@@ -2,6 +2,10 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QList>
+#include <QPair>
+#include <QThread>
+#include "loghandler.h"
 
 namespace Ui {
 class MainWindow;
@@ -17,6 +21,12 @@ public:
 
 private:
     Ui::MainWindow *ui;
+
+    QList<QPair<QThread*,QObject*> > d_threadList;
+
+    LogHandler *p_lh;
+
+
 };
 
 #endif // MAINWINDOW_H
