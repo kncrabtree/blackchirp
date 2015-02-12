@@ -52,6 +52,8 @@ int main(int argc, char *argv[])
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.setValue(QString("lastRun"),QDateTime::currentDateTime().toString(Qt::ISODate));
+    s.setValue(QString("savePath"),QString("%1/%2").arg(appDataPath).arg(appName.toLower()));
+
 
     //look for lock files from other applications that need same hardware resources
 
