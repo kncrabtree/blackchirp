@@ -12,6 +12,8 @@ TARGET = blackchirp
 TEMPLATE = app
 
 
-SOURCES += main.cpp\
+SOURCES += main.cpp
 
 include(gui.pri)
+include(data.pri)
+
