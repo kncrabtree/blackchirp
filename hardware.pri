@@ -1,5 +1,7 @@
 HEADERS += \
-    $$PWD/hardwaremanager.h
+    $$PWD/hardwaremanager.h \
+    $$PWD/hardwareobject.h
 
 SOURCES += \
-    $$PWD/hardwaremanager.cpp
+    $$PWD/hardwaremanager.cpp \
+    $$PWD/hardwareobject.cpp
