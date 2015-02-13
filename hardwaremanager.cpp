@@ -10,3 +10,8 @@ HardwareManager::~HardwareManager()
 
 }
 
+void HardwareManager::initialize()
+{
+
+}
+

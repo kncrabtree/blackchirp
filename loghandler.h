@@ -16,6 +16,7 @@ public:
     enum MessageCode {Normal, Warning, Error, Highlight, Debug};
 
 
+
 signals:
 	//sends the formatted messages to the UI
 	void sendLogMessage(const QString);
@@ -34,5 +35,7 @@ private:
 
 
 };
+
+Q_DECLARE_METATYPE(LogHandler::MessageCode)
 
 #endif // LOGHANDLER_H

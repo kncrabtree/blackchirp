@@ -7,6 +7,7 @@
 LogHandler::LogHandler(QObject *parent) :
     QObject(parent)
 {
+    qRegisterMetaType<LogHandler::MessageCode>("LogHandler::MessageCode");
     d_currentMonth = QDate::currentDate().month();
     d_logFile.setFileName(makeLogFileName());
     d_logFile.open(QIODevice::Append);
@@ -88,6 +89,7 @@ void LogHandler::writeToFile(const QString text, const LogHandler::MessageCode t
         msg.append(text).append(QString("\n"));
 
         d_logFile.write(msg.toLatin1());
+        d_logFile.flush();
     }
 }
 

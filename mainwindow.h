@@ -6,6 +6,7 @@
 #include <QPair>
 #include <QThread>
 #include "loghandler.h"
+#include "hardwaremanager.h"
 
 namespace Ui {
 class MainWindow;
@@ -25,6 +26,7 @@ private:
     QList<QPair<QThread*,QObject*> > d_threadList;
 
     LogHandler *p_lh;
+    HardwareManager *p_hwm;
 
 
 };

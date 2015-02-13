@@ -14,11 +14,22 @@ MainWindow::MainWindow(QWidget *parent) :
 
     p_lh = new LogHandler();
     connect(p_lh,&LogHandler::sendStatusMessage,statusLabel,&QLabel::setText);
+    connect(p_lh,&LogHandler::sendLogMessage,ui->log,&QTextEdit::append);
 
     QThread *lhThread = new QThread(this);
     p_lh->moveToThread(lhThread);
     d_threadList.append(qMakePair(lhThread,p_lh));
     lhThread->start();
+
+    p_hwm = new HardwareManager();
+    connect(p_hwm,&HardwareManager::logMessage,p_lh,&LogHandler::logMessage);
+    connect(p_hwm,&HardwareManager::statusMessage,p_lh,&LogHandler::sendStatusMessage);
+
+    QThread *hwmThread = new QThread(this);
+    connect(hwmThread,&QThread::started,p_hwm,&HardwareManager::initialize);
+    p_hwm->moveToThread(hwmThread);
+    d_threadList.append(qMakePair(hwmThread,p_hwm));
+    hwmThread->start();
 }
 
 MainWindow::~MainWindow()
