@@ -2,6 +2,9 @@
 #define HARDWAREMANAGER_H
 
 #include <QObject>
+#include <QList>
+#include <QThread>
+#include "hardwareobject.h"
 #include "loghandler.h"
 
 class HardwareManager : public QObject
@@ -17,6 +20,10 @@ signals:
 
 public slots:
     void initialize();
+
+private:
+    QList<QPair<HardwareObject*,QThread*> > d_hardwareList;
+
 };
 
 #endif // HARDWAREMANAGER_H

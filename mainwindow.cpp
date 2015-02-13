@@ -17,6 +17,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_lh,&LogHandler::sendLogMessage,ui->log,&QTextEdit::append);
 
     QThread *lhThread = new QThread(this);
+    connect(lhThread,&QThread::finished,p_lh,&LogHandler::deleteLater);
     p_lh->moveToThread(lhThread);
     d_threadList.append(qMakePair(lhThread,p_lh));
     lhThread->start();
@@ -27,6 +28,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QThread *hwmThread = new QThread(this);
     connect(hwmThread,&QThread::started,p_hwm,&HardwareManager::initialize);
+    connect(hwmThread,&QThread::finished,p_hwm,&HardwareManager::deleteLater);
     p_hwm->moveToThread(hwmThread);
     d_threadList.append(qMakePair(hwmThread,p_hwm));
     hwmThread->start();
@@ -34,14 +36,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
-    for(int i=0; i<d_threadList.size();i++)
+    while(!d_threadList.isEmpty())
     {
-        QThread *t = d_threadList.at(i).first;
-        QObject *obj = d_threadList.at(i).second;
+        QPair<QThread*,QObject*> p = d_threadList.takeFirst();
 
-        t->quit();
-        t->wait();
-        delete obj;
+        p.first->quit();
+        p.first->wait();
     }
 
     delete ui;
