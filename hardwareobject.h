@@ -105,6 +105,7 @@ public slots:
 	virtual void sleep(bool b);
 
 protected:
+	bool d_virtualHardware;
     const QString d_prettyName; /*!< Name to be displayed on UI */
     const QString d_key; /*!< Name to be used in settings */
 

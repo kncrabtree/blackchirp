@@ -4,6 +4,9 @@
 TcpInstrument::TcpInstrument(QString key, QString name, QObject *parent) :
     HardwareObject(key,name,parent)
 {
+#ifdef BC_NOTCP
+	d_hardwareDisabled = true;
+#endif
 }
 
 TcpInstrument::~TcpInstrument()
@@ -13,6 +16,9 @@ TcpInstrument::~TcpInstrument()
 
 void TcpInstrument::initialize()
 {
+	if(d_virtualHardware)
+		return;
+
 	d_socket = new QTcpSocket(this);
 	connect(d_socket,SIGNAL(error(QAbstractSocket::SocketError)),this,SLOT(socketError(QAbstractSocket::SocketError)));
 
@@ -27,6 +33,9 @@ void TcpInstrument::initialize()
 
 bool TcpInstrument::testConnection()
 {
+	if(d_virtualHardware)
+		return true;
+
 	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 	QString ip = s.value(key().append(QString("/ip")),QString("")).toString();
 	int port = s.value(key().append(QString("/port")),5000).toInt();
@@ -50,6 +59,9 @@ void TcpInstrument::socketError(QAbstractSocket::SocketError)
 
 bool TcpInstrument::writeCmd(QString cmd)
 {
+	if(d_virtualHardware)
+		return true;
+
     if(d_socket->state() != QTcpSocket::ConnectedState)
     {
         if(!connectSocket())
@@ -73,6 +85,9 @@ bool TcpInstrument::writeCmd(QString cmd)
 
 QByteArray TcpInstrument::queryCmd(QString cmd)
 {
+	if(d_virtualHardware)
+		return QByteArray();
+
     if(d_socket->state() != QTcpSocket::ConnectedState)
     {
         if(!connectSocket())
@@ -131,6 +146,9 @@ QByteArray TcpInstrument::queryCmd(QString cmd)
 
 bool TcpInstrument::connectSocket()
 {
+	if(d_virtualHardware)
+		return true;
+
     d_socket->connectToHost(d_ip,d_port);
     if(!d_socket->waitForConnected(1000))
     {
@@ -144,11 +162,17 @@ bool TcpInstrument::connectSocket()
 
 void TcpInstrument::disconnectSocket()
 {
+	if(d_virtualHardware)
+		return;
+
     d_socket->disconnectFromHost();
 }
 
 void TcpInstrument::setSocketConnectionInfo(QString ip, int port)
 {
+	if(d_virtualHardware)
+		return;
+
 	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 	s.setValue(key().append(QString("/ip")),ip);
 	s.setValue(key().append(QString("/port")),port);

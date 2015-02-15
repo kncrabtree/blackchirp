@@ -3,10 +3,16 @@
 Rs232Instrument::Rs232Instrument(QString key, QString name, QObject *parent) :
 	HardwareObject(key,name,parent)
 {
+#ifdef BC_NORS232
+	d_hardwareDisabled = true;
+#endif
 }
 
 Rs232Instrument::~Rs232Instrument()
 {
+	if(d_virtualHardware)
+		return;
+
     if(d_sp->isOpen())
         d_sp->close();
 
@@ -15,6 +21,9 @@ Rs232Instrument::~Rs232Instrument()
 
 void Rs232Instrument::initialize()
 {
+	if(d_virtualHardware)
+		return;
+
 	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 	s.setValue(key().append(QString("/prettyName")),name());
 	s.sync();
@@ -24,6 +33,9 @@ void Rs232Instrument::initialize()
 
 bool Rs232Instrument::testConnection()
 {
+	if(d_virtualHardware)
+		return true;
+
     if(d_sp->isOpen())
         d_sp->close();
 
@@ -59,6 +71,9 @@ bool Rs232Instrument::testConnection()
 
 bool Rs232Instrument::writeCmd(QString cmd)
 {
+	if(d_virtualHardware)
+		return true;
+
     if(!d_sp->isOpen())
     {
         emit hardwareFailure(this);
@@ -79,6 +94,9 @@ bool Rs232Instrument::writeCmd(QString cmd)
 
 QByteArray Rs232Instrument::queryCmd(QString cmd)
 {
+	if(d_virtualHardware)
+		return QByteArray();
+
     if(!d_sp->isOpen())
     {
         emit hardwareFailure(this);

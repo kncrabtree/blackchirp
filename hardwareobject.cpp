@@ -3,6 +3,11 @@
 HardwareObject::HardwareObject(QString key, QString name, QObject *parent) :
 	QObject(parent), d_prettyName(name), d_key(key), d_useTermChar(false), d_timeOut(1000)
 {
+#ifdef BC_NOHARDWARE
+	d_hardwareDisabled = true;
+#else
+	d_virtualHardware = false;
+#endif
 }
 
 
