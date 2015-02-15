@@ -6,7 +6,7 @@ HardwareObject::HardwareObject(QString key, QString name, QObject *parent) :
 #ifdef BC_NOHARDWARE
 	d_hardwareDisabled = true;
 #else
-	d_virtualHardware = false;
+	d_virtual = false;
 #endif
 }
 

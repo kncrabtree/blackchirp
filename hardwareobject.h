@@ -62,6 +62,8 @@ public:
      * \return Name for use in the settings file
      */
 	QString key() { return d_key; }
+
+	bool isVirtual() { return d_virtual; }
 	
 signals:
     /*!
@@ -105,7 +107,7 @@ public slots:
 	virtual void sleep(bool b);
 
 protected:
-	bool d_virtualHardware;
+	bool d_virtual;
     const QString d_prettyName; /*!< Name to be displayed on UI */
     const QString d_key; /*!< Name to be used in settings */
 

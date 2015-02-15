@@ -10,7 +10,7 @@ Rs232Instrument::Rs232Instrument(QString key, QString name, QObject *parent) :
 
 Rs232Instrument::~Rs232Instrument()
 {
-	if(d_virtualHardware)
+	if(d_virtual)
 		return;
 
     if(d_sp->isOpen())
@@ -21,7 +21,7 @@ Rs232Instrument::~Rs232Instrument()
 
 void Rs232Instrument::initialize()
 {
-	if(d_virtualHardware)
+	if(d_virtual)
 		return;
 
 	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
@@ -33,7 +33,7 @@ void Rs232Instrument::initialize()
 
 bool Rs232Instrument::testConnection()
 {
-	if(d_virtualHardware)
+	if(d_virtual)
 		return true;
 
     if(d_sp->isOpen())
@@ -71,7 +71,7 @@ bool Rs232Instrument::testConnection()
 
 bool Rs232Instrument::writeCmd(QString cmd)
 {
-	if(d_virtualHardware)
+	if(d_virtual)
 		return true;
 
     if(!d_sp->isOpen())
@@ -94,7 +94,7 @@ bool Rs232Instrument::writeCmd(QString cmd)
 
 QByteArray Rs232Instrument::queryCmd(QString cmd)
 {
-	if(d_virtualHardware)
+	if(d_virtual)
 		return QByteArray();
 
     if(!d_sp->isOpen())

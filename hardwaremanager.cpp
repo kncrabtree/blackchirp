@@ -45,6 +45,7 @@ void HardwareManager::initialize()
 		{
 			s.setArrayIndex(index);
 			s.setValue(QString("key"),d_hardwareList.at(i).first->key());
+			s.setValue(QString("virtual"),d_hardwareList.at(i).first->isVirtual());
 			index++;
 		}
 	}

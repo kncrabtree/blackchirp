@@ -16,7 +16,7 @@ TcpInstrument::~TcpInstrument()
 
 void TcpInstrument::initialize()
 {
-	if(d_virtualHardware)
+	if(d_virtual)
 		return;
 
 	d_socket = new QTcpSocket(this);
@@ -33,7 +33,7 @@ void TcpInstrument::initialize()
 
 bool TcpInstrument::testConnection()
 {
-	if(d_virtualHardware)
+	if(d_virtual)
 		return true;
 
 	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
@@ -59,7 +59,7 @@ void TcpInstrument::socketError(QAbstractSocket::SocketError)
 
 bool TcpInstrument::writeCmd(QString cmd)
 {
-	if(d_virtualHardware)
+	if(d_virtual)
 		return true;
 
     if(d_socket->state() != QTcpSocket::ConnectedState)
@@ -85,7 +85,7 @@ bool TcpInstrument::writeCmd(QString cmd)
 
 QByteArray TcpInstrument::queryCmd(QString cmd)
 {
-	if(d_virtualHardware)
+	if(d_virtual)
 		return QByteArray();
 
     if(d_socket->state() != QTcpSocket::ConnectedState)
@@ -146,7 +146,7 @@ QByteArray TcpInstrument::queryCmd(QString cmd)
 
 bool TcpInstrument::connectSocket()
 {
-	if(d_virtualHardware)
+	if(d_virtual)
 		return true;
 
     d_socket->connectToHost(d_ip,d_port);
@@ -162,7 +162,7 @@ bool TcpInstrument::connectSocket()
 
 void TcpInstrument::disconnectSocket()
 {
-	if(d_virtualHardware)
+	if(d_virtual)
 		return;
 
     d_socket->disconnectFromHost();
@@ -170,7 +170,7 @@ void TcpInstrument::disconnectSocket()
 
 void TcpInstrument::setSocketConnectionInfo(QString ip, int port)
 {
-	if(d_virtualHardware)
+	if(d_virtual)
 		return;
 
 	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
