@@ -1,3 +1,5 @@
-SOURCES += loghandler.cpp
+SOURCES += loghandler.cpp \
+    $$PWD/fid.cpp
 
-HEADERS += loghandler.h
+HEADERS += loghandler.h \
+    $$PWD/fid.h
