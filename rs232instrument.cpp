@@ -4,7 +4,7 @@ Rs232Instrument::Rs232Instrument(QString key, QString name, QObject *parent) :
 	HardwareObject(key,name,parent)
 {
 #ifdef BC_NORS232
-	d_hardwareDisabled = true;
+    d_virtual = true;
 #endif
 }
 

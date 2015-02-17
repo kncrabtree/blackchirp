@@ -5,7 +5,7 @@ TcpInstrument::TcpInstrument(QString key, QString name, QObject *parent) :
     HardwareObject(key,name,parent)
 {
 #ifdef BC_NOTCP
-	d_hardwareDisabled = true;
+    d_virtual = true;
 #endif
 }
 
