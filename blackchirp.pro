@@ -20,3 +20,17 @@ include(hardware.pri)
 
 
 unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
+
+#------------------------------------------------
+# The following defines allow running the code without real hardware.
+# Uncomment the appropriate lines to simulate hardware.
+# -----------------------------------------------
+
+# Simulates ALL hardware
+#DEFINES += BC_NOHARDWARE
+
+# Simulates ALL RS232 devices
+#DEFINES += BC_NORS232
+
+# Simulates ALL TCP devices
+#DEFINES += BC_NOTCP
