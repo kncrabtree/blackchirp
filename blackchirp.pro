@@ -34,3 +34,9 @@ unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
 
 # Simulates ALL TCP devices
 #DEFINES += BC_NOTCP
+
+# Simulates FTMW Oscilloscope (uncomment DEFINES and RESOURCES lines)
+DEFINES += BC_NOFTSCOPE
+RESOURCES += virtualdata.qrc
+
+
