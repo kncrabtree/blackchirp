@@ -19,4 +19,4 @@ include(data.pri)
 include(hardware.pri)
 
 
-unix:!macx: LIBS += -lqwt
+unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
