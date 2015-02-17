@@ -13,7 +13,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     p_lh = new LogHandler();
-    connect(p_lh,&LogHandler::sendStatusMessage,statusLabel,&QLabel::setText);
     connect(p_lh,&LogHandler::sendLogMessage,ui->log,&QTextEdit::append);
 
     QThread *lhThread = new QThread(this);
@@ -24,7 +23,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     p_hwm = new HardwareManager();
     connect(p_hwm,&HardwareManager::logMessage,p_lh,&LogHandler::logMessage);
-    connect(p_hwm,&HardwareManager::statusMessage,p_lh,&LogHandler::sendStatusMessage);
+    connect(p_hwm,&HardwareManager::statusMessage,statusLabel,&QLabel::setText);
 
     QThread *hwmThread = new QThread(this);
     connect(hwmThread,&QThread::started,p_hwm,&HardwareManager::initialize);
@@ -32,6 +31,16 @@ MainWindow::MainWindow(QWidget *parent) :
     p_hwm->moveToThread(hwmThread);
     d_threadList.append(qMakePair(hwmThread,p_hwm));
     hwmThread->start();
+
+    p_am = new AcquisitionManager();
+    connect(p_am,&AcquisitionManager::logMessage,p_lh,&LogHandler::logMessage);
+    connect(p_am,&AcquisitionManager::statusMessage,statusLabel,&QLabel::setText);
+
+    QThread *amThread = new QThread(this);
+    connect(amThread,&QThread::finished,p_am,&AcquisitionManager::deleteLater);
+    p_am->moveToThread(amThread);
+    d_threadList.append(qMakePair(amThread,p_am));
+    amThread->start();
 }
 
 MainWindow::~MainWindow()

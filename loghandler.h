@@ -20,7 +20,6 @@ public:
 signals:
 	//sends the formatted messages to the UI
 	void sendLogMessage(const QString);
-	void sendStatusMessage(const QString);
 
 public slots:
 	//access functions for transmitting messages to UI

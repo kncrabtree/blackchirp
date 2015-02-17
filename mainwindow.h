@@ -7,6 +7,7 @@
 #include <QThread>
 #include "loghandler.h"
 #include "hardwaremanager.h"
+#include "acquisitionmanager.h"
 
 namespace Ui {
 class MainWindow;
@@ -27,6 +28,7 @@ private:
 
     LogHandler *p_lh;
     HardwareManager *p_hwm;
+    AcquisitionManager *p_am;
 
 
 };
