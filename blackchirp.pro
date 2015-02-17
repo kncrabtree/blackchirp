@@ -18,3 +18,5 @@ include(gui.pri)
 include(data.pri)
 include(hardware.pri)
 
+
+unix:!macx: LIBS += -lqwt

@@ -1,5 +1,8 @@
-SOURCES += mainwindow.cpp
+SOURCES += mainwindow.cpp \
+    $$PWD/ftmwviewwidget.cpp
 
-HEADERS += mainwindow.h
+HEADERS += mainwindow.h \
+    $$PWD/ftmwviewwidget.h
 
-FORMS += mainwindow.ui
+FORMS += mainwindow.ui \
+    $$PWD/ftmwviewwidget.ui

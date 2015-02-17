@@ -65,6 +65,11 @@
        <attribute name="title">
         <string>CP-FTMW</string>
        </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="FtmwViewWidget" name="widget" native="true"/>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="lifTab">
        <attribute name="title">
@@ -123,6 +128,14 @@
   <widget class="QStatusBar" name="statusBar"/>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>FtmwViewWidget</class>
+   <extends>QWidget</extends>
+   <header>ftmwviewwidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
