@@ -26,6 +26,7 @@ signals:
      * \param QString Error message
      */
     void testComplete(QString,bool,QString);
+    void abortAcquisition();
 
 public slots:
     void initialize();
@@ -44,7 +45,7 @@ public slots:
      *
      * TODO: Consider generating an abort signal here
      */
-    void hardwareFailure(HardwareObject *obj);
+    void hardwareFailure(HardwareObject *obj, bool abort);
 
 private:
     QHash<QString,bool> d_status;
