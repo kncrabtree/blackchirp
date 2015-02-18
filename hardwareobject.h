@@ -64,6 +64,7 @@ public:
 	QString key() { return d_key; }
 
 	bool isVirtual() { return d_virtual; }
+    bool isCritical() { return d_isCritical; }
 	
 signals:
     /*!
@@ -114,6 +115,7 @@ protected:
     QByteArray d_readTerminator; /*!< Termination characters that indicate a message from the device is complete. */
     bool d_useTermChar; /*!< If true, a read operation is complete when the message ends with d_readTerminator */
     int d_timeOut; /*!< Timeout for read operation, in ms */
+    bool d_isCritical;
 
     /*!
      * \brief Convenience function for setting read options

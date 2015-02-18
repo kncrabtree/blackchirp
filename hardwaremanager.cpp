@@ -18,7 +18,11 @@ HardwareManager::~HardwareManager()
 }
 
 void HardwareManager::initialize()
-{
+{    
+    p_scope = new Oscilloscope();
+
+    QThread *scopeThread = new QThread(this);
+    d_hardwareList.append(qMakePair(p_scope,scopeThread));
 
 	//write arrays of the connected devices for use in the Hardware Settings menu
 	//first array is for all objects accessible to the hardware manager
@@ -76,9 +80,59 @@ void HardwareManager::initialize()
         connect(d_hardwareList.at(i).second,&QThread::started,d_hardwareList.at(i).first,&HardwareObject::initialize);
         connect(d_hardwareList.at(i).second,&QThread::finished,d_hardwareList.at(i).first,&HardwareObject::deleteLater);
         connect(d_hardwareList.at(i).first,&HardwareObject::logMessage,this,&HardwareManager::logMessage);
+        connect(d_hardwareList.at(i).first,&HardwareObject::connectionResult,this,&HardwareManager::connectionResult);
 
         d_hardwareList.at(i).first->moveToThread(d_hardwareList.at(i).second);
         d_hardwareList.at(i).second->start();
     }
 }
 
+void HardwareManager::connectionResult(HardwareObject *obj, bool success, QString msg)
+{
+    if(success)
+        emit logMessage(obj->name().append(QString(" connected successfully.")));
+    else
+    {
+        emit logMessage(obj->name().append(QString(" connection failed!")),LogHandler::Error);
+        emit logMessage(msg,LogHandler::Error);
+    }
+
+    bool ok = success;
+    if(!obj->isCritical())
+        ok = true;
+
+    if(d_status.contains(obj->key()))
+        d_status[obj->key()] = ok;
+    else
+        d_status.insert(obj->key(),ok);
+
+
+
+    emit testComplete(obj->name(),success,msg);
+    checkStatus();
+}
+
+void HardwareManager::hardwareFailure(HardwareObject *obj)
+{
+    if(!obj->isCritical())
+        return;
+
+    d_status[obj->key()] = false;
+    checkStatus();
+}
+
+void HardwareManager::checkStatus()
+{
+    //gotta wait until all instruments have responded
+    if(d_status.size() < d_hardwareList.size())
+        return;
+
+    bool success = true;
+    foreach (bool b, d_status)
+    {
+        if(!b)
+            success = false;
+    }
+
+    emit allHardwareConnected(success);
+}
