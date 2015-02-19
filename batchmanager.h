@@ -1,18 +1,38 @@
-#ifndef SEQUENCEMANAGER_H
-#define SEQUENCEMANAGER_H
+#ifndef BATCHMANAGER_H
+#define BATCHMANAGER_H
 
 #include <QObject>
+#include "loghandler.h"
+#include "experiment.h"
 
-class SequenceManager : public QObject
+class BatchManager : public QObject
 {
     Q_OBJECT
 public:
-    explicit SequenceManager(QObject *parent = 0);
-    ~SequenceManager();
+    enum BatchType
+    {
+        SingleExperiment
+    };
+
+    explicit BatchManager(BatchType b);
+    ~BatchManager();
 
 signals:
+    void logMessage(QString,LogHandler::MessageCode = LogHandler::Normal);
+    void beginExperiment(Experiment);
+    void batchComplete(bool aborted);
 
 public slots:
+    void experimentComplete(Experiment exp);
+    void beginNextExperiment();
+
+protected:
+    BatchType d_type;
+
+    virtual void writeReport() =0;
+    virtual void processExperiment(Experiment exp) =0;
+    virtual Experiment nextExperiment() =0;
+    virtual bool isComplete() =0;
 };
 
-#endif // SEQUENCEMANAGER_H
+#endif //BATCHMANAGER_H
