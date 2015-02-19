@@ -12,6 +12,8 @@ public:
     bool isInitialized;
     bool isAborted;
     bool isDummy;
+
+    FtmwConfig ftmwCfg;
 };
 
 Experiment::Experiment() : data(new ExperimentData)
@@ -71,22 +73,27 @@ bool Experiment::isDummy() const
     return data->isDummy;
 }
 
-void Experiment::setGasSetpoints(QList<QPair<double, QString> > list)
+FtmwConfig Experiment::ftmwConfig() const
+{
+    return data->ftmwCfg;
+}
+
+void Experiment::setGasSetpoints(const QList<QPair<double, QString> > list)
 {
     data->gasSetpoints = list;
 }
 
-void Experiment::addGasSetpoint(double setPoint, QString name)
+void Experiment::addGasSetpoint(const double setPoint, const QString name)
 {
     data->gasSetpoints.append(qMakePair(setPoint,name));
 }
 
-void Experiment::setPressureSetpoints(QList<QPair<double, QString> > list)
+void Experiment::setPressureSetpoints(const QList<QPair<double, QString> > list)
 {
     data->pressureSetpoints = list;
 }
 
-void Experiment::addPressureSetpoint(double setPoint, QString name)
+void Experiment::addPressureSetpoint(const double setPoint, const QString name)
 {
     data->pressureSetpoints.append(qMakePair(setPoint,name));
 }
@@ -105,5 +112,10 @@ void Experiment::setAborted()
 void Experiment::setDummy()
 {
     data->isDummy = true;
+}
+
+void Experiment::setFtmwConfig(const FtmwConfig cfg)
+{
+    data->ftmwCfg = cfg;
 }
 

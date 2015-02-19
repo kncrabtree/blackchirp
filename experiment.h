@@ -4,6 +4,7 @@
 #include <QSharedDataPointer>
 #include <QPair>
 #include <QDateTime>
+#include "ftmwconfig.h"
 
 class ExperimentData;
 
@@ -22,14 +23,16 @@ public:
     bool isInitialized() const;
     bool isAborted() const;
     bool isDummy() const;
+    FtmwConfig ftmwConfig() const;
 
-    void setGasSetpoints(QList<QPair<double,QString> > list);
-    void addGasSetpoint(double setPoint, QString name);
-    void setPressureSetpoints(QList<QPair<double,QString> > list);
-    void addPressureSetpoint(double setPoint, QString name);
+    void setGasSetpoints(const QList<QPair<double,QString> > list);
+    void addGasSetpoint(const double setPoint, const QString name);
+    void setPressureSetpoints(const QList<QPair<double,QString> > list);
+    void addPressureSetpoint(const double setPoint, const QString name);
     void setInitialized();
     void setAborted();
     void setDummy();
+    void setFtmwConfig(const FtmwConfig cfg);
 
 private:
     QSharedDataPointer<ExperimentData> data;
