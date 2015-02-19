@@ -14,6 +14,7 @@ TEMPLATE = app
 
 SOURCES += main.cpp
 
+include(acquisition.pri)
 include(gui.pri)
 include(data.pri)
 include(hardware.pri)
