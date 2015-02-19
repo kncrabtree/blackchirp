@@ -8,6 +8,8 @@
 #include "loghandler.h"
 #include "hardwaremanager.h"
 #include "acquisitionmanager.h"
+#include "batchmanager.h"
+#include "batchsingle.h"
 
 namespace Ui {
 class MainWindow;
@@ -21,14 +23,30 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+    enum ProgramState
+    {
+        Idle,
+        Acquiring,
+        Paused,
+        Disconnected,
+        Asleep
+    };
+
+public slots:
+    void startExperiment();
+
 private:
     Ui::MainWindow *ui;
-
-    QList<QPair<QThread*,QObject*> > d_threadList;
-
+    QList<QPair<QThread*,QObject*> > d_threadObjectList;
     LogHandler *p_lh;
     HardwareManager *p_hwm;
     AcquisitionManager *p_am;
+
+    bool d_hardwareConnected;
+    QThread *d_batchThread;
+
+    void configureUi(ProgramState s);
+    void startBatch(BatchManager *bm, bool sleepWhenDone = false);
 
 
 };

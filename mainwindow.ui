@@ -16,7 +16,7 @@
   <widget class="QWidget" name="centralWidget">
    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1">
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1">
+     <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1,0,0,0">
       <item>
        <widget class="QLabel" name="label">
         <property name="text">
@@ -29,6 +29,9 @@
       </item>
       <item>
        <layout class="QFormLayout" name="formLayout">
+        <property name="fieldGrowthPolicy">
+         <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+        </property>
         <item row="0" column="0">
          <widget class="QLabel" name="exptLabel">
           <property name="text">
@@ -50,6 +53,36 @@
          </widget>
         </item>
        </layout>
+      </item>
+      <item>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>FTMW Progress</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QProgressBar" name="ftmwProgressBar">
+        <property name="value">
+         <number>0</number>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
@@ -124,8 +157,32 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionStart_Experiment"/>
+   <addaction name="actionPause"/>
+   <addaction name="actionResume"/>
+   <addaction name="actionAbort"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
+  <action name="actionStart_Experiment">
+   <property name="text">
+    <string>Start Experiment</string>
+   </property>
+  </action>
+  <action name="actionPause">
+   <property name="text">
+    <string>Pause</string>
+   </property>
+  </action>
+  <action name="actionResume">
+   <property name="text">
+    <string>Resume</string>
+   </property>
+  </action>
+  <action name="actionAbort">
+   <property name="text">
+    <string>Abort</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
