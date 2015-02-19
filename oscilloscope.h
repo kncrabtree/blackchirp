@@ -57,54 +57,80 @@ public:
             summaryFrame(other.summaryFrame), trigChannel(other.trigChannel), slope(other.slope), bytesPerPoint(other.bytesPerPoint),
             byteOrder(other.byteOrder), vOffset(other.vOffset), yMult(other.yMult), yOff(other.yOff), xIncr(other.xIncr) {}
 
-        QStringList labels() const {
-            QStringList out;
-            out.append(QString("FID channel"));
-            out.append(QString("Vertical scale"));
-            out.append(QString("Vertical offset"));
-            out.append(QString("Trigger channel"));
-            out.append(QString("Trigger slope"));
-            out.append(QString("Sample rate"));
-            out.append(QString("Record length"));
-            out.append(QString("Fast frame"));
-            out.append(QString("Num frames"));
-            out.append(QString("Summary frame"));
-            out.append(QString("Bytes per point"));
-            out.append(QString("Byte order"));
+        QHash<QString,QPair<QVariant,QString> > headerHash() const
+        {
+            QHash<QString,QPair<QVariant,QString> > out;
+            QString empty = QString("");
+            QString prefix = QString("FtmwScope");
+            QString scratch;
+
+            out.insert(prefix+QString("FidChannel"),qMakePair(fidChannel,empty));
+            out.insert(prefix+QString("VerticalScale"),qMakePair(QString::number(vScale,'f',3),QString("V/div")));
+            out.insert(prefix+QString("VerticalOffset"),qMakePair(QString::number(vOffset,'f',3),QString("V")));
+            out.insert(prefix+QString("TriggerChannel"),qMakePair(trigChannel,empty));
+            slope == RisingEdge ? scratch = QString("RisingEdge") : scratch = QString("FallingEdge");
+            out.insert(prefix+QString("TriggerSlope"),qMakePair(scratch,empty));
+            out.insert(prefix+QString("SampleRate"),qMakePair(QString::number(sampleRate/1e9,'f',3),QString("GS/s")));
+            out.insert(prefix+QString("RecordLength"),qMakePair(recordLength,empty));
+            out.insert(prefix+QString("FastFrame"),qMakePair(fastFrameEnabled,empty));
+            out.insert(prefix+QString("NumFrames"),qMakePair(numFrames,empty));
+            out.insert(prefix+QString("SummaryFrame"),qMakePair(summaryFrame,empty));
+            out.insert(prefix+QString("BytesPerPoint"),qMakePair(bytesPerPoint,empty));
+            byteOrder == QDataStream::BigEndian ? scratch = QString("BigEndian") : scratch = QString("LittleEndian");
+            out.insert(prefix+QString("ByteOrder"),qMakePair(scratch,empty));
+
             return out;
         }
-        QStringList values() const {
-            QStringList out;
-            out.append(QString::number(fidChannel));
-            out.append(QString::number(vScale,'f',3));
-            out.append(QString::number(vOffset,'f',3));
-            out.append(QString::number(trigChannel));
-            slope == RisingEdge ? out.append(QString("Rising edge")) : out.append(QString("Falling edge"));
-            out.append(QString::number(sampleRate/1e9,'f',3));
-            out.append(QString::number(recordLength));
-            fastFrameEnabled ? out.append(QString("Yes")) : out.append(QString("No"));
-            out.append(QString::number(numFrames));
-            summaryFrame ? out.append(QString("Yes")) : out.append(QString("No"));
-            out.append(QString::number(bytesPerPoint));
-            byteOrder == QDataStream::BigEndian ? out.append(QString("Big endian")) : out.append(QString("Little endian"));
-            return out;
-        }
-        QStringList units() const {
-            QStringList out;
-            out.append(QString(""));
-            out.append(QString("V/div"));
-            out.append(QString("V"));
-            out.append(QString(""));
-            out.append(QString(""));
-            out.append(QString("GS/s"));
-            out.append(QString("pts"));
-            out.append(QString(""));
-            out.append(QString(""));
-            out.append(QString(""));
-            out.append(QString(""));
-            out.append(QString(""));
-            return out;
-        }
+
+//        QStringList labels() const {
+//            QStringList out;
+//            out.append(QString("FidChannel"));
+//            out.append(QString("VerticalScale"));
+//            out.append(QString("VerticalOffset"));
+//            out.append(QString("TriggerChannel"));
+//            out.append(QString("TriggerSlope"));
+//            out.append(QString("SampleRate"));
+//            out.append(QString("RecordLength"));
+//            out.append(QString("FastFrame"));
+//            out.append(QString("NumFrames"));
+//            out.append(QString("SummaryFrame"));
+//            out.append(QString("BytesPerPoint"));
+//            out.append(QString("ByteOrder"));
+//            return out;
+//        }
+//        QList<QVariant> values() const {
+//            QList<QVariant> out;
+//            out.append(fidChannel);
+//            out.append();
+//            out.append(QString::number(vOffset,'f',3));
+//            out.append(trigChannel);
+//            slope == RisingEdge ? out.append(QString("RisingEdge")) : out.append(QString("FallingEdge"));
+//            out.append(QString::number(sampleRate/1e9,'f',3));
+//            out.append(recordLength);
+//            out.append(fastFrameEnabled);
+//            out.append(numFrames);
+//            out.append(summaryFrame);
+//            out.append(bytesPerPoint);
+//            byteOrder == QDataStream::BigEndian ? out.append(QString("BigEndian")) : out.append(QString("LittleEndian"));
+//            return out;
+//        }
+//        QStringList units() const {
+//            QStringList out;
+
+//            out.append(empty);
+//            out.append(QString("V/div"));
+//            out.append(QString("V"));
+//            out.append(empty);
+//            out.append(empty);
+//            out.append(QString("GS/s"));
+//            out.append(QString("pts"));
+//            out.append(empty);
+//            out.append(empty);
+//            out.append(empty);
+//            out.append(empty);
+//            out.append(empty);
+//            return out;
+//        }
     };
 
     static Fid parseWaveform(QByteArray b, const ScopeConfig &config, const double loFreq, const Fid::Sideband sb);
