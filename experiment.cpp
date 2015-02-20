@@ -78,6 +78,12 @@ FtmwConfig Experiment::ftmwConfig() const
     return data->ftmwCfg;
 }
 
+bool Experiment::isComplete() const
+{
+    //check each sub expriment!
+    return data->ftmwCfg.isComplete();
+}
+
 void Experiment::setGasSetpoints(const QList<QPair<double, QString> > list)
 {
     data->gasSetpoints = list;
@@ -117,5 +123,10 @@ void Experiment::setDummy()
 void Experiment::setFtmwConfig(const FtmwConfig cfg)
 {
     data->ftmwCfg = cfg;
+}
+
+void Experiment::incrementFtmw()
+{
+    data->ftmwCfg.increment();
 }
 

@@ -5,7 +5,7 @@
 #include <QTimer>
 
 Oscilloscope::Oscilloscope(QObject *parent) :
-    TcpInstrument(QString("ftmwscope"),QString("FtmwOscilloscope"),parent), d_shotId(0), d_waitingForReply(false), d_foundHeader(false),
+    TcpInstrument(QString("ftmwscope"),QString("FtmwOscilloscope"),parent), d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {
 #ifdef BC_NOFTSCOPE
@@ -616,7 +616,6 @@ void Oscilloscope::beginAcquisition()
     d_foundHeader = false;
     d_headerNumBytes = 0;
     d_waveformBytes = 0;
-    d_shotId = 0;
     d_lastTrigger = QDateTime::currentDateTime();
     connect(&d_scopeTimeout,&QTimer::timeout,this,&Oscilloscope::wakeUp,Qt::UniqueConnection);
     connect(d_socket,&QTcpSocket::readyRead,this,&Oscilloscope::readWaveform,Qt::UniqueConnection);
@@ -627,7 +626,7 @@ void Oscilloscope::queryScope(quint64 id)
     if(d_virtual)
     {
         if(d_waitingForReply)
-            emit shotAcquired(id-1,makeSimulatedData());
+            emit shotAcquired(makeSimulatedData());
 
         return;
     }
@@ -660,7 +659,6 @@ void Oscilloscope::queryScope(quint64 id)
     d_headerNumBytes = 0;
     d_waveformBytes = 0;
     //the scope appears to cache replies, so each waveform is sent on the following trigger event
-    d_shotId = id-1;
     d_lastTrigger = QDateTime::currentDateTime();
 
 //    writeCmd(QString(":CURVE?\n"));
@@ -839,7 +837,7 @@ void Oscilloscope::readWaveform()
         {
             QByteArray wfm = d_socket->read(d_waveformBytes);
             emit logMessage(QString("Wfm read complete: %1 ms").arg(QTime::currentTime().msec()));
-            emit shotAcquired(d_shotId,wfm);
+            emit shotAcquired(wfm);
             d_waitingForReply = false;
             d_foundHeader = false;
             d_headerNumBytes = 0;

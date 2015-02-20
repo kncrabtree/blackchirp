@@ -24,6 +24,7 @@ public:
     bool isAborted() const;
     bool isDummy() const;
     FtmwConfig ftmwConfig() const;
+    bool isComplete() const;
 
     void setGasSetpoints(const QList<QPair<double,QString> > list);
     void addGasSetpoint(const double setPoint, const QString name);
@@ -33,6 +34,8 @@ public:
     void setAborted();
     void setDummy();
     void setFtmwConfig(const FtmwConfig cfg);
+
+    void incrementFtmw();
 
 private:
     QSharedDataPointer<ExperimentData> data;

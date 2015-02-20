@@ -82,61 +82,12 @@ public:
             return out;
         }
 
-//        QStringList labels() const {
-//            QStringList out;
-//            out.append(QString("FidChannel"));
-//            out.append(QString("VerticalScale"));
-//            out.append(QString("VerticalOffset"));
-//            out.append(QString("TriggerChannel"));
-//            out.append(QString("TriggerSlope"));
-//            out.append(QString("SampleRate"));
-//            out.append(QString("RecordLength"));
-//            out.append(QString("FastFrame"));
-//            out.append(QString("NumFrames"));
-//            out.append(QString("SummaryFrame"));
-//            out.append(QString("BytesPerPoint"));
-//            out.append(QString("ByteOrder"));
-//            return out;
-//        }
-//        QList<QVariant> values() const {
-//            QList<QVariant> out;
-//            out.append(fidChannel);
-//            out.append();
-//            out.append(QString::number(vOffset,'f',3));
-//            out.append(trigChannel);
-//            slope == RisingEdge ? out.append(QString("RisingEdge")) : out.append(QString("FallingEdge"));
-//            out.append(QString::number(sampleRate/1e9,'f',3));
-//            out.append(recordLength);
-//            out.append(fastFrameEnabled);
-//            out.append(numFrames);
-//            out.append(summaryFrame);
-//            out.append(bytesPerPoint);
-//            byteOrder == QDataStream::BigEndian ? out.append(QString("BigEndian")) : out.append(QString("LittleEndian"));
-//            return out;
-//        }
-//        QStringList units() const {
-//            QStringList out;
-
-//            out.append(empty);
-//            out.append(QString("V/div"));
-//            out.append(QString("V"));
-//            out.append(empty);
-//            out.append(empty);
-//            out.append(QString("GS/s"));
-//            out.append(QString("pts"));
-//            out.append(empty);
-//            out.append(empty);
-//            out.append(empty);
-//            out.append(empty);
-//            out.append(empty);
-//            return out;
-//        }
     };
 
     static Fid parseWaveform(QByteArray b, const ScopeConfig &config, const double loFreq, const Fid::Sideband sb);
 
 signals:
-    void shotAcquired(const quint64 id, const QByteArray data);
+    void shotAcquired(const QByteArray data);
 
 public slots:
     void initialize();
@@ -151,7 +102,6 @@ public slots:
     void wakeUp();
 
 private:
-    quint64 d_shotId;
     bool d_waitingForReply;
     bool d_foundHeader;
     int d_headerNumBytes;

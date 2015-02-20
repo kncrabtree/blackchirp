@@ -20,6 +20,7 @@ HardwareManager::~HardwareManager()
 void HardwareManager::initialize()
 {    
     p_scope = new Oscilloscope();
+    connect(p_scope,&Oscilloscope::shotAcquired,this,&HardwareManager::scopeShotAcquired);
 
     QThread *scopeThread = new QThread(this);
     d_hardwareList.append(qMakePair(p_scope,scopeThread));
@@ -123,6 +124,17 @@ void HardwareManager::hardwareFailure(HardwareObject *obj, bool abort)
 
     d_status[obj->key()] = false;
     checkStatus();
+}
+
+void HardwareManager::initializeExperiment(Experiment exp)
+{
+    //do initialization
+    //if successful, call Experiment::setInitialized()
+
+    exp.setInitialized();
+
+    emit experimentInitialized(exp);
+
 }
 
 void HardwareManager::checkStatus()

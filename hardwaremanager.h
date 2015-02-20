@@ -7,6 +7,7 @@
 #include "hardwareobject.h"
 #include "loghandler.h"
 #include "oscilloscope.h"
+#include "experiment.h"
 
 class HardwareManager : public QObject
 {
@@ -27,6 +28,8 @@ signals:
      */
     void testComplete(QString,bool,QString);
     void abortAcquisition();
+    void experimentInitialized(Experiment);
+    void scopeShotAcquired(const QByteArray);
 
 public slots:
     void initialize();
@@ -46,6 +49,8 @@ public slots:
      * TODO: Consider generating an abort signal here
      */
     void hardwareFailure(HardwareObject *obj, bool abort);
+
+    void initializeExperiment(Experiment exp);
 
 private:
     QHash<QString,bool> d_status;

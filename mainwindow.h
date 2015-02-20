@@ -32,8 +32,12 @@ public:
         Asleep
     };
 
+signals:
+    void statusMessage(const QString);
+
 public slots:
     void startExperiment();
+    void batchComplete(bool aborted);
 
 private:
     Ui::MainWindow *ui;

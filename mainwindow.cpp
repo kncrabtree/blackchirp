@@ -9,6 +9,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     QLabel *statusLabel = new QLabel(this);
+    connect(this,&MainWindow::statusMessage,statusLabel,&QLabel::setText);
     ui->statusBar->addWidget(statusLabel);
 
 
@@ -30,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(hwmThread,&QThread::finished,p_hwm,&HardwareManager::deleteLater);
     p_hwm->moveToThread(hwmThread);
     d_threadObjectList.append(qMakePair(hwmThread,p_hwm));
-    hwmThread->start();
+
 
     p_am = new AcquisitionManager();
     connect(p_am,&AcquisitionManager::logMessage,p_lh,&LogHandler::logMessage);
@@ -40,6 +41,11 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(amThread,&QThread::finished,p_am,&AcquisitionManager::deleteLater);
     p_am->moveToThread(amThread);
     d_threadObjectList.append(qMakePair(amThread,p_am));
+
+    connect(p_hwm,&HardwareManager::experimentInitialized,p_am,&AcquisitionManager::startExperiment);
+
+
+    hwmThread->start();
     amThread->start();
 
     d_batchThread = new QThread(this);
@@ -65,6 +71,16 @@ void MainWindow::startExperiment()
 
     //build experiment from a wizard or something
 
+}
+
+void MainWindow::batchComplete(bool aborted)
+{
+    if(aborted)
+        emit statusMessage(QString("Experiment aborted"));
+    else
+        emit statusMessage(QString("Experiment complete"));
+
+    configureUi(Idle);
 }
 
 void MainWindow::configureUi(MainWindow::ProgramState s)
@@ -112,9 +128,9 @@ void MainWindow::startBatch(BatchManager *bm, bool sleepWhenDone)
 {
     connect(d_batchThread,&QThread::started,bm,&BatchManager::beginNextExperiment);
     connect(bm,&BatchManager::logMessage,p_lh,&LogHandler::logMessage);
-//    connect(bm,&BatchManager::beginExperiment,p_hwm,&HardwareManager::initializeExperiment);
-//    connect(p_am,&AcquisitionManager::experimentComplete,bm,&BatchManager::experimentComplete);
-//    connect(bm,&BatchManager::batchComplete,this,&MainWindow::batchComplete);
+    connect(bm,&BatchManager::beginExperiment,p_hwm,&HardwareManager::initializeExperiment);
+    connect(p_am,&AcquisitionManager::experimentComplete,bm,&BatchManager::experimentComplete);
+    connect(bm,&BatchManager::batchComplete,this,&MainWindow::batchComplete);
     connect(bm,&BatchManager::batchComplete,d_batchThread,&QThread::quit);
     connect(d_batchThread,&QThread::finished,bm,&BatchManager::deleteLater);
 
