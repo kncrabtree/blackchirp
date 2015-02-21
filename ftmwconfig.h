@@ -2,8 +2,9 @@
 #define FTMWCONFIG_H
 
 #include <QSharedDataPointer>
-#include "oscilloscope.h"
 #include <QDateTime>
+#include <QDataStream>
+#include <QVariant>
 #include "fid.h"
 
 class FtmwConfigData;
@@ -15,6 +16,67 @@ public:
     FtmwConfig(const FtmwConfig &);
     FtmwConfig &operator=(const FtmwConfig &);
     ~FtmwConfig();
+
+    enum ScopeTriggerSlope {
+        RisingEdge,
+        FallingEdge
+    };
+
+    struct ScopeConfig {
+        //user-chosen settings
+        int fidChannel;
+        double vScale;
+        double sampleRate;
+        int recordLength;
+        bool fastFrameEnabled;
+        int numFrames;
+        bool summaryFrame;
+        int trigChannel;
+        ScopeTriggerSlope slope;
+
+        //settings hardcoded or read from scope
+        int bytesPerPoint; // set to 2
+        QDataStream::ByteOrder byteOrder; // set to BigEndian
+        double vOffset; // set to 0
+        double yMult; // read from scope (multiplier for digitized levels)
+        int yOff; // read from scope (location of y=0 in digitized levels)
+        double xIncr; // read from scope (actual point spacing in seconds)
+
+
+        ScopeConfig() : fidChannel(0), vScale(0.0), sampleRate(0.0), recordLength(0), fastFrameEnabled(false), numFrames(0),
+            summaryFrame(false), trigChannel(0), slope(RisingEdge), bytesPerPoint(1), byteOrder(QDataStream::LittleEndian),
+            vOffset(0.0), yMult(0.0), yOff(0), xIncr(0.0) {}
+        ScopeConfig(const ScopeConfig &other) : fidChannel(other.fidChannel), vScale(other.vScale), sampleRate(other.sampleRate),
+            recordLength(other.recordLength), fastFrameEnabled(other.fastFrameEnabled), numFrames(other.numFrames),
+            summaryFrame(other.summaryFrame), trigChannel(other.trigChannel), slope(other.slope), bytesPerPoint(other.bytesPerPoint),
+            byteOrder(other.byteOrder), vOffset(other.vOffset), yMult(other.yMult), yOff(other.yOff), xIncr(other.xIncr) {}
+
+        QHash<QString,QPair<QVariant,QString> > headerHash() const
+        {
+            QHash<QString,QPair<QVariant,QString> > out;
+            QString empty = QString("");
+            QString prefix = QString("FtmwScope");
+            QString scratch;
+
+            out.insert(prefix+QString("FidChannel"),qMakePair(fidChannel,empty));
+            out.insert(prefix+QString("VerticalScale"),qMakePair(QString::number(vScale,'f',3),QString("V/div")));
+            out.insert(prefix+QString("VerticalOffset"),qMakePair(QString::number(vOffset,'f',3),QString("V")));
+            out.insert(prefix+QString("TriggerChannel"),qMakePair(trigChannel,empty));
+            slope == RisingEdge ? scratch = QString("RisingEdge") : scratch = QString("FallingEdge");
+            out.insert(prefix+QString("TriggerSlope"),qMakePair(scratch,empty));
+            out.insert(prefix+QString("SampleRate"),qMakePair(QString::number(sampleRate/1e9,'f',3),QString("GS/s")));
+            out.insert(prefix+QString("RecordLength"),qMakePair(recordLength,empty));
+            out.insert(prefix+QString("FastFrame"),qMakePair(fastFrameEnabled,empty));
+            out.insert(prefix+QString("NumFrames"),qMakePair(numFrames,empty));
+            out.insert(prefix+QString("SummaryFrame"),qMakePair(summaryFrame,empty));
+            out.insert(prefix+QString("BytesPerPoint"),qMakePair(bytesPerPoint,empty));
+            byteOrder == QDataStream::BigEndian ? scratch = QString("BigEndian") : scratch = QString("LittleEndian");
+            out.insert(prefix+QString("ByteOrder"),qMakePair(scratch,empty));
+
+            return out;
+        }
+
+    };
 
     enum FtmwType
     {
@@ -33,7 +95,7 @@ public:
     double loFreq() const;
     Fid::Sideband sideband() const;
     QList<Fid> fidList() const;
-    Oscilloscope::ScopeConfig scopeConfig() const;
+    ScopeConfig scopeConfig() const;
 
     void setEnabled();
     void setType(const FtmwConfig::FtmwType type);
@@ -44,7 +106,7 @@ public:
     void setLoFreq(const double f);
     void setSideband(const Fid::Sideband sb);
     void setFidList(const QList<Fid> list);
-    void setScopeConfig(const Oscilloscope::ScopeConfig &other);
+    void setScopeConfig(const ScopeConfig &other);
 
     bool isComplete() const;
     QHash<QString,QPair<QVariant,QString> > headerHash() const;

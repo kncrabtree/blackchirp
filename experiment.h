@@ -25,6 +25,7 @@ public:
     bool isDummy() const;
     FtmwConfig ftmwConfig() const;
     bool isComplete() const;
+    bool hardwareSuccess() const;
 
     void setGasSetpoints(const QList<QPair<double,QString> > list);
     void addGasSetpoint(const double setPoint, const QString name);
@@ -34,7 +35,9 @@ public:
     void setAborted();
     void setDummy();
     void setFtmwConfig(const FtmwConfig cfg);
+    void setScopeConfig(const FtmwConfig::ScopeConfig &cfg);
 
+    void setHardwareFailed();
     void incrementFtmw();
 
 private:

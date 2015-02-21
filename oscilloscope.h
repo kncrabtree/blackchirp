@@ -23,68 +23,7 @@ public:
         BlockData
     };
 
-    enum TriggerSlope {
-        RisingEdge,
-        FallingEdge
-    };
-
-    struct ScopeConfig {
-        //user-chosen settings
-        int fidChannel;
-        double vScale;
-        double sampleRate;
-        int recordLength;
-        bool fastFrameEnabled;
-        int numFrames;
-        bool summaryFrame;
-        int trigChannel;
-        TriggerSlope slope;
-
-        //settings hardcoded or read from scope
-        int bytesPerPoint; // set to 2
-        QDataStream::ByteOrder byteOrder; // set to BigEndian
-        double vOffset; // set to 0
-        double yMult; // read from scope (multiplier for digitized levels)
-        int yOff; // read from scope (location of y=0 in digitized levels)
-        double xIncr; // read from scope (actual point spacing in seconds)
-
-
-        ScopeConfig() : fidChannel(0), vScale(0.0), sampleRate(0.0), recordLength(0), fastFrameEnabled(false), numFrames(0),
-            summaryFrame(false), trigChannel(0), slope(RisingEdge), bytesPerPoint(1), byteOrder(QDataStream::LittleEndian),
-            vOffset(0.0), yMult(0.0), yOff(0), xIncr(0.0) {}
-        ScopeConfig(const ScopeConfig &other) : fidChannel(other.fidChannel), vScale(other.vScale), sampleRate(other.sampleRate),
-            recordLength(other.recordLength), fastFrameEnabled(other.fastFrameEnabled), numFrames(other.numFrames),
-            summaryFrame(other.summaryFrame), trigChannel(other.trigChannel), slope(other.slope), bytesPerPoint(other.bytesPerPoint),
-            byteOrder(other.byteOrder), vOffset(other.vOffset), yMult(other.yMult), yOff(other.yOff), xIncr(other.xIncr) {}
-
-        QHash<QString,QPair<QVariant,QString> > headerHash() const
-        {
-            QHash<QString,QPair<QVariant,QString> > out;
-            QString empty = QString("");
-            QString prefix = QString("FtmwScope");
-            QString scratch;
-
-            out.insert(prefix+QString("FidChannel"),qMakePair(fidChannel,empty));
-            out.insert(prefix+QString("VerticalScale"),qMakePair(QString::number(vScale,'f',3),QString("V/div")));
-            out.insert(prefix+QString("VerticalOffset"),qMakePair(QString::number(vOffset,'f',3),QString("V")));
-            out.insert(prefix+QString("TriggerChannel"),qMakePair(trigChannel,empty));
-            slope == RisingEdge ? scratch = QString("RisingEdge") : scratch = QString("FallingEdge");
-            out.insert(prefix+QString("TriggerSlope"),qMakePair(scratch,empty));
-            out.insert(prefix+QString("SampleRate"),qMakePair(QString::number(sampleRate/1e9,'f',3),QString("GS/s")));
-            out.insert(prefix+QString("RecordLength"),qMakePair(recordLength,empty));
-            out.insert(prefix+QString("FastFrame"),qMakePair(fastFrameEnabled,empty));
-            out.insert(prefix+QString("NumFrames"),qMakePair(numFrames,empty));
-            out.insert(prefix+QString("SummaryFrame"),qMakePair(summaryFrame,empty));
-            out.insert(prefix+QString("BytesPerPoint"),qMakePair(bytesPerPoint,empty));
-            byteOrder == QDataStream::BigEndian ? scratch = QString("BigEndian") : scratch = QString("LittleEndian");
-            out.insert(prefix+QString("ByteOrder"),qMakePair(scratch,empty));
-
-            return out;
-        }
-
-    };
-
-    static Fid parseWaveform(QByteArray b, const ScopeConfig &config, const double loFreq, const Fid::Sideband sb);
+    static Fid parseWaveform(QByteArray b, const FtmwConfig::ScopeConfig &config, const double loFreq, const Fid::Sideband sb);
 
 signals:
     void shotAcquired(const QByteArray data);
@@ -96,9 +35,9 @@ public slots:
     void readWaveform();
     void endAcquisition(bool unlock = true);
 
-    Oscilloscope::ScopeConfig initializeAcquisition(const Oscilloscope::ScopeConfig &config);
+    Experiment prepareForExperiment(Experiment exp);
     void beginAcquisition();
-    void queryScope(quint64 id);
+    void queryScope();
     void wakeUp();
 
 private:
@@ -106,7 +45,7 @@ private:
     bool d_foundHeader;
     int d_headerNumBytes;
     int d_waveformBytes;
-    ScopeConfig d_configuration;
+    FtmwConfig::ScopeConfig d_configuration;
     QDateTime d_lastTrigger;
     bool d_waitingForWakeUp;
     QTimer d_scopeTimeout;
@@ -120,7 +59,5 @@ private:
 
 
 };
-
-Q_DECLARE_METATYPE(Oscilloscope::ScopeConfig)
 
 #endif // OSCILLOSCOPE_H

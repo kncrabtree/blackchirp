@@ -27,6 +27,7 @@ signals:
      * \param QString Error message
      */
     void testComplete(QString,bool,QString);
+    void beginAcquisition();
     void abortAcquisition();
     void experimentInitialized(Experiment);
     void scopeShotAcquired(const QByteArray);

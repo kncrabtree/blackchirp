@@ -3,7 +3,7 @@
 class ExperimentData : public QSharedData
 {
 public:
-    ExperimentData() : number(0), isInitialized(false), isAborted(false), isDummy(false) {}
+    ExperimentData() : number(0), isInitialized(false), isAborted(false), isDummy(false), hardwareSuccess(true) {}
 
     int number;
     QList<QPair<double,QString> > gasSetpoints;
@@ -12,6 +12,7 @@ public:
     bool isInitialized;
     bool isAborted;
     bool isDummy;
+    bool hardwareSuccess;
 
     FtmwConfig ftmwCfg;
 };
@@ -84,6 +85,11 @@ bool Experiment::isComplete() const
     return data->ftmwCfg.isComplete();
 }
 
+bool Experiment::hardwareSuccess() const
+{
+    return data->hardwareSuccess;
+}
+
 void Experiment::setGasSetpoints(const QList<QPair<double, QString> > list)
 {
     data->gasSetpoints = list;
@@ -123,6 +129,16 @@ void Experiment::setDummy()
 void Experiment::setFtmwConfig(const FtmwConfig cfg)
 {
     data->ftmwCfg = cfg;
+}
+
+void Experiment::setScopeConfig(const FtmwConfig::ScopeConfig &cfg)
+{
+    data->ftmwCfg.setScopeConfig(cfg);
+}
+
+void Experiment::setHardwareFailed()
+{
+    data->hardwareSuccess = false;
 }
 
 void Experiment::incrementFtmw()

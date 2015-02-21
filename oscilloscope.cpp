@@ -38,11 +38,12 @@ Oscilloscope::Oscilloscope(QObject *parent) :
             for(int i=0;i<750000;i++)
                 d_simulatedData.append(0.0);
         }
+
     }
 
 }
 
-Fid Oscilloscope::parseWaveform(QByteArray b, const Oscilloscope::ScopeConfig &config, const double loFreq, const Fid::Sideband sb)
+Fid Oscilloscope::parseWaveform(QByteArray b, const FtmwConfig::ScopeConfig &config, const double loFreq, const Fid::Sideband sb)
 {
     Fid out;
     out.setProbeFreq(loFreq);
@@ -117,6 +118,12 @@ bool Oscilloscope::testConnection()
 {
     if(d_virtual)
     {
+        QSettings s;
+        int shotInterval = s.value(QString("%1/virtualShotIntervalMs"),200).toInt();
+        QTimer *shotTimer = new QTimer(this);
+        connect(shotTimer,&QTimer::timeout,this,&Oscilloscope::queryScope);
+        shotTimer->start(shotInterval);
+
         emit connectionResult(this,true);
         return true;
     }
@@ -146,7 +153,7 @@ bool Oscilloscope::testConnection()
     return true;
 }
 
-Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope::ScopeConfig &config)
+Experiment Oscilloscope::prepareForExperiment(Experiment exp)
 {
     //attempt to apply settings. return invalid configuration if anything fails.
     //this is a lot of really tedious code.
@@ -155,17 +162,18 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
     //If this frequently fails, I recommend turning verbose headers on and writing a custom query command that verifies the header response, retrying until a valid reply is received.
 
     //make a copy of the configuration in which to store settings
-    ScopeConfig out(config);
+    if(!exp.ftmwConfig().isEnabled())
+        return exp;
+
+    FtmwConfig::ScopeConfig config(exp.ftmwConfig().scopeConfig());
 
     if(d_virtual)
     {
-        out.bytesPerPoint = config.bytesPerPoint;
-        out.vOffset = config.vOffset;
-        out.yOff = 0;
-        out.yMult = config.vScale*5.0/pow(2.0,8.0*config.bytesPerPoint-1.0);
-        out.xIncr = 1.0/config.sampleRate;
-        d_configuration = ScopeConfig(out);
-        return out;
+        config.yOff = 0;
+        config.yMult = config.vScale*5.0/pow(2.0,8.0*config.bytesPerPoint-1.0);
+        config.xIncr = 1.0/config.sampleRate;
+        d_configuration = config;
+        return exp;
     }
 
     disconnect(d_socket,&QTcpSocket::readyRead,this,&Oscilloscope::readWaveform);
@@ -174,14 +182,16 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
     if(!writeCmd(QString(":HEADER OFF\n")))
     {
         emit logMessage(QString("Could not disable verbose header mode on %1.").arg(d_prettyName),LogHandler::Error);
-        return ScopeConfig();
+        exp.setHardwareFailed();
+        return exp;
     }
 
     //write data transfer commands
     if(!writeCmd(QString(":DATA:SOURCE CH%1;START 1;STOP 1E12\n").arg(config.fidChannel)))
     {
         emit logMessage(QString("Could not write data commands to %1.").arg(d_prettyName),LogHandler::Error);
-        return ScopeConfig();
+        exp.setHardwareFailed();
+        return exp;
     }
 
     //clear out socket before senting our first query
@@ -193,14 +203,16 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
     if(resp.isEmpty() || !resp.contains(QString("CH%1").arg(config.fidChannel).toLatin1()))
     {
         emit logMessage(QString("Failed to set FID channel on %1. Response to data source query: %2 (Hex: %3)").arg(d_prettyName).arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
-        return ScopeConfig();
+        exp.setHardwareFailed();
+        return exp;
     }
 
 //    if(!writeCmd(QString("CH%1:BANDWIDTH:ENHANCED OFF; CH%1:BANDWIDTH 1.6+10; COUPLING AC;OFFSET 0;SCALE %2\n").arg(config.fidChannel).arg(QString::number(config.vScale,'g',4))))
     if(!writeCmd(QString("CH%1:BANDWIDTH FULL; COUPLING AC;OFFSET 0;SCALE %2\n").arg(config.fidChannel).arg(QString::number(config.vScale,'g',4))))
     {
         emit logMessage(QString("Failed to write channel settings to %1.").arg(d_prettyName),LogHandler::Error);
-        return ScopeConfig();
+        exp.setHardwareFailed();
+        return exp;
     }
 
     //read actual offset and vertical scale
@@ -212,14 +224,16 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
         if(!ok)
         {
             emit logMessage(QString("Could not parse offset response from %1. Response: %2 (Hex: %3)").arg(d_prettyName).arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
-        out.vOffset = offset;
+        config.vOffset = offset;
     }
     else
     {
         emit logMessage(QString("%1 gave an empty response to offset query.").arg(d_prettyName),LogHandler::Error);
-        return ScopeConfig();
+        exp.setHardwareFailed();
+        return exp;
     }
     resp = scopeQueryCmd(QString(":CH%1:SCALE?\n").arg(config.fidChannel));
     if(!resp.isEmpty())
@@ -229,24 +243,27 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
         if(!ok)
         {
             emit logMessage(QString("Could not parse scale response from %1. Response: %2 (Hex: %3)").arg(d_prettyName).arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
         if(!(fabs(config.vScale-scale) < 0.01))
             emit logMessage(QString("Vertical scale of %1 is different than specified. Target: %2 V/div, Scope setting: %3 V/div").arg(d_prettyName).arg(QString::number(config.vScale,'f',3))
                             .arg(QString::number(scale,'f',3)),LogHandler::Warning);
-        out.vScale = scale;
+        config.vScale = scale;
     }
     else
     {
         emit logMessage(QString("%1 gave an empty response to scale query.").arg(d_prettyName),LogHandler::Error);
-        return ScopeConfig();
+        exp.setHardwareFailed();
+        return exp;
     }
 
     //horizontal settings
     if(!writeCmd(QString(":HORIZONTAL:MODE MANUAL;POSITION 0;:HORIZONTAL:MODE:SAMPLERATE %1;RECORDLENGTH %2\n").arg(QString::number(config.sampleRate,'g',6)).arg(config.recordLength)))
     {
         emit logMessage(QString("Could not apply horizontal settings to %1.").arg(d_prettyName),LogHandler::Error);
-        return ScopeConfig();
+        exp.setHardwareFailed();
+        return exp;
     }
 
     //verify sample rate and record length
@@ -258,20 +275,23 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
         if(!ok)
         {
             emit logMessage(QString("%1 sample rate query returned an invalid response. Response: %2 (Hex: %3)").arg(d_prettyName).arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
         if(!(fabs(sRate - config.sampleRate)<1e6))
         {
             emit logMessage(QString("Could not set %1 sample rate successfully! Target: %2 GS/s, Scope setting: %3 GS/s").arg(d_prettyName).arg(QString::number(config.sampleRate/1e9,'f',3))
                             .arg(QString::number(sRate/1e9,'f',3)),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
-        out.sampleRate = sRate;
+        config.sampleRate = sRate;
     }
     else
     {
         emit logMessage(QString("%1 gave an empty response to sample rate query.").arg(d_prettyName),LogHandler::Error);
-        return ScopeConfig();
+        exp.setHardwareFailed();
+        return exp;
     }
     resp = scopeQueryCmd(QString(":HORIZONTAL:MODE:RECORDLENGTH?\n"));
     if(!resp.isEmpty())
@@ -281,20 +301,23 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
         if(!ok)
         {
             emit logMessage(QString("%1 record length query returned an invalid response. Response: %2 (Hex: %3)").arg(d_prettyName).arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
         if(!(abs(recLength-config.recordLength) < 1000))
         {
             emit logMessage(QString("Could not set %1 recoed length successfully! Target: %2, Scope setting: %3").arg(d_prettyName).arg(QString::number(config.recordLength))
                             .arg(QString::number(recLength)),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
-        out.recordLength = recLength;
+        config.recordLength = recLength;
     }
     else
     {
         emit logMessage(QString("%1 gave an empty response to record length query.").arg(d_prettyName),LogHandler::Error);
-        return ScopeConfig();
+        exp.setHardwareFailed();
+        return exp;
     }
 
     //fast frame settings
@@ -308,13 +331,15 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
             if(!ok || ffState)
             {
                 emit logMessage(QString("Could not disable %1 FastFrame mode.").arg(d_prettyName),LogHandler::Error);
-                return ScopeConfig();
+                exp.setHardwareFailed();
+                return exp;
             }
         }
         else
         {
             emit logMessage(QString("%1 gave an empty response to FastFrame state query."),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
     }
     else
@@ -328,13 +353,15 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
             if(!ok || !ffState)
             {
                 emit logMessage(QString("Could not enable %1 FastFrame mode.").arg(d_prettyName),LogHandler::Error);
-                return ScopeConfig();
+                exp.setHardwareFailed();
+                return exp;
             }
         }
         else
         {
             emit logMessage(QString("%1 gave an empty response to FastFrame state query."),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
 
         //now, check max number of frames
@@ -346,7 +373,8 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
             if(!ok || maxFrames < 1)
             {
                 emit logMessage(QString("Could not determine maximum number of frames in %1 FastFrame mode.").arg(d_prettyName),LogHandler::Error);
-                return ScopeConfig();
+                exp.setHardwareFailed();
+                return exp;
             }
 
             //cap requested number of frames if it is greater than max
@@ -370,19 +398,21 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
                 {
                     emit logMessage(QString("%1 FastFrame count query returned an invalid response. Response: %2 (Hex: %3)").arg(d_prettyName)
                                     .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
-                    return ScopeConfig();
+                    exp.setHardwareFailed();
+                    return exp;
                 }
                 if(n != numFrames)
                 {
                     emit logMessage(QString("Requested number of %1 FastFrames (%2) is different than actual number (%3). %3 frames will be acquired.").arg(d_prettyName)
                                     .arg(numFrames).arg(n));
                 }
-                out.numFrames = n;
+                config.numFrames = n;
             }
             else
             {
                 emit logMessage(QString("%1 gave an empty response to FastFrame count query."),LogHandler::Error);
-                return ScopeConfig();
+                exp.setHardwareFailed();
+                return exp;
             }
 
             QString sumfConfig = QString("AVE");
@@ -395,13 +425,15 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
                 {
                     emit logMessage(QString("Could not configure %1 FastFrame summary frame to %2. Response: %3 (Hex: %4)").arg(d_prettyName)
                                     .arg(sumfConfig).arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
-                    return ScopeConfig();
+                    exp.setHardwareFailed();
+                    return exp;
                 }
             }
             else
             {
                 emit logMessage(QString("%1 gave an empty response to FastFrame summary frame query."),LogHandler::Error);
-                return ScopeConfig();
+                exp.setHardwareFailed();
+                return exp;
             }
             if(config.summaryFrame)
             {
@@ -409,7 +441,8 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
                 if(!writeCmd(QString(":DATA:FRAMESTART 100000;FRAMESTOP 100000\n")))
                 {
                     emit logMessage(QString("Could not configure %1 to only send summary frame.").arg(d_prettyName),LogHandler::Error);
-                    return ScopeConfig();
+                    exp.setHardwareFailed();
+                    return exp;
                 }
             }
             else
@@ -418,20 +451,22 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
                 if(!writeCmd(QString(":DATA:FRAMESTART 1;FRAMESTOP 100000\n")))
                 {
                     emit logMessage(QString("Could not configure %1 to send all frames.").arg(d_prettyName),LogHandler::Error);
-                    return ScopeConfig();
+                    exp.setHardwareFailed();
+                    return exp;
                 }
             }
         }
         else
         {
             emit logMessage(QString("%1 gave an empty response to FastFrame max frames query."),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
     }
 
     //trigger settings
     QString slope = QString("RIS");
-    if(config.slope == FallingEdge)
+    if(config.slope == FtmwConfig::FallingEdge)
         slope = QString("FALL");
     resp = scopeQueryCmd(QString(":TRIGGER:A:EDGE:SOURCE CH%2;COUPLING DC;SLOPE %1;:TRIGGER:A:LEVEL 0.35;:TRIGGER:A:EDGE:SOURCE?;SLOPE?\n").arg(slope).arg(config.trigChannel));
     if(!resp.isEmpty())
@@ -439,33 +474,38 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
         if(!QString(resp).contains(QString("CH%1").arg(config.trigChannel),Qt::CaseInsensitive))
         {
             emit logMessage(QString("Could not verify %1 trigger channel. Response: %2 (Hex: %3)").arg(d_prettyName).arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
 
         if(!QString(resp).contains(slope,Qt::CaseInsensitive))
         {
             emit logMessage(QString("Could not verify %1 trigger slope. Response: %2 (Hex: %3)").arg(d_prettyName).arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
     }
     else
     {
         emit logMessage(QString("%1 gave an empty response to trigger query."),LogHandler::Error);
-        return ScopeConfig();
+        exp.setHardwareFailed();
+        return exp;
     }
 
     //set waveform output settings
     if(!writeCmd(QString(":WFMOUTPRE:ENCDG BIN;BN_FMT RI;BYT_OR LSB;BYT_NR 1\n")))
     {
         emit logMessage(QString("Could not send waveform output commands to %1.").arg(d_prettyName),LogHandler::Error);
-        return ScopeConfig();
+        exp.setHardwareFailed();
+        return exp;
     }
 
     //acquisition settings
     if(!writeCmd(QString(":ACQUIRE:MODE SAMPLE;STOPAFTER RUNSTOP;STATE RUN\n")))
     {
         emit logMessage(QString("Could not send acquisition commands to %1.").arg(d_prettyName),LogHandler::Error);
-        return ScopeConfig();
+        exp.setHardwareFailed();
+        return exp;
     }
 
     //force a trigger event to update these settings
@@ -488,7 +528,8 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
         {
             emit logMessage(QString("Could not parse %1 response to waveform output settings query. Response: %2 (Hex: %3)").arg(d_prettyName)
                             .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
 
         //check encoding
@@ -496,36 +537,41 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
         {
             emit logMessage(QString("%1 waveform encoding could not be set to binary. Response: %2 (Hex: %3)").arg(d_prettyName)
                             .arg(l.at(0)).arg(QString(l.at(0).toLatin1().toHex())),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
         //check binary format
         if(!l.at(1).contains(QString("RI"),Qt::CaseInsensitive))
         {
             emit logMessage(QString("%1 waveform format could not be set to signed integer. Response: %2 (Hex: %3)").arg(d_prettyName)
                             .arg(l.at(1)).arg(QString(l.at(1).toLatin1().toHex())),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
         //check byte order
         if(!l.at(2).contains(QString("LSB"),Qt::CaseInsensitive))
         {
             emit logMessage(QString("%1 waveform format could not be set to least significant byte first. Response: %2 (Hex: %3)").arg(d_prettyName)
                             .arg(l.at(2)).arg(QString(l.at(2).toLatin1().toHex())),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
-        out.byteOrder = QDataStream::LittleEndian;
+        config.byteOrder = QDataStream::LittleEndian;
 
         //verify number of frames
         if(!config.summaryFrame && l.at(3).toInt() != config.numFrames)
         {
             emit logMessage(QString("%1 waveform contains the wrong number of frames. Target: %2, Actual: %3. Response: %4 (Hex: %5)").arg(d_prettyName)
                             .arg(config.numFrames).arg(l.at(3).toInt()).arg(l.at(3)).arg(QString(l.at(3).toLatin1().toHex())),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
         else if (config.summaryFrame && l.at(3).toInt() != 1)
         {
             emit logMessage(QString("%1 waveform contains the wrong number of frames. Target: 1 summary frame, Actual: %2. Response: %3 (Hex: %4)").arg(d_prettyName)
                             .arg(l.at(3).toInt()).arg(l.at(3)).arg(QString(l.at(3).toLatin1().toHex())),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
         //verify record length
         bool ok = false;
@@ -534,13 +580,14 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
         {
             emit logMessage(QString("Could not parse %1 waveform record length response. Response: %2 (Hex: %3)").arg(d_prettyName)
                             .arg(l.at(4)).arg(QString(l.at(4).toLatin1().toHex())),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
         if(recLen != config.recordLength)
         {
             emit logMessage(QString("%1 record length is %2. Requested value was %3. Proceeding with %2 samples.").arg(d_prettyName)
                             .arg(recLen).arg(config.recordLength),LogHandler::Warning);
-            out.recordLength = recLen;
+            config.recordLength = recLen;
         }
         //get y multiplier
         double ym = l.at(5).toDouble(&ok);
@@ -548,46 +595,52 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
         {
             emit logMessage(QString("Could not parse %1 waveform Y multiplier response. Response: %2 (Hex: %3)").arg(d_prettyName)
                             .arg(l.at(5)).arg(QString(l.at(5).toLatin1().toHex())),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
-        out.yMult = ym;
+        config.yMult = ym;
         //get y offset
         double yo = l.at(6).toDouble(&ok);
         if(!ok)
         {
             emit logMessage(QString("Could not parse %1 waveform Y offset response. Response: %2 (Hex: %3)").arg(d_prettyName)
                             .arg(l.at(6)).arg(QString(l.at(6).toLatin1().toHex())),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
-        out.yOff = (int)round(yo);
+        config.yOff = (int)round(yo);
         //get x increment
         double xi = l.at(7).toDouble(&ok);
         if(!ok)
         {
             emit logMessage(QString("Could not parse %1 waveform X increment response. Response: %2 (Hex: %3)").arg(d_prettyName)
                             .arg(l.at(7)).arg(QString(l.at(7).toLatin1().toHex())),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
-        out.xIncr = xi;
+        config.xIncr = xi;
         //verify byte number
         int bpp = l.at(8).toInt(&ok);
         if(!ok || bpp < 1 || bpp > 2)
         {
             emit logMessage(QString("%1 gave an invalid response to bytes per point query. Response: %2 (Hex: %3)").arg(d_prettyName)
                             .arg(l.at(8)).arg(QString(l.at(8).toLatin1().toHex())),LogHandler::Error);
-            return ScopeConfig();
+            exp.setHardwareFailed();
+            return exp;
         }
-        out.bytesPerPoint = bpp;
+        config.bytesPerPoint = bpp;
     }
 
     if(!writeCmd(QString("CH%1:BANDWIDTH:ENHANCED OFF; CH%1:BANDWIDTH 1.6E10\n").arg(config.fidChannel)))
 //    if(!writeCmd(QString("CH%1:BANDWIDTH FULL").arg(config.fidChannel)))
     {
         emit logMessage(QString("Failed to write channel settings to %1.").arg(d_prettyName),LogHandler::Error);
-        return ScopeConfig();
+        exp.setHardwareFailed();
+        return exp;
     }
 
-    d_configuration = ScopeConfig(out);
+    d_configuration = config;
+
 
     //lock scope, turn off waveform display, connect signal-slot stuff
     writeCmd(QString(":LOCK ALL;:DISPLAY:WAVEFORM OFF\n"));
@@ -596,7 +649,7 @@ Oscilloscope::ScopeConfig Oscilloscope::initializeAcquisition(const Oscilloscope
 
 
 
-    return out;
+    return exp;
 
 }
 
@@ -621,7 +674,7 @@ void Oscilloscope::beginAcquisition()
     connect(d_socket,&QTcpSocket::readyRead,this,&Oscilloscope::readWaveform,Qt::UniqueConnection);
 }
 
-void Oscilloscope::queryScope(quint64 id)
+void Oscilloscope::queryScope()
 {
     if(d_virtual)
     {

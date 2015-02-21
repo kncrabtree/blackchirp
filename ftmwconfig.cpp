@@ -16,7 +16,7 @@ public:
     Fid::Sideband sideband;
     QList<Fid> fidList;
 
-    Oscilloscope::ScopeConfig scopeConfig;
+    FtmwConfig::ScopeConfig scopeConfig;
 
 
 
@@ -89,7 +89,7 @@ QList<Fid> FtmwConfig::fidList() const
     return data->fidList;
 }
 
-Oscilloscope::ScopeConfig FtmwConfig::scopeConfig() const
+FtmwConfig::ScopeConfig FtmwConfig::scopeConfig() const
 {
     return data->scopeConfig;
 }
@@ -139,7 +139,7 @@ void FtmwConfig::setFidList(const QList<Fid> list)
     data->fidList = list;
 }
 
-void FtmwConfig::setScopeConfig(const Oscilloscope::ScopeConfig &other)
+void FtmwConfig::setScopeConfig(const FtmwConfig::ScopeConfig &other)
 {
     data->scopeConfig = other;
 }
@@ -184,7 +184,7 @@ QHash<QString, QPair<QVariant, QString> > FtmwConfig::headerHash() const
     out.insert(prefix+QString("LOFrequency"),qMakePair(QString::number(loFreq(),'f',6),QString("MHz")));
     out.insert(prefix+QString("Sideband"),qMakePair((int)sideband(),empty));
 
-    Oscilloscope::ScopeConfig sc = scopeConfig();
+    FtmwConfig::ScopeConfig sc = scopeConfig();
     out.unite(sc.headerHash());
 
     return out;

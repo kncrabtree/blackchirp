@@ -83,6 +83,7 @@ void HardwareManager::initialize()
         connect(d_hardwareList.at(i).first,&HardwareObject::logMessage,this,&HardwareManager::logMessage);
         connect(d_hardwareList.at(i).first,&HardwareObject::connectionResult,this,&HardwareManager::connectionResult);
         connect(d_hardwareList.at(i).first,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure);
+        connect(this,&HardwareManager::beginAcquisition,d_hardwareList.at(i).first,&HardwareObject::beginAcquisition);
 
         d_hardwareList.at(i).first->moveToThread(d_hardwareList.at(i).second);
         d_hardwareList.at(i).second->start();
@@ -130,8 +131,27 @@ void HardwareManager::initializeExperiment(Experiment exp)
 {
     //do initialization
     //if successful, call Experiment::setInitialized()
+    bool success = true;
+    for(int i=0;i<d_hardwareList.size();i++)
+    {
+        QThread *t = d_hardwareList.at(i).second;
+        HardwareObject *obj = d_hardwareList.at(i).first;
+        if(t != NULL)
+            QMetaObject::invokeMethod(obj,"prepareForExperiment",Qt::BlockingQueuedConnection,Q_RETURN_ARG(Experiment,exp),Q_ARG(Experiment,exp));
+        else
+            exp = obj->prepareForExperiment(exp);
 
-    exp.setInitialized();
+        if(!exp.hardwareSuccess())
+        {
+            success = false;
+            break;
+        }
+    }
+
+    //any additional synchronous initialization can be performed here
+
+    if(success)
+        exp.setInitialized();
 
     emit experimentInitialized(exp);
 

@@ -6,6 +6,7 @@
 #include "loghandler.h"
 #include <QSettings>
 #include <QApplication>
+#include "experiment.h"
 
 /*!
  * \brief Abstract base class for all hardware connected to the instrument.
@@ -107,6 +108,10 @@ public slots:
      * \param b If true, go into standby mode. Else, active mode.
      */
 	virtual void sleep(bool b);
+
+    virtual Experiment prepareForExperiment(Experiment exp) =0;
+
+    virtual void beginAcquisition() =0;
 
 protected:
 	bool d_virtual;
