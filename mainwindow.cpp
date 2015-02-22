@@ -4,7 +4,7 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow), d_hardwareConnected(false)
+    ui(new Ui::MainWindow), d_hardwareConnected(false), d_state(Idle)
 {
     ui->setupUi(this);
 
@@ -25,6 +25,8 @@ MainWindow::MainWindow(QWidget *parent) :
     p_hwm = new HardwareManager();
     connect(p_hwm,&HardwareManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_hwm,&HardwareManager::statusMessage,statusLabel,&QLabel::setText);
+    connect(p_hwm,&HardwareManager::experimentInitialized,this,&MainWindow::experimentInitialized);
+    connect(p_hwm,&HardwareManager::allHardwareConnected,this,&MainWindow::hardwareInitialized);
 
     QThread *hwmThread = new QThread(this);
     connect(hwmThread,&QThread::started,p_hwm,&HardwareManager::initialize);
@@ -36,6 +38,7 @@ MainWindow::MainWindow(QWidget *parent) :
     p_am = new AcquisitionManager();
     connect(p_am,&AcquisitionManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_am,&AcquisitionManager::statusMessage,statusLabel,&QLabel::setText);
+    connect(p_am,&AcquisitionManager::ftmwShotAcquired,ui->ftmwProgressBar,&QProgressBar::setValue);
 
     QThread *amThread = new QThread(this);
     connect(amThread,&QThread::finished,p_am,&AcquisitionManager::deleteLater);
@@ -43,12 +46,19 @@ MainWindow::MainWindow(QWidget *parent) :
     d_threadObjectList.append(qMakePair(amThread,p_am));
 
     connect(p_hwm,&HardwareManager::experimentInitialized,p_am,&AcquisitionManager::startExperiment);
+    connect(p_hwm,&HardwareManager::scopeShotAcquired,p_am,&AcquisitionManager::processScopeShot);
+    connect(p_am,&AcquisitionManager::experimentComplete,p_hwm,&HardwareManager::endAcquisition);
+    connect(p_am,&AcquisitionManager::beginAcquisition,p_hwm,&HardwareManager::beginAcquisition);
 
 
     hwmThread->start();
     amThread->start();
 
     d_batchThread = new QThread(this);
+
+    connect(ui->actionStart_Experiment,&QAction::triggered,this,&MainWindow::startExperiment);
+
+    configureUi(Idle);
 }
 
 MainWindow::~MainWindow()
@@ -70,7 +80,16 @@ void MainWindow::startExperiment()
         return;
 
     //build experiment from a wizard or something
+    Experiment e;
+    FtmwConfig ft;
+    ft.setEnabled();
+    ft.setTargetShots(100);
+    ft.setType(FtmwConfig::TargetShots);
+    e.setFtmwConfig(ft);
 
+    BatchSingle *bs = new BatchSingle(e);
+
+    startBatch(bs);
 }
 
 void MainWindow::batchComplete(bool aborted)
@@ -80,7 +99,38 @@ void MainWindow::batchComplete(bool aborted)
     else
         emit statusMessage(QString("Experiment complete"));
 
+    if(ui->ftmwProgressBar->maximum() == 0)
+    {
+	    ui->ftmwProgressBar->setRange(0,1);
+	    ui->ftmwProgressBar->setValue(1);
+    }
+
     configureUi(Idle);
+}
+
+void MainWindow::experimentInitialized(Experiment exp)
+{
+	if(!exp.isInitialized())
+		return;
+
+	ui->exptSpinBox->setValue(exp.number());
+
+	if(exp.ftmwConfig().isEnabled())
+	{
+		if(exp.ftmwConfig().type() != FtmwConfig::TargetShots)
+			ui->ftmwProgressBar->setRange(0,0);
+		else
+		{
+			ui->ftmwProgressBar->setRange(0,exp.ftmwConfig().targetShots());
+			ui->ftmwProgressBar->setValue(0);
+		}
+	}
+}
+
+void MainWindow::hardwareInitialized(bool success)
+{
+	d_hardwareConnected = success;
+	configureUi(d_state);
 }
 
 void MainWindow::configureUi(MainWindow::ProgramState s)
@@ -122,6 +172,9 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionStart_Experiment->setEnabled(true);
         break;
     }
+
+    if(s != Disconnected)
+	    d_state = s;
 }
 
 void MainWindow::startBatch(BatchManager *bm, bool sleepWhenDone)

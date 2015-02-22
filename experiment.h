@@ -4,6 +4,7 @@
 #include <QSharedDataPointer>
 #include <QPair>
 #include <QDateTime>
+#include <QMetaType>
 #include "ftmwconfig.h"
 
 class ExperimentData;
@@ -43,5 +44,7 @@ public:
 private:
     QSharedDataPointer<ExperimentData> data;
 };
+
+Q_DECLARE_METATYPE(Experiment)
 
 #endif // EXPERIMENT_H

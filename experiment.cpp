@@ -1,4 +1,6 @@
 #include "experiment.h"
+#include <QSettings>
+#include <QApplication>
 
 class ExperimentData : public QSharedData
 {
@@ -114,6 +116,10 @@ void Experiment::setInitialized()
 {
     data->isInitialized = true;
     data->startTime = QDateTime::currentDateTime();
+
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    int num = s.value(QString("exptNum"),1).toInt();
+    data->number = num;
 }
 
 void Experiment::setAborted()

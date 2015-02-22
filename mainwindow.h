@@ -38,6 +38,8 @@ signals:
 public slots:
     void startExperiment();
     void batchComplete(bool aborted);
+    void experimentInitialized(Experiment exp);
+    void hardwareInitialized(bool success);
 
 private:
     Ui::MainWindow *ui;
@@ -51,6 +53,8 @@ private:
 
     void configureUi(ProgramState s);
     void startBatch(BatchManager *bm, bool sleepWhenDone = false);
+
+    ProgramState d_state;
 
 
 };

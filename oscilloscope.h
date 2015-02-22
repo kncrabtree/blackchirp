@@ -33,10 +33,10 @@ public slots:
     bool testConnection();
 
     void readWaveform();
-    void endAcquisition(bool unlock = true);
 
     Experiment prepareForExperiment(Experiment exp);
     void beginAcquisition();
+    void endAcquisition();
     void queryScope();
     void wakeUp();
 
@@ -54,6 +54,7 @@ private:
 
     QByteArray makeSimulatedData();
     QVector<double> d_simulatedData;
+    QTimer d_simulatedTimer;
 
 
 

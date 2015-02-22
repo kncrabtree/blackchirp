@@ -84,6 +84,7 @@ void HardwareManager::initialize()
         connect(d_hardwareList.at(i).first,&HardwareObject::connectionResult,this,&HardwareManager::connectionResult);
         connect(d_hardwareList.at(i).first,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure);
         connect(this,&HardwareManager::beginAcquisition,d_hardwareList.at(i).first,&HardwareObject::beginAcquisition);
+	   connect(this,&HardwareManager::endAcquisition,d_hardwareList.at(i).first,&HardwareObject::endAcquisition);
 
         d_hardwareList.at(i).first->moveToThread(d_hardwareList.at(i).second);
         d_hardwareList.at(i).second->start();

@@ -112,6 +112,7 @@ public slots:
     virtual Experiment prepareForExperiment(Experiment exp) =0;
 
     virtual void beginAcquisition() =0;
+    virtual void endAcquisition() =0;
 
 protected:
 	bool d_virtual;

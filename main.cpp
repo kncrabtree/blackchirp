@@ -105,6 +105,7 @@ int main(int argc, char *argv[])
     lockFile.setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner|QFileDevice::ReadGroup|QFileDevice::ReadOther);
     lockFile.close();
 
+    qRegisterMetaType<Experiment>("Experiment");
 
     MainWindow w;
     w.show();

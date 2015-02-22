@@ -39,6 +39,8 @@ Oscilloscope::Oscilloscope(QObject *parent) :
                 d_simulatedData.append(0.0);
         }
 
+	   connect(&d_simulatedTimer,&QTimer::timeout,this,&Oscilloscope::queryScope);
+
     }
 
 }
@@ -118,11 +120,11 @@ bool Oscilloscope::testConnection()
 {
     if(d_virtual)
     {
+	    d_simulatedTimer.stop();
         QSettings s;
         int shotInterval = s.value(QString("%1/virtualShotIntervalMs"),200).toInt();
-        QTimer *shotTimer = new QTimer(this);
-        connect(shotTimer,&QTimer::timeout,this,&Oscilloscope::queryScope);
-        shotTimer->start(shotInterval);
+	   d_simulatedTimer.setInterval(shotInterval);
+	   d_simulatedTimer.start();
 
         emit connectionResult(this,true);
         return true;
@@ -726,7 +728,7 @@ void Oscilloscope::wakeUp()
     d_scopeTimeout.stop();
     emit logMessage(QString("Attempting to wake up scope"),LogHandler::Warning);
 
-    endAcquisition(false);
+    endAcquisition();
 
     d_socket->waitForReadyRead();
 
@@ -758,7 +760,7 @@ QByteArray Oscilloscope::scopeQueryCmd(QString query)
 QByteArray Oscilloscope::makeSimulatedData()
 {
     QByteArray out;
-    QDataStream str(out);
+    QDataStream str(&out,QIODevice::WriteOnly);
     str.setByteOrder(d_configuration.byteOrder);
 
     int frames = 1;
@@ -902,7 +904,7 @@ void Oscilloscope::readWaveform()
     }
 }
 
-void Oscilloscope::endAcquisition(bool unlock)
+void Oscilloscope::endAcquisition()
 {
     if(d_virtual)
     {
@@ -924,11 +926,7 @@ void Oscilloscope::endAcquisition(bool unlock)
     if(d_socket->bytesAvailable())
         d_socket->readAll();
 
-    if(unlock)
-    {
-        //unlock panel, turn on waveform display
-        writeCmd(QString(":UNLOCK ALL;:DISPLAY:WAVEFORM ON\n"));
-    }
+    writeCmd(QString(":UNLOCK ALL;:DISPLAY:WAVEFORM ON\n"));
 
     d_waitingForReply = false;
     d_foundHeader = false;

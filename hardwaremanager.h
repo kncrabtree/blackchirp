@@ -30,6 +30,7 @@ signals:
     void beginAcquisition();
     void abortAcquisition();
     void experimentInitialized(Experiment);
+    void endAcquisition();
     void scopeShotAcquired(const QByteArray);
 
 public slots:

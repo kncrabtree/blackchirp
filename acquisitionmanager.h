@@ -23,6 +23,8 @@ signals:
     void logMessage(const QString,const LogHandler::MessageCode = LogHandler::Normal);
     void statusMessage(const QString);
     void experimentComplete(Experiment);
+    void ftmwShotAcquired(int);
+    void beginAcquisition();
 
 public slots:
     void startExperiment(Experiment exp);
