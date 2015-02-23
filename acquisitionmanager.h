@@ -27,8 +27,11 @@ signals:
     void beginAcquisition();
 
 public slots:
-    void startExperiment(Experiment exp);
+    void beginExperiment(Experiment exp);
     void processScopeShot(const QByteArray b);
+    void pause();
+    void resume();
+    void abort();
 
 private:
     Experiment d_currentExperiment;

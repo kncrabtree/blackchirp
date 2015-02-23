@@ -39,13 +39,16 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_am,&AcquisitionManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_am,&AcquisitionManager::statusMessage,statusLabel,&QLabel::setText);
     connect(p_am,&AcquisitionManager::ftmwShotAcquired,ui->ftmwProgressBar,&QProgressBar::setValue);
+    connect(ui->actionPause,&QAction::triggered,p_am,&AcquisitionManager::pause);
+    connect(ui->actionResume,&QAction::triggered,p_am,&AcquisitionManager::resume);
+    connect(ui->actionAbort,&QAction::triggered,p_am,&AcquisitionManager::abort);
 
     QThread *amThread = new QThread(this);
     connect(amThread,&QThread::finished,p_am,&AcquisitionManager::deleteLater);
     p_am->moveToThread(amThread);
     d_threadObjectList.append(qMakePair(amThread,p_am));
 
-    connect(p_hwm,&HardwareManager::experimentInitialized,p_am,&AcquisitionManager::startExperiment);
+    connect(p_hwm,&HardwareManager::experimentInitialized,p_am,&AcquisitionManager::beginExperiment);
     connect(p_hwm,&HardwareManager::scopeShotAcquired,p_am,&AcquisitionManager::processScopeShot);
     connect(p_am,&AcquisitionManager::experimentComplete,p_hwm,&HardwareManager::endAcquisition);
     connect(p_am,&AcquisitionManager::beginAcquisition,p_hwm,&HardwareManager::beginAcquisition);
@@ -57,6 +60,8 @@ MainWindow::MainWindow(QWidget *parent) :
     d_batchThread = new QThread(this);
 
     connect(ui->actionStart_Experiment,&QAction::triggered,this,&MainWindow::startExperiment);
+    connect(ui->actionPause,&QAction::triggered,this,&MainWindow::pauseUi);
+    connect(ui->actionResume,&QAction::triggered,this,&MainWindow::resumeUi);
 
     configureUi(Idle);
 }
@@ -138,7 +143,17 @@ void MainWindow::experimentInitialized(Experiment exp)
 void MainWindow::hardwareInitialized(bool success)
 {
 	d_hardwareConnected = success;
-	configureUi(d_state);
+    configureUi(d_state);
+}
+
+void MainWindow::pauseUi()
+{
+    configureUi(Paused);
+}
+
+void MainWindow::resumeUi()
+{
+    configureUi(Acquiring);
 }
 
 void MainWindow::configureUi(MainWindow::ProgramState s)
@@ -161,7 +176,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionStart_Experiment->setEnabled(false);
         break;
     case Paused:
-        ui->actionAbort->setEnabled(false);
+        ui->actionAbort->setEnabled(true);
         ui->actionPause->setEnabled(false);
         ui->actionResume->setEnabled(true);
         ui->actionStart_Experiment->setEnabled(false);

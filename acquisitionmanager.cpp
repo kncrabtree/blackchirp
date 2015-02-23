@@ -10,7 +10,7 @@ AcquisitionManager::~AcquisitionManager()
 
 }
 
-void AcquisitionManager::startExperiment(Experiment exp)
+void AcquisitionManager::beginExperiment(Experiment exp)
 {
 	if(!exp.isInitialized() || exp.isDummy())
 		emit experimentComplete(exp);
@@ -18,6 +18,8 @@ void AcquisitionManager::startExperiment(Experiment exp)
     //prepare data files, savemanager, fidmanager, etc
     d_currentExperiment = exp;
     d_state = Acquiring;
+    emit logMessage(QString("Starting experiment %1.").arg(exp.number()),LogHandler::Highlight);
+    emit statusMessage(QString("Acquiring"));
     emit beginAcquisition();
 
 }
@@ -33,6 +35,28 @@ void AcquisitionManager::processScopeShot(const QByteArray b)
          //process shot, etc...
         checkComplete();
     }
+}
+
+void AcquisitionManager::pause()
+{
+    d_state = Paused;
+    emit statusMessage(QString("Paused"));
+}
+
+void AcquisitionManager::resume()
+{
+    d_state = Acquiring;
+    emit statusMessage(QString("Acquiring"));
+}
+
+void AcquisitionManager::abort()
+{
+    d_state = Idle;
+    d_currentExperiment.setAborted();
+
+    //save!
+
+    emit experimentComplete(d_currentExperiment);
 }
 
 void AcquisitionManager::checkComplete()
