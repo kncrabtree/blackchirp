@@ -12,37 +12,6 @@ Oscilloscope::Oscilloscope(QObject *parent) :
     d_virtual = true;
 #endif
 
-    if(d_virtual)
-    {
-        QFile f(QString(":/virtualdata.txt"));
-        d_simulatedData.reserve(750000);
-        if(f.open(QIODevice::ReadOnly))
-        {
-            while(!f.atEnd())
-            {
-                QByteArray l = f.readLine();
-                if(l.isEmpty())
-                    break;
-
-                bool ok = false;
-                double d = l.toDouble(&ok);
-                if(ok)
-                    d_simulatedData.append(d);
-                else
-                    d_simulatedData.append(0.0);
-            }
-            f.close();
-        }
-        else
-        {
-            for(int i=0;i<750000;i++)
-                d_simulatedData.append(0.0);
-        }
-
-	   connect(&d_simulatedTimer,&QTimer::timeout,this,&Oscilloscope::queryScope);
-
-    }
-
 }
 
 Fid Oscilloscope::parseWaveform(QByteArray b, const FtmwConfig::ScopeConfig &config, const double loFreq, const Fid::Sideband sb)
@@ -111,6 +80,36 @@ void Oscilloscope::initialize()
     {
         setReadOptions(1000,true,QByteArray("\n"));
         TcpInstrument::initialize();
+    }
+    else
+    {
+	   QFile f(QString(":/data/virtualdata.txt"));
+	   d_simulatedData.reserve(750000);
+	   if(f.open(QIODevice::ReadOnly))
+	   {
+		  while(!f.atEnd())
+		  {
+			 QByteArray l = f.readLine().trimmed();
+			 if(l.isEmpty())
+				break;
+
+			 bool ok = false;
+			 double d = l.toDouble(&ok);
+			 if(ok)
+				d_simulatedData.append(d);
+			 else
+				d_simulatedData.append(0.0);
+		  }
+		  f.close();
+	   }
+	   else
+	   {
+		  for(int i=0;i<750000;i++)
+			 d_simulatedData.append(0.0);
+	   }
+
+	   connect(&d_simulatedTimer,&QTimer::timeout,this,&Oscilloscope::queryScope);
+
     }
     testConnection();
 }

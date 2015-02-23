@@ -85,6 +85,14 @@ void MainWindow::startExperiment()
     ft.setEnabled();
     ft.setTargetShots(100);
     ft.setType(FtmwConfig::TargetShots);
+    FtmwConfig::ScopeConfig sc = ft.scopeConfig();
+    sc.vScale = 0.02;
+    sc.recordLength = 750000;
+    sc.sampleRate = 50e9;
+    sc.numFrames = 1;
+    sc.fastFrameEnabled = false;
+    sc.summaryFrame = false;
+    ft.setScopeConfig(sc);
     e.setFtmwConfig(ft);
 
     BatchSingle *bs = new BatchSingle(e);
