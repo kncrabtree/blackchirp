@@ -165,7 +165,7 @@ void FtPlot::filterData()
         else if (numPnts > 1)
         {
             QPointF first(map.invTransform(pixel),d_currentFt.at(minIndex).y());
-            QPointF second(map.invTransform(pixel+0.99),d_currentFt.at(maxIndex).y());
+            QPointF second(map.invTransform(pixel),d_currentFt.at(maxIndex).y());
             filtered.append(first);
             filtered.append(second);
         }
