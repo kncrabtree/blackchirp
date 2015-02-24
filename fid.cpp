@@ -19,7 +19,7 @@ public:
     double spacing;
     double probeFreq;
     double vMult;
-    quint64 shots;
+    qint64 shots;
     QVector<qint64> fid;
     Fid::Sideband sideband;
 };
@@ -32,7 +32,7 @@ Fid::Fid(const Fid &rhs) : data(rhs.data)
 {
 }
 
-Fid::Fid(const double sp, const double p, const QVector<qint64> d, Sideband sb, double vMult, quint64 shots)
+Fid::Fid(const double sp, const double p, const QVector<qint64> d, Sideband sb, double vMult, qint64 shots)
 {
     data = new FidData;
     data->spacing = sp;
@@ -91,11 +91,7 @@ int Fid::size() const
 
 double Fid::at(const int i) const
 {
-    double d = (double)data->fid.at(i)*data->vMult;
-    if(data->shots > 1)
-        return d/(double)shots();
-
-    return d;
+    return (double)atNorm(i)*data->vMult;
 }
 
 double Fid::spacing() const
@@ -140,7 +136,15 @@ qint64 Fid::atRaw(const int i) const
     return data->fid.at(i);
 }
 
-quint64 Fid::shots() const
+qint64 Fid::atNorm(const int i) const
+{
+    if(data->shots > 1)
+        return data->fid.at(i)/data->shots;
+    else
+        return data->fid.at(i);
+}
+
+qint64 Fid::shots() const
 {
     return data->shots;
 }

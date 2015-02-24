@@ -48,7 +48,7 @@ public:
  \param p Probe frequency (MHz)
  \param d Data vector
 */
-    Fid(const double sp, const double p, const QVector<qint64> d, Sideband sb = UpperSideband, double vMult = 1.0, quint64 shots = 1);
+    Fid(const double sp, const double p, const QVector<qint64> d, Sideband sb = UpperSideband, double vMult = 1.0, qint64 shots = 1);
 
 
 /*!
@@ -135,7 +135,9 @@ public:
 
     qint64 atRaw(const int i) const;
 
-    quint64 shots() const;
+    qint64 atNorm(const int i) const;
+
+    qint64 shots() const;
 
     Fid::Sideband sideband() const;
 
