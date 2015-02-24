@@ -26,7 +26,7 @@ signals:
     void ftmwShotAcquired(int);
     void beginAcquisition();
 
-    void fidTest(Fid);
+    void newFidList(QList<Fid>);
 
 public slots:
     void beginExperiment(Experiment exp);

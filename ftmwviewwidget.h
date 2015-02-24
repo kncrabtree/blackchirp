@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include "fid.h"
+#include <QList>
 
 namespace Ui {
 class FtmwViewWidget;
@@ -17,10 +18,15 @@ public:
     ~FtmwViewWidget();
 
 public slots:
+    void newFidList(QList<Fid> fl);
+    void showFrame(int num);
     void fidTest(Fid f);
+
 
 private:
     Ui::FtmwViewWidget *ui;
+
+    QList<Fid> d_fidList;
 };
 
 #endif // FTMWVIEWWIDGET_H

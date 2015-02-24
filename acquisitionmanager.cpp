@@ -27,9 +27,9 @@ void AcquisitionManager::beginExperiment(Experiment exp)
 
 void AcquisitionManager::processScopeShot(const QByteArray b)
 {
-    Fid f = Oscilloscope::parseWaveform(b,d_currentExperiment.ftmwConfig().scopeConfig(),d_currentExperiment.ftmwConfig().loFreq(),d_currentExperiment.ftmwConfig().sideband());
+    QList<Fid> fl = Oscilloscope::parseWaveform(b,d_currentExperiment.ftmwConfig());
 
-    emit fidTest(f);
+    emit newFidList(fl);
 
     if(d_state == Acquiring && d_currentExperiment.ftmwConfig().isEnabled())
     {

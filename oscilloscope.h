@@ -23,7 +23,7 @@ public:
         BlockData
     };
 
-    static Fid parseWaveform(QByteArray b, const FtmwConfig::ScopeConfig &config, const double loFreq, const Fid::Sideband sb);
+    static QList<Fid> parseWaveform(QByteArray b, const FtmwConfig ftmwConfig);
 
 signals:
     void shotAcquired(const QByteArray data);

@@ -43,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionResume,&QAction::triggered,p_am,&AcquisitionManager::resume);
     connect(ui->actionAbort,&QAction::triggered,p_am,&AcquisitionManager::abort);
 
-    connect(p_am,&AcquisitionManager::fidTest,ui->ftViewWidget,&FtmwViewWidget::fidTest);
+    connect(p_am,&AcquisitionManager::newFidList,ui->ftViewWidget,&FtmwViewWidget::newFidList);
 
     QThread *amThread = new QThread(this);
     connect(amThread,&QThread::finished,p_am,&AcquisitionManager::deleteLater);

@@ -14,17 +14,14 @@ Oscilloscope::Oscilloscope(QObject *parent) :
 
 }
 
-Fid Oscilloscope::parseWaveform(QByteArray b, const FtmwConfig::ScopeConfig &config, const double loFreq, const Fid::Sideband sb)
+QList<Fid> Oscilloscope::parseWaveform(QByteArray b, const FtmwConfig ftmwConfig)
 {
-    Fid out;
-    out.setProbeFreq(loFreq);
-    out.setSpacing(config.xIncr);
-    out.setSideband(sb);
-    QVector<double> data;
-    data.reserve(config.recordLength);
+
+    FtmwConfig::ScopeConfig config = ftmwConfig.scopeConfig();
     QDataStream in(b);
     in.setByteOrder(config.byteOrder);
 
+    QList<Fid> out;
     QVector<qint32> raw;
 
     int pointsToRead = config.recordLength;
@@ -53,24 +50,27 @@ Fid Oscilloscope::parseWaveform(QByteArray b, const FtmwConfig::ScopeConfig &con
     }
 
     //the yOffset is in digitized units
-    if(config.fastFrameEnabled && !config.summaryFrame)
+    //need make a Fid for each frame
+    int nf = config.numFrames;
+    if(config.summaryFrame)
+        nf = 1;
+
+    for(int j=0;j<nf;j++)
     {
-        //need to sum up frames and average them
-        for(int i=0;i<config.recordLength;i++)
-        {
-            qint32 sum = 0;
-            for(int j=0;j<config.numFrames;j++)
-                sum += raw.at(i+config.recordLength*j) + (qint32)config.yOff;
-            data.append((double)sum/(double)config.numFrames*config.yMult);
-        }
-    }
-    else
-    {
+        Fid f;
+        f.setProbeFreq(ftmwConfig.loFreq());
+        f.setSpacing(config.xIncr);
+        f.setSideband(ftmwConfig.sideband());
+        QVector<double> data;
+        data.reserve(config.recordLength);
+
         for(int i=0;i<config.recordLength;i++)
             data.append(((double)raw.at(i)+(double)config.yOff)*config.yMult);
+
+        f.setData(data);
+        out.append(f);
     }
 
-    out.setData(data);
     return out;
 }
 
