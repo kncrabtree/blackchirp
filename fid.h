@@ -48,7 +48,7 @@ public:
  \param p Probe frequency (MHz)
  \param d Data vector
 */
-    Fid(const double sp, const double p, const QVector<double> d, Sideband sb = UpperSideband);
+    Fid(const double sp, const double p, const QVector<qint64> d, Sideband sb = UpperSideband, double vMult = 1.0, quint64 shots = 1);
 
 
 /*!
@@ -83,9 +83,13 @@ public:
 
      \param d New data vector
     */
-    void setData(const QVector<double> d);
+    void setData(const QVector<qint64> d);
 
     void setSideband(const Fid::Sideband sb);
+
+    void setVMult(const double vm);
+
+    void setShots(const quint64 s);
 
     /*!
      \brief Number of points in data vector
@@ -126,6 +130,12 @@ public:
      \return QVector<double> Data vector
     */
     QVector<double> toVector() const;
+
+    QVector<qint64> rawData() const;
+
+    qint64 atRaw(const int i) const;
+
+    quint64 shots() const;
 
     Fid::Sideband sideband() const;
 

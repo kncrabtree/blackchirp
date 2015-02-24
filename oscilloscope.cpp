@@ -22,7 +22,7 @@ QList<Fid> Oscilloscope::parseWaveform(QByteArray b, const FtmwConfig ftmwConfig
     in.setByteOrder(config.byteOrder);
 
     QList<Fid> out;
-    QVector<qint32> raw;
+    QVector<qint64> raw;
 
     int pointsToRead = config.recordLength;
     if(config.fastFrameEnabled && !config.summaryFrame)
@@ -37,13 +37,13 @@ QList<Fid> Oscilloscope::parseWaveform(QByteArray b, const FtmwConfig ftmwConfig
         {
             qint8 y;
             in >> y;
-            raw.append(static_cast<qint32>(y));
+            raw.append(static_cast<qint64>(y) + static_cast<qint64>(config.yOff));
         }
         else if(config.bytesPerPoint == 2)
         {
             qint16 y;
             in >> y;
-            raw.append(static_cast<qint32>(y));
+            raw.append(static_cast<qint64>(y) + static_cast<qint64>(config.yOff));
         }
         else
             return out;
@@ -61,12 +61,9 @@ QList<Fid> Oscilloscope::parseWaveform(QByteArray b, const FtmwConfig ftmwConfig
         f.setProbeFreq(ftmwConfig.loFreq());
         f.setSpacing(config.xIncr);
         f.setSideband(ftmwConfig.sideband());
-        QVector<double> data;
+        f.setVMult(config.yMult);
+        QVector<qint64> data = raw.mid(j*config.recordLength,config.recordLength);
         data.reserve(config.recordLength);
-
-        for(int i=0;i<config.recordLength;i++)
-            data.append(((double)raw.at(i)+(double)config.yOff)*config.yMult);
-
         f.setData(data);
         out.append(f);
     }

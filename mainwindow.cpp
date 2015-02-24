@@ -96,8 +96,8 @@ void MainWindow::startExperiment()
     sc.vScale = 0.02;
     sc.recordLength = 750000;
     sc.sampleRate = 50e9;
-    sc.numFrames = 1;
-    sc.fastFrameEnabled = false;
+    sc.numFrames = 10;
+    sc.fastFrameEnabled = true;
     sc.summaryFrame = false;
     ft.setScopeConfig(sc);
     e.setFtmwConfig(ft);

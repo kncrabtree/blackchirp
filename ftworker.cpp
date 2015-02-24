@@ -78,52 +78,53 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
 
 Fid FtWorker::filterFid(const Fid fid)
 {
-    QVector<double> data = fid.toVector();
+//    QVector<double> data = fid.toVector();
 
-    //make a vector of points for display purposes
-    QVector<QPointF> displayFid;
-    displayFid.reserve(data.size());
-    for(int i=0; i<data.size(); i++)
-        displayFid.append(QPointF((double)i*fid.spacing()*1.0e6,data.at(i)));
+//    //make a vector of points for display purposes
+//    QVector<QPointF> displayFid;
+//    displayFid.reserve(data.size());
+//    for(int i=0; i<data.size(); i++)
+//        displayFid.append(QPointF((double)i*fid.spacing()*1.0e6,data.at(i)));
 
-    emit fidDone(displayFid);
+    emit fidDone(fid.toXY());
+    return fid;
 
-    if(d_end < 0.01)
-        d_end = fid.spacing()*fid.size()*1e6;
+//    if(d_end < 0.01)
+//        d_end = fid.spacing()*fid.size()*1e6;
 
-    qint64 start = 0, end = fid.size();
+//    qint64 start = 0, end = fid.size();
 
-    if(d_start>0.0 && d_start < d_end)
-    {
-        start = (qint64)round(d_start/1e6/fid.spacing());
-        start = qMax((qint64)0,start);
-    }
+//    if(d_start>0.0 && d_start < d_end)
+//    {
+//        start = (qint64)round(d_start/1e6/fid.spacing());
+//        start = qMax((qint64)0,start);
+//    }
 
-    if(d_end > d_start && d_end < fid.spacing()*fid.size()*1e6)
-    {
-        end = (qint64)round(d_end/1e6/fid.spacing());
-        end = qMin((qint64)fid.size(),end);
-    }
+//    if(d_end > d_start && d_end < fid.spacing()*fid.size()*1e6)
+//    {
+//        end = (qint64)round(d_end/1e6/fid.spacing());
+//        end = qMin((qint64)fid.size(),end);
+//    }
 
-    if(start + 1000 > end && start + 1000 <= (qint64)fid.size())
-        end = start + 1000;
-    else if(start + 1000 > end && start - 1000 >= 0)
-        start -= 1000;
-    else if(start + 1000 > end)
-    {
-        start = 0;
-        end = fid.size();
-    }
+//    if(start + 1000 > end && start + 1000 <= (qint64)fid.size())
+//        end = start + 1000;
+//    else if(start + 1000 > end && start - 1000 >= 0)
+//        start -= 1000;
+//    else if(start + 1000 > end)
+//    {
+//        start = 0;
+//        end = fid.size();
+//    }
 
-    for(int i=0;i<start && i <data.size(); i++)
-        data.replace(i,0.0);
-    for(int i=end; i<data.size(); i++)
-        data.replace(i,0.0);
+//    for(int i=0;i<start && i <data.size(); i++)
+//        data.replace(i,0.0);
+//    for(int i=end; i<data.size(); i++)
+//        data.replace(i,0.0);
 
-    int chunkSize = 50000;
-    int choppedStart = ((int)start/chunkSize)*chunkSize;
-    int choppedLength = qMin((((int)end-choppedStart+chunkSize)/chunkSize)*chunkSize,data.size()-choppedStart);
+//    int chunkSize = 50000;
+//    int choppedStart = ((int)start/chunkSize)*chunkSize;
+//    int choppedLength = qMin((((int)end-choppedStart+chunkSize)/chunkSize)*chunkSize,data.size()-choppedStart);
 
-    //for synchronous use (eg the doFT function), return an FID object
-    return Fid(fid.spacing(),fid.probeFreq(),data.mid(choppedStart,choppedLength));
+//    //for synchronous use (eg the doFT function), return an FID object
+//    return Fid(fid.spacing(),fid.probeFreq(),data.mid(choppedStart,choppedLength));
 }

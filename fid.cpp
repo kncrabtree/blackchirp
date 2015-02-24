@@ -14,19 +14,13 @@ public:
  \brief Default constructor
 
 */
-    FidData() : spacing(5e-7), probeFreq(0.0), fid(QVector<double>(400)), sideband(Fid::UpperSideband) {}
-/*!
- \brief Copy constructor
-
- \param other Object to copy
-*/
-    FidData(const FidData &other) : QSharedData(other), spacing(other.spacing), probeFreq(other.probeFreq), fid(other.fid),
-        sideband(other.sideband) {}
-    ~FidData(){}
+    FidData() : spacing(5e-7), probeFreq(0.0), vMult(1.0), shots(1), fid(QVector<qint64>(400)), sideband(Fid::UpperSideband) {}
 
     double spacing;
     double probeFreq;
-    QVector<double> fid;
+    double vMult;
+    quint64 shots;
+    QVector<qint64> fid;
     Fid::Sideband sideband;
 };
 
@@ -38,13 +32,15 @@ Fid::Fid(const Fid &rhs) : data(rhs.data)
 {
 }
 
-Fid::Fid(const double sp, const double p, const QVector<double> d, Sideband sb)
+Fid::Fid(const double sp, const double p, const QVector<qint64> d, Sideband sb, double vMult, quint64 shots)
 {
     data = new FidData;
     data->spacing = sp;
     data->probeFreq = p;
     data->fid = d;
     data->sideband = sb;
+    data->vMult = vMult;
+    data->shots = shots;
 }
 
 Fid &Fid::operator=(const Fid &rhs)
@@ -68,7 +64,7 @@ void Fid::setProbeFreq(const double f)
     data->probeFreq = f;
 }
 
-void Fid::setData(const QVector<double> d)
+void Fid::setData(const QVector<qint64> d)
 {
     data->fid = d;
 }
@@ -78,6 +74,16 @@ void Fid::setSideband(const Fid::Sideband sb)
     data->sideband = sb;
 }
 
+void Fid::setVMult(const double vm)
+{
+    data->vMult = vm;
+}
+
+void Fid::setShots(const quint64 s)
+{
+    data->shots = s;
+}
+
 int Fid::size() const
 {
     return data->fid.size();
@@ -85,7 +91,11 @@ int Fid::size() const
 
 double Fid::at(const int i) const
 {
-    return data->fid.at(i);
+    double d = (double)data->fid.at(i)*data->vMult;
+    if(data->shots > 1)
+        return d/(double)shots();
+
+    return d;
 }
 
 double Fid::spacing() const
@@ -112,7 +122,27 @@ QVector<QPointF> Fid::toXY() const
 
 QVector<double> Fid::toVector() const
 {
+    QVector<double> out;
+    out.reserve(size());
+    for(int i=0;i<size();i++)
+        out.append(at(i));
+
+    return out;
+}
+
+QVector<qint64> Fid::rawData() const
+{
     return data->fid;
+}
+
+qint64 Fid::atRaw(const int i) const
+{
+    return data->fid.at(i);
+}
+
+quint64 Fid::shots() const
+{
+    return data->shots;
 }
 
 Fid::Sideband Fid::sideband() const

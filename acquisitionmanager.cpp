@@ -27,12 +27,12 @@ void AcquisitionManager::beginExperiment(Experiment exp)
 
 void AcquisitionManager::processScopeShot(const QByteArray b)
 {
-    QList<Fid> fl = Oscilloscope::parseWaveform(b,d_currentExperiment.ftmwConfig());
-
-    emit newFidList(fl);
-
     if(d_state == Acquiring && d_currentExperiment.ftmwConfig().isEnabled())
     {
+        QList<Fid> fl = Oscilloscope::parseWaveform(b,d_currentExperiment.ftmwConfig());
+
+        emit newFidList(fl);
+
         d_currentExperiment.incrementFtmw();
 	   emit ftmwShotAcquired(d_currentExperiment.ftmwConfig().completedShots());
          //process shot, etc...

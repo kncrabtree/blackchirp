@@ -6,6 +6,8 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent) :
     ui(new Ui::FtmwViewWidget)
 {
     ui->setupUi(this);
+
+    connect(ui->frameBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::showFrame);
 }
 
 FtmwViewWidget::~FtmwViewWidget()
