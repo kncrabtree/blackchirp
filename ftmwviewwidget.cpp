@@ -12,3 +12,8 @@ FtmwViewWidget::~FtmwViewWidget()
 {
     delete ui;
 }
+
+void FtmwViewWidget::fidTest(Fid f)
+{
+    ui->ftPlot->newFid(f);
+}

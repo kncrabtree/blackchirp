@@ -100,7 +100,7 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
-         <widget class="FtmwViewWidget" name="widget" native="true"/>
+         <widget class="FtmwViewWidget" name="ftViewWidget" native="true"/>
         </item>
        </layout>
       </widget>

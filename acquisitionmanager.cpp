@@ -1,4 +1,5 @@
 #include "acquisitionmanager.h"
+#include "oscilloscope.h"
 
 AcquisitionManager::AcquisitionManager(QObject *parent) : QObject(parent), d_state(Idle)
 {
@@ -26,7 +27,9 @@ void AcquisitionManager::beginExperiment(Experiment exp)
 
 void AcquisitionManager::processScopeShot(const QByteArray b)
 {
-    Q_UNUSED(b)
+    Fid f = Oscilloscope::parseWaveform(b,d_currentExperiment.ftmwConfig().scopeConfig(),d_currentExperiment.ftmwConfig().loFreq(),d_currentExperiment.ftmwConfig().sideband());
+
+    emit fidTest(f);
 
     if(d_state == Acquiring && d_currentExperiment.ftmwConfig().isEnabled())
     {

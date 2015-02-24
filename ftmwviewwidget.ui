@@ -18,7 +18,7 @@
     <widget class="QwtPlot" name="fidPlot" native="true"/>
    </item>
    <item>
-    <widget class="QwtPlot" name="ftPlot" native="true"/>
+    <widget class="FtPlot" name="ftPlot" native="true"/>
    </item>
   </layout>
  </widget>
@@ -27,6 +27,12 @@
    <class>QwtPlot</class>
    <extends>QWidget</extends>
    <header location="global">qwt6/qwt_plot.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>FtPlot</class>
+   <extends>QWidget</extends>
+   <header>ftplot.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -174,6 +174,7 @@ Experiment Oscilloscope::prepareForExperiment(Experiment exp)
         config.yMult = config.vScale*5.0/pow(2.0,8.0*config.bytesPerPoint-1.0);
         config.xIncr = 1.0/config.sampleRate;
         d_configuration = config;
+        exp.setScopeConfig(config);
         return exp;
     }
 

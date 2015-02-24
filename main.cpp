@@ -106,6 +106,8 @@ int main(int argc, char *argv[])
     lockFile.close();
 
     qRegisterMetaType<Experiment>("Experiment");
+    qRegisterMetaType<Fid>("Fid");
+    qRegisterMetaType<QVector<QPointF> >("QVector<QPointF>");
 
     MainWindow w;
     w.show();

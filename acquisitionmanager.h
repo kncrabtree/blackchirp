@@ -26,6 +26,8 @@ signals:
     void ftmwShotAcquired(int);
     void beginAcquisition();
 
+    void fidTest(Fid);
+
 public slots:
     void beginExperiment(Experiment exp);
     void processScopeShot(const QByteArray b);
