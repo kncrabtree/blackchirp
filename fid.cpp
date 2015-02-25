@@ -79,9 +79,22 @@ void Fid::setVMult(const double vm)
     data->vMult = vm;
 }
 
-void Fid::setShots(const quint64 s)
+void Fid::setShots(const qint64 s)
 {
     data->shots = s;
+}
+
+Fid &Fid::operator +=(const Fid other)
+{
+    if(other.size() == size())
+    {
+        for(int i=0;i<size();i++)
+            data->fid[i] += other.atRaw(i);
+
+        data->shots += other.shots();
+    }
+
+    return *this;
 }
 
 int Fid::size() const

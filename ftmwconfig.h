@@ -106,7 +106,9 @@ public:
     void setLoFreq(const double f);
     void setSideband(const Fid::Sideband sb);
     void setFidList(const QList<Fid> list);
+    void addFidList(const QList<Fid> l);
     void setScopeConfig(const ScopeConfig &other);
+
 
     bool isComplete() const;
     QHash<QString,QPair<QVariant,QString> > headerHash() const;

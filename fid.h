@@ -89,7 +89,9 @@ public:
 
     void setVMult(const double vm);
 
-    void setShots(const quint64 s);
+    void setShots(const qint64 s);
+
+    Fid &operator +=(const Fid other);
 
     /*!
      \brief Number of points in data vector

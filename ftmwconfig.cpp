@@ -139,6 +139,16 @@ void FtmwConfig::setFidList(const QList<Fid> list)
     data->fidList = list;
 }
 
+void FtmwConfig::addFidList(const QList<Fid> l)
+{
+    for(int i=0; i<data->fidList.size(); i++)
+    {
+        Fid f = data->fidList.takeFirst();
+        f += l.at(i);
+        data->fidList.append(f);
+    }
+}
+
 void FtmwConfig::setScopeConfig(const FtmwConfig::ScopeConfig &other)
 {
     data->scopeConfig = other;

@@ -142,6 +142,16 @@ void Experiment::setScopeConfig(const FtmwConfig::ScopeConfig &cfg)
     data->ftmwCfg.setScopeConfig(cfg);
 }
 
+void Experiment::setFidList(const QList<Fid> l)
+{
+    data->ftmwCfg.setFidList(l);
+}
+
+void Experiment::addFidList(const QList<Fid> l)
+{
+    data->ftmwCfg.addFidList(l);
+}
+
 void Experiment::setHardwareFailed()
 {
     data->hardwareSuccess = false;

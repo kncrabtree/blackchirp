@@ -18,43 +18,15 @@ QList<Fid> Oscilloscope::parseWaveform(QByteArray b, const FtmwConfig ftmwConfig
 {
 
     FtmwConfig::ScopeConfig config = ftmwConfig.scopeConfig();
-    QDataStream in(b);
-    in.setByteOrder(config.byteOrder);
 
     QList<Fid> out;
-    QVector<qint64> raw;
 
-    int pointsToRead = config.recordLength;
-    if(config.fastFrameEnabled && !config.summaryFrame)
-        pointsToRead*=config.numFrames;
-
-    raw.reserve(pointsToRead);
-
-    //read raw data into vector in 32 bit integer form
-    for(int i=0;i<pointsToRead;i++)
-    {
-        if(config.bytesPerPoint == 1)
-        {
-            qint8 y;
-            in >> y;
-            raw.append(static_cast<qint64>(y) + static_cast<qint64>(config.yOff));
-        }
-        else if(config.bytesPerPoint == 2)
-        {
-            qint16 y;
-            in >> y;
-            raw.append(static_cast<qint64>(y) + static_cast<qint64>(config.yOff));
-        }
-        else
-            return out;
-    }
-
-    //the yOffset is in digitized units
     //need make a Fid for each frame
     int nf = config.numFrames;
     if(config.summaryFrame)
         nf = 1;
 
+    //read raw data into vector in 64 bit integer form
     for(int j=0;j<nf;j++)
     {
         Fid f;
@@ -62,8 +34,30 @@ QList<Fid> Oscilloscope::parseWaveform(QByteArray b, const FtmwConfig ftmwConfig
         f.setSpacing(config.xIncr);
         f.setSideband(ftmwConfig.sideband());
         f.setVMult(config.yMult);
-        QVector<qint64> data = raw.mid(j*config.recordLength,config.recordLength);
-        data.reserve(config.recordLength);
+        QVector<qint64> data;
+        data.resize(config.recordLength);
+
+        for(int i=0;i<config.recordLength;i++)
+        {
+            if(config.bytesPerPoint == 1)
+            {
+                char y = b.at(j*config.recordLength + i);
+                data[i] = (static_cast<qint64>(y) + static_cast<qint64>(config.yOff));
+            }
+            else
+            {
+                char y1 = b.at(j*2*config.recordLength + 2*i);
+                char y2 = b.at(j*2*config.recordLength + 2*i + 1);
+                qint16 y = 0;
+                if(config.byteOrder == QDataStream::LittleEndian)
+                {
+                    y += (qint8)y1;
+                    y += 256*(qint8)y2;
+                }
+                data[i] = (static_cast<qint64>(y) + static_cast<qint64>(config.yOff));
+            }
+        }
+
         f.setData(data);
         out.append(f);
     }
@@ -757,17 +751,17 @@ QByteArray Oscilloscope::scopeQueryCmd(QString query)
 QByteArray Oscilloscope::makeSimulatedData()
 {
     QByteArray out;
-    QDataStream str(&out,QIODevice::WriteOnly);
-    str.setByteOrder(d_configuration.byteOrder);
+//    QDataStream str(&out,QIODevice::WriteOnly);
+//    str.setByteOrder(d_configuration.byteOrder);
 
     int frames = 1;
     if(d_configuration.fastFrameEnabled && !d_configuration.summaryFrame)
     {
         frames = d_configuration.numFrames;
-        out.reserve(d_simulatedData.size()*d_configuration.bytesPerPoint*d_configuration.numFrames);
+        out.resize(d_simulatedData.size()*d_configuration.bytesPerPoint*d_configuration.numFrames);
     }
     else
-        out.reserve(d_simulatedData.size()*d_configuration.bytesPerPoint);
+        out.resize(d_simulatedData.size()*d_configuration.bytesPerPoint);
 
 
     for(int i=0; i<frames; i++)
@@ -775,17 +769,34 @@ QByteArray Oscilloscope::makeSimulatedData()
         for(int j=0; j<d_simulatedData.size(); j++)
         {
             double dat = d_simulatedData.at(j);
-            double noise = ((double)qrand()/(double)RAND_MAX-0.5)*2.0*d_configuration.vScale;
+
 
             if(d_configuration.bytesPerPoint == 1)
             {
-                int n = qBound(-128,(int)round((dat+noise)/d_configuration.yMult),127);
-                str << (qint8)n;
+                int noise = (rand()%32)-16;
+                qint8 n = qBound(-128,((int)(dat/d_configuration.yMult)+noise),127);
+//                str << (qint8)n;
+                out[d_simulatedData.size()*i + j] = n;
             }
             else
             {
-                int n = qBound(-32768,(int)round((dat+noise)/d_configuration.yMult),32767);
-                str << (qint16)n;
+                int noise = (rand()%4096)-2048;
+                qint16 n = qBound(-32768,((int)(dat/d_configuration.yMult)+noise),32767);
+//                str << (qint16)n;
+                qint8 byte1;
+                qint8 byte2;
+                if(d_configuration.byteOrder == QDataStream::LittleEndian)
+                {
+                    byte1 = (qint8)(n % 256);
+                    byte2 = (qint8)(n / 256);
+                }
+                else
+                {
+                    byte1 = (qint8)(n / 256);
+                    byte2 = (qint8)(n * 256);
+                }
+                out[d_simulatedData.size()*2*i + 2*j] = byte1;
+                out[d_simulatedData.size()*2*i + 2*j + 1] = byte2;
             }
         }
     }

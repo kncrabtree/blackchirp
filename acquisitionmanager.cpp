@@ -31,7 +31,12 @@ void AcquisitionManager::processScopeShot(const QByteArray b)
     {
         QList<Fid> fl = Oscilloscope::parseWaveform(b,d_currentExperiment.ftmwConfig());
 
-        emit newFidList(fl);
+        if(d_currentExperiment.ftmwConfig().fidList().isEmpty())
+            d_currentExperiment.setFidList(fl);
+        else
+            d_currentExperiment.addFidList(fl);
+
+        emit newFidList(d_currentExperiment.ftmwConfig().fidList());
 
         d_currentExperiment.incrementFtmw();
 	   emit ftmwShotAcquired(d_currentExperiment.ftmwConfig().completedShots());
