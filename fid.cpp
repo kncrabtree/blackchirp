@@ -86,13 +86,11 @@ void Fid::setShots(const qint64 s)
 
 Fid &Fid::operator +=(const Fid other)
 {
-    if(other.size() == size())
-    {
-        for(int i=0;i<size();i++)
-            data->fid[i] += other.atRaw(i);
+    Q_ASSERT(size() == other.size());
+    for(int i=0;i<size();i++)
+        data->fid[i] += other.atRaw(i);
 
-        data->shots += other.shots();
-    }
+    data->shots += other.shots();
 
     return *this;
 }

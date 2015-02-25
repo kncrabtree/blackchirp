@@ -34,8 +34,8 @@ QList<Fid> Oscilloscope::parseWaveform(QByteArray b, const FtmwConfig ftmwConfig
         f.setSpacing(config.xIncr);
         f.setSideband(ftmwConfig.sideband());
         f.setVMult(config.yMult);
-        QVector<qint64> data;
-        data.resize(config.recordLength);
+        QVector<qint64> data(config.recordLength);
+//        data.resize(config.recordLength);
 
         for(int i=0;i<config.recordLength;i++)
         {
