@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout" stretch="1,5,0">
    <item>
-    <widget class="QWidget" name="fidPlot" native="true"/>
+    <widget class="FidPlot" name="fidPlot" native="true"/>
    </item>
    <item>
     <widget class="FtPlot" name="ftPlot" native="true"/>
@@ -74,6 +74,12 @@
    <class>FtPlot</class>
    <extends>QWidget</extends>
    <header>ftplot.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>FidPlot</class>
+   <extends>QWidget</extends>
+   <header>fidplot.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

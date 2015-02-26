@@ -34,6 +34,7 @@ void FtmwViewWidget::newFidList(QList<Fid> fl)
 void FtmwViewWidget::showFrame(int num)
 {
     ui->ftPlot->newFid(d_fidList.at(num-1));
+    ui->fidPlot->receiveData(d_fidList.at(num-1));
 }
 
 void FtmwViewWidget::fidTest(Fid f)
