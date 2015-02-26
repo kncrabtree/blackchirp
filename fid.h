@@ -137,7 +137,7 @@ public:
 
     qint64 atRaw(const int i) const;
 
-    qint64 atNorm(const int i) const;
+    double atNorm(const int i) const;
 
     qint64 shots() const;
 
