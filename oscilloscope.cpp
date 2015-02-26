@@ -54,6 +54,11 @@ QList<Fid> Oscilloscope::parseWaveform(QByteArray b, const FtmwConfig ftmwConfig
                     y += (qint8)y1;
                     y += 256*(qint8)y2;
                 }
+                else
+                {
+                    y += (qint8)y2;
+                    y += 256*(qint8)y1;
+                }
                 data[i] = (static_cast<qint64>(y) + static_cast<qint64>(config.yOff));
             }
         }
@@ -793,7 +798,7 @@ QByteArray Oscilloscope::makeSimulatedData()
                 else
                 {
                     byte1 = (qint8)(n / 256);
-                    byte2 = (qint8)(n * 256);
+                    byte2 = (qint8)(n % 256);
                 }
                 out[d_simulatedData.size()*2*i + 2*j] = byte1;
                 out[d_simulatedData.size()*2*i + 2*j + 1] = byte2;

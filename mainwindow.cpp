@@ -93,7 +93,7 @@ void MainWindow::startExperiment()
     ft.setTargetShots(100);
     ft.setType(FtmwConfig::TargetShots);
     FtmwConfig::ScopeConfig sc = ft.scopeConfig();
-    sc.bytesPerPoint = 1;
+    sc.bytesPerPoint = 2;
     sc.vScale = 0.02;
     sc.recordLength = 750000;
     sc.sampleRate = 50e9;
