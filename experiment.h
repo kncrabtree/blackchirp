@@ -47,6 +47,24 @@ private:
     QSharedDataPointer<ExperimentData> data;
 };
 
+class ExperimentData : public QSharedData
+{
+public:
+    ExperimentData() : number(0), isInitialized(false), isAborted(false), isDummy(false), hardwareSuccess(true) {}
+
+    int number;
+    QList<QPair<double,QString> > gasSetpoints;
+    QList<QPair<double,QString> > pressureSetpoints;
+    QDateTime startTime;
+    bool isInitialized;
+    bool isAborted;
+    bool isDummy;
+    bool hardwareSuccess;
+
+    FtmwConfig ftmwCfg;
+};
+
 Q_DECLARE_METATYPE(Experiment)
+Q_DECLARE_TYPEINFO(Experiment, Q_MOVABLE_TYPE);
 
 #endif // EXPERIMENT_H

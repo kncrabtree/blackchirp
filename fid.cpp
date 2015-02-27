@@ -1,29 +1,6 @@
 #include "fid.h"
 #include <QSharedData>
 
-//this is all pretty straightforward
-
-/*!
- \brief Internal data for Fid
-
- Stores the time spacing between points (in s), the probe frequency (in MHz), and the FID data (arbitrary units)
-*/
-class FidData : public QSharedData {
-public:
-/*!
- \brief Default constructor
-
-*/
-    FidData() : spacing(5e-7), probeFreq(0.0), vMult(1.0), shots(1), fid(QVector<qint64>(400)), sideband(Fid::UpperSideband) {}
-
-    double spacing;
-    double probeFreq;
-    double vMult;
-    qint64 shots;
-    QVector<qint64> fid;
-    Fid::Sideband sideband;
-};
-
 Fid::Fid() : data(new FidData)
 {
 }

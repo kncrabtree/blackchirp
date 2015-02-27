@@ -117,4 +117,28 @@ private:
     QSharedDataPointer<FtmwConfigData> data;
 };
 
+class FtmwConfigData : public QSharedData
+{
+public:
+    FtmwConfigData() : isEnabled(false), type(FtmwConfig::Forever), targetShots(-1), completedShots(0), autoSaveShots(1000), loFreq(0.0), sideband(Fid::UpperSideband) {}
+
+    bool isEnabled;
+    FtmwConfig::FtmwType type;
+    qint64 targetShots;
+    qint64 completedShots;
+    QDateTime targetTime;
+    int autoSaveShots;
+
+    double loFreq;
+    Fid::Sideband sideband;
+    QList<Fid> fidList;
+
+    FtmwConfig::ScopeConfig scopeConfig;
+
+
+
+};
+
+Q_DECLARE_TYPEINFO(FtmwConfig, Q_MOVABLE_TYPE);
+
 #endif // FTMWCONFIG_H

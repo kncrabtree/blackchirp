@@ -2,23 +2,6 @@
 #include <QSettings>
 #include <QApplication>
 
-class ExperimentData : public QSharedData
-{
-public:
-    ExperimentData() : number(0), isInitialized(false), isAborted(false), isDummy(false), hardwareSuccess(true) {}
-
-    int number;
-    QList<QPair<double,QString> > gasSetpoints;
-    QList<QPair<double,QString> > pressureSetpoints;
-    QDateTime startTime;
-    bool isInitialized;
-    bool isAborted;
-    bool isDummy;
-    bool hardwareSuccess;
-
-    FtmwConfig ftmwCfg;
-};
-
 Experiment::Experiment() : data(new ExperimentData)
 {
 
