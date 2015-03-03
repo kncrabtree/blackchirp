@@ -140,7 +140,7 @@ bool FtmwConfig::isComplete() const
         return completedShots() >= targetShots();
         break;
     case TargetTime:
-        return QDateTime::currentDateTime() > targetTime();
+        return QDateTime::currentDateTime() >= targetTime();
         break;
     case Forever:
     case PeakUp:
