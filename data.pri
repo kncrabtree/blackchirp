@@ -9,3 +9,5 @@ HEADERS += loghandler.h \
     $$PWD/ftworker.h \
     $$PWD/experiment.h \
     $$PWD/ftmwconfig.h
+
+OTHER_FILES += $$PWD/gpukernels.cu
