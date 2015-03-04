@@ -75,6 +75,11 @@ bool Experiment::hardwareSuccess() const
     return data->hardwareSuccess;
 }
 
+QString Experiment::errorString() const
+{
+    return data->errorString;
+}
+
 void Experiment::setGasSetpoints(const QList<QPair<double, QString> > list)
 {
     data->gasSetpoints = list;
@@ -97,18 +102,22 @@ void Experiment::addPressureSetpoint(const double setPoint, const QString name)
 
 void Experiment::setInitialized()
 {
-    data->isInitialized = true;
+    bool initSuccess = true;
+    if(ftmwConfig().isEnabled())
+    {
+        initSuccess = data->ftmwCfg.prepareForAcquisition();
+        if(!initSuccess)
+            data->errorString = data->ftmwCfg.errorString();
+    }
+
+    data->isInitialized = initSuccess;
     data->startTime = QDateTime::currentDateTime();
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     int num = s.value(QString("exptNum"),1).toInt();
     data->number = num;
 
-    if(ftmwConfig().isEnabled())
-    {
-        Fid f(ftmwConfig().scopeConfig().xIncr,ftmwConfig().loFreq(),QVector<qint64>(0),ftmwConfig().sideband(),ftmwConfig().scopeConfig().yMult,1);
-        data->ftmwCfg.setFidTemplate(f);
-    }
+
 }
 
 void Experiment::setAborted()
@@ -140,6 +149,11 @@ void Experiment::setFids(const QByteArray rawData)
 void Experiment::addFids(const QByteArray newData)
 {
     data->ftmwCfg.addFids(newData);
+}
+
+void Experiment::setErrorString(const QString str)
+{
+    data->errorString = str;
 }
 
 void Experiment::setHardwareFailed()

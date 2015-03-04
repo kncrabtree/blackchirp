@@ -99,7 +99,9 @@ public:
     Fid fidTemplate() const;
     int numFrames() const;
     QVector<qint64> parseWaveform(QByteArray b) const;
+    QString errorString() const;
 
+    bool prepareForAcquisition();
     void setEnabled();
     void setFidTemplate(const Fid f);
     void setType(const FtmwConfig::FtmwType type);
@@ -140,6 +142,7 @@ public:
     FtmwConfig::ScopeConfig scopeConfig;
     QVector<qint64> rawData;
     Fid fidTemplate;
+    QString errorString;
 
 
 

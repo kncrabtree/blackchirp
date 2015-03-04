@@ -116,6 +116,24 @@ QVector<qint64> FtmwConfig::parseWaveform(QByteArray b) const
     return out;
 }
 
+QString FtmwConfig::errorString() const
+{
+    return data->errorString;
+}
+
+bool FtmwConfig::prepareForAcquisition()
+{
+    Fid f(scopeConfig().xIncr,loFreq(),QVector<qint64>(0),sideband(),scopeConfig().yMult,1);
+    data->fidTemplate = f;
+
+#ifdef BC_CUDA
+
+#endif
+    return true;
+
+
+}
+
 void FtmwConfig::setEnabled()
 {
     data->isEnabled = true;

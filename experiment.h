@@ -27,6 +27,7 @@ public:
     FtmwConfig ftmwConfig() const;
     bool isComplete() const;
     bool hardwareSuccess() const;
+    QString errorString() const;
 
     void setGasSetpoints(const QList<QPair<double,QString> > list);
     void addGasSetpoint(const double setPoint, const QString name);
@@ -39,6 +40,7 @@ public:
     void setScopeConfig(const FtmwConfig::ScopeConfig &cfg);
     void setFids(const QByteArray rawData);
     void addFids(const QByteArray newData);
+    void setErrorString(const QString str);
 
     void setHardwareFailed();
     void incrementFtmw();
@@ -60,6 +62,7 @@ public:
     bool isAborted;
     bool isDummy;
     bool hardwareSuccess;
+    QString errorString;
 
     FtmwConfig ftmwCfg;
 };

@@ -14,7 +14,11 @@ AcquisitionManager::~AcquisitionManager()
 void AcquisitionManager::beginExperiment(Experiment exp)
 {
 	if(!exp.isInitialized() || exp.isDummy())
+    {
+        if(!exp.errorString().isEmpty())
+            emit logMessage(exp.errorString(),LogHandler::Error);
 		emit experimentComplete(exp);
+    }
 
     //prepare data files, savemanager, fidmanager, etc
     d_currentExperiment = exp;
