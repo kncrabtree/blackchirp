@@ -132,12 +132,12 @@ void Experiment::setScopeConfig(const FtmwConfig::ScopeConfig &cfg)
 }
 
 
-void Experiment::setFids(const QVector<qint64> rawData)
+void Experiment::setFids(const QByteArray rawData)
 {
     data->ftmwCfg.setFids(rawData);
 }
 
-void Experiment::addFids(const QVector<qint64> newData)
+void Experiment::addFids(const QByteArray newData)
 {
     data->ftmwCfg.addFids(newData);
 }

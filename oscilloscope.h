@@ -23,8 +23,6 @@ public:
         BlockData
     };
 
-    static QVector<qint64> parseWaveform(QByteArray b, const FtmwConfig::ScopeConfig &config);
-
 signals:
     void shotAcquired(const QByteArray data);
 

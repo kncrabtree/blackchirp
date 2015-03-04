@@ -14,44 +14,6 @@ Oscilloscope::Oscilloscope(QObject *parent) :
 
 }
 
-QVector<qint64> Oscilloscope::parseWaveform(QByteArray b, const FtmwConfig::ScopeConfig &config)
-{
-    //need make a Fid for each frame
-    int nf = config.numFrames;
-    if(config.summaryFrame)
-        nf = 1;
-
-    QVector<qint64> out(nf*config.recordLength);
-    //read raw data into vector in 64 bit integer form
-    for(int i=0;i<nf*config.recordLength;i++)
-    {
-        if(config.bytesPerPoint == 1)
-        {
-            char y = b.at(i);
-            out[i] = (static_cast<qint64>(y) + static_cast<qint64>(config.yOff));
-        }
-        else
-        {
-            char y1 = b.at(2*i);
-            char y2 = b.at(2*i + 1);
-            qint16 y = 0;
-            if(config.byteOrder == QDataStream::LittleEndian)
-            {
-                y += (qint8)y1;
-                y += 256*(qint8)y2;
-            }
-            else
-            {
-                y += (qint8)y2;
-                y += 256*(qint8)y1;
-            }
-            out[i] = (static_cast<qint64>(y) + static_cast<qint64>(config.yOff));
-        }
-    }
-
-    return out;
-}
-
 void Oscilloscope::initialize()
 {
     if(!d_virtual)

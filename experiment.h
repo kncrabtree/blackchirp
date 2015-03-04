@@ -37,8 +37,8 @@ public:
     void setDummy();
     void setFtmwConfig(const FtmwConfig cfg);
     void setScopeConfig(const FtmwConfig::ScopeConfig &cfg);
-    void setFids(const QVector<qint64> rawData);
-    void addFids(const QVector<qint64> newData);
+    void setFids(const QByteArray rawData);
+    void addFids(const QByteArray newData);
 
     void setHardwareFailed();
     void incrementFtmw();

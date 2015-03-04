@@ -82,6 +82,40 @@ int FtmwConfig::numFrames() const
     return scopeConfig().summaryFrame ? 1 : scopeConfig().numFrames;
 }
 
+QVector<qint64> FtmwConfig::parseWaveform(QByteArray b) const
+{
+
+    QVector<qint64> out(numFrames()*scopeConfig().recordLength);
+    //read raw data into vector in 64 bit integer form
+    for(int i=0;i<numFrames()*scopeConfig().recordLength;i++)
+    {
+        if(scopeConfig().bytesPerPoint == 1)
+        {
+            char y = b.at(i);
+            out[i] = (static_cast<qint64>(y) + static_cast<qint64>(scopeConfig().yOff));
+        }
+        else
+        {
+            char y1 = b.at(2*i);
+            char y2 = b.at(2*i + 1);
+            qint16 y = 0;
+            if(scopeConfig().byteOrder == QDataStream::LittleEndian)
+            {
+                y += (qint8)y1;
+                y += 256*(qint8)y2;
+            }
+            else
+            {
+                y += (qint8)y2;
+                y += 256*(qint8)y1;
+            }
+            out[i] = (static_cast<qint64>(y) + static_cast<qint64>(scopeConfig().yOff));
+        }
+    }
+
+    return out;
+}
+
 void FtmwConfig::setEnabled()
 {
     data->isEnabled = true;
@@ -127,9 +161,13 @@ void FtmwConfig::setSideband(const Fid::Sideband sb)
     data->sideband = sb;
 }
 
-void FtmwConfig::setFids(const QVector<qint64> newData)
+void FtmwConfig::setFids(const QByteArray newData)
 {
-    data->rawData = newData;
+#ifndef BC_CUDA
+    data->rawData = parseWaveform(newData);
+#else
+
+#endif
 
     if(!data->fidList.isEmpty())
         data->fidList.clear();
@@ -137,21 +175,22 @@ void FtmwConfig::setFids(const QVector<qint64> newData)
     for(int i=0; i<numFrames(); i++)
     {
         Fid f = fidTemplate();
-        f.setData(newData.mid(i*scopeConfig().recordLength,scopeConfig().recordLength));
+        f.setData(data->rawData.mid(i*scopeConfig().recordLength,scopeConfig().recordLength));
         data->fidList.append(f);
     }
+
 }
 
-void FtmwConfig::addFids(const QVector<qint64> newData)
+void FtmwConfig::addFids(const QByteArray rawData)
 {
 #ifndef BC_CUDA
-
-#else
-
-#endif
+    QVector<qint64> newData = parseWaveform(rawData);
     Q_ASSERT(data->rawData.size() == newData.size());
     for(int i=0; i<data->rawData.size(); i++)
         data->rawData[i] += newData.at(i);
+#else
+
+#endif
 
     const qint64 *d = data->rawData.data();
     for(int i=0; i<data->fidList.size(); i++)

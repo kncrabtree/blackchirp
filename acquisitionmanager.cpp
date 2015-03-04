@@ -30,12 +30,11 @@ void AcquisitionManager::processScopeShot(const QByteArray b)
     if(d_state == Acquiring && d_currentExperiment.ftmwConfig().isEnabled())
     {
         d_testTime.restart();
-        QVector<qint64> newData = Oscilloscope::parseWaveform(b,d_currentExperiment.ftmwConfig().scopeConfig());
 
         if(d_currentExperiment.ftmwConfig().fidList().isEmpty())
-            d_currentExperiment.setFids(newData);
+            d_currentExperiment.setFids(b);
         else
-            d_currentExperiment.addFids(newData);
+            d_currentExperiment.addFids(b);
 
         int t = d_testTime.elapsed();
         emit logMessage(QString("Elapsed time: %1 ms").arg(t));

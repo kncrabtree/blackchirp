@@ -98,6 +98,7 @@ public:
     ScopeConfig scopeConfig() const;
     Fid fidTemplate() const;
     int numFrames() const;
+    QVector<qint64> parseWaveform(QByteArray b) const;
 
     void setEnabled();
     void setFidTemplate(const Fid f);
@@ -108,8 +109,8 @@ public:
     void setAutoSaveShots(const int shots);
     void setLoFreq(const double f);
     void setSideband(const Fid::Sideband sb);
-    void setFids(const QVector<qint64> newData);
-    void addFids(const QVector<qint64> newData);
+    void setFids(const QByteArray newData);
+    void addFids(const QByteArray rawData);
     void setScopeConfig(const ScopeConfig &other);
 
 
