@@ -96,8 +96,11 @@ public:
     Fid::Sideband sideband() const;
     QList<Fid> fidList() const;
     ScopeConfig scopeConfig() const;
+    Fid fidTemplate() const;
+    int numFrames() const;
 
     void setEnabled();
+    void setFidTemplate(const Fid f);
     void setType(const FtmwConfig::FtmwType type);
     void setTargetShots(const qint64 target);
     void increment();
@@ -105,8 +108,8 @@ public:
     void setAutoSaveShots(const int shots);
     void setLoFreq(const double f);
     void setSideband(const Fid::Sideband sb);
-    void setFidList(const QList<Fid> list);
-    void addFidList(const QList<Fid> l);
+    void setFids(const QVector<qint64> newData);
+    void addFids(const QVector<qint64> newData);
     void setScopeConfig(const ScopeConfig &other);
 
 
@@ -134,6 +137,8 @@ public:
     QList<Fid> fidList;
 
     FtmwConfig::ScopeConfig scopeConfig;
+    QVector<qint64> rawData;
+    Fid fidTemplate;
 
 
 

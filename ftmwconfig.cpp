@@ -72,9 +72,24 @@ FtmwConfig::ScopeConfig FtmwConfig::scopeConfig() const
     return data->scopeConfig;
 }
 
+Fid FtmwConfig::fidTemplate() const
+{
+    return data->fidTemplate;
+}
+
+int FtmwConfig::numFrames() const
+{
+    return scopeConfig().summaryFrame ? 1 : scopeConfig().numFrames;
+}
+
 void FtmwConfig::setEnabled()
 {
     data->isEnabled = true;
+}
+
+void FtmwConfig::setFidTemplate(const Fid f)
+{
+    data->fidTemplate = f;
 }
 
 void FtmwConfig::setType(const FtmwType type)
@@ -112,17 +127,40 @@ void FtmwConfig::setSideband(const Fid::Sideband sb)
     data->sideband = sb;
 }
 
-void FtmwConfig::setFidList(const QList<Fid> list)
+void FtmwConfig::setFids(const QVector<qint64> newData)
 {
-    data->fidList = list;
+    data->rawData = newData;
+
+    if(!data->fidList.isEmpty())
+        data->fidList.clear();
+
+    for(int i=0; i<numFrames(); i++)
+    {
+        Fid f = fidTemplate();
+        f.setData(newData.mid(i*scopeConfig().recordLength,scopeConfig().recordLength));
+        data->fidList.append(f);
+    }
 }
 
-void FtmwConfig::addFidList(const QList<Fid> l)
+void FtmwConfig::addFids(const QVector<qint64> newData)
 {
+#ifndef BC_CUDA
+
+#else
+
+#endif
+    Q_ASSERT(data->rawData.size() == newData.size());
+    for(int i=0; i<data->rawData.size(); i++)
+        data->rawData[i] += newData.at(i);
+
+    const qint64 *d = data->rawData.data();
     for(int i=0; i<data->fidList.size(); i++)
     {
-        Fid f = data->fidList.takeFirst();
-        f += l.at(i);
+        data->fidList.removeFirst();
+        Fid f = fidTemplate();
+        f.setShots(completedShots());
+        f.setData(QVector<qint64>(scopeConfig().recordLength));
+        f.copyAdd(d,i*scopeConfig().recordLength);
         data->fidList.append(f);
     }
 }

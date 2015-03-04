@@ -14,57 +14,39 @@ Oscilloscope::Oscilloscope(QObject *parent) :
 
 }
 
-QList<Fid> Oscilloscope::parseWaveform(QByteArray b, const FtmwConfig ftmwConfig)
+QVector<qint64> Oscilloscope::parseWaveform(QByteArray b, const FtmwConfig::ScopeConfig &config)
 {
-
-    FtmwConfig::ScopeConfig config = ftmwConfig.scopeConfig();
-
-    QList<Fid> out;
-
     //need make a Fid for each frame
     int nf = config.numFrames;
     if(config.summaryFrame)
         nf = 1;
 
+    QVector<qint64> out(nf*config.recordLength);
     //read raw data into vector in 64 bit integer form
-    for(int j=0;j<nf;j++)
+    for(int i=0;i<nf*config.recordLength;i++)
     {
-        Fid f;
-        f.setProbeFreq(ftmwConfig.loFreq());
-        f.setSpacing(config.xIncr);
-        f.setSideband(ftmwConfig.sideband());
-        f.setVMult(config.yMult);
-        QVector<qint64> data(config.recordLength);
-//        data.resize(config.recordLength);
-
-        for(int i=0;i<config.recordLength;i++)
+        if(config.bytesPerPoint == 1)
         {
-            if(config.bytesPerPoint == 1)
+            char y = b.at(i);
+            out[i] = (static_cast<qint64>(y) + static_cast<qint64>(config.yOff));
+        }
+        else
+        {
+            char y1 = b.at(2*i);
+            char y2 = b.at(2*i + 1);
+            qint16 y = 0;
+            if(config.byteOrder == QDataStream::LittleEndian)
             {
-                char y = b.at(j*config.recordLength + i);
-                data[i] = (static_cast<qint64>(y) + static_cast<qint64>(config.yOff));
+                y += (qint8)y1;
+                y += 256*(qint8)y2;
             }
             else
             {
-                char y1 = b.at(j*2*config.recordLength + 2*i);
-                char y2 = b.at(j*2*config.recordLength + 2*i + 1);
-                qint16 y = 0;
-                if(config.byteOrder == QDataStream::LittleEndian)
-                {
-                    y += (qint8)y1;
-                    y += 256*(qint8)y2;
-                }
-                else
-                {
-                    y += (qint8)y2;
-                    y += 256*(qint8)y1;
-                }
-                data[i] = (static_cast<qint64>(y) + static_cast<qint64>(config.yOff));
+                y += (qint8)y2;
+                y += 256*(qint8)y1;
             }
+            out[i] = (static_cast<qint64>(y) + static_cast<qint64>(config.yOff));
         }
-
-        f.setData(data);
-        out.append(f);
     }
 
     return out;
@@ -638,7 +620,7 @@ Experiment Oscilloscope::prepareForExperiment(Experiment exp)
     }
 
     d_configuration = config;
-
+    exp.setScopeConfig(config);
 
     //lock scope, turn off waveform display, connect signal-slot stuff
     writeCmd(QString(":LOCK ALL;:DISPLAY:WAVEFORM OFF\n"));
@@ -755,6 +737,7 @@ QByteArray Oscilloscope::scopeQueryCmd(QString query)
 
 QByteArray Oscilloscope::makeSimulatedData()
 {
+    d_testTime.restart();
     QByteArray out;
 //    QDataStream str(&out,QIODevice::WriteOnly);
 //    str.setByteOrder(d_configuration.byteOrder);
@@ -785,7 +768,7 @@ QByteArray Oscilloscope::makeSimulatedData()
             }
             else
             {
-                int noise = (rand()%4096)-2048;
+                int noise = 0;//(rand()%4096)-2048;
                 qint16 n = qBound(-32768,((int)(dat/d_configuration.yMult)+noise),32767);
 //                str << (qint16)n;
                 qint8 byte1;
@@ -805,6 +788,7 @@ QByteArray Oscilloscope::makeSimulatedData()
             }
         }
     }
+    emit logMessage(QString("Simulate: %1 ms").arg(d_testTime.elapsed()));
     return out;
 }
 

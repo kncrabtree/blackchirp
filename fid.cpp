@@ -72,6 +72,41 @@ Fid &Fid::operator +=(const Fid other)
     return *this;
 }
 
+Fid &Fid::operator +=(const QVector<qint64> other)
+{
+    Q_ASSERT(size() == other.size());
+    for(int i=0; i<size();i++)
+        data->fid[i] += other.at(i);
+
+    data->shots++;
+
+    return *this;
+}
+
+Fid &Fid::operator +=(const qint64 *other)
+{
+    for(int i=0; i<size();i++)
+        data->fid[i] += other[i];
+
+    data->shots++;
+
+    return *this;
+}
+
+void Fid::add(const qint64 *other, const unsigned int offset)
+{
+    for(int i=0; i<size(); i++)
+        data->fid[i] += other[i+offset];
+
+    data->shots++;
+}
+
+void Fid::copyAdd(const qint64 *other, const unsigned int offset)
+{
+    memcpy(data->fid.data(),other + offset,sizeof(qint64)*size());
+    data->shots++;
+}
+
 int Fid::size() const
 {
     return data->fid.size();

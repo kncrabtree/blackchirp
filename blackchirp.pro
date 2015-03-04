@@ -9,7 +9,7 @@ QT       += core gui network
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets serialport
 
 #Enable CUDA GPU support
-CONFIG += gpu-cuda
+#CONFIG += gpu-cuda
 
 TARGET = blackchirp
 TEMPLATE = app
@@ -42,6 +42,9 @@ unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
 # Simulates FTMW Oscilloscope (uncomment DEFINES and RESOURCES lines)
 DEFINES += BC_NOFTSCOPE
 RESOURCES += virtualdata.qrc
+
+QMAKE_CXXFLAGS_RELEASE -= -O2
+QMAKE_CXXFLAGS_RELEASE += -O3
 
 
 gpu-cuda {

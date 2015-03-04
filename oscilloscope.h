@@ -23,7 +23,7 @@ public:
         BlockData
     };
 
-    static QList<Fid> parseWaveform(QByteArray b, const FtmwConfig ftmwConfig);
+    static QVector<qint64> parseWaveform(QByteArray b, const FtmwConfig::ScopeConfig &config);
 
 signals:
     void shotAcquired(const QByteArray data);
@@ -55,6 +55,7 @@ private:
     QByteArray makeSimulatedData();
     QVector<double> d_simulatedData;
     QTimer d_simulatedTimer;
+    QTime d_testTime;
 
 
 

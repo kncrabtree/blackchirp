@@ -4,6 +4,7 @@
 #include <QObject>
 #include "loghandler.h"
 #include "experiment.h"
+#include <QTime>
 
 class AcquisitionManager : public QObject
 {
@@ -38,8 +39,11 @@ public slots:
 private:
     Experiment d_currentExperiment;
     AcquisitionState d_state;
+    QTime d_testTime;
 
     void checkComplete();
+
+
 };
 
 #endif // ACQUISITIONMANAGER_H

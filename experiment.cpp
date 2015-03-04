@@ -103,6 +103,12 @@ void Experiment::setInitialized()
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     int num = s.value(QString("exptNum"),1).toInt();
     data->number = num;
+
+    if(ftmwConfig().isEnabled())
+    {
+        Fid f(ftmwConfig().scopeConfig().xIncr,ftmwConfig().loFreq(),QVector<qint64>(0),ftmwConfig().sideband(),ftmwConfig().scopeConfig().yMult,1);
+        data->ftmwCfg.setFidTemplate(f);
+    }
 }
 
 void Experiment::setAborted()
@@ -125,14 +131,15 @@ void Experiment::setScopeConfig(const FtmwConfig::ScopeConfig &cfg)
     data->ftmwCfg.setScopeConfig(cfg);
 }
 
-void Experiment::setFidList(const QList<Fid> l)
+
+void Experiment::setFids(const QVector<qint64> rawData)
 {
-    data->ftmwCfg.setFidList(l);
+    data->ftmwCfg.setFids(rawData);
 }
 
-void Experiment::addFidList(const QList<Fid> l)
+void Experiment::addFids(const QVector<qint64> newData)
 {
-    data->ftmwCfg.addFidList(l);
+    data->ftmwCfg.addFids(newData);
 }
 
 void Experiment::setHardwareFailed()
