@@ -90,7 +90,7 @@ void MainWindow::startExperiment()
     Experiment e;
     FtmwConfig ft;
     ft.setEnabled();
-    ft.setTargetShots(10);
+    ft.setTargetShots(100);
     ft.setType(FtmwConfig::TargetShots);
     FtmwConfig::ScopeConfig sc = ft.scopeConfig();
     sc.bytesPerPoint = 2;

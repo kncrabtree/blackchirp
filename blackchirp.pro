@@ -25,14 +25,14 @@ CUDA_SOURCES += gpufunctions.cu
 
 # Path to cuda toolkit install
 CUDA_DIR      = /usr/local/cuda-6.5
-INCLUDEPATH  += $$CUDA_DIR/include
+INCLUDEPATH  += $$CUDA_DIR/include -isystem /usr/include/qt5 -isystem /usr/include/qt5/QtCore
 QMAKE_LIBDIR += $$CUDA_DIR/lib64
 CUDA_INC = $$join(INCLUDEPATH,' -I','-I',' ')
 CUDA_INT
 LIBS += -L$$CUDA_DIR/lib64 -lcuda -lcudart
 # GPU architecture
 CUDA_ARCH     = sm_50
-NVCCFLAGS     = --compiler-options -fno-strict-aliasing -use_fast_math --ptxas-options=-v
+NVCCFLAGS     = --compiler-options -use_fast_math --ptxas-options=-v -Xcompiler -fPIE -Xcompiler -Wno-attributes
 
 CONFIG(debug, debug|release) {
 cuda_d.commands = $$CUDA_DIR/bin/nvcc -D_DEBUG -std=c++11 -m64 -O3 -arch=$$CUDA_ARCH -c $$NVCCFLAGS \

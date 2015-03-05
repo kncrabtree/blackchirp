@@ -9,7 +9,7 @@
 
 #ifdef BC_CUDA
 namespace GpuAvg {
-int initializeAcquisition(const int bytesPerPoint, const int numPoints);
+QString initializeAcquisition(const int bytesPerPoint, const int numPoints);
 int gpuParseAndAdd(int bytesPerPoint, int numPoints, const char *newDataIn, long long int *sumData, bool littleEndian = true);
 int acquisitionComplete();
 }
@@ -106,7 +106,7 @@ public:
     ScopeConfig scopeConfig() const;
     Fid fidTemplate() const;
     int numFrames() const;
-    QVector<qint64> parseWaveform(QByteArray b) const;
+    QList<Fid> parseWaveform(QByteArray b) const;
     QString errorString() const;
     void finishAcquisition() const;
 

@@ -1,5 +1,7 @@
 #include <cuda.h>
 #include <cuda_runtime_api.h>
+#include "fid.h"
+#include <QString>
 
 extern "C"
 
@@ -54,13 +56,23 @@ namespace GpuAvg {
 //device pointers
 char *devCharPtr = nullptr;
 long long int *devSumPtr = nullptr;
+long long int *hostPinnedSumPtr = nullptr;
 
 
-cudaError_t gpuFree(void *ptr)
+cudaError_t gpuFree(void *ptr, bool host = false)
 {
-    cudaError_t err = cudaFree(ptr);
-    ptr = nullptr;
-    return err;
+    if(!host)
+    {
+        cudaError_t err = cudaFree(ptr);
+        ptr = nullptr;
+        return err;
+    }
+    else
+    {
+        cudaError_t err = cudaFreeHost(ptr);
+        ptr = nullptr;
+        return err;
+    }
 }
 
 cudaError_t gpuMalloc(void *ptr, size_t size)
@@ -68,14 +80,14 @@ cudaError_t gpuMalloc(void *ptr, size_t size)
     return cudaMalloc(&ptr,size);
 }
 
-int initializeAcquisition(const int bytesPerPoint, const int numPoints)
+QString initializeAcquisition(const int bytesPerPoint, const int numPoints)
 {
     cudaError_t err;
     if(devSumPtr != nullptr)
     {
         err = gpuFree(devSumPtr);
         if(err != cudaSuccess)
-            return -1;//QString("Could not free GPU memory for 64 bit data. CUDA error message: %1").arg(QString(cudaGetErrorString(err)));
+            return QString("Could not free GPU memory for 64 bit data. CUDA error message: %1").arg(QString(cudaGetErrorString(err)));
     }
 
     err = cudaMalloc(&devSumPtr,numPoints*sizeof(long long int));
@@ -83,7 +95,7 @@ int initializeAcquisition(const int bytesPerPoint, const int numPoints)
     {
         if(devSumPtr != nullptr)
             devSumPtr = nullptr;
-        return -2;//QString("Could not allocate GPU memory for 64 bit data. CUDA error message: %1").arg(cudaGetErrorString(err));
+        return QString("Could not allocate GPU memory for 64 bit data. CUDA error message: %1").arg(cudaGetErrorString(err));
     }
 
     initMem64_kernel<<<(numPoints+255)/256, 256>>>(numPoints,devSumPtr);
@@ -91,7 +103,26 @@ int initializeAcquisition(const int bytesPerPoint, const int numPoints)
     if(err != cudaSuccess)
     {
         gpuFree(devSumPtr);
-        return -3;//QString("Could not initialize GPU memory to 0 for 64 bit data. CUDA error message: %1").arg(cudaGetErrorString(err));
+        return QString("Could not initialize GPU memory to 0 for 64 bit data. CUDA error message: %1").arg(cudaGetErrorString(err));
+    }
+
+    if(hostPinnedSumPtr != nullptr)
+    {
+        err = cudaFreeHost(hostPinnedSumPtr);
+        if(err != cudaSuccess)
+        {
+            gpuFree(devSumPtr);
+            return QString("Could not free pinned 64 bit host memory. CUDA error message: %1").arg(cudaGetErrorString(err));
+        }
+    }
+
+    err = cudaMallocHost(&hostPinnedSumPtr,numPoints*sizeof(long long int));
+    if(err != cudaSuccess)
+    {
+        if(hostPinnedSumPtr != nullptr)
+            hostPinnedSumPtr = nullptr;
+        gpuFree(devSumPtr);
+        return QString("Could not allocate pinned 64 bit host memory for sum. CUDA error message: %1").arg(cudaGetErrorString(err));
     }
 
     if(devCharPtr != nullptr)
@@ -100,7 +131,8 @@ int initializeAcquisition(const int bytesPerPoint, const int numPoints)
         if(err != cudaSuccess)
         {
             gpuFree(devSumPtr);
-            return -4;//QString("Could not free GPU memory for 64 bit data. CUDA error message: %1").arg(QString(cudaGetErrorString(err)));
+            gpuFree(hostPinnedSumPtr,true);
+            return QString("Could not free GPU memory for 64 bit data. CUDA error message: %1").arg(QString(cudaGetErrorString(err)));
         }
     }
 
@@ -110,10 +142,11 @@ int initializeAcquisition(const int bytesPerPoint, const int numPoints)
         if(devCharPtr != nullptr)
             devCharPtr = nullptr;
         gpuFree(devSumPtr);
-        return -5;//QString("Could not allocate GPU memory for 64 bit data. CUDA error message: %1").arg(QString(cudaGetErrorString(err)));
+        gpuFree(hostPinnedSumPtr,true);
+        return QString("Could not allocate GPU memory for 64 bit data. CUDA error message: %1").arg(QString(cudaGetErrorString(err)));
     }
 
-    return 0;//QString();
+    return QString();
 
 }
 
@@ -135,6 +168,9 @@ int acquisitionComplete()
 //        else
 //            out.append(QString(". Could not free GPU memory for character data. CUDA error message: %1").arg(QString(cudaGetErrorString(err))));
     }
+    err = gpuFree(hostPinnedSumPtr,true);
+    if(err != cudaSuccess)
+        out -=3;
 
     return out;
 }
@@ -150,17 +186,19 @@ int gpuParseAndAdd(int bytesPerPoint, int numPoints, const char *newDataIn, long
 
 
     if(bytesPerPoint == 1)
-        parseAdd_kernel1byte<<<(numPoints+255)/256, 256>>>(numPoints,devCharPtr,devSumPtr);
+        parseAdd_kernel1byte<<<(numPoints+1023)/1024, 1024>>>(numPoints,devCharPtr,devSumPtr);
     else
-        parseAdd_kernel2byte<<<(numPoints+255)/256, 256>>>(numPoints,devCharPtr,devSumPtr,littleEndian);
+        parseAdd_kernel2byte<<<(numPoints+1023)/1024, 1024>>>(numPoints,devCharPtr,devSumPtr,littleEndian);
 
     err = cudaGetLastError();
     if(err != cudaSuccess)
         return -2;//QString("Could not parse and add scope data on GPU. CUDA error message: %1").arg(QString(cudaGetErrorString(err)));
 
-    err = cudaMemcpy(sumData, devSumPtr, numPoints*sizeof(long long int), cudaMemcpyDeviceToHost);
+    err = cudaMemcpy(hostPinnedSumPtr, devSumPtr, numPoints*sizeof(long long int), cudaMemcpyDeviceToHost);
     if(err != cudaSuccess)
         return -3;//QString("Could not copy summed data from GPU. CUDA error message: %1").arg(QString(cudaGetErrorString(err)));
+
+    memcpy(sumData,hostPinnedSumPtr,numPoints*sizeof(long long int));
 
     return 0;//QString();
 

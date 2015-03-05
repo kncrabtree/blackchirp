@@ -83,35 +83,45 @@ int FtmwConfig::numFrames() const
     return scopeConfig().summaryFrame ? 1 : scopeConfig().numFrames;
 }
 
-QVector<qint64> FtmwConfig::parseWaveform(QByteArray b) const
+QList<Fid> FtmwConfig::parseWaveform(QByteArray b) const
 {
 
-    QVector<qint64> out(numFrames()*scopeConfig().recordLength);
+    int np = scopeConfig().recordLength;
+    QList<Fid> out;
     //read raw data into vector in 64 bit integer form
-    for(int i=0;i<numFrames()*scopeConfig().recordLength;i++)
+    for(int j=0;j<numFrames();j++)
     {
-        if(scopeConfig().bytesPerPoint == 1)
+        QVector<qint64> d(np);
+
+        for(int i=0; i<np;i++)
         {
-            char y = b.at(i);
-            out[i] = (static_cast<qint64>(y) + static_cast<qint64>(scopeConfig().yOff));
-        }
-        else
-        {
-            char y1 = b.at(2*i);
-            char y2 = b.at(2*i + 1);
-            qint16 y = 0;
-            if(scopeConfig().byteOrder == QDataStream::LittleEndian)
+            if(scopeConfig().bytesPerPoint == 1)
             {
-                y += (qint8)y1;
-                y += 256*(qint8)y2;
+                char y = b.at(j*np+i);
+                d[i] = (static_cast<qint64>(y) + static_cast<qint64>(scopeConfig().yOff));
             }
             else
             {
-                y += (qint8)y2;
-                y += 256*(qint8)y1;
+                char y1 = b.at(2*(j*np+i));
+                char y2 = b.at(2*(j*np+i) + 1);
+                qint16 y = 0;
+                if(scopeConfig().byteOrder == QDataStream::LittleEndian)
+                {
+                    y += (qint8)y1;
+                    y += 256*(qint8)y2;
+                }
+                else
+                {
+                    y += (qint8)y2;
+                    y += 256*(qint8)y1;
+                }
+                d[i] = (static_cast<qint64>(y) + static_cast<qint64>(scopeConfig().yOff));
             }
-            out[i] = (static_cast<qint64>(y) + static_cast<qint64>(scopeConfig().yOff));
         }
+
+        Fid f = fidTemplate();
+        f.setData(d);
+        out.append(f);
     }
 
     return out;
@@ -135,10 +145,10 @@ bool FtmwConfig::prepareForAcquisition()
     data->fidTemplate = f;
 
 #ifdef BC_CUDA
-    int error = GpuAvg::initializeAcquisition(scopeConfig().bytesPerPoint,scopeConfig().recordLength*numFrames());
-    if(error)
+    QString error = GpuAvg::initializeAcquisition(scopeConfig().bytesPerPoint,scopeConfig().recordLength*numFrames());
+    if(!error.isEmpty())
     {
-        data->errorString = QString::number(error);
+        data->errorString = error;
         return false;
     }
     data->rawData = QVector<qint64>(numFrames()*scopeConfig().recordLength);
@@ -196,7 +206,7 @@ void FtmwConfig::setSideband(const Fid::Sideband sb)
 bool FtmwConfig::setFids(const QByteArray newData)
 {
 #ifndef BC_CUDA
-    data->rawData = parseWaveform(newData);
+    data->fidList = parseWaveform(newData);
 #else
     int error = GpuAvg::gpuParseAndAdd(scopeConfig().bytesPerPoint,numFrames()*scopeConfig().recordLength,newData.constData(),data->rawData.data(),(scopeConfig().byteOrder == QDataStream::LittleEndian ? true : false));
     if(error)
@@ -204,8 +214,6 @@ bool FtmwConfig::setFids(const QByteArray newData)
         data->errorString = QString::number(error);
         return false;
     }
-#endif
-
     if(!data->fidList.isEmpty())
         data->fidList.clear();
 
@@ -215,17 +223,18 @@ bool FtmwConfig::setFids(const QByteArray newData)
         f.setData(data->rawData.mid(i*scopeConfig().recordLength,scopeConfig().recordLength));
         data->fidList.append(f);
     }
-
+#endif
     return true;
 }
 
 bool FtmwConfig::addFids(const QByteArray rawData)
 {
 #ifndef BC_CUDA
-    QVector<qint64> newData = parseWaveform(rawData);
-    Q_ASSERT(data->rawData.size() == newData.size());
-    for(int i=0; i<data->rawData.size(); i++)
-        data->rawData[i] += newData.at(i);
+    QList<Fid> newList = parseWaveform(rawData);
+    Q_ASSERT(data->fidList.size() == newList.size());
+    for(int i=0; i<data->fidList.size(); i++)
+        newList[i] += data->fidList.at(i);
+    data->fidList = newList;
 #else
     int error = GpuAvg::gpuParseAndAdd(scopeConfig().bytesPerPoint,numFrames()*scopeConfig().recordLength,rawData.constData(),data->rawData.data(),(scopeConfig().byteOrder == QDataStream::LittleEndian ? true : false));
     if(error)
@@ -233,7 +242,6 @@ bool FtmwConfig::addFids(const QByteArray rawData)
         data->errorString = QString::number(error);
         return false;
     }
-#endif
 
     const qint64 *d = data->rawData.data();
     for(int i=0; i<data->fidList.size(); i++)
@@ -246,6 +254,7 @@ bool FtmwConfig::addFids(const QByteArray rawData)
         data->fidList.append(f);
     }
 
+#endif
     return true;
 }
 
