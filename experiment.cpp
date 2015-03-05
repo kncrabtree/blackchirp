@@ -141,14 +141,26 @@ void Experiment::setScopeConfig(const FtmwConfig::ScopeConfig &cfg)
 }
 
 
-void Experiment::setFids(const QByteArray rawData)
+bool Experiment::setFids(const QByteArray rawData)
 {
-    data->ftmwCfg.setFids(rawData);
+    if(!data->ftmwCfg.setFids(rawData))
+    {
+        setErrorString(ftmwConfig().errorString());
+        return false;
+    }
+
+    return true;
 }
 
-void Experiment::addFids(const QByteArray newData)
+bool Experiment::addFids(const QByteArray newData)
 {
-    data->ftmwCfg.addFids(newData);
+    if(!data->ftmwCfg.addFids(newData))
+    {
+        setErrorString(ftmwConfig().errorString());
+        return false;
+    }
+
+    return true;
 }
 
 void Experiment::setErrorString(const QString str)
@@ -164,5 +176,10 @@ void Experiment::setHardwareFailed()
 void Experiment::incrementFtmw()
 {
     data->ftmwCfg.increment();
+}
+
+void Experiment::save()
+{
+    data->ftmwCfg.finishAcquisition();
 }
 

@@ -42,6 +42,7 @@ private:
     QTime d_testTime;
 
     void checkComplete();
+    void finalSave();
 
 
 };

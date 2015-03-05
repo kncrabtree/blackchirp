@@ -1,5 +1,6 @@
 #include "ftmwconfig.h"
 
+
 FtmwConfig::FtmwConfig() : data(new FtmwConfigData)
 {
 
@@ -121,13 +122,26 @@ QString FtmwConfig::errorString() const
     return data->errorString;
 }
 
+void FtmwConfig::finishAcquisition() const
+{
+#ifdef BC_CUDA
+    GpuAvg::acquisitionComplete();
+#endif
+}
+
 bool FtmwConfig::prepareForAcquisition()
 {
     Fid f(scopeConfig().xIncr,loFreq(),QVector<qint64>(0),sideband(),scopeConfig().yMult,1);
     data->fidTemplate = f;
 
 #ifdef BC_CUDA
-
+    int error = GpuAvg::initializeAcquisition(scopeConfig().bytesPerPoint,scopeConfig().recordLength*numFrames());
+    if(error)
+    {
+        data->errorString = QString::number(error);
+        return false;
+    }
+    data->rawData = QVector<qint64>(numFrames()*scopeConfig().recordLength);
 #endif
     return true;
 
@@ -179,12 +193,17 @@ void FtmwConfig::setSideband(const Fid::Sideband sb)
     data->sideband = sb;
 }
 
-void FtmwConfig::setFids(const QByteArray newData)
+bool FtmwConfig::setFids(const QByteArray newData)
 {
 #ifndef BC_CUDA
     data->rawData = parseWaveform(newData);
 #else
-
+    int error = GpuAvg::gpuParseAndAdd(scopeConfig().bytesPerPoint,numFrames()*scopeConfig().recordLength,newData.constData(),data->rawData.data(),(scopeConfig().byteOrder == QDataStream::LittleEndian ? true : false));
+    if(error)
+    {
+        data->errorString = QString::number(error);
+        return false;
+    }
 #endif
 
     if(!data->fidList.isEmpty())
@@ -197,9 +216,10 @@ void FtmwConfig::setFids(const QByteArray newData)
         data->fidList.append(f);
     }
 
+    return true;
 }
 
-void FtmwConfig::addFids(const QByteArray rawData)
+bool FtmwConfig::addFids(const QByteArray rawData)
 {
 #ifndef BC_CUDA
     QVector<qint64> newData = parseWaveform(rawData);
@@ -207,7 +227,12 @@ void FtmwConfig::addFids(const QByteArray rawData)
     for(int i=0; i<data->rawData.size(); i++)
         data->rawData[i] += newData.at(i);
 #else
-
+    int error = GpuAvg::gpuParseAndAdd(scopeConfig().bytesPerPoint,numFrames()*scopeConfig().recordLength,rawData.constData(),data->rawData.data(),(scopeConfig().byteOrder == QDataStream::LittleEndian ? true : false));
+    if(error)
+    {
+        data->errorString = QString::number(error);
+        return false;
+    }
 #endif
 
     const qint64 *d = data->rawData.data();
@@ -220,6 +245,8 @@ void FtmwConfig::addFids(const QByteArray rawData)
         f.copyAdd(d,i*scopeConfig().recordLength);
         data->fidList.append(f);
     }
+
+    return true;
 }
 
 void FtmwConfig::setScopeConfig(const FtmwConfig::ScopeConfig &other)

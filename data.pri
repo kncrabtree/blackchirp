@@ -2,7 +2,7 @@ SOURCES += loghandler.cpp \
     $$PWD/fid.cpp \
     $$PWD/ftworker.cpp \
     $$PWD/experiment.cpp \
-    $$PWD/ftmwconfig.cpp
+    $$PWD/ftmwconfig.cpp \
 
 HEADERS += loghandler.h \
     $$PWD/fid.h \
@@ -10,4 +10,6 @@ HEADERS += loghandler.h \
     $$PWD/experiment.h \
     $$PWD/ftmwconfig.h
 
-OTHER_FILES += $$PWD/gpukernels.cu
+gpu-cuda {
+    OTHER_FILES += $$PWD/gpufunctions.cu
+}

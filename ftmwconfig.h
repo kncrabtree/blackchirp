@@ -7,6 +7,14 @@
 #include <QVariant>
 #include "fid.h"
 
+#ifdef BC_CUDA
+namespace GpuAvg {
+int initializeAcquisition(const int bytesPerPoint, const int numPoints);
+int gpuParseAndAdd(int bytesPerPoint, int numPoints, const char *newDataIn, long long int *sumData, bool littleEndian = true);
+int acquisitionComplete();
+}
+#endif
+
 class FtmwConfigData;
 
 class FtmwConfig
@@ -100,6 +108,7 @@ public:
     int numFrames() const;
     QVector<qint64> parseWaveform(QByteArray b) const;
     QString errorString() const;
+    void finishAcquisition() const;
 
     bool prepareForAcquisition();
     void setEnabled();
@@ -111,8 +120,8 @@ public:
     void setAutoSaveShots(const int shots);
     void setLoFreq(const double f);
     void setSideband(const Fid::Sideband sb);
-    void setFids(const QByteArray newData);
-    void addFids(const QByteArray rawData);
+    bool setFids(const QByteArray newData);
+    bool addFids(const QByteArray rawData);
     void setScopeConfig(const ScopeConfig &other);
 
 
@@ -121,6 +130,7 @@ public:
 
 private:
     QSharedDataPointer<FtmwConfigData> data;
+
 };
 
 class FtmwConfigData : public QSharedData
@@ -144,10 +154,9 @@ public:
     Fid fidTemplate;
     QString errorString;
 
-
-
 };
 
 Q_DECLARE_TYPEINFO(FtmwConfig, Q_MOVABLE_TYPE);
+
 
 #endif // FTMWCONFIG_H

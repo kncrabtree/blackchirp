@@ -38,12 +38,14 @@ public:
     void setDummy();
     void setFtmwConfig(const FtmwConfig cfg);
     void setScopeConfig(const FtmwConfig::ScopeConfig &cfg);
-    void setFids(const QByteArray rawData);
-    void addFids(const QByteArray newData);
+    bool setFids(const QByteArray rawData);
+    bool addFids(const QByteArray newData);
     void setErrorString(const QString str);
 
     void setHardwareFailed();
     void incrementFtmw();
+
+    void save();
 
 private:
     QSharedDataPointer<ExperimentData> data;
