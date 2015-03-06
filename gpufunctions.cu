@@ -175,14 +175,16 @@ int acquisitionComplete()
     return out;
 }
 
-int gpuParseAndAdd(int bytesPerPoint, int numPoints, const char *newDataIn, long long int *sumData, bool littleEndian = true)
+QList<QVector<qint64> > gpuParseAndAdd(int bytesPerPoint, int numFrames, int numPointsPerFrame, const char *newDataIn, bool littleEndian = true)
 {
     //copy new data to device, run kernel, copy sum from device
     //note: in the future, can try streams and stuff
     cudaError_t err;
+    QList<QVector<qint64> > out;
+    int numPoints = numFrames*numPointsPerFrame;
     err = cudaMemcpy(devCharPtr, newDataIn, numPoints*bytesPerPoint*sizeof(char), cudaMemcpyHostToDevice);
     if(err != cudaSuccess)
-        return -1;//QString("Could not copy scope data to GPU. CUDA error message: %1").arg(QString(cudaGetErrorString(err)));
+        return out;//-1;//QString("Could not copy scope data to GPU. CUDA error message: %1").arg(QString(cudaGetErrorString(err)));
 
 
     if(bytesPerPoint == 1)
@@ -192,15 +194,27 @@ int gpuParseAndAdd(int bytesPerPoint, int numPoints, const char *newDataIn, long
 
     err = cudaGetLastError();
     if(err != cudaSuccess)
-        return -2;//QString("Could not parse and add scope data on GPU. CUDA error message: %1").arg(QString(cudaGetErrorString(err)));
+        return out;//-2;//QString("Could not parse and add scope data on GPU. CUDA error message: %1").arg(QString(cudaGetErrorString(err)));
 
     err = cudaMemcpy(hostPinnedSumPtr, devSumPtr, numPoints*sizeof(long long int), cudaMemcpyDeviceToHost);
     if(err != cudaSuccess)
-        return -3;//QString("Could not copy summed data from GPU. CUDA error message: %1").arg(QString(cudaGetErrorString(err)));
+        return out;//-3;//QString("Could not copy summed data from GPU. CUDA error message: %1").arg(QString(cudaGetErrorString(err)));
 
-    memcpy(sumData,hostPinnedSumPtr,numPoints*sizeof(long long int));
+//    memcpy(sumData,hostPinnedSumPtr,numPoints*sizeof(long long int));
+//    for(int i=0;i<numPoints;i++)
+//        sumData[i] = hostPinnedSumPtr[i];
 
-    return 0;//QString();
+    for(int i=0;i<numFrames;i++)
+    {
+        QVector<qint64> d(numPointsPerFrame);
+        for(int j=0;j<numPointsPerFrame;j++)
+            d[j] = hostPinnedSumPtr[i*numPointsPerFrame+j];
+        out.append(d);
+    }
+
+    return out;
+
+//    return 0;//QString();
 
 }
 

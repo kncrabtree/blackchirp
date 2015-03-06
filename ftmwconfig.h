@@ -10,7 +10,7 @@
 #ifdef BC_CUDA
 namespace GpuAvg {
 QString initializeAcquisition(const int bytesPerPoint, const int numPoints);
-int gpuParseAndAdd(int bytesPerPoint, int numPoints, const char *newDataIn, long long int *sumData, bool littleEndian = true);
+QList<QVector<qint64> > gpuParseAndAdd(int bytesPerPoint, int numFrames, int numPointsPerFrame, const char *newDataIn, bool littleEndian = true);
 int acquisitionComplete();
 }
 #endif
@@ -150,7 +150,6 @@ public:
     QList<Fid> fidList;
 
     FtmwConfig::ScopeConfig scopeConfig;
-    QVector<qint64> rawData;
     Fid fidTemplate;
     QString errorString;
 
