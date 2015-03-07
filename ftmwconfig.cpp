@@ -145,7 +145,7 @@ bool FtmwConfig::prepareForAcquisition()
     data->fidTemplate = f;
 
 #ifdef BC_CUDA
-    QString error = GpuAvg::initializeAcquisition(scopeConfig().bytesPerPoint,scopeConfig().recordLength*numFrames());
+    QString error = GpuAvg::initializeAcquisition(scopeConfig().bytesPerPoint,scopeConfig().recordLength*numFrames(),numFrames());
     if(!error.isEmpty())
     {
         data->errorString = error;

@@ -5,20 +5,6 @@
 
 extern "C"
 
-__global__ void vector_add(int n, long long *a, long long *b, long long *c)
-{
-    int ii = blockIdx.x*blockDim.x + threadIdx.x;
-    if(ii < n)
-        c[ii] = a[ii] + b[ii];
-}
-
-__global__ void addInPlace(int n, long long *oldData, long long *newData)
-{
-    int ii = blockIdx.x*blockDim.x + threadIdx.x;
-    if(ii < n)
-        oldData[ii] += newData[ii];
-}
-
 __global__ void initMem64_kernel(int n, long long *ptr)
 {
     int i = blockIdx.x*blockDim.x + threadIdx.x;
@@ -26,16 +12,16 @@ __global__ void initMem64_kernel(int n, long long *ptr)
         ptr[i] = 0;
 }
 
-__global__ void parseAdd_kernel1byte(int numPoints, char *devNewData, long long int *devSum)
+__global__ void parseAdd_kernel1byte(int numPoints, char *devNewData, long long int *devSum, int offset)
 {
-    int i = blockIdx.x*blockDim.x + threadIdx.x;
+    int i = offset + blockIdx.x*blockDim.x + threadIdx.x;
     if(i < numPoints)
         devSum[i] += (long long int)devNewData[i];
 }
 
-__global__ void parseAdd_kernel2byte(int numPoints, char *devNewData, long long int *devSum, bool le)
+__global__ void parseAdd_kernel2byte(int numPoints, char *devNewData, long long int *devSum, int offset, bool le)
 {
-    int i = blockIdx.x*blockDim.x + threadIdx.x;
+    int i = offset + blockIdx.x*blockDim.x + threadIdx.x;
     if(i < numPoints)
     {
         if(le)
@@ -58,7 +44,7 @@ char *devCharPtr = nullptr;
 char *hostPinnedCharPtr = nullptr;
 long long int *devSumPtr = nullptr;
 long long int *hostPinnedSumPtr = nullptr;
-
+QList<cudaStream_t> streamList;
 
 cudaError_t gpuFree(void *ptr, bool host = false)
 {
@@ -79,12 +65,43 @@ cudaError_t gpuMalloc(void *ptr, size_t size)
     return cudaMalloc(&ptr,size);
 }
 
-QString initializeAcquisition(const int bytesPerPoint, const int numPoints)
+void freeStreamList()
+{
+    while(!streamList.isEmpty())
+        cudaStreamDestroy(streamList.takeFirst());
+}
+
+cudaError_t makeStreamList(const int numStreams)
+{
+    bool success = true;
+    cudaError_t err;
+    for(int i=0;i<numStreams;i++)
+    {
+        cudaStream_t str;
+        err = cudaStreamCreate(&str);
+        Q_ASSERT(err == cudaSuccess);
+        if(err != cudaSuccess)
+        {
+            success = false;
+            break;
+        }
+        else
+            streamList.append(str);
+    }
+
+    if(!success)
+        freeStreamList();
+
+    return err;
+}
+
+QString initializeAcquisition(const int bytesPerPoint, const int numPoints, const int numFrames)
 {
     cudaError_t err;
     if(devSumPtr != nullptr)
     {
         err = gpuFree(devSumPtr);
+        Q_ASSERT(err == cudaSuccess);
         devSumPtr = nullptr;
         if(err != cudaSuccess)
             return QString("Could not free GPU memory for 64 bit data. CUDA error message: %1").arg(QString(cudaGetErrorString(err)));
@@ -100,6 +117,7 @@ QString initializeAcquisition(const int bytesPerPoint, const int numPoints)
 
     initMem64_kernel<<<(numPoints+255)/256, 256>>>(numPoints,devSumPtr);
     err = cudaGetLastError();
+    Q_ASSERT(err == cudaSuccess);
     if(err != cudaSuccess)
     {
         gpuFree(devSumPtr);
@@ -110,6 +128,7 @@ QString initializeAcquisition(const int bytesPerPoint, const int numPoints)
     if(hostPinnedSumPtr != nullptr)
     {
         err = cudaFreeHost(hostPinnedSumPtr);
+        Q_ASSERT(err == cudaSuccess);
         if(err != cudaSuccess)
         {
             gpuFree(devSumPtr);
@@ -119,6 +138,7 @@ QString initializeAcquisition(const int bytesPerPoint, const int numPoints)
     }
 
     err = cudaMallocHost(&hostPinnedSumPtr,numPoints*sizeof(long long int));
+    Q_ASSERT(err == cudaSuccess);
     if(err != cudaSuccess)
     {
         if(hostPinnedSumPtr != nullptr)
@@ -131,6 +151,7 @@ QString initializeAcquisition(const int bytesPerPoint, const int numPoints)
     if(devCharPtr != nullptr)
     {
         err = gpuFree(devCharPtr);
+        Q_ASSERT(err == cudaSuccess);
         if(err != cudaSuccess)
         {
             gpuFree(devSumPtr);
@@ -142,6 +163,7 @@ QString initializeAcquisition(const int bytesPerPoint, const int numPoints)
     }
 
     err = cudaMalloc(&devCharPtr,numPoints*bytesPerPoint*sizeof(char));
+    Q_ASSERT(err == cudaSuccess);
     if(err != cudaSuccess)
     {
         if(devCharPtr != nullptr)
@@ -156,6 +178,7 @@ QString initializeAcquisition(const int bytesPerPoint, const int numPoints)
     if(hostPinnedCharPtr != nullptr)
     {
         err = cudaFreeHost(hostPinnedCharPtr);
+        Q_ASSERT(err == cudaSuccess);
         if(err != cudaSuccess)
         {
             gpuFree(devSumPtr);
@@ -169,6 +192,7 @@ QString initializeAcquisition(const int bytesPerPoint, const int numPoints)
     }
 
     err = cudaMallocHost(&hostPinnedCharPtr,numPoints*sizeof(long long int));
+    Q_ASSERT(err == cudaSuccess);
     if(err != cudaSuccess)
     {
         if(hostPinnedCharPtr != nullptr)
@@ -181,6 +205,22 @@ QString initializeAcquisition(const int bytesPerPoint, const int numPoints)
         hostPinnedSumPtr = nullptr;
         return QString("Could not allocate pinned 8 bit host memory for sum. CUDA error message: %1").arg(cudaGetErrorString(err));
     }
+
+    err = makeStreamList(numFrames);
+    Q_ASSERT(err == cudaSuccess);
+    if(err != cudaSuccess)
+    {
+        gpuFree(devSumPtr);
+        devSumPtr = nullptr;
+        gpuFree(devCharPtr);
+        devCharPtr = nullptr;
+        gpuFree(hostPinnedSumPtr,true);
+        hostPinnedSumPtr = nullptr;
+        gpuFree(hostPinnedCharPtr,true);
+        hostPinnedCharPtr = nullptr;
+        return QString("Could not create CUDA streams for GPU averaging. CUDA error message: %1").arg(cudaGetErrorString(err));
+    }
+
 
     return QString();
 
@@ -217,47 +257,46 @@ int acquisitionComplete()
     hostPinnedCharPtr = nullptr;
     hostPinnedSumPtr = nullptr;
 
+    freeStreamList();
+
     return out;
 }
 
 QList<QVector<qint64> > gpuParseAndAdd(int bytesPerPoint, int numFrames, int numPointsPerFrame, const char *newDataIn, bool littleEndian = true)
 {
-    //copy new data to device, run kernel, copy sum from device
-    //note: in the future, can try streams and stuff
-    cudaError_t err;
     QList<QVector<qint64> > out;
     int numPoints = numFrames*numPointsPerFrame;
 
+    //move new data to pinned memory for efficiency and for stream usage
     memcpy(hostPinnedCharPtr,newDataIn,numPoints*bytesPerPoint*sizeof(char));
 
-    err = cudaMemcpy(devCharPtr, hostPinnedCharPtr, numPoints*bytesPerPoint*sizeof(char), cudaMemcpyHostToDevice);
-    if(err != cudaSuccess)
-        return out;//-1;//QString("Could not copy scope data to GPU. CUDA error message: %1").arg(QString(cudaGetErrorString(err)));
+    Q_ASSERT(numFrames == streamList.size());
+    //launch asynchronous streams
+    for(int i=0;i<streamList.size();i++)
+    {
+        cudaMemcpyAsync(&devCharPtr[i*numPointsPerFrame*bytesPerPoint], &hostPinnedCharPtr[i*numPointsPerFrame*bytesPerPoint], numPointsPerFrame*bytesPerPoint*sizeof(char), cudaMemcpyHostToDevice,streamList[i]);
+        if(bytesPerPoint == 1)
+            parseAdd_kernel1byte<<<(numPointsPerFrame+1023)/1024, 1024, 0, streamList[i]>>>(numPoints,devCharPtr,devSumPtr,i*numPointsPerFrame);
+        else
+            parseAdd_kernel2byte<<<(numPointsPerFrame+1023)/1024, 1024, 0, streamList[i]>>>(numPoints,devCharPtr,devSumPtr,i*numPointsPerFrame,littleEndian);
+        cudaMemcpyAsync(&hostPinnedSumPtr[i*numPointsPerFrame], &devSumPtr[i*numPointsPerFrame], numPointsPerFrame*sizeof(long long int), cudaMemcpyDeviceToHost,streamList[i]);
+    }
 
-
-    if(bytesPerPoint == 1)
-        parseAdd_kernel1byte<<<(numPoints+1023)/1024, 1024>>>(numPoints,devCharPtr,devSumPtr);
-    else
-        parseAdd_kernel2byte<<<(numPoints+1023)/1024, 1024>>>(numPoints,devCharPtr,devSumPtr,littleEndian);
-
-    err = cudaGetLastError();
-    if(err != cudaSuccess)
-        return out;//-2;//QString("Could not parse and add scope data on GPU. CUDA error message: %1").arg(QString(cudaGetErrorString(err)));
-
-    err = cudaMemcpy(hostPinnedSumPtr, devSumPtr, numPoints*sizeof(long long int), cudaMemcpyDeviceToHost);
-    if(err != cudaSuccess)
-        return out;//-3;//QString("Could not copy summed data from GPU. CUDA error message: %1").arg(QString(cudaGetErrorString(err)));
-
+    //while kernels and memory transfers are running, allocate memory for result data
     for(int i=0;i<numFrames;i++)
     {
         QVector<qint64> d(numPointsPerFrame);
-        memcpy(d.data(),&hostPinnedSumPtr[i*numPointsPerFrame],numPointsPerFrame*sizeof(qint64));
         out.append(d);
     }
 
-    return out;
 
-//    return 0;//QString();
+    //wait for each stream to complete, then copy data from pinned memory into output vectors
+    for(int i=0; i<streamList.size();i++)
+    {
+        cudaStreamSynchronize(streamList[i]);
+        memcpy(out[i].data(),&hostPinnedSumPtr[i*numPointsPerFrame],numPointsPerFrame*sizeof(qint64));
+    }
+    return out;
 
 }
 

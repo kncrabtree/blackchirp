@@ -730,7 +730,7 @@ QByteArray Oscilloscope::makeSimulatedData()
             }
             else
             {
-                int noise = 0;//(rand()%4096)-2048;
+                int noise = (rand()%4096)-2048;
                 qint16 n = qBound(-32768,((int)(dat/d_configuration.yMult)+noise),32767);
 //                str << (qint16)n;
                 qint8 byte1;

@@ -9,7 +9,7 @@
 
 #ifdef BC_CUDA
 namespace GpuAvg {
-QString initializeAcquisition(const int bytesPerPoint, const int numPoints);
+QString initializeAcquisition(const int bytesPerPoint, const int numPoints, const int numFrames);
 QList<QVector<qint64> > gpuParseAndAdd(int bytesPerPoint, int numFrames, int numPointsPerFrame, const char *newDataIn, bool littleEndian = true);
 int acquisitionComplete();
 }
