@@ -31,8 +31,6 @@ void AcquisitionManager::beginExperiment(Experiment exp)
 
 void AcquisitionManager::processScopeShot(const QByteArray b)
 {
-    static int total = 0;
-    static int count = 0;
     if(d_state == Acquiring && d_currentExperiment.ftmwConfig().isEnabled())
     {
         d_testTime.restart();
@@ -42,13 +40,6 @@ void AcquisitionManager::processScopeShot(const QByteArray b)
         else
             success = d_currentExperiment.addFids(b);
 
-        int t = d_testTime.elapsed();
-        total += t;
-        count++;
-        emit logMessage(QString("Elapsed time: %1 ms, avg: %2").arg(t).arg(total/count));
-
-        emit newFidList(d_currentExperiment.ftmwConfig().fidList());
-
         if(!success)
         {
             emit logMessage(d_currentExperiment.errorString(),LogHandler::Error);
@@ -56,9 +47,11 @@ void AcquisitionManager::processScopeShot(const QByteArray b)
             return;
         }
 
+
         d_currentExperiment.incrementFtmw();
-	   emit ftmwShotAcquired(d_currentExperiment.ftmwConfig().completedShots());
-         //process shot, etc...
+        emit newFidList(d_currentExperiment.ftmwConfig().fidList());
+        emit ftmwShotAcquired(d_currentExperiment.ftmwConfig().completedShots());
+
         checkComplete();
     }
 }

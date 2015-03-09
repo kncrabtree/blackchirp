@@ -180,6 +180,5 @@ void Experiment::incrementFtmw()
 
 void Experiment::save()
 {
-    data->ftmwCfg.finishAcquisition();
 }
 

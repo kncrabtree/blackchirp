@@ -8,11 +8,7 @@
 #include "fid.h"
 
 #ifdef BC_CUDA
-namespace GpuAvg {
-QString initializeAcquisition(const int bytesPerPoint, const int numPoints, const int numFrames);
-QList<QVector<qint64> > gpuParseAndAdd(int bytesPerPoint, int numFrames, int numPointsPerFrame, const char *newDataIn, bool littleEndian = true);
-int acquisitionComplete();
-}
+#include "gpuaverager.h"
 #endif
 
 class FtmwConfigData;
@@ -108,7 +104,6 @@ public:
     int numFrames() const;
     QList<Fid> parseWaveform(QByteArray b) const;
     QString errorString() const;
-    void finishAcquisition() const;
 
     bool prepareForAcquisition();
     void setEnabled();
@@ -152,6 +147,10 @@ public:
     FtmwConfig::ScopeConfig scopeConfig;
     Fid fidTemplate;
     QString errorString;
+
+#ifdef BC_CUDA
+    GpuAverager gpuAvg;
+#endif
 
 };
 

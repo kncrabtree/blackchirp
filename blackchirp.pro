@@ -21,7 +21,7 @@ gpu-cuda {
 DEFINES += BC_CUDA
 
 # Cuda sources
-CUDA_SOURCES += gpufunctions.cu
+CUDA_SOURCES += gpuaverager.cu
 
 # Path to cuda toolkit install
 CUDA_DIR      = /usr/local/cuda-6.5

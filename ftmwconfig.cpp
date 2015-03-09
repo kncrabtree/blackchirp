@@ -132,23 +132,16 @@ QString FtmwConfig::errorString() const
     return data->errorString;
 }
 
-void FtmwConfig::finishAcquisition() const
-{
-#ifdef BC_CUDA
-    GpuAvg::acquisitionComplete();
-#endif
-}
-
 bool FtmwConfig::prepareForAcquisition()
 {
     Fid f(scopeConfig().xIncr,loFreq(),QVector<qint64>(0),sideband(),scopeConfig().yMult,1);
     data->fidTemplate = f;
 
 #ifdef BC_CUDA
-    QString error = GpuAvg::initializeAcquisition(scopeConfig().bytesPerPoint,scopeConfig().recordLength*numFrames(),numFrames());
-    if(!error.isEmpty())
+    bool success = data->gpuAvg.initialize(scopeConfig().recordLength,numFrames(),scopeConfig().bytesPerPoint,scopeConfig().byteOrder);
+    if(!success)
     {
-        data->errorString = error;
+        data->errorString = data->gpuAvg.getErrorString();
         return false;
     }
 #endif
@@ -207,12 +200,15 @@ bool FtmwConfig::setFids(const QByteArray newData)
 #ifndef BC_CUDA
     data->fidList = parseWaveform(newData);
 #else
-    QList<QVector<qint64> > l = GpuAvg::gpuParseAndAdd(scopeConfig().bytesPerPoint,numFrames(),scopeConfig().recordLength,newData.constData(),(scopeConfig().byteOrder == QDataStream::LittleEndian ? true : false));
-//    if(error)
-//    {
-//        data->errorString = QString::number(error);
-//        return false;
-//    }
+    QList<QVector<qint64> > l = data->gpuAvg.parseAndAdd(newData.constData());
+
+    Q_ASSERT(!l.isEmpty());
+    if(l.isEmpty())
+    {
+        data->errorString = data->gpuAvg.getErrorString();
+        return false;
+    }
+
     if(!data->fidList.isEmpty())
         data->fidList.clear();
 
@@ -235,12 +231,14 @@ bool FtmwConfig::addFids(const QByteArray rawData)
         newList[i] += data->fidList.at(i);
     data->fidList = newList;
 #else
-    QList<QVector<qint64> >  l = GpuAvg::gpuParseAndAdd(scopeConfig().bytesPerPoint,numFrames(),scopeConfig().recordLength,rawData.constData(),(scopeConfig().byteOrder == QDataStream::LittleEndian ? true : false));
-//    if(error)
-//    {
-//        data->errorString = QString::number(error);
-//        return false;
-//    }
+    QList<QVector<qint64> >  l =data->gpuAvg.parseAndAdd(rawData.constData());
+
+    Q_ASSERT(!l.isEmpty());
+    if(l.isEmpty())
+    {
+        data->errorString = data->gpuAvg.getErrorString();
+        return false;
+    }
 
     for(int i=0; i<numFrames(); i++)
     {
@@ -250,17 +248,6 @@ bool FtmwConfig::addFids(const QByteArray rawData)
         f.setShots(completedShots()+1);
         data->fidList.append(f);
     }
-
-//    const qint64 *d = data->rawData.data();
-//    for(int i=0; i<data->fidList.size(); i++)
-//    {
-//        data->fidList.removeFirst();
-//        Fid f = fidTemplate();
-//        f.setShots(completedShots());
-//        f.setData(QVector<qint64>(scopeConfig().recordLength));
-//        f.copyAdd(d,i*scopeConfig().recordLength);
-//        data->fidList.append(f);
-//    }
 
 #endif
     return true;
