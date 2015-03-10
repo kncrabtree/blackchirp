@@ -699,10 +699,8 @@ QByteArray Oscilloscope::scopeQueryCmd(QString query)
 
 QByteArray Oscilloscope::makeSimulatedData()
 {
-    d_testTime.restart();
+//    d_testTime.restart();
     QByteArray out;
-//    QDataStream str(&out,QIODevice::WriteOnly);
-//    str.setByteOrder(d_configuration.byteOrder);
 
     int frames = 1;
     if(d_configuration.fastFrameEnabled && !d_configuration.summaryFrame)
@@ -725,14 +723,12 @@ QByteArray Oscilloscope::makeSimulatedData()
             {
                 int noise = (rand()%32)-16;
                 qint8 n = qBound(-128,((int)(dat/d_configuration.yMult)+noise),127);
-//                str << (qint8)n;
                 out[d_simulatedData.size()*i + j] = n;
             }
             else
             {
                 int noise = (rand()%4096)-2048;
                 qint16 n = qBound(-32768,((int)(dat/d_configuration.yMult)+noise),32767);
-//                str << (qint16)n;
                 qint8 byte1;
                 qint8 byte2;
                 if(d_configuration.byteOrder == QDataStream::LittleEndian)
@@ -750,7 +746,7 @@ QByteArray Oscilloscope::makeSimulatedData()
             }
         }
     }
-    emit logMessage(QString("Simulate: %1 ms").arg(d_testTime.elapsed()));
+//    emit logMessage(QString("Simulate: %1 ms").arg(d_testTime.elapsed()));
     return out;
 }
 
