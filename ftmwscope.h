@@ -1,5 +1,5 @@
-#ifndef OSCILLOSCOPE_H
-#define OSCILLOSCOPE_H
+#ifndef FTMWSCOPE_H
+#define FTMWSCOPE_H
 
 #include "tcpinstrument.h"
 #include <QVector>
@@ -12,11 +12,11 @@
 #include "fid.h"
 #include <QTimer>
 
-class Oscilloscope : public TcpInstrument
+class FtmwScope : public TcpInstrument
 {
     Q_OBJECT
 public:
-    explicit Oscilloscope(QObject *parent = 0);
+    explicit FtmwScope(QObject *parent = 0);
 
     enum ResponseType {
         RawData,
@@ -60,4 +60,4 @@ private:
 
 };
 
-#endif // OSCILLOSCOPE_H
+#endif // FTMWSCOPE_H

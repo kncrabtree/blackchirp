@@ -1,10 +1,10 @@
-#include "oscilloscope.h"
+#include "ftmwscope.h"
 #include <QFile>
 #include <QDebug>
 #include <math.h>
 #include <QTimer>
 
-Oscilloscope::Oscilloscope(QObject *parent) :
+FtmwScope::FtmwScope(QObject *parent) :
     TcpInstrument(QString("ftmwscope"),QString("FtmwOscilloscope"),parent), d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {
@@ -14,7 +14,7 @@ Oscilloscope::Oscilloscope(QObject *parent) :
 
 }
 
-void Oscilloscope::initialize()
+void FtmwScope::initialize()
 {
     if(!d_virtual)
     {
@@ -48,14 +48,14 @@ void Oscilloscope::initialize()
 			 d_simulatedData.append(0.0);
 	   }
 
-	   connect(&d_simulatedTimer,&QTimer::timeout,this,&Oscilloscope::queryScope);
+       connect(&d_simulatedTimer,&QTimer::timeout,this,&FtmwScope::queryScope);
 
     }
     testConnection();
 }
 
 
-bool Oscilloscope::testConnection()
+bool FtmwScope::testConnection()
 {
     if(d_virtual)
     {
@@ -94,7 +94,7 @@ bool Oscilloscope::testConnection()
     return true;
 }
 
-Experiment Oscilloscope::prepareForExperiment(Experiment exp)
+Experiment FtmwScope::prepareForExperiment(Experiment exp)
 {
     //attempt to apply settings. return invalid configuration if anything fails.
     //this is a lot of really tedious code.
@@ -118,7 +118,7 @@ Experiment Oscilloscope::prepareForExperiment(Experiment exp)
         return exp;
     }
 
-    disconnect(d_socket,&QTcpSocket::readyRead,this,&Oscilloscope::readWaveform);
+    disconnect(d_socket,&QTcpSocket::readyRead,this,&FtmwScope::readWaveform);
 
     //disable ugly headers
     if(!writeCmd(QString(":HEADER OFF\n")))
@@ -595,7 +595,7 @@ Experiment Oscilloscope::prepareForExperiment(Experiment exp)
 
 }
 
-void Oscilloscope::beginAcquisition()
+void FtmwScope::beginAcquisition()
 {
     if(d_virtual)
     {
@@ -612,11 +612,11 @@ void Oscilloscope::beginAcquisition()
     d_headerNumBytes = 0;
     d_waveformBytes = 0;
     d_lastTrigger = QDateTime::currentDateTime();
-    connect(&d_scopeTimeout,&QTimer::timeout,this,&Oscilloscope::wakeUp,Qt::UniqueConnection);
-    connect(d_socket,&QTcpSocket::readyRead,this,&Oscilloscope::readWaveform,Qt::UniqueConnection);
+    connect(&d_scopeTimeout,&QTimer::timeout,this,&FtmwScope::wakeUp,Qt::UniqueConnection);
+    connect(d_socket,&QTcpSocket::readyRead,this,&FtmwScope::readWaveform,Qt::UniqueConnection);
 }
 
-void Oscilloscope::queryScope()
+void FtmwScope::queryScope()
 {
     if(d_virtual)
     {
@@ -660,7 +660,7 @@ void Oscilloscope::queryScope()
 
 }
 
-void Oscilloscope::wakeUp()
+void FtmwScope::wakeUp()
 {
     if(d_virtual)
         return;
@@ -678,7 +678,7 @@ void Oscilloscope::wakeUp()
     beginAcquisition();
 }
 
-QByteArray Oscilloscope::scopeQueryCmd(QString query)
+QByteArray FtmwScope::scopeQueryCmd(QString query)
 {
     if(d_virtual)
         return QByteArray();
@@ -697,7 +697,7 @@ QByteArray Oscilloscope::scopeQueryCmd(QString query)
 
 }
 
-QByteArray Oscilloscope::makeSimulatedData()
+QByteArray FtmwScope::makeSimulatedData()
 {
 //    d_testTime.restart();
     QByteArray out;
@@ -751,7 +751,7 @@ QByteArray Oscilloscope::makeSimulatedData()
 }
 
 
-void Oscilloscope::readWaveform()
+void FtmwScope::readWaveform()
 {
     if(d_virtual)
         return;
@@ -859,7 +859,7 @@ void Oscilloscope::readWaveform()
     }
 }
 
-void Oscilloscope::endAcquisition()
+void FtmwScope::endAcquisition()
 {
     if(d_virtual)
     {
@@ -868,8 +868,8 @@ void Oscilloscope::endAcquisition()
     }
 
     //stop parsing waveforms
-    disconnect(d_socket,&QTcpSocket::readyRead,this,&Oscilloscope::readWaveform);
-    disconnect(&d_scopeTimeout,&QTimer::timeout,this,&Oscilloscope::wakeUp);
+    disconnect(d_socket,&QTcpSocket::readyRead,this,&FtmwScope::readWaveform);
+    disconnect(&d_scopeTimeout,&QTimer::timeout,this,&FtmwScope::wakeUp);
 
     if(d_socket->bytesAvailable())
         d_socket->readAll();

@@ -3,11 +3,11 @@ HEADERS += \
     $$PWD/hardwareobject.h \
     $$PWD/tcpinstrument.h \
     $$PWD/rs232instrument.h \
-    $$PWD/oscilloscope.h
+    $$PWD/ftmwscope.h
 
 SOURCES += \
     $$PWD/hardwaremanager.cpp \
     $$PWD/hardwareobject.cpp \
     $$PWD/tcpinstrument.cpp \
     $$PWD/rs232instrument.cpp \
-    $$PWD/oscilloscope.cpp
+    $$PWD/ftmwscope.cpp

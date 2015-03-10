@@ -1,5 +1,5 @@
 #include "acquisitionmanager.h"
-#include "oscilloscope.h"
+#include "ftmwscope.h"
 
 AcquisitionManager::AcquisitionManager(QObject *parent) : QObject(parent), d_state(Idle)
 {

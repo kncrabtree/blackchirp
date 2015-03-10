@@ -6,7 +6,7 @@
 #include <QThread>
 #include "hardwareobject.h"
 #include "loghandler.h"
-#include "oscilloscope.h"
+#include "ftmwscope.h"
 #include "experiment.h"
 
 class HardwareManager : public QObject
@@ -59,7 +59,7 @@ private:
     void checkStatus();
 
     QList<QPair<HardwareObject*,QThread*> > d_hardwareList;
-    Oscilloscope *p_scope;
+    FtmwScope *p_scope;
 
 };
 

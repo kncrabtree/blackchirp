@@ -19,8 +19,8 @@ HardwareManager::~HardwareManager()
 
 void HardwareManager::initialize()
 {    
-    p_scope = new Oscilloscope();
-    connect(p_scope,&Oscilloscope::shotAcquired,this,&HardwareManager::scopeShotAcquired);
+    p_scope = new FtmwScope();
+    connect(p_scope,&FtmwScope::shotAcquired,this,&HardwareManager::scopeShotAcquired);
 
     QThread *scopeThread = new QThread(this);
     d_hardwareList.append(qMakePair(p_scope,scopeThread));
