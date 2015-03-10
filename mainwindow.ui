@@ -149,6 +149,13 @@
      <height>18</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuSettings">
+    <property name="title">
+     <string>Settings</string>
+    </property>
+    <addaction name="actionCommunication"/>
+   </widget>
+   <addaction name="menuSettings"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -181,6 +188,11 @@
   <action name="actionAbort">
    <property name="text">
     <string>Abort</string>
+   </property>
+  </action>
+  <action name="actionCommunication">
+   <property name="text">
+    <string>Communication</string>
    </property>
   </action>
  </widget>

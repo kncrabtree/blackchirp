@@ -42,6 +42,7 @@ public slots:
     void hardwareInitialized(bool success);
     void pauseUi();
     void resumeUi();
+    void launchCommunicationDialog();
 
 private:
     Ui::MainWindow *ui;

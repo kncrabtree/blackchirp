@@ -54,6 +54,8 @@ public slots:
 
     void initializeExperiment(Experiment exp);
 
+    void testObjectConnection(const QString type, const QString key);
+
 private:
     QHash<QString,bool> d_status;
     void checkStatus();

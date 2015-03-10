@@ -158,6 +158,21 @@ void HardwareManager::initializeExperiment(Experiment exp)
 
 }
 
+void HardwareManager::testObjectConnection(const QString type, const QString key)
+{
+    Q_UNUSED(type)
+    HardwareObject *obj = nullptr;
+    for(int i=0; i<d_hardwareList.size();i++)
+    {
+        if(d_hardwareList.at(i).first->key() == key)
+            obj = d_hardwareList.at(i).first;
+    }
+    if(obj == nullptr)
+        emit testComplete(key,false,QString("Device not found!"));
+    else
+        QMetaObject::invokeMethod(obj,"testConnection");
+}
+
 void HardwareManager::checkStatus()
 {
     //gotta wait until all instruments have responded

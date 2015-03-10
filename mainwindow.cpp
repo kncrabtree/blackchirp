@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "communicationdialog.h"
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -64,6 +65,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionStart_Experiment,&QAction::triggered,this,&MainWindow::startExperiment);
     connect(ui->actionPause,&QAction::triggered,this,&MainWindow::pauseUi);
     connect(ui->actionResume,&QAction::triggered,this,&MainWindow::resumeUi);
+    connect(ui->actionCommunication,&QAction::triggered,this,&MainWindow::launchCommunicationDialog);
 
     configureUi(Idle);
 }
@@ -159,6 +161,15 @@ void MainWindow::resumeUi()
     configureUi(Acquiring);
 }
 
+void MainWindow::launchCommunicationDialog()
+{
+    CommunicationDialog d(this);
+    connect(&d,&CommunicationDialog::testConnection,p_hwm,&HardwareManager::testObjectConnection);
+    connect(p_hwm,&HardwareManager::testComplete,&d,&CommunicationDialog::testComplete);
+
+    d.exec();
+}
+
 void MainWindow::configureUi(MainWindow::ProgramState s)
 {
     if(!d_hardwareConnected)
@@ -171,24 +182,28 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionPause->setEnabled(false);
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
+        ui->actionCommunication->setEnabled(false);
         break;
     case Disconnected:
         ui->actionAbort->setEnabled(false);
         ui->actionPause->setEnabled(false);
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
+        ui->actionCommunication->setEnabled(true);
         break;
     case Paused:
         ui->actionAbort->setEnabled(true);
         ui->actionPause->setEnabled(false);
         ui->actionResume->setEnabled(true);
         ui->actionStart_Experiment->setEnabled(false);
+        ui->actionCommunication->setEnabled(false);
         break;
     case Acquiring:
         ui->actionAbort->setEnabled(true);
         ui->actionPause->setEnabled(true);
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
+        ui->actionCommunication->setEnabled(false);
         break;
     case Idle:
     default:
@@ -196,6 +211,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionPause->setEnabled(false);
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(true);
+        ui->actionCommunication->setEnabled(true);
         break;
     }
 
