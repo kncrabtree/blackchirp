@@ -123,7 +123,7 @@ void FtPlot::filterData()
     double firstPixel = 0.0;
     double lastPixel = canvas()->width();
     QwtScaleMap map = canvasMap(QwtPlot::xBottom);
-    double scaleMin = map.invTransform(firstPixel);
+//    double scaleMin = map.invTransform(firstPixel);
 //    double scaleMax = map.invTransform(lastPixel);
 
     QVector<QPointF> filtered;
