@@ -1,6 +1,7 @@
 #include "ftworker.h"
 #include <gsl/gsl_const.h>
 #include <gsl/gsl_sf.h>
+#include <QTime>
 
 FtWorker::FtWorker(QObject *parent) :
     QObject(parent), real(NULL), work(NULL), d_numPnts(0), d_start(0.0), d_end(0.0)
@@ -33,21 +34,22 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
 
     //prepare storage
     QVector<double> fftData(fid.toVector());
-    QVector<QPointF> spectrum;
-    spectrum.reserve((int)ceil((double)d_numPnts/2.0));
+    QVector<QPointF> spectrum(d_numPnts/2 + 1);
     double spacing = fid.spacing();
     double probe = fid.probeFreq();
     double sign = 1.0;
     if(fid.sideband() == Fid::LowerSideband)
         sign = -1.0;
 
+
     //do the FT. See GNU Scientific Library documentation for details
     gsl_fft_real_transform (fftData.data(), 1, d_numPnts, real, work);
+
 
     //convert fourier coefficients into magnitudes. the coefficients are stored in half-complex format
     //see http://www.gnu.org/software/gsl/manual/html_node/Mixed_002dradix-FFT-routines-for-real-data.html
     //first point is DC; block it!
-    spectrum << QPointF(probe,0.0);
+    spectrum[0] = QPointF(probe,0.0);
 //    spectrum << QPointF(probe,sqrt(fftData.at(0)*fftData.at(0)));
     double max = 0.0;
     int i;
@@ -65,14 +67,15 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
         double coef_mag = sqrt(coef_real*coef_real + coef_imag*coef_imag)/(double)d_numPnts*1000.0;
         max = qMax(max,coef_mag);
 
-        spectrum.append(QPointF(x1,coef_mag));
+        spectrum[i] = QPointF(x1,coef_mag);
     }
     if(i==d_numPnts-i)
-       spectrum.append(QPointF(probe + sign*(double)i/(double)d_numPnts/spacing*1.0e-6,
-                          sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/(double)d_numPnts*1000.0));
+       spectrum[i] = QPointF(probe + sign*(double)i/(double)d_numPnts/spacing*1.0e-6,
+                          sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/(double)d_numPnts*1000.0);
 
     //the signal is used for asynchronous purposes (in UI classes), and the return value for synchronous (in non-UI classes)
     emit ftDone(spectrum,max);
+
     return QPair<QVector<QPointF>,double>(spectrum,max);
 }
 
