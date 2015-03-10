@@ -156,6 +156,8 @@ public:
 
     double minFreq() const;
 
+    double vMult() const;
+
 private:
     QSharedDataPointer<FidData> data; /*!< The internal data storage object */
 };

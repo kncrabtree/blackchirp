@@ -293,8 +293,10 @@ QHash<QString, QPair<QVariant, QString> > FtmwConfig::headerHash() const
         out.insert(prefix+QString("TargetShots"),qMakePair(targetShots(),empty));
     if(type() == TargetTime)
         out.insert(prefix+QString("TargetTime"),qMakePair(targetTime(),empty));
-    out.insert(prefix+QString("LOFrequency"),qMakePair(QString::number(loFreq(),'f',6),QString("MHz")));
+    out.insert(prefix+QString("LoFrequency"),qMakePair(QString::number(loFreq(),'f',6),QString("MHz")));
     out.insert(prefix+QString("Sideband"),qMakePair((int)sideband(),empty));
+    out.insert(prefix+QString("FidVMult"),qMakePair(QString::number(fidTemplate().vMult(),'g',12),QString("V")));
+    out.insert(prefix+QString("CompletedShots"),qMakePair(completedShots(),empty));
 
     FtmwConfig::ScopeConfig sc = scopeConfig();
     out.unite(sc.headerHash());

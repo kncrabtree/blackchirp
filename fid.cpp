@@ -202,3 +202,8 @@ double Fid::minFreq() const
     else
         return 0.0;
 }
+
+double Fid::vMult() const
+{
+    return data->vMult;
+}
