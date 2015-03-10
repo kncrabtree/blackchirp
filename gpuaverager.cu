@@ -84,7 +84,6 @@ bool GpuAverager::initialize(const int pointsPerFrame, const int numFrames, cons
     }
 
     cudaError_t err = cudaMalloc(&p_devSumPtr,d_totalPoints*sizeof(qint64));
-    Q_ASSERT(err == cudaSuccess);
     if(err != cudaSuccess)
     {
         setError(QString("Could not allocate GPU memory for 64 bit data."),err);
@@ -93,7 +92,6 @@ bool GpuAverager::initialize(const int pointsPerFrame, const int numFrames, cons
 
     initMem64_kernel<<<(d_totalPoints+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock>>>(d_totalPoints,p_devSumPtr);
     err = cudaGetLastError();
-    Q_ASSERT(err == cudaSuccess);
     if(err != cudaSuccess)
     {
         setError(QString("Could not initialize GPU memory to 0 for 64 bit data."),err);
@@ -101,7 +99,6 @@ bool GpuAverager::initialize(const int pointsPerFrame, const int numFrames, cons
     }
 
     err = cudaMallocHost(&p_hostPinnedSumPtr,d_totalPoints*sizeof(qint64));
-    Q_ASSERT(err == cudaSuccess);
     if(err != cudaSuccess)
     {
         setError(QString("Could not allocate pinned 64 bit host memory for sum."),err);
@@ -109,7 +106,6 @@ bool GpuAverager::initialize(const int pointsPerFrame, const int numFrames, cons
     }
 
     err = cudaMalloc(&p_devCharPtr,d_totalPoints*d_bytesPerPoint*sizeof(char));
-    Q_ASSERT(err == cudaSuccess);
     if(err != cudaSuccess)
     {
         setError(QString("Could not allocate GPU memory for character data."),err);
@@ -117,7 +113,6 @@ bool GpuAverager::initialize(const int pointsPerFrame, const int numFrames, cons
     }
 
     err = cudaMallocHost(&p_hostPinnedCharPtr,d_totalPoints*d_bytesPerPoint*sizeof(char));
-    Q_ASSERT(err == cudaSuccess);
     if(err != cudaSuccess)
     {
         setError(QString("Could not allocate pinned 8 bit host memory."),err);
@@ -128,7 +123,6 @@ bool GpuAverager::initialize(const int pointsPerFrame, const int numFrames, cons
     {
         cudaStream_t str;
         err = cudaStreamCreate(&str);
-        Q_ASSERT(err == cudaSuccess);
         if(err != cudaSuccess)
         {
             setError(QString("Could not create streams for GPU processing."),err);
@@ -184,7 +178,6 @@ QList<QVector<qint64> > GpuAverager::parseAndAdd(const char *newDataIn)
     }
 
     cudaError_t err = cudaGetLastError();
-    Q_ASSERT(err == cudaSuccess);
     if(err != cudaSuccess)
         setError(QString("An error occured while averaging data on GPU."),err);
 

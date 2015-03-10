@@ -202,7 +202,6 @@ bool FtmwConfig::setFids(const QByteArray newData)
 #else
     QList<QVector<qint64> > l = data->gpuAvg.parseAndAdd(newData.constData());
 
-    Q_ASSERT(!l.isEmpty());
     if(l.isEmpty())
     {
         data->errorString = data->gpuAvg.getErrorString();
@@ -233,7 +232,6 @@ bool FtmwConfig::addFids(const QByteArray rawData)
 #else
     QList<QVector<qint64> >  l =data->gpuAvg.parseAndAdd(rawData.constData());
 
-    Q_ASSERT(!l.isEmpty());
     if(l.isEmpty())
     {
         data->errorString = data->gpuAvg.getErrorString();

@@ -24,7 +24,7 @@ DEFINES += BC_CUDA
 CUDA_SOURCES += gpuaverager.cu
 
 # Path to cuda toolkit install
-CUDA_DIR      = /usr/local/cuda-6.5
+CUDA_DIR      = /usr/local/cuda
 INCLUDEPATH  += $$CUDA_DIR/include -isystem /usr/include/qt5 -isystem /usr/include/qt5/QtCore
 QMAKE_LIBDIR += $$CUDA_DIR/lib64
 CUDA_INC = $$join(INCLUDEPATH,' -I','-I',' ')
