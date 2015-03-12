@@ -55,9 +55,9 @@ public:
             summaryFrame(other.summaryFrame), trigChannel(other.trigChannel), slope(other.slope), bytesPerPoint(other.bytesPerPoint),
             byteOrder(other.byteOrder), vOffset(other.vOffset), yMult(other.yMult), yOff(other.yOff), xIncr(other.xIncr) {}
 
-        QHash<QString,QPair<QVariant,QString> > headerHash() const
+        QMap<QString,QPair<QVariant,QString> > headerMap() const
         {
-            QHash<QString,QPair<QVariant,QString> > out;
+            QMap<QString,QPair<QVariant,QString> > out;
             QString empty = QString("");
             QString prefix = QString("FtmwScope");
             QString scratch;
@@ -121,7 +121,7 @@ public:
 
 
     bool isComplete() const;
-    QHash<QString,QPair<QVariant,QString> > headerHash() const;
+    QMap<QString,QPair<QVariant,QString> > headerMap() const;
 
 private:
     QSharedDataPointer<FtmwConfigData> data;

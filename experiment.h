@@ -21,6 +21,7 @@ public:
     QList<QPair<double,QString> > gasSetpoints() const;
     QList<QPair<double,QString> > pressureSetpoints() const;
     QDateTime startTime() const;
+    int timeDataInterval() const;
     bool isInitialized() const;
     bool isAborted() const;
     bool isDummy() const;
@@ -28,11 +29,13 @@ public:
     bool isComplete() const;
     bool hardwareSuccess() const;
     QString errorString() const;
+    QMap<QString,QList<QVariant>> timeDataMap() const;
 
     void setGasSetpoints(const QList<QPair<double,QString> > list);
     void addGasSetpoint(const double setPoint, const QString name);
     void setPressureSetpoints(const QList<QPair<double,QString> > list);
     void addPressureSetpoint(const double setPoint, const QString name);
+    void setTimeDataInterval(const int t);
     void setInitialized();
     void setAborted();
     void setDummy();
@@ -41,6 +44,8 @@ public:
     bool setFids(const QByteArray rawData);
     bool addFids(const QByteArray newData);
     void setErrorString(const QString str);
+    void addTimeData(const QList<QPair<QString,double>> dataList);
+    void addTimeStamp();
 
     void setHardwareFailed();
     void incrementFtmw();
@@ -54,12 +59,13 @@ private:
 class ExperimentData : public QSharedData
 {
 public:
-    ExperimentData() : number(0), isInitialized(false), isAborted(false), isDummy(false), hardwareSuccess(true) {}
+    ExperimentData() : number(0), timeDataInterval(300), isInitialized(false), isAborted(false), isDummy(false), hardwareSuccess(true) {}
 
     int number;
     QList<QPair<double,QString> > gasSetpoints;
     QList<QPair<double,QString> > pressureSetpoints;
     QDateTime startTime;
+    int timeDataInterval;
     bool isInitialized;
     bool isAborted;
     bool isDummy;
@@ -67,6 +73,7 @@ public:
     QString errorString;
 
     FtmwConfig ftmwCfg;
+    QMap<QString,QList<QVariant>> timeDataMap;
 };
 
 Q_DECLARE_METATYPE(Experiment)

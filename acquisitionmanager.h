@@ -5,6 +5,7 @@
 #include "loghandler.h"
 #include "experiment.h"
 #include <QTime>
+#include <QTimer>
 
 class AcquisitionManager : public QObject
 {
@@ -26,12 +27,15 @@ signals:
     void experimentComplete(Experiment);
     void ftmwShotAcquired(int);
     void beginAcquisition();
+    void timeDataSignal();
 
     void newFidList(QList<Fid>);
 
 public slots:
     void beginExperiment(Experiment exp);
     void processScopeShot(const QByteArray b);
+    void getTimeData();
+    void processTimeData(const QList<QPair<QString,double>> timeDataList);
     void pause();
     void resume();
     void abort();
@@ -40,9 +44,10 @@ private:
     Experiment d_currentExperiment;
     AcquisitionState d_state;
     QTime d_testTime;
+    QTimer d_timeDataTimer;
 
     void checkComplete();
-    void finalSave();
+    void endAcquisition();
 
 
 };

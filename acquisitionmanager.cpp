@@ -23,9 +23,17 @@ void AcquisitionManager::beginExperiment(Experiment exp)
 
     //prepare data files, savemanager, fidmanager, etc
     d_currentExperiment = exp;
+
     d_state = Acquiring;
     emit logMessage(QString("Starting experiment %1.").arg(exp.number()),LogHandler::Highlight);
     emit statusMessage(QString("Acquiring"));
+
+    if(d_currentExperiment.timeDataInterval() > 0)
+    {
+        getTimeData();
+        connect(&d_timeDataTimer,&QTimer::timeout,this,static_cast<void (AcquisitionManager::*)(void)>(&AcquisitionManager::getTimeData),Qt::UniqueConnection);
+        d_timeDataTimer.start(d_currentExperiment.timeDataInterval()*1000);
+    }
     emit beginAcquisition();
 
 }
@@ -63,27 +71,62 @@ void AcquisitionManager::processScopeShot(const QByteArray b)
     }
 }
 
+void AcquisitionManager::getTimeData()
+{
+    if(d_state == Acquiring)
+    {
+        emit timeDataSignal();
+
+        d_currentExperiment.addTimeStamp();
+        emit logMessage(QString("Timestamp: %1").arg(QDateTime::currentDateTime().toString()));
+
+        if(d_currentExperiment.ftmwConfig().isEnabled())
+        {
+            d_currentExperiment.addTimeData(QList<QPair<QString,double>>{ qMakePair(QString("ftmwShots"),static_cast<double>(d_currentExperiment.ftmwConfig().completedShots())) } );
+            emit logMessage(QString("ftmwShots: %1").arg(d_currentExperiment.ftmwConfig().completedShots()));
+        }
+    }
+}
+
+void AcquisitionManager::processTimeData(const QList<QPair<QString, double> > timeDataList)
+{
+    //test for abort conditions here!
+    //
+    //
+
+    emit logMessage(QString("Time data received."));
+    for(int i=0; i<timeDataList.size(); i++)
+        emit logMessage(QString("%1: %2").arg(timeDataList.at(i).first,QString::number(timeDataList.at(i).second)));
+
+    d_currentExperiment.addTimeData(timeDataList);
+}
+
 void AcquisitionManager::pause()
 {
-    d_state = Paused;
-    emit statusMessage(QString("Paused"));
+    if(d_state == Acquiring)
+    {
+        d_state = Paused;
+        emit statusMessage(QString("Paused"));
+    }
 }
 
 void AcquisitionManager::resume()
 {
-    d_state = Acquiring;
-    emit statusMessage(QString("Acquiring"));
+    if(d_state == Paused)
+    {
+        d_state = Acquiring;
+        emit statusMessage(QString("Acquiring"));
+    }
 }
 
 void AcquisitionManager::abort()
 {
-    d_state = Idle;
-    d_currentExperiment.setAborted();
-
-    //save!
-    finalSave();
-
-    emit experimentComplete(d_currentExperiment);
+    if(d_state == Paused || d_state == Acquiring)
+    {
+        d_currentExperiment.setAborted();
+        //save!
+        endAcquisition();
+    }
 }
 
 void AcquisitionManager::checkComplete()
@@ -91,14 +134,18 @@ void AcquisitionManager::checkComplete()
     if(d_state == Acquiring && d_currentExperiment.isComplete())
     {
         //do final save
-        finalSave();
-        d_state = Idle;
-        emit experimentComplete(d_currentExperiment);
+        endAcquisition();
     }
 }
 
-void AcquisitionManager::finalSave()
+void AcquisitionManager::endAcquisition()
 {
+    d_state = Idle;
+
+    disconnect(&d_timeDataTimer,&QTimer::timeout,this,static_cast<void (AcquisitionManager::*)(void)>(&AcquisitionManager::getTimeData));
+    d_timeDataTimer.stop();
     d_currentExperiment.save();
+
+    emit experimentComplete(d_currentExperiment);
 }
 

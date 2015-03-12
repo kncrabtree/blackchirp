@@ -12,8 +12,13 @@ HardwareManager::~HardwareManager()
     while(!d_hardwareList.isEmpty())
     {
         QPair<HardwareObject*,QThread*> p = d_hardwareList.takeFirst();
-        p.second->quit();
-        p.second->wait();
+        if(p.second != nullptr)
+        {
+            p.second->quit();
+            p.second->wait();
+        }
+        else
+            p.first->deleteLater();
     }
 }
 
@@ -78,16 +83,27 @@ void HardwareManager::initialize()
 
     for(int i=0;i<d_hardwareList.size();i++)
     {
-        connect(d_hardwareList.at(i).second,&QThread::started,d_hardwareList.at(i).first,&HardwareObject::initialize);
-        connect(d_hardwareList.at(i).second,&QThread::finished,d_hardwareList.at(i).first,&HardwareObject::deleteLater);
-        connect(d_hardwareList.at(i).first,&HardwareObject::logMessage,this,&HardwareManager::logMessage);
-        connect(d_hardwareList.at(i).first,&HardwareObject::connectionResult,this,&HardwareManager::connectionResult);
-        connect(d_hardwareList.at(i).first,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure);
-        connect(this,&HardwareManager::beginAcquisition,d_hardwareList.at(i).first,&HardwareObject::beginAcquisition);
-	   connect(this,&HardwareManager::endAcquisition,d_hardwareList.at(i).first,&HardwareObject::endAcquisition);
+        QThread *thread = d_hardwareList.at(i).second;
+        HardwareObject *obj = d_hardwareList.at(i).first;
 
-        d_hardwareList.at(i).first->moveToThread(d_hardwareList.at(i).second);
-        d_hardwareList.at(i).second->start();
+        connect(obj,&HardwareObject::logMessage,this,&HardwareManager::logMessage);
+        connect(obj,&HardwareObject::connectionResult,this,&HardwareManager::connectionResult);
+        connect(obj,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure);
+        connect(obj,&HardwareObject::timeDataRead,this,&HardwareManager::timeData);
+        connect(this,&HardwareManager::beginAcquisition,obj,&HardwareObject::beginAcquisition);
+        connect(this,&HardwareManager::endAcquisition,obj,&HardwareObject::endAcquisition);
+        connect(this,&HardwareManager::readTimeData,obj,&HardwareObject::readTimeData);
+
+        if(thread != nullptr)
+        {
+            connect(thread,&QThread::started,obj,&HardwareObject::initialize);
+            connect(thread,&QThread::finished,obj,&HardwareObject::deleteLater);
+            obj->moveToThread(thread);
+            thread->start();
+        }
+        else
+            obj->initialize();
+
     }
 }
 
@@ -137,7 +153,7 @@ void HardwareManager::initializeExperiment(Experiment exp)
     {
         QThread *t = d_hardwareList.at(i).second;
         HardwareObject *obj = d_hardwareList.at(i).first;
-        if(t != NULL)
+        if(t != nullptr)
             QMetaObject::invokeMethod(obj,"prepareForExperiment",Qt::BlockingQueuedConnection,Q_RETURN_ARG(Experiment,exp),Q_ARG(Experiment,exp));
         else
             exp = obj->prepareForExperiment(exp);
@@ -171,6 +187,12 @@ void HardwareManager::testObjectConnection(const QString type, const QString key
         emit testComplete(key,false,QString("Device not found!"));
     else
         QMetaObject::invokeMethod(obj,"testConnection");
+}
+
+void HardwareManager::getTimeData()
+{
+    for(int i=0; i<d_hardwareList.size(); i++)
+        QMetaObject::invokeMethod(d_hardwareList.at(i).first,"readTimeData");
 }
 
 void HardwareManager::checkStatus()

@@ -35,6 +35,8 @@ public slots:
     Experiment prepareForExperiment(Experiment exp);
     void beginAcquisition();
     void endAcquisition();
+    void readTimeData();
+
     void queryScope();
     void wakeUp();
 
@@ -54,9 +56,6 @@ private:
     QVector<double> d_simulatedData;
     QTimer d_simulatedTimer;
     QTime d_testTime;
-
-
-
 
 };
 

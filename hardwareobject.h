@@ -7,6 +7,8 @@
 #include <QSettings>
 #include <QApplication>
 #include "experiment.h"
+#include <QList>
+#include <QPair>
 
 /*!
  * \brief Abstract base class for all hardware connected to the instrument.
@@ -89,6 +91,8 @@ signals:
      * \param abort If an acquisition is underway, this will begin the abort routine if true
      */
     void hardwareFailure(HardwareObject*, bool abort = true);
+
+    void timeDataRead(const QList<QPair<QString,double>>);
 	
 public slots:
     /*!
@@ -113,6 +117,7 @@ public slots:
 
     virtual void beginAcquisition() =0;
     virtual void endAcquisition() =0;
+    virtual void readTimeData() =0;
 
 protected:
 	bool d_virtual;

@@ -44,6 +44,11 @@ QDateTime Experiment::startTime() const
     return data->startTime;
 }
 
+int Experiment::timeDataInterval() const
+{
+    return data->timeDataInterval;
+}
+
 bool Experiment::isInitialized() const
 {
     return data->isInitialized;
@@ -80,6 +85,11 @@ QString Experiment::errorString() const
     return data->errorString;
 }
 
+QMap<QString, QList<QVariant> > Experiment::timeDataMap() const
+{
+    return data->timeDataMap;
+}
+
 void Experiment::setGasSetpoints(const QList<QPair<double, QString> > list)
 {
     data->gasSetpoints = list;
@@ -98,6 +108,11 @@ void Experiment::setPressureSetpoints(const QList<QPair<double, QString> > list)
 void Experiment::addPressureSetpoint(const double setPoint, const QString name)
 {
     data->pressureSetpoints.append(qMakePair(setPoint,name));
+}
+
+void Experiment::setTimeDataInterval(const int t)
+{
+    data->timeDataInterval = t;
 }
 
 void Experiment::setInitialized()
@@ -166,6 +181,37 @@ bool Experiment::addFids(const QByteArray newData)
 void Experiment::setErrorString(const QString str)
 {
     data->errorString = str;
+}
+
+void Experiment::addTimeData(const QList<QPair<QString, double> > dataList)
+{
+    for(int i=0; i<dataList.size(); i++)
+    {
+        QString key = dataList.at(i).first;
+        double value = dataList.at(i).second;
+
+        if(data->timeDataMap.contains(key))
+            data->timeDataMap[key].append(value);
+        else
+        {
+            QList<QVariant> newList;
+            newList.append(QVariant(value));
+            data->timeDataMap.insert(key,newList);
+        }
+    }
+}
+
+void Experiment::addTimeStamp()
+{
+    QString key("exptTimeStamp");
+    if(data->timeDataMap.contains(key))
+        data->timeDataMap[key].append(QDateTime::currentDateTime());
+    else
+    {
+        QList<QVariant> newList;
+        newList.append(QDateTime::currentDateTime());
+        data->timeDataMap.insert(key,newList);
+    }
 }
 
 void Experiment::setHardwareFailed()

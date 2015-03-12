@@ -277,9 +277,9 @@ bool FtmwConfig::isComplete() const
     return false;
 }
 
-QHash<QString, QPair<QVariant, QString> > FtmwConfig::headerHash() const
+QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
 {
-    QHash<QString, QPair<QVariant, QString> > out;
+    QMap<QString, QPair<QVariant, QString> > out;
 
     QString prefix = QString("FtmwConfig");
     QString empty = QString("");
@@ -299,7 +299,7 @@ QHash<QString, QPair<QVariant, QString> > FtmwConfig::headerHash() const
     out.insert(prefix+QString("CompletedShots"),qMakePair(completedShots(),empty));
 
     FtmwConfig::ScopeConfig sc = scopeConfig();
-    out.unite(sc.headerHash());
+    out.unite(sc.headerMap());
 
     return out;
 

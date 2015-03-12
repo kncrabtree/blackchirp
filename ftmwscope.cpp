@@ -889,3 +889,9 @@ void FtmwScope::endAcquisition()
     d_waveformBytes = 0;
 
 }
+
+
+void FtmwScope::readTimeData()
+{
+    emit timeDataRead(QList<QPair<QString,double>>());
+}

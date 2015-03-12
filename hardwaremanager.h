@@ -32,6 +32,8 @@ signals:
     void experimentInitialized(Experiment);
     void endAcquisition();
     void scopeShotAcquired(const QByteArray);
+    void timeData(const QList<QPair<QString,double>>);
+    void readTimeData();
 
 public slots:
     void initialize();
@@ -55,6 +57,8 @@ public slots:
     void initializeExperiment(Experiment exp);
 
     void testObjectConnection(const QString type, const QString key);
+
+    void getTimeData();
 
 private:
     QHash<QString,bool> d_status;

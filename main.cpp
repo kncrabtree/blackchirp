@@ -37,14 +37,14 @@ int main(int argc, char *argv[])
     QDir home(appDataPath);
     if(!home.exists())
     {
-        QMessageBox::critical(NULL,QString("%1 Error").arg(appName),QString("The directory %1 does not exist!\n\nIn order to run %2, the directory %1 must exist and be writable by all users.").arg(appDataPath).arg(appName));
+        QMessageBox::critical(nullptr,QString("%1 Error").arg(appName),QString("The directory %1 does not exist!\n\nIn order to run %2, the directory %1 must exist and be writable by all users.").arg(appDataPath).arg(appName));
         return -1;
     }
 
     QFile testFile(QString("%1/test").arg(home.absolutePath()));
     if(!testFile.open(QIODevice::WriteOnly))
     {
-        QMessageBox::critical(NULL,QString("%1 Error").arg(appName),QString("Could not write to directory %1!\n\nIn order to run %2, the directory %1 must exist and be writable by all users.").arg(appDataPath).arg(appName));
+        QMessageBox::critical(nullptr,QString("%1 Error").arg(appName),QString("Could not write to directory %1!\n\nIn order to run %2, the directory %1 must exist and be writable by all users.").arg(appDataPath).arg(appName));
         return -1;
     }
     testFile.close();
@@ -83,9 +83,9 @@ int main(int argc, char *argv[])
                 pid = lockFile.readLine().trimmed().toInt(&ok);
 
             if(!ok)
-                QMessageBox::critical(NULL,QString("%1 Error").arg(appName),QString("An instance of %1 is running as user %2, and it must be closed before %3 be started.\n\nIf you are sure no other instance is running, delete the lock file (%4) and restart.").arg(title).arg(uName).arg(appName).arg(fileName));
+                QMessageBox::critical(nullptr,QString("%1 Error").arg(appName),QString("An instance of %1 is running as user %2, and it must be closed before %3 be started.\n\nIf you are sure no other instance is running, delete the lock file (%4) and restart.").arg(title).arg(uName).arg(appName).arg(fileName));
             else
-                QMessageBox::critical(NULL,QString("%1 Error").arg(appName),QString("An instance of %1 is running under PID %2 as user %3, and it must be closed before %4 can be started.\n\nIf process %2 has been terminated, delete the lock file (%5) and restart.").arg(title).arg(pid).arg(uName).arg(appName).arg(fileName));
+                QMessageBox::critical(nullptr,QString("%1 Error").arg(appName),QString("An instance of %1 is running under PID %2 as user %3, and it must be closed before %4 can be started.\n\nIf process %2 has been terminated, delete the lock file (%5) and restart.").arg(title).arg(pid).arg(uName).arg(appName).arg(fileName));
 
             if(lockFile.isOpen())
                 lockFile.close();
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 
     if(!lockFile.open(QIODevice::WriteOnly))
     {
-        QMessageBox::critical(NULL,QString("%1 Error").arg(appName),QString("Could not write lock file to %1. Ensure this location has write permissions enabled for your user.").arg(fileName));
+        QMessageBox::critical(nullptr,QString("%1 Error").arg(appName),QString("Could not write lock file to %1. Ensure this location has write permissions enabled for your user.").arg(fileName));
         return -1;
     }
     lockFile.write(QString("%1\n\nStarted by user %2 at %3.").arg(a.applicationPid()).arg(QFileInfo(lockFile).owner()).arg(QDateTime::currentDateTime().toString(Qt::ISODate)).toLatin1());
@@ -109,6 +109,7 @@ int main(int argc, char *argv[])
     qRegisterMetaType<Fid>("Fid");
     qRegisterMetaType<QList<Fid> >("QList<Fid>");
     qRegisterMetaType<QVector<QPointF> >("QVector<QPointF>");
+    qRegisterMetaType<QList<QPair<QString,double> >>("QList<QPair<QString,double> >");
 
     MainWindow w;
     w.show();
