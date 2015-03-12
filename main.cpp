@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
     qRegisterMetaType<Fid>("Fid");
     qRegisterMetaType<QList<Fid> >("QList<Fid>");
     qRegisterMetaType<QVector<QPointF> >("QVector<QPointF>");
-    qRegisterMetaType<QList<QPair<QString,double> >>("QList<QPair<QString,double> >");
+    qRegisterMetaType<QList<QPair<QString,QVariant> >>("QList<QPair<QString,QVariant> >");
 
     MainWindow w;
     w.show();

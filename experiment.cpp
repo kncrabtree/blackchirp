@@ -183,19 +183,19 @@ void Experiment::setErrorString(const QString str)
     data->errorString = str;
 }
 
-void Experiment::addTimeData(const QList<QPair<QString, double> > dataList)
+void Experiment::addTimeData(const QList<QPair<QString, QVariant> > dataList)
 {
     for(int i=0; i<dataList.size(); i++)
     {
         QString key = dataList.at(i).first;
-        double value = dataList.at(i).second;
+        QVariant value = dataList.at(i).second;
 
         if(data->timeDataMap.contains(key))
             data->timeDataMap[key].append(value);
         else
         {
             QList<QVariant> newList;
-            newList.append(QVariant(value));
+            newList.append(value);
             data->timeDataMap.insert(key,newList);
         }
     }

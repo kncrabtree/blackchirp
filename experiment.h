@@ -44,7 +44,7 @@ public:
     bool setFids(const QByteArray rawData);
     bool addFids(const QByteArray newData);
     void setErrorString(const QString str);
-    void addTimeData(const QList<QPair<QString,double>> dataList);
+    void addTimeData(const QList<QPair<QString, QVariant> > dataList);
     void addTimeStamp();
 
     void setHardwareFailed();

@@ -82,13 +82,13 @@ void AcquisitionManager::getTimeData()
 
         if(d_currentExperiment.ftmwConfig().isEnabled())
         {
-            d_currentExperiment.addTimeData(QList<QPair<QString,double>>{ qMakePair(QString("ftmwShots"),static_cast<double>(d_currentExperiment.ftmwConfig().completedShots())) } );
+            d_currentExperiment.addTimeData(QList<QPair<QString,QVariant>>{ qMakePair(QString("ftmwShots"),d_currentExperiment.ftmwConfig().completedShots()) } );
             emit logMessage(QString("ftmwShots: %1").arg(d_currentExperiment.ftmwConfig().completedShots()));
         }
     }
 }
 
-void AcquisitionManager::processTimeData(const QList<QPair<QString, double> > timeDataList)
+void AcquisitionManager::processTimeData(const QList<QPair<QString, QVariant> > timeDataList)
 {
     //test for abort conditions here!
     //
@@ -96,7 +96,7 @@ void AcquisitionManager::processTimeData(const QList<QPair<QString, double> > ti
 
     emit logMessage(QString("Time data received."));
     for(int i=0; i<timeDataList.size(); i++)
-        emit logMessage(QString("%1: %2").arg(timeDataList.at(i).first,QString::number(timeDataList.at(i).second)));
+        emit logMessage(QString("%1: %2").arg(timeDataList.at(i).first,timeDataList.at(i).second.toString()));
 
     d_currentExperiment.addTimeData(timeDataList);
 }

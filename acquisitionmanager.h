@@ -35,7 +35,7 @@ public slots:
     void beginExperiment(Experiment exp);
     void processScopeShot(const QByteArray b);
     void getTimeData();
-    void processTimeData(const QList<QPair<QString,double>> timeDataList);
+    void processTimeData(const QList<QPair<QString,QVariant>> timeDataList);
     void pause();
     void resume();
     void abort();

@@ -893,5 +893,5 @@ void FtmwScope::endAcquisition()
 
 void FtmwScope::readTimeData()
 {
-    emit timeDataRead(QList<QPair<QString,double>>());
+    emit timeDataRead(QList<QPair<QString,QVariant>>());
 }

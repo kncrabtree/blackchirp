@@ -32,7 +32,7 @@ signals:
     void experimentInitialized(Experiment);
     void endAcquisition();
     void scopeShotAcquired(const QByteArray);
-    void timeData(const QList<QPair<QString,double>>);
+    void timeData(const QList<QPair<QString,QVariant>>);
     void readTimeData();
 
 public slots:

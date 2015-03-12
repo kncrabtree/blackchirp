@@ -106,7 +106,7 @@ void MainWindow::startExperiment()
     sc.summaryFrame = false;
     ft.setScopeConfig(sc);
     e.setFtmwConfig(ft);
-    e.setTimeDataInterval(1);
+    e.setTimeDataInterval(5);
 
     BatchSingle *bs = new BatchSingle(e);
 

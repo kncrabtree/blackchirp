@@ -92,7 +92,7 @@ signals:
      */
     void hardwareFailure(HardwareObject*, bool abort = true);
 
-    void timeDataRead(const QList<QPair<QString,double>>);
+    void timeDataRead(const QList<QPair<QString,QVariant>>);
 	
 public slots:
     /*!
