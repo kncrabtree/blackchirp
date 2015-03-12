@@ -31,7 +31,7 @@ void AcquisitionManager::beginExperiment(Experiment exp)
     if(d_currentExperiment.timeDataInterval() > 0)
     {
         getTimeData();
-        connect(&d_timeDataTimer,&QTimer::timeout,this,static_cast<void (AcquisitionManager::*)(void)>(&AcquisitionManager::getTimeData),Qt::UniqueConnection);
+        connect(&d_timeDataTimer,&QTimer::timeout,this,&AcquisitionManager::getTimeData,Qt::UniqueConnection);
         d_timeDataTimer.start(d_currentExperiment.timeDataInterval()*1000);
     }
     emit beginAcquisition();
@@ -142,7 +142,7 @@ void AcquisitionManager::endAcquisition()
 {
     d_state = Idle;
 
-    disconnect(&d_timeDataTimer,&QTimer::timeout,this,static_cast<void (AcquisitionManager::*)(void)>(&AcquisitionManager::getTimeData));
+    disconnect(&d_timeDataTimer,&QTimer::timeout,this,&AcquisitionManager::getTimeData);
     d_timeDataTimer.stop();
     d_currentExperiment.save();
 
