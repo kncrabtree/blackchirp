@@ -92,7 +92,7 @@
        <enum>QTabWidget::East</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>4</number>
       </property>
       <widget class="QWidget" name="ftmwTab">
        <attribute name="title">
@@ -113,6 +113,11 @@
        <attribute name="title">
         <string>Tracking</string>
        </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <item>
+         <widget class="TrackingViewWidget" name="trackingViewWidget" native="true"/>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="controlTab">
        <attribute name="title">
@@ -149,13 +154,21 @@
      <height>18</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menuSettings">
+   <widget class="QMenu" name="menuHardware">
     <property name="title">
-     <string>Settings</string>
+     <string>Hardware</string>
     </property>
     <addaction name="actionCommunication"/>
    </widget>
-   <addaction name="menuSettings"/>
+   <widget class="QMenu" name="menuTracking">
+    <property name="title">
+     <string>Tracking</string>
+    </property>
+    <addaction name="actionTrackingShow"/>
+    <addaction name="action_Graphs"/>
+   </widget>
+   <addaction name="menuHardware"/>
+   <addaction name="menuTracking"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -195,6 +208,16 @@
     <string>Communication</string>
    </property>
   </action>
+  <action name="actionTrackingShow">
+   <property name="text">
+    <string>Show</string>
+   </property>
+  </action>
+  <action name="action_Graphs">
+   <property name="text">
+    <string># Graphs...</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
@@ -202,6 +225,12 @@
    <class>FtmwViewWidget</class>
    <extends>QWidget</extends>
    <header>ftmwviewwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>TrackingViewWidget</class>
+   <extends>QWidget</extends>
+   <header>trackingviewwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

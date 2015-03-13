@@ -82,7 +82,9 @@ void AcquisitionManager::getTimeData()
 
         if(d_currentExperiment.ftmwConfig().isEnabled())
         {
-            d_currentExperiment.addTimeData(QList<QPair<QString,QVariant>>{ qMakePair(QString("ftmwShots"),d_currentExperiment.ftmwConfig().completedShots()) } );
+            QList<QPair<QString,QVariant>> l { qMakePair(QString("ftmwShots"),d_currentExperiment.ftmwConfig().completedShots()) };
+            d_currentExperiment.addTimeData(l);
+            emit timeData(l);
             emit logMessage(QString("ftmwShots: %1").arg(d_currentExperiment.ftmwConfig().completedShots()));
         }
     }

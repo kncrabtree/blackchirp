@@ -28,6 +28,7 @@ signals:
     void ftmwShotAcquired(int);
     void beginAcquisition();
     void timeDataSignal();
+    void timeData(const QList<QPair<QString,QVariant>>);
 
     void newFidList(QList<Fid>);
 

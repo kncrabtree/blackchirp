@@ -55,8 +55,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::scopeShotAcquired,p_am,&AcquisitionManager::processScopeShot);
     connect(p_am,&AcquisitionManager::experimentComplete,p_hwm,&HardwareManager::endAcquisition);
     connect(p_am,&AcquisitionManager::beginAcquisition,p_hwm,&HardwareManager::beginAcquisition);
+    connect(p_am,&AcquisitionManager::beginAcquisition,ui->trackingViewWidget,&TrackingViewWidget::initializeForExperiment);
     connect(p_am,&AcquisitionManager::timeDataSignal,p_hwm,&HardwareManager::getTimeData);
     connect(p_hwm,&HardwareManager::timeData,p_am,&AcquisitionManager::processTimeData);
+
 
 
     hwmThread->start();
@@ -68,6 +70,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionPause,&QAction::triggered,this,&MainWindow::pauseUi);
     connect(ui->actionResume,&QAction::triggered,this,&MainWindow::resumeUi);
     connect(ui->actionCommunication,&QAction::triggered,this,&MainWindow::launchCommunicationDialog);
+    connect(ui->actionTrackingShow,&QAction::triggered,[=](){ ui->tabWidget->setCurrentIndex(2); });
+    connect(ui->action_Graphs,&QAction::triggered,ui->trackingViewWidget,&TrackingViewWidget::changeNumPlots);
 
     configureUi(Idle);
 }
@@ -115,6 +119,9 @@ void MainWindow::startExperiment()
 
 void MainWindow::batchComplete(bool aborted)
 {
+    disconnect(p_hwm,&HardwareManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated);
+    disconnect(p_am,&AcquisitionManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated);
+
     if(aborted)
         emit statusMessage(QString("Experiment aborted"));
     else
@@ -231,6 +238,9 @@ void MainWindow::startBatch(BatchManager *bm, bool sleepWhenDone)
     connect(bm,&BatchManager::batchComplete,this,&MainWindow::batchComplete);
     connect(bm,&BatchManager::batchComplete,d_batchThread,&QThread::quit);
     connect(d_batchThread,&QThread::finished,bm,&BatchManager::deleteLater);
+
+    connect(p_hwm,&HardwareManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated,Qt::UniqueConnection);
+    connect(p_am,&AcquisitionManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated,Qt::UniqueConnection);
 
     if(sleepWhenDone)
     {
