@@ -109,6 +109,7 @@ void TrackingViewWidget::changeNumPlots()
 
     QSettings s;
     s.setValue(QString("trackingWidget/numPlots"),newNum);
+    s.sync();
 
     if(newNum > d_allPlots.size())
     {
