@@ -92,15 +92,18 @@ void AcquisitionManager::getTimeData()
 
 void AcquisitionManager::processTimeData(const QList<QPair<QString, QVariant> > timeDataList)
 {
-    //test for abort conditions here!
-    //
-    //
+	if(d_state == Acquiring)
+	{
+		//test for abort conditions here!
+		//
+		//
 
-    emit logMessage(QString("Time data received."));
-    for(int i=0; i<timeDataList.size(); i++)
-        emit logMessage(QString("%1: %2").arg(timeDataList.at(i).first,timeDataList.at(i).second.toString()));
+		emit logMessage(QString("Time data received."));
+		for(int i=0; i<timeDataList.size(); i++)
+			emit logMessage(QString("%1: %2").arg(timeDataList.at(i).first,timeDataList.at(i).second.toString()));
 
-    d_currentExperiment.addTimeData(timeDataList);
+		d_currentExperiment.addTimeData(timeDataList);
+	}
 }
 
 void AcquisitionManager::pause()
