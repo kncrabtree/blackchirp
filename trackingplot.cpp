@@ -14,6 +14,8 @@ TrackingPlot::TrackingPlot(QWidget *parent) : ZoomPanPlot(parent)
     setAxisFont(QwtPlot::xTop,QFont(QString("sans-serif"),8));
     setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
     setAxisFont(QwtPlot::yRight,QFont(QString("sans-serif"),8));
+
+    canvas()->installEventFilter(this);
 }
 
 TrackingPlot::~TrackingPlot()
@@ -41,5 +43,16 @@ void TrackingPlot::legendItemClicked(QVariant info, bool checked, int index)
 
 void TrackingPlot::filterData()
 {
+}
+
+bool TrackingPlot::eventFilter(QObject *obj, QEvent *ev)
+{
+    if(obj == legend())
+    {
+        if(ev->type() == QEvent::MouseButtonRelease)
+        {
+            QMouseEvent *me = dynamic_cast<QMouseEvent*>(ev);
+        }
+    }
 }
 

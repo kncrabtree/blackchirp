@@ -30,6 +30,7 @@ private:
 
 protected:
     void filterData();
+    virtual bool eventFilter(QObject *obj, QEvent *ev);
 
 };
 

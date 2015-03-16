@@ -114,8 +114,8 @@ bool ZoomPanPlot::eventFilter(QObject *obj, QEvent *ev)
     {
         if(ev->type() == QEvent::MouseButtonPress)
         {
-            QMouseEvent *me = static_cast<QMouseEvent*>(ev);
-            if(me->button() == Qt::MiddleButton)
+            QMouseEvent *me = dynamic_cast<QMouseEvent*>(ev);
+            if(me != nullptr && me->button() == Qt::MiddleButton)
             {
                 if(!isAutoScale())
                 {
@@ -129,36 +129,39 @@ bool ZoomPanPlot::eventFilter(QObject *obj, QEvent *ev)
         }
         else if(ev->type() == QEvent::MouseButtonRelease)
         {
-            QMouseEvent *me = static_cast<QMouseEvent*>(ev);
-            if(d_config.panning && me->button() == Qt::MiddleButton)
+            QMouseEvent *me = dynamic_cast<QMouseEvent*>(ev);
+            if(me != nullptr)
             {
-                d_config.panning = false;
-                emit panningFinished();
-                ev->accept();
-                return true;
-            }
-            else if(me->button() == Qt::LeftButton && (me->modifiers() & Qt::ControlModifier))
-            {
-                autoScale();
-                ev->accept();
-                return true;
-            }
-            else if(me->button() == Qt::RightButton)
-            {
-                emit plotRightClicked(me);
-                ev->accept();
-                return true;
+                if(d_config.panning && me->button() == Qt::MiddleButton)
+                {
+                    d_config.panning = false;
+                    emit panningFinished();
+                    ev->accept();
+                    return true;
+                }
+                else if(me->button() == Qt::LeftButton && (me->modifiers() & Qt::ControlModifier))
+                {
+                    autoScale();
+                    ev->accept();
+                    return true;
+                }
+                else if(me->button() == Qt::RightButton)
+                {
+                    emit plotRightClicked(me);
+                    ev->accept();
+                    return true;
+                }
             }
         }
         else if(ev->type() == QEvent::MouseMove)
         {
-            pan(static_cast<QMouseEvent*>(ev));
+            pan(dynamic_cast<QMouseEvent*>(ev));
             ev->accept();
             return true;
         }
         else if(ev->type() == QEvent::Wheel)
         {
-            zoom(static_cast<QWheelEvent*>(ev));
+            zoom(dynamic_cast<QWheelEvent*>(ev));
             ev->accept();
             return true;
         }
@@ -276,6 +279,9 @@ int ZoomPanPlot::getAxisIndex(QwtPlot::Axis a)
         break;
     case QwtPlot::yRight:
         i=3;
+        break;
+    default:
+        i = 0;
         break;
     }
 
