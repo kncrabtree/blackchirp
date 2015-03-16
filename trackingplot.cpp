@@ -4,7 +4,9 @@
 
 TrackingPlot::TrackingPlot(QWidget *parent) : ZoomPanPlot(parent)
 {
-    insertLegend(new QwtLegend(),QwtPlot::BottomLegend);
+    QwtLegend *l = new QwtLegend;
+    connect(l,&QwtLegend::checked,this,&TrackingPlot::legendItemClicked);
+    insertLegend(l,QwtPlot::BottomLegend);
     setAxisScaleDraw(QwtPlot::xBottom,new TimeScaleDraw);
     setAxisScaleDraw(QwtPlot::xTop,new TimeScaleDraw);
 
@@ -26,6 +28,15 @@ void TrackingPlot::initializeLabel(QwtPlotCurve *curve, bool isVisible)
 
     item->setItemMode(QwtLegendData::Checkable);
     item->setChecked(isVisible);
+}
+
+void TrackingPlot::legendItemClicked(QVariant info, bool checked, int index)
+{
+    Q_UNUSED(index);
+
+    QwtPlotCurve *c = dynamic_cast<QwtPlotCurve*>(infoToItem(info));
+    if(c != nullptr)
+        emit curveVisiblityToggled(c,checked);
 }
 
 void TrackingPlot::filterData()

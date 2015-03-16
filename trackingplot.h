@@ -12,11 +12,19 @@
 
 class TrackingPlot : public ZoomPanPlot
 {
+    Q_OBJECT
+
 public:
     TrackingPlot(QWidget *parent = 0);
     ~TrackingPlot();
 
     void initializeLabel(QwtPlotCurve* curve, bool isVisible);
+
+signals:
+    void curveVisiblityToggled(QwtPlotCurve*,bool);
+
+public slots:
+    void legendItemClicked(QVariant info, bool checked, int index);
 
 private:
 

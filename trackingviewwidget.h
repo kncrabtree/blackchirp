@@ -38,7 +38,7 @@ public:
 public slots:
     void initializeForExperiment();
     void pointUpdated(const QList<QPair<QString,QVariant> > list);
-
+    void curveVisibilityToggled(QwtPlotCurve *c, bool visible);
 
 
     void changeNumPlots();
@@ -55,7 +55,6 @@ private:
     void configureGrid();
 
     void setAutoScaleYRanges(int plotIndex, QwtPlot::Axis axis);
-
 
 };
 

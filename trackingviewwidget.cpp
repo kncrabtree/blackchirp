@@ -140,6 +140,26 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
     }
 }
 
+void TrackingViewWidget::curveVisibilityToggled(QwtPlotCurve *c, bool visible)
+{
+    for(int i=0; i<d_plotCurves.size();i++)
+    {
+        if(c == d_plotCurves.at(i).curve)
+        {
+            QSettings s;
+            s.setValue(QString("trackingWidget/curves/%1/isVisible").arg(d_plotCurves.at(i).name),visible);
+            s.sync();
+
+            d_plotCurves[i].isVisible = visible;
+            d_plotCurves[i].curve->setVisible(visible);
+            setAutoScaleYRanges(d_plotCurves.at(i).plotIndex,d_plotCurves.at(i).axis);
+            d_allPlots.at(d_plotCurves.at(i).plotIndex)->replot();
+
+            return;
+        }
+    }
+}
+
 void TrackingViewWidget::changeNumPlots()
 {
     bool ok = true;
@@ -194,6 +214,7 @@ void TrackingViewWidget::addNewPlot()
     tp->installEventFilter(this);
 
     //signal-slot connections go here
+    connect(tp,&TrackingPlot::curveVisiblityToggled,this,&TrackingViewWidget::curveVisibilityToggled);
 
     d_allPlots.append(tp);
 
