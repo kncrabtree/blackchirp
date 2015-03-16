@@ -11,6 +11,9 @@ TrackingViewWidget::TrackingViewWidget(QWidget *parent) :
     for(int i=0; i<numPlots;i++)
         addNewPlot();
 
+    d_xRange.first = 0.0;
+    d_xRange.second = 0.0;
+
     configureGrid();
 }
 
@@ -22,16 +25,43 @@ TrackingViewWidget::~TrackingViewWidget()
 void TrackingViewWidget::initializeForExperiment()
 {
     d_plotCurves.clear();
+    d_xRange.first = QwtDate::toDouble(QDateTime::currentDateTime().addSecs(-1));
+    d_xRange.second = QwtDate::toDouble(QDateTime::currentDateTime());
 
     for(int i=0; i<d_allPlots.size(); i++)
     {
-        d_allPlots[i]->detachItems();
-        d_allPlots[i]->replot();
+        d_allPlots[i]->resetPlot();
+        d_allPlots[i]->setAxisAutoScaleRange(QwtPlot::xBottom,d_xRange.first,d_xRange.second);
+        d_allPlots[i]->setAxisAutoScaleRange(QwtPlot::xTop,d_xRange.first,d_xRange.second);
+        d_allPlots[i]->autoScale();
     }
 }
 
 void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > list)
 {
+    double x = QwtDate::toDouble(QDateTime::currentDateTime());
+    if(d_plotCurves.isEmpty())
+    {
+        d_xRange.first = x;
+        d_xRange.second = x;
+
+        for(int i=0;i<d_allPlots.size(); i++)
+        {
+            d_allPlots[i]->setAxisAutoScaleRange(QwtPlot::xBottom,x,x);
+            d_allPlots[i]->setAxisAutoScaleRange(QwtPlot::xTop,x,x);
+        }
+    }
+    else
+    {
+        d_xRange.second = x;
+
+        for(int i=0;i<d_allPlots.size(); i++)
+        {
+            d_allPlots[i]->setAxisAutoScaleMax(QwtPlot::xBottom,x);
+            d_allPlots[i]->setAxisAutoScaleMax(QwtPlot::xTop,x);
+        }
+    }
+
     for(int i=0; i<list.size(); i++)
     {
         //first, determine if the QVariant contains a number
@@ -42,7 +72,7 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
             continue;
 
         //create point to be plotted
-        QPointF newPoint(QwtDate::toDouble(QDateTime::currentDateTime()),value);
+        QPointF newPoint(x,value);
 
         //locate curve by name and append point
         bool foundCurve = false;
@@ -51,9 +81,15 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
             if(list.at(i).first == d_plotCurves.at(j).name)
             {
                 d_plotCurves[j].data.append(newPoint);
+                d_plotCurves[j].min = qMin(d_plotCurves.at(j).min,value);
+                d_plotCurves[j].max = qMax(d_plotCurves.at(j).max,value);
                 d_plotCurves[j].curve->setSamples(d_plotCurves.at(j).data);
                 if(d_plotCurves.at(j).isVisible)
+                {
+                    d_allPlots.at(d_plotCurves.at(j).plotIndex)->expandAutoScaleRange(
+                                d_plotCurves.at(j).axis,d_plotCurves.at(j).min,d_plotCurves.at(j).max);
                     d_allPlots.at(d_plotCurves.at(j).plotIndex)->replot();
+                }
 
                 foundCurve = true;
                 break;
@@ -79,7 +115,7 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
 
         s.beginGroup(QString("trackingWidget/curves/%1").arg(md.name));
 
-        md.axis = s.value(QString("axis"),QwtPlot::yLeft).toInt();
+        md.axis = s.value(QString("axis"),QwtPlot::yLeft).value<QwtPlot::Axis>();
         md.plotIndex = s.value(QString("plotIndex"),d_plotCurves.size()).toInt() % d_allPlots.size();
         md.isVisible = s.value(QString("isVisible"),true).toBool();
 
@@ -92,6 +128,11 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
         d_allPlots.at(md.plotIndex)->initializeLabel(md.curve,md.isVisible);
 
         s.endGroup();
+
+        md.min = value;
+        md.max = value;
+        if(md.isVisible)
+            d_allPlots.at(md.plotIndex)->setAxisAutoScaleRange(md.axis,md.min,md.max);
 
         d_plotCurves.append(md);
         d_allPlots.at(md.plotIndex)->replot();
@@ -144,6 +185,10 @@ void TrackingViewWidget::changeNumPlots()
 void TrackingViewWidget::addNewPlot()
 {
     TrackingPlot *tp = new TrackingPlot(this);
+
+    tp->setAxisAutoScaleRange(QwtPlot::xBottom,d_xRange.first,d_xRange.second);
+    tp->setAxisAutoScaleRange(QwtPlot::xTop,d_xRange.first,d_xRange.second);
+
     tp->setMinimumHeight(200);
     tp->setMinimumWidth(375);
     tp->installEventFilter(this);
@@ -271,4 +316,34 @@ void TrackingViewWidget::configureGrid()
         break;
     }
 
+}
+
+void TrackingViewWidget::setAutoScaleYRanges(int plotIndex, QwtPlot::Axis axis)
+{
+    double min;
+    double max;
+    bool foundCurve = false;
+    for(int i=0;i<d_plotCurves.size(); i++)
+    {
+        const CurveMetaData c = d_plotCurves.at(i);
+        if(c.plotIndex == plotIndex && axis == c.axis && c.isVisible)
+        {
+            if(!foundCurve)
+            {
+                foundCurve = true;
+                min = c.min;
+                max = c.max;
+            }
+            else
+            {
+                min = qMin(c.min,min);
+                max = qMax(c.max,max);
+            }
+        }
+    }
+
+    if(foundCurve)
+        d_allPlots[plotIndex]->setAxisAutoScaleRange(axis,min,max);
+    else
+        d_allPlots[plotIndex]->setAxisAutoScaleRange(axis,0.0,1.0);
 }

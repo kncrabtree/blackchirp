@@ -55,7 +55,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::scopeShotAcquired,p_am,&AcquisitionManager::processScopeShot);
     connect(p_am,&AcquisitionManager::experimentComplete,p_hwm,&HardwareManager::endAcquisition);
     connect(p_am,&AcquisitionManager::beginAcquisition,p_hwm,&HardwareManager::beginAcquisition);
-    connect(p_am,&AcquisitionManager::beginAcquisition,ui->trackingViewWidget,&TrackingViewWidget::initializeForExperiment);
     connect(p_am,&AcquisitionManager::timeDataSignal,p_hwm,&HardwareManager::getTimeData);
     connect(p_hwm,&HardwareManager::timeData,p_am,&AcquisitionManager::processTimeData);
 
@@ -247,6 +246,7 @@ void MainWindow::startBatch(BatchManager *bm, bool sleepWhenDone)
         //connect to sleep action
     }
 
+    ui->trackingViewWidget->initializeForExperiment();
     configureUi(Acquiring);
     bm->moveToThread(d_batchThread);
     d_batchThread->start();
