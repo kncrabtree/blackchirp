@@ -251,3 +251,11 @@ void MainWindow::startBatch(BatchManager *bm, bool sleepWhenDone)
     bm->moveToThread(d_batchThread);
     d_batchThread->start();
 }
+
+void MainWindow::closeEvent(QCloseEvent *ev)
+{
+    if(d_batchThread->isRunning())
+        ev->ignore();
+    else
+        ev->accept();
+}

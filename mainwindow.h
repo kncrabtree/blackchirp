@@ -5,6 +5,7 @@
 #include <QList>
 #include <QPair>
 #include <QThread>
+#include <QCloseEvent>
 #include "loghandler.h"
 #include "hardwaremanager.h"
 #include "acquisitionmanager.h"
@@ -59,6 +60,8 @@ private:
 
     ProgramState d_state;
 
+protected:
+    void closeEvent(QCloseEvent *ev);
 
 };
 
