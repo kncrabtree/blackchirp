@@ -45,7 +45,7 @@ private:
     Experiment d_currentExperiment;
     AcquisitionState d_state;
     QTime d_testTime;
-    QTimer d_timeDataTimer;
+    QTimer *d_timeDataTimer = nullptr;
 
     void checkComplete();
     void endAcquisition();

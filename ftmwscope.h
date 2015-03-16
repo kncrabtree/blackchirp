@@ -54,7 +54,7 @@ private:
 
     QByteArray makeSimulatedData();
     QVector<double> d_simulatedData;
-    QTimer d_simulatedTimer;
+    QTimer *d_simulatedTimer = nullptr;
     QTime d_testTime;
 
 };

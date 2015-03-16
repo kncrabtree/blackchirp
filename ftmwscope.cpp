@@ -48,7 +48,9 @@ void FtmwScope::initialize()
 			 d_simulatedData.append(0.0);
 	   }
 
-       connect(&d_simulatedTimer,&QTimer::timeout,this,&FtmwScope::queryScope);
+       d_simulatedTimer = new QTimer(this);
+
+       connect(d_simulatedTimer,&QTimer::timeout,this,&FtmwScope::queryScope);
 
     }
     testConnection();
@@ -59,11 +61,11 @@ bool FtmwScope::testConnection()
 {
     if(d_virtual)
     {
-	    d_simulatedTimer.stop();
+        d_simulatedTimer->stop();
         QSettings s;
         int shotInterval = s.value(QString("%1/virtualShotIntervalMs"),200).toInt();
-	   d_simulatedTimer.setInterval(shotInterval);
-	   d_simulatedTimer.start();
+       d_simulatedTimer->setInterval(shotInterval);
+
 
         emit connectionResult(this,true);
         return true;
@@ -599,6 +601,7 @@ void FtmwScope::beginAcquisition()
 {
     if(d_virtual)
     {
+        d_simulatedTimer->start();
         d_waitingForReply = true;
         return;
     }
@@ -863,6 +866,7 @@ void FtmwScope::endAcquisition()
 {
     if(d_virtual)
     {
+        d_simulatedTimer->stop();
         d_waitingForReply = false;
         return;
     }
