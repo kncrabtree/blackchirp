@@ -2,7 +2,7 @@
 #include <qwt6/qwt_legend_label.h>
 #include <qwt6/qwt_legend.h>
 
-TrackingPlot::TrackingPlot(QWidget *parent) : ZoomPanPlot(parent)
+TrackingPlot::TrackingPlot(QString name, QWidget *parent) : ZoomPanPlot(name, parent)
 {
     QwtLegend *l = new QwtLegend;
     l->contentsWidget()->installEventFilter(this);

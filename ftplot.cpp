@@ -14,7 +14,7 @@
 #include <QApplication>
 
 FtPlot::FtPlot(QWidget *parent) :
-    ZoomPanPlot(parent), d_autoScaleXRange(qMakePair(0.0,1.0)), d_autoScaleYRange(qMakePair(0.0,1.0)),
+    ZoomPanPlot(QString("FtPlot"),parent), d_autoScaleXRange(qMakePair(0.0,1.0)), d_autoScaleYRange(qMakePair(0.0,1.0)),
     d_processing(false), d_replotWhenDone(false)
 {
     //make axis label font smaller

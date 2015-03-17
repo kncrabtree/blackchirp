@@ -15,7 +15,7 @@ class TrackingPlot : public ZoomPanPlot
     Q_OBJECT
 
 public:
-    TrackingPlot(QWidget *parent = 0);
+    TrackingPlot(QString name, QWidget *parent = 0);
     ~TrackingPlot();
 
     void initializeLabel(QwtPlotCurve* curve, bool isVisible);

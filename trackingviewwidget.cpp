@@ -371,7 +371,7 @@ int TrackingViewWidget::findCurveIndex(QwtPlotCurve *c)
 
 void TrackingViewWidget::addNewPlot()
 {
-    TrackingPlot *tp = new TrackingPlot(this);
+    TrackingPlot *tp = new TrackingPlot(QString("TrackingPlot%1").arg(d_allPlots.size()),this);
 
     tp->setAxisAutoScaleRange(QwtPlot::xBottom,d_xRange.first,d_xRange.second);
     tp->setAxisAutoScaleRange(QwtPlot::xTop,d_xRange.first,d_xRange.second);

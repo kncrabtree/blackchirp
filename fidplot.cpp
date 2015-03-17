@@ -12,7 +12,7 @@
 #include <QFormLayout>
 
 FidPlot::FidPlot(QWidget *parent) :
-    ZoomPanPlot(parent), d_ftEndAtFidEnd(true)
+    ZoomPanPlot(QString("FidPlot"),parent), d_ftEndAtFidEnd(true)
 {
     //make axis label font smaller
     this->setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));

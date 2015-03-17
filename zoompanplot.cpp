@@ -5,13 +5,20 @@
 #include <QWidgetAction>
 #include <QFormLayout>
 #include <QDoubleSpinBox>
+#include <QSettings>
 
-ZoomPanPlot::ZoomPanPlot(QWidget *parent) : QwtPlot(parent)
+ZoomPanPlot::ZoomPanPlot(QString name, QWidget *parent) : QwtPlot(parent), d_name(name)
 {
     d_config.axisList.append(AxisConfig(QwtPlot::xBottom,QString("Bottom")));
     d_config.axisList.append(AxisConfig(QwtPlot::xTop,QString("Top")));
     d_config.axisList.append(AxisConfig(QwtPlot::yLeft,QString("Left")));
     d_config.axisList.append(AxisConfig(QwtPlot::yRight,QString("Right")));
+
+    QSettings s;
+    for(int i=0; i<d_config.axisList.size(); i++)
+        d_config.axisList[i].zoomFactor = s.value(QString("zoomFactors/%1/%2").arg(d_name)
+                                                  .arg(QVariant(d_config.axisList.at(i).type).toString()),0.1).toDouble();
+
 
     canvas()->installEventFilter(this);
 }
@@ -156,6 +163,11 @@ void ZoomPanPlot::setZoomFactor(QwtPlot::Axis a, double v)
 {
     int i = getAxisIndex(a);
     d_config.axisList[i].zoomFactor = v;
+
+    QSettings s;
+    s.setValue(QString("zoomFactors/%1/%2").arg(d_name)
+                       .arg(QVariant(d_config.axisList.at(i).type).toString()),v);
+    s.sync();
 }
 
 void ZoomPanPlot::resizeEvent(QResizeEvent *ev)

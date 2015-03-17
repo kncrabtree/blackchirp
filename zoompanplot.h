@@ -11,7 +11,7 @@ class ZoomPanPlot : public QwtPlot
     Q_OBJECT
 
 public:
-    explicit ZoomPanPlot(QWidget *parent = nullptr);
+    explicit ZoomPanPlot(QString name, QWidget *parent = nullptr);
     ~ZoomPanPlot();
 
     bool isAutoScale();
@@ -33,6 +33,7 @@ signals:
     void plotRightClicked(QMouseEvent *ev);
 
 protected:
+    const QString d_name;
     struct AxisConfig {
         QwtPlot::Axis type;
         bool autoScale;
