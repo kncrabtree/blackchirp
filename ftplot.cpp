@@ -14,7 +14,7 @@
 #include <QApplication>
 
 FtPlot::FtPlot(QWidget *parent) :
-    QwtPlot(parent), d_autoScaleXY(QPair<bool,bool>(true,true)), d_autoScaleXRange(QPair<double,double>(-1.0,-1.0)), d_autoScaleYRange(QPair<double,double>(-1.0,-1.0)),
+    ZoomPanPlot(parent), d_autoScaleXRange(qMakePair(0.0,1.0)), d_autoScaleYRange(qMakePair(0.0,1.0)),
     d_processing(false), d_replotWhenDone(false)
 {
     //make axis label font smaller
@@ -30,9 +30,6 @@ FtPlot::FtPlot(QWidget *parent) :
     llabel.setFont(QFont(tr("sans-serif"),8));
     this->setAxisTitle(QwtPlot::yLeft,llabel);
 
-    //intialize panning to false. This will be enabled when the middle mouse button is pressed
-    d_panning = false;
-
     QSettings s;
 
     //build and configure curve object
@@ -43,6 +40,7 @@ FtPlot::FtPlot(QWidget *parent) :
     p.setWidth(1);
     p_curveData->setPen(p);
     p_curveData->attach(this);
+
 
     QwtPlotPicker *picker = new QwtPlotPicker(this->canvas());
     picker->setAxis(QwtPlot::xBottom,QwtPlot::yLeft);
@@ -57,16 +55,11 @@ FtPlot::FtPlot(QWidget *parent) :
     p_plotGrid->enableXMin(true);
     p_plotGrid->enableY(true);
     p_plotGrid->enableYMin(true);
-
     p.setColor(s.value(tr("gridcolor"),pal.color(QPalette::Light)).value<QColor>());
     p.setStyle(Qt::DashLine);
     p_plotGrid->setMajorPen(p);
-
-
-
     p.setStyle(Qt::DotLine);
     p_plotGrid->setMinorPen(p);
-
     p_plotGrid->attach(this);
 
     this->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -82,6 +75,10 @@ FtPlot::FtPlot(QWidget *parent) :
     p_ftThread->start();
 
     setAxisAutoScale(QwtPlot::xBottom,false);
+    setAxisAutoScale(QwtPlot::yLeft,false);
+
+    setAxisAutoScaleRange(QwtPlot::xBottom,d_autoScaleXRange.first,d_autoScaleXRange.second);
+    setAxisAutoScaleRange(QwtPlot::yLeft,d_autoScaleYRange.first,d_autoScaleYRange.second);
 
 }
 
@@ -109,10 +106,16 @@ void FtPlot::ftDone(QVector<QPointF> ft, double max)
     d_autoScaleXRange.second = d_currentFt.at(d_currentFt.size()-1).x();
     d_autoScaleYRange.first = 0.0;
     d_autoScaleYRange.second = max;
-    replot();
+
+    setAxisAutoScaleRange(QwtPlot::xBottom,d_autoScaleXRange.first,d_autoScaleXRange.second);
+    setAxisAutoScaleRange(QwtPlot::yLeft,d_autoScaleYRange.first,d_autoScaleYRange.second);
+
+    filterData();
 
     if(d_replotWhenDone)
         updatePlot();
+
+    replot();
 }
 
 void FtPlot::filterData()
@@ -160,6 +163,7 @@ void FtPlot::filterData()
             dataIndex++;
             numPnts++;
         }
+
         if(numPnts == 1)
             filtered.append(d_currentFt.at(dataIndex-1));
         else if (numPnts > 1)
@@ -204,7 +208,7 @@ void FtPlot::ftColorSlot()
     QPen p(c);
     p.setWidth(1);
     p_curveData->setPen(p);
-    replot(false);
+    replot();
 
 }
 
@@ -224,141 +228,12 @@ void FtPlot::gridColorSlot()
 
     p.setStyle(Qt::DotLine);
     p_plotGrid->setMinorPen(p);
-    replot(false);
+    replot();
 }
 
 QColor FtPlot::getColor(QColor startingColor)
 {
     return QColorDialog::getColor(startingColor,this,tr("Select Color"));
-}
-
-void FtPlot::pan(QMouseEvent *me)
-{
-    if(!me)
-        return;
-
-    double xScaleMin = axisScaleDiv(QwtPlot::xBottom).lowerBound();
-    double xScaleMax = axisScaleDiv(QwtPlot::xBottom).upperBound();
-    double yScaleMin = axisScaleDiv(QwtPlot::yLeft).lowerBound();
-    double yScaleMax = axisScaleDiv(QwtPlot::yLeft).upperBound();
-
-    QPoint delta = d_panClickPos - me->pos();
-    double dx = (xScaleMax-xScaleMin)/(double)canvas()->width()*delta.x();
-    double dy = (yScaleMax-yScaleMin)/(double)canvas()->height()*-delta.y();
-
-
-    if(xScaleMin + dx < d_autoScaleXRange.first)
-        dx = d_autoScaleXRange.first - xScaleMin;
-    if(xScaleMax + dx > d_autoScaleXRange.second)
-        dx = d_autoScaleXRange.second - xScaleMax;
-    if(yScaleMin + dy < d_autoScaleYRange.first)
-        dy = d_autoScaleYRange.first - yScaleMin;
-    if(yScaleMax + dy > d_autoScaleYRange.second)
-        dy = d_autoScaleYRange.second - yScaleMax;
-
-    d_panClickPos -= delta;
-    setAxisScale(QwtPlot::xBottom,xScaleMin + dx,xScaleMax + dx);
-    if(dx)
-    {
-        updateAxes();
-        //updateAxes() doesn't reprocess the scale labels, which might need to be recalculated.
-        //this line will take care of that and avoid plot glitches
-        QApplication::sendPostedEvents(this,QEvent::LayoutRequest);
-    }
-    setAxisScale(QwtPlot::yLeft,yScaleMin + dy,yScaleMax + dy);
-
-    //only re-filter if we've moved horizontally (probably always!)
-    replot(dx!=0.0);
-}
-
-void FtPlot::zoom(QWheelEvent *we)
-{
-    if(!we)
-        return;
-
-    //ctrl-wheel: zoom only horizontally
-    //shift-wheel: zoom only vertically
-    //no modifiers: zoom both
-
-    //one step, which is 15 degrees, will zoom 10%
-    //the delta function is in units of 1/8th a degree
-    int numSteps = we->delta()/8/15;
-    double factor = 0.1;
-
-    //holding alt will make the x factor 5 times larger for faster zooming
-    if(we->modifiers() & Qt::AltModifier)
-        factor*=5.0;
-
-    if(!(we->modifiers() & Qt::ShiftModifier))
-    {
-        //do horizontal rescaling
-        //get current scale
-        double scaleXMin = axisScaleDiv(QwtPlot::xBottom).lowerBound();
-        double scaleXMax = axisScaleDiv(QwtPlot::xBottom).upperBound();
-
-        //find mouse position on scale (and make sure it's on the scale!)
-        double mousePos = canvasMap(QwtPlot::xBottom).invTransform(we->pos().x());
-        mousePos = qMax(mousePos,scaleXMin);
-        mousePos = qMin(mousePos,scaleXMax);
-
-        //calculate distances from mouse to scale; remove or add 10% from/to each
-        scaleXMin += fabs(mousePos - scaleXMin)*factor*(double)numSteps;
-        scaleXMax -= fabs(mousePos - scaleXMax)*factor*(double)numSteps;
-
-        //we can't go beyond range set by autoscale limits
-        scaleXMin = qMax(scaleXMin,d_autoScaleXRange.first);
-        scaleXMax = qMin(scaleXMax,d_autoScaleXRange.second);
-
-        if(scaleXMin <= d_autoScaleXRange.first && scaleXMax >= d_autoScaleXRange.second)
-            d_autoScaleXY.first = true;
-        else
-        {
-            d_autoScaleXY.first = false;
-            setAxisScale(QwtPlot::xBottom,scaleXMin,scaleXMax);
-            updateAxes();
-            //updateAxes() doesn't reprocess the scale labels, which might need to be recalculated.
-            //this line will take care of that and avoid plot glitches
-            QApplication::sendPostedEvents(this,QEvent::LayoutRequest);
-        }
-    }
-
-    if(!(we->modifiers() & Qt::ControlModifier))
-    {
-        //do vertical rescaling
-        //get current scale
-        double scaleYMin = axisScaleDiv(QwtPlot::yLeft).lowerBound();
-        double scaleYMax = axisScaleDiv(QwtPlot::yLeft).upperBound();
-
-        //find mouse position on scale (and make sure it's on the scale!)
-        double mousePos = canvasMap(QwtPlot::yLeft).invTransform(we->pos().y());
-        mousePos = qMax(mousePos,scaleYMin);
-        mousePos = qMin(mousePos,scaleYMax);
-
-        //calculate distances from mouse to scale; remove or add 10% from/to each
-        scaleYMin += fabs(mousePos - scaleYMin)*0.1*(double)numSteps;
-        scaleYMax -= fabs(mousePos - scaleYMax)*0.1*(double)numSteps;
-
-        //we can't go beyond range set by autoscale limits
-        scaleYMin = qMax(scaleYMin,d_autoScaleYRange.first);
-        scaleYMax = qMin(scaleYMax,d_autoScaleYRange.second);
-
-        if(scaleYMin <= d_autoScaleYRange.first && scaleYMax >= d_autoScaleYRange.second)
-            d_autoScaleXY.second = true;
-        else
-        {
-            d_autoScaleXY.second = false;
-            setAxisScale(QwtPlot::yLeft,scaleYMin,scaleYMax);
-        }
-    }
-
-    replot();
-}
-
-void FtPlot::enableAutoScaling()
-{
-    d_autoScaleXY.first = true;
-    d_autoScaleXY.second = true;
-    replot();
 }
 
 void FtPlot::ftStartChanged(double s)
@@ -386,88 +261,3 @@ void FtPlot::updatePlot()
     d_processing = true;
     d_replotWhenDone = false;
 }
-
-void FtPlot::resizeEvent(QResizeEvent *e)
-{
-    //we don't care about the details of the event, pass it up the chain so Qt can handle the resizing
-    QwtPlot::resizeEvent(e);
-
-    //now that the plot has been resized, refilter the data if possible
-    if(!d_currentFt.isEmpty())
-        replot();
-}
-
-bool FtPlot::eventFilter(QObject *obj, QEvent *ev)
-{
-    //make sure object is the plot canvas
-    if(obj == this->canvas())
-    {
-        if(ev->type() == QEvent::MouseButtonPress) //look for mouse button presses that would begin panning
-        {
-            QMouseEvent *me = static_cast<QMouseEvent*>(ev);
-            if(me->button() == Qt::MiddleButton) //check to see if it's a middle click
-            {
-                if(!d_autoScaleXY.first || !d_autoScaleXY.second)
-                {
-                    //get coordinates of mouse click in terms of the plot scales
-                    d_panClickPos = me->pos();
-                    //begin panning session
-                    d_panning=true;
-                    ev->accept();
-                    return true;
-                }
-            }
-        }
-        else if(d_panning && ev->type() == QEvent::MouseMove) //check for mouse movements
-        {
-            pan(static_cast<QMouseEvent*>(ev));
-            ev->accept();
-            return true;
-        }
-        else if(ev->type() == QEvent::MouseButtonRelease) //look for releases of mouse buttons
-        {
-            QMouseEvent *me = static_cast<QMouseEvent*>(ev);
-            if(me->button() == Qt::MiddleButton)
-            {
-                d_panning = false;
-                ev->accept();
-                return true;
-            }
-            else if(me->button() == Qt::LeftButton && (me->modifiers()&Qt::ControlModifier))
-            {
-                enableAutoScaling();
-                ev->accept();
-                return true;
-            }
-        }
-        else if (ev->type() == QEvent::Wheel)
-        {
-            zoom(static_cast<QWheelEvent*>(ev));
-            ev->accept();
-            return true;
-        }
-    }
-
-    return QwtPlot::eventFilter(obj,ev);
-}
-
-void FtPlot::replot(bool filter)
-{
-    if(d_autoScaleXY.first)
-    {
-        setAxisScale(QwtPlot::xBottom,d_autoScaleXRange.first,d_autoScaleXRange.second);
-        //x axes need to be updated before data are refiltered
-        updateAxes();
-        //updateAxes() doesn't reprocess the scale labels, which might need to be recalculated.
-        //this line will take care of that and avoid plot glitches
-        QApplication::sendPostedEvents(this,QEvent::LayoutRequest);
-    }
-    if(d_autoScaleXY.second)
-        setAxisScale(QwtPlot::yLeft,d_autoScaleYRange.first,d_autoScaleYRange.second);
-
-    if(filter)
-        filterData();
-
-    QwtPlot::replot();
-}
-

@@ -1,7 +1,7 @@
 #ifndef FTPLOT_H
 #define FTPLOT_H
 
-#include <qwt6/qwt_plot.h>
+#include "zoompanplot.h"
 #include <QVector>
 #include <QPointF>
 #include <qwt6/qwt_plot_curve.h>
@@ -27,7 +27,7 @@
  * Middle-click and drag to pan the plot.
  *
  */
-class FtPlot : public QwtPlot
+class FtPlot : public ZoomPanPlot
 {
     Q_OBJECT
 public:
@@ -60,7 +60,6 @@ public slots:
 
     void ftColorSlot();
     void gridColorSlot();
-    void enableAutoScaling();
 
     void ftStartChanged(double s);
     void ftEndChanged(double e);
@@ -75,15 +74,7 @@ private:
      * \brief The object representing the curve on the plot
      */
     QwtPlotCurve *p_curveData;
-
-    QPoint d_panClickPos;
-    QPair<bool,bool> d_autoScaleXY;
     QPair<double,double> d_autoScaleXRange, d_autoScaleYRange;
-
-    /*!
-     * \brief Whether to convert mouse movements into plot panning
-     */
-    bool d_panning;
 
     QwtPlotGrid *p_plotGrid;
 
@@ -94,33 +85,8 @@ private:
     Fid d_currentFid;
     QVector<QPointF> d_currentFt;
 
-    void pan(QMouseEvent *me);
-    void zoom(QWheelEvent *we);
-
     bool d_processing;
     bool d_replotWhenDone;
-
-protected:
-
-    /*!
-     * \brief Re-filters the FFT data when the plot size changes
-     * \param e The resizing event
-     */
-    void resizeEvent(QResizeEvent *e);
-
-    /*!
-     * \brief Captures events from Qt (see QWidget::eventFilter)
-     * \param obj The object targeted by the event
-     * \param ev The event
-     * \return Whether the event was processed by this widget
-     *
-     * Converts mouse movements into plot panning when the middle mouse button is held.
-     * A QwtPlotPanner could be used here, but it just takes a snapshot of the current graph and moves it around (there are empty areas while panning that aren't filled until the pan is complete).
-     * Using this function, the graph is continually filtered and updated while panning.
-     */
-    bool eventFilter(QObject *obj, QEvent *ev);
-
-    void replot(bool filter = true);
 
 
 };
