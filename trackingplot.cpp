@@ -18,6 +18,7 @@ TrackingPlot::TrackingPlot(QWidget *parent) : ZoomPanPlot(parent)
     setAxisFont(QwtPlot::yRight,QFont(QString("sans-serif"),8));
 
     canvas()->installEventFilter(this);
+    connect(this,&TrackingPlot::plotRightClicked,this,&TrackingPlot::buildContextMenu);
 }
 
 TrackingPlot::~TrackingPlot()
@@ -41,6 +42,13 @@ void TrackingPlot::legendItemClicked(QVariant info, bool checked, int index)
     QwtPlotCurve *c = dynamic_cast<QwtPlotCurve*>(infoToItem(info));
     if(c != nullptr)
         emit curveVisiblityToggled(c,checked);
+}
+
+void TrackingPlot::buildContextMenu(QMouseEvent *me)
+{
+    QMenu *menu = contextMenu();
+
+    menu->popup(me->globalPos());
 }
 
 void TrackingPlot::filterData()

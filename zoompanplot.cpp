@@ -2,13 +2,16 @@
 #include <QApplication>
 #include <QMouseEvent>
 #include <qwt6/qwt_scale_div.h>
+#include <QWidgetAction>
+#include <QFormLayout>
+#include <QDoubleSpinBox>
 
 ZoomPanPlot::ZoomPanPlot(QWidget *parent) : QwtPlot(parent)
 {
-    d_config.axisList.append(AxisConfig(QwtPlot::xBottom));
-    d_config.axisList.append(AxisConfig(QwtPlot::xTop));
-    d_config.axisList.append(AxisConfig(QwtPlot::yLeft));
-    d_config.axisList.append(AxisConfig(QwtPlot::yRight));
+    d_config.axisList.append(AxisConfig(QwtPlot::xBottom,QString("Bottom")));
+    d_config.axisList.append(AxisConfig(QwtPlot::xTop,QString("Top")));
+    d_config.axisList.append(AxisConfig(QwtPlot::yLeft,QString("Left")));
+    d_config.axisList.append(AxisConfig(QwtPlot::yRight,QString("Right")));
 
     canvas()->installEventFilter(this);
 }
@@ -132,6 +135,12 @@ void ZoomPanPlot::replot()
     }
 
     QwtPlot::replot();
+}
+
+void ZoomPanPlot::setZoomFactor(QwtPlot::Axis a, double v)
+{
+    int i = getAxisIndex(a);
+    d_config.axisList[i].zoomFactor = v;
 }
 
 void ZoomPanPlot::resizeEvent(QResizeEvent *ev)
@@ -302,6 +311,48 @@ void ZoomPanPlot::zoom(QWheelEvent *we)
     }
 
     replot();
+}
+
+QMenu *ZoomPanPlot::contextMenu()
+{
+    QMenu *menu = new QMenu();
+    menu->setAttribute(Qt::WA_DeleteOnClose);
+
+    QAction *asAction = menu->addAction(QString("Autoscale"));
+    connect(asAction,&QAction::triggered,this,&ZoomPanPlot::autoScale);
+
+    if(!itemList().isEmpty())
+    {
+        QMenu *zoomMenu = menu->addMenu(QString("Wheel zoom factor"));
+        QWidgetAction *wa = new QWidgetAction(zoomMenu);
+        QWidget *w = new QWidget(zoomMenu);
+        QFormLayout *fl = new QFormLayout(w);
+
+        for(int i=0; i<d_config.axisList.size(); i++)
+        {
+            const AxisConfig c = d_config.axisList.at(i);
+            if(!axisEnabled(c.type))
+                continue;
+
+            QDoubleSpinBox *box = new QDoubleSpinBox();
+            box->setMinimum(0.001);
+            box->setMaximum(0.5);
+            box->setDecimals(3);
+            box->setValue(c.zoomFactor);
+            box->setSingleStep(0.005);
+            box->setKeyboardTracking(false);
+            connect(box,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
+                    this,[=](double val){ setZoomFactor(c.type,val); });
+            fl->addRow(c.name,box);
+        }
+
+        w->setLayout(fl);
+        wa->setDefaultWidget(w);
+        zoomMenu->addAction(wa);
+    }
+
+    return menu;
+
 }
 
 int ZoomPanPlot::getAxisIndex(QwtPlot::Axis a)

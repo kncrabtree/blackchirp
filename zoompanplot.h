@@ -4,6 +4,7 @@
 #include <qwt6/qwt_plot.h>
 #include <QPoint>
 #include <QEvent>
+#include <QMenu>
 
 class ZoomPanPlot : public QwtPlot
 {
@@ -15,14 +16,15 @@ public:
 
     bool isAutoScale();
     void resetPlot();
-    void autoScale();
     void setAxisAutoScaleRange(QwtPlot::Axis axis, double min, double max);
     void setAxisAutoScaleMin(QwtPlot::Axis axis, double min);
     void setAxisAutoScaleMax(QwtPlot::Axis axis, double max);
     void expandAutoScaleRange(QwtPlot::Axis axis, double newValueMin, double newValueMax);
 
 public slots:
+    void autoScale();
     virtual void replot();
+    void setZoomFactor(QwtPlot::Axis a, double v);
 
 signals:
     void panningStarted();
@@ -36,8 +38,10 @@ protected:
         double min;
         double max;
         double zoomFactor;
+        QString name;
 
-        explicit AxisConfig(QwtPlot::Axis t) : type(t), autoScale(true), min(0.0), max(1.0), zoomFactor(0.1) {}
+        explicit AxisConfig(QwtPlot::Axis t, QString n) : type(t), autoScale(true),
+            min(0.0), max(1.0), zoomFactor(0.1), name(n) {}
     };
 
     struct PlotConfig {
@@ -55,6 +59,8 @@ protected:
     virtual bool eventFilter(QObject *obj, QEvent *ev);
     virtual void pan(QMouseEvent *me);
     virtual void zoom(QWheelEvent *we);
+
+    virtual QMenu *contextMenu();
 
 private:
     PlotConfig d_config;

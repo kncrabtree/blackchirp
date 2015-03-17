@@ -15,27 +15,26 @@ FidPlot::FidPlot(QWidget *parent) :
     ZoomPanPlot(parent), d_ftEndAtFidEnd(true)
 {
     //make axis label font smaller
-    this->setAxisFont(QwtPlot::xBottom,QFont(tr("sans-serif"),8));
-    this->setAxisFont(QwtPlot::yLeft,QFont(tr("sans-serif"),8));
+    this->setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
+    this->setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
 
     //build axis titles with small font. The <html> etc. tags are needed to display the mu character
-    QwtText blabel(tr("<html><body>Time (&mu;s)</body></html>"));
-    blabel.setFont(QFont(tr("sans-serif"),8));
+    QwtText blabel(QString("<html><body>Time (&mu;s)</body></html>"));
+    blabel.setFont(QFont(QString("sans-serif"),8));
     this->setAxisTitle(QwtPlot::xBottom,blabel);
 
-    QwtText llabel(tr("FID"));
-    llabel.setFont(QFont(tr("sans-serif"),8));
+    QwtText llabel(QString("FID"));
+    llabel.setFont(QFont(QString("sans-serif"),8));
     this->setAxisTitle(QwtPlot::yLeft,llabel);
 
     this->setAxisScaleDraw(QwtPlot::yLeft,new SciNotationScaleDraw());
 
 
     d_curve = new QwtPlotCurve();
-//	curveData->setRenderHint(QwtPlotItem::RenderAntialiased,true);
     QPalette pal;
     QPen p;
     QSettings s;
-    p.setColor(s.value(tr("fidcolor"),pal.text().color()).value<QColor>());
+    p.setColor(s.value(QString("fidcolor"),pal.text().color()).value<QColor>());
     p.setWidth(1);
     d_curve->setPen(p);
     d_curve->attach(this);
@@ -92,6 +91,8 @@ FidPlot::FidPlot(QWidget *parent) :
     d_yMinMax.first = -0.1;
     d_yMinMax.second = 0.1;
 
+    connect(this,&FidPlot::plotRightClicked,this,&FidPlot::buildContextMenu);
+
 }
 
 void FidPlot::receiveData(const Fid f)
@@ -122,8 +123,6 @@ void FidPlot::filterData()
     double firstPixel = 0.0;
     double lastPixel = canvas()->width();
     QwtScaleMap map = canvasMap(QwtPlot::xBottom);
-//    double scaleMin = map.invTransform(firstPixel);
-//    double scaleMax = map.invTransform(lastPixel);
 
     QVector<QPointF> filtered;
 
@@ -142,7 +141,6 @@ void FidPlot::filterData()
     {
         double min = fidData.at(dataIndex).y(), max = min;
         int minIndex = dataIndex, maxIndex = dataIndex;
-//        double upperLimit = map.invTransform(pixel+1.0);
         int numPnts = 0;
         while(dataIndex+1 < fidData.size() && map.transform(fidData.at(dataIndex).x()*1e6) < pixel+1.0)
         {
@@ -238,13 +236,12 @@ void FidPlot::setFtEnd(double end)
     QwtPlot::replot();
 }
 
-void FidPlot::contextMenuEvent(QContextMenuEvent *ev)
+void FidPlot::buildContextMenu(QMouseEvent *me)
 {
     if(d_currentFid.size()<2)
         return;
 
-    QMenu *menu = new QMenu();
-    connect(menu,&QMenu::aboutToHide,menu,&QMenu::deleteLater);
+    QMenu *menu = contextMenu();
 
     QWidgetAction *wa = new QWidgetAction(menu);
     QWidget *w = new QWidget(menu);
@@ -280,7 +277,7 @@ void FidPlot::contextMenuEvent(QContextMenuEvent *ev)
     wa->setDefaultWidget(w);
     menu->addAction(wa);
 
-    menu->popup(ev->globalPos());
+    menu->popup(me->globalPos());
 
 }
 

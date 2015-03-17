@@ -59,8 +59,7 @@ FtPlot::FtPlot(QWidget *parent) :
     p_plotGrid->setMinorPen(p);
     p_plotGrid->attach(this);
 
-    this->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(this,&FtPlot::customContextMenuRequested,this,&FtPlot::buildContextMenu);
+    connect(this,&FtPlot::plotRightClicked,this,&FtPlot::buildContextMenu);
 
     p_ftw = new FtWorker();
     //make signal/slot connections
@@ -177,9 +176,9 @@ void FtPlot::filterData()
     p_curveData->setSamples(filtered);
 }
 
-void FtPlot::buildContextMenu(QPoint p)
+void FtPlot::buildContextMenu(QMouseEvent *me)
 {
-    QMenu *m = new QMenu(this);
+    QMenu *m = contextMenu();
 
     QAction *ftColorAction = m->addAction(QString("Change FT Color..."));
     connect(ftColorAction,&QAction::triggered,this,[=](){ changeFtColor(getColor(p_curveData->pen().color())); });
@@ -187,7 +186,7 @@ void FtPlot::buildContextMenu(QPoint p)
     QAction *gridColorAction = m->addAction(QString("Change Grid Color..."));
     connect(gridColorAction,&QAction::triggered,this,[=](){ changeGridColor(getColor(p_plotGrid->majorPen().color())); });
 
-    m->popup(this->mapToGlobal(p));
+    m->popup(me->globalPos());
 }
 
 void FtPlot::changeFtColor(QColor c)

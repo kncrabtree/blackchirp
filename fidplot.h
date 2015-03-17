@@ -36,6 +36,7 @@ public slots:
     void initialize(double chirpStart, double chirpEnd, bool displayMarkers = true);
     void setFtStart(double start);
     void setFtEnd(double end);
+    void buildContextMenu(QMouseEvent *me);
 
 private:
     Fid d_currentFid;
@@ -48,7 +49,6 @@ private:
 
 protected:
     void filterData();
-    void contextMenuEvent(QContextMenuEvent *ev);
     void resizeEvent(QResizeEvent *e);
 
 };

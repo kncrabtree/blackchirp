@@ -26,6 +26,7 @@ signals:
 
 public slots:
     void legendItemClicked(QVariant info, bool checked, int index);
+    void buildContextMenu(QMouseEvent *me);
 
 
 private:

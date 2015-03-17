@@ -14,19 +14,6 @@
 #include "ftworker.h"
 #include <QThread>
 
-/*!
- * \brief Plot that displays the Fourier transform of the FID rolling average
- *
- * WARNING: DO NOT MESS WITH THIS CODE UNLESS YOU HAVE A GOOD UNDERSTANDING OF Qwt!!!
- * It is not for the faint of heart.
- *
- * This plot has several customizations on top of a standard QwtPlot.
- * The key improvement is data compression based on the number of horizontal pixels available; this greatly speeds up painting.
- * The FTPlot also has zooming, magnifying, and panning capabilities, but they are all customized to ensure the axes don't go beyond sensible limits.
- * Magnifying is done with the mouse wheel; hold Ctrl to magnify just the horizontal axis or Shift to magnify just the vertical axis.
- * Middle-click and drag to pan the plot.
- *
- */
 class FtPlot : public ZoomPanPlot
 {
     Q_OBJECT
@@ -56,7 +43,7 @@ public slots:
      */
     void filterData();
 
-    void buildContextMenu(QPoint p);
+    void buildContextMenu(QMouseEvent *me);
 
     void changeFtColor(QColor c);
     void changeGridColor(QColor c);
