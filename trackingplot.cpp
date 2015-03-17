@@ -5,8 +5,10 @@
 TrackingPlot::TrackingPlot(QWidget *parent) : ZoomPanPlot(parent)
 {
     QwtLegend *l = new QwtLegend;
+    l->contentsWidget()->installEventFilter(this);
     connect(l,&QwtLegend::checked,this,&TrackingPlot::legendItemClicked);
     insertLegend(l,QwtPlot::BottomLegend);
+
     setAxisScaleDraw(QwtPlot::xBottom,new TimeScaleDraw);
     setAxisScaleDraw(QwtPlot::xTop,new TimeScaleDraw);
 
@@ -47,12 +49,36 @@ void TrackingPlot::filterData()
 
 bool TrackingPlot::eventFilter(QObject *obj, QEvent *ev)
 {
-    if(obj == legend())
+    if(ev->type() == QEvent::MouseButtonPress)
     {
-        if(ev->type() == QEvent::MouseButtonRelease)
+        QwtLegend *l = static_cast<QwtLegend*>(legend());
+        if(obj == l->contentsWidget())
         {
             QMouseEvent *me = dynamic_cast<QMouseEvent*>(ev);
+            if(me != nullptr)
+            {
+                QwtLegendLabel *ll = dynamic_cast<QwtLegendLabel*>(l->contentsWidget()->childAt(me->pos()));
+                if(ll != nullptr)
+                {
+                    QVariant item = l->itemInfo(ll);
+                    QwtPlotCurve *c = dynamic_cast<QwtPlotCurve*>(infoToItem(item));
+                    if(c == nullptr)
+                    {
+                        ev->ignore();
+                        return true;
+                    }
+
+                    if(me->button() == Qt::RightButton)
+                    {
+                        emit legendItemRightClicked(c,me);
+                        ev->accept();
+                        return true;
+                    }
+                }
+            }
         }
     }
+
+    return ZoomPanPlot::eventFilter(obj,ev);
 }
 

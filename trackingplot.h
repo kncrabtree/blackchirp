@@ -22,9 +22,11 @@ public:
 
 signals:
     void curveVisiblityToggled(QwtPlotCurve*,bool);
+    void legendItemRightClicked(QwtPlotCurve*,QMouseEvent*);
 
 public slots:
     void legendItemClicked(QVariant info, bool checked, int index);
+
 
 private:
 

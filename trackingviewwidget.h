@@ -39,7 +39,9 @@ public slots:
     void initializeForExperiment();
     void pointUpdated(const QList<QPair<QString,QVariant> > list);
     void curveVisibilityToggled(QwtPlotCurve *c, bool visible);
-
+    void curveContextMenuRequested(QwtPlotCurve *c, QMouseEvent *me);
+    void changeCurveColor(int curveIndex);
+    void moveCurveToPlot(int curveIndex, int newPlotIndex);
 
     void changeNumPlots();
 
@@ -50,10 +52,9 @@ private:
     QList<TrackingPlot*> d_allPlots;
     QPair<double,double> d_xRange;
 
+    int findCurveIndex(QwtPlotCurve* c);
     void addNewPlot();
-
     void configureGrid();
-
     void setAutoScaleYRanges(int plotIndex, QwtPlot::Axis axis);
 
 };

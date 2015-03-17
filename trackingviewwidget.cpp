@@ -1,6 +1,7 @@
 #include "trackingviewwidget.h"
 #include <QSettings>
 #include <QInputDialog>
+#include <QColorDialog>
 #include <qwt6/qwt_date.h>
 
 TrackingViewWidget::TrackingViewWidget(QWidget *parent) :
@@ -142,22 +143,103 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
 
 void TrackingViewWidget::curveVisibilityToggled(QwtPlotCurve *c, bool visible)
 {
-    for(int i=0; i<d_plotCurves.size();i++)
+    int i = findCurveIndex(c);
+    if(i < 0)
+        return;
+
+    QSettings s;
+    s.setValue(QString("trackingWidget/curves/%1/isVisible").arg(d_plotCurves.at(i).name),visible);
+    s.sync();
+
+    d_plotCurves[i].isVisible = visible;
+    d_plotCurves[i].curve->setVisible(visible);
+    setAutoScaleYRanges(d_plotCurves.at(i).plotIndex,d_plotCurves.at(i).axis);
+    d_allPlots.at(d_plotCurves.at(i).plotIndex)->replot();
+
+}
+
+
+void TrackingViewWidget::curveContextMenuRequested(QwtPlotCurve *c, QMouseEvent *me)
+{
+    if(c == nullptr || me == nullptr)
+        return;
+
+    int i = findCurveIndex(c);
+    if(i<0)
+        return;
+
+    QMenu *menu = new QMenu();
+
+
+    QAction *colorAction = menu->addAction(QString("Change color..."));
+    connect(colorAction,&QAction::triggered,this, [=](){ changeCurveColor(i); } );
+
+    QMenu *moveMenu = menu->addMenu(QString("Change plot"));
+    QActionGroup *moveGroup = new QActionGroup(moveMenu);
+    moveGroup->setExclusive(true);
+    for(int j=0; j<d_allPlots.size(); j++)
     {
-        if(c == d_plotCurves.at(i).curve)
+        QAction *a = moveGroup->addAction(QString("Move to plot %1").arg(j+1));
+        if(j == d_plotCurves.at(i).plotIndex)
         {
-            QSettings s;
-            s.setValue(QString("trackingWidget/curves/%1/isVisible").arg(d_plotCurves.at(i).name),visible);
-            s.sync();
-
-            d_plotCurves[i].isVisible = visible;
-            d_plotCurves[i].curve->setVisible(visible);
-            setAutoScaleYRanges(d_plotCurves.at(i).plotIndex,d_plotCurves.at(i).axis);
-            d_allPlots.at(d_plotCurves.at(i).plotIndex)->replot();
-
-            return;
+            a->setEnabled(false);
+            a->setChecked(true);
         }
+        else
+            connect(a,&QAction::triggered,this, [=](){ moveCurveToPlot(i,j); });
     }
+     moveMenu->addActions(moveGroup->actions());
+
+    connect(menu,&QMenu::aboutToHide,menu,&QObject::deleteLater);
+
+    menu->popup(me->globalPos());
+}
+
+void TrackingViewWidget::changeCurveColor(int curveIndex)
+{
+    if(curveIndex < 0 || curveIndex >= d_plotCurves.size())
+        return;
+
+    QColor currentColor = d_plotCurves.at(curveIndex).curve->pen().color();
+    QColor newColor = QColorDialog::getColor(currentColor,this,QString("Select New Color"));
+    if(newColor.isValid())
+    {
+        d_plotCurves.at(curveIndex).curve->setPen(newColor);
+        QSettings s;
+        s.setValue(QString("trackingWidget/curves/%1/color").arg(d_plotCurves.at(curveIndex).name),newColor);
+        s.sync();
+        d_allPlots.at(d_plotCurves.at(curveIndex).plotIndex)->initializeLabel
+                (d_plotCurves.at(curveIndex).curve,d_plotCurves.at(curveIndex).isVisible);
+        d_allPlots.at(d_plotCurves.at(curveIndex).plotIndex)->replot();
+    }
+}
+
+void TrackingViewWidget::moveCurveToPlot(int curveIndex, int newPlotIndex)
+{
+    if(curveIndex < 0 || curveIndex >= d_plotCurves.size() || newPlotIndex < 0 || newPlotIndex >= d_allPlots.size())
+        return;
+
+    //note which plot we're starting from, and move curve
+    int oldPlotIndex = d_plotCurves.at(curveIndex).plotIndex;
+    d_plotCurves.at(curveIndex).curve->detach();
+    d_plotCurves.at(curveIndex).curve->attach(d_allPlots.at(newPlotIndex));
+
+    //update metadata, and update autoscale parameters for plots
+    d_plotCurves[curveIndex].plotIndex = newPlotIndex;
+    setAutoScaleYRanges(oldPlotIndex,d_plotCurves.at(curveIndex).axis);
+    setAutoScaleYRanges(newPlotIndex,d_plotCurves.at(curveIndex).axis);
+
+    //the new legend label needs to be made checkable
+    d_allPlots.at(newPlotIndex)->initializeLabel
+            (d_plotCurves.at(curveIndex).curve,d_plotCurves.at(curveIndex).isVisible);
+
+    //update settings, and replot
+    QSettings s;
+    s.setValue(QString("trackingWidget/curves/%1/plotIndex").arg(d_plotCurves.at(curveIndex).name),
+               newPlotIndex);
+    s.sync();
+    d_allPlots.at(oldPlotIndex)->replot();
+    d_allPlots.at(newPlotIndex)->replot();
 }
 
 void TrackingViewWidget::changeNumPlots()
@@ -170,7 +252,7 @@ void TrackingViewWidget::changeNumPlots()
 
     QSettings s;
     s.setValue(QString("trackingWidget/numPlots"),newNum);
-    s.sync();
+
 
     if(newNum > d_allPlots.size())
     {
@@ -184,10 +266,8 @@ void TrackingViewWidget::changeNumPlots()
             //reassign any curves that are on graphs about to be removed
             if(d_plotCurves.at(i).plotIndex >= newNum)
             {
-                d_plotCurves.at(i).curve->detach();
                 int newPlotIndex = d_plotCurves.at(i).plotIndex % newNum;
-                d_plotCurves[i].plotIndex = newPlotIndex;
-                d_plotCurves.at(i).curve->attach(d_allPlots.at(newPlotIndex));
+                moveCurveToPlot(i,newPlotIndex);
             }
         }
 
@@ -197,9 +277,26 @@ void TrackingViewWidget::changeNumPlots()
 
     configureGrid();
 
+
     for(int i=0; i<d_allPlots.size(); i++)
         d_allPlots.at(i)->replot();
 
+    s.sync();
+
+}
+
+int TrackingViewWidget::findCurveIndex(QwtPlotCurve *c)
+{
+    if(c == nullptr)
+        return -1;
+
+    for(int i=0; i<d_plotCurves.size(); i++)
+    {
+        if(d_plotCurves.at(i).curve == c)
+            return i;
+    }
+
+    return -1;
 }
 
 void TrackingViewWidget::addNewPlot()
@@ -215,6 +312,7 @@ void TrackingViewWidget::addNewPlot()
 
     //signal-slot connections go here
     connect(tp,&TrackingPlot::curveVisiblityToggled,this,&TrackingViewWidget::curveVisibilityToggled);
+    connect(tp,&TrackingPlot::legendItemRightClicked,this,&TrackingViewWidget::curveContextMenuRequested);
 
     d_allPlots.append(tp);
 
