@@ -18,29 +18,25 @@ FtPlot::FtPlot(QWidget *parent) :
     d_processing(false), d_replotWhenDone(false)
 {
     //make axis label font smaller
-    this->setAxisFont(QwtPlot::xBottom,QFont(tr("sans-serif"),8));
-    this->setAxisFont(QwtPlot::yLeft,QFont(tr("sans-serif"),8));
+    this->setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
+    this->setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
 
     //build axis titles with small font
-    QwtText blabel(tr("Frequency (MHz)"));
-    blabel.setFont(QFont(tr("sans-serif"),8));
+    QwtText blabel(QString("Frequency (MHz)"));
+    blabel.setFont(QFont(QString("sans-serif"),8));
     this->setAxisTitle(QwtPlot::xBottom,blabel);
 
-    QwtText llabel(tr("FT"));
-    llabel.setFont(QFont(tr("sans-serif"),8));
+    QwtText llabel(QString("FT"));
+    llabel.setFont(QFont(QString("sans-serif"),8));
     this->setAxisTitle(QwtPlot::yLeft,llabel);
 
     QSettings s;
 
     //build and configure curve object
     p_curveData = new QwtPlotCurve();
-    QPalette pal;
-    QPen p;
-    p.setColor(s.value(tr("ftcolor"),pal.color(QPalette::BrightText)).value<QColor>());
-    p.setWidth(1);
-    p_curveData->setPen(p);
+    QColor c = s.value(QString("ftcolor"),palette().color(QPalette::BrightText)).value<QColor>();
+    p_curveData->setPen(QPen(c));
     p_curveData->attach(this);
-
 
     QwtPlotPicker *picker = new QwtPlotPicker(this->canvas());
     picker->setAxis(QwtPlot::xBottom,QwtPlot::yLeft);
@@ -55,7 +51,8 @@ FtPlot::FtPlot(QWidget *parent) :
     p_plotGrid->enableXMin(true);
     p_plotGrid->enableY(true);
     p_plotGrid->enableYMin(true);
-    p.setColor(s.value(tr("gridcolor"),pal.color(QPalette::Light)).value<QColor>());
+    QPen p;
+    p.setColor(s.value(tr("gridcolor"),palette().color(QPalette::Light)).value<QColor>());
     p.setStyle(Qt::DashLine);
     p_plotGrid->setMajorPen(p);
     p.setStyle(Qt::DotLine);
@@ -126,10 +123,9 @@ void FtPlot::filterData()
     double firstPixel = 0.0;
     double lastPixel = canvas()->width();
     QwtScaleMap map = canvasMap(QwtPlot::xBottom);
-//    double scaleMin = map.invTransform(firstPixel);
-//    double scaleMax = map.invTransform(lastPixel);
 
     QVector<QPointF> filtered;
+    filtered.reserve(canvas()->width()*2);
 
     //find first data point that is in the range of the plot
     int dataIndex = 0;
@@ -146,7 +142,6 @@ void FtPlot::filterData()
     {
         double min = d_currentFt.at(dataIndex).y(), max = min;
         int minIndex = dataIndex, maxIndex = dataIndex;
-//        double upperLimit = map.invTransform(pixel+1.0);
         int numPnts = 0;
         while(dataIndex+1 < d_currentFt.size() && map.transform(d_currentFt.at(dataIndex).x()) < pixel+1.0)
         {
@@ -186,41 +181,37 @@ void FtPlot::buildContextMenu(QPoint p)
 {
     QMenu *m = new QMenu(this);
 
-    QAction *ftColorAction = new QAction(QString("Change FT Color..."),m);
-    connect(ftColorAction,&QAction::triggered,this,&FtPlot::ftColorSlot);
-    m->addAction(ftColorAction);
+    QAction *ftColorAction = m->addAction(QString("Change FT Color..."));
+    connect(ftColorAction,&QAction::triggered,this,[=](){ changeFtColor(getColor(p_curveData->pen().color())); });
 
-    m->addAction(QString("Change Grid Color..."),this,SLOT(gridColorSlot()));
+    QAction *gridColorAction = m->addAction(QString("Change Grid Color..."));
+    connect(gridColorAction,&QAction::triggered,this,[=](){ changeGridColor(getColor(p_plotGrid->majorPen().color())); });
 
     m->popup(this->mapToGlobal(p));
 }
 
-void FtPlot::ftColorSlot()
+void FtPlot::changeFtColor(QColor c)
 {
-    QColor c = getColor(p_curveData->pen().color());
     if(!c.isValid())
         return;
 
     QSettings s;
     s.setValue(tr("ftcolor"),c);
-//    s.sync();
+    s.sync();
 
-    QPen p(c);
-    p.setWidth(1);
-    p_curveData->setPen(p);
+    p_curveData->setPen(QPen(c));
     replot();
 
 }
 
-void FtPlot::gridColorSlot()
+void FtPlot::changeGridColor(QColor c)
 {
-    QColor c = getColor(p_plotGrid->majorPen().color());
     if(!c.isValid())
         return;
 
     QSettings s;
     s.setValue(tr("gridcolor"),c);
-//    s.sync();
+    s.sync();
 
     QPen p(c);
     p.setStyle(Qt::DashLine);

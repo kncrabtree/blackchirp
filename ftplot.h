@@ -58,8 +58,8 @@ public slots:
 
     void buildContextMenu(QPoint p);
 
-    void ftColorSlot();
-    void gridColorSlot();
+    void changeFtColor(QColor c);
+    void changeGridColor(QColor c);
 
     void ftStartChanged(double s);
     void ftEndChanged(double e);
