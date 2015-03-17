@@ -43,6 +43,8 @@ public slots:
     void changeCurveColor(int curveIndex);
     void moveCurveToPlot(int curveIndex, int newPlotIndex);
     void changeCurveAxis(int curveIndex);
+    void pushXAxis(int sourcePlotIndex);
+    void autoScaleAll();
 
     void changeNumPlots();
 

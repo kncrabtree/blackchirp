@@ -77,6 +77,21 @@ void ZoomPanPlot::expandAutoScaleRange(QwtPlot::Axis axis, double newValueMin, d
     setAxisAutoScaleRange(axis,qMin(newValueMin,d_config.axisList.at(i).min),qMax(newValueMax,d_config.axisList.at(i).max));
 }
 
+void ZoomPanPlot::setXRanges(const QwtScaleDiv &bottom, const QwtScaleDiv &top)
+{
+    setAxisScale(QwtPlot::xBottom,bottom.lowerBound(),bottom.upperBound());
+    setAxisScale(QwtPlot::xTop,top.lowerBound(),top.upperBound());
+
+    for(int i=0; i<d_config.axisList.size(); i++)
+    {
+        if(d_config.axisList.at(i).type == QwtPlot::xBottom || d_config.axisList.at(i).type == QwtPlot::xTop)
+            d_config.axisList[i].autoScale = false;
+    }
+
+    d_config.xDirty = true;
+    replot();
+}
+
 void ZoomPanPlot::replot()
 {
 

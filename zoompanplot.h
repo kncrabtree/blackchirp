@@ -20,6 +20,7 @@ public:
     void setAxisAutoScaleMin(QwtPlot::Axis axis, double min);
     void setAxisAutoScaleMax(QwtPlot::Axis axis, double max);
     void expandAutoScaleRange(QwtPlot::Axis axis, double newValueMin, double newValueMax);
+    void setXRanges(const QwtScaleDiv &bottom, const QwtScaleDiv &top);
 
 public slots:
     void autoScale();

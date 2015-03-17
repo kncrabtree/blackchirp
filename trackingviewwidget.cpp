@@ -291,6 +291,27 @@ void TrackingViewWidget::changeCurveAxis(int curveIndex)
     d_allPlots.at(d_plotCurves.at(curveIndex).plotIndex)->replot();
 }
 
+void TrackingViewWidget::pushXAxis(int sourcePlotIndex)
+{
+    if(sourcePlotIndex < 0 || sourcePlotIndex >= d_allPlots.size())
+        return;
+
+    const QwtScaleDiv b = d_allPlots.at(sourcePlotIndex)->axisScaleDiv(QwtPlot::xBottom);
+    const QwtScaleDiv t = d_allPlots.at(sourcePlotIndex)->axisScaleDiv(QwtPlot::xTop);
+
+    for(int i=0; i<d_allPlots.size(); i++)
+    {
+        if(i != sourcePlotIndex)
+            d_allPlots.at(i)->setXRanges(b,t);
+    }
+}
+
+void TrackingViewWidget::autoScaleAll()
+{
+    for(int i=0; i<d_allPlots.size(); i++)
+        d_allPlots.at(i)->autoScale();
+}
+
 void TrackingViewWidget::changeNumPlots()
 {
     bool ok = true;
@@ -362,6 +383,9 @@ void TrackingViewWidget::addNewPlot()
     //signal-slot connections go here
     connect(tp,&TrackingPlot::curveVisiblityToggled,this,&TrackingViewWidget::curveVisibilityToggled);
     connect(tp,&TrackingPlot::legendItemRightClicked,this,&TrackingViewWidget::curveContextMenuRequested);
+    int newPlotIndex = d_allPlots.size();
+    connect(tp,&TrackingPlot::axisPushRequested,this,[=](){ pushXAxis(newPlotIndex); });
+    connect(tp,&TrackingPlot::autoScaleAllRequested,this,&TrackingViewWidget::autoScaleAll);
 
     d_allPlots.append(tp);
 

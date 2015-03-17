@@ -23,6 +23,8 @@ public:
 signals:
     void curveVisiblityToggled(QwtPlotCurve*,bool);
     void legendItemRightClicked(QwtPlotCurve*,QMouseEvent*);
+    void axisPushRequested();
+    void autoScaleAllRequested();
 
 public slots:
     void legendItemClicked(QVariant info, bool checked, int index);

@@ -48,6 +48,13 @@ void TrackingPlot::buildContextMenu(QMouseEvent *me)
 {
     QMenu *menu = contextMenu();
 
+    QAction *pushAction = menu->addAction(QString("Push X Axis"));
+    pushAction->setToolTip(QString("Set the X axis ranges of all other plots to the range of this plot."));
+    connect(pushAction,&QAction::triggered,this,&TrackingPlot::axisPushRequested);
+
+    QAction *asAllAction = menu->addAction(QString("Autoscale All"));
+    connect(asAllAction,&QAction::triggered,this,&TrackingPlot::autoScaleAllRequested);
+
     menu->popup(me->globalPos());
 }
 
