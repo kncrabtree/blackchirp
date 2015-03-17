@@ -1,7 +1,7 @@
 #ifndef FIDPLOT_H
 #define FIDPLOT_H
+#include "zoompanplot.h"
 #include <QObject>
-#include <qwt6/qwt_plot.h>
 #include <QVector>
 #include <qwt6/qwt_plot_curve.h>
 #include <QResizeEvent>
@@ -14,7 +14,7 @@
 /*!
  * \brief The FID Plot
  */
-class FidPlot : public QwtPlot
+class FidPlot : public ZoomPanPlot
 {
     Q_OBJECT
 public:
@@ -33,7 +33,6 @@ signals:
 
 public slots:
     void receiveData(const Fid f);
-    void filterData();
     void initialize(double chirpStart, double chirpEnd, bool displayMarkers = true);
     void setFtStart(double start);
     void setFtEnd(double end);
@@ -41,13 +40,14 @@ public slots:
 private:
     Fid d_currentFid;
     QwtPlotCurve *d_curve;
+    QPair<double,double> d_yMinMax;
 
     QPair<QwtPlotMarker*,QwtPlotMarker*> d_chirpMarkers;
     QPair<QwtPlotMarker*,QwtPlotMarker*> d_ftMarkers;
     bool d_ftEndAtFidEnd;
 
 protected:
-    void replot();
+    void filterData();
     void contextMenuEvent(QContextMenuEvent *ev);
     void resizeEvent(QResizeEvent *e);
 

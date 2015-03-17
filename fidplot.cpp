@@ -12,7 +12,7 @@
 #include <QFormLayout>
 
 FidPlot::FidPlot(QWidget *parent) :
-    QwtPlot(parent), d_ftEndAtFidEnd(true)
+    ZoomPanPlot(parent), d_ftEndAtFidEnd(true)
 {
     //make axis label font smaller
     this->setAxisFont(QwtPlot::xBottom,QFont(tr("sans-serif"),8));
@@ -26,9 +26,6 @@ FidPlot::FidPlot(QWidget *parent) :
     QwtText llabel(tr("FID"));
     llabel.setFont(QFont(tr("sans-serif"),8));
     this->setAxisTitle(QwtPlot::yLeft,llabel);
-
-    this->setAxisAutoScale(QwtPlot::yLeft,true);
-    this->setAxisAutoScale(QwtPlot::xBottom,true);
 
     this->setAxisScaleDraw(QwtPlot::yLeft,new SciNotationScaleDraw());
 
@@ -92,6 +89,9 @@ FidPlot::FidPlot(QWidget *parent) :
     ftEndMarker->attach(this);
     d_ftMarkers.second = ftEndMarker;
 
+    d_yMinMax.first = -0.1;
+    d_yMinMax.second = 0.1;
+
 }
 
 void FidPlot::receiveData(const Fid f)
@@ -101,11 +101,14 @@ void FidPlot::receiveData(const Fid f)
 
     if(d_ftEndAtFidEnd)
     {
-        d_ftMarkers.second->setValue(f.spacing()*f.size()*1e6,0.0);
+        d_ftMarkers.second->setValue(f.spacing()*(double)f.size()*1e6,0.0);
         d_ftEndAtFidEnd = false; //unset this so that the marker isn't repositioned at every new FID
     }
 
+    setAxisAutoScaleMax(QwtPlot::xBottom,f.spacing()*1e6*(double)f.size());
+
     d_currentFid = f;
+    filterData();
     replot();
 }
 
@@ -156,8 +159,18 @@ void FidPlot::filterData()
             dataIndex++;
             numPnts++;
         }
+        if(filtered.isEmpty())
+        {
+            d_yMinMax.first = min;
+            d_yMinMax.second = max;
+        }
+        else
+        {
+            d_yMinMax.first = qMin(min,d_yMinMax.first);
+            d_yMinMax.second = qMax(max,d_yMinMax.second);
+        }
         if(numPnts == 1)
-            filtered.append(fidData.at(dataIndex-1));
+            filtered.append(QPointF(fidData.at(dataIndex-1).x()*1e6,fidData.at(dataIndex-1).y()));
         else if (numPnts > 1)
         {
             QPointF first(map.invTransform(pixel),fidData.at(minIndex).y());
@@ -174,6 +187,7 @@ void FidPlot::filterData()
         filtered.append(p);
     }
 
+    setAxisAutoScaleRange(QwtPlot::yLeft,d_yMinMax.first,d_yMinMax.second);
     //assign data to curve object
     d_curve->setSamples(filtered);
 }
@@ -220,26 +234,6 @@ void FidPlot::setFtEnd(double end)
     }
     else
         emit overrideEnd(d_ftMarkers.second->value().x());
-
-    QwtPlot::replot();
-}
-
-void FidPlot::replot()
-{
-    if(d_currentFid.size()>0)
-    {
-        if(fabs(axisScaleDiv(QwtPlot::xBottom).upperBound()-d_currentFid.spacing()*d_currentFid.size()*1e6) > 0.001)
-        {
-            setAxisScale(QwtPlot::xBottom,0.0,d_currentFid.spacing()*d_currentFid.size()*1e6);
-            //x axes need to be updated before data are refiltered
-            updateAxes();
-            //updateAxes() doesn't reprocess the scale labels, which might need to be recalculated.
-            //this line will take care of that and avoid plot glitches
-            QApplication::sendPostedEvents(this,QEvent::LayoutRequest);
-        }
-
-        filterData();
-    }
 
     QwtPlot::replot();
 }
