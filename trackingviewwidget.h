@@ -42,6 +42,7 @@ public slots:
     void curveContextMenuRequested(QwtPlotCurve *c, QMouseEvent *me);
     void changeCurveColor(int curveIndex);
     void moveCurveToPlot(int curveIndex, int newPlotIndex);
+    void changeCurveAxis(int curveIndex);
 
     void changeNumPlots();
 

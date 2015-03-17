@@ -3,6 +3,8 @@
 #include <QInputDialog>
 #include <QColorDialog>
 #include <qwt6/qwt_date.h>
+#include <qmenu.h>
+#include <QActionGroup>
 
 TrackingViewWidget::TrackingViewWidget(QWidget *parent) :
     QWidget(parent)
@@ -170,7 +172,6 @@ void TrackingViewWidget::curveContextMenuRequested(QwtPlotCurve *c, QMouseEvent 
 
     QMenu *menu = new QMenu();
 
-
     QAction *colorAction = menu->addAction(QString("Change color..."));
     connect(colorAction,&QAction::triggered,this, [=](){ changeCurveColor(i); } );
 
@@ -180,18 +181,42 @@ void TrackingViewWidget::curveContextMenuRequested(QwtPlotCurve *c, QMouseEvent 
     for(int j=0; j<d_allPlots.size(); j++)
     {
         QAction *a = moveGroup->addAction(QString("Move to plot %1").arg(j+1));
+        a->setCheckable(true);
         if(j == d_plotCurves.at(i).plotIndex)
         {
             a->setEnabled(false);
             a->setChecked(true);
         }
         else
+        {
             connect(a,&QAction::triggered,this, [=](){ moveCurveToPlot(i,j); });
+            a->setChecked(false);
+        }
     }
-     moveMenu->addActions(moveGroup->actions());
+    moveMenu->addActions(moveGroup->actions());
+
+    menu->addSection(QString("Axis"));
+    QActionGroup *axisGroup = new QActionGroup(menu);
+    axisGroup->setExclusive(true);
+    QAction *lAction = axisGroup->addAction(QString("Left"));
+    QAction *rAction = axisGroup->addAction(QString("Right"));
+    lAction->setCheckable(true);
+    rAction->setCheckable(true);
+    if(d_plotCurves.at(i).axis == QwtPlot::yLeft)
+    {
+        lAction->setEnabled(false);
+        lAction->setChecked(true);
+        connect(rAction,&QAction::triggered,this,[=](){ changeCurveAxis(i); });
+    }
+    else
+    {
+        rAction->setEnabled(false);
+        rAction->setChecked(true);
+        connect(lAction,&QAction::triggered,this,[=](){ changeCurveAxis(i); });
+    }
+    menu->addActions(axisGroup->actions());
 
     connect(menu,&QMenu::aboutToHide,menu,&QObject::deleteLater);
-
     menu->popup(me->globalPos());
 }
 
@@ -240,6 +265,30 @@ void TrackingViewWidget::moveCurveToPlot(int curveIndex, int newPlotIndex)
     s.sync();
     d_allPlots.at(oldPlotIndex)->replot();
     d_allPlots.at(newPlotIndex)->replot();
+}
+
+void TrackingViewWidget::changeCurveAxis(int curveIndex)
+{
+    if(curveIndex < 0 || curveIndex > d_plotCurves.size())
+        return;
+
+    QwtPlot::Axis oldAxis = d_plotCurves.at(curveIndex).axis;
+    QwtPlot::Axis newAxis;
+    if(oldAxis == QwtPlot::yLeft)
+        newAxis = QwtPlot::yRight;
+    else
+        newAxis = QwtPlot::yLeft;
+
+    d_plotCurves.at(curveIndex).curve->setAxes(QwtPlot::xBottom,newAxis);
+    d_plotCurves[curveIndex].axis = newAxis;
+
+    QSettings s;
+    s.setValue(QString("trackingWidget/curves/%1/axis").arg(d_plotCurves.at(curveIndex).name),newAxis);
+    s.sync();
+
+    setAutoScaleYRanges(d_plotCurves.at(curveIndex).plotIndex,oldAxis);
+    setAutoScaleYRanges(d_plotCurves.at(curveIndex).plotIndex,newAxis);
+    d_allPlots.at(d_plotCurves.at(curveIndex).plotIndex)->replot();
 }
 
 void TrackingViewWidget::changeNumPlots()
