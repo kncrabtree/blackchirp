@@ -43,6 +43,9 @@ void ZoomPanPlot::autoScale()
     for(int i=0; i<d_config.axisList.size(); i++)
         d_config.axisList[i].autoScale = true;
 
+    d_config.xDirty = true;
+    d_config.panning = false;
+
     replot();
 }
 
