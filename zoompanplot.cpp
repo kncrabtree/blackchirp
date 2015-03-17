@@ -73,6 +73,37 @@ void ZoomPanPlot::expandAutoScaleRange(QwtPlot::Axis axis, double newValueMin, d
 
 void ZoomPanPlot::replot()
 {
+
+    //figure out which axes to show
+    QwtPlotItemList l = itemList();
+    bool bottom = false, top = false, left = false, right = false;
+    for(int i=0; i<l.size(); i++)
+    {
+        if(l.at(i)->yAxis() == QwtPlot::yLeft)
+            left = true;
+        if(l.at(i)->yAxis() == QwtPlot::yRight)
+            right = true;
+        if(l.at(i)->xAxis() == QwtPlot::xBottom)
+            bottom = true;
+        if(l.at(i)->xAxis() == QwtPlot::xTop)
+            top = true;
+    }
+
+    enableAxis(QwtPlot::yLeft,left);
+    enableAxis(QwtPlot::yRight,right);
+    enableAxis(QwtPlot::xTop,top);
+    enableAxis(QwtPlot::xBottom,bottom);
+
+    if(!bottom)
+        d_config.axisList[getAxisIndex(QwtPlot::xBottom)].autoScale = true;
+    if(!top)
+        d_config.axisList[getAxisIndex(QwtPlot::xTop)].autoScale = true;
+    if(!left)
+        d_config.axisList[getAxisIndex(QwtPlot::yLeft)].autoScale = true;
+    if(!right)
+        d_config.axisList[getAxisIndex(QwtPlot::yRight)].autoScale = true;
+
+
     bool redrawXAxis = false;
     for(int i=0; i<d_config.axisList.size(); i++)
     {
@@ -155,15 +186,21 @@ bool ZoomPanPlot::eventFilter(QObject *obj, QEvent *ev)
         }
         else if(ev->type() == QEvent::MouseMove)
         {
-            pan(dynamic_cast<QMouseEvent*>(ev));
-            ev->accept();
-            return true;
+            if(d_config.panning)
+            {
+                pan(dynamic_cast<QMouseEvent*>(ev));
+                ev->accept();
+                return true;
+            }
         }
         else if(ev->type() == QEvent::Wheel)
         {
-            zoom(dynamic_cast<QWheelEvent*>(ev));
-            ev->accept();
-            return true;
+            if(!itemList().isEmpty())
+            {
+                zoom(dynamic_cast<QWheelEvent*>(ev));
+                ev->accept();
+                return true;
+            }
         }
     }
 
