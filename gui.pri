@@ -5,7 +5,8 @@ SOURCES += mainwindow.cpp \
     $$PWD/communicationdialog.cpp \
     $$PWD/trackingviewwidget.cpp \
     $$PWD/trackingplot.cpp \
-    $$PWD/zoompanplot.cpp
+    $$PWD/zoompanplot.cpp \
+    $$PWD/ftmwconfigwidget.cpp
 
 HEADERS += mainwindow.h \
     $$PWD/ftmwviewwidget.h \
@@ -14,8 +15,10 @@ HEADERS += mainwindow.h \
     $$PWD/communicationdialog.h \
     $$PWD/trackingviewwidget.h \
     $$PWD/trackingplot.h \
-    $$PWD/zoompanplot.h
+    $$PWD/zoompanplot.h \
+    $$PWD/ftmwconfigwidget.h
 
 FORMS += mainwindow.ui \
     $$PWD/ftmwviewwidget.ui \
-    $$PWD/communicationdialog.ui
+    $$PWD/communicationdialog.ui \
+    $$PWD/ftmwconfigwidget.ui

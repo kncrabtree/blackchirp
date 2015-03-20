@@ -1,0 +1,463 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>FtmwConfigWidget</class>
+ <widget class="QWidget" name="FtmwConfigWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>565</width>
+    <height>280</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,1">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="checkBox">
+       <property name="text">
+        <string>FTMW Enabled</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QGroupBox" name="acqSettingsBox">
+         <property name="title">
+          <string>Acquisition Settings</string>
+         </property>
+         <layout class="QFormLayout" name="formLayout_2">
+          <property name="fieldGrowthPolicy">
+           <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+          </property>
+          <item row="0" column="0">
+           <widget class="QLabel" name="modeLabel">
+            <property name="text">
+             <string>Mode</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QComboBox" name="modeComboBox">
+            <item>
+             <property name="text">
+              <string>Target Shots</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Target Time</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Forever</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Peak Up</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="targetShotsLabel">
+            <property name="text">
+             <string>Target Shots</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QSpinBox" name="targetShotsSpinBox">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Target number of shots.&lt;/p&gt;&lt;p&gt;In &amp;quot;target shots&amp;quot; mode, the experiment will finish when this number is reached.&lt;/p&gt;&lt;p&gt;In &amp;quot;peak up&amp;quot; mode, this will be the number of shots included in the rolling average (the number can be changed after the scan begins.)&lt;/p&gt;&lt;p&gt;In other modes, this number is ignored.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="maximum">
+             <number>2147483647</number>
+            </property>
+            <property name="singleStep">
+             <number>5000</number>
+            </property>
+            <property name="value">
+             <number>10000</number>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="targetTimeLabel">
+            <property name="text">
+             <string>Target Time</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QDateTimeEdit" name="targetTimeDateTimeEdit">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If the mode is &amp;quot;target time,&amp;quot; the experiment will finish at this time.&lt;/p&gt;&lt;p&gt;In all other modes, this value is ignored.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="displayFormat">
+             <string>yyyy-MM-dd h:mm AP</string>
+            </property>
+            <property name="calendarPopup">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="autosaveLabel">
+            <property name="text">
+             <string>Autosave</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QSpinBox" name="autosaveSpinBox">
+            <property name="toolTip">
+             <string>Number of shots per autosave of FID</string>
+            </property>
+            <property name="suffix">
+             <string> shots</string>
+            </property>
+            <property name="prefix">
+             <string>every </string>
+            </property>
+            <property name="minimum">
+             <number>1000</number>
+            </property>
+            <property name="maximum">
+             <number>1000000000</number>
+            </property>
+            <property name="singleStep">
+             <number>2500</number>
+            </property>
+            <property name="value">
+             <number>2500</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="fidSettingsBox">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="title">
+          <string>FID Settings</string>
+         </property>
+         <layout class="QFormLayout" name="formLayout_3">
+          <property name="fieldGrowthPolicy">
+           <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+          </property>
+          <item row="0" column="0">
+           <widget class="QLabel" name="loFrequencyLabel">
+            <property name="text">
+             <string>LO Frequency</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QDoubleSpinBox" name="loFrequencyDoubleSpinBox">
+            <property name="toolTip">
+             <string>Oscillator frequency in downconversion chain.</string>
+            </property>
+            <property name="suffix">
+             <string> MHz</string>
+            </property>
+            <property name="decimals">
+             <number>6</number>
+            </property>
+            <property name="maximum">
+             <double>10000000.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>25.500000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="sidebandLabel">
+            <property name="text">
+             <string>Sideband</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QComboBox" name="sidebandComboBox">
+            <property name="toolTip">
+             <string>Sideband for downconversion chain</string>
+            </property>
+            <item>
+             <property name="text">
+              <string>Upper Sideband</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Lower Sideband</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="scopeSettingsBox">
+       <property name="title">
+        <string>Scope Settings</string>
+       </property>
+       <layout class="QFormLayout" name="formLayout_4">
+        <property name="fieldGrowthPolicy">
+         <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+        </property>
+        <item row="0" column="0">
+         <widget class="QLabel" name="fIDChannelLabel">
+          <property name="text">
+           <string>FID Channel</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QSpinBox" name="fIDChannelSpinBox">
+          <property name="toolTip">
+           <string>Channel that records FIDs.</string>
+          </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>4</number>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="verticalScaleLabel">
+          <property name="text">
+           <string>Vertical Scale</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QDoubleSpinBox" name="verticalScaleDoubleSpinBox">
+          <property name="suffix">
+           <string> V/div</string>
+          </property>
+          <property name="decimals">
+           <number>3</number>
+          </property>
+          <property name="minimum">
+           <double>0.001000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>5.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.020000000000000</double>
+          </property>
+          <property name="value">
+           <double>0.020000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="sampleRateLabel">
+          <property name="text">
+           <string>Sample Rate</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QComboBox" name="sampleRateComboBox">
+          <property name="currentIndex">
+           <number>4</number>
+          </property>
+          <item>
+           <property name="text">
+            <string>2 GS/s</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>5 GS/s</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>10 GS/s</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>20 GS/s</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>50 GS/s</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>100 GS/s</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="recordLengthLabel">
+          <property name="text">
+           <string>Record Length</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QSpinBox" name="recordLengthSpinBox">
+          <property name="suffix">
+           <string> samples</string>
+          </property>
+          <property name="prefix">
+           <string/>
+          </property>
+          <property name="minimum">
+           <number>1000</number>
+          </property>
+          <property name="maximum">
+           <number>100000000</number>
+          </property>
+          <property name="singleStep">
+           <number>50000</number>
+          </property>
+          <property name="value">
+           <number>750000</number>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0">
+         <widget class="QLabel" name="fastFrameEnabledLabel">
+          <property name="text">
+           <string>Fast Frame?</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1">
+         <widget class="QCheckBox" name="fastFrameEnabledCheckBox">
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QLabel" name="framesLabel">
+          <property name="text">
+           <string>Frames</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <widget class="QSpinBox" name="framesSpinBox">
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="value">
+           <number>10</number>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0">
+         <widget class="QLabel" name="summaryFrameLabel">
+          <property name="text">
+           <string>Summary Frame?</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="1">
+         <widget class="QCheckBox" name="summaryFrameCheckBox"/>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="bytesPointLabel">
+          <property name="text">
+           <string>Bytes/point</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QSpinBox" name="bytesPointSpinBox">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of bytes encoding the scope data.&lt;/p&gt;&lt;p&gt;Set to 1 unless using a summary frame.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>2</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
