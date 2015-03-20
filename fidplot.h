@@ -37,6 +37,7 @@ public slots:
     void setFtStart(double start);
     void setFtEnd(double end);
     void buildContextMenu(QMouseEvent *me);
+    void changeFidColor();
 
 private:
     Fid d_currentFid;

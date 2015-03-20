@@ -1,7 +1,6 @@
 #include "fidplot.h"
 #include <math.h>
 #include <qwt6/qwt_plot_canvas.h>
-#include <QDebug>
 #include <QPalette>
 #include <QSettings>
 #include <QApplication>
@@ -10,6 +9,7 @@
 #include <QLabel>
 #include <QWidgetAction>
 #include <QFormLayout>
+#include <QColorDialog>
 
 FidPlot::FidPlot(QWidget *parent) :
     ZoomPanPlot(QString("FidPlot"),parent), d_ftEndAtFidEnd(true)
@@ -243,6 +243,9 @@ void FidPlot::buildContextMenu(QMouseEvent *me)
 
     QMenu *menu = contextMenu();
 
+    QAction *colorAct = menu->addAction(QString("Change FID color..."));
+    connect(colorAct,&QAction::triggered,this,&FidPlot::changeFidColor);
+
     QWidgetAction *wa = new QWidgetAction(menu);
     QWidget *w = new QWidget(menu);
     QFormLayout *fl = new QFormLayout(w);
@@ -279,6 +282,21 @@ void FidPlot::buildContextMenu(QMouseEvent *me)
 
     menu->popup(me->globalPos());
 
+}
+
+void FidPlot::changeFidColor()
+{
+    QColor c = QColorDialog::getColor(d_curve->pen().color(),this,QString("Select Color"));
+    if(c.isValid())
+    {
+        d_curve->setPen(c);
+
+        QSettings s;
+        s.setValue(QString("fidcolor"),c);
+        s.sync();
+
+        replot();
+    }
 }
 
 void FidPlot::resizeEvent(QResizeEvent *e)
