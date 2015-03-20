@@ -52,7 +52,7 @@ FtPlot::FtPlot(QWidget *parent) :
     p_plotGrid->enableY(true);
     p_plotGrid->enableYMin(true);
     QPen p;
-    p.setColor(s.value(tr("gridcolor"),palette().color(QPalette::Light)).value<QColor>());
+    p.setColor(s.value(QString("gridcolor"),palette().color(QPalette::Light)).value<QColor>());
     p.setStyle(Qt::DashLine);
     p_plotGrid->setMajorPen(p);
     p.setStyle(Qt::DotLine);
@@ -195,7 +195,7 @@ void FtPlot::changeFtColor(QColor c)
         return;
 
     QSettings s;
-    s.setValue(tr("ftcolor"),c);
+    s.setValue(QString("ftcolor"),c);
     s.sync();
 
     p_curveData->setPen(QPen(c));
@@ -209,7 +209,7 @@ void FtPlot::changeGridColor(QColor c)
         return;
 
     QSettings s;
-    s.setValue(tr("gridcolor"),c);
+    s.setValue(QString("gridcolor"),c);
     s.sync();
 
     QPen p(c);
@@ -223,7 +223,7 @@ void FtPlot::changeGridColor(QColor c)
 
 QColor FtPlot::getColor(QColor startingColor)
 {
-    return QColorDialog::getColor(startingColor,this,tr("Select Color"));
+    return QColorDialog::getColor(startingColor,this,QString("Select Color"));
 }
 
 void FtPlot::ftStartChanged(double s)
