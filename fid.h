@@ -183,6 +183,7 @@ public:
     Fid::Sideband sideband;
 };
 
+Q_DECLARE_METATYPE(Fid::Sideband)
 Q_DECLARE_METATYPE(Fid)
 Q_DECLARE_TYPEINFO(Fid,Q_MOVABLE_TYPE);
 

@@ -154,6 +154,8 @@ public:
 
 };
 
+Q_DECLARE_METATYPE(FtmwConfig::FtmwType)
+Q_DECLARE_METATYPE(FtmwConfig::ScopeTriggerSlope)
 Q_DECLARE_TYPEINFO(FtmwConfig, Q_MOVABLE_TYPE);
 
 

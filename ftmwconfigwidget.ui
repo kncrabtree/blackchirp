@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>565</width>
-    <height>280</height>
+    <width>568</width>
+    <height>331</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,7 +30,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QCheckBox" name="checkBox">
+      <widget class="QCheckBox" name="ftmwEnabledCheckBox">
        <property name="text">
         <string>FTMW Enabled</string>
        </property>
@@ -75,28 +75,7 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QComboBox" name="modeComboBox">
-            <item>
-             <property name="text">
-              <string>Target Shots</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Target Time</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Forever</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Peak Up</string>
-             </property>
-            </item>
-           </widget>
+           <widget class="QComboBox" name="modeComboBox"/>
           </item>
           <item row="1" column="0">
            <widget class="QLabel" name="targetShotsLabel">
@@ -109,6 +88,9 @@
            <widget class="QSpinBox" name="targetShotsSpinBox">
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Target number of shots.&lt;/p&gt;&lt;p&gt;In &amp;quot;target shots&amp;quot; mode, the experiment will finish when this number is reached.&lt;/p&gt;&lt;p&gt;In &amp;quot;peak up&amp;quot; mode, this will be the number of shots included in the rolling average (the number can be changed after the scan begins.)&lt;/p&gt;&lt;p&gt;In other modes, this number is ignored.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
             </property>
             <property name="maximum">
              <number>2147483647</number>
@@ -226,16 +208,6 @@
             <property name="toolTip">
              <string>Sideband for downconversion chain</string>
             </property>
-            <item>
-             <property name="text">
-              <string>Upper Sideband</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Lower Sideband</string>
-             </property>
-            </item>
            </widget>
           </item>
          </layout>
@@ -315,57 +287,57 @@
          </widget>
         </item>
         <item row="2" column="0">
+         <widget class="QLabel" name="triggerChannelLabel">
+          <property name="text">
+           <string>Trigger Channel</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QSpinBox" name="triggerChannelSpinBox">
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>4</number>
+          </property>
+          <property name="value">
+           <number>4</number>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="triggerSlopeLabel">
+          <property name="text">
+           <string>Trigger Slope</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QComboBox" name="triggerSlopeComboBox"/>
+        </item>
+        <item row="4" column="0">
          <widget class="QLabel" name="sampleRateLabel">
           <property name="text">
            <string>Sample Rate</string>
           </property>
          </widget>
         </item>
-        <item row="2" column="1">
+        <item row="4" column="1">
          <widget class="QComboBox" name="sampleRateComboBox">
           <property name="currentIndex">
-           <number>4</number>
+           <number>-1</number>
           </property>
-          <item>
-           <property name="text">
-            <string>2 GS/s</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>5 GS/s</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>10 GS/s</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>20 GS/s</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>50 GS/s</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>100 GS/s</string>
-           </property>
-          </item>
          </widget>
         </item>
-        <item row="3" column="0">
+        <item row="5" column="0">
          <widget class="QLabel" name="recordLengthLabel">
           <property name="text">
            <string>Record Length</string>
           </property>
          </widget>
         </item>
-        <item row="3" column="1">
+        <item row="5" column="1">
          <widget class="QSpinBox" name="recordLengthSpinBox">
           <property name="suffix">
            <string> samples</string>
@@ -387,28 +359,48 @@
           </property>
          </widget>
         </item>
-        <item row="5" column="0">
+        <item row="6" column="0">
+         <widget class="QLabel" name="bytesPointLabel">
+          <property name="text">
+           <string>Bytes/point</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <widget class="QSpinBox" name="bytesPointSpinBox">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of bytes encoding the scope data.&lt;/p&gt;&lt;p&gt;Set to 1 unless using a summary frame.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>2</number>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0">
          <widget class="QLabel" name="fastFrameEnabledLabel">
           <property name="text">
            <string>Fast Frame?</string>
           </property>
          </widget>
         </item>
-        <item row="5" column="1">
+        <item row="7" column="1">
          <widget class="QCheckBox" name="fastFrameEnabledCheckBox">
           <property name="checked">
            <bool>true</bool>
           </property>
          </widget>
         </item>
-        <item row="6" column="0">
+        <item row="8" column="0">
          <widget class="QLabel" name="framesLabel">
           <property name="text">
            <string>Frames</string>
           </property>
          </widget>
         </item>
-        <item row="6" column="1">
+        <item row="8" column="1">
          <widget class="QSpinBox" name="framesSpinBox">
           <property name="minimum">
            <number>1</number>
@@ -421,35 +413,15 @@
           </property>
          </widget>
         </item>
-        <item row="7" column="0">
+        <item row="9" column="0">
          <widget class="QLabel" name="summaryFrameLabel">
           <property name="text">
            <string>Summary Frame?</string>
           </property>
          </widget>
         </item>
-        <item row="7" column="1">
+        <item row="9" column="1">
          <widget class="QCheckBox" name="summaryFrameCheckBox"/>
-        </item>
-        <item row="4" column="0">
-         <widget class="QLabel" name="bytesPointLabel">
-          <property name="text">
-           <string>Bytes/point</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="QSpinBox" name="bytesPointSpinBox">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of bytes encoding the scope data.&lt;/p&gt;&lt;p&gt;Set to 1 unless using a summary frame.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="minimum">
-           <number>1</number>
-          </property>
-          <property name="maximum">
-           <number>2</number>
-          </property>
-         </widget>
         </item>
        </layout>
       </widget>

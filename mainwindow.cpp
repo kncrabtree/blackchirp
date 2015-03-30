@@ -1,6 +1,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "communicationdialog.h"
+#include "ftmwconfigwidget.h"
+#include <QDialogButtonBox>
+#include <QPushButton>
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -95,20 +98,28 @@ void MainWindow::startExperiment()
 
     //build experiment from a wizard or something
     Experiment e;
-    FtmwConfig ft;
-    ft.setEnabled();
-    ft.setTargetShots(100);
-    ft.setType(FtmwConfig::TargetShots);
-    FtmwConfig::ScopeConfig sc = ft.scopeConfig();
-    sc.bytesPerPoint = 2;
-    sc.vScale = 0.02;
-    sc.recordLength = 750000;
-    sc.sampleRate = 50e9;
-    sc.numFrames = 10;
-    sc.fastFrameEnabled = true;
-    sc.summaryFrame = false;
-    ft.setScopeConfig(sc);
-    e.setFtmwConfig(ft);
+
+    QDialog d;
+    d.setWindowTitle(QString("Configure FTMW Acquisition"));
+    QVBoxLayout *vbl = new QVBoxLayout;
+    FtmwConfigWidget *w = new FtmwConfigWidget;
+    vbl->addWidget(w);
+
+    QDialogButtonBox *bb = new QDialogButtonBox(QDialogButtonBox::Ok|QDialogButtonBox::Cancel|QDialogButtonBox::Reset);
+    connect(bb->button(QDialogButtonBox::Ok),&QPushButton::clicked,w,&FtmwConfigWidget::saveToSettings);
+    connect(bb->button(QDialogButtonBox::Ok),&QPushButton::clicked,&d,&QDialog::accept);
+    connect(bb->button(QDialogButtonBox::Cancel),&QPushButton::clicked,&d,&QDialog::reject);
+    connect(bb->button(QDialogButtonBox::Reset),&QPushButton::clicked,w,&FtmwConfigWidget::loadFromSettings);
+    vbl->addWidget(bb);
+
+    d.setLayout(vbl);
+    int ret = d.exec();
+
+    if(ret == QDialog::Rejected)
+        return;
+
+
+    e.setFtmwConfig(w->getConfig());
     e.setTimeDataInterval(5);
 
     BatchSingle *bs = new BatchSingle(e);
