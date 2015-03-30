@@ -298,11 +298,3 @@ void FidPlot::changeFidColor()
         replot();
     }
 }
-
-void FidPlot::resizeEvent(QResizeEvent *e)
-{
-    QwtPlot::resizeEvent(e);
-
-    if(d_currentFid.size()>0)
-        replot();
-}

@@ -50,7 +50,6 @@ private:
 
 protected:
     void filterData();
-    void resizeEvent(QResizeEvent *e);
 
 };
 
