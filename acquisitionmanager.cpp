@@ -67,7 +67,14 @@ void AcquisitionManager::processScopeShot(const QByteArray b)
 
         d_currentExperiment.incrementFtmw();
         emit newFidList(d_currentExperiment.ftmwConfig().fidList());
-        emit ftmwShotAcquired(d_currentExperiment.ftmwConfig().completedShots());
+
+        if(d_currentExperiment.ftmwConfig().type() == FtmwConfig::TargetShots)
+            emit ftmwShotAcquired(d_currentExperiment.ftmwConfig().completedShots());
+        else if(d_currentExperiment.ftmwConfig().type() == FtmwConfig::TargetTime)
+        {
+            qint64 elapsedSecs = d_currentExperiment.startTime().secsTo(QDateTime::currentDateTime());
+            emit ftmwShotAcquired(static_cast<int>(elapsedSecs));
+        }
 
         checkComplete();
     }

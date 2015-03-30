@@ -116,10 +116,13 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If the mode is &amp;quot;target time,&amp;quot; the experiment will finish at this time.&lt;/p&gt;&lt;p&gt;In all other modes, this value is ignored.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="displayFormat">
-             <string>yyyy-MM-dd h:mm AP</string>
+             <string>yyyy-MM-dd h:mm:ss AP</string>
             </property>
             <property name="calendarPopup">
              <bool>true</bool>
+            </property>
+            <property name="currentSectionIndex">
+             <number>3</number>
             </property>
            </widget>
           </item>

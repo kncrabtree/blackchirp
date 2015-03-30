@@ -152,16 +152,21 @@ void MainWindow::experimentInitialized(Experiment exp)
 		return;
 
 	ui->exptSpinBox->setValue(exp.number());
+    ui->ftmwProgressBar->setValue(0);
 
 	if(exp.ftmwConfig().isEnabled())
 	{
-		if(exp.ftmwConfig().type() != FtmwConfig::TargetShots)
+        switch(exp.ftmwConfig().type()) {
+        case FtmwConfig::TargetShots:
+            ui->ftmwProgressBar->setRange(0,exp.ftmwConfig().targetShots());
+            break;
+        case FtmwConfig::TargetTime:
+            ui->ftmwProgressBar->setRange(0,static_cast<int>(exp.startTime().secsTo(exp.ftmwConfig().targetTime())));
+            break;
+        default:
 			ui->ftmwProgressBar->setRange(0,0);
-		else
-		{
-			ui->ftmwProgressBar->setRange(0,exp.ftmwConfig().targetShots());
-			ui->ftmwProgressBar->setValue(0);
-		}
+            break;
+        }
 	}
 }
 

@@ -9,10 +9,10 @@ FtmwConfigWidget::FtmwConfigWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    ui->modeComboBox->addItem(QString("Target Shots"),FtmwConfig::TargetShots);
-    ui->modeComboBox->addItem(QString("Target Time"),FtmwConfig::TargetTime);
-    ui->modeComboBox->addItem(QString("Forever"),FtmwConfig::Forever);
-    ui->modeComboBox->addItem(QString("Peak Up"),FtmwConfig::PeakUp);
+    ui->modeComboBox->addItem(QString("Target Shots"),QVariant::fromValue(FtmwConfig::TargetShots));
+    ui->modeComboBox->addItem(QString("Target Time"),QVariant::fromValue(FtmwConfig::TargetTime));
+    ui->modeComboBox->addItem(QString("Forever"),QVariant::fromValue(FtmwConfig::Forever));
+    ui->modeComboBox->addItem(QString("Peak Up"),QVariant::fromValue(FtmwConfig::PeakUp));
 
     ui->sampleRateComboBox->addItem(QString("2 GS/s"),2e9);
     ui->sampleRateComboBox->addItem(QString("5 GS/s"),5e9);
@@ -21,16 +21,14 @@ FtmwConfigWidget::FtmwConfigWidget(QWidget *parent) :
     ui->sampleRateComboBox->addItem(QString("50 GS/s"),50e9);
     ui->sampleRateComboBox->addItem(QString("100 GS/s"),100e9);
 
-    ui->sidebandComboBox->addItem(QString("Upper Sideband"),Fid::UpperSideband);
-    ui->sidebandComboBox->addItem(QString("Lower Sideband"),Fid::LowerSideband);
+    ui->sidebandComboBox->addItem(QString("Upper Sideband"),QVariant::fromValue(Fid::UpperSideband));
+    ui->sidebandComboBox->addItem(QString("Lower Sideband"),QVariant::fromValue(Fid::LowerSideband));
 
-    ui->triggerSlopeComboBox->addItem(QString("Rising Edge"),FtmwConfig::RisingEdge);
-    ui->triggerSlopeComboBox->addItem(QString("Falling Edge"),FtmwConfig::FallingEdge);
+    ui->triggerSlopeComboBox->addItem(QString("Rising Edge"),QVariant::fromValue(FtmwConfig::RisingEdge));
+    ui->triggerSlopeComboBox->addItem(QString("Falling Edge"),QVariant::fromValue(FtmwConfig::FallingEdge));
 
 
     loadFromSettings();
-
-    ui->targetTimeDateTimeEdit->setDateTime(QDateTime::currentDateTime().addSecs(3600));
 
     validateSpinboxes();
 
@@ -88,7 +86,10 @@ FtmwConfig FtmwConfigWidget::getConfig() const
 
     out.setType(ui->modeComboBox->currentData().value<FtmwConfig::FtmwType>());
     out.setTargetShots(ui->targetShotsSpinBox->value());
-    out.setTargetTime(ui->targetTimeDateTimeEdit->dateTime());
+    if(ui->targetTimeDateTimeEdit->dateTime() > QDateTime::currentDateTime().addSecs(60))
+        out.setTargetTime(ui->targetTimeDateTimeEdit->dateTime());
+    else
+        out.setTargetTime(QDateTime::currentDateTime().addSecs(60));
     out.setAutoSaveShots(ui->autosaveSpinBox->value());
 
     out.setLoFreq(ui->loFrequencyDoubleSpinBox->value());
@@ -121,6 +122,10 @@ void FtmwConfigWidget::loadFromSettings()
 
     ui->modeComboBox->setCurrentIndex(s.value(QString("mode"),0).toInt());
     ui->targetShotsSpinBox->setValue(s.value(QString("targetShots"),10000).toInt());
+    ui->targetTimeDateTimeEdit->setMinimumDateTime(QDateTime::currentDateTime().addSecs(60));
+    ui->targetTimeDateTimeEdit->setDateTime(QDateTime::currentDateTime().addSecs(3600));
+    ui->targetTimeDateTimeEdit->setMaximumDateTime(QDateTime::currentDateTime().addSecs(2000000000));
+    ui->targetTimeDateTimeEdit->setCurrentSection(QDateTimeEdit::HourSection);
     ui->autosaveSpinBox->setValue(s.value(QString("autosaveShots"),2500).toInt());
 
     ui->loFrequencyDoubleSpinBox->setValue(s.value(QString("loFreq"),41000.0).toDouble());
@@ -181,7 +186,7 @@ void FtmwConfigWidget::configureUI()
     ui->fidSettingsBox->setEnabled(ui->ftmwEnabledCheckBox->isChecked());
     ui->scopeSettingsBox->setEnabled(ui->ftmwEnabledCheckBox->isChecked());
 
-    QVariant type = ui->modeComboBox->currentData();
+    FtmwConfig::FtmwType type = ui->modeComboBox->currentData().value<FtmwConfig::FtmwType>();
     if(type == FtmwConfig::TargetTime)
     {
         ui->targetTimeDateTimeEdit->setEnabled(true);
