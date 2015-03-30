@@ -34,7 +34,8 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
 
     //prepare storage
     QVector<double> fftData(fid.toVector());
-    QVector<QPointF> spectrum(d_numPnts/2 + 1);
+    int spectrumSize = d_numPnts/2 + 1;
+    QVector<QPointF> spectrum(spectrumSize);
     double spacing = fid.spacing();
     double probe = fid.probeFreq();
     double sign = 1.0;
@@ -49,8 +50,11 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
     //convert fourier coefficients into magnitudes. the coefficients are stored in half-complex format
     //see http://www.gnu.org/software/gsl/manual/html_node/Mixed_002dradix-FFT-routines-for-real-data.html
     //first point is DC; block it!
-    spectrum[0] = QPointF(probe,0.0);
-//    spectrum << QPointF(probe,sqrt(fftData.at(0)*fftData.at(0)));
+    if(fid.sideband() == Fid::UpperSideband)
+        spectrum[0] = QPointF(probe,0.0);
+    else
+        spectrum[spectrumSize-1] = QPointF(probe,0.0);
+
     double max = 0.0;
     int i;
     for(i=1; i<d_numPnts-i; i++)
@@ -67,11 +71,20 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
         double coef_mag = sqrt(coef_real*coef_real + coef_imag*coef_imag)/(double)d_numPnts*1000.0;
         max = qMax(max,coef_mag);
 
-        spectrum[i] = QPointF(x1,coef_mag);
+        if(fid.sideband() == Fid::UpperSideband)
+            spectrum[i] = QPointF(x1,coef_mag);
+        else
+            spectrum[spectrumSize-1-i] = QPointF(x1,coef_mag);
     }
     if(i==d_numPnts-i)
-       spectrum[i] = QPointF(probe + sign*(double)i/(double)d_numPnts/spacing*1.0e-6,
+    {
+        if(fid.sideband() == Fid::UpperSideband)
+            spectrum[i] = QPointF(probe + sign*(double)i/(double)d_numPnts/spacing*1.0e-6,
                           sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/(double)d_numPnts*1000.0);
+        else
+            spectrum[spectrumSize-1-i] = QPointF(probe + sign*(double)i/(double)d_numPnts/spacing*1.0e-6,
+                          sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/(double)d_numPnts*1000.0);
+    }
 
     //the signal is used for asynchronous purposes (in UI classes), and the return value for synchronous (in non-UI classes)
     emit ftDone(spectrum,max);
