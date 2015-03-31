@@ -21,7 +21,7 @@ void BatchManager::experimentComplete(Experiment exp)
     }
 
     if(!exp.isDummy())
-        emit logMessage(QString("Experiment %1 complete.").arg(exp.number()),LogHandler::Highlight);
+        emit logMessage(exp.endLogMessage(),exp.endLogMessageCode());
 
     processExperiment(exp);
     if(!exp.isAborted() && !isComplete())

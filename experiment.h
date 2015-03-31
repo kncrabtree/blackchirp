@@ -6,6 +6,7 @@
 #include <QDateTime>
 #include <QMetaType>
 #include "ftmwconfig.h"
+#include "loghandler.h"
 
 class ExperimentData;
 
@@ -30,6 +31,9 @@ public:
     bool hardwareSuccess() const;
     QString errorString() const;
     QMap<QString,QList<QVariant>> timeDataMap() const;
+    QString startLogMessage() const;
+    QString endLogMessage() const;
+    LogHandler::MessageCode endLogMessageCode() const;
 
     void setGasSetpoints(const QList<QPair<double,QString> > list);
     void addGasSetpoint(const double setPoint, const QString name);
@@ -61,7 +65,7 @@ private:
 class ExperimentData : public QSharedData
 {
 public:
-    ExperimentData() : number(0), timeDataInterval(300), isInitialized(false), isAborted(false), isDummy(false), hardwareSuccess(true) {}
+    ExperimentData() : number(0), timeDataInterval(300), isInitialized(false), isAborted(false), isDummy(false), hardwareSuccess(true), endLogMessageCode(LogHandler::Highlight) {}
 
     int number;
     QList<QPair<double,QString> > gasSetpoints;
@@ -73,6 +77,9 @@ public:
     bool isDummy;
     bool hardwareSuccess;
     QString errorString;
+    QString startLogMessage;
+    QString endLogMessage;
+    LogHandler::MessageCode endLogMessageCode;
 
     FtmwConfig ftmwCfg;
     QMap<QString,QList<QVariant>> timeDataMap;

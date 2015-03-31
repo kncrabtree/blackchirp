@@ -90,6 +90,21 @@ QMap<QString, QList<QVariant> > Experiment::timeDataMap() const
     return data->timeDataMap;
 }
 
+QString Experiment::startLogMessage() const
+{
+    return data->startLogMessage;
+}
+
+QString Experiment::endLogMessage() const
+{
+    return data->endLogMessage;
+}
+
+LogHandler::MessageCode Experiment::endLogMessageCode() const
+{
+    return data->endLogMessageCode;
+}
+
 void Experiment::setGasSetpoints(const QList<QPair<double, QString> > list)
 {
     data->gasSetpoints = list;
@@ -132,12 +147,28 @@ void Experiment::setInitialized()
     int num = s.value(QString("exptNum"),1).toInt();
     data->number = num;
 
+    if(ftmwConfig().isEnabled() && ftmwConfig().type() == FtmwConfig::PeakUp)
+    {
+        data->startLogMessage = QString("Peak up mode started.");
+        data->endLogMessage = QString("Peak up mode ended.");
+    }
+    else
+    {
+        data->startLogMessage = QString("Starting experiment %1.").arg(num);
+        data->endLogMessage = QString("Experiment %1 complete.").arg(num);
+    }
+
 
 }
 
 void Experiment::setAborted()
 {
     data->isAborted = true;
+    if(ftmwConfig().isEnabled() && (ftmwConfig().type() == FtmwConfig::TargetShots || ftmwConfig().type() == FtmwConfig::TargetTime ))
+    {
+        data->endLogMessage = QString("Experiment %1 aborted.").arg(number());
+        data->endLogMessageCode = LogHandler::Error;
+    }
 }
 
 void Experiment::setDummy()

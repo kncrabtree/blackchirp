@@ -25,7 +25,7 @@ void AcquisitionManager::beginExperiment(Experiment exp)
     d_currentExperiment = exp;
 
     d_state = Acquiring;
-    emit logMessage(QString("Starting experiment %1.").arg(exp.number()),LogHandler::Highlight);
+    emit logMessage(exp.startLogMessage(),LogHandler::Highlight);
     emit statusMessage(QString("Acquiring"));
 
     if(d_currentExperiment.timeDataInterval() > 0)
