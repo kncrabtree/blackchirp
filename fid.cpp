@@ -107,6 +107,20 @@ void Fid::copyAdd(const qint64 *other, const unsigned int offset)
     data->shots++;
 }
 
+void Fid::rollingAverage(const Fid other, qint64 targetShots)
+{
+    qint64 totalShots = shots() + other.shots();
+    if(totalShots <= targetShots)
+        *this += other;
+    else
+    {
+        for(int i=0; i<size(); i++)
+            data->fid[i] = targetShots*(atRaw(i) + other.atRaw(i))/totalShots;
+
+        data->shots = targetShots;
+    }
+}
+
 int Fid::size() const
 {
     return data->fid.size();

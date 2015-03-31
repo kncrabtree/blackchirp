@@ -172,7 +172,10 @@ void FtmwConfig::setTargetShots(const qint64 target)
 
 void FtmwConfig::increment()
 {
-    data->completedShots++;
+    if(type() == FtmwConfig::PeakUp)
+        data->completedShots = qMin(completedShots()+1,targetShots());
+    else
+        data->completedShots++;
 }
 
 void FtmwConfig::setTargetTime(const QDateTime time)
@@ -225,12 +228,23 @@ bool FtmwConfig::addFids(const QByteArray rawData)
 {
 #ifndef BC_CUDA
     QList<Fid> newList = parseWaveform(rawData);
-    Q_ASSERT(data->fidList.size() == newList.size());
-    for(int i=0; i<data->fidList.size(); i++)
-        newList[i] += data->fidList.at(i);
+    if(type() == FtmwConfig::PeakUp)
+    {
+        for(int i=0; i<data->fidList.size(); i++)
+            newList[i].rollingAverage(data->fidList.at(i),targetShots());
+    }
+    else
+    {
+        for(int i=0; i<data->fidList.size(); i++)
+            newList[i] += data->fidList.at(i);
+    }
     data->fidList = newList;
 #else
-    QList<QVector<qint64> >  l =data->gpuAvg.parseAndAdd(rawData.constData());
+    QList<QVector<qint64> >  l;
+    if(type() == FtmwConfig::PeakUp)
+        l = data->gpuAvg.parseAndRollAvg(rawData.constData(),completedShots()+1,targetShots());
+    else
+        l=data->gpuAvg.parseAndAdd(rawData.constData());
 
     if(l.isEmpty())
     {
@@ -243,7 +257,10 @@ bool FtmwConfig::addFids(const QByteArray rawData)
         data->fidList.removeFirst();
         Fid f = fidTemplate();
         f.setData(l.at(i));
-        f.setShots(completedShots()+1);
+        if(type() == FtmwConfig::PeakUp)
+            f.setShots(qMin(completedShots()+1,targetShots()));
+        else
+            f.setShots(completedShots()+1);
         data->fidList.append(f);
     }
 

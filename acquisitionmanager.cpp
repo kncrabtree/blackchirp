@@ -46,7 +46,7 @@ void AcquisitionManager::processScopeShot(const QByteArray b)
 //    static int count = 0;
     if(d_state == Acquiring && d_currentExperiment.ftmwConfig().isEnabled())
     {
-        d_testTime.restart();
+//        d_testTime.restart();
         bool success = true;
         if(d_currentExperiment.ftmwConfig().fidList().isEmpty())
             success = d_currentExperiment.setFids(b);

@@ -14,6 +14,20 @@ __global__ void parseAdd_kernel1byte(int numPoints, char *devNewData, long long 
         devSum[i] += (long long int)devNewData[i];
 }
 
+__global__ void parseRollAvg_kernel1byte(int numPoints, char *devnewData, long long int *devSum, int offset, qint64 currentShots, qint64 targetShots)
+{
+    int i = offset + blockIdx.x*blockDim.x + threadIdx.x;
+    if(i < numPoints)
+    {
+        devSum[i] += (long long int)devnewData[i];
+        if(currentShots > targetShots)
+        {
+            devSum[i] *= targetShots;
+            devSum[i] /= currentShots;
+        }
+    }
+}
+
 __global__ void parseAdd_kernel2byte(int numPoints, char *devNewData, long long int *devSum, int offset, bool le)
 {
     int i = offset + blockIdx.x*blockDim.x + threadIdx.x;
@@ -28,6 +42,30 @@ __global__ void parseAdd_kernel2byte(int numPoints, char *devNewData, long long 
         {
             int16_t dat = (devNewData[2*i] << 8 ) | (devNewData[2*i+1] & 0xff);
             devSum[i] += (long long int)dat;
+        }
+    }
+}
+
+__global__ void parseRollAvg_kernel2byte(int numPoints, char *devNewData, long long int *devSum, int offset, qint64 currentShots, qint64 targetShots, bool le)
+{
+    int i = offset + blockIdx.x*blockDim.x + threadIdx.x;
+    if(i < numPoints)
+    {
+        if(le)
+        {
+            int16_t dat = (devNewData[2*i+1] << 8 ) | (devNewData[2*i] & 0xff);
+            devSum[i] += (long long int)dat;
+        }
+        else
+        {
+            int16_t dat = (devNewData[2*i] << 8 ) | (devNewData[2*i+1] & 0xff);
+            devSum[i] += (long long int)dat;
+        }
+
+        if(currentShots > targetShots)
+        {
+            devSum[i] *= targetShots;
+            devSum[i] /= currentShots;
         }
     }
 }
@@ -183,6 +221,53 @@ QList<QVector<qint64> > GpuAverager::parseAndAdd(const char *newDataIn)
 
     return out;
 
+}
+
+QList<QVector<qint64> > GpuAverager::parseAndRollAvg(const char *newDataIn, const qint64 currentShots, const qint64 targetShots)
+{
+    QList<QVector<qint64> > out;
+    if(!d_isInitialized)
+    {
+        d_errorMsg = QString("Cannot process scope data because GPU was not initialized successfully.");
+        return out;
+    }
+
+    //move new data to pinned memory for efficiency and for stream usage
+    memcpy(p_hostPinnedCharPtr,newDataIn,d_totalPoints*d_bytesPerPoint*sizeof(char));
+
+    //launch asynchronous streams
+    for(int i=0;i<d_streamList.size();i++)
+    {
+        cudaMemcpyAsync(&p_devCharPtr[i*d_pointsPerFrame*d_bytesPerPoint], &p_hostPinnedCharPtr[i*d_pointsPerFrame*d_bytesPerPoint], d_pointsPerFrame*d_bytesPerPoint*sizeof(char), cudaMemcpyHostToDevice,d_streamList[i]);
+        if(d_bytesPerPoint == 1)
+            parseRollAvg_kernel1byte<<<(d_pointsPerFrame+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
+                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*d_pointsPerFrame,currentShots,targetShots);
+        else
+            parseRollAvg_kernel2byte<<<(d_pointsPerFrame+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
+                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*d_pointsPerFrame,currentShots,targetShots,d_isLittleEndian);
+        cudaMemcpyAsync(&p_hostPinnedSumPtr[i*d_pointsPerFrame], &p_devSumPtr[i*d_pointsPerFrame], d_pointsPerFrame*sizeof(qint64), cudaMemcpyDeviceToHost,d_streamList[i]);
+    }
+
+    //while kernels and memory transfers are running, allocate memory for result data
+    for(int i=0;i<d_numFrames;i++)
+    {
+        QVector<qint64> d(d_pointsPerFrame);
+        out.append(d);
+    }
+
+
+    //wait for each stream to complete, then copy data from pinned memory into output vectors
+    for(int i=0; i<d_streamList.size();i++)
+    {
+        cudaStreamSynchronize(d_streamList[i]);
+        memcpy(out[i].data(),&p_hostPinnedSumPtr[i*d_pointsPerFrame],d_pointsPerFrame*sizeof(qint64));
+    }
+
+    cudaError_t err = cudaGetLastError();
+    if(err != cudaSuccess)
+        setError(QString("An error occured while averaging data on GPU."),err);
+
+    return out;
 }
 
 void GpuAverager::setError(QString errMsg, cudaError_t errorCode)
