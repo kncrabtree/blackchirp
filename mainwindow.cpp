@@ -16,7 +16,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this,&MainWindow::statusMessage,statusLabel,&QLabel::setText);
     ui->statusBar->addWidget(statusLabel);
 
-
     p_lh = new LogHandler();
     connect(p_lh,&LogHandler::sendLogMessage,ui->log,&QTextEdit::append);
 
@@ -43,9 +42,12 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_am,&AcquisitionManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_am,&AcquisitionManager::statusMessage,statusLabel,&QLabel::setText);
     connect(p_am,&AcquisitionManager::ftmwShotAcquired,ui->ftmwProgressBar,&QProgressBar::setValue);
+    connect(p_am,&AcquisitionManager::ftmwShotAcquired,ui->ftViewWidget,&FtmwViewWidget::updateShotsLabel);
     connect(ui->actionPause,&QAction::triggered,p_am,&AcquisitionManager::pause);
     connect(ui->actionResume,&QAction::triggered,p_am,&AcquisitionManager::resume);
     connect(ui->actionAbort,&QAction::triggered,p_am,&AcquisitionManager::abort);
+    connect(ui->ftViewWidget,&FtmwViewWidget::rollingAverageShotsChanged,p_am,&AcquisitionManager::changeRollingAverageShots);
+    connect(ui->ftViewWidget,&FtmwViewWidget::rollingAverageReset,p_am,&AcquisitionManager::resetRollingAverage);
 
     connect(p_am,&AcquisitionManager::newFidList,ui->ftViewWidget,&FtmwViewWidget::newFidList);
 
@@ -153,6 +155,7 @@ void MainWindow::experimentInitialized(Experiment exp)
 
 	ui->exptSpinBox->setValue(exp.number());
     ui->ftmwProgressBar->setValue(0);
+    ui->ftViewWidget->initializeForExperiment(exp.ftmwConfig());
 
 	if(exp.ftmwConfig().isEnabled())
 	{

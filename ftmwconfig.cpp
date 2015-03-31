@@ -268,6 +268,15 @@ bool FtmwConfig::addFids(const QByteArray rawData)
     return true;
 }
 
+void FtmwConfig::resetFids()
+{
+    data->fidList.clear();
+    data->completedShots = 0;
+#ifdef BC_CUDA
+    data->gpuAvg.resetAverage();
+#endif
+}
+
 void FtmwConfig::setScopeConfig(const FtmwConfig::ScopeConfig &other)
 {
     data->scopeConfig = other;

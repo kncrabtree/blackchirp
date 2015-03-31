@@ -2,7 +2,7 @@
 #define FTMWVIEWWIDGET_H
 
 #include <QWidget>
-#include "fid.h"
+#include "ftmwconfig.h"
 #include <QList>
 
 namespace Ui {
@@ -16,9 +16,15 @@ class FtmwViewWidget : public QWidget
 public:
     explicit FtmwViewWidget(QWidget *parent = 0);
     ~FtmwViewWidget();
+    void initializeForExperiment(const FtmwConfig config);
+
+signals:
+    void rollingAverageShotsChanged(int);
+    void rollingAverageReset();
 
 public slots:
     void newFidList(QList<Fid> fl);
+    void updateShotsLabel(qint64 shots);
     void showFrame(int num);
     void fidTest(Fid f);
 

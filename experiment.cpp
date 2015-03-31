@@ -178,6 +178,16 @@ bool Experiment::addFids(const QByteArray newData)
     return true;
 }
 
+void Experiment::overrideTargetShots(const int target)
+{
+    data->ftmwCfg.setTargetShots(target);
+}
+
+void Experiment::resetFids()
+{
+    data->ftmwCfg.resetFids();
+}
+
 void Experiment::setErrorString(const QString str)
 {
     data->errorString = str;

@@ -25,7 +25,7 @@ signals:
     void logMessage(const QString,const LogHandler::MessageCode = LogHandler::Normal);
     void statusMessage(const QString);
     void experimentComplete(Experiment);
-    void ftmwShotAcquired(int);
+    void ftmwShotAcquired(qint64);
     void beginAcquisition();
     void timeDataSignal();
     void timeData(const QList<QPair<QString,QVariant>>);
@@ -35,6 +35,8 @@ signals:
 public slots:
     void beginExperiment(Experiment exp);
     void processScopeShot(const QByteArray b);
+    void changeRollingAverageShots(int newShots);
+    void resetRollingAverage();
     void getTimeData();
     void processTimeData(const QList<QPair<QString,QVariant>> timeDataList);
     void pause();

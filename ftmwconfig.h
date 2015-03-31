@@ -117,6 +117,7 @@ public:
     void setSideband(const Fid::Sideband sb);
     bool setFids(const QByteArray newData);
     bool addFids(const QByteArray rawData);
+    void resetFids();
     void setScopeConfig(const ScopeConfig &other);
 
 

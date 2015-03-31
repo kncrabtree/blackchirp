@@ -17,6 +17,7 @@ public:
     bool initialize(const int pointsPerFrame, const int numFrames, const int bytesPerPoint, QDataStream::ByteOrder byteOrder);
     QList<QVector<qint64> > parseAndAdd(const char *newDataIn);
     QList<QVector<qint64> > parseAndRollAvg(const char *newDataIn, const qint64 currentShots, const qint64 targetShots);
+    void resetAverage();
     QString getErrorString() const  { return d_errorMsg; }
 
 private:

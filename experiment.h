@@ -43,6 +43,8 @@ public:
     void setScopeConfig(const FtmwConfig::ScopeConfig &cfg);
     bool setFids(const QByteArray rawData);
     bool addFids(const QByteArray newData);
+    void overrideTargetShots(const int target);
+    void resetFids();
     void setErrorString(const QString str);
     void addTimeData(const QList<QPair<QString, QVariant> > dataList);
     void addTimeStamp();

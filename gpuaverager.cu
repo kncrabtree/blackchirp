@@ -270,6 +270,11 @@ QList<QVector<qint64> > GpuAverager::parseAndRollAvg(const char *newDataIn, cons
     return out;
 }
 
+void GpuAverager::resetAverage()
+{
+    initMem64_kernel<<<(d_totalPoints+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock>>>(d_totalPoints,p_devSumPtr);
+}
+
 void GpuAverager::setError(QString errMsg, cudaError_t errorCode)
 {
     d_errorMsg = errMsg.append(QString(" CUDA error message: %1").arg(cudaGetErrorString(errorCode)));
