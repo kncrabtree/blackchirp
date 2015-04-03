@@ -7,7 +7,8 @@ SOURCES += mainwindow.cpp \
     $$PWD/trackingplot.cpp \
     $$PWD/zoompanplot.cpp \
     $$PWD/ftmwconfigwidget.cpp \
-    $$PWD/chirpconfigwidget.cpp
+    $$PWD/chirpconfigwidget.cpp \
+    $$PWD/chirptablemodel.cpp
 
 HEADERS += mainwindow.h \
     $$PWD/ftmwviewwidget.h \
@@ -18,7 +19,8 @@ HEADERS += mainwindow.h \
     $$PWD/trackingplot.h \
     $$PWD/zoompanplot.h \
     $$PWD/ftmwconfigwidget.h \
-    $$PWD/chirpconfigwidget.h
+    $$PWD/chirpconfigwidget.h \
+    $$PWD/chirptablemodel.h
 
 FORMS += mainwindow.ui \
     $$PWD/ftmwviewwidget.ui \
