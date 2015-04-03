@@ -22,6 +22,8 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     connect(ui->moveDownButton,&QPushButton::clicked,[=](){ moveSegments(1); });
     connect(ui->removeButton,&QPushButton::clicked,this,&ChirpConfigWidget::removeSegments);
     connect(ui->clearButton,&QPushButton::clicked,this,&ChirpConfigWidget::clear);
+
+    ui->chirpTable->setItemDelegate(new DoubleSpinBoxDelegate);
 }
 
 ChirpConfigWidget::~ChirpConfigWidget()
@@ -48,8 +50,11 @@ void ChirpConfigWidget::initializeFromSettings()
     d_txMult = s.value(QString("txMult"),4.0).toDouble();
     d_txSidebandSign = s.value(QString("txSidebandSign"),-1.0).toDouble();
 
-    d_chirpMinMax.first = d_txMult*(d_txSidebandSign*d_awgMult*awgMin + d_valonMult*valonFreq);
-    d_chirpMinMax.second = d_txMult*(d_txSidebandSign*d_awgMult*awgMax + d_valonMult*valonFreq);
+    d_chirpMinMax.first = qMin(d_txMult*(d_txSidebandSign*d_awgMult*awgMin + d_valonMult*valonFreq),d_txMult*(d_txSidebandSign*d_awgMult*awgMax + d_valonMult*valonFreq));
+    d_chirpMinMax.second = qMax(d_txMult*(d_txSidebandSign*d_awgMult*awgMin + d_valonMult*valonFreq),d_txMult*(d_txSidebandSign*d_awgMult*awgMax + d_valonMult*valonFreq));
+    s.setValue(QString("chirpMin"),d_chirpMinMax.first);
+    s.setValue(QString("chirpMax"),d_chirpMinMax.second);
+    s.sync();
 
     ui->preChirpDelaySpinBox->setValue(s.value(QString("preChirpDelay"),300).toInt());
     ui->protectionDelaySpinBox->setValue(s.value(QString("protectionDelay"),300).toInt());

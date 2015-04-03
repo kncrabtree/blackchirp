@@ -2,6 +2,7 @@
 #define CHIRPTABLEMODEL_H
 
 #include <QAbstractTableModel>
+#include <QStyledItemDelegate>
 #include <QList>
 
 class ChirpTableModel : public QAbstractTableModel
@@ -38,5 +39,19 @@ private:
 
 
 };
+
+class DoubleSpinBoxDelegate : public QStyledItemDelegate
+{
+    Q_OBJECT
+public:
+    DoubleSpinBoxDelegate(QObject *parent=0);
+
+    // QAbstractItemDelegate interface
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    void setEditorData(QWidget *editor, const QModelIndex &index) const;
+    void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const;
+    void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+};
+
 
 #endif // CHIRPTABLEMODEL_H

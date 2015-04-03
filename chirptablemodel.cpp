@@ -1,4 +1,7 @@
 #include "chirptablemodel.h"
+#include <QDoubleSpinBox>
+#include <QSettings>
+#include <QApplication>
 
 ChirpTableModel::ChirpTableModel(QObject *parent)
     : QAbstractTableModel(parent)
@@ -33,22 +36,39 @@ QVariant ChirpTableModel::data(const QModelIndex &index, int role) const
     if(role == Qt::TextAlignmentRole)
         return Qt::AlignCenter;
 
-    if(role != Qt::DisplayRole)
-        return QVariant();
-
-    switch(index.column()) {
-    case 0:
-        return QString::number(d_segmentList.at(index.row()).startFreqMHz,'f',3);
-        break;
-    case 1:
-        return QString::number(d_segmentList.at(index.row()).endFreqMHz,'f',3);
-        break;
-    case 2:
-        return QString::number(d_segmentList.at(index.row()).durationNs,'f',1);
-        break;
-    default:
-        return QVariant();
-        break;
+    if(role == Qt::DisplayRole)
+    {
+        switch(index.column()) {
+        case 0:
+            return QString::number(d_segmentList.at(index.row()).startFreqMHz,'f',3);
+            break;
+        case 1:
+            return QString::number(d_segmentList.at(index.row()).endFreqMHz,'f',3);
+            break;
+        case 2:
+            return QString::number(d_segmentList.at(index.row()).durationNs,'f',1);
+            break;
+        default:
+            return QVariant();
+            break;
+        }
+    }
+    else if(role == Qt::EditRole)
+    {
+        switch(index.column()) {
+        case 0:
+            return d_segmentList.at(index.row()).startFreqMHz;
+            break;
+        case 1:
+            return d_segmentList.at(index.row()).endFreqMHz;
+            break;
+        case 2:
+            return d_segmentList.at(index.row()).durationNs;
+            break;
+        default:
+            return QVariant();
+            break;
+        }
     }
 
     return QVariant();
@@ -221,4 +241,60 @@ void ChirpTableModel::removeSegments(QList<int> rows)
     qSort(rows);
     for(int i=rows.size(); i>0; i--)
         removeRows(rows.at(i-1),1,QModelIndex());
+}
+
+
+DoubleSpinBoxDelegate::DoubleSpinBoxDelegate(QObject *parent) : QStyledItemDelegate(parent)
+{
+}
+
+QWidget *DoubleSpinBoxDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    Q_UNUSED(option)
+
+    QDoubleSpinBox *editor = new QDoubleSpinBox(parent);
+
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    double chirpMin = s.value(QString("chirpConfig/chirpMin"),26500.0).toDouble();
+    double chirpMax = s.value(QString("chirpConfig/chirpMax"),40000.0).toDouble();
+
+    switch(index.column())
+    {
+    case 0:
+    case 1:
+        editor->setMinimum(chirpMin);
+        editor->setMaximum(chirpMax);
+        editor->setDecimals(3);
+        break;
+    case 2:
+        editor->setMinimum(0.1);
+        editor->setMaximum(100000.0);
+        editor->setSingleStep(10.0);
+        editor->setDecimals(1);
+        break;
+    default:
+        break;
+    }
+
+    return editor;
+}
+
+void DoubleSpinBoxDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
+{
+    double val = index.model()->data(index, Qt::EditRole).toDouble();
+
+    static_cast<QDoubleSpinBox*>(editor)->setValue(val);
+}
+
+void DoubleSpinBoxDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
+{
+    QDoubleSpinBox *sb = static_cast<QDoubleSpinBox*>(editor);
+    sb->interpretText();
+    model->setData(index,sb->value(),Qt::EditRole);
+}
+
+void DoubleSpinBoxDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    Q_UNUSED(index)
+    editor->setGeometry(option.rect);
 }
