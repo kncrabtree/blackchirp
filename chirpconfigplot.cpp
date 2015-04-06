@@ -14,17 +14,36 @@ ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(QString("ChirpCo
     p_twtEnableCurve= new QwtPlotCurve(QString("TWT Enable"));
     color = s.value(QString("twtEnableColor"),pal.brightText().color()).value<QColor>();
     p_twtEnableCurve->setPen(QPen(color));
-    p_twtEnableCurve->attach(this);
+//    p_twtEnableCurve->attach(this);
 
     p_protectionCurve = new QwtPlotCurve(QString("Protection"));
     color = s.value(QString("protectionColor"),pal.brightText().color()).value<QColor>();
     p_protectionCurve->setPen(QPen(color));
-    p_protectionCurve->attach(this);
+//    p_protectionCurve->attach(this);
+
+    setAxisAutoScaleRange(QwtPlot::yLeft,-1.0,1.0);
 }
 
 ChirpConfigPlot::~ChirpConfigPlot()
 {
     detachItems();
+}
+
+void ChirpConfigPlot::newChirp(const ChirpConfig cc)
+{
+    bool as = d_chirpData.isEmpty();
+
+    d_chirpData = cc.getChirpMicroseconds();
+    if(d_chirpData.isEmpty())
+        setAxisAutoScaleRange(QwtPlot::xBottom,0.0,1.0);
+    else
+        setAxisAutoScaleRange(QwtPlot::xBottom,d_chirpData.at(0).x(),d_chirpData.at(d_chirpData.size()-1).x());
+
+    if(as)
+        autoScale();
+
+    filterData();
+    replot();
 }
 
 void ChirpConfigPlot::filterData()
@@ -40,7 +59,7 @@ void ChirpConfigPlot::filterData()
 
     //find first data point that is in the range of the plot
     int dataIndex = 0;
-    while(dataIndex+1 < d_chirpData.size() && map.transform(d_chirpData.at(dataIndex).x()*1e6) < firstPixel)
+    while(dataIndex+1 < d_chirpData.size() && map.transform(d_chirpData.at(dataIndex).x()) < firstPixel)
         dataIndex++;
 
     //add the previous point to the filtered array
@@ -54,7 +73,7 @@ void ChirpConfigPlot::filterData()
         double min = d_chirpData.at(dataIndex).y(), max = min;
         int minIndex = dataIndex, maxIndex = dataIndex;
         int numPnts = 0;
-        while(dataIndex+1 < d_chirpData.size() && map.transform(d_chirpData.at(dataIndex).x()*1e6) < pixel+1.0)
+        while(dataIndex+1 < d_chirpData.size() && map.transform(d_chirpData.at(dataIndex).x()) < pixel+1.0)
         {
             if(d_chirpData.at(dataIndex).y() < min)
             {
@@ -70,7 +89,7 @@ void ChirpConfigPlot::filterData()
             numPnts++;
         }
         if(numPnts == 1)
-            filtered.append(QPointF(d_chirpData.at(dataIndex-1).x()*1e6,d_chirpData.at(dataIndex-1).y()));
+            filtered.append(QPointF(d_chirpData.at(dataIndex-1).x(),d_chirpData.at(dataIndex-1).y()));
         else if (numPnts > 1)
         {
             QPointF first(map.invTransform(pixel),d_chirpData.at(minIndex).y());
@@ -83,7 +102,7 @@ void ChirpConfigPlot::filterData()
     if(dataIndex < d_chirpData.size())
     {
         QPointF p = d_chirpData.at(dataIndex);
-        p.setX(p.x()*1e6);
+        p.setX(p.x());
         filtered.append(p);
     }
 

@@ -27,11 +27,16 @@ public slots:
     void removeSegments();
     void clear();
 
+    void checkChirp();
+
+signals:
+    void chirpConfigChanged(const ChirpConfig);
+
 
 private:
     Ui::ChirpConfigWidget *ui;
     ChirpTableModel *p_ctm;
-    double d_awgMult, d_valonMult, d_txMult, d_txSidebandSign;
+    double d_awgMult, d_valonMult, d_txMult, d_txSidebandSign, d_valonFreq;
     QPair<double,double> d_chirpMinMax;
 
     bool isSelectionContiguous(QModelIndexList l);

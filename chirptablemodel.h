@@ -4,6 +4,7 @@
 #include <QAbstractTableModel>
 #include <QStyledItemDelegate>
 #include <QList>
+#include "chirpconfig.h"
 
 class ChirpTableModel : public QAbstractTableModel
 {
@@ -21,21 +22,17 @@ public:
     bool removeRows(int row, int count, const QModelIndex &parent);
     Qt::ItemFlags flags(const QModelIndex &index) const;
 
-    struct ChirpSegment {
-        double startFreqMHz;
-        double endFreqMHz;
-        double durationNs;
-    };
-
     void addSegment(double start, double end, double dur, int pos);
     void moveSegments(int first, int last, int delta);
     void removeSegments(QList<int> rows);
+
+    QList<ChirpConfig::ChirpSegment> segmentList() const;
 
 signals:
     void modelChanged();
 
 private:
-    QList<ChirpSegment> d_segmentList;
+    QList<ChirpConfig::ChirpSegment> d_segmentList;
 
 
 };

@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout" stretch="1,3">
    <item>
-    <widget class="QwtPlot" name="chirpPlot" native="true"/>
+    <widget class="ChirpConfigPlot" name="chirpPlot" native="true"/>
    </item>
    <item>
     <widget class="QGroupBox" name="chirpConfigurationBox">
@@ -236,9 +236,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QwtPlot</class>
+   <class>ChirpConfigPlot</class>
    <extends>QWidget</extends>
-   <header location="global">qwt6/qwt_plot.h</header>
+   <header>chirpconfigplot.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

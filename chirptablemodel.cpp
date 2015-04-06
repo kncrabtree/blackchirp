@@ -46,7 +46,7 @@ QVariant ChirpTableModel::data(const QModelIndex &index, int role) const
             return QString::number(d_segmentList.at(index.row()).endFreqMHz,'f',3);
             break;
         case 2:
-            return QString::number(d_segmentList.at(index.row()).durationNs,'f',1);
+            return QString::number(d_segmentList.at(index.row()).durationUs*1e3,'f',1);
             break;
         default:
             return QVariant();
@@ -63,7 +63,7 @@ QVariant ChirpTableModel::data(const QModelIndex &index, int role) const
             return d_segmentList.at(index.row()).endFreqMHz;
             break;
         case 2:
-            return d_segmentList.at(index.row()).durationNs;
+            return d_segmentList.at(index.row()).durationUs*1e3;
             break;
         default:
             return QVariant();
@@ -145,13 +145,14 @@ bool ChirpTableModel::setData(const QModelIndex &index, const QVariant &value, i
         d_segmentList[index.row()].endFreqMHz = newVal;
         break;
     case 2:
-        d_segmentList[index.row()].durationNs = newVal;
+        d_segmentList[index.row()].durationUs = newVal/1e3;
         break;
     default:
         return false;
         break;
     }
 
+    d_segmentList[index.row()].alphaUs = (d_segmentList.at(index.row()).endFreqMHz - d_segmentList.at(index.row()).startFreqMHz)/d_segmentList.at(index.row()).durationUs;
     emit dataChanged(index,index);
     return true;
 }
@@ -180,10 +181,11 @@ Qt::ItemFlags ChirpTableModel::flags(const QModelIndex &index) const
 
 void ChirpTableModel::addSegment(double start, double end, double dur, int pos)
 {
-    ChirpSegment cs;
+    ChirpConfig::ChirpSegment cs;
     cs.startFreqMHz = start;
     cs.endFreqMHz = end;
-    cs.durationNs = dur;
+    cs.durationUs = dur;
+    cs.alphaUs = (end-start)/dur;
 
     if(pos < 0 || pos >= d_segmentList.size())
     {
@@ -217,7 +219,7 @@ void ChirpTableModel::moveSegments(int first, int last, int delta)
             return;
     }
 
-    QList<ChirpSegment> chunk = d_segmentList.mid(first,last-first+1);
+    QList<ChirpConfig::ChirpSegment> chunk = d_segmentList.mid(first,last-first+1);
 
     //remove selected rows
     for(int i=0; i<last-first+1; i++)
@@ -241,6 +243,11 @@ void ChirpTableModel::removeSegments(QList<int> rows)
     qSort(rows);
     for(int i=rows.size(); i>0; i--)
         removeRows(rows.at(i-1),1,QModelIndex());
+}
+
+QList<ChirpConfig::ChirpSegment> ChirpTableModel::segmentList() const
+{
+    return d_segmentList;
 }
 
 

@@ -12,6 +12,7 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
 
     connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::setButtonStates);
     connect(ui->chirpTable->selectionModel(),&QItemSelectionModel::selectionChanged,this,&ChirpConfigWidget::setButtonStates);
+    connect(ui->chirpTable->selectionModel(),&QItemSelectionModel::selectionChanged,this,&ChirpConfigWidget::checkChirp);
 
     initializeFromSettings();
     setButtonStates();
@@ -36,7 +37,7 @@ void ChirpConfigWidget::initializeFromSettings()
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
     s.beginGroup(QString("valonSynth"));
-    double valonFreq = s.value(QString("txFreq"),5760.0).toDouble();
+    d_valonFreq = s.value(QString("txFreq"),5760.0).toDouble();
     s.endGroup();
 
     s.beginGroup(QString("awg"));
@@ -50,8 +51,8 @@ void ChirpConfigWidget::initializeFromSettings()
     d_txMult = s.value(QString("txMult"),4.0).toDouble();
     d_txSidebandSign = s.value(QString("txSidebandSign"),-1.0).toDouble();
 
-    d_chirpMinMax.first = qMin(d_txMult*(d_txSidebandSign*d_awgMult*awgMin + d_valonMult*valonFreq),d_txMult*(d_txSidebandSign*d_awgMult*awgMax + d_valonMult*valonFreq));
-    d_chirpMinMax.second = qMax(d_txMult*(d_txSidebandSign*d_awgMult*awgMin + d_valonMult*valonFreq),d_txMult*(d_txSidebandSign*d_awgMult*awgMax + d_valonMult*valonFreq));
+    d_chirpMinMax.first = qMin(d_txMult*(d_txSidebandSign*d_awgMult*awgMin + d_valonMult*d_valonFreq),d_txMult*(d_txSidebandSign*d_awgMult*awgMax + d_valonMult*d_valonFreq));
+    d_chirpMinMax.second = qMax(d_txMult*(d_txSidebandSign*d_awgMult*awgMin + d_valonMult*d_valonFreq),d_txMult*(d_txSidebandSign*d_awgMult*awgMax + d_valonMult*d_valonFreq));
     s.setValue(QString("chirpMin"),d_chirpMinMax.first);
     s.setValue(QString("chirpMax"),d_chirpMinMax.second);
     s.sync();
@@ -105,7 +106,7 @@ void ChirpConfigWidget::setButtonStates()
 
 void ChirpConfigWidget::addSegment()
 {
-    p_ctm->addSegment(d_chirpMinMax.first,d_chirpMinMax.second,500.0,-1);
+    p_ctm->addSegment(d_chirpMinMax.first,d_chirpMinMax.second,0.500,-1);
 }
 
 void ChirpConfigWidget::insertSegment()
@@ -114,7 +115,7 @@ void ChirpConfigWidget::insertSegment()
     if(l.size() != 1)
         return;
 
-    p_ctm->addSegment(d_chirpMinMax.first,d_chirpMinMax.second,500.0,l.at(0).row());
+    p_ctm->addSegment(d_chirpMinMax.first,d_chirpMinMax.second,0.500,l.at(0).row());
 }
 
 void ChirpConfigWidget::moveSegments(int direction)
@@ -160,6 +161,30 @@ void ChirpConfigWidget::clear()
 
     if(ret == QMessageBox::Yes)
         clearList();
+}
+
+void ChirpConfigWidget::checkChirp()
+{
+    ChirpConfig cc;
+    cc.setPreChirpDelay(ui->preChirpDelaySpinBox->value()/1e3);
+    cc.setProtectionDelay(ui->protectionDelaySpinBox->value()/1e3);
+    cc.setNumChirps(ui->chirpsSpinBox->value());
+    cc.setChirpInterval(ui->chirpIntervalDoubleSpinBox->value());
+
+    QList<ChirpConfig::ChirpSegment> l = p_ctm->segmentList();
+    for(int i=0; i<l.size();i++)
+    {
+        l[i].startFreqMHz = d_txSidebandSign*(l.at(i).startFreqMHz/d_txMult - d_valonMult*d_valonFreq)/d_awgMult;
+        l[i].endFreqMHz = d_txSidebandSign*(l.at(i).endFreqMHz/d_txMult - d_valonMult*d_valonFreq)/d_awgMult;
+        l[i].alphaUs = (l.at(i).endFreqMHz - l.at(i).startFreqMHz)/l.at(i).durationUs;
+    }
+    cc.setSegmentList(l);
+
+
+
+    cc.validate();
+    ui->chirpPlot->newChirp(cc);
+    emit chirpConfigChanged(cc);
 }
 
 bool ChirpConfigWidget::isSelectionContiguous(QModelIndexList l)
