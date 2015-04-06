@@ -100,6 +100,8 @@ void FidPlot::receiveData(const Fid f)
     if(f.size() < 2)
         return;
 
+    bool as = (d_currentFid.size() == 0);
+
     if(d_ftEndAtFidEnd)
     {
         d_ftMarkers.second->setValue(f.spacing()*(double)f.size()*1e6,0.0);
@@ -109,6 +111,8 @@ void FidPlot::receiveData(const Fid f)
     setAxisAutoScaleMax(QwtPlot::xBottom,f.spacing()*1e6*(double)f.size());
 
     d_currentFid = f;
+    if(as)
+        autoScale();
     filterData();
     replot();
 }
