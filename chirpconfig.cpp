@@ -130,7 +130,10 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
         QList<double> segmentPhasesRadians;
         segmentPhasesRadians.append(0.0);
         for(int i=1; i<data->segments.size(); i++)
-            segmentPhasesRadians.append(GSL_REAL(gsl_complex_arcsin_real(calculateChirp(data->segments.at(i-1),data->segments.at(i-1).durationUs,segmentPhasesRadians.at(i-1)))));
+        {
+            double segmentEndTime = static_cast<double>(segmentStarts.at(i)-segmentStarts.at(i-1))*data->sampleIntervalUS;
+            segmentPhasesRadians.append(calculateEndingPhaseRadians(data->segments.at(i-1),segmentEndTime,segmentPhasesRadians.at(i-1)));
+        }
 
         //determine current segment number
         //-1 means before chirp
@@ -295,5 +298,24 @@ int ChirpConfig::getLastSample(double time) const
 double ChirpConfig::calculateChirp(const ChirpConfig::ChirpSegment segment, const double t, const double phase) const
 {
     return gsl_sf_sin(gsl_sf_angle_restrict_pos(2.0*M_PI*(segment.startFreqMHz + 0.5*segment.alphaUs*t)*t + phase));
+}
+
+double ChirpConfig::calculateEndingPhaseRadians(const ChirpConfig::ChirpSegment segment, const double endingTime, const double startingPhase) const
+{
+    double sinVal = calculateChirp(segment,endingTime,startingPhase);
+    if(qFuzzyCompare(sinVal,1.0))
+        return 0.5*M_PI;
+    if(qFuzzyCompare(sinVal,-1.0))
+        return 1.5*M_PI;
+
+    double cosVal = calculateChirp(segment,endingTime,startingPhase + 0.5*M_PI);
+
+    if(cosVal > 0.0)
+        return gsl_sf_angle_restrict_pos(GSL_REAL(gsl_complex_arcsin_real(sinVal)));
+    else
+        return gsl_sf_angle_restrict_pos(M_PI - GSL_REAL(gsl_complex_arcsin_real(sinVal)));
+
+    //NOT REACHED
+    return 0.0;
 }
 

@@ -47,6 +47,7 @@ private:
     int getFirstSample(double time) const;
     int getLastSample(double time) const;
     double calculateChirp(const ChirpSegment segment, const double t, const double phase) const;
+    double calculateEndingPhaseRadians(const ChirpSegment segment, const double endingTime, const double startingPhase) const;
 };
 
 class ChirpConfigData : public QSharedData
