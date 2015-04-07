@@ -135,6 +135,9 @@
           <property name="toolTip">
            <string>After t0 pulse (which sends TWT enable and protection signals), how long to wait before starting chirp.</string>
           </property>
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
           <property name="suffix">
            <string> ns</string>
           </property>
@@ -160,6 +163,9 @@
          <widget class="QSpinBox" name="protectionDelaySpinBox">
           <property name="toolTip">
            <string>Following chirp, how long to wait before closing protection switch.</string>
+          </property>
+          <property name="keyboardTracking">
+           <bool>false</bool>
           </property>
           <property name="suffix">
            <string> ns</string>
@@ -190,6 +196,9 @@
           <property name="toolTip">
            <string>Number of chirps in the AWG waveform.</string>
           </property>
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
           <property name="minimum">
            <number>1</number>
           </property>
@@ -209,6 +218,9 @@
          <widget class="QDoubleSpinBox" name="chirpIntervalDoubleSpinBox">
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Time from beginning of one chirp to the beginning of the next.&lt;/p&gt;&lt;p&gt;Minimum is pre-chirp delay + chirp duration + protection delay + FID time + 4 μs.&lt;/p&gt;&lt;p&gt;Setting the chirp interval below this value will cause problems, as the scope will miss chirps and become unsynschronized.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="keyboardTracking">
+           <bool>false</bool>
           </property>
           <property name="suffix">
            <string> us</string>

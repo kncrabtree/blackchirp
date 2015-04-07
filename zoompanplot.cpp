@@ -148,6 +148,7 @@ void ZoomPanPlot::replot()
     {
         updateAxes();
         QApplication::sendPostedEvents(this,QEvent::LayoutRequest);
+        d_config.xDirty = true;
     }
 
     if(d_config.xDirty)

@@ -24,6 +24,13 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     connect(ui->removeButton,&QPushButton::clicked,this,&ChirpConfigWidget::removeSegments);
     connect(ui->clearButton,&QPushButton::clicked,this,&ChirpConfigWidget::clear);
 
+    auto vc = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
+    connect(ui->preChirpDelaySpinBox,vc,this,&ChirpConfigWidget::checkChirp);
+    connect(ui->protectionDelaySpinBox,vc,this,&ChirpConfigWidget::checkChirp);
+    connect(ui->chirpsSpinBox,vc,this,&ChirpConfigWidget::checkChirp);
+    connect(ui->chirpsSpinBox,vc,[=](int n){ui->chirpIntervalDoubleSpinBox->setEnabled(n>1);});
+    connect(ui->chirpIntervalDoubleSpinBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),this,&ChirpConfigWidget::checkChirp);
+
     ui->chirpTable->setItemDelegate(new DoubleSpinBoxDelegate);
 }
 
@@ -107,6 +114,7 @@ void ChirpConfigWidget::setButtonStates()
 void ChirpConfigWidget::addSegment()
 {
     p_ctm->addSegment(d_chirpMinMax.first,d_chirpMinMax.second,0.500,-1);
+    checkChirp();
 }
 
 void ChirpConfigWidget::insertSegment()
@@ -116,6 +124,7 @@ void ChirpConfigWidget::insertSegment()
         return;
 
     p_ctm->addSegment(d_chirpMinMax.first,d_chirpMinMax.second,0.500,l.at(0).row());
+    checkChirp();
 }
 
 void ChirpConfigWidget::moveSegments(int direction)
@@ -137,6 +146,7 @@ void ChirpConfigWidget::moveSegments(int direction)
         return;
 
     p_ctm->moveSegments(sortList.at(0),sortList.at(sortList.size()-1),direction);
+    checkChirp();
 }
 
 void ChirpConfigWidget::removeSegments()
@@ -151,6 +161,7 @@ void ChirpConfigWidget::removeSegments()
         rows.append(l.at(i).row());
 
     p_ctm->removeSegments(rows);
+    checkChirp();
 }
 
 void ChirpConfigWidget::clear()
@@ -212,4 +223,6 @@ void ChirpConfigWidget::clearList()
 {
     if(p_ctm->rowCount(QModelIndex()) > 0)
         p_ctm->removeRows(0,p_ctm->rowCount(QModelIndex()),QModelIndex());
+
+    checkChirp();
 }

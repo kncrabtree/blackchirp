@@ -3,6 +3,20 @@
 
 ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(QString("ChirpConfigPlot"),parent)
 {
+
+    //make axis label font smaller
+    this->setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
+    this->setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
+
+    //build axis titles with small font. The <html> etc. tags are needed to display the mu character
+    QwtText blabel(QString("<html><body>Time (&mu;s)</body></html>"));
+    blabel.setFont(QFont(QString("sans-serif"),8));
+    this->setAxisTitle(QwtPlot::xBottom,blabel);
+
+    QwtText llabel(QString("Chirp (Normalized)"));
+    llabel.setFont(QFont(QString("sans-serif"),8));
+    this->setAxisTitle(QwtPlot::yLeft,llabel);
+
     QSettings s;
     QPalette pal;
 
@@ -35,7 +49,10 @@ void ChirpConfigPlot::newChirp(const ChirpConfig cc)
 
     d_chirpData = cc.getChirpMicroseconds();
     if(d_chirpData.isEmpty())
+    {
         setAxisAutoScaleRange(QwtPlot::xBottom,0.0,1.0);
+        d_chirpData.clear();
+    }
     else
         setAxisAutoScaleRange(QwtPlot::xBottom,d_chirpData.at(0).x(),d_chirpData.at(d_chirpData.size()-1).x());
 
@@ -49,7 +66,10 @@ void ChirpConfigPlot::newChirp(const ChirpConfig cc)
 void ChirpConfigPlot::filterData()
 {
     if(d_chirpData.size() < 2)
+    {
+        p_chirpCurve->setSamples(d_chirpData);
         return;
+    }
 
     double firstPixel = 0.0;
     double lastPixel = canvas()->width();
