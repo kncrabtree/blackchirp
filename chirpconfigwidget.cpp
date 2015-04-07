@@ -12,6 +12,7 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
 
     connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::setButtonStates);
     connect(ui->chirpTable->selectionModel(),&QItemSelectionModel::selectionChanged,this,&ChirpConfigWidget::setButtonStates);
+    connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::checkChirp);
     connect(ui->chirpTable->selectionModel(),&QItemSelectionModel::selectionChanged,this,&ChirpConfigWidget::checkChirp);
 
     initializeFromSettings();

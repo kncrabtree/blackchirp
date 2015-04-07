@@ -154,6 +154,7 @@ bool ChirpTableModel::setData(const QModelIndex &index, const QVariant &value, i
 
     d_segmentList[index.row()].alphaUs = (d_segmentList.at(index.row()).endFreqMHz - d_segmentList.at(index.row()).startFreqMHz)/d_segmentList.at(index.row()).durationUs;
     emit dataChanged(index,index);
+    emit modelChanged();
     return true;
 }
 
