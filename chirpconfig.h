@@ -24,8 +24,9 @@ public:
     };
 
     bool isValid() const;
+    double preChirpProtection() const;
     double preChirpDelay() const;
-    double protectionDelay() const;
+    double postChirpProtection() const;
     int numChirps() const;
     double chirpInterval() const;
     double chirpDuration() const;
@@ -35,8 +36,9 @@ public:
     QVector<QPointF> getChirpSegmentMicroSeconds(double t1, double t2) const;
 
     bool validate();
+    void setPreChirpProtection(const double d);
     void setPreChirpDelay(const double d);
-    void setProtectionDelay(const double d);
+    void setPostChirpProtection(const double d);
     void setNumChirps(const int n);
     void setChirpInterval(const double i);
     void setSegmentList(const QList<ChirpConfig::ChirpSegment> l);
@@ -46,6 +48,7 @@ private:
 
     int getFirstSample(double time) const;
     int getLastSample(double time) const;
+    double getSampleTime(const int sample) const;
     double calculateChirp(const ChirpSegment segment, const double t, const double phase) const;
     double calculateEndingPhaseRadians(const ChirpSegment segment, const double endingTime, const double startingPhase) const;
 };
@@ -53,10 +56,11 @@ private:
 class ChirpConfigData : public QSharedData
 {
 public:
-    ChirpConfigData() : preChirpDelay(-1.0), protectionDelay(-1.0), numChirps(0), chirpInterval(-1.0), isValid(false) {}
+    ChirpConfigData() : preChirpProtection(-1.0), preChirpDelay(-1.0), postChirpProtection(-1.0), numChirps(0), chirpInterval(-1.0), isValid(false) {}
 
+    double preChirpProtection;
     double preChirpDelay;
-    double protectionDelay;
+    double postChirpProtection;
     int numChirps;
     double chirpInterval;
 

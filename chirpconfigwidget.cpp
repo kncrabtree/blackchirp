@@ -13,7 +13,7 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::setButtonStates);
     connect(ui->chirpTable->selectionModel(),&QItemSelectionModel::selectionChanged,this,&ChirpConfigWidget::setButtonStates);
     connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::checkChirp);
-    connect(ui->chirpTable->selectionModel(),&QItemSelectionModel::selectionChanged,this,&ChirpConfigWidget::checkChirp);
+//    connect(ui->chirpTable->selectionModel(),&QItemSelectionModel::selectionChanged,this,&ChirpConfigWidget::checkChirp);
 
     initializeFromSettings();
     setButtonStates();
@@ -26,8 +26,9 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     connect(ui->clearButton,&QPushButton::clicked,this,&ChirpConfigWidget::clear);
 
     auto vc = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
+    connect(ui->preChirpProtectionSpinBox,vc,this,&ChirpConfigWidget::checkChirp);
     connect(ui->preChirpDelaySpinBox,vc,this,&ChirpConfigWidget::checkChirp);
-    connect(ui->protectionDelaySpinBox,vc,this,&ChirpConfigWidget::checkChirp);
+    connect(ui->postChirpProtectionSpinBox,vc,this,&ChirpConfigWidget::checkChirp);
     connect(ui->chirpsSpinBox,vc,this,&ChirpConfigWidget::checkChirp);
     connect(ui->chirpsSpinBox,vc,[=](int n){ui->chirpIntervalDoubleSpinBox->setEnabled(n>1);});
     connect(ui->chirpIntervalDoubleSpinBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),this,&ChirpConfigWidget::checkChirp);
@@ -65,8 +66,9 @@ void ChirpConfigWidget::initializeFromSettings()
     s.setValue(QString("chirpMax"),d_chirpMinMax.second);
     s.sync();
 
+    ui->preChirpProtectionSpinBox->setValue(s.value(QString("preChirpProtection"),10).toInt());
     ui->preChirpDelaySpinBox->setValue(s.value(QString("preChirpDelay"),300).toInt());
-    ui->protectionDelaySpinBox->setValue(s.value(QString("protectionDelay"),300).toInt());
+    ui->postChirpProtectionSpinBox->setValue(s.value(QString("postChirpProtection"),300).toInt());
     ui->chirpsSpinBox->setValue(s.value(QString("numChirps"),10).toInt());
     ui->chirpIntervalDoubleSpinBox->setValue(s.value(QString("chirpInterval"),20.0).toDouble());
 
@@ -178,8 +180,9 @@ void ChirpConfigWidget::clear()
 void ChirpConfigWidget::checkChirp()
 {
     ChirpConfig cc;
+    cc.setPreChirpProtection(ui->preChirpProtectionSpinBox->value()/1e3);
     cc.setPreChirpDelay(ui->preChirpDelaySpinBox->value()/1e3);
-    cc.setProtectionDelay(ui->protectionDelaySpinBox->value()/1e3);
+    cc.setPostChirpProtection(ui->postChirpProtectionSpinBox->value()/1e3);
     cc.setNumChirps(ui->chirpsSpinBox->value());
     cc.setChirpInterval(ui->chirpIntervalDoubleSpinBox->value());
 

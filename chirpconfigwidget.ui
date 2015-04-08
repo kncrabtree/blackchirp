@@ -123,14 +123,14 @@
         <property name="fieldGrowthPolicy">
          <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
         </property>
-        <item row="0" column="0">
+        <item row="1" column="0">
          <widget class="QLabel" name="preChirpDelayLabel">
           <property name="text">
            <string>Pre-Chirp Delay</string>
           </property>
          </widget>
         </item>
-        <item row="0" column="1">
+        <item row="1" column="1">
          <widget class="QSpinBox" name="preChirpDelaySpinBox">
           <property name="toolTip">
            <string>After t0 pulse (which sends TWT enable and protection signals), how long to wait before starting chirp.</string>
@@ -152,15 +152,15 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
+        <item row="2" column="0">
          <widget class="QLabel" name="protectionDelayLabel">
           <property name="text">
-           <string>Protection Delay</string>
+           <string>Post-Chirp Protection</string>
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
-         <widget class="QSpinBox" name="protectionDelaySpinBox">
+        <item row="2" column="1">
+         <widget class="QSpinBox" name="postChirpProtectionSpinBox">
           <property name="toolTip">
            <string>Following chirp, how long to wait before closing protection switch.</string>
           </property>
@@ -184,14 +184,14 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="0">
+        <item row="3" column="0">
          <widget class="QLabel" name="chirpsLabel">
           <property name="text">
            <string>Chirps</string>
           </property>
          </widget>
         </item>
-        <item row="2" column="1">
+        <item row="3" column="1">
          <widget class="QSpinBox" name="chirpsSpinBox">
           <property name="toolTip">
            <string>Number of chirps in the AWG waveform.</string>
@@ -207,14 +207,14 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="0">
+        <item row="4" column="0">
          <widget class="QLabel" name="chirpIntervalLabel">
           <property name="text">
            <string>Chirp Interval</string>
           </property>
          </widget>
         </item>
-        <item row="3" column="1">
+        <item row="4" column="1">
          <widget class="QDoubleSpinBox" name="chirpIntervalDoubleSpinBox">
           <property name="toolTip">
            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Time from beginning of one chirp to the beginning of the next.&lt;/p&gt;&lt;p&gt;Minimum is pre-chirp delay + chirp duration + protection delay + FID time + 4 μs.&lt;/p&gt;&lt;p&gt;Setting the chirp interval below this value will cause problems, as the scope will miss chirps and become unsynschronized.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -236,6 +236,32 @@
           </property>
           <property name="value">
            <double>20.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="preChirpProtectionLabel">
+          <property name="text">
+           <string>Pre-Chirp Protection</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QSpinBox" name="preChirpProtectionSpinBox">
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+          <property name="suffix">
+           <string> ns</string>
+          </property>
+          <property name="minimum">
+           <number>10</number>
+          </property>
+          <property name="maximum">
+           <number>500</number>
+          </property>
+          <property name="singleStep">
+           <number>10</number>
           </property>
          </widget>
         </item>

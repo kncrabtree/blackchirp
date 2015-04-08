@@ -33,14 +33,19 @@ bool ChirpConfig::isValid() const
     return data->isValid;
 }
 
+double ChirpConfig::preChirpProtection() const
+{
+    return data->preChirpProtection;
+}
+
 double ChirpConfig::preChirpDelay() const
 {
     return data->preChirpDelay;
 }
 
-double ChirpConfig::protectionDelay() const
+double ChirpConfig::postChirpProtection() const
 {
-    return data->protectionDelay;
+    return data->postChirpProtection;
 }
 
 int ChirpConfig::numChirps() const
@@ -64,9 +69,9 @@ double ChirpConfig::chirpDuration() const
 double ChirpConfig::totalDuration() const
 {
     if(numChirps() > 1)
-        return (static_cast<double>(data->numChirps)-1.0)*data->chirpInterval + data->preChirpDelay + chirpDuration() + data->protectionDelay;
+        return (static_cast<double>(data->numChirps)-1.0)*data->chirpInterval + data->preChirpProtection + data->preChirpDelay + chirpDuration() + data->postChirpProtection;
     else
-        return data->preChirpDelay + chirpDuration() + data->protectionDelay;
+        return data->preChirpProtection + data->preChirpDelay + chirpDuration() + data->postChirpProtection;
 }
 
 QList<ChirpConfig::ChirpSegment> ChirpConfig::segmentList() const
@@ -105,24 +110,24 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
 
     while(!done) // loop that allows interval crossing
     {
-        double currentTime = static_cast<double>(firstSample+currentSample)*data->sampleIntervalUS;
+        double currentTime = getSampleTime(firstSample+currentSample);
         int currentInterval = static_cast<int>(floor(currentTime/data->chirpInterval));
-        double currentIntervalStartSample = getFirstSample(static_cast<double>(currentInterval)*data->chirpInterval);
-        double nextIntervalStartSample = getFirstSample((static_cast<double>(currentInterval) + 1.0) * data->chirpInterval);
+        int currentIntervalStartSample = getFirstSample(static_cast<double>(currentInterval)*data->chirpInterval);
+        int nextIntervalStartSample = getFirstSample((static_cast<double>(currentInterval) + 1.0) * data->chirpInterval);
         if(nextIntervalStartSample > firstSample+numSamples)
         {
             //this is the last interval
             done = true;
         }
-        int currentIntervalChirpStart = getFirstSample(static_cast<double>(currentIntervalStartSample)*data->sampleIntervalUS + data->preChirpDelay);
-        int currentIntervalChirpEnd = getLastSample(static_cast<double>(currentIntervalChirpStart)*data->sampleIntervalUS + chirpDuration());
-        int currentIntervalProtectionEnd = getLastSample(static_cast<double>(currentIntervalChirpEnd)*data->sampleIntervalUS + data->protectionDelay);
+        int currentIntervalChirpStart = getFirstSample(getSampleTime(currentIntervalStartSample) + data->preChirpProtection + data->preChirpDelay);
+        int currentIntervalChirpEnd = getLastSample(getSampleTime(currentIntervalChirpStart) + chirpDuration());
+        int currentIntervalProtectionEnd = getLastSample(getSampleTime(currentIntervalChirpEnd) + data->postChirpProtection);
 
         //start times for each segment
         QList<int> segmentStarts;
         segmentStarts.append(currentIntervalChirpStart);
         for(int i=1; i<data->segments.size(); i++)
-            segmentStarts.append(getFirstSample(static_cast<double>(segmentStarts.at(i-1))*data->sampleIntervalUS + data->segments.at(i-1).durationUs));
+            segmentStarts.append(getFirstSample(getSampleTime(segmentStarts.at(i-1)) + data->segments.at(i-1).durationUs));
 
         //starting phase for each segment
         //want to transition between frequencies as smoothly as possible, so try to start each segment at the phase at which the previous
@@ -131,7 +136,7 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
         segmentPhasesRadians.append(0.0);
         for(int i=1; i<data->segments.size(); i++)
         {
-            double segmentEndTime = static_cast<double>(segmentStarts.at(i)-segmentStarts.at(i-1))*data->sampleIntervalUS;
+            double segmentEndTime = getSampleTime(segmentStarts.at(i)-segmentStarts.at(i-1));
             segmentPhasesRadians.append(calculateEndingPhaseRadians(data->segments.at(i-1),segmentEndTime,segmentPhasesRadians.at(i-1)));
         }
 
@@ -140,63 +145,50 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
         //0 - data->segments.size()-1 means during a segement
         //data->segments.size() means protection interval
         //data->segment.size() + 1 means waiting for next chirp
-
-        int currentSegment = -1;
-        int nextSectionSample = firstSample+currentSample + getFirstSample(data->preChirpDelay);
-        if(currentSample >= currentIntervalChirpStart)
+        int currentSegment = 0;
+        int nextSegmentSample = firstSample+currentSample + getFirstSample(data->preChirpProtection + data->preChirpDelay + data->segments.at(0).durationUs);
+        if(data->segments.size() == 1)
+            nextSegmentSample = currentIntervalChirpEnd;
+        else
         {
-            if(currentSample >= currentIntervalChirpEnd)
-            {
-                if(currentSample >= currentIntervalProtectionEnd)
-                {
-                    currentSegment = data->segments.size() + 1;
-                    nextSectionSample = nextIntervalStartSample;
-                }
-                else
-                {
-                    currentSegment = data->segments.size();
-                    nextSectionSample = currentIntervalProtectionEnd+1;
-                }
-            }
-            currentSegment = 0;
             while(currentSegment + 1 < data->segments.size())
             {
                 if(currentSample < segmentStarts.at(currentSegment+1))
                     break;
 
                 currentSegment++;
-                nextSectionSample += getFirstSample(data->segments.at(currentSegment).durationUs);
+                nextSegmentSample += getFirstSample(data->segments.at(currentSegment).durationUs);
             }
-
         }
 
-        //loop that increments time and calculates points
-        while(currentSample < numSamples && currentSample < nextIntervalStartSample)
+        //loop that allows section/segment crossing
+        while(currentSample < nextIntervalStartSample)
         {
-            if(currentSegment < 0 || currentSegment >= data->segments.size())
-                out[currentSample] = QPointF(currentTime,0.0);
-            else if(currentSegment < data->segments.size())
-                out[currentSample] = QPointF(currentTime,calculateChirp(data->segments.at(currentSegment),currentTime-segmentStarts.at(currentSegment)*data->sampleIntervalUS,segmentPhasesRadians.at(currentSegment)));
+            //loop that increments time and calculates points
+            while(currentSample < numSamples && currentSample < nextSegmentSample)
+            {
+                if(currentSample < currentIntervalChirpStart || currentSample >= currentIntervalChirpEnd)
+                    out[currentSample] = QPointF(currentTime,0.0);
+                else
+                    out[currentSample] = QPointF(currentTime,calculateChirp(data->segments.at(currentSegment),currentTime-getSampleTime(segmentStarts.at(currentSegment)),segmentPhasesRadians.at(currentSegment)));
 
-            currentSample++;
-            currentTime = static_cast<double>(firstSample+currentSample)*data->sampleIntervalUS;
+                currentSample++;
+                currentTime = getSampleTime(firstSample+currentSample);
+
+
+            }
 
             if(currentSample >= numSamples)
-                done = true;
-
-            if(currentSample >= nextSectionSample)
             {
-                currentSegment++;
-                if(currentSample >= currentIntervalChirpEnd)
-                {
-                    if(currentSample >= currentIntervalProtectionEnd)
-                        nextSectionSample = nextIntervalStartSample;
-                    else
-                        nextSectionSample = currentIntervalProtectionEnd+1;
-                }
-                else
-                    nextSectionSample += getFirstSample(data->segments.at(currentSegment).durationUs);
+                done = true;
+                break;
             }
+
+            currentSegment++;
+            if(currentSegment >= data->segments.size())
+                nextSegmentSample = nextIntervalStartSample;
+            else
+                nextSegmentSample += getFirstSample(data->segments.at(currentSegment).durationUs);
         }
     }
 
@@ -209,8 +201,9 @@ bool ChirpConfig::validate()
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
     s.beginGroup(QString("chirpConfig"));
-    double minTwt = s.value(QString("minPreChirpDelay"),0.300).toDouble();
-    double minProt = s.value(QString("minProtectionDelay"),0.300).toDouble();
+    double minPreProt = s.value(QString("minPreChirpProtection"),0.010).toDouble();
+    double minTwt = s.value(QString("minPreChirpDelay"),0.100).toDouble();
+    double minPostProt = s.value(QString("minPostChirpProtection"),0.100).toDouble();
     s.endGroup();
 
     double awgRate = s.value(QString("awg/sampleRate"),16e9).toDouble();
@@ -222,10 +215,13 @@ bool ChirpConfig::validate()
     data->sampleIntervalUS = 1.0/awgRate*1e6;
 
     //make sure all settings are possible
+    if(data->preChirpProtection < minPreProt)
+        return false;
+
     if(data->preChirpDelay < minTwt)
         return false;
 
-    if(data->protectionDelay < minProt)
+    if(data->postChirpProtection < minPostProt)
         return false;
 
     if(data->numChirps < 1)
@@ -234,7 +230,7 @@ bool ChirpConfig::validate()
     if(data->segments.isEmpty())
         return false;
 
-    if(data->numChirps > 0 && data->chirpInterval < data->preChirpDelay + chirpDuration() + data->protectionDelay + 4.0)
+    if(data->numChirps > 0 && data->chirpInterval < data->preChirpProtection + data->preChirpDelay + chirpDuration() + data->postChirpProtection + 4.0)
         return false;
 
     if(totalDuration() >= awgMaxSamples/awgRate*1e6)
@@ -244,14 +240,19 @@ bool ChirpConfig::validate()
     return true;
 }
 
+void ChirpConfig::setPreChirpProtection(const double d)
+{
+    data->preChirpProtection = d;
+}
+
 void ChirpConfig::setPreChirpDelay(const double d)
 {
     data->preChirpDelay = d;
 }
 
-void ChirpConfig::setProtectionDelay(const double d)
+void ChirpConfig::setPostChirpProtection(const double d)
 {
-    data->protectionDelay = d;
+    data->postChirpProtection = d;
 }
 
 void ChirpConfig::setNumChirps(const int n)
@@ -293,6 +294,11 @@ int ChirpConfig::getLastSample(double time) const
         return static_cast<int>(round(data->sampleRateSperUS*time));
     else
         return static_cast<int>(floor(data->sampleRateSperUS*time));
+}
+
+double ChirpConfig::getSampleTime(const int sample) const
+{
+    return static_cast<double>(sample)*data->sampleIntervalUS;
 }
 
 double ChirpConfig::calculateChirp(const ChirpConfig::ChirpSegment segment, const double t, const double phase) const

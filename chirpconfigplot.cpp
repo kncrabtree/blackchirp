@@ -1,5 +1,6 @@
 #include "chirpconfigplot.h"
 #include <QSettings>
+#include <qwt6/qwt_legend.h>
 
 ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(QString("ChirpConfigPlot"),parent)
 {
@@ -28,14 +29,16 @@ ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(QString("ChirpCo
     p_twtEnableCurve= new QwtPlotCurve(QString("TWT Enable"));
     color = s.value(QString("twtEnableColor"),pal.brightText().color()).value<QColor>();
     p_twtEnableCurve->setPen(QPen(color));
-//    p_twtEnableCurve->attach(this);
+    p_twtEnableCurve->attach(this);
 
     p_protectionCurve = new QwtPlotCurve(QString("Protection"));
     color = s.value(QString("protectionColor"),pal.brightText().color()).value<QColor>();
     p_protectionCurve->setPen(QPen(color));
-//    p_protectionCurve->attach(this);
+    p_protectionCurve->attach(this);
 
     setAxisAutoScaleRange(QwtPlot::yLeft,-1.0,1.0);
+
+    insertLegend(new QwtLegend());
 }
 
 ChirpConfigPlot::~ChirpConfigPlot()
@@ -52,12 +55,49 @@ void ChirpConfigPlot::newChirp(const ChirpConfig cc)
     {
         setAxisAutoScaleRange(QwtPlot::xBottom,0.0,1.0);
         d_chirpData.clear();
+        p_twtEnableCurve->setSamples(QVector<QPointF>());
+        p_protectionCurve->setSamples(QVector<QPointF>());
+        autoScale();
+        return;
     }
     else
         setAxisAutoScaleRange(QwtPlot::xBottom,d_chirpData.at(0).x(),d_chirpData.at(d_chirpData.size()-1).x());
 
     if(as)
         autoScale();
+
+    QVector<QPointF> twtData, protectionData;
+
+    for(int i=0; i<cc.numChirps(); i++)
+    {
+        double segmentStartTime = cc.chirpInterval()*static_cast<double>(i);
+        double twtEnableTime = segmentStartTime + cc.preChirpProtection();
+        double chirpEndTime = twtEnableTime + cc.preChirpDelay() + cc.chirpDuration();
+        double protectionEndTime = chirpEndTime + cc.postChirpProtection();
+
+        //0 at the beginning for both segments
+        twtData.append(QPointF(segmentStartTime,0.0));
+        protectionData.append(QPointF(segmentStartTime,0.0));
+
+        //pre-chirp protection: protection goes high, twt enable stays low
+        protectionData.append(QPointF(segmentStartTime,1.0));
+
+        //twt enable, both are high
+        twtData.append(QPointF(twtEnableTime,0.0));
+        twtData.append(QPointF(twtEnableTime,1.0));
+
+        //chirp end, twt goes low, protection stays high
+        twtData.append(QPointF(chirpEndTime,1.0));
+        twtData.append(QPointF(chirpEndTime,0.0));
+
+        //post-chirp protection end: protection goes low, twt stays low
+        protectionData.append(QPointF(protectionEndTime,1.0));
+        protectionData.append(QPointF(protectionEndTime,0.0));
+        twtData.append(QPointF(protectionEndTime,0.0));
+    }
+
+    p_twtEnableCurve->setSamples(twtData);
+    p_protectionCurve->setSamples(protectionData);
 
     filterData();
     replot();
