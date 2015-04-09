@@ -16,6 +16,8 @@ public:
     explicit ChirpConfigWidget(QWidget *parent = 0);
     ~ChirpConfigWidget();
 
+    ChirpConfig getChirpConfig();
+
 public slots:
     void initializeFromSettings();
     void enableEditing(bool enabled);

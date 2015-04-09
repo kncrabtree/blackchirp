@@ -41,6 +41,28 @@ ChirpConfigWidget::~ChirpConfigWidget()
     delete ui;
 }
 
+ChirpConfig ChirpConfigWidget::getChirpConfig()
+{
+    ChirpConfig cc;
+    cc.setPreChirpProtection(ui->preChirpProtectionSpinBox->value()/1e3);
+    cc.setPreChirpDelay(ui->preChirpDelaySpinBox->value()/1e3);
+    cc.setPostChirpProtection(ui->postChirpProtectionSpinBox->value()/1e3);
+    cc.setNumChirps(ui->chirpsSpinBox->value());
+    cc.setChirpInterval(ui->chirpIntervalDoubleSpinBox->value());
+
+    QList<ChirpConfig::ChirpSegment> l = p_ctm->segmentList();
+    for(int i=0; i<l.size();i++)
+    {
+        l[i].startFreqMHz = d_txSidebandSign*(l.at(i).startFreqMHz/d_txMult - d_valonMult*d_valonFreq)/d_awgMult;
+        l[i].endFreqMHz = d_txSidebandSign*(l.at(i).endFreqMHz/d_txMult - d_valonMult*d_valonFreq)/d_awgMult;
+        l[i].alphaUs = (l.at(i).endFreqMHz - l.at(i).startFreqMHz)/l.at(i).durationUs;
+    }
+    cc.setSegmentList(l);
+    cc.validate();
+
+    return cc;
+}
+
 void ChirpConfigWidget::initializeFromSettings()
 {
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
@@ -179,27 +201,9 @@ void ChirpConfigWidget::clear()
 
 void ChirpConfigWidget::checkChirp()
 {
-    ChirpConfig cc;
-    cc.setPreChirpProtection(ui->preChirpProtectionSpinBox->value()/1e3);
-    cc.setPreChirpDelay(ui->preChirpDelaySpinBox->value()/1e3);
-    cc.setPostChirpProtection(ui->postChirpProtectionSpinBox->value()/1e3);
-    cc.setNumChirps(ui->chirpsSpinBox->value());
-    cc.setChirpInterval(ui->chirpIntervalDoubleSpinBox->value());
-
-    QList<ChirpConfig::ChirpSegment> l = p_ctm->segmentList();
-    for(int i=0; i<l.size();i++)
-    {
-        l[i].startFreqMHz = d_txSidebandSign*(l.at(i).startFreqMHz/d_txMult - d_valonMult*d_valonFreq)/d_awgMult;
-        l[i].endFreqMHz = d_txSidebandSign*(l.at(i).endFreqMHz/d_txMult - d_valonMult*d_valonFreq)/d_awgMult;
-        l[i].alphaUs = (l.at(i).endFreqMHz - l.at(i).startFreqMHz)/l.at(i).durationUs;
-    }
-    cc.setSegmentList(l);
-
-
-
-    cc.validate();
+    ChirpConfig cc = getChirpConfig();
     ui->chirpPlot->newChirp(cc);
-    emit chirpConfigChanged(cc);
+    emit chirpConfigChanged(cc); //why is this signal here?
 }
 
 bool ChirpConfigWidget::isSelectionContiguous(QModelIndexList l)
