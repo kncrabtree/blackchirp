@@ -1,6 +1,8 @@
 #include "chirpconfigplot.h"
 #include <QSettings>
 #include <qwt6/qwt_legend.h>
+#include <QColorDialog>
+#include <QMouseEvent>
 
 ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(QString("ChirpConfigPlot"),parent)
 {
@@ -39,6 +41,8 @@ ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(QString("ChirpCo
     setAxisAutoScaleRange(QwtPlot::yLeft,-1.0,1.0);
 
     insertLegend(new QwtLegend());
+
+    connect(this,&ChirpConfigPlot::plotRightClicked,this,&ChirpConfigPlot::buildContextMenu);
 }
 
 ChirpConfigPlot::~ChirpConfigPlot()
@@ -101,6 +105,57 @@ void ChirpConfigPlot::newChirp(const ChirpConfig cc)
 
     filterData();
     replot();
+}
+
+void ChirpConfigPlot::buildContextMenu(QMouseEvent *me)
+{
+    QMenu *menu = contextMenu();
+
+    QAction *chirpAction = menu->addAction(QString("Change chirp color..."));
+    connect(chirpAction,&QAction::triggered,[=](){ setCurveColor(p_chirpCurve); });
+    if(d_chirpData.isEmpty())
+        chirpAction->setEnabled(false);
+
+    QAction *twtAction = menu->addAction(QString("Change TWT enable color..."));
+    connect(twtAction,&QAction::triggered,[=](){ setCurveColor(p_twtEnableCurve); });
+    if(d_chirpData.isEmpty())
+        twtAction->setEnabled(false);
+
+    QAction *protAction = menu->addAction(QString("Change protection color..."));
+    connect(protAction,&QAction::triggered,[=](){ setCurveColor(p_protectionCurve); });
+    if(d_chirpData.isEmpty())
+        protAction->setEnabled(false);
+
+    menu->popup(me->globalPos());
+}
+
+void ChirpConfigPlot::setCurveColor(QwtPlotCurve *c)
+{
+    if(c != nullptr)
+    {
+        QString key;
+        if(c == p_chirpCurve)
+            key = QString("chirpColor");
+        if(c == p_twtEnableCurve)
+            key = QString("twtEnableColor");
+        if(c == p_protectionCurve)
+            key = QString("protectionColor");
+
+        if(key.isEmpty())
+            return;
+
+        QColor color = QColorDialog::getColor(c->pen().color(),this,QString("Choose color"));
+        if(!color.isValid())
+            return;
+
+        c->setPen(color);
+
+        QSettings s;
+        s.setValue(key,color);
+        s.sync();
+
+        replot();
+    }
 }
 
 void ChirpConfigPlot::filterData()

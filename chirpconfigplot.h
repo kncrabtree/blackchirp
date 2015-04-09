@@ -13,10 +13,14 @@ public:
 
 public slots:
     void newChirp(const ChirpConfig cc);
+    void buildContextMenu(QMouseEvent *me);
 
 private:
     QwtPlotCurve *p_twtEnableCurve, *p_protectionCurve, *p_chirpCurve;
     QVector<QPointF> d_chirpData;
+
+    void setCurveColor(QwtPlotCurve *c);
+
 
     // ZoomPanPlot interface
 protected:
