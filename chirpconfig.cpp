@@ -195,6 +195,38 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
     return out;
 }
 
+QMap<QString, QPair<QVariant, QString> > ChirpConfig::headerMap() const
+{
+    QMap<QString, QPair<QVariant,QString>> out;
+
+    out.insert(QString("#PreChirpProtection"),qMakePair(QString::number(data->preChirpProtection,'f',3),QString::fromUtf16(u"μs")));
+    out.insert(QString("#PreChirpDelay"),qMakePair(QString::number(data->preChirpDelay,'f',3),QString::fromUtf16(u"μs")));
+    out.insert(QString("#PostChirpProtection"),qMakePair(QString::number(data->postChirpProtection,'f',3),QString::fromUtf16(u"μs")));
+    out.insert(QString("#NumChirps"),qMakePair(data->numChirps,QString("")));
+    out.insert(QString("#ChirpInterval"),qMakePair(QString::number(data->chirpInterval,'f',3),QString::fromUtf16(u"μs")));
+
+    return out;
+}
+
+QString ChirpConfig::toString() const
+{
+    QString out;
+    QMap<QString, QPair<QVariant,QString>> header = headerMap();
+    auto it = headerMap().constBegin();
+    while(it != header.constEnd())
+    {
+        out.append(QString("%1\t%2\t%3\n").arg(it.key()).arg(it.value().first.toString()).arg(it.value().second));
+        it++;
+    }
+
+    for(int i=0; i<data->segments.size(); i++)
+    {
+        ChirpSegment s = data->segments.at(i);
+        out.append(QString("\n%1\t%2\t%3").arg(s.startFreqMHz,0,'f',3).arg(s.endFreqMHz,0,'f',3).arg(s.durationUs,0,'f',3));
+    }
+    return out;
+}
+
 bool ChirpConfig::validate()
 {
     data->isValid = false;

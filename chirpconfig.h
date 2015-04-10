@@ -4,6 +4,9 @@
 #include <QSharedDataPointer>
 #include <QPointF>
 #include <QVector>
+#include <QMap>
+#include <QVariant>
+#include <QPair>
 
 class ChirpConfigData;
 
@@ -34,6 +37,9 @@ public:
     QList<ChirpConfig::ChirpSegment> segmentList() const;
     QVector<QPointF> getChirpMicroseconds() const;
     QVector<QPointF> getChirpSegmentMicroSeconds(double t1, double t2) const;
+
+    QMap<QString,QPair<QVariant,QString>> headerMap() const;
+    QString toString() const;
 
     void setPreChirpProtection(const double d);
     void setPreChirpDelay(const double d);
