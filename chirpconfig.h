@@ -32,12 +32,13 @@ public:
     double postChirpProtection() const;
     int numChirps() const;
     double chirpInterval() const;
+
+    QList<ChirpConfig::ChirpSegment> segmentList() const;
+
     double chirpDuration() const;
     double totalDuration() const;
-    QList<ChirpConfig::ChirpSegment> segmentList() const;
     QVector<QPointF> getChirpMicroseconds() const;
     QVector<QPointF> getChirpSegmentMicroSeconds(double t1, double t2) const;
-
     QMap<QString,QPair<QVariant,QString>> headerMap() const;
     QString toString() const;
 
@@ -56,6 +57,8 @@ private:
     double getSampleTime(const int sample) const;
     double calculateChirp(const ChirpSegment segment, const double t, const double phase) const;
     double calculateEndingPhaseRadians(const ChirpSegment segment, const double endingTime, const double startingPhase) const;
+    double realToAwgFreq(const double realFreq) const;
+    double awgToRealFreq(const double awgFreq) const;
 
     bool validate();
 };
@@ -63,13 +66,21 @@ private:
 class ChirpConfigData : public QSharedData
 {
 public:
-    ChirpConfigData() : preChirpProtection(-1.0), preChirpDelay(-1.0), postChirpProtection(-1.0), numChirps(0), chirpInterval(-1.0), isValid(false) {}
+    ChirpConfigData() : preChirpProtection(-1.0), preChirpDelay(-1.0), postChirpProtection(-1.0), numChirps(0), chirpInterval(-1.0),
+        valonTxFreq(-1.0), valonTxMult(-1.0), awgMult(-1.0), mixerSideband(0.0), totalMult(0.0), isValid(false) {}
 
     double preChirpProtection;
     double preChirpDelay;
     double postChirpProtection;
     int numChirps;
     double chirpInterval;
+
+    double valonTxFreq;
+    double valonTxMult;
+    double awgMult;
+    double mixerSideband;
+    double totalMult;
+
 
     //working data to improve efficiency; do not record to disk!
     double sampleRateSperS; //awg rate, samples per second

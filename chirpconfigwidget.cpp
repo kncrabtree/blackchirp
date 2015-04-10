@@ -12,7 +12,7 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
 
     connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::setButtonStates);
     connect(ui->chirpTable->selectionModel(),&QItemSelectionModel::selectionChanged,this,&ChirpConfigWidget::setButtonStates);
-    connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::checkChirp);
+    connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::updateChirpPlot);
 //    connect(ui->chirpTable->selectionModel(),&QItemSelectionModel::selectionChanged,this,&ChirpConfigWidget::checkChirp);
 
     initializeFromSettings();
@@ -26,12 +26,12 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     connect(ui->clearButton,&QPushButton::clicked,this,&ChirpConfigWidget::clear);
 
     auto vc = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
-    connect(ui->preChirpProtectionSpinBox,vc,this,&ChirpConfigWidget::checkChirp);
-    connect(ui->preChirpDelaySpinBox,vc,this,&ChirpConfigWidget::checkChirp);
-    connect(ui->postChirpProtectionSpinBox,vc,this,&ChirpConfigWidget::checkChirp);
-    connect(ui->chirpsSpinBox,vc,this,&ChirpConfigWidget::checkChirp);
+    connect(ui->preChirpProtectionSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
+    connect(ui->preChirpDelaySpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
+    connect(ui->postChirpProtectionSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
+    connect(ui->chirpsSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
     connect(ui->chirpsSpinBox,vc,[=](int n){ui->chirpIntervalDoubleSpinBox->setEnabled(n>1);});
-    connect(ui->chirpIntervalDoubleSpinBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),this,&ChirpConfigWidget::checkChirp);
+    connect(ui->chirpIntervalDoubleSpinBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),this,&ChirpConfigWidget::updateChirpPlot);
 
     ui->chirpTable->setItemDelegate(new DoubleSpinBoxDelegate);
 }
@@ -43,49 +43,15 @@ ChirpConfigWidget::~ChirpConfigWidget()
 
 ChirpConfig ChirpConfigWidget::getChirpConfig()
 {
-    ChirpConfig cc;
-    cc.setPreChirpProtection(ui->preChirpProtectionSpinBox->value()/1e3);
-    cc.setPreChirpDelay(ui->preChirpDelaySpinBox->value()/1e3);
-    cc.setPostChirpProtection(ui->postChirpProtectionSpinBox->value()/1e3);
-    cc.setNumChirps(ui->chirpsSpinBox->value());
-    cc.setChirpInterval(ui->chirpIntervalDoubleSpinBox->value());
-
-    QList<ChirpConfig::ChirpSegment> l = p_ctm->segmentList();
-    for(int i=0; i<l.size();i++)
-    {
-        l[i].startFreqMHz = d_txSidebandSign*(l.at(i).startFreqMHz/d_txMult - d_valonMult*d_valonFreq)/d_awgMult;
-        l[i].endFreqMHz = d_txSidebandSign*(l.at(i).endFreqMHz/d_txMult - d_valonMult*d_valonFreq)/d_awgMult;
-        l[i].alphaUs = (l.at(i).endFreqMHz - l.at(i).startFreqMHz)/l.at(i).durationUs;
-    }
-    cc.setSegmentList(l);
-
-    return cc;
+    updateChirpConfig();
+    return d_currentChirpConfig;
 }
 
 void ChirpConfigWidget::initializeFromSettings()
 {
+
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-
-    s.beginGroup(QString("valonSynth"));
-    d_valonFreq = s.value(QString("txFreq"),5760.0).toDouble();
-    s.endGroup();
-
-    s.beginGroup(QString("awg"));
-    double awgMin = s.value(QString("minFreq"),100.0).toDouble();
-    double awgMax = s.value(QString("maxFreq"),6250.0).toDouble();
-    s.endGroup();
-
     s.beginGroup(QString("chirpConfig"));
-    d_awgMult = s.value(QString("awgMult"),1.0).toDouble();
-    d_valonMult = s.value(QString("valonMult"),2.0).toDouble();
-    d_txMult = s.value(QString("txMult"),4.0).toDouble();
-    d_txSidebandSign = s.value(QString("txSidebandSign"),-1.0).toDouble();
-
-    d_chirpMinMax.first = qMin(d_txMult*(d_txSidebandSign*d_awgMult*awgMin + d_valonMult*d_valonFreq),d_txMult*(d_txSidebandSign*d_awgMult*awgMax + d_valonMult*d_valonFreq));
-    d_chirpMinMax.second = qMax(d_txMult*(d_txSidebandSign*d_awgMult*awgMin + d_valonMult*d_valonFreq),d_txMult*(d_txSidebandSign*d_awgMult*awgMax + d_valonMult*d_valonFreq));
-    s.setValue(QString("chirpMin"),d_chirpMinMax.first);
-    s.setValue(QString("chirpMax"),d_chirpMinMax.second);
-    s.sync();
 
     ui->preChirpProtectionSpinBox->setValue(s.value(QString("preChirpProtection"),10).toInt());
     ui->preChirpDelaySpinBox->setValue(s.value(QString("preChirpDelay"),300).toInt());
@@ -93,14 +59,17 @@ void ChirpConfigWidget::initializeFromSettings()
     ui->chirpsSpinBox->setValue(s.value(QString("numChirps"),10).toInt());
     ui->chirpIntervalDoubleSpinBox->setValue(s.value(QString("chirpInterval"),20.0).toDouble());
 
+    double chirpMin = s.value(QString("chirpMin"),26500.0).toDouble();
+    double chirpMax = s.value(QString("chirpMax"),40000.0).toDouble();
+
     clearList();
 
     int numSegments = s.beginReadArray(QString("segments"));
     for(int i=0; i<numSegments; i++)
     {
         s.setArrayIndex(i);
-        double start = qBound(d_chirpMinMax.first,s.value(QString("startFreq"),d_chirpMinMax.first).toDouble(),d_chirpMinMax.second);
-        double end = qBound(d_chirpMinMax.first,s.value(QString("endFreq"),d_chirpMinMax.second).toDouble(),d_chirpMinMax.second);
+        double start = qBound(chirpMin,s.value(QString("startFreq"),chirpMin).toDouble(),chirpMax);
+        double end = qBound(chirpMin,s.value(QString("endFreq"),chirpMax).toDouble(),chirpMax);
         double dur = qBound(0.1,s.value(QString("duration"),500.0).toDouble(),100000.0);
         p_ctm->addSegment(start,end,dur,p_ctm->rowCount(QModelIndex()));
     }
@@ -137,8 +106,14 @@ void ChirpConfigWidget::setButtonStates()
 
 void ChirpConfigWidget::addSegment()
 {
-    p_ctm->addSegment(d_chirpMinMax.first,d_chirpMinMax.second,0.500,-1);
-    checkChirp();
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("chirpConfig"));
+    double chirpMin = s.value(QString("chirpMin"),26500.0).toDouble();
+    double chirpMax = s.value(QString("chirpMax"),40000.0).toDouble();
+    s.endGroup();
+
+    p_ctm->addSegment(chirpMin,chirpMax,0.500,-1);
+    updateChirpPlot();
 }
 
 void ChirpConfigWidget::insertSegment()
@@ -147,8 +122,14 @@ void ChirpConfigWidget::insertSegment()
     if(l.size() != 1)
         return;
 
-    p_ctm->addSegment(d_chirpMinMax.first,d_chirpMinMax.second,0.500,l.at(0).row());
-    checkChirp();
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("chirpConfig"));
+    double chirpMin = s.value(QString("chirpMin"),26500.0).toDouble();
+    double chirpMax = s.value(QString("chirpMax"),40000.0).toDouble();
+    s.endGroup();
+
+    p_ctm->addSegment(chirpMin,chirpMax,0.500,l.at(0).row());
+    updateChirpPlot();
 }
 
 void ChirpConfigWidget::moveSegments(int direction)
@@ -170,7 +151,7 @@ void ChirpConfigWidget::moveSegments(int direction)
         return;
 
     p_ctm->moveSegments(sortList.at(0),sortList.at(sortList.size()-1),direction);
-    checkChirp();
+    updateChirpPlot();
 }
 
 void ChirpConfigWidget::removeSegments()
@@ -185,7 +166,7 @@ void ChirpConfigWidget::removeSegments()
         rows.append(l.at(i).row());
 
     p_ctm->removeSegments(rows);
-    checkChirp();
+    updateChirpPlot();
 }
 
 void ChirpConfigWidget::clear()
@@ -198,11 +179,11 @@ void ChirpConfigWidget::clear()
         clearList();
 }
 
-void ChirpConfigWidget::checkChirp()
+void ChirpConfigWidget::updateChirpPlot()
 {
-    ChirpConfig cc = getChirpConfig();
-    ui->chirpPlot->newChirp(cc);
-    emit chirpConfigChanged(cc); //why is this signal here?
+    updateChirpConfig();
+    ui->chirpPlot->newChirp(d_currentChirpConfig);
+//    emit chirpConfigChanged(cc); //why is this signal here?
 }
 
 bool ChirpConfigWidget::isSelectionContiguous(QModelIndexList l)
@@ -231,5 +212,16 @@ void ChirpConfigWidget::clearList()
     if(p_ctm->rowCount(QModelIndex()) > 0)
         p_ctm->removeRows(0,p_ctm->rowCount(QModelIndex()),QModelIndex());
 
-    checkChirp();
+    updateChirpPlot();
+}
+
+void ChirpConfigWidget::updateChirpConfig()
+{
+    d_currentChirpConfig.setPreChirpProtection(ui->preChirpProtectionSpinBox->value()/1e3);
+    d_currentChirpConfig.setPreChirpDelay(ui->preChirpDelaySpinBox->value()/1e3);
+    d_currentChirpConfig.setPostChirpProtection(ui->postChirpProtectionSpinBox->value()/1e3);
+    d_currentChirpConfig.setNumChirps(ui->chirpsSpinBox->value());
+    d_currentChirpConfig.setChirpInterval(ui->chirpIntervalDoubleSpinBox->value());
+    d_currentChirpConfig.setSegmentList(p_ctm->segmentList());
+
 }

@@ -8,7 +8,29 @@
 
 ChirpConfig::ChirpConfig() : data(new ChirpConfigData)
 {
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
+    s.beginGroup(QString("valonSynth"));
+    data->valonTxFreq = s.value(QString("txFreq"),5760.0).toDouble();
+    s.endGroup();
+
+    s.beginGroup(QString("chirpConfig"));
+    data->awgMult = s.value(QString("awgMult"),1.0).toDouble();
+    data->valonTxMult = s.value(QString("valonMult"),2.0).toDouble();
+    data->totalMult = s.value(QString("txMult"),4.0).toDouble();
+    data->mixerSideband = s.value(QString("txSidebandSign"),-1.0).toDouble();
+    s.endGroup();
+
+    //move this code to widget that configures TX chain...
+//    s.beginGroup(QString("awg"));
+//    double awgMin = s.value(QString("minFreq"),100.0).toDouble();
+//    double awgMax = s.value(QString("maxFreq"),6250.0).toDouble();
+//    s.endGroup();
+//    d_chirpMinMax.first = qMin(d_txMult*(d_txSidebandSign*d_awgMult*awgMin + d_valonMult*d_valonFreq),d_txMult*(d_txSidebandSign*d_awgMult*awgMax + d_valonMult*d_valonFreq));
+//    d_chirpMinMax.second = qMax(d_txMult*(d_txSidebandSign*d_awgMult*awgMin + d_valonMult*d_valonFreq),d_txMult*(d_txSidebandSign*d_awgMult*awgMax + d_valonMult*d_valonFreq));
+//    s.setValue(QString("chirpMin"),d_chirpMinMax.first);
+//    s.setValue(QString("chirpMax"),d_chirpMinMax.second);
+//    s.sync();
 }
 
 ChirpConfig::ChirpConfig(const ChirpConfig &rhs) : data(rhs.data)
@@ -204,6 +226,11 @@ QMap<QString, QPair<QVariant, QString> > ChirpConfig::headerMap() const
     out.insert(QString("#PostChirpProtection"),qMakePair(QString::number(data->postChirpProtection,'f',3),QString::fromUtf16(u"μs")));
     out.insert(QString("#NumChirps"),qMakePair(data->numChirps,QString("")));
     out.insert(QString("#ChirpInterval"),qMakePair(QString::number(data->chirpInterval,'f',3),QString::fromUtf16(u"μs")));
+    out.insert(QString("#ValonTxMult"),qMakePair(QString::number(data->valonTxMult,'f',1),QString("")));
+    out.insert(QString("#AwgMult"),qMakePair(QString::number(data->awgMult,'f',1),QString("")));
+    out.insert(QString("#TotalMult"),qMakePair(QString::number(data->totalMult,'f',1),QString("")));
+    out.insert(QString("#MixerSideband"),qMakePair(QString::number(data->mixerSideband,'f',1),QString("")));
+    out.insert(QString("#ValonTxFreq"),qMakePair(QString::number(data->valonTxFreq,'f',3),QString("MHz")));
 
     return out;
 }
@@ -222,8 +249,16 @@ QString ChirpConfig::toString() const
     for(int i=0; i<data->segments.size(); i++)
     {
         ChirpSegment s = data->segments.at(i);
-        out.append(QString("\n%1\t%2\t%3").arg(s.startFreqMHz,0,'f',3).arg(s.endFreqMHz,0,'f',3).arg(s.durationUs,0,'f',3));
+        out.append(QString("\n%1\t%2\t%3").arg(s.startFreqMHz,0,'f',3).arg(s.endFreqMHz,0,'f',3).arg(s.durationUs,0,'f',4));
     }
+
+    out.append(QString("\n"));
+    for(int i=0; i<data->segments.size(); i++)
+    {
+        ChirpSegment s = data->segments.at(i);
+        out.append(QString("\n#%1\t%2\t%3").arg(awgToRealFreq(s.startFreqMHz),0,'f',3).arg(awgToRealFreq(s.endFreqMHz),0,'f',3).arg(s.durationUs,0,'f',4));
+    }
+
     return out;
 }
 
@@ -240,6 +275,8 @@ bool ChirpConfig::validate()
 
     double awgRate = s.value(QString("awg/sampleRate"),16e9).toDouble();
     double awgMaxSamples = s.value(QString("awg/maxSamples"),2e9).toDouble();
+    double awgMinFreq = s.value(QString("awg/minFreq"),100.0).toDouble();
+    double awgMaxFreq = s.value(QString("awg/maxFreq"),6250.0).toDouble();
 
     data->sampleRateSperS = awgRate;
     data->sampleRateSperUS = awgRate/1e6;
@@ -261,6 +298,15 @@ bool ChirpConfig::validate()
 
     if(data->segments.isEmpty())
         return false;
+
+    for(int i=0; i<data->segments.size();i++)
+    {
+        if(data->segments.at(i).startFreqMHz > awgMaxFreq || data->segments.at(i).startFreqMHz < awgMinFreq)
+            return false;
+
+        if(data->segments.at(i).endFreqMHz > awgMaxFreq || data->segments.at(i).endFreqMHz < awgMinFreq)
+            return false;
+    }
 
     if(data->numChirps > 0 && data->chirpInterval < data->preChirpProtection + data->preChirpDelay + chirpDuration() + data->postChirpProtection + 4.0)
         return false;
@@ -304,7 +350,18 @@ void ChirpConfig::setChirpInterval(const double i)
 
 void ChirpConfig::setSegmentList(const QList<ChirpConfig::ChirpSegment> l)
 {
-    data->segments = l;
+    QList<ChirpConfig::ChirpSegment> newSegList;
+    for(int i=0; i<l.size(); i++)
+    {
+        ChirpConfig::ChirpSegment seg;
+        seg.startFreqMHz = realToAwgFreq(l.at(i).startFreqMHz);
+        seg.endFreqMHz = realToAwgFreq(l.at(i).endFreqMHz);
+        seg.durationUs = l.at(i).durationUs;
+        seg.alphaUs = (seg.endFreqMHz - seg.startFreqMHz)/seg.durationUs;
+
+        newSegList.append(seg);
+    }
+    data->segments = newSegList;
     validate();
 }
 
@@ -361,5 +418,15 @@ double ChirpConfig::calculateEndingPhaseRadians(const ChirpConfig::ChirpSegment 
 
     //NOT REACHED
     return 0.0;
+}
+
+double ChirpConfig::realToAwgFreq(const double realFreq) const
+{
+    return data->mixerSideband*(realFreq/data->totalMult - data->valonTxMult*data->valonTxFreq)/data->awgMult;
+}
+
+double ChirpConfig::awgToRealFreq(const double awgFreq) const
+{
+    return data->totalMult*(data->mixerSideband*data->awgMult*awgFreq + data->valonTxFreq*data->valonTxMult);
 }
 
