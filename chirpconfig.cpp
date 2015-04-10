@@ -121,7 +121,6 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
         }
         int currentIntervalChirpStart = getFirstSample(getSampleTime(currentIntervalStartSample) + data->preChirpProtection + data->preChirpDelay);
         int currentIntervalChirpEnd = getLastSample(getSampleTime(currentIntervalChirpStart) + chirpDuration());
-        int currentIntervalProtectionEnd = getLastSample(getSampleTime(currentIntervalChirpEnd) + data->postChirpProtection);
 
         //start times for each segment
         QList<int> segmentStarts;
