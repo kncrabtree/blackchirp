@@ -58,7 +58,6 @@ ChirpConfig ChirpConfigWidget::getChirpConfig()
         l[i].alphaUs = (l.at(i).endFreqMHz - l.at(i).startFreqMHz)/l.at(i).durationUs;
     }
     cc.setSegmentList(l);
-    cc.validate();
 
     return cc;
 }
