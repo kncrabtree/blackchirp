@@ -86,6 +86,9 @@ unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
 DEFINES += BC_NOFTSCOPE
 RESOURCES += virtualdata.qrc
 
+#Simulates Valon Synthesizer
+DEFINES += BC_NOVALONSYNTH
+
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O3
 QMAKE_CXXFLAGS += -std=c++11
