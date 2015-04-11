@@ -12,6 +12,10 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    ui->exptSpinBox->blockSignals(true);
+    ui->valonTXDoubleSpinBox->blockSignals(true);
+    ui->valonRXDoubleSpinBox->blockSignals(true);
+
     QLabel *statusLabel = new QLabel(this);
     connect(this,&MainWindow::statusMessage,statusLabel,&QLabel::setText);
     ui->statusBar->addWidget(statusLabel);
@@ -30,6 +34,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::statusMessage,statusLabel,&QLabel::setText);
     connect(p_hwm,&HardwareManager::experimentInitialized,this,&MainWindow::experimentInitialized);
     connect(p_hwm,&HardwareManager::allHardwareConnected,this,&MainWindow::hardwareInitialized);
+    connect(p_hwm,&HardwareManager::valonTxFreqRead,ui->valonTXDoubleSpinBox,&QDoubleSpinBox::setValue);
+    connect(p_hwm,&HardwareManager::valonRxFreqRead,ui->valonRXDoubleSpinBox,&QDoubleSpinBox::setValue);
 
     QThread *hwmThread = new QThread(this);
     connect(hwmThread,&QThread::started,p_hwm,&HardwareManager::initialize);
@@ -62,7 +68,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_am,&AcquisitionManager::beginAcquisition,p_hwm,&HardwareManager::beginAcquisition);
     connect(p_am,&AcquisitionManager::timeDataSignal,p_hwm,&HardwareManager::getTimeData);
     connect(p_hwm,&HardwareManager::timeData,p_am,&AcquisitionManager::processTimeData);
-
 
 
     hwmThread->start();

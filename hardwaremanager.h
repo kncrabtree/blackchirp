@@ -8,6 +8,7 @@
 #include "loghandler.h"
 #include "ftmwscope.h"
 #include "experiment.h"
+#include "valonsynthesizer.h"
 
 class HardwareManager : public QObject
 {
@@ -34,6 +35,8 @@ signals:
     void scopeShotAcquired(const QByteArray);
     void timeData(const QList<QPair<QString,QVariant>>);
     void readTimeData();
+    void valonTxFreqRead(double);
+    void valonRxFreqRead(double);
 
 public slots:
     void initialize();
@@ -66,6 +69,7 @@ private:
 
     QList<QPair<HardwareObject*,QThread*> > d_hardwareList;
     FtmwScope *p_scope;
+    ValonSynthesizer *p_valon;
 
 };
 

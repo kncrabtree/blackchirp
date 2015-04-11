@@ -39,6 +39,10 @@ double ValonSynthesizer::readTxFreq()
         emit txFreqRead(d_txFreq);
         return d_txFreq;
     }
+
+    //implement communication
+    emit txFreqRead(d_txFreq);
+    return d_txFreq;
 }
 
 double ValonSynthesizer::readRxFreq()
@@ -48,6 +52,10 @@ double ValonSynthesizer::readRxFreq()
         emit rxFreqRead(d_rxFreq);
         return d_rxFreq;
     }
+
+    //implement communication
+    emit rxFreqRead(d_rxFreq);
+    return d_rxFreq;
 }
 
 double ValonSynthesizer::setTxFreq(const double f)
@@ -88,6 +96,8 @@ bool ValonSynthesizer::testConnection()
         //IMPLEMENT
     }
 
+    readTxFreq();
+    readRxFreq();
 
     emit connectionResult(this,true);
     return true;
@@ -103,4 +113,6 @@ void ValonSynthesizer::initialize()
         d_txFreq = s.value(QString("%1/txFreq").arg(key()),5760.0).toDouble();
         d_rxFreq = s.value(QString("%1/rxFreq").arg(key()),5120.0).toDouble();
     }
+
+    testConnection();
 }

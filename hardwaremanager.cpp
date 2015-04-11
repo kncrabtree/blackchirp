@@ -30,6 +30,13 @@ void HardwareManager::initialize()
     QThread *scopeThread = new QThread(this);
     d_hardwareList.append(qMakePair(p_scope,scopeThread));
 
+    //valon synth does not need to be in its own thread
+    p_valon = new ValonSynthesizer();
+    connect(p_valon,&ValonSynthesizer::txFreqRead,this,&HardwareManager::valonTxFreqRead);
+    connect(p_valon,&ValonSynthesizer::rxFreqRead,this,&HardwareManager::valonRxFreqRead);
+
+    d_hardwareList.append(qMakePair(p_valon,nullptr));
+
 	//write arrays of the connected devices for use in the Hardware Settings menu
 	//first array is for all objects accessible to the hardware manager
 	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
