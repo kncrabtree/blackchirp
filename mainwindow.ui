@@ -217,6 +217,7 @@
      <string>Hardware</string>
     </property>
     <addaction name="actionCommunication"/>
+    <addaction name="actionRf_Configuration"/>
    </widget>
    <widget class="QMenu" name="menuTracking">
     <property name="title">
@@ -274,6 +275,11 @@
   <action name="action_Graphs">
    <property name="text">
     <string># Graphs...</string>
+   </property>
+  </action>
+  <action name="actionRf_Configuration">
+   <property name="text">
+    <string>Rf Configuration</string>
    </property>
   </action>
  </widget>

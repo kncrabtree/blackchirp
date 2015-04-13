@@ -16,7 +16,7 @@ ChirpConfig::ChirpConfig() : data(new ChirpConfigData)
 
     s.beginGroup(QString("chirpConfig"));
     data->awgMult = s.value(QString("awgMult"),1.0).toDouble();
-    data->valonTxMult = s.value(QString("valonMult"),2.0).toDouble();
+    data->valonTxMult = s.value(QString("txValonMult"),2.0).toDouble();
     data->totalMult = s.value(QString("txMult"),4.0).toDouble();
     data->mixerSideband = s.value(QString("txSidebandSign"),-1.0).toDouble();
     s.endGroup();
@@ -26,11 +26,7 @@ ChirpConfig::ChirpConfig() : data(new ChirpConfigData)
 //    double awgMin = s.value(QString("minFreq"),100.0).toDouble();
 //    double awgMax = s.value(QString("maxFreq"),6250.0).toDouble();
 //    s.endGroup();
-//    d_chirpMinMax.first = qMin(d_txMult*(d_txSidebandSign*d_awgMult*awgMin + d_valonMult*d_valonFreq),d_txMult*(d_txSidebandSign*d_awgMult*awgMax + d_valonMult*d_valonFreq));
-//    d_chirpMinMax.second = qMax(d_txMult*(d_txSidebandSign*d_awgMult*awgMin + d_valonMult*d_valonFreq),d_txMult*(d_txSidebandSign*d_awgMult*awgMax + d_valonMult*d_valonFreq));
-//    s.setValue(QString("chirpMin"),d_chirpMinMax.first);
-//    s.setValue(QString("chirpMax"),d_chirpMinMax.second);
-//    s.sync();
+
 }
 
 ChirpConfig::ChirpConfig(const ChirpConfig &rhs) : data(rhs.data)

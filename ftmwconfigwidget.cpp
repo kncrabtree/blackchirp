@@ -128,9 +128,6 @@ void FtmwConfigWidget::loadFromSettings()
     ui->targetTimeDateTimeEdit->setCurrentSection(QDateTimeEdit::HourSection);
     ui->autosaveSpinBox->setValue(s.value(QString("autosaveShots"),2500).toInt());
 
-    ui->loFrequencyDoubleSpinBox->setValue(s.value(QString("loFreq"),41000.0).toDouble());
-    ui->sidebandComboBox->setCurrentIndex(s.value(QString("sideband"),1).toInt());
-
     ui->fIDChannelSpinBox->setValue(s.value(QString("fidChannel"),1).toInt());
     ui->verticalScaleDoubleSpinBox->setValue(s.value(QString("vScale"),0.020).toDouble());
     ui->triggerChannelSpinBox->setValue(s.value(QString("triggerChannel"),4).toInt());
@@ -143,6 +140,14 @@ void FtmwConfigWidget::loadFromSettings()
     ui->summaryFrameCheckBox->setChecked(s.value(QString("summaryFrame"),false).toBool());
 
     s.endGroup();
+
+
+    ui->loFrequencyDoubleSpinBox->setValue(s.value(QString("chirpConfig/loFreq"),41000.0).toDouble());
+    if(s.value(QString("chirpConfig/rxSidebandSign"),-1.0).toDouble() < 0)
+        ui->sidebandComboBox->setCurrentIndex(1);
+    else
+        ui->sidebandComboBox->setCurrentIndex(0);
+
     blockSignals(false);
 
     configureUI();
@@ -162,9 +167,6 @@ void FtmwConfigWidget::saveToSettings()
     s.setValue(QString("targetShots"),ui->targetShotsSpinBox->value());
     s.setValue(QString("autosaveShots"),ui->autosaveSpinBox->value());
 
-    s.setValue(QString("loFreq"),ui->loFrequencyDoubleSpinBox->value());
-    s.setValue(QString("sideband"),ui->sidebandComboBox->currentIndex());
-
     s.setValue(QString("fidChannel"),ui->fIDChannelSpinBox->value());
     s.setValue(QString("vScale"),ui->verticalScaleDoubleSpinBox->value());
     s.setValue(QString("triggerChannel"),ui->triggerChannelSpinBox->value());
@@ -177,6 +179,9 @@ void FtmwConfigWidget::saveToSettings()
     s.setValue(QString("summaryFrame"),ui->summaryFrameCheckBox->isChecked());
 
     s.endGroup();
+
+//    s.setValue(QString("loFreq"),ui->loFrequencyDoubleSpinBox->value());
+//    s.setValue(QString("sideband"),ui->sidebandComboBox->currentIndex());
 }
 
 void FtmwConfigWidget::configureUI()

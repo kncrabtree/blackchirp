@@ -4,6 +4,7 @@
 #include "ftmwconfigwidget.h"
 #include <QDialogButtonBox>
 #include <QPushButton>
+#include "rfconfigwidget.h"
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -79,6 +80,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionPause,&QAction::triggered,this,&MainWindow::pauseUi);
     connect(ui->actionResume,&QAction::triggered,this,&MainWindow::resumeUi);
     connect(ui->actionCommunication,&QAction::triggered,this,&MainWindow::launchCommunicationDialog);
+    connect(ui->actionRf_Configuration,&QAction::triggered,this,&MainWindow::launchRfConfigDialog);
     connect(ui->actionTrackingShow,&QAction::triggered,[=](){ ui->tabWidget->setCurrentIndex(2); });
     connect(ui->action_Graphs,&QAction::triggered,ui->trackingViewWidget,&TrackingViewWidget::changeNumPlots);
 
@@ -199,6 +201,31 @@ void MainWindow::launchCommunicationDialog()
     CommunicationDialog d(this);
     connect(&d,&CommunicationDialog::testConnection,p_hwm,&HardwareManager::testObjectConnection);
     connect(p_hwm,&HardwareManager::testComplete,&d,&CommunicationDialog::testComplete);
+
+    d.exec();
+}
+
+void MainWindow::launchRfConfigDialog()
+{
+    QDialog d(this);
+    d.setWindowTitle(QString("Rf Configuration"));
+    QVBoxLayout *vbl = new QVBoxLayout;
+    RfConfigWidget *rfw = new RfConfigWidget(ui->valonTXDoubleSpinBox->value(),ui->valonRXDoubleSpinBox->value());
+    QDialogButtonBox *bb = new QDialogButtonBox(QDialogButtonBox::Reset|QDialogButtonBox::Ok|QDialogButtonBox::Cancel);
+
+    vbl->addWidget(rfw);
+    vbl->addWidget(bb);
+    d.setLayout(vbl);
+
+    connect(bb->button(QDialogButtonBox::Reset),&QAbstractButton::clicked,rfw,&RfConfigWidget::loadFromSettings);
+    connect(bb->button(QDialogButtonBox::Ok),&QAbstractButton::clicked,rfw,&RfConfigWidget::saveSettings);
+    connect(bb->button(QDialogButtonBox::Ok),&QAbstractButton::clicked,&d,&QDialog::accept);
+    connect(bb->button(QDialogButtonBox::Cancel),&QAbstractButton::clicked,&d,&QDialog::reject);
+
+    connect(p_hwm,&HardwareManager::valonTxFreqRead,rfw,&RfConfigWidget::txFreqUpdate);
+    connect(p_hwm,&HardwareManager::valonRxFreqRead,rfw,&RfConfigWidget::rxFreqUpdate);
+    connect(rfw,&RfConfigWidget::setValonTx,p_hwm,&HardwareManager::setValonTxFreq);
+    connect(rfw,&RfConfigWidget::setValonRx,p_hwm,&HardwareManager::setValonRxFreq);
 
     d.exec();
 }

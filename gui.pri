@@ -9,7 +9,8 @@ SOURCES += mainwindow.cpp \
     $$PWD/ftmwconfigwidget.cpp \
     $$PWD/chirpconfigwidget.cpp \
     $$PWD/chirptablemodel.cpp \
-    $$PWD/chirpconfigplot.cpp
+    $$PWD/chirpconfigplot.cpp \
+    $$PWD/rfconfigwidget.cpp
 
 HEADERS += mainwindow.h \
     $$PWD/ftmwviewwidget.h \
@@ -22,10 +23,12 @@ HEADERS += mainwindow.h \
     $$PWD/ftmwconfigwidget.h \
     $$PWD/chirpconfigwidget.h \
     $$PWD/chirptablemodel.h \
-    $$PWD/chirpconfigplot.h
+    $$PWD/chirpconfigplot.h \
+    $$PWD/rfconfigwidget.h
 
 FORMS += mainwindow.ui \
     $$PWD/ftmwviewwidget.ui \
     $$PWD/communicationdialog.ui \
     $$PWD/ftmwconfigwidget.ui \
-    $$PWD/chirpconfigwidget.ui
+    $$PWD/chirpconfigwidget.ui \
+    $$PWD/rfconfigwidget.ui

@@ -44,6 +44,7 @@ public slots:
     void pauseUi();
     void resumeUi();
     void launchCommunicationDialog();
+    void launchRfConfigDialog();
 
 private:
     Ui::MainWindow *ui;

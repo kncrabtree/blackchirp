@@ -63,6 +63,9 @@ public slots:
 
     void getTimeData();
 
+    double setValonTxFreq(const double d);
+    double setValonRxFreq(const double d);
+
 private:
     QHash<QString,bool> d_status;
     void checkStatus();

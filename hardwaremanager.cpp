@@ -202,6 +202,26 @@ void HardwareManager::getTimeData()
         QMetaObject::invokeMethod(d_hardwareList.at(i).first,"readTimeData");
 }
 
+double HardwareManager::setValonTxFreq(const double d)
+{
+    if(p_valon->thread() == thread())
+        return p_valon->setTxFreq(d);
+
+    double out;
+    QMetaObject::invokeMethod(p_valon,"setTxFreq",Qt::BlockingQueuedConnection,Q_RETURN_ARG(double,out),Q_ARG(double,d));
+    return out;
+}
+
+double HardwareManager::setValonRxFreq(const double d)
+{
+    if(p_valon->thread() == thread())
+        return p_valon->setRxFreq(d);
+
+    double out;
+    QMetaObject::invokeMethod(p_valon,"setRxFreq",Qt::BlockingQueuedConnection,Q_RETURN_ARG(double,out),Q_ARG(double,d));
+    return out;
+}
+
 void HardwareManager::checkStatus()
 {
     //gotta wait until all instruments have responded
