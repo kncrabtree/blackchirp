@@ -73,6 +73,11 @@ FtmwConfig::ScopeConfig FtmwConfig::scopeConfig() const
     return data->scopeConfig;
 }
 
+ChirpConfig FtmwConfig::chirpConfig() const
+{
+    return data->chirpConfig;
+}
+
 Fid FtmwConfig::fidTemplate() const
 {
     return data->fidTemplate;
@@ -145,6 +150,10 @@ bool FtmwConfig::prepareForAcquisition()
         return false;
     }
 #endif
+
+    if(!chirpConfig().isValid())
+        return false;
+
     return true;
 
 
@@ -282,6 +291,11 @@ void FtmwConfig::setScopeConfig(const FtmwConfig::ScopeConfig &other)
     data->scopeConfig = other;
 }
 
+void FtmwConfig::setChirpConfig(const ChirpConfig other)
+{
+    data->chirpConfig = other;
+}
+
 bool FtmwConfig::isComplete() const
 {
     switch(type())
@@ -326,6 +340,7 @@ QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
 
     FtmwConfig::ScopeConfig sc = scopeConfig();
     out.unite(sc.headerMap());
+    out.unite(data->chirpConfig.headerMap());
 
     return out;
 

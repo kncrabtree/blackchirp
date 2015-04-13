@@ -6,6 +6,7 @@
 #include <QDataStream>
 #include <QVariant>
 #include "fid.h"
+#include "chirpconfig.h"
 
 #ifdef BC_CUDA
 #include "gpuaverager.h"
@@ -100,6 +101,7 @@ public:
     Fid::Sideband sideband() const;
     QList<Fid> fidList() const;
     ScopeConfig scopeConfig() const;
+    ChirpConfig chirpConfig() const;
     Fid fidTemplate() const;
     int numFrames() const;
     QList<Fid> parseWaveform(QByteArray b) const;
@@ -119,6 +121,7 @@ public:
     bool addFids(const QByteArray rawData);
     void resetFids();
     void setScopeConfig(const ScopeConfig &other);
+    void setChirpConfig(const ChirpConfig other);
 
 
     bool isComplete() const;
@@ -146,6 +149,7 @@ public:
     QList<Fid> fidList;
 
     FtmwConfig::ScopeConfig scopeConfig;
+    ChirpConfig chirpConfig;
     Fid fidTemplate;
     QString errorString;
 

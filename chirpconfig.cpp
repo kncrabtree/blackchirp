@@ -217,16 +217,16 @@ QMap<QString, QPair<QVariant, QString> > ChirpConfig::headerMap() const
 {
     QMap<QString, QPair<QVariant,QString>> out;
 
-    out.insert(QString("#PreChirpProtection"),qMakePair(QString::number(data->preChirpProtection,'f',3),QString::fromUtf16(u"μs")));
-    out.insert(QString("#PreChirpDelay"),qMakePair(QString::number(data->preChirpDelay,'f',3),QString::fromUtf16(u"μs")));
-    out.insert(QString("#PostChirpProtection"),qMakePair(QString::number(data->postChirpProtection,'f',3),QString::fromUtf16(u"μs")));
-    out.insert(QString("#NumChirps"),qMakePair(data->numChirps,QString("")));
-    out.insert(QString("#ChirpInterval"),qMakePair(QString::number(data->chirpInterval,'f',3),QString::fromUtf16(u"μs")));
-    out.insert(QString("#ValonTxMult"),qMakePair(QString::number(data->valonTxMult,'f',1),QString("")));
-    out.insert(QString("#AwgMult"),qMakePair(QString::number(data->awgMult,'f',1),QString("")));
-    out.insert(QString("#TotalMult"),qMakePair(QString::number(data->totalMult,'f',1),QString("")));
-    out.insert(QString("#MixerSideband"),qMakePair(QString::number(data->mixerSideband,'f',1),QString("")));
-    out.insert(QString("#ValonTxFreq"),qMakePair(QString::number(data->valonTxFreq,'f',3),QString("MHz")));
+    out.insert(QString("ChirpConfigPreChirpProtection"),qMakePair(QString::number(data->preChirpProtection,'f',3),QString::fromUtf16(u"μs")));
+    out.insert(QString("ChirpConfigPreChirpDelay"),qMakePair(QString::number(data->preChirpDelay,'f',3),QString::fromUtf16(u"μs")));
+    out.insert(QString("ChirpConfigPostChirpProtection"),qMakePair(QString::number(data->postChirpProtection,'f',3),QString::fromUtf16(u"μs")));
+    out.insert(QString("ChirpConfigNumChirps"),qMakePair(data->numChirps,QString("")));
+    out.insert(QString("ChirpConfigChirpInterval"),qMakePair(QString::number(data->chirpInterval,'f',3),QString::fromUtf16(u"μs")));
+    out.insert(QString("ChirpConfigValonTxMult"),qMakePair(QString::number(data->valonTxMult,'f',1),QString("")));
+    out.insert(QString("ChirpConfigAwgMult"),qMakePair(QString::number(data->awgMult,'f',1),QString("")));
+    out.insert(QString("ChirpConfigTotalMult"),qMakePair(QString::number(data->totalMult,'f',1),QString("")));
+    out.insert(QString("ChirpConfigMixerSideband"),qMakePair(QString::number(data->mixerSideband,'f',1),QString("")));
+    out.insert(QString("ChirpConfigValonTxFreq"),qMakePair(QString::number(data->valonTxFreq,'f',3),QString("MHz")));
 
     return out;
 }
