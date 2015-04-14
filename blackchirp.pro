@@ -64,7 +64,7 @@ include(acquisition.pri)
 include(gui.pri)
 include(data.pri)
 include(hardware.pri)
-
+include(wizard.pri)
 
 unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
 
