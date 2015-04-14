@@ -34,6 +34,7 @@ public:
     QString startLogMessage() const;
     QString endLogMessage() const;
     LogHandler::MessageCode endLogMessageCode() const;
+    QMap<QString, QPair<QVariant,QString>> headerMap() const;
 
     void setGasSetpoints(const QList<QPair<double,QString> > list);
     void addGasSetpoint(const double setPoint, const QString name);

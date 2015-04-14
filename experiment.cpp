@@ -105,6 +105,17 @@ LogHandler::MessageCode Experiment::endLogMessageCode() const
     return data->endLogMessageCode;
 }
 
+QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
+{
+    QMap<QString, QPair<QVariant, QString> > out;
+
+    //decide what goes here
+    if(ftmwConfig().isEnabled())
+        out.unite(ftmwConfig().headerMap());
+
+    return out;
+}
+
 void Experiment::setGasSetpoints(const QList<QPair<double, QString> > list)
 {
     data->gasSetpoints = list;

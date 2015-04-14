@@ -5,6 +5,7 @@
 #include <QDialogButtonBox>
 #include <QPushButton>
 #include "rfconfigwidget.h"
+#include "experimentwizard.h"
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -105,30 +106,11 @@ void MainWindow::startExperiment()
     if(d_batchThread->isRunning())
         return;
 
-    //build experiment from a wizard or something
-    Experiment e;
-
-    QDialog d;
-    d.setWindowTitle(QString("Configure FTMW Acquisition"));
-    QVBoxLayout *vbl = new QVBoxLayout;
-    FtmwConfigWidget *w = new FtmwConfigWidget;
-    vbl->addWidget(w);
-
-    QDialogButtonBox *bb = new QDialogButtonBox(QDialogButtonBox::Ok|QDialogButtonBox::Cancel|QDialogButtonBox::Reset);
-    connect(bb->button(QDialogButtonBox::Ok),&QPushButton::clicked,w,&FtmwConfigWidget::saveToSettings);
-    connect(bb->button(QDialogButtonBox::Ok),&QPushButton::clicked,&d,&QDialog::accept);
-    connect(bb->button(QDialogButtonBox::Cancel),&QPushButton::clicked,&d,&QDialog::reject);
-    connect(bb->button(QDialogButtonBox::Reset),&QPushButton::clicked,w,&FtmwConfigWidget::loadFromSettings);
-    vbl->addWidget(bb);
-
-    d.setLayout(vbl);
-    int ret = d.exec();
-
-    if(ret == QDialog::Rejected)
+    ExperimentWizard wiz(this);
+    if(wiz.exec() != QDialog::Accepted)
         return;
 
-
-    e.setFtmwConfig(w->getConfig());
+    Experiment e = wiz.getExperiment();
     e.setTimeDataInterval(5);
 
     BatchSingle *bs = new BatchSingle(e);

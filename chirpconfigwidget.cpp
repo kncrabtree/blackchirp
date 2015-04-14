@@ -9,6 +9,7 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->chirpTable->setModel(p_ctm);
+    ui->chirpTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);;
 
     connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::setButtonStates);
     connect(ui->chirpTable->selectionModel(),&QItemSelectionModel::selectionChanged,this,&ChirpConfigWidget::setButtonStates);
@@ -43,8 +44,12 @@ ChirpConfigWidget::~ChirpConfigWidget()
 
 ChirpConfig ChirpConfigWidget::getChirpConfig()
 {
-    updateChirpConfig();
     return d_currentChirpConfig;
+}
+
+QSpinBox *ChirpConfigWidget::numChirpsBox() const
+{
+    return ui->chirpsSpinBox;
 }
 
 void ChirpConfigWidget::initializeFromSettings()
@@ -183,7 +188,6 @@ void ChirpConfigWidget::updateChirpPlot()
 {
     updateChirpConfig();
     ui->chirpPlot->newChirp(d_currentChirpConfig);
-//    emit chirpConfigChanged(cc); //why is this signal here?
 }
 
 bool ChirpConfigWidget::isSelectionContiguous(QModelIndexList l)
@@ -223,5 +227,7 @@ void ChirpConfigWidget::updateChirpConfig()
     d_currentChirpConfig.setNumChirps(ui->chirpsSpinBox->value());
     d_currentChirpConfig.setChirpInterval(ui->chirpIntervalDoubleSpinBox->value());
     d_currentChirpConfig.setSegmentList(p_ctm->segmentList());
+
+    emit chirpConfigChanged();
 
 }

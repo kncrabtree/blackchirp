@@ -116,7 +116,17 @@
        </layout>
       </item>
       <item>
-       <widget class="QTableView" name="chirpTable"/>
+       <widget class="QTableView" name="chirpTable">
+        <property name="minimumSize">
+         <size>
+          <width>350</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="gridStyle">
+         <enum>Qt::NoPen</enum>
+        </property>
+       </widget>
       </item>
       <item>
        <layout class="QFormLayout" name="formLayout">

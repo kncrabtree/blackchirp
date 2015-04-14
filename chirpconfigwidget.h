@@ -2,6 +2,7 @@
 #define CHIRPCONFIGWIDGET_H
 
 #include <QWidget>
+#include <QSpinBox>
 #include "chirptablemodel.h"
 
 namespace Ui {
@@ -17,6 +18,7 @@ public:
     ~ChirpConfigWidget();
 
     ChirpConfig getChirpConfig();
+    QSpinBox *numChirpsBox() const;
 
 public slots:
     void initializeFromSettings();
@@ -32,7 +34,7 @@ public slots:
     void updateChirpPlot();
 
 signals:
-    void chirpConfigChanged(const ChirpConfig);
+    void chirpConfigChanged();
 
 
 private:

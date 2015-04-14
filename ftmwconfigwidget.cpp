@@ -32,7 +32,6 @@ FtmwConfigWidget::FtmwConfigWidget(QWidget *parent) :
 
     validateSpinboxes();
 
-    connect(ui->ftmwEnabledCheckBox,&QCheckBox::toggled,this,&FtmwConfigWidget::configureUI);
     connect(ui->modeComboBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),this,&FtmwConfigWidget::configureUI);
     connect(ui->fastFrameEnabledCheckBox,&QCheckBox::toggled,this,&FtmwConfigWidget::configureUI);
 
@@ -49,8 +48,6 @@ FtmwConfigWidget::~FtmwConfigWidget()
 void FtmwConfigWidget::setFromConfig(const FtmwConfig config)
 {
     blockSignals(true);
-
-    ui->ftmwEnabledCheckBox->setChecked(config.isEnabled());
 
     setComboBoxIndex(ui->modeComboBox,config.type());
     ui->targetShotsSpinBox->setValue(config.targetShots());
@@ -81,9 +78,6 @@ FtmwConfig FtmwConfigWidget::getConfig() const
 {
     FtmwConfig out;
 
-    if(ui->ftmwEnabledCheckBox->isEnabled())
-        out.setEnabled();
-
     out.setType(ui->modeComboBox->currentData().value<FtmwConfig::FtmwType>());
     out.setTargetShots(ui->targetShotsSpinBox->value());
     if(ui->targetTimeDateTimeEdit->dateTime() > QDateTime::currentDateTime().addSecs(60))
@@ -111,14 +105,32 @@ FtmwConfig FtmwConfigWidget::getConfig() const
     return out;
 }
 
+void FtmwConfigWidget::lockFastFrame(const int nf)
+{
+    blockSignals(true);
+    ui->framesSpinBox->setValue(nf);
+    ui->framesSpinBox->setEnabled(false);
+    if(nf == 1)
+    {
+        ui->fastFrameEnabledCheckBox->setChecked(false);
+        ui->summaryFrameCheckBox->setChecked(false);
+        ui->fastFrameEnabledCheckBox->setEnabled(false);
+        ui->summaryFrameCheckBox->setEnabled(false);
+    }
+    else
+    {
+        ui->fastFrameEnabledCheckBox->setChecked(true);
+        ui->fastFrameEnabledCheckBox->setEnabled(false);
+    }
+    blockSignals(false);
+}
+
 void FtmwConfigWidget::loadFromSettings()
 {
     blockSignals(true);
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
     s.beginGroup(QString("lastFtmwConfig"));
-
-    ui->ftmwEnabledCheckBox->setChecked(s.value(QString("ftmwEnabled"),true).toBool());
 
     ui->modeComboBox->setCurrentIndex(s.value(QString("mode"),0).toInt());
     ui->targetShotsSpinBox->setValue(s.value(QString("targetShots"),10000).toInt());
@@ -161,8 +173,6 @@ void FtmwConfigWidget::saveToSettings()
 
     s.beginGroup(QString("lastFtmwConfig"));
 
-    s.setValue(QString("ftmwEnabled"),ui->ftmwEnabledCheckBox->isChecked());
-
     s.setValue(QString("mode"),ui->modeComboBox->currentIndex());
     s.setValue(QString("targetShots"),ui->targetShotsSpinBox->value());
     s.setValue(QString("autosaveShots"),ui->autosaveSpinBox->value());
@@ -187,9 +197,6 @@ void FtmwConfigWidget::saveToSettings()
 void FtmwConfigWidget::configureUI()
 {
     blockSignals(true);
-    ui->acqSettingsBox->setEnabled(ui->ftmwEnabledCheckBox->isChecked());
-    ui->fidSettingsBox->setEnabled(ui->ftmwEnabledCheckBox->isChecked());
-    ui->scopeSettingsBox->setEnabled(ui->ftmwEnabledCheckBox->isChecked());
 
     FtmwConfig::FtmwType type = ui->modeComboBox->currentData().value<FtmwConfig::FtmwType>();
     if(type == FtmwConfig::TargetTime)

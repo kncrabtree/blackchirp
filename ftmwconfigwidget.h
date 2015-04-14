@@ -6,22 +6,6 @@
 
 class QComboBox;
 
-//Index definitions for convenience
-#define FCW_MODETARGETSHOTS 0
-#define FCW_MODETARGETTIME 1
-#define FCW_MODEFOREVER 2
-#define FCW_MODEPEAKUP 3
-
-#define FCW_2GSS 0
-#define FCW_5GSS 1
-#define FCW_10GSS 2
-#define FCW_20GSS 3
-#define FCW_50GSS 4
-#define FCW_100GSS 5
-
-#define FCW_UPPERSIDEBAND 0
-#define FCW_LOWERSIDEBAND 1
-
 namespace Ui {
 class FtmwConfigWidget;
 }
@@ -36,6 +20,8 @@ public:
 
     void setFromConfig(const FtmwConfig config);
     FtmwConfig getConfig() const;
+
+    void lockFastFrame(const int nf);
 
 public slots:
     void loadFromSettings();
