@@ -35,3 +35,12 @@ Experiment ExperimentWizard::getExperiment() const
     return exp;
 }
 
+void ExperimentWizard::saveToSettings()
+{
+    if(p_startPage->ftmwEnabled())
+    {
+        p_chirpConfigPage->saveToSettings();
+        p_ftmwConfigPage->saveToSettings();
+    }
+}
+

@@ -24,6 +24,7 @@ public:
     };
 
     Experiment getExperiment() const;
+    void saveToSettings();
 
 private:
     WizardStartPage *p_startPage;

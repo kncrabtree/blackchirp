@@ -83,6 +83,32 @@ void ChirpConfigWidget::initializeFromSettings()
 
 }
 
+void ChirpConfigWidget::saveToSettings()
+{
+    if(!d_currentChirpConfig.isValid())
+        return;
+
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("chirpConfig"));
+
+    s.setValue(QString("preChirpProtection"),ui->preChirpProtectionSpinBox->value());
+    s.setValue(QString("preChirpDelay"),ui->preChirpDelaySpinBox->value());
+    s.setValue(QString("postChirpProtection"),ui->postChirpProtectionSpinBox->value());
+    s.setValue(QString("numChirps"),ui->chirpsSpinBox->value());
+    s.setValue(QString("chirpInterval"),ui->chirpIntervalDoubleSpinBox->value());
+
+    s.beginWriteArray(QString("segments"));
+    for(int i=0; i<p_ctm->segmentList().size(); i++)
+    {
+        s.setArrayIndex(i);
+        s.setValue(QString("startFreq"),p_ctm->segmentList().at(i).startFreqMHz);
+        s.setValue(QString("endFreq"),p_ctm->segmentList().at(i).endFreqMHz);
+        s.setValue(QString("duration"),p_ctm->segmentList().at(i).durationUs);
+    }
+    s.endArray();
+    s.endGroup();
+}
+
 void ChirpConfigWidget::enableEditing(bool enabled)
 {
     ui->chirpConfigurationBox->setEnabled(enabled);

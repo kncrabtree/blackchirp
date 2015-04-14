@@ -111,6 +111,8 @@ void MainWindow::startExperiment()
         return;
 
     Experiment e = wiz.getExperiment();
+    wiz.saveToSettings();
+
     e.setTimeDataInterval(5);
 
     BatchSingle *bs = new BatchSingle(e);

@@ -39,3 +39,8 @@ ChirpConfig WizardChirpConfigPage::getChirpConfig() const
 {
     return p_ccw->getChirpConfig();
 }
+
+void WizardChirpConfigPage::saveToSettings()
+{
+    p_ccw->saveToSettings();
+}

@@ -18,6 +18,7 @@ public:
     int nextId() const;
 
     FtmwConfig getFtmwConfig() const;
+    void saveToSettings();
 
 private:
     FtmwConfigWidget *p_ftc;

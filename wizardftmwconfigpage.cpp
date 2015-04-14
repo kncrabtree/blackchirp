@@ -44,3 +44,8 @@ FtmwConfig WizardFtmwConfigPage::getFtmwConfig() const
 {
     return p_ftc->getConfig();
 }
+
+void WizardFtmwConfigPage::saveToSettings()
+{
+    p_ftc->saveToSettings();
+}

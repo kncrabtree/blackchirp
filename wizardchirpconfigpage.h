@@ -16,6 +16,7 @@ public:
     bool isComplete() const;
 
     ChirpConfig getChirpConfig() const;
+    void saveToSettings();
 
 private:
     ChirpConfigWidget *p_ccw;
