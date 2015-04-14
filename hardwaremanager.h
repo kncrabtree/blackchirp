@@ -9,6 +9,7 @@
 #include "ftmwscope.h"
 #include "experiment.h"
 #include "valonsynthesizer.h"
+#include "awg.h"
 
 class HardwareManager : public QObject
 {
@@ -73,6 +74,7 @@ private:
     QList<QPair<HardwareObject*,QThread*> > d_hardwareList;
     FtmwScope *p_scope;
     ValonSynthesizer *p_valon;
+    AWG *p_awg;
 
 };
 

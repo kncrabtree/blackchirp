@@ -30,6 +30,10 @@ void HardwareManager::initialize()
     QThread *scopeThread = new QThread(this);
     d_hardwareList.append(qMakePair(p_scope,scopeThread));
 
+    //awg does not need to be in its own thread
+    p_awg = new AWG();
+    d_hardwareList.append(qMakePair(p_awg,nullptr));
+
     //valon synth does not need to be in its own thread
     p_valon = new ValonSynthesizer();
     connect(p_valon,&ValonSynthesizer::txFreqRead,this,&HardwareManager::valonTxFreqRead);
