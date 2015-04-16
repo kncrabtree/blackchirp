@@ -34,7 +34,7 @@ signals:
     void settingUpdate(int,PulseGenConfig::Setting,QVariant);
 
 private:
-    const int d_numChannels;
+    int d_numChannels;
     PulseGenConfig d_config;
 
     void readAll();

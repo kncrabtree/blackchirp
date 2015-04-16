@@ -150,7 +150,7 @@
        <enum>QTabWidget::East</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="ftmwTab">
        <attribute name="title">
@@ -181,6 +181,16 @@
        <attribute name="title">
         <string>Control</string>
        </attribute>
+       <widget class="PulseConfigWidget" name="widget" native="true">
+        <property name="geometry">
+         <rect>
+          <x>100</x>
+          <y>150</y>
+          <width>801</width>
+          <height>361</height>
+         </rect>
+        </property>
+       </widget>
       </widget>
       <widget class="QWidget" name="logTab">
        <attribute name="title">
@@ -295,6 +305,12 @@
    <class>TrackingViewWidget</class>
    <extends>QWidget</extends>
    <header>trackingviewwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>PulseConfigWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">pulseconfigwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -78,6 +78,11 @@ PulseGenConfig::ChannelConfig PulseGenConfig::settings(const int index) const
 
 }
 
+double PulseGenConfig::repRate() const
+{
+    return data->repRate;
+}
+
 QMap<QString, QPair<QVariant, QString> > PulseGenConfig::headerMap() const
 {
     QMap<QString, QPair<QVariant, QString> > out;
@@ -144,5 +149,10 @@ void PulseGenConfig::add(const QString name, const bool enabled, const double de
     cc.level = level;
 
     data->config.append(cc);
+}
+
+void PulseGenConfig::setRepRate(const double r)
+{
+    data->repRate = r;
 }
 

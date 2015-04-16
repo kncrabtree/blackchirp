@@ -35,11 +35,13 @@ public:
     bool isEmpty() const;
     QVariant setting(const int index, const PulseGenConfig::Setting s) const;
     PulseGenConfig::ChannelConfig settings(const int index) const;
+    double repRate() const;
     QMap<QString,QPair<QVariant,QString>> headerMap() const;
 
     void set(const int index, const PulseGenConfig::Setting s, const QVariant val);
     void set(const int index, const PulseGenConfig::ChannelConfig cc);
     void add(const QString name, const bool enabled, const double delay, const double width, const ActiveLevel level);
+    void setRepRate(const double r);
 
 private:
     QSharedDataPointer<PulseGenConfigData> data;
@@ -49,6 +51,7 @@ class PulseGenConfigData : public QSharedData
 {
 public:
     QList<PulseGenConfig::ChannelConfig> config;
+    double repRate;
 };
 
 Q_DECLARE_METATYPE(PulseGenConfig::ActiveLevel)

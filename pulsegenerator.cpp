@@ -1,11 +1,17 @@
 #include "pulsegenerator.h"
 
 PulseGenerator::PulseGenerator(QObject *parent) :
-    Rs232Instrument(QString("pGen"),QString("Pulse Generator"),parent), d_numChannels(8)
+    Rs232Instrument(QString("pGen"),QString("Pulse Generator"),parent)
 {
 #ifdef BC_NOPULSEGEN
     d_virtual = true;
 #endif
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(d_key);
+
+    d_numChannels = s.value(QString("numChannels"),8).toInt();
+
+    s.endGroup();
 }
 
 PulseGenerator::~PulseGenerator()
@@ -43,23 +49,21 @@ void PulseGenerator::initialize()
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
 
-    d_config.add(QString("Gas"),true,0.0,400.0,
-                 s.value(QString("ch0Level"),PulseGenConfig::ActiveHigh).value<PulseGenConfig::ActiveLevel>());
-    d_config.add(QString("AWG"),false,500.0,1.0,
-                 s.value(QString("ch1Level"),PulseGenConfig::ActiveHigh).value<PulseGenConfig::ActiveLevel>());
-    d_config.add(QString("Xmer"),false,515.0,1.0,
-                 s.value(QString("ch2Level"),PulseGenConfig::ActiveHigh).value<PulseGenConfig::ActiveLevel>());
-    d_config.add(QString("LIF"),false,530.0,1.0,
-                 s.value(QString("ch3Level"),PulseGenConfig::ActiveHigh).value<PulseGenConfig::ActiveLevel>());
-    d_config.add(s.value(QString("ch4Name"),QString("Aux1")).toString(),false,0.0,50.0,
-                 s.value(QString("ch4Level"),PulseGenConfig::ActiveHigh).value<PulseGenConfig::ActiveLevel>());
-    d_config.add(s.value(QString("ch5Name"),QString("Aux2")).toString(),false,0.0,50.0,
-                 s.value(QString("ch5Level"),PulseGenConfig::ActiveHigh).value<PulseGenConfig::ActiveLevel>());
-    d_config.add(s.value(QString("ch6Name"),QString("Aux3")).toString(),false,0.0,50.0,
-                 s.value(QString("ch6Level"),PulseGenConfig::ActiveHigh).value<PulseGenConfig::ActiveLevel>());
-    d_config.add(s.value(QString("ch7Name"),QString("Aux4")).toString(),false,0.0,50.0,
-                 s.value(QString("ch7Level"),PulseGenConfig::ActiveHigh).value<PulseGenConfig::ActiveLevel>());
+    s.beginReadArray(QString("channels"));
+    for(int i=0; i<d_numChannels; i++)
+    {
+        s.setArrayIndex(i);
+        QString name = s.value(QString("name"),QString("Ch%1").arg(i)).toString();
+        double w = s.value(QString("defaultWidth"),0.0).toDouble();
+        double d = s.value(QString("defaultDelay"),0.050).toDouble();
+        PulseGenConfig::ActiveLevel lvl = s.value(QString("level"),PulseGenConfig::ActiveHigh).value<PulseGenConfig::ActiveLevel>();
+        bool en = s.value(QString("defaultEnabled"),false).toBool();
 
+        d_config.add(name,en,d,w,lvl);
+    }
+    s.endArray();
+
+    d_config.setRepRate(s.value(QString("repRate"),10.0).toDouble());
     s.endGroup();
 
     Rs232Instrument::initialize();

@@ -84,7 +84,8 @@ unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
 
 # Simulates FTMW Oscilloscope (uncomment DEFINES and RESOURCES lines)
 DEFINES += BC_NOFTSCOPE
-RESOURCES += virtualdata.qrc
+RESOURCES += virtualdata.qrc \
+    resources.qrc
 
 #Simulates Valon Synthesizer
 DEFINES += BC_NOVALONSYNTH
