@@ -5,7 +5,8 @@ HEADERS += \
     $$PWD/rs232instrument.h \
     $$PWD/ftmwscope.h \
     $$PWD/valonsynthesizer.h \
-    $$PWD/awg.h
+    $$PWD/awg.h \
+    $$PWD/pulsegenerator.h
 
 SOURCES += \
     $$PWD/hardwaremanager.cpp \
@@ -14,4 +15,5 @@ SOURCES += \
     $$PWD/rs232instrument.cpp \
     $$PWD/ftmwscope.cpp \
     $$PWD/valonsynthesizer.cpp \
-    $$PWD/awg.cpp
+    $$PWD/awg.cpp \
+    $$PWD/pulsegenerator.cpp
