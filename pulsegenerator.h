@@ -29,9 +29,12 @@ public slots:
     void set(const int index, const PulseGenConfig::Setting s, const QVariant val);
     void setChannel(const int index, const PulseGenConfig::ChannelConfig cc);
     void setAll(const PulseGenConfig cc);
+    void setRepRate(double d);
 
 signals:
     void settingUpdate(int,PulseGenConfig::Setting,QVariant);
+    void configUpdate(const PulseGenConfig);
+    void repRateUpdate(double);
 
 private:
     int d_numChannels;

@@ -38,8 +38,15 @@ void HardwareManager::initialize()
     p_valon = new ValonSynthesizer();
     connect(p_valon,&ValonSynthesizer::txFreqRead,this,&HardwareManager::valonTxFreqRead);
     connect(p_valon,&ValonSynthesizer::rxFreqRead,this,&HardwareManager::valonRxFreqRead);
-
     d_hardwareList.append(qMakePair(p_valon,nullptr));
+
+    //pulse generator does not need to be in its own thread
+    p_pGen = new PulseGenerator();
+    connect(p_pGen,&PulseGenerator::settingUpdate,this,&HardwareManager::pGenSettingUpdate);
+    connect(p_pGen,&PulseGenerator::configUpdate,this,&HardwareManager::pGenConfigUpdate);
+    connect(p_pGen,&PulseGenerator::repRateUpdate,this,&HardwareManager::pGenRepRateUpdate);
+    d_hardwareList.append(qMakePair(p_pGen,nullptr));
+
 
 	//write arrays of the connected devices for use in the Hardware Settings menu
 	//first array is for all objects accessible to the hardware manager
@@ -224,6 +231,33 @@ double HardwareManager::setValonRxFreq(const double d)
     double out;
     QMetaObject::invokeMethod(p_valon,"setRxFreq",Qt::BlockingQueuedConnection,Q_RETURN_ARG(double,out),Q_ARG(double,d));
     return out;
+}
+
+void HardwareManager::setPGenSetting(int index, PulseGenConfig::Setting s, QVariant val)
+{
+    if(p_pGen->thread() == thread())
+    {
+        p_pGen->set(index,s,val);
+        return;
+    }
+
+    QMetaObject::invokeMethod(p_pGen,"set",Q_ARG(int,index),Q_ARG(PulseGenConfig::Setting,s),Q_ARG(QVariant,val));
+}
+
+void HardwareManager::setPGenConfig(const PulseGenConfig c)
+{
+    if(p_pGen->thread() == thread())
+        p_pGen->setAll(c);
+    else
+        QMetaObject::invokeMethod(p_pGen,"setAll",Q_ARG(PulseGenConfig,c));
+}
+
+void HardwareManager::setPGenRepRate(double r)
+{
+    if(p_pGen->thread() == thread())
+        p_pGen->setRepRate(r);
+    else
+        QMetaObject::invokeMethod(p_pGen,"setRepRate",Q_ARG(double,r));
 }
 
 void HardwareManager::checkStatus()

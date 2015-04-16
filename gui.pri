@@ -11,7 +11,8 @@ SOURCES += mainwindow.cpp \
     $$PWD/chirptablemodel.cpp \
     $$PWD/chirpconfigplot.cpp \
     $$PWD/rfconfigwidget.cpp \
-    $$PWD/pulseconfigwidget.cpp
+    $$PWD/pulseconfigwidget.cpp \
+    $$PWD/pulseplot.cpp
 
 HEADERS += mainwindow.h \
     $$PWD/ftmwviewwidget.h \
@@ -26,7 +27,8 @@ HEADERS += mainwindow.h \
     $$PWD/chirptablemodel.h \
     $$PWD/chirpconfigplot.h \
     $$PWD/rfconfigwidget.h \
-    $$PWD/pulseconfigwidget.h
+    $$PWD/pulseconfigwidget.h \
+    $$PWD/pulseplot.h
 
 FORMS += mainwindow.ui \
     $$PWD/ftmwviewwidget.ui \

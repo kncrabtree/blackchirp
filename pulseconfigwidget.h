@@ -36,10 +36,14 @@ public:
     };
 
 signals:
-    void settingChanged(int,PulseGenConfig::Setting,QVariant);
+    void changeSetting(int,PulseGenConfig::Setting,QVariant);
+    void changeRepRate(double);
 
 public slots:
     void launchChannelConfig(int ch);
+    void newSetting(int index,PulseGenConfig::Setting s,QVariant val);
+    void newConfig(const PulseGenConfig c);
+    void newRepRate(double r);
 
 private:
     Ui::PulseConfigWidget *ui;

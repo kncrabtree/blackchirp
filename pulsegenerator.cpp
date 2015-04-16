@@ -39,7 +39,11 @@ bool PulseGenerator::testConnection()
 
     }
 
+    blockSignals(true);
     readAll();
+    blockSignals(false);
+
+    emit configUpdate(d_config);
     emit connectionResult(this,true);
     return true;
 }
@@ -54,12 +58,15 @@ void PulseGenerator::initialize()
     {
         s.setArrayIndex(i);
         QString name = s.value(QString("name"),QString("Ch%1").arg(i)).toString();
-        double w = s.value(QString("defaultWidth"),0.0).toDouble();
-        double d = s.value(QString("defaultDelay"),0.050).toDouble();
-        PulseGenConfig::ActiveLevel lvl = s.value(QString("level"),PulseGenConfig::ActiveHigh).value<PulseGenConfig::ActiveLevel>();
+        double d = s.value(QString("defaultDelay"),0.0).toDouble();
+        double w = s.value(QString("defaultWidth"),0.050).toDouble();
+        QVariant lvl = s.value(QString("level"),PulseGenConfig::ActiveHigh);
         bool en = s.value(QString("defaultEnabled"),false).toBool();
 
-        d_config.add(name,en,d,w,lvl);
+        if(lvl == QVariant(PulseGenConfig::ActiveHigh))
+            d_config.add(name,en,d,w,PulseGenConfig::ActiveHigh);
+        else
+            d_config.add(name,en,d,w,PulseGenConfig::ActiveLow);
     }
     s.endArray();
 
@@ -121,6 +128,7 @@ void PulseGenerator::set(const int index, const PulseGenConfig::Setting s, const
     if(d_virtual)
     {
         d_config.set(index,s,val);
+        emit settingUpdate(index,s,val);
         return;
     }
 
@@ -147,7 +155,21 @@ void PulseGenerator::setAll(const PulseGenConfig cc)
     for(int i=0; i<d_config.size(); i++)
         setChannel(i,cc.at(i));
 
+    setRepRate(cc.repRate());
+
     return;
+}
+
+void PulseGenerator::setRepRate(double d)
+{
+    if(d_virtual)
+    {
+        d_config.setRepRate(d);
+        emit repRateUpdate(d);
+        return;
+    }
+
+    //communicate
 }
 
 void PulseGenerator::readAll()

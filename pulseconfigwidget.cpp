@@ -40,7 +40,7 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
         ch.delayBox->setValue(s.value(QString("defaultDelay"),0.0).toDouble());
         ch.delayBox->setSingleStep(s.value(QString("delayStep"),1.0).toDouble());
         ui->pulseConfigBoxLayout->addWidget(ch.delayBox,i+1,col,1,1);
-        connect(ch.delayBox,vc,[=](double val){ emit settingChanged(i,PulseGenConfig::Delay,val); } );
+        connect(ch.delayBox,vc,this,[=](double val){ emit changeSetting(i,PulseGenConfig::Delay,val); } );
         col++;
 
         ch.widthBox = new QDoubleSpinBox(this);
@@ -51,7 +51,7 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
         ch.widthBox->setValue(s.value(QString("defaultWidth"),0.050).toDouble());
         ch.widthBox->setSingleStep(s.value(QString("widthStep"),1.0).toDouble());
         ui->pulseConfigBoxLayout->addWidget(ch.widthBox,i+1,col,1,1);
-        connect(ch.widthBox,vc,[=](double val){ emit settingChanged(i,PulseGenConfig::Width,val); } );
+        connect(ch.widthBox,vc,this,[=](double val){ emit changeSetting(i,PulseGenConfig::Width,val); } );
         col++;
 
         ch.onButton = new QPushButton(this);
@@ -62,8 +62,8 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
         else
             ch.onButton->setText(QString("Off"));
         ui->pulseConfigBoxLayout->addWidget(ch.onButton,i+1,col,1,1);
-        connect(ch.onButton,&QPushButton::toggled,[=](bool en){ emit settingChanged(i,PulseGenConfig::Enabled,en); } );
-        connect(ch.onButton,&QPushButton::toggled,[=](bool en){
+        connect(ch.onButton,&QPushButton::toggled,this,[=](bool en){ emit changeSetting(i,PulseGenConfig::Enabled,en); } );
+        connect(ch.onButton,&QPushButton::toggled,this,[=](bool en){
             if(en)
                 ch.onButton->setText(QString("On"));
             else
@@ -123,6 +123,8 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
     ui->pulseConfigBoxLayout->setColumnStretch(3,0);
     ui->pulseConfigBoxLayout->setColumnStretch(4,0);
 
+    connect(ui->repRateBox,vc,this,&PulseConfigWidget::changeRepRate);
+
     s.endArray();
     s.endGroup();
 }
@@ -171,7 +173,7 @@ void PulseConfigWidget::launchChannelConfig(int ch)
 
         chw.label->setText(chw.nameEdit->text());
         s.setValue(QString("name"),chw.nameEdit->text());
-        emit settingChanged(ch,PulseGenConfig::Name,chw.nameEdit->text());
+        emit changeSetting(ch,PulseGenConfig::Name,chw.nameEdit->text());
 
         chw.delayBox->setSingleStep(chw.delayStepBox->value());
         s.setValue(QString("delayStep"),chw.delayStepBox->value());
@@ -182,12 +184,12 @@ void PulseConfigWidget::launchChannelConfig(int ch)
         if(chw.levelButton->isChecked())
         {
             s.setValue(QString("level"),PulseGenConfig::ActiveHigh);
-            emit settingChanged(ch,PulseGenConfig::Level,PulseGenConfig::ActiveHigh);
+            emit changeSetting(ch,PulseGenConfig::Level,PulseGenConfig::ActiveHigh);
         }
         else
         {
             s.setValue(QString("level"),PulseGenConfig::ActiveLow);
-            emit settingChanged(ch,PulseGenConfig::Level,PulseGenConfig::ActiveLow);
+            emit changeSetting(ch,PulseGenConfig::Level,PulseGenConfig::ActiveLow);
         }
 
         s.endArray();
@@ -204,4 +206,60 @@ void PulseConfigWidget::launchChannelConfig(int ch)
     chw.widthStepBox->setParent(this);
     chw.widthStepBox->hide();
 
+}
+
+void PulseConfigWidget::newSetting(int index, PulseGenConfig::Setting s, QVariant val)
+{
+    if(index < 0 || index > d_widgetList.size())
+        return;
+
+    blockSignals(true);
+
+    switch(s) {
+    case PulseGenConfig::Name:
+        d_widgetList.at(index).label->setText(val.toString());
+        d_widgetList.at(index).nameEdit->setText(val.toString());
+        break;
+    case PulseGenConfig::Delay:
+        d_widgetList.at(index).delayBox->setValue(val.toDouble());
+        break;
+    case PulseGenConfig::Width:
+        d_widgetList.at(index).widthBox->setValue(val.toDouble());
+        break;
+    case PulseGenConfig::Level:
+        d_widgetList.at(index).levelButton->setChecked(val == QVariant(PulseGenConfig::ActiveHigh));
+        break;
+    case PulseGenConfig::Enabled:
+        d_widgetList.at(index).onButton->setChecked(val.toBool());
+        break;
+    }
+
+    blockSignals(false);
+
+    ui->pulsePlot->newSetting(index,s,val);
+}
+
+void PulseConfigWidget::newConfig(const PulseGenConfig c)
+{
+    blockSignals(true);
+    for(int i=0; i<c.size(); i++)
+    {
+        d_widgetList.at(i).label->setText(c.at(i).channelName);
+        d_widgetList.at(i).nameEdit->setText(c.at(i).channelName);
+        d_widgetList.at(i).delayBox->setValue(c.at(i).delay);
+        d_widgetList.at(i).widthBox->setValue(c.at(i).width);
+        d_widgetList.at(i).levelButton->setChecked(c.at(i).level == PulseGenConfig::ActiveHigh);
+        d_widgetList.at(i).onButton->setChecked(c.at(i).enabled);
+    }
+    ui->repRateBox->setValue(c.repRate());
+    blockSignals(false);
+
+    ui->pulsePlot->newConfig(c);
+}
+
+void PulseConfigWidget::newRepRate(double r)
+{
+    ui->repRateBox->blockSignals(true);
+    ui->repRateBox->setValue(r);
+    ui->repRateBox->blockSignals(false);
 }

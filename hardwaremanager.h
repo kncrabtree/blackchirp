@@ -10,6 +10,7 @@
 #include "experiment.h"
 #include "valonsynthesizer.h"
 #include "awg.h"
+#include "pulsegenerator.h"
 
 class HardwareManager : public QObject
 {
@@ -38,6 +39,9 @@ signals:
     void readTimeData();
     void valonTxFreqRead(double);
     void valonRxFreqRead(double);
+    void pGenSettingUpdate(int,PulseGenConfig::Setting,QVariant);
+    void pGenConfigUpdate(const PulseGenConfig);
+    void pGenRepRateUpdate(double);
 
 public slots:
     void initialize();
@@ -66,6 +70,9 @@ public slots:
 
     double setValonTxFreq(const double d);
     double setValonRxFreq(const double d);
+    void setPGenSetting(int index, PulseGenConfig::Setting s, QVariant val);
+    void setPGenConfig(const PulseGenConfig c);
+    void setPGenRepRate(double r);
 
 private:
     QHash<QString,bool> d_status;
@@ -75,6 +82,7 @@ private:
     FtmwScope *p_scope;
     ValonSynthesizer *p_valon;
     AWG *p_awg;
+    PulseGenerator *p_pGen;
 
 };
 

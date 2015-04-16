@@ -110,6 +110,8 @@ int main(int argc, char *argv[])
     qRegisterMetaType<QList<Fid> >("QList<Fid>");
     qRegisterMetaType<QVector<QPointF> >("QVector<QPointF>");
     qRegisterMetaType<QList<QPair<QString,QVariant> >>("QList<QPair<QString,QVariant> >");
+    qRegisterMetaType<PulseGenConfig::Setting>("PulseGenConfig::Setting");
+    qRegisterMetaType<PulseGenConfig>("PulseGenConfig");
 
     MainWindow w;
     w.show();

@@ -181,16 +181,25 @@
        <attribute name="title">
         <string>Control</string>
        </attribute>
-       <widget class="PulseConfigWidget" name="widget" native="true">
-        <property name="geometry">
-         <rect>
-          <x>100</x>
-          <y>150</y>
-          <width>801</width>
-          <height>361</height>
-         </rect>
-        </property>
-       </widget>
+       <layout class="QVBoxLayout" name="verticalLayout_5">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="QGroupBox" name="groupBox">
+            <property name="title">
+             <string>GroupBox</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="widget_2" native="true"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="PulseConfigWidget" name="pulseConfigWidget" native="true"/>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="logTab">
        <attribute name="title">
