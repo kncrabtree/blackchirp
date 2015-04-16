@@ -69,6 +69,11 @@ FtmwConfig Experiment::ftmwConfig() const
     return data->ftmwCfg;
 }
 
+PulseGenConfig Experiment::pGenConfig() const
+{
+    return data->pGenCfg;
+}
+
 bool Experiment::isComplete() const
 {
     //check each sub expriment!
@@ -112,6 +117,8 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
     //decide what goes here
     if(ftmwConfig().isEnabled())
         out.unite(ftmwConfig().headerMap());
+
+    out.unite(pGenConfig().headerMap());
 
     return out;
 }
@@ -228,6 +235,11 @@ void Experiment::overrideTargetShots(const int target)
 void Experiment::resetFids()
 {
     data->ftmwCfg.resetFids();
+}
+
+void Experiment::setPulseGenConfig(const PulseGenConfig c)
+{
+    data->pGenCfg = c;
 }
 
 void Experiment::setErrorString(const QString str)

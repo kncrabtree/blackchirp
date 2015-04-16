@@ -134,6 +134,45 @@ PulseConfigWidget::~PulseConfigWidget()
     delete ui;
 }
 
+PulseGenConfig PulseConfigWidget::getConfig()
+{
+    return ui->pulsePlot->config();
+}
+
+void PulseConfigWidget::makeInternalConnections()
+{
+    connect(this,&PulseConfigWidget::changeSetting,ui->pulsePlot,&PulsePlot::newSetting);
+}
+
+void PulseConfigWidget::configureLif(double startingDelay)
+{
+    if(d_widgetList.isEmpty())
+        return;
+
+    d_widgetList.at(BC_PGEN_LIFCHANNEL).delayBox->setValue(startingDelay);
+    d_widgetList.at(BC_PGEN_LIFCHANNEL).delayBox->setEnabled(false);
+    d_widgetList.at(BC_PGEN_LIFCHANNEL).onButton->setChecked(true);
+    d_widgetList.at(BC_PGEN_LIFCHANNEL).onButton->setEnabled(false);
+    d_widgetList.at(BC_PGEN_LIFCHANNEL).label->setText(QString("LIF"));
+    d_widgetList.at(BC_PGEN_LIFCHANNEL).nameEdit->setText(QString("LIF"));
+    d_widgetList.at(BC_PGEN_LIFCHANNEL).nameEdit->setEnabled(false);
+    ui->pulsePlot->newSetting(BC_PGEN_LIFCHANNEL,PulseGenConfig::Name,QString("LIF"));
+
+}
+
+void PulseConfigWidget::configureChirp()
+{
+    if(d_widgetList.isEmpty())
+        return;
+
+    d_widgetList.at(BC_PGEN_AWGCHANNEL).onButton->setChecked(true);
+    d_widgetList.at(BC_PGEN_AWGCHANNEL).onButton->setEnabled(false);
+    d_widgetList.at(BC_PGEN_AWGCHANNEL).label->setText(QString("AWG"));
+    d_widgetList.at(BC_PGEN_AWGCHANNEL).nameEdit->setText(QString("AWG"));
+    d_widgetList.at(BC_PGEN_AWGCHANNEL).nameEdit->setEnabled(false);
+    ui->pulsePlot->newSetting(BC_PGEN_AWGCHANNEL,PulseGenConfig::Name,QString("AWG"));
+}
+
 void PulseConfigWidget::launchChannelConfig(int ch)
 {
     if(ch < 0 || ch >= d_widgetList.size())
@@ -262,4 +301,5 @@ void PulseConfigWidget::newRepRate(double r)
     ui->repRateBox->blockSignals(true);
     ui->repRateBox->setValue(r);
     ui->repRateBox->blockSignals(false);
+    ui->pulsePlot->newRepRate(r);
 }

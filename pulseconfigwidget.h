@@ -35,6 +35,13 @@ public:
         QDoubleSpinBox *widthStepBox;
     };
 
+    PulseGenConfig getConfig();
+
+    void makeInternalConnections();
+    void configureLif(double startingDelay);
+    void configureChirp();
+
+
 signals:
     void changeSetting(int,PulseGenConfig::Setting,QVariant);
     void changeRepRate(double);

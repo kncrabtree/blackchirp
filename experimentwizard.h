@@ -6,6 +6,7 @@
 #include "wizardchirpconfigpage.h"
 #include "wizardftmwconfigpage.h"
 #include "wizardsummarypage.h"
+#include "wizardpulseconfigpage.h"
 #include "experiment.h"
 
 
@@ -20,9 +21,11 @@ public:
         ChirpConfigPage,
         FtmwConfigPage,
         LifConfigPage,
+        PulseConfigPage,
         SummaryPage
     };
 
+    void setPulseConfig(const PulseGenConfig c);
     Experiment getExperiment() const;
     void saveToSettings();
 
@@ -31,6 +34,7 @@ private:
     WizardChirpConfigPage *p_chirpConfigPage;
     WizardFtmwConfigPage *p_ftmwConfigPage;
     WizardSummaryPage *p_summaryPage;
+    WizardPulseConfigPage *p_pulseConfigPage;
 };
 
 #endif // EXPERIMENTWIZARD_H

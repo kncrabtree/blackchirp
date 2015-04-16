@@ -7,6 +7,7 @@
 #include <QMetaType>
 #include "ftmwconfig.h"
 #include "loghandler.h"
+#include "pulsegenconfig.h"
 
 class ExperimentData;
 
@@ -27,6 +28,7 @@ public:
     bool isAborted() const;
     bool isDummy() const;
     FtmwConfig ftmwConfig() const;
+    PulseGenConfig pGenConfig() const;
     bool isComplete() const;
     bool hardwareSuccess() const;
     QString errorString() const;
@@ -50,6 +52,7 @@ public:
     bool addFids(const QByteArray newData);
     void overrideTargetShots(const int target);
     void resetFids();
+    void setPulseGenConfig(const PulseGenConfig c);
     void setErrorString(const QString str);
     void addTimeData(const QList<QPair<QString, QVariant> > dataList);
     void addTimeStamp();
@@ -83,6 +86,7 @@ public:
     LogHandler::MessageCode endLogMessageCode;
 
     FtmwConfig ftmwCfg;
+    PulseGenConfig pGenCfg;
     QMap<QString,QList<QVariant>> timeDataMap;
 };
 

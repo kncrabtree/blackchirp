@@ -37,7 +37,7 @@ int WizardFtmwConfigPage::nextId() const
     if(field(QString("lif")).toBool())
         return ExperimentWizard::LifConfigPage;
     else
-        return ExperimentWizard::SummaryPage;
+        return ExperimentWizard::PulseConfigPage;
 }
 
 FtmwConfig WizardFtmwConfigPage::getFtmwConfig() const

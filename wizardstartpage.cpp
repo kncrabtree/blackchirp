@@ -19,6 +19,7 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     connect(p_lif,&QCheckBox::toggled,this,&WizardStartPage::completeChanged);
 
     registerField(QString("lif"),p_lif);
+    registerField(QString("ftmw"),p_ftmw);
 
     vbl->addWidget(p_ftmw);
     vbl->addWidget(p_lif);

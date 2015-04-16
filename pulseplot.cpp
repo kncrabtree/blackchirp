@@ -62,6 +62,11 @@ PulsePlot::~PulsePlot()
 
 }
 
+PulseGenConfig PulsePlot::config()
+{
+    return d_config;
+}
+
 void PulsePlot::newConfig(const PulseGenConfig c)
 {
     d_config = c;
@@ -75,6 +80,11 @@ void PulsePlot::newSetting(int index, PulseGenConfig::Setting s, QVariant val)
 
     d_config.set(index,s,val);
     replot();
+}
+
+void PulsePlot::newRepRate(double d)
+{
+    d_config.setRepRate(d);
 }
 
 

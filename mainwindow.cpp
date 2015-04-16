@@ -112,6 +112,7 @@ void MainWindow::startExperiment()
         return;
 
     ExperimentWizard wiz(this);
+    wiz.setPulseConfig(ui->pulseConfigWidget->getConfig());
     if(wiz.exec() != QDialog::Accepted)
         return;
 
