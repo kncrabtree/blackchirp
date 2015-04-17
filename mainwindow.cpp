@@ -251,7 +251,7 @@ void MainWindow::updateLeds(const PulseGenConfig cc)
 
 void MainWindow::updateLed(int index, PulseGenConfig::Setting s, QVariant val)
 {
-    if(index < 0 | index >= d_ledList.size())
+    if(index < 0 || index >= d_ledList.size())
         return;
 
     switch(s) {
