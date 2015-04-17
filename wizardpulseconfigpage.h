@@ -17,10 +17,10 @@ public:
     // QWizardPage interface
     void initializePage();
     int nextId() const;
+    bool validatePage();
 
 private:
     PulseConfigWidget *p_pcw;
-
 
 };
 

@@ -1,6 +1,7 @@
 #include "wizardpulseconfigpage.h"
 #include <QVBoxLayout>
 #include "experimentwizard.h"
+#include <QMessageBox>
 
 WizardPulseConfigPage::WizardPulseConfigPage(QWidget *parent) :
     QWizardPage(parent)
@@ -44,4 +45,19 @@ void WizardPulseConfigPage::initializePage()
 int WizardPulseConfigPage::nextId() const
 {
     return ExperimentWizard::SummaryPage;
+}
+
+
+bool WizardPulseConfigPage::validatePage()
+{
+    if(p_pcw->getConfig().at(BC_PGEN_GASCHANNEL).enabled == false)
+    {
+        QMessageBox::StandardButton ret = QMessageBox::question(this,QString("Gas Pulse Disabled"),QString("Are you sure you want to run this experiment with no gas pulses?"));
+        if(ret == QMessageBox::Yes)
+            return true;
+        else
+            return false;
+    }
+
+    return true;
 }
