@@ -5,10 +5,8 @@
 PulsePlot::PulsePlot(QWidget *parent) :
     ZoomPanPlot(QString("pulsePlot"),parent)
 {
-    QSettings s(QSettings::SystemScope, QApplication::organizationName(), QApplication::applicationName());
-    s.beginGroup(QString("pGen"));
-    int numChannels = s.value(QString("numChannels"),8).toInt();
-    s.endGroup();
+
+    int numChannels = BC_PGEN_NUMCHANNELS;
 
     setTitle(QwtText("Pulses"));
 

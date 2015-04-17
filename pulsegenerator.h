@@ -37,7 +37,6 @@ signals:
     void repRateUpdate(double);
 
 private:
-    int d_numChannels;
     PulseGenConfig d_config;
 
     void readAll();

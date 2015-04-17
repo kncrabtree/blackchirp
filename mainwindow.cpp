@@ -25,6 +25,24 @@ MainWindow::MainWindow(QWidget *parent) :
     p_lh = new LogHandler();
     connect(p_lh,&LogHandler::sendLogMessage,ui->log,&QTextEdit::append);
 
+    QGridLayout *gl = new QGridLayout;
+    for(int i=0; i<BC_PGEN_NUMCHANNELS; i++)
+    {
+        QLabel *lbl = new QLabel(QString("Ch%1").arg(i),this);
+        lbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+
+        Led *led = new Led(this);
+        gl->addWidget(lbl,i/2,(2*i)%4,1,1,Qt::AlignVCenter);
+        gl->addWidget(led,i/2,((2*i)%4)+1,1,1,Qt::AlignVCenter);
+
+        d_ledList.append(qMakePair(lbl,led));
+    }
+    gl->setColumnStretch(0,1);
+    gl->setColumnStretch(1,0);
+    gl->setColumnStretch(2,1);
+    gl->setColumnStretch(3,0);
+    ui->pulseConfigBox->setLayout(gl);
+
     QThread *lhThread = new QThread(this);
     connect(lhThread,&QThread::finished,p_lh,&LogHandler::deleteLater);
     p_lh->moveToThread(lhThread);
@@ -40,6 +58,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::valonRxFreqRead,ui->valonRXDoubleSpinBox,&QDoubleSpinBox::setValue);
     connect(p_hwm,&HardwareManager::pGenConfigUpdate,ui->pulseConfigWidget,&PulseConfigWidget::newConfig);
     connect(p_hwm,&HardwareManager::pGenSettingUpdate,ui->pulseConfigWidget,&PulseConfigWidget::newSetting);
+    connect(p_hwm,&HardwareManager::pGenConfigUpdate,this,&MainWindow::updateLeds);
+    connect(p_hwm,&HardwareManager::pGenSettingUpdate,this,&MainWindow::updateLed);
     connect(p_hwm,&HardwareManager::pGenRepRateUpdate,ui->pulseConfigWidget,&PulseConfigWidget::newRepRate);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeSetting,p_hwm,&HardwareManager::setPGenSetting);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeRepRate,p_hwm,&HardwareManager::setPGenRepRate);
@@ -218,6 +238,32 @@ void MainWindow::launchRfConfigDialog()
     connect(rfw,&RfConfigWidget::setValonRx,p_hwm,&HardwareManager::setValonRxFreq);
 
     d.exec();
+}
+
+void MainWindow::updateLeds(const PulseGenConfig cc)
+{
+    for(int i=0; i<d_ledList.size() && i < cc.size(); i++)
+    {
+        d_ledList.at(i).first->setText(cc.at(i).channelName);
+        d_ledList.at(i).second->setState(cc.at(i).enabled);
+    }
+}
+
+void MainWindow::updateLed(int index, PulseGenConfig::Setting s, QVariant val)
+{
+    if(index < 0 | index >= d_ledList.size())
+        return;
+
+    switch(s) {
+    case PulseGenConfig::Name:
+        d_ledList.at(index).first->setText(val.toString());
+        break;
+    case PulseGenConfig::Enabled:
+        d_ledList.at(index).second->setState(val.toBool());
+        break;
+    default:
+        break;
+    }
 }
 
 void MainWindow::configureUi(MainWindow::ProgramState s)

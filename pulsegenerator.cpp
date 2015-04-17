@@ -6,12 +6,6 @@ PulseGenerator::PulseGenerator(QObject *parent) :
 #ifdef BC_NOPULSEGEN
     d_virtual = true;
 #endif
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-
-    d_numChannels = s.value(QString("numChannels"),8).toInt();
-
-    s.endGroup();
 }
 
 PulseGenerator::~PulseGenerator()
@@ -54,7 +48,7 @@ void PulseGenerator::initialize()
     s.beginGroup(d_key);
 
     s.beginReadArray(QString("channels"));
-    for(int i=0; i<d_numChannels; i++)
+    for(int i=0; i<BC_PGEN_NUMCHANNELS; i++)
     {
         s.setArrayIndex(i);
         QString name = s.value(QString("name"),QString("Ch%1").arg(i)).toString();
@@ -174,7 +168,7 @@ void PulseGenerator::setRepRate(double d)
 
 void PulseGenerator::readAll()
 {
-    for(int i=0;i<d_numChannels; i++)
+    for(int i=0;i<BC_PGEN_NUMCHANNELS; i++)
         read(i);
 
 }

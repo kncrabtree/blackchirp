@@ -11,6 +11,8 @@
 #include "acquisitionmanager.h"
 #include "batchmanager.h"
 #include "batchsingle.h"
+#include "led.h"
+#include <QLabel>
 
 namespace Ui {
 class MainWindow;
@@ -45,10 +47,13 @@ public slots:
     void resumeUi();
     void launchCommunicationDialog();
     void launchRfConfigDialog();
+    void updateLeds(const PulseGenConfig cc);
+    void updateLed(int index,PulseGenConfig::Setting s, QVariant val);
 
 private:
     Ui::MainWindow *ui;
     QList<QPair<QThread*,QObject*> > d_threadObjectList;
+    QList<QPair<QLabel*,Led*>> d_ledList;
     LogHandler *p_lh;
     HardwareManager *p_hwm;
     AcquisitionManager *p_am;

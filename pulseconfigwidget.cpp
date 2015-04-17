@@ -12,16 +12,13 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::PulseConfigWidget)
 {
-    ui->setupUi(this);
-
-    QSettings s(QSettings::SystemScope, QApplication::organizationName(), QApplication::applicationName());
-    s.beginGroup(QString("pGen"));
-    int numChannels = s.value(QString("numChannels"),8).toInt();
-
+    ui->setupUi(this);    
 
     auto vc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
+    QSettings s(QSettings::SystemScope, QApplication::organizationName(), QApplication::applicationName());
+    s.beginGroup(QString("pGen"));
     s.beginReadArray(QString("channels"));
-    for(int i=0; i<numChannels; i++)
+    for(int i=0; i<BC_PGEN_NUMCHANNELS; i++)
     {
         s.setArrayIndex(i);
         ChWidgets ch;
