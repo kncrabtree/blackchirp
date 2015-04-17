@@ -1,12 +1,14 @@
 #include "led.h"
 #include <QPainter>
 #include <QPalette>
+#include <QRadialGradient>
 
 Led::Led(QWidget *parent) : QWidget(parent), d_ledOn(false)
 {
     setLedSize(15);
     d_onColor = QColor(0,175,0);
-    d_offColor = QPalette().color(QPalette::Base);
+//    d_offColor = QPalette().color(QPalette::Base);
+    d_offColor = QColor(0,30,0);
 }
 
 Led::~Led()
@@ -34,15 +36,20 @@ void Led::paintEvent(QPaintEvent *ev)
     Q_UNUSED(ev)
 
     QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
 
-//    QRadialGradient g(width()/2,height()/2,d_diameter/2,d_diameter/4,d_diameter/4);
+    QRadialGradient g(d_diameter/2,d_diameter/2,d_diameter/3,-d_diameter/3,d_diameter/8);
+    g.setColorAt(0,QColor(255,255,255,128));
 
 
     if(d_ledOn)
-        p.setBrush(QBrush(d_onColor));
+        g.setColorAt(1,d_onColor);
+//        p.setBrush(QBrush(d_onColor));
     else
-        p.setBrush(QBrush(d_offColor));
+        g.setColorAt(1,d_offColor);
+//        p.setBrush(QBrush(d_offColor));
 
+    p.setBrush(QBrush(g));
     p.drawEllipse(0,0,d_diameter,d_diameter);
 
 }
