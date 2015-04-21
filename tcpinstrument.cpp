@@ -1,12 +1,8 @@
 #include "tcpinstrument.h"
 #include <QTime>
 
-TcpInstrument::TcpInstrument(QString key, QString name, QObject *parent) :
-    HardwareObject(key,name,parent)
+TcpInstrument::TcpInstrument(QString key, QString subKey, QObject *parent) : CommunicationProtocol(CommunicationProtocol::Tcp,key,subKey,parent)
 {
-#ifdef BC_NOTCP
-    d_virtual = true;
-#endif
 }
 
 TcpInstrument::~TcpInstrument()
@@ -16,9 +12,6 @@ TcpInstrument::~TcpInstrument()
 
 void TcpInstrument::initialize()
 {
-	if(d_virtual)
-		return;
-
 	d_socket = new QTcpSocket(this);
 	connect(d_socket,SIGNAL(error(QAbstractSocket::SocketError)),this,SLOT(socketError(QAbstractSocket::SocketError)));
 
@@ -26,15 +19,11 @@ void TcpInstrument::initialize()
 	QString ip = s.value(key().append(QString("/ip")),QString("")).toString();
 	int port = s.value(key().append(QString("/port")),5000).toInt();
 
-	s.setValue(key().append(QString("/prettyName")),name());
-
 	setSocketConnectionInfo(ip,port);
 }
 
 bool TcpInstrument::testConnection()
 {
-	if(d_virtual)
-		return true;
 
 	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 	QString ip = s.value(key().append(QString("/ip")),QString("")).toString();
@@ -59,15 +48,13 @@ void TcpInstrument::socketError(QAbstractSocket::SocketError)
 
 bool TcpInstrument::writeCmd(QString cmd)
 {
-	if(d_virtual)
-		return true;
 
     if(d_socket->state() != QTcpSocket::ConnectedState)
     {
         if(!connectSocket())
         {
-            emit hardwareFailure(this);
-            emit logMessage(QString("Could not write command to %1. Socket is not connected. (Command = %2)").arg(d_prettyName).arg(cmd));
+            emit hardwareFailure();
+            emit logMessage(QString("Could not write command. Socket is not connected. (Command = %1)").arg(cmd));
             return false;
         }
     }
@@ -76,8 +63,8 @@ bool TcpInstrument::writeCmd(QString cmd)
 
     if(!d_socket->flush())
     {
-        emit hardwareFailure(this);
-        emit logMessage(QString("Could not write command to %1. (Command = %2)").arg(d_prettyName).arg(cmd),LogHandler::Error);
+        emit hardwareFailure();
+        emit logMessage(QString("Could not write command. (Command = %1)").arg(cmd),LogHandler::Error);
         return false;
     }
     return true;
@@ -85,15 +72,13 @@ bool TcpInstrument::writeCmd(QString cmd)
 
 QByteArray TcpInstrument::queryCmd(QString cmd)
 {
-	if(d_virtual)
-		return QByteArray();
 
     if(d_socket->state() != QTcpSocket::ConnectedState)
     {
         if(!connectSocket())
         {
-            emit hardwareFailure(this);
-            emit logMessage(QString("Could not write query to %1. Socket is not connected. (Query = %2)").arg(d_prettyName).arg(cmd));
+            emit hardwareFailure();
+            emit logMessage(QString("Could not write query. Socket is not connected. (Query = %1)").arg(cmd));
             return QByteArray();
         }
     }
@@ -105,8 +90,8 @@ QByteArray TcpInstrument::queryCmd(QString cmd)
 
     if(!d_socket->flush())
     {
-        emit hardwareFailure(this);
-        emit logMessage(QString("Could not write query to %1. (query = %2)").arg(d_prettyName).arg(cmd),LogHandler::Error);
+        emit hardwareFailure();
+        emit logMessage(QString("Could not write query. (query = %1)").arg(cmd),LogHandler::Error);
         return QByteArray();
     }
 
@@ -115,8 +100,8 @@ QByteArray TcpInstrument::queryCmd(QString cmd)
     {
         if(!d_socket->waitForReadyRead(d_timeOut))
         {
-            emit hardwareFailure(this);
-            emit logMessage(QString("%1 did not respond to query. (query = %2)").arg(d_prettyName).arg(cmd),LogHandler::Error);
+            emit hardwareFailure();
+            emit logMessage(QString("Did not respond to query. (query = %1)").arg(cmd),LogHandler::Error);
             return QByteArray();
         }
 
@@ -136,8 +121,8 @@ QByteArray TcpInstrument::queryCmd(QString cmd)
                 return out;
         }
 
-        emit hardwareFailure(this);
-        emit logMessage(QString("%1 timed out while waiting for termination character. (query = %2, partial response = %3)").arg(d_prettyName).arg(cmd).arg(QString(out)),LogHandler::Error);
+        emit hardwareFailure();
+        emit logMessage(QString("Timed out while waiting for termination character. (query = %1, partial response = %2)").arg(cmd).arg(QString(out)),LogHandler::Error);
         emit logMessage(QString("Hex response: %1").arg(QString(out.toHex())));
         return out;
     }
@@ -146,13 +131,10 @@ QByteArray TcpInstrument::queryCmd(QString cmd)
 
 bool TcpInstrument::connectSocket()
 {
-	if(d_virtual)
-		return true;
-
     d_socket->connectToHost(d_ip,d_port);
     if(!d_socket->waitForConnected(1000))
     {
-        emit logMessage(QString("Could not connect to %1 at %2:%3. %4").arg(d_prettyName).arg(d_ip).arg(d_port).arg(d_socket->errorString()),LogHandler::Error);
+        emit logMessage(QString("Could not connect to %1:%2. %3").arg(d_ip).arg(d_port).arg(d_socket->errorString()),LogHandler::Error);
         return false;
     }
     d_socket->setSocketOption(QAbstractSocket::KeepAliveOption,1);
@@ -162,17 +144,11 @@ bool TcpInstrument::connectSocket()
 
 void TcpInstrument::disconnectSocket()
 {
-	if(d_virtual)
-		return;
-
     d_socket->disconnectFromHost();
 }
 
 void TcpInstrument::setSocketConnectionInfo(QString ip, int port)
 {
-	if(d_virtual)
-		return;
-
 	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 	s.setValue(key().append(QString("/ip")),ip);
 	s.setValue(key().append(QString("/port")),port);

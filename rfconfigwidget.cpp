@@ -41,8 +41,8 @@ void RfConfigWidget::loadFromSettings()
     blockSignals(true);
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
-    double valonMin = s.value(QString("valonSynth/minFreq"),500.0).toDouble();
-    double valonMax = s.value(QString("valonSynth/maxFreq"),6000.0).toDouble();
+    double valonMin = s.value(QString("synthesizer/minFreq"),500.0).toDouble();
+    double valonMax = s.value(QString("synthesizer/maxFreq"),6000.0).toDouble();
 
     s.beginGroup(QString("chirpConfig"));
 
@@ -86,8 +86,8 @@ void RfConfigWidget::validate()
     blockSignals(true);
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
-    double valonMin = s.value(QString("valonSynth/minFreq"),500.0).toDouble();
-    double valonMax = s.value(QString("valonSynth/maxFreq"),6000.0).toDouble();
+    double valonMin = s.value(QString("synthesizer/minFreq"),500.0).toDouble();
+    double valonMax = s.value(QString("synthesizer/maxFreq"),6000.0).toDouble();
     double awgMin = s.value(QString("awg/minFreq"),100.0).toDouble();
     double awgMax = s.value(QString("awg/maxFreq"),6250.0).toDouble();
 

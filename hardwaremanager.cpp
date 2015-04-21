@@ -1,5 +1,10 @@
 #include "hardwaremanager.h"
 #include <QSettings>
+#include "dsa71604c.h"
+#include "virtualawg.h"
+#include "virtualftmwscope.h"
+#include "virtualpulsegenerator.h"
+#include "virtualvalonsynth.h"
 
 HardwareManager::HardwareManager(QObject *parent) : QObject(parent)
 {
@@ -24,24 +29,24 @@ HardwareManager::~HardwareManager()
 
 void HardwareManager::initialize()
 {    
-    p_scope = new FtmwScope();
+    p_scope = new FtmwScopeHardware();
     connect(p_scope,&FtmwScope::shotAcquired,this,&HardwareManager::scopeShotAcquired);
 
     QThread *scopeThread = new QThread(this);
     d_hardwareList.append(qMakePair(p_scope,scopeThread));
 
     //awg does not need to be in its own thread
-    p_awg = new AWG();
+    p_awg = new AwgHardware();
     d_hardwareList.append(qMakePair(p_awg,nullptr));
 
     //valon synth does not need to be in its own thread
-    p_valon = new ValonSynthesizer();
-    connect(p_valon,&ValonSynthesizer::txFreqRead,this,&HardwareManager::valonTxFreqRead);
-    connect(p_valon,&ValonSynthesizer::rxFreqRead,this,&HardwareManager::valonRxFreqRead);
+    p_valon = new SynthesizerHardware();
+    connect(p_valon,&Synthesizer::txFreqRead,this,&HardwareManager::valonTxFreqRead);
+    connect(p_valon,&Synthesizer::rxFreqRead,this,&HardwareManager::valonRxFreqRead);
     d_hardwareList.append(qMakePair(p_valon,nullptr));
 
     //pulse generator does not need to be in its own thread
-    p_pGen = new PulseGenerator();
+    p_pGen = new PulseGeneratorHardware();
     connect(p_pGen,&PulseGenerator::settingUpdate,this,&HardwareManager::pGenSettingUpdate);
     connect(p_pGen,&PulseGenerator::configUpdate,this,&HardwareManager::pGenConfigUpdate);
     connect(p_pGen,&PulseGenerator::repRateUpdate,this,&HardwareManager::pGenRepRateUpdate);
@@ -58,7 +63,7 @@ void HardwareManager::initialize()
 	{
 		s.setArrayIndex(i);
 		s.setValue(QString("key"),d_hardwareList.at(i).first->key());
-        s.setValue(QString("virtual"),d_hardwareList.at(i).first->isVirtual());
+        s.setValue(QString("type"),d_hardwareList.at(i).first->subKey());
 	}
 	s.endArray();
 	s.endGroup();
@@ -70,7 +75,7 @@ void HardwareManager::initialize()
 	int index=0;
 	for(int i=0;i<d_hardwareList.size();i++)
 	{
-		if(d_hardwareList.at(i).first->inherits("TcpInstrument"))
+        if(d_hardwareList.at(i).first->type() == CommunicationProtocol::Tcp)
 		{
 			s.setArrayIndex(index);
 			s.setValue(QString("key"),d_hardwareList.at(i).first->key());
@@ -87,7 +92,7 @@ void HardwareManager::initialize()
 	index=0;
 	for(int i=0;i<d_hardwareList.size();i++)
 	{
-		if(d_hardwareList.at(i).first->inherits("Rs232Instrument"))
+        if(d_hardwareList.at(i).first->type() == CommunicationProtocol::Rs232)
 		{
 			s.setArrayIndex(index);
 			s.setValue(QString("key"),d_hardwareList.at(i).first->key());
@@ -104,9 +109,11 @@ void HardwareManager::initialize()
         QThread *thread = d_hardwareList.at(i).second;
         HardwareObject *obj = d_hardwareList.at(i).first;
 
-        connect(obj,&HardwareObject::logMessage,this,&HardwareManager::logMessage);
+        connect(obj,&HardwareObject::logMessage,[=](QString msg, LogHandler::MessageCode mc){
+            emit logMessage(QString("%1: %2").arg(obj->name()).arg(msg),mc);
+        });
         connect(obj,&HardwareObject::connectionResult,this,&HardwareManager::connectionResult);
-        connect(obj,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure);
+        connect(obj,&HardwareObject::hardwareFailure,[=](bool abort){ hardwareFailure(obj,abort); });
         connect(obj,&HardwareObject::timeDataRead,this,&HardwareManager::timeData);
         connect(this,&HardwareManager::beginAcquisition,obj,&HardwareObject::beginAcquisition);
         connect(this,&HardwareManager::endAcquisition,obj,&HardwareObject::endAcquisition);

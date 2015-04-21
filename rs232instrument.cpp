@@ -1,18 +1,13 @@
 #include "rs232instrument.h"
 
-Rs232Instrument::Rs232Instrument(QString key, QString name, QObject *parent) :
-	HardwareObject(key,name,parent)
+Rs232Instrument::Rs232Instrument(QString key, QString subKey, QObject *parent) :
+    CommunicationProtocol(CommunicationProtocol::Rs232,key,subKey,parent)
 {
-#ifdef BC_NORS232
-    d_virtual = true;
-#endif
+
 }
 
 Rs232Instrument::~Rs232Instrument()
 {
-	if(d_virtual)
-		return;
-
     if(d_sp->isOpen())
         d_sp->close();
 
@@ -21,21 +16,11 @@ Rs232Instrument::~Rs232Instrument()
 
 void Rs232Instrument::initialize()
 {
-	if(d_virtual)
-		return;
-
-	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-	s.setValue(key().append(QString("/prettyName")),name());
-	s.sync();
-
     d_sp = new QSerialPort(this);
 }
 
 bool Rs232Instrument::testConnection()
 {
-	if(d_virtual)
-		return true;
-
     if(d_sp->isOpen())
         d_sp->close();
 
@@ -48,13 +33,6 @@ bool Rs232Instrument::testConnection()
     QString id = s.value(QString("%1/id").arg(key()),QString("")).toString();
 
     d_sp->setPortName(id);
-
-//    QList<QSerialPortInfo> l = QSerialPortInfo::availablePorts();
-//    for(int i=0; i<l.size(); i++)
-//    {
-//        if(l.at(i).portName() == id)
-//            d_sp->setPort(l.at(i));
-//    }
 
     if(d_sp->open(QIODevice::ReadWrite))
     {
@@ -71,13 +49,10 @@ bool Rs232Instrument::testConnection()
 
 bool Rs232Instrument::writeCmd(QString cmd)
 {
-	if(d_virtual)
-		return true;
-
     if(!d_sp->isOpen())
     {
-        emit hardwareFailure(this);
-        emit logMessage(QString("Could not write command to %1. Serial port is not open. (Command = %2)").arg(d_prettyName).arg(cmd),LogHandler::Error);
+        emit hardwareFailure();
+        emit logMessage(QString("Could not write command. Serial port is not open. (Command = %1)").arg(cmd),LogHandler::Error);
         return false;
     }
 
@@ -85,8 +60,8 @@ bool Rs232Instrument::writeCmd(QString cmd)
 
     if(!d_sp->flush())
     {
-        emit hardwareFailure(this);
-        emit logMessage(QString("Could not write command to %1. (Command = %2)").arg(d_prettyName).arg(cmd),LogHandler::Error);
+        emit hardwareFailure();
+        emit logMessage(QString("Could not write command. (Command = %1)").arg(cmd),LogHandler::Error);
         return false;
     }
     return true;
@@ -94,13 +69,10 @@ bool Rs232Instrument::writeCmd(QString cmd)
 
 QByteArray Rs232Instrument::queryCmd(QString cmd)
 {
-	if(d_virtual)
-		return QByteArray();
-
     if(!d_sp->isOpen())
     {
-        emit hardwareFailure(this);
-        emit logMessage(QString("Could not write query to %1. Serial port is not open. (Query = %2)").arg(d_prettyName).arg(cmd),LogHandler::Error);
+        emit hardwareFailure();
+        emit logMessage(QString("Could not write query. Serial port is not open. (Query = %1)").arg(cmd),LogHandler::Error);
         return QByteArray();
     }
 
@@ -111,8 +83,8 @@ QByteArray Rs232Instrument::queryCmd(QString cmd)
 
     if(!d_sp->flush())
     {
-        emit hardwareFailure(this);
-        emit logMessage(QString("Could not write query to %1. (query = %2)").arg(d_prettyName).arg(cmd),LogHandler::Error);
+        emit hardwareFailure();
+        emit logMessage(QString("Could not write query. (query = %1)").arg(cmd),LogHandler::Error);
         return QByteArray();
     }
 
@@ -121,8 +93,8 @@ QByteArray Rs232Instrument::queryCmd(QString cmd)
     {
         if(!d_sp->waitForReadyRead(d_timeOut))
         {
-            emit hardwareFailure(this);
-            emit logMessage(QString("%1 did not respond to query. (query = %2)").arg(d_prettyName).arg(cmd),LogHandler::Error);
+            emit hardwareFailure();
+            emit logMessage(QString("Did not respond to query. (query = %1)").arg(cmd),LogHandler::Error);
             return QByteArray();
         }
 
@@ -142,8 +114,8 @@ QByteArray Rs232Instrument::queryCmd(QString cmd)
                 return out;
         }
 
-        emit hardwareFailure(this);
-        emit logMessage(QString("%1 timed out while waiting for termination character. (query = %2, partial response = %3)").arg(d_prettyName).arg(cmd).arg(QString(out)),LogHandler::Error);
+        emit hardwareFailure();
+        emit logMessage(QString("Timed out while waiting for termination character. (query = %1, partial response = %2)").arg(cmd).arg(QString(out)),LogHandler::Error);
         emit logMessage(QString("Hex response: %1").arg(QString(out.toHex())),LogHandler::Error);
         return out;
     }

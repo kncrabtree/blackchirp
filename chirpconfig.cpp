@@ -10,7 +10,7 @@ ChirpConfig::ChirpConfig() : data(new ChirpConfigData)
 {
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
-    s.beginGroup(QString("valonSynth"));
+    s.beginGroup(QString("synthesizer"));
     data->valonTxFreq = s.value(QString("txFreq"),5760.0).toDouble();
     s.endGroup();
 

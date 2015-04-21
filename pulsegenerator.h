@@ -1,45 +1,60 @@
 #ifndef PULSEGENERATOR_H
 #define PULSEGENERATOR_H
 
-#include "rs232instrument.h"
+#include "hardwareobject.h"
 #include "pulsegenconfig.h"
 
-class PulseGenerator : public Rs232Instrument
+#if BC_PGEN==1
+class Qc9528;
+typedef Qc9528 PulseGeneratorHardware;
+
+//NOTE: Gas, AWG, excimer, and LIF channels are hardcoded
+#define BC_PGEN_GASCHANNEL 0
+#define BC_PGEN_AWGCHANNEL 1
+#define BC_PGEN_XMERCHANNEL 2
+#define BC_PGEN_LIFCHANNEL 3
+#define BC_PGEN_NUMCHANNELS 8
+
+#else
+class VirtualPulseGenerator;
+typedef VirtualPulseGenerator PulseGeneratorHardware;
+
+//NOTE: Gas, AWG, excimer, and LIF channels are hardcoded
+#define BC_PGEN_GASCHANNEL 0
+#define BC_PGEN_AWGCHANNEL 1
+#define BC_PGEN_XMERCHANNEL 2
+#define BC_PGEN_LIFCHANNEL 3
+#define BC_PGEN_NUMCHANNELS 8
+
+#endif
+
+class PulseGenerator : public HardwareObject
 {
     Q_OBJECT
 public:
-    PulseGenerator(QObject *parent = 0);
+    PulseGenerator(QObject *parent = nullptr);
     ~PulseGenerator();
 
-
-
-    // HardwareObject interface
 public slots:
-    bool testConnection();
-    void initialize();
-    Experiment prepareForExperiment(Experiment exp);
-    void beginAcquisition();
-    void endAcquisition();
-    void readTimeData();
+    PulseGenConfig config() const { return d_config; }
+    virtual QVariant read(const int index, const PulseGenConfig::Setting s) =0;
 
-    PulseGenConfig config() const;
-    QVariant read(const int index, const PulseGenConfig::Setting s);
-    PulseGenConfig::ChannelConfig read(const int index);
+    virtual PulseGenConfig::ChannelConfig read(const int index);
 
-    void set(const int index, const PulseGenConfig::Setting s, const QVariant val);
-    void setChannel(const int index, const PulseGenConfig::ChannelConfig cc);
-    void setAll(const PulseGenConfig cc);
-    void setRepRate(double d);
+    virtual void set(const int index, const PulseGenConfig::Setting s, const QVariant val) =0;
+    virtual void setChannel(const int index, const PulseGenConfig::ChannelConfig cc);
+    virtual void setAll(const PulseGenConfig cc);
+
+    virtual void setRepRate(double d) =0;
 
 signals:
     void settingUpdate(int,PulseGenConfig::Setting,QVariant);
     void configUpdate(const PulseGenConfig);
     void repRateUpdate(double);
 
-private:
+protected:
     PulseGenConfig d_config;
-
-    void readAll();
+    virtual void readAll();
 };
 
 #endif // PULSEGENERATOR_H

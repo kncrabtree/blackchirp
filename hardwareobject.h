@@ -9,6 +9,7 @@
 #include "experiment.h"
 #include <QList>
 #include <QPair>
+#include "communicationprotocol.h"
 
 /*!
  * \brief Abstract base class for all hardware connected to the instrument.
@@ -52,7 +53,7 @@ public:
      *
      * \param parent Pointer to parent QObject. Should be 0 if it will be in its own thread.
      */
-	explicit HardwareObject(QString key, QString name, QObject *parent = 0);
+    explicit HardwareObject(QObject *parent = 0);
 
     /*!
      * \brief Access function for pretty name.
@@ -66,8 +67,11 @@ public:
      */
 	QString key() { return d_key; }
 
-	bool isVirtual() { return d_virtual; }
+    QString subKey() { return d_subKey; }
+
     bool isCritical() { return d_isCritical; }
+
+    CommunicationProtocol::CommType type() { return d_comm->type(); }
 	
 signals:
     /*!
@@ -90,7 +94,7 @@ signals:
      * \param HardwareObject* This pointer
      * \param abort If an acquisition is underway, this will begin the abort routine if true
      */
-    void hardwareFailure(HardwareObject*, bool abort = true);
+    void hardwareFailure(bool abort = true);
 
     void timeDataRead(const QList<QPair<QString,QVariant>>);
 	
@@ -120,22 +124,16 @@ public slots:
     virtual void readTimeData() =0;
 
 protected:
-	bool d_virtual;
-    const QString d_prettyName; /*!< Name to be displayed on UI */
-    const QString d_key; /*!< Name to be used in settings */
+    QString d_prettyName; /*!< Name to be displayed on UI */
+    QString d_key; /*!< Name to be used in settings for abstract hardware*/
+    QString d_subKey; /*< Name to be used in settings for real hardware*/
 
-    QByteArray d_readTerminator; /*!< Termination characters that indicate a message from the device is complete. */
-    bool d_useTermChar; /*!< If true, a read operation is complete when the message ends with d_readTerminator */
-    int d_timeOut; /*!< Timeout for read operation, in ms */
+    CommunicationProtocol *d_comm;
+
+
     bool d_isCritical;
 
-    /*!
-     * \brief Convenience function for setting read options
-     * \param tmo Read timeout, in ms
-     * \param useTermChar If true, look for termination characters at the end of a message
-     * \param termChar Termination character(s)
-     */
-    void setReadOptions(int tmo, bool useTermChar = false, QByteArray termChar = QByteArray()) { d_timeOut = tmo, d_useTermChar = useTermChar, d_readTerminator = termChar; }
+
 	
 };
 

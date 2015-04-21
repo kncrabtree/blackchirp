@@ -1,22 +1,23 @@
 #ifndef AWG_H
 #define AWG_H
 
-#include "tcpinstrument.h"
+#include "hardwareobject.h"
 
-class AWG : public TcpInstrument
+#if BC_AWG==1
+class Awg71002a;
+typedef Awg71002a AwgHardware;
+#else
+class VirtualAwg;
+typedef VirtualAwg AwgHardware;
+#endif
+
+class AWG : public HardwareObject
 {
+    Q_OBJECT
 public:
-    AWG();
+    AWG(QObject *parent);
     ~AWG();
 
-    // HardwareObject interface
-public slots:
-    bool testConnection();
-    void initialize();
-    Experiment prepareForExperiment(Experiment exp);
-    void beginAcquisition();
-    void endAcquisition();
-    void readTimeData();
 };
 
 #endif // AWG_H

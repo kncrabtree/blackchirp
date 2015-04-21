@@ -1,12 +1,16 @@
+include(implementations.pri)
+
 HEADERS += \
     $$PWD/hardwaremanager.h \
     $$PWD/hardwareobject.h \
     $$PWD/tcpinstrument.h \
     $$PWD/rs232instrument.h \
     $$PWD/ftmwscope.h \
-    $$PWD/valonsynthesizer.h \
     $$PWD/awg.h \
-    $$PWD/pulsegenerator.h
+    $$PWD/pulsegenerator.h \
+    $$PWD/communicationprotocol.h \
+    $$PWD/virtualinstrument.h \
+    $$PWD/synthesizer.h
 
 SOURCES += \
     $$PWD/hardwaremanager.cpp \
@@ -14,6 +18,8 @@ SOURCES += \
     $$PWD/tcpinstrument.cpp \
     $$PWD/rs232instrument.cpp \
     $$PWD/ftmwscope.cpp \
-    $$PWD/valonsynthesizer.cpp \
     $$PWD/awg.cpp \
-    $$PWD/pulsegenerator.cpp
+    $$PWD/pulsegenerator.cpp \
+    $$PWD/communicationprotocol.cpp \
+    $$PWD/virtualinstrument.cpp \
+    $$PWD/synthesizer.cpp

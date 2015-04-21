@@ -1,7 +1,7 @@
 #ifndef RS232INSTRUMENT_H
 #define RS232INSTRUMENT_H
 
-#include "hardwareobject.h"
+#include "communicationprotocol.h"
 #include <QtSerialPort/qserialport.h>
 #include <QtSerialPort/qserialportinfo.h>
 
@@ -17,27 +17,21 @@
 //Existing names aren't reassigned when a new device is connected, so you should see one entry disappear and then reappear.
 
 
-class Rs232Instrument : public HardwareObject
+class Rs232Instrument : public CommunicationProtocol
 {
 	Q_OBJECT
 public:
-	explicit Rs232Instrument(QString key, QString name, QObject *parent = 0);
+    explicit Rs232Instrument(QString key, QString subKey, QObject *parent = 0);
     ~Rs232Instrument();
-	
-signals:
-	
+    bool writeCmd(QString cmd);
+    QByteArray queryCmd(QString cmd);
+    QSerialPort *d_sp;
+
+
 public slots:
 	void initialize();
 	bool testConnection();
 
-protected:
-	bool writeCmd(QString cmd);
-	QByteArray queryCmd(QString cmd);
-
-    QSerialPort *d_sp;
-
-private:
-	
 };
 
 #endif // RS232INSTRUMENT_H

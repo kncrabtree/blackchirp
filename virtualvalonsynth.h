@@ -1,19 +1,14 @@
-#ifndef VALONSYNTHESIZER_H
-#define VALONSYNTHESIZER_H
+#ifndef VIRTUALVALONSYNTH_H
+#define VIRTUALVALONSYNTH_H
 
-#include "rs232instrument.h"
+#include "synthesizer.h"
 
-
-class ValonSynthesizer : public Rs232Instrument
+class VirtualValonSynth : public Synthesizer
 {
     Q_OBJECT
 public:
-    ValonSynthesizer();
-    ~ValonSynthesizer();
-
-signals:
-    void txFreqRead(double);
-    void rxFreqRead(double);
+    explicit VirtualValonSynth(QObject *parent = nullptr);
+    ~VirtualValonSynth();
 
     // HardwareObject interface
 public slots:
@@ -24,17 +19,12 @@ public slots:
     void endAcquisition();
     void readTimeData();
 
+    // Synthesizer interface
+public slots:
     double readTxFreq();
     double readRxFreq();
     double setTxFreq(const double f);
     double setRxFreq(const double f);
-
-private:
-    double d_txFreq, d_rxFreq;
-
-    // HardwareObject interface
-public slots:
-
 };
 
-#endif // VALONSYNTHESIZER_H
+#endif // VIRTUALVALONSYNTH_H

@@ -71,32 +71,23 @@ RESOURCES += resources.qrc
 unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
 
 #------------------------------------------------
-# The following defines allow running the code without real hardware.
+# The following defines select hardware implementations.
 # Uncomment the appropriate lines to simulate hardware.
 # -----------------------------------------------
 
-# Simulates ALL hardware
-#DEFINES += BC_NOHARDWARE
-
-# Simulates ALL RS232 devices
-#DEFINES += BC_NORS232
-
-# Simulates ALL TCP devices
-#DEFINES += BC_NOTCP
-
-# Simulates FTMW Oscilloscope (uncomment DEFINES and RESOURCES lines)
-DEFINES += BC_NOFTSCOPE
+# FTMW Oscilloscope (0 = virtual, 1 = DSA71604C)
+DEFINES += BC_FTMWSCOPE=0
+#Uncomment if BC_FTMWSCOPE=0
 RESOURCES += virtualdata.qrc
 
+#AWG (0 = virtual, 1 = AWG 71002A)
+DEFINES += BC_AWG=0
 
-#Simulates Valon Synthesizer
-DEFINES += BC_NOVALONSYNTH
+#Synth (0 = virtual, 1 = Valon 5009)
+DEFINES += BC_SYNTH=0
 
-#Simulates AWG
-DEFINES += BC_NOAWG
-
-#Simulates Pulse Generator
-DEFINES += BC_NOPULSEGEN
+#Pulse generator (0 = virtual, 1 = Quantum Composers 9528+)
+DEFINES += BC_PGEN=0
 
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O3

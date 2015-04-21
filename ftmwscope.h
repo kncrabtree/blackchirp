@@ -1,7 +1,7 @@
 #ifndef FTMWSCOPE_H
 #define FTMWSCOPE_H
 
-#include "tcpinstrument.h"
+#include "hardwareobject.h"
 #include <QVector>
 #include <QPointF>
 #include <QDataStream>
@@ -12,50 +12,32 @@
 #include "fid.h"
 #include <QTimer>
 
-class FtmwScope : public TcpInstrument
+#if BC_FTMWSCOPE == 1
+class Dsa71604c;
+typedef FtmwScopeHardware Dsa71604c;
+#else
+class VirtualFtmwScope;
+typedef VirtualFtmwScope FtmwScopeHardware;
+#endif
+
+class FtmwScope : public HardwareObject
 {
     Q_OBJECT
 public:
-    explicit FtmwScope(QObject *parent = 0);
-
-    enum ResponseType {
-        RawData,
-        BlockData
-    };
+    explicit FtmwScope(QObject *parent = nullptr);
 
 signals:
     void shotAcquired(const QByteArray data);
 
 public slots:
-    void initialize();
-    bool testConnection();
+    virtual void readWaveform() =0;
 
-    void readWaveform();
 
-    Experiment prepareForExperiment(Experiment exp);
-    void beginAcquisition();
-    void endAcquisition();
-    void readTimeData();
-
-    void queryScope();
-    void wakeUp();
-
-private:
-    bool d_waitingForReply;
-    bool d_foundHeader;
-    int d_headerNumBytes;
-    int d_waveformBytes;
+protected:
     FtmwConfig::ScopeConfig d_configuration;
-    QDateTime d_lastTrigger;
-    bool d_waitingForWakeUp;
-    QTimer d_scopeTimeout;
 
-    QByteArray scopeQueryCmd(QString query);
 
-    QByteArray makeSimulatedData();
-    QVector<double> d_simulatedData;
-    QTimer *d_simulatedTimer = nullptr;
-    QTime d_testTime;
+
 
 };
 

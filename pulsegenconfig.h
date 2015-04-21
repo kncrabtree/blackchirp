@@ -7,13 +7,6 @@
 #include <QMap>
 
 
-//NOTE: Gas, AWG, excimer, and LIF channels are hardcoded
-#define BC_PGEN_GASCHANNEL 0
-#define BC_PGEN_AWGCHANNEL 1
-#define BC_PGEN_XMERCHANNEL 2
-#define BC_PGEN_LIFCHANNEL 3
-#define BC_PGEN_NUMCHANNELS 8
-
 class PulseGenConfigData;
 
 class PulseGenConfig

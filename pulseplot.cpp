@@ -1,6 +1,7 @@
 #include "pulseplot.h"
 #include <QSettings>
 #include <QApplication>
+#include "pulsegenerator.h"
 
 PulsePlot::PulsePlot(QWidget *parent) :
     ZoomPanPlot(QString("pulsePlot"),parent)
