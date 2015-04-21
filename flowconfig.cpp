@@ -69,6 +69,8 @@ void FlowConfig::set(int index, FlowConfig::Setting s, QVariant val)
     switch(s) {
     case Setpoint:
         data->flowList[index].setpoint = val.toDouble();
+        if(qFuzzyCompare(1.0+data->flowList.at(index).setpoint,1.0))
+            data->flowList[index].enabled = false;
         break;
     case Flow:
         data->flowList[index].flow = val.toDouble();
