@@ -122,6 +122,8 @@ void HardwareManager::initialize()
         QThread *thread = d_hardwareList.at(i).second;
         HardwareObject *obj = d_hardwareList.at(i).first;
 
+        s.setValue(QString("%1/prettyName").arg(obj->key()),obj->name());
+
         connect(obj,&HardwareObject::logMessage,[=](QString msg, LogHandler::MessageCode mc){
             emit logMessage(QString("%1: %2").arg(obj->name()).arg(msg),mc);
         });
