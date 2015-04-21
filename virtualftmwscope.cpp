@@ -29,7 +29,7 @@ bool VirtualFtmwScope::testConnection()
     d_simulatedTimer->setInterval(shotInterval);
 
 
-    emit connectionResult(this,true);
+    emit connected();
     return true;
 }
 

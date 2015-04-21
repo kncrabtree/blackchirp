@@ -23,7 +23,7 @@ bool VirtualValonSynth::testConnection()
     readTxFreq();
     readRxFreq();
 
-    emit connectionResult(this,true);
+    emit connected();
     return true;
 }
 

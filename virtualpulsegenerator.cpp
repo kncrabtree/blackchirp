@@ -25,7 +25,7 @@ bool VirtualPulseGenerator::testConnection()
     blockSignals(false);
 
     emit configUpdate(d_config);
-    emit connectionResult(this,true);
+    emit connected();
     return true;
 }
 

@@ -87,7 +87,7 @@ signals:
      * \param bool True if connection is successful
      * \param msg If unsuccessful, an optional message to display on the log tab along with the failure message.
      */
-    void connectionResult(HardwareObject*,bool,QString msg = QString());
+    void connected(bool success = true,QString msg = QString());
 
     /*!
      * \brief Signal emitted if communication to hardware is lost.

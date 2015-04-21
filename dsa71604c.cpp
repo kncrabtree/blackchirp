@@ -26,7 +26,7 @@ bool Dsa71604c::testConnection()
 
     if(!d_comm->testConnection())
     {
-        emit connectionResult(this,false);
+        emit connected(false);
         return false;
     }
 
@@ -34,18 +34,18 @@ bool Dsa71604c::testConnection()
 
     if(resp.isEmpty())
     {
-        emit connectionResult(this,false,QString("Did not respond to ID query."));
+        emit connected(false,QString("Did not respond to ID query."));
         return false;
     }
 
     if(!resp.startsWith(QByteArray("TEKTRONIX,DSA71604C")))
     {
-        emit connectionResult(this,false,QString("ID response invalid. Response: %1 (Hex: %)").arg(QString(resp)).arg(QString(resp.toHex())));
+        emit connected(false,QString("ID response invalid. Response: %1 (Hex: %)").arg(QString(resp)).arg(QString(resp.toHex())));
         return false;
     }
 
     emit logMessage(QString("ID response: %1").arg(QString(resp)));
-    emit connectionResult(this,true);
+    emit connected();
     return true;
 }
 

@@ -112,7 +112,7 @@ void HardwareManager::initialize()
         connect(obj,&HardwareObject::logMessage,[=](QString msg, LogHandler::MessageCode mc){
             emit logMessage(QString("%1: %2").arg(obj->name()).arg(msg),mc);
         });
-        connect(obj,&HardwareObject::connectionResult,this,&HardwareManager::connectionResult);
+        connect(obj,&HardwareObject::connected,[=](bool success, QString msg){ connectionResult(obj,success,msg); });
         connect(obj,&HardwareObject::hardwareFailure,[=](bool abort){ hardwareFailure(obj,abort); });
         connect(obj,&HardwareObject::timeDataRead,this,&HardwareManager::timeData);
         connect(this,&HardwareManager::beginAcquisition,obj,&HardwareObject::beginAcquisition);

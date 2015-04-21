@@ -20,7 +20,7 @@ VirtualAwg::~VirtualAwg()
 
 bool VirtualAwg::testConnection()
 {
-    emit connectionResult(this,true);
+    emit connected();
     return true;
 }
 
