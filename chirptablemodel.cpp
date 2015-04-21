@@ -1,4 +1,5 @@
 #include "chirptablemodel.h"
+
 #include <QDoubleSpinBox>
 #include <QSettings>
 #include <QApplication>

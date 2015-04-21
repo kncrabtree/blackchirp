@@ -1,6 +1,8 @@
 #include "ftmwviewwidget.h"
 #include "ui_ftmwviewwidget.h"
 
+#include "ftmwconfig.h"
+
 FtmwViewWidget::FtmwViewWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::FtmwViewWidget)

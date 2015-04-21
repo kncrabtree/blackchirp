@@ -2,11 +2,11 @@
 #define GPUAVERAGER_H
 
 #include <QDataStream>
-#include <cuda.h>
-#include <cuda_runtime_api.h>
 #include <QList>
 #include <QVector>
-#include <QtGlobal>
+
+#include <cuda.h>
+#include <cuda_runtime_api.h>
 
 class GpuAverager {
 

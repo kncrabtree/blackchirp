@@ -1,4 +1,5 @@
 #include "dsa71604c.h"
+
 #include "tcpinstrument.h"
 
 Dsa71604c::Dsa71604c(QObject *parent) :

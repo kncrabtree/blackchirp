@@ -2,12 +2,8 @@
 #define TRACKINGPLOT_H
 
 #include "zoompanplot.h"
-#include <qwt6/qwt_plot.h>
-#include <qwt6/qwt_plot_curve.h>
-#include <qwt6/qwt_date_scale_draw.h>
-#include <QPair>
-#include <QMouseEvent>
-#include <QWheelEvent>
+
+class QwtPlotCurve;
 
 
 class TrackingPlot : public ZoomPanPlot
@@ -38,6 +34,8 @@ protected:
     virtual bool eventFilter(QObject *obj, QEvent *ev);
 
 };
+
+#include <qwt6/qwt_date_scale_draw.h>
 
 class TimeScaleDraw : public QwtDateScaleDraw
 {

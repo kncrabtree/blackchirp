@@ -1,10 +1,12 @@
 #include "chirpconfig.h"
+
 #include <QSettings>
 #include <QApplication>
+#include <QList>
+
 #include <gsl/gsl_sf_trig.h>
 #include <gsl/gsl_complex_math.h>
 #include <gsl/gsl_const.h>
-#include <QList>
 
 ChirpConfig::ChirpConfig() : data(new ChirpConfigData)
 {

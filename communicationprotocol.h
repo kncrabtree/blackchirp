@@ -2,8 +2,10 @@
 #define COMMUNICATIONPROTOCOL_H
 
 #include <QObject>
+
 #include <QSettings>
 #include <QApplication>
+
 #include "loghandler.h"
 
 class CommunicationProtocol : public QObject

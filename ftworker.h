@@ -4,9 +4,11 @@
 #include <QObject>
 #include <QVector>
 #include <QPointF>
-#include "fid.h"
-#include <gsl/gsl_fft_real.h>
 #include <QPair>
+
+#include <gsl/gsl_fft_real.h>
+
+#include "fid.h"
 
 /*!
  \brief Class that handles processing of FIDs

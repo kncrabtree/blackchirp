@@ -2,6 +2,7 @@
 #define PULSEGENCONFIG_H
 
 #include <QSharedDataPointer>
+
 #include <QList>
 #include <QVariant>
 #include <QMap>

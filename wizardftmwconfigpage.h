@@ -2,7 +2,9 @@
 #define WIZARDFTMWCONFIGPAGE_H
 
 #include <QWizardPage>
-#include "ftmwconfigwidget.h"
+
+class FtmwConfig;
+class FtmwConfigWidget;
 
 class WizardFtmwConfigPage : public QWizardPage
 {

@@ -2,6 +2,7 @@
 #define EXPERIMENTWIZARD_H
 
 #include <QWizard>
+
 #include "wizardstartpage.h"
 #include "wizardchirpconfigpage.h"
 #include "wizardftmwconfigpage.h"

@@ -2,10 +2,11 @@
 #define ACQUISITIONMANAGER_H
 
 #include <QObject>
-#include "loghandler.h"
-#include "experiment.h"
 #include <QTime>
 #include <QTimer>
+
+#include "loghandler.h"
+#include "experiment.h"
 
 class AcquisitionManager : public QObject
 {

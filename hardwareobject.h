@@ -3,13 +3,14 @@
 
 #include <QObject>
 #include <QString>
-#include "loghandler.h"
 #include <QSettings>
 #include <QApplication>
-#include "experiment.h"
 #include <QList>
 #include <QPair>
+
+#include "loghandler.h"
 #include "communicationprotocol.h"
+#include "experiment.h"
 
 /*!
  * \brief Abstract base class for all hardware connected to the instrument.

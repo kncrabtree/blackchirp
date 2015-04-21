@@ -2,8 +2,10 @@
 #define HARDWAREMANAGER_H
 
 #include <QObject>
+
 #include <QList>
 #include <QThread>
+
 #include "hardwareobject.h"
 #include "loghandler.h"
 #include "ftmwscope.h"

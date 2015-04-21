@@ -1,6 +1,11 @@
 #include "trackingplot.h"
+
+#include <QMouseEvent>
+#include <QMenu>
+
 #include <qwt6/qwt_legend_label.h>
 #include <qwt6/qwt_legend.h>
+#include <qwt6/qwt_plot_curve.h>
 
 TrackingPlot::TrackingPlot(QString name, QWidget *parent) : ZoomPanPlot(name, parent)
 {

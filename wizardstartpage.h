@@ -2,7 +2,8 @@
 #define WIZARDSTARTPAGE_H
 
 #include <QWizardPage>
-#include <QCheckBox>
+
+class QCheckBox;
 
 class WizardStartPage : public QWizardPage
 {

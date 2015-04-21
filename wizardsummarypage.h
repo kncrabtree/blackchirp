@@ -2,7 +2,8 @@
 #define WIZARDSUMMARYPAGE_H
 
 #include <QWizardPage>
-#include <QPlainTextEdit>
+
+class QPlainTextEdit;
 
 class WizardSummaryPage : public QWizardPage
 {

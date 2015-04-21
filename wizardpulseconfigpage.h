@@ -2,7 +2,10 @@
 #define WIZARDPULSECONFIGPAGE_H
 
 #include <QWizardPage>
-#include "pulseconfigwidget.h"
+
+class PulseGenConfig;
+class PulseConfigWidget;
+
 
 class WizardPulseConfigPage : public QWizardPage
 {

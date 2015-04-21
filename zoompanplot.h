@@ -2,9 +2,8 @@
 #define ZOOMPANPLOT_H
 
 #include <qwt6/qwt_plot.h>
-#include <QPoint>
-#include <QEvent>
-#include <QMenu>
+
+class QMenu;
 
 class ZoomPanPlot : public QwtPlot
 {

@@ -4,15 +4,17 @@
 #include <QMainWindow>
 #include <QList>
 #include <QPair>
-#include <QThread>
-#include <QCloseEvent>
-#include "loghandler.h"
-#include "hardwaremanager.h"
-#include "acquisitionmanager.h"
-#include "batchmanager.h"
-#include "batchsingle.h"
-#include "led.h"
-#include <QLabel>
+
+#include "experiment.h"
+
+class QThread;
+class QCloseEvent;
+class LogHandler;
+class AcquisitionManager;
+class HardwareManager;
+class Led;
+class BatchManager;
+class QLabel;
 
 namespace Ui {
 class MainWindow;

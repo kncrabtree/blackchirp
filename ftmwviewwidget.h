@@ -2,8 +2,12 @@
 #define FTMWVIEWWIDGET_H
 
 #include <QWidget>
-#include "ftmwconfig.h"
+
 #include <QList>
+
+#include "fid.h"
+
+class FtmwConfig;
 
 namespace Ui {
 class FtmwViewWidget;

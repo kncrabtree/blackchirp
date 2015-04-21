@@ -2,8 +2,10 @@
 #define FLOWCONFIG_H
 
 #include <QSharedDataPointer>
+
 #include <QList>
 #include <QVariant>
+#include <QMetaType>
 
 #define BC_FLOW_NUMCHANNELS 4
 

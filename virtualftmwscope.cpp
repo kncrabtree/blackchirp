@@ -1,6 +1,8 @@
 #include "virtualftmwscope.h"
-#include "virtualinstrument.h"
+
 #include <QFile>
+
+#include "virtualinstrument.h"
 
 
 VirtualFtmwScope::VirtualFtmwScope(QObject *parent) :

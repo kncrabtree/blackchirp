@@ -2,9 +2,12 @@
 #define FTMWCONFIG_H
 
 #include <QSharedDataPointer>
+
 #include <QDateTime>
 #include <QDataStream>
 #include <QVariant>
+#include <QMetaType>
+
 #include "fid.h"
 #include "chirpconfig.h"
 

@@ -1,8 +1,14 @@
 #include "chirpconfigplot.h"
+
 #include <QSettings>
-#include <qwt6/qwt_legend.h>
 #include <QColorDialog>
 #include <QMouseEvent>
+#include <QMenu>
+
+#include <qwt6/qwt_legend.h>
+#include <qwt6/qwt_plot_curve.h>
+
+#include "chirpconfig.h"
 
 ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(QString("ChirpConfigPlot"),parent)
 {

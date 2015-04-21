@@ -2,7 +2,9 @@
 #define WIZARDCHIRPCONFIGPAGE_H
 
 #include <QWizardPage>
-#include "chirpconfigwidget.h"
+
+class ChirpConfigWidget;
+class ChirpConfig;
 
 class WizardChirpConfigPage : public QWizardPage
 {

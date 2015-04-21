@@ -2,8 +2,9 @@
 #define CHIRPTABLEMODEL_H
 
 #include <QAbstractTableModel>
-#include <QStyledItemDelegate>
+
 #include <QList>
+
 #include "chirpconfig.h"
 
 class ChirpTableModel : public QAbstractTableModel
@@ -36,6 +37,8 @@ private:
 
 
 };
+
+#include <QStyledItemDelegate>
 
 class DoubleSpinBoxDelegate : public QStyledItemDelegate
 {

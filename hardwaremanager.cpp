@@ -1,10 +1,5 @@
 #include "hardwaremanager.h"
 #include <QSettings>
-#include "dsa71604c.h"
-#include "virtualawg.h"
-#include "virtualftmwscope.h"
-#include "virtualpulsegenerator.h"
-#include "virtualvalonsynth.h"
 
 HardwareManager::HardwareManager(QObject *parent) : QObject(parent)
 {

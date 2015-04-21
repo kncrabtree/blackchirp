@@ -1,11 +1,14 @@
 #include "zoompanplot.h"
+
 #include <QApplication>
 #include <QMouseEvent>
-#include <qwt6/qwt_scale_div.h>
 #include <QWidgetAction>
 #include <QFormLayout>
 #include <QDoubleSpinBox>
 #include <QSettings>
+#include <QMenu>
+
+#include <qwt6/qwt_scale_div.h>
 
 ZoomPanPlot::ZoomPanPlot(QString name, QWidget *parent) : QwtPlot(parent), d_name(name)
 {

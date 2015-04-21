@@ -2,12 +2,14 @@
 #define TRACKINGVIEWWIDGET_H
 
 #include <QWidget>
-#include <QGridLayout>
+
 #include <QList>
-#include <QEvent>
+
 #include <qwt6/qwt_plot.h>
-#include <qwt6/qwt_plot_curve.h>
-#include "trackingplot.h"
+
+class QGridLayout;
+class TrackingPlot;
+class QwtPlotCurve;
 
 class TrackingViewWidget : public QWidget
 {

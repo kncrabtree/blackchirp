@@ -1,10 +1,18 @@
 #include "trackingviewwidget.h"
+
 #include <QSettings>
 #include <QInputDialog>
 #include <QColorDialog>
-#include <qwt6/qwt_date.h>
-#include <qmenu.h>
+#include <QMenu>
 #include <QActionGroup>
+#include <QMouseEvent>
+#include <QGridLayout>
+
+#include <qwt6/qwt_date.h>
+#include <qwt6/qwt_plot_curve.h>
+
+#include "trackingplot.h"
+
 
 TrackingViewWidget::TrackingViewWidget(QWidget *parent) :
     QWidget(parent)

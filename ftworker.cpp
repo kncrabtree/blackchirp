@@ -1,7 +1,9 @@
 #include "ftworker.h"
+
+#include <QTime>
+
 #include <gsl/gsl_const.h>
 #include <gsl/gsl_sf.h>
-#include <QTime>
 
 FtWorker::FtWorker(QObject *parent) :
     QObject(parent), real(NULL), work(NULL), d_numPnts(0), d_start(0.0), d_end(0.0)

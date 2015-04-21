@@ -1,10 +1,11 @@
 #ifndef FID_H
 #define FID_H
 
-#include <QMetaType>
 #include <QSharedDataPointer>
+
 #include <QVector>
 #include <QPointF>
+#include <QMetaType>
 
 class FidData;
 

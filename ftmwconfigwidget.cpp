@@ -1,7 +1,10 @@
 #include "ftmwconfigwidget.h"
 #include "ui_ftmwconfigwidget.h"
+
 #include <QSettings>
 #include <QApplication>
+
+#include "ftmwconfig.h"
 
 FtmwConfigWidget::FtmwConfigWidget(QWidget *parent) :
     QWidget(parent),

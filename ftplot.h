@@ -2,17 +2,16 @@
 #define FTPLOT_H
 
 #include "zoompanplot.h"
+
 #include <QVector>
 #include <QPointF>
-#include <qwt6/qwt_plot_curve.h>
-#include <qwt6/qwt_plot_zoomer.h>
-#include <qwt6/qwt_plot_panner.h>
-#include <qwt6/qwt_plot_picker.h>
-#include <qwt6/qwt_plot_magnifier.h>
-#include <qwt6/qwt_plot_grid.h>
-#include <QTime>
-#include "ftworker.h"
-#include <QThread>
+
+#include "fid.h"
+
+class QThread;
+class QwtPlotCurve;
+class QwtPlotGrid;
+class FtWorker;
 
 class FtPlot : public ZoomPanPlot
 {

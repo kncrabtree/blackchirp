@@ -1,6 +1,8 @@
 #include "wizardstartpage.h"
 
 #include <QVBoxLayout>
+#include <QCheckBox>
+
 #include "experimentwizard.h"
 
 WizardStartPage::WizardStartPage(QWidget *parent) :

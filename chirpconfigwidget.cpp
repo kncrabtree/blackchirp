@@ -1,7 +1,9 @@
 #include "chirpconfigwidget.h"
 #include "ui_chirpconfigwidget.h"
+
 #include <QSettings>
 #include <QMessageBox>
+#include <QSpinBox>
 
 ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     QWidget(parent),

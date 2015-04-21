@@ -1,15 +1,15 @@
 #ifndef FIDPLOT_H
 #define FIDPLOT_H
+
 #include "zoompanplot.h"
-#include <QObject>
-#include <QVector>
-#include <qwt6/qwt_plot_curve.h>
-#include <QResizeEvent>
-#include <qwt6/qwt_scale_draw.h>
-#include <qwt6/qwt_plot_marker.h>
+
 #include <QPointF>
-#include "fid.h"
 #include <QPair>
+
+#include "fid.h"
+
+class QwtPlotMarker;
+class QwtPlotCurve;
 
 /*!
  * \brief The FID Plot
@@ -53,6 +53,7 @@ protected:
 
 };
 
+#include <qwt6/qwt_scale_draw.h>
 
 class SciNotationScaleDraw : public QwtScaleDraw
 {

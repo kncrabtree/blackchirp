@@ -1,4 +1,5 @@
 #include "virtualpulsegenerator.h"
+
 #include "virtualinstrument.h"
 
 VirtualPulseGenerator::VirtualPulseGenerator(QObject *parent) : PulseGenerator(parent)

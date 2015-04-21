@@ -1,5 +1,8 @@
 #include "wizardsummarypage.h"
+
 #include <QVBoxLayout>
+#include <QPlainTextEdit>
+
 #include "experimentwizard.h"
 
 

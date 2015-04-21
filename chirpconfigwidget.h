@@ -2,8 +2,11 @@
 #define CHIRPCONFIGWIDGET_H
 
 #include <QWidget>
-#include <QSpinBox>
+
+#include "chirpconfig.h"
 #include "chirptablemodel.h"
+
+class QSpinBox;
 
 namespace Ui {
 class ChirpConfigWidget;

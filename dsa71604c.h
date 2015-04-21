@@ -2,7 +2,8 @@
 #define DSA71604C_H
 
 #include "ftmwscope.h"
-#include "tcpinstrument.h"
+
+class QTcpSocket;
 
 class Dsa71604c : public FtmwScope
 {

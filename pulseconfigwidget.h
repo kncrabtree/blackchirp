@@ -3,7 +3,8 @@
 
 #include <QWidget>
 #include <QList>
-#include <pulsegenconfig.h>
+
+#include "pulsegenconfig.h"
 
 class QLabel;
 class QDoubleSpinBox;

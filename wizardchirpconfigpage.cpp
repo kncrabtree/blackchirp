@@ -1,6 +1,10 @@
 #include "wizardchirpconfigpage.h"
+
 #include <QVBoxLayout>
 #include <QDialogButtonBox>
+#include <QSpinBox>
+
+#include "chirpconfigwidget.h"
 #include "experimentwizard.h"
 
 WizardChirpConfigPage::WizardChirpConfigPage(QWidget *parent) :

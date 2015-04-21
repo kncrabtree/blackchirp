@@ -1,4 +1,5 @@
 #include "virtualvalonsynth.h"
+
 #include "virtualinstrument.h"
 
 VirtualValonSynth::VirtualValonSynth(QObject *parent) : Synthesizer(parent)

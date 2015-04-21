@@ -2,8 +2,10 @@
 #define CHIRPCONFIGPLOT_H
 
 #include "zoompanplot.h"
-#include <qwt6/qwt_plot_curve.h>
-#include "chirpconfig.h"
+
+class ChirpConfig;
+class QwtPlotCurve;
+
 
 class ChirpConfigPlot : public ZoomPanPlot
 {

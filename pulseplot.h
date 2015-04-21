@@ -2,10 +2,13 @@
 #define PULSEPLOT_H
 
 #include "zoompanplot.h"
-#include "pulsegenconfig.h"
+
 #include <QList>
-#include <qwt6/qwt_plot_curve.h>
-#include <qwt6/qwt_plot_marker.h>
+
+#include "pulsegenconfig.h"
+
+class QwtPlotCurve;
+class QwtPlotMarker;
 
 class PulsePlot : public ZoomPanPlot
 {

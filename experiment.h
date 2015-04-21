@@ -5,6 +5,7 @@
 #include <QPair>
 #include <QDateTime>
 #include <QMetaType>
+
 #include "ftmwconfig.h"
 #include "loghandler.h"
 #include "pulsegenconfig.h"

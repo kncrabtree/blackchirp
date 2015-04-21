@@ -1,6 +1,6 @@
 #include "fidplot.h"
 #include <math.h>
-#include <qwt6/qwt_plot_canvas.h>
+
 #include <QPalette>
 #include <QSettings>
 #include <QApplication>
@@ -10,6 +10,13 @@
 #include <QWidgetAction>
 #include <QFormLayout>
 #include <QColorDialog>
+#include <QMouseEvent>
+
+#include <qwt6/qwt_plot_canvas.h>
+#include <qwt6/qwt_plot_marker.h>
+#include <qwt6/qwt_plot_curve.h>
+
+#include "fid.h"
 
 FidPlot::FidPlot(QWidget *parent) :
     ZoomPanPlot(QString("FidPlot"),parent), d_ftEndAtFidEnd(true)

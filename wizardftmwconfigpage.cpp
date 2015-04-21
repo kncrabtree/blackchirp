@@ -1,6 +1,9 @@
 #include "wizardftmwconfigpage.h"
+
 #include <QVBoxLayout>
 #include <QDialogButtonBox>
+
+#include "ftmwconfigwidget.h"
 #include "experimentwizard.h"
 
 WizardFtmwConfigPage::WizardFtmwConfigPage(QWidget *parent) :

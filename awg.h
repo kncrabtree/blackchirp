@@ -3,21 +3,23 @@
 
 #include "hardwareobject.h"
 
-#if BC_AWG==1
-class Awg71002a;
-typedef Awg71002a AwgHardware;
-#else
-class VirtualAwg;
-typedef VirtualAwg AwgHardware;
-#endif
-
 class AWG : public HardwareObject
 {
     Q_OBJECT
 public:
     AWG(QObject *parent);
     ~AWG();
-
 };
+
+
+#if BC_AWG==1
+#include "awg71002a.h"
+class Awg71002a;
+typedef Awg71002a AwgHardware;
+#else
+#include "virtualawg.h"
+class VirtualAwg;
+typedef VirtualAwg AwgHardware;
+#endif
 
 #endif // AWG_H

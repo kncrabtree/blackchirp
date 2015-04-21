@@ -3,14 +3,6 @@
 
 #include "hardwareobject.h"
 
-#if BC_SYNTH == 1
-class Valon5009;
-typedef Valon5009 SynthesizerHardware;
-#else
-class VirtualValonSynth;
-typedef VirtualValonSynth SynthesizerHardware;
-#endif
-
 class Synthesizer : public HardwareObject
 {
     Q_OBJECT
@@ -30,8 +22,16 @@ public slots:
 
 protected:
     double d_txFreq, d_rxFreq;
-
-
 };
+
+#if BC_SYNTH == 1
+#include "valon5009.h"
+class Valon5009;
+typedef Valon5009 SynthesizerHardware;
+#else
+#include "virtualvalonsynth.h"
+class VirtualValonSynth;
+typedef VirtualValonSynth SynthesizerHardware;
+#endif
 
 #endif // SYNTHESIZER_H

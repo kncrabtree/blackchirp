@@ -2,6 +2,7 @@
 #define BATCHMANAGER_H
 
 #include <QObject>
+
 #include "loghandler.h"
 #include "experiment.h"
 

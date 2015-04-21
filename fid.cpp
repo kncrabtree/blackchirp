@@ -1,5 +1,4 @@
 #include "fid.h"
-#include <QSharedData>
 
 Fid::Fid() : data(new FidData)
 {

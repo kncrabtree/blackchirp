@@ -2,23 +2,10 @@
 #define FTMWSCOPE_H
 
 #include "hardwareobject.h"
-#include <QVector>
-#include <QPointF>
-#include <QDataStream>
-#include <QTextStream>
-#include <QPointF>
-#include <QTime>
-#include <QStringList>
-#include "fid.h"
-#include <QTimer>
 
-#if BC_FTMWSCOPE == 1
-class Dsa71604c;
-typedef FtmwScopeHardware Dsa71604c;
-#else
-class VirtualFtmwScope;
-typedef VirtualFtmwScope FtmwScopeHardware;
-#endif
+#include <QByteArray>
+
+#include "ftmwconfig.h"
 
 class FtmwScope : public HardwareObject
 {
@@ -36,9 +23,16 @@ public slots:
 protected:
     FtmwConfig::ScopeConfig d_configuration;
 
-
-
-
 };
+
+#if BC_FTMWSCOPE == 1
+#include "dsa71604c.h"
+class Dsa71604c;
+typedef FtmwScopeHardware Dsa71604c;
+#else
+#include "virtualftmwscope.h"
+class VirtualFtmwScope;
+typedef VirtualFtmwScope FtmwScopeHardware;
+#endif
 
 #endif // FTMWSCOPE_H

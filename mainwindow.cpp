@@ -1,11 +1,22 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "communicationdialog.h"
-#include "ftmwconfigwidget.h"
+
+#include <QThread>
 #include <QDialogButtonBox>
 #include <QPushButton>
+#include <QCloseEvent>
+#include <QLabel>
+
+#include "communicationdialog.h"
+#include "ftmwconfigwidget.h"
 #include "rfconfigwidget.h"
 #include "experimentwizard.h"
+#include "loghandler.h"
+#include "hardwaremanager.h"
+#include "acquisitionmanager.h"
+#include "batchmanager.h"
+#include "batchsingle.h"
+#include "led.h"
 
 
 MainWindow::MainWindow(QWidget *parent) :

@@ -1,5 +1,6 @@
 #include "pulseconfigwidget.h"
 #include "ui_pulseconfigwidget.h"
+
 #include <QSettings>
 #include <QPushButton>
 #include <QToolButton>
@@ -7,6 +8,7 @@
 #include <QDialog>
 #include <QFormLayout>
 #include <QDialogButtonBox>
+
 #include "pulsegenerator.h"
 
 PulseConfigWidget::PulseConfigWidget(QWidget *parent) :

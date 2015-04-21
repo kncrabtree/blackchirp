@@ -2,9 +2,9 @@
 #define FTMWCONFIGWIDGET_H
 
 #include <QWidget>
-#include "ftmwconfig.h"
 
 class QComboBox;
+class FtmwConfig;
 
 namespace Ui {
 class FtmwConfigWidget;

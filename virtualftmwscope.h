@@ -2,7 +2,9 @@
 #define VIRTUALFTMWSCOPE_H
 
 #include "ftmwscope.h"
+
 #include <QVector>
+#include <QTimer>
 
 class VirtualFtmwScope : public FtmwScope
 {

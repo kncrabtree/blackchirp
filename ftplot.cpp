@@ -1,9 +1,7 @@
 #include "ftplot.h"
+
 #include <QFont>
-#include <qwt6/qwt_plot_canvas.h>
-#include <qwt6/qwt_picker_machine.h>
-#include <qwt6/qwt_scale_widget.h>
-#include <qwt6/qwt_scale_div.h>
+#include <QThread>
 #include <QMouseEvent>
 #include <QEvent>
 #include <QSettings>
@@ -12,6 +10,19 @@
 #include <QActionGroup>
 #include <QColorDialog>
 #include <QApplication>
+
+#include <qwt6/qwt_plot_canvas.h>
+#include <qwt6/qwt_picker_machine.h>
+#include <qwt6/qwt_scale_widget.h>
+#include <qwt6/qwt_scale_div.h>
+#include <qwt6/qwt_plot_curve.h>
+#include <qwt6/qwt_plot_zoomer.h>
+#include <qwt6/qwt_plot_panner.h>
+#include <qwt6/qwt_plot_picker.h>
+#include <qwt6/qwt_plot_magnifier.h>
+#include <qwt6/qwt_plot_grid.h>
+
+#include "ftworker.h"
 
 FtPlot::FtPlot(QWidget *parent) :
     ZoomPanPlot(QString("FtPlot"),parent), d_autoScaleXRange(qMakePair(0.0,1.0)), d_autoScaleYRange(qMakePair(0.0,1.0)),

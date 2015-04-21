@@ -2,6 +2,7 @@
 #define TCPINSTRUMENT_H
 
 #include "communicationprotocol.h"
+
 #include <QTcpSocket>
 
 class TcpInstrument : public CommunicationProtocol

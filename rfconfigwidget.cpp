@@ -1,5 +1,6 @@
 #include "rfconfigwidget.h"
 #include "ui_rfconfigwidget.h"
+
 #include <QSettings>
 #include <QApplication>
 

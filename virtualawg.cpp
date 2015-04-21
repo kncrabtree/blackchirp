@@ -1,4 +1,5 @@
 #include "virtualawg.h"
+
 #include "virtualinstrument.h"
 
 VirtualAwg::VirtualAwg(QObject *parent) : AWG(parent)

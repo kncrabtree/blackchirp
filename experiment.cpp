@@ -1,4 +1,5 @@
 #include "experiment.h"
+
 #include <QSettings>
 #include <QApplication>
 
