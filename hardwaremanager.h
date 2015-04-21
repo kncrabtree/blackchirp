@@ -80,7 +80,7 @@ private:
 
     QList<QPair<HardwareObject*,QThread*> > d_hardwareList;
     FtmwScope *p_scope;
-    Synthesizer *p_valon;
+    Synthesizer *p_synth;
     AWG *p_awg;
     PulseGenerator *p_pGen;
 

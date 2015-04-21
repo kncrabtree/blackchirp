@@ -40,10 +40,10 @@ void HardwareManager::initialize()
     d_hardwareList.append(qMakePair(p_awg,nullptr));
 
     //valon synth does not need to be in its own thread
-    p_valon = new SynthesizerHardware();
-    connect(p_valon,&Synthesizer::txFreqRead,this,&HardwareManager::valonTxFreqRead);
-    connect(p_valon,&Synthesizer::rxFreqRead,this,&HardwareManager::valonRxFreqRead);
-    d_hardwareList.append(qMakePair(p_valon,nullptr));
+    p_synth = new SynthesizerHardware();
+    connect(p_synth,&Synthesizer::txFreqRead,this,&HardwareManager::valonTxFreqRead);
+    connect(p_synth,&Synthesizer::rxFreqRead,this,&HardwareManager::valonRxFreqRead);
+    d_hardwareList.append(qMakePair(p_synth,nullptr));
 
     //pulse generator does not need to be in its own thread
     p_pGen = new PulseGeneratorHardware();
@@ -222,21 +222,21 @@ void HardwareManager::getTimeData()
 
 double HardwareManager::setValonTxFreq(const double d)
 {
-    if(p_valon->thread() == thread())
-        return p_valon->setTxFreq(d);
+    if(p_synth->thread() == thread())
+        return p_synth->setTxFreq(d);
 
     double out;
-    QMetaObject::invokeMethod(p_valon,"setTxFreq",Qt::BlockingQueuedConnection,Q_RETURN_ARG(double,out),Q_ARG(double,d));
+    QMetaObject::invokeMethod(p_synth,"setTxFreq",Qt::BlockingQueuedConnection,Q_RETURN_ARG(double,out),Q_ARG(double,d));
     return out;
 }
 
 double HardwareManager::setValonRxFreq(const double d)
 {
-    if(p_valon->thread() == thread())
-        return p_valon->setRxFreq(d);
+    if(p_synth->thread() == thread())
+        return p_synth->setRxFreq(d);
 
     double out;
-    QMetaObject::invokeMethod(p_valon,"setRxFreq",Qt::BlockingQueuedConnection,Q_RETURN_ARG(double,out),Q_ARG(double,d));
+    QMetaObject::invokeMethod(p_synth,"setRxFreq",Qt::BlockingQueuedConnection,Q_RETURN_ARG(double,out),Q_ARG(double,d));
     return out;
 }
 
