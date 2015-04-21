@@ -9,7 +9,7 @@ VirtualValonSynth::VirtualValonSynth(QObject *parent) : Synthesizer(parent)
 
     d_comm = new VirtualInstrument(d_key,this);
     connect(d_comm,&CommunicationProtocol::logMessage,this,&VirtualValonSynth::logMessage);
-    connect(d_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(this); });
+    connect(d_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
 }
 
 VirtualValonSynth::~VirtualValonSynth()

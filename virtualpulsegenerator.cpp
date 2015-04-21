@@ -9,7 +9,7 @@ VirtualPulseGenerator::VirtualPulseGenerator(QObject *parent) : PulseGenerator(p
 
     d_comm = new VirtualInstrument(d_key,this);
     connect(d_comm,&CommunicationProtocol::logMessage,this,&VirtualPulseGenerator::logMessage);
-    connect(d_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(this); });
+    connect(d_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
 }
 
 VirtualPulseGenerator::~VirtualPulseGenerator()

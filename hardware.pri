@@ -10,7 +10,8 @@ HEADERS += \
     $$PWD/pulsegenerator.h \
     $$PWD/communicationprotocol.h \
     $$PWD/virtualinstrument.h \
-    $$PWD/synthesizer.h
+    $$PWD/synthesizer.h \
+    $$PWD/flowcontroller.h
 
 SOURCES += \
     $$PWD/hardwaremanager.cpp \
@@ -22,4 +23,5 @@ SOURCES += \
     $$PWD/pulsegenerator.cpp \
     $$PWD/communicationprotocol.cpp \
     $$PWD/virtualinstrument.cpp \
-    $$PWD/synthesizer.cpp
+    $$PWD/synthesizer.cpp \
+    $$PWD/flowcontroller.cpp

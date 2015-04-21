@@ -9,8 +9,6 @@
 #include <QFormLayout>
 #include <QDialogButtonBox>
 
-#include "pulsegenerator.h"
-
 PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::PulseConfigWidget)

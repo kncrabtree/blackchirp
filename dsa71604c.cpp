@@ -11,7 +11,7 @@ Dsa71604c::Dsa71604c(QObject *parent) :
 
     d_comm = new TcpInstrument(d_key,d_subKey,this);
     connect(d_comm,&CommunicationProtocol::logMessage,this,&Dsa71604c::logMessage);
-    connect(d_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(this); });
+    connect(d_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
     d_socket = dynamic_cast<TcpInstrument*>(d_comm)->d_socket;
 }
 

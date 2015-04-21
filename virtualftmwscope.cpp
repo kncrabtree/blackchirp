@@ -13,7 +13,7 @@ VirtualFtmwScope::VirtualFtmwScope(QObject *parent) :
 
     d_comm = new VirtualInstrument(d_key,this);
     connect(d_comm,&CommunicationProtocol::logMessage,this,&VirtualFtmwScope::logMessage);
-    connect(d_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(this); });
+    connect(d_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
 }
 
 VirtualFtmwScope::~VirtualFtmwScope()

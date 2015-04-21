@@ -2,15 +2,6 @@
 
 FlowConfig::FlowConfig() : data(new FlowConfigData)
 {
-    for(int i=0; i<BC_FLOW_NUMCHANNELS; i++)
-    {
-        ChannelConfig cc;
-        cc.enabled = false;
-        cc.setpoint = 0.0;
-        cc.flow = 0.0;
-        cc.name = QString("");
-        data->flowList.append(cc);
-    }
 }
 
 FlowConfig::FlowConfig(const FlowConfig &rhs) : data(rhs.data)
@@ -40,9 +31,6 @@ QVariant FlowConfig::setting(int index, FlowConfig::Setting s) const
     case Setpoint:
         out = data->flowList.at(index).setpoint;
         break;
-    case Flow:
-        out = data->flowList.at(index).flow;
-        break;
     case Name:
         out = data->flowList.at(index).name;
         break;
@@ -51,14 +39,23 @@ QVariant FlowConfig::setting(int index, FlowConfig::Setting s) const
     return out;
 }
 
-double FlowConfig::pressure() const
-{
-    return data->pressure;
-}
 
 double FlowConfig::pressureSetPoint() const
 {
     return data->pressureSetpoint;
+}
+
+int FlowConfig::size() const
+{
+    return data->flowList.size();
+}
+
+void FlowConfig::add(double set, QString name)
+{
+    ChannelConfig cc;
+    cc.enabled = qFuzzyCompare(1.0+set,1.0);
+    cc.name = name;
+    data->flowList.append(cc);
 }
 
 void FlowConfig::set(int index, FlowConfig::Setting s, QVariant val)
@@ -72,19 +69,12 @@ void FlowConfig::set(int index, FlowConfig::Setting s, QVariant val)
         if(qFuzzyCompare(1.0+data->flowList.at(index).setpoint,1.0))
             data->flowList[index].enabled = false;
         break;
-    case Flow:
-        data->flowList[index].flow = val.toDouble();
-        break;
     case Name:
         data->flowList[index].name = val.toString();
         break;
     }
 }
 
-void FlowConfig::setPressure(double p)
-{
-    data->pressure = p;
-}
 
 void FlowConfig::setPressureSetpoint(double s)
 {

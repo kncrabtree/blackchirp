@@ -9,7 +9,7 @@ VirtualAwg::VirtualAwg(QObject *parent) : AWG(parent)
 
     d_comm = new VirtualInstrument(d_key,this);
     connect(d_comm,&CommunicationProtocol::logMessage,this,&VirtualAwg::logMessage);
-    connect(d_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(this); });
+    connect(d_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
 }
 
 VirtualAwg::~VirtualAwg()

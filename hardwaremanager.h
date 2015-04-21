@@ -6,13 +6,15 @@
 #include <QList>
 #include <QThread>
 
-#include "hardwareobject.h"
 #include "loghandler.h"
-#include "ftmwscope.h"
 #include "experiment.h"
-#include "synthesizer.h"
-#include "awg.h"
-#include "pulsegenerator.h"
+
+class HardwareObject;
+class FtmwScope;
+class AWG;
+class Synthesizer;
+class PulseGenerator;
+class FlowController;
 
 class HardwareManager : public QObject
 {
@@ -36,14 +38,23 @@ signals:
     void abortAcquisition();
     void experimentInitialized(Experiment);
     void endAcquisition();
-    void scopeShotAcquired(const QByteArray);
     void timeData(const QList<QPair<QString,QVariant>>);
     void readTimeData();
+
+    void scopeShotAcquired(const QByteArray);
+
     void valonTxFreqRead(double);
     void valonRxFreqRead(double);
+
     void pGenSettingUpdate(int,PulseGenConfig::Setting,QVariant);
     void pGenConfigUpdate(const PulseGenConfig);
     void pGenRepRateUpdate(double);
+
+    void flowUpdate(int,double);
+    void flowSetpointUpdate(int,double);
+    void pressureUpdate(double);
+    void pressureSetpointUpdate(double);
+    void pressureControlMode(bool);
 
 public slots:
     void initialize();
@@ -85,6 +96,7 @@ private:
     Synthesizer *p_synth;
     AWG *p_awg;
     PulseGenerator *p_pGen;
+    FlowController *p_flow;
 
 };
 

@@ -5,6 +5,7 @@
 #include <QList>
 
 #include "pulsegenconfig.h"
+#include "pulsegenerator.h"
 
 class QLabel;
 class QDoubleSpinBox;

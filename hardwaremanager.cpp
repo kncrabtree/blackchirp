@@ -1,5 +1,13 @@
 #include "hardwaremanager.h"
+
 #include <QSettings>
+
+#include "hardwareobject.h"
+#include "ftmwscope.h"
+#include "synthesizer.h"
+#include "awg.h"
+#include "pulsegenerator.h"
+#include "flowcontroller.h"
 
 HardwareManager::HardwareManager(QObject *parent) : QObject(parent)
 {
@@ -46,6 +54,16 @@ void HardwareManager::initialize()
     connect(p_pGen,&PulseGenerator::configUpdate,this,&HardwareManager::pGenConfigUpdate);
     connect(p_pGen,&PulseGenerator::repRateUpdate,this,&HardwareManager::pGenRepRateUpdate);
     d_hardwareList.append(qMakePair(p_pGen,nullptr));
+
+    p_flow = new FlowControllerHardware();
+    connect(p_flow,&FlowController::flowUpdate,this,&HardwareManager::flowUpdate);
+    connect(p_flow,&FlowController::flowSetpointUpdate,this,&HardwareManager::flowSetpointUpdate);
+    connect(p_flow,&FlowController::pressureUpdate,this,&HardwareManager::pressureUpdate);
+    connect(p_flow,&FlowController::pressureSetpointUpdate,this,&HardwareManager::pressureSetpointUpdate);
+    connect(p_flow,&FlowController::pressureControlMode,this,&HardwareManager::pressureControlMode);
+
+    QThread *flowThread = new QThread(this);
+    d_hardwareList.append(qMakePair(p_flow,flowThread));
 
 
 	//write arrays of the connected devices for use in the Hardware Settings menu
