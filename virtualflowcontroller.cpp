@@ -80,7 +80,7 @@ double VirtualFlowController::readFlowSetpoint(const int ch)
     if(ch < 0 || ch >= d_config.size())
         return -1.0;
 
-    emit flowUpdate(ch,d_config.setting(ch,FlowConfig::Setpoint).toDouble());
+    emit flowSetpointUpdate(ch,d_config.setting(ch,FlowConfig::Setpoint).toDouble());
     return d_config.setting(ch,FlowConfig::Setpoint).toDouble();
 }
 

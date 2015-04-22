@@ -57,6 +57,7 @@ void HardwareManager::initialize()
 
     p_flow = new FlowControllerHardware();
     connect(p_flow,&FlowController::flowUpdate,this,&HardwareManager::flowUpdate);
+    connect(p_flow,&FlowController::channelNameUpdate,this,&HardwareManager::flowNameUpdate);
     connect(p_flow,&FlowController::flowSetpointUpdate,this,&HardwareManager::flowSetpointUpdate);
     connect(p_flow,&FlowController::pressureUpdate,this,&HardwareManager::pressureUpdate);
     connect(p_flow,&FlowController::pressureSetpointUpdate,this,&HardwareManager::pressureSetpointUpdate);
@@ -280,6 +281,38 @@ void HardwareManager::setPGenRepRate(double r)
         p_pGen->setRepRate(r);
     else
         QMetaObject::invokeMethod(p_pGen,"setRepRate",Q_ARG(double,r));
+}
+
+void HardwareManager::setFlowChannelName(int index, QString name)
+{
+    if(p_flow->thread() == thread())
+        p_flow->setChannelName(index,name);
+    else
+        QMetaObject::invokeMethod(p_flow,"setChannelName",Q_ARG(int,index),Q_ARG(QString,name));
+}
+
+void HardwareManager::setFlowSetpoint(int index, double val)
+{
+    if(p_flow->thread() == thread())
+        p_flow->setFlowSetpoint(index,val);
+    else
+        QMetaObject::invokeMethod(p_flow,"setFlowSetpoint",Q_ARG(int,index),Q_ARG(double,val));
+}
+
+void HardwareManager::setPressureSetpoint(double val)
+{
+    if(p_flow->thread() == thread())
+        p_flow->setPressureSetpoint(val);
+    else
+        QMetaObject::invokeMethod(p_flow,"setPressureSetpoint",Q_ARG(double,val));
+}
+
+void HardwareManager::setPressureControlMode(bool en)
+{
+    if(p_flow->thread() == thread())
+        p_flow->setPressureControlMode(en);
+    else
+        QMetaObject::invokeMethod(p_flow,"setPressureControlMode",Q_ARG(bool,en));
 }
 
 void HardwareManager::checkStatus()

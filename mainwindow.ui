@@ -16,7 +16,7 @@
   <widget class="QWidget" name="centralWidget">
    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1">
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1,0,0,0,0">
+     <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1,0,0,0,0,0">
       <item>
        <widget class="QLabel" name="label">
         <property name="text">
@@ -113,6 +113,50 @@
        </layout>
       </item>
       <item>
+       <widget class="QGroupBox" name="flowStatusBox">
+        <property name="title">
+         <string>Flow Status</string>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_2">
+         <item row="0" column="1">
+          <widget class="QDoubleSpinBox" name="pressureDoubleSpinBox">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+           <property name="buttonSymbols">
+            <enum>QAbstractSpinBox::NoButtons</enum>
+           </property>
+           <property name="prefix">
+            <string/>
+           </property>
+           <property name="suffix">
+            <string> kTorr</string>
+           </property>
+           <property name="minimum">
+            <double>-100.000000000000000</double>
+           </property>
+           <property name="maximum">
+            <double>100.000000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="pressureLabel">
+           <property name="text">
+            <string>Pressure</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="Led" name="pressureLed" native="true"/>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
        <widget class="QGroupBox" name="pulseConfigBox">
         <property name="title">
          <string>Pulse Configuration</string>
@@ -188,18 +232,72 @@
        <attribute name="title">
         <string>Control</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_5">
+       <layout class="QVBoxLayout" name="verticalLayout_5" stretch="1,1">
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,1">
           <item>
-           <widget class="QGroupBox" name="groupBox">
+           <widget class="QGroupBox" name="gasControlBox">
             <property name="title">
-             <string>GroupBox</string>
+             <string>Gas Control</string>
             </property>
+            <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0" columnstretch="0,0,0">
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_7">
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <widget class="QDoubleSpinBox" name="pressureControlBox">
+               <property name="suffix">
+                <string> kTorr</string>
+               </property>
+               <property name="decimals">
+                <number>3</number>
+               </property>
+               <property name="maximum">
+                <double>10.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLabel" name="label_4">
+               <property name="text">
+                <string>Name</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="2">
+              <widget class="QPushButton" name="pressureControlButton">
+               <property name="text">
+                <string>Off</string>
+               </property>
+               <property name="checkable">
+                <bool>true</bool>
+               </property>
+               <property name="checked">
+                <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QLabel" name="label_3">
+               <property name="text">
+                <string>Setpoint</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </widget>
           </item>
           <item>
-           <widget class="QWidget" name="widget_2" native="true"/>
+           <widget class="QWidget" name="widget_2" native="true">
+            <zorder>gasControlBox</zorder>
+           </widget>
           </item>
          </layout>
         </item>
@@ -327,6 +425,12 @@
    <class>PulseConfigWidget</class>
    <extends>QWidget</extends>
    <header location="global">pulseconfigwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>Led</class>
+   <extends>QWidget</extends>
+   <header>led.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

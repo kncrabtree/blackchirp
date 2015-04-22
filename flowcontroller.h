@@ -15,6 +15,7 @@ public:
     FlowConfig config() const { return d_config; }
 
 signals:
+    void channelNameUpdate(int,QString);
     void flowUpdate(int,double);
     void pressureUpdate(double);
     void flowSetpointUpdate(int,double);

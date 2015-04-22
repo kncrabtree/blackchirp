@@ -51,6 +51,7 @@ signals:
     void pGenRepRateUpdate(double);
 
     void flowUpdate(int,double);
+    void flowNameUpdate(int,QString);
     void flowSetpointUpdate(int,double);
     void pressureUpdate(double);
     void pressureSetpointUpdate(double);
@@ -83,9 +84,15 @@ public slots:
 
     double setValonTxFreq(const double d);
     double setValonRxFreq(const double d);
+
     void setPGenSetting(int index, PulseGenConfig::Setting s, QVariant val);
     void setPGenConfig(const PulseGenConfig c);
     void setPGenRepRate(double r);
+
+    void setFlowChannelName(int index, QString name);
+    void setFlowSetpoint(int index, double val);
+    void setPressureSetpoint(double val);
+    void setPressureControlMode(bool en);
 
 private:
     QHash<QString,bool> d_status;

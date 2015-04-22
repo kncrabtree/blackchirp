@@ -6,6 +6,8 @@
 #include <QPushButton>
 #include <QCloseEvent>
 #include <QLabel>
+#include <QDoubleSpinBox>
+#include <QLineEdit>
 
 #include "communicationdialog.h"
 #include "ftmwconfigwidget.h"
@@ -17,6 +19,7 @@
 #include "batchmanager.h"
 #include "batchsingle.h"
 #include "led.h"
+#include "flowcontroller.h"
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -54,6 +57,7 @@ MainWindow::MainWindow(QWidget *parent) :
     gl->setColumnStretch(3,0);
     ui->pulseConfigBox->setLayout(gl);
 
+
     QThread *lhThread = new QThread(this);
     connect(lhThread,&QThread::finished,p_lh,&LogHandler::deleteLater);
     p_lh->moveToThread(lhThread);
@@ -69,8 +73,13 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::valonRxFreqRead,ui->valonRXDoubleSpinBox,&QDoubleSpinBox::setValue);
     connect(p_hwm,&HardwareManager::pGenConfigUpdate,ui->pulseConfigWidget,&PulseConfigWidget::newConfig);
     connect(p_hwm,&HardwareManager::pGenSettingUpdate,ui->pulseConfigWidget,&PulseConfigWidget::newSetting);
-    connect(p_hwm,&HardwareManager::pGenConfigUpdate,this,&MainWindow::updateLeds);
-    connect(p_hwm,&HardwareManager::pGenSettingUpdate,this,&MainWindow::updateLed);
+    connect(p_hwm,&HardwareManager::pGenConfigUpdate,this,&MainWindow::updatePulseLeds);
+    connect(p_hwm,&HardwareManager::pGenSettingUpdate,this,&MainWindow::updatePulseLed);
+    connect(p_hwm,&HardwareManager::flowNameUpdate,this,&MainWindow::updateFlowName);
+    connect(p_hwm,&HardwareManager::flowSetpointUpdate,this,&MainWindow::updateFlowSetpoint);
+    connect(p_hwm,&HardwareManager::pressureUpdate,ui->pressureDoubleSpinBox,&QDoubleSpinBox::setValue);
+    connect(p_hwm,&HardwareManager::pressureControlMode,this,&MainWindow::updatePressureControl);
+    connect(ui->pressureControlButton,&QPushButton::clicked,p_hwm,&HardwareManager::setPressureControlMode);
     connect(p_hwm,&HardwareManager::pGenRepRateUpdate,ui->pulseConfigWidget,&PulseConfigWidget::newRepRate);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeSetting,p_hwm,&HardwareManager::setPGenSetting);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeRepRate,p_hwm,&HardwareManager::setPGenRepRate);
@@ -80,6 +89,65 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(hwmThread,&QThread::finished,p_hwm,&HardwareManager::deleteLater);
     p_hwm->moveToThread(hwmThread);
     d_threadObjectList.append(qMakePair(hwmThread,p_hwm));
+
+    gl = static_cast<QGridLayout*>(ui->gasControlBox->layout());
+    QGridLayout *gl2 = static_cast<QGridLayout*>(ui->flowStatusBox->layout());
+    auto vc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
+    for(int i=0; i<BC_FLOW_NUMCHANNELS; i++)
+    {
+        FlowWidgets fw;
+        fw.nameEdit = new QLineEdit(this);
+        connect(fw.nameEdit,&QLineEdit::editingFinished,[=](){
+            QMetaObject::invokeMethod(p_hwm,"setFlowChannelName",Q_ARG(int,i),Q_ARG(QString,fw.nameEdit->text()));
+        });
+
+        fw.controlBox = new QDoubleSpinBox(this);
+        fw.controlBox->setSuffix(QString(" sccm"));
+        fw.controlBox->setRange(0.0,10000.0);
+        fw.controlBox->setSpecialValueText(QString("Off"));
+        fw.controlBox->setKeyboardTracking(false);
+        connect(fw.controlBox,vc,[=](double val){
+            QMetaObject::invokeMethod(p_hwm,"setFlowSetpoint",Q_ARG(int,i),Q_ARG(double,val));
+        });
+
+        fw.nameLabel = new QLabel(QString("Ch%1").arg(i+1),this);
+        fw.nameLabel->setMinimumWidth(QFontMetrics(QFont(QString("sans-serif"))).width(QString("MMMMMMMM")));
+        fw.nameLabel->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+
+        fw.led = new Led(this);
+
+        fw.displayBox = new QDoubleSpinBox(this);
+        fw.displayBox->setRange(-9999.9,9999.9);
+        fw.displayBox->setDecimals(1);
+        fw.displayBox->setSuffix(QString(" sccm"));
+        fw.displayBox->blockSignals(true);
+        fw.displayBox->setReadOnly(true);
+        fw.displayBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+
+        d_flowWidgets.append(fw);
+
+        gl->addWidget(new QLabel(QString::number(i+1),this),1+i,0,1,1);
+        gl->addWidget(fw.nameEdit,i+1,1,1,1);
+        gl->addWidget(fw.controlBox,i+1,2,1,1);
+
+        gl2->addWidget(fw.nameLabel,i+1,0,1,1,Qt::AlignRight);
+        gl2->addWidget(fw.displayBox,i+1,1,1,1);
+        gl2->addWidget(fw.led,i+1,2,1,1);
+    }
+    gl->addWidget(new QLabel(QString("Pressure"),this),2+BC_FLOW_NUMCHANNELS,1,1,1,Qt::AlignRight);
+    gl->addWidget(ui->pressureControlBox,2+BC_FLOW_NUMCHANNELS,2,1,1);
+    gl->addWidget(new QLabel(QString("Pressure Control Mode"),this),3+BC_FLOW_NUMCHANNELS,1,1,1,Qt::AlignRight);
+    gl->addWidget(ui->pressureControlButton,3+BC_FLOW_NUMCHANNELS,2,1,1);
+    gl->addItem(new QSpacerItem(10,10,QSizePolicy::Minimum,QSizePolicy::Expanding),4+BC_FLOW_NUMCHANNELS,0,1,3);
+
+    ui->pressureDoubleSpinBox->blockSignals(true);
+    connect(ui->pressureControlButton,&QPushButton::toggled,[=](bool en){
+        if(en)
+            ui->pressureControlButton->setText(QString("On"));
+        else
+            ui->pressureControlButton->setText(QString("Off"));
+    });
+
 
 
     p_am = new AcquisitionManager();
@@ -251,7 +319,7 @@ void MainWindow::launchRfConfigDialog()
     d.exec();
 }
 
-void MainWindow::updateLeds(const PulseGenConfig cc)
+void MainWindow::updatePulseLeds(const PulseGenConfig cc)
 {
     for(int i=0; i<d_ledList.size() && i < cc.size(); i++)
     {
@@ -260,7 +328,7 @@ void MainWindow::updateLeds(const PulseGenConfig cc)
     }
 }
 
-void MainWindow::updateLed(int index, PulseGenConfig::Setting s, QVariant val)
+void MainWindow::updatePulseLed(int index, PulseGenConfig::Setting s, QVariant val)
 {
     if(index < 0 || index >= d_ledList.size())
         return;
@@ -275,6 +343,58 @@ void MainWindow::updateLed(int index, PulseGenConfig::Setting s, QVariant val)
     default:
         break;
     }
+}
+
+void MainWindow::updateFlow(int ch, double val)
+{
+    if(ch < 0 || ch >= d_flowWidgets.size())
+        return;
+
+    d_flowWidgets.at(ch).displayBox->setValue(val);
+}
+
+void MainWindow::updateFlowName(int ch, QString name)
+{
+    if(ch < 0 || ch >= d_flowWidgets.size())
+        return;
+
+    if(name.isEmpty())
+        d_flowWidgets.at(ch).nameLabel->setText(QString("Ch%1").arg(ch+1));
+    else
+    {
+        d_flowWidgets.at(ch).nameLabel->setText(name.mid(0,9));
+        d_flowWidgets.at(ch).nameEdit->blockSignals(true);
+        d_flowWidgets.at(ch).nameEdit->setText(name);
+        d_flowWidgets.at(ch).nameEdit->blockSignals(false);
+    }
+}
+
+void MainWindow::updateFlowSetpoint(int ch, double val)
+{
+    if(ch < 0 || ch >= d_flowWidgets.size())
+        return;
+
+    d_flowWidgets.at(ch).controlBox->blockSignals(true);
+    d_flowWidgets.at(ch).controlBox->setValue(val);
+    d_flowWidgets.at(ch).controlBox->blockSignals(false);
+
+    if(qFuzzyCompare(1.0,val+1.0))
+        d_flowWidgets.at(ch).led->setState(false);
+    else
+        d_flowWidgets.at(ch).led->setState(true);
+}
+
+void MainWindow::updatePressureSetpoint(double val)
+{
+    ui->pressureControlBox->blockSignals(true);
+    ui->pressureControlBox->setValue(val);
+    ui->pressureControlBox->blockSignals(false);
+}
+
+void MainWindow::updatePressureControl(bool en)
+{
+    ui->pressureControlButton->setChecked(en);
+    ui->pressureLed->setState(en);
 }
 
 void MainWindow::configureUi(MainWindow::ProgramState s)
