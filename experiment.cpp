@@ -75,6 +75,11 @@ PulseGenConfig Experiment::pGenConfig() const
     return data->pGenCfg;
 }
 
+FlowConfig Experiment::flowConfig() const
+{
+    return data->flowCfg;
+}
+
 bool Experiment::isComplete() const
 {
     //check each sub expriment!
@@ -120,6 +125,7 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
         out.unite(ftmwConfig().headerMap());
 
     out.unite(pGenConfig().headerMap());
+    out.unite(flowConfig().headerMap());
 
     return out;
 }
@@ -241,6 +247,11 @@ void Experiment::resetFids()
 void Experiment::setPulseGenConfig(const PulseGenConfig c)
 {
     data->pGenCfg = c;
+}
+
+void Experiment::setFlowConfig(const FlowConfig c)
+{
+    data->flowCfg = c;
 }
 
 void Experiment::setErrorString(const QString str)

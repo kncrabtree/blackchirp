@@ -71,6 +71,7 @@ void FlowConfig::add(double set, QString name)
     ChannelConfig cc;
     cc.enabled = !(qFuzzyCompare(1.0+set,1.0));
     cc.name = name;
+    cc.setpoint = set;
     data->configList.append(cc);
     data->flowList.append(0.0);
 }
@@ -114,5 +115,23 @@ void FlowConfig::setPressureSetpoint(double s)
 void FlowConfig::setPressureControlMode(bool en)
 {
     data->pressureControlMode = en;
+}
+
+QMap<QString, QPair<QVariant, QString> > FlowConfig::headerMap() const
+{
+    QMap<QString, QPair<QVariant, QString> > out;
+    out.insert(QString("FlowConfigPressureControlMode"),qMakePair(pressureControlMode(),QString("")));
+    out.insert(QString("FlowConfigPressureSetpoint"),qMakePair(QString::number(pressureSetpoint(),'f',3),QString("kTorr")));
+    for(int i=0;i<data->configList.size(); i++)
+    {
+        if(data->configList.at(i).enabled)
+        {
+            out.insert(QString("FlowConfigChannel.%1.Name").arg(i),qMakePair(data->configList.at(i).name,QString("")));
+            out.insert(QString("FlowConfigChannel.%1.Setpoint").arg(i),
+                       qMakePair(QString::number(data->configList.at(i).setpoint,'f',2),QString("sccm")));
+        }
+    }
+
+    return out;
 }
 

@@ -9,6 +9,7 @@
 #include "ftmwconfig.h"
 #include "loghandler.h"
 #include "pulsegenconfig.h"
+#include "flowconfig.h"
 
 class ExperimentData;
 
@@ -30,6 +31,7 @@ public:
     bool isDummy() const;
     FtmwConfig ftmwConfig() const;
     PulseGenConfig pGenConfig() const;
+    FlowConfig flowConfig() const;
     bool isComplete() const;
     bool hardwareSuccess() const;
     QString errorString() const;
@@ -54,6 +56,7 @@ public:
     void overrideTargetShots(const int target);
     void resetFids();
     void setPulseGenConfig(const PulseGenConfig c);
+    void setFlowConfig(const FlowConfig c);
     void setErrorString(const QString str);
     void addTimeData(const QList<QPair<QString, QVariant> > dataList);
     void addTimeStamp();
@@ -88,6 +91,7 @@ public:
 
     FtmwConfig ftmwCfg;
     PulseGenConfig pGenCfg;
+    FlowConfig flowCfg;
     QMap<QString,QList<QVariant>> timeDataMap;
 };
 

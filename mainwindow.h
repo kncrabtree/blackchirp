@@ -81,6 +81,7 @@ private:
 
     void configureUi(ProgramState s);
     void startBatch(BatchManager *bm, bool sleepWhenDone = false);
+    FlowConfig getFlowConfig();
 
     ProgramState d_state;
 

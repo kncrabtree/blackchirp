@@ -216,6 +216,8 @@ void MainWindow::startExperiment()
 
     ExperimentWizard wiz(this);
     wiz.setPulseConfig(ui->pulseConfigWidget->getConfig());
+    wiz.setFlowConfig(getFlowConfig());
+
     if(wiz.exec() != QDialog::Accepted)
         return;
 
@@ -482,6 +484,17 @@ void MainWindow::startBatch(BatchManager *bm, bool sleepWhenDone)
     configureUi(Acquiring);
     bm->moveToThread(d_batchThread);
     d_batchThread->start();
+}
+
+FlowConfig MainWindow::getFlowConfig()
+{
+    FlowConfig cfg;
+    cfg.setPressureControlMode(ui->pressureControlButton->isChecked());
+    cfg.setPressureSetpoint(ui->pressureControlBox->value());
+    for(int i=0; i<d_flowWidgets.size(); i++)
+        cfg.add(d_flowWidgets.at(i).controlBox->value(),d_flowWidgets.at(i).nameEdit->text());
+
+    return cfg;
 }
 
 void MainWindow::closeEvent(QCloseEvent *ev)

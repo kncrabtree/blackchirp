@@ -42,6 +42,8 @@ public:
     void setPressureSetpoint(double s);
     void setPressureControlMode(bool en);
 
+    QMap<QString, QPair<QVariant,QString>> headerMap() const;
+
 private:
     QSharedDataPointer<FlowConfigData> data;
 };

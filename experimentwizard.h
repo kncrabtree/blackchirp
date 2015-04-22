@@ -27,6 +27,7 @@ public:
     };
 
     void setPulseConfig(const PulseGenConfig c);
+    void setFlowConfig(const FlowConfig c);
     Experiment getExperiment() const;
     void saveToSettings();
 
@@ -36,6 +37,7 @@ private:
     WizardFtmwConfigPage *p_ftmwConfigPage;
     WizardSummaryPage *p_summaryPage;
     WizardPulseConfigPage *p_pulseConfigPage;
+    FlowConfig d_flowConfig;
 };
 
 #endif // EXPERIMENTWIZARD_H

@@ -28,6 +28,11 @@ void ExperimentWizard::setPulseConfig(const PulseGenConfig c)
     p_pulseConfigPage->setConfig(c);
 }
 
+void ExperimentWizard::setFlowConfig(const FlowConfig c)
+{
+    d_flowConfig = c;
+}
+
 Experiment ExperimentWizard::getExperiment() const
 {
     Experiment exp;
@@ -41,6 +46,7 @@ Experiment ExperimentWizard::getExperiment() const
 
     exp.setFtmwConfig(ftc);
     exp.setPulseGenConfig(p_pulseConfigPage->getConfig());
+    exp.setFlowConfig(d_flowConfig);
 
     return exp;
 }
