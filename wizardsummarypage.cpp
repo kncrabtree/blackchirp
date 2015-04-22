@@ -1,7 +1,8 @@
 #include "wizardsummarypage.h"
 
 #include <QVBoxLayout>
-#include <QPlainTextEdit>
+#include <QTableWidget>
+#include <QHeaderView>
 
 #include "experimentwizard.h"
 
@@ -13,10 +14,19 @@ WizardSummaryPage::WizardSummaryPage(QWidget *parent) :
     setSubTitle(QString("The settings shown below will be used for this experiment. If anything is incorrect, use the back button to make changes."));
 
     QVBoxLayout *vbl = new QVBoxLayout(this);
-    p_pte = new QPlainTextEdit(this);
-    p_pte->setReadOnly(true);
+    p_tw = new QTableWidget(this);
+    p_tw->setColumnCount(3);
+    p_tw->setEditTriggers(QTableWidget::NoEditTriggers);
+    p_tw->setSelectionBehavior(QAbstractItemView::SelectRows);
 
-    vbl->addWidget(p_pte);
+    p_tw->setHorizontalHeaderItem(0,new QTableWidgetItem(QString("Key")));
+    p_tw->setHorizontalHeaderItem(1,new QTableWidgetItem(QString("Value")));
+    p_tw->setHorizontalHeaderItem(2,new QTableWidgetItem(QString("Unit")));
+    p_tw->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
+
+    vbl->addWidget(p_tw);
+    setLayout(vbl);
 
 }
 
@@ -28,20 +38,27 @@ WizardSummaryPage::~WizardSummaryPage()
 
 void WizardSummaryPage::initializePage()
 {
-    p_pte->clear();
+    p_tw->clearContents();
 
     ExperimentWizard *w = static_cast<ExperimentWizard*>(wizard());
     Experiment e = w->getExperiment();
 
     auto header = e.headerMap();
     auto it = header.constBegin();
+    p_tw->setRowCount(header.size());
+    int i = 0;
     while(it != header.constEnd())
     {
-        p_pte->appendPlainText(QString("%1\t%2\t%3\n").arg(it.key()).arg(it.value().first.toString()).arg(it.value().second));
+        p_tw->setItem(i,0,new QTableWidgetItem(it.key()));
+        p_tw->setItem(i,1,new QTableWidgetItem(it.value().first.toString()));
+        p_tw->setItem(i,2,new QTableWidgetItem(it.value().second));
+
         it++;
+        i++;
     }
-    p_pte->moveCursor(QTextCursor::Start);
-    p_pte->ensureCursorVisible();
+//    p_pte->moveCursor(QTextCursor::Start);
+//    p_pte->ensureCursorVisible();
+    p_tw->resizeColumnsToContents();
 }
 
 int WizardSummaryPage::nextId() const

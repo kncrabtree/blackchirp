@@ -3,7 +3,7 @@
 
 #include <QWizardPage>
 
-class QPlainTextEdit;
+class QTableWidget;
 
 class WizardSummaryPage : public QWizardPage
 {
@@ -17,7 +17,7 @@ public:
     int nextId() const;
 
 private:
-    QPlainTextEdit *p_pte;
+    QTableWidget *p_tw;
 };
 
 #endif // WIZARDSUMMARYPAGE_H
