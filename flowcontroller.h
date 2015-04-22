@@ -3,6 +3,8 @@
 
 #include "hardwareobject.h"
 
+#include <QTimer>
+
 #include "flowconfig.h"
 
 class FlowController : public HardwareObject
@@ -35,12 +37,20 @@ public slots:
     virtual void setPressureControlMode(bool enabled) =0;
     virtual bool readPressureControlMode() =0;
 
+    void updateInterval();
+    virtual void readNext();
+
+    // HardwareObject interface
+    void readTimeData();
 
 protected:
     FlowConfig d_config;
-    bool d_pressureControlMode;
+    QTimer *p_readTimer;
+    int d_nextRead;
 
     void readAll();
+
+
 };
 
 #if BC_FLOWCONTROLLER == 1

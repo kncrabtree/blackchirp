@@ -32,6 +32,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->valonTXDoubleSpinBox->blockSignals(true);
     ui->valonRXDoubleSpinBox->blockSignals(true);
 
+    auto vc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
+
     QLabel *statusLabel = new QLabel(this);
     connect(this,&MainWindow::statusMessage,statusLabel,&QLabel::setText);
     ui->statusBar->addWidget(statusLabel);
@@ -75,11 +77,14 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::pGenSettingUpdate,ui->pulseConfigWidget,&PulseConfigWidget::newSetting);
     connect(p_hwm,&HardwareManager::pGenConfigUpdate,this,&MainWindow::updatePulseLeds);
     connect(p_hwm,&HardwareManager::pGenSettingUpdate,this,&MainWindow::updatePulseLed);
+    connect(p_hwm,&HardwareManager::flowUpdate,this,&MainWindow::updateFlow);
     connect(p_hwm,&HardwareManager::flowNameUpdate,this,&MainWindow::updateFlowName);
     connect(p_hwm,&HardwareManager::flowSetpointUpdate,this,&MainWindow::updateFlowSetpoint);
     connect(p_hwm,&HardwareManager::pressureUpdate,ui->pressureDoubleSpinBox,&QDoubleSpinBox::setValue);
+    connect(p_hwm,&HardwareManager::pressureSetpointUpdate,this,&MainWindow::updatePressureSetpoint);
     connect(p_hwm,&HardwareManager::pressureControlMode,this,&MainWindow::updatePressureControl);
     connect(ui->pressureControlButton,&QPushButton::clicked,p_hwm,&HardwareManager::setPressureControlMode);
+    connect(ui->pressureControlBox,vc,p_hwm,&HardwareManager::setPressureSetpoint);
     connect(p_hwm,&HardwareManager::pGenRepRateUpdate,ui->pulseConfigWidget,&PulseConfigWidget::newRepRate);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeSetting,p_hwm,&HardwareManager::setPGenSetting);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeRepRate,p_hwm,&HardwareManager::setPGenRepRate);
@@ -92,7 +97,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     gl = static_cast<QGridLayout*>(ui->gasControlBox->layout());
     QGridLayout *gl2 = static_cast<QGridLayout*>(ui->flowStatusBox->layout());
-    auto vc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
     for(int i=0; i<BC_FLOW_NUMCHANNELS; i++)
     {
         FlowWidgets fw;

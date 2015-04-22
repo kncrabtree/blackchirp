@@ -1,8 +1,16 @@
 #include "flowcontroller.h"
 
-FlowController::FlowController(QObject *parent) : HardwareObject(parent), d_pressureControlMode(false)
+FlowController::FlowController(QObject *parent) : HardwareObject(parent), d_nextRead(BC_FLOW_NUMCHANNELS)
 {
     d_key = QString("flowController");
+
+    p_readTimer = new QTimer(this);
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(d_key);
+    int interval = s.value(QString("pollIntervalMs"),333).toInt();
+    s.endGroup();
+    p_readTimer->setInterval(interval);
+    connect(p_readTimer,&QTimer::timeout,this,&FlowController::readNext);
 }
 
 FlowController::~FlowController()
@@ -27,26 +35,53 @@ void FlowController::setChannelName(const int ch, const QString name)
     s.endGroup();
 }
 
-void FlowController::readAll()
+void FlowController::updateInterval()
 {
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
+    int interval = s.value(QString("pollIntervalMs"),333).toInt();
+    s.endGroup();
+    p_readTimer->setInterval(interval);
+}
 
-    s.beginReadArray(QString("channels"));
+void FlowController::readNext()
+{
+    if(d_nextRead < 0 || d_nextRead >= d_config.size())
+    {
+        readPressure();
+        d_nextRead = 0;
+    }
+    else
+    {
+        readFlow(d_nextRead);
+        d_nextRead++;
+    }
+}
+
+void FlowController::readAll()
+{
     for(int i=0; i<d_config.size(); i++)
     {
-        s.setArrayIndex(i);
-        d_config.set(i,FlowConfig::Name,s.value(QString("name"),QString("Ch%1").arg(i+1)));
         emit channelNameUpdate(i,d_config.setting(i,FlowConfig::Name).toString());
-
         readFlowSetpoint(i);
         readFlow(i);
     }
-    s.endArray();
-    s.endGroup();
 
     readPressureSetpoint();
     readPressure();
     readPressureControlMode();
 }
 
+
+
+void FlowController::readTimeData()
+{
+    QList<QPair<QString,QVariant>> out;
+    out.append(qMakePair(QString("Pressure"),d_config.pressure()));
+    for(int i=0; i<d_config.size(); i++)
+    {
+        if(d_config.setting(i,FlowConfig::Enabled).toBool())
+            out.append(qMakePair(QString("Flow.%1").arg(i),d_config.setting(i,FlowConfig::Flow)));
+    }
+    emit timeDataRead(out);
+}
