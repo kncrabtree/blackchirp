@@ -24,14 +24,14 @@ signals:
     void batchComplete(bool aborted);
 
 public slots:
-    void experimentComplete(Experiment exp);
+    void experimentComplete(const Experiment exp);
     void beginNextExperiment();
 
 protected:
     BatchType d_type;
 
     virtual void writeReport() =0;
-    virtual void processExperiment(Experiment exp) =0;
+    virtual void processExperiment(const Experiment exp) =0;
     virtual Experiment nextExperiment() =0;
     virtual bool isComplete() =0;
 };

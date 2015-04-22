@@ -22,8 +22,6 @@ public:
     ~Experiment();
 
     int number() const;
-    QList<QPair<double,QString> > gasSetpoints() const;
-    QList<QPair<double,QString> > pressureSetpoints() const;
     QDateTime startTime() const;
     int timeDataInterval() const;
     bool isInitialized() const;
@@ -41,10 +39,6 @@ public:
     LogHandler::MessageCode endLogMessageCode() const;
     QMap<QString, QPair<QVariant,QString>> headerMap() const;
 
-    void setGasSetpoints(const QList<QPair<double,QString> > list);
-    void addGasSetpoint(const double setPoint, const QString name);
-    void setPressureSetpoints(const QList<QPair<double,QString> > list);
-    void addPressureSetpoint(const double setPoint, const QString name);
     void setTimeDataInterval(const int t);
     void setInitialized();
     void setAborted();
@@ -76,8 +70,6 @@ public:
     ExperimentData() : number(0), timeDataInterval(300), isInitialized(false), isAborted(false), isDummy(false), hardwareSuccess(true), endLogMessageCode(LogHandler::Highlight) {}
 
     int number;
-    QList<QPair<double,QString> > gasSetpoints;
-    QList<QPair<double,QString> > pressureSetpoints;
     QDateTime startTime;
     int timeDataInterval;
     bool isInitialized;

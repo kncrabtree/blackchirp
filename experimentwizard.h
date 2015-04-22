@@ -9,6 +9,7 @@
 #include "wizardsummarypage.h"
 #include "wizardpulseconfigpage.h"
 #include "experiment.h"
+#include "batchsingle.h"
 
 
 class ExperimentWizard : public QWizard
@@ -29,6 +30,7 @@ public:
     void setPulseConfig(const PulseGenConfig c);
     void setFlowConfig(const FlowConfig c);
     Experiment getExperiment() const;
+    BatchManager *getBatchManager() const;
     void saveToSettings();
 
 private:

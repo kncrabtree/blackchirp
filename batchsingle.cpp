@@ -1,6 +1,6 @@
 #include "batchsingle.h"
 
-BatchSingle::BatchSingle(Experiment e) : BatchManager(BatchManager::SingleExperiment), d_exp(e), d_complete(false)
+BatchSingle::BatchSingle(const Experiment e) : BatchManager(BatchManager::SingleExperiment), d_exp(e), d_complete(false)
 {
 }
 
@@ -16,7 +16,7 @@ void BatchSingle::writeReport()
     //no report to write
 }
 
-void BatchSingle::processExperiment(Experiment exp)
+void BatchSingle::processExperiment(const Experiment exp)
 {
     //no processing needs to be done
     Q_UNUSED(exp)

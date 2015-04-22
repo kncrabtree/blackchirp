@@ -17,7 +17,6 @@
 #include "hardwaremanager.h"
 #include "acquisitionmanager.h"
 #include "batchmanager.h"
-#include "batchsingle.h"
 #include "led.h"
 #include "flowcontroller.h"
 
@@ -221,14 +220,11 @@ void MainWindow::startExperiment()
     if(wiz.exec() != QDialog::Accepted)
         return;
 
-    Experiment e = wiz.getExperiment();
+
     wiz.saveToSettings();
+    BatchManager *bm = wiz.getBatchManager();
 
-    e.setTimeDataInterval(5);
-
-    BatchSingle *bs = new BatchSingle(e);
-
-    startBatch(bs);
+    startBatch(bm);
 }
 
 void MainWindow::batchComplete(bool aborted)

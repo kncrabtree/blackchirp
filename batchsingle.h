@@ -6,13 +6,13 @@
 class BatchSingle : public BatchManager
 {
 public:
-    BatchSingle(Experiment e);
+    BatchSingle(const Experiment e);
     ~BatchSingle();
 
     // BatchManager interface
 protected:
     void writeReport();
-    void processExperiment(Experiment exp);
+    void processExperiment(const Experiment exp);
     Experiment nextExperiment();
     bool isComplete();
 

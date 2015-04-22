@@ -30,16 +30,6 @@ int Experiment::number() const
     return data->number;
 }
 
-QList<QPair<double, QString> > Experiment::gasSetpoints() const
-{
-    return data->gasSetpoints;
-}
-
-QList<QPair<double, QString> > Experiment::pressureSetpoints() const
-{
-    return data->pressureSetpoints;
-}
-
 QDateTime Experiment::startTime() const
 {
     return data->startTime;
@@ -120,7 +110,8 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
 {
     QMap<QString, QPair<QVariant, QString> > out;
 
-    //decide what goes here
+    out.insert(QString("AuxDataInterval"),qMakePair(data->timeDataInterval,QString("s")));
+
     if(ftmwConfig().isEnabled())
         out.unite(ftmwConfig().headerMap());
 
@@ -128,26 +119,6 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
     out.unite(flowConfig().headerMap());
 
     return out;
-}
-
-void Experiment::setGasSetpoints(const QList<QPair<double, QString> > list)
-{
-    data->gasSetpoints = list;
-}
-
-void Experiment::addGasSetpoint(const double setPoint, const QString name)
-{
-    data->gasSetpoints.append(qMakePair(setPoint,name));
-}
-
-void Experiment::setPressureSetpoints(const QList<QPair<double, QString> > list)
-{
-    data->pressureSetpoints = list;
-}
-
-void Experiment::addPressureSetpoint(const double setPoint, const QString name)
-{
-    data->pressureSetpoints.append(qMakePair(setPoint,name));
 }
 
 void Experiment::setTimeDataInterval(const int t)

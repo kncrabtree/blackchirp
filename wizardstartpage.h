@@ -4,6 +4,7 @@
 #include <QWizardPage>
 
 class QCheckBox;
+class QSpinBox;
 
 class WizardStartPage : public QWizardPage
 {
@@ -18,9 +19,11 @@ public:
 
     bool ftmwEnabled() const;
     bool lifEnabled() const;
+    int auxDataInterval() const;
 
 private:
     QCheckBox *p_ftmw, *p_lif;
+    QSpinBox *p_auxDataIntervalBox;
 };
 
 #endif // WIZARDSTARTPAGE_H

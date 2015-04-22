@@ -11,7 +11,7 @@ BatchManager::~BatchManager()
 
 }
 
-void BatchManager::experimentComplete(Experiment exp)
+void BatchManager::experimentComplete(const Experiment exp)
 {
     if(!exp.isInitialized())
     {

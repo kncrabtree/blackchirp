@@ -47,8 +47,14 @@ Experiment ExperimentWizard::getExperiment() const
     exp.setFtmwConfig(ftc);
     exp.setPulseGenConfig(p_pulseConfigPage->getConfig());
     exp.setFlowConfig(d_flowConfig);
+    exp.setTimeDataInterval(p_startPage->auxDataInterval());
 
     return exp;
+}
+
+BatchManager *ExperimentWizard::getBatchManager() const
+{
+    return new BatchSingle(getExperiment());
 }
 
 void ExperimentWizard::saveToSettings()
