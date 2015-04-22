@@ -7,6 +7,7 @@
 #include <QActionGroup>
 #include <QMouseEvent>
 #include <QGridLayout>
+#include <QApplication>
 
 #include <qwt6/qwt_date.h>
 #include <qwt6/qwt_plot_curve.h>
@@ -119,7 +120,28 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
         md.name = list.at(i).first;
 
         //Create curve
-        QwtPlotCurve *c = new QwtPlotCurve(md.name);
+        //Change name if it is a flow with a known name
+        QString realName = md.name;
+        if(realName.startsWith(QString("Flow")))
+        {
+            QStringList l = realName.split(QString("."));
+            if(l.size() > 1)
+            {
+                bool ok = false;
+                int index = l.at(1).trimmed().toInt(&ok);
+                if(ok)
+                {
+                    QSettings s2(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+                    s2.beginGroup(QString("flowController"));
+                    s2.beginReadArray(QString("channels"));
+                    s2.setArrayIndex(index);
+                    realName = s2.value(QString("name"),md.name).toString();
+                    s2.endArray();
+                    s2.endGroup();
+                }
+            }
+        }
+        QwtPlotCurve *c = new QwtPlotCurve(realName);
         c->setRenderHint(QwtPlotItem::RenderAntialiased);
         md.curve = c;
         c->setSamples(md.data);
