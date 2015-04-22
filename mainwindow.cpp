@@ -410,6 +410,8 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
+        ui->gasControlBox->setEnabled(false);
+        ui->pulseConfigWidget->setEnabled(false);
         break;
     case Disconnected:
         ui->actionAbort->setEnabled(false);
@@ -417,6 +419,8 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionCommunication->setEnabled(true);
+        ui->gasControlBox->setEnabled(false);
+        ui->pulseConfigWidget->setEnabled(false);
         break;
     case Paused:
         ui->actionAbort->setEnabled(true);
@@ -424,6 +428,8 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(true);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
+        ui->gasControlBox->setEnabled(false);
+        ui->pulseConfigWidget->setEnabled(false);
         break;
     case Acquiring:
         ui->actionAbort->setEnabled(true);
@@ -431,6 +437,8 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
+        ui->gasControlBox->setEnabled(false);
+        ui->pulseConfigWidget->setEnabled(false);
         break;
     case Idle:
     default:
@@ -439,6 +447,8 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(true);
         ui->actionCommunication->setEnabled(true);
+        ui->gasControlBox->setEnabled(true);
+        ui->pulseConfigWidget->setEnabled(true);
         break;
     }
 
