@@ -5,7 +5,8 @@ SOURCES += loghandler.cpp \
     $$PWD/ftmwconfig.cpp \
     $$PWD/chirpconfig.cpp \
     $$PWD/pulsegenconfig.cpp \
-    $$PWD/flowconfig.cpp
+    $$PWD/flowconfig.cpp \
+    $$PWD/lifconfig.cpp
 
 HEADERS += loghandler.h \
     $$PWD/fid.h \
@@ -15,7 +16,8 @@ HEADERS += loghandler.h \
     $$PWD/gpuaverager.h \
     $$PWD/chirpconfig.h \
     $$PWD/pulsegenconfig.h \
-    $$PWD/flowconfig.h
+    $$PWD/flowconfig.h \
+    $$PWD/lifconfig.h
 
 gpu-cuda {
     OTHER_FILES += $$PWD/gpuaverager.cu
