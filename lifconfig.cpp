@@ -293,20 +293,15 @@ QMap<QString, QPair<QVariant, QString> > LifConfig::headerMap() const
     return out;
 }
 
-QPoint LifConfig::lastUpdatedPointIndices() const
-{
-    return data->lastUpdatedPoint;
-}
-
-LifConfig::LifPoint LifConfig::lastUpdatedLifPoint() const
+QPair<QPoint, LifConfig::LifPoint> LifConfig::lastUpdatedLifPoint() const
 {
     if(data->lastUpdatedPoint.x() < data->lifData.size())
     {
         if(data->lastUpdatedPoint.y() < data->lifData.at(data->lastUpdatedPoint.x()).size())
-            return data->lifData.at(data->lastUpdatedPoint.x()).at(data->lastUpdatedPoint.y());
+            return qMakePair(data->lastUpdatedPoint,data->lifData.at(data->lastUpdatedPoint.x()).at(data->lastUpdatedPoint.y()));
     }
 
-    return LifPoint();
+    return qMakePair(QPoint(-1,-1),LifPoint());
 
 }
 

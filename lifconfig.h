@@ -88,8 +88,7 @@ public:
     QVector<QPointF> spectrum(int delayIndex) const;
     LifTrace parseWaveform(const QByteArray b) const;
     QMap<QString,QPair<QVariant,QString> > headerMap() const;
-    QPoint lastUpdatedPointIndices() const;
-    LifPoint lastUpdatedLifPoint() const;
+    QPair<QPoint,LifPoint> lastUpdatedLifPoint() const;
 
     bool setEnabled();
     bool validate();
