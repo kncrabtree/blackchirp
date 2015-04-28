@@ -95,6 +95,10 @@ public:
     bool validate();
     void setLifGate(int start, int end);
     void setRefGate(int start, int end);
+    void setDelayParameters(double start, double stop, double step);
+    void setFrequencyParameters(double start, double stop, double step);
+    void setOrder(LifConfig::ScanOrder o);
+    void setShotsPerPoint(int pts);
     bool addWaveform(const LifTrace t);
 
 

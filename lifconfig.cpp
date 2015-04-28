@@ -210,6 +210,30 @@ void LifConfig::setRefGate(int start, int end)
     data->refGateEndPoint = end;
 }
 
+void LifConfig::setDelayParameters(double start, double stop, double step)
+{
+    data->delayStartUs = start;
+    data->delayEndUs = stop;
+    data->delayStepUs = step;
+}
+
+void LifConfig::setFrequencyParameters(double start, double stop, double step)
+{
+    data->frequencyStart = start;
+    data->frequencyEnd = stop;
+    data->frequencyStep = step;
+}
+
+void LifConfig::setOrder(LifConfig::ScanOrder o)
+{
+    data->order = o;
+}
+
+void LifConfig::setShotsPerPoint(int pts)
+{
+    data->shotsPerPoint = pts;
+}
+
 LifTrace LifConfig::parseWaveform(const QByteArray b) const
 {
     if(!data->refEnabled)
