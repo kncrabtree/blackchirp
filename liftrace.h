@@ -16,6 +16,7 @@ class LifTraceData;
 class LifTrace
 {
 public:
+    LifTrace();
     explicit LifTrace(const LifConfig::LifScopeConfig c, const QByteArray b);
     LifTrace(const LifTrace &);
     LifTrace &operator=(const LifTrace &);
@@ -28,6 +29,8 @@ public:
     qint64 lifAtRaw(int i) const;
     qint64 refAtRaw(int i) const;
     int count() const;
+    int size() const;
+    bool hasRefData() const;
 
     void add(const LifTrace &other);
     void rollAvg(const LifTrace &other, int numShots);

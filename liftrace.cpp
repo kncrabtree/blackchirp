@@ -1,6 +1,10 @@
 #include "liftrace.h"
 
-LifTrace::LifTrace(const LifConfig::LifScopeConfig c, const QByteArray b)
+LifTrace::LifTrace() : data(new LifTraceData)
+{
+}
+
+LifTrace::LifTrace(const LifConfig::LifScopeConfig c, const QByteArray b) : data(new LifTraceData)
 {
     //reference channel is used to normalize to pulse energy
     //if active, must be second channel
@@ -158,6 +162,16 @@ qint64 LifTrace::refAtRaw(int i) const
 int LifTrace::count() const
 {
     return data->count;
+}
+
+int LifTrace::size() const
+{
+    return data->lifData.size();
+}
+
+bool LifTrace::hasRefData() const
+{
+    return !data->refData.isEmpty();
 }
 
 void LifTrace::add(const LifTrace &other)
