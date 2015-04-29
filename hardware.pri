@@ -11,7 +11,8 @@ HEADERS += \
     $$PWD/communicationprotocol.h \
     $$PWD/virtualinstrument.h \
     $$PWD/synthesizer.h \
-    $$PWD/flowcontroller.h
+    $$PWD/flowcontroller.h \
+    $$PWD/lifscope.h
 
 SOURCES += \
     $$PWD/hardwaremanager.cpp \
@@ -24,4 +25,5 @@ SOURCES += \
     $$PWD/communicationprotocol.cpp \
     $$PWD/virtualinstrument.cpp \
     $$PWD/synthesizer.cpp \
-    $$PWD/flowcontroller.cpp
+    $$PWD/flowcontroller.cpp \
+    $$PWD/lifscope.cpp
