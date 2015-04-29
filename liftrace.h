@@ -9,12 +9,14 @@
 #include <QByteArray>
 #include <QDataStream>
 
+#include "lifconfig.h"
+
 class LifTraceData;
 
 class LifTrace
 {
 public:
-    explicit LifTrace(const QByteArray b, QDataStream::ByteOrder bo, int bytesPerPoint, int recLen, double xIncr, double lym, bool ref = false, double rym = -1.0);
+    explicit LifTrace(const LifConfig::LifScopeConfig c, const QByteArray b);
     LifTrace(const LifTrace &);
     LifTrace &operator=(const LifTrace &);
     ~LifTrace();

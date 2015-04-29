@@ -1,23 +1,23 @@
 #include "liftrace.h"
 
-LifTrace::LifTrace(const QByteArray b, QDataStream::ByteOrder bo, int bytesPerPoint, int recLen, double xIncr, double lym, bool ref, double rym)
+LifTrace::LifTrace(const LifConfig::LifScopeConfig c, const QByteArray b)
 {
     //reference channel is used to normalize to pulse energy
     //if active, must be second channel
-    data->xSpacing = xIncr;
-    data->lifYMult = lym;
-    data->refYMult = rym;
+    data->xSpacing = c.xIncr;
+    data->lifYMult = c.yMult1;
+    data->refYMult = c.yMult2;
     data->count = 1;
 
-    data->lifData.resize(recLen);
-    for(int i=0; i<recLen; i++)
+    data->lifData.resize(c.recordLength);
+    for(int i=0; i<c.recordLength; i++)
     {
-        if(bytesPerPoint == 1)
+        if(c.bytesPerPoint == 1)
             data->lifData[i] = static_cast<qint16>(b.at(i));
         else
         {
             qint16 dat;
-            if(bo == QDataStream::LittleEndian)
+            if(c.byteOrder == QDataStream::LittleEndian)
                 dat = (b.at(2*i + 1) << 8) | (b.at(2*i) & 0xff);
             else
                 dat = (b.at(2*i) << 8) | (b.at(2*i + 1) & 0xff);
@@ -25,20 +25,20 @@ LifTrace::LifTrace(const QByteArray b, QDataStream::ByteOrder bo, int bytesPerPo
         }
     }
 
-    if(ref && rym > 0.0)
+    if(c.refEnabled)
     {
-        data->refData.resize(recLen);
-        for(int i=0; i<recLen; i++)
+        data->refData.resize(c.recordLength);
+        for(int i=0; i<c.recordLength; i++)
         {
-            if(bytesPerPoint == 1)
-                data->refData[i] = static_cast<qint16>(b.at(recLen + i));
+            if(c.bytesPerPoint == 1)
+                data->refData[i] = static_cast<qint16>(b.at(c.recordLength + i));
             else
             {
                 qint16 dat;
-                if(bo == QDataStream::LittleEndian)
-                    dat = (b.at(2*(i+recLen) + 1) << 8) | (b.at(2*(i+recLen)) & 0xff);
+                if(c.byteOrder == QDataStream::LittleEndian)
+                    dat = (b.at(2*(i+c.recordLength) + 1) << 8) | (b.at(2*(i+c.recordLength)) & 0xff);
                 else
-                    dat = (b.at(2*(i+recLen)) << 8) | (b.at(2*(i+recLen) + 1) & 0xff);
+                    dat = (b.at(2*(i+c.recordLength)) << 8) | (b.at(2*(i+c.recordLength) + 1) & 0xff);
                 data->refData[i] = dat;
             }
         }

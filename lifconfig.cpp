@@ -1,5 +1,7 @@
 #include "lifconfig.h"
 
+#include "liftrace.h"
+
 
 LifConfig::LifConfig() : data(new LifConfigData)
 {
@@ -205,7 +207,7 @@ void LifConfig::setLifGate(int start, int end)
 
 void LifConfig::setRefGate(int start, int end)
 {
-    data->refEnabled = true;
+    data->scopeConfig.refEnabled = true;
     data->refGateStartPoint=start;
     data->refGateEndPoint = end;
 }
@@ -234,22 +236,13 @@ void LifConfig::setShotsPerPoint(int pts)
     data->shotsPerPoint = pts;
 }
 
-LifTrace LifConfig::parseWaveform(const QByteArray b) const
-{
-    if(!data->refEnabled)
-        return LifTrace(b,data->scopeConfig.byteOrder,data->scopeConfig.bytesPerPoint,data->scopeConfig.recordLength,
-                        data->scopeConfig.xIncr,data->scopeConfig.yMult1);
-    else
-        return LifTrace(b,data->scopeConfig.byteOrder,data->scopeConfig.bytesPerPoint,data->scopeConfig.recordLength,
-                        data->scopeConfig.xIncr,data->scopeConfig.yMult1,true,data->scopeConfig.yMult2);
-}
-
 QMap<QString, QPair<QVariant, QString> > LifConfig::headerMap() const
 {
     QMap<QString,QPair<QVariant,QString> > out;
     QString empty = QString("");
-    QString prefix = QString("LifScope");
+    QString prefix = QString("LifConfig");
     QString so = (data->order == DelayFirst ? QString("DelayFirst") : QString("FrequencyFirst"));
+    QString scratch;
 
 
     out.insert(prefix+QString("ScanOrder"),qMakePair(so,empty));
@@ -282,13 +275,24 @@ QMap<QString, QPair<QVariant, QString> > LifConfig::headerMap() const
     out.insert(prefix+QString("LifGateStart"),qMakePair(data->lifGateStartPoint,empty));
     out.insert(prefix+QString("LifGateStop"),qMakePair(data->lifGateEndPoint,empty));
 
-    if(data->refEnabled)
+    if(data->scopeConfig.refEnabled)
     {
         out.insert(prefix+QString("RefGateStart"),qMakePair(data->refGateStartPoint,empty));
         out.insert(prefix+QString("RefGateStop"),qMakePair(data->refGateEndPoint,empty));
     }
 
-    out.unite(data->scopeConfig.headerMap());
+    //Scope config
+
+    prefix = QString("LifScope");
+    out.insert(prefix+QString("LifVerticalScale"),qMakePair(QString::number(data->scopeConfig.vScale1,'f',3),QString("V/div")));
+    out.insert(prefix+QString("RefVerticalScale"),qMakePair(QString::number(data->scopeConfig.vScale2,'f',3),QString("V/div")));
+    data->scopeConfig.slope == RisingEdge ? scratch = QString("RisingEdge") : scratch = QString("FallingEdge");
+    out.insert(prefix+QString("TriggerSlope"),qMakePair(scratch,empty));
+    out.insert(prefix+QString("SampleRate"),qMakePair(QString::number(data->scopeConfig.sampleRate/1e9,'f',3),QString("GS/s")));
+    out.insert(prefix+QString("RecordLength"),qMakePair(data->scopeConfig.recordLength,empty));
+    out.insert(prefix+QString("BytesPerPoint"),qMakePair(data->scopeConfig.bytesPerPoint,empty));
+    data->scopeConfig.byteOrder == QDataStream::BigEndian ? scratch = QString("BigEndian") : scratch = QString("LittleEndian");
+    out.insert(prefix+QString("ByteOrder"),qMakePair(scratch,empty));
 
     return out;
 }
@@ -316,7 +320,7 @@ bool LifConfig::addWaveform(const LifTrace t)
 
     //convert to double using scope scaling, and add point
     double d;
-    if(data->refEnabled)
+    if(data->scopeConfig.refEnabled)
         d = t.integrate(data->lifGateStartPoint,data->lifGateEndPoint,data->refGateStartPoint,data->refGateEndPoint);
     else
         d = t.integrate(data->lifGateStartPoint,data->lifGateEndPoint);

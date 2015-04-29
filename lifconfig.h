@@ -10,9 +10,8 @@
 #include <QMap>
 #include <QVariant>
 
-#include "liftrace.h"
-
 class LifConfigData;
+class LifTrace;
 
 class LifConfig
 {
@@ -43,32 +42,14 @@ public:
         int bytesPerPoint;
         QDataStream::ByteOrder byteOrder;
 
+        bool refEnabled;
         double vScale1, vScale2;
         double yMult1, yMult2;
 
 
         LifScopeConfig() : sampleRate(0.0), recordLength(0), xIncr(0.0), slope(RisingEdge), bytesPerPoint(1),
-            byteOrder(QDataStream::LittleEndian), vScale1(0.0), vScale2(0.0), yMult1(0.0), yMult2(0.0) {}
+            byteOrder(QDataStream::LittleEndian), refEnabled(false), vScale1(0.0), vScale2(0.0), yMult1(0.0), yMult2(0.0) {}
 
-        QMap<QString,QPair<QVariant,QString> > headerMap() const
-        {
-            QMap<QString,QPair<QVariant,QString> > out;
-            QString empty = QString("");
-            QString prefix = QString("LifScope");
-            QString scratch;
-
-            out.insert(prefix+QString("VerticalScale1"),qMakePair(QString::number(vScale1,'f',3),QString("V/div")));
-            out.insert(prefix+QString("VerticalScale2"),qMakePair(QString::number(vScale2,'f',3),QString("V/div")));
-            slope == RisingEdge ? scratch = QString("RisingEdge") : scratch = QString("FallingEdge");
-            out.insert(prefix+QString("TriggerSlope"),qMakePair(scratch,empty));
-            out.insert(prefix+QString("SampleRate"),qMakePair(QString::number(sampleRate/1e9,'f',3),QString("GS/s")));
-            out.insert(prefix+QString("RecordLength"),qMakePair(recordLength,empty));
-            out.insert(prefix+QString("BytesPerPoint"),qMakePair(bytesPerPoint,empty));
-            byteOrder == QDataStream::BigEndian ? scratch = QString("BigEndian") : scratch = QString("LittleEndian");
-            out.insert(prefix+QString("ByteOrder"),qMakePair(scratch,empty));
-
-            return out;
-        }
     };
 
     enum ScanOrder {
@@ -86,7 +67,6 @@ public:
     int completedShots() const;
     QVector<QPointF> timeSlice(int frequencyIndex) const;
     QVector<QPointF> spectrum(int delayIndex) const;
-    LifTrace parseWaveform(const QByteArray b) const;
     QMap<QString,QPair<QVariant,QString> > headerMap() const;
     QPair<QPoint,LifPoint> lastUpdatedLifPoint() const;
 
@@ -112,7 +92,7 @@ private:
 class LifConfigData : public QSharedData
 {
 public:
-    LifConfigData() : enabled(false), complete(false),  valid(false), refEnabled(false), order(LifConfig::DelayFirst),
+    LifConfigData() : enabled(false), complete(false),  valid(false), order(LifConfig::DelayFirst),
         delayStartUs(-1.0), delayEndUs(-1.0), delayStepUs(0.0), frequencyStart(-1.0), frequencyEnd(-1.0),
         frequencyStep(0.0), lifGateStartPoint(-1), lifGateEndPoint(-1),
         refGateStartPoint(-1), refGateEndPoint(-1), currentDelayIndex(0), currentFrequencyIndex(0) {}
@@ -120,7 +100,6 @@ public:
     bool enabled;
     bool complete;
     bool valid;
-    bool refEnabled;
     LifConfig::ScanOrder order;
     double delayStartUs;
     double delayEndUs;
@@ -146,5 +125,6 @@ Q_DECLARE_METATYPE(LifConfig::LifScopeConfig)
 Q_DECLARE_METATYPE(LifConfig::LifPoint)
 Q_DECLARE_METATYPE(LifConfig)
 Q_DECLARE_TYPEINFO(LifConfig::LifPoint,Q_MOVABLE_TYPE);
+Q_DECLARE_TYPEINFO(LifConfig::LifScopeConfig,Q_MOVABLE_TYPE);
 
 #endif // LIFCONFIG_H
