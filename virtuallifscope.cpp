@@ -2,7 +2,8 @@
 
 #include "virtualinstrument.h"
 
-VirtualLifScope::VirtualLifScope()
+VirtualLifScope::VirtualLifScope(QObject *parent) :
+    LifScope(parent)
 {
     d_subKey = QString("virtual");
     d_prettyName = QString("Virtual LIF Oscilloscope");

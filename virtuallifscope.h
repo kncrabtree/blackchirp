@@ -5,8 +5,9 @@
 
 class VirtualLifScope : public LifScope
 {
+    Q_OBJECT
 public:
-    VirtualLifScope();
+    VirtualLifScope(QObject *parent = nullptr);
     ~VirtualLifScope();
 
 
