@@ -13,7 +13,8 @@ SOURCES += mainwindow.cpp \
     $$PWD/rfconfigwidget.cpp \
     $$PWD/pulseconfigwidget.cpp \
     $$PWD/pulseplot.cpp \
-    $$PWD/led.cpp
+    $$PWD/led.cpp \
+    $$PWD/liftraceplot.cpp
 
 HEADERS += mainwindow.h \
     $$PWD/ftmwviewwidget.h \
@@ -30,7 +31,8 @@ HEADERS += mainwindow.h \
     $$PWD/rfconfigwidget.h \
     $$PWD/pulseconfigwidget.h \
     $$PWD/pulseplot.h \
-    $$PWD/led.h
+    $$PWD/led.h \
+    $$PWD/liftraceplot.h
 
 FORMS += mainwindow.ui \
     $$PWD/ftmwviewwidget.ui \
