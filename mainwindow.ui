@@ -295,9 +295,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QWidget" name="widget_2" native="true">
-            <zorder>gasControlBox</zorder>
-           </widget>
+           <widget class="LifTracePlot" name="tempLifPlot" native="true"/>
           </item>
          </layout>
         </item>
@@ -431,6 +429,12 @@
    <class>Led</class>
    <extends>QWidget</extends>
    <header>led.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>LifTracePlot</class>
+   <extends>QWidget</extends>
+   <header>liftraceplot.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

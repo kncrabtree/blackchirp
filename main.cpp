@@ -112,6 +112,7 @@ int main(int argc, char *argv[])
     qRegisterMetaType<QList<QPair<QString,QVariant> >>("QList<QPair<QString,QVariant> >");
     qRegisterMetaType<PulseGenConfig::Setting>("PulseGenConfig::Setting");
     qRegisterMetaType<PulseGenConfig>("PulseGenConfig");
+    qRegisterMetaType<LifConfig::LifScopeConfig>("LifConfig::LifScopeConfig");
 
     MainWindow w;
     w.show();

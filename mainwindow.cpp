@@ -88,6 +88,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeSetting,p_hwm,&HardwareManager::setPGenSetting);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeRepRate,p_hwm,&HardwareManager::setPGenRepRate);
 
+    //TEST
+    connect(p_hwm,&HardwareManager::lifScopeShotAcquired,ui->tempLifPlot,&LifTracePlot::newTrace);
+
     QThread *hwmThread = new QThread(this);
     connect(hwmThread,&QThread::started,p_hwm,&HardwareManager::initialize);
     connect(hwmThread,&QThread::finished,p_hwm,&HardwareManager::deleteLater);
@@ -172,7 +175,7 @@ MainWindow::MainWindow(QWidget *parent) :
     d_threadObjectList.append(qMakePair(amThread,p_am));
 
     connect(p_hwm,&HardwareManager::experimentInitialized,p_am,&AcquisitionManager::beginExperiment);
-    connect(p_hwm,&HardwareManager::scopeShotAcquired,p_am,&AcquisitionManager::processScopeShot);
+    connect(p_hwm,&HardwareManager::ftmwScopeShotAcquired,p_am,&AcquisitionManager::processScopeShot);
     connect(p_am,&AcquisitionManager::experimentComplete,p_hwm,&HardwareManager::endAcquisition);
     connect(p_am,&AcquisitionManager::beginAcquisition,p_hwm,&HardwareManager::beginAcquisition);
     connect(p_am,&AcquisitionManager::timeDataSignal,p_hwm,&HardwareManager::getTimeData);

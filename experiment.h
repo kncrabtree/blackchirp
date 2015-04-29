@@ -10,6 +10,7 @@
 #include "loghandler.h"
 #include "pulsegenconfig.h"
 #include "flowconfig.h"
+#include "lifconfig.h"
 
 class ExperimentData;
 

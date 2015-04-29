@@ -8,6 +8,7 @@
 #include "awg.h"
 #include "pulsegenerator.h"
 #include "flowcontroller.h"
+#include "lifscope.h"
 
 HardwareManager::HardwareManager(QObject *parent) : QObject(parent)
 {
@@ -32,11 +33,11 @@ HardwareManager::~HardwareManager()
 
 void HardwareManager::initialize()
 {    
-    p_scope = new FtmwScopeHardware();
-    connect(p_scope,&FtmwScope::shotAcquired,this,&HardwareManager::scopeShotAcquired);
+    p_ftmwScope = new FtmwScopeHardware();
+    connect(p_ftmwScope,&FtmwScope::shotAcquired,this,&HardwareManager::ftmwScopeShotAcquired);
 
     QThread *scopeThread = new QThread(this);
-    d_hardwareList.append(qMakePair(p_scope,scopeThread));
+    d_hardwareList.append(qMakePair(p_ftmwScope,scopeThread));
 
     //awg does not need to be in its own thread
     p_awg = new AwgHardware();
@@ -65,6 +66,12 @@ void HardwareManager::initialize()
 
     QThread *flowThread = new QThread(this);
     d_hardwareList.append(qMakePair(p_flow,flowThread));
+
+    p_lifScope = new LifScopeHardware();
+    connect(p_lifScope,&LifScope::waveformRead,this,&HardwareManager::lifScopeShotAcquired);
+
+    QThread *lifScopeThread = new QThread(this);
+    d_hardwareList.append(qMakePair(p_lifScope,lifScopeThread));
 
 
 	//write arrays of the connected devices for use in the Hardware Settings menu

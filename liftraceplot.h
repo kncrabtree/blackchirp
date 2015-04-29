@@ -20,7 +20,7 @@ signals:
 
 public slots:
     void setNumAverages(int n);
-    void newTrace(const LifTrace t);
+    void newTrace(const LifConfig::LifScopeConfig c, const QByteArray b);
     void traceProcessed(const LifTrace t);
 
 private:

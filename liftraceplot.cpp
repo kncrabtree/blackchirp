@@ -2,6 +2,7 @@
 
 #include <qwt6/qwt_plot_curve.h>
 #include <qwt6/qwt_plot_zoneitem.h>
+#include <qwt6/qwt_legend.h>
 #include <QSettings>
 
 LifTracePlot::LifTracePlot(QWidget *parent) :
@@ -16,35 +17,40 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
 
     p_lif = new QwtPlotCurve(QString("LIF"));
     p_lif->setPen(QPen(lifColor));
-    p_lif->setRenderHint(QwtPlotItem::RenderAntialiased);
-    p_lif->setVisible(false);
     p_lif->attach(this);
 
     p_ref = new QwtPlotCurve(QString("Ref"));
     p_ref->setPen(QPen(refColor));
-    p_ref->setRenderHint(QwtPlotItem::RenderAntialiased);
     p_ref->setVisible(false);
-    p_ref->attach(this);
 
     p_lifZone = new QwtPlotZoneItem();
     p_lifZone->setPen(QPen(lifColor));
     p_lifZone->setBrush(QBrush(zoneBrushColor));
-    p_lifZone->setVisible(false);
     p_lifZone->setOrientation(Qt::Vertical);
-    p_lifZone->attach(this);
 
     p_refZone = new QwtPlotZoneItem();
     p_refZone->setPen(QPen(lifColor));
     p_refZone->setBrush(QBrush(zoneBrushColor));
-    p_refZone->setVisible(false);
     p_refZone->setOrientation(Qt::Vertical);
-    p_refZone->attach(this);
+
+    QwtLegend *leg = new QwtLegend(this);
+    insertLegend(leg);
 
 }
 
 LifTracePlot::~LifTracePlot()
 {
+    p_lif->detach();
+    delete p_lif;
 
+    p_ref->detach();
+    delete p_ref;
+
+    p_lifZone->detach();
+    delete p_lifZone;
+
+    p_refZone->detach();
+    delete p_refZone;
 }
 
 void LifTracePlot::setNumAverages(int n)
@@ -52,8 +58,10 @@ void LifTracePlot::setNumAverages(int n)
     d_numAverages = n;
 }
 
-void LifTracePlot::newTrace(const LifTrace t)
+void LifTracePlot::newTrace(const LifConfig::LifScopeConfig c, const QByteArray b)
 {
+    LifTrace t = LifTrace(c,b);
+
     if(t.size() == 0)
         return;
 
@@ -76,28 +84,28 @@ void LifTracePlot::traceProcessed(const LifTrace t)
         d_refZoneRange.second = t.size()-1;
 
     QVector<QPointF> lif = t.lifToXY();
-    setAxisAutoScaleRange(QwtPlot::xBottom,lif.at(0).x(),lif.at(lif.size()-1).x());
+    setAxisAutoScaleRange(QwtPlot::xBottom,lif.at(0).x()*1e6,lif.at(lif.size()-1).x()*1e6);
 
-    p_lifZone->setInterval(lif.at(d_lifZoneRange.first).x(),lif.at(d_lifZoneRange.second).x());
-    if(!p_lif->isVisible())
-        p_lif->setVisible(true);
-    if(!p_lifZone->isVisible())
-        p_lif->setVisible(true);
+    p_lifZone->setInterval(lif.at(d_lifZoneRange.first).x()*1e6,lif.at(d_lifZoneRange.second).x()*1e6);
+    if(p_lifZone->plot() != this)
+        p_lifZone->attach(this);
 
     if(t.hasRefData())
     {
         QVector<QPointF> ref = t.refToXY();
 
-        p_refZone->setInterval(lif.at(d_refZoneRange.first).x(),lif.at(d_refZoneRange.second).x());
-        if(!p_ref->isVisible())
-            p_ref->setVisible(true);
-        if(!p_refZone->isVisible())
-            p_ref->setVisible(true);
+        p_refZone->setInterval(ref.at(d_refZoneRange.first).x()*1e6,ref.at(d_refZoneRange.second).x()*1e6);
+        if(p_ref->plot() != this)
+            p_ref->attach(this);
+        if(p_refZone->plot() != this)
+            p_refZone->attach(this);
     }
     else
     {
-        p_ref->setVisible(false);
-        p_refZone->setVisible(false);
+        if(p_ref->plot() == this)
+            p_ref->detach();
+        if(p_refZone->plot() == this)
+            p_refZone->detach();
     }
 
     filterData();

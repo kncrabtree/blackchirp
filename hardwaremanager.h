@@ -15,6 +15,7 @@ class AWG;
 class Synthesizer;
 class PulseGenerator;
 class FlowController;
+class LifScope;
 
 class HardwareManager : public QObject
 {
@@ -41,7 +42,7 @@ signals:
     void timeData(const QList<QPair<QString,QVariant>>);
     void readTimeData();
 
-    void scopeShotAcquired(const QByteArray);
+    void ftmwScopeShotAcquired(const QByteArray);
 
     void valonTxFreqRead(double);
     void valonRxFreqRead(double);
@@ -56,6 +57,8 @@ signals:
     void pressureUpdate(double);
     void pressureSetpointUpdate(double);
     void pressureControlMode(bool);
+
+    void lifScopeShotAcquired(const LifConfig::LifScopeConfig, const QByteArray);
 
 public slots:
     void initialize();
@@ -99,11 +102,12 @@ private:
     void checkStatus();
 
     QList<QPair<HardwareObject*,QThread*> > d_hardwareList;
-    FtmwScope *p_scope;
+    FtmwScope *p_ftmwScope;
     Synthesizer *p_synth;
     AWG *p_awg;
     PulseGenerator *p_pGen;
     FlowController *p_flow;
+    LifScope *p_lifScope;
 
 };
 

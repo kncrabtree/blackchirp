@@ -2,6 +2,8 @@
 
 #include "virtualinstrument.h"
 
+#include <QTimer>
+
 VirtualLifScope::VirtualLifScope(QObject *parent) :
     LifScope(parent)
 {
@@ -33,6 +35,10 @@ bool VirtualLifScope::testConnection()
 void VirtualLifScope::initialize()
 {
     testConnection();
+    QTimer *test = new QTimer(this);
+    test->setInterval(200);
+    connect(test,&QTimer::timeout,this,&VirtualLifScope::queryScope);
+    test->start();
 }
 
 Experiment VirtualLifScope::prepareForExperiment(Experiment exp)
