@@ -15,7 +15,7 @@ void AcquisitionManager::beginExperiment(Experiment exp)
 	if(!exp.isInitialized() || exp.isDummy())
     {
         if(!exp.errorString().isEmpty())
-            emit logMessage(exp.errorString(),LogHandler::Error);
+            emit logMessage(exp.errorString(),BlackChirp::LogError);
 		emit experimentComplete(exp);
         return;
     }
@@ -24,7 +24,7 @@ void AcquisitionManager::beginExperiment(Experiment exp)
     d_currentExperiment = exp;
 
     d_state = Acquiring;
-    emit logMessage(exp.startLogMessage(),LogHandler::Highlight);
+    emit logMessage(exp.startLogMessage(),BlackChirp::LogHighlight);
     emit statusMessage(QString("Acquiring"));
 
     if(d_currentExperiment.timeDataInterval() > 0)
@@ -54,7 +54,7 @@ void AcquisitionManager::processScopeShot(const QByteArray b)
 
         if(!success)
         {
-            emit logMessage(d_currentExperiment.errorString(),LogHandler::Error);
+            emit logMessage(d_currentExperiment.errorString(),BlackChirp::LogError);
             abort();
             return;
         }
@@ -67,7 +67,7 @@ void AcquisitionManager::processScopeShot(const QByteArray b)
         d_currentExperiment.incrementFtmw();
         emit newFidList(d_currentExperiment.ftmwConfig().fidList());
 
-        if(d_currentExperiment.ftmwConfig().type() == FtmwConfig::TargetTime)
+        if(d_currentExperiment.ftmwConfig().type() == BlackChirp::FtmwTargetTime)
         {
             qint64 elapsedSecs = d_currentExperiment.startTime().secsTo(QDateTime::currentDateTime());
             emit ftmwShotAcquired(elapsedSecs);
@@ -81,13 +81,13 @@ void AcquisitionManager::processScopeShot(const QByteArray b)
 
 void AcquisitionManager::changeRollingAverageShots(int newShots)
 {
-    if(d_state == Acquiring && d_currentExperiment.ftmwConfig().isEnabled() && d_currentExperiment.ftmwConfig().type() == FtmwConfig::PeakUp)
+    if(d_state == Acquiring && d_currentExperiment.ftmwConfig().isEnabled() && d_currentExperiment.ftmwConfig().type() == BlackChirp::FtmwPeakUp)
         d_currentExperiment.overrideTargetShots(newShots);
 }
 
 void AcquisitionManager::resetRollingAverage()
 {
-    if(d_state == Acquiring && d_currentExperiment.ftmwConfig().isEnabled() && d_currentExperiment.ftmwConfig().type() == FtmwConfig::PeakUp)
+    if(d_state == Acquiring && d_currentExperiment.ftmwConfig().isEnabled() && d_currentExperiment.ftmwConfig().type() == BlackChirp::FtmwPeakUp)
         d_currentExperiment.resetFids();
 }
 

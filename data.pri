@@ -19,7 +19,8 @@ HEADERS += loghandler.h \
     $$PWD/pulsegenconfig.h \
     $$PWD/flowconfig.h \
     $$PWD/lifconfig.h \
-    $$PWD/liftrace.h
+    $$PWD/liftrace.h \
+    $$PWD/datastructs.h
 
 gpu-cuda {
     OTHER_FILES += $$PWD/gpuaverager.cu

@@ -24,7 +24,7 @@ PulseGenConfig::~PulseGenConfig()
 
 }
 
-PulseGenConfig::ChannelConfig PulseGenConfig::at(const int i) const
+BlackChirp::PulseChannelConfig PulseGenConfig::at(const int i) const
 {
     Q_ASSERT(i < data->config.size());
     return data->config.at(i);
@@ -40,26 +40,26 @@ bool PulseGenConfig::isEmpty() const
     return data->config.isEmpty();
 }
 
-QVariant PulseGenConfig::setting(const int index, const PulseGenConfig::Setting s) const
+QVariant PulseGenConfig::setting(const int index, const BlackChirp::PulseSetting s) const
 {
     if(index < 0 || index >= data->config.size())
         return QVariant();
 
     switch(s)
     {
-    case Delay:
+    case BlackChirp::PulseDelay:
         return data->config.at(index).delay;
         break;
-    case Width:
+    case BlackChirp::PulseWidth:
         return data->config.at(index).width;
         break;
-    case Enabled:
+    case BlackChirp::PulseEnabled:
         return data->config.at(index).enabled;
         break;
-    case Level:
+    case BlackChirp::PulseLevel:
         return data->config.at(index).level;
         break;
-    case Name:
+    case BlackChirp::PulseName:
         return data->config.at(index).channelName;
         break;
     default:
@@ -69,10 +69,10 @@ QVariant PulseGenConfig::setting(const int index, const PulseGenConfig::Setting 
     return QVariant();
 }
 
-PulseGenConfig::ChannelConfig PulseGenConfig::settings(const int index) const
+BlackChirp::PulseChannelConfig PulseGenConfig::settings(const int index) const
 {
     if(index < 0 || index >= data->config.size())
-        return ChannelConfig();
+        return BlackChirp::PulseChannelConfig();
 
     return data->config.at(index);
 
@@ -100,26 +100,26 @@ QMap<QString, QPair<QVariant, QString> > PulseGenConfig::headerMap() const
     return out;
 }
 
-void PulseGenConfig::set(const int index, const PulseGenConfig::Setting s, const QVariant val)
+void PulseGenConfig::set(const int index, const BlackChirp::PulseSetting s, const QVariant val)
 {
     if(index < 0 || index >= data->config.size())
         return;
 
     switch(s)
     {
-    case Delay:
+    case BlackChirp::PulseDelay:
         data->config[index].delay = val.toDouble();
         break;
-    case Width:
+    case BlackChirp::PulseWidth:
         data->config[index].width = val.toDouble();
         break;
-    case Enabled:
+    case BlackChirp::PulseEnabled:
         data->config[index].enabled = val.toBool();
         break;
-    case Level:
-        data->config[index].level = val.value<PulseGenConfig::ActiveLevel>();
+    case BlackChirp::PulseLevel:
+        data->config[index].level = val.value<BlackChirp::PulseActiveLevel>();
         break;
-    case Name:
+    case BlackChirp::PulseName:
         data->config[index].channelName = val.toString();
         break;
     default:
@@ -127,21 +127,21 @@ void PulseGenConfig::set(const int index, const PulseGenConfig::Setting s, const
     }
 }
 
-void PulseGenConfig::set(const int index, const PulseGenConfig::ChannelConfig cc)
+void PulseGenConfig::set(const int index, const BlackChirp::PulseChannelConfig cc)
 {
     if(index < 0 || index >= data->config.size())
         return;
 
-    set(index,Delay,cc.delay);
-    set(index,Width,cc.width);
-    set(index,Enabled,cc.enabled);
-    set(index,Level,cc.level);
-    set(index,Name,cc.channelName);
+    set(index,BlackChirp::PulseDelay,cc.delay);
+    set(index,BlackChirp::PulseWidth,cc.width);
+    set(index,BlackChirp::PulseEnabled,cc.enabled);
+    set(index,BlackChirp::PulseLevel,cc.level);
+    set(index,BlackChirp::PulseName,cc.channelName);
 }
 
-void PulseGenConfig::add(const QString name, const bool enabled, const double delay, const double width, const PulseGenConfig::ActiveLevel level)
+void PulseGenConfig::add(const QString name, const bool enabled, const double delay, const double width, const BlackChirp::PulseActiveLevel level)
 {
-    ChannelConfig cc;
+    BlackChirp::PulseChannelConfig cc;
     cc.channel = data->config.size()+1;
     cc.channelName = name;
     cc.enabled = enabled;

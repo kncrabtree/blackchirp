@@ -25,7 +25,7 @@ void FtmwViewWidget::initializeForExperiment(const FtmwConfig config)
 {
     ui->shotsLabel->setText(QString("Shots: 0"));
 
-    if(config.isEnabled() && config.type() == FtmwConfig::PeakUp)
+    if(config.isEnabled() && config.type() == BlackChirp::FtmwPeakUp)
     {
         ui->rollingAverageLabel->show();
         ui->rollingAverageSpinbox->show();

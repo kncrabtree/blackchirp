@@ -27,13 +27,13 @@ public:
     void moveSegments(int first, int last, int delta);
     void removeSegments(QList<int> rows);
 
-    QList<ChirpConfig::ChirpSegment> segmentList() const;
+    QList<BlackChirp::ChirpSegment> segmentList() const;
 
 signals:
     void modelChanged();
 
 private:
-    QList<ChirpConfig::ChirpSegment> d_segmentList;
+    QList<BlackChirp::ChirpSegment> d_segmentList;
 
 
 };

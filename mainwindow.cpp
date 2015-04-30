@@ -261,10 +261,10 @@ void MainWindow::experimentInitialized(Experiment exp)
 	if(exp.ftmwConfig().isEnabled())
 	{
         switch(exp.ftmwConfig().type()) {
-        case FtmwConfig::TargetShots:
+        case BlackChirp::FtmwTargetShots:
             ui->ftmwProgressBar->setRange(0,exp.ftmwConfig().targetShots());
             break;
-        case FtmwConfig::TargetTime:
+        case BlackChirp::FtmwTargetTime:
             ui->ftmwProgressBar->setRange(0,static_cast<int>(exp.startTime().secsTo(exp.ftmwConfig().targetTime())));
             break;
         default:
@@ -333,16 +333,16 @@ void MainWindow::updatePulseLeds(const PulseGenConfig cc)
     }
 }
 
-void MainWindow::updatePulseLed(int index, PulseGenConfig::Setting s, QVariant val)
+void MainWindow::updatePulseLed(int index, BlackChirp::PulseSetting s, QVariant val)
 {
     if(index < 0 || index >= d_ledList.size())
         return;
 
     switch(s) {
-    case PulseGenConfig::Name:
+    case BlackChirp::PulseName:
         d_ledList.at(index).first->setText(val.toString());
         break;
-    case PulseGenConfig::Enabled:
+    case BlackChirp::PulseEnabled:
         d_ledList.at(index).second->setState(val.toBool());
         break;
     default:

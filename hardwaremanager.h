@@ -6,7 +6,7 @@
 #include <QList>
 #include <QThread>
 
-#include "loghandler.h"
+#include "datastructs.h"
 #include "experiment.h"
 
 class HardwareObject;
@@ -25,7 +25,7 @@ public:
     ~HardwareManager();
 
 signals:
-    void logMessage(const QString, const LogHandler::MessageCode = LogHandler::Normal);
+    void logMessage(const QString, const BlackChirp::LogMessageCode = BlackChirp::LogNormal);
     void statusMessage(const QString);
     void allHardwareConnected(bool);
     /*!
@@ -47,7 +47,7 @@ signals:
     void valonTxFreqRead(double);
     void valonRxFreqRead(double);
 
-    void pGenSettingUpdate(int,PulseGenConfig::Setting,QVariant);
+    void pGenSettingUpdate(int,BlackChirp::PulseSetting,QVariant);
     void pGenConfigUpdate(const PulseGenConfig);
     void pGenRepRateUpdate(double);
 
@@ -58,7 +58,7 @@ signals:
     void pressureSetpointUpdate(double);
     void pressureControlMode(bool);
 
-    void lifScopeShotAcquired(const LifConfig::LifScopeConfig, const QByteArray);
+    void lifScopeShotAcquired(const LifTrace);
 
 public slots:
     void initialize();
@@ -88,7 +88,7 @@ public slots:
     double setValonTxFreq(const double d);
     double setValonRxFreq(const double d);
 
-    void setPGenSetting(int index, PulseGenConfig::Setting s, QVariant val);
+    void setPGenSetting(int index, BlackChirp::PulseSetting s, QVariant val);
     void setPGenConfig(const PulseGenConfig c);
     void setPGenRepRate(double r);
 

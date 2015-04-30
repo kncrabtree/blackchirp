@@ -38,7 +38,7 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
         ch.delayBox->setValue(s.value(QString("defaultDelay"),0.0).toDouble());
         ch.delayBox->setSingleStep(s.value(QString("delayStep"),1.0).toDouble());
         ui->pulseConfigBoxLayout->addWidget(ch.delayBox,i+1,col,1,1);
-        connect(ch.delayBox,vc,this,[=](double val){ emit changeSetting(i,PulseGenConfig::Delay,val); } );
+        connect(ch.delayBox,vc,this,[=](double val){ emit changeSetting(i,BlackChirp::PulseDelay,val); } );
         col++;
 
         ch.widthBox = new QDoubleSpinBox(this);
@@ -49,7 +49,7 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
         ch.widthBox->setValue(s.value(QString("defaultWidth"),0.050).toDouble());
         ch.widthBox->setSingleStep(s.value(QString("widthStep"),1.0).toDouble());
         ui->pulseConfigBoxLayout->addWidget(ch.widthBox,i+1,col,1,1);
-        connect(ch.widthBox,vc,this,[=](double val){ emit changeSetting(i,PulseGenConfig::Width,val); } );
+        connect(ch.widthBox,vc,this,[=](double val){ emit changeSetting(i,BlackChirp::PulseWidth,val); } );
         col++;
 
         ch.onButton = new QPushButton(this);
@@ -60,7 +60,7 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
         else
             ch.onButton->setText(QString("Off"));
         ui->pulseConfigBoxLayout->addWidget(ch.onButton,i+1,col,1,1);
-        connect(ch.onButton,&QPushButton::toggled,this,[=](bool en){ emit changeSetting(i,PulseGenConfig::Enabled,en); } );
+        connect(ch.onButton,&QPushButton::toggled,this,[=](bool en){ emit changeSetting(i,BlackChirp::PulseEnabled,en); } );
         connect(ch.onButton,&QPushButton::toggled,this,[=](bool en){
             if(en)
                 ch.onButton->setText(QString("On"));
@@ -80,7 +80,7 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
 
         ch.levelButton = new QPushButton(this);
         ch.levelButton->setCheckable(true);
-        if(s.value(QString("level"),PulseGenConfig::ActiveHigh) == QVariant(PulseGenConfig::ActiveHigh))
+        if(s.value(QString("level"),BlackChirp::PulseLevelActiveHigh) == QVariant(BlackChirp::PulseLevelActiveHigh))
         {
             ch.levelButton->setChecked(true);
             ch.levelButton->setText(QString("Active High"));
@@ -154,7 +154,7 @@ void PulseConfigWidget::configureLif(double startingDelay)
     d_widgetList.at(BC_PGEN_LIFCHANNEL).label->setText(QString("LIF"));
     d_widgetList.at(BC_PGEN_LIFCHANNEL).nameEdit->setText(QString("LIF"));
     d_widgetList.at(BC_PGEN_LIFCHANNEL).nameEdit->setEnabled(false);
-    ui->pulsePlot->newSetting(BC_PGEN_LIFCHANNEL,PulseGenConfig::Name,QString("LIF"));
+    ui->pulsePlot->newSetting(BC_PGEN_LIFCHANNEL,BlackChirp::PulseName,QString("LIF"));
 
 }
 
@@ -168,7 +168,7 @@ void PulseConfigWidget::configureChirp()
     d_widgetList.at(BC_PGEN_AWGCHANNEL).label->setText(QString("AWG"));
     d_widgetList.at(BC_PGEN_AWGCHANNEL).nameEdit->setText(QString("AWG"));
     d_widgetList.at(BC_PGEN_AWGCHANNEL).nameEdit->setEnabled(false);
-    ui->pulsePlot->newSetting(BC_PGEN_AWGCHANNEL,PulseGenConfig::Name,QString("AWG"));
+    ui->pulsePlot->newSetting(BC_PGEN_AWGCHANNEL,BlackChirp::PulseName,QString("AWG"));
 }
 
 void PulseConfigWidget::launchChannelConfig(int ch)
@@ -210,7 +210,7 @@ void PulseConfigWidget::launchChannelConfig(int ch)
 
         chw.label->setText(chw.nameEdit->text());
         s.setValue(QString("name"),chw.nameEdit->text());
-        emit changeSetting(ch,PulseGenConfig::Name,chw.nameEdit->text());
+        emit changeSetting(ch,BlackChirp::PulseName,chw.nameEdit->text());
 
         chw.delayBox->setSingleStep(chw.delayStepBox->value());
         s.setValue(QString("delayStep"),chw.delayStepBox->value());
@@ -220,13 +220,13 @@ void PulseConfigWidget::launchChannelConfig(int ch)
 
         if(chw.levelButton->isChecked())
         {
-            s.setValue(QString("level"),PulseGenConfig::ActiveHigh);
-            emit changeSetting(ch,PulseGenConfig::Level,PulseGenConfig::ActiveHigh);
+            s.setValue(QString("level"),BlackChirp::PulseLevelActiveHigh);
+            emit changeSetting(ch,BlackChirp::PulseLevel,BlackChirp::PulseLevelActiveHigh);
         }
         else
         {
-            s.setValue(QString("level"),PulseGenConfig::ActiveLow);
-            emit changeSetting(ch,PulseGenConfig::Level,PulseGenConfig::ActiveLow);
+            s.setValue(QString("level"),BlackChirp::PulseLevelActiveLow);
+            emit changeSetting(ch,BlackChirp::PulseLevel,BlackChirp::PulseLevelActiveLow);
         }
 
         s.endArray();
@@ -245,7 +245,7 @@ void PulseConfigWidget::launchChannelConfig(int ch)
 
 }
 
-void PulseConfigWidget::newSetting(int index, PulseGenConfig::Setting s, QVariant val)
+void PulseConfigWidget::newSetting(int index, BlackChirp::PulseSetting s, QVariant val)
 {
     if(index < 0 || index > d_widgetList.size())
         return;
@@ -253,20 +253,20 @@ void PulseConfigWidget::newSetting(int index, PulseGenConfig::Setting s, QVarian
     blockSignals(true);
 
     switch(s) {
-    case PulseGenConfig::Name:
+    case BlackChirp::PulseName:
         d_widgetList.at(index).label->setText(val.toString());
         d_widgetList.at(index).nameEdit->setText(val.toString());
         break;
-    case PulseGenConfig::Delay:
+    case BlackChirp::PulseDelay:
         d_widgetList.at(index).delayBox->setValue(val.toDouble());
         break;
-    case PulseGenConfig::Width:
+    case BlackChirp::PulseWidth:
         d_widgetList.at(index).widthBox->setValue(val.toDouble());
         break;
-    case PulseGenConfig::Level:
-        d_widgetList.at(index).levelButton->setChecked(val == QVariant(PulseGenConfig::ActiveHigh));
+    case BlackChirp::PulseLevel:
+        d_widgetList.at(index).levelButton->setChecked(val == QVariant(BlackChirp::PulseLevelActiveHigh));
         break;
-    case PulseGenConfig::Enabled:
+    case BlackChirp::PulseEnabled:
         d_widgetList.at(index).onButton->setChecked(val.toBool());
         break;
     }
@@ -285,7 +285,7 @@ void PulseConfigWidget::newConfig(const PulseGenConfig c)
         d_widgetList.at(i).nameEdit->setText(c.at(i).channelName);
         d_widgetList.at(i).delayBox->setValue(c.at(i).delay);
         d_widgetList.at(i).widthBox->setValue(c.at(i).width);
-        d_widgetList.at(i).levelButton->setChecked(c.at(i).level == PulseGenConfig::ActiveHigh);
+        d_widgetList.at(i).levelButton->setChecked(c.at(i).level == BlackChirp::PulseLevelActiveHigh);
         d_widgetList.at(i).onButton->setChecked(c.at(i).enabled);
     }
     ui->repRateBox->setValue(c.repRate());

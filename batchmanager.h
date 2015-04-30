@@ -3,7 +3,7 @@
 
 #include <QObject>
 
-#include "loghandler.h"
+#include "datastructs.h"
 #include "experiment.h"
 
 class BatchManager : public QObject
@@ -19,7 +19,7 @@ public:
     ~BatchManager();
 
 signals:
-    void logMessage(QString,LogHandler::MessageCode = LogHandler::Normal);
+    void logMessage(QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal);
     void beginExperiment(Experiment);
     void batchComplete(bool aborted);
 

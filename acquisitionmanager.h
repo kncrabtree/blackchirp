@@ -5,7 +5,7 @@
 #include <QTime>
 #include <QTimer>
 
-#include "loghandler.h"
+#include "datastructs.h"
 #include "experiment.h"
 
 class AcquisitionManager : public QObject
@@ -23,7 +23,7 @@ public:
     };
 
 signals:
-    void logMessage(const QString,const LogHandler::MessageCode = LogHandler::Normal);
+    void logMessage(const QString,const BlackChirp::LogMessageCode = BlackChirp::LogNormal);
     void statusMessage(const QString);
     void experimentComplete(Experiment);
     void ftmwShotAcquired(qint64);

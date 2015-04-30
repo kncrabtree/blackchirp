@@ -101,7 +101,7 @@ QString Experiment::endLogMessage() const
     return data->endLogMessage;
 }
 
-LogHandler::MessageCode Experiment::endLogMessageCode() const
+BlackChirp::LogMessageCode Experiment::endLogMessageCode() const
 {
     return data->endLogMessageCode;
 }
@@ -143,7 +143,7 @@ void Experiment::setInitialized()
     int num = s.value(QString("exptNum"),1).toInt();
     data->number = num;
 
-    if(ftmwConfig().isEnabled() && ftmwConfig().type() == FtmwConfig::PeakUp)
+    if(ftmwConfig().isEnabled() && ftmwConfig().type() == BlackChirp::FtmwPeakUp)
     {
         data->startLogMessage = QString("Peak up mode started.");
         data->endLogMessage = QString("Peak up mode ended.");
@@ -160,10 +160,10 @@ void Experiment::setInitialized()
 void Experiment::setAborted()
 {
     data->isAborted = true;
-    if(ftmwConfig().isEnabled() && (ftmwConfig().type() == FtmwConfig::TargetShots || ftmwConfig().type() == FtmwConfig::TargetTime ))
+    if(ftmwConfig().isEnabled() && (ftmwConfig().type() == BlackChirp::FtmwTargetShots || ftmwConfig().type() == BlackChirp::FtmwTargetTime ))
     {
         data->endLogMessage = QString("Experiment %1 aborted.").arg(number());
-        data->endLogMessageCode = LogHandler::Error;
+        data->endLogMessageCode = BlackChirp::LogError;
     }
 }
 
@@ -177,7 +177,7 @@ void Experiment::setFtmwConfig(const FtmwConfig cfg)
     data->ftmwCfg = cfg;
 }
 
-void Experiment::setScopeConfig(const FtmwConfig::ScopeConfig &cfg)
+void Experiment::setScopeConfig(const BlackChirp::FtmwScopeConfig &cfg)
 {
     data->ftmwCfg.setScopeConfig(cfg);
 }

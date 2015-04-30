@@ -28,7 +28,7 @@ bool FtmwConfig::isEnabled() const
     return data->isEnabled;
 }
 
-FtmwConfig::FtmwType FtmwConfig::type() const
+BlackChirp::FtmwType FtmwConfig::type() const
 {
     return data->type;
 }
@@ -58,7 +58,7 @@ double FtmwConfig::loFreq() const
     return data->loFreq;
 }
 
-Fid::Sideband FtmwConfig::sideband() const
+BlackChirp::Sideband FtmwConfig::sideband() const
 {
     return data->sideband;
 }
@@ -68,7 +68,7 @@ QList<Fid> FtmwConfig::fidList() const
     return data->fidList;
 }
 
-FtmwConfig::ScopeConfig FtmwConfig::scopeConfig() const
+BlackChirp::FtmwScopeConfig FtmwConfig::scopeConfig() const
 {
     return data->scopeConfig;
 }
@@ -169,7 +169,7 @@ void FtmwConfig::setFidTemplate(const Fid f)
     data->fidTemplate = f;
 }
 
-void FtmwConfig::setType(const FtmwType type)
+void FtmwConfig::setType(const BlackChirp::FtmwType type)
 {
     data->type = type;
 }
@@ -181,7 +181,7 @@ void FtmwConfig::setTargetShots(const qint64 target)
 
 void FtmwConfig::increment()
 {
-    if(type() == FtmwConfig::PeakUp)
+    if(type() == BlackChirp::FtmwPeakUp)
         data->completedShots = qMin(completedShots()+1,targetShots());
     else
         data->completedShots++;
@@ -202,7 +202,7 @@ void FtmwConfig::setLoFreq(const double f)
     data->loFreq = f;
 }
 
-void FtmwConfig::setSideband(const Fid::Sideband sb)
+void FtmwConfig::setSideband(const BlackChirp::Sideband sb)
 {
     data->sideband = sb;
 }
@@ -237,7 +237,7 @@ bool FtmwConfig::addFids(const QByteArray rawData)
 {
 #ifndef BC_CUDA
     QList<Fid> newList = parseWaveform(rawData);
-    if(type() == FtmwConfig::PeakUp)
+    if(type() == BlackChirp::PeakUp)
     {
         for(int i=0; i<data->fidList.size(); i++)
             newList[i].rollingAverage(data->fidList.at(i),targetShots());
@@ -250,7 +250,7 @@ bool FtmwConfig::addFids(const QByteArray rawData)
     data->fidList = newList;
 #else
     QList<QVector<qint64> >  l;
-    if(type() == FtmwConfig::PeakUp)
+    if(type() == BlackChirp::FtmwPeakUp)
         l = data->gpuAvg.parseAndRollAvg(rawData.constData(),completedShots()+1,targetShots());
     else
         l=data->gpuAvg.parseAndAdd(rawData.constData());
@@ -266,7 +266,7 @@ bool FtmwConfig::addFids(const QByteArray rawData)
         data->fidList.removeFirst();
         Fid f = fidTemplate();
         f.setData(l.at(i));
-        if(type() == FtmwConfig::PeakUp)
+        if(type() == BlackChirp::FtmwPeakUp)
             f.setShots(qMin(completedShots()+1,targetShots()));
         else
             f.setShots(completedShots()+1);
@@ -286,7 +286,7 @@ void FtmwConfig::resetFids()
 #endif
 }
 
-void FtmwConfig::setScopeConfig(const FtmwConfig::ScopeConfig &other)
+void FtmwConfig::setScopeConfig(const BlackChirp::FtmwScopeConfig &other)
 {
     data->scopeConfig = other;
 }
@@ -300,14 +300,14 @@ bool FtmwConfig::isComplete() const
 {
     switch(type())
     {
-    case TargetShots:
+    case BlackChirp::FtmwTargetShots:
         return completedShots() >= targetShots();
         break;
-    case TargetTime:
+    case BlackChirp::FtmwTargetTime:
         return QDateTime::currentDateTime() >= targetTime();
         break;
-    case Forever:
-    case PeakUp:
+    case BlackChirp::FtmwForever:
+    case BlackChirp::FtmwPeakUp:
     default:
         return false;
         break;
@@ -329,16 +329,16 @@ QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
         return out;
 
     out.insert(prefix+QString("Type"),qMakePair((int)type(),empty));
-    if(type() == TargetShots)
+    if(type() == BlackChirp::FtmwTargetShots)
         out.insert(prefix+QString("TargetShots"),qMakePair(targetShots(),empty));
-    if(type() == TargetTime)
+    if(type() == BlackChirp::FtmwTargetTime)
         out.insert(prefix+QString("TargetTime"),qMakePair(targetTime(),empty));
     out.insert(prefix+QString("LoFrequency"),qMakePair(QString::number(loFreq(),'f',6),QString("MHz")));
     out.insert(prefix+QString("Sideband"),qMakePair((int)sideband(),empty));
     out.insert(prefix+QString("FidVMult"),qMakePair(QString::number(fidTemplate().vMult(),'g',12),QString("V")));
     out.insert(prefix+QString("CompletedShots"),qMakePair(completedShots(),empty));
 
-    FtmwConfig::ScopeConfig sc = scopeConfig();
+    BlackChirp::FtmwScopeConfig sc = scopeConfig();
     out.unite(sc.headerMap());
     out.unite(data->chirpConfig.headerMap());
 

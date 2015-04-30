@@ -20,8 +20,12 @@ signals:
 
 public slots:
     void setNumAverages(int n);
-    void newTrace(const LifConfig::LifScopeConfig c, const QByteArray b);
+    void newTrace(const LifTrace t);
     void traceProcessed(const LifTrace t);
+    void buildContextMenu(QMouseEvent *me);
+    void changeLifColor();
+    void changeRefColor();
+    void legendItemClicked(QVariant info, bool checked, int index);
 
 private:
     QwtPlotCurve *p_lif, *p_ref;
@@ -31,10 +35,13 @@ private:
     bool d_resetNext;
     QPair<int,int> d_lifZoneRange, d_refZoneRange;
 
+    void initializeLabel(QwtPlotCurve *curve, bool isVisible);
+
 
     // ZoomPanPlot interface
 protected:
     void filterData();
+    bool eventFilter(QObject *obj, QEvent *ev);
 };
 
 #endif // LIFTRACEPLOT_H

@@ -63,7 +63,7 @@ double VirtualFlowController::setFlowSetpoint(const int ch, const double val)
     if(ch<0 || ch >= d_config.size())
         return -1.0;
 
-    d_config.set(ch,FlowConfig::Setpoint,val);
+    d_config.set(ch,BlackChirp::FlowSettingSetpoint,val);
     return readFlowSetpoint(ch);
 }
 
@@ -78,8 +78,8 @@ double VirtualFlowController::readFlowSetpoint(const int ch)
     if(ch < 0 || ch >= d_config.size())
         return -1.0;
 
-    emit flowSetpointUpdate(ch,d_config.setting(ch,FlowConfig::Setpoint).toDouble());
-    return d_config.setting(ch,FlowConfig::Setpoint).toDouble();
+    emit flowSetpointUpdate(ch,d_config.setting(ch,BlackChirp::FlowSettingSetpoint).toDouble());
+    return d_config.setting(ch,BlackChirp::FlowSettingSetpoint).toDouble();
 }
 
 double VirtualFlowController::readPressureSetpoint()
@@ -93,13 +93,13 @@ double VirtualFlowController::readFlow(const int ch)
     if(ch < 0 || ch >= d_config.size())
         return -1.0;
 
-    double sp = d_config.setting(ch,FlowConfig::Setpoint).toDouble();
+    double sp = d_config.setting(ch,BlackChirp::FlowSettingSetpoint).toDouble();
     double noise = sp*((double)(qrand()%100)-50.0)/1000.0;
     double flow = sp + noise;
-    d_config.set(ch,FlowConfig::Flow,flow);
+    d_config.set(ch,BlackChirp::FlowSettingFlow,flow);
 
-    emit flowUpdate(ch,d_config.setting(ch,FlowConfig::Flow).toDouble());
-    return d_config.setting(ch,FlowConfig::Setpoint).toDouble();
+    emit flowUpdate(ch,d_config.setting(ch,BlackChirp::FlowSettingFlow).toDouble());
+    return d_config.setting(ch,BlackChirp::FlowSettingSetpoint).toDouble();
 }
 
 double VirtualFlowController::readPressure()

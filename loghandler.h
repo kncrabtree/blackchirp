@@ -5,6 +5,8 @@
 #include <QString>
 #include <QFile>
 
+#include "datastructs.h"
+
 class LogHandler : public QObject
 {
     Q_OBJECT
@@ -13,7 +15,7 @@ public:
     ~LogHandler();
 
 	//definitions of log message types
-    enum MessageCode {Normal, Warning, Error, Highlight, Debug};
+
 
 
 
@@ -23,18 +25,16 @@ signals:
 
 public slots:
 	//access functions for transmitting messages to UI
-	void logMessage(const QString text, const LogHandler::MessageCode type=LogHandler::Normal);
+    void logMessage(const QString text, const BlackChirp::LogMessageCode type=BlackChirp::LogNormal);
 
 private:
     QFile d_logFile;
     int d_currentMonth;
 
-    void writeToFile(const QString text, const LogHandler::MessageCode type, const QString timeStamp);
+    void writeToFile(const QString text, const BlackChirp::LogMessageCode type, const QString timeStamp);
     QString makeLogFileName();
 
 
 };
-
-Q_DECLARE_METATYPE(LogHandler::MessageCode)
 
 #endif // LOGHANDLER_H

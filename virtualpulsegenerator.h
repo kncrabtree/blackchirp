@@ -21,9 +21,9 @@ public slots:
 
     // PulseGenerator interface
 public slots:
-    QVariant read(const int index, const PulseGenConfig::Setting s);
+    QVariant read(const int index, const BlackChirp::PulseSetting s);
 
-    void set(const int index, const PulseGenConfig::Setting s, const QVariant val);
+    void set(const int index, const BlackChirp::PulseSetting s, const QVariant val);
     void setRepRate(double d);
 
 };

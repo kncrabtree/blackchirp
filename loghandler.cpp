@@ -7,7 +7,7 @@
 LogHandler::LogHandler(QObject *parent) :
     QObject(parent)
 {
-    qRegisterMetaType<LogHandler::MessageCode>("LogHandler::MessageCode");
+    qRegisterMetaType<BlackChirp::LogMessageCode>("BlackChirp::MessageCode");
     d_currentMonth = QDate::currentDate().month();
     d_logFile.setFileName(makeLogFileName());
     d_logFile.open(QIODevice::Append);
@@ -19,13 +19,13 @@ LogHandler::~LogHandler()
         d_logFile.close();
 }
 
-void LogHandler::logMessage(const QString text, const MessageCode type)
+void LogHandler::logMessage(const QString text, const BlackChirp::LogMessageCode type)
 {
 	QDateTime time;
     QString timeStamp = time.currentDateTime().toString();
     writeToFile(text, type, timeStamp);
 
-    if(type == LogHandler::Debug)
+    if(type == BlackChirp::LogDebug)
         return;
 
 	QString out;
@@ -33,16 +33,16 @@ void LogHandler::logMessage(const QString text, const MessageCode type)
 
 	switch(type)
 	{
-	case Warning:
+    case BlackChirp::LogWarning:
 		out.append(QString("<span style=\"font-weight:bold\">Warning: %1</span>").arg(text));
 		break;
-	case Error:
+    case BlackChirp::LogError:
 		out.append(QString("<span style=\"font-weight:bold;color:red\">Error: %1</span>").arg(text));
 		break;
-	case Highlight:
+    case BlackChirp::LogHighlight:
 		out.append(QString("<span style=\"font-weight:bold;color:green\">%1</span>").arg(text));
 		break;
-	case Normal:
+    case BlackChirp::LogNormal:
 	default:
 		out.append(text);
 		break;
@@ -52,7 +52,7 @@ void LogHandler::logMessage(const QString text, const MessageCode type)
     emit sendLogMessage(out);
 }
 
-void LogHandler::writeToFile(const QString text, const LogHandler::MessageCode type, const QString timeStamp)
+void LogHandler::writeToFile(const QString text, const BlackChirp::LogMessageCode type, const QString timeStamp)
 {
     QDate now = QDate::currentDate();
     if(now.month() != d_currentMonth)
@@ -73,13 +73,13 @@ void LogHandler::writeToFile(const QString text, const LogHandler::MessageCode t
         QString msg = QString("%1: ").arg(timeStamp);
         switch (type)
         {
-        case LogHandler::Warning:
+        case BlackChirp::LogWarning:
             msg.append(QString("[WARNING] "));
             break;
-        case LogHandler::Error:
+        case BlackChirp::LogError:
             msg.append(QString("[ERROR] "));
             break;
-        case LogHandler::Debug:
+        case BlackChirp::LogDebug:
             msg.append(QString("[DEBUG] "));
             break;
         default:

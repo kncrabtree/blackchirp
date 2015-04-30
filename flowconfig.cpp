@@ -21,23 +21,23 @@ FlowConfig::~FlowConfig()
 
 }
 
-QVariant FlowConfig::setting(int index, FlowConfig::Setting s) const
+QVariant FlowConfig::setting(int index, BlackChirp::FlowSetting s) const
 {
     QVariant out;
     if(index < 0 || index > data->configList.size())
         return out;
 
     switch(s) {
-    case Enabled:
+    case BlackChirp::FlowSettingEnabled:
         out = data->configList.at(index).enabled;
         break;
-    case Setpoint:
+    case BlackChirp::FlowSettingSetpoint:
         out = data->configList.at(index).setpoint;
         break;
-    case Flow:
+    case BlackChirp::FlowSettingFlow:
         out = data->flowList.at(index);
         break;
-    case Name:
+    case BlackChirp::FlowSettingName:
         out = data->configList.at(index).name;
         break;
     }
@@ -68,7 +68,7 @@ int FlowConfig::size() const
 
 void FlowConfig::add(double set, QString name)
 {
-    ChannelConfig cc;
+    BlackChirp::FlowChannelConfig cc;
     cc.enabled = !(qFuzzyCompare(1.0+set,1.0));
     cc.name = name;
     cc.setpoint = set;
@@ -76,26 +76,26 @@ void FlowConfig::add(double set, QString name)
     data->flowList.append(0.0);
 }
 
-void FlowConfig::set(int index, FlowConfig::Setting s, QVariant val)
+void FlowConfig::set(int index, BlackChirp::FlowSetting s, QVariant val)
 {
     if(index < 0 || index > data->configList.size())
         return;
 
     switch(s) {
-    case Enabled:
+    case BlackChirp::FlowSettingEnabled:
         //this is handled automatically by the setpoint case
         break;
-    case Setpoint:
+    case BlackChirp::FlowSettingSetpoint:
         data->configList[index].setpoint = val.toDouble();
         if(qFuzzyCompare(1.0+data->configList.at(index).setpoint,1.0))
             data->configList[index].enabled = false;
         else
             data->configList[index].enabled = true;
         break;
-    case Flow:
+    case BlackChirp::FlowSettingFlow:
         data->flowList[index] = val.toDouble();
         break;
-    case Name:
+    case BlackChirp::FlowSettingName:
         data->configList[index].name = val.toString();
         break;
     }

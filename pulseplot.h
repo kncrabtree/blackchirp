@@ -21,7 +21,7 @@ public:
 
 public slots:
     void newConfig(const PulseGenConfig c);
-    void newSetting(int index, PulseGenConfig::Setting s, QVariant val);
+    void newSetting(int index, BlackChirp::PulseSetting s, QVariant val);
     void newRepRate(double d);
 
     // ZoomPanPlot interface

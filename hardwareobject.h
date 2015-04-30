@@ -8,7 +8,7 @@
 #include <QList>
 #include <QPair>
 
-#include "loghandler.h"
+#include "datastructs.h"
 #include "communicationprotocol.h"
 #include "experiment.h"
 
@@ -78,9 +78,9 @@ signals:
     /*!
      * \brief Displays a message on the log.
      * \param QString The message to display
-     * \param LogHandler::MessageCode The status incidator (Normal, Warning, Error, Highlight)
+     * \param BlackChirp::MessageCode The status incidator (Normal, Warning, Error, Highlight)
      */
-	void logMessage(const QString, const LogHandler::MessageCode = LogHandler::Normal);
+	void logMessage(const QString, const BlackChirp::LogMessageCode = BlackChirp::LogNormal);
 
     /*!
      * \brief Indicates whether a connection is successful

@@ -72,7 +72,7 @@ int LifConfig::completedShots() const
         return totalShots();
 
     int out;
-    if(data->order == LifConfig::DelayFirst)
+    if(data->order == BlackChirp::LifOrderDelayFirst)
     {
         out = data->currentDelayIndex*numFrequencyPoints()*data->shotsPerPoint;
         out += data->currentFrequencyIndex*data->shotsPerPoint;
@@ -163,7 +163,7 @@ bool LifConfig::setEnabled()
     //allocate memory for storage
     for(int i=0; i<numDelayPoints(); i++)
     {
-        QVector<LifConfig::LifPoint> d;
+        QVector<BlackChirp::LifPoint> d;
         d.resize(numFrequencyPoints());
         data->lifData.append(d);
     }
@@ -226,7 +226,7 @@ void LifConfig::setFrequencyParameters(double start, double stop, double step)
     data->frequencyStep = step;
 }
 
-void LifConfig::setOrder(LifConfig::ScanOrder o)
+void LifConfig::setOrder(BlackChirp::LifScanOrder o)
 {
     data->order = o;
 }
@@ -241,9 +241,7 @@ QMap<QString, QPair<QVariant, QString> > LifConfig::headerMap() const
     QMap<QString,QPair<QVariant,QString> > out;
     QString empty = QString("");
     QString prefix = QString("LifConfig");
-    QString so = (data->order == DelayFirst ? QString("DelayFirst") : QString("FrequencyFirst"));
-    QString scratch;
-
+    QString so = (data->order == BlackChirp::LifOrderDelayFirst ? QString("DelayFirst") : QString("FrequencyFirst"));
 
     out.insert(prefix+QString("ScanOrder"),qMakePair(so,empty));
     if(numDelayPoints() > 1)
@@ -281,23 +279,12 @@ QMap<QString, QPair<QVariant, QString> > LifConfig::headerMap() const
         out.insert(prefix+QString("RefGateStop"),qMakePair(data->refGateEndPoint,empty));
     }
 
-    //Scope config
-
-    prefix = QString("LifScope");
-    out.insert(prefix+QString("LifVerticalScale"),qMakePair(QString::number(data->scopeConfig.vScale1,'f',3),QString("V/div")));
-    out.insert(prefix+QString("RefVerticalScale"),qMakePair(QString::number(data->scopeConfig.vScale2,'f',3),QString("V/div")));
-    data->scopeConfig.slope == RisingEdge ? scratch = QString("RisingEdge") : scratch = QString("FallingEdge");
-    out.insert(prefix+QString("TriggerSlope"),qMakePair(scratch,empty));
-    out.insert(prefix+QString("SampleRate"),qMakePair(QString::number(data->scopeConfig.sampleRate/1e9,'f',3),QString("GS/s")));
-    out.insert(prefix+QString("RecordLength"),qMakePair(data->scopeConfig.recordLength,empty));
-    out.insert(prefix+QString("BytesPerPoint"),qMakePair(data->scopeConfig.bytesPerPoint,empty));
-    data->scopeConfig.byteOrder == QDataStream::BigEndian ? scratch = QString("BigEndian") : scratch = QString("LittleEndian");
-    out.insert(prefix+QString("ByteOrder"),qMakePair(scratch,empty));
+    out.unite(data->scopeConfig.headerMap());
 
     return out;
 }
 
-QPair<QPoint, LifConfig::LifPoint> LifConfig::lastUpdatedLifPoint() const
+QPair<QPoint, BlackChirp::LifPoint> LifConfig::lastUpdatedLifPoint() const
 {
     if(data->lastUpdatedPoint.x() < data->lifData.size())
     {
@@ -305,7 +292,7 @@ QPair<QPoint, LifConfig::LifPoint> LifConfig::lastUpdatedLifPoint() const
             return qMakePair(data->lastUpdatedPoint,data->lifData.at(data->lastUpdatedPoint.x()).at(data->lastUpdatedPoint.y()));
     }
 
-    return qMakePair(QPoint(-1,-1),LifPoint());
+    return qMakePair(QPoint(-1,-1),BlackChirp::LifPoint());
 
 }
 
@@ -354,7 +341,7 @@ void LifConfig::increment()
     if(data->currentDelayIndex+1 >= numDelayPoints() && data->currentFrequencyIndex+1 >= numFrequencyPoints())
         data->complete = true;
 
-    if(data->order == LifConfig::DelayFirst)
+    if(data->order == BlackChirp::LifOrderDelayFirst)
     {
         if(data->currentFrequencyIndex+1 >= numFrequencyPoints())
             data->currentDelayIndex = (data->currentDelayIndex+1)%numDelayPoints();

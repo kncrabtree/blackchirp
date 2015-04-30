@@ -7,6 +7,8 @@
 #include <QVariant>
 #include <QMetaType>
 
+#include "datastructs.h"
+
 class FlowConfigData;
 
 class FlowConfig
@@ -17,27 +19,14 @@ public:
     FlowConfig &operator=(const FlowConfig &);
     ~FlowConfig();
 
-    enum Setting {
-        Enabled,
-        Setpoint,
-        Flow,
-        Name
-    };
-
-    struct ChannelConfig {
-        bool enabled;
-        double setpoint;
-        QString name;
-    };
-
-    QVariant setting(int index, FlowConfig::Setting s) const;
+    QVariant setting(int index, BlackChirp::FlowSetting s) const;
     double pressureSetpoint() const;
     double pressure() const;
     bool pressureControlMode() const;
     int size() const;
 
     void add(double set = 0.0, QString name = QString(""));
-    void set(int index, FlowConfig::Setting s, QVariant val);
+    void set(int index, BlackChirp::FlowSetting s, QVariant val);
     void setPressure(double p);
     void setPressureSetpoint(double s);
     void setPressureControlMode(bool en);
@@ -54,14 +43,12 @@ class FlowConfigData : public QSharedData
 public:
     FlowConfigData() : pressureSetpoint(0.0), pressure(0.0), pressureControlMode(false) {}
 
-    QList<FlowConfig::ChannelConfig> configList;
+    QList<BlackChirp::FlowChannelConfig> configList;
     double pressureSetpoint;
 
     QList<double> flowList;
     double pressure;
     bool pressureControlMode;
 };
-
-Q_DECLARE_METATYPE(FlowConfig::Setting)
 
 #endif // FLOWCONFIG_H

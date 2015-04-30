@@ -183,7 +183,7 @@ Qt::ItemFlags ChirpTableModel::flags(const QModelIndex &index) const
 
 void ChirpTableModel::addSegment(double start, double end, double dur, int pos)
 {
-    ChirpConfig::ChirpSegment cs;
+    BlackChirp::ChirpSegment cs;
     cs.startFreqMHz = start;
     cs.endFreqMHz = end;
     cs.durationUs = dur;
@@ -221,7 +221,7 @@ void ChirpTableModel::moveSegments(int first, int last, int delta)
             return;
     }
 
-    QList<ChirpConfig::ChirpSegment> chunk = d_segmentList.mid(first,last-first+1);
+    QList<BlackChirp::ChirpSegment> chunk = d_segmentList.mid(first,last-first+1);
 
     //remove selected rows
     for(int i=0; i<last-first+1; i++)
@@ -247,7 +247,7 @@ void ChirpTableModel::removeSegments(QList<int> rows)
         removeRows(rows.at(i-1),1,QModelIndex());
 }
 
-QList<ChirpConfig::ChirpSegment> ChirpTableModel::segmentList() const
+QList<BlackChirp::ChirpSegment> ChirpTableModel::segmentList() const
 {
     return d_segmentList;
 }

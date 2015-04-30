@@ -42,13 +42,13 @@ void VirtualPulseGenerator::initialize()
         QString name = s.value(QString("name"),QString("Ch%1").arg(i)).toString();
         double d = s.value(QString("defaultDelay"),0.0).toDouble();
         double w = s.value(QString("defaultWidth"),0.050).toDouble();
-        QVariant lvl = s.value(QString("level"),PulseGenConfig::ActiveHigh);
+        QVariant lvl = s.value(QString("level"),BlackChirp::PulseLevelActiveHigh);
         bool en = s.value(QString("defaultEnabled"),false).toBool();
 
-        if(lvl == QVariant(PulseGenConfig::ActiveHigh))
-            d_config.add(name,en,d,w,PulseGenConfig::ActiveHigh);
+        if(lvl == QVariant(BlackChirp::PulseLevelActiveHigh))
+            d_config.add(name,en,d,w,BlackChirp::PulseLevelActiveHigh);
         else
-            d_config.add(name,en,d,w,PulseGenConfig::ActiveLow);
+            d_config.add(name,en,d,w,BlackChirp::PulseLevelActiveLow);
     }
     s.endArray();
 
@@ -75,13 +75,13 @@ void VirtualPulseGenerator::readTimeData()
 {
 }
 
-QVariant VirtualPulseGenerator::read(const int index, const PulseGenConfig::Setting s)
+QVariant VirtualPulseGenerator::read(const int index, const BlackChirp::PulseSetting s)
 {
     emit settingUpdate(index,s,d_config.setting(index,s));
     return d_config.setting(index,s);
 }
 
-void VirtualPulseGenerator::set(const int index, const PulseGenConfig::Setting s, const QVariant val)
+void VirtualPulseGenerator::set(const int index, const BlackChirp::PulseSetting s, const QVariant val)
 {
     d_config.set(index,s,val);
     emit settingUpdate(index,s,val);

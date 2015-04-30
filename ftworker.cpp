@@ -41,7 +41,7 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
     double spacing = fid.spacing();
     double probe = fid.probeFreq();
     double sign = 1.0;
-    if(fid.sideband() == Fid::LowerSideband)
+    if(fid.sideband() == BlackChirp::LowerSideband)
         sign = -1.0;
 
 
@@ -52,7 +52,7 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
     //convert fourier coefficients into magnitudes. the coefficients are stored in half-complex format
     //see http://www.gnu.org/software/gsl/manual/html_node/Mixed_002dradix-FFT-routines-for-real-data.html
     //first point is DC; block it!
-    if(fid.sideband() == Fid::UpperSideband)
+    if(fid.sideband() == BlackChirp::UpperSideband)
         spectrum[0] = QPointF(probe,0.0);
     else
         spectrum[spectrumSize-1] = QPointF(probe,0.0);
@@ -73,14 +73,14 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
         double coef_mag = sqrt(coef_real*coef_real + coef_imag*coef_imag)/(double)d_numPnts*1000.0;
         max = qMax(max,coef_mag);
 
-        if(fid.sideband() == Fid::UpperSideband)
+        if(fid.sideband() == BlackChirp::UpperSideband)
             spectrum[i] = QPointF(x1,coef_mag);
         else
             spectrum[spectrumSize-1-i] = QPointF(x1,coef_mag);
     }
     if(i==d_numPnts-i)
     {
-        if(fid.sideband() == Fid::UpperSideband)
+        if(fid.sideband() == BlackChirp::UpperSideband)
             spectrum[i] = QPointF(probe + sign*(double)i/(double)d_numPnts/spacing*1.0e-6,
                           sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/(double)d_numPnts*1000.0);
         else

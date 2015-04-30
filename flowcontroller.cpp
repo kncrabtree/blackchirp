@@ -21,7 +21,7 @@ FlowController::~FlowController()
 void FlowController::setChannelName(const int ch, const QString name)
 {
     if(ch < d_config.size())
-        d_config.set(ch,FlowConfig::Name,name);
+        d_config.set(ch,BlackChirp::FlowSettingName,name);
 
     emit channelNameUpdate(ch,name);
 
@@ -62,7 +62,7 @@ void FlowController::readAll()
 {
     for(int i=0; i<d_config.size(); i++)
     {
-        emit channelNameUpdate(i,d_config.setting(i,FlowConfig::Name).toString());
+        emit channelNameUpdate(i,d_config.setting(i,BlackChirp::FlowSettingName).toString());
         readFlowSetpoint(i);
         readFlow(i);
     }
@@ -80,8 +80,8 @@ void FlowController::readTimeData()
     out.append(qMakePair(QString("Pressure"),d_config.pressure()));
     for(int i=0; i<d_config.size(); i++)
     {
-        if(d_config.setting(i,FlowConfig::Enabled).toBool())
-            out.append(qMakePair(QString("Flow.%1").arg(i),d_config.setting(i,FlowConfig::Flow)));
+        if(d_config.setting(i,BlackChirp::FlowSettingEnabled).toBool())
+            out.append(qMakePair(QString("Flow.%1").arg(i),d_config.setting(i,BlackChirp::FlowSettingFlow)));
     }
     emit timeDataRead(out);
 }

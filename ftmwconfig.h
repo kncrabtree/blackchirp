@@ -10,6 +10,7 @@
 
 #include "fid.h"
 #include "chirpconfig.h"
+#include "datastructs.h"
 
 #ifdef BC_CUDA
 #include "gpuaverager.h"
@@ -25,85 +26,16 @@ public:
     FtmwConfig &operator=(const FtmwConfig &);
     ~FtmwConfig();
 
-    enum ScopeTriggerSlope {
-        RisingEdge,
-        FallingEdge
-    };
-
-    struct ScopeConfig {
-        //user-chosen settings
-        int fidChannel;
-        double vScale;
-        double sampleRate;
-        int recordLength;
-        bool fastFrameEnabled;
-        int numFrames;
-        bool summaryFrame;
-        int trigChannel;
-        ScopeTriggerSlope slope;
-
-        //settings hardcoded or read from scope
-        int bytesPerPoint; // set to 2
-        QDataStream::ByteOrder byteOrder; // set to BigEndian
-        double vOffset; // set to 0
-        double yMult; // read from scope (multiplier for digitized levels)
-        int yOff; // read from scope (location of y=0 in digitized levels)
-        double xIncr; // read from scope (actual point spacing in seconds)
-
-
-        ScopeConfig() : fidChannel(0), vScale(0.0), sampleRate(0.0), recordLength(0), fastFrameEnabled(false), numFrames(0),
-            summaryFrame(false), trigChannel(0), slope(RisingEdge), bytesPerPoint(1), byteOrder(QDataStream::LittleEndian),
-            vOffset(0.0), yMult(0.0), yOff(0), xIncr(0.0) {}
-        ScopeConfig(const ScopeConfig &other) : fidChannel(other.fidChannel), vScale(other.vScale), sampleRate(other.sampleRate),
-            recordLength(other.recordLength), fastFrameEnabled(other.fastFrameEnabled), numFrames(other.numFrames),
-            summaryFrame(other.summaryFrame), trigChannel(other.trigChannel), slope(other.slope), bytesPerPoint(other.bytesPerPoint),
-            byteOrder(other.byteOrder), vOffset(other.vOffset), yMult(other.yMult), yOff(other.yOff), xIncr(other.xIncr) {}
-
-        QMap<QString,QPair<QVariant,QString> > headerMap() const
-        {
-            QMap<QString,QPair<QVariant,QString> > out;
-            QString empty = QString("");
-            QString prefix = QString("FtmwScope");
-            QString scratch;
-
-            out.insert(prefix+QString("FidChannel"),qMakePair(fidChannel,empty));
-            out.insert(prefix+QString("VerticalScale"),qMakePair(QString::number(vScale,'f',3),QString("V/div")));
-            out.insert(prefix+QString("VerticalOffset"),qMakePair(QString::number(vOffset,'f',3),QString("V")));
-            out.insert(prefix+QString("TriggerChannel"),qMakePair(trigChannel,empty));
-            slope == RisingEdge ? scratch = QString("RisingEdge") : scratch = QString("FallingEdge");
-            out.insert(prefix+QString("TriggerSlope"),qMakePair(scratch,empty));
-            out.insert(prefix+QString("SampleRate"),qMakePair(QString::number(sampleRate/1e9,'f',3),QString("GS/s")));
-            out.insert(prefix+QString("RecordLength"),qMakePair(recordLength,empty));
-            out.insert(prefix+QString("FastFrame"),qMakePair(fastFrameEnabled,empty));
-            out.insert(prefix+QString("NumFrames"),qMakePair(numFrames,empty));
-            out.insert(prefix+QString("SummaryFrame"),qMakePair(summaryFrame,empty));
-            out.insert(prefix+QString("BytesPerPoint"),qMakePair(bytesPerPoint,empty));
-            byteOrder == QDataStream::BigEndian ? scratch = QString("BigEndian") : scratch = QString("LittleEndian");
-            out.insert(prefix+QString("ByteOrder"),qMakePair(scratch,empty));
-
-            return out;
-        }
-
-    };
-
-    enum FtmwType
-    {
-        TargetShots,
-        TargetTime,
-        Forever,
-        PeakUp
-    };
-
     bool isEnabled() const;
-    FtmwConfig::FtmwType type() const;
+    BlackChirp::FtmwType type() const;
     qint64 targetShots() const;
     qint64 completedShots() const;
     QDateTime targetTime() const;
     int autoSaveShots() const;
     double loFreq() const;
-    Fid::Sideband sideband() const;
+    BlackChirp::Sideband sideband() const;
     QList<Fid> fidList() const;
-    ScopeConfig scopeConfig() const;
+    BlackChirp::FtmwScopeConfig scopeConfig() const;
     ChirpConfig chirpConfig() const;
     Fid fidTemplate() const;
     int numFrames() const;
@@ -113,17 +45,17 @@ public:
     bool prepareForAcquisition();
     void setEnabled();
     void setFidTemplate(const Fid f);
-    void setType(const FtmwConfig::FtmwType type);
+    void setType(const BlackChirp::FtmwType type);
     void setTargetShots(const qint64 target);
     void increment();
     void setTargetTime(const QDateTime time);
     void setAutoSaveShots(const int shots);
     void setLoFreq(const double f);
-    void setSideband(const Fid::Sideband sb);
+    void setSideband(const BlackChirp::Sideband sb);
     bool setFids(const QByteArray newData);
     bool addFids(const QByteArray rawData);
     void resetFids();
-    void setScopeConfig(const ScopeConfig &other);
+    void setScopeConfig(const BlackChirp::FtmwScopeConfig &other);
     void setChirpConfig(const ChirpConfig other);
 
 
@@ -138,20 +70,20 @@ private:
 class FtmwConfigData : public QSharedData
 {
 public:
-    FtmwConfigData() : isEnabled(false), type(FtmwConfig::Forever), targetShots(-1), completedShots(0), autoSaveShots(1000), loFreq(0.0), sideband(Fid::UpperSideband) {}
+    FtmwConfigData() : isEnabled(false), type(BlackChirp::FtmwForever), targetShots(-1), completedShots(0), autoSaveShots(1000), loFreq(0.0), sideband(BlackChirp::UpperSideband) {}
 
     bool isEnabled;
-    FtmwConfig::FtmwType type;
+    BlackChirp::FtmwType type;
     qint64 targetShots;
     qint64 completedShots;
     QDateTime targetTime;
     int autoSaveShots;
 
     double loFreq;
-    Fid::Sideband sideband;
+    BlackChirp::Sideband sideband;
     QList<Fid> fidList;
 
-    FtmwConfig::ScopeConfig scopeConfig;
+    BlackChirp::FtmwScopeConfig scopeConfig;
     ChirpConfig chirpConfig;
     Fid fidTemplate;
     QString errorString;
@@ -162,8 +94,7 @@ public:
 
 };
 
-Q_DECLARE_METATYPE(FtmwConfig::FtmwType)
-Q_DECLARE_METATYPE(FtmwConfig::ScopeTriggerSlope)
+
 Q_DECLARE_TYPEINFO(FtmwConfig, Q_MOVABLE_TYPE);
 
 

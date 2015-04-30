@@ -12,10 +12,10 @@ FtmwConfigWidget::FtmwConfigWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    ui->modeComboBox->addItem(QString("Target Shots"),QVariant::fromValue(FtmwConfig::TargetShots));
-    ui->modeComboBox->addItem(QString("Target Time"),QVariant::fromValue(FtmwConfig::TargetTime));
-    ui->modeComboBox->addItem(QString("Forever"),QVariant::fromValue(FtmwConfig::Forever));
-    ui->modeComboBox->addItem(QString("Peak Up"),QVariant::fromValue(FtmwConfig::PeakUp));
+    ui->modeComboBox->addItem(QString("Target Shots"),QVariant::fromValue(BlackChirp::FtmwTargetShots));
+    ui->modeComboBox->addItem(QString("Target Time"),QVariant::fromValue(BlackChirp::FtmwTargetTime));
+    ui->modeComboBox->addItem(QString("Forever"),QVariant::fromValue(BlackChirp::FtmwForever));
+    ui->modeComboBox->addItem(QString("Peak Up"),QVariant::fromValue(BlackChirp::FtmwPeakUp));
 
     ui->sampleRateComboBox->addItem(QString("2 GS/s"),2e9);
     ui->sampleRateComboBox->addItem(QString("5 GS/s"),5e9);
@@ -24,11 +24,11 @@ FtmwConfigWidget::FtmwConfigWidget(QWidget *parent) :
     ui->sampleRateComboBox->addItem(QString("50 GS/s"),50e9);
     ui->sampleRateComboBox->addItem(QString("100 GS/s"),100e9);
 
-    ui->sidebandComboBox->addItem(QString("Upper Sideband"),QVariant::fromValue(Fid::UpperSideband));
-    ui->sidebandComboBox->addItem(QString("Lower Sideband"),QVariant::fromValue(Fid::LowerSideband));
+    ui->sidebandComboBox->addItem(QString("Upper Sideband"),QVariant::fromValue(BlackChirp::UpperSideband));
+    ui->sidebandComboBox->addItem(QString("Lower Sideband"),QVariant::fromValue(BlackChirp::LowerSideband));
 
-    ui->triggerSlopeComboBox->addItem(QString("Rising Edge"),QVariant::fromValue(FtmwConfig::RisingEdge));
-    ui->triggerSlopeComboBox->addItem(QString("Falling Edge"),QVariant::fromValue(FtmwConfig::FallingEdge));
+    ui->triggerSlopeComboBox->addItem(QString("Rising Edge"),QVariant::fromValue(BlackChirp::RisingEdge));
+    ui->triggerSlopeComboBox->addItem(QString("Falling Edge"),QVariant::fromValue(BlackChirp::FallingEdge));
 
 
     loadFromSettings();
@@ -61,7 +61,7 @@ void FtmwConfigWidget::setFromConfig(const FtmwConfig config)
     ui->loFrequencyDoubleSpinBox->setValue(config.loFreq());
     setComboBoxIndex(ui->sidebandComboBox,config.sideband());
 
-    const FtmwConfig::ScopeConfig sc = config.scopeConfig();
+    const BlackChirp::FtmwScopeConfig sc = config.scopeConfig();
     ui->fIDChannelSpinBox->setValue(sc.fidChannel);
     ui->verticalScaleDoubleSpinBox->setValue(sc.vScale);
     ui->triggerChannelSpinBox->setValue(sc.trigChannel);
@@ -81,7 +81,7 @@ FtmwConfig FtmwConfigWidget::getConfig() const
 {
     FtmwConfig out;
 
-    out.setType(ui->modeComboBox->currentData().value<FtmwConfig::FtmwType>());
+    out.setType(ui->modeComboBox->currentData().value<BlackChirp::FtmwType>());
     out.setTargetShots(ui->targetShotsSpinBox->value());
     if(ui->targetTimeDateTimeEdit->dateTime() > QDateTime::currentDateTime().addSecs(60))
         out.setTargetTime(ui->targetTimeDateTimeEdit->dateTime());
@@ -90,13 +90,13 @@ FtmwConfig FtmwConfigWidget::getConfig() const
     out.setAutoSaveShots(ui->autosaveSpinBox->value());
 
     out.setLoFreq(ui->loFrequencyDoubleSpinBox->value());
-    out.setSideband(ui->sidebandComboBox->currentData().value<Fid::Sideband>());
+    out.setSideband(ui->sidebandComboBox->currentData().value<BlackChirp::Sideband>());
 
-    FtmwConfig::ScopeConfig sc;
+    BlackChirp::FtmwScopeConfig sc;
     sc.fidChannel = ui->fIDChannelSpinBox->value();
     sc.vScale = ui->verticalScaleDoubleSpinBox->value();
     sc.trigChannel = ui->triggerChannelSpinBox->value();
-    sc.slope = ui->triggerSlopeComboBox->currentData().value<FtmwConfig::ScopeTriggerSlope>();
+    sc.slope = ui->triggerSlopeComboBox->currentData().value<BlackChirp::ScopeTriggerSlope>();
     sc.sampleRate = ui->sampleRateComboBox->currentData().toDouble();
     sc.recordLength = ui->recordLengthSpinBox->value();
     sc.bytesPerPoint = ui->bytesPointSpinBox->value();
@@ -201,8 +201,8 @@ void FtmwConfigWidget::configureUI()
 {
     blockSignals(true);
 
-    FtmwConfig::FtmwType type = ui->modeComboBox->currentData().value<FtmwConfig::FtmwType>();
-    if(type == FtmwConfig::TargetTime)
+    BlackChirp::FtmwType type = ui->modeComboBox->currentData().value<BlackChirp::FtmwType>();
+    if(type == BlackChirp::FtmwTargetTime)
     {
         ui->targetTimeDateTimeEdit->setEnabled(true);
         ui->targetShotsSpinBox->setEnabled(false);
@@ -213,10 +213,10 @@ void FtmwConfigWidget::configureUI()
         ui->targetShotsSpinBox->setEnabled(true);
     }
 
-    if(type == FtmwConfig::Forever)
+    if(type == BlackChirp::FtmwForever)
         ui->targetShotsSpinBox->setEnabled(false);
 
-    if(type == FtmwConfig::PeakUp)
+    if(type == BlackChirp::FtmwPeakUp)
         ui->autosaveSpinBox->setEnabled(false);
     else
         ui->autosaveSpinBox->setEnabled(true);

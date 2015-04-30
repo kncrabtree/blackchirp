@@ -6,7 +6,7 @@
 #include <QSettings>
 #include <QApplication>
 
-#include "loghandler.h"
+#include "datastructs.h"
 
 class CommunicationProtocol : public QObject
 {
@@ -36,7 +36,7 @@ public:
     void setReadOptions(int tmo, bool useTermChar = false, QByteArray termChar = QByteArray()) { d_timeOut = tmo, d_useTermChar = useTermChar, d_readTerminator = termChar; }
 
 signals:
-    void logMessage(QString,LogHandler::MessageCode = LogHandler::Normal);
+    void logMessage(QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal);
     void hardwareFailure();
 
 public slots:

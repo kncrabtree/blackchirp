@@ -17,6 +17,7 @@ VirtualLifScope::VirtualLifScope(QObject *parent) :
     setLifVScale(0.02);
     setRefVScale(0.02);
     setHorizontalConfig(1e9,1000);
+    d_config.refEnabled = true;
 }
 
 VirtualLifScope::~VirtualLifScope()
@@ -146,7 +147,7 @@ void VirtualLifScope::queryScope()
         }
     }
 
-    emit waveformRead(d_config,out);
+    emit waveformRead(LifTrace(d_config,out));
 
 }
 

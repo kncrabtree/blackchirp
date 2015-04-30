@@ -94,7 +94,7 @@ double ChirpConfig::totalDuration() const
         return data->preChirpProtection + data->preChirpDelay + chirpDuration() + data->postChirpProtection;
 }
 
-QList<ChirpConfig::ChirpSegment> ChirpConfig::segmentList() const
+QList<BlackChirp::ChirpSegment> ChirpConfig::segmentList() const
 {
     return data->segments;
 }
@@ -246,14 +246,14 @@ QString ChirpConfig::toString() const
 
     for(int i=0; i<data->segments.size(); i++)
     {
-        ChirpSegment s = data->segments.at(i);
+        BlackChirp::ChirpSegment s = data->segments.at(i);
         out.append(QString("\n%1\t%2\t%3").arg(s.startFreqMHz,0,'f',3).arg(s.endFreqMHz,0,'f',3).arg(s.durationUs,0,'f',4));
     }
 
     out.append(QString("\n"));
     for(int i=0; i<data->segments.size(); i++)
     {
-        ChirpSegment s = data->segments.at(i);
+        BlackChirp::ChirpSegment s = data->segments.at(i);
         out.append(QString("\n#%1\t%2\t%3").arg(awgToRealFreq(s.startFreqMHz),0,'f',3).arg(awgToRealFreq(s.endFreqMHz),0,'f',3).arg(s.durationUs,0,'f',4));
     }
 
@@ -346,12 +346,12 @@ void ChirpConfig::setChirpInterval(const double i)
     validate();
 }
 
-void ChirpConfig::setSegmentList(const QList<ChirpConfig::ChirpSegment> l)
+void ChirpConfig::setSegmentList(const QList<BlackChirp::ChirpSegment> l)
 {
-    QList<ChirpConfig::ChirpSegment> newSegList;
+    QList<BlackChirp::ChirpSegment> newSegList;
     for(int i=0; i<l.size(); i++)
     {
-        ChirpConfig::ChirpSegment seg;
+        BlackChirp::ChirpSegment seg;
         seg.startFreqMHz = realToAwgFreq(l.at(i).startFreqMHz);
         seg.endFreqMHz = realToAwgFreq(l.at(i).endFreqMHz);
         seg.durationUs = l.at(i).durationUs;
@@ -394,12 +394,12 @@ double ChirpConfig::getSampleTime(const int sample) const
     return static_cast<double>(sample)*data->sampleIntervalUS;
 }
 
-double ChirpConfig::calculateChirp(const ChirpConfig::ChirpSegment segment, const double t, const double phase) const
+double ChirpConfig::calculateChirp(const BlackChirp::ChirpSegment segment, const double t, const double phase) const
 {
     return gsl_sf_sin(gsl_sf_angle_restrict_pos(2.0*M_PI*(segment.startFreqMHz + 0.5*segment.alphaUs*t)*t + phase));
 }
 
-double ChirpConfig::calculateEndingPhaseRadians(const ChirpConfig::ChirpSegment segment, const double endingTime, const double startingPhase) const
+double ChirpConfig::calculateEndingPhaseRadians(const BlackChirp::ChirpSegment segment, const double endingTime, const double startingPhase) const
 {
     double sinVal = calculateChirp(segment,endingTime,startingPhase);
     if(qFuzzyCompare(sinVal,1.0))

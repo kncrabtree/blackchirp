@@ -12,7 +12,7 @@ public:
     ~LifScope();
 
 signals:
-    void waveformRead(LifConfig::LifScopeConfig, QByteArray);
+    void waveformRead(const LifTrace);
 
 public slots:
     virtual void setLifVScale(double scale) =0;
@@ -22,7 +22,7 @@ public slots:
     virtual void queryScope() =0;
 
 protected:
-    LifConfig::LifScopeConfig d_config;
+    BlackChirp::LifScopeConfig d_config;
     bool d_refEnabled;
 };
 

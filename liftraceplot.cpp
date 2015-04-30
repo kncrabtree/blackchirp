@@ -1,9 +1,15 @@
 #include "liftraceplot.h"
 
+#include <QSettings>
+#include <QMenu>
+#include <QColorDialog>
+#include <QMouseEvent>
+
 #include <qwt6/qwt_plot_curve.h>
 #include <qwt6/qwt_plot_zoneitem.h>
 #include <qwt6/qwt_legend.h>
-#include <QSettings>
+#include <qwt6/qwt_legend_label.h>
+
 
 LifTracePlot::LifTracePlot(QWidget *parent) :
     ZoomPanPlot(QString("lifTrace"),parent), d_numAverages(1), d_resetNext(true)
@@ -21,7 +27,6 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
 
     p_ref = new QwtPlotCurve(QString("Ref"));
     p_ref->setPen(QPen(refColor));
-    p_ref->setVisible(false);
 
     p_lifZone = new QwtPlotZoneItem();
     p_lifZone->setPen(QPen(lifColor));
@@ -34,7 +39,13 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
     p_refZone->setOrientation(Qt::Vertical);
 
     QwtLegend *leg = new QwtLegend(this);
+    leg->contentsWidget()->installEventFilter(this);
+    connect(leg,&QwtLegend::checked,this,&LifTracePlot::legendItemClicked);
     insertLegend(leg);
+
+    initializeLabel(p_lif,true);
+
+    connect(this,&LifTracePlot::plotRightClicked,this,&LifTracePlot::buildContextMenu);
 
 }
 
@@ -58,10 +69,8 @@ void LifTracePlot::setNumAverages(int n)
     d_numAverages = n;
 }
 
-void LifTracePlot::newTrace(const LifConfig::LifScopeConfig c, const QByteArray b)
+void LifTracePlot::newTrace(const LifTrace t)
 {
-    LifTrace t = LifTrace(c,b);
-
     if(t.size() == 0)
         return;
 
@@ -96,7 +105,10 @@ void LifTracePlot::traceProcessed(const LifTrace t)
 
         p_refZone->setInterval(ref.at(d_refZoneRange.first).x()*1e6,ref.at(d_refZoneRange.second).x()*1e6);
         if(p_ref->plot() != this)
+        {
             p_ref->attach(this);
+            initializeLabel(p_ref,true);
+        }
         if(p_refZone->plot() != this)
             p_refZone->attach(this);
     }
@@ -112,7 +124,79 @@ void LifTracePlot::traceProcessed(const LifTrace t)
     replot();
 }
 
+void LifTracePlot::buildContextMenu(QMouseEvent *me)
+{
+    QMenu *m = contextMenu();
 
+//    QAction *lifColorAction = m->addAction(QString("Change LIF Color..."));
+//    connect(lifColorAction,&QAction::triggered,this,&LifTracePlot::changeLifColor);
+
+//    QAction *refColorAction = m->addAction(QString("Change Ref Color..."));
+//    connect(refColorAction,&QAction::triggered,this,&LifTracePlot::changeRefColor);
+
+    m->popup(me->globalPos());
+}
+
+void LifTracePlot::changeLifColor()
+{
+    QColor currentColor = p_lif->pen().color();
+
+    QColor newColor = QColorDialog::getColor(currentColor,this,QString("Choose New LIF Color"));
+    if(!newColor.isValid())
+        return;
+
+    QSettings s;
+    s.setValue(QString("lifTracePlot/lifColor"),newColor);
+
+    p_lif->setPen(QPen(newColor));
+    p_lifZone->setPen(QPen(newColor));
+
+    replot();
+}
+
+void LifTracePlot::changeRefColor()
+{
+    QColor currentColor = p_ref->pen().color();
+
+    QColor newColor = QColorDialog::getColor(currentColor,this,QString("Choose New Reference Color"));
+    if(!newColor.isValid())
+        return;
+
+    QSettings s;
+    s.setValue(QString("lifTracePlot/refColor"),newColor);
+
+    p_ref->setPen(QPen(newColor));
+    p_refZone->setPen(QPen(newColor));
+
+    if(p_ref->plot() == this)
+        replot();
+}
+
+void LifTracePlot::legendItemClicked(QVariant info, bool checked, int index)
+{
+    Q_UNUSED(index);
+
+    QwtPlotCurve *c = dynamic_cast<QwtPlotCurve*>(infoToItem(info));
+    if(c == nullptr)
+        return;
+
+    c->setVisible(checked);
+    if(c == p_lif)
+        p_lifZone->setVisible(checked);
+    else if(c == p_ref)
+        p_refZone->setVisible(checked);
+
+    replot();
+}
+
+void LifTracePlot::initializeLabel(QwtPlotCurve *curve, bool isVisible)
+{
+    QwtLegendLabel* item = static_cast<QwtLegendLabel*>
+            (static_cast<QwtLegend*>(legend())->legendWidget(itemToInfo(curve)));
+
+    item->setItemMode(QwtLegendData::Checkable);
+    item->setChecked(isVisible);
+}
 
 void LifTracePlot::filterData()
 {
@@ -251,4 +335,48 @@ void LifTracePlot::filterData()
     if(d_currentTrace.hasRefData())
         p_ref->setSamples(refFiltered);
 
+}
+
+bool LifTracePlot::eventFilter(QObject *obj, QEvent *ev)
+{
+    if(ev->type() == QEvent::MouseButtonPress)
+    {
+        QwtLegend *l = static_cast<QwtLegend*>(legend());
+        if(obj == l->contentsWidget())
+        {
+            QMouseEvent *me = dynamic_cast<QMouseEvent*>(ev);
+            if(me != nullptr)
+            {
+                QwtLegendLabel *ll = dynamic_cast<QwtLegendLabel*>(l->contentsWidget()->childAt(me->pos()));
+                if(ll != nullptr)
+                {
+                    QVariant item = l->itemInfo(ll);
+                    QwtPlotCurve *c = dynamic_cast<QwtPlotCurve*>(infoToItem(item));
+                    if(c == nullptr)
+                    {
+                        ev->ignore();
+                        return true;
+                    }
+
+                    if(me->button() == Qt::RightButton)
+                    {
+                        if(c == p_lif)
+                        {
+                            changeLifColor();
+                            ev->accept();
+                            return true;
+                        }
+                        else if(c == p_ref)
+                        {
+                            changeRefColor();
+                            ev->accept();
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return ZoomPanPlot::eventFilter(obj,ev);
 }

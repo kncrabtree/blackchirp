@@ -7,7 +7,7 @@
 #include <QMetaType>
 
 #include "ftmwconfig.h"
-#include "loghandler.h"
+#include "datastructs.h"
 #include "pulsegenconfig.h"
 #include "flowconfig.h"
 #include "lifconfig.h"
@@ -37,7 +37,7 @@ public:
     QMap<QString,QList<QVariant>> timeDataMap() const;
     QString startLogMessage() const;
     QString endLogMessage() const;
-    LogHandler::MessageCode endLogMessageCode() const;
+    BlackChirp::LogMessageCode endLogMessageCode() const;
     QMap<QString, QPair<QVariant,QString>> headerMap() const;
 
     void setTimeDataInterval(const int t);
@@ -45,7 +45,7 @@ public:
     void setAborted();
     void setDummy();
     void setFtmwConfig(const FtmwConfig cfg);
-    void setScopeConfig(const FtmwConfig::ScopeConfig &cfg);
+    void setScopeConfig(const BlackChirp::FtmwScopeConfig &cfg);
     bool setFids(const QByteArray rawData);
     bool addFids(const QByteArray newData);
     void overrideTargetShots(const int target);
@@ -68,7 +68,7 @@ private:
 class ExperimentData : public QSharedData
 {
 public:
-    ExperimentData() : number(0), timeDataInterval(300), isInitialized(false), isAborted(false), isDummy(false), hardwareSuccess(true), endLogMessageCode(LogHandler::Highlight) {}
+    ExperimentData() : number(0), timeDataInterval(300), isInitialized(false), isAborted(false), isDummy(false), hardwareSuccess(true), endLogMessageCode(BlackChirp::LogHighlight) {}
 
     int number;
     QDateTime startTime;
@@ -80,7 +80,7 @@ public:
     QString errorString;
     QString startLogMessage;
     QString endLogMessage;
-    LogHandler::MessageCode endLogMessageCode;
+    BlackChirp::LogMessageCode endLogMessageCode;
 
     FtmwConfig ftmwCfg;
     PulseGenConfig pGenCfg;

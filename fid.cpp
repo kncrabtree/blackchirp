@@ -8,7 +8,7 @@ Fid::Fid(const Fid &rhs) : data(rhs.data)
 {
 }
 
-Fid::Fid(const double sp, const double p, const QVector<qint64> d, Sideband sb, double vMult, qint64 shots)
+Fid::Fid(const double sp, const double p, const QVector<qint64> d, BlackChirp::Sideband sb, double vMult, qint64 shots)
 {
     data = new FidData;
     data->spacing = sp;
@@ -45,7 +45,7 @@ void Fid::setData(const QVector<qint64> d)
     data->fid = d;
 }
 
-void Fid::setSideband(const Fid::Sideband sb)
+void Fid::setSideband(const BlackChirp::Sideband sb)
 {
     data->sideband = sb;
 }
@@ -185,7 +185,7 @@ qint64 Fid::shots() const
     return data->shots;
 }
 
-Fid::Sideband Fid::sideband() const
+BlackChirp::Sideband Fid::sideband() const
 {
     return data->sideband;
 }
@@ -194,7 +194,7 @@ double Fid::maxFreq() const
 {
     if(spacing()>0.0)
     {
-        if(sideband() == UpperSideband)
+        if(sideband() == BlackChirp::UpperSideband)
             return probeFreq() + 1.0/2.0/spacing()/1e6;
         else
             return probeFreq();
@@ -207,7 +207,7 @@ double Fid::minFreq() const
 {
     if(spacing()>0.0)
     {
-        if(sideband() == LowerSideband)
+        if(sideband() == BlackChirp::LowerSideband)
             return probeFreq() - 1.0/2.0/spacing()/1e6;
         else
             return probeFreq();

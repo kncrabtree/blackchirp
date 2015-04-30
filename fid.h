@@ -7,6 +7,8 @@
 #include <QPointF>
 #include <QMetaType>
 
+#include "datastructs.h"
+
 class FidData;
 
 /*!
@@ -25,11 +27,6 @@ class FidData;
 class Fid
 {
 public:
-    enum Sideband {
-        UpperSideband,
-        LowerSideband
-    };
-
     /*!
      \brief Default constructor.
 
@@ -49,7 +46,7 @@ public:
  \param p Probe frequency (MHz)
  \param d Data vector
 */
-    Fid(const double sp, const double p, const QVector<qint64> d, Sideband sb = UpperSideband, double vMult = 1.0, qint64 shots = 1);
+    Fid(const double sp, const double p, const QVector<qint64> d, BlackChirp::Sideband sb = BlackChirp::UpperSideband, double vMult = 1.0, qint64 shots = 1);
 
 
 /*!
@@ -86,7 +83,7 @@ public:
     */
     void setData(const QVector<qint64> d);
 
-    void setSideband(const Fid::Sideband sb);
+    void setSideband(const BlackChirp::Sideband sb);
 
     void setVMult(const double vm);
 
@@ -148,7 +145,7 @@ public:
 
     qint64 shots() const;
 
-    Fid::Sideband sideband() const;
+    BlackChirp::Sideband sideband() const;
 
     /*!
      * \brief Calculates max frequency of FT from the probe frequency and spacing
@@ -175,17 +172,16 @@ public:
  \brief Default constructor
 
 */
-    FidData() : spacing(5e-7), probeFreq(0.0), vMult(1.0), shots(1), fid(QVector<qint64>(400)), sideband(Fid::UpperSideband) {}
+    FidData() : spacing(5e-7), probeFreq(0.0), vMult(1.0), shots(1), fid(QVector<qint64>(400)), sideband(BlackChirp::UpperSideband) {}
 
     double spacing;
     double probeFreq;
     double vMult;
     qint64 shots;
     QVector<qint64> fid;
-    Fid::Sideband sideband;
+    BlackChirp::Sideband sideband;
 };
 
-Q_DECLARE_METATYPE(Fid::Sideband)
 Q_DECLARE_METATYPE(Fid)
 Q_DECLARE_TYPEINFO(Fid,Q_MOVABLE_TYPE);
 

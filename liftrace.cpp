@@ -4,7 +4,7 @@ LifTrace::LifTrace() : data(new LifTraceData)
 {
 }
 
-LifTrace::LifTrace(const LifConfig::LifScopeConfig c, const QByteArray b) : data(new LifTraceData)
+LifTrace::LifTrace(const BlackChirp::LifScopeConfig c, const QByteArray b) : data(new LifTraceData)
 {
     //reference channel is used to normalize to pulse energy
     //if active, must be second channel

@@ -12,31 +12,31 @@ PulseGenerator::~PulseGenerator()
 }
 
 
-PulseGenConfig::ChannelConfig PulseGenerator::read(const int index)
+BlackChirp::PulseChannelConfig PulseGenerator::read(const int index)
 {
-    PulseGenConfig::ChannelConfig out = d_config.settings(index);
+    BlackChirp::PulseChannelConfig out = d_config.settings(index);
     bool ok = false;
-    out.channelName = read(index,PulseGenConfig::Name).toString();
-    out.delay = read(index,PulseGenConfig::Delay).toDouble(&ok);
+    out.channelName = read(index,BlackChirp::PulseName).toString();
+    out.delay = read(index,BlackChirp::PulseDelay).toDouble(&ok);
     if(!ok)
         return out;
-    out.width = read(index,PulseGenConfig::Width).toDouble(&ok);
+    out.width = read(index,BlackChirp::PulseWidth).toDouble(&ok);
     if(!ok)
         return out;
-    out.enabled = read(index,PulseGenConfig::Enabled).toBool();
-    out.level = read(index,PulseGenConfig::Level).value<PulseGenConfig::ActiveLevel>();
+    out.enabled = read(index,BlackChirp::PulseEnabled).toBool();
+    out.level = read(index,BlackChirp::PulseLevel).value<BlackChirp::PulseActiveLevel>();
 
     return out;
 }
 
 
-void PulseGenerator::setChannel(const int index, const PulseGenConfig::ChannelConfig cc)
+void PulseGenerator::setChannel(const int index, const BlackChirp::PulseChannelConfig cc)
 {
-    set(index,PulseGenConfig::Name,cc.channelName);
-    set(index,PulseGenConfig::Enabled,cc.enabled);
-    set(index,PulseGenConfig::Delay,cc.delay);
-    set(index,PulseGenConfig::Width,cc.width);
-    set(index,PulseGenConfig::Level,cc.level);
+    set(index,BlackChirp::PulseName,cc.channelName);
+    set(index,BlackChirp::PulseEnabled,cc.enabled);
+    set(index,BlackChirp::PulseDelay,cc.delay);
+    set(index,BlackChirp::PulseWidth,cc.width);
+    set(index,BlackChirp::PulseLevel,cc.level);
 }
 
 void PulseGenerator::setAll(const PulseGenConfig cc)

@@ -132,7 +132,7 @@ void HardwareManager::initialize()
 
         s.setValue(QString("%1/prettyName").arg(obj->key()),obj->name());
 
-        connect(obj,&HardwareObject::logMessage,[=](QString msg, LogHandler::MessageCode mc){
+        connect(obj,&HardwareObject::logMessage,[=](QString msg, BlackChirp::LogMessageCode mc){
             emit logMessage(QString("%1: %2").arg(obj->name()).arg(msg),mc);
         });
         connect(obj,&HardwareObject::connected,[=](bool success, QString msg){ connectionResult(obj,success,msg); });
@@ -161,8 +161,8 @@ void HardwareManager::connectionResult(HardwareObject *obj, bool success, QStrin
         emit logMessage(obj->name().append(QString(" connected successfully.")));
     else
     {
-        emit logMessage(obj->name().append(QString(" connection failed!")),LogHandler::Error);
-        emit logMessage(msg,LogHandler::Error);
+        emit logMessage(obj->name().append(QString(" connection failed!")),BlackChirp::LogError);
+        emit logMessage(msg,BlackChirp::LogError);
     }
 
     bool ok = success;
@@ -263,7 +263,7 @@ double HardwareManager::setValonRxFreq(const double d)
     return out;
 }
 
-void HardwareManager::setPGenSetting(int index, PulseGenConfig::Setting s, QVariant val)
+void HardwareManager::setPGenSetting(int index, BlackChirp::PulseSetting s, QVariant val)
 {
     if(p_pGen->thread() == thread())
     {
@@ -271,7 +271,7 @@ void HardwareManager::setPGenSetting(int index, PulseGenConfig::Setting s, QVari
         return;
     }
 
-    QMetaObject::invokeMethod(p_pGen,"set",Q_ARG(int,index),Q_ARG(PulseGenConfig::Setting,s),Q_ARG(QVariant,val));
+    QMetaObject::invokeMethod(p_pGen,"set",Q_ARG(int,index),Q_ARG(BlackChirp::PulseSetting,s),Q_ARG(QVariant,val));
 }
 
 void HardwareManager::setPGenConfig(const PulseGenConfig c)

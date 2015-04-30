@@ -64,7 +64,7 @@ bool TcpInstrument::writeCmd(QString cmd)
     if(!d_socket->flush())
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not write command. (Command = %1)").arg(cmd),LogHandler::Error);
+        emit logMessage(QString("Could not write command. (Command = %1)").arg(cmd),BlackChirp::LogError);
         return false;
     }
     return true;
@@ -91,7 +91,7 @@ QByteArray TcpInstrument::queryCmd(QString cmd)
     if(!d_socket->flush())
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not write query. (query = %1)").arg(cmd),LogHandler::Error);
+        emit logMessage(QString("Could not write query. (query = %1)").arg(cmd),BlackChirp::LogError);
         return QByteArray();
     }
 
@@ -101,7 +101,7 @@ QByteArray TcpInstrument::queryCmd(QString cmd)
         if(!d_socket->waitForReadyRead(d_timeOut))
         {
             emit hardwareFailure();
-            emit logMessage(QString("Did not respond to query. (query = %1)").arg(cmd),LogHandler::Error);
+            emit logMessage(QString("Did not respond to query. (query = %1)").arg(cmd),BlackChirp::LogError);
             return QByteArray();
         }
 
@@ -122,7 +122,7 @@ QByteArray TcpInstrument::queryCmd(QString cmd)
         }
 
         emit hardwareFailure();
-        emit logMessage(QString("Timed out while waiting for termination character. (query = %1, partial response = %2)").arg(cmd).arg(QString(out)),LogHandler::Error);
+        emit logMessage(QString("Timed out while waiting for termination character. (query = %1, partial response = %2)").arg(cmd).arg(QString(out)),BlackChirp::LogError);
         emit logMessage(QString("Hex response: %1").arg(QString(out.toHex())));
         return out;
     }
@@ -134,7 +134,7 @@ bool TcpInstrument::connectSocket()
     d_socket->connectToHost(d_ip,d_port);
     if(!d_socket->waitForConnected(1000))
     {
-        emit logMessage(QString("Could not connect to %1:%2. %3").arg(d_ip).arg(d_port).arg(d_socket->errorString()),LogHandler::Error);
+        emit logMessage(QString("Could not connect to %1:%2. %3").arg(d_ip).arg(d_port).arg(d_socket->errorString()),BlackChirp::LogError);
         return false;
     }
     d_socket->setSocketOption(QAbstractSocket::KeepAliveOption,1);

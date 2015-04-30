@@ -21,7 +21,7 @@ public slots:
 
 
 protected:
-    FtmwConfig::ScopeConfig d_configuration;
+    BlackChirp::FtmwScopeConfig d_configuration;
 
 };
 

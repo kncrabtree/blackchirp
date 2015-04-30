@@ -8,6 +8,8 @@
 #include <QVariant>
 #include <QPair>
 
+#include "datastructs.h"
+
 class ChirpConfigData;
 
 //note: all time units are microseconds; all frequency units are MHz
@@ -19,13 +21,6 @@ public:
     ChirpConfig &operator=(const ChirpConfig &);
     ~ChirpConfig();
 
-    struct ChirpSegment {
-        double startFreqMHz;
-        double endFreqMHz;
-        double durationUs;
-        double alphaUs;
-    };
-
     bool isValid() const;
     double preChirpProtection() const;
     double preChirpDelay() const;
@@ -33,7 +28,7 @@ public:
     int numChirps() const;
     double chirpInterval() const;
 
-    QList<ChirpConfig::ChirpSegment> segmentList() const;
+    QList<BlackChirp::ChirpSegment> segmentList() const;
 
     double chirpDuration() const;
     double totalDuration() const;
@@ -47,7 +42,7 @@ public:
     void setPostChirpProtection(const double d);
     void setNumChirps(const int n);
     void setChirpInterval(const double i);
-    void setSegmentList(const QList<ChirpConfig::ChirpSegment> l);
+    void setSegmentList(const QList<BlackChirp::ChirpSegment> l);
 
 private:
     QSharedDataPointer<ChirpConfigData> data;
@@ -55,8 +50,8 @@ private:
     int getFirstSample(double time) const;
     int getLastSample(double time) const;
     double getSampleTime(const int sample) const;
-    double calculateChirp(const ChirpSegment segment, const double t, const double phase) const;
-    double calculateEndingPhaseRadians(const ChirpSegment segment, const double endingTime, const double startingPhase) const;
+    double calculateChirp(const BlackChirp::ChirpSegment segment, const double t, const double phase) const;
+    double calculateEndingPhaseRadians(const BlackChirp::ChirpSegment segment, const double endingTime, const double startingPhase) const;
     double realToAwgFreq(const double realFreq) const;
     double awgToRealFreq(const double awgFreq) const;
 
@@ -89,7 +84,7 @@ public:
     double sampleIntervalUS; //awg sample interval is microseconds
     bool isValid;
 
-    QList<ChirpConfig::ChirpSegment> segments;
+    QList<BlackChirp::ChirpSegment> segments;
 
 };
 

@@ -19,12 +19,6 @@ public:
     explicit TrackingViewWidget(QWidget *parent = 0);
     ~TrackingViewWidget();
 
-    enum YAxis {
-        yLeft,
-        yRight,
-        Both
-    };
-
     //! Associates curves with which plot and axis they're displayed on
     struct CurveMetaData {
         QwtPlotCurve *curve; /*!< The curve */

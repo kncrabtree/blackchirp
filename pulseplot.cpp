@@ -77,7 +77,7 @@ void PulsePlot::newConfig(const PulseGenConfig c)
     replot();
 }
 
-void PulsePlot::newSetting(int index, PulseGenConfig::Setting s, QVariant val)
+void PulsePlot::newSetting(int index, BlackChirp::PulseSetting s, QVariant val)
 {
     if(index < 0 || index > d_config.size())
         return;
@@ -123,12 +123,12 @@ void PulsePlot::replot()
 
     for(int i=0; i<d_config.size() && i <d_plotItems.size(); i++)
     {
-        PulseGenConfig::ChannelConfig c = d_config.at(i);
+        BlackChirp::PulseChannelConfig c = d_config.at(i);
         double channelOff = (double)(d_config.size()-1-i)*1.5 + 0.25;
         double channelOn = (double)(d_config.size()-1-i)*1.5 + 1.25;
         QVector<QPointF> data;
 
-        if(c.level == PulseGenConfig::ActiveLow)
+        if(c.level == BlackChirp::PulseLevelActiveLow)
             qSwap(channelOff,channelOn);
 
         data.append(QPointF(0.0,channelOff));

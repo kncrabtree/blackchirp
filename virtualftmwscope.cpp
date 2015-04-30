@@ -73,7 +73,7 @@ Experiment VirtualFtmwScope::prepareForExperiment(Experiment exp)
     if(!exp.ftmwConfig().isEnabled())
         return exp;
 
-    FtmwConfig::ScopeConfig config(exp.ftmwConfig().scopeConfig());
+    BlackChirp::FtmwScopeConfig config(exp.ftmwConfig().scopeConfig());
 
     config.yOff = 0;
     config.yMult = config.vScale*5.0/pow(2.0,8.0*config.bytesPerPoint-1.0);
