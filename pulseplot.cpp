@@ -16,6 +16,9 @@ PulsePlot::PulsePlot(QWidget *parent) :
 
     setTitle(QwtText("Pulses"));
 
+    setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
+    setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
+
     QFont labelFont(QString("sans serif"),8);
     QwtText xLabel(QString("Time (<span>&mu;</span>s)"));
     xLabel.setFont(labelFont);
