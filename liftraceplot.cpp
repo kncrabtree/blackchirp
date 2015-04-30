@@ -12,14 +12,15 @@
 
 
 LifTracePlot::LifTracePlot(QWidget *parent) :
-    ZoomPanPlot(QString("lifTrace"),parent), d_numAverages(1), d_resetNext(true)
+    ZoomPanPlot(QString("lifTrace"),parent), d_numAverages(1), d_resetNext(true),
+    d_lifGateMode(false), d_refGateMode(false)
 {
     QSettings s;
 
-    QColor lifColor = s.value(QString("lifTracePlot/lifColor"),QPalette().color(QPalette::Text)).value<QColor>();
-    QColor refColor = s.value(QString("lifTracePlot/refColor"),QPalette().color(QPalette::Text)).value<QColor>();
-    QColor zoneBrushColor = QColor(Qt::black);
-    zoneBrushColor.setAlpha(50);
+    QColor lifColor = s.value(QString("lifTracePlot/lifColor"),
+                              QPalette().color(QPalette::Text)).value<QColor>();
+    QColor refColor = s.value(QString("lifTracePlot/refColor"),
+                              QPalette().color(QPalette::Text)).value<QColor>();
 
     p_lif = new QwtPlotCurve(QString("LIF"));
     p_lif->setPen(QPen(lifColor));
@@ -29,14 +30,18 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
     p_ref->setPen(QPen(refColor));
 
     p_lifZone = new QwtPlotZoneItem();
-    p_lifZone->setPen(QPen(lifColor));
-    p_lifZone->setBrush(QBrush(zoneBrushColor));
+    p_lifZone->setPen(QPen(lifColor,2.0));
+    lifColor.setAlpha(75);
+    p_lifZone->setBrush(QBrush(lifColor));
     p_lifZone->setOrientation(Qt::Vertical);
+    p_lifZone->setZ(2.0);
 
     p_refZone = new QwtPlotZoneItem();
-    p_refZone->setPen(QPen(lifColor));
-    p_refZone->setBrush(QBrush(zoneBrushColor));
+    p_refZone->setPen(QPen(refColor,2.0));
+    refColor.setAlpha(75);
+    p_refZone->setBrush(QBrush(refColor));
     p_refZone->setOrientation(Qt::Vertical);
+    p_refZone->setZ(2.0);
 
     QwtLegend *leg = new QwtLegend(this);
     leg->contentsWidget()->installEventFilter(this);
@@ -47,6 +52,10 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
 
     connect(this,&LifTracePlot::plotRightClicked,this,&LifTracePlot::buildContextMenu);
 
+    d_lifZoneRange.first = -1;
+    d_lifZoneRange.second = -1;
+    d_refZoneRange.first = -1;
+    d_refZoneRange.second = -1;
 }
 
 LifTracePlot::~LifTracePlot()
@@ -83,32 +92,52 @@ void LifTracePlot::traceProcessed(const LifTrace t)
 {
     d_currentTrace = t;
 
+    bool updateLif = false, updateRef = false;
+
     if(d_lifZoneRange.first < 0 || d_lifZoneRange.first >= t.size())
+    {
         d_lifZoneRange.first = 0;
-    if(d_lifZoneRange.second < d_lifZoneRange.first || d_lifZoneRange.second >= t.size())
+        updateLif = true;
+    }
+    if(d_lifZoneRange.second < d_lifZoneRange.first || d_lifZoneRange.second >= t.size()-1)
+    {
         d_lifZoneRange.second = t.size()-1;
-    if(d_refZoneRange.first < 0 || d_refZoneRange.first >= t.size())
-        d_refZoneRange.first = 0;
-    if(d_refZoneRange.second < d_refZoneRange.first || d_refZoneRange.second >= t.size())
-        d_refZoneRange.second = t.size()-1;
+        updateLif = true;
+    }
+    if(t.hasRefData())
+    {
+        if(d_refZoneRange.first < 0 || d_refZoneRange.first >= t.size())
+        {
+            d_refZoneRange.first = 0;
+            updateRef = true;
+        }
+        if(d_refZoneRange.second < d_refZoneRange.first || d_refZoneRange.second >= t.size()-1)
+        {
+            d_refZoneRange.second = t.size()-1;
+            updateRef = true;
+        }
+    }
 
-    QVector<QPointF> lif = t.lifToXY();
-    setAxisAutoScaleRange(QwtPlot::xBottom,lif.at(0).x()*1e6,lif.at(lif.size()-1).x()*1e6);
+    setAxisAutoScaleRange(QwtPlot::xBottom,0.0,
+                          d_currentTrace.spacing()*static_cast<double>(d_currentTrace.size())*1e6);
 
-    p_lifZone->setInterval(lif.at(d_lifZoneRange.first).x()*1e6,lif.at(d_lifZoneRange.second).x()*1e6);
+    if(updateLif)
+        updateLifZone();
+
     if(p_lifZone->plot() != this)
         p_lifZone->attach(this);
 
     if(t.hasRefData())
     {
-        QVector<QPointF> ref = t.refToXY();
+        if(updateRef)
+            updateRefZone();
 
-        p_refZone->setInterval(ref.at(d_refZoneRange.first).x()*1e6,ref.at(d_refZoneRange.second).x()*1e6);
         if(p_ref->plot() != this)
         {
             p_ref->attach(this);
             initializeLabel(p_ref,true);
         }
+
         if(p_refZone->plot() != this)
             p_refZone->attach(this);
     }
@@ -128,11 +157,17 @@ void LifTracePlot::buildContextMenu(QMouseEvent *me)
 {
     QMenu *m = contextMenu();
 
-//    QAction *lifColorAction = m->addAction(QString("Change LIF Color..."));
-//    connect(lifColorAction,&QAction::triggered,this,&LifTracePlot::changeLifColor);
+    QAction *lifZoneAction = m->addAction(QString("Change LIF Gate..."));
+    connect(lifZoneAction,&QAction::triggered,this,&LifTracePlot::changeLifGateRange);
+    if(d_currentTrace.size() == 0 || !p_lifZone->isVisible())
+        lifZoneAction->setEnabled(false);
 
-//    QAction *refColorAction = m->addAction(QString("Change Ref Color..."));
-//    connect(refColorAction,&QAction::triggered,this,&LifTracePlot::changeRefColor);
+
+    QAction *refZoneAction = m->addAction(QString("Change Ref Gate..."));
+    connect(refZoneAction,&QAction::triggered,this,&LifTracePlot::changeRefGateRange);
+    if(!d_currentTrace.hasRefData() || !p_refZone->isVisible())
+        refZoneAction->setEnabled(false);
+
 
     m->popup(me->globalPos());
 }
@@ -150,6 +185,10 @@ void LifTracePlot::changeLifColor()
 
     p_lif->setPen(QPen(newColor));
     p_lifZone->setPen(QPen(newColor));
+    newColor.setAlpha(75);
+    p_lifZone->setBrush(newColor);
+
+    initializeLabel(p_lif,p_lif->isVisible());
 
     replot();
 }
@@ -167,6 +206,10 @@ void LifTracePlot::changeRefColor()
 
     p_ref->setPen(QPen(newColor));
     p_refZone->setPen(QPen(newColor));
+    newColor.setAlpha(75);
+    p_refZone->setBrush(newColor);
+
+    initializeLabel(p_ref,p_ref->isVisible());
 
     if(p_ref->plot() == this)
         replot();
@@ -189,6 +232,23 @@ void LifTracePlot::legendItemClicked(QVariant info, bool checked, int index)
     replot();
 }
 
+void LifTracePlot::reset()
+{
+    d_resetNext = true;
+}
+
+void LifTracePlot::changeLifGateRange()
+{
+    d_lifGateMode = true;
+    canvas()->setMouseTracking(true);
+}
+
+void LifTracePlot::changeRefGateRange()
+{
+    d_refGateMode = true;
+    canvas()->setMouseTracking(true);
+}
+
 void LifTracePlot::initializeLabel(QwtPlotCurve *curve, bool isVisible)
 {
     QwtLegendLabel* item = static_cast<QwtLegendLabel*>
@@ -196,6 +256,20 @@ void LifTracePlot::initializeLabel(QwtPlotCurve *curve, bool isVisible)
 
     item->setItemMode(QwtLegendData::Checkable);
     item->setChecked(isVisible);
+}
+
+void LifTracePlot::updateLifZone()
+{
+    double x1 = static_cast<double>(d_lifZoneRange.first)*d_currentTrace.spacing()*1e6;
+    double x2 = static_cast<double>(d_lifZoneRange.second)*d_currentTrace.spacing()*1e6;
+    p_lifZone->setInterval(x1,x2);
+}
+
+void LifTracePlot::updateRefZone()
+{
+    double x1 = static_cast<double>(d_refZoneRange.first)*d_currentTrace.spacing()*1e6;
+    double x2 = static_cast<double>(d_refZoneRange.second)*d_currentTrace.spacing()*1e6;
+    p_refZone->setInterval(x1,x2);
 }
 
 void LifTracePlot::filterData()
@@ -374,6 +448,108 @@ bool LifTracePlot::eventFilter(QObject *obj, QEvent *ev)
                         }
                     }
                 }
+            }
+        }
+
+        if(d_lifGateMode)
+        {
+            d_lifGateMode = false;
+            canvas()->setMouseTracking(false);
+            ev->accept();
+            return true;
+        }
+
+        if(d_refGateMode)
+        {
+            d_refGateMode = false;
+            canvas()->setMouseTracking(false);
+            ev->accept();
+            return true;
+        }
+    }
+    else if(ev->type() == QEvent::Wheel)
+    {
+        QWheelEvent *we = static_cast<QWheelEvent*>(ev);
+        int d = we->angleDelta().y()/120;
+
+        if(we->modifiers() & Qt::ControlModifier)
+            d*=5;
+
+        if(d_lifGateMode)
+        {
+            int newSpacing = d_lifZoneRange.second - d_lifZoneRange.first + 2*d;
+            if(newSpacing > 3)
+            {
+                d_lifZoneRange.first = qBound(0,d_lifZoneRange.first-d,qMin(d_lifZoneRange.second+d-1,d_currentTrace.size()-1));
+                d_lifZoneRange.second = qBound(d_lifZoneRange.first,d_lifZoneRange.second+d,d_currentTrace.size()-1);
+                updateLifZone();
+                replot();
+                ev->accept();
+                return true;
+            }
+            else
+            {
+                ev->ignore();
+                return true;
+            }
+        }
+
+        if(d_refGateMode)
+        {
+            int newSpacing = d_refZoneRange.second - d_refZoneRange.first + 2*d;
+            if(newSpacing > 3)
+            {
+                d_refZoneRange.first = qBound(0,d_refZoneRange.first-d,qMin(d_refZoneRange.second+d-1,d_currentTrace.size()-1));
+                d_refZoneRange.second = qBound(d_refZoneRange.first,d_refZoneRange.second+d,d_currentTrace.size()-1);
+                updateRefZone();
+                replot();
+                ev->accept();
+                return true;
+            }
+            else
+            {
+                ev->ignore();
+                return true;
+            }
+        }
+    }
+    else if(ev->type() == QEvent::MouseMove)
+    {
+        QMouseEvent *me = static_cast<QMouseEvent*>(ev);
+        double mousePos = canvasMap(QwtPlot::xBottom).invTransform(me->localPos().x());
+        int newCenter = static_cast<int>(round(mousePos/(d_currentTrace.spacing()*1e6)));
+
+        if(d_lifGateMode)
+        {
+            //preserve spacing, move center
+            int oldCenter = (d_lifZoneRange.second + d_lifZoneRange.first)/2;
+            int shift = newCenter - oldCenter;
+            if(d_lifZoneRange.first + shift >= 0 && d_lifZoneRange.second + shift < d_currentTrace.size())
+            {
+                d_lifZoneRange.first += shift;
+                d_lifZoneRange.second += shift;
+
+                updateLifZone();
+                replot();
+                ev->accept();
+                return true;
+            }
+        }
+
+        if(d_refGateMode)
+        {
+            //preserve spacing, move center
+            int oldCenter = (d_refZoneRange.second + d_refZoneRange.first)/2;
+            int shift = newCenter - oldCenter;
+            if(d_refZoneRange.first + shift >= 0 && d_refZoneRange.second + shift < d_currentTrace.size())
+            {
+                d_refZoneRange.first += shift;
+                d_refZoneRange.second += shift;
+
+                updateRefZone();
+                replot();
+                ev->accept();
+                return true;
             }
         }
     }

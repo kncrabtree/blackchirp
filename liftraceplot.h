@@ -26,16 +26,22 @@ public slots:
     void changeLifColor();
     void changeRefColor();
     void legendItemClicked(QVariant info, bool checked, int index);
+    void reset();
+
+    void changeLifGateRange();
+    void changeRefGateRange();
 
 private:
     QwtPlotCurve *p_lif, *p_ref;
     QwtPlotZoneItem *p_lifZone, *p_refZone;
     LifTrace d_currentTrace;
     int d_numAverages;
-    bool d_resetNext;
+    bool d_resetNext, d_lifGateMode, d_refGateMode;
     QPair<int,int> d_lifZoneRange, d_refZoneRange;
 
     void initializeLabel(QwtPlotCurve *curve, bool isVisible);
+    void updateLifZone();
+    void updateRefZone();
 
 
     // ZoomPanPlot interface

@@ -23,6 +23,7 @@ public:
     ~LifTrace();
 
     double integrate(int gl1, int gl2, int gr1 = -1, int gr2 = -1) const;
+    double spacing() const;
     QVector<QPointF> lifToXY() const;
     QVector<QPointF> refToXY() const;
     double maxTime() const;

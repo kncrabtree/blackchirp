@@ -107,6 +107,11 @@ double LifTrace::integrate(int gl1, int gl2, int gr1, int gr2) const
         return out/ref;
 }
 
+double LifTrace::spacing() const
+{
+    return data->xSpacing;
+}
+
 QVector<QPointF> LifTrace::lifToXY() const
 {
     QVector<QPointF> out;
