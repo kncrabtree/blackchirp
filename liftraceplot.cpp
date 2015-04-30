@@ -4,6 +4,9 @@
 #include <QMenu>
 #include <QColorDialog>
 #include <QMouseEvent>
+#include <QWidgetAction>
+#include <QSpinBox>
+#include <QFormLayout>
 
 #include <qwt6/qwt_plot_curve.h>
 #include <qwt6/qwt_plot_zoneitem.h>
@@ -12,7 +15,7 @@
 
 
 LifTracePlot::LifTracePlot(QWidget *parent) :
-    ZoomPanPlot(QString("lifTrace"),parent), d_numAverages(1), d_resetNext(true),
+    ZoomPanPlot(QString("lifTrace"),parent), d_numAverages(10), d_resetNext(true),
     d_lifGateMode(false), d_refGateMode(false)
 {
     QSettings s;
@@ -83,8 +86,16 @@ void LifTracePlot::newTrace(const LifTrace t)
     if(t.size() == 0)
         return;
 
-//    if(d_resetNext)
-    traceProcessed(t);
+    if(d_resetNext || d_currentTrace.size() == 0)
+    {
+        d_resetNext = false;
+        traceProcessed(t);
+    }
+    else
+    {
+        d_currentTrace.rollAvg(t,d_numAverages);
+        traceProcessed(d_currentTrace);
+    }
 
 }
 
@@ -167,6 +178,33 @@ void LifTracePlot::buildContextMenu(QMouseEvent *me)
     connect(refZoneAction,&QAction::triggered,this,&LifTracePlot::changeRefGateRange);
     if(!d_currentTrace.hasRefData() || !p_refZone->isVisible() || !isEnabled())
         refZoneAction->setEnabled(false);
+
+    m->addSeparator();
+
+    QAction *resetAction = m->addAction(QString("Reset Averages"));
+    connect(resetAction,&QAction::triggered,this,&LifTracePlot::reset);
+    if(d_currentTrace.size() == 0 || !isEnabled())
+        resetAction->setEnabled(false);
+
+    QWidgetAction *wa = new QWidgetAction(m);
+    QWidget *w = new QWidget(m);
+    QSpinBox *shotsBox = new QSpinBox(w);
+    QFormLayout *fl = new QFormLayout();
+
+    fl->addRow(QString("Average"),shotsBox);
+
+    shotsBox->setRange(1,__INT32_MAX__);
+    shotsBox->setSingleStep(10);
+    shotsBox->setValue(d_numAverages);
+    shotsBox->setSuffix(QString(" shots"));
+    connect(shotsBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+            [=](int n){ d_numAverages = n; });
+    if(!isEnabled())
+        shotsBox->setEnabled(false);
+
+    w->setLayout(fl);
+    wa->setDefaultWidget(w);
+    m->addAction(wa);
 
 
     m->popup(me->globalPos());

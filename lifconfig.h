@@ -15,7 +15,6 @@
 
 
 class LifConfigData;
-//class LifTrace;
 
 class LifConfig
 {
