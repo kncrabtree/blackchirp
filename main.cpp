@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
     qRegisterMetaType<QList<Fid> >("QList<Fid>");
     qRegisterMetaType<QVector<QPointF> >("QVector<QPointF>");
     qRegisterMetaType<QList<QPair<QString,QVariant> >>("QList<QPair<QString,QVariant> >");
-    qRegisterMetaType<BlackChirp::PulseSetting>("BlackChirp::Setting");
+    qRegisterMetaType<BlackChirp::PulseSetting>("BlackChirp::PulseSetting");
     qRegisterMetaType<PulseGenConfig>("PulseGenConfig");
     qRegisterMetaType<LifTrace>("LifTrace");
 
