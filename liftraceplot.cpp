@@ -18,8 +18,19 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
     ZoomPanPlot(QString("lifTrace"),parent), d_numAverages(10), d_resetNext(true),
     d_lifGateMode(false), d_refGateMode(false)
 {
-    QSettings s;
+    setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
+    setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
 
+    //build axis titles with small font. The <html> etc. tags are needed to display the mu character
+    QwtText blabel(QString("Time (ns)"));
+    blabel.setFont(QFont(QString("sans-serif"),8));
+    this->setAxisTitle(QwtPlot::xBottom,blabel);
+
+    QwtText llabel(QString("LIF (V)"));
+    llabel.setFont(QFont(QString("sans-serif"),8));
+    this->setAxisTitle(QwtPlot::yLeft,llabel);
+
+    QSettings s;
     QColor lifColor = s.value(QString("lifTracePlot/lifColor"),
                               QPalette().color(QPalette::Text)).value<QColor>();
     QColor refColor = s.value(QString("lifTracePlot/refColor"),
@@ -103,6 +114,11 @@ void LifTracePlot::traceProcessed(const LifTrace t)
 {
     d_currentTrace = t;
 
+    if(t.hasRefData())
+        emit integralUpdate(t.integrate(d_lifZoneRange.first,d_lifZoneRange.second,d_refZoneRange.first,d_refZoneRange.second));
+    else
+        emit integralUpdate(t.integrate(d_lifZoneRange.first,d_lifZoneRange.second));
+
     bool updateLif = false, updateRef = false;
 
     if(d_lifZoneRange.first < 0 || d_lifZoneRange.first >= t.size())
@@ -130,7 +146,7 @@ void LifTracePlot::traceProcessed(const LifTrace t)
     }
 
     setAxisAutoScaleRange(QwtPlot::xBottom,0.0,
-                          d_currentTrace.spacing()*static_cast<double>(d_currentTrace.size())*1e6);
+                          d_currentTrace.spacing()*static_cast<double>(d_currentTrace.size())*1e9);
 
     if(updateLif)
         updateLifZone();
@@ -298,16 +314,23 @@ void LifTracePlot::initializeLabel(QwtPlotCurve *curve, bool isVisible)
 
 void LifTracePlot::updateLifZone()
 {
-    double x1 = static_cast<double>(d_lifZoneRange.first)*d_currentTrace.spacing()*1e6;
-    double x2 = static_cast<double>(d_lifZoneRange.second)*d_currentTrace.spacing()*1e6;
+    double x1 = static_cast<double>(d_lifZoneRange.first)*d_currentTrace.spacing()*1e9;
+    double x2 = static_cast<double>(d_lifZoneRange.second)*d_currentTrace.spacing()*1e9;
     p_lifZone->setInterval(x1,x2);
+
+    if(d_currentTrace.hasRefData())
+        emit integralUpdate(d_currentTrace.integrate(d_lifZoneRange.first,d_lifZoneRange.second,d_refZoneRange.first,d_refZoneRange.second));
+    else
+        emit integralUpdate(d_currentTrace.integrate(d_lifZoneRange.first,d_lifZoneRange.second));
 }
 
 void LifTracePlot::updateRefZone()
 {
-    double x1 = static_cast<double>(d_refZoneRange.first)*d_currentTrace.spacing()*1e6;
-    double x2 = static_cast<double>(d_refZoneRange.second)*d_currentTrace.spacing()*1e6;
+    double x1 = static_cast<double>(d_refZoneRange.first)*d_currentTrace.spacing()*1e9;
+    double x2 = static_cast<double>(d_refZoneRange.second)*d_currentTrace.spacing()*1e9;
     p_refZone->setInterval(x1,x2);
+
+    emit integralUpdate(d_currentTrace.integrate(d_lifZoneRange.first,d_lifZoneRange.second,d_refZoneRange.first,d_refZoneRange.second));
 }
 
 void LifTracePlot::filterData()
@@ -331,7 +354,7 @@ void LifTracePlot::filterData()
     //find first data point that is in the range of the plot
     //note: x data for lif and ref are assumed to be the same!
     int dataIndex = 0;
-    while(dataIndex+1 < lifData.size() && map.transform(lifData.at(dataIndex).x()*1e6) < firstPixel)
+    while(dataIndex+1 < lifData.size() && map.transform(lifData.at(dataIndex).x()*1e9) < firstPixel)
         dataIndex++;
 
     //add the previous point to the filtered array
@@ -357,7 +380,7 @@ void LifTracePlot::filterData()
         int lifMinIndex = dataIndex, lifMaxIndex = dataIndex, refMinIndex = dataIndex, refMaxIndex = dataIndex;
         int numPnts = 0;
 
-        while(dataIndex+1 < lifData.size() && map.transform(lifData.at(dataIndex).x()*1e6) < pixel+1.0)
+        while(dataIndex+1 < lifData.size() && map.transform(lifData.at(dataIndex).x()*1e9) < pixel+1.0)
         {
             if(lifData.at(dataIndex).y() < lifMin)
             {
@@ -408,9 +431,9 @@ void LifTracePlot::filterData()
         }
         if(numPnts == 1)
         {
-            lifFiltered.append(QPointF(lifData.at(dataIndex-1).x()*1e6,lifData.at(dataIndex-1).y()));
+            lifFiltered.append(QPointF(lifData.at(dataIndex-1).x()*1e9,lifData.at(dataIndex-1).y()));
             if(d_currentTrace.hasRefData())
-                refFiltered.append(QPointF(lifData.at(dataIndex-1).x()*1e6,refData.at(dataIndex-1).y()));
+                refFiltered.append(QPointF(lifData.at(dataIndex-1).x()*1e9,refData.at(dataIndex-1).y()));
         }
         else if (numPnts > 1)
         {
@@ -431,12 +454,12 @@ void LifTracePlot::filterData()
     if(dataIndex < lifData.size())
     {
         QPointF p = lifData.at(dataIndex);
-        p.setX(p.x()*1e6);
+        p.setX(p.x()*1e9);
         lifFiltered.append(p);
         if(d_currentTrace.hasRefData())
         {
             p = refData.at(dataIndex);
-            p.setX(p.x()*1e6);
+            p.setX(p.x()*1e9);
             refFiltered.append(p);
         }
     }
@@ -555,7 +578,7 @@ bool LifTracePlot::eventFilter(QObject *obj, QEvent *ev)
     {
         QMouseEvent *me = static_cast<QMouseEvent*>(ev);
         double mousePos = canvasMap(QwtPlot::xBottom).invTransform(me->localPos().x());
-        int newCenter = static_cast<int>(round(mousePos/(d_currentTrace.spacing()*1e6)));
+        int newCenter = static_cast<int>(round(mousePos/(d_currentTrace.spacing()*1e9)));
 
         if(d_lifGateMode)
         {

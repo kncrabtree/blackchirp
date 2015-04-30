@@ -17,6 +17,7 @@ public:
 
 signals:
     void colorChanged();
+    void integralUpdate(double);
 
 public slots:
     void setNumAverages(int n);
