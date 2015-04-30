@@ -299,7 +299,7 @@ void ZoomPanPlot::zoom(QWheelEvent *we)
 
     //one step, which is 15 degrees, will zoom 10%
     //the delta function is in units of 1/8th a degree
-    int numSteps = we->delta()/8/15;
+    int numSteps = we->angleDelta().y()/8/15;
 
     for(int i=0; i<d_config.axisList.size(); i++)
     {
