@@ -159,13 +159,13 @@ void LifTracePlot::buildContextMenu(QMouseEvent *me)
 
     QAction *lifZoneAction = m->addAction(QString("Change LIF Gate..."));
     connect(lifZoneAction,&QAction::triggered,this,&LifTracePlot::changeLifGateRange);
-    if(d_currentTrace.size() == 0 || !p_lifZone->isVisible())
+    if(d_currentTrace.size() == 0 || !p_lifZone->isVisible() || !isEnabled())
         lifZoneAction->setEnabled(false);
 
 
     QAction *refZoneAction = m->addAction(QString("Change Ref Gate..."));
     connect(refZoneAction,&QAction::triggered,this,&LifTracePlot::changeRefGateRange);
-    if(!d_currentTrace.hasRefData() || !p_refZone->isVisible())
+    if(!d_currentTrace.hasRefData() || !p_refZone->isVisible() || !isEnabled())
         refZoneAction->setEnabled(false);
 
 
