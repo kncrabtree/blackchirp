@@ -221,8 +221,13 @@ void FtmwConfigWidget::configureUI()
     else
         ui->autosaveSpinBox->setEnabled(true);
 
-    ui->framesSpinBox->setEnabled(ui->fastFrameEnabledCheckBox->isChecked());
-    ui->summaryFrameCheckBox->setEnabled(ui->fastFrameEnabledCheckBox->isChecked());
+
+    if(ui->fastFrameEnabledCheckBox->isEnabled())
+    {
+        ui->framesSpinBox->setEnabled(ui->fastFrameEnabledCheckBox->isChecked());
+        ui->summaryFrameCheckBox->setEnabled(ui->fastFrameEnabledCheckBox->isChecked());
+    }
+
     blockSignals(false);
 }
 
