@@ -47,6 +47,7 @@ FtPlot::FtPlot(QWidget *parent) :
     p_curveData = new QwtPlotCurve();
     QColor c = s.value(QString("ftcolor"),palette().color(QPalette::BrightText)).value<QColor>();
     p_curveData->setPen(QPen(c));
+    p_curveData->setRenderHint(QwtPlotItem::RenderAntialiased);
     p_curveData->attach(this);
 
     QwtPlotPicker *picker = new QwtPlotPicker(this->canvas());

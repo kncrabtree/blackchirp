@@ -44,6 +44,7 @@ FidPlot::FidPlot(QWidget *parent) :
     p.setColor(s.value(QString("fidcolor"),pal.text().color()).value<QColor>());
     p.setWidth(1);
     d_curve->setPen(p);
+    d_curve->setRenderHint(QwtPlotItem::RenderAntialiased);
     d_curve->attach(this);
 
     QwtPlotMarker *chirpStartMarker = new QwtPlotMarker();
