@@ -1,6 +1,7 @@
 #include "liftraceplot.h"
 
 #include <QSettings>
+#include <QApplication>
 #include <QMenu>
 #include <QColorDialog>
 #include <QMouseEvent>
@@ -16,7 +17,7 @@
 
 
 LifTracePlot::LifTracePlot(QWidget *parent) :
-    ZoomPanPlot(QString("lifTrace"),parent), d_numAverages(10), d_resetNext(true),
+    ZoomPanPlot(QString("lifTrace"),parent), d_resetNext(true),
     d_lifGateMode(false), d_refGateMode(false)
 {
     setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
@@ -75,10 +76,12 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
 
     connect(this,&LifTracePlot::plotRightClicked,this,&LifTracePlot::buildContextMenu);
 
-    d_lifZoneRange.first = -1;
-    d_lifZoneRange.second = -1;
-    d_refZoneRange.first = -1;
-    d_refZoneRange.second = -1;
+    QSettings s2(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    d_lifZoneRange.first = s2.value(QString("lifConfig/lifStart"),-1).toInt();
+    d_lifZoneRange.second = s2.value(QString("lifConfig/lifEnd"),-1).toInt();
+    d_refZoneRange.first = s2.value(QString("lifConfig/refStart"),-1).toInt();
+    d_refZoneRange.second = s2.value(QString("lifConfig/refEnd"),-1).toInt();
+    d_numAverages = s2.value(QString("lifConfig/numAverages"),10).toInt();
 
     connect(this,&LifTracePlot::integralUpdate,this,&LifTracePlot::setIntegralText);
 }
@@ -101,9 +104,33 @@ LifTracePlot::~LifTracePlot()
     delete p_integralLabel;
 }
 
+void LifTracePlot::setLifGateRange(int begin, int end)
+{
+    d_lifZoneRange.first = begin;
+    d_lifZoneRange.second = end;
+}
+
+void LifTracePlot::setRefGateRange(int begin, int end)
+{
+    d_refZoneRange.first = begin;
+    d_refZoneRange.second = end;
+}
+
+LifConfig LifTracePlot::getSettings(LifConfig c)
+{
+    c.setLifGate(d_lifZoneRange.first,d_lifZoneRange.second);
+    c.setRefGate(d_refZoneRange.first,d_refZoneRange.second);
+    c.setShotsPerPoint(d_numAverages);
+
+    return c;
+}
+
 void LifTracePlot::setNumAverages(int n)
 {
     d_numAverages = n;
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.setValue(QString("lifConfig/numAverages"),n);
+    s.sync();
 }
 
 void LifTracePlot::newTrace(const LifTrace t)
@@ -126,6 +153,14 @@ void LifTracePlot::newTrace(const LifTrace t)
 
 void LifTracePlot::traceProcessed(const LifTrace t)
 {
+    bool updateLif = false, updateRef = false;
+    if(d_currentTrace.size() == 0)
+    {
+        updateLif = true;
+        if(t.hasRefData())
+            updateRef = true;
+    }
+
     d_currentTrace = t;
 
     if(t.hasRefData())
@@ -133,7 +168,7 @@ void LifTracePlot::traceProcessed(const LifTrace t)
     else
         emit integralUpdate(t.integrate(d_lifZoneRange.first,d_lifZoneRange.second));
 
-    bool updateLif = false, updateRef = false;
+
 
     if(d_lifZoneRange.first < 0 || d_lifZoneRange.first >= t.size())
     {
@@ -227,8 +262,7 @@ void LifTracePlot::buildContextMenu(QMouseEvent *me)
     shotsBox->setSingleStep(10);
     shotsBox->setValue(d_numAverages);
     shotsBox->setSuffix(QString(" shots"));
-    connect(shotsBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-            [=](int n){ d_numAverages = n; });
+    connect(shotsBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&LifTracePlot::setNumAverages);
     if(!isEnabled())
         shotsBox->setEnabled(false);
 
@@ -550,6 +584,10 @@ bool LifTracePlot::eventFilter(QObject *obj, QEvent *ev)
         {
             d_lifGateMode = false;
             canvas()->setMouseTracking(false);
+
+            QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+            s.setValue(QString("lifConfig/lifStart"),d_lifZoneRange.first);
+            s.setValue(QString("lifConfig/lifEnd"),d_lifZoneRange.second);
             ev->accept();
             return true;
         }
@@ -558,6 +596,10 @@ bool LifTracePlot::eventFilter(QObject *obj, QEvent *ev)
         {
             d_refGateMode = false;
             canvas()->setMouseTracking(false);
+
+            QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+            s.setValue(QString("lifConfig/refStart"),d_refZoneRange.first);
+            s.setValue(QString("lifConfig/refEnd"),d_refZoneRange.second);
             ev->accept();
             return true;
         }

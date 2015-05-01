@@ -3,6 +3,7 @@
 
 #include "zoompanplot.h"
 
+#include "lifconfig.h"
 #include "liftrace.h"
 
 class QwtPlotCurve;
@@ -15,6 +16,11 @@ class LifTracePlot : public ZoomPanPlot
 public:
     LifTracePlot(QWidget *parent = nullptr);
     ~LifTracePlot();
+
+    void setLifGateRange(int begin, int end);
+    void setRefGateRange(int begin, int end);
+
+    LifConfig getSettings(LifConfig c);
 
 signals:
     void colorChanged();
