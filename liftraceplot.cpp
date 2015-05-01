@@ -12,6 +12,7 @@
 #include <qwt6/qwt_plot_zoneitem.h>
 #include <qwt6/qwt_legend.h>
 #include <qwt6/qwt_legend_label.h>
+#include <qwt6/qwt_plot_textlabel.h>
 
 
 LifTracePlot::LifTracePlot(QWidget *parent) :
@@ -36,12 +37,20 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
     QColor refColor = s.value(QString("lifTracePlot/refColor"),
                               QPalette().color(QPalette::Text)).value<QColor>();
 
+    p_integralLabel = new QwtPlotTextLabel();
+    p_integralLabel->setZ(10.0);
+    p_integralLabel->attach(this);
+
     p_lif = new QwtPlotCurve(QString("LIF"));
+    p_lif->setRenderHint(QwtPlotItem::RenderAntialiased);
     p_lif->setPen(QPen(lifColor));
     p_lif->attach(this);
+    p_lif->setZ(1.0);
 
     p_ref = new QwtPlotCurve(QString("Ref"));
+    p_ref->setRenderHint(QwtPlotItem::RenderAntialiased);
     p_ref->setPen(QPen(refColor));
+    p_ref->setZ(1.0);
 
     p_lifZone = new QwtPlotZoneItem();
     p_lifZone->setPen(QPen(lifColor,2.0));
@@ -70,6 +79,8 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
     d_lifZoneRange.second = -1;
     d_refZoneRange.first = -1;
     d_refZoneRange.second = -1;
+
+    connect(this,&LifTracePlot::integralUpdate,this,&LifTracePlot::setIntegralText);
 }
 
 LifTracePlot::~LifTracePlot()
@@ -85,6 +96,9 @@ LifTracePlot::~LifTracePlot()
 
     p_refZone->detach();
     delete p_refZone;
+
+    p_integralLabel->detach();
+    delete p_integralLabel;
 }
 
 void LifTracePlot::setNumAverages(int n)
@@ -238,7 +252,7 @@ void LifTracePlot::changeLifColor()
     s.setValue(QString("lifTracePlot/lifColor"),newColor);
 
     p_lif->setPen(QPen(newColor));
-    p_lifZone->setPen(QPen(newColor));
+    p_lifZone->setPen(QPen(newColor,2.0));
     newColor.setAlpha(75);
     p_lifZone->setBrush(newColor);
 
@@ -259,7 +273,7 @@ void LifTracePlot::changeRefColor()
     s.setValue(QString("lifTracePlot/refColor"),newColor);
 
     p_ref->setPen(QPen(newColor));
-    p_refZone->setPen(QPen(newColor));
+    p_refZone->setPen(QPen(newColor,2.0));
     newColor.setAlpha(75);
     p_refZone->setBrush(newColor);
 
@@ -289,6 +303,26 @@ void LifTracePlot::legendItemClicked(QVariant info, bool checked, int index)
 void LifTracePlot::reset()
 {
     d_resetNext = true;
+}
+
+void LifTracePlot::setIntegralText(double d)
+{
+    QwtText t;
+    QString text = QString::number(d,'e',3);
+
+    t.setRenderFlags(Qt::AlignRight | Qt::AlignTop);
+    t.setText(text);
+    t.setBackgroundBrush(QBrush(QPalette().color(QPalette::Window)));
+    QColor border = QPalette().color(QPalette::Text);
+    border.setAlpha(0);
+    t.setBorderPen(QPen(border));
+    t.setColor(QPalette().color(QPalette::Text));
+
+    QFont f(QString("monospace"),14);
+    f.setBold(true);
+    t.setFont(f);
+
+    p_integralLabel->setText(t);
 }
 
 void LifTracePlot::changeLifGateRange()

@@ -7,6 +7,7 @@
 
 class QwtPlotCurve;
 class QwtPlotZoneItem;
+class QwtPlotTextLabel;
 
 class LifTracePlot : public ZoomPanPlot
 {
@@ -28,6 +29,7 @@ public slots:
     void changeRefColor();
     void legendItemClicked(QVariant info, bool checked, int index);
     void reset();
+    void setIntegralText(double d);
 
     void changeLifGateRange();
     void changeRefGateRange();
@@ -35,6 +37,7 @@ public slots:
 private:
     QwtPlotCurve *p_lif, *p_ref;
     QwtPlotZoneItem *p_lifZone, *p_refZone;
+    QwtPlotTextLabel *p_integralLabel;
     LifTrace d_currentTrace;
     int d_numAverages;
     bool d_resetNext, d_lifGateMode, d_refGateMode;
