@@ -30,6 +30,8 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
 
     connect(this,&LifControlWidget::newTrace,ui->lifPlot,&LifTracePlot::newTrace);
 
+    connect(ui->refEnabledCheckBox,&QCheckBox::toggled,ui->refVScaleDoubleSpinBox,&QDoubleSpinBox::setEnabled);
+
 }
 
 LifControlWidget::~LifControlWidget()
