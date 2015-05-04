@@ -88,6 +88,11 @@ int LifConfig::completedShots() const
     return out;
 }
 
+BlackChirp::LifScopeConfig LifConfig::scopeConfig() const
+{
+    return data->scopeConfig;
+}
+
 QVector<QPointF> LifConfig::timeSlice(int frequencyIndex) const
 {
     QVector<QPointF> out;
@@ -229,6 +234,11 @@ void LifConfig::setFrequencyParameters(double start, double stop, double step)
 void LifConfig::setOrder(BlackChirp::LifScanOrder o)
 {
     data->order = o;
+}
+
+void LifConfig::setScopeConfig(BlackChirp::LifScopeConfig c)
+{
+    data->scopeConfig = c;
 }
 
 void LifConfig::setShotsPerPoint(int pts)

@@ -32,6 +32,7 @@ public:
     int numFrequencyPoints() const;
     int totalShots() const;
     int completedShots() const;
+    BlackChirp::LifScopeConfig scopeConfig() const;
     QVector<QPointF> timeSlice(int frequencyIndex) const;
     QVector<QPointF> spectrum(int delayIndex) const;
     QMap<QString,QPair<QVariant,QString> > headerMap() const;
@@ -44,6 +45,7 @@ public:
     void setDelayParameters(double start, double stop, double step);
     void setFrequencyParameters(double start, double stop, double step);
     void setOrder(BlackChirp::LifScanOrder o);
+    void setScopeConfig(BlackChirp::LifScopeConfig c);
     void setShotsPerPoint(int pts);
     bool addWaveform(const LifTrace t);
 
