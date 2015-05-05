@@ -69,6 +69,7 @@ void HardwareManager::initialize()
 
     p_lifScope = new LifScopeHardware();
     connect(p_lifScope,&LifScope::waveformRead,this,&HardwareManager::lifScopeShotAcquired);
+    connect(p_lifScope,&LifScope::configUpdated,this,&HardwareManager::lifScopeConfigUpdated);
 
     QThread *lifScopeThread = new QThread(this);
     d_hardwareList.append(qMakePair(p_lifScope,lifScopeThread));
@@ -320,6 +321,14 @@ void HardwareManager::setPressureControlMode(bool en)
         p_flow->setPressureControlMode(en);
     else
         QMetaObject::invokeMethod(p_flow,"setPressureControlMode",Q_ARG(bool,en));
+}
+
+void HardwareManager::setLifScopeConfig(const BlackChirp::LifScopeConfig c)
+{
+    if(p_lifScope->thread() == thread())
+        p_lifScope->setAll(c);
+    else
+        QMetaObject::invokeMethod(p_lifScope,"setAll",Q_ARG(BlackChirp::LifScopeConfig,c));
 }
 
 void HardwareManager::checkStatus()

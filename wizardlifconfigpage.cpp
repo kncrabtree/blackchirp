@@ -70,7 +70,7 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     hbl->addWidget(delayBox,1);
 
 
-    QGroupBox *laserBox = new QGroupBox(QString("LIF laser"));
+    QGroupBox *laserBox = new QGroupBox(QString("LIF Laser"));
     QFormLayout *laserFl = new QFormLayout;
 
     p_laserSingle = new QCheckBox(this);
@@ -82,7 +82,7 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
                            s.value(QString("lifLaser/maxFreq"),100000.0).toDouble());
     p_laserStart->setDecimals(2);
     p_laserStart->setValue(s.value(QString("lifConfig/laserStart"),20000.0).toDouble());
-    p_laserStart->setSuffix(QString::fromUtf16(u" µs"));
+    p_laserStart->setSuffix(QString::fromUtf16(u" cm⁻¹"));
     p_laserStart->setSingleStep(100.0);
     laserFl->addRow(QString("Start"),p_laserStart);
 
@@ -91,7 +91,7 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
                          s.value(QString("lifLaser/maxFreq"),100000.0).toDouble());
     p_laserEnd->setDecimals(2);
     p_laserEnd->setValue(s.value(QString("lifConfig/laserEnd"),20100.0).toDouble());
-    p_laserEnd->setSuffix(QString::fromUtf16(u" µs"));
+    p_laserEnd->setSuffix(QString::fromUtf16(u" cm⁻¹"));
     p_laserEnd->setSingleStep(100.0);
     laserFl->addRow(QString("End"),p_laserEnd);
 
@@ -100,7 +100,7 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_laserStep->setDecimals(2);
     p_laserStep->setValue(s.value(QString("lifConfig/laserStep"),1.0).toDouble());
     p_laserStep->setSingleStep(1.0);
-    p_laserStep->setSuffix(QString::fromUtf16(u" µs"));
+    p_laserStep->setSuffix(QString::fromUtf16(u" cm⁻¹"));
     laserFl->addRow(QString("Step Size"),p_laserStep);
 
     QPushButton *laserButton = new QPushButton(QString("Set to Start"),this);
@@ -113,6 +113,37 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     vbl->addLayout(hbl,0);
 
     setLayout(vbl);
+
+    connect(p_delaySingle,&QCheckBox::toggled,[=](bool en){
+        if(en)
+        {
+            p_delayEnd->setEnabled(false);
+            p_delayStep->setEnabled(false);
+            p_delayEnd->setValue(p_delayStart->value());
+        }
+        else
+        {
+            p_delayEnd->setEnabled(true);
+            p_delayStep->setEnabled(true);
+        }
+    });
+
+    connect(p_laserSingle,&QCheckBox::toggled,[=](bool en){
+        if(en)
+        {
+            p_laserEnd->setEnabled(false);
+            p_laserStep->setEnabled(false);
+            p_laserEnd->setValue(p_laserStart->value());
+        }
+        else
+        {
+            p_laserEnd->setEnabled(true);
+            p_laserStep->setEnabled(true);
+        }
+    });
+
+    connect(this,&WizardLifConfigPage::scopeConfigChanged,p_lifControl,&LifControlWidget::scopeConfigChanged);
+    connect(p_lifControl,&LifControlWidget::updateScope,this,&WizardLifConfigPage::updateScope);
 
 }
 

@@ -26,7 +26,7 @@ signals:
     void newTrace(const LifTrace);
 
 public slots:
-    void configUpdate(const BlackChirp::LifScopeConfig c);
+    void scopeConfigChanged(const BlackChirp::LifScopeConfig c);
 
 private:
     Ui::LifControlWidget *ui;

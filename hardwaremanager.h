@@ -59,6 +59,7 @@ signals:
     void pressureControlMode(bool);
 
     void lifScopeShotAcquired(const LifTrace);
+    void lifScopeConfigUpdated(const BlackChirp::LifScopeConfig);
 
 public slots:
     void initialize();
@@ -96,6 +97,8 @@ public slots:
     void setFlowSetpoint(int index, double val);
     void setPressureSetpoint(double val);
     void setPressureControlMode(bool en);
+
+    void setLifScopeConfig(const BlackChirp::LifScopeConfig c);
 
 private:
     QHash<QString,bool> d_status;

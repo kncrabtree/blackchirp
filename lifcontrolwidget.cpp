@@ -51,7 +51,7 @@ LifConfig LifControlWidget::getSettings(LifConfig c)
     return c;
 }
 
-void LifControlWidget::configUpdate(const BlackChirp::LifScopeConfig c)
+void LifControlWidget::scopeConfigChanged(const BlackChirp::LifScopeConfig c)
 {
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 

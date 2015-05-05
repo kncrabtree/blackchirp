@@ -20,6 +20,8 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
     p_summaryPage = new WizardSummaryPage(this);
     p_lifConfigPage = new WizardLifConfigPage(this);
     connect(this,&ExperimentWizard::newTrace,p_lifConfigPage,&WizardLifConfigPage::newTrace);
+    connect(this,&ExperimentWizard::scopeConfigChanged,p_lifConfigPage,&WizardLifConfigPage::scopeConfigChanged);
+    connect(p_lifConfigPage,&WizardLifConfigPage::updateScope,this,&ExperimentWizard::updateScope);
 
 
     setPage(StartPage,p_startPage);

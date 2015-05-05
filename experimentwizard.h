@@ -38,6 +38,8 @@ public:
 
 signals:
     void newTrace(const LifTrace);
+    void updateScope(const BlackChirp::LifScopeConfig);
+    void scopeConfigChanged(const BlackChirp::LifScopeConfig);
 
 private:
     WizardStartPage *p_startPage;
