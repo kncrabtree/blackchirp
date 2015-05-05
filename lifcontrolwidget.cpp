@@ -13,8 +13,8 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
     ui->lIFVScaleDoubleSpinBox->setValue(s.value(QString("lifConfig/lifVScale"),0.02).toDouble());
-    ui->sampleRateSpinBox->setValue(s.value(QString("lifConfig/sampleRate"),1000).toInt());
-    ui->samplesSpinBox->setValue(static_cast<int>(round(s.value(QString("lifConfig/samples"),1e9).toDouble()/1e6)));
+    ui->samplesSpinBox->setValue(s.value(QString("lifConfig/samples"),1000).toInt());
+    ui->sampleRateSpinBox->setValue(static_cast<int>(round(s.value(QString("lifConfig/sampleRate"),1e9).toDouble()/1e6)));
     ui->refEnabledCheckBox->setChecked(s.value(QString("lifConfig/refEnabled"),false).toBool());
     ui->refVScaleDoubleSpinBox->setValue(s.value(QString("lifConfig/refVScale"),0.02).toDouble());
 
@@ -31,6 +31,9 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
     connect(this,&LifControlWidget::newTrace,ui->lifPlot,&LifTracePlot::newTrace);
 
     connect(ui->refEnabledCheckBox,&QCheckBox::toggled,ui->refVScaleDoubleSpinBox,&QDoubleSpinBox::setEnabled);
+
+    ui->lifPlot->setAxisAutoScaleRange(QwtPlot::xBottom,0.0,static_cast<double>(ui->samplesSpinBox->value())/static_cast<double>(ui->sampleRateSpinBox->value())*1e3);
+    ui->lifPlot->autoScale();
 
 }
 
@@ -78,6 +81,9 @@ void LifControlWidget::configUpdate(const BlackChirp::LifScopeConfig c)
     s.setValue(QString("lifConfig/refEnabled"),c.refEnabled);
     s.setValue(QString("lifConfig/refVScale"),c.vScale2);
     s.sync();
+
+    ui->lifPlot->setAxisAutoScaleRange(QwtPlot::xBottom,0.0,static_cast<double>(c.recordLength)/c.sampleRate*1e9);
+
 }
 
 BlackChirp::LifScopeConfig LifControlWidget::toConfig() const

@@ -68,6 +68,10 @@ LifTrace::~LifTrace()
 
 double LifTrace::integrate(int gl1, int gl2, int gr1, int gr2) const
 {
+    if(gl1 < 0)
+        gl1 = 0;
+    if(gl2 < 0)
+        gl2 = data->lifData.size()-1;
 
     //validate ranges (sort of; if ranges are bad this will return 0);
     //lif start must be in range of data
@@ -88,8 +92,13 @@ double LifTrace::integrate(int gl1, int gl2, int gr1, int gr2) const
         out /= static_cast<double>(data->count);
 
     //if no reference; just return raw integral
-    if(gr1 < 0 || gr1 >= data->refData.size() || gr2 < 0 || gr2 >= data->refData.size())
+    if(data->refData.size() == 0)
         return out;
+
+    if(gr1 < 0)
+        gr1 = 0;
+    if(gr2 < 0)
+        gr2 = data->refData.size()-1;
 
     sum = 0;
     for(int i = gr1; i<gr2-1; i++)
