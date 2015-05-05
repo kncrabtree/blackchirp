@@ -4,7 +4,8 @@ HEADERS += \
     $$PWD/wizardchirpconfigpage.h \
     $$PWD/wizardftmwconfigpage.h \
     $$PWD/wizardsummarypage.h \
-    $$PWD/wizardpulseconfigpage.h
+    $$PWD/wizardpulseconfigpage.h \
+    $$PWD/wizardlifconfigpage.h
 
 SOURCES += \
     $$PWD/experimentwizard.cpp \
@@ -12,4 +13,5 @@ SOURCES += \
     $$PWD/wizardchirpconfigpage.cpp \
     $$PWD/wizardftmwconfigpage.cpp \
     $$PWD/wizardsummarypage.cpp \
-    $$PWD/wizardpulseconfigpage.cpp
+    $$PWD/wizardpulseconfigpage.cpp \
+    $$PWD/wizardlifconfigpage.cpp

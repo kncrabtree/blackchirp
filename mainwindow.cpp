@@ -219,6 +219,7 @@ void MainWindow::startExperiment()
     ExperimentWizard wiz(this);
     wiz.setPulseConfig(ui->pulseConfigWidget->getConfig());
     wiz.setFlowConfig(getFlowConfig());
+    connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
 
     if(wiz.exec() != QDialog::Accepted)
         return;

@@ -16,7 +16,6 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
 
     p_ftmw = new QCheckBox(this);
     p_lif = new QCheckBox(this);
-    p_lif->setEnabled(false);
 
     p_auxDataIntervalBox = new QSpinBox(this);
     p_auxDataIntervalBox->setRange(5,__INT_MAX__);

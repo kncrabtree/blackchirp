@@ -3,17 +3,20 @@
 
 #include <QWizard>
 
-#include "wizardstartpage.h"
-#include "wizardchirpconfigpage.h"
-#include "wizardftmwconfigpage.h"
-#include "wizardsummarypage.h"
-#include "wizardpulseconfigpage.h"
+class WizardStartPage;
+class WizardChirpConfigPage;
+class WizardFtmwConfigPage;
+class WizardSummaryPage;
+class WizardPulseConfigPage;
+class WizardLifConfigPage;
+class BatchManager;
+
 #include "experiment.h"
-#include "batchsingle.h"
 
 
 class ExperimentWizard : public QWizard
 {
+    Q_OBJECT
 public:
     ExperimentWizard(QWidget *parent = 0);
     ~ExperimentWizard();
@@ -33,12 +36,16 @@ public:
     BatchManager *getBatchManager() const;
     void saveToSettings();
 
+signals:
+    void newTrace(const LifTrace);
+
 private:
     WizardStartPage *p_startPage;
     WizardChirpConfigPage *p_chirpConfigPage;
     WizardFtmwConfigPage *p_ftmwConfigPage;
     WizardSummaryPage *p_summaryPage;
     WizardPulseConfigPage *p_pulseConfigPage;
+    WizardLifConfigPage *p_lifConfigPage;
     FlowConfig d_flowConfig;
 };
 

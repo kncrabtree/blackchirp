@@ -1,5 +1,13 @@
 #include "experimentwizard.h"
 
+#include "wizardstartpage.h"
+#include "wizardchirpconfigpage.h"
+#include "wizardftmwconfigpage.h"
+#include "wizardsummarypage.h"
+#include "wizardpulseconfigpage.h"
+#include "wizardlifconfigpage.h"
+#include "batchsingle.h"
+
 ExperimentWizard::ExperimentWizard(QWidget *parent) :
     QWizard(parent)
 {
@@ -10,12 +18,15 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
     p_ftmwConfigPage = new WizardFtmwConfigPage(this);
     p_pulseConfigPage = new WizardPulseConfigPage(this);
     p_summaryPage = new WizardSummaryPage(this);
+    p_lifConfigPage = new WizardLifConfigPage(this);
+    connect(this,&ExperimentWizard::newTrace,p_lifConfigPage,&WizardLifConfigPage::newTrace);
 
 
     setPage(StartPage,p_startPage);
     setPage(ChirpConfigPage,p_chirpConfigPage);
     setPage(FtmwConfigPage,p_ftmwConfigPage);
     setPage(PulseConfigPage,p_pulseConfigPage);
+    setPage(LifConfigPage,p_lifConfigPage);
     setPage(SummaryPage,p_summaryPage);
 }
 
@@ -39,10 +50,12 @@ Experiment ExperimentWizard::getExperiment() const
 
     FtmwConfig ftc = p_ftmwConfigPage->getFtmwConfig();
     if(p_startPage->ftmwEnabled())
+    {
         ftc.setEnabled();
 
-    ChirpConfig cc = p_chirpConfigPage->getChirpConfig();
-    ftc.setChirpConfig(cc);
+        ChirpConfig cc = p_chirpConfigPage->getChirpConfig();
+        ftc.setChirpConfig(cc);
+    }
 
     exp.setFtmwConfig(ftc);
     exp.setPulseGenConfig(p_pulseConfigPage->getConfig());

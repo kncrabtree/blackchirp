@@ -18,6 +18,8 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
     ui->refEnabledCheckBox->setChecked(s.value(QString("lifConfig/refEnabled"),false).toBool());
     ui->refVScaleDoubleSpinBox->setValue(s.value(QString("lifConfig/refVScale"),0.02).toDouble());
 
+    ui->refVScaleDoubleSpinBox->setEnabled(ui->refEnabledCheckBox->isChecked());
+
     //connect signals
     auto sig = [=](){ emit updateScope(toConfig()); };
     auto dvc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
