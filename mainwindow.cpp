@@ -87,9 +87,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::pGenRepRateUpdate,ui->pulseConfigWidget,&PulseConfigWidget::newRepRate);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeSetting,p_hwm,&HardwareManager::setPGenSetting);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeRepRate,p_hwm,&HardwareManager::setPGenRepRate);
-
-    //TEST
-    connect(p_hwm,&HardwareManager::lifScopeShotAcquired,ui->tempLifPlot,&LifTracePlot::newTrace);
+    connect(p_hwm,&HardwareManager::lifScopeShotAcquired,ui->lifControlWidget,&LifControlWidget::newTrace);
+    connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,ui->lifControlWidget,&LifControlWidget::scopeConfigChanged);
+    connect(ui->lifControlWidget,&LifControlWidget::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
 
     QThread *hwmThread = new QThread(this);
     connect(hwmThread,&QThread::started,p_hwm,&HardwareManager::initialize);
@@ -220,6 +220,8 @@ void MainWindow::startExperiment()
     wiz.setPulseConfig(ui->pulseConfigWidget->getConfig());
     wiz.setFlowConfig(getFlowConfig());
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
+    connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
+    connect(&wiz,&ExperimentWizard::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
 
     if(wiz.exec() != QDialog::Accepted)
         return;

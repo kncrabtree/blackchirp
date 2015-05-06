@@ -153,8 +153,8 @@ void VirtualLifScope::queryScope()
 
 void VirtualLifScope::setRefEnabled(bool en)
 {
-    d_refEnabled = en;
+    d_config.refEnabled = en;
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.setValue(QString("%1/refEnabled"),en);
+    s.setValue(QString("%1/refEnabled").arg(d_key),en);
 }

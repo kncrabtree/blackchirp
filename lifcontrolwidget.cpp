@@ -85,6 +85,7 @@ void LifControlWidget::scopeConfigChanged(const BlackChirp::LifScopeConfig c)
     s.sync();
 
     ui->lifPlot->setAxisAutoScaleRange(QwtPlot::xBottom,0.0,static_cast<double>(c.recordLength)/c.sampleRate*1e9);
+    ui->lifPlot->reset();
 
 }
 

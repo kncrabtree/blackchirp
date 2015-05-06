@@ -68,9 +68,10 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
     p_refZone->setZ(2.0);
 
     QwtLegend *leg = new QwtLegend(this);
+
     leg->contentsWidget()->installEventFilter(this);
     connect(leg,&QwtLegend::checked,this,&LifTracePlot::legendItemClicked);
-    insertLegend(leg);
+    insertLegend(leg,QwtPlot::BottomLegend);
 
     initializeLabel(p_lif,true);
 

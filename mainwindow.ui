@@ -234,7 +234,7 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_5" stretch="1,1">
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,1">
+         <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="2,3">
           <item>
            <widget class="QGroupBox" name="gasControlBox">
             <property name="title">
@@ -295,7 +295,7 @@
            </widget>
           </item>
           <item>
-           <widget class="LifTracePlot" name="tempLifPlot" native="true"/>
+           <widget class="LifControlWidget" name="lifControlWidget" native="true"/>
           </item>
          </layout>
         </item>
@@ -432,9 +432,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>LifTracePlot</class>
+   <class>LifControlWidget</class>
    <extends>QWidget</extends>
-   <header>liftraceplot.h</header>
+   <header location="global">lifcontrolwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
