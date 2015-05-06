@@ -40,7 +40,7 @@ PulseGenConfig WizardPulseConfigPage::getConfig() const
 void WizardPulseConfigPage::initializePage()
 {
     if(field(QString("lif")).toBool())
-        p_pcw->configureLif(500.0); //FIXME
+        p_pcw->configureLif(field(QString("delayStart")).toDouble());
 
     if(field(QString("ftmw")).toBool())
         p_pcw->configureChirp();

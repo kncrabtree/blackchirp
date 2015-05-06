@@ -35,6 +35,11 @@ bool LifConfig::isComplete() const
     return data->complete;
 }
 
+bool LifConfig::isValid() const
+{
+    return data->valid;
+}
+
 double LifConfig::currentDelay() const
 {
     return static_cast<double>(data->currentDelayIndex)*data->delayStepUs + data->delayStartUs;
@@ -160,9 +165,31 @@ QVector<QPointF> LifConfig::spectrum(int delayIndex) const
     return out;
 }
 
-bool LifConfig::setEnabled()
+void LifConfig::setEnabled()
 {
     if(!data->valid)
+        return;
+
+    data->enabled = true;
+}
+
+bool LifConfig::validate()
+{
+    data->valid = false;
+
+    if(numDelayPoints() < 1 || numFrequencyPoints() < 1)
+        return false;
+
+    data->valid = true;
+    return true;
+}
+
+bool LifConfig::allocateMemory()
+{
+    if(!data->valid)
+        return false;
+
+    if(!data->enabled)
         return false;
 
     //allocate memory for storage
@@ -186,21 +213,7 @@ bool LifConfig::setEnabled()
             data->frequencyStep = -data->frequencyStep;
     }
 
-    data->enabled = true;
-    return true;
-}
-
-bool LifConfig::validate()
-{
-    data->valid = false;
-
-    if(numDelayPoints() < 1 || numFrequencyPoints() < 1)
-        return false;
-
-    if(data->lifGateEndPoint < 0 || data->lifGateStartPoint < 0)
-        return false;
-
-    data->valid = true;
+    data->memAllocated = true;
     return true;
 }
 
@@ -256,9 +269,13 @@ QMap<QString, QPair<QVariant, QString> > LifConfig::headerMap() const
     QMap<QString,QPair<QVariant,QString> > out;
     QString empty = QString("");
     QString prefix = QString("LifConfig");
-    QString so = (data->order == BlackChirp::LifOrderDelayFirst ? QString("DelayFirst") : QString("FrequencyFirst"));
+    QString so = (data->order == BlackChirp::LifOrderDelayFirst ?
+                      QString("DelayFirst") : QString("FrequencyFirst"));
+    QString comp = (data->completeMode == BlackChirp::LifStopWhenComplete ?
+                        QString("Stop") : QString("Continue"));
 
     out.insert(prefix+QString("ScanOrder"),qMakePair(so,empty));
+    out.insert(prefix+QString("CompleteBehavior"),qMakePair(comp,empty));
     if(numDelayPoints() > 1)
     {
         out.insert(prefix+QString("DelayStart"),
@@ -287,7 +304,6 @@ QMap<QString, QPair<QVariant, QString> > LifConfig::headerMap() const
     out.insert(prefix+QString("ShotsPerPoint"),qMakePair(data->shotsPerPoint,empty));
     out.insert(prefix+QString("LifGateStart"),qMakePair(data->lifGateStartPoint,empty));
     out.insert(prefix+QString("LifGateStop"),qMakePair(data->lifGateEndPoint,empty));
-
     if(data->scopeConfig.refEnabled)
     {
         out.insert(prefix+QString("RefGateStart"),qMakePair(data->refGateStartPoint,empty));

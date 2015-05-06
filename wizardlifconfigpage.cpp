@@ -42,8 +42,10 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     ofl->addRow(QString("Scan order"),p_orderBox);
 
     p_completeBox = new QComboBox(this);
-    p_completeBox->addItem(QString("Stop integrating when all points acquired."),QVariant::fromValue(BlackChirp::LifStopWhenComplete));
-    p_completeBox->addItem(QString("Continue integrating until entire experiment is complete."));
+    p_completeBox->addItem(QString("Stop integrating when all points acquired."),
+                           QVariant::fromValue(BlackChirp::LifStopWhenComplete));
+    p_completeBox->addItem(QString("Continue integrating until entire experiment is complete."),
+                           QVariant::fromValue(BlackChirp::LifContinueUntilExperimentComplete));
     p_completeBox->setCurrentIndex(s.value(QString("lifConfig/completeMode"),1).toInt());
     p_completeBox->setToolTip(QString("Configures behavior if LIF scan finishes before the rest of the experiment.\n\nStop integrating: Once all points are acquired, no more shots will be integrated.\nContinue: Scan will return to beginning and continue integrating data until remainder of experiment is completed or aborted.\n\n This setting is not applicable if LIF is the only measurement being made or if other parts of the experiment finish before LIF."));
     ofl->addRow(QString("Completion behavior"),p_completeBox);
@@ -175,6 +177,7 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     connect(this,&WizardLifConfigPage::scopeConfigChanged,p_lifControl,&LifControlWidget::scopeConfigChanged);
     connect(p_lifControl,&LifControlWidget::updateScope,this,&WizardLifConfigPage::updateScope);
 
+    registerField(QString("delayStart"),p_delayStart,"value","valueChanged");
 }
 
 WizardLifConfigPage::~WizardLifConfigPage()
@@ -203,6 +206,19 @@ void WizardLifConfigPage::saveToSettings() const
     s.sync();
 }
 
+LifConfig WizardLifConfigPage::getConfig()
+{
+    LifConfig out;
+    out = p_lifControl->getSettings(out);
+    out.setCompleteMode(p_completeBox->currentData().value<BlackChirp::LifCompleteMode>());
+    out.setOrder(p_orderBox->currentData().value<BlackChirp::LifScanOrder>());
+    out.setDelayParameters(p_delayStart->value(),p_delayEnd->value(),p_delayStep->value());
+    out.setFrequencyParameters(p_laserStart->value(),p_laserEnd->value(),p_laserStep->value());
+
+    out.validate();
+    return out;
+}
+
 
 
 void WizardLifConfigPage::initializePage()
@@ -211,7 +227,7 @@ void WizardLifConfigPage::initializePage()
 
 bool WizardLifConfigPage::validatePage()
 {
-    return true;
+    return getConfig().isValid();
 }
 
 int WizardLifConfigPage::nextId() const

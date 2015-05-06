@@ -58,8 +58,12 @@ Experiment ExperimentWizard::getExperiment() const
         ChirpConfig cc = p_chirpConfigPage->getChirpConfig();
         ftc.setChirpConfig(cc);
     }
+    LifConfig lc = p_lifConfigPage->getConfig();
+    if(p_startPage->lifEnabled())
+        lc.setEnabled();
 
     exp.setFtmwConfig(ftc);
+    exp.setLifConfig(lc);
     exp.setPulseGenConfig(p_pulseConfigPage->getConfig());
     exp.setFlowConfig(d_flowConfig);
     exp.setTimeDataInterval(p_startPage->auxDataInterval());
@@ -69,7 +73,15 @@ Experiment ExperimentWizard::getExperiment() const
 
 BatchManager *ExperimentWizard::getBatchManager() const
 {
-    return new BatchSingle(getExperiment());
+    Experiment e = getExperiment();
+    if(e.lifConfig().isEnabled())
+    {
+        LifConfig lc = e.lifConfig();
+        lc.allocateMemory();
+        e.setLifConfig(lc);
+    }
+
+    return new BatchSingle(e);
 }
 
 void ExperimentWizard::saveToSettings()

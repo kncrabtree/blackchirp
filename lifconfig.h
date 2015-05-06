@@ -26,6 +26,7 @@ public:
 
     bool isEnabled() const;
     bool isComplete() const;
+    bool isValid() const;
     double currentDelay() const;
     double currentFrequency() const;
     int numDelayPoints() const;
@@ -38,8 +39,9 @@ public:
     QMap<QString,QPair<QVariant,QString> > headerMap() const;
     QPair<QPoint,BlackChirp::LifPoint> lastUpdatedLifPoint() const;
 
-    bool setEnabled();
+    void setEnabled();
     bool validate();
+    bool allocateMemory();
     void setLifGate(int start, int end);
     void setRefGate(int start, int end);
     void setDelayParameters(double start, double stop, double step);
@@ -62,7 +64,7 @@ private:
 class LifConfigData : public QSharedData
 {
 public:
-    LifConfigData() : enabled(false), complete(false),  valid(false), order(BlackChirp::LifOrderDelayFirst),
+    LifConfigData() : enabled(false), complete(false),  valid(false), memAllocated(false), order(BlackChirp::LifOrderDelayFirst),
         completeMode(BlackChirp::LifContinueUntilExperimentComplete), delayStartUs(-1.0), delayEndUs(-1.0),
         delayStepUs(0.0), frequencyStart(-1.0), frequencyEnd(-1.0), frequencyStep(0.0), lifGateStartPoint(-1), lifGateEndPoint(-1),
         refGateStartPoint(-1), refGateEndPoint(-1), currentDelayIndex(0), currentFrequencyIndex(0) {}
@@ -70,6 +72,7 @@ public:
     bool enabled;
     bool complete;
     bool valid;
+    bool memAllocated;
     BlackChirp::LifScanOrder order;
     BlackChirp::LifCompleteMode completeMode;
     double delayStartUs;

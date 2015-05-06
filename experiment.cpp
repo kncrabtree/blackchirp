@@ -70,10 +70,15 @@ FlowConfig Experiment::flowConfig() const
     return data->flowCfg;
 }
 
+LifConfig Experiment::lifConfig() const
+{
+    return data->lifCfg;
+}
+
 bool Experiment::isComplete() const
 {
     //check each sub expriment!
-    return data->ftmwCfg.isComplete();
+    return (data->ftmwCfg.isComplete() && data->lifCfg.isComplete());
 }
 
 bool Experiment::hardwareSuccess() const
@@ -112,11 +117,14 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
 
     out.insert(QString("AuxDataInterval"),qMakePair(data->timeDataInterval,QString("s")));
 
-    if(ftmwConfig().isEnabled())
-        out.unite(ftmwConfig().headerMap());
+    if(data->ftmwCfg.isEnabled())
+        out.unite(data->ftmwCfg.headerMap());
 
-    out.unite(pGenConfig().headerMap());
-    out.unite(flowConfig().headerMap());
+    if(data->lifCfg.isEnabled())
+        out.unite(data->lifCfg.headerMap());
+
+    out.unite(data->pGenCfg.headerMap());
+    out.unite(data->flowCfg.headerMap());
 
     return out;
 }
@@ -165,6 +173,11 @@ void Experiment::setAborted()
         data->endLogMessage = QString("Experiment %1 aborted.").arg(number());
         data->endLogMessageCode = BlackChirp::LogError;
     }
+    else if(ftmwConfig().isEnabled() && lifConfig().isEnabled() && !lifConfig().isComplete())
+    {
+        data->endLogMessage = QString("Experiment %1 aborted.").arg(number());
+        data->endLogMessageCode = BlackChirp::LogError;
+    }
 }
 
 void Experiment::setDummy()
@@ -180,6 +193,11 @@ void Experiment::setFtmwConfig(const FtmwConfig cfg)
 void Experiment::setScopeConfig(const BlackChirp::FtmwScopeConfig &cfg)
 {
     data->ftmwCfg.setScopeConfig(cfg);
+}
+
+void Experiment::setLifConfig(const LifConfig cfg)
+{
+    data->lifCfg = cfg;
 }
 
 

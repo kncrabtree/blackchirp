@@ -31,6 +31,7 @@ public:
     FtmwConfig ftmwConfig() const;
     PulseGenConfig pGenConfig() const;
     FlowConfig flowConfig() const;
+    LifConfig lifConfig() const;
     bool isComplete() const;
     bool hardwareSuccess() const;
     QString errorString() const;
@@ -46,6 +47,7 @@ public:
     void setDummy();
     void setFtmwConfig(const FtmwConfig cfg);
     void setScopeConfig(const BlackChirp::FtmwScopeConfig &cfg);
+    void setLifConfig(const LifConfig cfg);
     bool setFids(const QByteArray rawData);
     bool addFids(const QByteArray newData);
     void overrideTargetShots(const int target);
@@ -85,6 +87,7 @@ public:
     FtmwConfig ftmwCfg;
     PulseGenConfig pGenCfg;
     FlowConfig flowCfg;
+    LifConfig lifCfg;
     QMap<QString,QList<QVariant>> timeDataMap;
 };
 
