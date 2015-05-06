@@ -9,6 +9,7 @@
 #include <QSettings>
 #include <QApplication>
 #include <QGroupBox>
+#include <QLabel>
 
 #include "lifcontrolwidget.h"
 #include "experimentwizard.h"
@@ -17,7 +18,7 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     QWizardPage(parent)
 {
     setTitle(QString("LIF Configuration"));
-    setSubTitle(QString("Configure the parameters for the LIF Acquisition. Any changes you make to the oscilloscope settings will be applied immediately; you can preview the results in the plot. Right-click the plot to set integration ranges and number of shots to acquire per step. For the laser frequency and delay controls, if you check the single point checkbox, the starting value will be used for the entire scan, and the stop value will be set equal to the start. Note that if you leave the checkbox unchecked, but leave the stop value equal to the start, the scan will still be a single point scan. You can use the buttons to set the laser or LIF delay to the value in the start box."));
+    setSubTitle(QString("Configure the parameters for the LIF Acquisition. Oscilloscope settings are immediately applied. Integration gates and shots per point can be set by right-clicking the plot."));
 
     QVBoxLayout *vbl = new QVBoxLayout;
 
@@ -36,6 +37,7 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
 
     p_delaySingle = new QCheckBox(this);
     p_delaySingle->setChecked(s.value(QString("lifConfig/delaySingle"),false).toBool());
+    p_delaySingle->setToolTip(QString("If checked, the LIF delay will not change during the scan, and will remain at the value in the start box."));
     delayFl->addRow(QString("Single Point"),p_delaySingle);
 
     p_delayStart = new QDoubleSpinBox(this);
@@ -44,6 +46,7 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_delayStart->setValue(s.value(QString("lifConfig/delayStart"),1000.0).toDouble());
     p_delayStart->setSuffix(QString::fromUtf16(u" µs"));
     p_delayStart->setSingleStep(10.0);
+    p_delayStart->setToolTip(QString("Starting delay for LIF measurement. For a single delay scan, this will be the value used."));
     delayFl->addRow(QString("Start"),p_delayStart);
 
     p_delayEnd = new QDoubleSpinBox(this);
@@ -52,6 +55,7 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_delayEnd->setValue(s.value(QString("lifConfig/delayEnd"),1100.0).toDouble());
     p_delayEnd->setSuffix(QString::fromUtf16(u" µs"));
     p_delayEnd->setSingleStep(10.0);
+    p_delayEnd->setToolTip(QString("Ending delay for LIF measurement. May be greater or less than starting delay, and need not be an integral number of steps from start.\nIf |end-start| < step, the delay will remain at the starting value as if the single point box were checked."));
     delayFl->addRow(QString("End"),p_delayEnd);
 
     p_delayStep = new QDoubleSpinBox(this);
@@ -60,6 +64,7 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_delayStep->setValue(s.value(QString("lifConfig/delayStep"),1.0).toDouble());
     p_delayStep->setSingleStep(1.0);
     p_delayStep->setSuffix(QString::fromUtf16(u" µs"));
+    p_delayStep->setToolTip(QString("Step size between delay points."));
     delayFl->addRow(QString("Step Size"),p_delayStep);
 
     QPushButton *delayButton = new QPushButton(QString("Set to Start"),this);
@@ -75,6 +80,7 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
 
     p_laserSingle = new QCheckBox(this);
     p_laserSingle->setChecked(s.value(QString("lifConfig/laserSingle"),false).toBool());
+    p_laserSingle->setToolTip(QString("If checked, the LIF laser frequency will not change during the scan, and will remain at the value in the start box."));
     laserFl->addRow(QString("Single Point"),p_laserSingle);
 
     p_laserStart = new QDoubleSpinBox(this);
@@ -84,6 +90,7 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_laserStart->setValue(s.value(QString("lifConfig/laserStart"),20000.0).toDouble());
     p_laserStart->setSuffix(QString::fromUtf16(u" cm⁻¹"));
     p_laserStart->setSingleStep(100.0);
+    p_laserStart->setToolTip(QString("Starting frequency for LIF measurement. For a single frequency scan, this will be the value used."));
     laserFl->addRow(QString("Start"),p_laserStart);
 
     p_laserEnd = new QDoubleSpinBox(this);
@@ -93,6 +100,7 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_laserEnd->setValue(s.value(QString("lifConfig/laserEnd"),20100.0).toDouble());
     p_laserEnd->setSuffix(QString::fromUtf16(u" cm⁻¹"));
     p_laserEnd->setSingleStep(100.0);
+    p_laserEnd->setToolTip(QString("Ending laser frequency for LIF measurement. May be greater or less than starting frequency, and need not be an integral number of steps from start.\nIf |end-start| < step, the frequency will remain at the starting value as if the single point box were checked."));
     laserFl->addRow(QString("End"),p_laserEnd);
 
     p_laserStep = new QDoubleSpinBox(this);
@@ -101,6 +109,7 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_laserStep->setValue(s.value(QString("lifConfig/laserStep"),1.0).toDouble());
     p_laserStep->setSingleStep(1.0);
     p_laserStep->setSuffix(QString::fromUtf16(u" cm⁻¹"));
+    p_laserStep->setToolTip(QString("Step size between frequency points."));
     laserFl->addRow(QString("Step Size"),p_laserStep);
 
     QPushButton *laserButton = new QPushButton(QString("Set to Start"),this);
