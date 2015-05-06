@@ -45,6 +45,7 @@ public:
     void setDelayParameters(double start, double stop, double step);
     void setFrequencyParameters(double start, double stop, double step);
     void setOrder(BlackChirp::LifScanOrder o);
+    void setCompleteMode(BlackChirp::LifCompleteMode mode);
     void setScopeConfig(BlackChirp::LifScopeConfig c);
     void setShotsPerPoint(int pts);
     bool addWaveform(const LifTrace t);
@@ -62,14 +63,15 @@ class LifConfigData : public QSharedData
 {
 public:
     LifConfigData() : enabled(false), complete(false),  valid(false), order(BlackChirp::LifOrderDelayFirst),
-        delayStartUs(-1.0), delayEndUs(-1.0), delayStepUs(0.0), frequencyStart(-1.0), frequencyEnd(-1.0),
-        frequencyStep(0.0), lifGateStartPoint(-1), lifGateEndPoint(-1),
+        completeMode(BlackChirp::LifContinueUntilExperimentComplete), delayStartUs(-1.0), delayEndUs(-1.0),
+        delayStepUs(0.0), frequencyStart(-1.0), frequencyEnd(-1.0), frequencyStep(0.0), lifGateStartPoint(-1), lifGateEndPoint(-1),
         refGateStartPoint(-1), refGateEndPoint(-1), currentDelayIndex(0), currentFrequencyIndex(0) {}
 
     bool enabled;
     bool complete;
     bool valid;
     BlackChirp::LifScanOrder order;
+    BlackChirp::LifCompleteMode completeMode;
     double delayStartUs;
     double delayEndUs;
     double delayStepUs;

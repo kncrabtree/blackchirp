@@ -79,5 +79,8 @@ void ExperimentWizard::saveToSettings()
         p_chirpConfigPage->saveToSettings();
         p_ftmwConfigPage->saveToSettings();
     }
+
+    if(p_startPage->lifEnabled())
+        p_lifConfigPage->saveToSettings();
 }
 

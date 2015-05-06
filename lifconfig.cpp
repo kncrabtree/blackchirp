@@ -236,6 +236,11 @@ void LifConfig::setOrder(BlackChirp::LifScanOrder o)
     data->order = o;
 }
 
+void LifConfig::setCompleteMode(BlackChirp::LifCompleteMode mode)
+{
+    data->completeMode = mode;
+}
+
 void LifConfig::setScopeConfig(BlackChirp::LifScopeConfig c)
 {
     data->scopeConfig = c;
@@ -309,13 +314,9 @@ QPair<QPoint, BlackChirp::LifPoint> LifConfig::lastUpdatedLifPoint() const
 bool LifConfig::addWaveform(const LifTrace t)
 {
     //the boolean returned by this function tells if the point was incremented
+    if(data->complete && data->completeMode == BlackChirp::LifStopWhenComplete)
+        return false;
 
-    //do trapezoidal integration in integer/point space.
-    //each segment has a width of 1 unit, and the area is (y_i + y_{i+1})/2
-    //(think of it as end points have weight of 1, middle points have weight 2)
-    //add up all y_i + y_{i+1}, then divide by 2 at the end
-
-    //convert to double using scope scaling, and add point
     double d;
     if(data->scopeConfig.refEnabled)
         d = t.integrate(data->lifGateStartPoint,data->lifGateEndPoint,data->refGateStartPoint,data->refGateEndPoint);

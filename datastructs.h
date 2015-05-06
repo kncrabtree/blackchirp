@@ -40,6 +40,11 @@ enum LifScanOrder {
     LifOrderFrequencyFirst
 };
 
+enum LifCompleteMode {
+    LifStopWhenComplete,
+    LifContinueUntilExperimentComplete
+};
+
 
 enum FlowSetting {
     FlowSettingEnabled,
@@ -191,6 +196,8 @@ Q_DECLARE_METATYPE(BlackChirp::ScopeTriggerSlope)
 Q_DECLARE_METATYPE(BlackChirp::LifPoint)
 Q_DECLARE_METATYPE(BlackChirp::LogMessageCode)
 Q_DECLARE_METATYPE(BlackChirp::PulseActiveLevel)
+Q_DECLARE_METATYPE(BlackChirp::LifScanOrder)
+Q_DECLARE_METATYPE(BlackChirp::LifCompleteMode)
 
 Q_DECLARE_TYPEINFO(BlackChirp::LifPoint,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::ChirpSegment,Q_MOVABLE_TYPE);

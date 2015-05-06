@@ -10,6 +10,7 @@
 #include <QApplication>
 #include <QGroupBox>
 #include <QLabel>
+#include <QComboBox>
 
 #include "lifcontrolwidget.h"
 #include "experimentwizard.h"
@@ -29,6 +30,26 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     vbl->addWidget(p_lifControl,1);
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+
+    QGroupBox *optionsBox = new QGroupBox(QString("Acquisition Options"));
+    QFormLayout *ofl = new QFormLayout;
+
+    p_orderBox = new QComboBox(this);
+    p_orderBox->addItem(QString("Frequency First"),QVariant::fromValue(BlackChirp::LifOrderFrequencyFirst));
+    p_orderBox->addItem(QString("Delay First"),QVariant::fromValue(BlackChirp::LifOrderDelayFirst));
+    p_orderBox->setCurrentIndex(s.value(QString("lifConfig/scanOrder"),0).toInt());
+    p_orderBox->setToolTip(QString("Controls the order in which the delay and laser frequency will be changed during the scan.\n\nFrequency first: Acquire spectrum at single delay point, then increment delay and repeat.\nDelay first: Acquire time trace at a single frequency, then increment frequency and repeat.\n\nNote that the order is irrelevant if either the delay or frequency is set to a single point."));
+    ofl->addRow(QString("Scan order"),p_orderBox);
+
+    p_completeBox = new QComboBox(this);
+    p_completeBox->addItem(QString("Stop integrating when all points acquired."),QVariant::fromValue(BlackChirp::LifStopWhenComplete));
+    p_completeBox->addItem(QString("Continue integrating until entire experiment is complete."));
+    p_completeBox->setCurrentIndex(s.value(QString("lifConfig/completeMode"),1).toInt());
+    p_completeBox->setToolTip(QString("Configures behavior if LIF scan finishes before the rest of the experiment.\n\nStop integrating: Once all points are acquired, no more shots will be integrated.\nContinue: Scan will return to beginning and continue integrating data until remainder of experiment is completed or aborted.\n\n This setting is not applicable if LIF is the only measurement being made or if other parts of the experiment finish before LIF."));
+    ofl->addRow(QString("Completion behavior"),p_completeBox);
+
+    optionsBox->setLayout(ofl);
+    vbl->addWidget(optionsBox,0);
 
     QHBoxLayout *hbl = new QHBoxLayout;
 
@@ -159,6 +180,27 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
 WizardLifConfigPage::~WizardLifConfigPage()
 {
 
+}
+
+void WizardLifConfigPage::saveToSettings() const
+{
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+
+    //scope settings and graph settings are saved on the fly, so don't worry about those
+    s.beginGroup(QString("lifConfig"));
+    s.setValue(QString("scanOrder"),p_orderBox->currentIndex());
+    s.setValue(QString("completeMode"),p_completeBox->currentIndex());
+    s.setValue(QString("delaySingle"),p_delaySingle->isChecked());
+    s.setValue(QString("delayStart"),p_delayStart->value());
+    s.setValue(QString("delayEnd"),p_delayEnd->value());
+    s.setValue(QString("delayStep"),p_delayStep->value());
+    s.setValue(QString("laserSingle"),p_laserSingle->isChecked());
+    s.setValue(QString("laserStart"),p_laserStart->value());
+    s.setValue(QString("laserEnd"),p_laserEnd->value());
+    s.setValue(QString("laserStep"),p_laserStep->value());
+
+    s.endGroup();
+    s.sync();
 }
 
 

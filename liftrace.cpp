@@ -81,6 +81,10 @@ double LifTrace::integrate(int gl1, int gl2, int gr1, int gr2) const
     //lif start must be less than end
     gl1 = qBound(0,gl1,gl2);
 
+    //do trapezoidal integration in integer/point space.
+    //each segment has a width of 1 unit, and the area is (y_i + y_{i+1})/2
+    //(think of it as end points have weight of 1, middle points have weight 2)
+    //add up all y_i + y_{i+1}, then divide by 2 at the end
 
     qint64 sum = 0;
     for(int i = gl1; i<gl2-1; i++)

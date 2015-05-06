@@ -8,6 +8,7 @@
 class QDoubleSpinBox;
 class QCheckBox;
 class LifControlWidget;
+class QComboBox;
 
 class WizardLifConfigPage : public QWizardPage
 {
@@ -15,6 +16,8 @@ class WizardLifConfigPage : public QWizardPage
 public:
     WizardLifConfigPage(QWidget *parent = nullptr);
     ~WizardLifConfigPage();
+
+    void saveToSettings() const;
 
     // QWizardPage interface
     void initializePage();
@@ -30,6 +33,7 @@ private:
     QDoubleSpinBox *p_delayStart, *p_delayStep, *p_delayEnd;
     QDoubleSpinBox *p_laserStart, *p_laserStep, *p_laserEnd;
     QCheckBox *p_delaySingle, *p_laserSingle;
+    QComboBox *p_orderBox, *p_completeBox;
     LifControlWidget *p_lifControl;
 
 
