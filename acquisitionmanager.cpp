@@ -93,16 +93,11 @@ void AcquisitionManager::processLifScopeShot(const LifTrace t)
                 d_currentExperiment.setLifWaiting(true);
                 emit nextLifPoint(d_currentExperiment.lifConfig().currentDelay(),
                                   d_currentExperiment.lifConfig().currentFrequency());
-
-                emit logMessage(QString("Lif Point: %1, %2").arg(d_currentExperiment.lifConfig().currentDelay(),0,'f',3).arg(d_currentExperiment.lifConfig().currentFrequency(),0,'f',0));
             }
         }
 
         if(d_currentExperiment.lifConfig().completedShots() <= d_currentExperiment.lifConfig().totalShots())
-        {
             emit lifShotAcquired(d_currentExperiment.lifConfig().completedShots());
-//            emit logMessage(QString("Lif: %1/%2").arg(d_currentExperiment.lifConfig().completedShots()).arg(d_currentExperiment.lifConfig().totalShots()));
-        }
 
         checkComplete();
     }
