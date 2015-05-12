@@ -37,10 +37,7 @@ bool WizardFtmwConfigPage::validatePage()
 
 int WizardFtmwConfigPage::nextId() const
 {
-    if(field(QString("lif")).toBool())
-        return ExperimentWizard::LifConfigPage;
-    else
-        return ExperimentWizard::PulseConfigPage;
+    return ExperimentWizard::PulseConfigPage;
 }
 
 FtmwConfig WizardFtmwConfigPage::getFtmwConfig() const
