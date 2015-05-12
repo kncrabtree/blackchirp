@@ -28,7 +28,7 @@ protected:
 #if BC_FTMWSCOPE == 1
 #include "dsa71604c.h"
 class Dsa71604c;
-typedef FtmwScopeHardware Dsa71604c;
+typedef Dsa71604c FtmwScopeHardware;
 #else
 #include "virtualftmwscope.h"
 class VirtualFtmwScope;
