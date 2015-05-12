@@ -114,6 +114,7 @@ int main(int argc, char *argv[])
     qRegisterMetaType<BlackChirp::LifScopeConfig>("BlackChirp::LifScopeConfig");
     qRegisterMetaType<PulseGenConfig>("PulseGenConfig");
     qRegisterMetaType<LifTrace>("LifTrace");
+    qRegisterMetaType<QPair<QPoint,BlackChirp::LifPoint>>("QPair<QPoint,BlackChirp::LifPoint>");
 
     MainWindow w;
     w.show();

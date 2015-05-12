@@ -27,6 +27,9 @@ signals:
     void statusMessage(const QString);
     void experimentComplete(Experiment);
     void ftmwShotAcquired(qint64);
+    void lifPointUpdate(QPair<QPoint,BlackChirp::LifPoint>);
+    void nextLifPoint(double delay, double frequency);
+    void lifShotAcquired(int);
     void beginAcquisition();
     void timeDataSignal();
     void timeData(const QList<QPair<QString,QVariant>>);
@@ -35,7 +38,9 @@ signals:
 
 public slots:
     void beginExperiment(Experiment exp);
-    void processScopeShot(const QByteArray b);
+    void processFtmwScopeShot(const QByteArray b);
+    void processLifScopeShot(const LifTrace t);
+    void lifHardwareReady(bool success);
     void changeRollingAverageShots(int newShots);
     void resetRollingAverage();
     void getTimeData();

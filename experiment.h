@@ -28,6 +28,7 @@ public:
     bool isInitialized() const;
     bool isAborted() const;
     bool isDummy() const;
+    bool isLifWaiting() const;
     FtmwConfig ftmwConfig() const;
     PulseGenConfig pGenConfig() const;
     FlowConfig flowConfig() const;
@@ -45,11 +46,13 @@ public:
     void setInitialized();
     void setAborted();
     void setDummy();
+    void setLifWaiting(bool wait);
     void setFtmwConfig(const FtmwConfig cfg);
     void setScopeConfig(const BlackChirp::FtmwScopeConfig &cfg);
     void setLifConfig(const LifConfig cfg);
     bool setFids(const QByteArray rawData);
     bool addFids(const QByteArray newData);
+    bool addLifWaveform(const LifTrace t);
     void overrideTargetShots(const int target);
     void resetFids();
     void setPulseGenConfig(const PulseGenConfig c);
@@ -70,7 +73,8 @@ private:
 class ExperimentData : public QSharedData
 {
 public:
-    ExperimentData() : number(0), timeDataInterval(300), isInitialized(false), isAborted(false), isDummy(false), hardwareSuccess(true), endLogMessageCode(BlackChirp::LogHighlight) {}
+    ExperimentData() : number(0), timeDataInterval(300), isInitialized(false), isAborted(false), isDummy(false),
+        hardwareSuccess(true), waitForLifSet(false), endLogMessageCode(BlackChirp::LogHighlight) {}
 
     int number;
     QDateTime startTime;
@@ -79,6 +83,7 @@ public:
     bool isAborted;
     bool isDummy;
     bool hardwareSuccess;
+    bool waitForLifSet;
     QString errorString;
     QString startLogMessage;
     QString endLogMessage;

@@ -16,7 +16,7 @@
   <widget class="QWidget" name="centralWidget">
    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1">
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1,0,0,0,0,0">
+     <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1,0,0,0,0,0,0,0">
       <item>
        <widget class="QLabel" name="label">
         <property name="text">
@@ -188,6 +188,23 @@
       </item>
       <item>
        <widget class="QProgressBar" name="ftmwProgressBar">
+        <property name="value">
+         <number>0</number>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>LIF Progress</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QProgressBar" name="lifProgressBar">
         <property name="value">
          <number>0</number>
         </property>

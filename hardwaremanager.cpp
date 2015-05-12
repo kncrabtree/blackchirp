@@ -244,6 +244,17 @@ void HardwareManager::getTimeData()
         QMetaObject::invokeMethod(d_hardwareList.at(i).first,"readTimeData");
 }
 
+void HardwareManager::setLifParameters(double delay, double frequency)
+{
+    bool success = true;
+
+    if(!setPGenLifDelay(delay))
+        success = false;
+    Q_UNUSED(frequency)
+
+    emit lifSettingsComplete(success);
+}
+
 double HardwareManager::setValonTxFreq(const double d)
 {
     if(p_synth->thread() == thread())
@@ -289,6 +300,21 @@ void HardwareManager::setPGenRepRate(double r)
         p_pGen->setRepRate(r);
     else
         QMetaObject::invokeMethod(p_pGen,"setRepRate",Q_ARG(double,r));
+}
+
+bool HardwareManager::setPGenLifDelay(double d)
+{
+    double actualDelay;
+    if(p_pGen->thread() == thread())
+        actualDelay = p_pGen->setLifDelay(d);
+    else
+        QMetaObject::invokeMethod(p_pGen,"setLifDelay",Qt::BlockingQueuedConnection,
+                                  Q_RETURN_ARG(double,actualDelay),Q_ARG(double,d));
+
+    if(fabs(d-actualDelay) < 0.001)
+        return true;
+
+    return false;
 }
 
 void HardwareManager::setFlowChannelName(int index, QString name)

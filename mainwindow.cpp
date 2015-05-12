@@ -161,6 +161,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_am,&AcquisitionManager::statusMessage,statusLabel,&QLabel::setText);
     connect(p_am,&AcquisitionManager::ftmwShotAcquired,ui->ftmwProgressBar,&QProgressBar::setValue);
     connect(p_am,&AcquisitionManager::ftmwShotAcquired,ui->ftViewWidget,&FtmwViewWidget::updateShotsLabel);
+    connect(p_am,&AcquisitionManager::lifShotAcquired,ui->lifProgressBar,&QProgressBar::setValue);
     connect(ui->actionPause,&QAction::triggered,p_am,&AcquisitionManager::pause);
     connect(ui->actionResume,&QAction::triggered,p_am,&AcquisitionManager::resume);
     connect(ui->actionAbort,&QAction::triggered,p_am,&AcquisitionManager::abort);
@@ -175,7 +176,10 @@ MainWindow::MainWindow(QWidget *parent) :
     d_threadObjectList.append(qMakePair(amThread,p_am));
 
     connect(p_hwm,&HardwareManager::experimentInitialized,p_am,&AcquisitionManager::beginExperiment);
-    connect(p_hwm,&HardwareManager::ftmwScopeShotAcquired,p_am,&AcquisitionManager::processScopeShot);
+    connect(p_hwm,&HardwareManager::ftmwScopeShotAcquired,p_am,&AcquisitionManager::processFtmwScopeShot);
+    connect(p_am,&AcquisitionManager::nextLifPoint,p_hwm,&HardwareManager::setLifParameters);
+    connect(p_hwm,&HardwareManager::lifSettingsComplete,p_am,&AcquisitionManager::lifHardwareReady);
+    connect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_am,&AcquisitionManager::processLifScopeShot);
     connect(p_am,&AcquisitionManager::experimentComplete,p_hwm,&HardwareManager::endAcquisition);
     connect(p_am,&AcquisitionManager::beginAcquisition,p_hwm,&HardwareManager::beginAcquisition);
     connect(p_am,&AcquisitionManager::timeDataSignal,p_hwm,&HardwareManager::getTimeData);
@@ -261,6 +265,8 @@ void MainWindow::experimentInitialized(Experiment exp)
     ui->ftmwProgressBar->setValue(0);
     ui->ftViewWidget->initializeForExperiment(exp.ftmwConfig());
 
+    ui->lifProgressBar->setValue(0);
+
 	if(exp.ftmwConfig().isEnabled())
 	{
         switch(exp.ftmwConfig().type()) {
@@ -275,6 +281,19 @@ void MainWindow::experimentInitialized(Experiment exp)
             break;
         }
 	}
+    else
+    {
+        ui->ftmwProgressBar->setRange(0,1);
+        ui->ftmwProgressBar->setValue(1);
+    }
+
+    if(exp.lifConfig().isEnabled())
+        ui->lifProgressBar->setRange(0,exp.lifConfig().totalShots());
+    else
+    {
+        ui->lifProgressBar->setRange(0,1);
+        ui->lifProgressBar->setValue(1);
+    }
 }
 
 void MainWindow::hardwareInitialized(bool success)

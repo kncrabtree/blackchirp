@@ -39,11 +39,11 @@ void AcquisitionManager::beginExperiment(Experiment exp)
 
 }
 
-void AcquisitionManager::processScopeShot(const QByteArray b)
+void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 {
 //    static int total = 0;
 //    static int count = 0;
-    if(d_state == Acquiring && d_currentExperiment.ftmwConfig().isEnabled())
+    if(d_state == Acquiring && d_currentExperiment.ftmwConfig().isEnabled() && !d_currentExperiment.ftmwConfig().isComplete())
     {
 //        d_testTime.restart();
         bool success = true;
@@ -76,6 +76,49 @@ void AcquisitionManager::processScopeShot(const QByteArray b)
             emit ftmwShotAcquired(d_currentExperiment.ftmwConfig().completedShots());
 
         checkComplete();
+    }
+}
+
+void AcquisitionManager::processLifScopeShot(const LifTrace t)
+{
+    if(d_state == Acquiring && d_currentExperiment.lifConfig().isEnabled() && !d_currentExperiment.isLifWaiting())
+    {
+        //process trace; only send data to UI if point is complete
+        if(d_currentExperiment.addLifWaveform(t))
+        {
+            emit lifPointUpdate(d_currentExperiment.lifConfig().lastUpdatedLifPoint());
+
+            if(!d_currentExperiment.isComplete())
+            {
+                d_currentExperiment.setLifWaiting(true);
+                emit nextLifPoint(d_currentExperiment.lifConfig().currentDelay(),
+                                  d_currentExperiment.lifConfig().currentFrequency());
+
+                emit logMessage(QString("Lif Point: %1, %2").arg(d_currentExperiment.lifConfig().currentDelay(),0,'f',3).arg(d_currentExperiment.lifConfig().currentFrequency(),0,'f',0));
+            }
+        }
+
+        if(d_currentExperiment.lifConfig().completedShots() <= d_currentExperiment.lifConfig().totalShots())
+        {
+            emit lifShotAcquired(d_currentExperiment.lifConfig().completedShots());
+//            emit logMessage(QString("Lif: %1/%2").arg(d_currentExperiment.lifConfig().completedShots()).arg(d_currentExperiment.lifConfig().totalShots()));
+        }
+
+        checkComplete();
+    }
+}
+
+void AcquisitionManager::lifHardwareReady(bool success)
+{
+    if(d_currentExperiment.lifConfig().isEnabled())
+    {
+        if(!success)
+        {
+            emit logMessage(QString("LIF delay and/or frequency could not be set. Aborting."),BlackChirp::LogError);
+            abort();
+        }
+        else
+            d_currentExperiment.setLifWaiting(false);
     }
 }
 
@@ -118,9 +161,9 @@ void AcquisitionManager::processTimeData(const QList<QPair<QString, QVariant> > 
 		//
 		//
 
-		emit logMessage(QString("Time data received."));
-		for(int i=0; i<timeDataList.size(); i++)
-			emit logMessage(QString("%1: %2").arg(timeDataList.at(i).first,timeDataList.at(i).second.toString()));
+//		emit logMessage(QString("Time data received."));
+//		for(int i=0; i<timeDataList.size(); i++)
+//			emit logMessage(QString("%1: %2").arg(timeDataList.at(i).first,timeDataList.at(i).second.toString()));
 
 		d_currentExperiment.addTimeData(timeDataList);
 	}

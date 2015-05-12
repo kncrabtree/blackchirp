@@ -60,6 +60,7 @@ signals:
 
     void lifScopeShotAcquired(const LifTrace);
     void lifScopeConfigUpdated(const BlackChirp::LifScopeConfig);
+    void lifSettingsComplete(bool success = true);
 
 public slots:
     void initialize();
@@ -85,6 +86,7 @@ public slots:
     void testObjectConnection(const QString type, const QString key);
 
     void getTimeData();
+    void setLifParameters(double delay, double frequency);
 
     double setValonTxFreq(const double d);
     double setValonRxFreq(const double d);
@@ -92,6 +94,7 @@ public slots:
     void setPGenSetting(int index, BlackChirp::PulseSetting s, QVariant val);
     void setPGenConfig(const PulseGenConfig c);
     void setPGenRepRate(double r);
+    bool setPGenLifDelay(double d);
 
     void setFlowChannelName(int index, QString name);
     void setFlowSetpoint(int index, double val);

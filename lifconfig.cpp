@@ -32,7 +32,10 @@ bool LifConfig::isEnabled() const
 
 bool LifConfig::isComplete() const
 {
-    return data->complete;
+    if(data->enabled)
+        return data->complete;
+
+    return true;
 }
 
 bool LifConfig::isValid() const
@@ -55,7 +58,7 @@ int LifConfig::numDelayPoints() const
     if(fabs(data->delayStartUs-data->delayEndUs) < data->delayStepUs)
         return 1;
 
-    return static_cast<int>(floor(fabs((data->delayStartUs-data->delayEndUs)/data->delayStepUs)))+2;
+    return static_cast<int>(floor(fabs((data->delayStartUs-data->delayEndUs)/data->delayStepUs)))+1;
 }
 
 int LifConfig::numFrequencyPoints() const
@@ -63,7 +66,7 @@ int LifConfig::numFrequencyPoints() const
     if(fabs(data->frequencyStart-data->frequencyEnd) < data->frequencyStep)
         return 1;
 
-    return static_cast<int>(floor(fabs((data->frequencyStart-data->frequencyEnd)/data->frequencyStep)))+2;
+    return static_cast<int>(floor(fabs((data->frequencyStart-data->frequencyEnd)/data->frequencyStep)))+1;
 }
 
 int LifConfig::totalShots() const

@@ -55,6 +55,11 @@ bool Experiment::isDummy() const
     return data->isDummy;
 }
 
+bool Experiment::isLifWaiting() const
+{
+    return data->waitForLifSet;
+}
+
 FtmwConfig Experiment::ftmwConfig() const
 {
     return data->ftmwCfg;
@@ -185,6 +190,11 @@ void Experiment::setDummy()
     data->isDummy = true;
 }
 
+void Experiment::setLifWaiting(bool wait)
+{
+    data->waitForLifSet = wait;
+}
+
 void Experiment::setFtmwConfig(const FtmwConfig cfg)
 {
     data->ftmwCfg = cfg;
@@ -221,6 +231,11 @@ bool Experiment::addFids(const QByteArray newData)
     }
 
     return true;
+}
+
+bool Experiment::addLifWaveform(const LifTrace t)
+{
+    return data->lifCfg.addWaveform(t);
 }
 
 void Experiment::overrideTargetShots(const int target)

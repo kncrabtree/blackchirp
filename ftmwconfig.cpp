@@ -298,6 +298,9 @@ void FtmwConfig::setChirpConfig(const ChirpConfig other)
 
 bool FtmwConfig::isComplete() const
 {
+    if(!isEnabled())
+        return true;
+
     switch(type())
     {
     case BlackChirp::FtmwTargetShots:
