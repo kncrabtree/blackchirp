@@ -18,11 +18,12 @@ public slots:
 
     virtual BlackChirp::PulseChannelConfig read(const int index);
 
-    virtual void set(const int index, const BlackChirp::PulseSetting s, const QVariant val) =0;
+    virtual QVariant set(const int index, const BlackChirp::PulseSetting s, const QVariant val) =0;
     virtual void setChannel(const int index, const BlackChirp::PulseChannelConfig cc);
     virtual void setAll(const PulseGenConfig cc);
 
     virtual void setRepRate(double d) =0;
+    virtual double setLifDelay(double d) =0;
 
 signals:
     void settingUpdate(int,BlackChirp::PulseSetting,QVariant);

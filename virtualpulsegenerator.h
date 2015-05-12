@@ -23,8 +23,9 @@ public slots:
 public slots:
     QVariant read(const int index, const BlackChirp::PulseSetting s);
 
-    void set(const int index, const BlackChirp::PulseSetting s, const QVariant val);
+    QVariant set(const int index, const BlackChirp::PulseSetting s, const QVariant val);
     void setRepRate(double d);
+    double setLifDelay(double d);
 
 };
 

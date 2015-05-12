@@ -60,6 +60,7 @@ void VirtualPulseGenerator::initialize()
 
 Experiment VirtualPulseGenerator::prepareForExperiment(Experiment exp)
 {
+    setAll(exp.pGenConfig());
     return exp;
 }
 
@@ -81,14 +82,19 @@ QVariant VirtualPulseGenerator::read(const int index, const BlackChirp::PulseSet
     return d_config.setting(index,s);
 }
 
-void VirtualPulseGenerator::set(const int index, const BlackChirp::PulseSetting s, const QVariant val)
+QVariant VirtualPulseGenerator::set(const int index, const BlackChirp::PulseSetting s, const QVariant val)
 {
     d_config.set(index,s,val);
-    emit settingUpdate(index,s,val);
+    return read(index,s);
 }
 
 void VirtualPulseGenerator::setRepRate(double d)
 {
     d_config.setRepRate(d);
     emit repRateUpdate(d);
+}
+
+double VirtualPulseGenerator::setLifDelay(double d)
+{
+   return set(BC_PGEN_LIFCHANNEL,BlackChirp::PulseDelay,d).toDouble();
 }
