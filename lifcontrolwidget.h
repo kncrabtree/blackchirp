@@ -24,9 +24,11 @@ public:
 signals:
     void updateScope(const BlackChirp::LifScopeConfig);
     void newTrace(const LifTrace);
+    void lifColorChanged();
 
 public slots:
     void scopeConfigChanged(const BlackChirp::LifScopeConfig c);
+    void checkLifColors();
 
 private:
     Ui::LifControlWidget *ui;

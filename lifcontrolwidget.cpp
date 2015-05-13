@@ -29,6 +29,7 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
     connect(ui->samplesSpinBox,ivc,sig);
     connect(ui->refEnabledCheckBox,&QCheckBox::toggled,sig);
     connect(ui->refVScaleDoubleSpinBox,dvc,sig);
+    connect(ui->lifPlot,&LifTracePlot::colorChanged,this,&LifControlWidget::lifColorChanged);
 
     connect(this,&LifControlWidget::newTrace,ui->lifPlot,&LifTracePlot::newTrace);
 
@@ -87,6 +88,11 @@ void LifControlWidget::scopeConfigChanged(const BlackChirp::LifScopeConfig c)
     ui->lifPlot->setAxisAutoScaleRange(QwtPlot::xBottom,0.0,static_cast<double>(c.recordLength)/c.sampleRate*1e9);
     ui->lifPlot->reset();
 
+}
+
+void LifControlWidget::checkLifColors()
+{
+    ui->lifPlot->checkColors();
 }
 
 BlackChirp::LifScopeConfig LifControlWidget::toConfig() const

@@ -33,6 +33,7 @@ public slots:
     void buildContextMenu(QMouseEvent *me);
     void changeLifColor();
     void changeRefColor();
+    void checkColors();
     void legendItemClicked(QVariant info, bool checked, int index);
     void reset();
     void setIntegralText(double d);

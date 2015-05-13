@@ -90,6 +90,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,ui->lifControlWidget,&LifControlWidget::newTrace);
     connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,ui->lifControlWidget,&LifControlWidget::scopeConfigChanged);
     connect(ui->lifControlWidget,&LifControlWidget::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
+    connect(p_hwm,&HardwareManager::lifSettingsComplete,ui->lifDisplayWidget,&LifDisplayWidget::resetLifPlot);
 
     QThread *hwmThread = new QThread(this);
     connect(hwmThread,&QThread::started,p_hwm,&HardwareManager::initialize);
@@ -199,6 +200,12 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionTrackingShow,&QAction::triggered,[=](){ ui->tabWidget->setCurrentIndex(2); });
     connect(ui->action_Graphs,&QAction::triggered,ui->trackingViewWidget,&TrackingViewWidget::changeNumPlots);
 
+    connect(ui->lifControlWidget,&LifControlWidget::lifColorChanged,
+            ui->lifDisplayWidget,&LifDisplayWidget::checkLifColors);
+    connect(ui->lifDisplayWidget,&LifDisplayWidget::lifColorChanged,
+            ui->lifControlWidget,&LifControlWidget::checkLifColors);
+
+
     configureUi(Idle);
 }
 
@@ -226,6 +233,8 @@ void MainWindow::startExperiment()
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
     connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
     connect(&wiz,&ExperimentWizard::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
+    connect(&wiz,&ExperimentWizard::lifColorChanged,ui->lifControlWidget,&LifControlWidget::checkLifColors);
+    connect(&wiz,&ExperimentWizard::lifColorChanged,ui->lifDisplayWidget,&LifDisplayWidget::checkLifColors);
 
     if(wiz.exec() != QDialog::Accepted)
         return;
@@ -252,6 +261,9 @@ void MainWindow::batchComplete(bool aborted)
 	    ui->ftmwProgressBar->setRange(0,1);
 	    ui->ftmwProgressBar->setValue(1);
     }
+
+    disconnect(p_hwm,&HardwareManager::lifScopeShotAcquired,
+               ui->lifDisplayWidget,&LifDisplayWidget::lifShotAcquired);
 
     configureUi(Idle);
 }
@@ -288,7 +300,11 @@ void MainWindow::experimentInitialized(Experiment exp)
     }
 
     if(exp.lifConfig().isEnabled())
+    {
         ui->lifProgressBar->setRange(0,exp.lifConfig().totalShots());
+        connect(p_hwm,&HardwareManager::lifScopeShotAcquired,
+                ui->lifDisplayWidget,&LifDisplayWidget::lifShotAcquired,Qt::UniqueConnection);
+    }
     else
     {
         ui->lifProgressBar->setRange(0,1);

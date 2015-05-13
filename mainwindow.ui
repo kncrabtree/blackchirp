@@ -218,7 +218,7 @@
        <enum>QTabWidget::East</enum>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="ftmwTab">
        <attribute name="title">
@@ -234,6 +234,11 @@
        <attribute name="title">
         <string>LIF</string>
        </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_6">
+        <item>
+         <widget class="LifDisplayWidget" name="lifDisplayWidget" native="true"/>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="trackingTab">
        <attribute name="title">
@@ -452,6 +457,12 @@
    <class>LifControlWidget</class>
    <extends>QWidget</extends>
    <header location="global">lifcontrolwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>LifDisplayWidget</class>
+   <extends>QWidget</extends>
+   <header>lifdisplaywidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

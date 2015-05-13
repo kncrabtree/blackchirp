@@ -40,6 +40,7 @@ signals:
     void newTrace(const LifTrace);
     void updateScope(const BlackChirp::LifScopeConfig);
     void scopeConfigChanged(const BlackChirp::LifScopeConfig);
+    void lifColorChanged();
 
 private:
     WizardStartPage *p_startPage;

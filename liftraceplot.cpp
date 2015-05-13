@@ -294,6 +294,8 @@ void LifTracePlot::changeLifColor()
     initializeLabel(p_lif,p_lif->isVisible());
 
     replot();
+
+    emit colorChanged();
 }
 
 void LifTracePlot::changeRefColor()
@@ -316,6 +318,34 @@ void LifTracePlot::changeRefColor()
 
     if(p_ref->plot() == this)
         replot();
+
+    emit colorChanged();
+}
+
+void LifTracePlot::checkColors()
+{
+    QSettings s;
+    QColor lifColor = s.value(QString("lifTracePlot/lifColor"),
+                              QPalette().color(QPalette::Text)).value<QColor>();
+    QColor refColor = s.value(QString("lifTracePlot/refColor"),
+                              QPalette().color(QPalette::Text)).value<QColor>();
+
+    p_lif->setPen(QPen(lifColor));
+    p_lifZone->setPen(QPen(lifColor,2.0));
+    lifColor.setAlpha(75);
+    p_lifZone->setBrush(lifColor);
+    initializeLabel(p_lif,p_lif->isVisible());
+
+    p_ref->setPen(QPen(refColor));
+    p_refZone->setPen(QPen(refColor,2.0));
+    refColor.setAlpha(75);
+    p_refZone->setBrush(refColor);
+
+    if(p_ref->plot() == this)
+        initializeLabel(p_ref,p_ref->isVisible());
+
+    replot();
+
 }
 
 void LifTracePlot::legendItemClicked(QVariant info, bool checked, int index)

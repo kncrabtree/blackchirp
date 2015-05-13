@@ -20,6 +20,7 @@ public:
     void setAxisAutoScaleMax(QwtPlot::Axis axis, double max);
     void expandAutoScaleRange(QwtPlot::Axis axis, double newValueMin, double newValueMax);
     void setXRanges(const QwtScaleDiv &bottom, const QwtScaleDiv &top);
+    virtual void setName(QString name);
 
 public slots:
     void autoScale();
@@ -32,7 +33,7 @@ signals:
     void plotRightClicked(QMouseEvent *ev);
 
 protected:
-    const QString d_name;
+    QString d_name;
     struct AxisConfig {
         QwtPlot::Axis type;
         bool autoScale;

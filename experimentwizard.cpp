@@ -22,6 +22,7 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
     connect(this,&ExperimentWizard::newTrace,p_lifConfigPage,&WizardLifConfigPage::newTrace);
     connect(this,&ExperimentWizard::scopeConfigChanged,p_lifConfigPage,&WizardLifConfigPage::scopeConfigChanged);
     connect(p_lifConfigPage,&WizardLifConfigPage::updateScope,this,&ExperimentWizard::updateScope);
+    connect(p_lifConfigPage,&WizardLifConfigPage::lifColorChanged,this,&ExperimentWizard::lifColorChanged);
 
 
     setPage(StartPage,p_startPage);

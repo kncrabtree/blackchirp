@@ -29,6 +29,7 @@ signals:
     void newTrace(const LifTrace c);
     void updateScope(const BlackChirp::LifScopeConfig);
     void scopeConfigChanged(const BlackChirp::LifScopeConfig);
+    void lifColorChanged();
 
 private:
     QDoubleSpinBox *p_delayStart, *p_delayStep, *p_delayEnd;

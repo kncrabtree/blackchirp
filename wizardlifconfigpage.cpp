@@ -176,6 +176,7 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
 
     connect(this,&WizardLifConfigPage::scopeConfigChanged,p_lifControl,&LifControlWidget::scopeConfigChanged);
     connect(p_lifControl,&LifControlWidget::updateScope,this,&WizardLifConfigPage::updateScope);
+    connect(p_lifControl,&LifControlWidget::lifColorChanged,this,&WizardLifConfigPage::lifColorChanged);
 
     registerField(QString("delayStart"),p_delayStart,"value","valueChanged");
 }

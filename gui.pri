@@ -15,7 +15,9 @@ SOURCES += mainwindow.cpp \
     $$PWD/pulseplot.cpp \
     $$PWD/led.cpp \
     $$PWD/liftraceplot.cpp \
-    $$PWD/lifcontrolwidget.cpp
+    $$PWD/lifcontrolwidget.cpp \
+    $$PWD/lifdisplaywidget.cpp \
+    $$PWD/lifsliceplot.cpp
 
 HEADERS += mainwindow.h \
     $$PWD/ftmwviewwidget.h \
@@ -34,7 +36,9 @@ HEADERS += mainwindow.h \
     $$PWD/pulseplot.h \
     $$PWD/led.h \
     $$PWD/liftraceplot.h \
-    $$PWD/lifcontrolwidget.h
+    $$PWD/lifcontrolwidget.h \
+    $$PWD/lifdisplaywidget.h \
+    $$PWD/lifsliceplot.h
 
 FORMS += mainwindow.ui \
     $$PWD/ftmwviewwidget.ui \
@@ -43,4 +47,5 @@ FORMS += mainwindow.ui \
     $$PWD/chirpconfigwidget.ui \
     $$PWD/rfconfigwidget.ui \
     $$PWD/pulseconfigwidget.ui \
-    $$PWD/lifcontrolwidget.ui
+    $$PWD/lifcontrolwidget.ui \
+    $$PWD/lifdisplaywidget.ui

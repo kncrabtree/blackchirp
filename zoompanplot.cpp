@@ -10,18 +10,14 @@
 
 #include <qwt6/qwt_scale_div.h>
 
-ZoomPanPlot::ZoomPanPlot(QString name, QWidget *parent) : QwtPlot(parent), d_name(name)
+ZoomPanPlot::ZoomPanPlot(QString name, QWidget *parent) : QwtPlot(parent)
 {
     d_config.axisList.append(AxisConfig(QwtPlot::xBottom,QString("Bottom")));
     d_config.axisList.append(AxisConfig(QwtPlot::xTop,QString("Top")));
     d_config.axisList.append(AxisConfig(QwtPlot::yLeft,QString("Left")));
     d_config.axisList.append(AxisConfig(QwtPlot::yRight,QString("Right")));
 
-    QSettings s;
-    for(int i=0; i<d_config.axisList.size(); i++)
-        d_config.axisList[i].zoomFactor = s.value(QString("zoomFactors/%1/%2").arg(d_name)
-                                                  .arg(QVariant(d_config.axisList.at(i).type).toString()),0.1).toDouble();
-
+    setName(name);
 
     canvas()->installEventFilter(this);
 }
@@ -100,6 +96,16 @@ void ZoomPanPlot::setXRanges(const QwtScaleDiv &bottom, const QwtScaleDiv &top)
 
     d_config.xDirty = true;
     replot();
+}
+
+void ZoomPanPlot::setName(QString name)
+{
+    d_name = name;
+
+    QSettings s;
+    for(int i=0; i<d_config.axisList.size(); i++)
+        d_config.axisList[i].zoomFactor = s.value(QString("zoomFactors/%1/%2").arg(d_name)
+                                                  .arg(QVariant::fromValue(d_config.axisList.at(i).type).toString()),0.1).toDouble();
 }
 
 void ZoomPanPlot::replot()
