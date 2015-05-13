@@ -41,6 +41,8 @@ public slots:
     void changeLifGateRange();
     void changeRefGateRange();
 
+    void clearPlot();
+
 private:
     QwtPlotCurve *p_lif, *p_ref;
     QwtPlotZoneItem *p_lifZone, *p_refZone;

@@ -44,7 +44,15 @@ void LifSlicePlot::setName(QString name)
     d_curve->setPen(QPen(c));
 }
 
+void LifSlicePlot::prepareForExperiment(double xMin, double xMax)
+{
+    d_curve->setSamples(QVector<QPointF>());
 
+    setAxisAutoScaleRange(QwtPlot::xBottom,xMin,xMax);
+    setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
+
+    autoScale();
+}
 
 void LifSlicePlot::filterData()
 {

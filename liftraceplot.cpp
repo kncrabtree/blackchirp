@@ -45,7 +45,7 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
     p_lif = new QwtPlotCurve(QString("LIF"));
     p_lif->setRenderHint(QwtPlotItem::RenderAntialiased);
     p_lif->setPen(QPen(lifColor));
-    p_lif->attach(this);
+//    p_lif->attach(this);
     p_lif->setZ(1.0);
 
     p_ref = new QwtPlotCurve(QString("Ref"));
@@ -72,8 +72,6 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
     leg->contentsWidget()->installEventFilter(this);
     connect(leg,&QwtLegend::checked,this,&LifTracePlot::legendItemClicked);
     insertLegend(leg,QwtPlot::BottomLegend);
-
-    initializeLabel(p_lif,true);
 
     connect(this,&LifTracePlot::plotRightClicked,this,&LifTracePlot::buildContextMenu);
 
@@ -197,6 +195,12 @@ void LifTracePlot::traceProcessed(const LifTrace t)
 
     setAxisAutoScaleRange(QwtPlot::xBottom,0.0,
                           d_currentTrace.spacing()*static_cast<double>(d_currentTrace.size())*1e9);
+
+    if(p_lif->plot() != this)
+    {
+        p_lif->attach(this);
+        initializeLabel(p_lif,true);
+    }
 
     if(updateLif)
         updateLifZone();
@@ -400,6 +404,19 @@ void LifTracePlot::changeRefGateRange()
 {
     d_refGateMode = true;
     canvas()->setMouseTracking(true);
+}
+
+void LifTracePlot::clearPlot()
+{
+    p_lif->detach();
+    p_lifZone->detach();
+    p_ref->detach();
+    p_refZone->detach();
+    p_integralLabel->setText(QString(""));
+
+    d_currentTrace = LifTrace();
+
+    replot();
 }
 
 void LifTracePlot::initializeLabel(QwtPlotCurve *curve, bool isVisible)

@@ -299,6 +299,7 @@ void MainWindow::experimentInitialized(Experiment exp)
         ui->ftmwProgressBar->setValue(1);
     }
 
+    ui->lifDisplayWidget->prepareForExperiment(exp.lifConfig());
     if(exp.lifConfig().isEnabled())
     {
         ui->lifProgressBar->setRange(0,exp.lifConfig().totalShots());

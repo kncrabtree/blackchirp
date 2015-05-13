@@ -43,6 +43,23 @@ void LifDisplayWidget::lifShotAcquired(const LifTrace t)
     ui->lifTracePlot->newTrace(t);
 }
 
+void LifDisplayWidget::prepareForExperiment(const LifConfig c)
+{
+    ui->lifTracePlot->clearPlot();
+    if(!c.isEnabled())
+    {
+        ui->timeSlicePlot->prepareForExperiment(0.0,1.0);
+        ui->freqSlicePlot->prepareForExperiment(0.0,1.0);
+    }
+    else
+    {
+        QPair<double,double> delayRange = c.delayRange();
+        ui->timeSlicePlot->prepareForExperiment(delayRange.first,delayRange.second);
+        QPair<double,double> freqRange = c.frequencyRange();
+        ui->freqSlicePlot->prepareForExperiment(freqRange.first,freqRange.second);
+    }
+}
+
 void LifDisplayWidget::resizeEvent(QResizeEvent *ev)
 {
     int margin = 5;

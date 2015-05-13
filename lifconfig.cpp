@@ -53,6 +53,23 @@ double LifConfig::currentFrequency() const
     return static_cast<double>(data->currentFrequencyIndex)*data->frequencyStep + data->frequencyStart;
 }
 
+QPair<double, double> LifConfig::delayRange() const
+{
+    QPair<double,double> out;
+    out.first = qMin(data->delayStartUs,data->delayEndUs);
+    out.second = qMax(data->delayStartUs,data->delayEndUs);
+    return out;
+
+}
+
+QPair<double, double> LifConfig::frequencyRange() const
+{
+    QPair<double,double> out;
+    out.first = qMin(data->frequencyStart,data->frequencyEnd);
+    out.second = qMax(data->frequencyStart,data->frequencyEnd);
+    return out;
+}
+
 int LifConfig::numDelayPoints() const
 {
     if(fabs(data->delayStartUs-data->delayEndUs) < data->delayStepUs)

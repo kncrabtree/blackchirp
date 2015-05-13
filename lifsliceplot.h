@@ -15,9 +15,12 @@ public:
     void setXAxisTitle(QString title);
     void setName(QString name);
 
+    void prepareForExperiment(double xMin, double xMax);
+
     // ZoomPanPlot interface
 protected:
     void filterData();
+
 
     QwtPlotCurve *d_curve;
 };

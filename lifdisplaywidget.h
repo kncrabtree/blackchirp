@@ -7,6 +7,7 @@
 
 #include "datastructs.h"
 #include "liftrace.h"
+#include "lifconfig.h"
 
 namespace Ui {
 class LifDisplayWidget;
@@ -27,6 +28,7 @@ public slots:
     void checkLifColors();
     void resetLifPlot();
     void lifShotAcquired(const LifTrace t);
+    void prepareForExperiment(const LifConfig c);
 
 private:
     Ui::LifDisplayWidget *ui;

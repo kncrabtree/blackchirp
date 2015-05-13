@@ -29,6 +29,8 @@ public:
     bool isValid() const;
     double currentDelay() const;
     double currentFrequency() const;
+    QPair<double,double> delayRange() const;
+    QPair<double,double> frequencyRange() const;
     int numDelayPoints() const;
     int numFrequencyPoints() const;
     int totalShots() const;
