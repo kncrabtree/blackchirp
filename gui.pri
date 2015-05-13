@@ -17,7 +17,8 @@ SOURCES += mainwindow.cpp \
     $$PWD/liftraceplot.cpp \
     $$PWD/lifcontrolwidget.cpp \
     $$PWD/lifdisplaywidget.cpp \
-    $$PWD/lifsliceplot.cpp
+    $$PWD/lifsliceplot.cpp \
+    $$PWD/lifspectrogramplot.cpp
 
 HEADERS += mainwindow.h \
     $$PWD/ftmwviewwidget.h \
@@ -38,7 +39,8 @@ HEADERS += mainwindow.h \
     $$PWD/liftraceplot.h \
     $$PWD/lifcontrolwidget.h \
     $$PWD/lifdisplaywidget.h \
-    $$PWD/lifsliceplot.h
+    $$PWD/lifsliceplot.h \
+    $$PWD/lifspectrogramplot.h
 
 FORMS += mainwindow.ui \
     $$PWD/ftmwviewwidget.ui \

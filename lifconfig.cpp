@@ -55,19 +55,12 @@ double LifConfig::currentFrequency() const
 
 QPair<double, double> LifConfig::delayRange() const
 {
-    QPair<double,double> out;
-    out.first = qMin(data->delayStartUs,data->delayEndUs);
-    out.second = qMax(data->delayStartUs,data->delayEndUs);
-    return out;
-
+    return qMakePair(data->delayStartUs,data->delayEndUs);
 }
 
 QPair<double, double> LifConfig::frequencyRange() const
 {
-    QPair<double,double> out;
-    out.first = qMin(data->frequencyStart,data->frequencyEnd);
-    out.second = qMax(data->frequencyStart,data->frequencyEnd);
-    return out;
+    return qMakePair(data->frequencyStart,data->frequencyEnd);
 }
 
 int LifConfig::numDelayPoints() const
@@ -340,7 +333,12 @@ QPair<QPoint, BlackChirp::LifPoint> LifConfig::lastUpdatedLifPoint() const
     if(data->lastUpdatedPoint.x() < data->lifData.size())
     {
         if(data->lastUpdatedPoint.y() < data->lifData.at(data->lastUpdatedPoint.x()).size())
+//        {
             return qMakePair(data->lastUpdatedPoint,data->lifData.at(data->lastUpdatedPoint.x()).at(data->lastUpdatedPoint.y()));
+//            BlackChirp::LifPoint p;
+//            p.mean = static_cast<double>(qrand() % 1000)/100.0;
+//            return qMakePair(data->lastUpdatedPoint,p);
+//        }
     }
 
     return qMakePair(QPoint(-1,-1),BlackChirp::LifPoint());

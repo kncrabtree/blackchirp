@@ -126,18 +126,22 @@ void ZoomPanPlot::replot()
             top = true;
     }
 
-    enableAxis(QwtPlot::yLeft,left);
-    enableAxis(QwtPlot::yRight,right);
-    enableAxis(QwtPlot::xTop,top);
-    enableAxis(QwtPlot::xBottom,bottom);
+    if(!d_config.axisList.at(getAxisIndex(QwtPlot::yLeft)).override)
+        enableAxis(QwtPlot::yLeft,left);
+    if(!d_config.axisList.at(getAxisIndex(QwtPlot::yRight)).override)
+        enableAxis(QwtPlot::yRight,right);
+    if(!d_config.axisList.at(getAxisIndex(QwtPlot::xTop)).override)
+        enableAxis(QwtPlot::xTop,top);
+    if(!d_config.axisList.at(getAxisIndex(QwtPlot::xBottom)).override)
+        enableAxis(QwtPlot::xBottom,bottom);
 
-    if(!bottom)
+    if(!bottom || d_config.axisList.at(getAxisIndex(QwtPlot::xBottom)).override)
         d_config.axisList[getAxisIndex(QwtPlot::xBottom)].autoScale = true;
-    if(!top)
+    if(!top || d_config.axisList.at(getAxisIndex(QwtPlot::xTop)).override)
         d_config.axisList[getAxisIndex(QwtPlot::xTop)].autoScale = true;
-    if(!left)
+    if(!left || d_config.axisList.at(getAxisIndex(QwtPlot::yLeft)).override)
         d_config.axisList[getAxisIndex(QwtPlot::yLeft)].autoScale = true;
-    if(!right)
+    if(!right || d_config.axisList.at(getAxisIndex(QwtPlot::yRight)).override)
         d_config.axisList[getAxisIndex(QwtPlot::yRight)].autoScale = true;
 
 
@@ -178,6 +182,11 @@ void ZoomPanPlot::setZoomFactor(QwtPlot::Axis a, double v)
     s.setValue(QString("zoomFactors/%1/%2").arg(d_name)
                        .arg(QVariant(d_config.axisList.at(i).type).toString()),v);
     s.sync();
+}
+
+void ZoomPanPlot::setAxisOverride(QwtPlot::Axis axis, bool override)
+{
+    d_config.axisList[getAxisIndex(axis)].override = override;
 }
 
 void ZoomPanPlot::resizeEvent(QResizeEvent *ev)
@@ -267,6 +276,8 @@ void ZoomPanPlot::pan(QMouseEvent *me)
     for(int i=0; i<d_config.axisList.size(); i++)
     {
         const AxisConfig c = d_config.axisList.at(i);
+        if(c.override)
+            continue;
 
         double scaleMin = axisScaleDiv(c.type).lowerBound();
         double scaleMax = axisScaleDiv(c.type).upperBound();
@@ -310,6 +321,8 @@ void ZoomPanPlot::zoom(QWheelEvent *we)
     for(int i=0; i<d_config.axisList.size(); i++)
     {
         const AxisConfig c = d_config.axisList.at(i);
+        if(c.override)
+            continue;
 
         if((c.type == QwtPlot::xBottom || c.type == QwtPlot::xTop) && lockHorizontal)
             continue;

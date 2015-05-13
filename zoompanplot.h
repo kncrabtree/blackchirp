@@ -37,12 +37,13 @@ protected:
     struct AxisConfig {
         QwtPlot::Axis type;
         bool autoScale;
+        bool override;
         double min;
         double max;
         double zoomFactor;
         QString name;
 
-        explicit AxisConfig(QwtPlot::Axis t, QString n) : type(t), autoScale(true),
+        explicit AxisConfig(QwtPlot::Axis t, QString n) : type(t), autoScale(true), override(false),
             min(0.0), max(1.0), zoomFactor(0.1), name(n) {}
     };
 
@@ -55,6 +56,8 @@ protected:
 
         PlotConfig() : xDirty(false), panning(false) {}
     };
+
+    void setAxisOverride(QwtPlot::Axis axis, bool override = true);
 
     virtual void filterData() =0;
     virtual void resizeEvent(QResizeEvent *ev);

@@ -168,8 +168,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionAbort,&QAction::triggered,p_am,&AcquisitionManager::abort);
     connect(ui->ftViewWidget,&FtmwViewWidget::rollingAverageShotsChanged,p_am,&AcquisitionManager::changeRollingAverageShots);
     connect(ui->ftViewWidget,&FtmwViewWidget::rollingAverageReset,p_am,&AcquisitionManager::resetRollingAverage);
-
     connect(p_am,&AcquisitionManager::newFidList,ui->ftViewWidget,&FtmwViewWidget::newFidList);
+    connect(p_am,&AcquisitionManager::lifPointUpdate,ui->lifDisplayWidget,&LifDisplayWidget::updatePoint);
 
     QThread *amThread = new QThread(this);
     connect(amThread,&QThread::finished,p_am,&AcquisitionManager::deleteLater);
