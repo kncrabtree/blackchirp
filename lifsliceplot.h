@@ -4,6 +4,7 @@
 #include "zoompanplot.h"
 
 class QwtPlotCurve;
+class QwtPlotTextLabel;
 
 class LifSlicePlot : public ZoomPanPlot
 {
@@ -16,13 +17,14 @@ public:
     void setName(QString name);
 
     void prepareForExperiment(double xMin, double xMax);
+    void setData(const QVector<QPointF> d);
+    void setPlotTitle(QString text);
 
     // ZoomPanPlot interface
 protected:
     void filterData();
 
-
-    QwtPlotCurve *d_curve;
+    QwtPlotCurve *p_curve;
 };
 
 #endif // LIFSLICEPLOT_H

@@ -3,7 +3,7 @@
 #include <QSettings>
 
 #include <qwt6/qwt_plot_curve.h>
-#include <qwt6/qwt_legend.h>
+#include <qwt6/qwt_plot_textlabel.h>
 
 LifSlicePlot::LifSlicePlot(QWidget *parent) :
     ZoomPanPlot(QString("lifSlicePlot"),parent)
@@ -15,9 +15,10 @@ LifSlicePlot::LifSlicePlot(QWidget *parent) :
     llabel.setFont(QFont(QString("sans-serif"),8));
     this->setAxisTitle(QwtPlot::yLeft,llabel);
 
-    d_curve = new QwtPlotCurve(QString("trace"));
-    d_curve->setRenderHint(QwtPlotItem::RenderAntialiased);
-    d_curve->attach(this);
+    p_curve = new QwtPlotCurve(QString("trace"));
+    p_curve->setRenderHint(QwtPlotItem::RenderAntialiased);
+    p_curve->setZ(1.0);
+    p_curve->attach(this);
 
 }
 
@@ -41,17 +42,31 @@ void LifSlicePlot::setName(QString name)
 
     QSettings s;
     QColor c = s.value(QString("%1/curveColor").arg(d_name),QPalette().color(QPalette::Text)).value<QColor>();
-    d_curve->setPen(QPen(c));
+    p_curve->setPen(QPen(c));
 }
 
 void LifSlicePlot::prepareForExperiment(double xMin, double xMax)
 {
-    d_curve->setSamples(QVector<QPointF>());
+    p_curve->setSamples(QVector<QPointF>());
 
     setAxisAutoScaleRange(QwtPlot::xBottom,xMin,xMax);
     setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
 
     autoScale();
+}
+
+void LifSlicePlot::setData(const QVector<QPointF> d)
+{
+    p_curve->setSamples(d);
+    replot();
+}
+
+void LifSlicePlot::setPlotTitle(QString text)
+{
+    QFont f(QString("sans-serif"),8);
+    QwtText title(text);
+    title.setFont(f);
+    setTitle(title);
 }
 
 void LifSlicePlot::filterData()

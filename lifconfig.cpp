@@ -90,7 +90,7 @@ int LifConfig::completedShots() const
         return totalShots();
 
     int out;
-    if(data->order == BlackChirp::LifOrderDelayFirst)
+    if(data->order == BlackChirp::LifOrderFrequencyFirst)
     {
         out = data->currentDelayIndex*numFrequencyPoints()*data->shotsPerPoint;
         out += data->currentFrequencyIndex*data->shotsPerPoint;
@@ -386,7 +386,7 @@ void LifConfig::increment()
     if(data->currentDelayIndex+1 >= numDelayPoints() && data->currentFrequencyIndex+1 >= numFrequencyPoints())
         data->complete = true;
 
-    if(data->order == BlackChirp::LifOrderDelayFirst)
+    if(data->order == BlackChirp::LifOrderFrequencyFirst)
     {
         if(data->currentFrequencyIndex+1 >= numFrequencyPoints())
             data->currentDelayIndex = (data->currentDelayIndex+1)%numDelayPoints();

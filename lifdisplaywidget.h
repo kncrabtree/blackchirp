@@ -31,13 +31,22 @@ public slots:
     void prepareForExperiment(const LifConfig c);
     void updatePoint(QPair<QPoint,BlackChirp::LifPoint> val);
 
+    void freqSlice(int delayIndex);
+    void delaySlice(int freqIndex);
+
 private:
     Ui::LifDisplayWidget *ui;
 
-    int d_numColumns;
-    int d_numRows;
+    int d_numFrequencyPoints;
+    int d_numDelayPoints;
     bool d_delayReverse, d_freqReverse;
+    int d_currentSpectrumDelayIndex, d_currentTimeTraceFreqIndex;
+    QPair<double,double> d_delayRange;
+    QPair<double,double> d_freqRange;
     QVector<BlackChirp::LifPoint> d_lifData;
+
+    void updateSpectrum();
+    void updateTimeTrace();
 
 protected:
     void resizeEvent(QResizeEvent *ev);

@@ -23,7 +23,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="LifSlicePlot" name="timeSlicePlot" native="true">
+  <widget class="LifSlicePlot" name="timeTracePlot" native="true">
    <property name="geometry">
     <rect>
      <x>14</x>
@@ -33,7 +33,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="LifSlicePlot" name="freqSlicePlot" native="true">
+  <widget class="LifSlicePlot" name="spectrumPlot" native="true">
    <property name="geometry">
     <rect>
      <x>21</x>

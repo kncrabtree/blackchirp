@@ -34,8 +34,6 @@ private:
     bool d_firstPoint;
     bool d_delayDragging, d_freqDragging, d_grabDelay, d_grabFreq;
     double d_zMax;
-    QPair<double,double> d_delayRange;
-    QPair<double,double> d_freqRange;
 
 
     // ZoomPanPlot interface
