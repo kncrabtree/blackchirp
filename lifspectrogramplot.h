@@ -3,9 +3,11 @@
 
 #include "zoompanplot.h"
 
+#include "lifconfig.h"
+
 class QwtPlotSpectrogram;
 class QwtMatrixRasterData;
-class QwtLinearColorMap;
+class QwtPlotMarker;
 
 class LifSpectrogramPlot : public ZoomPanPlot
 {
@@ -14,21 +16,32 @@ public:
     LifSpectrogramPlot(QWidget *parent = nullptr);
     ~LifSpectrogramPlot();
 
-    void setRasterData(QwtMatrixRasterData *dat);
-    void prepareForExperiment(double xMin, double xMax, double yMin, double yMax, bool enabled = true);
+    void prepareForExperiment(const LifConfig c);
+    void updatePoint(int row, int col, double val);
 
     void setZMax(double d);
     void replot();
 
+signals:
+    void freqSlice(int delayIndex);
+    void delaySlice(int freqIndex);
+
 private:
+    QwtMatrixRasterData *p_spectrogramData;
     QwtPlotSpectrogram *p_spectrogram;
+    QwtPlotMarker *p_delayMarker, *p_freqMarker;
     bool d_enabled;
+    bool d_firstPoint;
+    bool d_delayDragging, d_freqDragging, d_grabDelay, d_grabFreq;
     double d_zMax;
+    QPair<double,double> d_delayRange;
+    QPair<double,double> d_freqRange;
 
 
     // ZoomPanPlot interface
 protected:
     void filterData();
+    bool eventFilter(QObject *obj, QEvent *ev);
 };
 
 #endif // LIFSPECTROGRAMPLOT_H

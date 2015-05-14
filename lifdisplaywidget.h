@@ -9,8 +9,6 @@
 #include "liftrace.h"
 #include "lifconfig.h"
 
-class QwtMatrixRasterData;
-
 namespace Ui {
 class LifDisplayWidget;
 }
@@ -40,8 +38,6 @@ private:
     int d_numRows;
     bool d_delayReverse, d_freqReverse;
     QVector<BlackChirp::LifPoint> d_lifData;
-    QwtMatrixRasterData *p_spectrogramData;
-    double d_spectrogramZMax;
 
 protected:
     void resizeEvent(QResizeEvent *ev);
