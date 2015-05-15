@@ -1,6 +1,7 @@
 #include "lifspectrogramplot.h"
 
 #include <QMouseEvent>
+#include <QMenu>
 
 #include <qwt6/qwt_plot_spectrogram.h>
 #include <qwt6/qwt_matrix_raster_data.h>
@@ -81,7 +82,7 @@ LifSpectrogramPlot::LifSpectrogramPlot(QWidget *parent) :
     canvas()->installEventFilter(this);
     canvas()->setMouseTracking(true);
 
-
+    connect(this,&LifSpectrogramPlot::plotRightClicked,this,&LifSpectrogramPlot::buildContextMenu);
 }
 
 LifSpectrogramPlot::~LifSpectrogramPlot()
@@ -211,6 +212,54 @@ void LifSpectrogramPlot::replot()
     ZoomPanPlot::replot();
 }
 
+void LifSpectrogramPlot::moveFreqCursor(QPoint pos)
+{
+    //snap to nearest freq point
+    double mVal = canvasMap(QwtPlot::xBottom).invTransform(pos.x());
+    QwtInterval fInt = p_spectrogramData->interval(Qt::XAxis);
+    double dx = fInt.width()/static_cast<double>(p_spectrogramData->numColumns());
+    int col = qBound(0,static_cast<int>(floor((mVal-fInt.minValue())/dx)),p_spectrogramData->numColumns()-1);
+    double freqVal = static_cast<double>(col)*dx + fInt.minValue() + dx/2.0;
+    p_freqMarker->setXValue(freqVal);
+    emit delaySlice(col);
+}
+
+void LifSpectrogramPlot::moveDelayCursor(QPoint pos)
+{
+    //snap to nearest delay point
+    double mVal = canvasMap(QwtPlot::yLeft).invTransform(pos.y());
+    QwtInterval dInt = p_spectrogramData->interval(Qt::YAxis);
+    double dy = dInt.width()/static_cast<double>(p_spectrogramData->numRows());
+    int row = qBound(0,static_cast<int>(floor((mVal-dInt.minValue())/dy)),p_spectrogramData->numRows()-1);
+    double delayVal = static_cast<double>(row)*dy + dInt.minValue() + dy/2.0;
+    p_delayMarker->setYValue(delayVal);
+    emit freqSlice(row);
+}
+
+void LifSpectrogramPlot::buildContextMenu(QMouseEvent *me)
+{
+    if(!d_enabled || d_firstPoint)
+        return;
+
+    QMenu *menu = ZoomPanPlot::contextMenu();
+
+    menu->addSeparator();
+
+    //must copy mouse position here; me pointer not valid when slot invoked!
+    QPoint pos = me->pos();
+
+    QAction *delayCursorAction = menu->addAction(QString("Move delay cursor here"));
+    connect(delayCursorAction,&QAction::triggered,[=](){ moveDelayCursor(pos); });
+
+    QAction *freqCursorAction = menu->addAction(QString("Move frequency cursor here"));
+    connect(freqCursorAction,&QAction::triggered,[=](){ moveFreqCursor(pos); });
+
+    QAction *bothCursorAction = menu->addAction(QString("Move both cursors here"));
+    connect(bothCursorAction,&QAction::triggered,[=](){ moveDelayCursor(pos); moveFreqCursor(pos); });
+
+    menu->popup(me->globalPos());
+}
+
 void LifSpectrogramPlot::filterData()
 {
 }
@@ -281,28 +330,9 @@ bool LifSpectrogramPlot::eventFilter(QObject *obj, QEvent *ev)
                 else
                 {
                     if(d_delayDragging)
-                    {
-                        //snap to nearest delay point
-                        double mVal = canvasMap(QwtPlot::yLeft).invTransform(me->pos().y());
-                        QwtInterval dInt = p_spectrogramData->interval(Qt::YAxis);
-                        double dy = dInt.width()/static_cast<double>(p_spectrogramData->numRows());
-                        int row = qBound(0,static_cast<int>(floor((mVal-dInt.minValue())/dy)),p_spectrogramData->numRows()-1);
-                        double delayVal = static_cast<double>(row)*dy + dInt.minValue() + dy/2.0;
-                        p_delayMarker->setYValue(delayVal);
-                        emit freqSlice(row);
-                    }
-
+                        moveDelayCursor(me->pos());
                     if(d_freqDragging)
-                    {
-                        //snap to nearest freq point
-                        double mVal = canvasMap(QwtPlot::xBottom).invTransform(me->pos().x());
-                        QwtInterval fInt = p_spectrogramData->interval(Qt::XAxis);
-                        double dx = fInt.width()/static_cast<double>(p_spectrogramData->numColumns());
-                        int col = qBound(0,static_cast<int>(floor((mVal-fInt.minValue())/dx)),p_spectrogramData->numColumns()-1);
-                        double freqVal = static_cast<double>(col)*dx + fInt.minValue() + dx/2.0;
-                        p_freqMarker->setXValue(freqVal);
-                        emit delaySlice(col);
-                    }
+                        moveFreqCursor(me->pos());
 
                     replot();
                 }

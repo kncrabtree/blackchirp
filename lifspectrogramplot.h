@@ -8,6 +8,7 @@
 class QwtPlotSpectrogram;
 class QwtMatrixRasterData;
 class QwtPlotMarker;
+class QMouseEvent;
 
 class LifSpectrogramPlot : public ZoomPanPlot
 {
@@ -21,6 +22,11 @@ public:
 
     void setZMax(double d);
     void replot();
+
+public slots:
+    void moveFreqCursor(QPoint pos);
+    void moveDelayCursor(QPoint pos);
+    void buildContextMenu(QMouseEvent *me);
 
 signals:
     void freqSlice(int delayIndex);
