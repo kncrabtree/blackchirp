@@ -199,6 +199,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionRf_Configuration,&QAction::triggered,this,&MainWindow::launchRfConfigDialog);
     connect(ui->actionTrackingShow,&QAction::triggered,[=](){ ui->tabWidget->setCurrentIndex(2); });
     connect(ui->action_Graphs,&QAction::triggered,ui->trackingViewWidget,&TrackingViewWidget::changeNumPlots);
+    connect(ui->actionTest_All_Connections,&QAction::triggered,p_hwm,&HardwareManager::testAll);
 
     connect(ui->lifControlWidget,&LifControlWidget::lifColorChanged,
             ui->lifDisplayWidget,&LifDisplayWidget::checkLifColors);
@@ -454,6 +455,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
+        ui->actionTest_All_Connections->setEnabled(false);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         break;
@@ -463,6 +465,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionCommunication->setEnabled(true);
+        ui->actionTest_All_Connections->setEnabled(true);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         break;
@@ -472,6 +475,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(true);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
+        ui->actionTest_All_Connections->setEnabled(false);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         break;
@@ -481,6 +485,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
+        ui->actionTest_All_Connections->setEnabled(false);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         break;
@@ -491,6 +496,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(true);
         ui->actionCommunication->setEnabled(true);
+        ui->actionTest_All_Connections->setEnabled(true);
         ui->gasControlBox->setEnabled(true);
         ui->pulseConfigWidget->setEnabled(true);
         break;

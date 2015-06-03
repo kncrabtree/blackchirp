@@ -361,6 +361,7 @@
      <string>Hardware</string>
     </property>
     <addaction name="actionCommunication"/>
+    <addaction name="actionTest_All_Connections"/>
     <addaction name="actionRf_Configuration"/>
    </widget>
    <widget class="QMenu" name="menuTracking">
@@ -374,6 +375,9 @@
    <addaction name="menuTracking"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
+   <property name="toolButtonStyle">
+    <enum>Qt::ToolButtonTextBesideIcon</enum>
+   </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
    </attribute>
@@ -387,26 +391,46 @@
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionStart_Experiment">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/experiment.png</normaloff>:/icons/experiment.png</iconset>
+   </property>
    <property name="text">
     <string>Start Experiment</string>
    </property>
   </action>
   <action name="actionPause">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/pause.png</normaloff>:/icons/pause.png</iconset>
+   </property>
    <property name="text">
     <string>Pause</string>
    </property>
   </action>
   <action name="actionResume">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/start.png</normaloff>:/icons/start.png</iconset>
+   </property>
    <property name="text">
     <string>Resume</string>
    </property>
   </action>
   <action name="actionAbort">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/abort.png</normaloff>:/icons/abort.png</iconset>
+   </property>
    <property name="text">
     <string>Abort</string>
    </property>
   </action>
   <action name="actionCommunication">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/computer.png</normaloff>:/icons/computer.png</iconset>
+   </property>
    <property name="text">
     <string>Communication</string>
    </property>
@@ -417,13 +441,30 @@
    </property>
   </action>
   <action name="action_Graphs">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/dataplots.png</normaloff>:/icons/dataplots.png</iconset>
+   </property>
    <property name="text">
     <string># Graphs...</string>
    </property>
   </action>
   <action name="actionRf_Configuration">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/rf.png</normaloff>:/icons/rf.png</iconset>
+   </property>
    <property name="text">
     <string>Rf Configuration</string>
+   </property>
+  </action>
+  <action name="actionTest_All_Connections">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/connect.png</normaloff>:/icons/connect.png</iconset>
+   </property>
+   <property name="text">
+    <string>Test All Connections</string>
    </property>
   </action>
  </widget>
@@ -466,6 +507,8 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

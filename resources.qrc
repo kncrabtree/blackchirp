@@ -1,5 +1,22 @@
 <RCC>
     <qresource prefix="/">
         <file>icons/configure.png</file>
+        <file>icons/abort.png</file>
+        <file>icons/add.png</file>
+        <file>icons/computer.png</file>
+        <file>icons/connect.png</file>
+        <file>icons/dataplots.png</file>
+        <file>icons/go-last.png</file>
+        <file>icons/labjack.png</file>
+        <file>icons/laser.png</file>
+        <file>icons/remove.png</file>
+        <file>icons/arrow-down.png</file>
+        <file>icons/arrow-up.png</file>
+        <file>icons/clear.png</file>
+        <file>icons/open.png</file>
+        <file>icons/start.png</file>
+        <file>icons/pause.png</file>
+        <file>icons/experiment.png</file>
+        <file>icons/rf.png</file>
     </qresource>
 </RCC>

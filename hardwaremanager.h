@@ -83,6 +83,7 @@ public slots:
 
     void initializeExperiment(Experiment exp);
 
+    void testAll();
     void testObjectConnection(const QString type, const QString key);
 
     void getTimeData();
