@@ -72,7 +72,7 @@ public:
 
     bool isCritical() { return d_isCritical; }
 
-    CommunicationProtocol::CommType type() { return d_comm->type(); }
+    CommunicationProtocol::CommType type() { return p_comm->type(); }
 	
 signals:
     /*!
@@ -129,7 +129,7 @@ protected:
     QString d_key; /*!< Name to be used in settings for abstract hardware*/
     QString d_subKey; /*< Name to be used in settings for real hardware*/
 
-    CommunicationProtocol *d_comm;
+    CommunicationProtocol *p_comm;
 
 
     bool d_isCritical;

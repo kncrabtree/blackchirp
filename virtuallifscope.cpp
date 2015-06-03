@@ -10,9 +10,9 @@ VirtualLifScope::VirtualLifScope(QObject *parent) :
     d_subKey = QString("virtual");
     d_prettyName = QString("Virtual LIF Oscilloscope");
 
-    d_comm = new VirtualInstrument(d_key,this);
-    connect(d_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
-    connect(d_comm,&CommunicationProtocol::logMessage,this,&VirtualLifScope::logMessage);
+    p_comm = new VirtualInstrument(d_key,this);
+    connect(p_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
+    connect(p_comm,&CommunicationProtocol::logMessage,this,&VirtualLifScope::logMessage);
 
     setLifVScale(0.02);
     setRefVScale(0.02);

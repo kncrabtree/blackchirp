@@ -26,7 +26,9 @@ public:
     ~Rs232Instrument();
     bool writeCmd(QString cmd);
     QByteArray queryCmd(QString cmd);
-    QSerialPort *d_sp;
+    QSerialPort *p_sp;
+
+    QIODevice *device() { return p_sp; }
 
 
 public slots:

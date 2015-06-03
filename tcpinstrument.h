@@ -14,7 +14,7 @@ public:
 
     bool writeCmd(QString cmd);
     QByteArray queryCmd(QString cmd);
-    QTcpSocket *d_socket;
+    QIODevice *device(){ return p_socket; }
 
 public slots:
 	virtual void initialize();
@@ -25,6 +25,7 @@ public slots:
 private:
     QString d_ip;
     int d_port;
+    QTcpSocket *p_socket;
 
     bool connectSocket();
     void disconnectSocket();

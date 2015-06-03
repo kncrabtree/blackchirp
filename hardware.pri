@@ -12,7 +12,9 @@ HEADERS += \
     $$PWD/virtualinstrument.h \
     $$PWD/synthesizer.h \
     $$PWD/flowcontroller.h \
-    $$PWD/lifscope.h
+    $$PWD/lifscope.h \
+    $$PWD/gpibcontroller.h \
+    $$PWD/gpibinstrument.h
 
 SOURCES += \
     $$PWD/hardwaremanager.cpp \
@@ -26,4 +28,6 @@ SOURCES += \
     $$PWD/virtualinstrument.cpp \
     $$PWD/synthesizer.cpp \
     $$PWD/flowcontroller.cpp \
-    $$PWD/lifscope.cpp
+    $$PWD/lifscope.cpp \
+    $$PWD/gpibcontroller.cpp \
+    $$PWD/gpibinstrument.cpp

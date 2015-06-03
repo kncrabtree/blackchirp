@@ -5,7 +5,8 @@ HEADERS += \
     $$PWD/virtualvalonsynth.h \
     $$PWD/virtualpulsegenerator.h \
     $$PWD/virtualflowcontroller.h \
-    $$PWD/virtuallifscope.h
+    $$PWD/virtuallifscope.h \
+    $$PWD/virtualgpibcontroller.h
 
 SOURCES += \
     $$PWD/virtualftmwscope.cpp \
@@ -14,4 +15,5 @@ SOURCES += \
     $$PWD/virtualvalonsynth.cpp \
     $$PWD/virtualpulsegenerator.cpp \
     $$PWD/virtualflowcontroller.cpp \
-    $$PWD/virtuallifscope.cpp
+    $$PWD/virtuallifscope.cpp \
+    $$PWD/virtualgpibcontroller.cpp

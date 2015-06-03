@@ -9,10 +9,10 @@ Dsa71604c::Dsa71604c(QObject *parent) :
     d_subKey = QString("dsa71604c");
     d_prettyName = QString("Ftmw Oscilloscope DSA71604C");
 
-    d_comm = new TcpInstrument(d_key,d_subKey,this);
-    connect(d_comm,&CommunicationProtocol::logMessage,this,&Dsa71604c::logMessage);
-    connect(d_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
-    d_socket = dynamic_cast<TcpInstrument*>(d_comm)->d_socket;
+    p_comm = new TcpInstrument(d_key,d_subKey,this);
+    connect(p_comm,&CommunicationProtocol::logMessage,this,&Dsa71604c::logMessage);
+    connect(p_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
+    p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
 }
 
 Dsa71604c::~Dsa71604c()
@@ -25,7 +25,7 @@ Dsa71604c::~Dsa71604c()
 bool Dsa71604c::testConnection()
 {
 
-    if(!d_comm->testConnection())
+    if(!p_comm->testConnection())
     {
         emit connected(false);
         return false;
@@ -52,8 +52,8 @@ bool Dsa71604c::testConnection()
 
 void Dsa71604c::initialize()
 {
-    d_comm->setReadOptions(1000,true,QByteArray("\n"));
-    d_comm->initialize();
+    p_comm->setReadOptions(1000,true,QByteArray("\n"));
+    p_comm->initialize();
     testConnection();
 }
 
@@ -70,10 +70,10 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
         return exp;
 
     BlackChirp::FtmwScopeConfig config(exp.ftmwConfig().scopeConfig());
-    disconnect(d_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform);
+    disconnect(p_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform);
 
     //disable ugly headers
-    if(!d_comm->writeCmd(QString(":HEADER OFF\n")))
+    if(!p_comm->writeCmd(QString(":HEADER OFF\n")))
     {
         emit logMessage(QString("Could not disable verbose header mode."),BlackChirp::LogError);
         exp.setHardwareFailed();
@@ -81,7 +81,7 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
     }
 
     //write data transfer commands
-    if(!d_comm->writeCmd(QString(":DATA:SOURCE CH%1;START 1;STOP 1E12\n").arg(config.fidChannel)))
+    if(!p_comm->writeCmd(QString(":DATA:SOURCE CH%1;START 1;STOP 1E12\n").arg(config.fidChannel)))
     {
         emit logMessage(QString("Could not write :DATA commands."),BlackChirp::LogError);
         exp.setHardwareFailed();
@@ -89,8 +89,8 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
     }
 
     //clear out socket before senting our first query
-    if(d_socket->bytesAvailable())
-        d_socket->readAll();
+    if(p_socket->bytesAvailable())
+        p_socket->readAll();
 
     //verify that FID channel was set correctly
     QByteArray resp = scopeQueryCmd(QString(":DATA:SOURCE?\n"));
@@ -102,7 +102,7 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
     }
 
 //    if(!d_comm->writeCmd(QString("CH%1:BANDWIDTH:ENHANCED OFF; CH%1:BANDWIDTH 1.6+10; COUPLING AC;OFFSET 0;SCALE %2\n").arg(config.fidChannel).arg(QString::number(config.vScale,'g',4))))
-    if(!d_comm->writeCmd(QString("CH%1:BANDWIDTH FULL; COUPLING AC;OFFSET 0;SCALE %2\n").arg(config.fidChannel).arg(QString::number(config.vScale,'g',4))))
+    if(!p_comm->writeCmd(QString("CH%1:BANDWIDTH FULL; COUPLING AC;OFFSET 0;SCALE %2\n").arg(config.fidChannel).arg(QString::number(config.vScale,'g',4))))
     {
         emit logMessage(QString("Failed to write channel settings."),BlackChirp::LogError);
         exp.setHardwareFailed();
@@ -153,7 +153,7 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
     }
 
     //horizontal settings
-    if(!d_comm->writeCmd(QString(":HORIZONTAL:MODE MANUAL;POSITION 0;:HORIZONTAL:MODE:SAMPLERATE %1;RECORDLENGTH %2\n").arg(QString::number(config.sampleRate,'g',6)).arg(config.recordLength)))
+    if(!p_comm->writeCmd(QString(":HORIZONTAL:MODE MANUAL;POSITION 0;:HORIZONTAL:MODE:SAMPLERATE %1;RECORDLENGTH %2\n").arg(QString::number(config.sampleRate,'g',6)).arg(config.recordLength)))
     {
         emit logMessage(QString("Could not apply horizontal settings."),BlackChirp::LogError);
         exp.setHardwareFailed();
@@ -329,7 +329,7 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
             if(config.summaryFrame)
             {
                 //this forces the scope to only return the final frame, which is the summary frame
-                if(!d_comm->writeCmd(QString(":DATA:FRAMESTART 100000;FRAMESTOP 100000\n")))
+                if(!p_comm->writeCmd(QString(":DATA:FRAMESTART 100000;FRAMESTOP 100000\n")))
                 {
                     emit logMessage(QString("Could not configure summary frame."),BlackChirp::LogError);
                     exp.setHardwareFailed();
@@ -339,7 +339,7 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
             else
             {
                 //this forces the scope to return all frames
-                if(!d_comm->writeCmd(QString(":DATA:FRAMESTART 1;FRAMESTOP 100000\n")))
+                if(!p_comm->writeCmd(QString(":DATA:FRAMESTART 1;FRAMESTOP 100000\n")))
                 {
                     emit logMessage(QString("Could not configure frames."),BlackChirp::LogError);
                     exp.setHardwareFailed();
@@ -384,7 +384,7 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
     }
 
     //set waveform output settings
-    if(!d_comm->writeCmd(QString(":WFMOUTPRE:ENCDG BIN;BN_FMT RI;BYT_OR LSB;BYT_NR 1\n")))
+    if(!p_comm->writeCmd(QString(":WFMOUTPRE:ENCDG BIN;BN_FMT RI;BYT_OR LSB;BYT_NR 1\n")))
     {
         emit logMessage(QString("Could not send waveform output commands."),BlackChirp::LogError);
         exp.setHardwareFailed();
@@ -392,7 +392,7 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
     }
 
     //acquisition settings
-    if(!d_comm->writeCmd(QString(":ACQUIRE:MODE SAMPLE;STOPAFTER RUNSTOP;STATE RUN\n")))
+    if(!p_comm->writeCmd(QString(":ACQUIRE:MODE SAMPLE;STOPAFTER RUNSTOP;STATE RUN\n")))
     {
         emit logMessage(QString("Could not send acquisition commands."),BlackChirp::LogError);
         exp.setHardwareFailed();
@@ -403,12 +403,12 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
     if(config.fastFrameEnabled)
     {
         for(int i=0;i<config.numFrames;i++)
-            d_comm->writeCmd(QString(":TRIGGER FORCE\n"));
+            p_comm->writeCmd(QString(":TRIGGER FORCE\n"));
     }
     else
-        d_comm->writeCmd(QString(":TRIGGER FORCE\n"));
+        p_comm->writeCmd(QString(":TRIGGER FORCE\n"));
 
-    d_socket->waitForReadyRead(100);
+    p_socket->waitForReadyRead(100);
 
     //read certain output settings from scope
     resp = scopeQueryCmd(QString(":WFMOUTPRE:ENCDG?;BN_FMT?;BYT_OR?;NR_FR?;NR_PT?;YMULT?;YOFF?;XINCR?;BYT_NR?\n"));
@@ -520,7 +520,7 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
         config.bytesPerPoint = bpp;
     }
 
-    if(!d_comm->writeCmd(QString("CH%1:BANDWIDTH:ENHANCED OFF; CH%1:BANDWIDTH 1.6E10\n").arg(config.fidChannel)))
+    if(!p_comm->writeCmd(QString("CH%1:BANDWIDTH:ENHANCED OFF; CH%1:BANDWIDTH 1.6E10\n").arg(config.fidChannel)))
 //    if(!d_comm->writeCmd(QString("CH%1:BANDWIDTH FULL").arg(config.fidChannel)))
     {
         emit logMessage(QString("Failed to write channel settings."),BlackChirp::LogError);
@@ -532,9 +532,9 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
     exp.setScopeConfig(config);
 
     //lock scope, turn off waveform display, connect signal-slot stuff
-    d_comm->writeCmd(QString(":LOCK ALL;:DISPLAY:WAVEFORM OFF\n"));
-    if(d_socket->bytesAvailable())
-        d_socket->readAll();
+    p_comm->writeCmd(QString(":LOCK ALL;:DISPLAY:WAVEFORM OFF\n"));
+    if(p_socket->bytesAvailable())
+        p_socket->readAll();
 
 
 
@@ -543,37 +543,37 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
 
 void Dsa71604c::beginAcquisition()
 {
-    if(d_socket->bytesAvailable())
-        d_socket->readAll();
+    if(p_socket->bytesAvailable())
+        p_socket->readAll();
 
-    d_comm->writeCmd(QString(":CURVESTREAM?\n"));
+    p_comm->writeCmd(QString(":CURVESTREAM?\n"));
     d_waitingForReply = true;
     d_foundHeader = false;
     d_headerNumBytes = 0;
     d_waveformBytes = 0;
     d_lastTrigger = QDateTime::currentDateTime();
     connect(&d_scopeTimeout,&QTimer::timeout,this,&Dsa71604c::wakeUp,Qt::UniqueConnection);
-    connect(d_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform,Qt::UniqueConnection);
+    connect(p_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform,Qt::UniqueConnection);
 }
 
 void Dsa71604c::endAcquisition()
 {
 
     //stop parsing waveforms
-    disconnect(d_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform);
+    disconnect(p_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform);
     disconnect(&d_scopeTimeout,&QTimer::timeout,this,&Dsa71604c::wakeUp);
 
-    if(d_socket->bytesAvailable())
-        d_socket->readAll();
+    if(p_socket->bytesAvailable())
+        p_socket->readAll();
 
     //send *CLS command twice to kick scope out of curvestream mode and clear the error queue
-    d_comm->writeCmd(QString("*CLS\n"));
-    d_comm->writeCmd(QString("*CLS\n"));
+    p_comm->writeCmd(QString("*CLS\n"));
+    p_comm->writeCmd(QString("*CLS\n"));
 
-    if(d_socket->bytesAvailable())
-        d_socket->readAll();
+    if(p_socket->bytesAvailable())
+        p_socket->readAll();
 
-    d_comm->writeCmd(QString(":UNLOCK ALL;:DISPLAY:WAVEFORM ON\n"));
+    p_comm->writeCmd(QString(":UNLOCK ALL;:DISPLAY:WAVEFORM ON\n"));
 
     d_waitingForReply = false;
     d_foundHeader = false;
@@ -590,7 +590,7 @@ void Dsa71604c::readWaveform()
     if(!d_waitingForReply) // if for some reason the readyread signal weren't disconnected, don't eat all the bytes
         return;
 
-    qint64 ba = d_socket->bytesAvailable();
+    qint64 ba = p_socket->bytesAvailable();
     emit logMessage(QString("Bytes available: %1\t%2 ms").arg(ba).arg(QTime::currentTime().msec()));
 
     //waveforms are returned from the scope in the format #xyyyyyyy<data>\n
@@ -608,7 +608,7 @@ void Dsa71604c::readWaveform()
         qint64 i=0;
         while(i<ba && !d_foundHeader)
         {
-            d_socket->getChar(&c);
+            p_socket->getChar(&c);
             if(c=='#')
             {
                 d_foundHeader = true;
@@ -621,11 +621,11 @@ void Dsa71604c::readWaveform()
     if(d_foundHeader && d_headerNumBytes == 0) //we've found the header hash, now get the number of header bytes
     {
         //make sure the entire header can be read
-        if(d_socket->bytesAvailable())
+        if(p_socket->bytesAvailable())
         {
             //there is a header byte ready. Read it and set the number of remaining header bytes
             char c=0;
-            d_socket->getChar(&c);
+            p_socket->getChar(&c);
             QString hdrNum = QString::fromLatin1(&c,1);
             bool ok = false;
             int nb = hdrNum.toInt(&ok,16);
@@ -634,7 +634,7 @@ void Dsa71604c::readWaveform()
                 //it's possible that we're in the middle of an old waveform by fluke.
                 //continue looking for '#'
                 d_foundHeader = false;
-                if(d_socket->bytesAvailable())
+                if(p_socket->bytesAvailable())
                     readWaveform();
 
                 return;
@@ -647,9 +647,9 @@ void Dsa71604c::readWaveform()
 
     if(d_foundHeader && d_headerNumBytes > 0 && d_waveformBytes == 0) //header hash and number of header bytes read, need to read # wfm bytes
     {
-        if(d_socket->bytesAvailable() >= d_headerNumBytes)
+        if(p_socket->bytesAvailable() >= d_headerNumBytes)
         {
-            QByteArray wfmBytes = d_socket->read(d_headerNumBytes);
+            QByteArray wfmBytes = p_socket->read(d_headerNumBytes);
             bool ok = false;
             int b = wfmBytes.toInt(&ok);
             int nf = d_configuration.numFrames;
@@ -661,7 +661,7 @@ void Dsa71604c::readWaveform()
                 //continue looking for '#'
                 d_foundHeader = false;
                 d_headerNumBytes = 0;
-                if(d_socket->bytesAvailable())
+                if(p_socket->bytesAvailable())
                     readWaveform();
 
                 return;
@@ -674,9 +674,9 @@ void Dsa71604c::readWaveform()
 
     if(d_foundHeader && d_headerNumBytes > 0 && d_waveformBytes > 0) // waiting to read waveform data
     {
-        if(d_socket->bytesAvailable() >= d_waveformBytes) // whole waveform can be read!
+        if(p_socket->bytesAvailable() >= d_waveformBytes) // whole waveform can be read!
         {
-            QByteArray wfm = d_socket->read(d_waveformBytes);
+            QByteArray wfm = p_socket->read(d_waveformBytes);
             emit logMessage(QString("Wfm read complete: %1 ms").arg(QTime::currentTime().msec()));
             emit shotAcquired(wfm);
             d_waitingForReply = false;
@@ -732,7 +732,7 @@ void Dsa71604c::wakeUp()
 
     endAcquisition();
 
-    d_socket->waitForReadyRead();
+    p_socket->waitForReadyRead();
 
 //    if(!testConnection())
 //        return;
@@ -746,11 +746,11 @@ QByteArray Dsa71604c::scopeQueryCmd(QString query)
     //This will retry the query if it fails, suppressing any errors on the first try
 
     blockSignals(true);
-    QByteArray resp = d_comm->queryCmd(query);
+    QByteArray resp = p_comm->queryCmd(query);
     blockSignals(false);
 
     if(resp.isEmpty())
-        resp = d_comm->queryCmd(query);
+        resp = p_comm->queryCmd(query);
 
     return resp;
 }

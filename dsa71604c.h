@@ -35,7 +35,7 @@ private:
     QTimer d_scopeTimeout;
 
     QByteArray scopeQueryCmd(QString query);
-    QTcpSocket *d_socket;
+    QTcpSocket *p_socket;
 };
 
 #endif // DSA71604C_H

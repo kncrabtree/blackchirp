@@ -7,9 +7,9 @@ VirtualValonSynth::VirtualValonSynth(QObject *parent) : Synthesizer(parent)
     d_subKey = QString("virtual");
     d_prettyName = QString("Virtual Synthesizer");
 
-    d_comm = new VirtualInstrument(d_key,this);
-    connect(d_comm,&CommunicationProtocol::logMessage,this,&VirtualValonSynth::logMessage);
-    connect(d_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
+    p_comm = new VirtualInstrument(d_key,this);
+    connect(p_comm,&CommunicationProtocol::logMessage,this,&VirtualValonSynth::logMessage);
+    connect(p_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
 }
 
 VirtualValonSynth::~VirtualValonSynth()
