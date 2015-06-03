@@ -53,6 +53,7 @@ protected:
 
 };
 
+#ifdef BC_FLOWCONTROLLER
 #if BC_FLOWCONTROLLER == 1
 #include "mks647c.h"
 class Mks647c;
@@ -65,6 +66,9 @@ class VirtualFlowController;
 typedef VirtualFlowController FlowControllerHardware;
 
 #define BC_FLOW_NUMCHANNELS 4
+#endif
+#else
+#define BC_FLOW_NUMCHANNELS 0
 #endif
 
 #endif // FLOWCONTROLLER_H

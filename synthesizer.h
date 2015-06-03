@@ -24,6 +24,7 @@ protected:
     double d_txFreq, d_rxFreq;
 };
 
+#ifdef BC_SYNTH
 #if BC_SYNTH == 1
 #include "valon5009.h"
 class Valon5009;
@@ -32,6 +33,7 @@ typedef Valon5009 SynthesizerHardware;
 #include "virtualvalonsynth.h"
 class VirtualValonSynth;
 typedef VirtualValonSynth SynthesizerHardware;
+#endif
 #endif
 
 #endif // SYNTHESIZER_H

@@ -12,6 +12,7 @@ public:
 };
 
 
+#ifdef BC_AWG
 #if BC_AWG==1
 #include "awg71002a.h"
 class Awg71002a;
@@ -20,6 +21,7 @@ typedef Awg71002a AwgHardware;
 #include "virtualawg.h"
 class VirtualAwg;
 typedef VirtualAwg AwgHardware;
+#endif
 #endif
 
 #endif // AWG_H

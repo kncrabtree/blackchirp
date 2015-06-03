@@ -28,6 +28,7 @@ protected:
     bool d_refEnabled;
 };
 
+#ifdef BC_LIFSCOPE
 #if BC_LIFSCOPE == 1
 #include "dpo3012.h"
 class Dpo3012;
@@ -36,6 +37,7 @@ typedef Dpo3012 LifScopeHardware;
 #include "virtuallifscope.h"
 class VirtualLifScope;
 typedef VirtualLifScope LifScopeHardware;
+#endif
 #endif
 
 #endif // LIFSCOPE_H
