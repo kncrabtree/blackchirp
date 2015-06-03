@@ -333,12 +333,12 @@ QPair<QPoint, BlackChirp::LifPoint> LifConfig::lastUpdatedLifPoint() const
     if(data->lastUpdatedPoint.x() < data->lifData.size())
     {
         if(data->lastUpdatedPoint.y() < data->lifData.at(data->lastUpdatedPoint.x()).size())
-//        {
-            return qMakePair(data->lastUpdatedPoint,data->lifData.at(data->lastUpdatedPoint.x()).at(data->lastUpdatedPoint.y()));
-//            BlackChirp::LifPoint p;
-//            p.mean = static_cast<double>(qrand() % 1000)/100.0;
-//            return qMakePair(data->lastUpdatedPoint,p);
-//        }
+        {
+//            return qMakePair(data->lastUpdatedPoint,data->lifData.at(data->lastUpdatedPoint.x()).at(data->lastUpdatedPoint.y()));
+            BlackChirp::LifPoint p;
+            p.mean = static_cast<double>(qrand() % 1000)/100.0;
+            return qMakePair(data->lastUpdatedPoint,p);
+        }
     }
 
     return qMakePair(QPoint(-1,-1),BlackChirp::LifPoint());
