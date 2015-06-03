@@ -83,9 +83,12 @@ void HardwareManager::initialize()
 	s.beginWriteArray("instruments");
 	for(int i=0;i<d_hardwareList.size();i++)
 	{
+        HardwareObject *obj = d_hardwareList.at(i).first;
 		s.setArrayIndex(i);
-		s.setValue(QString("key"),d_hardwareList.at(i).first->key());
-        s.setValue(QString("type"),d_hardwareList.at(i).first->subKey());
+        s.setValue(QString("key"),obj->key());
+        s.setValue(QString("subKey"),obj->subKey());
+        s.setValue(QString("prettyName"),obj->name());
+        s.setValue(QString("critical"),obj->isCritical());
 	}
 	s.endArray();
 	s.endGroup();
@@ -124,6 +127,23 @@ void HardwareManager::initialize()
 	s.endArray();
 	s.endGroup();
 
+    //now an array for all GPIB instruments
+    s.beginGroup(QString("gpib"));
+    s.remove("");
+    s.beginWriteArray("instruments");
+    index=0;
+    for(int i=0;i<d_hardwareList.size();i++)
+    {
+       if(d_hardwareList.at(i).first->type() == CommunicationProtocol::Gpib)
+        {
+            s.setArrayIndex(index);
+            s.setValue(QString("key"),d_hardwareList.at(i).first->key());
+            index++;
+        }
+    }
+    s.endArray();
+    s.endGroup();
+
 	s.sync();
 
     for(int i=0;i<d_hardwareList.size();i++)
@@ -132,6 +152,9 @@ void HardwareManager::initialize()
         HardwareObject *obj = d_hardwareList.at(i).first;
 
         s.setValue(QString("%1/prettyName").arg(obj->key()),obj->name());
+        s.setValue(QString("%1/subKey").arg(obj->key()),obj->subKey());
+        s.setValue(QString("%1/connected").arg(obj->key()),false);
+        s.setValue(QString("%1/critical").arg(obj->key()),obj->isCritical());
 
         connect(obj,&HardwareObject::logMessage,[=](QString msg, BlackChirp::LogMessageCode mc){
             emit logMessage(QString("%1: %2").arg(obj->name()).arg(msg),mc);
@@ -148,11 +171,21 @@ void HardwareManager::initialize()
             connect(thread,&QThread::started,obj,&HardwareObject::initialize);
             connect(thread,&QThread::finished,obj,&HardwareObject::deleteLater);
             obj->moveToThread(thread);
-            thread->start();
         }
         else
             obj->initialize();
 
+    }
+
+    //now, start all threads
+    for(int i=0;i<d_hardwareList.size();i++)
+    {
+        QThread *thread = d_hardwareList.at(i).second;
+        if(thread != nullptr)
+        {
+            if(!thread->isRunning())
+                thread->start();
+        }
     }
 }
 

@@ -15,7 +15,9 @@ public:
     enum CommType {
         Virtual,
         Tcp,
-        Rs232
+        Rs232,
+        Gpib,
+        Custom
     };
 
     explicit CommunicationProtocol(CommType type, QString key, QString subKey, QObject *parent = nullptr);
