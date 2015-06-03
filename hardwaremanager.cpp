@@ -208,7 +208,9 @@ void HardwareManager::connectionResult(HardwareObject *obj, bool success, QStrin
     else
         d_status.insert(obj->key(),ok);
 
-
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.setValue(QString("%1/connected").arg(obj->key()),success);
+    s.sync();
 
     emit testComplete(obj->name(),success,msg);
     checkStatus();
@@ -219,10 +221,13 @@ void HardwareManager::hardwareFailure(HardwareObject *obj, bool abort)
     if(abort)
         emit abortAcquisition();
 
-    if(!obj->isCritical())
-        return;
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.setValue(QString("%1/connected").arg(obj->key()),false);
+    s.sync();
 
-    d_status[obj->key()] = false;
+    if(obj->isCritical())
+        d_status[obj->key()] = false;
+
     checkStatus();
 }
 
