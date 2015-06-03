@@ -117,7 +117,7 @@ void PulseGenConfig::set(const int index, const BlackChirp::PulseSetting s, cons
         data->config[index].enabled = val.toBool();
         break;
     case BlackChirp::PulseLevel:
-        data->config[index].level = val.value<BlackChirp::PulseActiveLevel>();
+        data->config[index].level = static_cast<BlackChirp::PulseActiveLevel>(val.toInt());
         break;
     case BlackChirp::PulseName:
         data->config[index].channelName = val.toString();

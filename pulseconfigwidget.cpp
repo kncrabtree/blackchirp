@@ -80,7 +80,7 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
 
         ch.levelButton = new QPushButton(this);
         ch.levelButton->setCheckable(true);
-        if(s.value(QString("level"),BlackChirp::PulseLevelActiveHigh) == QVariant(BlackChirp::PulseLevelActiveHigh))
+        if(static_cast<BlackChirp::PulseActiveLevel>(s.value(QString("level"),BlackChirp::PulseLevelActiveHigh).toInt()) == BlackChirp::PulseLevelActiveHigh)
         {
             ch.levelButton->setChecked(true);
             ch.levelButton->setText(QString("Active High"));
@@ -221,12 +221,12 @@ void PulseConfigWidget::launchChannelConfig(int ch)
         if(chw.levelButton->isChecked())
         {
             s.setValue(QString("level"),BlackChirp::PulseLevelActiveHigh);
-            emit changeSetting(ch,BlackChirp::PulseLevel,BlackChirp::PulseLevelActiveHigh);
+            emit changeSetting(ch,BlackChirp::PulseLevel,QVariant::fromValue(BlackChirp::PulseLevelActiveHigh));
         }
         else
         {
             s.setValue(QString("level"),BlackChirp::PulseLevelActiveLow);
-            emit changeSetting(ch,BlackChirp::PulseLevel,BlackChirp::PulseLevelActiveLow);
+            emit changeSetting(ch,BlackChirp::PulseLevel,QVariant::fromValue(BlackChirp::PulseLevelActiveLow));
         }
 
         s.endArray();
