@@ -306,5 +306,28 @@ void Experiment::incrementFtmw()
 
 void Experiment::save()
 {
+    //record validation keys
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    QString keys = s.value(QString("knownValidationKeys"),QString("")).toString();
+    QStringList knownKeyList = keys.split(QChar(';'),QString::SkipEmptyParts);
+
+    auto it = data->timeDataMap.constBegin();
+    while(it != data->timeDataMap.constEnd())
+    {
+        QString key = it.key();
+        if(!knownKeyList.contains(key))
+            knownKeyList.append(key);
+        it++;
+    }
+
+    keys.clear();
+    if(knownKeyList.size() > 0)
+    {
+        keys = knownKeyList.at(0);
+        for(int i=1; i<knownKeyList.size();i++)
+            keys.append(QString(";%1").arg(knownKeyList.at(i)));
+
+        s.setValue(QString("knownValidationKeys"),keys);
+    }
 }
 
