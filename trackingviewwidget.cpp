@@ -122,7 +122,7 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
         //Create curve
         //Change name if it is a flow with a known name
         QString realName = md.name;
-        if(realName.startsWith(QString("Flow")))
+        if(realName.startsWith(QString("flow")))
         {
             QStringList l = realName.split(QString("."));
             if(l.size() > 1)
