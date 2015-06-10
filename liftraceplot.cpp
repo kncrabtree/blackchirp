@@ -279,6 +279,34 @@ void LifTracePlot::buildContextMenu(QMouseEvent *me)
     m->popup(me->globalPos());
 }
 
+void LifTracePlot::buildLegendContextMenu(QwtPlotCurve *c, QMouseEvent *me)
+{
+	if(c == nullptr)
+		return;
+
+	QMenu *m = new QMenu();
+	m->setAttribute(Qt::WA_DeleteOnClose);
+
+	QAction *toggleAction = m->addAction(QString("Toggle visibility"));
+	QVariant info = itemToInfo(c);
+	QwtLegendLabel *ll = static_cast<QwtLegendLabel*>(static_cast<QwtLegend*>(legend())->legendWidget(info));
+	connect(toggleAction,&QAction::triggered,[=](){
+		bool ch = !ll->isChecked();
+		ll->setChecked(ch);
+		legendItemClicked(info,ch,0);
+	});
+
+	QAction *colorAction = m->addAction(QString("Change color"));
+	if(c == p_lif)
+		connect(colorAction,&QAction::triggered,this,&LifTracePlot::changeLifColor);
+	else if(c == p_ref)
+		connect(colorAction,&QAction::triggered,this,&LifTracePlot::changeRefColor);
+	else
+		colorAction->setEnabled(false);
+
+	m->popup(me->globalPos());
+}
+
 void LifTracePlot::changeLifColor()
 {
     QColor currentColor = p_lif->pen().color();
@@ -614,19 +642,10 @@ bool LifTracePlot::eventFilter(QObject *obj, QEvent *ev)
 
                     if(me->button() == Qt::RightButton)
                     {
-                        if(c == p_lif)
-                        {
-                            changeLifColor();
-                            ev->accept();
-                            return true;
-                        }
-                        else if(c == p_ref)
-                        {
-                            changeRefColor();
-                            ev->accept();
-                            return true;
-                        }
-                    }
+					buildLegendContextMenu(c,me);
+					ev->accept();
+					return true;
+				}
                 }
             }
         }

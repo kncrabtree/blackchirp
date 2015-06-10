@@ -31,6 +31,7 @@ public slots:
     void newTrace(const LifTrace t);
     void traceProcessed(const LifTrace t);
     void buildContextMenu(QMouseEvent *me);
+    void buildLegendContextMenu(QwtPlotCurve *c, QMouseEvent *me);
     void changeLifColor();
     void changeRefColor();
     void checkColors();

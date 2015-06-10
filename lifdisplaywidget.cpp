@@ -101,6 +101,7 @@ void LifDisplayWidget::prepareForExperiment(const LifConfig c)
         ui->spectrumPlot->prepareForExperiment(d_freqRange.first,d_freqRange.second);
 
     }
+    ui->lifTracePlot->setEnabled(false);
 
     ui->lifSpectrogram->prepareForExperiment(c);
 }
