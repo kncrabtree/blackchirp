@@ -424,8 +424,11 @@ void LifTracePlot::initializeLabel(QwtPlotCurve *curve, bool isVisible)
     QwtLegendLabel* item = static_cast<QwtLegendLabel*>
             (static_cast<QwtLegend*>(legend())->legendWidget(itemToInfo(curve)));
 
-    item->setItemMode(QwtLegendData::Checkable);
-    item->setChecked(isVisible);
+    if(item != nullptr)
+    {
+	    item->setItemMode(QwtLegendData::Checkable);
+	    item->setChecked(isVisible);
+    }
 }
 
 void LifTracePlot::updateLifZone()
