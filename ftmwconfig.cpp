@@ -237,7 +237,7 @@ bool FtmwConfig::addFids(const QByteArray rawData)
 {
 #ifndef BC_CUDA
     QList<Fid> newList = parseWaveform(rawData);
-    if(type() == BlackChirp::PeakUp)
+    if(type() == BlackChirp::FtmwPeakUp)
     {
         for(int i=0; i<data->fidList.size(); i++)
             newList[i].rollingAverage(data->fidList.at(i),targetShots());
