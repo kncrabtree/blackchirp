@@ -80,8 +80,8 @@ DEFINES += BC_FTMWSCOPE=0
 #Uncomment if BC_FTMWSCOPE=0
 RESOURCES += virtualdata.qrc
 
-#AWG (0 = virtual, 1 = AWG 71002A)
-DEFINES += BC_AWG=0
+#AWG (0 = virtual, 1 = AWG 70002A)
+DEFINES += BC_AWG=1
 
 #Synth (0 = virtual, 1 = Valon 5009)
 DEFINES += BC_SYNTH=0

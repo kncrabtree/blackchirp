@@ -6,7 +6,8 @@ HEADERS += \
     $$PWD/virtualpulsegenerator.h \
     $$PWD/virtualflowcontroller.h \
     $$PWD/virtuallifscope.h \
-    $$PWD/virtualgpibcontroller.h
+    $$PWD/virtualgpibcontroller.h \
+    $$PWD/awg70002a.h
 
 SOURCES += \
     $$PWD/virtualftmwscope.cpp \
@@ -16,4 +17,5 @@ SOURCES += \
     $$PWD/virtualpulsegenerator.cpp \
     $$PWD/virtualflowcontroller.cpp \
     $$PWD/virtuallifscope.cpp \
-    $$PWD/virtualgpibcontroller.cpp
+    $$PWD/virtualgpibcontroller.cpp \
+    $$PWD/awg70002a.cpp

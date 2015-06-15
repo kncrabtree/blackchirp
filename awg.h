@@ -14,9 +14,9 @@ public:
 
 #ifdef BC_AWG
 #if BC_AWG==1
-#include "awg71002a.h"
-class Awg71002a;
-typedef Awg71002a AwgHardware;
+#include "awg70002a.h"
+class AWG70002a;
+typedef AWG70002a AwgHardware;
 #else
 #include "virtualawg.h"
 class VirtualAwg;
