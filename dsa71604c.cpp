@@ -41,7 +41,7 @@ bool Dsa71604c::testConnection()
 
     if(!resp.startsWith(QByteArray("TEKTRONIX,DSA71604C")))
     {
-        emit connected(false,QString("ID response invalid. Response: %1 (Hex: %)").arg(QString(resp)).arg(QString(resp.toHex())));
+        emit connected(false,QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())));
         return false;
     }
 
