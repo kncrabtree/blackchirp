@@ -20,19 +20,21 @@ CommunicationDialog::CommunicationDialog(QWidget *parent) :
 	{
 		s.setArrayIndex(i);
 		QString key = s.value(QString("key"),QString("")).toString();
-		if(!key.isEmpty())
-			gpibDevices.append(key);
+        QString subKey = s.value(QString("subKey"),QString("")).toString();
+
+        if(!key.isEmpty() && !subKey.isEmpty())
+            d_gpibDevices.append(qMakePair(key,subKey));
 	}
 	s.endArray();
 	s.endGroup();
 
-	for(int i=0;i<gpibDevices.size();i++)
+    for(int i=0;i<d_gpibDevices.size();i++)
 	{
-		QString name = s.value(QString("%1/prettyName").arg(gpibDevices.at(i)),gpibDevices.at(i)).toString();
+        QString name = s.value(QString("%1/prettyName").arg(d_gpibDevices.at(i).first),d_gpibDevices.at(i).first).toString();
 		ui->gpibDeviceComboBox->addItem(name);
 	}
 
-	if(gpibDevices.isEmpty())
+    if(d_gpibDevices.isEmpty())
 		ui->gpibBox->setEnabled(false);
 
 	//populate TCP devices
@@ -42,19 +44,21 @@ CommunicationDialog::CommunicationDialog(QWidget *parent) :
 	{
 		s.setArrayIndex(i);
 		QString key = s.value(QString("key"),QString("")).toString();
-		if(!key.isEmpty())
-			tcpDevices.append(key);
+        QString subKey = s.value(QString("subKey"),QString("")).toString();
+
+        if(!key.isEmpty() && !subKey.isEmpty())
+            d_tcpDevices.append(qMakePair(key,subKey));
 	}
 	s.endArray();
 	s.endGroup();
 
-	for(int i=0;i<tcpDevices.size();i++)
+    for(int i=0;i<d_tcpDevices.size();i++)
 	{
-		QString name = s.value(QString("%1/prettyName").arg(tcpDevices.at(i)),tcpDevices.at(i)).toString();
+        QString name = s.value(QString("%1/prettyName").arg(d_tcpDevices.at(i).first),d_tcpDevices.at(i).first).toString();
 		ui->tcpDeviceComboBox->addItem(name);
 	}
 
-	if(tcpDevices.isEmpty())
+    if(d_tcpDevices.isEmpty())
 		ui->tcpBox->setEnabled(false);
 
 	//populate RS232 devices
@@ -64,19 +68,21 @@ CommunicationDialog::CommunicationDialog(QWidget *parent) :
 	{
 		s.setArrayIndex(i);
 		QString key = s.value(QString("key"),QString("")).toString();
-		if(!key.isEmpty())
-			rs232Devices.append(key);
+        QString subKey = s.value(QString("subKey"),QString("")).toString();
+
+        if(!key.isEmpty() && !subKey.isEmpty())
+            d_rs232Devices.append(qMakePair(key,subKey));
 	}
 	s.endArray();
 	s.endGroup();
 
-	for(int i=0;i<rs232Devices.size();i++)
+    for(int i=0;i<d_rs232Devices.size();i++)
 	{
-		QString name = s.value(QString("%1/prettyName").arg(rs232Devices.at(i)),rs232Devices.at(i)).toString();
+        QString name = s.value(QString("%1/prettyName").arg(d_rs232Devices.at(i).first),d_rs232Devices.at(i).first).toString();
 		ui->rs232DeviceComboBox->addItem(name);
 	}
 
-	if(rs232Devices.isEmpty())
+    if(d_rs232Devices.isEmpty())
 		ui->rs232Box->setEnabled(false);
 
 	ui->gpibDeviceComboBox->setCurrentIndex(-1);
@@ -130,9 +136,11 @@ void CommunicationDialog::gpibDeviceChanged(int index)
 	}
 
 	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-	QString key = gpibDevices.at(index);
+    QString key = d_gpibDevices.at(index).first;
+    QString subKey = d_gpibDevices.at(index).second;
+
 	ui->busAddressSpinBox->setEnabled(true);
-	ui->busAddressSpinBox->setValue(s.value(QString("%1/address").arg(key),0).toInt());
+    ui->busAddressSpinBox->setValue(s.value(QString("%1/%2/address").arg(key).arg(subKey),0).toInt());
 	ui->gpibTestButton->setEnabled(true);
 
 }
@@ -150,11 +158,13 @@ void CommunicationDialog::tcpDeviceChanged(int index)
 	}
 
 	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-	QString key = tcpDevices.at(index);
+    QString key = d_tcpDevices.at(index).first;
+    QString subKey = d_tcpDevices.at(index).second;
+
 	ui->ipLineEdit->setEnabled(true);
-	ui->ipLineEdit->setText(s.value(QString("%1/ip").arg(key),QString("")).toString());
+    ui->ipLineEdit->setText(s.value(QString("%1/%2/ip").arg(key).arg(subKey),QString("")).toString());
 	ui->portSpinBox->setEnabled(true);
-	ui->portSpinBox->setValue(s.value(QString("%1/port").arg(key),0).toInt());
+    ui->portSpinBox->setValue(s.value(QString("%1/%2/port").arg(key).arg(subKey),0).toInt());
 	ui->tcpTestButton->setEnabled(true);
 }
 
@@ -170,10 +180,12 @@ void CommunicationDialog::rs232DeviceChanged(int index)
 	}
 
 	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-	QString key = rs232Devices.at(index);
+    QString key = d_rs232Devices.at(index).first;
+    QString subKey = d_rs232Devices.at(index).second;
+
 	ui->rs232DeviceIDLineEdit->setEnabled(true);
-	ui->rs232DeviceIDLineEdit->setText(s.value(QString("%1/id").arg(key),QString("")).toString());
-	int br = s.value(QString("%1/baudrate").arg(key),-1).toInt();
+    ui->rs232DeviceIDLineEdit->setText(s.value(QString("%1/%2/id").arg(key).arg(subKey),QString("")).toString());
+    int br = s.value(QString("%1/%2/baudrate").arg(key).arg(subKey),-1).toInt();
 	ui->baudRateComboBox->setEnabled(true);
 	ui->baudRateComboBox->setCurrentIndex(-1);
 	for(int i=0;i<ui->baudRateComboBox->count();i++)
@@ -192,8 +204,10 @@ void CommunicationDialog::testGpib()
 		return;
 
 	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-	QString key = gpibDevices.at(index);
-	s.setValue(QString("%1/address").arg(key),ui->busAddressSpinBox->value());
+    QString key = d_gpibDevices.at(index).first;
+    QString subKey = d_gpibDevices.at(index).second;
+
+    s.setValue(QString("%1/%2/address").arg(key).arg(subKey),ui->busAddressSpinBox->value());
 	s.sync();
 
 	startTest(QString("gpib"),key);
@@ -206,9 +220,11 @@ void CommunicationDialog::testTcp()
 		return;
 
 	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-	QString key = tcpDevices.at(index);
-	s.setValue(QString("%1/ip").arg(key),ui->ipLineEdit->text());
-	s.setValue(QString("%1/port").arg(key),ui->portSpinBox->value());
+    QString key = d_tcpDevices.at(index).first;
+    QString subKey = d_tcpDevices.at(index).second;
+
+    s.setValue(QString("%1/%2/ip").arg(key).arg(subKey),ui->ipLineEdit->text());
+    s.setValue(QString("%1/%2/port").arg(key).arg(subKey),ui->portSpinBox->value());
 	s.sync();
 
 	startTest(QString("tcp"),key);
@@ -221,13 +237,15 @@ void CommunicationDialog::testRs232()
 		return;
 
 	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-	QString key = rs232Devices.at(index);
-	s.setValue(QString("%1/id").arg(key),ui->rs232DeviceIDLineEdit->text());
+    QString key = d_rs232Devices.at(index).first;
+    QString subKey = d_rs232Devices.at(index).second;
+
+    s.setValue(QString("%1/%2/id").arg(key).arg(subKey),ui->rs232DeviceIDLineEdit->text());
 	int brIndex = ui->baudRateComboBox->currentIndex();
 	if(brIndex < 0)
-		s.setValue(QString("%1/baudrate").arg(key),0);
+        s.setValue(QString("%1/%2/baudrate").arg(key).arg(subKey),0);
 	else
-		s.setValue(QString("%1/baudrate").arg(key),ui->baudRateComboBox->itemText(brIndex).toInt());
+        s.setValue(QString("%1/%2/baudrate").arg(key).arg(subKey),ui->baudRateComboBox->itemText(brIndex).toInt());
 	s.sync();
 
 	startTest(QString("rs232"),key);

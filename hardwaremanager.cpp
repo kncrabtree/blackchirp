@@ -104,6 +104,7 @@ void HardwareManager::initialize()
 		{
 			s.setArrayIndex(index);
 			s.setValue(QString("key"),d_hardwareList.at(i).first->key());
+            s.setValue(QString("subKey"),d_hardwareList.at(i).first->subKey());
 			index++;
 		}
 	}
@@ -121,6 +122,7 @@ void HardwareManager::initialize()
 		{
 			s.setArrayIndex(index);
 			s.setValue(QString("key"),d_hardwareList.at(i).first->key());
+            s.setValue(QString("subKey"),d_hardwareList.at(i).first->subKey());
 			index++;
 		}
 	}
@@ -138,6 +140,7 @@ void HardwareManager::initialize()
         {
             s.setArrayIndex(index);
             s.setValue(QString("key"),d_hardwareList.at(i).first->key());
+            s.setValue(QString("subKey"),d_hardwareList.at(i).first->subKey());
             index++;
         }
     }

@@ -18,9 +18,9 @@ public:
 private:
 	Ui::CommunicationDialog *ui;
 
-	QStringList gpibDevices;
-	QStringList tcpDevices;
-	QStringList rs232Devices;
+    QList<QPair<QString,QString>> d_gpibDevices;
+    QList<QPair<QString,QString>> d_tcpDevices;
+    QList<QPair<QString,QString>> d_rs232Devices;
 
 	void startTest(QString type, QString key);
 
