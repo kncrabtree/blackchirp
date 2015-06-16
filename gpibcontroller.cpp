@@ -16,7 +16,15 @@ bool GpibController::writeCmd(int address, QString cmd)
 	if(address != d_currentAddress)
 		setAddress(address);
 
-	return p_comm->writeCmd(cmd);
+    return p_comm->writeCmd(cmd);
+}
+
+bool GpibController::writeBinary(int address, QByteArray dat)
+{
+    if(address != d_currentAddress)
+        setAddress(address);
+
+    return p_comm->writeBinary(dat);
 }
 
 QByteArray GpibController::queryCmd(int address, QString cmd)

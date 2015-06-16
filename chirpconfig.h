@@ -29,11 +29,13 @@ public:
     double chirpInterval() const;
 
     QList<BlackChirp::ChirpSegment> segmentList() const;
+    QByteArray waveformHash() const;
 
     double chirpDuration() const;
     double totalDuration() const;
     QVector<QPointF> getChirpMicroseconds() const;
     QVector<QPointF> getChirpSegmentMicroSeconds(double t1, double t2) const;
+    QVector<QPair<bool,bool>> getMarkerData() const;
     QMap<QString,QPair<QVariant,QString>> headerMap() const;
     QString toString() const;
 

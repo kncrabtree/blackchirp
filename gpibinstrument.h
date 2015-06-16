@@ -22,6 +22,7 @@ protected:
 	// CommunicationProtocol interface
 public:
 	bool writeCmd(QString cmd);
+    bool writeBinary(QByteArray dat);
 	QByteArray queryCmd(QString cmd);
 
 public slots:

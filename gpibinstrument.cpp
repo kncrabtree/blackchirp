@@ -24,7 +24,12 @@ int GpibInstrument::address() const
 
 bool GpibInstrument::writeCmd(QString cmd)
 {
-	return p_controller->writeCmd(d_address,cmd);
+    return p_controller->writeCmd(d_address,cmd);
+}
+
+bool GpibInstrument::writeBinary(QByteArray dat)
+{
+    return p_controller->writeBinary(d_address,dat);
 }
 
 QByteArray GpibInstrument::queryCmd(QString cmd)

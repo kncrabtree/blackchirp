@@ -13,6 +13,7 @@ public:
     ~TcpInstrument();
 
     bool writeCmd(QString cmd);
+    bool writeBinary(QByteArray dat);
     QByteArray queryCmd(QString cmd);
     QIODevice *device(){ return p_socket; }
 

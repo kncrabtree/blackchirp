@@ -17,6 +17,10 @@ public slots:
     void beginAcquisition();
     void endAcquisition();
     void readTimeData();
+
+private:
+    QString getWaveformKey(const ChirpConfig cc);
+    QString writeWaveform(const ChirpConfig cc);
 };
 
 #endif // AWG70002A_H

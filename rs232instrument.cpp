@@ -67,6 +67,26 @@ bool Rs232Instrument::writeCmd(QString cmd)
     return true;
 }
 
+bool Rs232Instrument::writeBinary(QByteArray dat)
+{
+    if(!p_sp->isOpen())
+    {
+        emit hardwareFailure();
+        emit logMessage(QString("Could not write binary data. Serial port is not open. (Data hex = %1)").arg(QString(dat.toHex())),BlackChirp::LogError);
+        return false;
+    }
+
+    qint64 ret = p_sp->write(dat);
+
+    if(ret == -1)
+    {
+        emit hardwareFailure();
+        emit logMessage(QString("Could not write binary data. (Data hex = %1)").arg(QString(dat.toHex())),BlackChirp::LogError);
+        return false;
+    }
+    return true;
+}
+
 QByteArray Rs232Instrument::queryCmd(QString cmd)
 {
     if(!p_sp->isOpen())

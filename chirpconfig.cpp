@@ -3,6 +3,7 @@
 #include <QSettings>
 #include <QApplication>
 #include <QList>
+#include <QCryptographicHash>
 
 #include <gsl/gsl_sf_trig.h>
 #include <gsl/gsl_complex_math.h>
@@ -99,6 +100,24 @@ QList<BlackChirp::ChirpSegment> ChirpConfig::segmentList() const
     return data->segments;
 }
 
+QByteArray ChirpConfig::waveformHash() const
+{
+    QCryptographicHash c(QCryptographicHash::Sha256);
+    c.addData(QByteArray::number(data->preChirpProtection));
+    c.addData(QByteArray::number(data->preChirpDelay));
+    for(int i=0; i<data->segments.size(); i++)
+    {
+        c.addData(QByteArray::number(data->segments.at(i).startFreqMHz));
+        c.addData(QByteArray::number(data->segments.at(i).endFreqMHz));
+        c.addData(QByteArray::number(data->segments.at(i).durationUs));
+    }
+    c.addData(QByteArray::number(data->numChirps));
+    c.addData(QByteArray::number(data->chirpInterval));
+    c.addData(QByteArray::number(data->postChirpProtection));
+
+    return c.result();
+}
+
 QVector<QPointF> ChirpConfig::getChirpMicroseconds() const
 {
     return getChirpSegmentMicroSeconds(0.0,totalDuration());
@@ -115,6 +134,8 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
 
     int firstSample = getFirstSample(t1);
     int invalidSample = getFirstSample(t2); //invalid sample is the point AFTER the last point to be included
+    if(qFuzzyCompare(t2,totalDuration()))
+        invalidSample += 1;
 
     //the actual number of samples may be different, if the requested t2 is after the total chirp duration
     int numSamples = qMin(invalidSample-firstSample - 1,
@@ -213,6 +234,70 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
 
 
     return out;
+}
+
+QVector<QPair<bool, bool> > ChirpConfig::getMarkerData() const
+{
+    if(!isValid())
+        return QVector<QPair<bool,bool>>();
+
+    int currentSample = 0;
+    int firstSample = 0;
+    int invalidSample = getFirstSample(totalDuration()) + 1; //invalid sample is the point AFTER the last point to be included
+    int numSamples = invalidSample - 1;
+
+    QVector<QPair<bool,bool>> out(numSamples);
+
+    bool done = false;
+
+    while(!done) // loop that allows interval crossing
+    {
+        //starting an interval
+        double currentTime = getSampleTime(firstSample+currentSample);
+        int currentInterval = static_cast<int>(floor(currentTime/data->chirpInterval));
+        int currentIntervalStartSample = getFirstSample(static_cast<double>(currentInterval)*data->chirpInterval);
+        int nextIntervalStartSample = getFirstSample((static_cast<double>(currentInterval) + 1.0) * data->chirpInterval);
+        if(nextIntervalStartSample > firstSample+numSamples)
+        {
+            //this is the last interval
+            done = true;
+            nextIntervalStartSample = firstSample+numSamples;
+        }
+        int currentIntervalChirpStart = getFirstSample(getSampleTime(currentIntervalStartSample) + data->preChirpProtection + data->preChirpDelay);
+        int currentIntervalChirpEnd = getLastSample(getSampleTime(currentIntervalChirpStart) + chirpDuration());
+        int currentIntervalProtEnd = getLastSample(getSampleTime(currentIntervalChirpEnd) + data->postChirpProtection)-1;
+        int currentIntervalTwtStart = getFirstSample(getSampleTime(currentIntervalStartSample) + data->preChirpProtection);
+        //note: twt ends at the same time as the chirp
+
+        //sections will correspond to marker states:
+        //0 = prot high, twt low
+        //1 = both high
+        //2 = prot high, twt low
+        //3 = both low
+
+        bool prot = true;
+        bool twt = false;
+
+        while(currentSample < nextIntervalStartSample)
+        {
+            //assess section state
+            if(currentSample == currentIntervalTwtStart)
+                twt = true;
+            if(currentSample == currentIntervalChirpEnd)
+                twt = false;
+            if(currentSample == currentIntervalProtEnd)
+                prot = false;
+
+            out[currentSample] = qMakePair(prot,twt);
+
+            currentSample++;
+        }
+
+
+    }
+
+    return out;
+
 }
 
 QMap<QString, QPair<QVariant, QString> > ChirpConfig::headerMap() const

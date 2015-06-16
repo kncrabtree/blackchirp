@@ -19,6 +19,12 @@ bool VirtualInstrument::writeCmd(QString cmd)
     return true;
 }
 
+bool VirtualInstrument::writeBinary(QByteArray dat)
+{
+    Q_UNUSED(dat)
+    return true;
+}
+
 QByteArray VirtualInstrument::queryCmd(QString cmd)
 {
     Q_UNUSED(cmd)

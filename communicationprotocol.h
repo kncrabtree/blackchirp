@@ -24,6 +24,7 @@ public:
     ~CommunicationProtocol();
 
     virtual bool writeCmd(QString cmd) =0;
+    virtual bool writeBinary(QByteArray dat) =0;
     virtual QByteArray queryCmd(QString cmd) =0;
 
     QString key() { return d_key; }

@@ -25,6 +25,7 @@ public:
     explicit Rs232Instrument(QString key, QString subKey, QObject *parent = 0);
     ~Rs232Instrument();
     bool writeCmd(QString cmd);
+    bool writeBinary(QByteArray dat);
     QByteArray queryCmd(QString cmd);
     QSerialPort *p_sp;
 

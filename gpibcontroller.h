@@ -11,6 +11,7 @@ public:
 	~GpibController();
 
 	bool writeCmd(int address, QString cmd);
+    bool writeBinary(int address, QByteArray dat);
 	QByteArray queryCmd(int address, QString cmd);
 
 protected:

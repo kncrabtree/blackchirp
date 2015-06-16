@@ -67,6 +67,47 @@ bool TcpInstrument::writeCmd(QString cmd)
         emit logMessage(QString("Could not write command. (Command = %1)").arg(cmd),BlackChirp::LogError);
         return false;
     }
+
+    while (p_socket->bytesToWrite() > 0) {
+        if(!p_socket->waitForBytesWritten(30000))
+        {
+            emit hardwareFailure();
+            emit logMessage(QString("Timed out while waiting for command write. Command = %1").arg(cmd),BlackChirp::LogError);
+            return false;
+        }
+    }
+    return true;
+}
+
+bool TcpInstrument::writeBinary(QByteArray dat)
+{
+    if(p_socket->state() != QTcpSocket::ConnectedState)
+    {
+        if(!connectSocket())
+        {
+            emit hardwareFailure();
+            emit logMessage(QString("Could not write binary data. Socket is not connected. Data hex (first 25 bytes) = %1").arg(QString(dat.toHex()).mid(0,50)),BlackChirp::LogError);
+            return false;
+        }
+    }
+
+    qint64 ret = p_socket->write(dat);
+
+    if(ret == -1)
+    {
+        emit hardwareFailure();
+        emit logMessage(QString("Could not write binary data. Data hex (first 25 bytes) = %1").arg(QString(dat.toHex()).mid(0,50)),BlackChirp::LogError);
+        return false;
+    }
+
+    while (p_socket->bytesToWrite() > 0) {
+        if(!p_socket->waitForBytesWritten(30000))
+        {
+            emit hardwareFailure();
+            emit logMessage(QString("Timed out while waiting for binary data write. Data hex (first 25 bytes) = %1").arg(QString(dat.toHex()).mid(0,50)),BlackChirp::LogError);
+            return false;
+        }
+    }
     return true;
 }
 
@@ -93,6 +134,15 @@ QByteArray TcpInstrument::queryCmd(QString cmd)
         emit hardwareFailure();
         emit logMessage(QString("Could not write query. (query = %1)").arg(cmd),BlackChirp::LogError);
         return QByteArray();
+    }
+
+    while (p_socket->bytesToWrite() > 0) {
+        if(!p_socket->waitForBytesWritten(30000))
+        {
+            emit hardwareFailure();
+            emit logMessage(QString("Timed out while waiting for query write. Query = %1").arg(cmd),BlackChirp::LogError);
+            return QByteArray();
+        }
     }
 
 	//write to socket here, return response
@@ -138,7 +188,7 @@ bool TcpInstrument::connectSocket()
         return false;
     }
     p_socket->setSocketOption(QAbstractSocket::KeepAliveOption,1);
-    p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
+//    p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
     return true;
 }
 
