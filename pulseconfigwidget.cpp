@@ -17,7 +17,9 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
 
     auto vc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
     QSettings s(QSettings::SystemScope, QApplication::organizationName(), QApplication::applicationName());
+    QString subKey = s.value(QString("pGen/subKey"),QString("virtual")).toString();
     s.beginGroup(QString("pGen"));
+    s.beginGroup(subKey);
     s.beginReadArray(QString("channels"));
     for(int i=0; i<BC_PGEN_NUMCHANNELS; i++)
     {
@@ -125,6 +127,7 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
 
     s.endArray();
     s.endGroup();
+    s.endGroup();
 }
 
 PulseConfigWidget::~PulseConfigWidget()
@@ -204,7 +207,9 @@ void PulseConfigWidget::launchChannelConfig(int ch)
     if(d.exec() == QDialog::Accepted)
     {
         QSettings s(QSettings::SystemScope, QApplication::organizationName(), QApplication::applicationName());
+        QString subKey = s.value(QString("pGen/subKey"),QString("virtual")).toString();
         s.beginGroup(QString("pGen"));;
+        s.beginGroup(subKey);
         s.beginWriteArray(QString("channels"));
         s.setArrayIndex(ch);
 
@@ -230,6 +235,7 @@ void PulseConfigWidget::launchChannelConfig(int ch)
         }
 
         s.endArray();
+        s.endGroup();
         s.endGroup();
         s.sync();
     }

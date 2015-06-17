@@ -1,14 +1,13 @@
-#ifndef VIRTUALPULSEGENERATOR_H
-#define VIRTUALPULSEGENERATOR_H
+#ifndef QC9528_H
+#define QC9528_H
 
 #include "pulsegenerator.h"
 
-class VirtualPulseGenerator : public PulseGenerator
+
+class Qc9528 : public PulseGenerator
 {
-    Q_OBJECT
 public:
-    explicit VirtualPulseGenerator(QObject *parent = nullptr);
-    ~VirtualPulseGenerator();
+    explicit Qc9528(QObject *parent = nullptr);
 
     // HardwareObject interface
 public slots:
@@ -26,6 +25,9 @@ public slots:
 
     bool set(const int index, const BlackChirp::PulseSetting s, const QVariant val);
     bool setRepRate(double d);
+
+private:
+    bool pGenWriteCmd(QString cmd);
 };
 
-#endif // VIRTUALPULSEGENERATOR_H
+#endif // QC9528_H

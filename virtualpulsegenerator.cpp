@@ -34,6 +34,7 @@ void VirtualPulseGenerator::initialize()
 {
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
 
     s.beginReadArray(QString("channels"));
     for(int i=0; i<BC_PGEN_NUMCHANNELS; i++)
@@ -53,6 +54,7 @@ void VirtualPulseGenerator::initialize()
     s.endArray();
 
     d_config.setRepRate(s.value(QString("repRate"),10.0).toDouble());
+    s.endGroup();
     s.endGroup();
 
     testConnection();
@@ -82,19 +84,22 @@ QVariant VirtualPulseGenerator::read(const int index, const BlackChirp::PulseSet
     return d_config.setting(index,s);
 }
 
-QVariant VirtualPulseGenerator::set(const int index, const BlackChirp::PulseSetting s, const QVariant val)
+double VirtualPulseGenerator::readRepRate()
+{
+    emit repRateUpdate(d_config.repRate());
+    return d_config.repRate();
+}
+
+bool VirtualPulseGenerator::set(const int index, const BlackChirp::PulseSetting s, const QVariant val)
 {
     d_config.set(index,s,val);
-    return read(index,s);
+    read(index,s);
+    return true;
 }
 
-void VirtualPulseGenerator::setRepRate(double d)
+bool VirtualPulseGenerator::setRepRate(double d)
 {
     d_config.setRepRate(d);
-    emit repRateUpdate(d);
-}
-
-double VirtualPulseGenerator::setLifDelay(double d)
-{
-   return set(BC_PGEN_LIFCHANNEL,BlackChirp::PulseDelay,d).toDouble();
+    readRepRate();
+    return true;
 }

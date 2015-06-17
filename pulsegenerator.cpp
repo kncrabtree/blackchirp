@@ -30,27 +30,39 @@ BlackChirp::PulseChannelConfig PulseGenerator::read(const int index)
 }
 
 
-void PulseGenerator::setChannel(const int index, const BlackChirp::PulseChannelConfig cc)
+bool PulseGenerator::setChannel(const int index, const BlackChirp::PulseChannelConfig cc)
 {
-    set(index,BlackChirp::PulseName,cc.channelName);
-    set(index,BlackChirp::PulseEnabled,cc.enabled);
-    set(index,BlackChirp::PulseDelay,cc.delay);
-    set(index,BlackChirp::PulseWidth,cc.width);
-    set(index,BlackChirp::PulseLevel,cc.level);
+    bool success = true;
+
+    success &= set(index,BlackChirp::PulseName,cc.channelName);
+    success &= set(index,BlackChirp::PulseEnabled,cc.enabled);
+    success &= set(index,BlackChirp::PulseDelay,cc.delay);
+    success &= set(index,BlackChirp::PulseWidth,cc.width);
+    success &= set(index,BlackChirp::PulseLevel,cc.level);
+
+    return success;
 }
 
-void PulseGenerator::setAll(const PulseGenConfig cc)
+bool PulseGenerator::setAll(const PulseGenConfig cc)
 {
+    bool success = true;
     for(int i=0; i<d_config.size(); i++)
-        setChannel(i,cc.at(i));
+        success &= setChannel(i,cc.at(i));
 
-    setRepRate(cc.repRate());
+    success &= setRepRate(cc.repRate());
 
-    return;
+    return success;
+}
+
+bool PulseGenerator::setLifDelay(double d)
+{
+    return set(BC_PGEN_LIFCHANNEL,BlackChirp::PulseDelay,d);
 }
 
 void PulseGenerator::readAll()
 {
     for(int i=0;i<BC_PGEN_NUMCHANNELS; i++)
         read(i);
+
+    readRepRate();
 }

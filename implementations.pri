@@ -7,7 +7,8 @@ HEADERS += \
     $$PWD/virtualflowcontroller.h \
     $$PWD/virtuallifscope.h \
     $$PWD/virtualgpibcontroller.h \
-    $$PWD/awg70002a.h
+    $$PWD/awg70002a.h \
+    $$PWD/qc9528.h
 
 SOURCES += \
     $$PWD/virtualftmwscope.cpp \
@@ -18,4 +19,5 @@ SOURCES += \
     $$PWD/virtualflowcontroller.cpp \
     $$PWD/virtuallifscope.cpp \
     $$PWD/virtualgpibcontroller.cpp \
-    $$PWD/awg70002a.cpp
+    $$PWD/awg70002a.cpp \
+    $$PWD/qc9528.cpp

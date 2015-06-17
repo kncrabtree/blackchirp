@@ -15,15 +15,16 @@ public:
 public slots:
     PulseGenConfig config() const { return d_config; }
     virtual QVariant read(const int index, const BlackChirp::PulseSetting s) =0;
+    virtual double readRepRate() =0;
 
     virtual BlackChirp::PulseChannelConfig read(const int index);
 
-    virtual QVariant set(const int index, const BlackChirp::PulseSetting s, const QVariant val) =0;
-    virtual void setChannel(const int index, const BlackChirp::PulseChannelConfig cc);
-    virtual void setAll(const PulseGenConfig cc);
+    virtual bool set(const int index, const BlackChirp::PulseSetting s, const QVariant val) =0;
+    virtual bool setChannel(const int index, const BlackChirp::PulseChannelConfig cc);
+    virtual bool setAll(const PulseGenConfig cc);
 
-    virtual void setRepRate(double d) =0;
-    virtual double setLifDelay(double d) =0;
+    virtual bool setRepRate(double d) =0;
+    virtual bool setLifDelay(double d);
 
 signals:
     void settingUpdate(int,BlackChirp::PulseSetting,QVariant);

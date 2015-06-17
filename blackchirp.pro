@@ -87,7 +87,7 @@ DEFINES += BC_AWG=1
 DEFINES += BC_SYNTH=0
 
 #Pulse generator (0 = virtual, 1 = Quantum Composers 9528+)
-DEFINES += BC_PGEN=0
+DEFINES += BC_PGEN=1
 
 #Flow Controller (0 = virtual, 1 = MKS 647C)
 DEFINES += BC_FLOWCONTROLLER=0
