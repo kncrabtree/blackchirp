@@ -33,9 +33,19 @@ bool Qc9528::testConnection()
         return false;
     }
 
+    if(!resp.startsWith(QByteArray("QC,9528")))
+    {
+        emit connected(false,QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp.trimmed())).arg(QString(resp.toHex())));
+        return false;
+    }
+
+    emit logMessage(QString("ID response: %1").arg(QString(resp.trimmed())));
+
     blockSignals(true);
     readAll();
     blockSignals(false);
+
+    pGenWriteCmd(QString(":PULSE0:STATE 1\n"));
 
     emit configUpdate(d_config);
     emit connected();
@@ -312,6 +322,16 @@ bool Qc9528::setRepRate(double d)
     }
 
     return true;
+}
+
+void Qc9528::sleep(bool b)
+{
+    if(b)
+        pGenWriteCmd(QString(":PULSE0:STATE 0\n"));
+    else
+        pGenWriteCmd(QString(":PULSE0:STATE 1\n"));
+
+    HardwareObject::sleep(b);
 }
 
 bool Qc9528::pGenWriteCmd(QString cmd)

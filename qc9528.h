@@ -26,6 +26,8 @@ public slots:
     bool set(const int index, const BlackChirp::PulseSetting s, const QVariant val);
     bool setRepRate(double d);
 
+    void sleep(bool b);
+
 private:
     bool pGenWriteCmd(QString cmd);
 };
