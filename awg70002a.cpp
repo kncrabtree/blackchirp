@@ -13,6 +13,8 @@ AWG70002a::AWG70002a(QObject *parent) :
     p_comm = new TcpInstrument(d_key,d_subKey,this);
     connect(p_comm,&CommunicationProtocol::logMessage,this,&AWG70002a::logMessage);
     connect(p_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
+
+    p_comm->setReadOptions(1000,true,QByteArray("\n"));
 }
 
 
@@ -40,6 +42,12 @@ bool AWG70002a::testConnection()
     }
 
     emit logMessage(QString("ID response: %1").arg(QString(resp.trimmed())));
+
+    p_comm->writeCmd(QString("*CLS\n"));
+    resp = p_comm->queryCmd(QString("System:Error:Count?\n"));
+    if(resp.trimmed().toInt() > 0)
+        resp = p_comm->queryCmd(QString("System:Error:All?\n"));
+
     emit connected();
     return true;
 }
@@ -188,7 +196,6 @@ QString AWG70002a::writeWaveform(const ChirpConfig cc)
     if(!p_comm->writeCmd(QString("WList:Waveform:New \"%1\", %2\n").arg(name).arg(data.size())))
         return QString("!Could not create new AWG waveform");
 
-
     QByteArray resp = p_comm->queryCmd(QString("*OPC?\n"));
     if(resp.isEmpty())
         return QString("!Could not create new AWG waveform. Timed out while waiting for *OPC query");
@@ -243,6 +250,14 @@ QString AWG70002a::writeWaveform(const ChirpConfig cc)
 
         p_comm->writeCmd(QString("\n"));
 
+        resp = p_comm->queryCmd(QString("System:Error:Count?\n"));
+        if(resp.trimmed().toInt() > 0)
+        {
+            resp = p_comm->queryCmd(QString("System:Error:All?\n"));
+            emit logMessage(QString("AWG error: %1").arg(QString(resp.trimmed())),BlackChirp::LogDebug);
+            return QString("!Could not write waveform data to AWG. See logfile for details. Header was: %1").arg(header);
+        }
+
         currentChunk++;
     }
 
@@ -283,6 +298,14 @@ QString AWG70002a::writeWaveform(const ChirpConfig cc)
             return QString("!Could not write marker data to AWG. Header was: %1").arg(header);
 
         p_comm->writeCmd(QString("\n"));
+
+        resp = p_comm->queryCmd(QString("System:Error:Count?\n"));
+        if(resp.trimmed().toInt() > 0)
+        {
+            resp = p_comm->queryCmd(QString("System:Error:All?\n"));
+            emit logMessage(QString("AWG error: %1").arg(QString(resp.trimmed())),BlackChirp::LogDebug);
+             return QString("!Could not write marker data to AWG. See logfile for details. Header was: %1").arg(header);
+        }
 
         currentChunk++;
 
