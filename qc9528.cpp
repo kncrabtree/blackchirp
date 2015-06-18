@@ -96,12 +96,12 @@ Experiment Qc9528::prepareForExperiment(Experiment exp)
 
 void Qc9528::beginAcquisition()
 {
-    pGenWriteCmd(QString(":KLOCK 1\n"));
+    pGenWriteCmd(QString(":SYSTEM:KLOCK 1\n"));
 }
 
 void Qc9528::endAcquisition()
 {
-    pGenWriteCmd(QString(":KLOCK 0\n"));
+    pGenWriteCmd(QString(":SYSTEM:KLOCK 0\n"));
 }
 
 void Qc9528::readTimeData()
