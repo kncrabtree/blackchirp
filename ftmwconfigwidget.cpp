@@ -30,6 +30,7 @@ FtmwConfigWidget::FtmwConfigWidget(QWidget *parent) :
     ui->triggerSlopeComboBox->addItem(QString("Rising Edge"),QVariant::fromValue(BlackChirp::RisingEdge));
     ui->triggerSlopeComboBox->addItem(QString("Falling Edge"),QVariant::fromValue(BlackChirp::FallingEdge));
 
+    ui->triggerDelayDoubleSpinBox->setSuffix(QString::fromUtf16(u" μs"));
 
     loadFromSettings();
 
@@ -65,6 +66,7 @@ void FtmwConfigWidget::setFromConfig(const FtmwConfig config)
     ui->fIDChannelSpinBox->setValue(sc.fidChannel);
     ui->verticalScaleDoubleSpinBox->setValue(sc.vScale);
     ui->triggerChannelSpinBox->setValue(sc.trigChannel);
+    ui->triggerDelayDoubleSpinBox->setValue(sc.trigDelay/1e6);
     setComboBoxIndex(ui->triggerSlopeComboBox,sc.slope);
     setComboBoxIndex(ui->sampleRateComboBox,sc.sampleRate);
     ui->bytesPointSpinBox->setValue(sc.bytesPerPoint);
@@ -96,6 +98,7 @@ FtmwConfig FtmwConfigWidget::getConfig() const
     sc.fidChannel = ui->fIDChannelSpinBox->value();
     sc.vScale = ui->verticalScaleDoubleSpinBox->value();
     sc.trigChannel = ui->triggerChannelSpinBox->value();
+    sc.trigDelay = ui->triggerDelayDoubleSpinBox->value()/1e6;
     sc.slope = ui->triggerSlopeComboBox->currentData().value<BlackChirp::ScopeTriggerSlope>();
     sc.sampleRate = ui->sampleRateComboBox->currentData().toDouble();
     sc.recordLength = ui->recordLengthSpinBox->value();
@@ -146,6 +149,7 @@ void FtmwConfigWidget::loadFromSettings()
     ui->fIDChannelSpinBox->setValue(s.value(QString("fidChannel"),1).toInt());
     ui->verticalScaleDoubleSpinBox->setValue(s.value(QString("vScale"),0.020).toDouble());
     ui->triggerChannelSpinBox->setValue(s.value(QString("triggerChannel"),4).toInt());
+    ui->triggerDelayDoubleSpinBox->setValue(s.value(QString("triggerDelay"),0.0).toDouble());
     ui->triggerSlopeComboBox->setCurrentIndex(s.value(QString("triggerSlope"),0).toInt());
     ui->sampleRateComboBox->setCurrentIndex(s.value(QString("sampleRate"),4).toInt());
     ui->recordLengthSpinBox->setValue(s.value(QString("recordLength"),750000).toInt());
@@ -183,6 +187,7 @@ void FtmwConfigWidget::saveToSettings()
     s.setValue(QString("fidChannel"),ui->fIDChannelSpinBox->value());
     s.setValue(QString("vScale"),ui->verticalScaleDoubleSpinBox->value());
     s.setValue(QString("triggerChannel"),ui->triggerChannelSpinBox->value());
+    s.setValue(QString("triggerDelay"),ui->triggerDelayDoubleSpinBox->value());
     s.setValue(QString("triggerSlope"),ui->triggerSlopeComboBox->currentIndex());
     s.setValue(QString("sampleRate"),ui->sampleRateComboBox->currentIndex());
     s.setValue(QString("recordLength"),ui->recordLengthSpinBox->value());

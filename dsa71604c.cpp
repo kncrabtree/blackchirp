@@ -12,7 +12,7 @@ Dsa71604c::Dsa71604c(QObject *parent) :
     p_comm = new TcpInstrument(d_key,d_subKey,this);
     connect(p_comm,&CommunicationProtocol::logMessage,this,&Dsa71604c::logMessage);
     connect(p_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
-    p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
+
 }
 
 Dsa71604c::~Dsa71604c()
@@ -54,6 +54,7 @@ void Dsa71604c::initialize()
 {
     p_comm->setReadOptions(1000,true,QByteArray("\n"));
     p_comm->initialize();
+    p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
     testConnection();
 }
 
@@ -153,14 +154,15 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
     }
 
     //horizontal settings
-    if(!p_comm->writeCmd(QString(":HORIZONTAL:MODE MANUAL;POSITION 0;:HORIZONTAL:MODE:SAMPLERATE %1;RECORDLENGTH %2\n").arg(QString::number(config.sampleRate,'g',6)).arg(config.recordLength)))
+    if(!p_comm->writeCmd(QString(":HORIZONTAL:MODE MANUAL;:HORIZONTAL:DELAY:MODE ON;:HORIZONTAL:DELAY:POSITION 0;:HORIZONTAL:DELAY:TIME %1;:HORIZONTAL:MODE:SAMPLERATE %2;RECORDLENGTH %3\n")
+                         .arg(QString::number(config.trigDelay,'g',6)).arg(QString::number(config.sampleRate,'g',6)).arg(config.recordLength)))
     {
         emit logMessage(QString("Could not apply horizontal settings."),BlackChirp::LogError);
         exp.setHardwareFailed();
         return exp;
     }
 
-    //verify sample rate and record length
+    //verify sample rate, record length, and horizontal delay
     resp = scopeQueryCmd(QString(":HORIZONTAL:MODE:SAMPLERATE?\n"));
     if(!resp.isEmpty())
     {
@@ -210,6 +212,32 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
     else
     {
         emit logMessage(QString("Gave an empty response to record length query."),BlackChirp::LogError);
+        exp.setHardwareFailed();
+        return exp;
+    }
+    resp = scopeQueryCmd(QString(":HORIZONTAL:DELAY:TIME?\n"));
+    if(!resp.isEmpty())
+    {
+        bool ok = false;
+        double delay = resp.trimmed().toDouble(&ok);
+        if(!ok)
+        {
+            emit logMessage(QString("Trigger delay query returned an invalid response. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
+            exp.setHardwareFailed();
+            return exp;
+        }
+        if(!qFuzzyCompare(1.0+delay,1.0+config.trigDelay))
+        {
+            emit logMessage(QString("Could not set trigger delay successfully! Target: %1, Scope setting: %2").arg(QString::number(config.trigDelay))
+                            .arg(QString::number(delay)),BlackChirp::LogError);
+            exp.setHardwareFailed();
+            return exp;
+        }
+        config.trigDelay = delay;
+    }
+    else
+    {
+        emit logMessage(QString("Gave an empty response to trigger delay query."),BlackChirp::LogError);
         exp.setHardwareFailed();
         return exp;
     }

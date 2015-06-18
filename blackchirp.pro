@@ -76,12 +76,12 @@ unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
 # -----------------------------------------------
 
 # FTMW Oscilloscope (0 = virtual, 1 = DSA71604C)
-DEFINES += BC_FTMWSCOPE=0
+DEFINES += BC_FTMWSCOPE=1
 #Uncomment if BC_FTMWSCOPE=0
-RESOURCES += virtualdata.qrc
+#RESOURCES += virtualdata.qrc
 
 #AWG (0 = virtual, 1 = AWG 70002A)
-DEFINES += BC_AWG=1
+DEFINES += BC_AWG=0
 
 #Synth (0 = virtual, 1 = Valon 5009)
 DEFINES += BC_SYNTH=0

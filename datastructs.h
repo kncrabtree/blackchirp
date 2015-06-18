@@ -66,6 +66,7 @@ struct FtmwScopeConfig {
     int numFrames;
     bool summaryFrame;
     int trigChannel;
+    double trigDelay; //in seconds
     ScopeTriggerSlope slope;
 
     //settings hardcoded or read from scope
@@ -78,12 +79,13 @@ struct FtmwScopeConfig {
 
 
     FtmwScopeConfig() : fidChannel(0), vScale(0.0), sampleRate(0.0), recordLength(0), fastFrameEnabled(false), numFrames(0),
-        summaryFrame(false), trigChannel(0), slope(RisingEdge), bytesPerPoint(1), byteOrder(QDataStream::LittleEndian),
+        summaryFrame(false), trigChannel(0), trigDelay(0), slope(RisingEdge), bytesPerPoint(1), byteOrder(QDataStream::LittleEndian),
         vOffset(0.0), yMult(0.0), yOff(0), xIncr(0.0) {}
     FtmwScopeConfig(const FtmwScopeConfig &other) : fidChannel(other.fidChannel), vScale(other.vScale), sampleRate(other.sampleRate),
         recordLength(other.recordLength), fastFrameEnabled(other.fastFrameEnabled), numFrames(other.numFrames),
-        summaryFrame(other.summaryFrame), trigChannel(other.trigChannel), slope(other.slope), bytesPerPoint(other.bytesPerPoint),
-        byteOrder(other.byteOrder), vOffset(other.vOffset), yMult(other.yMult), yOff(other.yOff), xIncr(other.xIncr) {}
+        summaryFrame(other.summaryFrame), trigChannel(other.trigChannel), trigDelay(other.trigDelay), slope(other.slope),
+        bytesPerPoint(other.bytesPerPoint), byteOrder(other.byteOrder), vOffset(other.vOffset), yMult(other.yMult), yOff(other.yOff),
+        xIncr(other.xIncr) {}
 
     QMap<QString,QPair<QVariant,QString> > headerMap() const
     {
@@ -96,6 +98,7 @@ struct FtmwScopeConfig {
         out.insert(prefix+QString("VerticalScale"),qMakePair(QString::number(vScale,'f',3),QString("V/div")));
         out.insert(prefix+QString("VerticalOffset"),qMakePair(QString::number(vOffset,'f',3),QString("V")));
         out.insert(prefix+QString("TriggerChannel"),qMakePair(trigChannel,empty));
+        out.insert(prefix+QString("TriggerDelay"),qMakePair(QString::number(trigDelay),QString("s")));
         slope == RisingEdge ? scratch = QString("RisingEdge") : scratch = QString("FallingEdge");
         out.insert(prefix+QString("TriggerSlope"),qMakePair(scratch,empty));
         out.insert(prefix+QString("SampleRate"),qMakePair(QString::number(sampleRate/1e9,'f',3),QString("GS/s")));

@@ -3,6 +3,8 @@
 
 #include "ftmwscope.h"
 
+#include <QTimer>
+
 class QTcpSocket;
 
 class Dsa71604c : public FtmwScope
