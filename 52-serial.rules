@@ -1,0 +1,11 @@
+#These rules create symlinks for the serial ports used with the QtFTM and BBAcq programs.
+
+#Valon synth
+SUBSYSTEMS=="usb", KERNEL=="ttyUSB[0-9]*", ATTRS{manufacturer}=="FTDI", ATTRS{idProduct}=="6001", ATTRS{serial}=="A502NJ4X", SYMLINK+="valonSynth", GROUP="dialout"
+
+#Pulse Generator
+#SUBSYSTEMS=="usb", KERNEL=="ttyUSB[0-9]*", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="AM01QI3O", SYMLINK+="pulseGenerator", GROUP="dialout"
+
+#Flow controller
+#SUBSYSTEMS=="usb", KERNEL=="ttyUSB[0-9]*", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="A70326SD", SYMLINK+="flowController", GROUP="dialout"
+

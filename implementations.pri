@@ -8,7 +8,8 @@ HEADERS += \
     $$PWD/virtuallifscope.h \
     $$PWD/virtualgpibcontroller.h \
     $$PWD/awg70002a.h \
-    $$PWD/qc9528.h
+    $$PWD/qc9528.h \
+    $$PWD/valon5009.h
 
 SOURCES += \
     $$PWD/virtualftmwscope.cpp \
@@ -20,4 +21,5 @@ SOURCES += \
     $$PWD/virtuallifscope.cpp \
     $$PWD/virtualgpibcontroller.cpp \
     $$PWD/awg70002a.cpp \
-    $$PWD/qc9528.cpp
+    $$PWD/qc9528.cpp \
+    $$PWD/valon5009.cpp

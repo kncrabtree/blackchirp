@@ -84,10 +84,10 @@ DEFINES += BC_FTMWSCOPE=1
 DEFINES += BC_AWG=0
 
 #Synth (0 = virtual, 1 = Valon 5009)
-DEFINES += BC_SYNTH=0
+DEFINES += BC_SYNTH=1
 
 #Pulse generator (0 = virtual, 1 = Quantum Composers 9528+)
-DEFINES += BC_PGEN=1
+DEFINES += BC_PGEN=0
 
 #Flow Controller (0 = virtual, 1 = MKS 647C)
 DEFINES += BC_FLOWCONTROLLER=0
@@ -98,5 +98,8 @@ DEFINES += BC_LIFSCOPE=0
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O3
 QMAKE_CXXFLAGS += -std=c++11
+
+DISTFILES += \
+    52-serial.rules
 
 
