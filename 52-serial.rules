@@ -1,4 +1,8 @@
-#These rules create symlinks for the serial ports used with the QtFTM and BBAcq programs.
+#These rules create symlinks for the serial ports used with BlackChirp.
+#If this file is modified, it needs to be copied to /etc/udev/rules.d/52-serial.rules as root
+#After copying the file, run the following two commands as root for changes to take effect:
+#     udevadm control --reload
+#     udevadm trigger
 
 #Valon synth
 SUBSYSTEMS=="usb", KERNEL=="ttyUSB[0-9]*", ATTRS{manufacturer}=="FTDI", ATTRS{idProduct}=="6001", ATTRS{serial}=="A502NJ4X", SYMLINK+="valonSynth", GROUP="dialout"
