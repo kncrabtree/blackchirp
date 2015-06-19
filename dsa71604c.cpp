@@ -387,10 +387,13 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
     QString slope = QString("RIS");
     if(config.slope == BlackChirp::FallingEdge)
         slope = QString("FALL");
-    resp = scopeQueryCmd(QString(":TRIGGER:A:EDGE:SOURCE CH%2;COUPLING DC;SLOPE %1;:TRIGGER:A:LEVEL 0.35;:TRIGGER:A:EDGE:SOURCE?;SLOPE?\n").arg(slope).arg(config.trigChannel));
+    QString trigCh = QString("AUX");
+    if(config.trigChannel > 0)
+        trigCh = QString("CH%1").arg(config.trigChannel);
+    resp = scopeQueryCmd(QString(":TRIGGER:A:EDGE:SOURCE %1;COUPLING DC;SLOPE %2;:TRIGGER:A:LEVEL 0.35;:TRIGGER:A:EDGE:SOURCE?;SLOPE?\n").arg(trigCh).arg(slope));
     if(!resp.isEmpty())
     {
-        if(!QString(resp).contains(QString("CH%1").arg(config.trigChannel),Qt::CaseInsensitive))
+        if(!QString(resp).contains(trigCh),Qt::CaseInsensitive)
         {
             emit logMessage(QString("Could not verify trigger channel. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
             exp.setHardwareFailed();

@@ -264,14 +264,17 @@
         </item>
         <item row="2" column="1">
          <widget class="QSpinBox" name="triggerChannelSpinBox">
+          <property name="specialValueText">
+           <string>Aux In</string>
+          </property>
           <property name="minimum">
-           <number>1</number>
+           <number>0</number>
           </property>
           <property name="maximum">
            <number>4</number>
           </property>
           <property name="value">
-           <number>4</number>
+           <number>0</number>
           </property>
          </widget>
         </item>
@@ -402,7 +405,7 @@
         <item row="3" column="1">
          <widget class="QDoubleSpinBox" name="triggerDelayDoubleSpinBox">
           <property name="suffix">
-           <string> </string>
+           <string/>
           </property>
           <property name="decimals">
            <number>3</number>

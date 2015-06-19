@@ -97,7 +97,10 @@ struct FtmwScopeConfig {
         out.insert(prefix+QString("FidChannel"),qMakePair(fidChannel,empty));
         out.insert(prefix+QString("VerticalScale"),qMakePair(QString::number(vScale,'f',3),QString("V/div")));
         out.insert(prefix+QString("VerticalOffset"),qMakePair(QString::number(vOffset,'f',3),QString("V")));
-        out.insert(prefix+QString("TriggerChannel"),qMakePair(trigChannel,empty));
+        scratch = QString("AuxIn");
+        if(trigChannel > 0)
+            scratch = QString::number(trigChannel);
+        out.insert(prefix+QString("TriggerChannel"),qMakePair(scratch,empty));
         out.insert(prefix+QString("TriggerDelay"),qMakePair(QString::number(trigDelay),QString("s")));
         slope == RisingEdge ? scratch = QString("RisingEdge") : scratch = QString("FallingEdge");
         out.insert(prefix+QString("TriggerSlope"),qMakePair(scratch,empty));
