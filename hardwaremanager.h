@@ -79,7 +79,7 @@ public slots:
      *
      * TODO: Consider generating an abort signal here
      */
-    void hardwareFailure(HardwareObject *obj, bool abort);
+    void hardwareFailure();
 
     void initializeExperiment(Experiment exp);
 
@@ -105,7 +105,7 @@ public slots:
     void setLifScopeConfig(const BlackChirp::LifScopeConfig c);
 
 private:
-    QHash<QString,bool> d_status;
+    int d_responseCount;
     void checkStatus();
 
     QList<QPair<HardwareObject*,QThread*> > d_hardwareList;

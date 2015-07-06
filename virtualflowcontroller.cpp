@@ -8,8 +8,6 @@ VirtualFlowController::VirtualFlowController(QObject *parent) : FlowController(p
     d_prettyName = QString("Virtual Flow Controller");
 
     p_comm = new VirtualInstrument(d_key,this);
-    connect(p_comm,&CommunicationProtocol::logMessage,this,&VirtualFlowController::logMessage);
-    connect(p_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
 }
 
 VirtualFlowController::~VirtualFlowController()

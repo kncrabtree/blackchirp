@@ -8,8 +8,6 @@ VirtualPulseGenerator::VirtualPulseGenerator(QObject *parent) : PulseGenerator(p
     d_prettyName = QString("Virtual Pulse Generator");
 
     p_comm = new VirtualInstrument(d_key,this);
-    connect(p_comm,&CommunicationProtocol::logMessage,this,&VirtualPulseGenerator::logMessage);
-    connect(p_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
 }
 
 VirtualPulseGenerator::~VirtualPulseGenerator()

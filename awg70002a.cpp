@@ -11,8 +11,8 @@ AWG70002a::AWG70002a(QObject *parent) :
     d_prettyName = QString("Arbitrary Waveform Generator AWG70002A");
 
     p_comm = new TcpInstrument(d_key,d_subKey,this);
-    connect(p_comm,&CommunicationProtocol::logMessage,this,&AWG70002a::logMessage);
-    connect(p_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
+    connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
+    connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
 
     p_comm->setReadOptions(1000,true,QByteArray("\n"));
 }

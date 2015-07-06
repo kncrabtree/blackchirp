@@ -60,17 +60,21 @@ public:
      * \brief Access function for pretty name.
      * \return Name for display on UI
      */
-	QString name() { return d_prettyName; }
+    QString name() const { return d_prettyName; }
 
     /*!
      * \brief Access function for key.
      * \return Name for use in the settings file
      */
-	QString key() { return d_key; }
+    QString key() const { return d_key; }
 
-    QString subKey() { return d_subKey; }
+    QString subKey() const { return d_subKey; }
 
-    bool isCritical() { return d_isCritical; }
+    bool isCritical() const { return d_isCritical; }
+
+    bool isConnected() const { return d_isConnected; }
+    void setConnected(bool connected) { d_isConnected = connected; }
+
 
     CommunicationProtocol::CommType type() { return p_comm->type(); }
 	
@@ -95,7 +99,7 @@ signals:
      * \param HardwareObject* This pointer
      * \param abort If an acquisition is underway, this will begin the abort routine if true
      */
-    void hardwareFailure(bool abort = true);
+    void hardwareFailure();
 
     void timeDataRead(const QList<QPair<QString,QVariant>>);
 	
@@ -130,9 +134,10 @@ protected:
     QString d_subKey; /*< Name to be used in settings for real hardware*/
 
     CommunicationProtocol *p_comm;
-
-
     bool d_isCritical;
+
+private:
+    bool d_isConnected;
 
 
 	

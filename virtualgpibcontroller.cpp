@@ -9,8 +9,6 @@ VirtualGpibController::VirtualGpibController(QObject *parent) : GpibController(p
     d_isCritical = false;
 
 	p_comm = new VirtualInstrument(d_key,this);
-	connect(p_comm,&CommunicationProtocol::logMessage,this,&VirtualGpibController::logMessage);
-	connect(p_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
 }
 
 VirtualGpibController::~VirtualGpibController()

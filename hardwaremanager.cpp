@@ -10,7 +10,7 @@
 #include "flowcontroller.h"
 #include "lifscope.h"
 
-HardwareManager::HardwareManager(QObject *parent) : QObject(parent)
+HardwareManager::HardwareManager(QObject *parent) : QObject(parent), d_responseCount(0)
 {
 
 }
@@ -163,7 +163,6 @@ void HardwareManager::initialize()
             emit logMessage(QString("%1: %2").arg(obj->name()).arg(msg),mc);
         });
         connect(obj,&HardwareObject::connected,[=](bool success, QString msg){ connectionResult(obj,success,msg); });
-        connect(obj,&HardwareObject::hardwareFailure,[=](bool abort){ hardwareFailure(obj,abort); });
         connect(obj,&HardwareObject::timeDataRead,this,&HardwareManager::timeData);
         connect(this,&HardwareManager::beginAcquisition,obj,&HardwareObject::beginAcquisition);
         connect(this,&HardwareManager::endAcquisition,obj,&HardwareObject::endAcquisition);
@@ -194,22 +193,26 @@ void HardwareManager::initialize()
 
 void HardwareManager::connectionResult(HardwareObject *obj, bool success, QString msg)
 {
+    if(d_responseCount < d_hardwareList.size())
+        d_responseCount++;
+
     if(success)
-        emit logMessage(obj->name().append(QString(" connected successfully.")));
+    {
+        connect(obj,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure,Qt::UniqueConnection);
+        emit logMessage(obj->name().append(QString(": Connected successfully.")));
+    }
     else
     {
-        emit logMessage(obj->name().append(QString(" connection failed!")),BlackChirp::LogError);
-        emit logMessage(msg,BlackChirp::LogError);
+        disconnect(obj,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure);
+        BlackChirp::LogMessageCode code = BlackChirp::LogError;
+        if(!obj->isCritical())
+            code = BlackChirp::LogWarning;
+        emit logMessage(obj->name().append(QString(": Connection failed!")),code);
+        if(!msg.isEmpty())
+            emit logMessage(msg,code);
     }
 
-    bool ok = success;
-    if(!obj->isCritical())
-        ok = true;
-
-    if(d_status.contains(obj->key()))
-        d_status[obj->key()] = ok;
-    else
-        d_status.insert(obj->key(),ok);
+    obj->setConnected(success);
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.setValue(QString("%1/connected").arg(obj->key()),success);
@@ -219,17 +222,21 @@ void HardwareManager::connectionResult(HardwareObject *obj, bool success, QStrin
     checkStatus();
 }
 
-void HardwareManager::hardwareFailure(HardwareObject *obj, bool abort)
+void HardwareManager::hardwareFailure()
 {
-    if(abort)
-        emit abortAcquisition();
+    HardwareObject *obj = dynamic_cast<HardwareObject*>(sender());
+    if(obj == nullptr)
+        return;
+
+    disconnect(obj,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure);
+    obj->setConnected(false);
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.setValue(QString("%1/connected").arg(obj->key()),false);
     s.sync();
 
-    if(obj->isCritical())
-        d_status[obj->key()] = false;
+   //TODO: implement re-test like in QtFTM?
+    emit abortAcquisition();
 
     checkStatus();
 }
@@ -268,8 +275,12 @@ void HardwareManager::testAll()
 {
     for(int i=0; i<d_hardwareList.size(); i++)
     {
-        d_status[d_hardwareList.at(i).first->key()] = false;
-        QMetaObject::invokeMethod(d_hardwareList.at(i).first,"testConnection");
+        HardwareObject *obj = d_hardwareList.at(i).first;
+        obj->setConnected(false);
+        if(obj->thread() == thread())
+            obj->testConnection();
+        else
+            QMetaObject::invokeMethod(obj,"testConnection");
     }
 
     checkStatus();
@@ -287,13 +298,24 @@ void HardwareManager::testObjectConnection(const QString type, const QString key
     if(obj == nullptr)
         emit testComplete(key,false,QString("Device not found!"));
     else
-        QMetaObject::invokeMethod(obj,"testConnection");
+    {
+        if(obj->thread() == thread())
+            obj->testConnection();
+        else
+            QMetaObject::invokeMethod(obj,"testConnection");
+    }
 }
 
 void HardwareManager::getTimeData()
 {
     for(int i=0; i<d_hardwareList.size(); i++)
-        QMetaObject::invokeMethod(d_hardwareList.at(i).first,"readTimeData");
+    {
+        HardwareObject *obj = d_hardwareList.at(i).first;
+        if(obj->thread() == thread())
+            obj->readTimeData();
+        else
+            QMetaObject::invokeMethod(obj,"readTimeData");
+    }
 }
 
 void HardwareManager::setLifParameters(double delay, double frequency)
@@ -412,13 +434,14 @@ void HardwareManager::setLifScopeConfig(const BlackChirp::LifScopeConfig c)
 void HardwareManager::checkStatus()
 {
     //gotta wait until all instruments have responded
-    if(d_status.size() < d_hardwareList.size())
+    if(d_responseCount < d_hardwareList.size())
         return;
 
     bool success = true;
-    foreach (bool b, d_status)
+    for(int i=0; i<d_hardwareList.size(); i++)
     {
-        if(!b)
+        HardwareObject *obj = d_hardwareList.at(i).first;
+        if(!obj->isConnected() && obj->isCritical())
             success = false;
     }
 

@@ -10,8 +10,8 @@ Dsa71604c::Dsa71604c(QObject *parent) :
     d_prettyName = QString("Ftmw Oscilloscope DSA71604C");
 
     p_comm = new TcpInstrument(d_key,d_subKey,this);
-    connect(p_comm,&CommunicationProtocol::logMessage,this,&Dsa71604c::logMessage);
-    connect(p_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
+    connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
+    connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
 
 }
 

@@ -12,8 +12,6 @@ VirtualFtmwScope::VirtualFtmwScope(QObject *parent) :
     d_prettyName = QString("Virtual FTMW Oscilloscope");
 
     p_comm = new VirtualInstrument(d_key,this);
-    connect(p_comm,&CommunicationProtocol::logMessage,this,&VirtualFtmwScope::logMessage);
-    connect(p_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
 }
 
 VirtualFtmwScope::~VirtualFtmwScope()

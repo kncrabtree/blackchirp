@@ -8,8 +8,6 @@ VirtualAwg::VirtualAwg(QObject *parent) : AWG(parent)
     d_prettyName = QString("Virtual Arbitrary Waveform Generator");
 
     p_comm = new VirtualInstrument(d_key,this);
-    connect(p_comm,&CommunicationProtocol::logMessage,this,&VirtualAwg::logMessage);
-    connect(p_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
 }
 
 VirtualAwg::~VirtualAwg()

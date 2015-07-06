@@ -9,8 +9,8 @@ Qc9528::Qc9528(QObject *parent) :
     d_prettyName = QString("Pulse Generator QC 9528");
 
     p_comm = new Rs232Instrument(d_key,d_subKey,this);
-    connect(p_comm,&CommunicationProtocol::logMessage,this,&Qc9528::logMessage);
-    connect(p_comm,&CommunicationProtocol::hardwareFailure,[=](){ emit hardwareFailure(); });
+    connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
+    connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
 
     p_comm->setReadOptions(100,true,QByteArray("\r\n"));
 }
