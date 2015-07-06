@@ -12,10 +12,18 @@ VirtualLifScope::VirtualLifScope(QObject *parent) :
 
     p_comm = new VirtualInstrument(d_key,this);
 
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
+    d_config.refEnabled = s.value(QString("refEnabled"),false).toBool();
+    s.setValue(QString("refEnabled"),d_config.refEnabled);
+    s.endGroup();
+    s.endGroup();
+    s.sync();
+
     setLifVScale(0.02);
     setRefVScale(0.02);
     setHorizontalConfig(1e9,1000);
-    d_config.refEnabled = true;
 }
 
 VirtualLifScope::~VirtualLifScope()
@@ -154,5 +162,10 @@ void VirtualLifScope::setRefEnabled(bool en)
     d_config.refEnabled = en;
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.setValue(QString("%1/refEnabled").arg(d_key),en);
+    s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
+    s.setValue(QString("refEnabled"),en);
+    s.endGroup();
+    s.endGroup();
+    s.sync();
 }

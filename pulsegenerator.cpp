@@ -1,7 +1,7 @@
 #include "pulsegenerator.h"
 
 PulseGenerator::PulseGenerator(QObject *parent) :
-   HardwareObject(parent)
+   HardwareObject(parent), d_minWidth(0.010), d_maxWidth(100000.0), d_minDelay(0.0), d_maxDelay(100000.0)
 {
     d_key = QString("pGen");
 }

@@ -15,14 +15,16 @@ Valon5009::Valon5009(QObject *parent) :
     p_comm->setReadOptions(500,true,QByteArray("\n\r"));
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-
+    s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
     //allow hardware limits to be made in settings
-    d_minFreq = s.value(QString("%1/%2/minFreq").arg(d_key).arg(d_subKey),500.0).toDouble();
-    d_maxFreq = s.value(QString("%1/%2/maxFreq").arg(d_key).arg(d_subKey),6000.0).toDouble();
-
-    //these settings are used elsewhere in the program
-    s.setValue(QString("%1/minFreq"),d_minFreq);
-    s.setValue(QString("%1/maxFreq"),d_maxFreq);
+    d_minFreq = s.value(QString("minFreq"),500.0).toDouble();
+    d_maxFreq = s.value(QString("maxFreq"),6000.0).toDouble();
+    //write the settings if they're not there
+    s.setValue(QString("minFreq"),d_minFreq);
+    s.setValue(QString("maxFreq"),d_maxFreq);
+    s.endGroup();
+    s.endGroup();
 }
 
 

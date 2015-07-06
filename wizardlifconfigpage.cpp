@@ -106,9 +106,11 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_laserSingle->setToolTip(QString("If checked, the LIF laser frequency will not change during the scan, and will remain at the value in the start box."));
     laserFl->addRow(QString("Single Point"),p_laserSingle);
 
+    s.beginGroup(QString("lifLaser"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
     p_laserStart = new QDoubleSpinBox(this);
-    p_laserStart->setRange(s.value(QString("lifLaser/minFreq"),10000.0).toDouble(),
-                           s.value(QString("lifLaser/maxFreq"),100000.0).toDouble());
+    p_laserStart->setRange(s.value(QString("minFreq"),10000.0).toDouble(),
+                           s.value(QString("maxFreq"),100000.0).toDouble());
     p_laserStart->setDecimals(2);
     p_laserStart->setValue(s.value(QString("lifConfig/laserStart"),20000.0).toDouble());
     p_laserStart->setSuffix(QString::fromUtf16(u" cm⁻¹"));
@@ -116,15 +118,18 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_laserStart->setToolTip(QString("Starting frequency for LIF measurement. For a single frequency scan, this will be the value used."));
     laserFl->addRow(QString("Start"),p_laserStart);
 
+
     p_laserEnd = new QDoubleSpinBox(this);
-    p_laserEnd->setRange(s.value(QString("lifLaser/minFreq"),10000.0).toDouble(),
-                         s.value(QString("lifLaser/maxFreq"),100000.0).toDouble());
+    p_laserEnd->setRange(s.value(QString("minFreq"),10000.0).toDouble(),
+                         s.value(QString("maxFreq"),100000.0).toDouble());
     p_laserEnd->setDecimals(2);
     p_laserEnd->setValue(s.value(QString("lifConfig/laserEnd"),20100.0).toDouble());
     p_laserEnd->setSuffix(QString::fromUtf16(u" cm⁻¹"));
     p_laserEnd->setSingleStep(100.0);
     p_laserEnd->setToolTip(QString("Ending laser frequency for LIF measurement. May be greater or less than starting frequency, and need not be an integral number of steps from start.\nIf |end-start| < step, the frequency will remain at the starting value as if the single point box were checked."));
     laserFl->addRow(QString("End"),p_laserEnd);
+    s.endGroup();
+    s.endGroup();
 
     p_laserStep = new QDoubleSpinBox(this);
     p_laserStep->setRange(0.01,100.0);

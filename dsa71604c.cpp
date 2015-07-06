@@ -13,6 +13,14 @@ Dsa71604c::Dsa71604c(QObject *parent) :
     connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
     connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
 
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
+    double bandwidth = s.value(QString("bandwidth"),16000.0).toDouble();
+    s.setValue(QString("bandwidth"),bandwidth);
+    s.endGroup();
+    s.endGroup();
+
 }
 
 Dsa71604c::~Dsa71604c()

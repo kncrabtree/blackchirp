@@ -20,6 +20,7 @@ bool VirtualFlowController::testConnection()
 {
     p_readTimer->stop();
     readAll();
+    updateInterval();
     p_readTimer->start();
 
     emit connected();
@@ -28,8 +29,10 @@ bool VirtualFlowController::testConnection()
 
 void VirtualFlowController::initialize()
 {
+
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
 
     s.beginReadArray(QString("channels"));
     for(int i=0;i<BC_FLOW_NUMCHANNELS;i++)
@@ -38,6 +41,7 @@ void VirtualFlowController::initialize()
         d_config.add(0.0,s.value(QString("name"),QString("")).toString());
     }
     s.endArray();
+    s.endGroup();
     s.endGroup();
 
     testConnection();

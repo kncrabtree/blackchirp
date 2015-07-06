@@ -14,6 +14,21 @@ AWG70002a::AWG70002a(QObject *parent) :
     connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
     connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
 
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
+    double awgRate = s.value(QString("sampleRate"),16e9).toDouble();
+    double awgMaxSamples = s.value(QString("maxSamples"),2e9).toDouble();
+    double awgMinFreq = s.value(QString("minFreq"),100.0).toDouble();
+    double awgMaxFreq = s.value(QString("maxFreq"),6250.0).toDouble();
+    s.setValue(QString("sampleRate"),awgRate);
+    s.setValue(QString("maxSmaples"),awgMaxSamples);
+    s.setValue(QString("minFreq"),awgMinFreq);
+    s.setValue(QString("maxFreq"),awgMaxFreq);
+    s.endGroup();
+    s.endGroup();
+    s.sync();
+
     p_comm->setReadOptions(1000,true,QByteArray("\n"));
 }
 

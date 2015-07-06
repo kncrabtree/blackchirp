@@ -14,7 +14,9 @@ ChirpConfig::ChirpConfig() : data(new ChirpConfigData)
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
     s.beginGroup(QString("synthesizer"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
     data->valonTxFreq = s.value(QString("txFreq"),5760.0).toDouble();
+    s.endGroup();
     s.endGroup();
 
     s.beginGroup(QString("chirpConfig"));
@@ -356,10 +358,14 @@ bool ChirpConfig::validate()
     double minPostProt = s.value(QString("minPostChirpProtection"),0.100).toDouble();
     s.endGroup();
 
-    double awgRate = s.value(QString("awg/sampleRate"),16e9).toDouble();
-    double awgMaxSamples = s.value(QString("awg/maxSamples"),2e9).toDouble();
-    double awgMinFreq = s.value(QString("awg/minFreq"),100.0).toDouble();
-    double awgMaxFreq = s.value(QString("awg/maxFreq"),6250.0).toDouble();
+    s.beginGroup(QString("awg"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    double awgRate = s.value(QString("sampleRate"),16e9).toDouble();
+    double awgMaxSamples = s.value(QString("maxSamples"),2e9).toDouble();
+    double awgMinFreq = s.value(QString("minFreq"),100.0).toDouble();
+    double awgMaxFreq = s.value(QString("maxFreq"),6250.0).toDouble();
+    s.endGroup();
+    s.endGroup();
 
     data->sampleRateSperS = awgRate;
     data->sampleRateSperUS = awgRate/1e6;

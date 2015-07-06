@@ -5,12 +5,7 @@ FlowController::FlowController(QObject *parent) : HardwareObject(parent), d_next
     d_key = QString("flowController");
 
     p_readTimer = new QTimer(this);
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    int interval = s.value(QString("pollIntervalMs"),333).toInt();
-    s.endGroup();
-    p_readTimer->setInterval(interval);
-    connect(p_readTimer,&QTimer::timeout,this,&FlowController::readNext);
+
 }
 
 FlowController::~FlowController()
@@ -27,11 +22,13 @@ void FlowController::setChannelName(const int ch, const QString name)
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
 
     s.beginWriteArray(QString("channels"));
     s.setArrayIndex(ch);
     s.setValue(QString("name"),name);
     s.endArray();
+    s.endGroup();
     s.endGroup();
 }
 
@@ -39,7 +36,9 @@ void FlowController::updateInterval()
 {
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
     int interval = s.value(QString("pollIntervalMs"),333).toInt();
+    s.endGroup();
     s.endGroup();
     p_readTimer->setInterval(interval);
 }

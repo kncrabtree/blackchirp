@@ -8,6 +8,24 @@ VirtualPulseGenerator::VirtualPulseGenerator(QObject *parent) : PulseGenerator(p
     d_prettyName = QString("Virtual Pulse Generator");
 
     p_comm = new VirtualInstrument(d_key,this);
+
+    QSettings s(QSettings::SystemScope, QApplication::organizationName(), QApplication::applicationName());
+    s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
+
+    d_minWidth = s.value(QString("minWidth"),0.004).toDouble();
+    d_maxWidth = s.value(QString("maxWidth"),100000.0).toDouble();
+    d_minDelay = s.value(QString("minDelay"),0.0).toDouble();
+    d_maxDelay = s.value(QString("maxDelay"),100000.0).toDouble();
+
+    s.setValue(QString("minWidth"),d_minWidth);
+    s.setValue(QString("maxWidth"),d_maxWidth);
+    s.setValue(QString("minDelay"),d_minDelay);
+    s.setValue(QString("maxDelay"),d_maxDelay);
+
+    s.endGroup();
+    s.endGroup();
+    s.sync();
 }
 
 VirtualPulseGenerator::~VirtualPulseGenerator()

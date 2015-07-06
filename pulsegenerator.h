@@ -34,6 +34,11 @@ signals:
 protected:
     PulseGenConfig d_config;
     virtual void readAll();
+
+    double d_minWidth;
+    double d_maxWidth;
+    double d_minDelay;
+    double d_maxDelay;
 };
 
 

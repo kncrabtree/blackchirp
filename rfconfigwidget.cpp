@@ -41,9 +41,12 @@ void RfConfigWidget::loadFromSettings()
 {
     blockSignals(true);
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-
-    double valonMin = s.value(QString("synthesizer/minFreq"),500.0).toDouble();
-    double valonMax = s.value(QString("synthesizer/maxFreq"),6000.0).toDouble();
+    s.beginGroup(QString("synthesizer"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    double valonMin = s.value(QString("minFreq"),500.0).toDouble();
+    double valonMax = s.value(QString("maxFreq"),6000.0).toDouble();
+    s.endGroup();
+    s.endGroup();
 
     s.beginGroup(QString("chirpConfig"));
 
@@ -85,12 +88,22 @@ void RfConfigWidget::rxFreqUpdate(const double d)
 void RfConfigWidget::validate()
 {
     blockSignals(true);
+
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
+    s.beginGroup(QString("synthesizer"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
     double valonMin = s.value(QString("synthesizer/minFreq"),500.0).toDouble();
     double valonMax = s.value(QString("synthesizer/maxFreq"),6000.0).toDouble();
-    double awgMin = s.value(QString("awg/minFreq"),100.0).toDouble();
-    double awgMax = s.value(QString("awg/maxFreq"),6250.0).toDouble();
+    s.endGroup();
+    s.endGroup();
+
+    s.beginGroup(QString("awg"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    double awgMin = s.value(QString("minFreq"),100.0).toDouble();
+    double awgMax = s.value(QString("maxFreq"),6250.0).toDouble();
+    s.endGroup();
+    s.endGroup();
 
     d_txSidebandSign = sideband(ui->txSidebandComboBox->currentIndex());
     d_rxSidebandSign = sideband(ui->rxSidebandComboBox->currentIndex());
@@ -123,7 +136,11 @@ void RfConfigWidget::validate()
     s.setValue(QString("chirpConfig/chirpMax"),chirpMax);
     s.sync();
 
-    double bandwidth = s.value(QString("ftmwScope/bandwidth"),16000.0).toDouble();
+    s.beginGroup(QString("ftmwScope"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    double bandwidth = s.value(QString("bandwidth"),16000.0).toDouble();
+    s.endGroup();
+    s.endGroup();
 
     double ftMin = qMin(ui->chirpLOFrequencyDoubleSpinBox->value() + d_rxSidebandSign*bandwidth,ui->chirpLOFrequencyDoubleSpinBox->value());
     double ftMax = qMax(ui->chirpLOFrequencyDoubleSpinBox->value() + d_rxSidebandSign*bandwidth,ui->chirpLOFrequencyDoubleSpinBox->value());
