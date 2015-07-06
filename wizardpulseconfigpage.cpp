@@ -4,7 +4,6 @@
 #include <QMessageBox>
 
 #include "pulseconfigwidget.h"
-#include "pulsegenerator.h"
 #include "experimentwizard.h"
 
 WizardPulseConfigPage::WizardPulseConfigPage(QWidget *parent) :

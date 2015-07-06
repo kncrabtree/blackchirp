@@ -8,14 +8,29 @@ QT       += core gui network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets serialport
 
-#Enable CUDA GPU support
-CONFIG += gpu-cuda
-
 TARGET = blackchirp
 TEMPLATE = app
 
+CONFIG += c++11
+
+#Enable CUDA GPU support
+CONFIG += gpu-cuda
+
+#Run with virtual hardware
+CONFIG += nohardware
 
 SOURCES += main.cpp
+
+
+include(acquisition.pri)
+include(gui.pri)
+include(data.pri)
+include(hardware.pri)
+include(wizard.pri)
+
+RESOURCES += resources.qrc
+
+unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
 
 gpu-cuda {
 	DEFINES += BC_CUDA
@@ -60,44 +75,72 @@ gpu-cuda {
 	}
 }
 
-include(acquisition.pri)
-include(gui.pri)
-include(data.pri)
-include(hardware.pri)
-include(wizard.pri)
 
-RESOURCES += resources.qrc
-
-unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
-
+nohardware {
+#The values here should not be modified
+FTMWSCOPE=0
+AWG=0
+SYNTH=0
+PGEN=0
+PGEN_GAS=0
+PGEN_AWG=1
+PGEN_XMER=2
+PGEN_LIF=3
+PGEN_CHANNELS=8
+FC=0
+FC_CHANNELS=4
+LIFSCOPE=0
+} else {
 #------------------------------------------------
 # The following defines select hardware implementations.
-# Uncomment the appropriate lines to simulate hardware.
 # -----------------------------------------------
 
 # FTMW Oscilloscope (0 = virtual, 1 = DSA71604C)
-DEFINES += BC_FTMWSCOPE=1
-#Uncomment if BC_FTMWSCOPE=0
-#RESOURCES += virtualdata.qrc
+FTMWSCOPE=1
 
 #AWG (0 = virtual, 1 = AWG 70002A)
-DEFINES += BC_AWG=1
+AWG=1
 
 #Synth (0 = virtual, 1 = Valon 5009)
-DEFINES += BC_SYNTH=0
+SYNTH=0
 
 #Pulse generator (0 = virtual, 1 = Quantum Composers 9528+)
-DEFINES += BC_PGEN=1
+PGEN=1
+#pulse generator channel definitions (0 = A, 1 = B, etc...)
+PGEN_GAS=0
+PGEN_AWG=1
+PGEN_XMER=2
+PGEN_LIF=3
+#num channels
+PGEN_CHANNELS=8
 
 #Flow Controller (0 = virtual, 1 = MKS 647C)
-DEFINES += BC_FLOWCONTROLLER=0
+FC=0
+#num channels
+FC_CHANNELS=4
 
 #LIF Oscilloscope (0 = virtual, 1 = DPO3012)
-DEFINES += BC_LIFSCOPE=0
+LIFSCOPE=0
+}
+
+
+#------------------------------------------------
+# Do not modify the following
+# -----------------------------------------------
+
+DEFINES += BC_FTMWSCOPE=$$FTMWSCOPE
+DEFINES += BC_AWG=$$AWG
+DEFINES += BC_SYNTH=$$SYNTH
+DEFINES += BC_PGEN=$$PGEN BC_PGEN_GASCHANNEL=$$PGEN_GAS BC_PGEN_AWGCHANNEL=$$PGEN_AWG BC_PGEN_XMERCHANNEL=$$PGEN_XMER BC_PGEN_LIFCHANNEL=$$PGEN_LIF BC_PGEN_NUMCHANNELS=$$PGEN_CHANNELS
+DEFINES += BC_FLOWCONTROLLER=$$FC  BC_FLOW_NUMCHANNELS=$$FC_CHANNELS
+DEFINES += BC_LIFSCOPE=$$LIFSCOPE
 
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O3
-QMAKE_CXXFLAGS += -std=c++11
+
+equals(FTMWSCOPE,0) {
+RESOURCES += virtualdata.qrc
+}
 
 DISTFILES += \
     52-serial.rules

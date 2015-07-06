@@ -18,8 +18,6 @@
 #include "acquisitionmanager.h"
 #include "batchmanager.h"
 #include "led.h"
-#include "flowcontroller.h"
-
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
