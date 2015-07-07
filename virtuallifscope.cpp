@@ -49,6 +49,8 @@ bool VirtualLifScope::testConnection()
 
 void VirtualLifScope::initialize()
 {
+    ///NOTE: consider moving ranges and range-checking to base class from constructor
+
     testConnection();
     QTimer *test = new QTimer(this);
     test->setInterval(200);
