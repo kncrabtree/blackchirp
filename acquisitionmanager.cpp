@@ -136,14 +136,12 @@ void AcquisitionManager::getTimeData()
         emit timeDataSignal();
 
         d_currentExperiment.addTimeStamp();
-        emit logMessage(QString("Timestamp: %1").arg(QDateTime::currentDateTime().toString()));
 
         if(d_currentExperiment.ftmwConfig().isEnabled())
         {
             QList<QPair<QString,QVariant>> l { qMakePair(QString("ftmwShots"),d_currentExperiment.ftmwConfig().completedShots()) };
             d_currentExperiment.addTimeData(l);
             emit timeData(l);
-            emit logMessage(QString("ftmwShots: %1").arg(d_currentExperiment.ftmwConfig().completedShots()));
         }
     }
 }
