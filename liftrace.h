@@ -17,7 +17,7 @@ class LifTrace
 {
 public:
     LifTrace();
-    explicit LifTrace(const BlackChirp::LifScopeConfig c, const QByteArray b);
+    explicit LifTrace(const BlackChirp::LifScopeConfig &c, const QByteArray b);
     LifTrace(const LifTrace &);
     LifTrace &operator=(const LifTrace &);
     ~LifTrace();
