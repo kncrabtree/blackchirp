@@ -29,6 +29,7 @@ signals:
 public slots:
     void scopeConfigChanged(const BlackChirp::LifScopeConfig c);
     void checkLifColors();
+    void updateHardwareLimits();
 
 private:
     Ui::LifControlWidget *ui;

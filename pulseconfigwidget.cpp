@@ -125,6 +125,8 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
 
     connect(ui->repRateBox,vc,this,&PulseConfigWidget::changeRepRate);
 
+    updateHardwareLimits();
+
     s.endArray();
     s.endGroup();
     s.endGroup();
@@ -306,4 +308,38 @@ void PulseConfigWidget::newRepRate(double r)
     ui->repRateBox->setValue(r);
     ui->repRateBox->blockSignals(false);
     ui->pulsePlot->newRepRate(r);
+}
+
+void PulseConfigWidget::updateHardwareLimits()
+{
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("pGen"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    double minWidth = s.value(QString("minWidth"),0.01).toDouble();
+    double maxWidth = s.value(QString("maxWidth"),1e5).toDouble();
+    double minDelay = s.value(QString("minDelay"),0.0).toDouble();
+    double maxDelay = s.value(QString("maxDelay"),1e5).toDouble();
+    s.endGroup();
+    s.endGroup();
+
+    for(int i=0; i<d_widgetList.size(); i++)
+    {
+        QDoubleSpinBox *wid = d_widgetList.at(i).widthBox;
+        QDoubleSpinBox *del = d_widgetList.at(i).delayBox;
+
+        if(del != nullptr)
+        {
+            del->blockSignals(true);
+            del->setRange(minDelay,maxDelay);
+            del->blockSignals(false);
+        }
+
+        if(wid != nullptr)
+        {
+            wid->blockSignals(true);
+            wid->setRange(minWidth,maxWidth);
+            wid->blockSignals(false);
+        }
+    }
+
 }

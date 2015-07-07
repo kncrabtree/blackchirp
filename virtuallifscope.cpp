@@ -16,6 +16,14 @@ VirtualLifScope::VirtualLifScope(QObject *parent) :
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
     d_config.refEnabled = s.value(QString("refEnabled"),false).toBool();
+    double minVS = s.value(QString("minVScale"),0.01).toDouble();
+    double maxVS = s.value(QString("maxVScale"),5.0).toDouble();
+    double minSamples = s.value(QString("minSamples"),1000).toInt();
+    double maxSamples = s.value(QString("maxSamples"),10000).toInt();
+    s.setValue(QString("minVScale"),minVS);
+    s.setValue(QString("maxVScale"),maxVS);
+    s.setValue(QString("minSamples"),minSamples);
+    s.setValue(QString("maxSamples"),maxSamples);
     s.setValue(QString("refEnabled"),d_config.refEnabled);
     s.endGroup();
     s.endGroup();

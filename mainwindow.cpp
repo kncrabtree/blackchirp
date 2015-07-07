@@ -66,6 +66,8 @@ MainWindow::MainWindow(QWidget *parent) :
     p_hwm = new HardwareManager();
     connect(p_hwm,&HardwareManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_hwm,&HardwareManager::statusMessage,statusLabel,&QLabel::setText);
+    connect(p_hwm,&HardwareManager::hwInitializationComplete,ui->pulseConfigWidget,&PulseConfigWidget::updateHardwareLimits);
+    connect(p_hwm,&HardwareManager::hwInitializationComplete,ui->lifControlWidget,&LifControlWidget::updateHardwareLimits);
     connect(p_hwm,&HardwareManager::experimentInitialized,this,&MainWindow::experimentInitialized);
     connect(p_hwm,&HardwareManager::allHardwareConnected,this,&MainWindow::hardwareInitialized);
     connect(p_hwm,&HardwareManager::valonTxFreqRead,ui->valonTXDoubleSpinBox,&QDoubleSpinBox::setValue);

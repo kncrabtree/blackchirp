@@ -189,6 +189,8 @@ void HardwareManager::initialize()
                 thread->start();
         }
     }
+
+    emit hwInitializationComplete();
 }
 
 void HardwareManager::connectionResult(HardwareObject *obj, bool success, QString msg)

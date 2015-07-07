@@ -27,6 +27,8 @@ public:
 signals:
     void logMessage(const QString, const BlackChirp::LogMessageCode = BlackChirp::LogNormal);
     void statusMessage(const QString);
+    void hwInitializationComplete();
+
     void allHardwareConnected(bool);
     /*!
      * \brief Emitted when a connection is being tested from the communication dialog

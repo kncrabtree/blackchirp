@@ -12,13 +12,15 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
+    updateHardwareLimits();
+
     ui->lIFVScaleDoubleSpinBox->setValue(s.value(QString("lifConfig/lifVScale"),0.02).toDouble());
     ui->samplesSpinBox->setValue(s.value(QString("lifConfig/samples"),1000).toInt());
     ui->sampleRateSpinBox->setValue(static_cast<int>(round(s.value(QString("lifConfig/sampleRate"),1e9).toDouble()/1e6)));
     ui->refEnabledCheckBox->setChecked(s.value(QString("lifConfig/refEnabled"),false).toBool());
     ui->refVScaleDoubleSpinBox->setValue(s.value(QString("lifConfig/refVScale"),0.02).toDouble());
-
     ui->refVScaleDoubleSpinBox->setEnabled(ui->refEnabledCheckBox->isChecked());
+
 
     //connect signals
     auto sig = [=](){ emit updateScope(toConfig()); };
@@ -93,6 +95,31 @@ void LifControlWidget::scopeConfigChanged(const BlackChirp::LifScopeConfig c)
 void LifControlWidget::checkLifColors()
 {
     ui->lifPlot->checkColors();
+}
+
+void LifControlWidget::updateHardwareLimits()
+{
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("lifScope"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    double minVS = s.value(QString("minVScale"),0.01).toDouble();
+    double maxVS = s.value(QString("maxVScale"),5.0).toDouble();
+    double minSamples = s.value(QString("minSamples"),1000).toInt();
+    double maxSamples = s.value(QString("maxSamples"),10000).toInt();
+    s.endGroup();
+    s.endGroup();
+
+    ui->lIFVScaleDoubleSpinBox->blockSignals(true);
+    ui->lIFVScaleDoubleSpinBox->setRange(minVS,maxVS);
+    ui->lIFVScaleDoubleSpinBox->blockSignals(false);
+
+    ui->samplesSpinBox->blockSignals(true);
+    ui->samplesSpinBox->setRange(minSamples,maxSamples);
+    ui->samplesSpinBox->blockSignals(false);
+
+    ui->refVScaleDoubleSpinBox->blockSignals(true);
+    ui->refVScaleDoubleSpinBox->setRange(minVS,maxVS);
+    ui->refVScaleDoubleSpinBox->blockSignals(false);
 }
 
 BlackChirp::LifScopeConfig LifControlWidget::toConfig() const
