@@ -16,7 +16,7 @@ public:
 
 protected:
 	virtual void readAddress() =0;
-	virtual void setAddress(int a) =0;
+    virtual bool setAddress(int a) =0;
 
 	int d_currentAddress;
 };
