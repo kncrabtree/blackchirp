@@ -9,7 +9,8 @@ HEADERS += \
     $$PWD/virtualgpibcontroller.h \
     $$PWD/awg70002a.h \
     $$PWD/qc9528.h \
-    $$PWD/valon5009.h
+    $$PWD/valon5009.h \
+    $$PWD/mks647c.h
 
 SOURCES += \
     $$PWD/virtualftmwscope.cpp \
@@ -22,4 +23,5 @@ SOURCES += \
     $$PWD/virtualgpibcontroller.cpp \
     $$PWD/awg70002a.cpp \
     $$PWD/qc9528.cpp \
-    $$PWD/valon5009.cpp
+    $$PWD/valon5009.cpp \
+    $$PWD/mks647c.cpp

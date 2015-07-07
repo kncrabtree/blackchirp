@@ -46,11 +46,13 @@ void VirtualGpibController::readPointData()
 {
 }
 
-void VirtualGpibController::readAddress()
+bool VirtualGpibController::readAddress()
 {
+    return true;
 }
 
-void VirtualGpibController::setAddress(int a)
+bool VirtualGpibController::setAddress(int a)
 {
 	d_currentAddress = a;
+    return true;
 }

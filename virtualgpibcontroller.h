@@ -21,8 +21,8 @@ public slots:
 
 	// GpibController interface
 protected:
-	void readAddress();
-	void setAddress(int a);
+    bool readAddress();
+    bool setAddress(int a);
 };
 
 #endif // VIRTUALGPIBCONTROLLER_H
