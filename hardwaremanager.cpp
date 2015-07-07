@@ -89,6 +89,9 @@ void HardwareManager::initialize()
         s.setValue(QString("subKey"),obj->subKey());
         s.setValue(QString("prettyName"),obj->name());
         s.setValue(QString("critical"),obj->isCritical());
+        if(obj->type() == CommunicationProtocol::Virtual)
+            emit logMessage(QString("%1 is a virtual instrument. Be cautious about taking real measurements!")
+                            .arg(obj->name()),BlackChirp::LogWarning);
 	}
 	s.endArray();
 	s.endGroup();

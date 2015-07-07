@@ -463,7 +463,7 @@ void MainWindow::updatePressureControl(bool en)
 
 void MainWindow::setLogIcon(BlackChirp::LogMessageCode c)
 {
-    if(ui->tabWidget->currentWidget() == ui->logTab)
+    if(ui->tabWidget->currentWidget() != ui->logTab)
     {
         switch(c) {
         case BlackChirp::LogWarning:
