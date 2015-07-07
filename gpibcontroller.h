@@ -15,7 +15,7 @@ public:
 	QByteArray queryCmd(int address, QString cmd);
 
 protected:
-	virtual void readAddress() =0;
+    virtual bool readAddress() =0;
     virtual bool setAddress(int a) =0;
 
 	int d_currentAddress;
