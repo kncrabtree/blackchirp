@@ -35,9 +35,11 @@ void LogHandler::logMessage(const QString text, const BlackChirp::LogMessageCode
 	{
     case BlackChirp::LogWarning:
 		out.append(QString("<span style=\"font-weight:bold\">Warning: %1</span>").arg(text));
+        emit iconUpdate(type);
 		break;
     case BlackChirp::LogError:
 		out.append(QString("<span style=\"font-weight:bold;color:red\">Error: %1</span>").arg(text));
+        emit iconUpdate(type);
 		break;
     case BlackChirp::LogHighlight:
 		out.append(QString("<span style=\"font-weight:bold;color:green\">%1</span>").arg(text));

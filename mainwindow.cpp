@@ -21,7 +21,7 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow), d_hardwareConnected(false), d_state(Idle)
+    ui(new Ui::MainWindow), d_hardwareConnected(false), d_state(Idle), d_logCount(0), d_logIcon(BlackChirp::LogNormal)
 {
     ui->setupUi(this);
 
@@ -37,6 +37,25 @@ MainWindow::MainWindow(QWidget *parent) :
 
     p_lh = new LogHandler();
     connect(p_lh,&LogHandler::sendLogMessage,ui->log,&QTextEdit::append);
+    connect(p_lh,&LogHandler::iconUpdate,this,&MainWindow::setLogIcon);
+    connect(ui->tabWidget,&QTabWidget::currentChanged,[=](int i) {
+        if(i == ui->tabWidget->indexOf(ui->logTab))
+        {
+            setLogIcon(BlackChirp::LogNormal);
+            if(d_logCount > 0)
+            {
+                d_logCount = 0;
+                ui->tabWidget->setTabText(ui->tabWidget->indexOf(ui->logTab),QString("Log"));
+            }
+        }
+    });
+    connect(p_lh,&LogHandler::sendLogMessage,[=](){
+        if(ui->tabWidget->currentWidget() != ui->logTab)
+        {
+            d_logCount++;
+            ui->tabWidget->setTabText(ui->tabWidget->indexOf(ui->logTab),QString("Log (%1)").arg(d_logCount));
+        }
+    });
 
     QGridLayout *gl = new QGridLayout;
     for(int i=0; i<BC_PGEN_NUMCHANNELS; i++)
@@ -440,6 +459,35 @@ void MainWindow::updatePressureControl(bool en)
 {
     ui->pressureControlButton->setChecked(en);
     ui->pressureLed->setState(en);
+}
+
+void MainWindow::setLogIcon(BlackChirp::LogMessageCode c)
+{
+    if(ui->tabWidget->currentWidget() == ui->logTab)
+    {
+        switch(c) {
+        case BlackChirp::LogWarning:
+            if(d_logIcon != BlackChirp::LogError)
+            {
+                ui->tabWidget->setTabIcon(ui->tabWidget->indexOf(ui->logTab),QIcon(QString(":/icons/warning.png")));
+                d_logIcon = c;
+            }
+            break;
+        case BlackChirp::LogError:
+            ui->tabWidget->setTabIcon(ui->tabWidget->indexOf(ui->logTab),QIcon(QString(":/icons/error.png")));
+            d_logIcon = c;
+            break;
+        default:
+            d_logIcon = c;
+            ui->tabWidget->setTabIcon(ui->tabWidget->indexOf(ui->logTab),QIcon());
+            break;
+        }
+    }
+    else
+    {
+        d_logIcon = BlackChirp::LogNormal;
+        ui->tabWidget->setTabIcon(ui->tabWidget->indexOf(ui->logTab),QIcon());
+    }
 }
 
 void MainWindow::configureUi(MainWindow::ProgramState s)

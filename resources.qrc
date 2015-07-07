@@ -18,5 +18,7 @@
         <file>icons/pause.png</file>
         <file>icons/experiment.png</file>
         <file>icons/rf.png</file>
+        <file>icons/error.png</file>
+        <file>icons/warning.png</file>
     </qresource>
 </RCC>

@@ -66,6 +66,7 @@ public slots:
     void updateFlowSetpoint(int ch, double val);
     void updatePressureSetpoint(double val);
     void updatePressureControl(bool en);
+    void setLogIcon(BlackChirp::LogMessageCode c);
 
 private:
     Ui::MainWindow *ui;
@@ -84,6 +85,8 @@ private:
     FlowConfig getFlowConfig();
 
     ProgramState d_state;
+    int d_logCount;
+    BlackChirp::LogMessageCode d_logIcon;
 
 protected:
     void closeEvent(QCloseEvent *ev);
