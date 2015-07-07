@@ -15,13 +15,17 @@ signals:
     void rxFreqRead(double);
 
 public slots:
+    virtual void initialize();
     virtual double readTxFreq() =0;
     virtual double readRxFreq() =0;
-    virtual double setTxFreq(const double f) =0;
-    virtual double setRxFreq(const double f) =0;
+    double setTxFreq(const double f);
+    double setRxFreq(const double f);
+    virtual double setSynthTxFreq(const double f) =0;
+    virtual double setSynthRxFreq(const double f) =0;
 
 protected:
     double d_txFreq, d_rxFreq;
+    double d_minFreq, d_maxFreq;
 };
 
 #ifdef BC_SYNTH

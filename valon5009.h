@@ -24,13 +24,16 @@ public slots:
 public slots:
     double readTxFreq();
     double readRxFreq();
-    double setTxFreq(const double f);
-    double setRxFreq(const double f);
+    double setSynthTxFreq(const double f);
+    double setSynthRxFreq(const double f);
 
 private:
     bool valonWriteCmd(QString cmd);
     QByteArray valonQueryCmd(QString cmd);
     double d_minFreq, d_maxFreq;
+
+    bool setSynth(int channel, double f);
+    bool readSynth(int channel);
 };
 
 #endif // VALON5009_H

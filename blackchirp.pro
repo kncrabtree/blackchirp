@@ -17,7 +17,7 @@ CONFIG += c++11
 CONFIG += gpu-cuda
 
 #Run with virtual hardware
-CONFIG += nohardware
+#CONFIG += nohardware
 
 SOURCES += main.cpp
 
@@ -96,16 +96,16 @@ LIFSCOPE=0
 # -----------------------------------------------
 
 # FTMW Oscilloscope (0 = virtual, 1 = DSA71604C)
-FTMWSCOPE=1
+FTMWSCOPE=0
 
 #AWG (0 = virtual, 1 = AWG 70002A)
-AWG=1
+AWG=0
 
 #Synth (0 = virtual, 1 = Valon 5009)
-SYNTH=0
+SYNTH=1
 
 #Pulse generator (0 = virtual, 1 = Quantum Composers 9528+)
-PGEN=1
+PGEN=0
 #pulse generator channel definitions (0 = A, 1 = B, etc...)
 PGEN_GAS=0
 PGEN_AWG=1

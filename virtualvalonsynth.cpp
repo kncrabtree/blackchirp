@@ -8,6 +8,8 @@ VirtualValonSynth::VirtualValonSynth(QObject *parent) : Synthesizer(parent)
     d_prettyName = QString("Virtual Synthesizer");
 
     p_comm = new VirtualInstrument(d_key,this);
+    d_txFreq = 5760.0;
+    d_rxFreq = 5120.0;
 }
 
 VirtualValonSynth::~VirtualValonSynth()
@@ -28,6 +30,7 @@ bool VirtualValonSynth::testConnection()
 
 void VirtualValonSynth::initialize()
 {
+    Synthesizer::initialize();
     testConnection();
 }
 
@@ -56,17 +59,17 @@ double VirtualValonSynth::readTxFreq()
 
 double VirtualValonSynth::readRxFreq()
 {
-    emit txFreqRead(d_rxFreq);
+    emit rxFreqRead(d_rxFreq);
     return d_rxFreq;
 }
 
-double VirtualValonSynth::setTxFreq(const double f)
+double VirtualValonSynth::setSynthTxFreq(const double f)
 {
     d_txFreq = f;
     return readTxFreq();
 }
 
-double VirtualValonSynth::setRxFreq(const double f)
+double VirtualValonSynth::setSynthRxFreq(const double f)
 {
     d_rxFreq = f;
     return readRxFreq();

@@ -93,8 +93,8 @@ void RfConfigWidget::validate()
 
     s.beginGroup(QString("synthesizer"));
     s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-    double valonMin = s.value(QString("synthesizer/minFreq"),500.0).toDouble();
-    double valonMax = s.value(QString("synthesizer/maxFreq"),6000.0).toDouble();
+    double valonMin = s.value(QString("minFreq"),500.0).toDouble();
+    double valonMax = s.value(QString("maxFreq"),6000.0).toDouble();
     s.endGroup();
     s.endGroup();
 

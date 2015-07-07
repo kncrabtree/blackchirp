@@ -23,8 +23,8 @@ public slots:
 public slots:
     double readTxFreq();
     double readRxFreq();
-    double setTxFreq(const double f);
-    double setRxFreq(const double f);
+    double setSynthTxFreq(const double f);
+    double setSynthRxFreq(const double f);
 };
 
 #endif // VIRTUALVALONSYNTH_H
