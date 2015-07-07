@@ -10,7 +10,8 @@ HEADERS += \
     $$PWD/awg70002a.h \
     $$PWD/qc9528.h \
     $$PWD/valon5009.h \
-    $$PWD/mks647c.h
+    $$PWD/mks647c.h \
+    $$PWD/prologixgpiblan.h
 
 SOURCES += \
     $$PWD/virtualftmwscope.cpp \
@@ -24,4 +25,5 @@ SOURCES += \
     $$PWD/awg70002a.cpp \
     $$PWD/qc9528.cpp \
     $$PWD/valon5009.cpp \
-    $$PWD/mks647c.cpp
+    $$PWD/mks647c.cpp \
+    $$PWD/prologixgpiblan.cpp

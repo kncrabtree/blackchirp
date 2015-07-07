@@ -14,7 +14,10 @@ GpibController::~GpibController()
 bool GpibController::writeCmd(int address, QString cmd)
 {
 	if(address != d_currentAddress)
-		setAddress(address);
+    {
+        if(!setAddress(address))
+            return false;
+    }
 
     return p_comm->writeCmd(cmd);
 }
@@ -22,7 +25,10 @@ bool GpibController::writeCmd(int address, QString cmd)
 bool GpibController::writeBinary(int address, QByteArray dat)
 {
     if(address != d_currentAddress)
-        setAddress(address);
+    {
+        if(!setAddress(address))
+            return false;
+    }
 
     return p_comm->writeBinary(dat);
 }
@@ -30,7 +36,10 @@ bool GpibController::writeBinary(int address, QByteArray dat)
 QByteArray GpibController::queryCmd(int address, QString cmd)
 {
 	if(address != d_currentAddress)
-		setAddress(address);
+    {
+        if(!setAddress(address))
+            return QByteArray();
+    }
 
 	return p_comm->queryCmd(cmd);
 }
