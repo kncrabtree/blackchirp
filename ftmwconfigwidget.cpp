@@ -113,22 +113,23 @@ FtmwConfig FtmwConfigWidget::getConfig() const
 
 void FtmwConfigWidget::lockFastFrame(const int nf)
 {
-    blockSignals(true);
+
+    ui->fastFrameEnabledCheckBox->blockSignals(true);
     ui->framesSpinBox->setValue(nf);
     ui->framesSpinBox->setEnabled(false);
     if(nf == 1)
     {
         ui->fastFrameEnabledCheckBox->setChecked(false);
         ui->summaryFrameCheckBox->setChecked(false);
-        ui->fastFrameEnabledCheckBox->setEnabled(false);
         ui->summaryFrameCheckBox->setEnabled(false);
     }
     else
     {
         ui->fastFrameEnabledCheckBox->setChecked(true);
-        ui->fastFrameEnabledCheckBox->setEnabled(false);
+        ui->summaryFrameCheckBox->setEnabled(true);
     }
-    blockSignals(false);
+    ui->fastFrameEnabledCheckBox->setEnabled(false);
+    ui->fastFrameEnabledCheckBox->blockSignals(false);
 }
 
 void FtmwConfigWidget::loadFromSettings()

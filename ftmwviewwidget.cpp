@@ -31,10 +31,13 @@ void FtmwViewWidget::prepareForExperiment(const FtmwConfig config)
     ui->frameBox->blockSignals(true);
     if(config.isEnabled())
     {
-        if(ui->frameBox->value() > config.chirpConfig().numChirps())
+        int frames = config.scopeConfig().numFrames;
+        if(config.scopeConfig().summaryFrame)
+            frames = 1;
+        if(ui->frameBox->value() > frames)
             ui->frameBox->setValue(1);
 
-        ui->frameBox->setRange(1,config.chirpConfig().numChirps());
+        ui->frameBox->setRange(1,frames);
 
         if(config.type() == BlackChirp::FtmwPeakUp)
         {
