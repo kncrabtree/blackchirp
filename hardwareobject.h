@@ -102,6 +102,7 @@ signals:
     void hardwareFailure();
 
     void timeDataRead(const QList<QPair<QString,QVariant>>);
+    void timeDataReadNoPlot(const QList<QPair<QString,QVariant>>);
 	
 public slots:
     /*!
