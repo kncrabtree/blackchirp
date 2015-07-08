@@ -34,6 +34,7 @@ public slots:
     void moveSegments(int direction);
     void removeSegments();
     void clear();
+    void load();
 
     void updateChirpPlot();
 

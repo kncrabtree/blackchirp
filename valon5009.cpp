@@ -60,6 +60,7 @@ void Valon5009::initialize()
 Experiment Valon5009::prepareForExperiment(Experiment exp)
 {
     //TODO: verify that 10 MHz reference is locked
+    //Ensure that TX and RX frequencies match FT and chirp configs, if applicable
     return exp;
 }
 

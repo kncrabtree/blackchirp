@@ -6,6 +6,8 @@
 #include <QVariant>
 #include <QMetaType>
 #include <QDataStream>
+#include <QSettings>
+#include <QApplication>
 
 namespace BlackChirp {
 
@@ -191,6 +193,15 @@ struct PulseChannelConfig {
 
     PulseChannelConfig() : channel(-1), enabled(false), delay(-1.0), width(-1.0), level(PulseLevelActiveHigh) {}
 };
+
+enum ExptFileType {
+    HeaderFile,
+    ChirpFile,
+    FidFile
+};
+
+QString getExptFile(int num, BlackChirp::ExptFileType t);
+QString getExptDir(int num);
 
 
 }

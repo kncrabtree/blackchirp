@@ -4,6 +4,7 @@
 #include <QApplication>
 #include <QList>
 #include <QCryptographicHash>
+#include <QFile>
 
 #include <gsl/gsl_sf_trig.h>
 #include <gsl/gsl_complex_math.h>
@@ -46,9 +47,37 @@ ChirpConfig &ChirpConfig::operator=(const ChirpConfig &rhs)
     return *this;
 }
 
+ChirpConfig::ChirpConfig(int num) : data(new ChirpConfigData)
+{
+    QFile f(BlackChirp::getExptFile(num,BlackChirp::ChirpFile));
+    if(!f.open(QIODevice::ReadOnly))
+        return;
+
+    while(!f.atEnd())
+        parseFileLine(f.readLine().trimmed());
+
+    validate();
+
+    f.close();
+}
+
 ChirpConfig::~ChirpConfig()
 {
 
+}
+
+bool ChirpConfig::compareTxParams(const ChirpConfig &other) const
+{
+    if(!qFuzzyCompare(awgMult(),other.awgMult()))
+        return false;
+    if(!qFuzzyCompare(synthTxMult(),other.synthTxMult()))
+        return false;
+    if(!qFuzzyCompare(mixerSideband(),other.mixerSideband()))
+        return false;
+    if(!qFuzzyCompare(totalMult(),other.totalMult()))
+        return false;
+
+    return true;
 }
 
 bool ChirpConfig::isValid() const
@@ -100,6 +129,30 @@ double ChirpConfig::totalDuration() const
 QList<BlackChirp::ChirpSegment> ChirpConfig::segmentList() const
 {
     return data->segments;
+}
+
+double ChirpConfig::segmentStartFreq(int i) const
+{
+    if(i < 0 || i >= data->segments.size())
+        return -1.0;
+
+    return awgToRealFreq(data->segments.at(i).startFreqMHz);
+}
+
+double ChirpConfig::segmentEndFreq(int i) const
+{
+    if(i < 0 || i >= data->segments.size())
+        return -1.0;
+
+    return awgToRealFreq(data->segments.at(i).endFreqMHz);
+}
+
+double ChirpConfig::segmentDuration(int i) const
+{
+    if(i < 0 || i >= data->segments.size())
+        return -1.0;
+
+    return data->segments.at(i).durationUs;
 }
 
 QByteArray ChirpConfig::waveformHash() const
@@ -324,7 +377,7 @@ QString ChirpConfig::toString() const
 {
     QString out;
     QMap<QString, QPair<QVariant,QString>> header = headerMap();
-    auto it = headerMap().constBegin();
+    auto it = header.constBegin();
     while(it != header.constEnd())
     {
         out.append(QString("%1\t%2\t%3\n").arg(it.key()).arg(it.value().first.toString()).arg(it.value().second));
@@ -334,17 +387,42 @@ QString ChirpConfig::toString() const
     for(int i=0; i<data->segments.size(); i++)
     {
         BlackChirp::ChirpSegment s = data->segments.at(i);
-        out.append(QString("\n%1\t%2\t%3").arg(s.startFreqMHz,0,'f',3).arg(s.endFreqMHz,0,'f',3).arg(s.durationUs,0,'f',4));
+        out.append(QString("\nSegment\t%1\t%2\t%3").arg(s.startFreqMHz,0,'f',3).arg(s.endFreqMHz,0,'f',3).arg(s.durationUs,0,'f',4));
     }
 
     out.append(QString("\n"));
     for(int i=0; i<data->segments.size(); i++)
     {
         BlackChirp::ChirpSegment s = data->segments.at(i);
-        out.append(QString("\n#%1\t%2\t%3").arg(awgToRealFreq(s.startFreqMHz),0,'f',3).arg(awgToRealFreq(s.endFreqMHz),0,'f',3).arg(s.durationUs,0,'f',4));
+        out.append(QString("\n#Segment\t%1\t%2\t%3").arg(awgToRealFreq(s.startFreqMHz),0,'f',3).arg(awgToRealFreq(s.endFreqMHz),0,'f',3).arg(s.durationUs,0,'f',4));
     }
 
     return out;
+}
+
+double ChirpConfig::synthTxMult() const
+{
+    return data->valonTxMult;
+}
+
+double ChirpConfig::awgMult() const
+{
+    return data->awgMult;
+}
+
+double ChirpConfig::mixerSideband() const
+{
+    return data->mixerSideband;
+}
+
+double ChirpConfig::totalMult() const
+{
+    return data->totalMult;
+}
+
+double ChirpConfig::synthTxFreq() const
+{
+    return data->valonTxFreq;
 }
 
 bool ChirpConfig::validate()
@@ -405,6 +483,120 @@ bool ChirpConfig::validate()
 
     data->isValid = true;
     return true;
+}
+
+void ChirpConfig::parseFileLine(QByteArray line)
+{
+    if(line.isEmpty() || line.startsWith('#'))
+        return;
+
+    if(line.startsWith(QByteArray("ChirpConfig")))
+    {
+        line.replace(QByteArray("ChirpConfig"),QByteArray(""));
+        QByteArrayList l = line.split('\t');
+        if(l.size() < 2)
+            return;
+
+        QByteArray key = l.first().trimmed();
+        QByteArray val = l.at(1).trimmed();
+
+        if(key.contains(QByteArray("PreChirpProtection")))
+        {
+            bool ok;
+            double p = val.toDouble(&ok);
+            if(ok)
+                data->preChirpProtection = p;
+        }
+        else if(key.contains(QByteArray("PreChirpDelay")))
+        {
+            bool ok;
+            double p = val.toDouble(&ok);
+            if(ok)
+                data->preChirpDelay = p;
+        }
+        else if(key.contains(QByteArray("PostChirpProtection")))
+        {
+            bool ok;
+            double p = val.toDouble(&ok);
+            if(ok)
+                data->postChirpProtection = p;
+        }
+        else if(key.contains(QByteArray("NumChirps")))
+        {
+            bool ok;
+            int p = val.toInt(&ok);
+            if(ok)
+                data->numChirps = p;
+        }
+        else if(key.contains(QByteArray("ChirpInterval")))
+        {
+            bool ok;
+            double p = val.toDouble(&ok);
+            if(ok)
+                data->chirpInterval = p;
+        }
+        else if(key.contains(QByteArray("ValonTxMult")))
+        {
+            bool ok;
+            double p = val.toDouble(&ok);
+            if(ok)
+                data->valonTxMult = p;
+        }
+        else if(key.contains(QByteArray("AwgMult")))
+        {
+            bool ok;
+            double p = val.toDouble(&ok);
+            if(ok)
+                data->awgMult = p;
+        }
+        else if(key.contains(QByteArray("TotalMult")))
+        {
+            bool ok;
+            double p = val.toDouble(&ok);
+            if(ok)
+                data->totalMult = p;
+        }
+        else if(key.contains(QByteArray("MixerSideband")))
+        {
+            bool ok;
+            double p = val.toDouble(&ok);
+            if(ok)
+                data->mixerSideband = p;
+        }
+        else if(key.contains(QByteArray("ValonTxFreq")))
+        {
+            bool ok;
+            double p = val.toDouble(&ok);
+            if(ok)
+                data->valonTxFreq = p;
+        }
+    }
+    else if(line.startsWith(QByteArray("Segment")))
+    {
+        QByteArrayList l = line.split('\t');
+        if(l.size() < 4)
+            return;
+
+        bool ok;
+        double start = l.at(1).trimmed().toDouble(&ok);
+        if(ok)
+        {
+            double stop = l.at(2).trimmed().toDouble(&ok);
+            if(ok)
+            {
+                double dur = l.at(3).trimmed().toDouble(&ok);
+                if(ok)
+                {
+                    BlackChirp::ChirpSegment cs;
+                    cs.startFreqMHz = start;
+                    cs.endFreqMHz = stop;
+                    cs.durationUs = dur;
+                    cs.alphaUs = (stop-start)/dur;
+                    data->segments.append(cs);
+                }
+            }
+        }
+    }
 }
 
 void ChirpConfig::setPreChirpProtection(const double d)

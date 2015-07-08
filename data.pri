@@ -7,7 +7,8 @@ SOURCES += loghandler.cpp \
     $$PWD/pulsegenconfig.cpp \
     $$PWD/flowconfig.cpp \
     $$PWD/lifconfig.cpp \
-    $$PWD/liftrace.cpp
+    $$PWD/liftrace.cpp \
+    $$PWD/datastructs.cpp
 
 HEADERS += loghandler.h \
     $$PWD/fid.h \

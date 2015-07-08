@@ -2,6 +2,9 @@
 
 #include <QSettings>
 #include <QApplication>
+#include <QDir>
+#include <QFile>
+#include <QTextStream>
 
 Experiment::Experiment() : data(new ExperimentData)
 {
@@ -149,11 +152,10 @@ void Experiment::setInitialized()
             data->errorString = data->ftmwCfg.errorString();
     }
 
-    data->isInitialized = initSuccess;
-    data->startTime = QDateTime::currentDateTime();
+
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    int num = s.value(QString("exptNum"),1).toInt();
+    int num = s.value(QString("exptNum"),0).toInt()+1;
     data->number = num;
 
     if(ftmwConfig().isEnabled() && ftmwConfig().type() == BlackChirp::FtmwPeakUp)
@@ -167,6 +169,47 @@ void Experiment::setInitialized()
         data->endLogMessage = QString("Experiment %1 complete.").arg(num);
     }
 
+    //write headers; chirps, etc
+    //scan header
+
+    //chirp file
+    if(data->ftmwCfg.isEnabled())
+    {
+        QDir d(BlackChirp::getExptDir(num));
+        if(!d.exists())
+        {
+            initSuccess = d.mkpath(d.absolutePath());
+            if(!initSuccess)
+            {
+                data->isInitialized = false;
+                data->errorString = QString("Could not create the directory %1 for saving.").arg(d.absolutePath());
+                return;
+            }
+        }
+
+
+        QFile chp(BlackChirp::getExptFile(num,BlackChirp::ChirpFile));
+        if(!chp.open(QIODevice::WriteOnly))
+        {
+            data->isInitialized = false;
+            data->errorString = QString("Could not open the file %1 for writing.").arg(chp.fileName());
+            return;
+        }
+        else
+        {
+            QTextStream t(&chp);
+            t << data->ftmwCfg.chirpConfig().toString();
+            t.flush();
+            chp.close();
+        }
+    }
+
+
+    data->isInitialized = initSuccess;
+    data->startTime = QDateTime::currentDateTime();
+
+    if(initSuccess)
+        s.setValue(QString("exptNum"),1); //FIXME
 
 }
 

@@ -4,6 +4,7 @@
 #include <QSettings>
 #include <QMessageBox>
 #include <QSpinBox>
+#include <QInputDialog>
 
 ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     QWidget(parent),
@@ -27,14 +28,16 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     connect(ui->moveDownButton,&QPushButton::clicked,[=](){ moveSegments(1); });
     connect(ui->removeButton,&QPushButton::clicked,this,&ChirpConfigWidget::removeSegments);
     connect(ui->clearButton,&QPushButton::clicked,this,&ChirpConfigWidget::clear);
+    connect(ui->loadButton,&QPushButton::clicked,this,&ChirpConfigWidget::load);
 
     auto vc = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
+    auto dvc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
     connect(ui->preChirpProtectionSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
     connect(ui->preChirpDelaySpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
     connect(ui->postChirpProtectionSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
     connect(ui->chirpsSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
     connect(ui->chirpsSpinBox,vc,[=](int n){ui->chirpIntervalDoubleSpinBox->setEnabled(n>1);});
-    connect(ui->chirpIntervalDoubleSpinBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),this,&ChirpConfigWidget::updateChirpPlot);
+    connect(ui->chirpIntervalDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot);
 
     ui->chirpTable->setItemDelegate(new DoubleSpinBoxDelegate);
 }
@@ -210,6 +213,75 @@ void ChirpConfigWidget::clear()
 
     if(ret == QMessageBox::Yes)
         clearList();
+}
+
+void ChirpConfigWidget::load()
+{
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    int e = s.value(QString("exptNum"),0).toInt();
+    bool ok;
+    int num = QInputDialog::getInt(this,QString("Load Chirp"),QString("Load chirp from experiment"),e,0,e,1,&ok);
+    if(!ok || num <= 0 || num > e)
+        return;
+
+    ChirpConfig cc(num);
+    if(!cc.isValid())
+    {
+        QMessageBox::critical(this,QString("Load Failed"),QString("Could not open chirp from experiment %1.").arg(e));
+        return;
+    }
+
+    //check if rf config parameters are the same...
+    if(!d_currentChirpConfig.compareTxParams(cc))
+    {
+        QString labelTable = QString("<html><body><table><tr><th align=\"left\">Setting</th><th align=\"center\">Current</th><th align=\"center\">Experiment %1</th></tr>").arg(e);
+        labelTable.append(QString("<tr><td align=\"left\">%1</td><td align=\"center\">%2</td><td align=\"center\">%3</td></tr>").arg(QString("Synth TX Mult")).arg(d_currentChirpConfig.synthTxMult()).arg(cc.synthTxMult()));
+        labelTable.append(QString("<tr><td align=\"left\">%1</td><td align=\"center\">%2</td><td align=\"center\">%3</td></tr>").arg(QString("AWG Mult")).arg(d_currentChirpConfig.awgMult()).arg(cc.awgMult()));
+        labelTable.append(QString("<tr><td align=\"left\">%1</td><td align=\"center\">%2</td><td align=\"center\">%3</td></tr>").arg(QString("Mixer Sideband")).arg(d_currentChirpConfig.mixerSideband()).arg(cc.mixerSideband()));
+        labelTable.append(QString("<tr><td align=\"left\">%1</td><td align=\"center\">%2</td><td align=\"center\">%3</td></tr>").arg(QString("Total Mult")).arg(d_currentChirpConfig.totalMult()).arg(cc.totalMult()));
+        labelTable.append(QString("</table></body></html>"));
+
+        QMessageBox::critical(this,QString("Configuration Error"),QString("TX settings from experiment %1 do not match current settings.\nIf you wish to use these settings, make the appropriate changes in the RF configuration menu.\n\n").arg(e) + labelTable);
+    }
+
+    //warn if valon tx freq is different
+    if(!qFuzzyCompare(d_currentChirpConfig.synthTxFreq(),cc.synthTxFreq()))
+    {
+        if(QMessageBox::question(this,QString("Change TX Freq?"),QString("The TX frequency from experiment %1 (%2) does not match the current TX frequency (%3).\nIf you continue, the TX frequency will be changed when the scan begins.\n\nDo you wish to continue?"),QMessageBox::Yes|QMessageBox::No,QMessageBox::No) == QMessageBox::No)
+            return;
+    }
+
+    //use chirp
+    auto vc = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
+    auto dvc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
+    disconnect(ui->preChirpProtectionSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
+    disconnect(ui->preChirpDelaySpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
+    disconnect(ui->postChirpProtectionSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
+    disconnect(ui->chirpsSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
+    disconnect(ui->chirpIntervalDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot);
+    disconnect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::updateChirpPlot);
+
+    clearList();
+    ui->preChirpDelaySpinBox->setValue(qRound(cc.preChirpDelay()*1e3));
+    ui->preChirpProtectionSpinBox->setValue(qRound(cc.preChirpProtection()*1e3));
+    ui->postChirpProtectionSpinBox->setValue(qRound(cc.postChirpProtection()*1e3));
+    ui->chirpsSpinBox->setValue(cc.numChirps());
+    ui->chirpIntervalDoubleSpinBox->setValue(cc.chirpInterval());
+    for(int i=0; i<cc.segmentList().size(); i++)
+        p_ctm->addSegment(cc.segmentStartFreq(i),cc.segmentEndFreq(i),cc.segmentDuration(i),-1);
+
+
+    connect(ui->preChirpProtectionSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot,Qt::UniqueConnection);
+    connect(ui->preChirpDelaySpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot,Qt::UniqueConnection);
+    connect(ui->postChirpProtectionSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot,Qt::UniqueConnection);
+    connect(ui->chirpsSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot,Qt::UniqueConnection);
+    connect(ui->chirpIntervalDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot,Qt::UniqueConnection);
+    connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::updateChirpPlot,Qt::UniqueConnection);
+
+    d_currentChirpConfig = cc;
+    emit chirpConfigChanged();
+    ui->chirpPlot->newChirp(d_currentChirpConfig);
+
 }
 
 void ChirpConfigWidget::updateChirpPlot()

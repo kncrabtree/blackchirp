@@ -19,8 +19,10 @@ public:
     ChirpConfig();
     ChirpConfig(const ChirpConfig &);
     ChirpConfig &operator=(const ChirpConfig &);
+    ChirpConfig(int num);
     ~ChirpConfig();
 
+    bool compareTxParams(const ChirpConfig &other) const;
     bool isValid() const;
     double preChirpProtection() const;
     double preChirpDelay() const;
@@ -29,6 +31,9 @@ public:
     double chirpInterval() const;
 
     QList<BlackChirp::ChirpSegment> segmentList() const;
+    double segmentStartFreq(int i) const;
+    double segmentEndFreq(int i) const;
+    double segmentDuration(int i) const;
     QByteArray waveformHash() const;
 
     double chirpDuration() const;
@@ -38,6 +43,12 @@ public:
     QVector<QPair<bool,bool>> getMarkerData() const;
     QMap<QString,QPair<QVariant,QString>> headerMap() const;
     QString toString() const;
+
+    double synthTxMult() const;
+    double awgMult() const;
+    double mixerSideband() const;
+    double totalMult() const;
+    double synthTxFreq() const;
 
     void setPreChirpProtection(const double d);
     void setPreChirpDelay(const double d);
@@ -58,6 +69,7 @@ private:
     double awgToRealFreq(const double awgFreq) const;
 
     bool validate();
+    void parseFileLine(QByteArray line);
 };
 
 class ChirpConfigData : public QSharedData
