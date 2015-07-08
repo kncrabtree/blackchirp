@@ -282,6 +282,9 @@ void MainWindow::batchComplete(bool aborted)
 	    ui->ftmwProgressBar->setValue(1);
     }
 
+    ui->ftmwTab->setEnabled(true);
+    ui->lifTab->setEnabled(true);
+
     disconnect(p_hwm,&HardwareManager::lifScopeShotAcquired,
                ui->lifDisplayWidget,&LifDisplayWidget::lifShotAcquired);
 
@@ -295,7 +298,7 @@ void MainWindow::experimentInitialized(Experiment exp)
 
 	ui->exptSpinBox->setValue(exp.number());
     ui->ftmwProgressBar->setValue(0);
-    ui->ftViewWidget->initializeForExperiment(exp.ftmwConfig());
+    ui->ftViewWidget->prepareForExperiment(exp.ftmwConfig());
 
     ui->lifProgressBar->setValue(0);
 
@@ -315,6 +318,7 @@ void MainWindow::experimentInitialized(Experiment exp)
 	}
     else
     {
+        ui->ftmwTab->setEnabled(false);
         ui->ftmwProgressBar->setRange(0,1);
         ui->ftmwProgressBar->setValue(1);
     }
@@ -328,6 +332,7 @@ void MainWindow::experimentInitialized(Experiment exp)
     }
     else
     {
+        ui->lifTab->setEnabled(false);
         ui->lifProgressBar->setRange(0,1);
         ui->lifProgressBar->setValue(1);
     }
@@ -506,7 +511,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionTest_All_Connections->setEnabled(false);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
-	   ui->lifControlWidget->setEnabled(false);
+        ui->lifControlWidget->setEnabled(false);
         break;
     case Disconnected:
         ui->actionAbort->setEnabled(false);
@@ -517,7 +522,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionTest_All_Connections->setEnabled(true);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
-	   ui->lifControlWidget->setEnabled(false);
+        ui->lifControlWidget->setEnabled(false);
         break;
     case Paused:
         ui->actionAbort->setEnabled(true);
@@ -528,7 +533,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionTest_All_Connections->setEnabled(false);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
-	   ui->lifControlWidget->setEnabled(false);
+        ui->lifControlWidget->setEnabled(false);
         break;
     case Acquiring:
         ui->actionAbort->setEnabled(true);
@@ -539,7 +544,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionTest_All_Connections->setEnabled(false);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
-	   ui->lifControlWidget->setEnabled(false);
+        ui->lifControlWidget->setEnabled(false);
         break;
     case Idle:
     default:
@@ -551,7 +556,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionTest_All_Connections->setEnabled(true);
         ui->gasControlBox->setEnabled(true);
         ui->pulseConfigWidget->setEnabled(true);
-	   ui->lifControlWidget->setEnabled(true);
+        ui->lifControlWidget->setEnabled(true);
         break;
     }
 

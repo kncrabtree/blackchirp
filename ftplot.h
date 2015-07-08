@@ -6,7 +6,7 @@
 #include <QVector>
 #include <QPointF>
 
-#include "fid.h"
+#include "ftmwconfig.h"
 
 class QThread;
 class QwtPlotCurve;
@@ -24,6 +24,8 @@ public:
      */
     explicit FtPlot(QWidget *parent = 0);
     ~FtPlot();
+
+    void prepareForExperiment(const FtmwConfig c);
 
 signals:
     void fidDone(const QVector<QPointF> fid);
@@ -60,7 +62,6 @@ private:
      * \brief The object representing the curve on the plot
      */
     QwtPlotCurve *p_curveData;
-    QPair<double,double> d_autoScaleXRange, d_autoScaleYRange;
 
     QwtPlotGrid *p_plotGrid;
 

@@ -137,6 +137,24 @@ QString FtmwConfig::errorString() const
     return data->errorString;
 }
 
+double FtmwConfig::ftMin() const
+{
+    double sign = 1.0;
+    if(data->sideband == BlackChirp::LowerSideband)
+        sign = -1.0;
+    double lastFreq = data->loFreq + sign*data->scopeConfig.sampleRate/(1e6*2.0);
+    return qMin(data->loFreq,lastFreq);
+}
+
+double FtmwConfig::ftMax() const
+{
+    double sign = 1.0;
+    if(data->sideband == BlackChirp::LowerSideband)
+        sign = -1.0;
+    double lastFreq = data->loFreq + sign*data->scopeConfig.sampleRate/(1e6*2.0);
+    return qMax(data->loFreq,lastFreq);
+}
+
 bool FtmwConfig::prepareForAcquisition()
 {
     Fid f(scopeConfig().xIncr,loFreq(),QVector<qint64>(0),sideband(),scopeConfig().yMult,1);

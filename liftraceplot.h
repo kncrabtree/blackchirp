@@ -22,6 +22,8 @@ public:
 
     LifConfig getSettings(LifConfig c);
 
+    void setDisplayOnly(bool b) { d_displayOnly = b; }
+
 signals:
     void colorChanged();
     void integralUpdate(double);
@@ -52,6 +54,7 @@ private:
     int d_numAverages;
     bool d_resetNext, d_lifGateMode, d_refGateMode;
     QPair<int,int> d_lifZoneRange, d_refZoneRange;
+    bool d_displayOnly;
 
     void initializeLabel(QwtPlotCurve *curve, bool isVisible);
     void updateLifZone();

@@ -20,7 +20,7 @@ class FtmwViewWidget : public QWidget
 public:
     explicit FtmwViewWidget(QWidget *parent = 0);
     ~FtmwViewWidget();
-    void initializeForExperiment(const FtmwConfig config);
+    void prepareForExperiment(const FtmwConfig config);
 
 signals:
     void rollingAverageShotsChanged(int);

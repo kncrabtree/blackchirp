@@ -16,8 +16,6 @@
 #include <qwt6/qwt_plot_marker.h>
 #include <qwt6/qwt_plot_curve.h>
 
-#include "fid.h"
-
 FidPlot::FidPlot(QWidget *parent) :
     ZoomPanPlot(QString("FidPlot"),parent), d_ftEndAtFidEnd(true)
 {
@@ -34,43 +32,50 @@ FidPlot::FidPlot(QWidget *parent) :
     llabel.setFont(QFont(QString("sans-serif"),8));
     this->setAxisTitle(QwtPlot::yLeft,llabel);
 
-    this->setAxisScaleDraw(QwtPlot::yLeft,new SciNotationScaleDraw());
+//    this->setAxisScaleDraw(QwtPlot::yLeft,new SciNotationScaleDraw());
 
 
-    d_curve = new QwtPlotCurve();
-    QPalette pal;
-    QPen p;
+    p_curve = new QwtPlotCurve();
     QSettings s;
-    p.setColor(s.value(QString("fidcolor"),pal.text().color()).value<QColor>());
-    p.setWidth(1);
-    d_curve->setPen(p);
-    d_curve->setRenderHint(QwtPlotItem::RenderAntialiased);
-    d_curve->attach(this);
+    QColor c = s.value(QString("fidcolor"),palette().color(QPalette::Text)).value<QColor>();
+    p_curve->setPen(QPen(c));
+    p_curve->setRenderHint(QwtPlotItem::RenderAntialiased);
+    p_curve->attach(this);
+    p_curve->setVisible(false);
 
     QwtPlotMarker *chirpStartMarker = new QwtPlotMarker();
-    p.setColor(pal.text().color());
     chirpStartMarker->setLineStyle(QwtPlotMarker::VLine);
-    chirpStartMarker->setLinePen(p);
+    chirpStartMarker->setLinePen(QPen(QPalette().color(QPalette::Text)));
     QwtText csLabel(QString("Chirp Start"));
     csLabel.setFont(QFont(QString("sans serif"),6));
     chirpStartMarker->setLabel(csLabel);
     chirpStartMarker->setLabelOrientation(Qt::Vertical);
     chirpStartMarker->setLabelAlignment(Qt::AlignBottom|Qt::AlignRight);
     d_chirpMarkers.first = chirpStartMarker;
+    chirpStartMarker->attach(this);
+    chirpStartMarker->setVisible(false);
 
     QwtPlotMarker *chirpEndMarker = new QwtPlotMarker();
     chirpEndMarker->setLineStyle(QwtPlotMarker::VLine);
-    chirpEndMarker->setLinePen(p);
+    chirpEndMarker->setLinePen(QPen(QPalette().color(QPalette::Text)));
     QwtText ceLabel(QString("Chirp End"));
     ceLabel.setFont(QFont(QString("sans serif"),6));
     chirpEndMarker->setLabel(ceLabel);
     chirpEndMarker->setLabelOrientation(Qt::Vertical);
     chirpEndMarker->setLabelAlignment(Qt::AlignTop|Qt::AlignRight);
     d_chirpMarkers.second = chirpEndMarker;
+    chirpEndMarker->attach(this);
+    chirpEndMarker->setVisible(false);
+
+    QSettings s2(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s2.beginGroup(QString("FidPlot"));
+    double ftStart = s2.value(QString("lastFtStart"),0.0).toDouble();
+    double ftEnd = s2.value(QString("lastFtEnd"),-1.0).toDouble();
+    s2.endGroup();
 
     QwtPlotMarker *ftStartMarker = new QwtPlotMarker();
     ftStartMarker->setLineStyle(QwtPlotMarker::VLine);
-    ftStartMarker->setLinePen(p);
+    ftStartMarker->setLinePen(QPen(QPalette().color(QPalette::Text)));
     QwtText ftsLabel(QString(" FT Start "));
     ftsLabel.setFont(QFont(QString("sans serif"),6));
     ftsLabel.setBackgroundBrush(QPalette().window());
@@ -78,13 +83,14 @@ FidPlot::FidPlot(QWidget *parent) :
     ftStartMarker->setLabel(ftsLabel);
     ftStartMarker->setLabelOrientation(Qt::Vertical);
     ftStartMarker->setLabelAlignment(Qt::AlignBottom|Qt::AlignRight);
-    ftStartMarker->setValue(0.0,0.0);
+    ftStartMarker->setXValue(ftStart);
     ftStartMarker->attach(this);
+    ftStartMarker->setVisible(false);
     d_ftMarkers.first = ftStartMarker;
 
     QwtPlotMarker *ftEndMarker = new QwtPlotMarker();
     ftEndMarker->setLineStyle(QwtPlotMarker::VLine);
-    ftEndMarker->setLinePen(p);
+    ftEndMarker->setLinePen(QPen(QPalette().color(QPalette::Text)));
     QwtText fteLabel(QString(" FT End "));
     fteLabel.setFont(QFont(QString("sans serif"),6));
     fteLabel.setBackgroundBrush(QPalette().window());
@@ -92,14 +98,14 @@ FidPlot::FidPlot(QWidget *parent) :
     ftEndMarker->setLabel(fteLabel);
     ftEndMarker->setLabelOrientation(Qt::Vertical);
     ftEndMarker->setLabelAlignment(Qt::AlignTop|Qt::AlignLeft);
-    ftEndMarker->setValue(0.0,0.0);
+    ftEndMarker->setXValue(ftEnd);
     ftEndMarker->attach(this);
+    ftEndMarker->setVisible(false);
     d_ftMarkers.second = ftEndMarker;
 
-    d_yMinMax.first = -0.1;
-    d_yMinMax.second = 0.1;
-
     connect(this,&FidPlot::plotRightClicked,this,&FidPlot::buildContextMenu);
+
+    setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
 
 }
 
@@ -108,19 +114,8 @@ void FidPlot::receiveData(const Fid f)
     if(f.size() < 2)
         return;
 
-    bool as = (d_currentFid.size() == 0);
-
-    if(d_ftEndAtFidEnd)
-    {
-        d_ftMarkers.second->setValue(f.spacing()*(double)f.size()*1e6,0.0);
-        d_ftEndAtFidEnd = false; //unset this so that the marker isn't repositioned at every new FID
-    }
-
-    setAxisAutoScaleMax(QwtPlot::xBottom,f.spacing()*1e6*(double)f.size());
-
     d_currentFid = f;
-    if(as)
-        autoScale();
+
     filterData();
     replot();
 }
@@ -149,6 +144,7 @@ void FidPlot::filterData()
         filtered.append(fidData.at(dataIndex-1));
 
     //at this point, dataIndex is at the first point within the range of the plot. loop over pixels, compressing data
+    double yMin = fidData.at(dataIndex).y(), yMax = yMin;
     for(double pixel = firstPixel; pixel<lastPixel; pixel+=1.0)
     {
         double min = fidData.at(dataIndex).y(), max = min;
@@ -171,13 +167,13 @@ void FidPlot::filterData()
         }
         if(filtered.isEmpty())
         {
-            d_yMinMax.first = min;
-            d_yMinMax.second = max;
+            yMin = min;
+            yMax = max;
         }
         else
         {
-            d_yMinMax.first = qMin(min,d_yMinMax.first);
-            d_yMinMax.second = qMax(max,d_yMinMax.second);
+            yMin = qMin(min,yMin);
+            yMax = qMax(max,yMax);
         }
         if(numPnts == 1)
             filtered.append(QPointF(fidData.at(dataIndex-1).x()*1e6,fidData.at(dataIndex-1).y()));
@@ -197,33 +193,65 @@ void FidPlot::filterData()
         filtered.append(p);
     }
 
-    setAxisAutoScaleRange(QwtPlot::yLeft,d_yMinMax.first,d_yMinMax.second);
+    setAxisAutoScaleRange(QwtPlot::yLeft,yMin,yMax);
     //assign data to curve object
-    d_curve->setSamples(filtered);
+    p_curve->setSamples(filtered);
 }
 
-void FidPlot::initialize(double chirpStart, double chirpEnd, bool displayMarkers)
-{
-    if(displayMarkers)
+void FidPlot::prepareForExperiment(const FtmwConfig c)
+{     
+    d_currentFid = Fid();
+    p_curve->setSamples(QVector<QPointF>());
+
+    if(!c.isEnabled())
     {
-        d_chirpMarkers.first->setValue(chirpStart,0.0);
-        d_chirpMarkers.first->attach(this);
-        d_chirpMarkers.second->setValue(chirpEnd,0.0);
-        d_chirpMarkers.second->attach(this);
+        p_curve->setVisible(false);
+
+        d_chirpMarkers.first->setVisible(false);
+        d_chirpMarkers.second->setVisible(false);
+        d_ftMarkers.first->setVisible(false);
+        d_ftMarkers.second->setVisible(false);
+
+        setAxisAutoScaleRange(QwtPlot::xBottom,0.0,1.0);
+        setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
     }
     else
     {
-        d_chirpMarkers.first->detach();
-        d_chirpMarkers.second->detach();
+        p_curve->setVisible(true);
+
+        d_ftMarkers.first->setVisible(true);
+        d_ftMarkers.second->setVisible(true);
+
+        double maxTime = c.scopeConfig().recordLength/c.scopeConfig().sampleRate*1e6;
+        double ftEnd = d_ftMarkers.second->xValue();
+        if(ftEnd < 0.0 || ftEnd < d_ftMarkers.first->xValue() || ftEnd > maxTime)
+            d_ftMarkers.second->setXValue(maxTime);
+
+        setAxisAutoScaleRange(QwtPlot::xBottom,0.0,maxTime);
+        setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
+
+        //following will only matter if phase correction is even implemented
+        bool displayMarkers = false; //c.phaseCorrectionEnabled();
+        double chirpStart = 0.0; // c.chirpStart();
+        double chirpEnd = 0.0; // c.chirpEnd();
+        if(displayMarkers)
+        {
+            d_chirpMarkers.first->setValue(chirpStart,0.0);
+            d_chirpMarkers.second->setValue(chirpEnd,0.0);
+        }
+
+        d_chirpMarkers.first->setVisible(displayMarkers);
+        d_chirpMarkers.second->setVisible(displayMarkers);
     }
 
-    setFtStart(0.0);
-    setFtEnd(0.0);
-    d_ftEndAtFidEnd = true;
+    autoScale();
 }
 
 void FidPlot::setFtStart(double start)
 {
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("FidPlot"));
+
     if(start < d_ftMarkers.second->value().x() && start >= 0.0)
     {
         d_ftMarkers.first->setValue(start,0.0);
@@ -232,11 +260,17 @@ void FidPlot::setFtStart(double start)
     else
         emit overrideStart(d_ftMarkers.first->value().x());
 
+    s.setValue(QString("lastFtStart"),d_ftMarkers.first->xValue());
+    s.endGroup();
+
     QwtPlot::replot();
 }
 
 void FidPlot::setFtEnd(double end)
 {
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("FidPlot"));
+
     if(end > d_ftMarkers.first->value().x() && end <= d_currentFid.spacing()*d_currentFid.size()*1e6)
     {
         d_ftMarkers.second->setValue(end,0.0);
@@ -245,12 +279,15 @@ void FidPlot::setFtEnd(double end)
     else
         emit overrideEnd(d_ftMarkers.second->value().x());
 
+    s.setValue(QString("lastFtEnd"),d_ftMarkers.second->xValue());
+    s.endGroup();
+
     QwtPlot::replot();
 }
 
 void FidPlot::buildContextMenu(QMouseEvent *me)
 {
-    if(d_currentFid.size()<2)
+    if(d_currentFid.size()<2 || !isEnabled())
         return;
 
     QMenu *menu = contextMenu();
@@ -298,10 +335,10 @@ void FidPlot::buildContextMenu(QMouseEvent *me)
 
 void FidPlot::changeFidColor()
 {
-    QColor c = QColorDialog::getColor(d_curve->pen().color(),this,QString("Select Color"));
+    QColor c = QColorDialog::getColor(p_curve->pen().color(),this,QString("Select Color"));
     if(c.isValid())
     {
-        d_curve->setPen(c);
+        p_curve->setPen(c);
 
         QSettings s;
         s.setValue(QString("fidcolor"),c);

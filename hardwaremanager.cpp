@@ -383,17 +383,15 @@ void HardwareManager::setPGenRepRate(double r)
 
 bool HardwareManager::setPGenLifDelay(double d)
 {
-    double actualDelay;
     if(p_pGen->thread() == thread())
-        actualDelay = p_pGen->setLifDelay(d);
+        return p_pGen->setLifDelay(d);
     else
+    {
+        bool out;
         QMetaObject::invokeMethod(p_pGen,"setLifDelay",Qt::BlockingQueuedConnection,
-                                  Q_RETURN_ARG(double,actualDelay),Q_ARG(double,d));
-
-    if(fabs(d-actualDelay) < 0.001)
-        return true;
-
-    return false;
+                                  Q_RETURN_ARG(bool,out),Q_ARG(double,d));
+        return out;
+    }
 }
 
 void HardwareManager::setFlowChannelName(int index, QString name)

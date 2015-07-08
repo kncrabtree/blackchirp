@@ -25,8 +25,7 @@
 #include "ftworker.h"
 
 FtPlot::FtPlot(QWidget *parent) :
-    ZoomPanPlot(QString("FtPlot"),parent), d_autoScaleXRange(qMakePair(0.0,1.0)), d_autoScaleYRange(qMakePair(0.0,1.0)),
-    d_processing(false), d_replotWhenDone(false)
+    ZoomPanPlot(QString("FtPlot"),parent), d_processing(false), d_replotWhenDone(false)
 {
     //make axis label font smaller
     this->setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
@@ -49,6 +48,7 @@ FtPlot::FtPlot(QWidget *parent) :
     p_curveData->setPen(QPen(c));
     p_curveData->setRenderHint(QwtPlotItem::RenderAntialiased);
     p_curveData->attach(this);
+    p_curveData->setVisible(false);
 
     QwtPlotPicker *picker = new QwtPlotPicker(this->canvas());
     picker->setAxis(QwtPlot::xBottom,QwtPlot::yLeft);
@@ -82,11 +82,8 @@ FtPlot::FtPlot(QWidget *parent) :
     p_ftw->moveToThread(p_ftThread);
     p_ftThread->start();
 
-    setAxisAutoScale(QwtPlot::xBottom,false);
-    setAxisAutoScale(QwtPlot::yLeft,false);
-
-    setAxisAutoScaleRange(QwtPlot::xBottom,d_autoScaleXRange.first,d_autoScaleXRange.second);
-    setAxisAutoScaleRange(QwtPlot::yLeft,d_autoScaleYRange.first,d_autoScaleYRange.second);
+    setAxisAutoScaleRange(QwtPlot::xBottom,0.0,1.0);
+    setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
 
 }
 
@@ -94,6 +91,25 @@ FtPlot::~FtPlot()
 {
     p_ftThread->quit();
     p_ftThread->wait();
+}
+
+void FtPlot::prepareForExperiment(const FtmwConfig c)
+{
+    d_currentFid = Fid();
+    d_currentFt = QVector<QPointF>();
+    p_curveData->setSamples(d_currentFt);
+    setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
+    if(!c.isEnabled())
+    {
+        p_curveData->setVisible(false);
+        setAxisAutoScaleRange(QwtPlot::xBottom,0.0,1.0);
+    }
+    else
+    {
+        p_curveData->setVisible(true);
+        setAxisAutoScaleRange(QwtPlot::xBottom,c.ftMin(),c.ftMax());
+    }
+    autoScale();
 }
 
 void FtPlot::newFid(const Fid f)
@@ -110,13 +126,10 @@ void FtPlot::ftDone(QVector<QPointF> ft, double max)
 {
     d_processing = false;
     d_currentFt = ft;
-    d_autoScaleXRange.first = d_currentFt.at(0).x();
-    d_autoScaleXRange.second = d_currentFt.at(d_currentFt.size()-1).x();
-    d_autoScaleYRange.first = 0.0;
-    d_autoScaleYRange.second = max;
+    if(ft.isEmpty())
+        return;
 
-    setAxisAutoScaleRange(QwtPlot::xBottom,d_autoScaleXRange.first,d_autoScaleXRange.second);
-    setAxisAutoScaleRange(QwtPlot::yLeft,d_autoScaleYRange.first,d_autoScaleYRange.second);
+    setAxisAutoScaleMax(QwtPlot::yLeft,max);
 
     filterData();
 
@@ -190,6 +203,9 @@ void FtPlot::filterData()
 
 void FtPlot::buildContextMenu(QMouseEvent *me)
 {
+    if(d_currentFid.size() < 2 || !isEnabled())
+        return;
+
     QMenu *m = contextMenu();
 
     QAction *ftColorAction = m->addAction(QString("Change FT Color..."));

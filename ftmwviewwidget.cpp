@@ -21,32 +21,61 @@ FtmwViewWidget::~FtmwViewWidget()
     delete ui;
 }
 
-void FtmwViewWidget::initializeForExperiment(const FtmwConfig config)
+void FtmwViewWidget::prepareForExperiment(const FtmwConfig config)
 {
     ui->shotsLabel->setText(QString("Shots: 0"));
 
-    if(config.isEnabled() && config.type() == BlackChirp::FtmwPeakUp)
+    ui->fidPlot->prepareForExperiment(config);
+    ui->ftPlot->prepareForExperiment(config);
+
+    ui->frameBox->blockSignals(true);
+    if(config.isEnabled())
     {
-        ui->rollingAverageLabel->show();
-        ui->rollingAverageSpinbox->show();
-        ui->rollingAverageResetButton->show();
+        if(ui->frameBox->value() > config.chirpConfig().numChirps())
+            ui->frameBox->setValue(1);
 
-        blockSignals(true);
-        ui->rollingAverageSpinbox->setValue(config.targetShots());
-        blockSignals(false);
+        ui->frameBox->setRange(1,config.chirpConfig().numChirps());
 
-        connect(ui->rollingAverageSpinbox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::rollingAverageShotsChanged,Qt::UniqueConnection);
-        connect(ui->rollingAverageResetButton,&QPushButton::clicked,this,&FtmwViewWidget::rollingAverageReset,Qt::UniqueConnection);
+        if(config.type() == BlackChirp::FtmwPeakUp)
+        {
+            ui->rollingAverageLabel->show();
+            ui->rollingAverageSpinbox->show();
+            ui->rollingAverageResetButton->show();
+
+            blockSignals(true);
+            ui->rollingAverageSpinbox->setValue(config.targetShots());
+            blockSignals(false);
+
+            connect(ui->rollingAverageSpinbox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::rollingAverageShotsChanged,Qt::UniqueConnection);
+            connect(ui->rollingAverageResetButton,&QPushButton::clicked,this,&FtmwViewWidget::rollingAverageReset,Qt::UniqueConnection);
+        }
+        else
+        {
+            ui->rollingAverageLabel->hide();
+            ui->rollingAverageSpinbox->hide();
+            ui->rollingAverageResetButton->hide();
+
+            disconnect(ui->rollingAverageSpinbox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::rollingAverageShotsChanged);
+            disconnect(ui->rollingAverageResetButton,&QPushButton::clicked,this,&FtmwViewWidget::rollingAverageReset);
+        }
     }
     else
     {
+        ui->frameBox->setRange(0,0);
+        ui->frameBox->setValue(0);
+
         ui->rollingAverageLabel->hide();
         ui->rollingAverageSpinbox->hide();
         ui->rollingAverageResetButton->hide();
 
         disconnect(ui->rollingAverageSpinbox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::rollingAverageShotsChanged);
         disconnect(ui->rollingAverageResetButton,&QPushButton::clicked,this,&FtmwViewWidget::rollingAverageReset);
+
     }
+
+    ui->frameBox->blockSignals(false);
+
+
 }
 
 void FtmwViewWidget::newFidList(QList<Fid> fl)

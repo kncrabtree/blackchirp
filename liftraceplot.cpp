@@ -18,7 +18,7 @@
 
 LifTracePlot::LifTracePlot(QWidget *parent) :
     ZoomPanPlot(QString("lifTrace"),parent), d_resetNext(true),
-    d_lifGateMode(false), d_refGateMode(false)
+    d_lifGateMode(false), d_refGateMode(false), d_displayOnly(false)
 {
     setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
     setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
@@ -238,42 +238,45 @@ void LifTracePlot::buildContextMenu(QMouseEvent *me)
 {
     QMenu *m = contextMenu();
 
-    QAction *lifZoneAction = m->addAction(QString("Change LIF Gate..."));
-    connect(lifZoneAction,&QAction::triggered,this,&LifTracePlot::changeLifGateRange);
-    if(d_currentTrace.size() == 0 || !p_lifZone->isVisible() || !isEnabled())
-        lifZoneAction->setEnabled(false);
+    if(!d_displayOnly)
+    {
+        QAction *lifZoneAction = m->addAction(QString("Change LIF Gate..."));
+        connect(lifZoneAction,&QAction::triggered,this,&LifTracePlot::changeLifGateRange);
+        if(d_currentTrace.size() == 0 || !p_lifZone->isVisible() || !isEnabled())
+            lifZoneAction->setEnabled(false);
 
 
-    QAction *refZoneAction = m->addAction(QString("Change Ref Gate..."));
-    connect(refZoneAction,&QAction::triggered,this,&LifTracePlot::changeRefGateRange);
-    if(!d_currentTrace.hasRefData() || !p_refZone->isVisible() || !isEnabled())
-        refZoneAction->setEnabled(false);
+        QAction *refZoneAction = m->addAction(QString("Change Ref Gate..."));
+        connect(refZoneAction,&QAction::triggered,this,&LifTracePlot::changeRefGateRange);
+        if(!d_currentTrace.hasRefData() || !p_refZone->isVisible() || !isEnabled())
+            refZoneAction->setEnabled(false);
 
-    m->addSeparator();
+        m->addSeparator();
 
-    QAction *resetAction = m->addAction(QString("Reset Averages"));
-    connect(resetAction,&QAction::triggered,this,&LifTracePlot::reset);
-    if(d_currentTrace.size() == 0 || !isEnabled())
-        resetAction->setEnabled(false);
+        QAction *resetAction = m->addAction(QString("Reset Averages"));
+        connect(resetAction,&QAction::triggered,this,&LifTracePlot::reset);
+        if(d_currentTrace.size() == 0 || !isEnabled())
+            resetAction->setEnabled(false);
 
-    QWidgetAction *wa = new QWidgetAction(m);
-    QWidget *w = new QWidget(m);
-    QSpinBox *shotsBox = new QSpinBox(w);
-    QFormLayout *fl = new QFormLayout();
+        QWidgetAction *wa = new QWidgetAction(m);
+        QWidget *w = new QWidget(m);
+        QSpinBox *shotsBox = new QSpinBox(w);
+        QFormLayout *fl = new QFormLayout();
 
-    fl->addRow(QString("Average"),shotsBox);
+        fl->addRow(QString("Average"),shotsBox);
 
-    shotsBox->setRange(1,__INT32_MAX__);
-    shotsBox->setSingleStep(10);
-    shotsBox->setValue(d_numAverages);
-    shotsBox->setSuffix(QString(" shots"));
-    connect(shotsBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&LifTracePlot::setNumAverages);
-    if(!isEnabled())
-        shotsBox->setEnabled(false);
+        shotsBox->setRange(1,__INT32_MAX__);
+        shotsBox->setSingleStep(10);
+        shotsBox->setValue(d_numAverages);
+        shotsBox->setSuffix(QString(" shots"));
+        connect(shotsBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&LifTracePlot::setNumAverages);
+        if(!isEnabled())
+            shotsBox->setEnabled(false);
 
-    w->setLayout(fl);
-    wa->setDefaultWidget(w);
-    m->addAction(wa);
+        w->setLayout(fl);
+        wa->setDefaultWidget(w);
+        m->addAction(wa);
+    }
 
 
     m->popup(me->globalPos());

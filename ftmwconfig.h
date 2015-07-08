@@ -41,6 +41,8 @@ public:
     int numFrames() const;
     QList<Fid> parseWaveform(QByteArray b) const;
     QString errorString() const;
+    double ftMin() const;
+    double ftMax() const;
 
     bool prepareForAcquisition();
     void setEnabled();

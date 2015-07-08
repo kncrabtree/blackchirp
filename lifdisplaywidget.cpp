@@ -24,6 +24,7 @@ LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
     title.setText(QString("Current Trace"));
     title.setFont(QFont("sans-serif",8));
     ui->lifTracePlot->setTitle(title);
+    ui->lifTracePlot->setDisplayOnly(true);
 
     connect(ui->lifTracePlot,&LifTracePlot::colorChanged,this,&LifDisplayWidget::lifColorChanged);
     connect(ui->lifSpectrogram,&LifSpectrogramPlot::freqSlice,this,&LifDisplayWidget::freqSlice);
@@ -101,7 +102,6 @@ void LifDisplayWidget::prepareForExperiment(const LifConfig c)
         ui->spectrumPlot->prepareForExperiment(d_freqRange.first,d_freqRange.second);
 
     }
-    ui->lifTracePlot->setEnabled(false);
 
     ui->lifSpectrogram->prepareForExperiment(c);
 }
