@@ -169,25 +169,38 @@ void Experiment::setInitialized()
         data->endLogMessage = QString("Experiment %1 complete.").arg(num);
     }
 
+    QDir d(BlackChirp::getExptDir(num));
+    if(!d.exists())
+    {
+        initSuccess = d.mkpath(d.absolutePath());
+        if(!initSuccess)
+        {
+            data->isInitialized = false;
+            data->errorString = QString("Could not create the directory %1 for saving.").arg(d.absolutePath());
+            return;
+        }
+    }
+
     //write headers; chirps, etc
     //scan header
+    QFile hdr(BlackChirp::getExptFile(num,BlackChirp::HeaderFile));
+    if(!hdr.open(QIODevice::WriteOnly))
+    {
+        data->isInitialized = false;
+        data->errorString = QString("Could not open the file %1 for writing.").arg(hdr.fileName());
+        return;
+    }
+    else
+    {
+        QTextStream t(&hdr);
+        t << BlackChirp::headerMapToString(headerMap());
+        t.flush();
+        hdr.close();
+    }
 
     //chirp file
     if(data->ftmwCfg.isEnabled())
     {
-        QDir d(BlackChirp::getExptDir(num));
-        if(!d.exists())
-        {
-            initSuccess = d.mkpath(d.absolutePath());
-            if(!initSuccess)
-            {
-                data->isInitialized = false;
-                data->errorString = QString("Could not create the directory %1 for saving.").arg(d.absolutePath());
-                return;
-            }
-        }
-
-
         QFile chp(BlackChirp::getExptFile(num,BlackChirp::ChirpFile));
         if(!chp.open(QIODevice::WriteOnly))
         {
@@ -209,7 +222,7 @@ void Experiment::setInitialized()
     data->startTime = QDateTime::currentDateTime();
 
     if(initSuccess)
-        s.setValue(QString("exptNum"),1); //FIXME
+        s.setValue(QString("exptNum"),0); //FIXME
 
 }
 
@@ -371,6 +384,16 @@ void Experiment::save()
             keys.append(QString(";%1").arg(knownKeyList.at(i)));
 
         s.setValue(QString("knownValidationKeys"),keys);
+    }
+
+    //rewrite header file
+    QFile hdr(BlackChirp::getExptFile(data->number,BlackChirp::HeaderFile));
+    if(hdr.open(QIODevice::WriteOnly))
+    {
+        QTextStream t(&hdr);
+        t << BlackChirp::headerMapToString(headerMap());
+        t.flush();
+        hdr.close();
     }
 }
 

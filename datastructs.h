@@ -202,6 +202,7 @@ enum ExptFileType {
 
 QString getExptFile(int num, BlackChirp::ExptFileType t);
 QString getExptDir(int num);
+QString headerMapToString(QMap<QString,QPair<QVariant,QString>> map);
 
 
 }

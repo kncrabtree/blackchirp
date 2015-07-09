@@ -28,3 +28,27 @@ QString BlackChirp::getExptDir(int num)
 
     return savePath + QString("/experiments/%1/%2/%3/").arg(mil).arg(th).arg(num);
 }
+
+
+QString BlackChirp::headerMapToString(QMap<QString, QPair<QVariant, QString> > map)
+{
+    QString out;
+    QString tab("\t");
+    QString nl("\n");
+
+    if(map.isEmpty())
+        return out;
+
+    auto it = map.constBegin();
+    auto v = it.value();
+    out.append(it.key() + tab + v.first.toString() + tab + v.second);
+    it++;
+    while(it != map.constEnd())
+    {
+        v = it.value();
+        out.append(nl + it.key() + tab + v.first.toString() + tab + v.second);
+        it++;
+    }
+
+    return out;
+}
