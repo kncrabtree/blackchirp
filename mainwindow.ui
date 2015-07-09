@@ -388,6 +388,7 @@
    <addaction name="actionPause"/>
    <addaction name="actionResume"/>
    <addaction name="actionAbort"/>
+   <addaction name="actionTest"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionStart_Experiment">
@@ -465,6 +466,11 @@
    </property>
    <property name="text">
     <string>Test All Connections</string>
+   </property>
+  </action>
+  <action name="actionTest">
+   <property name="text">
+    <string>Test</string>
    </property>
   </action>
  </widget>

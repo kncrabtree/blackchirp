@@ -1,5 +1,6 @@
 #include "ftmwconfig.h"
 
+#include <QFile>
 
 FtmwConfig::FtmwConfig() : data(new FtmwConfigData)
 {
@@ -16,6 +17,19 @@ FtmwConfig &FtmwConfig::operator=(const FtmwConfig &rhs)
     if (this != &rhs)
         data.operator=(rhs.data);
     return *this;
+}
+
+FtmwConfig::FtmwConfig(int num) : data(new FtmwConfigData)
+{
+    //eventually, do all the file parsing etc...
+    //for now, just build the fid list
+    QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile));
+    if(fid.open(QIODevice::ReadOnly))
+    {
+        QDataStream d(&fid);
+        d >> data->fidList;
+        fid.close();
+    }
 }
 
 FtmwConfig::~FtmwConfig()

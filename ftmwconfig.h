@@ -24,6 +24,7 @@ public:
     FtmwConfig();
     FtmwConfig(const FtmwConfig &);
     FtmwConfig &operator=(const FtmwConfig &);
+    FtmwConfig(int num);
     ~FtmwConfig();
 
     bool isEnabled() const;

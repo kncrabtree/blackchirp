@@ -227,6 +227,7 @@ MainWindow::MainWindow(QWidget *parent) :
             ui->lifControlWidget,&LifControlWidget::checkLifColors);
 
 
+    connect(ui->actionTest,&QAction::triggered,this,&MainWindow::test);
     configureUi(Idle);
 }
 
@@ -606,4 +607,10 @@ void MainWindow::closeEvent(QCloseEvent *ev)
         ev->ignore();
     else
         ev->accept();
+}
+
+void MainWindow::test()
+{
+//    FtmwConfig f(1);
+//    qDebug() << f.fidList().size();
 }

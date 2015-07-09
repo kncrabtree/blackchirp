@@ -220,3 +220,41 @@ double Fid::vMult() const
 {
     return data->vMult;
 }
+
+
+QDataStream &operator<<(QDataStream &stream, const Fid fid)
+{
+    QByteArray magic("BCFIDv1.0");
+    stream << magic << fid.spacing() << fid.probeFreq() << fid.vMult() << fid.shots();
+    qint16 sb = static_cast<qint16>(fid.sideband());
+    stream << sb << fid.rawData();
+    return stream;
+}
+
+
+QDataStream &operator>>(QDataStream &stream, Fid fid)
+{
+    QByteArray b;
+    stream >> b;
+    if(b.startsWith("BCFID"))
+    {
+        if(b.endsWith("v1.0"))
+        {
+            double spacing, probeFreq, vMult;
+            qint64 shots;
+            qint16 sb;
+            stream >> spacing >> probeFreq >> vMult >> shots >> sb;
+            BlackChirp::Sideband sideband = static_cast<BlackChirp::Sideband>(sb);
+            QVector<qint64> dat;
+            stream >> dat;
+
+            fid.setSpacing(spacing);
+            fid.setProbeFreq(probeFreq);
+            fid.setVMult(vMult);
+            fid.setShots(shots);
+            fid.setSideband(sideband);
+            fid.setData(dat);
+        }
+    }
+    return stream;
+}

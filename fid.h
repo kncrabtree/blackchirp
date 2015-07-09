@@ -6,6 +6,7 @@
 #include <QVector>
 #include <QPointF>
 #include <QMetaType>
+#include <QDataStream>
 
 #include "datastructs.h"
 
@@ -160,6 +161,10 @@ public:
 private:
     QSharedDataPointer<FidData> data; /*!< The internal data storage object */
 };
+
+//DataStream operators
+QDataStream &operator<<(QDataStream &stream, const Fid fid);
+QDataStream &operator>>(QDataStream &stream, Fid fid);
 
 /*!
  \brief Internal data for Fid

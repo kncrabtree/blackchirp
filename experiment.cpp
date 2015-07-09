@@ -395,5 +395,18 @@ void Experiment::save()
         t.flush();
         hdr.close();
     }
+
+    //write fid (NOTE: this code is tested, and it works.
+    //Don't want to waste disk space with useless FIDs
+//    if(ftmwConfig().isEnabled())
+//    {
+//        QFile fid(BlackChirp::getExptFile(data->number,BlackChirp::FidFile));
+//        if(fid.open(QIODevice::WriteOnly))
+//        {
+//            QDataStream d(&fid);
+//            d << ftmwConfig().fidList();
+//            fid.close();
+//        }
+//    }
 }
 
