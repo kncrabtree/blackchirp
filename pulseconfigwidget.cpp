@@ -28,7 +28,7 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
         int col = 0;
 
         ch.label = new QLabel(s.value(QString("name"),QString("Ch%1").arg(i)).toString(),this);
-        ch.label->setAlignment(Qt::AlignRight);
+        ch.label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         ui->pulseConfigBoxLayout->addWidget(ch.label,i+1,col,1,1);
         col++;
 
