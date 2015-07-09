@@ -16,10 +16,13 @@ public:
     // QWizardPage interface
     int nextId() const;
     bool isComplete() const;
+    void initializePage();
 
     bool ftmwEnabled() const;
     bool lifEnabled() const;
     int auxDataInterval() const;
+
+    void saveToSettings() const;
 
 private:
     QCheckBox *p_ftmw, *p_lif;

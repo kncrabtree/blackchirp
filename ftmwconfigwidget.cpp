@@ -175,7 +175,7 @@ void FtmwConfigWidget::loadFromSettings()
 
 }
 
-void FtmwConfigWidget::saveToSettings()
+void FtmwConfigWidget::saveToSettings() const
 {
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 

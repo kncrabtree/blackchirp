@@ -20,7 +20,7 @@ public:
     int nextId() const;
 
     FtmwConfig getFtmwConfig() const;
-    void saveToSettings();
+    void saveToSettings() const;
 
 private:
     FtmwConfigWidget *p_ftc;

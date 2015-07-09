@@ -88,7 +88,7 @@ void ChirpConfigWidget::initializeFromSettings()
 
 }
 
-void ChirpConfigWidget::saveToSettings()
+void ChirpConfigWidget::saveToSettings() const
 {
     if(!d_currentChirpConfig.isValid())
         return;

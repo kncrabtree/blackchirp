@@ -34,7 +34,6 @@ public:
     void setFlowConfig(const FlowConfig c);
     Experiment getExperiment() const;
     BatchManager *getBatchManager() const;
-    void saveToSettings();
 
 signals:
     void newTrace(const LifTrace);
@@ -50,6 +49,8 @@ private:
     WizardPulseConfigPage *p_pulseConfigPage;
     WizardLifConfigPage *p_lifConfigPage;
     FlowConfig d_flowConfig;
+
+    void saveToSettings() const;
 };
 
 #endif // EXPERIMENTWIZARD_H

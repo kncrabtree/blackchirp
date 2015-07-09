@@ -261,8 +261,6 @@ void MainWindow::startExperiment()
     if(wiz.exec() != QDialog::Accepted)
         return;
 
-
-    wiz.saveToSettings();
     BatchManager *bm = wiz.getBatchManager();
 
     startBatch(bm);

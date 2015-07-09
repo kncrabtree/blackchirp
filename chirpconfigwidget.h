@@ -25,7 +25,7 @@ public:
 
 public slots:
     void initializeFromSettings();
-    void saveToSettings();
+    void saveToSettings() const;
     void enableEditing(bool enabled);
     void setButtonStates();
 

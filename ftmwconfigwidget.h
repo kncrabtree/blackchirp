@@ -25,7 +25,7 @@ public:
 
 public slots:
     void loadFromSettings();
-    void saveToSettings();
+    void saveToSettings() const;
     void configureUI();
     void validateSpinboxes();
 

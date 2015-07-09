@@ -20,6 +20,7 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     p_auxDataIntervalBox = new QSpinBox(this);
     p_auxDataIntervalBox->setRange(5,__INT_MAX__);
     p_auxDataIntervalBox->setValue(300);
+    p_auxDataIntervalBox->setSingleStep(300);
     p_auxDataIntervalBox->setSuffix(QString(" s"));
     p_auxDataIntervalBox->setToolTip(QString("Interval for aux data readings (e.g., flows, pressure, etc.)"));
 
@@ -55,6 +56,14 @@ bool WizardStartPage::isComplete() const
     return (p_ftmw->isChecked() || p_lif->isChecked());
 }
 
+void WizardStartPage::initializePage()
+{
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("wizard"));
+    p_auxDataIntervalBox->setValue(s.value(QString("auxDataInterval"),300).toInt());
+    s.endGroup();
+}
+
 bool WizardStartPage::ftmwEnabled() const
 {
     return p_ftmw->isChecked();
@@ -68,4 +77,13 @@ bool WizardStartPage::lifEnabled() const
 int WizardStartPage::auxDataInterval() const
 {
     return p_auxDataIntervalBox->value();
+}
+
+void WizardStartPage::saveToSettings() const
+{
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("wizard"));
+    s.setValue(QString("auxDataInterval"),p_auxDataIntervalBox->value());
+    s.endGroup();
+    s.sync();
 }

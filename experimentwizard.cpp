@@ -74,6 +74,7 @@ Experiment ExperimentWizard::getExperiment() const
 
 BatchManager *ExperimentWizard::getBatchManager() const
 {
+    saveToSettings();
     Experiment e = getExperiment();
     if(e.lifConfig().isEnabled())
     {
@@ -85,8 +86,10 @@ BatchManager *ExperimentWizard::getBatchManager() const
     return new BatchSingle(e);
 }
 
-void ExperimentWizard::saveToSettings()
+void ExperimentWizard::saveToSettings() const
 {
+    p_startPage->saveToSettings();
+
     if(p_startPage->ftmwEnabled())
     {
         p_chirpConfigPage->saveToSettings();
