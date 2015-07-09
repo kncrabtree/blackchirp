@@ -158,6 +158,8 @@ public:
 
     double vMult() const;
 
+    static QByteArray magicString();
+
 private:
     QSharedDataPointer<FidData> data; /*!< The internal data storage object */
 };

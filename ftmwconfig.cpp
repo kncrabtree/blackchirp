@@ -27,7 +27,13 @@ FtmwConfig::FtmwConfig(int num) : data(new FtmwConfigData)
     if(fid.open(QIODevice::ReadOnly))
     {
         QDataStream d(&fid);
-        d >> data->fidList;
+        QByteArray magic;
+        d >> magic;
+        if(magic.startsWith("BCFID"))
+        {
+            if(magic.endsWith("v1.0"))
+                d >> data->fidList;
+        }
         fid.close();
     }
 }
@@ -167,6 +173,21 @@ double FtmwConfig::ftMax() const
         sign = -1.0;
     double lastFreq = data->loFreq + sign*data->scopeConfig.sampleRate/(1e6*2.0);
     return qMax(data->loFreq,lastFreq);
+}
+
+bool FtmwConfig::writeFidFile(int num) const
+{
+    QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile));
+    if(fid.open(QIODevice::WriteOnly))
+    {
+        QDataStream d(&fid);
+        d << Fid::magicString();
+        d << data->fidList;
+        fid.close();
+        return true;
+    }
+    else
+        return false;
 }
 
 bool FtmwConfig::prepareForAcquisition()

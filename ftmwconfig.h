@@ -44,6 +44,7 @@ public:
     QString errorString() const;
     double ftMin() const;
     double ftMax() const;
+    bool writeFidFile(int num) const;
 
     bool prepareForAcquisition();
     void setEnabled();
