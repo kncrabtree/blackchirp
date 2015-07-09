@@ -1,6 +1,7 @@
 #include "lifconfig.h"
 
 #include "liftrace.h"
+#include <QFile>
 
 
 LifConfig::LifConfig() : data(new LifConfigData)
@@ -18,6 +19,30 @@ LifConfig &LifConfig::operator=(const LifConfig &rhs)
     if (this != &rhs)
         data.operator=(rhs.data);
     return *this;
+}
+
+LifConfig::LifConfig(int num) : data(new LifConfigData)
+{
+    //need to read other settings from expt header
+
+
+    QFile lif(BlackChirp::getExptFile(num,BlackChirp::LifFile));
+    if(lif.open(QIODevice::ReadOnly))
+    {
+        QDataStream d(&lif);
+        QByteArray magic;
+        d >> magic;
+        if(magic.startsWith("BCLIF"))
+        {
+            if(magic.endsWith("v1.0"))
+            {
+                QList<QVector<BlackChirp::LifPoint>> l;
+                d >> l;
+                data->lifData = l;
+            }
+        }
+        lif.close();
+    };
 }
 
 LifConfig::~LifConfig()
@@ -345,6 +370,21 @@ QPair<QPoint, BlackChirp::LifPoint> LifConfig::lastUpdatedLifPoint() const
 
 }
 
+bool LifConfig::writeLifFile(int num) const
+{
+    QFile lif(BlackChirp::getExptFile(num,BlackChirp::LifFile));
+    if(lif.open(QIODevice::WriteOnly))
+    {
+        QDataStream d(&lif);
+        d << QByteArray("BCLIFv1.0");
+        d << data->lifData;
+        lif.close();
+        return true;
+    }
+    else
+        return false;
+}
+
 bool LifConfig::addWaveform(const LifTrace t)
 {
     //the boolean returned by this function tells if the point was incremented
@@ -402,3 +442,17 @@ void LifConfig::increment()
     }
 }
 
+
+
+QDataStream &operator<<(QDataStream &stream, const BlackChirp::LifPoint &pt)
+{
+    stream << pt.count << pt.mean << pt.sumsq;
+    return stream;
+}
+
+
+QDataStream &operator>>(QDataStream &stream, BlackChirp::LifPoint &pt)
+{
+    stream >> pt.count >> pt.mean >> pt.sumsq;
+    return stream;
+}

@@ -22,6 +22,7 @@ public:
     LifConfig();
     LifConfig(const LifConfig &);
     LifConfig &operator=(const LifConfig &);
+    LifConfig(int num);
     ~LifConfig();   
 
     bool isEnabled() const;
@@ -40,6 +41,7 @@ public:
     QVector<QPointF> spectrum(int delayIndex) const;
     QMap<QString,QPair<QVariant,QString> > headerMap() const;
     QPair<QPoint,BlackChirp::LifPoint> lastUpdatedLifPoint() const;
+    bool writeLifFile(int num) const;
 
     void setEnabled();
     bool validate();
@@ -97,6 +99,8 @@ public:
 
 };
 
+QDataStream &operator<<(QDataStream &stream, const BlackChirp::LifPoint &pt);
+QDataStream &operator>>(QDataStream &stream, BlackChirp::LifPoint &pt);
 
 Q_DECLARE_METATYPE(LifConfig)
 

@@ -13,6 +13,9 @@ QString BlackChirp::getExptFile(int num, BlackChirp::ExptFileType t)
     case FidFile:
         file.append(QString(".fid"));
         break;
+    case LifFile:
+        file.append(QString(".lif"));
+        break;
     }
 
     return getExptDir(num) + file;

@@ -611,6 +611,6 @@ void MainWindow::closeEvent(QCloseEvent *ev)
 
 void MainWindow::test()
 {
-//    FtmwConfig f(1);
-//    qDebug() << f.fidList().size();
+//    LifConfig f(1);
+//    qDebug() << f.isValid();
 }

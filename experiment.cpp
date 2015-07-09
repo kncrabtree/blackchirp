@@ -408,5 +408,8 @@ void Experiment::save()
 //            fid.close();
 //        }
 //    }
+
+//    if(lifConfig().isEnabled())
+//        lifConfig().writeLifFile(data->number);
 }
 

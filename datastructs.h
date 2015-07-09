@@ -197,7 +197,8 @@ struct PulseChannelConfig {
 enum ExptFileType {
     HeaderFile,
     ChirpFile,
-    FidFile
+    FidFile,
+    LifFile
 };
 
 QString getExptFile(int num, BlackChirp::ExptFileType t);
