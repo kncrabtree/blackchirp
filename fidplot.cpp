@@ -193,7 +193,7 @@ void FidPlot::filterData()
         filtered.append(p);
     }
 
-    setAxisAutoScaleRange(QwtPlot::yLeft,yMin,yMax);
+    expandAutoScaleRange(QwtPlot::yLeft,yMin,yMax);
     //assign data to curve object
     p_curve->setSamples(filtered);
 }
@@ -228,7 +228,7 @@ void FidPlot::prepareForExperiment(const FtmwConfig c)
             d_ftMarkers.second->setXValue(maxTime);
 
         setAxisAutoScaleRange(QwtPlot::xBottom,0.0,maxTime);
-        setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
+        setAxisAutoScaleRange(QwtPlot::yLeft,0.0,0.0);
 
         //following will only matter if phase correction is even implemented
         bool displayMarkers = false; //c.phaseCorrectionEnabled();
