@@ -398,8 +398,8 @@ void Experiment::save()
 
     //write fid (NOTE: this code is tested, and it works.
     //Don't want to waste disk space with useless FIDs
-    if(ftmwConfig().isEnabled())
-        ftmwConfig().writeFidFile(data->number);
+//    if(ftmwConfig().isEnabled())
+//        ftmwConfig().writeFidFile(data->number);
 
 //    if(lifConfig().isEnabled())
 //        lifConfig().writeLifFile(data->number);
