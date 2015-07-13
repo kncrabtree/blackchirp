@@ -136,17 +136,17 @@ void VirtualFtmwScope::readWaveform()
                 {
                     int noise = (rand()%4096)-2048;
                     qint16 n = qBound(-32768,((int)(dat/d_configuration.yMult)+noise),32767);
-                    qint8 byte1;
-                    qint8 byte2;
+                    quint8 byte1;
+                    quint8 byte2;
                     if(d_configuration.byteOrder == QDataStream::LittleEndian)
                     {
-                        byte1 = (qint8)(n % 256);
-                        byte2 = (qint8)(n / 256);
+                        byte1 = (n & 0x00ff);
+                        byte2 = (n & 0xff00) >> 8;
                     }
                     else
                     {
-                        byte1 = (qint8)(n / 256);
-                        byte2 = (qint8)(n % 256);
+                        byte1 = (n & 0xff00) >> 8;
+                        byte2 = (n & 0x00ff);
                     }
                     out[d_simulatedData.size()*2*i + 2*j] = byte1;
                     out[d_simulatedData.size()*2*i + 2*j + 1] = byte2;

@@ -127,18 +127,18 @@ QList<Fid> FtmwConfig::parseWaveform(QByteArray b) const
             }
             else
             {
-                char y1 = b.at(2*(j*np+i));
-                char y2 = b.at(2*(j*np+i) + 1);
+                unsigned char y1 = b.at(2*(j*np+i));
+                unsigned char y2 = b.at(2*(j*np+i) + 1);
                 qint16 y = 0;
                 if(scopeConfig().byteOrder == QDataStream::LittleEndian)
                 {
-                    y += (qint8)y1;
-                    y += 256*(qint8)y2;
+                    y |= static_cast<quint8>(y1);
+                    y |= static_cast<quint8>(y2) << 8;
                 }
                 else
                 {
-                    y += (qint8)y2;
-                    y += 256*(qint8)y1;
+                    y |= static_cast<quint8>(y1) << 8;
+                    y |= static_cast<quint8>(y2);
                 }
                 d[i] = (static_cast<qint64>(y) + static_cast<qint64>(scopeConfig().yOff));
             }
