@@ -227,6 +227,9 @@ void FidPlot::prepareForExperiment(const FtmwConfig c)
         if(ftEnd < 0.0 || ftEnd < d_ftMarkers.first->xValue() || ftEnd > maxTime)
             d_ftMarkers.second->setXValue(maxTime);
 
+        emit ftStartChanged(d_ftMarkers.first->xValue());
+        emit ftEndChanged(d_ftMarkers.second->xValue());
+
         setAxisAutoScaleRange(QwtPlot::xBottom,0.0,maxTime);
         setAxisAutoScaleRange(QwtPlot::yLeft,0.0,0.0);
 

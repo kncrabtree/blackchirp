@@ -51,6 +51,7 @@ public slots:
 
     void ftStartChanged(double s);
     void ftEndChanged(double e);
+    void pzfChanged(int zpf);
 
     void updatePlot();
 
@@ -74,6 +75,7 @@ private:
 
     bool d_processing;
     bool d_replotWhenDone;
+    int d_pzf;
 
 
 };

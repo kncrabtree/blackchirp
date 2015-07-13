@@ -14,6 +14,9 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent) :
     ui->rollingAverageLabel->hide();
     ui->rollingAverageSpinbox->hide();
     ui->rollingAverageResetButton->hide();
+
+    connect(ui->fidPlot,&FidPlot::ftStartChanged,ui->ftPlot,&FtPlot::ftStartChanged);
+    connect(ui->fidPlot,&FidPlot::ftEndChanged,ui->ftPlot,&FtPlot::ftEndChanged);
 }
 
 FtmwViewWidget::~FtmwViewWidget()

@@ -10,22 +10,21 @@
 #include <QActionGroup>
 #include <QColorDialog>
 #include <QApplication>
+#include <QWidgetAction>
+#include <QSpinBox>
+#include <QFormLayout>
 
-#include <qwt6/qwt_plot_canvas.h>
 #include <qwt6/qwt_picker_machine.h>
 #include <qwt6/qwt_scale_widget.h>
 #include <qwt6/qwt_scale_div.h>
 #include <qwt6/qwt_plot_curve.h>
-#include <qwt6/qwt_plot_zoomer.h>
-#include <qwt6/qwt_plot_panner.h>
 #include <qwt6/qwt_plot_picker.h>
-#include <qwt6/qwt_plot_magnifier.h>
 #include <qwt6/qwt_plot_grid.h>
 
 #include "ftworker.h"
 
 FtPlot::FtPlot(QWidget *parent) :
-    ZoomPanPlot(QString("FtPlot"),parent), d_processing(false), d_replotWhenDone(false)
+    ZoomPanPlot(QString("FtPlot"),parent), d_processing(false), d_replotWhenDone(false), d_pzf(0)
 {
     //make axis label font smaller
     this->setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
@@ -214,6 +213,22 @@ void FtPlot::buildContextMenu(QMouseEvent *me)
     QAction *gridColorAction = m->addAction(QString("Change Grid Color..."));
     connect(gridColorAction,&QAction::triggered,this,[=](){ changeGridColor(getColor(p_plotGrid->majorPen().color())); });
 
+    QWidgetAction *wa = new QWidgetAction(m);
+    QWidget *w = new QWidget(m);
+    QSpinBox *pzfBox = new QSpinBox(w);
+    QFormLayout *fl = new QFormLayout();
+
+    fl->addRow(QString("Zero fill factor"),pzfBox);
+
+    pzfBox->setRange(0,4);
+    pzfBox->setSingleStep(1);
+    pzfBox->setValue(d_pzf);
+    connect(pzfBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtPlot::pzfChanged);
+
+    w->setLayout(fl);
+    wa->setDefaultWidget(w);
+    m->addAction(wa);
+
     m->popup(me->globalPos());
 }
 
@@ -257,6 +272,9 @@ QColor FtPlot::getColor(QColor startingColor)
 void FtPlot::ftStartChanged(double s)
 {
     QMetaObject::invokeMethod(p_ftw,"setStart",Q_ARG(double,s));
+    if(d_currentFid.size() < 2)
+        return;
+
     if(!d_processing)
         updatePlot();
     else
@@ -266,11 +284,27 @@ void FtPlot::ftStartChanged(double s)
 void FtPlot::ftEndChanged(double e)
 {
     QMetaObject::invokeMethod(p_ftw,"setEnd",Q_ARG(double,e));
+    if(d_currentFid.size() < 2)
+        return;
+
     if(!d_processing)
         updatePlot();
     else
         d_replotWhenDone = true;
 
+}
+
+void FtPlot::pzfChanged(int zpf)
+{
+    d_pzf = zpf;
+    QMetaObject::invokeMethod(p_ftw,"setPzf",Q_ARG(int,zpf));
+    if(d_currentFid.size() < 2)
+        return;
+
+    if(!d_processing)
+        updatePlot();
+    else
+        d_replotWhenDone = true;
 }
 
 void FtPlot::updatePlot()

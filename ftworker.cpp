@@ -5,8 +5,10 @@
 #include <gsl/gsl_const.h>
 #include <gsl/gsl_sf.h>
 
+#include "analysis.h"
+
 FtWorker::FtWorker(QObject *parent) :
-    QObject(parent), real(NULL), work(NULL), d_numPnts(0), d_start(0.0), d_end(0.0)
+    QObject(parent), real(NULL), work(NULL), d_numPnts(0), d_start(0.0), d_end(0.0), d_pzf(0)
 {
 }
 
@@ -14,6 +16,8 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
 {
     if(f.size() < 2)
         return QPair<QVector<QPointF>,double>(QVector<QPointF>(),0.0);
+
+    double rawSize = static_cast<double>(f.size());
 
     //first, apply any filtering that needs to be done
     Fid fid = filterFid(f);
@@ -38,7 +42,7 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
     QVector<double> fftData(fid.toVector());
     int spectrumSize = d_numPnts/2 + 1;
     QVector<QPointF> spectrum(spectrumSize);
-    double spacing = fid.spacing();
+    double spacing = fid.spacing()*1.0e6;
     double probe = fid.probeFreq();
     double sign = 1.0;
     if(fid.sideband() == BlackChirp::LowerSideband)
@@ -59,10 +63,11 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
 
     double max = 0.0;
     int i;
+    double np = static_cast<double>(d_numPnts);
     for(i=1; i<d_numPnts-i; i++)
     {
         //calculate x value
-        double x1 = probe + sign*(double)i/(double)d_numPnts/spacing*1.0e-6;
+        double x1 = probe + sign*(double)i/np/spacing;
 
         //calculate real and imaginary coefficients
         double coef_real = fftData.at(2*i-1);
@@ -70,7 +75,7 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
 
         //calculate magnitude and update max
         //note: Normalize output, and convert to mV
-        double coef_mag = sqrt(coef_real*coef_real + coef_imag*coef_imag)/(double)d_numPnts*1000.0;
+        double coef_mag = sqrt(coef_real*coef_real + coef_imag*coef_imag)/rawSize;
         max = qMax(max,coef_mag);
 
         if(fid.sideband() == BlackChirp::UpperSideband)
@@ -81,11 +86,11 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
     if(i==d_numPnts-i)
     {
         if(fid.sideband() == BlackChirp::UpperSideband)
-            spectrum[i] = QPointF(probe + sign*(double)i/(double)d_numPnts/spacing*1.0e-6,
-                          sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/(double)d_numPnts*1000.0);
+            spectrum[i] = QPointF(probe + sign*(double)i/np/spacing,
+                          sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/rawSize);
         else
-            spectrum[spectrumSize-1-i] = QPointF(probe + sign*(double)i/(double)d_numPnts/spacing*1.0e-6,
-                          sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/(double)d_numPnts*1000.0);
+            spectrum[spectrumSize-1-i] = QPointF(probe + sign*(double)i/np/spacing,
+                          sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/rawSize);
     }
 
     //the signal is used for asynchronous purposes (in UI classes), and the return value for synchronous (in non-UI classes)
@@ -104,45 +109,41 @@ Fid FtWorker::filterFid(const Fid fid)
 //    for(int i=0; i<data.size(); i++)
 //        displayFid.append(QPointF((double)i*fid.spacing()*1.0e6,data.at(i)));
 
-    emit fidDone(fid.toXY());
-    return fid;
+//    emit fidDone(fid.toXY());
 
-//    if(d_end < 0.01)
-//        d_end = fid.spacing()*fid.size()*1e6;
+    Fid out = fid;
+    QVector<qint64> data = out.rawData();
+    if(d_fidData.size() < data.size())
+        d_fidData.resize(data.size());
+    d_fidData.fill(0);
 
-//    qint64 start = 0, end = fid.size();
+    bool fStart = (d_start > 0.001);
+    bool fEnd = (d_end > 0.001);
 
-//    if(d_start>0.0 && d_start < d_end)
-//    {
-//        start = (qint64)round(d_start/1e6/fid.spacing());
-//        start = qMax((qint64)0,start);
-//    }
+    for(int i=0; i<data.size(); i++)
+    {
+        if(fStart && static_cast<double>(i)*fid.spacing() < d_start*1e-6)
+            continue;
+        else if(fEnd && static_cast<double>(i)*fid.spacing() > d_end*1e-6)
+            continue;
+        else
+            d_fidData[i] = data.at(i);
+    }
 
-//    if(d_end > d_start && d_end < fid.spacing()*fid.size()*1e6)
-//    {
-//        end = (qint64)round(d_end/1e6/fid.spacing());
-//        end = qMin((qint64)fid.size(),end);
-//    }
+    if(d_pzf > 0 && d_pzf <= 4)
+    {
+        int filledSize = Analysis::nextPowerOf2(2*data.size()) << (d_pzf-1);
+        if(d_fidData.size() != filledSize)
+            d_fidData.resize(filledSize);
+    }
+    else if(d_pzf == 0)
+    {
+        if(d_fidData.size() != data.size())
+            d_fidData.resize(data.size());
+    }
 
-//    if(start + 1000 > end && start + 1000 <= (qint64)fid.size())
-//        end = start + 1000;
-//    else if(start + 1000 > end && start - 1000 >= 0)
-//        start -= 1000;
-//    else if(start + 1000 > end)
-//    {
-//        start = 0;
-//        end = fid.size();
-//    }
+    out.setData(d_fidData);
 
-//    for(int i=0;i<start && i <data.size(); i++)
-//        data.replace(i,0.0);
-//    for(int i=end; i<data.size(); i++)
-//        data.replace(i,0.0);
+    return out;
 
-//    int chunkSize = 50000;
-//    int choppedStart = ((int)start/chunkSize)*chunkSize;
-//    int choppedLength = qMin((((int)end-choppedStart+chunkSize)/chunkSize)*chunkSize,data.size()-choppedStart);
-
-//    //for synchronous use (eg the doFT function), return an FID object
-//    return Fid(fid.spacing(),fid.probeFreq(),data.mid(choppedStart,choppedLength));
 }

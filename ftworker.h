@@ -70,6 +70,7 @@ public slots:
 
     void setStart(double s) { d_start = s; }
     void setEnd(double e) { d_end = e; }
+    void setPzf(int z) { d_pzf = z; }
 
 private:
     gsl_fft_real_wavetable *real; /*!< Wavetable for GNU Scientific Library FFT operations */
@@ -78,6 +79,9 @@ private:
 
     double d_start;
     double d_end;
+    int d_pzf;
+
+    QVector<qint64> d_fidData;
 
 };
 
