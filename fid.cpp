@@ -231,7 +231,69 @@ QDataStream &operator<<(QDataStream &stream, const Fid fid)
 {
     stream << fid.spacing() << fid.probeFreq() << fid.vMult() << fid.shots();
     qint16 sb = static_cast<qint16>(fid.sideband());
-    stream << sb << fid.rawData();
+    stream << sb;
+    qint8 bytes = 2;
+    for(int i=0; i<fid.size(); i++)
+    {
+        if(fid.atRaw(i) > __INT32_MAX__ || fid.atRaw(i) < -(__INT32_MAX__)-1)
+        {
+            bytes = 8;
+            break;
+        }
+
+        if(fid.atRaw(i) > (1<<(8*bytes-1)) - 1)
+        {
+            bytes++;
+            i--;
+        }
+    }
+
+
+    switch(bytes) {
+    case 2:
+    {
+        stream << bytes;
+        QVector<qint16> out(fid.size());
+        for(int i=0; i<fid.size(); i++)
+            out[i] = static_cast<qint16>(fid.atRaw(i));
+        stream << out;
+        break;
+    }
+    case 3:
+    {
+        stream << bytes;
+        stream << static_cast<quint32>(fid.size());
+        quint8 b1, b2, b3;
+
+        for(int i=0; i<fid.size(); i++)
+        {
+            b1 = (fid.atRaw(i) & 0x00ff0000) >> 16;
+            b2 = (fid.atRaw(i) & 0x0000ff00) >> 8;
+            b3 = fid.atRaw(i) & 0x000000ff;
+            if(stream.byteOrder() == QDataStream::BigEndian)
+                stream << b1 << b2 << b3;
+            else
+                stream << b3 << b2 << b1;
+        }
+        break;
+    }
+    case 4:
+    {
+        stream << bytes;
+        QVector<qint32> out(fid.size());
+        for(int i=0; i<fid.size(); i++)
+            out[i] = static_cast<qint32>(fid.atRaw(i));
+        stream << out;
+        break;
+    }
+    case 8:
+    default:
+        bytes = 8;
+        stream << bytes;
+        stream << fid.rawData();
+        break;
+    }
+
     return stream;
 }
 
@@ -241,9 +303,62 @@ QDataStream &operator>>(QDataStream &stream, Fid fid)
     double spacing, probeFreq, vMult;
     qint64 shots;
     qint16 sb;
-    stream >> spacing >> probeFreq >> vMult >> shots >> sb;
+    qint8 size;
+    stream >> spacing >> probeFreq >> vMult >> shots >> sb >> size;
     QVector<qint64> dat;
-    stream >> dat;
+    if(size == 2)
+    {
+        QVector<qint16> in;
+        stream >> in;
+        dat.resize(in.size());
+        for(int i=0; i<in.size(); i++)
+            dat[i] = static_cast<qint64>(in.at(i));
+    }
+    else if(size == 3)
+    {
+        quint32 np;
+        stream >> np;
+        dat.resize(np);
+        quint8 b1, b2, b3;
+        qint64 pt = 0;
+        for(quint32 i=0; i<np; i++)
+        {
+            pt = 0;
+            if(stream.byteOrder() == QDataStream::BigEndian)
+                stream >> b1 >> b2 >> b3;
+            else
+                stream >> b3 >> b2 >> b1;
+
+            if(i > 2034)
+            {
+                if(b1 & 0x80)
+                    pt = Q_UINT64_C(0xffffffffff000000);
+                pt |= static_cast<qint64>(b1 << 16);
+                pt |= static_cast<qint64>(b2 << 8);
+                pt |= static_cast<qint64>(b3);
+                dat[i] = pt;
+            }
+            else
+            {
+                if(b1 & 0x80)
+                    pt = Q_UINT64_C(0xffffffffff000000);
+                pt |= static_cast<qint64>(b1 << 16);
+                pt |= static_cast<qint64>(b2 << 8);
+                pt |= static_cast<qint64>(b3);
+                dat[i] = pt;
+            }
+        }
+    }
+    else if(size == 4)
+    {
+        QVector<qint32> in;
+        stream >> in;
+        dat.resize(in.size());
+        for(int i=0; i<in.size(); i++)
+            dat[i] = static_cast<qint64>(in.at(i));
+    }
+    else
+        stream >> dat;
 
     BlackChirp::Sideband sideband = static_cast<BlackChirp::Sideband>(sb);
     fid.setSpacing(spacing);
