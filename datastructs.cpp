@@ -1,6 +1,6 @@
 #include "datastructs.h"
 
-QString BlackChirp::getExptFile(int num, BlackChirp::ExptFileType t)
+QString BlackChirp::getExptFile(int num, BlackChirp::ExptFileType t, int snapNum)
 {
     QString file = QString::number(num);
     switch(t) {
@@ -11,10 +11,21 @@ QString BlackChirp::getExptFile(int num, BlackChirp::ExptFileType t)
         file.append(QString(".chp"));
         break;
     case FidFile:
+        if(snapNum >= 0)
+            file.append(QString("-snap%1").arg(snapNum));
         file.append(QString(".fid"));
+        if(snapNum >= 0)
+            file.append(QString("~"));
         break;
     case LifFile:
+        if(snapNum >= 0)
+            file.append(QString("-snap%1").arg(snapNum));
         file.append(QString(".lif"));
+        if(snapNum >= 0)
+            file.append(QString("~"));
+        break;
+    case SnapFile:
+        file.append(QString(".snp"));
         break;
     }
 

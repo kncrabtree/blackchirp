@@ -44,7 +44,7 @@ public:
     QString errorString() const;
     double ftMin() const;
     double ftMax() const;
-    bool writeFidFile(int num) const;
+    bool writeFidFile(int num, int snapNum = -1) const;
 
     bool prepareForAcquisition();
     void setEnabled();
@@ -58,6 +58,7 @@ public:
     void setSideband(const BlackChirp::Sideband sb);
     bool setFids(const QByteArray newData);
     bool addFids(const QByteArray rawData);
+    bool subtractFids(const QList<Fid> otherList);
     void resetFids();
     void setScopeConfig(const BlackChirp::FtmwScopeConfig &other);
     void setChirpConfig(const ChirpConfig other);

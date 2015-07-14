@@ -175,9 +175,9 @@ double FtmwConfig::ftMax() const
     return qMax(data->loFreq,lastFreq);
 }
 
-bool FtmwConfig::writeFidFile(int num) const
+bool FtmwConfig::writeFidFile(int num, int snapNum) const
 {
-    QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile));
+    QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,snapNum));
     if(fid.open(QIODevice::WriteOnly))
     {
         QDataStream d(&fid);
@@ -330,6 +330,26 @@ bool FtmwConfig::addFids(const QByteArray rawData)
     return true;
 }
 
+bool FtmwConfig::subtractFids(const QList<Fid> otherList)
+{
+    if(otherList.size() != data->fidList.size())
+        return false;
+
+    for(int i=0; i<otherList.size(); i++)
+    {
+        if(otherList.at(i).size() != data->fidList.size())
+            return false;
+
+        if(otherList.at(i).shots() > data->fidList.at(i).shots())
+            return false;
+    }
+
+    for(int i=0; i<data->fidList.size(); i++)
+        data->fidList[i] -= otherList.at(i);
+
+    return true;
+}
+
 void FtmwConfig::resetFids()
 {
     data->fidList.clear();
@@ -392,7 +412,6 @@ QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
     out.insert(prefix+QString("LoFrequency"),qMakePair(QString::number(loFreq(),'f',6),QString("MHz")));
     out.insert(prefix+QString("Sideband"),qMakePair((int)sideband(),empty));
     out.insert(prefix+QString("FidVMult"),qMakePair(QString::number(fidTemplate().vMult(),'g',12),QString("V")));
-    out.insert(prefix+QString("CompletedShots"),qMakePair(completedShots(),empty));
 
     BlackChirp::FtmwScopeConfig sc = scopeConfig();
     out.unite(sc.headerMap());

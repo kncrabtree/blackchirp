@@ -1,13 +1,19 @@
 #include "acquisitionmanager.h"
 
+#include <savemanager.h>
+
 AcquisitionManager::AcquisitionManager(QObject *parent) : QObject(parent), d_state(Idle)
 {
-
+    p_saveThread = new QThread(this);
 }
 
 AcquisitionManager::~AcquisitionManager()
 {
-
+    if(p_saveThread->isRunning())
+    {
+        p_saveThread->quit();
+        p_saveThread->wait();
+    }
 }
 
 void AcquisitionManager::beginExperiment(Experiment exp)
@@ -22,6 +28,15 @@ void AcquisitionManager::beginExperiment(Experiment exp)
 
     //prepare data files, savemanager, fidmanager, etc
     d_currentExperiment = exp;
+
+    SaveManager *sm = new SaveManager();
+    connect(sm,&SaveManager::finalSaveComplete,p_saveThread,&QThread::quit);
+    connect(sm,&SaveManager::finalSaveComplete,this,&AcquisitionManager::experimentComplete);
+    connect(this,&AcquisitionManager::doFinalSave,sm,&SaveManager::finalSave);
+    connect(this,&AcquisitionManager::takeSnapshot,sm,&SaveManager::snapshot);
+    connect(p_saveThread,&QThread::finished,sm,&SaveManager::deleteLater);
+    sm->moveToThread(p_saveThread);
+    p_saveThread->start();
 
     d_state = Acquiring;
     emit logMessage(exp.startLogMessage(),BlackChirp::LogHighlight);
@@ -205,8 +220,8 @@ void AcquisitionManager::endAcquisition()
 
     disconnect(d_timeDataTimer,&QTimer::timeout,this,&AcquisitionManager::getTimeData);
     d_timeDataTimer->stop();
-    d_currentExperiment.save();
 
-    emit experimentComplete(d_currentExperiment);
+    emit doFinalSave(d_currentExperiment);
+    emit statusMessage(QString("Saving experiment %1").arg(d_currentExperiment.number()));
 }
 

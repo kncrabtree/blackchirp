@@ -145,14 +145,14 @@ void Experiment::setTimeDataInterval(const int t)
 void Experiment::setInitialized()
 {
     bool initSuccess = true;
+    data->startTime = QDateTime::currentDateTime();
+
     if(ftmwConfig().isEnabled())
     {
         initSuccess = data->ftmwCfg.prepareForAcquisition();
         if(!initSuccess)
             data->errorString = data->ftmwCfg.errorString();
     }
-
-
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     int num = s.value(QString("exptNum"),0).toInt()+1;
@@ -183,43 +183,28 @@ void Experiment::setInitialized()
 
     //write headers; chirps, etc
     //scan header
-    QFile hdr(BlackChirp::getExptFile(num,BlackChirp::HeaderFile));
-    if(!hdr.open(QIODevice::WriteOnly))
+    if(!saveHeader())
     {
         data->isInitialized = false;
-        data->errorString = QString("Could not open the file %1 for writing.").arg(hdr.fileName());
+        data->errorString = QString("Could not open the file %1 for writing.")
+                .arg(BlackChirp::getExptFile(data->number,BlackChirp::HeaderFile));
         return;
-    }
-    else
-    {
-        QTextStream t(&hdr);
-        t << BlackChirp::headerMapToString(headerMap());
-        t.flush();
-        hdr.close();
     }
 
     //chirp file
     if(data->ftmwCfg.isEnabled())
     {
-        QFile chp(BlackChirp::getExptFile(num,BlackChirp::ChirpFile));
-        if(!chp.open(QIODevice::WriteOnly))
+        if(!saveChirpFile())
         {
             data->isInitialized = false;
-            data->errorString = QString("Could not open the file %1 for writing.").arg(chp.fileName());
+            data->errorString = QString("Could not open the file %1 for writing.")
+                    .arg(BlackChirp::getExptFile(num,BlackChirp::ChirpFile));
             return;
-        }
-        else
-        {
-            QTextStream t(&chp);
-            t << data->ftmwCfg.chirpConfig().toString();
-            t.flush();
-            chp.close();
         }
     }
 
 
     data->isInitialized = initSuccess;
-    data->startTime = QDateTime::currentDateTime();
 
     if(initSuccess)
         s.setValue(QString("exptNum"),0); //FIXME
@@ -360,7 +345,7 @@ void Experiment::incrementFtmw()
     data->ftmwCfg.increment();
 }
 
-void Experiment::save()
+void Experiment::finalSave() const
 {
     //record validation keys
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
@@ -387,6 +372,20 @@ void Experiment::save()
     }
 
     //rewrite header file
+    saveHeader();
+
+    //write fid (NOTE: this code is tested, and it works.
+    //Don't want to waste disk space with useless FIDs
+    if(ftmwConfig().isEnabled())
+        ftmwConfig().writeFidFile(data->number);
+
+    if(lifConfig().isEnabled())
+            lifConfig().writeLifFile(data->number);
+}
+
+bool Experiment::saveHeader() const
+{
+
     QFile hdr(BlackChirp::getExptFile(data->number,BlackChirp::HeaderFile));
     if(hdr.open(QIODevice::WriteOnly))
     {
@@ -394,14 +393,42 @@ void Experiment::save()
         t << BlackChirp::headerMapToString(headerMap());
         t.flush();
         hdr.close();
+        return true;
+    }
+    else
+        return false;
+}
+
+bool Experiment::saveChirpFile() const
+{
+    QFile chp(BlackChirp::getExptFile(data->number,BlackChirp::ChirpFile));
+    if(chp.open(QIODevice::WriteOnly))
+    {
+        QTextStream t(&chp);
+        t << data->ftmwCfg.chirpConfig().toString();
+        t.flush();
+        chp.close();
+        return true;
+    }
+    else
+        return false;
+}
+
+void Experiment::snapshot(int snapNum, const Experiment other) const
+{
+    if(ftmwConfig().isEnabled())
+    {
+        FtmwConfig cf = ftmwConfig();
+        if(other.number() == data->number && other.isInitialized())
+        {
+            if(cf.subtractFids(other.ftmwConfig().fidList()))
+                cf.writeFidFile(data->number,snapNum);
+        }
+        else
+            cf.writeFidFile(data->number,snapNum);
     }
 
-    //write fid (NOTE: this code is tested, and it works.
-    //Don't want to waste disk space with useless FIDs
-//    if(ftmwConfig().isEnabled())
-//        ftmwConfig().writeFidFile(data->number);
-
-//    if(lifConfig().isEnabled())
-//        lifConfig().writeLifFile(data->number);
+    if(lifConfig().isEnabled())
+        lifConfig().writeLifFile(data->number);
 }
 

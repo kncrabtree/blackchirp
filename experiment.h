@@ -64,7 +64,10 @@ public:
     void setHardwareFailed();
     void incrementFtmw();
 
-    void save();
+    void finalSave() const;
+    bool saveHeader() const;
+    bool saveChirpFile() const;
+    void snapshot(int snapNum, const Experiment other) const;
 
 private:
     QSharedDataPointer<ExperimentData> data;

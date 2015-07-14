@@ -166,7 +166,7 @@ struct LifPoint {
     double sumsq;
     quint64 count;
 
-    LifPoint() : mean(0.0), sumsq(0.0), count(0) {}
+    LifPoint() : mean(0.0), sumsq(0.0), count(0) {}    
 };
 
 
@@ -198,10 +198,11 @@ enum ExptFileType {
     HeaderFile,
     ChirpFile,
     FidFile,
-    LifFile
+    LifFile,
+    SnapFile
 };
 
-QString getExptFile(int num, BlackChirp::ExptFileType t);
+QString getExptFile(int num, BlackChirp::ExptFileType t, int snapNum = -1);
 QString getExptDir(int num);
 QString headerMapToString(QMap<QString,QPair<QVariant,QString>> map);
 

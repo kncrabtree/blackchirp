@@ -92,6 +92,19 @@ Fid &Fid::operator +=(const qint64 *other)
     return *this;
 }
 
+Fid &Fid::operator -=(const Fid other)
+{
+    Q_ASSERT(data->shots > other.shots());
+    Q_ASSERT(size() == other.size());
+
+    for(int i=0; i<size(); i--)
+        data->fid[i] -= other.atRaw(i);
+
+    data->shots -= other.shots();
+
+    return *this;
+}
+
 void Fid::add(const qint64 *other, const unsigned int offset)
 {
     for(int i=0; i<size(); i++)

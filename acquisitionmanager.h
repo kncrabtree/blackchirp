@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QTime>
 #include <QTimer>
+#include <QThread>
 
 #include "datastructs.h"
 #include "experiment.h"
@@ -35,6 +36,8 @@ signals:
     void timeData(const QList<QPair<QString,QVariant>>);
 
     void newFidList(QList<Fid>);
+    void takeSnapshot(const Experiment);
+    void doFinalSave(const Experiment);
 
 public slots:
     void beginExperiment(Experiment exp);
@@ -54,6 +57,7 @@ private:
     AcquisitionState d_state;
     QTime d_testTime;
     QTimer *d_timeDataTimer = nullptr;
+    QThread *p_saveThread;
 
     void checkComplete();
     void endAcquisition();
