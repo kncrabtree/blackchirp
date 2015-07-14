@@ -5,9 +5,7 @@
 
 #include <QList>
 
-#include "fid.h"
-
-class FtmwConfig;
+#include "experiment.h"
 
 namespace Ui {
 class FtmwViewWidget;
@@ -20,7 +18,7 @@ class FtmwViewWidget : public QWidget
 public:
     explicit FtmwViewWidget(QWidget *parent = 0);
     ~FtmwViewWidget();
-    void prepareForExperiment(const FtmwConfig config);
+    void prepareForExperiment(const Experiment e);
 
 signals:
     void rollingAverageShotsChanged(int);

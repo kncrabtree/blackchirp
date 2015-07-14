@@ -6,7 +6,7 @@
 #include <QVector>
 #include <QPointF>
 
-#include "ftmwconfig.h"
+#include "experiment.h"
 
 class QThread;
 class QwtPlotCurve;
@@ -25,7 +25,7 @@ public:
     explicit FtPlot(QWidget *parent = 0);
     ~FtPlot();
 
-    void prepareForExperiment(const FtmwConfig c);
+    void prepareForExperiment(const Experiment e);
 
 signals:
     void fidDone(const QVector<QPointF> fid);
@@ -52,6 +52,7 @@ public slots:
     void ftStartChanged(double s);
     void ftEndChanged(double e);
     void pzfChanged(int zpf);
+    void exportXY();
 
     void updatePlot();
 
@@ -76,6 +77,7 @@ private:
     bool d_processing;
     bool d_replotWhenDone;
     int d_pzf;
+    int d_number;
 
 
 };

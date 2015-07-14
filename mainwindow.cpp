@@ -298,7 +298,7 @@ void MainWindow::experimentInitialized(Experiment exp)
 
 	ui->exptSpinBox->setValue(exp.number());
     ui->ftmwProgressBar->setValue(0);
-    ui->ftViewWidget->prepareForExperiment(exp.ftmwConfig());
+    ui->ftViewWidget->prepareForExperiment(exp);
 
     ui->lifProgressBar->setValue(0);
 

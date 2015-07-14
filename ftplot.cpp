@@ -13,6 +13,8 @@
 #include <QWidgetAction>
 #include <QSpinBox>
 #include <QFormLayout>
+#include <QFileDialog>
+#include <QMessageBox>
 
 #include <qwt6/qwt_picker_machine.h>
 #include <qwt6/qwt_scale_widget.h>
@@ -24,7 +26,7 @@
 #include "ftworker.h"
 
 FtPlot::FtPlot(QWidget *parent) :
-    ZoomPanPlot(QString("FtPlot"),parent), d_processing(false), d_replotWhenDone(false), d_pzf(0)
+    ZoomPanPlot(QString("FtPlot"),parent), d_processing(false), d_replotWhenDone(false), d_pzf(0), d_number(0)
 {
     //make axis label font smaller
     this->setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
@@ -92,8 +94,11 @@ FtPlot::~FtPlot()
     p_ftThread->wait();
 }
 
-void FtPlot::prepareForExperiment(const FtmwConfig c)
+void FtPlot::prepareForExperiment(const Experiment e)
 {
+    FtmwConfig c = e.ftmwConfig();
+    d_number = e.number();
+
     d_currentFid = Fid();
     d_currentFt = QVector<QPointF>();
     p_curveData->setSamples(d_currentFt);
@@ -213,6 +218,9 @@ void FtPlot::buildContextMenu(QMouseEvent *me)
     QAction *gridColorAction = m->addAction(QString("Change Grid Color..."));
     connect(gridColorAction,&QAction::triggered,this,[=](){ changeGridColor(getColor(p_plotGrid->majorPen().color())); });
 
+    QAction *exportAction = m->addAction(QString("Export XY..."));
+    connect(exportAction,&QAction::triggered,this,&FtPlot::exportXY);
+
     QWidgetAction *wa = new QWidgetAction(m);
     QWidget *w = new QWidget(m);
     QSpinBox *pzfBox = new QSpinBox(w);
@@ -305,6 +313,31 @@ void FtPlot::pzfChanged(int zpf)
         updatePlot();
     else
         d_replotWhenDone = true;
+}
+
+void FtPlot::exportXY()
+{
+    QString name = QFileDialog::getSaveFileName(this,QString("Export FT"),QString("~/%1_ft.txt").arg(d_number));
+    if(name.isEmpty())
+        return;
+
+    QFile f(name);
+
+    if(!f.open(QIODevice::WriteOnly))
+    {
+        QMessageBox::critical(this,QString("FT Export Failed"),QString("Could not open file %1 for writing. Please choose a different filename.").arg(name));
+        return;
+    }
+
+    QApplication::setOverrideCursor(Qt::BusyCursor);
+
+    f.write(QString("freq%1\tft%1").arg(d_number).toLatin1());
+
+    for(int i=0;i<d_currentFt.size();i++)
+        f.write(QString("\n%1\t%2").arg(d_currentFt.at(i).x(),0,'f',6).arg(d_currentFt.at(i).y(),0,'e',12).toLatin1());
+    f.close();
+
+    QApplication::restoreOverrideCursor();
 }
 
 void FtPlot::updatePlot()

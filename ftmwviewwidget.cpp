@@ -1,8 +1,6 @@
 #include "ftmwviewwidget.h"
 #include "ui_ftmwviewwidget.h"
 
-#include "ftmwconfig.h"
-
 FtmwViewWidget::FtmwViewWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::FtmwViewWidget)
@@ -17,6 +15,7 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent) :
 
     connect(ui->fidPlot,&FidPlot::ftStartChanged,ui->ftPlot,&FtPlot::ftStartChanged);
     connect(ui->fidPlot,&FidPlot::ftEndChanged,ui->ftPlot,&FtPlot::ftEndChanged);
+    ui->exptLabel->setVisible(false);
 }
 
 FtmwViewWidget::~FtmwViewWidget()
@@ -24,12 +23,17 @@ FtmwViewWidget::~FtmwViewWidget()
     delete ui;
 }
 
-void FtmwViewWidget::prepareForExperiment(const FtmwConfig config)
+void FtmwViewWidget::prepareForExperiment(const Experiment e)
 {
+    FtmwConfig config = e.ftmwConfig();
+    ui->exptLabel->setText(QString("Experiment %1").arg(e.number()));
+    if(!ui->exptLabel->isVisible())
+        ui->exptLabel->setVisible(true);
+
     ui->shotsLabel->setText(QString("Shots: 0"));
 
     ui->fidPlot->prepareForExperiment(config);
-    ui->ftPlot->prepareForExperiment(config);
+    ui->ftPlot->prepareForExperiment(e);
 
     ui->frameBox->blockSignals(true);
     if(config.isEnabled())
