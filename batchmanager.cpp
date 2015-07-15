@@ -13,7 +13,7 @@ BatchManager::~BatchManager()
 
 void BatchManager::experimentComplete(const Experiment exp)
 {
-    if(!exp.isInitialized())
+    if(!exp.isInitialized() || !exp.hardwareSuccess())
     {
         writeReport();
         emit batchComplete(true);

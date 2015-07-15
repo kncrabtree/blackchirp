@@ -18,11 +18,36 @@ AcquisitionManager::~AcquisitionManager()
 
 void AcquisitionManager::beginExperiment(Experiment exp)
 {
-	if(!exp.isInitialized() || exp.isDummy())
+    if(!exp.hardwareSuccess() || exp.isDummy())
     {
         if(!exp.errorString().isEmpty())
             emit logMessage(exp.errorString(),BlackChirp::LogError);
 		emit experimentComplete(exp);
+        return;
+    }
+
+#ifdef BC_CUDA
+    if(exp.ftmwConfig().isEnabled())
+    {
+        //prepare GPU Averager
+        BlackChirp::FtmwScopeConfig sc = exp.ftmwConfig().scopeConfig();
+        bool success = gpuAvg.initialize(sc.recordLength,exp.ftmwConfig().numFrames(),
+                                         sc.bytesPerPoint,sc.byteOrder);
+        if(!success)
+        {
+            emit logMessage(gpuAvg.getErrorString(),BlackChirp::LogError);
+            emit experimentComplete(exp);
+            return;
+        }
+    }
+#endif
+
+    exp.setInitialized();
+    if(!exp.isInitialized())
+    {
+        if(!exp.errorString().isEmpty())
+            emit logMessage(exp.errorString(),BlackChirp::LogError);
+        emit experimentComplete(exp);
         return;
     }
 
@@ -59,14 +84,30 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 {
 //    static int total = 0;
 //    static int count = 0;
-    if(d_state == Acquiring && d_currentExperiment.ftmwConfig().isEnabled() && !d_currentExperiment.ftmwConfig().isComplete())
+    if(d_state == Acquiring && d_currentExperiment.ftmwConfig().isEnabled()
+            && !d_currentExperiment.ftmwConfig().isComplete())
     {
 //        d_testTime.restart();
         bool success = true;
-        if(d_currentExperiment.ftmwConfig().fidList().isEmpty())
-            success = d_currentExperiment.setFids(b);
+
+#ifndef BC_CUDA
+        success = d_currentExperiment.addFids(b);
+#else
+        QList<QVector<qint64> >  l;
+        if(d_currentExperiment.ftmwConfig().type() == BlackChirp::FtmwPeakUp)
+            l = gpuAvg.parseAndRollAvg(b.constData(),d_currentExperiment.ftmwConfig().completedShots()+1,
+                                       d_currentExperiment.ftmwConfig().targetShots());
         else
-            success = d_currentExperiment.addFids(b);
+            l = gpuAvg.parseAndAdd(b.constData());
+
+        if(l.isEmpty())
+        {
+            d_currentExperiment.setErrorString(gpuAvg.getErrorString());
+            success = false;
+        }
+        else
+            success = d_currentExperiment.setFidsData(l);
+#endif
 
         if(!success)
         {
@@ -142,7 +183,12 @@ void AcquisitionManager::changeRollingAverageShots(int newShots)
 void AcquisitionManager::resetRollingAverage()
 {
     if(d_state == Acquiring && d_currentExperiment.ftmwConfig().isEnabled() && d_currentExperiment.ftmwConfig().type() == BlackChirp::FtmwPeakUp)
+    {
         d_currentExperiment.resetFids();
+#ifdef BC_CUDA
+        gpuAvg.resetAverage();
+#endif
+    }
 }
 
 void AcquisitionManager::getTimeData()

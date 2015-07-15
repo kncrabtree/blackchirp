@@ -79,14 +79,31 @@ GpuAverager::GpuAverager() : d_pointsPerFrame(0), d_numFrames(0), d_totalPoints(
 
 GpuAverager::~GpuAverager()
 {
+   freeMemory();
+}
+
+void GpuAverager::freeMemory()
+{
     if(p_devCharPtr != nullptr)
+    {
         cudaFree(p_devCharPtr);
+        p_devCharPtr = nullptr;
+    }
     if(p_hostPinnedCharPtr != nullptr)
+    {
         cudaFreeHost(p_hostPinnedCharPtr);
+        p_hostPinnedCharPtr = nullptr;
+    }
     if(p_devSumPtr != nullptr)
+    {
         cudaFree(p_devSumPtr);
+        p_devSumPtr = nullptr;
+    }
     if(p_hostPinnedSumPtr != nullptr)
+    {
         cudaFreeHost(p_hostPinnedSumPtr);
+        p_hostPinnedSumPtr = nullptr;
+    }
 
     while(!d_streamList.isEmpty())
         cudaStreamDestroy(d_streamList.takeFirst());
@@ -94,6 +111,8 @@ GpuAverager::~GpuAverager()
 
 bool GpuAverager::initialize(const int pointsPerFrame, const int numFrames, const int bytesPerPoint, QDataStream::ByteOrder byteOrder)
 {
+    freeMemory();
+
     d_pointsPerFrame = pointsPerFrame;
     d_numFrames = numFrames;
     d_totalPoints = pointsPerFrame*numFrames;
