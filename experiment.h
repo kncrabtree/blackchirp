@@ -42,7 +42,7 @@ public:
     QString endLogMessage() const;
     BlackChirp::LogMessageCode endLogMessageCode() const;
     QMap<QString, QPair<QVariant,QString>> headerMap() const;
-    bool snapshotReady() const;
+    bool snapshotReady();
 
     void setTimeDataInterval(const int t);
     void setAutoSaveShotsInterval(const int s);
@@ -79,13 +79,15 @@ private:
 class ExperimentData : public QSharedData
 {
 public:
-    ExperimentData() : number(0), timeDataInterval(300), autoSaveShotsInterval(10000), isInitialized(false), isAborted(false),
-        isDummy(false), hardwareSuccess(true), waitForLifSet(false), endLogMessageCode(BlackChirp::LogHighlight) {}
+    ExperimentData() : number(0), timeDataInterval(300), autoSaveShotsInterval(10000), lastSnapshot(0), isInitialized(false),
+        isAborted(false), isDummy(false), hardwareSuccess(true), waitForLifSet(false),
+        endLogMessageCode(BlackChirp::LogHighlight) {}
 
     int number;
     QDateTime startTime;
     int timeDataInterval;
     int autoSaveShotsInterval;
+    qint64 lastSnapshot;
     bool isInitialized;
     bool isAborted;
     bool isDummy;

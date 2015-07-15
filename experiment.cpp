@@ -142,15 +142,43 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
     return out;
 }
 
-bool Experiment::snapshotReady() const
+bool Experiment::snapshotReady()
 {
     if(isComplete())
         return false;
 
     if(ftmwConfig().isEnabled())
-        return !(ftmwConfig().completedShots() % data->autoSaveShotsInterval);
+    {
+        if(ftmwConfig().completedShots() > 0)
+        {
+            qint64 d = ftmwConfig().completedShots() - data->lastSnapshot;
+            if(d > 0)
+            {
+                bool out = !(d % static_cast<qint64>(data->autoSaveShotsInterval));
+                if(out)
+                    data->lastSnapshot = ftmwConfig().completedShots();
+                return out;
+            }
+            else
+                return false;
+        }
+    }
     else if(lifConfig().isEnabled())
-        return !(lifConfig().completedShots() % data->autoSaveShotsInterval);
+    {
+        if(lifConfig().completedShots() > 0)
+        {
+            qint64 d = lifConfig().completedShots() - data->lastSnapshot;
+            if(d > 0)
+            {
+                bool out = !(d % static_cast<qint64>(data->autoSaveShotsInterval));
+                if(out)
+                    data->lastSnapshot = lifConfig().completedShots();
+                return out;
+            }
+            else
+                return false;
+        }
+    }
 
     return false;
 }

@@ -97,7 +97,7 @@ Fid &Fid::operator -=(const Fid other)
     Q_ASSERT(data->shots > other.shots());
     Q_ASSERT(size() == other.size());
 
-    for(int i=0; i<size(); i--)
+    for(int i=0; i<size(); i++)
         data->fid[i] -= other.atRaw(i);
 
     data->shots -= other.shots();

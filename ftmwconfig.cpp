@@ -322,10 +322,10 @@ bool FtmwConfig::subtractFids(const QList<Fid> otherList)
 
     for(int i=0; i<otherList.size(); i++)
     {
-        if(otherList.at(i).size() != data->fidList.size())
+        if(otherList.at(i).size() != data->fidList.at(i).size())
             return false;
 
-        if(otherList.at(i).shots() > data->fidList.at(i).shots())
+        if(otherList.at(i).shots() >= data->fidList.at(i).shots())
             return false;
     }
 
