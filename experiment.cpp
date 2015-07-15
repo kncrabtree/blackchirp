@@ -43,6 +43,11 @@ int Experiment::timeDataInterval() const
     return data->timeDataInterval;
 }
 
+int Experiment::autoSaveShots() const
+{
+    return data->autoSaveShotsInterval;
+}
+
 bool Experiment::isInitialized() const
 {
     return data->isInitialized;
@@ -137,9 +142,27 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
     return out;
 }
 
+bool Experiment::snapshotReady() const
+{
+    if(isComplete())
+        return false;
+
+    if(ftmwConfig().isEnabled())
+        return !(ftmwConfig().completedShots() % data->autoSaveShotsInterval);
+    else if(lifConfig().isEnabled())
+        return !(lifConfig().completedShots() % data->autoSaveShotsInterval);
+
+    return false;
+}
+
 void Experiment::setTimeDataInterval(const int t)
 {
     data->timeDataInterval = t;
+}
+
+void Experiment::setAutoSaveShotsInterval(const int s)
+{
+    data->autoSaveShotsInterval = s;
 }
 
 void Experiment::setInitialized()

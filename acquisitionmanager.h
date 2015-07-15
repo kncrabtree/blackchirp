@@ -32,6 +32,7 @@ signals:
     void nextLifPoint(double delay, double frequency);
     void lifShotAcquired(int);
     void beginAcquisition();
+    void endAcquisition();
     void timeDataSignal();
     void timeData(const QList<QPair<QString,QVariant>>);
 
@@ -60,7 +61,7 @@ private:
     QThread *p_saveThread;
 
     void checkComplete();
-    void endAcquisition();
+    void finishAcquisition();
 
 
 };

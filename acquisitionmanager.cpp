@@ -50,6 +50,7 @@ void AcquisitionManager::beginExperiment(Experiment exp)
         connect(d_timeDataTimer,&QTimer::timeout,this,&AcquisitionManager::getTimeData,Qt::UniqueConnection);
         d_timeDataTimer->start(d_currentExperiment.timeDataInterval()*1000);
     }
+    d_currentExperiment.setAutoSaveShotsInterval(1000);
     emit beginAcquisition();
 
 }
@@ -201,21 +202,25 @@ void AcquisitionManager::abort()
     {
         d_currentExperiment.setAborted();
         //save!
-        endAcquisition();
+        finishAcquisition();
     }
 }
 
 void AcquisitionManager::checkComplete()
 {
-    if(d_state == Acquiring && d_currentExperiment.isComplete())
+    if(d_state == Acquiring)
     {
-        //do final save
-        endAcquisition();
+        if(d_currentExperiment.snapshotReady())
+            emit takeSnapshot(d_currentExperiment);
+
+        if(d_currentExperiment.isComplete())
+            finishAcquisition();
     }
 }
 
-void AcquisitionManager::endAcquisition()
+void AcquisitionManager::finishAcquisition()
 {
+    emit endAcquisition();
     d_state = Idle;
 
     disconnect(d_timeDataTimer,&QTimer::timeout,this,&AcquisitionManager::getTimeData);
