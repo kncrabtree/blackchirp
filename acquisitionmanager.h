@@ -9,6 +9,10 @@
 #include "datastructs.h"
 #include "experiment.h"
 
+#ifdef BC_CUDA
+#include "gpuaverager.h"
+#endif
+
 class AcquisitionManager : public QObject
 {
     Q_OBJECT
@@ -61,6 +65,10 @@ private:
 
     void checkComplete();
     void endAcquisition();
+
+#ifdef BC_CUDA
+    GpuAverager gpuAvg;
+#endif
 
 
 };

@@ -195,17 +195,11 @@ bool FtmwConfig::prepareForAcquisition()
     Fid f(scopeConfig().xIncr,loFreq(),QVector<qint64>(0),sideband(),scopeConfig().yMult,1);
     data->fidTemplate = f;
 
-#ifdef BC_CUDA
-    bool success = data->gpuAvg.initialize(scopeConfig().recordLength,numFrames(),scopeConfig().bytesPerPoint,scopeConfig().byteOrder);
-    if(!success)
+    if(!chirpConfig().isValid())
     {
-        data->errorString = data->gpuAvg.getErrorString();
+        data->errorString = QString("Invalid chirp configuration.");
         return false;
     }
-#endif
-
-    if(!chirpConfig().isValid())
-        return false;
 
     return true;
 
@@ -260,73 +254,64 @@ void FtmwConfig::setSideband(const BlackChirp::Sideband sb)
     data->sideband = sb;
 }
 
-bool FtmwConfig::setFids(const QByteArray newData)
+bool FtmwConfig::setFidsData(const QList<QVector<qint64> > newList)
 {
-#ifndef BC_CUDA
-    data->fidList = parseWaveform(newData);
-#else
-    QList<QVector<qint64> > l = data->gpuAvg.parseAndAdd(newData.constData());
-
-    if(l.isEmpty())
+    if(data->fidList.isEmpty())
     {
-        data->errorString = data->gpuAvg.getErrorString();
-        return false;
+        for(int i=0; i<newList.size(); i++)
+        {
+            Fid f = fidTemplate();
+            f.setData(newList.at(i));
+            data->fidList.append(f);
+        }
+    }
+    else
+    {
+        if(newList.size() != data->fidList.size())
+        {
+            data->errorString = QString("Could not set new FID list data. List sizes are not equal (new = %1, current = %2)")
+                    .arg(newList.size()).arg(data->fidList.size());
+            return false;
+        }
+
+        for(int i=0; i<data->fidList.size(); i++)
+        {
+            data->fidList[i].setData(newList.at(i));
+            if(type() == BlackChirp::FtmwPeakUp)
+                data->fidList[i].setShots(qMin(completedShots()+1,targetShots()));
+            else
+                data->fidList[i].setShots(completedShots()+1);
+        }
     }
 
-    if(!data->fidList.isEmpty())
-        data->fidList.clear();
-
-    for(int i=0; i<numFrames(); i++)
-    {
-        Fid f = fidTemplate();
-        f.setData(l.at(i));
-        data->fidList.append(f);
-    }
-#endif
     return true;
 }
 
 bool FtmwConfig::addFids(const QByteArray rawData)
 {
-#ifndef BC_CUDA
     QList<Fid> newList = parseWaveform(rawData);
-    if(type() == BlackChirp::FtmwPeakUp)
+    if(data->completedShots > 0)
     {
-        for(int i=0; i<data->fidList.size(); i++)
-            newList[i].rollingAverage(data->fidList.at(i),targetShots());
-    }
-    else
-    {
-        for(int i=0; i<data->fidList.size(); i++)
-            newList[i] += data->fidList.at(i);
+        if(newList.size() != data->fidList.size())
+        {
+            data->errorString = QString("Could not set new FID list data. List sizes are not equal (new = %1, current = %2)")
+                    .arg(newList.size()).arg(data->fidList.size());
+            return false;
+        }
+
+        if(type() == BlackChirp::FtmwPeakUp)
+        {
+            for(int i=0; i<data->fidList.size(); i++)
+                newList[i].rollingAverage(data->fidList.at(i),targetShots());
+        }
+        else
+        {
+            for(int i=0; i<data->fidList.size(); i++)
+                newList[i] += data->fidList.at(i);
+        }
     }
     data->fidList = newList;
-#else
-    QList<QVector<qint64> >  l;
-    if(type() == BlackChirp::FtmwPeakUp)
-        l = data->gpuAvg.parseAndRollAvg(rawData.constData(),completedShots()+1,targetShots());
-    else
-        l=data->gpuAvg.parseAndAdd(rawData.constData());
 
-    if(l.isEmpty())
-    {
-        data->errorString = data->gpuAvg.getErrorString();
-        return false;
-    }
-
-    for(int i=0; i<numFrames(); i++)
-    {
-        data->fidList.removeFirst();
-        Fid f = fidTemplate();
-        f.setData(l.at(i));
-        if(type() == BlackChirp::FtmwPeakUp)
-            f.setShots(qMin(completedShots()+1,targetShots()));
-        else
-            f.setShots(completedShots()+1);
-        data->fidList.append(f);
-    }
-
-#endif
     return true;
 }
 
@@ -354,9 +339,6 @@ void FtmwConfig::resetFids()
 {
     data->fidList.clear();
     data->completedShots = 0;
-#ifdef BC_CUDA
-    data->gpuAvg.resetAverage();
-#endif
 }
 
 void FtmwConfig::setScopeConfig(const BlackChirp::FtmwScopeConfig &other)

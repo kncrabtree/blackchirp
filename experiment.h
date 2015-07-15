@@ -50,7 +50,7 @@ public:
     void setFtmwConfig(const FtmwConfig cfg);
     void setScopeConfig(const BlackChirp::FtmwScopeConfig &cfg);
     void setLifConfig(const LifConfig cfg);
-    bool setFids(const QByteArray rawData);
+    bool setFidsData(const QList<QVector<qint64>> l);
     bool addFids(const QByteArray newData);
     bool addLifWaveform(const LifTrace t);
     void overrideTargetShots(const int target);

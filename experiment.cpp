@@ -147,11 +147,14 @@ void Experiment::setInitialized()
     bool initSuccess = true;
     data->startTime = QDateTime::currentDateTime();
 
-    if(ftmwConfig().isEnabled())
+    if(data->ftmwCfg.isEnabled())
     {
-        initSuccess = data->ftmwCfg.prepareForAcquisition();
-        if(!initSuccess)
-            data->errorString = data->ftmwCfg.errorString();
+        if(!data->ftmwCfg.prepareForAcquisition())
+        {
+            setErrorString(data->ftmwCfg.errorString());
+            data->isInitialized = false;
+            return;
+        }
     }
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
@@ -251,10 +254,9 @@ void Experiment::setLifConfig(const LifConfig cfg)
     data->lifCfg = cfg;
 }
 
-
-bool Experiment::setFids(const QByteArray rawData)
+bool Experiment::setFidsData(const QList<QVector<qint64> > l)
 {
-    if(!data->ftmwCfg.setFids(rawData))
+    if(!data->ftmwCfg.setFidsData(l))
     {
         setErrorString(ftmwConfig().errorString());
         return false;

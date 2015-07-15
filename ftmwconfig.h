@@ -12,10 +12,6 @@
 #include "chirpconfig.h"
 #include "datastructs.h"
 
-#ifdef BC_CUDA
-#include "gpuaverager.h"
-#endif
-
 class FtmwConfigData;
 
 class FtmwConfig
@@ -56,7 +52,7 @@ public:
     void setAutoSaveShots(const int shots);
     void setLoFreq(const double f);
     void setSideband(const BlackChirp::Sideband sb);
-    bool setFids(const QByteArray newData);
+    bool setFidsData(const QList<QVector<qint64>> newList);
     bool addFids(const QByteArray rawData);
     bool subtractFids(const QList<Fid> otherList);
     void resetFids();
@@ -92,10 +88,6 @@ public:
     ChirpConfig chirpConfig;
     Fid fidTemplate;
     QString errorString;
-
-#ifdef BC_CUDA
-    GpuAverager gpuAvg;
-#endif
 
 };
 

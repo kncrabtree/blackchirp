@@ -31,6 +31,7 @@ private:
     QString d_errorMsg;
 
     void setError(QString errMsg, cudaError_t errorCode);
+    void freeMemory();
 
     char *p_devCharPtr = nullptr;
     char *p_hostPinnedCharPtr = nullptr;
