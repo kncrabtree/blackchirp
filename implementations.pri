@@ -11,7 +11,9 @@ HEADERS += \
     $$PWD/qc9528.h \
     $$PWD/valon5009.h \
     $$PWD/mks647c.h \
-    $$PWD/prologixgpiblan.h
+    $$PWD/prologixgpiblan.h \
+    $$PWD/virtualioboard.h
+
 
 SOURCES += \
     $$PWD/virtualftmwscope.cpp \
@@ -26,4 +28,16 @@ SOURCES += \
     $$PWD/qc9528.cpp \
     $$PWD/valon5009.cpp \
     $$PWD/mks647c.cpp \
-    $$PWD/prologixgpiblan.cpp
+    $$PWD/prologixgpiblan.cpp \
+    $$PWD/virtualioboard.cpp
+
+
+equals(IOBOARD,1) {
+HEADERS += $$PWD/labjacku3.h \
+    $$PWD/u3.h
+
+SOURCES += $$PWD/labjacku3.cpp \
+    $$PWD/u3.cpp
+
+LIBS += -llabjackusb
+}

@@ -21,13 +21,6 @@ CONFIG += gpu-cuda
 
 SOURCES += main.cpp
 
-
-include(acquisition.pri)
-include(gui.pri)
-include(data.pri)
-include(hardware.pri)
-include(wizard.pri)
-
 RESOURCES += resources.qrc
 
 unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
@@ -90,6 +83,7 @@ PGEN_CHANNELS=8
 FC=0
 FC_CHANNELS=4
 LIFSCOPE=0
+IOBOARD=0
 } else {
 #------------------------------------------------
 # The following defines select hardware implementations.
@@ -121,7 +115,18 @@ FC_CHANNELS=4
 
 #LIF Oscilloscope (0 = virtual, 1 = DPO3012)
 LIFSCOPE=0
+
+#IO Board (0 = virtual, 1 = Labjack U3)
+IOBOARD=0
 }
+
+
+include(acquisition.pri)
+include(gui.pri)
+include(data.pri)
+include(hardware.pri)
+include(wizard.pri)
+include(implementations.pri)
 
 
 #------------------------------------------------
@@ -134,6 +139,7 @@ DEFINES += BC_SYNTH=$$SYNTH
 DEFINES += BC_PGEN=$$PGEN BC_PGEN_GASCHANNEL=$$PGEN_GAS BC_PGEN_AWGCHANNEL=$$PGEN_AWG BC_PGEN_XMERCHANNEL=$$PGEN_XMER BC_PGEN_LIFCHANNEL=$$PGEN_LIF BC_PGEN_NUMCHANNELS=$$PGEN_CHANNELS
 DEFINES += BC_FLOWCONTROLLER=$$FC  BC_FLOW_NUMCHANNELS=$$FC_CHANNELS
 DEFINES += BC_LIFSCOPE=$$LIFSCOPE
+DEFINES += BC_IOBOARD=$$IOBOARD
 
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O3

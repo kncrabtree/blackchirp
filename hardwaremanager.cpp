@@ -9,6 +9,7 @@
 #include "pulsegenerator.h"
 #include "flowcontroller.h"
 #include "lifscope.h"
+#include "ioboard.h"
 
 HardwareManager::HardwareManager(QObject *parent) : QObject(parent), d_responseCount(0)
 {
@@ -35,9 +36,7 @@ void HardwareManager::initialize()
 {    
     p_ftmwScope = new FtmwScopeHardware();
     connect(p_ftmwScope,&FtmwScope::shotAcquired,this,&HardwareManager::ftmwScopeShotAcquired);
-
-    QThread *scopeThread = new QThread(this);
-    d_hardwareList.append(qMakePair(p_ftmwScope,scopeThread));
+    d_hardwareList.append(qMakePair(p_ftmwScope,new QThread(this)));
 
     //awg does not need to be in its own thread
     p_awg = new AwgHardware();
@@ -63,16 +62,15 @@ void HardwareManager::initialize()
     connect(p_flow,&FlowController::pressureUpdate,this,&HardwareManager::pressureUpdate);
     connect(p_flow,&FlowController::pressureSetpointUpdate,this,&HardwareManager::pressureSetpointUpdate);
     connect(p_flow,&FlowController::pressureControlMode,this,&HardwareManager::pressureControlMode);
-
-    QThread *flowThread = new QThread(this);
-    d_hardwareList.append(qMakePair(p_flow,flowThread));
+    d_hardwareList.append(qMakePair(p_flow,new QThread(this)));
 
     p_lifScope = new LifScopeHardware();
     connect(p_lifScope,&LifScope::waveformRead,this,&HardwareManager::lifScopeShotAcquired);
     connect(p_lifScope,&LifScope::configUpdated,this,&HardwareManager::lifScopeConfigUpdated);
+    d_hardwareList.append(qMakePair(p_lifScope,new QThread(this)));
 
-    QThread *lifScopeThread = new QThread(this);
-    d_hardwareList.append(qMakePair(p_lifScope,lifScopeThread));
+    p_iob = new IOBoardHardware();
+    d_hardwareList.append(qMakePair(p_iob,new QThread(this)));
 
 
 	//write arrays of the connected devices for use in the Hardware Settings menu

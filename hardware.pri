@@ -1,5 +1,3 @@
-include(implementations.pri)
-
 HEADERS += \
     $$PWD/hardwaremanager.h \
     $$PWD/hardwareobject.h \
@@ -14,7 +12,9 @@ HEADERS += \
     $$PWD/flowcontroller.h \
     $$PWD/lifscope.h \
     $$PWD/gpibcontroller.h \
-    $$PWD/gpibinstrument.h
+    $$PWD/gpibinstrument.h \
+    $$PWD/ioboard.h \
+    $$PWD/custominstrument.h
 
 SOURCES += \
     $$PWD/hardwaremanager.cpp \
@@ -30,4 +30,6 @@ SOURCES += \
     $$PWD/flowcontroller.cpp \
     $$PWD/lifscope.cpp \
     $$PWD/gpibcontroller.cpp \
-    $$PWD/gpibinstrument.cpp
+    $$PWD/gpibinstrument.cpp \
+    $$PWD/ioboard.cpp \
+    $$PWD/custominstrument.cpp
