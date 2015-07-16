@@ -106,6 +106,5 @@ public:
 };
 
 Q_DECLARE_METATYPE(Experiment)
-Q_DECLARE_TYPEINFO(Experiment, Q_MOVABLE_TYPE);
 
 #endif // EXPERIMENT_H

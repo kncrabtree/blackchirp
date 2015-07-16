@@ -192,6 +192,5 @@ public:
 };
 
 Q_DECLARE_METATYPE(Fid)
-Q_DECLARE_TYPEINFO(Fid,Q_MOVABLE_TYPE);
 
 #endif // FID_H

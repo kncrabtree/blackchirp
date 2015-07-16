@@ -82,14 +82,14 @@ void AcquisitionManager::beginExperiment(Experiment exp)
 
 void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 {
-    static int total = 0;
-    static int count = 0;
+//    static int total = 0;
+//    static int count = 0;
     if(d_state == Acquiring && d_currentExperiment.ftmwConfig().isEnabled()
             && !d_currentExperiment.ftmwConfig().isComplete())
     {
 
-        QTime testTime;
-        testTime.start();
+//        QTime testTime;
+//        testTime.start();
         bool success = true;
 
         if(d_currentExperiment.ftmwConfig().isPhaseCorrectionEnabled() && d_currentExperiment.ftmwConfig().completedShots() > 50)
@@ -125,10 +125,10 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
             return;
         }
 
-        int t = testTime.elapsed();
-        total += t;
-        count++;
-        emit logMessage(QString("Elapsed time: %1 ms, avg: %2").arg(t).arg(total/count));
+//        int t = testTime.elapsed();
+//        total += t;
+//        count++;
+//        emit logMessage(QString("Elapsed time: %1 ms, avg: %2").arg(t).arg(total/count));
 
         d_currentExperiment.incrementFtmw();
         emit newFidList(d_currentExperiment.ftmwConfig().fidList());

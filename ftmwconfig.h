@@ -96,7 +96,5 @@ public:
 };
 
 
-Q_DECLARE_TYPEINFO(FtmwConfig, Q_MOVABLE_TYPE);
-
 
 #endif // FTMWCONFIG_H
