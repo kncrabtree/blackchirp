@@ -57,7 +57,6 @@ void FtmwConfigWidget::setFromConfig(const FtmwConfig config)
     ui->targetShotsSpinBox->setValue(config.targetShots());
     if(config.targetTime().isValid())
         ui->targetTimeDateTimeEdit->setDateTime(config.targetTime());
-    ui->autosaveSpinBox->setValue(config.autoSaveShots());
 
     ui->loFrequencyDoubleSpinBox->setValue(config.loFreq());
     setComboBoxIndex(ui->sidebandComboBox,config.sideband());
@@ -89,7 +88,6 @@ FtmwConfig FtmwConfigWidget::getConfig() const
         out.setTargetTime(ui->targetTimeDateTimeEdit->dateTime());
     else
         out.setTargetTime(QDateTime::currentDateTime().addSecs(60));
-    out.setAutoSaveShots(ui->autosaveSpinBox->value());
 
     out.setLoFreq(ui->loFrequencyDoubleSpinBox->value());
     out.setSideband(ui->sidebandComboBox->currentData().value<BlackChirp::Sideband>());
@@ -145,7 +143,6 @@ void FtmwConfigWidget::loadFromSettings()
     ui->targetTimeDateTimeEdit->setDateTime(QDateTime::currentDateTime().addSecs(3600));
     ui->targetTimeDateTimeEdit->setMaximumDateTime(QDateTime::currentDateTime().addSecs(2000000000));
     ui->targetTimeDateTimeEdit->setCurrentSection(QDateTimeEdit::HourSection);
-    ui->autosaveSpinBox->setValue(s.value(QString("autosaveShots"),2500).toInt());
 
     ui->fIDChannelSpinBox->setValue(s.value(QString("fidChannel"),1).toInt());
     ui->verticalScaleDoubleSpinBox->setValue(s.value(QString("vScale"),0.020).toDouble());
@@ -183,7 +180,6 @@ void FtmwConfigWidget::saveToSettings() const
 
     s.setValue(QString("mode"),ui->modeComboBox->currentIndex());
     s.setValue(QString("targetShots"),ui->targetShotsSpinBox->value());
-    s.setValue(QString("autosaveShots"),ui->autosaveSpinBox->value());
 
     s.setValue(QString("fidChannel"),ui->fIDChannelSpinBox->value());
     s.setValue(QString("vScale"),ui->verticalScaleDoubleSpinBox->value());

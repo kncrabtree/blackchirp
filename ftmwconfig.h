@@ -12,6 +12,8 @@
 #include "chirpconfig.h"
 #include "datastructs.h"
 
+#define BC_FTMW_MAXSHIFT 50
+
 class FtmwConfigData;
 
 class FtmwConfig
@@ -24,11 +26,11 @@ public:
     ~FtmwConfig();
 
     bool isEnabled() const;
+    bool isPhaseCorrectionEnabled() const;
     BlackChirp::FtmwType type() const;
     qint64 targetShots() const;
     qint64 completedShots() const;
     QDateTime targetTime() const;
-    int autoSaveShots() const;
     double loFreq() const;
     BlackChirp::Sideband sideband() const;
     QList<Fid> fidList() const;
@@ -40,20 +42,21 @@ public:
     QString errorString() const;
     double ftMin() const;
     double ftMax() const;
+    QPair<int,int> chirpRange() const;
     bool writeFidFile(int num, int snapNum = -1) const;
 
     bool prepareForAcquisition();
     void setEnabled();
+    void setPhaseCorrectionEnabled(bool enabled);
     void setFidTemplate(const Fid f);
     void setType(const BlackChirp::FtmwType type);
     void setTargetShots(const qint64 target);
     void increment();
     void setTargetTime(const QDateTime time);
-    void setAutoSaveShots(const int shots);
     void setLoFreq(const double f);
     void setSideband(const BlackChirp::Sideband sb);
     bool setFidsData(const QList<QVector<qint64>> newList);
-    bool addFids(const QByteArray rawData);
+    bool addFids(const QByteArray rawData, int shift = 0);
     bool subtractFids(const QList<Fid> otherList);
     void resetFids();
     void setScopeConfig(const BlackChirp::FtmwScopeConfig &other);
@@ -71,14 +74,15 @@ private:
 class FtmwConfigData : public QSharedData
 {
 public:
-    FtmwConfigData() : isEnabled(false), type(BlackChirp::FtmwForever), targetShots(-1), completedShots(0), autoSaveShots(1000), loFreq(0.0), sideband(BlackChirp::UpperSideband) {}
+    FtmwConfigData() : isEnabled(false), phaseCorrectionEnabled(false), type(BlackChirp::FtmwForever), targetShots(-1),
+        completedShots(0), loFreq(0.0), sideband(BlackChirp::UpperSideband) {}
 
     bool isEnabled;
+    bool phaseCorrectionEnabled;
     BlackChirp::FtmwType type;
     qint64 targetShots;
     qint64 completedShots;
     QDateTime targetTime;
-    int autoSaveShots;
 
     double loFreq;
     BlackChirp::Sideband sideband;

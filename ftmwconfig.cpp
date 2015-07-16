@@ -48,6 +48,11 @@ bool FtmwConfig::isEnabled() const
     return data->isEnabled;
 }
 
+bool FtmwConfig::isPhaseCorrectionEnabled() const
+{
+    return data->phaseCorrectionEnabled;
+}
+
 BlackChirp::FtmwType FtmwConfig::type() const
 {
     return data->type;
@@ -66,11 +71,6 @@ qint64 FtmwConfig::completedShots() const
 QDateTime FtmwConfig::targetTime() const
 {
     return data->targetTime;
-}
-
-int FtmwConfig::autoSaveShots() const
-{
-    return data->autoSaveShots;
 }
 
 double FtmwConfig::loFreq() const
@@ -175,6 +175,29 @@ double FtmwConfig::ftMax() const
     return qMax(data->loFreq,lastFreq);
 }
 
+QPair<int, int> FtmwConfig::chirpRange() const
+{
+    //want to return [first,last) samples for chirp.
+    if(!data->chirpConfig.isValid())
+        return qMakePair(-1,-1);
+
+    if(data->fidList.isEmpty())
+        return qMakePair(-1,-1);
+
+    //we assume that the scope is triggered on the rising edge of the pre-chirp protection pulse.
+    //This should be enforced by the wizard
+
+    double chirpStart = (data->chirpConfig.preChirpDelay() + data->chirpConfig.preChirpProtection())*1e-6;
+    int startSample = qBound(BC_FTMW_MAXSHIFT,qRound(chirpStart*data->scopeConfig.sampleRate) + BC_FTMW_MAXSHIFT,data->fidList.first().size() - BC_FTMW_MAXSHIFT);
+    double chirpEnd = chirpStart + data->chirpConfig.chirpDuration()*1e-6;
+    int endSample = qBound(BC_FTMW_MAXSHIFT,qRound(chirpEnd*data->scopeConfig.sampleRate) - BC_FTMW_MAXSHIFT,data->fidList.first().size() - BC_FTMW_MAXSHIFT);
+
+    if(startSample > endSample)
+        qSwap(startSample,endSample);
+
+    return qMakePair(startSample,endSample);
+}
+
 bool FtmwConfig::writeFidFile(int num, int snapNum) const
 {
     QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,snapNum));
@@ -211,6 +234,11 @@ void FtmwConfig::setEnabled()
     data->isEnabled = true;
 }
 
+void FtmwConfig::setPhaseCorrectionEnabled(bool enabled)
+{
+    data->phaseCorrectionEnabled = enabled;
+}
+
 void FtmwConfig::setFidTemplate(const Fid f)
 {
     data->fidTemplate = f;
@@ -237,11 +265,6 @@ void FtmwConfig::increment()
 void FtmwConfig::setTargetTime(const QDateTime time)
 {
     data->targetTime = time;
-}
-
-void FtmwConfig::setAutoSaveShots(const int shots)
-{
-    data->autoSaveShots = shots;
 }
 
 void FtmwConfig::setLoFreq(const double f)
@@ -287,7 +310,7 @@ bool FtmwConfig::setFidsData(const QList<QVector<qint64> > newList)
     return true;
 }
 
-bool FtmwConfig::addFids(const QByteArray rawData)
+bool FtmwConfig::addFids(const QByteArray rawData, int shift)
 {
     QList<Fid> newList = parseWaveform(rawData);
     if(data->completedShots > 0)
@@ -307,7 +330,7 @@ bool FtmwConfig::addFids(const QByteArray rawData)
         else
         {
             for(int i=0; i<data->fidList.size(); i++)
-                newList[i] += data->fidList.at(i);
+                newList[i].add(data->fidList.at(i),shift);
         }
     }
     data->fidList = newList;

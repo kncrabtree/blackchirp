@@ -60,12 +60,14 @@ public slots:
 private:
     Experiment d_currentExperiment;
     AcquisitionState d_state;
-    QTime d_testTime;
     QTimer *d_timeDataTimer = nullptr;
     QThread *p_saveThread;
+    int d_currentShift;
 
     void checkComplete();
     void finishAcquisition();
+    bool calculateShift(const QByteArray b);
+    float calculateFom(const QVector<qint16> vec, const QVector<qint64> fid, QPair<int,int> range, int trialShift);
 
 #ifdef BC_CUDA
     GpuAverager gpuAvg;

@@ -7,31 +7,31 @@ __global__ void initMem64_kernel(int n, long long *ptr)
         ptr[i] = 0;
 }
 
-__global__ void parseAdd_kernel1byte(int numPoints, char *devNewData, long long int *devSum, int offset)
+__global__ void parseAdd_kernel1byte(int numPoints, char *devNewData, long long int *devSum, int offset, int shift)
 {
     int i = offset + blockIdx.x*blockDim.x + threadIdx.x;
-    if(i < numPoints)
-        devSum[i] += (long long int)devNewData[i];
+    if(i + shift < numPoints && i + shift >= 0)
+        devSum[i] += (long long int)devNewData[i+shift];
 }
 
-__global__ void parseRollAvg_kernel1byte(int numPoints, char *devnewData, long long int *devSum, int offset, qint64 currentShots, qint64 targetShots)
+__global__ void parseRollAvg_kernel1byte(int numPoints, char *devnewData, long long int *devSum, int offset, qint64 currentShots, qint64 targetShots, int shift)
 {
     int i = offset + blockIdx.x*blockDim.x + threadIdx.x;
-    if(i < numPoints)
+    if(i + shift < numPoints && i + shift >= 0)
+        devSum[i] += (long long int)devnewData[i+shift];
+
+    if(i < numPoints && currentShots > targetShots)
     {
-        devSum[i] += (long long int)devnewData[i];
-        if(currentShots > targetShots)
-        {
-            devSum[i] *= targetShots;
-            devSum[i] /= currentShots;
-        }
+        devSum[i] *= targetShots;
+        devSum[i] /= currentShots;
     }
+
 }
 
-__global__ void parseAdd_kernel2byte(int numPoints, char *devNewData, long long int *devSum, int offset, bool le)
+__global__ void parseAdd_kernel2byte(int numPoints, char *devNewData, long long int *devSum, int offset, bool le, int shift)
 {
     int i = offset + blockIdx.x*blockDim.x + threadIdx.x;
-    if(i < numPoints)
+    if(i + shift < numPoints && i + shift >= 0)
     {
         if(le)
         {
@@ -46,10 +46,10 @@ __global__ void parseAdd_kernel2byte(int numPoints, char *devNewData, long long 
     }
 }
 
-__global__ void parseRollAvg_kernel2byte(int numPoints, char *devNewData, long long int *devSum, int offset, qint64 currentShots, qint64 targetShots, bool le)
+__global__ void parseRollAvg_kernel2byte(int numPoints, char *devNewData, long long int *devSum, int offset, qint64 currentShots, qint64 targetShots, bool le, int shift)
 {
     int i = offset + blockIdx.x*blockDim.x + threadIdx.x;
-    if(i < numPoints)
+    if(i + shift < numPoints && i + shift >= 0)
     {
         if(le)
         {
@@ -61,12 +61,12 @@ __global__ void parseRollAvg_kernel2byte(int numPoints, char *devNewData, long l
             int16_t dat = (devNewData[2*i] << 8 ) | (devNewData[2*i+1] & 0xff);
             devSum[i] += (long long int)dat;
         }
+    }
 
-        if(currentShots > targetShots)
-        {
-            devSum[i] *= targetShots;
-            devSum[i] /= currentShots;
-        }
+    if(i < numPoints && currentShots > targetShots)
+    {
+        devSum[i] *= targetShots;
+        devSum[i] /= currentShots;
     }
 }
 
@@ -194,7 +194,7 @@ bool GpuAverager::initialize(const int pointsPerFrame, const int numFrames, cons
 
 }
 
-QList<QVector<qint64> > GpuAverager::parseAndAdd(const char *newDataIn)
+QList<QVector<qint64> > GpuAverager::parseAndAdd(const char *newDataIn, const int shift)
 {
     QList<QVector<qint64> > out;
     if(!d_isInitialized)
@@ -212,10 +212,10 @@ QList<QVector<qint64> > GpuAverager::parseAndAdd(const char *newDataIn)
         cudaMemcpyAsync(&p_devCharPtr[i*d_pointsPerFrame*d_bytesPerPoint], &p_hostPinnedCharPtr[i*d_pointsPerFrame*d_bytesPerPoint], d_pointsPerFrame*d_bytesPerPoint*sizeof(char), cudaMemcpyHostToDevice,d_streamList[i]);
         if(d_bytesPerPoint == 1)
             parseAdd_kernel1byte<<<(d_pointsPerFrame+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
-                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*d_pointsPerFrame);
+                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*d_pointsPerFrame,shift);
         else
             parseAdd_kernel2byte<<<(d_pointsPerFrame+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
-                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*d_pointsPerFrame,d_isLittleEndian);
+                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*d_pointsPerFrame,d_isLittleEndian,shift);
         cudaMemcpyAsync(&p_hostPinnedSumPtr[i*d_pointsPerFrame], &p_devSumPtr[i*d_pointsPerFrame], d_pointsPerFrame*sizeof(qint64), cudaMemcpyDeviceToHost,d_streamList[i]);
     }
 
@@ -242,7 +242,7 @@ QList<QVector<qint64> > GpuAverager::parseAndAdd(const char *newDataIn)
 
 }
 
-QList<QVector<qint64> > GpuAverager::parseAndRollAvg(const char *newDataIn, const qint64 currentShots, const qint64 targetShots)
+QList<QVector<qint64> > GpuAverager::parseAndRollAvg(const char *newDataIn, const qint64 currentShots, const qint64 targetShots, const int shift)
 {
     QList<QVector<qint64> > out;
     if(!d_isInitialized)
@@ -260,10 +260,10 @@ QList<QVector<qint64> > GpuAverager::parseAndRollAvg(const char *newDataIn, cons
         cudaMemcpyAsync(&p_devCharPtr[i*d_pointsPerFrame*d_bytesPerPoint], &p_hostPinnedCharPtr[i*d_pointsPerFrame*d_bytesPerPoint], d_pointsPerFrame*d_bytesPerPoint*sizeof(char), cudaMemcpyHostToDevice,d_streamList[i]);
         if(d_bytesPerPoint == 1)
             parseRollAvg_kernel1byte<<<(d_pointsPerFrame+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
-                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*d_pointsPerFrame,currentShots,targetShots);
+                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*d_pointsPerFrame,currentShots,targetShots,shift);
         else
             parseRollAvg_kernel2byte<<<(d_pointsPerFrame+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
-                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*d_pointsPerFrame,currentShots,targetShots,d_isLittleEndian);
+                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*d_pointsPerFrame,currentShots,targetShots,d_isLittleEndian,shift);
         cudaMemcpyAsync(&p_hostPinnedSumPtr[i*d_pointsPerFrame], &p_devSumPtr[i*d_pointsPerFrame], d_pointsPerFrame*sizeof(qint64), cudaMemcpyDeviceToHost,d_streamList[i]);
     }
 

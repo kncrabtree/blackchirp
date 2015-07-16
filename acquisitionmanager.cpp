@@ -2,7 +2,7 @@
 
 #include <savemanager.h>
 
-AcquisitionManager::AcquisitionManager(QObject *parent) : QObject(parent), d_state(Idle)
+AcquisitionManager::AcquisitionManager(QObject *parent) : QObject(parent), d_state(Idle), d_currentShift(0)
 {
     p_saveThread = new QThread(this);
 }
@@ -51,6 +51,7 @@ void AcquisitionManager::beginExperiment(Experiment exp)
         return;
     }
 
+    d_currentShift = 0;
     //prepare data files, savemanager, fidmanager, etc
     d_currentExperiment = exp;
 
@@ -82,23 +83,32 @@ void AcquisitionManager::beginExperiment(Experiment exp)
 
 void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 {
-//    static int total = 0;
-//    static int count = 0;
+    static int total = 0;
+    static int count = 0;
     if(d_state == Acquiring && d_currentExperiment.ftmwConfig().isEnabled()
             && !d_currentExperiment.ftmwConfig().isComplete())
     {
-//        d_testTime.restart();
+
+        QTime testTime;
+        testTime.start();
         bool success = true;
 
+        if(d_currentExperiment.ftmwConfig().isPhaseCorrectionEnabled() && d_currentExperiment.ftmwConfig().completedShots() > 50)
+        {
+            success = calculateShift(b);
+            if(!success)
+                return;
+        }
+
 #ifndef BC_CUDA
-        success = d_currentExperiment.addFids(b);
+        success = d_currentExperiment.addFids(b,d_currentShift);
 #else
         QList<QVector<qint64> >  l;
         if(d_currentExperiment.ftmwConfig().type() == BlackChirp::FtmwPeakUp)
             l = gpuAvg.parseAndRollAvg(b.constData(),d_currentExperiment.ftmwConfig().completedShots()+1,
-                                       d_currentExperiment.ftmwConfig().targetShots());
+                                       d_currentExperiment.ftmwConfig().targetShots(),d_currentShift);
         else
-            l = gpuAvg.parseAndAdd(b.constData());
+            l = gpuAvg.parseAndAdd(b.constData(),d_currentShift);
 
         if(l.isEmpty())
         {
@@ -116,10 +126,10 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
             return;
         }
 
-//        int t = d_testTime.elapsed();
-//        total += t;
-//        count++;
-//        emit logMessage(QString("Elapsed time: %1 ms, avg: %2").arg(t).arg(total/count));
+        int t = testTime.elapsed();
+        total += t;
+        count++;
+        emit logMessage(QString("Elapsed time: %1 ms, avg: %2").arg(t).arg(total/count));
 
         d_currentExperiment.incrementFtmw();
         emit newFidList(d_currentExperiment.ftmwConfig().fidList());
@@ -268,11 +278,154 @@ void AcquisitionManager::finishAcquisition()
 {
     emit endAcquisition();
     d_state = Idle;
+    d_currentShift = 0;
 
     disconnect(d_timeDataTimer,&QTimer::timeout,this,&AcquisitionManager::getTimeData);
     d_timeDataTimer->stop();
 
     emit doFinalSave(d_currentExperiment);
     emit statusMessage(QString("Saving experiment %1").arg(d_currentExperiment.number()));
+}
+
+bool AcquisitionManager::calculateShift(const QByteArray b)
+{
+    if(!d_currentExperiment.ftmwConfig().isEnabled())
+        return true;
+
+    if(d_currentExperiment.ftmwConfig().fidList().isEmpty())
+        return true;
+
+    if(d_currentExperiment.ftmwConfig().completedShots() < 50)
+        return true;
+
+    //first, we need to extract the chirp from b
+    auto r = d_currentExperiment.ftmwConfig().chirpRange();
+    if(r.first < 0 || r.second < 0)
+        return true;
+
+    QVector<qint16> newChirp(r.second-r.first);
+    QVector<qint64> avgFid = d_currentExperiment.ftmwConfig().fidList().first().rawData();
+    if(d_currentExperiment.ftmwConfig().scopeConfig().bytesPerPoint == 2)
+    {
+        for(int i=r.first; i<r.second; i++)
+        {
+            int index = i-r.first;
+            qint8 b1 = b.at(2*i);
+            qint8 b2 = b.at(2*i+1);
+            qint16 dat = 0;
+            if(d_currentExperiment.ftmwConfig().scopeConfig().byteOrder == QDataStream::LittleEndian)
+            {
+                dat |= b1;
+                dat |= (b2 << 8);
+            }
+            else
+            {
+                dat |= (b1 << 8);
+                dat |= b2;
+            }
+            newChirp[index] = dat;
+        }
+    }
+    else
+    {
+        for(int i=r.first; i<r.second; i++)
+        {
+            int index = i-r.first;
+            newChirp[index] = static_cast<qint16>(b.at(i));
+        }
+    }
+
+    int max = 5;
+    float thresh = 0.1; // fractional improvement needed to adjust shift
+    int shift = d_currentShift;
+    float fomCenter = calculateFom(newChirp,avgFid,r,shift);
+    float fomDown = calculateFom(newChirp,avgFid,r,shift-1);
+    float fomUp = calculateFom(newChirp,avgFid,r,shift+1);
+    bool done = false;
+    while(!done && qAbs(shift-d_currentShift) < max)
+    {
+        //always assume shift "wants" to go toward 0:
+        if(shift >= 0)
+        {
+            if((fomDown-fomCenter) > qAbs(fomCenter)*thresh)
+            {
+                shift--;
+                fomUp = fomCenter;
+                fomCenter = fomDown;
+                fomDown = calculateFom(newChirp,avgFid,r,shift-1);
+            }
+            else if((fomUp-fomCenter) > qAbs(fomCenter)*thresh)
+            {
+                shift++;
+                fomDown = fomCenter;
+                fomCenter = fomUp;
+                fomUp = calculateFom(newChirp,avgFid,r,shift+1);
+            }
+            else
+                done = true;
+        }
+        else
+        {
+            if((fomUp-fomCenter) > qAbs(fomCenter)*thresh)
+            {
+                shift++;
+                fomDown = fomCenter;
+                fomCenter = fomUp;
+                fomUp = calculateFom(newChirp,avgFid,r,shift+1);
+            }
+            else if((fomDown-fomCenter) > qAbs(fomCenter)*thresh)
+            {
+                shift--;
+                fomUp = fomCenter;
+                fomCenter = fomDown;
+                fomDown = calculateFom(newChirp,avgFid,r,shift-1);
+            }
+            else
+                done = true;
+        }
+    }
+
+    if(!done)
+    {
+        emit logMessage(QString("Calculated shift for this FID exceeded maximum permissible shift of %1 points. Fid rejected.").arg(max),BlackChirp::LogWarning);
+        return false;
+    }
+
+    if(qAbs(shift) > BC_FTMW_MAXSHIFT)
+    {
+        emit logMessage(QString("Total shift exceeds maximum range (%1). Aborting experiment.").arg(BC_FTMW_MAXSHIFT),BlackChirp::LogError);
+        abort();
+        return false;
+    }
+
+    if(d_currentShift != shift)
+    {
+        emit logMessage(QString("Shift changed from %1 to %2. FOMs: (%3, %4, %5)").arg(d_currentShift).arg(shift)
+                        .arg(fomDown,0,'e',2).arg(fomCenter,0,'e',2).arg(fomUp,0,'e',2));
+    }
+    d_currentShift = shift;
+    return true;
+
+
+}
+
+float AcquisitionManager::calculateFom(const QVector<qint16> vec, const QVector<qint64> fid, QPair<int, int> range, int trialShift)
+{
+    //Kahan summation (32 bit precision is sufficient)
+    float sum = 0.0;
+    float c = 0.0;
+    for(int i=0; i<vec.size(); i++)
+    {
+        if(i+range.first-trialShift >= 0 && i+range.first-trialShift < fid.size())
+        {
+            float dat = static_cast<float>(fid.at(i+range.first-trialShift)*vec.at(i));
+            float y = dat - c;
+            float t = sum + y;
+            c = (t-sum) - y;
+            sum = t;
+        }
+    }
+
+    return sum;
 }
 

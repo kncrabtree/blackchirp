@@ -96,8 +96,9 @@ public:
     Fid &operator -=(const Fid other);
 
     void add(const qint64 *other, const unsigned int offset = 0);
+    void add(const Fid other, int shift);
     void copyAdd(const qint64 *other, const unsigned int offset = 0);
-    void rollingAverage(const Fid other, qint64 targetShots);
+    void rollingAverage(const Fid other, qint64 targetShots, int shift = 0);
 
     /*!
      \brief Number of points in data vector

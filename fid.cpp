@@ -113,21 +113,43 @@ void Fid::add(const qint64 *other, const unsigned int offset)
     data->shots++;
 }
 
+void Fid::add(const Fid other, int shift)
+{
+    Q_ASSERT(size() == other.size());
+    if(shift == 0)
+        *this += other;
+    else
+    {
+        for(int i=0; i<size(); i++)
+        {
+            if(i+shift >=0 && i+shift < other.size())
+                data->fid[i] += other.atRaw(i+shift);
+        }
+
+        data->shots += other.shots();
+    }
+}
+
 void Fid::copyAdd(const qint64 *other, const unsigned int offset)
 {
     memcpy(data->fid.data(),other + offset,sizeof(qint64)*size());
     data->shots++;
 }
 
-void Fid::rollingAverage(const Fid other, qint64 targetShots)
+void Fid::rollingAverage(const Fid other, qint64 targetShots, int shift)
 {
     qint64 totalShots = shots() + other.shots();
     if(totalShots <= targetShots)
-        *this += other;
+        add(other,shift);
     else
     {
         for(int i=0; i<size(); i++)
-            data->fid[i] = targetShots*(atRaw(i) + other.atRaw(i))/totalShots;
+        {
+            if(i+shift >=0 && i+shift < other.size())
+                data->fid[i] = targetShots*(atRaw(i) + other.atRaw(i+shift))/totalShots;
+            else
+                data->fid[i] = targetShots*atRaw(i)/totalShots;
+        }
 
         data->shots = targetShots;
     }

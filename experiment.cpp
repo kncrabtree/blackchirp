@@ -316,9 +316,9 @@ bool Experiment::setFidsData(const QList<QVector<qint64> > l)
     return true;
 }
 
-bool Experiment::addFids(const QByteArray newData)
+bool Experiment::addFids(const QByteArray newData, int shift)
 {
-    if(!data->ftmwCfg.addFids(newData))
+    if(!data->ftmwCfg.addFids(newData,shift))
     {
         setErrorString(ftmwConfig().errorString());
         return false;
