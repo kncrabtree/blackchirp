@@ -5,6 +5,7 @@ FlowController::FlowController(QObject *parent) : HardwareObject(parent), d_next
     d_key = QString("flowController");
 
     p_readTimer = new QTimer(this);
+    connect(p_readTimer,&QTimer::timeout,this,&FlowController::readNext);
 
 }
 

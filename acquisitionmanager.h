@@ -38,7 +38,7 @@ signals:
     void beginAcquisition();
     void endAcquisition();
     void timeDataSignal();
-    void timeData(const QList<QPair<QString,QVariant>>);
+    void timeData(const QList<QPair<QString,QVariant>>, bool plot=true);
 
     void newFidList(QList<Fid>);
     void takeSnapshot(const Experiment);
@@ -52,7 +52,7 @@ public slots:
     void changeRollingAverageShots(int newShots);
     void resetRollingAverage();
     void getTimeData();
-    void processTimeData(const QList<QPair<QString,QVariant>> timeDataList);
+    void processTimeData(const QList<QPair<QString,QVariant>> timeDataList, bool plot);
     void pause();
     void resume();
     void abort();

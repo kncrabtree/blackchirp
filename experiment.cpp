@@ -104,7 +104,7 @@ QString Experiment::errorString() const
     return data->errorString;
 }
 
-QMap<QString, QList<QVariant> > Experiment::timeDataMap() const
+QMap<QString, QList<QPair<QVariant, bool> > > Experiment::timeDataMap() const
 {
     return data->timeDataMap;
 }
@@ -354,35 +354,72 @@ void Experiment::setErrorString(const QString str)
     data->errorString = str;
 }
 
-void Experiment::addTimeData(const QList<QPair<QString, QVariant> > dataList)
+bool Experiment::addTimeData(const QList<QPair<QString, QVariant> > dataList, bool plot)
 {
+    //return false if scan should be aborted
+    bool out = true;
     for(int i=0; i<dataList.size(); i++)
     {
         QString key = dataList.at(i).first;
         QVariant value = dataList.at(i).second;
 
         if(data->timeDataMap.contains(key))
-            data->timeDataMap[key].append(value);
+            data->timeDataMap[key].append(qMakePair(value,plot));
         else
         {
-            QList<QVariant> newList;
-            newList.append(value);
+            QList<QPair<QVariant,bool>> newList;
+            newList.append(qMakePair(value,plot));
             data->timeDataMap.insert(key,newList);
         }
+
+        if(data->validationConditions.contains(key))
+        {
+            bool ok = false;
+            double d = value.toDouble(&ok);
+            if(!ok)
+            {
+                out = false;
+                data->errorString = QString("Aborting because the item \"%1\" (value = %2) cannot be converted to a double.").arg(key).arg(value.toString());
+                break;
+            }
+            else
+            {
+                const BlackChirp::ValidationItem &vi = data->validationConditions.value(key);
+                if(d < vi.min || d > vi.max)
+                {
+                    out = false;
+                    data->errorString = QString("Aborting because %1 is outside specified range (Value = %2, Min = %3, Max = %4).")
+                            .arg(key).arg(d,0,'g',vi.precision).arg(vi.min,0,'g',vi.precision).arg(vi.max,0,'g',vi.precision);
+                    break;
+                }
+            }
+        }
     }
+
+    return out;
 }
 
 void Experiment::addTimeStamp()
 {
     QString key("exptTimeStamp");
     if(data->timeDataMap.contains(key))
-        data->timeDataMap[key].append(QDateTime::currentDateTime());
+        data->timeDataMap[key].append(qMakePair(QDateTime::currentDateTime(),false));
     else
     {
-        QList<QVariant> newList;
-        newList.append(QDateTime::currentDateTime());
+        QList<QPair<QVariant,bool>> newList;
+        newList.append(qMakePair(QDateTime::currentDateTime(),false));
         data->timeDataMap.insert(key,newList);
     }
+}
+
+void Experiment::addValidationItem(QString key, double min, double max, int precision)
+{
+    BlackChirp::ValidationItem it;
+    it.min = min;
+    it.max = max;
+    it.precision = precision;
+
+    data->validationConditions.insert(key,it);
 }
 
 void Experiment::setHardwareFailed()
@@ -421,11 +458,6 @@ void Experiment::finalSave() const
         s.setValue(QString("knownValidationKeys"),keys);
     }
 
-    //rewrite header file
-    saveHeader();
-
-    //write fid (NOTE: this code is tested, and it works.
-    //Don't want to waste disk space with useless FIDs
     if(ftmwConfig().isEnabled())
         ftmwConfig().writeFidFile(data->number);
 

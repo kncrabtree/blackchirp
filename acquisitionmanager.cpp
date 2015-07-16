@@ -211,25 +211,18 @@ void AcquisitionManager::getTimeData()
         if(d_currentExperiment.ftmwConfig().isEnabled())
         {
             QList<QPair<QString,QVariant>> l { qMakePair(QString("ftmwShots"),d_currentExperiment.ftmwConfig().completedShots()) };
-            d_currentExperiment.addTimeData(l);
-            emit timeData(l);
+            d_currentExperiment.addTimeData(l,true);
+            emit timeData(l,true);
         }
     }
 }
 
-void AcquisitionManager::processTimeData(const QList<QPair<QString, QVariant> > timeDataList)
+void AcquisitionManager::processTimeData(const QList<QPair<QString, QVariant> > timeDataList, bool plot)
 {
 	if(d_state == Acquiring)
 	{
-		//test for abort conditions here!
-		//
-		//
-
-//		emit logMessage(QString("Time data received."));
-//		for(int i=0; i<timeDataList.size(); i++)
-//			emit logMessage(QString("%1: %2").arg(timeDataList.at(i).first,timeDataList.at(i).second.toString()));
-
-		d_currentExperiment.addTimeData(timeDataList);
+        if(!d_currentExperiment.addTimeData(timeDataList,plot))
+            abort();
 	}
 }
 

@@ -204,7 +204,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_am,&AcquisitionManager::endAcquisition,p_hwm,&HardwareManager::endAcquisition);
     connect(p_am,&AcquisitionManager::timeDataSignal,p_hwm,&HardwareManager::getTimeData);
     connect(p_hwm,&HardwareManager::timeData,p_am,&AcquisitionManager::processTimeData);
-    connect(p_hwm,&HardwareManager::timeDataNoPlot,p_am,&AcquisitionManager::processTimeData);
 
 
     hwmThread->start();

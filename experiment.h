@@ -37,7 +37,7 @@ public:
     bool isComplete() const;
     bool hardwareSuccess() const;
     QString errorString() const;
-    QMap<QString,QList<QVariant>> timeDataMap() const;
+    QMap<QString,QList<QPair<QVariant,bool>>> timeDataMap() const;
     QString startLogMessage() const;
     QString endLogMessage() const;
     BlackChirp::LogMessageCode endLogMessageCode() const;
@@ -61,8 +61,9 @@ public:
     void setPulseGenConfig(const PulseGenConfig c);
     void setFlowConfig(const FlowConfig c);
     void setErrorString(const QString str);
-    void addTimeData(const QList<QPair<QString, QVariant> > dataList);
+    bool addTimeData(const QList<QPair<QString, QVariant> > dataList, bool plot);
     void addTimeStamp();
+    void addValidationItem(QString key, double min, double max, int precision);
 
     void setHardwareFailed();
     void incrementFtmw();
@@ -102,7 +103,8 @@ public:
     PulseGenConfig pGenCfg;
     FlowConfig flowCfg;
     LifConfig lifCfg;
-    QMap<QString,QList<QVariant>> timeDataMap;
+    QMap<QString,QList<QPair<QVariant,bool>>> timeDataMap;
+    QMap<QString,BlackChirp::ValidationItem> validationConditions;
 };
 
 Q_DECLARE_METATYPE(Experiment)

@@ -202,6 +202,12 @@ enum ExptFileType {
     SnapFile
 };
 
+struct ValidationItem {
+    double min;
+    double max;
+    int precision;
+};
+
 QString getExptFile(int num, BlackChirp::ExptFileType t, int snapNum = -1);
 QString getExptDir(int num);
 QString headerMapToString(QMap<QString,QPair<QVariant,QString>> map);
@@ -218,11 +224,13 @@ Q_DECLARE_METATYPE(BlackChirp::LogMessageCode)
 Q_DECLARE_METATYPE(BlackChirp::PulseActiveLevel)
 Q_DECLARE_METATYPE(BlackChirp::LifScanOrder)
 Q_DECLARE_METATYPE(BlackChirp::LifCompleteMode)
+Q_DECLARE_METATYPE(BlackChirp::ValidationItem)
 
 Q_DECLARE_TYPEINFO(BlackChirp::LifPoint,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::ChirpSegment,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::FlowChannelConfig,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::PulseChannelConfig,Q_MOVABLE_TYPE);
+Q_DECLARE_TYPEINFO(BlackChirp::ValidationItem,Q_PRIMITIVE_TYPE);
 
 #endif // DATASTRUCTS_H
 

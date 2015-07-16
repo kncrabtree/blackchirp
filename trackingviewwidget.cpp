@@ -49,8 +49,11 @@ void TrackingViewWidget::initializeForExperiment()
     }
 }
 
-void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > list)
+void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > list, bool plot)
 {
+    if(!plot)
+        return;
+
     double x = QwtDate::toDouble(QDateTime::currentDateTime());
     if(d_plotCurves.isEmpty())
     {
@@ -133,10 +136,14 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
                 {
                     QSettings s2(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
                     s2.beginGroup(QString("flowController"));
+                    s2.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
                     s2.beginReadArray(QString("channels"));
                     s2.setArrayIndex(index);
-                    realName = s2.value(QString("name"),md.name).toString();
+                    realName = s2.value(QString("name"),QString("")).toString();
+                    if(realName.isEmpty())
+                        realName = md.name;
                     s2.endArray();
+                    s2.endGroup();
                     s2.endGroup();
                 }
             }

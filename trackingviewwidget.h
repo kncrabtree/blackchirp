@@ -33,7 +33,7 @@ public:
 
 public slots:
     void initializeForExperiment();
-    void pointUpdated(const QList<QPair<QString,QVariant> > list);
+    void pointUpdated(const QList<QPair<QString,QVariant> > list, bool plot);
     void curveVisibilityToggled(QwtPlotCurve *c, bool visible);
     void curveContextMenuRequested(QwtPlotCurve *c, QMouseEvent *me);
     void changeCurveColor(int curveIndex);

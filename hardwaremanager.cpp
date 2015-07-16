@@ -166,8 +166,8 @@ void HardwareManager::initialize()
             emit logMessage(QString("%1: %2").arg(obj->name()).arg(msg),mc);
         });
         connect(obj,&HardwareObject::connected,[=](bool success, QString msg){ connectionResult(obj,success,msg); });
-        connect(obj,&HardwareObject::timeDataRead,this,&HardwareManager::timeData);
-        connect(obj,&HardwareObject::timeDataReadNoPlot,this,&HardwareManager::timeDataNoPlot);
+        connect(obj,&HardwareObject::timeDataRead,[=](const QList<QPair<QString,QVariant>> l){ emit timeData(l,true); });
+        connect(obj,&HardwareObject::timeDataReadNoPlot,[=](const QList<QPair<QString,QVariant>> l){ emit timeData(l,false); });
         connect(this,&HardwareManager::beginAcquisition,obj,&HardwareObject::beginAcquisition);
         connect(this,&HardwareManager::endAcquisition,obj,&HardwareObject::endAcquisition);
         connect(this,&HardwareManager::readTimeData,obj,&HardwareObject::readTimeData);
