@@ -10,6 +10,7 @@
 #include <QLineEdit>
 
 #include "communicationdialog.h"
+#include "ioboardconfigdialog.h"
 #include "ftmwconfigwidget.h"
 #include "rfconfigwidget.h"
 #include "experimentwizard.h"
@@ -215,6 +216,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionPause,&QAction::triggered,this,&MainWindow::pauseUi);
     connect(ui->actionResume,&QAction::triggered,this,&MainWindow::resumeUi);
     connect(ui->actionCommunication,&QAction::triggered,this,&MainWindow::launchCommunicationDialog);
+    connect(ui->actionIO_Board,&QAction::triggered,this,&MainWindow::launchIOBoardDialog);
     connect(ui->actionRf_Configuration,&QAction::triggered,this,&MainWindow::launchRfConfigDialog);
     connect(ui->actionTrackingShow,&QAction::triggered,[=](){ ui->tabWidget->setCurrentIndex(2); });
     connect(ui->action_Graphs,&QAction::triggered,ui->trackingViewWidget,&TrackingViewWidget::changeNumPlots);
@@ -358,6 +360,16 @@ void MainWindow::launchCommunicationDialog()
     CommunicationDialog d(this);
     connect(&d,&CommunicationDialog::testConnection,p_hwm,&HardwareManager::testObjectConnection);
     connect(p_hwm,&HardwareManager::testComplete,&d,&CommunicationDialog::testComplete);
+
+    d.exec();
+}
+
+void MainWindow::launchIOBoardDialog()
+{
+    IOBoardConfigDialog d(this);
+
+    connect(&d,&IOBoardConfigDialog::testConnection,p_hwm,&HardwareManager::testObjectConnection);
+    connect(p_hwm,&HardwareManager::testComplete,&d,&IOBoardConfigDialog::testComplete);
 
     d.exec();
 }
@@ -507,6 +519,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
+        ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
@@ -518,6 +531,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionCommunication->setEnabled(true);
+        ui->actionIO_Board->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
@@ -529,6 +543,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(true);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
+        ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
@@ -540,6 +555,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
+        ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
@@ -552,6 +568,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(true);
         ui->actionCommunication->setEnabled(true);
+        ui->actionIO_Board->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
         ui->gasControlBox->setEnabled(true);
         ui->pulseConfigWidget->setEnabled(true);

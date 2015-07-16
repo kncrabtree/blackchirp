@@ -58,6 +58,7 @@ public slots:
     void pauseUi();
     void resumeUi();
     void launchCommunicationDialog();
+    void launchIOBoardDialog();
     void launchRfConfigDialog();
     void updatePulseLeds(const PulseGenConfig cc);
     void updatePulseLed(int index,BlackChirp::PulseSetting s, QVariant val);

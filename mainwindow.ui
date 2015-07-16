@@ -362,6 +362,7 @@
     </property>
     <addaction name="actionCommunication"/>
     <addaction name="actionTest_All_Connections"/>
+    <addaction name="actionIO_Board"/>
     <addaction name="actionRf_Configuration"/>
    </widget>
    <widget class="QMenu" name="menuTracking">
@@ -471,6 +472,15 @@
   <action name="actionTest">
    <property name="text">
     <string>Test</string>
+   </property>
+  </action>
+  <action name="actionIO_Board">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/labjack.png</normaloff>:/icons/labjack.png</iconset>
+   </property>
+   <property name="text">
+    <string>IO Board</string>
    </property>
   </action>
  </widget>
