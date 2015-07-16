@@ -416,9 +416,10 @@ QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
     out.insert(prefix+QString("LoFrequency"),qMakePair(QString::number(loFreq(),'f',6),QString("MHz")));
     out.insert(prefix+QString("Sideband"),qMakePair((int)sideband(),empty));
     out.insert(prefix+QString("FidVMult"),qMakePair(QString::number(fidTemplate().vMult(),'g',12),QString("V")));
+    out.insert(prefix+QString("PhaseCorrectionEnabled"),qMakePair(data->phaseCorrectionEnabled,QString("")));
 
-    BlackChirp::FtmwScopeConfig sc = scopeConfig();
-    out.unite(sc.headerMap());
+
+    out.unite(data->scopeConfig.headerMap());
     out.unite(data->chirpConfig.headerMap());
 
     return out;

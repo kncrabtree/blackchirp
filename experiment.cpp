@@ -129,13 +129,10 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
     QMap<QString, QPair<QVariant, QString> > out;
 
     out.insert(QString("AuxDataInterval"),qMakePair(data->timeDataInterval,QString("s")));
+    out.insert(QString("AutosaveInterval"),qMakePair(data->autoSaveShotsInterval,QString("shots")));
 
-    if(data->ftmwCfg.isEnabled())
-        out.unite(data->ftmwCfg.headerMap());
-
-    if(data->lifCfg.isEnabled())
-        out.unite(data->lifCfg.headerMap());
-
+    out.unite(data->ftmwCfg.headerMap());
+    out.unite(data->lifCfg.headerMap());
     out.unite(data->pGenCfg.headerMap());
     out.unite(data->flowCfg.headerMap());
 

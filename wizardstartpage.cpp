@@ -24,16 +24,26 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     p_auxDataIntervalBox->setSuffix(QString(" s"));
     p_auxDataIntervalBox->setToolTip(QString("Interval for aux data readings (e.g., flows, pressure, etc.)"));
 
+    p_snapshotBox = new QSpinBox(this);
+    p_snapshotBox->setRange(1<<8,(1<<16)-1);
+    p_snapshotBox->setValue(20000);
+    p_snapshotBox->setSingleStep(5000);
+    p_snapshotBox->setPrefix(QString("every "));
+    p_snapshotBox->setSuffix(QString(" shots"));
+    p_snapshotBox->setToolTip(QString("Interval for taking experiment snapshots (i.e., autosaving)."));
+
     connect(p_ftmw,&QCheckBox::toggled,this,&WizardStartPage::completeChanged);
     connect(p_lif,&QCheckBox::toggled,this,&WizardStartPage::completeChanged);
 
     registerField(QString("lif"),p_lif);
     registerField(QString("ftmw"),p_ftmw);
     registerField(QString("auxDataInterval"),p_auxDataIntervalBox);
+    registerField(QString("snapshotInterval"),p_snapshotBox);
 
     fl->addRow(QString("FTMW"),p_ftmw);
     fl->addRow(QString("LIF"),p_lif);
     fl->addRow(QString("Aux Data Interval"),p_auxDataIntervalBox);
+    fl->addRow(QString("Snaphot Interval"),p_snapshotBox);
 
     setLayout(fl);
 }
@@ -61,6 +71,7 @@ void WizardStartPage::initializePage()
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(QString("wizard"));
     p_auxDataIntervalBox->setValue(s.value(QString("auxDataInterval"),300).toInt());
+    p_snapshotBox->setValue(s.value(QString("snapshotInterval"),20000).toInt());
     s.endGroup();
 }
 
@@ -79,11 +90,17 @@ int WizardStartPage::auxDataInterval() const
     return p_auxDataIntervalBox->value();
 }
 
+int WizardStartPage::snapshotInterval() const
+{
+    return p_snapshotBox->value();
+}
+
 void WizardStartPage::saveToSettings() const
 {
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(QString("wizard"));
     s.setValue(QString("auxDataInterval"),p_auxDataIntervalBox->value());
+    s.setValue(QString("snapshotInterval"),p_snapshotBox->value());
     s.endGroup();
     s.sync();
 }

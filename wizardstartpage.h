@@ -21,12 +21,13 @@ public:
     bool ftmwEnabled() const;
     bool lifEnabled() const;
     int auxDataInterval() const;
+    int snapshotInterval() const;
 
     void saveToSettings() const;
 
 private:
     QCheckBox *p_ftmw, *p_lif;
-    QSpinBox *p_auxDataIntervalBox;
+    QSpinBox *p_auxDataIntervalBox, *p_snapshotBox;
 };
 
 #endif // WIZARDSTARTPAGE_H

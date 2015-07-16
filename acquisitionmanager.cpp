@@ -76,7 +76,6 @@ void AcquisitionManager::beginExperiment(Experiment exp)
         connect(d_timeDataTimer,&QTimer::timeout,this,&AcquisitionManager::getTimeData,Qt::UniqueConnection);
         d_timeDataTimer->start(d_currentExperiment.timeDataInterval()*1000);
     }
-    d_currentExperiment.setAutoSaveShotsInterval(1000);
     emit beginAcquisition();
 
 }

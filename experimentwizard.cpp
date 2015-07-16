@@ -68,6 +68,7 @@ Experiment ExperimentWizard::getExperiment() const
     exp.setPulseGenConfig(p_pulseConfigPage->getConfig());
     exp.setFlowConfig(d_flowConfig);
     exp.setTimeDataInterval(p_startPage->auxDataInterval());
+    exp.setAutoSaveShotsInterval(p_startPage->snapshotInterval());
 
     return exp;
 }
