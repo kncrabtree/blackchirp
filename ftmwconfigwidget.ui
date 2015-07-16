@@ -87,36 +87,14 @@
            </widget>
           </item>
           <item row="3" column="0">
-           <widget class="QLabel" name="autosaveLabel">
+           <widget class="QLabel" name="phaseCorrectionLabel">
             <property name="text">
-             <string>Autosave</string>
+             <string>Phase Correction</string>
             </property>
            </widget>
           </item>
           <item row="3" column="1">
-           <widget class="QSpinBox" name="autosaveSpinBox">
-            <property name="toolTip">
-             <string>Number of shots per autosave of FID</string>
-            </property>
-            <property name="suffix">
-             <string> shots</string>
-            </property>
-            <property name="prefix">
-             <string>every </string>
-            </property>
-            <property name="minimum">
-             <number>1000</number>
-            </property>
-            <property name="maximum">
-             <number>1000000000</number>
-            </property>
-            <property name="singleStep">
-             <number>2500</number>
-            </property>
-            <property name="value">
-             <number>2500</number>
-            </property>
-           </widget>
+           <widget class="QCheckBox" name="phaseCorrectionCheckBox"/>
           </item>
          </layout>
         </widget>

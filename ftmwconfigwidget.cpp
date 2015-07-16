@@ -51,28 +51,37 @@ FtmwConfigWidget::~FtmwConfigWidget()
 
 void FtmwConfigWidget::setFromConfig(const FtmwConfig config)
 {
-    blockSignals(true);
-
+    ui->modeComboBox->blockSignals(true);
     setComboBoxIndex(ui->modeComboBox,config.type());
+    ui->modeComboBox->blockSignals(false);
+
     ui->targetShotsSpinBox->setValue(config.targetShots());
     if(config.targetTime().isValid())
         ui->targetTimeDateTimeEdit->setDateTime(config.targetTime());
+    ui->phaseCorrectionCheckBox->setChecked(config.isPhaseCorrectionEnabled());
 
     ui->loFrequencyDoubleSpinBox->setValue(config.loFreq());
     setComboBoxIndex(ui->sidebandComboBox,config.sideband());
 
     const BlackChirp::FtmwScopeConfig sc = config.scopeConfig();
+
+    ui->fIDChannelSpinBox->blockSignals(true);
     ui->fIDChannelSpinBox->setValue(sc.fidChannel);
+    ui->fIDChannelSpinBox->blockSignals(false);
     ui->verticalScaleDoubleSpinBox->setValue(sc.vScale);
+    ui->triggerChannelSpinBox->blockSignals(true);
     ui->triggerChannelSpinBox->setValue(sc.trigChannel);
+    ui->triggerChannelSpinBox->blockSignals(false);
     ui->triggerDelayDoubleSpinBox->setValue(sc.trigDelay/1e6);
     setComboBoxIndex(ui->triggerSlopeComboBox,sc.slope);
     setComboBoxIndex(ui->sampleRateComboBox,sc.sampleRate);
     ui->bytesPointSpinBox->setValue(sc.bytesPerPoint);
+    ui->fastFrameEnabledCheckBox->blockSignals(true);
     ui->fastFrameEnabledCheckBox->setChecked(sc.fastFrameEnabled);
+    ui->fastFrameEnabledCheckBox->blockSignals(false);
     ui->framesSpinBox->setValue(sc.numFrames);
     ui->summaryFrameCheckBox->setChecked(sc.summaryFrame);
-    blockSignals(false);
+
 
     configureUI();
     validateSpinboxes();
@@ -88,6 +97,7 @@ FtmwConfig FtmwConfigWidget::getConfig() const
         out.setTargetTime(ui->targetTimeDateTimeEdit->dateTime());
     else
         out.setTargetTime(QDateTime::currentDateTime().addSecs(60));
+    out.setPhaseCorrectionEnabled(ui->phaseCorrectionCheckBox->isChecked());
 
     out.setLoFreq(ui->loFrequencyDoubleSpinBox->value());
     out.setSideband(ui->sidebandComboBox->currentData().value<BlackChirp::Sideband>());
@@ -143,6 +153,7 @@ void FtmwConfigWidget::loadFromSettings()
     ui->targetTimeDateTimeEdit->setDateTime(QDateTime::currentDateTime().addSecs(3600));
     ui->targetTimeDateTimeEdit->setMaximumDateTime(QDateTime::currentDateTime().addSecs(2000000000));
     ui->targetTimeDateTimeEdit->setCurrentSection(QDateTimeEdit::HourSection);
+    ui->phaseCorrectionCheckBox->setChecked(s.value(QString("phaseCorrection"),false).toBool());
 
     ui->fIDChannelSpinBox->setValue(s.value(QString("fidChannel"),1).toInt());
     ui->verticalScaleDoubleSpinBox->setValue(s.value(QString("vScale"),0.020).toDouble());
@@ -180,6 +191,7 @@ void FtmwConfigWidget::saveToSettings() const
 
     s.setValue(QString("mode"),ui->modeComboBox->currentIndex());
     s.setValue(QString("targetShots"),ui->targetShotsSpinBox->value());
+    s.setValue(QString("phaseCorrection"),ui->phaseCorrectionCheckBox->isChecked());
 
     s.setValue(QString("fidChannel"),ui->fIDChannelSpinBox->value());
     s.setValue(QString("vScale"),ui->verticalScaleDoubleSpinBox->value());
@@ -201,8 +213,6 @@ void FtmwConfigWidget::saveToSettings() const
 
 void FtmwConfigWidget::configureUI()
 {
-    blockSignals(true);
-
     BlackChirp::FtmwType type = ui->modeComboBox->currentData().value<BlackChirp::FtmwType>();
     if(type == BlackChirp::FtmwTargetTime)
     {
@@ -218,11 +228,6 @@ void FtmwConfigWidget::configureUI()
     if(type == BlackChirp::FtmwForever)
         ui->targetShotsSpinBox->setEnabled(false);
 
-    if(type == BlackChirp::FtmwPeakUp)
-        ui->autosaveSpinBox->setEnabled(false);
-    else
-        ui->autosaveSpinBox->setEnabled(true);
-
 
     if(ui->fastFrameEnabledCheckBox->isEnabled())
     {
@@ -230,7 +235,6 @@ void FtmwConfigWidget::configureUI()
         ui->summaryFrameCheckBox->setEnabled(ui->fastFrameEnabledCheckBox->isChecked());
     }
 
-    blockSignals(false);
 }
 
 void FtmwConfigWidget::validateSpinboxes()

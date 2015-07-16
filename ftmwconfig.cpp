@@ -184,10 +184,9 @@ QPair<int, int> FtmwConfig::chirpRange() const
     if(data->fidList.isEmpty())
         return qMakePair(-1,-1);
 
-    //we assume that the scope is triggered on the rising edge of the pre-chirp protection pulse.
-    //This should be enforced by the wizard
+    //we assume that the scope is triggered at the beginning of the protection pulse
 
-    double chirpStart = (data->chirpConfig.preChirpDelay() + data->chirpConfig.preChirpProtection())*1e-6;
+    double chirpStart = (data->chirpConfig.preChirpDelay() + data->chirpConfig.preChirpProtection() - data->scopeConfig.trigDelay)*1e-6;
     int startSample = qBound(BC_FTMW_MAXSHIFT,qRound(chirpStart*data->scopeConfig.sampleRate) + BC_FTMW_MAXSHIFT,data->fidList.first().size() - BC_FTMW_MAXSHIFT);
     double chirpEnd = chirpStart + data->chirpConfig.chirpDuration()*1e-6;
     int endSample = qBound(BC_FTMW_MAXSHIFT,qRound(chirpEnd*data->scopeConfig.sampleRate) - BC_FTMW_MAXSHIFT,data->fidList.first().size() - BC_FTMW_MAXSHIFT);
