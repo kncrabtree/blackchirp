@@ -9,7 +9,8 @@ SOURCES += loghandler.cpp \
     $$PWD/lifconfig.cpp \
     $$PWD/liftrace.cpp \
     $$PWD/datastructs.cpp \
-    $$PWD/analysis.cpp
+    $$PWD/analysis.cpp \
+    $$PWD/ioboardconfig.cpp
 
 HEADERS += loghandler.h \
     $$PWD/fid.h \
@@ -23,7 +24,8 @@ HEADERS += loghandler.h \
     $$PWD/lifconfig.h \
     $$PWD/liftrace.h \
     $$PWD/datastructs.h \
-    $$PWD/analysis.h
+    $$PWD/analysis.h \
+    $$PWD/ioboardconfig.h
 
 gpu-cuda {
     OTHER_FILES += $$PWD/gpuaverager.cu

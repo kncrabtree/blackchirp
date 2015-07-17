@@ -15,7 +15,7 @@ void IOBoard::readSettings()
     d_numAnalog = qBound(0,s.value(QString("numAnalog"),4).toInt(),16);
     d_numDigital = qBound(0,s.value(QString("numDigital"),16-d_numAnalog).toInt(),16);
     d_reservedAnalog = qMin(d_numAnalog,s.value(QString("reservedAnalog"),0).toInt());
-    d_reservedDigital = qMin(d_numAnalog,s.value(QString("reservedDigital"),0).toInt());
+    d_reservedDigital = qMin(d_numDigital,s.value(QString("reservedDigital"),0).toInt());
 
     s.setValue(QString("numAnalog"),d_numAnalog);
     s.setValue(QString("numDigital"),d_numDigital);
