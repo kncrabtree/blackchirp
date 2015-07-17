@@ -389,7 +389,7 @@ bool Experiment::addTimeData(const QList<QPair<QString, QVariant> > dataList, bo
                 {
                     out = false;
                     data->errorString = QString("Aborting because %1 is outside specified range (Value = %2, Min = %3, Max = %4).")
-                            .arg(key).arg(d,0,'g',vi.precision).arg(vi.min,0,'g',vi.precision).arg(vi.max,0,'g',vi.precision);
+                            .arg(key).arg(d,0,'g').arg(vi.min,0,'g').arg(vi.max,0,'g');
                     break;
                 }
             }
@@ -412,12 +412,12 @@ void Experiment::addTimeStamp()
     }
 }
 
-void Experiment::addValidationItem(QString key, double min, double max, int precision)
+void Experiment::addValidationItem(QString key, double min, double max)
 {
     BlackChirp::ValidationItem it;
+    it.key = key;
     it.min = min;
     it.max = max;
-    it.precision = precision;
 
     data->validationConditions.insert(key,it);
 }

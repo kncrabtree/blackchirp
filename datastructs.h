@@ -203,9 +203,9 @@ enum ExptFileType {
 };
 
 struct ValidationItem {
+    QString key;
     double min;
     double max;
-    int precision;
 };
 
 struct IOBoardChannel {

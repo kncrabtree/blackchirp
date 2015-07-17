@@ -9,6 +9,7 @@
 
 #include "experimentwizard.h"
 #include "ioboardconfigmodel.h"
+#include "validationmodel.h"
 
 WizardValidationPage::WizardValidationPage(QWidget *parent) :
     QWizardPage(parent)
@@ -17,7 +18,6 @@ WizardValidationPage::WizardValidationPage(QWidget *parent) :
     setSubTitle(QString("Configure IO board channels and set up conditions that will automatically abort the experiment."));
 
     QHBoxLayout *hbl = new QHBoxLayout;
-    hbl->addSpacerItem(new QSpacerItem(20,0,QSizePolicy::Expanding));
 
     QGroupBox *iobox = new QGroupBox(QString("IO Board"));
     QVBoxLayout *iol = new QVBoxLayout;
@@ -55,12 +55,14 @@ WizardValidationPage::WizardValidationPage(QWidget *parent) :
     vl->addWidget(val,0,Qt::AlignCenter);
 
     p_validationView = new QTableView;
-    //create validation model
+    ValidationModel *valmodel = new ValidationModel(p_validationView);
+    p_validationView->setModel(valmodel);
+    p_validationView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     p_validationView->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     vl->addWidget(p_validationView,1,Qt::AlignCenter);
+    vl->addStretch(1);
 
     hbl->addLayout(vl,1);
-    hbl->addSpacerItem(new QSpacerItem(20,0,QSizePolicy::Expanding));
 
     setLayout(hbl);
 }

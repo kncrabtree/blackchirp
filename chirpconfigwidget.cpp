@@ -39,7 +39,7 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     connect(ui->chirpsSpinBox,vc,[=](int n){ui->chirpIntervalDoubleSpinBox->setEnabled(n>1);});
     connect(ui->chirpIntervalDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot);
 
-    ui->chirpTable->setItemDelegate(new DoubleSpinBoxDelegate);
+    ui->chirpTable->setItemDelegate(new ChirpDoubleSpinBoxDelegate);
 }
 
 ChirpConfigWidget::~ChirpConfigWidget()

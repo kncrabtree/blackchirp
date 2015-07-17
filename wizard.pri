@@ -7,7 +7,8 @@ HEADERS += \
     $$PWD/wizardpulseconfigpage.h \
     $$PWD/wizardlifconfigpage.h \
     $$PWD/wizardvalidationpage.h \
-    $$PWD/ioboardconfigmodel.h
+    $$PWD/ioboardconfigmodel.h \
+    $$PWD/validationmodel.h
 
 SOURCES += \
     $$PWD/experimentwizard.cpp \
@@ -18,4 +19,5 @@ SOURCES += \
     $$PWD/wizardpulseconfigpage.cpp \
     $$PWD/wizardlifconfigpage.cpp \
     $$PWD/wizardvalidationpage.cpp \
-    $$PWD/ioboardconfigmodel.cpp
+    $$PWD/ioboardconfigmodel.cpp \
+    $$PWD/validationmodel.cpp

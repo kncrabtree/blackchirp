@@ -63,7 +63,7 @@ public:
     void setErrorString(const QString str);
     bool addTimeData(const QList<QPair<QString, QVariant> > dataList, bool plot);
     void addTimeStamp();
-    void addValidationItem(QString key, double min, double max, int precision);
+    void addValidationItem(QString key, double min, double max);
 
     void setHardwareFailed();
     void incrementFtmw();

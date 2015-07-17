@@ -253,11 +253,11 @@ QList<BlackChirp::ChirpSegment> ChirpTableModel::segmentList() const
 }
 
 
-DoubleSpinBoxDelegate::DoubleSpinBoxDelegate(QObject *parent) : QStyledItemDelegate(parent)
+ChirpDoubleSpinBoxDelegate::ChirpDoubleSpinBoxDelegate(QObject *parent) : QStyledItemDelegate(parent)
 {
 }
 
-QWidget *DoubleSpinBoxDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
+QWidget *ChirpDoubleSpinBoxDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
     Q_UNUSED(option)
 
@@ -288,21 +288,21 @@ QWidget *DoubleSpinBoxDelegate::createEditor(QWidget *parent, const QStyleOption
     return editor;
 }
 
-void DoubleSpinBoxDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
+void ChirpDoubleSpinBoxDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
     double val = index.model()->data(index, Qt::EditRole).toDouble();
 
     static_cast<QDoubleSpinBox*>(editor)->setValue(val);
 }
 
-void DoubleSpinBoxDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
+void ChirpDoubleSpinBoxDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
 {
     QDoubleSpinBox *sb = static_cast<QDoubleSpinBox*>(editor);
     sb->interpretText();
     model->setData(index,sb->value(),Qt::EditRole);
 }
 
-void DoubleSpinBoxDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const
+void ChirpDoubleSpinBoxDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
     Q_UNUSED(index)
     editor->setGeometry(option.rect);

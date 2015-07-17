@@ -40,11 +40,11 @@ private:
 
 #include <QStyledItemDelegate>
 
-class DoubleSpinBoxDelegate : public QStyledItemDelegate
+class ChirpDoubleSpinBoxDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
 public:
-    DoubleSpinBoxDelegate(QObject *parent=0);
+    ChirpDoubleSpinBoxDelegate(QObject *parent=0);
 
     // QAbstractItemDelegate interface
     QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
