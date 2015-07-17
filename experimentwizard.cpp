@@ -6,6 +6,7 @@
 #include "wizardsummarypage.h"
 #include "wizardpulseconfigpage.h"
 #include "wizardlifconfigpage.h"
+#include "wizardvalidationpage.h"
 #include "batchsingle.h"
 
 ExperimentWizard::ExperimentWizard(QWidget *parent) :
@@ -17,6 +18,7 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
     p_chirpConfigPage = new WizardChirpConfigPage(this);
     p_ftmwConfigPage = new WizardFtmwConfigPage(this);
     p_pulseConfigPage = new WizardPulseConfigPage(this);
+    p_validationPage = new WizardValidationPage(this);
     p_summaryPage = new WizardSummaryPage(this);
     p_lifConfigPage = new WizardLifConfigPage(this);
     connect(this,&ExperimentWizard::newTrace,p_lifConfigPage,&WizardLifConfigPage::newTrace);
@@ -30,6 +32,7 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
     setPage(FtmwConfigPage,p_ftmwConfigPage);
     setPage(PulseConfigPage,p_pulseConfigPage);
     setPage(LifConfigPage,p_lifConfigPage);
+    setPage(ValidationPage,p_validationPage);
     setPage(SummaryPage,p_summaryPage);
 }
 

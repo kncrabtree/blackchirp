@@ -1,5 +1,5 @@
-#ifndef IOBOARDANALOGCONFIGMODEL_H
-#define IOBOARDANALOGCONFIGMODEL_H
+#ifndef IOBOARDCONFIGMODEL_H
+#define IOBOARDCONFIGMODEL_H
 
 #include <QAbstractTableModel>
 #include <QList>
@@ -7,20 +7,21 @@
 #include "datastructs.h"
 #include "ioboardconfig.h"
 
-class IOBoardAnalogConfigModel : public QAbstractTableModel
+class IOBoardConfigModel : public QAbstractTableModel
 {
 	Q_OBJECT
 public:
-    IOBoardAnalogConfigModel(const IOBoardConfig c, QObject *parent = nullptr);
-	~IOBoardAnalogConfigModel();
+    IOBoardConfigModel(const  QMap<int,BlackChirp::IOBoardChannel> l, int numChannels, int numReserved, QString prefix = QString("AIN"), QObject *parent = nullptr);
+    ~IOBoardConfigModel();
 
 	void saveToSettings();
-    QMap<int,QPair<bool,QString>> getConfig();
+    QMap<int,BlackChirp::IOBoardChannel> getConfig();
 
 private:
-    QMap<int,QPair<bool,QString>> d_channelConfig;
+    QMap<int,BlackChirp::IOBoardChannel> d_channelConfig;
     int d_reserved;
     int d_numChannels;
+    QString d_prefix;
 
 	// QAbstractItemModel interface
 public:

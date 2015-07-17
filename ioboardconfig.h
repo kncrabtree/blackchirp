@@ -6,6 +6,8 @@
 #include <QMap>
 #include <QVariant>
 
+#include "datastructs.h"
+
 class IOBoardConfigData;
 
 class IOBoardConfig
@@ -16,10 +18,10 @@ public:
     IOBoardConfig &operator=(const IOBoardConfig &);
     ~IOBoardConfig();
 
-    void setAnalogChannel(int ch, bool enabled, QString name);
-    void setDigitalChannel(int ch, bool enabled, QString name);
-    void setAnalogChannels(const  QMap<int,QPair<bool,QString>> l);
-    void setDigitalChannels(const  QMap<int,QPair<bool,QString>> l);
+    void setAnalogChannel(int ch, bool enabled, QString name, bool plot);
+    void setDigitalChannel(int ch, bool enabled, QString name, bool plot);
+    void setAnalogChannels(const  QMap<int,BlackChirp::IOBoardChannel> l);
+    void setDigitalChannels(const QMap<int, BlackChirp::IOBoardChannel> l);
 
     int numAnalogChannels() const;
     int numDigitalChannels() const;
@@ -27,8 +29,12 @@ public:
     int reservedDigitalChannels() const;
     bool isAnalogChEnabled(int ch) const;
     bool isDigitalChEnabled(int ch) const;
-    QMap<int,QPair<bool,QString>> analogList() const;
-    QMap<int,QPair<bool,QString>> digitalList() const;
+    QString analogChannelName(int ch) const;
+    QString digitalChannelName(int ch) const;
+    bool plotAnalogChannel(int ch) const;
+    bool plotDigitalChannel(int ch) const;
+    QMap<int,BlackChirp::IOBoardChannel> analogList() const;
+    QMap<int,BlackChirp::IOBoardChannel> digitalList() const;
 
     QMap<QString,QPair<QVariant,QString>> headerMap() const;
     void saveToSettings() const;

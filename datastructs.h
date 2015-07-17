@@ -208,6 +208,16 @@ struct ValidationItem {
     int precision;
 };
 
+struct IOBoardChannel {
+    bool enabled;
+    QString name;
+    bool plot;
+
+    IOBoardChannel() {}
+    IOBoardChannel(bool e, QString n, bool p) : enabled(e), name(n), plot(p) {}
+    IOBoardChannel(const IOBoardChannel &other) : enabled(other.enabled), name(other.name), plot(other.plot) {}
+};
+
 QString getExptFile(int num, BlackChirp::ExptFileType t, int snapNum = -1);
 QString getExptDir(int num);
 QString headerMapToString(QMap<QString,QPair<QVariant,QString>> map);
@@ -231,6 +241,7 @@ Q_DECLARE_TYPEINFO(BlackChirp::ChirpSegment,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::FlowChannelConfig,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::PulseChannelConfig,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::ValidationItem,Q_PRIMITIVE_TYPE);
+Q_DECLARE_TYPEINFO(BlackChirp::IOBoardChannel,Q_PRIMITIVE_TYPE);
 
 #endif // DATASTRUCTS_H
 

@@ -9,6 +9,7 @@ class WizardFtmwConfigPage;
 class WizardSummaryPage;
 class WizardPulseConfigPage;
 class WizardLifConfigPage;
+class WizardValidationPage;
 class BatchManager;
 
 #include "experiment.h"
@@ -27,6 +28,7 @@ public:
         FtmwConfigPage,
         LifConfigPage,
         PulseConfigPage,
+        ValidationPage,
         SummaryPage
     };
 
@@ -48,6 +50,8 @@ private:
     WizardSummaryPage *p_summaryPage;
     WizardPulseConfigPage *p_pulseConfigPage;
     WizardLifConfigPage *p_lifConfigPage;
+    WizardValidationPage *p_validationPage;
+
     FlowConfig d_flowConfig;
 
     void saveToSettings() const;
