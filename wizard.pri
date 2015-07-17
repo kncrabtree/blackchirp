@@ -5,7 +5,9 @@ HEADERS += \
     $$PWD/wizardftmwconfigpage.h \
     $$PWD/wizardsummarypage.h \
     $$PWD/wizardpulseconfigpage.h \
-    $$PWD/wizardlifconfigpage.h
+    $$PWD/wizardlifconfigpage.h \
+    $$PWD/ioboardanalogconfigmodel.h \
+    $$PWD/ioboarddigitalconfigmodel.h
 
 SOURCES += \
     $$PWD/experimentwizard.cpp \
@@ -14,4 +16,6 @@ SOURCES += \
     $$PWD/wizardftmwconfigpage.cpp \
     $$PWD/wizardsummarypage.cpp \
     $$PWD/wizardpulseconfigpage.cpp \
-    $$PWD/wizardlifconfigpage.cpp
+    $$PWD/wizardlifconfigpage.cpp \
+    $$PWD/ioboardanalogconfigmodel.cpp \
+    $$PWD/ioboarddigitalconfigmodel.cpp

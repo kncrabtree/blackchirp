@@ -21,12 +21,17 @@ public:
     void setAnalogChannels(const  QMap<int,QPair<bool,QString>> l);
     void setDigitalChannels(const  QMap<int,QPair<bool,QString>> l);
 
+    int numAnalogChannels() const;
+    int numDigitalChannels() const;
+    int reservedAnalogChannels() const;
+    int reservedDigitalChannels() const;
     bool isAnalogChEnabled(int ch) const;
     bool isDigitalChEnabled(int ch) const;
     QMap<int,QPair<bool,QString>> analogList() const;
     QMap<int,QPair<bool,QString>> digitalList() const;
 
     QMap<QString,QPair<QVariant,QString>> headerMap() const;
+    void saveToSettings() const;
 
 private:
     QSharedDataPointer<IOBoardConfigData> data;

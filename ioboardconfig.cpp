@@ -10,6 +10,11 @@ public:
     QMap<int,QPair<bool,QString>> analog;
     QMap<int,QPair<bool,QString>> digital;
 
+    int numAnalog;
+    int numDigital;
+    int reservedAnalog;
+    int reservedDigital;
+
 };
 
 IOBoardConfig::IOBoardConfig() : data(new IOBoardConfigData)
@@ -18,17 +23,17 @@ IOBoardConfig::IOBoardConfig() : data(new IOBoardConfigData)
     s.beginGroup(QString("ioboard"));
     s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
 
-    int numAnalog = qBound(0,s.value(QString("numAnalog"),4).toInt(),16);
-    int numDigital = qBound(0,s.value(QString("numDigital"),16-numAnalog).toInt(),16);
-    int reservedAnalog = qMin(numAnalog,s.value(QString("reservedAnalog"),0).toInt());
-    int reservedDigital = qMin(numDigital,s.value(QString("reservedDigital"),0).toInt());
+    data->numAnalog = qBound(0,s.value(QString("numAnalog"),4).toInt(),16);
+    data->numDigital = qBound(0,s.value(QString("numDigital"),16-data->numAnalog).toInt(),16);
+    data->reservedAnalog = qMin(data->numAnalog,s.value(QString("reservedAnalog"),0).toInt());
+    data->reservedDigital = qMin(data->numDigital,s.value(QString("reservedDigital"),0).toInt());
 
     s.endGroup();
     s.endGroup();
 
     s.beginGroup(QString("iobconfig"));
     s.beginReadArray(QString("analog"));
-    for(int i=reservedAnalog; i<numAnalog; i++)
+    for(int i=0; i<data->numAnalog-data->reservedAnalog; i++)
     {
         s.setArrayIndex(i);
         QString name = s.value(QString("name"),QString("")).toString();
@@ -37,13 +42,14 @@ IOBoardConfig::IOBoardConfig() : data(new IOBoardConfigData)
     }
     s.endArray();
     s.beginReadArray(QString("digital"));
-    for(int i=reservedDigital; i<numDigital; i++)
+    for(int i=0; i<data->numDigital-data->reservedDigital; i++)
     {
         s.setArrayIndex(i);
         QString name = s.value(QString("name"),QString("")).toString();
         bool enabled = s.value(QString("enabled"),false).toBool();
         data->digital.insert(i,qMakePair(enabled,name));
     }
+    s.endArray();
 
     s.endGroup();
 }
@@ -91,6 +97,26 @@ void IOBoardConfig::setDigitalChannels(const QMap<int, QPair<bool, QString> > l)
     data->digital = l;
 }
 
+int IOBoardConfig::numAnalogChannels() const
+{
+    return data->numAnalog;
+}
+
+int IOBoardConfig::numDigitalChannels() const
+{
+    return data->numDigital;
+}
+
+int IOBoardConfig::reservedAnalogChannels() const
+{
+    return data->reservedAnalog;
+}
+
+int IOBoardConfig::reservedDigitalChannels() const
+{
+    return data->numDigital;
+}
+
 bool IOBoardConfig::isAnalogChEnabled(int ch) const
 {
     if(data->analog.contains(ch))
@@ -126,16 +152,50 @@ QMap<QString, QPair<QVariant, QString> > IOBoardConfig::headerMap() const
     QString empty = QString("");
     for(;it != data->analog.constEnd(); it++)
     {
-        out.insert(prefix+QString("Analog.")+QString::number(it.key())+QString(".Enabled"),qMakePair(it.value().first,empty));
-        out.insert(prefix+QString("Analog.")+QString::number(it.key())+QString(".Name"),qMakePair(it.value().second,empty));
+        out.insert(prefix+QString("Analog.")+QString::number(it.key()+data->reservedAnalog)+QString(".Enabled"),qMakePair(it.value().first,empty));
+        out.insert(prefix+QString("Analog.")+QString::number(it.key()+data->reservedAnalog)+QString(".Name"),qMakePair(it.value().second,empty));
     }
     it = data->digital.constBegin();
     for(;it != data->digital.constEnd(); it++)
     {
-        out.insert(prefix+QString("Digital.")+QString::number(it.key())+QString(".Enabled"),qMakePair(it.value().first,empty));
-        out.insert(prefix+QString("Digital.")+QString::number(it.key())+QString(".Name"),qMakePair(it.value().second,empty));
+        out.insert(prefix+QString("Digital.")+QString::number(it.key()+data->reservedDigital)+QString(".Enabled"),qMakePair(it.value().first,empty));
+        out.insert(prefix+QString("Digital.")+QString::number(it.key()+data->reservedDigital)+QString(".Name"),qMakePair(it.value().second,empty));
     }
 
     return out;
+}
+
+void IOBoardConfig::saveToSettings() const
+{
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+
+    s.beginGroup(QString("iobconfig"));
+    s.remove(QString("analog"));
+    s.beginWriteArray(QString("analog"));
+    for(int i=0; i<data->numAnalog-data->reservedAnalog; i++)
+    {
+        s.setArrayIndex(i);
+        QString name = data->analog.value(i).second;
+        if(name.isEmpty())
+            name = QString("ain%1").arg(i+data->reservedAnalog);
+        s.setValue(QString("name"),name);
+        s.setValue(QString("enabled"),data->analog.value(i).first);
+    }
+    s.endArray();
+    s.remove(QString("digital"));
+    s.beginWriteArray(QString("digital"));
+    for(int i=0; i<data->numDigital-data->reservedDigital; i++)
+    {
+        s.setArrayIndex(i);
+        QString name = data->digital.value(i).second;
+        if(name.isEmpty())
+            name = QString("din%1").arg(i+data->reservedDigital);
+        s.setValue(QString("name"),name);
+        s.setValue(QString("enabled"),data->digital.value(i).first);
+    }
+    s.endArray();
+
+    s.endGroup();
+    s.sync();
 }
 
