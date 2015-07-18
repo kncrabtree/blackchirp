@@ -70,6 +70,8 @@ Experiment ExperimentWizard::getExperiment() const
     exp.setLifConfig(lc);
     exp.setPulseGenConfig(p_pulseConfigPage->getConfig());
     exp.setFlowConfig(d_flowConfig);
+    exp.setIOBoardConfig(p_validationPage->getConfig());
+    exp.setValidationItems(p_validationPage->getValidation());
     exp.setTimeDataInterval(p_startPage->auxDataInterval());
     exp.setAutoSaveShotsInterval(p_startPage->snapshotInterval());
 
@@ -102,5 +104,7 @@ void ExperimentWizard::saveToSettings() const
 
     if(p_startPage->lifEnabled())
         p_lifConfigPage->saveToSettings();
+
+    p_validationPage->saveToSettings();
 }
 

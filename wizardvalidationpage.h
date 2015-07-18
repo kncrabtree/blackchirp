@@ -14,12 +14,14 @@ public:
 
 private:
     QTableView *p_analogView, *p_digitalView, *p_validationView;
-    IOBoardConfig d_config;
-
 
     // QWizardPage interface
 public:
     int nextId() const;
+
+    IOBoardConfig getConfig() const;
+    QMap<QString,BlackChirp::ValidationItem> getValidation() const;
+    void saveToSettings() const;
 };
 
 #endif // WIZARDVALIDATIONPAGE_H

@@ -312,6 +312,10 @@ QMap<QString, QPair<QVariant, QString> > LifConfig::headerMap() const
     QString comp = (data->completeMode == BlackChirp::LifStopWhenComplete ?
                         QString("Stop") : QString("Continue"));
 
+    out.insert(prefix+QString("Enabled"),qMakePair(isEnabled(),empty));
+    if(!isEnabled())
+        return out;
+
     out.insert(prefix+QString("ScanOrder"),qMakePair(so,empty));
     out.insert(prefix+QString("CompleteBehavior"),qMakePair(comp,empty));
     if(numDelayPoints() > 1)

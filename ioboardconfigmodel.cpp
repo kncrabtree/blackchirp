@@ -68,7 +68,7 @@ QVariant IOBoardConfigModel::data(const QModelIndex &index, int role) const
 
 bool IOBoardConfigModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    if(!d_channelConfig.contains(index.row()) || index.column() < 0 || index.column() > 1)
+    if(!d_channelConfig.contains(index.row()) || index.column() < 0 || index.column() > 2)
 		return false;
 
 	if(role == Qt::CheckStateRole)

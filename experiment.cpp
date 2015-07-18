@@ -88,6 +88,11 @@ LifConfig Experiment::lifConfig() const
     return data->lifCfg;
 }
 
+IOBoardConfig Experiment::iobConfig() const
+{
+    return data->iobCfg;
+}
+
 bool Experiment::isComplete() const
 {
     //check each sub expriment!
@@ -131,10 +136,20 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
     out.insert(QString("AuxDataInterval"),qMakePair(data->timeDataInterval,QString("s")));
     out.insert(QString("AutosaveInterval"),qMakePair(data->autoSaveShotsInterval,QString("shots")));
 
+    auto it = data->validationConditions.constBegin();
+    QString prefix("Validation.");
+    QString empty("");
+    for(;it != data->validationConditions.constEnd(); it++)
+    {
+        out.insert(prefix+it.key()+QString(".Min"),qMakePair(it.value().min,empty));
+        out.insert(prefix+it.key()+QString(".Max"),qMakePair(it.value().max,empty));
+    }
+
     out.unite(data->ftmwCfg.headerMap());
     out.unite(data->lifCfg.headerMap());
     out.unite(data->pGenCfg.headerMap());
     out.unite(data->flowCfg.headerMap());
+    out.unite(data->iobCfg.headerMap());
 
     return out;
 }
@@ -302,6 +317,11 @@ void Experiment::setLifConfig(const LifConfig cfg)
     data->lifCfg = cfg;
 }
 
+void Experiment::setIOBoardConfig(const IOBoardConfig cfg)
+{
+    data->iobCfg = cfg;
+}
+
 bool Experiment::setFidsData(const QList<QVector<qint64> > l)
 {
     if(!data->ftmwCfg.setFidsData(l))
@@ -412,14 +432,9 @@ void Experiment::addTimeStamp()
     }
 }
 
-void Experiment::addValidationItem(QString key, double min, double max)
+void Experiment::setValidationItems(const QMap<QString, BlackChirp::ValidationItem> m)
 {
-    BlackChirp::ValidationItem it;
-    it.key = key;
-    it.min = min;
-    it.max = max;
-
-    data->validationConditions.insert(key,it);
+    data->validationConditions = m;
 }
 
 void Experiment::setHardwareFailed()

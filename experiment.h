@@ -11,6 +11,7 @@
 #include "pulsegenconfig.h"
 #include "flowconfig.h"
 #include "lifconfig.h"
+#include "ioboardconfig.h"
 
 class ExperimentData;
 
@@ -34,6 +35,7 @@ public:
     PulseGenConfig pGenConfig() const;
     FlowConfig flowConfig() const;
     LifConfig lifConfig() const;
+    IOBoardConfig iobConfig() const;
     bool isComplete() const;
     bool hardwareSuccess() const;
     QString errorString() const;
@@ -53,6 +55,7 @@ public:
     void setFtmwConfig(const FtmwConfig cfg);
     void setScopeConfig(const BlackChirp::FtmwScopeConfig &cfg);
     void setLifConfig(const LifConfig cfg);
+    void setIOBoardConfig(const IOBoardConfig cfg);
     bool setFidsData(const QList<QVector<qint64>> l);
     bool addFids(const QByteArray newData, int shift = 0);
     bool addLifWaveform(const LifTrace t);
@@ -63,7 +66,7 @@ public:
     void setErrorString(const QString str);
     bool addTimeData(const QList<QPair<QString, QVariant> > dataList, bool plot);
     void addTimeStamp();
-    void addValidationItem(QString key, double min, double max);
+    void setValidationItems(const QMap<QString,BlackChirp::ValidationItem> m);
 
     void setHardwareFailed();
     void incrementFtmw();
@@ -103,6 +106,7 @@ public:
     PulseGenConfig pGenCfg;
     FlowConfig flowCfg;
     LifConfig lifCfg;
+    IOBoardConfig iobCfg;
     QMap<QString,QList<QPair<QVariant,bool>>> timeDataMap;
     QMap<QString,BlackChirp::ValidationItem> validationConditions;
 };

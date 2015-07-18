@@ -203,11 +203,11 @@ void ValidationModel::saveToSettings()
 	for(int i = d_validationList.size()-1; i >= 0; i--)
 	{
 		if(d_validationList.at(i).key.isEmpty())
-			d_validationList.removeAt(i);
+            removeRows(i,1,QModelIndex());
 	}
 
 	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-	s.beginGroup(QString("lastScanConfig"));
+    s.beginGroup(QString("lastExperiment"));
     s.remove(QString("validation"));
 	s.beginWriteArray(QString("validation"));
 	for(int i=0; i<d_validationList.size();i++)
@@ -225,6 +225,20 @@ void ValidationModel::saveToSettings()
 
 QList<BlackChirp::ValidationItem> ValidationModel::getList()
 {
+    //first, remove any items with empty keys
+    for(int i = d_validationList.size()-1; i >= 0; i--)
+    {
+        if(d_validationList.at(i).key.isEmpty())
+            removeRows(i,1,QModelIndex());
+    }
+
+    //now, make sure min<max
+    for(int i=0; i<d_validationList.size(); i++)
+    {
+        if(d_validationList.at(i).min > d_validationList.at(i).max)
+            qSwap(d_validationList[i].min,d_validationList[i].max);
+    }
+
 	return d_validationList;
 }
 
