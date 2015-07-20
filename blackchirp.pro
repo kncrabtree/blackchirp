@@ -117,7 +117,7 @@ FC_CHANNELS=4
 LIFSCOPE=0
 
 #IO Board (0 = virtual, 1 = Labjack U3)
-IOBOARD=0
+IOBOARD=1
 }
 
 

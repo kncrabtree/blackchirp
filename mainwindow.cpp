@@ -271,6 +271,7 @@ void MainWindow::batchComplete(bool aborted)
 {
     disconnect(p_hwm,&HardwareManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated);
     disconnect(p_am,&AcquisitionManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated);
+    disconnect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort);
 
     if(aborted)
         emit statusMessage(QString("Experiment aborted"));
@@ -592,6 +593,7 @@ void MainWindow::startBatch(BatchManager *bm, bool sleepWhenDone)
 
     connect(p_hwm,&HardwareManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated,Qt::UniqueConnection);
     connect(p_am,&AcquisitionManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated,Qt::UniqueConnection);
+    connect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort,Qt::UniqueConnection);
 
     if(sleepWhenDone)
     {

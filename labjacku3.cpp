@@ -90,6 +90,7 @@ void LabjackU3::initialize()
 
 Experiment LabjackU3::prepareForExperiment(Experiment exp)
 {
+    d_config = exp.iobConfig();
     return exp;
 }
 
@@ -103,4 +104,51 @@ void LabjackU3::endAcquisition()
 
 void LabjackU3::readTimeData()
 {
+    QList<QPair<QString,QVariant>> outPlot, outNoPlot;
+
+    auto it = d_config.analogList().constBegin();
+
+
+    for(;it!=d_config.analogList().constEnd();it++)
+    {
+        auto ch = it.value();
+        if(ch.enabled)
+        {
+            double val;
+            long error = eAIN(d_handle,&d_calInfo,1,0,it.key()+d_config.reservedAnalogChannels(),32,&val,0,0,0,0,0,0);
+            if(error)
+            {
+                emit logMessage(QString("eAIN function call returned error code %1").arg(error),BlackChirp::LogError);
+                emit hardwareFailure();
+                return;
+            }
+            if(ch.plot)
+                outPlot.append(qMakePair(QString("ain.%1").arg(it.key()),val));
+            else
+                outNoPlot.append(qMakePair(QString("ain.%1").arg(it.key()),val));
+        }
+    }
+    it = d_config.digitalList().constBegin();
+    for(;it != d_config.digitalList().constEnd(); it++)
+    {
+        auto ch = it.value();
+        if(ch.enabled)
+        {
+            long val;
+            long error = eDI(d_handle,1,it.key()+d_config.reservedDigitalChannels()+d_config.numAnalogChannels(),&val);
+            if(error)
+            {
+                emit logMessage(QString("eDI function call returned error code %1").arg(error),BlackChirp::LogError);
+                emit hardwareFailure();
+                return;
+            }
+            if(ch.plot)
+                outPlot.append(qMakePair(QString("din.%1").arg(it.key()),static_cast<int>(val)));
+            else
+                outNoPlot.append(qMakePair(QString("din.%1").arg(it.key()),static_cast<int>(val)));
+        }
+    }
+
+    emit timeDataRead(outPlot);
+    emit timeDataReadNoPlot(outNoPlot);
 }
