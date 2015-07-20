@@ -394,12 +394,18 @@ bool Experiment::addTimeData(const QList<QPair<QString, QVariant> > dataList, bo
 
         if(data->validationConditions.contains(key))
         {
+            //convert key if needed
+            QString name = BlackChirp::channelNameLookup(key);
+            if(name.isEmpty())
+                name = key;
+
             bool ok = false;
             double d = value.toDouble(&ok);
+
             if(!ok)
             {
                 out = false;
-                data->errorString = QString("Aborting because the item \"%1\" (value = %2) cannot be converted to a double.").arg(key).arg(value.toString());
+                data->errorString = QString("Aborting because the item \"%1\" (value = %2) cannot be converted to a double.").arg(name).arg(value.toString());
                 break;
             }
             else
@@ -409,7 +415,7 @@ bool Experiment::addTimeData(const QList<QPair<QString, QVariant> > dataList, bo
                 {
                     out = false;
                     data->errorString = QString("Aborting because %1 is outside specified range (Value = %2, Min = %3, Max = %4).")
-                            .arg(key).arg(d,0,'g').arg(vi.min,0,'g').arg(vi.max,0,'g');
+                            .arg(name).arg(d,0,'g').arg(vi.min,0,'g').arg(vi.max,0,'g');
                     break;
                 }
             }

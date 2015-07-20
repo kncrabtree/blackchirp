@@ -13,6 +13,7 @@
 #include <qwt6/qwt_plot_curve.h>
 
 #include "trackingplot.h"
+#include "datastructs.h"
 
 
 TrackingViewWidget::TrackingViewWidget(QWidget *parent) :
@@ -123,31 +124,10 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
         md.name = list.at(i).first;
 
         //Create curve
-        //Change name if it is a flow with a known name
-        QString realName = md.name;
-        if(realName.startsWith(QString("flow")))
-        {
-            QStringList l = realName.split(QString("."));
-            if(l.size() > 1)
-            {
-                bool ok = false;
-                int index = l.at(1).trimmed().toInt(&ok);
-                if(ok)
-                {
-                    QSettings s2(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-                    s2.beginGroup(QString("flowController"));
-                    s2.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-                    s2.beginReadArray(QString("channels"));
-                    s2.setArrayIndex(index);
-                    realName = s2.value(QString("name"),QString("")).toString();
-                    if(realName.isEmpty())
-                        realName = md.name;
-                    s2.endArray();
-                    s2.endGroup();
-                    s2.endGroup();
-                }
-            }
-        }
+        QString realName = BlackChirp::channelNameLookup(md.name);
+        if(realName.isEmpty())
+            realName = md.name;
+
         QwtPlotCurve *c = new QwtPlotCurve(realName);
         c->setRenderHint(QwtPlotItem::RenderAntialiased);
         md.curve = c;

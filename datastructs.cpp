@@ -66,3 +66,48 @@ QString BlackChirp::headerMapToString(QMap<QString, QPair<QVariant, QString> > m
 
     return out;
 }
+
+
+QString BlackChirp::channelNameLookup(QString key)
+{
+    QString subKey, arrayName;
+
+    if(key.startsWith(QString("flow")))
+    {
+        QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+        subKey = QString("flowController/%1").arg(s.value(QString("subKey"),QString("virtual")).toString());
+        arrayName = QString("channels");
+    }
+    else if(key.startsWith(QString("ain")))
+    {
+        subKey = QString("iobconfig");
+        arrayName = QString("analog");
+    }
+    else if(key.startsWith(QString("din")))
+    {
+        subKey = QString("iobconfig");
+        arrayName = QString("digital");
+    }
+
+    if(subKey.isEmpty() || arrayName.isEmpty())
+        return QString("");
+
+    QStringList l = key.split(QString("."));
+    if(l.size() < 1)
+        return QString("");
+
+    bool ok = false;
+    int index = l.at(1).trimmed().toInt(&ok);
+    if(!ok)
+        return QString("");
+
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(subKey);
+    s.beginReadArray(arrayName);
+    s.setArrayIndex(index);
+    QString out = s.value(QString("name"),QString("")).toString();
+    s.endArray();
+    s.endGroup();
+
+    return out;
+}

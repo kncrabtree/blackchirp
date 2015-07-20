@@ -3,6 +3,8 @@
 
 #include "hardwareobject.h"
 
+#include "ioboardconfig.h"
+
 class IOBoard : public HardwareObject
 {
     Q_OBJECT
@@ -10,6 +12,7 @@ public:
     explicit IOBoard(QObject *parent = nullptr);
 
 protected:
+    IOBoardConfig d_config;
     int d_numAnalog;
     int d_numDigital;
     int d_reservedAnalog;

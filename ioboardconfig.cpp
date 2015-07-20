@@ -36,7 +36,7 @@ IOBoardConfig::IOBoardConfig() : data(new IOBoardConfigData)
     for(int i=0; i<data->numAnalog-data->reservedAnalog; i++)
     {
         s.setArrayIndex(i);
-        QString name = s.value(QString("name"),QString("ain%1").arg(i+data->reservedAnalog)).toString();
+        QString name = s.value(QString("name"),QString("ain.%1").arg(i+data->reservedAnalog)).toString();
         bool enabled = s.value(QString("enabled"),false).toBool();
         bool plot = s.value(QString("plot"),false).toBool();
         data->analog.insert(i,BlackChirp::IOBoardChannel(enabled,name,plot));
@@ -46,7 +46,7 @@ IOBoardConfig::IOBoardConfig() : data(new IOBoardConfigData)
     for(int i=0; i<data->numDigital-data->reservedDigital; i++)
     {
         s.setArrayIndex(i);
-        QString name = s.value(QString("name"),QString("din%1").arg(data->reservedDigital)).toString();
+        QString name = s.value(QString("name"),QString("din.%1").arg(data->reservedDigital)).toString();
         bool enabled = s.value(QString("enabled"),false).toBool();
         bool plot = s.value(QString("plot"),false).toBool();
         data->digital.insert(i,BlackChirp::IOBoardChannel(enabled,name,plot));
@@ -213,7 +213,7 @@ void IOBoardConfig::saveToSettings() const
         s.setArrayIndex(i);
         QString name = data->analog.value(i).name;
         if(name.isEmpty())
-            name = QString("ain%1").arg(i+data->reservedAnalog);
+            name = QString("ain.%1").arg(i+data->reservedAnalog);
         s.setValue(QString("name"),name);
         s.setValue(QString("enabled"),data->analog.value(i).enabled);
         s.setValue(QString("plot"),data->analog.value(i).plot);
@@ -226,7 +226,7 @@ void IOBoardConfig::saveToSettings() const
         s.setArrayIndex(i);
         QString name = data->digital.value(i).name;
         if(name.isEmpty())
-            name = QString("din%1").arg(i+data->reservedDigital);
+            name = QString("din.%1").arg(i+data->reservedDigital);
         s.setValue(QString("name"),name);
         s.setValue(QString("enabled"),data->digital.value(i).enabled);
         s.setValue(QString("plot"),data->digital.value(i).plot);

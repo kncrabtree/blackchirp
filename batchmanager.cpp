@@ -13,6 +13,9 @@ BatchManager::~BatchManager()
 
 void BatchManager::experimentComplete(const Experiment exp)
 {
+    if(!exp.errorString().isEmpty())
+        emit logMessage(exp.errorString(),BlackChirp::LogError);
+
     if(!exp.isInitialized() || !exp.hardwareSuccess())
     {
         writeReport();

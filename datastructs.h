@@ -221,6 +221,7 @@ struct IOBoardChannel {
 QString getExptFile(int num, BlackChirp::ExptFileType t, int snapNum = -1);
 QString getExptDir(int num);
 QString headerMapToString(QMap<QString,QPair<QVariant,QString>> map);
+QString channelNameLookup(QString key);
 
 
 }
