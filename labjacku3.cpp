@@ -31,10 +31,25 @@ LabjackU3::LabjackU3(QObject *parent) :
 
 }
 
-void LabjackU3::configure()
+bool LabjackU3::configure()
 {
     if(d_handle == nullptr)
-        return;
+    {
+        emit logMessage(QString("Handle is null."),BlackChirp::LogError);
+        return false;
+    }
+
+    long enableTimers[2] = {0,0}, enableCounters[2] = {0,0}, timerModes[2] = {0,0};
+    double timerValues[2] = {0.0,0.0};
+    long error = eTCConfig(d_handle,enableTimers,enableCounters,4,LJ_tc48MHZ,0,timerModes,timerValues,0,0);
+    if(error)
+    {
+        emit logMessage(QString("eTCConfig function call returned error code %1.").arg(error),BlackChirp::LogError);
+        return false;
+    }
+
+    return true;
+
 }
 
 void LabjackU3::closeConnection()
@@ -75,7 +90,12 @@ bool LabjackU3::testConnection()
         return false;
     }
 
-    configure();
+    if(!configure())
+    {
+        closeConnection();
+        emit connected(false,QString("Could not configure."));
+        return false;
+    }
 
     emit connected();
     emit logMessage(QString("ID response: %1").arg(d_calInfo.prodID));

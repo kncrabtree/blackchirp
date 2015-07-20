@@ -509,6 +509,7 @@ void MainWindow::setLogIcon(BlackChirp::LogMessageCode c)
 
 void MainWindow::configureUi(MainWindow::ProgramState s)
 {
+    d_state = s;
     if(!d_hardwareConnected)
         s = Disconnected;
 
@@ -576,9 +577,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->lifControlWidget->setEnabled(true);
         break;
     }
-
-    if(s != Disconnected)
-	    d_state = s;
 }
 
 void MainWindow::startBatch(BatchManager *bm, bool sleepWhenDone)

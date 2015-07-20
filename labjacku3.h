@@ -26,7 +26,7 @@ private:
 
     int d_serialNo;
 
-    void configure();
+    bool configure();
     void closeConnection();
 };
 
