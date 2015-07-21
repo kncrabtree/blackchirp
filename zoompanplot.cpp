@@ -105,7 +105,7 @@ void ZoomPanPlot::setName(QString name)
     QSettings s;
     for(int i=0; i<d_config.axisList.size(); i++)
         d_config.axisList[i].zoomFactor = s.value(QString("zoomFactors/%1/%2").arg(d_name)
-                                                  .arg(QVariant::fromValue(d_config.axisList.at(i).type).toString()),0.1).toDouble();
+                                                  .arg((int)d_config.axisList.at(i).type),0.1).toDouble();
 }
 
 void ZoomPanPlot::replot()

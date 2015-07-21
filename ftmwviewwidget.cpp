@@ -1,9 +1,13 @@
 #include "ftmwviewwidget.h"
 #include "ui_ftmwviewwidget.h"
 
+#include <QThread>
+
+#include "ftworker.h"
+
 FtmwViewWidget::FtmwViewWidget(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::FtmwViewWidget)
+    ui(new Ui::FtmwViewWidget), d_replotWhenDone(false), d_processing(false), d_pzf(0)
 {
     ui->setupUi(this);
 
@@ -13,13 +17,26 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent) :
     ui->rollingAverageSpinbox->hide();
     ui->rollingAverageResetButton->hide();
 
-    connect(ui->fidPlot,&FidPlot::ftStartChanged,ui->ftPlot,&FtPlot::ftStartChanged);
-    connect(ui->fidPlot,&FidPlot::ftEndChanged,ui->ftPlot,&FtPlot::ftEndChanged);
+    connect(ui->fidPlot,&FidPlot::ftStartChanged,this,&FtmwViewWidget::ftStartChanged);
+    connect(ui->fidPlot,&FidPlot::ftEndChanged,this,&FtmwViewWidget::ftEndChanged);
     ui->exptLabel->setVisible(false);
+
+    p_ftw = new FtWorker();
+    //make signal/slot connections
+    connect(p_ftw,&FtWorker::ftDone,this,&FtmwViewWidget::ftDone);
+    p_ftThread = new QThread(this);
+    connect(p_ftThread,&QThread::finished,p_ftw,&FtWorker::deleteLater);
+    p_ftw->moveToThread(p_ftThread);
+    p_ftThread->start();
+
+    connect(ui->ftPlot,&FtPlot::pzfChanged,this,&FtmwViewWidget::pzfChanged);
 }
 
 FtmwViewWidget::~FtmwViewWidget()
 {
+    p_ftThread->quit();
+    p_ftThread->wait();
+
     delete ui;
 }
 
@@ -36,6 +53,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
     ui->ftPlot->prepareForExperiment(e);
 
     ui->frameBox->blockSignals(true);
+    d_fidList.clear();
     if(config.isEnabled())
     {
         int frames = config.scopeConfig().numFrames;
@@ -111,11 +129,65 @@ void FtmwViewWidget::updateShotsLabel(qint64 shots)
 
 void FtmwViewWidget::showFrame(int num)
 {
-    ui->ftPlot->newFid(d_fidList.at(num-1));
+    //process FID
+    if(!d_processing)
+        updateFtPlot();
+    else
+        d_replotWhenDone = true;
+
     ui->fidPlot->receiveData(d_fidList.at(num-1));
 }
 
-void FtmwViewWidget::fidTest(Fid f)
+void FtmwViewWidget::ftStartChanged(double s)
 {
-    ui->ftPlot->newFid(f);
+    QMetaObject::invokeMethod(p_ftw,"setStart",Q_ARG(double,s));
+    if(d_fidList.isEmpty())
+        return;
+
+    if(!d_processing)
+        updateFtPlot();
+    else
+        d_replotWhenDone = true;
 }
+
+void FtmwViewWidget::ftEndChanged(double e)
+{
+    QMetaObject::invokeMethod(p_ftw,"setEnd",Q_ARG(double,e));
+    if(d_fidList.isEmpty())
+        return;
+
+    if(!d_processing)
+        updateFtPlot();
+    else
+        d_replotWhenDone = true;
+}
+
+void FtmwViewWidget::pzfChanged(int zpf)
+{
+    d_pzf = zpf;
+    QMetaObject::invokeMethod(p_ftw,"setPzf",Q_ARG(int,zpf));
+    if(d_fidList.isEmpty())
+        return;
+
+    if(!d_processing)
+        updateFtPlot();
+    else
+        d_replotWhenDone = true;
+}
+
+void FtmwViewWidget::updateFtPlot()
+{
+    QMetaObject::invokeMethod(p_ftw,"doFT",Q_ARG(const Fid,d_fidList.at(ui->frameBox->value()-1)));
+    d_processing = true;
+    d_replotWhenDone = false;
+}
+
+void FtmwViewWidget::ftDone(QVector<QPointF> ft, double max)
+{
+    d_processing = false;
+    ui->ftPlot->newFt(ft,max);
+
+    if(d_replotWhenDone)
+        updateFtPlot();
+}
+

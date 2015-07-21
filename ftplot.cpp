@@ -1,7 +1,6 @@
 #include "ftplot.h"
 
 #include <QFont>
-#include <QThread>
 #include <QMouseEvent>
 #include <QEvent>
 #include <QSettings>
@@ -23,10 +22,8 @@
 #include <qwt6/qwt_plot_picker.h>
 #include <qwt6/qwt_plot_grid.h>
 
-#include "ftworker.h"
-
 FtPlot::FtPlot(QWidget *parent) :
-    ZoomPanPlot(QString("FtPlot"),parent), d_processing(false), d_replotWhenDone(false), d_pzf(0), d_number(0)
+    ZoomPanPlot(QString("FtPlot"),parent), d_number(0), d_pzf(0)
 {
     //make axis label font smaller
     this->setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
@@ -74,15 +71,6 @@ FtPlot::FtPlot(QWidget *parent) :
 
     connect(this,&FtPlot::plotRightClicked,this,&FtPlot::buildContextMenu);
 
-    p_ftw = new FtWorker();
-    //make signal/slot connections
-    connect(p_ftw,&FtWorker::ftDone,this,&FtPlot::ftDone);
-    connect(p_ftw,&FtWorker::fidDone,this,&FtPlot::fidDone);
-    p_ftThread = new QThread(this);
-    connect(p_ftThread,&QThread::finished,p_ftw,&FtWorker::deleteLater);
-    p_ftw->moveToThread(p_ftThread);
-    p_ftThread->start();
-
     setAxisAutoScaleRange(QwtPlot::xBottom,0.0,1.0);
     setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
 
@@ -90,8 +78,6 @@ FtPlot::FtPlot(QWidget *parent) :
 
 FtPlot::~FtPlot()
 {
-    p_ftThread->quit();
-    p_ftThread->wait();
 }
 
 void FtPlot::prepareForExperiment(const Experiment e)
@@ -99,7 +85,6 @@ void FtPlot::prepareForExperiment(const Experiment e)
     FtmwConfig c = e.ftmwConfig();
     d_number = e.number();
 
-    d_currentFid = Fid();
     d_currentFt = QVector<QPointF>();
     p_curveData->setSamples(d_currentFt);
     setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
@@ -116,30 +101,14 @@ void FtPlot::prepareForExperiment(const Experiment e)
     autoScale();
 }
 
-void FtPlot::newFid(const Fid f)
+void FtPlot::newFt(QVector<QPointF> ft, double max)
 {
-    d_currentFid = f;
-
-    if(d_processing)
-        d_replotWhenDone = true;
-    else
-        updatePlot();
-}
-
-void FtPlot::ftDone(QVector<QPointF> ft, double max)
-{
-    d_processing = false;
     d_currentFt = ft;
     if(ft.isEmpty())
         return;
 
     setAxisAutoScaleMax(QwtPlot::yLeft,max);
-
     filterData();
-
-    if(d_replotWhenDone)
-        updatePlot();
-
     replot();
 }
 
@@ -207,7 +176,7 @@ void FtPlot::filterData()
 
 void FtPlot::buildContextMenu(QMouseEvent *me)
 {
-    if(d_currentFid.size() < 2 || !isEnabled())
+    if(d_currentFt.size() < 2 || !isEnabled())
         return;
 
     QMenu *m = contextMenu();
@@ -231,7 +200,10 @@ void FtPlot::buildContextMenu(QMouseEvent *me)
     pzfBox->setRange(0,4);
     pzfBox->setSingleStep(1);
     pzfBox->setValue(d_pzf);
-    connect(pzfBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtPlot::pzfChanged);
+    connect(pzfBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),[=](int p){
+        d_pzf = p;
+        emit pzfChanged(p);
+    });
 
     w->setLayout(fl);
     wa->setDefaultWidget(w);
@@ -277,44 +249,6 @@ QColor FtPlot::getColor(QColor startingColor)
     return QColorDialog::getColor(startingColor,this,QString("Select Color"));
 }
 
-void FtPlot::ftStartChanged(double s)
-{
-    QMetaObject::invokeMethod(p_ftw,"setStart",Q_ARG(double,s));
-    if(d_currentFid.size() < 2)
-        return;
-
-    if(!d_processing)
-        updatePlot();
-    else
-        d_replotWhenDone = true;
-}
-
-void FtPlot::ftEndChanged(double e)
-{
-    QMetaObject::invokeMethod(p_ftw,"setEnd",Q_ARG(double,e));
-    if(d_currentFid.size() < 2)
-        return;
-
-    if(!d_processing)
-        updatePlot();
-    else
-        d_replotWhenDone = true;
-
-}
-
-void FtPlot::pzfChanged(int zpf)
-{
-    d_pzf = zpf;
-    QMetaObject::invokeMethod(p_ftw,"setPzf",Q_ARG(int,zpf));
-    if(d_currentFid.size() < 2)
-        return;
-
-    if(!d_processing)
-        updatePlot();
-    else
-        d_replotWhenDone = true;
-}
-
 void FtPlot::exportXY()
 {
     QString name = QFileDialog::getSaveFileName(this,QString("Export FT"),QString("~/%1_ft.txt").arg(d_number));
@@ -338,11 +272,4 @@ void FtPlot::exportXY()
     f.close();
 
     QApplication::restoreOverrideCursor();
-}
-
-void FtPlot::updatePlot()
-{
-    QMetaObject::invokeMethod(p_ftw,"doFT",Q_ARG(const Fid,d_currentFid));
-    d_processing = true;
-    d_replotWhenDone = false;
 }

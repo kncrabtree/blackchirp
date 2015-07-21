@@ -8,10 +8,8 @@
 
 #include "experiment.h"
 
-class QThread;
 class QwtPlotCurve;
 class QwtPlotGrid;
-class FtWorker;
 
 class FtPlot : public ZoomPanPlot
 {
@@ -28,57 +26,29 @@ public:
     void prepareForExperiment(const Experiment e);
 
 signals:
-    void fidDone(const QVector<QPointF> fid);
+    void pzfChanged(int);
 
 public slots:
-    void newFid(const Fid f);
-    void ftDone(const QVector<QPointF> ft, double max);
-
-    /*!
-     * \brief Compresses data based on number of pixels wide the plot currently is
-     *
-     * This calculates the number of data points that will occupy a single pixel, based on the x-axis scale and width of plot.
-     * It then loops over the most recent FFT data in chunks, finding the min and max y value in each.
-     * In the end, each pixel has two data points: the min and max values of the data contained therein.
-     * With 500000 points and 1000 pixels, or example, this compresses the data by 99.75% (2000/500000).
-     */
+    void newFt(const QVector<QPointF> ft, double max);
     void filterData();
-
     void buildContextMenu(QMouseEvent *me);
 
     void changeFtColor(QColor c);
-    void changeGridColor(QColor c);
-
-    void ftStartChanged(double s);
-    void ftEndChanged(double e);
-    void pzfChanged(int zpf);
+    void changeGridColor(QColor c);    
     void exportXY();
-
-    void updatePlot();
-
 
 
 private:
-
     /*!
      * \brief The object representing the curve on the plot
      */
     QwtPlotCurve *p_curveData;
-
     QwtPlotGrid *p_plotGrid;
+    QVector<QPointF> d_currentFt;
+    int d_number;
+    int d_pzf;
 
     QColor getColor(QColor startingColor);
-
-    QThread *p_ftThread;
-    FtWorker *p_ftw;
-    Fid d_currentFid;
-    QVector<QPointF> d_currentFt;
-
-    bool d_processing;
-    bool d_replotWhenDone;
-    int d_pzf;
-    int d_number;
-
 
 };
 
