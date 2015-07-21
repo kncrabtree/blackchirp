@@ -272,6 +272,7 @@ void MainWindow::batchComplete(bool aborted)
     disconnect(p_hwm,&HardwareManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated);
     disconnect(p_am,&AcquisitionManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated);
     disconnect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort);
+    disconnect(p_hwm,&HardwareManager::lifScopeShotAcquired,ui->lifDisplayWidget,&LifDisplayWidget::lifShotAcquired);
 
     if(aborted)
         emit statusMessage(QString("Experiment aborted"));
@@ -287,13 +288,11 @@ void MainWindow::batchComplete(bool aborted)
     ui->ftmwTab->setEnabled(true);
     ui->lifTab->setEnabled(true);
 
-    disconnect(p_hwm,&HardwareManager::lifScopeShotAcquired,
-               ui->lifDisplayWidget,&LifDisplayWidget::lifShotAcquired);
 
     configureUi(Idle);
 }
 
-void MainWindow::experimentInitialized(Experiment exp)
+void MainWindow::experimentInitialized(const Experiment exp)
 {
 	if(!exp.isInitialized())
 		return;
@@ -338,6 +337,11 @@ void MainWindow::experimentInitialized(Experiment exp)
         ui->lifProgressBar->setRange(0,1);
         ui->lifProgressBar->setValue(1);
     }
+
+    if(p_lh->thread() == thread())
+        p_lh->beginExperimentLog(exp);
+    else
+        QMetaObject::invokeMethod(p_lh,"beginExperimentLog",Q_ARG(const Experiment,exp));
 }
 
 void MainWindow::hardwareInitialized(bool success)
@@ -583,10 +587,12 @@ void MainWindow::startBatch(BatchManager *bm, bool sleepWhenDone)
 {
     connect(d_batchThread,&QThread::started,bm,&BatchManager::beginNextExperiment);
     connect(bm,&BatchManager::logMessage,p_lh,&LogHandler::logMessage);
+    connect(bm,&BatchManager::beginExperiment,p_lh,&LogHandler::endExperimentLog);
     connect(bm,&BatchManager::beginExperiment,p_hwm,&HardwareManager::initializeExperiment);
     connect(p_am,&AcquisitionManager::experimentComplete,bm,&BatchManager::experimentComplete);
     connect(bm,&BatchManager::batchComplete,this,&MainWindow::batchComplete);
     connect(bm,&BatchManager::batchComplete,d_batchThread,&QThread::quit);
+    connect(bm,&BatchManager::batchComplete,p_lh,&LogHandler::endExperimentLog);
     connect(d_batchThread,&QThread::finished,bm,&BatchManager::deleteLater);
 
     connect(p_hwm,&HardwareManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated,Qt::UniqueConnection);

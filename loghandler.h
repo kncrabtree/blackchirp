@@ -6,6 +6,7 @@
 #include <QFile>
 
 #include "datastructs.h"
+#include "experiment.h"
 
 class LogHandler : public QObject
 {
@@ -13,11 +14,6 @@ class LogHandler : public QObject
 public:
     explicit LogHandler(QObject *parent = 0);
     ~LogHandler();
-
-	//definitions of log message types
-
-
-
 
 signals:
 	//sends the formatted messages to the UI
@@ -27,9 +23,12 @@ signals:
 public slots:
 	//access functions for transmitting messages to UI
     void logMessage(const QString text, const BlackChirp::LogMessageCode type=BlackChirp::LogNormal);
+    void beginExperimentLog(const Experiment e);
+    void endExperimentLog();
 
 private:
     QFile d_logFile;
+    QFile d_exptLog;
     int d_currentMonth;
 
     void writeToFile(const QString text, const BlackChirp::LogMessageCode type, const QString timeStamp);

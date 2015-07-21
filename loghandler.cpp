@@ -54,6 +54,21 @@ void LogHandler::logMessage(const QString text, const BlackChirp::LogMessageCode
     emit sendLogMessage(out);
 }
 
+void LogHandler::beginExperimentLog(const Experiment e)
+{
+    d_exptLog.setFileName(BlackChirp::getExptFile(e.number(),BlackChirp::LogFile));
+    d_exptLog.open(QIODevice::WriteOnly);
+}
+
+void LogHandler::endExperimentLog()
+{
+    if(d_exptLog.isOpen())
+    {
+        d_exptLog.close();
+        d_exptLog.setFileName(QString(""));
+    }
+}
+
 void LogHandler::writeToFile(const QString text, const BlackChirp::LogMessageCode type, const QString timeStamp)
 {
     QDate now = QDate::currentDate();
@@ -70,28 +85,34 @@ void LogHandler::writeToFile(const QString text, const BlackChirp::LogMessageCod
         d_logFile.open(QIODevice::Append);
     }
 
+    QString msg = QString("%1: ").arg(timeStamp);
+    switch (type)
+    {
+    case BlackChirp::LogWarning:
+        msg.append(QString("[WARNING] "));
+        break;
+    case BlackChirp::LogError:
+        msg.append(QString("[ERROR] "));
+        break;
+    case BlackChirp::LogDebug:
+        msg.append(QString("[DEBUG] "));
+        break;
+    default:
+        break;
+    }
+
+    msg.append(text).append(QString("\n"));
+
     if(d_logFile.isOpen())
     {
-        QString msg = QString("%1: ").arg(timeStamp);
-        switch (type)
-        {
-        case BlackChirp::LogWarning:
-            msg.append(QString("[WARNING] "));
-            break;
-        case BlackChirp::LogError:
-            msg.append(QString("[ERROR] "));
-            break;
-        case BlackChirp::LogDebug:
-            msg.append(QString("[DEBUG] "));
-            break;
-        default:
-            break;
-        }
-
-        msg.append(text).append(QString("\n"));
-
         d_logFile.write(msg.toLatin1());
         d_logFile.flush();
+    }
+
+    if(d_exptLog.isOpen())
+    {
+        d_exptLog.write(msg.toLatin1());
+        d_exptLog.flush();
     }
 }
 
