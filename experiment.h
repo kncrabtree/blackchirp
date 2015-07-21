@@ -39,7 +39,7 @@ public:
     bool isComplete() const;
     bool hardwareSuccess() const;
     QString errorString() const;
-    QMap<QString,QList<QPair<QVariant,bool>>> timeDataMap() const;
+    QMap<QString,QPair<QList<QVariant>,bool>> timeDataMap() const;
     QString startLogMessage() const;
     QString endLogMessage() const;
     BlackChirp::LogMessageCode endLogMessageCode() const;
@@ -74,6 +74,7 @@ public:
     void finalSave() const;
     bool saveHeader() const;
     bool saveChirpFile() const;
+    bool saveTimeFile() const;
     void snapshot(int snapNum, const Experiment other) const;
 
 private:
@@ -107,7 +108,7 @@ public:
     FlowConfig flowCfg;
     LifConfig lifCfg;
     IOBoardConfig iobCfg;
-    QMap<QString,QList<QPair<QVariant,bool>>> timeDataMap;
+    QMap<QString,QPair<QList<QVariant>,bool>> timeDataMap;
     QMap<QString,BlackChirp::ValidationItem> validationConditions;
 };
 

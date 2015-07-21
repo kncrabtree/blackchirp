@@ -27,6 +27,9 @@ QString BlackChirp::getExptFile(int num, BlackChirp::ExptFileType t, int snapNum
     case SnapFile:
         file.append(QString(".snp"));
         break;
+    case TimeFile:
+        file.append(QString(".tdt"));
+        break;
     }
 
     return getExptDir(num) + file;

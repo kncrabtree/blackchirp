@@ -109,7 +109,7 @@ QString Experiment::errorString() const
     return data->errorString;
 }
 
-QMap<QString, QList<QPair<QVariant, bool> > > Experiment::timeDataMap() const
+QMap<QString, QPair<QList<QVariant>, bool> > Experiment::timeDataMap() const
 {
     return data->timeDataMap;
 }
@@ -384,12 +384,12 @@ bool Experiment::addTimeData(const QList<QPair<QString, QVariant> > dataList, bo
         QVariant value = dataList.at(i).second;
 
         if(data->timeDataMap.contains(key))
-            data->timeDataMap[key].append(qMakePair(value,plot));
+            data->timeDataMap[key].first.append(value);
         else
         {
-            QList<QPair<QVariant,bool>> newList;
-            newList.append(qMakePair(value,plot));
-            data->timeDataMap.insert(key,newList);
+            QList<QVariant> newList;
+            newList.append(value);
+            data->timeDataMap.insert(key,qMakePair(newList,plot));
         }
 
         if(data->validationConditions.contains(key))
@@ -429,12 +429,12 @@ void Experiment::addTimeStamp()
 {
     QString key("exptTimeStamp");
     if(data->timeDataMap.contains(key))
-        data->timeDataMap[key].append(qMakePair(QDateTime::currentDateTime(),false));
+        data->timeDataMap[key].first.append(QDateTime::currentDateTime());
     else
     {
-        QList<QPair<QVariant,bool>> newList;
-        newList.append(qMakePair(QDateTime::currentDateTime(),false));
-        data->timeDataMap.insert(key,newList);
+        QList<QVariant> newList;
+        newList.append(QDateTime::currentDateTime());
+        data->timeDataMap.insert(key,qMakePair(newList,false));
     }
 }
 
@@ -484,6 +484,8 @@ void Experiment::finalSave() const
 
     if(lifConfig().isEnabled())
             lifConfig().writeLifFile(data->number);
+
+    saveTimeFile();
 }
 
 bool Experiment::saveHeader() const
@@ -517,6 +519,141 @@ bool Experiment::saveChirpFile() const
         return false;
 }
 
+bool Experiment::saveTimeFile() const
+{
+    if(data->timeDataMap.isEmpty())
+        return true;
+
+    QFile tdt(BlackChirp::getExptFile(data->number,BlackChirp::TimeFile));
+    if(tdt.open(QIODevice::WriteOnly))
+    {
+        QList<QPair<QString,QList<QVariant>>> plot, noPlot;
+        QTextStream t(&tdt);
+        t.setRealNumberNotation(QTextStream::ScientificNotation);
+        t.setRealNumberPrecision(6);
+        QString tab("\t");
+        QString nl("\n");
+
+        auto it = data->timeDataMap.constBegin();
+        int maxPlotSize = 0, maxNoPlotSize = 0;
+        for(;it != data->timeDataMap.constEnd(); it++)
+        {
+            QString alias = BlackChirp::channelNameLookup(it.key());
+            if(!alias.isEmpty())
+                t << QString("#Alias") << tab << alias << tab << it.key() << nl;
+            bool p = it.value().second;
+            if(p)
+            {
+                plot.append(qMakePair(it.key(),it.value().first));
+                maxPlotSize = qMax(it.value().first.size(),maxPlotSize);
+            }
+            else
+            {
+                noPlot.append(qMakePair(it.key(),it.value().first));
+                maxNoPlotSize = qMax(it.value().first.size(),maxNoPlotSize);
+            }
+        }
+
+
+        if(!plot.isEmpty())
+        {
+            t << QString("#PlotData\n\n");
+            QString name = BlackChirp::channelNameLookup(plot.first().first);
+            if(name.isEmpty())
+                name = plot.first().first;
+
+            t << name << QString("_%1").arg(data->number);
+            for(int i=1; i<plot.size(); i++)
+            {
+                name = BlackChirp::channelNameLookup(plot.at(i).first);
+                if(name.isEmpty())
+                    name = plot.at(i).first;
+
+                t << tab << name << QString("_%1").arg(data->number);
+            }
+
+            for(int i=0; i<maxPlotSize; i++)
+            {
+                t << nl;
+
+                if(i >= plot.first().second.size())
+                    t << QString("NaN");
+                else
+                {
+                    if(plot.first().second.at(i).canConvert(QVariant::Double))
+                        t << plot.first().second.at(i).toDouble();
+                    else
+                        t << plot.first().second.at(i).toString();
+                }
+
+                for(int j=1; j<plot.size(); j++)
+                {
+                    if(i >= plot.at(j).second.size())
+                        t << tab << QString("NaN");
+                    else
+                    {
+                        if(plot.at(j).second.at(i).canConvert(QVariant::Double))
+                            t << tab << plot.at(j).second.at(i).toDouble();
+                        else
+                            t << tab << plot.at(j).second.at(i).toString();
+                    }
+                }
+            }
+        }
+
+        if(!noPlot.isEmpty())
+        {
+            t << QString("\n\n#NoPlotData\n\n");
+            QString name = BlackChirp::channelNameLookup(noPlot.first().first);
+            if(name.isEmpty())
+                name = plot.first().first;
+
+            t << name << QString("_%1").arg(data->number);
+            for(int i=1; i<noPlot.size(); i++)
+            {
+                name = BlackChirp::channelNameLookup(noPlot.at(i).first);
+                if(name.isEmpty())
+                    name = noPlot.at(i).first;
+
+                t << tab <<name << QString("_%1").arg(data->number);
+            }
+
+            for(int i=0; i<maxNoPlotSize; i++)
+            {
+                t << nl;
+
+                if(i >= noPlot.first().second.size())
+                    t << QString("NaN");
+                else
+                {
+                    if(noPlot.first().second.at(i).canConvert(QVariant::Double))
+                        t << noPlot.first().second.at(i).toDouble();
+                    else
+                        t << noPlot.first().second.at(i).toString();
+                }
+
+                for(int j=1; j<noPlot.size(); j++)
+                {
+                    if(i >= noPlot.at(j).second.size())
+                        t << tab << QString("NaN");
+                    else
+                    {
+                        if(noPlot.at(j).second.at(i).canConvert(QVariant::Double))
+                            t << tab << noPlot.at(j).second.at(i).toDouble();
+                        else
+                            t << tab <<noPlot.at(j).second.at(i).toString();
+                    }
+                }
+            }
+        }
+        t.flush();
+        tdt.close();
+        return true;
+    }
+    else
+        return false;
+}
+
 void Experiment::snapshot(int snapNum, const Experiment other) const
 {
     if(ftmwConfig().isEnabled())
@@ -533,5 +670,7 @@ void Experiment::snapshot(int snapNum, const Experiment other) const
 
     if(lifConfig().isEnabled())
         lifConfig().writeLifFile(data->number);
+
+    saveTimeFile();
 }
 

@@ -199,7 +199,8 @@ enum ExptFileType {
     ChirpFile,
     FidFile,
     LifFile,
-    SnapFile
+    SnapFile,
+    TimeFile
 };
 
 struct ValidationItem {
