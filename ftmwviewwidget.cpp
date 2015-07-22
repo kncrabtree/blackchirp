@@ -129,6 +129,9 @@ void FtmwViewWidget::updateShotsLabel(qint64 shots)
 
 void FtmwViewWidget::showFrame(int num)
 {
+    if(d_fidList.size() <= num)
+        return;
+
     //process FID
     if(!d_processing)
         updateFtPlot();
@@ -177,9 +180,12 @@ void FtmwViewWidget::pzfChanged(int zpf)
 
 void FtmwViewWidget::updateFtPlot()
 {
-    QMetaObject::invokeMethod(p_ftw,"doFT",Q_ARG(const Fid,d_fidList.at(ui->frameBox->value()-1)));
-    d_processing = true;
-    d_replotWhenDone = false;
+    if(d_fidList.size() >= ui->frameBox->value())
+    {
+        QMetaObject::invokeMethod(p_ftw,"doFT",Q_ARG(const Fid,d_fidList.at(ui->frameBox->value()-1)));
+        d_processing = true;
+        d_replotWhenDone = false;
+    }
 }
 
 void FtmwViewWidget::ftDone(QVector<QPointF> ft, double max)
