@@ -80,6 +80,74 @@ Experiment::Experiment(const int num) : data(new ExperimentData)
         return;
     }
 
+    //load time data
+    QFile tdt(BlackChirp::getExptFile(num,BlackChirp::TimeFile));
+    if(tdt.open(QIODevice::ReadOnly))
+    {
+        bool plot = true;
+        bool lookForHeader = true;
+        QStringList hdrList;
+
+        while(!tdt.atEnd())
+        {
+            QByteArray line = tdt.readLine().trimmed();
+
+            if(line.isEmpty())
+                continue;
+
+            if(line.startsWith('#'))
+            {
+                if(line.endsWith("NoPlotData"))
+                {
+                    plot = false;
+                    lookForHeader = true;
+                    hdrList.clear();
+                    continue;
+                }
+                else if(line.endsWith("PlotData"))
+                {
+                    plot = true;
+                    lookForHeader = true;
+                    hdrList.clear();
+                    continue;
+                }
+                else
+                    continue;
+            }
+
+            QByteArrayList l = line.split('\t');
+            if(l.isEmpty())
+                continue;
+
+            if(lookForHeader)
+            {
+                for(int i=0; i<l.size(); i++)
+                {
+                    QByteArrayList l2 = l.at(i).split('_');
+                    QString name;
+                    for(int j=0; j<l2.size()-1; j++)
+                        name += QString(l2.at(j));
+
+                    hdrList.append(name);
+                    data->timeDataMap[name] = qMakePair(QList<QVariant>(),plot);
+                }
+                lookForHeader = false;
+            }
+            else
+            {
+                if(l.size() != hdrList.size())
+                    continue;
+
+                for(int i=0; i<l.size(); i++)
+                    data->timeDataMap[hdrList.at(i)].first.append(QString(l.at(i).trimmed()));
+            }
+
+        }
+
+        tdt.close();
+    }
+
+
     data->number = num;
 
 }

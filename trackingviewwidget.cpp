@@ -16,8 +16,8 @@
 #include "datastructs.h"
 
 
-TrackingViewWidget::TrackingViewWidget(QWidget *parent) :
-    QWidget(parent)
+TrackingViewWidget::TrackingViewWidget(bool viewOnly, QWidget *parent) :
+    QWidget(parent), d_viewMode(viewOnly)
 {    
     QSettings s;
     int numPlots = qBound(1,s.value(QString("trackingWidget/numPlots"),4).toInt(),9);
@@ -50,12 +50,12 @@ void TrackingViewWidget::initializeForExperiment()
     }
 }
 
-void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > list, bool plot)
+void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > list, bool plot, QDateTime t)
 {
     if(!plot)
         return;
 
-    double x = QwtDate::toDouble(QDateTime::currentDateTime());
+    double x = QwtDate::toDouble(t);
     if(d_plotCurves.isEmpty())
     {
         d_xRange.first = x;
@@ -166,9 +166,12 @@ void TrackingViewWidget::curveVisibilityToggled(QwtPlotCurve *c, bool visible)
     if(i < 0)
         return;
 
-    QSettings s;
-    s.setValue(QString("trackingWidget/curves/%1/isVisible").arg(d_plotCurves.at(i).name),visible);
-    s.sync();
+    if(!d_viewMode)
+    {
+        QSettings s;
+        s.setValue(QString("trackingWidget/curves/%1/isVisible").arg(d_plotCurves.at(i).name),visible);
+        s.sync();
+    }
 
     d_plotCurves[i].isVisible = visible;
     d_plotCurves[i].curve->setVisible(visible);
@@ -247,9 +250,12 @@ void TrackingViewWidget::changeCurveColor(int curveIndex)
     if(newColor.isValid())
     {
         d_plotCurves.at(curveIndex).curve->setPen(newColor);
-        QSettings s;
-        s.setValue(QString("trackingWidget/curves/%1/color").arg(d_plotCurves.at(curveIndex).name),newColor);
-        s.sync();
+        if(!d_viewMode)
+        {
+            QSettings s;
+            s.setValue(QString("trackingWidget/curves/%1/color").arg(d_plotCurves.at(curveIndex).name),newColor);
+            s.sync();
+        }
         d_allPlots.at(d_plotCurves.at(curveIndex).plotIndex)->initializeLabel
                 (d_plotCurves.at(curveIndex).curve,d_plotCurves.at(curveIndex).isVisible);
         d_allPlots.at(d_plotCurves.at(curveIndex).plotIndex)->replot();
@@ -276,10 +282,13 @@ void TrackingViewWidget::moveCurveToPlot(int curveIndex, int newPlotIndex)
             (d_plotCurves.at(curveIndex).curve,d_plotCurves.at(curveIndex).isVisible);
 
     //update settings, and replot
-    QSettings s;
-    s.setValue(QString("trackingWidget/curves/%1/plotIndex").arg(d_plotCurves.at(curveIndex).name),
-               newPlotIndex);
-    s.sync();
+    if(!d_viewMode)
+    {
+        QSettings s;
+        s.setValue(QString("trackingWidget/curves/%1/plotIndex").arg(d_plotCurves.at(curveIndex).name),
+                   newPlotIndex);
+        s.sync();
+    }
     d_allPlots.at(oldPlotIndex)->replot();
     d_allPlots.at(newPlotIndex)->replot();
 }
@@ -299,9 +308,12 @@ void TrackingViewWidget::changeCurveAxis(int curveIndex)
     d_plotCurves.at(curveIndex).curve->setAxes(QwtPlot::xBottom,newAxis);
     d_plotCurves[curveIndex].axis = newAxis;
 
-    QSettings s;
-    s.setValue(QString("trackingWidget/curves/%1/axis").arg(d_plotCurves.at(curveIndex).name),newAxis);
-    s.sync();
+    if(!d_viewMode)
+    {
+        QSettings s;
+        s.setValue(QString("trackingWidget/curves/%1/axis").arg(d_plotCurves.at(curveIndex).name),newAxis);
+        s.sync();
+    }
 
     setAutoScaleYRanges(d_plotCurves.at(curveIndex).plotIndex,oldAxis);
     setAutoScaleYRanges(d_plotCurves.at(curveIndex).plotIndex,newAxis);
@@ -337,9 +349,12 @@ void TrackingViewWidget::changeNumPlots()
     if(!ok || newNum == d_allPlots.size())
         return;
 
-    QSettings s;
-    s.setValue(QString("trackingWidget/numPlots"),newNum);
-
+    if(!d_viewMode)
+    {
+        QSettings s;
+        s.setValue(QString("trackingWidget/numPlots"),newNum);
+        s.sync();
+    }
 
     if(newNum > d_allPlots.size())
     {
@@ -368,8 +383,6 @@ void TrackingViewWidget::changeNumPlots()
     for(int i=0; i<d_allPlots.size(); i++)
         d_allPlots.at(i)->replot();
 
-    s.sync();
-
 }
 
 int TrackingViewWidget::findCurveIndex(QwtPlotCurve *c)
@@ -388,7 +401,11 @@ int TrackingViewWidget::findCurveIndex(QwtPlotCurve *c)
 
 void TrackingViewWidget::addNewPlot()
 {
-    TrackingPlot *tp = new TrackingPlot(QString("TrackingPlot%1").arg(d_allPlots.size()),this);
+    QString name = QString("TrackingPlot%1").arg(d_allPlots.size());
+    if(d_viewMode)
+        name = QString("TrackingPlotView%1").arg(d_allPlots.size());
+
+    TrackingPlot *tp = new TrackingPlot(name,this);
 
     tp->setAxisAutoScaleRange(QwtPlot::xBottom,d_xRange.first,d_xRange.second);
     tp->setAxisAutoScaleRange(QwtPlot::xTop,d_xRange.first,d_xRange.second);

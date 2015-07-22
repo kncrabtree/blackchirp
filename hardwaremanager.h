@@ -42,7 +42,7 @@ signals:
     void abortAcquisition();
     void experimentInitialized(Experiment);
     void endAcquisition();
-    void timeData(const QList<QPair<QString,QVariant>>,bool plot);
+    void timeData(const QList<QPair<QString,QVariant>>,bool plot,QDateTime t = QDateTime::currentDateTime());
     void readTimeData();
 
     void ftmwScopeShotAcquired(const QByteArray);

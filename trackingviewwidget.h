@@ -4,6 +4,7 @@
 #include <QWidget>
 
 #include <QList>
+#include <QDateTime>
 
 #include <qwt6/qwt_plot.h>
 
@@ -16,7 +17,7 @@ class TrackingViewWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit TrackingViewWidget(QWidget *parent = 0);
+    explicit TrackingViewWidget(bool viewOnly = false, QWidget *parent = 0);
     ~TrackingViewWidget();
 
     //! Associates curves with which plot and axis they're displayed on
@@ -33,7 +34,7 @@ public:
 
 public slots:
     void initializeForExperiment();
-    void pointUpdated(const QList<QPair<QString,QVariant> > list, bool plot);
+    void pointUpdated(const QList<QPair<QString,QVariant> > list, bool plot, QDateTime t);
     void curveVisibilityToggled(QwtPlotCurve *c, bool visible);
     void curveContextMenuRequested(QwtPlotCurve *c, QMouseEvent *me);
     void changeCurveColor(int curveIndex);
@@ -50,6 +51,7 @@ private:
     QList<CurveMetaData> d_plotCurves;
     QList<TrackingPlot*> d_allPlots;
     QPair<double,double> d_xRange;
+    bool d_viewMode;
 
     int findCurveIndex(QwtPlotCurve* c);
     void addNewPlot();

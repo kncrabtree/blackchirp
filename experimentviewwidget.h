@@ -20,6 +20,9 @@ public slots:
 private:
     Experiment d_experiment;
     QTabWidget *p_tabWidget;
+
+    QWidget *buildHeaderWidget();
+    QWidget *buildTrackingWidget();
 };
 
 #endif // EXPERIMENTVIEWWIDGET_H

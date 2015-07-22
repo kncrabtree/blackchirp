@@ -2,6 +2,7 @@
 #define ACQUISITIONMANAGER_H
 
 #include <QObject>
+#include <QDateTime>
 #include <QTime>
 #include <QTimer>
 #include <QThread>
@@ -38,7 +39,7 @@ signals:
     void beginAcquisition();
     void endAcquisition();
     void timeDataSignal();
-    void timeData(const QList<QPair<QString,QVariant>>, bool plot=true);
+    void timeData(const QList<QPair<QString,QVariant>>, bool plot=true, QDateTime t = QDateTime::currentDateTime());
 
     void newFidList(QList<Fid>);
     void takeSnapshot(const Experiment);
