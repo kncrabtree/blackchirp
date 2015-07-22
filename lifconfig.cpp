@@ -179,6 +179,11 @@ QVector<QPointF> LifConfig::spectrum(int delayIndex) const
     return out;
 }
 
+QList<QVector<BlackChirp::LifPoint> > LifConfig::lifData() const
+{
+    return data->lifData;
+}
+
 void LifConfig::setEnabled()
 {
     if(!data->valid)
@@ -440,10 +445,10 @@ QPair<QPoint, BlackChirp::LifPoint> LifConfig::lastUpdatedLifPoint() const
     {
         if(data->lastUpdatedPoint.y() < data->lifData.at(data->lastUpdatedPoint.x()).size())
         {
-//            return qMakePair(data->lastUpdatedPoint,data->lifData.at(data->lastUpdatedPoint.x()).at(data->lastUpdatedPoint.y()));
-            BlackChirp::LifPoint p;
-            p.mean = static_cast<double>(qrand() % 1000)/100.0;
-            return qMakePair(data->lastUpdatedPoint,p);
+            return qMakePair(data->lastUpdatedPoint,data->lifData.at(data->lastUpdatedPoint.x()).at(data->lastUpdatedPoint.y()));
+//            BlackChirp::LifPoint p;
+//            p.mean = static_cast<double>(qrand() % 1000)/100.0;
+//            return qMakePair(data->lastUpdatedPoint,p);
         }
     }
 

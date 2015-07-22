@@ -10,6 +10,7 @@
 #include <QTextEdit>
 
 #include "ftmwviewwidget.h"
+#include "lifdisplaywidget.h"
 #include "trackingviewwidget.h"
 #include "loghandler.h"
 
@@ -45,7 +46,14 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QWidget *parent) : QWidget(p
     {
         QWidget *ftmw = buildFtmwWidget();
         if(ftmw != nullptr)
-            p_tabWidget->addTab(ftmw,QString("FTMW"));
+            p_tabWidget->addTab(ftmw,QString("CP-FTMW"));
+    }
+
+    if(d_experiment.lifConfig().isEnabled())
+    {
+        QWidget *lif = buildLifWidget();
+        if(lif != nullptr)
+            p_tabWidget->addTab(lif,QString("LIF"));
     }
 
     QWidget *tracking = buildTrackingWidget();
@@ -109,6 +117,36 @@ QWidget *ExperimentViewWidget::buildFtmwWidget()
 
     return out;
 
+}
+
+QWidget *ExperimentViewWidget::buildLifWidget()
+{
+    QWidget *out = nullptr;
+    if(d_experiment.lifConfig().isEnabled())
+    {
+        out = new QWidget;
+        QVBoxLayout *vbl = new QVBoxLayout;
+        LifDisplayWidget *lif = new LifDisplayWidget(out);
+        vbl->addWidget(lif);
+        out->setLayout(vbl);
+
+        lif->prepareForExperiment(d_experiment.lifConfig());
+
+        auto d = d_experiment.lifConfig().lifData();
+        QPoint p;
+        for(int i = 0; i<d.size(); i++)
+        {
+            auto dat = d.at(i);
+            p.setX(i);
+            for(int j=0; j<dat.size(); j++)
+            {
+                p.setY(j);
+                lif->updatePoint(qMakePair(p,dat.at(j)));
+            }
+        }
+    }
+
+    return out;
 }
 
 QWidget *ExperimentViewWidget::buildTrackingWidget()

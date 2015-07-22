@@ -29,6 +29,7 @@ private:
 
     QWidget *buildHeaderWidget();
     QWidget *buildFtmwWidget();
+    QWidget *buildLifWidget();
     QWidget *buildTrackingWidget();
     QWidget *buildLogWidget();
 };

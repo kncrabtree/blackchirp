@@ -38,6 +38,7 @@ public:
     BlackChirp::LifScopeConfig scopeConfig() const;
     QVector<QPointF> timeSlice(int frequencyIndex) const;
     QVector<QPointF> spectrum(int delayIndex) const;
+    QList<QVector<BlackChirp::LifPoint>> lifData() const;
     QMap<QString,QPair<QVariant,QString> > headerMap() const;
     void parseLine(QString key, QVariant val);
     bool loadLifData(int num);
