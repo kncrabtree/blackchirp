@@ -21,30 +21,6 @@ LifConfig &LifConfig::operator=(const LifConfig &rhs)
     return *this;
 }
 
-LifConfig::LifConfig(int num) : data(new LifConfigData)
-{
-    //need to read other settings from expt header
-
-
-    QFile lif(BlackChirp::getExptFile(num,BlackChirp::LifFile));
-    if(lif.open(QIODevice::ReadOnly))
-    {
-        QDataStream d(&lif);
-        QByteArray magic;
-        d >> magic;
-        if(magic.startsWith("BCLIF"))
-        {
-            if(magic.endsWith("v1.0"))
-            {
-                QList<QVector<BlackChirp::LifPoint>> l;
-                d >> l;
-                data->lifData = l;
-            }
-        }
-        lif.close();
-    };
-}
-
 LifConfig::~LifConfig()
 {
 
@@ -355,6 +331,107 @@ QMap<QString, QPair<QVariant, QString> > LifConfig::headerMap() const
     out.unite(data->scopeConfig.headerMap());
 
     return out;
+}
+
+void LifConfig::parseLine(QString key, QVariant val)
+{
+    if(key.startsWith(QString("LifConfig")))
+    {
+        if(key.endsWith(QString("Enabled")))
+            data->enabled = val.toBool();
+        if(key.endsWith(QString("ScanOrder")))
+        {
+            if(val.toString().contains(QString("Delay")))
+                data->order = BlackChirp::LifOrderDelayFirst;
+            else
+                data->order = BlackChirp::LifOrderFrequencyFirst;
+        }
+        if(key.endsWith(QString("CompleteBehavior")))
+        {
+            if(val.toString().contains(QString("Stop")))
+                data->completeMode = BlackChirp::LifStopWhenComplete;
+            else
+                data->completeMode = BlackChirp::LifContinueUntilExperimentComplete;
+        }
+        if(key.endsWith(QString("DelayStart")) || key.endsWith(QString("Delay")))
+            data->delayStartUs = val.toDouble();
+        if(key.endsWith(QString("DelayStop")))
+            data->delayEndUs = val.toDouble();
+        if(key.endsWith(QString("DelayStep")))
+            data->delayStepUs = val.toDouble();
+        if(key.endsWith(QString("FrequencyStart")) || key.endsWith(QString("Frequency")))
+            data->frequencyStart = val.toDouble();
+        if(key.endsWith(QString("FrequencyStop")))
+            data->frequencyEnd = val.toDouble();
+        if(key.endsWith(QString("FrequencyStep")))
+            data->frequencyStep = val.toDouble();
+        if(key.endsWith(QString("ShotsPerPoint")))
+            data->shotsPerPoint = val.toInt();
+        if(key.endsWith(QString("LifGateStart")))
+            data->lifGateStartPoint = val.toInt();
+        if(key.endsWith(QString("LifGateStop")))
+            data->lifGateEndPoint = val.toInt();
+        if(key.endsWith(QString("RefGateStart")))
+            data->refGateStartPoint = val.toInt();
+        if(key.endsWith(QString("RefGateStop")))
+            data->refGateEndPoint = val.toInt();
+    }
+    else if(key.startsWith(QString("LifScope")))
+    {
+        if(key.endsWith(QString("LifVerticalScale")))
+            data->scopeConfig.vScale1 = val.toDouble();
+        if(key.endsWith(QString("RefVerticalScale")))
+            data->scopeConfig.vScale2 = val.toDouble();
+        if(key.endsWith(QString("TriggerSlope")))
+        {
+            if(val.toString().contains(QString("Rising")))
+                data->scopeConfig.slope = BlackChirp::RisingEdge;
+            else
+                data->scopeConfig.slope = BlackChirp::FallingEdge;
+        }
+        if(key.endsWith(QString("SampleRate")))
+            data->scopeConfig.sampleRate = val.toDouble()*1e9;
+        if(key.endsWith(QString("RecordLength")))
+            data->scopeConfig.recordLength = val.toInt();
+        if(key.endsWith(QString("BytesPerPoint")))
+            data->scopeConfig.bytesPerPoint = val.toInt();
+        if(key.endsWith(QString("ByteOrder")))
+        {
+            if(val.toString().contains(QString("Little")))
+                data->scopeConfig.byteOrder = QDataStream::LittleEndian;
+            else
+                data->scopeConfig.byteOrder = QDataStream::BigEndian;
+        }
+
+    }
+
+}
+
+bool LifConfig::loadLifData(int num)
+{
+    QFile lif(BlackChirp::getExptFile(num,BlackChirp::LifFile));
+    if(lif.open(QIODevice::ReadOnly))
+    {
+        QDataStream d(&lif);
+        QByteArray magic;
+        d >> magic;
+        if(!magic.startsWith("BCLIF"))
+        {
+            lif.close();
+            return false;
+        }
+        if(magic.endsWith("v1.0"))
+        {
+            QList<QVector<BlackChirp::LifPoint>> l;
+            d >> l;
+            data->lifData = l;
+        }
+
+        lif.close();
+        return true;
+    };
+
+    return false;
 }
 
 QPair<QPoint, BlackChirp::LifPoint> LifConfig::lastUpdatedLifPoint() const

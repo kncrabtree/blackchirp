@@ -19,25 +19,6 @@ FtmwConfig &FtmwConfig::operator=(const FtmwConfig &rhs)
     return *this;
 }
 
-FtmwConfig::FtmwConfig(int num) : data(new FtmwConfigData)
-{
-    //eventually, do all the file parsing etc...
-    //for now, just build the fid list
-    QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile));
-    if(fid.open(QIODevice::ReadOnly))
-    {
-        QDataStream d(&fid);
-        QByteArray magic;
-        d >> magic;
-        if(magic.startsWith("BCFID"))
-        {
-            if(magic.endsWith("v1.0"))
-                d >> data->fidList;
-        }
-        fid.close();
-    }
-}
-
 FtmwConfig::~FtmwConfig()
 {
 
@@ -416,7 +397,7 @@ QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
     out.insert(prefix+QString("LoFrequency"),qMakePair(QString::number(loFreq(),'f',6),QString("MHz")));
     out.insert(prefix+QString("Sideband"),qMakePair((int)sideband(),empty));
     out.insert(prefix+QString("FidVMult"),qMakePair(QString::number(fidTemplate().vMult(),'g',12),QString("V")));
-    out.insert(prefix+QString("PhaseCorrectionEnabled"),qMakePair(data->phaseCorrectionEnabled,QString("")));
+    out.insert(prefix+QString("PhaseCorrection"),qMakePair(data->phaseCorrectionEnabled,QString("")));
 
 
     out.unite(data->scopeConfig.headerMap());
@@ -424,5 +405,90 @@ QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
 
     return out;
 
+}
+
+void FtmwConfig::loadFids(const int num)
+{
+    QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile));
+    if(fid.open(QIODevice::ReadOnly))
+    {
+        QDataStream d(&fid);
+        QByteArray magic;
+        d >> magic;
+        if(magic.startsWith("BCFID"))
+        {
+            if(magic.endsWith("v1.0"))
+                d >> data->fidList;
+        }
+        fid.close();
+    }
+}
+
+void FtmwConfig::parseLine(const QString key, const QVariant val)
+{
+    if(key.startsWith(QString("FtmwScope")))
+    {
+        if(key.endsWith(QString("FidChannel")))
+            data->scopeConfig.fidChannel = val.toInt();
+        if(key.endsWith(QString("VerticalScale")))
+            data->scopeConfig.vScale = val.toDouble();
+        if(key.endsWith(QString("VerticalOffset")))
+            data->scopeConfig.vOffset = val.toDouble();
+        if(key.endsWith(QString("TriggerChannel")))
+        {
+            if(val.toString().contains(QString("AuxIn")))
+                data->scopeConfig.trigChannel = 0;
+            else
+                data->scopeConfig.trigChannel = val.toInt();
+        }
+        if(key.endsWith(QString("TriggerDelay")))
+            data->scopeConfig.trigDelay = val.toDouble();
+        if(key.endsWith(QString("TriggerSlope")))
+        {
+            if(val.toString().contains(QString("Rising")))
+                data->scopeConfig.slope = BlackChirp::RisingEdge;
+            else
+                data->scopeConfig.slope = BlackChirp::FallingEdge;
+        }
+        if(key.endsWith(QString("SampleRate")))
+            data->scopeConfig.sampleRate = val.toDouble()*1e9;
+        if(key.endsWith(QString("RecordLength")))
+            data->scopeConfig.recordLength = val.toInt();
+        if(key.endsWith(QString("FastFrame")))
+            data->scopeConfig.fastFrameEnabled = val.toBool();
+        if(key.endsWith(QString("SummaryFrame")))
+            data->scopeConfig.summaryFrame = val.toBool();
+        if(key.endsWith(QString("BytesPerPoint")))
+            data->scopeConfig.bytesPerPoint = val.toInt();
+        if(key.endsWith(QString("ByteOrder")))
+        {
+            if(val.toString().contains(QString("BigEndian")))
+                data->scopeConfig.byteOrder = QDataStream::BigEndian;
+            else
+                data->scopeConfig.byteOrder = QDataStream::LittleEndian;
+        }
+    }
+    else if(key.startsWith(QString("FtmwConfig")))
+    {
+        if(key.endsWith(QString("Enabled")))
+            data->isEnabled = val.toBool();
+        if(key.endsWith(QString("Type")))
+            data->type = (BlackChirp::FtmwType)val.toInt();
+        if(key.endsWith(QString("TargetShots")))
+            data->targetShots = val.toInt();
+        if(key.endsWith(QString("TargetTime")))
+            data->targetTime = val.toDateTime();
+        if(key.endsWith(QString("LoFrequency")))
+            data->loFreq = val.toDouble();
+        if(key.endsWith(QString("Sideband")))
+            data->sideband = (BlackChirp::Sideband)val.toInt();
+        if(key.endsWith(QString("PhaseCorrection")))
+            data->phaseCorrectionEnabled = val.toBool();
+    }
+}
+
+void FtmwConfig::loadChirps(const int num)
+{
+    data->chirpConfig = ChirpConfig(num);
 }
 

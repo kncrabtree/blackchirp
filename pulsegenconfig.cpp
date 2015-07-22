@@ -100,6 +100,42 @@ QMap<QString, QPair<QVariant, QString> > PulseGenConfig::headerMap() const
     return out;
 }
 
+void PulseGenConfig::parseLine(QString key, QVariant val)
+{
+    if(key.startsWith(QString("PulseGen")))
+    {
+        if(key.endsWith(QString("RepRate")))
+            data->repRate = val.toDouble();
+        else
+        {
+            QStringList l = key.split(QString("."));
+            if(l.size() < 3)
+                return;
+
+            QString subKey = l.last();
+            int index = l.at(1).toInt();
+
+            while(data->config.size() <= index)
+            {
+                BlackChirp::PulseChannelConfig c;
+                c.channel = data->config.size()+1;
+                data->config.append(c);
+            }
+
+            if(subKey.endsWith(QString("Name")))
+                data->config[index].channelName = val.toString();
+            if(subKey.endsWith(QString("Enabled")))
+                data->config[index].enabled = val.toBool();
+            if(subKey.endsWith(QString("Delay")))
+                data->config[index].delay = val.toDouble();
+            if(subKey.endsWith(QString("Width")))
+                data->config[index].width = val.toDouble();
+            if(subKey.endsWith(QString("Level")))
+                data->config[index].level = (BlackChirp::PulseActiveLevel)val.toInt();
+        }
+    }
+}
+
 void PulseGenConfig::set(const int index, const BlackChirp::PulseSetting s, const QVariant val)
 {
     if(index < 0 || index >= data->config.size())

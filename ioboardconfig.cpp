@@ -17,43 +17,46 @@ public:
 
 };
 
-IOBoardConfig::IOBoardConfig() : data(new IOBoardConfigData)
+IOBoardConfig::IOBoardConfig(bool fromSettings) : data(new IOBoardConfigData)
 {
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("ioboard"));
-    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-
-    data->numAnalog = qBound(0,s.value(QString("numAnalog"),4).toInt(),16);
-    data->numDigital = qBound(0,s.value(QString("numDigital"),16-data->numAnalog).toInt(),16);
-    data->reservedAnalog = qMin(data->numAnalog,s.value(QString("reservedAnalog"),0).toInt());
-    data->reservedDigital = qMin(data->numDigital,s.value(QString("reservedDigital"),0).toInt());
-
-    s.endGroup();
-    s.endGroup();
-
-    s.beginGroup(QString("iobconfig"));
-    s.beginReadArray(QString("analog"));
-    for(int i=0; i<data->numAnalog-data->reservedAnalog; i++)
+    if(fromSettings)
     {
-        s.setArrayIndex(i);
-        QString name = s.value(QString("name"),QString("ain.%1").arg(i+data->reservedAnalog)).toString();
-        bool enabled = s.value(QString("enabled"),false).toBool();
-        bool plot = s.value(QString("plot"),false).toBool();
-        data->analog.insert(i,BlackChirp::IOBoardChannel(enabled,name,plot));
-    }
-    s.endArray();
-    s.beginReadArray(QString("digital"));
-    for(int i=0; i<data->numDigital-data->reservedDigital; i++)
-    {
-        s.setArrayIndex(i);
-        QString name = s.value(QString("name"),QString("din.%1").arg(data->reservedDigital)).toString();
-        bool enabled = s.value(QString("enabled"),false).toBool();
-        bool plot = s.value(QString("plot"),false).toBool();
-        data->digital.insert(i,BlackChirp::IOBoardChannel(enabled,name,plot));
-    }
-    s.endArray();
+        QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+        s.beginGroup(QString("ioboard"));
+        s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
 
-    s.endGroup();
+        data->numAnalog = qBound(0,s.value(QString("numAnalog"),4).toInt(),16);
+        data->numDigital = qBound(0,s.value(QString("numDigital"),16-data->numAnalog).toInt(),16);
+        data->reservedAnalog = qMin(data->numAnalog,s.value(QString("reservedAnalog"),0).toInt());
+        data->reservedDigital = qMin(data->numDigital,s.value(QString("reservedDigital"),0).toInt());
+
+        s.endGroup();
+        s.endGroup();
+
+        s.beginGroup(QString("iobconfig"));
+        s.beginReadArray(QString("analog"));
+        for(int i=0; i<data->numAnalog-data->reservedAnalog; i++)
+        {
+            s.setArrayIndex(i);
+            QString name = s.value(QString("name"),QString("ain.%1").arg(i+data->reservedAnalog)).toString();
+            bool enabled = s.value(QString("enabled"),false).toBool();
+            bool plot = s.value(QString("plot"),false).toBool();
+            data->analog.insert(i,BlackChirp::IOBoardChannel(enabled,name,plot));
+        }
+        s.endArray();
+        s.beginReadArray(QString("digital"));
+        for(int i=0; i<data->numDigital-data->reservedDigital; i++)
+        {
+            s.setArrayIndex(i);
+            QString name = s.value(QString("name"),QString("din.%1").arg(data->reservedDigital)).toString();
+            bool enabled = s.value(QString("enabled"),false).toBool();
+            bool plot = s.value(QString("plot"),false).toBool();
+            data->digital.insert(i,BlackChirp::IOBoardChannel(enabled,name,plot));
+        }
+        s.endArray();
+
+        s.endGroup();
+    }
 }
 
 IOBoardConfig::IOBoardConfig(const IOBoardConfig &rhs) : data(rhs.data)
@@ -184,21 +187,72 @@ QMap<QString, QPair<QVariant, QString> > IOBoardConfig::headerMap() const
     auto it = data->analog.constBegin();
     QString prefix = QString("IOBoardConfig");
     QString empty = QString("");
+    out.insert(prefix+QString("ReservedAnalog"),qMakePair(data->reservedAnalog,empty));
+    out.insert(prefix+QString("ReservedDigital"),qMakePair(data->reservedDigital,empty));
+    out.insert(prefix+QString("NumAnalog"),qMakePair(data->numAnalog,empty));
+    out.insert(prefix+QString("NumDigital"),qMakePair(data->numDigital,empty));
     for(;it != data->analog.constEnd(); it++)
     {
-        out.insert(prefix+QString("Analog.")+QString::number(it.key()+data->reservedAnalog)+QString(".Enabled"),qMakePair(it.value().enabled,empty));
-        out.insert(prefix+QString("Analog.")+QString::number(it.key()+data->reservedAnalog)+QString(".Name"),qMakePair(it.value().name,empty));
-        out.insert(prefix+QString("Analog.")+QString::number(it.key()+data->reservedAnalog)+QString(".Plot"),qMakePair(it.value().plot,empty));
+        out.insert(prefix+QString("Analog.")+QString::number(it.key())+QString(".Enabled"),qMakePair(it.value().enabled,empty));
+        out.insert(prefix+QString("Analog.")+QString::number(it.key())+QString(".Name"),qMakePair(it.value().name,empty));
+        out.insert(prefix+QString("Analog.")+QString::number(it.key())+QString(".Plot"),qMakePair(it.value().plot,empty));
     }
     it = data->digital.constBegin();
     for(;it != data->digital.constEnd(); it++)
     {
-        out.insert(prefix+QString("Digital.")+QString::number(it.key()+data->reservedDigital)+QString(".Enabled"),qMakePair(it.value().enabled,empty));
-        out.insert(prefix+QString("Digital.")+QString::number(it.key()+data->reservedDigital)+QString(".Name"),qMakePair(it.value().name,empty));
-        out.insert(prefix+QString("Digital.")+QString::number(it.key()+data->reservedDigital)+QString(".Plot"),qMakePair(it.value().plot,empty));
+        out.insert(prefix+QString("Digital.")+QString::number(it.key())+QString(".Enabled"),qMakePair(it.value().enabled,empty));
+        out.insert(prefix+QString("Digital.")+QString::number(it.key())+QString(".Name"),qMakePair(it.value().name,empty));
+        out.insert(prefix+QString("Digital.")+QString::number(it.key())+QString(".Plot"),qMakePair(it.value().plot,empty));
     }
 
     return out;
+}
+
+void IOBoardConfig::parseLine(QString key, QVariant val)
+{
+    if(key.startsWith(QString("IOBoardConfig")))
+    {
+        if(key.contains(QString("Reserved")))
+        {
+            if(key.endsWith(QString("Analog")))
+                data->reservedAnalog = val.toInt();
+            if(key.endsWith(QString("Digital")))
+                data->reservedDigital = val.toInt();
+        }
+        else if(key.contains(QString("Num")))
+        {
+            if(key.endsWith(QString("Analog")))
+                data->reservedAnalog = val.toInt();
+            if(key.endsWith(QString("Digital")))
+                data->reservedDigital = val.toInt();
+        }
+        else
+        {
+            QStringList l = key.split(QString("."));
+            if(l.size() < 3)
+                return;
+
+            QString subKey = l.last();
+            int index = l.at(1).toInt();
+
+            QMap<int,BlackChirp::IOBoardChannel> *map = nullptr;
+            if(l.first().endsWith(QString("Analog")))
+                map = &data->analog;
+            else if(l.first().endsWith(QString("Digital")))
+                map = &data->digital;
+
+            if(map == nullptr)
+                return;
+
+            if(subKey.endsWith(QString("Enabled")))
+                map->operator[](index).enabled = val.toBool();
+            if(subKey.endsWith(QString("Name")))
+                map->operator[](index).name = val.toString();
+            if(subKey.endsWith(QString("Plot")))
+                map->operator[](index).plot = val.toBool();
+
+        }
+    }
 }
 
 void IOBoardConfig::saveToSettings() const

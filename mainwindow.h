@@ -49,6 +49,7 @@ public:
 
 signals:
     void statusMessage(const QString);
+    void closing();
 
 public slots:
     void startExperiment();

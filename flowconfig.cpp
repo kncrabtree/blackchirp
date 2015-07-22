@@ -135,3 +135,37 @@ QMap<QString, QPair<QVariant, QString> > FlowConfig::headerMap() const
     return out;
 }
 
+void FlowConfig::parseLine(const QString key, const QVariant val)
+{
+    if(key.startsWith(QString("FlowConfig")))
+    {
+        if(key.endsWith(QString("PressureControlMode")))
+            data->pressureControlMode = val.toBool();
+        if(key.endsWith(QString("PressureSetpoint")))
+            data->pressureSetpoint = val.toDouble();
+        if(key.contains(QString("Channel")))
+        {
+            QStringList l = key.split(QString("."));
+            if(l.size() < 3)
+                return;
+
+            QString subKey = l.last();
+            int index = l.at(1).toInt();
+
+            while(data->configList.size() < index)
+                data->configList.append(BlackChirp::FlowChannelConfig());
+
+            if(subKey.contains(QString("Name")))
+            {
+                data->configList[index].enabled = true;
+                data->configList[index].name = val.toString();
+            }
+            if(subKey.contains(QString("Setpoint")))
+            {
+                data->configList[index].enabled = true;
+                data->configList[index].name = val.toDouble();
+            }
+        }
+    }
+}
+

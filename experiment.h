@@ -21,6 +21,7 @@ public:
     Experiment();
     Experiment(const Experiment &);
     Experiment &operator=(const Experiment &);
+    Experiment(const int num);
     ~Experiment();
 
     int number() const;

@@ -19,7 +19,8 @@ SOURCES += mainwindow.cpp \
     $$PWD/lifdisplaywidget.cpp \
     $$PWD/lifsliceplot.cpp \
     $$PWD/lifspectrogramplot.cpp \
-    $$PWD/ioboardconfigdialog.cpp
+    $$PWD/ioboardconfigdialog.cpp \
+    $$PWD/experimentviewwidget.cpp
 
 HEADERS += mainwindow.h \
     $$PWD/ftmwviewwidget.h \
@@ -42,7 +43,8 @@ HEADERS += mainwindow.h \
     $$PWD/lifdisplaywidget.h \
     $$PWD/lifsliceplot.h \
     $$PWD/lifspectrogramplot.h \
-    $$PWD/ioboardconfigdialog.h
+    $$PWD/ioboardconfigdialog.h \
+    $$PWD/experimentviewwidget.h
 
 FORMS += mainwindow.ui \
     $$PWD/ftmwviewwidget.ui \

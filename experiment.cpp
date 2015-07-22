@@ -23,6 +23,67 @@ Experiment &Experiment::operator=(const Experiment &rhs)
     return *this;
 }
 
+Experiment::Experiment(const int num) : data(new ExperimentData)
+{
+    QDir d(BlackChirp::getExptDir(num));
+    if(!d.exists())
+        return;
+
+    data->iobCfg = IOBoardConfig(false);
+
+    QFile hdr(BlackChirp::getExptFile(num,BlackChirp::HeaderFile));
+    if(hdr.open(QIODevice::ReadOnly))
+    {
+        while(!hdr.atEnd())
+        {
+            QString line = QString(hdr.readLine());
+            if(line.isEmpty())
+                continue;
+
+            QStringList l = line.split(QString("\t"));
+            if(l.size() < 2)
+                continue;
+
+            QString key = l.first();
+            QVariant val = QVariant(l.at(1));
+
+            if(key.startsWith(QString("Ftmw")))
+                data->ftmwCfg.parseLine(key,val);
+
+            if(key.startsWith(QString("Flow")))
+                data->flowCfg.parseLine(key,val);
+
+            if(key.startsWith(QString("IOBoardConfig")))
+                data->iobCfg.parseLine(key,val);
+
+            if(key.startsWith(QString("PulseGen")))
+                data->pGenCfg.parseLine(key,val);
+
+            if(key.startsWith(QString("Lif")))
+                data->lifCfg.parseLine(key,val);
+        }
+
+        hdr.close();
+
+        if(data->ftmwCfg.isEnabled())
+        {
+            data->ftmwCfg.loadChirps(num);
+            data->ftmwCfg.loadFids(num);
+        }
+
+        if(data->lifCfg.isEnabled())
+            data->lifCfg.loadLifData(num);
+    }
+    else
+    {
+        data->errorString = QString("Could not open header file (%1)").arg(hdr.fileName());
+        return;
+    }
+
+    data->number = num;
+
+}
+
 Experiment::~Experiment()
 {
 

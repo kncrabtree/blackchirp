@@ -27,6 +27,7 @@ public:
     BlackChirp::PulseChannelConfig settings(const int index) const;
     double repRate() const;
     QMap<QString,QPair<QVariant,QString>> headerMap() const;
+    void parseLine(QString key, QVariant val);
 
     void set(const int index, const BlackChirp::PulseSetting s, const QVariant val);
     void set(const int index, const BlackChirp::PulseChannelConfig cc);

@@ -13,7 +13,7 @@ class IOBoardConfigData;
 class IOBoardConfig
 {
 public:
-    IOBoardConfig();
+    IOBoardConfig(bool fromSettings = true);
     IOBoardConfig(const IOBoardConfig &);
     IOBoardConfig &operator=(const IOBoardConfig &);
     ~IOBoardConfig();
@@ -37,6 +37,7 @@ public:
     QMap<int,BlackChirp::IOBoardChannel> digitalList() const;
 
     QMap<QString,QPair<QVariant,QString>> headerMap() const;
+    void parseLine(QString key, QVariant val);
     void saveToSettings() const;
 
 private:

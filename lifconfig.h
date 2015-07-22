@@ -22,7 +22,6 @@ public:
     LifConfig();
     LifConfig(const LifConfig &);
     LifConfig &operator=(const LifConfig &);
-    LifConfig(int num);
     ~LifConfig();   
 
     bool isEnabled() const;
@@ -40,6 +39,8 @@ public:
     QVector<QPointF> timeSlice(int frequencyIndex) const;
     QVector<QPointF> spectrum(int delayIndex) const;
     QMap<QString,QPair<QVariant,QString> > headerMap() const;
+    void parseLine(QString key, QVariant val);
+    bool loadLifData(int num);
     QPair<QPoint,BlackChirp::LifPoint> lastUpdatedLifPoint() const;
     bool writeLifFile(int num) const;
 

@@ -22,7 +22,6 @@ public:
     FtmwConfig();
     FtmwConfig(const FtmwConfig &);
     FtmwConfig &operator=(const FtmwConfig &);
-    FtmwConfig(int num);
     ~FtmwConfig();
 
     bool isEnabled() const;
@@ -65,6 +64,9 @@ public:
 
     bool isComplete() const;
     QMap<QString,QPair<QVariant,QString> > headerMap() const;
+    void loadFids(const int num);
+    void parseLine(const QString key, const QVariant val);
+    void loadChirps(const int num);
 
 private:
     QSharedDataPointer<FtmwConfigData> data;

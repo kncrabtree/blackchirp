@@ -32,6 +32,7 @@ public:
     void setPressureControlMode(bool en);
 
     QMap<QString, QPair<QVariant,QString>> headerMap() const;
+    void parseLine(const QString key, const QVariant val);
 
 private:
     QSharedDataPointer<FlowConfigData> data;

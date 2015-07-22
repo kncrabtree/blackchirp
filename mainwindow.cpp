@@ -19,6 +19,7 @@
 #include "acquisitionmanager.h"
 #include "batchmanager.h"
 #include "led.h"
+#include "experimentviewwidget.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -626,11 +627,16 @@ void MainWindow::closeEvent(QCloseEvent *ev)
     if(d_batchThread->isRunning())
         ev->ignore();
     else
+    {
         ev->accept();
+        emit closing();
+    }
 }
 
 void MainWindow::test()
 {
-//    FtmwConfig f(1);
-//    qDebug() << f.fidList().size();
+    ExperimentViewWidget *evw = new ExperimentViewWidget(1,this);
+    connect(this,&MainWindow::closing,evw,&ExperimentViewWidget::close);
+    evw->show();
+    evw->raise();
 }
