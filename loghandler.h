@@ -12,7 +12,7 @@ class LogHandler : public QObject
 {
     Q_OBJECT
 public:
-    explicit LogHandler(QObject *parent = 0);
+    explicit LogHandler(bool logToFile = true, QObject *parent = 0);
     ~LogHandler();
 
 signals:
@@ -23,6 +23,7 @@ signals:
 public slots:
 	//access functions for transmitting messages to UI
     void logMessage(const QString text, const BlackChirp::LogMessageCode type=BlackChirp::LogNormal);
+    void logMessageWithTime(const QString text, const BlackChirp::LogMessageCode type=BlackChirp::LogNormal, QDateTime t = QDateTime::currentDateTime());
     void beginExperimentLog(const Experiment e);
     void endExperimentLog();
 
@@ -30,6 +31,7 @@ private:
     QFile d_logFile;
     QFile d_exptLog;
     int d_currentMonth;
+    bool d_logToFile;
 
     void writeToFile(const QString text, const BlackChirp::LogMessageCode type, const QString timeStamp);
     QString makeLogFileName();

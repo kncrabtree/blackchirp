@@ -4,8 +4,8 @@
 #include <QApplication>
 #include <QSettings>
 
-LogHandler::LogHandler(QObject *parent) :
-    QObject(parent)
+LogHandler::LogHandler(bool logToFile, QObject *parent) :
+    QObject(parent), d_logToFile(logToFile)
 {
     qRegisterMetaType<BlackChirp::LogMessageCode>("BlackChirp::MessageCode");
     d_currentMonth = QDate::currentDate().month();
@@ -21,36 +21,42 @@ LogHandler::~LogHandler()
 
 void LogHandler::logMessage(const QString text, const BlackChirp::LogMessageCode type)
 {
-	QDateTime time;
-    QString timeStamp = time.currentDateTime().toString();
-    writeToFile(text, type, timeStamp);
+    logMessageWithTime(text,type,QDateTime::currentDateTime());
+}
+
+void LogHandler::logMessageWithTime(const QString text, const BlackChirp::LogMessageCode type, QDateTime t)
+{
+    QString timeStamp = t.toString();
+
+    if(d_logToFile)
+        writeToFile(text, type, timeStamp);
 
     if(type == BlackChirp::LogDebug)
         return;
 
-	QString out;
+    QString out;
     out.append(QString("<span style=\"font-size:7pt\">%1</span> ").arg(timeStamp));
 
-	switch(type)
-	{
+    switch(type)
+    {
     case BlackChirp::LogWarning:
-		out.append(QString("<span style=\"font-weight:bold\">Warning: %1</span>").arg(text));
+        out.append(QString("<span style=\"font-weight:bold\">Warning: %1</span>").arg(text));
         emit iconUpdate(type);
-		break;
+        break;
     case BlackChirp::LogError:
-		out.append(QString("<span style=\"font-weight:bold;color:red\">Error: %1</span>").arg(text));
+        out.append(QString("<span style=\"font-weight:bold;color:red\">Error: %1</span>").arg(text));
         emit iconUpdate(type);
-		break;
+        break;
     case BlackChirp::LogHighlight:
-		out.append(QString("<span style=\"font-weight:bold;color:green\">%1</span>").arg(text));
-		break;
+        out.append(QString("<span style=\"font-weight:bold;color:green\">%1</span>").arg(text));
+        break;
     case BlackChirp::LogNormal:
-	default:
-		out.append(text);
-		break;
-	}
+    default:
+        out.append(text);
+        break;
+    }
 
-	//emit signal containing formatted message
+    //emit signal containing formatted message
     emit sendLogMessage(out);
 }
 
@@ -96,6 +102,9 @@ void LogHandler::writeToFile(const QString text, const BlackChirp::LogMessageCod
         break;
     case BlackChirp::LogDebug:
         msg.append(QString("[DEBUG] "));
+        break;
+    case BlackChirp::LogHighlight:
+        msg.append(QString("[HIGHLIGHT] "));
         break;
     default:
         break;

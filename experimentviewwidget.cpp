@@ -6,8 +6,11 @@
 #include <QTableWidget>
 #include <QHeaderView>
 #include <QLabel>
+#include <QFile>
+#include <QTextEdit>
 
 #include "trackingviewwidget.h"
+#include "loghandler.h"
 
 ExperimentViewWidget::ExperimentViewWidget(int num, QWidget *parent) : QWidget(parent)
 {
@@ -40,6 +43,10 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QWidget *parent) : QWidget(p
     QWidget *tracking = buildTrackingWidget();
     if(tracking != nullptr)
         p_tabWidget->addTab(tracking,QString("Tracking"));
+
+    QWidget *log = buildLogWidget();
+    if(log != nullptr)
+        p_tabWidget->addTab(log,QString("Log"));
 
     hbl->addWidget(p_tabWidget);
     setLayout(hbl);
@@ -133,5 +140,74 @@ QWidget *ExperimentViewWidget::buildTrackingWidget()
     }
 
     return tracking;
+}
+
+QWidget *ExperimentViewWidget::buildLogWidget()
+{
+    QWidget *log = new QWidget;
+    QBoxLayout *vbl = new QVBoxLayout;
+    QTextEdit *te = new QTextEdit(log);
+    te->setReadOnly(true);
+    p_lh = new LogHandler(false,log);
+    connect(p_lh,&LogHandler::sendLogMessage,te,&QTextEdit::append);
+    vbl->addWidget(te);
+    log->setLayout(vbl);
+
+    QFile f(BlackChirp::getExptFile(d_experiment.number(),BlackChirp::LogFile));
+    if(f.open(QIODevice::ReadOnly))
+    {
+        while(!f.atEnd())
+        {
+            QString line = QString(f.readLine());
+            if(line.isEmpty())
+                continue;
+
+            if(line.contains(QString("[DEBUG]")))
+                continue;
+            if(line.contains(QString(": [WARNING] ")))
+            {
+                QStringList l = line.split(QString(": [WARNING] "));
+                if(l.size() < 2)
+                    continue;
+
+                p_lh->logMessageWithTime(l.last(),BlackChirp::LogWarning,QDateTime::fromString(l.first()));
+                continue;
+            }
+            if(line.contains(QString(": [ERROR] ")))
+            {
+                QStringList l = line.split(QString(": [ERROR] "));
+                if(l.size() < 2)
+                    continue;
+
+                p_lh->logMessageWithTime(l.last(),BlackChirp::LogError,QDateTime::fromString(l.first()));
+                continue;
+            }
+            if(line.contains(QString(": [HIGHLIGHT] ")))
+            {
+                QStringList l = line.split(QString(": [HIGHLIGHT] "));
+                if(l.size() < 2)
+                    continue;
+
+                p_lh->logMessageWithTime(l.last(),BlackChirp::LogHighlight,QDateTime::fromString(l.first()));
+                continue;
+            }
+            else
+            {
+                QStringList l = line.split(QString(": "));
+                if(l.size() < 2)
+                    continue;
+
+                QString theLine;
+                for(int i=1; i<l.size(); i++)
+                    theLine+=l.at(i);
+
+                p_lh->logMessageWithTime(theLine,BlackChirp::LogNormal,QDateTime::fromString(l.first()));
+            }
+        }
+        f.close();
+    }
+
+    return log;
+
 }
 

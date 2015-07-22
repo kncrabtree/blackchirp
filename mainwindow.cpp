@@ -635,7 +635,7 @@ void MainWindow::closeEvent(QCloseEvent *ev)
 
 void MainWindow::test()
 {
-    ExperimentViewWidget *evw = new ExperimentViewWidget(1,this);
+    ExperimentViewWidget *evw = new ExperimentViewWidget(1);
     connect(this,&MainWindow::closing,evw,&ExperimentViewWidget::close);
     evw->show();
     evw->raise();
