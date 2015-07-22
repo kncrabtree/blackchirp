@@ -333,7 +333,7 @@ QDataStream &operator<<(QDataStream &stream, const Fid fid)
 }
 
 
-QDataStream &operator>>(QDataStream &stream, Fid fid)
+QDataStream &operator>>(QDataStream &stream, Fid &fid)
 {
     double spacing, probeFreq, vMult;
     qint64 shots;
@@ -364,24 +364,12 @@ QDataStream &operator>>(QDataStream &stream, Fid fid)
             else
                 stream >> b3 >> b2 >> b1;
 
-            if(i > 2034)
-            {
-                if(b1 & 0x80)
-                    pt = Q_UINT64_C(0xffffffffff000000);
-                pt |= static_cast<qint64>(b1 << 16);
-                pt |= static_cast<qint64>(b2 << 8);
-                pt |= static_cast<qint64>(b3);
-                dat[i] = pt;
-            }
-            else
-            {
-                if(b1 & 0x80)
-                    pt = Q_UINT64_C(0xffffffffff000000);
-                pt |= static_cast<qint64>(b1 << 16);
-                pt |= static_cast<qint64>(b2 << 8);
-                pt |= static_cast<qint64>(b3);
-                dat[i] = pt;
-            }
+            if(b1 & 0x80)
+                pt = Q_UINT64_C(0xffffffffff000000);
+            pt |= static_cast<qint64>(b1 << 16);
+            pt |= static_cast<qint64>(b2 << 8);
+            pt |= static_cast<qint64>(b3);
+            dat[i] = pt;
         }
     }
     else if(size == 4)

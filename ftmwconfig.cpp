@@ -418,7 +418,11 @@ void FtmwConfig::loadFids(const int num)
         if(magic.startsWith("BCFID"))
         {
             if(magic.endsWith("v1.0"))
-                d >> data->fidList;
+            {
+                QList<Fid> dat;
+                d >> dat;
+                data->fidList = dat;
+            }
         }
         fid.close();
     }

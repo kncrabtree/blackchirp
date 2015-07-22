@@ -168,7 +168,7 @@ private:
 
 //DataStream operators
 QDataStream &operator<<(QDataStream &stream, const Fid fid);
-QDataStream &operator>>(QDataStream &stream, Fid fid);
+QDataStream &operator>>(QDataStream &stream, Fid &fid);
 
 /*!
  \brief Internal data for Fid

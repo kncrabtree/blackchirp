@@ -9,6 +9,7 @@
 #include <QFile>
 #include <QTextEdit>
 
+#include "ftmwviewwidget.h"
 #include "trackingviewwidget.h"
 #include "loghandler.h"
 
@@ -39,6 +40,13 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QWidget *parent) : QWidget(p
     QWidget *hdr = buildHeaderWidget();
     if(hdr != nullptr)
         p_tabWidget->addTab(hdr,QString("Header"));
+
+    if(d_experiment.ftmwConfig().isEnabled())
+    {
+        QWidget *ftmw = buildFtmwWidget();
+        if(ftmw != nullptr)
+            p_tabWidget->addTab(ftmw,QString("FTMW"));
+    }
 
     QWidget *tracking = buildTrackingWidget();
     if(tracking != nullptr)
@@ -81,6 +89,26 @@ QWidget *ExperimentViewWidget::buildHeaderWidget()
     hdr->setLayout(hdrvl);
 
     return hdr;
+}
+
+QWidget *ExperimentViewWidget::buildFtmwWidget()
+{
+    QWidget *out = nullptr;
+    p_ftmw = nullptr;
+    if(d_experiment.ftmwConfig().isEnabled())
+    {
+        out = new QWidget;
+        QVBoxLayout *vbl = new QVBoxLayout;
+        p_ftmw = new FtmwViewWidget(out);
+        vbl->addWidget(p_ftmw);
+        out->setLayout(vbl);
+
+        p_ftmw->prepareForExperiment(d_experiment);
+        p_ftmw->newFidList(d_experiment.ftmwConfig().fidList());
+    }
+
+    return out;
+
 }
 
 QWidget *ExperimentViewWidget::buildTrackingWidget()

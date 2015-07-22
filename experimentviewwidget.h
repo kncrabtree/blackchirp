@@ -8,6 +8,7 @@
 
 class QTabWidget;
 class LogHandler;
+class FtmwViewWidget;
 
 class ExperimentViewWidget : public QWidget
 {
@@ -23,9 +24,11 @@ public slots:
 private:
     Experiment d_experiment;
     QTabWidget *p_tabWidget;
+    FtmwViewWidget *p_ftmw;
     LogHandler *p_lh;
 
     QWidget *buildHeaderWidget();
+    QWidget *buildFtmwWidget();
     QWidget *buildTrackingWidget();
     QWidget *buildLogWidget();
 };
