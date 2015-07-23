@@ -20,5 +20,6 @@
         <file>icons/rf.png</file>
         <file>icons/error.png</file>
         <file>icons/warning.png</file>
+        <file>icons/control.png</file>
     </qresource>
 </RCC>

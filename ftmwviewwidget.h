@@ -27,6 +27,7 @@ signals:
     void rollingAverageReset();
 
 public slots:
+    void togglePanel(bool on);
     void newFidList(QList<Fid> fl);
     void updateShotsLabel(qint64 shots);
     void showFrame(int num);
