@@ -208,8 +208,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::timeData,p_am,&AcquisitionManager::processTimeData);
 
 
-    hwmThread->start();
-    amThread->start();
+    connect(this,&MainWindow::startInit,[=](){
+        hwmThread->start();
+        amThread->start();
+    });
 
     d_batchThread = new QThread(this);
 
@@ -244,6 +246,12 @@ MainWindow::~MainWindow()
     }
 
     delete ui;
+}
+
+void MainWindow::initializeHardware()
+{
+    emit statusMessage(QString("Initializing hardware..."));
+    emit startInit();
 }
 
 void MainWindow::startExperiment()
@@ -353,6 +361,10 @@ void MainWindow::experimentInitialized(const Experiment exp)
 void MainWindow::hardwareInitialized(bool success)
 {
 	d_hardwareConnected = success;
+    if(success)
+        emit statusMessage(QString("Hardware connected"));
+    else
+        emit statusMessage(QString("Hardware error. See log for details."));
     configureUi(d_state);
 }
 

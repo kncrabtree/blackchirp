@@ -47,7 +47,10 @@ public:
         QDoubleSpinBox *displayBox;
     };
 
+    void initializeHardware();
+
 signals:
+    void startInit();
     void statusMessage(const QString);
     void closing();
 
