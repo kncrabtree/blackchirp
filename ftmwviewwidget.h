@@ -40,9 +40,11 @@ public slots:
 private:
     Ui::FtmwViewWidget *ui;
 
+    BlackChirp::FtmwViewMode d_mode;
     bool d_replotWhenDone, d_processing;
     int d_pzf;
-    QList<Fid> d_fidList;
+    QList<Fid> d_currentFidList;
+    Fid d_currentFid;
     QThread *p_ftThread;
     FtWorker *p_ftw;
 };

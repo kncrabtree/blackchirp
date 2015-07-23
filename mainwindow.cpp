@@ -298,7 +298,9 @@ void MainWindow::experimentInitialized(const Experiment exp)
 	if(!exp.isInitialized())
 		return;
 
-	ui->exptSpinBox->setValue(exp.number());
+    if(exp.number() > 0)
+        ui->exptSpinBox->setValue(exp.number());
+
     ui->ftmwProgressBar->setValue(0);
     ui->ftViewWidget->prepareForExperiment(exp);
 
@@ -339,10 +341,13 @@ void MainWindow::experimentInitialized(const Experiment exp)
         ui->lifProgressBar->setValue(1);
     }
 
-    if(p_lh->thread() == thread())
-        p_lh->beginExperimentLog(exp);
-    else
-        QMetaObject::invokeMethod(p_lh,"beginExperimentLog",Q_ARG(const Experiment,exp));
+    if(exp.number() > 0)
+    {
+        if(p_lh->thread() == thread())
+            p_lh->beginExperimentLog(exp);
+        else
+            QMetaObject::invokeMethod(p_lh,"beginExperimentLog",Q_ARG(const Experiment,exp));
+    }
 }
 
 void MainWindow::hardwareInitialized(bool success)

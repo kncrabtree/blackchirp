@@ -18,7 +18,7 @@ AcquisitionManager::~AcquisitionManager()
 
 void AcquisitionManager::beginExperiment(Experiment exp)
 {
-    if(!exp.hardwareSuccess() || exp.isDummy())
+    if(!exp.hardwareSuccess())
     {
         if(!exp.errorString().isEmpty())
             emit logMessage(exp.errorString(),BlackChirp::LogError);

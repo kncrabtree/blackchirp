@@ -355,8 +355,12 @@ void Experiment::setInitialized()
 
     if(ftmwConfig().isEnabled() && ftmwConfig().type() == BlackChirp::FtmwPeakUp)
     {
+        data->number = -1;
         data->startLogMessage = QString("Peak up mode started.");
         data->endLogMessage = QString("Peak up mode ended.");
+        data->isDummy = true;
+        data->isInitialized = true;
+        return;
     }
     else
     {
@@ -584,6 +588,9 @@ void Experiment::incrementFtmw()
 
 void Experiment::finalSave() const
 {
+    if(data->isDummy)
+        return;
+
     //record validation keys
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     QString keys = s.value(QString("knownValidationKeys"),QString("")).toString();
@@ -619,7 +626,6 @@ void Experiment::finalSave() const
 
 bool Experiment::saveHeader() const
 {
-
     QFile hdr(BlackChirp::getExptFile(data->number,BlackChirp::HeaderFile));
     if(hdr.open(QIODevice::WriteOnly))
     {
@@ -785,6 +791,9 @@ bool Experiment::saveTimeFile() const
 
 void Experiment::snapshot(int snapNum, const Experiment other) const
 {
+    if(data->isDummy)
+        return;
+
     if(ftmwConfig().isEnabled())
     {
         FtmwConfig cf = ftmwConfig();

@@ -7,7 +7,7 @@
 
 FtmwViewWidget::FtmwViewWidget(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::FtmwViewWidget), d_replotWhenDone(false), d_processing(false), d_pzf(0)
+    ui(new Ui::FtmwViewWidget), d_mode(BlackChirp::FtmwViewLive), d_replotWhenDone(false), d_processing(false), d_pzf(0)
 {
     ui->setupUi(this);
 
@@ -53,7 +53,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
     ui->ftPlot->prepareForExperiment(e);
 
     ui->frameBox->blockSignals(true);
-    d_fidList.clear();
+    d_currentFidList.clear();
     if(config.isEnabled())
     {
         int frames = config.scopeConfig().numFrames;
@@ -108,16 +108,16 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
 
 void FtmwViewWidget::newFidList(QList<Fid> fl)
 {
-    d_fidList = fl;
-    if(ui->frameBox->maximum() != d_fidList.size())
+    d_currentFidList = fl;
+    if(ui->frameBox->maximum() != d_currentFidList.size())
     {
-        if(ui->frameBox->value() > d_fidList.size())
+        if(ui->frameBox->value() > d_currentFidList.size())
         {
             blockSignals(true);
-            ui->frameBox->setValue(d_fidList.size());
+            ui->frameBox->setValue(d_currentFidList.size());
             blockSignals(false);
         }
-        ui->frameBox->setMaximum(d_fidList.size());
+        ui->frameBox->setMaximum(d_currentFidList.size());
     }
     showFrame(ui->frameBox->value());
 }
@@ -129,22 +129,23 @@ void FtmwViewWidget::updateShotsLabel(qint64 shots)
 
 void FtmwViewWidget::showFrame(int num)
 {
-    if(d_fidList.size() <= num)
+    if(d_currentFidList.size() <= num)
         return;
 
+    d_currentFid = d_currentFidList.at(num-1);
     //process FID
     if(!d_processing)
         updateFtPlot();
     else
         d_replotWhenDone = true;
 
-    ui->fidPlot->receiveData(d_fidList.at(num-1));
+    ui->fidPlot->receiveData(d_currentFid);
 }
 
 void FtmwViewWidget::ftStartChanged(double s)
 {
     QMetaObject::invokeMethod(p_ftw,"setStart",Q_ARG(double,s));
-    if(d_fidList.isEmpty())
+    if(d_currentFidList.isEmpty())
         return;
 
     if(!d_processing)
@@ -156,7 +157,7 @@ void FtmwViewWidget::ftStartChanged(double s)
 void FtmwViewWidget::ftEndChanged(double e)
 {
     QMetaObject::invokeMethod(p_ftw,"setEnd",Q_ARG(double,e));
-    if(d_fidList.isEmpty())
+    if(d_currentFidList.isEmpty())
         return;
 
     if(!d_processing)
@@ -169,7 +170,7 @@ void FtmwViewWidget::pzfChanged(int zpf)
 {
     d_pzf = zpf;
     QMetaObject::invokeMethod(p_ftw,"setPzf",Q_ARG(int,zpf));
-    if(d_fidList.isEmpty())
+    if(d_currentFidList.isEmpty())
         return;
 
     if(!d_processing)
@@ -180,9 +181,9 @@ void FtmwViewWidget::pzfChanged(int zpf)
 
 void FtmwViewWidget::updateFtPlot()
 {
-    if(d_fidList.size() >= ui->frameBox->value())
+    if(d_currentFidList.size() >= ui->frameBox->value())
     {
-        QMetaObject::invokeMethod(p_ftw,"doFT",Q_ARG(const Fid,d_fidList.at(ui->frameBox->value()-1)));
+        QMetaObject::invokeMethod(p_ftw,"doFT",Q_ARG(const Fid,d_currentFid));
         d_processing = true;
         d_replotWhenDone = false;
     }

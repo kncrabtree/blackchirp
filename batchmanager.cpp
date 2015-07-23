@@ -23,8 +23,7 @@ void BatchManager::experimentComplete(const Experiment exp)
         return;
     }
 
-    if(!exp.isDummy())
-        emit logMessage(exp.endLogMessage(),exp.endLogMessageCode());
+    emit logMessage(exp.endLogMessage(),exp.endLogMessageCode());
 
     processExperiment(exp);
     if(!exp.isAborted() && !isComplete())
