@@ -99,6 +99,34 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
     return QPair<QVector<QPointF>,double>(spectrum,max);
 }
 
+void FtWorker::doFtDiff(const Fid ref, const Fid diff)
+{
+    if(ref.size() != diff.size() || ref.sideband() != diff.sideband())
+        return;
+
+    if(!qFuzzyCompare(ref.spacing(),diff.spacing()) || !qFuzzyCompare(ref.probeFreq(),diff.probeFreq()))
+        return;
+
+    blockSignals(true);
+    auto r = doFT(ref);
+    auto d = doFT(diff);
+    blockSignals(false);
+
+    double max = r.first.first().y() - d.first.first().y();
+    double min = max;
+
+
+    for(int i=0; i<r.first.size() && i<d.first.size(); i++)
+    {
+        r.first[i].setY(r.first.at(i).y() - d.first.at(i).y());
+        min = qMin(r.first.at(i).y(),min);
+        max = qMax(r.first.at(i).y(),max);
+    }
+
+    emit ftDiffDone(r.first,min,max);
+
+}
+
 Fid FtWorker::filterFid(const Fid fid)
 {
 //    QVector<double> data = fid.toVector();

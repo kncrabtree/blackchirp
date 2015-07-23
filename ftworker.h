@@ -52,6 +52,8 @@ signals:
     */
     void fidDone(QVector<QPointF> fid);
 
+    void ftDiffDone(QVector<QPointF> ft, double min, double max);
+
 public slots:
     /*!
      \brief Filters and performs FFT operation on an Fid
@@ -60,6 +62,8 @@ public slots:
      \return QPair<QVector<QPointF>, double> Resulting FT magnitude spectrum in XY format and maximum Y value
     */
     QPair<QVector<QPointF>,double> doFT(const Fid fid);
+    void doFtDiff(const Fid ref, const Fid diff);
+
     /*!
      \brief Perform truncation, high-pass, and exponential filtering on an Fid
 

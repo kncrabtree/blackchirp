@@ -30,6 +30,7 @@ signals:
 
 public slots:
     void newFt(const QVector<QPointF> ft, double max);
+    void newFtDiff(const QVector<QPointF> ft, double min, double max);
     void filterData();
     void buildContextMenu(QMouseEvent *me);
 

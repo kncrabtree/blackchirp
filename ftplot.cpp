@@ -112,6 +112,17 @@ void FtPlot::newFt(QVector<QPointF> ft, double max)
     replot();
 }
 
+void FtPlot::newFtDiff(const QVector<QPointF> ft, double min, double max)
+{
+    d_currentFt = ft;
+    if(ft.isEmpty())
+        return;
+
+    setAxisAutoScaleRange(QwtPlot::yLeft,min,max);
+    filterData();
+    replot();
+}
+
 void FtPlot::filterData()
 {
     if(d_currentFt.size() < 2)

@@ -44,6 +44,7 @@ signals:
     void newFidList(QList<Fid>);
     void takeSnapshot(const Experiment);
     void doFinalSave(const Experiment);
+    void snapshotComplete();
 
 public slots:
     void beginExperiment(Experiment exp);

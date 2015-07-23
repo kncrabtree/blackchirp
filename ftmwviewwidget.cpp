@@ -2,16 +2,20 @@
 #include "ui_ftmwviewwidget.h"
 
 #include <QThread>
+#include <QMessageBox>
 
 #include "ftworker.h"
+#include "ftmwsnapshotwidget.h"
 
 FtmwViewWidget::FtmwViewWidget(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::FtmwViewWidget), d_mode(BlackChirp::FtmwViewLive), d_replotWhenDone(false), d_processing(false), d_pzf(0)
+    ui(new Ui::FtmwViewWidget), d_mode(BlackChirp::FtmwViewLive), d_replotWhenDone(false), d_processing(false),
+    d_pzf(0), d_currentExptNum(-1), p_snapWidget(nullptr)
 {
     ui->setupUi(this);
 
-    connect(ui->frameBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::showFrame);
+    connect(ui->frameBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::updateFtPlot);
+    connect(ui->refFrameSpinBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::updateFtPlot);
 
     ui->peakUpControlBox->hide();
 
@@ -22,6 +26,7 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent) :
     p_ftw = new FtWorker();
     //make signal/slot connections
     connect(p_ftw,&FtWorker::ftDone,this,&FtmwViewWidget::ftDone);
+    connect(p_ftw,&FtWorker::ftDiffDone,this,&FtmwViewWidget::ftDiffDone);
     p_ftThread = new QThread(this);
     connect(p_ftThread,&QThread::finished,p_ftw,&FtWorker::deleteLater);
     p_ftw->moveToThread(p_ftThread);
@@ -30,6 +35,12 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent) :
     connect(ui->ftPlot,&FtPlot::pzfChanged,this,&FtmwViewWidget::pzfChanged);
     connect(ui->controlButton,&QToolButton::toggled,this,&FtmwViewWidget::togglePanel);
     togglePanel(false);
+
+    connect(ui->liveUpdateButton,&QRadioButton::clicked,this,&FtmwViewWidget::modeChanged);
+    connect(ui->singleFrameButton,&QRadioButton::clicked,this,&FtmwViewWidget::modeChanged);
+    connect(ui->frameDiffButton,&QRadioButton::clicked,this,&FtmwViewWidget::modeChanged);
+    connect(ui->snapDiffButton,&QRadioButton::clicked,this,&FtmwViewWidget::modeChanged);
+    connect(ui->snapshotCheckbox,&QCheckBox::toggled,this,&FtmwViewWidget::modeChanged);
 }
 
 FtmwViewWidget::~FtmwViewWidget()
@@ -60,9 +71,17 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
     ui->snapDiffButton->setEnabled(false);
     ui->snapshotCheckbox->setEnabled(false);
 
+    if(p_snapWidget != nullptr)
+    {
+        p_snapWidget->setEnabled(false);
+        p_snapWidget->deleteLater();
+        p_snapWidget = nullptr;
+    }
+
     d_currentFidList.clear();
     if(config.isEnabled())
     {
+        d_currentExptNum = e.number();
         ui->controlButton->setEnabled(true);
 
         ui->frameBox->blockSignals(true);
@@ -114,6 +133,8 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
     }
     else
     {        
+        d_currentExptNum = -1;
+
         ui->frameBox->blockSignals(true);
         ui->frameBox->setRange(0,0);
         ui->frameBox->setValue(0);
@@ -158,7 +179,8 @@ void FtmwViewWidget::newFidList(QList<Fid> fl)
         }
         ui->frameBox->setMaximum(d_currentFidList.size());
     }
-    showFrame(ui->frameBox->value());
+    if(d_mode == BlackChirp::FtmwViewLive)
+        updateFtPlot();
 }
 
 void FtmwViewWidget::updateShotsLabel(qint64 shots)
@@ -166,65 +188,85 @@ void FtmwViewWidget::updateShotsLabel(qint64 shots)
     ui->shotsLabel->setText(QString("Shots: %1").arg(shots));
 }
 
-void FtmwViewWidget::showFrame(int num)
-{
-    if(d_currentFidList.size() <= num)
-        return;
-
-    d_currentFid = d_currentFidList.at(num-1);
-    //process FID
-    if(!d_processing)
-        updateFtPlot();
-    else
-        d_replotWhenDone = true;
-
-    ui->fidPlot->receiveData(d_currentFid);
-}
-
 void FtmwViewWidget::ftStartChanged(double s)
 {
     QMetaObject::invokeMethod(p_ftw,"setStart",Q_ARG(double,s));
-    if(d_currentFidList.isEmpty())
-        return;
-
-    if(!d_processing)
-        updateFtPlot();
-    else
-        d_replotWhenDone = true;
+    updateFtPlot();
 }
 
 void FtmwViewWidget::ftEndChanged(double e)
 {
     QMetaObject::invokeMethod(p_ftw,"setEnd",Q_ARG(double,e));
-    if(d_currentFidList.isEmpty())
-        return;
-
-    if(!d_processing)
-        updateFtPlot();
-    else
-        d_replotWhenDone = true;
+    updateFtPlot();
 }
 
 void FtmwViewWidget::pzfChanged(int zpf)
 {
     d_pzf = zpf;
     QMetaObject::invokeMethod(p_ftw,"setPzf",Q_ARG(int,zpf));
-    if(d_currentFidList.isEmpty())
-        return;
-
-    if(!d_processing)
-        updateFtPlot();
-    else
-        d_replotWhenDone = true;
+    updateFtPlot();
 }
 
 void FtmwViewWidget::updateFtPlot()
 {
-    if(d_currentFidList.size() >= ui->frameBox->value())
+    if(d_processing)
     {
+        d_replotWhenDone = true;
+        return;
+    }
+
+    if(d_currentFidList.isEmpty())
+        return;
+
+    if(d_mode == BlackChirp::FtmwViewLive)
+    {
+        if(d_currentFidList.size() >= ui->frameBox->value())
+            d_currentFid = d_currentFidList.at(ui->frameBox->value()-1);
+        else
+            d_currentFid = d_currentFidList.first();
+
         QMetaObject::invokeMethod(p_ftw,"doFT",Q_ARG(const Fid,d_currentFid));
         d_processing = true;
         d_replotWhenDone = false;
+        ui->fidPlot->receiveData(d_currentFid);
+    }
+    else if(d_mode == BlackChirp::FtmwViewSingle)
+    {
+        if(ui->snapshotCheckbox->isChecked() && p_snapWidget != nullptr)
+            d_currentFid = p_snapWidget->getSnapFid(ui->frameBox->value()-1);
+        else
+            d_currentFid = d_currentFidList.at(ui->frameBox->value()-1);
+
+        QMetaObject::invokeMethod(p_ftw,"doFT",Q_ARG(const Fid,d_currentFid));
+        d_processing = true;
+        d_replotWhenDone = false;
+        ui->fidPlot->receiveData(d_currentFid);
+    }
+    else if(d_mode == BlackChirp::FtmwViewFrameDiff)
+    {
+        if(ui->snapshotCheckbox->isChecked() && p_snapWidget != nullptr)
+        {
+            d_currentFid = p_snapWidget->getSnapFid(ui->frameBox->value()-1);
+            d_currentRefFid = p_snapWidget->getSnapFid(ui->refFrameSpinBox->value()-1);
+        }
+        else
+        {
+            d_currentFid = d_currentFidList.at(ui->frameBox->value()-1);
+            d_currentRefFid = d_currentFidList.at(ui->refFrameSpinBox->value()-1);
+        }
+
+        QMetaObject::invokeMethod(p_ftw,"doFtDiff",Q_ARG(const Fid,d_currentRefFid),Q_ARG(const Fid,d_currentFid));
+        d_processing = true;
+        d_replotWhenDone = false;
+        ui->fidPlot->receiveData(d_currentFid);
+    }
+    else if(d_mode == BlackChirp::FtmwViewSnapDiff)
+    {
+        //note that the current and ref fids are set on mode change and then from signals from snap widget
+        QMetaObject::invokeMethod(p_ftw,"doFtDiff",Q_ARG(const Fid,d_currentRefFid),Q_ARG(const Fid,d_currentFid));
+        d_processing = true;
+        d_replotWhenDone = false;
+        ui->fidPlot->receiveData(d_currentFid);
     }
 }
 
@@ -235,5 +277,165 @@ void FtmwViewWidget::ftDone(QVector<QPointF> ft, double max)
 
     if(d_replotWhenDone)
         updateFtPlot();
+}
+
+void FtmwViewWidget::ftDiffDone(QVector<QPointF> ft, double min, double max)
+{
+    d_processing = false;
+    ui->ftPlot->newFtDiff(ft,min,max);
+
+    if(d_replotWhenDone)
+        updateFtPlot();
+}
+
+void FtmwViewWidget::modeChanged()
+{
+    if(ui->liveUpdateButton->isChecked())
+    {
+        d_mode = BlackChirp::FtmwViewLive;
+        ui->refFrameSpinBox->setEnabled(false);
+        ui->snapshotCheckbox->blockSignals(true);
+        ui->snapshotCheckbox->setChecked(false);
+        ui->snapshotCheckbox->blockSignals(false);
+        ui->snapshotCheckbox->setEnabled(false);
+
+        if(p_snapWidget != nullptr)
+        {
+            p_snapWidget->setSelectionEnabled(false);
+            p_snapWidget->setDiffMode(false);
+        }
+
+    }
+    else if(ui->singleFrameButton->isChecked())
+    {
+        d_mode = BlackChirp::FtmwViewSingle;
+        ui->refFrameSpinBox->setEnabled(false);
+
+        if(p_snapWidget != nullptr)
+        {
+            ui->snapshotCheckbox->setEnabled(true);
+            p_snapWidget->setSelectionEnabled(ui->snapshotCheckbox->isChecked());
+            p_snapWidget->setDiffMode(false);
+        }
+        else
+        {
+            ui->snapshotCheckbox->blockSignals(true);
+            ui->snapshotCheckbox->setChecked(false);
+            ui->snapshotCheckbox->blockSignals(false);
+            ui->snapshotCheckbox->setEnabled(false);
+        }
+
+    }
+    else if(ui->frameDiffButton->isChecked())
+    {
+        d_mode = BlackChirp::FtmwViewFrameDiff;
+        ui->refFrameSpinBox->setEnabled(true);
+
+        if(p_snapWidget != nullptr)
+        {
+            ui->snapshotCheckbox->setEnabled(true);
+            p_snapWidget->setSelectionEnabled(ui->snapshotCheckbox->isChecked());
+            p_snapWidget->setDiffMode(false);
+        }
+        else
+        {
+            ui->snapshotCheckbox->blockSignals(true);
+            ui->snapshotCheckbox->setChecked(false);
+            ui->snapshotCheckbox->blockSignals(false);
+            ui->snapshotCheckbox->setEnabled(false);
+        }
+    }
+    else if(ui->snapDiffButton->isChecked())
+    {
+        d_mode = BlackChirp::FtmwViewFrameDiff;
+        ui->snapshotCheckbox->blockSignals(true);
+        ui->snapshotCheckbox->setChecked(false);
+        ui->snapshotCheckbox->blockSignals(false);
+        ui->snapshotCheckbox->setEnabled(false);
+
+        Q_ASSERT(p_snapWidget != nullptr);
+        p_snapWidget->setSelectionEnabled(false);
+        p_snapWidget->setDiffMode(true);
+
+        d_currentFid = p_snapWidget->getDiffFid(ui->frameBox->value()-1);
+        d_currentRefFid = p_snapWidget->getRefFid(ui->frameBox->value()-1);
+    }
+
+    updateFtPlot();
+}
+
+void FtmwViewWidget::snapshotTaken()
+{
+    if(d_currentExptNum < 1)
+        return;
+
+    if(p_snapWidget == nullptr)
+    {
+        p_snapWidget = new FtmwSnapshotWidget(d_currentExptNum,this);
+        connect(p_snapWidget,&FtmwSnapshotWidget::loadFailed,this,&FtmwViewWidget::snapshotLoadError);
+        connect(p_snapWidget,&FtmwSnapshotWidget::snapListChanged,this,&FtmwViewWidget::snapListUpdate);
+        connect(p_snapWidget,&FtmwSnapshotWidget::refChanged,this,&FtmwViewWidget::snapRefChanged);
+        connect(p_snapWidget,&FtmwSnapshotWidget::refChanged,this,&FtmwViewWidget::snapDiffChanged);
+    }
+
+
+    if(p_snapWidget->readSnapshots())
+        ui->snapDiffButton->setEnabled(true);
+
+}
+
+void FtmwViewWidget::experimentComplete()
+{
+    if(d_mode == BlackChirp::FtmwViewLive)
+    {
+        ui->singleFrameButton->setChecked(true);
+        modeChanged();
+    }
+
+    ui->liveUpdateButton->setEnabled(false);
+
+    if(p_snapWidget != nullptr)
+    {
+        p_snapWidget->setFinalizeEnabled(true);
+    }
+
+    updateFtPlot();
+}
+
+void FtmwViewWidget::snapshotLoadError(QString msg)
+{
+    p_snapWidget->setEnabled(false);
+    p_snapWidget->deleteLater();
+    p_snapWidget = nullptr;
+    if(ui->snapDiffButton->isChecked())
+        ui->singleFrameButton->setChecked(true);
+
+    ui->snapDiffButton->setEnabled(false);
+
+    QMessageBox::warning(this,QString("Snapshot Load Error"),msg,QMessageBox::Ok);
+}
+
+void FtmwViewWidget::snapListUpdate()
+{
+    if(d_mode == BlackChirp::FtmwViewSnapDiff || ui->snapshotCheckbox->isChecked())
+        updateFtPlot();
+}
+
+void FtmwViewWidget::snapRefChanged()
+{
+    if(d_mode == BlackChirp::FtmwViewSnapDiff)
+    {
+        d_currentRefFid = p_snapWidget->getRefFid(ui->frameBox->value()-1);
+        updateFtPlot();
+    }
+}
+
+void FtmwViewWidget::snapDiffChanged()
+{
+    if(d_mode == BlackChirp::FtmwViewSnapDiff)
+    {
+        d_currentFid = p_snapWidget->getDiffFid(ui->frameBox->value()-1);
+        updateFtPlot();
+    }
 }
 

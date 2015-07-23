@@ -9,6 +9,7 @@
 
 class FtWorker;
 class QThread;
+class FtmwSnapshotWidget;
 
 namespace Ui {
 class FtmwViewWidget;
@@ -30,12 +31,19 @@ public slots:
     void togglePanel(bool on);
     void newFidList(QList<Fid> fl);
     void updateShotsLabel(qint64 shots);
-    void showFrame(int num);
     void ftStartChanged(double s);
     void ftEndChanged(double e);
     void pzfChanged(int zpf);
     void updateFtPlot();
     void ftDone(QVector<QPointF> ft, double max);
+    void ftDiffDone(QVector<QPointF> ft, double min, double max);
+    void modeChanged();
+    void snapshotTaken();
+    void experimentComplete();
+    void snapshotLoadError(QString msg);
+    void snapListUpdate();
+    void snapRefChanged();
+    void snapDiffChanged();
 
 
 private:
@@ -43,11 +51,12 @@ private:
 
     BlackChirp::FtmwViewMode d_mode;
     bool d_replotWhenDone, d_processing;
-    int d_pzf;
+    int d_pzf, d_currentExptNum;
     QList<Fid> d_currentFidList;
-    Fid d_currentFid;
+    Fid d_currentFid, d_currentRefFid;
     QThread *p_ftThread;
     FtWorker *p_ftw;
+    FtmwSnapshotWidget *p_snapWidget;
 };
 
 #endif // FTMWVIEWWIDGET_H

@@ -191,6 +191,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->ftViewWidget,&FtmwViewWidget::rollingAverageReset,p_am,&AcquisitionManager::resetRollingAverage);
     connect(p_am,&AcquisitionManager::newFidList,ui->ftViewWidget,&FtmwViewWidget::newFidList);
     connect(p_am,&AcquisitionManager::lifPointUpdate,ui->lifDisplayWidget,&LifDisplayWidget::updatePoint);
+    connect(p_am,&AcquisitionManager::snapshotComplete,ui->ftViewWidget,&FtmwViewWidget::snapshotTaken);
 
     QThread *amThread = new QThread(this);
     connect(amThread,&QThread::finished,p_am,&AcquisitionManager::deleteLater);
@@ -611,6 +612,7 @@ void MainWindow::startBatch(BatchManager *bm, bool sleepWhenDone)
     connect(bm,&BatchManager::batchComplete,this,&MainWindow::batchComplete);
     connect(bm,&BatchManager::batchComplete,d_batchThread,&QThread::quit);
     connect(bm,&BatchManager::batchComplete,p_lh,&LogHandler::endExperimentLog);
+    connect(bm,&BatchManager::batchComplete,ui->ftViewWidget,&FtmwViewWidget::experimentComplete);
     connect(d_batchThread,&QThread::finished,bm,&BatchManager::deleteLater);
 
     connect(p_hwm,&HardwareManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated,Qt::UniqueConnection);
