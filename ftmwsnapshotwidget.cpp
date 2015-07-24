@@ -46,6 +46,8 @@ FtmwSnapshotWidget::FtmwSnapshotWidget(int num, QWidget *parent) : QWidget(paren
     p_finalizeButton->setEnabled(false);
     vbl->addWidget(p_finalizeButton,0);
 
+    gb->setLayout(vbl);
+
     setLayout(vl);
 
     p_workerThread = new QThread(this);
@@ -99,6 +101,11 @@ Fid FtmwSnapshotWidget::getDiffFid(int i)
 {
     Q_ASSERT(p_diffBox->value() < count());
     return p_sw->parseFile(d_num,p_diffBox->value()).at(i);
+}
+
+QSize FtmwSnapshotWidget::sizeHint() const
+{
+    return QSize(100,300);
 }
 
 void FtmwSnapshotWidget::setSelectionEnabled(bool en)
@@ -170,7 +177,7 @@ bool FtmwSnapshotWidget::readSnapshots()
 
             out = true;
 
-            for(int i = count(); i < numSnaps; i++)
+            for(int i = count()-1; i < numSnaps; i++)
             {
                 QFile f(BlackChirp::getExptFile(d_num,BlackChirp::FidFile,i));
                 if(f.exists())
@@ -181,6 +188,7 @@ bool FtmwSnapshotWidget::readSnapshots()
                         item->setCheckState(Qt::Checked);
                     else
                         item->setCheckState(Qt::Unchecked);
+                    p_lw->insertItem(i,item);
                 }
                 else
                 {
@@ -192,6 +200,7 @@ bool FtmwSnapshotWidget::readSnapshots()
         }
         p_refBox->setRange(0,count()-2);
         p_diffBox->setRange(0,count()-2);
+        updateSnapList();
         snp.close();
     }
     else
@@ -225,6 +234,15 @@ void FtmwSnapshotWidget::updateSnapList()
             if(p_lw->item(i)->data(Qt::CheckStateRole) == Qt::Checked)
                 snapList.append(i);
         }
+    }
+
+    if(!subtract && snapList.isEmpty())
+    {
+        subtract = true;
+        p_lw->blockSignals(true);
+        for(int i=0; i<count(); i++)
+            p_lw->item(i)->setData(Qt::CheckStateRole,Qt::Checked);
+        p_lw->blockSignals(false);
     }
 
     QMetaObject::invokeMethod(p_sw,"calculateFidList",Q_ARG(int,d_num),Q_ARG(const QList<int>,snapList),

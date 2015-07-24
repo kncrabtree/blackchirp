@@ -376,6 +376,10 @@ void FtmwViewWidget::snapshotTaken()
         connect(p_snapWidget,&FtmwSnapshotWidget::snapListChanged,this,&FtmwViewWidget::snapListUpdate);
         connect(p_snapWidget,&FtmwSnapshotWidget::refChanged,this,&FtmwViewWidget::snapRefChanged);
         connect(p_snapWidget,&FtmwSnapshotWidget::refChanged,this,&FtmwViewWidget::snapDiffChanged);
+        p_snapWidget->setSelectionEnabled(false);
+        p_snapWidget->setDiffMode(false);
+        p_snapWidget->setFinalizeEnabled(false);
+        ui->rightLayout->addWidget(p_snapWidget);
     }
 
 

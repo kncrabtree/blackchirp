@@ -26,6 +26,8 @@ public:
     Fid getRefFid(int i);
     Fid getDiffFid(int i);
 
+    QSize sizeHint() const;
+
 signals:
     void loadFailed(QString errMsg);
     void snapListChanged();

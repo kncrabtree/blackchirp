@@ -107,7 +107,7 @@ void FtPlot::newFt(QVector<QPointF> ft, double max)
     if(ft.isEmpty())
         return;
 
-    setAxisAutoScaleMax(QwtPlot::yLeft,max);
+    setAxisAutoScaleRange(QwtPlot::yLeft,0.0,max);
     filterData();
     replot();
 }

@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
     qRegisterMetaType<QPair<QPoint,BlackChirp::LifPoint>>("QPair<QPoint,BlackChirp::LifPoint>");
 
     MainWindow w;
-    w.show();
+    w.showMaximized();
     w.initializeHardware();
     int ret = a.exec();
     lockFile.remove();
