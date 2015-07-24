@@ -26,6 +26,7 @@ public slots:
     void logMessageWithTime(const QString text, const BlackChirp::LogMessageCode type=BlackChirp::LogNormal, QDateTime t = QDateTime::currentDateTime());
     void beginExperimentLog(const Experiment e);
     void endExperimentLog();
+    void experimentLogMessage(int num, QString text, BlackChirp::LogMessageCode type = BlackChirp::LogNormal);
 
 private:
     QFile d_logFile;

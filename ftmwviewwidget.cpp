@@ -377,6 +377,7 @@ void FtmwViewWidget::snapshotTaken()
         connect(p_snapWidget,&FtmwSnapshotWidget::refChanged,this,&FtmwViewWidget::snapRefChanged);
         connect(p_snapWidget,&FtmwSnapshotWidget::refChanged,this,&FtmwViewWidget::snapDiffChanged);
         connect(p_snapWidget,&FtmwSnapshotWidget::finalizedList,this,&FtmwViewWidget::finalizedSnapList);
+        connect(p_snapWidget,&FtmwSnapshotWidget::experimentLogMessage,this,&FtmwViewWidget::experimentLogMessage);
         p_snapWidget->setSelectionEnabled(false);
         p_snapWidget->setDiffMode(false);
         p_snapWidget->setFinalizeEnabled(false);

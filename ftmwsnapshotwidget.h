@@ -34,6 +34,7 @@ signals:
     void refChanged();
     void diffChanged();
     void finalizedList(const QList<Fid>);
+    void experimentLogMessage(int,QString,BlackChirp::LogMessageCode=BlackChirp::LogNormal);
 
 public slots:
     void setSelectionEnabled(bool en);

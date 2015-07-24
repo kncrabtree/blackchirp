@@ -291,6 +291,47 @@ void FtmwSnapshotWidget::finalize()
         return;
     }
 
+    bool remainderKept = (p_lw->item(count()-1)->data(Qt::CheckStateRole) == Qt::Checked ? true : false);
+    QList<int> snaps;
+    for(int i=count()-2; i>=0; i--)
+    {
+        if(p_lw->item(i)->data(Qt::CheckStateRole) == Qt::Unchecked)
+            snaps.append(i);
+    }
+
+    emit experimentLogMessage(d_num,QString("Finalizing snapshots...."));
+
+    if(snaps.isEmpty() && remainderKept)
+        emit experimentLogMessage(d_num,QString("All snapshots kept."));
+    else
+    {
+        if(snaps.isEmpty())
+            emit experimentLogMessage(d_num,QString("All snapshots removed."));
+        else if(snaps.size() == 1)
+            emit experimentLogMessage(d_num,QString("Removed snapshot %1.").arg(snaps.first()));
+        else if(snaps.size() == 2)
+        {
+            std::stable_sort(snaps.begin(),snaps.end());
+            emit experimentLogMessage(d_num,QString("Removed snapshots %1 and %2.").arg(snaps.first()).arg(snaps.last()));
+        }
+        else
+        {
+            std::stable_sort(snaps.begin(),snaps.end());
+            QString snapString = QString("and %1").arg(snaps.last());
+            for(int i = snaps.size()-2; i>=0; i--)
+                snapString.prepend(QString("%1, ").arg(snaps.at(i)));
+            emit experimentLogMessage(d_num,QString("Removed snapshots %1.").arg(snapString));
+        }
+    }
+
+    if(remainderKept)
+        emit experimentLogMessage(d_num,QString("Remainder of shots kept."));
+    else
+        emit experimentLogMessage(d_num,QString("Remainder of shots removed."));
+
+    emit experimentLogMessage(d_num,QString("Final number of shots: %1").arg(d_snapList.first().shots()));
+
+
     //delete snapshot files
     for(int i=0; i<count()-1; i++)
     {

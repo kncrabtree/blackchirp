@@ -62,7 +62,11 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QWidget *parent) : QWidget(p
 
     QWidget *log = buildLogWidget();
     if(log != nullptr)
+    {
         p_tabWidget->addTab(log,QString("Log"));
+        if(p_ftmw != nullptr)
+            connect(p_ftmw,&FtmwViewWidget::experimentLogMessage,p_lh,&LogHandler::experimentLogMessage);
+    }
 
     hbl->addWidget(p_tabWidget);
     setLayout(hbl);

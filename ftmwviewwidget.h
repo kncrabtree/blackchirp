@@ -26,6 +26,7 @@ public:
 signals:
     void rollingAverageShotsChanged(int);
     void rollingAverageReset();
+    void experimentLogMessage(int,QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal);
 
 public slots:
     void togglePanel(bool on);

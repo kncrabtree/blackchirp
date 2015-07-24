@@ -40,6 +40,7 @@ MainWindow::MainWindow(QWidget *parent) :
     p_lh = new LogHandler();
     connect(p_lh,&LogHandler::sendLogMessage,ui->log,&QTextEdit::append);
     connect(p_lh,&LogHandler::iconUpdate,this,&MainWindow::setLogIcon);
+    connect(ui->ftViewWidget,&FtmwViewWidget::experimentLogMessage,p_lh,&LogHandler::experimentLogMessage);
     connect(ui->tabWidget,&QTabWidget::currentChanged,[=](int i) {
         if(i == ui->tabWidget->indexOf(ui->logTab))
         {

@@ -75,6 +75,42 @@ void LogHandler::endExperimentLog()
     }
 }
 
+void LogHandler::experimentLogMessage(int num, QString text, BlackChirp::LogMessageCode type)
+{
+    QString timeStamp = QDateTime::currentDateTime().toString();
+    logMessageWithTime(text,type,QDateTime::currentDateTime());
+
+    if(d_exptLog.isOpen() && d_exptLog.fileName().endsWith(QString("%1.log").arg(num)))
+        return;
+
+    QFile f(BlackChirp::getExptFile(num,BlackChirp::LogFile));
+    if(f.open(QIODevice::Append))
+    {
+        QString msg = QString("%1: ").arg(timeStamp);
+        switch (type)
+        {
+        case BlackChirp::LogWarning:
+            msg.append(QString("[WARNING] "));
+            break;
+        case BlackChirp::LogError:
+            msg.append(QString("[ERROR] "));
+            break;
+        case BlackChirp::LogDebug:
+            msg.append(QString("[DEBUG] "));
+            break;
+        case BlackChirp::LogHighlight:
+            msg.append(QString("[HIGHLIGHT] "));
+            break;
+        default:
+            break;
+        }
+
+        msg.append(text).append(QString("\n"));
+        f.write(msg.toLatin1());
+        f.close();
+    }
+}
+
 void LogHandler::writeToFile(const QString text, const BlackChirp::LogMessageCode type, const QString timeStamp)
 {
     QDate now = QDate::currentDate();
