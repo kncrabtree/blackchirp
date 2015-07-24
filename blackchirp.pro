@@ -93,13 +93,13 @@ IOBOARD=0
 FTMWSCOPE=0
 
 #AWG (0 = virtual, 1 = AWG 70002A)
-AWG=0
+AWG=1
 
 #Synth (0 = virtual, 1 = Valon 5009)
 SYNTH=1
 
 #Pulse generator (0 = virtual, 1 = Quantum Composers 9528+)
-PGEN=0
+PGEN=1
 #pulse generator channel definitions (0 = A, 1 = B, etc...)
 PGEN_GAS=0
 PGEN_AWG=1
@@ -117,7 +117,7 @@ FC_CHANNELS=4
 LIFSCOPE=0
 
 #IO Board (0 = virtual, 1 = Labjack U3)
-IOBOARD=1
+IOBOARD=0
 }
 
 
