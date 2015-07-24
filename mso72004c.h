@@ -1,5 +1,5 @@
-#ifndef DSA71604C_H
-#define DSA71604C_H
+#ifndef MSO72004C_H
+#define MSO72004C_H
 
 #include "ftmwscope.h"
 
@@ -8,12 +8,12 @@
 
 class QTcpSocket;
 
-class Dsa71604c : public FtmwScope
+class MSO72004C : public FtmwScope
 {
     Q_OBJECT
 public:
-    Dsa71604c(QObject *parent = nullptr);
-    ~Dsa71604c();
+    MSO72004C(QObject *parent = nullptr);
+    ~MSO72004C();
 
     // HardwareObject interface
 public slots:
@@ -39,4 +39,4 @@ private:
     QTcpSocket *p_socket;
 };
 
-#endif // DSA71604C_H
+#endif // MSO72004C_H

@@ -1,13 +1,13 @@
-#include "dsa71604c.h"
+#include "mso72004c.h"
 
 #include "tcpinstrument.h"
 
-Dsa71604c::Dsa71604c(QObject *parent) :
+MSO72004C::MSO72004C(QObject *parent) :
     FtmwScope(parent), d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {
-    d_subKey = QString("dsa71604c");
-    d_prettyName = QString("Ftmw Oscilloscope DSA71604C");
+    d_subKey = QString("MSO72004C");
+    d_prettyName = QString("Ftmw Oscilloscope MSO72004C");
 
     p_comm = new TcpInstrument(d_key,d_subKey,this);
     connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
@@ -23,14 +23,14 @@ Dsa71604c::Dsa71604c(QObject *parent) :
 
 }
 
-Dsa71604c::~Dsa71604c()
+MSO72004C::~MSO72004C()
 {
 
 }
 
 
 
-bool Dsa71604c::testConnection()
+bool MSO72004C::testConnection()
 {
 
     if(!p_comm->testConnection())
@@ -47,7 +47,7 @@ bool Dsa71604c::testConnection()
         return false;
     }
 
-    if(!resp.startsWith(QByteArray("TEKTRONIX,DSA71604C")))
+    if(!resp.startsWith(QByteArray("TEKTRONIX,MSO")))
     {
         emit connected(false,QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())));
         return false;
@@ -58,17 +58,17 @@ bool Dsa71604c::testConnection()
     return true;
 }
 
-void Dsa71604c::initialize()
+void MSO72004C::initialize()
 {
     p_comm->setReadOptions(100,true,QByteArray("\n"));
     p_comm->initialize();
     p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
-    connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),this,&Dsa71604c::socketError);
+    connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),this,&MSO72004C::socketError);
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
     testConnection();
 }
 
-Experiment Dsa71604c::prepareForExperiment(Experiment exp)
+Experiment MSO72004C::prepareForExperiment(Experiment exp)
 {
     //attempt to apply settings. return invalid configuration if anything fails.
     //this is a lot of really tedious code.
@@ -81,7 +81,7 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
         return exp;
 
     BlackChirp::FtmwScopeConfig config(exp.ftmwConfig().scopeConfig());
-    disconnect(p_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform);
+    disconnect(p_socket,&QTcpSocket::readyRead,this,&MSO72004C::readWaveform);
 
     //disable ugly headers
     if(!p_comm->writeCmd(QString(":HEADER OFF\n")))
@@ -582,7 +582,7 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
     return exp;
 }
 
-void Dsa71604c::beginAcquisition()
+void MSO72004C::beginAcquisition()
 {
     if(p_socket->bytesAvailable())
         p_socket->readAll();
@@ -592,16 +592,16 @@ void Dsa71604c::beginAcquisition()
     d_foundHeader = false;
     d_headerNumBytes = 0;
     d_waveformBytes = 0;
-    connect(&d_scopeTimeout,&QTimer::timeout,this,&Dsa71604c::wakeUp,Qt::UniqueConnection);
-    connect(p_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform,Qt::UniqueConnection);
+    connect(&d_scopeTimeout,&QTimer::timeout,this,&MSO72004C::wakeUp,Qt::UniqueConnection);
+    connect(p_socket,&QTcpSocket::readyRead,this,&MSO72004C::readWaveform,Qt::UniqueConnection);
 }
 
-void Dsa71604c::endAcquisition()
+void MSO72004C::endAcquisition()
 {
 
     //stop parsing waveforms
-    disconnect(p_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform);
-    disconnect(&d_scopeTimeout,&QTimer::timeout,this,&Dsa71604c::wakeUp);
+    disconnect(p_socket,&QTcpSocket::readyRead,this,&MSO72004C::readWaveform);
+    disconnect(&d_scopeTimeout,&QTimer::timeout,this,&MSO72004C::wakeUp);
 
     if(p_socket->bytesAvailable())
         p_socket->readAll();
@@ -621,11 +621,11 @@ void Dsa71604c::endAcquisition()
     d_waveformBytes = 0;
 }
 
-void Dsa71604c::readTimeData()
+void MSO72004C::readTimeData()
 {
 }
 
-void Dsa71604c::readWaveform()
+void MSO72004C::readWaveform()
 {
     if(!d_waitingForReply) // if for some reason the readyread signal weren't disconnected, don't eat all the bytes
         return;
@@ -732,7 +732,7 @@ void Dsa71604c::readWaveform()
     }
 }
 
-void Dsa71604c::wakeUp()
+void MSO72004C::wakeUp()
 {
     d_scopeTimeout.stop();
     emit logMessage(QString("Attempting to wake up scope"),BlackChirp::LogWarning);
@@ -750,14 +750,14 @@ void Dsa71604c::wakeUp()
     beginAcquisition();
 }
 
-void Dsa71604c::socketError(QAbstractSocket::SocketError e)
+void MSO72004C::socketError(QAbstractSocket::SocketError e)
 {
     emit logMessage(QString("Socket error: %1").arg((int)e),BlackChirp::LogError);
     emit logMessage(QString("Error message: %1").arg(p_socket->errorString()),BlackChirp::LogError);
     emit hardwareFailure();
 }
 
-QByteArray Dsa71604c::scopeQueryCmd(QString query)
+QByteArray MSO72004C::scopeQueryCmd(QString query)
 {
     //the scope is flaky. Sometimes, for no apparent reason, it doesn't respond
     //This will retry the query if it fails, suppressing any errors on the first try

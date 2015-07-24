@@ -30,6 +30,10 @@ protected:
 #include "dsa71604c.h"
 class Dsa71604c;
 typedef Dsa71604c FtmwScopeHardware;
+#elif BC_FTMWSCOPE == 2
+#include "mso72004c.h"
+class MSO72004C;
+typedef MSO72004C FtmwScopeHardware;
 #else
 #include "virtualftmwscope.h"
 class VirtualFtmwScope;

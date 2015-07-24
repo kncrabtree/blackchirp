@@ -89,7 +89,7 @@ IOBOARD=0
 # The following defines select hardware implementations.
 # -----------------------------------------------
 
-# FTMW Oscilloscope (0 = virtual, 1 = DSA71604C)
+# FTMW Oscilloscope (0 = virtual, 1 = DSA71604C, 2 = MSO72004C)
 FTMWSCOPE=1
 
 #AWG (0 = virtual, 1 = AWG 70002A)

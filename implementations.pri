@@ -12,7 +12,8 @@ HEADERS += \
     $$PWD/valon5009.h \
     $$PWD/mks647c.h \
     $$PWD/prologixgpiblan.h \
-    $$PWD/virtualioboard.h
+    $$PWD/virtualioboard.h \
+    $$PWD/mso72004c.h
 
 
 SOURCES += \
@@ -29,7 +30,8 @@ SOURCES += \
     $$PWD/valon5009.cpp \
     $$PWD/mks647c.cpp \
     $$PWD/prologixgpiblan.cpp \
-    $$PWD/virtualioboard.cpp
+    $$PWD/virtualioboard.cpp \
+    $$PWD/mso72004c.cpp
 
 
 equals(IOBOARD,1) {
