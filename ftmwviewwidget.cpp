@@ -381,6 +381,8 @@ void FtmwViewWidget::snapshotTaken()
         p_snapWidget->setSelectionEnabled(false);
         p_snapWidget->setDiffMode(false);
         p_snapWidget->setFinalizeEnabled(false);
+        if(!ui->controlFrame->isVisible())
+            p_snapWidget->setVisible(false);
         ui->rightLayout->addWidget(p_snapWidget);
     }
 

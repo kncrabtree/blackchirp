@@ -72,6 +72,11 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QWidget *parent) : QWidget(p
     setLayout(hbl);
 }
 
+QSize ExperimentViewWidget::sizeHint() const
+{
+    return QSize(1024,768);
+}
+
 QWidget *ExperimentViewWidget::buildHeaderWidget()
 {
     QWidget *hdr = new QWidget();
@@ -117,10 +122,37 @@ QWidget *ExperimentViewWidget::buildFtmwWidget()
 
         p_ftmw->prepareForExperiment(d_experiment);
         p_ftmw->newFidList(d_experiment.ftmwConfig().fidList());
+        p_ftmw->updateShotsLabel(d_experiment.ftmwConfig().fidList().first().shots());
+
+        //check for snap file
+        QFile snp(BlackChirp::getExptFile(d_experiment.number(),BlackChirp::SnapFile));
+        if(snp.exists() && snp.open(QIODevice::ReadOnly))
+        {
+            bool fids = false;
+            while(!snp.atEnd())
+            {
+                QByteArray line = snp.readLine();
+                if(line.startsWith("fid"))
+                {
+                    QByteArrayList l = line.split('\t');
+                    if(!l.isEmpty() && l.last().trimmed().toInt() > 0)
+                    {
+                        fids = true;
+                        break;
+                    }
+                }
+            }
+            snp.close();
+
+            if(fids)
+                p_ftmw->snapshotTaken();
+        }
+
+        p_ftmw->experimentComplete();
     }
 
-    return out;
 
+    return out;
 }
 
 QWidget *ExperimentViewWidget::buildLifWidget()
@@ -268,8 +300,9 @@ QWidget *ExperimentViewWidget::buildLogWidget()
                     continue;
 
                 QString theLine;
-                for(int i=1; i<l.size(); i++)
-                    theLine+=l.at(i);
+                theLine += l.at(1);
+                for(int i=2; i<l.size(); i++)
+                    theLine+=QString(": ")+l.at(i);
 
                 p_lh->logMessageWithTime(theLine,BlackChirp::LogNormal,QDateTime::fromString(l.first()));
             }

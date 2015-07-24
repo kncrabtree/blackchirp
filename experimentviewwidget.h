@@ -16,6 +16,8 @@ class ExperimentViewWidget : public QWidget
 public:
     explicit ExperimentViewWidget(int num, QWidget *parent = 0);
 
+    QSize sizeHint() const;
+
 signals:
     void logMessage(QString msg, BlackChirp::LogMessageCode t = BlackChirp::LogNormal);
 
