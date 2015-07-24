@@ -84,6 +84,8 @@ public slots:
      */
     void hardwareFailure();
 
+    void sleep(bool b);
+
     void initializeExperiment(Experiment exp);
 
     void testAll();

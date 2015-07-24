@@ -3,6 +3,7 @@
 #include <QVBoxLayout>
 #include <QTableWidget>
 #include <QHeaderView>
+#include <QCheckBox>
 
 #include "experimentwizard.h"
 
@@ -24,8 +25,11 @@ WizardSummaryPage::WizardSummaryPage(QWidget *parent) :
     p_tw->setHorizontalHeaderItem(2,new QTableWidgetItem(QString("Unit")));
     p_tw->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
+    QCheckBox *sleepBox = new QCheckBox(QString("Sleep when complete"),this);
+    registerField(QString("sleep"),sleepBox);
 
     vbl->addWidget(p_tw);
+    vbl->addWidget(sleepBox,0,Qt::AlignHCenter);
     setLayout(vbl);
 
 }

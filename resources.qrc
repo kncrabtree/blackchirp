@@ -21,5 +21,6 @@
         <file>icons/error.png</file>
         <file>icons/warning.png</file>
         <file>icons/control.png</file>
+        <file>icons/sleep.png</file>
     </qresource>
 </RCC>

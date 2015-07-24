@@ -1,7 +1,7 @@
 #include "batchmanager.h"
 
 BatchManager::BatchManager(BatchManager::BatchType b)
-    : QObject(), d_type(b)
+    : QObject(), d_type(b), d_sleep(false)
 {
 
 }

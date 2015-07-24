@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QDoubleSpinBox>
 #include <QLineEdit>
+#include <QMessageBox>
 
 #include "communicationdialog.h"
 #include "ioboardconfigdialog.h"
@@ -225,6 +226,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionRf_Configuration,&QAction::triggered,this,&MainWindow::launchRfConfigDialog);
     connect(ui->actionTrackingShow,&QAction::triggered,[=](){ ui->tabWidget->setCurrentIndex(2); });
     connect(ui->action_Graphs,&QAction::triggered,ui->trackingViewWidget,&TrackingViewWidget::changeNumPlots);
+    connect(ui->actionSleep,&QAction::toggled,this,&MainWindow::sleep);
     connect(ui->actionTest_All_Connections,&QAction::triggered,p_hwm,&HardwareManager::testAll);
 
     connect(ui->lifControlWidget,&LifControlWidget::lifColorChanged,
@@ -531,6 +533,18 @@ void MainWindow::setLogIcon(BlackChirp::LogMessageCode c)
     }
 }
 
+void MainWindow::sleep(bool s)
+{
+    QMetaObject::invokeMethod(p_hwm,"sleep",Q_ARG(bool,s));
+    if(s)
+    {
+        configureUi(Asleep);
+        QMessageBox::information(this,QString("BlackChirp Asleep"),QString("The instrument is asleep. Press the sleep button to re-activate it."),QMessageBox::Ok);
+    }
+    else
+        configureUi(Idle);
+}
+
 void MainWindow::configureUi(MainWindow::ProgramState s)
 {
     d_state = s;
@@ -550,6 +564,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         ui->lifControlWidget->setEnabled(false);
+        ui->actionSleep->setEnabled(true);
         break;
     case Disconnected:
         ui->actionAbort->setEnabled(false);
@@ -562,6 +577,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         ui->lifControlWidget->setEnabled(false);
+        ui->actionSleep->setEnabled(false);
         break;
     case Paused:
         ui->actionAbort->setEnabled(true);
@@ -574,6 +590,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         ui->lifControlWidget->setEnabled(false);
+        ui->actionSleep->setEnabled(false);
         break;
     case Acquiring:
         ui->actionAbort->setEnabled(true);
@@ -586,6 +603,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         ui->lifControlWidget->setEnabled(false);
+        ui->actionSleep->setEnabled(false);
         break;
     case Idle:
     default:
@@ -599,11 +617,12 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->gasControlBox->setEnabled(true);
         ui->pulseConfigWidget->setEnabled(true);
         ui->lifControlWidget->setEnabled(true);
+        ui->actionSleep->setEnabled(true);
         break;
     }
 }
 
-void MainWindow::startBatch(BatchManager *bm, bool sleepWhenDone)
+void MainWindow::startBatch(BatchManager *bm)
 {
     connect(d_batchThread,&QThread::started,bm,&BatchManager::beginNextExperiment);
     connect(bm,&BatchManager::logMessage,p_lh,&LogHandler::logMessage);
@@ -620,10 +639,8 @@ void MainWindow::startBatch(BatchManager *bm, bool sleepWhenDone)
     connect(p_am,&AcquisitionManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated,Qt::UniqueConnection);
     connect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort,Qt::UniqueConnection);
 
-    if(sleepWhenDone)
-    {
-        //connect to sleep action
-    }
+    if(bm->sleepWhenComplete())
+        connect(bm,&BatchManager::batchComplete,ui->actionSleep,&QAction::trigger);
 
     ui->trackingViewWidget->initializeForExperiment();
     configureUi(Acquiring);

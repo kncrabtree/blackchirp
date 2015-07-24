@@ -89,7 +89,9 @@ BatchManager *ExperimentWizard::getBatchManager() const
         e.setLifConfig(lc);
     }
 
-    return new BatchSingle(e);
+    BatchManager *out = new BatchSingle(e);
+    out->setSleep(field(QString("sleep")).toBool());
+    return out;
 }
 
 void ExperimentWizard::saveToSettings() const

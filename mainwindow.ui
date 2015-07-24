@@ -389,6 +389,7 @@
    <addaction name="actionPause"/>
    <addaction name="actionResume"/>
    <addaction name="actionAbort"/>
+   <addaction name="actionSleep"/>
    <addaction name="actionTest"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
@@ -481,6 +482,18 @@
    </property>
    <property name="text">
     <string>IO Board</string>
+   </property>
+  </action>
+  <action name="actionSleep">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/sleep.png</normaloff>:/icons/sleep.png</iconset>
+   </property>
+   <property name="text">
+    <string>Sleep</string>
    </property>
   </action>
  </widget>

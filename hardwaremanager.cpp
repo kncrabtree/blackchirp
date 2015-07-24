@@ -245,6 +245,21 @@ void HardwareManager::hardwareFailure()
     checkStatus();
 }
 
+void HardwareManager::sleep(bool b)
+{
+    for(int i=0; i<d_hardwareList.size(); i++)
+    {
+        HardwareObject *obj = d_hardwareList.at(i).first;
+        if(obj->isConnected())
+        {
+            if(obj->thread() == thread())
+                obj->sleep(b);
+            else
+                QMetaObject::invokeMethod(obj,"sleep",Q_ARG(bool,b));
+        }
+    }
+}
+
 void HardwareManager::initializeExperiment(Experiment exp)
 {
     //do initialization

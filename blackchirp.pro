@@ -17,7 +17,7 @@ CONFIG += c++11
 CONFIG += gpu-cuda
 
 #Run with virtual hardware
-#CONFIG += nohardware
+CONFIG += nohardware
 
 SOURCES += main.cpp
 

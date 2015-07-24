@@ -72,6 +72,7 @@ public slots:
     void updatePressureSetpoint(double val);
     void updatePressureControl(bool en);
     void setLogIcon(BlackChirp::LogMessageCode c);
+    void sleep(bool s);
 
 private:
     Ui::MainWindow *ui;
@@ -86,7 +87,7 @@ private:
     QThread *d_batchThread;
 
     void configureUi(ProgramState s);
-    void startBatch(BatchManager *bm, bool sleepWhenDone = false);
+    void startBatch(BatchManager *bm);
     FlowConfig getFlowConfig();
 
     ProgramState d_state;
