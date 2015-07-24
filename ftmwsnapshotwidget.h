@@ -29,10 +29,11 @@ public:
     QSize sizeHint() const;
 
 signals:
-    void loadFailed(QString errMsg);
+    void loadFailed(const QString errMsg);
     void snapListChanged();
     void refChanged();
     void diffChanged();
+    void finalizedList(const QList<Fid>);
 
 public slots:
     void setSelectionEnabled(bool en);
@@ -41,6 +42,7 @@ public slots:
     bool readSnapshots();
     void updateSnapList();
     void snapListUpdated(const QList<Fid> l);
+    void finalize();
 
 private:
     QListWidget *p_lw;

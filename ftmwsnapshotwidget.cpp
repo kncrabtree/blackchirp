@@ -10,8 +10,10 @@
 #include <QListWidgetItem>
 #include <QFile>
 #include <QThread>
+#include <QMessageBox>
 
 #include "datastructs.h"
+#include "ftmwconfig.h"
 #include "snapworker.h"
 
 FtmwSnapshotWidget::FtmwSnapshotWidget(int num, QWidget *parent) : QWidget(parent), d_num(num), d_busy(false),
@@ -130,6 +132,10 @@ void FtmwSnapshotWidget::setDiffMode(bool en)
 void FtmwSnapshotWidget::setFinalizeEnabled(bool en)
 {
     p_finalizeButton->setEnabled(en);
+    if(en)
+        connect(p_finalizeButton,&QPushButton::clicked,this,&FtmwSnapshotWidget::finalize, Qt::UniqueConnection);
+    else
+        disconnect(p_finalizeButton,&QPushButton::clicked,this,&FtmwSnapshotWidget::finalize);
 }
 
 bool FtmwSnapshotWidget::readSnapshots()
@@ -269,4 +275,61 @@ void FtmwSnapshotWidget::snapListUpdated(const QList<Fid> l)
         setEnabled(true);
         unsetCursor();
     }
+}
+
+void FtmwSnapshotWidget::finalize()
+{
+    int ret = QMessageBox::question(qobject_cast<QWidget*>(parent()),QString("Discard snapshots?"),QString("If you continue, the currently-selected snapshots will be combined, and the FID output file overwritten.\nThe snapshots themselves will be deleted.\n\nAre you sure you wish to proceed?"),QMessageBox::Yes|QMessageBox::No,QMessageBox::No);
+
+    if(ret == QMessageBox::No)
+        return;
+
+    //write fid file
+    if(!FtmwConfig::writeFidFile(d_num,d_snapList))
+    {
+        QMessageBox::critical(qobject_cast<QWidget*>(parent()),QString("Save failed!"),QString("Could not write FID file!"),QMessageBox::Ok);
+        return;
+    }
+
+    //delete snapshot files
+    for(int i=0; i<count()-1; i++)
+    {
+        QFile snap(BlackChirp::getExptFile(d_num,BlackChirp::FidFile,i));
+        if(snap.exists())
+            snap.remove();
+    }
+
+    //rewrite or delete snp file
+    QFile snp(BlackChirp::getExptFile(d_num,BlackChirp::SnapFile));
+    if(snp.exists())
+    {
+        if(snp.open(QIODevice::ReadOnly))
+        {
+            QByteArrayList l;
+            while(!snp.atEnd())
+            {
+                QByteArray line = snp.readLine();
+                if(!line.isEmpty() && !line.startsWith("fid"))
+                    l.append(line);
+            }
+            snp.close();
+
+            //if there's anything left (eg LIF snapshots), rewrite the file with those
+            if(!l.isEmpty())
+            {
+                snp.open(QIODevice::WriteOnly);
+                while(!l.isEmpty())
+                    snp.write(l.takeFirst());
+                snp.close();
+            }
+            else
+                snp.remove();
+
+        }
+        else
+            snp.remove();
+    }
+
+    emit finalizedList(d_snapList);
+
 }

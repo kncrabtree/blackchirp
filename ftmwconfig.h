@@ -43,6 +43,7 @@ public:
     double ftMax() const;
     QPair<int,int> chirpRange() const;
     bool writeFidFile(int num, int snapNum = -1) const;
+    static bool writeFidFile(int num, QList<Fid> list);
 
     bool prepareForAcquisition();
     void setEnabled();

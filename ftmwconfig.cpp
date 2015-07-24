@@ -193,6 +193,21 @@ bool FtmwConfig::writeFidFile(int num, int snapNum) const
         return false;
 }
 
+bool FtmwConfig::writeFidFile(int num, QList<Fid> list)
+{
+    QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile));
+    if(fid.open(QIODevice::WriteOnly))
+    {
+        QDataStream d(&fid);
+        d << Fid::magicString();
+        d << list;
+        fid.close();
+        return true;
+    }
+    else
+        return false;
+}
+
 bool FtmwConfig::prepareForAcquisition()
 {
     Fid f(scopeConfig().xIncr,loFreq(),QVector<qint64>(0),sideband(),scopeConfig().yMult,1);

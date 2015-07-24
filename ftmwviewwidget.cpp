@@ -376,6 +376,7 @@ void FtmwViewWidget::snapshotTaken()
         connect(p_snapWidget,&FtmwSnapshotWidget::snapListChanged,this,&FtmwViewWidget::snapListUpdate);
         connect(p_snapWidget,&FtmwSnapshotWidget::refChanged,this,&FtmwViewWidget::snapRefChanged);
         connect(p_snapWidget,&FtmwSnapshotWidget::refChanged,this,&FtmwViewWidget::snapDiffChanged);
+        connect(p_snapWidget,&FtmwSnapshotWidget::finalizedList,this,&FtmwViewWidget::finalizedSnapList);
         p_snapWidget->setSelectionEnabled(false);
         p_snapWidget->setDiffMode(false);
         p_snapWidget->setFinalizeEnabled(false);
@@ -441,5 +442,34 @@ void FtmwViewWidget::snapDiffChanged()
         d_currentFid = p_snapWidget->getDiffFid(ui->frameBox->value()-1);
         updateFtPlot();
     }
+}
+
+void FtmwViewWidget::finalizedSnapList(const QList<Fid> l)
+{
+    Q_ASSERT(l.size() > 0);
+    d_currentFidList = l;
+    updateShotsLabel(l.first().shots());
+
+    if(ui->snapshotCheckbox->isChecked())
+    {
+        ui->snapshotCheckbox->blockSignals(true);
+        ui->snapshotCheckbox->setChecked(false);
+        ui->snapshotCheckbox->setEnabled(false);
+        ui->snapshotCheckbox->blockSignals(false);
+    }
+
+    if(d_mode == BlackChirp::FtmwViewSnapDiff)
+    {
+        ui->singleFrameButton->blockSignals(true);
+        ui->singleFrameButton->setChecked(true);
+        ui->singleFrameButton->blockSignals(false);
+        d_mode = BlackChirp::FtmwViewSingle;
+    }
+
+    ui->snapDiffButton->setEnabled(false);
+
+    p_snapWidget->setEnabled(false);
+    p_snapWidget->deleteLater();
+    p_snapWidget = nullptr;
 }
 

@@ -44,6 +44,7 @@ public slots:
     void snapListUpdate();
     void snapRefChanged();
     void snapDiffChanged();
+    void finalizedSnapList(const QList<Fid> l);
 
 
 private:
