@@ -4,6 +4,7 @@
 #include "ftmwscope.h"
 
 #include <QTimer>
+#include <QAbstractSocket>
 
 class QTcpSocket;
 
@@ -26,6 +27,7 @@ public slots:
     void readWaveform();
     void queryScope();
     void wakeUp();
+    void socketError(QAbstractSocket::SocketError e);
 
 private:
     bool d_waitingForReply;

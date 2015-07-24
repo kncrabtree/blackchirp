@@ -60,9 +60,11 @@ bool Dsa71604c::testConnection()
 
 void Dsa71604c::initialize()
 {
-    p_comm->setReadOptions(1000,true,QByteArray("\n"));
+    p_comm->setReadOptions(100,true,QByteArray("\n"));
     p_comm->initialize();
     p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
+    connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),this,&Dsa71604c::socketError);
+    p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
     testConnection();
 }
 
@@ -777,6 +779,12 @@ void Dsa71604c::wakeUp()
 //        return;
 
     beginAcquisition();
+}
+
+void Dsa71604c::socketError(QAbstractSocket::SocketError e)
+{
+    emit logMessage(QString("Socket error: %1").arg((int)e));
+    emit logMessage(QString("Error message: %1").arg(p_socket->errorString()));
 }
 
 QByteArray Dsa71604c::scopeQueryCmd(QString query)

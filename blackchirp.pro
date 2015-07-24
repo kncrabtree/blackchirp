@@ -90,7 +90,7 @@ IOBOARD=0
 # -----------------------------------------------
 
 # FTMW Oscilloscope (0 = virtual, 1 = DSA71604C)
-FTMWSCOPE=0
+FTMWSCOPE=1
 
 #AWG (0 = virtual, 1 = AWG 70002A)
 AWG=1
