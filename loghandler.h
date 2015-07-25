@@ -15,6 +15,9 @@ public:
     explicit LogHandler(bool logToFile = true, QObject *parent = 0);
     ~LogHandler();
 
+    static QString formatForDisplay(QString text, BlackChirp::LogMessageCode type, QDateTime t = QDateTime::currentDateTime());
+    static QString formatForFile(QString text, BlackChirp::LogMessageCode type, QDateTime t = QDateTime::currentDateTime());
+
 signals:
 	//sends the formatted messages to the UI
 	void sendLogMessage(const QString);
@@ -34,7 +37,7 @@ private:
     int d_currentMonth;
     bool d_logToFile;
 
-    void writeToFile(const QString text, const BlackChirp::LogMessageCode type, const QString timeStamp);
+    void writeToFile(const QString text, const BlackChirp::LogMessageCode type, QDateTime t = QDateTime::currentDateTime());
     QString makeLogFileName();
 
 

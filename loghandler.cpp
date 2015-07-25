@@ -19,21 +19,9 @@ LogHandler::~LogHandler()
         d_logFile.close();
 }
 
-void LogHandler::logMessage(const QString text, const BlackChirp::LogMessageCode type)
-{
-    logMessageWithTime(text,type,QDateTime::currentDateTime());
-}
-
-void LogHandler::logMessageWithTime(const QString text, const BlackChirp::LogMessageCode type, QDateTime t)
+QString LogHandler::formatForDisplay(QString text, BlackChirp::LogMessageCode type, QDateTime t)
 {
     QString timeStamp = t.toString();
-
-    if(d_logToFile)
-        writeToFile(text, type, timeStamp);
-
-    if(type == BlackChirp::LogDebug)
-        return;
-
     QString out;
     out.append(QString("<span style=\"font-size:7pt\">%1</span> ").arg(timeStamp));
 
@@ -41,11 +29,9 @@ void LogHandler::logMessageWithTime(const QString text, const BlackChirp::LogMes
     {
     case BlackChirp::LogWarning:
         out.append(QString("<span style=\"font-weight:bold\">Warning: %1</span>").arg(text));
-        emit iconUpdate(type);
         break;
     case BlackChirp::LogError:
         out.append(QString("<span style=\"font-weight:bold;color:red\">Error: %1</span>").arg(text));
-        emit iconUpdate(type);
         break;
     case BlackChirp::LogHighlight:
         out.append(QString("<span style=\"font-weight:bold;color:green\">%1</span>").arg(text));
@@ -55,8 +41,52 @@ void LogHandler::logMessageWithTime(const QString text, const BlackChirp::LogMes
         out.append(text);
         break;
     }
+    return out;
+}
 
-    //emit signal containing formatted message
+QString LogHandler::formatForFile(QString text, BlackChirp::LogMessageCode type, QDateTime t)
+{
+    QString timeStamp = t.toString();
+    QString out = QString("%1: ").arg(timeStamp);
+    switch (type)
+    {
+    case BlackChirp::LogWarning:
+        out.append(QString("[WARNING] "));
+        break;
+    case BlackChirp::LogError:
+        out.append(QString("[ERROR] "));
+        break;
+    case BlackChirp::LogDebug:
+        out.append(QString("[DEBUG] "));
+        break;
+    case BlackChirp::LogHighlight:
+        out.append(QString("[HIGHLIGHT] "));
+        break;
+    default:
+        break;
+    }
+
+    out.append(text).replace(QChar('\r'),QChar(' ')).replace(QChar('\n'),QChar(' ')).append(QString("\n"));
+    return out;
+}
+
+void LogHandler::logMessage(const QString text, const BlackChirp::LogMessageCode type)
+{
+    logMessageWithTime(text,type,QDateTime::currentDateTime());
+}
+
+void LogHandler::logMessageWithTime(const QString text, const BlackChirp::LogMessageCode type, QDateTime t)
+{
+    if(d_logToFile)
+        writeToFile(text, type, t);
+
+    if(type == BlackChirp::LogDebug)
+        return;
+
+    if(type == BlackChirp::LogError || type == BlackChirp::LogWarning)
+        emit iconUpdate(type);
+
+    QString out = formatForDisplay(text,type,t);
     emit sendLogMessage(out);
 }
 
@@ -77,7 +107,6 @@ void LogHandler::endExperimentLog()
 
 void LogHandler::experimentLogMessage(int num, QString text, BlackChirp::LogMessageCode type)
 {
-    QString timeStamp = QDateTime::currentDateTime().toString();
     logMessageWithTime(text,type,QDateTime::currentDateTime());
 
     if(d_exptLog.isOpen() && d_exptLog.fileName().endsWith(QString("%1.log").arg(num)))
@@ -86,32 +115,13 @@ void LogHandler::experimentLogMessage(int num, QString text, BlackChirp::LogMess
     QFile f(BlackChirp::getExptFile(num,BlackChirp::LogFile));
     if(f.open(QIODevice::Append))
     {
-        QString msg = QString("%1: ").arg(timeStamp);
-        switch (type)
-        {
-        case BlackChirp::LogWarning:
-            msg.append(QString("[WARNING] "));
-            break;
-        case BlackChirp::LogError:
-            msg.append(QString("[ERROR] "));
-            break;
-        case BlackChirp::LogDebug:
-            msg.append(QString("[DEBUG] "));
-            break;
-        case BlackChirp::LogHighlight:
-            msg.append(QString("[HIGHLIGHT] "));
-            break;
-        default:
-            break;
-        }
-
-        msg.append(text).append(QString("\n"));
+        QString msg = formatForFile(text,type);
         f.write(msg.toLatin1());
         f.close();
     }
 }
 
-void LogHandler::writeToFile(const QString text, const BlackChirp::LogMessageCode type, const QString timeStamp)
+void LogHandler::writeToFile(const QString text, const BlackChirp::LogMessageCode type, QDateTime t)
 {
     QDate now = QDate::currentDate();
     if(now.month() != d_currentMonth)
@@ -127,26 +137,7 @@ void LogHandler::writeToFile(const QString text, const BlackChirp::LogMessageCod
         d_logFile.open(QIODevice::Append);
     }
 
-    QString msg = QString("%1: ").arg(timeStamp);
-    switch (type)
-    {
-    case BlackChirp::LogWarning:
-        msg.append(QString("[WARNING] "));
-        break;
-    case BlackChirp::LogError:
-        msg.append(QString("[ERROR] "));
-        break;
-    case BlackChirp::LogDebug:
-        msg.append(QString("[DEBUG] "));
-        break;
-    case BlackChirp::LogHighlight:
-        msg.append(QString("[HIGHLIGHT] "));
-        break;
-    default:
-        break;
-    }
-
-    msg.append(text).append(QString("\n"));
+    QString msg = formatForFile(text,type,t);
 
     if(d_logFile.isOpen())
     {
