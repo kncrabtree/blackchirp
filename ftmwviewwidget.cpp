@@ -7,10 +7,10 @@
 #include "ftworker.h"
 #include "ftmwsnapshotwidget.h"
 
-FtmwViewWidget::FtmwViewWidget(QWidget *parent) :
+FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     QWidget(parent),
     ui(new Ui::FtmwViewWidget), d_mode(BlackChirp::FtmwViewLive), d_replotWhenDone(false), d_processing(false),
-    d_pzf(0), d_currentExptNum(-1), p_snapWidget(nullptr)
+    d_pzf(0), d_currentExptNum(-1), p_snapWidget(nullptr), d_path(path)
 {
     ui->setupUi(this);
 
@@ -371,7 +371,7 @@ void FtmwViewWidget::snapshotTaken()
 
     if(p_snapWidget == nullptr)
     {
-        p_snapWidget = new FtmwSnapshotWidget(d_currentExptNum,this);
+        p_snapWidget = new FtmwSnapshotWidget(d_currentExptNum,d_path,this);
         connect(p_snapWidget,&FtmwSnapshotWidget::loadFailed,this,&FtmwViewWidget::snapshotLoadError);
         connect(p_snapWidget,&FtmwSnapshotWidget::snapListChanged,this,&FtmwViewWidget::snapListUpdate);
         connect(p_snapWidget,&FtmwSnapshotWidget::refChanged,this,&FtmwViewWidget::snapRefChanged);

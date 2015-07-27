@@ -41,7 +41,7 @@ public:
     QList<QVector<BlackChirp::LifPoint>> lifData() const;
     QMap<QString,QPair<QVariant,QString> > headerMap() const;
     void parseLine(QString key, QVariant val);
-    bool loadLifData(int num);
+    bool loadLifData(int num, const QString path = QString(""));
     QPair<QPoint,BlackChirp::LifPoint> lastUpdatedLifPoint() const;
     bool writeLifFile(int num) const;
 

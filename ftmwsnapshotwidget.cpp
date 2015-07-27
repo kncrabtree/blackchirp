@@ -16,8 +16,8 @@
 #include "ftmwconfig.h"
 #include "snapworker.h"
 
-FtmwSnapshotWidget::FtmwSnapshotWidget(int num, QWidget *parent) : QWidget(parent), d_num(num), d_busy(false),
-    d_updateWhenDone(false)
+FtmwSnapshotWidget::FtmwSnapshotWidget(int num, const QString path, QWidget *parent) : QWidget(parent), d_num(num), d_busy(false),
+    d_updateWhenDone(false), d_path(path)
 {
     QVBoxLayout *vl = new QVBoxLayout;
     QGroupBox *gb = new QGroupBox(QString("Snapshot Control"));
@@ -44,8 +44,9 @@ FtmwSnapshotWidget::FtmwSnapshotWidget(int num, QWidget *parent) : QWidget(paren
 
     vbl->addLayout(fl,0);
 
-    p_finalizeButton = new QPushButton(QString("Finalize"));
+    p_finalizeButton = new QPushButton(QString(" Finalize"));
     p_finalizeButton->setEnabled(false);
+    p_finalizeButton->setIcon(QIcon(QString(":/icons/check.png")));
     vbl->addWidget(p_finalizeButton,0);
 
     gb->setLayout(vbl);
@@ -96,13 +97,13 @@ Fid FtmwSnapshotWidget::getSnapFid(int i) const
 Fid FtmwSnapshotWidget::getRefFid(int i)
 {
     Q_ASSERT(p_refBox->value() < count());
-    return p_sw->parseFile(d_num,p_refBox->value()).at(i);
+    return p_sw->parseFile(d_num,p_refBox->value(),d_path).at(i);
 }
 
 Fid FtmwSnapshotWidget::getDiffFid(int i)
 {
     Q_ASSERT(p_diffBox->value() < count());
-    return p_sw->parseFile(d_num,p_diffBox->value()).at(i);
+    return p_sw->parseFile(d_num,p_diffBox->value(),d_path).at(i);
 }
 
 QSize FtmwSnapshotWidget::sizeHint() const
@@ -141,7 +142,7 @@ void FtmwSnapshotWidget::setFinalizeEnabled(bool en)
 bool FtmwSnapshotWidget::readSnapshots()
 {
     bool out = false;
-    QFile snp(BlackChirp::getExptFile(d_num,BlackChirp::SnapFile));
+    QFile snp(BlackChirp::getExptFile(d_num,BlackChirp::SnapFile,d_path));
     if(snp.open(QIODevice::ReadOnly))
     {
         bool parseSuccess = false;
@@ -185,7 +186,7 @@ bool FtmwSnapshotWidget::readSnapshots()
 
             for(int i = count()-1; i < numSnaps; i++)
             {
-                QFile f(BlackChirp::getExptFile(d_num,BlackChirp::FidFile,i));
+                QFile f(BlackChirp::getExptFile(d_num,BlackChirp::FidFile,d_path,i));
                 if(f.exists())
                 {
                     QListWidgetItem *item = new QListWidgetItem(QString("Snapshot %1").arg(i));
@@ -285,7 +286,7 @@ void FtmwSnapshotWidget::finalize()
         return;
 
     //write fid file
-    if(!FtmwConfig::writeFidFile(d_num,d_snapList))
+    if(!FtmwConfig::writeFidFile(d_num,d_snapList,d_path))
     {
         QMessageBox::critical(qobject_cast<QWidget*>(parent()),QString("Save failed!"),QString("Could not write FID file!"),QMessageBox::Ok);
         return;
@@ -299,20 +300,20 @@ void FtmwSnapshotWidget::finalize()
             snaps.append(i);
     }
 
-    emit experimentLogMessage(d_num,QString("Finalizing snapshots...."));
+    emit experimentLogMessage(d_num,QString("Finalizing snapshots...."),BlackChirp::LogNormal,d_path);
 
     if(snaps.isEmpty() && remainderKept)
-        emit experimentLogMessage(d_num,QString("All snapshots kept."));
+        emit experimentLogMessage(d_num,QString("All snapshots kept."),BlackChirp::LogNormal,d_path);
     else
     {
         if(snaps.isEmpty())
-            emit experimentLogMessage(d_num,QString("All snapshots removed."));
+            emit experimentLogMessage(d_num,QString("All snapshots removed."),BlackChirp::LogNormal,d_path);
         else if(snaps.size() == 1)
-            emit experimentLogMessage(d_num,QString("Removed snapshot %1.").arg(snaps.first()));
+            emit experimentLogMessage(d_num,QString("Removed snapshot %1.").arg(snaps.first()),BlackChirp::LogNormal,d_path);
         else if(snaps.size() == 2)
         {
             std::stable_sort(snaps.begin(),snaps.end());
-            emit experimentLogMessage(d_num,QString("Removed snapshots %1 and %2.").arg(snaps.first()).arg(snaps.last()));
+            emit experimentLogMessage(d_num,QString("Removed snapshots %1 and %2.").arg(snaps.first()).arg(snaps.last()),BlackChirp::LogNormal,d_path);
         }
         else
         {
@@ -320,28 +321,28 @@ void FtmwSnapshotWidget::finalize()
             QString snapString = QString("and %1").arg(snaps.last());
             for(int i = snaps.size()-2; i>=0; i--)
                 snapString.prepend(QString("%1, ").arg(snaps.at(i)));
-            emit experimentLogMessage(d_num,QString("Removed snapshots %1.").arg(snapString));
+            emit experimentLogMessage(d_num,QString("Removed snapshots %1.").arg(snapString),BlackChirp::LogNormal,d_path);
         }
     }
 
     if(remainderKept)
-        emit experimentLogMessage(d_num,QString("Remainder of shots kept."));
+        emit experimentLogMessage(d_num,QString("Remainder of shots kept."),BlackChirp::LogNormal,d_path);
     else
-        emit experimentLogMessage(d_num,QString("Remainder of shots removed."));
+        emit experimentLogMessage(d_num,QString("Remainder of shots removed."),BlackChirp::LogNormal,d_path);
 
-    emit experimentLogMessage(d_num,QString("Final number of shots: %1").arg(d_snapList.first().shots()));
+    emit experimentLogMessage(d_num,QString("Final number of shots: %1").arg(d_snapList.first().shots()),BlackChirp::LogNormal,d_path);
 
 
     //delete snapshot files
     for(int i=0; i<count()-1; i++)
     {
-        QFile snap(BlackChirp::getExptFile(d_num,BlackChirp::FidFile,i));
+        QFile snap(BlackChirp::getExptFile(d_num,BlackChirp::FidFile,d_path,i));
         if(snap.exists())
             snap.remove();
     }
 
     //rewrite or delete snp file
-    QFile snp(BlackChirp::getExptFile(d_num,BlackChirp::SnapFile));
+    QFile snp(BlackChirp::getExptFile(d_num,BlackChirp::SnapFile,d_path));
     if(snp.exists())
     {
         if(snp.open(QIODevice::ReadOnly))

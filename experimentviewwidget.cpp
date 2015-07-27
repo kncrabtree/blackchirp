@@ -14,9 +14,9 @@
 #include "trackingviewwidget.h"
 #include "loghandler.h"
 
-ExperimentViewWidget::ExperimentViewWidget(int num, QWidget *parent) : QWidget(parent)
+ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *parent) : QWidget(parent)
 {
-    d_experiment = Experiment(num);
+    d_experiment = Experiment(num,path);
     setWindowFlags(Qt::Window);
     setWindowTitle(QString("Experiment %1").arg(num));
     setAttribute(Qt::WA_DeleteOnClose);
@@ -44,7 +44,7 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QWidget *parent) : QWidget(p
 
     if(d_experiment.ftmwConfig().isEnabled())
     {
-        QWidget *ftmw = buildFtmwWidget();
+        QWidget *ftmw = buildFtmwWidget(path);
         if(ftmw != nullptr)
             p_tabWidget->addTab(ftmw,QString("CP-FTMW"));
     }
@@ -60,7 +60,7 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QWidget *parent) : QWidget(p
     if(tracking != nullptr)
         p_tabWidget->addTab(tracking,QString("Tracking"));
 
-    QWidget *log = buildLogWidget();
+    QWidget *log = buildLogWidget(path);
     if(log != nullptr)
     {
         p_tabWidget->addTab(log,QString("Log"));
@@ -108,7 +108,7 @@ QWidget *ExperimentViewWidget::buildHeaderWidget()
     return hdr;
 }
 
-QWidget *ExperimentViewWidget::buildFtmwWidget()
+QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
 {
     QWidget *out = nullptr;
     p_ftmw = nullptr;
@@ -116,7 +116,7 @@ QWidget *ExperimentViewWidget::buildFtmwWidget()
     {
         out = new QWidget;
         QVBoxLayout *vbl = new QVBoxLayout;
-        p_ftmw = new FtmwViewWidget(out);
+        p_ftmw = new FtmwViewWidget(out,path);
         vbl->addWidget(p_ftmw);
         out->setLayout(vbl);
 
@@ -125,7 +125,7 @@ QWidget *ExperimentViewWidget::buildFtmwWidget()
         p_ftmw->updateShotsLabel(d_experiment.ftmwConfig().fidList().first().shots());
 
         //check for snap file
-        QFile snp(BlackChirp::getExptFile(d_experiment.number(),BlackChirp::SnapFile));
+        QFile snp(BlackChirp::getExptFile(d_experiment.number(),BlackChirp::SnapFile,path));
         if(snp.exists() && snp.open(QIODevice::ReadOnly))
         {
             bool fids = false;
@@ -244,7 +244,7 @@ QWidget *ExperimentViewWidget::buildTrackingWidget()
     return tracking;
 }
 
-QWidget *ExperimentViewWidget::buildLogWidget()
+QWidget *ExperimentViewWidget::buildLogWidget(QString path)
 {
     QWidget *log = new QWidget;
     QBoxLayout *vbl = new QVBoxLayout;
@@ -255,7 +255,7 @@ QWidget *ExperimentViewWidget::buildLogWidget()
     vbl->addWidget(te);
     log->setLayout(vbl);
 
-    QFile f(BlackChirp::getExptFile(d_experiment.number(),BlackChirp::LogFile));
+    QFile f(BlackChirp::getExptFile(d_experiment.number(),BlackChirp::LogFile,path));
     if(f.open(QIODevice::ReadOnly))
     {
         while(!f.atEnd())

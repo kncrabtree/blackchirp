@@ -14,7 +14,7 @@ class ExperimentViewWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit ExperimentViewWidget(int num, QWidget *parent = 0);
+    explicit ExperimentViewWidget(int num, QString path = QString(""), QWidget *parent = 0);
 
     QSize sizeHint() const;
 
@@ -30,10 +30,10 @@ private:
     LogHandler *p_lh;
 
     QWidget *buildHeaderWidget();
-    QWidget *buildFtmwWidget();
+    QWidget *buildFtmwWidget(QString path = QString(""));
     QWidget *buildLifWidget();
     QWidget *buildTrackingWidget();
-    QWidget *buildLogWidget();
+    QWidget *buildLogWidget(QString path = QString(""));
 };
 
 #endif // EXPERIMENTVIEWWIDGET_H

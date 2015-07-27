@@ -23,15 +23,15 @@ Experiment &Experiment::operator=(const Experiment &rhs)
     return *this;
 }
 
-Experiment::Experiment(const int num) : data(new ExperimentData)
+Experiment::Experiment(const int num, QString exptPath) : data(new ExperimentData)
 {
-    QDir d(BlackChirp::getExptDir(num));
+    QDir d(BlackChirp::getExptDir(num,exptPath));
     if(!d.exists())
         return;
 
     data->iobCfg = IOBoardConfig(false);
 
-    QFile hdr(BlackChirp::getExptFile(num,BlackChirp::HeaderFile));
+    QFile hdr(BlackChirp::getExptFile(num,BlackChirp::HeaderFile,exptPath));
     if(hdr.open(QIODevice::ReadOnly))
     {
         while(!hdr.atEnd())
@@ -67,12 +67,12 @@ Experiment::Experiment(const int num) : data(new ExperimentData)
 
         if(data->ftmwCfg.isEnabled())
         {
-            data->ftmwCfg.loadChirps(num);
-            data->ftmwCfg.loadFids(num);
+            data->ftmwCfg.loadChirps(num,exptPath);
+            data->ftmwCfg.loadFids(num,exptPath);
         }
 
         if(data->lifCfg.isEnabled())
-            data->lifCfg.loadLifData(num);
+            data->lifCfg.loadLifData(num,exptPath);
     }
     else
     {
@@ -81,7 +81,7 @@ Experiment::Experiment(const int num) : data(new ExperimentData)
     }
 
     //load time data
-    QFile tdt(BlackChirp::getExptFile(num,BlackChirp::TimeFile));
+    QFile tdt(BlackChirp::getExptFile(num,BlackChirp::TimeFile,exptPath));
     if(tdt.open(QIODevice::ReadOnly))
     {
         bool plot = true;
@@ -351,6 +351,7 @@ void Experiment::setInitialized()
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     int num = s.value(QString("exptNum"),0).toInt()+1;
+    num = 1; //REMOVE
     data->number = num;
 
     if(ftmwConfig().isEnabled() && ftmwConfig().type() == BlackChirp::FtmwPeakUp)
@@ -406,7 +407,7 @@ void Experiment::setInitialized()
     data->isInitialized = initSuccess;
 
     if(initSuccess)
-        s.setValue(QString("exptNum"),0); //FIXME
+        s.setValue(QString("exptNum"),number());
 
 }
 
@@ -741,7 +742,7 @@ bool Experiment::saveTimeFile() const
             t << QString("\n\n#NoPlotData\n\n");
             QString name = BlackChirp::channelNameLookup(noPlot.first().first);
             if(name.isEmpty())
-                name = plot.first().first;
+                name = noPlot.first().first;
 
             t << name << QString("_%1").arg(data->number);
             for(int i=1; i<noPlot.size(); i++)

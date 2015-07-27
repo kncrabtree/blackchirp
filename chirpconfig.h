@@ -19,7 +19,7 @@ public:
     ChirpConfig();
     ChirpConfig(const ChirpConfig &);
     ChirpConfig &operator=(const ChirpConfig &);
-    ChirpConfig(int num);
+    ChirpConfig(int num, QString path = QString(""));
     ~ChirpConfig();
 
     bool compareTxParams(const ChirpConfig &other) const;

@@ -15,7 +15,7 @@ class FtmwSnapshotWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit FtmwSnapshotWidget(int num, QWidget *parent = 0);
+    explicit FtmwSnapshotWidget(int num, const QString path = QString(""), QWidget *parent = 0);
     ~FtmwSnapshotWidget();
 
     int count() const;
@@ -34,7 +34,7 @@ signals:
     void refChanged();
     void diffChanged();
     void finalizedList(const QList<Fid>);
-    void experimentLogMessage(int,QString,BlackChirp::LogMessageCode=BlackChirp::LogNormal);
+    void experimentLogMessage(int,QString,BlackChirp::LogMessageCode=BlackChirp::LogNormal,QString=QString(""));
 
 public slots:
     void setSelectionEnabled(bool en);
@@ -54,6 +54,7 @@ private:
 
     int d_num;
     bool d_busy, d_updateWhenDone;
+    QString d_path;
     QList<Fid> d_snapList;
 };
 

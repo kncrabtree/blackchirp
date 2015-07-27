@@ -425,6 +425,8 @@
     <addaction name="menuTracking_2"/>
     <addaction name="actionControl"/>
     <addaction name="actionLog"/>
+    <addaction name="separator"/>
+    <addaction name="actionView_Experiment"/>
    </widget>
    <addaction name="menuAcquisition"/>
    <addaction name="menuHardware"/>
@@ -640,6 +642,15 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+5</string>
+   </property>
+  </action>
+  <action name="actionView_Experiment">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/viewold.png</normaloff>:/icons/viewold.png</iconset>
+   </property>
+   <property name="text">
+    <string>View Experiment...</string>
    </property>
   </action>
  </widget>

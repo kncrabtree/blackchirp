@@ -8,7 +8,12 @@
 #include <QLabel>
 #include <QDoubleSpinBox>
 #include <QLineEdit>
+#include <QDialog>
 #include <QMessageBox>
+#include <QCheckBox>
+#include <QToolButton>
+#include <QFileDialog>
+#include <QDir>
 
 #include "communicationdialog.h"
 #include "ioboardconfigdialog.h"
@@ -241,13 +246,15 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionAutoscale_All,&QAction::triggered,ui->trackingViewWidget,&TrackingViewWidget::autoScaleAll);
     connect(ui->actionSleep,&QAction::toggled,this,&MainWindow::sleep);
     connect(ui->actionTest_All_Connections,&QAction::triggered,p_hwm,&HardwareManager::testAll);
+    connect(ui->actionView_Experiment,&QAction::triggered,this,&MainWindow::viewExperiment);
 
     connect(ui->lifControlWidget,&LifControlWidget::lifColorChanged,
             ui->lifDisplayWidget,&LifDisplayWidget::checkLifColors);
     connect(ui->lifDisplayWidget,&LifDisplayWidget::lifColorChanged,
             ui->lifControlWidget,&LifControlWidget::checkLifColors);
 
-
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    ui->exptSpinBox->setValue(s.value(QString("exptNum"),0).toInt());
     connect(ui->actionTest,&QAction::triggered,this,&MainWindow::test);
     configureUi(Idle);
 }
@@ -558,6 +565,119 @@ void MainWindow::sleep(bool s)
         configureUi(Idle);
 }
 
+void MainWindow::viewExperiment()
+{
+    QDialog d(this);
+    d.setWindowTitle(QString("View experiment"));
+    QVBoxLayout *vbl = new QVBoxLayout;
+    QFormLayout *fl = new QFormLayout;
+    QHBoxLayout *hl = new QHBoxLayout;
+
+    QSpinBox *numBox = new QSpinBox(&d);
+
+    fl->addRow(QString("Experiment Number"),numBox);
+
+    QCheckBox *pathBox = new QCheckBox(QString("Specify path"),&d);
+    fl->addRow(pathBox);
+
+    QLineEdit *pathEdit = new QLineEdit(&d);
+    QToolButton *browseButton = new QToolButton(&d);
+    browseButton->setIcon(QIcon(QString(":/icons/view.png")));
+
+    connect(browseButton,&QToolButton::clicked,[=](){
+        QString path = QFileDialog::getExistingDirectory(this,QString("Select experiment directory"),QString("~"));
+        if(!path.isEmpty())
+            pathEdit->setText(path);
+    });
+
+    hl->addWidget(pathEdit,1);
+    hl->addWidget(browseButton,0);
+    fl->addRow(hl);
+
+    int lastCompletedExperiment = ui->exptSpinBox->value();
+    if(d_batchThread->isRunning())
+        lastCompletedExperiment--;
+
+    if(lastCompletedExperiment < 1)
+    {
+        numBox->setRange(0,__INT_MAX__);
+        numBox->setSpecialValueText(QString("Select..."));
+        numBox->setEnabled(false);
+        pathBox->setChecked(true);
+        pathBox->setEnabled(false);
+    }
+    else
+    {
+        numBox->setRange(1,lastCompletedExperiment);
+        numBox->setValue(lastCompletedExperiment);
+        pathBox->setChecked(false);
+        pathEdit->setEnabled(false);
+        browseButton->setEnabled(false);
+    }
+
+    connect(pathBox,&QCheckBox::toggled,[=](bool checked){
+       if(checked)
+       {
+           pathEdit->setEnabled(true);
+           browseButton->setEnabled(true);
+           numBox->setRange(1,__INT_MAX__);
+       }
+       else
+       {
+           numBox->setRange(1,lastCompletedExperiment);
+           pathEdit->clear();
+           pathEdit->setEnabled(false);
+           browseButton->setEnabled(false);
+       }
+    });
+
+    QDialogButtonBox *bb = new QDialogButtonBox(QDialogButtonBox::Open|QDialogButtonBox::Cancel,&d);
+
+    connect(bb->button(QDialogButtonBox::Open),&QPushButton::clicked,&d,&QDialog::accept);
+    connect(bb->button(QDialogButtonBox::Cancel),&QPushButton::clicked,&d,&QDialog::reject);
+
+    vbl->addLayout(fl);
+    vbl->addWidget(bb);
+
+    d.setLayout(vbl);
+
+    if(d.exec() == QDialog::Accepted)
+    {
+        QString path = QString("");
+        if(pathBox->isChecked())
+        {
+            path = pathEdit->text();
+            if(path.isEmpty())
+            {
+                QMessageBox::critical(this,QString("Load error"),QString("Cannot open experiment with an empty path."),QMessageBox::Ok);
+                return;
+            }
+
+            QDir dir(path);
+            if(!dir.exists())
+            {
+                QMessageBox::critical(this,QString("Load error"),QString("The directory %1 does not exist. Could not load experiment.").arg(dir.absolutePath()),QMessageBox::Ok);
+                return;
+            }
+        }
+
+        int num = numBox->value();
+        if(num < 1)
+        {
+            QMessageBox::critical(this,QString("Load error"),QString("Cannot open an experiment numbered below 1. (You chose %1)").arg(num),QMessageBox::Ok);
+            return;
+        }
+
+        ExperimentViewWidget *evw = new ExperimentViewWidget(1,path);
+        connect(this,&MainWindow::closing,evw,&ExperimentViewWidget::close);
+        evw->show();
+        evw->raise();
+    }
+
+
+
+}
+
 void MainWindow::configureUi(MainWindow::ProgramState s)
 {
     d_state = s;
@@ -685,8 +805,5 @@ void MainWindow::closeEvent(QCloseEvent *ev)
 
 void MainWindow::test()
 {
-    ExperimentViewWidget *evw = new ExperimentViewWidget(1);
-    connect(this,&MainWindow::closing,evw,&ExperimentViewWidget::close);
-    evw->show();
-    evw->raise();
+
 }

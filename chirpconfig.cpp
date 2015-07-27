@@ -47,9 +47,9 @@ ChirpConfig &ChirpConfig::operator=(const ChirpConfig &rhs)
     return *this;
 }
 
-ChirpConfig::ChirpConfig(int num) : data(new ChirpConfigData)
+ChirpConfig::ChirpConfig(int num, QString path) : data(new ChirpConfigData)
 {
-    QFile f(BlackChirp::getExptFile(num,BlackChirp::ChirpFile));
+    QFile f(BlackChirp::getExptFile(num,BlackChirp::ChirpFile,path));
     if(!f.open(QIODevice::ReadOnly))
         return;
 

@@ -43,7 +43,7 @@ public:
     double ftMax() const;
     QPair<int,int> chirpRange() const;
     bool writeFidFile(int num, int snapNum = -1) const;
-    static bool writeFidFile(int num, QList<Fid> list);
+    static bool writeFidFile(int num, QList<Fid> list, QString path = QString(""));
 
     bool prepareForAcquisition();
     void setEnabled();
@@ -65,9 +65,9 @@ public:
 
     bool isComplete() const;
     QMap<QString,QPair<QVariant,QString> > headerMap() const;
-    void loadFids(const int num);
+    void loadFids(const int num, const QString path = QString(""));
     void parseLine(const QString key, const QVariant val);
-    void loadChirps(const int num);
+    void loadChirps(const int num, const QString path = QString(""));
 
 private:
     QSharedDataPointer<FtmwConfigData> data;

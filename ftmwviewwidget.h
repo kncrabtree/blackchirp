@@ -19,14 +19,14 @@ class FtmwViewWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit FtmwViewWidget(QWidget *parent = 0);
+    explicit FtmwViewWidget(QWidget *parent = 0, QString path = QString(""));
     ~FtmwViewWidget();
     void prepareForExperiment(const Experiment e);
 
 signals:
     void rollingAverageShotsChanged(int);
     void rollingAverageReset();
-    void experimentLogMessage(int,QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal);
+    void experimentLogMessage(int,QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal,QString=QString(""));
 
 public slots:
     void togglePanel(bool on);
@@ -59,6 +59,7 @@ private:
     QThread *p_ftThread;
     FtWorker *p_ftw;
     FtmwSnapshotWidget *p_snapWidget;
+    QString d_path;
 };
 
 #endif // FTMWVIEWWIDGET_H

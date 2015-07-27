@@ -21,7 +21,7 @@ public:
     Experiment();
     Experiment(const Experiment &);
     Experiment &operator=(const Experiment &);
-    Experiment(const int num);
+    Experiment(const int num, QString exptPath = QString(""));
     ~Experiment();
 
     int number() const;

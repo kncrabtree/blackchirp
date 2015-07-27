@@ -412,9 +412,9 @@ void LifConfig::parseLine(QString key, QVariant val)
 
 }
 
-bool LifConfig::loadLifData(int num)
+bool LifConfig::loadLifData(int num, const QString path)
 {
-    QFile lif(BlackChirp::getExptFile(num,BlackChirp::LifFile));
+    QFile lif(BlackChirp::getExptFile(num,BlackChirp::LifFile,path));
     if(lif.open(QIODevice::ReadOnly))
     {
         QDataStream d(&lif);

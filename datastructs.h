@@ -227,8 +227,8 @@ struct IOBoardChannel {
     IOBoardChannel(const IOBoardChannel &other) : enabled(other.enabled), name(other.name), plot(other.plot) {}
 };
 
-QString getExptFile(int num, BlackChirp::ExptFileType t, int snapNum = -1);
-QString getExptDir(int num);
+QString getExptFile(int num, BlackChirp::ExptFileType t, QString path = QString(""), int snapNum = -1);
+QString getExptDir(int num, QString path = QString(""));
 QString headerMapToString(QMap<QString,QPair<QVariant,QString>> map);
 QString channelNameLookup(QString key);
 

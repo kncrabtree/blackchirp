@@ -73,6 +73,7 @@ public slots:
     void updatePressureControl(bool en);
     void setLogIcon(BlackChirp::LogMessageCode c);
     void sleep(bool s);
+    void viewExperiment();
 
 private:
     Ui::MainWindow *ui;

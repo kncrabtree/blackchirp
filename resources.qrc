@@ -28,5 +28,8 @@
         <file>icons/controltab.png</file>
         <file>icons/lif.png</file>
         <file>icons/log.png</file>
+        <file>icons/check.png</file>
+        <file>icons/viewold.png</file>
+        <file>icons/view.png</file>
     </qresource>
 </RCC>

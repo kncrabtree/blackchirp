@@ -180,7 +180,7 @@ QPair<int, int> FtmwConfig::chirpRange() const
 
 bool FtmwConfig::writeFidFile(int num, int snapNum) const
 {
-    QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,snapNum));
+    QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,QString(""),snapNum));
     if(fid.open(QIODevice::WriteOnly))
     {
         QDataStream d(&fid);
@@ -193,9 +193,9 @@ bool FtmwConfig::writeFidFile(int num, int snapNum) const
         return false;
 }
 
-bool FtmwConfig::writeFidFile(int num, QList<Fid> list)
+bool FtmwConfig::writeFidFile(int num, QList<Fid> list, QString path)
 {
-    QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile));
+    QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,path));
     if(fid.open(QIODevice::WriteOnly))
     {
         QDataStream d(&fid);
@@ -422,9 +422,9 @@ QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
 
 }
 
-void FtmwConfig::loadFids(const int num)
+void FtmwConfig::loadFids(const int num, const QString path)
 {
-    QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile));
+    QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,path));
     if(fid.open(QIODevice::ReadOnly))
     {
         QDataStream d(&fid);
@@ -506,8 +506,8 @@ void FtmwConfig::parseLine(const QString key, const QVariant val)
     }
 }
 
-void FtmwConfig::loadChirps(const int num)
+void FtmwConfig::loadChirps(const int num, const QString path)
 {
-    data->chirpConfig = ChirpConfig(num);
+    data->chirpConfig = ChirpConfig(num,path);
 }
 

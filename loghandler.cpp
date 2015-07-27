@@ -108,14 +108,14 @@ void LogHandler::endExperimentLog()
     }
 }
 
-void LogHandler::experimentLogMessage(int num, QString text, BlackChirp::LogMessageCode type)
+void LogHandler::experimentLogMessage(int num, QString text, BlackChirp::LogMessageCode type, QString path)
 {
     logMessageWithTime(text,type,QDateTime::currentDateTime());
 
     if(d_exptLog.isOpen() && d_exptLog.fileName().endsWith(QString("%1.log").arg(num)))
         return;
 
-    QFile f(BlackChirp::getExptFile(num,BlackChirp::LogFile));
+    QFile f(BlackChirp::getExptFile(num,BlackChirp::LogFile,path));
     if(f.open(QIODevice::Append))
     {
         QString msg = formatForFile(text,type);

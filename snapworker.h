@@ -10,7 +10,7 @@ class SnapWorker : public QObject
     Q_OBJECT
 public:
     explicit SnapWorker(QObject *parent = 0);
-    QList<Fid> parseFile(int exptNum, int snapNum = -1);
+    QList<Fid> parseFile(int exptNum, int snapNum = -1, QString path = QString(""));
 
 signals:
     void fidListComplete(const QList<Fid>);

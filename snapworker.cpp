@@ -73,11 +73,11 @@ void SnapWorker::calculateFidList(int exptNum, const QList<int> snapList, bool s
     emit fidListComplete(out);
 }
 
-QList<Fid> SnapWorker::parseFile(int exptNum, int snapNum)
+QList<Fid> SnapWorker::parseFile(int exptNum, int snapNum, QString path)
 {
     QList<Fid> out;
 
-    QFile f(BlackChirp::getExptFile(exptNum,BlackChirp::FidFile,snapNum));
+    QFile f(BlackChirp::getExptFile(exptNum,BlackChirp::FidFile,path,snapNum));
     if(f.open(QIODevice::ReadOnly))
     {
         QDataStream d(&f);
