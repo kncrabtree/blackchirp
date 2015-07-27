@@ -17,6 +17,9 @@ LogHandler::~LogHandler()
 {
     if(d_logFile.isOpen())
         d_logFile.close();
+
+    if(d_exptLog.isOpen())
+        d_exptLog.close();
 }
 
 QString LogHandler::formatForDisplay(QString text, BlackChirp::LogMessageCode type, QDateTime t)
