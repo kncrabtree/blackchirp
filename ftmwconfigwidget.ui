@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>568</width>
+    <width>586</width>
     <height>331</height>
    </rect>
   </property>
@@ -400,6 +400,25 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>modeComboBox</tabstop>
+  <tabstop>targetShotsSpinBox</tabstop>
+  <tabstop>targetTimeDateTimeEdit</tabstop>
+  <tabstop>phaseCorrectionCheckBox</tabstop>
+  <tabstop>loFrequencyDoubleSpinBox</tabstop>
+  <tabstop>sidebandComboBox</tabstop>
+  <tabstop>fIDChannelSpinBox</tabstop>
+  <tabstop>verticalScaleDoubleSpinBox</tabstop>
+  <tabstop>triggerChannelSpinBox</tabstop>
+  <tabstop>triggerDelayDoubleSpinBox</tabstop>
+  <tabstop>triggerSlopeComboBox</tabstop>
+  <tabstop>sampleRateComboBox</tabstop>
+  <tabstop>recordLengthSpinBox</tabstop>
+  <tabstop>bytesPointSpinBox</tabstop>
+  <tabstop>fastFrameEnabledCheckBox</tabstop>
+  <tabstop>framesSpinBox</tabstop>
+  <tabstop>summaryFrameCheckBox</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

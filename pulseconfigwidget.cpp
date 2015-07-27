@@ -21,6 +21,7 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
     s.beginGroup(QString("pGen"));
     s.beginGroup(subKey);
     s.beginReadArray(QString("channels"));
+    QWidget *lastFocusWidget = nullptr;
     for(int i=0; i<BC_PGEN_NUMCHANNELS; i++)
     {
         s.setArrayIndex(i);
@@ -75,6 +76,7 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
         ui->pulseConfigBoxLayout->addWidget(ch.cfgButton,i+1,col,1,1);
         connect(ch.cfgButton,&QToolButton::clicked,[=](){ launchChannelConfig(i); } );
         col++;
+        lastFocusWidget = ch.cfgButton;
 
         ch.nameEdit = new QLineEdit(ch.label->text(),this);
         ch.nameEdit->setMaxLength(8);
@@ -123,6 +125,9 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
     ui->pulseConfigBoxLayout->setColumnStretch(3,0);
     ui->pulseConfigBoxLayout->setColumnStretch(4,0);
 
+    if(lastFocusWidget != nullptr)
+        setTabOrder(lastFocusWidget,ui->repRateBox);
+
     connect(ui->repRateBox,vc,this,&PulseConfigWidget::changeRepRate);
 
     updateHardwareLimits();
@@ -130,6 +135,8 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
     s.endArray();
     s.endGroup();
     s.endGroup();
+
+    setFocusPolicy(Qt::TabFocus);
 }
 
 PulseConfigWidget::~PulseConfigWidget()

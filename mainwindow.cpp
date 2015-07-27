@@ -123,6 +123,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     gl = static_cast<QGridLayout*>(ui->gasControlBox->layout());
     QGridLayout *gl2 = static_cast<QGridLayout*>(ui->flowStatusBox->layout());
+    QWidget *lastFocusWidget = nullptr;
     for(int i=0; i<BC_FLOW_NUMCHANNELS; i++)
     {
         FlowWidgets fw;
@@ -139,6 +140,7 @@ MainWindow::MainWindow(QWidget *parent) :
         connect(fw.controlBox,vc,[=](double val){
             QMetaObject::invokeMethod(p_hwm,"setFlowSetpoint",Q_ARG(int,i),Q_ARG(double,val));
         });
+        lastFocusWidget = fw.controlBox;
 
         fw.nameLabel = new QLabel(QString("Ch%1").arg(i+1),this);
         fw.nameLabel->setMinimumWidth(QFontMetrics(QFont(QString("sans-serif"))).width(QString("MMMMMMMM")));
@@ -152,6 +154,7 @@ MainWindow::MainWindow(QWidget *parent) :
         fw.displayBox->setSuffix(QString(" sccm"));
         fw.displayBox->blockSignals(true);
         fw.displayBox->setReadOnly(true);
+        fw.displayBox->setFocusPolicy(Qt::ClickFocus);
         fw.displayBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
 
         d_flowWidgets.append(fw);
@@ -169,6 +172,11 @@ MainWindow::MainWindow(QWidget *parent) :
     gl->addWidget(new QLabel(QString("Pressure Control Mode"),this),3+BC_FLOW_NUMCHANNELS,1,1,1,Qt::AlignRight);
     gl->addWidget(ui->pressureControlButton,3+BC_FLOW_NUMCHANNELS,2,1,1);
     gl->addItem(new QSpacerItem(10,10,QSizePolicy::Minimum,QSizePolicy::Expanding),4+BC_FLOW_NUMCHANNELS,0,1,3);
+    if(lastFocusWidget != nullptr)
+        setTabOrder(lastFocusWidget,ui->pressureControlBox);
+
+    setTabOrder(ui->pressureControlBox,ui->pressureControlButton);
+    setTabOrder(ui->pressureControlButton,ui->pulseConfigWidget);
 
     ui->pressureDoubleSpinBox->blockSignals(true);
     connect(ui->pressureControlButton,&QPushButton::toggled,[=](bool en){
@@ -224,8 +232,13 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionCommunication,&QAction::triggered,this,&MainWindow::launchCommunicationDialog);
     connect(ui->actionIO_Board,&QAction::triggered,this,&MainWindow::launchIOBoardDialog);
     connect(ui->actionRf_Configuration,&QAction::triggered,this,&MainWindow::launchRfConfigDialog);
-    connect(ui->actionTrackingShow,&QAction::triggered,[=](){ ui->tabWidget->setCurrentIndex(2); });
+    connect(ui->actionCP_FTMW,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(ui->ftmwTab); });
+    connect(ui->actionLIF,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(ui->lifTab); });
+    connect(ui->actionTrackingShow,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(ui->trackingTab); });
+    connect(ui->actionControl,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(ui->controlTab); });
+    connect(ui->actionLog,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(ui->logTab); });
     connect(ui->action_Graphs,&QAction::triggered,ui->trackingViewWidget,&TrackingViewWidget::changeNumPlots);
+    connect(ui->actionAutoscale_All,&QAction::triggered,ui->trackingViewWidget,&TrackingViewWidget::autoScaleAll);
     connect(ui->actionSleep,&QAction::toggled,this,&MainWindow::sleep);
     connect(ui->actionTest_All_Connections,&QAction::triggered,p_hwm,&HardwareManager::testAll);
 

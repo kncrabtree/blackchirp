@@ -41,6 +41,9 @@
         </item>
         <item row="0" column="1">
          <widget class="QSpinBox" name="exptSpinBox">
+          <property name="focusPolicy">
+           <enum>Qt::ClickFocus</enum>
+          </property>
           <property name="readOnly">
            <bool>true</bool>
           </property>
@@ -55,12 +58,15 @@
         <item row="1" column="0">
          <widget class="QLabel" name="valonTXLabel">
           <property name="text">
-           <string>Valon TX</string>
+           <string>TX</string>
           </property>
          </widget>
         </item>
         <item row="1" column="1">
          <widget class="QDoubleSpinBox" name="valonTXDoubleSpinBox">
+          <property name="focusPolicy">
+           <enum>Qt::ClickFocus</enum>
+          </property>
           <property name="readOnly">
            <bool>true</bool>
           </property>
@@ -84,12 +90,15 @@
         <item row="2" column="0">
          <widget class="QLabel" name="valonRXLabel">
           <property name="text">
-           <string>Valon RX</string>
+           <string>RCVR</string>
           </property>
          </widget>
         </item>
         <item row="2" column="1">
          <widget class="QDoubleSpinBox" name="valonRXDoubleSpinBox">
+          <property name="focusPolicy">
+           <enum>Qt::ClickFocus</enum>
+          </property>
           <property name="readOnly">
            <bool>true</bool>
           </property>
@@ -120,6 +129,9 @@
         <layout class="QGridLayout" name="gridLayout_2">
          <item row="0" column="1">
           <widget class="QDoubleSpinBox" name="pressureDoubleSpinBox">
+           <property name="focusPolicy">
+            <enum>Qt::ClickFocus</enum>
+           </property>
            <property name="readOnly">
             <bool>true</bool>
            </property>
@@ -221,6 +233,10 @@
        <number>0</number>
       </property>
       <widget class="QWidget" name="ftmwTab">
+       <attribute name="icon">
+        <iconset resource="resources.qrc">
+         <normaloff>:/icons/chirp.png</normaloff>:/icons/chirp.png</iconset>
+       </attribute>
        <attribute name="title">
         <string>CP-FTMW</string>
        </attribute>
@@ -231,6 +247,10 @@
        </layout>
       </widget>
       <widget class="QWidget" name="lifTab">
+       <attribute name="icon">
+        <iconset resource="resources.qrc">
+         <normaloff>:/icons/laser.png</normaloff>:/icons/laser.png</iconset>
+       </attribute>
        <attribute name="title">
         <string>LIF</string>
        </attribute>
@@ -241,6 +261,10 @@
        </layout>
       </widget>
       <widget class="QWidget" name="trackingTab">
+       <attribute name="icon">
+        <iconset resource="resources.qrc">
+         <normaloff>:/icons/dataplots.png</normaloff>:/icons/dataplots.png</iconset>
+       </attribute>
        <attribute name="title">
         <string>Tracking</string>
        </attribute>
@@ -251,6 +275,10 @@
        </layout>
       </widget>
       <widget class="QWidget" name="controlTab">
+       <attribute name="icon">
+        <iconset resource="resources.qrc">
+         <normaloff>:/icons/controltab.png</normaloff>:/icons/controltab.png</iconset>
+       </attribute>
        <attribute name="title">
         <string>Control</string>
        </attribute>
@@ -360,20 +388,47 @@
     <property name="title">
      <string>Hardware</string>
     </property>
+    <addaction name="actionSleep"/>
+    <addaction name="separator"/>
     <addaction name="actionCommunication"/>
     <addaction name="actionTest_All_Connections"/>
     <addaction name="actionIO_Board"/>
     <addaction name="actionRf_Configuration"/>
    </widget>
-   <widget class="QMenu" name="menuTracking">
+   <widget class="QMenu" name="menuAcquisition">
     <property name="title">
-     <string>Tracking</string>
+     <string>Acquisition</string>
     </property>
-    <addaction name="actionTrackingShow"/>
-    <addaction name="action_Graphs"/>
+    <addaction name="actionStart_Experiment"/>
+    <addaction name="actionPause"/>
+    <addaction name="actionResume"/>
+    <addaction name="actionAbort"/>
    </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <widget class="QMenu" name="menuTracking_2">
+     <property name="title">
+      <string>Tracking</string>
+     </property>
+     <property name="icon">
+      <iconset resource="resources.qrc">
+       <normaloff>:/icons/dataplots.png</normaloff>:/icons/dataplots.png</iconset>
+     </property>
+     <addaction name="actionTrackingShow"/>
+     <addaction name="actionAutoscale_All"/>
+     <addaction name="action_Graphs"/>
+    </widget>
+    <addaction name="actionCP_FTMW"/>
+    <addaction name="actionLIF"/>
+    <addaction name="menuTracking_2"/>
+    <addaction name="actionControl"/>
+    <addaction name="actionLog"/>
+   </widget>
+   <addaction name="menuAcquisition"/>
    <addaction name="menuHardware"/>
-   <addaction name="menuTracking"/>
+   <addaction name="menuView"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <property name="toolButtonStyle">
@@ -401,6 +456,9 @@
    <property name="text">
     <string>Start Experiment</string>
    </property>
+   <property name="shortcut">
+    <string>F2</string>
+   </property>
   </action>
   <action name="actionPause">
    <property name="icon">
@@ -409,6 +467,9 @@
    </property>
    <property name="text">
     <string>Pause</string>
+   </property>
+   <property name="shortcut">
+    <string>F3</string>
    </property>
   </action>
   <action name="actionResume">
@@ -419,6 +480,9 @@
    <property name="text">
     <string>Resume</string>
    </property>
+   <property name="shortcut">
+    <string>F4</string>
+   </property>
   </action>
   <action name="actionAbort">
    <property name="icon">
@@ -427,6 +491,9 @@
    </property>
    <property name="text">
     <string>Abort</string>
+   </property>
+   <property name="shortcut">
+    <string>F5</string>
    </property>
   </action>
   <action name="actionCommunication">
@@ -437,16 +504,26 @@
    <property name="text">
     <string>Communication</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+H</string>
+   </property>
   </action>
   <action name="actionTrackingShow">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/dataplots.png</normaloff>:/icons/dataplots.png</iconset>
+   </property>
    <property name="text">
     <string>Show</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+3</string>
    </property>
   </action>
   <action name="action_Graphs">
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/icons/dataplots.png</normaloff>:/icons/dataplots.png</iconset>
+     <normaloff>:/icons/num.png</normaloff>:/icons/num.png</iconset>
    </property>
    <property name="text">
     <string># Graphs...</string>
@@ -460,6 +537,9 @@
    <property name="text">
     <string>Rf Configuration</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
   </action>
   <action name="actionTest_All_Connections">
    <property name="icon">
@@ -468,6 +548,9 @@
    </property>
    <property name="text">
     <string>Test All Connections</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+T</string>
    </property>
   </action>
   <action name="actionTest">
@@ -483,6 +566,9 @@
    <property name="text">
     <string>IO Board</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+I</string>
+   </property>
   </action>
   <action name="actionSleep">
    <property name="checkable">
@@ -494,6 +580,66 @@
    </property>
    <property name="text">
     <string>Sleep</string>
+   </property>
+   <property name="shortcut">
+    <string>F8</string>
+   </property>
+  </action>
+  <action name="actionAutoscale_All">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/autoscale.png</normaloff>:/icons/autoscale.png</iconset>
+   </property>
+   <property name="text">
+    <string>Autoscale All</string>
+   </property>
+  </action>
+  <action name="actionCP_FTMW">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/chirp.png</normaloff>:/icons/chirp.png</iconset>
+   </property>
+   <property name="text">
+    <string>CP-FTMW</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+1</string>
+   </property>
+  </action>
+  <action name="actionLIF">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/laser.png</normaloff>:/icons/laser.png</iconset>
+   </property>
+   <property name="text">
+    <string>LIF</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+2</string>
+   </property>
+  </action>
+  <action name="actionControl">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/controltab.png</normaloff>:/icons/controltab.png</iconset>
+   </property>
+   <property name="text">
+    <string>Control</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+4</string>
+   </property>
+  </action>
+  <action name="actionLog">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/log.png</normaloff>:/icons/log.png</iconset>
+   </property>
+   <property name="text">
+    <string>Log</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+5</string>
    </property>
   </action>
  </widget>

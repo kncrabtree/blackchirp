@@ -109,7 +109,7 @@
         <item row="4" column="0">
          <widget class="QLabel" name="valonTxFrequencyLabel">
           <property name="text">
-           <string>Valon Frequency</string>
+           <string>TX Oscillator Freq</string>
           </property>
          </widget>
         </item>
@@ -145,7 +145,7 @@
      <item>
       <widget class="QGroupBox" name="rxBox">
        <property name="title">
-        <string>RX</string>
+        <string>RCVR</string>
        </property>
        <layout class="QFormLayout" name="formLayout">
         <property name="fieldGrowthPolicy">
@@ -229,7 +229,7 @@
         <item row="4" column="0">
          <widget class="QLabel" name="valonFrequencyLabel">
           <property name="text">
-           <string>Valon Frequency</string>
+           <string>RCVR Oscillator Freq</string>
           </property>
          </widget>
         </item>

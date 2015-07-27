@@ -246,6 +246,19 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>gpibDeviceComboBox</tabstop>
+  <tabstop>busAddressSpinBox</tabstop>
+  <tabstop>gpibTestButton</tabstop>
+  <tabstop>tcpDeviceComboBox</tabstop>
+  <tabstop>ipLineEdit</tabstop>
+  <tabstop>portSpinBox</tabstop>
+  <tabstop>tcpTestButton</tabstop>
+  <tabstop>rs232DeviceComboBox</tabstop>
+  <tabstop>rs232DeviceIDLineEdit</tabstop>
+  <tabstop>baudRateComboBox</tabstop>
+  <tabstop>rs232TestButton</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

@@ -360,6 +360,21 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>addButton</tabstop>
+  <tabstop>insertButton</tabstop>
+  <tabstop>moveUpButton</tabstop>
+  <tabstop>moveDownButton</tabstop>
+  <tabstop>removeButton</tabstop>
+  <tabstop>clearButton</tabstop>
+  <tabstop>loadButton</tabstop>
+  <tabstop>preChirpProtectionSpinBox</tabstop>
+  <tabstop>preChirpDelaySpinBox</tabstop>
+  <tabstop>postChirpProtectionSpinBox</tabstop>
+  <tabstop>chirpsSpinBox</tabstop>
+  <tabstop>chirpIntervalDoubleSpinBox</tabstop>
+  <tabstop>chirpTable</tabstop>
+ </tabstops>
  <resources>
   <include location="resources.qrc"/>
  </resources>

@@ -22,5 +22,11 @@
         <file>icons/warning.png</file>
         <file>icons/control.png</file>
         <file>icons/sleep.png</file>
+        <file>icons/autoscale.png</file>
+        <file>icons/num.png</file>
+        <file>icons/chirp.png</file>
+        <file>icons/controltab.png</file>
+        <file>icons/lif.png</file>
+        <file>icons/log.png</file>
     </qresource>
 </RCC>
