@@ -13,7 +13,8 @@ HEADERS += \
     $$PWD/mks647c.h \
     $$PWD/prologixgpiblan.h \
     $$PWD/virtualioboard.h \
-    $$PWD/mso72004c.h
+    $$PWD/mso72004c.h \
+    $$PWD/qc9518.h
 
 
 SOURCES += \
@@ -31,7 +32,8 @@ SOURCES += \
     $$PWD/mks647c.cpp \
     $$PWD/prologixgpiblan.cpp \
     $$PWD/virtualioboard.cpp \
-    $$PWD/mso72004c.cpp
+    $$PWD/mso72004c.cpp \
+    $$PWD/qc9518.cpp
 
 
 equals(IOBOARD,1) {
