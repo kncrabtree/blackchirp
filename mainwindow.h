@@ -98,9 +98,6 @@ private:
 protected:
     void closeEvent(QCloseEvent *ev);
 
-private slots:
-    void test();
-
 };
 
 #endif // MAINWINDOW_H

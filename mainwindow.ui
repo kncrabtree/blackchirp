@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>BlackChirp</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="resources.qrc">
+    <normaloff>:/icons/bc.png</normaloff>:/icons/bc.png</iconset>
+  </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1">
     <item>
@@ -447,7 +451,7 @@
    <addaction name="actionResume"/>
    <addaction name="actionAbort"/>
    <addaction name="actionSleep"/>
-   <addaction name="actionTest"/>
+   <addaction name="actionView_Experiment"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionStart_Experiment">
@@ -553,11 +557,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+T</string>
-   </property>
-  </action>
-  <action name="actionTest">
-   <property name="text">
-    <string>Test</string>
    </property>
   </action>
   <action name="actionIO_Board">

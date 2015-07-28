@@ -255,7 +255,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     ui->exptSpinBox->setValue(s.value(QString("exptNum"),0).toInt());
-    connect(ui->actionTest,&QAction::triggered,this,&MainWindow::test);
     configureUi(Idle);
 }
 
@@ -801,9 +800,4 @@ void MainWindow::closeEvent(QCloseEvent *ev)
         ev->accept();
         emit closing();
     }
-}
-
-void MainWindow::test()
-{
-
 }

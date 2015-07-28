@@ -31,5 +31,6 @@
         <file>icons/check.png</file>
         <file>icons/viewold.png</file>
         <file>icons/view.png</file>
+        <file>icons/bc.png</file>
     </qresource>
 </RCC>
