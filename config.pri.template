@@ -1,5 +1,5 @@
 #Enable CUDA GPU support
-CONFIG += gpu-cuda
+#CONFIG += gpu-cuda
 
 #Run with virtual hardware
 CONFIG += nohardware

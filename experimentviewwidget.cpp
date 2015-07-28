@@ -40,30 +40,30 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
 
     QWidget *hdr = buildHeaderWidget();
     if(hdr != nullptr)
-        p_tabWidget->addTab(hdr,QString("Header"));
+        p_tabWidget->addTab(hdr,QIcon(QString(":/icons/header.png")),QString("Header"));
 
     if(d_experiment.ftmwConfig().isEnabled())
     {
         QWidget *ftmw = buildFtmwWidget(path);
         if(ftmw != nullptr)
-            p_tabWidget->addTab(ftmw,QString("CP-FTMW"));
+            p_tabWidget->addTab(ftmw,QIcon(QString(":/icons/chirp.png")),QString("CP-FTMW"));
     }
 
     if(d_experiment.lifConfig().isEnabled())
     {
         QWidget *lif = buildLifWidget();
         if(lif != nullptr)
-            p_tabWidget->addTab(lif,QString("LIF"));
+            p_tabWidget->addTab(lif,QIcon(QString(":/icons/laser.png")),QString("LIF"));
     }
 
     QWidget *tracking = buildTrackingWidget();
     if(tracking != nullptr)
-        p_tabWidget->addTab(tracking,QString("Tracking"));
+        p_tabWidget->addTab(tracking,QIcon(QString(":/icons/dataplots.png")),QString("Tracking"));
 
     QWidget *log = buildLogWidget(path);
     if(log != nullptr)
     {
-        p_tabWidget->addTab(log,QString("Log"));
+        p_tabWidget->addTab(log,QIcon(QString(":/icons/log.png")),QString("Log"));
         if(p_ftmw != nullptr)
             connect(p_ftmw,&FtmwViewWidget::experimentLogMessage,p_lh,&LogHandler::experimentLogMessage);
     }
