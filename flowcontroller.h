@@ -12,7 +12,7 @@ class FlowController : public HardwareObject
     Q_OBJECT
 public:
     FlowController(QObject *parent = nullptr);
-    ~FlowController();
+    virtual ~FlowController();
 
     FlowConfig config() const { return d_config; }
 

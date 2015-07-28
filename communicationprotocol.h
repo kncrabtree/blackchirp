@@ -21,7 +21,7 @@ public:
     };
 
     explicit CommunicationProtocol(CommType type, QString key, QString subKey, QObject *parent = nullptr);
-    ~CommunicationProtocol();
+    virtual ~CommunicationProtocol();
 
     virtual bool writeCmd(QString cmd) =0;
     virtual bool writeBinary(QByteArray dat) =0;

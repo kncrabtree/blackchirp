@@ -11,7 +11,7 @@ class ZoomPanPlot : public QwtPlot
 
 public:
     explicit ZoomPanPlot(QString name, QWidget *parent = nullptr);
-    ~ZoomPanPlot();
+    virtual ~ZoomPanPlot();
 
     bool isAutoScale();
     void resetPlot();

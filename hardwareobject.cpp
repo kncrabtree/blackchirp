@@ -5,6 +5,11 @@ HardwareObject::HardwareObject(QObject *parent) :
 {
 }
 
+HardwareObject::~HardwareObject()
+{
+
+}
+
 
 void HardwareObject::sleep(bool b)
 {

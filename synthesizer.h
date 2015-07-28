@@ -8,7 +8,7 @@ class Synthesizer : public HardwareObject
     Q_OBJECT
 public:
     Synthesizer(QObject *parent = nullptr);
-    ~Synthesizer();
+    virtual ~Synthesizer();
 
 signals:
     void txFreqRead(double);

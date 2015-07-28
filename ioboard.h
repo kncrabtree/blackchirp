@@ -10,6 +10,7 @@ class IOBoard : public HardwareObject
     Q_OBJECT
 public:
     explicit IOBoard(QObject *parent = nullptr);
+    virtual ~IOBoard();
 
 protected:
     IOBoardConfig d_config;

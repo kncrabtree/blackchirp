@@ -8,7 +8,7 @@ class AWG : public HardwareObject
     Q_OBJECT
 public:
     AWG(QObject *parent);
-    ~AWG();
+    virtual ~AWG();
 };
 
 

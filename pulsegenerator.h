@@ -10,7 +10,7 @@ class PulseGenerator : public HardwareObject
     Q_OBJECT
 public:
     PulseGenerator(QObject *parent = nullptr);
-    ~PulseGenerator();
+    virtual ~PulseGenerator();
 
 public slots:
     PulseGenConfig config() const { return d_config; }

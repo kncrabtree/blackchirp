@@ -6,6 +6,11 @@ IOBoard::IOBoard(QObject *parent) :
     d_key = QString("ioboard");
 }
 
+IOBoard::~IOBoard()
+{
+
+}
+
 void IOBoard::readSettings()
 {
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());

@@ -16,7 +16,7 @@ public:
     };
 
     explicit BatchManager(BatchType b);
-    ~BatchManager();
+    virtual ~BatchManager();
 
     void setSleep(bool s) { d_sleep = s; }
     bool sleepWhenComplete() const { return d_sleep; }

@@ -12,6 +12,7 @@ class FtmwScope : public HardwareObject
     Q_OBJECT
 public:
     explicit FtmwScope(QObject *parent = nullptr);
+    virtual ~FtmwScope();
 
 signals:
     void shotAcquired(const QByteArray data);

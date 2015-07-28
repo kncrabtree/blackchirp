@@ -9,7 +9,7 @@ class LifScope : public HardwareObject
     Q_OBJECT
 public:
     LifScope(QObject *parent = nullptr);
-    ~LifScope();
+    virtual ~LifScope();
 
 signals:
     void waveformRead(const LifTrace);
