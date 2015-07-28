@@ -351,7 +351,6 @@ void Experiment::setInitialized()
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     int num = s.value(QString("exptNum"),0).toInt()+1;
-    num = 1; //REMOVE
     data->number = num;
 
     if(ftmwConfig().isEnabled() && ftmwConfig().type() == BlackChirp::FtmwPeakUp)
