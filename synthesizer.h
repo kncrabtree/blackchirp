@@ -15,7 +15,6 @@ signals:
     void rxFreqRead(double);
 
 public slots:
-    virtual void initialize();
     virtual double readTxFreq() =0;
     virtual double readRxFreq() =0;
     double setTxFreq(const double f);
@@ -33,6 +32,10 @@ protected:
 #include "valon5009.h"
 class Valon5009;
 typedef Valon5009 SynthesizerHardware;
+#elif BC_SYNTH == 2
+#include "pldrogroup.h"
+class PldroGroup;
+typedef PldroGroup SynthesizerHardware;
 #else
 #include "virtualvalonsynth.h"
 class VirtualValonSynth;

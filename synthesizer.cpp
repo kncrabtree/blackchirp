@@ -11,21 +11,6 @@ Synthesizer::~Synthesizer()
 
 }
 
-void Synthesizer::initialize()
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    //allow hardware limits to be made in settings
-    d_minFreq = s.value(QString("minFreq"),500.0).toDouble();
-    d_maxFreq = s.value(QString("maxFreq"),6000.0).toDouble();
-    //write the settings if they're not there
-    s.setValue(QString("minFreq"),d_minFreq);
-    s.setValue(QString("maxFreq"),d_maxFreq);
-    s.endGroup();
-    s.endGroup();
-}
-
 double Synthesizer::setTxFreq(const double f)
 {
     if(f < d_minFreq || f > d_maxFreq)

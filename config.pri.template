@@ -32,7 +32,7 @@ FTMWSCOPE=1
 #AWG (0 = virtual, 1 = AWG 70002A)
 AWG=1
 
-#Synth (0 = virtual, 1 = Valon 5009)
+#Synth (0 = virtual, 1 = Valon 5009, 2 = PLDROs)
 SYNTH=1
 
 #Pulse generator (0 = virtual, 1 = Quantum Composers 9528+, 2 = Quantum Composers 9518)

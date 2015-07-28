@@ -14,7 +14,8 @@ HEADERS += \
     $$PWD/prologixgpiblan.h \
     $$PWD/virtualioboard.h \
     $$PWD/mso72004c.h \
-    $$PWD/qc9518.h
+    $$PWD/qc9518.h \
+    $$PWD/pldrogroup.h
 
 
 SOURCES += \
@@ -33,7 +34,8 @@ SOURCES += \
     $$PWD/prologixgpiblan.cpp \
     $$PWD/virtualioboard.cpp \
     $$PWD/mso72004c.cpp \
-    $$PWD/qc9518.cpp
+    $$PWD/qc9518.cpp \
+    $$PWD/pldrogroup.cpp
 
 
 equals(IOBOARD,1) {
