@@ -448,8 +448,6 @@ Experiment MSO72004C::prepareForExperiment(Experiment exp)
     else
         p_comm->writeCmd(QString(":TRIGGER FORCE\n"));
 
-    p_socket->waitForReadyRead(100);
-
     //read certain output settings from scope
     resp = scopeQueryCmd(QString(":WFMOUTPRE:ENCDG?;BN_FMT?;BYT_OR?;NR_FR?;NR_PT?;YMULT?;YOFF?;XINCR?;BYT_NR?\n"));
     if(!resp.isEmpty())
@@ -738,14 +736,13 @@ void MSO72004C::wakeUp()
 
     endAcquisition();
 
-    p_socket->waitForReadyRead();
-
     if(!testConnection())
     {
         emit hardwareFailure();
         return;
     }
 
+    p_comm->writeCmd(QString(":LOCK ALL;:DISPLAY:WAVEFORM OFF\n"));
     beginAcquisition();
 }
 
@@ -762,7 +759,9 @@ QByteArray MSO72004C::scopeQueryCmd(QString query)
     //This will retry the query if it fails, suppressing any errors on the first try
 
     blockSignals(true);
+    p_comm->blockSignals(true);
     QByteArray resp = p_comm->queryCmd(query);
+    p_comm->blockSignals(false);
     blockSignals(false);
 
     if(resp.isEmpty())

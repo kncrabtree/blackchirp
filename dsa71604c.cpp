@@ -21,6 +21,8 @@ Dsa71604c::Dsa71604c(QObject *parent) :
     s.endGroup();
     s.endGroup();
 
+    p_scopeTimeout = new QTimer(this);
+
 }
 
 Dsa71604c::~Dsa71604c()
@@ -49,6 +51,8 @@ bool Dsa71604c::testConnection()
 
     if(!resp.startsWith(QByteArray("TEKTRONIX,DSA71604C")))
     {
+        if(resp.length() > 50)
+            resp = resp.mid(0,50);
         emit connected(false,QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())));
         return false;
     }
@@ -60,11 +64,12 @@ bool Dsa71604c::testConnection()
 
 void Dsa71604c::initialize()
 {
-    p_comm->setReadOptions(100,true,QByteArray("\n"));
+    p_comm->setReadOptions(1000,false,QByteArray("\n"));
     p_comm->initialize();
     p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
     connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),this,&Dsa71604c::socketError);
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
+    p_socket->setSocketOption(QAbstractSocket::KeepAliveOption,1);
     testConnection();
 }
 
@@ -449,8 +454,6 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
     else
         p_comm->writeCmd(QString(":TRIGGER FORCE\n"));
 
-    p_socket->waitForReadyRead(100);
-
     //read certain output settings from scope
     resp = scopeQueryCmd(QString(":WFMOUTPRE:ENCDG?;BN_FMT?;BYT_OR?;NR_FR?;NR_PT?;YMULT?;YOFF?;XINCR?;BYT_NR?\n"));
     if(!resp.isEmpty())
@@ -587,13 +590,14 @@ void Dsa71604c::beginAcquisition()
     if(p_socket->bytesAvailable())
         p_socket->readAll();
 
+    connect(p_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform,Qt::UniqueConnection);
     p_comm->writeCmd(QString(":CURVESTREAM?\n"));
+
     d_waitingForReply = true;
     d_foundHeader = false;
     d_headerNumBytes = 0;
     d_waveformBytes = 0;
-    connect(&d_scopeTimeout,&QTimer::timeout,this,&Dsa71604c::wakeUp,Qt::UniqueConnection);
-    connect(p_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform,Qt::UniqueConnection);
+    connect(p_scopeTimeout,&QTimer::timeout,this,&Dsa71604c::wakeUp,Qt::UniqueConnection);
 }
 
 void Dsa71604c::endAcquisition()
@@ -601,7 +605,7 @@ void Dsa71604c::endAcquisition()
 
     //stop parsing waveforms
     disconnect(p_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform);
-    disconnect(&d_scopeTimeout,&QTimer::timeout,this,&Dsa71604c::wakeUp);
+    disconnect(p_scopeTimeout,&QTimer::timeout,this,&Dsa71604c::wakeUp);
 
     if(p_socket->bytesAvailable())
         p_socket->readAll();
@@ -631,7 +635,7 @@ void Dsa71604c::readWaveform()
         return;
 
     qint64 ba = p_socket->bytesAvailable();
-//    emit logMessage(QString("Bytes available: %1\t%2 ms").arg(ba).arg(QTime::currentTime().msec()));
+    emit logMessage(QString("Bytes available: %1\t%2 ms").arg(ba).arg(QTime::currentTime().msec()));
 
     //waveforms are returned from the scope in the format #xyyyyyyy<data>\n
     //the reply starts with the '#' character
@@ -652,9 +656,9 @@ void Dsa71604c::readWaveform()
             if(c=='#')
             {
                 d_foundHeader = true;
-                d_scopeTimeout.stop();
-                d_scopeTimeout.start(10000);
-//                emit logMessage(QString("Found hdr: %1 ms").arg(QTime::currentTime().msec()));
+                p_scopeTimeout->stop();
+                p_scopeTimeout->start(10000);
+                emit logMessage(QString("Found hdr: %1 ms").arg(QTime::currentTime().msec()));
             }
             i++;
         }
@@ -719,7 +723,7 @@ void Dsa71604c::readWaveform()
         if(p_socket->bytesAvailable() >= d_waveformBytes) // whole waveform can be read!
         {
             QByteArray wfm = p_socket->read(d_waveformBytes);
-//            emit logMessage(QString("Wfm read complete: %1 ms").arg(QTime::currentTime().msec()));
+            emit logMessage(QString("Wfm read complete: %1 ms").arg(QTime::currentTime().msec()));
             emit shotAcquired(wfm);
             d_waitingForReply = false;
             d_foundHeader = false;
@@ -734,12 +738,10 @@ void Dsa71604c::readWaveform()
 
 void Dsa71604c::wakeUp()
 {
-    d_scopeTimeout.stop();
+    p_scopeTimeout->stop();
     emit logMessage(QString("Attempting to wake up scope"),BlackChirp::LogWarning);
 
     endAcquisition();
-
-    p_socket->waitForReadyRead();
 
     if(!testConnection())
     {
@@ -747,6 +749,7 @@ void Dsa71604c::wakeUp()
         return;
     }
 
+    p_comm->writeCmd(QString(":LOCK ALL;:DISPLAY:WAVEFORM OFF\n"));
     beginAcquisition();
 }
 
@@ -763,7 +766,9 @@ QByteArray Dsa71604c::scopeQueryCmd(QString query)
     //This will retry the query if it fails, suppressing any errors on the first try
 
     blockSignals(true);
+    p_comm->blockSignals(true);
     QByteArray resp = p_comm->queryCmd(query);
+    p_comm->blockSignals(false);
     blockSignals(false);
 
     if(resp.isEmpty())

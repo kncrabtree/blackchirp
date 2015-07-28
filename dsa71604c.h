@@ -33,7 +33,7 @@ private:
     bool d_foundHeader;
     int d_headerNumBytes;
     int d_waveformBytes;
-    QTimer d_scopeTimeout;
+    QTimer *p_scopeTimeout;
 
     QByteArray scopeQueryCmd(QString query);
     QTcpSocket *p_socket;
