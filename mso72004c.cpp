@@ -268,7 +268,7 @@ Experiment MSO72004C::prepareForExperiment(Experiment exp)
         }
         else
         {
-            emit logMessage(QString("%1 gave an empty response to FastFrame state query."),BlackChirp::LogError);
+            emit logMessage(QString("Gave an empty response to FastFrame state query."),BlackChirp::LogError);
             exp.setHardwareFailed();
             return exp;
         }
@@ -290,7 +290,7 @@ Experiment MSO72004C::prepareForExperiment(Experiment exp)
         }
         else
         {
-            emit logMessage(QString("%1 gave an empty response to FastFrame state query."),BlackChirp::LogError);
+            emit logMessage(QString("Gave an empty response to FastFrame state query."),BlackChirp::LogError);
             exp.setHardwareFailed();
             return exp;
         }
@@ -339,7 +339,7 @@ Experiment MSO72004C::prepareForExperiment(Experiment exp)
             }
             else
             {
-                emit logMessage(QString("%1 gave an empty response to FastFrame count query."),BlackChirp::LogError);
+                emit logMessage(QString("Gave an empty response to FastFrame count query."),BlackChirp::LogError);
                 exp.setHardwareFailed();
                 return exp;
             }
@@ -359,7 +359,7 @@ Experiment MSO72004C::prepareForExperiment(Experiment exp)
             }
             else
             {
-                emit logMessage(QString("%1 gave an empty response to FastFrame summary frame query."),BlackChirp::LogError);
+                emit logMessage(QString("Gave an empty response to FastFrame summary frame query."),BlackChirp::LogError);
                 exp.setHardwareFailed();
                 return exp;
             }
@@ -386,7 +386,7 @@ Experiment MSO72004C::prepareForExperiment(Experiment exp)
         }
         else
         {
-            emit logMessage(QString("%1 gave an empty response to FastFrame max frames query."),BlackChirp::LogError);
+            emit logMessage(QString("Gave an empty response to FastFrame max frames query."),BlackChirp::LogError);
             exp.setHardwareFailed();
             return exp;
         }
@@ -418,7 +418,7 @@ Experiment MSO72004C::prepareForExperiment(Experiment exp)
     }
     else
     {
-        emit logMessage(QString("%1 gave an empty response to trigger query."),BlackChirp::LogError);
+        emit logMessage(QString("Gave an empty response to trigger query."),BlackChirp::LogError);
         exp.setHardwareFailed();
         return exp;
     }
@@ -718,7 +718,6 @@ void MSO72004C::readWaveform()
             QByteArray wfm = p_socket->read(d_waveformBytes);
 //            emit logMessage(QString("Wfm read complete: %1 ms").arg(QTime::currentTime().msec()));
             emit shotAcquired(wfm);
-            d_waitingForReply = false;
             d_foundHeader = false;
             d_headerNumBytes = 0;
             d_waveformBytes = 0;

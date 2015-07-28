@@ -29,7 +29,7 @@ AWG70002a::AWG70002a(QObject *parent) :
     s.endGroup();
     s.sync();
 
-    p_comm->setReadOptions(1000,true,QByteArray("\n"));
+    p_comm->setReadOptions(10000,true,QByteArray("\n"));
 }
 
 
@@ -110,7 +110,7 @@ void AWG70002a::endAcquisition()
 {
     p_comm->writeCmd(QString(":Output:OFF ON\n"));
     p_comm->writeCmd(QString(":AWGControl:STOP:Immediate\n"));
-//    p_comm->queryCmd(QString("*OPC?\n"));
+    p_comm->queryCmd(QString("*OPC?\n"));
 }
 
 void AWG70002a::readTimeData()
