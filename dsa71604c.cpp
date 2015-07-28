@@ -21,8 +21,6 @@ Dsa71604c::Dsa71604c(QObject *parent) :
     s.endGroup();
     s.endGroup();
 
-    p_scopeTimeout = new QTimer(this);
-
 }
 
 Dsa71604c::~Dsa71604c()
@@ -64,8 +62,10 @@ bool Dsa71604c::testConnection()
 
 void Dsa71604c::initialize()
 {
-    p_comm->setReadOptions(1000,false,QByteArray("\n"));
+    p_scopeTimeout = new QTimer(this);
+
     p_comm->initialize();
+    p_comm->setReadOptions(3000,true,QByteArray("\n"));
     p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
     connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),this,&Dsa71604c::socketError);
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
@@ -459,7 +459,7 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
     if(!resp.isEmpty())
     {
         QStringList l = QString(resp.trimmed()).split(QChar(';'),QString::SkipEmptyParts);
-        if(l.size() != 9)
+        if(l.size() < 9)
         {
             emit logMessage(QString("Could not parse response to waveform output settings query. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
             exp.setHardwareFailed();
@@ -553,7 +553,7 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
         }
         config.xIncr = xi;
         //verify byte number
-        int bpp = l.at(8).toInt(&ok);
+        int bpp = l.at(8).mid(0,1).toInt(&ok);
         if(!ok || bpp < 1 || bpp > 2)
         {
             emit logMessage(QString("Invalid response to bytes per point query. Response: %1 (Hex: %2)")
@@ -562,14 +562,6 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
             return exp;
         }
         config.bytesPerPoint = bpp;
-    }
-
-    if(!p_comm->writeCmd(QString("CH%1:BANDWIDTH:ENHANCED OFF; CH%1:BANDWIDTH 1.6E10\n").arg(config.fidChannel)))
-//    if(!d_comm->writeCmd(QString("CH%1:BANDWIDTH FULL").arg(config.fidChannel)))
-    {
-        emit logMessage(QString("Failed to write channel settings."),BlackChirp::LogError);
-        exp.setHardwareFailed();
-        return exp;
     }
 
     d_configuration = config;
@@ -635,7 +627,7 @@ void Dsa71604c::readWaveform()
         return;
 
     qint64 ba = p_socket->bytesAvailable();
-    emit logMessage(QString("Bytes available: %1\t%2 ms").arg(ba).arg(QTime::currentTime().msec()));
+//    emit logMessage(QString("Bytes available: %1\t%2 ms").arg(ba).arg(QTime::currentTime().msec()));
 
     //waveforms are returned from the scope in the format #xyyyyyyy<data>\n
     //the reply starts with the '#' character
@@ -657,8 +649,8 @@ void Dsa71604c::readWaveform()
             {
                 d_foundHeader = true;
                 p_scopeTimeout->stop();
-                p_scopeTimeout->start(10000);
-                emit logMessage(QString("Found hdr: %1 ms").arg(QTime::currentTime().msec()));
+                p_scopeTimeout->start(600000);
+//                emit logMessage(QString("Found hdr: %1 ms").arg(QTime::currentTime().msec()));
             }
             i++;
         }
@@ -723,7 +715,7 @@ void Dsa71604c::readWaveform()
         if(p_socket->bytesAvailable() >= d_waveformBytes) // whole waveform can be read!
         {
             QByteArray wfm = p_socket->read(d_waveformBytes);
-            emit logMessage(QString("Wfm read complete: %1 ms").arg(QTime::currentTime().msec()));
+//            emit logMessage(QString("Wfm read complete: %1 ms").arg(QTime::currentTime().msec()));
             emit shotAcquired(wfm);
             d_foundHeader = false;
             d_headerNumBytes = 0;

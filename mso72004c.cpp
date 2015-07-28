@@ -558,14 +558,6 @@ Experiment MSO72004C::prepareForExperiment(Experiment exp)
         config.bytesPerPoint = bpp;
     }
 
-    if(!p_comm->writeCmd(QString("CH%1:BANDWIDTH:ENHANCED OFF; CH%1:BANDWIDTH 1.6E10\n").arg(config.fidChannel)))
-//    if(!d_comm->writeCmd(QString("CH%1:BANDWIDTH FULL").arg(config.fidChannel)))
-    {
-        emit logMessage(QString("Failed to write channel settings."),BlackChirp::LogError);
-        exp.setHardwareFailed();
-        return exp;
-    }
-
     d_configuration = config;
     exp.setScopeConfig(config);
 
