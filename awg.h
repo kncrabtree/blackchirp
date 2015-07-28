@@ -17,6 +17,10 @@ public:
 #include "awg70002a.h"
 class AWG70002a;
 typedef AWG70002a AwgHardware;
+#elif BC_AWG==2
+#include "awg7122b.h"
+class AWG7122B;
+typedef AWG7122B AwgHardware;
 #else
 #include "virtualawg.h"
 class VirtualAwg;

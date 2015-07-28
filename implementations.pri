@@ -15,7 +15,8 @@ HEADERS += \
     $$PWD/virtualioboard.h \
     $$PWD/mso72004c.h \
     $$PWD/qc9518.h \
-    $$PWD/pldrogroup.h
+    $$PWD/pldrogroup.h \
+    $$PWD/awg7122b.h
 
 
 SOURCES += \
@@ -35,7 +36,8 @@ SOURCES += \
     $$PWD/virtualioboard.cpp \
     $$PWD/mso72004c.cpp \
     $$PWD/qc9518.cpp \
-    $$PWD/pldrogroup.cpp
+    $$PWD/pldrogroup.cpp \
+    $$PWD/awg7122b.cpp
 
 
 equals(IOBOARD,1) {
