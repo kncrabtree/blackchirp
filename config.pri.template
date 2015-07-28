@@ -4,6 +4,8 @@ CONFIG += gpu-cuda
 #Run with virtual hardware
 CONFIG += nohardware
 
+#Disable LIF controls/acquisition
+CONFIG += nolif
 
 
 nohardware {
@@ -100,6 +102,12 @@ gpu-cuda {
 		cuda.output = ${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
 		QMAKE_EXTRA_COMPILERS += cuda
 	}
+}
+
+nolif {
+	LIFSCOPE = 0
+
+	DEFINES += BC_NO_LIF
 }
 
 

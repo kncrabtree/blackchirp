@@ -32,16 +32,22 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     p_snapshotBox->setSuffix(QString(" shots"));
     p_snapshotBox->setToolTip(QString("Interval for taking experiment snapshots (i.e., autosaving)."));
 
-    connect(p_ftmw,&QCheckBox::toggled,this,&WizardStartPage::completeChanged);
-    connect(p_lif,&QCheckBox::toggled,this,&WizardStartPage::completeChanged);
 
-    registerField(QString("lif"),p_lif);
-    registerField(QString("ftmw"),p_ftmw);
     registerField(QString("auxDataInterval"),p_auxDataIntervalBox);
     registerField(QString("snapshotInterval"),p_snapshotBox);
 
     fl->addRow(QString("FTMW"),p_ftmw);
+    connect(p_ftmw,&QCheckBox::toggled,this,&WizardStartPage::completeChanged);
+    registerField(QString("ftmw"),p_ftmw);
+#ifdef BC_NO_LIF
+    p_ftmw->setChecked(true);
+    p_lif->setEnabled(false);
+    p_lif->setVisible(false);
+#else
     fl->addRow(QString("LIF"),p_lif);
+    connect(p_lif,&QCheckBox::toggled,this,&WizardStartPage::completeChanged);
+    registerField(QString("lif"),p_lif);
+#endif
     fl->addRow(QString("Aux Data Interval"),p_auxDataIntervalBox);
     fl->addRow(QString("Snaphot Interval"),p_snapshotBox);
 

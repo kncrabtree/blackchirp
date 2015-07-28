@@ -64,10 +64,14 @@ void HardwareManager::initialize()
     connect(p_flow,&FlowController::pressureControlMode,this,&HardwareManager::pressureControlMode);
     d_hardwareList.append(qMakePair(p_flow,new QThread(this)));
 
+#ifndef BC_NO_LIF
     p_lifScope = new LifScopeHardware();
     connect(p_lifScope,&LifScope::waveformRead,this,&HardwareManager::lifScopeShotAcquired);
     connect(p_lifScope,&LifScope::configUpdated,this,&HardwareManager::lifScopeConfigUpdated);
     d_hardwareList.append(qMakePair(p_lifScope,new QThread(this)));
+#else
+    p_lifScope = nullptr;
+#endif
 
     p_iob = new IOBoardHardware();
     d_hardwareList.append(qMakePair(p_iob,new QThread(this)));
@@ -442,10 +446,13 @@ void HardwareManager::setPressureControlMode(bool en)
 
 void HardwareManager::setLifScopeConfig(const BlackChirp::LifScopeConfig c)
 {
-    if(p_lifScope->thread() == thread())
-        p_lifScope->setAll(c);
-    else
-        QMetaObject::invokeMethod(p_lifScope,"setAll",Q_ARG(BlackChirp::LifScopeConfig,c));
+    if(p_lifScope != nullptr)
+    {
+        if(p_lifScope->thread() == thread())
+            p_lifScope->setAll(c);
+        else
+            QMetaObject::invokeMethod(p_lifScope,"setAll",Q_ARG(BlackChirp::LifScopeConfig,c));
+    }
 }
 
 void HardwareManager::checkStatus()

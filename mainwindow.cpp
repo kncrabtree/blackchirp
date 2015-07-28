@@ -212,12 +212,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(amThread,&QThread::finished,p_am,&AcquisitionManager::deleteLater);
     p_am->moveToThread(amThread);
     d_threadObjectList.append(qMakePair(amThread,p_am));
-
     connect(p_hwm,&HardwareManager::experimentInitialized,p_am,&AcquisitionManager::beginExperiment);
     connect(p_hwm,&HardwareManager::ftmwScopeShotAcquired,p_am,&AcquisitionManager::processFtmwScopeShot);
-    connect(p_am,&AcquisitionManager::nextLifPoint,p_hwm,&HardwareManager::setLifParameters);
-    connect(p_hwm,&HardwareManager::lifSettingsComplete,p_am,&AcquisitionManager::lifHardwareReady);
-    connect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_am,&AcquisitionManager::processLifScopeShot);
     connect(p_am,&AcquisitionManager::beginAcquisition,p_hwm,&HardwareManager::beginAcquisition);
     connect(p_am,&AcquisitionManager::endAcquisition,p_hwm,&HardwareManager::endAcquisition);
     connect(p_am,&AcquisitionManager::timeDataSignal,p_hwm,&HardwareManager::getTimeData);
@@ -238,7 +234,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionIO_Board,&QAction::triggered,this,&MainWindow::launchIOBoardDialog);
     connect(ui->actionRf_Configuration,&QAction::triggered,this,&MainWindow::launchRfConfigDialog);
     connect(ui->actionCP_FTMW,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(ui->ftmwTab); });
-    connect(ui->actionLIF,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(ui->lifTab); });
     connect(ui->actionTrackingShow,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(ui->trackingTab); });
     connect(ui->actionControl,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(ui->controlTab); });
     connect(ui->actionLog,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(ui->logTab); });
@@ -248,10 +243,26 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionTest_All_Connections,&QAction::triggered,p_hwm,&HardwareManager::testAll);
     connect(ui->actionView_Experiment,&QAction::triggered,this,&MainWindow::viewExperiment);
 
+#ifdef BC_NO_LIF
+    ui->actionLIF->setEnabled(false);
+    ui->actionLIF->setVisible(false);
+    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->lifTab));
+    ui->lifTab->setEnabled(false);
+    ui->lifControlWidget->setVisible(false);
+    ui->lifControlWidget->setEnabled(false);
+    ui->controlTopLayout->addStretch(3);
+    ui->lifProgressBar->hide();
+    ui->lifProgressLabel->hide();
+#else
+    connect(p_am,&AcquisitionManager::nextLifPoint,p_hwm,&HardwareManager::setLifParameters);
+    connect(p_hwm,&HardwareManager::lifSettingsComplete,p_am,&AcquisitionManager::lifHardwareReady);
+    connect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_am,&AcquisitionManager::processLifScopeShot);
+    connect(ui->actionLIF,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(ui->lifTab); });
     connect(ui->lifControlWidget,&LifControlWidget::lifColorChanged,
             ui->lifDisplayWidget,&LifDisplayWidget::checkLifColors);
     connect(ui->lifDisplayWidget,&LifDisplayWidget::lifColorChanged,
             ui->lifControlWidget,&LifControlWidget::checkLifColors);
+#endif
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     ui->exptSpinBox->setValue(s.value(QString("exptNum"),0).toInt());
@@ -752,6 +763,10 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionSleep->setEnabled(true);
         break;
     }
+
+#ifdef BC_NO_LIF
+    ui->lifControlWidget->setEnabled(false);
+#endif
 }
 
 void MainWindow::startBatch(BatchManager *bm)
