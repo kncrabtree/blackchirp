@@ -122,7 +122,8 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
 
         p_ftmw->prepareForExperiment(d_experiment);
         p_ftmw->newFidList(d_experiment.ftmwConfig().fidList());
-        p_ftmw->updateShotsLabel(d_experiment.ftmwConfig().fidList().first().shots());
+        if(!d_experiment.ftmwConfig().fidList().isEmpty())
+            p_ftmw->updateShotsLabel(d_experiment.ftmwConfig().fidList().first().shots());
 
         //check for snap file
         QFile snp(BlackChirp::getExptFile(d_experiment.number(),BlackChirp::SnapFile,path));
