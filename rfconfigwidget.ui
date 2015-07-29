@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>530</width>
+    <width>534</width>
     <height>261</height>
    </rect>
   </property>
@@ -48,7 +48,7 @@
         <item row="1" column="0">
          <widget class="QLabel" name="valonTxMultiplicationLabel">
           <property name="text">
-           <string>Valon Multiplication</string>
+           <string>Osc Multiplication</string>
           </property>
          </widget>
         </item>
@@ -154,7 +154,7 @@
         <item row="0" column="0">
          <widget class="QLabel" name="valonMultiplicationLabel">
           <property name="text">
-           <string>Valon Multiplication</string>
+           <string>Osc Multiplication</string>
           </property>
          </widget>
         </item>
