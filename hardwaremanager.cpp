@@ -267,8 +267,6 @@ void HardwareManager::sleep(bool b)
 void HardwareManager::initializeExperiment(Experiment exp)
 {
     //do initialization
-    //if successful, call Experiment::setInitialized()
-    bool success = true;
     for(int i=0;i<d_hardwareList.size();i++)
     {
         QThread *t = d_hardwareList.at(i).second;
@@ -279,17 +277,10 @@ void HardwareManager::initializeExperiment(Experiment exp)
             exp = obj->prepareForExperiment(exp);
 
         if(!exp.hardwareSuccess())
-        {
-            success = false;
             break;
-        }
     }
 
     //any additional synchronous initialization can be performed here
-
-    if(success)
-        exp.setInitialized();
-
     emit experimentInitialized(exp);
 
 }
