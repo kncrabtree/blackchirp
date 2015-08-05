@@ -31,6 +31,9 @@ PldroGroup::PldroGroup(QObject *parent) :
 
 bool PldroGroup::testConnection()
 {
+    readTxFreq();
+    readRxFreq();
+
     emit connected(true);
     return true;
 }
