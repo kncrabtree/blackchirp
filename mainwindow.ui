@@ -87,7 +87,7 @@
            <number>3</number>
           </property>
           <property name="maximum">
-           <double>6000.000000000000000</double>
+           <double>1000000000000.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -119,7 +119,7 @@
            <number>3</number>
           </property>
           <property name="maximum">
-           <double>6000.000000000000000</double>
+           <double>1000000000000.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -656,15 +656,9 @@
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
   <customwidget>
-   <class>FtmwViewWidget</class>
+   <class>Led</class>
    <extends>QWidget</extends>
-   <header>ftmwviewwidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>TrackingViewWidget</class>
-   <extends>QWidget</extends>
-   <header>trackingviewwidget.h</header>
+   <header location="global">led.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
@@ -674,9 +668,15 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>Led</class>
+   <class>FtmwViewWidget</class>
    <extends>QWidget</extends>
-   <header>led.h</header>
+   <header>ftmwviewwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>TrackingViewWidget</class>
+   <extends>QWidget</extends>
+   <header>trackingviewwidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
