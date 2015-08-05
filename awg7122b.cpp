@@ -56,9 +56,24 @@ bool AWG7122B::testConnection()
     emit logMessage(QString("ID response: %1").arg(QString(resp.trimmed())));
 
     p_comm->writeCmd(QString("*CLS\n"));
-    resp = p_comm->queryCmd(QString("System:Error:Count?\n"));
-    if(resp.trimmed().toInt() > 0)
-        resp = p_comm->queryCmd(QString("System:Error:All?\n"));
+    resp = p_comm->queryCmd(QString("System:Error:Next?\n"));
+    if(!resp.trimmed().startsWith('0'))
+    {
+        int t = 0;
+        while(t < 100)
+        {
+            if(!resp.trimmed().startsWith('0'))
+            {
+                emit logMessage(QString("AWG error: %1").arg(QString(resp.trimmed())),BlackChirp::LogDebug);
+                resp = p_comm->queryCmd(QString("System:Error:Next?\n"));
+                if(resp.isEmpty())
+                    break;
+                t++;
+            }
+            else
+                break;
+        }
+    }
 
     emit connected();
     return true;
@@ -98,14 +113,14 @@ void AWG7122B::beginAcquisition()
 {
     p_comm->writeCmd(QString(":AWGControl:RUN:Immediate\n"));
     p_comm->queryCmd(QString("*OPC?\n"));
-    p_comm->writeCmd(QString(":Output:OFF OFF\n"));
-    p_comm->writeCmd(QString(":Output1:State On\n"));
+//    p_comm->writeCmd(QString(":Output:OFF OFF\n"));
+    p_comm->writeCmd(QString(":Output1:State 1\n"));
 
 }
 
 void AWG7122B::endAcquisition()
 {
-    p_comm->writeCmd(QString(":Output:OFF ON\n"));
+    p_comm->writeCmd(QString(":Output1:State 0\n"));
     p_comm->writeCmd(QString(":AWGControl:STOP:Immediate\n"));
     p_comm->queryCmd(QString("*OPC?\n"));
 }
@@ -272,11 +287,24 @@ QString AWG7122B::writeWaveform(const ChirpConfig cc)
 
         p_comm->writeCmd(QString("\n"));
 
-        resp = p_comm->queryCmd(QString("System:Error:Count?\n"));
-        if(resp.trimmed().toInt() > 0)
+        resp = p_comm->queryCmd(QString("System:Error:Next?\n"));
+        if(!resp.trimmed().startsWith('0'))
         {
-            resp = p_comm->queryCmd(QString("System:Error:All?\n"));
-            emit logMessage(QString("AWG error: %1").arg(QString(resp.trimmed())),BlackChirp::LogDebug);
+            int t = 0;
+            while(t < 10)
+            {
+                if(!resp.trimmed().startsWith('0'))
+                {
+                    emit logMessage(QString("AWG error: %1").arg(QString(resp.trimmed())),BlackChirp::LogDebug);
+                    resp = p_comm->queryCmd(QString("System:Error:Next?\n"));
+                    if(resp.isEmpty())
+                        break;
+                    t++;
+                }
+                else
+                    break;
+            }
+
             return QString("!Could not write waveform data to AWG. See logfile for details. Header was: %1").arg(header);
         }
 
@@ -321,12 +349,25 @@ QString AWG7122B::writeWaveform(const ChirpConfig cc)
 
         p_comm->writeCmd(QString("\n"));
 
-        resp = p_comm->queryCmd(QString("System:Error:Count?\n"));
-        if(resp.trimmed().toInt() > 0)
+        resp = p_comm->queryCmd(QString("System:Error:Next?\n"));
+        if(!resp.trimmed().startsWith('0'))
         {
-            resp = p_comm->queryCmd(QString("System:Error:All?\n"));
-            emit logMessage(QString("AWG error: %1").arg(QString(resp.trimmed())),BlackChirp::LogDebug);
-             return QString("!Could not write marker data to AWG. See logfile for details. Header was: %1").arg(header);
+            int t = 0;
+            while(t < 10)
+            {
+                if(!resp.trimmed().startsWith('0'))
+                {
+                    emit logMessage(QString("AWG error: %1").arg(QString(resp.trimmed())),BlackChirp::LogDebug);
+                    resp = p_comm->queryCmd(QString("System:Error:Next?\n"));
+                    if(resp.isEmpty())
+                        break;
+                    t++;
+                }
+                else
+                    break;
+            }
+
+            return QString("!Could not write marker data to AWG. See logfile for details. Header was: %1").arg(header);
         }
 
         currentChunk++;
