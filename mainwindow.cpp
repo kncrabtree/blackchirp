@@ -337,7 +337,7 @@ void MainWindow::batchComplete(bool aborted)
 
 void MainWindow::experimentInitialized(const Experiment exp)
 {
-	if(!exp.isInitialized())
+    if(!exp.hardwareSuccess())
 		return;
 
     if(exp.number() > 0)
