@@ -61,15 +61,13 @@ void PldroGroup::readTimeData()
 {
 }
 
-double PldroGroup::readTxFreq()
+double PldroGroup::readSynthTxFreq()
 {
-    emit txFreqRead(d_txFreq);
     return d_txFreq;
 }
 
-double PldroGroup::readRxFreq()
+double PldroGroup::readSynthRxFreq()
 {
-    emit rxFreqRead(d_rxFreq);
     return d_rxFreq;
 }
 

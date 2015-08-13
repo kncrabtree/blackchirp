@@ -20,8 +20,8 @@ public slots:
 
     // Synthesizer interface
 public slots:
-    double readTxFreq();
-    double readRxFreq();
+    double readSynthTxFreq();
+    double readSynthRxFreq();
     double setSynthTxFreq(const double f);
     double setSynthRxFreq(const double f);
 };

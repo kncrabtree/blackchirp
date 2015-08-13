@@ -62,15 +62,13 @@ void VirtualValonSynth::readTimeData()
 {
 }
 
-double VirtualValonSynth::readTxFreq()
+double VirtualValonSynth::readSynthTxFreq()
 {
-    emit txFreqRead(d_txFreq);
     return d_txFreq;
 }
 
-double VirtualValonSynth::readRxFreq()
+double VirtualValonSynth::readSynthRxFreq()
 {
-    emit rxFreqRead(d_rxFreq);
     return d_rxFreq;
 }
 

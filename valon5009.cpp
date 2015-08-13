@@ -86,17 +86,15 @@ void Valon5009::readTimeData()
 {
 }
 
-double Valon5009::readTxFreq()
+double Valon5009::readSynthTxFreq()
 {
     readSynth(1);
-    emit txFreqRead(d_txFreq);
     return d_txFreq;
 }
 
-double Valon5009::readRxFreq()
+double Valon5009::readSynthRxFreq()
 {
     readSynth(2);
-    emit rxFreqRead(d_rxFreq);
     return d_rxFreq;
 }
 

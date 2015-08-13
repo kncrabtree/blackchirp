@@ -11,6 +11,34 @@ Synthesizer::~Synthesizer()
 
 }
 
+double Synthesizer::readTxFreq()
+{
+    double tx = readSynthTxFreq();
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
+    s.setValue(QString("txFreq"),tx);
+    s.endGroup();
+    s.endGroup();
+
+    emit txFreqRead(tx);
+    return tx;
+}
+
+double Synthesizer::readRxFreq()
+{
+    double rx = readSynthRxFreq();
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
+    s.setValue(QString("rxFreq"),rx);
+    s.endGroup();
+    s.endGroup();
+
+    emit rxFreqRead(rx);
+    return rx;
+}
+
 double Synthesizer::setTxFreq(const double f)
 {
     if(f < d_minFreq || f > d_maxFreq)

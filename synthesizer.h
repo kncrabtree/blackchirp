@@ -15,8 +15,10 @@ signals:
     void rxFreqRead(double);
 
 public slots:
-    virtual double readTxFreq() =0;
-    virtual double readRxFreq() =0;
+    virtual double readTxFreq();
+    virtual double readRxFreq();
+    virtual double readSynthTxFreq() =0;
+    virtual double readSynthRxFreq() =0;
     double setTxFreq(const double f);
     double setRxFreq(const double f);
     virtual double setSynthTxFreq(const double f) =0;
