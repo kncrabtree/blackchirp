@@ -219,8 +219,13 @@ void ChirpConfigWidget::load()
 {
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     int e = s.value(QString("exptNum"),0).toInt();
+    if(e < 1)
+    {
+        QMessageBox::critical(this,QString("Cannot Load Chirp"),QString("Cannot load chirp because no experiments have been performed."),QMessageBox::Ok);
+        return;
+    }
     bool ok;
-    int num = QInputDialog::getInt(this,QString("Load Chirp"),QString("Load chirp from experiment"),e,0,e,1,&ok);
+    int num = QInputDialog::getInt(this,QString("Load Chirp"),QString("Load chirp from experiment"),e,1,e,1,&ok);
     if(!ok || num <= 0 || num > e)
         return;
 
@@ -234,20 +239,26 @@ void ChirpConfigWidget::load()
     //check if rf config parameters are the same...
     if(!d_currentChirpConfig.compareTxParams(cc))
     {
-        QString labelTable = QString("<html><body><table><tr><th align=\"left\">Setting</th><th align=\"center\">Current</th><th align=\"center\">Experiment %1</th></tr>").arg(e);
-        labelTable.append(QString("<tr><td align=\"left\">%1</td><td align=\"center\">%2</td><td align=\"center\">%3</td></tr>").arg(QString("Synth TX Mult")).arg(d_currentChirpConfig.synthTxMult()).arg(cc.synthTxMult()));
-        labelTable.append(QString("<tr><td align=\"left\">%1</td><td align=\"center\">%2</td><td align=\"center\">%3</td></tr>").arg(QString("AWG Mult")).arg(d_currentChirpConfig.awgMult()).arg(cc.awgMult()));
-        labelTable.append(QString("<tr><td align=\"left\">%1</td><td align=\"center\">%2</td><td align=\"center\">%3</td></tr>").arg(QString("Mixer Sideband")).arg(d_currentChirpConfig.mixerSideband()).arg(cc.mixerSideband()));
-        labelTable.append(QString("<tr><td align=\"left\">%1</td><td align=\"center\">%2</td><td align=\"center\">%3</td></tr>").arg(QString("Total Mult")).arg(d_currentChirpConfig.totalMult()).arg(cc.totalMult()));
-        labelTable.append(QString("</table></body></html>"));
+        QString labelTable;
+        QString nl("\n");
+        QString tab("\t");
+        QTextStream t(&labelTable);
+        t.setFieldAlignment(QTextStream::AlignLeft);
+        t << QString("Setting            ") << tab << QString("Current") << tab << QString("Experiment %1").arg(e) << nl;
+        t << QString("Synth TX Mult ") << tab << d_currentChirpConfig.synthTxMult() << tab << cc.synthTxMult() << nl;
+        t << QString("AWG Mult          ") << tab << d_currentChirpConfig.awgMult() << tab << cc.awgMult() << nl;
+        t << QString("Mixer Sideband") << tab << d_currentChirpConfig.mixerSideband() << tab << cc.mixerSideband() << nl;
+        t << QString("Total Mult        ") << tab << d_currentChirpConfig.totalMult() << tab << cc.totalMult();
+        t.flush();
 
         QMessageBox::critical(this,QString("Configuration Error"),QString("TX settings from experiment %1 do not match current settings.\nIf you wish to use these settings, make the appropriate changes in the RF configuration menu.\n\n").arg(e) + labelTable);
+        return;
     }
 
     //warn if valon tx freq is different
     if(!qFuzzyCompare(d_currentChirpConfig.synthTxFreq(),cc.synthTxFreq()))
     {
-        if(QMessageBox::question(this,QString("Change TX Freq?"),QString("The TX frequency from experiment %1 (%2) does not match the current TX frequency (%3).\nIf you continue, the TX frequency will be changed when the scan begins.\n\nDo you wish to continue?"),QMessageBox::Yes|QMessageBox::No,QMessageBox::No) == QMessageBox::No)
+        if(QMessageBox::question(this,QString("Change TX Freq?"),QString("The TX frequency from experiment %1 (%2) does not match the current TX frequency (%3).\nIf you continue, the TX frequency will be changed when the scan begins.\n\nDo you wish to continue?").arg(num).arg(cc.synthTxFreq()).arg(d_currentChirpConfig.synthTxFreq()),QMessageBox::Yes|QMessageBox::No,QMessageBox::No) == QMessageBox::No)
             return;
     }
 
