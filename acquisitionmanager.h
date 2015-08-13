@@ -31,7 +31,8 @@ public:
 signals:
     void logMessage(const QString,const BlackChirp::LogMessageCode = BlackChirp::LogNormal);
     void statusMessage(const QString);
-    void experimentComplete(Experiment);
+    void experimentInitialized(const Experiment);
+    void experimentComplete(const Experiment);
     void ftmwShotAcquired(qint64);
     void lifPointUpdate(QPair<QPoint,BlackChirp::LifPoint>);
     void nextLifPoint(double delay, double frequency);

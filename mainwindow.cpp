@@ -96,7 +96,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::statusMessage,statusLabel,&QLabel::setText);
     connect(p_hwm,&HardwareManager::hwInitializationComplete,ui->pulseConfigWidget,&PulseConfigWidget::updateHardwareLimits);
     connect(p_hwm,&HardwareManager::hwInitializationComplete,ui->lifControlWidget,&LifControlWidget::updateHardwareLimits);
-    connect(p_hwm,&HardwareManager::experimentInitialized,this,&MainWindow::experimentInitialized);
     connect(p_hwm,&HardwareManager::allHardwareConnected,this,&MainWindow::hardwareInitialized);
     connect(p_hwm,&HardwareManager::valonTxFreqRead,ui->valonTXDoubleSpinBox,&QDoubleSpinBox::setValue);
     connect(p_hwm,&HardwareManager::valonRxFreqRead,ui->valonRXDoubleSpinBox,&QDoubleSpinBox::setValue);
@@ -196,6 +195,7 @@ MainWindow::MainWindow(QWidget *parent) :
     p_am = new AcquisitionManager();
     connect(p_am,&AcquisitionManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_am,&AcquisitionManager::statusMessage,statusLabel,&QLabel::setText);
+    connect(p_am,&AcquisitionManager::experimentInitialized,this,&MainWindow::experimentInitialized);
     connect(p_am,&AcquisitionManager::ftmwShotAcquired,ui->ftmwProgressBar,&QProgressBar::setValue);
     connect(p_am,&AcquisitionManager::ftmwShotAcquired,ui->ftViewWidget,&FtmwViewWidget::updateShotsLabel);
     connect(p_am,&AcquisitionManager::lifShotAcquired,ui->lifProgressBar,&QProgressBar::setValue);
@@ -337,7 +337,7 @@ void MainWindow::batchComplete(bool aborted)
 
 void MainWindow::experimentInitialized(const Experiment exp)
 {
-    if(!exp.hardwareSuccess())
+    if(!exp.isInitialized())
 		return;
 
     if(exp.number() > 0)

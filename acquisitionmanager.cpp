@@ -51,6 +51,7 @@ void AcquisitionManager::beginExperiment(Experiment exp)
         return;
     }
 
+    emit experimentInitialized(exp);
     d_currentShift = 0;
     //prepare data files, savemanager, fidmanager, etc
     d_currentExperiment = exp;
