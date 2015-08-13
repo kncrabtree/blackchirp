@@ -41,6 +41,7 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     registerField(QString("ftmw"),p_ftmw);
 #ifdef BC_NO_LIF
     p_ftmw->setChecked(true);
+    p_ftmw->setEnabled(false);
     p_lif->setEnabled(false);
     p_lif->setVisible(false);
 #else
