@@ -355,3 +355,27 @@ bool Qc9518::pGenWriteCmd(QString cmd)
     }
     return false;
 }
+
+Experiment Qc9518::prepareForExperiment(Experiment exp)
+{
+    bool success = setAll(exp.pGenConfig());
+    if(!success)
+        exp.setHardwareFailed();
+
+    return exp;
+}
+
+void Qc9518::beginAcquisition()
+{
+    pGenWriteCmd(QString(":SYSTEM:KLOCK 1\n"));
+}
+
+void Qc9518::endAcquisition()
+{
+    pGenWriteCmd(QString(":SYSTEM:KLOCK 0\n"));
+}
+
+void Qc9518::readTimeData()
+{
+
+}

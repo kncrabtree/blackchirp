@@ -56,7 +56,7 @@ protected:
 #if BC_FLOWCONTROLLER == 1
 #include "mks647c.h"
 class Mks647c;
-typedef Mks647c FlowControllerHardware
+typedef Mks647c FlowControllerHardware;
 #else
 #include "virtualflowcontroller.h"
 class VirtualFlowController;

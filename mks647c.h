@@ -38,6 +38,12 @@ private:
 
     QByteArray mksQueryCmd(QString cmd, int respLength);
     int d_maxTries;
+
+    // HardwareObject interface
+public slots:
+    Experiment prepareForExperiment(Experiment exp);
+    void beginAcquisition();
+    void endAcquisition();
 };
 
 #endif // MKS647C_H

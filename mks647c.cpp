@@ -423,3 +423,18 @@ QByteArray Mks647c::mksQueryCmd(QString cmd, int respLength)
     }
     return resp;
 }
+
+Experiment Mks647c::prepareForExperiment(Experiment exp)
+{
+    return exp;
+}
+
+void Mks647c::beginAcquisition()
+{
+
+}
+
+void Mks647c::endAcquisition()
+{
+
+}
