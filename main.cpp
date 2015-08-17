@@ -63,14 +63,21 @@ int main(int argc, char *argv[])
     //list containing lockfile names and application names
     QList<QPair<QString,QString> > incompatibleApps;
     //add other apps here
+    //if the app is from a different organization (e.g. CfA Spectroscopy Lab instead of CrabtreeLab), enter full path to lockfile and prepend with !
     incompatibleApps.append(qMakePair(lockFileName,appName));
+    incompatibleApps.append(qMakePair(QString("!/home/data/CfA Spectroscopy Lab/qtftm.lock"),QString("QtFTM")));
+    incompatibleApps.append(qMakePair(QString("!/home/data/CfA Spectroscopy Lab/bbacq.lock"),QString("BBAcq")));
 
 
     QFile lockFile;
     for(int i=0;i<incompatibleApps.size();i++)
     {
         QString title = incompatibleApps.at(i).second;
-        QString fileName = QString("%1/%2").arg(lockFilePath).arg(incompatibleApps.at(i).first);
+        QString fileName;
+        if(incompatibleApps.at(i).first.startsWith(QString("!")))
+            fileName = incompatibleApps.at(i).first.mid(1);
+        else
+            fileName = QString("%1/%2").arg(lockFilePath).arg(incompatibleApps.at(i).first);
 
         lockFile.setFileName(fileName);
         qint64 pid = 0;
@@ -95,6 +102,7 @@ int main(int argc, char *argv[])
     }
 
     QString fileName = QString("%1/%2").arg(lockFilePath).arg(lockFileName);
+    lockFile.setFileName(fileName);
 
     if(!lockFile.open(QIODevice::WriteOnly))
     {
