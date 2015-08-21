@@ -48,7 +48,7 @@ IOBoardConfig::IOBoardConfig(bool fromSettings) : data(new IOBoardConfigData)
         for(int i=0; i<data->numDigital-data->reservedDigital; i++)
         {
             s.setArrayIndex(i);
-            QString name = s.value(QString("name"),QString("din.%1").arg(data->reservedDigital)).toString();
+            QString name = s.value(QString("name"),QString("din.%1").arg(i+data->reservedDigital)).toString();
             bool enabled = s.value(QString("enabled"),false).toBool();
             bool plot = s.value(QString("plot"),false).toBool();
             data->digital.insert(i,BlackChirp::IOBoardChannel(enabled,name,plot));
