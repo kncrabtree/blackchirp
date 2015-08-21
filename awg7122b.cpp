@@ -165,7 +165,7 @@ QString AWG7122B::getWaveformKey(const ChirpConfig cc)
     QStringList wfmNames;
     for(int i=0; i<n; i++)
     {
-        resp = p_comm->queryCmd(QString("WList:Name? %1\n").arg(i+1));
+        resp = p_comm->queryCmd(QString("WList:Name? %1\n").arg(i));
         if(!resp.isEmpty())
             wfmNames.append(QString(resp.trimmed().replace(QByteArray("\""),QByteArray())));
     }
@@ -230,7 +230,7 @@ QString AWG7122B::writeWaveform(const ChirpConfig cc)
     Q_ASSERT(data.size() == markerData.size());
 
     //create new waveform on AWG
-    if(!p_comm->writeCmd(QString("WList:Waveform:New \"%1\", %2\n").arg(name).arg(data.size())))
+    if(!p_comm->writeCmd(QString("WList:Waveform:New \"%1\", %2,REAL\n").arg(name).arg(data.size())))
         return QString("!Could not create new AWG waveform");
 
     QByteArray resp = p_comm->queryCmd(QString("*OPC?\n"));
@@ -245,7 +245,7 @@ QString AWG7122B::writeWaveform(const ChirpConfig cc)
     //do waveform data first
     //chunks are in bytes
     int chunkSize = 1e6;
-    int chunks = static_cast<int>(ceil(static_cast<double>(data.size())*4.0/static_cast<double>(chunkSize)));
+    int chunks = static_cast<int>(ceil(static_cast<double>(data.size())*5.0/static_cast<double>(chunkSize)));
     int currentChunk = 0;
     //prepare data
     QByteArray chunkData;
@@ -254,8 +254,8 @@ QString AWG7122B::writeWaveform(const ChirpConfig cc)
     while(currentChunk < chunks)
     {
         chunkData.clear();
-        int startIndex = currentChunk*chunkSize/4;
-        int endIndex = qMin((currentChunk+1)*chunkSize/4,data.size());
+        int startIndex = currentChunk*chunkSize/5;
+        int endIndex = qMin((currentChunk+1)*chunkSize/5,data.size());
         int numPnts = endIndex - startIndex;
 
         //downcast double to float
@@ -263,11 +263,15 @@ QString AWG7122B::writeWaveform(const ChirpConfig cc)
         {
             float val = static_cast<float>(data.at(startIndex+i).y());
             char *c = reinterpret_cast<char*>(&val);
+            quint8 byte = 0;
+            byte += (static_cast<int>(markerData.at(startIndex+i).second) << 7) +
+                    (static_cast<int>(markerData.at(startIndex+i).first) << 6);
 
 #if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
             chunkData.append(c,4);
+            chunkData.append(byte);
 #else
-            chunkData.append(c[3]).append(c[2]).append(c[1]).append(c[0]);
+            chunkData.append(c[3]).append(c[2]).append(c[1]).append(c[0]).append(byte);
 #endif
         }
 
@@ -275,7 +279,7 @@ QString AWG7122B::writeWaveform(const ChirpConfig cc)
         QString header = QString("WList:Waveform:Data \"%1\",%2,%3,")
                 .arg(name).arg(startIndex).arg(numPnts);
 
-        QString binSize = QString::number(numPnts*4);
+        QString binSize = QString::number(numPnts*5);
         QString binHeader = QString("#%1%2").arg(binSize.size()).arg(binSize);
         header.append(binHeader);
 
@@ -312,67 +316,67 @@ QString AWG7122B::writeWaveform(const ChirpConfig cc)
     }
 
     //reset for marker data
-    currentChunk = 0;
-    chunks = static_cast<int>(ceil(static_cast<double>(markerData.size())/static_cast<double>(chunkSize)));
-    QByteArray markerChunkData;
-    markerChunkData.reserve(chunkSize);
+//    currentChunk = 0;
+//    chunks = static_cast<int>(ceil(static_cast<double>(markerData.size())/static_cast<double>(chunkSize)));
+//    QByteArray markerChunkData;
+//    markerChunkData.reserve(chunkSize);
 
-    while(currentChunk < chunks)
-    {
-        markerChunkData.clear();
-        int startIndex = currentChunk*chunkSize;
-        int endIndex = qMin((currentChunk+1)*chunkSize,markerData.size());
-        int numPnts = endIndex - startIndex;
+//    while(currentChunk < chunks)
+//    {
+//        markerChunkData.clear();
+//        int startIndex = currentChunk*chunkSize;
+//        int endIndex = qMin((currentChunk+1)*chunkSize,markerData.size());
+//        int numPnts = endIndex - startIndex;
 
-        for(int i=0; i < numPnts; i++)
-        {
-            quint8 byte = 0;
-            byte += (static_cast<int>(markerData.at(startIndex+i).second) << 7) +
-                    (static_cast<int>(markerData.at(startIndex+i).first) << 6);
-            markerChunkData.append(byte);
-        }
+//        for(int i=0; i < numPnts; i++)
+//        {
+//            quint8 byte = 0;
+//            byte += (static_cast<int>(markerData.at(startIndex+i).second) << 7) +
+//                    (static_cast<int>(markerData.at(startIndex+i).first) << 6);
+//            markerChunkData.append(byte);
+//        }
 
 
-        //create data header
-        QString header = QString("WList:Waveform:Marker:Data \"%1\",%2,%3,")
-                .arg(name).arg(startIndex).arg(numPnts);
+//        //create data header
+//        QString header = QString("WList:Waveform:Marker:Data \"%1\",%2,%3,")
+//                .arg(name).arg(startIndex).arg(numPnts);
 
-        QString binSize = QString::number(numPnts);
-        QString binHeader = QString("#%1%2").arg(binSize.size()).arg(binSize);
-        header.append(binHeader);
+//        QString binSize = QString::number(numPnts);
+//        QString binHeader = QString("#%1%2").arg(binSize.size()).arg(binSize);
+//        header.append(binHeader);
 
-        if(!p_comm->writeCmd(header))
-            return QString("!Could not write header data to AWG. Header: %1").arg(header);
+//        if(!p_comm->writeCmd(header))
+//            return QString("!Could not write header data to AWG. Header: %1").arg(header);
 
-        if(!p_comm->writeBinary(markerChunkData))
-            return QString("!Could not write marker data to AWG. Header was: %1").arg(header);
+//        if(!p_comm->writeBinary(markerChunkData))
+//            return QString("!Could not write marker data to AWG. Header was: %1").arg(header);
 
-        p_comm->writeCmd(QString("\n"));
+//        p_comm->writeCmd(QString("\n"));
 
-        resp = p_comm->queryCmd(QString("System:Error:Next?\n"));
-        if(!resp.trimmed().startsWith('0'))
-        {
-            int t = 0;
-            while(t < 10)
-            {
-                if(!resp.trimmed().startsWith('0'))
-                {
-                    emit logMessage(QString("AWG error: %1").arg(QString(resp.trimmed())),BlackChirp::LogDebug);
-                    resp = p_comm->queryCmd(QString("System:Error:Next?\n"));
-                    if(resp.isEmpty())
-                        break;
-                    t++;
-                }
-                else
-                    break;
-            }
+//        resp = p_comm->queryCmd(QString("System:Error:Next?\n"));
+//        if(!resp.trimmed().startsWith('0'))
+//        {
+//            int t = 0;
+//            while(t < 10)
+//            {
+//                if(!resp.trimmed().startsWith('0'))
+//                {
+//                    emit logMessage(QString("AWG error: %1").arg(QString(resp.trimmed())),BlackChirp::LogDebug);
+//                    resp = p_comm->queryCmd(QString("System:Error:Next?\n"));
+//                    if(resp.isEmpty())
+//                        break;
+//                    t++;
+//                }
+//                else
+//                    break;
+//            }
 
-            return QString("!Could not write marker data to AWG. See logfile for details. Header was: %1").arg(header);
-        }
+//            return QString("!Could not write marker data to AWG. See logfile for details. Header was: %1").arg(header);
+//        }
 
-        currentChunk++;
+//        currentChunk++;
 
-    }
+//    }
 
     return name;
 }
