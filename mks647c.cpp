@@ -103,6 +103,7 @@ void Mks647c::initialize()
 {
     p_comm->setReadOptions(1000,true,QByteArray("\r\n"));
     p_comm->initialize();
+    FlowController::initialize();
     testConnection();
 }
 
@@ -118,7 +119,7 @@ double Mks647c::setFlowSetpoint(const int ch, const double val)
     int sp = qRound(val/(d_gasRangeList.at(d_rangeIndexList.at(ch))*d_gcfList.at(ch)*1000.0));
 
     if(sp >=0 && sp <=1100)
-        p_comm->writeCmd(QString("FS%1%2;\r\n").arg(ch).arg(sp,4,10,QLatin1Char('0')));
+        p_comm->writeCmd(QString("FS%1%2;\r\n").arg(ch+1).arg(sp,4,10,QLatin1Char('0')));
     else
         emit logMessage(QString("Flow setpoint (%1) invalid for current range. Converted value = %2 (valid range: 0-1100)").arg(val).arg(sp),BlackChirp::LogWarning);
 

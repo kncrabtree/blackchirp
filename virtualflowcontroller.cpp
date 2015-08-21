@@ -29,21 +29,7 @@ bool VirtualFlowController::testConnection()
 
 void VirtualFlowController::initialize()
 {
-
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-
-    s.beginReadArray(QString("channels"));
-    for(int i=0;i<BC_FLOW_NUMCHANNELS;i++)
-    {
-        s.setArrayIndex(i);
-        d_config.add(0.0,s.value(QString("name"),QString("")).toString());
-    }
-    s.endArray();
-    s.endGroup();
-    s.endGroup();
-
+    FlowController::initialize();
     testConnection();
 }
 

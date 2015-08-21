@@ -154,7 +154,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
         fw.displayBox = new QDoubleSpinBox(this);
         fw.displayBox->setRange(-9999.9,9999.9);
-        fw.displayBox->setDecimals(1);
+        fw.displayBox->setDecimals(2);
         fw.displayBox->setSuffix(QString(" sccm"));
         fw.displayBox->blockSignals(true);
         fw.displayBox->setReadOnly(true);
