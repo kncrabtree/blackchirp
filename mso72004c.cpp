@@ -60,7 +60,9 @@ bool MSO72004C::testConnection()
 
 void MSO72004C::initialize()
 {
-    p_comm->setReadOptions(100,true,QByteArray("\n"));
+    p_scopeTimeout = new QTimer(this);
+
+    p_comm->setReadOptions(1000,true,QByteArray("\n"));
     p_comm->initialize();
     p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
     connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),this,&MSO72004C::socketError);
@@ -112,7 +114,8 @@ Experiment MSO72004C::prepareForExperiment(Experiment exp)
         return exp;
     }
 
-    if(!p_comm->writeCmd(QString("CH%1:BANDWIDTH:ENHANCED OFF; CH%1:BANDWIDTH 1.6+10; COUPLING AC;OFFSET 0;SCALE %2\n").arg(config.fidChannel).arg(QString::number(config.vScale,'g',4))))
+    if(!p_comm->writeCmd(QString(":CH%1:BANDWIDTH:ENHANCED OFF; :CH%1:BANDWIDTH 1.6E+10; COUPLING AC;POSITION 0;OFFSET 0;SCALE %2\n")
+                         .arg(config.fidChannel).arg(QString::number(config.vScale,'e',3))))
     {
         emit logMessage(QString("Failed to write channel settings."),BlackChirp::LogError);
         exp.setHardwareFailed();
@@ -486,7 +489,7 @@ Experiment MSO72004C::prepareForExperiment(Experiment exp)
         config.byteOrder = QDataStream::LittleEndian;
 
         //verify number of frames
-        if(!config.summaryFrame && l.at(3).toInt() != config.numFrames)
+        if(config.fastFrameEnabled && !config.summaryFrame && l.at(3).toInt() != config.numFrames)
         {
             emit logMessage(QString("Waveform contains the wrong number of frames. Target: %1, Actual: %2. Response: %3 (Hex: %4)")
                             .arg(config.numFrames).arg(l.at(3).toInt()).arg(l.at(3)).arg(QString(l.at(3).toLatin1().toHex())),BlackChirp::LogError);
@@ -581,7 +584,7 @@ void MSO72004C::beginAcquisition()
     d_foundHeader = false;
     d_headerNumBytes = 0;
     d_waveformBytes = 0;
-    connect(&d_scopeTimeout,&QTimer::timeout,this,&MSO72004C::wakeUp,Qt::UniqueConnection);
+    connect(p_scopeTimeout,&QTimer::timeout,this,&MSO72004C::wakeUp,Qt::UniqueConnection);
     connect(p_socket,&QTcpSocket::readyRead,this,&MSO72004C::readWaveform,Qt::UniqueConnection);
 }
 
@@ -590,7 +593,7 @@ void MSO72004C::endAcquisition()
 
     //stop parsing waveforms
     disconnect(p_socket,&QTcpSocket::readyRead,this,&MSO72004C::readWaveform);
-    disconnect(&d_scopeTimeout,&QTimer::timeout,this,&MSO72004C::wakeUp);
+    disconnect(p_scopeTimeout,&QTimer::timeout,this,&MSO72004C::wakeUp);
 
     if(p_socket->bytesAvailable())
         p_socket->readAll();
@@ -641,8 +644,8 @@ void MSO72004C::readWaveform()
             if(c=='#')
             {
                 d_foundHeader = true;
-                d_scopeTimeout.stop();
-                d_scopeTimeout.start(10000);
+                p_scopeTimeout->stop();
+                p_scopeTimeout->start(10000);
 //                emit logMessage(QString("Found hdr: %1 ms").arg(QTime::currentTime().msec()));
             }
             i++;
@@ -722,7 +725,7 @@ void MSO72004C::readWaveform()
 
 void MSO72004C::wakeUp()
 {
-    d_scopeTimeout.stop();
+    p_scopeTimeout->stop();
     emit logMessage(QString("Attempting to wake up scope"),BlackChirp::LogWarning);
 
     endAcquisition();
