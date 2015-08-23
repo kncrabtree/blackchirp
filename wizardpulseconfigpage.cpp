@@ -38,8 +38,10 @@ PulseGenConfig WizardPulseConfigPage::getConfig() const
 
 void WizardPulseConfigPage::initializePage()
 {
+#ifndef BC_NO_LIF
     if(field(QString("lif")).toBool())
         p_pcw->configureLif(field(QString("delayStart")).toDouble());
+#endif
 
     if(field(QString("ftmw")).toBool())
         p_pcw->configureChirp();
