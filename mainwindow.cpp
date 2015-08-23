@@ -357,6 +357,9 @@ void MainWindow::experimentInitialized(const Experiment exp)
         case BlackChirp::FtmwTargetTime:
             ui->ftmwProgressBar->setRange(0,static_cast<int>(exp.startTime().secsTo(exp.ftmwConfig().targetTime())));
             break;
+        case BlackChirp::FtmwPeakUp:
+            configureUi(Peaking);
+            break;
         default:
 			ui->ftmwProgressBar->setRange(0,0);
             break;
@@ -678,7 +681,7 @@ void MainWindow::viewExperiment()
             return;
         }
 
-        ExperimentViewWidget *evw = new ExperimentViewWidget(1,path);
+        ExperimentViewWidget *evw = new ExperimentViewWidget(num,path);
         connect(this,&MainWindow::closing,evw,&ExperimentViewWidget::close);
         evw->show();
         evw->raise();
@@ -746,6 +749,19 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         ui->lifControlWidget->setEnabled(false);
+        ui->actionSleep->setEnabled(false);
+        break;
+    case Peaking:
+        ui->actionAbort->setEnabled(true);
+        ui->actionPause->setEnabled(false);
+        ui->actionResume->setEnabled(false);
+        ui->actionStart_Experiment->setEnabled(false);
+        ui->actionCommunication->setEnabled(false);
+        ui->actionIO_Board->setEnabled(false);
+        ui->actionTest_All_Connections->setEnabled(false);
+        ui->gasControlBox->setEnabled(true);
+        ui->pulseConfigWidget->setEnabled(true);
+        ui->lifControlWidget->setEnabled(true);
         ui->actionSleep->setEnabled(false);
         break;
     case Idle:

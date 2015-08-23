@@ -34,6 +34,7 @@ public:
     {
         Idle,
         Acquiring,
+        Peaking,
         Paused,
         Disconnected,
         Asleep
