@@ -152,7 +152,7 @@ void FlowConfig::parseLine(const QString key, const QVariant val)
             QString subKey = l.last();
             int index = l.at(1).toInt();
 
-            while(data->configList.size() < index)
+            while(data->configList.size() <= index)
                 data->configList.append(BlackChirp::FlowChannelConfig());
 
             if(subKey.contains(QString("Name")))
