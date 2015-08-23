@@ -116,7 +116,7 @@ double Mks647c::setFlowSetpoint(const int ch, const double val)
     readFlow(ch);
 
     //use full scale range and gcf to convert val to setpoint in units of 0.1% full scale
-    int sp = qRound(val/(d_gasRangeList.at(d_rangeIndexList.at(ch))*d_gcfList.at(ch)*1000.0));
+    int sp = qRound(val/(d_gasRangeList.at(d_rangeIndexList.at(ch))*d_gcfList.at(ch))*1000.0);
 
     if(sp >=0 && sp <=1100)
         p_comm->writeCmd(QString("FS%1%2;\r\n").arg(ch+1).arg(sp,4,10,QLatin1Char('0')));
@@ -159,7 +159,7 @@ double Mks647c::readFlowSetpoint(const int ch)
     if(resp.isEmpty())
     {
         emit hardwareFailure();
-        emit logMessage(QString("No response to setpoint query for ch+1annel %1.").arg(ch+1),BlackChirp::LogError);
+        emit logMessage(QString("No response to setpoint query for channel %1.").arg(ch+1),BlackChirp::LogError);
 	   return -1.0;
     }
 
@@ -168,7 +168,7 @@ double Mks647c::readFlowSetpoint(const int ch)
     if(!ok)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read setpointfor channel %1. Response: %2").arg(ch+1).arg(QString(resp)),BlackChirp::LogError);
+        emit logMessage(QString("Could not read setpoint for channel %1. Response: %2").arg(ch+1).arg(QString(resp)),BlackChirp::LogError);
 	   return -1.0;
     }
 
