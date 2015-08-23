@@ -47,6 +47,9 @@ bool MSO72004C::testConnection()
         return false;
     }
 
+    if(resp.length() > 100)
+        resp = resp.mid(0,100);
+
     if(!resp.startsWith(QByteArray("TEKTRONIX,MSO")))
     {
         emit connected(false,QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())));
@@ -402,7 +405,8 @@ Experiment MSO72004C::prepareForExperiment(Experiment exp)
     QString trigCh = QString("AUX");
     if(config.trigChannel > 0)
         trigCh = QString("CH%1").arg(config.trigChannel);
-    resp = scopeQueryCmd(QString(":TRIGGER:A:EDGE:SOURCE %1;COUPLING DC;SLOPE %2;:TRIGGER:A:LEVEL 0.35;:TRIGGER:A:EDGE:SOURCE?;SLOPE?\n").arg(trigCh).arg(slope));
+    //:TRIGGER:A:LEVEL 0.35;
+    resp = scopeQueryCmd(QString(":TRIGGER:A:EDGE:SOURCE %1;COUPLING DC;SLOPE %2;:TRIGGER:A:EDGE:SOURCE?;SLOPE?\n").arg(trigCh).arg(slope));
     if(!resp.isEmpty())
     {
         if(!QString(resp).contains(trigCh),Qt::CaseInsensitive)
