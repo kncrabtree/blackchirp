@@ -330,7 +330,7 @@ bool AcquisitionManager::calculateShift(const QByteArray b)
     }
 
     int max = 5;
-    float thresh = 0.1; // fractional improvement needed to adjust shift
+    float thresh = 0.25; // fractional improvement needed to adjust shift
     int shift = d_currentShift;
     float fomCenter = calculateFom(newChirp,avgFid,r,shift);
     float fomDown = calculateFom(newChirp,avgFid,r,shift-1);
@@ -338,41 +338,28 @@ bool AcquisitionManager::calculateShift(const QByteArray b)
     bool done = false;
     while(!done && qAbs(shift-d_currentShift) < max)
     {
-        //always assume shift "wants" to go toward 0:
-        if(shift >= 0)
+        if(fomCenter > fomDown && fomCenter > fomUp)
+            done = true;
+        else if((fomDown-fomCenter) > (fomUp-fomCenter))
         {
-            if((fomDown-fomCenter) > qAbs(fomCenter)*thresh)
+            if(fomDown > thresh*fomCenter)
             {
                 shift--;
                 fomUp = fomCenter;
                 fomCenter = fomDown;
                 fomDown = calculateFom(newChirp,avgFid,r,shift-1);
-            }
-            else if((fomUp-fomCenter) > qAbs(fomCenter)*thresh)
-            {
-                shift++;
-                fomDown = fomCenter;
-                fomCenter = fomUp;
-                fomUp = calculateFom(newChirp,avgFid,r,shift+1);
             }
             else
                 done = true;
         }
         else
         {
-            if((fomUp-fomCenter) > qAbs(fomCenter)*thresh)
+            if(fomUp > thresh*fomCenter)
             {
                 shift++;
                 fomDown = fomCenter;
                 fomCenter = fomUp;
                 fomUp = calculateFom(newChirp,avgFid,r,shift+1);
-            }
-            else if((fomDown-fomCenter) > qAbs(fomCenter)*thresh)
-            {
-                shift--;
-                fomUp = fomCenter;
-                fomCenter = fomDown;
-                fomDown = calculateFom(newChirp,avgFid,r,shift-1);
             }
             else
                 done = true;
@@ -385,6 +372,14 @@ bool AcquisitionManager::calculateShift(const QByteArray b)
         return false;
     }
 
+    if(qAbs(d_currentShift - shift) > 0)
+    {
+//        emit logMessage(QString("Shot rejected"));
+        emit logMessage(QString("Shift changed from %1 to %2. FOMs: (%3, %4, %5)").arg(d_currentShift).arg(shift)
+                        .arg(fomDown,0,'e',2).arg(fomCenter,0,'e',2).arg(fomUp,0,'e',2));
+        d_currentShift = shift;
+//        return false;
+    }
     if(qAbs(shift) > BC_FTMW_MAXSHIFT)
     {
         emit logMessage(QString("Total shift exceeds maximum range (%1). Aborting experiment.").arg(BC_FTMW_MAXSHIFT),BlackChirp::LogError);
@@ -392,12 +387,6 @@ bool AcquisitionManager::calculateShift(const QByteArray b)
         return false;
     }
 
-    if(d_currentShift != shift)
-    {
-        emit logMessage(QString("Shift changed from %1 to %2. FOMs: (%3, %4, %5)").arg(d_currentShift).arg(shift)
-                        .arg(fomDown,0,'e',2).arg(fomCenter,0,'e',2).arg(fomUp,0,'e',2));
-    }
-    d_currentShift = shift;
     return true;
 
 
@@ -410,9 +399,9 @@ float AcquisitionManager::calculateFom(const QVector<qint16> vec, const QVector<
     float c = 0.0;
     for(int i=0; i<vec.size(); i++)
     {
-        if(i+range.first-trialShift >= 0 && i+range.first-trialShift < fid.size())
+        if(i+range.first+trialShift >= 0 && i+range.first+trialShift < fid.size())
         {
-            float dat = static_cast<float>(fid.at(i+range.first-trialShift)*vec.at(i));
+            float dat = static_cast<float>(fid.at(i+range.first+trialShift)*vec.at(i));
             float y = dat - c;
             float t = sum + y;
             c = (t-sum) - y;
