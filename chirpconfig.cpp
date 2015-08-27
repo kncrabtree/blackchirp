@@ -120,10 +120,14 @@ double ChirpConfig::chirpDuration() const
 
 double ChirpConfig::totalDuration() const
 {
+    double baseLength = 10.0;
+    double length;
     if(numChirps() > 1)
-        return (static_cast<double>(data->numChirps)-1.0)*data->chirpInterval + data->preChirpProtection + data->preChirpDelay + chirpDuration() + data->postChirpProtection;
+        length =  (static_cast<double>(data->numChirps)-1.0)*data->chirpInterval + data->preChirpProtection + data->preChirpDelay + chirpDuration() + data->postChirpProtection;
     else
-        return data->preChirpProtection + data->preChirpDelay + chirpDuration() + data->postChirpProtection;
+        length = data->preChirpProtection + data->preChirpDelay + chirpDuration() + data->postChirpProtection;
+
+    return floor(length/baseLength + 1.0)*baseLength;
 }
 
 QList<BlackChirp::ChirpSegment> ChirpConfig::segmentList() const
@@ -285,6 +289,13 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
             else
                 nextSegmentSample += getFirstSample(data->segments.at(currentSegment).durationUs);
         }
+
+    }
+    //fill with zeroes until total length
+    while(currentSample < invalidSample-1)
+    {
+        double currentTime = getSampleTime(firstSample+currentSample);
+        out[currentSample] = QPointF(currentTime,0.0);
     }
 
 
@@ -347,9 +358,10 @@ QVector<QPair<bool, bool> > ChirpConfig::getMarkerData() const
 
             currentSample++;
         }
-
-
     }
+    //fill with zeroes until total length
+    while(currentSample < invalidSample-1)
+        out[currentSample] = qMakePair(false,false);
 
     return out;
 
