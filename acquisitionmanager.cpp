@@ -94,7 +94,7 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 //        testTime.start();
         bool success = true;
 
-        if(d_currentExperiment.ftmwConfig().isPhaseCorrectionEnabled() && d_currentExperiment.ftmwConfig().completedShots() > 50)
+        if(d_currentExperiment.ftmwConfig().isPhaseCorrectionEnabled())
         {
             success = calculateShift(b);
             if(!success)
@@ -289,7 +289,7 @@ bool AcquisitionManager::calculateShift(const QByteArray b)
     if(d_currentExperiment.ftmwConfig().fidList().isEmpty())
         return true;
 
-    if(d_currentExperiment.ftmwConfig().completedShots() < 50)
+    if(d_currentExperiment.ftmwConfig().completedShots() < 100)
         return true;
 
     //first, we need to extract the chirp from b
