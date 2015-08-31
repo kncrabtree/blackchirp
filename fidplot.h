@@ -6,7 +6,7 @@
 #include <QPointF>
 #include <QPair>
 
-#include "ftmwconfig.h"
+#include "experiment.h"
 
 class QwtPlotMarker;
 class QwtPlotCurve;
@@ -33,11 +33,12 @@ signals:
 
 public slots:
     void receiveData(const Fid f);
-    void prepareForExperiment(const FtmwConfig c);
+    void prepareForExperiment(const Experiment e);
     void setFtStart(double start);
     void setFtEnd(double end);
     void buildContextMenu(QMouseEvent *me);
     void changeFidColor();
+    void exportFid();
 
 private:
     Fid d_currentFid;
@@ -46,6 +47,7 @@ private:
     QPair<QwtPlotMarker*,QwtPlotMarker*> d_chirpMarkers;
     QPair<QwtPlotMarker*,QwtPlotMarker*> d_ftMarkers;
     bool d_ftEndAtFidEnd;
+    int d_number;
 
 protected:
     void filterData();

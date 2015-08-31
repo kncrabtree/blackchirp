@@ -60,7 +60,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
 
     ui->shotsLabel->setText(QString("Shots: 0"));
 
-    ui->fidPlot->prepareForExperiment(config);
+    ui->fidPlot->prepareForExperiment(e);
     ui->ftPlot->prepareForExperiment(e);
 
     ui->liveUpdateButton->blockSignals(true);
