@@ -104,6 +104,7 @@ Experiment AWG7122B::prepareForExperiment(Experiment exp)
     p_comm->writeCmd(QString("Source1:Waveform \"%1\"\n").arg(wfmName));
     p_comm->writeCmd(QString("AWGControl:RMode Triggered\n"));
     p_comm->writeCmd(QString("Trigger:Source External\n"));
+    p_comm->writeCmd(QString("Trigger:Mode Synchronous\n"));
 
 
     return exp;
