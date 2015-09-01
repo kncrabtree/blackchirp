@@ -323,6 +323,7 @@ void FtmwSnapshotWidget::finalize()
                 emit experimentLogMessage(d_num,QString("All snapshots removed."),BlackChirp::LogNormal,d_path);
             else
                 emit experimentLogMessage(d_num,QString("All snapshots kept."),BlackChirp::LogNormal,d_path);
+        }
         else if(snaps.size() == 1)
             emit experimentLogMessage(d_num,QString("Removed snapshot %1.").arg(snaps.first()),BlackChirp::LogNormal,d_path);
         else if(snaps.size() == 2)
