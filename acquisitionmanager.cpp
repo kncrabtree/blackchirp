@@ -2,7 +2,7 @@
 
 #include <savemanager.h>
 
-AcquisitionManager::AcquisitionManager(QObject *parent) : QObject(parent), d_state(Idle), d_currentShift(0)
+AcquisitionManager::AcquisitionManager(QObject *parent) : QObject(parent), d_state(Idle), d_currentShift(0), d_lastFom(0.0)
 {
     p_saveThread = new QThread(this);
 }
@@ -53,6 +53,7 @@ void AcquisitionManager::beginExperiment(Experiment exp)
 
     emit experimentInitialized(exp);
     d_currentShift = 0;
+    d_lastFom = 0.0;
     //prepare data files, savemanager, fidmanager, etc
     d_currentExperiment = exp;
 
@@ -330,7 +331,7 @@ bool AcquisitionManager::calculateShift(const QByteArray b)
     }
 
     int max = 5;
-    float thresh = 0.25; // fractional improvement needed to adjust shift
+    float thresh = 1.15; // fractional improvement needed to adjust shift
     int shift = d_currentShift;
     float fomCenter = calculateFom(newChirp,avgFid,r,shift);
     float fomDown = calculateFom(newChirp,avgFid,r,shift-1);
@@ -374,7 +375,12 @@ bool AcquisitionManager::calculateShift(const QByteArray b)
 
     if(qAbs(d_currentShift - shift) > 0)
     {
-//        emit logMessage(QString("Shot rejected"));
+        if(fomCenter < 0.9*d_lastFom)
+        {
+            emit logMessage(QString("Shot rejected. FOM (%1) is less than 90% of last FOM (%2)").arg(fomCenter,0,'e',2).arg(d_lastFom,0,'e',2));
+            return false;
+        }
+
         emit logMessage(QString("Shift changed from %1 to %2. FOMs: (%3, %4, %5)").arg(d_currentShift).arg(shift)
                         .arg(fomDown,0,'e',2).arg(fomCenter,0,'e',2).arg(fomUp,0,'e',2));
         d_currentShift = shift;
@@ -387,6 +393,7 @@ bool AcquisitionManager::calculateShift(const QByteArray b)
         return false;
     }
 
+    d_lastFom = fomCenter;
     return true;
 
 
@@ -401,7 +408,7 @@ float AcquisitionManager::calculateFom(const QVector<qint16> vec, const QVector<
     {
         if(i+range.first+trialShift >= 0 && i+range.first+trialShift < fid.size())
         {
-            float dat = static_cast<float>(fid.at(i+range.first+trialShift)*vec.at(i));
+            float dat = static_cast<float>(fid.at(i+range.first+trialShift)*static_cast<qint64>(vec.at(i)));
             float y = dat - c;
             float t = sum + y;
             c = (t-sum) - y;

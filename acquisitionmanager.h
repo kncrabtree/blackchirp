@@ -66,6 +66,7 @@ private:
     QTimer *d_timeDataTimer = nullptr;
     QThread *p_saveThread;
     int d_currentShift;
+    float d_lastFom;
 
     void checkComplete();
     void finishAcquisition();
