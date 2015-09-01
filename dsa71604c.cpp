@@ -39,6 +39,8 @@ bool Dsa71604c::testConnection()
         return false;
     }
 
+    p_comm->writeCmd(QString("*CLS\n"));
+    p_comm->writeCmd(QString("*CLS\n"));
     QByteArray resp = scopeQueryCmd(QString("*IDN?\n"));
 
     if(resp.isEmpty())
