@@ -111,6 +111,11 @@ QSize FtmwSnapshotWidget::sizeHint() const
     return QSize(100,300);
 }
 
+void FtmwSnapshotWidget::setFidList(const QList<Fid> l)
+{
+    d_totalFidList = l;
+}
+
 void FtmwSnapshotWidget::setSelectionEnabled(bool en)
 {
     p_lw->setEnabled(en);
@@ -252,8 +257,8 @@ void FtmwSnapshotWidget::updateSnapList()
         p_lw->blockSignals(false);
     }
 
-    QMetaObject::invokeMethod(p_sw,"calculateFidList",Q_ARG(int,d_num),Q_ARG(const QList<int>,snapList),
-                              Q_ARG(bool,subtract));
+    QMetaObject::invokeMethod(p_sw,"calculateFidList",Q_ARG(int,d_num),Q_ARG(const QList<Fid>,d_totalFidList),
+                              Q_ARG(const QList<int>,snapList),Q_ARG(bool,subtract));
     d_busy = true;
     d_updateWhenDone = false;
     setEnabled(false);
@@ -280,6 +285,12 @@ void FtmwSnapshotWidget::snapListUpdated(const QList<Fid> l)
 
 void FtmwSnapshotWidget::finalize()
 {
+    if(d_snapList.isEmpty())
+    {
+        QMessageBox::critical(qobject_cast<QWidget*>(parent()),QString("Finalize Error"),QString("Cannot finalize because the snapshot list is empty."),QMessageBox::Ok);
+        return;
+    }
+
     int ret = QMessageBox::question(qobject_cast<QWidget*>(parent()),QString("Discard snapshots?"),QString("If you continue, the currently-selected snapshots will be combined, and the FID output file overwritten.\nThe snapshots themselves will be deleted.\n\nAre you sure you wish to proceed?"),QMessageBox::Yes|QMessageBox::No,QMessageBox::No);
 
     if(ret == QMessageBox::No)

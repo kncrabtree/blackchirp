@@ -16,7 +16,7 @@ signals:
     void fidListComplete(const QList<Fid>);
 
 public slots:
-    void calculateFidList(int exptNum, const QList<int> snapList, bool subtractFromFull);
+    void calculateFidList(int exptNum, const QList<Fid> allList, const QList<int> snapList, bool subtractFromFull);
 
 };
 

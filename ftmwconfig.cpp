@@ -441,6 +441,61 @@ void FtmwConfig::loadFids(const int num, const QString path)
         }
         fid.close();
     }
+
+    if(data->fidList.isEmpty())
+    {
+        //try to reconstruct from snapshots, if any
+        QFile snp(BlackChirp::getExptFile(num,BlackChirp::SnapFile,path));
+        if(snp.exists() && snp.open(QIODevice::ReadOnly))
+        {
+            bool parseSuccess = false;
+            int numSnaps = 0;
+            while(!snp.atEnd())
+            {
+                QString line = snp.readLine();
+                if(line.startsWith(QString("fid")))
+                {
+                    QStringList l = line.split(QString("\t"));
+                    bool ok = false;
+                    int n = l.last().trimmed().toInt(&ok);
+                    if(ok)
+                    {
+                        parseSuccess = true;
+                        numSnaps = n;
+                        break;
+                    }
+                }
+            }
+
+            if(parseSuccess && numSnaps > 0)
+            {
+                for(int i=0; i<numSnaps; i++)
+                {
+                    QList<Fid> in;
+                    QFile f(BlackChirp::getExptFile(num,BlackChirp::FidFile,path,i));
+                    if(f.exists() && f.open(QIODevice::ReadOnly))
+                    {
+                        QDataStream d(&f);
+                        QByteArray magic;
+                        d >> magic;
+                        if(magic.startsWith("BCFID"))
+                        {
+                            if(magic.endsWith("v1.0"))
+                                d >> in;
+                        }
+                        f.close();
+                        if(data->fidList.isEmpty())
+                            data->fidList = in;
+                        else if(data->fidList.size() == in.size())
+                        {
+                            for(int j=0; j<data->fidList.size(); j++)
+                                data->fidList[j] += in.at(j);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 void FtmwConfig::parseLine(const QString key, const QVariant val)

@@ -11,19 +11,12 @@ SnapWorker::SnapWorker(QObject *parent) : QObject(parent)
 
 }
 
-void SnapWorker::calculateFidList(int exptNum, const QList<int> snapList, bool subtractFromFull)
+void SnapWorker::calculateFidList(int exptNum, const QList<Fid> allList, const QList<int> snapList, bool subtractFromFull)
 {
-    QList<Fid> out;
+    QList<Fid> out = allList;
 
     if(subtractFromFull)
     {
-        out = parseFile(exptNum,-1);
-        if(out.isEmpty())
-        {
-            emit fidListComplete(QList<Fid>());
-            return;
-        }
-
         if(snapList.isEmpty())
         {
             emit fidListComplete(out);
@@ -35,7 +28,7 @@ void SnapWorker::calculateFidList(int exptNum, const QList<int> snapList, bool s
             QList<Fid> snap = parseFile(exptNum,snapList.at(i));
             if(snap.size() != out.size())
             {
-                emit fidListComplete(QList<Fid>());
+                emit fidListComplete(out);
                 return;
             }
             for(int j=0; j<snap.size(); j++)
@@ -62,7 +55,7 @@ void SnapWorker::calculateFidList(int exptNum, const QList<int> snapList, bool s
             QList<Fid> snap = parseFile(exptNum,snapList.at(i));
             if(snap.size() != out.size())
             {
-                emit fidListComplete(QList<Fid>());
+                emit fidListComplete(allList);
                 return;
             }
             for(int j=0; j<snap.size(); j++)

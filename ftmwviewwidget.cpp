@@ -64,6 +64,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
     ui->ftPlot->prepareForExperiment(e);
 
     ui->liveUpdateButton->blockSignals(true);
+    ui->liveUpdateButton->setEnabled(true);
     ui->liveUpdateButton->setChecked(true);
     d_mode = BlackChirp::FtmwViewLive;
     ui->liveUpdateButton->blockSignals(false);
@@ -181,6 +182,9 @@ void FtmwViewWidget::newFidList(QList<Fid> fl)
     }
     if(d_mode == BlackChirp::FtmwViewLive)
         updateFtPlot();
+
+    if(p_snapWidget != nullptr)
+        p_snapWidget->setFidList(fl);
 }
 
 void FtmwViewWidget::updateShotsLabel(qint64 shots)
@@ -347,7 +351,7 @@ void FtmwViewWidget::modeChanged()
     }
     else if(ui->snapDiffButton->isChecked())
     {
-        d_mode = BlackChirp::FtmwViewFrameDiff;
+        d_mode = BlackChirp::FtmwViewSnapDiff;
         ui->snapshotCheckbox->blockSignals(true);
         ui->snapshotCheckbox->setChecked(false);
         ui->snapshotCheckbox->blockSignals(false);
@@ -375,7 +379,7 @@ void FtmwViewWidget::snapshotTaken()
         connect(p_snapWidget,&FtmwSnapshotWidget::loadFailed,this,&FtmwViewWidget::snapshotLoadError);
         connect(p_snapWidget,&FtmwSnapshotWidget::snapListChanged,this,&FtmwViewWidget::snapListUpdate);
         connect(p_snapWidget,&FtmwSnapshotWidget::refChanged,this,&FtmwViewWidget::snapRefChanged);
-        connect(p_snapWidget,&FtmwSnapshotWidget::refChanged,this,&FtmwViewWidget::snapDiffChanged);
+        connect(p_snapWidget,&FtmwSnapshotWidget::diffChanged,this,&FtmwViewWidget::snapDiffChanged);
         connect(p_snapWidget,&FtmwSnapshotWidget::finalizedList,this,&FtmwViewWidget::finalizedSnapList);
         connect(p_snapWidget,&FtmwSnapshotWidget::experimentLogMessage,this,&FtmwViewWidget::experimentLogMessage);
         p_snapWidget->setSelectionEnabled(false);
@@ -386,6 +390,7 @@ void FtmwViewWidget::snapshotTaken()
         ui->rightLayout->addWidget(p_snapWidget);
     }
 
+    p_snapWidget->setFidList(d_currentFidList);
 
     if(p_snapWidget->readSnapshots())
         ui->snapDiffButton->setEnabled(true);

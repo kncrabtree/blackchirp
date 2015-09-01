@@ -27,6 +27,7 @@ public:
     Fid getDiffFid(int i);
 
     QSize sizeHint() const;
+    void setFidList(const QList<Fid> l);
 
 signals:
     void loadFailed(const QString errMsg);
@@ -55,7 +56,7 @@ private:
     int d_num;
     bool d_busy, d_updateWhenDone;
     QString d_path;
-    QList<Fid> d_snapList;
+    QList<Fid> d_snapList, d_totalFidList;
 };
 
 #endif // FTMWSNAPSHOTWIDGET_H
