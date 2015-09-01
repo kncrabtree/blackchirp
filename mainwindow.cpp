@@ -615,9 +615,9 @@ void MainWindow::viewExperiment()
     {
         numBox->setRange(0,__INT_MAX__);
         numBox->setSpecialValueText(QString("Select..."));
-        numBox->setEnabled(false);
+        numBox->setEnabled(true);
         pathBox->setChecked(true);
-        pathBox->setEnabled(false);
+        pathBox->setEnabled(true);
     }
     else
     {
