@@ -87,10 +87,10 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
     {
         if(fid.sideband() == BlackChirp::UpperSideband)
             spectrum[i] = QPointF(probe + sign*(double)i/np/spacing,
-                          sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/rawSize)*1e3;
+                          sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/rawSize*1e3);
         else
             spectrum[spectrumSize-1-i] = QPointF(probe + sign*(double)i/np/spacing,
-                          sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/rawSize)*1e3;
+                          sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/rawSize*1e3);
     }
 
     //the signal is used for asynchronous purposes (in UI classes), and the return value for synchronous (in non-UI classes)
