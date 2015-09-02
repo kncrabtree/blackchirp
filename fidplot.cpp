@@ -382,6 +382,7 @@ void FidPlot::exportFid()
         f.write(QString("\n#Sideband\tUpper\t").toLatin1());
     else
         f.write(QString("\n#Sideband\tLower\t").toLatin1());
+    f.write(QString("\n#Shots\t%1\t").arg(d_currentFid.shots()).toLatin1());
     f.write(QString("\n#Spacing\t%1\ts\n\n").arg(d_currentFid.spacing(),0,'e',3).toLatin1());
 
     f.write(QString("fid%1").arg(d_number).toLatin1());
