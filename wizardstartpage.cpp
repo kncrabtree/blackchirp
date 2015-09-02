@@ -50,7 +50,7 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     registerField(QString("lif"),p_lif);
 #endif
     fl->addRow(QString("Aux Data Interval"),p_auxDataIntervalBox);
-    fl->addRow(QString("Snaphot Interval"),p_snapshotBox);
+    fl->addRow(QString("Snapshot Interval"),p_snapshotBox);
 
     setLayout(fl);
 }
