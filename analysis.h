@@ -6,6 +6,7 @@
 namespace Analysis {
 
 quint32 nextPowerOf2(quint32 n);
+qint64 intRoundClosest(const qint64 n, const qint64 d);
 
 }
 

@@ -299,7 +299,7 @@ bool AcquisitionManager::calculateShift(const QByteArray b)
         return true;
 
     QVector<qint16> newChirp(r.second-r.first);
-    QVector<qint64> avgFid = d_currentExperiment.ftmwConfig().fidList().first().rawData();
+    Fid avgFid = d_currentExperiment.ftmwConfig().fidList().first();
     if(d_currentExperiment.ftmwConfig().scopeConfig().bytesPerPoint == 2)
     {
         for(int i=r.first; i<r.second; i++)
@@ -399,7 +399,7 @@ bool AcquisitionManager::calculateShift(const QByteArray b)
 
 }
 
-float AcquisitionManager::calculateFom(const QVector<qint16> vec, const QVector<qint64> fid, QPair<int, int> range, int trialShift)
+float AcquisitionManager::calculateFom(const QVector<qint16> vec, const Fid fid, QPair<int, int> range, int trialShift)
 {
     //Kahan summation (32 bit precision is sufficient)
     float sum = 0.0;
@@ -408,7 +408,7 @@ float AcquisitionManager::calculateFom(const QVector<qint16> vec, const QVector<
     {
         if(i+range.first+trialShift >= 0 && i+range.first+trialShift < fid.size())
         {
-            float dat = static_cast<float>(fid.at(i+range.first+trialShift)*static_cast<qint64>(vec.at(i)));
+            float dat = static_cast<float>(fid.atRaw(i+range.first+trialShift))*(static_cast<float>(vec.at(i)));
             float y = dat - c;
             float t = sum + y;
             c = (t-sum) - y;
@@ -416,6 +416,6 @@ float AcquisitionManager::calculateFom(const QVector<qint16> vec, const QVector<
         }
     }
 
-    return sum;
+    return sum/static_cast<float>(fid.shots());
 }
 

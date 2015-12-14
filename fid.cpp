@@ -1,5 +1,7 @@
 #include "fid.h"
 
+#include "analysis.h"
+
 Fid::Fid() : data(new FidData)
 {
 }
@@ -147,9 +149,9 @@ void Fid::rollingAverage(const Fid other, qint64 targetShots, int shift)
         for(int i=0; i<other.size(); i++)
         {
             if(i+shift >=0 && i+shift < size())
-                data->fid[i+shift] = (targetShots*(atRaw(i+shift) + other.atRaw(i)))/totalShots;
+                data->fid[i+shift] = Analysis::intRoundClosest(targetShots*(atRaw(i+shift) + other.atRaw(i)),totalShots);
             else
-                data->fid[i] = (targetShots*atRaw(i))/totalShots;
+                data->fid[i] = Analysis::intRoundClosest(targetShots*atRaw(i),totalShots);
         }
 
         data->shots = targetShots;
@@ -211,7 +213,7 @@ qint64 Fid::atRaw(const int i) const
 double Fid::atNorm(const int i) const
 {
     if(data->shots > 1)
-        return (double)data->fid.at(i)/(double)data->shots;
+        return ((double)data->fid.at(i)/(double)data->shots);
     else
         return (double)data->fid.at(i);
 }
