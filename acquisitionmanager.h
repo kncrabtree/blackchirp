@@ -71,7 +71,7 @@ private:
     void checkComplete();
     void finishAcquisition();
     bool calculateShift(const QByteArray b);
-    float calculateFom(const QVector<qint16> vec, const Fid fid, QPair<int,int> range, int trialShift);
+    float calculateFom(const QVector<qint64> vec, const Fid fid, QPair<int,int> range, int trialShift);
 
 #ifdef BC_CUDA
     GpuAverager gpuAvg;

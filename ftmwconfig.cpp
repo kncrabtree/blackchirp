@@ -133,6 +133,20 @@ QList<Fid> FtmwConfig::parseWaveform(QByteArray b) const
     return out;
 }
 
+QVector<qint64> FtmwConfig::extractChirp(QByteArray b) const
+{
+    QVector<qint64> out;
+    auto r = chirpRange();
+    if(r.first >= 0 && r.second >= 0)
+    {
+        QList<Fid> l = parseWaveform(b);
+        if(!l.isEmpty())
+            out = l.first().rawData().mid(r.first, r.second - r.first);
+    }
+
+    return out;
+}
+
 QString FtmwConfig::errorString() const
 {
     return data->errorString;

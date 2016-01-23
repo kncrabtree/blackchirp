@@ -295,40 +295,10 @@ bool AcquisitionManager::calculateShift(const QByteArray b)
 
     //first, we need to extract the chirp from b
     auto r = d_currentExperiment.ftmwConfig().chirpRange();
-    if(r.first < 0 || r.second < 0)
+    QVector<qint64> newChirp = d_currentExperiment.ftmwConfig().extractChirp(b);
+    if(newChirp.isEmpty())
         return true;
-
-    QVector<qint16> newChirp(r.second-r.first);
     Fid avgFid = d_currentExperiment.ftmwConfig().fidList().first();
-    if(d_currentExperiment.ftmwConfig().scopeConfig().bytesPerPoint == 2)
-    {
-        for(int i=r.first; i<r.second; i++)
-        {
-            int index = i-r.first;
-            qint8 b1 = b.at(2*i);
-            qint8 b2 = b.at(2*i+1);
-            qint16 dat = 0;
-            if(d_currentExperiment.ftmwConfig().scopeConfig().byteOrder == QDataStream::LittleEndian)
-            {
-                dat |= b1;
-                dat |= (b2 << 8);
-            }
-            else
-            {
-                dat |= (b1 << 8);
-                dat |= b2;
-            }
-            newChirp[index] = dat;
-        }
-    }
-    else
-    {
-        for(int i=r.first; i<r.second; i++)
-        {
-            int index = i-r.first;
-            newChirp[index] = static_cast<qint16>(b.at(i));
-        }
-    }
 
     int max = 5;
     float thresh = 1.15; // fractional improvement needed to adjust shift
@@ -399,7 +369,7 @@ bool AcquisitionManager::calculateShift(const QByteArray b)
 
 }
 
-float AcquisitionManager::calculateFom(const QVector<qint16> vec, const Fid fid, QPair<int, int> range, int trialShift)
+float AcquisitionManager::calculateFom(const QVector<qint64> vec, const Fid fid, QPair<int, int> range, int trialShift)
 {
     //Kahan summation (32 bit precision is sufficient)
     float sum = 0.0;

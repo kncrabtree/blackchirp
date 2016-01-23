@@ -38,6 +38,7 @@ public:
     Fid fidTemplate() const;
     int numFrames() const;
     QList<Fid> parseWaveform(QByteArray b) const;
+    QVector<qint64> extractChirp(QByteArray b) const;
     QString errorString() const;
     double ftMin() const;
     double ftMax() const;
