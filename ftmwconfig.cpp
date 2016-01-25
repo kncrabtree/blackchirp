@@ -101,10 +101,11 @@ QList<Fid> FtmwConfig::parseWaveform(QByteArray b) const
 
         for(int i=0; i<np;i++)
         {
+            qint64 dat;
             if(scopeConfig().bytesPerPoint == 1)
             {
                 char y = b.at(j*np+i);
-                d[i] = (static_cast<qint64>(y) + static_cast<qint64>(scopeConfig().yOff));
+                dat = (static_cast<qint64>(y) + static_cast<qint64>(scopeConfig().yOff));
             }
             else
             {
@@ -121,8 +122,15 @@ QList<Fid> FtmwConfig::parseWaveform(QByteArray b) const
                     y |= static_cast<quint8>(y1) << 8;
                     y |= static_cast<quint8>(y2);
                 }
-                d[i] = (static_cast<qint64>(y) + static_cast<qint64>(scopeConfig().yOff));
+                dat = (static_cast<qint64>(y) + static_cast<qint64>(scopeConfig().yOff));
             }
+
+            //in peak up mode, add 8 bits of padding so that there are empty bits to fill when
+            //the rolling average kicks in
+            if(type() == BlackChirp::FtmwPeakUp)
+                dat = dat << 8;
+
+            d[i] = dat;
         }
 
         Fid f = fidTemplate();
@@ -225,6 +233,11 @@ bool FtmwConfig::writeFidFile(int num, QList<Fid> list, QString path)
 bool FtmwConfig::prepareForAcquisition()
 {
     Fid f(scopeConfig().xIncr,loFreq(),QVector<qint64>(0),sideband(),scopeConfig().yMult,1);
+
+    //in peak up mode, data points will be shifted by 8 bits (x256), so the multiplier
+    //needs to decrease by a factor of 256
+    if(type() == BlackChirp::FtmwPeakUp)
+        f.setVMult(f.vMult()/256.0);
     data->fidTemplate = f;
 
     if(!chirpConfig().isValid())
