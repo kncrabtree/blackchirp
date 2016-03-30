@@ -494,7 +494,7 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
         config.byteOrder = QDataStream::LittleEndian;
 
         //verify number of frames
-        if(!config.summaryFrame && l.at(3).toInt() != config.numFrames)
+        if(config.fastFrameEnabled && !config.summaryFrame && l.at(3).toInt() != config.numFrames)
         {
             emit logMessage(QString("Waveform contains the wrong number of frames. Target: %1, Actual: %2. Response: %3 (Hex: %4)")
                             .arg(config.numFrames).arg(l.at(3).toInt()).arg(l.at(3)).arg(QString(l.at(3).toLatin1().toHex())),BlackChirp::LogError);
