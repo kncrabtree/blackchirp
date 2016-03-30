@@ -17,8 +17,8 @@ __global__ void parseAdd_kernel1byte(int numPoints, char *devNewData, long long 
 __global__ void parseRollAvg_kernel1byte(int numPoints, char *devnewData, long long int *devSum, int offset, qint64 currentShots, qint64 targetShots, int shift)
 {
     int i = offset + blockIdx.x*blockDim.x + threadIdx.x;
-    if(i + shift < numPoints && i + shift >= 0)
-        devSum[i] += ((long long int)devnewData[i+shift] << 8);
+    if(i < numPoints && i - shift < numPoints && i >= 0 && i - shift >= 0)
+        devSum[i] += ((long long int)devnewData[i-shift] << 8);
 
     if(i < numPoints && currentShots > targetShots)
     {

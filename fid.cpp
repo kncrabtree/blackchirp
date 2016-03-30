@@ -124,7 +124,7 @@ void Fid::add(const Fid other, int shift)
     {
         for(int i=0; i<size(); i++)
         {
-            if(i+shift >=0 && i+shift < size())
+            if(i+shift >=0 && i >= 0 && i+shift < size() && i < size())
                 data->fid[i+shift] += other.atRaw(i);
         }
 
