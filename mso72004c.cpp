@@ -568,8 +568,6 @@ Experiment MSO72004C::prepareForExperiment(Experiment exp)
     d_configuration = config;
     exp.setScopeConfig(config);
 
-    //lock scope, turn off waveform display, connect signal-slot stuff
-    p_comm->writeCmd(QString(":LOCK ALL;:DISPLAY:WAVEFORM OFF\n"));
     if(p_socket->bytesAvailable())
         p_socket->readAll();
 
@@ -580,6 +578,7 @@ Experiment MSO72004C::prepareForExperiment(Experiment exp)
 
 void MSO72004C::beginAcquisition()
 {
+    p_comm->writeCmd(QString(":LOCK ALL;:DISPLAY:WAVEFORM OFF\n"));
     if(p_socket->bytesAvailable())
         p_socket->readAll();
 

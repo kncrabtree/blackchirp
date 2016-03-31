@@ -569,18 +569,15 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
     d_configuration = config;
     exp.setScopeConfig(config);
 
-    //lock scope, turn off waveform display, connect signal-slot stuff
-    p_comm->writeCmd(QString(":LOCK ALL;:DISPLAY:WAVEFORM OFF\n"));
     if(p_socket->bytesAvailable())
         p_socket->readAll();
-
-
 
     return exp;
 }
 
 void Dsa71604c::beginAcquisition()
 {
+    p_comm->writeCmd(QString(":LOCK ALL;:DISPLAY:WAVEFORM OFF\n"));
     if(p_socket->bytesAvailable())
         p_socket->readAll();
 
