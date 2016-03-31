@@ -54,7 +54,11 @@ FtmwViewWidget::~FtmwViewWidget()
 void FtmwViewWidget::prepareForExperiment(const Experiment e)
 {
     FtmwConfig config = e.ftmwConfig();
-    ui->exptLabel->setText(QString("Experiment %1").arg(e.number()));
+    if(config.type() == BlackChirp::FtmwPeakUp)
+        ui->exptLabel->setText(QString("Peak Up Mode"));
+    else
+        ui->exptLabel->setText(QString("Experiment %1").arg(e.number()));
+
     if(!ui->exptLabel->isVisible())
         ui->exptLabel->setVisible(true);
 
