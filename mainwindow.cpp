@@ -316,6 +316,7 @@ void MainWindow::batchComplete(bool aborted)
     disconnect(p_am,&AcquisitionManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated);
     disconnect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort);
     disconnect(p_hwm,&HardwareManager::lifScopeShotAcquired,ui->lifDisplayWidget,&LifDisplayWidget::lifShotAcquired);
+    disconnect(ui->ftViewWidget,&FtmwViewWidget::rollingAverageShotsChanged,ui->ftmwProgressBar,&QProgressBar::setMaximum);
 
     if(aborted)
         emit statusMessage(QString("Experiment aborted"));
@@ -358,6 +359,8 @@ void MainWindow::experimentInitialized(const Experiment exp)
             ui->ftmwProgressBar->setRange(0,static_cast<int>(exp.startTime().secsTo(exp.ftmwConfig().targetTime())));
             break;
         case BlackChirp::FtmwPeakUp:
+            ui->ftmwProgressBar->setRange(0,exp.ftmwConfig().targetShots());
+            connect(ui->ftViewWidget,&FtmwViewWidget::rollingAverageShotsChanged,ui->ftmwProgressBar,&QProgressBar::setMaximum,Qt::UniqueConnection);
             configureUi(Peaking);
             break;
         default:
