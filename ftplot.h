@@ -27,6 +27,7 @@ public:
 
 signals:
     void pzfChanged(int);
+    void unitsChanged(double);
 
 public slots:
     void newFt(const QVector<QPointF> ft, double max);
@@ -37,6 +38,7 @@ public slots:
     void changeFtColor(QColor c);
     void changeGridColor(QColor c);    
     void exportXY();
+    void configureUnits(BlackChirp::FtPlotUnits u);
 
 
 private:
@@ -48,6 +50,7 @@ private:
     QVector<QPointF> d_currentFt;
     int d_number;
     int d_pzf;
+    BlackChirp::FtPlotUnits d_currentUnits;
 
     QColor getColor(QColor startingColor);
 

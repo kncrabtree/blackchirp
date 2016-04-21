@@ -227,6 +227,13 @@ struct IOBoardChannel {
     IOBoardChannel(const IOBoardChannel &other) : enabled(other.enabled), name(other.name), plot(other.plot) {}
 };
 
+enum FtPlotUnits {
+    FtPlotV,
+    FtPlotmV,
+    FtPlotuV,
+    FtPlotnV
+};
+
 QString getExptFile(int num, BlackChirp::ExptFileType t, QString path = QString(""), int snapNum = -1);
 QString getExptDir(int num, QString path = QString(""));
 QString headerMapToString(QMap<QString,QPair<QVariant,QString>> map);
@@ -245,6 +252,7 @@ Q_DECLARE_METATYPE(BlackChirp::PulseActiveLevel)
 Q_DECLARE_METATYPE(BlackChirp::LifScanOrder)
 Q_DECLARE_METATYPE(BlackChirp::LifCompleteMode)
 Q_DECLARE_METATYPE(BlackChirp::ValidationItem)
+Q_DECLARE_METATYPE(BlackChirp::FtPlotUnits)
 
 Q_DECLARE_TYPEINFO(BlackChirp::LifPoint,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::ChirpSegment,Q_MOVABLE_TYPE);

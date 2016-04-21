@@ -35,6 +35,7 @@ public slots:
     void ftStartChanged(double s);
     void ftEndChanged(double e);
     void pzfChanged(int zpf);
+    void scalingChanged(double scf);
     void updateFtPlot();
     void ftDone(QVector<QPointF> ft, double max);
     void ftDiffDone(QVector<QPointF> ft, double min, double max);

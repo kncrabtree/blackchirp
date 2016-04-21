@@ -14,6 +14,8 @@
 #include <QFormLayout>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QList>
+#include <QPair>
 
 #include <qwt6/qwt_picker_machine.h>
 #include <qwt6/qwt_scale_widget.h>
@@ -23,7 +25,7 @@
 #include <qwt6/qwt_plot_grid.h>
 
 FtPlot::FtPlot(QWidget *parent) :
-    ZoomPanPlot(QString("FtPlot"),parent), d_number(0), d_pzf(0)
+    ZoomPanPlot(QString("FtPlot"),parent), d_number(0), d_pzf(0), d_currentUnits(BlackChirp::FtPlotmV)
 {
     //make axis label font smaller
     this->setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
@@ -99,6 +101,8 @@ void FtPlot::prepareForExperiment(const Experiment e)
         setAxisAutoScaleRange(QwtPlot::xBottom,c.ftMin(),c.ftMax());
     }
     autoScale();
+    QSettings s;
+    configureUnits(static_cast<BlackChirp::FtPlotUnits>(s.value(QString("ftUnits"),BlackChirp::FtPlotmV).toInt()));
 }
 
 void FtPlot::newFt(QVector<QPointF> ft, double max)
@@ -220,6 +224,31 @@ void FtPlot::buildContextMenu(QMouseEvent *me)
     wa->setDefaultWidget(w);
     m->addAction(wa);
 
+    QList<QPair<BlackChirp::FtPlotUnits,QString>> unitsList;
+    unitsList << qMakePair(BlackChirp::FtPlotV,QString("V"));
+    unitsList << qMakePair(BlackChirp::FtPlotmV,QString("mV"));
+    unitsList << qMakePair(BlackChirp::FtPlotuV,QString::fromUtf16(u"µV"));
+    unitsList << qMakePair(BlackChirp::FtPlotnV,QString("nV"));
+
+
+    QMenu *yMenu = m->addMenu(QString("Y Scaling"));
+    QActionGroup *scaleGroup = new QActionGroup(yMenu);
+    scaleGroup->setExclusive(true);
+
+    for(int i=0; i<unitsList.size(); i++)
+    {
+        QAction *a = yMenu->addAction(unitsList.at(i).second);
+        a->setCheckable(true);
+        if(unitsList.at(i).first == d_currentUnits)
+            a->setChecked(true);
+        else
+            a->setChecked(false);
+        connect(a,&QAction::triggered,this,[=](){ configureUnits(unitsList.at(i).first); });
+    }
+    yMenu->addActions(scaleGroup->actions());
+
+
+
     m->popup(me->globalPos());
 }
 
@@ -283,4 +312,39 @@ void FtPlot::exportXY()
     f.close();
 
     QApplication::restoreOverrideCursor();
+}
+
+void FtPlot::configureUnits(BlackChirp::FtPlotUnits u)
+{
+    d_currentUnits = u;
+    QwtText title = axisTitle(QwtPlot::yLeft);
+    double scf = 1.0;
+
+    switch(u)
+    {
+    case BlackChirp::FtPlotV:
+        title.setText(QString("FT (V)"));
+        scf = 1.0;
+        break;
+    case BlackChirp::FtPlotmV:
+        title.setText(QString("FT (mV)"));
+        scf = 1e3;
+        break;
+    case BlackChirp::FtPlotuV:
+        title.setText(QString::fromUtf16(u"FT (µV)"));
+        scf = 1e6;
+        break;
+    case BlackChirp::FtPlotnV:
+        title.setText(QString("FT (nV)"));
+        scf = 1e9;
+        break;
+    default:
+        break;
+    }
+
+    QSettings s;
+    s.setValue(QString("ftUnits"),d_currentUnits);
+
+    setAxisTitle(QwtPlot::yLeft,title);
+    emit unitsChanged(scf);
 }

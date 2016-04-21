@@ -8,7 +8,7 @@
 #include "analysis.h"
 
 FtWorker::FtWorker(QObject *parent) :
-    QObject(parent), real(NULL), work(NULL), d_numPnts(0), d_start(0.0), d_end(0.0), d_pzf(0)
+    QObject(parent), real(NULL), work(NULL), d_numPnts(0), d_start(0.0), d_end(0.0), d_pzf(0), d_scaling(1.0)
 {
 }
 
@@ -75,7 +75,7 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
 
         //calculate magnitude and update max
         //note: Normalize output, and convert to mV
-        double coef_mag = sqrt(coef_real*coef_real + coef_imag*coef_imag)/rawSize*1e3;
+        double coef_mag = sqrt(coef_real*coef_real + coef_imag*coef_imag)/rawSize*d_scaling;
         max = qMax(max,coef_mag);
 
         if(fid.sideband() == BlackChirp::UpperSideband)
@@ -87,10 +87,10 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
     {
         if(fid.sideband() == BlackChirp::UpperSideband)
             spectrum[i] = QPointF(probe + sign*(double)i/np/spacing,
-                          sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/rawSize*1e3);
+                          sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/rawSize*d_scaling);
         else
             spectrum[spectrumSize-1-i] = QPointF(probe + sign*(double)i/np/spacing,
-                          sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/rawSize*1e3);
+                          sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/rawSize*d_scaling);
     }
 
     //the signal is used for asynchronous purposes (in UI classes), and the return value for synchronous (in non-UI classes)
