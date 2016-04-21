@@ -30,7 +30,6 @@ public slots:
 private:
     bool valonWriteCmd(QString cmd);
     QByteArray valonQueryCmd(QString cmd);
-    double d_minFreq, d_maxFreq;
 
     bool setSynth(int channel, double f);
     bool readSynth(int channel);

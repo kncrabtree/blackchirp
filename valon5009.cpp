@@ -3,7 +3,7 @@
 #include "rs232instrument.h"
 
 Valon5009::Valon5009(QObject *parent) :
-    Synthesizer(parent), d_minFreq(500.0), d_maxFreq(6000.0)
+    Synthesizer(parent)
 {
     d_subKey = QString("valon5009");
     d_prettyName = QString("Valon Synthesizer 5009");
