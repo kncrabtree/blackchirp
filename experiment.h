@@ -76,7 +76,9 @@ public:
     bool saveHeader() const;
     bool saveChirpFile() const;
     bool saveTimeFile() const;
+    QString timeDataText() const;
     void snapshot(int snapNum, const Experiment other) const;
+    void exportAscii(const QString fileName) const;
 
 private:
     QSharedDataPointer<ExperimentData> data;

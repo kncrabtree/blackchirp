@@ -8,6 +8,10 @@
 #include <QLabel>
 #include <QFile>
 #include <QTextEdit>
+#include <QFileDialog>
+#include <QToolBar>
+#include <QAction>
+#include <QMessageBox>
 
 #include "ftmwviewwidget.h"
 #include "lifdisplaywidget.h"
@@ -21,16 +25,26 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
     setWindowTitle(QString("Experiment %1").arg(num));
     setAttribute(Qt::WA_DeleteOnClose);
 
-    QHBoxLayout *hbl = new QHBoxLayout;
+    QToolBar *toolBar = new QToolBar(this);
+    toolBar->setMovable(false);
+    toolBar->setAllowedAreas(Qt::TopToolBarArea);
+    QAction *exportAction = toolBar->addAction(QIcon(QString(":/icons/export.png")),QString("Export Experiment"));
+    connect(exportAction,&QAction::triggered,this,&ExperimentViewWidget::exportAscii);
+    toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+
+
+
+    QVBoxLayout *vbl = new QVBoxLayout;
+    vbl->addWidget(toolBar);
 
     if(d_experiment.number() < 1)
     {
         QLabel *errLabel = new QLabel(d_experiment.errorString());
         errLabel->setAlignment(Qt::AlignCenter);
         errLabel->setWordWrap(true);
-        hbl->addWidget(errLabel);
+        vbl->addWidget(errLabel);
         resize(500,500);
-        setLayout(hbl);
+        setLayout(vbl);
         return;
     }
 
@@ -68,13 +82,35 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
             connect(p_ftmw,&FtmwViewWidget::experimentLogMessage,p_lh,&LogHandler::experimentLogMessage);
     }
 
-    hbl->addWidget(p_tabWidget);
-    setLayout(hbl);
+    vbl->addWidget(p_tabWidget);
+    setLayout(vbl);
 }
 
 QSize ExperimentViewWidget::sizeHint() const
 {
     return QSize(1024,768);
+}
+
+void ExperimentViewWidget::exportAscii()
+{
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    QString path = s.value(QString("exportPath"),QDir::homePath()).toString();
+
+    QString name = QFileDialog::getSaveFileName(this,QString("Export Experiment"),path + QString("/expt%1.txt").arg(d_experiment.number()));
+
+    QFile f(name);
+    if(!f.open(QIODevice::WriteOnly))
+    {
+        QMessageBox::critical(this,QString("Export Failed"),QString("Could not open file %1 for writing. Please choose a different filename.").arg(name));
+        return;
+    }
+
+    f.close();
+
+    QString newPath = QFileInfo(name).dir().absolutePath();
+    s.setValue(QString("exportPath"),newPath);
+
+    d_experiment.exportAscii(name);
 }
 
 QWidget *ExperimentViewWidget::buildHeaderWidget()

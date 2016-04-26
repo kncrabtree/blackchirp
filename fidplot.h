@@ -38,7 +38,6 @@ public slots:
     void setFtEnd(double end);
     void buildContextMenu(QMouseEvent *me);
     void changeFidColor();
-    void exportFid();
 
 private:
     Fid d_currentFid;

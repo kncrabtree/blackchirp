@@ -22,6 +22,7 @@ signals:
     void logMessage(QString msg, BlackChirp::LogMessageCode t = BlackChirp::LogNormal);
 
 public slots:
+    void exportAscii();
 
 private:
     Experiment d_experiment;

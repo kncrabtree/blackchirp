@@ -226,7 +226,12 @@ void AcquisitionManager::processTimeData(const QList<QPair<QString, QVariant> > 
 	{
         if(!d_currentExperiment.addTimeData(timeDataList,plot))
             abort();
-	}
+    }
+}
+
+void AcquisitionManager::exportAsciiFid(const QString s)
+{
+    d_currentExperiment.exportAscii(s);
 }
 
 void AcquisitionManager::pause()

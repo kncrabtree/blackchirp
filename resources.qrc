@@ -33,5 +33,6 @@
         <file>icons/view.png</file>
         <file>icons/bc.png</file>
         <file>icons/header.png</file>
+        <file>icons/export.png</file>
     </qresource>
 </RCC>

@@ -75,6 +75,7 @@ public slots:
     void setLogIcon(BlackChirp::LogMessageCode c);
     void sleep(bool s);
     void viewExperiment();
+    void exportExperiment();
 
 private:
     Ui::MainWindow *ui;
@@ -95,6 +96,7 @@ private:
     ProgramState d_state;
     int d_logCount;
     BlackChirp::LogMessageCode d_logIcon;
+    int d_currentExptNum;
 
 protected:
     void closeEvent(QCloseEvent *ev);

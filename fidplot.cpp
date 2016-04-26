@@ -303,11 +303,6 @@ void FidPlot::buildContextMenu(QMouseEvent *me)
     QAction *colorAct = menu->addAction(QString("Change FID color..."));
     connect(colorAct,&QAction::triggered,this,&FidPlot::changeFidColor);
 
-    QAction *exportAct = menu->addAction(QString("Export to ASCII..."));
-    if(d_currentFid.size() == 0)
-        exportAct->setEnabled(false);
-    connect(exportAct,&QAction::triggered,this,&FidPlot::exportFid);
-
     QWidgetAction *wa = new QWidgetAction(menu);
     QWidget *w = new QWidget(menu);
     QFormLayout *fl = new QFormLayout(w);
@@ -359,37 +354,4 @@ void FidPlot::changeFidColor()
 
         replot();
     }
-}
-
-void FidPlot::exportFid()
-{
-    QString name = QFileDialog::getSaveFileName(this,QString("Export FID"),QString("~/%1_fid.txt").arg(d_number));
-    if(name.isEmpty())
-        return;
-
-    QFile f(name);
-
-    if(!f.open(QIODevice::WriteOnly))
-    {
-        QMessageBox::critical(this,QString("FID Export Failed"),QString("Could not open file %1 for writing. Please choose a different filename.").arg(name));
-        return;
-    }
-
-    QApplication::setOverrideCursor(Qt::BusyCursor);
-
-    f.write(QString("#Probe freq\t%1\tMHz").arg(d_currentFid.probeFreq(),0,'f',5).toLatin1());
-    if(d_currentFid.sideband() == BlackChirp::UpperSideband)
-        f.write(QString("\n#Sideband\tUpper\t").toLatin1());
-    else
-        f.write(QString("\n#Sideband\tLower\t").toLatin1());
-    f.write(QString("\n#Shots\t%1\t").arg(d_currentFid.shots()).toLatin1());
-    f.write(QString("\n#Spacing\t%1\ts\n\n").arg(d_currentFid.spacing(),0,'e',3).toLatin1());
-
-    f.write(QString("fid%1").arg(d_number).toLatin1());
-
-    for(int i=0;i<d_currentFid.size();i++)
-        f.write(QString("\n%1").arg(d_currentFid.at(i),0,'e',12).toLatin1());
-    f.close();
-
-    QApplication::restoreOverrideCursor();
 }

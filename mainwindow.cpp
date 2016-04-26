@@ -29,7 +29,7 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow), d_hardwareConnected(false), d_state(Idle), d_logCount(0), d_logIcon(BlackChirp::LogNormal)
+    ui(new Ui::MainWindow), d_hardwareConnected(false), d_state(Idle), d_logCount(0), d_logIcon(BlackChirp::LogNormal), d_currentExptNum(0)
 {
     ui->setupUi(this);
 
@@ -242,6 +242,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionSleep,&QAction::toggled,this,&MainWindow::sleep);
     connect(ui->actionTest_All_Connections,&QAction::triggered,p_hwm,&HardwareManager::testAll);
     connect(ui->actionView_Experiment,&QAction::triggered,this,&MainWindow::viewExperiment);
+    connect(ui->actionExport_experiment,&QAction::triggered,this,&MainWindow::exportExperiment);
 
 #ifdef BC_NO_LIF
     ui->actionLIF->setEnabled(false);
@@ -337,12 +338,14 @@ void MainWindow::batchComplete(bool aborted)
 }
 
 void MainWindow::experimentInitialized(const Experiment exp)
-{
+{   
     if(!exp.isInitialized())
 		return;
 
     if(exp.number() > 0)
         ui->exptSpinBox->setValue(exp.number());
+
+    d_currentExptNum = exp.number();
 
     ui->ftmwProgressBar->setValue(0);
     ui->ftViewWidget->prepareForExperiment(exp);
@@ -689,9 +692,35 @@ void MainWindow::viewExperiment()
         evw->show();
         evw->raise();
     }
+}
 
+void MainWindow::exportExperiment()
+{
+    if(d_currentExptNum == 0)
+        return;
 
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    QString path = s.value(QString("exportPath"),QDir::homePath()).toString();
 
+    int num = d_currentExptNum;
+    if(num < 0)
+        num = 0;
+
+    QString name = QFileDialog::getSaveFileName(this,QString("Export Experiment"),path + QString("/expt%1.txt").arg(num));
+
+    QFile f(name);
+    if(!f.open(QIODevice::WriteOnly))
+    {
+        QMessageBox::critical(this,QString("Export Failed"),QString("Could not open file %1 for writing. Please choose a different filename.").arg(name));
+        return;
+    }
+
+    f.close();
+
+    QString newPath = QFileInfo(name).dir().absolutePath();
+    s.setValue(QString("exportPath"),newPath);
+
+    QMetaObject::invokeMethod(p_am,"exportAsciiFid",Q_ARG(QString,name));
 }
 
 void MainWindow::configureUi(MainWindow::ProgramState s)
@@ -710,6 +739,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionCommunication->setEnabled(false);
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
+        ui->actionExport_experiment->setEnabled(d_currentExptNum != 0);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         ui->lifControlWidget->setEnabled(false);
@@ -723,6 +753,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionCommunication->setEnabled(true);
         ui->actionIO_Board->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
+        ui->actionExport_experiment->setEnabled(d_currentExptNum != 0);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         ui->lifControlWidget->setEnabled(false);
@@ -736,6 +767,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionCommunication->setEnabled(false);
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
+        ui->actionExport_experiment->setEnabled(false);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         ui->lifControlWidget->setEnabled(false);
@@ -749,6 +781,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionCommunication->setEnabled(false);
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
+        ui->actionExport_experiment->setEnabled(false);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         ui->lifControlWidget->setEnabled(false);
@@ -762,6 +795,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionCommunication->setEnabled(false);
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
+        ui->actionExport_experiment->setEnabled(false);
         ui->gasControlBox->setEnabled(true);
         ui->pulseConfigWidget->setEnabled(true);
         ui->lifControlWidget->setEnabled(true);
@@ -776,6 +810,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionCommunication->setEnabled(true);
         ui->actionIO_Board->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
+        ui->actionExport_experiment->setEnabled(d_currentExptNum != 0);
         ui->gasControlBox->setEnabled(true);
         ui->pulseConfigWidget->setEnabled(true);
         ui->lifControlWidget->setEnabled(true);

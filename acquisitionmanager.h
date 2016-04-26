@@ -56,6 +56,7 @@ public slots:
     void resetRollingAverage();
     void getTimeData();
     void processTimeData(const QList<QPair<QString,QVariant>> timeDataList, bool plot);
+    void exportAsciiFid(const QString s);
     void pause();
     void resume();
     void abort();
