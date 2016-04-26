@@ -464,6 +464,9 @@ void FtmwConfig::loadFids(const int num, const QString path)
                 QList<Fid> dat;
                 d >> dat;
                 data->fidList = dat;
+                if(!dat.isEmpty())
+                    data->fidTemplate = dat.first();
+                data->fidTemplate.setData(QVector<qint64>());
             }
         }
         fid.close();

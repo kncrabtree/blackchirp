@@ -163,7 +163,7 @@ void FlowConfig::parseLine(const QString key, const QVariant val)
             if(subKey.contains(QString("Setpoint")))
             {
                 data->configList[index].enabled = true;
-                data->configList[index].name = val.toDouble();
+                data->configList[index].setpoint = val.toDouble();
             }
         }
     }
