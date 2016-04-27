@@ -63,6 +63,11 @@ bool Qc9528::testConnection()
     readAll();
     blockSignals(false);
 
+    pGenWriteCmd(QString(":PULSE0:STATE 0\n"));
+    pGenWriteCmd(QString(":PULSE0:MODE NORMAL\n"));
+    pGenWriteCmd(QString(":PULSE0:ICLOCK EXT10\n"));
+    pGenWriteCmd(QString(":PULSE0:GATE DISABLED\n"));
+    pGenWriteCmd(QString(":PULSE0:TRIGGER DISABLED\n"));
     pGenWriteCmd(QString(":PULSE0:STATE 1\n"));
 
     emit configUpdate(d_config);
