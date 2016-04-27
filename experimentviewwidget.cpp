@@ -98,6 +98,9 @@ void ExperimentViewWidget::exportAscii()
 
     QString name = QFileDialog::getSaveFileName(this,QString("Export Experiment"),path + QString("/expt%1.txt").arg(d_experiment.number()));
 
+    if(name.isEmpty())
+        return;
+
     QFile f(name);
     if(!f.open(QIODevice::WriteOnly))
     {

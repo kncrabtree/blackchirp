@@ -291,15 +291,22 @@ QColor FtPlot::getColor(QColor startingColor)
 
 void FtPlot::exportXY()
 {
-    QString name = QFileDialog::getSaveFileName(this,QString("Export FT"),QString("~/%1_ft.txt").arg(d_number));
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    QString path = s.value(QString("exportPath"),QDir::homePath()).toString();
+
+    int num = d_number;
+    if(num < 0)
+        num = 0;
+
+    QString name = QFileDialog::getSaveFileName(this,QString("Export Experiment"),path + QString("/ft%1.txt").arg(num));
+
     if(name.isEmpty())
         return;
 
     QFile f(name);
-
     if(!f.open(QIODevice::WriteOnly))
     {
-        QMessageBox::critical(this,QString("FT Export Failed"),QString("Could not open file %1 for writing. Please choose a different filename.").arg(name));
+        QMessageBox::critical(this,QString("Export Failed"),QString("Could not open file %1 for writing. Please choose a different filename.").arg(name));
         return;
     }
 
@@ -312,6 +319,10 @@ void FtPlot::exportXY()
     f.close();
 
     QApplication::restoreOverrideCursor();
+
+    QString newPath = QFileInfo(name).dir().absolutePath();
+    s.setValue(QString("exportPath"),newPath);
+
 }
 
 void FtPlot::configureUnits(BlackChirp::FtPlotUnits u)
