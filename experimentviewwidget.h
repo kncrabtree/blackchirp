@@ -20,9 +20,11 @@ public:
 
 signals:
     void logMessage(QString msg, BlackChirp::LogMessageCode t = BlackChirp::LogNormal);
+    void notifyUiFinalized(int);
 
 public slots:
     void exportAscii();
+    void ftmwFinalized(int num);
 
 private:
     Experiment d_experiment;

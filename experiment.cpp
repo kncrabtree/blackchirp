@@ -667,6 +667,8 @@ void Experiment::finalSave() const
         s.setValue(QString("knownValidationKeys"),keys);
     }
 
+    saveHeader();
+
     if(ftmwConfig().isEnabled())
         ftmwConfig().writeFidFile(data->number);
 
@@ -856,6 +858,8 @@ void Experiment::snapshot(int snapNum, const Experiment other) const
     if(data->isDummy)
         return;
 
+    saveHeader();
+
     if(ftmwConfig().isEnabled())
     {
         FtmwConfig cf = ftmwConfig();
@@ -892,6 +896,7 @@ void Experiment::exportAscii(const QString fileName) const
         QString dash = QString("-");
 
         t << nl << nl;
+
 
         if(ftmwConfig().isEnabled() && !ftmwConfig().fidList().isEmpty())
         {

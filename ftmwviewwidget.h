@@ -27,6 +27,7 @@ signals:
     void rollingAverageShotsChanged(int);
     void rollingAverageReset();
     void experimentLogMessage(int,QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal,QString=QString(""));
+    void finalized(int);
 
 public slots:
     void togglePanel(bool on);
@@ -47,6 +48,8 @@ public slots:
     void snapRefChanged();
     void snapDiffChanged();
     void finalizedSnapList(const QList<Fid> l);
+    void removeSnapWidget();
+    void checkRemoveSnapWidget(int num);
 
 
 private:

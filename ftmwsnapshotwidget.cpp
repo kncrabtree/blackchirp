@@ -13,7 +13,7 @@
 #include <QMessageBox>
 
 #include "datastructs.h"
-#include "ftmwconfig.h"
+#include "experiment.h"
 #include "snapworker.h"
 
 FtmwSnapshotWidget::FtmwSnapshotWidget(int num, const QString path, QWidget *parent) : QWidget(parent), d_num(num), d_busy(false),
@@ -387,6 +387,10 @@ void FtmwSnapshotWidget::finalize()
         else
             snp.remove();
     }
+
+    //rewrite experiment header
+    Experiment e(d_num,d_path);
+    e.saveHeader();
 
     emit finalizedList(d_snapList);
 

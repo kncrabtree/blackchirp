@@ -68,7 +68,6 @@ void AcquisitionManager::beginExperiment(Experiment exp)
     p_saveThread->start();
 
     d_state = Acquiring;
-    emit logMessage(exp.startLogMessage(),BlackChirp::LogHighlight);
     emit statusMessage(QString("Acquiring"));
 
     if(d_currentExperiment.timeDataInterval() > 0)

@@ -97,6 +97,7 @@ void LogHandler::beginExperimentLog(const Experiment e)
 {
     d_exptLog.setFileName(BlackChirp::getExptFile(e.number(),BlackChirp::LogFile));
     d_exptLog.open(QIODevice::WriteOnly);
+    logMessage(e.startLogMessage(),BlackChirp::LogHighlight);
 }
 
 void LogHandler::endExperimentLog()

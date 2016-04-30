@@ -485,10 +485,43 @@ void FtmwViewWidget::finalizedSnapList(const QList<Fid> l)
         d_mode = BlackChirp::FtmwViewSingle;
     }
 
-    ui->snapDiffButton->setEnabled(false);
+    removeSnapWidget();
 
-    p_snapWidget->setEnabled(false);
-    p_snapWidget->deleteLater();
-    p_snapWidget = nullptr;
+    emit finalized(d_currentExptNum);
+}
+
+void FtmwViewWidget::removeSnapWidget()
+{
+    ui->snapDiffButton->setEnabled(false);
+    ui->snapshotCheckbox->setEnabled(false);
+
+    if(p_snapWidget != nullptr)
+    {
+        p_snapWidget->setEnabled(false);
+        p_snapWidget->deleteLater();
+        p_snapWidget = nullptr;
+    }
+}
+
+void FtmwViewWidget::checkRemoveSnapWidget(int num)
+{
+    if(num == d_currentExptNum)
+    {
+        if(d_mode == BlackChirp::FtmwViewSnapDiff || ui->snapshotCheckbox->isChecked())
+        {
+            ui->snapshotCheckbox->blockSignals(true);
+            ui->snapshotCheckbox->setChecked(false);
+            ui->snapshotCheckbox->blockSignals(false);
+
+            ui->singleFrameButton->blockSignals(true);
+            ui->singleFrameButton->setChecked(true);
+            ui->singleFrameButton->blockSignals(false);
+
+        }
+
+        removeSnapWidget();
+
+        modeChanged();
+    }
 }
 

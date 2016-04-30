@@ -399,6 +399,13 @@ void MainWindow::experimentInitialized(const Experiment exp)
         else
             QMetaObject::invokeMethod(p_lh,"beginExperimentLog",Q_ARG(const Experiment,exp));
     }
+    else
+    {
+        if(p_lh->thread() == thread())
+            p_lh->logMessage(exp.startLogMessage(),BlackChirp::LogHighlight);
+        else
+            QMetaObject::invokeMethod(p_lh,"logMessage",Q_ARG(const QString,exp.startLogMessage()),Q_ARG(BlackChirp::LogMessageCode,BlackChirp::LogHighlight));
+    }
 }
 
 void MainWindow::hardwareInitialized(bool success)
@@ -689,6 +696,8 @@ void MainWindow::viewExperiment()
 
         ExperimentViewWidget *evw = new ExperimentViewWidget(num,path);
         connect(this,&MainWindow::closing,evw,&ExperimentViewWidget::close);
+        connect(evw,&ExperimentViewWidget::notifyUiFinalized,ui->ftViewWidget,&FtmwViewWidget::checkRemoveSnapWidget);
+        connect(ui->ftViewWidget,&FtmwViewWidget::finalized,evw,&ExperimentViewWidget::ftmwFinalized);
         evw->show();
         evw->raise();
     }

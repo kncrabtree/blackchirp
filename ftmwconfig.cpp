@@ -436,6 +436,10 @@ QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
         out.insert(prefix+QString("TargetShots"),qMakePair(targetShots(),empty));
     if(type() == BlackChirp::FtmwTargetTime)
         out.insert(prefix+QString("TargetTime"),qMakePair(targetTime(),empty));
+    if(data->fidList.isEmpty())
+        out.insert(prefix+QString("CompletedShots"),qMakePair(0,empty));
+    else
+        out.insert(prefix+QString("CompletedShots"),qMakePair(data->fidList.first().shots(),empty));
     out.insert(prefix+QString("LoFrequency"),qMakePair(QString::number(loFreq(),'f',6),QString("MHz")));
     out.insert(prefix+QString("Sideband"),qMakePair((int)sideband(),empty));
     out.insert(prefix+QString("FidVMult"),qMakePair(QString::number(fidTemplate().vMult(),'g',12),QString("V")));
@@ -564,6 +568,8 @@ void FtmwConfig::parseLine(const QString key, const QVariant val)
             data->scopeConfig.summaryFrame = val.toBool();
         if(key.endsWith(QString("BytesPerPoint")))
             data->scopeConfig.bytesPerPoint = val.toInt();
+        if(key.endsWith(QString("NumFrames")))
+            data->scopeConfig.numFrames = val.toInt();
         if(key.endsWith(QString("ByteOrder")))
         {
             if(val.toString().contains(QString("BigEndian")))
