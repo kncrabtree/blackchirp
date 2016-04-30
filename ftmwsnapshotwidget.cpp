@@ -389,6 +389,9 @@ void FtmwSnapshotWidget::finalize()
     }
 
     //rewrite experiment header
+    QFile hdr(BlackChirp::getExptFile(d_num,BlackChirp::HeaderFile,d_path));
+    if(hdr.exists())
+        hdr.copy(hdr.fileName().append(QString(".orig")));
     Experiment e(d_num,d_path);
     e.saveHeader();
 

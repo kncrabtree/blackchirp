@@ -222,9 +222,9 @@ void IOBoardConfig::parseLine(QString key, QVariant val)
         else if(key.contains(QString("Num")))
         {
             if(key.endsWith(QString("Analog")))
-                data->reservedAnalog = val.toInt();
+                data->numAnalog = val.toInt();
             if(key.endsWith(QString("Digital")))
-                data->reservedDigital = val.toInt();
+                data->numDigital = val.toInt();
         }
         else
         {

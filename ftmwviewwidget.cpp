@@ -420,6 +420,7 @@ void FtmwViewWidget::experimentComplete()
 
     if(p_snapWidget != nullptr)
     {
+        p_snapWidget->updateSnapList();
         p_snapWidget->setFinalizeEnabled(true);
     }
 

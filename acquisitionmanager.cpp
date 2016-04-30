@@ -138,10 +138,12 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
         if(d_currentExperiment.ftmwConfig().type() == BlackChirp::FtmwTargetTime)
         {
             qint64 elapsedSecs = d_currentExperiment.startTime().secsTo(QDateTime::currentDateTime());
-            emit ftmwShotAcquired(elapsedSecs);
+            emit ftmwUpdateProgress(elapsedSecs);
         }
         else
-            emit ftmwShotAcquired(d_currentExperiment.ftmwConfig().completedShots());
+            emit ftmwUpdateProgress(d_currentExperiment.ftmwConfig().completedShots());
+
+        emit ftmwNumShots(d_currentExperiment.ftmwConfig().completedShots());
 
         checkComplete();
     }

@@ -33,7 +33,8 @@ signals:
     void statusMessage(const QString);
     void experimentInitialized(const Experiment);
     void experimentComplete(const Experiment);
-    void ftmwShotAcquired(qint64);
+    void ftmwUpdateProgress(qint64);
+    void ftmwNumShots(qint64);
     void lifPointUpdate(QPair<QPoint,BlackChirp::LifPoint>);
     void nextLifPoint(double delay, double frequency);
     void lifShotAcquired(int);

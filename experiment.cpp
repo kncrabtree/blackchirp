@@ -61,6 +61,12 @@ Experiment::Experiment(const int num, QString exptPath) : data(new ExperimentDat
 
             if(key.startsWith(QString("Lif")))
                 data->lifCfg.parseLine(key,val);
+
+            if(key.startsWith(QString("AutosaveInterval")))
+                data->autoSaveShotsInterval = val.toInt();
+
+            if(key.startsWith(QString("AuxDataInterval")))
+                data->timeDataInterval = val.toInt();
         }
 
         hdr.close();
