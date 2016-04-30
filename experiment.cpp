@@ -896,12 +896,22 @@ void Experiment::exportAscii(const QString fileName) const
         t << QString("#");
         t << BlackChirp::headerMapToString(headerMap()).replace(QString("\n"),QString("\n#"));
 
+
         QString tab = QString("\t");
         QString nl = QString("\n");
         QString fid = QString("fid");
         QString dash = QString("-");
 
+        QFile logFile(BlackChirp::getExptFile(number(),BlackChirp::LogFile));
+        if(logFile.open(QIODevice::ReadOnly))
+        {
+            QString logText = QString(logFile.readAll());
+            t << nl << nl << QString("#Log\n#") << logText.trimmed().replace(QString("\n"),QString("\n#"));
+            logFile.close();
+        }
+
         t << nl << nl;
+
 
 
         if(ftmwConfig().isEnabled() && !ftmwConfig().fidList().isEmpty())
