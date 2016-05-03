@@ -587,6 +587,10 @@ void MSO72004C::beginAcquisition()
     d_foundHeader = false;
     d_headerNumBytes = 0;
     d_waveformBytes = 0;
+
+    p_scopeTimeout->stop();
+    p_scopeTimeout->start(10000);
+
     connect(p_scopeTimeout,&QTimer::timeout,this,&MSO72004C::wakeUp,Qt::UniqueConnection);
     connect(p_socket,&QTcpSocket::readyRead,this,&MSO72004C::readWaveform,Qt::UniqueConnection);
 }
