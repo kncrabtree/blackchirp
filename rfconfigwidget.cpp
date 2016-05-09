@@ -48,7 +48,7 @@ void RfConfigWidget::loadFromSettings()
     s.endGroup();
     s.endGroup();
 
-    s.beginGroup(QString("chirpConfig"));
+    s.beginGroup(QString("rfConfig"));
 
     ui->awgMultiplicationSpinBox->setValue(s.value(QString("awgMult"),1).toInt());
     ui->valonTxMultiplicationSpinBox->setValue(s.value(QString("txValonMult"),2).toInt());
@@ -132,8 +132,8 @@ void RfConfigWidget::validate()
                 static_cast<double>(ui->totalMultiplicationSpinBox->value())*(d_txSidebandSign*static_cast<double>(ui->awgMultiplicationSpinBox->value())*awgMin + static_cast<double>(ui->valonTxMultiplicationSpinBox->value())*d_valonTxFreq),
                 static_cast<double>(ui->totalMultiplicationSpinBox->value())*(d_txSidebandSign*static_cast<double>(ui->awgMultiplicationSpinBox->value())*awgMax + static_cast<double>(ui->valonTxMultiplicationSpinBox->value())*d_valonTxFreq));
 
-    s.setValue(QString("chirpConfig/chirpMin"),chirpMin);
-    s.setValue(QString("chirpConfig/chirpMax"),chirpMax);
+    s.setValue(QString("rfConfig/chirpMin"),chirpMin);
+    s.setValue(QString("rfConfig/chirpMax"),chirpMax);
     s.sync();
 
     s.beginGroup(QString("ftmwScope"));
@@ -155,7 +155,7 @@ void RfConfigWidget::validate()
 void RfConfigWidget::saveSettings()
 {
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("chirpConfig"));
+    s.beginGroup(QString("rfConfig"));
 
     s.setValue(QString("awgMult"),ui->awgMultiplicationSpinBox->value());
     s.setValue(QString("txValonMult"),ui->valonTxMultiplicationSpinBox->value());

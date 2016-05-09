@@ -132,9 +132,3 @@ QMap<QString, BlackChirp::ValidationItem> WizardValidationPage::getValidation() 
         out.insert(l.at(i).key,l.at(i));
     return out;
 }
-
-void WizardValidationPage::saveToSettings() const
-{
-    getConfig().saveToSettings();
-    static_cast<ValidationModel*>(p_validationView->model())->saveToSettings();
-}

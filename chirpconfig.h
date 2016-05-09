@@ -55,7 +55,17 @@ public:
     void setPostChirpProtection(const double d);
     void setNumChirps(const int n);
     void setChirpInterval(const double i);
+    void addSegment(const double startMHz, const double endMHz, const double durationUs);
     void setSegmentList(const QList<BlackChirp::ChirpSegment> l);
+
+    void setTxFreq(double f);
+    void setTxMult(double m);
+    void setAwgMult(double m);
+    void setTxSideband(double s);
+    void setTotalMult(double m);
+
+    void saveToSettings() const;
+    static ChirpConfig loadFromSettings();
 
 private:
     QSharedDataPointer<ChirpConfigData> data;
@@ -76,18 +86,18 @@ class ChirpConfigData : public QSharedData
 {
 public:
     ChirpConfigData() : preChirpProtection(-1.0), preChirpDelay(-1.0), postChirpProtection(-1.0), numChirps(0), chirpInterval(-1.0),
-        valonTxFreq(-1.0), valonTxMult(-1.0), awgMult(-1.0), mixerSideband(0.0), totalMult(0.0), isValid(false) {}
+        synthTxFreq(-1.0), synthTxMult(-1.0), awgMult(-1.0), mixerTxSideband(0.0), totalMult(0.0), isValid(false) {}
 
-    double preChirpProtection;
-    double preChirpDelay;
-    double postChirpProtection;
+    double preChirpProtection; //units: us
+    double preChirpDelay; //units: us
+    double postChirpProtection; //units: us
     int numChirps;
-    double chirpInterval;
+    double chirpInterval; //units: us
 
-    double valonTxFreq;
-    double valonTxMult;
+    double synthTxFreq; //units: MHz
+    double synthTxMult;
     double awgMult;
-    double mixerSideband;
+    double mixerTxSideband; //+1.0 or -1.0
     double totalMult;
 
 
@@ -95,7 +105,7 @@ public:
     double sampleRateSperS; //awg rate, samples per second
     double sampleRateSperUS; //awg rate, samples per microecond
     double sampleIntervalS; //awg sample interval in seconds
-    double sampleIntervalUS; //awg sample interval is microseconds
+    double sampleIntervalUS; //awg sample interval in microseconds
     bool isValid;
 
     QList<BlackChirp::ChirpSegment> segments;

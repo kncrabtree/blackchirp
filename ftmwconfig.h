@@ -70,6 +70,9 @@ public:
     void parseLine(const QString key, const QVariant val);
     void loadChirps(const int num, const QString path = QString(""));
 
+    void saveToSettings() const;
+    static FtmwConfig loadFromSettings();
+
 private:
     QSharedDataPointer<FtmwConfigData> data;
 

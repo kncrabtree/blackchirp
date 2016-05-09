@@ -60,58 +60,31 @@ QSpinBox *ChirpConfigWidget::numChirpsBox() const
 void ChirpConfigWidget::initializeFromSettings()
 {
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("chirpConfig"));
-
-    ui->preChirpProtectionSpinBox->setValue(s.value(QString("preChirpProtection"),10).toInt());
-    ui->preChirpDelaySpinBox->setValue(s.value(QString("preChirpDelay"),300).toInt());
-    ui->postChirpProtectionSpinBox->setValue(s.value(QString("postChirpProtection"),300).toInt());
-    ui->chirpsSpinBox->setValue(s.value(QString("numChirps"),10).toInt());
-    ui->chirpIntervalDoubleSpinBox->setValue(s.value(QString("chirpInterval"),20.0).toDouble());
-
-    double chirpMin = s.value(QString("chirpMin"),26500.0).toDouble();
-    double chirpMax = s.value(QString("chirpMax"),40000.0).toDouble();
-
-    clearList();
-
-    int numSegments = s.beginReadArray(QString("segments"));
-    for(int i=0; i<numSegments; i++)
-    {
-        s.setArrayIndex(i);
-        double start = qBound(chirpMin,s.value(QString("startFreq"),chirpMin).toDouble(),chirpMax);
-        double end = qBound(chirpMin,s.value(QString("endFreq"),chirpMax).toDouble(),chirpMax);
-        double dur = qBound(0.1,s.value(QString("duration"),500.0).toDouble(),100000.0);
-        p_ctm->addSegment(start,end,dur,p_ctm->rowCount(QModelIndex()));
-    }
-    s.endArray();
-    s.endGroup();
-
-}
-
-void ChirpConfigWidget::saveToSettings() const
-{
-    if(!d_currentChirpConfig.isValid())
-        return;
+    d_currentChirpConfig = ChirpConfig::loadFromSettings();
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("chirpConfig"));
+    double chirpMin = s.value(QString("rfConfig/chirpMin"),26500.0).toDouble();
+    double chirpMax = s.value(QString("rfConfig/chirpMax"),40000.0).toDouble();
 
-    s.setValue(QString("preChirpProtection"),ui->preChirpProtectionSpinBox->value());
-    s.setValue(QString("preChirpDelay"),ui->preChirpDelaySpinBox->value());
-    s.setValue(QString("postChirpProtection"),ui->postChirpProtectionSpinBox->value());
-    s.setValue(QString("numChirps"),ui->chirpsSpinBox->value());
-    s.setValue(QString("chirpInterval"),ui->chirpIntervalDoubleSpinBox->value());
-
-    s.beginWriteArray(QString("segments"));
-    for(int i=0; i<p_ctm->segmentList().size(); i++)
+    if(d_currentChirpConfig.isValid())
     {
-        s.setArrayIndex(i);
-        s.setValue(QString("startFreq"),p_ctm->segmentList().at(i).startFreqMHz);
-        s.setValue(QString("endFreq"),p_ctm->segmentList().at(i).endFreqMHz);
-        s.setValue(QString("duration"),p_ctm->segmentList().at(i).durationUs);
+        ui->preChirpProtectionSpinBox->setValue(d_currentChirpConfig.preChirpProtection()*1000);
+        ui->preChirpDelaySpinBox->setValue(d_currentChirpConfig.preChirpDelay()*1000);
+        ui->postChirpProtectionSpinBox->setValue(d_currentChirpConfig.postChirpProtection()*1000);
+        ui->chirpsSpinBox->setValue(d_currentChirpConfig.numChirps());
+        ui->chirpIntervalDoubleSpinBox->setValue(d_currentChirpConfig.chirpInterval());
+
+        for(int i=0; i<d_currentChirpConfig.segmentList().size(); i++)
+        {
+            double start = qBound(chirpMin,d_currentChirpConfig.segmentStartFreq(i),chirpMax);
+            double end = qBound(chirpMin,d_currentChirpConfig.segmentEndFreq(i),chirpMax);
+            double dur = qBound(0.1,d_currentChirpConfig.segmentDuration(i),100000.0);
+            p_ctm->addSegment(start,end,dur,p_ctm->rowCount(QModelIndex()));
+        }
     }
-    s.endArray();
-    s.endGroup();
+
+    updateChirpPlot();
+
 }
 
 void ChirpConfigWidget::enableEditing(bool enabled)
@@ -143,7 +116,7 @@ void ChirpConfigWidget::setButtonStates()
 void ChirpConfigWidget::addSegment()
 {
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("chirpConfig"));
+    s.beginGroup(QString("rfConfig"));
     double chirpMin = s.value(QString("chirpMin"),26500.0).toDouble();
     double chirpMax = s.value(QString("chirpMax"),40000.0).toDouble();
     s.endGroup();
@@ -159,7 +132,7 @@ void ChirpConfigWidget::insertSegment()
         return;
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("chirpConfig"));
+    s.beginGroup(QString("rfConfig"));
     double chirpMin = s.value(QString("chirpMin"),26500.0).toDouble();
     double chirpMax = s.value(QString("chirpMax"),40000.0).toDouble();
     s.endGroup();

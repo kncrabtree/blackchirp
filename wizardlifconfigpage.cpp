@@ -37,7 +37,6 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_orderBox = new QComboBox(this);
     p_orderBox->addItem(QString("Frequency First"),QVariant::fromValue(BlackChirp::LifOrderFrequencyFirst));
     p_orderBox->addItem(QString("Delay First"),QVariant::fromValue(BlackChirp::LifOrderDelayFirst));
-    p_orderBox->setCurrentIndex(s.value(QString("lifConfig/scanOrder"),0).toInt());
     p_orderBox->setToolTip(QString("Controls the order in which the delay and laser frequency will be changed during the scan.\n\nFrequency first: Acquire spectrum at single delay point, then increment delay and repeat.\nDelay first: Acquire time trace at a single frequency, then increment frequency and repeat.\n\nNote that the order is irrelevant if either the delay or frequency is set to a single point."));
     ofl->addRow(QString("Scan order"),p_orderBox);
 
@@ -46,7 +45,6 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
                            QVariant::fromValue(BlackChirp::LifStopWhenComplete));
     p_completeBox->addItem(QString("Continue integrating until entire experiment is complete."),
                            QVariant::fromValue(BlackChirp::LifContinueUntilExperimentComplete));
-    p_completeBox->setCurrentIndex(s.value(QString("lifConfig/completeMode"),1).toInt());
     p_completeBox->setToolTip(QString("Configures behavior if LIF scan finishes before the rest of the experiment.\n\nStop integrating: Once all points are acquired, no more shots will be integrated.\nContinue: Scan will return to beginning and continue integrating data until remainder of experiment is completed or aborted.\n\n This setting is not applicable if LIF is the only measurement being made or if other parts of the experiment finish before LIF."));
     ofl->addRow(QString("Completion behavior"),p_completeBox);
 
@@ -66,7 +64,6 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_delayStart = new QDoubleSpinBox(this);
     p_delayStart->setRange(0.0,100000.0);
     p_delayStart->setDecimals(3);
-    p_delayStart->setValue(s.value(QString("lifConfig/delayStart"),1000.0).toDouble());
     p_delayStart->setSuffix(QString::fromUtf16(u" µs"));
     p_delayStart->setSingleStep(10.0);
     p_delayStart->setToolTip(QString("Starting delay for LIF measurement. For a single delay scan, this will be the value used."));
@@ -75,7 +72,6 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_delayEnd = new QDoubleSpinBox(this);
     p_delayEnd->setRange(0.0,100000.0);
     p_delayEnd->setDecimals(3);
-    p_delayEnd->setValue(s.value(QString("lifConfig/delayEnd"),1100.0).toDouble());
     p_delayEnd->setSuffix(QString::fromUtf16(u" µs"));
     p_delayEnd->setSingleStep(10.0);
     p_delayEnd->setToolTip(QString("Ending delay for LIF measurement. May be greater or less than starting delay, and need not be an integral number of steps from start.\nIf |end-start| < step, the delay will remain at the starting value as if the single point box were checked."));
@@ -84,7 +80,6 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_delayStep = new QDoubleSpinBox(this);
     p_delayStep->setRange(0.05,100.0);
     p_delayStep->setDecimals(3);
-    p_delayStep->setValue(s.value(QString("lifConfig/delayStep"),1.0).toDouble());
     p_delayStep->setSingleStep(1.0);
     p_delayStep->setSuffix(QString::fromUtf16(u" µs"));
     p_delayStep->setToolTip(QString("Step size between delay points."));
@@ -112,7 +107,6 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_laserStart->setRange(s.value(QString("minFreq"),10000.0).toDouble(),
                            s.value(QString("maxFreq"),100000.0).toDouble());
     p_laserStart->setDecimals(2);
-    p_laserStart->setValue(s.value(QString("lifConfig/laserStart"),20000.0).toDouble());
     p_laserStart->setSuffix(QString::fromUtf16(u" cm⁻¹"));
     p_laserStart->setSingleStep(100.0);
     p_laserStart->setToolTip(QString("Starting frequency for LIF measurement. For a single frequency scan, this will be the value used."));
@@ -123,7 +117,6 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_laserEnd->setRange(s.value(QString("minFreq"),10000.0).toDouble(),
                          s.value(QString("maxFreq"),100000.0).toDouble());
     p_laserEnd->setDecimals(2);
-    p_laserEnd->setValue(s.value(QString("lifConfig/laserEnd"),20100.0).toDouble());
     p_laserEnd->setSuffix(QString::fromUtf16(u" cm⁻¹"));
     p_laserEnd->setSingleStep(100.0);
     p_laserEnd->setToolTip(QString("Ending laser frequency for LIF measurement. May be greater or less than starting frequency, and need not be an integral number of steps from start.\nIf |end-start| < step, the frequency will remain at the starting value as if the single point box were checked."));
@@ -134,7 +127,6 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_laserStep = new QDoubleSpinBox(this);
     p_laserStep->setRange(0.01,100.0);
     p_laserStep->setDecimals(2);
-    p_laserStep->setValue(s.value(QString("lifConfig/laserStep"),1.0).toDouble());
     p_laserStep->setSingleStep(1.0);
     p_laserStep->setSuffix(QString::fromUtf16(u" cm⁻¹"));
     p_laserStep->setToolTip(QString("Step size between frequency points."));
@@ -150,6 +142,8 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     vbl->addLayout(hbl,0);
 
     setLayout(vbl);
+
+    setFromConfig(LifConfig::loadFromSettings());
 
     connect(p_delaySingle,&QCheckBox::toggled,[=](bool en){
         if(en)
@@ -191,25 +185,20 @@ WizardLifConfigPage::~WizardLifConfigPage()
 
 }
 
-void WizardLifConfigPage::saveToSettings() const
+void WizardLifConfigPage::setFromConfig(const LifConfig c)
 {
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    p_orderBox->setCurrentIndex(p_orderBox->findData(QVariant::fromValue(c.order())));
+    p_completeBox->setCurrentIndex(p_completeBox->findData(QVariant::fromValue(c.completeMode())));
+    p_delaySingle->setChecked(c.numDelayPoints() == 1);
+    p_delayStart->setValue(c.delayRange().first);
+    p_delayEnd->setValue(c.delayRange().second);
+    p_delayStep->setValue(c.delayStep());
+    p_laserSingle->setChecked(c.numFrequencyPoints() == 1);
+    p_laserStart->setValue(c.frequencyRange().first);
+    p_laserEnd->setValue(c.frequencyRange().second);
+    p_laserStep->setValue(c.frequencyStep());
 
-    //scope settings and graph settings are saved on the fly, so don't worry about those
-    s.beginGroup(QString("lifConfig"));
-    s.setValue(QString("scanOrder"),p_orderBox->currentIndex());
-    s.setValue(QString("completeMode"),p_completeBox->currentIndex());
-    s.setValue(QString("delaySingle"),p_delaySingle->isChecked());
-    s.setValue(QString("delayStart"),p_delayStart->value());
-    s.setValue(QString("delayEnd"),p_delayEnd->value());
-    s.setValue(QString("delayStep"),p_delayStep->value());
-    s.setValue(QString("laserSingle"),p_laserSingle->isChecked());
-    s.setValue(QString("laserStart"),p_laserStart->value());
-    s.setValue(QString("laserEnd"),p_laserEnd->value());
-    s.setValue(QString("laserStep"),p_laserStep->value());
-
-    s.endGroup();
-    s.sync();
+    //Control widget is set on the fly
 }
 
 LifConfig WizardLifConfigPage::getConfig()

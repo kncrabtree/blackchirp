@@ -264,8 +264,8 @@ QWidget *ChirpDoubleSpinBoxDelegate::createEditor(QWidget *parent, const QStyleO
     QDoubleSpinBox *editor = new QDoubleSpinBox(parent);
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    double chirpMin = s.value(QString("chirpConfig/chirpMin"),26500.0).toDouble();
-    double chirpMax = s.value(QString("chirpConfig/chirpMax"),40000.0).toDouble();
+    double chirpMin = s.value(QString("rfConfig/chirpMin"),26500.0).toDouble();
+    double chirpMax = s.value(QString("rfConfig/chirpMax"),40000.0).toDouble();
 
     switch(index.column())
     {

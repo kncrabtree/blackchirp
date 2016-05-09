@@ -17,7 +17,7 @@ public:
     WizardLifConfigPage(QWidget *parent = nullptr);
     ~WizardLifConfigPage();
 
-    void saveToSettings() const;
+    void setFromConfig(const LifConfig c);
     LifConfig getConfig();
 
     // QWizardPage interface

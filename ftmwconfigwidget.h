@@ -24,8 +24,6 @@ public:
     void lockFastFrame(const int nf);
 
 public slots:
-    void loadFromSettings();
-    void saveToSettings() const;
     void configureUI();
     void validateSpinboxes();
 

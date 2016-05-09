@@ -602,3 +602,67 @@ void FtmwConfig::loadChirps(const int num, const QString path)
     data->chirpConfig = ChirpConfig(num,path);
 }
 
+void FtmwConfig::saveToSettings() const
+{
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+
+    s.beginGroup(QString("lastFtmwConfig"));
+
+    s.setValue(QString("mode"),static_cast<int>(type()));
+    s.setValue(QString("targetShots"),targetShots());
+    s.setValue(QString("targetTime"),QDateTime::currentDateTime().msecsTo(targetTime()));
+    s.setValue(QString("phaseCorrection"),isPhaseCorrectionEnabled());
+
+    s.setValue(QString("fidChannel"),scopeConfig().fidChannel);
+    s.setValue(QString("vScale"),scopeConfig().vScale);
+    s.setValue(QString("triggerChannel"),scopeConfig().trigChannel);
+    s.setValue(QString("triggerDelay"),scopeConfig().trigDelay);
+    s.setValue(QString("triggerSlope"),static_cast<int>(scopeConfig().slope));
+    s.setValue(QString("sampleRate"),scopeConfig().sampleRate);
+    s.setValue(QString("recordLength"),scopeConfig().recordLength);
+    s.setValue(QString("bytesPerPoint"),scopeConfig().bytesPerPoint);
+    s.setValue(QString("fastFrame"),scopeConfig().fastFrameEnabled);
+    s.setValue(QString("numFrames"),scopeConfig().numFrames);
+    s.setValue(QString("summaryFrame"),scopeConfig().summaryFrame);
+    s.setValue(QString("loFreq"),loFreq());
+    s.setValue(QString("sideband"),static_cast<int>(sideband()));
+
+    s.endGroup();
+
+    chirpConfig().saveToSettings();
+
+
+}
+
+FtmwConfig FtmwConfig::loadFromSettings()
+{
+    FtmwConfig out;
+
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("lastFtmwConfig"));
+
+    out.setType(static_cast<BlackChirp::FtmwType>(s.value(QString("mode"),0).toInt()));
+    out.setTargetShots(s.value(QString("targetShots"),10000).toInt());
+    out.setTargetTime(QDateTime::currentDateTime().addMSecs(s.value(QString("targetTime"),3600000).toInt()));
+    out.setPhaseCorrectionEnabled(s.value(QString("phaseCorrection"),false).toBool());
+
+    BlackChirp::FtmwScopeConfig sc;
+    sc.fidChannel = s.value(QString("fidChannel"),1).toInt();
+    sc.vScale = s.value(QString("vScale"),0.02).toDouble();
+    sc.trigChannel = s.value(QString("triggerChannel"),4).toInt();
+    sc.trigDelay = s.value(QString("triggerDelay"),0.0).toDouble();
+    sc.slope = static_cast<BlackChirp::ScopeTriggerSlope>(s.value(QString("triggerSlope"),0).toInt());
+    sc.sampleRate = s.value(QString("sampleRate"),50e9).toDouble();
+    sc.recordLength = s.value(QString("recordLength"),750000).toInt();
+    sc.bytesPerPoint = s.value(QString("bytesPerPoint"),1).toInt();
+    sc.fastFrameEnabled = s.value(QString("fastFrame"),false).toBool();
+    sc.numFrames = s.value(QString("numFrames"),1).toBool();
+    sc.summaryFrame = s.value(QString("summaryFrame"),false).toBool();
+    out.setScopeConfig(sc);
+
+    out.setLoFreq(s.value(QString("loFreq"),0.0).toDouble());
+    out.setSideband(s.value(QString("sideband"),BlackChirp::UpperSideband).value<BlackChirp::Sideband>());
+
+    return out;
+}
+

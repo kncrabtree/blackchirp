@@ -76,9 +76,9 @@ bool WizardStartPage::isComplete() const
 void WizardStartPage::initializePage()
 {
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("wizard"));
+    s.beginGroup(QString("lastExperiment"));
     p_auxDataIntervalBox->setValue(s.value(QString("auxDataInterval"),300).toInt());
-    p_snapshotBox->setValue(s.value(QString("snapshotInterval"),20000).toInt());
+    p_snapshotBox->setValue(s.value(QString("autoSaveShots"),20000).toInt());
     s.endGroup();
 }
 
@@ -100,14 +100,4 @@ int WizardStartPage::auxDataInterval() const
 int WizardStartPage::snapshotInterval() const
 {
     return p_snapshotBox->value();
-}
-
-void WizardStartPage::saveToSettings() const
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("wizard"));
-    s.setValue(QString("auxDataInterval"),p_auxDataIntervalBox->value());
-    s.setValue(QString("snapshotInterval"),p_snapshotBox->value());
-    s.endGroup();
-    s.sync();
 }

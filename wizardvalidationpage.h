@@ -21,7 +21,6 @@ public:
 
     IOBoardConfig getConfig() const;
     QMap<QString,BlackChirp::ValidationItem> getValidation() const;
-    void saveToSettings() const;
 };
 
 #endif // WIZARDVALIDATIONPAGE_H

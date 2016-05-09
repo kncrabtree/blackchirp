@@ -32,9 +32,12 @@ FtmwConfigWidget::FtmwConfigWidget(QWidget *parent) :
 
     ui->triggerDelayDoubleSpinBox->setSuffix(QString::fromUtf16(u" μs"));
 
-    loadFromSettings();
+    ui->targetTimeDateTimeEdit->setMinimumDateTime(QDateTime::currentDateTime().addSecs(60));
+    ui->targetTimeDateTimeEdit->setDateTime(QDateTime::currentDateTime().addSecs(3600));
+    ui->targetTimeDateTimeEdit->setMaximumDateTime(QDateTime::currentDateTime().addSecs(2000000000));
+    ui->targetTimeDateTimeEdit->setCurrentSection(QDateTimeEdit::HourSection);
 
-    validateSpinboxes();
+    setFromConfig(FtmwConfig::loadFromSettings());
 
     connect(ui->modeComboBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),this,&FtmwConfigWidget::configureUI);
     connect(ui->fastFrameEnabledCheckBox,&QCheckBox::toggled,this,&FtmwConfigWidget::configureUI);
@@ -57,7 +60,10 @@ void FtmwConfigWidget::setFromConfig(const FtmwConfig config)
 
     ui->targetShotsSpinBox->setValue(config.targetShots());
     if(config.targetTime().isValid())
+    {
+        ui->targetTimeDateTimeEdit->setEnabled(true);
         ui->targetTimeDateTimeEdit->setDateTime(config.targetTime());
+    }
     ui->phaseCorrectionCheckBox->setChecked(config.isPhaseCorrectionEnabled());
 
     ui->loFrequencyDoubleSpinBox->setValue(config.loFreq());
@@ -72,9 +78,10 @@ void FtmwConfigWidget::setFromConfig(const FtmwConfig config)
     ui->triggerChannelSpinBox->blockSignals(true);
     ui->triggerChannelSpinBox->setValue(sc.trigChannel);
     ui->triggerChannelSpinBox->blockSignals(false);
-    ui->triggerDelayDoubleSpinBox->setValue(sc.trigDelay/1e6);
+    ui->triggerDelayDoubleSpinBox->setValue(sc.trigDelay*1e6);
     setComboBoxIndex(ui->triggerSlopeComboBox,sc.slope);
     setComboBoxIndex(ui->sampleRateComboBox,sc.sampleRate);
+    ui->recordLengthSpinBox->setValue(sc.recordLength);
     ui->bytesPointSpinBox->setValue(sc.bytesPerPoint);
     ui->fastFrameEnabledCheckBox->blockSignals(true);
     ui->fastFrameEnabledCheckBox->setChecked(sc.fastFrameEnabled);
@@ -138,77 +145,6 @@ void FtmwConfigWidget::lockFastFrame(const int nf)
     }
     ui->fastFrameEnabledCheckBox->setEnabled(false);
     ui->fastFrameEnabledCheckBox->blockSignals(false);
-}
-
-void FtmwConfigWidget::loadFromSettings()
-{
-    blockSignals(true);
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-
-    s.beginGroup(QString("lastFtmwConfig"));
-
-    ui->modeComboBox->setCurrentIndex(s.value(QString("mode"),0).toInt());
-    ui->targetShotsSpinBox->setValue(s.value(QString("targetShots"),10000).toInt());
-    ui->targetTimeDateTimeEdit->setMinimumDateTime(QDateTime::currentDateTime().addSecs(60));
-    ui->targetTimeDateTimeEdit->setDateTime(QDateTime::currentDateTime().addSecs(3600));
-    ui->targetTimeDateTimeEdit->setMaximumDateTime(QDateTime::currentDateTime().addSecs(2000000000));
-    ui->targetTimeDateTimeEdit->setCurrentSection(QDateTimeEdit::HourSection);
-    ui->phaseCorrectionCheckBox->setChecked(s.value(QString("phaseCorrection"),false).toBool());
-
-    ui->fIDChannelSpinBox->setValue(s.value(QString("fidChannel"),1).toInt());
-    ui->verticalScaleDoubleSpinBox->setValue(s.value(QString("vScale"),0.020).toDouble());
-    ui->triggerChannelSpinBox->setValue(s.value(QString("triggerChannel"),4).toInt());
-    ui->triggerDelayDoubleSpinBox->setValue(s.value(QString("triggerDelay"),0.0).toDouble());
-    ui->triggerSlopeComboBox->setCurrentIndex(s.value(QString("triggerSlope"),0).toInt());
-    ui->sampleRateComboBox->setCurrentIndex(s.value(QString("sampleRate"),4).toInt());
-    ui->recordLengthSpinBox->setValue(s.value(QString("recordLength"),750000).toInt());
-    ui->bytesPointSpinBox->setValue(s.value(QString("bytesPerPoint"),1).toInt());
-    ui->fastFrameEnabledCheckBox->setChecked(s.value(QString("fastFrame"),true).toBool());
-    ui->framesSpinBox->setValue(s.value(QString("numFrames"),10).toInt());
-    ui->summaryFrameCheckBox->setChecked(s.value(QString("summaryFrame"),false).toBool());
-
-    s.endGroup();
-
-
-    ui->loFrequencyDoubleSpinBox->setValue(s.value(QString("chirpConfig/loFreq"),41000.0).toDouble());
-    if(s.value(QString("chirpConfig/rxSidebandSign"),-1.0).toDouble() < 0)
-        ui->sidebandComboBox->setCurrentIndex(1);
-    else
-        ui->sidebandComboBox->setCurrentIndex(0);
-
-    blockSignals(false);
-
-    configureUI();
-
-
-}
-
-void FtmwConfigWidget::saveToSettings() const
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-
-    s.beginGroup(QString("lastFtmwConfig"));
-
-    s.setValue(QString("mode"),ui->modeComboBox->currentIndex());
-    s.setValue(QString("targetShots"),ui->targetShotsSpinBox->value());
-    s.setValue(QString("phaseCorrection"),ui->phaseCorrectionCheckBox->isChecked());
-
-    s.setValue(QString("fidChannel"),ui->fIDChannelSpinBox->value());
-    s.setValue(QString("vScale"),ui->verticalScaleDoubleSpinBox->value());
-    s.setValue(QString("triggerChannel"),ui->triggerChannelSpinBox->value());
-    s.setValue(QString("triggerDelay"),ui->triggerDelayDoubleSpinBox->value());
-    s.setValue(QString("triggerSlope"),ui->triggerSlopeComboBox->currentIndex());
-    s.setValue(QString("sampleRate"),ui->sampleRateComboBox->currentIndex());
-    s.setValue(QString("recordLength"),ui->recordLengthSpinBox->value());
-    s.setValue(QString("bytesPerPoint"),ui->bytesPointSpinBox->value());
-    s.setValue(QString("fastFrame"),ui->fastFrameEnabledCheckBox->isChecked());
-    s.setValue(QString("numFrames"),ui->framesSpinBox->value());
-    s.setValue(QString("summaryFrame"),ui->summaryFrameCheckBox->isChecked());
-
-    s.endGroup();
-
-//    s.setValue(QString("loFreq"),ui->loFrequencyDoubleSpinBox->value());
-//    s.setValue(QString("sideband"),ui->sidebandComboBox->currentIndex());
 }
 
 void FtmwConfigWidget::configureUI()

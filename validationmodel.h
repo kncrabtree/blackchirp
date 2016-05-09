@@ -29,7 +29,6 @@ public:
 	Qt::ItemFlags flags(const QModelIndex &index) const;
 	
     void addNewItem(QString k = QString(""), double min = 0.0, double max = 1.0);
-	void saveToSettings();
     QList<BlackChirp::ValidationItem> getList();
 	
 private:

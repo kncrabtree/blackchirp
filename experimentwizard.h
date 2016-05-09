@@ -53,8 +53,6 @@ private:
     WizardValidationPage *p_validationPage;
 
     FlowConfig d_flowConfig;
-
-    void saveToSettings() const;
 };
 
 #endif // EXPERIMENTWIZARD_H

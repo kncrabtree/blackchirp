@@ -14,7 +14,6 @@ public:
     IOBoardConfigModel(const  QMap<int,BlackChirp::IOBoardChannel> l, int numChannels, int numReserved, QString prefix = QString("AIN"), QObject *parent = nullptr);
     ~IOBoardConfigModel();
 
-	void saveToSettings();
     QMap<int,BlackChirp::IOBoardChannel> getConfig();
 
 private:

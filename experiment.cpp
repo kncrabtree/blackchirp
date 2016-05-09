@@ -634,6 +634,15 @@ void Experiment::setValidationItems(const QMap<QString, BlackChirp::ValidationIt
     data->validationConditions = m;
 }
 
+void Experiment::addValidationItem(const QString key, const double min, const double max)
+{
+    BlackChirp::ValidationItem val;
+    val.key = key;
+    val.min = qMin(min,max);
+    val.max = qMax(min,max);
+    data->validationConditions.insert(key,val);
+}
+
 void Experiment::setHardwareFailed()
 {
     data->hardwareSuccess = false;
@@ -954,5 +963,82 @@ void Experiment::exportAscii(const QString fileName) const
         f.close();
     }
 
+}
+
+void Experiment::saveToSettings() const
+{
+
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("lastExperiment"));
+
+    s.setValue(QString("ftmwEnabled"),ftmwConfig().isEnabled());
+    if(ftmwConfig().isEnabled())
+        data->ftmwCfg.saveToSettings();
+
+#ifndef BC_NO_LIF
+    s.setValue(QString("lifEnabled"),lifConfig().isEnabled());
+    if(lifConfig().isEnabled())
+        data->lifCfg.saveToSettings();
+#endif
+
+    s.setValue(QString("autoSaveShots"),autoSaveShots());
+    s.setValue(QString("auxDataInterval"),timeDataInterval());
+
+    data->iobCfg.saveToSettings();
+
+    s.remove(QString("validation"));
+    s.beginWriteArray(QString("validation"));
+    int i=0;
+    foreach(BlackChirp::ValidationItem val,data->validationConditions)
+    {
+        s.setArrayIndex(i);
+        s.setValue(QString("key"),val.key);
+        s.setValue(QString("min"),qMin(val.min,val.max));
+        s.setValue(QString("max"),qMax(val.min,val.max));
+        i++;
+    }
+    s.endArray();
+    s.endGroup();
+
+}
+
+Experiment Experiment::loadFromSettings()
+{
+    Experiment out;
+
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("lastExperiment"));
+
+    if(s.value(QString("ftmwEnabled"),false).toBool())
+        out.setFtmwConfig(FtmwConfig::loadFromSettings());
+
+#ifndef BC_NO_LIF
+    if(s.value(QString("lifEnabled"),false).toBool())
+        out.setLifConfig(LifConfig::loadFromSettings());
+#endif
+
+    out.setAutoSaveShotsInterval(s.value(QString("autoSaveShots"),10000).toInt());
+    out.setTimeDataInterval(s.value(QString("auxDataInterval"),300).toInt());
+
+    out.setIOBoardConfig(IOBoardConfig());
+
+    int num = s.beginReadArray(QString("validation"));
+    for(int i=0; i<num; i++)
+    {
+        s.setArrayIndex(i);
+        bool ok = false;
+        QString key = s.value(QString("key")).toString();
+        double min = s.value(QString("min")).toDouble(&ok);
+        if(ok)
+        {
+            double max = s.value(QString("max")).toDouble(&ok);
+            if(ok && !key.isEmpty())
+                out.addValidationItem(key,min,max);
+        }
+    }
+    s.endArray();
+    s.endGroup();
+
+    return out;
 }
 

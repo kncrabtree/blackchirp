@@ -30,12 +30,16 @@ public:
     double currentDelay() const;
     double currentFrequency() const;
     QPair<double,double> delayRange() const;
+    double delayStep() const;
     QPair<double,double> frequencyRange() const;
+    double frequencyStep() const;
     int numDelayPoints() const;
     int numFrequencyPoints() const;
     int totalShots() const;
     int completedShots() const;
     BlackChirp::LifScopeConfig scopeConfig() const;
+    BlackChirp::LifScanOrder order() const;
+    BlackChirp::LifCompleteMode completeMode() const;
     QVector<QPointF> timeSlice(int frequencyIndex) const;
     QVector<QPointF> spectrum(int delayIndex) const;
     QList<QVector<BlackChirp::LifPoint>> lifData() const;
@@ -57,6 +61,9 @@ public:
     void setScopeConfig(BlackChirp::LifScopeConfig c);
     void setShotsPerPoint(int pts);
     bool addWaveform(const LifTrace t);
+
+    void saveToSettings() const;
+    static LifConfig loadFromSettings();
 
 
 private:

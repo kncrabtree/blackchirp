@@ -62,6 +62,7 @@ Experiment ExperimentWizard::getExperiment() const
         ChirpConfig cc = p_chirpConfigPage->getChirpConfig();
         ftc.setChirpConfig(cc);
     }
+
     LifConfig lc = p_lifConfigPage->getConfig();
     if(p_startPage->lifEnabled())
         lc.setEnabled();
@@ -80,7 +81,6 @@ Experiment ExperimentWizard::getExperiment() const
 
 BatchManager *ExperimentWizard::getBatchManager() const
 {
-    saveToSettings();
     Experiment e = getExperiment();
     if(e.lifConfig().isEnabled())
     {
@@ -90,23 +90,7 @@ BatchManager *ExperimentWizard::getBatchManager() const
     }
 
     BatchManager *out = new BatchSingle(e);
+    e.saveToSettings();
     out->setSleep(field(QString("sleep")).toBool());
     return out;
 }
-
-void ExperimentWizard::saveToSettings() const
-{
-    p_startPage->saveToSettings();
-
-    if(p_startPage->ftmwEnabled())
-    {
-        p_chirpConfigPage->saveToSettings();
-        p_ftmwConfigPage->saveToSettings();
-    }
-
-    if(p_startPage->lifEnabled())
-        p_lifConfigPage->saveToSettings();
-
-    p_validationPage->saveToSettings();
-}
-

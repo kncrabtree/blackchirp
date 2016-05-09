@@ -59,9 +59,19 @@ QPair<double, double> LifConfig::delayRange() const
     return qMakePair(data->delayStartUs,data->delayEndUs);
 }
 
+double LifConfig::delayStep() const
+{
+    return data->delayStepUs;
+}
+
 QPair<double, double> LifConfig::frequencyRange() const
 {
     return qMakePair(data->frequencyStart,data->frequencyEnd);
+}
+
+double LifConfig::frequencyStep() const
+{
+    return data->frequencyStep;
 }
 
 int LifConfig::numDelayPoints() const
@@ -110,6 +120,16 @@ int LifConfig::completedShots() const
 BlackChirp::LifScopeConfig LifConfig::scopeConfig() const
 {
     return data->scopeConfig;
+}
+
+BlackChirp::LifScanOrder LifConfig::order() const
+{
+    return data->order;
+}
+
+BlackChirp::LifCompleteMode LifConfig::completeMode() const
+{
+    return data->completeMode;
 }
 
 QVector<QPointF> LifConfig::timeSlice(int frequencyIndex) const
@@ -488,6 +508,43 @@ bool LifConfig::addWaveform(const LifTrace t)
         increment();
 
     return inc;
+}
+
+void LifConfig::saveToSettings() const
+{
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+
+    //scope settings and graph settings are saved on the fly, so don't worry about those
+    s.beginGroup(QString("lastLifConfig"));
+    s.setValue(QString("scanOrder"),static_cast<int>(order()));
+    s.setValue(QString("completeMode"),static_cast<int>(completeMode()));
+    s.setValue(QString("delaySingle"),(numDelayPoints() == 1));
+    s.setValue(QString("delayStart"),data->delayStartUs);
+    s.setValue(QString("delayEnd"),data->delayEndUs);
+    s.setValue(QString("delayStep"),data->delayStepUs);
+    s.setValue(QString("laserSingle"),(numFrequencyPoints() == 1));
+    s.setValue(QString("laserStart"),data->frequencyStart);
+    s.setValue(QString("laserEnd"),data->frequencyEnd);
+    s.setValue(QString("laserStep"),data->frequencyStep);
+
+    s.endGroup();
+    s.sync();
+}
+
+LifConfig LifConfig::loadFromSettings()
+{
+    //scope settings have to come from the control widget on UI or wizard
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("lastLifConfig"));
+
+    LifConfig out;
+    out.setCompleteMode(static_cast<BlackChirp::LifCompleteMode>(s.value(QString("completeMode"),0).toInt()));
+    out.setOrder(static_cast<BlackChirp::LifScanOrder>(s.value(QString("scanOrder"),0).toInt()));
+    out.setDelayParameters(s.value(QString("delayStart"),1000.0).toDouble(),s.value(QString("delayEnd"),1100.0).toDouble(),s.value(QString("delayStep"),10.0).toDouble());
+    out.setFrequencyParameters(s.value(QString("laserStart"),15000.0).toDouble(),s.value(QString("laserEnd"),15100.0).toDouble(),s.value(QString("laserStep"),5.0).toDouble());
+
+    out.validate();
+    return out;
 }
 
 bool LifConfig::addPoint(const double d)

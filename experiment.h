@@ -68,6 +68,7 @@ public:
     bool addTimeData(const QList<QPair<QString, QVariant> > dataList, bool plot);
     void addTimeStamp();
     void setValidationItems(const QMap<QString,BlackChirp::ValidationItem> m);
+    void addValidationItem(const QString key, const double min, const double max);
 
     void setHardwareFailed();
     void incrementFtmw();
@@ -79,6 +80,9 @@ public:
     QString timeDataText() const;
     void snapshot(int snapNum, const Experiment other) const;
     void exportAscii(const QString fileName) const;
+
+    void saveToSettings() const;
+    static Experiment loadFromSettings();
 
 private:
     QSharedDataPointer<ExperimentData> data;

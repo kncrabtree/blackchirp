@@ -23,8 +23,6 @@ public:
     int auxDataInterval() const;
     int snapshotInterval() const;
 
-    void saveToSettings() const;
-
 private:
     QCheckBox *p_ftmw, *p_lif;
     QSpinBox *p_auxDataIntervalBox, *p_snapshotBox;
