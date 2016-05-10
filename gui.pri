@@ -21,7 +21,8 @@ SOURCES += mainwindow.cpp \
     $$PWD/lifspectrogramplot.cpp \
     $$PWD/ioboardconfigdialog.cpp \
     $$PWD/experimentviewwidget.cpp \
-    $$PWD/ftmwsnapshotwidget.cpp
+    $$PWD/ftmwsnapshotwidget.cpp \
+    $$PWD/quickexptdialog.cpp
 
 HEADERS += mainwindow.h \
     $$PWD/ftmwviewwidget.h \
@@ -46,7 +47,8 @@ HEADERS += mainwindow.h \
     $$PWD/lifspectrogramplot.h \
     $$PWD/ioboardconfigdialog.h \
     $$PWD/experimentviewwidget.h \
-    $$PWD/ftmwsnapshotwidget.h
+    $$PWD/ftmwsnapshotwidget.h \
+    $$PWD/quickexptdialog.h
 
 FORMS += mainwindow.ui \
     $$PWD/ftmwviewwidget.ui \
@@ -57,4 +59,5 @@ FORMS += mainwindow.ui \
     $$PWD/pulseconfigwidget.ui \
     $$PWD/lifcontrolwidget.ui \
     $$PWD/lifdisplaywidget.ui \
-    $$PWD/ioboardconfigdialog.ui
+    $$PWD/ioboardconfigdialog.ui \
+    $$PWD/quickexptdialog.ui

@@ -20,6 +20,7 @@ public:
     ~LifControlWidget();
 
     LifConfig getSettings(LifConfig c);
+    BlackChirp::LifScopeConfig toConfig() const;
 
 signals:
     void updateScope(const BlackChirp::LifScopeConfig);
@@ -34,7 +35,6 @@ public slots:
 private:
     Ui::LifControlWidget *ui;
 
-    BlackChirp::LifScopeConfig toConfig() const;
 };
 
 #endif // LIFCONTROLWIDGET_H

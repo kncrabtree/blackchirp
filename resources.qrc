@@ -34,5 +34,6 @@
         <file>icons/bc.png</file>
         <file>icons/header.png</file>
         <file>icons/export.png</file>
+        <file>icons/quickexpt.png</file>
     </qresource>
 </RCC>

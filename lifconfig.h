@@ -35,6 +35,7 @@ public:
     double frequencyStep() const;
     int numDelayPoints() const;
     int numFrequencyPoints() const;
+    int shotsPerPoint() const;
     int totalShots() const;
     int completedShots() const;
     BlackChirp::LifScopeConfig scopeConfig() const;

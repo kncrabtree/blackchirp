@@ -449,6 +449,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionStart_Experiment"/>
+   <addaction name="actionQuick_Experiment"/>
    <addaction name="actionPause"/>
    <addaction name="actionResume"/>
    <addaction name="actionAbort"/>
@@ -478,7 +479,7 @@
     <string>Pause</string>
    </property>
    <property name="shortcut">
-    <string>F3</string>
+    <string>F4</string>
    </property>
   </action>
   <action name="actionResume">
@@ -490,7 +491,7 @@
     <string>Resume</string>
    </property>
    <property name="shortcut">
-    <string>F4</string>
+    <string>F5</string>
    </property>
   </action>
   <action name="actionAbort">
@@ -502,7 +503,7 @@
     <string>Abort</string>
    </property>
    <property name="shortcut">
-    <string>F5</string>
+    <string>F6</string>
    </property>
   </action>
   <action name="actionCommunication">
@@ -665,6 +666,18 @@
    </property>
    <property name="toolTip">
     <string>Export experiment to a text file</string>
+   </property>
+  </action>
+  <action name="actionQuick_Experiment">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/quickexpt.png</normaloff>:/icons/quickexpt.png</iconset>
+   </property>
+   <property name="text">
+    <string>Quick Experiment</string>
+   </property>
+   <property name="shortcut">
+    <string>F3</string>
    </property>
   </action>
  </widget>

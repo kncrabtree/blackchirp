@@ -1010,11 +1010,19 @@ Experiment Experiment::loadFromSettings()
     s.beginGroup(QString("lastExperiment"));
 
     if(s.value(QString("ftmwEnabled"),false).toBool())
-        out.setFtmwConfig(FtmwConfig::loadFromSettings());
+    {
+        FtmwConfig f = FtmwConfig::loadFromSettings();
+        f.setEnabled();
+        out.setFtmwConfig(f);
+    }
 
 #ifndef BC_NO_LIF
     if(s.value(QString("lifEnabled"),false).toBool())
-        out.setLifConfig(LifConfig::loadFromSettings());
+    {
+        LifConfig l = LifConfig::loadFromSettings();
+        l.setEnabled();
+        out.setLifConfig(l);
+    }
 #endif
 
     out.setAutoSaveShotsInterval(s.value(QString("autoSaveShots"),10000).toInt());

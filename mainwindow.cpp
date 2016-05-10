@@ -24,12 +24,14 @@
 #include "hardwaremanager.h"
 #include "acquisitionmanager.h"
 #include "batchmanager.h"
+#include "batchsingle.h"
 #include "led.h"
 #include "experimentviewwidget.h"
+#include "quickexptdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow), d_hardwareConnected(false), d_state(Idle), d_logCount(0), d_logIcon(BlackChirp::LogNormal), d_currentExptNum(0)
+    ui(new Ui::MainWindow), d_hardwareConnected(false), d_oneExptDone(false), d_state(Idle), d_logCount(0), d_logIcon(BlackChirp::LogNormal), d_currentExptNum(0)
 {
     ui->setupUi(this);
 
@@ -228,6 +230,7 @@ MainWindow::MainWindow(QWidget *parent) :
     d_batchThread = new QThread(this);
 
     connect(ui->actionStart_Experiment,&QAction::triggered,this,&MainWindow::startExperiment);
+    connect(ui->actionQuick_Experiment,&QAction::triggered,this,&MainWindow::quickStart);
     connect(ui->actionPause,&QAction::triggered,this,&MainWindow::pauseUi);
     connect(ui->actionResume,&QAction::triggered,this,&MainWindow::resumeUi);
     connect(ui->actionCommunication,&QAction::triggered,this,&MainWindow::launchCommunicationDialog);
@@ -311,6 +314,39 @@ void MainWindow::startExperiment()
     startBatch(bm);
 }
 
+void MainWindow::quickStart()
+{
+    if(d_batchThread->isRunning())
+        return;
+
+    Experiment e = Experiment::loadFromSettings();
+    if(e.lifConfig().isEnabled())
+    {
+        LifConfig lc = e.lifConfig();
+        lc = ui->lifControlWidget->getSettings(lc);
+        lc.allocateMemory();
+        e.setLifConfig(lc);
+    }
+
+    e.setFlowConfig(getFlowConfig());
+    e.setPulseGenConfig(ui->pulseConfigWidget->getConfig());
+
+    //create a popup summary of experiment.
+    QuickExptDialog d(e);
+
+    int ret = d.exec();
+
+    if(ret == QDialog::Accepted)
+    {
+        BatchManager *bm = new BatchSingle(e);
+        e.saveToSettings();
+        bm->setSleep(d.sleepWhenDone());
+        startBatch(bm);
+    }
+    else if(ret == d.configureResult())
+        startExperiment();
+}
+
 void MainWindow::batchComplete(bool aborted)
 {
     disconnect(p_hwm,&HardwareManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated);
@@ -333,6 +369,7 @@ void MainWindow::batchComplete(bool aborted)
     ui->ftmwTab->setEnabled(true);
     ui->lifTab->setEnabled(true);
 
+    d_oneExptDone = true;
 
     configureUi(Idle);
 }
@@ -470,6 +507,9 @@ void MainWindow::launchRfConfigDialog()
     connect(rfw,&RfConfigWidget::setValonRx,p_hwm,&HardwareManager::setValonRxFreq);
 
     d.exec();
+
+    d_oneExptDone = false;
+    configureUi(d_state);
 }
 
 void MainWindow::updatePulseLeds(const PulseGenConfig cc)
@@ -748,6 +788,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionPause->setEnabled(false);
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
+        ui->actionQuick_Experiment->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
@@ -762,6 +803,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionPause->setEnabled(false);
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
+        ui->actionQuick_Experiment->setEnabled(false);
         ui->actionCommunication->setEnabled(true);
         ui->actionIO_Board->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
@@ -776,6 +818,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionPause->setEnabled(false);
         ui->actionResume->setEnabled(true);
         ui->actionStart_Experiment->setEnabled(false);
+        ui->actionQuick_Experiment->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
@@ -790,6 +833,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionPause->setEnabled(true);
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
+        ui->actionQuick_Experiment->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
@@ -804,6 +848,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionPause->setEnabled(false);
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
+        ui->actionQuick_Experiment->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
@@ -819,6 +864,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionPause->setEnabled(false);
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(true);
+        ui->actionQuick_Experiment->setEnabled(d_oneExptDone);
         ui->actionCommunication->setEnabled(true);
         ui->actionIO_Board->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);

@@ -90,6 +90,11 @@ int LifConfig::numFrequencyPoints() const
     return static_cast<int>(floor(fabs((data->frequencyStart-data->frequencyEnd)/data->frequencyStep)))+1;
 }
 
+int LifConfig::shotsPerPoint() const
+{
+    return data->shotsPerPoint;
+}
+
 int LifConfig::totalShots() const
 {
     return numDelayPoints()*numFrequencyPoints()*data->shotsPerPoint;

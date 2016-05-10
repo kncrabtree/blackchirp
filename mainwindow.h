@@ -57,6 +57,7 @@ signals:
 
 public slots:
     void startExperiment();
+    void quickStart();
     void batchComplete(bool aborted);
     void experimentInitialized(const Experiment exp);
     void hardwareInitialized(bool success);
@@ -87,6 +88,7 @@ private:
     AcquisitionManager *p_am;
 
     bool d_hardwareConnected;
+    bool d_oneExptDone;
     QThread *d_batchThread;
 
     void configureUi(ProgramState s);

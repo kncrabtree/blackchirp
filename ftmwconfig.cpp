@@ -656,12 +656,14 @@ FtmwConfig FtmwConfig::loadFromSettings()
     sc.recordLength = s.value(QString("recordLength"),750000).toInt();
     sc.bytesPerPoint = s.value(QString("bytesPerPoint"),1).toInt();
     sc.fastFrameEnabled = s.value(QString("fastFrame"),false).toBool();
-    sc.numFrames = s.value(QString("numFrames"),1).toBool();
+    sc.numFrames = s.value(QString("numFrames"),1).toInt();
     sc.summaryFrame = s.value(QString("summaryFrame"),false).toBool();
     out.setScopeConfig(sc);
 
     out.setLoFreq(s.value(QString("loFreq"),0.0).toDouble());
     out.setSideband(s.value(QString("sideband"),BlackChirp::UpperSideband).value<BlackChirp::Sideband>());
+
+    out.setChirpConfig(ChirpConfig::loadFromSettings());
 
     return out;
 }
