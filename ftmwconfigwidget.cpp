@@ -39,6 +39,16 @@ FtmwConfigWidget::FtmwConfigWidget(QWidget *parent) :
 
     setFromConfig(FtmwConfig::loadFromSettings());
 
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    double loFreq = s.value(QString("rfConfig/loFreq"),0.0).toDouble();
+    int sideband = s.value(QString("rfConfig/rxSidebandSign"),1).toInt();
+    if(sideband > 0)
+        ui->sidebandComboBox->setCurrentIndex(ui->sidebandComboBox->findData(QVariant::fromValue(BlackChirp::UpperSideband)));
+    else
+        ui->sidebandComboBox->setCurrentIndex(ui->sidebandComboBox->findData(QVariant::fromValue(BlackChirp::LowerSideband)));
+    ui->loFrequencyDoubleSpinBox->setValue(loFreq);
+
+
     connect(ui->modeComboBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),this,&FtmwConfigWidget::configureUI);
     connect(ui->fastFrameEnabledCheckBox,&QCheckBox::toggled,this,&FtmwConfigWidget::configureUI);
 

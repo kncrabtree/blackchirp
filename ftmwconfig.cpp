@@ -661,7 +661,7 @@ FtmwConfig FtmwConfig::loadFromSettings()
     out.setScopeConfig(sc);
 
     out.setLoFreq(s.value(QString("loFreq"),0.0).toDouble());
-    out.setSideband(s.value(QString("sideband"),BlackChirp::UpperSideband).value<BlackChirp::Sideband>());
+    out.setSideband(static_cast<BlackChirp::Sideband>(s.value(QString("sideband"),BlackChirp::UpperSideband).toInt()));
 
     out.setChirpConfig(ChirpConfig::loadFromSettings());
 
