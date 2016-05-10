@@ -44,7 +44,10 @@ bool Rs232Instrument::testConnection()
         return true;
     }
     else
+    {
+        emit logMessage(p_sp->errorString(),BlackChirp::LogError);
         return false;
+    }
 }
 
 bool Rs232Instrument::writeCmd(QString cmd)
