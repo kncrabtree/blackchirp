@@ -661,7 +661,7 @@ void MainWindow::viewExperiment()
     fl->addRow(hl);
 
     int lastCompletedExperiment = ui->exptSpinBox->value();
-    if(d_batchThread->isRunning())
+    if(d_batchThread->isRunning() && d_currentExptNum == lastCompletedExperiment)
         lastCompletedExperiment--;
 
     if(lastCompletedExperiment < 1)
