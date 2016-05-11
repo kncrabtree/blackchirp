@@ -236,48 +236,6 @@
       <property name="currentIndex">
        <number>0</number>
       </property>
-      <widget class="QWidget" name="ftmwTab">
-       <attribute name="icon">
-        <iconset resource="resources.qrc">
-         <normaloff>:/icons/chirp.png</normaloff>:/icons/chirp.png</iconset>
-       </attribute>
-       <attribute name="title">
-        <string>CP-FTMW</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_3">
-        <item>
-         <widget class="FtmwViewWidget" name="ftViewWidget" native="true"/>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="lifTab">
-       <attribute name="icon">
-        <iconset resource="resources.qrc">
-         <normaloff>:/icons/laser.png</normaloff>:/icons/laser.png</iconset>
-       </attribute>
-       <attribute name="title">
-        <string>LIF</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_6">
-        <item>
-         <widget class="LifDisplayWidget" name="lifDisplayWidget" native="true"/>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="trackingTab">
-       <attribute name="icon">
-        <iconset resource="resources.qrc">
-         <normaloff>:/icons/dataplots.png</normaloff>:/icons/dataplots.png</iconset>
-       </attribute>
-       <attribute name="title">
-        <string>Tracking</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_4">
-        <item>
-         <widget class="TrackingViewWidget" name="trackingViewWidget" native="true"/>
-        </item>
-       </layout>
-      </widget>
       <widget class="QWidget" name="controlTab">
        <attribute name="icon">
         <iconset resource="resources.qrc">
@@ -355,6 +313,48 @@
         </item>
         <item>
          <widget class="PulseConfigWidget" name="pulseConfigWidget" native="true"/>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="ftmwTab">
+       <attribute name="icon">
+        <iconset resource="resources.qrc">
+         <normaloff>:/icons/chirp.png</normaloff>:/icons/chirp.png</iconset>
+       </attribute>
+       <attribute name="title">
+        <string>CP-FTMW</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="FtmwViewWidget" name="ftViewWidget" native="true"/>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="lifTab">
+       <attribute name="icon">
+        <iconset resource="resources.qrc">
+         <normaloff>:/icons/laser.png</normaloff>:/icons/laser.png</iconset>
+       </attribute>
+       <attribute name="title">
+        <string>LIF</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_6">
+        <item>
+         <widget class="LifDisplayWidget" name="lifDisplayWidget" native="true"/>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="trackingTab">
+       <attribute name="icon">
+        <iconset resource="resources.qrc">
+         <normaloff>:/icons/dataplots.png</normaloff>:/icons/dataplots.png</iconset>
+       </attribute>
+       <attribute name="title">
+        <string>Tracking</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <item>
+         <widget class="TrackingViewWidget" name="trackingViewWidget" native="true"/>
         </item>
        </layout>
       </widget>
