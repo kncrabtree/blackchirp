@@ -65,7 +65,7 @@ FtmwConfigWidget::~FtmwConfigWidget()
 void FtmwConfigWidget::setFromConfig(const FtmwConfig config)
 {
     ui->modeComboBox->blockSignals(true);
-    setComboBoxIndex(ui->modeComboBox,config.type());
+    setComboBoxIndex(ui->modeComboBox,qVariantFromValue(config.type()));
     ui->modeComboBox->blockSignals(false);
 
     ui->targetShotsSpinBox->setValue(config.targetShots());
@@ -89,7 +89,7 @@ void FtmwConfigWidget::setFromConfig(const FtmwConfig config)
     ui->triggerChannelSpinBox->setValue(sc.trigChannel);
     ui->triggerChannelSpinBox->blockSignals(false);
     ui->triggerDelayDoubleSpinBox->setValue(sc.trigDelay*1e6);
-    setComboBoxIndex(ui->triggerSlopeComboBox,sc.slope);
+    setComboBoxIndex(ui->triggerSlopeComboBox,qVariantFromValue(sc.slope));
     setComboBoxIndex(ui->sampleRateComboBox,sc.sampleRate);
     ui->recordLengthSpinBox->setValue(sc.recordLength);
     ui->bytesPointSpinBox->setValue(sc.bytesPerPoint);

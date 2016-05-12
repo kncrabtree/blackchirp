@@ -428,6 +428,7 @@ void Experiment::setInitialized()
         data->endLogMessage = QString("Peak up mode ended.");
         data->isDummy = true;
         data->isInitialized = true;
+        saveToSettings();
         return;
     }
     else
