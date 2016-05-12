@@ -79,18 +79,7 @@ Experiment ExperimentWizard::getExperiment() const
     return exp;
 }
 
-BatchManager *ExperimentWizard::getBatchManager() const
+bool ExperimentWizard::sleepWhenDone() const
 {
-    Experiment e = getExperiment();
-    if(e.lifConfig().isEnabled())
-    {
-        LifConfig lc = e.lifConfig();
-        lc.allocateMemory();
-        e.setLifConfig(lc);
-    }
-
-    BatchManager *out = new BatchSingle(e);
-    e.saveToSettings();
-    out->setSleep(field(QString("sleep")).toBool());
-    return out;
+    return field(QString("sleep")).toBool();
 }

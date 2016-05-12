@@ -25,9 +25,11 @@
 #include "acquisitionmanager.h"
 #include "batchmanager.h"
 #include "batchsingle.h"
+#include "batchsequence.h"
 #include "led.h"
 #include "experimentviewwidget.h"
 #include "quickexptdialog.h"
+#include "batchsequencedialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -231,6 +233,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->actionStart_Experiment,&QAction::triggered,this,&MainWindow::startExperiment);
     connect(ui->actionQuick_Experiment,&QAction::triggered,this,&MainWindow::quickStart);
+    connect(ui->actionStart_Sequence,&QAction::triggered,this,&MainWindow::startSequence);
     connect(ui->actionPause,&QAction::triggered,this,&MainWindow::pauseUi);
     connect(ui->actionResume,&QAction::triggered,this,&MainWindow::resumeUi);
     connect(ui->actionCommunication,&QAction::triggered,this,&MainWindow::launchCommunicationDialog);
@@ -309,8 +312,8 @@ void MainWindow::startExperiment()
     if(wiz.exec() != QDialog::Accepted)
         return;
 
-    BatchManager *bm = wiz.getBatchManager();
-
+    BatchManager *bm = new BatchSingle(wiz.getExperiment());
+    bm->setSleep(wiz.sleepWhenDone());
     startBatch(bm);
 }
 
@@ -324,27 +327,94 @@ void MainWindow::quickStart()
     {
         LifConfig lc = e.lifConfig();
         lc = ui->lifControlWidget->getSettings(lc);
-        lc.allocateMemory();
         e.setLifConfig(lc);
     }
-
     e.setFlowConfig(getFlowConfig());
     e.setPulseGenConfig(ui->pulseConfigWidget->getConfig());
 
     //create a popup summary of experiment.
-    QuickExptDialog d(e);
-
+    QuickExptDialog d(e,this);
     int ret = d.exec();
 
     if(ret == QDialog::Accepted)
     {
         BatchManager *bm = new BatchSingle(e);
-        e.saveToSettings();
         bm->setSleep(d.sleepWhenDone());
         startBatch(bm);
     }
     else if(ret == d.configureResult())
         startExperiment();
+}
+
+void MainWindow::startSequence()
+{
+    if(d_batchThread->isRunning())
+        return;
+
+    BatchSequenceDialog d(this);
+    d.setQuickExptEnabled(d_oneExptDone);
+    int ret = d.exec();
+
+    if(ret == QDialog::Rejected)
+        return;
+
+    Experiment exp;
+    bool sleep = false;
+
+    if(ret == d.quickCode())
+    {
+        Experiment e = Experiment::loadFromSettings();
+        if(e.lifConfig().isEnabled())
+        {
+            LifConfig lc = e.lifConfig();
+            lc = ui->lifControlWidget->getSettings(lc);
+            e.setLifConfig(lc);
+        }
+        e.setFlowConfig(getFlowConfig());
+        e.setPulseGenConfig(ui->pulseConfigWidget->getConfig());
+
+        //create a popup summary of experiment.
+        QuickExptDialog qd(e,this);
+        int qeret = qd.exec();
+
+        if(qeret == QDialog::Accepted)
+        {
+            exp = e;
+            sleep = qd.sleepWhenDone();
+        }
+        else if(qeret == qd.configureResult())
+            ret = d.configureCode(); //set ret to indicate that the experiment needs to be configured
+        else if(qeret == QDialog::Rejected)
+            return;
+    }
+
+    if(ret == d.configureCode())
+    {
+        ExperimentWizard wiz(this);
+        wiz.setPulseConfig(ui->pulseConfigWidget->getConfig());
+        wiz.setFlowConfig(getFlowConfig());
+        connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
+        connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
+        connect(&wiz,&ExperimentWizard::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
+        connect(&wiz,&ExperimentWizard::lifColorChanged,ui->lifControlWidget,&LifControlWidget::checkLifColors);
+        connect(&wiz,&ExperimentWizard::lifColorChanged,ui->lifDisplayWidget,&LifDisplayWidget::checkLifColors);
+
+        if(wiz.exec() != QDialog::Accepted)
+            return;
+
+        exp = wiz.getExperiment();
+        sleep = wiz.sleepWhenDone();
+    }
+
+    d.saveToSettings();
+    BatchSequence *bs = new BatchSequence();
+    bs->setExperiment(exp);
+    bs->setNumExperiments(d.numExperiments());
+    bs->setInterval(d.interval());
+    bs->setAutoExport(d.autoExport());
+    bs->setSleep(sleep);
+    startBatch(bs);
+
 }
 
 void MainWindow::batchComplete(bool aborted)
@@ -789,6 +859,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionQuick_Experiment->setEnabled(false);
+        ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
@@ -804,6 +875,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionQuick_Experiment->setEnabled(false);
+        ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(true);
         ui->actionIO_Board->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
@@ -819,6 +891,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(true);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionQuick_Experiment->setEnabled(false);
+        ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
@@ -834,6 +907,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionQuick_Experiment->setEnabled(false);
+        ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
@@ -849,6 +923,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionQuick_Experiment->setEnabled(false);
+        ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
@@ -865,6 +940,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionResume->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(true);
         ui->actionQuick_Experiment->setEnabled(d_oneExptDone);
+        ui->actionStart_Sequence->setEnabled(true);
         ui->actionCommunication->setEnabled(true);
         ui->actionIO_Board->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
@@ -884,10 +960,12 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
 void MainWindow::startBatch(BatchManager *bm)
 {
     connect(d_batchThread,&QThread::started,bm,&BatchManager::beginNextExperiment);
+    connect(bm,&BatchManager::statusMessage,this,&MainWindow::statusMessage);
     connect(bm,&BatchManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(bm,&BatchManager::beginExperiment,p_lh,&LogHandler::endExperimentLog);
     connect(bm,&BatchManager::beginExperiment,p_hwm,&HardwareManager::initializeExperiment);
     connect(p_am,&AcquisitionManager::experimentComplete,bm,&BatchManager::experimentComplete);
+    connect(ui->actionAbort,&QAction::triggered,bm,&BatchManager::abort);
     connect(bm,&BatchManager::batchComplete,this,&MainWindow::batchComplete);
     connect(bm,&BatchManager::batchComplete,d_batchThread,&QThread::quit);
     connect(bm,&BatchManager::batchComplete,p_lh,&LogHandler::endExperimentLog);

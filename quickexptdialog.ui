@@ -11,7 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Quick Experiment Setup</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="resources.qrc">
+    <normaloff>:/icons/bc.png</normaloff>:/icons/bc.png</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -85,7 +89,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QToolButton" name="configureButton">
+      <widget class="QPushButton" name="configureButton">
        <property name="text">
         <string>Configure</string>
        </property>
@@ -98,9 +102,6 @@
          <width>15</width>
          <height>15</height>
         </size>
-       </property>
-       <property name="toolButtonStyle">
-        <enum>Qt::ToolButtonTextBesideIcon</enum>
        </property>
       </widget>
      </item>
@@ -118,7 +119,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QToolButton" name="cancelButton">
+      <widget class="QPushButton" name="cancelButton">
        <property name="text">
         <string>Cancel</string>
        </property>
@@ -132,13 +133,10 @@
          <height>15</height>
         </size>
        </property>
-       <property name="toolButtonStyle">
-        <enum>Qt::ToolButtonTextBesideIcon</enum>
-       </property>
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="startButton">
+      <widget class="QPushButton" name="startButton">
        <property name="text">
         <string>Start</string>
        </property>
@@ -152,8 +150,8 @@
          <height>15</height>
         </size>
        </property>
-       <property name="toolButtonStyle">
-        <enum>Qt::ToolButtonTextBesideIcon</enum>
+       <property name="default">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -164,38 +162,5 @@
  <resources>
   <include location="resources.qrc"/>
  </resources>
- <connections>
-  <connection>
-   <sender>startButton</sender>
-   <signal>clicked()</signal>
-   <receiver>QuickExptDialog</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>481</x>
-     <y>472</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>504</x>
-     <y>433</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>cancelButton</sender>
-   <signal>clicked()</signal>
-   <receiver>QuickExptDialog</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>432</x>
-     <y>469</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>384</x>
-     <y>438</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

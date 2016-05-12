@@ -35,5 +35,6 @@
         <file>icons/header.png</file>
         <file>icons/export.png</file>
         <file>icons/quickexpt.png</file>
+        <file>icons/sequence.png</file>
     </qresource>
 </RCC>

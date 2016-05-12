@@ -7,7 +7,9 @@ QuickExptDialog::QuickExptDialog(Experiment e, QWidget *parent) :
 {
     ui->setupUi(this);
 
-    connect(ui->configureButton,&QToolButton::clicked,this,[=](){ done(d_configureResult); });
+    connect(ui->cancelButton,&QPushButton::clicked,this,&QuickExptDialog::reject);
+    connect(ui->configureButton,&QPushButton::clicked,this,[=](){ done(d_configureResult); });
+    connect(ui->startButton,&QPushButton::clicked,this,&QuickExptDialog::accept);
 
     QString html;
 
@@ -42,9 +44,9 @@ QuickExptDialog::QuickExptDialog(Experiment e, QWidget *parent) :
         {
             html.append(QString("<li>Chirp spacing: %1 &mu;s</li>").arg(e.ftmwConfig().chirpConfig().chirpInterval(),0,'f',1));
             if(e.ftmwConfig().scopeConfig().summaryFrame)
-                html.append(QString("<li>Summary frame: Yes</li"));
+                html.append(QString("<li>Summary frame: Yes</li>"));
             else
-                html.append(QString("<li>Summary frame: No</li"));
+                html.append(QString("<li>Summary frame: No</li>"));
         }
         html.append(QString("</ul>"));
     }

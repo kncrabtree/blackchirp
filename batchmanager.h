@@ -12,7 +12,8 @@ class BatchManager : public QObject
 public:
     enum BatchType
     {
-        SingleExperiment
+        SingleExperiment,
+        Sequence
     };
 
     explicit BatchManager(BatchType b);
@@ -22,13 +23,18 @@ public:
     bool sleepWhenComplete() const { return d_sleep; }
 
 signals:
+    void statusMessage(QString);
     void logMessage(QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal);
     void beginExperiment(Experiment);
     void batchComplete(bool aborted);
 
 public slots:
     void experimentComplete(const Experiment exp);
-    void beginNextExperiment();
+    virtual void beginNextExperiment();
+
+    //NOTE: Abort is only used if user wants to stop _between_ experiments.
+    //If abort happens during an experiment, the experimentComplete() function will handle it
+    virtual void abort() =0;
 
 protected:
     BatchType d_type;

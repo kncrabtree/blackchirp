@@ -407,6 +407,16 @@ void Experiment::setInitialized()
         }
     }
 
+    if(lifConfig().isEnabled())
+    {
+        if(!data->lifCfg.allocateMemory())
+        {
+            setErrorString(QString("Could not allocate memory for LIF experiment."));
+            data->isInitialized = false;
+            return;
+        }
+    }
+
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     int num = s.value(QString("exptNum"),0).toInt()+1;
     data->number = num;
@@ -425,6 +435,7 @@ void Experiment::setInitialized()
         data->startLogMessage = QString("Starting experiment %1.").arg(num);
         data->endLogMessage = QString("Experiment %1 complete.").arg(num);
     }
+
 
     QDir d(BlackChirp::getExptDir(num));
     if(!d.exists())
@@ -463,8 +474,13 @@ void Experiment::setInitialized()
 
     data->isInitialized = initSuccess;
 
+
+
     if(initSuccess)
+    {
         s.setValue(QString("exptNum"),number());
+        saveToSettings();
+    }
 
 }
 

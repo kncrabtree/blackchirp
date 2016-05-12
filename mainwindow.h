@@ -58,6 +58,7 @@ signals:
 public slots:
     void startExperiment();
     void quickStart();
+    void startSequence();
     void batchComplete(bool aborted);
     void experimentInitialized(const Experiment exp);
     void hardwareInitialized(bool success);

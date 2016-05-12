@@ -9,6 +9,9 @@ public:
     BatchSingle(const Experiment e);
     ~BatchSingle();
 
+public slots:
+     void abort();
+
     // BatchManager interface
 protected:
     void writeReport();

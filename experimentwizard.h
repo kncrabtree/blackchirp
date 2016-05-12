@@ -35,7 +35,7 @@ public:
     void setPulseConfig(const PulseGenConfig c);
     void setFlowConfig(const FlowConfig c);
     Experiment getExperiment() const;
-    BatchManager *getBatchManager() const;
+    bool sleepWhenDone() const;
 
 signals:
     void newTrace(const LifTrace);

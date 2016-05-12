@@ -9,7 +9,10 @@ BatchSingle::~BatchSingle()
 
 }
 
-
+void BatchSingle::abort()
+{
+    //nothing to do (experiment will signal that it was aborted)
+}
 
 void BatchSingle::writeReport()
 {

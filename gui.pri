@@ -22,7 +22,8 @@ SOURCES += mainwindow.cpp \
     $$PWD/ioboardconfigdialog.cpp \
     $$PWD/experimentviewwidget.cpp \
     $$PWD/ftmwsnapshotwidget.cpp \
-    $$PWD/quickexptdialog.cpp
+    $$PWD/quickexptdialog.cpp \
+    $$PWD/batchsequencedialog.cpp
 
 HEADERS += mainwindow.h \
     $$PWD/ftmwviewwidget.h \
@@ -48,7 +49,8 @@ HEADERS += mainwindow.h \
     $$PWD/ioboardconfigdialog.h \
     $$PWD/experimentviewwidget.h \
     $$PWD/ftmwsnapshotwidget.h \
-    $$PWD/quickexptdialog.h
+    $$PWD/quickexptdialog.h \
+    $$PWD/batchsequencedialog.h
 
 FORMS += mainwindow.ui \
     $$PWD/ftmwviewwidget.ui \
@@ -60,4 +62,5 @@ FORMS += mainwindow.ui \
     $$PWD/lifcontrolwidget.ui \
     $$PWD/lifdisplaywidget.ui \
     $$PWD/ioboardconfigdialog.ui \
-    $$PWD/quickexptdialog.ui
+    $$PWD/quickexptdialog.ui \
+    $$PWD/batchsequencedialog.ui

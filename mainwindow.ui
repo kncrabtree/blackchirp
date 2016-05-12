@@ -404,6 +404,8 @@
      <string>Acquisition</string>
     </property>
     <addaction name="actionStart_Experiment"/>
+    <addaction name="actionQuick_Experiment"/>
+    <addaction name="actionStart_Sequence"/>
     <addaction name="actionPause"/>
     <addaction name="actionResume"/>
     <addaction name="actionAbort"/>
@@ -678,6 +680,15 @@
    </property>
    <property name="shortcut">
     <string>F3</string>
+   </property>
+  </action>
+  <action name="actionStart_Sequence">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/sequence.png</normaloff>:/icons/sequence.png</iconset>
+   </property>
+   <property name="text">
+    <string>Start Sequence</string>
    </property>
   </action>
  </widget>
