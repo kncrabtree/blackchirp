@@ -76,6 +76,7 @@ public slots:
     void setEnd(double e) { d_end = e; }
     void setPzf(int z) { d_pzf = z; }
     void setScaling(double s) { d_scaling = s; }
+    void setIgnoreZone(double z) { d_ignoreZone = z; }
 
 private:
     gsl_fft_real_wavetable *real; /*!< Wavetable for GNU Scientific Library FFT operations */
@@ -86,6 +87,7 @@ private:
     double d_end;
     int d_pzf;
     double d_scaling;
+    double d_ignoreZone;
 
     QVector<qint64> d_fidData;
 

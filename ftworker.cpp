@@ -8,7 +8,7 @@
 #include "analysis.h"
 
 FtWorker::FtWorker(QObject *parent) :
-    QObject(parent), real(NULL), work(NULL), d_numPnts(0), d_start(0.0), d_end(0.0), d_pzf(0), d_scaling(1.0)
+    QObject(parent), real(NULL), work(NULL), d_numPnts(0), d_start(0.0), d_end(0.0), d_pzf(0), d_scaling(1.0), d_ignoreZone(50.0)
 {
 }
 
@@ -76,7 +76,10 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
         //calculate magnitude and update max
         //note: Normalize output, and convert to mV
         double coef_mag = sqrt(coef_real*coef_real + coef_imag*coef_imag)/rawSize*d_scaling;
-        max = qMax(max,coef_mag);
+
+        //only update max if we're 50 MHz away from LO
+        if(qAbs(probe-x1) > d_ignoreZone)
+            max = qMax(max,coef_mag);
 
         if(fid.sideband() == BlackChirp::UpperSideband)
             spectrum[i] = QPointF(x1,coef_mag);
@@ -85,12 +88,18 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
     }
     if(i==d_numPnts-i)
     {
+        QPointF p(probe + sign*(double)i/np/spacing,
+                   sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/rawSize*d_scaling);
+
         if(fid.sideband() == BlackChirp::UpperSideband)
-            spectrum[i] = QPointF(probe + sign*(double)i/np/spacing,
-                          sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/rawSize*d_scaling);
+            spectrum[i] = p;
         else
-            spectrum[spectrumSize-1-i] = QPointF(probe + sign*(double)i/np/spacing,
-                          sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/rawSize*d_scaling);
+            spectrum[spectrumSize-1-i] = p;
+
+        //only update max if we're 50 MHz away from LO
+        if(qAbs(probe-p.x()) > d_ignoreZone)
+            max = qMax(max,p.y());
+
     }
 
     //the signal is used for asynchronous purposes (in UI classes), and the return value for synchronous (in non-UI classes)
