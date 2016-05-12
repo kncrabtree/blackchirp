@@ -599,6 +599,7 @@ void MSO72004C::endAcquisition()
 {
 
     //stop parsing waveforms
+    p_scopeTimeout->stop();
     disconnect(p_socket,&QTcpSocket::readyRead,this,&MSO72004C::readWaveform);
     disconnect(p_scopeTimeout,&QTimer::timeout,this,&MSO72004C::wakeUp);
 
