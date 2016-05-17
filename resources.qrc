@@ -36,5 +36,6 @@
         <file>icons/export.png</file>
         <file>icons/quickexpt.png</file>
         <file>icons/sequence.png</file>
+        <file>icons/exportbatch.png</file>
     </qresource>
 </RCC>

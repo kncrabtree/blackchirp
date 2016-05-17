@@ -30,6 +30,7 @@
 #include "experimentviewwidget.h"
 #include "quickexptdialog.h"
 #include "batchsequencedialog.h"
+#include "exportbatchdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -249,6 +250,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionTest_All_Connections,&QAction::triggered,p_hwm,&HardwareManager::testAll);
     connect(ui->actionView_Experiment,&QAction::triggered,this,&MainWindow::viewExperiment);
     connect(ui->actionExport_experiment,&QAction::triggered,this,&MainWindow::exportExperiment);
+    connect(ui->actionExport_Batch,&QAction::triggered,this,&MainWindow::exportBatch);
 
 #ifdef BC_NO_LIF
     ui->actionLIF->setEnabled(false);
@@ -845,6 +847,22 @@ void MainWindow::exportExperiment()
     QMetaObject::invokeMethod(p_am,"exportAsciiFid",Q_ARG(QString,name));
 }
 
+void MainWindow::exportBatch()
+{
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    int lastExpt = s.value(QString("exptNum"),0).toInt();
+
+    if(lastExpt < 2)
+    {
+        QMessageBox::information(this,QString("Cannot export batch"),QString("You must have completed more than one experiment to export a batch."));
+        return;
+    }
+
+    ExportBatchDialog d(this);
+    d.exec();
+
+}
+
 void MainWindow::configureUi(MainWindow::ProgramState s)
 {
     d_state = s;
@@ -864,6 +882,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
         ui->actionExport_experiment->setEnabled(d_currentExptNum != 0);
+        ui->actionExport_Batch->setEnabled(true);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         ui->lifControlWidget->setEnabled(false);
@@ -880,6 +899,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionIO_Board->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
         ui->actionExport_experiment->setEnabled(d_currentExptNum != 0);
+        ui->actionExport_Batch->setEnabled(true);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         ui->lifControlWidget->setEnabled(false);
@@ -896,6 +916,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
         ui->actionExport_experiment->setEnabled(false);
+        ui->actionExport_Batch->setEnabled(false);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         ui->lifControlWidget->setEnabled(false);
@@ -912,6 +933,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
         ui->actionExport_experiment->setEnabled(false);
+        ui->actionExport_Batch->setEnabled(false);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         ui->lifControlWidget->setEnabled(false);
@@ -928,6 +950,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
         ui->actionExport_experiment->setEnabled(false);
+        ui->actionExport_Batch->setEnabled(false);
         ui->gasControlBox->setEnabled(true);
         ui->pulseConfigWidget->setEnabled(true);
         ui->lifControlWidget->setEnabled(true);
@@ -945,6 +968,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionIO_Board->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
         ui->actionExport_experiment->setEnabled(d_currentExptNum != 0);
+        ui->actionExport_Batch->setEnabled(true);
         ui->gasControlBox->setEnabled(true);
         ui->pulseConfigWidget->setEnabled(true);
         ui->lifControlWidget->setEnabled(true);

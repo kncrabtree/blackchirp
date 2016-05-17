@@ -78,6 +78,7 @@ public slots:
     void sleep(bool s);
     void viewExperiment();
     void exportExperiment();
+    void exportBatch();
 
 private:
     Ui::MainWindow *ui;
