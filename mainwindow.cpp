@@ -849,6 +849,9 @@ void MainWindow::exportExperiment()
 
 void MainWindow::exportBatch()
 {
+    if(d_batchThread->isRunning())
+        return;
+
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     int lastExpt = s.value(QString("exptNum"),0).toInt();
 
