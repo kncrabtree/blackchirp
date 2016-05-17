@@ -39,23 +39,17 @@ void ExportBatchDialog::selectDirectory()
 
 void ExportBatchDialog::accept()
 {
-    QList<int> range = Analysis::parseIntRanges(ui->rangeLineEdit->text());
-    if(range.isEmpty())
-    {
-        QMessageBox::critical(this,QString("Export error"),QString("Could not parse requested range."));
-        return;
-    }
-
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     int lastExpt = s.value(QString("exptNum"),0).toInt();
 
-    std::sort(range.begin(),range.end());
-
-    if(range.first() > lastExpt)
+    QList<int> range = Analysis::parseIntRanges(ui->rangeLineEdit->text(),lastExpt);
+    if(range.isEmpty())
     {
-        QMessageBox::critical(this,QString("Export error"),QString("The maximum experiment number is %1. Please enter a valid range.").arg(lastExpt));
+        QMessageBox::critical(this,QString("Export error"),QString("Could not parse requested range. The maximum experiment number is %1.").arg(lastExpt));
         return;
     }
+
+    std::sort(range.begin(),range.end());
 
     //test path
     QString fileName = ui->pathLineEdit->text() + QString("/expt%1.txt").arg(range.first());
@@ -74,6 +68,7 @@ void ExportBatchDialog::accept()
     {
         if(range.at(i) > lastExpt)
         {
+            //this should never happen
             errorList.append(range.mid(i));
             break;
         }
@@ -81,6 +76,7 @@ void ExportBatchDialog::accept()
         Experiment e(range.at(i));
         if(e.number()<1)
         {
+            //could not load experiment
             errorList.append(range.at(i));
             continue;
         }

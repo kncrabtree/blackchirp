@@ -19,7 +19,7 @@ qint64 Analysis::intRoundClosest(const qint64 n, const qint64 d)
 }
 
 
-QList<int> Analysis::parseIntRanges(const QString str)
+QList<int> Analysis::parseIntRanges(const QString str, int max)
 {
     QList<int> out;
 
@@ -35,23 +35,23 @@ QList<int> Analysis::parseIntRanges(const QString str)
 
             bool ok = false;
             int start = l2.at(0).trimmed().toInt(&ok);
-            if(!ok || start < 1)
+            if(!ok || start < 1 || start > max)
                 continue;
             int end = l2.at(1).trimmed().toInt(&ok);
-            if(!ok || end < 1)
+            if(!ok || end < 1 || end > max)
                 continue;
 
             if(end < start)
                 std::swap(start,end);
 
-            for(int j=start; j<=end; j++)
+            for(int j=start; j<=qMin(max,end); j++)
                 out.append(j);
         }
         else
         {
             bool ok = false;
             int num = l.at(i).trimmed().toInt(&ok);
-            if(!ok || num < 1)
+            if(!ok || num < 1 || num > max)
                 continue;
 
             out.append(num);
