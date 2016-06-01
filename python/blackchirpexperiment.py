@@ -667,7 +667,7 @@ class BlackChirpExperiment:
   
       
     def analyze_fid(self,index=0,f_min = None, f_max=None, snr=3, win=50,
-                    width_factor=3.):
+                    width_factor=3., mode = "amplitude"):
         """
         Perform full FT and peak fitting analysis of a single FID
         
@@ -715,9 +715,9 @@ class BlackChirpExperiment:
             x0 : peak finder's x value
             w : width_factor*original_FT_spacing (default width factor is 3)
         In addition, bounds are set on each parameter:
-            y0 : [0, 5*noise+baseline] (from peak finder)
+            y0 : [baseline/5, 5*noise+baseline] (from peak finder)
             A : [A/5, A*5]
-            x0 : [x-w, x+w] (assume peak finder is good to ~+/-1 point)
+            x0 : [x-w, x+w] (assume peak finder is good to ~a few points)
             w : [w/10, w+10]
             
         The actual fit is performed by bcfitting.bc_fit_multigauss, which
@@ -737,6 +737,12 @@ class BlackChirpExperiment:
         Nevertheless, the model waves can be plotted on top of the FT
         with good results; there are (by default) only stright line segments
         connecting the chunks.
+        
+        Optionally, by setting mode="area", the program will fit to an area
+        normalized gaussian instead of a height-normalized one:
+            f(x) = y0 + sum_i^N Ai/(sqrt(2pi)wi) * exp( -(x-x0i)^2 / 2*wi^2 )
+        I've found this routine to be less accurate in general, but its
+        quality is improved by more accurate guesses of linewidths.
         
         Arguments:
         
@@ -758,6 +764,9 @@ class BlackChirpExperiment:
             width_factor : float (optional, default 3)
                 Multiple of FT point spacing for initial peak width guess
                 and for bounds on center frequencies in fitting routine
+                
+            mode : string (optional, default "amplitude")
+                Choose whether to fit peak "area" or "amplitude"
                 
         Returns: tuple (x, y, xl, yl, il, sl, pl, el, mx, my, cov)
         
@@ -837,6 +846,18 @@ class BlackChirpExperiment:
         chunk_index = 0
         total_chunk_size = 0
         
+        fit_area = True
+        if mode == "amplitude":
+            fit_area = False
+            
+        func = bcfit.fit_peaks_gauss            
+        model = bcfit.bc_multigauss
+        wf = 1.
+        if fit_area:
+            func = bcfit.fit_peaks_gauss_area
+            model = bcfit.bc_multigauss_area
+            wf = 5.
+        
         while len(il) > 0:
             #get next peak
             peaks = []
@@ -865,14 +886,17 @@ class BlackChirpExperiment:
             
             #construct parameter guesses and boundary conditions
             p = [ baseline[this_peak] ]
-            lowerbound = [0.0]
-            upperbound = [5*noise[this_peak]]
+            lowerbound = [baseline[this_peak] / 5.]
+            upperbound = [baseline[this_peak] + 3.*noise[this_peak]]
             for i in peaks:
-                p.append(y[i])
+                a = y[i]
+                if fit_area:
+                    a *= width*numpy.sqrt(2.*numpy.pi)
+                p.append(a)
                 p.append(x[i])
                 p.append(width)
-                lowerbound.append(y[i]/5.)
-                upperbound.append(y[i]*5.)
+                lowerbound.append(a/5./wf)
+                upperbound.append(a*5.*wf)
                 lowerbound.append(x[i]-width)
                 upperbound.append(x[i]+width)
                 lowerbound.append(width/10.)
@@ -921,9 +945,10 @@ class BlackChirpExperiment:
         
         #iterate over slices in parallel, performing a fit on each one
         #when a process finishes, the code beneath is called
+        
         with concurrent.futures.ProcessPoolExecutor() as exc:
             for xarray, yarray, md, res in zip(x_list,y_list, the_metadata,
-                                 exc.map(bcfit.fit_peaks_gauss,
+                                 exc.map(func,
                                          x_list,y_list,p_list,b_list)):
                                              
                 #get information about which chunk this is
@@ -950,7 +975,7 @@ class BlackChirpExperiment:
                 #build model using optimized parameters
                 for i in range(len(xarray)):
                     modelx[chunk_start+i] = xarray[i]
-                tmp = bcfit.bc_multigauss(xarray,*popt)
+                tmp = model(xarray,*popt)
                 for i in range(len(tmp)):
                     modely[chunk_start+i] = tmp[i]
                 
