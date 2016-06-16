@@ -31,6 +31,7 @@
 #include "quickexptdialog.h"
 #include "batchsequencedialog.h"
 #include "exportbatchdialog.h"
+#include "motorscandialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -273,6 +274,14 @@ MainWindow::MainWindow(QWidget *parent) :
             ui->lifControlWidget,&LifControlWidget::checkLifColors);
 #endif
 
+#ifdef BC_NO_MOTOR
+    ui->actionStart_Motor_Scan->setEnabled(false);
+    ui->actionStart_Motor_Scan->setVisible(false);
+#else
+    //make signal/slot connections when ready
+    connect(ui->actionStart_Motor_Scan,&QAction::triggered,this,&MainWindow::startMotorScan);
+#endif
+
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     ui->exptSpinBox->setValue(s.value(QString("exptNum"),0).toInt());
     configureUi(Idle);
@@ -417,6 +426,19 @@ void MainWindow::startSequence()
     bs->setSleep(sleep);
     startBatch(bs);
 
+}
+
+void MainWindow::startMotorScan()
+{
+    MotorScanDialog d(this);
+
+    if(d.exec() != QDialog::Accepted)
+        return;
+
+    MotorScan ms = d.toMotorScan();
+
+    //send motor scan to AcquisitionManager...
+    Q_UNUSED(ms)
 }
 
 void MainWindow::batchComplete(bool aborted)
@@ -881,6 +903,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionQuick_Experiment->setEnabled(false);
         ui->actionStart_Sequence->setEnabled(false);
+        ui->actionStart_Motor_Scan->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
@@ -898,6 +921,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionQuick_Experiment->setEnabled(false);
         ui->actionStart_Sequence->setEnabled(false);
+        ui->actionStart_Motor_Scan->setEnabled(false);
         ui->actionCommunication->setEnabled(true);
         ui->actionIO_Board->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
@@ -915,6 +939,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionQuick_Experiment->setEnabled(false);
         ui->actionStart_Sequence->setEnabled(false);
+        ui->actionStart_Motor_Scan->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
@@ -932,6 +957,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionQuick_Experiment->setEnabled(false);
         ui->actionStart_Sequence->setEnabled(false);
+        ui->actionStart_Motor_Scan->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
@@ -967,6 +993,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionStart_Experiment->setEnabled(true);
         ui->actionQuick_Experiment->setEnabled(d_oneExptDone);
         ui->actionStart_Sequence->setEnabled(true);
+        ui->actionStart_Motor_Scan->setEnabled(true);
         ui->actionCommunication->setEnabled(true);
         ui->actionIO_Board->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
@@ -981,6 +1008,10 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
 
 #ifdef BC_NO_LIF
     ui->lifControlWidget->setEnabled(false);
+#endif
+
+#ifdef BC_NO_MOTOR
+    ui->actionStart_Motor_Scan->setEnabled(false);
 #endif
 }
 

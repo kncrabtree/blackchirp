@@ -7,6 +7,9 @@ CONFIG += nohardware
 #Disable LIF controls/acquisition
 CONFIG += nolif
 
+#Disable motor controls/acquisition
+CONFIG += nomotor
+
 
 #-----------------------------------------
 # Library configuration
@@ -120,6 +123,10 @@ nolif {
 	LIFSCOPE = 0
 
 	DEFINES += BC_NO_LIF
+}
+
+nomotor {
+        DEFINES += BC_NO_MOTOR
 }
 
 

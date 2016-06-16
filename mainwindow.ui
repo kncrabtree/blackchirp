@@ -406,6 +406,7 @@
     <addaction name="actionStart_Experiment"/>
     <addaction name="actionQuick_Experiment"/>
     <addaction name="actionStart_Sequence"/>
+    <addaction name="actionStart_Motor_Scan"/>
     <addaction name="actionPause"/>
     <addaction name="actionResume"/>
     <addaction name="actionAbort"/>
@@ -702,6 +703,15 @@
    </property>
    <property name="toolTip">
     <string>Export several experiments at once.</string>
+   </property>
+  </action>
+  <action name="actionStart_Motor_Scan">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/motorscan.png</normaloff>:/icons/motorscan.png</iconset>
+   </property>
+   <property name="text">
+    <string>Start Motor Scan</string>
    </property>
   </action>
  </widget>
