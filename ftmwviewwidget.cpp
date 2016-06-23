@@ -34,6 +34,7 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
 
     connect(ui->ftPlot,&FtPlot::pzfChanged,this,&FtmwViewWidget::pzfChanged);
     connect(ui->ftPlot,&FtPlot::unitsChanged,this,&FtmwViewWidget::scalingChanged);
+    connect(ui->ftPlot,&FtPlot::winfChanged,this,&FtmwViewWidget::winfChanged);
     connect(ui->controlButton,&QToolButton::toggled,this,&FtmwViewWidget::togglePanel);
     togglePanel(false);
 
@@ -219,6 +220,12 @@ void FtmwViewWidget::pzfChanged(int zpf)
 void FtmwViewWidget::scalingChanged(double scf)
 {
     QMetaObject::invokeMethod(p_ftw,"setScaling",Q_ARG(double,scf));
+    updateFtPlot();
+}
+
+void FtmwViewWidget::winfChanged(BlackChirp::FtWindowFunction f)
+{
+    QMetaObject::invokeMethod(p_ftw,"setWindowFunction",Q_ARG(BlackChirp::FtWindowFunction,f));
     updateFtPlot();
 }
 

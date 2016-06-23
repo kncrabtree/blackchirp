@@ -8,7 +8,10 @@
 
 #include <gsl/gsl_fft_real.h>
 
+#include "analysis.h"
 #include "fid.h"
+
+
 
 /*!
  \brief Class that handles processing of FIDs
@@ -68,15 +71,16 @@ public slots:
      \brief Perform truncation, high-pass, and exponential filtering on an Fid
 
      \param f Fid to filter
-     \return Fid Filtered Fid
+     \return QVector<double> Filtered Fid
     */
-    Fid filterFid(const Fid f);
+    QVector<double> filterFid(const Fid fid);
 
     void setStart(double s) { d_start = s; }
     void setEnd(double e) { d_end = e; }
     void setPzf(int z) { d_pzf = z; }
     void setScaling(double s) { d_scaling = s; }
     void setIgnoreZone(double z) { d_ignoreZone = z; }
+    void setWindowFunction(BlackChirp::FtWindowFunction wf) { d_currentWinf = wf; d_recalculateWinf = true; }
 
 private:
     gsl_fft_real_wavetable *real; /*!< Wavetable for GNU Scientific Library FFT operations */
@@ -88,8 +92,19 @@ private:
     int d_pzf;
     double d_scaling;
     double d_ignoreZone;
+    bool d_recalculateWinf;
 
     QVector<qint64> d_fidData;
+    QVector<double> d_winf;
+    BlackChirp::FtWindowFunction d_currentWinf;
+
+    void makeWinf(int n,BlackChirp::FtWindowFunction f);
+    void winBartlett(int n);
+    void winBlackman(int n);
+    void winBlackmanHarris(int n);
+    void winHamming(int n);
+    void winHanning(int n);
+    void winKaiserBessel(int n, double beta);
 
 };
 

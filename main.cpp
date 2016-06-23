@@ -6,6 +6,7 @@
 #include <QDesktopServices>
 #include <QDateTime>
 #include <QDir>
+#include <gsl/gsl_errno.h>
 
 #ifdef Q_OS_UNIX
 #include <sys/stat.h>
@@ -123,6 +124,15 @@ int main(int argc, char *argv[])
     qRegisterMetaType<PulseGenConfig>("PulseGenConfig");
     qRegisterMetaType<LifTrace>("LifTrace");
     qRegisterMetaType<QPair<QPoint,BlackChirp::LifPoint>>("QPair<QPoint,BlackChirp::LifPoint>");
+    qRegisterMetaType<BlackChirp::FtWindowFunction>("BlackChirp::FtWindowFunction");
+
+
+#ifndef QT_DEBUG
+    gsl_set_error_handler_off();
+#else
+    //comment this line out to enable the gsl error handler
+    gsl_set_error_handler_off();
+#endif
 
     MainWindow w;
     w.showMaximized();

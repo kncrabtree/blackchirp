@@ -65,6 +65,16 @@ enum FlowSetting {
 enum PulseActiveLevel { PulseLevelActiveLow, PulseLevelActiveHigh };
 enum PulseSetting { PulseDelay, PulseWidth, PulseEnabled, PulseLevel, PulseName };
 
+enum FtWindowFunction {
+    Bartlett,
+    Boxcar,
+    Blackman,
+    BlackmanHarris,
+    Hamming,
+    Hanning,
+    KaiserBessel14
+};
+
 struct FtmwScopeConfig {
     //user-chosen settings
     int fidChannel;
@@ -253,6 +263,7 @@ Q_DECLARE_METATYPE(BlackChirp::LifScanOrder)
 Q_DECLARE_METATYPE(BlackChirp::LifCompleteMode)
 Q_DECLARE_METATYPE(BlackChirp::ValidationItem)
 Q_DECLARE_METATYPE(BlackChirp::FtPlotUnits)
+Q_DECLARE_METATYPE(BlackChirp::FtWindowFunction)
 
 Q_DECLARE_TYPEINFO(BlackChirp::LifPoint,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::ChirpSegment,Q_MOVABLE_TYPE);

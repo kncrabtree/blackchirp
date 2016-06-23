@@ -5,27 +5,25 @@
 #include <gsl/gsl_const.h>
 #include <gsl/gsl_sf.h>
 
-#include "analysis.h"
-
 FtWorker::FtWorker(QObject *parent) :
-    QObject(parent), real(NULL), work(NULL), d_numPnts(0), d_start(0.0), d_end(0.0), d_pzf(0), d_scaling(1.0), d_ignoreZone(50.0)
+    QObject(parent), real(NULL), work(NULL), d_numPnts(0), d_start(0.0), d_end(0.0), d_pzf(0), d_scaling(1.0), d_ignoreZone(50.0), d_recalculateWinf(true)
 {
 }
 
-QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
+QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid fid)
 {
-    if(f.size() < 2)
+    if(fid.size() < 2)
         return QPair<QVector<QPointF>,double>(QVector<QPointF>(),0.0);
 
-    double rawSize = static_cast<double>(f.size());
+    double rawSize = static_cast<double>(fid.size());
 
     //first, apply any filtering that needs to be done
-    Fid fid = filterFid(f);
+    QVector<double> fftData = filterFid(fid);
 
     //might need to allocate or reallocate workspace and wavetable
-    if(fid.size() != d_numPnts)
+    if(fftData.size() != d_numPnts)
     {
-        d_numPnts = fid.size();
+        d_numPnts = fftData.size();
 
         //free memory if this is a reallocation
         if(real)
@@ -39,7 +37,6 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid f)
     }
 
     //prepare storage
-    QVector<double> fftData(fid.toVector());
     int spectrumSize = d_numPnts/2 + 1;
     QVector<QPointF> spectrum(spectrumSize);
     double spacing = fid.spacing()*1.0e6;
@@ -136,51 +133,152 @@ void FtWorker::doFtDiff(const Fid ref, const Fid diff)
 
 }
 
-Fid FtWorker::filterFid(const Fid fid)
+QVector<double> FtWorker::filterFid(const Fid fid)
 {
-//    QVector<double> data = fid.toVector();
 
-//    //make a vector of points for display purposes
-//    QVector<QPointF> displayFid;
-//    displayFid.reserve(data.size());
-//    for(int i=0; i<data.size(); i++)
-//        displayFid.append(QPointF((double)i*fid.spacing()*1.0e6,data.at(i)));
-
-//    emit fidDone(fid.toXY());
-
-    Fid out = fid;
-    QVector<qint64> data = out.rawData();
-    if(d_fidData.size() < data.size())
-        d_fidData.resize(data.size());
-    d_fidData.fill(0);
+    QVector<double> out(fid.size());
+    QVector<double> data = fid.toVector();
 
     bool fStart = (d_start > 0.001);
     bool fEnd = (d_end > 0.001);
 
+    int si = qBound(0, static_cast<int>(floor(d_start*1e-6/fid.spacing())), fid.size()-1);
+    int ei = qBound(0,static_cast<int>(ceil(d_end*1e-6/fid.spacing())), fid.size()-1);
+    if(!fStart || si - ei >= 0)
+        si = 0;
+    if(!fEnd || ei <= si)
+        ei = fid.size()-1;
+
+    int n = ei - si + 1;
+    makeWinf(n,d_currentWinf);
+
     for(int i=0; i<data.size(); i++)
     {
-        if(fStart && static_cast<double>(i)*fid.spacing() < d_start*1e-6)
+        if(i < si || i > ei)
             continue;
-        else if(fEnd && static_cast<double>(i)*fid.spacing() > d_end*1e-6)
-            continue;
+
+        if(d_currentWinf == BlackChirp::Boxcar)
+            out[i] = data.at(i);
         else
-            d_fidData[i] = data.at(i);
+            out[i] = data.at(i)*d_winf.at(i-si);
     }
 
     if(d_pzf > 0 && d_pzf <= 4)
     {
         int filledSize = Analysis::nextPowerOf2(2*data.size()) << (d_pzf-1);
-        if(d_fidData.size() != filledSize)
-            d_fidData.resize(filledSize);
+        if(out.size() != filledSize)
+            out.resize(filledSize);
     }
-    else if(d_pzf == 0)
-    {
-        if(d_fidData.size() != data.size())
-            d_fidData.resize(data.size());
-    }
-
-    out.setData(d_fidData);
 
     return out;
 
+}
+
+void FtWorker::makeWinf(int n, BlackChirp::FtWindowFunction f)
+{
+    if(f == d_currentWinf && d_winf.size() == n && !d_recalculateWinf)
+        return;
+
+    if(d_winf.size() != n)
+        d_winf.resize(n);
+
+    switch(f)
+    {
+    case BlackChirp::Bartlett:
+        winBartlett(n);
+        break;
+    case BlackChirp::Blackman:
+        winBlackman(n);
+        break;
+    case BlackChirp::BlackmanHarris:
+        winBlackmanHarris(n);
+        break;
+    case BlackChirp::Hamming:
+        winHamming(n);
+        break;
+    case BlackChirp::Hanning:
+        winHanning(n);
+        break;
+    case BlackChirp::KaiserBessel14:
+        winKaiserBessel(n,14.0);
+        break;
+    case BlackChirp::Boxcar:
+    default:
+        d_winf.fill(1.0);
+        break;
+    }
+
+    d_recalculateWinf = false;
+}
+
+void FtWorker::winBartlett(int n)
+{
+    double a = (static_cast<double>(n)-1.0)/2.0;
+    double b = 2.0/(static_cast<double>(n)-1.0);
+    for(int i=0; i<n; i++)
+        d_winf[i] = b*(a-qAbs(static_cast<double>(i)-a));
+}
+
+void FtWorker::winBlackman(int n)
+{
+    double N = static_cast<double>(n);
+    double p2n = 2.0*M_PI/N;
+    double p4n = 4.0*M_PI/N;
+    for(int i=0; i<n; i++)
+    {
+        double I = static_cast<double>(i);
+        d_winf[i] = 0.42 - 0.5*cos(p2n*I) + 0.08*cos(p4n*I);
+    }
+
+}
+
+void FtWorker::winBlackmanHarris(int n)
+{
+    double N = static_cast<double>(n);
+    double p2n = 2.0*M_PI/N;
+    double p4n = 4.0*M_PI/N;
+    double p6n = 6.0*M_PI/N;
+    for(int i=0; i<n; i++)
+    {
+        double I = static_cast<double>(i);
+        d_winf[i] = 0.35875 - 0.48829*cos(p2n*I) + 0.14128*cos(p4n*I) - 0.01168*cos(p6n*I);
+    }
+}
+
+void FtWorker::winHamming(int n)
+{
+    double N = static_cast<double>(n)-1.0;
+    double p2n = 2.0*M_PI/N;
+    for(int i=0; i<n; i++)
+    {
+        double I = static_cast<double>(i);
+        d_winf[i] = 0.54 - 0.46*cos(p2n*I);
+    }
+}
+
+void FtWorker::winHanning(int n)
+{
+    double N = static_cast<double>(n)-1.0;
+    double p2n = 2.0*M_PI/N;
+    for(int i=0; i<n; i++)
+    {
+        double I = static_cast<double>(i);
+        d_winf[i] = 0.5 - 0.5*cos(p2n*I);
+    }
+}
+
+void FtWorker::winKaiserBessel(int n, double beta)
+{
+    double Ibeta = gsl_sf_bessel_I0(beta);
+    double n2 = 2.0/(static_cast<double>(n)-1.0);
+    for(int i=0; i<n; i++)
+    {
+        double I = static_cast<double>(i);
+        double arg = beta*sqrt(1.0-(n2*I-1.0)*(n2*I-1.0));
+        double bsl = gsl_sf_bessel_I0(arg);
+        if(gsl_isinf(bsl) || gsl_isnan(bsl))
+            d_winf[i] = 0.0;
+        else
+            d_winf[i] = bsl/Ibeta;
+    }
 }

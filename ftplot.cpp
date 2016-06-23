@@ -76,6 +76,8 @@ FtPlot::FtPlot(QWidget *parent) :
     setAxisAutoScaleRange(QwtPlot::xBottom,0.0,1.0);
     setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
 
+    d_currentWinf = static_cast<BlackChirp::FtWindowFunction>(s.value(QString("windowFunction"),BlackChirp::Boxcar).toInt());
+
 }
 
 FtPlot::~FtPlot()
@@ -103,6 +105,7 @@ void FtPlot::prepareForExperiment(const Experiment e)
     autoScale();
     QSettings s;
     configureUnits(static_cast<BlackChirp::FtPlotUnits>(s.value(QString("ftUnits"),BlackChirp::FtPlotmV).toInt()));
+    setWinf(d_currentWinf);
 }
 
 void FtPlot::newFt(QVector<QPointF> ft, double max)
@@ -247,7 +250,27 @@ void FtPlot::buildContextMenu(QMouseEvent *me)
     }
     yMenu->addActions(scaleGroup->actions());
 
+    QList<QPair<BlackChirp::FtWindowFunction,QString>> winfList;
+    winfList << qMakePair(BlackChirp::Bartlett,QString("Bartlett"));
+    winfList << qMakePair(BlackChirp::Blackman,QString("Blackman"));
+    winfList << qMakePair(BlackChirp::BlackmanHarris,QString("Blackman-Harris"));
+    winfList << qMakePair(BlackChirp::Boxcar,QString("Boxcar (none)"));
+    winfList << qMakePair(BlackChirp::Hamming,QString("Hamming"));
+    winfList << qMakePair(BlackChirp::Hanning,QString("Hanning"));
+    winfList << qMakePair(BlackChirp::KaiserBessel14,QString("Kaiser-Bessel, B=14"));
 
+    QMenu *winfMenu = m->addMenu(QString("Window Function"));
+    QActionGroup *winfGroup = new QActionGroup(winfMenu);
+    winfGroup->setExclusive(true);
+
+    for(int i=0; i<winfList.size(); i++)
+    {
+        QAction *a = winfMenu->addAction(winfList.at(i).second);
+        a->setCheckable(true);
+        a->setChecked(winfList.at(i).first == d_currentWinf);
+        connect(a,&QAction::triggered,this,[=](){ setWinf(winfList.at(i).first); });
+    }
+    winfMenu->addActions(winfGroup->actions());
 
     m->popup(me->globalPos());
 }
@@ -358,4 +381,14 @@ void FtPlot::configureUnits(BlackChirp::FtPlotUnits u)
 
     setAxisTitle(QwtPlot::yLeft,title);
     emit unitsChanged(scf);
+}
+
+void FtPlot::setWinf(BlackChirp::FtWindowFunction wf)
+{
+    d_currentWinf = wf;
+    QSettings s;
+    s.setValue(QString("windowFunction"),d_currentWinf);
+    s.sync();
+
+    emit winfChanged(d_currentWinf);
 }
