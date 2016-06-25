@@ -1,12 +1,11 @@
 #include "mks647c.h"
 
-#include "rs232instrument.h"
-
 Mks647c::Mks647c(QObject *parent) :
     FlowController(parent), d_maxTries(5)
 {
     d_subKey = QString("mks647c");
     d_prettyName = QString("MKS 647C Flow Control Unit");
+    d_commType = CommunicationProtocol::Rs232;
 
     double b = 28316.847; //scfm --> sccm conversion
     double c = b/60.0; // scfh --> sccm conversion
@@ -33,10 +32,6 @@ Mks647c::Mks647c(QObject *parent) :
         d_rangeIndexList.append(4);
         d_gcfList.append(0.0);
     }
-
-    p_comm = new Rs232Instrument(d_key,d_subKey,this);
-    connect(p_comm,&CommunicationProtocol::logMessage,this,&Mks647c::logMessage);
-    connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&Mks647c::hardwareFailure);
 }
 
 

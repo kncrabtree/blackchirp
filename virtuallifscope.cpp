@@ -1,7 +1,5 @@
 #include "virtuallifscope.h"
 
-#include "virtualinstrument.h"
-
 #include <QTimer>
 
 VirtualLifScope::VirtualLifScope(QObject *parent) :
@@ -9,8 +7,7 @@ VirtualLifScope::VirtualLifScope(QObject *parent) :
 {
     d_subKey = QString("virtual");
     d_prettyName = QString("Virtual LIF Oscilloscope");
-
-    p_comm = new VirtualInstrument(d_key,this);
+    d_commType = CommunicationProtocol::Virtual;
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);

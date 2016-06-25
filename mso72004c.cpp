@@ -1,6 +1,6 @@
 #include "mso72004c.h"
 
-#include "tcpinstrument.h"
+#include <QTcpSocket>
 
 MSO72004C::MSO72004C(QObject *parent) :
     FtmwScope(parent), d_waitingForReply(false), d_foundHeader(false),
@@ -8,10 +8,7 @@ MSO72004C::MSO72004C(QObject *parent) :
 {
     d_subKey = QString("MSO72004C");
     d_prettyName = QString("Ftmw Oscilloscope MSO72004C");
-
-    p_comm = new TcpInstrument(d_key,d_subKey,this);
-    connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
-    connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
+    d_commType = CommunicationProtocol::Tcp;
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);

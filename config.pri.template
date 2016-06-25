@@ -23,6 +23,7 @@ FC=0
 FC_CHANNELS=4
 LIFSCOPE=0
 IOBOARD=0
+GPIB=0
 } else {
 #------------------------------------------------
 # The following defines select hardware implementations.
@@ -57,6 +58,9 @@ LIFSCOPE=1
 
 #IO Board (0 = virtual, 1 = Labjack U3)
 IOBOARD=1
+
+#GPIB controller (0 = virtual, 1 = Prologix GPIB-LAN)
+GPIB=0
 }
 
 
@@ -122,6 +126,7 @@ DEFINES += BC_PGEN=$$PGEN BC_PGEN_GASCHANNEL=$$PGEN_GAS BC_PGEN_AWGCHANNEL=$$PGE
 DEFINES += BC_FLOWCONTROLLER=$$FC  BC_FLOW_NUMCHANNELS=$$FC_CHANNELS
 DEFINES += BC_LIFSCOPE=$$LIFSCOPE
 DEFINES += BC_IOBOARD=$$IOBOARD
+DEFINES += BC_GPIBCONTROLLER=$$GPIB
 
 equals(FTMWSCOPE,0) {
 RESOURCES += virtualdata.qrc

@@ -2,16 +2,12 @@
 
 #include <QFile>
 
-#include "virtualinstrument.h"
-
-
 VirtualFtmwScope::VirtualFtmwScope(QObject *parent) :
     FtmwScope(parent)
 {
     d_subKey = QString("virtual");
     d_prettyName = QString("Virtual FTMW Oscilloscope");
-
-    p_comm = new VirtualInstrument(d_key,this);
+    d_commType = CommunicationProtocol::Virtual;
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);

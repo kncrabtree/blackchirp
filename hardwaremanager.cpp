@@ -10,6 +10,7 @@
 #include "flowcontroller.h"
 #include "lifscope.h"
 #include "ioboard.h"
+#include "gpibcontroller.h"
 
 HardwareManager::HardwareManager(QObject *parent) : QObject(parent), d_responseCount(0)
 {
@@ -33,22 +34,23 @@ HardwareManager::~HardwareManager()
 }
 
 void HardwareManager::initialize()
-{    
+{
+    GpibController *gpib = new GpibControllerHardware();
+    QThread *gpibThread = new QThread(this);
+    d_hardwareList.append(qMakePair(gpib,gpibThread));
+
     p_ftmwScope = new FtmwScopeHardware();
     connect(p_ftmwScope,&FtmwScope::shotAcquired,this,&HardwareManager::ftmwScopeShotAcquired);
-    d_hardwareList.append(qMakePair(p_ftmwScope,new QThread(this)));
+    d_hardwareList.append(qMakePair(p_ftmwScope,nullptr));
 
-    //awg does not need to be in its own thread
     p_awg = new AwgHardware();
     d_hardwareList.append(qMakePair(p_awg,nullptr));
 
-    //valon synth does not need to be in its own thread
     p_synth = new SynthesizerHardware();
     connect(p_synth,&Synthesizer::txFreqRead,this,&HardwareManager::valonTxFreqRead);
     connect(p_synth,&Synthesizer::rxFreqRead,this,&HardwareManager::valonRxFreqRead);
     d_hardwareList.append(qMakePair(p_synth,nullptr));
 
-    //pulse generator does not need to be in its own thread
     p_pGen = new PulseGeneratorHardware();
     connect(p_pGen,&PulseGenerator::settingUpdate,this,&HardwareManager::pGenSettingUpdate);
     connect(p_pGen,&PulseGenerator::configUpdate,this,&HardwareManager::pGenConfigUpdate);
@@ -62,19 +64,19 @@ void HardwareManager::initialize()
     connect(p_flow,&FlowController::pressureUpdate,this,&HardwareManager::pressureUpdate);
     connect(p_flow,&FlowController::pressureSetpointUpdate,this,&HardwareManager::pressureSetpointUpdate);
     connect(p_flow,&FlowController::pressureControlMode,this,&HardwareManager::pressureControlMode);
-    d_hardwareList.append(qMakePair(p_flow,new QThread(this)));
+    d_hardwareList.append(qMakePair(p_flow,nullptr));
 
 #ifndef BC_NO_LIF
     p_lifScope = new LifScopeHardware();
     connect(p_lifScope,&LifScope::waveformRead,this,&HardwareManager::lifScopeShotAcquired);
     connect(p_lifScope,&LifScope::configUpdated,this,&HardwareManager::lifScopeConfigUpdated);
-    d_hardwareList.append(qMakePair(p_lifScope,new QThread(this)));
+    d_hardwareList.append(qMakePair(p_lifScope,nullptr));
 #else
     p_lifScope = nullptr;
 #endif
 
     p_iob = new IOBoardHardware();
-    d_hardwareList.append(qMakePair(p_iob,new QThread(this)));
+    d_hardwareList.append(qMakePair(p_iob,nullptr));
 
 
 	//write arrays of the connected devices for use in the Hardware Settings menu
@@ -158,6 +160,25 @@ void HardwareManager::initialize()
     {
         QThread *thread = d_hardwareList.at(i).second;
         HardwareObject *obj = d_hardwareList.at(i).first;
+        if(obj->isThreaded())
+        {
+            if(obj != gpib)
+            {
+                if(obj->type() != CommunicationProtocol::Gpib)
+                    thread = new QThread(this);
+                else
+                    thread = gpibThread;
+
+                d_hardwareList[i].second = thread;
+            }
+        }
+        else if(obj->type() == CommunicationProtocol::Gpib)
+        {
+            thread = gpibThread;
+            d_hardwareList[i].second = thread;
+        }
+
+        obj->buildCommunication(gpib);
 
         s.setValue(QString("%1/prettyName").arg(obj->key()),obj->name());
         s.setValue(QString("%1/subKey").arg(obj->key()),obj->subKey());

@@ -1,14 +1,11 @@
 #include "virtualgpibcontroller.h"
 
-#include "virtualinstrument.h"
-
 VirtualGpibController::VirtualGpibController(QObject *parent) : GpibController(parent)
 {
 	d_subKey = QString("virtual");
 	d_prettyName = QString("Virtual GPIB Controller");
     d_isCritical = false;
-
-	p_comm = new VirtualInstrument(d_key,this);
+    d_commType = CommunicationProtocol::Virtual;
 }
 
 VirtualGpibController::~VirtualGpibController()
@@ -42,10 +39,6 @@ void VirtualGpibController::endAcquisition()
 {
 }
 
-void VirtualGpibController::readPointData()
-{
-}
-
 bool VirtualGpibController::readAddress()
 {
     return true;
@@ -55,4 +48,9 @@ bool VirtualGpibController::setAddress(int a)
 {
 	d_currentAddress = a;
     return true;
+}
+
+
+void VirtualGpibController::readTimeData()
+{
 }

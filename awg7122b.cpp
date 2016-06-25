@@ -1,16 +1,12 @@
 #include "awg7122b.h"
 
-#include "tcpinstrument.h"
-
 AWG7122B::AWG7122B(QObject *parent) :
     AWG(parent)
 {
     d_subKey = QString("awg7122b");
     d_prettyName = QString("Arbirtary Waveform Generator AWG7122B");
-
-    p_comm = new TcpInstrument(d_key,d_subKey,this);
-    connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
-    connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
+    d_commType = CommunicationProtocol::Tcp;
+    d_threaded = false;
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);

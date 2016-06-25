@@ -1,16 +1,11 @@
 #include "prologixgpiblan.h"
 
-#include "tcpinstrument.h"
-
 PrologixGpibLan::PrologixGpibLan(QObject *parent) :
     GpibController(parent)
 {
     d_subKey = QString("prologixGpibLan");
     d_prettyName = QString("Prologix GPIB-LAN Controller");
-
-    p_comm = new TcpInstrument(d_key,d_subKey,this);
-    connect(p_comm,&CommunicationProtocol::logMessage,this,&PrologixGpibLan::logMessage);
-    connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&PrologixGpibLan::hardwareFailure);
+    d_commType = CommunicationProtocol::Tcp;
 }
 
 

@@ -1,16 +1,12 @@
 #include "valon5009.h"
 
-#include "rs232instrument.h"
-
 Valon5009::Valon5009(QObject *parent) :
     Synthesizer(parent)
 {
     d_subKey = QString("valon5009");
     d_prettyName = QString("Valon Synthesizer 5009");
-
-    p_comm = new Rs232Instrument(d_key,d_subKey,this);
-    connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
-    connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
+    d_commType = CommunicationProtocol::Rs232;
+    d_threaded = false;
 
     p_comm->setReadOptions(500,true,QByteArray("\n\r"));
 

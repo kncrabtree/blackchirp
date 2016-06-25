@@ -1,13 +1,10 @@
 #include "virtualflowcontroller.h"
 
-#include "virtualinstrument.h"
-
 VirtualFlowController::VirtualFlowController(QObject *parent) : FlowController(parent)
 {
     d_subKey = QString("virtual");
     d_prettyName = QString("Virtual Flow Controller");
-
-    p_comm = new VirtualInstrument(d_key,this);
+    d_commType = CommunicationProtocol::Virtual;
 }
 
 VirtualFlowController::~VirtualFlowController()

@@ -1,14 +1,12 @@
 #include "pldrogroup.h"
 
-#include "custominstrument.h"
-
 PldroGroup::PldroGroup(QObject *parent) :
     Synthesizer(parent)
 {
     d_subKey = QString("pldro");
     d_prettyName = QString("PLDRO Oscillators");
-
-    p_comm = new CustomInstrument(d_key,d_subKey,this);
+    d_commType = CommunicationProtocol::Custom;
+    d_threaded = false;
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);

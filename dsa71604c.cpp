@@ -1,6 +1,6 @@
 #include "dsa71604c.h"
 
-#include "tcpinstrument.h"
+#include <QTcpSocket>
 
 Dsa71604c::Dsa71604c(QObject *parent) :
     FtmwScope(parent), d_waitingForReply(false), d_foundHeader(false),
@@ -8,10 +8,7 @@ Dsa71604c::Dsa71604c(QObject *parent) :
 {
     d_subKey = QString("dsa71604c");
     d_prettyName = QString("Ftmw Oscilloscope DSA71604C");
-
-    p_comm = new TcpInstrument(d_key,d_subKey,this);
-    connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
-    connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
+    d_commType = CommunicationProtocol::Tcp;
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);

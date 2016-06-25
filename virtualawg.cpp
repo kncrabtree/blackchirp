@@ -1,13 +1,11 @@
 #include "virtualawg.h"
 
-#include "virtualinstrument.h"
-
 VirtualAwg::VirtualAwg(QObject *parent) : AWG(parent)
 {
     d_subKey = QString("virtual");
     d_prettyName = QString("Virtual Arbitrary Waveform Generator");
-
-    p_comm = new VirtualInstrument(d_key,this);
+    d_commType = CommunicationProtocol::Virtual;
+    d_threaded = false;
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);

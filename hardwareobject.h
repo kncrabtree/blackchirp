@@ -74,10 +74,11 @@ public:
     bool isCritical() const { return d_isCritical; }
 
     bool isConnected() const { return d_isConnected; }
+    bool isThreaded() const { return d_threaded; }
     void setConnected(bool connected) { d_isConnected = connected; }
 
 
-    CommunicationProtocol::CommType type() { return p_comm->type(); }
+    CommunicationProtocol::CommType type() { return d_commType; }
 	
 signals:
     /*!
@@ -130,6 +131,8 @@ public slots:
     virtual void endAcquisition() =0;
     virtual void readTimeData() =0;
 
+    virtual void buildCommunication(QObject *gc);
+
 protected:
     QString d_prettyName; /*!< Name to be displayed on UI */
     QString d_key; /*!< Name to be used in settings for abstract hardware*/
@@ -137,6 +140,8 @@ protected:
 
     CommunicationProtocol *p_comm;
     bool d_isCritical;
+    bool d_threaded;
+    CommunicationProtocol::CommType d_commType;
 
 private:
     bool d_isConnected;

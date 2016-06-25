@@ -1,13 +1,12 @@
 #include "virtualvalonsynth.h"
 
-#include "virtualinstrument.h"
-
 VirtualValonSynth::VirtualValonSynth(QObject *parent) : Synthesizer(parent)
 {
     d_subKey = QString("virtual");
     d_prettyName = QString("Virtual Synthesizer");
+    d_commType = CommunicationProtocol::Virtual;
+    d_threaded = false;
 
-    p_comm = new VirtualInstrument(d_key,this);
     d_txFreq = 5760.0;
     d_rxFreq = 5120.0;
 

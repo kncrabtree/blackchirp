@@ -2,17 +2,13 @@
 
 #include <QtEndian>
 
-#include "tcpinstrument.h"
-
 AWG70002a::AWG70002a(QObject *parent) :
     AWG(parent)
 {
     d_subKey = QString("awg70002a");
     d_prettyName = QString("Arbitrary Waveform Generator AWG70002A");
-
-    p_comm = new TcpInstrument(d_key,d_subKey,this);
-    connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
-    connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
+    d_commType = CommunicationProtocol::Tcp;
+    d_threaded = false;
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);

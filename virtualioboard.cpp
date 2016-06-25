@@ -1,14 +1,12 @@
 #include "virtualioboard.h"
 
-#include "virtualinstrument.h"
-
 VirtualIOBoard::VirtualIOBoard(QObject *parent) :
     IOBoard(parent)
 {
     d_subKey = QString("virtual");
     d_prettyName = QString("Virtual IO Board");
-
-    p_comm = new VirtualInstrument(d_key,this);
+    d_commType = CommunicationProtocol::Virtual;
+    d_threaded = false;
 
     //See labjacku3.cpp for an explanation of these parameters
     d_numAnalog = 4;

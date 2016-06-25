@@ -1,16 +1,11 @@
 #include "labjacku3.h"
 
-#include "custominstrument.h"
-
 LabjackU3::LabjackU3(QObject *parent) :
     IOBoard(parent), d_handle(nullptr), d_serialNo(3)
 {
     d_subKey = QString("labjacku3");
     d_prettyName = QString("Labjack U3 IO Board");
-
-    p_comm = new CustomInstrument(d_key,d_subKey,this);
-    connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
-    connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
+    d_commType = CommunicationProtocol::Custom;
 
     //note that all "reserved" channels come first!
     //any unreserved channels may be used as arbitrary validation conditions

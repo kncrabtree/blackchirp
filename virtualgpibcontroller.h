@@ -17,12 +17,13 @@ public slots:
     Experiment prepareForExperiment(Experiment exp);
 	void beginAcquisition();
 	void endAcquisition();
-	void readPointData();
+    void readTimeData();
 
 	// GpibController interface
 protected:
     bool readAddress();
     bool setAddress(int a);
+
 };
 
 #endif // VIRTUALGPIBCONTROLLER_H

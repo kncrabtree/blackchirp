@@ -1,16 +1,12 @@
 #include "qc9528.h"
 
-#include "rs232instrument.h"
-
 Qc9528::Qc9528(QObject *parent) :
     PulseGenerator(parent)
 {
     d_subKey = QString("qc9528");
     d_prettyName = QString("Pulse Generator QC 9528");
-
-    p_comm = new Rs232Instrument(d_key,d_subKey,this);
-    connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
-    connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
+    d_commType = CommunicationProtocol::Rs232;
+    d_threaded = false;
 
     p_comm->setReadOptions(100,true,QByteArray("\r\n"));
 
