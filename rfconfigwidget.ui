@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>534</width>
-    <height>261</height>
+    <width>566</width>
+    <height>326</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -48,7 +48,7 @@
         <item row="1" column="0">
          <widget class="QLabel" name="valonTxMultiplicationLabel">
           <property name="text">
-           <string>Osc Multiplication</string>
+           <string>TX LO Multiplication</string>
           </property>
          </widget>
         </item>
@@ -68,7 +68,7 @@
         <item row="2" column="0">
          <widget class="QLabel" name="txSidebandLabel">
           <property name="text">
-           <string>Sideband</string>
+           <string>TX Sideband</string>
           </property>
          </widget>
         </item>
@@ -89,7 +89,7 @@
         <item row="3" column="0">
          <widget class="QLabel" name="totalMultiplicationLabel">
           <property name="text">
-           <string>Total Multiplication</string>
+           <string>TX Total Multiplication</string>
           </property>
          </widget>
         </item>
@@ -154,7 +154,7 @@
         <item row="0" column="0">
          <widget class="QLabel" name="valonMultiplicationLabel">
           <property name="text">
-           <string>Osc Multiplication</string>
+           <string>RCVR LO Multiplication</string>
           </property>
          </widget>
         </item>
@@ -174,7 +174,7 @@
         <item row="1" column="0">
          <widget class="QLabel" name="rxSidebandLabel">
           <property name="text">
-           <string>Chirp Sideband</string>
+           <string>RCVR Sideband</string>
           </property>
          </widget>
         </item>
@@ -195,7 +195,7 @@
         <item row="2" column="0">
          <widget class="QLabel" name="chirpLOFrequencyLabel">
           <property name="text">
-           <string>Chirp LO Frequency</string>
+           <string>RCVR LO Frequency</string>
           </property>
          </widget>
         </item>
