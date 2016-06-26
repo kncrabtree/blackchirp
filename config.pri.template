@@ -8,6 +8,12 @@ CONFIG += nohardware
 CONFIG += nolif
 
 
+#-----------------------------------------
+# Library configuration
+#-----------------------------------------
+unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
+
+
 nohardware {
 #The values here should not be modified
 FTMWSCOPE=0

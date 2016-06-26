@@ -6,6 +6,7 @@
 #include <QDesktopServices>
 #include <QDateTime>
 #include <QDir>
+#include <QProcessEnvironment>
 #include <gsl/gsl_errno.h>
 
 #ifdef Q_OS_UNIX
@@ -26,7 +27,21 @@ int main(int argc, char *argv[])
     //QSettings information
     const QString appName = QString("BlackChirp");
     const QString lockFileName = QString("blackchirp.lock");
-    const QString appDataPath = QString("/home/data");
+#ifdef Q_OS_UNIX
+    QString appDataPath = QString("/home/data");
+#elif !defined(Q_OS_WIN32)
+    QString appDataPath = QString("c:/data");
+#endif
+
+    QProcessEnvironment se = QProcessEnvironment::systemEnvironment();
+    if(se.contains(QString("BC_DATADIR")))
+    {
+        QString ad = se.value(QString("BC_DATADIR"));
+        if(ad.endsWith(QChar('/')))
+            ad.chop(1);
+
+        appDataPath = ad;
+    }
 
     QApplication::setApplicationName(appName);
     QApplication::setOrganizationDomain(QString("crabtreelab.ucdavis.edu"));
@@ -40,6 +55,12 @@ int main(int argc, char *argv[])
     {
         QMessageBox::critical(nullptr,QString("%1 Error").arg(appName),QString("The directory %1 does not exist!\n\nIn order to run %2, the directory %1 must exist and be writable by all users.").arg(appDataPath).arg(appName));
         return -1;
+    }
+
+    if(!home.cd(QApplication::organizationName()))
+    {
+        if(!home.mkpath(QApplication::organizationName()))
+            QMessageBox::critical(nullptr,QString("%1 Error").arg(appName),QString("Could not create folder %1 for application configuration storage. Check the permissions of the path and try again.").arg(lockFilePath));
     }
 
     QFile testFile(QString("%1/test").arg(home.absolutePath()));

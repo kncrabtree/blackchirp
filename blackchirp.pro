@@ -30,8 +30,6 @@ SOURCES += main.cpp
 
 RESOURCES += resources.qrc
 
-unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
-
 include(config.pri)
 include(acquisition.pri)
 include(gui.pri)
