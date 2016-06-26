@@ -70,7 +70,9 @@ GPIB=0
 }
 
 
-
+#------------------------------
+# CUDA compiler configuration
+#------------------------------
 gpu-cuda {
 	DEFINES += BC_CUDA
 
