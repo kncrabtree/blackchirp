@@ -378,11 +378,11 @@ QMap<QString, QPair<QVariant, QString> > ChirpConfig::headerMap() const
     out.insert(QString("ChirpConfigPostChirpProtection"),qMakePair(QString::number(data->postChirpProtection,'f',3),QString::fromUtf16(u"μs")));
     out.insert(QString("ChirpConfigNumChirps"),qMakePair(data->numChirps,QString("")));
     out.insert(QString("ChirpConfigChirpInterval"),qMakePair(QString::number(data->chirpInterval,'f',3),QString::fromUtf16(u"μs")));
-    out.insert(QString("ChirpConfigValonTxMult"),qMakePair(QString::number(data->synthTxMult,'f',1),QString("")));
+    out.insert(QString("ChirpConfigTxMult"),qMakePair(QString::number(data->synthTxMult,'f',1),QString("")));
     out.insert(QString("ChirpConfigAwgMult"),qMakePair(QString::number(data->awgMult,'f',1),QString("")));
     out.insert(QString("ChirpConfigTotalMult"),qMakePair(QString::number(data->totalMult,'f',1),QString("")));
     out.insert(QString("ChirpConfigMixerSideband"),qMakePair(QString::number(data->mixerTxSideband,'f',1),QString("")));
-    out.insert(QString("ChirpConfigValonTxFreq"),qMakePair(QString::number(data->synthTxFreq,'f',3),QString("MHz")));
+    out.insert(QString("ChirpConfigTxFreq"),qMakePair(QString::number(data->synthTxFreq,'f',3),QString("MHz")));
 
     return out;
 }
@@ -549,7 +549,7 @@ void ChirpConfig::parseFileLine(QByteArray line)
             if(ok)
                 data->chirpInterval = p;
         }
-        else if(key.contains(QByteArray("ValonTxMult")))
+        else if(key.contains(QByteArray("TxMult")))
         {
             bool ok;
             double p = val.toDouble(&ok);
@@ -577,7 +577,7 @@ void ChirpConfig::parseFileLine(QByteArray line)
             if(ok)
                 data->mixerTxSideband = p;
         }
-        else if(key.contains(QByteArray("ValonTxFreq")))
+        else if(key.contains(QByteArray("TxFreq")))
         {
             bool ok;
             double p = val.toDouble(&ok);
