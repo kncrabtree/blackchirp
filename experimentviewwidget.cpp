@@ -18,7 +18,7 @@
 #include "trackingviewwidget.h"
 #include "loghandler.h"
 
-ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *parent) : QWidget(parent)
+ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *parent) : QWidget(parent), p_ftmw(nullptr), p_lh(nullptr)
 {
     d_experiment = Experiment(num,path);
     setWindowFlags(Qt::Window);
