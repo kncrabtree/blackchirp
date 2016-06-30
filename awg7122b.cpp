@@ -22,8 +22,6 @@ AWG7122B::AWG7122B(QObject *parent) :
     s.endGroup();
     s.endGroup();
     s.sync();
-
-    p_comm->setReadOptions(10000,true,QByteArray("\n"));
 }
 
 
@@ -78,6 +76,7 @@ bool AWG7122B::testConnection()
 void AWG7122B::initialize()
 {
     p_comm->initialize();
+    p_comm->setReadOptions(10000,true,QByteArray("\n"));
     testConnection();
 }
 

@@ -8,7 +8,6 @@ Qc9528::Qc9528(QObject *parent) :
     d_commType = CommunicationProtocol::Rs232;
     d_threaded = false;
 
-    p_comm->setReadOptions(100,true,QByteArray("\r\n"));
 
     QSettings s(QSettings::SystemScope, QApplication::organizationName(), QApplication::applicationName());
     s.beginGroup(d_key);
@@ -127,6 +126,7 @@ void Qc9528::initialize()
     s.endGroup();
 
     p_comm->initialize();
+    p_comm->setReadOptions(100,true,QByteArray("\r\n"));
     testConnection();
 }
 

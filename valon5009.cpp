@@ -8,7 +8,6 @@ Valon5009::Valon5009(QObject *parent) :
     d_commType = CommunicationProtocol::Rs232;
     d_threaded = false;
 
-    p_comm->setReadOptions(500,true,QByteArray("\n\r"));
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
@@ -60,6 +59,7 @@ bool Valon5009::testConnection()
 void Valon5009::initialize()
 {
     p_comm->initialize();
+    p_comm->setReadOptions(500,true,QByteArray("\n\r"));
     testConnection();
 }
 

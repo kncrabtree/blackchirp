@@ -62,8 +62,8 @@ void MSO72004C::initialize()
 {
     p_scopeTimeout = new QTimer(this);
 
-    p_comm->setReadOptions(1000,true,QByteArray("\n"));
     p_comm->initialize();
+    p_comm->setReadOptions(1000,true,QByteArray("\n"));
     p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
     connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),this,&MSO72004C::socketError);
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);

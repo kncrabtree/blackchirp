@@ -44,8 +44,8 @@ bool PrologixGpibLan::testConnection()
 
 void PrologixGpibLan::initialize()
 {
-    p_comm->setReadOptions(1000,true,QByteArray("\n"));
     p_comm->initialize();
+    p_comm->setReadOptions(1000,true,QByteArray("\n"));
     testConnection();
 }
 

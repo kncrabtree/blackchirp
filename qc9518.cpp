@@ -68,7 +68,6 @@ bool Qc9518::testConnection()
 
 void Qc9518::initialize()
 {
-	p_comm->setReadOptions(100,true,QByteArray("\r\n"));
 
     //set up config
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
@@ -98,6 +97,7 @@ void Qc9518::initialize()
     s.endGroup();
 
     p_comm->initialize();
+    p_comm->setReadOptions(100,true,QByteArray("\r\n"));
     testConnection();
 }
 

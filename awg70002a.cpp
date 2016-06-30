@@ -25,7 +25,6 @@ AWG70002a::AWG70002a(QObject *parent) :
     s.endGroup();
     s.sync();
 
-    p_comm->setReadOptions(10000,true,QByteArray("\n"));
 }
 
 
@@ -66,6 +65,7 @@ bool AWG70002a::testConnection()
 void AWG70002a::initialize()
 {
     p_comm->initialize();
+    p_comm->setReadOptions(10000,true,QByteArray("\n"));
     testConnection();
 }
 
