@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>786</width>
+    <width>843</width>
     <height>603</height>
    </rect>
   </property>
@@ -46,6 +46,40 @@
          <widget class="QPushButton" name="insertButton">
           <property name="text">
            <string> Insert Segment</string>
+          </property>
+          <property name="icon">
+           <iconset resource="resources.qrc">
+            <normaloff>:/icons/go-last.png</normaloff>:/icons/go-last.png</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="addEmptyButton">
+          <property name="text">
+           <string>Add Empty Segment</string>
+          </property>
+          <property name="icon">
+           <iconset resource="resources.qrc">
+            <normaloff>:/icons/add.png</normaloff>:/icons/add.png</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="insertEmptyButton">
+          <property name="text">
+           <string>Insert Empty Segment</string>
           </property>
           <property name="icon">
            <iconset resource="resources.qrc">

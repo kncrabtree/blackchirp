@@ -56,6 +56,7 @@ public:
     void setNumChirps(const int n);
     void setChirpInterval(const double i);
     void addSegment(const double startMHz, const double endMHz, const double durationUs);
+    void addEmptySegment(const double durationUs);
     void setSegmentList(const QList<BlackChirp::ChirpSegment> l);
 
     void setTxFreq(double f);

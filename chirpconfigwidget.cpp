@@ -14,16 +14,19 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     ui->chirpTable->setModel(p_ctm);
     ui->chirpTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);;
 
+    initializeFromSettings();
+
     connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::setButtonStates);
     connect(ui->chirpTable->selectionModel(),&QItemSelectionModel::selectionChanged,this,&ChirpConfigWidget::setButtonStates);
     connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::updateChirpPlot);
 //    connect(ui->chirpTable->selectionModel(),&QItemSelectionModel::selectionChanged,this,&ChirpConfigWidget::checkChirp);
 
-    initializeFromSettings();
     setButtonStates();
 
     connect(ui->addButton,&QPushButton::clicked,this,&ChirpConfigWidget::addSegment);
+    connect(ui->addEmptyButton,&QPushButton::clicked,this,&ChirpConfigWidget::addEmptySegment);
     connect(ui->insertButton,&QPushButton::clicked,this,&ChirpConfigWidget::insertSegment);
+    connect(ui->insertEmptyButton,&QPushButton::clicked,this,&ChirpConfigWidget::insertEmptySegment);
     connect(ui->moveUpButton,&QPushButton::clicked,[=](){ moveSegments(-1); });
     connect(ui->moveDownButton,&QPushButton::clicked,[=](){ moveSegments(1); });
     connect(ui->removeButton,&QPushButton::clicked,this,&ChirpConfigWidget::removeSegments);
@@ -59,7 +62,6 @@ QSpinBox *ChirpConfigWidget::numChirpsBox() const
 
 void ChirpConfigWidget::initializeFromSettings()
 {
-
     d_currentChirpConfig = ChirpConfig::loadFromSettings();
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
@@ -76,10 +78,16 @@ void ChirpConfigWidget::initializeFromSettings()
 
         for(int i=0; i<d_currentChirpConfig.segmentList().size(); i++)
         {
-            double start = qBound(chirpMin,d_currentChirpConfig.segmentStartFreq(i),chirpMax);
-            double end = qBound(chirpMin,d_currentChirpConfig.segmentEndFreq(i),chirpMax);
             double dur = qBound(0.1,d_currentChirpConfig.segmentDuration(i),100000.0);
-            p_ctm->addSegment(start,end,dur,p_ctm->rowCount(QModelIndex()));
+
+            if(d_currentChirpConfig.segmentList().at(i).empty)
+                p_ctm->addSegment(0.0,0.0,dur,p_ctm->rowCount(QModelIndex()),true);
+            else
+            {
+                double start = qBound(chirpMin,d_currentChirpConfig.segmentStartFreq(i),chirpMax);
+                double end = qBound(chirpMin,d_currentChirpConfig.segmentEndFreq(i),chirpMax);
+                p_ctm->addSegment(start,end,dur,p_ctm->rowCount(QModelIndex()));
+            }
         }
     }
 
@@ -101,6 +109,7 @@ void ChirpConfigWidget::setButtonStates()
 
     //insert button only enabled if one item is selected
     ui->insertButton->setEnabled(l.size() == 1);
+    ui->insertEmptyButton->setEnabled(l.size() == 1);
 
     //remove button active if one or more rows selected
     ui->removeButton->setEnabled(l.size() > 0);
@@ -125,6 +134,12 @@ void ChirpConfigWidget::addSegment()
     updateChirpPlot();
 }
 
+void ChirpConfigWidget::addEmptySegment()
+{
+    p_ctm->addSegment(0.0,0.0,0.500,-1,true);
+    updateChirpPlot();
+}
+
 void ChirpConfigWidget::insertSegment()
 {
     QModelIndexList l = ui->chirpTable->selectionModel()->selectedRows();
@@ -138,6 +153,16 @@ void ChirpConfigWidget::insertSegment()
     s.endGroup();
 
     p_ctm->addSegment(chirpMin,chirpMax,0.500,l.at(0).row());
+    updateChirpPlot();
+}
+
+void ChirpConfigWidget::insertEmptySegment()
+{
+    QModelIndexList l = ui->chirpTable->selectionModel()->selectedRows();
+    if(l.size() != 1)
+        return;
+
+    p_ctm->addSegment(0.0,0.0,0.500,l.at(0).row(),true);
     updateChirpPlot();
 }
 

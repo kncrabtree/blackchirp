@@ -23,7 +23,7 @@ public:
     bool removeRows(int row, int count, const QModelIndex &parent);
     Qt::ItemFlags flags(const QModelIndex &index) const;
 
-    void addSegment(double start, double end, double dur, int pos);
+    void addSegment(double start, double end, double dur, int pos, bool empty=false);
     void moveSegments(int first, int last, int delta);
     void removeSegments(QList<int> rows);
 

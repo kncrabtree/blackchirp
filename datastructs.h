@@ -198,6 +198,7 @@ struct ChirpSegment {
     double endFreqMHz;
     double durationUs;
     double alphaUs;
+    bool empty;
 };
 
 struct PulseChannelConfig {

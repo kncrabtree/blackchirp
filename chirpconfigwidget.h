@@ -29,7 +29,9 @@ public slots:
     void setButtonStates();
 
     void addSegment();
+    void addEmptySegment();
     void insertSegment();
+    void insertEmptySegment();
     void moveSegments(int direction);
     void removeSegments();
     void clear();
