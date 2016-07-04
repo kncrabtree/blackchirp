@@ -6,9 +6,9 @@
 #include <QCheckBox>
 
 ChirpTableModel::ChirpTableModel(QObject *parent)
-    : QAbstractTableModel(parent)
+    : QAbstractTableModel(parent), d_currentChirp(0), d_applyToAll(true)
 {
-
+    d_chirpList.append(QList<BlackChirp::ChirpSegment>());
 }
 
 ChirpTableModel::~ChirpTableModel()
@@ -21,7 +21,7 @@ ChirpTableModel::~ChirpTableModel()
 int ChirpTableModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent)
-    return d_segmentList.size();
+    return d_chirpList.at(d_currentChirp).size();
 }
 
 int ChirpTableModel::columnCount(const QModelIndex &parent) const
@@ -32,13 +32,14 @@ int ChirpTableModel::columnCount(const QModelIndex &parent) const
 
 QVariant ChirpTableModel::data(const QModelIndex &index, int role) const
 {
-    if(index.row() >= d_segmentList.size())
+    QList<BlackChirp::ChirpSegment> segmentList = d_chirpList.at(d_currentChirp);
+    if(index.row() >= segmentList.size())
         return QVariant();
 
     if(role == Qt::TextAlignmentRole)
         return Qt::AlignCenter;
 
-    bool empty = d_segmentList.at(index.row()).empty;
+    bool empty = segmentList.at(index.row()).empty;
 
     if(role == Qt::DisplayRole)
     {
@@ -47,16 +48,16 @@ QVariant ChirpTableModel::data(const QModelIndex &index, int role) const
             if(empty)
                 return QString("Empty");
             else
-                return QString::number(d_segmentList.at(index.row()).startFreqMHz,'f',3);
+                return QString::number(segmentList.at(index.row()).startFreqMHz,'f',3);
             break;
         case 1:
             if(empty)
                 return QString("Empty");
             else
-                return QString::number(d_segmentList.at(index.row()).endFreqMHz,'f',3);
+                return QString::number(segmentList.at(index.row()).endFreqMHz,'f',3);
             break;
         case 2:
-            return QString::number(d_segmentList.at(index.row()).durationUs*1e3,'f',1);
+            return QString::number(segmentList.at(index.row()).durationUs*1e3,'f',1);
             break;
         case 3:
             if(empty)
@@ -73,16 +74,16 @@ QVariant ChirpTableModel::data(const QModelIndex &index, int role) const
     {
         switch(index.column()) {
         case 0:
-            return d_segmentList.at(index.row()).startFreqMHz;
+            return segmentList.at(index.row()).startFreqMHz;
             break;
         case 1:
-            return d_segmentList.at(index.row()).endFreqMHz;
+            return segmentList.at(index.row()).endFreqMHz;
             break;
         case 2:
-            return d_segmentList.at(index.row()).durationUs*1e3;
+            return segmentList.at(index.row()).durationUs*1e3;
             break;
         case 3:
-            return d_segmentList.at(index.row()).empty;
+            return segmentList.at(index.row()).empty;
             break;
         default:
             return QVariant();
@@ -153,44 +154,56 @@ bool ChirpTableModel::setData(const QModelIndex &index, const QVariant &value, i
     if(role != Qt::EditRole)
         return false;
 
-    if(index.row() >= d_segmentList.size() || index.column() > 3)
+    if(index.row() >= d_chirpList.at(d_currentChirp).size() || index.column() > 3)
         return false;
 
-    switch (index.column()) {
-    case 0:
-        d_segmentList[index.row()].startFreqMHz = value.toDouble();
-        break;
-    case 1:
-        d_segmentList[index.row()].endFreqMHz = value.toDouble();
-        break;
-    case 2:
-        d_segmentList[index.row()].durationUs = value.toDouble()/1e3;
-        break;
-    case 3:
-        d_segmentList[index.row()].empty = value.toBool();
-        if(d_segmentList.at(index.row()).empty)
-        {
-            d_segmentList[index.row()].startFreqMHz = 0.0;
-            d_segmentList[index.row()].endFreqMHz = 0.0;
-        }
-        else
-        {
-            QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-            double chirpMin = s.value(QString("rfConfig/chirpMin"),26500.0).toDouble();
-            double chirpMax = s.value(QString("rfConfig/chirpMax"),40000.0).toDouble();
-
-            if(d_segmentList.at(index.row()).startFreqMHz < chirpMin || d_segmentList.at(index.row()).startFreqMHz > chirpMax)
-                d_segmentList[index.row()].startFreqMHz = chirpMin;
-            if(d_segmentList.at(index.row()).endFreqMHz < chirpMin || d_segmentList.at(index.row()).endFreqMHz > chirpMax)
-                d_segmentList[index.row()].endFreqMHz = chirpMax;
-        }
-        break;
-    default:
-        return false;
-        break;
+    int ll = d_currentChirp;
+    int ul = d_currentChirp+1;
+    if(d_applyToAll)
+    {
+        ll = 0;
+        ul = d_chirpList.size();
     }
 
-    d_segmentList[index.row()].alphaUs = (d_segmentList.at(index.row()).endFreqMHz - d_segmentList.at(index.row()).startFreqMHz)/d_segmentList.at(index.row()).durationUs;
+    for(int i=ll; i<ul; i++)
+    {
+        switch (index.column()) {
+        case 0:
+            d_chirpList[i][index.row()].startFreqMHz = value.toDouble();
+            break;
+        case 1:
+            d_chirpList[i][index.row()].endFreqMHz = value.toDouble();
+            break;
+        case 2:
+            d_chirpList[i][index.row()].durationUs = value.toDouble()/1e3;
+            break;
+        case 3:
+            d_chirpList[i][index.row()].empty = value.toBool();
+            if(d_chirpList.at(i).at(index.row()).empty)
+            {
+                d_chirpList[i][index.row()].startFreqMHz = 0.0;
+                d_chirpList[i][index.row()].endFreqMHz = 0.0;
+            }
+            else
+            {
+                QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+                double chirpMin = s.value(QString("rfConfig/chirpMin"),26500.0).toDouble();
+                double chirpMax = s.value(QString("rfConfig/chirpMax"),40000.0).toDouble();
+
+                if(d_chirpList.at(i).at(index.row()).startFreqMHz < chirpMin || d_chirpList.at(i).at(index.row()).startFreqMHz > chirpMax)
+                    d_chirpList[i][index.row()].startFreqMHz = chirpMin;
+                if(d_chirpList.at(i).at(index.row()).endFreqMHz < chirpMin || d_chirpList.at(i).at(index.row()).endFreqMHz > chirpMax)
+                    d_chirpList[i][index.row()].endFreqMHz = chirpMax;
+            }
+            break;
+        default:
+            return false;
+            break;
+        }
+
+        d_chirpList[i][index.row()].alphaUs = (d_chirpList.at(i).at(index.row()).endFreqMHz - d_chirpList.at(i).at(index.row()).startFreqMHz)/d_chirpList.at(i).at(index.row()).durationUs;
+    }
+
     emit dataChanged(index,index);
     emit modelChanged();
     return true;
@@ -198,13 +211,29 @@ bool ChirpTableModel::setData(const QModelIndex &index, const QVariant &value, i
 
 bool ChirpTableModel::removeRows(int row, int count, const QModelIndex &parent)
 {
-    if(row < 0 || row+count > d_segmentList.size() || d_segmentList.isEmpty())
+    if(row < 0 || row+count > d_chirpList.at(d_currentChirp).size() || d_chirpList.at(d_currentChirp).isEmpty())
         return false;
 
-    beginRemoveRows(parent,row,row+count-1);
-    for(int i=0; i<count; i++)
-        d_segmentList.removeAt(row);
-    endRemoveRows();
+    int ll = d_currentChirp;
+    int ul = d_currentChirp+1;
+    if(d_applyToAll)
+    {
+        ll = 0;
+        ul = d_chirpList.size();
+    }
+    for(int j=ll; j<ul; j++)
+    {
+        for(int i=0; i<count; i++)
+        {
+            if(j == d_currentChirp)
+                beginRemoveRows(parent,row,row+count-1);
+
+            d_chirpList[j].removeAt(row);
+
+            if(j == d_currentChirp)
+                endRemoveRows();
+        }
+    }
 
     emit modelChanged();
     return true;
@@ -212,8 +241,13 @@ bool ChirpTableModel::removeRows(int row, int count, const QModelIndex &parent)
 
 Qt::ItemFlags ChirpTableModel::flags(const QModelIndex &index) const
 {
-    if(index.row() < d_segmentList.size())
-        return Qt::ItemIsEnabled|Qt::ItemIsSelectable|Qt::ItemIsEditable;
+    if(index.row() < d_chirpList.at(d_currentChirp).size())
+    {
+        if(!d_chirpList.at(d_currentChirp).at(index.row()).empty || index.column() == 2 || index.column() == 3)
+            return Qt::ItemIsEnabled|Qt::ItemIsSelectable|Qt::ItemIsEditable;
+        else
+            return Qt::ItemIsSelectable;
+    }
 
     return Qt::ItemIsEnabled|Qt::ItemIsSelectable;
 }
@@ -227,25 +261,59 @@ void ChirpTableModel::addSegment(double start, double end, double dur, int pos, 
     cs.alphaUs = (end-start)/dur;
     cs.empty = empty;
 
-    if(pos < 0 || pos >= d_segmentList.size())
+    int ll = d_currentChirp;
+    int ul = d_currentChirp+1;
+    if(d_applyToAll)
     {
-        beginInsertRows(QModelIndex(),d_segmentList.size(),d_segmentList.size());
-        d_segmentList.append(cs);
+        ll = 0;
+        ul = d_chirpList.size();
+    }
+
+    if(pos < 0 || pos >= d_chirpList.at(d_currentChirp).size())
+    {
+        for(int i=ll; i<ul; i++)
+        {
+            if(i == d_currentChirp)
+                beginInsertRows(QModelIndex(),d_chirpList.at(d_currentChirp).size(),d_chirpList.at(d_currentChirp).size());
+
+            d_chirpList[i].append(cs);
+
+            if(i == d_currentChirp)
+                endInsertRows();
+        }
     }
     else
     {
-        beginInsertRows(QModelIndex(),pos,pos);
-        d_segmentList.insert(pos,cs);
+
+        for(int i=ll; i<ul; i++)
+        {
+            if(i == d_currentChirp)
+                beginInsertRows(QModelIndex(),pos,pos);
+
+            d_chirpList[i].insert(pos,cs);
+
+            if(i == d_currentChirp)
+                endInsertRows();
+        }
+
     }
-    endInsertRows();
+
     emit modelChanged();
 }
 
 void ChirpTableModel::moveSegments(int first, int last, int delta)
 {
     //make sure all movement is within valid ranges
-    if(first + delta < 0 || last + delta >= d_segmentList.size())
+    if(first + delta < 0 || last + delta >= d_chirpList.at(d_currentChirp).size())
         return;
+
+    int ll = d_currentChirp;
+    int ul = d_currentChirp+1;
+    if(d_applyToAll)
+    {
+        ll = 0;
+        ul = d_chirpList.size();
+    }
 
     //this bit of code is not intuitive! read docs on QAbstractItemModel::beginMoveRows() carefully!
     if(delta>0)
@@ -259,19 +327,22 @@ void ChirpTableModel::moveSegments(int first, int last, int delta)
             return;
     }
 
-    QList<BlackChirp::ChirpSegment> chunk = d_segmentList.mid(first,last-first+1);
-
-    //remove selected rows
-    for(int i=0; i<last-first+1; i++)
-        d_segmentList.removeAt(first);
-
-    //insert rows at their new location
-    for(int i = chunk.size(); i>0; i--)
+    for(int j=ul; j<ll; j++)
     {
-        if(delta>0)
-            d_segmentList.insert(first+1,chunk.at(i-1));
-        else
-            d_segmentList.insert(first-1,chunk.at(i-1));
+        QList<BlackChirp::ChirpSegment> chunk = d_chirpList.at(j).mid(first,last-first+1);
+
+        //remove selected rows
+        for(int i=0; i<last-first+1; i++)
+            d_chirpList[j].removeAt(first);
+
+        //insert rows at their new location
+        for(int i = chunk.size(); i>0; i--)
+        {
+            if(delta>0)
+                d_chirpList[j].insert(first+1,chunk.at(i-1));
+            else
+                d_chirpList[j].insert(first-1,chunk.at(i-1));
+        }
     }
     endMoveRows();
 
@@ -285,9 +356,41 @@ void ChirpTableModel::removeSegments(QList<int> rows)
         removeRows(rows.at(i-1),1,QModelIndex());
 }
 
-QList<BlackChirp::ChirpSegment> ChirpTableModel::segmentList() const
+QList<QList<BlackChirp::ChirpSegment>> ChirpTableModel::chirpList() const
 {
-    return d_segmentList;
+    return d_chirpList;
+}
+
+void ChirpTableModel::setCurrentChirp(int i)
+{
+    beginRemoveRows(QModelIndex(),0,d_chirpList.at(d_currentChirp).size()-1);
+    endRemoveRows();
+    d_currentChirp = i;
+    beginInsertRows(QModelIndex(),0,d_chirpList.at(d_currentChirp).size()-1);
+    endInsertRows();
+    emit modelChanged();
+}
+
+void ChirpTableModel::setNumChirps(int num)
+{
+    if(num > d_chirpList.size())
+    {
+        if(!d_chirpList.isEmpty())
+        {
+            for(int i=d_chirpList.size(); i<num; i++)
+                d_chirpList.append(d_chirpList.first());
+        }
+        else
+        {
+            for(int i=d_chirpList.size(); i<num; i++)
+                d_chirpList.append(QList<BlackChirp::ChirpSegment>());
+        }
+    }
+    else if(num < d_chirpList.size())
+    {
+        while(d_chirpList.size() > num)
+            d_chirpList.removeLast();
+    }
 }
 
 

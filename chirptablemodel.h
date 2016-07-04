@@ -27,13 +27,21 @@ public:
     void moveSegments(int first, int last, int delta);
     void removeSegments(QList<int> rows);
 
-    QList<BlackChirp::ChirpSegment> segmentList() const;
+    QList<QList<BlackChirp::ChirpSegment>> chirpList() const;
+
+public slots:
+    void setCurrentChirp(int i);
+    void setApplyToAll(bool a2a) { d_applyToAll = a2a; }
+    void setNumChirps(int num);
 
 signals:
     void modelChanged();
 
 private:
-    QList<BlackChirp::ChirpSegment> d_segmentList;
+    QList<QList<BlackChirp::ChirpSegment>> d_chirpList;
+    QList<BlackChirp::ChirpSegment> d_currentData;
+    int d_currentChirp;
+    bool d_applyToAll;
 
 
 };

@@ -49,7 +49,7 @@ private:
     ChirpConfig d_currentChirpConfig;
 
     bool isSelectionContiguous(QModelIndexList l);
-    void clearList();
+    void clearList(bool replot=true);
     void updateChirpConfig();
 
 
