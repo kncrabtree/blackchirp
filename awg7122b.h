@@ -23,6 +23,8 @@ public slots:
 private:
     QString getWaveformKey(const ChirpConfig cc);
     QString writeWaveform(const ChirpConfig cc);
+
+    bool d_triggered;
 };
 
 #endif // AWG7122B_H

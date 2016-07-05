@@ -15,10 +15,12 @@ AWG7122B::AWG7122B(QObject *parent) :
     double awgMaxSamples = s.value(QString("maxSamples"),2e9).toDouble();
     double awgMinFreq = s.value(QString("minFreq"),50.0).toDouble();
     double awgMaxFreq = s.value(QString("maxFreq"),12000.0).toDouble();
+    d_triggered = s.value(QString("triggered"),false).toBool();
     s.setValue(QString("sampleRate"),awgRate);
     s.setValue(QString("maxSmaples"),awgMaxSamples);
     s.setValue(QString("minFreq"),awgMinFreq);
     s.setValue(QString("maxFreq"),awgMaxFreq);
+    s.setValue(QString("triggered"),d_triggered);
     s.endGroup();
     s.endGroup();
     s.sync();
@@ -97,9 +99,12 @@ Experiment AWG7122B::prepareForExperiment(Experiment exp)
     }
 
     p_comm->writeCmd(QString("Source1:Waveform \"%1\"\n").arg(wfmName));
-    p_comm->writeCmd(QString("AWGControl:RMode Triggered\n"));
-    p_comm->writeCmd(QString("Trigger:Source External\n"));
-    p_comm->writeCmd(QString("Trigger:Mode Synchronous\n"));
+    if(d_triggered)
+    {
+        p_comm->writeCmd(QString("AWGControl:RMode Triggered\n"));
+        p_comm->writeCmd(QString("Trigger:Source External\n"));
+        p_comm->writeCmd(QString("Trigger:Mode Synchronous\n"));
+    }
 
 
     return exp;
@@ -109,16 +114,18 @@ void AWG7122B::beginAcquisition()
 {
     p_comm->writeCmd(QString(":AWGControl:RUN:Immediate\n"));
     p_comm->queryCmd(QString("*OPC?\n"));
-//    p_comm->writeCmd(QString(":Output:OFF OFF\n"));
     p_comm->writeCmd(QString(":Output1:State 1\n"));
 
 }
 
 void AWG7122B::endAcquisition()
 {
-    p_comm->writeCmd(QString(":Output1:State 0\n"));
-    p_comm->writeCmd(QString(":AWGControl:STOP:Immediate\n"));
-    p_comm->queryCmd(QString("*OPC?\n"));
+    if(d_triggered)
+    {
+        p_comm->writeCmd(QString(":Output1:State 0\n"));
+        p_comm->writeCmd(QString(":AWGControl:STOP:Immediate\n"));
+        p_comm->queryCmd(QString("*OPC?\n"));
+    }
 }
 
 void AWG7122B::readTimeData()
