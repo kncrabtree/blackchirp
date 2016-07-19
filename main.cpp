@@ -27,10 +27,10 @@ int main(int argc, char *argv[])
     //QSettings information
     const QString appName = QString("BlackChirp");
     const QString lockFileName = QString("blackchirp.lock");
-#ifdef Q_OS_UNIX
-    QString appDataPath = QString("/home/data");
-#elif !defined(Q_OS_WIN32)
+#ifdef Q_OS_MSDOS
     QString appDataPath = QString("c:/data");
+#else
+    QString appDataPath = QString("/home/data");
 #endif
 
     QProcessEnvironment se = QProcessEnvironment::systemEnvironment();
