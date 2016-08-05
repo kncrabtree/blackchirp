@@ -9,8 +9,7 @@ BatchSequence::BatchSequence() :
     p_intervalTimer->setSingleShot(true);
     connect(p_intervalTimer,&QTimer::timeout,this,[=](){ d_waiting = false; emit beginExperiment(nextExperiment()); });
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    d_exportPath = s.value(QString("exportPath"),QDir::homePath()).toString();
+    d_exportPath = BlackChirp::getExportDir();
 }
 
 

@@ -43,6 +43,8 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     connect(ui->frameDiffButton,&QRadioButton::clicked,this,&FtmwViewWidget::modeChanged);
     connect(ui->snapDiffButton,&QRadioButton::clicked,this,&FtmwViewWidget::modeChanged);
     connect(ui->snapshotCheckbox,&QCheckBox::toggled,this,&FtmwViewWidget::modeChanged);
+
+    connect(ui->peakFindWidget,&PeakFindWidget::peakList,ui->ftPlot,&FtPlot::newPeakList);
 }
 
 FtmwViewWidget::~FtmwViewWidget()
@@ -68,6 +70,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
 
     ui->fidPlot->prepareForExperiment(e);
     ui->ftPlot->prepareForExperiment(e);
+    ui->peakFindWidget->prepareForExperiment(e);
 
     ui->liveUpdateButton->blockSignals(true);
     ui->liveUpdateButton->setEnabled(true);
@@ -296,6 +299,7 @@ void FtmwViewWidget::ftDone(QVector<QPointF> ft, double max)
 {
     d_processing = false;
     ui->ftPlot->newFt(ft,max);
+    ui->peakFindWidget->newFt(ft);
 
     if(d_replotWhenDone)
         updateFtPlot();

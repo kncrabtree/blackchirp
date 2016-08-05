@@ -23,6 +23,7 @@
 #include <qwt6/qwt_plot_curve.h>
 #include <qwt6/qwt_plot_picker.h>
 #include <qwt6/qwt_plot_grid.h>
+#include <qwt6/qwt_symbol.h>
 
 FtPlot::FtPlot(QWidget *parent) :
     ZoomPanPlot(QString("FtPlot"),parent), d_number(0), d_pzf(0), d_currentUnits(BlackChirp::FtPlotmV)
@@ -77,6 +78,8 @@ FtPlot::FtPlot(QWidget *parent) :
     setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
 
     d_currentWinf = static_cast<BlackChirp::FtWindowFunction>(s.value(QString("windowFunction"),BlackChirp::Boxcar).toInt());
+
+    p_peakData = nullptr;
 
 }
 
@@ -314,8 +317,8 @@ QColor FtPlot::getColor(QColor startingColor)
 
 void FtPlot::exportXY()
 {
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    QString path = s.value(QString("exportPath"),QDir::homePath()).toString();
+
+    QString path = BlackChirp::getExportDir();
 
     int num = d_number;
     if(num < 0)
@@ -343,8 +346,7 @@ void FtPlot::exportXY()
 
     QApplication::restoreOverrideCursor();
 
-    QString newPath = QFileInfo(name).dir().absolutePath();
-    s.setValue(QString("exportPath"),newPath);
+    BlackChirp::setExportDir(name);
 
 }
 
@@ -391,4 +393,27 @@ void FtPlot::setWinf(BlackChirp::FtWindowFunction wf)
     s.sync();
 
     emit winfChanged(d_currentWinf);
+}
+
+void FtPlot::newPeakList(const QList<QPointF> l)
+{
+    if(p_peakData == nullptr)
+    {
+        p_peakData = new QwtPlotCurve(QString("Peaks"));
+        p_peakData->setStyle(QwtPlotCurve::NoCurve);
+        p_peakData->setRenderHint(QwtPlotCurve::RenderAntialiased);
+
+        QSettings s;
+        QColor c = s.value(QString("peakColor"),QColor(Qt::red)).value<QColor>();
+        QwtSymbol *sym = new QwtSymbol(QwtSymbol::Ellipse);
+        sym->setSize(5);
+        sym->setColor(c);
+        sym->setPen(QPen(c));
+        p_peakData->setSymbol(sym);
+
+        p_peakData->attach(this);
+    }
+
+    p_peakData->setSamples(l.toVector());
+    replot();
 }

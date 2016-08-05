@@ -41,6 +41,7 @@ public slots:
     void exportXY();
     void configureUnits(BlackChirp::FtPlotUnits u);
     void setWinf(BlackChirp::FtWindowFunction wf);
+    void newPeakList(const QList<QPointF> l);
 
 
 private:
@@ -48,6 +49,7 @@ private:
      * \brief The object representing the curve on the plot
      */
     QwtPlotCurve *p_curveData;
+    QwtPlotCurve *p_peakData;
     QwtPlotGrid *p_plotGrid;
     QVector<QPointF> d_currentFt;
     int d_number;

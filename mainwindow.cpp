@@ -820,8 +820,7 @@ void MainWindow::exportExperiment()
     if(d_currentExptNum == 0)
         return;
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    QString path = s.value(QString("exportPath"),QDir::homePath()).toString();
+    QString path = BlackChirp::getExportDir();
 
     int num = d_currentExptNum;
     if(num < 0)
@@ -841,8 +840,7 @@ void MainWindow::exportExperiment()
 
     f.close();
 
-    QString newPath = QFileInfo(name).dir().absolutePath();
-    s.setValue(QString("exportPath"),newPath);
+    BlackChirp::setExportDir(name);
 
     QMetaObject::invokeMethod(p_am,"exportAsciiFid",Q_ARG(QString,name));
 }

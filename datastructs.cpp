@@ -1,5 +1,7 @@
 #include "datastructs.h"
 
+#include <QDir>
+
 QString BlackChirp::getExptFile(int num, BlackChirp::ExptFileType t, QString path, int snapNum)
 {
     QString file = QString::number(num);
@@ -129,4 +131,20 @@ QString BlackChirp::channelNameLookup(QString key)
     s.endGroup();
 
     return out;
+}
+
+
+QString BlackChirp::getExportDir()
+{
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    QString path = s.value(QString("exportPath"),QDir::homePath()).toString();
+    return path;
+}
+
+
+void BlackChirp::setExportDir(const QString fileName)
+{
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    QString newPath = QFileInfo(fileName).dir().absolutePath();
+    s.setValue(QString("exportPath"),newPath);
 }

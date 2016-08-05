@@ -146,6 +146,7 @@ int main(int argc, char *argv[])
     qRegisterMetaType<LifTrace>("LifTrace");
     qRegisterMetaType<QPair<QPoint,BlackChirp::LifPoint>>("QPair<QPoint,BlackChirp::LifPoint>");
     qRegisterMetaType<BlackChirp::FtWindowFunction>("BlackChirp::FtWindowFunction");
+    qRegisterMetaType<QList<QPointF>>("QList<QPointF>");
 
 
 #ifndef QT_DEBUG
