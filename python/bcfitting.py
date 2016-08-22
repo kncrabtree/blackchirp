@@ -272,7 +272,7 @@ def fit_peaks_gauss(*args):
     
     if bounds is not None:
         res = spopt.curve_fit(bc_multigauss,xarray,yarray,p0=params,
-                              bounds=bounds,jac=bc_multigauss_jac)
+                              bounds=bounds)
     else:
         res = spopt.curve_fit(bc_multigauss,xarray,yarray,
                                   p0=params,full_output=True)
