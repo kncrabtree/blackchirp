@@ -20,7 +20,10 @@ public slots:
 
     // MotorController interface
 public slots:
-    void moveToNextPosition();
+    void moveToPosition(double x, double y, double z);
+    bool prepareForMotorScan(const MotorScan ms);
+    void moveToRestingPos();
+    void checkLimit();
 };
 
 #endif // VIRTUALMOTORCONTROLLER_H

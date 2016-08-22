@@ -50,6 +50,7 @@ public:
 
 
 
+
 private:
     QSharedDataPointer<MotorScanData> data;
 };
