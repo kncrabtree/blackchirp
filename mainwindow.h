@@ -59,6 +59,7 @@ public slots:
     void startExperiment();
     void quickStart();
     void startSequence();
+    void startMotorScan();
     void batchComplete(bool aborted);
     void experimentInitialized(const Experiment exp);
     void hardwareInitialized(bool success);

@@ -14,7 +14,8 @@ HEADERS += \
     $$PWD/gpibcontroller.h \
     $$PWD/gpibinstrument.h \
     $$PWD/ioboard.h \
-    $$PWD/custominstrument.h
+    $$PWD/custominstrument.h \
+    $$PWD/motorcontroller.h
 
 SOURCES += \
     $$PWD/hardwaremanager.cpp \
@@ -32,4 +33,5 @@ SOURCES += \
     $$PWD/gpibcontroller.cpp \
     $$PWD/gpibinstrument.cpp \
     $$PWD/ioboard.cpp \
-    $$PWD/custominstrument.cpp
+    $$PWD/custominstrument.cpp \
+    $$PWD/motorcontroller.cpp

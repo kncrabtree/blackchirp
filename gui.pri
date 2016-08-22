@@ -24,7 +24,8 @@ SOURCES += mainwindow.cpp \
     $$PWD/ftmwsnapshotwidget.cpp \
     $$PWD/quickexptdialog.cpp \
     $$PWD/batchsequencedialog.cpp \
-    $$PWD/exportbatchdialog.cpp
+    $$PWD/exportbatchdialog.cpp \
+    $$PWD/motorscandialog.cpp
 
 HEADERS += mainwindow.h \
     $$PWD/ftmwviewwidget.h \
@@ -52,7 +53,8 @@ HEADERS += mainwindow.h \
     $$PWD/ftmwsnapshotwidget.h \
     $$PWD/quickexptdialog.h \
     $$PWD/batchsequencedialog.h \
-    $$PWD/exportbatchdialog.h
+    $$PWD/exportbatchdialog.h \
+    $$PWD/motorscandialog.h
 
 FORMS += mainwindow.ui \
     $$PWD/ftmwviewwidget.ui \
@@ -66,4 +68,5 @@ FORMS += mainwindow.ui \
     $$PWD/ioboardconfigdialog.ui \
     $$PWD/quickexptdialog.ui \
     $$PWD/batchsequencedialog.ui \
-    $$PWD/exportbatchdialog.ui
+    $$PWD/exportbatchdialog.ui \
+    $$PWD/motorscandialog.ui
