@@ -949,8 +949,12 @@ ChirpConfig ChirpConfig::loadFromSettings()
 {
     ChirpConfig out;
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    double chirpMin = s.value(QString("rfConfig/chirpMin"),26500.0).toDouble();
-    double chirpMax = s.value(QString("rfConfig/chirpMax"),40000.0).toDouble();
+    s.beginGroup(QString("awg"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    double awgMinFreq = s.value(QString("minFreq"),100.0).toDouble();
+    double awgMaxFreq = s.value(QString("maxFreq"),6250.0).toDouble();
+    s.endGroup();
+    s.endGroup();;
     s.beginGroup(QString("lastChirpConfig"));
 
     out.setPreChirpProtection(s.value(QString("preChirpProtection"),out.preChirpProtection()).toDouble());
@@ -973,8 +977,8 @@ ChirpConfig ChirpConfig::loadFromSettings()
         {
             s.setArrayIndex(i);
 
-            double startFreqMHz = qBound(chirpMin,s.value(QString("startFreq"),-1.0).toDouble(),chirpMax);
-            double endFreqMHz = qBound(chirpMin,s.value(QString("endFreq"),-1.0).toDouble(),chirpMax);
+            double startFreqMHz = qBound(awgMinFreq,s.value(QString("startFreq"),-1.0).toDouble(),awgMaxFreq);
+            double endFreqMHz = qBound(awgMinFreq,s.value(QString("endFreq"),-1.0).toDouble(),awgMaxFreq);
             double durationUs = qBound(0.1,s.value(QString("duration"),-1.0).toDouble(),100000.0);
             bool empty = s.value(QString("empty"),false).toBool();
 
