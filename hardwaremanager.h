@@ -17,6 +17,7 @@ class PulseGenerator;
 class FlowController;
 class LifScope;
 class IOBoard;
+class MotorController;
 
 class HardwareManager : public QObject
 {
@@ -121,6 +122,7 @@ private:
     FlowController *p_flow;
     LifScope *p_lifScope;
     IOBoard *p_iob;
+    MotorController *p_mc;
 
 };
 

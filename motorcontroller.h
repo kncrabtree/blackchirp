@@ -32,4 +32,14 @@ protected:
     QTimer *p_limitTimer;
 };
 
+#if BC_MOTOR==1
+#include "scx11.h"
+class Scx11;
+typedef Scx11 MotorControllerHardware;
+#else
+#include "virtualmotorcontroller.h"
+class VirtualMotorController;
+typedef VirtualMotorController MotorControllerHardware;
+#endif
+
 #endif // MOTORCONTROLLER_H

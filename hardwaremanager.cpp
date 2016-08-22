@@ -11,6 +11,7 @@
 #include "lifscope.h"
 #include "ioboard.h"
 #include "gpibcontroller.h"
+#include "motorcontroller.h"
 
 HardwareManager::HardwareManager(QObject *parent) : QObject(parent), d_responseCount(0)
 {
@@ -77,6 +78,13 @@ void HardwareManager::initialize()
 
     p_iob = new IOBoardHardware();
     d_hardwareList.append(qMakePair(p_iob,nullptr));
+
+#ifndef BC_NO_MOTOR
+    p_mc = new MotorControllerHardware();
+    d_hardwareList.append(qMakePair(p_mc,new QThread(this)));
+#else
+    p_mc = nullptr;
+#endif
 
 
 	//write arrays of the connected devices for use in the Hardware Settings menu
