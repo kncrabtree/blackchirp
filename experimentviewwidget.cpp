@@ -93,8 +93,7 @@ QSize ExperimentViewWidget::sizeHint() const
 
 void ExperimentViewWidget::exportAscii()
 {
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    QString path = s.value(QString("exportPath"),QDir::homePath()).toString();
+    QString path = BlackChirp::getExportDir();
 
     QString name = QFileDialog::getSaveFileName(this,QString("Export Experiment"),path + QString("/expt%1.txt").arg(d_experiment.number()));
 
@@ -110,8 +109,7 @@ void ExperimentViewWidget::exportAscii()
 
     f.close();
 
-    QString newPath = QFileInfo(name).dir().absolutePath();
-    s.setValue(QString("exportPath"),newPath);
+    BlackChirp::setExportDir(name);
 
     d_experiment.exportAscii(name);
 }

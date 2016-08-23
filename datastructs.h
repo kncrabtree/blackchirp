@@ -247,6 +247,8 @@ enum FtPlotUnits {
 
 QString getExptFile(int num, BlackChirp::ExptFileType t, QString path = QString(""), int snapNum = -1);
 QString getExptDir(int num, QString path = QString(""));
+QString getExportDir();
+void setExportDir(const QString fileName);
 QString headerMapToString(QMap<QString,QPair<QVariant,QString>> map);
 QString channelNameLookup(QString key);
 

@@ -24,7 +24,10 @@ SOURCES += mainwindow.cpp \
     $$PWD/ftmwsnapshotwidget.cpp \
     $$PWD/quickexptdialog.cpp \
     $$PWD/batchsequencedialog.cpp \
-    $$PWD/exportbatchdialog.cpp
+    $$PWD/exportbatchdialog.cpp \
+    $$PWD/peakfindwidget.cpp \
+    $$PWD/peaklistmodel.cpp \
+    $$PWD/peaklistexportdialog.cpp
 
 HEADERS += mainwindow.h \
     $$PWD/ftmwviewwidget.h \
@@ -52,7 +55,10 @@ HEADERS += mainwindow.h \
     $$PWD/ftmwsnapshotwidget.h \
     $$PWD/quickexptdialog.h \
     $$PWD/batchsequencedialog.h \
-    $$PWD/exportbatchdialog.h
+    $$PWD/exportbatchdialog.h \
+    $$PWD/peakfindwidget.h \
+    $$PWD/peaklistmodel.h \
+    $$PWD/peaklistexportdialog.h
 
 FORMS += mainwindow.ui \
     $$PWD/ftmwviewwidget.ui \
@@ -66,4 +72,6 @@ FORMS += mainwindow.ui \
     $$PWD/ioboardconfigdialog.ui \
     $$PWD/quickexptdialog.ui \
     $$PWD/batchsequencedialog.ui \
-    $$PWD/exportbatchdialog.ui
+    $$PWD/exportbatchdialog.ui \
+    $$PWD/peakfindwidget.ui \
+    $$PWD/peaklistexportdialog.ui

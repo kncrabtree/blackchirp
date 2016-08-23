@@ -208,6 +208,9 @@
             </layout>
            </widget>
           </item>
+          <item>
+           <widget class="PeakFindWidget" name="peakFindWidget" native="true"/>
+          </item>
          </layout>
         </widget>
        </item>
@@ -291,6 +294,12 @@
    <class>FidPlot</class>
    <extends>QWidget</extends>
    <header>fidplot.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>PeakFindWidget</class>
+   <extends>QWidget</extends>
+   <header>peakfindwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -15,8 +15,8 @@ ExportBatchDialog::ExportBatchDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    QString path = s.value(QString("exportPath"),QDir::homePath()).toString();
+
+    QString path = BlackChirp::getExportDir();
     ui->pathLineEdit->setText(path);
 
     connect(ui->selectButton,&QPushButton::clicked,this,&ExportBatchDialog::selectDirectory);
@@ -97,7 +97,7 @@ void ExportBatchDialog::accept()
         QMessageBox::warning(this,QString("Export warning"),QString("Could not export the following experiments: %1").arg(errList));
     }
 
-    s.setValue(QString("exportPath"),ui->pathLineEdit->text());
+    BlackChirp::setExportDir(ui->pathLineEdit->text());
     QDialog::accept();
 }
 
