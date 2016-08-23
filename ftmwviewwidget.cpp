@@ -34,6 +34,7 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
 
     connect(ui->ftPlot,&FtPlot::pzfChanged,this,&FtmwViewWidget::pzfChanged);
     connect(ui->ftPlot,&FtPlot::unitsChanged,this,&FtmwViewWidget::scalingChanged);
+    connect(ui->ftPlot,&FtPlot::scalingChange,ui->peakFindWidget,&PeakFindWidget::changeScaleFactor);
     connect(ui->ftPlot,&FtPlot::winfChanged,this,&FtmwViewWidget::winfChanged);
     connect(ui->controlButton,&QToolButton::toggled,this,&FtmwViewWidget::togglePanel);
     togglePanel(false);

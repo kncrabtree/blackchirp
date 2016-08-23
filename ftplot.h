@@ -27,7 +27,8 @@ public:
 
 signals:
     void pzfChanged(int);
-    void unitsChanged(double);
+    void unitsChanged(double newScf);
+    void scalingChange(double scfRatio);
     void winfChanged(BlackChirp::FtWindowFunction);
 
 public slots:

@@ -59,9 +59,9 @@ QVariant PeakListModel::headerData(int section, Qt::Orientation orientation, int
         if(orientation == Qt::Horizontal)
         {
             if(section == 0)
-                return QString("Frequency (MHz)");
+                return QString("Freq (MHz)");
             else if(section == 1)
-                return QString("Intensity");
+                return QString("Int (%1 pks)").arg(d_peakList.size());
         }
     }
 

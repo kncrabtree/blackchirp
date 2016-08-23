@@ -98,6 +98,7 @@ QPair<double,double> Analysis::medianFilterMeanStDev(double dat[], int n)
     double val;
     int i, j;
     double median;
+    int totalReject = 0;
 
     while(true)
     {
@@ -131,10 +132,13 @@ QPair<double,double> Analysis::medianFilterMeanStDev(double dat[], int n)
                 mean += delta/((double)z + 1.0);
                 sumSq += delta*(dat[z]-mean);
             }
-            return qMakePair(mean, sqrt(sumSq/((double)size - 1.0)));
+            //increase mean and stDev artificially if many points have been removed
+            double scf = 1.0 + 2.0*(double)totalReject/(double)n;
+            return qMakePair(scf*mean, scf*sqrt(sumSq/((double)size - 1.0)));
         }
 
         size -= reject;
+        totalReject += reject;
         L = 0;
         R = size - 1;
         k -= (reject/2);

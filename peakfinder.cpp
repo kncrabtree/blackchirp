@@ -43,15 +43,12 @@ QList<QPointF> PeakFinder::findPeaks(const QVector<QPointF> ft, double minF, dou
 
     //build a noise model
     int chunks = 100;
-    int chunkSize = (endIndex-startIndex)/chunks;
+    int chunkSize = (endIndex-startIndex + 1)/chunks + 1;
     QList<QPair<double,double>> blParams;
     for(int i=0; i<chunks; i++)
     {
         QVector<double> dat;
-        if(i+1 == chunks)
-            dat = yDat.mid(startIndex + i*chunkSize, endIndex - (startIndex + i*chunkSize));
-        else
-            dat = yDat.mid(startIndex + i*chunkSize, chunkSize);
+        dat = yDat.mid(startIndex + i*chunkSize, chunkSize);
 
         //median filter iteratively calculates median and removes any points that are 10 times greater than the median
         //Once all large points are rejected, it calculates and returns the mean and standard deviation

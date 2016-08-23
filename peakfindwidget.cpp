@@ -36,6 +36,7 @@ PeakFindWidget::PeakFindWidget(QWidget *parent) :
     connect(ui->peakListTableView->selectionModel(),&QItemSelectionModel::selectionChanged,this,&PeakFindWidget::updateRemoveButton);
     connect(ui->liveUpdateBox,&QCheckBox::toggled,[=](bool b){ if(b) findPeaks(); });
     connect(ui->optionsButton,&QPushButton::clicked,this,&PeakFindWidget::launchOptionsDialog);
+    connect(ui->exportButton,&QPushButton::clicked,this,&PeakFindWidget::launchExportDialog);
 
 }
 
@@ -104,16 +105,17 @@ void PeakFindWidget::newFt(const QVector<QPointF> ft)
 
 void PeakFindWidget::newPeakList(const QList<QPointF> pl)
 {
+    d_busy = false;
+
     //send peak list to model
     p_listModel->setPeakList(pl);
+    ui->peakListTableView->resizeColumnsToContents();
     emit peakList(p_listModel->peakList());
 
     ui->exportButton->setEnabled(!pl.isEmpty());
 
     if(d_waiting)
         findPeaks();
-    else
-        d_busy = false;
 }
 
 void PeakFindWidget::findPeaks()
@@ -153,8 +155,11 @@ void PeakFindWidget::updateRemoveButton()
 
 void PeakFindWidget::changeScaleFactor(double scf)
 {
-    p_listModel->scalingChanged(scf);
-    emit peakList(p_listModel->peakList());
+    if(p_listModel->rowCount(QModelIndex()) > 0)
+    {
+        p_listModel->scalingChanged(scf);
+        emit peakList(p_listModel->peakList());
+    }
 }
 
 void PeakFindWidget::launchOptionsDialog()

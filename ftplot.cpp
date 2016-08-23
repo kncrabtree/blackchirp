@@ -51,6 +51,19 @@ FtPlot::FtPlot(QWidget *parent) :
     p_curveData->attach(this);
     p_curveData->setVisible(false);
 
+    p_peakData = new QwtPlotCurve(QString("Peaks"));
+    p_peakData->setStyle(QwtPlotCurve::NoCurve);
+    p_peakData->setRenderHint(QwtPlotCurve::RenderAntialiased);
+
+    c = s.value(QString("peakColor"),QColor(Qt::red)).value<QColor>();
+    QwtSymbol *sym = new QwtSymbol(QwtSymbol::Ellipse);
+    sym->setSize(5);
+    sym->setColor(c);
+    sym->setPen(QPen(c));
+    p_peakData->setSymbol(sym);
+
+    p_peakData->attach(this);
+
     QwtPlotPicker *picker = new QwtPlotPicker(this->canvas());
     picker->setAxis(QwtPlot::xBottom,QwtPlot::yLeft);
     picker->setStateMachine(new QwtPickerClickPointMachine);
@@ -79,8 +92,6 @@ FtPlot::FtPlot(QWidget *parent) :
 
     d_currentWinf = static_cast<BlackChirp::FtWindowFunction>(s.value(QString("windowFunction"),BlackChirp::Boxcar).toInt());
 
-    p_peakData = nullptr;
-
 }
 
 FtPlot::~FtPlot()
@@ -94,6 +105,8 @@ void FtPlot::prepareForExperiment(const Experiment e)
 
     d_currentFt = QVector<QPointF>();
     p_curveData->setSamples(d_currentFt);
+    p_peakData->setSamples(QVector<QPointF>());
+
     setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
     if(!c.isEnabled())
     {
@@ -352,9 +365,9 @@ void FtPlot::exportXY()
 
 void FtPlot::configureUnits(BlackChirp::FtPlotUnits u)
 {
-    d_currentUnits = u;
     QwtText title = axisTitle(QwtPlot::yLeft);
     double scf = 1.0;
+    double oldScf = 1.0;
 
     switch(u)
     {
@@ -378,11 +391,32 @@ void FtPlot::configureUnits(BlackChirp::FtPlotUnits u)
         break;
     }
 
+    switch(d_currentUnits)
+    {
+    case BlackChirp::FtPlotV:
+        oldScf = 1.0;
+        break;
+    case BlackChirp::FtPlotmV:
+        oldScf = 1e3;
+        break;
+    case BlackChirp::FtPlotuV:
+        oldScf = 1e6;
+        break;
+    case BlackChirp::FtPlotnV:
+        oldScf = 1e9;
+        break;
+    default:
+        break;
+    }
+
+    d_currentUnits = u;
+
     QSettings s;
     s.setValue(QString("ftUnits"),d_currentUnits);
 
     setAxisTitle(QwtPlot::yLeft,title);
     emit unitsChanged(scf);
+    emit scalingChange(scf/oldScf);
 }
 
 void FtPlot::setWinf(BlackChirp::FtWindowFunction wf)
@@ -397,22 +431,6 @@ void FtPlot::setWinf(BlackChirp::FtWindowFunction wf)
 
 void FtPlot::newPeakList(const QList<QPointF> l)
 {
-    if(p_peakData == nullptr)
-    {
-        p_peakData = new QwtPlotCurve(QString("Peaks"));
-        p_peakData->setStyle(QwtPlotCurve::NoCurve);
-        p_peakData->setRenderHint(QwtPlotCurve::RenderAntialiased);
-
-        QSettings s;
-        QColor c = s.value(QString("peakColor"),QColor(Qt::red)).value<QColor>();
-        QwtSymbol *sym = new QwtSymbol(QwtSymbol::Ellipse);
-        sym->setSize(5);
-        sym->setColor(c);
-        sym->setPen(QPen(c));
-        p_peakData->setSymbol(sym);
-
-        p_peakData->attach(this);
-    }
 
     p_peakData->setSamples(l.toVector());
     replot();

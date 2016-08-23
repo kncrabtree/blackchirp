@@ -15,6 +15,7 @@ PeakListExportDialog::PeakListExportDialog(const QList<QPointF> peakList, int nu
     ui->setupUi(this);
 
     connect(ui->ftbRadioButton,&QRadioButton::toggled,ui->ftbOptionsBox,&QGroupBox::setEnabled);
+    ui->ftbOptionsBox->setEnabled(false);
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(QString("peakListExport"));
@@ -36,13 +37,17 @@ PeakListExportDialog::PeakListExportDialog(const QList<QPointF> peakList, int nu
     ui->drOnlyCheckBox->setChecked(drOnly);
     ui->drOnlyThreshSpinBox->setValue(drOnlyThresh);
     ui->drOnlyThreshSpinBox->setEnabled(drOnly);
-    connect(ui->dipoleCheckBox,&QCheckBox::toggled,ui->drOnlyThreshSpinBox,&QDoubleSpinBox::setEnabled);
+    connect(ui->drOnlyCheckBox,&QCheckBox::toggled,ui->drOnlyThreshSpinBox,&QDoubleSpinBox::setEnabled);
 
     int defaultShots = s.value(QString("defaultShots"),100).toInt();
     ui->defaultShotsSpinBox->setValue(defaultShots);
 
+    bool drPowerEnabled = s.value(QString("drPowerEnabled"),false).toBool();
     double drPower = s.value(QString("drPower"),17.0).toDouble();
+    ui->drPowerCheckBox->setChecked(drPowerEnabled);
     ui->drPowerDoubleSpinBox->setValue(drPower);
+    ui->drPowerDoubleSpinBox->setEnabled(drPowerEnabled);
+    connect(ui->drPowerCheckBox,&QCheckBox::toggled,ui->drPowerDoubleSpinBox,&QDoubleSpinBox::setEnabled);
 
     p_sm = new ShotsModel(this);
     ui->shotsTableView->setModel(p_sm);
@@ -68,9 +73,11 @@ PeakListExportDialog::PeakListExportDialog(const QList<QPointF> peakList, int nu
     p_pm = new PeakListModel(this);
     p_proxy = new QSortFilterProxyModel(this);
     p_proxy->setSourceModel(p_pm);
+    p_proxy->setSortRole(Qt::EditRole);
     p_pm->setPeakList(d_peakList);
     ui->peakListTableView->setModel(p_proxy);
     ui->peakListTableView->sortByColumn(1,Qt::DescendingOrder);
+    ui->peakListTableView->setSortingEnabled(true);
     connect(ui->removePeakButton,&QToolButton::clicked,this,&PeakListExportDialog::removePeaks);
     connect(ui->resetPeakListButton,&QPushButton::clicked,[=](){ p_pm->setPeakList(d_peakList);});
 
@@ -129,7 +136,7 @@ void PeakListExportDialog::accept()
         ext = QString(".ftb");
 
     QString name = QFileDialog::getSaveFileName(this,QString("Export Peak List"),
-                                                savePath + QString("/peaks%1.").arg(d_number) + ext);
+                                                savePath + QString("/peaks%1").arg(d_number) + ext);
 
     QFile f(name);
     if(!f.open(QIODevice::WriteOnly))
@@ -147,11 +154,13 @@ void PeakListExportDialog::accept()
     if(ui->asciiRadioButton->isChecked())
     {
         QString tab("\t");
+        t.setRealNumberNotation(QTextStream::ScientificNotation);
+        t.setRealNumberPrecision(4);
 
         for(int i=0; i<p_proxy->rowCount(); i++)
         {
             QModelIndex ind = p_proxy->mapToSource(p_proxy->index(i,0));
-            t << p_pm->data(p_pm->index(ind.row(),0),Qt::EditRole).toDouble() << tab <<
+            t << QString::number(p_pm->data(p_pm->index(ind.row(),0),Qt::EditRole).toDouble(),'f',4) << tab <<
                  p_pm->data(p_pm->index(ind.row(),1),Qt::EditRole).toDouble() << nl;
         }
     }
@@ -179,20 +188,29 @@ void PeakListExportDialog::accept()
             int shots = ui->defaultShotsSpinBox->value();
             for(int j=0; j<shotsList.size(); j++)
             {
-                if(intensity > shotsList.at(j).second)
+                if(intensity < shotsList.at(j).second)
                     shots = shotsList.at(j).first;
             }
 
 
             if(ui->drOnlyCheckBox->isChecked() && intensity<ui->drOnlyThreshSpinBox->value())
             {
-                t << QString("amdor drfreq:") << freq << space << drText << space
-                  << QString("#intensity %1").arg(intensity,0,'e',3);
+                t << QString("amdor drfreq:") << freq << space;
+
+                if(ui->drPowerCheckBox->isChecked())
+                    t << drText << space;
+
+                t << QString("#intensity %1").arg(intensity,0,'e',3);
             }
             else
             {
-                t << QString("ftmfreq:") << freq << space << shotsText << shots << space << dipoleText << space
-                  << QString("#intensity %1").arg(intensity,0,'e',3);
+                t << QString("ftmfreq:") << freq << space << shotsText << shots << space;
+                if(ui->dipoleCheckBox->isChecked())
+                    t << dipoleText << space;
+                if(ui->drPowerCheckBox->isChecked())
+                    t << drText << space;
+
+                t  << QString("#intensity %1").arg(intensity,0,'e',3);
             }
         }
     }
@@ -210,6 +228,7 @@ void PeakListExportDialog::accept()
     s.setValue(QString("drOnlyThresh"),ui->drOnlyThreshSpinBox->value());
     s.setValue(QString("defaultShots"),ui->defaultShotsSpinBox->value());
     s.setValue(QString("drPower"),ui->drPowerDoubleSpinBox->value());
+    s.setValue(QString("drPowerEnabled"),ui->drPowerCheckBox->isChecked());
 
     s.beginWriteArray(QString("shotsTable"));
     for(int i=0; i<shotsList.size(); i++)
@@ -363,7 +382,7 @@ QVariant ShotsModel::headerData(int section, Qt::Orientation orientation, int ro
             if(section == 0)
                 return QString("The number of shots to use for a peak in this intensity range.");
             else if(section == 1)
-                return QString("Upper limit on intensity range for this number of shots");
+                return QString("Upper limit on intensity for this number of shots.\nIf the intensity of a line is greater than any entry in this table, the value in the \"Default Shots\" box will be used instead.\n\nFor example, if the default shots box is set to 10, and you add entries of 50/1 and 100/0.1,\nthen all lines with intensity >=1 will be set to 10 shots, 0.1 <= intensity < 1 will be set to 50, and < 0.1 will be set to 100.");
         }
     }
 
