@@ -17,7 +17,8 @@ HEADERS += \
     $$PWD/qc9518.h \
     $$PWD/pldrogroup.h \
     $$PWD/awg7122b.h \
-    $$PWD/virtualmotorcontroller.h
+    $$PWD/virtualmotorcontroller.h \
+    $$PWD/scx11.h
 
 
 SOURCES += \
@@ -39,7 +40,8 @@ SOURCES += \
     $$PWD/qc9518.cpp \
     $$PWD/pldrogroup.cpp \
     $$PWD/awg7122b.cpp \
-    $$PWD/virtualmotorcontroller.cpp
+    $$PWD/virtualmotorcontroller.cpp \
+    $$PWD/scx11.cpp
 
 
 equals(IOBOARD,1) {
