@@ -29,7 +29,9 @@ public slots:
     void setButtonStates();
 
     void addSegment();
+    void addEmptySegment();
     void insertSegment();
+    void insertEmptySegment();
     void moveSegments(int direction);
     void removeSegments();
     void clear();
@@ -47,7 +49,7 @@ private:
     ChirpConfig d_currentChirpConfig;
 
     bool isSelectionContiguous(QModelIndexList l);
-    void clearList();
+    void clearList(bool replot=true);
     void updateChirpConfig();
 
 

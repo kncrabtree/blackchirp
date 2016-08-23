@@ -242,7 +242,7 @@ void FidPlot::prepareForExperiment(const Experiment e)
         if(displayMarkers)
         {
             double chirpStart = c.chirpConfig().preChirpDelay() + c.chirpConfig().preChirpProtection() - c.scopeConfig().trigDelay*1e6;
-            double chirpEnd = chirpStart + c.chirpConfig().chirpDuration();
+            double chirpEnd = chirpStart + c.chirpConfig().chirpDuration(0);
 
             d_chirpMarkers.first->setValue(chirpStart,0.0);
             d_chirpMarkers.second->setValue(chirpEnd,0.0);

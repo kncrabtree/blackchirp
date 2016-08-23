@@ -27,12 +27,6 @@ ChirpConfig::ChirpConfig() : data(new ChirpConfigData)
     data->mixerTxSideband = s.value(QString("txSidebandSign"),-1.0).toDouble();
     s.endGroup();
 
-    //move this code to widget that configures TX chain...
-//    s.beginGroup(QString("awg"));
-//    double awgMin = s.value(QString("minFreq"),100.0).toDouble();
-//    double awgMax = s.value(QString("maxFreq"),6250.0).toDouble();
-//    s.endGroup();
-
 }
 
 ChirpConfig::ChirpConfig(const ChirpConfig &rhs) : data(rhs.data)
@@ -112,53 +106,107 @@ double ChirpConfig::chirpInterval() const
     return data->chirpInterval;
 }
 
-double ChirpConfig::chirpDuration() const
+bool ChirpConfig::allChirpsIdentical() const
+{
+    if(data->chirpList.size() == 1)
+        return true;
+
+    QList<BlackChirp::ChirpSegment> firstList = data->chirpList.first();
+
+    for(int i=1; i<data->chirpList.size(); i++)
+    {
+        QList<BlackChirp::ChirpSegment> thisList = data->chirpList.at(i);
+
+        if(thisList.size() != firstList.size())
+            return false;
+
+        for(int j=0; j<thisList.size(); j++)
+        {
+            if(thisList.at(j).empty != firstList.at(j).empty)
+                return false;
+
+            if(!qFuzzyCompare(thisList.at(j).durationUs,firstList.at(j).durationUs))
+                return false;
+
+            if(!thisList.at(j).empty)
+            {
+                if(!qFuzzyCompare(thisList.at(j).startFreqMHz,firstList.at(j).startFreqMHz))
+                    return false;
+
+                if(!qFuzzyCompare(thisList.at(j).endFreqMHz,firstList.at(j).endFreqMHz))
+                    return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+double ChirpConfig::chirpDuration(int chirpNum) const
 {
     double out = 0.0;
-    for(int i=0; i<data->segments.size(); i++)
-        out += data->segments.at(i).durationUs;
+    QList<BlackChirp::ChirpSegment> segments = data->chirpList.at(chirpNum);
+    for(int i=0; i<segments.size(); i++)
+        out += segments.at(i).durationUs;
     return out;
 }
 
 double ChirpConfig::totalDuration() const
 {
     double baseLength = 10.0;
-    double length;
-    if(numChirps() > 1)
-        length =  (static_cast<double>(data->numChirps)-1.0)*data->chirpInterval + data->preChirpProtection + data->preChirpDelay + chirpDuration() + data->postChirpProtection;
-    else
-        length = data->preChirpProtection + data->preChirpDelay + chirpDuration() + data->postChirpProtection;
+    double length = data->preChirpProtection + data->preChirpDelay + data->postChirpProtection;
+    length += (static_cast<double>(data->numChirps)-1.0)*data->chirpInterval + chirpDuration(data->numChirps-1);
 
     return floor(length/baseLength + 1.0)*baseLength;
 }
 
-QList<BlackChirp::ChirpSegment> ChirpConfig::segmentList() const
+QList<QList<BlackChirp::ChirpSegment>> ChirpConfig::chirpList() const
 {
-    return data->segments;
+    return data->chirpList;
 }
 
-double ChirpConfig::segmentStartFreq(int i) const
+double ChirpConfig::segmentStartFreq(int chirp, int segment) const
 {
-    if(i < 0 || i >= data->segments.size())
+    if(chirp < 0 || chirp >= data->chirpList.size())
         return -1.0;
 
-    return awgToRealFreq(data->segments.at(i).startFreqMHz);
+    if(segment < 0 || segment >= data->chirpList.at(chirp).size())
+        return -1.0;
+
+    return awgToRealFreq(data->chirpList.at(chirp).at(segment).startFreqMHz);
 }
 
-double ChirpConfig::segmentEndFreq(int i) const
+double ChirpConfig::segmentEndFreq(int chirp, int segment) const
 {
-    if(i < 0 || i >= data->segments.size())
+    if(chirp < 0 || chirp >= data->chirpList.size())
         return -1.0;
 
-    return awgToRealFreq(data->segments.at(i).endFreqMHz);
+    if(segment < 0 || segment >= data->chirpList.at(chirp).size())
+        return -1.0;
+
+    return awgToRealFreq(data->chirpList.at(chirp).at(segment).endFreqMHz);
 }
 
-double ChirpConfig::segmentDuration(int i) const
+double ChirpConfig::segmentDuration(int chirp, int segment) const
 {
-    if(i < 0 || i >= data->segments.size())
+    if(chirp < 0 || chirp >= data->chirpList.size())
         return -1.0;
 
-    return data->segments.at(i).durationUs;
+    if(segment < 0 || segment >= data->chirpList.at(chirp).size())
+        return -1.0;
+
+    return data->chirpList.at(chirp).at(segment).durationUs;
+}
+
+bool ChirpConfig::segmentEmpty(int chirp, int segment) const
+{
+    if(chirp < 0 || chirp >= data->chirpList.size())
+        return true;
+
+    if(segment < 0 || segment >= data->chirpList.at(chirp).size())
+        return true;
+
+    return data->chirpList.at(chirp).at(segment).empty;
 }
 
 QByteArray ChirpConfig::waveformHash() const
@@ -166,11 +214,15 @@ QByteArray ChirpConfig::waveformHash() const
     QCryptographicHash c(QCryptographicHash::Sha256);
     c.addData(QByteArray::number(data->preChirpProtection));
     c.addData(QByteArray::number(data->preChirpDelay));
-    for(int i=0; i<data->segments.size(); i++)
+    for(int j=0; j<data->chirpList.size(); j++)
     {
-        c.addData(QByteArray::number(data->segments.at(i).startFreqMHz));
-        c.addData(QByteArray::number(data->segments.at(i).endFreqMHz));
-        c.addData(QByteArray::number(data->segments.at(i).durationUs));
+        for(int i=0; i<data->chirpList.at(j).size(); i++)
+        {
+            c.addData(QByteArray::number(data->chirpList.at(j).at(i).startFreqMHz));
+            c.addData(QByteArray::number(data->chirpList.at(j).at(i).endFreqMHz));
+            c.addData(QByteArray::number(data->chirpList.at(j).at(i).durationUs));
+            c.addData(QByteArray::number(static_cast<int>(data->chirpList.at(j).at(i).empty)));
+        }
     }
     c.addData(QByteArray::number(data->numChirps));
     c.addData(QByteArray::number(data->chirpInterval));
@@ -222,23 +274,23 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
             done = true;
         }
         int currentIntervalChirpStart = getFirstSample(getSampleTime(currentIntervalStartSample) + data->preChirpProtection + data->preChirpDelay);
-        int currentIntervalChirpEnd = getLastSample(getSampleTime(currentIntervalChirpStart) + chirpDuration());
+        int currentIntervalChirpEnd = getLastSample(getSampleTime(currentIntervalChirpStart) + chirpDuration(currentInterval));
 
         //start times for each segment
         QList<int> segmentStarts;
         segmentStarts.append(currentIntervalChirpStart);
-        for(int i=1; i<data->segments.size(); i++)
-            segmentStarts.append(getFirstSample(getSampleTime(segmentStarts.at(i-1)) + data->segments.at(i-1).durationUs));
+        for(int i=1; i<data->chirpList.at(currentInterval).size(); i++)
+            segmentStarts.append(getFirstSample(getSampleTime(segmentStarts.at(i-1)) + data->chirpList.at(currentInterval).at(i-1).durationUs));
 
         //starting phase for each segment
         //want to transition between frequencies as smoothly as possible, so try to start each segment at the phase at which the previous
         //segment would have been if it were to continue
         QList<double> segmentPhasesRadians;
         segmentPhasesRadians.append(0.0);
-        for(int i=1; i<data->segments.size(); i++)
+        for(int i=1; i<data->chirpList.at(currentInterval).size(); i++)
         {
             double segmentEndTime = getSampleTime(segmentStarts.at(i)-segmentStarts.at(i-1));
-            segmentPhasesRadians.append(calculateEndingPhaseRadians(data->segments.at(i-1),segmentEndTime,segmentPhasesRadians.at(i-1)));
+            segmentPhasesRadians.append(calculateEndingPhaseRadians(data->chirpList.at(currentInterval).at(i-1),segmentEndTime,segmentPhasesRadians.at(i-1)));
         }
 
         //determine current segment number
@@ -247,18 +299,24 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
         //data->segments.size() means protection interval
         //data->segment.size() + 1 means waiting for next chirp
         int currentSegment = 0;
-        int nextSegmentSample = firstSample+currentSample + getFirstSample(data->preChirpProtection + data->preChirpDelay + data->segments.at(0).durationUs);
-        if(data->segments.size() == 1)
+        int nextSegmentSample;
+        if(data->chirpList.at(currentInterval).isEmpty())
+        {
+            nextSegmentSample = firstSample+currentSample + getFirstSample(data->preChirpProtection + data->preChirpDelay);
+        }
+        else
+            nextSegmentSample = firstSample+currentSample + getFirstSample(data->preChirpProtection + data->preChirpDelay + data->chirpList.at(currentInterval).at(0).durationUs);
+        if(data->chirpList.at(currentInterval).size() == 1)
             nextSegmentSample = currentIntervalChirpEnd;
         else
         {
-            while(currentSegment + 1 < data->segments.size())
+            while(currentSegment + 1 < data->chirpList.at(currentInterval).size())
             {
                 if(currentSample < segmentStarts.at(currentSegment+1))
                     break;
 
                 currentSegment++;
-                nextSegmentSample += getFirstSample(data->segments.at(currentSegment).durationUs);
+                nextSegmentSample += getFirstSample(data->chirpList.at(currentInterval).at(currentSegment).durationUs);
             }
         }
 
@@ -271,7 +329,7 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
                 if(currentSample < currentIntervalChirpStart || currentSample >= currentIntervalChirpEnd)
                     out[currentSample] = QPointF(currentTime,0.0);
                 else
-                    out[currentSample] = QPointF(currentTime,calculateChirp(data->segments.at(currentSegment),currentTime-getSampleTime(segmentStarts.at(currentSegment)),segmentPhasesRadians.at(currentSegment)));
+                    out[currentSample] = QPointF(currentTime,calculateChirp(data->chirpList.at(currentInterval).at(currentSegment),currentTime-getSampleTime(segmentStarts.at(currentSegment)),segmentPhasesRadians.at(currentSegment)));
 
                 currentSample++;
                 currentTime = getSampleTime(firstSample+currentSample);
@@ -286,10 +344,10 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
             }
 
             currentSegment++;
-            if(currentSegment >= data->segments.size())
+            if(currentSegment >= data->chirpList.at(currentInterval).size())
                 nextSegmentSample = nextIntervalStartSample;
             else
-                nextSegmentSample += getFirstSample(data->segments.at(currentSegment).durationUs);
+                nextSegmentSample += getFirstSample(data->chirpList.at(currentInterval).at(currentSegment).durationUs);
         }
 
     }
@@ -332,7 +390,7 @@ QVector<QPair<bool, bool> > ChirpConfig::getMarkerData() const
             nextIntervalStartSample = firstSample+numSamples;
         }
         int currentIntervalChirpStart = getFirstSample(getSampleTime(currentIntervalStartSample) + data->preChirpProtection + data->preChirpDelay);
-        int currentIntervalChirpEnd = getLastSample(getSampleTime(currentIntervalChirpStart) + chirpDuration());
+        int currentIntervalChirpEnd = getLastSample(getSampleTime(currentIntervalChirpStart) + chirpDuration(currentInterval));
         int currentIntervalProtEnd = getLastSample(getSampleTime(currentIntervalChirpEnd) + data->postChirpProtection)-1;
         int currentIntervalTwtStart = getFirstSample(getSampleTime(currentIntervalStartSample) + data->preChirpProtection);
         //note: twt ends at the same time as the chirp
@@ -398,17 +456,51 @@ QString ChirpConfig::toString() const
         it++;
     }
 
-    for(int i=0; i<data->segments.size(); i++)
+    if(allChirpsIdentical())
     {
-        BlackChirp::ChirpSegment s = data->segments.at(i);
-        out.append(QString("\nSegment\t%1\t%2\t%3").arg(s.startFreqMHz,0,'f',3).arg(s.endFreqMHz,0,'f',3).arg(s.durationUs,0,'f',4));
-    }
+        for(int i=0; i<data->chirpList.first().size(); i++)
+        {
+            BlackChirp::ChirpSegment s = data->chirpList.first().at(i);
+            if(s.empty)
+                out.append(QString("\nEmptySegment\t%1").arg(s.durationUs,0,'f',4));
+            else
+                out.append(QString("\nSegment\t%1\t%2\t%3").arg(s.startFreqMHz,0,'f',3).arg(s.endFreqMHz,0,'f',3).arg(s.durationUs,0,'f',4));
+        }
 
-    out.append(QString("\n"));
-    for(int i=0; i<data->segments.size(); i++)
+        out.append(QString("\n"));
+        for(int i=0; i<data->chirpList.first().size(); i++)
+        {
+            BlackChirp::ChirpSegment s = data->chirpList.first().at(i);
+            if(s.empty)
+                out.append(QString("\n#EmptySegment\t%1").arg(s.durationUs,0,'f',4));
+            else
+                out.append(QString("\n#Segment\t%1\t%2\t%3").arg(awgToRealFreq(s.startFreqMHz),0,'f',3).arg(awgToRealFreq(s.endFreqMHz),0,'f',3).arg(s.durationUs,0,'f',4));
+        }
+    }
+    else
     {
-        BlackChirp::ChirpSegment s = data->segments.at(i);
-        out.append(QString("\n#Segment\t%1\t%2\t%3").arg(awgToRealFreq(s.startFreqMHz),0,'f',3).arg(awgToRealFreq(s.endFreqMHz),0,'f',3).arg(s.durationUs,0,'f',4));
+        for(int j=0; j<data->chirpList.size(); j++)
+        {
+            QList<BlackChirp::ChirpSegment> thisList = data->chirpList.at(j);
+            for(int i=0; i<thisList.size(); i++)
+            {
+                BlackChirp::ChirpSegment s = thisList.at(i);
+                if(s.empty)
+                    out.append(QString("\nEmptySegment-%2\t%1").arg(s.durationUs,0,'f',4).arg(j));
+                else
+                    out.append(QString("\nSegment-%4\t%1\t%2\t%3").arg(s.startFreqMHz,0,'f',3).arg(s.endFreqMHz,0,'f',3).arg(s.durationUs,0,'f',4).arg(j));
+            }
+
+            out.append(QString("\n"));
+            for(int i=0; i<thisList.size(); i++)
+            {
+                BlackChirp::ChirpSegment s = thisList.at(i);
+                if(s.empty)
+                    out.append(QString("\n#EmptySegment-%2\t%1").arg(s.durationUs,0,'f',4).arg(j));
+                else
+                    out.append(QString("\n#Segment-%4\t%1\t%2\t%3").arg(awgToRealFreq(s.startFreqMHz),0,'f',3).arg(awgToRealFreq(s.endFreqMHz),0,'f',3).arg(s.durationUs,0,'f',4).arg(j));
+            }
+        }
     }
 
     return out;
@@ -477,20 +569,28 @@ bool ChirpConfig::validate()
     if(data->numChirps < 1)
         return false;
 
-    if(data->segments.isEmpty())
+    if(data->chirpList.isEmpty())
         return false;
 
-    for(int i=0; i<data->segments.size();i++)
+    for(int j=0; j<data->chirpList.size(); j++)
     {
-        if(data->segments.at(i).startFreqMHz > awgMaxFreq || data->segments.at(i).startFreqMHz < awgMinFreq)
+        QList<BlackChirp::ChirpSegment> thisList = data->chirpList.at(j);
+
+        if(thisList.isEmpty())
             return false;
 
-        if(data->segments.at(i).endFreqMHz > awgMaxFreq || data->segments.at(i).endFreqMHz < awgMinFreq)
+        for(int i=0; i<thisList.size();i++)
+        {
+            if((thisList.at(i).startFreqMHz > awgMaxFreq || thisList.at(i).startFreqMHz < awgMinFreq) && !thisList.at(i).empty)
+                return false;
+
+            if((thisList.at(i).endFreqMHz > awgMaxFreq || thisList.at(i).endFreqMHz < awgMinFreq)  && !thisList.at(i).empty)
+                return false;
+        }
+
+        if(data->numChirps > 0 && data->chirpInterval < data->preChirpProtection + data->preChirpDelay + chirpDuration(j) + data->postChirpProtection + 4.0)
             return false;
     }
-
-    if(data->numChirps > 0 && data->chirpInterval < data->preChirpProtection + data->preChirpDelay + chirpDuration() + data->postChirpProtection + 4.0)
-        return false;
 
     if(totalDuration() >= awgMaxSamples/awgRate*1e6)
         return false;
@@ -540,7 +640,7 @@ void ChirpConfig::parseFileLine(QByteArray line)
             bool ok;
             int p = val.toInt(&ok);
             if(ok)
-                data->numChirps = p;
+                setNumChirps(p);
         }
         else if(key.contains(QByteArray("ChirpInterval")))
         {
@@ -591,7 +691,16 @@ void ChirpConfig::parseFileLine(QByteArray line)
         if(l.size() < 4)
             return;
 
+        int chirpNum = -1;
         bool ok;
+        QByteArrayList l2 = l.at(0).split('-');
+        if(l2.size() == 2)
+        {
+            int cn = l2.at(1).toInt(&ok);
+            if(ok && cn >=0 && cn < data->numChirps)
+                chirpNum = cn;
+        }
+
         double start = l.at(1).trimmed().toDouble(&ok);
         if(ok)
         {
@@ -600,16 +709,29 @@ void ChirpConfig::parseFileLine(QByteArray line)
             {
                 double dur = l.at(3).trimmed().toDouble(&ok);
                 if(ok)
-                {
-                    BlackChirp::ChirpSegment cs;
-                    cs.startFreqMHz = start;
-                    cs.endFreqMHz = stop;
-                    cs.durationUs = dur;
-                    cs.alphaUs = (stop-start)/dur;
-                    data->segments.append(cs);
-                }
+                    addSegment(start,stop,dur,chirpNum);
             }
         }
+    }
+    else if(line.startsWith(QByteArray("EmptySegment")))
+    {
+        QByteArrayList l = line.split('\t');
+        if(l.size() < 2)
+            return;
+
+        int chirpNum = -1;
+        bool ok;
+        QByteArrayList l2 = l.at(0).split('-');
+        if(l2.size() == 2)
+        {
+            int cn = l2.at(1).toInt(&ok);
+            if(ok && cn >=0 && cn < data->numChirps)
+                chirpNum = cn;
+        }
+
+        double dur = l.at(1).trimmed().toDouble(&ok);
+        if(ok)
+            addEmptySegment(dur,chirpNum);
     }
 }
 
@@ -633,7 +755,26 @@ void ChirpConfig::setPostChirpProtection(const double d)
 
 void ChirpConfig::setNumChirps(const int n)
 {
-    data->numChirps = n;
+    if(n > data->chirpList.size())
+    {
+        if(!data->chirpList.isEmpty())
+        {
+            for(int i=data->numChirps; i<n; i++)
+                data->chirpList.append(data->chirpList.first());
+        }
+        else
+        {
+            for(int i=data->numChirps; i<n; i++)
+                data->chirpList.append(QList<BlackChirp::ChirpSegment>());
+        }
+    }
+    else if(n < data->chirpList.size())
+    {
+        while(data->chirpList.size() > n)
+            data->chirpList.removeLast();
+    }
+
+    data->numChirps = n;    
     validate();
 }
 
@@ -643,7 +784,7 @@ void ChirpConfig::setChirpInterval(const double i)
     validate();
 }
 
-void ChirpConfig::addSegment(const double startMHz, const double endMHz, const double durationUs)
+void ChirpConfig::addSegment(const double startMHz, const double endMHz, const double durationUs, const int chirpNum)
 {
     if(startMHz > 0.0 && endMHz > 0.0 && durationUs > 0.0)
     {
@@ -652,25 +793,67 @@ void ChirpConfig::addSegment(const double startMHz, const double endMHz, const d
         seg.endFreqMHz = endMHz;
         seg.durationUs = durationUs;
         seg.alphaUs = (endMHz-startMHz)/durationUs;
+        seg.empty = false;
 
-        data->segments.append(seg);
+        if(chirpNum < 0 || chirpNum > data->chirpList.size())
+        {
+            for(int i=0; i<data->chirpList.size(); i++)
+                data->chirpList[i].append(seg);
+        }
+        else
+            data->chirpList[chirpNum].append(seg);
     }
 }
 
-void ChirpConfig::setSegmentList(const QList<BlackChirp::ChirpSegment> l)
+void ChirpConfig::addEmptySegment(const double durationUs, const int chirpNum)
 {
-    QList<BlackChirp::ChirpSegment> newSegList;
-    for(int i=0; i<l.size(); i++)
+    if(durationUs > 0.0)
     {
         BlackChirp::ChirpSegment seg;
-        seg.startFreqMHz = realToAwgFreq(l.at(i).startFreqMHz);
-        seg.endFreqMHz = realToAwgFreq(l.at(i).endFreqMHz);
-        seg.durationUs = l.at(i).durationUs;
-        seg.alphaUs = (seg.endFreqMHz - seg.startFreqMHz)/seg.durationUs;
+        seg.startFreqMHz = 0.0;
+        seg.endFreqMHz = 0.0;
+        seg.durationUs = durationUs;
+        seg.alphaUs = 0.0;
+        seg.empty = true;
 
-        newSegList.append(seg);
+        if(chirpNum < 0 || chirpNum > data->chirpList.size())
+        {
+            for(int i=0; i<data->chirpList.size(); i++)
+                data->chirpList[i].append(seg);
+        }
+        else
+            data->chirpList[chirpNum].append(seg);
     }
-    data->segments = newSegList;
+}
+
+void ChirpConfig::setChirpList(const QList<QList<BlackChirp::ChirpSegment>> l)
+{
+    QList<QList<BlackChirp::ChirpSegment>> newChirpList;
+    for(int j=0; j<l.size(); j++)
+    {
+        newChirpList.append(QList<BlackChirp::ChirpSegment>());
+        for(int i=0; i<l.at(j).size(); i++)
+        {
+            BlackChirp::ChirpSegment seg;
+            seg.durationUs = l.at(j).at(i).durationUs;
+            seg.empty = l.at(j).at(i).empty;
+            if(!l.at(j).at(i).empty)
+            {
+                seg.startFreqMHz = realToAwgFreq(l.at(j).at(i).startFreqMHz);
+                seg.endFreqMHz = realToAwgFreq(l.at(j).at(i).endFreqMHz);
+                seg.alphaUs = (seg.endFreqMHz - seg.startFreqMHz)/seg.durationUs;
+            }
+            else
+            {
+                seg.startFreqMHz = 0.0;
+                seg.endFreqMHz = 0.0;
+                seg.alphaUs = 0.0;
+            }
+
+            newChirpList[j].append(seg);
+        }
+    }
+    data->chirpList = newChirpList;
     validate();
 }
 
@@ -719,15 +902,46 @@ void ChirpConfig::saveToSettings() const
     s.setValue(QString("txSideband"),mixerSideband());
     s.setValue(QString("txTotalMult"),totalMult());
 
-    s.beginWriteArray(QString("segments"));
-    for(int i=0; i<segmentList().size(); i++)
+    //if all chirps are identical, only write segments list
+    if(!allChirpsIdentical())
     {
-        s.setArrayIndex(i);
-        s.setValue(QString("startFreq"),segmentList().at(i).startFreqMHz);
-        s.setValue(QString("endFreq"),segmentList().at(i).endFreqMHz);
-        s.setValue(QString("duration"),segmentList().at(i).durationUs);
+        s.beginWriteArray(QString("chirps"));
+        QList<QList<BlackChirp::ChirpSegment>> cList = chirpList();
+        for(int j=0; j<cList.size(); j++)
+        {
+            s.setArrayIndex(j);
+            QList<BlackChirp::ChirpSegment> segmentList = cList.at(j);
+
+            s.beginWriteArray(QString("segments"));
+            for(int i=0; i<segmentList.size(); i++)
+            {
+                s.setArrayIndex(i);
+                s.setValue(QString("startFreq"),segmentList.at(i).startFreqMHz);
+                s.setValue(QString("endFreq"),segmentList.at(i).endFreqMHz);
+                s.setValue(QString("duration"),segmentList.at(i).durationUs);
+                s.setValue(QString("empty"),segmentList.at(i).empty);
+            }
+            s.endArray();
+        }
+        s.endArray();
+        s.remove(QString("segments"));
     }
-    s.endArray();
+    else
+    {
+        QList<BlackChirp::ChirpSegment> segmentList = chirpList().first();
+
+        s.beginWriteArray(QString("segments"));
+        for(int i=0; i<segmentList.size(); i++)
+        {
+            s.setArrayIndex(i);
+            s.setValue(QString("startFreq"),segmentList.at(i).startFreqMHz);
+            s.setValue(QString("endFreq"),segmentList.at(i).endFreqMHz);
+            s.setValue(QString("duration"),segmentList.at(i).durationUs);
+            s.setValue(QString("empty"),segmentList.at(i).empty);
+        }
+        s.endArray();
+        s.remove(QString("chirps"));
+    }
     s.endGroup();
 }
 
@@ -735,6 +949,12 @@ ChirpConfig ChirpConfig::loadFromSettings()
 {
     ChirpConfig out;
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("awg"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    double awgMinFreq = s.value(QString("minFreq"),100.0).toDouble();
+    double awgMaxFreq = s.value(QString("maxFreq"),6250.0).toDouble();
+    s.endGroup();
+    s.endGroup();;
     s.beginGroup(QString("lastChirpConfig"));
 
     out.setPreChirpProtection(s.value(QString("preChirpProtection"),out.preChirpProtection()).toDouble());
@@ -749,16 +969,49 @@ ChirpConfig ChirpConfig::loadFromSettings()
     out.setTxSideband(s.value(QString("txSideband"),out.mixerSideband()).toDouble());
     out.setTotalMult(s.value(QString("txTotalMult"),out.totalMult()).toDouble());
 
+    //if all chirps are identical, then there will only be a "segments" list
     int num = s.beginReadArray(QString("segments"));
-    for(int i=0; i<num; i++)
+    if(num > 0)
     {
-        s.setArrayIndex(i);
+        for(int i=0; i<num; i++)
+        {
+            s.setArrayIndex(i);
 
-        double startFreqMHz = s.value(QString("startFreq"),-1.0).toDouble();
-        double endFreqMHz = s.value(QString("endFreq"),-1.0).toDouble();
-        double durationUs = s.value(QString("duration"),-1.0).toDouble();
+            double startFreqMHz = qBound(awgMinFreq,s.value(QString("startFreq"),-1.0).toDouble(),awgMaxFreq);
+            double endFreqMHz = qBound(awgMinFreq,s.value(QString("endFreq"),-1.0).toDouble(),awgMaxFreq);
+            double durationUs = qBound(0.1,s.value(QString("duration"),-1.0).toDouble(),100000.0);
+            bool empty = s.value(QString("empty"),false).toBool();
 
-        out.addSegment(startFreqMHz,endFreqMHz,durationUs);
+            if(!empty)
+                out.addSegment(startFreqMHz,endFreqMHz,durationUs);
+            else
+                out.addEmptySegment(durationUs);
+        }
+    }
+    else
+    {
+        s.endArray();
+        int numChirps = s.beginReadArray(QString("chirps"));
+        for(int j=0; j<numChirps; j++)
+        {
+            s.setArrayIndex(j);
+            int numSegments = s.beginReadArray(QString("segments"));
+            for(int i=0; i<numSegments; i++)
+            {
+                s.setArrayIndex(i);
+
+                double startFreqMHz = s.value(QString("startFreq"),-1.0).toDouble();
+                double endFreqMHz = s.value(QString("endFreq"),-1.0).toDouble();
+                double durationUs = s.value(QString("duration"),-1.0).toDouble();
+                bool empty = s.value(QString("empty"),false).toBool();
+
+                if(!empty)
+                    out.addSegment(startFreqMHz,endFreqMHz,durationUs,j);
+                else
+                    out.addEmptySegment(durationUs,j);
+            }
+            s.endArray();
+        }
     }
     s.endArray();
     s.endGroup();
@@ -800,11 +1053,17 @@ double ChirpConfig::getSampleTime(const int sample) const
 
 double ChirpConfig::calculateChirp(const BlackChirp::ChirpSegment segment, const double t, const double phase) const
 {
+    if(segment.empty)
+        return 0.0;
+
     return gsl_sf_sin(gsl_sf_angle_restrict_pos(2.0*M_PI*(segment.startFreqMHz + 0.5*segment.alphaUs*t)*t + phase));
 }
 
 double ChirpConfig::calculateEndingPhaseRadians(const BlackChirp::ChirpSegment segment, const double endingTime, const double startingPhase) const
 {
+    if(segment.empty)
+        return 0.0;
+
     double sinVal = calculateChirp(segment,endingTime,startingPhase);
     if(qFuzzyCompare(sinVal,1.0))
         return 0.5*M_PI;

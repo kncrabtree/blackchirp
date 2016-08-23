@@ -82,7 +82,7 @@ void ChirpConfigPlot::newChirp(const ChirpConfig cc)
     {
         double segmentStartTime = cc.chirpInterval()*static_cast<double>(i);
         double twtEnableTime = segmentStartTime + cc.preChirpProtection();
-        double chirpEndTime = twtEnableTime + cc.preChirpDelay() + cc.chirpDuration();
+        double chirpEndTime = twtEnableTime + cc.preChirpDelay() + cc.chirpDuration(i);
         double protectionEndTime = chirpEndTime + cc.postChirpProtection();
 
         //0 at the beginning for both segments

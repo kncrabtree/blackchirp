@@ -29,14 +29,16 @@ public:
     double postChirpProtection() const;
     int numChirps() const;
     double chirpInterval() const;
+    bool allChirpsIdentical() const;
 
-    QList<BlackChirp::ChirpSegment> segmentList() const;
-    double segmentStartFreq(int i) const;
-    double segmentEndFreq(int i) const;
-    double segmentDuration(int i) const;
+    QList<QList<BlackChirp::ChirpSegment>> chirpList() const;
+    double segmentStartFreq(int chirp, int segment) const;
+    double segmentEndFreq(int chirp, int segment) const;
+    double segmentDuration(int chirp, int segment) const;
+    bool segmentEmpty(int chirp, int segment) const;
     QByteArray waveformHash() const;
 
-    double chirpDuration() const;
+    double chirpDuration(int chirpNum) const;
     double totalDuration() const;
     QVector<QPointF> getChirpMicroseconds() const;
     QVector<QPointF> getChirpSegmentMicroSeconds(double t1, double t2) const;
@@ -55,8 +57,9 @@ public:
     void setPostChirpProtection(const double d);
     void setNumChirps(const int n);
     void setChirpInterval(const double i);
-    void addSegment(const double startMHz, const double endMHz, const double durationUs);
-    void setSegmentList(const QList<BlackChirp::ChirpSegment> l);
+    void addSegment(const double startMHz, const double endMHz, const double durationUs, const int chirpNum = -1);
+    void addEmptySegment(const double durationUs, const int chirpNum = -1);
+    void setChirpList(const QList<QList<BlackChirp::ChirpSegment> > l);
 
     void setTxFreq(double f);
     void setTxMult(double m);
@@ -108,7 +111,7 @@ public:
     double sampleIntervalUS; //awg sample interval in microseconds
     bool isValid;
 
-    QList<BlackChirp::ChirpSegment> segments;
+    QList<QList<BlackChirp::ChirpSegment>> chirpList;
 
 };
 
