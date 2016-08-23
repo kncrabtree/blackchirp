@@ -58,7 +58,7 @@ QList<QPointF> PeakFinder::findPeaks(const QVector<QPointF> ft, double minF, dou
     QList<QPointF> out;
     for(int i = startIndex+2; i<endIndex-2; i++)
     {
-        int thisChunk = (i-startIndex)/chunkSize;
+        int thisChunk = qBound(0,(i-startIndex)/chunkSize,chunks-1);
         double mean = blParams.at(thisChunk).first;
         double stDev = blParams.at(thisChunk).second;
         double thisSNR = (yDat.at(i)-mean)/stDev;
