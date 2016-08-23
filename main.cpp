@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 
     //QSettings information
     const QString appName = QString("BlackChirp");
-    const QString lockFileName = QString("blackchirp.lock");
+    const QString lockFileName = QString("lock_blackchirp.lock");
 #ifdef Q_OS_MSDOS
     QString appDataPath = QString("c:/data");
 #else
@@ -87,8 +87,7 @@ int main(int argc, char *argv[])
     //add other apps here
     //if the app is from a different organization (e.g. CfA Spectroscopy Lab instead of CrabtreeLab), enter full path to lockfile and prepend with !
     incompatibleApps.append(qMakePair(lockFileName,appName));
-    incompatibleApps.append(qMakePair(QString("!/home/data/CfA Spectroscopy Lab/qtftm.lock"),QString("QtFTM")));
-    incompatibleApps.append(qMakePair(QString("!/home/data/CfA Spectroscopy Lab/bbacq.lock"),QString("BBAcq")));
+    incompatibleApps.append(qMakePair(QString("lock_qtftm.lock"),QString("QtFTM")));
 
 
     QFile lockFile;
