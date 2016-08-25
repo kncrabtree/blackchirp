@@ -221,6 +221,9 @@ void FtPlot::buildContextMenu(QMouseEvent *me)
     QAction *gridColorAction = m->addAction(QString("Change Grid Color..."));
     connect(gridColorAction,&QAction::triggered,this,[=](){ changeGridColor(getColor(p_plotGrid->majorPen().color())); });
 
+    QAction *peakColorAction = m->addAction(QString("Change Peak Color..."));
+    connect(peakColorAction,&QAction::triggered,this,[=]() { changePeakColor(getColor(p_peakData->symbol()->brush().color())); });
+
     QAction *exportAction = m->addAction(QString("Export XY..."));
     connect(exportAction,&QAction::triggered,this,&FtPlot::exportXY);
 
@@ -320,6 +323,24 @@ void FtPlot::changeGridColor(QColor c)
 
     p.setStyle(Qt::DotLine);
     p_plotGrid->setMinorPen(p);
+    replot();
+}
+
+void FtPlot::changePeakColor(QColor c)
+{
+    if(!c.isValid())
+        return;
+
+    QSettings s;
+    s.setValue(QString("peakColor"),c);
+    s.sync();
+
+    QwtSymbol *sym = new QwtSymbol(QwtSymbol::Ellipse);
+    sym->setSize(5);
+    sym->setColor(c);
+    sym->setPen(QPen(c));
+    p_peakData->setSymbol(sym);
+
     replot();
 }
 

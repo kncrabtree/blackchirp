@@ -38,7 +38,8 @@ public slots:
     void buildContextMenu(QMouseEvent *me);
 
     void changeFtColor(QColor c);
-    void changeGridColor(QColor c);    
+    void changeGridColor(QColor c);
+    void changePeakColor(QColor c);
     void exportXY();
     void configureUnits(BlackChirp::FtPlotUnits u);
     void setWinf(BlackChirp::FtWindowFunction wf);
