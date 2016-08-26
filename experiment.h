@@ -10,8 +10,12 @@
 #include "datastructs.h"
 #include "pulsegenconfig.h"
 #include "flowconfig.h"
-#include "lifconfig.h"
 #include "ioboardconfig.h"
+
+#ifdef BC_LIF
+#include "lifconfig.h"
+#endif
+
 
 class ExperimentData;
 
@@ -31,11 +35,9 @@ public:
     bool isInitialized() const;
     bool isAborted() const;
     bool isDummy() const;
-    bool isLifWaiting() const;
     FtmwConfig ftmwConfig() const;
     PulseGenConfig pGenConfig() const;
     FlowConfig flowConfig() const;
-    LifConfig lifConfig() const;
     IOBoardConfig iobConfig() const;
     bool isComplete() const;
     bool hardwareSuccess() const;
@@ -52,14 +54,11 @@ public:
     void setInitialized();
     void setAborted();
     void setDummy();
-    void setLifWaiting(bool wait);
     void setFtmwConfig(const FtmwConfig cfg);
     void setScopeConfig(const BlackChirp::FtmwScopeConfig &cfg);
-    void setLifConfig(const LifConfig cfg);
     void setIOBoardConfig(const IOBoardConfig cfg);
     bool setFidsData(const QList<QVector<qint64>> l);
     bool addFids(const QByteArray newData, int shift = 0);
-    bool addLifWaveform(const LifTrace t);
     void overrideTargetShots(const int target);
     void resetFids();
     void setPulseGenConfig(const PulseGenConfig c);
@@ -69,6 +68,14 @@ public:
     void addTimeStamp();
     void setValidationItems(const QMap<QString,BlackChirp::ValidationItem> m);
     void addValidationItem(const QString key, const double min, const double max);
+
+#ifdef BC_LIF
+    bool isLifWaiting() const;
+    LifConfig lifConfig() const;
+    void setLifWaiting(bool wait);
+    void setLifConfig(const LifConfig cfg);
+    bool addLifWaveform(const LifTrace t);
+#endif
 
     void setHardwareFailed();
     void incrementFtmw();
@@ -92,8 +99,11 @@ class ExperimentData : public QSharedData
 {
 public:
     ExperimentData() : number(0), timeDataInterval(300), autoSaveShotsInterval(10000), lastSnapshot(0), isInitialized(false),
-        isAborted(false), isDummy(false), hardwareSuccess(true), waitForLifSet(false),
-        endLogMessageCode(BlackChirp::LogHighlight) {}
+        isAborted(false), isDummy(false), hardwareSuccess(true), endLogMessageCode(BlackChirp::LogHighlight)
+#ifdef BC_LIF
+    ,  waitForLifSet(false)
+#endif
+    {}
 
     int number;
     QDateTime startTime;
@@ -104,7 +114,6 @@ public:
     bool isAborted;
     bool isDummy;
     bool hardwareSuccess;
-    bool waitForLifSet;
     QString errorString;
     QString startLogMessage;
     QString endLogMessage;
@@ -113,10 +122,14 @@ public:
     FtmwConfig ftmwCfg;
     PulseGenConfig pGenCfg;
     FlowConfig flowCfg;
-    LifConfig lifCfg;
     IOBoardConfig iobCfg;
     QMap<QString,QPair<QList<QVariant>,bool>> timeDataMap;
     QMap<QString,BlackChirp::ValidationItem> validationConditions;
+
+#ifdef BC_LIF
+    LifConfig lifCfg;
+    bool waitForLifSet;
+#endif
 };
 
 Q_DECLARE_METATYPE(Experiment)

@@ -14,18 +14,12 @@ SOURCES += mainwindow.cpp \
     $$PWD/pulseconfigwidget.cpp \
     $$PWD/pulseplot.cpp \
     $$PWD/led.cpp \
-    $$PWD/liftraceplot.cpp \
-    $$PWD/lifcontrolwidget.cpp \
-    $$PWD/lifdisplaywidget.cpp \
-    $$PWD/lifsliceplot.cpp \
-    $$PWD/lifspectrogramplot.cpp \
     $$PWD/ioboardconfigdialog.cpp \
     $$PWD/experimentviewwidget.cpp \
     $$PWD/ftmwsnapshotwidget.cpp \
     $$PWD/quickexptdialog.cpp \
     $$PWD/batchsequencedialog.cpp \
-    $$PWD/exportbatchdialog.cpp \
-    $$PWD/motorscandialog.cpp
+	$$PWD/exportbatchdialog.cpp
 
 HEADERS += mainwindow.h \
     $$PWD/ftmwviewwidget.h \
@@ -43,18 +37,12 @@ HEADERS += mainwindow.h \
     $$PWD/pulseconfigwidget.h \
     $$PWD/pulseplot.h \
     $$PWD/led.h \
-    $$PWD/liftraceplot.h \
-    $$PWD/lifcontrolwidget.h \
-    $$PWD/lifdisplaywidget.h \
-    $$PWD/lifsliceplot.h \
-    $$PWD/lifspectrogramplot.h \
     $$PWD/ioboardconfigdialog.h \
     $$PWD/experimentviewwidget.h \
     $$PWD/ftmwsnapshotwidget.h \
     $$PWD/quickexptdialog.h \
     $$PWD/batchsequencedialog.h \
-    $$PWD/exportbatchdialog.h \
-    $$PWD/motorscandialog.h
+	$$PWD/exportbatchdialog.h
 
 FORMS += mainwindow.ui \
     $$PWD/ftmwviewwidget.ui \
@@ -63,10 +51,33 @@ FORMS += mainwindow.ui \
     $$PWD/chirpconfigwidget.ui \
     $$PWD/rfconfigwidget.ui \
     $$PWD/pulseconfigwidget.ui \
-    $$PWD/lifcontrolwidget.ui \
-    $$PWD/lifdisplaywidget.ui \
     $$PWD/ioboardconfigdialog.ui \
     $$PWD/quickexptdialog.ui \
     $$PWD/batchsequencedialog.ui \
-    $$PWD/exportbatchdialog.ui \
-    $$PWD/motorscandialog.ui
+	$$PWD/exportbatchdialog.ui
+
+lif {
+	HEADERS += $$PWD/liftraceplot.h \
+			   $$PWD/lifcontrolwidget.h \
+			   $$PWD/lifdisplaywidget.h \
+			   $$PWD/lifsliceplot.h \
+			   $$PWD/lifspectrogramplot.h
+	SOURCES += $$PWD/liftraceplot.cpp \
+			   $$PWD/lifcontrolwidget.cpp \
+			   $$PWD/lifdisplaywidget.cpp \
+			   $$PWD/lifsliceplot.cpp \
+			   $$PWD/lifspectrogramplot.cpp
+	FORMS += $$PWD/lifcontrolwidget.ui \
+			 $$PWD/lifdisplaywidget.ui
+}
+
+motor {
+	HEADERS += $$PWD/motorscandialog.h \
+			   $$PWD/motordisplaywidget.h \
+			   $$PWD/motorsliderwidget.h
+	SOURCES += $$PWD/motorscandialog.cpp \
+			   $$PWD/motordisplaywidget.cpp \
+			   $$PWD/motorsliderwidget.cpp
+	FORMS += $$PWD/motorscandialog.ui \
+			 $$PWD/motordisplaywidget.ui
+}

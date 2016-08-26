@@ -15,7 +15,6 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     QFormLayout *fl = new QFormLayout(this);
 
     p_ftmw = new QCheckBox(this);
-    p_lif = new QCheckBox(this);
 
     p_auxDataIntervalBox = new QSpinBox(this);
     p_auxDataIntervalBox->setRange(5,__INT_MAX__);
@@ -39,12 +38,12 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     fl->addRow(QString("FTMW"),p_ftmw);
     connect(p_ftmw,&QCheckBox::toggled,this,&WizardStartPage::completeChanged);
     registerField(QString("ftmw"),p_ftmw);
-#ifdef BC_NO_LIF
+
+#ifndef BC_LIF
     p_ftmw->setChecked(true);
     p_ftmw->setEnabled(false);
-    p_lif->setEnabled(false);
-    p_lif->setVisible(false);
 #else
+    p_lif = new QCheckBox(this);
     fl->addRow(QString("LIF"),p_lif);
     connect(p_lif,&QCheckBox::toggled,this,&WizardStartPage::completeChanged);
     registerField(QString("lif"),p_lif);
@@ -62,15 +61,22 @@ WizardStartPage::~WizardStartPage()
 
 int WizardStartPage::nextId() const
 {
+#ifdef BC_LIF
     if(p_lif->isChecked())
         return ExperimentWizard::LifConfigPage;
     else
         return ExperimentWizard::ChirpConfigPage;
+#endif
+
+    return ExperimentWizard::ChirpConfigPage;
 }
 
 bool WizardStartPage::isComplete() const
 {
+#ifdef BC_LIF
     return (p_ftmw->isChecked() || p_lif->isChecked());
+#endif
+    return true;
 }
 
 void WizardStartPage::initializePage()
@@ -89,7 +95,11 @@ bool WizardStartPage::ftmwEnabled() const
 
 bool WizardStartPage::lifEnabled() const
 {
+#ifdef BC_LIF
     return p_lif->isChecked();
+#endif
+
+    return false;
 }
 
 int WizardStartPage::auxDataInterval() const

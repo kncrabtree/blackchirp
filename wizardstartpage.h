@@ -24,7 +24,10 @@ public:
     int snapshotInterval() const;
 
 private:
-    QCheckBox *p_ftmw, *p_lif;
+    QCheckBox *p_ftmw;
+#ifdef BC_LIF
+    QCheckBox *p_lif;
+#endif
     QSpinBox *p_auxDataIntervalBox, *p_snapshotBox;
 };
 

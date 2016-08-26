@@ -17,6 +17,19 @@ class BatchManager;
 class QLabel;
 class QLineEdit;
 class QDoubleSpinBox;
+class QProgressBar;
+class QAction;
+
+#ifdef BC_LIF
+class LifControlWidget;
+class LifDisplayWidget;
+#endif
+
+#ifdef BC_MOTOR
+class MotorDisplayWidget;
+#endif
+
+
 
 namespace Ui {
 class MainWindow;
@@ -59,7 +72,6 @@ public slots:
     void startExperiment();
     void quickStart();
     void startSequence();
-    void startMotorScan();
     void batchComplete(bool aborted);
     void experimentInitialized(const Experiment exp);
     void hardwareInitialized(bool success);
@@ -80,6 +92,10 @@ public slots:
     void viewExperiment();
     void exportExperiment();
     void exportBatch();
+
+#ifdef BC_MOTOR
+    void startMotorScan();
+#endif
 
 private:
     Ui::MainWindow *ui;
@@ -102,6 +118,21 @@ private:
     int d_logCount;
     BlackChirp::LogMessageCode d_logIcon;
     int d_currentExptNum;
+
+#ifdef BC_LIF
+    QWidget *p_lifTab;
+    LifControlWidget *p_lifControlWidget;
+    QProgressBar *p_lifProgressBar;
+    QAction *p_lifAction;
+    LifDisplayWidget *p_lifDisplayWidget;
+#endif
+
+#ifdef BC_MOTOR
+    QAction *p_startMotorScanAction;
+    QAction *p_motorViewAction;
+    QWidget *p_motorTab;
+    MotorDisplayWidget *p_motorDisplayWidget;
+#endif
 
 protected:
     void closeEvent(QCloseEvent *ev);

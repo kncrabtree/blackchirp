@@ -33,6 +33,15 @@
 #include "exportbatchdialog.h"
 #include "motorscandialog.h"
 
+#ifdef BC_LIF
+#include "lifdisplaywidget.h"
+#include "lifcontrolwidget.h"
+#endif
+
+#ifdef BC_MOTOR
+#include "motordisplaywidget.h"
+#endif
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow), d_hardwareConnected(false), d_oneExptDone(false), d_state(Idle), d_logCount(0), d_logIcon(BlackChirp::LogNormal), d_currentExptNum(0)
@@ -101,7 +110,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_hwm,&HardwareManager::statusMessage,statusLabel,&QLabel::setText);
     connect(p_hwm,&HardwareManager::hwInitializationComplete,ui->pulseConfigWidget,&PulseConfigWidget::updateHardwareLimits);
-    connect(p_hwm,&HardwareManager::hwInitializationComplete,ui->lifControlWidget,&LifControlWidget::updateHardwareLimits);
     connect(p_hwm,&HardwareManager::allHardwareConnected,this,&MainWindow::hardwareInitialized);
     connect(p_hwm,&HardwareManager::valonTxFreqRead,ui->valonTXDoubleSpinBox,&QDoubleSpinBox::setValue);
     connect(p_hwm,&HardwareManager::valonRxFreqRead,ui->valonRXDoubleSpinBox,&QDoubleSpinBox::setValue);
@@ -120,10 +128,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::pGenRepRateUpdate,ui->pulseConfigWidget,&PulseConfigWidget::newRepRate);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeSetting,p_hwm,&HardwareManager::setPGenSetting);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeRepRate,p_hwm,&HardwareManager::setPGenRepRate);
-    connect(p_hwm,&HardwareManager::lifScopeShotAcquired,ui->lifControlWidget,&LifControlWidget::newTrace);
-    connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,ui->lifControlWidget,&LifControlWidget::scopeConfigChanged);
-    connect(ui->lifControlWidget,&LifControlWidget::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
-    connect(p_hwm,&HardwareManager::lifSettingsComplete,ui->lifDisplayWidget,&LifDisplayWidget::resetLifPlot);
+
 
     QThread *hwmThread = new QThread(this);
     connect(hwmThread,&QThread::started,p_hwm,&HardwareManager::initialize);
@@ -204,14 +209,12 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_am,&AcquisitionManager::experimentInitialized,this,&MainWindow::experimentInitialized);
     connect(p_am,&AcquisitionManager::ftmwUpdateProgress,ui->ftmwProgressBar,&QProgressBar::setValue);
     connect(p_am,&AcquisitionManager::ftmwNumShots,ui->ftViewWidget,&FtmwViewWidget::updateShotsLabel);
-    connect(p_am,&AcquisitionManager::lifShotAcquired,ui->lifProgressBar,&QProgressBar::setValue);
     connect(ui->actionPause,&QAction::triggered,p_am,&AcquisitionManager::pause);
     connect(ui->actionResume,&QAction::triggered,p_am,&AcquisitionManager::resume);
     connect(ui->actionAbort,&QAction::triggered,p_am,&AcquisitionManager::abort);
     connect(ui->ftViewWidget,&FtmwViewWidget::rollingAverageShotsChanged,p_am,&AcquisitionManager::changeRollingAverageShots);
     connect(ui->ftViewWidget,&FtmwViewWidget::rollingAverageReset,p_am,&AcquisitionManager::resetRollingAverage);
     connect(p_am,&AcquisitionManager::newFidList,ui->ftViewWidget,&FtmwViewWidget::newFidList);
-    connect(p_am,&AcquisitionManager::lifPointUpdate,ui->lifDisplayWidget,&LifDisplayWidget::updatePoint);
     connect(p_am,&AcquisitionManager::snapshotComplete,ui->ftViewWidget,&FtmwViewWidget::snapshotTaken);
 
     QThread *amThread = new QThread(this);
@@ -253,33 +256,50 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionExport_experiment,&QAction::triggered,this,&MainWindow::exportExperiment);
     connect(ui->actionExport_Batch,&QAction::triggered,this,&MainWindow::exportBatch);
 
-#ifdef BC_NO_LIF
-    ui->actionLIF->setEnabled(false);
-    ui->actionLIF->setVisible(false);
-    ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->lifTab));
-    ui->lifTab->setEnabled(false);
-    ui->lifControlWidget->setVisible(false);
-    ui->lifControlWidget->setEnabled(false);
-    ui->controlTopLayout->addStretch(3);
-    ui->lifProgressBar->hide();
-    ui->lifProgressLabel->hide();
-#else
-    connect(p_am,&AcquisitionManager::nextLifPoint,p_hwm,&HardwareManager::setLifParameters);
+#ifdef BC_LIF
+    p_lifDisplayWidget = new LifDisplayWidget(this);
+    int lti = ui->tabWidget->insertTab(ui->tabWidget->indexOf(ui->trackingTab),p_lifDisplayWidget,QIcon(QString(":/icons/laser.png")),QString("LIF"));
+    p_lifTab = ui->tabWidget->widget(mti);
+    p_lifProgressBar = new QProgressBar(this);
+    ui->instrumentStatusLayout->addWidget(QLabel(QString("LIF Progress")),0,Qt::AlignCenter);
+    ui->instrumentStatusLayout->addWidget(p_lifProgressBar);
+    p_lifControlWidget = new LifControlWidget(this);
+    ui->controlTopLayout->addWidget(p_lifcontrolWidget,2);
+    p_lifAction = new QAction(QIcon(QString(":/icons/laser.png")),QString("LIF"),this);
+    ui->menuView->insertAction(ui->actionLog,p_lifAction);
+
+    connect(p_hwm,&HardwareManager::hwInitializationComplete,p_lifControlWidget,&LifControlWidget::updateHardwareLimits);
+    connect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_lifControlWidget,&LifControlWidget::newTrace);
+    connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,p_lifControlWidget,&LifControlWidget::scopeConfigChanged);
+    connect(p_lifControlWidget,&LifControlWidget::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
+    connect(p_hwm,&HardwareManager::lifSettingsComplete,p_lifDisplayWidget,&LifDisplayWidget::resetLifPlot);
     connect(p_hwm,&HardwareManager::lifSettingsComplete,p_am,&AcquisitionManager::lifHardwareReady);
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_am,&AcquisitionManager::processLifScopeShot);
+    connect(p_am,&AcquisitionManager::nextLifPoint,p_hwm,&HardwareManager::setLifParameters);
+    connect(p_am,&AcquisitionManager::lifShotAcquired,p_lifProgressBar,&QProgressBar::setValue);
+    connect(p_am,&AcquisitionManager::lifPointUpdate,p_lifDisplayWidget,&LifDisplayWidget::updatePoint);
     connect(ui->actionLIF,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(ui->lifTab); });
     connect(ui->lifControlWidget,&LifControlWidget::lifColorChanged,
             ui->lifDisplayWidget,&LifDisplayWidget::checkLifColors);
     connect(ui->lifDisplayWidget,&LifDisplayWidget::lifColorChanged,
             ui->lifControlWidget,&LifControlWidget::checkLifColors);
+#else
+    ui->controlTopLayout->addStretch(3);
 #endif
 
-#ifdef BC_NO_MOTOR
-    ui->actionStart_Motor_Scan->setEnabled(false);
-    ui->actionStart_Motor_Scan->setVisible(false);
-#else
-    //make signal/slot connections when ready
-    connect(ui->actionStart_Motor_Scan,&QAction::triggered,this,&MainWindow::startMotorScan);
+#ifdef BC_MOTOR
+    p_startMotorScanAction = new QAction(QIcon(QString(":/icons/motorscan.png")),QString("Start Motor Scan"),this);
+    ui->menuAcquisition->insertAction(ui->actionPause,p_startMotorScanAction);
+    connect(p_startMotorScanAction,&QAction::triggered,this,&MainWindow::startMotorScan);
+
+    p_motorDisplayWidget = new MotorDisplayWidget(this);
+    int mti = ui->tabWidget->insertTab(ui->tabWidget->indexOf(ui->trackingTab),p_motorDisplayWidget,QIcon(QString(":/icons/motorscan.png")),QString("Motor"));
+    p_motorTab = ui->tabWidget->widget(mti);
+
+    p_motorViewAction = new QAction(QIcon(QString(":/icons/motorscan.png")),QString("Motor"),this);
+    ui->menuView->insertAction(ui->actionLog,p_motorViewAction);
+    connect(p_motorViewAction,&QAction::triggered,[=](){ ui->tabWidget->setCurrentWidget(p_motorTab);});
+
 #endif
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
@@ -314,11 +334,14 @@ void MainWindow::startExperiment()
     ExperimentWizard wiz(this);
     wiz.setPulseConfig(ui->pulseConfigWidget->getConfig());
     wiz.setFlowConfig(getFlowConfig());
+
+#ifdef BC_LIF
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
     connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
     connect(&wiz,&ExperimentWizard::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
     connect(&wiz,&ExperimentWizard::lifColorChanged,ui->lifControlWidget,&LifControlWidget::checkLifColors);
     connect(&wiz,&ExperimentWizard::lifColorChanged,ui->lifDisplayWidget,&LifDisplayWidget::checkLifColors);
+#endif
 
     if(wiz.exec() != QDialog::Accepted)
         return;
@@ -334,12 +357,14 @@ void MainWindow::quickStart()
         return;
 
     Experiment e = Experiment::loadFromSettings();
+#ifdef BC_LIF
     if(e.lifConfig().isEnabled())
     {
         LifConfig lc = e.lifConfig();
         lc = ui->lifControlWidget->getSettings(lc);
         e.setLifConfig(lc);
     }
+#endif
     e.setFlowConfig(getFlowConfig());
     e.setPulseGenConfig(ui->pulseConfigWidget->getConfig());
 
@@ -375,12 +400,14 @@ void MainWindow::startSequence()
     if(ret == d.quickCode())
     {
         Experiment e = Experiment::loadFromSettings();
+#ifdef BC_LIF
         if(e.lifConfig().isEnabled())
         {
             LifConfig lc = e.lifConfig();
             lc = ui->lifControlWidget->getSettings(lc);
             e.setLifConfig(lc);
         }
+#endif
         e.setFlowConfig(getFlowConfig());
         e.setPulseGenConfig(ui->pulseConfigWidget->getConfig());
 
@@ -404,11 +431,13 @@ void MainWindow::startSequence()
         ExperimentWizard wiz(this);
         wiz.setPulseConfig(ui->pulseConfigWidget->getConfig());
         wiz.setFlowConfig(getFlowConfig());
+#ifdef BC_LIF
         connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
         connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
         connect(&wiz,&ExperimentWizard::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
         connect(&wiz,&ExperimentWizard::lifColorChanged,ui->lifControlWidget,&LifControlWidget::checkLifColors);
         connect(&wiz,&ExperimentWizard::lifColorChanged,ui->lifDisplayWidget,&LifDisplayWidget::checkLifColors);
+#endif
 
         if(wiz.exec() != QDialog::Accepted)
             return;
@@ -428,6 +457,7 @@ void MainWindow::startSequence()
 
 }
 
+#ifdef BC_MOTOR
 void MainWindow::startMotorScan()
 {
     MotorScanDialog d(this);
@@ -440,14 +470,19 @@ void MainWindow::startMotorScan()
     //send motor scan to AcquisitionManager...
     Q_UNUSED(ms)
 }
+#endif
 
 void MainWindow::batchComplete(bool aborted)
 {
     disconnect(p_hwm,&HardwareManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated);
     disconnect(p_am,&AcquisitionManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated);
     disconnect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort);
-    disconnect(p_hwm,&HardwareManager::lifScopeShotAcquired,ui->lifDisplayWidget,&LifDisplayWidget::lifShotAcquired);
     disconnect(ui->ftViewWidget,&FtmwViewWidget::rollingAverageShotsChanged,ui->ftmwProgressBar,&QProgressBar::setMaximum);
+
+#ifdef BC_LIF
+    disconnect(p_hwm,&HardwareManager::lifScopeShotAcquired,ui->lifDisplayWidget,&LifDisplayWidget::lifShotAcquired);
+    p_lifTab->setEnabled(true);
+#endif
 
     if(aborted)
         emit statusMessage(QString("Experiment aborted"));
@@ -461,7 +496,6 @@ void MainWindow::batchComplete(bool aborted)
     }
 
     ui->ftmwTab->setEnabled(true);
-    ui->lifTab->setEnabled(true);
 
     d_oneExptDone = true;
 
@@ -480,8 +514,6 @@ void MainWindow::experimentInitialized(const Experiment exp)
 
     ui->ftmwProgressBar->setValue(0);
     ui->ftViewWidget->prepareForExperiment(exp);
-
-    ui->lifProgressBar->setValue(0);
 
 	if(exp.ftmwConfig().isEnabled())
 	{
@@ -509,19 +541,22 @@ void MainWindow::experimentInitialized(const Experiment exp)
         ui->ftmwProgressBar->setValue(1);
     }
 
-    ui->lifDisplayWidget->prepareForExperiment(exp.lifConfig());
+#ifdef BC_LIF
+    p_lifProgressBar->setValue(0);
+    p_lifDisplayWidget->prepareForExperiment(exp.lifConfig());
     if(exp.lifConfig().isEnabled())
     {
-        ui->lifProgressBar->setRange(0,exp.lifConfig().totalShots());
+        p_lifProgressBar->setRange(0,exp.lifConfig().totalShots());
         connect(p_hwm,&HardwareManager::lifScopeShotAcquired,
-                ui->lifDisplayWidget,&LifDisplayWidget::lifShotAcquired,Qt::UniqueConnection);
+                p_lifDisplayWidget,&LifDisplayWidget::lifShotAcquired,Qt::UniqueConnection);
     }
     else
     {
-        ui->lifTab->setEnabled(false);
-        ui->lifProgressBar->setRange(0,1);
-        ui->lifProgressBar->setValue(1);
+        p_lifTab->setEnabled(false);
+        p_lifProgressBar->setRange(0,1);
+        p_lifProgressBar->setValue(1);
     }
+#endif
 
     if(exp.number() > 0)
     {
@@ -903,7 +938,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionQuick_Experiment->setEnabled(false);
         ui->actionStart_Sequence->setEnabled(false);
-        ui->actionStart_Motor_Scan->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
@@ -911,8 +945,13 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionExport_Batch->setEnabled(true);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
-        ui->lifControlWidget->setEnabled(false);
         ui->actionSleep->setEnabled(true);
+#ifdef BC_LIF
+        p_lifControlWidget->setEnabled(false);
+#endif
+#ifdef BC_MOTOR
+        p_startMotorScanAction->setEnabled(false);
+#endif
         break;
     case Disconnected:
         ui->actionAbort->setEnabled(false);
@@ -921,7 +960,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionQuick_Experiment->setEnabled(false);
         ui->actionStart_Sequence->setEnabled(false);
-        ui->actionStart_Motor_Scan->setEnabled(false);
         ui->actionCommunication->setEnabled(true);
         ui->actionIO_Board->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
@@ -929,8 +967,13 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionExport_Batch->setEnabled(true);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
-        ui->lifControlWidget->setEnabled(false);
         ui->actionSleep->setEnabled(false);
+#ifdef BC_LIF
+        p_lifControlWidget->setEnabled(false);
+#endif
+#ifdef BC_MOTOR
+        p_startMotorScanAction->setEnabled(false);
+#endif
         break;
     case Paused:
         ui->actionAbort->setEnabled(true);
@@ -939,7 +982,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionQuick_Experiment->setEnabled(false);
         ui->actionStart_Sequence->setEnabled(false);
-        ui->actionStart_Motor_Scan->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
@@ -947,8 +989,13 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionExport_Batch->setEnabled(false);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
-        ui->lifControlWidget->setEnabled(false);
         ui->actionSleep->setEnabled(false);
+#ifdef BC_LIF
+        p_lifControlWidget->setEnabled(false);
+#endif
+#ifdef BC_MOTOR
+        p_startMotorScanAction->setEnabled(false);
+#endif
         break;
     case Acquiring:
         ui->actionAbort->setEnabled(true);
@@ -957,7 +1004,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionQuick_Experiment->setEnabled(false);
         ui->actionStart_Sequence->setEnabled(false);
-        ui->actionStart_Motor_Scan->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
@@ -965,8 +1011,13 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionExport_Batch->setEnabled(false);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
-        ui->lifControlWidget->setEnabled(false);
         ui->actionSleep->setEnabled(false);
+#ifdef BC_LIF
+        p_lifControlWidget->setEnabled(false);
+#endif
+#ifdef BC_MOTOR
+        p_startMotorScanAction->setEnabled(false);
+#endif
         break;
     case Peaking:
         ui->actionAbort->setEnabled(true);
@@ -982,8 +1033,13 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionExport_Batch->setEnabled(false);
         ui->gasControlBox->setEnabled(true);
         ui->pulseConfigWidget->setEnabled(true);
-        ui->lifControlWidget->setEnabled(true);
         ui->actionSleep->setEnabled(false);
+#ifdef BC_LIF
+        p_lifControlWidget->setEnabled(true);
+#endif
+#ifdef BC_MOTOR
+        p_startMotorScanAction->setEnabled(false);
+#endif
         break;
     case Idle:
     default:
@@ -993,7 +1049,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionStart_Experiment->setEnabled(true);
         ui->actionQuick_Experiment->setEnabled(d_oneExptDone);
         ui->actionStart_Sequence->setEnabled(true);
-        ui->actionStart_Motor_Scan->setEnabled(true);
         ui->actionCommunication->setEnabled(true);
         ui->actionIO_Board->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
@@ -1001,18 +1056,15 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionExport_Batch->setEnabled(true);
         ui->gasControlBox->setEnabled(true);
         ui->pulseConfigWidget->setEnabled(true);
-        ui->lifControlWidget->setEnabled(true);
         ui->actionSleep->setEnabled(true);
+#ifdef BC_LIF
+        p_lifControlWidget->setEnabled(true);
+#endif
+#ifdef BC_MOTOR
+        p_startMotorScanAction->setEnabled(true);
+#endif
         break;
     }
-
-#ifdef BC_NO_LIF
-    ui->lifControlWidget->setEnabled(false);
-#endif
-
-#ifdef BC_NO_MOTOR
-    ui->actionStart_Motor_Scan->setEnabled(false);
-#endif
 }
 
 void MainWindow::startBatch(BatchManager *bm)

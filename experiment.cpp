@@ -59,8 +59,10 @@ Experiment::Experiment(const int num, QString exptPath) : data(new ExperimentDat
             if(key.startsWith(QString("PulseGen")))
                 data->pGenCfg.parseLine(key,val);
 
+#ifdef BC_LIF
             if(key.startsWith(QString("Lif")))
                 data->lifCfg.parseLine(key,val);
+#endif
 
             if(key.startsWith(QString("AutosaveInterval")))
                 data->autoSaveShotsInterval = val.toInt();
@@ -77,8 +79,10 @@ Experiment::Experiment(const int num, QString exptPath) : data(new ExperimentDat
             data->ftmwCfg.loadFids(num,exptPath);
         }
 
+#ifdef BC_LIF
         if(data->lifCfg.isEnabled())
             data->lifCfg.loadLifData(num,exptPath);
+#endif
     }
     else
     {
@@ -203,11 +207,6 @@ bool Experiment::isDummy() const
     return data->isDummy;
 }
 
-bool Experiment::isLifWaiting() const
-{
-    return data->waitForLifSet;
-}
-
 FtmwConfig Experiment::ftmwConfig() const
 {
     return data->ftmwCfg;
@@ -223,11 +222,6 @@ FlowConfig Experiment::flowConfig() const
     return data->flowCfg;
 }
 
-LifConfig Experiment::lifConfig() const
-{
-    return data->lifCfg;
-}
-
 IOBoardConfig Experiment::iobConfig() const
 {
     return data->iobCfg;
@@ -235,8 +229,12 @@ IOBoardConfig Experiment::iobConfig() const
 
 bool Experiment::isComplete() const
 {
+#ifdef BC_LIF
     //check each sub expriment!
     return (data->ftmwCfg.isComplete() && data->lifCfg.isComplete());
+#endif
+
+    return data->ftmwCfg.isComplete();
 }
 
 bool Experiment::hardwareSuccess() const
@@ -286,10 +284,13 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
     }
 
     out.unite(data->ftmwCfg.headerMap());
-    out.unite(data->lifCfg.headerMap());
     out.unite(data->pGenCfg.headerMap());
     out.unite(data->flowCfg.headerMap());
     out.unite(data->iobCfg.headerMap());
+
+#ifdef BC_LIF
+    out.unite(data->lifCfg.headerMap());
+#endif
 
     if(!data->timeDataMap.isEmpty())
     {
@@ -362,6 +363,7 @@ bool Experiment::snapshotReady()
                 return false;
         }
     }
+#ifdef BC_LIF
     else if(lifConfig().isEnabled())
     {
         if(lifConfig().completedShots() > 0)
@@ -378,6 +380,7 @@ bool Experiment::snapshotReady()
                 return false;
         }
     }
+#endif
 
     return false;
 }
@@ -407,6 +410,7 @@ void Experiment::setInitialized()
         }
     }
 
+#ifdef BC_LIF
     if(lifConfig().isEnabled())
     {
         if(!data->lifCfg.allocateMemory())
@@ -416,6 +420,7 @@ void Experiment::setInitialized()
             return;
         }
     }
+#endif
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     int num = s.value(QString("exptNum"),0).toInt()+1;
@@ -493,21 +498,18 @@ void Experiment::setAborted()
         data->endLogMessage = QString("Experiment %1 aborted.").arg(number());
         data->endLogMessageCode = BlackChirp::LogError;
     }
+#ifdef BC_LIF
     else if(ftmwConfig().isEnabled() && lifConfig().isEnabled() && !lifConfig().isComplete())
     {
         data->endLogMessage = QString("Experiment %1 aborted.").arg(number());
         data->endLogMessageCode = BlackChirp::LogError;
     }
+#endif
 }
 
 void Experiment::setDummy()
 {
     data->isDummy = true;
-}
-
-void Experiment::setLifWaiting(bool wait)
-{
-    data->waitForLifSet = wait;
 }
 
 void Experiment::setFtmwConfig(const FtmwConfig cfg)
@@ -518,11 +520,6 @@ void Experiment::setFtmwConfig(const FtmwConfig cfg)
 void Experiment::setScopeConfig(const BlackChirp::FtmwScopeConfig &cfg)
 {
     data->ftmwCfg.setScopeConfig(cfg);
-}
-
-void Experiment::setLifConfig(const LifConfig cfg)
-{
-    data->lifCfg = cfg;
 }
 
 void Experiment::setIOBoardConfig(const IOBoardConfig cfg)
@@ -550,11 +547,6 @@ bool Experiment::addFids(const QByteArray newData, int shift)
     }
 
     return true;
-}
-
-bool Experiment::addLifWaveform(const LifTrace t)
-{
-    return data->lifCfg.addWaveform(t);
 }
 
 void Experiment::overrideTargetShots(const int target)
@@ -704,8 +696,10 @@ void Experiment::finalSave() const
     if(ftmwConfig().isEnabled())
         ftmwConfig().writeFidFile(data->number);
 
+#ifdef BC_LIF
     if(lifConfig().isEnabled())
             lifConfig().writeLifFile(data->number);
+#endif
 
     saveTimeFile();
 }
@@ -904,8 +898,10 @@ void Experiment::snapshot(int snapNum, const Experiment other) const
             cf.writeFidFile(data->number,snapNum);
     }
 
+#ifdef BC_LIF
     if(lifConfig().isEnabled())
         lifConfig().writeLifFile(data->number);
+#endif
 
     saveTimeFile();
 }
@@ -992,7 +988,7 @@ void Experiment::saveToSettings() const
     if(ftmwConfig().isEnabled())
         data->ftmwCfg.saveToSettings();
 
-#ifndef BC_NO_LIF
+#ifdef BC_LIF
     s.setValue(QString("lifEnabled"),lifConfig().isEnabled());
     if(lifConfig().isEnabled())
         data->lifCfg.saveToSettings();
@@ -1033,7 +1029,7 @@ Experiment Experiment::loadFromSettings()
         out.setFtmwConfig(f);
     }
 
-#ifndef BC_NO_LIF
+#ifdef BC_LIF
     if(s.value(QString("lifEnabled"),false).toBool())
     {
         LifConfig l = LifConfig::loadFromSettings();
@@ -1067,3 +1063,31 @@ Experiment Experiment::loadFromSettings()
     return out;
 }
 
+
+#ifdef BC_LIF
+bool Experiment::isLifWaiting() const
+{
+    return data->waitForLifSet;
+}
+
+LifConfig Experiment::lifConfig() const
+{
+    return data->lifCfg;
+}
+
+void Experiment::setLifConfig(const LifConfig cfg)
+{
+    data->lifCfg = cfg;
+}
+
+bool Experiment::addLifWaveform(const LifTrace t)
+{
+    return data->lifCfg.addWaveform(t);
+}
+
+void Experiment::setLifWaiting(bool wait)
+{
+    data->waitForLifSet = wait;
+}
+
+#endif

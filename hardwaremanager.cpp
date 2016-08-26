@@ -8,10 +8,19 @@
 #include "awg.h"
 #include "pulsegenerator.h"
 #include "flowcontroller.h"
-#include "lifscope.h"
 #include "ioboard.h"
+
+#ifdef BC_GPIBCONTROLLER
 #include "gpibcontroller.h"
+#endif
+
+#ifdef BC_LIF
+#include "lifscope.h"
+#endif
+
+#ifdef BC_MOTOR
 #include "motorcontroller.h"
+#endif
 
 HardwareManager::HardwareManager(QObject *parent) : QObject(parent), d_responseCount(0)
 {
@@ -36,9 +45,11 @@ HardwareManager::~HardwareManager()
 
 void HardwareManager::initialize()
 {
+#ifdef BC_GPIBCONTROLLER
     GpibController *gpib = new GpibControllerHardware();
     QThread *gpibThread = new QThread(this);
     d_hardwareList.append(qMakePair(gpib,gpibThread));
+#endif
 
     p_ftmwScope = new FtmwScopeHardware();
     connect(p_ftmwScope,&FtmwScope::shotAcquired,this,&HardwareManager::ftmwScopeShotAcquired);
@@ -67,23 +78,19 @@ void HardwareManager::initialize()
     connect(p_flow,&FlowController::pressureControlMode,this,&HardwareManager::pressureControlMode);
     d_hardwareList.append(qMakePair(p_flow,nullptr));
 
-#ifndef BC_NO_LIF
+#ifdef BC_LIF
     p_lifScope = new LifScopeHardware();
     connect(p_lifScope,&LifScope::waveformRead,this,&HardwareManager::lifScopeShotAcquired);
     connect(p_lifScope,&LifScope::configUpdated,this,&HardwareManager::lifScopeConfigUpdated);
     d_hardwareList.append(qMakePair(p_lifScope,nullptr));
-#else
-    p_lifScope = nullptr;
 #endif
 
     p_iob = new IOBoardHardware();
     d_hardwareList.append(qMakePair(p_iob,nullptr));
 
-#ifndef BC_NO_MOTOR
+#ifdef BC_MOTOR
     p_mc = new MotorControllerHardware();
     d_hardwareList.append(qMakePair(p_mc,new QThread(this)));
-#else
-    p_mc = nullptr;
 #endif
 
 
@@ -168,25 +175,26 @@ void HardwareManager::initialize()
     {
         QThread *thread = d_hardwareList.at(i).second;
         HardwareObject *obj = d_hardwareList.at(i).first;
-        if(obj->isThreaded())
-        {
-            if(obj != gpib)
-            {
-                if(obj->type() != CommunicationProtocol::Gpib)
-                    thread = new QThread(this);
-                else
-                    thread = gpibThread;
-
-                d_hardwareList[i].second = thread;
-            }
-        }
-        else if(obj->type() == CommunicationProtocol::Gpib)
+#ifdef BC_GPIBCONTROLLER
+        if(obj->type() == CommunicationProtocol::Gpib)
         {
             thread = gpibThread;
             d_hardwareList[i].second = thread;
         }
+        else if(obj->isThreaded() && obj != gpib)
+#else
+        if(obj->isThreaded())
+#endif
+        {
+            thread = new QThread(this);
+            d_hardwareList[i].second = thread;
+        }
 
+#ifdef BB_GPIBCONTROLLER
         obj->buildCommunication(gpib);
+#else
+        obj->buildCommunication();
+#endif
 
         s.setValue(QString("%1/prettyName").arg(obj->key()),obj->name());
         s.setValue(QString("%1/subKey").arg(obj->key()),obj->subKey());
@@ -361,16 +369,6 @@ void HardwareManager::getTimeData()
     }
 }
 
-void HardwareManager::setLifParameters(double delay, double frequency)
-{
-    bool success = true;
-
-    if(!setPGenLifDelay(delay))
-        success = false;
-    Q_UNUSED(frequency)
-
-    emit lifSettingsComplete(success);
-}
 
 double HardwareManager::setValonTxFreq(const double d)
 {
@@ -419,19 +417,6 @@ void HardwareManager::setPGenRepRate(double r)
         QMetaObject::invokeMethod(p_pGen,"setRepRate",Q_ARG(double,r));
 }
 
-bool HardwareManager::setPGenLifDelay(double d)
-{
-    if(p_pGen->thread() == thread())
-        return p_pGen->setLifDelay(d);
-    else
-    {
-        bool out;
-        QMetaObject::invokeMethod(p_pGen,"setLifDelay",Qt::BlockingQueuedConnection,
-                                  Q_RETURN_ARG(bool,out),Q_ARG(double,d));
-        return out;
-    }
-}
-
 void HardwareManager::setFlowChannelName(int index, QString name)
 {
     if(p_flow->thread() == thread())
@@ -464,17 +449,6 @@ void HardwareManager::setPressureControlMode(bool en)
         QMetaObject::invokeMethod(p_flow,"setPressureControlMode",Q_ARG(bool,en));
 }
 
-void HardwareManager::setLifScopeConfig(const BlackChirp::LifScopeConfig c)
-{
-    if(p_lifScope != nullptr)
-    {
-        if(p_lifScope->thread() == thread())
-            p_lifScope->setAll(c);
-        else
-            QMetaObject::invokeMethod(p_lifScope,"setAll",Q_ARG(BlackChirp::LifScopeConfig,c));
-    }
-}
-
 void HardwareManager::checkStatus()
 {
     //gotta wait until all instruments have responded
@@ -491,3 +465,37 @@ void HardwareManager::checkStatus()
 
     emit allHardwareConnected(success);
 }
+
+#ifdef BC_LIF
+void HardwareManager::setLifParameters(double delay, double frequency)
+{
+    bool success = true;
+
+    if(!setPGenLifDelay(delay))
+        success = false;
+    Q_UNUSED(frequency)
+
+    emit lifSettingsComplete(success);
+}
+
+bool HardwareManager::setPGenLifDelay(double d)
+{
+    if(p_pGen->thread() == thread())
+        return p_pGen->setLifDelay(d);
+    else
+    {
+        bool out;
+        QMetaObject::invokeMethod(p_pGen,"setLifDelay",Qt::BlockingQueuedConnection,
+                                  Q_RETURN_ARG(bool,out),Q_ARG(double,d));
+        return out;
+    }
+}
+
+void HardwareManager::setLifScopeConfig(const BlackChirp::LifScopeConfig c)
+{
+    if(p_lifScope->thread() == thread())
+        p_lifScope->setAll(c);
+    else
+        QMetaObject::invokeMethod(p_lifScope,"setAll",Q_ARG(BlackChirp::LifScopeConfig,c));
+}
+#endif

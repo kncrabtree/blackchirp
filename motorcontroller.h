@@ -32,7 +32,7 @@ protected:
     QTimer *p_limitTimer;
 };
 
-#if BC_MOTOR==1
+#if BC_MOTORCONTROLLER==1
 #include "scx11.h"
 class Scx11;
 typedef Scx11 MotorControllerHardware;

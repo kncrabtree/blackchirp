@@ -149,6 +149,7 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
     }
 }
 
+#ifdef BC_LIF
 void AcquisitionManager::processLifScopeShot(const LifTrace t)
 {
     if(d_state == Acquiring && d_currentExperiment.lifConfig().isEnabled() && !d_currentExperiment.isLifWaiting())
@@ -186,6 +187,7 @@ void AcquisitionManager::lifHardwareReady(bool success)
             d_currentExperiment.setLifWaiting(false);
     }
 }
+#endif
 
 void AcquisitionManager::changeRollingAverageShots(int newShots)
 {

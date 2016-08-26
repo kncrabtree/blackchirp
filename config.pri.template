@@ -1,24 +1,76 @@
 #Enable CUDA GPU support
 #CONFIG += gpu-cuda
 
-#Run with virtual hardware
-CONFIG += nohardware
+#Enable hardware
+CONFIG += hardware
 
-#Disable LIF controls/acquisition
-CONFIG += nolif
+#Enable LIF controls/acquisition
+CONFIG += lif
 
-#Disable motor controls/acquisition
-CONFIG += nomotor
+#Enable motor controls/acquisition
+CONFIG += motor
 
 
 #-----------------------------------------
 # Library configuration
+#
+# You may need to specify custom paths etc
+# for your OS. See qmake documentation for
+# examples
 #-----------------------------------------
 unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
 
 
-nohardware {
-#The values here should not be modified
+hardware {
+#------------------------------------------------
+# The following defines select hardware implementations.
+#
+# If you have not enabled the lif or motor options above,
+# you can ignore their corresponding entries below
+# -----------------------------------------------
+
+# FTMW Oscilloscope (0 = virtual, 1 = DSA71604C, 2 = MSO72004C)
+FTMWSCOPE=2
+
+#AWG (0 = virtual, 1 = AWG70002A, 2 = AWG7122B)
+AWG=2
+
+#Synth (0 = virtual, 1 = Valon 5009, 2 = PLDROs)
+SYNTH=2
+
+#Pulse generator (0 = virtual, 1 = Quantum Composers 9528+, 2 = Quantum Composers 9518)
+PGEN=2
+#pulse generator channel definitions (0 = A, 1 = B, etc...)
+PGEN_GAS=0
+PGEN_AWG=5
+PGEN_XMER=2
+PGEN_LIF=3
+#num channels
+PGEN_CHANNELS=8
+
+#Flow Controller (0 = virtual, 1 = MKS 647C)
+FC=1
+#num channels
+FC_CHANNELS=4
+
+#IO Board (0 = virtual, 1 = Labjack U3)
+IOBOARD=1
+
+#GPIB controller (-1 = none, 0 = virtual, 1 = Prologix GPIB-LAN)
+GPIB=-1
+
+###### LIF ONLY #####
+#LIF Oscilloscope (0 = virtual, 1 = DPO3012)
+LIFSCOPE=1
+##### END LIF ONLY #####
+
+##### MOTOR ONLY #####
+#Motor controller (0 = virtual, 1 = SCX11)
+MOTOR=1
+##### END MOTOR ONLY #####
+
+} else {
+#The values in this section should not be modified
 FTMWSCOPE=0
 AWG=0
 SYNTH=0
@@ -33,43 +85,7 @@ FC_CHANNELS=4
 LIFSCOPE=0
 IOBOARD=0
 GPIB=0
-} else {
-#------------------------------------------------
-# The following defines select hardware implementations.
-# -----------------------------------------------
-
-# FTMW Oscilloscope (0 = virtual, 1 = DSA71604C, 2 = MSO72004C)
-FTMWSCOPE=1
-
-#AWG (0 = virtual, 1 = AWG70002A, 2 = AWG7122B)
-AWG=1
-
-#Synth (0 = virtual, 1 = Valon 5009, 2 = PLDROs)
-SYNTH=1
-
-#Pulse generator (0 = virtual, 1 = Quantum Composers 9528+, 2 = Quantum Composers 9518)
-PGEN=1
-#pulse generator channel definitions (0 = A, 1 = B, etc...)
-PGEN_GAS=0
-PGEN_AWG=1
-PGEN_XMER=2
-PGEN_LIF=3
-#num channels
-PGEN_CHANNELS=8
-
-#Flow Controller (0 = virtual, 1 = MKS 647C)
-FC=1
-#num channels
-FC_CHANNELS=4
-
-#LIF Oscilloscope (0 = virtual, 1 = DPO3012)
-LIFSCOPE=1
-
-#IO Board (0 = virtual, 1 = Labjack U3)
-IOBOARD=1
-
-#GPIB controller (0 = virtual, 1 = Prologix GPIB-LAN)
-GPIB=0
+MOTOR=0
 }
 
 
@@ -119,30 +135,35 @@ gpu-cuda {
 	}
 }
 
-nolif {
-	LIFSCOPE = 0
-
-	DEFINES += BC_NO_LIF
-}
-
-nomotor {
-        DEFINES += BC_NO_MOTOR
-}
-
-
 #------------------------------------------------
 # Do not modify the following
 # -----------------------------------------------
+
+lif {
+	DEFINES += BC_LIF
+	DEFINES += BC_LIFSCOPE=$$LIFSCOPE
+}
+
+motor {
+	DEFINES += BC_MOTOR
+	DEFINES += BC_MOTORCONTROLLER=$$MOTOR
+}
 
 DEFINES += BC_FTMWSCOPE=$$FTMWSCOPE
 DEFINES += BC_AWG=$$AWG
 DEFINES += BC_SYNTH=$$SYNTH
 DEFINES += BC_PGEN=$$PGEN BC_PGEN_GASCHANNEL=$$PGEN_GAS BC_PGEN_AWGCHANNEL=$$PGEN_AWG BC_PGEN_XMERCHANNEL=$$PGEN_XMER BC_PGEN_LIFCHANNEL=$$PGEN_LIF BC_PGEN_NUMCHANNELS=$$PGEN_CHANNELS
 DEFINES += BC_FLOWCONTROLLER=$$FC  BC_FLOW_NUMCHANNELS=$$FC_CHANNELS
-DEFINES += BC_LIFSCOPE=$$LIFSCOPE
 DEFINES += BC_IOBOARD=$$IOBOARD
-DEFINES += BC_GPIBCONTROLLER=$$GPIB
+
+!equals(GPIB,-1) {
+	DEFINES += BC_GPIBCONTROLLER=$$GPIB
+}
 
 equals(FTMWSCOPE,0) {
 RESOURCES += virtualdata.qrc
 }
+
+# Enabling this line will include all hardware files in compilation, even unused ones
+# This is only for development purposes
+# CONFIG += allhardware
