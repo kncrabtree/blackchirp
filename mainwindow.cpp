@@ -38,6 +38,10 @@
 #include "lifcontrolwidget.h"
 #endif
 
+#ifdef BC_MOTOR
+#include "motordisplaywidget.h"
+#endif
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow), d_hardwareConnected(false), d_oneExptDone(false), d_state(Idle), d_logCount(0), d_logIcon(BlackChirp::LogNormal), d_currentExptNum(0)
@@ -101,21 +105,6 @@ MainWindow::MainWindow(QWidget *parent) :
     p_lh->moveToThread(lhThread);
     d_threadObjectList.append(qMakePair(lhThread,p_lh));
     lhThread->start();
-
-#ifdef BC_LIF
-    p_lifDisplayWidget = new LifDisplayWidget(this);
-    ui->tabWidget->insertTab(ui->tabWidget->indexOf(ui->trackingTab)-1,p_lifDisplayWidget,QIcon(QString(":/icons/laser.png")),QString("LIF"));
-    p_lifProgressBar = new QProgressBar(this);
-    ui->instrumentStatusLayout->addWidget(QLabel(QString("LIF Progress")),0,Qt::AlignCenter);
-    ui->instrumentStatusLayout->addWidget(p_lifProgressBar);
-    p_lifControlWidget = new LifControlWidget(this);
-    ui->controlTopLayout->addWidget(p_lifcontrolWidget,2);
-    p_lifAction = new QAction(QIcon(QString(":/icons/laser.png")),QString("LIF"),this);
-    ui->menuView->insertAction(ui->actionTrackingShow,p_lifAction);
-#else
-    ui->controlTopLayout->addStretch(3);
-#endif
-
 
     p_hwm = new HardwareManager();
     connect(p_hwm,&HardwareManager::logMessage,p_lh,&LogHandler::logMessage);
@@ -268,6 +257,17 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionExport_Batch,&QAction::triggered,this,&MainWindow::exportBatch);
 
 #ifdef BC_LIF
+    p_lifDisplayWidget = new LifDisplayWidget(this);
+    int lti = ui->tabWidget->insertTab(ui->tabWidget->indexOf(ui->trackingTab),p_lifDisplayWidget,QIcon(QString(":/icons/laser.png")),QString("LIF"));
+    p_lifTab = ui->tabWidget->widget(mti);
+    p_lifProgressBar = new QProgressBar(this);
+    ui->instrumentStatusLayout->addWidget(QLabel(QString("LIF Progress")),0,Qt::AlignCenter);
+    ui->instrumentStatusLayout->addWidget(p_lifProgressBar);
+    p_lifControlWidget = new LifControlWidget(this);
+    ui->controlTopLayout->addWidget(p_lifcontrolWidget,2);
+    p_lifAction = new QAction(QIcon(QString(":/icons/laser.png")),QString("LIF"),this);
+    ui->menuView->insertAction(ui->actionLog,p_lifAction);
+
     connect(p_hwm,&HardwareManager::hwInitializationComplete,p_lifControlWidget,&LifControlWidget::updateHardwareLimits);
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_lifControlWidget,&LifControlWidget::newTrace);
     connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,p_lifControlWidget,&LifControlWidget::scopeConfigChanged);
@@ -283,12 +283,23 @@ MainWindow::MainWindow(QWidget *parent) :
             ui->lifDisplayWidget,&LifDisplayWidget::checkLifColors);
     connect(ui->lifDisplayWidget,&LifDisplayWidget::lifColorChanged,
             ui->lifControlWidget,&LifControlWidget::checkLifColors);
+#else
+    ui->controlTopLayout->addStretch(3);
 #endif
 
 #ifdef BC_MOTOR
-    p_startMotorScanAction = new QAction(QIcon(QString(":icons/motorScan.png")),QString("Start Motor Scan"),this);
+    p_startMotorScanAction = new QAction(QIcon(QString(":/icons/motorscan.png")),QString("Start Motor Scan"),this);
     ui->menuAcquisition->insertAction(ui->actionPause,p_startMotorScanAction);
     connect(p_startMotorScanAction,&QAction::triggered,this,&MainWindow::startMotorScan);
+
+    p_motorDisplayWidget = new MotorDisplayWidget(this);
+    int mti = ui->tabWidget->insertTab(ui->tabWidget->indexOf(ui->trackingTab),p_motorDisplayWidget,QIcon(QString(":/icons/motorscan.png")),QString("Motor"));
+    p_motorTab = ui->tabWidget->widget(mti);
+
+    p_motorViewAction = new QAction(QIcon(QString(":/icons/motorscan.png")),QString("Motor"),this);
+    ui->menuView->insertAction(ui->actionLog,p_motorViewAction);
+    connect(p_motorViewAction,&QAction::triggered,[=](){ ui->tabWidget->setCurrentWidget(p_motorTab);});
+
 #endif
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());

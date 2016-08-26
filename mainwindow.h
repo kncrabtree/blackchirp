@@ -25,6 +25,10 @@ class LifControlWidget;
 class LifDisplayWidget;
 #endif
 
+#ifdef BC_MOTOR
+class MotorDisplayWidget;
+#endif
+
 
 
 namespace Ui {
@@ -125,6 +129,9 @@ private:
 
 #ifdef BC_MOTOR
     QAction *p_startMotorScanAction;
+    QAction *p_motorViewAction;
+    QWidget *p_motorTab;
+    MotorDisplayWidget *p_motorDisplayWidget;
 #endif
 
 protected:

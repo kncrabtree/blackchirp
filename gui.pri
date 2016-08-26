@@ -72,7 +72,12 @@ lif {
 }
 
 motor {
-	HEADERS += $$PWD/motorscandialog.h
-	SOURCES += $$PWD/motorscandialog.cpp
-	FORMS += $$PWD/motorscandialog.ui
+	HEADERS += $$PWD/motorscandialog.h \
+			   $$PWD/motordisplaywidget.h \
+			   $$PWD/motorsliderwidget.h
+	SOURCES += $$PWD/motorscandialog.cpp \
+			   $$PWD/motordisplaywidget.cpp \
+			   $$PWD/motorsliderwidget.cpp
+	FORMS += $$PWD/motorscandialog.ui \
+			 $$PWD/motordisplaywidget.ui
 }
