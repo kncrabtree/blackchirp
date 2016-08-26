@@ -14,7 +14,7 @@ public:
     MotorController(QObject *parent = nullptr);
 
 signals:
-    void motionComplete();
+    void motionComplete(bool success = true);
     void limitStatus(bool nx, bool px, bool ny, bool py, bool nz, bool pz);
     void posUpdate(BlackChirp::MotorAxis axis, double pos);
 

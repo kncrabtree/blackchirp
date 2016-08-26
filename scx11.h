@@ -29,7 +29,13 @@ public slots:
     void checkLimit();
 
 private:
-    QSerialPort *p_sp;
+    int d_xId;
+    int d_yId;
+    int d_zId;
+    bool moveAxis(BlackChirp::MotorAxis axis, double pos);
+
+
+
 
 };
 
