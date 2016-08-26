@@ -143,10 +143,11 @@ int main(int argc, char *argv[])
     qRegisterMetaType<BlackChirp::PulseSetting>("BlackChirp::PulseSetting");
     qRegisterMetaType<BlackChirp::LifScopeConfig>("BlackChirp::LifScopeConfig");
     qRegisterMetaType<PulseGenConfig>("PulseGenConfig");
-    qRegisterMetaType<LifTrace>("LifTrace");
     qRegisterMetaType<QPair<QPoint,BlackChirp::LifPoint>>("QPair<QPoint,BlackChirp::LifPoint>");
     qRegisterMetaType<BlackChirp::FtWindowFunction>("BlackChirp::FtWindowFunction");
-
+#ifdef BC_LIF
+    qRegisterMetaType<LifTrace>("LifTrace");
+#endif
 
 #ifndef QT_DEBUG
     gsl_set_error_handler_off();

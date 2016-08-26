@@ -35,9 +35,6 @@ signals:
     void experimentComplete(const Experiment);
     void ftmwUpdateProgress(qint64);
     void ftmwNumShots(qint64);
-    void lifPointUpdate(QPair<QPoint,BlackChirp::LifPoint>);
-    void nextLifPoint(double delay, double frequency);
-    void lifShotAcquired(int);
     void beginAcquisition();
     void endAcquisition();
     void timeDataSignal();
@@ -48,11 +45,15 @@ signals:
     void doFinalSave(const Experiment);
     void snapshotComplete();
 
+#ifdef BC_LIF
+    void lifPointUpdate(QPair<QPoint,BlackChirp::LifPoint>);
+    void nextLifPoint(double delay, double frequency);
+    void lifShotAcquired(int);
+#endif
+
 public slots:
     void beginExperiment(Experiment exp);
     void processFtmwScopeShot(const QByteArray b);
-    void processLifScopeShot(const LifTrace t);
-    void lifHardwareReady(bool success);
     void changeRollingAverageShots(int newShots);
     void resetRollingAverage();
     void getTimeData();
@@ -61,6 +62,11 @@ public slots:
     void pause();
     void resume();
     void abort();
+
+#ifdef BC_LIF
+    void processLifScopeShot(const LifTrace t);
+    void lifHardwareReady(bool success);
+#endif
 
 private:
     Experiment d_currentExperiment;

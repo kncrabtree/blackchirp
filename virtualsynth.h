@@ -1,14 +1,14 @@
-#ifndef VIRTUALVALONSYNTH_H
-#define VIRTUALVALONSYNTH_H
+#ifndef VIRTUALSYNTH_H
+#define VIRTUALSYNTH_H
 
 #include "synthesizer.h"
 
-class VirtualValonSynth : public Synthesizer
+class VirtualSynth : public Synthesizer
 {
     Q_OBJECT
 public:
-    explicit VirtualValonSynth(QObject *parent = nullptr);
-    ~VirtualValonSynth();
+    explicit VirtualSynth(QObject *parent = nullptr);
+    ~VirtualSynth();
 
     // HardwareObject interface
 public slots:
@@ -27,4 +27,4 @@ public slots:
     double setSynthRxFreq(const double f);
 };
 
-#endif // VIRTUALVALONSYNTH_H
+#endif // VIRTUALSYNTH_H

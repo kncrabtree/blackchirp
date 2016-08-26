@@ -1,6 +1,6 @@
-#include "virtualvalonsynth.h"
+#include "virtualsynth.h"
 
-VirtualValonSynth::VirtualValonSynth(QObject *parent) : Synthesizer(parent)
+VirtualSynth::VirtualSynth(QObject *parent) : Synthesizer(parent)
 {
     d_subKey = QString("virtual");
     d_prettyName = QString("Virtual Synthesizer");
@@ -23,14 +23,14 @@ VirtualValonSynth::VirtualValonSynth(QObject *parent) : Synthesizer(parent)
     s.endGroup();
 }
 
-VirtualValonSynth::~VirtualValonSynth()
+VirtualSynth::~VirtualSynth()
 {
 
 }
 
 
 
-bool VirtualValonSynth::testConnection()
+bool VirtualSynth::testConnection()
 {
     readTxFreq();
     readRxFreq();
@@ -39,45 +39,45 @@ bool VirtualValonSynth::testConnection()
     return true;
 }
 
-void VirtualValonSynth::initialize()
+void VirtualSynth::initialize()
 {
     testConnection();
 }
 
-Experiment VirtualValonSynth::prepareForExperiment(Experiment exp)
+Experiment VirtualSynth::prepareForExperiment(Experiment exp)
 {
     return exp;
 }
 
-void VirtualValonSynth::beginAcquisition()
+void VirtualSynth::beginAcquisition()
 {
 }
 
-void VirtualValonSynth::endAcquisition()
+void VirtualSynth::endAcquisition()
 {
 }
 
-void VirtualValonSynth::readTimeData()
+void VirtualSynth::readTimeData()
 {
 }
 
-double VirtualValonSynth::readSynthTxFreq()
+double VirtualSynth::readSynthTxFreq()
 {
     return d_txFreq;
 }
 
-double VirtualValonSynth::readSynthRxFreq()
+double VirtualSynth::readSynthRxFreq()
 {
     return d_rxFreq;
 }
 
-double VirtualValonSynth::setSynthTxFreq(const double f)
+double VirtualSynth::setSynthTxFreq(const double f)
 {
     d_txFreq = f;
     return readTxFreq();
 }
 
-double VirtualValonSynth::setSynthRxFreq(const double f)
+double VirtualSynth::setSynthRxFreq(const double f)
 {
     d_rxFreq = f;
     return readRxFreq();

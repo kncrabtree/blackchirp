@@ -34,9 +34,12 @@ private:
 
     QWidget *buildHeaderWidget();
     QWidget *buildFtmwWidget(QString path = QString(""));
-    QWidget *buildLifWidget();
     QWidget *buildTrackingWidget();
     QWidget *buildLogWidget(QString path = QString(""));
+
+#ifdef BC_LIF
+    QWidget *buildLifWidget();
+#endif
 };
 
 #endif // EXPERIMENTVIEWWIDGET_H

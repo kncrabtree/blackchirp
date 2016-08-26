@@ -55,7 +55,7 @@ QuickExptDialog::QuickExptDialog(Experiment e, QWidget *parent) :
         html.append(QString("<h1>FTMW disabled</h1>"));
     }
 
-#ifndef BC_NO_LIF
+#ifdef BC_LIF
     if(e.lifConfig().isEnabled())
     {
         html.append(QString("<h1>LIF settings</h1><ul>"));

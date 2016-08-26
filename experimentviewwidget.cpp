@@ -14,9 +14,12 @@
 #include <QMessageBox>
 
 #include "ftmwviewwidget.h"
-#include "lifdisplaywidget.h"
 #include "trackingviewwidget.h"
 #include "loghandler.h"
+
+#ifdef BC_LIF
+#include "lifdisplaywidget.h"
+#endif
 
 ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *parent) : QWidget(parent), p_ftmw(nullptr), p_lh(nullptr)
 {
@@ -63,12 +66,14 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
             p_tabWidget->addTab(ftmw,QIcon(QString(":/icons/chirp.png")),QString("CP-FTMW"));
     }
 
+#ifdef BC_LIF
     if(d_experiment.lifConfig().isEnabled())
     {
         QWidget *lif = buildLifWidget();
         if(lif != nullptr)
             p_tabWidget->addTab(lif,QIcon(QString(":/icons/laser.png")),QString("LIF"));
     }
+#endif
 
     QWidget *tracking = buildTrackingWidget();
     if(tracking != nullptr)
@@ -211,6 +216,7 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
     return out;
 }
 
+#ifdef BC_LIF
 QWidget *ExperimentViewWidget::buildLifWidget()
 {
     QWidget *out = nullptr;
@@ -240,6 +246,7 @@ QWidget *ExperimentViewWidget::buildLifWidget()
 
     return out;
 }
+#endif
 
 QWidget *ExperimentViewWidget::buildTrackingWidget()
 {

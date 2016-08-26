@@ -10,7 +10,7 @@ WizardPulseConfigPage::WizardPulseConfigPage(QWidget *parent) :
     QWizardPage(parent)
 {
     setTitle("Configure Pulses");
-    setSubTitle("Some settings will be made automatically (e.g., LIF delays).");
+    setSubTitle("Some settings may be made automatically (e.g., LIF delays).");
 
     QVBoxLayout *vbl = new QVBoxLayout();
 
@@ -38,7 +38,7 @@ PulseGenConfig WizardPulseConfigPage::getConfig() const
 
 void WizardPulseConfigPage::initializePage()
 {
-#ifndef BC_NO_LIF
+#ifdef BC_LIF
     if(field(QString("lif")).toBool())
         p_pcw->configureLif(field(QString("delayStart")).toDouble());
 #endif
