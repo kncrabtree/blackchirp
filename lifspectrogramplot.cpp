@@ -29,11 +29,10 @@ LifSpectrogramPlot::LifSpectrogramPlot(QWidget *parent) :
     p_spectrogram->setDisplayMode(QwtPlotSpectrogram::ImageMode);
     p_spectrogram->setDisplayMode(QwtPlotSpectrogram::ContourMode,false);
     p_spectrogram->setRenderHint(QwtPlotItem::RenderAntialiased);
-    p_spectrogram->setData(new QwtMatrixRasterData);
-    p_spectrogram->attach(this);
-
     p_spectrogramData = new QwtMatrixRasterData;
     p_spectrogram->setData(p_spectrogramData);
+    p_spectrogram->attach(this);
+
 
     QwtLinearColorMap *map = new QwtLinearColorMap(Qt::black,Qt::red);
     map->addColorStop(0.05,Qt::darkBlue);
@@ -93,6 +92,8 @@ LifSpectrogramPlot::~LifSpectrogramPlot()
 void LifSpectrogramPlot::prepareForExperiment(const LifConfig c)
 {
     d_enabled = c.isEnabled();
+    if(p_spectrogramData != nullptr)
+        delete p_spectrogramData;
     p_spectrogramData = new QwtMatrixRasterData;
     d_delayDragging = false;
     d_freqDragging = false;
