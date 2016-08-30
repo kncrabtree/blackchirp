@@ -16,6 +16,8 @@
 #include <QMessageBox>
 #include <QList>
 #include <QPair>
+#include <QDialogButtonBox>
+#include <QPushButton>
 
 #include <qwt6/qwt_picker_machine.h>
 #include <qwt6/qwt_scale_widget.h>
@@ -352,13 +354,48 @@ QColor FtPlot::getColor(QColor startingColor)
 void FtPlot::exportXY()
 {
 
+    QDialog d(this);
+    d.setWindowTitle(QString("Export FT"));
+    d.setWindowIcon(QIcon(QString(":/icons/bc_logo_small.png")));
+
+    QVBoxLayout *vbl = new QVBoxLayout;
+    QFormLayout *fl = new QFormLayout;
+
+    QDoubleSpinBox *minBox = new QDoubleSpinBox;
+    minBox->setRange(d_currentFt.first().x(),d_currentFt.last().x());
+    minBox->setDecimals(3);
+    minBox->setValue(d_currentFt.first().x());
+    minBox->setSuffix(QString(" MHz"));
+    minBox->setSingleStep(500.0);
+    fl->addRow(QString("Minimum Frequency"),minBox);
+
+    QDoubleSpinBox *maxBox = new QDoubleSpinBox;
+    maxBox->setRange(d_currentFt.first().x(),d_currentFt.last().x());
+    maxBox->setDecimals(3);
+    maxBox->setValue(d_currentFt.last().x());
+    maxBox->setSuffix(QString(" MHz"));
+    maxBox->setSingleStep(500.0);
+    fl->addRow(QString("Maximum Frequency"),maxBox);
+
+    vbl->addLayout(fl,1);
+
+    QDialogButtonBox *bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    connect(bb->button(QDialogButtonBox::Ok),&QPushButton::clicked,&d,&QDialog::accept);
+    connect(bb->button(QDialogButtonBox::Cancel),&QPushButton::clicked,&d,&QDialog::reject);
+    vbl->addWidget(bb,0);
+
+    d.setLayout(vbl);
+
+    if(d.exec() == QDialog::Rejected)
+        return;
+
     QString path = BlackChirp::getExportDir();
 
     int num = d_number;
     if(num < 0)
         num = 0;
 
-    QString name = QFileDialog::getSaveFileName(this,QString("Export Experiment"),path + QString("/ft%1.txt").arg(num));
+    QString name = QFileDialog::getSaveFileName(this,QString("Export FT"),path + QString("/ft%1.txt").arg(num));
 
     if(name.isEmpty())
         return;
@@ -375,7 +412,12 @@ void FtPlot::exportXY()
     f.write(QString("freq%1\tft%1").arg(d_number).toLatin1());
 
     for(int i=0;i<d_currentFt.size();i++)
-        f.write(QString("\n%1\t%2").arg(d_currentFt.at(i).x(),0,'f',6).arg(d_currentFt.at(i).y(),0,'e',12).toLatin1());
+    {
+        if(d_currentFt.at(i).x() >= minBox->value() && d_currentFt.at(i).x() <= maxBox->value())
+            f.write(QString("\n%1\t%2").arg(d_currentFt.at(i).x(),0,'f',6)
+                    .arg(d_currentFt.at(i).y(),0,'e',12).toLatin1());
+    }
+
     f.close();
 
     QApplication::restoreOverrideCursor();
