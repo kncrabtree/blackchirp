@@ -74,10 +74,16 @@ lif {
 motor {
 	HEADERS += $$PWD/motorscandialog.h \
 			   $$PWD/motordisplaywidget.h \
-			   $$PWD/motorsliderwidget.h
+			   $$PWD/motorsliderwidget.h \
+			   $$PWD/motorspectrogramplot.h \
+			   $$PWD/motorzplot.h \
+			   $$PWD/motorxyplot.h
 	SOURCES += $$PWD/motorscandialog.cpp \
 			   $$PWD/motordisplaywidget.cpp \
-			   $$PWD/motorsliderwidget.cpp
+			   $$PWD/motorsliderwidget.cpp \
+			   $$PWD/motorspectrogramplot.cpp \
+			   $$PWD/motorzplot.cpp \
+			   $$PWD/motorxyplot.cpp
 	FORMS += $$PWD/motorscandialog.ui \
 			 $$PWD/motordisplaywidget.ui
 }

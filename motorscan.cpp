@@ -90,6 +90,28 @@ int MotorScan::tPoints() const
     return data->tPoints;
 }
 
+int MotorScan::numPoints(MotorScan::MotorDataAxis axis) const
+{
+    int out = 0;
+
+    switch(axis) {
+    case MotorX:
+        out = xPoints();
+        break;
+    case MotorY:
+        out = yPoints();
+        break;
+    case MotorZ:
+        out = zPoints();
+        break;
+    case MotorT:
+        out = tPoints();
+        break;
+    }
+
+    return out;
+}
+
 double MotorScan::xVal(int i) const
 {
     if(i<0 || i>=xPoints())

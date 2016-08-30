@@ -28,11 +28,6 @@ MotorSliderWidget::MotorSliderWidget(QWidget *parent) : QWidget(parent)
     connect(p_slider,&QSlider::valueChanged,this,&MotorSliderWidget::updateBox);
     connect(p_dsb,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),this,&MotorSliderWidget::updateSlider);
 
-    setRange(1.0,12.0,7,2);
-    setUnits(QString("mm"));
-    setLabel(QString("X"));
-
-
 }
 
 void MotorSliderWidget::setRange(double min, double max, int steps, int decimals)
@@ -82,5 +77,28 @@ void MotorSliderWidget::setLabel(QString s)
 void MotorSliderWidget::setUnits(QString u)
 {
     p_dsb->setSuffix(QString(" ")+u);
+}
+
+void MotorSliderWidget::setAxis(MotorScan::MotorDataAxis a)
+{
+    switch(a)
+    {
+    case MotorScan::MotorX:
+        setLabel(QString("X"));
+        setUnits(QString("mm"));
+        break;
+    case MotorScan::MotorY:
+        setLabel(QString("Y"));
+        setUnits(QString("mm"));
+        break;
+    case MotorScan::MotorZ:
+        setLabel(QString("Z"));
+        setUnits(QString("mm"));
+        break;
+    case MotorScan::MotorT:
+        setLabel(QString("T"));
+        setUnits(QString::fromUtf16(u"µs"));
+        break;
+    }
 }
 

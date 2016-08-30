@@ -13,12 +13,15 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout">
+  <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0,0">
    <item>
-    <widget class="QWidget" name="motorSpectrogramPlot" native="true"/>
+    <widget class="MotorZPlot" name="motorZSpectrogramPlot" native="true"/>
    </item>
    <item>
     <widget class="MotorSliderWidget" name="spectrogramSlider1" native="true"/>
+   </item>
+   <item>
+    <widget class="MotorSliderWidget" name="spectrogramSlider2" native="true"/>
    </item>
   </layout>
  </widget>
@@ -27,6 +30,12 @@
    <class>MotorSliderWidget</class>
    <extends>QWidget</extends>
    <header>motorsliderwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>MotorZPlot</class>
+   <extends>QWidget</extends>
+   <header>motorzplot.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

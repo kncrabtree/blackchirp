@@ -7,6 +7,8 @@
 #include <QSlider>
 #include <QDoubleSpinBox>
 
+#include "motorscan.h"
+
 class MotorSliderWidget : public QWidget
 {
     Q_OBJECT
@@ -20,8 +22,7 @@ public slots:
     void setRange(double min, double max, int steps, int decimals = 2);
     void updateSlider(double newVal);
     void updateBox(int newVal);
-    void setLabel(QString s);
-    void setUnits(QString u);
+    void setAxis(MotorScan::MotorDataAxis a);
 
 protected:
     QLabel *p_label;
@@ -30,6 +31,9 @@ protected:
 
     double d_min, d_max, d_stepSize;
     int d_numSteps;
+
+    void setLabel(QString s);
+    void setUnits(QString u);
 };
 
 #endif // MOTORSLIDERWIDGET_H

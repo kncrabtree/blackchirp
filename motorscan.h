@@ -14,6 +14,14 @@ class QwtMatrixRasterData;
 class MotorScan
 {
 public:
+
+    enum MotorDataAxis {
+        MotorX,
+        MotorY,
+        MotorZ,
+        MotorT
+    };
+
     MotorScan();
     MotorScan(const MotorScan &rhs);
     MotorScan &operator=(const MotorScan &rhs);
@@ -25,6 +33,7 @@ public:
     int yPoints() const;
     int zPoints() const;
     int tPoints() const;
+    int numPoints(MotorDataAxis axis) const;
 
     double xVal(int i) const;
     double yVal(int i) const;
