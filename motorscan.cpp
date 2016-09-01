@@ -144,7 +144,7 @@ double MotorScan::tVal(int i) const
     return data->t0 + static_cast<double>(i)*data->dt;
 }
 
-double MotorScan::value(MotorScan::MotorDataAxis axis, int i) const
+double MotorScan::axisValue(MotorScan::MotorDataAxis axis, int i) const
 {
     if(i<0 || i >= numPoints(axis))
         return -1.0;
@@ -169,10 +169,17 @@ double MotorScan::value(MotorScan::MotorDataAxis axis, int i) const
     return out;
 }
 
+QPair<double, double> MotorScan::range(MotorScan::MotorDataAxis axis) const
+{
+    double first = axisValue(axis,0);
+    double last = axisValue(axis,numPoints(axis)-1);
+    return qMakePair(first,last);
+}
+
 QPair<double, double> MotorScan::interval(MotorScan::MotorDataAxis axis) const
 {
-    double first = value(axis,0);
-    double last = value(axis,numPoints(axis)-1);
+    double first = axisValue(axis,0);
+    double last = axisValue(axis,numPoints(axis)-1);
     double halfStep = fabs(first - last)/static_cast<double>(numPoints(axis)-1)/2.0;
     double min = qMin(first,last) - halfStep;
     double max = qMax(first,last) + halfStep;
@@ -181,9 +188,19 @@ QPair<double, double> MotorScan::interval(MotorScan::MotorDataAxis axis) const
 
 }
 
+double MotorScan::value(int x, int y, int z, int t) const
+{
+    return data->zyxtData.at(z).at(y).at(x).at(t);
+}
+
 int MotorScan::shotsPerPoint() const
 {
     return data->shotsPerPoint;
+}
+
+bool MotorScan::isPointComplete() const
+{
+    return data->currentPointShots >= data->shotsPerPoint;
 }
 
 bool MotorScan::isComplete() const
@@ -191,51 +208,111 @@ bool MotorScan::isComplete() const
     return data->currentPoint >= data->totalPoints;
 }
 
-QVector<QPointF> MotorScan::tSlice(int x, int y, int z) const
+QVector3D MotorScan::currentPos() const
+{
+    return QVector3D(xVal(data->currentX),yVal(data->currentY),zVal(data->currentZ));
+}
+
+QVector<double> MotorScan::slice(MotorScan::MotorDataAxis xAxis, MotorScan::MotorDataAxis yAxis, MotorScan::MotorDataAxis otherAxis1, int otherPoint1, MotorScan::MotorDataAxis otherAxis2, int otherPoint2) const
+{
+
+    if(xAxis == yAxis || xAxis == otherAxis1 || xAxis == otherAxis2 || yAxis == otherAxis1 ||
+            yAxis == otherAxis2 || otherAxis1 == otherAxis2)
+        return QVector<double>();
+
+    int i,j, k=otherPoint1, l=otherPoint2;
+    int *x, *y, *z, *t;
+
+    switch(xAxis)
+    {
+    case MotorX:
+        x = &i;
+        break;
+    case MotorY:
+        y = &i;
+        break;
+    case MotorZ:
+        z = &i;
+        break;
+    case MotorT:
+        t = &i;
+        break;
+    }
+
+    switch(yAxis)
+    {
+    case MotorX:
+        x = &j;
+        break;
+    case MotorY:
+        y = &j;
+        break;
+    case MotorZ:
+        z = &j;
+        break;
+    case MotorT:
+        t = &j;
+        break;
+    }
+
+    switch(otherAxis1)
+    {
+    case MotorX:
+        x = &k;
+        break;
+    case MotorY:
+        y = &k;
+        break;
+    case MotorZ:
+        z = &k;
+        break;
+    case MotorT:
+        t = &k;
+        break;
+    }
+
+    switch(otherAxis2)
+    {
+    case MotorX:
+        x = &l;
+        break;
+    case MotorY:
+        y = &l;
+        break;
+    case MotorZ:
+        z = &l;
+        break;
+    case MotorT:
+        t = &l;
+        break;
+    }
+
+    QVector<double> out(numPoints(xAxis)*numPoints(yAxis));
+    int idx = 0;
+    for(i=0; i<numPoints(xAxis); i++)
+    {
+        for(j=0; j<numPoints(yAxis); j++)
+        {
+            out[idx] = value(*x,*y,*z,*t);
+            idx++;
+        }
+    }
+
+    return out;
+
+}
+
+QVector<QPointF> MotorScan::tTrace(int x, int y, int z) const
 {
     QVector<QPointF> out(tPoints());
-    for(int i=0; i<tPoints(); i++)
+    for(int t=0; t<tPoints(); t++)
     {
-        QPointF dat(tVal(i), data->zyxtData.at(z).at(y).at(x).at(i));
-        out[i] = dat;
+        QPointF dat(tVal(t), value(x,y,z,t));
+        out[t] = dat;
     }
 
     return out;
 
-}
-
-QVector<double> MotorScan::xySlice(int z, int t) const
-{
-    //row-x; column-y
-    QVector<double> out(zPoints()*tPoints());
-    int i =0;
-    for(int y=0; y<yPoints(); y++)
-    {
-        for(int x=0; x<xPoints(); x++)
-        {
-            out[i] = data->zyxtData.at(z).at(y).at(x).at(t);
-            i++;
-        }
-    }
-
-    return out;
-}
-
-QVector<double> MotorScan::yzSlice(int x, int t) const
-{
-    //row-z; column-y
-    QVector<double> out(zPoints()*yPoints());
-    int i =0;
-    for(int y=0; y<yPoints(); y++)
-    {
-        for(int z=0; z<zPoints(); z++)
-        {
-            out[i] = data->zyxtData.at(z).at(y).at(x).at(t);
-            i++;
-        }
-    }
-
-    return out;
 }
 
 void MotorScan::setXPoints(int x)
@@ -295,6 +372,53 @@ void MotorScan::initialize()
     data->currentPointShots = 0;
     data->currentPoint = 0;
     data->totalPoints = data->xPoints*data->yPoints*data->zPoints;
+    data->currentX = 0;
+    data->currentY = 0;
+    data->currentZ = 0;
+}
+
+bool MotorScan::addTrace(const QVector<double> d)
+{
+    QVector<double> newDat = data->zyxtData.at(data->currentZ).at(data->currentY).at(data->currentX);
+
+    data->currentPointShots++;
+    bool adv = data->currentPointShots < data->shotsPerPoint;
+    if(!adv)
+    {
+        for(int i=0; i<newDat.size() && i < d.size(); i++)
+            newDat[i] += d.at(i);
+    }
+    else
+    {
+        double shots = static_cast<double>(data->shotsPerPoint);
+        for(int i=0; i<newDat.size() && i < d.size(); i++)
+            newDat[i] = (newDat.at(i) + d.at(i))/shots;
+    }
+
+    data->zyxtData[data->currentZ][data->currentY][data->currentX] = newDat;
+    if(adv)
+        advance();
+
+    return adv;
+}
+
+void MotorScan::advance()
+{
+    data->currentPoint++;
+
+    data->currentX++;
+    if(data->currentX == xPoints())
+    {
+        data->currentX = 0;
+        data->currentY++;
+        if(data->currentY == yPoints())
+        {
+            data->currentY = 0;
+            data->currentZ++;
+        }
+    }
+
+    data->currentPointShots = 0;
 }
 
 

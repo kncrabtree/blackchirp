@@ -16,7 +16,7 @@ public:
     void prepareForScan(const MotorScan s);
 
 public slots:
-    void updateData(QVector<QPointF> d, double min, double max);
+    void updateData(QVector<QPointF> d);
 
 private:
     QwtPlotCurve *p_curve;

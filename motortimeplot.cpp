@@ -29,8 +29,16 @@ void MotorTimePlot::prepareForScan(const MotorScan s)
     p_curve->setSamples(QVector<QPointF>());
 }
 
-void MotorTimePlot::updateData(QVector<QPointF> d, double min, double max)
+void MotorTimePlot::updateData(QVector<QPointF> d)
 {
+    double min = d.first().y();
+    double max = d.first().y();
+    for(int i=0; i<d.size(); i++)
+    {
+        min = qMin(d.at(i).y(),min);
+        max = qMax(d.at(i).y(),max);
+    }
+
     p_curve->setSamples(d);
     setAxisAutoScaleRange(QwtPlot::yLeft,min,max);
     replot();

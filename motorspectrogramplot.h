@@ -18,13 +18,14 @@ public:
     void setLabelText(QwtPlot::Axis axis, QString text);
     virtual void prepareForScan(const MotorScan s);
     virtual void buildContextMenu(QMouseEvent *me);
+    MotorScan::MotorDataAxis leftAxis() const { return d_leftAxis; }
+    MotorScan::MotorDataAxis bottomAxis() const { return d_bottomAxis; }
 
 public slots:
-    virtual void updateData(QVector<double> data, int cols, double min, double max, MotorScan::MotorDataAxis leftAxis, MotorScan::MotorDataAxis bottomAxis);
+    virtual void updateData(QVector<double> data, int cols);
     virtual void updatePoint(int row, int col, double val);
     virtual void setAxis(QwtPlot::Axis plotAxis, MotorScan::MotorDataAxis motorAxis);
 
-    // ZoomPanPlot interface
 protected:
     void filterData();
     void recalculateZRange();

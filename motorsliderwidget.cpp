@@ -24,10 +24,44 @@ MotorSliderWidget::MotorSliderWidget(QWidget *parent) : QWidget(parent)
 
     setLayout(l);
 
+    setAxis(MotorScan::MotorX);
+
     connect(p_slider,&QSlider::valueChanged,this,&MotorSliderWidget::valueChanged);
     connect(p_slider,&QSlider::valueChanged,this,&MotorSliderWidget::updateBox);
     connect(p_dsb,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),this,&MotorSliderWidget::updateSlider);
 
+}
+
+MotorScan::MotorDataAxis MotorSliderWidget::axis() const
+{
+    return d_currentAxis;
+}
+
+int MotorSliderWidget::currentIndex() const
+{
+    return p_slider->value();
+}
+
+void MotorSliderWidget::changeAxis(MotorScan::MotorDataAxis a, const MotorScan s)
+{
+    setAxis(a);
+    setRange(s);
+}
+
+void MotorSliderWidget::setRange(const MotorScan s)
+{
+    QPair<double,double> range = s.range(d_currentAxis);
+    int steps = s.numPoints(d_currentAxis);
+
+    double theRange = fabs(range.first-range.second);
+    int decimals = 1;
+    if(theRange < 10.0)
+        decimals = 2;
+    if(theRange < 1.0)
+        decimals = 3;
+
+    setRange(range.first,range.second,steps,decimals);
+    p_slider->setValue(steps/2);
 }
 
 void MotorSliderWidget::setRange(double min, double max, int steps, int decimals)
@@ -100,5 +134,7 @@ void MotorSliderWidget::setAxis(MotorScan::MotorDataAxis a)
         setUnits(QString::fromUtf16(u"µs"));
         break;
     }
+
+    d_currentAxis = a;
 }
 

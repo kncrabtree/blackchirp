@@ -17,8 +17,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0,0">
      <item>
-      <widget class="MotorZPlot" name="motorZSpectrogramPlot" native="true">
-      </widget>
+      <widget class="MotorZPlot" name="motorZSpectrogramPlot" native="true"/>
      </item>
      <item>
       <widget class="MotorSliderWidget" name="zSlider1" native="true"/>
@@ -43,13 +42,13 @@
       <widget class="MotorTimePlot" name="motorTimePlot" native="true"/>
      </item>
      <item>
-      <widget class="MotorSliderWidget" name="timeSlider1" native="true"/>
+      <widget class="MotorSliderWidget" name="timeXSlider" native="true"/>
      </item>
      <item>
-      <widget class="MotorSliderWidget" name="timeSlider2" native="true"/>
+      <widget class="MotorSliderWidget" name="timeYSlider" native="true"/>
      </item>
      <item>
-      <widget class="MotorSliderWidget" name="timeSlider3" native="true"/>
+      <widget class="MotorSliderWidget" name="timeZSlider" native="true"/>
      </item>
     </layout>
    </item>

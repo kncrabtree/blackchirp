@@ -5,6 +5,7 @@
 #include <QVector>
 #include <QList>
 #include <QPointF>
+#include <QVector3D>
 
 #include <qwt6/qwt_matrix_raster_data.h>
 
@@ -39,15 +40,19 @@ public:
     double yVal(int i) const;
     double zVal(int i) const;
     double tVal(int i) const;
-    double value(MotorDataAxis axis, int i) const;
+    double axisValue(MotorDataAxis axis, int i) const;
+    QPair<double,double> range(MotorDataAxis axis) const;
     QPair<double,double> interval(MotorDataAxis axis) const;
 
-    int shotsPerPoint() const;
-    bool isComplete() const;
+    double value(int x, int y, int z, int t) const;
 
-    QVector<QPointF> tSlice(int x, int y, int z) const;
-    QVector<double> xySlice(int z, int t) const;
-    QVector<double> yzSlice(int x, int t) const;
+    int shotsPerPoint() const;
+    bool isPointComplete() const;
+    bool isComplete() const;
+    QVector3D currentPos() const;
+
+    QVector<double> slice(MotorDataAxis xAxis, MotorDataAxis yAxis, MotorDataAxis otherAxis1, int otherPoint1, MotorDataAxis otherAxis2, int otherPoint2) const;
+    QVector<QPointF> tTrace(int x, int y, int z) const;
 
     void setXPoints(int x);
     void setYPoints(int y);
@@ -57,6 +62,9 @@ public:
 
     void setShotsPerPoint(const int s);
     void initialize();
+    bool addTrace(const QVector<double> d);
+    void advance();
+
 
 
 
@@ -93,6 +101,10 @@ public:
 
     int totalPoints;
     int currentPoint;
+
+    int currentX;
+    int currentY;
+    int currentZ;
 
     QList<QList<QList<QVector<double>>>> zyxtData;
 };

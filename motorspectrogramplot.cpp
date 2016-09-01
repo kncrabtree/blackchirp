@@ -2,6 +2,7 @@
 
 #include <QMenu>
 #include <QMouseEvent>
+#include <algorithm>
 
 #include <qwt6/qwt_color_map.h>
 #include <qwt6/qwt_scale_widget.h>
@@ -88,27 +89,12 @@ void MotorSpectrogramPlot::buildContextMenu(QMouseEvent *me)
 
 }
 
-void MotorSpectrogramPlot::updateData(QVector<double> data, int cols, double min, double max, MotorScan::MotorDataAxis leftAxis, MotorScan::MotorDataAxis bottomAxis)
+void MotorSpectrogramPlot::updateData(QVector<double> data, int cols)
 {
     bool recalcRange = false;
-
-    if(leftAxis != d_leftAxis)
-    {
-        recalcRange = true;
-        setAxis(QwtPlot::yLeft,leftAxis);
-        p_spectrogramData->setInterval(Qt::YAxis,d_intervalList.value(leftAxis));
-        d_max = max;
-        d_min = min;
-    }
-
-    if(bottomAxis != d_bottomAxis)
-    {
-        recalcRange = true;
-        setAxis(QwtPlot::xBottom,bottomAxis);
-        p_spectrogramData->setInterval(Qt::XAxis,d_intervalList.value(bottomAxis));
-        d_max = max;
-        d_min = min;
-    }
+    auto mm = std::minmax_element(data.begin(),data.end());
+    double min = *(mm.first);
+    double max = *(mm.second);
 
     if(d_firstPoint)
     {
