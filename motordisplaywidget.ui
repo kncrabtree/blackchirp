@@ -13,15 +13,45 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0,0">
+  <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="MotorZPlot" name="motorZSpectrogramPlot" native="true"/>
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0,0">
+     <item>
+      <widget class="MotorZPlot" name="motorZSpectrogramPlot" native="true">
+      </widget>
+     </item>
+     <item>
+      <widget class="MotorSliderWidget" name="zSlider1" native="true"/>
+     </item>
+     <item>
+      <widget class="MotorSliderWidget" name="zSlider2" native="true"/>
+     </item>
+    </layout>
    </item>
    <item>
-    <widget class="MotorSliderWidget" name="spectrogramSlider1" native="true"/>
-   </item>
-   <item>
-    <widget class="MotorSliderWidget" name="spectrogramSlider2" native="true"/>
+    <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,0,0,1,0,0,0">
+     <item>
+      <widget class="MotorXYPlot" name="motorXYSpectrogramPlot" native="true"/>
+     </item>
+     <item>
+      <widget class="MotorSliderWidget" name="xySlider1" native="true"/>
+     </item>
+     <item>
+      <widget class="MotorSliderWidget" name="xySlider2" native="true"/>
+     </item>
+     <item>
+      <widget class="MotorTimePlot" name="motorTimePlot" native="true"/>
+     </item>
+     <item>
+      <widget class="MotorSliderWidget" name="timeSlider1" native="true"/>
+     </item>
+     <item>
+      <widget class="MotorSliderWidget" name="timeSlider2" native="true"/>
+     </item>
+     <item>
+      <widget class="MotorSliderWidget" name="timeSlider3" native="true"/>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>
@@ -36,6 +66,18 @@
    <class>MotorZPlot</class>
    <extends>QWidget</extends>
    <header>motorzplot.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>MotorXYPlot</class>
+   <extends>QWidget</extends>
+   <header>motorxyplot.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>MotorTimePlot</class>
+   <extends>QWidget</extends>
+   <header>motortimeplot.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

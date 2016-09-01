@@ -144,6 +144,43 @@ double MotorScan::tVal(int i) const
     return data->t0 + static_cast<double>(i)*data->dt;
 }
 
+double MotorScan::value(MotorScan::MotorDataAxis axis, int i) const
+{
+    if(i<0 || i >= numPoints(axis))
+        return -1.0;
+
+    double out = -1.0;
+
+    switch(axis) {
+    case MotorX:
+        out = xVal(i);
+        break;
+    case MotorY:
+        out = yVal(i);
+        break;
+    case MotorZ:
+        out = zVal(i);
+        break;
+    case MotorT:
+        out = tVal(i);
+        break;
+    }
+
+    return out;
+}
+
+QPair<double, double> MotorScan::interval(MotorScan::MotorDataAxis axis) const
+{
+    double first = value(axis,0);
+    double last = value(axis,numPoints(axis)-1);
+    double halfStep = fabs(first - last)/static_cast<double>(numPoints(axis)-1)/2.0;
+    double min = qMin(first,last) - halfStep;
+    double max = qMax(first,last) + halfStep;
+
+    return qMakePair(min,max);
+
+}
+
 int MotorScan::shotsPerPoint() const
 {
     return data->shotsPerPoint;

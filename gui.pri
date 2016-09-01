@@ -77,13 +77,15 @@ motor {
 			   $$PWD/motorsliderwidget.h \
 			   $$PWD/motorspectrogramplot.h \
 			   $$PWD/motorzplot.h \
-			   $$PWD/motorxyplot.h
+			   $$PWD/motorxyplot.h \
+			   $$PWD/motortimeplot.h
 	SOURCES += $$PWD/motorscandialog.cpp \
 			   $$PWD/motordisplaywidget.cpp \
 			   $$PWD/motorsliderwidget.cpp \
 			   $$PWD/motorspectrogramplot.cpp \
 			   $$PWD/motorzplot.cpp \
-			   $$PWD/motorxyplot.cpp
+			   $$PWD/motorxyplot.cpp \
+			   $$PWD/motortimeplot.cpp
 	FORMS += $$PWD/motorscandialog.ui \
 			 $$PWD/motordisplaywidget.ui
 }

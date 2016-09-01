@@ -9,16 +9,40 @@
 
 MotorSpectrogramPlot::MotorSpectrogramPlot(QWidget *parent) : ZoomPanPlot(QString("motorSpectrogramPlot"),parent)
 {
-    d_zMax = 1.0;
+    d_max = 1.0;
 
     setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
     setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
 
-    setAxisAutoScaleRange(QwtPlot::xBottom,0.0,1.0);
-    setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
+    d_intervalList.insert(MotorScan::MotorX,QwtInterval(0.0,1.0));
+    d_intervalList.insert(MotorScan::MotorY,QwtInterval(0.0,1.0));
+    d_intervalList.insert(MotorScan::MotorZ,QwtInterval(0.0,1.0));
+    d_intervalList.insert(MotorScan::MotorT,QwtInterval(0.0,1.0));
 
     connect(this,&MotorSpectrogramPlot::plotRightClicked,this,&MotorSpectrogramPlot::buildContextMenu);
 
+    p_spectrogramData = new QwtMatrixRasterData;
+    p_spectrogramData->setInterval(Qt::XAxis,QwtInterval(0.0,1.0));
+    p_spectrogramData->setInterval(Qt::YAxis,QwtInterval(0.0,1.0));
+    p_spectrogramData->setInterval(Qt::ZAxis,QwtInterval(0.0,1.0));
+    p_spectrogramData->setValueMatrix(QVector<double>(),1);
+
+
+    p_spectrogram = new QwtPlotSpectrogram();
+    p_spectrogram->setDisplayMode(QwtPlotSpectrogram::ImageMode);
+    p_spectrogram->setDisplayMode(QwtPlotSpectrogram::ContourMode,false);
+    p_spectrogram->setRenderHint(QwtPlotItem::RenderAntialiased);
+    p_spectrogram->setData(p_spectrogramData);
+    p_spectrogram->attach(this);
+
+    enableAxis(QwtPlot::yRight);
+    setAxisOverride(QwtPlot::yRight);
+
+
+}
+
+MotorSpectrogramPlot::~MotorSpectrogramPlot()
+{
 }
 
 void MotorSpectrogramPlot::setLabelText(QwtPlot::Axis axis, QString text)
@@ -30,26 +54,30 @@ void MotorSpectrogramPlot::setLabelText(QwtPlot::Axis axis, QString text)
 
 void MotorSpectrogramPlot::prepareForScan(const MotorScan s)
 {
-
-    if(p_spectrogramData != nullptr)
-        delete p_spectrogramData;
-
-    p_spectrogramData = new QwtMatrixRasterData;
     d_firstPoint = true;
 
-    QVector<double> specDat;
-    int lPoints = s.numPoints(d_leftAxis);
-    int bPoints = s.numPoints(d_bottomAxis);
-    specDat.resize(lPoints*bPoints);
-    p_spectrogramData->setValueMatrix(specDat,bPoints);
+    QwtLinearColorMap *map = new QwtLinearColorMap(Qt::black,Qt::red);
+    map->addColorStop(0.05,Qt::darkBlue);
+    map->addColorStop(0.1,Qt::blue);
+    map->addColorStop(0.25,Qt::cyan);
+    map->addColorStop(0.5,Qt::green);
+    map->addColorStop(0.75,Qt::yellow);
+    map->addColorStop(0.9,QColor(0xff,0x66,0));
 
+    QwtScaleWidget *rightAxis = axisWidget( QwtPlot::yRight );
+    rightAxis->setColorMap(QwtInterval(0.0,1.0),map);
+
+    Q_FOREACH(const MotorScan::MotorDataAxis &axis, d_intervalList.keys())
+    {
+        QPair<double,double> p = s.interval(axis);
+        d_intervalList[axis] = QwtInterval(p.first,p.second);
+    }
+
+    p_spectrogramData->setInterval(Qt::YAxis,d_intervalList.value(d_leftAxis));
+    p_spectrogramData->setInterval(Qt::XAxis,d_intervalList.value(d_bottomAxis));
     p_spectrogramData->setInterval(Qt::ZAxis,QwtInterval(0.0,1.0));
-    p_spectrogram->setData(p_spectrogramData);
-    setAxisAutoScaleRange(QwtPlot::yRight,0.0,1.0);
-    autoScale();
 
-    d_zMax = 0.0;
-    replot();
+    autoScale();
 }
 
 void MotorSpectrogramPlot::buildContextMenu(QMouseEvent *me)
@@ -60,32 +88,74 @@ void MotorSpectrogramPlot::buildContextMenu(QMouseEvent *me)
 
 }
 
-void MotorSpectrogramPlot::updateData(QVector<double> data, int cols, double max, MotorScan::MotorDataAxis leftAxis, MotorScan::MotorDataAxis bottomAxis)
+void MotorSpectrogramPlot::updateData(QVector<double> data, int cols, double min, double max, MotorScan::MotorDataAxis leftAxis, MotorScan::MotorDataAxis bottomAxis)
 {
-    if(leftAxis == d_leftAxis && bottomAxis == d_bottomAxis)
+    bool recalcRange = false;
+
+    if(leftAxis != d_leftAxis)
     {
-        if(max > d_zMax)
-        {
-            setAxisAutoScaleRange(QwtPlot::yRight,0.0,max);
-            p_spectrogramData->setInterval(Qt::ZAxis,QwtInterval(0.0,max));
-
-            QwtLinearColorMap *map2 = new QwtLinearColorMap(Qt::black,Qt::red);
-            map2->addColorStop(0.05,Qt::darkBlue);
-            map2->addColorStop(0.1,Qt::blue);
-            map2->addColorStop(0.25,Qt::cyan);
-            map2->addColorStop(0.5,Qt::green);
-            map2->addColorStop(0.75,Qt::yellow);
-            map2->addColorStop(0.9,QColor(0xff,0x66,0));
-
-            QwtScaleWidget *rightAxis = axisWidget( QwtPlot::yRight );
-            rightAxis->setColorMap(QwtInterval(0.0,max),map2);
-
-            d_zMax = max;
-        }
-
-        p_spectrogramData->setValueMatrix(data,cols);
+        recalcRange = true;
+        setAxis(QwtPlot::yLeft,leftAxis);
+        p_spectrogramData->setInterval(Qt::YAxis,d_intervalList.value(leftAxis));
+        d_max = max;
+        d_min = min;
     }
 
+    if(bottomAxis != d_bottomAxis)
+    {
+        recalcRange = true;
+        setAxis(QwtPlot::xBottom,bottomAxis);
+        p_spectrogramData->setInterval(Qt::XAxis,d_intervalList.value(bottomAxis));
+        d_max = max;
+        d_min = min;
+    }
+
+    if(d_firstPoint)
+    {
+        recalcRange = true;
+        d_firstPoint = false;
+        d_max = max;
+        d_min = min;
+    }
+
+    if(max > d_max)
+    {
+        recalcRange = true;
+        d_max = max;
+    }
+
+    if(min < d_min)
+    {
+        recalcRange = true;
+        d_min = min;
+    }
+
+    if(recalcRange)
+        recalculateZRange();
+
+    p_spectrogramData->setValueMatrix(data,cols);
+    replot();
+}
+
+void MotorSpectrogramPlot::updatePoint(int row, int col, double val)
+{
+    bool recalcRange = false;
+    if(val > d_max)
+    {
+        recalcRange = true;
+        d_max = val;
+    }
+
+    if(val < d_min)
+    {
+        recalcRange = true;
+        d_min = val;
+    }
+
+    if(recalcRange)
+        recalculateZRange();
+
+    p_spectrogramData->setValue(row,col,val);
     replot();
 }
 
@@ -120,4 +190,35 @@ void MotorSpectrogramPlot::setAxis(QwtPlot::Axis plotAxis, MotorScan::MotorDataA
 
 void MotorSpectrogramPlot::filterData()
 {
+}
+
+void MotorSpectrogramPlot::recalculateZRange()
+{
+    p_spectrogramData->setInterval(Qt::ZAxis,QwtInterval(d_min,d_max));
+
+    QwtLinearColorMap *map = new QwtLinearColorMap(Qt::black,Qt::red);
+    map->addColorStop(0.05,Qt::darkBlue);
+    map->addColorStop(0.1,Qt::blue);
+    map->addColorStop(0.25,Qt::cyan);
+    map->addColorStop(0.5,Qt::green);
+    map->addColorStop(0.75,Qt::yellow);
+    map->addColorStop(0.9,QColor(0xff,0x66,0));
+
+    QwtScaleWidget *rightAxis = axisWidget( QwtPlot::yRight );
+    rightAxis->setColorMap(QwtInterval(d_min,d_max),map);
+    p_spectrogramData->setInterval(Qt::ZAxis,QwtInterval(d_min,d_max));
+}
+
+
+void MotorSpectrogramPlot::replot()
+{
+    setAxisAutoScaleRange(QwtPlot::xBottom,p_spectrogramData->interval(Qt::XAxis).minValue(),
+                          p_spectrogramData->interval(Qt::XAxis).maxValue());
+    setAxisAutoScaleRange(QwtPlot::yLeft,p_spectrogramData->interval(Qt::YAxis).minValue(),
+                          p_spectrogramData->interval(Qt::YAxis).maxValue());
+    setAxisAutoScaleRange(QwtPlot::yRight,p_spectrogramData->interval(Qt::ZAxis).minValue(),
+                          p_spectrogramData->interval(Qt::ZAxis).maxValue());
+
+    ZoomPanPlot::replot();
+
 }

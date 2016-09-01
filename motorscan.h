@@ -39,6 +39,8 @@ public:
     double yVal(int i) const;
     double zVal(int i) const;
     double tVal(int i) const;
+    double value(MotorDataAxis axis, int i) const;
+    QPair<double,double> interval(MotorDataAxis axis) const;
 
     int shotsPerPoint() const;
     bool isComplete() const;
