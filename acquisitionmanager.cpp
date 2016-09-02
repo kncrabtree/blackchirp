@@ -5,6 +5,9 @@
 AcquisitionManager::AcquisitionManager(QObject *parent) : QObject(parent), d_state(Idle), d_currentShift(0), d_lastFom(0.0)
 {
     p_saveThread = new QThread(this);
+#ifdef BC_MOTOR
+    d_waitingForMotor = false;
+#endif
 }
 
 AcquisitionManager::~AcquisitionManager()
@@ -264,6 +267,79 @@ void AcquisitionManager::abort()
         finishAcquisition();
     }
 }
+
+#ifdef BC_MOTOR
+void AcquisitionManager::startMotorScan(MotorScan s)
+{
+    //this would be bad!
+    if(d_state != Idle)
+        return;
+
+
+    d_currentMotorScan = s;
+    d_waitingForMotor = true;
+
+    //also need to initialize oscilloscope here!
+
+    QVector3D pos = s.currentPos();
+    emit startMotorMove(pos.x(),pos.y(),pos.z());
+    d_state = Acquiring;
+    d_currentMotorScan.initialize();
+}
+
+void AcquisitionManager::motorMoveComplete(bool success)
+{
+    //if motor move not successful, abort acquisition
+    if(!success)
+        abortMotorScan();
+    else
+    {
+        d_waitingForMotor = false;
+    }
+}
+
+void AcquisitionManager::motorTraceReceived(const QVector<double> dat)
+{
+    if(d_state == Acquiring && d_currentMotorScan.isInitialized() && !d_waitingForMotor)
+    {
+        bool adv = d_currentMotorScan.addTrace(dat);
+        if(adv)
+        {
+            if(d_currentMotorScan.isComplete())
+                finishMotorScan();
+            else
+            {
+                QVector3D pos = d_currentMotorScan.currentPos();
+                emit startMotorMove(pos.x(),pos.y(),pos.z());
+                d_waitingForMotor = true;
+            }
+        }
+    }
+
+    //TODO: construct a rolling average waveform and send to UI
+}
+
+void AcquisitionManager::abortMotorScan()
+{
+    if(d_state == Acquiring || d_state == Paused)
+    {
+        d_currentMotorScan.abort();
+        finishMotorScan();
+    }
+}
+
+void AcquisitionManager::finishMotorScan()
+{
+    if(d_state == Acquiring || d_state == Paused)
+    {
+        d_state = Idle;
+        d_waitingForMotor = false;
+        //save data!
+
+        d_currentMotorScan = MotorScan();
+    }
+}
+#endif
 
 void AcquisitionManager::checkComplete()
 {

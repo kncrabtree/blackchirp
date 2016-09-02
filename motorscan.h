@@ -23,6 +23,7 @@ public:
 
     static MotorScan fromSettings();
     void saveToSettings() const;
+    bool isInitialized() const;
 
     int xPoints() const;
     int yPoints() const;
@@ -58,6 +59,7 @@ public:
     void initialize();
     bool addTrace(const QVector<double> d);
     void advance();
+    void abort();
 
 
 
@@ -80,6 +82,7 @@ public:
     int tPoints;
 
 
+
     double x0;
     double y0;
     double z0;
@@ -90,6 +93,7 @@ public:
     double dz;
     double dt;
 
+    bool initialized;
     int shotsPerPoint;
     int currentPointShots;
 

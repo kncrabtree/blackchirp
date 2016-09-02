@@ -70,6 +70,11 @@ void MotorScan::saveToSettings() const
     s.sync();
 }
 
+bool MotorScan::isInitialized() const
+{
+    return data->initialized;
+}
+
 int MotorScan::xPoints() const
 {
     return data->xPoints;
@@ -369,6 +374,7 @@ void MotorScan::initialize()
         data->zyxtData.append(yd);
     }
 
+    data->initialized = true;
     data->currentPointShots = 0;
     data->currentPoint = 0;
     data->totalPoints = data->xPoints*data->yPoints*data->zPoints;
@@ -382,7 +388,7 @@ bool MotorScan::addTrace(const QVector<double> d)
     QVector<double> newDat = data->zyxtData.at(data->currentZ).at(data->currentY).at(data->currentX);
 
     data->currentPointShots++;
-    bool adv = data->currentPointShots < data->shotsPerPoint;
+    bool adv = isPointComplete();
     if(!adv)
     {
         for(int i=0; i<newDat.size() && i < d.size(); i++)
@@ -419,6 +425,15 @@ void MotorScan::advance()
     }
 
     data->currentPointShots = 0;
+}
+
+void MotorScan::abort()
+{
+    if(data->currentPointShots < data->shotsPerPoint && data->currentPointShots > 0)
+    {
+        for(int i=0; i<tPoints(); i++)
+            data->zyxtData[data->currentZ][data->currentY][data->currentX][i]/=static_cast<double>(data->currentPointShots);
+    }
 }
 
 

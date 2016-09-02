@@ -14,6 +14,10 @@
 #include "gpuaverager.h"
 #endif
 
+#ifdef BC_MOTOR
+#include "motorscan.h"
+#endif
+
 class AcquisitionManager : public QObject
 {
     Q_OBJECT
@@ -51,6 +55,10 @@ signals:
     void lifShotAcquired(int);
 #endif
 
+#ifdef BC_MOTOR
+    void startMotorMove(double x, double y, double z);
+#endif
+
 public slots:
     void beginExperiment(Experiment exp);
     void processFtmwScopeShot(const QByteArray b);
@@ -68,6 +76,14 @@ public slots:
     void lifHardwareReady(bool success);
 #endif
 
+#ifdef BC_MOTOR
+    void startMotorScan(MotorScan s);
+    void motorMoveComplete(bool success);
+    void motorTraceReceived(const QVector<double> dat);
+    void abortMotorScan();
+    void finishMotorScan();
+#endif
+
 private:
     Experiment d_currentExperiment;
     AcquisitionState d_state;
@@ -83,6 +99,11 @@ private:
 
 #ifdef BC_CUDA
     GpuAverager gpuAvg;
+#endif
+
+#ifdef BC_MOTOR
+    bool d_waitingForMotor;
+    MotorScan d_currentMotorScan;
 #endif
 
 
