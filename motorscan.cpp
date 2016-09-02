@@ -90,21 +90,21 @@ int MotorScan::tPoints() const
     return data->tPoints;
 }
 
-int MotorScan::numPoints(MotorScan::MotorDataAxis axis) const
+int MotorScan::numPoints(BlackChirp::MotorAxis axis) const
 {
     int out = 0;
 
     switch(axis) {
-    case MotorX:
+    case BlackChirp::MotorX:
         out = xPoints();
         break;
-    case MotorY:
+    case BlackChirp::MotorY:
         out = yPoints();
         break;
-    case MotorZ:
+    case BlackChirp::MotorZ:
         out = zPoints();
         break;
-    case MotorT:
+    case BlackChirp::MotorT:
         out = tPoints();
         break;
     }
@@ -144,7 +144,7 @@ double MotorScan::tVal(int i) const
     return data->t0 + static_cast<double>(i)*data->dt;
 }
 
-double MotorScan::axisValue(MotorScan::MotorDataAxis axis, int i) const
+double MotorScan::axisValue(BlackChirp::MotorAxis axis, int i) const
 {
     if(i<0 || i >= numPoints(axis))
         return -1.0;
@@ -152,16 +152,16 @@ double MotorScan::axisValue(MotorScan::MotorDataAxis axis, int i) const
     double out = -1.0;
 
     switch(axis) {
-    case MotorX:
+    case BlackChirp::MotorX:
         out = xVal(i);
         break;
-    case MotorY:
+    case BlackChirp::MotorY:
         out = yVal(i);
         break;
-    case MotorZ:
+    case BlackChirp::MotorZ:
         out = zVal(i);
         break;
-    case MotorT:
+    case BlackChirp::MotorT:
         out = tVal(i);
         break;
     }
@@ -169,14 +169,14 @@ double MotorScan::axisValue(MotorScan::MotorDataAxis axis, int i) const
     return out;
 }
 
-QPair<double, double> MotorScan::range(MotorScan::MotorDataAxis axis) const
+QPair<double, double> MotorScan::range(BlackChirp::MotorAxis axis) const
 {
     double first = axisValue(axis,0);
     double last = axisValue(axis,numPoints(axis)-1);
     return qMakePair(first,last);
 }
 
-QPair<double, double> MotorScan::interval(MotorScan::MotorDataAxis axis) const
+QPair<double, double> MotorScan::interval(BlackChirp::MotorAxis axis) const
 {
     double first = axisValue(axis,0);
     double last = axisValue(axis,numPoints(axis)-1);
@@ -213,7 +213,7 @@ QVector3D MotorScan::currentPos() const
     return QVector3D(xVal(data->currentX),yVal(data->currentY),zVal(data->currentZ));
 }
 
-QVector<double> MotorScan::slice(MotorScan::MotorDataAxis xAxis, MotorScan::MotorDataAxis yAxis, MotorScan::MotorDataAxis otherAxis1, int otherPoint1, MotorScan::MotorDataAxis otherAxis2, int otherPoint2) const
+QVector<double> MotorScan::slice(BlackChirp::MotorAxis xAxis, BlackChirp::MotorAxis yAxis, BlackChirp::MotorAxis otherAxis1, int otherPoint1, BlackChirp::MotorAxis otherAxis2, int otherPoint2) const
 {
 
     if(xAxis == yAxis || xAxis == otherAxis1 || xAxis == otherAxis2 || yAxis == otherAxis1 ||
@@ -225,64 +225,64 @@ QVector<double> MotorScan::slice(MotorScan::MotorDataAxis xAxis, MotorScan::Moto
 
     switch(xAxis)
     {
-    case MotorX:
+    case BlackChirp::MotorX:
         x = &i;
         break;
-    case MotorY:
+    case BlackChirp::MotorY:
         y = &i;
         break;
-    case MotorZ:
+    case BlackChirp::MotorZ:
         z = &i;
         break;
-    case MotorT:
+    case BlackChirp::MotorT:
         t = &i;
         break;
     }
 
     switch(yAxis)
     {
-    case MotorX:
+    case BlackChirp::MotorX:
         x = &j;
         break;
-    case MotorY:
+    case BlackChirp::MotorY:
         y = &j;
         break;
-    case MotorZ:
+    case BlackChirp::MotorZ:
         z = &j;
         break;
-    case MotorT:
+    case BlackChirp::MotorT:
         t = &j;
         break;
     }
 
     switch(otherAxis1)
     {
-    case MotorX:
+    case BlackChirp::MotorX:
         x = &k;
         break;
-    case MotorY:
+    case BlackChirp::MotorY:
         y = &k;
         break;
-    case MotorZ:
+    case BlackChirp::MotorZ:
         z = &k;
         break;
-    case MotorT:
+    case BlackChirp::MotorT:
         t = &k;
         break;
     }
 
     switch(otherAxis2)
     {
-    case MotorX:
+    case BlackChirp::MotorX:
         x = &l;
         break;
-    case MotorY:
+    case BlackChirp::MotorY:
         y = &l;
         break;
-    case MotorZ:
+    case BlackChirp::MotorZ:
         z = &l;
         break;
-    case MotorT:
+    case BlackChirp::MotorT:
         t = &l;
         break;
     }

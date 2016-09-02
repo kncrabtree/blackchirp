@@ -14,16 +14,16 @@ class MotorSliderWidget : public QWidget
     Q_OBJECT
 public:
     explicit MotorSliderWidget(QWidget *parent = 0);
-    MotorScan::MotorDataAxis axis() const;
+    BlackChirp::MotorAxis axis() const;
     int currentIndex() const;
 
 signals:
     void valueChanged(int);
 
 public slots:
-    void changeAxis(MotorScan::MotorDataAxis a, const MotorScan s);
+    void changeAxis(BlackChirp::MotorAxis a, const MotorScan s);
     void setRange(const MotorScan s);
-    void setAxis(MotorScan::MotorDataAxis a);
+    void setAxis(BlackChirp::MotorAxis a);
     void updateSlider(double newVal);
     void updateBox(int newVal);
 
@@ -31,7 +31,7 @@ protected:
     QLabel *p_label;
     QSlider *p_slider;
     QDoubleSpinBox *p_dsb;
-    MotorScan::MotorDataAxis d_currentAxis;
+    BlackChirp::MotorAxis d_currentAxis;
 
     double d_min, d_max, d_stepSize;
     int d_numSteps;

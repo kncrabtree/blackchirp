@@ -6,8 +6,8 @@
 MotorXYPlot::MotorXYPlot(QWidget *parent) : MotorSpectrogramPlot(parent)
 {
     setName(QString("motorXYPlot"));
-    setAxis(QwtPlot::yLeft,MotorScan::MotorY);
-    setAxis(QwtPlot::xBottom,MotorScan::MotorX);
+    setAxis(QwtPlot::yLeft,BlackChirp::MotorY);
+    setAxis(QwtPlot::xBottom,BlackChirp::MotorX);
 }
 
 

@@ -15,10 +15,10 @@ MotorSpectrogramPlot::MotorSpectrogramPlot(QWidget *parent) : ZoomPanPlot(QStrin
     setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
     setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
 
-    d_intervalList.insert(MotorScan::MotorX,QwtInterval(0.0,1.0));
-    d_intervalList.insert(MotorScan::MotorY,QwtInterval(0.0,1.0));
-    d_intervalList.insert(MotorScan::MotorZ,QwtInterval(0.0,1.0));
-    d_intervalList.insert(MotorScan::MotorT,QwtInterval(0.0,1.0));
+    d_intervalList.insert(BlackChirp::MotorX,QwtInterval(0.0,1.0));
+    d_intervalList.insert(BlackChirp::MotorY,QwtInterval(0.0,1.0));
+    d_intervalList.insert(BlackChirp::MotorZ,QwtInterval(0.0,1.0));
+    d_intervalList.insert(BlackChirp::MotorT,QwtInterval(0.0,1.0));
 
     connect(this,&MotorSpectrogramPlot::plotRightClicked,this,&MotorSpectrogramPlot::buildContextMenu);
 
@@ -68,7 +68,7 @@ void MotorSpectrogramPlot::prepareForScan(const MotorScan s)
     QwtScaleWidget *rightAxis = axisWidget( QwtPlot::yRight );
     rightAxis->setColorMap(QwtInterval(0.0,1.0),map);
 
-    Q_FOREACH(const MotorScan::MotorDataAxis &axis, d_intervalList.keys())
+    Q_FOREACH(const BlackChirp::MotorAxis &axis, d_intervalList.keys())
     {
         QPair<double,double> p = s.interval(axis);
         d_intervalList[axis] = QwtInterval(p.first,p.second);
@@ -145,21 +145,21 @@ void MotorSpectrogramPlot::updatePoint(int row, int col, double val)
     replot();
 }
 
-void MotorSpectrogramPlot::setAxis(QwtPlot::Axis plotAxis, MotorScan::MotorDataAxis motorAxis)
+void MotorSpectrogramPlot::setAxis(QwtPlot::Axis plotAxis, BlackChirp::MotorAxis motorAxis)
 {
     QString text;
 
     switch (motorAxis) {
-    case MotorScan::MotorX:
+    case BlackChirp::MotorX:
         text = QString("X (mm)");
         break;
-    case MotorScan::MotorY:
+    case BlackChirp::MotorY:
         text = QString("Y (mm)");
         break;
-    case MotorScan::MotorZ:
+    case BlackChirp::MotorZ:
         text = QString("Z (mm)");
         break;
-    case MotorScan::MotorT:
+    case BlackChirp::MotorT:
         text = QString::fromUtf16(u"T (µs)");
         break;
     }

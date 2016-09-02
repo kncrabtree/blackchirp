@@ -104,10 +104,12 @@ void VirtualMotorController::checkLimit()
 {
     bool nx = fabs(d_xPos-d_xRange.first) < 0.01;
     bool px = fabs(d_xPos-d_xRange.second) < 0.01;
+    emit limitStatus(BlackChirp::MotorX,nx,px);
     bool ny = fabs(d_yPos-d_yRange.first) < 0.01;
     bool py = fabs(d_yPos-d_yRange.second) < 0.01;
+    emit limitStatus(BlackChirp::MotorY,ny,py);
     bool nz = fabs(d_zPos-d_zRange.first) < 0.01;
     bool pz = fabs(d_zPos-d_zRange.second) < 0.01;
+    emit limitStatus(BlackChirp::MotorZ,nz,pz);
 
-    emit limitStatus(nx,px,ny,py,nz,pz);
 }

@@ -24,7 +24,7 @@ MotorSliderWidget::MotorSliderWidget(QWidget *parent) : QWidget(parent)
 
     setLayout(l);
 
-    setAxis(MotorScan::MotorX);
+    setAxis(BlackChirp::MotorX);
 
     connect(p_slider,&QSlider::valueChanged,this,&MotorSliderWidget::valueChanged);
     connect(p_slider,&QSlider::valueChanged,this,&MotorSliderWidget::updateBox);
@@ -32,7 +32,7 @@ MotorSliderWidget::MotorSliderWidget(QWidget *parent) : QWidget(parent)
 
 }
 
-MotorScan::MotorDataAxis MotorSliderWidget::axis() const
+BlackChirp::MotorAxis MotorSliderWidget::axis() const
 {
     return d_currentAxis;
 }
@@ -42,7 +42,7 @@ int MotorSliderWidget::currentIndex() const
     return p_slider->value();
 }
 
-void MotorSliderWidget::changeAxis(MotorScan::MotorDataAxis a, const MotorScan s)
+void MotorSliderWidget::changeAxis(BlackChirp::MotorAxis a, const MotorScan s)
 {
     setAxis(a);
     setRange(s);
@@ -113,23 +113,23 @@ void MotorSliderWidget::setUnits(QString u)
     p_dsb->setSuffix(QString(" ")+u);
 }
 
-void MotorSliderWidget::setAxis(MotorScan::MotorDataAxis a)
+void MotorSliderWidget::setAxis(BlackChirp::MotorAxis a)
 {
     switch(a)
     {
-    case MotorScan::MotorX:
+    case BlackChirp::MotorX:
         setLabel(QString("X"));
         setUnits(QString("mm"));
         break;
-    case MotorScan::MotorY:
+    case BlackChirp::MotorY:
         setLabel(QString("Y"));
         setUnits(QString("mm"));
         break;
-    case MotorScan::MotorZ:
+    case BlackChirp::MotorZ:
         setLabel(QString("Z"));
         setUnits(QString("mm"));
         break;
-    case MotorScan::MotorT:
+    case BlackChirp::MotorT:
         setLabel(QString("T"));
         setUnits(QString::fromUtf16(u"µs"));
         break;

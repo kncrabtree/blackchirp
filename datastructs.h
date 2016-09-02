@@ -65,7 +65,8 @@ enum FlowSetting {
 enum MotorAxis {
     MotorX,
     MotorY,
-    MotorZ
+    MotorZ,
+    MotorT
 };
 
 enum PulseActiveLevel { PulseLevelActiveLow, PulseLevelActiveHigh };
