@@ -75,6 +75,11 @@ bool MotorScan::isInitialized() const
     return data->initialized;
 }
 
+bool MotorScan::hardwareError() const
+{
+    return data->hardwareError;
+}
+
 int MotorScan::xPoints() const
 {
     return data->xPoints;
@@ -320,6 +325,11 @@ QVector<QPointF> MotorScan::tTrace(int x, int y, int z) const
 
 }
 
+BlackChirp::MotorScopeConfig MotorScan::scopeConfig() const
+{
+    return data->scopeConfig;
+}
+
 void MotorScan::setXPoints(int x)
 {
     data->xPoints = x;
@@ -354,6 +364,16 @@ void MotorScan::setIntervals(double x0, double y0, double z0, double dx, double 
 void MotorScan::setShotsPerPoint(const int s)
 {
     data->shotsPerPoint = s;
+}
+
+void MotorScan::setScopeConfig(const BlackChirp::MotorScopeConfig &sc)
+{
+    data->scopeConfig = sc;
+}
+
+void MotorScan::setHardwareError()
+{
+    data->hardwareError = true;
 }
 
 void MotorScan::initialize()

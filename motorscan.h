@@ -24,6 +24,7 @@ public:
     static MotorScan fromSettings();
     void saveToSettings() const;
     bool isInitialized() const;
+    bool hardwareError() const;
 
     int xPoints() const;
     int yPoints() const;
@@ -48,6 +49,7 @@ public:
 
     QVector<double> slice(BlackChirp::MotorAxis xAxis, BlackChirp::MotorAxis yAxis, BlackChirp::MotorAxis otherAxis1, int otherPoint1, BlackChirp::MotorAxis otherAxis2, int otherPoint2) const;
     QVector<QPointF> tTrace(int x, int y, int z) const;
+    BlackChirp::MotorScopeConfig scopeConfig() const;
 
     void setXPoints(int x);
     void setYPoints(int y);
@@ -56,6 +58,8 @@ public:
     void setIntervals(double x0, double y0, double z0, double dx, double dy, double dz);
 
     void setShotsPerPoint(const int s);
+    void setScopeConfig(const BlackChirp::MotorScopeConfig &sc);
+    void setHardwareError();
     void initialize();
     bool addTrace(const QVector<double> d);
     void advance();
@@ -74,7 +78,8 @@ class MotorScanData : public QSharedData
 {
 public:
     MotorScanData() : xPoints(0), yPoints(0), zPoints(0), tPoints(0),
-    x0(0.0), y0(0.0), z0(0.0), t0(0.0), dx(1.0), dy(1.0), dz(1.0), dt(1.0) {}
+    x0(0.0), y0(0.0), z0(0.0), t0(0.0), dx(1.0), dy(1.0), dz(1.0), dt(1.0),
+      initialized(false), hardwareError(false) {}
 
     int xPoints;
     int yPoints;
@@ -94,6 +99,7 @@ public:
     double dt;
 
     bool initialized;
+    bool hardwareError;
     int shotsPerPoint;
     int currentPointShots;
 
@@ -105,6 +111,7 @@ public:
     int currentZ;
 
     QList<QList<QList<QVector<double>>>> zyxtData;
+    BlackChirp::MotorScopeConfig scopeConfig;
 };
 
 #endif // MOTORSCAN_H

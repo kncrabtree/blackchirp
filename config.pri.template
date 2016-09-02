@@ -67,6 +67,9 @@ LIFSCOPE=1
 ##### MOTOR ONLY #####
 #Motor controller (0 = virtual, 1 = SCX11)
 MOTOR=1
+
+#Motor scope (0 = virtual, 1 = Pico2206B)
+MOTORSCOPE=1
 ##### END MOTOR ONLY #####
 
 } else {
@@ -86,6 +89,7 @@ LIFSCOPE=0
 IOBOARD=0
 GPIB=0
 MOTOR=0
+MOTORSCOPE=0
 }
 
 
@@ -147,6 +151,7 @@ lif {
 motor {
 	DEFINES += BC_MOTOR
 	DEFINES += BC_MOTORCONTROLLER=$$MOTOR
+        DEFINES += BC_MOTORSCOPE=$$MOTORSCOPE
 }
 
 DEFINES += BC_FTMWSCOPE=$$FTMWSCOPE

@@ -7,10 +7,7 @@ VirtualMotorController::VirtualMotorController(QObject *parent) :
 {
     d_subKey = QString("virtual");
     d_prettyName = QString("Virtual Motor Controller");
-
-    p_comm = new VirtualInstrument(d_key,this);
-    connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
-    connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
+    d_commType = CommunicationProtocol::Virtual;
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);

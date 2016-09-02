@@ -22,8 +22,9 @@ HEADERS += \
     $$PWD/scx11.h \
     $$PWD/virtualsynth.h \
     $$PWD/labjacku3.h \
-    $$PWD/u3.h
-
+    $$PWD/u3.h \
+    $$PWD/virtualmotorscope.h \
+    $$PWD/pico2206b.h
 
 SOURCES += \
     $$PWD/virtualftmwscope.cpp \
@@ -47,7 +48,9 @@ SOURCES += \
     $$PWD/scx11.cpp \
     $$PWD/virtualsynth.cpp \
     $$PWD/labjacku3.cpp \
-    $$PWD/u3.cpp
+    $$PWD/u3.cpp \
+    $$PWD/virtualmotorscope.cpp \
+    $$PWD/pico2206b.cpp
 
 } else {
 
@@ -150,13 +153,22 @@ lif {
 
 motor {
 	equals(MOTOR,0) {
-		HEADERS += $$PWD/virtualmotorcontroller.h
-		SOURCES += $$PWD/virtualmotorcontroller.cpp
+                HEADERS += $$PWD/virtualmotorcontroller.h
+                SOURCES += $$PWD/virtualmotorcontroller.cpp
 	}
 	equals(MOTOR,1) {
 		HEADERS += $$PWD/scx11.h
 		SOURCES += $$PWD/scx11.cpp
 	}
+
+        equals(MOTORSCOPE,0) {
+                HEADERS += $$PWD/virtualmotorscope.h
+                SOURCES += $$PWD/virtualmotorscope.cpp
+        }
+        equals(MOTORSCOPE,1) {
+                HEADERS += $$PWD/pico2206b.h
+                SOURCES += $$PWD/pico2206b.cpp
+        }
 }
 
 }
