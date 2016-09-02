@@ -19,9 +19,10 @@ HEADERS += \
     $$PWD/pldrogroup.h \
     $$PWD/awg7122b.h \
     $$PWD/virtualmotorcontroller.h \
-	$$PWD/virtualsynth.h \
-	$$PWD/labjacku3.h \
-	$$PWD/u3.h
+    $$PWD/scx11.h \
+    $$PWD/virtualsynth.h \
+    $$PWD/labjacku3.h \
+    $$PWD/u3.h
 
 
 SOURCES += \
@@ -43,9 +44,11 @@ SOURCES += \
     $$PWD/pldrogroup.cpp \
     $$PWD/awg7122b.cpp \
     $$PWD/virtualmotorcontroller.cpp \
-	$$PWD/virtualsynth.cpp \
-	$$PWD/labjacku3.cpp \
-	$$PWD/u3.cpp
+    $$PWD/scx11.cpp \
+    $$PWD/virtualsynth.cpp \
+    $$PWD/labjacku3.cpp \
+    $$PWD/u3.cpp
+
 } else {
 
 equals(FTMWSCOPE,0) {
@@ -149,6 +152,10 @@ motor {
 	equals(MOTOR,0) {
 		HEADERS += $$PWD/virtualmotorcontroller.h
 		SOURCES += $$PWD/virtualmotorcontroller.cpp
+	}
+	equals(MOTOR,1) {
+		HEADERS += $$PWD/scx11.h
+		SOURCES += $$PWD/scx11.cpp
 	}
 }
 

@@ -14,8 +14,10 @@ public:
     MotorController(QObject *parent = nullptr);
 
 signals:
-    void motionComplete();
-    void limitStatus(bool nx, bool px, bool ny, bool py, bool nz, bool pz);
+    void motionComplete(bool success = true);
+    //void limitStatus(bool nx, bool px, bool ny, bool py, bool nz, bool pz);
+    void limitStatus(BlackChirp::MotorAxis axis, bool negLimit, bool posLimit);
+
     void posUpdate(BlackChirp::MotorAxis axis, double pos);
 
 public slots:
