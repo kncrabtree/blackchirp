@@ -32,8 +32,9 @@ private:
     int d_xId;
     int d_yId;
     int d_zId;
+    int d_nextRead;
     bool moveAxis(BlackChirp::MotorAxis axis, double pos);
-
+    void checkLimitOneAxis(BlackChirp::MotorAxis axis);
 
 
 

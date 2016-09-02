@@ -15,7 +15,9 @@ public:
 
 signals:
     void motionComplete(bool success = true);
-    void limitStatus(bool nx, bool px, bool ny, bool py, bool nz, bool pz);
+    //void limitStatus(bool nx, bool px, bool ny, bool py, bool nz, bool pz);
+    void limitStatus(BlackChirp::MotorAxis axis, bool negLimit, bool posLimit);
+
     void posUpdate(BlackChirp::MotorAxis axis, double pos);
 
 public slots:

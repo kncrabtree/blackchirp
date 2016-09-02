@@ -17,6 +17,8 @@ Scx11::Scx11(QObject *parent) : MotorController(parent)
     s.setValue(QString("zId"),d_zId);
     s.endGroup();
     s.endGroup();
+
+
 }
 
 
@@ -58,6 +60,8 @@ bool Scx11::testConnection()
 
     emit logMessage(QString("ID response: %1").arg(QString(resp.trimmed())));
     emit connected();
+    p_limitTimer->start();
+    d_nextRead = 0;
     return true;
 }
 
@@ -65,7 +69,9 @@ void Scx11::initialize()
 {
     p_comm->initialize();
     p_comm->setReadOptions(1000,true,QByteArray(">"));
+    p_limitTimer->stop();
     testConnection();
+
 
     // need to set default velocity and acceleration time here.
 
@@ -90,21 +96,36 @@ void Scx11::moveToPosition(double x, double y, double z)
 
     if (abs(d_xPos-x) >= 0.001)
     {
-
         axis = BlackChirp::MotorAxis::MotorX;
         done = Scx11::moveAxis(axis, x);
+        if (!done)
+        {
+            emit hardwareFailure();
+            return;
+        }
+
     }
     if (abs(d_yPos-y) >= 0.001)
     {
         axis = BlackChirp::MotorAxis::MotorY;
         done = Scx11::moveAxis(axis, y);
+        if (!done)
+        {
+            emit hardwareFailure();
+            return;
+        }
     }
     if (abs(d_zPos-z) >= 0.001)
     {
         axis = BlackChirp::MotorAxis::MotorZ;
         done = Scx11::moveAxis(axis, z);
+        if (!done)
+        {
+            emit hardwareFailure();
+            return;
+        }
     }
-
+    return;
 }
 
 bool Scx11::prepareForMotorScan(const MotorScan ms)
@@ -120,6 +141,28 @@ void Scx11::moveToRestingPos()
 
 void Scx11::checkLimit()
 {
+    BlackChirp::MotorAxis axis;
+
+    if(d_nextRead == 0)
+    {
+        axis = BlackChirp::MotorAxis::MotorX;
+    }
+    else if(d_nextRead == 1)
+    {
+        axis = BlackChirp::MotorAxis::MotorY;
+    }
+    else if(d_nextRead == 2)
+    {
+        axis = BlackChirp::MotorAxis::MotorY;
+    }
+
+    Scx11::checkLimitOneAxis(axis);
+
+    d_nextRead += 1;
+    if(d_nextRead == 3)
+    {
+        d_nextRead = 0;
+    }
 }
 
 bool Scx11::moveAxis(BlackChirp::MotorAxis axis, double pos)
@@ -153,7 +196,9 @@ bool Scx11::moveAxis(BlackChirp::MotorAxis axis, double pos)
         p_comm->device()->waitForReadyRead(50);
         resp = p_comm->queryCmd(QString("SIGMOVE\n"));
         if(resp.contains("0"))
+        {
             done = true;
+        }
 
         if(resp.isEmpty())
         {
@@ -168,4 +213,60 @@ bool Scx11::moveAxis(BlackChirp::MotorAxis axis, double pos)
 
     emit posUpdate(axis, pos);
     return true;
+}
+
+void Scx11::checkLimitOneAxis(BlackChirp::MotorAxis axis)
+{
+    int id;
+
+    switch(axis)
+    {
+    case BlackChirp::MotorX:
+        id = d_xId;
+        break;
+    case BlackChirp::MotorY:
+        id = d_yId;
+        break;
+    case BlackChirp::MotorZ:
+        id = d_zId;
+        break;
+    }
+
+    bool sigPositive, sigNegative;
+
+    p_comm->writeCmd(QString("@%1\n").arg(id));
+    QByteArray resp = p_comm->queryCmd(QString("SIGLSP\n"));
+
+    if(resp.contains("0"))
+    {
+        sigPositive = false;
+    }
+    else if(resp.contains("1"))
+    {
+        sigPositive = true;
+    }
+    else
+    {
+        emit hardwareFailure();
+        return;
+    }
+
+    resp = p_comm->queryCmd(QString("SIGLSN\n"));
+
+    if(resp.contains("0"))
+    {
+        sigNegative = false;
+    }
+    else if(resp.contains("1"))
+    {
+        sigNegative = true;
+    }
+    else
+    {
+        emit hardwareFailure();
+        return;
+    }
+
+    emit limitStatus(axis, sigPositive, sigNegative);
+    return;
 }
