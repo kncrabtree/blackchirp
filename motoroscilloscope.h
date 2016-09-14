@@ -24,6 +24,10 @@ public slots:
 
 signals:
     void traceAcquired(QVector<double> d);
+
+protected:
+    BlackChirp::MotorScopeConfig d_config;
+
 };
 
 #if BC_MOTORSCOPE==1
