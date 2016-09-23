@@ -31,7 +31,9 @@ private:
     QTimer *p_acquisitionTimer;
     int16_t isReady;
     bool d_acquiring;
-    int16_t d;
+    int16_t d[1024];
+    //QVector<int16_t> d;
+    int num;
 
     void beginAcquisition();
     void endAcquisition();
