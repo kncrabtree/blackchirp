@@ -52,8 +52,6 @@ void Pico2206B::initialize()
 
     d_acquiring = false;
 
-    num = 0;
-
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
     s.beginGroup(d_key);
@@ -65,8 +63,8 @@ void Pico2206B::initialize()
     d_config.sampleRate = s.value(QString("sampleRate"),500.0).toDouble();
     d_config.triggerChannel = s.value(QString("triggerChannel"),2).toInt();
     d_config.slope = static_cast<BlackChirp::ScopeTriggerSlope>(s.value(QString("slope"),BlackChirp::ScopeTriggerSlope::RisingEdge).toUInt());
-    d_config.byteOrder = static_cast<QDataStream::ByteOrder>(s.value(QString("byteOrder"),QDataStream::ByteOrder::BigEndian).toUInt());
-    d_config.bytesPerPoint = s.value(QString("bytesPerPoing"),100).toInt();
+    //d_config.byteOrder = static_cast<QDataStream::ByteOrder>(s.value(QString("byteOrder"),QDataStream::ByteOrder::BigEndian).toUInt());
+    //d_config.bytesPerPoint = s.value(QString("bytesPerPoing"),100).toInt();
     s.endGroup();
     s.endGroup();
 
@@ -77,9 +75,11 @@ void Pico2206B::initialize()
 
 bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
 {
+    d_config = sc;
+
     PS2000A_CHANNEL dataChannel, triggerChannel;
 
-
+    //Do I need to judge recordlenth times interval < 0.2
 
     if (sc.dataChannel == 1)
         dataChannel = PS2000A_CHANNEL_A;
@@ -93,25 +93,55 @@ bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
 
     PS2000A_RANGE range;
     if (sc.verticalScale <= 0.02)
+    {
+        d_config.verticalScale = 0.02;
         range = PS2000A_20MV;
+    }
     else if (sc.verticalScale <= 0.05)
+    {
+        d_config.verticalScale = 0.05;
         range = PS2000A_50MV;
+    }
     else if (sc.verticalScale <= 0.1)
+    {
+        d_config.verticalScale = 0.1;
         range = PS2000A_100MV;
+    }
     else if (sc.verticalScale <= 0.2)
+    {
+        d_config.verticalScale = 0.2;
         range = PS2000A_200MV;
+    }
     else if (sc.verticalScale <= 0.5)
+    {
+        d_config.verticalScale = 0.5;
         range = PS2000A_500MV;
+    }
     else if (sc.verticalScale <= 1.0)
+    {
+        d_config.verticalScale = 1.0;
         range = PS2000A_1V;
+    }
     else if (sc.verticalScale <= 2.0)
+    {
+        d_config.verticalScale = 2.0;
         range = PS2000A_2V;
+    }
     else if (sc.verticalScale <= 5.0)
+    {
+        d_config.verticalScale = 5.0;
         range = PS2000A_5V;
+    }
     else if (sc.verticalScale <= 10.0)
+    {
+        d_config.verticalScale = 10.0;
         range = PS2000A_10V;
+    }
     else //if (sc.verticalScale <= 20.0)
+    {
+        d_config.verticalScale = 20.0;
         range = PS2000A_20V;
+    }
     //else
     //{
         //what to do if the verticalScale is over 20V
@@ -130,7 +160,6 @@ bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
 
     noSamples = sc.recordLength;
 
-    //double timeIntervalNanoseconds;
     status = ps2000aGetTimebase(d_handle, timebase, noSamples, NULL, 0, NULL, 0);
     if(status != PICO_OK)
     {
@@ -138,7 +167,6 @@ bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
         emit logMessage(QString("Pico2206B timebase setting failed. Error code: %1").arg(status));
         return false;
     }
-    emit logMessage(QString("timebase ok"));
 
     PS2000A_THRESHOLD_DIRECTION direction;
     switch(sc.slope)
@@ -159,19 +187,15 @@ bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
         emit logMessage(QString("Pico2206B trigger setting failed. Error code: %1").arg(status));
         return false;
     }
-    emit logMessage(QString("trigger ok"));
 
-
-    status = ps2000aSetDataBuffer(d_handle, dataChannel, &(d[0]), noSamples, 0, PS2000A_RATIO_MODE_NONE);
+    d_buffer.resize(noSamples);
+    status = ps2000aSetDataBuffer(d_handle, dataChannel, d_buffer.data(), noSamples, 0, PS2000A_RATIO_MODE_NONE);
     if(status != PICO_OK)
     {
         emit connected(false);
         emit logMessage(QString("Pico2206B data buffer setting failed. Error code: %1").arg(status));
         return false;
     }
-    emit logMessage(QString("buffer ok"));
-
-    d_config = sc;
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
@@ -183,8 +207,8 @@ bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
     s.setValue(QString("sampleRate"),sc.sampleRate);
     s.setValue(QString("triggerChannel"),sc.triggerChannel);
     s.setValue(QString("slope"),static_cast<uint>(sc.slope));
-    s.setValue(QString("byteOrder"),static_cast<uint>(sc.byteOrder));
-    s.setValue(QString("bytesPerPoint"),sc.bytesPerPoint);
+    //s.setValue(QString("byteOrder"),static_cast<uint>(sc.byteOrder));
+    //s.setValue(QString("bytesPerPoint"),sc.bytesPerPoint);
     s.endGroup();
     s.endGroup();
 
@@ -227,12 +251,12 @@ void Pico2206B::endAcquisition()
 {
     emit logMessage(QString("start end acqu function"));
     status = ps2000aIsReady(d_handle, &isReady);
-//    if(status != PICO_OK)
-//    {
-//        emit connected(false);
-//        emit logMessage(QString("Pico2206B isReady function calling failed. Error code: %1").arg(status));
-//        return;
-//    }
+    if(status != PICO_OK)
+    {
+        emit connected(false);
+        emit logMessage(QString("Pico2206B isReady function calling failed. Error code: %1").arg(status));
+        return;
+    }
     if (isReady == 0)
         return;
 
@@ -253,22 +277,16 @@ void Pico2206B::endAcquisition()
         //some signal over range
     }
 
-    num ++;
+    QVector<double> d;
+    d.resize(noSamples);
 
-    //QVector<double> z = static_cast<QVector<double>>(d);
-
-    //emit traceAcquired(z);
-
-
-    QString str;
     for (int i = 0; i < noSamples; ++i)
     {
-        if (i > 0)
-            str += " ";
-        str += QString::number(d[i]);
+        d[i] = d_buffer[i] / 32512.0 * d_config.verticalScale;
     }
 
-    emit logMessage(QString("Experiment:%1; Data:%2").arg(num).arg(str));
+    emit traceAcquired(d);
+
     d_acquiring = false;
     status = ps2000aStop(d_handle);
     if(status != PICO_OK)
