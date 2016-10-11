@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>204</height>
+    <height>496</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <iconset resource="resources.qrc">
     <normaloff>:/icons/motorscan.png</normaloff>:/icons/motorscan.png</iconset>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,1,0">
    <item>
     <layout class="QGridLayout" name="gridLayout" rowstretch="0,1,1,1">
      <item row="0" column="1">
@@ -245,6 +245,19 @@
     </layout>
    </item>
    <item>
+    <widget class="QLabel" name="label_7">
+     <property name="text">
+      <string>Scope Configuration</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="MotorScopeConfigWidget" name="scopeConfigWidget" native="true"/>
+   </item>
+   <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -256,6 +269,14 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>MotorScopeConfigWidget</class>
+   <extends>QWidget</extends>
+   <header>motorscopeconfigwidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resources.qrc"/>
  </resources>

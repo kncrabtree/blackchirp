@@ -35,7 +35,7 @@ protected:
 class Pico2206B;
 typedef Pico2206B MotorScopeHardware;
 #else
-#include "virtualmotorcontroller.h"
+#include "virtualmotorscope.h"
 class VirtualMotorScope;
 typedef VirtualMotorScope MotorScopeHardware;
 #endif

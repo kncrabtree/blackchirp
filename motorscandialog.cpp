@@ -100,6 +100,8 @@ MotorScan MotorScanDialog::toMotorScan()
 
     out.setIntervals(ui->xMinBox->value(),ui->yMinBox->value(),ui->zMinBox->value(),dx,dy,dz);
 
+    out.setScopeConfig(ui->scopeConfigWidget->toConfig());
+
     return out;
 
 }
