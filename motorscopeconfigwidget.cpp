@@ -9,8 +9,13 @@ MotorScopeConfigWidget::MotorScopeConfigWidget(QWidget *parent) :
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(QString("motorScope"));
-    s.beginGroup(QString("pico2206b"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+
+    ui->dataChannelSpinBox->setMinimum(s.value(QString("minChannel"),1).toInt());
+    ui->dataChannelSpinBox->setMaximum(s.value(QString("maxChannel"),2).toInt());
     ui->dataChannelSpinBox->setValue(s.value(QString("dataChannel"),1).toInt());
+
+
     ui->triggerChannelSpinBox->setValue(s.value(QString("triggerChannel"),2).toInt());
     ui->verticalRangeDoubleSpinBox->setValue(s.value(QString("verticalScale"),5.0).toDouble());
     ui->recordLengthSpinBox->setValue(s.value(QString("sampleRate"),100).toInt());
