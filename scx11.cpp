@@ -18,7 +18,6 @@ Scx11::Scx11(QObject *parent) : MotorController(parent)
     s.endGroup();
     s.endGroup();
 
-
 }
 
 
@@ -267,6 +266,6 @@ void Scx11::checkLimitOneAxis(BlackChirp::MotorAxis axis)
         return;
     }
 
-    emit limitStatus(axis, sigPositive, sigNegative);
+    emit limitStatus(axis, sigNegative, sigPositive);
     return;
 }

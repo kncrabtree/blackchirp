@@ -22,6 +22,11 @@ class MotorController;
 class LifScope;
 #endif
 
+#ifdef BC_MOTOR
+class MotorController;
+class MotorOscilloscope;
+#endif
+
 class HardwareManager : public QObject
 {
     Q_OBJECT
@@ -134,6 +139,7 @@ private:
 
 #ifdef BC_MOTOR
     MotorController *p_mc;
+    MotorOscilloscope *p_motorScope;
 #endif
 };
 

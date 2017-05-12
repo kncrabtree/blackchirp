@@ -20,6 +20,7 @@
 
 #ifdef BC_MOTOR
 #include "motorcontroller.h"
+#include "motoroscilloscope.h"
 #endif
 
 HardwareManager::HardwareManager(QObject *parent) : QObject(parent), d_responseCount(0)
@@ -90,7 +91,10 @@ void HardwareManager::initialize()
 
 #ifdef BC_MOTOR
     p_mc = new MotorControllerHardware();
-    d_hardwareList.append(qMakePair(p_mc,new QThread(this)));
+    d_hardwareList.append(qMakePair(p_mc,nullptr));
+
+    p_motorScope = new MotorScopeHardware();
+    d_hardwareList.append(qMakePair(p_motorScope,nullptr));
 #endif
 
 

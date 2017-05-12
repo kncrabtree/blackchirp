@@ -24,6 +24,10 @@ public slots:
 
 signals:
     void traceAcquired(QVector<double> d);
+
+protected:
+    BlackChirp::MotorScopeConfig d_config;
+
 };
 
 #if BC_MOTORSCOPE==1
@@ -31,7 +35,7 @@ signals:
 class Pico2206B;
 typedef Pico2206B MotorScopeHardware;
 #else
-#include "virtualmotorcontroller.h"
+#include "virtualmotorscope.h"
 class VirtualMotorScope;
 typedef VirtualMotorScope MotorScopeHardware;
 #endif
