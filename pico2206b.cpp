@@ -2,7 +2,6 @@
 
 #include <PicoStatus.h>
 #include <ps2000aApi.h>
-#include <QtCore/qmath.h>
 #include <QTimer>
 
 Pico2206B::Pico2206B(QObject *parent) : MotorOscilloscope(parent)
@@ -14,6 +13,24 @@ Pico2206B::Pico2206B(QObject *parent) : MotorOscilloscope(parent)
 
     d_handle = 0;
 
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+
+    s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
+
+    s.setValue(QString("minDataChannel"),1);
+    s.setValue(QString("maxDataChannel"),2);
+    s.setValue(QString("minTriggerChannel"),1);
+    s.setValue(QString("maxTriggerChannel"),2);
+    s.setValue(QString("minVerticalScale"),0.02);
+    s.setValue(QString("maxVerticalScale"),20);
+    s.setValue(QString("minRecordLength"),1);
+    s.setValue(QString("maxRecordLength"),32e6); // ?
+    s.setValue(QString("minSampleRate"),16);
+    s.setValue(QString("maxSampleRate"),69e9);
+
+    s.endGroup();
+    s.endGroup();
 }
 
 Pico2206B::~Pico2206B()
@@ -59,7 +76,7 @@ void Pico2206B::initialize()
 
     d_config.dataChannel = s.value(QString("dataChannel"),1).toInt();
     d_config.verticalScale = s.value(QString("verticalScale"),5.0).toDouble();
-    d_config.recordLength = s.value(QString("sampleRate"),100).toInt();
+    d_config.recordLength = s.value(QString("recordLength"),100).toInt();
     d_config.sampleRate = s.value(QString("sampleRate"),500.0).toDouble();
     d_config.triggerChannel = s.value(QString("triggerChannel"),2).toInt();
     d_config.slope = static_cast<BlackChirp::ScopeTriggerSlope>(s.value(QString("slope"),BlackChirp::ScopeTriggerSlope::RisingEdge).toUInt());
@@ -155,7 +172,7 @@ bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
         return false;
     }
 
-    double sampleInterval = (sc.sampleRate * qPow(10,-9));
+    double sampleInterval = (sc.sampleRate * 1e-9);
     timebase = 62500000 * sampleInterval + 2;
 
     noSamples = sc.recordLength;
