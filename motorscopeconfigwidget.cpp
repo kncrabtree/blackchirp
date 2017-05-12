@@ -18,6 +18,16 @@ MotorScopeConfigWidget::MotorScopeConfigWidget(QWidget *parent) :
     ui->triggerDirectionComboBox->setCurrentIndex(s.value(QString("slope"),BlackChirp::ScopeTriggerSlope::RisingEdge).toUInt());
     s.endGroup();
     s.endGroup();
+
+    ui->sampleRateDoubleSpinBox_2->setValue(1e9/ui->sampleRateDoubleSpinBox->value());
+    auto dvc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
+    connect(ui->sampleRateDoubleSpinBox,dvc,[=](double t){ui->sampleRateDoubleSpinBox_2->setValue(1e9/t);});
+    connect(ui->sampleRateDoubleSpinBox_2,dvc,[=](double t){ui->sampleRateDoubleSpinBox->setValue(1e9/t);});
+
+//    //if the dataChannel and triggerChannel can't be the same.
+//    auto vc = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
+//    connect(ui->dataChannelSpinBox,vc,[=](int t){ui->triggerChannelSpinBox->setValue(3-t);});
+//    connect(ui->triggerChannelSpinBox,vc,[=](int t){ui->dataChannelSpinBox->setValue(3-t);});
 }
 
 MotorScopeConfigWidget::~MotorScopeConfigWidget()
