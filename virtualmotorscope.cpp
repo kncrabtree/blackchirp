@@ -8,6 +8,24 @@ VirtualMotorScope::VirtualMotorScope(QObject *parent) : MotorOscilloscope(parent
     d_commType = CommunicationProtocol::Virtual;
 
     //establish settings parameters (min/max sample rate, vertical scale, etc)
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+
+    s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
+
+    s.setValue(QString("minDataChannel"),1);
+    s.setValue(QString("maxDataChannel"),2);
+    s.setValue(QString("minTriggerChannel"),1);
+    s.setValue(QString("maxTriggerChannel"),2);
+    s.setValue(QString("minVerticalScale"),0.02);
+    s.setValue(QString("maxVerticalScale"),20);
+    s.setValue(QString("minRecordLength"),1);
+    s.setValue(QString("maxRecordLength"),32e6); // ?
+    s.setValue(QString("minSampleRate"),16);
+    s.setValue(QString("maxSampleRate"),69e9);
+
+    s.endGroup();
+    s.endGroup();
 }
 
 
