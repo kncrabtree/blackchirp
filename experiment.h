@@ -16,6 +16,10 @@
 #include "lifconfig.h"
 #endif
 
+#ifdef BC_MOTOR
+#include "motorscan.h"
+#endif
+
 
 class ExperimentData;
 
@@ -77,6 +81,12 @@ public:
     bool addLifWaveform(const LifTrace t);
 #endif
 
+#ifdef BC_MOTOR
+    MotorScan motorScan() const;
+    void setMotorScan(const MotorScan s);
+    bool addMotorTrace(const QVector<double> d);
+#endif
+
     void setHardwareFailed();
     void incrementFtmw();
 
@@ -129,6 +139,10 @@ public:
 #ifdef BC_LIF
     LifConfig lifCfg;
     bool waitForLifSet;
+#endif
+
+#ifdef BC_MOTOR
+    MotorScan motorScan;
 #endif
 };
 

@@ -10,6 +10,7 @@ class WizardSummaryPage;
 class WizardPulseConfigPage;
 class WizardLifConfigPage;
 class WizardValidationPage;
+class WizardMotorScanConfigPage;
 class BatchManager;
 
 #include "experiment.h"
@@ -28,6 +29,9 @@ public:
         FtmwConfigPage,
 #ifdef BC_LIF
         LifConfigPage,
+#endif
+#ifdef BC_MOTOR
+        MotorScanConfigPage,
 #endif
         PulseConfigPage,
         ValidationPage,
@@ -60,6 +64,12 @@ signals:
 private:
     WizardLifConfigPage *p_lifConfigPage;
 #endif
+
+#ifdef BC_MOTOR
+private:
+    WizardMotorScanConfigPage *p_motorScanConfigPage;
+#endif
+
 };
 
 #endif // EXPERIMENTWIZARD_H

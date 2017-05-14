@@ -93,10 +93,6 @@ public slots:
     void exportExperiment();
     void exportBatch();
 
-#ifdef BC_MOTOR
-    void startMotorScan();
-#endif
-
 private:
     Ui::MainWindow *ui;
     QList<QPair<QThread*,QObject*> > d_threadObjectList;

@@ -1,12 +1,11 @@
-#include "motorscandialog.h"
-#include "ui_motorscandialog.h"
+#include "motorscanconfigwidget.h"
+#include "ui_motorscanconfigwidget.h"
 
-#include <QSettings>
 #include <QMessageBox>
 
-MotorScanDialog::MotorScanDialog(QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::MotorScanDialog)
+MotorScanConfigWidget::MotorScanConfigWidget(QWidget *parent) :
+    QWidget(parent),
+    ui(new Ui::MotorScanConfigWidget)
 {
     ui->setupUi(this);
 
@@ -29,9 +28,9 @@ MotorScanDialog::MotorScanDialog(QWidget *parent) :
     s.endGroup();
 
     auto vc = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
-    connect(ui->xPointsBox,vc,this,&MotorScanDialog::validateBoxes);
-    connect(ui->yPointsBox,vc,this,&MotorScanDialog::validateBoxes);
-    connect(ui->zPointsBox,vc,this,&MotorScanDialog::validateBoxes);
+    connect(ui->xPointsBox,vc,this,&MotorScanConfigWidget::validateBoxes);
+    connect(ui->yPointsBox,vc,this,&MotorScanConfigWidget::validateBoxes);
+    connect(ui->zPointsBox,vc,this,&MotorScanConfigWidget::validateBoxes);
 
     auto dvc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
     connect(ui->xMinBox,dvc,[=](double d){
@@ -47,15 +46,15 @@ MotorScanDialog::MotorScanDialog(QWidget *parent) :
             ui->zMaxBox->setValue(d);
     });
 
-
+    setFromMotorScan(MotorScan::fromSettings());
 }
 
-MotorScanDialog::~MotorScanDialog()
+MotorScanConfigWidget::~MotorScanConfigWidget()
 {
     delete ui;
 }
 
-void MotorScanDialog::setFromMotorScan(MotorScan ms)
+void MotorScanConfigWidget::setFromMotorScan(MotorScan ms)
 {
     ui->xMinBox->setValue(ms.xVal(0));
     ui->xMaxBox->setValue(ms.xVal(ms.xPoints()-1));
@@ -70,9 +69,11 @@ void MotorScanDialog::setFromMotorScan(MotorScan ms)
     ui->zPointsBox->setValue(ms.zPoints());
 
     ui->shotsPerPointSpinBox->setValue(ms.shotsPerPoint());
+
+    ui->scopeConfigWidget->setFromConfig(ms.scopeConfig());
 }
 
-MotorScan MotorScanDialog::toMotorScan()
+MotorScan MotorScanConfigWidget::toMotorScan()
 {
     MotorScan out;
 
@@ -103,10 +104,9 @@ MotorScan MotorScanDialog::toMotorScan()
     out.setScopeConfig(ui->scopeConfigWidget->toConfig());
 
     return out;
-
 }
 
-void MotorScanDialog::validateBoxes()
+void MotorScanConfigWidget::validateBoxes()
 {
     if(ui->xPointsBox->value() == 1)
     {
@@ -133,27 +133,25 @@ void MotorScanDialog::validateBoxes()
         ui->zMaxBox->setEnabled(true);
 }
 
-
-void MotorScanDialog::accept()
+bool MotorScanConfigWidget::validatePage()
 {
     if(ui->xPointsBox->value() > 1 && fabs(ui->xMinBox->value() - ui->xMaxBox->value()) < 0.1)
     {
         QMessageBox::critical(this,QString("Motor Scan Error"),QString("The beginning and ending X values must be different when the number of points is greater than 1."));
-        return;
+        return false;
     }
 
     if(ui->yPointsBox->value() > 1 && fabs(ui->yMinBox->value() - ui->yMaxBox->value()) < 0.1)
     {
         QMessageBox::critical(this,QString("Motor Scan Error"),QString("The beginning and ending Y values must be different when the number of points is greater than 1."));
-        return;
+        return false;
     }
 
     if(ui->zPointsBox->value() > 1 && fabs(ui->zMinBox->value() - ui->zMaxBox->value()) < 0.1)
     {
         QMessageBox::critical(this,QString("Motor Scan Error"),QString("The beginning and ending Z values must be different when the number of points is greater than 1."));
-        return;
+        return false;
     }
 
-    QDialog::accept();
-
+    return true;
 }

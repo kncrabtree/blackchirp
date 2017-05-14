@@ -64,6 +64,11 @@ Experiment::Experiment(const int num, QString exptPath) : data(new ExperimentDat
                 data->lifCfg.parseLine(key,val);
 #endif
 
+#ifdef BC_MOTOR
+            if(key.startsWith(QString("Motor")))
+                data->motorScan.parseLine(key,val);
+#endif
+
             if(key.startsWith(QString("AutosaveInterval")))
                 data->autoSaveShotsInterval = val.toInt();
 
@@ -82,6 +87,11 @@ Experiment::Experiment(const int num, QString exptPath) : data(new ExperimentDat
 #ifdef BC_LIF
         if(data->lifCfg.isEnabled())
             data->lifCfg.loadLifData(num,exptPath);
+#endif
+
+#ifdef BC_MOTOR
+        if(data->motorScan.isEnabled())
+            data->motorScan.loadMotorData(num,exptPath);
 #endif
     }
     else
@@ -229,6 +239,12 @@ IOBoardConfig Experiment::iobConfig() const
 
 bool Experiment::isComplete() const
 {
+#ifdef BC_MOTOR
+    //if motor scan is enabled, then not possible to do LIF or FTMW
+    if(data->motorScan.isEnabled())
+        return data->motorScan.isComplete();
+#endif
+
 #ifdef BC_LIF
     //check each sub expriment!
     return (data->ftmwCfg.isComplete() && data->lifCfg.isComplete());
@@ -290,6 +306,10 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
 
 #ifdef BC_LIF
     out.unite(data->lifCfg.headerMap());
+#endif
+
+#ifdef BC_MOTOR
+    out.unite(data->motorScan.headerMap());
 #endif
 
     if(!data->timeDataMap.isEmpty())
@@ -382,6 +402,25 @@ bool Experiment::snapshotReady()
     }
 #endif
 
+#ifdef BC_MOTOR
+    if(motorScan().isEnabled())
+    {
+        if(motorScan().completedShots() > 0)
+        {
+           qint64 d = static_cast<qint64>(motorScan().completedShots()) - data->lastSnapshot;
+           if(d>0)
+           {
+               bool out = !(d % static_cast<qint64>(data->autoSaveShotsInterval));
+               if(out)
+                   data->lastSnapshot = motorScan().completedShots();
+               return out;
+           }
+           else
+               return false;
+        }
+    }
+#endif
+
     return false;
 }
 
@@ -419,6 +458,13 @@ void Experiment::setInitialized()
             data->isInitialized = false;
             return;
         }
+    }
+#endif
+
+#ifdef BC_MOTOR
+    if(motorScan().isEnabled())
+    {
+        data->motorScan.initialize();
     }
 #endif
 
@@ -499,12 +545,21 @@ void Experiment::setAborted()
         data->endLogMessageCode = BlackChirp::LogError;
     }
 #ifdef BC_LIF
-    else if(ftmwConfig().isEnabled() && lifConfig().isEnabled() && !lifConfig().isComplete())
+    else if(lifConfig().isEnabled() && !lifConfig().isComplete())
     {
         data->endLogMessage = QString("Experiment %1 aborted.").arg(number());
         data->endLogMessageCode = BlackChirp::LogError;
     }
 #endif
+
+#ifdef BC_MOTOR
+    if(motorScan().isEnabled())
+    {
+        data->endLogMessage = QString("Experiment %1 aborted.").arg(number());
+        data->endLogMessageCode = BlackChirp::LogError;
+    }
+#endif
+
 }
 
 void Experiment::setDummy()
@@ -652,6 +707,23 @@ void Experiment::addValidationItem(const QString key, const double min, const do
     data->validationConditions.insert(key,val);
 }
 
+#ifdef BC_MOTOR
+MotorScan Experiment::motorScan() const
+{
+    return data->motorScan;
+}
+
+void Experiment::setMotorScan(const MotorScan s)
+{
+    data->motorScan = s;
+}
+
+bool Experiment::addMotorTrace(const QVector<double> d)
+{
+    return data->motorScan.addTrace(d);
+}
+#endif
+
 void Experiment::setHardwareFailed()
 {
     data->hardwareSuccess = false;
@@ -699,6 +771,11 @@ void Experiment::finalSave() const
 #ifdef BC_LIF
     if(lifConfig().isEnabled())
             lifConfig().writeLifFile(data->number);
+#endif
+
+#ifdef BC_MOTOR
+    if(motorScan().isEnabled())
+        motorScan().writeMotorFile(data->number);
 #endif
 
     saveTimeFile();
@@ -903,6 +980,11 @@ void Experiment::snapshot(int snapNum, const Experiment other) const
         lifConfig().writeLifFile(data->number);
 #endif
 
+#ifdef BC_MOTOR
+    if(motorScan().isEnabled())
+        motorScan().writeMotorFile(data->number);
+#endif
+
     saveTimeFile();
 }
 
@@ -994,6 +1076,12 @@ void Experiment::saveToSettings() const
         data->lifCfg.saveToSettings();
 #endif
 
+#ifdef BC_MOTOR
+    s.setValue(QString("motorEnabled"),motorScan().isEnabled());
+    if(motorScan().isEnabled())
+        data->motorScan.saveToSettings();
+#endif
+
     s.setValue(QString("autoSaveShots"),autoSaveShots());
     s.setValue(QString("auxDataInterval"),timeDataInterval());
 
@@ -1035,6 +1123,15 @@ Experiment Experiment::loadFromSettings()
         LifConfig l = LifConfig::loadFromSettings();
         l.setEnabled();
         out.setLifConfig(l);
+    }
+#endif
+
+#ifdef BC_MOTOR
+    if(s.value(QString("motorEnabled"),false).toBool())
+    {
+        MotorScan m = MotorScan::fromSettings();
+        m.setEnabled();
+        out.setMotorScan(m);
     }
 #endif
 

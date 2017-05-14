@@ -2,6 +2,7 @@
 
 #include <QSettings>
 #include <QApplication>
+#include <QFile>
 
 MotorScan::MotorScan() : data(new MotorScanData)
 {
@@ -55,14 +56,17 @@ void MotorScan::saveToSettings() const
     s.setValue(QString("xPoints"),xPoints());
     s.setValue(QString("yPoints"),yPoints());
     s.setValue(QString("zPoints"),zPoints());
+    s.setValue(QString("tPoints"),tPoints());
 
     s.setValue(QString("x0"),xVal(0));
     s.setValue(QString("y0"),yVal(0));
     s.setValue(QString("z0"),zVal(0));
+    s.setValue(QString("t0"),tVal(0));
 
     s.setValue(QString("dx"),(xVal(xPoints()-1) - xVal(0))/(static_cast<double>(xPoints())-1.0));
     s.setValue(QString("dy"),(yVal(yPoints()-1) - yVal(0))/(static_cast<double>(yPoints())-1.0));
     s.setValue(QString("dz"),(zVal(zPoints()-1) - zVal(0))/(static_cast<double>(zPoints())-1.0));
+    s.setValue(QString("dz"),(tVal(tPoints()-1) - tVal(0))/(static_cast<double>(tPoints())-1.0));
 
     s.setValue(QString("shotsPerPoint"),shotsPerPoint());
 
@@ -78,6 +82,46 @@ bool MotorScan::isInitialized() const
 bool MotorScan::hardwareError() const
 {
     return data->hardwareError;
+}
+
+bool MotorScan::isEnabled() const
+{
+    return data->enabled;
+}
+
+QMap<QString, QPair<QVariant, QString> > MotorScan::headerMap() const
+{
+    QMap<QString, QPair<QVariant, QString> > out;
+
+    QString prefix = QString("MotorScan");
+    QString empty = QString("");
+    QString mm = QString("mm");
+    QString s = QString("s");
+
+    out.insert(prefix+QString("Enabled"),qMakePair(isEnabled(),empty));
+    if(!isEnabled())
+        return out;
+
+    out.insert(prefix+QString("XPoints"),qMakePair(xPoints(),empty));
+    out.insert(prefix+QString("YPoints"),qMakePair(yPoints(),empty));
+    out.insert(prefix+QString("ZPoints"),qMakePair(zPoints(),empty));
+    out.insert(prefix+QString("TPoints"),qMakePair(tPoints(),empty));
+
+    out.insert(prefix+QString("XStart"),qMakePair(data->x0,mm));
+    out.insert(prefix+QString("YStart"),qMakePair(data->y0,mm));
+    out.insert(prefix+QString("ZStart"),qMakePair(data->z0,mm));
+    out.insert(prefix+QString("TStart"),qMakePair(data->t0,s));
+
+    out.insert(prefix+QString("XStep"),qMakePair(data->dx,mm));
+    out.insert(prefix+QString("YStep"),qMakePair(data->dy,mm));
+    out.insert(prefix+QString("ZStep"),qMakePair(data->dz,mm));
+    out.insert(prefix+QString("TStep"),qMakePair(data->dt,s));
+
+    out.insert(prefix+QString("ShotsPerPoint"),qMakePair(data->shotsPerPoint,empty));
+
+    out.unite(data->scopeConfig.headerMap());
+    return out;
+
 }
 
 int MotorScan::xPoints() const
@@ -203,9 +247,29 @@ double MotorScan::value(int x, int y, int z, int t) const
     return data->zyxtData.at(z).at(y).at(x).at(t);
 }
 
+bool MotorScan::writeMotorFile(int num) const
+{
+    QFile motor(BlackChirp::getExptFile(num,BlackChirp::MotorFile));
+    if(motor.open(QIODevice::WriteOnly))
+    {
+        QDataStream d(&motor);
+        d << QByteArray("BCMOTORv1.0");
+        d << data->zyxtData;
+        motor.close();
+        return true;
+    }
+    else
+        return false;
+}
+
 int MotorScan::shotsPerPoint() const
 {
     return data->shotsPerPoint;
+}
+
+int MotorScan::completedShots() const
+{
+    return data->currentPoint*data->shotsPerPoint + data->currentPointShots;
 }
 
 bool MotorScan::isPointComplete() const
@@ -330,6 +394,75 @@ BlackChirp::MotorScopeConfig MotorScan::scopeConfig() const
     return data->scopeConfig;
 }
 
+void MotorScan::parseLine(QString key, QVariant val)
+{
+    if(key.startsWith(QString("MotorScan")))
+    {
+        if(key.endsWith(QString("Enabled")))
+            data->enabled = val.toBool();
+        if(key.endsWith(QString("XPoints")))
+            data->xPoints = val.toInt();
+        if(key.endsWith(QString("YPoints")))
+            data->yPoints = val.toInt();
+        if(key.endsWith(QString("ZPoints")))
+            data->zPoints = val.toInt();
+        if(key.endsWith(QString("TPoints")))
+            data->tPoints = val.toInt();
+        if(key.endsWith(QString("XStart")))
+            data->x0 = val.toDouble();
+        if(key.endsWith(QString("YStart")))
+            data->y0 = val.toDouble();
+        if(key.endsWith(QString("ZStart")))
+            data->z0 = val.toDouble();
+        if(key.endsWith(QString("TStart")))
+            data->t0 = val.toDouble();
+        if(key.endsWith(QString("XStep")))
+            data->dx = val.toDouble();
+        if(key.endsWith(QString("YStep")))
+            data->dy = val.toDouble();
+        if(key.endsWith(QString("ZStep")))
+            data->dz = val.toDouble();
+        if(key.endsWith(QString("TStep")))
+            data->dt = val.toDouble();
+        if(key.endsWith(QString("ShotsPerPoint")))
+            data->shotsPerPoint = val.toInt();
+    }
+    else if(key.startsWith(QString("MotorScope")))
+    {
+        if(key.endsWith(QString("VerticalScale")))
+            data->scopeConfig.verticalScale = val.toDouble();
+        if(key.endsWith(QString("TriggerSlope")))
+        {
+            if(val.toString().contains(QString("Rising")))
+                data->scopeConfig.slope = BlackChirp::RisingEdge;
+            else
+                data->scopeConfig.slope = BlackChirp::FallingEdge;
+        }
+        if(key.endsWith(QString("SampleRate")))
+            data->scopeConfig.sampleRate = val.toDouble()*1e6;
+        if(key.endsWith(QString("RecordLength")))
+            data->scopeConfig.recordLength = val.toInt();
+        if(key.endsWith(QString("BytesPerPoint")))
+            data->scopeConfig.bytesPerPoint = val.toInt();
+        if(key.endsWith(QString("ByteOrder")))
+        {
+            if(val.toString().contains(QString("Big")))
+                data->scopeConfig.byteOrder = QDataStream::BigEndian;
+            else
+                data->scopeConfig.byteOrder = QDataStream::LittleEndian;
+        }
+        if(key.endsWith(QString("TriggerChannel")))
+            data->scopeConfig.triggerChannel = val.toInt();
+        if(key.endsWith(QString("DataChannel")))
+            data->scopeConfig.dataChannel = val.toInt();
+    }
+}
+
+void MotorScan::setEnabled()
+{
+    data->enabled = true;
+}
+
 void MotorScan::setXPoints(int x)
 {
     data->xPoints = x;
@@ -359,6 +492,33 @@ void MotorScan::setIntervals(double x0, double y0, double z0, double dx, double 
     data->dx = dx;
     data->dy = dy;
     data->dz = dz;
+}
+
+bool MotorScan::loadMotorData(int num, const QString path)
+{
+    QFile motor(BlackChirp::getExptFile(num,BlackChirp::MotorFile,path));
+    if(motor.open(QIODevice::ReadOnly))
+    {
+        QDataStream d(&motor);
+        QByteArray magic;
+        d >> magic;
+        if(!magic.startsWith("BCMOTOR"))
+        {
+            motor.close();
+            return false;
+        }
+        if(magic.endsWith("v1.0"))
+        {
+            QList<QList<QList<QVector<double>>>> l;
+            d >> l;
+            data->zyxtData = l;
+        }
+
+        motor.close();
+        return true;
+    }
+
+    return false;
 }
 
 void MotorScan::setShotsPerPoint(const int s)

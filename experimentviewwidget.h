@@ -40,6 +40,10 @@ private:
 #ifdef BC_LIF
     QWidget *buildLifWidget();
 #endif
+
+#ifdef BC_MOTOR
+    QWidget *buildMotorWidget();
+#endif
 };
 
 #endif // EXPERIMENTVIEWWIDGET_H

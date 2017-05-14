@@ -26,6 +26,9 @@ public:
     bool isInitialized() const;
     bool hardwareError() const;
 
+    bool isEnabled() const;
+    QMap<QString,QPair<QVariant,QString> > headerMap() const;
+
     int xPoints() const;
     int yPoints() const;
     int zPoints() const;
@@ -42,7 +45,10 @@ public:
 
     double value(int x, int y, int z, int t) const;
 
+    bool writeMotorFile(int num) const;
+
     int shotsPerPoint() const;
+    int completedShots() const;
     bool isPointComplete() const;
     bool isComplete() const;
     QVector3D currentPos() const;
@@ -51,12 +57,16 @@ public:
     QVector<QPointF> tTrace(int x, int y, int z) const;
     BlackChirp::MotorScopeConfig scopeConfig() const;
 
+    void parseLine(QString key, QVariant val);
+    void setEnabled();
+
     void setXPoints(int x);
     void setYPoints(int y);
     void setZPoints(int z);
     void setTPoints(int t);
     void setIntervals(double x0, double y0, double z0, double dx, double dy, double dz);
 
+    bool loadMotorData(int num, const QString path);
     void setShotsPerPoint(const int s);
     void setScopeConfig(const BlackChirp::MotorScopeConfig &sc);
     void setHardwareError();
@@ -77,9 +87,11 @@ private:
 class MotorScanData : public QSharedData
 {
 public:
-    MotorScanData() : xPoints(0), yPoints(0), zPoints(0), tPoints(0),
+    MotorScanData() : enabled(false), xPoints(0), yPoints(0), zPoints(0), tPoints(0),
     x0(0.0), y0(0.0), z0(0.0), t0(0.0), dx(1.0), dy(1.0), dz(1.0), dt(1.0),
       initialized(false), hardwareError(false) {}
+
+    bool enabled;
 
     int xPoints;
     int yPoints;

@@ -19,7 +19,7 @@ SOURCES += mainwindow.cpp \
     $$PWD/ftmwsnapshotwidget.cpp \
     $$PWD/quickexptdialog.cpp \
     $$PWD/batchsequencedialog.cpp \
-	$$PWD/exportbatchdialog.cpp
+        $$PWD/exportbatchdialog.cpp
 
 HEADERS += mainwindow.h \
     $$PWD/ftmwviewwidget.h \
@@ -42,7 +42,7 @@ HEADERS += mainwindow.h \
     $$PWD/ftmwsnapshotwidget.h \
     $$PWD/quickexptdialog.h \
     $$PWD/batchsequencedialog.h \
-	$$PWD/exportbatchdialog.h
+        $$PWD/exportbatchdialog.h
 
 FORMS += mainwindow.ui \
     $$PWD/ftmwviewwidget.ui \
@@ -54,7 +54,7 @@ FORMS += mainwindow.ui \
     $$PWD/ioboardconfigdialog.ui \
     $$PWD/quickexptdialog.ui \
     $$PWD/batchsequencedialog.ui \
-	$$PWD/exportbatchdialog.ui
+        $$PWD/exportbatchdialog.ui
 
 lif {
 	HEADERS += $$PWD/liftraceplot.h \
@@ -72,24 +72,27 @@ lif {
 }
 
 motor {
-	HEADERS += $$PWD/motorscandialog.h \
+	HEADERS += \
 			   $$PWD/motordisplaywidget.h \
 			   $$PWD/motorsliderwidget.h \
 			   $$PWD/motorspectrogramplot.h \
 			   $$PWD/motorzplot.h \
 			   $$PWD/motorxyplot.h \
                            $$PWD/motortimeplot.h \
-                           $$PWD/motorscopeconfigwidget.h
-	SOURCES += $$PWD/motorscandialog.cpp \
+                           $$PWD/motorscopeconfigwidget.h \
+                           $$PWD/motorscanconfigwidget.h
+	SOURCES += \
 			   $$PWD/motordisplaywidget.cpp \
 			   $$PWD/motorsliderwidget.cpp \
 			   $$PWD/motorspectrogramplot.cpp \
 			   $$PWD/motorzplot.cpp \
 			   $$PWD/motorxyplot.cpp \
                            $$PWD/motortimeplot.cpp \
-                           $$PWD/motorscopeconfigwidget.cpp
+                           $$PWD/motorscopeconfigwidget.cpp \
+                           $$PWD/motorscanconfigwidget.cpp
 
-	FORMS += $$PWD/motorscandialog.ui \
+	FORMS += \
                  $$PWD/motordisplaywidget.ui \
-                 $$PWD/motorscopeconfigwidget.ui
+                 $$PWD/motorscopeconfigwidget.ui \
+                 $$PWD/motorscanconfigwidget.ui
 }

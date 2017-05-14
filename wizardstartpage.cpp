@@ -40,13 +40,28 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     registerField(QString("ftmw"),p_ftmw);
 
 #ifndef BC_LIF
+
     p_ftmw->setChecked(true);
+#ifndef BC_MOTOR
     p_ftmw->setEnabled(false);
+#endif
 #else
     p_lif = new QCheckBox(this);
     fl->addRow(QString("LIF"),p_lif);
     connect(p_lif,&QCheckBox::toggled,this,&WizardStartPage::completeChanged);
     registerField(QString("lif"),p_lif);
+#endif
+
+#ifdef BC_MOTOR
+    p_motor = new QCheckBox(this);
+    fl->addRow(QString("Motor Scan"),p_motor);
+    connect(p_motor,&QCheckBox::toggled,this,&WizardStartPage::completeChanged);
+    connect(p_motor,&QCheckBox::toggled,[=](bool ch){
+        p_ftmw->setDisabled(ch);
+#ifdef BC_LIF
+        p_lif->setDisabled(ch);
+#endif
+    });
 #endif
     fl->addRow(QString("Aux Data Interval"),p_auxDataIntervalBox);
     fl->addRow(QString("Snapshot Interval"),p_snapshotBox);
@@ -61,6 +76,11 @@ WizardStartPage::~WizardStartPage()
 
 int WizardStartPage::nextId() const
 {
+#ifdef BC_MOTOR
+    if(p_motor->isChecked())
+        return ExperimentWizard::MotorScanConfigPage;
+#endif
+
 #ifdef BC_LIF
     if(p_lif->isChecked())
         return ExperimentWizard::LifConfigPage;
@@ -74,8 +94,14 @@ int WizardStartPage::nextId() const
 bool WizardStartPage::isComplete() const
 {
 #ifdef BC_LIF
-    return (p_ftmw->isChecked() || p_lif->isChecked());
+#ifdef BC_MOTOR
+    if(p_motor->isChecked())
+        return true;
+    else
+        return (p_ftmw->isChecked() || p_lif->isChecked());
 #endif
+#endif
+
     return true;
 }
 
@@ -97,6 +123,15 @@ bool WizardStartPage::lifEnabled() const
 {
 #ifdef BC_LIF
     return p_lif->isChecked();
+#endif
+
+    return false;
+}
+
+bool WizardStartPage::motorEnabled() const
+{
+#ifdef BC_MOTOR
+    return p_motor->isChecked();
 #endif
 
     return false;

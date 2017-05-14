@@ -31,7 +31,6 @@
 #include "quickexptdialog.h"
 #include "batchsequencedialog.h"
 #include "exportbatchdialog.h"
-#include "motorscandialog.h"
 
 #ifdef BC_LIF
 #include "lifdisplaywidget.h"
@@ -288,10 +287,6 @@ MainWindow::MainWindow(QWidget *parent) :
 #endif
 
 #ifdef BC_MOTOR
-    p_startMotorScanAction = new QAction(QIcon(QString(":/icons/motorscan.png")),QString("Start Motor Scan"),this);
-    ui->menuAcquisition->insertAction(ui->actionPause,p_startMotorScanAction);
-    connect(p_startMotorScanAction,&QAction::triggered,this,&MainWindow::startMotorScan);
-
     p_motorDisplayWidget = new MotorDisplayWidget(this);
     int mti = ui->tabWidget->insertTab(ui->tabWidget->indexOf(ui->trackingTab),p_motorDisplayWidget,QIcon(QString(":/icons/motorscan.png")),QString("Motor"));
     p_motorTab = ui->tabWidget->widget(mti);
@@ -456,21 +451,6 @@ void MainWindow::startSequence()
     startBatch(bs);
 
 }
-
-#ifdef BC_MOTOR
-void MainWindow::startMotorScan()
-{
-    MotorScanDialog d(this);
-
-    if(d.exec() != QDialog::Accepted)
-        return;
-
-    MotorScan ms = d.toMotorScan();
-
-    //send motor scan to AcquisitionManager...
-    Q_UNUSED(ms)
-}
-#endif
 
 void MainWindow::batchComplete(bool aborted)
 {

@@ -12,6 +12,10 @@
 #include "wizardlifconfigpage.h"
 #endif
 
+#ifdef BC_MOTOR
+#include "wizardmotorscanconfigpage.h"
+#endif
+
 ExperimentWizard::ExperimentWizard(QWidget *parent) :
     QWizard(parent)
 {
@@ -38,6 +42,11 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
     connect(p_lifConfigPage,&WizardLifConfigPage::updateScope,this,&ExperimentWizard::updateScope);
     connect(p_lifConfigPage,&WizardLifConfigPage::lifColorChanged,this,&ExperimentWizard::lifColorChanged);
     setPage(LifConfigPage,p_lifConfigPage);
+#endif
+
+#ifdef BC_MOTOR
+    p_motorScanConfigPage = new WizardMotorScanConfigPage(this);
+    setPage(MotorScanConfigPage,p_motorScanConfigPage);
 #endif
 }
 
@@ -73,6 +82,13 @@ Experiment ExperimentWizard::getExperiment() const
     if(p_startPage->lifEnabled())
         lc.setEnabled();
     exp.setLifConfig(lc);
+#endif
+
+#ifdef BC_MOTOR
+    MotorScan ms = p_motorScanConfigPage->motorScan();
+    if(p_startPage->motorEnabled())
+        ms.setEnabled();
+    exp.setMotorScan(ms);
 #endif
 
     exp.setFtmwConfig(ftc);

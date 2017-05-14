@@ -33,6 +33,9 @@ QString BlackChirp::getExptFile(int num, BlackChirp::ExptFileType t, QString pat
     case LogFile:
         file.append(QString(".log"));
         break;
+    case MotorFile:
+        file.append(QString(".mdt"));
+        break;
     }
 
     return getExptDir(num,path) + file;

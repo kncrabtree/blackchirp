@@ -24,3 +24,8 @@ lif {
 	HEADERS += $$PWD/wizardlifconfigpage.h
 	SOURCES += $$PWD/wizardlifconfigpage.cpp
 }
+
+motor {
+        HEADERS += $$PWD/wizardmotorscanconfigpage.h
+        SOURCES += $$PWD/wizardmotorscanconfigpage.cpp
+}

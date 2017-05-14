@@ -3,6 +3,7 @@
 
 #include <QWidget>
 
+#include "experiment.h"
 #include "motorscan.h"
 
 class MotorSliderWidget;

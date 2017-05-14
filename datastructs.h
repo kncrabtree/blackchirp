@@ -220,6 +220,7 @@ struct MotorScopeConfig {
         byteOrder == QDataStream::BigEndian ? scratch = QString("BigEndian") : scratch = QString("LittleEndian");
         out.insert(prefix+QString("ByteOrder"),qMakePair(scratch,empty));
         out.insert(prefix+QString("TriggerChannel"),qMakePair(QString::number(triggerChannel),empty));
+        out.insert(prefix+QString("DataChannel"),qMakePair(QString::number(dataChannel),empty));
 
         return out;
     }
@@ -258,7 +259,8 @@ enum ExptFileType {
     LifFile,
     SnapFile,
     TimeFile,
-    LogFile
+    LogFile,
+    MotorFile
 };
 
 struct ValidationItem {

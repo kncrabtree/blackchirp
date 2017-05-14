@@ -28,14 +28,19 @@ MotorDisplayWidget::~MotorDisplayWidget()
 
 void MotorDisplayWidget::prepareForScan(const MotorScan s)
 {
-    d_currentScan = s;
+    setEnabled(s.isEnabled());
 
-    Q_FOREACH(MotorSliderWidget *w,d_sliders)
-        w->setRange(s);
+    if(s.isEnabled())
+    {
+        d_currentScan = s;
 
-    ui->motorZSpectrogramPlot->prepareForScan(s);
-    ui->motorTimePlot->prepareForScan(s);
-    ui->motorXYSpectrogramPlot->prepareForScan(s);
+        Q_FOREACH(MotorSliderWidget *w,d_sliders)
+            w->setRange(s);
+
+        ui->motorZSpectrogramPlot->prepareForScan(s);
+        ui->motorTimePlot->prepareForScan(s);
+        ui->motorXYSpectrogramPlot->prepareForScan(s);
+    }
 }
 
 void MotorDisplayWidget::newMotorData(const MotorScan s)

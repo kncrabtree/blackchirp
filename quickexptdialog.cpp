@@ -73,6 +73,24 @@ QuickExptDialog::QuickExptDialog(Experiment e, QWidget *parent) :
     }
 #endif
 
+#ifdef BC_MOTOR
+    if(e.motorScan().isEnabled())
+    {
+        html.append(QString("<h1>Motor Scan Settings</h1><ul>"));
+        html.append(QString("<li>X Range: %1-%2 mm</li>")
+                    .arg(e.motorScan().xVal(0)).arg(e.motorScan().xVal(e.motorScan().xPoints()-1)));
+        html.append(QString("<li>X Points: %1</li>").arg(e.motorScan().xPoints()));
+        html.append(QString("<li>Y Range: %1-%2 mm</li>")
+                    .arg(e.motorScan().yVal(0)).arg(e.motorScan().yVal(e.motorScan().yPoints()-1)));
+        html.append(QString("<li>Y Points: %1</li>").arg(e.motorScan().yPoints()));
+        html.append(QString("<li>Z Range: %1-%2 mm</li>")
+                    .arg(e.motorScan().zVal(0)).arg(e.motorScan().zVal(e.motorScan().zPoints()-1)));
+        html.append(QString("<li>Z Points: %1</li>").arg(e.motorScan().zPoints()));
+        html.append(QString("<li>Shots Per Point: %1</li>").arg(e.motorScan().shotsPerPoint()));
+        html.append(QString("</ul>"));
+    }
+#endif
+
     ui->textEdit->insertHtml(html);
 
     ui->tableWidget->setHorizontalHeaderItem(0,new QTableWidgetItem(QString("Key")));
