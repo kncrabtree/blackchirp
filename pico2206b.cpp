@@ -17,18 +17,26 @@ Pico2206B::Pico2206B(QObject *parent) : MotorOscilloscope(parent)
 
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
-
-    s.setValue(QString("minDataChannel"),1);
-    s.setValue(QString("maxDataChannel"),2);
-    s.setValue(QString("minTriggerChannel"),1);
-    s.setValue(QString("maxTriggerChannel"),2);
-    s.setValue(QString("minVerticalScale"),0.02);
-    s.setValue(QString("maxVerticalScale"),20);
-    s.setValue(QString("minRecordLength"),1);
-    s.setValue(QString("maxRecordLength"),32e6); // ?
-    s.setValue(QString("minSampleRate"),16);
-    s.setValue(QString("maxSampleRate"),69e9);
-
+    int minDataChannel = s.value(QString("minDataChannel"),1).toInt();
+    int maxDataChannel = s.value(QString("maxDataChannel"),2).toInt();
+    int minTriggerChannel = s.value(QString("minTriggerChannel"),1).toInt();
+    int maxTriggerChannel = s.value(QString("maxTriggerChannel"),2).toInt();
+    double minVerticalScale = s.value(QString("minVerticalScale"),0.02).toDouble();
+    double maxVerticalScale = s.value(QString("maxVerticalScale"),20).toDouble();
+    int minRecordLength = s.value(QString("minRecordLength"),1).toInt();
+    int maxRecordLength = s.value(QString("maxRecordLength"),32e6).toInt();
+    double minSampleRate = s.value(QString("minSampleRate"),16).toDouble();
+    double maxSampleRate = s.value(QString("maxSampleRate"),69e9).toDouble();
+    s.setValue(QString("minDataChannel"),minDataChannel);
+    s.setValue(QString("maxDataChannel"),maxDataChannel);
+    s.setValue(QString("minTriggerChannel"),minTriggerChannel);
+    s.setValue(QString("maxTriggerChannel"),maxTriggerChannel);
+    s.setValue(QString("minVerticalScale"),minVerticalScale);
+    s.setValue(QString("maxVerticalScale"),maxVerticalScale);
+    s.setValue(QString("minRecordLength"),minRecordLength);
+    s.setValue(QString("maxRecordLength"),maxRecordLength);
+    s.setValue(QString("minSampleRate"),minSampleRate);
+    s.setValue(QString("maxSampleRate"),maxSampleRate);
     s.endGroup();
     s.endGroup();
 }
@@ -75,10 +83,10 @@ void Pico2206B::initialize()
     s.beginGroup(d_subKey);
 
     d_config.dataChannel = s.value(QString("dataChannel"),1).toInt();
+    d_config.triggerChannel = s.value(QString("triggerChannel"),2).toInt();
     d_config.verticalScale = s.value(QString("verticalScale"),5.0).toDouble();
     d_config.recordLength = s.value(QString("recordLength"),100).toInt();
     d_config.sampleRate = s.value(QString("sampleRate"),500.0).toDouble();
-    d_config.triggerChannel = s.value(QString("triggerChannel"),2).toInt();
     d_config.slope = static_cast<BlackChirp::ScopeTriggerSlope>(s.value(QString("slope"),BlackChirp::ScopeTriggerSlope::RisingEdge).toUInt());
     //d_config.byteOrder = static_cast<QDataStream::ByteOrder>(s.value(QString("byteOrder"),QDataStream::ByteOrder::BigEndian).toUInt());
     //d_config.bytesPerPoint = s.value(QString("bytesPerPoing"),100).toInt();

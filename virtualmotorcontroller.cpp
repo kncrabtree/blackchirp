@@ -12,6 +12,14 @@ VirtualMotorController::VirtualMotorController(QObject *parent) :
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
+
+    double xHomeOffset = s.value(QString("xHomeOffset"),0).toDouble(); //total: about 77
+    double yHomeOffset = s.value(QString("yHomeOffset"),80).toDouble(); //total: 162.516
+    double zHomeOffset = s.value(QString("zHomeOffset"),200).toDouble(); //total: about 397
+    s.setValue(QString("xHomeOffset"),xHomeOffset);
+    s.setValue(QString("yHomeOffset"),yHomeOffset);
+    s.setValue(QString("zHomeOffset"),zHomeOffset);
+
     double xMin = s.value(QString("xMin"),-100.0).toDouble();
     double xMax = s.value(QString("xMax"),100.0).toDouble();
     double yMin = s.value(QString("yMin"),-100.0).toDouble();
