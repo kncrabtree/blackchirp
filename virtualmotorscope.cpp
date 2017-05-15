@@ -12,18 +12,26 @@ VirtualMotorScope::VirtualMotorScope(QObject *parent) : MotorOscilloscope(parent
 
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
-
-    s.setValue(QString("minDataChannel"),1);
-    s.setValue(QString("maxDataChannel"),2);
-    s.setValue(QString("minTriggerChannel"),1);
-    s.setValue(QString("maxTriggerChannel"),2);
-    s.setValue(QString("minVerticalScale"),0.02);
-    s.setValue(QString("maxVerticalScale"),20);
-    s.setValue(QString("minRecordLength"),1);
-    s.setValue(QString("maxRecordLength"),32e6); // ?
-    s.setValue(QString("minSampleRate"),16);
-    s.setValue(QString("maxSampleRate"),69e9);
-
+    int minDataChannel = s.value(QString("minDataChannel"),1).toInt();
+    int maxDataChannel = s.value(QString("maxDataChannel"),2).toInt();
+    int minTriggerChannel = s.value(QString("minTriggerChannel"),1).toInt();
+    int maxTriggerChannel = s.value(QString("maxTriggerChannel"),2).toInt();
+    double minVerticalScale = s.value(QString("minVerticalScale"),0.02).toDouble();
+    double maxVerticalScale = s.value(QString("maxVerticalScale"),20).toDouble();
+    int minRecordLength = s.value(QString("minRecordLength"),1).toInt();
+    int maxRecordLength = s.value(QString("maxRecordLength"),32e6).toInt();
+    double minSampleRate = s.value(QString("minSampleRate"),16).toDouble();
+    double maxSampleRate = s.value(QString("maxSampleRate"),69e9).toDouble();
+    s.setValue(QString("minDataChannel"),minDataChannel);
+    s.setValue(QString("maxDataChannel"),maxDataChannel);
+    s.setValue(QString("minTriggerChannel"),minTriggerChannel);
+    s.setValue(QString("maxTriggerChannel"),maxTriggerChannel);
+    s.setValue(QString("minVerticalScale"),minVerticalScale);
+    s.setValue(QString("maxVerticalScale"),maxVerticalScale);
+    s.setValue(QString("minRecordLength"),minRecordLength);
+    s.setValue(QString("maxRecordLength"),maxRecordLength);
+    s.setValue(QString("minSampleRate"),minSampleRate);
+    s.setValue(QString("maxSampleRate"),maxSampleRate);
     s.endGroup();
     s.endGroup();
 }
