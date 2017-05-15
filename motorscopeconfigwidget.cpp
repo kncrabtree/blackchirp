@@ -46,8 +46,8 @@ MotorScopeConfigWidget::MotorScopeConfigWidget(QWidget *parent) :
     auto ivc = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
     connect(ui->sampleRateDoubleSpinBox,dvc,[=](double t){ui->sampleRateDoubleSpinBox_2->setValue(1e9/t);});
     //connect(ui->sampleRateDoubleSpinBox_2,dvc,[=](double t){ui->sampleRateDoubleSpinBox->setValue(1e9/t);});
-    connect(ui->recordLengthSpinBox,ivc,[=](int t){ui->recordTimeDoubleSpinBox->setValue(static_cast<double>(t-1)*ui->sampleRateDoubleSpinBox->value());});
-    connect(ui->sampleRateDoubleSpinBox,dvc,[=](double t){ui->recordTimeDoubleSpinBox->setValue(t*(static_cast<double>(ui->recordLengthSpinBox->value())-1));});
+    connect(ui->recordLengthSpinBox,ivc,[=](int t){ui->recordTimeDoubleSpinBox->setValue(static_cast<double>(t-1)*ui->sampleRateDoubleSpinBox->value()*1e-3);});
+    connect(ui->sampleRateDoubleSpinBox,dvc,[=](double t){ui->recordTimeDoubleSpinBox->setValue(t*(static_cast<double>(ui->recordLengthSpinBox->value())-1)*1e-3);});
 
 //    //if the dataChannel and triggerChannel can't be the same.
 //    auto vc = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);

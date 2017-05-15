@@ -18,13 +18,11 @@ public slots:
 public slots:
     bool configure(const BlackChirp::MotorScopeConfig &sc);
     MotorScan prepareForMotorScan(MotorScan s);
-
+    void queryScope();
 
 signals:
     void configChanged(BlackChirp::MotorScopeConfig sc);
 
-protected:
-    BlackChirp::MotorScopeConfig d_currentConfig;
 };
 
 #endif // VIRTUALMOTORSCOPE_H

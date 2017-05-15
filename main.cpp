@@ -139,12 +139,14 @@ int main(int argc, char *argv[])
     qRegisterMetaType<Fid>("Fid");
     qRegisterMetaType<QList<Fid> >("QList<Fid>");
     qRegisterMetaType<QVector<QPointF> >("QVector<QPointF>");
+    qRegisterMetaType<QVector<double>>("Vector<double>");
     qRegisterMetaType<QList<QPair<QString,QVariant> >>("QList<QPair<QString,QVariant> >");
     qRegisterMetaType<BlackChirp::PulseSetting>("BlackChirp::PulseSetting");
     qRegisterMetaType<BlackChirp::LifScopeConfig>("BlackChirp::LifScopeConfig");
     qRegisterMetaType<PulseGenConfig>("PulseGenConfig");
     qRegisterMetaType<QPair<QPoint,BlackChirp::LifPoint>>("QPair<QPoint,BlackChirp::LifPoint>");
     qRegisterMetaType<BlackChirp::FtWindowFunction>("BlackChirp::FtWindowFunction");
+    qRegisterMetaType<BlackChirp::MotorAxis>("BlackChirp::MotorAxis");
 #ifdef BC_LIF
     qRegisterMetaType<LifTrace>("LifTrace");
 #endif
