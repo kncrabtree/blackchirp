@@ -27,6 +27,7 @@ class LifDisplayWidget;
 
 #ifdef BC_MOTOR
 class MotorDisplayWidget;
+class MotorStatusWidget;
 #endif
 
 
@@ -124,10 +125,10 @@ private:
 #endif
 
 #ifdef BC_MOTOR
-    QAction *p_startMotorScanAction;
     QAction *p_motorViewAction;
     QWidget *p_motorTab;
     MotorDisplayWidget *p_motorDisplayWidget;
+    MotorStatusWidget *p_motorStatusWidget;
 #endif
 
 protected:

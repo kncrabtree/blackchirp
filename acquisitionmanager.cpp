@@ -269,29 +269,11 @@ void AcquisitionManager::abort()
 }
 
 #ifdef BC_MOTOR
-void AcquisitionManager::startMotorScan(MotorScan s)
-{
-    //this would be bad!
-    if(d_state != Idle)
-        return;
-
-
-    d_currentMotorScan = s;
-    d_waitingForMotor = true;
-
-    //also need to initialize oscilloscope here!
-
-    QVector3D pos = s.currentPos();
-    emit startMotorMove(pos.x(),pos.y(),pos.z());
-    d_state = Acquiring;
-    d_currentMotorScan.initialize();
-}
-
 void AcquisitionManager::motorMoveComplete(bool success)
 {
     //if motor move not successful, abort acquisition
     if(!success)
-        abortMotorScan();
+        abort();
     else
     {
         d_waitingForMotor = false;
@@ -300,16 +282,16 @@ void AcquisitionManager::motorMoveComplete(bool success)
 
 void AcquisitionManager::motorTraceReceived(const QVector<double> dat)
 {
-    if(d_state == Acquiring && d_currentMotorScan.isInitialized() && !d_waitingForMotor)
+    if(d_state == Acquiring && !d_waitingForMotor)
     {
-        bool adv = d_currentMotorScan.addTrace(dat);
+        bool adv = d_currentExperiment.addMotorTrace(dat);
         if(adv)
         {
-            if(d_currentMotorScan.isComplete())
-                finishMotorScan();
-            else
+            checkComplete();
+
+            if(d_state == Acquiring)
             {
-                QVector3D pos = d_currentMotorScan.currentPos();
+                QVector3D pos = d_currentExperiment.motorScan().currentPos();
                 emit startMotorMove(pos.x(),pos.y(),pos.z());
                 d_waitingForMotor = true;
             }
@@ -317,27 +299,6 @@ void AcquisitionManager::motorTraceReceived(const QVector<double> dat)
     }
 
     //TODO: construct a rolling average waveform and send to UI
-}
-
-void AcquisitionManager::abortMotorScan()
-{
-    if(d_state == Acquiring || d_state == Paused)
-    {
-        d_currentMotorScan.abort();
-        finishMotorScan();
-    }
-}
-
-void AcquisitionManager::finishMotorScan()
-{
-    if(d_state == Acquiring || d_state == Paused)
-    {
-        d_state = Idle;
-        d_waitingForMotor = false;
-        //save data!
-
-        d_currentMotorScan = MotorScan();
-    }
 }
 #endif
 

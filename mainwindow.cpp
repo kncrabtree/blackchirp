@@ -31,6 +31,7 @@
 #include "quickexptdialog.h"
 #include "batchsequencedialog.h"
 #include "exportbatchdialog.h"
+#include "motorstatuswidget.h"
 
 #ifdef BC_LIF
 #include "lifdisplaywidget.h"
@@ -295,6 +296,14 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->menuView->insertAction(ui->actionLog,p_motorViewAction);
     connect(p_motorViewAction,&QAction::triggered,[=](){ ui->tabWidget->setCurrentWidget(p_motorTab);});
 
+    p_motorStatusWidget = new MotorStatusWidget(this);
+    ui->instrumentStatusLayout->addWidget(p_motorStatusWidget);
+
+    connect(p_hwm,&HardwareManager::motorMoveComplete,p_am,&AcquisitionManager::motorMoveComplete);
+    connect(p_hwm,&HardwareManager::motorTraceAcquired,p_am,&AcquisitionManager::motorTraceReceived);
+    connect(p_am,&AcquisitionManager::startMotorMove,p_hwm,&HardwareManager::moveMotorToPosition);
+    connect(p_hwm,&HardwareManager::motorPosUpdate,p_motorStatusWidget,&MotorStatusWidget::updatePosition);
+    connect(p_hwm,&HardwareManager::motorLimitStatus,p_motorStatusWidget,&MotorStatusWidget::updateLimit);
 #endif
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
@@ -526,6 +535,7 @@ void MainWindow::experimentInitialized(const Experiment exp)
     p_lifDisplayWidget->prepareForExperiment(exp.lifConfig());
     if(exp.lifConfig().isEnabled())
     {
+        p_lifTab->setEnabled(true);
         p_lifProgressBar->setRange(0,exp.lifConfig().totalShots());
         connect(p_hwm,&HardwareManager::lifScopeShotAcquired,
                 p_lifDisplayWidget,&LifDisplayWidget::lifShotAcquired,Qt::UniqueConnection);
@@ -536,6 +546,12 @@ void MainWindow::experimentInitialized(const Experiment exp)
         p_lifProgressBar->setRange(0,1);
         p_lifProgressBar->setValue(1);
     }
+#endif
+
+#ifdef BC_MOTOR
+    p_motorStatusWidget->prepareForExperiment(exp);
+    p_motorDisplayWidget->prepareForScan(exp.motorScan());
+    p_motorTab->setEnabled(exp.motorScan().isEnabled());
 #endif
 
     if(exp.number() > 0)
@@ -929,9 +945,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(false);
 #endif
-#ifdef BC_MOTOR
-        p_startMotorScanAction->setEnabled(false);
-#endif
         break;
     case Disconnected:
         ui->actionAbort->setEnabled(false);
@@ -950,9 +963,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionSleep->setEnabled(false);
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(false);
-#endif
-#ifdef BC_MOTOR
-        p_startMotorScanAction->setEnabled(false);
 #endif
         break;
     case Paused:
@@ -973,9 +983,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(false);
 #endif
-#ifdef BC_MOTOR
-        p_startMotorScanAction->setEnabled(false);
-#endif
         break;
     case Acquiring:
         ui->actionAbort->setEnabled(true);
@@ -994,9 +1001,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionSleep->setEnabled(false);
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(false);
-#endif
-#ifdef BC_MOTOR
-        p_startMotorScanAction->setEnabled(false);
 #endif
         break;
     case Peaking:
@@ -1017,9 +1021,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(true);
 #endif
-#ifdef BC_MOTOR
-        p_startMotorScanAction->setEnabled(false);
-#endif
         break;
     case Idle:
     default:
@@ -1039,9 +1040,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionSleep->setEnabled(true);
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(true);
-#endif
-#ifdef BC_MOTOR
-        p_startMotorScanAction->setEnabled(true);
 #endif
         break;
     }

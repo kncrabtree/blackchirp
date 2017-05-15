@@ -76,6 +76,14 @@ signals:
     void lifSettingsComplete(bool success = true);
 #endif
 
+#ifdef BC_MOTOR
+    void motorTraceAcquired(QVector<double> d);
+    void motorMoveComplete(bool);
+    void moveMotorToPosition(double x, double y, double z);
+    void motorLimitStatus(BlackChirp::MotorAxis axis, bool negLimit, bool posLimit);
+    void motorPosUpdate(BlackChirp::MotorAxis axis, double pos);
+#endif
+
 public slots:
     void initialize();
 

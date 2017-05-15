@@ -12,7 +12,16 @@ MotorController::MotorController(QObject *parent) : HardwareObject(parent)
 
 Experiment MotorController::prepareForExperiment(Experiment exp)
 {
-    moveToRestingPos();
+    if(exp.motorScan().isEnabled())
+    {
+        if(!prepareForMotorScan(exp.motorScan()))
+        {
+            exp.setHardwareFailed();
+            exp.setErrorString(QString("Failed to prepare %1 for scan").arg(name()));
+        }
+    }
+    else
+        moveToRestingPos();
 
     return exp;
 }
