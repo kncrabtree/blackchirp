@@ -1,5 +1,7 @@
 #include "virtualmotorscope.h"
 
+#include <QTimer>
+
 VirtualMotorScope::VirtualMotorScope(QObject *parent) : MotorOscilloscope(parent)
 {
     d_subKey = QString("virtual");
@@ -32,8 +34,17 @@ VirtualMotorScope::VirtualMotorScope(QObject *parent) : MotorOscilloscope(parent
     s.setValue(QString("maxRecordLength"),maxRecordLength);
     s.setValue(QString("minSampleRate"),minSampleRate);
     s.setValue(QString("maxSampleRate"),maxSampleRate);
+
+    d_config.dataChannel = s.value(QString("dataChannel"),1).toInt();
+    d_config.triggerChannel = s.value(QString("triggerChannel"),2).toInt();
+    d_config.verticalScale = s.value(QString("verticalScale"),5.0).toDouble();
+    d_config.recordLength = s.value(QString("recordLength"),100).toInt();
+    d_config.sampleRate = s.value(QString("sampleRate"),500.0).toDouble();
+    d_config.slope = static_cast<BlackChirp::ScopeTriggerSlope>(s.value(QString("slope"),BlackChirp::ScopeTriggerSlope::RisingEdge).toUInt());
+
     s.endGroup();
     s.endGroup();
+
 }
 
 
@@ -47,6 +58,10 @@ bool VirtualMotorScope::testConnection()
 void VirtualMotorScope::initialize()
 {
     testConnection();
+    QTimer *test = new QTimer(this);
+    test->setInterval(200);
+    connect(test,&QTimer::timeout,this,&VirtualMotorScope::queryScope);
+    test->start();
 }
 
 bool VirtualMotorScope::configure(const BlackChirp::MotorScopeConfig &sc)
@@ -55,7 +70,7 @@ bool VirtualMotorScope::configure(const BlackChirp::MotorScopeConfig &sc)
     out.byteOrder = QDataStream::BigEndian;
     out.bytesPerPoint = 2;
 
-    d_currentConfig = out;
+    d_config = out;
     emit configChanged(out);
     return true;
 }
@@ -70,4 +85,18 @@ MotorScan VirtualMotorScope::prepareForMotorScan(MotorScan s)
     return s;
 
 
+}
+
+void VirtualMotorScope::queryScope()
+{
+    QVector<double> out;
+    out.resize(d_config.recordLength);
+
+    for(int i=0; i<d_config.recordLength; i++)
+    {
+        double dat = static_cast<double>((qrand() % 65536 - 32768)) / 65536.0 * d_config.verticalScale;
+        out[i] = dat;
+    }
+
+    emit traceAcquired(out);
 }
