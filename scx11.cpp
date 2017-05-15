@@ -114,6 +114,7 @@ void Scx11::beginAcquisition()
 
 void Scx11::endAcquisition()
 {
+    moveToRestingPos();
 }
 
 void Scx11::readTimeData()

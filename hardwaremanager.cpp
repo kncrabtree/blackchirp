@@ -91,9 +91,14 @@ void HardwareManager::initialize()
 
 #ifdef BC_MOTOR
     p_mc = new MotorControllerHardware();
+    connect(p_mc,&MotorController::motionComplete,this,&HardwareManager::motorMoveComplete);
+    connect(this,&HardwareManager::moveMotorToPosition,p_mc,&MotorController::moveToPosition);
+    connect(p_mc,&MotorController::posUpdate,this,&HardwareManager::motorPosUpdate);
+    connect(p_mc,&MotorController::limitStatus,this,&HardwareManager::motorLimitStatus);
     d_hardwareList.append(qMakePair(p_mc,nullptr));
 
     p_motorScope = new MotorScopeHardware();
+    connect(p_motorScope,&MotorOscilloscope::traceAcquired,this,&HardwareManager::motorTraceAcquired);
     d_hardwareList.append(qMakePair(p_motorScope,nullptr));
 #endif
 

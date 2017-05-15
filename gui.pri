@@ -80,7 +80,8 @@ motor {
 			   $$PWD/motorxyplot.h \
                            $$PWD/motortimeplot.h \
                            $$PWD/motorscopeconfigwidget.h \
-                           $$PWD/motorscanconfigwidget.h
+                           $$PWD/motorscanconfigwidget.h \
+                           $$PWD/motorstatuswidget.h
 	SOURCES += \
 			   $$PWD/motordisplaywidget.cpp \
 			   $$PWD/motorsliderwidget.cpp \
@@ -89,10 +90,12 @@ motor {
 			   $$PWD/motorxyplot.cpp \
                            $$PWD/motortimeplot.cpp \
                            $$PWD/motorscopeconfigwidget.cpp \
-                           $$PWD/motorscanconfigwidget.cpp
+                           $$PWD/motorscanconfigwidget.cpp \
+                           $$PWD/motorstatuswidget.cpp
 
 	FORMS += \
                  $$PWD/motordisplaywidget.ui \
                  $$PWD/motorscopeconfigwidget.ui \
-                 $$PWD/motorscanconfigwidget.ui
+                 $$PWD/motorscanconfigwidget.ui \
+                 $$PWD/motorstatuswidget.ui
 }

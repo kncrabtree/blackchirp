@@ -77,11 +77,8 @@ public slots:
 #endif
 
 #ifdef BC_MOTOR
-    void startMotorScan(MotorScan s);
     void motorMoveComplete(bool success);
     void motorTraceReceived(const QVector<double> dat);
-    void abortMotorScan();
-    void finishMotorScan();
 #endif
 
 private:
@@ -103,7 +100,6 @@ private:
 
 #ifdef BC_MOTOR
     bool d_waitingForMotor;
-    MotorScan d_currentMotorScan;
 #endif
 
 
