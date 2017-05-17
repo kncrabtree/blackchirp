@@ -58,8 +58,12 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     connect(p_motor,&QCheckBox::toggled,this,&WizardStartPage::completeChanged);
     connect(p_motor,&QCheckBox::toggled,[=](bool ch){
         p_ftmw->setDisabled(ch);
+        if(ch)
+            p_ftmw->setChecked(false);
 #ifdef BC_LIF
         p_lif->setDisabled(ch);
+        if(ch)
+            p_lif->setChecked(false);
 #endif
     });
 #endif
@@ -93,16 +97,16 @@ int WizardStartPage::nextId() const
 
 bool WizardStartPage::isComplete() const
 {
+    bool out = p_ftmw->isChecked();
 #ifdef BC_LIF
-#ifdef BC_MOTOR
-    if(p_motor->isChecked())
-        return true;
-    else
-        return (p_ftmw->isChecked() || p_lif->isChecked());
-#endif
+    out = out || p_lif->isChecked();
 #endif
 
-    return true;
+#ifdef BC_MOTOR
+    out = out || p_motor->isChecked();
+#endif
+
+    return out;
 }
 
 void WizardStartPage::initializePage()

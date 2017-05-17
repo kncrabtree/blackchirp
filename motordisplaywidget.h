@@ -23,6 +23,7 @@ public:
 public slots:
     void prepareForScan(const MotorScan s);
     void newMotorData(const MotorScan s);
+    void updatePlots();
 
 private:
     Ui::MotorDisplayWidget *ui;

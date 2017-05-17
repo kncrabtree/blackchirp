@@ -16,6 +16,8 @@ public:
 public slots:
     bool testConnection();
     void initialize();
+    void beginAcquisition();
+    void endAcquisition();
 
     // MotorOscilloscope interface
 public slots:
@@ -33,9 +35,10 @@ private:
     bool d_acquiring;
     QVector<qint16> d_buffer;
 
-    void beginAcquisition();
-    void endAcquisition();
+    void beginScopeAcquisition();
+    void endScopeAcquisition();
     void closeConnection();
+
 };
 
 

@@ -72,15 +72,11 @@ void VirtualMotorController::beginAcquisition()
 {
 }
 
-void VirtualMotorController::endAcquisition()
-{
-}
-
 void VirtualMotorController::readTimeData()
 {
 }
 
-void VirtualMotorController::moveToPosition(double x, double y, double z)
+bool VirtualMotorController::moveToPosition(double x, double y, double z)
 {
     d_xPos = x;
     d_yPos = y;
@@ -91,12 +87,6 @@ void VirtualMotorController::moveToPosition(double x, double y, double z)
     emit posUpdate(BlackChirp::MotorZ,d_zPos);
 
     emit motionComplete();
-}
-
-bool VirtualMotorController::prepareForMotorScan(const MotorScan ms)
-{
-    moveToPosition(ms.xVal(0),ms.yVal(0),ms.zVal(0));
-
     return true;
 }
 

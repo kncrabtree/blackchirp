@@ -100,6 +100,7 @@ MotorScan MotorScanConfigWidget::toMotorScan()
         dz = 0.0;
 
     out.setIntervals(ui->xMinBox->value(),ui->yMinBox->value(),ui->zMinBox->value(),dx,dy,dz);
+    out.setShotsPerPoint(ui->shotsPerPointSpinBox->value());
 
     out.setScopeConfig(ui->scopeConfigWidget->toConfig());
 

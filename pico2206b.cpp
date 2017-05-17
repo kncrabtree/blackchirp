@@ -4,7 +4,7 @@
 #include <ps2000aApi.h>
 #include <QTimer>
 
-Pico2206B::Pico2206B(QObject *parent) : MotorOscilloscope(parent)
+Pico2206B::Pico2206B(QObject *parent) : MotorOscilloscope(parent), d_acquiring(false)
 {
     d_subKey = QString("pico2206b");
     d_prettyName = QString("Pico 2206B Oscilloscope");
@@ -25,8 +25,8 @@ Pico2206B::Pico2206B(QObject *parent) : MotorOscilloscope(parent)
     double maxVerticalScale = s.value(QString("maxVerticalScale"),20).toDouble();
     int minRecordLength = s.value(QString("minRecordLength"),1).toInt();
     int maxRecordLength = s.value(QString("maxRecordLength"),32e6).toInt();
-    double minSampleRate = s.value(QString("minSampleRate"),16).toDouble();
-    double maxSampleRate = s.value(QString("maxSampleRate"),69e9).toDouble();
+    double minSampleRate = s.value(QString("minSampleInterval"),16).toDouble();
+    double maxSampleRate = s.value(QString("maxSampleInterval"),69e9).toDouble();
     s.setValue(QString("minDataChannel"),minDataChannel);
     s.setValue(QString("maxDataChannel"),maxDataChannel);
     s.setValue(QString("minTriggerChannel"),minTriggerChannel);
@@ -35,8 +35,8 @@ Pico2206B::Pico2206B(QObject *parent) : MotorOscilloscope(parent)
     s.setValue(QString("maxVerticalScale"),maxVerticalScale);
     s.setValue(QString("minRecordLength"),minRecordLength);
     s.setValue(QString("maxRecordLength"),maxRecordLength);
-    s.setValue(QString("minSampleRate"),minSampleRate);
-    s.setValue(QString("maxSampleRate"),maxSampleRate);
+    s.setValue(QString("minSampleInterval"),minSampleRate);
+    s.setValue(QString("maxSampleInterval"),maxSampleRate);
     s.endGroup();
     s.endGroup();
 }
@@ -63,7 +63,7 @@ bool Pico2206B::testConnection()
 
     emit connected();
 
-    configure(d_config);
+//    configure(d_config);
 
     return true;
 
@@ -77,25 +77,35 @@ void Pico2206B::initialize()
 
     d_acquiring = false;
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+//    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
+//    s.beginGroup(d_key);
+//    s.beginGroup(d_subKey);
 
-    d_config.dataChannel = s.value(QString("dataChannel"),1).toInt();
-    d_config.triggerChannel = s.value(QString("triggerChannel"),2).toInt();
-    d_config.verticalScale = s.value(QString("verticalScale"),5.0).toDouble();
-    d_config.recordLength = s.value(QString("recordLength"),100).toInt();
-    d_config.sampleRate = s.value(QString("sampleRate"),500.0).toDouble();
-    d_config.slope = static_cast<BlackChirp::ScopeTriggerSlope>(s.value(QString("slope"),BlackChirp::ScopeTriggerSlope::RisingEdge).toUInt());
-    //d_config.byteOrder = static_cast<QDataStream::ByteOrder>(s.value(QString("byteOrder"),QDataStream::ByteOrder::BigEndian).toUInt());
-    //d_config.bytesPerPoint = s.value(QString("bytesPerPoing"),100).toInt();
-    s.endGroup();
-    s.endGroup();
+//    d_config.dataChannel = s.value(QString("dataChannel"),1).toInt();
+//    d_config.triggerChannel = s.value(QString("triggerChannel"),2).toInt();
+//    d_config.verticalScale = s.value(QString("verticalScale"),5.0).toDouble();
+//    d_config.recordLength = s.value(QString("recordLength"),100).toInt();
+//    d_config.sampleRate = s.value(QString("sampleRate"),500.0).toDouble();
+//    d_config.slope = static_cast<BlackChirp::ScopeTriggerSlope>(s.value(QString("slope"),BlackChirp::ScopeTriggerSlope::RisingEdge).toUInt());
+//    //d_config.byteOrder = static_cast<QDataStream::ByteOrder>(s.value(QString("byteOrder"),QDataStream::ByteOrder::BigEndian).toUInt());
+//    //d_config.bytesPerPoint = s.value(QString("bytesPerPoing"),100).toInt();
+//    s.endGroup();
+//    s.endGroup();
 
     testConnection();
 
 
+}
+
+void Pico2206B::beginAcquisition()
+{
+    beginScopeAcquisition();
+}
+
+void Pico2206B::endAcquisition()
+{
+    d_acquiring = false;
 }
 
 bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
@@ -222,22 +232,22 @@ bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
         return false;
     }
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+//    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    s.setValue(QString("dataChannel"),sc.dataChannel);
-    s.setValue(QString("verticalScale"),sc.verticalScale);
-    s.setValue(QString("recordlength"),sc.recordLength);
-    s.setValue(QString("sampleRate"),sc.sampleRate);
-    s.setValue(QString("triggerChannel"),sc.triggerChannel);
-    s.setValue(QString("slope"),static_cast<uint>(sc.slope));
-    //s.setValue(QString("byteOrder"),static_cast<uint>(sc.byteOrder));
-    //s.setValue(QString("bytesPerPoint"),sc.bytesPerPoint);
-    s.endGroup();
-    s.endGroup();
+//    s.beginGroup(d_key);
+//    s.beginGroup(d_subKey);
+//    s.setValue(QString("dataChannel"),sc.dataChannel);
+//    s.setValue(QString("verticalScale"),sc.verticalScale);
+//    s.setValue(QString("recordlength"),sc.recordLength);
+//    s.setValue(QString("sampleRate"),sc.sampleRate);
+//    s.setValue(QString("triggerChannel"),sc.triggerChannel);
+//    s.setValue(QString("slope"),static_cast<uint>(sc.slope));
+//    //s.setValue(QString("byteOrder"),static_cast<uint>(sc.byteOrder));
+//    //s.setValue(QString("bytesPerPoint"),sc.bytesPerPoint);
+//    s.endGroup();
+//    s.endGroup();
 
-    beginAcquisition();
+//    beginAcquisition();
 
     return true;
 }
@@ -253,7 +263,7 @@ MotorScan Pico2206B::prepareForMotorScan(MotorScan s)
     return s;
 }
 
-void Pico2206B::beginAcquisition()
+void Pico2206B::beginScopeAcquisition()
 {
     if (d_acquiring == true)
         return;
@@ -272,8 +282,21 @@ void Pico2206B::beginAcquisition()
     emit logMessage(QString("start acqu process"));
 }
 
-void Pico2206B::endAcquisition()
+void Pico2206B::endScopeAcquisition()
 {
+    if(!d_acquiring)
+    {
+        status = ps2000aStop(d_handle);
+        if(status != PICO_OK)
+        {
+            ///TODO: Update other areas to be like this
+            emit hardwareFailure();
+            emit logMessage(QString("Pico2206B stop failed. Error code: %1").arg(status),BlackChirp::LogError);
+            return;
+        }
+    }
+    return;
+
     emit logMessage(QString("start end acqu function"));
     status = ps2000aIsReady(d_handle, &isReady);
     if(status != PICO_OK)

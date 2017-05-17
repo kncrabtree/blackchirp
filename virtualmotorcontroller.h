@@ -15,13 +15,11 @@ public slots:
     void initialize();
     Experiment prepareForExperiment(Experiment exp);
     void beginAcquisition();
-    void endAcquisition();
     void readTimeData();
 
     // MotorController interface
 public slots:
-    void moveToPosition(double x, double y, double z);
-    bool prepareForMotorScan(const MotorScan ms);
+    bool moveToPosition(double x, double y, double z);
     void moveToRestingPos();
     void checkLimit();
 };

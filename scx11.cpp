@@ -112,16 +112,11 @@ void Scx11::beginAcquisition()
 {
 }
 
-void Scx11::endAcquisition()
-{
-    moveToRestingPos();
-}
-
 void Scx11::readTimeData()
 {
 }
 
-void Scx11::moveToPosition(double x, double y, double z)
+bool Scx11::moveToPosition(double x, double y, double z)
 {
     BlackChirp::MotorAxis axis;
     bool done;
@@ -133,10 +128,12 @@ void Scx11::moveToPosition(double x, double y, double z)
         if (!done)
         {
             emit hardwareFailure();
-            return;
+            emit motionComplete(false);
+            return false;
         }
 
     }
+
     if (abs(d_yPos-y) >= 0.001)
     {
         axis = BlackChirp::MotorAxis::MotorY;
@@ -144,9 +141,11 @@ void Scx11::moveToPosition(double x, double y, double z)
         if (!done)
         {
             emit hardwareFailure();
-            return;
+            emit motionComplete(false);
+            return false;
         }
     }
+
     if (abs(d_zPos-z) >= 0.001)
     {
         axis = BlackChirp::MotorAxis::MotorZ;
@@ -154,15 +153,13 @@ void Scx11::moveToPosition(double x, double y, double z)
         if (!done)
         {
             emit hardwareFailure();
-            return;
+            ///TODO: log message saying what problem was
+            emit motionComplete(false);
+            return false;
         }
     }
-    return;
-}
 
-bool Scx11::prepareForMotorScan(const MotorScan ms)
-{
-    Q_UNUSED(ms)
+    emit motionComplete(true);
     return true;
 }
 

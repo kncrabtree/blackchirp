@@ -25,3 +25,14 @@ Experiment MotorController::prepareForExperiment(Experiment exp)
 
     return exp;
 }
+
+bool MotorController::prepareForMotorScan(const MotorScan ms)
+{
+    return moveToPosition(ms.xVal(0),ms.yVal(0),ms.zVal(0));
+}
+
+
+void MotorController::endAcquisition()
+{
+    moveToRestingPos();
+}

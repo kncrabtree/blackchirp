@@ -19,6 +19,9 @@ MotorDisplayWidget::MotorDisplayWidget(QWidget *parent) :
 
     d_sliders << ui->zSlider1 << ui->zSlider2 << ui->xySlider1 << ui->xySlider2
               << ui->timeXSlider << ui->timeYSlider << ui->timeZSlider;
+
+    for(int i=0; i<d_sliders.size();i++)
+        connect(d_sliders.at(i),&MotorSliderWidget::valueChanged,this,&MotorDisplayWidget::updatePlots);
 }
 
 MotorDisplayWidget::~MotorDisplayWidget()
@@ -46,20 +49,23 @@ void MotorDisplayWidget::prepareForScan(const MotorScan s)
 void MotorDisplayWidget::newMotorData(const MotorScan s)
 {
     d_currentScan = s;
+    updatePlots();
+}
 
+void MotorDisplayWidget::updatePlots()
+{
     //prepare slices; update plots
-    QVector<double> sliceZPlot = s.slice(ui->motorZSpectrogramPlot->leftAxis(),ui->motorZSpectrogramPlot->bottomAxis()
+    QVector<double> sliceZPlot = d_currentScan.slice(ui->motorZSpectrogramPlot->leftAxis(),ui->motorZSpectrogramPlot->bottomAxis()
                                          ,ui->zSlider1->axis(),ui->zSlider1->currentIndex(),
                                          ui->zSlider2->axis(),ui->zSlider2->currentIndex());
 
-    ui->motorZSpectrogramPlot->updateData(sliceZPlot,s.numPoints(ui->motorZSpectrogramPlot->bottomAxis()));
+    ui->motorZSpectrogramPlot->updateData(sliceZPlot,d_currentScan.numPoints(ui->motorZSpectrogramPlot->bottomAxis()));
 
-    QVector<double> sliceXYPlot = s.slice(ui->motorXYSpectrogramPlot->leftAxis(),ui->motorXYSpectrogramPlot->bottomAxis()
+    QVector<double> sliceXYPlot = d_currentScan.slice(ui->motorXYSpectrogramPlot->leftAxis(),ui->motorXYSpectrogramPlot->bottomAxis()
                                          ,ui->xySlider1->axis(),ui->xySlider1->currentIndex(),
                                          ui->xySlider2->axis(),ui->xySlider2->currentIndex());
-    ui->motorXYSpectrogramPlot->updateData(sliceXYPlot,s.numPoints(ui->motorXYSpectrogramPlot->bottomAxis()));
+    ui->motorXYSpectrogramPlot->updateData(sliceXYPlot,d_currentScan.numPoints(ui->motorXYSpectrogramPlot->bottomAxis()));
 
-    QVector<QPointF> timeTrace = s.tTrace(ui->timeXSlider->currentIndex(),ui->timeYSlider->currentIndex(),ui->timeZSlider->currentIndex());
+    QVector<QPointF> timeTrace = d_currentScan.tTrace(ui->timeXSlider->currentIndex(),ui->timeYSlider->currentIndex(),ui->timeZSlider->currentIndex());
     ui->motorTimePlot->updateData(timeTrace);
-
 }

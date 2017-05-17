@@ -42,6 +42,17 @@ MotorScan MotorScan::fromSettings()
     double z0 = s.value(QString("z0"),-10.0).toDouble();
 
     out.setIntervals(x0,y0,z0,dx,dy,dz);
+
+    BlackChirp::MotorScopeConfig ms;
+    ms.dataChannel = s.value(QString("dataChannel"),1).toInt();
+    ms.triggerChannel = s.value(QString("triggerChannel"),2).toInt();
+    ms.recordLength = s.value(QString("recordLength"),500).toInt();
+    ms.sampleRate = s.value(QString("sampleRate"),1e6).toDouble();
+    ms.slope = static_cast<BlackChirp::ScopeTriggerSlope>(s.value(QString("slope"),BlackChirp::RisingEdge).toUInt());
+    ms.verticalScale = s.value(QString("verticalScale"),1.0).toDouble();
+
+    out.setScopeConfig(ms);
+
     s.endGroup();
 
     return out;
@@ -66,11 +77,19 @@ void MotorScan::saveToSettings() const
     s.setValue(QString("dx"),(xVal(xPoints()-1) - xVal(0))/(static_cast<double>(xPoints())-1.0));
     s.setValue(QString("dy"),(yVal(yPoints()-1) - yVal(0))/(static_cast<double>(yPoints())-1.0));
     s.setValue(QString("dz"),(zVal(zPoints()-1) - zVal(0))/(static_cast<double>(zPoints())-1.0));
-    s.setValue(QString("dz"),(tVal(tPoints()-1) - tVal(0))/(static_cast<double>(tPoints())-1.0));
+    s.setValue(QString("dt"),(tVal(tPoints()-1) - tVal(0))/(static_cast<double>(tPoints())-1.0));
 
     s.setValue(QString("shotsPerPoint"),shotsPerPoint());
 
+    s.setValue(QString("dataChannel"),scopeConfig().dataChannel);
+    s.setValue(QString("triggerChannel"),scopeConfig().triggerChannel);
+    s.setValue(QString("recordLength"),scopeConfig().recordLength);
+    s.setValue(QString("sampleRate"),scopeConfig().sampleRate);
+    s.setValue(QString("slope"),static_cast<uint>(scopeConfig().slope));
+    s.setValue(QString("verticalScale"),scopeConfig().verticalScale);
+
     s.endGroup();
+
     s.sync();
 }
 
@@ -96,7 +115,7 @@ QMap<QString, QPair<QVariant, QString> > MotorScan::headerMap() const
     QString prefix = QString("MotorScan");
     QString empty = QString("");
     QString mm = QString("mm");
-    QString s = QString("s");
+    QString us = QString::fromUtf16(u"μs");
 
     out.insert(prefix+QString("Enabled"),qMakePair(isEnabled(),empty));
     if(!isEnabled())
@@ -110,12 +129,12 @@ QMap<QString, QPair<QVariant, QString> > MotorScan::headerMap() const
     out.insert(prefix+QString("XStart"),qMakePair(data->x0,mm));
     out.insert(prefix+QString("YStart"),qMakePair(data->y0,mm));
     out.insert(prefix+QString("ZStart"),qMakePair(data->z0,mm));
-    out.insert(prefix+QString("TStart"),qMakePair(data->t0,s));
+    out.insert(prefix+QString("TStart"),qMakePair(data->t0,us));
 
     out.insert(prefix+QString("XStep"),qMakePair(data->dx,mm));
     out.insert(prefix+QString("YStep"),qMakePair(data->dy,mm));
     out.insert(prefix+QString("ZStep"),qMakePair(data->dz,mm));
-    out.insert(prefix+QString("TStep"),qMakePair(data->dt,s));
+    out.insert(prefix+QString("TStep"),qMakePair(data->dt,us));
 
     out.insert(prefix+QString("ShotsPerPoint"),qMakePair(data->shotsPerPoint,empty));
 
@@ -529,6 +548,8 @@ void MotorScan::setShotsPerPoint(const int s)
 void MotorScan::setScopeConfig(const BlackChirp::MotorScopeConfig &sc)
 {
     data->scopeConfig = sc;
+    data->tPoints = sc.recordLength;
+    data->dt = 1.0/sc.sampleRate*1e6;
 }
 
 void MotorScan::setHardwareError()

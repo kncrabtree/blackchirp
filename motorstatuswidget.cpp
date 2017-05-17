@@ -50,6 +50,8 @@ MotorStatusWidget::MotorStatusWidget(QWidget *parent) :
 
     ui->progressBar->setValue(0);
 
+    updateRanges();
+
 }
 
 MotorStatusWidget::~MotorStatusWidget()
@@ -79,7 +81,7 @@ void MotorStatusWidget::updateRanges()
     s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
 
     d_x.minPos = s.value(QString("xMin"),-100.0).toDouble();
-    d_x.maxPos = s.value(QString("xMin"),100.0).toDouble();
+    d_x.maxPos = s.value(QString("xMax"),100.0).toDouble();
     d_y.minPos = s.value(QString("yMin"),-100.0).toDouble();
     d_y.maxPos = s.value(QString("yMax"),100.0).toDouble();
     d_z.minPos = s.value(QString("zMin"),-100.0).toDouble();
@@ -98,13 +100,13 @@ void MotorStatusWidget::updatePosition(BlackChirp::MotorAxis axis, double pos)
     switch(axis)
     {
     case BlackChirp::MotorX:
-        d_x.positionBar->setValue((pos-d_x.minPos)/(d_x.maxPos-d_x.minPos));
+        d_x.positionBar->setValue((pos-d_x.minPos)/(d_x.maxPos-d_x.minPos)*10000);
         break;
     case BlackChirp::MotorY:
-        d_y.positionBar->setValue((pos-d_y.minPos)/(d_y.maxPos-d_y.minPos));
+        d_y.positionBar->setValue((pos-d_y.minPos)/(d_y.maxPos-d_y.minPos)*10000);
         break;
     case BlackChirp::MotorZ:
-        d_z.positionBar->setValue((pos-d_z.minPos)/(d_z.maxPos-d_z.minPos));
+        d_z.positionBar->setValue((pos-d_z.minPos)/(d_z.maxPos-d_z.minPos)*10000);
         break;
     default:
         break;
@@ -130,4 +132,9 @@ void MotorStatusWidget::updateLimit(BlackChirp::MotorAxis axis, bool n, bool p)
     default:
         break;
     }
+}
+
+void MotorStatusWidget::updateProgress(int s)
+{
+    ui->progressBar->setValue(s);
 }

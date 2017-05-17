@@ -57,6 +57,8 @@ signals:
 
 #ifdef BC_MOTOR
     void startMotorMove(double x, double y, double z);
+    void motorProgress(int);
+    void motorDataUpdate(const MotorScan s);
 #endif
 
 public slots:

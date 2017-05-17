@@ -3,6 +3,8 @@
 
 #include "motoroscilloscope.h"
 
+class QTimer;
+
 class VirtualMotorScope : public MotorOscilloscope
 {
     Q_OBJECT
@@ -20,9 +22,14 @@ public slots:
     MotorScan prepareForMotorScan(MotorScan s);
     void queryScope();
 
-signals:
-    void configChanged(BlackChirp::MotorScopeConfig sc);
+private:
+    QTimer *p_testTimer;
 
+
+    // HardwareObject interface
+public slots:
+    virtual void beginAcquisition();
+    virtual void endAcquisition();
 };
 
 #endif // VIRTUALMOTORSCOPE_H

@@ -295,7 +295,12 @@ void AcquisitionManager::motorTraceReceived(const QVector<double> dat)
                 emit startMotorMove(pos.x(),pos.y(),pos.z());
                 d_waitingForMotor = true;
             }
+
+            emit motorDataUpdate(d_currentExperiment.motorScan());
         }
+
+        //emit a progress signal
+        emit motorProgress(d_currentExperiment.motorScan().completedShots());
     }
 
     //TODO: construct a rolling average waveform and send to UI

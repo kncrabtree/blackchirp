@@ -6,7 +6,7 @@ VirtualMotorScope::VirtualMotorScope(QObject *parent) : MotorOscilloscope(parent
 {
     d_subKey = QString("virtual");
     d_prettyName = QString("Virtual Motor Oscilloscope");
-    d_threaded = true;
+    d_threaded = false;
     d_commType = CommunicationProtocol::Virtual;
 
     //establish settings parameters (min/max sample rate, vertical scale, etc)
@@ -58,10 +58,10 @@ bool VirtualMotorScope::testConnection()
 void VirtualMotorScope::initialize()
 {
     testConnection();
-    QTimer *test = new QTimer(this);
-    test->setInterval(200);
-    connect(test,&QTimer::timeout,this,&VirtualMotorScope::queryScope);
-    test->start();
+    p_testTimer = new QTimer(this);
+    p_testTimer->setInterval(200);
+    connect(p_testTimer,&QTimer::timeout,this,&VirtualMotorScope::queryScope);
+
 }
 
 bool VirtualMotorScope::configure(const BlackChirp::MotorScopeConfig &sc)
@@ -71,7 +71,6 @@ bool VirtualMotorScope::configure(const BlackChirp::MotorScopeConfig &sc)
     out.bytesPerPoint = 2;
 
     d_config = out;
-    emit configChanged(out);
     return true;
 }
 
@@ -99,4 +98,15 @@ void VirtualMotorScope::queryScope()
     }
 
     emit traceAcquired(out);
+}
+
+
+void VirtualMotorScope::beginAcquisition()
+{
+    p_testTimer->start();
+}
+
+void VirtualMotorScope::endAcquisition()
+{
+    p_testTimer->stop();
 }

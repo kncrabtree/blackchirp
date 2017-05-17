@@ -21,9 +21,9 @@ signals:
     void posUpdate(BlackChirp::MotorAxis axis, double pos);
 
 public slots:
-    virtual void moveToPosition(double x, double y, double z) =0;
+    virtual bool moveToPosition(double x, double y, double z) =0;
     virtual Experiment prepareForExperiment(Experiment exp);
-    virtual bool prepareForMotorScan(const MotorScan ms) =0;
+    virtual bool prepareForMotorScan(const MotorScan ms);
     virtual void moveToRestingPos() =0;
     virtual void checkLimit() =0;
 
@@ -32,6 +32,10 @@ protected:
     QPair<double,double> d_xRange, d_yRange, d_zRange;
     double d_xRestingPos, d_yRestingPos, d_zRestingPos;
     QTimer *p_limitTimer;
+
+    // HardwareObject interface
+public slots:
+    virtual void endAcquisition();
 };
 
 #if BC_MOTORCONTROLLER==1
