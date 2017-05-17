@@ -25,8 +25,8 @@ Pico2206B::Pico2206B(QObject *parent) : MotorOscilloscope(parent), d_acquiring(f
     double maxVerticalScale = s.value(QString("maxVerticalScale"),20).toDouble();
     int minRecordLength = s.value(QString("minRecordLength"),1).toInt();
     int maxRecordLength = s.value(QString("maxRecordLength"),32e6).toInt();
-    double minSampleRate = s.value(QString("minSampleInterval"),16).toDouble();
-    double maxSampleRate = s.value(QString("maxSampleInterval"),69e9).toDouble();
+    double minSampleRate = s.value(QString("minSampleInterval"),1/69).toDouble();
+    double maxSampleRate = s.value(QString("maxSampleInterval"),1e9/16).toDouble();
     s.setValue(QString("minDataChannel"),minDataChannel);
     s.setValue(QString("maxDataChannel"),maxDataChannel);
     s.setValue(QString("minTriggerChannel"),minTriggerChannel);
@@ -35,8 +35,8 @@ Pico2206B::Pico2206B(QObject *parent) : MotorOscilloscope(parent), d_acquiring(f
     s.setValue(QString("maxVerticalScale"),maxVerticalScale);
     s.setValue(QString("minRecordLength"),minRecordLength);
     s.setValue(QString("maxRecordLength"),maxRecordLength);
-    s.setValue(QString("minSampleInterval"),minSampleRate);
-    s.setValue(QString("maxSampleInterval"),maxSampleRate);
+    s.setValue(QString("minSampleRate"),minSampleRate);
+    s.setValue(QString("maxSampleRate"),maxSampleRate);
     s.endGroup();
     s.endGroup();
 }
