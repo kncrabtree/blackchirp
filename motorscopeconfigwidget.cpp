@@ -26,8 +26,8 @@ MotorScopeConfigWidget::MotorScopeConfigWidget(QWidget *parent) :
     ui->sampleIntervalDoubleSpinBox->setMinimum(1.0*1e6/(s.value(QString("maxSampleRate"), 1.0*1e9/16.0).toDouble()));
     ui->sampleIntervalDoubleSpinBox->setMaximum(1.0*1e6/(s.value(QString("minSampleRate"), 1.0/69.0).toDouble()));
 
-    //ui->recordTimeDoubleSpinBox->setMinimum((static_cast<double>(s.value(QString("minRecordLength"),1).toInt())-1)*1e6/(s.value(QString("minSampleRate"), 1/69)).toDouble()*1e-3);
-    //ui->recordTimeDoubleSpinBox->setMaximum((static_cast<double>(s.value(QString("maxRecordLength"),32e6).toInt())-1)*1e6/(s.value(QString("maxSampleRate"), 1e9/69)).toDouble()*1e-3);
+    ui->recordTimeDoubleSpinBox->setMinimum((static_cast<double>(s.value(QString("minRecordLength"),1).toInt())-1)*1e6/(s.value(QString("maxSampleRate"), 1.0*1e9/16.0)).toDouble()*1e-3);
+    ui->recordTimeDoubleSpinBox->setMaximum((static_cast<double>(s.value(QString("maxRecordLength"),32e6).toInt())-1)*1e6/(s.value(QString("minSampleRate"), 1.0/69.0)).toDouble()*1e-3);
     ui->recordTimeDoubleSpinBox->setValue((static_cast<double>(ui->recordLengthSpinBox->value())-1)*ui->sampleIntervalDoubleSpinBox->value()*1e-3);
 
     ui->triggerDirectionComboBox->setCurrentIndex(s.value(QString("slope"),BlackChirp::ScopeTriggerSlope::RisingEdge).toUInt());
