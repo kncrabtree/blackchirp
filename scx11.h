@@ -25,6 +25,7 @@ public slots:
     bool moveToPosition(double x, double y, double z);
     void moveToRestingPos();
     void checkLimit();
+    void readCurrentPosition();
 
 private:
     int d_xId;

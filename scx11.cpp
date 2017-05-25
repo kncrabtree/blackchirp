@@ -88,6 +88,7 @@ bool Scx11::testConnection()
         emit connected(false, QString("Could not connect to SCX11. ID response: %1").arg(QString(resp.trimmed())));
         return false;
     }
+    //TODO: need to do for 3 axes?
 
     emit logMessage(QString("ID response: %1").arg(QString(resp.trimmed())));
     emit connected();
@@ -102,6 +103,7 @@ void Scx11::initialize()
     p_comm->setReadOptions(1000,true,QByteArray(">"));
     p_limitTimer->stop();
     testConnection();
+    readCurrentPosition()
 
 
     // need to set default velocity and acceleration time here.
@@ -194,6 +196,32 @@ void Scx11::checkLimit()
     }
 }
 
+void Scx11::readCurrentPosition()
+{
+    int id = d_xId;
+    p_comm->writeCmd(QString("@%1\n").arg(id));
+    QByteArray resp = p_comm->queryCmd(QString("PC\n"));
+    resp = resp.left(resp.size() - 3);
+    double num = resp.right(resp.size() - resp.indexOf('=') - 1).toDouble();
+    posUpdate(BlackChirp::MotorX, num);
+    //TODO
+    int id = d_yId;
+    p_comm->writeCmd(QString("@%1\n").arg(id));
+    QByteArray resp = p_comm->queryCmd(QString("PC\n"));
+    resp = resp.left(resp.size() - 3);
+    double num = resp.right(resp.size() - resp.indexOf('=') - 1).toDouble();
+    posUpdate(BlackChirp::MotorY, num);
+
+    int id = d_zId;
+    p_comm->writeCmd(QString("@%1\n").arg(id));
+    QByteArray resp = p_comm->queryCmd(QString("PC\n"));
+    resp = resp.left(resp.size() - 3);
+    double num = resp.right(resp.size() - resp.indexOf('=') - 1).toDouble();
+    posUpdate(BlackChirp::MotorZ, num);
+
+
+}
+
 bool Scx11::moveAxis(BlackChirp::MotorAxis axis, double pos)
 {
     int id;
@@ -236,6 +264,7 @@ bool Scx11::moveAxis(BlackChirp::MotorAxis axis, double pos)
     }
     if(!done)
     {
+        emit hardwareFailure();
         emit logMessage(QString("Error occured during motion of axis %1. Sequence aborted.").arg(axisName));
         return false;
     }
@@ -277,6 +306,7 @@ void Scx11::checkLimitOneAxis(BlackChirp::MotorAxis axis)
     else
     {
         emit hardwareFailure();
+        emit logMessage(QString("Unable to check positive limit position for motor %1.").arg(id),BlackChirp::LogError);
         return;
     }
 

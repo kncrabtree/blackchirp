@@ -254,11 +254,12 @@ void Pico2206B::beginScopeAcquisition()
     if(status != PICO_OK)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Pico2206B data acquisition failed. Error code: %1").arg(status),BlackChirp::LogError);
+        emit logMessage(QString("Pico2206B data acquisition failed. Error code: %1.").arg(status),BlackChirp::LogError);
         return;
     }
     p_acquisitionTimer->start();
     d_acquiring = true;
+    emit logMessage(QString("Pico2206B start."));
     return;
 }
 
@@ -271,17 +272,18 @@ void Pico2206B::endScopeAcquisition()
         {
             ///TODO: Update other areas to be like this
             emit hardwareFailure();
-            emit logMessage(QString("Pico2206B stop failed. Error code: %1").arg(status),BlackChirp::LogError);
+            emit logMessage(QString("Pico2206B stop failed. Error code: %1.").arg(status),BlackChirp::LogError);
             return;
         }
+        return;
     }
 
-    emit logMessage(QString("start end acqu function"));
+    emit logMessage(QString("start end acqu function."));
     status = ps2000aIsReady(d_handle, &isReady);
     if(status != PICO_OK)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Pico2206B isReady function calling failed. Error code: %1").arg(status),BlackChirp::LogError);
+        emit logMessage(QString("Pico2206B isReady function calling failed. Error code: %1.").arg(status),BlackChirp::LogError);
         return;
     }
     if (isReady == 0)

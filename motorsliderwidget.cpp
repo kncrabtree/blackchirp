@@ -71,7 +71,7 @@ void MotorSliderWidget::setRange(double min, double max, int steps, int decimals
 
     d_min = min;
     d_max = max;
-    d_stepSize = (max - min)/((double)steps-1);
+    d_stepSize = (max - min)/((double)steps-1.0);
     d_numSteps = steps;
 
     p_slider->setRange(0,steps-1);
