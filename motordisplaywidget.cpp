@@ -38,11 +38,17 @@ void MotorDisplayWidget::prepareForScan(const MotorScan s)
         d_currentScan = s;
 
         Q_FOREACH(MotorSliderWidget *w,d_sliders)
+        {
+            w->blockSignals(true);
             w->setRange(s);
+            w->blockSignals(false);
+        }
 
         ui->motorZSpectrogramPlot->prepareForScan(s);
         ui->motorTimePlot->prepareForScan(s);
         ui->motorXYSpectrogramPlot->prepareForScan(s);
+
+        updatePlots();
     }
 }
 

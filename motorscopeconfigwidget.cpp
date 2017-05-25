@@ -20,14 +20,14 @@ MotorScopeConfigWidget::MotorScopeConfigWidget(QWidget *parent) :
     ui->verticalRangeDoubleSpinBox->setMinimum(s.value(QString("minVerticalScale"),0.02).toDouble());
     ui->verticalRangeDoubleSpinBox->setMaximum(s.value(QString("maxVerticalScale"),20).toDouble());
 
-    ui->recordLengthSpinBox->setMinimum(s.value(QString("minRecordLength"),1  ).toInt());
+    ui->recordLengthSpinBox->setMinimum(s.value(QString("minRecordLength"),1).toInt());
     ui->recordLengthSpinBox->setMaximum(s.value(QString("maxRecordLength"),32e6).toInt());
 
-    ui->sampleIntervalDoubleSpinBox->setMinimum(s.value(QString("minSampleInterval"), 16).toDouble());
-    ui->sampleIntervalDoubleSpinBox->setMaximum(s.value(QString("maxSampleInterval"), 69e9).toDouble());
+    ui->sampleIntervalDoubleSpinBox->setMinimum(1.0*1e6/(s.value(QString("maxSampleRate"), 1.0*1e9/16.0).toDouble()));
+    ui->sampleIntervalDoubleSpinBox->setMaximum(1.0*1e6/(s.value(QString("minSampleRate"), 1.0/69.0).toDouble()));
 
-    ui->recordTimeDoubleSpinBox->setMinimum((static_cast<double>(s.value(QString("minRecordLength"),1).toInt())-1)*s.value(QString("minSampleInterval"), 16).toDouble()*1e-3);
-    ui->recordTimeDoubleSpinBox->setMaximum((static_cast<double>(s.value(QString("maxRecordLength"),32e6).toInt())-1)*s.value(QString("maxSampleIntercal"), 69e9).toDouble()*1e-3);
+    ui->recordTimeDoubleSpinBox->setMinimum((static_cast<double>(s.value(QString("minRecordLength"),1).toInt())-1)*1e6/(s.value(QString("maxSampleRate"), 1.0*1e9/16.0)).toDouble()*1e-3);
+    ui->recordTimeDoubleSpinBox->setMaximum((static_cast<double>(s.value(QString("maxRecordLength"),32e6).toInt())-1)*1e6/(s.value(QString("minSampleRate"), 1.0/69.0)).toDouble()*1e-3);
     ui->recordTimeDoubleSpinBox->setValue((static_cast<double>(ui->recordLengthSpinBox->value())-1)*ui->sampleIntervalDoubleSpinBox->value()*1e-3);
 
     ui->triggerDirectionComboBox->setCurrentIndex(s.value(QString("slope"),BlackChirp::ScopeTriggerSlope::RisingEdge).toUInt());
@@ -60,7 +60,7 @@ void MotorScopeConfigWidget::setFromConfig(const BlackChirp::MotorScopeConfig &s
     ui->dataChannelSpinBox->setValue(sc.dataChannel);
     ui->triggerChannelSpinBox->setValue(sc.triggerChannel);
     ui->verticalRangeDoubleSpinBox->setValue(sc.verticalScale);
-    ui->sampleIntervalDoubleSpinBox->setValue(1.0/sc.sampleRate*1e9);
+    ui->sampleIntervalDoubleSpinBox->setValue(1.0/sc.sampleRate*1.0e9);
     ui->recordLengthSpinBox->setValue(sc.recordLength);
     ui->triggerDirectionComboBox->setCurrentIndex(static_cast<uint>(sc.slope));
 }

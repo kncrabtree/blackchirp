@@ -63,11 +63,6 @@ void VirtualMotorController::initialize()
     testConnection();
 }
 
-Experiment VirtualMotorController::prepareForExperiment(Experiment exp)
-{
-    return exp;
-}
-
 void VirtualMotorController::beginAcquisition()
 {
 }

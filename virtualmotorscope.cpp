@@ -22,8 +22,8 @@ VirtualMotorScope::VirtualMotorScope(QObject *parent) : MotorOscilloscope(parent
     double maxVerticalScale = s.value(QString("maxVerticalScale"),20).toDouble();
     int minRecordLength = s.value(QString("minRecordLength"),1).toInt();
     int maxRecordLength = s.value(QString("maxRecordLength"),32e6).toInt();
-    double minSampleRate = s.value(QString("minSampleRate"),16).toDouble();
-    double maxSampleRate = s.value(QString("maxSampleRate"),69e9).toDouble();
+    double minSampleRate = s.value(QString("minSampleRate"),1.0/69.0).toDouble();
+    double maxSampleRate = s.value(QString("maxSampleRate"),1.0*1e9/16.0).toDouble();
     s.setValue(QString("minDataChannel"),minDataChannel);
     s.setValue(QString("maxDataChannel"),maxDataChannel);
     s.setValue(QString("minTriggerChannel"),minTriggerChannel);
@@ -39,7 +39,7 @@ VirtualMotorScope::VirtualMotorScope(QObject *parent) : MotorOscilloscope(parent
     d_config.triggerChannel = s.value(QString("triggerChannel"),2).toInt();
     d_config.verticalScale = s.value(QString("verticalScale"),5.0).toDouble();
     d_config.recordLength = s.value(QString("recordLength"),100).toInt();
-    d_config.sampleRate = s.value(QString("sampleRate"),500.0).toDouble();
+    d_config.sampleRate = s.value(QString("sampleRate"),1e6*1.0).toDouble();
     d_config.slope = static_cast<BlackChirp::ScopeTriggerSlope>(s.value(QString("slope"),BlackChirp::ScopeTriggerSlope::RisingEdge).toUInt());
 
     s.endGroup();

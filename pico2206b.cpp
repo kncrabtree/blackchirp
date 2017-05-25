@@ -25,8 +25,8 @@ Pico2206B::Pico2206B(QObject *parent) : MotorOscilloscope(parent), d_acquiring(f
     double maxVerticalScale = s.value(QString("maxVerticalScale"),20).toDouble();
     int minRecordLength = s.value(QString("minRecordLength"),1).toInt();
     int maxRecordLength = s.value(QString("maxRecordLength"),32e6).toInt();
-    double minSampleRate = s.value(QString("minSampleInterval"),16).toDouble();
-    double maxSampleRate = s.value(QString("maxSampleInterval"),69e9).toDouble();
+    double minSampleRate = s.value(QString("minSampleRate"),1/69.0).toDouble();
+    double maxSampleRate = s.value(QString("maxSampleRate"),1e9/16.0).toDouble();
     s.setValue(QString("minDataChannel"),minDataChannel);
     s.setValue(QString("maxDataChannel"),maxDataChannel);
     s.setValue(QString("minTriggerChannel"),minTriggerChannel);
@@ -35,8 +35,8 @@ Pico2206B::Pico2206B(QObject *parent) : MotorOscilloscope(parent), d_acquiring(f
     s.setValue(QString("maxVerticalScale"),maxVerticalScale);
     s.setValue(QString("minRecordLength"),minRecordLength);
     s.setValue(QString("maxRecordLength"),maxRecordLength);
-    s.setValue(QString("minSampleInterval"),minSampleRate);
-    s.setValue(QString("maxSampleInterval"),maxSampleRate);
+    s.setValue(QString("minSampleRate"),minSampleRate);
+    s.setValue(QString("maxSampleRate"),maxSampleRate);
     s.endGroup();
     s.endGroup();
 }
@@ -45,8 +45,6 @@ Pico2206B::~Pico2206B()
 {
     closeConnection();
 }
-
-
 
 bool Pico2206B::testConnection()
 {
@@ -63,7 +61,7 @@ bool Pico2206B::testConnection()
 
     emit connected();
 
-//    configure(d_config);
+    //configure(d_config);
 
     return true;
 
@@ -72,26 +70,10 @@ bool Pico2206B::testConnection()
 void Pico2206B::initialize()
 {
     p_acquisitionTimer = new QTimer(this);
-    connect(p_acquisitionTimer,&QTimer::timeout,this,&Pico2206B::endAcquisition);
+    connect(p_acquisitionTimer,&QTimer::timeout,this,&Pico2206B::endScopeAcquisition);
     p_acquisitionTimer->setInterval(1000);
 
     d_acquiring = false;
-
-//    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-
-//    s.beginGroup(d_key);
-//    s.beginGroup(d_subKey);
-
-//    d_config.dataChannel = s.value(QString("dataChannel"),1).toInt();
-//    d_config.triggerChannel = s.value(QString("triggerChannel"),2).toInt();
-//    d_config.verticalScale = s.value(QString("verticalScale"),5.0).toDouble();
-//    d_config.recordLength = s.value(QString("recordLength"),100).toInt();
-//    d_config.sampleRate = s.value(QString("sampleRate"),500.0).toDouble();
-//    d_config.slope = static_cast<BlackChirp::ScopeTriggerSlope>(s.value(QString("slope"),BlackChirp::ScopeTriggerSlope::RisingEdge).toUInt());
-//    //d_config.byteOrder = static_cast<QDataStream::ByteOrder>(s.value(QString("byteOrder"),QDataStream::ByteOrder::BigEndian).toUInt());
-//    //d_config.bytesPerPoint = s.value(QString("bytesPerPoing"),100).toInt();
-//    s.endGroup();
-//    s.endGroup();
 
     testConnection();
 
@@ -100,7 +82,8 @@ void Pico2206B::initialize()
 
 void Pico2206B::beginAcquisition()
 {
-    beginScopeAcquisition();
+    if(d_enabled)
+        beginScopeAcquisition();
 }
 
 void Pico2206B::endAcquisition()
@@ -113,8 +96,6 @@ bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
     d_config = sc;
 
     PS2000A_CHANNEL dataChannel, triggerChannel;
-
-    //Do I need to judge recordlenth times interval < 0.2
 
     if (sc.dataChannel == 1)
         dataChannel = PS2000A_CHANNEL_A;
@@ -172,15 +153,11 @@ bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
         d_config.verticalScale = 10.0;
         range = PS2000A_10V;
     }
-    else //if (sc.verticalScale <= 20.0)
+    else
     {
         d_config.verticalScale = 20.0;
         range = PS2000A_20V;
     }
-    //else
-    //{
-        //what to do if the verticalScale is over 20V
-    //}
 
     status = ps2000aSetChannel(d_handle, dataChannel, true, PS2000A_DC, range, 0.0);
     if(status != PICO_OK)
@@ -190,8 +167,8 @@ bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
         return false;
     }
 
-    double sampleInterval = (sc.sampleRate * 1e-9);
-    timebase = 62500000 * sampleInterval + 2;
+    double sampleInterval = (1.0/sc.sampleRate);
+    timebase = static_cast<uint32_t>(62500000 * sampleInterval + 2);
 
     noSamples = sc.recordLength;
 
@@ -214,8 +191,9 @@ bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
         break;
     }
 
-    int16_t threshold = qPow(2,13);
-    status = ps2000aSetSimpleTrigger(d_handle, 1, triggerChannel, threshold, direction, 0, 0);
+    // disable trigger now -> 0 second parameter
+    int16_t threshold = 8192;
+    status = ps2000aSetSimpleTrigger(d_handle, 0, triggerChannel, threshold, direction, 0, 200);
     if(status != PICO_OK)
     {
         emit connected(false);
@@ -254,11 +232,15 @@ bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
 
 MotorScan Pico2206B::prepareForMotorScan(MotorScan s)
 {
-    bool ok = configure(s.scopeConfig());
-    if(!ok)
-        s.setHardwareError();
-    else
-        s.setScopeConfig(d_config);
+    if(s.isEnabled())
+    {
+        d_enabled = true;
+        bool ok = configure(s.scopeConfig());
+        if(!ok)
+            s.setHardwareError();
+        else
+            s.setScopeConfig(d_config);
+    }
 
     return s;
 }
@@ -268,18 +250,17 @@ void Pico2206B::beginScopeAcquisition()
     if (d_acquiring == true)
         return;
 
-    emit logMessage(QString("start acqu funtion"));
-
     status = ps2000aRunBlock(d_handle, 0, noSamples, timebase, 0, NULL, 0, NULL, NULL);
     if(status != PICO_OK)
     {
-        emit connected(false);
-        emit logMessage(QString("Pico2206B data acquisition failed. Error code: %1").arg(status));
+        emit hardwareFailure();
+        emit logMessage(QString("Pico2206B data acquisition failed. Error code: %1.").arg(status),BlackChirp::LogError);
         return;
     }
     p_acquisitionTimer->start();
-
-    emit logMessage(QString("start acqu process"));
+    d_acquiring = true;
+    emit logMessage(QString("Pico2206B start."));
+    return;
 }
 
 void Pico2206B::endScopeAcquisition()
@@ -291,18 +272,18 @@ void Pico2206B::endScopeAcquisition()
         {
             ///TODO: Update other areas to be like this
             emit hardwareFailure();
-            emit logMessage(QString("Pico2206B stop failed. Error code: %1").arg(status),BlackChirp::LogError);
+            emit logMessage(QString("Pico2206B stop failed. Error code: %1.").arg(status),BlackChirp::LogError);
             return;
         }
+        return;
     }
-    return;
 
-    emit logMessage(QString("start end acqu function"));
+    emit logMessage(QString("start end acqu function."));
     status = ps2000aIsReady(d_handle, &isReady);
     if(status != PICO_OK)
     {
-        emit connected(false);
-        emit logMessage(QString("Pico2206B isReady function calling failed. Error code: %1").arg(status));
+        emit hardwareFailure();
+        emit logMessage(QString("Pico2206B isReady function calling failed. Error code: %1.").arg(status),BlackChirp::LogError);
         return;
     }
     if (isReady == 0)
@@ -316,8 +297,8 @@ void Pico2206B::endScopeAcquisition()
     status = ps2000aGetValues(d_handle, 0, &noOfSamples, 1, PS2000A_RATIO_MODE_NONE, 0, &overflow);
     if(status != PICO_OK)
     {
-        emit connected(false);
-        emit logMessage(QString("Pico2206B data passing failed. Error code: %1").arg(status));
+        emit hardwareFailure();
+        emit logMessage(QString("Pico2206B data passing failed. Error code: %1").arg(status),BlackChirp::LogError);
         return;
     }
     if(overflow != 0)
@@ -339,11 +320,11 @@ void Pico2206B::endScopeAcquisition()
     status = ps2000aStop(d_handle);
     if(status != PICO_OK)
     {
-        emit connected(false);
-        emit logMessage(QString("Pico2206B stop failed. Error code: %1").arg(status));
+        emit hardwareFailure();
+        emit logMessage(QString("Pico2206B stop failed. Error code: %1").arg(status),BlackChirp::LogError);
         return;
     }
-    beginAcquisition();
+     beginScopeAcquisition();
 }
 
 

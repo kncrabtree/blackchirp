@@ -7,6 +7,7 @@ MotorController::MotorController(QObject *parent) : HardwareObject(parent)
     d_key = QString("motorController");
 
     p_limitTimer = new QTimer(this);
+    p_limitTimer->setInterval(1000);
     connect(p_limitTimer,&QTimer::timeout,this,&MotorController::checkLimit);
 }
 
