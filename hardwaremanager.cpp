@@ -93,6 +93,7 @@ void HardwareManager::initialize()
     p_mc = new MotorControllerHardware();
     connect(p_mc,&MotorController::motionComplete,this,&HardwareManager::motorMoveComplete);
     connect(this,&HardwareManager::moveMotorToPosition,p_mc,&MotorController::moveToPosition);
+    connect(this,&HardwareManager::motorRest,p_mc,&MotorController::moveToRestingPos);
     connect(p_mc,&MotorController::posUpdate,this,&HardwareManager::motorPosUpdate);
     connect(p_mc,&MotorController::limitStatus,this,&HardwareManager::motorLimitStatus);
     d_hardwareList.append(qMakePair(p_mc,nullptr));

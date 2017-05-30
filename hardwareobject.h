@@ -141,6 +141,7 @@ protected:
     CommunicationProtocol *p_comm;
     bool d_isCritical;
     bool d_threaded;
+    bool d_enabledForExperiment;
     CommunicationProtocol::CommType d_commType;
 
 private:

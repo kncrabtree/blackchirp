@@ -71,7 +71,8 @@ void AWG70002a::initialize()
 
 Experiment AWG70002a::prepareForExperiment(Experiment exp)
 {
-    if(!exp.ftmwConfig().isEnabled())
+    d_enabledForExperiment = exp.ftmwConfig().isEnabled();
+    if(!d_enabledForExperiment)
         return exp;
 
     //encode error by prepending '!' to an error message
@@ -96,18 +97,24 @@ Experiment AWG70002a::prepareForExperiment(Experiment exp)
 
 void AWG70002a::beginAcquisition()
 {
-    p_comm->writeCmd(QString(":AWGControl:RUN:Immediate\n"));
-    p_comm->queryCmd(QString("*OPC?\n"));
-    p_comm->writeCmd(QString(":Output:OFF OFF\n"));
-    p_comm->writeCmd(QString(":Output1:State On\n"));
+    if(d_enabledForExperiment)
+    {
+        p_comm->writeCmd(QString(":AWGControl:RUN:Immediate\n"));
+        p_comm->queryCmd(QString("*OPC?\n"));
+        p_comm->writeCmd(QString(":Output:OFF OFF\n"));
+        p_comm->writeCmd(QString(":Output1:State On\n"));
+    }
 
 }
 
 void AWG70002a::endAcquisition()
 {
-    p_comm->writeCmd(QString(":Output:OFF ON\n"));
-    p_comm->writeCmd(QString(":AWGControl:STOP:Immediate\n"));
-    p_comm->queryCmd(QString("*OPC?\n"));
+    if(d_enabledForExperiment)
+    {
+        p_comm->writeCmd(QString(":Output:OFF ON\n"));
+        p_comm->writeCmd(QString(":AWGControl:STOP:Immediate\n"));
+        p_comm->queryCmd(QString("*OPC?\n"));
+    }
 }
 
 void AWG70002a::readTimeData()

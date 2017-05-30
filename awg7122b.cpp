@@ -84,7 +84,8 @@ void AWG7122B::initialize()
 
 Experiment AWG7122B::prepareForExperiment(Experiment exp)
 {
-    if(!exp.ftmwConfig().isEnabled())
+    d_enabledForExperiment = exp.ftmwConfig().isEnabled();
+    if(!d_enabledForExperiment)
         return exp;
 
     //encode error by prepending '!' to an error message
@@ -112,15 +113,18 @@ Experiment AWG7122B::prepareForExperiment(Experiment exp)
 
 void AWG7122B::beginAcquisition()
 {
-    p_comm->writeCmd(QString(":AWGControl:RUN:Immediate\n"));
-    p_comm->queryCmd(QString("*OPC?\n"));
-    p_comm->writeCmd(QString(":Output1:State 1\n"));
+    if(d_enabledForExperiment)
+    {
+        p_comm->writeCmd(QString(":AWGControl:RUN:Immediate\n"));
+        p_comm->queryCmd(QString("*OPC?\n"));
+        p_comm->writeCmd(QString(":Output1:State 1\n"));
+    }
 
 }
 
 void AWG7122B::endAcquisition()
 {
-    if(d_triggered)
+    if(d_triggered && d_enabledForExperiment)
     {
         p_comm->writeCmd(QString(":Output1:State 0\n"));
         p_comm->writeCmd(QString(":AWGControl:STOP:Immediate\n"));

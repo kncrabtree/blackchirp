@@ -83,6 +83,17 @@ void AcquisitionManager::beginExperiment(Experiment exp)
     }
     emit beginAcquisition();
 
+#ifdef BC_MOTOR
+    if(d_currentExperiment.motorScan().isEnabled())
+    {
+        d_waitingForMotor = true;
+        QVector3D pos = d_currentExperiment.motorScan().currentPos();
+        emit startMotorMove(pos.x(),pos.y(),pos.z());
+        emit statusMessage(QString("Moving motor to (X,Y,Z) = (%1, %2, %3)")
+                           .arg(pos.x(),0,'f',3).arg(pos.y(),0,'f',3).arg(pos.z(),0,'f',3));
+    }
+#endif
+
 }
 
 void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
@@ -264,6 +275,15 @@ void AcquisitionManager::abort()
     {
         d_currentExperiment.setAborted();
         //save!
+#ifdef BC_MOTOR
+        if(d_currentExperiment.motorScan().isEnabled())
+        {
+            d_waitingForMotor = true;
+            emit motorRest();
+            emit statusMessage(QString("Motor scan aborted. Returning motor to resting position..."));
+            return;
+        }
+#endif
         finishAcquisition();
     }
 }
@@ -271,6 +291,12 @@ void AcquisitionManager::abort()
 #ifdef BC_MOTOR
 void AcquisitionManager::motorMoveComplete(bool success)
 {
+    if(d_currentExperiment.isComplete() || d_currentExperiment.isAborted())
+    {
+        finishAcquisition();
+        return;
+    }
+
     //if motor move not successful, abort acquisition
     if(!success)
         abort();
@@ -285,6 +311,8 @@ void AcquisitionManager::motorTraceReceived(const QVector<double> dat)
     if(d_state == Acquiring && !d_waitingForMotor)
     {
         bool adv = d_currentExperiment.addMotorTrace(dat);
+        emit statusMessage(QString("Acquiring (%1/%2)").arg(d_currentExperiment.motorScan().currentPointShots())
+                           .arg(d_currentExperiment.motorScan().shotsPerPoint()));
         if(adv)
         {
             checkComplete();
@@ -293,6 +321,8 @@ void AcquisitionManager::motorTraceReceived(const QVector<double> dat)
             {
                 QVector3D pos = d_currentExperiment.motorScan().currentPos();
                 emit startMotorMove(pos.x(),pos.y(),pos.z());
+                emit statusMessage(QString("Moving motor to (X,Y,Z) = (%1, %2, %3)")
+                                   .arg(pos.x(),0,'f',3).arg(pos.y(),0,'f',3).arg(pos.z(),0,'f',3));
                 d_waitingForMotor = true;
             }
 
@@ -315,12 +345,27 @@ void AcquisitionManager::checkComplete()
             emit takeSnapshot(d_currentExperiment);
 
         if(d_currentExperiment.isComplete())
+        {
+#ifdef BC_MOTOR
+            if(d_currentExperiment.motorScan().isEnabled())
+            {
+                d_state = Idle;
+                d_waitingForMotor = true;
+                emit motorRest();
+                emit statusMessage(QString("Motor scan complete. Returning motor to resting position..."));
+                return;
+            }
+#endif
             finishAcquisition();
+        }
     }
 }
 
 void AcquisitionManager::finishAcquisition()
 {
+#ifdef BC_MOTOR
+    d_waitingForMotor = false;
+#endif
     emit endAcquisition();
     d_state = Idle;
     d_currentShift = 0;

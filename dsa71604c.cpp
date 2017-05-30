@@ -81,7 +81,8 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
     //If this frequently fails, I recommend turning verbose headers on and writing a custom query command that verifies the header response, retrying until a valid reply is received.
 
     //make a copy of the configuration in which to store settings
-    if(!exp.ftmwConfig().isEnabled())
+    d_enabledForExperiment = exp.ftmwConfig().isEnabled();
+    if(!d_enabledForExperiment)
         return exp;
 
     BlackChirp::FtmwScopeConfig config(exp.ftmwConfig().scopeConfig());
@@ -574,43 +575,49 @@ Experiment Dsa71604c::prepareForExperiment(Experiment exp)
 
 void Dsa71604c::beginAcquisition()
 {
-    p_comm->writeCmd(QString(":LOCK ALL;:DISPLAY:WAVEFORM OFF\n"));
-    if(p_socket->bytesAvailable())
-        p_socket->readAll();
+    if(d_enabledForExperiment)
+    {
+        p_comm->writeCmd(QString(":LOCK ALL;:DISPLAY:WAVEFORM OFF\n"));
+        if(p_socket->bytesAvailable())
+            p_socket->readAll();
 
-    connect(p_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform,Qt::UniqueConnection);
-    p_comm->writeCmd(QString(":CURVESTREAM?\n"));
+        connect(p_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform,Qt::UniqueConnection);
+        p_comm->writeCmd(QString(":CURVESTREAM?\n"));
 
-    d_waitingForReply = true;
-    d_foundHeader = false;
-    d_headerNumBytes = 0;
-    d_waveformBytes = 0;
-    connect(p_scopeTimeout,&QTimer::timeout,this,&Dsa71604c::wakeUp,Qt::UniqueConnection);
+        d_waitingForReply = true;
+        d_foundHeader = false;
+        d_headerNumBytes = 0;
+        d_waveformBytes = 0;
+        connect(p_scopeTimeout,&QTimer::timeout,this,&Dsa71604c::wakeUp,Qt::UniqueConnection);
+    }
 }
 
 void Dsa71604c::endAcquisition()
 {
 
-    //stop parsing waveforms
-    disconnect(p_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform);
-    disconnect(p_scopeTimeout,&QTimer::timeout,this,&Dsa71604c::wakeUp);
+    if(d_enabledForExperiment)
+    {
+        //stop parsing waveforms
+        disconnect(p_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform);
+        disconnect(p_scopeTimeout,&QTimer::timeout,this,&Dsa71604c::wakeUp);
 
-    if(p_socket->bytesAvailable())
-        p_socket->readAll();
+        if(p_socket->bytesAvailable())
+            p_socket->readAll();
 
-    //send *CLS command twice to kick scope out of curvestream mode and clear the error queue
-    p_comm->writeCmd(QString("*CLS\n"));
-    p_comm->writeCmd(QString("*CLS\n"));
+        //send *CLS command twice to kick scope out of curvestream mode and clear the error queue
+        p_comm->writeCmd(QString("*CLS\n"));
+        p_comm->writeCmd(QString("*CLS\n"));
 
-    if(p_socket->bytesAvailable())
-        p_socket->readAll();
+        if(p_socket->bytesAvailable())
+            p_socket->readAll();
 
-    p_comm->writeCmd(QString(":UNLOCK ALL;:DISPLAY:WAVEFORM ON\n"));
+        p_comm->writeCmd(QString(":UNLOCK ALL;:DISPLAY:WAVEFORM ON\n"));
 
-    d_waitingForReply = false;
-    d_foundHeader = false;
-    d_headerNumBytes = 0;
-    d_waveformBytes = 0;
+        d_waitingForReply = false;
+        d_foundHeader = false;
+        d_headerNumBytes = 0;
+        d_waveformBytes = 0;
+    }
 }
 
 void Dsa71604c::readTimeData()

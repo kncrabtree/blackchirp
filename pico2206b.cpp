@@ -82,7 +82,7 @@ void Pico2206B::initialize()
 
 void Pico2206B::beginAcquisition()
 {
-    if(d_enabled)
+    if(d_enabledForExperiment)
         beginScopeAcquisition();
 }
 
@@ -232,9 +232,9 @@ bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
 
 MotorScan Pico2206B::prepareForMotorScan(MotorScan s)
 {
-    if(s.isEnabled())
+    d_enabledForExperiment = s.isEnabled();
+    if(d_enabledForExperiment)
     {
-        d_enabled = true;
         bool ok = configure(s.scopeConfig());
         if(!ok)
             s.setHardwareError();

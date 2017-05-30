@@ -82,6 +82,7 @@ signals:
     void moveMotorToPosition(double x, double y, double z);
     void motorLimitStatus(BlackChirp::MotorAxis axis, bool negLimit, bool posLimit);
     void motorPosUpdate(BlackChirp::MotorAxis axis, double pos);
+    void motorRest();
 #endif
 
 public slots:

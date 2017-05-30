@@ -10,7 +10,7 @@
 #endif
 
 HardwareObject::HardwareObject(QObject *parent) :
-    QObject(parent), d_isCritical(true), d_threaded(true)
+    QObject(parent), d_isCritical(true), d_threaded(true), d_enabledForExperiment(true)
 {
 }
 

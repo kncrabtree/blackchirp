@@ -1,6 +1,6 @@
 #include "scx11.h"
 
-Scx11::Scx11(QObject *parent) : MotorController(parent)
+Scx11::Scx11(QObject *parent) : MotorController(parent), d_idle(true)
 {
     d_subKey = QString("scx11");
     d_prettyName = QString("Motor controller SCX11");
@@ -9,46 +9,44 @@ Scx11::Scx11(QObject *parent) : MotorController(parent)
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
-    int d_xId = s.value(QString("xId"),QString("0")).toInt();
-    int d_yId = s.value(QString("yId"),QString("1")).toInt();
-    int d_zId = s.value(QString("zId"),QString("2")).toInt();
-    s.setValue(QString("xId"),d_xId);
-    s.setValue(QString("yId"),d_yId);
-    s.setValue(QString("zId"),d_zId);
+    s.beginReadArray(QString("channels"));
 
-    double xHomeOffset = s.value(QString("xHomeOffset"),0).toDouble(); //total: about 77
-    double yHomeOffset = s.value(QString("yHomeOffset"),80).toDouble(); //total: 162.516
-    double zHomeOffset = s.value(QString("zHomeOffset"),200).toDouble(); //total: about 397
-    s.setValue(QString("xHomeOffset"),xHomeOffset);
-    s.setValue(QString("yHomeOffset"),yHomeOffset);
-    s.setValue(QString("zHomeOffset"),zHomeOffset);
+    for(int i=0; i<3; i++)
+    {
+        s.setArrayIndex(i);
+        AxisInfo ai;
+        ai.id = s.value(QString("id"),i+1).toInt();
+        ai.offset = s.value(QString("offset"),100).toDouble();
+        ai.min = s.value(QString("min"),-100.0).toDouble();
+        ai.max = s.value(QString("max"),100.0).toDouble();
+        ai.rest= s.value(QString("rest"),ai.min).toDouble();
+        ai.axis = axisIndex(i);
+        ai.name = axisName(ai.axis);
+        ai.moving = false;
+        ai.nextPos = ai.rest;
+        d_channels.append(ai);
+    }
 
-    double xMin = s.value(QString("xMin"),-100.0).toDouble();
-    double xMax = s.value(QString("xMax"),100.0).toDouble();
-    double yMin = s.value(QString("yMin"),-100.0).toDouble();
-    double yMax = s.value(QString("yMax"),100.0).toDouble();
-    double zMin = s.value(QString("zMin"),-100.0).toDouble();
-    double zMax = s.value(QString("zMax"),100.0).toDouble();
+    s.endArray();
 
-    d_xRestingPos = s.value(QString("xRest"),xMin).toDouble();
-    d_yRestingPos = s.value(QString("yRest"),yMin).toDouble();
-    d_zRestingPos = s.value(QString("zRest"),zMin).toDouble();
+    s.beginWriteArray(QString("channels"));
+    for(int i=0; i<d_channels.size();i++)
+    {
+        s.setArrayIndex(i);
+        s.setValue(QString("id"),d_channels.at(i).id);
+        s.setValue(QString("offset"),d_channels.at(i).offset);
+        s.setValue(QString("min"),d_channels.at(i).min);
+        s.setValue(QString("max"),d_channels.at(i).max);
+        s.setValue(QString("rest"),d_channels.at(i).rest);
+    }
 
-    s.setValue(QString("xMin"),xMin);
-    s.setValue(QString("xMax"),xMax);
-    s.setValue(QString("yMin"),yMin);
-    s.setValue(QString("yMax"),yMax);
-    s.setValue(QString("zMin"),zMin);
-    s.setValue(QString("zMax"),zMax);
-    s.setValue(QString("xRest"),d_xRestingPos);
-    s.setValue(QString("yRest"),d_yRestingPos);
-    s.setValue(QString("zRest"),d_zRestingPos);
-
-    d_xRange = qMakePair(xMin,xMax);
-    d_yRange = qMakePair(yMin,yMax);
-    d_zRange = qMakePair(zMin,zMax);
+    s.endArray();
     s.endGroup();
     s.endGroup();
+
+    d_xRange = qMakePair(d_channels.at(0).min,d_channels.at(0).max);
+    d_yRange = qMakePair(d_channels.at(1).min,d_channels.at(1).max);
+    d_zRange = qMakePair(d_channels.at(2).min,d_channels.at(2).max);
 
 }
 
@@ -62,33 +60,93 @@ bool Scx11::testConnection()
         return false;
     }
 
-    QByteArray resp = p_comm->queryCmd(QString("VER\n"));
+    QByteArray resp;
 
-    if(resp.isEmpty())
-    {
-        emit connected(false,QString("Could not receive responce to version query."));
-        return false;
-    }
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
+    s.beginReadArray(QString("channels"));
 
-    if(resp.startsWith("VER"))
+    for(int i = 0; i < d_channels.size(); i++)
     {
-        p_comm->writeCmd(QString("ECHO=0\n"));
-        QByteArray t;
-        while(p_comm->device()->waitForReadyRead(1000))
+        resp = p_comm->queryCmd(QString("@%1@%1\n").arg(d_channels.at(i).id));
+        if(!resp.endsWith(">"))
         {
-            t.append(p_comm->device()->readAll());
-            if(t.endsWith(">"))
-                break;
+            emit connected(false,QString("Could not communicate with %1 axis").arg(d_channels.at(i).name));
+            return false;
         }
+
         resp = p_comm->queryCmd(QString("VER\n"));
+        if(!resp.endsWith(">"))
+        {
+            emit connected(false,QString("Could not get version info from %1 axis").arg(d_channels.at(i).name));
+            return false;
+        }
+
+        if(resp.startsWith("VER"))
+        {
+            QByteArray t = p_comm->queryCmd(QString("ECHO=0\n"));
+            if(!t.endsWith(">"))
+            {
+                emit connected(false,QString("Could not disable echo on %1 axis").arg(d_channels.at(i).name));
+                return false;
+            }
+
+            resp = p_comm->queryCmd(QString("VER\n"));
+            if(!resp.endsWith(">"))
+            {
+                emit connected(false,QString("Could not get version info from %1 axis").arg(d_channels.at(i).name));
+                return false;
+            }
+        }
+
+        if(!resp.startsWith("SCX11"))
+        {
+            emit connected(false, QString("Could not connect to SCX11. ID response: %1").arg(QString(resp.trimmed())));
+            return false;
+        }
+
+        QByteArray t = p_comm->queryCmd(QString("VERBOSE=1\n"));
+        if(!t.endsWith(">"))
+        {
+            emit connected(false,QString("Could not enable verbose mode on %1 axis").arg(d_channels.at(i).name));
+            return false;
+        }
+
+
+        //read negative limit
+        resp = p_comm->queryCmd(QString("SIGLSN\n"));
+        if(!resp.contains("=1"))
+        {
+            emit connected(false,QString("%1 axis is not at its negative limit. Move it there manually and reconnect.").arg(d_channels.at(i).name));
+            return false;
+        }
+
+        //set offset
+        s.setArrayIndex(i);
+        double homeOffset = s.value(QString("offset"),0.0).toDouble();
+
+        t = p_comm->queryCmd(QString("PC=%1\n").arg(-homeOffset,0,'f',3));
+        if(!t.endsWith(">"))
+        {
+            emit connected(false,QString("Could not set initial home offset on %1 axis").arg(d_channels.at(i).axis));
+            return false;
+        }
+
     }
 
-    if(!resp.startsWith("SCX11"))
+    s.endArray();
+    s.endGroup();
+    s.endGroup();
+
+
+    d_idle = true;
+    if(!readCurrentPosition())
     {
-        emit connected(false, QString("Could not connect to SCX11. ID response: %1").arg(QString(resp.trimmed())));
+        emit connected(false,QString("Could not read current position."));
         return false;
     }
-    //TODO: need to do for 3 axes?
+
 
     emit logMessage(QString("ID response: %1").arg(QString(resp.trimmed())));
     emit connected();
@@ -101,12 +159,14 @@ void Scx11::initialize()
 {
     p_comm->initialize();
     p_comm->setReadOptions(1000,true,QByteArray(">"));
-    p_limitTimer->stop();
+
+    p_motionTimer = new QTimer(this);
+    p_motionTimer->setInterval(50);
+
     testConnection();
-    readCurrentPosition()
-
-
-    // need to set default velocity and acceleration time here.
+    connect(this,&Scx11::hardwareFailure,p_limitTimer,&QTimer::stop);
+    connect(this,&Scx11::hardwareFailure,p_motionTimer,&QTimer::stop);
+    connect(p_motionTimer,&QTimer::timeout,this,&Scx11::checkMotion);
 
 }
 
@@ -120,203 +180,178 @@ void Scx11::readTimeData()
 
 bool Scx11::moveToPosition(double x, double y, double z)
 {
-    BlackChirp::MotorAxis axis;
-    bool done;
+    QList<QPair<double,double>> positions{ qMakePair(d_xPos,x), qMakePair(d_yPos,y), qMakePair(d_zPos,z) };
 
-    if (abs(d_xPos-x) >= 0.001)
+    if(!d_idle)
     {
-        axis = BlackChirp::MotorAxis::MotorX;
-        done = Scx11::moveAxis(axis, x);
-        if (!done)
-        {
-            emit hardwareFailure();
-            emit motionComplete(false);
-            return false;
-        }
+        if(p_motionTimer->isActive())
+            p_motionTimer->stop();
 
-    }
-
-    if (abs(d_yPos-y) >= 0.001)
-    {
-        axis = BlackChirp::MotorAxis::MotorY;
-        done = Scx11::moveAxis(axis, y);
-        if (!done)
+        //abort current motion
+        for(int i=0; i<d_channels.size(); i++)
         {
-            emit hardwareFailure();
-            emit motionComplete(false);
-            return false;
+            AxisInfo ai = d_channels.at(i);
+            QByteArray resp = p_comm->queryCmd(QString("@%1@%1\n").arg(ai.id));
+            resp = p_comm->queryCmd(QString("HSTOP\n"));
+            if(resp.isEmpty())
+            {
+                emit hardwareFailure();
+                emit logMessage(QString("Could not abort current motion to move to next position (%1, %2, %3)").arg(x,0,'f',3).arg(y,0,'f',3).arg(z,0,'f',3),BlackChirp::LogError);
+                return false;
+            }
         }
     }
 
-    if (abs(d_zPos-z) >= 0.001)
+    for(int i=0; i<d_channels.size() && i<positions.size(); i++)
     {
-        axis = BlackChirp::MotorAxis::MotorZ;
-        done = Scx11::moveAxis(axis, z);
-        if (!done)
+        double cPos = positions.at(i).first;
+        double nPos = positions.at(i).second;
+
+        if(qAbs(cPos - nPos) >= 0.001)
         {
-            emit hardwareFailure();
-            ///TODO: log message saying what problem was
-            emit motionComplete(false);
-            return false;
+            d_channels[i].moving = true;
+            d_channels[i].nextPos = nPos;
+            AxisInfo ai = d_channels.at(i);
+            QByteArray resp = p_comm->queryCmd(QString("@%1@%1\n").arg(ai.id));
+            resp = p_comm->queryCmd(QString("MA %1\n").arg(ai.nextPos,0,'f',3));
+            if(!p_motionTimer->isActive())
+                p_motionTimer->start();
+            d_idle = false;
         }
     }
 
-    emit motionComplete(true);
     return true;
 }
 
 void Scx11::moveToRestingPos()
 {
-    Scx11::moveToPosition(d_xRestingPos, d_yRestingPos, d_zRestingPos);
+    Scx11::moveToPosition(d_channels.at(0).rest, d_channels.at(1).rest, d_channels.at(2).rest);
 }
 
 void Scx11::checkLimit()
 {
-    BlackChirp::MotorAxis axis;
-
-    if(d_nextRead == 0)
-    {
-        axis = BlackChirp::MotorAxis::MotorX;
-    }
-    else if(d_nextRead == 1)
-    {
-        axis = BlackChirp::MotorAxis::MotorY;
-    }
-    else if(d_nextRead == 2)
-    {
-        axis = BlackChirp::MotorAxis::MotorY;
-    }
-
-    Scx11::checkLimitOneAxis(axis);
+    checkLimitOneAxis(d_channels.at(d_nextRead).axis);
 
     d_nextRead += 1;
-    if(d_nextRead == 3)
-    {
-        d_nextRead = 0;
-    }
+    d_nextRead %= d_channels.size();
 }
 
-void Scx11::readCurrentPosition()
+bool Scx11::readCurrentPosition()
 {
-    int id = d_xId;
-    p_comm->writeCmd(QString("@%1\n").arg(id));
-    QByteArray resp = p_comm->queryCmd(QString("PC\n"));
-    resp = resp.left(resp.size() - 3);
-    double num = resp.right(resp.size() - resp.indexOf('=') - 1).toDouble();
-    posUpdate(BlackChirp::MotorX, num);
-    //TODO
-    int id = d_yId;
-    p_comm->writeCmd(QString("@%1\n").arg(id));
-    QByteArray resp = p_comm->queryCmd(QString("PC\n"));
-    resp = resp.left(resp.size() - 3);
-    double num = resp.right(resp.size() - resp.indexOf('=') - 1).toDouble();
-    posUpdate(BlackChirp::MotorY, num);
-
-    int id = d_zId;
-    p_comm->writeCmd(QString("@%1\n").arg(id));
-    QByteArray resp = p_comm->queryCmd(QString("PC\n"));
-    resp = resp.left(resp.size() - 3);
-    double num = resp.right(resp.size() - resp.indexOf('=') - 1).toDouble();
-    posUpdate(BlackChirp::MotorZ, num);
-
-
-}
-
-bool Scx11::moveAxis(BlackChirp::MotorAxis axis, double pos)
-{
-    int id;
-    QString axisName;
-
-    switch(axis)
+    for(int i=0; i<d_channels.size(); i++)
     {
-    case BlackChirp::MotorX:
-        id = d_xId;
-        axisName = QString("X");
-        break;
-    case BlackChirp::MotorY:
-        id = d_yId;
-        axisName = QString("Y");
-        break;
-    case BlackChirp::MotorZ:
-        id = d_zId;
-        axisName = QString("Z");
-        break;
-    }
-
-    p_comm->writeCmd(QString("@%1\n").arg(id));
-    p_comm->writeCmd(QString("MA %1\n").arg(pos,0,'f',3));
-
-    QByteArray resp;
-    bool done = false;
-    while(!done)
-    {
-        p_comm->device()->waitForReadyRead(50);
-        resp = p_comm->queryCmd(QString("SIGMOVE\n"));
-        if(resp.contains("0"))
+        int id = d_channels.at(i).id;
+        QByteArray resp = p_comm->queryCmd(QString("@%1@%1\n").arg(id));
+        if(!resp.endsWith(">"))
         {
-            done = true;
+            emit hardwareFailure();
+            emit logMessage(QString("Could not read position for %1 axis").arg(d_channels.at(i).name),BlackChirp::LogError);
+            return false;
         }
 
-        if(resp.isEmpty())
+        resp = p_comm->queryCmd(QString("PC\n"));
+        if(!resp.endsWith(">") || !resp.contains('=') || !resp.contains('m'))
         {
+            emit hardwareFailure();
+            emit logMessage(QString("Could not read position for %1 axis").arg(d_channels.at(i).name),BlackChirp::LogError);
+            return false;
+        }
+        int f = resp.indexOf('=');
+        int l = resp.indexOf('m',f);
+        double num = resp.mid(f+1,l-f-1).trimmed().toDouble();
+        emit posUpdate(d_channels.at(i).axis, num);
+        switch (d_channels.at(i).axis) {
+        case BlackChirp::MotorX:
+            d_xPos = num;
+            break;
+        case BlackChirp::MotorY:
+            d_yPos = num;
+            break;
+        case BlackChirp::MotorZ:
+            d_zPos = num;
+            break;
+        default:
             break;
         }
     }
-    if(!done)
+
+    return true;
+}
+
+void Scx11::checkMotion()
+{
+    if(d_idle)
+        return;
+
+    for(int i=0; i<d_channels.size(); i++)
     {
-        emit hardwareFailure();
-        emit logMessage(QString("Error occured during motion of axis %1. Sequence aborted.").arg(axisName));
-        return false;
+        AxisInfo ai = d_channels.at(i);
+        if(!ai.moving)
+            continue;
+
+        QByteArray resp = p_comm->queryCmd(QString("@%1@%1\n").arg(ai.id));
+        resp = p_comm->queryCmd(QString("SIGMOVE\n"));
+        if(resp.isEmpty())
+        {
+            p_motionTimer->stop();
+            emit motionComplete(false);
+            emit hardwareFailure();
+            emit logMessage(QString("Error occured during motion of %1 axis. Sequence aborted.").arg(ai.name),BlackChirp::LogError);
+            d_idle = true;
+            return;
+
+        }
+        if(resp.contains("=0"))
+        {
+            d_channels[i].moving = false;
+            if(!moving())
+            {
+                d_idle = true;
+                emit motionComplete();
+            }
+        }
     }
 
-    emit posUpdate(axis, pos);
-    return true;
+    readCurrentPosition();
+
 }
 
 void Scx11::checkLimitOneAxis(BlackChirp::MotorAxis axis)
 {
-    int id;
-
-    switch(axis)
-    {
-    case BlackChirp::MotorX:
-        id = d_xId;
-        break;
-    case BlackChirp::MotorY:
-        id = d_yId;
-        break;
-    case BlackChirp::MotorZ:
-        id = d_zId;
-        break;
-    }
+    AxisInfo ai = axisInfo(axis);
 
     bool sigPositive, sigNegative;
 
-    p_comm->writeCmd(QString("@%1\n").arg(id));
-    QByteArray resp = p_comm->queryCmd(QString("SIGLSP\n"));
+    QByteArray resp = p_comm->queryCmd(QString("@%1@%1\n").arg(ai.id));
+    if(!resp.endsWith(">"))
+    {
+        emit hardwareFailure();
+        emit logMessage(QString("Could not read limits for %1 axis").arg(ai.name),BlackChirp::LogError);
+        return;
+    }
 
-    if(resp.contains("0"))
+    resp = p_comm->queryCmd(QString("SIGLSP\n"));
+    if(resp.contains("=0"))
     {
         sigPositive = false;
     }
-    else if(resp.contains("1"))
+    else if(resp.contains("=1"))
     {
         sigPositive = true;
     }
     else
     {
         emit hardwareFailure();
-        emit logMessage(QString("Unable to check positive limit position for motor %1.").arg(id),BlackChirp::LogError);
+        emit logMessage(QString("Unable to check positive limit position for %1 axis.").arg(ai.name),BlackChirp::LogError);
         return;
     }
 
     resp = p_comm->queryCmd(QString("SIGLSN\n"));
-
-    if(resp.contains("0"))
+    if(resp.contains("=0"))
     {
         sigNegative = false;
     }
-    else if(resp.contains("1"))
+    else if(resp.contains("=1"))
     {
         sigNegative = true;
     }
@@ -328,4 +363,74 @@ void Scx11::checkLimitOneAxis(BlackChirp::MotorAxis axis)
 
     emit limitStatus(axis, sigNegative, sigPositive);
     return;
+}
+
+BlackChirp::MotorAxis Scx11::axisIndex(int id)
+{
+    switch(id)
+    {
+    case 0:
+        return BlackChirp::MotorX;
+        break;
+    case 1:
+        return BlackChirp::MotorY;
+        break;
+    case 2:
+        return BlackChirp::MotorZ;
+        break;
+    default:
+        return BlackChirp::MotorZ;
+        break;
+    }
+}
+
+Scx11::AxisInfo Scx11::axisInfo(BlackChirp::MotorAxis axis)
+{
+    switch(axis)
+    {
+    case BlackChirp::MotorX:
+        return(d_channels.at(0));
+        break;
+    case BlackChirp::MotorY:
+        return(d_channels.at(1));
+        break;
+    case BlackChirp::MotorZ:
+        return(d_channels.at(2));
+        break;
+    default:
+        return AxisInfo();
+        break;
+    }
+}
+
+QString Scx11::axisName(BlackChirp::MotorAxis axis)
+{
+    switch(axis)
+    {
+    case BlackChirp::MotorX:
+        return QString("X");
+        break;
+    case BlackChirp::MotorY:
+        return QString("Y");
+        break;
+    case BlackChirp::MotorZ:
+        return QString("Z");
+        break;
+    default:
+        return QString("T");
+        break;
+    }
+
+    return QString();
+}
+
+bool Scx11::moving()
+{
+    for(int i=0; i<d_channels.size(); i++)
+    {
+        if(d_channels.at(i).moving)
+            return true;
+    }
+
+    return false;
 }

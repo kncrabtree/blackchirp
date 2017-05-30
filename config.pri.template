@@ -139,6 +139,18 @@ gpu-cuda {
 	}
 }
 
+
+#------------------------------------------------
+# Space for custom include/lib paths
+#------------------------------------------------
+motor {
+	equals(MOTORSCOPE,1) {
+	LIBS += -L/opt/picoscope/lib/ -lps2000a
+	INCLUDEPATH += /opt/picoscope/include/libps2000a-1.1/
+	}
+}
+
+
 #------------------------------------------------
 # Do not modify the following
 # -----------------------------------------------

@@ -286,6 +286,11 @@ int MotorScan::shotsPerPoint() const
     return data->shotsPerPoint;
 }
 
+int MotorScan::currentPointShots() const
+{
+    return data->currentPointShots;
+}
+
 int MotorScan::completedShots() const
 {
     return data->currentPoint*data->shotsPerPoint + data->currentPointShots;

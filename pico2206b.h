@@ -38,7 +38,6 @@ private:
     void beginScopeAcquisition();
     void endScopeAcquisition();
     void closeConnection();
-    bool d_enabled = false;
 
 };
 

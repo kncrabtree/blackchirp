@@ -79,14 +79,19 @@ void MotorStatusWidget::updateRanges()
 
     s.beginGroup(QString("motorController"));
     s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    s.beginReadArray(QString("channels"));
 
-    d_x.minPos = s.value(QString("xMin"),-100.0).toDouble();
-    d_x.maxPos = s.value(QString("xMax"),100.0).toDouble();
-    d_y.minPos = s.value(QString("yMin"),-100.0).toDouble();
-    d_y.maxPos = s.value(QString("yMax"),100.0).toDouble();
-    d_z.minPos = s.value(QString("zMin"),-100.0).toDouble();
-    d_z.maxPos = s.value(QString("zMax"),100.0).toDouble();
+    s.setArrayIndex(0);
+    d_x.minPos = s.value(QString("min"),-100.0).toDouble();
+    d_x.maxPos = s.value(QString("max"),100.0).toDouble();
+    s.setArrayIndex(1);
+    d_y.minPos = s.value(QString("min"),-100.0).toDouble();
+    d_y.maxPos = s.value(QString("max"),100.0).toDouble();
+    s.setArrayIndex(2);
+    d_z.minPos = s.value(QString("min"),-100.0).toDouble();
+    d_z.maxPos = s.value(QString("max"),100.0).toDouble();
 
+    s.endArray();
     s.endGroup();
     s.endGroup();
 
@@ -97,20 +102,26 @@ void MotorStatusWidget::updateRanges()
 
 void MotorStatusWidget::updatePosition(BlackChirp::MotorAxis axis, double pos)
 {
+    AxisWidget *w;
     switch(axis)
     {
     case BlackChirp::MotorX:
-        d_x.positionBar->setValue((pos-d_x.minPos)/(d_x.maxPos-d_x.minPos)*10000);
+        w = &d_x;
         break;
     case BlackChirp::MotorY:
-        d_y.positionBar->setValue((pos-d_y.minPos)/(d_y.maxPos-d_y.minPos)*10000);
+        w = &d_y;
         break;
     case BlackChirp::MotorZ:
-        d_z.positionBar->setValue((pos-d_z.minPos)/(d_z.maxPos-d_z.minPos)*10000);
+        w = &d_z;
         break;
     default:
+        return;
         break;
     }
+
+    w->currentPos = pos;
+    int barPos = qBound(0,qRound((pos-w->minPos)/(w->maxPos-w->minPos)*10000.0),10000);
+    w->positionBar->setValue(barPos);
 }
 
 void MotorStatusWidget::updateLimit(BlackChirp::MotorAxis axis, bool n, bool p)

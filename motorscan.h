@@ -48,6 +48,7 @@ public:
     bool writeMotorFile(int num) const;
 
     int shotsPerPoint() const;
+    int currentPointShots() const;
     int completedShots() const;
     bool isPointComplete() const;
     bool isComplete() const;
