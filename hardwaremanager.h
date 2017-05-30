@@ -15,8 +15,17 @@ class AWG;
 class Synthesizer;
 class PulseGenerator;
 class FlowController;
-class LifScope;
 class IOBoard;
+class MotorController;
+
+#ifdef BC_LIF
+class LifScope;
+#endif
+
+#ifdef BC_MOTOR
+class MotorController;
+class MotorOscilloscope;
+#endif
 
 class HardwareManager : public QObject
 {
@@ -61,9 +70,20 @@ signals:
     void pressureSetpointUpdate(double);
     void pressureControlMode(bool);
 
+#ifdef BC_LIF
     void lifScopeShotAcquired(const LifTrace);
     void lifScopeConfigUpdated(const BlackChirp::LifScopeConfig);
     void lifSettingsComplete(bool success = true);
+#endif
+
+#ifdef BC_MOTOR
+    void motorTraceAcquired(QVector<double> d);
+    void motorMoveComplete(bool);
+    void moveMotorToPosition(double x, double y, double z);
+    void motorLimitStatus(BlackChirp::MotorAxis axis, bool negLimit, bool posLimit);
+    void motorPosUpdate(BlackChirp::MotorAxis axis, double pos);
+    void motorRest();
+#endif
 
 public slots:
     void initialize();
@@ -92,7 +112,6 @@ public slots:
     void testObjectConnection(const QString type, const QString key);
 
     void getTimeData();
-    void setLifParameters(double delay, double frequency);
 
     double setValonTxFreq(const double d);
     double setValonRxFreq(const double d);
@@ -100,14 +119,17 @@ public slots:
     void setPGenSetting(int index, BlackChirp::PulseSetting s, QVariant val);
     void setPGenConfig(const PulseGenConfig c);
     void setPGenRepRate(double r);
-    bool setPGenLifDelay(double d);
 
     void setFlowChannelName(int index, QString name);
     void setFlowSetpoint(int index, double val);
     void setPressureSetpoint(double val);
     void setPressureControlMode(bool en);
 
+#ifdef BC_LIF
+    void setLifParameters(double delay, double frequency);
+    bool setPGenLifDelay(double d);
     void setLifScopeConfig(const BlackChirp::LifScopeConfig c);
+#endif
 
 private:
     int d_responseCount;
@@ -119,9 +141,15 @@ private:
     AWG *p_awg;
     PulseGenerator *p_pGen;
     FlowController *p_flow;
-    LifScope *p_lifScope;
     IOBoard *p_iob;
+#ifdef BC_LIF
+    LifScope *p_lifScope;
+#endif
 
+#ifdef BC_MOTOR
+    MotorController *p_mc;
+    MotorOscilloscope *p_motorScope;
+#endif
 };
 
 #endif // HARDWAREMANAGER_H

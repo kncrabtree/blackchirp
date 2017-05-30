@@ -27,9 +27,11 @@ TEMPLATE = app
 CONFIG += c++11
 
 SOURCES += main.cpp
-
 RESOURCES += resources.qrc
 
+!exists(config.pri) {
+	 error('config.pri file not found. Please copy config.pri.template to config.pri, and then edit config.pri as needed.')
+}
 include(config.pri)
 include(acquisition.pri)
 include(gui.pri)

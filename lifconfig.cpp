@@ -459,7 +459,7 @@ bool LifConfig::loadLifData(int num, const QString path)
 
         lif.close();
         return true;
-    };
+    }
 
     return false;
 }

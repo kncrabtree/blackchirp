@@ -62,6 +62,13 @@ enum FlowSetting {
     FlowSettingName
 };
 
+enum MotorAxis {
+    MotorX,
+    MotorY,
+    MotorZ,
+    MotorT
+};
+
 enum PulseActiveLevel { PulseLevelActiveLow, PulseLevelActiveHigh };
 enum PulseSetting { PulseDelay, PulseWidth, PulseEnabled, PulseLevel, PulseName };
 
@@ -186,6 +193,40 @@ struct LifPoint {
     LifPoint() : mean(0.0), sumsq(0.0), count(0) {}    
 };
 
+struct MotorScopeConfig {
+    int dataChannel;
+    double verticalScale;
+    int recordLength;
+    double sampleRate;
+    int triggerChannel;
+    BlackChirp::ScopeTriggerSlope slope;
+    QDataStream::ByteOrder byteOrder;
+    int bytesPerPoint;
+
+    QMap<QString,QPair<QVariant,QString> > headerMap() const
+    {
+        QMap<QString,QPair<QVariant,QString> > out;
+
+        QString scratch;
+        QString prefix = QString("MotorScope");
+        QString empty = QString("");
+
+        out.insert(prefix+QString("VerticalScale"),qMakePair(QString::number(verticalScale,'f',3),QString("V/div")));
+        slope == RisingEdge ? scratch = QString("RisingEdge") : scratch = QString("FallingEdge");
+        out.insert(prefix+QString("TriggerSlope"),qMakePair(scratch,empty));
+        out.insert(prefix+QString("SampleRate"),qMakePair(QString::number(sampleRate/1e6,'f',3),QString("MS/s")));
+        out.insert(prefix+QString("RecordLength"),qMakePair(recordLength,empty));
+        out.insert(prefix+QString("BytesPerPoint"),qMakePair(bytesPerPoint,empty));
+        byteOrder == QDataStream::BigEndian ? scratch = QString("BigEndian") : scratch = QString("LittleEndian");
+        out.insert(prefix+QString("ByteOrder"),qMakePair(scratch,empty));
+        out.insert(prefix+QString("TriggerChannel"),qMakePair(QString::number(triggerChannel),empty));
+        out.insert(prefix+QString("DataChannel"),qMakePair(QString::number(dataChannel),empty));
+
+        return out;
+    }
+
+};
+
 
 struct FlowChannelConfig {
     bool enabled;
@@ -219,7 +260,8 @@ enum ExptFileType {
     LifFile,
     SnapFile,
     TimeFile,
-    LogFile
+    LogFile,
+    MotorFile
 };
 
 struct ValidationItem {

@@ -79,7 +79,8 @@ Experiment MSO72004C::prepareForExperiment(Experiment exp)
     //If this frequently fails, I recommend turning verbose headers on and writing a custom query command that verifies the header response, retrying until a valid reply is received.
 
     //make a copy of the configuration in which to store settings
-    if(!exp.ftmwConfig().isEnabled())
+    d_enabledForExperiment = exp.ftmwConfig().isEnabled();
+    if(!d_enabledForExperiment)
         return exp;
 
     BlackChirp::FtmwScopeConfig config(exp.ftmwConfig().scopeConfig());
@@ -575,47 +576,53 @@ Experiment MSO72004C::prepareForExperiment(Experiment exp)
 
 void MSO72004C::beginAcquisition()
 {
-    p_comm->writeCmd(QString(":LOCK ALL;:DISPLAY:WAVEFORM OFF\n"));
-    if(p_socket->bytesAvailable())
-        p_socket->readAll();
+    if(d_enabledForExperiment)
+    {
+        p_comm->writeCmd(QString(":LOCK ALL;:DISPLAY:WAVEFORM OFF\n"));
+        if(p_socket->bytesAvailable())
+            p_socket->readAll();
 
-    p_comm->writeCmd(QString(":CURVESTREAM?\n"));
-    d_waitingForReply = true;
-    d_foundHeader = false;
-    d_headerNumBytes = 0;
-    d_waveformBytes = 0;
+        p_comm->writeCmd(QString(":CURVESTREAM?\n"));
+        d_waitingForReply = true;
+        d_foundHeader = false;
+        d_headerNumBytes = 0;
+        d_waveformBytes = 0;
 
-    p_scopeTimeout->stop();
-    p_scopeTimeout->start(10000);
+        p_scopeTimeout->stop();
+        p_scopeTimeout->start(10000);
 
-    connect(p_scopeTimeout,&QTimer::timeout,this,&MSO72004C::wakeUp,Qt::UniqueConnection);
-    connect(p_socket,&QTcpSocket::readyRead,this,&MSO72004C::readWaveform,Qt::UniqueConnection);
+        connect(p_scopeTimeout,&QTimer::timeout,this,&MSO72004C::wakeUp,Qt::UniqueConnection);
+        connect(p_socket,&QTcpSocket::readyRead,this,&MSO72004C::readWaveform,Qt::UniqueConnection);
+    }
 }
 
 void MSO72004C::endAcquisition()
 {
 
-    //stop parsing waveforms
-    p_scopeTimeout->stop();
-    disconnect(p_socket,&QTcpSocket::readyRead,this,&MSO72004C::readWaveform);
-    disconnect(p_scopeTimeout,&QTimer::timeout,this,&MSO72004C::wakeUp);
+    if(d_enabledForExperiment)
+    {
+        //stop parsing waveforms
+        p_scopeTimeout->stop();
+        disconnect(p_socket,&QTcpSocket::readyRead,this,&MSO72004C::readWaveform);
+        disconnect(p_scopeTimeout,&QTimer::timeout,this,&MSO72004C::wakeUp);
 
-    if(p_socket->bytesAvailable())
-        p_socket->readAll();
+        if(p_socket->bytesAvailable())
+            p_socket->readAll();
 
-    //send *CLS command twice to kick scope out of curvestream mode and clear the error queue
-    p_comm->writeCmd(QString("*CLS\n"));
-    p_comm->writeCmd(QString("*CLS\n"));
+        //send *CLS command twice to kick scope out of curvestream mode and clear the error queue
+        p_comm->writeCmd(QString("*CLS\n"));
+        p_comm->writeCmd(QString("*CLS\n"));
 
-    if(p_socket->bytesAvailable())
-        p_socket->readAll();
+        if(p_socket->bytesAvailable())
+            p_socket->readAll();
 
-    p_comm->writeCmd(QString(":UNLOCK ALL;:DISPLAY:WAVEFORM ON\n"));
+        p_comm->writeCmd(QString(":UNLOCK ALL;:DISPLAY:WAVEFORM ON\n"));
 
-    d_waitingForReply = false;
-    d_foundHeader = false;
-    d_headerNumBytes = 0;
-    d_waveformBytes = 0;
+        d_waitingForReply = false;
+        d_foundHeader = false;
+        d_headerNumBytes = 0;
+        d_waveformBytes = 0;
+    }
 }
 
 void MSO72004C::readTimeData()

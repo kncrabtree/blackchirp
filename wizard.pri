@@ -5,7 +5,6 @@ HEADERS += \
     $$PWD/wizardftmwconfigpage.h \
     $$PWD/wizardsummarypage.h \
     $$PWD/wizardpulseconfigpage.h \
-    $$PWD/wizardlifconfigpage.h \
     $$PWD/wizardvalidationpage.h \
     $$PWD/ioboardconfigmodel.h \
     $$PWD/validationmodel.h
@@ -17,7 +16,16 @@ SOURCES += \
     $$PWD/wizardftmwconfigpage.cpp \
     $$PWD/wizardsummarypage.cpp \
     $$PWD/wizardpulseconfigpage.cpp \
-    $$PWD/wizardlifconfigpage.cpp \
     $$PWD/wizardvalidationpage.cpp \
     $$PWD/ioboardconfigmodel.cpp \
     $$PWD/validationmodel.cpp
+
+lif {
+	HEADERS += $$PWD/wizardlifconfigpage.h
+	SOURCES += $$PWD/wizardlifconfigpage.cpp
+}
+
+motor {
+        HEADERS += $$PWD/wizardmotorscanconfigpage.h
+        SOURCES += $$PWD/wizardmotorscanconfigpage.cpp
+}

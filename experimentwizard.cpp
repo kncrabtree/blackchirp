@@ -5,9 +5,16 @@
 #include "wizardftmwconfigpage.h"
 #include "wizardsummarypage.h"
 #include "wizardpulseconfigpage.h"
-#include "wizardlifconfigpage.h"
 #include "wizardvalidationpage.h"
 #include "batchsingle.h"
+
+#ifdef BC_LIF
+#include "wizardlifconfigpage.h"
+#endif
+
+#ifdef BC_MOTOR
+#include "wizardmotorscanconfigpage.h"
+#endif
 
 ExperimentWizard::ExperimentWizard(QWidget *parent) :
     QWizard(parent)
@@ -20,20 +27,27 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
     p_pulseConfigPage = new WizardPulseConfigPage(this);
     p_validationPage = new WizardValidationPage(this);
     p_summaryPage = new WizardSummaryPage(this);
-    p_lifConfigPage = new WizardLifConfigPage(this);
-    connect(this,&ExperimentWizard::newTrace,p_lifConfigPage,&WizardLifConfigPage::newTrace);
-    connect(this,&ExperimentWizard::scopeConfigChanged,p_lifConfigPage,&WizardLifConfigPage::scopeConfigChanged);
-    connect(p_lifConfigPage,&WizardLifConfigPage::updateScope,this,&ExperimentWizard::updateScope);
-    connect(p_lifConfigPage,&WizardLifConfigPage::lifColorChanged,this,&ExperimentWizard::lifColorChanged);
-
 
     setPage(StartPage,p_startPage);
     setPage(ChirpConfigPage,p_chirpConfigPage);
     setPage(FtmwConfigPage,p_ftmwConfigPage);
     setPage(PulseConfigPage,p_pulseConfigPage);
-    setPage(LifConfigPage,p_lifConfigPage);
     setPage(ValidationPage,p_validationPage);
     setPage(SummaryPage,p_summaryPage);
+
+#ifdef BC_LIF
+    p_lifConfigPage = new WizardLifConfigPage(this);
+    connect(this,&ExperimentWizard::newTrace,p_lifConfigPage,&WizardLifConfigPage::newTrace);
+    connect(this,&ExperimentWizard::scopeConfigChanged,p_lifConfigPage,&WizardLifConfigPage::scopeConfigChanged);
+    connect(p_lifConfigPage,&WizardLifConfigPage::updateScope,this,&ExperimentWizard::updateScope);
+    connect(p_lifConfigPage,&WizardLifConfigPage::lifColorChanged,this,&ExperimentWizard::lifColorChanged);
+    setPage(LifConfigPage,p_lifConfigPage);
+#endif
+
+#ifdef BC_MOTOR
+    p_motorScanConfigPage = new WizardMotorScanConfigPage(this);
+    setPage(MotorScanConfigPage,p_motorScanConfigPage);
+#endif
 }
 
 ExperimentWizard::~ExperimentWizard()
@@ -63,12 +77,21 @@ Experiment ExperimentWizard::getExperiment() const
         ftc.setChirpConfig(cc);
     }
 
+#ifdef BC_LIF
     LifConfig lc = p_lifConfigPage->getConfig();
     if(p_startPage->lifEnabled())
         lc.setEnabled();
+    exp.setLifConfig(lc);
+#endif
+
+#ifdef BC_MOTOR
+    MotorScan ms = p_motorScanConfigPage->motorScan();
+    if(p_startPage->motorEnabled())
+        ms.setEnabled();
+    exp.setMotorScan(ms);
+#endif
 
     exp.setFtmwConfig(ftc);
-    exp.setLifConfig(lc);
     exp.setPulseGenConfig(p_pulseConfigPage->getConfig());
     exp.setFlowConfig(d_flowConfig);
     exp.setIOBoardConfig(p_validationPage->getConfig());

@@ -10,6 +10,7 @@ class WizardSummaryPage;
 class WizardPulseConfigPage;
 class WizardLifConfigPage;
 class WizardValidationPage;
+class WizardMotorScanConfigPage;
 class BatchManager;
 
 #include "experiment.h"
@@ -26,7 +27,12 @@ public:
         StartPage,
         ChirpConfigPage,
         FtmwConfigPage,
+#ifdef BC_LIF
         LifConfigPage,
+#endif
+#ifdef BC_MOTOR
+        MotorScanConfigPage,
+#endif
         PulseConfigPage,
         ValidationPage,
         SummaryPage
@@ -37,11 +43,6 @@ public:
     Experiment getExperiment() const;
     bool sleepWhenDone() const;
 
-signals:
-    void newTrace(const LifTrace);
-    void updateScope(const BlackChirp::LifScopeConfig);
-    void scopeConfigChanged(const BlackChirp::LifScopeConfig);
-    void lifColorChanged();
 
 private:
     WizardStartPage *p_startPage;
@@ -49,10 +50,26 @@ private:
     WizardFtmwConfigPage *p_ftmwConfigPage;
     WizardSummaryPage *p_summaryPage;
     WizardPulseConfigPage *p_pulseConfigPage;
-    WizardLifConfigPage *p_lifConfigPage;
     WizardValidationPage *p_validationPage;
 
     FlowConfig d_flowConfig;
+
+#ifdef BC_LIF
+signals:
+    void newTrace(const LifTrace);
+    void updateScope(const BlackChirp::LifScopeConfig);
+    void scopeConfigChanged(const BlackChirp::LifScopeConfig);
+    void lifColorChanged();
+
+private:
+    WizardLifConfigPage *p_lifConfigPage;
+#endif
+
+#ifdef BC_MOTOR
+private:
+    WizardMotorScanConfigPage *p_motorScanConfigPage;
+#endif
+
 };
 
 #endif // EXPERIMENTWIZARD_H

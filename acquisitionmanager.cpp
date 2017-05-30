@@ -5,6 +5,9 @@
 AcquisitionManager::AcquisitionManager(QObject *parent) : QObject(parent), d_state(Idle), d_currentShift(0), d_lastFom(0.0)
 {
     p_saveThread = new QThread(this);
+#ifdef BC_MOTOR
+    d_waitingForMotor = false;
+#endif
 }
 
 AcquisitionManager::~AcquisitionManager()
@@ -80,6 +83,17 @@ void AcquisitionManager::beginExperiment(Experiment exp)
     }
     emit beginAcquisition();
 
+#ifdef BC_MOTOR
+    if(d_currentExperiment.motorScan().isEnabled())
+    {
+        d_waitingForMotor = true;
+        QVector3D pos = d_currentExperiment.motorScan().currentPos();
+        emit startMotorMove(pos.x(),pos.y(),pos.z());
+        emit statusMessage(QString("Moving motor to (X,Y,Z) = (%1, %2, %3)")
+                           .arg(pos.x(),0,'f',3).arg(pos.y(),0,'f',3).arg(pos.z(),0,'f',3));
+    }
+#endif
+
 }
 
 void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
@@ -149,6 +163,7 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
     }
 }
 
+#ifdef BC_LIF
 void AcquisitionManager::processLifScopeShot(const LifTrace t)
 {
     if(d_state == Acquiring && d_currentExperiment.lifConfig().isEnabled() && !d_currentExperiment.isLifWaiting())
@@ -186,6 +201,7 @@ void AcquisitionManager::lifHardwareReady(bool success)
             d_currentExperiment.setLifWaiting(false);
     }
 }
+#endif
 
 void AcquisitionManager::changeRollingAverageShots(int newShots)
 {
@@ -259,9 +275,67 @@ void AcquisitionManager::abort()
     {
         d_currentExperiment.setAborted();
         //save!
+#ifdef BC_MOTOR
+        if(d_currentExperiment.motorScan().isEnabled())
+        {
+            d_waitingForMotor = true;
+            emit motorRest();
+            emit statusMessage(QString("Motor scan aborted. Returning motor to resting position..."));
+            return;
+        }
+#endif
         finishAcquisition();
     }
 }
+
+#ifdef BC_MOTOR
+void AcquisitionManager::motorMoveComplete(bool success)
+{
+    if(d_currentExperiment.isComplete() || d_currentExperiment.isAborted())
+    {
+        finishAcquisition();
+        return;
+    }
+
+    //if motor move not successful, abort acquisition
+    if(!success)
+        abort();
+    else
+    {
+        d_waitingForMotor = false;
+    }
+}
+
+void AcquisitionManager::motorTraceReceived(const QVector<double> dat)
+{
+    if(d_state == Acquiring && !d_waitingForMotor)
+    {
+        bool adv = d_currentExperiment.addMotorTrace(dat);
+        emit statusMessage(QString("Acquiring (%1/%2)").arg(d_currentExperiment.motorScan().currentPointShots())
+                           .arg(d_currentExperiment.motorScan().shotsPerPoint()));
+        if(adv)
+        {
+            checkComplete();
+
+            if(d_state == Acquiring)
+            {
+                QVector3D pos = d_currentExperiment.motorScan().currentPos();
+                emit startMotorMove(pos.x(),pos.y(),pos.z());
+                emit statusMessage(QString("Moving motor to (X,Y,Z) = (%1, %2, %3)")
+                                   .arg(pos.x(),0,'f',3).arg(pos.y(),0,'f',3).arg(pos.z(),0,'f',3));
+                d_waitingForMotor = true;
+            }
+
+            emit motorDataUpdate(d_currentExperiment.motorScan());
+        }
+
+        //emit a progress signal
+        emit motorProgress(d_currentExperiment.motorScan().completedShots());
+    }
+
+    //TODO: construct a rolling average waveform and send to UI
+}
+#endif
 
 void AcquisitionManager::checkComplete()
 {
@@ -271,12 +345,27 @@ void AcquisitionManager::checkComplete()
             emit takeSnapshot(d_currentExperiment);
 
         if(d_currentExperiment.isComplete())
+        {
+#ifdef BC_MOTOR
+            if(d_currentExperiment.motorScan().isEnabled())
+            {
+                d_state = Idle;
+                d_waitingForMotor = true;
+                emit motorRest();
+                emit statusMessage(QString("Motor scan complete. Returning motor to resting position..."));
+                return;
+            }
+#endif
             finishAcquisition();
+        }
     }
 }
 
 void AcquisitionManager::finishAcquisition()
 {
+#ifdef BC_MOTOR
+    d_waitingForMotor = false;
+#endif
     emit endAcquisition();
     d_state = Idle;
     d_currentShift = 0;

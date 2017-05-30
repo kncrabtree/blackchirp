@@ -20,11 +20,18 @@ public:
 
     bool ftmwEnabled() const;
     bool lifEnabled() const;
+    bool motorEnabled() const;
     int auxDataInterval() const;
     int snapshotInterval() const;
 
 private:
-    QCheckBox *p_ftmw, *p_lif;
+    QCheckBox *p_ftmw;
+#ifdef BC_LIF
+    QCheckBox *p_lif;
+#endif
+#ifdef BC_MOTOR
+    QCheckBox *p_motor;
+#endif
     QSpinBox *p_auxDataIntervalBox, *p_snapshotBox;
 };
 

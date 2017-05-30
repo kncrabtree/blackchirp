@@ -138,15 +138,21 @@ int main(int argc, char *argv[])
     qRegisterMetaType<Fid>("Fid");
     qRegisterMetaType<QList<Fid> >("QList<Fid>");
     qRegisterMetaType<QVector<QPointF> >("QVector<QPointF>");
+    qRegisterMetaType<QVector<double>>("Vector<double>");
     qRegisterMetaType<QList<QPair<QString,QVariant> >>("QList<QPair<QString,QVariant> >");
     qRegisterMetaType<BlackChirp::PulseSetting>("BlackChirp::PulseSetting");
-    qRegisterMetaType<BlackChirp::LifScopeConfig>("BlackChirp::LifScopeConfig");
     qRegisterMetaType<PulseGenConfig>("PulseGenConfig");
-    qRegisterMetaType<LifTrace>("LifTrace");
-    qRegisterMetaType<QPair<QPoint,BlackChirp::LifPoint>>("QPair<QPoint,BlackChirp::LifPoint>");
     qRegisterMetaType<BlackChirp::FtWindowFunction>("BlackChirp::FtWindowFunction");
     qRegisterMetaType<QList<QPointF>>("QList<QPointF>");
-
+#ifdef BC_LIF
+    qRegisterMetaType<LifTrace>("LifTrace");
+    qRegisterMetaType<QPair<QPoint,BlackChirp::LifPoint>>("QPair<QPoint,BlackChirp::LifPoint>");
+    qRegisterMetaType<BlackChirp::LifScopeConfig>("BlackChirp::LifScopeConfig");
+#endif
+#ifdef BC_MOTOR
+    qRegisterMetaType<BlackChirp::MotorAxis>("BlackChirp::MotorAxis");
+    qRegisterMetaType<MotorScan>("MotorScan");
+#endif
 
 #ifndef QT_DEBUG
     gsl_set_error_handler_off();

@@ -20,7 +20,7 @@
   <widget class="QWidget" name="centralWidget">
    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1">
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1,0,0,0,0,0,0,0">
+     <layout class="QVBoxLayout" name="instrumentStatusLayout" stretch="0,1,0,0,0,0,0">
       <item>
        <widget class="QLabel" name="label">
         <property name="text">
@@ -209,23 +209,6 @@
         </property>
        </widget>
       </item>
-      <item>
-       <widget class="QLabel" name="lifProgressLabel">
-        <property name="text">
-         <string>LIF Progress</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QProgressBar" name="lifProgressBar">
-        <property name="value">
-         <number>0</number>
-        </property>
-       </widget>
-      </item>
      </layout>
     </item>
     <item>
@@ -246,7 +229,7 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_5" stretch="1,1">
         <item>
-         <layout class="QHBoxLayout" name="controlTopLayout" stretch="2,3">
+         <layout class="QHBoxLayout" name="controlTopLayout" stretch="2">
           <item>
            <widget class="QGroupBox" name="gasControlBox">
             <property name="title">
@@ -306,9 +289,6 @@
             </layout>
            </widget>
           </item>
-          <item>
-           <widget class="LifControlWidget" name="lifControlWidget" native="true"/>
-          </item>
          </layout>
         </item>
         <item>
@@ -327,20 +307,6 @@
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
          <widget class="FtmwViewWidget" name="ftViewWidget" native="true"/>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="lifTab">
-       <attribute name="icon">
-        <iconset resource="resources.qrc">
-         <normaloff>:/icons/laser.png</normaloff>:/icons/laser.png</iconset>
-       </attribute>
-       <attribute name="title">
-        <string>LIF</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_6">
-        <item>
-         <widget class="LifDisplayWidget" name="lifDisplayWidget" native="true"/>
         </item>
        </layout>
       </widget>
@@ -385,7 +351,7 @@
      <x>0</x>
      <y>0</y>
      <width>1168</width>
-     <height>27</height>
+     <height>18</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuHardware">
@@ -429,10 +395,9 @@
      <addaction name="actionAutoscale_All"/>
      <addaction name="action_Graphs"/>
     </widget>
-    <addaction name="actionCP_FTMW"/>
-    <addaction name="actionLIF"/>
-    <addaction name="menuTracking_2"/>
     <addaction name="actionControl"/>
+    <addaction name="actionCP_FTMW"/>
+    <addaction name="menuTracking_2"/>
     <addaction name="actionLog"/>
     <addaction name="separator"/>
     <addaction name="actionView_Experiment"/>
@@ -529,9 +494,6 @@
    <property name="text">
     <string>&amp;Show</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+3</string>
-   </property>
   </action>
   <action name="action_Graphs">
    <property name="icon">
@@ -610,21 +572,6 @@
    <property name="text">
     <string>&amp;CP-FTMW</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+1</string>
-   </property>
-  </action>
-  <action name="actionLIF">
-   <property name="icon">
-    <iconset resource="resources.qrc">
-     <normaloff>:/icons/laser.png</normaloff>:/icons/laser.png</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;LIF</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+2</string>
-   </property>
   </action>
   <action name="actionControl">
    <property name="icon">
@@ -634,9 +581,6 @@
    <property name="text">
     <string>C&amp;ontrol</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+4</string>
-   </property>
   </action>
   <action name="actionLog">
    <property name="icon">
@@ -645,9 +589,6 @@
    </property>
    <property name="text">
     <string>Lo&amp;g</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+5</string>
    </property>
   </action>
   <action name="actionView_Experiment">
@@ -729,18 +670,6 @@
    <class>TrackingViewWidget</class>
    <extends>QWidget</extends>
    <header>trackingviewwidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>LifControlWidget</class>
-   <extends>QWidget</extends>
-   <header location="global">lifcontrolwidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>LifDisplayWidget</class>
-   <extends>QWidget</extends>
-   <header>lifdisplaywidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

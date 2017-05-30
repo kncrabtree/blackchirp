@@ -131,7 +131,7 @@ public slots:
     virtual void endAcquisition() =0;
     virtual void readTimeData() =0;
 
-    virtual void buildCommunication(QObject *gc);
+    virtual void buildCommunication(QObject *gc = nullptr);
 
 protected:
     QString d_prettyName; /*!< Name to be displayed on UI */
@@ -141,6 +141,7 @@ protected:
     CommunicationProtocol *p_comm;
     bool d_isCritical;
     bool d_threaded;
+    bool d_enabledForExperiment;
     CommunicationProtocol::CommType d_commType;
 
 private:

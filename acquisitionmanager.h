@@ -14,6 +14,10 @@
 #include "gpuaverager.h"
 #endif
 
+#ifdef BC_MOTOR
+#include "motorscan.h"
+#endif
+
 class AcquisitionManager : public QObject
 {
     Q_OBJECT
@@ -35,24 +39,32 @@ signals:
     void experimentComplete(const Experiment);
     void ftmwUpdateProgress(qint64);
     void ftmwNumShots(qint64);
-    void lifPointUpdate(QPair<QPoint,BlackChirp::LifPoint>);
-    void nextLifPoint(double delay, double frequency);
-    void lifShotAcquired(int);
     void beginAcquisition();
     void endAcquisition();
     void timeDataSignal();
     void timeData(const QList<QPair<QString,QVariant>>, bool plot=true, QDateTime t = QDateTime::currentDateTime());
+    void motorRest();
 
     void newFidList(QList<Fid>);
     void takeSnapshot(const Experiment);
     void doFinalSave(const Experiment);
     void snapshotComplete();
 
+#ifdef BC_LIF
+    void lifPointUpdate(QPair<QPoint,BlackChirp::LifPoint>);
+    void nextLifPoint(double delay, double frequency);
+    void lifShotAcquired(int);
+#endif
+
+#ifdef BC_MOTOR
+    void startMotorMove(double x, double y, double z);
+    void motorProgress(int);
+    void motorDataUpdate(const MotorScan s);
+#endif
+
 public slots:
     void beginExperiment(Experiment exp);
     void processFtmwScopeShot(const QByteArray b);
-    void processLifScopeShot(const LifTrace t);
-    void lifHardwareReady(bool success);
     void changeRollingAverageShots(int newShots);
     void resetRollingAverage();
     void getTimeData();
@@ -61,6 +73,16 @@ public slots:
     void pause();
     void resume();
     void abort();
+
+#ifdef BC_LIF
+    void processLifScopeShot(const LifTrace t);
+    void lifHardwareReady(bool success);
+#endif
+
+#ifdef BC_MOTOR
+    void motorMoveComplete(bool success);
+    void motorTraceReceived(const QVector<double> dat);
+#endif
 
 private:
     Experiment d_currentExperiment;
@@ -77,6 +99,10 @@ private:
 
 #ifdef BC_CUDA
     GpuAverager gpuAvg;
+#endif
+
+#ifdef BC_MOTOR
+    bool d_waitingForMotor;
 #endif
 
 

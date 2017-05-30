@@ -14,11 +14,6 @@ SOURCES += mainwindow.cpp \
     $$PWD/pulseconfigwidget.cpp \
     $$PWD/pulseplot.cpp \
     $$PWD/led.cpp \
-    $$PWD/liftraceplot.cpp \
-    $$PWD/lifcontrolwidget.cpp \
-    $$PWD/lifdisplaywidget.cpp \
-    $$PWD/lifsliceplot.cpp \
-    $$PWD/lifspectrogramplot.cpp \
     $$PWD/ioboardconfigdialog.cpp \
     $$PWD/experimentviewwidget.cpp \
     $$PWD/ftmwsnapshotwidget.cpp \
@@ -45,11 +40,6 @@ HEADERS += mainwindow.h \
     $$PWD/pulseconfigwidget.h \
     $$PWD/pulseplot.h \
     $$PWD/led.h \
-    $$PWD/liftraceplot.h \
-    $$PWD/lifcontrolwidget.h \
-    $$PWD/lifdisplaywidget.h \
-    $$PWD/lifsliceplot.h \
-    $$PWD/lifspectrogramplot.h \
     $$PWD/ioboardconfigdialog.h \
     $$PWD/experimentviewwidget.h \
     $$PWD/ftmwsnapshotwidget.h \
@@ -67,11 +57,53 @@ FORMS += mainwindow.ui \
     $$PWD/chirpconfigwidget.ui \
     $$PWD/rfconfigwidget.ui \
     $$PWD/pulseconfigwidget.ui \
-    $$PWD/lifcontrolwidget.ui \
-    $$PWD/lifdisplaywidget.ui \
     $$PWD/ioboardconfigdialog.ui \
     $$PWD/quickexptdialog.ui \
     $$PWD/batchsequencedialog.ui \
     $$PWD/exportbatchdialog.ui \
     $$PWD/peakfindwidget.ui \
     $$PWD/peaklistexportdialog.ui
+
+lif {
+	HEADERS += $$PWD/liftraceplot.h \
+			   $$PWD/lifcontrolwidget.h \
+			   $$PWD/lifdisplaywidget.h \
+			   $$PWD/lifsliceplot.h \
+			   $$PWD/lifspectrogramplot.h
+	SOURCES += $$PWD/liftraceplot.cpp \
+			   $$PWD/lifcontrolwidget.cpp \
+			   $$PWD/lifdisplaywidget.cpp \
+			   $$PWD/lifsliceplot.cpp \
+			   $$PWD/lifspectrogramplot.cpp
+	FORMS +=   $$PWD/lifcontrolwidget.ui \
+			   $$PWD/lifdisplaywidget.ui
+}
+
+motor {
+	HEADERS += \
+			   $$PWD/motordisplaywidget.h \
+			   $$PWD/motorsliderwidget.h \
+			   $$PWD/motorspectrogramplot.h \
+			   $$PWD/motorzplot.h \
+			   $$PWD/motorxyplot.h \
+			   $$PWD/motortimeplot.h \
+			   $$PWD/motorscopeconfigwidget.h \
+			   $$PWD/motorscanconfigwidget.h \
+			   $$PWD/motorstatuswidget.h
+	SOURCES += \
+			   $$PWD/motordisplaywidget.cpp \
+			   $$PWD/motorsliderwidget.cpp \
+			   $$PWD/motorspectrogramplot.cpp \
+			   $$PWD/motorzplot.cpp \
+			   $$PWD/motorxyplot.cpp \
+			   $$PWD/motortimeplot.cpp \
+			   $$PWD/motorscopeconfigwidget.cpp \
+			   $$PWD/motorscanconfigwidget.cpp \
+			   $$PWD/motorstatuswidget.cpp
+
+	FORMS += \
+			   $$PWD/motordisplaywidget.ui \
+			   $$PWD/motorscopeconfigwidget.ui \
+			   $$PWD/motorscanconfigwidget.ui \
+			   $$PWD/motorstatuswidget.ui
+}

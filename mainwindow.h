@@ -17,6 +17,20 @@ class BatchManager;
 class QLabel;
 class QLineEdit;
 class QDoubleSpinBox;
+class QProgressBar;
+class QAction;
+
+#ifdef BC_LIF
+class LifControlWidget;
+class LifDisplayWidget;
+#endif
+
+#ifdef BC_MOTOR
+class MotorDisplayWidget;
+class MotorStatusWidget;
+#endif
+
+
 
 namespace Ui {
 class MainWindow;
@@ -101,6 +115,21 @@ private:
     int d_logCount;
     BlackChirp::LogMessageCode d_logIcon;
     int d_currentExptNum;
+
+#ifdef BC_LIF
+    QWidget *p_lifTab;
+    LifControlWidget *p_lifControlWidget;
+    QProgressBar *p_lifProgressBar;
+    QAction *p_lifAction;
+    LifDisplayWidget *p_lifDisplayWidget;
+#endif
+
+#ifdef BC_MOTOR
+    QAction *p_motorViewAction;
+    QWidget *p_motorTab;
+    MotorDisplayWidget *p_motorDisplayWidget;
+    MotorStatusWidget *p_motorStatusWidget;
+#endif
 
 protected:
     void closeEvent(QCloseEvent *ev);

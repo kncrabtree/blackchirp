@@ -39,9 +39,9 @@ typedef Valon5009 SynthesizerHardware;
 class PldroGroup;
 typedef PldroGroup SynthesizerHardware;
 #else
-#include "virtualvalonsynth.h"
-class VirtualValonSynth;
-typedef VirtualValonSynth SynthesizerHardware;
+#include "virtualsynth.h"
+class VirtualSynth;
+typedef VirtualSynth SynthesizerHardware;
 #endif
 #endif
 

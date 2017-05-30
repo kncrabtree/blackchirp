@@ -6,8 +6,6 @@ SOURCES += loghandler.cpp \
     $$PWD/chirpconfig.cpp \
     $$PWD/pulsegenconfig.cpp \
     $$PWD/flowconfig.cpp \
-    $$PWD/lifconfig.cpp \
-    $$PWD/liftrace.cpp \
     $$PWD/datastructs.cpp \
     $$PWD/analysis.cpp \
     $$PWD/ioboardconfig.cpp \
@@ -23,14 +21,25 @@ HEADERS += loghandler.h \
     $$PWD/chirpconfig.h \
     $$PWD/pulsegenconfig.h \
     $$PWD/flowconfig.h \
-    $$PWD/lifconfig.h \
-    $$PWD/liftrace.h \
     $$PWD/datastructs.h \
     $$PWD/analysis.h \
     $$PWD/ioboardconfig.h \
     $$PWD/snapworker.h \
     $$PWD/peakfinder.h
 
+
 gpu-cuda {
     OTHER_FILES += $$PWD/gpuaverager.cu
+}
+
+lif {
+	 HEADERS += $$PWD/lifconfig.h \
+				$$PWD/liftrace.h
+	SOURCES +=  $$PWD/lifconfig.cpp \
+				$$PWD/liftrace.cpp
+}
+
+motor {
+	 HEADERS += $$PWD/motorscan.h
+	 SOURCES += $$PWD/motorscan.cpp
 }

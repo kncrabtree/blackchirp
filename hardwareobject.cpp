@@ -3,11 +3,14 @@
 #include "virtualinstrument.h"
 #include "tcpinstrument.h"
 #include "rs232instrument.h"
-#include "gpibinstrument.h"
 #include "custominstrument.h"
 
+#ifdef BC_GPIBCONTROLLER
+#include "gpibinstrument.h"
+#endif
+
 HardwareObject::HardwareObject(QObject *parent) :
-    QObject(parent), d_isCritical(true), d_threaded(true)
+    QObject(parent), d_isCritical(true), d_threaded(true), d_enabledForExperiment(true)
 {
 }
 
@@ -19,7 +22,11 @@ HardwareObject::~HardwareObject()
 
 void HardwareObject::buildCommunication(QObject *gc)
 {
+#ifdef BC_GPIBCONTROLLER
     GpibController *c = dynamic_cast<GpibController*>(gc);
+#else
+    Q_UNUSED(gc)
+#endif
     switch(d_commType)
     {
     case CommunicationProtocol::Rs232:
@@ -28,10 +35,12 @@ void HardwareObject::buildCommunication(QObject *gc)
     case CommunicationProtocol::Tcp:
         p_comm = new TcpInstrument(d_key,d_subKey,this);
         break;
+#ifdef BC_GPIBCONTROLLER
     case CommunicationProtocol::Gpib:
         p_comm = new GpibInstrument(d_key,d_subKey,c,this);
         setParent(c);
         break;
+#endif
     case CommunicationProtocol::Custom:
         p_comm = new CustomInstrument(d_key,d_subKey,this);
     case CommunicationProtocol::Virtual:
