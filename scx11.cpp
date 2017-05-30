@@ -99,6 +99,7 @@ bool Scx11::testConnection()
                 return false;
             }
         }
+        emit logMessage(QString("ID response: %1").arg(QString(resp.trimmed())));
 
         if(!resp.startsWith("SCX11"))
         {
@@ -148,7 +149,6 @@ bool Scx11::testConnection()
     }
 
 
-    emit logMessage(QString("ID response: %1").arg(QString(resp.trimmed())));
     emit connected();
     p_limitTimer->start();
     d_nextRead = 0;
