@@ -259,12 +259,12 @@ MainWindow::MainWindow(QWidget *parent) :
 #ifdef BC_LIF
     p_lifDisplayWidget = new LifDisplayWidget(this);
     int lti = ui->tabWidget->insertTab(ui->tabWidget->indexOf(ui->trackingTab),p_lifDisplayWidget,QIcon(QString(":/icons/laser.png")),QString("LIF"));
-    p_lifTab = ui->tabWidget->widget(mti);
+    p_lifTab = ui->tabWidget->widget(lti);
     p_lifProgressBar = new QProgressBar(this);
-    ui->instrumentStatusLayout->addWidget(QLabel(QString("LIF Progress")),0,Qt::AlignCenter);
+    ui->instrumentStatusLayout->addWidget(new QLabel(QString("LIF Progress")),0,Qt::AlignCenter);
     ui->instrumentStatusLayout->addWidget(p_lifProgressBar);
     p_lifControlWidget = new LifControlWidget(this);
-    ui->controlTopLayout->addWidget(p_lifcontrolWidget,2);
+    ui->controlTopLayout->addWidget(p_lifControlWidget,2);
     p_lifAction = new QAction(QIcon(QString(":/icons/laser.png")),QString("LIF"),this);
     ui->menuView->insertAction(ui->actionLog,p_lifAction);
 
@@ -278,11 +278,11 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_am,&AcquisitionManager::nextLifPoint,p_hwm,&HardwareManager::setLifParameters);
     connect(p_am,&AcquisitionManager::lifShotAcquired,p_lifProgressBar,&QProgressBar::setValue);
     connect(p_am,&AcquisitionManager::lifPointUpdate,p_lifDisplayWidget,&LifDisplayWidget::updatePoint);
-    connect(ui->actionLIF,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(ui->lifTab); });
-    connect(ui->lifControlWidget,&LifControlWidget::lifColorChanged,
-            ui->lifDisplayWidget,&LifDisplayWidget::checkLifColors);
-    connect(ui->lifDisplayWidget,&LifDisplayWidget::lifColorChanged,
-            ui->lifControlWidget,&LifControlWidget::checkLifColors);
+    connect(p_lifAction,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(p_lifTab); });
+    connect(p_lifControlWidget,&LifControlWidget::lifColorChanged,
+            p_lifDisplayWidget,&LifDisplayWidget::checkLifColors);
+    connect(p_lifDisplayWidget,&LifDisplayWidget::lifColorChanged,
+            p_lifControlWidget,&LifControlWidget::checkLifColors);
 #else
     ui->controlTopLayout->addStretch(3);
 #endif
@@ -346,8 +346,8 @@ void MainWindow::startExperiment()
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
     connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
     connect(&wiz,&ExperimentWizard::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
-    connect(&wiz,&ExperimentWizard::lifColorChanged,ui->lifControlWidget,&LifControlWidget::checkLifColors);
-    connect(&wiz,&ExperimentWizard::lifColorChanged,ui->lifDisplayWidget,&LifDisplayWidget::checkLifColors);
+    connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifControlWidget,&LifControlWidget::checkLifColors);
+    connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifDisplayWidget,&LifDisplayWidget::checkLifColors);
 #endif
 
     if(wiz.exec() != QDialog::Accepted)
@@ -368,7 +368,7 @@ void MainWindow::quickStart()
     if(e.lifConfig().isEnabled())
     {
         LifConfig lc = e.lifConfig();
-        lc = ui->lifControlWidget->getSettings(lc);
+        lc = p_lifControlWidget->getSettings(lc);
         e.setLifConfig(lc);
     }
 #endif
@@ -411,7 +411,7 @@ void MainWindow::startSequence()
         if(e.lifConfig().isEnabled())
         {
             LifConfig lc = e.lifConfig();
-            lc = ui->lifControlWidget->getSettings(lc);
+            lc = p_lifControlWidget->getSettings(lc);
             e.setLifConfig(lc);
         }
 #endif
@@ -442,8 +442,8 @@ void MainWindow::startSequence()
         connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
         connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
         connect(&wiz,&ExperimentWizard::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
-        connect(&wiz,&ExperimentWizard::lifColorChanged,ui->lifControlWidget,&LifControlWidget::checkLifColors);
-        connect(&wiz,&ExperimentWizard::lifColorChanged,ui->lifDisplayWidget,&LifDisplayWidget::checkLifColors);
+        connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifControlWidget,&LifControlWidget::checkLifColors);
+        connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifDisplayWidget,&LifDisplayWidget::checkLifColors);
 #endif
 
         if(wiz.exec() != QDialog::Accepted)
@@ -472,7 +472,7 @@ void MainWindow::batchComplete(bool aborted)
     disconnect(ui->ftViewWidget,&FtmwViewWidget::rollingAverageShotsChanged,ui->ftmwProgressBar,&QProgressBar::setMaximum);
 
 #ifdef BC_LIF
-    disconnect(p_hwm,&HardwareManager::lifScopeShotAcquired,ui->lifDisplayWidget,&LifDisplayWidget::lifShotAcquired);
+    disconnect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_lifDisplayWidget,&LifDisplayWidget::lifShotAcquired);
     p_lifTab->setEnabled(true);
 #endif
 

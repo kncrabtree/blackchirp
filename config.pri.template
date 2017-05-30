@@ -1,15 +1,18 @@
 #Enable CUDA GPU support
-#CONFIG += gpu-cuda
+CONFIG += gpu-cuda
 
 #Enable hardware
 CONFIG += hardware
 
 #Enable LIF controls/acquisition
-CONFIG += lif
+#CONFIG += lif
 
 #Enable motor controls/acquisition
-CONFIG += motor
+#CONFIG += motor
 
+# Enabling this line will include all hardware files in compilation, even unused ones
+# This is only for development purposes
+#CONFIG += allhardware
 
 #-----------------------------------------
 # Library configuration
@@ -144,12 +147,15 @@ gpu-cuda {
 # Space for custom include/lib paths
 #------------------------------------------------
 motor {
-	equals(MOTORSCOPE,1) {
+	equals(MOTORSCOPE,1)|allhardware {
 	LIBS += -L/opt/picoscope/lib/ -lps2000a
 	INCLUDEPATH += /opt/picoscope/include/libps2000a-1.1/
 	}
 }
 
+equals(IOBOARD,1)|allhardware {
+	LIBS += -llabjackusb
+}
 
 #------------------------------------------------
 # Do not modify the following
@@ -163,7 +169,7 @@ lif {
 motor {
 	DEFINES += BC_MOTOR
 	DEFINES += BC_MOTORCONTROLLER=$$MOTOR
-        DEFINES += BC_MOTORSCOPE=$$MOTORSCOPE
+		DEFINES += BC_MOTORSCOPE=$$MOTORSCOPE
 }
 
 DEFINES += BC_FTMWSCOPE=$$FTMWSCOPE
@@ -180,7 +186,3 @@ DEFINES += BC_IOBOARD=$$IOBOARD
 equals(FTMWSCOPE,0) {
 RESOURCES += virtualdata.qrc
 }
-
-# Enabling this line will include all hardware files in compilation, even unused ones
-# This is only for development purposes
-# CONFIG += allhardware
