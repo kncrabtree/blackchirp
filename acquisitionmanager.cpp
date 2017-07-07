@@ -159,8 +159,9 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 
         emit ftmwNumShots(d_currentExperiment.ftmwConfig().completedShots());
 
-        checkComplete();
     }
+
+    checkComplete();
 }
 
 #ifdef BC_LIF
@@ -184,8 +185,9 @@ void AcquisitionManager::processLifScopeShot(const LifTrace t)
         if(d_currentExperiment.lifConfig().completedShots() <= d_currentExperiment.lifConfig().totalShots())
             emit lifShotAcquired(d_currentExperiment.lifConfig().completedShots());
 
-        checkComplete();
     }
+
+    checkComplete();
 }
 
 void AcquisitionManager::lifHardwareReady(bool success)
