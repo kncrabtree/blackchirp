@@ -26,7 +26,7 @@ ChirpConfig::ChirpConfig() : data(new ChirpConfigData)
     data->totalMult = s.value(QString("txMult"),4.0).toDouble();
     data->mixerTxSideband = s.value(QString("txSidebandSign"),-1.0).toDouble();
 
-    double minPreProt = s.value(QString("minPreChirpProtection"),0.010).toDouble();
+    double minPreProt = qMax(s.value(QString("minPreChirpProtection"),0.010).toDouble(),0.0);
     double minTwt = s.value(QString("minPreChirpDelay"),0.100).toDouble();
     double minPostTwt = s.value(QString("minPostChirpDelay"),0.0).toDouble();
     double minPostProt = s.value(QString("minPostChirpProtection"),0.100).toDouble();
@@ -557,7 +557,7 @@ bool ChirpConfig::validate()
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
     s.beginGroup(QString("chirpConfig"));
-    double minPreProt = s.value(QString("minPreChirpProtection"),0.010).toDouble();
+    double minPreProt = qMax(s.value(QString("minPreChirpProtection"),0.010).toDouble(),0.0);
     double minTwt = s.value(QString("minPreChirpDelay"),0.100).toDouble();
     double minPostTwt = s.value(QString("minPostChirpDelay"),0.0).toDouble();
     double minPostProt = s.value(QString("minPostChirpProtection"),0.100).toDouble();
@@ -611,6 +611,9 @@ bool ChirpConfig::validate()
             if((thisList.at(i).endFreqMHz > awgMaxFreq || thisList.at(i).endFreqMHz < awgMinFreq)  && !thisList.at(i).empty)
                 return false;
         }
+
+        if(data->postChirpDelay + chirpDuration(j) + data->preChirpDelay < 1e6/awgRate)
+            return false;
 
         if(data->numChirps > 0 && data->chirpInterval < data->preChirpProtection + data->preChirpDelay + chirpDuration(j) + qMax(0.0,qMin(data->postChirpProtection,data->postChirpDelay)) + 4.0)
             return false;
