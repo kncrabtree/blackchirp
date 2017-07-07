@@ -26,6 +26,7 @@ public:
     bool isValid() const;
     double preChirpProtection() const;
     double preChirpDelay() const;
+    double postChirpDelay() const;
     double postChirpProtection() const;
     int numChirps() const;
     double chirpInterval() const;
@@ -54,6 +55,7 @@ public:
 
     void setPreChirpProtection(const double d);
     void setPreChirpDelay(const double d);
+    void setPostChirpDelay(const double d);
     void setPostChirpProtection(const double d);
     void setNumChirps(const int n);
     void setChirpInterval(const double i);
@@ -88,11 +90,13 @@ private:
 class ChirpConfigData : public QSharedData
 {
 public:
-    ChirpConfigData() : preChirpProtection(-1.0), preChirpDelay(-1.0), postChirpProtection(-1.0), numChirps(0), chirpInterval(-1.0),
+    //note: postChirpDelay initialized to 0.0 for backwards compatibility
+    ChirpConfigData() : preChirpProtection(-1.0), preChirpDelay(-1.0), postChirpDelay(0.0), postChirpProtection(-1.0), numChirps(0), chirpInterval(-1.0),
         synthTxFreq(-1.0), synthTxMult(-1.0), awgMult(-1.0), mixerTxSideband(0.0), totalMult(0.0), isValid(false) {}
 
     double preChirpProtection; //units: us
     double preChirpDelay; //units: us
+    double postChirpDelay; //units: us
     double postChirpProtection; //units: us
     int numChirps;
     double chirpInterval; //units: us

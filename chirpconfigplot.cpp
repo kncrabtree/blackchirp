@@ -83,6 +83,7 @@ void ChirpConfigPlot::newChirp(const ChirpConfig cc)
         double segmentStartTime = cc.chirpInterval()*static_cast<double>(i);
         double twtEnableTime = segmentStartTime + cc.preChirpProtection();
         double chirpEndTime = twtEnableTime + cc.preChirpDelay() + cc.chirpDuration(i);
+        double twtEndTime = chirpEndTime + cc.postChirpDelay();
         double protectionEndTime = chirpEndTime + cc.postChirpProtection();
 
         //0 at the beginning for both segments
@@ -97,8 +98,8 @@ void ChirpConfigPlot::newChirp(const ChirpConfig cc)
         twtData.append(QPointF(twtEnableTime,1.0));
 
         //chirp end, twt goes low, protection stays high
-        twtData.append(QPointF(chirpEndTime,1.0));
-        twtData.append(QPointF(chirpEndTime,0.0));
+        twtData.append(QPointF(twtEndTime,1.0));
+        twtData.append(QPointF(twtEndTime,0.0));
 
         //post-chirp protection end: protection goes low, twt stays low
         protectionData.append(QPointF(protectionEndTime,1.0));
