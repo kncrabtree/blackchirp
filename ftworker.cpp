@@ -6,7 +6,7 @@
 #include <gsl/gsl_sf.h>
 
 FtWorker::FtWorker(QObject *parent) :
-    QObject(parent), real(NULL), work(NULL), d_numPnts(0), d_start(0.0), d_end(0.0), d_pzf(0), d_scaling(1.0), d_ignoreZone(50.0), d_recalculateWinf(true)
+    QObject(parent), real(NULL), work(NULL), d_numPnts(0), d_start(0.0), d_end(0.0), d_pzf(0), d_removeDC(false), d_scaling(1.0), d_ignoreZone(50.0), d_recalculateWinf(true)
 {
 }
 
@@ -152,10 +152,47 @@ QVector<double> FtWorker::filterFid(const Fid fid)
     int n = ei - si + 1;
     makeWinf(n,d_currentWinf);
 
+    if(d_removeDC)
+    {
+        //calculate average of samples in the FT range, then subtract that from each point
+        //use Kahan summation
+        double sum = 0.0;
+        double c = 0.0;
+        for(int i=0; i<data.size(); i++)
+        {
+            if(i < si)
+                continue;
+
+            if(i > ei)
+                break;
+
+            float y = data.at(y) - c;
+            float t = sum + y;
+            c = (t-sum) - y;
+            sum = t;
+        }
+
+        double avg = sum/static_cast<double>(n);
+        for(int i=0; i<data.size(); i++)
+        {
+            if(i < si)
+                continue;
+
+            if(i > ei)
+                break;
+
+            data[i] -= avg;
+        }
+
+    }
+
     for(int i=0; i<data.size(); i++)
     {
-        if(i < si || i > ei)
+        if(i < si)
             continue;
+
+        if(i > ei)
+            break;
 
         if(d_currentWinf == BlackChirp::Boxcar)
             out[i] = data.at(i);

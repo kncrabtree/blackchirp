@@ -35,6 +35,7 @@ public slots:
     void updateShotsLabel(qint64 shots);
     void ftStartChanged(double s);
     void ftEndChanged(double e);
+    void removeDcChanged(bool rdc);
     void pzfChanged(int zpf);
     void scalingChanged(double scf);
     void winfChanged(BlackChirp::FtWindowFunction f);

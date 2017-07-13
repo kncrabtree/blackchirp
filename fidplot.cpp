@@ -19,7 +19,7 @@
 #include <qwt6/qwt_plot_curve.h>
 
 FidPlot::FidPlot(QWidget *parent) :
-    ZoomPanPlot(QString("FidPlot"),parent), d_ftEndAtFidEnd(true), d_number(0)
+    ZoomPanPlot(QString("FidPlot"),parent), d_removeDc(false), d_ftEndAtFidEnd(true), d_number(0)
 {
     //make axis label font smaller
     this->setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
@@ -73,6 +73,7 @@ FidPlot::FidPlot(QWidget *parent) :
     s2.beginGroup(QString("FidPlot"));
     double ftStart = s2.value(QString("lastFtStart"),0.0).toDouble();
     double ftEnd = s2.value(QString("lastFtEnd"),-1.0).toDouble();
+    d_removeDc = s2.value(QString("removeDc"),false).toBool();
     s2.endGroup();
 
     QwtPlotMarker *ftStartMarker = new QwtPlotMarker();
@@ -293,6 +294,19 @@ void FidPlot::setFtEnd(double end)
     QwtPlot::replot();
 }
 
+void FidPlot::removeDc(bool rdc)
+{
+    d_removeDc = rdc;
+
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("FidPlot"));
+    s.setValue(QString("removeDc"),d_removeDc);
+    s.endGroup();
+
+    emit removeDcChanged(d_removeDc);
+
+}
+
 void FidPlot::buildContextMenu(QMouseEvent *me)
 {
     if(d_currentFid.size()<2 || !isEnabled())
@@ -302,6 +316,12 @@ void FidPlot::buildContextMenu(QMouseEvent *me)
 
     QAction *colorAct = menu->addAction(QString("Change FID color..."));
     connect(colorAct,&QAction::triggered,this,&FidPlot::changeFidColor);
+
+    QAction *removeDcAct = menu->addAction(QString("Remove DC Offset"));
+    removeDcAct->setCheckable(true);
+    removeDcAct->setChecked(d_removeDc);
+    connect(removeDcAct,&QAction::toggled,this,&FidPlot::removeDc);
+
 
     QWidgetAction *wa = new QWidgetAction(menu);
     QWidget *w = new QWidget(menu);

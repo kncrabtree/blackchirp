@@ -78,6 +78,7 @@ public slots:
     void setStart(double s) { d_start = s; }
     void setEnd(double e) { d_end = e; }
     void setPzf(int z) { d_pzf = z; }
+    void setRemoveDc(bool b) { d_removeDC = b; }
     void setScaling(double s) { d_scaling = s; }
     void setIgnoreZone(double z) { d_ignoreZone = z; }
     void setWindowFunction(BlackChirp::FtWindowFunction wf) { d_currentWinf = wf; d_recalculateWinf = true; }
@@ -90,6 +91,7 @@ private:
     double d_start;
     double d_end;
     int d_pzf;
+    bool d_removeDC;
     double d_scaling;
     double d_ignoreZone;
     bool d_recalculateWinf;

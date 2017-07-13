@@ -30,12 +30,14 @@ signals:
     void overrideEnd(double);
     void ftStartChanged(double);
     void ftEndChanged(double);
+    void removeDcChanged(bool);
 
 public slots:
     void receiveData(const Fid f);
     void prepareForExperiment(const Experiment e);
     void setFtStart(double start);
     void setFtEnd(double end);
+    void removeDc(bool rdc);
     void buildContextMenu(QMouseEvent *me);
     void changeFidColor();
 
@@ -45,6 +47,7 @@ private:
 
     QPair<QwtPlotMarker*,QwtPlotMarker*> d_chirpMarkers;
     QPair<QwtPlotMarker*,QwtPlotMarker*> d_ftMarkers;
+    bool d_removeDc;
     bool d_ftEndAtFidEnd;
     int d_number;
 

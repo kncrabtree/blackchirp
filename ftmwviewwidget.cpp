@@ -21,6 +21,7 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
 
     connect(ui->fidPlot,&FidPlot::ftStartChanged,this,&FtmwViewWidget::ftStartChanged);
     connect(ui->fidPlot,&FidPlot::ftEndChanged,this,&FtmwViewWidget::ftEndChanged);
+    connect(ui->fidPlot,&FidPlot::removeDcChanged,this,&FtmwViewWidget::removeDcChanged);
     ui->exptLabel->setVisible(false);
 
     p_ftw = new FtWorker();
@@ -211,6 +212,12 @@ void FtmwViewWidget::ftStartChanged(double s)
 void FtmwViewWidget::ftEndChanged(double e)
 {
     QMetaObject::invokeMethod(p_ftw,"setEnd",Q_ARG(double,e));
+    updateFtPlot();
+}
+
+void FtmwViewWidget::removeDcChanged(bool rdc)
+{
+    QMetaObject::invokeMethod(p_ftw,"setRemoveDc",Q_ARG(bool,rdc));
     updateFtPlot();
 }
 
