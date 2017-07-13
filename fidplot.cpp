@@ -19,7 +19,7 @@
 #include <qwt6/qwt_plot_curve.h>
 
 FidPlot::FidPlot(QWidget *parent) :
-    ZoomPanPlot(QString("FidPlot"),parent), d_removeDc(false), d_ftEndAtFidEnd(true), d_number(0)
+    ZoomPanPlot(QString("FidPlot"),parent), d_removeDc(false), d_ftEndAtFidEnd(true), d_showProcessed(false), d_number(0)
 {
     //make axis label font smaller
     this->setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
@@ -74,6 +74,7 @@ FidPlot::FidPlot(QWidget *parent) :
     double ftStart = s2.value(QString("lastFtStart"),0.0).toDouble();
     double ftEnd = s2.value(QString("lastFtEnd"),-1.0).toDouble();
     d_removeDc = s2.value(QString("removeDc"),false).toBool();
+    d_showProcessed = s2.value(QString("showProcessed"),false).toBool();
     s2.endGroup();
 
     QwtPlotMarker *ftStartMarker = new QwtPlotMarker();
@@ -119,16 +120,37 @@ void FidPlot::receiveData(const Fid f)
 
     d_currentFid = f;
 
-    filterData();
-    replot();
+    if(!d_showProcessed)
+    {
+        filterData();
+        replot();
+    }
+}
+
+void FidPlot::receiveProcessedFid(const QVector<QPointF> d)
+{
+    if(d.size() < 2)
+        return;
+
+    d_currentProcessedFid = d;
+
+    if(d_showProcessed)
+    {
+        filterData();
+        replot();
+    }
 }
 
 void FidPlot::filterData()
 {
-    if(d_currentFid.size() < 2)
-        return;
+    QVector<QPointF> fidData;
+    if(d_showProcessed)
+        fidData = d_currentProcessedFid;
+    else
+        fidData = d_currentFid.toXY();
 
-    QVector<QPointF> fidData = d_currentFid.toXY();
+    if(fidData.size()<2)
+        return;
 
     double firstPixel = 0.0;
     double lastPixel = canvas()->width();
@@ -196,7 +218,7 @@ void FidPlot::filterData()
         filtered.append(p);
     }
 
-    expandAutoScaleRange(QwtPlot::yLeft,yMin,yMax);
+    setAxisAutoScaleRange(QwtPlot::yLeft,yMin,yMax);
     //assign data to curve object
     p_curve->setSamples(filtered);
 }
@@ -206,6 +228,7 @@ void FidPlot::prepareForExperiment(const Experiment e)
     FtmwConfig c = e.ftmwConfig();
     d_number = e.number();
     d_currentFid = Fid();
+    d_currentProcessedFid = QVector<QPointF>();
     p_curve->setSamples(QVector<QPointF>());
 
     if(!c.isEnabled())
@@ -234,6 +257,8 @@ void FidPlot::prepareForExperiment(const Experiment e)
 
         emit ftStartChanged(d_ftMarkers.first->xValue());
         emit ftEndChanged(d_ftMarkers.second->xValue());
+        emit removeDcChanged(d_removeDc);
+        emit showProcessedChanged(d_showProcessed);
 
         setAxisAutoScaleRange(QwtPlot::xBottom,0.0,maxTime);
         setAxisAutoScaleRange(QwtPlot::yLeft,0.0,0.0);
@@ -307,6 +332,18 @@ void FidPlot::removeDc(bool rdc)
 
 }
 
+void FidPlot::showProcessed(bool p)
+{
+    d_showProcessed = p;
+
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("FidPlot"));
+    s.setValue(QString("showProcessed"),d_showProcessed);
+    s.endGroup();
+
+    emit showProcessedChanged(d_showProcessed);
+}
+
 void FidPlot::buildContextMenu(QMouseEvent *me)
 {
     if(d_currentFid.size()<2 || !isEnabled())
@@ -317,21 +354,28 @@ void FidPlot::buildContextMenu(QMouseEvent *me)
     QAction *colorAct = menu->addAction(QString("Change FID color..."));
     connect(colorAct,&QAction::triggered,this,&FidPlot::changeFidColor);
 
+    QAction *processAct = menu->addAction(QString("Show Processed FID"));
+    processAct->setCheckable(true);
+    processAct->setChecked(d_showProcessed);
+    connect(processAct,&QAction::toggled,this,&FidPlot::showProcessed);
+
     QAction *removeDcAct = menu->addAction(QString("Remove DC Offset"));
     removeDcAct->setCheckable(true);
     removeDcAct->setChecked(d_removeDc);
     connect(removeDcAct,&QAction::toggled,this,&FidPlot::removeDc);
 
 
-    QWidgetAction *wa = new QWidgetAction(menu);
-    QWidget *w = new QWidget(menu);
+    QMenu *limitMenu = menu->addMenu(QString("FT Limits..."));
+
+    QWidgetAction *wa = new QWidgetAction(limitMenu);
+    QWidget *w = new QWidget(limitMenu);
     QFormLayout *fl = new QFormLayout(w);
 
 
 
     QDoubleSpinBox *startBox = new QDoubleSpinBox();
     startBox->setMinimum(0.0);
-    startBox->setDecimals(2);
+    startBox->setDecimals(4);
     startBox->setMaximum(d_currentFid.size()*d_currentFid.spacing()*1e6);
     startBox->setSingleStep(0.05);
     startBox->setValue(d_ftMarkers.first->value().x());
@@ -343,7 +387,7 @@ void FidPlot::buildContextMenu(QMouseEvent *me)
 
     QDoubleSpinBox *endBox = new QDoubleSpinBox();
     endBox->setMinimum(0.0);
-    endBox->setDecimals(2);
+    endBox->setDecimals(4);
     endBox->setMaximum(d_currentFid.size()*d_currentFid.spacing()*1e6);
     endBox->setSingleStep(0.05);
     endBox->setValue(d_ftMarkers.second->value().x());
@@ -353,9 +397,13 @@ void FidPlot::buildContextMenu(QMouseEvent *me)
     endBox->setSuffix(QString::fromUtf8(" μs"));
     fl->addRow(QString("FT End"),endBox);
 
+    w->setFocusPolicy(Qt::TabFocus);
+    w->setTabOrder(startBox,endBox);
+
     w->setLayout(fl);
     wa->setDefaultWidget(w);
-    menu->addAction(wa);
+    limitMenu->addAction(wa);
+
 
     menu->popup(me->globalPos());
 

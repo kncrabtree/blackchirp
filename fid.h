@@ -181,7 +181,7 @@ public:
  \brief Default constructor
 
 */
-    FidData() : spacing(5e-7), probeFreq(0.0), vMult(1.0), shots(1), fid(QVector<qint64>(400)), sideband(BlackChirp::UpperSideband) {}
+    FidData() : spacing(5e-7), probeFreq(0.0), vMult(1.0), shots(1), fid(QVector<qint64>(0)), sideband(BlackChirp::UpperSideband) {}
 
     double spacing;
     double probeFreq;

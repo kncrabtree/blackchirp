@@ -6,7 +6,7 @@
 #include <gsl/gsl_sf.h>
 
 FtWorker::FtWorker(QObject *parent) :
-    QObject(parent), real(NULL), work(NULL), d_numPnts(0), d_start(0.0), d_end(0.0), d_pzf(0), d_removeDC(false), d_scaling(1.0), d_ignoreZone(50.0), d_recalculateWinf(true)
+    QObject(parent), real(NULL), work(NULL), d_numPnts(0), d_start(0.0), d_end(0.0), d_pzf(0), d_removeDC(false), d_showProcessed(false), d_scaling(1.0), d_ignoreZone(50.0), d_recalculateWinf(true)
 {
 }
 
@@ -19,6 +19,9 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid fid)
 
     //first, apply any filtering that needs to be done
     QVector<double> fftData = filterFid(fid);
+
+    if(d_showProcessed)
+        prepareForDisplay(fftData,fid.spacing());
 
     //might need to allocate or reallocate workspace and wavetable
     if(fftData.size() != d_numPnts)
@@ -118,6 +121,9 @@ void FtWorker::doFtDiff(const Fid ref, const Fid diff)
     auto d = doFT(diff);
     blockSignals(false);
 
+    if(d_showProcessed)
+        prepareForDisplay(diff);
+
     double max = r.first.first().y() - d.first.first().y();
     double min = max;
 
@@ -209,6 +215,23 @@ QVector<double> FtWorker::filterFid(const Fid fid)
 
     return out;
 
+}
+
+void FtWorker::prepareForDisplay(const QVector<double> fid, double spacing)
+{
+    QVector<QPointF> out(fid.size());
+    for(int i=0; i<out.size(); i++)
+    {
+        out[i].setX(spacing*static_cast<double>(i));
+        out[i].setY(fid.at(i));
+    }
+
+    emit fidDone(out);
+}
+
+void FtWorker::prepareForDisplay(const Fid fid)
+{
+    return prepareForDisplay(filterFid(fid),fid.spacing());
 }
 
 void FtWorker::makeWinf(int n, BlackChirp::FtWindowFunction f)

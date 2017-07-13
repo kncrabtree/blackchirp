@@ -31,24 +31,29 @@ signals:
     void ftStartChanged(double);
     void ftEndChanged(double);
     void removeDcChanged(bool);
+    void showProcessedChanged(bool);
 
 public slots:
     void receiveData(const Fid f);
+    void receiveProcessedFid(const QVector<QPointF> d);
     void prepareForExperiment(const Experiment e);
     void setFtStart(double start);
     void setFtEnd(double end);
     void removeDc(bool rdc);
+    void showProcessed(bool p);
     void buildContextMenu(QMouseEvent *me);
     void changeFidColor();
 
 private:
     Fid d_currentFid;
+    QVector<QPointF> d_currentProcessedFid;
     QwtPlotCurve *p_curve;
 
     QPair<QwtPlotMarker*,QwtPlotMarker*> d_chirpMarkers;
     QPair<QwtPlotMarker*,QwtPlotMarker*> d_ftMarkers;
     bool d_removeDc;
     bool d_ftEndAtFidEnd;
+    bool d_showProcessed;
     int d_number;
 
 protected:

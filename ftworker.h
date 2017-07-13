@@ -79,9 +79,12 @@ public slots:
     void setEnd(double e) { d_end = e; }
     void setPzf(int z) { d_pzf = z; }
     void setRemoveDc(bool b) { d_removeDC = b; }
+    void setShowProcessed(bool p) { d_showProcessed = p; }
     void setScaling(double s) { d_scaling = s; }
     void setIgnoreZone(double z) { d_ignoreZone = z; }
     void setWindowFunction(BlackChirp::FtWindowFunction wf) { d_currentWinf = wf; d_recalculateWinf = true; }
+    void prepareForDisplay(const QVector<double> fid, double spacing);
+    void prepareForDisplay(const Fid fid);
 
 private:
     gsl_fft_real_wavetable *real; /*!< Wavetable for GNU Scientific Library FFT operations */
@@ -91,7 +94,7 @@ private:
     double d_start;
     double d_end;
     int d_pzf;
-    bool d_removeDC;
+    bool d_removeDC, d_showProcessed;
     double d_scaling;
     double d_ignoreZone;
     bool d_recalculateWinf;

@@ -36,6 +36,7 @@ public slots:
     void ftStartChanged(double s);
     void ftEndChanged(double e);
     void removeDcChanged(bool rdc);
+    void showProcessedChanged(bool p);
     void pzfChanged(int zpf);
     void scalingChanged(double scf);
     void winfChanged(BlackChirp::FtWindowFunction f);

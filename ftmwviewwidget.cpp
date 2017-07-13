@@ -22,12 +22,14 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     connect(ui->fidPlot,&FidPlot::ftStartChanged,this,&FtmwViewWidget::ftStartChanged);
     connect(ui->fidPlot,&FidPlot::ftEndChanged,this,&FtmwViewWidget::ftEndChanged);
     connect(ui->fidPlot,&FidPlot::removeDcChanged,this,&FtmwViewWidget::removeDcChanged);
+    connect(ui->fidPlot,&FidPlot::showProcessedChanged,this,&FtmwViewWidget::showProcessedChanged);
     ui->exptLabel->setVisible(false);
 
     p_ftw = new FtWorker();
     //make signal/slot connections
     connect(p_ftw,&FtWorker::ftDone,this,&FtmwViewWidget::ftDone);
     connect(p_ftw,&FtWorker::ftDiffDone,this,&FtmwViewWidget::ftDiffDone);
+    connect(p_ftw,&FtWorker::fidDone,ui->fidPlot,&FidPlot::receiveProcessedFid);
     p_ftThread = new QThread(this);
     connect(p_ftThread,&QThread::finished,p_ftw,&FtWorker::deleteLater);
     p_ftw->moveToThread(p_ftThread);
@@ -218,6 +220,12 @@ void FtmwViewWidget::ftEndChanged(double e)
 void FtmwViewWidget::removeDcChanged(bool rdc)
 {
     QMetaObject::invokeMethod(p_ftw,"setRemoveDc",Q_ARG(bool,rdc));
+    updateFtPlot();
+}
+
+void FtmwViewWidget::showProcessedChanged(bool p)
+{
+    QMetaObject::invokeMethod(p_ftw,"setShowProcessed",Q_ARG(bool,p));
     updateFtPlot();
 }
 
