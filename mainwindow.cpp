@@ -125,8 +125,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::gasPressureUpdate,ui->pressureDoubleSpinBox,&QDoubleSpinBox::setValue);
     connect(p_hwm,&HardwareManager::gasPressureSetpointUpdate,this,&MainWindow::updatePressureSetpoint);
     connect(p_hwm,&HardwareManager::gasPressureControlMode,this,&MainWindow::updatePressureControl);
-    connect(ui->pressureControlButton,&QPushButton::clicked,p_hwm,&HardwareManager::setPressureControlMode);
-    connect(ui->pressureControlBox,vc,p_hwm,&HardwareManager::setPressureSetpoint);
+    connect(ui->pressureControlButton,&QPushButton::clicked,p_hwm,&HardwareManager::setGasPressureControlMode);
+    connect(ui->pressureControlBox,vc,p_hwm,&HardwareManager::setGasPressureSetpoint);
     connect(p_hwm,&HardwareManager::pGenRepRateUpdate,ui->pulseConfigWidget,&PulseConfigWidget::newRepRate);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeSetting,p_hwm,&HardwareManager::setPGenSetting);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeRepRate,p_hwm,&HardwareManager::setPGenRepRate);
@@ -287,7 +287,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_lifDisplayWidget,&LifDisplayWidget::lifColorChanged,
             p_lifControlWidget,&LifControlWidget::checkLifColors);
 #else
-    ui->controlTopLayout->addStretch(3);
+    ui->controlTopLayout->addStretch(1);
 #endif
 
 #ifdef BC_MOTOR
@@ -957,6 +957,51 @@ void MainWindow::configPController(bool readOnly)
     {
         Led *pcled = new Led();
         hbl->addWidget(pcled,0);
+
+        QGroupBox *pcBox = new QGroupBox(QString("Chamber Pressure Control"));
+        QHBoxLayout *hbl2 = new QHBoxLayout;
+
+        QLabel *psLabel = new QLabel("Pressure Setpoint");
+        psLabel->setAlignment(Qt::AlignRight);
+
+        QDoubleSpinBox *pSetpointBox = new QDoubleSpinBox;
+        pSetpointBox->setMinimum(cpbox->minimum());
+        pSetpointBox->setMaximum(cpbox->maximum());
+        pSetpointBox->setDecimals(cpbox->decimals());
+        pSetpointBox->setSuffix(cpbox->suffix());
+
+        pSetpointBox->setSingleStep(qAbs(pSetpointBox->maximum() - pSetpointBox->minimum())/100.0);
+        pSetpointBox->setKeyboardTracking(false);
+
+        QPushButton *pControlButton = new QPushButton("Off");
+        pControlButton->setCheckable(true);
+        pControlButton->setChecked(false);
+
+        connect(p_hwm,&HardwareManager::pressureSetpointUpdate,[=](double val){
+           pSetpointBox->blockSignals(true);
+           pSetpointBox->setValue(val);
+           pSetpointBox->blockSignals(true);
+        });
+        connect(pSetpointBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),p_hwm,&HardwareManager::setPressureSetpoint);
+        connect(pControlButton,&QPushButton::toggled,p_hwm,&HardwareManager::setPressureControlMode);
+        connect(p_hwm,&HardwareManager::pressureControlMode,[=](bool en){
+            pControlButton->blockSignals(true);
+            if(en)
+                pControlButton->setText(QString("On"));
+            else
+                pControlButton->setText(QString("Off"));
+            pControlButton->setChecked(en);
+            pcled->setState(en);
+            pControlButton->blockSignals(false);
+        });
+
+        hbl2->addWidget(psLabel,0);
+        hbl2->addWidget(pSetpointBox,1);
+        hbl2->addWidget(pControlButton,0);
+
+        pcBox->setLayout(hbl2);
+
+        ui->gasControlLayout->addWidget(pcBox,0);
     }
 
     QGroupBox *pgb = new QGroupBox(QString("Chamber Status"));

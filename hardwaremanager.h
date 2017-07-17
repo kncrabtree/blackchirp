@@ -133,8 +133,13 @@ public slots:
 
     void setFlowChannelName(int index, QString name);
     void setFlowSetpoint(int index, double val);
+    void setGasPressureSetpoint(double val);
+    void setGasPressureControlMode(bool en);
+
+#ifdef BC_PCONTROLLER
     void setPressureSetpoint(double val);
     void setPressureControlMode(bool en);
+#endif
 
 #ifdef BC_LIF
     void setLifParameters(double delay, double frequency);

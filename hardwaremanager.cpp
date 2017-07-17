@@ -457,7 +457,7 @@ void HardwareManager::setFlowSetpoint(int index, double val)
         QMetaObject::invokeMethod(p_flow,"setFlowSetpoint",Q_ARG(int,index),Q_ARG(double,val));
 }
 
-void HardwareManager::setPressureSetpoint(double val)
+void HardwareManager::setGasPressureSetpoint(double val)
 {
     if(p_flow->thread() == thread())
         p_flow->setPressureSetpoint(val);
@@ -465,12 +465,28 @@ void HardwareManager::setPressureSetpoint(double val)
         QMetaObject::invokeMethod(p_flow,"setPressureSetpoint",Q_ARG(double,val));
 }
 
-void HardwareManager::setPressureControlMode(bool en)
+void HardwareManager::setGasPressureControlMode(bool en)
 {
     if(p_flow->thread() == thread())
         p_flow->setPressureControlMode(en);
     else
         QMetaObject::invokeMethod(p_flow,"setPressureControlMode",Q_ARG(bool,en));
+}
+
+void HardwareManager::setPressureSetpoint(double val)
+{
+    if(p_pc->thread() == thread())
+        p_pc->setPressureSetpoint(val);
+    else
+        QMetaObject::invokeMethod(p_pc,"setPressureSetpoint",Q_ARG(double,val));
+}
+
+void HardwareManager::setPressureControlMode(bool en)
+{
+    if(p_pc->thread() == thread())
+        p_pc->setPressureControlMode(en);
+    else
+        QMetaObject::invokeMethod(p_pc,"setPressureControlMode",Q_ARG(bool,en));
 }
 
 void HardwareManager::checkStatus()
