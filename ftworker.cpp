@@ -172,7 +172,7 @@ QVector<double> FtWorker::filterFid(const Fid fid)
             if(i > ei)
                 break;
 
-            float y = data.at(y) - c;
+            float y = data.at(i) - c;
             float t = sum + y;
             c = (t-sum) - y;
             sum = t;
