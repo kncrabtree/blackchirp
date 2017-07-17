@@ -361,10 +361,13 @@ void FtPlot::exportXY()
     QVBoxLayout *vbl = new QVBoxLayout;
     QFormLayout *fl = new QFormLayout;
 
+    double min = axisScaleDiv(QwtPlot::xBottom).lowerBound();
+    double max = axisScaleDiv(QwtPlot::xBottom).upperBound();
+
     QDoubleSpinBox *minBox = new QDoubleSpinBox;
     minBox->setRange(d_currentFt.first().x(),d_currentFt.last().x());
     minBox->setDecimals(3);
-    minBox->setValue(d_currentFt.first().x());
+    minBox->setValue(min);
     minBox->setSuffix(QString(" MHz"));
     minBox->setSingleStep(500.0);
     fl->addRow(QString("Minimum Frequency"),minBox);
@@ -372,7 +375,7 @@ void FtPlot::exportXY()
     QDoubleSpinBox *maxBox = new QDoubleSpinBox;
     maxBox->setRange(d_currentFt.first().x(),d_currentFt.last().x());
     maxBox->setDecimals(3);
-    maxBox->setValue(d_currentFt.last().x());
+    maxBox->setValue(max);
     maxBox->setSuffix(QString(" MHz"));
     maxBox->setSingleStep(500.0);
     fl->addRow(QString("Maximum Frequency"),maxBox);
