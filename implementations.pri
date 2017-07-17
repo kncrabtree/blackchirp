@@ -172,3 +172,9 @@ motor {
 }
 
 }
+
+HEADERS += \
+    $$PWD/virtualpressurecontroller.h
+
+SOURCES += \
+    $$PWD/virtualpressurecontroller.cpp

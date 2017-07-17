@@ -11,7 +11,8 @@ HEADERS += \
     $$PWD/synthesizer.h \
     $$PWD/flowcontroller.h \
     $$PWD/ioboard.h \
-        $$PWD/custominstrument.h
+        $$PWD/custominstrument.h \
+    $$PWD/pressurecontroller.h
 
 SOURCES += \
     $$PWD/hardwaremanager.cpp \
@@ -26,7 +27,8 @@ SOURCES += \
     $$PWD/synthesizer.cpp \
     $$PWD/flowcontroller.cpp \
     $$PWD/ioboard.cpp \
-        $$PWD/custominstrument.cpp
+        $$PWD/custominstrument.cpp \
+    $$PWD/pressurecontroller.cpp
 
 allhardware {
 HEADERS += \

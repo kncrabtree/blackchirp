@@ -48,6 +48,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+
     ui->exptSpinBox->blockSignals(true);
     ui->valonTXDoubleSpinBox->blockSignals(true);
     ui->valonRXDoubleSpinBox->blockSignals(true);
@@ -120,15 +122,18 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::flowUpdate,this,&MainWindow::updateFlow);
     connect(p_hwm,&HardwareManager::flowNameUpdate,this,&MainWindow::updateFlowName);
     connect(p_hwm,&HardwareManager::flowSetpointUpdate,this,&MainWindow::updateFlowSetpoint);
-    connect(p_hwm,&HardwareManager::pressureUpdate,ui->pressureDoubleSpinBox,&QDoubleSpinBox::setValue);
-    connect(p_hwm,&HardwareManager::pressureSetpointUpdate,this,&MainWindow::updatePressureSetpoint);
-    connect(p_hwm,&HardwareManager::pressureControlMode,this,&MainWindow::updatePressureControl);
+    connect(p_hwm,&HardwareManager::gasPressureUpdate,ui->pressureDoubleSpinBox,&QDoubleSpinBox::setValue);
+    connect(p_hwm,&HardwareManager::gasPressureSetpointUpdate,this,&MainWindow::updatePressureSetpoint);
+    connect(p_hwm,&HardwareManager::gasPressureControlMode,this,&MainWindow::updatePressureControl);
     connect(ui->pressureControlButton,&QPushButton::clicked,p_hwm,&HardwareManager::setPressureControlMode);
     connect(ui->pressureControlBox,vc,p_hwm,&HardwareManager::setPressureSetpoint);
     connect(p_hwm,&HardwareManager::pGenRepRateUpdate,ui->pulseConfigWidget,&PulseConfigWidget::newRepRate);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeSetting,p_hwm,&HardwareManager::setPGenSetting);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeRepRate,p_hwm,&HardwareManager::setPGenRepRate);
 
+#ifdef BC_PCONTROLLER
+    connect(p_hwm,&HardwareManager::pressureControlReadOnly,this,&MainWindow::configPController);
+#endif
 
     QThread *hwmThread = new QThread(this);
     connect(hwmThread,&QThread::started,p_hwm,&HardwareManager::initialize);
@@ -200,8 +205,6 @@ MainWindow::MainWindow(QWidget *parent) :
         else
             ui->pressureControlButton->setText(QString("Off"));
     });
-
-
 
     p_am = new AcquisitionManager();
     connect(p_am,&AcquisitionManager::logMessage,p_lh,&LogHandler::logMessage);
@@ -309,7 +312,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_am,&AcquisitionManager::motorDataUpdate,p_motorDisplayWidget,&MotorDisplayWidget::newMotorData);
 #endif
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+
     ui->exptSpinBox->setValue(s.value(QString("exptNum"),0).toInt());
     configureUi(Idle);
 }
@@ -919,6 +922,49 @@ void MainWindow::exportBatch()
     d.exec();
 
 }
+
+#ifdef BC_PCONTROLLER
+void MainWindow::configPController(bool readOnly)
+{
+    QHBoxLayout *hbl = new QHBoxLayout;
+    QLabel *cplabel = new QLabel(QString("Pressure"));
+    cplabel->setAlignment(Qt::AlignRight);
+    QDoubleSpinBox *cpbox = new QDoubleSpinBox;
+
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    QString subKey = s.value(QString("pressureController/subKey"),QString("virtual")).toString();
+    s.beginGroup(QString("pressureController"));
+    s.beginGroup(subKey);
+
+    cpbox->setMinimum(s.value(QString("min"),-1.0).toDouble());
+    cpbox->setMaximum(s.value(QString("max"),20.0).toDouble());
+    cpbox->setDecimals(s.value(QString("decimal"),4).toInt());
+    cpbox->setSuffix(QString(" ")+s.value(QString("units"),QString("Torr")).toString());
+
+    cpbox->setReadOnly(true);
+    cpbox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+    cpbox->setKeyboardTracking(false);
+    cpbox->blockSignals(true);
+
+    connect(p_hwm,&HardwareManager::pressureUpdate,cpbox,&QDoubleSpinBox::setValue);
+
+    s.endGroup();
+    s.endGroup();
+
+    hbl->addWidget(cplabel,0);
+    hbl->addWidget(cpbox,1);
+    if(!readOnly)
+    {
+        Led *pcled = new Led();
+        hbl->addWidget(pcled,0);
+    }
+
+    QGroupBox *pgb = new QGroupBox(QString("Chamber Status"));
+    pgb->setLayout(hbl);
+
+    ui->instrumentStatusLayout->insertWidget(2,pgb,0);
+}
+#endif
 
 void MainWindow::configureUi(MainWindow::ProgramState s)
 {

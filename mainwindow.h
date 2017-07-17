@@ -94,6 +94,10 @@ public slots:
     void exportExperiment();
     void exportBatch();
 
+#ifdef BC_PCONTROLLER
+    void configPController(bool readOnly);
+#endif
+
 private:
     Ui::MainWindow *ui;
     QList<QPair<QThread*,QObject*> > d_threadObjectList;

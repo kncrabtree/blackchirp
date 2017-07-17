@@ -329,7 +329,7 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
                 label = QString("FlowConfigChannel.%1.Average").arg(channel);
                 units = QString("sccm");
             }
-            else if(key == QString("pressure"))
+            else if(key == QString("gasPressure"))
             {
                 label = QString("FlowConfigPressureAverage");
                 units = QString("kTorr");
