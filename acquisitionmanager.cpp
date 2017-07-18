@@ -310,7 +310,7 @@ void AcquisitionManager::motorMoveComplete(bool success)
 
 void AcquisitionManager::motorTraceReceived(const QVector<double> dat)
 {
-    if(d_state == Acquiring && !d_waitingForMotor)
+    if(d_state == Acquiring && !d_waitingForMotor && d_currentExperiment.motorScan().isEnabled())
     {
         bool adv = d_currentExperiment.addMotorTrace(dat);
         emit statusMessage(QString("Acquiring (%1/%2)").arg(d_currentExperiment.motorScan().currentPointShots())
