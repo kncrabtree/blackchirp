@@ -174,7 +174,9 @@ motor {
 }
 
 HEADERS += \
-    $$PWD/virtualpressurecontroller.h
+    $$PWD/virtualpressurecontroller.h \
+    $$PWD/intellisysiqplus.h
 
 SOURCES += \
-    $$PWD/virtualpressurecontroller.cpp
+    $$PWD/virtualpressurecontroller.cpp \
+    $$PWD/intellisysiqplus.cpp

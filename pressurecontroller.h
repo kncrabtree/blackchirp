@@ -38,7 +38,9 @@ public slots:
 };
 
 #if BC_PCONTROLLER == 1
-
+#include "intellisysiqplus.h"
+class IntellisysIQPlus;
+typedef IntellisysIQPlus PressureControllerHardware;
 #else
 #include "virtualpressurecontroller.h"
 class VirtualPressureController;
