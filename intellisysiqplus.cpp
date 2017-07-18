@@ -84,7 +84,7 @@ double IntellisysIQPlus::readPressure()
     int f = resp.indexOf('+');
     int l = resp.size();
     double num = resp.mid(f+1,l-f-1).trimmed().toDouble();
-    d_pressure = num * fullScale;
+    d_pressure = num * fullScale/100.0;
     emit pressureUpdate(d_pressure);
     return d_pressure;
 }
