@@ -24,7 +24,9 @@ HEADERS += \
     $$PWD/labjacku3.h \
     $$PWD/u3.h \
     $$PWD/virtualmotorscope.h \
-    $$PWD/pico2206b.h
+    $$PWD/pico2206b.h \
+    $$PWD/virtualpressurecontroller.h \
+    $$PWD/intellisysiqplus.h
 
 SOURCES += \
     $$PWD/virtualftmwscope.cpp \
@@ -50,7 +52,9 @@ SOURCES += \
     $$PWD/labjacku3.cpp \
     $$PWD/u3.cpp \
     $$PWD/virtualmotorscope.cpp \
-    $$PWD/pico2206b.cpp
+    $$PWD/pico2206b.cpp \
+    $$PWD/virtualpressurecontroller.cpp  \
+    $$PWD/intellisysiqplus.cpp
 
 } else {
 
@@ -144,6 +148,15 @@ equals(GPIB,1) {
 	SOURCES += $$PWD/prologixgpiblan.cpp
 }
 
+equals(PC,0) {
+        HEADERS += $$PWD/virtualpressurecontroller.h
+        SOURCES += $$PWD/virtualpressurecontroller.cpp
+}
+equals(PC,1) {
+        HEADERS += $$PWD/intellisysiqplus.h
+        SOURCES += $$PWD/intellisysiqplus.cpp
+}
+
 lif {
 	equals(LIFSCOPE,0) {
 		HEADERS += $$PWD/virtuallifscope.h
@@ -173,10 +186,6 @@ motor {
 
 }
 
-HEADERS += \
-    $$PWD/virtualpressurecontroller.h \
-    $$PWD/intellisysiqplus.h
 
-SOURCES += \
-    $$PWD/virtualpressurecontroller.cpp \
-    $$PWD/intellisysiqplus.cpp
+
+
