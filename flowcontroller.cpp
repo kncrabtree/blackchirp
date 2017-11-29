@@ -94,7 +94,7 @@ void FlowController::readAll()
 void FlowController::readTimeData()
 {
     QList<QPair<QString,QVariant>> out;
-    out.append(qMakePair(QString("pressure"),d_config.pressure()));
+    out.append(qMakePair(QString("gasPressure"),d_config.pressure()));
     for(int i=0; i<d_config.size(); i++)
     {
         if(d_config.setting(i,BlackChirp::FlowSettingEnabled).toBool())

@@ -62,6 +62,9 @@ IOBOARD=1
 #GPIB controller (-1 = none, 0 = virtual, 1 = Prologix GPIB-LAN)
 GPIB=-1
 
+#pressure controller (-1 = none, 0 = virtual, 1 = Intellisys IQ Plus)
+PC=-1
+
 ###### LIF ONLY #####
 #LIF Oscilloscope (0 = virtual, 1 = DPO3012)
 LIFSCOPE=1
@@ -91,6 +94,7 @@ FC_CHANNELS=4
 LIFSCOPE=0
 IOBOARD=0
 GPIB=0
+PC=0
 MOTOR=0
 MOTORSCOPE=0
 }
@@ -181,6 +185,10 @@ DEFINES += BC_IOBOARD=$$IOBOARD
 
 !equals(GPIB,-1) {
 	DEFINES += BC_GPIBCONTROLLER=$$GPIB
+}
+
+!equals(PC,-1) {
+        DEFINES += BC_PCONTROLLER=$$PC
 }
 
 equals(FTMWSCOPE,0) {

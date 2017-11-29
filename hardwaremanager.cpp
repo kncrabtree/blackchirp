@@ -10,6 +10,10 @@
 #include "flowcontroller.h"
 #include "ioboard.h"
 
+#ifdef BC_PCONTROLLER
+#include "pressurecontroller.h"
+#endif
+
 #ifdef BC_GPIBCONTROLLER
 #include "gpibcontroller.h"
 #endif
@@ -46,6 +50,7 @@ HardwareManager::~HardwareManager()
 
 void HardwareManager::initialize()
 {
+
 #ifdef BC_GPIBCONTROLLER
     GpibController *gpib = new GpibControllerHardware();
     QThread *gpibThread = new QThread(this);
@@ -74,10 +79,19 @@ void HardwareManager::initialize()
     connect(p_flow,&FlowController::flowUpdate,this,&HardwareManager::flowUpdate);
     connect(p_flow,&FlowController::channelNameUpdate,this,&HardwareManager::flowNameUpdate);
     connect(p_flow,&FlowController::flowSetpointUpdate,this,&HardwareManager::flowSetpointUpdate);
-    connect(p_flow,&FlowController::pressureUpdate,this,&HardwareManager::pressureUpdate);
-    connect(p_flow,&FlowController::pressureSetpointUpdate,this,&HardwareManager::pressureSetpointUpdate);
-    connect(p_flow,&FlowController::pressureControlMode,this,&HardwareManager::pressureControlMode);
+    connect(p_flow,&FlowController::pressureUpdate,this,&HardwareManager::gasPressureUpdate);
+    connect(p_flow,&FlowController::pressureSetpointUpdate,this,&HardwareManager::gasPressureSetpointUpdate);
+    connect(p_flow,&FlowController::pressureControlMode,this,&HardwareManager::gasPressureControlMode);
     d_hardwareList.append(qMakePair(p_flow,nullptr));
+
+#ifdef BC_PCONTROLLER
+    p_pc = new PressureControllerHardware();
+    connect(p_pc,&PressureController::pressureUpdate,this,&HardwareManager::pressureUpdate);
+    connect(p_pc,&PressureController::pressureSetpointUpdate,this,&HardwareManager::pressureSetpointUpdate);
+    connect(p_pc,&PressureController::pressureControlMode,this,&HardwareManager::pressureControlMode);
+    d_hardwareList.append(qMakePair(p_pc,nullptr));
+    emit pressureControlReadOnly(p_pc->isReadOnly());
+#endif
 
 #ifdef BC_LIF
     p_lifScope = new LifScopeHardware();
@@ -443,7 +457,7 @@ void HardwareManager::setFlowSetpoint(int index, double val)
         QMetaObject::invokeMethod(p_flow,"setFlowSetpoint",Q_ARG(int,index),Q_ARG(double,val));
 }
 
-void HardwareManager::setPressureSetpoint(double val)
+void HardwareManager::setGasPressureSetpoint(double val)
 {
     if(p_flow->thread() == thread())
         p_flow->setPressureSetpoint(val);
@@ -451,12 +465,28 @@ void HardwareManager::setPressureSetpoint(double val)
         QMetaObject::invokeMethod(p_flow,"setPressureSetpoint",Q_ARG(double,val));
 }
 
-void HardwareManager::setPressureControlMode(bool en)
+void HardwareManager::setGasPressureControlMode(bool en)
 {
     if(p_flow->thread() == thread())
         p_flow->setPressureControlMode(en);
     else
         QMetaObject::invokeMethod(p_flow,"setPressureControlMode",Q_ARG(bool,en));
+}
+
+void HardwareManager::setPressureSetpoint(double val)
+{
+    if(p_pc->thread() == thread())
+        p_pc->setPressureSetpoint(val);
+    else
+        QMetaObject::invokeMethod(p_pc,"setPressureSetpoint",Q_ARG(double,val));
+}
+
+void HardwareManager::setPressureControlMode(bool en)
+{
+    if(p_pc->thread() == thread())
+        p_pc->setPressureControlMode(en);
+    else
+        QMetaObject::invokeMethod(p_pc,"setPressureControlMode",Q_ARG(bool,en));
 }
 
 void HardwareManager::checkStatus()
