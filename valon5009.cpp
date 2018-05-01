@@ -49,8 +49,16 @@ bool Valon5009::testConnection()
 
     emit logMessage(QString("ID response: %1").arg(QString(resp)));
 
-    readTxFreq();
-    readRxFreq();
+    if(readTxFreq() < 0.0)
+    {
+        emit connected(false,QString("Error reading TX frequency"));
+        return false;
+    }
+    if(readRxFreq() < 0.0)
+    {
+        emit connected(false,QString("Error reading RCVR frequency"));
+        return false;
+    }
 
     emit connected();
     return true;
@@ -84,14 +92,18 @@ void Valon5009::readTimeData()
 
 double Valon5009::readSynthTxFreq()
 {
-    readSynth(1);
-    return d_txFreq;
+    if(readSynth(1))
+        return d_txFreq;
+    else
+        return -1.0;
 }
 
 double Valon5009::readSynthRxFreq()
 {
-    readSynth(2);
-    return d_rxFreq;
+    if(readSynth(2))
+        return d_rxFreq;
+    else
+        return -1.0;
 }
 
 double Valon5009::setSynthTxFreq(const double f)
@@ -134,8 +146,13 @@ QByteArray Valon5009::valonQueryCmd(QString cmd)
 
     QByteArray resp = p_comm->queryCmd(cmd);
     resp = resp.trimmed();
-    if(resp.startsWith("-1->") || resp.startsWith("-2->"))
-        resp = resp.mid(4).trimmed();
+    while(true)
+    {
+        if(resp.startsWith("-") || resp.startsWith(">") || resp.startsWith("1") || resp.startsWith("2"))
+            resp = resp.mid(1);
+        else
+            break;
+    }
     if(resp.startsWith(cmd.toLatin1()))
         resp.replace(cmd.toLatin1(),QByteArray());
     return resp.trimmed();

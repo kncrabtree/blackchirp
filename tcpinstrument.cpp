@@ -166,9 +166,16 @@ QByteArray TcpInstrument::queryCmd(QString cmd)
             if(!p_socket->waitForReadyRead(d_timeOut))
                 break;
 
-            out.append(p_socket->readAll());
-            if(out.endsWith(d_readTerminator))
+            QByteArray t = p_socket->readAll();
+            if(t.contains(d_readTerminator))
+            {
+                out.append(t.mid(0,t.indexOf(d_readTerminator)));
                 return out;
+            }
+            else
+                out.append(t);
+            //            if(out.endsWith(d_readTerminator))
+            //                return out;
         }
 
         emit hardwareFailure();

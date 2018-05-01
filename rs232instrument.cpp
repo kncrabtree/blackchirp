@@ -132,10 +132,18 @@ QByteArray Rs232Instrument::queryCmd(QString cmd)
             if(!p_sp->waitForReadyRead(d_timeOut))
                 break;
 
-            out.append(p_sp->readAll());
-            if(out.endsWith(d_readTerminator))
+            QByteArray t = p_sp->readAll();
+            if(t.contains(d_readTerminator))
+            {
+                out.append(t.mid(0,t.indexOf(d_readTerminator)));
                 return out;
+            }
+            else
+                out.append(t);
+            //            if(out.endsWith(d_readTerminator))
+            //                return out;
         }
+
 
         emit hardwareFailure();
         emit logMessage(QString("Timed out while waiting for termination character. (query = %1, partial response = %2)").arg(cmd).arg(QString(out)),BlackChirp::LogError);
