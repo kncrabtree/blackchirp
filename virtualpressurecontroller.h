@@ -25,6 +25,12 @@ public slots:
     double readPressureSetpoint();
     void setPressureControlMode(bool enabled);
     bool readPressureControlMode();
+    void openGateValve();
+    void closeGateValve();
+
+private:
+    QTimer *p_readTimer;
+    double randPressure;
 };
 
 #endif // VIRTUALPRESSURECONTROLLER_H

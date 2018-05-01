@@ -26,10 +26,13 @@ public slots:
     double readPressureSetpoint();
     void setPressureControlMode(bool enabled);
     bool readPressureControlMode();
+    void openGateValve();
+    void closeGateValve();
 
 private:
     double fullScale;
     QTimer *p_readTimer;
+
 };
 
 #endif // INTELLISYSIQPLUS_H

@@ -38,12 +38,18 @@ VirtualPressureController::~VirtualPressureController()
 bool VirtualPressureController::testConnection()
 {
     emit connected();
+    p_readTimer->start();
     return true;
 }
 
 void VirtualPressureController::initialize()
 {
+    p_readTimer = new QTimer(this);
+    p_readTimer->setInterval(200);
+    connect(p_readTimer,&QTimer::timeout,this,&VirtualPressureController::readPressure);
 
+    randPressure = static_cast<double>((qrand() % 65536)) / 65536.0 * 9.9 + 0.05;
+    emit logMessage(QString("%1").arg(randPressure,0,'f',3));
     testConnection();
 }
 
@@ -63,7 +69,8 @@ void VirtualPressureController::endAcquisition()
 
 double VirtualPressureController::readPressure()
 {
-    d_pressure = static_cast<double>((qrand() % 65536)) / 65536.0 * 10.0;
+    d_pressure = static_cast<double>((qrand() % 65536) - 32768) / 65536.0 * 0.05 + randPressure;
+   // emit logMessage(QString("%1").arg(d_pressure,0,'f',3));
     emit pressureUpdate(d_pressure);
     return d_pressure;
 }
@@ -83,6 +90,10 @@ double VirtualPressureController::readPressureSetpoint()
 void VirtualPressureController::setPressureControlMode(bool enabled)
 {
     d_pressureControlMode = enabled;
+    if(enabled)
+    {
+        randPressure = d_setPoint;
+    }
     readPressureControlMode();
 }
 
@@ -91,3 +102,16 @@ bool VirtualPressureController::readPressureControlMode()
     emit pressureControlMode(d_pressureControlMode);
     return d_pressureControlMode;
 }
+
+void VirtualPressureController::openGateValve()
+{
+    this->setPressureControlMode(false);
+    randPressure = 0.05;
+}
+
+void VirtualPressureController::closeGateValve()
+{
+    this->setPressureControlMode(false);
+}
+
+

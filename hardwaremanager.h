@@ -139,6 +139,8 @@ public slots:
 #ifdef BC_PCONTROLLER
     void setPressureSetpoint(double val);
     void setPressureControlMode(bool en);
+    void openGateValve();
+    void closeGateValve();
 #endif
 
 #ifdef BC_LIF

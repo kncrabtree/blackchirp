@@ -26,6 +26,9 @@ public slots:
     virtual void setPressureControlMode(bool enabled) =0;
     virtual bool readPressureControlMode() =0;
 
+    virtual void openGateValve() =0;
+    virtual void closeGateValve() =0;
+
 protected:
     bool d_readOnly;
     double d_pressure;

@@ -473,6 +473,7 @@ void HardwareManager::setGasPressureControlMode(bool en)
         QMetaObject::invokeMethod(p_flow,"setPressureControlMode",Q_ARG(bool,en));
 }
 
+#ifdef BC_PCONTROLLER
 void HardwareManager::setPressureSetpoint(double val)
 {
     if(p_pc->thread() == thread())
@@ -488,6 +489,23 @@ void HardwareManager::setPressureControlMode(bool en)
     else
         QMetaObject::invokeMethod(p_pc,"setPressureControlMode",Q_ARG(bool,en));
 }
+
+void HardwareManager::openGateValve()
+{
+    if(p_pc->thread() == thread())
+        p_pc->openGateValve();
+    else
+        QMetaObject::invokeMethod(p_pc,"openGateValve");
+}
+
+void HardwareManager::closeGateValve()
+{
+    if(p_pc->thread() == thread())
+        p_pc->closeGateValve();
+    else
+        QMetaObject::invokeMethod(p_pc,"closeGateValve");
+}
+#endif
 
 void HardwareManager::checkStatus()
 {

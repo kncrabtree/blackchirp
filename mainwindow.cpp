@@ -972,6 +972,7 @@ void MainWindow::configPController(bool readOnly)
 
         pSetpointBox->setSingleStep(qAbs(pSetpointBox->maximum() - pSetpointBox->minimum())/100.0);
         pSetpointBox->setKeyboardTracking(false);
+//        pSetpointBox->setEnabled(false);
 
         QPushButton *pControlButton = new QPushButton("Off");
         pControlButton->setCheckable(true);
@@ -980,16 +981,20 @@ void MainWindow::configPController(bool readOnly)
         connect(p_hwm,&HardwareManager::pressureSetpointUpdate,[=](double val){
            pSetpointBox->blockSignals(true);
            pSetpointBox->setValue(val);
-           pSetpointBox->blockSignals(true);
+           pSetpointBox->blockSignals(false);
         });
         connect(pSetpointBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),p_hwm,&HardwareManager::setPressureSetpoint);
         connect(pControlButton,&QPushButton::toggled,p_hwm,&HardwareManager::setPressureControlMode);
         connect(p_hwm,&HardwareManager::pressureControlMode,[=](bool en){
             pControlButton->blockSignals(true);
             if(en)
+            {
                 pControlButton->setText(QString("On"));
+            }
             else
+            {
                 pControlButton->setText(QString("Off"));
+            }
             pControlButton->setChecked(en);
             pcled->setState(en);
             pControlButton->blockSignals(false);
@@ -999,7 +1004,26 @@ void MainWindow::configPController(bool readOnly)
         hbl2->addWidget(pSetpointBox,1);
         hbl2->addWidget(pControlButton,0);
 
-        pcBox->setLayout(hbl2);
+        QHBoxLayout *hbl3 = new QHBoxLayout;
+
+//        QLabel *vpLabel = new QLabel("Valve Position");
+//        vpLabel->setAlignment(Qt::AlignRight);
+//        QLabel *vpvLabel = new QLabel("");
+//        vpLabel->setAlignment(Qt::AlignRight);
+
+        QPushButton *pOpenButton = new QPushButton("Open");
+        QPushButton *pCloseButton = new QPushButton("Close");
+        connect(pOpenButton,&QPushButton::clicked,p_hwm,&HardwareManager::openGateValve);
+        connect(pCloseButton,&QPushButton::clicked,p_hwm,&HardwareManager::closeGateValve);
+        hbl3->addWidget(pOpenButton,0);
+        hbl3->addWidget(pCloseButton,0);
+
+        QVBoxLayout *vbl = new QVBoxLayout;
+
+        vbl->addLayout(hbl2);
+        vbl->addLayout(hbl3);
+
+        pcBox->setLayout(vbl);
 
         ui->gasControlLayout->addWidget(pcBox,0);
     }
