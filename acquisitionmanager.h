@@ -95,7 +95,9 @@ private:
     void checkComplete();
     void finishAcquisition();
     bool calculateShift(const QByteArray b);
+    bool scoreChirp(const QByteArray b);
     float calculateFom(const QVector<qint64> vec, const Fid fid, QPair<int,int> range, int trialShift);
+    double calculateChirpRMS(const QVector<qint64> chirp, double sf, qint64 shots = 1);
 
 #ifdef BC_CUDA
     GpuAverager gpuAvg;

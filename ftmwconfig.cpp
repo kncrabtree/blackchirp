@@ -34,6 +34,16 @@ bool FtmwConfig::isPhaseCorrectionEnabled() const
     return data->phaseCorrectionEnabled;
 }
 
+bool FtmwConfig::isChirpScoringEnabled() const
+{
+    return data->chirpScoringEnabled;
+}
+
+double FtmwConfig::chirpRMSThreshold() const
+{
+    return data->chirpRMSThreshold;
+}
+
 BlackChirp::FtmwType FtmwConfig::type() const
 {
     return data->type;
@@ -89,7 +99,7 @@ int FtmwConfig::numFrames() const
     return scopeConfig().summaryFrame ? 1 : scopeConfig().numFrames;
 }
 
-QList<Fid> FtmwConfig::parseWaveform(QByteArray b) const
+QList<Fid> FtmwConfig::parseWaveform(const QByteArray b) const
 {
 
     int np = scopeConfig().recordLength;
@@ -141,7 +151,21 @@ QList<Fid> FtmwConfig::parseWaveform(QByteArray b) const
     return out;
 }
 
-QVector<qint64> FtmwConfig::extractChirp(QByteArray b) const
+QVector<qint64> FtmwConfig::extractChirp() const
+{
+    QVector<qint64> out;
+    QList<Fid> dat = fidList();
+    if(!dat.isEmpty())
+    {
+        auto r = chirpRange();
+        if(r.first >= 0 && r.second >= 0)
+            out = dat.first().rawData().mid(r.first, r.second - r.first);
+    }
+
+    return out;
+}
+
+QVector<qint64> FtmwConfig::extractChirp(const QByteArray b) const
 {
     QVector<qint64> out;
     auto r = chirpRange();
@@ -259,6 +283,16 @@ void FtmwConfig::setEnabled()
 void FtmwConfig::setPhaseCorrectionEnabled(bool enabled)
 {
     data->phaseCorrectionEnabled = enabled;
+}
+
+void FtmwConfig::setChirpScoringEnabled(bool enabled)
+{
+    data->chirpScoringEnabled = enabled;
+}
+
+void FtmwConfig::setChirpRMSThreshold(double t)
+{
+    data->chirpRMSThreshold = t;
 }
 
 void FtmwConfig::setFidTemplate(const Fid f)
@@ -444,6 +478,8 @@ QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
     out.insert(prefix+QString("Sideband"),qMakePair((int)sideband(),empty));
     out.insert(prefix+QString("FidVMult"),qMakePair(QString::number(fidTemplate().vMult(),'g',12),QString("V")));
     out.insert(prefix+QString("PhaseCorrection"),qMakePair(data->phaseCorrectionEnabled,QString("")));
+    out.insert(prefix+QString("ChirpScoring"),qMakePair(data->chirpScoringEnabled,QString("")));
+    out.insert(prefix+QString("ChirpRMSThreshold"),qMakePair(QString::number(data->chirpRMSThreshold,'f',3),QString("")));
 
 
     out.unite(data->scopeConfig.headerMap());
@@ -594,6 +630,10 @@ void FtmwConfig::parseLine(const QString key, const QVariant val)
             data->sideband = (BlackChirp::Sideband)val.toInt();
         if(key.endsWith(QString("PhaseCorrection")))
             data->phaseCorrectionEnabled = val.toBool();
+        if(key.endsWith(QString("ChirpScoring")))
+            data->chirpScoringEnabled = val.toBool();
+        if(key.endsWith(QString("ChirpRMSThreshold")))
+            data->chirpRMSThreshold = val.toDouble();
     }
 }
 
@@ -612,6 +652,8 @@ void FtmwConfig::saveToSettings() const
     s.setValue(QString("targetShots"),targetShots());
     s.setValue(QString("targetTime"),QDateTime::currentDateTime().msecsTo(targetTime()));
     s.setValue(QString("phaseCorrection"),isPhaseCorrectionEnabled());
+    s.setValue(QString("chirpScoring"),isChirpScoringEnabled());
+    s.setValue(QString("chirpRMSThreshold"),chirpRMSThreshold());
 
     s.setValue(QString("fidChannel"),scopeConfig().fidChannel);
     s.setValue(QString("vScale"),scopeConfig().vScale);
@@ -645,6 +687,8 @@ FtmwConfig FtmwConfig::loadFromSettings()
     out.setTargetShots(s.value(QString("targetShots"),10000).toInt());
     out.setTargetTime(QDateTime::currentDateTime().addMSecs(s.value(QString("targetTime"),3600000).toInt()));
     out.setPhaseCorrectionEnabled(s.value(QString("phaseCorrection"),false).toBool());
+    out.setChirpScoringEnabled(s.value(QString("chirpScoring"),false).toBool());
+    out.setChirpRMSThreshold(s.value(QString("chirpRMSThreshold"),0.0).toDouble());
 
     BlackChirp::FtmwScopeConfig sc;
     sc.fidChannel = s.value(QString("fidChannel"),1).toInt();

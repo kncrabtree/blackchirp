@@ -51,6 +51,7 @@ FtmwConfigWidget::FtmwConfigWidget(QWidget *parent) :
 
     connect(ui->modeComboBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),this,&FtmwConfigWidget::configureUI);
     connect(ui->fastFrameEnabledCheckBox,&QCheckBox::toggled,this,&FtmwConfigWidget::configureUI);
+    connect(ui->chirpScoringCheckBox,&QCheckBox::toggled,ui->chirpThresholdDoubleSpinBox,&QDoubleSpinBox::setEnabled);
 
     connect(ui->fIDChannelSpinBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwConfigWidget::validateSpinboxes);
     connect(ui->triggerChannelSpinBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwConfigWidget::validateSpinboxes);
@@ -75,6 +76,12 @@ void FtmwConfigWidget::setFromConfig(const FtmwConfig config)
         ui->targetTimeDateTimeEdit->setDateTime(config.targetTime());
     }
     ui->phaseCorrectionCheckBox->setChecked(config.isPhaseCorrectionEnabled());
+
+    ui->chirpScoringCheckBox->blockSignals(true);
+    ui->chirpScoringCheckBox->setChecked(config.isChirpScoringEnabled());
+    ui->chirpThresholdDoubleSpinBox->setValue(config.chirpRMSThreshold());
+    ui->chirpThresholdDoubleSpinBox->setEnabled(config.isChirpScoringEnabled());
+    ui->chirpScoringCheckBox->blockSignals(false);
 
     ui->loFrequencyDoubleSpinBox->setValue(config.loFreq());
     setComboBoxIndex(ui->sidebandComboBox,config.sideband());
@@ -115,6 +122,8 @@ FtmwConfig FtmwConfigWidget::getConfig() const
     else
         out.setTargetTime(QDateTime::currentDateTime().addSecs(60));
     out.setPhaseCorrectionEnabled(ui->phaseCorrectionCheckBox->isChecked());
+    out.setChirpScoringEnabled(ui->chirpScoringCheckBox->isChecked());
+    out.setChirpRMSThreshold(ui->chirpThresholdDoubleSpinBox->value());
 
     out.setLoFreq(ui->loFrequencyDoubleSpinBox->value());
     out.setSideband(ui->sidebandComboBox->currentData().value<BlackChirp::Sideband>());

@@ -263,8 +263,7 @@ void FidPlot::prepareForExperiment(const Experiment e)
         setAxisAutoScaleRange(QwtPlot::xBottom,0.0,maxTime);
         setAxisAutoScaleRange(QwtPlot::yLeft,0.0,0.0);
 
-        //following will only matter if phase correction is even implemented
-        bool displayMarkers = c.isPhaseCorrectionEnabled();
+        bool displayMarkers = c.isPhaseCorrectionEnabled() || c.isChirpScoringEnabled();
         if(displayMarkers)
         {
             double chirpStart = c.chirpConfig().preChirpDelay() + c.chirpConfig().preChirpProtection() - c.scopeConfig().trigDelay*1e6;

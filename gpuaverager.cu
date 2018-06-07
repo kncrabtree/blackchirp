@@ -54,14 +54,16 @@ __global__ void parseRollAvg_kernel2byte(int numPoints, char *devNewData, long l
         if(le)
         {
             int16_t dat = (devNewData[2*i+1] << 8 ) | (devNewData[2*i] & 0xff);
-            devSum[i] += (long long int)dat;
+            devSum[i] += (long long int)dat << 8;
         }
         else
         {
             int16_t dat = (devNewData[2*i] << 8 ) | (devNewData[2*i+1] & 0xff);
-            devSum[i] += (long long int)dat;
+            devSum[i] += (long long int)dat << 8;
         }
     }
+
+
 
     if(i < numPoints && currentShots > targetShots)
     {
