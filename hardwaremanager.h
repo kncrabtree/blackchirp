@@ -18,6 +18,10 @@ class FlowController;
 class IOBoard;
 class MotorController;
 
+#ifdef BC_PCONTROLLER
+class PressureController;
+#endif
+
 #ifdef BC_LIF
 class LifScope;
 #endif
@@ -66,9 +70,16 @@ signals:
     void flowUpdate(int,double);
     void flowNameUpdate(int,QString);
     void flowSetpointUpdate(int,double);
+    void gasPressureUpdate(double);
+    void gasPressureSetpointUpdate(double);
+    void gasPressureControlMode(bool);
+
+#ifdef BC_PCONTROLLER
+    void pressureControlReadOnly(bool);
     void pressureUpdate(double);
     void pressureSetpointUpdate(double);
     void pressureControlMode(bool);
+#endif
 
 #ifdef BC_LIF
     void lifScopeShotAcquired(const LifTrace);
@@ -122,8 +133,15 @@ public slots:
 
     void setFlowChannelName(int index, QString name);
     void setFlowSetpoint(int index, double val);
+    void setGasPressureSetpoint(double val);
+    void setGasPressureControlMode(bool en);
+
+#ifdef BC_PCONTROLLER
     void setPressureSetpoint(double val);
     void setPressureControlMode(bool en);
+    void openGateValve();
+    void closeGateValve();
+#endif
 
 #ifdef BC_LIF
     void setLifParameters(double delay, double frequency);
@@ -142,6 +160,11 @@ private:
     PulseGenerator *p_pGen;
     FlowController *p_flow;
     IOBoard *p_iob;
+
+#ifdef BC_PCONTROLLER
+    PressureController *p_pc;
+#endif
+
 #ifdef BC_LIF
     LifScope *p_lifScope;
 #endif
