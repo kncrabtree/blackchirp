@@ -499,7 +499,6 @@ bool AcquisitionManager::scoreChirp(const QByteArray b)
 //    emit logMessage(QString("This RMS: %1\tAVG RMS: %2").arg(newChirpRMS,0,'e',2).arg(currentRMS,0,'e',2));
 
     //The chirp is good if its RMS is greater than threshold*currentRMS.
-    return true;
     return newChirpRMS > currentRMS*d_currentExperiment.ftmwConfig().chirpRMSThreshold();
 
 }
