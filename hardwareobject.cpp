@@ -43,6 +43,7 @@ void HardwareObject::buildCommunication(QObject *gc)
 #endif
     case CommunicationProtocol::Custom:
         p_comm = new CustomInstrument(d_key,d_subKey,this);
+        break;
     case CommunicationProtocol::Virtual:
     default:
         p_comm = new VirtualInstrument(d_key,this);

@@ -5,6 +5,7 @@
 #include <QList>
 #include <QCryptographicHash>
 #include <QFile>
+#include <math.h>
 
 #include <gsl/gsl_sf_trig.h>
 #include <gsl/gsl_complex_math.h>

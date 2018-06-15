@@ -1,6 +1,7 @@
 #include "analysis.h"
 
 #include <QtAlgorithms>
+#include <math.h>
 
 quint32 Analysis::nextPowerOf2(quint32 n)
 {

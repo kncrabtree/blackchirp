@@ -227,7 +227,7 @@ void FtmwConfigWidget::setComboBoxIndex(QComboBox *box, QVariant value)
     {
         if(box == ui->sampleRateComboBox)
         {
-            if(fabs(box->itemData(i).toDouble() - value.toDouble()) < 1.0)
+            if(qAbs(box->itemData(i).toDouble() - value.toDouble()) < 1.0)
             {
                 box->setCurrentIndex(i);
                 return;

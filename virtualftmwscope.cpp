@@ -1,6 +1,7 @@
 #include "virtualftmwscope.h"
 
 #include <QFile>
+#include <math.h>
 
 VirtualFtmwScope::VirtualFtmwScope(QObject *parent) :
     FtmwScope(parent)

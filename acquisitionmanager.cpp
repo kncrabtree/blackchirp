@@ -1,6 +1,8 @@
 #include "acquisitionmanager.h"
 
-#include <savemanager.h>
+#include "savemanager.h"
+
+#include <math.h>
 
 AcquisitionManager::AcquisitionManager(QObject *parent) : QObject(parent), d_state(Idle), d_currentShift(0), d_lastFom(0.0)
 {
@@ -525,6 +527,8 @@ float AcquisitionManager::calculateFom(const QVector<qint64> vec, const Fid fid,
 
 double AcquisitionManager::calculateChirpRMS(const QVector<qint64> chirp, double sf, qint64 shots)
 {
+    Q_UNUSED(sf)
+
     //Kahan summation
     double sum = 0.0;
     double c = 0.0;
