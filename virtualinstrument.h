@@ -10,13 +10,6 @@ public:
     explicit VirtualInstrument(QString key, QObject *parent = nullptr);
     ~VirtualInstrument();
 
-    // CommunicationProtocol interface
-public:
-    bool writeCmd(QString cmd);
-    bool writeBinary(QByteArray dat);
-    QByteArray queryCmd(QString cmd);
-    QIODevice *device() { return nullptr; }
-
 public slots:
     void initialize();
     bool testConnection();
