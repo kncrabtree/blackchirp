@@ -1,5 +1,7 @@
 #include "mks647c.h"
 
+#include <math.h>
+
 Mks647c::Mks647c(QObject *parent) :
     FlowController(parent), d_maxTries(5)
 {

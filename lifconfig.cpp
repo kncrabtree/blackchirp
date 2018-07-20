@@ -2,6 +2,7 @@
 
 #include "liftrace.h"
 #include <QFile>
+#include <math.h>
 
 
 LifConfig::LifConfig() : data(new LifConfigData)

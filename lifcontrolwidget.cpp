@@ -3,6 +3,7 @@
 
 #include <QSettings>
 #include <QApplication>
+#include <math.h>
 
 LifControlWidget::LifControlWidget(QWidget *parent) :
     QWidget(parent),

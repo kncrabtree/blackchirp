@@ -2,6 +2,7 @@
 #include "ui_motorscanconfigwidget.h"
 
 #include <QMessageBox>
+#include <math.h>
 
 MotorScanConfigWidget::MotorScanConfigWidget(QWidget *parent) :
     QWidget(parent),

@@ -1,5 +1,7 @@
 #include "awg7122b.h"
 
+#include <math.h>
+
 AWG7122B::AWG7122B(QObject *parent) :
     AWG(parent)
 {

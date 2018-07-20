@@ -1,6 +1,7 @@
 #include "mso72004c.h"
 
 #include <QTcpSocket>
+#include <math.h>
 
 MSO72004C::MSO72004C(QObject *parent) :
     FtmwScope(parent), d_waitingForReply(false), d_foundHeader(false),

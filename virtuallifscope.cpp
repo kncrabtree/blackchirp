@@ -1,6 +1,7 @@
 #include "virtuallifscope.h"
 
 #include <QTimer>
+#include <math.h>
 
 VirtualLifScope::VirtualLifScope(QObject *parent) :
     LifScope(parent)

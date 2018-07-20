@@ -1,6 +1,7 @@
 #include "dsa71604c.h"
 
 #include <QTcpSocket>
+#include <math.h>
 
 Dsa71604c::Dsa71604c(QObject *parent) :
     FtmwScope(parent), d_waitingForReply(false), d_foundHeader(false),

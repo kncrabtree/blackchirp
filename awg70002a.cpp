@@ -1,6 +1,7 @@
 #include "awg70002a.h"
 
 #include <QtEndian>
+#include <math.h>
 
 AWG70002a::AWG70002a(QObject *parent) :
     AWG(parent)
