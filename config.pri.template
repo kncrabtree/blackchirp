@@ -32,7 +32,7 @@ hardware {
 # you can ignore their corresponding entries below
 # -----------------------------------------------
 
-# FTMW Oscilloscope (0 = virtual, 1 = DSA71604C, 2 = MSO72004C)
+# FTMW Oscilloscope (0 = virtual, 1 = DSA71604C, 2 = MSO72004C, 3 = M4i2220x8)
 FTMWSCOPE=2
 
 #AWG (0 = virtual, 1 = AWG70002A, 2 = AWG7122B)
@@ -112,6 +112,10 @@ motor {
 
 equals(IOBOARD,1)|allhardware {
 	LIBS += -llabjackusb
+}
+
+equals(FTMWSCOPE,3)|allhardware {
+     LIBS += -lspcm_linux
 }
 
 

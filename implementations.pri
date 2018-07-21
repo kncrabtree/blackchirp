@@ -26,7 +26,8 @@ HEADERS += \
     $$PWD/virtualmotorscope.h \
     $$PWD/pico2206b.h \
     $$PWD/virtualpressurecontroller.h \
-    $$PWD/intellisysiqplus.h
+    $$PWD/intellisysiqplus.h \
+    $$PWD/m4i2220x8.h
 
 SOURCES += \
     $$PWD/virtualftmwscope.cpp \
@@ -54,7 +55,8 @@ SOURCES += \
     $$PWD/virtualmotorscope.cpp \
     $$PWD/pico2206b.cpp \
     $$PWD/virtualpressurecontroller.cpp  \
-    $$PWD/intellisysiqplus.cpp
+    $$PWD/intellisysiqplus.cpp \
+    $$PWD/m4i2220x8.cpp
 
 } else {
 
@@ -71,6 +73,11 @@ equals(FTMWSCOPE,1) {
 equals(FTMWSCOPE,2) {
 	HEADERS += $$PWD/mso72004c.h
 	SOURCES += $$PWD/mso72004c.cpp
+}
+
+equals(FTMWSCOPE,3) {
+     HEADERS += $$PWD/m4i2220x8.h
+     SOURCES += $$PWD/m4i2220x8.cpp
 }
 
 
@@ -185,7 +192,3 @@ motor {
 }
 
 }
-
-
-
-
