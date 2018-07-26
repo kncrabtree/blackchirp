@@ -129,7 +129,7 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 #else
         QList<QVector<qint64> >  l;
         if(d_currentExperiment.ftmwConfig().type() == BlackChirp::FtmwPeakUp)
-            l = gpuAvg.parseAndRollAvg(b.constData(),d_currentExperiment.ftmwConfig().completedShots()+1,
+            l = gpuAvg.parseAndRollAvg(b.constData(),d_currentExperiment.ftmwConfig().completedShots()+d_currentExperiment.ftmwConfig().scopeConfig().numAverages,
                                        d_currentExperiment.ftmwConfig().targetShots(),d_currentShift);
         else
             l = gpuAvg.parseAndAdd(b.constData(),d_currentShift);

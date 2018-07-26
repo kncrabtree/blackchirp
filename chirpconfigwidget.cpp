@@ -23,6 +23,8 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
 
     setButtonStates();
 
+
+
     connect(ui->addButton,&QPushButton::clicked,this,&ChirpConfigWidget::addSegment);
     connect(ui->addEmptyButton,&QPushButton::clicked,this,&ChirpConfigWidget::addEmptySegment);
     connect(ui->insertButton,&QPushButton::clicked,this,&ChirpConfigWidget::insertSegment);
@@ -49,6 +51,20 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     connect(ui->applyToAllBox,&QCheckBox::toggled,p_ctm,&ChirpTableModel::setApplyToAll);
 
     ui->chirpTable->setItemDelegate(new ChirpDoubleSpinBoxDelegate);
+
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+
+    s.beginGroup(QString("ftmwscope"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    bool ff = s.value(QString("canFastFrame"),false).toBool();
+    s.endGroup();
+    s.endGroup();
+
+    if(!ff)
+    {
+        ui->chirpsSpinBox->setValue(1);
+        ui->chirpsSpinBox->setEnabled(false);
+    }
 }
 
 ChirpConfigWidget::~ChirpConfigWidget()

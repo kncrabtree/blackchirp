@@ -1,6 +1,7 @@
 #include "ftmwconfig.h"
 
 #include <QFile>
+#include <QtEndian>
 
 FtmwConfig::FtmwConfig() : data(new FtmwConfigData)
 {
@@ -111,32 +112,71 @@ QList<Fid> FtmwConfig::parseWaveform(const QByteArray b) const
 
         for(int i=0; i<np;i++)
         {
-            qint64 dat;
+            qint64 dat = 0;
+
+            /*
+            for(int k = 0; k<scopeConfig().bytesPerPoint; k++)
+            {
+                int thisIndex = k;
+                if(scopeConfig().byteOrder == QDataStream::BigEndian)
+                    thisIndex = scopeConfig().bytesPerPoint - k;
+
+                dat |= (static_cast<quint8>(b.at(scopeConfig().bytesPerPoint*(j*np+i)+thisIndex)) << (8*k));
+            }
+            //check for the sign bit on the most significant byte, and carry out sign extension if necessary
+            if(dat | (128 << (scopeConfig().bytesPerPoint-1)))
+                dat &= Q_INT64_C(0xffffffffffffffff);
+
+            dat += static_cast<qint64>(scopeConfig().yOff);
+            */
+
+
             if(scopeConfig().bytesPerPoint == 1)
             {
                 char y = b.at(j*np+i);
                 dat = (static_cast<qint64>(y) + static_cast<qint64>(scopeConfig().yOff));
             }
+            else if(scopeConfig().bytesPerPoint == 2)
+            {
+                auto y1 = static_cast<quint8>(b.at(2*(j*np+i)));
+                auto y2 = static_cast<quint8>(b.at(2*(j*np+i) + 1));
+
+                qint16 y = 0;
+                y |= y1;
+                y |= (y2 << 8);
+
+                if(scopeConfig().byteOrder == QDataStream::BigEndian)
+                    y = qFromBigEndian(y);
+                else
+                    y = qFromLittleEndian(y);
+
+                dat = (static_cast<qint64>(y) + static_cast<qint64>(scopeConfig().yOff));
+            }
             else
             {
-                unsigned char y1 = b.at(2*(j*np+i));
-                unsigned char y2 = b.at(2*(j*np+i) + 1);
-                qint16 y = 0;
-                if(scopeConfig().byteOrder == QDataStream::LittleEndian)
-                {
-                    y |= static_cast<quint8>(y1);
-                    y |= static_cast<quint8>(y2) << 8;
-                }
+                auto y1 = static_cast<quint8>(b.at(4*(j*np+i)));
+                auto y2 = static_cast<quint8>(b.at(4*(j*np+i) + 1));
+                auto y3 = static_cast<quint8>(b.at(4*(j*np+i) + 2));
+                auto y4 = static_cast<quint8>(b.at(4*(j*np+i) + 3));
+
+                qint32 y = 0;
+                y |= y1;
+                y |= (y2 << 8);
+                y |= (y3 << 16);
+                y |= (y4 << 24);
+
+                if(scopeConfig().byteOrder == QDataStream::BigEndian)
+                    y = qFromBigEndian(y);
                 else
-                {
-                    y |= static_cast<quint8>(y1) << 8;
-                    y |= static_cast<quint8>(y2);
-                }
+                    y = qFromLittleEndian(y);
+
                 dat = (static_cast<qint64>(y) + static_cast<qint64>(scopeConfig().yOff));
             }
 
+
             //in peak up mode, add 8 bits of padding so that there are empty bits to fill when
-            //the rolling average kicks in
+            //the rolling average kicks in.
+            //Note that this could lead to overflow problems if bytesPerPoint = 4 and the # of averages is large
             if(type() == BlackChirp::FtmwPeakUp)
                 dat = dat << 8;
 
@@ -145,6 +185,7 @@ QList<Fid> FtmwConfig::parseWaveform(const QByteArray b) const
 
         Fid f = fidTemplate();
         f.setData(d);
+        f.setShots(scopeConfig().numAverages);
         out.append(f);
     }
 
@@ -313,9 +354,9 @@ void FtmwConfig::setTargetShots(const qint64 target)
 void FtmwConfig::increment()
 {
     if(type() == BlackChirp::FtmwPeakUp)
-        data->completedShots = qMin(completedShots()+1,targetShots());
+        data->completedShots = qMin(completedShots()+scopeConfig().numAverages,targetShots());
     else
-        data->completedShots++;
+        data->completedShots+=scopeConfig().numAverages;
 }
 
 void FtmwConfig::setTargetTime(const QDateTime time)
@@ -341,6 +382,7 @@ bool FtmwConfig::setFidsData(const QList<QVector<qint64> > newList)
         {
             Fid f = fidTemplate();
             f.setData(newList.at(i));
+            f.setShots(scopeConfig().numAverages);
             data->fidList.append(f);
         }
     }
@@ -357,9 +399,9 @@ bool FtmwConfig::setFidsData(const QList<QVector<qint64> > newList)
         {
             data->fidList[i].setData(newList.at(i));
             if(type() == BlackChirp::FtmwPeakUp)
-                data->fidList[i].setShots(qMin(completedShots()+1,targetShots()));
+                data->fidList[i].setShots(qMin(completedShots()+scopeConfig().numAverages,targetShots()));
             else
-                data->fidList[i].setShots(completedShots()+1);
+                data->fidList[i].setShots(completedShots()+scopeConfig().numAverages);
         }
     }
 
@@ -587,6 +629,8 @@ void FtmwConfig::parseLine(const QString key, const QVariant val)
         }
         if(key.endsWith(QString("TriggerDelay")))
             data->scopeConfig.trigDelay = val.toDouble();
+        if(key.endsWith(QString("TriggerLevel")))
+            data->scopeConfig.trigLevel = val.toDouble();
         if(key.endsWith(QString("TriggerSlope")))
         {
             if(val.toString().contains(QString("Rising")))
@@ -602,6 +646,10 @@ void FtmwConfig::parseLine(const QString key, const QVariant val)
             data->scopeConfig.fastFrameEnabled = val.toBool();
         if(key.endsWith(QString("SummaryFrame")))
             data->scopeConfig.summaryFrame = val.toBool();
+        if(key.endsWith(QString("BlockAverage")))
+            data->scopeConfig.blockAverageEnabled = val.toBool();
+        if(key.endsWith(QString("NumAverages")))
+            data->scopeConfig.numAverages = val.toInt();
         if(key.endsWith(QString("BytesPerPoint")))
             data->scopeConfig.bytesPerPoint = val.toInt();
         if(key.endsWith(QString("NumFrames")))
@@ -659,6 +707,7 @@ void FtmwConfig::saveToSettings() const
     s.setValue(QString("vScale"),scopeConfig().vScale);
     s.setValue(QString("triggerChannel"),scopeConfig().trigChannel);
     s.setValue(QString("triggerDelay"),scopeConfig().trigDelay);
+    s.setValue(QString("triggerLevel"),scopeConfig().trigLevel);
     s.setValue(QString("triggerSlope"),static_cast<int>(scopeConfig().slope));
     s.setValue(QString("sampleRate"),scopeConfig().sampleRate);
     s.setValue(QString("recordLength"),scopeConfig().recordLength);
@@ -666,6 +715,8 @@ void FtmwConfig::saveToSettings() const
     s.setValue(QString("fastFrame"),scopeConfig().fastFrameEnabled);
     s.setValue(QString("numFrames"),scopeConfig().numFrames);
     s.setValue(QString("summaryFrame"),scopeConfig().summaryFrame);
+    s.setValue(QString("blockAverage"),scopeConfig().blockAverageEnabled);
+    s.setValue(QString("numAverages"),scopeConfig().numAverages);
     s.setValue(QString("loFreq"),loFreq());
     s.setValue(QString("sideband"),static_cast<int>(sideband()));
 
@@ -695,6 +746,7 @@ FtmwConfig FtmwConfig::loadFromSettings()
     sc.vScale = s.value(QString("vScale"),0.02).toDouble();
     sc.trigChannel = s.value(QString("triggerChannel"),4).toInt();
     sc.trigDelay = s.value(QString("triggerDelay"),0.0).toDouble();
+    sc.trigLevel = s.value(QString("triggerLevel"),0.35).toDouble();
     sc.slope = static_cast<BlackChirp::ScopeTriggerSlope>(s.value(QString("triggerSlope"),0).toInt());
     sc.sampleRate = s.value(QString("sampleRate"),50e9).toDouble();
     sc.recordLength = s.value(QString("recordLength"),750000).toInt();
@@ -702,6 +754,8 @@ FtmwConfig FtmwConfig::loadFromSettings()
     sc.fastFrameEnabled = s.value(QString("fastFrame"),false).toBool();
     sc.numFrames = s.value(QString("numFrames"),1).toInt();
     sc.summaryFrame = s.value(QString("summaryFrame"),false).toBool();
+    sc.blockAverageEnabled = s.value(QString("blockAverage"),false).toBool();
+    sc.numAverages = s.value(QString("numAverages"),1).toInt();
     out.setScopeConfig(sc);
 
     out.setLoFreq(s.value(QString("loFreq"),0.0).toDouble());

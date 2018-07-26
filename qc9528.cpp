@@ -358,7 +358,7 @@ bool Qc9528::set(const int index, const BlackChirp::PulseSetting s, const QVaria
 
 bool Qc9528::setRepRate(double d)
 {
-    if(d < 0.01 || d > 20.0)
+    if(d < 0.01 || d > 100000.0)
         return false;
 
     if(!pGenWriteCmd(QString(":PULSE0:PERIOD %1\r\n").arg(1.0/d,0,'f',9)))

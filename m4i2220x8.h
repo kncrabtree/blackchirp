@@ -8,6 +8,8 @@
 #include "spcm/spcerr.h"
 #include "spcm/spcm_drv.h"
 
+#include <QTimer>
+
 
 class M4i2220x8 : public FtmwScope
 {
@@ -31,6 +33,12 @@ public slots:
 
 private:
     drv_handle p_handle;
+
+    qint64 d_waveformBytes;
+    QByteArray d_m4iBuffer;
+
+    QTimer *p_timer;
+
 };
 
 #endif // M412220X8_H

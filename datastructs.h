@@ -91,12 +91,15 @@ struct FtmwScopeConfig {
     bool fastFrameEnabled;
     int numFrames;
     bool summaryFrame;
+    bool blockAverageEnabled;
+    int numAverages;
     int trigChannel;
     double trigDelay; //in seconds
+    double trigLevel; //in V
     ScopeTriggerSlope slope;
 
     //settings hardcoded or read from scope
-    int bytesPerPoint; // set to 2
+    int bytesPerPoint;
     QDataStream::ByteOrder byteOrder; // set to BigEndian
     double vOffset; // set to 0
     double yMult; // read from scope (multiplier for digitized levels)
@@ -105,13 +108,14 @@ struct FtmwScopeConfig {
 
 
     FtmwScopeConfig() : fidChannel(0), vScale(0.0), sampleRate(0.0), recordLength(0), fastFrameEnabled(false), numFrames(0),
-        summaryFrame(false), trigChannel(0), trigDelay(0), slope(RisingEdge), bytesPerPoint(1), byteOrder(QDataStream::LittleEndian),
+        summaryFrame(false), blockAverageEnabled(false), numAverages(1), trigChannel(0), trigDelay(0), trigLevel(0.0),
+        slope(RisingEdge), bytesPerPoint(1), byteOrder(QDataStream::LittleEndian),
         vOffset(0.0), yMult(0.0), yOff(0), xIncr(0.0) {}
     FtmwScopeConfig(const FtmwScopeConfig &other) : fidChannel(other.fidChannel), vScale(other.vScale), sampleRate(other.sampleRate),
         recordLength(other.recordLength), fastFrameEnabled(other.fastFrameEnabled), numFrames(other.numFrames),
-        summaryFrame(other.summaryFrame), trigChannel(other.trigChannel), trigDelay(other.trigDelay), slope(other.slope),
-        bytesPerPoint(other.bytesPerPoint), byteOrder(other.byteOrder), vOffset(other.vOffset), yMult(other.yMult), yOff(other.yOff),
-        xIncr(other.xIncr) {}
+        summaryFrame(other.summaryFrame),blockAverageEnabled(other.blockAverageEnabled), numAverages(other.numAverages), trigChannel(other.trigChannel),
+        trigDelay(other.trigDelay), trigLevel(other.trigLevel), slope(other.slope), bytesPerPoint(other.bytesPerPoint), byteOrder(other.byteOrder),
+        vOffset(other.vOffset), yMult(other.yMult), yOff(other.yOff), xIncr(other.xIncr) {}
 
     QMap<QString,QPair<QVariant,QString> > headerMap() const
     {
@@ -128,6 +132,7 @@ struct FtmwScopeConfig {
             scratch = QString::number(trigChannel);
         out.insert(prefix+QString("TriggerChannel"),qMakePair(scratch,empty));
         out.insert(prefix+QString("TriggerDelay"),qMakePair(QString::number(trigDelay),QString("s")));
+        out.insert(prefix+QString("TriggerLevel"),qMakePair(QString::number(trigLevel),QString("V")));
         slope == RisingEdge ? scratch = QString("RisingEdge") : scratch = QString("FallingEdge");
         out.insert(prefix+QString("TriggerSlope"),qMakePair(scratch,empty));
         out.insert(prefix+QString("SampleRate"),qMakePair(QString::number(sampleRate/1e9,'f',3),QString("GS/s")));
@@ -135,6 +140,8 @@ struct FtmwScopeConfig {
         out.insert(prefix+QString("FastFrame"),qMakePair(fastFrameEnabled,empty));
         out.insert(prefix+QString("NumFrames"),qMakePair(numFrames,empty));
         out.insert(prefix+QString("SummaryFrame"),qMakePair(summaryFrame,empty));
+        out.insert(prefix+QString("BlockAverage"),qMakePair(blockAverageEnabled,empty));
+        out.insert(prefix+QString("NumAverages"),qMakePair(numAverages,empty));
         out.insert(prefix+QString("BytesPerPoint"),qMakePair(bytesPerPoint,empty));
         byteOrder == QDataStream::BigEndian ? scratch = QString("BigEndian") : scratch = QString("LittleEndian");
         out.insert(prefix+QString("ByteOrder"),qMakePair(scratch,empty));
