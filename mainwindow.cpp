@@ -245,7 +245,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionPause,&QAction::triggered,this,&MainWindow::pauseUi);
     connect(ui->actionResume,&QAction::triggered,this,&MainWindow::resumeUi);
     connect(ui->actionCommunication,&QAction::triggered,this,&MainWindow::launchCommunicationDialog);
-    connect(ui->actionIO_Board,&QAction::triggered,this,&MainWindow::launchIOBoardDialog);
     connect(ui->actionRf_Configuration,&QAction::triggered,this,&MainWindow::launchRfConfigDialog);
     connect(ui->actionCP_FTMW,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(ui->ftmwTab); });
     connect(ui->actionTrackingShow,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(ui->trackingTab); });
@@ -601,16 +600,6 @@ void MainWindow::launchCommunicationDialog()
     CommunicationDialog d(this);
     connect(&d,&CommunicationDialog::testConnection,p_hwm,&HardwareManager::testObjectConnection);
     connect(p_hwm,&HardwareManager::testComplete,&d,&CommunicationDialog::testComplete);
-
-    d.exec();
-}
-
-void MainWindow::launchIOBoardDialog()
-{
-    IOBoardConfigDialog d(this);
-
-    connect(&d,&IOBoardConfigDialog::testConnection,p_hwm,&HardwareManager::testObjectConnection);
-    connect(p_hwm,&HardwareManager::testComplete,&d,&IOBoardConfigDialog::testComplete);
 
     d.exec();
 }
@@ -1051,7 +1040,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionQuick_Experiment->setEnabled(false);
         ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
-        ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
         ui->actionExport_experiment->setEnabled(d_currentExptNum != 0);
         ui->actionExport_Batch->setEnabled(true);
@@ -1070,7 +1058,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionQuick_Experiment->setEnabled(false);
         ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(true);
-        ui->actionIO_Board->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
         ui->actionExport_experiment->setEnabled(d_currentExptNum != 0);
         ui->actionExport_Batch->setEnabled(true);
@@ -1089,7 +1076,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionQuick_Experiment->setEnabled(false);
         ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
-        ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
         ui->actionExport_experiment->setEnabled(false);
         ui->actionExport_Batch->setEnabled(false);
@@ -1108,7 +1094,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionQuick_Experiment->setEnabled(false);
         ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
-        ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
         ui->actionExport_experiment->setEnabled(false);
         ui->actionExport_Batch->setEnabled(false);
@@ -1127,7 +1112,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionQuick_Experiment->setEnabled(false);
         ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
-        ui->actionIO_Board->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
         ui->actionExport_experiment->setEnabled(false);
         ui->actionExport_Batch->setEnabled(false);
@@ -1147,7 +1131,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionQuick_Experiment->setEnabled(d_oneExptDone);
         ui->actionStart_Sequence->setEnabled(true);
         ui->actionCommunication->setEnabled(true);
-        ui->actionIO_Board->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
         ui->actionExport_experiment->setEnabled(d_currentExptNum != 0);
         ui->actionExport_Batch->setEnabled(true);

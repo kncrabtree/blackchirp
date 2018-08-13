@@ -2,6 +2,7 @@
 
 #include <math.h>
 
+
 M4i2220x8::M4i2220x8(QObject *parent) : FtmwScope(parent), p_handle(nullptr)
 {
     d_subKey = QString("m4i2220x8");
@@ -44,6 +45,14 @@ M4i2220x8::M4i2220x8(QObject *parent) : FtmwScope(parent), p_handle(nullptr)
         }
         s.endArray();
     }
+
+    s.beginWriteArray(QString("comm"));
+    s.setArrayIndex(0);
+    s.setValue(QString("name"),QString("Device Path"));
+    s.setValue(QString("key"),QString("devPath"));
+    s.setValue(QString("type"),QString("string"));
+    s.endArray();
+
     s.endGroup();
     s.endGroup();
 
@@ -62,14 +71,25 @@ M4i2220x8::~M4i2220x8()
 
 bool M4i2220x8::testConnection()
 {
-    if(p_handle == nullptr)
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
+    QByteArray path = s.value(QString("devPath"),QString("/dev/spcm0")).toString().toLatin1();
+    s.endGroup();
+    s.endGroup();
+
+    if(p_handle != nullptr)
     {
-        p_handle = spcm_hOpen(QByteArray("/dev/spcm0").data());
+        spcm_vClose(p_handle);
+        p_handle = nullptr;
     }
+
+    p_handle = spcm_hOpen(path.data());
+
 
     if(p_handle == nullptr)
     {
-        emit connected(false,QString("Could not connect to digitizer."));
+        emit connected(false,QString("Could not connect to digitizer. Verify that %1 exists and is accessible.").arg(QString(path)));
         return false;
     }
 

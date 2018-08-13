@@ -22,15 +22,12 @@
 #include <math.h>
 #include <stdlib.h>
 #include "labjackusb.h"
+#include <QtGlobal>
 
-
-typedef unsigned char uint8;
-typedef unsigned short uint16;
-typedef unsigned int uint32;
 
 //Structure for storing calibration constants
 struct U3_CALIBRATION_INFORMATION {
-    uint8 prodID;
+    quint8 prodID;
     double hardwareVersion; //helps to determine which calibration calculations
                             //to use
     int highVoltage;        //indicates if the device is U3-HV
@@ -64,7 +61,7 @@ typedef struct U3_CALIBRATION_INFORMATION u3CalibrationInfo;
 
 //Structure for storing LJTDAC calibration constants
 struct U3_TDAC_CALIBRATION_INFORMATION {
-    uint8 prodID;
+    quint8 prodID;
     double ccConstants[4];
     /*
     DAC Calibration constants order
@@ -80,31 +77,31 @@ typedef struct U3_TDAC_CALIBRATION_INFORMATION u3TdacCalibrationInfo;
 
 /* Functions */
 
-void normalChecksum( uint8 *b,
+void normalChecksum( quint8 *b,
                      int n);
 //Adds checksum to a data packet for normal command format.
 //b = data packet for normal command
 //n = size of data packet
 
-void extendedChecksum( uint8 *b,
+void extendedChecksum( quint8 *b,
                        int n);
 //Adds checksum to a data packet for extended command format.
 //b = data packet for extended command
 //n = size of data packet
 
-uint8 normalChecksum8( uint8 *b,
+quint8 normalChecksum8( quint8 *b,
                        int n);
 //Returns the Checksum8 for a normal command data packet.
 //b = data packet for normal command
 //n = size of data packet
 
-uint16 extendedChecksum16( uint8 *b,
+quint16 extendedChecksum16( quint8 *b,
                            int n);
 //Returns the Checksum16 for a extended command data packet.
 //b = data packet for extended command
 //n = size of data packet
 
-uint8 extendedChecksum8( uint8 *b);
+quint8 extendedChecksum8( quint8 *b);
 //Returns the Checksum8 for a extended command data packet.
 //b = data packet for extended command
 
@@ -129,7 +126,7 @@ long getCalibrationInfo( HANDLE hDevice,
 
 long getTdacCalibrationInfo( HANDLE hDevice,
                              u3TdacCalibrationInfo *caliInfo,
-                             uint8 DIOAPinNum);
+                             quint8 DIOAPinNum);
 //Gets calibration information from the EEPROM of a LJTick-DAC (LJTDAC).
 //Returns the calibration information in a u3TdacCalibrationInfo structure.
 //hDevice = handle to a U3 device
@@ -138,7 +135,7 @@ long getTdacCalibrationInfo( HANDLE hDevice,
 //             The DIOB pin is assumed to be the next digital IO line.
 
 
-double FPuint8ArrayToFPDouble( uint8 *buffer,
+double FPuint8ArrayToFPDouble( quint8 *buffer,
                                int startIndex);
 //Converts a fixed point byte array (starting a startIndex) to a floating point
 //double value.  This function is used primarily by getCalibrationInfo.
@@ -155,8 +152,8 @@ long isTdacCalibrationInfoValid(u3TdacCalibrationInfo *caliInfo);
 
 long getAinVoltCalibrated( u3CalibrationInfo *caliInfo,
                            int dac1Enabled,
-                           uint8 negChannel,
-                           uint16 bytesVolt,
+                           quint8 negChannel,
+                           quint16 bytesVolt,
                            double *analogVolt);
 //Translates the binary AIN reading from the U3, to a voltage value
 //(calibrated) in Volts.  Call getCalibrationInfo first to set up caliInfo.
@@ -174,9 +171,9 @@ long getAinVoltCalibrated( u3CalibrationInfo *caliInfo,
 //analogVolt = the converted analog voltage
 
 long getAinVoltCalibrated_hw130( u3CalibrationInfo *caliInfo,
-                                 uint8 positiveChannel,
-                                 uint8 negChannel,
-                                 uint16 bytesVolt,
+                                 quint8 positiveChannel,
+                                 quint8 negChannel,
+                                 quint16 bytesVolt,
                                  double *analogVolt);
 //Translates the binary AIN reading from the U3, to a voltage value
 //(calibrated) in Volts.  Call getCalibrationInfo first to set up caliInfo.
@@ -191,7 +188,7 @@ long getAinVoltCalibrated_hw130( u3CalibrationInfo *caliInfo,
 long getDacBinVoltCalibrated( u3CalibrationInfo *caliInfo,
                               int dacNumber,
                               double analogVolt,
-                              uint8 *bytesVolt);
+                              quint8 *bytesVolt);
 //Translates a analog output voltage value (Volts) to a binary 8 bit value
 //(calibrated) that can be sent to a U3.  Call getCalibrationInfo first to set
 //up caliInfo.  Returns -1 on error, 0 on success.
@@ -205,7 +202,7 @@ long getDacBinVoltCalibrated( u3CalibrationInfo *caliInfo,
 long getDacBinVoltCalibrated8Bit( u3CalibrationInfo *caliInfo,
                                   int dacNumber,
                                   double analogVolt,
-                                  uint8 *bytesVolt8);
+                                  quint8 *bytesVolt8);
 //Translates a analog output voltage value (Volts) to a binary 8 bit value
 //(calibrated) that can be sent to a U3.  Call getCalibrationInfo first to set
 //up caliInfo.  Returns -1 on error, 0 on success.
@@ -218,7 +215,7 @@ long getDacBinVoltCalibrated8Bit( u3CalibrationInfo *caliInfo,
 long getDacBinVoltCalibrated16Bit( u3CalibrationInfo *caliInfo,
                                    int dacNumber,
                                    double analogVolt,
-                                   uint16 *bytesVolt16);
+                                   quint16 *bytesVolt16);
 //Translates a analog output voltage value (Volts) to a binary 16 bit value
 //(calibrated) that can be sent to a U3. Call getCalibrationInfo first to set
 //up caliInfo.  Returns -1 on error, 0 on success.
@@ -231,7 +228,7 @@ long getDacBinVoltCalibrated16Bit( u3CalibrationInfo *caliInfo,
 long getTdacBinVoltCalibrated( u3TdacCalibrationInfo *caliInfo,
                                int dacNumber,
                                double analogVolt,
-                               uint16 *bytesVolt);
+                               quint16 *bytesVolt);
 //Translates a voltage value (Volts) to binary analog input bytes (calibrated)
 //that can be sent to a LJTick-DAC (LJTDAC).  Call getTdacCalibrationInfo
 //first to set up caliInfo.  Returns -1 on error, 0 on success.
@@ -241,7 +238,7 @@ long getTdacBinVoltCalibrated( u3TdacCalibrationInfo *caliInfo,
 //bytesVolt = the converted 2 byte voltage
 
 long getTempKCalibrated( u3CalibrationInfo *caliInfo,
-                         uint32 bytesTemp,
+                         quint32 bytesTemp,
                          double *kelvinTemp);
 //Translates the binary reading from the U3, to a temperature value
 //(calibrated) in Kelvins.  Call getCalibrationInfo first to set up caliInfo.
@@ -252,8 +249,8 @@ long getTempKCalibrated( u3CalibrationInfo *caliInfo,
 
 
 long getAinVoltUncalibrated( int dac1Enabled,
-                             uint8 negChannel,
-                             uint16 bytesVolt,
+                             quint8 negChannel,
+                             quint16 bytesVolt,
                              double *analogVolt);
 //Translates the binary AIN reading from the U3, to a voltage value
 //(uncalibrated) in Volts. Returns -1 on error, 0 on success.
@@ -268,9 +265,9 @@ long getAinVoltUncalibrated( int dac1Enabled,
 //analogVolt = the converted analog voltage
 
 long getAinVoltUncalibrated_hw130( int highVoltage,
-                                   uint8 positiveChannel,
-                                   uint8 negChannel,
-                                   uint16 bytesVolt,
+                                   quint8 positiveChannel,
+                                   quint8 negChannel,
+                                   quint16 bytesVolt,
                                    double *analogVolt);
 //Translates the binary AIN reading from the U3, to a voltage value
 //(uncalibrated) in Volts. Returns -1 on error, 0 on success.
@@ -285,7 +282,7 @@ long getAinVoltUncalibrated_hw130( int highVoltage,
 
 long getDacBinVoltUncalibrated( int dacNumber,
                                 double analogVolt,
-                                uint8 *bytesVolt);
+                                quint8 *bytesVolt);
 //Translates a DAC voltage value (Volts) to a binary 8 bit value (uncalibrated)
 //that can be sent to a U3.  Returns -1 on error, 0 on success.
 //This function is for U3 hardware versions 1.20 and 1.21, and does the same
@@ -296,7 +293,7 @@ long getDacBinVoltUncalibrated( int dacNumber,
 
 long getDacBinVoltUncalibrated8Bit( int dacNumber,
                                     double analogVolt,
-                                    uint8 *bytesVolt8);
+                                    quint8 *bytesVolt8);
 //Translates a DAC voltage value (Volts) to a binary 8 bit value (uncalibrated)
 //that can be sent to a U3.  Returns -1 on error, 0 on success.
 //This function is for U3 hardware versions 1.20 and 1.21.
@@ -306,7 +303,7 @@ long getDacBinVoltUncalibrated8Bit( int dacNumber,
 
 long getDacBinVoltUncalibrated16Bit( int dacNumber,
                                      double analogVolt,
-                                     uint16 *bytesVolt16);
+                                     quint16 *bytesVolt16);
 //Translates a DAC voltage value (Volts) to a binary 16 bit value
 //(uncalibrated) that can be sent to a U3-LV/HV.  Returns -1 on error, 0 on
 //success.
@@ -315,7 +312,7 @@ long getDacBinVoltUncalibrated16Bit( int dacNumber,
 //analogVoltage = the analog voltage that will be converted
 //bytesVoltage = the converted binary 16 bit value
 
-long getTempKUncalibrated( uint16 bytesTemp,
+long getTempKUncalibrated( quint16 bytesTemp,
                            double *kelvinTemp);
 //Translates the binary analog bytes read from the U3, to a temperature value
 //(uncalibrated) in Kelvins.  Call getCalibrationInfo first to set up caliInfo.
@@ -324,17 +321,17 @@ long getTempKUncalibrated( uint16 bytesTemp,
 //kelvinTemp = the converted Kelvin temperature
 
 long I2C( HANDLE hDevice,
-          uint8 I2COptions,
-          uint8 SpeedAdjust,
-          uint8 SDAPinNum,
-          uint8 SCLPinNum,
-          uint8 Address,
-          uint8 NumI2CBytesToSend,
-          uint8 NumI2CBytesToReceive,
-          uint8 *I2CBytesCommand,
-          uint8 *Errorcode,
-          uint8 *AckArray,
-          uint8 *I2CBytesResponse);
+          quint8 I2COptions,
+          quint8 SpeedAdjust,
+          quint8 SDAPinNum,
+          quint8 SCLPinNum,
+          quint8 Address,
+          quint8 NumI2CBytesToSend,
+          quint8 NumI2CBytesToReceive,
+          quint8 *I2CBytesCommand,
+          quint8 *Errorcode,
+          quint8 *AckArray,
+          quint8 *I2CBytesResponse);
 //This function will perform the I2C low-level function call.  Please refer to
 //section 5.3.19 of the U3 User's Guide for parameter documentation.  Returns
 //-1 on error, 0 on success.
@@ -556,36 +553,36 @@ long eTCValues( HANDLE Handle,
 /* Easy Function Helpers */
 
 long ehConfigIO( HANDLE hDevice,
-                 uint8 inWriteMask,
-                 uint8 inTimerCounterConfig,
-                 uint8 inDAC1Enable,
-                 uint8 inFIOAnalog,
-                 uint8 inEIOAnalog,
-                 uint8 *outTimerCounterConfig,
-                 uint8 *outDAC1Enable,
-                 uint8 *outFIOAnalog,
-                 uint8 *outEIOAnalog);
+                 quint8 inWriteMask,
+                 quint8 inTimerCounterConfig,
+                 quint8 inDAC1Enable,
+                 quint8 inFIOAnalog,
+                 quint8 inEIOAnalog,
+                 quint8 *outTimerCounterConfig,
+                 quint8 *outDAC1Enable,
+                 quint8 *outFIOAnalog,
+                 quint8 *outEIOAnalog);
 //Used by the eAIN, eDAC, eDI, eDO and eTCConfig easy functions.  This function
 //takes the ConfigIO low-level command and response bytes (not including
 //checksum and command bytes) as its parameter and performs a ConfigIO call
 //with the U3.  Returns -1 or errorcode (>1 value) on error, 0 on success.
 
 long ehConfigTimerClock( HANDLE hDevice,
-                         uint8 inTimerClockConfig,
-                         uint8 inTimerClockDivisor,
-                         uint8 *outTimerClockConfig,
-                         uint8 *outTimerClockDivisor);
+                         quint8 inTimerClockConfig,
+                         quint8 inTimerClockDivisor,
+                         quint8 *outTimerClockConfig,
+                         quint8 *outTimerClockDivisor);
 //Used by the eTCConfig easy function.  This function takes the
 //ConfigTimerClock low-level command and response bytes (not including checksum
 //and command bytes) as its parameter and performs a ConfigTimerClock call with
 //the U3.  Returns -1 or errorcode (>1 value) on error, 0 on success.
 
 long ehFeedback( HANDLE hDevice,
-                 uint8 *inIOTypesDataBuff,
+                 quint8 *inIOTypesDataBuff,
                  long inIOTypesDataSize,
-                 uint8 *outErrorcode,
-                 uint8 *outErrorFrame,
-                 uint8 *outDataBuff,
+                 quint8 *outErrorcode,
+                 quint8 *outErrorFrame,
+                 quint8 *outDataBuff,
                  long outDataSize);
 //Used by the all of the easy functions.  This function takes the Feedback
 //low-level command and response bytes (not including checksum and command
@@ -689,3 +686,4 @@ long ehFeedback( HANDLE hDevice,
 #define LJ_tmFALLINGEDGES16 13
 
 #endif
+
