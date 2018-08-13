@@ -422,8 +422,13 @@ bool FtmwConfig::addFids(const QByteArray rawData, int shift)
 
         if(type() == BlackChirp::FtmwPeakUp)
         {
-            for(int i=0; i<data->fidList.size(); i++)
-                newList[i].rollingAverage(data->fidList.at(i),targetShots(),shift);
+            if(targetShots() > 1)
+            {
+                for(int i=0; i<data->fidList.size(); i++)
+                    newList[i].rollingAverage(data->fidList.at(i),targetShots(),shift);
+            }
+            else
+                data->fidList = newList;
         }
         else
         {
