@@ -35,7 +35,8 @@ private:
     drv_handle p_handle;
 
     qint64 d_waveformBytes;
-    QByteArray d_m4iBuffer;
+    char *p_m4iBuffer;
+    int d_bufferSize;
 
     QTimer *p_timer;
 

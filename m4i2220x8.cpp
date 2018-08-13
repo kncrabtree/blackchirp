@@ -181,7 +181,10 @@ Experiment M4i2220x8::prepareForExperiment(Experiment exp)
     spcm_dwSetParam_i32(p_handle,SPC_ACDC0,1);
 
 
-    ///TODO: Configure clock source if desired
+    //Configure clock source
+    spcm_dwSetParam_i32(p_handle,SPC_CLOCKMODE,SPC_CM_EXTREFCLOCK);
+    spcm_dwSetParam_i32(p_handle,SPC_REFERENCECLOCK,1250000000);
+
     // Configure sample rate
     spcm_dwSetParam_i64(p_handle,SPC_SAMPLERATE,static_cast<qint64>(sc.sampleRate));
 
@@ -190,6 +193,8 @@ Experiment M4i2220x8::prepareForExperiment(Experiment exp)
         emit logMessage(QString("Trigger channel set to External Input (selected: %1). Must trigger on Ext In."),BlackChirp::LogWarning);
     sc.trigChannel = 0;
 
+
+
     if(sc.slope == BlackChirp::RisingEdge)
         spcm_dwSetParam_i32(p_handle,SPC_TRIG_EXT0_MODE,SPC_TM_POS);
     else
@@ -197,6 +202,7 @@ Experiment M4i2220x8::prepareForExperiment(Experiment exp)
 
     spcm_dwSetParam_i32(p_handle,SPC_TRIG_ORMASK,SPC_TMASK_EXT0);
 
+//    spcm_dwSetParam_i32(p_handle,SPC_TRIG_TERM,1);
     spcm_dwSetParam_i32(p_handle,SPC_TRIG_EXT0_LEVEL0,static_cast<qint32>(round(sc.trigLevel*1000.0)));
 
 
@@ -240,15 +246,14 @@ Experiment M4i2220x8::prepareForExperiment(Experiment exp)
     spcm_dwSetParam_i64(p_handle,SPC_POSTTRIGGER,static_cast<qint64>(sc.recordLength-32));
     spcm_dwSetParam_i64(p_handle,SPC_LOOPS,static_cast<qint64>(16000000));
 
-    quint64 bufferSize = sc.recordLength*dataWidth*sc.numFrames*10;
+    d_bufferSize = sc.recordLength*dataWidth*sc.numFrames*10;
 
     sc.bytesPerPoint = dataWidth;
 
     d_waveformBytes = sc.recordLength*dataWidth*sc.numFrames;
-    d_m4iBuffer.clear();
-    d_m4iBuffer.resize(bufferSize);
+    p_m4iBuffer = new char[d_bufferSize];
 
-    spcm_dwDefTransfer_i64(p_handle,SPCM_BUF_DATA,SPCM_DIR_CARDTOPC,4096*4,static_cast<void*>(d_m4iBuffer.data()),0,bufferSize);
+    spcm_dwDefTransfer_i64(p_handle,SPCM_BUF_DATA,SPCM_DIR_CARDTOPC,4096*4,static_cast<void*>(p_m4iBuffer),0,d_bufferSize);
 
     sc.yMult = sc.vScale/128.0;
     sc.byteOrder = QDataStream::LittleEndian;
@@ -262,6 +267,8 @@ Experiment M4i2220x8::prepareForExperiment(Experiment exp)
     {
         exp.setHardwareFailed();
         exp.setErrorString(QString("Could not initialize %1. Error message: %2").arg(d_prettyName).arg(QString::fromLatin1(errText)));
+        spcm_dwInvalidateBuf(p_handle,SPCM_BUF_DATA);
+        delete[] p_m4iBuffer;
     }
 
     exp.setScopeConfig(sc);
@@ -293,9 +300,9 @@ void M4i2220x8::endAcquisition()
     spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_STOP);
     spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_DATA_STOPDMA);
     spcm_dwInvalidateBuf(p_handle,SPCM_BUF_DATA);
+    delete[] p_m4iBuffer;
 
     d_waveformBytes = 0;
-    d_m4iBuffer.clear();
 
 }
 
@@ -342,10 +349,10 @@ void M4i2220x8::readWaveform()
             for(int i=0; i<d_waveformBytes; i++)
             {
                 int thisPos = i + pos;
-                if(thisPos >= d_m4iBuffer.size())
-                    thisPos -= d_m4iBuffer.size();
+                if(thisPos >= d_bufferSize)
+                    thisPos -= d_bufferSize;
 
-                out[i] = d_m4iBuffer.at(thisPos);
+                out[i] = p_m4iBuffer[thisPos];
             }
 
             //tell m4i that it can use this memory again
@@ -363,7 +370,7 @@ void M4i2220x8::readWaveform()
 
         spcm_dwInvalidateBuf(p_handle,SPCM_BUF_DATA);
 
-        spcm_dwDefTransfer_i64(p_handle,SPCM_BUF_DATA,SPCM_DIR_CARDTOPC,4096*4,static_cast<void*>(d_m4iBuffer.data()),0,d_m4iBuffer.size());
+        spcm_dwDefTransfer_i64(p_handle,SPCM_BUF_DATA,SPCM_DIR_CARDTOPC,4096*4,static_cast<void*>(p_m4iBuffer),0,d_bufferSize);
 
 
 
