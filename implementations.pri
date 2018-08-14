@@ -192,3 +192,9 @@ motor {
 }
 
 }
+
+HEADERS += \
+    $$PWD/ad9914.h
+
+SOURCES += \
+    $$PWD/ad9914.cpp

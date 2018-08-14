@@ -35,7 +35,7 @@ hardware {
 # FTMW Oscilloscope (0 = virtual, 1 = DSA71604C, 2 = MSO72004C, 3 = M4i2220x8)
 FTMWSCOPE=2
 
-#AWG (0 = virtual, 1 = AWG70002A, 2 = AWG7122B)
+#AWG (0 = virtual, 1 = AWG70002A, 2 = AWG7122B, 3 = AD9914)
 AWG=2
 
 #Synth (0 = virtual, 1 = Valon 5009, 2 = PLDROs)
