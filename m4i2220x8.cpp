@@ -128,7 +128,12 @@ void M4i2220x8::initialize()
 Experiment M4i2220x8::prepareForExperiment(Experiment exp)
 {
     if(!exp.ftmwConfig().isEnabled())
+    {
+        d_enabledForExperiment = false;
         return exp;
+    }
+
+    d_enabledForExperiment = true;
 
     //first, reset the card so all registers are in default states
     spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_RESET);
@@ -297,32 +302,38 @@ Experiment M4i2220x8::prepareForExperiment(Experiment exp)
 
 void M4i2220x8::beginAcquisition()
 {
-    spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
-    spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_DATA_STARTDMA);
-
-    QByteArray errText(1000,'\0');
-    if(spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
+    if(d_enabledForExperiment)
     {
-        emit logMessage(QString::fromLatin1(errText),BlackChirp::LogError);
-        emit hardwareFailure();
-        return;
-    }
+        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
+        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_DATA_STARTDMA);
 
-    connect(p_timer,&QTimer::timeout,this,&M4i2220x8::readWaveform,Qt::UniqueConnection);
-    p_timer->start(100);
+        QByteArray errText(1000,'\0');
+        if(spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
+        {
+            emit logMessage(QString::fromLatin1(errText),BlackChirp::LogError);
+            emit hardwareFailure();
+            return;
+        }
+
+        connect(p_timer,&QTimer::timeout,this,&M4i2220x8::readWaveform,Qt::UniqueConnection);
+        p_timer->start(100);
+    }
 }
 
 void M4i2220x8::endAcquisition()
 {
-    p_timer->stop();
-    disconnect(p_timer,&QTimer::timeout,this,&M4i2220x8::readWaveform);
+    if(d_enabledForExperiment)
+    {
+        p_timer->stop();
+        disconnect(p_timer,&QTimer::timeout,this,&M4i2220x8::readWaveform);
 
-    spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_STOP);
-    spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_DATA_STOPDMA);
-    spcm_dwInvalidateBuf(p_handle,SPCM_BUF_DATA);
-    delete[] p_m4iBuffer;
+        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_STOP);
+        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_DATA_STOPDMA);
+        spcm_dwInvalidateBuf(p_handle,SPCM_BUF_DATA);
+        delete[] p_m4iBuffer;
 
-    d_waveformBytes = 0;
+        d_waveformBytes = 0;
+    }
 
 }
 
