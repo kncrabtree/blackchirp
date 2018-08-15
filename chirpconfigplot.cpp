@@ -32,7 +32,7 @@ ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(QString("ChirpCo
     p_chirpCurve = new QwtPlotCurve(QString("Chirp"));
     QColor color = s.value(QString("chirpColor"),pal.brightText().color()).value<QColor>();
     p_chirpCurve->setPen(QPen(color));
-//    p_chirpCurve->attach(this);
+    p_chirpCurve->attach(this);
 
     p_ampEnableCurve= new QwtPlotCurve(QString("Amp Enable"));
     color = s.value(QString("ampEnableColor"),pal.brightText().color()).value<QColor>();
@@ -42,7 +42,7 @@ ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(QString("ChirpCo
     p_protectionCurve = new QwtPlotCurve(QString("Protection"));
     color = s.value(QString("protectionColor"),pal.brightText().color()).value<QColor>();
     p_protectionCurve->setPen(QPen(color));
-    p_protectionCurve->attach(this);
+//    p_protectionCurve->attach(this);
 
     setAxisAutoScaleRange(QwtPlot::yLeft,-1.0,1.0);
 
