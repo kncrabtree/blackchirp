@@ -9,9 +9,6 @@ AD9914::AD9914(QObject *parent) : AWG(parent)
     d_commType = CommunicationProtocol::Rs232;
     d_threaded = false;
 
-    p_comm->initialize();
-    p_comm->setReadOptions(100,true,QByteArray("\n"));
-
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
@@ -19,8 +16,9 @@ AD9914::AD9914(QObject *parent) : AWG(parent)
     s.setValue(QString("sampleRate"),d_clockFreqHz);
     s.setValue(QString("maxSamples"),1e9);
     s.setValue(QString("minFreq"),0.0);
-    s.setValue(QString("maxFreq"),1400);
-    s.setValue(QString("hasProtection"),false);
+    s.setValue(QString("maxFreq"),d_clockFreqHz*0.4);
+    s.setValue(QString("hasProtectionPulse"),false);
+    s.setValue(QString("hasAmpEnablePulse"),false);
     s.setValue(QString("rampOnly"),true);
     s.endGroup();
     s.endGroup();
@@ -59,6 +57,9 @@ bool AD9914::testConnection()
 
 void AD9914::initialize()
 {
+    p_comm->initialize();
+    p_comm->setReadOptions(100,true,QByteArray("\n"));
+
     testConnection();
 }
 

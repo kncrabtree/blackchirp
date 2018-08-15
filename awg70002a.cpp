@@ -18,10 +18,16 @@ AWG70002a::AWG70002a(QObject *parent) :
     double awgMaxSamples = s.value(QString("maxSamples"),2e9).toDouble();
     double awgMinFreq = s.value(QString("minFreq"),100.0).toDouble();
     double awgMaxFreq = s.value(QString("maxFreq"),6250.0).toDouble();
+    bool pp = s.value(QString("hasProtectionPulse"),true).toBool();
+    bool ep = s.value(QString("hasAmpEnablePulse"),true).toBool();
+    bool ro = s.value(QString("rampOnly"),false).toBool();
     s.setValue(QString("sampleRate"),awgRate);
     s.setValue(QString("maxSmaples"),awgMaxSamples);
     s.setValue(QString("minFreq"),awgMinFreq);
     s.setValue(QString("maxFreq"),awgMaxFreq);
+    s.setValue(QString("hasProtectionPulse"),pp);
+    s.setValue(QString("hasAmpEnablePulse"),ep);
+    s.setValue(QString("rampOnly"),ro);
     s.endGroup();
     s.endGroup();
     s.sync();

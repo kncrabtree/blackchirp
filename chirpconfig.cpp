@@ -557,6 +557,17 @@ bool ChirpConfig::validate()
     data->isValid = false;
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
+    s.beginGroup(QString("awg"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    double awgRate = s.value(QString("sampleRate"),16e9).toDouble();
+    double awgMaxSamples = s.value(QString("maxSamples"),2e9).toDouble();
+    double awgMinFreq = s.value(QString("minFreq"),100.0).toDouble();
+    double awgMaxFreq = s.value(QString("maxFreq"),6250.0).toDouble();
+    bool hasProtection = s.value(QString("hasProtectionPulse"),true).toBool();
+    bool hasAmpEnable = s.value(QString("hasAmpEnablePulse"),true).toBool();
+    s.endGroup();
+    s.endGroup();
+
     s.beginGroup(QString("chirpConfig"));
     double minPreProt = qMax(s.value(QString("minPreChirpProtection"),0.010).toDouble(),0.0);
     double minTwt = s.value(QString("minPreChirpDelay"),0.100).toDouble();
@@ -564,14 +575,6 @@ bool ChirpConfig::validate()
     double minPostProt = s.value(QString("minPostChirpProtection"),0.100).toDouble();
     s.endGroup();
 
-    s.beginGroup(QString("awg"));
-    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-    double awgRate = s.value(QString("sampleRate"),16e9).toDouble();
-    double awgMaxSamples = s.value(QString("maxSamples"),2e9).toDouble();
-    double awgMinFreq = s.value(QString("minFreq"),100.0).toDouble();
-    double awgMaxFreq = s.value(QString("maxFreq"),6250.0).toDouble();
-    s.endGroup();
-    s.endGroup();
 
     data->sampleRateSperS = awgRate;
     data->sampleRateSperUS = awgRate/1e6;
@@ -579,23 +582,45 @@ bool ChirpConfig::validate()
     data->sampleIntervalUS = 1.0/awgRate*1e6;
 
     //make sure all settings are possible
-    if(data->preChirpProtection < minPreProt)
-        return false;
+    if(hasProtection)
+    {
+        if(data->preChirpProtection < minPreProt)
+            return false;
 
-    if(data->preChirpDelay < minTwt)
-        return false;
+        if(data->postChirpProtection < minPostProt)
+            return false;
 
-    if(data->postChirpDelay < minPostTwt)
-        return false;
+    }
+    else
+    {
+        data->preChirpProtection = 0.0;
+        data->postChirpProtection = 0.0;
+    }
 
-    if(data->postChirpProtection < minPostProt)
-        return false;
+    if(hasAmpEnable)
+    {
+
+        if(data->preChirpDelay < minTwt)
+            return false;
+
+        if(data->postChirpDelay < minPostTwt)
+            return false;
+    }
+    else
+    {
+        data->preChirpDelay = 0.0;
+        data->postChirpDelay = 0.0;
+    }
+
+
+
 
     if(data->numChirps < 1)
         return false;
 
     if(data->chirpList.isEmpty())
         return false;
+
 
     for(int j=0; j<data->chirpList.size(); j++)
     {
@@ -622,6 +647,8 @@ bool ChirpConfig::validate()
 
     if(totalDuration() >= awgMaxSamples/awgRate*1e6)
         return false;
+
+
 
     data->isValid = true;
     return true;

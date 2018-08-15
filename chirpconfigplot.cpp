@@ -10,7 +10,7 @@
 
 #include "chirpconfig.h"
 
-ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(QString("ChirpConfigPlot"),parent)
+ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(QString("ChirpConfigPlot"),parent), d_protectionEnabled(true), d_ampEnablePulseEnabled(true)
 {
 
     //make axis label font smaller
@@ -32,12 +32,12 @@ ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(QString("ChirpCo
     p_chirpCurve = new QwtPlotCurve(QString("Chirp"));
     QColor color = s.value(QString("chirpColor"),pal.brightText().color()).value<QColor>();
     p_chirpCurve->setPen(QPen(color));
-    p_chirpCurve->attach(this);
+//    p_chirpCurve->attach(this);
 
-    p_twtEnableCurve= new QwtPlotCurve(QString("TWT Enable"));
-    color = s.value(QString("twtEnableColor"),pal.brightText().color()).value<QColor>();
-    p_twtEnableCurve->setPen(QPen(color));
-    p_twtEnableCurve->attach(this);
+    p_ampEnableCurve= new QwtPlotCurve(QString("Amp Enable"));
+    color = s.value(QString("ampEnableColor"),pal.brightText().color()).value<QColor>();
+    p_ampEnableCurve->setPen(QPen(color));
+//    p_ampEnableCurve->attach(this);
 
     p_protectionCurve = new QwtPlotCurve(QString("Protection"));
     color = s.value(QString("protectionColor"),pal.brightText().color()).value<QColor>();
@@ -65,7 +65,7 @@ void ChirpConfigPlot::newChirp(const ChirpConfig cc)
     {
         setAxisAutoScaleRange(QwtPlot::xBottom,0.0,1.0);
         d_chirpData.clear();
-        p_twtEnableCurve->setSamples(QVector<QPointF>());
+        p_ampEnableCurve->setSamples(QVector<QPointF>());
         p_protectionCurve->setSamples(QVector<QPointF>());
         autoScale();
         return;
@@ -76,7 +76,7 @@ void ChirpConfigPlot::newChirp(const ChirpConfig cc)
     if(as)
         autoScale();
 
-    QVector<QPointF> twtData, protectionData;
+    QVector<QPointF> ampData, protectionData;
 
     for(int i=0; i<cc.numChirps(); i++)
     {
@@ -86,28 +86,30 @@ void ChirpConfigPlot::newChirp(const ChirpConfig cc)
         double twtEndTime = chirpEndTime + cc.postChirpDelay();
         double protectionEndTime = chirpEndTime + cc.postChirpProtection();
 
-        //0 at the beginning for both segments
-        twtData.append(QPointF(segmentStartTime,0.0));
-        protectionData.append(QPointF(segmentStartTime,0.0));
+        //build protection data
+        if(d_protectionEnabled)
+        {
+            protectionData.append(QPointF(segmentStartTime,0.0));
+            protectionData.append(QPointF(segmentStartTime,1.0));
+            protectionData.append(QPointF(protectionEndTime,1.0));
+            protectionData.append(QPointF(protectionEndTime,0.0));
+        }
 
-        //pre-chirp protection: protection goes high, twt enable stays low
-        protectionData.append(QPointF(segmentStartTime,1.0));
 
-        //twt enable, both are high
-        twtData.append(QPointF(twtEnableTime,0.0));
-        twtData.append(QPointF(twtEnableTime,1.0));
+        //build Enable data
+        if(d_ampEnablePulseEnabled)
+        {
+            ampData.append(QPointF(segmentStartTime,0.0));
+            ampData.append(QPointF(twtEnableTime,0.0));
+            ampData.append(QPointF(twtEnableTime,1.0));
+            ampData.append(QPointF(twtEndTime,1.0));
+            ampData.append(QPointF(twtEndTime,0.0));
+            ampData.append(QPointF(protectionEndTime,0.0));
+        }
 
-        //chirp end, twt goes low, protection stays high
-        twtData.append(QPointF(twtEndTime,1.0));
-        twtData.append(QPointF(twtEndTime,0.0));
-
-        //post-chirp protection end: protection goes low, twt stays low
-        protectionData.append(QPointF(protectionEndTime,1.0));
-        protectionData.append(QPointF(protectionEndTime,0.0));
-        twtData.append(QPointF(protectionEndTime,0.0));
     }
 
-    p_twtEnableCurve->setSamples(twtData);
+    p_ampEnableCurve->setSamples(ampData);
     p_protectionCurve->setSamples(protectionData);
 
     filterData();
@@ -123,10 +125,10 @@ void ChirpConfigPlot::buildContextMenu(QMouseEvent *me)
     if(d_chirpData.isEmpty())
         chirpAction->setEnabled(false);
 
-    QAction *twtAction = menu->addAction(QString("Change TWT enable color..."));
-    connect(twtAction,&QAction::triggered,[=](){ setCurveColor(p_twtEnableCurve); });
+    QAction *ampAction = menu->addAction(QString("Change amp enable color..."));
+    connect(ampAction,&QAction::triggered,[=](){ setCurveColor(p_ampEnableCurve); });
     if(d_chirpData.isEmpty())
-        twtAction->setEnabled(false);
+        ampAction->setEnabled(false);
 
     QAction *protAction = menu->addAction(QString("Change protection color..."));
     connect(protAction,&QAction::triggered,[=](){ setCurveColor(p_protectionCurve); });
@@ -136,6 +138,22 @@ void ChirpConfigPlot::buildContextMenu(QMouseEvent *me)
     menu->popup(me->globalPos());
 }
 
+void ChirpConfigPlot::setProtectionEnabled(bool en)
+{
+    d_protectionEnabled = en;
+    p_protectionCurve->detach();
+    if(en)
+        p_protectionCurve->attach(this);
+}
+
+void ChirpConfigPlot::setAmpEnablePulseEnabled(bool en)
+{
+    d_ampEnablePulseEnabled = en;
+    p_ampEnableCurve->detach();
+    if(en)
+        p_ampEnableCurve->attach(this);
+}
+
 void ChirpConfigPlot::setCurveColor(QwtPlotCurve *c)
 {
     if(c != nullptr)
@@ -143,8 +161,8 @@ void ChirpConfigPlot::setCurveColor(QwtPlotCurve *c)
         QString key;
         if(c == p_chirpCurve)
             key = QString("chirpColor");
-        if(c == p_twtEnableCurve)
-            key = QString("twtEnableColor");
+        if(c == p_ampEnableCurve)
+            key = QString("ampEnableColor");
         if(c == p_protectionCurve)
             key = QString("protectionColor");
 
