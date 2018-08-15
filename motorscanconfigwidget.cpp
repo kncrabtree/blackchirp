@@ -10,21 +10,27 @@ MotorScanConfigWidget::MotorScanConfigWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
+
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(QString("motorController"));
     s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-    ui->xMinBox->setRange(s.value(QString("xMin"),-100.0).toDouble(),
-                          s.value(QString("xMax"),100.0).toDouble());
-    ui->xMaxBox->setRange(s.value(QString("xMin"),-100.0).toDouble(),
-                          s.value(QString("xMax"),100.0).toDouble());
-    ui->yMinBox->setRange(s.value(QString("yMin"),-100.0).toDouble(),
-                          s.value(QString("yMax"),100.0).toDouble());
-    ui->yMaxBox->setRange(s.value(QString("yMin"),-100.0).toDouble(),
-                          s.value(QString("yMax"),100.0).toDouble());
-    ui->zMinBox->setRange(s.value(QString("zMin"),-100.0).toDouble(),
-                          s.value(QString("zMax"),100.0).toDouble());
-    ui->zMaxBox->setRange(s.value(QString("zMin"),-100.0).toDouble(),
-                          s.value(QString("zMax"),100.0).toDouble());
+    s.beginReadArray(QString("channels"));
+    s.setArrayIndex(0);
+    ui->xMinBox->setRange(s.value(QString("min"),-100.0).toDouble(),
+                          s.value(QString("max"),100.0).toDouble());
+    ui->xMaxBox->setRange(s.value(QString("min"),-100.0).toDouble(),
+                          s.value(QString("max"),100.0).toDouble());
+    s.setArrayIndex(1);
+    ui->yMinBox->setRange(s.value(QString("min"),-100.0).toDouble(),
+                          s.value(QString("max"),100.0).toDouble());
+    ui->yMaxBox->setRange(s.value(QString("min"),-100.0).toDouble(),
+                          s.value(QString("max"),100.0).toDouble());
+    s.setArrayIndex(2);
+    ui->zMinBox->setRange(s.value(QString("min"),-100.0).toDouble(),
+                          s.value(QString("max"),100.0).toDouble());
+    ui->zMaxBox->setRange(s.value(QString("min"),-100.0).toDouble(),
+                          s.value(QString("max"),100.0).toDouble());
+    s.endArray();
     s.endGroup();
     s.endGroup();
 

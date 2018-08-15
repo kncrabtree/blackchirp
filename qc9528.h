@@ -30,6 +30,7 @@ public slots:
 
 private:
     bool pGenWriteCmd(QString cmd);
+    bool d_forceExtClock;
 };
 
 #endif // QC9528_H

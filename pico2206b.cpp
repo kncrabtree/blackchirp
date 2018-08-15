@@ -71,7 +71,7 @@ void Pico2206B::initialize()
 {
     p_acquisitionTimer = new QTimer(this);
     connect(p_acquisitionTimer,&QTimer::timeout,this,&Pico2206B::endScopeAcquisition);
-    p_acquisitionTimer->setInterval(1000);
+    p_acquisitionTimer->setInterval(10);
 
     d_acquiring = false;
 
@@ -193,7 +193,7 @@ bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
 
     // disable trigger now -> 0 second parameter
     int16_t threshold = 8192;
-    status = ps2000aSetSimpleTrigger(d_handle, 0, triggerChannel, threshold, direction, 0, 200);
+    status = ps2000aSetSimpleTrigger(d_handle, 1, triggerChannel, threshold, direction, 0, 0);
     if(status != PICO_OK)
     {
         emit connected(false);
@@ -259,7 +259,7 @@ void Pico2206B::beginScopeAcquisition()
     }
     p_acquisitionTimer->start();
     d_acquiring = true;
-    emit logMessage(QString("Pico2206B start."));
+//    emit logMessage(QString("Pico2206B start."));
     return;
 }
 
@@ -278,7 +278,7 @@ void Pico2206B::endScopeAcquisition()
         return;
     }
 
-    emit logMessage(QString("start end acqu function."));
+//    emit logMessage(QString("start end acqu function."));
     status = ps2000aIsReady(d_handle, &isReady);
     if(status != PICO_OK)
     {
@@ -289,7 +289,7 @@ void Pico2206B::endScopeAcquisition()
     if (isReady == 0)
         return;
 
-    emit logMessage(QString("got all data"));
+//    emit logMessage(QString("got all data"));
     p_acquisitionTimer->stop();
 
     uint32_t noOfSamples = noSamples;
