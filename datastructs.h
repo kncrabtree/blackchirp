@@ -82,6 +82,15 @@ enum FtWindowFunction {
     KaiserBessel14
 };
 
+enum ClockType {
+    UpConversionLO,
+    DownConversionLO,
+    UpAndDownLO,
+    AwgClock,
+    DigitizerClock,
+    ReferenceClock
+};
+
 struct FtmwScopeConfig {
     //user-chosen settings
     int fidChannel;
