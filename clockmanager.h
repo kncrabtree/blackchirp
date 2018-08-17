@@ -30,7 +30,7 @@ public:
     QList<Clock*> clockList() { return d_clockList; }
 
 signals:
-    void logMessage(QString, BlackChirp::LogMessageCode);
+    void logMessage(QString, BlackChirp::LogMessageCode mc = BlackChirp::LogNormal);
     void clockFrequencyUpdate(BlackChirp::ClockType, double);
 
 public slots:
