@@ -27,7 +27,8 @@ HEADERS += \
     $$PWD/pico2206b.h \
     $$PWD/virtualpressurecontroller.h \
     $$PWD/intellisysiqplus.h \
-    $$PWD/m4i2220x8.h
+    $$PWD/m4i2220x8.h \
+    $$PWD/fixedclock.h
 
 SOURCES += \
     $$PWD/virtualftmwscope.cpp \
@@ -56,7 +57,8 @@ SOURCES += \
     $$PWD/pico2206b.cpp \
     $$PWD/virtualpressurecontroller.cpp  \
     $$PWD/intellisysiqplus.cpp \
-    $$PWD/m4i2220x8.cpp
+    $$PWD/m4i2220x8.cpp \
+    $$PWD/fixedclock.cpp
 
 } else {
 
@@ -106,6 +108,11 @@ equals(SYNTH,1) {
 equals(SYNTH,2) {
 	HEADERS += $$PWD/pldrogroup.h
 	SOURCES += $$PWD/pldrogroup.cpp
+}
+
+contains(CLOCKS,0) {
+        HEADERS += $$PWD/fixedclock.h
+        SOURCES += $$PWD/fixedclock.cpp
 }
 
 

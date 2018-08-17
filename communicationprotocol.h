@@ -17,7 +17,8 @@ public:
         Tcp,
         Rs232,
         Gpib,
-        Custom
+        Custom,
+        None
     };
 
     explicit CommunicationProtocol(CommType type, QString key, QString subKey, QObject *parent = nullptr);

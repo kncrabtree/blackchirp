@@ -45,13 +45,19 @@ void HardwareObject::buildCommunication(QObject *gc)
         p_comm = new CustomInstrument(d_key,d_subKey,this);
         break;
     case CommunicationProtocol::Virtual:
-    default:
         p_comm = new VirtualInstrument(d_key,this);
+        break;
+    case CommunicationProtocol::None:
+    default:
+        p_comm = nullptr;
         break;
     }
 
-    connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
-    connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
+    if(p_comm)
+    {
+        connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
+        connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
+    }
 }
 
 void HardwareObject::sleep(bool b)
