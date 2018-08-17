@@ -41,6 +41,11 @@ AWG=2
 #Synth (0 = virtual, 1 = Valon 5009, 2 = PLDROs)
 SYNTH=2
 
+#Clocks. Include in a space-delimited list, up to 5 numbers
+#For example:
+#CLOCKS=0 0 1 3 2
+CLOCKS=0 0
+
 #Pulse generator (0 = virtual, 1 = Quantum Composers 9528+, 2 = Quantum Composers 9518)
 PGEN=2
 #pulse generator channel definitions (0 = A, 1 = B, etc...)
@@ -83,6 +88,7 @@ MOTORSCOPE=1
 FTMWSCOPE=0
 AWG=0
 SYNTH=0
+CLOCKS=0 0
 PGEN=0
 PGEN_GAS=0
 PGEN_AWG=1
@@ -197,4 +203,17 @@ DEFINES += BC_IOBOARD=$$IOBOARD
 
 equals(FTMWSCOPE,0) {
 RESOURCES += virtualdata.qrc
+}
+
+CLOCK_HW = FixedClock
+
+for(num, 0..$$size(CLOCKS)) {
+N = $$member(CLOCKS,$$num)
+count(N,1) {
+DEFINES += BC_CLOCK_$$num=$$member(CLOCK_HW,$$N)
+}
+}
+
+contains(CLOCKS,0) {
+DEFINES += BC_CLOCK_FIXED
 }
