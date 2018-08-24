@@ -27,7 +27,8 @@ HEADERS += \
     $$PWD/pico2206b.h \
     $$PWD/virtualpressurecontroller.h \
     $$PWD/intellisysiqplus.h \
-    $$PWD/m4i2220x8.h
+    $$PWD/m4i2220x8.h \
+    $$PWD/dsox92004a.h
 
 SOURCES += \
     $$PWD/virtualftmwscope.cpp \
@@ -56,7 +57,8 @@ SOURCES += \
     $$PWD/pico2206b.cpp \
     $$PWD/virtualpressurecontroller.cpp  \
     $$PWD/intellisysiqplus.cpp \
-    $$PWD/m4i2220x8.cpp
+    $$PWD/m4i2220x8.cpp \
+    $$PWD/dsox92004a.cpp
 
 } else {
 
@@ -78,6 +80,11 @@ equals(FTMWSCOPE,2) {
 equals(FTMWSCOPE,3) {
      HEADERS += $$PWD/m4i2220x8.h
      SOURCES += $$PWD/m4i2220x8.cpp
+}
+
+equals(FTMWSCOPE,4) {
+     HEADERS += $$PWD/dsox92004a.h
+     SOURCES += $$PWD/dsox92004a.cpp
 }
 
 
