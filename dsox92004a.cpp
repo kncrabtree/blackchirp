@@ -1,6 +1,7 @@
 #include "dsox92004a.h"
 
 #include <QTcpSocket>
+#include <QTimer>
 
 DSOx92004A::DSOx92004A(QObject *parent) : FtmwScope(parent)
 {
@@ -12,18 +13,17 @@ DSOx92004A::DSOx92004A(QObject *parent) : FtmwScope(parent)
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
 
-    s.setValue(QString("canBlockAverage"),false);
+    s.setValue(QString("canBlockAverage"),true);
     s.setValue(QString("canFastFrame"),true);
     s.setValue(QString("canSummaryFrame"),false);
-    s.setValue(QString("canBlockAndFastFrame"),true);
+    s.setValue(QString("canBlockAndFastFrame"),false);
 
     double bandwidth = s.value(QString("bandwidth"),20000.0).toDouble();
     s.setValue(QString("bandwidth"),bandwidth);
 
-    if(s.beginReadArray(QString("sampleRates")) > 0)
-        s.endArray();
-    else
+    if(s.beginReadArray(QString("sampleRates")) < 1)
     {
+        s.endArray();
         QList<QPair<QString,double>> sampleRates;
         sampleRates << qMakePair(QString("1 GSa/s"),1e9) << qMakePair(QString("1.25 GSa/s"),1.25e9)  << qMakePair(QString("2 GSa/s"),2e9)
                     << qMakePair(QString("2.5 GSa/s"),2.5e9) << qMakePair(QString("4 GSa/s"),4e9) << qMakePair(QString("5 GSa/s"),5e9)  << qMakePair(QString("10 GSa/s"),10e9)
@@ -62,7 +62,7 @@ bool DSOx92004A::testConnection()
     if(resp.length() > 100)
         resp = resp.mid(0,100);
 
-    if(!resp.startsWith(QByteArray("Keysight Technologies,DSO")))
+    if(!resp.startsWith(QByteArray("KEYSIGHT TECHNOLOGIES,DSOX92004A")))
     {
         emit connected(false,QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())));
         return false;
@@ -79,11 +79,10 @@ void DSOx92004A::initialize()
     p_comm->initialize();
     p_comm->setReadOptions(1000,true,QByteArray("\n"));
     p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
-    connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),this,&MSO72004C::socketError);
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
 
-    p_queryTimer = new QTimer(this);
-    connect(p_queryTimer,&QTimer::timeout,this,&DSOx92004A::readWaveform);
+//    p_queryTimer = new QTimer(this);
+//    connect(p_queryTimer,&QTimer::timeout,this,&DSOx92004A::readWaveform);
     testConnection();
 }
 
@@ -96,38 +95,208 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
     auto config = exp.ftmwConfig().scopeConfig();
 
     //disable ugly headers
-    if(!p_comm->writeCmd(QString(":SYSTEM:HEADER OFF\n")))
+    if(!scopeCommand(QString("*RST;:SYSTEM:HEADER OFF")))
     {
-        emit logMessage(QString("Could not disable verbose header mode."),BlackChirp::LogError);
         exp.setHardwareFailed();
         return exp;
     }
 
+    if(!scopeCommand(QString(":DISPLAY:MAIN OFF")))
+    {
+        exp.setHardwareFailed();
+        return exp;
+    }
+
+    if(!scopeCommand(QString(":CHANNEL%1:DISPLAY ON").arg(config.fidChannel)))
+    {
+        exp.setHardwareFailed();
+        return exp;
+    }
+    if(!scopeCommand(QString(":CHANNEL%1:INPUT DC50").arg(config.fidChannel)))
+    {
+        exp.setHardwareFailed();
+        return exp;
+    }
+    if(!scopeCommand(QString(":CHANNEL%1:OFFSET 0").arg(config.fidChannel)))
+    {
+        exp.setHardwareFailed();
+        return exp;
+    }
+    if(!scopeCommand(QString(":CHANNEL%1:SCALE %2").arg(config.fidChannel).arg(QString::number(config.vScale,'e',3))))
+    {
+        exp.setHardwareFailed();
+        return exp;
+    }
+
+    //trigger settings
+    QString slope = QString("POS");
+    if(config.slope == BlackChirp::FallingEdge)
+        slope = QString("NEG");
+    QString trigCh = QString("AUX");
+    if(config.trigChannel > 0)
+        trigCh = QString("CHAN%1").arg(config.trigChannel);
+
+    if(!scopeCommand(QString(":TRIGGER:SWEEP TRIGGERED")))
+    {
+        exp.setHardwareFailed();
+        return exp;
+    }
+    if(!scopeCommand(QString(":TRIGGER:LEVEL %1,%2").arg(trigCh).arg(config.trigLevel,0,'f',3)))
+    {
+        exp.setHardwareFailed();
+        return exp;
+    }
+    if(!scopeCommand(QString(":TRIGGER:MODE EDGE")))
+    {
+        exp.setHardwareFailed();
+        return exp;
+    }
+    if(!scopeCommand(QString(":TRIGGER:EDGE:SOURCE %1").arg(trigCh)))
+    {
+        exp.setHardwareFailed();
+        return exp;
+    }
+    if(!scopeCommand(QString(":TRIGGER:EDGE:SLOPE %1").arg(slope)))
+    {
+        exp.setHardwareFailed();
+        return exp;
+    }
+
+
+    //set trigger position to left of screen
+    if(!scopeCommand(QString(":TIMEBASE:REFERENCE LEFT")))
+    {
+        exp.setHardwareFailed();
+        return exp;
+    }
+
+
+
+    //Data transfer stuff. LSBFirst is faster, and we'll use 2 bytes because averaging
+    //will probably be done
     //write data transfer commands
-    if(!p_comm->writeCmd(QString(":WAVEFORM:SOURCE CHAN%\n").arg(config.fidChannel)))
+    if(!scopeCommand(QString(":WAVEFORM:SOURCE CHAN%1").arg(config.fidChannel)))
     {
-        emit logMessage(QString("Could not set waveform source. Write failed."),BlackChirp::LogError);
+        exp.setHardwareFailed();
+        return exp;
+    }
+    if(!scopeCommand(QString(":WAVEFORM:BYTEORDER LSBFIRST")))
+    {
+        exp.setHardwareFailed();
+        return exp;
+    }
+    if(!scopeCommand(QString(":WAVEFORM:FORMAT WORD")))
+    {
+        exp.setHardwareFailed();
+        return exp;
+    }
+    if(!scopeCommand(QString(":WAVEFORM:STREAMING ON")))
+    {
+        exp.setHardwareFailed();
+        return exp;
+    }
+    config.byteOrder = QDataStream::BigEndian;
+    config.bytesPerPoint = 2;
+
+
+    //calculate y multipliers and x spacing, since this scope will not
+    //update those until after waveforms have been acquired
+    config.yMult = config.vScale*10.0/32768.0;
+    config.xIncr = 1.0/config.sampleRate;
+    config.yOff = 0;
+
+    //now the fast frame/segmented stuff
+    if(config.fastFrameEnabled)
+    {
+        if(!scopeCommand(QString(":ACQUIRE:MODE SEGMENTED")))
+        {
+            exp.setHardwareFailed();
+            return exp;
+        }
+        if(!scopeCommand(QString(":ACQUIRE:SEGMENTED:COUNT %1").arg(config.numFrames)))
+        {
+            exp.setHardwareFailed();
+            return exp;
+        }
+        if(!scopeCommand(QString(":WAVEFORM:SEGMENTED:ALL ON")))
+        {
+            exp.setHardwareFailed();
+            return exp;
+        }
+    }
+    else
+    {
+
+        config.numFrames = 1;
+
+        if(!scopeCommand(QString(":ACQUIRE:MODE RTIME")))
+        {
+            exp.setHardwareFailed();
+            return exp;
+        }
+    }
+
+    //block averaging...
+    if(config.blockAverageEnabled)
+    {
+        if(!scopeCommand(QString(":ACQUIRE:AVERAGE ON")))
+        {
+            exp.setHardwareFailed();
+            return exp;
+        }
+        if(!scopeCommand(QString(":ACQUIRE:COUNT %1").arg(config.numAverages)))
+        {
+            exp.setHardwareFailed();
+            return exp;
+        }
+        config.blockAverageMultiply = true;
+    }
+    else
+        config.numAverages = 1;
+
+    //sample rate and point settings
+    if(!scopeCommand(QString(":ACQUIRE:SRATE:ANALOG:AUTO OFF")))
+    {
+        exp.setHardwareFailed();
+        return exp;
+    }
+    if(!scopeCommand(QString(":ACQUIRE:SRATE:ANALOG %1").arg(QString::number(config.sampleRate,'g',2))))
+    {
+        exp.setHardwareFailed();
+        return exp;
+    }
+    if(!scopeCommand(QString(":ACQUIRE:POINTS:AUTO OFF")))
+    {
+        exp.setHardwareFailed();
+        return exp;
+    }
+    if(!scopeCommand(QString(":ACQUIRE:POINTS:ANALOG %1").arg(config.recordLength)))
+    {
         exp.setHardwareFailed();
         return exp;
     }
 
-    //clear out socket before senting our first query
-    if(p_socket->bytesAvailable())
-        p_socket->readAll();
+
+    p_comm->queryCmd(QString("*TRG;*OPC?\n"));
+
+    p_comm->device()->readAll();
+
+    bool done = false;
+    while(!done)
+    {
+        QByteArray resp = p_comm->queryCmd(QString(":SYSTEM:ERROR? STRING\n"));
+        if(resp.startsWith('0') || resp.isEmpty())
+            break;
+
+        emit logMessage(QString(resp));
+
+    }
 
     //verify that FID channel was set correctly
     QByteArray resp = p_comm->queryCmd(QString(":WAVEFORM:SOURCE?\n"));
     if(resp.isEmpty() || !resp.contains(QString("CHAN%1").arg(config.fidChannel).toLatin1()))
     {
         emit logMessage(QString("Failed to set FID channel. Response to waveform source query: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
-        exp.setHardwareFailed();
-        return exp;
-    }
-
-    if(!p_comm->writeCmd(QString(":CHAN%1:BWLIMIT OFF; INPUT DC50;OFFSET 0;SCALE %2\n")
-                         .arg(config.fidChannel).arg(QString::number(config.vScale,'e',3))))
-    {
-        emit logMessage(QString("Failed to write channel settings."),BlackChirp::LogError);
         exp.setHardwareFailed();
         return exp;
     }
@@ -171,15 +340,6 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
     else
     {
         emit logMessage(QString("Gave an empty response to scale query."),BlackChirp::LogError);
-        exp.setHardwareFailed();
-        return exp;
-    }
-
-    //sample rate and point settings
-    if(!p_comm->writeCmd(QString(":ACQUIRE:SRATE %1;POINTS %2\n")
-                         .arg(QString::number(config.sampleRate,'g',6)).arg(config.recordLength)))
-    {
-        emit logMessage(QString("Could not apply sample rate/point settings."),BlackChirp::LogError);
         exp.setHardwareFailed();
         return exp;
     }
@@ -237,92 +397,21 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
         return exp;
     }
 
-    //trigger settings
-    QString slope = QString("POS");
-    if(config.slope == BlackChirp::FallingEdge)
-        slope = QString("NEG");
-    QString trigCh = QString("AUX");
-    if(config.trigChannel > 0)
-        trigCh = QString("CHAN%1").arg(config.trigChannel);
-
-    resp = p_comm->queryCmd(QString(":TRIGGER:MODE EDGE;:TRIGGER:EDGE:SOURCE %1;COUPLING DC;SLOPE %2;:TRIGGER:LEVEL %3;:TRIGGER:EDGE:SOURCE?;:TRIGGER:SLOPE?\n").arg(trigCh).arg(slope).arg(config.trigLevel,0,'f',3));
-    if(!resp.isEmpty())
+    resp = p_comm->queryCmd(QString(":TRIGGER:EDGE:SOURCE?\n"));
+    if(resp.isEmpty() || !QString(resp).contains(trigCh),Qt::CaseInsensitive)
     {
-        if(!QString(resp).contains(trigCh),Qt::CaseInsensitive)
-        {
-            emit logMessage(QString("Could not verify trigger channel. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
-            return exp;
-        }
-
-        if(!QString(resp).contains(slope,Qt::CaseInsensitive))
-        {
-            emit logMessage(QString("Could not verify trigger slope. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
-            return exp;
-        }
-    }
-    else
-    {
-        emit logMessage(QString("Gave an empty response to trigger query."),BlackChirp::LogError);
+        emit logMessage(QString("Could not verify trigger channel. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
         exp.setHardwareFailed();
         return exp;
     }
 
-    //Data transfer stuff. LSBFirst is faster, and we'll use 2 bytes because averaging
-    //will probably be done
-    p_comm->writeCmd(QString(":WAVEFORM:BYTEORDER LSBFIRST;FORMAT WORD;STREAMING ON\n"));
-    config.byteOrder = QDataStream::BigEndian;
-    config.bytesPerPoint = 2;
 
-
-    //calculate y multipliers and x spacing, since this scope will not
-    //update those until after waveforms have been acquired
-    config.yMult = config.vScale*10.0/32768.0;
-    config.xIncr = 1,0/config.sampleRate;
-    config.yOff = 0;
-
-    //now the fast frame/segmented stuff
-    if(config.fastFrameEnabled)
+    resp = p_comm->queryCmd(QString(":TRIGGER:EDGE:SLOPE?\n"));
+    if(resp.isEmpty() || !QString(resp).contains(slope))
     {
-        resp = p_comm->queryCmd(QString(":ACQUIRE:MODE SEGMENTED;ACQUIRE:SEGMENTED:COUNT %1;COUNT?\n").arg(config.numFrames));
-        if(resp.isEmpty())
-        {
-            emit logMessage(QString("Gave an empty response to segmented frame count query."),BlackChirp::LogError);
-            exp.setHardwareFailed();
-            return exp;
-        }
-        int nf = resp.trimmed().toInt();
-        if(nf != config.numFrames)
-        {
-            emit logMessage(QString("Could not set number of segmented frames to desired value. Requested: %1, Actual: %2").arg(config.numFrames).arg(nf),BlackChirp::LogError);
-            exp.setHardwareFailed();
-            return exp;
-        }
-    }
-    else
-    {
-        p_comm->writeCmd(QString(":ACQUIRE:MODE RTIME\n"));
-        config.numFrames = 1;
-    }
-
-    //block averaging...
-    if(config.blockAverageEnabled)
-    {
-        resp = p_comm->queryCmd(QString(":ACQUIRE:AVERAGE ON;COUNT %1;COUNT?\n").arg(config.numAverages));
-        if(resp.isEmpty())
-        {
-            emit logMessage(QString("Gave an empty response to average count query."),BlackChirp::LogError);
-            exp.setHardwareFailed();
-            return exp;
-        }
-        int na = resp.trimmed().toInt();
-        if(na != config.numAverages)
-        {
-            emit logMessage(QString("Could not set number of averages to desired value. Requested: %1, Actual: %2").arg(config.numFrames).arg(nf),BlackChirp::LogError);
-            exp.setHardwareFailed();
-            return exp;
-        }
+        emit logMessage(QString("Could not verify trigger slope. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
+        exp.setHardwareFailed();
+        return exp;
     }
 
     d_configuration = config;
@@ -338,8 +427,9 @@ void DSOx92004A::beginAcquisition()
 {
     if(d_enabledForExperiment)
     {
-        p_comm->writeCmd(QString(":DIGITIZE\n"));
-        p_queryTimer->start(100);
+        connect(p_socket,&QTcpSocket::readyRead,this,&DSOx92004A::readWaveform);
+        p_comm->writeCmd(QString(":SYSTEM:GUI OFF;:DIGITIZE;*OPC?\n"));
+//        p_queryTimer->start(100);
     }
 }
 
@@ -347,9 +437,11 @@ void DSOx92004A::endAcquisition()
 {
     if(d_enabledForExperiment)
     {
+        disconnect(p_socket,&QTcpSocket::readyRead,this,&DSOx92004A::readWaveform);
         disconnect(p_socket, &QTcpSocket::readyRead, this, &DSOx92004A::retrieveData);
-        p_queryTimer->stop();
+//        p_queryTimer->stop();
         p_comm->writeCmd(QString("*CLS\n"));
+        p_comm->writeCmd(QString(":SYSTEM:GUI ON\n"));
     }
 }
 
@@ -359,14 +451,16 @@ void DSOx92004A::readTimeData()
 
 void DSOx92004A::readWaveform()
 {
-    QByteArray resp = p_comm->queryCmd(QString("*OPC?\n"));
+    disconnect(p_socket,&QTcpSocket::readyRead,this,&DSOx92004A::readWaveform);
+    QByteArray resp = p_socket->readAll();
+
     if(resp.contains('1'))
     {
         //begin next transfer -- TEST
-//        p_comm->writeCmd(QString(":DIGITIZE\n"));
+        p_comm->writeCmd(QString(":DIGITIZE\n"));
 
         //grab waveform data directly from socket;
-        p_queryTimer->stop();
+//        p_queryTimer->stop();
         p_comm->writeCmd(QString(":WAVEFORM:DATA?\n"));
 
         connect(p_socket, &QTcpSocket::readyRead, this, &DSOx92004A::retrieveData);
@@ -397,7 +491,35 @@ void DSOx92004A::retrieveData()
 
     QByteArray out = p_socket->read(bytes);
     emit shotAcquired(out);
-    p_comm->writeCmd(QString(":DIGITIZE\n"));
-    p_queryTimer->start(100);
 
+    p_socket->readAll();
+
+    connect(p_socket,&QTcpSocket::readyRead,this,&DSOx92004A::readWaveform);
+//    p_comm->writeCmd(QString(":DIGITIZE;*OPC?\n"));
+    p_comm->writeCmd(QString("*OPC?\n"));
+//    p_queryTimer->start(100);
+
+}
+
+bool DSOx92004A::scopeCommand(QString cmd)
+{
+    QString orig = cmd;
+    if(cmd.endsWith(QString("\n")))
+        cmd.chop(1);
+
+    cmd.append(QString(";:SYSTEM:ERROR?\n"));
+    QByteArray resp = p_comm->queryCmd(cmd,true);
+    if(resp.isEmpty())
+    {
+        emit logMessage(QString("Timed out on query %1").arg(orig),BlackChirp::LogError);
+        return false;
+    }
+
+    int val = resp.trimmed().toInt();
+    if(val != 0)
+    {
+        emit logMessage(QString("Received error %1 on query %2").arg(val).arg(orig),BlackChirp::LogError);
+        return false;
+    }
+    return true;
 }

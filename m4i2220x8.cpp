@@ -24,10 +24,10 @@ M4i2220x8::M4i2220x8(QObject *parent) : FtmwScope(parent), p_handle(nullptr)
     double bandwidth = s.value(QString("bandwidth"),1250.0).toDouble();
     s.setValue(QString("bandwidth"),bandwidth);
 
-    if(s.beginReadArray(QString("sampleRates")) > 0)
-        s.endArray();
-    else
+    if(s.beginReadArray(QString("sampleRates")) < 1)
     {
+        s.endArray();
+
         QList<QPair<QString,double>> sampleRates;
         for(int i=0; i<6; i++)
         {

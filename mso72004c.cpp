@@ -23,10 +23,9 @@ MSO72004C::MSO72004C(QObject *parent) :
     double bandwidth = s.value(QString("bandwidth"),16000.0).toDouble();
     s.setValue(QString("bandwidth"),bandwidth);
 
-    if(s.beginReadArray(QString("sampleRates")) > 0)
-        s.endArray();
-    else
+    if(s.beginReadArray(QString("sampleRates")) < 1)
     {
+        s.endArray();
         QList<QPair<QString,double>> sampleRates;
         sampleRates << qMakePair(QString("2 GSa/s"),2e9) << qMakePair(QString("5 GSa/s"),5e9)  << qMakePair(QString("10 GSa/s"),10e9)
                     << qMakePair(QString("20 GSa/s"),20e9) << qMakePair(QString("50 GSa/s"),50e9)  << qMakePair(QString("100 GSa/s"),100e9);

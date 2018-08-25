@@ -25,7 +25,7 @@ public:
 
     virtual bool writeCmd(QString cmd);
     virtual bool writeBinary(QByteArray dat);
-    virtual QByteArray queryCmd(QString cmd);
+    virtual QByteArray queryCmd(QString cmd, bool suppressError = false);
 
     QString key() { return d_key; }
     CommType type() { return d_type; }
