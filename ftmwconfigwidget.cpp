@@ -173,8 +173,11 @@ FtmwConfig FtmwConfigWidget::getConfig() const
     sc.recordLength = ui->recordLengthSpinBox->value();
     sc.bytesPerPoint = ui->bytesPointSpinBox->value();
     sc.fastFrameEnabled = ui->fastFrameEnabledCheckBox->isChecked();
-    if(sc.fastFrameEnabled && !canSf)
-        sc.manualFrameAverage = true;
+    if(ui->summaryFrameCheckBox->isChecked())
+    {
+        sc.summaryFrame = canSf;
+        sc.manualFrameAverage = !canSf;
+    }
     sc.numFrames = ui->framesSpinBox->value();
     sc.summaryFrame = ui->summaryFrameCheckBox->isChecked();
     sc.blockAverageEnabled = ui->blockAverageCheckBox->isChecked();
@@ -199,7 +202,10 @@ void FtmwConfigWidget::lockFastFrame(const int nf)
         ui->summaryFrameCheckBox->setEnabled(false);
     }
     else
+    {
         ui->fastFrameEnabledCheckBox->setChecked(true);
+        ui->summaryFrameCheckBox->setEnabled(true);
+    }
 
     ui->fastFrameEnabledCheckBox->setEnabled(false);
     ui->fastFrameEnabledCheckBox->blockSignals(false);

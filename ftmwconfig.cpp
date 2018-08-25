@@ -366,7 +366,7 @@ void FtmwConfig::setTargetShots(const qint64 target)
 void FtmwConfig::increment()
 {
     int increment = scopeConfig().numAverages;
-    if(scopeConfig().fastFrameEnabled && (scopeConfig().manualFrameAverage || scopeConfig().fastFrameEnabled))
+    if(scopeConfig().fastFrameEnabled && (scopeConfig().manualFrameAverage || scopeConfig().summaryFrame))
         increment *= scopeConfig().numFrames;
 
     if(type() == BlackChirp::FtmwPeakUp)
