@@ -49,6 +49,10 @@ typedef AWG7122B AwgHardware;
 #include "ad9914.h"
 class AD9914;
 typedef AD9914 AwgHardware;
+#elif BC_AWG==4
+#include "m8195a.h"
+class M8195A;
+typedef M8195A AwgHardware;
 #else
 #include "virtualawg.h"
 class VirtualAwg;

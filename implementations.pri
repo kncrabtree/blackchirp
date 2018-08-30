@@ -28,7 +28,8 @@ HEADERS += \
     $$PWD/virtualpressurecontroller.h \
     $$PWD/intellisysiqplus.h \
     $$PWD/m4i2220x8.h \
-    $$PWD/dsox92004a.h
+	$$PWD/dsox92004a.h \
+	$$PWD/m8195a.h
 
 SOURCES += \
     $$PWD/virtualftmwscope.cpp \
@@ -58,7 +59,8 @@ SOURCES += \
     $$PWD/virtualpressurecontroller.cpp  \
     $$PWD/intellisysiqplus.cpp \
     $$PWD/m4i2220x8.cpp \
-    $$PWD/dsox92004a.cpp
+	$$PWD/dsox92004a.cpp \
+	$$PWD/m8195a.cpp
 
 } else {
 
@@ -99,6 +101,11 @@ equals(AWG,1) {
 equals(AWG,2) {
 	HEADERS += $$PWD/awg7122b.h
 	SOURCES += $$PWD/awg7122b.cpp
+}
+
+equals(AWG,4) {
+	HEADERS += $$PWD/m8195a.h
+	SOURCES += $$PWD/m8195a.cpp
 }
 
 
@@ -201,7 +208,7 @@ motor {
 }
 
 HEADERS += \
-    $$PWD/ad9914.h
+	$$PWD/ad9914.h
 
 SOURCES += \
-    $$PWD/ad9914.cpp
+	$$PWD/ad9914.cpp
