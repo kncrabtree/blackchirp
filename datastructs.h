@@ -118,7 +118,9 @@ struct FtmwScopeConfig {
     bool fastFrameEnabled;
     int numFrames;
     bool summaryFrame;
+    bool manualFrameAverage;
     bool blockAverageEnabled;
+    bool blockAverageMultiply;//if device internally averages instead of sums, multiply to get approx raw ADC sum
     int numAverages;
     int trigChannel;
     double trigDelay; //in seconds
@@ -135,12 +137,12 @@ struct FtmwScopeConfig {
 
 
     FtmwScopeConfig() : fidChannel(0), vScale(0.0), sampleRate(0.0), recordLength(0), fastFrameEnabled(false), numFrames(0),
-        summaryFrame(false), blockAverageEnabled(false), numAverages(1), trigChannel(0), trigDelay(0), trigLevel(0.0),
+        summaryFrame(false), manualFrameAverage(false), blockAverageEnabled(false), blockAverageMultiply(false), numAverages(1), trigChannel(0), trigDelay(0), trigLevel(0.0),
         slope(RisingEdge), bytesPerPoint(1), byteOrder(QDataStream::LittleEndian),
         vOffset(0.0), yMult(0.0), yOff(0), xIncr(0.0) {}
     FtmwScopeConfig(const FtmwScopeConfig &other) : fidChannel(other.fidChannel), vScale(other.vScale), sampleRate(other.sampleRate),
         recordLength(other.recordLength), fastFrameEnabled(other.fastFrameEnabled), numFrames(other.numFrames),
-        summaryFrame(other.summaryFrame),blockAverageEnabled(other.blockAverageEnabled), numAverages(other.numAverages), trigChannel(other.trigChannel),
+        summaryFrame(other.summaryFrame),manualFrameAverage(other.manualFrameAverage), blockAverageEnabled(other.blockAverageEnabled), blockAverageMultiply(other.blockAverageMultiply), numAverages(other.numAverages), trigChannel(other.trigChannel),
         trigDelay(other.trigDelay), trigLevel(other.trigLevel), slope(other.slope), bytesPerPoint(other.bytesPerPoint), byteOrder(other.byteOrder),
         vOffset(other.vOffset), yMult(other.yMult), yOff(other.yOff), xIncr(other.xIncr) {}
 

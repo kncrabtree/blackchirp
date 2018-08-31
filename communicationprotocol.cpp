@@ -58,7 +58,7 @@ bool CommunicationProtocol::writeBinary(QByteArray dat)
     return true;
 }
 
-QByteArray CommunicationProtocol::queryCmd(QString cmd)
+QByteArray CommunicationProtocol::queryCmd(QString cmd, bool suppressError)
 {
     if(p_device == nullptr)
         return QByteArray();
@@ -119,9 +119,12 @@ QByteArray CommunicationProtocol::queryCmd(QString cmd)
             }
         }
 
-        emit hardwareFailure();
-        emit logMessage(QString("Timed out while waiting for termination character. (query = %1, partial response = %2)").arg(cmd).arg(QString(out)),BlackChirp::LogError);
-        emit logMessage(QString("Hex response: %1").arg(QString(out.toHex())));
+        if(!suppressError)
+        {
+            emit hardwareFailure();
+            emit logMessage(QString("Timed out while waiting for termination character. (query = %1, partial response = %2)").arg(cmd).arg(QString(out)),BlackChirp::LogError);
+            emit logMessage(QString("Hex response: %1").arg(QString(out.toHex())));
+        }
         return out;
     }
 }

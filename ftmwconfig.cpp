@@ -97,7 +97,7 @@ Fid FtmwConfig::fidTemplate() const
 
 int FtmwConfig::numFrames() const
 {
-    return scopeConfig().summaryFrame ? 1 : scopeConfig().numFrames;
+    return (scopeConfig().summaryFrame && !scopeConfig().manualFrameAverage) ? 1 : scopeConfig().numFrames;
 }
 
 QList<Fid> FtmwConfig::parseWaveform(const QByteArray b) const
@@ -180,13 +180,25 @@ QList<Fid> FtmwConfig::parseWaveform(const QByteArray b) const
             if(type() == BlackChirp::FtmwPeakUp)
                 dat = dat << 8;
 
+            if(scopeConfig().blockAverageMultiply)
+                dat *= scopeConfig().numAverages;
+
             d[i] = dat;
         }
 
         Fid f = fidTemplate();
         f.setData(d);
         f.setShots(scopeConfig().numAverages);
-        out.append(f);
+
+        if(scopeConfig().fastFrameEnabled && scopeConfig().manualFrameAverage)
+        {
+            if(out.isEmpty())
+                out.append(f);
+            else
+                out[0]+=f;
+        }
+        else
+            out.append(f);
     }
 
     return out;
@@ -353,10 +365,14 @@ void FtmwConfig::setTargetShots(const qint64 target)
 
 void FtmwConfig::increment()
 {
+    int increment = scopeConfig().numAverages;
+    if(scopeConfig().fastFrameEnabled && (scopeConfig().manualFrameAverage || scopeConfig().summaryFrame))
+        increment *= scopeConfig().numFrames;
+
     if(type() == BlackChirp::FtmwPeakUp)
-        data->completedShots = qMin(completedShots()+scopeConfig().numAverages,targetShots());
+        data->completedShots = qMin(completedShots()+increment,targetShots());
     else
-        data->completedShots+=scopeConfig().numAverages;
+        data->completedShots+=increment;
 }
 
 void FtmwConfig::setTargetTime(const QDateTime time)

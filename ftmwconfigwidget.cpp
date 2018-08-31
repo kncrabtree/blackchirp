@@ -73,6 +73,7 @@ FtmwConfigWidget::FtmwConfigWidget(QWidget *parent) :
 
     connect(ui->modeComboBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),this,&FtmwConfigWidget::configureUI);
     connect(ui->fastFrameEnabledCheckBox,&QCheckBox::toggled,this,&FtmwConfigWidget::configureUI);
+    connect(ui->blockAverageCheckBox,&QCheckBox::toggled,this,&FtmwConfigWidget::configureUI);
     connect(ui->chirpScoringCheckBox,&QCheckBox::toggled,ui->chirpThresholdDoubleSpinBox,&QDoubleSpinBox::setEnabled);
 
     connect(ui->fIDChannelSpinBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwConfigWidget::validateSpinboxes);
@@ -140,6 +141,14 @@ FtmwConfig FtmwConfigWidget::getConfig() const
 {
     FtmwConfig out;
 
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+
+    s.beginGroup(QString("ftmwscope"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    bool canSf = s.value(QString("canSummaryFrame"),false).toBool();
+    s.endGroup();
+    s.endGroup();
+
     out.setType(ui->modeComboBox->currentData().value<BlackChirp::FtmwType>());
     out.setTargetShots(ui->targetShotsSpinBox->value());
     if(ui->targetTimeDateTimeEdit->dateTime() > QDateTime::currentDateTime().addSecs(60))
@@ -164,6 +173,11 @@ FtmwConfig FtmwConfigWidget::getConfig() const
     sc.recordLength = ui->recordLengthSpinBox->value();
     sc.bytesPerPoint = ui->bytesPointSpinBox->value();
     sc.fastFrameEnabled = ui->fastFrameEnabledCheckBox->isChecked();
+    if(ui->summaryFrameCheckBox->isChecked())
+    {
+        sc.summaryFrame = canSf;
+        sc.manualFrameAverage = !canSf;
+    }
     sc.numFrames = ui->framesSpinBox->value();
     sc.summaryFrame = ui->summaryFrameCheckBox->isChecked();
     sc.blockAverageEnabled = ui->blockAverageCheckBox->isChecked();
@@ -178,12 +192,6 @@ void FtmwConfigWidget::lockFastFrame(const int nf)
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
-    s.beginGroup(QString("ftmwscope"));
-    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-    bool sf = s.value(QString("canSummaryFrame"),false).toBool();
-    s.endGroup();
-    s.endGroup();
-
     ui->fastFrameEnabledCheckBox->blockSignals(true);
     ui->framesSpinBox->setValue(nf);
     ui->framesSpinBox->setEnabled(false);
@@ -196,8 +204,9 @@ void FtmwConfigWidget::lockFastFrame(const int nf)
     else
     {
         ui->fastFrameEnabledCheckBox->setChecked(true);
-        ui->summaryFrameCheckBox->setEnabled(sf);
+        ui->summaryFrameCheckBox->setEnabled(true);
     }
+
     ui->fastFrameEnabledCheckBox->setEnabled(false);
     ui->fastFrameEnabledCheckBox->blockSignals(false);
 
