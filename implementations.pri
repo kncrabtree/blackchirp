@@ -29,7 +29,8 @@ HEADERS += \
     $$PWD/intellisysiqplus.h \
     $$PWD/m4i2220x8.h \
 	$$PWD/dsox92004a.h \
-	$$PWD/m8195a.h
+	$$PWD/m8195a.h \
+	$$PWD/ad9914.h
 
 SOURCES += \
     $$PWD/virtualftmwscope.cpp \
@@ -60,7 +61,8 @@ SOURCES += \
     $$PWD/intellisysiqplus.cpp \
     $$PWD/m4i2220x8.cpp \
 	$$PWD/dsox92004a.cpp \
-	$$PWD/m8195a.cpp
+	$$PWD/m8195a.cpp \
+	$$PWD/ad9914.cpp
 
 } else {
 
@@ -102,7 +104,10 @@ equals(AWG,2) {
 	HEADERS += $$PWD/awg7122b.h
 	SOURCES += $$PWD/awg7122b.cpp
 }
-
+equals(AWG,3) {
+	HEADERS += $$PWD/ad9914.h
+	SOURCES += $$PWD/ad9914.cpp
+}
 equals(AWG,4) {
 	HEADERS += $$PWD/m8195a.h
 	SOURCES += $$PWD/m8195a.cpp
@@ -206,9 +211,3 @@ motor {
 }
 
 }
-
-HEADERS += \
-	$$PWD/ad9914.h
-
-SOURCES += \
-	$$PWD/ad9914.cpp
