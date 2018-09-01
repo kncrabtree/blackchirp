@@ -39,8 +39,10 @@ public:
 public slots:
     bool setRole(BlackChirp::ClockType t, int outputIndex = 0);
     void removeRole(BlackChirp::ClockType t);
+    void clearRoles();
     bool hasRole(BlackChirp::ClockType t);
 
+    void readAll();
     double readFrequency(BlackChirp::ClockType t);
     double setFrequency(BlackChirp::ClockType t, double freqMHz);
 

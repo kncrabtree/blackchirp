@@ -90,24 +90,8 @@ enum ClockType {
     ReferenceClock
 };
 
-QString clockPrettyName(ClockType t)
-{
-    switch (t) {
-    case UpConversionLO:
-        return QString("Upconversion LO");
-    case DownConversionLO:
-        return QString("Downconversion LO");
-    case AwgClock:
-        return QString("AWG Clock");
-    case DigitizerClock:
-        return QString("Digitizer Clock");
-    case ReferenceClock:
-        return QString("Reference Clock");
-    default:
-        return QString("Unknown Type");
-    }
+QString clockPrettyName(ClockType t);
 
-}
 
 struct FtmwScopeConfig {
     //user-chosen settings

@@ -24,7 +24,7 @@ protected:
     double readHwFrequency(int outputIndex);
 
 private:
-    double d_currentFrequency;
+    QList<double> d_currentFrequencyList;
 };
 
 #endif // FIXEDCLOCK_H

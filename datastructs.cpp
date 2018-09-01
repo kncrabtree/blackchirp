@@ -151,3 +151,23 @@ void BlackChirp::setExportDir(const QString fileName)
     QString newPath = QFileInfo(fileName).dir().absolutePath();
     s.setValue(QString("exportPath"),newPath);
 }
+
+
+QString BlackChirp::clockPrettyName(BlackChirp::ClockType t)
+{
+    switch (t) {
+    case UpConversionLO:
+        return QString("Upconversion LO");
+    case DownConversionLO:
+        return QString("Downconversion LO");
+    case AwgClock:
+        return QString("AWG Clock");
+    case DigitizerClock:
+        return QString("Digitizer Clock");
+    case ReferenceClock:
+        return QString("Reference Clock");
+    default:
+        return QString("Unknown Type");
+    }
+
+}

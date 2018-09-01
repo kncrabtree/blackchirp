@@ -7,6 +7,7 @@
 
 ClockManager::ClockManager(QObject *parent) : QObject(parent)
 {
+    d_clockTypes << BlackChirp::UpConversionLO << BlackChirp::DownConversionLO << BlackChirp::AwgClock << BlackChirp::DigitizerClock << BlackChirp::ReferenceClock;
 
 #ifdef BC_CLOCK_0
     d_clockList << new Clock0Hardware(0,this);
@@ -30,45 +31,70 @@ ClockManager::ClockManager(QObject *parent) : QObject(parent)
 
     readClockRoles();
 
+    for(int i=0; i<d_clockList.size(); i++)
+    {
+        auto c = d_clockList.at(i);
+        connect(c,&Clock::frequencyUpdate,this,&ClockManager::clockFrequencyUpdate);
+    }
+
+
 }
 
 double ClockManager::setClockFrequency(BlackChirp::ClockType t, double freqMHz)
 {
-    if(!d_usedClockTypes.contains(t))
+    if(!d_clockRoles.contains(d_clockTypes.indexOf(t)))
     {
         emit logMessage(QString("No clock configured for use as %1").arg(BlackChirp::clockPrettyName(t)),BlackChirp::LogWarning);
         return -1.0;
     }
+
+    return d_clockRoles.value(d_clockTypes.indexOf(t))->setFrequency(t,freqMHz);
 }
 
 double ClockManager::readClockFrequency(BlackChirp::ClockType t)
 {
+    if(!d_clockRoles.contains(d_clockTypes.indexOf(t)))
+    {
+        emit logMessage(QString("No clock configured for use as %1").arg(BlackChirp::clockPrettyName(t)),BlackChirp::LogWarning);
+        return -1.0;
+    }
 
+    return d_clockRoles.value(d_clockTypes.indexOf(t))->readFrequency(t);
 }
 
 void ClockManager::readClockRoles()
 {
-    d_usedClockTypes.clear();
+    d_clockRoles.clear();
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("clocks"));
+    s.beginGroup(QString("clockManager"));
+    int band = s.value(QString("currentBand"),0).toInt();
+    s.beginReadArray(QString("bands"));
+    s.setArrayIndex(band);
+    s.beginReadArray(QString("clocks"));
     for(int index=0; index<d_clockList.size(); index++)
     {
         s.setArrayIndex(index);
 
+        auto c = d_clockList.at(index);
+        c->clearRoles();
         int outputs = c->numOutputs();
-        s.setValue(QString("subKey"),c->subKey());
-        int no = s.beginReadArray(QString("outputs"));
-        for(int i=0; i<outputs && i < no; i++)
+        s.beginReadArray(QString("outputs"));
+        for(int i=0; i<outputs; i++)
         {
             s.setArrayIndex(i);
             auto role = static_cast<BlackChirp::ClockType>(s.value(QString("type"),QVariant(BlackChirp::UpConversionLO)).toInt());
-            if(!d_usedClockTypes.contains(role))
+            if(!d_clockRoles.contains(d_clockTypes.indexOf(role)))
+            {
+                d_clockRoles.insert(d_clockTypes.indexOf(role),c);
                 c->setRole(role,i);
+            }
         }
         s.endArray();
         s.endArray();
     }
+    s.endGroup();
+    s.endArray();
     s.endGroup();
 
 }

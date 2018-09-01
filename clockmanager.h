@@ -40,7 +40,8 @@ public slots:
 
 private:
     QList<Clock*> d_clockList;
-    QList<BlackChirp::ClockType> d_usedClockTypes;
+    QList<BlackChirp::ClockType> d_clockTypes;
+    QMap<int,Clock*> d_clockRoles;
 
 };
 

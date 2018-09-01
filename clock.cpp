@@ -26,9 +26,26 @@ void Clock::removeRole(BlackChirp::ClockType t)
     d_outputRoles.remove(d_outputRoles.key(t));
 }
 
+void Clock::clearRoles()
+{
+    d_outputRoles.clear();
+}
+
 bool Clock::hasRole(BlackChirp::ClockType t)
 {
     return d_outputRoles.values().contains(t);
+}
+
+void Clock::readAll()
+{
+    for(int i=0; i<numOutputs(); i++)
+    {
+        double f = readHwFrequency(i);
+        if(f < 0.0)
+            break;
+        if(d_outputRoles.contains(i))
+            emit frequencyUpdate(d_outputRoles.value(i),f);
+    }
 }
 
 double Clock::readFrequency(BlackChirp::ClockType t)
