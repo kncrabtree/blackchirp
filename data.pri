@@ -10,7 +10,8 @@ SOURCES += loghandler.cpp \
     $$PWD/analysis.cpp \
     $$PWD/ioboardconfig.cpp \
     $$PWD/snapworker.cpp \
-    $$PWD/peakfinder.cpp
+    $$PWD/peakfinder.cpp \
+    $$PWD/rfconfig.cpp
 
 HEADERS += loghandler.h \
     $$PWD/fid.h \
@@ -25,7 +26,8 @@ HEADERS += loghandler.h \
     $$PWD/analysis.h \
     $$PWD/ioboardconfig.h \
     $$PWD/snapworker.h \
-    $$PWD/peakfinder.h
+    $$PWD/peakfinder.h \
+    $$PWD/rfconfig.h
 
 
 gpu-cuda {

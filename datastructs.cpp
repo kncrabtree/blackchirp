@@ -161,13 +161,32 @@ QString BlackChirp::clockPrettyName(BlackChirp::ClockType t)
     case DownConversionLO:
         return QString("Downconversion LO");
     case AwgClock:
-        return QString("AWG Clock");
+        return QString("AWG Reference Clock");
     case DigitizerClock:
-        return QString("Digitizer Clock");
+        return QString("Digitizer Reference Clock");
     case ReferenceClock:
-        return QString("Reference Clock");
+        return QString("Common Reference Clock");
     default:
         return QString("Unknown Type");
     }
 
+}
+
+
+QString BlackChirp::clockKey(BlackChirp::ClockType t)
+{
+    switch (t) {
+    case UpConversionLO:
+        return QString("UpLO");
+    case DownConversionLO:
+        return QString("DownLO");
+    case AwgClock:
+        return QString("AwgRef");
+    case DigitizerClock:
+        return QString("DigRef");
+    case ReferenceClock:
+        return QString("ComRef");
+    default:
+        return QString("Unknown");
+    }
 }

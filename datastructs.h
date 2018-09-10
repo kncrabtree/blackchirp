@@ -91,6 +91,7 @@ enum ClockType {
 };
 
 QString clockPrettyName(ClockType t);
+QString clockKey(ClockType t);
 
 
 struct FtmwScopeConfig {
