@@ -138,7 +138,7 @@ double IntellisysIQPlus::setPressureSetpoint(const double val)
     int f = resp.indexOf('+');
     int l = resp.size();
     double num_check = resp.mid(f+1,l-f-1).trimmed().toDouble();
-    if(qAbs(num_check - num)>=0.001)
+    if(qAbs(num_check - num)>=0.01)
     {
         emit connected(false,QString("Fail to set chamber pressure set point"));
         return false;

@@ -36,6 +36,16 @@
  * After determining if the connection is successful, the testConnection() function MUST emit the connectionResult() signal with the this pointer, a boolean indicating success, and an optional error message that can be displayed in the log along with the failure notification.
  * The testConnection() slot is also called from the communication dialog to re-test a connection that is lost.
  *
+ * For instruments that do not communicate by GPIB, RS232, or TCP (i.e., a CustomInstrument), a general interface is available to allow the user to specify any information needed to connect to the device (file handles, ID numbers, etc).
+ * In the constructor of the implementation, create a QSettings Array with the key: d_key\d_subKey\comm.
+ * Each entry may define the following parameters:
+ * name: A QString that will be displayed to the user to indicate what information is sought (e.g., Device name, ID number, etc)
+ * key: A QString that the implementation will use to retrieve the entered value
+ * type: "string" or "int" -- String will create a QLineEdit object for text entry, and "int" will create a QSpinBox for numeric entry
+ * length: (optional) sets a limit on the length of text entry for strings
+ * min: (optional) sets the lower limit on numeric entries (defaut: -2^31)
+ * max: (optional) sets the uppser limit on numeric entries (default: 2^31-1)
+ *
  * If at any point during operation, the program loses communication with the device, the hardwareFailure() signal should be emitted with the this pointer.
  * When emitted, any ongoing scan will be terminated and all controls will be frozen until communication is re-established by a successful call to the testConnection() function.
  * Some communication options (timeout, termination chartacters, etc) can be set, but it is up to the subclass to decide how or whether to make use of them.

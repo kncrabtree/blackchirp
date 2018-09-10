@@ -24,6 +24,19 @@ LabjackU3::LabjackU3(QObject *parent) :
     d_reservedAnalog = 0; //if you have specific channels implemented; this should be nonzero
     d_reservedDigital = 0; //if you have counters, timers, or other dedicated digital I/O lines, this should be nonzero
 
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
+    s.beginWriteArray(QString("comm"));
+    s.setArrayIndex(0);
+    s.setValue(QString("name"),QString("Serial No"));
+    s.setValue(QString("type"),QString("int"));
+    s.setValue(QString("key"),QString("serialNo"));
+    s.setValue(QString("min"),0);
+    s.endArray();
+    s.endGroup();
+    s.endGroup();
+
 }
 
 bool LabjackU3::configure()

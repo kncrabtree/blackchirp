@@ -32,10 +32,10 @@ hardware {
 # you can ignore their corresponding entries below
 # -----------------------------------------------
 
-# FTMW Oscilloscope (0 = virtual, 1 = DSA71604C, 2 = MSO72004C)
+# FTMW Oscilloscope (0 = virtual, 1 = DSA71604C, 2 = MSO72004C, 3 = M4i2220x8)
 FTMWSCOPE=2
 
-#AWG (0 = virtual, 1 = AWG70002A, 2 = AWG7122B)
+#AWG (0 = virtual, 1 = AWG70002A, 2 = AWG7122B, 3 = AD9914, 4=M8195A)
 AWG=2
 
 #Synth (0 = virtual, 1 = Valon 5009, 2 = PLDROs)
@@ -114,6 +114,10 @@ equals(IOBOARD,1)|allhardware {
 	LIBS += -llabjackusb
 }
 
+equals(FTMWSCOPE,3)|allhardware {
+     LIBS += -lspcm_linux
+}
+
 
 #------------------------------
 # CUDA compiler configuration
@@ -133,7 +137,7 @@ gpu-cuda {
 	LIBS += -L$$CUDA_DIR/lib64 -lcuda -lcudart
 	# GPU architecture
 	CUDA_ARCH     = sm_50
-	NVCCFLAGS     = --compiler-options -use_fast_math --ptxas-options=-v -Xcompiler -fPIE -Xcompiler -Wno-attributes
+        NVCCFLAGS     = --compiler-options -use_fast_math --ptxas-options=-v -Xcompiler -fPIC -Xcompiler -Wno-attributes
 
 	CONFIG(debug, debug|release) {
 		cuda_d.commands = $$CUDA_DIR/bin/nvcc -D_DEBUG -std=c++11 -m64 -O3 -arch=$$CUDA_ARCH -c $$NVCCFLAGS \

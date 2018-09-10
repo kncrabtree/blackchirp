@@ -12,7 +12,46 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->chirpTable->setModel(p_ctm);
-    ui->chirpTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);;
+    ui->chirpTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+
+    s.beginGroup(QString("ftmwscope"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    bool ff = s.value(QString("canFastFrame"),false).toBool();
+    s.endGroup();
+    s.endGroup();
+
+    if(!ff)
+    {
+        ui->chirpsSpinBox->setValue(1);
+        ui->chirpsSpinBox->setEnabled(false);
+    }
+
+    s.beginGroup(QString("awg"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    bool hasProtectionPulse = s.value(QString("hasProtectionPulse"),true).toBool();
+    bool hasAmpEnablePulse = s.value(QString("hasAmpEnablePulse"),true).toBool();
+    s.endGroup();
+    s.endGroup();
+
+    if(!hasProtectionPulse)
+    {
+        ui->preChirpProtectionSpinBox->setRange(0,0);
+        ui->preChirpProtectionSpinBox->setEnabled(false);
+        ui->postChirpProtectionSpinBox->setRange(0,0);
+        ui->postChirpProtectionSpinBox->setEnabled(false);
+    }
+    ui->chirpPlot->setProtectionEnabled(hasProtectionPulse);
+
+    if(!hasAmpEnablePulse)
+    {
+        ui->preChirpDelaySpinBox->setRange(0,0);
+        ui->preChirpDelaySpinBox->setEnabled(false);
+        ui->postChirpDelaySpinBox->setRange(0,0);
+        ui->postChirpDelaySpinBox->setEnabled(false);
+    }
+    ui->chirpPlot->setAmpEnablePulseEnabled(hasAmpEnablePulse);
 
     initializeFromSettings();
 
@@ -22,6 +61,8 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
 //    connect(ui->chirpTable->selectionModel(),&QItemSelectionModel::selectionChanged,this,&ChirpConfigWidget::checkChirp);
 
     setButtonStates();
+
+
 
     connect(ui->addButton,&QPushButton::clicked,this,&ChirpConfigWidget::addSegment);
     connect(ui->addEmptyButton,&QPushButton::clicked,this,&ChirpConfigWidget::addEmptySegment);
@@ -49,6 +90,8 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     connect(ui->applyToAllBox,&QCheckBox::toggled,p_ctm,&ChirpTableModel::setApplyToAll);
 
     ui->chirpTable->setItemDelegate(new ChirpDoubleSpinBoxDelegate);
+
+
 }
 
 ChirpConfigWidget::~ChirpConfigWidget()

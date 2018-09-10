@@ -361,7 +361,7 @@
      <x>0</x>
      <y>0</y>
      <width>1168</width>
-     <height>23</height>
+     <height>28</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuHardware">
@@ -372,7 +372,6 @@
     <addaction name="separator"/>
     <addaction name="actionCommunication"/>
     <addaction name="actionTest_All_Connections"/>
-    <addaction name="actionIO_Board"/>
     <addaction name="actionRf_Configuration"/>
    </widget>
    <widget class="QMenu" name="menuAcquisition">
@@ -536,18 +535,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+T</string>
-   </property>
-  </action>
-  <action name="actionIO_Board">
-   <property name="icon">
-    <iconset resource="resources.qrc">
-     <normaloff>:/icons/labjack.png</normaloff>:/icons/labjack.png</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;IO Board</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+I</string>
    </property>
   </action>
   <action name="actionSleep">

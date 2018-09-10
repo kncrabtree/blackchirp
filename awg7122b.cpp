@@ -1,5 +1,7 @@
 #include "awg7122b.h"
 
+#include <math.h>
+
 AWG7122B::AWG7122B(QObject *parent) :
     AWG(parent)
 {
@@ -15,11 +17,17 @@ AWG7122B::AWG7122B(QObject *parent) :
     double awgMaxSamples = s.value(QString("maxSamples"),2e9).toDouble();
     double awgMinFreq = s.value(QString("minFreq"),50.0).toDouble();
     double awgMaxFreq = s.value(QString("maxFreq"),12000.0).toDouble();
+    bool pp = s.value(QString("hasProtectionPulse"),true).toBool();
+    bool ep = s.value(QString("hasAmpEnablePulse"),true).toBool();
+    bool ro = s.value(QString("rampOnly"),false).toBool();
     d_triggered = s.value(QString("triggered"),false).toBool();
     s.setValue(QString("sampleRate"),awgRate);
     s.setValue(QString("maxSmaples"),awgMaxSamples);
     s.setValue(QString("minFreq"),awgMinFreq);
     s.setValue(QString("maxFreq"),awgMaxFreq);
+    s.setValue(QString("hasProtectionPulse"),pp);
+    s.setValue(QString("hasAmpEnablePulse"),ep);
+    s.setValue(QString("rampOnly"),ro);
     s.setValue(QString("triggered"),d_triggered);
     s.endGroup();
     s.endGroup();

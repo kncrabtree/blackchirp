@@ -193,6 +193,24 @@ void HardwareManager::initialize()
     s.endArray();
     s.endGroup();
 
+    //now an array for all custom instruments
+    s.beginGroup(QString("custom"));
+    s.remove("");
+    s.beginWriteArray("instruments");
+    index = 0;
+    for(int i=0;i<d_hardwareList.size();i++)
+    {
+       if(d_hardwareList.at(i).first->type() == CommunicationProtocol::Custom)
+        {
+            s.setArrayIndex(index);
+            s.setValue(QString("key"),d_hardwareList.at(i).first->key());
+            s.setValue(QString("subKey"),d_hardwareList.at(i).first->subKey());
+            index++;
+        }
+    }
+    s.endArray();
+    s.endGroup();
+
 	s.sync();
 
     for(int i=0;i<d_hardwareList.size();i++)

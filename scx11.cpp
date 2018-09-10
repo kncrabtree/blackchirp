@@ -70,14 +70,14 @@ bool Scx11::testConnection()
     for(int i = 0; i < d_channels.size(); i++)
     {
         resp = p_comm->queryCmd(QString("@%1@%1\n").arg(d_channels.at(i).id));
-        if(!resp.endsWith(">"))
+        if(resp.isEmpty())
         {
             emit connected(false,QString("Could not communicate with %1 axis").arg(d_channels.at(i).name));
             return false;
         }
 
         resp = p_comm->queryCmd(QString("VER\n"));
-        if(!resp.endsWith(">"))
+        if(resp.isEmpty())
         {
             emit connected(false,QString("Could not get version info from %1 axis").arg(d_channels.at(i).name));
             return false;
@@ -86,14 +86,14 @@ bool Scx11::testConnection()
         if(resp.startsWith("VER"))
         {
             QByteArray t = p_comm->queryCmd(QString("ECHO=0\n"));
-            if(!t.endsWith(">"))
+            if(t.isEmpty())
             {
                 emit connected(false,QString("Could not disable echo on %1 axis").arg(d_channels.at(i).name));
                 return false;
             }
 
             resp = p_comm->queryCmd(QString("VER\n"));
-            if(!resp.endsWith(">"))
+            if(resp.isEmpty())
             {
                 emit connected(false,QString("Could not get version info from %1 axis").arg(d_channels.at(i).name));
                 return false;
@@ -108,7 +108,7 @@ bool Scx11::testConnection()
         }
 
         QByteArray t = p_comm->queryCmd(QString("VERBOSE=1\n"));
-        if(!t.endsWith(">"))
+        if(t.isEmpty())
         {
             emit connected(false,QString("Could not enable verbose mode on %1 axis").arg(d_channels.at(i).name));
             return false;
@@ -128,7 +128,7 @@ bool Scx11::testConnection()
         double homeOffset = s.value(QString("offset"),0.0).toDouble();
 
         t = p_comm->queryCmd(QString("PC=%1\n").arg(-homeOffset,0,'f',3));
-        if(!t.endsWith(">"))
+        if(t.isEmpty())
         {
             emit connected(false,QString("Could not set initial home offset on %1 axis").arg(d_channels.at(i).axis));
             return false;
@@ -242,7 +242,7 @@ bool Scx11::readCurrentPosition()
     {
         int id = d_channels.at(i).id;
         QByteArray resp = p_comm->queryCmd(QString("@%1@%1\n").arg(id));
-        if(!resp.endsWith(">"))
+        if(resp.isEmpty())
         {
             emit hardwareFailure();
             emit logMessage(QString("Could not read position for %1 axis").arg(d_channels.at(i).name),BlackChirp::LogError);
@@ -250,7 +250,7 @@ bool Scx11::readCurrentPosition()
         }
 
         resp = p_comm->queryCmd(QString("PC\n"));
-        if(!resp.endsWith(">") || !resp.contains('=') || !resp.contains('m'))
+        if(resp.isEmpty() || !resp.contains('=') || !resp.contains('m'))
         {
             emit hardwareFailure();
             emit logMessage(QString("Could not read position for %1 axis").arg(d_channels.at(i).name),BlackChirp::LogError);
@@ -323,7 +323,7 @@ void Scx11::checkLimitOneAxis(BlackChirp::MotorAxis axis)
     bool sigPositive, sigNegative;
 
     QByteArray resp = p_comm->queryCmd(QString("@%1@%1\n").arg(ai.id));
-    if(!resp.endsWith(">"))
+    if(resp.isEmpty())
     {
         emit hardwareFailure();
         emit logMessage(QString("Could not read limits for %1 axis").arg(ai.name),BlackChirp::LogError);

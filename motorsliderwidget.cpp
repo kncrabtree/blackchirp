@@ -1,6 +1,7 @@
 #include "motorsliderwidget.h"
 
 #include <QVBoxLayout>
+#include <math.h>
 
 MotorSliderWidget::MotorSliderWidget(QWidget *parent) : QWidget(parent)
 {

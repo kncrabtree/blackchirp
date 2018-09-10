@@ -3,6 +3,7 @@
 #include <QSettings>
 #include <QApplication>
 #include <QFile>
+#include <math.h>
 
 MotorScan::MotorScan() : data(new MotorScanData)
 {

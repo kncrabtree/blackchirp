@@ -35,6 +35,14 @@ typedef Dsa71604c FtmwScopeHardware;
 #include "mso72004c.h"
 class MSO72004C;
 typedef MSO72004C FtmwScopeHardware;
+#elif BC_FTMWSCOPE == 3
+#include "m4i2220x8.h"
+class M4i2220x8;
+typedef M4i2220x8 FtmwScopeHardware;
+#elif BC_FTMWSCOPE == 4
+#include "dsox92004a.h"
+class DSOx92004A;
+typedef DSOx92004A FtmwScopeHardware;
 #else
 #include "virtualftmwscope.h"
 class VirtualFtmwScope;

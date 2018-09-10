@@ -15,18 +15,14 @@ public:
     bool writeCmd(QString cmd);
     bool writeBinary(QByteArray dat);
     QByteArray queryCmd(QString cmd);
-    QIODevice *device(){ return p_socket; }
 
 public slots:
 	virtual void initialize();
 	virtual bool testConnection();
-	void socketError(QAbstractSocket::SocketError);
-
 
 private:
     QString d_ip;
     int d_port;
-    QTcpSocket *p_socket;
 
     bool connectSocket();
     void disconnectSocket();

@@ -1,6 +1,8 @@
 #include "acquisitionmanager.h"
 
-#include <savemanager.h>
+#include "savemanager.h"
+
+#include <math.h>
 
 AcquisitionManager::AcquisitionManager(QObject *parent) : QObject(parent), d_state(Idle), d_currentShift(0), d_lastFom(0.0)
 {
@@ -108,6 +110,13 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 //        testTime.start();
         bool success = true;
 
+        if(d_currentExperiment.ftmwConfig().isChirpScoringEnabled())
+        {
+            success = scoreChirp(b);
+            if(!success)
+                return;
+        }
+
         if(d_currentExperiment.ftmwConfig().isPhaseCorrectionEnabled())
         {
             success = calculateShift(b);
@@ -120,7 +129,7 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 #else
         QList<QVector<qint64> >  l;
         if(d_currentExperiment.ftmwConfig().type() == BlackChirp::FtmwPeakUp)
-            l = gpuAvg.parseAndRollAvg(b.constData(),d_currentExperiment.ftmwConfig().completedShots()+1,
+            l = gpuAvg.parseAndRollAvg(b.constData(),d_currentExperiment.ftmwConfig().completedShots()+d_currentExperiment.ftmwConfig().scopeConfig().numAverages,
                                        d_currentExperiment.ftmwConfig().targetShots(),d_currentShift);
         else
             l = gpuAvg.parseAndAdd(b.constData(),d_currentShift);
@@ -310,7 +319,7 @@ void AcquisitionManager::motorMoveComplete(bool success)
 
 void AcquisitionManager::motorTraceReceived(const QVector<double> dat)
 {
-    if(d_state == Acquiring && !d_waitingForMotor)
+    if(d_state == Acquiring && !d_waitingForMotor && d_currentExperiment.motorScan().isEnabled())
     {
         bool adv = d_currentExperiment.addMotorTrace(dat);
         emit statusMessage(QString("Acquiring (%1/%2)").arg(d_currentExperiment.motorScan().currentPointShots())
@@ -466,6 +475,36 @@ bool AcquisitionManager::calculateShift(const QByteArray b)
 
 }
 
+bool AcquisitionManager::scoreChirp(const QByteArray b)
+{
+    if(!d_currentExperiment.ftmwConfig().isEnabled())
+        return true;
+
+    if(d_currentExperiment.ftmwConfig().fidList().isEmpty())
+        return true;
+
+    if(d_currentExperiment.ftmwConfig().completedShots() < 20)
+        return true;
+
+    //Extract chirp from this waveform (1st frame)
+    QVector<qint64> newChirp = d_currentExperiment.ftmwConfig().extractChirp(b);
+    if(newChirp.isEmpty())
+        return true;
+
+    //Calculate chirp RMS
+    double newChirpRMS = calculateChirpRMS(newChirp,d_currentExperiment.ftmwConfig().fidTemplate().vMult());
+
+    //Get current RMS
+    QVector<qint64> currentChirp = d_currentExperiment.ftmwConfig().extractChirp();
+    double currentRMS = calculateChirpRMS(currentChirp,d_currentExperiment.ftmwConfig().fidTemplate().vMult(),d_currentExperiment.ftmwConfig().completedShots());
+
+//    emit logMessage(QString("This RMS: %1\tAVG RMS: %2").arg(newChirpRMS,0,'e',2).arg(currentRMS,0,'e',2));
+
+    //The chirp is good if its RMS is greater than threshold*currentRMS.
+    return newChirpRMS > currentRMS*d_currentExperiment.ftmwConfig().chirpRMSThreshold();
+
+}
+
 float AcquisitionManager::calculateFom(const QVector<qint64> vec, const Fid fid, QPair<int, int> range, int trialShift)
 {
     //Kahan summation (32 bit precision is sufficient)
@@ -484,5 +523,24 @@ float AcquisitionManager::calculateFom(const QVector<qint64> vec, const Fid fid,
     }
 
     return sum/static_cast<float>(fid.shots());
+}
+
+double AcquisitionManager::calculateChirpRMS(const QVector<qint64> chirp, double sf, qint64 shots)
+{
+    Q_UNUSED(sf)
+
+    //Kahan summation
+    double sum = 0.0;
+    double c = 0.0;
+    for(int i=0; i<chirp.size(); i++)
+    {
+        double dat = static_cast<double>(chirp.at(i)*chirp.at(i))/static_cast<double>(shots*shots);
+        double y = dat - c;
+        double t = sum + y;
+        c = (t-sum) - y;
+        sum = t;
+    }
+
+    return sqrt(sum);
 }
 

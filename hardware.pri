@@ -11,8 +11,7 @@ HEADERS += \
     $$PWD/synthesizer.h \
     $$PWD/flowcontroller.h \
     $$PWD/ioboard.h \
-        $$PWD/custominstrument.h \
-    $$PWD/pressurecontroller.h
+		$$PWD/custominstrument.h
 
 SOURCES += \
     $$PWD/hardwaremanager.cpp \
@@ -27,8 +26,7 @@ SOURCES += \
     $$PWD/synthesizer.cpp \
     $$PWD/flowcontroller.cpp \
     $$PWD/ioboard.cpp \
-        $$PWD/custominstrument.cpp \
-    $$PWD/pressurecontroller.cpp
+		$$PWD/custominstrument.cpp
 
 allhardware {
 HEADERS += \
@@ -51,6 +49,11 @@ greaterThan(GPIB,-1) {
 			   $$PWD/gpibinstrument.h
 	SOURCES += $$PWD/gpibcontroller.cpp \
 			   $$PWD/gpibinstrument.cpp
+}
+
+greaterThan(PC,-1) {
+	HEADERS += $$PWD/pressurecontroller.h
+	SOURCES += $$PWD/pressurecontroller.cpp
 }
 
 lif {

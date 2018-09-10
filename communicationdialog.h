@@ -7,6 +7,8 @@ namespace Ui {
 class CommunicationDialog;
 }
 
+class QLabel;
+
 class CommunicationDialog : public QDialog
 {
 	Q_OBJECT
@@ -17,20 +19,29 @@ public:
 	
 private:
 	Ui::CommunicationDialog *ui;
+    struct CustomInfo {
+        QLabel *labelWidget;
+        QWidget *displayWidget;
+        QString type;
+        QString key;
+    };
 
-    QList<QPair<QString,QString>> d_gpibDevices;
-    QList<QPair<QString,QString>> d_tcpDevices;
-    QList<QPair<QString,QString>> d_rs232Devices;
+    QList<QPair<QString,QString>> d_gpibDevices, d_tcpDevices, d_rs232Devices, d_customDevices;
+    QList<CustomInfo> d_customInfoList;
 
 	void startTest(QString type, QString key);
+
+
 
 public slots:
 	void gpibDeviceChanged(int index);
 	void tcpDeviceChanged(int index);
 	void rs232DeviceChanged(int index);
+    void customDeviceChanged(int index);
 	void testGpib();
 	void testTcp();
 	void testRs232();
+    void testCustom();
 
 	void testComplete(QString device, bool success, QString msg);
 

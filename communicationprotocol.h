@@ -23,13 +23,13 @@ public:
     explicit CommunicationProtocol(CommType type, QString key, QString subKey, QObject *parent = nullptr);
     virtual ~CommunicationProtocol();
 
-    virtual bool writeCmd(QString cmd) =0;
-    virtual bool writeBinary(QByteArray dat) =0;
-    virtual QByteArray queryCmd(QString cmd) =0;
+    virtual bool writeCmd(QString cmd);
+    virtual bool writeBinary(QByteArray dat);
+    virtual QByteArray queryCmd(QString cmd, bool suppressError = false);
 
     QString key() { return d_key; }
     CommType type() { return d_type; }
-    virtual QIODevice *device() =0;
+    QIODevice *device() { return p_device; }
 
     /*!
      * \brief Convenience function for setting read options
@@ -55,6 +55,8 @@ protected:
     QByteArray d_readTerminator; /*!< Termination characters that indicate a message from the device is complete. */
     bool d_useTermChar; /*!< If true, a read operation is complete when the message ends with d_readTerminator */
     int d_timeOut; /*!< Timeout for read operation, in ms */
+
+    QIODevice *p_device = nullptr;
 };
 
 #endif // COMMUNICATIONPROTOCOL_H

@@ -1,5 +1,7 @@
 #include "virtualmotorcontroller.h"
 
+#include <math.h>
+
 #include "virtualinstrument.h"
 
 VirtualMotorController::VirtualMotorController(QObject *parent) :

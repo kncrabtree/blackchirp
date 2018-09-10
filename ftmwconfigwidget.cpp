@@ -17,12 +17,35 @@ FtmwConfigWidget::FtmwConfigWidget(QWidget *parent) :
     ui->modeComboBox->addItem(QString("Forever"),QVariant::fromValue(BlackChirp::FtmwForever));
     ui->modeComboBox->addItem(QString("Peak Up"),QVariant::fromValue(BlackChirp::FtmwPeakUp));
 
-    ui->sampleRateComboBox->addItem(QString("2 GS/s"),2e9);
-    ui->sampleRateComboBox->addItem(QString("5 GS/s"),5e9);
-    ui->sampleRateComboBox->addItem(QString("10 GS/s"),10e9);
-    ui->sampleRateComboBox->addItem(QString("20 GS/s"),20e9);
-    ui->sampleRateComboBox->addItem(QString("50 GS/s"),50e9);
-    ui->sampleRateComboBox->addItem(QString("100 GS/s"),100e9);
+    ///TODO: Customize more UI settings according to Hardware limits for ftmwscope implementation
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+
+    s.beginGroup(QString("ftmwscope"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    int size = s.beginReadArray(QString("sampleRates"));
+    if(size > 0)
+    {
+        for(int i=0; i<size; i++)
+        {
+            s.setArrayIndex(i);
+            QString str = s.value(QString("text"),QString("")).toString();
+            double val = s.value(QString("val"),0.0).toDouble();
+            ui->sampleRateComboBox->addItem(str,val);
+        }
+    }
+    else
+    {
+        ui->sampleRateComboBox->addItem(QString("2 GS/s"),2e9);
+        ui->sampleRateComboBox->addItem(QString("5 GS/s"),5e9);
+        ui->sampleRateComboBox->addItem(QString("10 GS/s"),10e9);
+        ui->sampleRateComboBox->addItem(QString("20 GS/s"),20e9);
+        ui->sampleRateComboBox->addItem(QString("50 GS/s"),50e9);
+        ui->sampleRateComboBox->addItem(QString("100 GS/s"),100e9);
+    }
+    s.endArray();
+
+    s.endGroup();
+    s.endGroup();
 
     ui->sidebandComboBox->addItem(QString("Upper Sideband"),QVariant::fromValue(BlackChirp::UpperSideband));
     ui->sidebandComboBox->addItem(QString("Lower Sideband"),QVariant::fromValue(BlackChirp::LowerSideband));
@@ -39,7 +62,6 @@ FtmwConfigWidget::FtmwConfigWidget(QWidget *parent) :
 
     setFromConfig(FtmwConfig::loadFromSettings());
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     double loFreq = s.value(QString("rfConfig/loFreq"),0.0).toDouble();
     int sideband = s.value(QString("rfConfig/rxSidebandSign"),1).toInt();
     if(sideband > 0)
@@ -51,6 +73,8 @@ FtmwConfigWidget::FtmwConfigWidget(QWidget *parent) :
 
     connect(ui->modeComboBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),this,&FtmwConfigWidget::configureUI);
     connect(ui->fastFrameEnabledCheckBox,&QCheckBox::toggled,this,&FtmwConfigWidget::configureUI);
+    connect(ui->blockAverageCheckBox,&QCheckBox::toggled,this,&FtmwConfigWidget::configureUI);
+    connect(ui->chirpScoringCheckBox,&QCheckBox::toggled,ui->chirpThresholdDoubleSpinBox,&QDoubleSpinBox::setEnabled);
 
     connect(ui->fIDChannelSpinBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwConfigWidget::validateSpinboxes);
     connect(ui->triggerChannelSpinBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwConfigWidget::validateSpinboxes);
@@ -76,6 +100,12 @@ void FtmwConfigWidget::setFromConfig(const FtmwConfig config)
     }
     ui->phaseCorrectionCheckBox->setChecked(config.isPhaseCorrectionEnabled());
 
+    ui->chirpScoringCheckBox->blockSignals(true);
+    ui->chirpScoringCheckBox->setChecked(config.isChirpScoringEnabled());
+    ui->chirpThresholdDoubleSpinBox->setValue(config.chirpRMSThreshold());
+    ui->chirpThresholdDoubleSpinBox->setEnabled(config.isChirpScoringEnabled());
+    ui->chirpScoringCheckBox->blockSignals(false);
+
     ui->loFrequencyDoubleSpinBox->setValue(config.loFreq());
     setComboBoxIndex(ui->sidebandComboBox,config.sideband());
 
@@ -89,6 +119,7 @@ void FtmwConfigWidget::setFromConfig(const FtmwConfig config)
     ui->triggerChannelSpinBox->setValue(sc.trigChannel);
     ui->triggerChannelSpinBox->blockSignals(false);
     ui->triggerDelayDoubleSpinBox->setValue(sc.trigDelay*1e6);
+    ui->triggerLevelDoubleSpinBox->setValue(sc.trigLevel);
     setComboBoxIndex(ui->triggerSlopeComboBox,qVariantFromValue(sc.slope));
     setComboBoxIndex(ui->sampleRateComboBox,sc.sampleRate);
     ui->recordLengthSpinBox->setValue(sc.recordLength);
@@ -98,6 +129,8 @@ void FtmwConfigWidget::setFromConfig(const FtmwConfig config)
     ui->fastFrameEnabledCheckBox->blockSignals(false);
     ui->framesSpinBox->setValue(sc.numFrames);
     ui->summaryFrameCheckBox->setChecked(sc.summaryFrame);
+    ui->blockAverageCheckBox->setChecked(sc.blockAverageEnabled);
+    ui->averagesSpinBox->setValue(sc.numAverages);
 
 
     configureUI();
@@ -108,6 +141,14 @@ FtmwConfig FtmwConfigWidget::getConfig() const
 {
     FtmwConfig out;
 
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+
+    s.beginGroup(QString("ftmwscope"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    bool canSf = s.value(QString("canSummaryFrame"),false).toBool();
+    s.endGroup();
+    s.endGroup();
+
     out.setType(ui->modeComboBox->currentData().value<BlackChirp::FtmwType>());
     out.setTargetShots(ui->targetShotsSpinBox->value());
     if(ui->targetTimeDateTimeEdit->dateTime() > QDateTime::currentDateTime().addSecs(60))
@@ -115,6 +156,8 @@ FtmwConfig FtmwConfigWidget::getConfig() const
     else
         out.setTargetTime(QDateTime::currentDateTime().addSecs(60));
     out.setPhaseCorrectionEnabled(ui->phaseCorrectionCheckBox->isChecked());
+    out.setChirpScoringEnabled(ui->chirpScoringCheckBox->isChecked());
+    out.setChirpRMSThreshold(ui->chirpThresholdDoubleSpinBox->value());
 
     out.setLoFreq(ui->loFrequencyDoubleSpinBox->value());
     out.setSideband(ui->sidebandComboBox->currentData().value<BlackChirp::Sideband>());
@@ -124,13 +167,21 @@ FtmwConfig FtmwConfigWidget::getConfig() const
     sc.vScale = ui->verticalScaleDoubleSpinBox->value();
     sc.trigChannel = ui->triggerChannelSpinBox->value();
     sc.trigDelay = ui->triggerDelayDoubleSpinBox->value()/1e6;
+    sc.trigLevel = ui->triggerLevelDoubleSpinBox->value();
     sc.slope = ui->triggerSlopeComboBox->currentData().value<BlackChirp::ScopeTriggerSlope>();
     sc.sampleRate = ui->sampleRateComboBox->currentData().toDouble();
     sc.recordLength = ui->recordLengthSpinBox->value();
     sc.bytesPerPoint = ui->bytesPointSpinBox->value();
     sc.fastFrameEnabled = ui->fastFrameEnabledCheckBox->isChecked();
+    if(ui->summaryFrameCheckBox->isChecked())
+    {
+        sc.summaryFrame = canSf;
+        sc.manualFrameAverage = !canSf;
+    }
     sc.numFrames = ui->framesSpinBox->value();
     sc.summaryFrame = ui->summaryFrameCheckBox->isChecked();
+    sc.blockAverageEnabled = ui->blockAverageCheckBox->isChecked();
+    sc.numAverages = ui->averagesSpinBox->value();
     out.setScopeConfig(sc);
 
     return out;
@@ -138,6 +189,8 @@ FtmwConfig FtmwConfigWidget::getConfig() const
 
 void FtmwConfigWidget::lockFastFrame(const int nf)
 {
+
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
     ui->fastFrameEnabledCheckBox->blockSignals(true);
     ui->framesSpinBox->setValue(nf);
@@ -153,12 +206,39 @@ void FtmwConfigWidget::lockFastFrame(const int nf)
         ui->fastFrameEnabledCheckBox->setChecked(true);
         ui->summaryFrameCheckBox->setEnabled(true);
     }
+
     ui->fastFrameEnabledCheckBox->setEnabled(false);
     ui->fastFrameEnabledCheckBox->blockSignals(false);
+
+    configureUI();
 }
 
 void FtmwConfigWidget::configureUI()
 {
+
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+
+    s.beginGroup(QString("ftmwscope"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    bool ba = s.value(QString("canBlockAverage"),false).toBool();
+    bool ffba = s.value(QString("canBlockAndFastFrame"),false).toBool();
+    bool ff = ui->fastFrameEnabledCheckBox->isChecked();
+    s.endGroup();
+    s.endGroup();
+
+    if(!ba || (!ffba && ff))
+    {
+        ui->blockAverageCheckBox->setChecked(false);
+        ui->blockAverageCheckBox->setEnabled(false);
+        ui->averagesSpinBox->setValue(1);
+        ui->averagesSpinBox->setEnabled(false);
+    }
+    else
+    {
+        ui->blockAverageCheckBox->setEnabled(true);
+        ui->averagesSpinBox->setEnabled(true);
+    }
+
     BlackChirp::FtmwType type = ui->modeComboBox->currentData().value<BlackChirp::FtmwType>();
     if(type == BlackChirp::FtmwTargetTime)
     {
@@ -218,7 +298,7 @@ void FtmwConfigWidget::setComboBoxIndex(QComboBox *box, QVariant value)
     {
         if(box == ui->sampleRateComboBox)
         {
-            if(fabs(box->itemData(i).toDouble() - value.toDouble()) < 1.0)
+            if(qAbs(box->itemData(i).toDouble() - value.toDouble()) < 1.0)
             {
                 box->setCurrentIndex(i);
                 return;

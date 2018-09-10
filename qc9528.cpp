@@ -17,11 +17,14 @@ Qc9528::Qc9528(QObject *parent) :
     d_maxWidth = s.value(QString("maxWidth"),100000.0).toDouble();
     d_minDelay = s.value(QString("minDelay"),0.0).toDouble();
     d_maxDelay = s.value(QString("maxDelay"),100000.0).toDouble();
+    d_forceExtClock = s.value(QString("forceExtClock"),true).toBool();
+
 
     s.setValue(QString("minWidth"),d_minWidth);
     s.setValue(QString("maxWidth"),d_maxWidth);
     s.setValue(QString("minDelay"),d_minDelay);
     s.setValue(QString("maxDelay"),d_maxDelay);
+    s.setValue(QString("forceExtClock"),d_forceExtClock);
 
     s.endGroup();
     s.endGroup();
@@ -58,18 +61,21 @@ bool Qc9528::testConnection()
     readAll();
     blockSignals(false);
 
-    resp = p_comm->queryCmd(QString(":PULSE0:ICLOCK?\r\n"));
-    if(resp.isEmpty())
+    if(d_forceExtClock)
     {
-        emit connected(false,QString("No response to external clock source query."));
-        return false;
-    }
-    if(!resp.startsWith("EXT10"))
-    {
-        if(!pGenWriteCmd(QString(":PULSE0:ICL EXT10\r\n")))
+        resp = p_comm->queryCmd(QString(":PULSE0:ICLOCK?\r\n"));
+        if(resp.isEmpty())
         {
-            emit connected(false,QString("Could not set clock source to external 10 MHz."));
+            emit connected(false,QString("No response to external clock source query."));
             return false;
+        }
+        if(!resp.startsWith("EXT10"))
+        {
+            if(!pGenWriteCmd(QString(":PULSE0:ICL EXT10\r\n")))
+            {
+                emit connected(false,QString("Could not set clock source to external 10 MHz."));
+                return false;
+            }
         }
     }
 
@@ -358,7 +364,7 @@ bool Qc9528::set(const int index, const BlackChirp::PulseSetting s, const QVaria
 
 bool Qc9528::setRepRate(double d)
 {
-    if(d < 0.01 || d > 20.0)
+    if(d < 0.01 || d > 100000.0)
         return false;
 
     if(!pGenWriteCmd(QString(":PULSE0:PERIOD %1\r\n").arg(1.0/d,0,'f',9)))

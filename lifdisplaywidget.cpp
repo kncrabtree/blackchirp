@@ -2,6 +2,7 @@
 #include "ui_lifdisplaywidget.h"
 
 #include <QResizeEvent>
+#include <math.h>
 
 #include <qwt6/qwt_matrix_raster_data.h>
 

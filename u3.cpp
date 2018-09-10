@@ -35,77 +35,77 @@ u3CalibrationInfo U3_CALIBRATION_INFO_DEFAULT = {
 };
 
 
-void normalChecksum(uint8 *b, int n)
+void normalChecksum(quint8 *b, int n)
 {
     b[0] = normalChecksum8(b, n);
 }
 
 
-void extendedChecksum(uint8 *b, int n)
+void extendedChecksum(quint8 *b, int n)
 {
-    uint16 a;
+    quint16 a;
 
     a = extendedChecksum16(b, n);
-    b[4] = (uint8)(a & 0xFF);
-    b[5] = (uint8)((a/256) & 0xFF);
+    b[4] = (quint8)(a & 0xFF);
+    b[5] = (quint8)((a/256) & 0xFF);
     b[0] = extendedChecksum8(b);
 }
 
 
-uint8 normalChecksum8(uint8 *b, int n)
+quint8 normalChecksum8(quint8 *b, int n)
 {
     int i;
-    uint16 a, bb;
+    quint16 a, bb;
 
     //Sums bytes 1 to n-1 unsigned to a 2 byte value. Sums quotient and
     //remainder of 256 division.  Again, sums quotient and remainder of
     //256 division.
     for( i = 1, a = 0; i < n; i++ )
-        a += (uint16)b[i];
+        a += (quint16)b[i];
 
     bb = a / 256;
     a = (a - 256*bb) + bb;
     bb = a / 256;
 
-    return (uint8)((a - 256*bb) + bb);
+    return (quint8)((a - 256*bb) + bb);
 }
 
 
-uint16 extendedChecksum16(uint8 *b, int n)
+quint16 extendedChecksum16(quint8 *b, int n)
 {
     int i, a = 0;
 
     //Sums bytes 6 to n-1 to a unsigned 2 byte value
     for( i = 6; i < n; i++ )
-        a += (uint16)b[i];
+        a += (quint16)b[i];
 
     return a;
 }
 
 
-uint8 extendedChecksum8(uint8 *b)
+quint8 extendedChecksum8(quint8 *b)
 {
     int i, a, bb;
 
     //Sums bytes 1 to 5. Sums quotient and remainder of 256 division. Again,
     //sums quotient and remainder of 256 division.
     for( i = 1, a = 0; i < 6; i++ )
-        a += (uint16)b[i];
+        a += (quint16)b[i];
 
     bb=a / 256;
     a=(a - 256*bb) + bb;
     bb=a / 256;
 
-    return (uint8)((a - 256*bb) + bb);
+    return (quint8)((a - 256*bb) + bb);
 }
 
 
 HANDLE openUSBConnection(int localID)
 {
-    uint8 buffer[38];  //send size of 26, receive size of 38
-    uint16 checksumTotal = 0;
-    uint32 numDevices = 0;
-    uint32 dev;
+    quint8 buffer[38];  //send size of 26, receive size of 38
+    quint16 checksumTotal = 0;
+    quint32 numDevices = 0;
+    quint32 dev;
     int i, serial;
     HANDLE hDevice = 0;
 
@@ -130,12 +130,12 @@ HANDLE openUSBConnection(int localID)
                 checksumTotal = 0;
 
                 //Setting up a ConfigU3 command
-                buffer[1] = (uint8)(0xF8);
-                buffer[2] = (uint8)(0x0A);
-                buffer[3] = (uint8)(0x08);
+                buffer[1] = (quint8)(0xF8);
+                buffer[2] = (quint8)(0x0A);
+                buffer[3] = (quint8)(0x08);
 
                 for( i = 6; i < 38; i++ )
-                    buffer[i] = (uint8)(0x00);
+                    buffer[i] = (quint8)(0x00);
 
                 extendedChecksum(buffer, 26);
 
@@ -146,17 +146,17 @@ HANDLE openUSBConnection(int localID)
                     goto locid_error;
 
                 checksumTotal = extendedChecksum16(buffer, 38);
-                if( (uint8)((checksumTotal / 256) & 0xFF) != buffer[5] )
+                if( (quint8)((checksumTotal / 256) & 0xFF) != buffer[5] )
                     goto locid_error;
 
-                if( (uint8)(checksumTotal & 0xFF) != buffer[4] )
+                if( (quint8)(checksumTotal & 0xFF) != buffer[4] )
                     goto locid_error;
 
                 if( extendedChecksum8(buffer) != buffer[0] )
                     goto locid_error;
 
-                if( buffer[1] != (uint8)(0xF8) || buffer[2] != (uint8)(0x10) ||
-                    buffer[3] != (uint8)(0x08) )
+                if( buffer[1] != (quint8)(0xF8) || buffer[2] != (quint8)(0x10) ||
+                    buffer[3] != (quint8)(0x08) )
                     goto locid_error;
 
                 if( buffer[6] != 0 )
@@ -231,14 +231,14 @@ invalid:
 
 long getCalibrationInfo(HANDLE hDevice, u3CalibrationInfo *caliInfo)
 {
-    uint8 sendBuffer[8], recBuffer[40];
-    uint8 cU3SendBuffer[26], cU3RecBuffer[38];
+    quint8 sendBuffer[8], recBuffer[40];
+    quint8 cU3SendBuffer[26], cU3RecBuffer[38];
     int sentRec = 0, offset = 0, i = 0;
 
     /* Sending ConfigU3 command to get hardware version and see if HV */
-    cU3SendBuffer[1] = (uint8)(0xF8);  //Command byte
-    cU3SendBuffer[2] = (uint8)(0x0A);  //Number of data words
-    cU3SendBuffer[3] = (uint8)(0x08);  //Extended command number
+    cU3SendBuffer[1] = (quint8)(0xF8);  //Command byte
+    cU3SendBuffer[2] = (quint8)(0x0A);  //Number of data words
+    cU3SendBuffer[3] = (quint8)(0x08);  //Extended command number
 
     //Setting WriteMask0 and all other bytes to 0 since we only want to read the
     //response
@@ -265,8 +265,8 @@ long getCalibrationInfo(HANDLE hDevice, u3CalibrationInfo *caliInfo)
             goto readError1;
     }
 
-    if( cU3RecBuffer[1] != (uint8)(0xF8) || cU3RecBuffer[2] != (uint8)(0x10) ||
-        cU3RecBuffer[3] != (uint8)(0x08))
+    if( cU3RecBuffer[1] != (quint8)(0xF8) || cU3RecBuffer[2] != (quint8)(0x10) ||
+        cU3RecBuffer[3] != (quint8)(0x08))
         goto commandByteError;
 
     caliInfo->hardwareVersion = cU3RecBuffer[14] + cU3RecBuffer[13]/100.0;
@@ -278,11 +278,11 @@ long getCalibrationInfo(HANDLE hDevice, u3CalibrationInfo *caliInfo)
     for( i = 0; i < 5; i++ )
     {
         /* Reading block i from memory */
-        sendBuffer[1] = (uint8)(0xF8);  //Command byte
-        sendBuffer[2] = (uint8)(0x01);  //Cumber of data words
-        sendBuffer[3] = (uint8)(0x2D);  //Extended command number
+        sendBuffer[1] = (quint8)(0xF8);  //Command byte
+        sendBuffer[2] = (quint8)(0x01);  //Cumber of data words
+        sendBuffer[3] = (quint8)(0x2D);  //Extended command number
         sendBuffer[6] = 0;
-        sendBuffer[7] = (uint8)i;  //Blocknum = i
+        sendBuffer[7] = (quint8)i;  //Blocknum = i
         extendedChecksum(sendBuffer, 8);
 
         sentRec = LJUSB_Write(hDevice, sendBuffer, 8);
@@ -303,8 +303,8 @@ long getCalibrationInfo(HANDLE hDevice, u3CalibrationInfo *caliInfo)
                 goto readError1;
         }
 
-        if( recBuffer[1] != (uint8)(0xF8) || recBuffer[2] != (uint8)(0x11) ||
-            recBuffer[3] != (uint8)(0x2D) )
+        if( recBuffer[1] != (quint8)(0xF8) || recBuffer[2] != (quint8)(0x11) ||
+            recBuffer[3] != (quint8)(0x2D) )
             goto commandByteError;
 
         offset = i * 4;
@@ -338,13 +338,13 @@ commandByteError:
 }
 
 
-long getTdacCalibrationInfo( HANDLE hDevice, u3TdacCalibrationInfo *caliInfo, uint8 DIOAPinNum)
+long getTdacCalibrationInfo( HANDLE hDevice, u3TdacCalibrationInfo *caliInfo, quint8 DIOAPinNum)
 {
     int err;
-    uint8 options, speedAdjust, sdaPinNum, sclPinNum;
-    uint8 address, numByteToSend, numBytesToRec, errorcode;
-    uint8 bytesComm[1], bytesResp[32];
-    uint8 ackArray[4];
+    quint8 options, speedAdjust, sdaPinNum, sclPinNum;
+    quint8 address, numByteToSend, numBytesToRec, errorcode;
+    quint8 bytesComm[1], bytesResp[32];
+    quint8 ackArray[4];
 
     err = 0;
 
@@ -354,7 +354,7 @@ long getTdacCalibrationInfo( HANDLE hDevice, u3TdacCalibrationInfo *caliInfo, ui
                       //130 kHz)
     sdaPinNum = DIOAPinNum+1;  //SDAPinNum : FIO channel connected to pin DIOB
     sclPinNum = DIOAPinNum;  //SCLPinNum : FIO channel connected to pin DIOA
-    address = (uint8)(0xA0);  //Address : h0xA0 is the address for EEPROM
+    address = (quint8)(0xA0);  //Address : h0xA0 is the address for EEPROM
     numByteToSend = 1;  //NumI2CByteToSend : 1 byte for the EEPROM address
     numBytesToRec = 32;  //NumI2CBytesToReceive : getting 32 bytes starting at
                          //EEPROM address specified in I2CByte0
@@ -386,25 +386,25 @@ long getTdacCalibrationInfo( HANDLE hDevice, u3TdacCalibrationInfo *caliInfo, ui
 }
 
 
-double FPuint8ArrayToFPDouble(uint8 *buffer, int startIndex)
+double FPuint8ArrayToFPDouble(quint8 *buffer, int startIndex)
 {
-    uint32 resultDec = 0, resultWh = 0;
+    quint32 resultDec = 0, resultWh = 0;
 
-    resultDec = (uint32)buffer[startIndex] |
-                ((uint32)buffer[startIndex + 1] << 8) |
-                ((uint32)buffer[startIndex + 2] << 16) |
-                ((uint32)buffer[startIndex + 3] << 24);
+    resultDec = (quint32)buffer[startIndex] |
+                ((quint32)buffer[startIndex + 1] << 8) |
+                ((quint32)buffer[startIndex + 2] << 16) |
+                ((quint32)buffer[startIndex + 3] << 24);
 
-    resultWh = (uint32)buffer[startIndex + 4] |
-                ((uint32)buffer[startIndex + 5] << 8) |
-                ((uint32)buffer[startIndex + 6] << 16) |
-                ((uint32)buffer[startIndex + 7] << 24);
+    resultWh = (quint32)buffer[startIndex + 4] |
+                ((quint32)buffer[startIndex + 5] << 8) |
+                ((quint32)buffer[startIndex + 6] << 16) |
+                ((quint32)buffer[startIndex + 7] << 24);
 
     return ( (double)((int)resultWh) + (double)(resultDec)/4294967296.0 );
 }
 
 
-long getAinVoltCalibrated(u3CalibrationInfo *caliInfo, int dacEnabled, uint8 negChannel, uint16 bytesVolt, double *analogVolt)
+long getAinVoltCalibrated(u3CalibrationInfo *caliInfo, int dacEnabled, quint8 negChannel, quint16 bytesVolt, double *analogVolt)
 {
     if( isCalibrationInfoValid(caliInfo) == 0 )
         return -1;
@@ -444,7 +444,7 @@ long getAinVoltCalibrated(u3CalibrationInfo *caliInfo, int dacEnabled, uint8 neg
 }
 
 
-long getAinVoltCalibrated_hw130(u3CalibrationInfo *caliInfo, uint8 positiveChannel, uint8 negChannel, uint16 bytesVolt, double *analogVolt)
+long getAinVoltCalibrated_hw130(u3CalibrationInfo *caliInfo, quint8 positiveChannel, quint8 negChannel, quint16 bytesVolt, double *analogVolt)
 {
     if( isCalibrationInfoValid(caliInfo) == 0 )
         return -1;
@@ -498,13 +498,13 @@ long getAinVoltCalibrated_hw130(u3CalibrationInfo *caliInfo, uint8 positiveChann
 }
 
 
-long getDacBinVoltCalibrated(u3CalibrationInfo *caliInfo, int dacNumber, double analogVolt, uint8 *bytesVolt)
+long getDacBinVoltCalibrated(u3CalibrationInfo *caliInfo, int dacNumber, double analogVolt, quint8 *bytesVolt)
 {
     return getDacBinVoltCalibrated8Bit(caliInfo, dacNumber, analogVolt, bytesVolt);
 }
 
 
-long getDacBinVoltCalibrated8Bit(u3CalibrationInfo *caliInfo, int dacNumber, double analogVolt, uint8 *bytesVolt8)
+long getDacBinVoltCalibrated8Bit(u3CalibrationInfo *caliInfo, int dacNumber, double analogVolt, quint8 *bytesVolt8)
 {
     double tBytesVolt;
 
@@ -526,13 +526,13 @@ long getDacBinVoltCalibrated8Bit(u3CalibrationInfo *caliInfo, int dacNumber, dou
     else if( tBytesVolt > 255 && caliInfo->hardwareVersion < 1.30 )
         tBytesVolt = 255;
 
-    *bytesVolt8 = (uint8)tBytesVolt;
+    *bytesVolt8 = (quint8)tBytesVolt;
 
     return 0;
 }
 
 
-long getDacBinVoltCalibrated16Bit(u3CalibrationInfo *caliInfo, int dacNumber, double analogVolt, uint16 *bytesVolt16)
+long getDacBinVoltCalibrated16Bit(u3CalibrationInfo *caliInfo, int dacNumber, double analogVolt, quint16 *bytesVolt16)
 {
     double tBytesVolt;
 
@@ -560,15 +560,15 @@ long getDacBinVoltCalibrated16Bit(u3CalibrationInfo *caliInfo, int dacNumber, do
     else if( tBytesVolt > 255 && caliInfo->hardwareVersion < 1.30 )
         tBytesVolt = 255;
 
-    *bytesVolt16 = (uint16)tBytesVolt;
+    *bytesVolt16 = (quint16)tBytesVolt;
 
     return 0;
 }
 
 
-long getTdacBinVoltCalibrated(u3TdacCalibrationInfo *caliInfo, int dacNumber, double analogVolt, uint16 *bytesVolt)
+long getTdacBinVoltCalibrated(u3TdacCalibrationInfo *caliInfo, int dacNumber, double analogVolt, quint16 *bytesVolt)
 {
-    uint32 tBytesVolt;
+    quint32 tBytesVolt;
 
     if( isTdacCalibrationInfoValid(caliInfo) == 0 )
         return -1;
@@ -585,12 +585,12 @@ long getTdacBinVoltCalibrated(u3TdacCalibrationInfo *caliInfo, int dacNumber, do
     if( tBytesVolt > 65535 )
         tBytesVolt = 65535;
 
-    *bytesVolt = (uint16)tBytesVolt;
+    *bytesVolt = (quint16)tBytesVolt;
 
     return 0;
 }
 
-long getTempKCalibrated(u3CalibrationInfo *caliInfo, uint32 bytesTemp, double *kelvinTemp)
+long getTempKCalibrated(u3CalibrationInfo *caliInfo, quint32 bytesTemp, double *kelvinTemp)
 {
     if( isCalibrationInfoValid(caliInfo) == 0 )
         return -1;
@@ -600,7 +600,7 @@ long getTempKCalibrated(u3CalibrationInfo *caliInfo, uint32 bytesTemp, double *k
 }
 
 
-long getAinVoltUncalibrated(int dacEnabled, uint8 negChannel, uint16 bytesVolt, double *analogVolt)
+long getAinVoltUncalibrated(int dacEnabled, quint8 negChannel, quint16 bytesVolt, double *analogVolt)
 {
     U3_CALIBRATION_INFO_DEFAULT.hardwareVersion = 1.20;
     U3_CALIBRATION_INFO_DEFAULT.highVoltage = 0;
@@ -608,7 +608,7 @@ long getAinVoltUncalibrated(int dacEnabled, uint8 negChannel, uint16 bytesVolt, 
 }
 
 
-long getAinVoltUncalibrated_hw130(int highVoltage, uint8 positiveChannel, uint8 negChannel, uint16 bytesVolt, double *analogVolt)
+long getAinVoltUncalibrated_hw130(int highVoltage, quint8 positiveChannel, quint8 negChannel, quint16 bytesVolt, double *analogVolt)
 {
     U3_CALIBRATION_INFO_DEFAULT.hardwareVersion = 1.30;
     U3_CALIBRATION_INFO_DEFAULT.highVoltage = highVoltage;
@@ -616,7 +616,7 @@ long getAinVoltUncalibrated_hw130(int highVoltage, uint8 positiveChannel, uint8 
 }
 
 
-long getDacBinVoltUncalibrated(int dacNumber, double analogVolt, uint8 *bytesVolt)
+long getDacBinVoltUncalibrated(int dacNumber, double analogVolt, quint8 *bytesVolt)
 {
     U3_CALIBRATION_INFO_DEFAULT.hardwareVersion = 1.20;
     U3_CALIBRATION_INFO_DEFAULT.highVoltage = 0;
@@ -624,7 +624,7 @@ long getDacBinVoltUncalibrated(int dacNumber, double analogVolt, uint8 *bytesVol
 }
 
 
-long getDacBinVoltUncalibrated8Bit(int dacNumber, double analogVolt, uint8 *bytesVolt8)
+long getDacBinVoltUncalibrated8Bit(int dacNumber, double analogVolt, quint8 *bytesVolt8)
 {
     U3_CALIBRATION_INFO_DEFAULT.hardwareVersion = 1.20;
     U3_CALIBRATION_INFO_DEFAULT.highVoltage = 0;
@@ -632,7 +632,7 @@ long getDacBinVoltUncalibrated8Bit(int dacNumber, double analogVolt, uint8 *byte
 }
 
 
-long getDacBinVoltUncalibrated16Bit(int dacNumber, double analogVolt, uint16 *bytesVolt16)
+long getDacBinVoltUncalibrated16Bit(int dacNumber, double analogVolt, quint16 *bytesVolt16)
 {
     U3_CALIBRATION_INFO_DEFAULT.hardwareVersion = 1.30;
     U3_CALIBRATION_INFO_DEFAULT.highVoltage = 0;
@@ -640,7 +640,7 @@ long getDacBinVoltUncalibrated16Bit(int dacNumber, double analogVolt, uint16 *by
 }
 
 
-long getTempKUncalibrated(uint16 bytesTemp, double *kelvinTemp)
+long getTempKUncalibrated(quint16 bytesTemp, double *kelvinTemp)
 {
     U3_CALIBRATION_INFO_DEFAULT.hardwareVersion = 1.20;
     U3_CALIBRATION_INFO_DEFAULT.highVoltage = 0;
@@ -648,11 +648,11 @@ long getTempKUncalibrated(uint16 bytesTemp, double *kelvinTemp)
 }
 
 
-long I2C(HANDLE hDevice, uint8 I2COptions, uint8 SpeedAdjust, uint8 SDAPinNum, uint8 SCLPinNum, uint8 Address, uint8 NumI2CBytesToSend, uint8 NumI2CBytesToReceive, uint8 *I2CBytesCommand, uint8 *Errorcode, uint8 *AckArray, uint8 *I2CBytesResponse)
+long I2C(HANDLE hDevice, quint8 I2COptions, quint8 SpeedAdjust, quint8 SDAPinNum, quint8 SCLPinNum, quint8 Address, quint8 NumI2CBytesToSend, quint8 NumI2CBytesToReceive, quint8 *I2CBytesCommand, quint8 *Errorcode, quint8 *AckArray, quint8 *I2CBytesResponse)
 {
-    uint8 *sendBuff, *recBuff;
-    uint16 checksumTotal = 0;
-    uint32 ackArrayTotal, expectedAckArray;
+    quint8 *sendBuff, *recBuff;
+    quint16 checksumTotal = 0;
+    quint32 ackArrayTotal, expectedAckArray;
     int sendChars, recChars, sendSize, recSize;
     int i, ret;
 
@@ -661,15 +661,15 @@ long I2C(HANDLE hDevice, uint8 I2COptions, uint8 SpeedAdjust, uint8 SDAPinNum, u
     sendSize = 6 + 8 + ((NumI2CBytesToSend%2 != 0)?(NumI2CBytesToSend + 1):(NumI2CBytesToSend));
     recSize = 6 + 6 + ((NumI2CBytesToReceive%2 != 0)?(NumI2CBytesToReceive + 1):(NumI2CBytesToReceive));
 
-    sendBuff = (uint8 *)malloc(sizeof(uint8)*sendSize);
-    recBuff = (uint8 *)malloc(sizeof(uint8)*recSize);
+    sendBuff = (quint8 *)malloc(sizeof(quint8)*sendSize);
+    recBuff = (quint8 *)malloc(sizeof(quint8)*recSize);
 
     sendBuff[sendSize - 1] = 0;
 
     //I2C command
-    sendBuff[1] = (uint8)(0xF8);  //Command byte
+    sendBuff[1] = (quint8)(0xF8);  //Command byte
     sendBuff[2] = (sendSize - 6) / 2;  //Number of data words = 4 + NumI2CBytesToSend
-    sendBuff[3] = (uint8)(0x3B);  //extended command number
+    sendBuff[3] = (quint8)(0x3B);  //extended command number
 
     sendBuff[6] = I2COptions;  //I2COptions
     sendBuff[7] = SpeedAdjust;  //SpeedAdjust
@@ -723,32 +723,32 @@ long I2C(HANDLE hDevice, uint8 I2COptions, uint8 SpeedAdjust, uint8 SDAPinNum, u
     for( i = 0; i < NumI2CBytesToReceive; i++ )
         I2CBytesResponse[i] = recBuff[12 + i];
 
-    if( (uint8)(extendedChecksum8(recBuff)) != recBuff[0] )
+    if( (quint8)(extendedChecksum8(recBuff)) != recBuff[0] )
     {
         printf("I2C Error : read buffer has bad checksum (%d)\n", recBuff[0]);
         ret = -1;
     }
 
-    if( recBuff[1] != (uint8)(0xF8) )
+    if( recBuff[1] != (quint8)(0xF8) )
     {
         printf("I2C Error : read buffer has incorrect command byte (%d)\n", recBuff[1]);
         ret = -1;
     }
 
-    if( recBuff[2] != (uint8)((recSize - 6)/2) )
+    if( recBuff[2] != (quint8)((recSize - 6)/2) )
     {
         printf("I2C Error : read buffer has incorrect number of data words (%d)\n", recBuff[2]);
         ret = -1;
     }
 
-    if( recBuff[3] != (uint8)(0x3B) )
+    if( recBuff[3] != (quint8)(0x3B) )
     {
         printf("I2C Error : read buffer has incorrect extended command number (%d)\n", recBuff[3]);
         ret = -1;
     }
 
     checksumTotal = extendedChecksum16(recBuff, recSize);
-    if( (uint8)((checksumTotal / 256) & 0xff) != recBuff[5] || (uint8)(checksumTotal & 255) != recBuff[4])
+    if( (quint8)((checksumTotal / 256) & 0xff) != recBuff[5] || (quint8)(checksumTotal & 255) != recBuff[4])
     {
         printf("I2C error : read buffer has bad checksum16 (%u)\n", checksumTotal);
         ret = -1;
@@ -776,11 +776,11 @@ long eAIN(HANDLE Handle, u3CalibrationInfo *CalibrationInfo, long ConfigIO, long
 	Q_UNUSED(Range)
 	Q_UNUSED(Reserved1)
 	Q_UNUSED(Reserved2)
-    uint8 sendDataBuff[3], recDataBuff[2];
-    uint8 FIOAnalog, EIOAnalog, curFIOAnalog, curEIOAnalog;
-    uint8 curTCConfig, settling, quicksample, Errorcode;
-    uint8 ErrorFrame, outDAC1Enable;
-    uint16 bytesVT;
+    quint8 sendDataBuff[3], recDataBuff[2];
+    quint8 FIOAnalog, EIOAnalog, curFIOAnalog, curEIOAnalog;
+    quint8 curTCConfig, settling, quicksample, Errorcode;
+    quint8 ErrorFrame, outDAC1Enable;
+    quint16 bytesVT;
     int hv, isSpecialRange = 0;
     long error;
     double hwver;
@@ -856,9 +856,9 @@ long eAIN(HANDLE Handle, u3CalibrationInfo *CalibrationInfo, long ConfigIO, long
 
     settling = (Settling != 0) ? 1 : 0;
     quicksample = (Resolution != 0) ? 1 : 0;
-    sendDataBuff[1] = (uint8)ChannelP + settling*64 + quicksample*128;  //Positive channel (bits 0-4), LongSettling (bit 6)
+    sendDataBuff[1] = (quint8)ChannelP + settling*64 + quicksample*128;  //Positive channel (bits 0-4), LongSettling (bit 6)
                                                                         //QuickSample (bit 7)
-    sendDataBuff[2] = (uint8)ChannelN;  //Negative channel
+    sendDataBuff[2] = (quint8)ChannelN;  //Negative channel
 
     if( ehFeedback(Handle, sendDataBuff, 3, &Errorcode, &ErrorFrame, recDataBuff, 2) < 0 )
         return -1;
@@ -903,9 +903,9 @@ long eDAC(HANDLE Handle, u3CalibrationInfo *CalibrationInfo, long ConfigIO, long
 	Q_UNUSED(Binary)
 	Q_UNUSED(Reserved1)
 	Q_UNUSED(Reserved2)
-    uint8 sendDataBuff[3];
-    uint8 byteV, DAC1Enabled, Errorcode, ErrorFrame;
-    uint16 bytesV;
+    quint8 sendDataBuff[3];
+    quint8 byteV, DAC1Enabled, Errorcode, ErrorFrame;
+    quint16 bytesV;
     long error, sendSize;
 
     if( isCalibrationInfoValid(CalibrationInfo) == 0 )
@@ -949,8 +949,8 @@ long eDAC(HANDLE Handle, u3CalibrationInfo *CalibrationInfo, long ConfigIO, long
         if( getDacBinVoltCalibrated16Bit(CalibrationInfo, (int)Channel, Voltage, &bytesV) < 0 )
             return -1;
 
-        sendDataBuff[1] = (uint8)(bytesV&255);  //Value LSB
-        sendDataBuff[2] = (uint8)((bytesV&65280)/256);  //Value MSB
+        sendDataBuff[1] = (quint8)(bytesV&255);  //Value LSB
+        sendDataBuff[2] = (quint8)((bytesV&65280)/256);  //Value MSB
     }
 
     if( ehFeedback(Handle, sendDataBuff, sendSize, &Errorcode, &ErrorFrame, NULL, 0) < 0 )
@@ -964,9 +964,9 @@ long eDAC(HANDLE Handle, u3CalibrationInfo *CalibrationInfo, long ConfigIO, long
 
 long eDI(HANDLE Handle, long ConfigIO, long Channel, long *State)
 {
-    uint8 sendDataBuff[4], recDataBuff[1];
-    uint8 Errorcode, ErrorFrame, FIOAnalog, EIOAnalog;
-    uint8 curFIOAnalog, curEIOAnalog, curTCConfig;
+    quint8 sendDataBuff[4], recDataBuff[1];
+    quint8 Errorcode, ErrorFrame, FIOAnalog, EIOAnalog;
+    quint8 curFIOAnalog, curEIOAnalog, curTCConfig;
     long error;
 
     if( Channel < 0 || Channel > 19 )
@@ -1023,9 +1023,9 @@ long eDI(HANDLE Handle, long ConfigIO, long Channel, long *State)
 
 long eDO(HANDLE Handle, long ConfigIO, long Channel, long State)
 {
-    uint8 sendDataBuff[4];
-    uint8 Errorcode, ErrorFrame, FIOAnalog, EIOAnalog;
-    uint8 curFIOAnalog, curEIOAnalog, curTCConfig;
+    quint8 sendDataBuff[4];
+    quint8 Errorcode, ErrorFrame, FIOAnalog, EIOAnalog;
+    quint8 curFIOAnalog, curEIOAnalog, curTCConfig;
     long error;
 
     if( Channel < 0 || Channel > 19 )
@@ -1083,9 +1083,9 @@ long eTCConfig(HANDLE Handle, long *aEnableTimers, long *aEnableCounters, long T
 {
 	Q_UNUSED(Reserved1)
 	Q_UNUSED(Reserved2)
-    uint8 sendDataBuff[8];
-    uint8 FIOAnalog, EIOAnalog, curFIOAnalog, curEIOAnalog;
-    uint8 TimerCounterConfig, curTimerCounterConfig, Errorcode, ErrorFrame;
+    quint8 sendDataBuff[8];
+    quint8 FIOAnalog, EIOAnalog, curFIOAnalog, curEIOAnalog;
+    quint8 TimerCounterConfig, curTimerCounterConfig, Errorcode, ErrorFrame;
     int sendDataBuffSize, numTimers, numCounters, i;
     long error;
 
@@ -1111,7 +1111,7 @@ long eTCConfig(HANDLE Handle, long *aEnableTimers, long *aEnableCounters, long T
         TimerClockBaseIndex = TimerClockBaseIndex - 20;
     }
 
-    error = ehConfigTimerClock(Handle, (uint8)(TimerClockBaseIndex + 128), (uint8)TimerClockDivisor, NULL, NULL);
+    error = ehConfigTimerClock(Handle, (quint8)(TimerClockBaseIndex + 128), (quint8)TimerClockDivisor, NULL, NULL);
     if( error != 0 )
         return error;
 
@@ -1168,9 +1168,9 @@ long eTCConfig(HANDLE Handle, long *aEnableTimers, long *aEnableCounters, long T
         for( i = 0; i < numTimers; i++ )
         {
             sendDataBuff[i*4] = 43 + i*2;  //TimerConfig
-            sendDataBuff[1 + i*4] = (uint8)aTimerModes[i];  //TimerMode
-            sendDataBuff[2 + i*4] = (uint8)(((long)aTimerValues[i])&0x00ff);  //Value LSB
-            sendDataBuff[3 + i*4] = (uint8)((((long)aTimerValues[i])&0xff00)/256);  //Value MSB
+            sendDataBuff[1 + i*4] = (quint8)aTimerModes[i];  //TimerMode
+            sendDataBuff[2 + i*4] = (quint8)(((long)aTimerValues[i])&0x00ff);  //Value LSB
+            sendDataBuff[3 + i*4] = (quint8)((((long)aTimerValues[i])&0xff00)/256);  //Value MSB
         }
 
         sendDataBuffSize = 4 * numTimers;
@@ -1189,7 +1189,7 @@ long eTCValues(HANDLE Handle, long *aReadTimers, long *aUpdateResetTimers, long 
 {
 	Q_UNUSED(Reserved1)
 	Q_UNUSED(Reserved2)
-    uint8 sendDataBuff[12], recDataBuff[16], Errorcode, ErrorFrame;
+    quint8 sendDataBuff[12], recDataBuff[16], Errorcode, ErrorFrame;
     int sendDataBuffSize, recDataBuffSize, i, j;
     int numTimers, dataCountCounter, dataCountTimer;
 
@@ -1206,8 +1206,8 @@ long eTCValues(HANDLE Handle, long *aReadTimers, long *aUpdateResetTimers, long 
         {
             sendDataBuff[sendDataBuffSize] = 42 + i*2;  //Timer
             sendDataBuff[1 + sendDataBuffSize] = ((aUpdateResetTimers[i] != 0) ? 1 : 0);  //UpdateReset
-            sendDataBuff[2 + sendDataBuffSize] = (uint8)(((long)aTimerValues[i])&0x00ff);  //Value LSB
-            sendDataBuff[3 + sendDataBuffSize] = (uint8)((((long)aTimerValues[i])&0xff00)/256);  //Value MSB
+            sendDataBuff[2 + sendDataBuffSize] = (quint8)(((long)aTimerValues[i])&0x00ff);  //Value LSB
+            sendDataBuff[3 + sendDataBuffSize] = (quint8)((((long)aTimerValues[i])&0xff00)/256);  //Value MSB
             sendDataBuffSize += 4;
             recDataBuffSize += 4;
             numTimers++;
@@ -1255,15 +1255,15 @@ long eTCValues(HANDLE Handle, long *aReadTimers, long *aUpdateResetTimers, long 
 }
 
 
-long ehConfigIO(HANDLE hDevice, uint8 inWriteMask, uint8 inTimerCounterConfig, uint8 inDAC1Enable, uint8 inFIOAnalog, uint8 inEIOAnalog, uint8 *outTimerCounterConfig, uint8 *outDAC1Enable, uint8 *outFIOAnalog, uint8 *outEIOAnalog)
+long ehConfigIO(HANDLE hDevice, quint8 inWriteMask, quint8 inTimerCounterConfig, quint8 inDAC1Enable, quint8 inFIOAnalog, quint8 inEIOAnalog, quint8 *outTimerCounterConfig, quint8 *outDAC1Enable, quint8 *outFIOAnalog, quint8 *outEIOAnalog)
 {
-    uint8 sendBuff[12], recBuff[12];
-    uint16 checksumTotal;
+    quint8 sendBuff[12], recBuff[12];
+    quint16 checksumTotal;
     int sendChars, recChars;
 
-    sendBuff[1] = (uint8)(0xF8);  //Command byte
-    sendBuff[2] = (uint8)(0x03);  //Number of data words
-    sendBuff[3] = (uint8)(0x0B);  //Extended command number
+    sendBuff[1] = (quint8)(0xF8);  //Command byte
+    sendBuff[2] = (quint8)(0x03);  //Number of data words
+    sendBuff[3] = (quint8)(0x0B);  //Extended command number
 
     sendBuff[6] = inWriteMask;  //Writemask
 
@@ -1295,13 +1295,13 @@ long ehConfigIO(HANDLE hDevice, uint8 inWriteMask, uint8 inTimerCounterConfig, u
     }
 
     checksumTotal = extendedChecksum16(recBuff, 12);
-    if( (uint8)((checksumTotal / 256 ) & 0xff) != recBuff[5] )
+    if( (quint8)((checksumTotal / 256 ) & 0xff) != recBuff[5] )
     {
         printf("ehConfigIO error : read buffer has bad checksum16(MSB)\n");
         return -1;
     }
 
-    if( (uint8)(checksumTotal & 0xff) != recBuff[4] )
+    if( (quint8)(checksumTotal & 0xff) != recBuff[4] )
     {
         printf("ehConfigIO error : read buffer has bad checksum16(LBS)\n");
         return -1;
@@ -1313,7 +1313,7 @@ long ehConfigIO(HANDLE hDevice, uint8 inWriteMask, uint8 inTimerCounterConfig, u
         return -1;
     }
 
-    if( recBuff[1] != (uint8)(0xF8) || recBuff[2] != (uint8)(0x03) || recBuff[3] != (uint8)(0x0B) )
+    if( recBuff[1] != (quint8)(0xF8) || recBuff[2] != (quint8)(0x03) || recBuff[3] != (quint8)(0x0B) )
     {
         printf("ehConfigIO error : read buffer has wrong command bytes\n");
         return -1;
@@ -1338,15 +1338,15 @@ long ehConfigIO(HANDLE hDevice, uint8 inWriteMask, uint8 inTimerCounterConfig, u
 }
 
 
-long ehConfigTimerClock(HANDLE hDevice, uint8 inTimerClockConfig, uint8 inTimerClockDivisor, uint8 *outTimerClockConfig, uint8 *outTimerClockDivisor)
+long ehConfigTimerClock(HANDLE hDevice, quint8 inTimerClockConfig, quint8 inTimerClockDivisor, quint8 *outTimerClockConfig, quint8 *outTimerClockDivisor)
 {
-    uint8 sendBuff[10], recBuff[10];
-    uint16 checksumTotal;
+    quint8 sendBuff[10], recBuff[10];
+    quint16 checksumTotal;
     int sendChars, recChars;
 
-    sendBuff[1] = (uint8)(0xF8);  //Command byte
-    sendBuff[2] = (uint8)(0x02);  //Number of data words
-    sendBuff[3] = (uint8)(0x0A);  //Extended command number
+    sendBuff[1] = (quint8)(0xF8);  //Command byte
+    sendBuff[2] = (quint8)(0x02);  //Number of data words
+    sendBuff[3] = (quint8)(0x0A);  //Extended command number
 
     sendBuff[6] = 0;  //Reserved
     sendBuff[7] = 0;  //Reserved
@@ -1376,13 +1376,13 @@ long ehConfigTimerClock(HANDLE hDevice, uint8 inTimerClockConfig, uint8 inTimerC
     }
 
     checksumTotal = extendedChecksum16(recBuff, 10);
-    if( (uint8)((checksumTotal / 256 ) & 0xff) != recBuff[5] )
+    if( (quint8)((checksumTotal / 256 ) & 0xff) != recBuff[5] )
     {
         printf("ehConfigTimerClock error : read buffer has bad checksum16(MSB)\n");
         return -1;
     }
 
-    if( (uint8)(checksumTotal & 0xff) != recBuff[4] )
+    if( (quint8)(checksumTotal & 0xff) != recBuff[4] )
     {
         printf("ehConfigTimerClock error : read buffer has bad checksum16(LBS)\n");
         return -1;
@@ -1394,7 +1394,7 @@ long ehConfigTimerClock(HANDLE hDevice, uint8 inTimerClockConfig, uint8 inTimerC
         return -1;
     }
 
-    if( recBuff[1] != (uint8)(0xF8) || recBuff[2] != (uint8)(0x02) || recBuff[3] != (uint8)(0x0A) )
+    if( recBuff[1] != (quint8)(0xF8) || recBuff[2] != (quint8)(0x02) || recBuff[3] != (quint8)(0x0A) )
     {
         printf("ehConfigTimerClock error : read buffer has wrong command bytes\n");
         return -1;
@@ -1416,10 +1416,10 @@ long ehConfigTimerClock(HANDLE hDevice, uint8 inTimerClockConfig, uint8 inTimerC
 }
 
 
-long ehFeedback(HANDLE hDevice, uint8 *inIOTypesDataBuff, long inIOTypesDataSize, uint8 *outErrorcode, uint8 *outErrorFrame, uint8 *outDataBuff, long outDataSize)
+long ehFeedback(HANDLE hDevice, quint8 *inIOTypesDataBuff, long inIOTypesDataSize, quint8 *outErrorcode, quint8 *outErrorFrame, quint8 *outDataBuff, long outDataSize)
 {
-    uint8 *sendBuff, *recBuff;
-    uint16 checksumTotal;
+    quint8 *sendBuff, *recBuff;
+    quint16 checksumTotal;
     int sendChars, recChars, sendDWSize, recDWSize;
     int commandBytes, ret, i;
 
@@ -1431,8 +1431,8 @@ long ehFeedback(HANDLE hDevice, uint8 *inIOTypesDataBuff, long inIOTypesDataSize
     if( ((recDWSize = outDataSize + 3)%2) != 0 )
         recDWSize++;
 
-    sendBuff = (uint8 *)malloc(sizeof(uint8)*(commandBytes + sendDWSize));
-    recBuff = (uint8 *)malloc(sizeof(uint8)*(commandBytes + recDWSize));
+    sendBuff = (quint8 *)malloc(sizeof(quint8)*(commandBytes + sendDWSize));
+    recBuff = (quint8 *)malloc(sizeof(quint8)*(commandBytes + recDWSize));
     if( sendBuff == NULL || recBuff == NULL )
     {
         ret = -1;
@@ -1442,10 +1442,10 @@ long ehFeedback(HANDLE hDevice, uint8 *inIOTypesDataBuff, long inIOTypesDataSize
     sendBuff[sendDWSize + commandBytes - 1] = 0;
 
     /* Setting up Feedback command */
-    sendBuff[1] = (uint8)(0xF8);  //Command byte
+    sendBuff[1] = (quint8)(0xF8);  //Command byte
     sendBuff[2] = sendDWSize/2;  //Number of data words (.5 word for echo, 1.5
                                  //                      words for IOTypes)
-    sendBuff[3] = (uint8)(0x00);  //Extended command number
+    sendBuff[3] = (quint8)(0x00);  //Extended command number
 
     sendBuff[6] = 0;  //Echo
 
@@ -1485,14 +1485,14 @@ long ehFeedback(HANDLE hDevice, uint8 *inIOTypesDataBuff, long inIOTypesDataSize
     }
 
     checksumTotal = extendedChecksum16(recBuff, recChars);
-    if( (uint8)((checksumTotal / 256 ) & 0xff) != recBuff[5] )
+    if( (quint8)((checksumTotal / 256 ) & 0xff) != recBuff[5] )
     {
         printf("ehFeedback error : read buffer has bad checksum16(MSB)\n");
         ret = -1;
         goto cleanmem;
     }
 
-    if( (uint8)(checksumTotal & 0xff) != recBuff[4] )
+    if( (quint8)(checksumTotal & 0xff) != recBuff[4] )
     {
         printf("ehFeedback error : read buffer has bad checksum16(LBS)\n");
         ret = -1;
@@ -1506,7 +1506,7 @@ long ehFeedback(HANDLE hDevice, uint8 *inIOTypesDataBuff, long inIOTypesDataSize
         goto cleanmem;
     }
 
-    if( recBuff[1] != (uint8)(0xF8) || recBuff[3] != (uint8)(0x00) )
+    if( recBuff[1] != (quint8)(0xF8) || recBuff[3] != (quint8)(0x00) )
     {
         printf("ehFeedback error : read buffer has wrong command bytes \n");
         ret = -1;

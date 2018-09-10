@@ -1,6 +1,7 @@
 #include "mso72004c.h"
 
 #include <QTcpSocket>
+#include <math.h>
 
 MSO72004C::MSO72004C(QObject *parent) :
     FtmwScope(parent), d_waitingForReply(false), d_foundHeader(false),
@@ -13,8 +14,31 @@ MSO72004C::MSO72004C(QObject *parent) :
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
+
+    s.setValue(QString("canBlockAverage"),false);
+    s.setValue(QString("canFastFrame"),true);
+    s.setValue(QString("canSummaryFrame"),true);
+    s.setValue(QString("canBlockAndFastFrame"),false);
+
     double bandwidth = s.value(QString("bandwidth"),16000.0).toDouble();
     s.setValue(QString("bandwidth"),bandwidth);
+
+    if(s.beginReadArray(QString("sampleRates")) < 1)
+    {
+        s.endArray();
+        QList<QPair<QString,double>> sampleRates;
+        sampleRates << qMakePair(QString("2 GSa/s"),2e9) << qMakePair(QString("5 GSa/s"),5e9)  << qMakePair(QString("10 GSa/s"),10e9)
+                    << qMakePair(QString("20 GSa/s"),20e9) << qMakePair(QString("50 GSa/s"),50e9)  << qMakePair(QString("100 GSa/s"),100e9);
+
+        s.beginWriteArray(QString("sampleRates"));
+        for(int i=0; i<sampleRates.size(); i++)
+        {
+            s.setArrayIndex(i);
+            s.setValue(QString("text"),sampleRates.at(i).first);
+            s.setValue(QString("val"),sampleRates.at(i).second);
+        }
+        s.endArray();
+    }
     s.endGroup();
     s.endGroup();
 
@@ -403,8 +427,8 @@ Experiment MSO72004C::prepareForExperiment(Experiment exp)
     QString trigCh = QString("AUX");
     if(config.trigChannel > 0)
         trigCh = QString("CH%1").arg(config.trigChannel);
-    //:TRIGGER:A:LEVEL 0.35;
-    resp = scopeQueryCmd(QString(":TRIGGER:A:EDGE:SOURCE %1;COUPLING DC;SLOPE %2;:TRIGGER:A:EDGE:SOURCE?;SLOPE?\n").arg(trigCh).arg(slope));
+
+    resp = scopeQueryCmd(QString(":TRIGGER:A:EDGE:SOURCE %1;COUPLING DC;SLOPE %2;:TRIGGER:A:LEVEL %3;:TRIGGER:A:EDGE:SOURCE?;SLOPE?\n").arg(trigCh).arg(slope).arg(config.trigLevel,0,'f',3));
     if(!resp.isEmpty())
     {
         if(!QString(resp).contains(trigCh),Qt::CaseInsensitive)

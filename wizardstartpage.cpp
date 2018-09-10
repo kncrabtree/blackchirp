@@ -24,7 +24,7 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     p_auxDataIntervalBox->setToolTip(QString("Interval for aux data readings (e.g., flows, pressure, etc.)"));
 
     p_snapshotBox = new QSpinBox(this);
-    p_snapshotBox->setRange(1<<8,(1<<16)-1);
+    p_snapshotBox->setRange(1<<8,(1<<30)-1);
     p_snapshotBox->setValue(20000);
     p_snapshotBox->setSingleStep(5000);
     p_snapshotBox->setPrefix(QString("every "));

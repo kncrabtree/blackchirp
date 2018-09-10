@@ -26,6 +26,8 @@ public:
 
     bool isEnabled() const;
     bool isPhaseCorrectionEnabled() const;
+    bool isChirpScoringEnabled() const;
+    double chirpRMSThreshold() const;
     BlackChirp::FtmwType type() const;
     qint64 targetShots() const;
     qint64 completedShots() const;
@@ -37,8 +39,9 @@ public:
     ChirpConfig chirpConfig() const;
     Fid fidTemplate() const;
     int numFrames() const;
-    QList<Fid> parseWaveform(QByteArray b) const;
-    QVector<qint64> extractChirp(QByteArray b) const;
+    QList<Fid> parseWaveform(const QByteArray b) const;
+    QVector<qint64> extractChirp() const;
+    QVector<qint64> extractChirp(const QByteArray b) const;
     QString errorString() const;
     double ftMin() const;
     double ftMax() const;
@@ -49,6 +52,8 @@ public:
     bool prepareForAcquisition();
     void setEnabled();
     void setPhaseCorrectionEnabled(bool enabled);
+    void setChirpScoringEnabled(bool enabled);
+    void setChirpRMSThreshold(double t);
     void setFidTemplate(const Fid f);
     void setType(const BlackChirp::FtmwType type);
     void setTargetShots(const qint64 target);
@@ -81,11 +86,13 @@ private:
 class FtmwConfigData : public QSharedData
 {
 public:
-    FtmwConfigData() : isEnabled(false), phaseCorrectionEnabled(false), type(BlackChirp::FtmwForever), targetShots(-1),
+    FtmwConfigData() : isEnabled(false), phaseCorrectionEnabled(false), chirpScoringEnabled(false), chirpRMSThreshold(0.0), type(BlackChirp::FtmwForever), targetShots(-1),
         completedShots(0), loFreq(0.0), sideband(BlackChirp::UpperSideband) {}
 
     bool isEnabled;
     bool phaseCorrectionEnabled;
+    bool chirpScoringEnabled;
+    double chirpRMSThreshold;
     BlackChirp::FtmwType type;
     qint64 targetShots;
     qint64 completedShots;
