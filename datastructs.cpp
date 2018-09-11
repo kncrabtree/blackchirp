@@ -162,6 +162,8 @@ QString BlackChirp::clockPrettyName(BlackChirp::ClockType t)
         return QString("Downconversion LO");
     case AwgClock:
         return QString("AWG Reference Clock");
+    case DRClock:
+        return QString("Double Resonance Clock");
     case DigitizerClock:
         return QString("Digitizer Reference Clock");
     case ReferenceClock:
@@ -182,6 +184,8 @@ QString BlackChirp::clockKey(BlackChirp::ClockType t)
         return QString("DownLO");
     case AwgClock:
         return QString("AwgRef");
+    case DRClock:
+        return QString("DrClock");
     case DigitizerClock:
         return QString("DigRef");
     case ReferenceClock:
@@ -189,4 +193,12 @@ QString BlackChirp::clockKey(BlackChirp::ClockType t)
     default:
         return QString("Unknown");
     }
+}
+
+QList<BlackChirp::ClockType> BlackChirp::allClockTypes()
+{
+    QList <BlackChirp::ClockType> out;
+    out << UpConversionLO << DownConversionLO << AwgClock
+         << DRClock << DigitizerClock << ReferenceClock;
+    return out;
 }

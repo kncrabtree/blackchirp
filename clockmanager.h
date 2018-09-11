@@ -37,11 +37,13 @@ public slots:
     double setClockFrequency(BlackChirp::ClockType t, double freqMHz);
     double readClockFrequency(BlackChirp::ClockType t);
     void readClockRoles();
+    void setBand(int band);
 
 private:
     QList<Clock*> d_clockList;
     QList<BlackChirp::ClockType> d_clockTypes;
     QMap<int,Clock*> d_clockRoles;
+    int d_currentBand;
 
 };
 

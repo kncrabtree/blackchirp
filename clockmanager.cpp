@@ -7,7 +7,12 @@
 
 ClockManager::ClockManager(QObject *parent) : QObject(parent)
 {
-    d_clockTypes << BlackChirp::UpConversionLO << BlackChirp::DownConversionLO << BlackChirp::AwgClock << BlackChirp::DigitizerClock << BlackChirp::ReferenceClock;
+    d_clockTypes = BlackChirp::allClockTypes();
+
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("clockManager"));
+    d_currentBand = s.value(QString("currentBand"),0).toInt();
+    s.endGroup();
 
 #ifdef BC_CLOCK_0
     d_clockList << new Clock0Hardware(0,this);
@@ -68,9 +73,9 @@ void ClockManager::readClockRoles()
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(QString("clockManager"));
-    int band = s.value(QString("currentBand"),0).toInt();
+    s.setValue(QString("currentBand"),d_currentBand);
     s.beginReadArray(QString("bands"));
-    s.setArrayIndex(band);
+    s.setArrayIndex(d_currentBand);
     s.beginReadArray(QString("clocks"));
     for(int index=0; index<d_clockList.size(); index++)
     {
@@ -83,6 +88,8 @@ void ClockManager::readClockRoles()
         for(int i=0; i<outputs; i++)
         {
             s.setArrayIndex(i);
+            double mult = s.value(QString("multFactor"),1.0).toDouble();
+            c->setMultFactor(mult,i);
             auto role = static_cast<BlackChirp::ClockType>(s.value(QString("type"),QVariant(BlackChirp::UpConversionLO)).toInt());
             if(!d_clockRoles.contains(d_clockTypes.indexOf(role)))
             {
@@ -91,10 +98,19 @@ void ClockManager::readClockRoles()
             }
         }
         s.endArray();
-        s.endArray();
     }
-    s.endGroup();
+    s.endArray();
     s.endArray();
     s.endGroup();
 
+}
+
+void ClockManager::setBand(int band)
+{
+    //Note, this function is intended to be called during experiment initialization.
+    //The individual clock frequencies will be changed directly by
+    //the HardwareManager
+    ///TODO: figure out how to communicate with IO Board or something
+    d_currentBand = band;
+    readClockRoles();
 }

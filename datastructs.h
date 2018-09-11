@@ -82,14 +82,17 @@ enum FtWindowFunction {
     KaiserBessel14
 };
 
+//NOTE: be sure to edit the functions below if adding a new clock type
 enum ClockType {
     UpConversionLO,
     DownConversionLO,
     AwgClock,
+    DRClock,
     DigitizerClock,
     ReferenceClock
 };
 
+QList<ClockType> allClockTypes();
 QString clockPrettyName(ClockType t);
 QString clockKey(ClockType t);
 

@@ -14,6 +14,8 @@ FixedClock::FixedClock(int clockNum, QObject *parent) : Clock(clockNum, parent)
 
     for(int i=0; i<d_numOutputs; i++)
         d_currentFrequencyList << 0.0;
+
+    Clock::prepareMultFactors();
 }
 
 
@@ -43,6 +45,7 @@ void FixedClock::initialize()
     s.endArray();
     s.endGroup();
     s.endGroup();
+
 }
 
 Experiment FixedClock::prepareForExperiment(Experiment exp)

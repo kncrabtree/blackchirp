@@ -31,10 +31,15 @@ public:
 
     int numOutputs() { return d_numOutputs; }
     bool isTunable() { return d_isTunable; }
+    void setMultFactor(double d, int output=0);
 
     //implement this function if d_numChannels > 1 to return
     //human-readable names for each output (e.g., Source 1, Source 2, etc)
     virtual QStringList channelNames();
+
+    //This function should be called in the constructor of an implementation
+    //to populate d_multFactors list
+    void prepareMultFactors();
 
 public slots:
     bool setRole(BlackChirp::ClockType t, int outputIndex = 0);
@@ -55,6 +60,7 @@ protected:
     bool d_isTunable;
     double d_minFreqMHz, d_maxFreqMHz;
     QMap<int,BlackChirp::ClockType> d_outputRoles;
+    QList<double> d_multFactors;
 
     virtual bool setHwFrequency(double freqMHz, int outputIndex = 0) =0;
     virtual double readHwFrequency(int outputIndex = 0) =0;
