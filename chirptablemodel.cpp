@@ -48,13 +48,19 @@ QVariant ChirpTableModel::data(const QModelIndex &index, int role) const
             if(empty)
                 return QString("Empty");
             else
-                return QString::number(segmentList.at(index.row()).startFreqMHz,'f',3);
+            {
+                double chirpFreq = d_currentRfConfig.calculateChirpFreq(segmentList.at(index.row()).startFreqMHz);
+                return QString::number(chirpFreq,'f',3);
+            }
             break;
         case 1:
             if(empty)
                 return QString("Empty");
             else
-                return QString::number(segmentList.at(index.row()).endFreqMHz,'f',3);
+            {
+                double chirpFreq = d_currentRfConfig.calculateChirpFreq(segmentList.at(index.row()).endFreqMHz);
+                return QString::number(chirpFreq,'f',3);
+            }
             break;
         case 2:
             return QString::number(segmentList.at(index.row()).durationUs*1e3,'f',1);
@@ -65,6 +71,16 @@ QVariant ChirpTableModel::data(const QModelIndex &index, int role) const
             else
                 return QString("No");
             break;
+        case 4:
+            if(empty)
+                return QString("Empty");
+            else
+                return QString::number(segmentList.at(index.row()).startFreqMHz,'f',3);
+        case 5:
+            if(empty)
+                return QString("Empty");
+            else
+                return QString::number(segmentList.at(index.row()).endFreqMHz,'f',3);
         default:
             return QVariant();
             break;
@@ -74,16 +90,22 @@ QVariant ChirpTableModel::data(const QModelIndex &index, int role) const
     {
         switch(index.column()) {
         case 0:
-            return segmentList.at(index.row()).startFreqMHz;
+            return  d_currentRfConfig.calculateChirpFreq(segmentList.at(index.row()).startFreqMHz);
             break;
         case 1:
-            return segmentList.at(index.row()).endFreqMHz;
+            return  d_currentRfConfig.calculateChirpFreq(segmentList.at(index.row()).endFreqMHz);
             break;
         case 2:
             return segmentList.at(index.row()).durationUs*1e3;
             break;
         case 3:
             return segmentList.at(index.row()).empty;
+            break;
+        case 4:
+            return segmentList.at(index.row()).startFreqMHz;
+            break;
+        case 5:
+            return segmentList.at(index.row()).endFreqMHz;
             break;
         default:
             return QVariant();
@@ -104,16 +126,22 @@ QVariant ChirpTableModel::headerData(int section, Qt::Orientation orientation, i
         {
             switch(section) {
             case 0:
-                return QString("f Start (MHz)");
+                return QString("Chirp Start (MHz)");
                 break;
             case 1:
-                return QString("f End (MHz)");
+                return QString("Chirp End (MHz)");
                 break;
             case 2:
                 return QString("Duration (ns)");
                 break;
             case 3:
                 return QString("Empty?");
+                break;
+            case 4:
+                return QString("AWG Start (MHz)");
+                break;
+            case 5:
+                return QString("AWG End (MHz)");
                 break;
             default:
                 return QVariant();
@@ -139,6 +167,12 @@ QVariant ChirpTableModel::headerData(int section, Qt::Orientation orientation, i
         case 3:
             return QString("An empty segment makes a gap in the chirp.");
             break;
+        case 4:
+            return QString("Starting AWG frequency for the chirp segment (in MHz)");
+            break;
+        case 5:
+            return QString("Ending AWG frequency for the chirp segment (in MHz)");
+            break;
         default:
             return QVariant();
             break;
@@ -154,7 +188,7 @@ bool ChirpTableModel::setData(const QModelIndex &index, const QVariant &value, i
     if(role != Qt::EditRole)
         return false;
 
-    if(index.row() >= d_chirpList.at(d_currentChirp).size() || index.column() > 3)
+    if(index.row() >= d_chirpList.at(d_currentChirp).size() || index.column() > 5)
         return false;
 
     int ll = d_currentChirp;
@@ -169,10 +203,10 @@ bool ChirpTableModel::setData(const QModelIndex &index, const QVariant &value, i
     {
         switch (index.column()) {
         case 0:
-            d_chirpList[i][index.row()].startFreqMHz = value.toDouble();
+            d_chirpList[i][index.row()].startFreqMHz = d_currentRfConfig.calculateAwgFreq(value.toDouble());
             break;
         case 1:
-            d_chirpList[i][index.row()].endFreqMHz = value.toDouble();
+            d_chirpList[i][index.row()].endFreqMHz = d_currentRfConfig.calculateAwgFreq(value.toDouble());
             break;
         case 2:
             d_chirpList[i][index.row()].durationUs = value.toDouble()/1e3;
@@ -187,14 +221,19 @@ bool ChirpTableModel::setData(const QModelIndex &index, const QVariant &value, i
             else
             {
                 QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-                double chirpMin = s.value(QString("rfConfig/chirpMin"),26500.0).toDouble();
-                double chirpMax = s.value(QString("rfConfig/chirpMax"),40000.0).toDouble();
-
-                if(d_chirpList.at(i).at(index.row()).startFreqMHz < chirpMin || d_chirpList.at(i).at(index.row()).startFreqMHz > chirpMax)
-                    d_chirpList[i][index.row()].startFreqMHz = chirpMin;
-                if(d_chirpList.at(i).at(index.row()).endFreqMHz < chirpMin || d_chirpList.at(i).at(index.row()).endFreqMHz > chirpMax)
-                    d_chirpList[i][index.row()].endFreqMHz = chirpMax;
+                s.beginGroup(QString("awg"));
+                s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+                d_chirpList[i][index.row()].startFreqMHz = s.value(QString("minFreq"),0.0).toDouble();
+                d_chirpList[i][index.row()].endFreqMHz = s.value(QString("maxFreq"),1000.0).toDouble();
+                s.endGroup();
+                s.endGroup();
             }
+            break;
+        case 4:
+            d_chirpList[i][index.row()].startFreqMHz = value.toDouble();
+            break;
+        case 5:
+            d_chirpList[i][index.row()].endFreqMHz = value.toDouble();
             break;
         default:
             return false;
@@ -254,9 +293,21 @@ Qt::ItemFlags ChirpTableModel::flags(const QModelIndex &index) const
 
 void ChirpTableModel::addSegment(double start, double end, double dur, int pos, bool empty)
 {
+
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("awg"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    double awgMin = s.value(QString("minFreq"),0.0).toDouble();
+    double awgMax = s.value(QString("maxFreq"),1000.0).toDouble();
+    s.endGroup();
+    s.endGroup();
+
+    double startFreq = qBound(awgMin,start,awgMax);
+    double endFreq = qBound(awgMin,end,awgMax);
+
     BlackChirp::ChirpSegment cs;
-    cs.startFreqMHz = start;
-    cs.endFreqMHz = end;
+    cs.startFreqMHz = startFreq;
+    cs.endFreqMHz = endFreq;
     cs.durationUs = dur;
     cs.alphaUs = (end-start)/dur;
     cs.empty = empty;
@@ -406,8 +457,18 @@ QWidget *ChirpDoubleSpinBoxDelegate::createEditor(QWidget *parent, const QStyleO
     QWidget *out = editor;
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    double chirpMin = s.value(QString("rfConfig/chirpMin"),26500.0).toDouble();
-    double chirpMax = s.value(QString("rfConfig/chirpMax"),40000.0).toDouble();
+    s.beginGroup(QString("awg"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    double awgMin = s.value(QString("minFreq"),0.0).toDouble();
+    double awgMax = s.value(QString("maxFreq"),1000.0).toDouble();
+    s.endGroup();
+    s.endGroup();
+
+    auto rfc = dynamic_cast<const ChirpTableModel*>(index.model())->getRfConfig();
+    double chirpMin = rfc.calculateChirpFreq(awgMin);
+    double chirpMax = rfc.calculateChirpFreq(awgMax);
+    if(chirpMin > chirpMax)
+        qSwap(chirpMin,chirpMax);
 
     bool empty = index.model()->data(index.model()->index(index.row(),3),Qt::EditRole).toBool();
 
@@ -417,8 +478,7 @@ QWidget *ChirpDoubleSpinBoxDelegate::createEditor(QWidget *parent, const QStyleO
     case 1:
         if(!empty)
         {
-            editor->setMinimum(chirpMin);
-            editor->setMaximum(chirpMax);
+            editor->setRange(chirpMin,chirpMax);
             editor->setDecimals(3);
             editor->setEnabled(true);
         }
@@ -439,6 +499,24 @@ QWidget *ChirpDoubleSpinBoxDelegate::createEditor(QWidget *parent, const QStyleO
         break;
     case 3:
         out = new QCheckBox(parent);
+        break;
+    case 4:
+    case 5:
+        if(!empty)
+        {
+            editor->setRange(awgMin,awgMax);
+            editor->setDecimals(3);
+            editor->setEnabled(true);
+        }
+        else
+        {
+            editor->setMinimum(0.0);
+            editor->setMaximum(0.0);
+            editor->setDecimals(3);
+            editor->setEnabled(false);
+            editor->setSpecialValueText(QString("Empty"));
+        }
+        break;
     default:
         break;
     }

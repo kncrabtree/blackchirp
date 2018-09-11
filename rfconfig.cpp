@@ -72,6 +72,20 @@ RfConfig RfConfig::loadFromSettings()
     return out;
 }
 
+bool RfConfig::isValid() const
+{
+    if(data->chirps.isEmpty())
+        return false;
+
+    for(int i=0; i<data->chirps.size(); i++)
+    {
+        if(data->chirps.at(i).chirpList().isEmpty())
+            return false;
+    }
+
+    return true;
+}
+
 void RfConfig::setAwgMult(const double m)
 {
     data->awgMult = m;
@@ -161,9 +175,17 @@ bool RfConfig::commonLO() const
     return data->commonUpDownLO;
 }
 
+double RfConfig::clockFrequency(BlackChirp::ClockType t) const
+{
+    if(data->clocks.contains(t))
+        return data->clocks.value(t).desiredFreqMHz;
+    else
+        return -1.0;
+}
+
 double RfConfig::rawClockFrequency(BlackChirp::ClockType t) const
 {
-    if(!data->clocks.contains(t))
+    if(data->clocks.contains(t))
         return getRawFrequency(data->clocks.value(t));
     else
         return -1.0;
@@ -175,6 +197,32 @@ ChirpConfig RfConfig::getChirpConfig(int num)
         return data->chirps.at(num);
 
     return ChirpConfig();
+}
+
+double RfConfig::calculateChirpFreq(double awgFreq) const
+{
+    double cf = clockFrequency(BlackChirp::UpConversionLO);
+    double chirp = awgFreq*awgMult();
+    if(upMixSideband() == BlackChirp::LowerSideband)
+        chirp = cf - chirp;
+    else
+        chirp = cf + chirp;
+
+    return chirp*chirpMult();
+
+}
+
+double RfConfig::calculateAwgFreq(double chirpFreq) const
+{
+    double cf = clockFrequency(BlackChirp::UpConversionLO);
+    double awg = chirpFreq/chirpMult();
+    if(upMixSideband() == BlackChirp::LowerSideband)
+        awg = cf - awg;
+    else
+        awg = awg - cf;
+
+    return awg/awgMult();
+
 }
 
 double RfConfig::getRawFrequency(RfConfig::ClockFreq f) const

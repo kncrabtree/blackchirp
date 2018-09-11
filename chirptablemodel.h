@@ -5,7 +5,7 @@
 
 #include <QList>
 
-#include "chirpconfig.h"
+#include "rfconfig.h"
 
 class ChirpTableModel : public QAbstractTableModel
 {
@@ -28,6 +28,8 @@ public:
     void removeSegments(QList<int> rows);
 
     QList<QList<BlackChirp::ChirpSegment>> chirpList() const;
+    void setRfConfig(const RfConfig c){ d_currentRfConfig = c; }
+    RfConfig getRfConfig() const { return d_currentRfConfig; }
 
 public slots:
     void setCurrentChirp(int i);
@@ -40,6 +42,7 @@ signals:
 private:
     QList<QList<BlackChirp::ChirpSegment>> d_chirpList;
     QList<BlackChirp::ChirpSegment> d_currentData;
+    RfConfig d_currentRfConfig;
     int d_currentChirp;
     bool d_applyToAll;
 

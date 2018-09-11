@@ -73,8 +73,9 @@ Experiment ExperimentWizard::getExperiment() const
     {
         ftc.setEnabled();
 
-        ChirpConfig cc = p_chirpConfigPage->getChirpConfig();
-        ftc.setChirpConfig(cc);
+        ///TODO: Get RF config from chirpconfigpage here!
+//        ChirpConfig cc = p_chirpConfigPage->getChirpConfig();
+//        ftc.setChirpConfig(cc);
     }
 
 #ifdef BC_LIF

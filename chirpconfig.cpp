@@ -36,8 +36,6 @@ ChirpConfig::ChirpConfig(int num, QString path) : data(new ChirpConfigData)
     while(!f.atEnd())
         parseFileLine(f.readLine().trimmed());
 
-    validate();
-
     f.close();
 }
 
@@ -144,7 +142,7 @@ double ChirpConfig::segmentStartFreq(int chirp, int segment) const
     if(segment < 0 || segment >= data->chirpList.at(chirp).size())
         return -1.0;
 
-    return awgToRealFreq(data->chirpList.at(chirp).at(segment).startFreqMHz);
+    return data->chirpList.at(chirp).at(segment).startFreqMHz;
 }
 
 double ChirpConfig::segmentEndFreq(int chirp, int segment) const
@@ -155,7 +153,7 @@ double ChirpConfig::segmentEndFreq(int chirp, int segment) const
     if(segment < 0 || segment >= data->chirpList.at(chirp).size())
         return -1.0;
 
-    return awgToRealFreq(data->chirpList.at(chirp).at(segment).endFreqMHz);
+    return data->chirpList.at(chirp).at(segment).endFreqMHz;
 }
 
 double ChirpConfig::segmentDuration(int chirp, int segment) const
@@ -214,7 +212,7 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
     //t1 and t2 are the starting and ending time [t1,t2).
     //y values are ADC levels (10 bit)
     //x values are in microseconds
-    if(!isValid())
+    if(data->chirpList.isEmpty())
         return QVector<QPointF>();
 
     int firstSample = getFirstSample(t1);
@@ -336,7 +334,7 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
 
 QVector<QPair<bool, bool> > ChirpConfig::getMarkerData() const
 {
-    if(!isValid())
+    if(data->chirpList.isEmpty())
         return QVector<QPair<bool,bool>>();
 
     int currentSample = 0;
@@ -655,13 +653,12 @@ void ChirpConfig::addEmptySegment(const double durationUs, const int chirpNum)
 
 void ChirpConfig::setChirpList(const QList<QList<BlackChirp::ChirpSegment>> l)
 {
-
-    data->chirpList = newChirpList;
+    data->chirpList = l;
 }
 
 void ChirpConfig::saveToSettings() const
 {
-    if(!isValid())
+    if(data->chirpList.isEmpty())
         return;
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
@@ -722,12 +719,6 @@ ChirpConfig ChirpConfig::loadFromSettings()
     ///TODO: This class should not worry about hardware limits. That should be handled elsewhere!
     ChirpConfig out;
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("awg"));
-    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-    double awgMinFreq = s.value(QString("minFreq"),100.0).toDouble();
-    double awgMaxFreq = s.value(QString("maxFreq"),6250.0).toDouble();
-    s.endGroup();
-    s.endGroup();;
     s.beginGroup(QString("lastChirpConfig"));
 
     out.setPreChirpProtectionDelay(s.value(QString("preChirpProtectionDelay"),out.preChirpProtectionDelay()).toDouble());
@@ -746,8 +737,8 @@ ChirpConfig ChirpConfig::loadFromSettings()
         {
             s.setArrayIndex(i);
 
-            double startFreqMHz = qBound(awgMinFreq,s.value(QString("startFreq"),-1.0).toDouble(),awgMaxFreq);
-            double endFreqMHz = qBound(awgMinFreq,s.value(QString("endFreq"),-1.0).toDouble(),awgMaxFreq);
+            double startFreqMHz = s.value(QString("startFreq"),-1.0).toDouble();
+            double endFreqMHz = s.value(QString("endFreq"),-1.0).toDouble();
             double durationUs = qBound(0.1,s.value(QString("duration"),-1.0).toDouble(),100000.0);
             bool empty = s.value(QString("empty"),false).toBool();
 
@@ -791,7 +782,7 @@ ChirpConfig ChirpConfig::loadFromSettings()
 int ChirpConfig::getFirstSample(double time) const
 {
     //first sample is inclusive
-    if(!data->isValid)
+    if(data->chirpList.isEmpty())
         return -1;
 
     double nearestSampleTime = round(data->sampleRateSperUS*time)*data->sampleIntervalUS;
@@ -804,7 +795,7 @@ int ChirpConfig::getFirstSample(double time) const
 int ChirpConfig::getLastSample(double time) const
 {
     //last sample is non-inclusive
-    if(!data->isValid)
+    if(data->chirpList.isEmpty())
         return -1.0;
 
     double nearestSampleTime = round(data->sampleRateSperUS*time)*data->sampleIntervalUS;

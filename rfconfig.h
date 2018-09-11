@@ -38,6 +38,7 @@ public:
     void saveToSetting() const;
     static RfConfig loadFromSettings();
 
+    bool isValid() const;
     void setAwgMult(const double m);
     void setUpMixSideband(const BlackChirp::Sideband s);
     void setChirpMult(const double m);
@@ -53,8 +54,12 @@ public:
     double chirpMult() const;
     BlackChirp::Sideband downMixSideband() const;
     bool commonLO() const;
+    double clockFrequency(BlackChirp::ClockType t) const;
     double rawClockFrequency(BlackChirp::ClockType t) const;
     ChirpConfig getChirpConfig(int num=0);
+
+    double calculateChirpFreq(double awgFreq) const;
+    double calculateAwgFreq(double chirpFreq) const;
 
 private:
     QSharedDataPointer<RfConfigData> data;

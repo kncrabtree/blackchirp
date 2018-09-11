@@ -258,7 +258,7 @@ double FtmwConfig::ftMax() const
 QPair<int, int> FtmwConfig::chirpRange() const
 {
     //want to return [first,last) samples for chirp.
-    if(!data->chirpConfig.isValid())
+    if(data->chirpConfig.chirpList().isEmpty())
         return qMakePair(-1,-1);
 
     if(data->fidList.isEmpty())
@@ -317,7 +317,7 @@ bool FtmwConfig::prepareForAcquisition()
         f.setVMult(f.vMult()/256.0);
     data->fidTemplate = f;
 
-    if(!chirpConfig().isValid())
+    if(data->chirpConfig.chirpList().isEmpty())
     {
         data->errorString = QString("Invalid chirp configuration.");
         return false;

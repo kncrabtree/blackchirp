@@ -20,7 +20,7 @@ public:
     explicit ChirpConfigWidget(QWidget *parent = 0);
     ~ChirpConfigWidget();
 
-    ChirpConfig getChirpConfig();
+    RfConfig getRfConfig();
     QSpinBox *numChirpsBox() const;
 
 public slots:

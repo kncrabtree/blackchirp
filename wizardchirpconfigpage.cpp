@@ -36,10 +36,10 @@ int WizardChirpConfigPage::nextId() const
 
 bool WizardChirpConfigPage::isComplete() const
 {
-    return p_ccw->getChirpConfig().isValid();
+    return p_ccw->getRfConfig().isValid();
 }
 
-ChirpConfig WizardChirpConfigPage::getChirpConfig() const
+RfConfig WizardChirpConfigPage::getRfConfig() const
 {
-    return p_ccw->getChirpConfig();
+    return p_ccw->getRfConfig();
 }

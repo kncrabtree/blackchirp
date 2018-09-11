@@ -101,9 +101,10 @@ ChirpConfigWidget::~ChirpConfigWidget()
     delete ui;
 }
 
-ChirpConfig ChirpConfigWidget::getChirpConfig()
+RfConfig ChirpConfigWidget::getRfConfig()
 {
-    return d_currentChirpConfig;
+    ///TODO: Handle multiple chirp configs
+    return d_currentRfConfig;
 }
 
 QSpinBox *ChirpConfigWidget::numChirpsBox() const
@@ -172,7 +173,7 @@ void ChirpConfigWidget::initializeFromSettings()
                 {
                     double dur = qBound(0.1,cc.segmentDuration(i,j),100000.0);
 
-                    if(d_currentChirpConfig.chirpList().at(i).at(j).empty)
+                    if(cc.chirpList().at(i).at(j).empty)
                         p_ctm->addSegment(0.0,0.0,dur,p_ctm->rowCount(QModelIndex()),true);
                     else
                         p_ctm->addSegment(cc.segmentStartFreq(i,j),cc.segmentEndFreq(i,j),dur,p_ctm->rowCount(QModelIndex()));
@@ -213,13 +214,16 @@ void ChirpConfigWidget::setButtonStates()
     //clear button only enabled if table is not empty
     ui->clearButton->setEnabled(p_ctm->rowCount(QModelIndex()) > 0);
 
-    ui->currentChirpBox->setRange(1,d_currentChirpConfig.numChirps());
-    ui->applyToAllBox->setEnabled(d_currentChirpConfig.allChirpsIdentical());
+    //get number of chirps associated with current chirp config
+    ///TODO: Handle >1 CC
+    auto cc = d_currentRfConfig.getChirpConfig();
+    ui->currentChirpBox->setRange(1,cc.numChirps());
+    ui->applyToAllBox->setEnabled(cc.allChirpsIdentical());
 }
 
 void ChirpConfigWidget::addSegment()
 {
-    p_ctm->addSegment(chirpMin,chirpMax,0.500,-1);
+    p_ctm->addSegment(-1.0,-1.0,0.500,-1);
     updateChirpPlot();
 }
 
@@ -235,7 +239,7 @@ void ChirpConfigWidget::insertSegment()
     if(l.size() != 1)
         return;
 
-    p_ctm->addSegment(chirpMin,chirpMax,0.500,l.at(0).row());
+    p_ctm->addSegment(-1.0,-1.0,0.500,l.at(0).row());
     updateChirpPlot();
 }
 

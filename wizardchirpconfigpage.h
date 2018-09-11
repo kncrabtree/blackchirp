@@ -4,7 +4,7 @@
 #include <QWizardPage>
 
 class ChirpConfigWidget;
-class ChirpConfig;
+class RfConfig;
 
 class WizardChirpConfigPage : public QWizardPage
 {
@@ -17,7 +17,7 @@ public:
     int nextId() const;
     bool isComplete() const;
 
-    ChirpConfig getChirpConfig() const;
+    RfConfig getRfConfig() const;
 
 private:
     ChirpConfigWidget *p_ccw;
