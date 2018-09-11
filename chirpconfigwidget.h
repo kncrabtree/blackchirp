@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-#include "chirpconfig.h"
+#include "rfconfig.h"
 #include "chirptablemodel.h"
 
 class QSpinBox;
@@ -46,11 +46,10 @@ signals:
 private:
     Ui::ChirpConfigWidget *ui;
     ChirpTableModel *p_ctm;
-    ChirpConfig d_currentChirpConfig;
+    RfConfig d_currentRfConfig;
 
     bool isSelectionContiguous(QModelIndexList l);
     void clearList(bool replot=true);
-    void updateChirpConfig();
 
 
 };

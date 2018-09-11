@@ -266,7 +266,7 @@ void FidPlot::prepareForExperiment(const Experiment e)
         bool displayMarkers = c.isPhaseCorrectionEnabled() || c.isChirpScoringEnabled();
         if(displayMarkers)
         {
-            double chirpStart = c.chirpConfig().preChirpDelay() + c.chirpConfig().preChirpProtection() - c.scopeConfig().trigDelay*1e6;
+            double chirpStart = c.chirpConfig().preChirpGateDelay() + c.chirpConfig().preChirpProtectionDelay() - c.scopeConfig().trigDelay*1e6;
             double chirpEnd = chirpStart + c.chirpConfig().chirpDuration(0);
 
             d_chirpMarkers.first->setValue(chirpStart,0.0);

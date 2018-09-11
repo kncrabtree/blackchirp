@@ -44,6 +44,9 @@ public:
     void setDownMixSideband(const BlackChirp::Sideband s);
     void setCommonLO(bool b);
     void setClockFreq(BlackChirp::ClockType t, double targetFreqMHz, double factor = 1.0, MultOperation o = Multiply);
+    void clearChirpConfigs();
+    bool setChirpConfig(const ChirpConfig cc, int num=0);
+    void addChirpConfig(const ChirpConfig cc);
 
     double awgMult() const;
     BlackChirp::Sideband upMixSideband() const;
@@ -51,6 +54,7 @@ public:
     BlackChirp::Sideband downMixSideband() const;
     bool commonLO() const;
     double rawClockFrequency(BlackChirp::ClockType t) const;
+    ChirpConfig getChirpConfig(int num=0);
 
 private:
     QSharedDataPointer<RfConfigData> data;

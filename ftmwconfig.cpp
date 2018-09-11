@@ -266,7 +266,7 @@ QPair<int, int> FtmwConfig::chirpRange() const
 
     //we assume that the scope is triggered at the beginning of the protection pulse
 
-    double chirpStart = (data->chirpConfig.preChirpDelay() + data->chirpConfig.preChirpProtection() - data->scopeConfig.trigDelay*1e6)*1e-6;
+    double chirpStart = (data->chirpConfig.preChirpGateDelay() + data->chirpConfig.preChirpProtectionDelay() - data->scopeConfig.trigDelay*1e6)*1e-6;
     int startSample = qBound(BC_FTMW_MAXSHIFT,qRound(chirpStart*data->scopeConfig.sampleRate) + BC_FTMW_MAXSHIFT,data->fidList.first().size() - BC_FTMW_MAXSHIFT);
     double chirpEnd = chirpStart + data->chirpConfig.chirpDuration(0)*1e-6;
     int endSample = qBound(BC_FTMW_MAXSHIFT,qRound(chirpEnd*data->scopeConfig.sampleRate) - BC_FTMW_MAXSHIFT,data->fidList.first().size() - BC_FTMW_MAXSHIFT);

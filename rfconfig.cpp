@@ -107,6 +107,35 @@ void RfConfig::setClockFreq(BlackChirp::ClockType t, double targetFreqMHz, doubl
     data->clocks.insert(t,f);
 }
 
+void RfConfig::clearChirpConfigs()
+{
+    data->chirps.clear();
+}
+
+bool RfConfig::setChirpConfig(const ChirpConfig cc, int num)
+{
+    if(data->chirps.isEmpty() && num == 0)
+    {
+        data->chirps.append(cc);
+        return true;
+    }
+
+    if(num < data->chirps.size())
+    {
+        data->chirps[num] = cc;
+        return true;
+    }
+
+    return false;
+
+
+}
+
+void RfConfig::addChirpConfig(const ChirpConfig cc)
+{
+    data->chirps.append(cc);
+}
+
 double RfConfig::awgMult() const
 {
     return data->awgMult;
@@ -138,6 +167,14 @@ double RfConfig::rawClockFrequency(BlackChirp::ClockType t) const
         return getRawFrequency(data->clocks.value(t));
     else
         return -1.0;
+}
+
+ChirpConfig RfConfig::getChirpConfig(int num)
+{
+    if(num < data->chirps.size())
+        return data->chirps.at(num);
+
+    return ChirpConfig();
 }
 
 double RfConfig::getRawFrequency(RfConfig::ClockFreq f) const
