@@ -361,7 +361,7 @@
      <x>0</x>
      <y>0</y>
      <width>1168</width>
-     <height>28</height>
+     <height>18</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuHardware">
@@ -372,7 +372,6 @@
     <addaction name="separator"/>
     <addaction name="actionCommunication"/>
     <addaction name="actionTest_All_Connections"/>
-    <addaction name="actionRf_Configuration"/>
    </widget>
    <widget class="QMenu" name="menuAcquisition">
     <property name="title">
@@ -511,18 +510,6 @@
    </property>
    <property name="text">
     <string># &amp;Graphs...</string>
-   </property>
-  </action>
-  <action name="actionRf_Configuration">
-   <property name="icon">
-    <iconset resource="resources.qrc">
-     <normaloff>:/icons/rf.png</normaloff>:/icons/rf.png</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Rf Configuration</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+R</string>
    </property>
   </action>
   <action name="actionTest_All_Connections">

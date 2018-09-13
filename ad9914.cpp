@@ -126,9 +126,8 @@ Experiment AD9914::prepareForExperiment(Experiment exp)
     l2 << seg;
     l << l2;
     cc.setChirpList(l);
-    auto ftc = exp.ftmwConfig();
-    ftc.setChirpConfig(cc);
-    exp.setFtmwConfig(ftc);
+    ///TODO: Deal with this for RfConfig
+
 
     QByteArray resp = p_comm->queryCmd(QString("IN\n"));
     if(!resp.startsWith(QByteArray("SUCCESS")))

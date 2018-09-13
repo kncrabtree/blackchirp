@@ -8,7 +8,6 @@
 ChirpTableModel::ChirpTableModel(QObject *parent)
     : QAbstractTableModel(parent), d_currentChirp(0), d_applyToAll(true)
 {
-    d_chirpList.append(QList<BlackChirp::ChirpSegment>());
 }
 
 ChirpTableModel::~ChirpTableModel()
@@ -21,13 +20,16 @@ ChirpTableModel::~ChirpTableModel()
 int ChirpTableModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent)
+    if(d_currentChirp >= d_chirpList.size())
+        return 0;
+
     return d_chirpList.at(d_currentChirp).size();
 }
 
 int ChirpTableModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent)
-    return 4;
+    return 6;
 }
 
 QVariant ChirpTableModel::data(const QModelIndex &index, int role) const

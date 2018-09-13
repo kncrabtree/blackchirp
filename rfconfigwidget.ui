@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>566</width>
-    <height>326</height>
+    <width>645</width>
+    <height>451</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,23 +17,20 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QGroupBox" name="txBox">
+      <widget class="QGroupBox" name="upconversionBox">
        <property name="title">
-        <string>TX</string>
+        <string>Upconversion Settings</string>
        </property>
-       <layout class="QFormLayout" name="formLayout_2">
-        <property name="fieldGrowthPolicy">
-         <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
-        </property>
+       <layout class="QFormLayout" name="formLayout">
         <item row="0" column="0">
-         <widget class="QLabel" name="awgMultiplicationLabel">
+         <widget class="QLabel" name="label">
           <property name="text">
            <string>AWG Multiplication</string>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QSpinBox" name="awgMultiplicationSpinBox">
+         <widget class="QSpinBox" name="awgMultBox">
           <property name="suffix">
            <string>x</string>
           </property>
@@ -41,60 +38,29 @@
            <number>1</number>
           </property>
           <property name="maximum">
-           <number>100</number>
+           <number>1000</number>
           </property>
          </widget>
         </item>
         <item row="1" column="0">
-         <widget class="QLabel" name="valonTxMultiplicationLabel">
+         <widget class="QLabel" name="upconversionSidebandLabel">
           <property name="text">
-           <string>TX LO Multiplication</string>
+           <string>Upconversion Sideband</string>
           </property>
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="QSpinBox" name="valonTxMultiplicationSpinBox">
-          <property name="suffix">
-           <string>x</string>
-          </property>
-          <property name="minimum">
-           <number>1</number>
-          </property>
-          <property name="maximum">
-           <number>100</number>
-          </property>
-         </widget>
+         <widget class="QComboBox" name="upconversionSidebandComboBox"/>
         </item>
         <item row="2" column="0">
-         <widget class="QLabel" name="txSidebandLabel">
+         <widget class="QLabel" name="chirpMultiplicationLabel">
           <property name="text">
-           <string>TX Sideband</string>
+           <string>Chirp Multiplication</string>
           </property>
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="QComboBox" name="txSidebandComboBox">
-          <item>
-           <property name="text">
-            <string>Upper</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Lower</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="totalMultiplicationLabel">
-          <property name="text">
-           <string>TX Total Multiplication</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QSpinBox" name="totalMultiplicationSpinBox">
+         <widget class="QSpinBox" name="chirpMultiplicationSpinBox">
           <property name="suffix">
            <string>x</string>
           </property>
@@ -102,40 +68,7 @@
            <number>1</number>
           </property>
           <property name="maximum">
-           <number>100</number>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="0">
-         <widget class="QLabel" name="valonTxFrequencyLabel">
-          <property name="text">
-           <string>TX Oscillator Freq</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="QDoubleSpinBox" name="valonTxFrequencyDoubleSpinBox">
-          <property name="suffix">
-           <string> MHz</string>
-          </property>
-          <property name="decimals">
-           <number>3</number>
-          </property>
-          <property name="minimum">
-           <double>500.000000000000000</double>
-          </property>
-          <property name="maximum">
-           <double>6000.000000000000000</double>
-          </property>
-          <property name="value">
-           <double>5760.000000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="1">
-         <widget class="QPushButton" name="txApplyButton">
-          <property name="text">
-           <string>Apply</string>
+           <number>1000</number>
           </property>
          </widget>
         </item>
@@ -143,93 +76,18 @@
       </widget>
      </item>
      <item>
-      <widget class="QGroupBox" name="rxBox">
+      <widget class="QGroupBox" name="downconversionBox">
        <property name="title">
-        <string>RCVR</string>
+        <string>Downconversion Settings</string>
        </property>
-       <layout class="QFormLayout" name="formLayout">
-        <property name="fieldGrowthPolicy">
-         <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
-        </property>
-        <item row="0" column="0">
-         <widget class="QLabel" name="valonMultiplicationLabel">
-          <property name="text">
-           <string>RCVR LO Multiplication</string>
-          </property>
-         </widget>
-        </item>
+       <layout class="QFormLayout" name="formLayout_2">
         <item row="0" column="1">
-         <widget class="QSpinBox" name="valonRxMultiplicationSpinBox">
-          <property name="suffix">
-           <string>x</string>
-          </property>
-          <property name="minimum">
-           <number>1</number>
-          </property>
-          <property name="maximum">
-           <number>100</number>
-          </property>
-         </widget>
+         <widget class="QComboBox" name="downconversionSidebandComboBox"/>
         </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="rxSidebandLabel">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_2">
           <property name="text">
-           <string>RCVR Sideband</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QComboBox" name="rxSidebandComboBox">
-          <item>
-           <property name="text">
-            <string>Upper</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Lower</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="chirpLOFrequencyLabel">
-          <property name="text">
-           <string>RCVR LO Frequency</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QDoubleSpinBox" name="chirpLOFrequencyDoubleSpinBox">
-          <property name="suffix">
-           <string> MHz</string>
-          </property>
-          <property name="decimals">
-           <number>3</number>
-          </property>
-          <property name="maximum">
-           <double>1000000.000000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QPushButton" name="rxApplyButton">
-          <property name="text">
-           <string>Apply</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="QLabel" name="valonRxFrequencyDisplayLabel">
-          <property name="text">
-           <string>xxxx.xxx MHz</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="0">
-         <widget class="QLabel" name="valonFrequencyLabel">
-          <property name="text">
-           <string>RCVR Oscillator Freq</string>
+           <string>Downconversion Sideband</string>
           </property>
          </widget>
         </item>
@@ -239,82 +97,23 @@
     </layout>
    </item>
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout">
-     <item>
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string>Ensure your desired frequencies fall within both ranges below.</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <layout class="QGridLayout" name="gridLayout">
-       <item row="1" column="2">
-        <widget class="QLabel" name="ftRangeDisplayLabel">
-         <property name="text">
-          <string>xxxxx.xxx - xxxxx.xxx MHz</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLabel" name="chirpRangeLabel">
-         <property name="text">
-          <string>Chirp Range:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QLabel" name="ftRangeLagel">
-         <property name="text">
-          <string>FT Range:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="2">
-        <widget class="QLabel" name="chirpRangeDisplayLabel">
-         <property name="text">
-          <string>xxxxx.xxx - xxxxx.xxx MHz</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0" rowspan="2">
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="0" column="3" rowspan="2">
-        <spacer name="horizontalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </item>
-    </layout>
+    <widget class="QGroupBox" name="clockConfigBox">
+     <property name="title">
+      <string>Clock Configuration</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QCheckBox" name="commonLoCheckBox">
+        <property name="text">
+         <string>Use common LO for up/downconversion</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QTableView" name="clockTableView"/>
+      </item>
+     </layout>
+    </widget>
    </item>
   </layout>
  </widget>

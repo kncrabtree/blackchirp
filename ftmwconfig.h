@@ -9,12 +9,14 @@
 #include <QMetaType>
 
 #include "fid.h"
-#include "chirpconfig.h"
+#include "rfconfig.h"
 #include "datastructs.h"
 
 #define BC_FTMW_MAXSHIFT 50
 
 class FtmwConfigData;
+
+///TODO: ChirpConfig/RfConfig integration.
 
 class FtmwConfig
 {
@@ -36,7 +38,8 @@ public:
     BlackChirp::Sideband sideband() const;
     QList<Fid> fidList() const;
     BlackChirp::FtmwScopeConfig scopeConfig() const;
-    ChirpConfig chirpConfig() const;
+    RfConfig rfConfig() const;
+    ChirpConfig chirpConfig(int num = 0) const;
     Fid fidTemplate() const;
     int numFrames() const;
     QList<Fid> parseWaveform(const QByteArray b) const;
@@ -66,7 +69,7 @@ public:
     bool subtractFids(const QList<Fid> otherList);
     void resetFids();
     void setScopeConfig(const BlackChirp::FtmwScopeConfig &other);
-    void setChirpConfig(const ChirpConfig other);
+    void setRfConfig(const RfConfig other);
 
 
     bool isComplete() const;
@@ -103,7 +106,7 @@ public:
     QList<Fid> fidList;
 
     BlackChirp::FtmwScopeConfig scopeConfig;
-    ChirpConfig chirpConfig;
+    RfConfig rfConfig;
     Fid fidTemplate;
     QString errorString;
 

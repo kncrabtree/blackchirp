@@ -85,9 +85,14 @@ BlackChirp::FtmwScopeConfig FtmwConfig::scopeConfig() const
     return data->scopeConfig;
 }
 
-ChirpConfig FtmwConfig::chirpConfig() const
+RfConfig FtmwConfig::rfConfig() const
 {
-    return data->chirpConfig;
+    return data->rfConfig;
+}
+
+ChirpConfig FtmwConfig::chirpConfig(int num) const
+{
+    return data->rfConfig.getChirpConfig(num);
 }
 
 Fid FtmwConfig::fidTemplate() const
@@ -258,7 +263,9 @@ double FtmwConfig::ftMax() const
 QPair<int, int> FtmwConfig::chirpRange() const
 {
     //want to return [first,last) samples for chirp.
-    if(data->chirpConfig.chirpList().isEmpty())
+    //TODO: handle multiple chirps
+    auto cc = rfConfig().getChirpConfig();
+    if(cc.chirpList().isEmpty())
         return qMakePair(-1,-1);
 
     if(data->fidList.isEmpty())
@@ -266,9 +273,9 @@ QPair<int, int> FtmwConfig::chirpRange() const
 
     //we assume that the scope is triggered at the beginning of the protection pulse
 
-    double chirpStart = (data->chirpConfig.preChirpGateDelay() + data->chirpConfig.preChirpProtectionDelay() - data->scopeConfig.trigDelay*1e6)*1e-6;
+    double chirpStart = (cc.preChirpGateDelay() + cc.preChirpProtectionDelay() - data->scopeConfig.trigDelay*1e6)*1e-6;
     int startSample = qBound(BC_FTMW_MAXSHIFT,qRound(chirpStart*data->scopeConfig.sampleRate) + BC_FTMW_MAXSHIFT,data->fidList.first().size() - BC_FTMW_MAXSHIFT);
-    double chirpEnd = chirpStart + data->chirpConfig.chirpDuration(0)*1e-6;
+    double chirpEnd = chirpStart + cc.chirpDuration(0)*1e-6;
     int endSample = qBound(BC_FTMW_MAXSHIFT,qRound(chirpEnd*data->scopeConfig.sampleRate) - BC_FTMW_MAXSHIFT,data->fidList.first().size() - BC_FTMW_MAXSHIFT);
 
     if(startSample > endSample)
@@ -317,9 +324,9 @@ bool FtmwConfig::prepareForAcquisition()
         f.setVMult(f.vMult()/256.0);
     data->fidTemplate = f;
 
-    if(data->chirpConfig.chirpList().isEmpty())
+    if(!data->rfConfig.isValid())
     {
-        data->errorString = QString("Invalid chirp configuration.");
+        data->errorString = QString("Invalid RF/Chirp configuration.");
         return false;
     }
 
@@ -488,9 +495,9 @@ void FtmwConfig::setScopeConfig(const BlackChirp::FtmwScopeConfig &other)
     data->scopeConfig = other;
 }
 
-void FtmwConfig::setChirpConfig(const ChirpConfig other)
+void FtmwConfig::setRfConfig(const RfConfig other)
 {
-    data->chirpConfig = other;
+    data->rfConfig = other;
 }
 
 bool FtmwConfig::isComplete() const
@@ -546,7 +553,8 @@ QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
 
 
     out.unite(data->scopeConfig.headerMap());
-    out.unite(data->chirpConfig.headerMap());
+    ///TODO: header map for rf config
+//    out.unite(data->rfConfig.headerMap());
 
     return out;
 
@@ -708,7 +716,8 @@ void FtmwConfig::parseLine(const QString key, const QVariant val)
 
 void FtmwConfig::loadChirps(const int num, const QString path)
 {
-    data->chirpConfig = ChirpConfig(num,path);
+    ///TODO: Figure out the future of loading chirps from disk
+    data->rfConfig.addChirpConfig(ChirpConfig(num,path));
 }
 
 void FtmwConfig::saveToSettings() const
@@ -743,7 +752,7 @@ void FtmwConfig::saveToSettings() const
 
     s.endGroup();
 
-    chirpConfig().saveToSettings();
+    data->rfConfig.saveToSettings();
 
 
 }
@@ -782,7 +791,7 @@ FtmwConfig FtmwConfig::loadFromSettings()
     out.setLoFreq(s.value(QString("loFreq"),0.0).toDouble());
     out.setSideband(static_cast<BlackChirp::Sideband>(s.value(QString("sideband"),BlackChirp::UpperSideband).toInt()));
 
-    out.setChirpConfig(ChirpConfig::loadFromSettings());
+    out.setRfConfig(RfConfig::loadFromSettings());
 
     return out;
 }

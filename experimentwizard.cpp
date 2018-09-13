@@ -1,6 +1,7 @@
 #include "experimentwizard.h"
 
 #include "wizardstartpage.h"
+#include "wizardrfconfigpage.h"
 #include "wizardchirpconfigpage.h"
 #include "wizardftmwconfigpage.h"
 #include "wizardsummarypage.h"
@@ -22,6 +23,7 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
     setWindowTitle(QString("Experiment Setup"));
 
     p_startPage = new WizardStartPage(this);
+    p_rfConfigPage = new WizardRfConfigPage(this);
     p_chirpConfigPage = new WizardChirpConfigPage(this);
     p_ftmwConfigPage = new WizardFtmwConfigPage(this);
     p_pulseConfigPage = new WizardPulseConfigPage(this);
@@ -29,6 +31,7 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
     p_summaryPage = new WizardSummaryPage(this);
 
     setPage(StartPage,p_startPage);
+    setPage(RfConfigPage,p_rfConfigPage);
     setPage(ChirpConfigPage,p_chirpConfigPage);
     setPage(FtmwConfigPage,p_ftmwConfigPage);
     setPage(PulseConfigPage,p_pulseConfigPage);

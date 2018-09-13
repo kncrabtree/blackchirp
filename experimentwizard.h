@@ -4,6 +4,7 @@
 #include <QWizard>
 
 class WizardStartPage;
+class WizardRfConfigPage;
 class WizardChirpConfigPage;
 class WizardFtmwConfigPage;
 class WizardSummaryPage;
@@ -25,6 +26,7 @@ public:
 
     enum Page {
         StartPage,
+        RfConfigPage,
         ChirpConfigPage,
         FtmwConfigPage,
 #ifdef BC_LIF
@@ -46,6 +48,7 @@ public:
 
 private:
     WizardStartPage *p_startPage;
+    WizardRfConfigPage *p_rfConfigPage;
     WizardChirpConfigPage *p_chirpConfigPage;
     WizardFtmwConfigPage *p_ftmwConfigPage;
     WizardSummaryPage *p_summaryPage;

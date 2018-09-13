@@ -60,6 +60,7 @@ public:
     void setDummy();
     void setFtmwConfig(const FtmwConfig cfg);
     void setScopeConfig(const BlackChirp::FtmwScopeConfig &cfg);
+    void setRfConfig(const RfConfig cfg);
     void setIOBoardConfig(const IOBoardConfig cfg);
     bool setFidsData(const QList<QVector<qint64>> l);
     bool addFids(const QByteArray newData, int shift = 0);

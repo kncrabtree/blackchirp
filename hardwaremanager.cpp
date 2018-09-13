@@ -5,6 +5,7 @@
 #include "hardwareobject.h"
 #include "ftmwscope.h"
 #include "synthesizer.h"
+#include "clockmanager.h"
 #include "awg.h"
 #include "pulsegenerator.h"
 #include "flowcontroller.h"
@@ -63,6 +64,14 @@ void HardwareManager::initialize()
 
     p_awg = new AwgHardware();
     d_hardwareList.append(qMakePair(p_awg,nullptr));
+
+    p_clockManager = new ClockManager(this);
+    connect(p_clockManager,&ClockManager::logMessage,this,&HardwareManager::logMessage);
+    ///TODO: Clock Frequency update signals?
+    auto cl = p_clockManager->clockList();
+    for(int i=0; i<cl.size(); i++)
+        d_hardwareList.append(qMakePair(cl.at(i),nullptr));
+
 
     p_synth = new SynthesizerHardware();
     connect(p_synth,&Synthesizer::txFreqRead,this,&HardwareManager::valonTxFreqRead);

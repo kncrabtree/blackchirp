@@ -9,8 +9,15 @@ FixedClock::FixedClock(int clockNum, QObject *parent) : Clock(clockNum, parent)
     d_numOutputs = 5;
     d_isTunable = false;
 
-    d_minFreqMHz = 0.0;
-    d_maxFreqMHz = 1e20;
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
+    d_minFreqMHz = s.value(QString("minFreqMHz"),0.0).toDouble();
+    d_maxFreqMHz = s.value(QString("maxFreqMHz"),1e7).toDouble();
+    s.setValue(QString("minFreqMHz"),d_minFreqMHz);
+    s.setValue(QString("maxFreqMHz"),d_maxFreqMHz);
+    s.endGroup();
+    s.endGroup();
 
     for(int i=0; i<d_numOutputs; i++)
         d_currentFrequencyList << 0.0;
@@ -45,6 +52,8 @@ void FixedClock::initialize()
     s.endArray();
     s.endGroup();
     s.endGroup();
+
+    testConnection();
 
 }
 

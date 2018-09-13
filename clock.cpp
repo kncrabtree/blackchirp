@@ -13,9 +13,7 @@ void Clock::setMultFactor(double d, int output)
 
 QStringList Clock::channelNames()
 {
-    QStringList out;
-    out << QString("");
-    return out;
+    return QStringList();
 }
 
 void Clock::prepareMultFactors()

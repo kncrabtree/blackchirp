@@ -9,11 +9,6 @@ ClockManager::ClockManager(QObject *parent) : QObject(parent)
 {
     d_clockTypes = BlackChirp::allClockTypes();
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("clockManager"));
-    d_currentBand = s.value(QString("currentBand"),0).toInt();
-    s.endGroup();
-
 #ifdef BC_CLOCK_0
     d_clockList << new Clock0Hardware(0,this);
 #endif
@@ -34,7 +29,31 @@ ClockManager::ClockManager(QObject *parent) : QObject(parent)
     d_clockList << new Clock4Hardware(4,this);
 #endif
 
-    readClockRoles();
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("clockManager"));
+    s.beginWriteArray(QString("hwClocks"));
+    int index = 0;
+    for(int i=0; i<d_clockList.size(); i++)
+    {
+        auto c = d_clockList.at(i);
+        auto names = c->channelNames();
+        for(int j=0; j<c->numOutputs(); j++)
+        {
+            s.setArrayIndex(index);
+            s.setValue(QString("key"),c->key());
+            s.setValue(QString("output"),j);
+            QString pn = c->name();
+            pn.append(QString(" "));
+            if(j < names.size())
+                pn.append(names.at(j));
+            else
+                pn.append(QString("Output %1").arg(j));
+            s.setValue(QString("name"),pn);
+            index++;
+        }
+    }
+    s.endArray();
+    s.endGroup();
 
     for(int i=0; i<d_clockList.size(); i++)
     {
@@ -47,70 +66,101 @@ ClockManager::ClockManager(QObject *parent) : QObject(parent)
 
 double ClockManager::setClockFrequency(BlackChirp::ClockType t, double freqMHz)
 {
-    if(!d_clockRoles.contains(d_clockTypes.indexOf(t)))
+    if(!d_clockRoles.contains(t))
     {
         emit logMessage(QString("No clock configured for use as %1").arg(BlackChirp::clockPrettyName(t)),BlackChirp::LogWarning);
         return -1.0;
     }
 
-    return d_clockRoles.value(d_clockTypes.indexOf(t))->setFrequency(t,freqMHz);
+    return d_clockRoles.value(t)->setFrequency(t,freqMHz);
 }
 
 double ClockManager::readClockFrequency(BlackChirp::ClockType t)
 {
-    if(!d_clockRoles.contains(d_clockTypes.indexOf(t)))
+    if(!d_clockRoles.contains(t))
     {
         emit logMessage(QString("No clock configured for use as %1").arg(BlackChirp::clockPrettyName(t)),BlackChirp::LogWarning);
         return -1.0;
     }
 
-    return d_clockRoles.value(d_clockTypes.indexOf(t))->readFrequency(t);
+    return d_clockRoles.value(t)->readFrequency(t);
 }
 
-void ClockManager::readClockRoles()
+Experiment ClockManager::ClockManager::prepareForExperiment(Experiment exp)
 {
+    if(!exp.ftmwConfig().isEnabled())
+        return exp;
+
     d_clockRoles.clear();
-
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("clockManager"));
-    s.setValue(QString("currentBand"),d_currentBand);
-    s.beginReadArray(QString("bands"));
-    s.setArrayIndex(d_currentBand);
-    s.beginReadArray(QString("clocks"));
-    for(int index=0; index<d_clockList.size(); index++)
+    auto rfc = exp.ftmwConfig().rfConfig();
+    auto map = rfc.getClocks();
+    for(auto i = map.constBegin(); i != map.end(); i++)
     {
-        s.setArrayIndex(index);
+        auto type = i.key();
+        auto d = i.value();
 
-        auto c = d_clockList.at(index);
-        c->clearRoles();
-        int outputs = c->numOutputs();
-        s.beginReadArray(QString("outputs"));
-        for(int i=0; i<outputs; i++)
+        //find correct clock
+        Clock *c = nullptr;
+        for(int j=0; j<d_clockList.size(); j++)
         {
-            s.setArrayIndex(i);
-            double mult = s.value(QString("multFactor"),1.0).toDouble();
-            c->setMultFactor(mult,i);
-            auto role = static_cast<BlackChirp::ClockType>(s.value(QString("type"),QVariant(BlackChirp::UpConversionLO)).toInt());
-            if(!d_clockRoles.contains(d_clockTypes.indexOf(role)))
+            if(d.hwKey == d_clockList.at(j)->key())
             {
-                d_clockRoles.insert(d_clockTypes.indexOf(role),c);
-                c->setRole(role,i);
+                c = d_clockList.at(j);
+                break;
             }
         }
-        s.endArray();
+
+        if(c == nullptr)
+        {
+            exp.setErrorString(QString("Could not find hardware clock for %1 (%2 output %3)")
+                               .arg(BlackChirp::clockPrettyName(type)).arg(d.hwKey).arg(d.output));
+            exp.setHardwareFailed();
+            return exp;
+        }
+
+        c->clearRoles();
+
+        if(!c->setRole(type,d.output))
+        {
+            exp.setErrorString(QString("The output number requested for %1 (%2) is out of range (only %2 outputs are available).")
+                               .arg(c->name()).arg(d.output).arg(c->numOutputs()));
+            exp.setHardwareFailed();
+            return exp;
+        }
+
+        d_clockRoles.insertMulti(type,c);
+
+        double mf = d.factor;
+        if(d.op == RfConfig::Divide)
+            mf = 1.0/d.factor;
+
+        c->setMultFactor(mf,d.output);
+
+        double actualFreq = c->setFrequency(type,d.desiredFreqMHz);
+        if(actualFreq < 0.0)
+        {
+            exp.setErrorString(QString("Could not set %1 to %2 MHz (raw frequency = %3 MHz).")
+                               .arg(c->name())
+                               .arg(d.desiredFreqMHz,0,'f',6)
+                               .arg(rfc.rawClockFrequency(type),0,'f',6));
+            exp.setHardwareFailed();
+            return exp;
+        }
+
+        if(qAbs(actualFreq-d.desiredFreqMHz) > 0.1)
+        {
+            emit logMessage(QString("Actual frequency of %1 (%2 MHz) is more than 100 kHz from desired frequency (%3 MHz)")
+                            .arg(BlackChirp::clockPrettyName(type))
+                            .arg(actualFreq,0,'f',6)
+                            .arg(d.desiredFreqMHz,0,'f',6));
+        }
+
+        d.desiredFreqMHz = actualFreq;
+
+        rfc.setClockFreqInfo(type,d);
     }
-    s.endArray();
-    s.endArray();
-    s.endGroup();
 
-}
+    exp.setRfConfig(rfc);
+    return exp;
 
-void ClockManager::setBand(int band)
-{
-    //Note, this function is intended to be called during experiment initialization.
-    //The individual clock frequencies will be changed directly by
-    //the HardwareManager
-    ///TODO: figure out how to communicate with IO Board or something
-    d_currentBand = band;
-    readClockRoles();
 }

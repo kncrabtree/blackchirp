@@ -58,6 +58,9 @@ ChirpConfigPlot::~ChirpConfigPlot()
 
 void ChirpConfigPlot::newChirp(const ChirpConfig cc)
 {
+    if(cc.chirpList().isEmpty())
+        return;
+
     bool as = d_chirpData.isEmpty();
 
     d_chirpData = cc.getChirpMicroseconds();

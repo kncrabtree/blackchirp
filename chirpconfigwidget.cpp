@@ -136,13 +136,13 @@ void ChirpConfigWidget::initializeFromSettings()
     ui->postChirpDelaySpinBox->setMinimum(minPostGate*1000);
     ui->postChirpProtectionSpinBox->setMinimum(minPostProt*1000);
 
+    ui->preChirpProtectionSpinBox->setValue(cc.preChirpProtectionDelay()*1000);
+    ui->preChirpDelaySpinBox->setValue(cc.preChirpGateDelay()*1000);
+    ui->postChirpDelaySpinBox->setValue(cc.postChirpGateDelay()*1000);
+    ui->postChirpProtectionSpinBox->setValue(cc.postChirpProtectionDelay()*1000);
+    ui->chirpsSpinBox->setValue(cc.numChirps());
     if(!cc.chirpList().isEmpty())
     {
-        ui->preChirpProtectionSpinBox->setValue(cc.preChirpProtectionDelay()*1000);
-        ui->preChirpDelaySpinBox->setValue(cc.preChirpGateDelay()*1000);
-        ui->postChirpDelaySpinBox->setValue(cc.postChirpGateDelay()*1000);
-        ui->postChirpProtectionSpinBox->setValue(cc.postChirpProtectionDelay()*1000);
-        ui->chirpsSpinBox->setValue(cc.numChirps());
         ui->chirpIntervalDoubleSpinBox->setValue(cc.chirpInterval());
 
         p_ctm->setNumChirps(cc.numChirps());

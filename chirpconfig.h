@@ -55,8 +55,8 @@ public:
     void addEmptySegment(const double durationUs, const int chirpNum = -1);
     void setChirpList(const QList<QList<BlackChirp::ChirpSegment> > l);
 
-    void saveToSettings() const;
-    static ChirpConfig loadFromSettings();
+    void saveToSettings(int index) const;
+    static ChirpConfig loadFromSettings(int index);
 
 private:
     QSharedDataPointer<ChirpConfigData> data;
@@ -74,11 +74,10 @@ class ChirpConfigData : public QSharedData
 {
 public:
     //note: postChirpDelay initialized to 0.0 for backwards compatibility
-    ChirpConfigData() : protectionDelaysUs(qMakePair(500.0,500.0)), gateDelaysUs(qMakePair(500.0,0.0)), numChirps(0), chirpInterval(-1.0) {}
+    ChirpConfigData() : protectionDelaysUs(qMakePair(500.0,500.0)), gateDelaysUs(qMakePair(500.0,0.0)), chirpInterval(-1.0) {}
 
     QPair<double,double> protectionDelaysUs;
     QPair<double,double> gateDelaysUs;
-    int numChirps;
     double chirpInterval; //units: us
 
 

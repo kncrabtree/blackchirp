@@ -4,6 +4,7 @@
 #include <QObject>
 
 #include "datastructs.h"
+#include "experiment.h"
 
 class Clock;
 
@@ -36,14 +37,12 @@ signals:
 public slots:
     double setClockFrequency(BlackChirp::ClockType t, double freqMHz);
     double readClockFrequency(BlackChirp::ClockType t);
-    void readClockRoles();
-    void setBand(int band);
+    Experiment prepareForExperiment(Experiment exp);
 
 private:
     QList<Clock*> d_clockList;
     QList<BlackChirp::ClockType> d_clockTypes;
-    QMap<int,Clock*> d_clockRoles;
-    int d_currentBand;
+    QMap<BlackChirp::ClockType,Clock*> d_clockRoles;
 
 };
 

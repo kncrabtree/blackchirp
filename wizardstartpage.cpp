@@ -89,10 +89,10 @@ int WizardStartPage::nextId() const
     if(p_lif->isChecked())
         return ExperimentWizard::LifConfigPage;
     else
-        return ExperimentWizard::ChirpConfigPage;
+        return ExperimentWizard::RfConfigPage;
 #endif
 
-    return ExperimentWizard::ChirpConfigPage;
+    return ExperimentWizard::RfConfigPage;
 }
 
 bool WizardStartPage::isComplete() const

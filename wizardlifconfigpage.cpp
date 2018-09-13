@@ -228,7 +228,7 @@ bool WizardLifConfigPage::validatePage()
 int WizardLifConfigPage::nextId() const
 {
     if(field(QString("ftmw")).toBool())
-        return ExperimentWizard::ChirpConfigPage;
+        return ExperimentWizard::RfConfigPage;
     else
         return ExperimentWizard::PulseConfigPage;
 }

@@ -17,6 +17,7 @@ class PulseGenerator;
 class FlowController;
 class IOBoard;
 class MotorController;
+class ClockManager;
 
 #ifdef BC_PCONTROLLER
 class PressureController;
@@ -160,6 +161,7 @@ private:
     PulseGenerator *p_pGen;
     FlowController *p_flow;
     IOBoard *p_iob;
+    ClockManager *p_clockManager;
 
 #ifdef BC_PCONTROLLER
     PressureController *p_pc;

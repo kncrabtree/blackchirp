@@ -66,7 +66,7 @@ double ChirpConfig::postChirpProtectionDelay() const
 
 int ChirpConfig::numChirps() const
 {
-    return data->numChirps;
+    return data->chirpList.size();
 }
 
 double ChirpConfig::chirpInterval() const
@@ -76,7 +76,7 @@ double ChirpConfig::chirpInterval() const
 
 bool ChirpConfig::allChirpsIdentical() const
 {
-    if(data->chirpList.size() == 1)
+    if(data->chirpList.size() <= 1)
         return true;
 
     QList<BlackChirp::ChirpSegment> firstList = data->chirpList.first();
@@ -124,7 +124,7 @@ double ChirpConfig::totalDuration() const
     ///TODO: This should be an implementation detail of the AWG, not part of the chirpConfig
     double baseLength = 10.0;
     double length = preChirpProtectionDelay() + preChirpGateDelay() + postChirpProtectionDelay();
-    length += (static_cast<double>(data->numChirps)-1.0)*data->chirpInterval + chirpDuration(data->numChirps-1);
+    length += (static_cast<double>(numChirps())-1.0)*data->chirpInterval + chirpDuration(numChirps()-1);
 
     return floor(length/baseLength + 1.0)*baseLength;
 }
@@ -194,7 +194,7 @@ QByteArray ChirpConfig::waveformHash() const
             c.addData(QByteArray::number(static_cast<int>(data->chirpList.at(j).at(i).empty)));
         }
     }
-    c.addData(QByteArray::number(data->numChirps));
+    c.addData(QByteArray::number(numChirps()));
     c.addData(QByteArray::number(data->chirpInterval));
     c.addData(QByteArray::number(postChirpProtectionDelay()));
 
@@ -405,7 +405,7 @@ QMap<QString, QPair<QVariant, QString> > ChirpConfig::headerMap() const
     out.insert(QString("ChirpConfigPreChirpGateDelay"),qMakePair(QString::number(preChirpGateDelay(),'f',3),QString::fromUtf16(u"μs")));
     out.insert(QString("ChirpConfigPostChirpGateDelay"),qMakePair(QString::number(postChirpGateDelay(),'f',3),QString::fromUtf16(u"μs")));
     out.insert(QString("ChirpConfigPostChirpProtectionDelay"),qMakePair(QString::number(postChirpProtectionDelay(),'f',3),QString::fromUtf16(u"μs")));
-    out.insert(QString("ChirpConfigNumChirps"),qMakePair(data->numChirps,QString("")));
+    out.insert(QString("ChirpConfigNumChirps"),qMakePair(numChirps(),QString("")));
     out.insert(QString("ChirpConfigChirpInterval"),qMakePair(QString::number(data->chirpInterval,'f',3),QString::fromUtf16(u"μs")));
 
     return out;
@@ -522,7 +522,7 @@ void ChirpConfig::parseFileLine(QByteArray line)
         if(l2.size() == 2)
         {
             int cn = l2.at(1).toInt(&ok);
-            if(ok && cn >=0 && cn < data->numChirps)
+            if(ok && cn >=0 && cn < numChirps())
                 chirpNum = cn;
         }
 
@@ -550,7 +550,7 @@ void ChirpConfig::parseFileLine(QByteArray line)
         if(l2.size() == 2)
         {
             int cn = l2.at(1).toInt(&ok);
-            if(ok && cn >=0 && cn < data->numChirps)
+            if(ok && cn >=0 && cn < numChirps())
                 chirpNum = cn;
         }
 
@@ -586,12 +586,12 @@ void ChirpConfig::setNumChirps(const int n)
     {
         if(!data->chirpList.isEmpty())
         {
-            for(int i=data->numChirps; i<n; i++)
+            for(int i=numChirps(); i<n; i++)
                 data->chirpList.append(data->chirpList.first());
         }
         else
         {
-            for(int i=data->numChirps; i<n; i++)
+            for(int i=numChirps(); i<n; i++)
                 data->chirpList.append(QList<BlackChirp::ChirpSegment>());
         }
     }
@@ -599,9 +599,7 @@ void ChirpConfig::setNumChirps(const int n)
     {
         while(data->chirpList.size() > n)
             data->chirpList.removeLast();
-    }
-
-    data->numChirps = n;    
+    }    
 }
 
 void ChirpConfig::setChirpInterval(const double i)
@@ -656,13 +654,14 @@ void ChirpConfig::setChirpList(const QList<QList<BlackChirp::ChirpSegment>> l)
     data->chirpList = l;
 }
 
-void ChirpConfig::saveToSettings() const
+void ChirpConfig::saveToSettings(int index) const
 {
-    if(data->chirpList.isEmpty())
-        return;
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("lastChirpConfig"));
+    s.beginGroup(QString("lastRfConfig"));
+    s.beginWriteArray(QString("chirpConfigs"));
+    s.setArrayIndex(index);
+
 
     s.setValue(QString("preChirpProtectionDelay"),preChirpProtectionDelay());
     s.setValue(QString("preChirpGateDelay"),preChirpGateDelay());
@@ -711,15 +710,20 @@ void ChirpConfig::saveToSettings() const
         s.endArray();
         s.remove(QString("chirps"));
     }
+
+    s.endArray();
     s.endGroup();
+
 }
 
-ChirpConfig ChirpConfig::loadFromSettings()
+ChirpConfig ChirpConfig::loadFromSettings(int index)
 {
-    ///TODO: This class should not worry about hardware limits. That should be handled elsewhere!
     ChirpConfig out;
+
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("lastChirpConfig"));
+    s.beginGroup(QString("lastRfConfig"));
+    s.beginReadArray(QString("chirpConfigs"));
+    s.setArrayIndex(index);
 
     out.setPreChirpProtectionDelay(s.value(QString("preChirpProtectionDelay"),out.preChirpProtectionDelay()).toDouble());
     out.setPreChirpGateDelay(s.value(QString("preChirpGateDelay"),out.preChirpGateDelay()).toDouble());
@@ -773,6 +777,8 @@ ChirpConfig ChirpConfig::loadFromSettings()
             s.endArray();
         }
     }
+    s.endArray();
+
     s.endArray();
     s.endGroup();
 

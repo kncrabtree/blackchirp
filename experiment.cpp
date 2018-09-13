@@ -577,6 +577,11 @@ void Experiment::setScopeConfig(const BlackChirp::FtmwScopeConfig &cfg)
     data->ftmwCfg.setScopeConfig(cfg);
 }
 
+void Experiment::setRfConfig(const RfConfig cfg)
+{
+    data->ftmwCfg.setRfConfig(cfg);
+}
+
 void Experiment::setIOBoardConfig(const IOBoardConfig cfg)
 {
     data->iobCfg = cfg;
