@@ -91,10 +91,12 @@ enum ClockType {
     DigitizerClock,
     ReferenceClock
 };
+inline bool operator <(ClockType &t1, ClockType &t2) { return static_cast<int>(t1) < static_cast<int>(t2); }
 
 QList<ClockType> allClockTypes();
 QString clockPrettyName(ClockType t);
 QString clockKey(ClockType t);
+BlackChirp::ClockType clockType(QString key);
 
 
 struct FtmwScopeConfig {
@@ -333,6 +335,7 @@ Q_DECLARE_METATYPE(BlackChirp::LifCompleteMode)
 Q_DECLARE_METATYPE(BlackChirp::ValidationItem)
 Q_DECLARE_METATYPE(BlackChirp::FtPlotUnits)
 Q_DECLARE_METATYPE(BlackChirp::FtWindowFunction)
+Q_DECLARE_METATYPE(BlackChirp::ClockType)
 
 Q_DECLARE_TYPEINFO(BlackChirp::LifPoint,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::ChirpSegment,Q_MOVABLE_TYPE);

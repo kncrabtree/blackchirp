@@ -45,6 +45,7 @@ public:
     QMap<QString,QPair<QVariant,QString>> headerMap() const;
     QString toString() const;
 
+    void setAwgSampleRate(const double samplesPerSecond);
     void setPreChirpProtectionDelay(const double d);
     void setPreChirpGateDelay(const double d);
     void setPostChirpGateDelay(const double d);

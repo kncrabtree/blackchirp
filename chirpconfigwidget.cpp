@@ -119,6 +119,7 @@ ChirpConfigWidget::~ChirpConfigWidget()
 void ChirpConfigWidget::setRfConfig(const RfConfig c)
 {
     d_currentRfConfig = c;
+    p_ctm->setRfConfig(c);
     auto cc = d_currentRfConfig.getChirpConfig();
 
     ui->preChirpProtectionSpinBox->setValue(cc.preChirpProtectionDelay()*1000);

@@ -34,7 +34,7 @@ void ClockTableModel::setConfig(const RfConfig c)
 
         if(!d_rfConfig.getClocks().isEmpty())
         {
-            for(auto it = d_rfConfig.getClocks().constBegin(); it!=d_rfConfig.getClocks().end(); it++)
+            for(auto it = d_rfConfig.getClocks().constBegin(); it!=d_rfConfig.getClocks().constEnd(); it++)
             {
                 if(!hw.key.isEmpty() && it.value().hwKey == hw.key && it.value().output == hw.output)
                 {

@@ -1,6 +1,9 @@
 #include "rfconfig.h"
 
 #include <QSettings>
+#include <QPair>
+
+#include <QDebug>
 
 class RfConfigData : public QSharedData
 {
@@ -17,7 +20,7 @@ public:
     BlackChirp::Sideband downMixSideband;
 
     //Logical clocks:
-    QMap<BlackChirp::ClockType,RfConfig::ClockFreq> clocks;
+    QHash<BlackChirp::ClockType,RfConfig::ClockFreq> clocks;
 
     //options
     bool commonUpDownLO;
@@ -113,11 +116,77 @@ RfConfig RfConfig::loadFromSettings()
     num = s.beginReadArray(QString("chirpConfigs"));
     s.endArray();
     for(int i=0; i<num; i++)
-        out.addChirpConfig(ChirpConfig::loadFromSettings(i));
+    {
+        auto cc = ChirpConfig::loadFromSettings(i);
+        out.addChirpConfig(cc);
+    }
 
     s.endGroup();
 
     return out;
+}
+
+QMap<QString, QPair<QVariant, QString> > RfConfig::headerMap() const
+{
+    QMap<QString, QPair<QVariant, QString> > out;
+
+    QString prefix = QString("RfConfig");
+    QString empty = QString("");
+
+    out.insert(prefix+QString("AwgMult"),qMakePair(awgMult(),empty));
+    out.insert(prefix+QString("UpMixSideband"),qMakePair(QVariant::fromValue(upMixSideband()),empty));
+    out.insert(prefix+QString("ChirpMult"),qMakePair(chirpMult(),empty));
+    out.insert(prefix+QString("DownMixSideband"),qMakePair(QVariant::fromValue(downMixSideband()),empty));
+    out.insert(prefix+QString("CommonLO"),qMakePair(commonLO(),empty));
+    auto l = getClocks();
+    if(!l.isEmpty())
+    {
+        for(auto it = l.constBegin(); it != l.constEnd(); it++)
+        {
+            QString p2 = prefix+QString("Clock.")+BlackChirp::clockKey(it.key())+QString(".");
+            ClockFreq c = it.value();
+            out.insert(p2+QString("Frequency"),qMakePair(c.desiredFreqMHz,QString("MHz")));
+            out.insert(p2+QString("Factor"),qMakePair(c.factor,empty));
+            out.insert(p2+QString("Op"),qMakePair(QVariant::fromValue(c.op),empty));
+            out.insert(p2+QString("Output"),qMakePair(c.output,empty));
+            out.insert(p2+QString("HwKey"),qMakePair(c.hwKey,empty));
+        }
+    }
+    ///TODO: Handle multiple chirpconfigs?
+    out.unite(getChirpConfig().headerMap());
+    return out;
+}
+
+void RfConfig::parseLine(const QString key, const QVariant val)
+{
+    if(key.endsWith(QString("AwgMult")))
+        data->awgMult = val.toDouble();
+    if(key.endsWith(QString("UpMixSideband")))
+        data->upMixSideband = val.value<BlackChirp::Sideband>();
+    if(key.endsWith(QString("ChirpMult")))
+        data->chirpMult = val.toDouble();
+    if(key.endsWith(QString("DownMixSideband")))
+        data->downMixSideband = val.value<BlackChirp::Sideband>();
+    if(key.endsWith(QString("CommonLO")))
+        data->commonUpDownLO = val.toBool();
+    if(key.contains("Clock."))
+    {
+        auto l = key.split(QString("."));
+        if(l.size() < 3)
+            return;
+        auto type = BlackChirp::clockType(l.at(1));
+        auto subkey = l.at(2);
+        if(subkey.startsWith(QString("Frequency")))
+            setClockDesiredFreq(type,val.toDouble());
+        if(subkey.startsWith(QString("Factor")))
+            setClockFactor(type,val.toDouble());
+        if(subkey.startsWith(QString("Op")))
+            setClockOp(type,val.value<MultOperation>());
+        if(subkey.startsWith(QString("Output")))
+            setClockOutputNum(type,val.toInt());
+        if(subkey.startsWith(QString("HwKey")))
+            setClockHwKey(type,val.toString());
+    }
 }
 
 bool RfConfig::isValid() const
@@ -189,6 +258,26 @@ void RfConfig::setClockOp(BlackChirp::ClockType t, RfConfig::MultOperation o)
     setClockFreqInfo(t,c);
 }
 
+void RfConfig::setClockOutputNum(BlackChirp::ClockType t, int output)
+{
+    if(!getClocks().contains(t))
+        setClockFreqInfo(t);
+
+    auto c = getClocks().value(t);
+    c.output = output;
+    setClockFreqInfo(t,c);
+}
+
+void RfConfig::setClockHwKey(BlackChirp::ClockType t, QString key)
+{
+    if(!getClocks().contains(t))
+        setClockFreqInfo(t);
+
+    auto c = getClocks().value(t);
+    c.hwKey = key;
+    setClockFreqInfo(t,c);
+}
+
 void RfConfig::setClockHwInfo(BlackChirp::ClockType t, QString hwKey, int output)
 {
     if(!getClocks().contains(t))
@@ -212,7 +301,7 @@ void RfConfig::setClockFreqInfo(BlackChirp::ClockType t, double targetFreqMHz, d
     setClockFreqInfo(t,f);
 }
 
-void RfConfig::setClockFreqInfo(BlackChirp::ClockType t, RfConfig::ClockFreq cf)
+void RfConfig::setClockFreqInfo(BlackChirp::ClockType t, const ClockFreq &cf)
 {
     data->clocks.insert(t,cf);
 }
@@ -241,8 +330,23 @@ bool RfConfig::setChirpConfig(const ChirpConfig cc, int num)
 
 }
 
-void RfConfig::addChirpConfig(const ChirpConfig cc)
+void RfConfig::addChirpConfig(ChirpConfig cc)
 {
+    if(data->chirps.isEmpty())
+    {
+        QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+
+        s.beginGroup(QString("awg"));
+        s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+        double sampleRate = s.value(QString("sampleRate"),1e9).toDouble();
+        s.endGroup();
+        s.endGroup();
+
+        if(rawClockFrequency(BlackChirp::AwgClock) > 0.0)
+            cc.setAwgSampleRate(rawClockFrequency(BlackChirp::AwgClock));
+        else
+            cc.setAwgSampleRate(sampleRate);
+    }
     data->chirps.append(cc);
 }
 
@@ -271,7 +375,7 @@ bool RfConfig::commonLO() const
     return data->commonUpDownLO;
 }
 
-QMap<BlackChirp::ClockType, RfConfig::ClockFreq> RfConfig::getClocks() const
+QHash<BlackChirp::ClockType, RfConfig::ClockFreq> RfConfig::getClocks() const
 {
     return data->clocks;
 }

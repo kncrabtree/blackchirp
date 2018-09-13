@@ -202,3 +202,23 @@ QList<BlackChirp::ClockType> BlackChirp::allClockTypes()
          << DRClock << DigitizerClock << ReferenceClock;
     return out;
 }
+
+
+BlackChirp::ClockType BlackChirp::clockType(QString key)
+{
+
+    if(key == QString("UpLO"))
+        return UpConversionLO;
+    if(key == QString("DownLO"))
+        return DownConversionLO;
+    if(key == QString("AwgRef"))
+        return AwgClock;
+    if(key == QString("DrClock"))
+        return DRClock;
+    if(key == QString("DigRef"))
+        return DigitizerClock;
+    if(key == QString("ComRef"))
+        return ReferenceClock;
+
+    return ReferenceClock;
+}

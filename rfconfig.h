@@ -39,6 +39,8 @@ public:
 
     void saveToSettings() const;
     static RfConfig loadFromSettings();
+    QMap<QString,QPair<QVariant,QString> > headerMap() const;
+    void parseLine(const QString key, const QVariant val);
 
     bool isValid() const;
     void setAwgMult(const double m);
@@ -49,12 +51,14 @@ public:
     void setClockDesiredFreq(BlackChirp::ClockType t, double targetFreqMHz);
     void setClockFactor(BlackChirp::ClockType t, double factor);
     void setClockOp(BlackChirp::ClockType t, MultOperation o);
+    void setClockOutputNum(BlackChirp::ClockType t, int output);
+    void setClockHwKey(BlackChirp::ClockType t, QString key);
     void setClockHwInfo(BlackChirp::ClockType t, QString hwKey, int output);
     void setClockFreqInfo(BlackChirp::ClockType t, double targetFreqMHz = 0.0, double factor = 1.0, MultOperation o = Multiply, QString hwKey = QString(""), int output = 0);
-    void setClockFreqInfo(BlackChirp::ClockType t, ClockFreq cf);
+    void setClockFreqInfo(BlackChirp::ClockType t, const ClockFreq &cf);
     void clearChirpConfigs();
     bool setChirpConfig(const ChirpConfig cc, int num=0);
-    void addChirpConfig(const ChirpConfig cc);
+    void addChirpConfig(ChirpConfig cc);
 
     double awgMult() const;
     BlackChirp::Sideband upMixSideband() const;
@@ -62,7 +66,7 @@ public:
     BlackChirp::Sideband downMixSideband() const;
     bool commonLO() const;
 
-    QMap<BlackChirp::ClockType,ClockFreq> getClocks() const;
+    QHash<BlackChirp::ClockType,ClockFreq> getClocks() const;
     double clockFrequency(BlackChirp::ClockType t) const;
     double rawClockFrequency(BlackChirp::ClockType t) const;
     ChirpConfig getChirpConfig(int num=0) const;
@@ -75,5 +79,7 @@ private:
 
     double getRawFrequency(ClockFreq f) const;
 };
+
+Q_DECLARE_METATYPE(RfConfig::MultOperation)
 
 #endif // RFCONFIG_H

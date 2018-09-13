@@ -314,6 +314,18 @@ void ChirpTableModel::addSegment(double start, double end, double dur, int pos, 
     cs.alphaUs = (end-start)/dur;
     cs.empty = empty;
 
+    if(d_chirpList.isEmpty())
+    {
+        d_currentChirp = 0;
+        QList<BlackChirp::ChirpSegment> l;
+        l << cs;
+        beginInsertRows(QModelIndex(),0,0);
+        d_chirpList << l;
+        endInsertRows();
+        emit modelChanged();
+        return;
+    }
+
     int ll = d_currentChirp;
     int ul = d_currentChirp+1;
     if(d_applyToAll)

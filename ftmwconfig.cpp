@@ -536,8 +536,7 @@ QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
 
 
     out.unite(data->scopeConfig.headerMap());
-    ///TODO: header map for rf config
-//    out.unite(data->rfConfig.headerMap());
+    out.unite(data->rfConfig.headerMap());
 
     return out;
 
@@ -691,6 +690,8 @@ void FtmwConfig::parseLine(const QString key, const QVariant val)
         if(key.endsWith(QString("ChirpRMSThreshold")))
             data->chirpRMSThreshold = val.toDouble();
     }
+    else if(key.startsWith(QString("RfConfig")))
+        data->rfConfig.parseLine(key,val);
 }
 
 void FtmwConfig::loadChirps(const int num, const QString path)

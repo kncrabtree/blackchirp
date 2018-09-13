@@ -226,6 +226,8 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
     int currentSample = 0;
 
     QVector<QPointF> out(numSamples);
+    if(numSamples == 0)
+        return out;
 
     //find where the first sample falls with respect to delays and chirps
     //find interval number
@@ -322,7 +324,7 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
 
     }
     //fill with zeroes until total length
-    while(currentSample < invalidSample-1)
+    while(currentSample < invalidSample-1 && currentSample < out.size())
     {
         double currentTime = getSampleTime(firstSample+currentSample);
         out[currentSample] = QPointF(currentTime,0.0);
@@ -450,6 +452,14 @@ QString ChirpConfig::toString() const
     }
 
     return out;
+}
+
+void ChirpConfig::setAwgSampleRate(const double samplesPerSecond)
+{
+    data->sampleRateSperS = samplesPerSecond;
+    data->sampleRateSperUS = samplesPerSecond/1e6;
+    data->sampleIntervalS = 1.0/samplesPerSecond;
+    data->sampleIntervalUS = 1.0/data->sampleRateSperUS;
 }
 
 void ChirpConfig::parseFileLine(QByteArray line)

@@ -49,8 +49,9 @@ Experiment::Experiment(const int num, QString exptPath) : data(new ExperimentDat
             QString key = l.first();
             QVariant val = QVariant(l.at(1));
 
-            if(key.startsWith(QString("Ftmw")))
+            if(key.startsWith(QString("Ftmw")) || key.startsWith(QString("RfConfig")))
                 data->ftmwCfg.parseLine(key,val);
+
 
             if(key.startsWith(QString("Flow")))
                 data->flowCfg.parseLine(key,val);

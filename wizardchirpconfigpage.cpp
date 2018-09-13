@@ -32,6 +32,10 @@ void WizardChirpConfigPage::initializePage()
 {
     //get rfConfig
     auto e = getExperiment();
+    auto r = e.ftmwConfig().rfConfig();
+    auto c = r.getClocks();
+    for(auto it=c.constBegin(); it != c.constEnd(); it++)
+        qDebug() << BlackChirp::clockKey(it.key()) << it.value().desiredFreqMHz << it.value().hwKey;
     p_ccw->setRfConfig(e.ftmwConfig().rfConfig());
     p_ccw->updateChirpPlot();
 

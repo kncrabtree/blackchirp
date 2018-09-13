@@ -25,9 +25,6 @@ public:
     int auxDataInterval() const;
     int snapshotInterval() const;
 
-signals:
-    void experimentUpdate(const Experiment);
-
 private:
     QCheckBox *p_ftmw;
 #ifdef BC_LIF
