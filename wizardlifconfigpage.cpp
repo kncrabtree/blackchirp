@@ -16,7 +16,7 @@
 #include "experimentwizard.h"
 
 WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
-    QWizardPage(parent)
+    ExperimentWizardPage(parent)
 {
     setTitle(QString("LIF Configuration"));
     setSubTitle(QString("Configure the parameters for the LIF Acquisition. Oscilloscope settings are immediately applied. Integration gates and shots per point can be set by right-clicking the plot."));
@@ -143,8 +143,6 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
 
     setLayout(vbl);
 
-    setFromConfig(LifConfig::loadFromSettings());
-
     connect(p_delaySingle,&QCheckBox::toggled,[=](bool en){
         if(en)
         {
@@ -218,16 +216,35 @@ LifConfig WizardLifConfigPage::getConfig()
 
 void WizardLifConfigPage::initializePage()
 {
+    auto e = getExperiment();
+    setFromConfig(e.lifConfig());
 }
 
 bool WizardLifConfigPage::validatePage()
 {
-    return getConfig().isValid();
+    auto e = getExperiment();
+    LifConfig out;
+    out = p_lifControl->getSettings(out);
+    out.setCompleteMode(p_completeBox->currentData().value<BlackChirp::LifCompleteMode>());
+    out.setOrder(p_orderBox->currentData().value<BlackChirp::LifScanOrder>());
+    out.setDelayParameters(p_delayStart->value(),p_delayEnd->value(),p_delayStep->value());
+    out.setFrequencyParameters(p_laserStart->value(),p_laserEnd->value(),p_laserStep->value());
+
+    out.validate();
+    if(out.isValid())
+    {
+        e.setLifConfig(out);
+        emit experimentUpdate(e);
+        return true;
+    }
+
+    return false;
 }
 
 int WizardLifConfigPage::nextId() const
 {
-    if(field(QString("ftmw")).toBool())
+    auto e = getExperiment();
+    if(e.ftmwConfig().isEnabled())
         return ExperimentWizard::RfConfigPage;
     else
         return ExperimentWizard::PulseConfigPage;

@@ -28,6 +28,19 @@ ValidationModel::~ValidationModel()
 
 }
 
+void ValidationModel::setFromMap(const QMap<QString, BlackChirp::ValidationItem> l)
+{
+    d_validationList.clear();
+
+    if(!l.isEmpty())
+    {
+        for(auto it = l.constBegin(); it != l.constEnd(); it++)
+            d_validationList << it.value();
+    }
+
+    emit dataChanged(index(0,0),index(d_validationList.size(),3));
+}
+
 
 
 int ValidationModel::rowCount(const QModelIndex &parent) const

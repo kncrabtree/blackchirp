@@ -1,12 +1,12 @@
 #ifndef WIZARDFTMWCONFIGPAGE_H
 #define WIZARDFTMWCONFIGPAGE_H
 
-#include <QWizardPage>
+#include "experimentwizardpage.h"
 
 class FtmwConfig;
 class FtmwConfigWidget;
 
-class WizardFtmwConfigPage : public QWizardPage
+class WizardFtmwConfigPage : public ExperimentWizardPage
 {
     Q_OBJECT
 public:
@@ -18,8 +18,6 @@ public:
     void initializePage();
     bool validatePage();
     int nextId() const;
-
-    FtmwConfig getFtmwConfig() const;
 
 private:
     FtmwConfigWidget *p_ftc;

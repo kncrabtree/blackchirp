@@ -1,12 +1,12 @@
 #ifndef WIZARDSTARTPAGE_H
 #define WIZARDSTARTPAGE_H
 
-#include <QWizardPage>
+#include "experimentwizardpage.h"
 
 class QCheckBox;
 class QSpinBox;
 
-class WizardStartPage : public QWizardPage
+class WizardStartPage : public ExperimentWizardPage
 {
     Q_OBJECT
 public:
@@ -17,12 +17,16 @@ public:
     int nextId() const;
     bool isComplete() const;
     void initializePage();
+    bool validatePage();
 
     bool ftmwEnabled() const;
     bool lifEnabled() const;
     bool motorEnabled() const;
     int auxDataInterval() const;
     int snapshotInterval() const;
+
+signals:
+    void experimentUpdate(const Experiment);
 
 private:
     QCheckBox *p_ftmw;
@@ -33,6 +37,8 @@ private:
     QCheckBox *p_motor;
 #endif
     QSpinBox *p_auxDataIntervalBox, *p_snapshotBox;
+
+
 };
 
 #endif // WIZARDSTARTPAGE_H

@@ -10,7 +10,7 @@ class ClockTableModel : public QAbstractTableModel
 {
     Q_OBJECT
 public:
-    explicit ClockTableModel(RfConfig rfc, QObject *parent = nullptr);
+    explicit ClockTableModel(QObject *parent = nullptr);
     struct ClockHwInfo {
         int index;
         bool used;
@@ -20,6 +20,7 @@ public:
     };
 
     QList<ClockHwInfo> getHwInfo() const { return d_hwInfo; }
+    void setConfig(const RfConfig c);
     RfConfig getRfConfig() const;
 
 private:

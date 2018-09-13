@@ -2,9 +2,7 @@
 
 #include <QVBoxLayout>
 
-#include "experimentwizard.h"
-
-WizardRfConfigPage::WizardRfConfigPage(QWidget *parent) : QWizardPage(parent)
+WizardRfConfigPage::WizardRfConfigPage(QWidget *parent) : ExperimentWizardPage(parent)
 {
     setTitle(QString("Configure Clocks"));
 
@@ -20,14 +18,17 @@ WizardRfConfigPage::WizardRfConfigPage(QWidget *parent) : QWizardPage(parent)
 
 void WizardRfConfigPage::initializePage()
 {
-    //TODO: get rfConfig from earlier page
-    auto c = RfConfig::loadFromSettings();
-    p_rfc->setRfConfig(c);
+    auto e = getExperiment();
+    p_rfc->setRfConfig(e.ftmwConfig().rfConfig());
 }
 
 bool WizardRfConfigPage::validatePage()
 {
     ///TODO: If segmented, check to make sure upconversion and downconversion LOs are set
+
+    auto e = getExperiment();
+    e.setRfConfig(p_rfc->getRfConfig());
+    emit experimentUpdate(e);
     return true;
 }
 

@@ -1,11 +1,11 @@
 #ifndef WIZARDSUMMARYPAGE_H
 #define WIZARDSUMMARYPAGE_H
 
-#include <QWizardPage>
+#include "experimentwizardpage.h"
 
 class QTableWidget;
 
-class WizardSummaryPage : public QWizardPage
+class WizardSummaryPage : public ExperimentWizardPage
 {
     Q_OBJECT
 public:

@@ -8,7 +8,8 @@ HEADERS += \
     $$PWD/wizardvalidationpage.h \
     $$PWD/ioboardconfigmodel.h \
     $$PWD/validationmodel.h \
-    $$PWD/wizardrfconfigpage.h
+    $$PWD/wizardrfconfigpage.h \
+    $$PWD/experimentwizardpage.h
 
 SOURCES += \
     $$PWD/experimentwizard.cpp \
@@ -20,7 +21,8 @@ SOURCES += \
     $$PWD/wizardvalidationpage.cpp \
     $$PWD/ioboardconfigmodel.cpp \
     $$PWD/validationmodel.cpp \
-    $$PWD/wizardrfconfigpage.cpp
+    $$PWD/wizardrfconfigpage.cpp \
+    $$PWD/experimentwizardpage.cpp
 
 lif {
 	HEADERS += $$PWD/wizardlifconfigpage.h

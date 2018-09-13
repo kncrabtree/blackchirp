@@ -12,6 +12,11 @@ RfConfigWidget::RfConfigWidget(QWidget *parent) :
     ui->upconversionSidebandComboBox->addItem(QString("Lower"),BlackChirp::LowerSideband);
     ui->downconversionSidebandComboBox->addItem(QString("Lower"),BlackChirp::LowerSideband);
 
+    p_ctm = new ClockTableModel();
+    ui->clockTableView->setModel(p_ctm);
+    ui->clockTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->clockTableView->setItemDelegate(new ClockTableDelegate);
+
 }
 
 RfConfigWidget::~RfConfigWidget()
@@ -36,10 +41,8 @@ void RfConfigWidget::setRfConfig(const RfConfig c)
 
     ui->commonLoCheckBox->setChecked(c.commonLO());
 
-    p_ctm = new ClockTableModel(c);
-    ui->clockTableView->setModel(p_ctm);
-    ui->clockTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    ui->clockTableView->setItemDelegate(new ClockTableDelegate);
+    p_ctm->setConfig(c);
+    ui->clockTableView->resizeColumnsToContents();
 }
 
 RfConfig RfConfigWidget::getRfConfig()

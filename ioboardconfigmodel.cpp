@@ -1,7 +1,7 @@
 #include "ioboardconfigmodel.h"
 
-IOBoardConfigModel::IOBoardConfigModel(const QMap<int, BlackChirp::IOBoardChannel> l, int numChannels, int numReserved, QString prefix, QObject *parent) :
-    QAbstractTableModel(parent), d_channelConfig(l), d_reserved(numReserved), d_numChannels(numChannels), d_prefix(prefix)
+IOBoardConfigModel::IOBoardConfigModel(QString prefix, QObject *parent) :
+    QAbstractTableModel(parent), d_prefix(prefix)
 {
 }
 
@@ -13,6 +13,24 @@ IOBoardConfigModel::~IOBoardConfigModel()
 QMap<int, BlackChirp::IOBoardChannel> IOBoardConfigModel::getConfig()
 {
     return d_channelConfig;
+}
+
+void IOBoardConfigModel::setFromConfig(const IOBoardConfig c)
+{
+    if(d_prefix == QString("AIN"))
+    {
+        d_channelConfig = c.analogList();
+        d_reserved = c.reservedAnalogChannels();
+        d_numChannels = c.numAnalogChannels();
+    }
+    else if(d_prefix == QString("DIN"))
+    {
+        d_channelConfig = c.digitalList();
+        d_reserved = c.reservedDigitalChannels();
+        d_numChannels = c.numDigitalChannels();
+    }
+
+    emit dataChanged(index(0,0),index(d_channelConfig.size(),3));
 }
 
 

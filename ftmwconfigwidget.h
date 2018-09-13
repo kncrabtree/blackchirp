@@ -3,8 +3,9 @@
 
 #include <QWidget>
 
+#include "ftmwconfig.h"
+
 class QComboBox;
-class FtmwConfig;
 
 namespace Ui {
 class FtmwConfigWidget;
@@ -19,9 +20,7 @@ public:
     ~FtmwConfigWidget();
 
     void setFromConfig(const FtmwConfig config);
-    FtmwConfig getConfig() const;
-
-    void lockFastFrame(const int nf);
+    FtmwConfig getConfig();
 
 public slots:
     void configureUI();
@@ -31,6 +30,7 @@ private:
     Ui::FtmwConfigWidget *ui;
 
     void setComboBoxIndex(QComboBox *box, QVariant value);
+    FtmwConfig d_ftmwConfig;
 
 };
 

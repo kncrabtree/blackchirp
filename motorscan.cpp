@@ -483,9 +483,9 @@ void MotorScan::parseLine(QString key, QVariant val)
     }
 }
 
-void MotorScan::setEnabled()
+void MotorScan::setEnabled(bool en)
 {
-    data->enabled = true;
+    data->enabled = en;
 }
 
 void MotorScan::setXPoints(int x)

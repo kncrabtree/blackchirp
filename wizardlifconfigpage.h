@@ -1,16 +1,14 @@
 #ifndef WIZARDLIFCONFIGPAGE_H
 #define WIZARDLIFCONFIGPAGE_H
 
-#include <QWizardPage>
-
-#include "lifconfig.h"
+#include "experimentwizardpage.h"
 
 class QDoubleSpinBox;
 class QCheckBox;
 class LifControlWidget;
 class QComboBox;
 
-class WizardLifConfigPage : public QWizardPage
+class WizardLifConfigPage : public ExperimentWizardPage
 {
     Q_OBJECT
 public:

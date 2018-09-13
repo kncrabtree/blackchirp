@@ -13,12 +13,10 @@
 #include "validationmodel.h"
 
 WizardValidationPage::WizardValidationPage(QWidget *parent) :
-    QWizardPage(parent)
+    ExperimentWizardPage(parent)
 {
     setTitle(QString("Validation Settings"));
     setSubTitle(QString("Configure IO board channels and set up conditions that will automatically abort the experiment."));
-
-    IOBoardConfig c;
 
     QHBoxLayout *hbl = new QHBoxLayout;
 
@@ -30,7 +28,7 @@ WizardValidationPage::WizardValidationPage(QWidget *parent) :
     iol->addWidget(an,0,Qt::AlignCenter);
 
     p_analogView = new QTableView();
-    IOBoardConfigModel *anmodel = new IOBoardConfigModel(c.analogList(),c.numAnalogChannels(),c.reservedAnalogChannels(),QString("AIN"),p_analogView);
+    IOBoardConfigModel *anmodel = new IOBoardConfigModel(QString("AIN"),p_analogView);
     p_analogView->setModel(anmodel);
     p_analogView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     p_analogView->horizontalHeader()->setSectionResizeMode(2,QHeaderView::Stretch);
@@ -42,7 +40,7 @@ WizardValidationPage::WizardValidationPage(QWidget *parent) :
     iol->addWidget(di,0,Qt::AlignCenter);
 
     p_digitalView = new QTableView();
-    IOBoardConfigModel *dmodel = new IOBoardConfigModel(c.digitalList(),c.numDigitalChannels(),c.reservedDigitalChannels(),QString("DIN"),p_digitalView);
+    IOBoardConfigModel *dmodel = new IOBoardConfigModel(QString("DIN"),p_digitalView);
     p_digitalView->setModel(dmodel);
     p_digitalView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     p_digitalView->horizontalHeader()->setSectionResizeMode(2,QHeaderView::Stretch);
@@ -72,14 +70,26 @@ WizardValidationPage::WizardValidationPage(QWidget *parent) :
     QHBoxLayout *tl = new QHBoxLayout;
     tl->addStretch(1);
 
-    QToolButton *addButton = new QToolButton();
-    connect(addButton,&QToolButton::clicked,[=](){ valmodel->addNewItem(); });
-    addButton->setIcon(QIcon(QString(":/icons/add.png")));
-    addButton->setText(QString(""));
-    tl->addWidget(addButton,0);
+    p_addButton = new QToolButton();
+    p_addButton->setIcon(QIcon(QString(":/icons/add.png")));
+    p_addButton->setText(QString(""));
+    tl->addWidget(p_addButton,0);
 
-    QToolButton *removeButton = new QToolButton();
-    connect(removeButton,&QToolButton::clicked,[=](){
+    p_removeButton = new QToolButton();
+    p_removeButton->setIcon(QIcon(QString(":/icons/remove.png")));
+    p_removeButton->setText(QString(""));
+    tl->addWidget(p_removeButton,0);
+    tl->addStretch(1);
+    vl->addLayout(tl);
+
+    vl->addStretch(1);
+
+    hbl->addLayout(vl,1);
+
+    setLayout(hbl);
+
+    connect(p_addButton,&QToolButton::clicked,[=](){ valmodel->addNewItem(); });
+    connect(p_removeButton,&QToolButton::clicked,[=](){
         QModelIndexList l = p_validationView->selectionModel()->selectedIndexes();
         if(l.isEmpty())
             return;
@@ -96,17 +106,6 @@ WizardValidationPage::WizardValidationPage(QWidget *parent) :
         for(int i=rowList.size()-1; i>=0; i--)
             valmodel->removeRows(rowList.at(i),1,QModelIndex());
     });
-    removeButton->setIcon(QIcon(QString(":/icons/remove.png")));
-    removeButton->setText(QString(""));
-    tl->addWidget(removeButton,0);
-    tl->addStretch(1);
-    vl->addLayout(tl);
-
-    vl->addStretch(1);
-
-    hbl->addLayout(vl,1);
-
-    setLayout(hbl);
 }
 
 
@@ -131,4 +130,38 @@ QMap<QString, BlackChirp::ValidationItem> WizardValidationPage::getValidation() 
     for(int i=0; i<l.size(); i++)
         out.insert(l.at(i).key,l.at(i));
     return out;
+}
+
+
+void WizardValidationPage::initializePage()
+{
+    auto e = getExperiment();
+    auto c = e.iobConfig();
+
+    dynamic_cast<IOBoardConfigModel*>(p_analogView->model())->setFromConfig(c);
+    dynamic_cast<IOBoardConfigModel*>(p_digitalView->model())->setFromConfig(c);
+    dynamic_cast<ValidationModel*>(p_validationView->model())->setFromMap(e.validationItems());
+
+    p_analogView->resizeColumnsToContents();
+    p_digitalView->resizeColumnsToContents();
+    p_validationView->resizeColumnsToContents();
+
+}
+
+bool WizardValidationPage::validatePage()
+{
+    auto e = getExperiment();
+
+    IOBoardConfig c;
+    c.setAnalogChannels(static_cast<IOBoardConfigModel*>(p_analogView->model())->getConfig());
+    c.setDigitalChannels(static_cast<IOBoardConfigModel*>(p_digitalView->model())->getConfig());
+    e.setIOBoardConfig(c);
+
+    auto l = static_cast<ValidationModel*>(p_validationView->model())->getList();
+    e.setValidationItems(QMap<QString, BlackChirp::ValidationItem>());
+    for(int i=0; i<l.size(); i++)
+        e.addValidationItem(l.at(i));
+
+    emit experimentUpdate(e);
+    return true;
 }

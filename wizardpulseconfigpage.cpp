@@ -4,10 +4,9 @@
 #include <QMessageBox>
 
 #include "pulseconfigwidget.h"
-#include "experimentwizard.h"
 
 WizardPulseConfigPage::WizardPulseConfigPage(QWidget *parent) :
-    QWizardPage(parent)
+    ExperimentWizardPage(parent)
 {
     setTitle("Configure Pulses");
     setSubTitle("Some settings may be made automatically (e.g., LIF delays).");
@@ -26,24 +25,19 @@ WizardPulseConfigPage::~WizardPulseConfigPage()
 
 }
 
-void WizardPulseConfigPage::setConfig(const PulseGenConfig c)
-{
-    p_pcw->newConfig(c);
-}
-
-PulseGenConfig WizardPulseConfigPage::getConfig() const
-{
-    return p_pcw->getConfig();
-}
-
 void WizardPulseConfigPage::initializePage()
 {
+    auto e = getExperiment();
+    p_pcw->setFromConfig(e.pGenConfig());
+
 #ifdef BC_LIF
-    if(field(QString("lif")).toBool())
+    ///TODO: can set this directly from LifConfig now instead of using field
+    /// Also need to work with new mechanism for special channels
+    if(e.lifConfig().isEnabled())
         p_pcw->configureLif(field(QString("delayStart")).toDouble());
 #endif
 
-    if(field(QString("ftmw")).toBool())
+    if(e.ftmwConfig().isEnabled())
         p_pcw->configureChirp();
 }
 
@@ -55,5 +49,8 @@ int WizardPulseConfigPage::nextId() const
 
 bool WizardPulseConfigPage::validatePage()
 {
+    auto e = getExperiment();
+    e.setPulseGenConfig(p_pcw->getConfig());
+    emit experimentUpdate(e);
     return true;
 }

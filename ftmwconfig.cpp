@@ -65,16 +65,6 @@ QDateTime FtmwConfig::targetTime() const
     return data->targetTime;
 }
 
-double FtmwConfig::loFreq() const
-{
-    return data->loFreq;
-}
-
-BlackChirp::Sideband FtmwConfig::sideband() const
-{
-    return data->sideband;
-}
-
 QList<Fid> FtmwConfig::fidList() const
 {
     return data->fidList;
@@ -245,19 +235,21 @@ QString FtmwConfig::errorString() const
 double FtmwConfig::ftMin() const
 {
     double sign = 1.0;
-    if(data->sideband == BlackChirp::LowerSideband)
+    if(rfConfig().downMixSideband() == BlackChirp::LowerSideband)
         sign = -1.0;
-    double lastFreq = data->loFreq + sign*data->scopeConfig.sampleRate/(1e6*2.0);
-    return qMin(data->loFreq,lastFreq);
+    double lo = rfConfig().clockFrequency(BlackChirp::DownConversionLO);
+    double lastFreq = lo + sign*data->scopeConfig.sampleRate/(1e6*2.0);
+    return qMin(lo,lastFreq);
 }
 
 double FtmwConfig::ftMax() const
 {
     double sign = 1.0;
-    if(data->sideband == BlackChirp::LowerSideband)
+    if(rfConfig().downMixSideband() == BlackChirp::LowerSideband)
         sign = -1.0;
-    double lastFreq = data->loFreq + sign*data->scopeConfig.sampleRate/(1e6*2.0);
-    return qMax(data->loFreq,lastFreq);
+    double lo = rfConfig().clockFrequency(BlackChirp::DownConversionLO);
+    double lastFreq = lo + sign*data->scopeConfig.sampleRate/(1e6*2.0);
+    return qMax(lo,lastFreq);
 }
 
 QPair<int, int> FtmwConfig::chirpRange() const
@@ -316,7 +308,10 @@ bool FtmwConfig::writeFidFile(int num, QList<Fid> list, QString path)
 
 bool FtmwConfig::prepareForAcquisition()
 {
-    Fid f(scopeConfig().xIncr,loFreq(),QVector<qint64>(0),sideband(),scopeConfig().yMult,1);
+    double df = rfConfig().clockFrequency(BlackChirp::DownConversionLO);
+    auto sb = rfConfig().downMixSideband();
+
+    Fid f(scopeConfig().xIncr,df,QVector<qint64>(0),sb,scopeConfig().yMult,1);
 
     //in peak up mode, data points will be shifted by 8 bits (x256), so the multiplier
     //needs to decrease by a factor of 256
@@ -335,9 +330,9 @@ bool FtmwConfig::prepareForAcquisition()
 
 }
 
-void FtmwConfig::setEnabled()
+void FtmwConfig::setEnabled(bool en)
 {
-    data->isEnabled = true;
+    data->isEnabled = en;
 }
 
 void FtmwConfig::setPhaseCorrectionEnabled(bool enabled)
@@ -385,16 +380,6 @@ void FtmwConfig::increment()
 void FtmwConfig::setTargetTime(const QDateTime time)
 {
     data->targetTime = time;
-}
-
-void FtmwConfig::setLoFreq(const double f)
-{
-    data->loFreq = f;
-}
-
-void FtmwConfig::setSideband(const BlackChirp::Sideband sb)
-{
-    data->sideband = sb;
 }
 
 bool FtmwConfig::setFidsData(const QList<QVector<qint64> > newList)
@@ -544,8 +529,6 @@ QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
         out.insert(prefix+QString("CompletedShots"),qMakePair(0,empty));
     else
         out.insert(prefix+QString("CompletedShots"),qMakePair(data->fidList.first().shots(),empty));
-    out.insert(prefix+QString("LoFrequency"),qMakePair(QString::number(loFreq(),'f',6),QString("MHz")));
-    out.insert(prefix+QString("Sideband"),qMakePair((int)sideband(),empty));
     out.insert(prefix+QString("FidVMult"),qMakePair(QString::number(fidTemplate().vMult(),'g',12),QString("V")));
     out.insert(prefix+QString("PhaseCorrection"),qMakePair(data->phaseCorrectionEnabled,QString("")));
     out.insert(prefix+QString("ChirpScoring"),qMakePair(data->chirpScoringEnabled,QString("")));
@@ -701,10 +684,6 @@ void FtmwConfig::parseLine(const QString key, const QVariant val)
             data->targetShots = val.toInt();
         if(key.endsWith(QString("TargetTime")))
             data->targetTime = val.toDateTime();
-        if(key.endsWith(QString("LoFrequency")))
-            data->loFreq = val.toDouble();
-        if(key.endsWith(QString("Sideband")))
-            data->sideband = (BlackChirp::Sideband)val.toInt();
         if(key.endsWith(QString("PhaseCorrection")))
             data->phaseCorrectionEnabled = val.toBool();
         if(key.endsWith(QString("ChirpScoring")))
@@ -747,8 +726,6 @@ void FtmwConfig::saveToSettings() const
     s.setValue(QString("summaryFrame"),scopeConfig().summaryFrame);
     s.setValue(QString("blockAverage"),scopeConfig().blockAverageEnabled);
     s.setValue(QString("numAverages"),scopeConfig().numAverages);
-    s.setValue(QString("loFreq"),loFreq());
-    s.setValue(QString("sideband"),static_cast<int>(sideband()));
 
     s.endGroup();
 
@@ -787,10 +764,6 @@ FtmwConfig FtmwConfig::loadFromSettings()
     sc.blockAverageEnabled = s.value(QString("blockAverage"),false).toBool();
     sc.numAverages = s.value(QString("numAverages"),1).toInt();
     out.setScopeConfig(sc);
-
-    out.setLoFreq(s.value(QString("loFreq"),0.0).toDouble());
-    out.setSideband(static_cast<BlackChirp::Sideband>(s.value(QString("sideband"),BlackChirp::UpperSideband).toInt()));
-
     out.setRfConfig(RfConfig::loadFromSettings());
 
     return out;

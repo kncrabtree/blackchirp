@@ -210,12 +210,12 @@ QList<QVector<BlackChirp::LifPoint> > LifConfig::lifData() const
     return data->lifData;
 }
 
-void LifConfig::setEnabled()
+void LifConfig::setEnabled(bool en)
 {
-    if(!data->valid)
-        return;
+//    if(!data->valid)
+//        return;
 
-    data->enabled = true;
+    data->enabled = en;
 }
 
 bool LifConfig::validate()

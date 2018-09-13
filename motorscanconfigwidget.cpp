@@ -53,7 +53,6 @@ MotorScanConfigWidget::MotorScanConfigWidget(QWidget *parent) :
             ui->zMaxBox->setValue(d);
     });
 
-    setFromMotorScan(MotorScan::fromSettings());
 }
 
 MotorScanConfigWidget::~MotorScanConfigWidget()

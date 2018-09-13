@@ -1,21 +1,17 @@
 #ifndef WIZARDPULSECONFIGPAGE_H
 #define WIZARDPULSECONFIGPAGE_H
 
-#include <QWizardPage>
+#include "experimentwizardpage.h"
 
-class PulseGenConfig;
 class PulseConfigWidget;
 
 
-class WizardPulseConfigPage : public QWizardPage
+class WizardPulseConfigPage : public ExperimentWizardPage
 {
     Q_OBJECT
 public:
     WizardPulseConfigPage(QWidget *parent = 0);
     ~WizardPulseConfigPage();
-
-    void setConfig(const PulseGenConfig c);
-    PulseGenConfig getConfig() const;
 
     // QWizardPage interface
     void initializePage();

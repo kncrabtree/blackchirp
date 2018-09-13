@@ -50,7 +50,7 @@ signals:
 public slots:
     void launchChannelConfig(int ch);
     void newSetting(int index,BlackChirp::PulseSetting s,QVariant val);
-    void newConfig(const PulseGenConfig c);
+    void setFromConfig(const PulseGenConfig c);
     void newRepRate(double r);
     void updateHardwareLimits();
 

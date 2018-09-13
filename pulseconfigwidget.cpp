@@ -291,7 +291,7 @@ void PulseConfigWidget::newSetting(int index, BlackChirp::PulseSetting s, QVaria
     ui->pulsePlot->newSetting(index,s,val);
 }
 
-void PulseConfigWidget::newConfig(const PulseGenConfig c)
+void PulseConfigWidget::setFromConfig(const PulseGenConfig c)
 {
     blockSignals(true);
     for(int i=0; i<c.size(); i++)

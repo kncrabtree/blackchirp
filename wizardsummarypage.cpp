@@ -9,7 +9,7 @@
 
 
 WizardSummaryPage::WizardSummaryPage(QWidget *parent) :
-    QWizardPage(parent)
+    ExperimentWizardPage(parent)
 {
     setTitle(QString("Experiment Summary"));
     setSubTitle(QString("The settings shown below will be used for this experiment. If anything is incorrect, use the back button to make changes."));
@@ -44,8 +44,7 @@ void WizardSummaryPage::initializePage()
 {
     p_tw->clearContents();
 
-    ExperimentWizard *w = static_cast<ExperimentWizard*>(wizard());
-    Experiment e = w->getExperiment();
+    auto e = getExperiment();
 
     auto header = e.headerMap();
     auto it = header.constBegin();

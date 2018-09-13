@@ -7,7 +7,7 @@
 #include "experimentwizard.h"
 
 WizardMotorScanConfigPage::WizardMotorScanConfigPage(QWidget *parent) :
-    QWizardPage(parent)
+    ExperimentWizardPage(parent)
 {
     setTitle(QString("Motor Scan Configuration"));
     setSubTitle(QString("Configure the parameters of the motor scan."));
@@ -21,14 +21,22 @@ WizardMotorScanConfigPage::WizardMotorScanConfigPage(QWidget *parent) :
     setLayout(vbl);
 }
 
-MotorScan WizardMotorScanConfigPage::motorScan() const
+void WizardMotorScanConfigPage::initializePage()
 {
-    return p_mscw->toMotorScan();
+    auto e = getExperiment();
+    p_mscw->setFromMotorScan(e.motorScan());
 }
 
 bool WizardMotorScanConfigPage::validatePage()
 {
-    return p_mscw->validatePage();
+    if(p_mscw->validatePage())
+    {
+        auto e = getExperiment();
+        e.setMotorScan(p_mscw->toMotorScan());
+        emit experimentUpdate(e);
+        return true;
+    }
+    return false;
 }
 
 int WizardMotorScanConfigPage::nextId() const

@@ -5,9 +5,17 @@
 #include <QSpinBox>
 #include <QDoubleSpinBox>
 
-ClockTableModel::ClockTableModel(RfConfig rfc, QObject *parent) : QAbstractTableModel(parent), d_rfConfig(rfc)
+ClockTableModel::ClockTableModel(QObject *parent) : QAbstractTableModel(parent)
 {
     d_clockTypes = BlackChirp::allClockTypes();
+
+}
+
+void ClockTableModel::setConfig(const RfConfig c)
+{
+    d_rfConfig = c;
+    d_hwInfo.clear();
+    d_clockAssignments.clear();
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(QString("clockManager"));
@@ -39,6 +47,7 @@ ClockTableModel::ClockTableModel(RfConfig rfc, QObject *parent) : QAbstractTable
     s.endArray();
     s.endGroup();
 
+    emit dataChanged(index(0,0),index(d_clockTypes.size(),5));
 }
 
 RfConfig ClockTableModel::getRfConfig() const

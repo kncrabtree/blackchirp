@@ -28,8 +28,6 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
         ui->chirpsSpinBox->setEnabled(false);
     }
 
-    initializeFromSettings();
-
     s.beginGroup(QString("awg"));
     s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
     bool hasProtectionPulse = s.value(QString("hasProtectionPulse"),true).toBool();
@@ -37,6 +35,23 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     ///TODO: Send min and max to ChirpTableModel
     s.endGroup();
     s.endGroup();
+
+    s.beginGroup(QString("protectionLimits"));
+    double minPreProt = s.value(QString("minPreChirpProtectionDelayUs"),0.010).toDouble();
+    double minPreGate = s.value(QString("minPreChirpGateDelayUs"),0.100).toDouble();
+    double minPostGate = s.value(QString("minPostChirpGateDelayUs"),0.0).toDouble();
+    double minPostProt = s.value(QString("minPostChirpProtectionDelayUs"),0.100).toDouble();
+
+    s.setValue(QString("minPreChirpProtectionDelayUs"),minPreProt);
+    s.setValue(QString("minPreChirpGateDelayUs"),minPreGate);
+    s.setValue(QString("minPostChirpGateDelayUs"),minPostGate);
+    s.setValue(QString("minPostChirpProtectionDelayUs"),minPostProt);
+    s.endGroup();
+
+    ui->preChirpProtectionSpinBox->setMinimum(minPreProt*1000);
+    ui->preChirpDelaySpinBox->setMinimum(minPreGate*1000);
+    ui->postChirpDelaySpinBox->setMinimum(minPostGate*1000);
+    ui->postChirpProtectionSpinBox->setMinimum(minPostProt*1000);
 
     if(!hasProtectionPulse && BC_PGEN_PROTCHANNEL < 0)
     {
@@ -101,40 +116,10 @@ ChirpConfigWidget::~ChirpConfigWidget()
     delete ui;
 }
 
-RfConfig ChirpConfigWidget::getRfConfig()
+void ChirpConfigWidget::setRfConfig(const RfConfig c)
 {
-    ///TODO: Handle multiple chirp configs
-    return d_currentRfConfig;
-}
-
-QSpinBox *ChirpConfigWidget::numChirpsBox() const
-{
-    return ui->chirpsSpinBox;
-}
-
-void ChirpConfigWidget::initializeFromSettings()
-{
-    ///TODO: RfConfig needs to load last chirp from settings or something
+    d_currentRfConfig = c;
     auto cc = d_currentRfConfig.getChirpConfig();
-
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-
-    s.beginGroup(QString("protectionLimits"));
-    double minPreProt = s.value(QString("minPreChirpProtectionDelayUs"),0.010).toDouble();
-    double minPreGate = s.value(QString("minPreChirpGateDelayUs"),0.100).toDouble();
-    double minPostGate = s.value(QString("minPostChirpGateDelayUs"),0.0).toDouble();
-    double minPostProt = s.value(QString("minPostChirpProtectionDelayUs"),0.100).toDouble();
-
-    s.setValue(QString("minPreChirpProtectionDelayUs"),minPreProt);
-    s.setValue(QString("minPreChirpGateDelayUs"),minPreGate);
-    s.setValue(QString("minPostChirpGateDelayUs"),minPostGate);
-    s.setValue(QString("minPostChirpProtectionDelayUs"),minPostProt);
-    s.endGroup();
-
-    ui->preChirpProtectionSpinBox->setMinimum(minPreProt*1000);
-    ui->preChirpDelaySpinBox->setMinimum(minPreGate*1000);
-    ui->postChirpDelaySpinBox->setMinimum(minPostGate*1000);
-    ui->postChirpProtectionSpinBox->setMinimum(minPostProt*1000);
 
     ui->preChirpProtectionSpinBox->setValue(cc.preChirpProtectionDelay()*1000);
     ui->preChirpDelaySpinBox->setValue(cc.preChirpGateDelay()*1000);
@@ -184,8 +169,17 @@ void ChirpConfigWidget::initializeFromSettings()
     }
 
     ui->currentChirpBox->setValue(1);
-    updateChirpPlot();
+}
 
+RfConfig ChirpConfigWidget::getRfConfig()
+{
+    ///TODO: Handle multiple chirp configs
+    return d_currentRfConfig;
+}
+
+QSpinBox *ChirpConfigWidget::numChirpsBox() const
+{
+    return ui->chirpsSpinBox;
 }
 
 void ChirpConfigWidget::enableEditing(bool enabled)

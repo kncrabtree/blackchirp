@@ -137,67 +137,6 @@
         </widget>
        </item>
        <item>
-        <widget class="QGroupBox" name="fidSettingsBox">
-         <property name="toolTip">
-          <string/>
-         </property>
-         <property name="title">
-          <string>FID Settings</string>
-         </property>
-         <layout class="QFormLayout" name="formLayout_3">
-          <property name="fieldGrowthPolicy">
-           <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
-          </property>
-          <item row="0" column="0">
-           <widget class="QLabel" name="loFrequencyLabel">
-            <property name="text">
-             <string>LO Frequency</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QDoubleSpinBox" name="loFrequencyDoubleSpinBox">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="toolTip">
-             <string>Oscillator frequency in downconversion chain.</string>
-            </property>
-            <property name="suffix">
-             <string> MHz</string>
-            </property>
-            <property name="decimals">
-             <number>6</number>
-            </property>
-            <property name="maximum">
-             <double>10000000.000000000000000</double>
-            </property>
-            <property name="value">
-             <double>25.500000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="sidebandLabel">
-            <property name="text">
-             <string>Sideband</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QComboBox" name="sidebandComboBox">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="toolTip">
-             <string>Sideband for downconversion chain</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
         <spacer name="verticalSpacer_2">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -495,8 +434,6 @@
   <tabstop>targetShotsSpinBox</tabstop>
   <tabstop>targetTimeDateTimeEdit</tabstop>
   <tabstop>phaseCorrectionCheckBox</tabstop>
-  <tabstop>loFrequencyDoubleSpinBox</tabstop>
-  <tabstop>sidebandComboBox</tabstop>
   <tabstop>fIDChannelSpinBox</tabstop>
   <tabstop>verticalScaleDoubleSpinBox</tabstop>
   <tabstop>triggerChannelSpinBox</tabstop>

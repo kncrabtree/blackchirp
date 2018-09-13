@@ -50,7 +50,7 @@ public:
     QPair<QPoint,BlackChirp::LifPoint> lastUpdatedLifPoint() const;
     bool writeLifFile(int num) const;
 
-    void setEnabled();
+    void setEnabled(bool en = true);
     bool validate();
     bool allocateMemory();
     void setLifGate(int start, int end);

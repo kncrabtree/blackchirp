@@ -20,11 +20,11 @@ public:
     explicit ChirpConfigWidget(QWidget *parent = 0);
     ~ChirpConfigWidget();
 
+    void setRfConfig(const RfConfig c);
     RfConfig getRfConfig();
     QSpinBox *numChirpsBox() const;
 
 public slots:
-    void initializeFromSettings();
     void enableEditing(bool enabled);
     void setButtonStates();
 

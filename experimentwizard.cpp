@@ -1,5 +1,6 @@
 #include "experimentwizard.h"
 
+#include "experimentwizardpage.h"
 #include "wizardstartpage.h"
 #include "wizardrfconfigpage.h"
 #include "wizardchirpconfigpage.h"
@@ -22,35 +23,56 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
 {
     setWindowTitle(QString("Experiment Setup"));
 
-    p_startPage = new WizardStartPage(this);
-    p_rfConfigPage = new WizardRfConfigPage(this);
-    p_chirpConfigPage = new WizardChirpConfigPage(this);
-    p_ftmwConfigPage = new WizardFtmwConfigPage(this);
-    p_pulseConfigPage = new WizardPulseConfigPage(this);
-    p_validationPage = new WizardValidationPage(this);
-    p_summaryPage = new WizardSummaryPage(this);
+    auto startPage = new WizardStartPage(this);
+    d_pages << startPage;
 
-    setPage(StartPage,p_startPage);
-    setPage(RfConfigPage,p_rfConfigPage);
-    setPage(ChirpConfigPage,p_chirpConfigPage);
-    setPage(FtmwConfigPage,p_ftmwConfigPage);
-    setPage(PulseConfigPage,p_pulseConfigPage);
-    setPage(ValidationPage,p_validationPage);
-    setPage(SummaryPage,p_summaryPage);
+    auto rfConfigPage = new WizardRfConfigPage(this);
+    d_pages << rfConfigPage;
+
+    auto chirpConfigPage = new WizardChirpConfigPage(this);
+    d_pages << chirpConfigPage;
+
+    auto ftmwConfigPage = new WizardFtmwConfigPage(this);
+    d_pages << ftmwConfigPage;
+
+    auto pulseConfigPage = new WizardPulseConfigPage(this);
+    d_pages << ftmwConfigPage;
+
+    auto validationPage = new WizardValidationPage(this);
+    d_pages << validationPage;
+
+    auto summaryPage = new WizardSummaryPage(this);
+    d_pages << summaryPage;
+
+    setPage(StartPage,startPage);
+    setPage(RfConfigPage,rfConfigPage);
+    setPage(ChirpConfigPage,chirpConfigPage);
+    setPage(FtmwConfigPage,ftmwConfigPage);
+    setPage(PulseConfigPage,pulseConfigPage);
+    setPage(ValidationPage,validationPage);
+    setPage(SummaryPage,summaryPage);
+
 
 #ifdef BC_LIF
-    p_lifConfigPage = new WizardLifConfigPage(this);
-    connect(this,&ExperimentWizard::newTrace,p_lifConfigPage,&WizardLifConfigPage::newTrace);
-    connect(this,&ExperimentWizard::scopeConfigChanged,p_lifConfigPage,&WizardLifConfigPage::scopeConfigChanged);
-    connect(p_lifConfigPage,&WizardLifConfigPage::updateScope,this,&ExperimentWizard::updateScope);
-    connect(p_lifConfigPage,&WizardLifConfigPage::lifColorChanged,this,&ExperimentWizard::lifColorChanged);
-    setPage(LifConfigPage,p_lifConfigPage);
+    auto lifConfigPage = new WizardLifConfigPage(this);
+    d_pages << lifConfigPage;
+    connect(this,&ExperimentWizard::newTrace,lifConfigPage,&WizardLifConfigPage::newTrace);
+    connect(this,&ExperimentWizard::scopeConfigChanged,lifConfigPage,&WizardLifConfigPage::scopeConfigChanged);
+    connect(lifConfigPage,&WizardLifConfigPage::updateScope,this,&ExperimentWizard::updateScope);
+    connect(lifConfigPage,&WizardLifConfigPage::lifColorChanged,this,&ExperimentWizard::lifColorChanged);
+    setPage(LifConfigPage,lifConfigPage);
 #endif
 
 #ifdef BC_MOTOR
-    p_motorScanConfigPage = new WizardMotorScanConfigPage(this);
-    setPage(MotorScanConfigPage,p_motorScanConfigPage);
+    auto motorScanConfigPage = new WizardMotorScanConfigPage(this);
+    d_pages << motorScanConfigPage;
+    setPage(MotorScanConfigPage,motorScanConfigPage);
 #endif
+
+    for(int i=0; i<d_pages.size(); i++)
+        connect(d_pages.at(i),&ExperimentWizardPage::experimentUpdate,this,&ExperimentWizard::updateExperiment);
+
+    d_experiment = Experiment::loadFromSettings();
 }
 
 ExperimentWizard::~ExperimentWizard()
@@ -59,51 +81,17 @@ ExperimentWizard::~ExperimentWizard()
 
 void ExperimentWizard::setPulseConfig(const PulseGenConfig c)
 {
-    p_pulseConfigPage->setConfig(c);
+    d_experiment.setPulseGenConfig(c);
 }
 
 void ExperimentWizard::setFlowConfig(const FlowConfig c)
 {
-    d_flowConfig = c;
+    d_experiment.setFlowConfig(c);
 }
 
 Experiment ExperimentWizard::getExperiment() const
 {
-    Experiment exp;
-
-    FtmwConfig ftc = p_ftmwConfigPage->getFtmwConfig();
-    if(p_startPage->ftmwEnabled())
-    {
-        ftc.setEnabled();
-
-        ///TODO: Get RF config from chirpconfigpage here!
-//        ChirpConfig cc = p_chirpConfigPage->getChirpConfig();
-//        ftc.setChirpConfig(cc);
-    }
-
-#ifdef BC_LIF
-    LifConfig lc = p_lifConfigPage->getConfig();
-    if(p_startPage->lifEnabled())
-        lc.setEnabled();
-    exp.setLifConfig(lc);
-#endif
-
-#ifdef BC_MOTOR
-    MotorScan ms = p_motorScanConfigPage->motorScan();
-    if(p_startPage->motorEnabled())
-        ms.setEnabled();
-    exp.setMotorScan(ms);
-#endif
-
-    exp.setFtmwConfig(ftc);
-    exp.setPulseGenConfig(p_pulseConfigPage->getConfig());
-    exp.setFlowConfig(d_flowConfig);
-    exp.setIOBoardConfig(p_validationPage->getConfig());
-    exp.setValidationItems(p_validationPage->getValidation());
-    exp.setTimeDataInterval(p_startPage->auxDataInterval());
-    exp.setAutoSaveShotsInterval(p_startPage->snapshotInterval());
-
-    return exp;
+    return d_experiment;
 }
 
 bool ExperimentWizard::sleepWhenDone() const

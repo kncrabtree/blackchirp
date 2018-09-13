@@ -7,7 +7,7 @@
 #include "experimentwizard.h"
 
 WizardStartPage::WizardStartPage(QWidget *parent) :
-    QWizardPage(parent)
+    ExperimentWizardPage(parent)
 {
     setTitle(QString("Configure Experiment"));
     setSubTitle(QString("Choose which type(s) of experiment you wish to perform."));
@@ -111,11 +111,20 @@ bool WizardStartPage::isComplete() const
 
 void WizardStartPage::initializePage()
 {
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("lastExperiment"));
-    p_auxDataIntervalBox->setValue(s.value(QString("auxDataInterval"),300).toInt());
-    p_snapshotBox->setValue(s.value(QString("autoSaveShots"),20000).toInt());
-    s.endGroup();
+    auto e = getExperiment();
+
+#ifdef BC_LIF
+    p_ftmw->setChecked(e.ftmwConfig().isEnabled());
+    p_lif->setChecked(e.lifConfig().isEnabled());
+#endif
+
+#ifdef BC_MOTOR
+    p_motor->setChecked(e.motorScan().isEnabled());
+#endif
+
+    p_snapshotBox->setValue(e.autoSaveShots());
+    p_auxDataIntervalBox->setValue(e.timeDataInterval());
+
 }
 
 bool WizardStartPage::ftmwEnabled() const
@@ -149,4 +158,27 @@ int WizardStartPage::auxDataInterval() const
 int WizardStartPage::snapshotInterval() const
 {
     return p_snapshotBox->value();
+}
+
+
+bool WizardStartPage::validatePage()
+{
+    ///TODO: In the future, allow user to choose old experiment to repeat!
+    ///Be sure to give user the options to use current pulse settings.
+    /// Allow changing flow settings?
+     auto e = getExperiment();
+
+     e.setFtmwEnabled(p_ftmw->isChecked());
+
+#ifdef BC_LIF
+     e.setLifEnabled(p_lif->isChecked());
+#endif
+
+#ifdef BC_MOTOR
+     e.setMotorEnabled(p_motor->isChecked());
+#endif
+
+     emit experimentUpdate(e);
+     return true;
+
 }

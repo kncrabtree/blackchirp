@@ -11,10 +11,11 @@ class IOBoardConfigModel : public QAbstractTableModel
 {
 	Q_OBJECT
 public:
-    IOBoardConfigModel(const  QMap<int,BlackChirp::IOBoardChannel> l, int numChannels, int numReserved, QString prefix = QString("AIN"), QObject *parent = nullptr);
+    IOBoardConfigModel(QString prefix = QString("AIN"), QObject *parent = nullptr);
     ~IOBoardConfigModel();
 
     QMap<int,BlackChirp::IOBoardChannel> getConfig();
+    void setFromConfig(const IOBoardConfig c);
 
 private:
     QMap<int,BlackChirp::IOBoardChannel> d_channelConfig;

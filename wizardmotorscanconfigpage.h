@@ -1,19 +1,16 @@
 #ifndef WIZARDMOTORSCANCONFIGPAGE_H
 #define WIZARDMOTORSCANCONFIGPAGE_H
 
-#include <QWizardPage>
-
-#include "motorscan.h"
+#include "experimentwizardpage.h"
 
 class MotorScanConfigWidget;
 
-class WizardMotorScanConfigPage : public QWizardPage
+class WizardMotorScanConfigPage : public ExperimentWizardPage
 {
 public:
     WizardMotorScanConfigPage(QWidget *parent = nullptr);
 
-    MotorScan motorScan() const;
-
+    void initializePage();
     bool validatePage();
     int nextId() const;
 

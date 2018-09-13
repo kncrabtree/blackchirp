@@ -31,6 +31,8 @@ Experiment::Experiment(const int num, QString exptPath) : data(new ExperimentDat
 
     data->iobCfg = IOBoardConfig(false);
 
+    ///TODO: RfConfig...
+
     QFile hdr(BlackChirp::getExptFile(num,BlackChirp::HeaderFile,exptPath));
     if(hdr.open(QIODevice::ReadOnly))
     {
@@ -362,6 +364,11 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
     return out;
 }
 
+QMap<QString, BlackChirp::ValidationItem> Experiment::validationItems() const
+{
+    return data->validationConditions;
+}
+
 bool Experiment::snapshotReady()
 {
     if(isComplete())
@@ -572,6 +579,11 @@ void Experiment::setFtmwConfig(const FtmwConfig cfg)
     data->ftmwCfg = cfg;
 }
 
+void Experiment::setFtmwEnabled(bool en)
+{
+    data->ftmwCfg.setEnabled(en);
+}
+
 void Experiment::setScopeConfig(const BlackChirp::FtmwScopeConfig &cfg)
 {
     data->ftmwCfg.setScopeConfig(cfg);
@@ -709,13 +721,23 @@ void Experiment::addValidationItem(const QString key, const double min, const do
     val.key = key;
     val.min = qMin(min,max);
     val.max = qMax(min,max);
-    data->validationConditions.insert(key,val);
+    addValidationItem(val);
+}
+
+void Experiment::addValidationItem(const BlackChirp::ValidationItem &i)
+{
+    data->validationConditions.insert(i.key,i);
 }
 
 #ifdef BC_MOTOR
 MotorScan Experiment::motorScan() const
 {
     return data->motorScan;
+}
+
+void Experiment::setMotorEnabled(bool en)
+{
+    data->motorScan.setEnabled(en);
 }
 
 void Experiment::setMotorScan(const MotorScan s)
@@ -1175,6 +1197,11 @@ bool Experiment::isLifWaiting() const
 LifConfig Experiment::lifConfig() const
 {
     return data->lifCfg;
+}
+
+void Experiment::setLifEnabled(bool en)
+{
+    data->lifCfg.setEnabled(en);
 }
 
 void Experiment::setLifConfig(const LifConfig cfg)

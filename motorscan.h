@@ -59,7 +59,7 @@ public:
     BlackChirp::MotorScopeConfig scopeConfig() const;
 
     void parseLine(QString key, QVariant val);
-    void setEnabled();
+    void setEnabled(bool en = true);
 
     void setXPoints(int x);
     void setYPoints(int y);

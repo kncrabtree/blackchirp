@@ -1,12 +1,12 @@
 #ifndef WIZARDCHIRPCONFIGPAGE_H
 #define WIZARDCHIRPCONFIGPAGE_H
 
-#include <QWizardPage>
+#include "experimentwizardpage.h"
 
 class ChirpConfigWidget;
 class RfConfig;
 
-class WizardChirpConfigPage : public QWizardPage
+class WizardChirpConfigPage : public ExperimentWizardPage
 {
     Q_OBJECT
 public:
@@ -14,13 +14,13 @@ public:
     ~WizardChirpConfigPage();
 
     // QWizardPage interface
+    void initializePage();
     int nextId() const;
-    bool isComplete() const;
-
-    RfConfig getRfConfig() const;
+    bool validatePage();
 
 private:
     ChirpConfigWidget *p_ccw;
+
 };
 
 #endif // WIZARDCHIRPCONFIGPAGE_H

@@ -1,11 +1,11 @@
 #ifndef WIZARDRFCONFIGPAGE_H
 #define WIZARDRFCONFIGPAGE_H
 
-#include <QWizardPage>
+#include "experimentwizardpage.h"
 
 #include "rfconfigwidget.h"
 
-class WizardRfConfigPage : public QWizardPage
+class WizardRfConfigPage : public ExperimentWizardPage
 {
     Q_OBJECT
 public:
@@ -16,6 +16,7 @@ private:
 
     // QWizardPage interface
 public:
+    RfConfig getRfConfig() { return p_rfc->getRfConfig(); }
     virtual void initializePage();
     virtual bool validatePage();
     virtual int nextId() const;

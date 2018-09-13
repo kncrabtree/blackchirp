@@ -3,19 +3,10 @@
 
 #include <QWizard>
 
-class WizardStartPage;
-class WizardRfConfigPage;
-class WizardChirpConfigPage;
-class WizardFtmwConfigPage;
-class WizardSummaryPage;
-class WizardPulseConfigPage;
-class WizardLifConfigPage;
-class WizardValidationPage;
-class WizardMotorScanConfigPage;
-class BatchManager;
-
 #include "experiment.h"
 
+class BatchManager;
+class ExperimentWizardPage;
 
 class ExperimentWizard : public QWizard
 {
@@ -45,17 +36,15 @@ public:
     Experiment getExperiment() const;
     bool sleepWhenDone() const;
 
+public slots:
+    void updateExperiment(const Experiment e) { d_experiment = e; }
 
-private:
-    WizardStartPage *p_startPage;
-    WizardRfConfigPage *p_rfConfigPage;
-    WizardChirpConfigPage *p_chirpConfigPage;
-    WizardFtmwConfigPage *p_ftmwConfigPage;
-    WizardSummaryPage *p_summaryPage;
-    WizardPulseConfigPage *p_pulseConfigPage;
-    WizardValidationPage *p_validationPage;
 
-    FlowConfig d_flowConfig;
+private:    
+    QList<ExperimentWizardPage*> d_pages;
+
+
+    Experiment d_experiment;
 
 #ifdef BC_LIF
 signals:
@@ -65,12 +54,12 @@ signals:
     void lifColorChanged();
 
 private:
-    WizardLifConfigPage *p_lifConfigPage;
+    ExperimentWizardPage *p_lifConfigPage;
 #endif
 
 #ifdef BC_MOTOR
 private:
-    WizardMotorScanConfigPage *p_motorScanConfigPage;
+    ExperimentWizardPage *p_motorScanConfigPage;
 #endif
 
 };

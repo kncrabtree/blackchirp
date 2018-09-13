@@ -34,8 +34,6 @@ public:
     qint64 targetShots() const;
     qint64 completedShots() const;
     QDateTime targetTime() const;
-    double loFreq() const;
-    BlackChirp::Sideband sideband() const;
     QList<Fid> fidList() const;
     BlackChirp::FtmwScopeConfig scopeConfig() const;
     RfConfig rfConfig() const;
@@ -53,7 +51,7 @@ public:
     static bool writeFidFile(int num, QList<Fid> list, QString path = QString(""));
 
     bool prepareForAcquisition();
-    void setEnabled();
+    void setEnabled(bool en = true);
     void setPhaseCorrectionEnabled(bool enabled);
     void setChirpScoringEnabled(bool enabled);
     void setChirpRMSThreshold(double t);
@@ -62,8 +60,6 @@ public:
     void setTargetShots(const qint64 target);
     void increment();
     void setTargetTime(const QDateTime time);
-    void setLoFreq(const double f);
-    void setSideband(const BlackChirp::Sideband sb);
     bool setFidsData(const QList<QVector<qint64>> newList);
     bool addFids(const QByteArray rawData, int shift = 0);
     bool subtractFids(const QList<Fid> otherList);
@@ -90,7 +86,7 @@ class FtmwConfigData : public QSharedData
 {
 public:
     FtmwConfigData() : isEnabled(false), phaseCorrectionEnabled(false), chirpScoringEnabled(false), chirpRMSThreshold(0.0), type(BlackChirp::FtmwForever), targetShots(-1),
-        completedShots(0), loFreq(0.0), sideband(BlackChirp::UpperSideband) {}
+        completedShots(0) {}
 
     bool isEnabled;
     bool phaseCorrectionEnabled;
@@ -101,8 +97,6 @@ public:
     qint64 completedShots;
     QDateTime targetTime;
 
-    double loFreq;
-    BlackChirp::Sideband sideband;
     QList<Fid> fidList;
 
     BlackChirp::FtmwScopeConfig scopeConfig;

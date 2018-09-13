@@ -47,9 +47,6 @@ FtmwConfigWidget::FtmwConfigWidget(QWidget *parent) :
     s.endGroup();
     s.endGroup();
 
-    ui->sidebandComboBox->addItem(QString("Upper Sideband"),QVariant::fromValue(BlackChirp::UpperSideband));
-    ui->sidebandComboBox->addItem(QString("Lower Sideband"),QVariant::fromValue(BlackChirp::LowerSideband));
-
     ui->triggerSlopeComboBox->addItem(QString("Rising Edge"),QVariant::fromValue(BlackChirp::RisingEdge));
     ui->triggerSlopeComboBox->addItem(QString("Falling Edge"),QVariant::fromValue(BlackChirp::FallingEdge));
 
@@ -59,16 +56,6 @@ FtmwConfigWidget::FtmwConfigWidget(QWidget *parent) :
     ui->targetTimeDateTimeEdit->setDateTime(QDateTime::currentDateTime().addSecs(3600));
     ui->targetTimeDateTimeEdit->setMaximumDateTime(QDateTime::currentDateTime().addSecs(2000000000));
     ui->targetTimeDateTimeEdit->setCurrentSection(QDateTimeEdit::HourSection);
-
-    setFromConfig(FtmwConfig::loadFromSettings());
-
-    double loFreq = s.value(QString("rfConfig/loFreq"),0.0).toDouble();
-    int sideband = s.value(QString("rfConfig/rxSidebandSign"),1).toInt();
-    if(sideband > 0)
-        ui->sidebandComboBox->setCurrentIndex(ui->sidebandComboBox->findData(QVariant::fromValue(BlackChirp::UpperSideband)));
-    else
-        ui->sidebandComboBox->setCurrentIndex(ui->sidebandComboBox->findData(QVariant::fromValue(BlackChirp::LowerSideband)));
-    ui->loFrequencyDoubleSpinBox->setValue(loFreq);
 
 
     connect(ui->modeComboBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),this,&FtmwConfigWidget::configureUI);
@@ -106,9 +93,6 @@ void FtmwConfigWidget::setFromConfig(const FtmwConfig config)
     ui->chirpThresholdDoubleSpinBox->setEnabled(config.isChirpScoringEnabled());
     ui->chirpScoringCheckBox->blockSignals(false);
 
-    ui->loFrequencyDoubleSpinBox->setValue(config.loFreq());
-    setComboBoxIndex(ui->sidebandComboBox,config.sideband());
-
     const BlackChirp::FtmwScopeConfig sc = config.scopeConfig();
 
     ui->fIDChannelSpinBox->blockSignals(true);
@@ -124,6 +108,7 @@ void FtmwConfigWidget::setFromConfig(const FtmwConfig config)
     setComboBoxIndex(ui->sampleRateComboBox,sc.sampleRate);
     ui->recordLengthSpinBox->setValue(sc.recordLength);
     ui->bytesPointSpinBox->setValue(sc.bytesPerPoint);
+    ///TODO: Use information from ChirpConfig here
     ui->fastFrameEnabledCheckBox->blockSignals(true);
     ui->fastFrameEnabledCheckBox->setChecked(sc.fastFrameEnabled);
     ui->fastFrameEnabledCheckBox->blockSignals(false);
@@ -132,15 +117,14 @@ void FtmwConfigWidget::setFromConfig(const FtmwConfig config)
     ui->blockAverageCheckBox->setChecked(sc.blockAverageEnabled);
     ui->averagesSpinBox->setValue(sc.numAverages);
 
+    d_ftmwConfig = config;
 
     configureUI();
     validateSpinboxes();
 }
 
-FtmwConfig FtmwConfigWidget::getConfig() const
+FtmwConfig FtmwConfigWidget::getConfig()
 {
-    FtmwConfig out;
-
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
     s.beginGroup(QString("ftmwscope"));
@@ -149,18 +133,15 @@ FtmwConfig FtmwConfigWidget::getConfig() const
     s.endGroup();
     s.endGroup();
 
-    out.setType(ui->modeComboBox->currentData().value<BlackChirp::FtmwType>());
-    out.setTargetShots(ui->targetShotsSpinBox->value());
+    d_ftmwConfig.setType(ui->modeComboBox->currentData().value<BlackChirp::FtmwType>());
+    d_ftmwConfig.setTargetShots(ui->targetShotsSpinBox->value());
     if(ui->targetTimeDateTimeEdit->dateTime() > QDateTime::currentDateTime().addSecs(60))
-        out.setTargetTime(ui->targetTimeDateTimeEdit->dateTime());
+        d_ftmwConfig.setTargetTime(ui->targetTimeDateTimeEdit->dateTime());
     else
-        out.setTargetTime(QDateTime::currentDateTime().addSecs(60));
-    out.setPhaseCorrectionEnabled(ui->phaseCorrectionCheckBox->isChecked());
-    out.setChirpScoringEnabled(ui->chirpScoringCheckBox->isChecked());
-    out.setChirpRMSThreshold(ui->chirpThresholdDoubleSpinBox->value());
-
-    out.setLoFreq(ui->loFrequencyDoubleSpinBox->value());
-    out.setSideband(ui->sidebandComboBox->currentData().value<BlackChirp::Sideband>());
+        d_ftmwConfig.setTargetTime(QDateTime::currentDateTime().addSecs(60));
+    d_ftmwConfig.setPhaseCorrectionEnabled(ui->phaseCorrectionCheckBox->isChecked());
+    d_ftmwConfig.setChirpScoringEnabled(ui->chirpScoringCheckBox->isChecked());
+    d_ftmwConfig.setChirpRMSThreshold(ui->chirpThresholdDoubleSpinBox->value());
 
     BlackChirp::FtmwScopeConfig sc;
     sc.fidChannel = ui->fIDChannelSpinBox->value();
@@ -182,35 +163,9 @@ FtmwConfig FtmwConfigWidget::getConfig() const
     sc.summaryFrame = ui->summaryFrameCheckBox->isChecked();
     sc.blockAverageEnabled = ui->blockAverageCheckBox->isChecked();
     sc.numAverages = ui->averagesSpinBox->value();
-    out.setScopeConfig(sc);
+    d_ftmwConfig.setScopeConfig(sc);
 
-    return out;
-}
-
-void FtmwConfigWidget::lockFastFrame(const int nf)
-{
-
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-
-    ui->fastFrameEnabledCheckBox->blockSignals(true);
-    ui->framesSpinBox->setValue(nf);
-    ui->framesSpinBox->setEnabled(false);
-    if(nf == 1)
-    {
-        ui->fastFrameEnabledCheckBox->setChecked(false);
-        ui->summaryFrameCheckBox->setChecked(false);
-        ui->summaryFrameCheckBox->setEnabled(false);
-    }
-    else
-    {
-        ui->fastFrameEnabledCheckBox->setChecked(true);
-        ui->summaryFrameCheckBox->setEnabled(true);
-    }
-
-    ui->fastFrameEnabledCheckBox->setEnabled(false);
-    ui->fastFrameEnabledCheckBox->blockSignals(false);
-
-    configureUI();
+    return d_ftmwConfig;
 }
 
 void FtmwConfigWidget::configureUI()
@@ -260,6 +215,8 @@ void FtmwConfigWidget::configureUI()
         ui->framesSpinBox->setEnabled(ui->fastFrameEnabledCheckBox->isChecked());
         ui->summaryFrameCheckBox->setEnabled(ui->fastFrameEnabledCheckBox->isChecked());
     }
+    else
+        ui->framesSpinBox->setValue(1);
 
 }
 
@@ -272,7 +229,10 @@ void FtmwConfigWidget::validateSpinboxes()
 
     QSpinBox *senderBox = dynamic_cast<QSpinBox*>(s);
     if(senderBox == nullptr)
+    {
+        blockSignals(false);
         return;
+    }
 
     QSpinBox *otherBox;
     if(senderBox == ui->fIDChannelSpinBox)

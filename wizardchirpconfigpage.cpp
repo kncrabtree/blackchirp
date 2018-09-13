@@ -8,7 +8,7 @@
 #include "experimentwizard.h"
 
 WizardChirpConfigPage::WizardChirpConfigPage(QWidget *parent) :
-    QWizardPage(parent)
+    ExperimentWizardPage(parent)
 {
     setTitle(QString("Configure FTMW Chirp"));
 
@@ -28,18 +28,28 @@ WizardChirpConfigPage::~WizardChirpConfigPage()
 
 }
 
+void WizardChirpConfigPage::initializePage()
+{
+    //get rfConfig
+    auto e = getExperiment();
+    p_ccw->setRfConfig(e.ftmwConfig().rfConfig());
+    p_ccw->updateChirpPlot();
+
+}
+
 
 int WizardChirpConfigPage::nextId() const
 {
     return ExperimentWizard::FtmwConfigPage;
 }
 
-bool WizardChirpConfigPage::isComplete() const
-{
-    return p_ccw->getRfConfig().isValid();
-}
 
-RfConfig WizardChirpConfigPage::getRfConfig() const
+bool WizardChirpConfigPage::validatePage()
 {
-    return p_ccw->getRfConfig();
+    ///TODO: Smarter validation?
+    auto e = getExperiment();
+    auto rfc = p_ccw->getRfConfig();
+    e.setRfConfig(rfc);
+    emit experimentUpdate(e);
+    return true;
 }

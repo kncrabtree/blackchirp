@@ -51,6 +51,7 @@ public:
     QString endLogMessage() const;
     BlackChirp::LogMessageCode endLogMessageCode() const;
     QMap<QString, QPair<QVariant,QString>> headerMap() const;
+    QMap<QString,BlackChirp::ValidationItem> validationItems() const;
     bool snapshotReady();
 
     void setTimeDataInterval(const int t);
@@ -59,6 +60,7 @@ public:
     void setAborted();
     void setDummy();
     void setFtmwConfig(const FtmwConfig cfg);
+    void setFtmwEnabled(bool en = true);
     void setScopeConfig(const BlackChirp::FtmwScopeConfig &cfg);
     void setRfConfig(const RfConfig cfg);
     void setIOBoardConfig(const IOBoardConfig cfg);
@@ -73,10 +75,12 @@ public:
     void addTimeStamp();
     void setValidationItems(const QMap<QString,BlackChirp::ValidationItem> m);
     void addValidationItem(const QString key, const double min, const double max);
+    void addValidationItem(const BlackChirp::ValidationItem &i);
 
 #ifdef BC_LIF
     bool isLifWaiting() const;
     LifConfig lifConfig() const;
+    void setLifEnabled(bool en = true);
     void setLifWaiting(bool wait);
     void setLifConfig(const LifConfig cfg);
     bool addLifWaveform(const LifTrace t);
@@ -84,6 +88,7 @@ public:
 
 #ifdef BC_MOTOR
     MotorScan motorScan() const;
+    void setMotorEnabled(bool en = true);
     void setMotorScan(const MotorScan s);
     bool addMotorTrace(const QVector<double> d);
 #endif

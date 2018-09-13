@@ -18,6 +18,8 @@ class ValidationModel : public QAbstractTableModel
 public:
 	ValidationModel(QObject *parent = nullptr);
 	~ValidationModel();
+
+    void setFromMap(const QMap<QString, BlackChirp::ValidationItem> l);
 	
 	// QAbstractItemModel interface
 	int rowCount(const QModelIndex &parent) const;

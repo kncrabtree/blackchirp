@@ -7,7 +7,7 @@
 #include "experimentwizard.h"
 
 WizardFtmwConfigPage::WizardFtmwConfigPage(QWidget *parent) :
-    QWizardPage(parent)
+    ExperimentWizardPage(parent)
 {
     setTitle(QString("Configure FTMW Acquisition"));
 
@@ -27,20 +27,20 @@ WizardFtmwConfigPage::~WizardFtmwConfigPage()
 
 void WizardFtmwConfigPage::initializePage()
 {
-    p_ftc->lockFastFrame(field(QString("numChirps")).toInt());
+    ///TODO: Be more flexible here
+    auto e = getExperiment();
+    p_ftc->setFromConfig(e.ftmwConfig());
 }
 
 bool WizardFtmwConfigPage::validatePage()
 {
+    auto e = getExperiment();
+    e.setFtmwConfig(p_ftc->getConfig());
+    emit experimentUpdate(e);
     return true;
 }
 
 int WizardFtmwConfigPage::nextId() const
 {
     return ExperimentWizard::PulseConfigPage;
-}
-
-FtmwConfig WizardFtmwConfigPage::getFtmwConfig() const
-{
-    return p_ftc->getConfig();
 }
