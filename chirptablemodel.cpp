@@ -306,6 +306,10 @@ void ChirpTableModel::addSegment(double start, double end, double dur, int pos, 
 
     double startFreq = qBound(awgMin,start,awgMax);
     double endFreq = qBound(awgMin,end,awgMax);
+    if(start < 0.0)
+        startFreq = awgMin;
+    if(end < 0.0)
+        endFreq = awgMax;
 
     BlackChirp::ChirpSegment cs;
     cs.startFreqMHz = startFreq;
@@ -421,9 +425,37 @@ void ChirpTableModel::removeSegments(QList<int> rows)
         removeRows(rows.at(i-1),1,QModelIndex());
 }
 
+double ChirpTableModel::calculateAwgFrequency(double f) const
+{
+    return d_currentRfConfig.calculateAwgFreq(f);
+}
+
+double ChirpTableModel::calculateChirpFrequency(double f) const
+{
+    return d_currentRfConfig.calculateChirpFreq(f);
+}
+
 QList<QList<BlackChirp::ChirpSegment>> ChirpTableModel::chirpList() const
 {
     return d_chirpList;
+}
+
+RfConfig ChirpTableModel::getRfConfig()
+{
+    if(d_currentRfConfig.numChirpConfigs() == 0)
+    {
+        ChirpConfig cc;
+        cc.setChirpList(chirpList());
+        d_currentRfConfig.addChirpConfig(cc);
+    }
+    else
+    {
+        auto cc = d_currentRfConfig.getChirpConfig();
+        cc.setChirpList(chirpList());
+        d_currentRfConfig.setChirpConfig(cc);
+    }
+
+    return d_currentRfConfig;
 }
 
 void ChirpTableModel::setCurrentChirp(int i)
@@ -478,9 +510,8 @@ QWidget *ChirpDoubleSpinBoxDelegate::createEditor(QWidget *parent, const QStyleO
     s.endGroup();
     s.endGroup();
 
-    auto rfc = dynamic_cast<const ChirpTableModel*>(index.model())->getRfConfig();
-    double chirpMin = rfc.calculateChirpFreq(awgMin);
-    double chirpMax = rfc.calculateChirpFreq(awgMax);
+    double chirpMin = dynamic_cast<const ChirpTableModel*>(index.model())->calculateChirpFrequency(awgMin);
+    double chirpMax = dynamic_cast<const ChirpTableModel*>(index.model())->calculateChirpFrequency(awgMax);
     if(chirpMin > chirpMax)
         qSwap(chirpMin,chirpMax);
 

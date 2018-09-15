@@ -60,6 +60,7 @@ public:
     bool setChirpConfig(const ChirpConfig cc, int num=0);
     void addChirpConfig(ChirpConfig cc);
 
+
     double awgMult() const;
     BlackChirp::Sideband upMixSideband() const;
     double chirpMult() const;
@@ -70,6 +71,7 @@ public:
     double clockFrequency(BlackChirp::ClockType t) const;
     double rawClockFrequency(BlackChirp::ClockType t) const;
     ChirpConfig getChirpConfig(int num=0) const;
+    int numChirpConfigs() const;
 
     double calculateChirpFreq(double awgFreq) const;
     double calculateAwgFreq(double chirpFreq) const;

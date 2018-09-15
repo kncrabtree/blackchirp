@@ -62,6 +62,10 @@ private:
     ExperimentWizardPage *p_motorScanConfigPage;
 #endif
 
+
+    // QWidget interface
+public:
+    virtual QSize sizeHint() const;
 };
 
 #endif // EXPERIMENTWIZARD_H

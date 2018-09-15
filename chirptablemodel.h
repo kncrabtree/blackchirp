@@ -26,10 +26,12 @@ public:
     void addSegment(double start, double end, double dur, int pos, bool empty=false);
     void moveSegments(int first, int last, int delta);
     void removeSegments(QList<int> rows);
+    double calculateAwgFrequency(double f) const;
+    double calculateChirpFrequency(double f) const;
 
     QList<QList<BlackChirp::ChirpSegment>> chirpList() const;
     void setRfConfig(const RfConfig c){ d_currentRfConfig = c; }
-    RfConfig getRfConfig() const { return d_currentRfConfig; }
+    RfConfig getRfConfig();
 
 public slots:
     void setCurrentChirp(int i);

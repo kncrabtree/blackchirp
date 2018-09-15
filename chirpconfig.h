@@ -75,7 +75,7 @@ class ChirpConfigData : public QSharedData
 {
 public:
     //note: postChirpDelay initialized to 0.0 for backwards compatibility
-    ChirpConfigData() : protectionDelaysUs(qMakePair(500.0,500.0)), gateDelaysUs(qMakePair(500.0,0.0)), chirpInterval(-1.0) {}
+    ChirpConfigData() : protectionDelaysUs(qMakePair(0.5,0.5)), gateDelaysUs(qMakePair(0.5,0.0)), chirpInterval(-1.0) {}
 
     QPair<double,double> protectionDelaysUs;
     QPair<double,double> gateDelaysUs;

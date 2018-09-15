@@ -17,6 +17,8 @@ RfConfigWidget::RfConfigWidget(QWidget *parent) :
     ui->clockTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     ui->clockTableView->setItemDelegate(new ClockTableDelegate);
 
+    connect(ui->commonLoCheckBox,&QCheckBox::toggled,p_ctm,&ClockTableModel::setCommonLo);
+
 }
 
 RfConfigWidget::~RfConfigWidget()
@@ -39,7 +41,9 @@ void RfConfigWidget::setRfConfig(const RfConfig c)
 
     ui->chirpMultiplicationSpinBox->setValue(qRound(c.chirpMult()));
 
+    ui->commonLoCheckBox->blockSignals(true);
     ui->commonLoCheckBox->setChecked(c.commonLO());
+    ui->commonLoCheckBox->blockSignals(false);
 
     p_ctm->setConfig(c);
     ui->clockTableView->resizeColumnsToContents();
@@ -53,6 +57,7 @@ RfConfig RfConfigWidget::getRfConfig()
     rfc.setUpMixSideband(static_cast<BlackChirp::Sideband>(ui->upconversionSidebandComboBox->currentData().toInt()));
     rfc.setChirpMult(static_cast<double>(ui->chirpMultiplicationSpinBox->value()));
     rfc.setDownMixSideband(static_cast<BlackChirp::Sideband>(ui->downconversionSidebandComboBox->currentData().toInt()));
+    rfc.setCommonLO(ui->commonLoCheckBox->isChecked());
 
     return rfc;
 }

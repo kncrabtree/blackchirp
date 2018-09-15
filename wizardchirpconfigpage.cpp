@@ -57,3 +57,20 @@ bool WizardChirpConfigPage::validatePage()
     emit experimentUpdate(e);
     return true;
 }
+
+
+bool WizardChirpConfigPage::isComplete() const
+{
+    auto l = p_ccw->getRfConfig().getChirpConfig().chirpList();
+
+    if(l.isEmpty())
+        return false;
+
+    for(int i=0; i<l.size(); i++)
+    {
+        if(l.at(i).isEmpty())
+            return false;
+    }
+
+    return true;
+}

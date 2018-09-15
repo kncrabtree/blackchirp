@@ -8,7 +8,7 @@
 
 ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::ChirpConfigWidget), p_ctm(new ChirpTableModel(this))
+    ui(new Ui::ChirpConfigWidget), p_ctm(new ChirpTableModel(this)), d_rampOnly(false)
 {
     ui->setupUi(this);
     ui->chirpTable->setModel(p_ctm);
@@ -32,7 +32,7 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
     bool hasProtectionPulse = s.value(QString("hasProtectionPulse"),true).toBool();
     bool hasAmpEnablePulse = s.value(QString("hasAmpEnablePulse"),true).toBool();
-    ///TODO: Send min and max to ChirpTableModel
+    d_rampOnly = s.value(QString("rampOnly"),false).toBool();
     s.endGroup();
     s.endGroup();
 
@@ -118,9 +118,25 @@ ChirpConfigWidget::~ChirpConfigWidget()
 
 void ChirpConfigWidget::setRfConfig(const RfConfig c)
 {
-    d_currentRfConfig = c;
-    p_ctm->setRfConfig(c);
-    auto cc = d_currentRfConfig.getChirpConfig();
+    if(d_rampOnly)
+    {
+        auto rfc = c;
+        auto thiscc = rfc.getChirpConfig();
+        if(!thiscc.chirpList().isEmpty())
+        {
+            if(thiscc.chirpList().first().size() > 1)
+            {
+                thiscc.setChirpList(QList<QList<BlackChirp::ChirpSegment>>());
+                rfc.setChirpConfig(thiscc);
+            }
+        }
+        p_ctm->setRfConfig(rfc);
+    }
+    else
+        p_ctm->setRfConfig(c);
+
+    clearList(false);
+    auto cc = c.getChirpConfig();
 
     ui->preChirpProtectionSpinBox->setValue(cc.preChirpProtectionDelay()*1000);
     ui->preChirpDelaySpinBox->setValue(cc.preChirpGateDelay()*1000);
@@ -175,7 +191,21 @@ void ChirpConfigWidget::setRfConfig(const RfConfig c)
 RfConfig ChirpConfigWidget::getRfConfig()
 {
     ///TODO: Handle multiple chirp configs
-    return d_currentRfConfig;
+    auto rfc = p_ctm->getRfConfig();
+
+    for(int i=0; i<rfc.numChirpConfigs(); i++)
+    {
+        auto cc = rfc.getChirpConfig(i);
+        cc.setPreChirpProtectionDelay(ui->preChirpProtectionSpinBox->value()/1e3);
+        cc.setPreChirpGateDelay(ui->preChirpDelaySpinBox->value()/1e3);
+        cc.setPostChirpGateDelay(ui->postChirpDelaySpinBox->value()/1e3);
+        cc.setPostChirpProtectionDelay(ui->postChirpProtectionSpinBox->value()/1e3);
+        cc.setNumChirps(ui->chirpsSpinBox->value());
+        cc.setChirpInterval(ui->chirpIntervalDoubleSpinBox->value());
+        rfc.setChirpConfig(cc,i);
+    }
+
+    return rfc;
 }
 
 QSpinBox *ChirpConfigWidget::numChirpsBox() const
@@ -195,24 +225,30 @@ void ChirpConfigWidget::setButtonStates()
     QModelIndexList l = ui->chirpTable->selectionModel()->selectedRows();
     bool c = isSelectionContiguous(l);
 
+    if(d_rampOnly)
+    {
+        ui->addButton->setEnabled(p_ctm->rowCount(QModelIndex()) == 0);
+        ui->addEmptyButton->setEnabled(false);
+    }
+
     //insert button only enabled if one item is selected
-    ui->insertButton->setEnabled(l.size() == 1);
-    ui->insertEmptyButton->setEnabled(l.size() == 1);
+    ui->insertButton->setEnabled(l.size() == 1 && !d_rampOnly);
+    ui->insertEmptyButton->setEnabled(l.size() == 1 && !d_rampOnly);
 
     //remove button active if one or more rows selected
     ui->removeButton->setEnabled(l.size() > 0);
 
     //move buttons enabled only if selection is contiguous
-    ui->moveDownButton->setEnabled(c);
-    ui->moveUpButton->setEnabled(c);
+    ui->moveDownButton->setEnabled(c && p_ctm->rowCount(QModelIndex()) > 0);
+    ui->moveUpButton->setEnabled(c && p_ctm->rowCount(QModelIndex()) > 0);
 
     //clear button only enabled if table is not empty
     ui->clearButton->setEnabled(p_ctm->rowCount(QModelIndex()) > 0);
 
     //get number of chirps associated with current chirp config
     ///TODO: Handle >1 CC
-    auto cc = d_currentRfConfig.getChirpConfig();
-    ui->currentChirpBox->setRange(1,cc.numChirps());
+    auto cc = getRfConfig().getChirpConfig();
+    ui->currentChirpBox->setRange(1,qMax(1,cc.numChirps()));
     ui->applyToAllBox->setEnabled(cc.allChirpsIdentical());
 }
 
@@ -374,30 +410,19 @@ void ChirpConfigWidget::load()
     connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::updateChirpPlot,Qt::UniqueConnection);
 
     ///TODO: deal with return value, handle >1 CC
-    d_currentRfConfig.setChirpConfig(cc);
+    auto rfc = getRfConfig();
     emit chirpConfigChanged();
-    ui->chirpPlot->newChirp(cc);
+    ui->chirpPlot->newChirp(rfc.getChirpConfig());
     setButtonStates();
 
 }
 
 void ChirpConfigWidget::updateChirpPlot()
 {
-    ChirpConfig cc;
-    cc.setPreChirpProtectionDelay(ui->preChirpProtectionSpinBox->value()/1e3);
-    cc.setPreChirpGateDelay(ui->preChirpDelaySpinBox->value()/1e3);
-    cc.setPostChirpGateDelay(ui->postChirpDelaySpinBox->value()/1e3);
-    cc.setPostChirpProtectionDelay(ui->postChirpProtectionSpinBox->value()/1e3);
-    cc.setNumChirps(ui->chirpsSpinBox->value());
-    cc.setChirpInterval(ui->chirpIntervalDoubleSpinBox->value());
-
-    cc.setChirpList(p_ctm->chirpList());
-
-    ///TODO: deal with return value, handle >1 CC
-    d_currentRfConfig.setChirpConfig(cc);
+    auto rfc =getRfConfig();
 
     emit chirpConfigChanged();
-    ui->chirpPlot->newChirp(d_currentRfConfig.getChirpConfig());
+    ui->chirpPlot->newChirp(rfc.getChirpConfig());
 }
 
 bool ChirpConfigWidget::isSelectionContiguous(QModelIndexList l)

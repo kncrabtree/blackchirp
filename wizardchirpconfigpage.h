@@ -17,9 +17,11 @@ public:
     void initializePage();
     int nextId() const;
     bool validatePage();
+    virtual bool isComplete() const;
 
 private:
     ChirpConfigWidget *p_ccw;
+
 
 };
 

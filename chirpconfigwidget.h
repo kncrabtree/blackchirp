@@ -46,10 +46,11 @@ signals:
 private:
     Ui::ChirpConfigWidget *ui;
     ChirpTableModel *p_ctm;
-    RfConfig d_currentRfConfig;
+    bool d_rampOnly;
 
     bool isSelectionContiguous(QModelIndexList l);
     void clearList(bool replot=true);
+
 
 
 };

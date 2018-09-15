@@ -98,3 +98,9 @@ bool ExperimentWizard::sleepWhenDone() const
 {
     return field(QString("sleep")).toBool();
 }
+
+
+QSize ExperimentWizard::sizeHint() const
+{
+    return QSize(1000,600);
+}

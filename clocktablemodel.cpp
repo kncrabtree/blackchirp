@@ -55,6 +55,28 @@ RfConfig ClockTableModel::getRfConfig() const
     return d_rfConfig;
 }
 
+void ClockTableModel::setCommonLo(bool b)
+{
+    d_rfConfig.setCommonLO(b);
+    if(b)
+    {
+        d_rfConfig.setClockFreqInfo(BlackChirp::DownConversionLO,d_rfConfig.getClocks().value(BlackChirp::UpConversionLO));
+        if(d_clockAssignments.contains(BlackChirp::UpConversionLO))
+        {
+            d_clockAssignments.insert(BlackChirp::DownConversionLO,d_clockAssignments.value(BlackChirp::UpConversionLO));
+        }
+    }
+    else
+    {
+        d_rfConfig.setClockHwInfo(BlackChirp::DownConversionLO,QString(""),0);
+        d_clockAssignments.remove(BlackChirp::DownConversionLO);
+    }
+
+    int downRow = d_clockTypes.indexOf(BlackChirp::DownConversionLO);
+    emit dataChanged(index(downRow,1),index(downRow,5));
+
+}
+
 
 
 int ClockTableModel::rowCount(const QModelIndex &parent) const
@@ -199,6 +221,9 @@ bool ClockTableModel::setData(const QModelIndex &index, const QVariant &value, i
         {
             d_hwInfo[value.toInt()].used = true;
             d_clockAssignments.insert(type,value.toInt());
+            if(type == d_clockTypes.indexOf(BlackChirp::UpConversionLO) && d_rfConfig.commonLO())
+                d_clockAssignments.insert(BlackChirp::DownConversionLO,value.toInt());
+
             d_rfConfig.setClockHwInfo(type,d_hwInfo.at(value.toInt()).key,d_hwInfo.at(value.toInt()).output);
         }
         break;
@@ -248,9 +273,13 @@ Qt::ItemFlags ClockTableModel::flags(const QModelIndex &index) const
 {
     if(index.row() < d_clockTypes.size())
     {
+        if(d_rfConfig.commonLO() && index.row() == d_clockTypes.indexOf(BlackChirp::DownConversionLO) && index.column() > 0)
+            return 0;
+
         if(index.column() > 0)
             return Qt::ItemIsEnabled|Qt::ItemIsEditable;
     }
+
     return Qt::ItemIsEnabled;
 }
 
@@ -288,7 +317,7 @@ QWidget *ClockTableDelegate::createEditor(QWidget *parent, const QStyleOptionVie
     else if(index.column() == 3)
     {
         QSpinBox *sb = new QSpinBox(parent);
-        sb->setRange(0,1000000);
+        sb->setRange(1,1000000);
         out = sb;
     }
     else if(index.column() == 4)

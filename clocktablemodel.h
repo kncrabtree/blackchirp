@@ -23,6 +23,9 @@ public:
     void setConfig(const RfConfig c);
     RfConfig getRfConfig() const;
 
+public slots:
+    void setCommonLo(bool b);
+
 private:
     RfConfig d_rfConfig;
     QList<BlackChirp::ClockType> d_clockTypes;
