@@ -12,7 +12,6 @@
 class HardwareObject;
 class FtmwScope;
 class AWG;
-class Synthesizer;
 class PulseGenerator;
 class FlowController;
 class IOBoard;
@@ -61,8 +60,7 @@ signals:
 
     void ftmwScopeShotAcquired(const QByteArray);
 
-    void valonTxFreqRead(double);
-    void valonRxFreqRead(double);
+    void clockFrequencyUpdate(BlackChirp::ClockType, double);
 
     void pGenSettingUpdate(int,BlackChirp::PulseSetting,QVariant);
     void pGenConfigUpdate(const PulseGenConfig);
@@ -125,9 +123,6 @@ public slots:
 
     void getTimeData();
 
-    double setValonTxFreq(const double d);
-    double setValonRxFreq(const double d);
-
     void setPGenSetting(int index, BlackChirp::PulseSetting s, QVariant val);
     void setPGenConfig(const PulseGenConfig c);
     void setPGenRepRate(double r);
@@ -156,7 +151,6 @@ private:
 
     QList<QPair<HardwareObject*,QThread*> > d_hardwareList;
     FtmwScope *p_ftmwScope;
-    Synthesizer *p_synth;
     AWG *p_awg;
     PulseGenerator *p_pGen;
     FlowController *p_flow;

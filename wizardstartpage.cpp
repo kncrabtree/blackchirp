@@ -178,6 +178,9 @@ bool WizardStartPage::validatePage()
      e.setMotorEnabled(p_motor->isChecked());
 #endif
 
+     e.setAutoSaveShotsInterval(p_snapshotBox->value());
+     e.setTimeDataInterval(p_auxDataIntervalBox->value());
+
      emit experimentUpdate(e);
      return true;
 

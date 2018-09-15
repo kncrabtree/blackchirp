@@ -23,7 +23,8 @@ SOURCES += mainwindow.cpp \
     $$PWD/peaklistmodel.cpp \
     $$PWD/peaklistexportdialog.cpp \
     $$PWD/rfconfigwidget.cpp \
-    $$PWD/clocktablemodel.cpp
+    $$PWD/clocktablemodel.cpp \
+    $$PWD/clockdisplaywidget.cpp
 
 HEADERS += mainwindow.h \
     $$PWD/ftmwviewwidget.h \
@@ -50,7 +51,8 @@ HEADERS += mainwindow.h \
     $$PWD/peaklistmodel.h \
     $$PWD/peaklistexportdialog.h \
     $$PWD/rfconfigwidget.h \
-    $$PWD/clocktablemodel.h
+    $$PWD/clocktablemodel.h \
+    $$PWD/clockdisplaywidget.h
 
 FORMS += mainwindow.ui \
     $$PWD/ftmwviewwidget.ui \

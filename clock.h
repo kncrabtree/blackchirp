@@ -64,6 +64,10 @@ protected:
 
     virtual bool setHwFrequency(double freqMHz, int outputIndex = 0) =0;
     virtual double readHwFrequency(int outputIndex = 0) =0;
+
+    // HardwareObject interface
+public slots:
+    virtual Experiment prepareForExperiment(Experiment exp);
 };
 
 #endif // CLOCK_H

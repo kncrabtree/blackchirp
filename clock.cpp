@@ -67,8 +67,7 @@ double Clock::readFrequency(BlackChirp::ClockType t)
     int output = d_outputRoles.key(t);
     double out = readHwFrequency(output);
     out *= d_multFactors.at(output);
-    if(out > 0.0)
-        emit frequencyUpdate(t,out);
+    emit frequencyUpdate(t,out);
 
     return out;
 }
@@ -102,4 +101,32 @@ double Clock::setFrequency(BlackChirp::ClockType t, double freqMHz)
         emit frequencyUpdate(t,out);
 
     return out;
+}
+
+
+Experiment Clock::prepareForExperiment(Experiment exp)
+{
+    if(exp.ftmwConfig().isEnabled())
+    {
+        auto rfc = exp.ftmwConfig().rfConfig();
+        auto clocks = rfc.getClocks();
+        for(auto it = clocks.constBegin(); it != clocks.constEnd(); it++)
+        {
+            if(hasRole(it.key()))
+            {
+                auto c = it.value();
+                double val = setFrequency(it.key(),c.desiredFreqMHz);
+                if(val < 0.0)
+                {
+                    exp.setErrorString(QString("Could not initialize %1 to %2 MHz").arg(BlackChirp::clockPrettyName(it.key())).arg(it.value().desiredFreqMHz,0,'f',6));
+                    exp.setHardwareFailed();
+                    return exp;
+                }
+                rfc.setClockDesiredFreq(it.key(),val);
+            }
+        }
+        exp.setRfConfig(rfc);
+    }
+
+    return exp;
 }

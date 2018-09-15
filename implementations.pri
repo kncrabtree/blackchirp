@@ -16,11 +16,9 @@ HEADERS += \
     $$PWD/virtualioboard.h \
     $$PWD/mso72004c.h \
     $$PWD/qc9518.h \
-    $$PWD/pldrogroup.h \
     $$PWD/awg7122b.h \
     $$PWD/virtualmotorcontroller.h \
     $$PWD/scx11.h \
-    $$PWD/virtualsynth.h \
     $$PWD/labjacku3.h \
     $$PWD/u3.h \
     $$PWD/virtualmotorscope.h \
@@ -49,11 +47,9 @@ SOURCES += \
     $$PWD/virtualioboard.cpp \
     $$PWD/mso72004c.cpp \
     $$PWD/qc9518.cpp \
-    $$PWD/pldrogroup.cpp \
     $$PWD/awg7122b.cpp \
     $$PWD/virtualmotorcontroller.cpp \
     $$PWD/scx11.cpp \
-    $$PWD/virtualsynth.cpp \
     $$PWD/labjacku3.cpp \
     $$PWD/u3.cpp \
     $$PWD/virtualmotorscope.cpp \
@@ -115,25 +111,14 @@ equals(AWG,4) {
 	SOURCES += $$PWD/m8195a.cpp
 }
 
-
-equals(SYNTH,0) {
-	HEADERS += $$PWD/virtualsynth.h
-	SOURCES += $$PWD/virtualsynth.cpp
-}
-equals(SYNTH,1) {
-	HEADERS += $$PWD/valon5009.h
-	SOURCES += $$PWD/valon5009.cpp
-}
-equals(SYNTH,2) {
-	HEADERS += $$PWD/pldrogroup.h
-	SOURCES += $$PWD/pldrogroup.cpp
-}
-
 contains(CLOCKS,0) {
         HEADERS += $$PWD/fixedclock.h
         SOURCES += $$PWD/fixedclock.cpp
 }
-
+contains(CLOCKS,1) {
+        HEADERS += $$PWD/valon5009.h
+        SOURCES += $$PWD/valon5009.cpp
+}
 
 equals(PGEN,0) {
 	HEADERS += $$PWD/virtualpulsegenerator.h

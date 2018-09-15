@@ -8,7 +8,6 @@ HEADERS += \
     $$PWD/pulsegenerator.h \
     $$PWD/communicationprotocol.h \
     $$PWD/virtualinstrument.h \
-    $$PWD/synthesizer.h \
     $$PWD/flowcontroller.h \
     $$PWD/ioboard.h \
 		$$PWD/custominstrument.h \
@@ -25,7 +24,6 @@ SOURCES += \
     $$PWD/pulsegenerator.cpp \
     $$PWD/communicationprotocol.cpp \
     $$PWD/virtualinstrument.cpp \
-    $$PWD/synthesizer.cpp \
     $$PWD/flowcontroller.cpp \
     $$PWD/ioboard.cpp \
 		$$PWD/custominstrument.cpp \

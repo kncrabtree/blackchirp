@@ -32,6 +32,7 @@
 #include "batchsequencedialog.h"
 #include "exportbatchdialog.h"
 #include "motorstatuswidget.h"
+#include "clockdisplaywidget.h"
 
 #ifdef BC_LIF
 #include "lifdisplaywidget.h"
@@ -51,8 +52,6 @@ MainWindow::MainWindow(QWidget *parent) :
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
     ui->exptSpinBox->blockSignals(true);
-    ui->valonTXDoubleSpinBox->blockSignals(true);
-    ui->valonRXDoubleSpinBox->blockSignals(true);
 
     auto vc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
 
@@ -101,6 +100,11 @@ MainWindow::MainWindow(QWidget *parent) :
     gl->setColumnStretch(3,0);
     ui->pulseConfigBox->setLayout(gl);
 
+    auto *clockBox = new QGroupBox(QString("Clocks"),this);
+    auto *clockWidget = new ClockDisplayWidget(this);
+    clockBox->setLayout(clockWidget->layout());
+    ui->instrumentStatusLayout->insertWidget(2,clockBox);
+
 
     QThread *lhThread = new QThread(this);
     connect(lhThread,&QThread::finished,p_lh,&LogHandler::deleteLater);
@@ -113,8 +117,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::statusMessage,statusLabel,&QLabel::setText);
     connect(p_hwm,&HardwareManager::hwInitializationComplete,ui->pulseConfigWidget,&PulseConfigWidget::updateHardwareLimits);
     connect(p_hwm,&HardwareManager::allHardwareConnected,this,&MainWindow::hardwareInitialized);
-    connect(p_hwm,&HardwareManager::valonTxFreqRead,ui->valonTXDoubleSpinBox,&QDoubleSpinBox::setValue);
-    connect(p_hwm,&HardwareManager::valonRxFreqRead,ui->valonRXDoubleSpinBox,&QDoubleSpinBox::setValue);
+    connect(p_hwm,&HardwareManager::clockFrequencyUpdate,clockWidget,&ClockDisplayWidget::updateFrequency);
     connect(p_hwm,&HardwareManager::pGenConfigUpdate,ui->pulseConfigWidget,&PulseConfigWidget::setFromConfig);
     connect(p_hwm,&HardwareManager::pGenSettingUpdate,ui->pulseConfigWidget,&PulseConfigWidget::newSetting);
     connect(p_hwm,&HardwareManager::pGenConfigUpdate,this,&MainWindow::updatePulseLeds);

@@ -94,7 +94,7 @@ Experiment ClockManager::ClockManager::prepareForExperiment(Experiment exp)
     d_clockRoles.clear();
     auto rfc = exp.ftmwConfig().rfConfig();
     auto map = rfc.getClocks();
-    for(auto i = map.constBegin(); i != map.end(); i++)
+    for(auto i = map.constBegin(); i != map.constEnd(); i++)
     {
         auto type = i.key();
         auto d = i.value();

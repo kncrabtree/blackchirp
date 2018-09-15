@@ -57,11 +57,6 @@ void FixedClock::initialize()
 
 }
 
-Experiment FixedClock::prepareForExperiment(Experiment exp)
-{
-    return exp;
-}
-
 void FixedClock::beginAcquisition()
 {
 }

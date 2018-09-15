@@ -56,10 +56,32 @@ private:
 class FixedClock;
 #endif
 
+#ifdef BC_CLOCK_VALON5009
+#include "valon5009.h"
+class Valon5009;
+#endif
+
+#ifdef BC_CLOCK_VALON5015
+#include "valon5015.h"
+class Valon5015;
+#endif
+
 #ifdef BC_CLOCK_0
 typedef BC_CLOCK_0 Clock0Hardware;
 #endif
 
 #ifdef BC_CLOCK_1
 typedef BC_CLOCK_1 Clock1Hardware;
+#endif
+
+#ifdef BC_CLOCK_2
+typedef BC_CLOCK_2 Clock2Hardware;
+#endif
+
+#ifdef BC_CLOCK_3
+typedef BC_CLOCK_3 Clock3Hardware;
+#endif
+
+#ifdef BC_CLOCK_4
+typedef BC_CLOCK_4 Clock4Hardware;
 #endif

@@ -1,25 +1,27 @@
 #include "valon5009.h"
 
-Valon5009::Valon5009(QObject *parent) :
-    Synthesizer(parent)
+Valon5009::Valon5009(int clockNum, QObject *parent) :
+    Clock(clockNum, parent)
 {
     d_subKey = QString("valon5009");
     d_prettyName = QString("Valon Synthesizer 5009");
     d_commType = CommunicationProtocol::Rs232;
     d_threaded = false;
+    d_numOutputs = 2;
+    d_isTunable = true;
 
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
-    //allow hardware limits to be made in settings
-    d_minFreq = s.value(QString("minFreq"),500.0).toDouble();
-    d_maxFreq = s.value(QString("maxFreq"),6000.0).toDouble();
-    //write the settings if they're not there
-    s.setValue(QString("minFreq"),d_minFreq);
-    s.setValue(QString("maxFreq"),d_maxFreq);
+    d_minFreqMHz = s.value(QString("minFreqMHz"),500.0).toDouble();
+    d_maxFreqMHz = s.value(QString("maxFreqMHz"),6000.0).toDouble();
+    s.setValue(QString("minFreqMHz"),d_minFreqMHz);
+    s.setValue(QString("maxFreqMHz"),d_maxFreqMHz);
     s.endGroup();
     s.endGroup();
+
+    Clock::prepareMultFactors();
 
 }
 
@@ -49,17 +51,6 @@ bool Valon5009::testConnection()
 
     emit logMessage(QString("ID response: %1").arg(QString(resp)));
 
-    if(readTxFreq() < 0.0)
-    {
-        emit connected(false,QString("Error reading TX frequency"));
-        return false;
-    }
-    if(readRxFreq() < 0.0)
-    {
-        emit connected(false,QString("Error reading RCVR frequency"));
-        return false;
-    }
-
     emit connected();
     return true;
 }
@@ -69,13 +60,6 @@ void Valon5009::initialize()
     p_comm->initialize();
     p_comm->setReadOptions(500,true,QByteArray("\n\r"));
     testConnection();
-}
-
-Experiment Valon5009::prepareForExperiment(Experiment exp)
-{
-    //TODO: verify that 10 MHz reference is locked
-    //Ensure that TX and RX frequencies match FT and chirp configs, if applicable
-    return exp;
 }
 
 void Valon5009::beginAcquisition()
@@ -88,38 +72,6 @@ void Valon5009::endAcquisition()
 
 void Valon5009::readTimeData()
 {
-}
-
-double Valon5009::readSynthTxFreq()
-{
-    if(readSynth(1))
-        return d_txFreq;
-    else
-        return -1.0;
-}
-
-double Valon5009::readSynthRxFreq()
-{
-    if(readSynth(2))
-        return d_rxFreq;
-    else
-        return -1.0;
-}
-
-double Valon5009::setSynthTxFreq(const double f)
-{
-    if(!setSynth(1,f))
-        return -1.0;
-
-    return readTxFreq();
-}
-
-double Valon5009::setSynthRxFreq(const double f)
-{
-    if(!setSynth(2,f))
-        return -1.0;
-
-    return readRxFreq();
 }
 
 bool Valon5009::valonWriteCmd(QString cmd)
@@ -158,58 +110,54 @@ QByteArray Valon5009::valonQueryCmd(QString cmd)
     return resp.trimmed();
 }
 
-bool Valon5009::setSynth(int channel, double f)
+QStringList Valon5009::channelNames()
 {
-    if(channel != 1)
-        channel = 2;
-    if(!valonWriteCmd(QString("S%1; Frequency %2M\r").arg(channel).arg(f,0,'f',0)))
-        return false;
-
-    return true;
+    QStringList out;
+    out << QString("Source 1") << QString("Source 2");
+    return out;
 }
 
-bool Valon5009::readSynth(int channel)
+bool Valon5009::setHwFrequency(double freqMHz, int outputIndex)
 {
-    QString cmd = QString("S1; Frequency?\r");
-    QString type = QString("TX");
-    double *freq = &d_txFreq;
-    if(channel == 2)
-    {
-        cmd = QString("S2; Frequency?\r");
-        type = QString("RX");
-        freq = &d_rxFreq;
-    }
+    auto source = QString("S%1").arg(outputIndex+1);
+    return valonWriteCmd(source+QString("; Frequency %2M\r").arg(freqMHz,0,'f',6));
+}
+
+double Valon5009::readHwFrequency(int outputIndex)
+{
+    auto source = QString("S%1").arg(outputIndex+1);
+    auto cmd = source + QString("; Frequency?\r");
 
     QByteArray resp = valonQueryCmd(cmd);
     if(resp.isEmpty())
-        return false;
+    {
+        emit hardwareFailure();
+        emit logMessage(QString("Could not read %1 frequency. No response received.").arg(channelNames().at(outputIndex)),BlackChirp::LogError);
+        return -1.0;
+    }
 
     if(!resp.startsWith("F"))
     {
-        emit hardwareFailure();
         emit logMessage(QString("Could not read %1 frequency. Response: %2 (Hex: %3)")
-                            .arg(type).arg(QString(resp)).arg(QString(resp.toHex())));
-        return false;
+                            .arg(channelNames().at(outputIndex)).arg(QString(resp)).arg(QString(resp.toHex())));
+        return -1.0;
     }
     QByteArrayList l = resp.split(' ');
     if(l.size() < 2)
     {
-        emit hardwareFailure();
         emit logMessage(QString("Could not parse %1 frequency response. Response: %2 (Hex: %3)")
-                        .arg(type).arg(QString(resp)).arg(QString(resp.toHex())));
-        return false;
+                        .arg(channelNames().at(outputIndex)).arg(QString(resp)).arg(QString(resp.toHex())));
+        return -1.0;
     }
+
     bool ok = false;
     double f = l.at(1).trimmed().toDouble(&ok);
     if(!ok)
     {
-        emit hardwareFailure();
         emit logMessage(QString("Could not convert %1 frequency to number. Response: %2 (Hex: %3)")
-                        .arg(type).arg(QString(l.at(1).trimmed())).arg(QString(l.at(1).trimmed().toHex())));
-        return false;
+                        .arg(channelNames().at(outputIndex)).arg(QString(l.at(1).trimmed())).arg(QString(l.at(1).trimmed().toHex())));
+        return -1.0;
     }
 
-    *freq = f;
-    return true;
-
+    return f;
 }

@@ -4,7 +4,6 @@
 
 #include "hardwareobject.h"
 #include "ftmwscope.h"
-#include "synthesizer.h"
 #include "clockmanager.h"
 #include "awg.h"
 #include "pulsegenerator.h"
@@ -67,16 +66,10 @@ void HardwareManager::initialize()
 
     p_clockManager = new ClockManager(this);
     connect(p_clockManager,&ClockManager::logMessage,this,&HardwareManager::logMessage);
-    ///TODO: Clock Frequency update signals?
+    connect(p_clockManager,&ClockManager::clockFrequencyUpdate,this,&HardwareManager::clockFrequencyUpdate);
     auto cl = p_clockManager->clockList();
     for(int i=0; i<cl.size(); i++)
         d_hardwareList.append(qMakePair(cl.at(i),nullptr));
-
-
-    p_synth = new SynthesizerHardware();
-    connect(p_synth,&Synthesizer::txFreqRead,this,&HardwareManager::valonTxFreqRead);
-    connect(p_synth,&Synthesizer::rxFreqRead,this,&HardwareManager::valonRxFreqRead);
-    d_hardwareList.append(qMakePair(p_synth,nullptr));
 
     p_pGen = new PulseGeneratorHardware();
     connect(p_pGen,&PulseGenerator::settingUpdate,this,&HardwareManager::pGenSettingUpdate);
@@ -355,6 +348,8 @@ void HardwareManager::sleep(bool b)
 void HardwareManager::initializeExperiment(Experiment exp)
 {
     //do initialization
+    p_clockManager->prepareForExperiment(exp);
+
     for(int i=0;i<d_hardwareList.size();i++)
     {
         QThread *t = d_hardwareList.at(i).second;
@@ -418,27 +413,6 @@ void HardwareManager::getTimeData()
         else
             QMetaObject::invokeMethod(obj,"readTimeData");
     }
-}
-
-
-double HardwareManager::setValonTxFreq(const double d)
-{
-    if(p_synth->thread() == thread())
-        return p_synth->setTxFreq(d);
-
-    double out;
-    QMetaObject::invokeMethod(p_synth,"setTxFreq",Qt::BlockingQueuedConnection,Q_RETURN_ARG(double,out),Q_ARG(double,d));
-    return out;
-}
-
-double HardwareManager::setValonRxFreq(const double d)
-{
-    if(p_synth->thread() == thread())
-        return p_synth->setRxFreq(d);
-
-    double out;
-    QMetaObject::invokeMethod(p_synth,"setRxFreq",Qt::BlockingQueuedConnection,Q_RETURN_ARG(double,out),Q_ARG(double,d));
-    return out;
 }
 
 void HardwareManager::setPGenSetting(int index, BlackChirp::PulseSetting s, QVariant val)

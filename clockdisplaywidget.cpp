@@ -1,0 +1,46 @@
+#include "clockdisplaywidget.h"
+
+#include <QFormLayout>
+#include <QDoubleSpinBox>
+
+#include "rfconfig.h"
+
+ClockDisplayWidget::ClockDisplayWidget(QWidget *parent) : QWidget(parent)
+{
+    auto *fl = new QFormLayout(this);
+
+    auto ct = BlackChirp::allClockTypes();
+
+    auto rfc = RfConfig::loadFromSettings();
+
+    for(int i=0; i<ct.size(); i++)
+    {
+        auto type = ct.at(i);
+        auto key = BlackChirp::clockKey(type);
+        auto tt = BlackChirp::clockPrettyName(type);
+
+        auto *box = new QDoubleSpinBox(this);
+        box->setRange(-1.0,1e7);
+        box->setDecimals(6);
+        box->setSuffix(QString(" MHz"));
+        box->setButtonSymbols(QAbstractSpinBox::NoButtons);
+        box->setReadOnly(true);
+        box->setSpecialValueText(QString("Not Yet Set"));
+        box->setValue(rfc.clockFrequency(type));
+        box->setToolTip(tt);
+        box->blockSignals(true);
+
+        fl->addRow(key,box);
+        d_boxes.insert(type,box);
+    }
+
+
+    setLayout(fl);
+}
+
+void ClockDisplayWidget::updateFrequency(BlackChirp::ClockType t, double f)
+{
+    auto box = d_boxes.value(t);
+    box->setValue(f);
+    box->setSpecialValueText(QString("Error"));
+}

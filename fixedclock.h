@@ -13,7 +13,6 @@ public:
 public slots:
     bool testConnection();
     void initialize();
-    Experiment prepareForExperiment(Experiment exp);
     void beginAcquisition();
     void endAcquisition();
     void readTimeData();
