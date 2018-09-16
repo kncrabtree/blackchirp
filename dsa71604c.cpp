@@ -37,9 +37,9 @@ Dsa71604c::Dsa71604c(QObject *parent) :
             s.setValue(QString("text"),sampleRates.at(i).first);
             s.setValue(QString("val"),sampleRates.at(i).second);
         }
-        s.endArray();
     }
 
+    s.endArray();
     s.endGroup();
     s.endGroup();
 

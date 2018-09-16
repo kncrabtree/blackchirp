@@ -43,9 +43,9 @@ M4i2220x8::M4i2220x8(QObject *parent) : FtmwScope(parent), p_handle(nullptr)
             s.setValue(QString("text"),sampleRates.at(i).first);
             s.setValue(QString("val"),sampleRates.at(i).second);
         }
-        s.endArray();
     }
 
+    s.endArray();
     s.beginWriteArray(QString("comm"));
     s.setArrayIndex(0);
     s.setValue(QString("name"),QString("Device Path"));

@@ -3,8 +3,6 @@
 #include <QSettings>
 #include <QPair>
 
-#include <QDebug>
-
 class RfConfigData : public QSharedData
 {
 public:

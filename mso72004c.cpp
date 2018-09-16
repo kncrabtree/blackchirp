@@ -37,8 +37,8 @@ MSO72004C::MSO72004C(QObject *parent) :
             s.setValue(QString("text"),sampleRates.at(i).first);
             s.setValue(QString("val"),sampleRates.at(i).second);
         }
-        s.endArray();
     }
+    s.endArray();
     s.endGroup();
     s.endGroup();
 

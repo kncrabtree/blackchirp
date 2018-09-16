@@ -43,6 +43,7 @@ void FixedClock::initialize()
         s.setArrayIndex(i);
         d_currentFrequencyList[i] = s.value(QString("frequencyMHz"),0.0).toDouble();
     }
+    s.endArray();
     s.beginWriteArray(QString("outputs"));
     for(int i=0; i<d_numOutputs; i++)
     {
