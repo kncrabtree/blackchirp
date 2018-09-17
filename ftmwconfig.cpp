@@ -45,6 +45,11 @@ double FtmwConfig::chirpRMSThreshold() const
     return data->chirpRMSThreshold;
 }
 
+double FtmwConfig::chirpOffsetUs() const
+{
+    return data->chirpOffsetUs;
+}
+
 BlackChirp::FtmwType FtmwConfig::type() const
 {
     return data->type;
@@ -65,9 +70,14 @@ QDateTime FtmwConfig::targetTime() const
     return data->targetTime;
 }
 
-QList<Fid> FtmwConfig::fidList() const
+FidList FtmwConfig::fidList() const
 {
     return data->fidList;
+}
+
+QList<FidList> FtmwConfig::multiFidList() const
+{
+    return data->multiFidStorage;
 }
 
 BlackChirp::FtmwScopeConfig FtmwConfig::scopeConfig() const
@@ -95,11 +105,11 @@ int FtmwConfig::numFrames() const
     return (scopeConfig().summaryFrame && !scopeConfig().manualFrameAverage) ? 1 : scopeConfig().numFrames;
 }
 
-QList<Fid> FtmwConfig::parseWaveform(const QByteArray b) const
+FidList FtmwConfig::parseWaveform(const QByteArray b) const
 {
 
     int np = scopeConfig().recordLength;
-    QList<Fid> out;
+    FidList out;
     //read raw data into vector in 64 bit integer form
     for(int j=0;j<numFrames();j++)
     {
@@ -202,7 +212,7 @@ QList<Fid> FtmwConfig::parseWaveform(const QByteArray b) const
 QVector<qint64> FtmwConfig::extractChirp() const
 {
     QVector<qint64> out;
-    QList<Fid> dat = fidList();
+    FidList dat = fidList();
     if(!dat.isEmpty())
     {
         auto r = chirpRange();
@@ -219,7 +229,7 @@ QVector<qint64> FtmwConfig::extractChirp(const QByteArray b) const
     auto r = chirpRange();
     if(r.first >= 0 && r.second >= 0)
     {
-        QList<Fid> l = parseWaveform(b);
+        FidList l = parseWaveform(b);
         if(!l.isEmpty())
             out = l.first().rawData().mid(r.first, r.second - r.first);
     }
@@ -276,22 +286,39 @@ QPair<int, int> FtmwConfig::chirpRange() const
     return qMakePair(startSample,endSample);
 }
 
-bool FtmwConfig::writeFidFile(int num, int snapNum) const
+bool FtmwConfig::writeFids(int num, int snapNum) const
 {
-    QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,QString(""),snapNum));
-    if(fid.open(QIODevice::WriteOnly))
+    if(!data->multipleFidLists)
     {
-        QDataStream d(&fid);
-        d << Fid::magicString();
-        d << data->fidList;
-        fid.close();
-        return true;
+        QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,QString(""),snapNum));
+        if(fid.open(QIODevice::WriteOnly))
+        {
+            QDataStream d(&fid);
+            d << Fid::magicString();
+            d << data->fidList;
+            fid.close();
+            return true;
+        }
+        else
+            return false;
     }
     else
-        return false;
+    {
+        QFile fid(BlackChirp::getExptFile(num,BlackChirp::MultiFidFile,QString(""),snapNum));
+        if(fid.open(QIODevice::WriteOnly))
+        {
+            QDataStream d(&fid);
+            d << Fid::magicString();
+            d << data->multiFidStorage;
+            fid.close();
+            return true;
+        }
+        else
+            return false;
+    }
 }
 
-bool FtmwConfig::writeFidFile(int num, QList<Fid> list, QString path)
+bool FtmwConfig::writeFidFile(int num, FidList list, QString path)
 {
     QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,path));
     if(fid.open(QIODevice::WriteOnly))
@@ -350,6 +377,11 @@ void FtmwConfig::setChirpRMSThreshold(double t)
     data->chirpRMSThreshold = t;
 }
 
+void FtmwConfig::setChirpOffsetUs(double o)
+{
+    data->chirpOffsetUs = o;
+}
+
 void FtmwConfig::setFidTemplate(const Fid f)
 {
     data->fidTemplate = f;
@@ -358,6 +390,17 @@ void FtmwConfig::setFidTemplate(const Fid f)
 void FtmwConfig::setType(const BlackChirp::FtmwType type)
 {
     data->type = type;
+    switch (type) {
+    case BlackChirp::FtmwPeakUp:
+    case BlackChirp::FtmwTargetShots:
+    case BlackChirp::FtmwTargetTime:
+    case BlackChirp::FtmwForever:
+        data->multipleFidLists = false;
+        break;
+    default:
+        data->multipleFidLists = true;
+        break;
+    }
 }
 
 void FtmwConfig::setTargetShots(const qint64 target)
@@ -418,7 +461,7 @@ bool FtmwConfig::setFidsData(const QList<QVector<qint64> > newList)
 
 bool FtmwConfig::addFids(const QByteArray rawData, int shift)
 {
-    QList<Fid> newList = parseWaveform(rawData);
+    FidList newList = parseWaveform(rawData);
     if(data->completedShots > 0)
     {
         if(newList.size() != data->fidList.size())
@@ -449,22 +492,54 @@ bool FtmwConfig::addFids(const QByteArray rawData, int shift)
     return true;
 }
 
-bool FtmwConfig::subtractFids(const QList<Fid> otherList)
+bool FtmwConfig::subtractFids(const FtmwConfig other)
 {
-    if(otherList.size() != data->fidList.size())
-        return false;
-
-    for(int i=0; i<otherList.size(); i++)
+    if(!data->multipleFidLists)
     {
-        if(otherList.at(i).size() != data->fidList.at(i).size())
+        auto otherList = other.fidList();
+
+        if(otherList.size() != data->fidList.size())
             return false;
 
-        if(otherList.at(i).shots() >= data->fidList.at(i).shots())
-            return false;
+        for(int i=0; i<otherList.size(); i++)
+        {
+            if(otherList.at(i).size() != data->fidList.at(i).size())
+                return false;
+
+            if(otherList.at(i).shots() >= data->fidList.at(i).shots())
+                return false;
+        }
+
+        for(int i=0; i<data->fidList.size(); i++)
+            data->fidList[i] -= otherList.at(i);
+
     }
+    else
+    {
+        auto otherList = other.multiFidList();
 
-    for(int i=0; i<data->fidList.size(); i++)
-        data->fidList[i] -= otherList.at(i);
+        for(int i=0; i<data->multiFidStorage.size(); i++)
+        {
+            if(i >= otherList.size())
+                continue;
+
+            if(otherList.at(i).size() != data->multiFidStorage.at(i).size() || data->multiFidStorage.at(i).isEmpty())
+                return false;
+
+            //if numbers of shots are equal, then no new data have been added for this chunk.
+            //Write an empty list of fids.
+            //Otherwise, get the difference.
+            if(otherList.at(i).first().shots() == data->multiFidStorage.at(i).first().shots())
+                data->multiFidStorage[i] = FidList();
+            else if(otherList.at(i).first().shots() < data->multiFidStorage.at(i).first().shots())
+            {
+                for(int j=0; j<data->multiFidStorage.at(i).size(); j++)
+                    data->multiFidStorage[i][j] -= otherList.at(i).at(j);
+            }
+            else
+                return false;
+        }
+    }
 
     return true;
 }
@@ -525,14 +600,12 @@ QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
         out.insert(prefix+QString("TargetShots"),qMakePair(targetShots(),empty));
     if(type() == BlackChirp::FtmwTargetTime)
         out.insert(prefix+QString("TargetTime"),qMakePair(targetTime(),empty));
-    if(data->fidList.isEmpty())
-        out.insert(prefix+QString("CompletedShots"),qMakePair(0,empty));
-    else
-        out.insert(prefix+QString("CompletedShots"),qMakePair(data->fidList.first().shots(),empty));
+    out.insert(prefix+QString("CompletedShots"),qMakePair(data->completedShots,empty));
     out.insert(prefix+QString("FidVMult"),qMakePair(QString::number(fidTemplate().vMult(),'g',12),QString("V")));
     out.insert(prefix+QString("PhaseCorrection"),qMakePair(data->phaseCorrectionEnabled,QString("")));
     out.insert(prefix+QString("ChirpScoring"),qMakePair(data->chirpScoringEnabled,QString("")));
-    out.insert(prefix+QString("ChirpRMSThreshold"),qMakePair(QString::number(data->chirpRMSThreshold,'f',3),QString("")));
+    out.insert(prefix+QString("ChirpRMSThreshold"),qMakePair(QString::number(data->chirpRMSThreshold,'f',3),empty));
+    out.insert(prefix+QString("ChirpOffset"),qMakePair(QString::number(data->chirpOffsetUs,'f',4),QString::fromUtf16(u" μs")));
 
 
     out.unite(data->scopeConfig.headerMap());
@@ -554,7 +627,7 @@ void FtmwConfig::loadFids(const int num, const QString path)
         {
             if(magic.endsWith("v1.0"))
             {
-                QList<Fid> dat;
+                FidList dat;
                 d >> dat;
                 data->fidList = dat;
                 if(!dat.isEmpty())
@@ -594,7 +667,7 @@ void FtmwConfig::loadFids(const int num, const QString path)
             {
                 for(int i=0; i<numSnaps; i++)
                 {
-                    QList<Fid> in;
+                    FidList in;
                     QFile f(BlackChirp::getExptFile(num,BlackChirp::FidFile,path,i));
                     if(f.exists() && f.open(QIODevice::ReadOnly))
                     {
@@ -619,6 +692,8 @@ void FtmwConfig::loadFids(const int num, const QString path)
             }
         }
     }
+
+    ///TODO: Load from .mfd file
 }
 
 void FtmwConfig::parseLine(const QString key, const QVariant val)
@@ -689,6 +764,8 @@ void FtmwConfig::parseLine(const QString key, const QVariant val)
             data->chirpScoringEnabled = val.toBool();
         if(key.endsWith(QString("ChirpRMSThreshold")))
             data->chirpRMSThreshold = val.toDouble();
+        if(key.endsWith(QString("ChirpOffset")))
+            data->chirpOffsetUs = val.toDouble();
     }
     else if(key.startsWith(QString("RfConfig")))
         data->rfConfig.parseLine(key,val);
@@ -711,6 +788,7 @@ void FtmwConfig::saveToSettings() const
     s.setValue(QString("targetTime"),QDateTime::currentDateTime().msecsTo(targetTime()));
     s.setValue(QString("phaseCorrection"),isPhaseCorrectionEnabled());
     s.setValue(QString("chirpScoring"),isChirpScoringEnabled());
+    s.setValue(QString("chirpOffsetUs"),chirpOffsetUs());
     s.setValue(QString("chirpRMSThreshold"),chirpRMSThreshold());
 
     s.setValue(QString("fidChannel"),scopeConfig().fidChannel);
@@ -748,6 +826,7 @@ FtmwConfig FtmwConfig::loadFromSettings()
     out.setPhaseCorrectionEnabled(s.value(QString("phaseCorrection"),false).toBool());
     out.setChirpScoringEnabled(s.value(QString("chirpScoring"),false).toBool());
     out.setChirpRMSThreshold(s.value(QString("chirpRMSThreshold"),0.0).toDouble());
+    out.setChirpOffsetUs(s.value(QString("chirpOffsetUs"),-1.0).toDouble());
 
     BlackChirp::FtmwScopeConfig sc;
     sc.fidChannel = s.value(QString("fidChannel"),1).toInt();

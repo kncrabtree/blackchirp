@@ -19,6 +19,13 @@ QString BlackChirp::getExptFile(int num, BlackChirp::ExptFileType t, QString pat
         if(snapNum >= 0)
             file.append(QString("~"));
         break;
+    case MultiFidFile:
+        if(snapNum >= 0)
+            file.append(QString("-snap%1").arg(snapNum));
+        file.append(QString(".mfd"));
+        if(snapNum >= 0)
+            file.append(QString("~"));
+        break;
     case LifFile:
         if(snapNum >= 0)
             file.append(QString("-snap%1").arg(snapNum));

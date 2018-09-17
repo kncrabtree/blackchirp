@@ -180,7 +180,7 @@ void FtmwViewWidget::togglePanel(bool on)
     }
 }
 
-void FtmwViewWidget::newFidList(QList<Fid> fl)
+void FtmwViewWidget::newFidList(FidList fl)
 {
     d_currentFidList = fl;
     if(ui->frameBox->maximum() != d_currentFidList.size())
@@ -491,7 +491,7 @@ void FtmwViewWidget::snapDiffChanged()
     }
 }
 
-void FtmwViewWidget::finalizedSnapList(const QList<Fid> l)
+void FtmwViewWidget::finalizedSnapList(const FidList l)
 {
     Q_ASSERT(l.size() > 0);
     d_currentFidList = l;

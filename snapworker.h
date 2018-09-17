@@ -10,13 +10,13 @@ class SnapWorker : public QObject
     Q_OBJECT
 public:
     explicit SnapWorker(QObject *parent = 0);
-    QList<Fid> parseFile(int exptNum, int snapNum = -1, QString path = QString(""));
+    FidList parseFile(int exptNum, int snapNum = -1, QString path = QString(""));
 
 signals:
-    void fidListComplete(const QList<Fid>);
+    void fidListComplete(const FidList);
 
 public slots:
-    void calculateFidList(int exptNum, const QList<Fid> allList, const QList<int> snapList, bool subtractFromFull);
+    void calculateFidList(int exptNum, const FidList allList, const QList<int> snapList, bool subtractFromFull);
 
 };
 

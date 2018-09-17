@@ -31,7 +31,7 @@ signals:
 
 public slots:
     void togglePanel(bool on);
-    void newFidList(QList<Fid> fl);
+    void newFidList(FidList fl);
     void updateShotsLabel(qint64 shots);
     void ftStartChanged(double s);
     void ftEndChanged(double e);
@@ -50,7 +50,7 @@ public slots:
     void snapListUpdate();
     void snapRefChanged();
     void snapDiffChanged();
-    void finalizedSnapList(const QList<Fid> l);
+    void finalizedSnapList(const FidList l);
     void removeSnapWidget();
     void checkRemoveSnapWidget(int num);
 
@@ -61,7 +61,7 @@ private:
     BlackChirp::FtmwViewMode d_mode;
     bool d_replotWhenDone, d_processing;
     int d_pzf, d_currentExptNum;
-    QList<Fid> d_currentFidList;
+    FidList d_currentFidList;
     Fid d_currentFid, d_currentRefFid;
     QThread *p_ftThread;
     FtWorker *p_ftw;

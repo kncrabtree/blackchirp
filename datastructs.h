@@ -283,6 +283,7 @@ enum ExptFileType {
     HeaderFile,
     ChirpFile,
     FidFile,
+    MultiFidFile,
     LifFile,
     SnapFile,
     TimeFile,

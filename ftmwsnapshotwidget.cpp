@@ -78,7 +78,7 @@ bool FtmwSnapshotWidget::isEmpty() const
     return p_lw->count() == 0;
 }
 
-QList<Fid> FtmwSnapshotWidget::getSnapList() const
+FidList FtmwSnapshotWidget::getSnapList() const
 {
     return d_snapList;
 }
@@ -111,7 +111,7 @@ QSize FtmwSnapshotWidget::sizeHint() const
     return QSize(100,300);
 }
 
-void FtmwSnapshotWidget::setFidList(const QList<Fid> l)
+void FtmwSnapshotWidget::setFidList(const FidList l)
 {
     d_totalFidList = l;
 }
@@ -257,7 +257,7 @@ void FtmwSnapshotWidget::updateSnapList()
         p_lw->blockSignals(false);
     }
 
-    QMetaObject::invokeMethod(p_sw,"calculateFidList",Q_ARG(int,d_num),Q_ARG(const QList<Fid>,d_totalFidList),
+    QMetaObject::invokeMethod(p_sw,"calculateFidList",Q_ARG(int,d_num),Q_ARG(const FidList,d_totalFidList),
                               Q_ARG(const QList<int>,snapList),Q_ARG(bool,subtract));
     d_busy = true;
     d_updateWhenDone = false;
@@ -267,7 +267,7 @@ void FtmwSnapshotWidget::updateSnapList()
 
 }
 
-void FtmwSnapshotWidget::snapListUpdated(const QList<Fid> l)
+void FtmwSnapshotWidget::snapListUpdated(const FidList l)
 {
     d_busy = false;
 

@@ -192,5 +192,6 @@ public:
 };
 
 Q_DECLARE_METATYPE(Fid)
+typedef QList<Fid> FidList;
 
 #endif // FID_H

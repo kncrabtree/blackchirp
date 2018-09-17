@@ -20,21 +20,21 @@ public:
 
     int count() const;
     bool isEmpty() const;
-    QList<Fid> getSnapList() const;
+    FidList getSnapList() const;
     int snapListSize() const;
     Fid getSnapFid(int i) const;
     Fid getRefFid(int i);
     Fid getDiffFid(int i);
 
     QSize sizeHint() const;
-    void setFidList(const QList<Fid> l);
+    void setFidList(const FidList l);
 
 signals:
     void loadFailed(const QString errMsg);
     void snapListChanged();
     void refChanged();
     void diffChanged();
-    void finalizedList(const QList<Fid>);
+    void finalizedList(const FidList);
     void experimentLogMessage(int,QString,BlackChirp::LogMessageCode=BlackChirp::LogNormal,QString=QString(""));
 
 public slots:
@@ -43,7 +43,7 @@ public slots:
     void setFinalizeEnabled(bool en);
     bool readSnapshots();
     void updateSnapList();
-    void snapListUpdated(const QList<Fid> l);
+    void snapListUpdated(const FidList l);
     void finalize();
 
 private:
@@ -56,7 +56,7 @@ private:
     int d_num;
     bool d_busy, d_updateWhenDone;
     QString d_path;
-    QList<Fid> d_snapList, d_totalFidList;
+    FidList d_snapList, d_totalFidList;
 };
 
 #endif // FTMWSNAPSHOTWIDGET_H

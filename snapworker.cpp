@@ -11,9 +11,9 @@ SnapWorker::SnapWorker(QObject *parent) : QObject(parent)
 
 }
 
-void SnapWorker::calculateFidList(int exptNum, const QList<Fid> allList, const QList<int> snapList, bool subtractFromFull)
+void SnapWorker::calculateFidList(int exptNum, const FidList allList, const QList<int> snapList, bool subtractFromFull)
 {
-    QList<Fid> out = allList;
+    FidList out = allList;
 
     if(subtractFromFull)
     {
@@ -25,7 +25,7 @@ void SnapWorker::calculateFidList(int exptNum, const QList<Fid> allList, const Q
 
         for(int i=0; i<snapList.size(); i++)
         {
-            QList<Fid> snap = parseFile(exptNum,snapList.at(i));
+            FidList snap = parseFile(exptNum,snapList.at(i));
             if(snap.size() != out.size())
             {
                 emit fidListComplete(out);
@@ -52,7 +52,7 @@ void SnapWorker::calculateFidList(int exptNum, const QList<Fid> allList, const Q
 
         for(int i=1; i<snapList.size(); i++)
         {
-            QList<Fid> snap = parseFile(exptNum,snapList.at(i));
+            FidList snap = parseFile(exptNum,snapList.at(i));
             if(snap.size() != out.size())
             {
                 emit fidListComplete(allList);
@@ -66,9 +66,9 @@ void SnapWorker::calculateFidList(int exptNum, const QList<Fid> allList, const Q
     emit fidListComplete(out);
 }
 
-QList<Fid> SnapWorker::parseFile(int exptNum, int snapNum, QString path)
+FidList SnapWorker::parseFile(int exptNum, int snapNum, QString path)
 {
-    QList<Fid> out;
+    FidList out;
 
     QFile f(BlackChirp::getExptFile(exptNum,BlackChirp::FidFile,path,snapNum));
     if(f.open(QIODevice::ReadOnly))

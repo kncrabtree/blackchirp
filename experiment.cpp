@@ -794,7 +794,7 @@ void Experiment::finalSave() const
     saveHeader();
 
     if(ftmwConfig().isEnabled())
-        ftmwConfig().writeFidFile(data->number);
+        ftmwConfig().writeFids(data->number);
 
 #ifdef BC_LIF
     if(lifConfig().isEnabled())
@@ -996,11 +996,11 @@ void Experiment::snapshot(int snapNum, const Experiment other) const
         FtmwConfig cf = ftmwConfig();
         if(other.number() == data->number && other.isInitialized())
         {
-            if(cf.subtractFids(other.ftmwConfig().fidList()))
-                cf.writeFidFile(data->number,snapNum);
+            if(cf.subtractFids(other.ftmwConfig()))
+                cf.writeFids(data->number,snapNum);
         }
         else
-            cf.writeFidFile(data->number,snapNum);
+            cf.writeFids(data->number,snapNum);
     }
 
 #ifdef BC_LIF
