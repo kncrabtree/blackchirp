@@ -75,7 +75,7 @@ MainWindow::MainWindow(QWidget *parent) :
             }
         }
     });
-    connect(p_lh,&LogHandler::sendLogMessage,[=](){
+    connect(p_lh,&LogHandler::sendLogMessage,this,[=](){
         if(ui->tabWidget->currentWidget() != ui->logTab)
         {
             d_logCount++;
