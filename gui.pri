@@ -6,7 +6,6 @@ SOURCES += mainwindow.cpp \
     $$PWD/trackingviewwidget.cpp \
     $$PWD/trackingplot.cpp \
     $$PWD/zoompanplot.cpp \
-    $$PWD/ftmwconfigwidget.cpp \
     $$PWD/chirpconfigwidget.cpp \
     $$PWD/chirptablemodel.cpp \
     $$PWD/chirpconfigplot.cpp \
@@ -24,7 +23,8 @@ SOURCES += mainwindow.cpp \
     $$PWD/peaklistexportdialog.cpp \
     $$PWD/rfconfigwidget.cpp \
     $$PWD/clocktablemodel.cpp \
-    $$PWD/clockdisplaywidget.cpp
+    $$PWD/clockdisplaywidget.cpp \
+    $$PWD/digitizerconfigwidget.cpp
 
 HEADERS += mainwindow.h \
     $$PWD/ftmwviewwidget.h \
@@ -34,7 +34,6 @@ HEADERS += mainwindow.h \
     $$PWD/trackingviewwidget.h \
     $$PWD/trackingplot.h \
     $$PWD/zoompanplot.h \
-    $$PWD/ftmwconfigwidget.h \
     $$PWD/chirpconfigwidget.h \
     $$PWD/chirptablemodel.h \
     $$PWD/chirpconfigplot.h \
@@ -52,12 +51,12 @@ HEADERS += mainwindow.h \
     $$PWD/peaklistexportdialog.h \
     $$PWD/rfconfigwidget.h \
     $$PWD/clocktablemodel.h \
-    $$PWD/clockdisplaywidget.h
+    $$PWD/clockdisplaywidget.h \
+    $$PWD/digitizerconfigwidget.h
 
 FORMS += mainwindow.ui \
     $$PWD/ftmwviewwidget.ui \
     $$PWD/communicationdialog.ui \
-    $$PWD/ftmwconfigwidget.ui \
     $$PWD/chirpconfigwidget.ui \
     $$PWD/pulseconfigwidget.ui \
     $$PWD/ioboardconfigdialog.ui \
@@ -66,7 +65,8 @@ FORMS += mainwindow.ui \
     $$PWD/exportbatchdialog.ui \
     $$PWD/peakfindwidget.ui \
     $$PWD/peaklistexportdialog.ui \
-    $$PWD/rfconfigwidget.ui
+    $$PWD/rfconfigwidget.ui \
+    $$PWD/digitizerconfigwidget.ui
 
 lif {
 	HEADERS += $$PWD/liftraceplot.h \

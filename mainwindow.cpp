@@ -17,7 +17,7 @@
 
 #include "communicationdialog.h"
 #include "ioboardconfigdialog.h"
-#include "ftmwconfigwidget.h"
+#include "digitizerconfigwidget.h"
 #include "rfconfigwidget.h"
 #include "experimentwizard.h"
 #include "loghandler.h"

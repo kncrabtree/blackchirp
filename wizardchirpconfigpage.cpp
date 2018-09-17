@@ -40,7 +40,7 @@ void WizardChirpConfigPage::initializePage()
 
 int WizardChirpConfigPage::nextId() const
 {
-    return ExperimentWizard::FtmwConfigPage;
+    return ExperimentWizard::DigitizerConfigPage;
 }
 
 

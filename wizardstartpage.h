@@ -3,8 +3,12 @@
 
 #include "experimentwizardpage.h"
 
-class QCheckBox;
+class QGroupBox;
 class QSpinBox;
+class QDateTimeEdit;
+class QCheckBox;
+class QComboBox;
+class QDoubleSpinBox;
 
 class WizardStartPage : public ExperimentWizardPage
 {
@@ -19,21 +23,24 @@ public:
     void initializePage();
     bool validatePage();
 
-    bool ftmwEnabled() const;
-    bool lifEnabled() const;
-    bool motorEnabled() const;
-    int auxDataInterval() const;
-    int snapshotInterval() const;
+public slots:
+    void configureUI();
 
 private:
-    QCheckBox *p_ftmw;
+    QGroupBox *p_ftmw;
 #ifdef BC_LIF
-    QCheckBox *p_lif;
+    QGroupBox *p_lif;
 #endif
 #ifdef BC_MOTOR
-    QCheckBox *p_motor;
+    QGroupBox *p_motor;
 #endif
-    QSpinBox *p_auxDataIntervalBox, *p_snapshotBox;
+
+    QSpinBox *p_auxDataIntervalBox, *p_snapshotBox, *p_ftmwShotsBox;
+    QComboBox *p_ftmwTypeBox;
+    QDateTimeEdit *p_ftmwTargetTimeBox;
+    QCheckBox *p_phaseCorrectionBox, *p_chirpScoringBox;
+    QDoubleSpinBox *p_thresholdBox, *p_chirpOffsetBox;
+
 
 
 };

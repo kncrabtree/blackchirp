@@ -4,7 +4,7 @@
 #include "wizardstartpage.h"
 #include "wizardrfconfigpage.h"
 #include "wizardchirpconfigpage.h"
-#include "wizardftmwconfigpage.h"
+#include "wizarddigitizerconfigpage.h"
 #include "wizardsummarypage.h"
 #include "wizardpulseconfigpage.h"
 #include "wizardvalidationpage.h"
@@ -32,11 +32,11 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
     auto chirpConfigPage = new WizardChirpConfigPage(this);
     d_pages << chirpConfigPage;
 
-    auto ftmwConfigPage = new WizardFtmwConfigPage(this);
-    d_pages << ftmwConfigPage;
+    auto digitizerConfigPage = new WizardDigitizerConfigPage(this);
+    d_pages << digitizerConfigPage;
 
     auto pulseConfigPage = new WizardPulseConfigPage(this);
-    d_pages << ftmwConfigPage;
+    d_pages << digitizerConfigPage;
 
     auto validationPage = new WizardValidationPage(this);
     d_pages << validationPage;
@@ -47,7 +47,7 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
     setPage(StartPage,startPage);
     setPage(RfConfigPage,rfConfigPage);
     setPage(ChirpConfigPage,chirpConfigPage);
-    setPage(FtmwConfigPage,ftmwConfigPage);
+    setPage(DigitizerConfigPage,digitizerConfigPage);
     setPage(PulseConfigPage,pulseConfigPage);
     setPage(ValidationPage,validationPage);
     setPage(SummaryPage,summaryPage);

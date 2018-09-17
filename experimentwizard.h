@@ -19,7 +19,7 @@ public:
         StartPage,
         RfConfigPage,
         ChirpConfigPage,
-        FtmwConfigPage,
+        DigitizerConfigPage,
 #ifdef BC_LIF
         LifConfigPage,
 #endif

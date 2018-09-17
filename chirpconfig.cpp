@@ -619,23 +619,24 @@ void ChirpConfig::setChirpInterval(const double i)
 
 void ChirpConfig::addSegment(const double startMHz, const double endMHz, const double durationUs, const int chirpNum)
 {
-    if(startMHz > 0.0 && endMHz > 0.0 && durationUs > 0.0)
-    {
-        BlackChirp::ChirpSegment seg;
-        seg.startFreqMHz = startMHz;
-        seg.endFreqMHz = endMHz;
-        seg.durationUs = durationUs;
-        seg.alphaUs = (endMHz-startMHz)/durationUs;
-        seg.empty = false;
+    if(startMHz < 0.0 || endMHz < 0.0 || durationUs < 0.0)
+        return;
 
-        if(chirpNum < 0 || chirpNum > data->chirpList.size())
-        {
-            for(int i=0; i<data->chirpList.size(); i++)
-                data->chirpList[i].append(seg);
-        }
-        else
-            data->chirpList[chirpNum].append(seg);
+    BlackChirp::ChirpSegment seg;
+    seg.startFreqMHz = startMHz;
+    seg.endFreqMHz = endMHz;
+    seg.durationUs = durationUs;
+    seg.alphaUs = (endMHz-startMHz)/durationUs;
+    seg.empty = false;
+
+    if(chirpNum < 0 || chirpNum > data->chirpList.size())
+    {
+        for(int i=0; i<data->chirpList.size(); i++)
+            data->chirpList[i].append(seg);
     }
+    else
+        data->chirpList[chirpNum].append(seg);
+
 }
 
 void ChirpConfig::addEmptySegment(const double durationUs, const int chirpNum)

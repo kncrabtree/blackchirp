@@ -1,21 +1,14 @@
-#include "ftmwconfigwidget.h"
-#include "ui_ftmwconfigwidget.h"
+#include "digitizerconfigwidget.h"
+#include "ui_digitizerconfigwidget.h"
 
 #include <QSettings>
 #include <QApplication>
 
-#include "ftmwconfig.h"
-
-FtmwConfigWidget::FtmwConfigWidget(QWidget *parent) :
+DigitizerConfigWidget::DigitizerConfigWidget(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::FtmwConfigWidget)
+    ui(new Ui::DigitizerConfigWidget)
 {
     ui->setupUi(this);
-
-    ui->modeComboBox->addItem(QString("Target Shots"),QVariant::fromValue(BlackChirp::FtmwTargetShots));
-    ui->modeComboBox->addItem(QString("Target Time"),QVariant::fromValue(BlackChirp::FtmwTargetTime));
-    ui->modeComboBox->addItem(QString("Forever"),QVariant::fromValue(BlackChirp::FtmwForever));
-    ui->modeComboBox->addItem(QString("Peak Up"),QVariant::fromValue(BlackChirp::FtmwPeakUp));
 
     ///TODO: Customize more UI settings according to Hardware limits for ftmwscope implementation
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
@@ -52,47 +45,23 @@ FtmwConfigWidget::FtmwConfigWidget(QWidget *parent) :
 
     ui->triggerDelayDoubleSpinBox->setSuffix(QString::fromUtf16(u" μs"));
 
-    ui->targetTimeDateTimeEdit->setMinimumDateTime(QDateTime::currentDateTime().addSecs(60));
-    ui->targetTimeDateTimeEdit->setDateTime(QDateTime::currentDateTime().addSecs(3600));
-    ui->targetTimeDateTimeEdit->setMaximumDateTime(QDateTime::currentDateTime().addSecs(2000000000));
-    ui->targetTimeDateTimeEdit->setCurrentSection(QDateTimeEdit::HourSection);
 
+    connect(ui->fastFrameEnabledCheckBox,&QCheckBox::toggled,this,&DigitizerConfigWidget::configureUI);
+    connect(ui->blockAverageCheckBox,&QCheckBox::toggled,this,&DigitizerConfigWidget::configureUI);
 
-    connect(ui->modeComboBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),this,&FtmwConfigWidget::configureUI);
-    connect(ui->fastFrameEnabledCheckBox,&QCheckBox::toggled,this,&FtmwConfigWidget::configureUI);
-    connect(ui->blockAverageCheckBox,&QCheckBox::toggled,this,&FtmwConfigWidget::configureUI);
-    connect(ui->chirpScoringCheckBox,&QCheckBox::toggled,ui->chirpThresholdDoubleSpinBox,&QDoubleSpinBox::setEnabled);
-
-    connect(ui->fIDChannelSpinBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwConfigWidget::validateSpinboxes);
-    connect(ui->triggerChannelSpinBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwConfigWidget::validateSpinboxes);
+    connect(ui->fIDChannelSpinBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&DigitizerConfigWidget::validateSpinboxes);
+    connect(ui->triggerChannelSpinBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&DigitizerConfigWidget::validateSpinboxes);
 
 }
 
-FtmwConfigWidget::~FtmwConfigWidget()
+DigitizerConfigWidget::~DigitizerConfigWidget()
 {
     delete ui;
 }
 
-void FtmwConfigWidget::setFromConfig(const FtmwConfig config)
+void DigitizerConfigWidget::setFromConfig(const FtmwConfig config)
 {
-    ui->modeComboBox->blockSignals(true);
-    setComboBoxIndex(ui->modeComboBox,qVariantFromValue(config.type()));
-    ui->modeComboBox->blockSignals(false);
-
-    ui->targetShotsSpinBox->setValue(config.targetShots());
-    if(config.targetTime().isValid())
-    {
-        ui->targetTimeDateTimeEdit->setEnabled(true);
-        ui->targetTimeDateTimeEdit->setDateTime(config.targetTime());
-    }
-    ui->phaseCorrectionCheckBox->setChecked(config.isPhaseCorrectionEnabled());
-
-    ui->chirpScoringCheckBox->blockSignals(true);
-    ui->chirpScoringCheckBox->setChecked(config.isChirpScoringEnabled());
-    ui->chirpThresholdDoubleSpinBox->setValue(config.chirpRMSThreshold());
-    ui->chirpThresholdDoubleSpinBox->setEnabled(config.isChirpScoringEnabled());
-    ui->chirpScoringCheckBox->blockSignals(false);
-
+    d_config = config;
     const BlackChirp::FtmwScopeConfig sc = config.scopeConfig();
 
     ui->fIDChannelSpinBox->blockSignals(true);
@@ -117,14 +86,13 @@ void FtmwConfigWidget::setFromConfig(const FtmwConfig config)
     ui->blockAverageCheckBox->setChecked(sc.blockAverageEnabled);
     ui->averagesSpinBox->setValue(sc.numAverages);
 
-    d_ftmwConfig = config;
-
     configureUI();
     validateSpinboxes();
 }
 
-FtmwConfig FtmwConfigWidget::getConfig()
+FtmwConfig DigitizerConfigWidget::getConfig()
 {
+    ///TODO: this should be enforced elsewhere
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
     s.beginGroup(QString("ftmwscope"));
@@ -132,16 +100,6 @@ FtmwConfig FtmwConfigWidget::getConfig()
     bool canSf = s.value(QString("canSummaryFrame"),false).toBool();
     s.endGroup();
     s.endGroup();
-
-    d_ftmwConfig.setType(ui->modeComboBox->currentData().value<BlackChirp::FtmwType>());
-    d_ftmwConfig.setTargetShots(ui->targetShotsSpinBox->value());
-    if(ui->targetTimeDateTimeEdit->dateTime() > QDateTime::currentDateTime().addSecs(60))
-        d_ftmwConfig.setTargetTime(ui->targetTimeDateTimeEdit->dateTime());
-    else
-        d_ftmwConfig.setTargetTime(QDateTime::currentDateTime().addSecs(60));
-    d_ftmwConfig.setPhaseCorrectionEnabled(ui->phaseCorrectionCheckBox->isChecked());
-    d_ftmwConfig.setChirpScoringEnabled(ui->chirpScoringCheckBox->isChecked());
-    d_ftmwConfig.setChirpRMSThreshold(ui->chirpThresholdDoubleSpinBox->value());
 
     BlackChirp::FtmwScopeConfig sc;
     sc.fidChannel = ui->fIDChannelSpinBox->value();
@@ -163,12 +121,12 @@ FtmwConfig FtmwConfigWidget::getConfig()
     sc.summaryFrame = ui->summaryFrameCheckBox->isChecked();
     sc.blockAverageEnabled = ui->blockAverageCheckBox->isChecked();
     sc.numAverages = ui->averagesSpinBox->value();
-    d_ftmwConfig.setScopeConfig(sc);
+    d_config.setScopeConfig(sc);
 
-    return d_ftmwConfig;
+    return d_config;
 }
 
-void FtmwConfigWidget::configureUI()
+void DigitizerConfigWidget::configureUI()
 {
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
@@ -194,21 +152,6 @@ void FtmwConfigWidget::configureUI()
         ui->averagesSpinBox->setEnabled(true);
     }
 
-    BlackChirp::FtmwType type = ui->modeComboBox->currentData().value<BlackChirp::FtmwType>();
-    if(type == BlackChirp::FtmwTargetTime)
-    {
-        ui->targetTimeDateTimeEdit->setEnabled(true);
-        ui->targetShotsSpinBox->setEnabled(false);
-    }
-    else
-    {
-        ui->targetTimeDateTimeEdit->setEnabled(false);
-        ui->targetShotsSpinBox->setEnabled(true);
-    }
-
-    if(type == BlackChirp::FtmwForever)
-        ui->targetShotsSpinBox->setEnabled(false);
-
 
     if(ui->fastFrameEnabledCheckBox->isEnabled())
     {
@@ -220,7 +163,7 @@ void FtmwConfigWidget::configureUI()
 
 }
 
-void FtmwConfigWidget::validateSpinboxes()
+void DigitizerConfigWidget::validateSpinboxes()
 {
     blockSignals(true);
     QObject *s = sender();
@@ -252,7 +195,7 @@ void FtmwConfigWidget::validateSpinboxes()
 
 }
 
-void FtmwConfigWidget::setComboBoxIndex(QComboBox *box, QVariant value)
+void DigitizerConfigWidget::setComboBoxIndex(QComboBox *box, QVariant value)
 {
     for(int i=0; i<box->count(); i++)
     {

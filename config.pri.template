@@ -87,7 +87,6 @@ MOTORSCOPE=1
 #The values in this section should not be modified
 FTMWSCOPE=0
 AWG=0
-SYNTH=0
 CLOCKS=0 0
 PGEN=0
 PGEN_AWG=-1
