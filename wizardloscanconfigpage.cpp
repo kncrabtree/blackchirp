@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QHBoxLayout>
 #include <QFormLayout>
+#include <QCheckBox>
 
 WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWizardPage(parent)
 {
@@ -20,6 +21,7 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     p_upStartBox->setDecimals(6);
     p_upStartBox->setSuffix(QString(" MHz"));
     p_upStartBox->setSingleStep(1000.0);
+    p_upStartBox->setRange(0.0,1e9);
     p_upStartBox->setToolTip(QString("Starting major step LO frequency.\nChanging this value will update the major step size."));
     p_upStartBox->setKeyboardTracking(false);
 
@@ -27,6 +29,7 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     p_upEndBox->setDecimals(6);
     p_upEndBox->setSuffix(QString(" MHz"));
     p_upEndBox->setSingleStep(1000.0);
+    p_upEndBox->setRange(0.0,1e9);
     p_upEndBox->setToolTip(QString("Ending LO frequency (including major and minor steps).\nThis is a limit; the frequency will not exceed this value.\nChanging this value will update the major step size."));
     p_upEndBox->setKeyboardTracking(false);
 
@@ -38,6 +41,7 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     p_upMinorStepBox->setDecimals(6);
     p_upMinorStepBox->setSuffix(QString(" MHz"));
     p_upMinorStepBox->setSingleStep(1.0);
+    p_upMinorStepBox->setRange(0.0,1e9);
     p_upMinorStepBox->setToolTip(QString("Minor step size, if number of minor steps > 1.\nMay change the number of major steps."));
     p_upMinorStepBox->setKeyboardTracking(false);
 
@@ -49,6 +53,7 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     p_upMajorStepBox->setDecimals(6);
     p_upMajorStepBox->setSuffix(QString(" MHz"));
     p_upMajorStepBox->setSingleStep(100.0);
+    p_upMajorStepBox->setRange(0.0,1e9);
     p_upMajorStepBox->setToolTip(QString("Desired major step size.\nChanging this will update the number of major steps."));
     p_upMajorStepBox->setKeyboardTracking(false);
 
@@ -78,6 +83,7 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     p_downStartBox->setDecimals(6);
     p_downStartBox->setSuffix(QString(" MHz"));
     p_downStartBox->setSingleStep(1000.0);
+    p_downStartBox->setRange(0.0,1e9);
     p_downStartBox->setToolTip(QString("Starting major step LO frequency."));
     p_downStartBox->setKeyboardTracking(false);
 
@@ -85,6 +91,7 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     p_downEndBox->setDecimals(6);
     p_downEndBox->setSuffix(QString(" MHz"));
     p_downEndBox->setSingleStep(1000.0);
+    p_downEndBox->setRange(0.0,1e9);
     p_downEndBox->setToolTip(QString("Ending LO frequency (including major and minor steps).\nThis is a limit; the frequency will not exceed this value.\nChanging this value will update the major step size."));
     p_downEndBox->setKeyboardTracking(false);
 
@@ -96,6 +103,7 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     p_downMinorStepBox->setDecimals(6);
     p_downMinorStepBox->setSuffix(QString(" MHz"));
     p_downMinorStepBox->setSingleStep(1.0);
+    p_downMinorStepBox->setRange(0.0,1e9);
     p_downMinorStepBox->setToolTip(QString("Minor step size, if number of minor steps > 1.\nMay change the number of major steps."));
     p_downMinorStepBox->setKeyboardTracking(false);
 
@@ -107,24 +115,34 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     p_downMajorStepBox->setDecimals(6);
     p_downMajorStepBox->setSuffix(QString(" MHz"));
     p_downMajorStepBox->setSingleStep(100.0);
+    p_downMajorStepBox->setRange(0.0,1e9);
     p_downMajorStepBox->setToolTip(QString("Desired major step size.\nChanging this will update the number of major steps."));
     p_downMajorStepBox->setKeyboardTracking(false);
 
+    p_fixedDownLoBox = new QCheckBox(QString("Fixed Frequency"));
+    p_fixedDownLoBox->setToolTip(QString("If checked, the downconversion frequency will be set to the start value for all points."));
+
+    p_constantDownOffsetBox = new QCheckBox(QString("Constant Offset"));
+    p_constantDownOffsetBox->setToolTip(QString("If checked, the downconversion frequency will maintain a constant difference from the upconversion LO.\nThe difference will be kept at the difference of the start frequencies."));
+
     auto *downgl = new QGridLayout;
-    downgl->addWidget(new QLabel("Start"),0,0);
+    downgl->addWidget(new QLabel("Start"),0,0,Qt::AlignRight);
     downgl->addWidget(p_downStartBox,0,1);
-    downgl->addWidget(new QLabel("End"),0,2);
+    downgl->addWidget(new QLabel("End"),0,2,Qt::AlignRight);
     downgl->addWidget(p_downEndBox,0,3);
 
-    downgl->addWidget(new QLabel("Minor Steps/pt"),1,0);
+    downgl->addWidget(new QLabel("Minor Steps/pt"),1,0,Qt::AlignRight);
     downgl->addWidget(p_downNumMinorBox,1,1);
-    downgl->addWidget(new QLabel("Size"),1,2);
+    downgl->addWidget(new QLabel("Size"),1,2,Qt::AlignRight);
     downgl->addWidget(p_downMinorStepBox,1,3);
 
-    downgl->addWidget(new QLabel("Major Steps"),2,0);
+    downgl->addWidget(new QLabel("Major Steps"),2,0,Qt::AlignRight);
     downgl->addWidget(p_downNumMajorBox,2,1);
-    downgl->addWidget(new QLabel("Size"),2,2);
+    downgl->addWidget(new QLabel("Size"),2,2,Qt::AlignRight);
     downgl->addWidget(p_downMajorStepBox,2,3);
+
+    downgl->addWidget(p_fixedDownLoBox,3,0,1,2,Qt::AlignLeft);
+    downgl->addWidget(p_constantDownOffsetBox,3,2,1,2,Qt::AlignLeft);
 
     p_downBox->setLayout(downgl);
 
@@ -142,6 +160,7 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     p_targetSweepsBox->setRange(1,__INT_MAX__);
     p_targetSweepsBox->setToolTip(QString("Number of sweeps through the total LO range.\nExperiment will end when this number is reached."));
     fl->addRow(QString("Target Sweeps"),p_targetSweepsBox);
+    otherBox->setLayout(fl);
 
     auto *hbl = new QHBoxLayout;
     hbl->addWidget(otherBox);
@@ -195,6 +214,11 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
        majorStepChanged(BlackChirp::DownConversionLO,v);
     });
 
+    connect(p_constantDownOffsetBox,&QCheckBox::toggled,this,&WizardLoScanConfigPage::constantOffsetChanged);
+    connect(p_fixedDownLoBox,&QCheckBox::toggled,this,&WizardLoScanConfigPage::fixedChanged);
+
+    loadFromSettings();
+
 }
 
 void WizardLoScanConfigPage::initializePage()
@@ -247,10 +271,100 @@ void WizardLoScanConfigPage::initializePage()
     p_targetSweepsBox->setValue(d_rfConfig.targetSweeps());
 
     p_downBox->setDisabled(d_rfConfig.commonLO());
+    if(d_rfConfig.commonLO())
+    {
+        p_downStartBox->blockSignals(true);
+        p_downStartBox->setValue(p_upStartBox->value());
+        p_downStartBox->blockSignals(false);
+
+        p_downEndBox->blockSignals(true);
+        p_downEndBox->setValue(p_upEndBox->value());
+        p_downEndBox->blockSignals(false);
+
+        p_downNumMinorBox->blockSignals(true);
+        p_downNumMinorBox->setValue(p_upNumMinorBox->value());
+        p_downNumMinorBox->blockSignals(false);
+
+        p_downMinorStepBox->blockSignals(true);
+        p_downMinorStepBox->setValue(p_upMinorStepBox->value());
+        p_downMinorStepBox->blockSignals(false);
+
+        p_downNumMajorBox->blockSignals(true);
+        p_downNumMajorBox->setValue(p_upNumMajorBox->value());
+        p_downNumMajorBox->blockSignals(false);
+
+        p_downMajorStepBox->blockSignals(true);
+        p_downMajorStepBox->setValue(p_upMajorStepBox->value());
+        p_downMajorStepBox->blockSignals(false);
+    }
 }
 
 bool WizardLoScanConfigPage::validatePage()
 {
+    auto e = getExperiment();
+
+    QList<double> upLoValues, downLoValues;
+    double direction = 1.0;
+    double start = p_upStartBox->value();
+    double end = p_upEndBox->value();
+    int numMinor = p_upNumMinorBox->value();
+    double minorSize = p_upMinorStepBox->value();
+    double majorStep = p_upMajorStepBox->value();
+
+    if(end < start)
+        direction *= -1.0;
+
+    for(int i=0; i<p_upNumMajorBox->value(); i++)
+    {
+        double thisMajorFreq = start + direction*majorStep*static_cast<double>(i);
+        upLoValues << thisMajorFreq;
+        for(int j=1; j<numMinor; j++)
+            upLoValues << thisMajorFreq + minorSize*direction*static_cast<double>(j);
+    }
+
+    double offset = p_downStartBox->value() - start;
+    direction = 1.0;
+    start = p_downStartBox->value();
+    end = p_downEndBox->value();
+    numMinor = p_downNumMinorBox->value();
+    minorSize = p_downMinorStepBox->value();
+    majorStep = p_downMajorStepBox->value();
+    if(end < start)
+        direction *= -1.0;
+
+    if(d_rfConfig.commonLO())
+        downLoValues = upLoValues;
+    else if(p_fixedDownLoBox->isChecked())
+    {
+        for(int i=0; i<upLoValues.size(); i++)
+            downLoValues << start;
+    }
+    else if(p_constantDownOffsetBox->isChecked())
+    {
+        for(int i=0; i<upLoValues.size(); i++)
+            downLoValues << upLoValues.at(i) + offset;
+    }
+    else
+    {
+        for(int i=0; i<p_downNumMajorBox->value(); i++)
+        {
+            double thisMajorFreq = start + direction*majorStep*static_cast<double>(i);
+            upLoValues << thisMajorFreq;
+            for(int j=1; j<numMinor; j++)
+                upLoValues << thisMajorFreq + minorSize*direction*static_cast<double>(j);
+        }
+    }
+
+    for(int i=0; i<upLoValues.size() && i<downLoValues.size(); i++)
+        d_rfConfig.addClockStep(upLoValues.at(i),downLoValues.at(i));
+
+    d_rfConfig.setShotsPerClockStep(p_shotsPerStepBox->value());
+    d_rfConfig.setTargetSweeps(p_targetSweepsBox->value());
+
+    e.setRfConfig(d_rfConfig);
+    emit experimentUpdate(e);
+
+    saveToSettings();
     return true;
 }
 
@@ -271,44 +385,14 @@ void WizardLoScanConfigPage::startChanged(BlackChirp::ClockType t, double val)
         p_downStartBox->setValue(val);
     }
 
-    if(t == BlackChirp::UpConversionLO)
-    {
-        //calculate new step size
-        int numMinor = p_upNumMinorBox->value();
-        double minorSize = p_upMinorStepBox->value();
+    QDoubleSpinBox *box = p_upMajorStepBox;
+    if(t == BlackChirp::DownConversionLO)
+        box = p_downMajorStepBox;
 
-        double end = p_upEndBox->value();
-        if(end < val)
-            minorSize*=-1.0;
+    box->blockSignals(true);
+    box->setValue(calculateMajorStepSize(t));
+    box->blockSignals(false);
 
-        double lastMajor = end - static_cast<double>(numMinor-1)*minorSize;
-        int numMajor = p_upNumMajorBox->value();
-
-        double newMajorStep = fabs(lastMajor - val)/static_cast<double>(numMajor-1);
-
-        p_upMajorStepBox->blockSignals(true);
-        p_upMajorStepBox->setValue(newMajorStep);
-        p_upMajorStepBox->blockSignals(false);
-    }
-    else
-    {
-        //calculate new step size
-        int numMinor = p_downNumMinorBox->value();
-        double minorSize = p_downMinorStepBox->value();
-
-        double end = p_downEndBox->value();
-        if(end < val)
-            minorSize*=-1.0;
-
-        double lastMajor = end - static_cast<double>(numMinor-1)*minorSize;
-        int numMajor = p_downNumMajorBox->value();
-
-        double newMajorStep = fabs(lastMajor - val)/static_cast<double>(numMajor-1);
-
-        p_downMajorStepBox->blockSignals(true);
-        p_downMajorStepBox->setValue(newMajorStep);
-        p_downMajorStepBox->blockSignals(false);
-    }
 }
 
 void WizardLoScanConfigPage::endChanged(BlackChirp::ClockType t, double val)
@@ -318,44 +402,14 @@ void WizardLoScanConfigPage::endChanged(BlackChirp::ClockType t, double val)
         p_downEndBox->setValue(val);
     }
 
-    if(t == BlackChirp::UpConversionLO)
-    {
-        //calculate new step size
-        int numMinor = p_upNumMinorBox->value();
-        double minorSize = p_upMinorStepBox->value();
+    QDoubleSpinBox *box = p_upMajorStepBox;
+    if(t == BlackChirp::DownConversionLO)
+        box = p_downMajorStepBox;
 
-        double start = p_upStartBox->value();
-        if(val < start)
-            minorSize*=-1.0;
+    box->blockSignals(true);
+    box->setValue(calculateMajorStepSize(t));
+    box->blockSignals(false);
 
-        double lastMajor = val - static_cast<double>(numMinor-1)*minorSize;
-        int numMajor = p_upNumMajorBox->value();
-
-        double newMajorStep = fabs(lastMajor - start)/static_cast<double>(numMajor-1);
-
-        p_upMajorStepBox->blockSignals(true);
-        p_upMajorStepBox->setValue(newMajorStep);
-        p_upMajorStepBox->blockSignals(false);
-    }
-    else
-    {
-        //calculate new step size
-        int numMinor = p_downNumMinorBox->value();
-        double minorSize = p_downMinorStepBox->value();
-
-        double start = p_downStartBox->value();
-        if(val < start)
-            minorSize*=-1.0;
-
-        double lastMajor = val - static_cast<double>(numMinor-1)*minorSize;
-        int numMajor = p_downNumMajorBox->value();
-
-        double newMajorStep = fabs(lastMajor - start)/static_cast<double>(numMajor-1);
-
-        p_downMajorStepBox->blockSignals(true);
-        p_downMajorStepBox->setValue(newMajorStep);
-        p_downMajorStepBox->blockSignals(false);
-    }
 }
 
 void WizardLoScanConfigPage::minorStepChanged(BlackChirp::ClockType t, int val)
@@ -373,6 +427,7 @@ void WizardLoScanConfigPage::minorStepChanged(BlackChirp::ClockType t, int val)
 
     p_upMinorStepBox->setEnabled(val > 1);
 
+    //calculate new end frequencies if necessary
     p_upEndBox->blockSignals(true);
     p_downEndBox->blockSignals(true);
     double start = p_upStartBox->value();
@@ -398,10 +453,25 @@ void WizardLoScanConfigPage::minorStepChanged(BlackChirp::ClockType t, int val)
     p_upEndBox->blockSignals(false);
     p_downEndBox->blockSignals(false);
 
+    //calculate new major step sizes
+    QDoubleSpinBox *box = p_upMajorStepBox;
+    if(t == BlackChirp::DownConversionLO)
+        box = p_downMajorStepBox;
+
+    box->blockSignals(true);
+    box->setValue(calculateMajorStepSize(t));
+    box->blockSignals(false);
+
+
 }
 
 void WizardLoScanConfigPage::minorStepSizeChanged(BlackChirp::ClockType t, double val)
 {
+    if(d_rfConfig.commonLO() && t == BlackChirp::UpConversionLO)
+    {
+        p_downMinorStepBox->setValue(val);
+    }
+
     p_upEndBox->blockSignals(true);
     p_downEndBox->blockSignals(true);
     if(t == BlackChirp::UpConversionLO)
@@ -430,6 +500,16 @@ void WizardLoScanConfigPage::minorStepSizeChanged(BlackChirp::ClockType t, doubl
     }
     p_upEndBox->blockSignals(false);
     p_downEndBox->blockSignals(false);
+
+    //calculate new major step sizes
+    QDoubleSpinBox *box = p_upMajorStepBox;
+    if(t == BlackChirp::DownConversionLO)
+        box = p_downMajorStepBox;
+
+    box->blockSignals(true);
+    box->setValue(calculateMajorStepSize(t));
+    box->blockSignals(false);
+
 }
 
 void WizardLoScanConfigPage::majorStepChanged(BlackChirp::ClockType t, int val)
@@ -445,32 +525,13 @@ void WizardLoScanConfigPage::majorStepChanged(BlackChirp::ClockType t, int val)
     p_downNumMajorBox->setValue(val);
     p_downNumMajorBox->blockSignals(false);
 
-    double start = p_upStartBox->value();
-    double end = p_upEndBox->value();
-    double minorStep = p_upMinorStepBox->value();
-    minorStep *= static_cast<double>(p_upNumMinorBox->value());
-    if(end < start)
-        minorStep *= -1.0;
 
-    end -= minorStep;
-
-    double newMajStep = fabs(start-end)/static_cast<double>(val-1);
     p_upMajorStepBox->blockSignals(true);
-    p_upMajorStepBox->setValue(newMajStep);
+    p_upMajorStepBox->setValue(calculateMajorStepSize(BlackChirp::UpConversionLO));
     p_upMajorStepBox->blockSignals(false);
 
-    start = p_downStartBox->value();
-    end = p_downEndBox->value();
-    minorStep = p_downMinorStepBox->value();
-    minorStep *= static_cast<double>(p_downNumMinorBox->value());
-    if(end < start)
-        minorStep *= -1.0;
-
-    end -= minorStep;
-
-    newMajStep = fabs(start-end)/static_cast<double>(val-1);
     p_downMajorStepBox->blockSignals(true);
-    p_downMajorStepBox->setValue(newMajStep);
+    p_downMajorStepBox->setValue(calculateMajorStepSize(BlackChirp::DownConversionLO));
     p_downMajorStepBox->blockSignals(false);
 
 }
@@ -500,4 +561,116 @@ void WizardLoScanConfigPage::majorStepSizeChanged(BlackChirp::ClockType t, doubl
     if(newMajorStep != numMajor)
         p_upNumMajorBox->setValue(newMajorStep); //this will also update downNumMajor box
 
+}
+
+void WizardLoScanConfigPage::fixedChanged(bool fixed)
+{
+    p_downEndBox->setEnabled(!fixed);
+    p_downMajorStepBox->setEnabled(!fixed);
+    p_downMinorStepBox->setEnabled(!fixed);
+    p_downNumMajorBox->setEnabled(!fixed);
+    p_downNumMinorBox->setEnabled(!fixed);
+    p_constantDownOffsetBox->setEnabled(!fixed);
+}
+
+void WizardLoScanConfigPage::constantOffsetChanged(bool co)
+{
+    p_downEndBox->setEnabled(!co);
+    p_downMajorStepBox->setEnabled(!co);
+    p_downMinorStepBox->setEnabled(!co);
+    p_downNumMajorBox->setEnabled(!co);
+    p_downNumMinorBox->setEnabled(!co);
+    p_fixedDownLoBox->setEnabled(!co);
+}
+
+void WizardLoScanConfigPage::saveToSettings() const
+{
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("lastLoScan"));
+
+    s.setValue(QString("upStart"),p_upStartBox->value());
+    s.setValue(QString("upEnd"),p_upEndBox->value());
+    s.setValue(QString("upNumMinor"),p_upNumMinorBox->value());
+    s.setValue(QString("upMinorStep"),p_upMinorStepBox->value());
+    s.setValue(QString("upNumMajor"),p_upNumMajorBox->value());
+    s.setValue(QString("upMajorStep"),p_upMajorStepBox->value());
+
+    s.setValue(QString("downStart"),p_downStartBox->value());
+    s.setValue(QString("downEnd"),p_downEndBox->value());
+    s.setValue(QString("downNumMinor"),p_downNumMinorBox->value());
+    s.setValue(QString("downMinorStep"),p_downMinorStepBox->value());
+    s.setValue(QString("downNumMajor"),p_downNumMajorBox->value());
+    s.setValue(QString("downMajorStep"),p_downMajorStepBox->value());
+
+    s.setValue(QString("downFixed"),p_fixedDownLoBox->isChecked());
+    s.setValue(QString("downConstantOffset"),p_constantDownOffsetBox->isChecked());
+
+    s.endGroup();
+    s.sync();
+}
+
+void WizardLoScanConfigPage::loadFromSettings()
+{
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("lastLoScan"));
+
+    p_upStartBox->setValue(s.value(QString("upStart"),0).toDouble());
+    p_upEndBox->setValue(s.value(QString("upEnd"),1000.0).toDouble());
+    p_upNumMinorBox->setValue(s.value(QString("upNumMinor"),1).toInt());
+    p_upMinorStepBox->setValue(s.value(QString("upMinorStep"),0.0).toDouble());
+    p_upNumMajorBox->setValue(s.value(QString("upNumMajor"),2).toInt());
+    p_upMajorStepBox->setValue(s.value(QString("upMajorStep"),1000.0).toDouble());
+
+    p_downStartBox->setValue(s.value(QString("downStart"),0).toDouble());
+    p_downEndBox->setValue(s.value(QString("downEnd"),1000.0).toDouble());
+    p_downNumMinorBox->setValue(s.value(QString("downNumMinor"),1).toInt());
+    p_downMinorStepBox->setValue(s.value(QString("downMinorStep"),0.0).toDouble());
+    p_downNumMajorBox->setValue(s.value(QString("downNumMajor"),2).toInt());
+    p_downMajorStepBox->setValue(s.value(QString("downMajorStep"),1000.0).toDouble());
+
+    p_fixedDownLoBox->setChecked(s.value(QString("downFixed"),false).toBool());
+    p_constantDownOffsetBox->setChecked(s.value(QString("downConstantOffset"),false).toBool());
+
+    s.endGroup();
+}
+
+double WizardLoScanConfigPage::calculateMajorStepSize(BlackChirp::ClockType t)
+{
+    if(t == BlackChirp::UpConversionLO)
+    {
+        //calculate new step size
+        int numMinor = p_upNumMinorBox->value();
+        double minorSize = p_upMinorStepBox->value();
+
+        double start = p_upStartBox->value();
+        double end = p_upEndBox->value();
+        if(end < start)
+            minorSize*=-1.0;
+
+        double lastMajor = end - static_cast<double>(numMinor-1)*minorSize;
+        int numMajor = p_upNumMajorBox->value();
+
+        return fabs(lastMajor - start)/static_cast<double>(numMajor-1);
+
+
+    }
+    else
+    {
+        //calculate new step size
+        int numMinor = p_downNumMinorBox->value();
+        double minorSize = p_downMinorStepBox->value();
+
+        double start = p_downStartBox->value();
+        double end = p_downEndBox->value();
+
+        if(end < start)
+            minorSize*=-1.0;
+
+        double lastMajor = end - static_cast<double>(numMinor-1)*minorSize;
+        int numMajor = p_downNumMajorBox->value();
+
+        return fabs(lastMajor - start)/static_cast<double>(numMajor-1);
+
+
+    }
 }

@@ -29,6 +29,7 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     p_ftmwTypeBox->addItem(QString("Target Time"),QVariant::fromValue(BlackChirp::FtmwTargetTime));
     p_ftmwTypeBox->addItem(QString("Forever"),QVariant::fromValue(BlackChirp::FtmwForever));
     p_ftmwTypeBox->addItem(QString("Peak Up"),QVariant::fromValue(BlackChirp::FtmwPeakUp));
+    p_ftmwTypeBox->addItem(QString("LO Scan"),QVariant::fromValue(BlackChirp::FtmwLoScan));
     p_ftmwTypeBox->setCurrentIndex(0);
     fl->addRow(QString("Type"),p_ftmwTypeBox);
 
@@ -162,7 +163,7 @@ int WizardStartPage::nextId() const
     if(p_lif->isChecked())
         return ExperimentWizard::LifConfigPage;
     else
-        return startingFtmwPage();
+        return ExperimentWizard::RfConfigPage;
 #endif
 
     return startingFtmwPage();

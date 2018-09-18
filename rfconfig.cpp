@@ -394,6 +394,14 @@ void RfConfig::addClockStep(QHash<BlackChirp::ClockType, RfConfig::ClockFreq> h)
     data->clockConfigList.append(h);
 }
 
+void RfConfig::addClockStep(double upLoMHz, double downLoMHz)
+{
+    setClockDesiredFreq(BlackChirp::UpConversionLO,upLoMHz);
+    setClockDesiredFreq(BlackChirp::DownConversionLO,downLoMHz);
+    data->clockConfigList.append(data->currentClocks);
+    data->currentClocks = data->clockConfigList.first();
+}
+
 void RfConfig::clearChirpConfigs()
 {
     data->chirps.clear();
