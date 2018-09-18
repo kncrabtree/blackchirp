@@ -507,6 +507,14 @@ double RfConfig::rawClockFrequency(BlackChirp::ClockType t) const
         return -1.0;
 }
 
+QString RfConfig::clockHardware(BlackChirp::ClockType t) const
+{
+    if(data->currentClocks.contains(t))
+        return data->currentClocks.value(t).hwKey;
+    else
+        return QString("");
+}
+
 ChirpConfig RfConfig::getChirpConfig(int num) const
 {
     if(num < data->chirps.size())

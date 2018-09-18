@@ -79,6 +79,7 @@ public:
     QHash<BlackChirp::ClockType,ClockFreq> getClocks() const;
     double clockFrequency(BlackChirp::ClockType t) const;
     double rawClockFrequency(BlackChirp::ClockType t) const;
+    QString clockHardware(BlackChirp::ClockType t) const;
     ChirpConfig getChirpConfig(int num=0) const;
     int numChirpConfigs() const;
     bool isComplete() const;
