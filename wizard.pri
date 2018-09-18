@@ -9,7 +9,8 @@ HEADERS += \
     $$PWD/validationmodel.h \
     $$PWD/wizardrfconfigpage.h \
     $$PWD/experimentwizardpage.h \
-    $$PWD/wizarddigitizerconfigpage.h
+    $$PWD/wizarddigitizerconfigpage.h \
+    $$PWD/wizardloscanconfigpage.h
 
 SOURCES += \
     $$PWD/experimentwizard.cpp \
@@ -22,7 +23,8 @@ SOURCES += \
     $$PWD/validationmodel.cpp \
     $$PWD/wizardrfconfigpage.cpp \
     $$PWD/experimentwizardpage.cpp \
-    $$PWD/wizarddigitizerconfigpage.cpp
+    $$PWD/wizarddigitizerconfigpage.cpp \
+    $$PWD/wizardloscanconfigpage.cpp
 
 lif {
 	HEADERS += $$PWD/wizardlifconfigpage.h

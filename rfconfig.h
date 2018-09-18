@@ -8,6 +8,9 @@
 
 class RfConfigData;
 
+///TODO: Write .rfc file!
+///Might make sense to wait for the big BlackChirpDataStorage refactor though!
+
 /**
  * @brief Configuration for RF/Microwave sources
  *
@@ -48,6 +51,8 @@ public:
     void setChirpMult(const double m);
     void setDownMixSideband(const BlackChirp::Sideband s);
     void setCommonLO(bool b);
+    void setShotsPerClockStep(int s);
+    void setTargetSweeps(int s);
     void setClockDesiredFreq(BlackChirp::ClockType t, double targetFreqMHz);
     void setClockFactor(BlackChirp::ClockType t, double factor);
     void setClockOp(BlackChirp::ClockType t, MultOperation o);
@@ -56,9 +61,11 @@ public:
     void setClockHwInfo(BlackChirp::ClockType t, QString hwKey, int output);
     void setClockFreqInfo(BlackChirp::ClockType t, double targetFreqMHz = 0.0, double factor = 1.0, MultOperation o = Multiply, QString hwKey = QString(""), int output = 0);
     void setClockFreqInfo(BlackChirp::ClockType t, const ClockFreq &cf);
+    void addClockStep(QHash<BlackChirp::ClockType,ClockFreq> h);
     void clearChirpConfigs();
     bool setChirpConfig(const ChirpConfig cc, int num=0);
     void addChirpConfig(ChirpConfig cc);
+    int advanceClockStep();
 
 
     double awgMult() const;
@@ -66,12 +73,15 @@ public:
     double chirpMult() const;
     BlackChirp::Sideband downMixSideband() const;
     bool commonLO() const;
+    int targetSweeps() const;
+    int shotsPerClockStep() const;
 
     QHash<BlackChirp::ClockType,ClockFreq> getClocks() const;
     double clockFrequency(BlackChirp::ClockType t) const;
     double rawClockFrequency(BlackChirp::ClockType t) const;
     ChirpConfig getChirpConfig(int num=0) const;
     int numChirpConfigs() const;
+    bool isComplete() const;
 
     double calculateChirpFreq(double awgFreq) const;
     double calculateAwgFreq(double chirpFreq) const;

@@ -17,6 +17,7 @@ public:
 
     enum Page {
         StartPage,
+        LoScanPage,
         RfConfigPage,
         ChirpConfigPage,
         DigitizerConfigPage,

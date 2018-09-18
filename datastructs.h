@@ -34,7 +34,8 @@ enum FtmwType
     FtmwTargetShots,
     FtmwTargetTime,
     FtmwForever,
-    FtmwPeakUp
+    FtmwPeakUp,
+    FtmwLoScan
 };
 
 enum FtmwViewMode {

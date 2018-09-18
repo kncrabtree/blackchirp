@@ -7,7 +7,8 @@ class RfConfigData : public QSharedData
 {
 public:
     RfConfigData() : awgMult(1.0), upMixSideband(BlackChirp::UpperSideband), chirpMult(1.0),
-        downMixSideband(BlackChirp::UpperSideband), commonUpDownLO(false) {}
+        downMixSideband(BlackChirp::UpperSideband), commonUpDownLO(false),
+        currentClockIndex(-1), completedSweeps(-1), targetSweeps(-1), shotsPerClockConfig(-1) {}
 
     //Upconversion chain
     double awgMult;
@@ -18,10 +19,19 @@ public:
     BlackChirp::Sideband downMixSideband;
 
     //Logical clocks:
-    QHash<BlackChirp::ClockType,RfConfig::ClockFreq> clocks;
+    QHash<BlackChirp::ClockType,RfConfig::ClockFreq> currentClocks;
 
     //options
     bool commonUpDownLO;
+
+    //multiple clock setups
+    QList<QHash<BlackChirp::ClockType,RfConfig::ClockFreq>> clockConfigList;
+    int currentClockIndex;
+    int completedSweeps;
+    int targetSweeps;
+    int shotsPerClockConfig;
+
+
 
     //chirps
     QList<ChirpConfig> chirps;
@@ -58,11 +68,13 @@ void RfConfig::saveToSettings() const
     s.setValue(QString("chirpMult"),chirpMult());
     s.setValue(QString("downSideband"),downMixSideband());
     s.setValue(QString("commonLO"),commonLO());
+    s.setValue(QString("targetSweeps"),data->targetSweeps);
+    s.setValue(QString("shotsPerClockConfig"),data->shotsPerClockConfig);
     s.beginWriteArray(QString("clocks"));
     int index = 0;
-    if(!data->clocks.isEmpty())
+    if(!data->currentClocks.isEmpty())
     {
-        for(auto it=data->clocks.constBegin(); it != data->clocks.end(); it++)
+        for(auto it=data->currentClocks.constBegin(); it != data->currentClocks.constEnd(); it++)
         {
             s.setArrayIndex(index);
             auto c = it.value();
@@ -76,6 +88,32 @@ void RfConfig::saveToSettings() const
         }
     }
     s.endArray();
+    if(!data->clockConfigList.isEmpty())
+    {
+        s.beginWriteArray(QString("clockSteps"));
+        for(int i=0; i<data->clockConfigList.size(); i++)
+        {
+            s.setArrayIndex(i);
+            auto c = data->clockConfigList.at(i);
+            index = 0;
+            s.beginWriteArray(QString("clocks"));
+            for(auto it=c.constBegin(); it != c.constEnd(); it++)
+            {
+                s.setArrayIndex(index);
+                auto c = it.value();
+                s.setValue(QString("type"),it.key());
+                s.setValue(QString("desiredFreqMHz"),c.desiredFreqMHz);
+                s.setValue(QString("factor"),c.factor);
+                s.setValue(QString("op"),c.op);
+                s.setValue(QString("output"),c.output);
+                s.setValue(QString("hwKey"),c.hwKey);
+                index++;
+            }
+            s.endArray();
+        }
+        s.endArray();
+    }
+
     for(int i=0; i<data->chirps.size(); i++)
         data->chirps.at(i).saveToSettings(i);
 
@@ -110,6 +148,29 @@ RfConfig RfConfig::loadFromSettings()
     }
     s.endArray();
 
+    int num2 = s.beginReadArray(QString("clockSteps"));
+    for(int j=0; j<num2; j++)
+    {
+        s.setArrayIndex(j);
+        num = s.beginReadArray(QString("clocks"));
+        QHash<BlackChirp::ClockType,ClockFreq> h;
+        for(int i=0; i<num; i++)
+        {
+            s.setArrayIndex(i);
+            ClockFreq cf;
+            auto type = static_cast<BlackChirp::ClockType>(s.value(QString("type"),BlackChirp::UpConversionLO).toInt());
+            cf.desiredFreqMHz = s.value(QString("desiredFreqMHz"),0.0).toDouble();
+            cf.factor = s.value(QString("factor"),1.0).toDouble();
+            cf.op = static_cast<MultOperation>(s.value(QString("op"),Multiply).toInt());
+            cf.hwKey = s.value(QString("hwKey"),QString("")).toString();
+            cf.output = s.value(QString("output"),0).toInt();
+            h.insert(type,cf);
+        }
+        s.endArray();
+        out.addClockStep(h);
+    }
+    s.endArray();
+
 
     num = s.beginReadArray(QString("chirpConfigs"));
     s.endArray();
@@ -140,6 +201,8 @@ QMap<QString, QPair<QVariant, QString> > RfConfig::headerMap() const
     out.insert(prefix+QString("ChirpMult"),qMakePair(chirpMult(),empty));
     out.insert(prefix+QString("DownMixSideband"),qMakePair(downMixSideband() == BlackChirp::UpperSideband ? upper : lower,empty));
     out.insert(prefix+QString("CommonLO"),qMakePair(commonLO(),empty));
+    out.insert(prefix+QString("TargetSweeps"),qMakePair(targetSweeps(),empty));
+    out.insert(prefix+QString("ShotsPerClockStep"),qMakePair(shotsPerClockStep(),empty));
     auto l = getClocks();
     if(!l.isEmpty())
     {
@@ -171,6 +234,10 @@ void RfConfig::parseLine(const QString key, const QVariant val)
         data->downMixSideband = val.toString().startsWith(QString("Upper")) ? BlackChirp::UpperSideband : BlackChirp::LowerSideband;
     if(key.endsWith(QString("CommonLO")))
         data->commonUpDownLO = val.toBool();
+    if(key.endsWith(QString("TatgetSweeps")))
+        data->targetSweeps = val.toInt();
+    if(key.endsWith(QString("ShotsPerClockStep")))
+        data->shotsPerClockConfig = val.toInt();
     if(key.contains("Clock."))
     {
         auto l = key.split(QString("."));
@@ -228,6 +295,16 @@ void RfConfig::setDownMixSideband(const BlackChirp::Sideband s)
 void RfConfig::setCommonLO(bool b)
 {
     data->commonUpDownLO = b;
+}
+
+void RfConfig::setShotsPerClockStep(int s)
+{
+    data->shotsPerClockConfig = s;
+}
+
+void RfConfig::setTargetSweeps(int s)
+{
+    data->targetSweeps = s;
 }
 
 void RfConfig::setClockDesiredFreq(BlackChirp::ClockType t, double targetFreqMHz)
@@ -306,10 +383,15 @@ void RfConfig::setClockFreqInfo(BlackChirp::ClockType t, double targetFreqMHz, d
 void RfConfig::setClockFreqInfo(BlackChirp::ClockType t, const ClockFreq &cf)
 {
     if(commonLO() && t == BlackChirp::UpConversionLO)
-        data->clocks.insert(BlackChirp::DownConversionLO,cf);
+        data->currentClocks.insert(BlackChirp::DownConversionLO,cf);
     if(commonLO() && t == BlackChirp::DownConversionLO)
-        data->clocks.insert(BlackChirp::UpConversionLO,cf);
-    data->clocks.insert(t,cf);
+        data->currentClocks.insert(BlackChirp::UpConversionLO,cf);
+    data->currentClocks.insert(t,cf);
+}
+
+void RfConfig::addClockStep(QHash<BlackChirp::ClockType, RfConfig::ClockFreq> h)
+{
+    data->clockConfigList.append(h);
 }
 
 void RfConfig::clearChirpConfigs()
@@ -356,6 +438,19 @@ void RfConfig::addChirpConfig(ChirpConfig cc)
     data->chirps.append(cc);
 }
 
+int RfConfig::advanceClockStep()
+{
+    data->currentClockIndex++;
+    if(data->currentClockIndex >= data->clockConfigList.size())
+    {
+        data->currentClockIndex = 0;
+        data->completedSweeps++;
+    }
+    data->currentClocks = data->clockConfigList.at(data->currentClockIndex);
+
+    return data->currentClockIndex;
+}
+
 double RfConfig::awgMult() const
 {
     return data->awgMult;
@@ -381,23 +476,33 @@ bool RfConfig::commonLO() const
     return data->commonUpDownLO;
 }
 
+int RfConfig::targetSweeps() const
+{
+    return data->targetSweeps;
+}
+
+int RfConfig::shotsPerClockStep() const
+{
+    return data->shotsPerClockConfig;
+}
+
 QHash<BlackChirp::ClockType, RfConfig::ClockFreq> RfConfig::getClocks() const
 {
-    return data->clocks;
+    return data->currentClocks;
 }
 
 double RfConfig::clockFrequency(BlackChirp::ClockType t) const
 {
-    if(data->clocks.contains(t))
-        return data->clocks.value(t).desiredFreqMHz;
+    if(data->currentClocks.contains(t))
+        return data->currentClocks.value(t).desiredFreqMHz;
     else
         return -1.0;
 }
 
 double RfConfig::rawClockFrequency(BlackChirp::ClockType t) const
 {
-    if(data->clocks.contains(t))
-        return getRawFrequency(data->clocks.value(t));
+    if(data->currentClocks.contains(t))
+        return getRawFrequency(data->currentClocks.value(t));
     else
         return -1.0;
 }
@@ -413,6 +518,11 @@ ChirpConfig RfConfig::getChirpConfig(int num) const
 int RfConfig::numChirpConfigs() const
 {
     return data->chirps.size();
+}
+
+bool RfConfig::isComplete() const
+{
+    return data->completedSweeps >= data->targetSweeps;
 }
 
 double RfConfig::calculateChirpFreq(double awgFreq) const

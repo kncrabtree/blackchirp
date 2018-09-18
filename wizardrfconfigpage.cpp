@@ -5,6 +5,7 @@
 WizardRfConfigPage::WizardRfConfigPage(QWidget *parent) : ExperimentWizardPage(parent)
 {
     setTitle(QString("Configure Clocks"));
+    setSubTitle(QString("Configure the clock setup. If the experiment involves multiple clock frequencies (e.g., an LO scan), the frequencies will be set automatically."));
 
     p_rfc = new RfConfigWidget(this);
 
@@ -34,5 +35,5 @@ bool WizardRfConfigPage::validatePage()
 
 int WizardRfConfigPage::nextId() const
 {
-    return ExperimentWizard::ChirpConfigPage;
+    return startingFtmwPage();
 }

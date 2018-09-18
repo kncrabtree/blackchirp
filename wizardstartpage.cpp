@@ -162,10 +162,10 @@ int WizardStartPage::nextId() const
     if(p_lif->isChecked())
         return ExperimentWizard::LifConfigPage;
     else
-        return ExperimentWizard::RfConfigPage;
+        return startingFtmwPage();
 #endif
 
-    return ExperimentWizard::RfConfigPage;
+    return startingFtmwPage();
 }
 
 bool WizardStartPage::isComplete() const

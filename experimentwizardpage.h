@@ -16,6 +16,7 @@ signals:
 
 protected:
     Experiment getExperiment() const;
+    int startingFtmwPage() const;
 };
 
 #endif // EXPERIMENTWIZARDPAGE_H
