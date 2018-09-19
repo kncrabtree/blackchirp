@@ -94,7 +94,11 @@ public:
 #endif
 
     void setHardwareFailed();
-    void incrementFtmw();
+    /**
+     * @brief incrementFtmw
+     * @return Boolean that indicates a new segment needs to start
+     */
+    bool incrementFtmw();
 
     void finalSave() const;
     bool saveHeader() const;

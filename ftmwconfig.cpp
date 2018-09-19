@@ -100,6 +100,11 @@ Fid FtmwConfig::fidTemplate() const
     return data->fidTemplate;
 }
 
+bool FtmwConfig::processingPaused() const
+{
+    return data->processingPaused;
+}
+
 int FtmwConfig::numFrames() const
 {
     return (scopeConfig().summaryFrame && !scopeConfig().manualFrameAverage) ? 1 : scopeConfig().numFrames;
@@ -346,11 +351,13 @@ bool FtmwConfig::prepareForAcquisition()
         f.setVMult(f.vMult()/256.0);
     data->fidTemplate = f;
 
-    if(!data->rfConfig.isValid())
+    if(!data->rfConfig.prepareForAcquisition())
     {
         data->errorString = QString("Invalid RF/Chirp configuration.");
         return false;
     }
+
+    data->completedShots = 0;
 
     return true;
 
@@ -408,7 +415,7 @@ void FtmwConfig::setTargetShots(const qint64 target)
     data->targetShots = target;
 }
 
-void FtmwConfig::increment()
+bool FtmwConfig::increment()
 {
     int increment = scopeConfig().numAverages;
     if(scopeConfig().fastFrameEnabled && (scopeConfig().manualFrameAverage || scopeConfig().summaryFrame))
@@ -418,6 +425,38 @@ void FtmwConfig::increment()
         data->completedShots = qMin(completedShots()+increment,targetShots());
     else
         data->completedShots+=increment;
+
+    if(type() == BlackChirp::FtmwLoScan)
+    {
+        //get number of shots of current FidList.
+        //ask rfconfig if this is enough to advance segment
+        if(data->rfConfig.canAdvance(data->fidList.first().shots()))
+        {
+            //place fid list in storage
+            int oldIndex = data->rfConfig.currentIndex();
+            if(oldIndex < data->multiFidStorage.size())
+                data->multiFidStorage << data->fidList;
+            else
+                data->multiFidStorage[oldIndex] = data->fidList;
+
+            //get fid list from storage or clear it for new data
+            int newIndex = data->rfConfig.advanceClockStep();
+            if(newIndex < data->multiFidStorage.size())
+                data->fidList = data->multiFidStorage.at(newIndex);
+            else
+                data->fidList.clear();
+
+            //adjust number of completed shots in case the increment does not go evenly into
+            //segment shots
+            data->completedShots = data->rfConfig.completedSegmentShots();
+
+            data->processingPaused = true;
+            return true;
+        }
+    }
+
+
+    return false;
 }
 
 void FtmwConfig::setTargetTime(const QDateTime time)
@@ -558,6 +597,14 @@ void FtmwConfig::setScopeConfig(const BlackChirp::FtmwScopeConfig &other)
 void FtmwConfig::setRfConfig(const RfConfig other)
 {
     data->rfConfig = other;
+    if(type() == BlackChirp::FtmwLoScan)
+        data->targetShots = data->rfConfig.totalShots();
+}
+
+void FtmwConfig::clocksReady()
+{
+    data->fidTemplate.setProbeFreq(rfConfig().clockFrequency(BlackChirp::DownConversionLO));
+    data->processingPaused = false;
 }
 
 bool FtmwConfig::isComplete() const
@@ -568,6 +615,7 @@ bool FtmwConfig::isComplete() const
     switch(type())
     {
     case BlackChirp::FtmwTargetShots:
+    case BlackChirp::FtmwLoScan:
         return completedShots() >= targetShots();
         break;
     case BlackChirp::FtmwTargetTime:

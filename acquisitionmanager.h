@@ -39,6 +39,7 @@ signals:
     void experimentComplete(const Experiment);
     void ftmwUpdateProgress(qint64);
     void ftmwNumShots(qint64);
+    void newClockSettings(const RfConfig);
     void beginAcquisition();
     void endAcquisition();
     void timeDataSignal();
@@ -70,6 +71,7 @@ public slots:
     void getTimeData();
     void processTimeData(const QList<QPair<QString,QVariant>> timeDataList, bool plot);
     void exportAsciiFid(const QString s);
+    void clockSettingsComplete();
     void pause();
     void resume();
     void abort();

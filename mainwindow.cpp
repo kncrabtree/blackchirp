@@ -227,8 +227,12 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(amThread,&QThread::finished,p_am,&AcquisitionManager::deleteLater);
     p_am->moveToThread(amThread);
     d_threadObjectList.append(qMakePair(amThread,p_am));
+
+
     connect(p_hwm,&HardwareManager::experimentInitialized,p_am,&AcquisitionManager::beginExperiment);
     connect(p_hwm,&HardwareManager::ftmwScopeShotAcquired,p_am,&AcquisitionManager::processFtmwScopeShot);
+    connect(p_am,&AcquisitionManager::newClockSettings,p_hwm,&HardwareManager::setClocks);
+    connect(p_hwm,&HardwareManager::allClocksReady,p_am,&AcquisitionManager::clockSettingsComplete);
     connect(p_am,&AcquisitionManager::beginAcquisition,p_hwm,&HardwareManager::beginAcquisition);
     connect(p_am,&AcquisitionManager::endAcquisition,p_hwm,&HardwareManager::endAcquisition);
     connect(p_am,&AcquisitionManager::timeDataSignal,p_hwm,&HardwareManager::getTimeData);

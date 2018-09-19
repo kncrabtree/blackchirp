@@ -39,6 +39,7 @@ public:
     RfConfig rfConfig() const;
     ChirpConfig chirpConfig(int num = 0) const;
     Fid fidTemplate() const;
+    bool processingPaused() const;
     int numFrames() const;
     FidList parseWaveform(const QByteArray b) const;
     QVector<qint64> extractChirp() const;
@@ -59,7 +60,7 @@ public:
     void setFidTemplate(const Fid f);
     void setType(const BlackChirp::FtmwType type);
     void setTargetShots(const qint64 target);
-    void increment();
+    bool increment();
     void setTargetTime(const QDateTime time);
     bool setFidsData(const QList<QVector<qint64>> newList);
     bool addFids(const QByteArray rawData, int shift = 0);
@@ -67,6 +68,7 @@ public:
     void resetFids();
     void setScopeConfig(const BlackChirp::FtmwScopeConfig &other);
     void setRfConfig(const RfConfig other);
+    void clocksReady();
 
 
     bool isComplete() const;
@@ -87,7 +89,8 @@ class FtmwConfigData : public QSharedData
 {
 public:
     FtmwConfigData() : isEnabled(false), phaseCorrectionEnabled(false), chirpScoringEnabled(false), chirpRMSThreshold(0.0),
-        chirpOffsetUs(-1.0), type(BlackChirp::FtmwForever), targetShots(-1), completedShots(0), multipleFidLists(false) {}
+        chirpOffsetUs(-1.0), type(BlackChirp::FtmwForever), targetShots(-1), completedShots(0), multipleFidLists(false),
+        processingPaused(false) {}
 
     bool isEnabled;
     bool phaseCorrectionEnabled;
@@ -107,6 +110,8 @@ public:
     RfConfig rfConfig;
     Fid fidTemplate;
     QString errorString;
+
+    bool processingPaused;
 
 };
 

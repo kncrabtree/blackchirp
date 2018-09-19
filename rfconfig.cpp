@@ -258,7 +258,7 @@ void RfConfig::parseLine(const QString key, const QVariant val)
     }
 }
 
-bool RfConfig::isValid() const
+bool RfConfig::prepareForAcquisition()
 {
     if(data->chirps.isEmpty())
         return false;
@@ -268,6 +268,15 @@ bool RfConfig::isValid() const
         if(data->chirps.at(i).chirpList().isEmpty())
             return false;
     }
+
+    if(!data->clockConfigList.isEmpty())
+        data->currentClocks = data->clockConfigList.first();
+
+    if(data->currentClocks.isEmpty())
+        return false;
+
+    data->currentClockIndex = 0;
+    data->completedSweeps = 0;
 
     return true;
 }
@@ -492,6 +501,47 @@ int RfConfig::targetSweeps() const
 int RfConfig::shotsPerClockStep() const
 {
     return data->shotsPerClockConfig;
+}
+
+int RfConfig::currentIndex() const
+{
+    return data->currentClockIndex;
+}
+
+int RfConfig::completedSweeps() const
+{
+    return data->completedSweeps;
+}
+
+qint64 RfConfig::totalShots() const
+{
+    return static_cast<qint64>(data->shotsPerClockConfig)
+            *static_cast<qint64>(data->clockConfigList.size())
+            *static_cast<qint64>(data->targetSweeps);
+}
+
+qint64 RfConfig::completedSegmentShots() const
+{
+    qint64 completedSweepShots = static_cast<qint64>(data->completedSweeps)
+            *static_cast<qint64>(data->shotsPerClockConfig)
+            *static_cast<qint64>(data->clockConfigList.size());
+
+    return completedSweepShots +
+            static_cast<qint64>(data->shotsPerClockConfig)
+            *static_cast<qint64>(data->currentClockIndex + 1);
+}
+
+bool RfConfig::canAdvance(qint64 shots) const
+{
+    qint64 target = static_cast<qint64>(data->shotsPerClockConfig)
+            *static_cast<qint64>(data->completedSweeps+1);
+
+    //don't return true if this is the last segment!
+    if(data->currentClockIndex + 1 == data->clockConfigList.size()
+            && data->completedSweeps + 1 == data->targetSweeps)
+        return false;
+
+    return shots >= target;
 }
 
 QHash<BlackChirp::ClockType, RfConfig::ClockFreq> RfConfig::getClocks() const

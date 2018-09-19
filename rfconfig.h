@@ -45,7 +45,7 @@ public:
     QMap<QString,QPair<QVariant,QString> > headerMap() const;
     void parseLine(const QString key, const QVariant val);
 
-    bool isValid() const;
+    bool prepareForAcquisition();
     void setAwgMult(const double m);
     void setUpMixSideband(const BlackChirp::Sideband s);
     void setChirpMult(const double m);
@@ -76,6 +76,11 @@ public:
     bool commonLO() const;
     int targetSweeps() const;
     int shotsPerClockStep() const;
+    int currentIndex() const;
+    int completedSweeps() const;
+    qint64 totalShots() const;
+    qint64 completedSegmentShots() const;
+    bool canAdvance(qint64 shots) const;
 
     QHash<BlackChirp::ClockType,ClockFreq> getClocks() const;
     double clockFrequency(BlackChirp::ClockType t) const;

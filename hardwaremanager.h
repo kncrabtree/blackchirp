@@ -61,6 +61,7 @@ signals:
     void ftmwScopeShotAcquired(const QByteArray);
 
     void clockFrequencyUpdate(BlackChirp::ClockType, double);
+    void allClocksReady();
 
     void pGenSettingUpdate(int,BlackChirp::PulseSetting,QVariant);
     void pGenConfigUpdate(const PulseGenConfig);
@@ -122,6 +123,8 @@ public slots:
     void testObjectConnection(const QString type, const QString key);
 
     void getTimeData();
+
+    void setClocks(const RfConfig rfc);
 
     void setPGenSetting(int index, BlackChirp::PulseSetting s, QVariant val);
     void setPGenConfig(const PulseGenConfig c);

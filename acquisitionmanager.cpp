@@ -35,7 +35,7 @@ void AcquisitionManager::beginExperiment(Experiment exp)
     if(exp.ftmwConfig().isEnabled())
     {
         //prepare GPU Averager
-        BlackChirp::FtmwScopeConfig sc = exp.ftmwConfig().scopeConfig();
+        auto sc = exp.ftmwConfig().scopeConfig();
         bool success = gpuAvg.initialize(sc.recordLength,exp.ftmwConfig().numFrames(),
                                          sc.bytesPerPoint,sc.byteOrder);
         if(!success)
@@ -102,8 +102,10 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 {
 //    static int total = 0;
 //    static int count = 0;
-    if(d_state == Acquiring && d_currentExperiment.ftmwConfig().isEnabled()
-            && !d_currentExperiment.ftmwConfig().isComplete())
+    if(d_state == Acquiring
+            && d_currentExperiment.ftmwConfig().isEnabled()
+            && !d_currentExperiment.ftmwConfig().isComplete()
+            && !d_currentExperiment.ftmwConfig().processingPaused())
     {
 
 //        QTime testTime;
@@ -155,7 +157,7 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 //        count++;
 //        emit logMessage(QString("Elapsed time: %1 ms, avg: %2").arg(t).arg(total/count));
 
-        d_currentExperiment.incrementFtmw();
+        bool advanceSegment = d_currentExperiment.incrementFtmw();
         emit newFidList(d_currentExperiment.ftmwConfig().fidList());
 
         if(d_currentExperiment.ftmwConfig().type() == BlackChirp::FtmwTargetTime)
@@ -168,6 +170,8 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 
         emit ftmwNumShots(d_currentExperiment.ftmwConfig().completedShots());
 
+        if(advanceSegment)
+            emit newClockSettings(d_currentExperiment.ftmwConfig().rfConfig());
     }
 
     checkComplete();
@@ -260,6 +264,11 @@ void AcquisitionManager::processTimeData(const QList<QPair<QString, QVariant> > 
 void AcquisitionManager::exportAsciiFid(const QString s)
 {
     d_currentExperiment.exportAscii(s);
+}
+
+void AcquisitionManager::clockSettingsComplete()
+{
+    d_currentExperiment.ftmwConfig().clocksReady();
 }
 
 void AcquisitionManager::pause()

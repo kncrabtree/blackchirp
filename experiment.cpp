@@ -757,9 +757,9 @@ void Experiment::setHardwareFailed()
     data->hardwareSuccess = false;
 }
 
-void Experiment::incrementFtmw()
+bool Experiment::incrementFtmw()
 {
-    data->ftmwCfg.increment();
+    return data->ftmwCfg.increment();
 }
 
 void Experiment::finalSave() const

@@ -415,6 +415,15 @@ void HardwareManager::getTimeData()
     }
 }
 
+void HardwareManager::setClocks(const RfConfig rfc)
+{
+    auto l = rfc.getClocks();
+    for(auto it = l.constBegin(); it != l.constEnd(); it++)
+        p_clockManager->setClockFrequency(it.key(),it.value().desiredFreqMHz);
+
+    emit allClocksReady();
+}
+
 void HardwareManager::setPGenSetting(int index, BlackChirp::PulseSetting s, QVariant val)
 {
     if(p_pGen->thread() == thread())
