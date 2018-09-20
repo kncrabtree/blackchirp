@@ -157,8 +157,9 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 //        count++;
 //        emit logMessage(QString("Elapsed time: %1 ms, avg: %2").arg(t).arg(total/count));
 
-        bool advanceSegment = d_currentExperiment.incrementFtmw();
         emit newFidList(d_currentExperiment.ftmwConfig().fidList());
+
+        bool advanceSegment = d_currentExperiment.incrementFtmw();
 
         if(d_currentExperiment.ftmwConfig().type() == BlackChirp::FtmwTargetTime)
         {
@@ -171,7 +172,12 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
         emit ftmwNumShots(d_currentExperiment.ftmwConfig().completedShots());
 
         if(advanceSegment)
+        {
+#ifdef BC_CUDA
+            gpuAvg.setCurrentData(d_currentExperiment.ftmwConfig().rawFidList());
+#endif
             emit newClockSettings(d_currentExperiment.ftmwConfig().rfConfig());
+        }
     }
 
     checkComplete();
@@ -268,7 +274,7 @@ void AcquisitionManager::exportAsciiFid(const QString s)
 
 void AcquisitionManager::clockSettingsComplete()
 {
-    d_currentExperiment.ftmwConfig().clocksReady();
+    d_currentExperiment.setFtmwClocksReady();
 }
 
 void AcquisitionManager::pause()

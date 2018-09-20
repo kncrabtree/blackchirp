@@ -18,6 +18,7 @@ public:
     QList<QVector<qint64> > parseAndAdd(const char *newDataIn, const int shift = 0);
     QList<QVector<qint64> > parseAndRollAvg(const char *newDataIn, const qint64 currentShots, const qint64 targetShots, const int shift = 0);
     void resetAverage();
+    void setCurrentData(const QVector<qint64> v);
     QString getErrorString() const  { return d_errorMsg; }
 
 private:

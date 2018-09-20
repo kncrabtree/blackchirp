@@ -124,15 +124,12 @@ void RfConfig::saveToSettings() const
 RfConfig RfConfig::loadFromSettings()
 {
     RfConfig out;
+    out.setCommonLO(false); //this will be set properly after clocks are loaded
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
     s.beginGroup(QString("lastRfConfig"));
-    out.setAwgMult(s.value(QString("awgMult"),1.0).toDouble());
-    out.setUpMixSideband(static_cast<BlackChirp::Sideband>(s.value(QString("upSideband"),BlackChirp::UpperSideband).toInt()));
-    out.setChirpMult(s.value(QString("chirpMult"),1.0).toDouble());
-    out.setDownMixSideband(static_cast<BlackChirp::Sideband>(s.value(QString("downSideband"),BlackChirp::UpperSideband).toInt()));
-    out.setCommonLO(s.value(QString("commonLO"),false).toBool());
+
     int num = s.beginReadArray(QString("clocks"));
     for(int i=0; i<num; i++)
     {
@@ -147,6 +144,14 @@ RfConfig RfConfig::loadFromSettings()
         out.setClockFreqInfo(type,cf);
     }
     s.endArray();
+
+    out.setAwgMult(s.value(QString("awgMult"),1.0).toDouble());
+    out.setUpMixSideband(static_cast<BlackChirp::Sideband>(s.value(QString("upSideband"),BlackChirp::UpperSideband).toInt()));
+    out.setChirpMult(s.value(QString("chirpMult"),1.0).toDouble());
+    out.setDownMixSideband(static_cast<BlackChirp::Sideband>(s.value(QString("downSideband"),BlackChirp::UpperSideband).toInt()));
+    out.setCommonLO(s.value(QString("commonLO"),false).toBool());
+    out.setTargetSweeps(s.value(QString("targetSweeps"),-1).toInt());
+    out.setShotsPerClockStep(s.value(QString("shotsPerClockConfig"),-1).toInt());
 
     int num2 = s.beginReadArray(QString("clockSteps"));
     for(int j=0; j<num2; j++)
@@ -411,6 +416,11 @@ void RfConfig::addClockStep(double upLoMHz, double downLoMHz)
     data->currentClocks = data->clockConfigList.first();
 }
 
+void RfConfig::clearClockSteps()
+{
+    data->clockConfigList.clear();
+}
+
 void RfConfig::clearChirpConfigs()
 {
     data->chirps.clear();
@@ -528,13 +538,12 @@ qint64 RfConfig::completedSegmentShots() const
 
     return completedSweepShots +
             static_cast<qint64>(data->shotsPerClockConfig)
-            *static_cast<qint64>(data->currentClockIndex + 1);
+            *static_cast<qint64>(data->currentClockIndex);
 }
 
 bool RfConfig::canAdvance(qint64 shots) const
 {
-    qint64 target = static_cast<qint64>(data->shotsPerClockConfig)
-            *static_cast<qint64>(data->completedSweeps+1);
+    qint64 target = static_cast<qint64>(data->completedSweeps+1)*static_cast<qint64>(data->shotsPerClockConfig);
 
     //don't return true if this is the last segment!
     if(data->currentClockIndex + 1 == data->clockConfigList.size()

@@ -183,6 +183,11 @@ void FtmwViewWidget::togglePanel(bool on)
 void FtmwViewWidget::newFidList(FidList fl)
 {
     d_currentFidList = fl;
+    if(fl.isEmpty())
+        updateShotsLabel(0);
+    else
+        updateShotsLabel(fl.first().shots());
+
     if(ui->frameBox->maximum() != d_currentFidList.size())
     {
         if(ui->frameBox->value() > d_currentFidList.size())
@@ -262,7 +267,7 @@ void FtmwViewWidget::updateFtPlot()
     if(d_mode == BlackChirp::FtmwViewLive)
     {
         if(d_currentFidList.size() >= ui->frameBox->value())
-            d_currentFid = d_currentFidList.at(ui->frameBox->value()-1);
+            d_currentFid = d_currentFidList.at(qBound(0,ui->frameBox->value()-1,d_currentFidList.size()-1));
         else
             d_currentFid = d_currentFidList.first();
 
@@ -276,7 +281,7 @@ void FtmwViewWidget::updateFtPlot()
         if(ui->snapshotCheckbox->isChecked() && p_snapWidget != nullptr)
             d_currentFid = p_snapWidget->getSnapFid(ui->frameBox->value()-1);
         else
-            d_currentFid = d_currentFidList.at(ui->frameBox->value()-1);
+            d_currentFid = d_currentFidList.at(qBound(0,ui->frameBox->value()-1,d_currentFidList.size()-1));
 
         QMetaObject::invokeMethod(p_ftw,"doFT",Q_ARG(const Fid,d_currentFid));
         d_processing = true;
@@ -309,6 +314,8 @@ void FtmwViewWidget::updateFtPlot()
         d_replotWhenDone = false;
         ui->fidPlot->receiveData(d_currentFid);
     }
+
+    ui->ftPlot->setAxisAutoScaleRange(QwtPlot::xBottom,d_currentFid.minFreq(),d_currentFid.maxFreq());
 }
 
 void FtmwViewWidget::ftDone(QVector<QPointF> ft, double max)

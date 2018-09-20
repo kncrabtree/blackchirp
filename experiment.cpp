@@ -762,6 +762,11 @@ bool Experiment::incrementFtmw()
     return data->ftmwCfg.increment();
 }
 
+void Experiment::setFtmwClocksReady()
+{
+    data->ftmwCfg.clocksReady();
+}
+
 void Experiment::finalSave() const
 {
     if(data->isDummy)

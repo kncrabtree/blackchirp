@@ -34,6 +34,7 @@ public:
     qint64 completedShots() const;
     QDateTime targetTime() const;
     FidList fidList() const;
+    QVector<qint64> rawFidList() const;
     QList<FidList> multiFidList() const;
     BlackChirp::FtmwScopeConfig scopeConfig() const;
     RfConfig rfConfig() const;

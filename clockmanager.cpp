@@ -92,6 +92,9 @@ Experiment ClockManager::ClockManager::prepareForExperiment(Experiment exp)
         return exp;
 
     d_clockRoles.clear();
+    for(int i=0; i<d_clockList.size(); i++)
+        d_clockList[i]->clearRoles();
+
     auto rfc = exp.ftmwConfig().rfConfig();
     auto map = rfc.getClocks();
     for(auto i = map.constBegin(); i != map.constEnd(); i++)
@@ -118,9 +121,7 @@ Experiment ClockManager::ClockManager::prepareForExperiment(Experiment exp)
             return exp;
         }
 
-        c->clearRoles();
-
-        if(!c->setRole(type,d.output))
+        if(!c->addRole(type,d.output))
         {
             exp.setErrorString(QString("The output number requested for %1 (%2) is out of range (only %2 outputs are available).")
                                .arg(c->name()).arg(d.output).arg(c->numOutputs()));

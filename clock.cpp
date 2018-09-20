@@ -22,18 +22,18 @@ void Clock::prepareMultFactors()
         d_multFactors << 1.0;
 }
 
-bool Clock::setRole(BlackChirp::ClockType t, int outputIndex)
+bool Clock::addRole(BlackChirp::ClockType t, int outputIndex)
 {
     if(outputIndex >= d_numOutputs)
         return false;
 
-    d_outputRoles.insert(outputIndex,t);
+    d_outputRoles.insert(t,outputIndex);
     return true;
 }
 
 void Clock::removeRole(BlackChirp::ClockType t)
 {
-    d_outputRoles.remove(d_outputRoles.key(t));
+    d_outputRoles.remove(t);
 }
 
 void Clock::clearRoles()
@@ -43,7 +43,7 @@ void Clock::clearRoles()
 
 bool Clock::hasRole(BlackChirp::ClockType t)
 {
-    return d_outputRoles.values().contains(t);
+    return d_outputRoles.contains(t);
 }
 
 void Clock::readAll()
@@ -54,8 +54,11 @@ void Clock::readAll()
         f *= d_multFactors.at(i);
         if(f < 0.0)
             break;
-        if(d_outputRoles.contains(i))
-            emit frequencyUpdate(d_outputRoles.value(i),f);
+        for(auto it = d_outputRoles.constBegin(); it != d_outputRoles.constEnd(); it++)
+        {
+            if(it.value() == 1)
+                emit frequencyUpdate(it.key(),f);
+        }
     }
 }
 
@@ -64,7 +67,7 @@ double Clock::readFrequency(BlackChirp::ClockType t)
     if(!hasRole(t))
         return -1.0;
 
-    int output = d_outputRoles.key(t);
+    int output = d_outputRoles.value(t);
     double out = readHwFrequency(output);
     out *= d_multFactors.at(output);
     emit frequencyUpdate(t,out);
@@ -77,7 +80,7 @@ double Clock::setFrequency(BlackChirp::ClockType t, double freqMHz)
     if(!hasRole(t))
         return -1.0;
 
-    int output = d_outputRoles.key(t);
+    int output = d_outputRoles.value(t);
     double hwFreqMHz = freqMHz/d_multFactors.at(output);
 
     if(hwFreqMHz < d_minFreqMHz || hwFreqMHz > d_maxFreqMHz)
@@ -88,14 +91,14 @@ double Clock::setFrequency(BlackChirp::ClockType t, double freqMHz)
         return -1.0;
     }
 
-    if(!setHwFrequency(hwFreqMHz,d_outputRoles.key(t)))
+    if(!setHwFrequency(hwFreqMHz,d_outputRoles.value(t)))
     {
         emit logMessage(QString("Cannot set frequency to %1 because of a hardware error.")
                         .arg(hwFreqMHz,0,'f',3),BlackChirp::LogError);
         return -1.0;
     }
 
-    double out = readHwFrequency(d_outputRoles.key(t));
+    double out = readHwFrequency(d_outputRoles.value(t));
     out *= d_multFactors.at(output);
     if(out > 0.0)
         emit frequencyUpdate(t,out);

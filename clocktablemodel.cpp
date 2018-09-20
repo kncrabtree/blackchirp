@@ -39,13 +39,15 @@ void ClockTableModel::setConfig(const RfConfig c)
                 if(!hw.key.isEmpty() && it.value().hwKey == hw.key && it.value().output == hw.output)
                 {
                     d_clockAssignments.insert(it.key(),hw.index);
-                    break;
                 }
             }
         }
     }
     s.endArray();
     s.endGroup();
+
+    if(c.commonLO())
+        setCommonLo(c.commonLO());
 
     emit dataChanged(index(0,0),index(d_clockTypes.size(),5));
 }

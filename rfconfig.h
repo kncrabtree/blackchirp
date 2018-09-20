@@ -63,6 +63,7 @@ public:
     void setClockFreqInfo(BlackChirp::ClockType t, const ClockFreq &cf);
     void addClockStep(QHash<BlackChirp::ClockType,ClockFreq> h);
     void addClockStep(double upLoMHz, double downLoMHz);
+    void clearClockSteps();
     void clearChirpConfigs();
     bool setChirpConfig(const ChirpConfig cc, int num=0);
     void addChirpConfig(ChirpConfig cc);
@@ -99,6 +100,7 @@ private:
     double getRawFrequency(ClockFreq f) const;
 };
 
+Q_DECLARE_METATYPE(RfConfig)
 Q_DECLARE_METATYPE(RfConfig::MultOperation)
 
 #endif // RFCONFIG_H

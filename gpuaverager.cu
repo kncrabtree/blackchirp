@@ -7,6 +7,13 @@ __global__ void initMem64_kernel(int n, long long *ptr)
         ptr[i] = 0;
 }
 
+__global__ void setMem64_kernel(int n, long long *ptr, const long long *newData)
+{
+    int i = blockIdx.x*blockDim.x + threadIdx.x;
+    if(i < n)
+        ptr[i] = newData[i];
+}
+
 __global__ void parseAdd_kernel1byte(int numPoints, char *devNewData, long long int *devSum, int offset, int shift)
 {
     int i = offset + blockIdx.x*blockDim.x + threadIdx.x;
@@ -345,6 +352,24 @@ QList<QVector<qint64> > GpuAverager::parseAndRollAvg(const char *newDataIn, cons
 void GpuAverager::resetAverage()
 {
     initMem64_kernel<<<(d_totalPoints+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock>>>(d_totalPoints,p_devSumPtr);
+}
+
+void GpuAverager::setCurrentData(const QVector<qint64> v)
+{
+    if(v.isEmpty())
+    {
+        initMem64_kernel<<<(d_totalPoints+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock>>>(d_totalPoints,p_devSumPtr);
+    }
+    else
+    {
+//        if(v.size() != d_totalPoints)
+//            return;
+
+        const qint64 *d = v.constData();
+        cudaMemcpy(p_devSumPtr,d,d_totalPoints*sizeof(qint64),cudaMemcpyHostToDevice);
+
+//        setMem64_kernel<<<(d_totalPoints+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock>>>(d_totalPoints,p_devSumPtr,d);
+    }
 }
 
 void GpuAverager::setError(QString errMsg, cudaError_t errorCode)

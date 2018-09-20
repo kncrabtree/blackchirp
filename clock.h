@@ -42,7 +42,7 @@ public:
     void prepareMultFactors();
 
 public slots:
-    bool setRole(BlackChirp::ClockType t, int outputIndex = 0);
+    bool addRole(BlackChirp::ClockType t, int outputIndex = 0);
     void removeRole(BlackChirp::ClockType t);
     void clearRoles();
     bool hasRole(BlackChirp::ClockType t);
@@ -59,7 +59,7 @@ protected:
     int d_numOutputs;
     bool d_isTunable;
     double d_minFreqMHz, d_maxFreqMHz;
-    QMap<int,BlackChirp::ClockType> d_outputRoles;
+    QHash<BlackChirp::ClockType,int> d_outputRoles;
     QList<double> d_multFactors;
 
     virtual bool setHwFrequency(double freqMHz, int outputIndex = 0) =0;

@@ -99,6 +99,7 @@ public:
      * @return Boolean that indicates a new segment needs to start
      */
     bool incrementFtmw();
+    void setFtmwClocksReady();
 
     void finalSave() const;
     bool saveHeader() const;

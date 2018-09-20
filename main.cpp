@@ -136,7 +136,8 @@ int main(int argc, char *argv[])
 
     qRegisterMetaType<Experiment>("Experiment");
     qRegisterMetaType<Fid>("Fid");
-    qRegisterMetaType<FidList >("FidList");
+    qRegisterMetaType<FidList>("FidList");
+    qRegisterMetaType<RfConfig>("RfConfig");
     qRegisterMetaType<QVector<QPointF> >("QVector<QPointF>");
     qRegisterMetaType<QVector<double>>("Vector<double>");
     qRegisterMetaType<QList<QPair<QString,QVariant> >>("QList<QPair<QString,QVariant> >");

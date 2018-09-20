@@ -193,5 +193,6 @@ public:
 
 Q_DECLARE_METATYPE(Fid)
 typedef QList<Fid> FidList;
+Q_DECLARE_TYPEINFO(FidList,Q_MOVABLE_TYPE);
 
 #endif // FID_H

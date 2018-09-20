@@ -214,7 +214,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_am,&AcquisitionManager::statusMessage,statusLabel,&QLabel::setText);
     connect(p_am,&AcquisitionManager::experimentInitialized,this,&MainWindow::experimentInitialized);
     connect(p_am,&AcquisitionManager::ftmwUpdateProgress,ui->ftmwProgressBar,&QProgressBar::setValue);
-    connect(p_am,&AcquisitionManager::ftmwNumShots,ui->ftViewWidget,&FtmwViewWidget::updateShotsLabel);
+//    connect(p_am,&AcquisitionManager::ftmwNumShots,ui->ftViewWidget,&FtmwViewWidget::updateShotsLabel);
     connect(ui->actionPause,&QAction::triggered,p_am,&AcquisitionManager::pause);
     connect(ui->actionResume,&QAction::triggered,p_am,&AcquisitionManager::resume);
     connect(ui->actionAbort,&QAction::triggered,p_am,&AcquisitionManager::abort);
@@ -519,6 +519,7 @@ void MainWindow::experimentInitialized(const Experiment exp)
 	{
         switch(exp.ftmwConfig().type()) {
         case BlackChirp::FtmwTargetShots:
+        case BlackChirp::FtmwLoScan:
             ui->ftmwProgressBar->setRange(0,exp.ftmwConfig().targetShots());
             break;
         case BlackChirp::FtmwTargetTime:

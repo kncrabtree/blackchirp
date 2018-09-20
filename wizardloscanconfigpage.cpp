@@ -297,6 +297,9 @@ void WizardLoScanConfigPage::initializePage()
         p_downMajorStepBox->setValue(p_upMajorStepBox->value());
         p_downMajorStepBox->blockSignals(false);
     }
+
+    p_targetSweepsBox->setValue(d_rfConfig.targetSweeps());
+    p_shotsPerStepBox->setValue(d_rfConfig.shotsPerClockStep());
 }
 
 bool WizardLoScanConfigPage::validatePage()
@@ -354,6 +357,8 @@ bool WizardLoScanConfigPage::validatePage()
                 upLoValues << thisMajorFreq + minorSize*direction*static_cast<double>(j);
         }
     }
+
+    d_rfConfig.clearClockSteps();
 
     for(int i=0; i<upLoValues.size() && i<downLoValues.size(); i++)
         d_rfConfig.addClockStep(upLoValues.at(i),downLoValues.at(i));

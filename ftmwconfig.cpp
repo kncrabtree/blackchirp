@@ -75,6 +75,25 @@ FidList FtmwConfig::fidList() const
     return data->fidList;
 }
 
+QVector<qint64> FtmwConfig::rawFidList() const
+{
+    int outSize = data->fidList.size();
+    if(outSize == 0)
+        return QVector<qint64>();
+
+    outSize*=data->fidList.first().size();
+
+    QVector<qint64> out(outSize);
+    for(int i=0; i<data->fidList.size(); i++)
+    {
+        int offset = i*data->fidList.first().size();
+        for(int j=0; j<data->fidList.at(i).size(); j++)
+            out[offset+j] = data->fidList.at(i).atRaw(j);
+    }
+
+    return out;
+}
+
 QList<FidList> FtmwConfig::multiFidList() const
 {
     return data->multiFidStorage;
@@ -357,6 +376,9 @@ bool FtmwConfig::prepareForAcquisition()
         return false;
     }
 
+    if(type() == BlackChirp::FtmwLoScan)
+        data->targetShots = data->rfConfig.totalShots();
+
     data->completedShots = 0;
 
     return true;
@@ -434,7 +456,7 @@ bool FtmwConfig::increment()
         {
             //place fid list in storage
             int oldIndex = data->rfConfig.currentIndex();
-            if(oldIndex < data->multiFidStorage.size())
+            if(oldIndex == data->multiFidStorage.size())
                 data->multiFidStorage << data->fidList;
             else
                 data->multiFidStorage[oldIndex] = data->fidList;
@@ -442,7 +464,7 @@ bool FtmwConfig::increment()
             //get fid list from storage or clear it for new data
             int newIndex = data->rfConfig.advanceClockStep();
             if(newIndex < data->multiFidStorage.size())
-                data->fidList = data->multiFidStorage.at(newIndex);
+                data->fidList = data->multiFidStorage[newIndex];
             else
                 data->fidList.clear();
 
@@ -488,10 +510,11 @@ bool FtmwConfig::setFidsData(const QList<QVector<qint64> > newList)
         for(int i=0; i<data->fidList.size(); i++)
         {
             data->fidList[i].setData(newList.at(i));
+            int increment = scopeConfig().numAverages;
             if(type() == BlackChirp::FtmwPeakUp)
-                data->fidList[i].setShots(qMin(completedShots()+scopeConfig().numAverages,targetShots()));
+                data->fidList[i].setShots(qMin(data->fidList.at(i).shots()+increment,targetShots()));
             else
-                data->fidList[i].setShots(completedShots()+scopeConfig().numAverages);
+                data->fidList[i].setShots(data->fidList.at(i).shots()+increment);
         }
     }
 
@@ -597,8 +620,6 @@ void FtmwConfig::setScopeConfig(const BlackChirp::FtmwScopeConfig &other)
 void FtmwConfig::setRfConfig(const RfConfig other)
 {
     data->rfConfig = other;
-    if(type() == BlackChirp::FtmwLoScan)
-        data->targetShots = data->rfConfig.totalShots();
 }
 
 void FtmwConfig::clocksReady()
