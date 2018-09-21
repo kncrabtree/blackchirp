@@ -7,6 +7,7 @@
 #include <QPointF>
 
 #include "experiment.h"
+#include "ft.h"
 
 class QwtPlotCurve;
 class QwtPlotGrid;
@@ -20,7 +21,7 @@ public:
      * \brief Initializes axes, etc. for the FT plot
      * \param parent Parent widget
      */
-    explicit FtPlot(QWidget *parent = 0);
+    explicit FtPlot(QString id, QWidget *parent = 0);
     ~FtPlot();
 
     void prepareForExperiment(const Experiment e);
@@ -32,8 +33,7 @@ signals:
     void winfChanged(BlackChirp::FtWindowFunction);
 
 public slots:
-    void newFt(const QVector<QPointF> ft, double max);
-    void newFtDiff(const QVector<QPointF> ft, double min, double max);
+    void newFt(const Ft ft);
     void filterData();
     void buildContextMenu(QMouseEvent *me);
 
@@ -42,7 +42,6 @@ public slots:
     void changePeakColor(QColor c);
     void exportXY();
     void configureUnits(BlackChirp::FtPlotUnits u);
-    void setWinf(BlackChirp::FtWindowFunction wf);
     void newPeakList(const QList<QPointF> l);
 
 
@@ -53,14 +52,17 @@ private:
     QwtPlotCurve *p_curveData;
     QwtPlotCurve *p_peakData;
     QwtPlotGrid *p_plotGrid;
-    QVector<QPointF> d_currentFt;
+    Ft d_currentFt;
     int d_number;
-    int d_pzf;
     BlackChirp::FtPlotUnits d_currentUnits;
-    BlackChirp::FtWindowFunction d_currentWinf;
 
     QColor getColor(QColor startingColor);
 
+
+    // QWidget interface
+public:
+    virtual QSize sizeHint() const;
+    virtual QSize minimumSizeHint() const;
 };
 
 #endif // FTPLOT_H

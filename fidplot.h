@@ -23,42 +23,36 @@ public:
      * \brief Constructor. Initializes axes and plot options
      * \param parent Parent widget
      */
-    explicit FidPlot(QWidget *parent = 0);
+    explicit FidPlot(QString id, QWidget *parent = 0);
 
 signals:
-    void overrideStart(double);
-    void overrideEnd(double);
     void ftStartChanged(double);
     void ftEndChanged(double);
-    void removeDcChanged(bool);
-    void showProcessedChanged(bool);
+
 
 public slots:
-    void receiveData(const Fid f);
     void receiveProcessedFid(const QVector<QPointF> d);
     void prepareForExperiment(const Experiment e);
     void setFtStart(double start);
     void setFtEnd(double end);
-    void removeDc(bool rdc);
-    void showProcessed(bool p);
     void buildContextMenu(QMouseEvent *me);
     void changeFidColor();
 
 private:
-    Fid d_currentFid;
-    QVector<QPointF> d_currentProcessedFid;
+    QVector<QPointF> d_currentFid;
     QwtPlotCurve *p_curve;
 
     QPair<QwtPlotMarker*,QwtPlotMarker*> d_chirpMarkers;
     QPair<QwtPlotMarker*,QwtPlotMarker*> d_ftMarkers;
-    bool d_removeDc;
-    bool d_ftEndAtFidEnd;
-    bool d_showProcessed;
-    int d_number;
 
 protected:
     void filterData();
 
+
+    // QWidget interface
+public:
+    virtual QSize sizeHint() const;
+    virtual QSize minimumSizeHint() const;
 };
 
 #include <qwt6/qwt_scale_draw.h>

@@ -38,13 +38,6 @@ enum FtmwType
     FtmwLoScan
 };
 
-enum FtmwViewMode {
-    FtmwViewLive,
-    FtmwViewSingle,
-    FtmwViewFrameDiff,
-    FtmwViewSnapDiff
-};
-
 enum LifScanOrder {
     LifOrderDelayFirst,
     LifOrderFrequencyFirst

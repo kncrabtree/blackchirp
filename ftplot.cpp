@@ -27,8 +27,8 @@
 #include <qwt6/qwt_plot_grid.h>
 #include <qwt6/qwt_symbol.h>
 
-FtPlot::FtPlot(QWidget *parent) :
-    ZoomPanPlot(QString("FtPlot"),parent), d_number(0), d_pzf(0), d_currentUnits(BlackChirp::FtPlotmV)
+FtPlot::FtPlot(QString id, QWidget *parent) :
+    ZoomPanPlot(QString("FtPlot"+id),parent), d_number(0), d_currentUnits(BlackChirp::FtPlotmV)
 {
     //make axis label font smaller
     this->setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
@@ -39,12 +39,12 @@ FtPlot::FtPlot(QWidget *parent) :
     blabel.setFont(QFont(QString("sans-serif"),8));
     this->setAxisTitle(QwtPlot::xBottom,blabel);
 
-    QwtText llabel(QString("FT"));
+    QwtText llabel(QString("FT "+id));
     llabel.setFont(QFont(QString("sans-serif"),8));
     this->setAxisTitle(QwtPlot::yLeft,llabel);
 
     QSettings s;
-
+    s.beginGroup(d_name);
     //build and configure curve object
     p_curveData = new QwtPlotCurve();
     QColor c = s.value(QString("ftcolor"),palette().color(QPalette::BrightText)).value<QColor>();
@@ -92,7 +92,7 @@ FtPlot::FtPlot(QWidget *parent) :
     setAxisAutoScaleRange(QwtPlot::xBottom,0.0,1.0);
     setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
 
-    d_currentWinf = static_cast<BlackChirp::FtWindowFunction>(s.value(QString("windowFunction"),BlackChirp::Boxcar).toInt());
+    s.endGroup();
 
 }
 
@@ -105,8 +105,8 @@ void FtPlot::prepareForExperiment(const Experiment e)
     FtmwConfig c = e.ftmwConfig();
     d_number = e.number();
 
-    d_currentFt = QVector<QPointF>();
-    p_curveData->setSamples(d_currentFt);
+    d_currentFt = Ft();
+    p_curveData->setSamples(QVector<QPointF>());
     p_peakData->setSamples(QVector<QPointF>());
 
     setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
@@ -123,27 +123,16 @@ void FtPlot::prepareForExperiment(const Experiment e)
     autoScale();
     QSettings s;
     configureUnits(static_cast<BlackChirp::FtPlotUnits>(s.value(QString("ftUnits"),BlackChirp::FtPlotmV).toInt()));
-    setWinf(d_currentWinf);
 }
 
-void FtPlot::newFt(QVector<QPointF> ft, double max)
+void FtPlot::newFt(const Ft ft)
 {
     d_currentFt = ft;
     if(ft.isEmpty())
         return;
 
-    setAxisAutoScaleRange(QwtPlot::yLeft,0.0,max);
-    filterData();
-    replot();
-}
-
-void FtPlot::newFtDiff(const QVector<QPointF> ft, double min, double max)
-{
-    d_currentFt = ft;
-    if(ft.isEmpty())
-        return;
-
-    setAxisAutoScaleRange(QwtPlot::yLeft,min,max);
+    setAxisAutoScaleRange(QwtPlot::yLeft,ft.yMin(),ft.yMax());
+    setAxisAutoScaleRange(QwtPlot::xBottom,ft.minFreq(),ft.maxFreq());
     filterData();
     replot();
 }
@@ -226,72 +215,72 @@ void FtPlot::buildContextMenu(QMouseEvent *me)
     QAction *peakColorAction = m->addAction(QString("Change Peak Color..."));
     connect(peakColorAction,&QAction::triggered,this,[=]() { changePeakColor(getColor(p_peakData->symbol()->brush().color())); });
 
-    QAction *exportAction = m->addAction(QString("Export XY..."));
-    connect(exportAction,&QAction::triggered,this,&FtPlot::exportXY);
+//    QAction *exportAction = m->addAction(QString("Export XY..."));
+//    connect(exportAction,&QAction::triggered,this,&FtPlot::exportXY);
 
-    QWidgetAction *wa = new QWidgetAction(m);
-    QWidget *w = new QWidget(m);
-    QSpinBox *pzfBox = new QSpinBox(w);
-    QFormLayout *fl = new QFormLayout();
+//    QWidgetAction *wa = new QWidgetAction(m);
+//    QWidget *w = new QWidget(m);
+//    QSpinBox *pzfBox = new QSpinBox(w);
+//    QFormLayout *fl = new QFormLayout();
 
-    fl->addRow(QString("Zero fill factor"),pzfBox);
+//    fl->addRow(QString("Zero fill factor"),pzfBox);
 
-    pzfBox->setRange(0,4);
-    pzfBox->setSingleStep(1);
-    pzfBox->setValue(d_pzf);
-    connect(pzfBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),[=](int p){
-        d_pzf = p;
-        emit pzfChanged(p);
-    });
+//    pzfBox->setRange(0,4);
+//    pzfBox->setSingleStep(1);
+//    pzfBox->setValue(d_pzf);
+//    connect(pzfBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),[=](int p){
+//        d_pzf = p;
+//        emit pzfChanged(p);
+//    });
 
-    w->setLayout(fl);
-    wa->setDefaultWidget(w);
-    m->addAction(wa);
+//    w->setLayout(fl);
+//    wa->setDefaultWidget(w);
+//    m->addAction(wa);
 
-    QList<QPair<BlackChirp::FtPlotUnits,QString>> unitsList;
-    unitsList << qMakePair(BlackChirp::FtPlotV,QString("V"));
-    unitsList << qMakePair(BlackChirp::FtPlotmV,QString("mV"));
-    unitsList << qMakePair(BlackChirp::FtPlotuV,QString::fromUtf16(u"µV"));
-    unitsList << qMakePair(BlackChirp::FtPlotnV,QString("nV"));
+//    QList<QPair<BlackChirp::FtPlotUnits,QString>> unitsList;
+//    unitsList << qMakePair(BlackChirp::FtPlotV,QString("V"));
+//    unitsList << qMakePair(BlackChirp::FtPlotmV,QString("mV"));
+//    unitsList << qMakePair(BlackChirp::FtPlotuV,QString::fromUtf16(u"µV"));
+//    unitsList << qMakePair(BlackChirp::FtPlotnV,QString("nV"));
 
 
-    QMenu *yMenu = m->addMenu(QString("Y Scaling"));
-    QActionGroup *scaleGroup = new QActionGroup(yMenu);
-    scaleGroup->setExclusive(true);
+//    QMenu *yMenu = m->addMenu(QString("Y Scaling"));
+//    QActionGroup *scaleGroup = new QActionGroup(yMenu);
+//    scaleGroup->setExclusive(true);
 
-    for(int i=0; i<unitsList.size(); i++)
-    {
-        QAction *a = yMenu->addAction(unitsList.at(i).second);
-        a->setCheckable(true);
-        if(unitsList.at(i).first == d_currentUnits)
-            a->setChecked(true);
-        else
-            a->setChecked(false);
-        connect(a,&QAction::triggered,this,[=](){ configureUnits(unitsList.at(i).first); });
-    }
-    yMenu->addActions(scaleGroup->actions());
+//    for(int i=0; i<unitsList.size(); i++)
+//    {
+//        QAction *a = yMenu->addAction(unitsList.at(i).second);
+//        a->setCheckable(true);
+//        if(unitsList.at(i).first == d_currentUnits)
+//            a->setChecked(true);
+//        else
+//            a->setChecked(false);
+//        connect(a,&QAction::triggered,this,[=](){ configureUnits(unitsList.at(i).first); });
+//    }
+//    yMenu->addActions(scaleGroup->actions());
 
-    QList<QPair<BlackChirp::FtWindowFunction,QString>> winfList;
-    winfList << qMakePair(BlackChirp::Bartlett,QString("Bartlett"));
-    winfList << qMakePair(BlackChirp::Blackman,QString("Blackman"));
-    winfList << qMakePair(BlackChirp::BlackmanHarris,QString("Blackman-Harris"));
-    winfList << qMakePair(BlackChirp::Boxcar,QString("Boxcar (none)"));
-    winfList << qMakePair(BlackChirp::Hamming,QString("Hamming"));
-    winfList << qMakePair(BlackChirp::Hanning,QString("Hanning"));
-    winfList << qMakePair(BlackChirp::KaiserBessel14,QString("Kaiser-Bessel, B=14"));
+//    QList<QPair<BlackChirp::FtWindowFunction,QString>> winfList;
+//    winfList << qMakePair(BlackChirp::Bartlett,QString("Bartlett"));
+//    winfList << qMakePair(BlackChirp::Blackman,QString("Blackman"));
+//    winfList << qMakePair(BlackChirp::BlackmanHarris,QString("Blackman-Harris"));
+//    winfList << qMakePair(BlackChirp::Boxcar,QString("Boxcar (none)"));
+//    winfList << qMakePair(BlackChirp::Hamming,QString("Hamming"));
+//    winfList << qMakePair(BlackChirp::Hanning,QString("Hanning"));
+//    winfList << qMakePair(BlackChirp::KaiserBessel14,QString("Kaiser-Bessel, B=14"));
 
-    QMenu *winfMenu = m->addMenu(QString("Window Function"));
-    QActionGroup *winfGroup = new QActionGroup(winfMenu);
-    winfGroup->setExclusive(true);
+//    QMenu *winfMenu = m->addMenu(QString("Window Function"));
+//    QActionGroup *winfGroup = new QActionGroup(winfMenu);
+//    winfGroup->setExclusive(true);
 
-    for(int i=0; i<winfList.size(); i++)
-    {
-        QAction *a = winfMenu->addAction(winfList.at(i).second);
-        a->setCheckable(true);
-        a->setChecked(winfList.at(i).first == d_currentWinf);
-        connect(a,&QAction::triggered,this,[=](){ setWinf(winfList.at(i).first); });
-    }
-    winfMenu->addActions(winfGroup->actions());
+//    for(int i=0; i<winfList.size(); i++)
+//    {
+//        QAction *a = winfMenu->addAction(winfList.at(i).second);
+//        a->setCheckable(true);
+//        a->setChecked(winfList.at(i).first == d_currentWinf);
+//        connect(a,&QAction::triggered,this,[=](){ setWinf(winfList.at(i).first); });
+//    }
+//    winfMenu->addActions(winfGroup->actions());
 
     m->popup(me->globalPos());
 }
@@ -302,7 +291,9 @@ void FtPlot::changeFtColor(QColor c)
         return;
 
     QSettings s;
+    s.beginGroup(d_name);
     s.setValue(QString("ftcolor"),c);
+    s.endGroup();
     s.sync();
 
     p_curveData->setPen(QPen(c));
@@ -316,8 +307,11 @@ void FtPlot::changeGridColor(QColor c)
         return;
 
     QSettings s;
+    s.beginGroup(d_name);
     s.setValue(QString("gridcolor"),c);
+    s.endGroup();
     s.sync();
+
 
     QPen p(c);
     p.setStyle(Qt::DashLine);
@@ -334,7 +328,9 @@ void FtPlot::changePeakColor(QColor c)
         return;
 
     QSettings s;
+    s.beginGroup(d_name);
     s.setValue(QString("peakColor"),c);
+    s.endGroup();
     s.sync();
 
     QwtSymbol *sym = new QwtSymbol(QwtSymbol::Ellipse);
@@ -365,7 +361,7 @@ void FtPlot::exportXY()
     double max = axisScaleDiv(QwtPlot::xBottom).upperBound();
 
     QDoubleSpinBox *minBox = new QDoubleSpinBox;
-    minBox->setRange(d_currentFt.first().x(),d_currentFt.last().x());
+    minBox->setRange(d_currentFt.minFreq(),d_currentFt.maxFreq());
     minBox->setDecimals(3);
     minBox->setValue(min);
     minBox->setSuffix(QString(" MHz"));
@@ -373,7 +369,7 @@ void FtPlot::exportXY()
     fl->addRow(QString("Minimum Frequency"),minBox);
 
     QDoubleSpinBox *maxBox = new QDoubleSpinBox;
-    maxBox->setRange(d_currentFt.first().x(),d_currentFt.last().x());
+    maxBox->setRange(d_currentFt.minFreq(),d_currentFt.maxFreq());
     maxBox->setDecimals(3);
     maxBox->setValue(max);
     maxBox->setSuffix(QString(" MHz"));
@@ -485,19 +481,20 @@ void FtPlot::configureUnits(BlackChirp::FtPlotUnits u)
     emit scalingChange(scf/oldScf);
 }
 
-void FtPlot::setWinf(BlackChirp::FtWindowFunction wf)
-{
-    d_currentWinf = wf;
-    QSettings s;
-    s.setValue(QString("windowFunction"),d_currentWinf);
-    s.sync();
-
-    emit winfChanged(d_currentWinf);
-}
-
 void FtPlot::newPeakList(const QList<QPointF> l)
 {
 
     p_peakData->setSamples(l.toVector());
     replot();
+}
+
+
+QSize FtPlot::sizeHint() const
+{
+    return QSize(300,100);
+}
+
+QSize FtPlot::minimumSizeHint() const
+{
+    return QSize(100,100);
 }

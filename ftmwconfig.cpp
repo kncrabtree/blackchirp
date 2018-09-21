@@ -70,8 +70,29 @@ QDateTime FtmwConfig::targetTime() const
     return data->targetTime;
 }
 
+Fid FtmwConfig::singleFid(int frame, int segment) const
+{
+    if(data->fidList.isEmpty())
+        return Fid();
+
+    int i = qBound(0,frame,data->fidList.size()-1);
+
+    if(data->multipleFidLists && segment >= 0 && segment < data->multiFidStorage.size())
+        return data->multiFidStorage.at(i).at(segment);
+
+    return data->fidList.at(i);
+}
+
 FidList FtmwConfig::fidList() const
 {
+    return data->fidList;
+}
+
+FidList FtmwConfig::fidList(int segment) const
+{
+    if(data->multipleFidLists && segment < data->multiFidStorage.size() && segment >= 0)
+        return data->multiFidStorage.at(segment);
+
     return data->fidList;
 }
 

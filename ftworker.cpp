@@ -5,23 +5,21 @@
 #include <gsl/gsl_const.h>
 #include <gsl/gsl_sf.h>
 
-FtWorker::FtWorker(QObject *parent) :
-    QObject(parent), real(NULL), work(NULL), d_numPnts(0), d_start(0.0), d_end(0.0), d_pzf(0), d_removeDC(false), d_showProcessed(false), d_scaling(1.0), d_ignoreZone(50.0), d_recalculateWinf(true)
+FtWorker::FtWorker(int i, QObject *parent) :
+    QObject(parent), d_id(i), real(NULL), work(NULL), d_numPnts(0)
 {
 }
 
-QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid fid)
+Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings)
 {
     if(fid.size() < 2)
-        return QPair<QVector<QPointF>,double>(QVector<QPointF>(),0.0);
+        return Ft();
 
     double rawSize = static_cast<double>(fid.size());
 
     //first, apply any filtering that needs to be done
-    QVector<double> fftData = filterFid(fid);
-
-    if(d_showProcessed)
-        prepareForDisplay(fftData,fid.spacing());
+    QVector<double> fftData = filterFid(fid,settings);
+    prepareForDisplay(fftData,fid.spacing());
 
     //might need to allocate or reallocate workspace and wavetable
     if(fftData.size() != d_numPnts)
@@ -41,7 +39,8 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid fid)
 
     //prepare storage
     int spectrumSize = d_numPnts/2 + 1;
-    QVector<QPointF> spectrum(spectrumSize);
+    Ft spectrum(spectrumSize,fid.probeFreq());
+
     double spacing = fid.spacing()*1.0e6;
     double probe = fid.probeFreq();
     double sign = 1.0;
@@ -56,12 +55,12 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid fid)
     //convert fourier coefficients into magnitudes. the coefficients are stored in half-complex format
     //see http://www.gnu.org/software/gsl/manual/html_node/Mixed_002dradix-FFT-routines-for-real-data.html
     //first point is DC; block it!
+    //always make sure that data go from low to high frequency
     if(fid.sideband() == BlackChirp::UpperSideband)
         spectrum[0] = QPointF(probe,0.0);
     else
         spectrum[spectrumSize-1] = QPointF(probe,0.0);
 
-    double max = 0.0;
     int i;
     double np = static_cast<double>(d_numPnts);
     for(i=1; i<d_numPnts-i; i++)
@@ -75,11 +74,7 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid fid)
 
         //calculate magnitude and update max
         //note: Normalize output, and convert to mV
-        double coef_mag = sqrt(coef_real*coef_real + coef_imag*coef_imag)/rawSize*d_scaling;
-
-        //only update max if we're 50 MHz away from LO
-        if(qAbs(probe-x1) > d_ignoreZone)
-            max = qMax(max,coef_mag);
+        double coef_mag = sqrt(coef_real*coef_real + coef_imag*coef_imag)/rawSize*settings.scalingFactor;
 
         if(fid.sideband() == BlackChirp::UpperSideband)
             spectrum[i] = QPointF(x1,coef_mag);
@@ -89,7 +84,7 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid fid)
     if(i==d_numPnts-i)
     {
         QPointF p(probe + sign*(double)i/np/spacing,
-                   sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/rawSize*d_scaling);
+                   sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/rawSize*settings.scalingFactor);
 
         if(fid.sideband() == BlackChirp::UpperSideband)
             spectrum[i] = p;
@@ -97,18 +92,20 @@ QPair<QVector<QPointF>, double> FtWorker::doFT(const Fid fid)
             spectrum[spectrumSize-1-i] = p;
 
         //only update max if we're 50 MHz away from LO
-        if(qAbs(probe-p.x()) > d_ignoreZone)
-            max = qMax(max,p.y());
+//        if(qAbs(probe-p.x()) > d_ignoreZone)
+//            max = qMax(max,p.y());
 
     }
 
     //the signal is used for asynchronous purposes (in UI classes), and the return value for synchronous (in non-UI classes)
-    emit ftDone(spectrum,max);
+    emit ftDone(spectrum,d_id);
 
-    return QPair<QVector<QPointF>,double>(spectrum,max);
+    d_lastProcSettings = settings;
+
+    return spectrum;
 }
 
-void FtWorker::doFtDiff(const Fid ref, const Fid diff)
+void FtWorker::doFtDiff(const Fid ref, const Fid diff, const FidProcessingSettings &settings)
 {
     if(ref.size() != diff.size() || ref.sideband() != diff.sideband())
         return;
@@ -117,48 +114,53 @@ void FtWorker::doFtDiff(const Fid ref, const Fid diff)
         return;
 
     blockSignals(true);
-    auto r = doFT(ref);
-    auto d = doFT(diff);
+    Ft r = doFT(ref,settings);
+    Ft d = doFT(diff,settings);
     blockSignals(false);
 
-    if(d_showProcessed)
-        prepareForDisplay(diff);
-
-    double max = r.first.first().y() - d.first.first().y();
-    double min = max;
-
-
-    for(int i=0; i<r.first.size() && i<d.first.size(); i++)
+    Ft out = r;
+    if(qFuzzyCompare(r.loFreq(),d.loFreq()))
     {
-        r.first[i].setY(r.first.at(i).y() - d.first.at(i).y());
-        min = qMin(r.first.at(i).y(),min);
-        max = qMax(r.first.at(i).y(),max);
+
+        for(int i=0; i<r.size() && i<d.size(); i++)
+        {
+            auto p = r.at(i);
+            p.setY(p.y() - d.at(i).y());
+            out.setPoint(i,p);
+        }
+    }
+    else
+    {
+        //need to create a resampled FT...
+        ///TODO
     }
 
-    emit ftDiffDone(r.first,min,max);
+    d_lastProcSettings = settings;
+
+    emit ftDiffDone(out,d_id);
 
 }
 
-QVector<double> FtWorker::filterFid(const Fid fid)
+QVector<double> FtWorker::filterFid(const Fid fid, const FidProcessingSettings &settings)
 {
 
     QVector<double> out(fid.size());
     QVector<double> data = fid.toVector();
 
-    bool fStart = (d_start > 0.001);
-    bool fEnd = (d_end > 0.001);
+    bool fStart = (settings.startUs > 0.001);
+    bool fEnd = (settings.endUs > 0.001);
 
-    int si = qBound(0, static_cast<int>(floor(d_start*1e-6/fid.spacing())), fid.size()-1);
-    int ei = qBound(0,static_cast<int>(ceil(d_end*1e-6/fid.spacing())), fid.size()-1);
+    int si = qBound(0, static_cast<int>(floor(settings.startUs*1e-6/fid.spacing())), fid.size()-1);
+    int ei = qBound(0,static_cast<int>(ceil(settings.endUs*1e-6/fid.spacing())), fid.size()-1);
     if(!fStart || si - ei >= 0)
         si = 0;
     if(!fEnd || ei <= si)
         ei = fid.size()-1;
 
     int n = ei - si + 1;
-    makeWinf(n,d_currentWinf);
+    makeWinf(n,settings.windowFunction);
 
-    if(d_removeDC)
+    if(settings.removeDC)
     {
         //calculate average of samples in the FT range, then subtract that from each point
         //use Kahan summation
@@ -200,15 +202,15 @@ QVector<double> FtWorker::filterFid(const Fid fid)
         if(i > ei)
             break;
 
-        if(d_currentWinf == BlackChirp::Boxcar)
+        if(settings.windowFunction == BlackChirp::Boxcar)
             out[i] = data.at(i);
         else
             out[i] = data.at(i)*d_winf.at(i-si);
     }
 
-    if(d_pzf > 0 && d_pzf <= 4)
+    if(settings.zeroPadFactor > 0 && settings.zeroPadFactor <= 4)
     {
-        int filledSize = Analysis::nextPowerOf2(2*data.size()) << (d_pzf-1);
+        int filledSize = Analysis::nextPowerOf2(2*data.size()) << (settings.zeroPadFactor-1);
         if(out.size() != filledSize)
             out.resize(filledSize);
     }
@@ -226,17 +228,12 @@ void FtWorker::prepareForDisplay(const QVector<double> fid, double spacing)
         out[i].setY(fid.at(i));
     }
 
-    emit fidDone(out);
-}
-
-void FtWorker::prepareForDisplay(const Fid fid)
-{
-    return prepareForDisplay(filterFid(fid),fid.spacing());
+    emit fidDone(out,d_id);
 }
 
 void FtWorker::makeWinf(int n, BlackChirp::FtWindowFunction f)
 {
-    if(f == d_currentWinf && d_winf.size() == n && !d_recalculateWinf)
+    if(f == d_lastProcSettings.windowFunction && d_winf.size() == n)
         return;
 
     if(d_winf.size() != n)
@@ -267,8 +264,6 @@ void FtWorker::makeWinf(int n, BlackChirp::FtWindowFunction f)
         d_winf.fill(1.0);
         break;
     }
-
-    d_recalculateWinf = false;
 }
 
 void FtWorker::winBartlett(int n)

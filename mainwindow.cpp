@@ -220,7 +220,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionAbort,&QAction::triggered,p_am,&AcquisitionManager::abort);
     connect(ui->ftViewWidget,&FtmwViewWidget::rollingAverageShotsChanged,p_am,&AcquisitionManager::changeRollingAverageShots);
     connect(ui->ftViewWidget,&FtmwViewWidget::rollingAverageReset,p_am,&AcquisitionManager::resetRollingAverage);
-    connect(p_am,&AcquisitionManager::newFidList,ui->ftViewWidget,&FtmwViewWidget::newFidList);
+    connect(p_am,&AcquisitionManager::newFtmwConfig,ui->ftViewWidget,&FtmwViewWidget::updateFtmw);
     connect(p_am,&AcquisitionManager::snapshotComplete,ui->ftViewWidget,&FtmwViewWidget::snapshotTaken);
 
     QThread *amThread = new QThread(this);
@@ -835,7 +835,6 @@ void MainWindow::viewExperiment()
 
         ExperimentViewWidget *evw = new ExperimentViewWidget(num,path);
         connect(this,&MainWindow::closing,evw,&ExperimentViewWidget::close);
-        connect(evw,&ExperimentViewWidget::notifyUiFinalized,ui->ftViewWidget,&FtmwViewWidget::checkRemoveSnapWidget);
         connect(ui->ftViewWidget,&FtmwViewWidget::finalized,evw,&ExperimentViewWidget::ftmwFinalized);
         evw->show();
         evw->raise();

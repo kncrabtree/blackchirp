@@ -55,7 +55,6 @@ HEADERS += mainwindow.h \
     $$PWD/digitizerconfigwidget.h
 
 FORMS += mainwindow.ui \
-    $$PWD/ftmwviewwidget.ui \
     $$PWD/communicationdialog.ui \
     $$PWD/chirpconfigwidget.ui \
     $$PWD/pulseconfigwidget.ui \

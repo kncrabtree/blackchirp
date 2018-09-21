@@ -46,7 +46,8 @@ signals:
     void timeData(const QList<QPair<QString,QVariant>>, bool plot=true, QDateTime t = QDateTime::currentDateTime());
     void motorRest();
 
-    void newFidList(FidList);
+    void newFidList(const FidList, int);
+    void newFtmwConfig(const FtmwConfig);
     void takeSnapshot(const Experiment);
     void doFinalSave(const Experiment);
     void snapshotComplete();

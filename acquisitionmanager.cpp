@@ -157,7 +157,8 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 //        count++;
 //        emit logMessage(QString("Elapsed time: %1 ms, avg: %2").arg(t).arg(total/count));
 
-        emit newFidList(d_currentExperiment.ftmwConfig().fidList());
+        int segment = qMax(0,d_currentExperiment.ftmwConfig().rfConfig().currentIndex());
+        emit newFidList(d_currentExperiment.ftmwConfig().fidList(),segment);
 
         bool advanceSegment = d_currentExperiment.incrementFtmw();
 
@@ -177,6 +178,7 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
             gpuAvg.setCurrentData(d_currentExperiment.ftmwConfig().rawFidList());
 #endif
             emit newClockSettings(d_currentExperiment.ftmwConfig().rfConfig());
+            emit newFtmwConfig(d_currentExperiment.ftmwConfig());
         }
     }
 

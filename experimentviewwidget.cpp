@@ -138,8 +138,8 @@ void ExperimentViewWidget::ftmwFinalized(int num)
     {
         p_tabWidget->removeTab(0);
         p_tabWidget->insertTab(0,buildHeaderWidget(),QIcon(QString(":/icons/header.png")),QString("Header"));
-        if(p_ftmw != nullptr)
-            p_ftmw->checkRemoveSnapWidget(num);
+//        if(p_ftmw != nullptr)
+//            p_ftmw->checkRemoveSnapWidget(num);
 
         emit notifyUiFinalized(num);
 
@@ -192,9 +192,9 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
         out->setLayout(vbl);
 
         p_ftmw->prepareForExperiment(d_experiment);
-        p_ftmw->newFidList(d_experiment.ftmwConfig().fidList());
-        if(!d_experiment.ftmwConfig().fidList().isEmpty())
-            p_ftmw->updateShotsLabel(d_experiment.ftmwConfig().fidList().first().shots());
+        p_ftmw->updateFtmw(d_experiment.ftmwConfig());
+//        if(!d_experiment.ftmwConfig().fidList().isEmpty())
+//            p_ftmw->updateShotsLabel(d_experiment.ftmwConfig().fidList().first().shots());
 
         //check for snap file
         QFile snp(BlackChirp::getExptFile(d_experiment.number(),BlackChirp::SnapFile,path));

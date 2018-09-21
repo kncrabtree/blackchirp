@@ -33,7 +33,9 @@ public:
     qint64 targetShots() const;
     qint64 completedShots() const;
     QDateTime targetTime() const;
+    Fid singleFid(int frame=0, int segment=0) const;
     FidList fidList() const;
+    FidList fidList(int segment) const;
     QVector<qint64> rawFidList() const;
     QList<FidList> multiFidList() const;
     BlackChirp::FtmwScopeConfig scopeConfig() const;

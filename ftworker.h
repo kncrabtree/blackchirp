@@ -10,6 +10,7 @@
 
 #include "analysis.h"
 #include "fid.h"
+#include "ft.h"
 
 
 
@@ -26,36 +27,44 @@
  Two slots are available, doFt() and filterFid(), and each has a corresponding signal ftDone() and fidDone() that are emitted when the operation is complete.
  Both slots also return the values that are emitted for use in direct function calls; doFt() calls filterFid() internally, for example.
 
-TODO: Eliminate artifacts from QtFTM; add in better processing options (zero padding; possibility of windowing, etc)
-
 */
 class FtWorker : public QObject
 {
     Q_OBJECT
-public:
+public: 
+    struct FidProcessingSettings {
+        double startUs;
+        double endUs;
+        int zeroPadFactor;
+        bool removeDC;
+        double scalingFactor;
+        BlackChirp::FtWindowFunction windowFunction;
+
+        FidProcessingSettings() : startUs(-1.0), endUs(-1.0), zeroPadFactor(0), removeDC(false), scalingFactor(1.0), windowFunction(BlackChirp::Boxcar) {}
+    };
+
     /*!
      \brief Constructor. Does nothing
 
      \param parent
     */
-    explicit FtWorker(QObject *parent = 0);
+    explicit FtWorker(int i, QObject *parent = nullptr);
+
+    const int d_id;
 
 signals:
     /*!
      \brief Emitted when FFT is complete
-
-     \param ft FT data in XY format
-     \param max Maximum Y value of FT
     */
-    void ftDone(QVector<QPointF> ft, double max);
+    void ftDone(const Ft ft, int);
     /*!
      \brief Emitted when Fid filtering is complete
 
      \param fid The filtered Fid
     */
-    void fidDone(QVector<QPointF> fid);
+    void fidDone(const QVector<QPointF> fid, int);
 
-    void ftDiffDone(QVector<QPointF> ft, double min, double max);
+    void ftDiffDone(const Ft ft, int);
 
 public slots:
     /*!
@@ -64,8 +73,8 @@ public slots:
      \param fid Fid to analyze
      \return QPair<QVector<QPointF>, double> Resulting FT magnitude spectrum in XY format and maximum Y value
     */
-    QPair<QVector<QPointF>,double> doFT(const Fid fid);
-    void doFtDiff(const Fid ref, const Fid diff);
+    Ft doFT(const Fid fid, const FidProcessingSettings &settings);
+    void doFtDiff(const Fid ref, const Fid diff, const FidProcessingSettings &settings);
 
     /*!
      \brief Perform truncation, high-pass, and exponential filtering on an Fid
@@ -73,36 +82,20 @@ public slots:
      \param f Fid to filter
      \return QVector<double> Filtered Fid
     */
-    QVector<double> filterFid(const Fid fid);
+    QVector<double> filterFid(const Fid fid, const FidProcessingSettings &settings);
 
-    void setStart(double s) { d_start = s; }
-    void setEnd(double e) { d_end = e; }
-    void setPzf(int z) { d_pzf = z; }
-    void setRemoveDc(bool b) { d_removeDC = b; }
-    void setShowProcessed(bool p) { d_showProcessed = p; }
-    void setScaling(double s) { d_scaling = s; }
-    void setIgnoreZone(double z) { d_ignoreZone = z; }
-    void setWindowFunction(BlackChirp::FtWindowFunction wf) { d_currentWinf = wf; d_recalculateWinf = true; }
     void prepareForDisplay(const QVector<double> fid, double spacing);
-    void prepareForDisplay(const Fid fid);
 
 private:
     gsl_fft_real_wavetable *real; /*!< Wavetable for GNU Scientific Library FFT operations */
     gsl_fft_real_workspace *work; /*!< Memory for GNU Scientific Library FFT operations */
     int d_numPnts; /*!< Number of points used to allocate last wavetable and workspace */
 
-    double d_start;
-    double d_end;
-    int d_pzf;
-    bool d_removeDC, d_showProcessed;
-    double d_scaling;
-    double d_ignoreZone;
-    bool d_recalculateWinf;
+    FidProcessingSettings d_lastProcSettings;
 
-    QVector<qint64> d_fidData;
+
+    //store a precalculated window function for speed
     QVector<double> d_winf;
-    BlackChirp::FtWindowFunction d_currentWinf;
-
     void makeWinf(int n,BlackChirp::FtWindowFunction f);
     void winBartlett(int n);
     void winBlackman(int n);
