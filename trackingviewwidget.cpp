@@ -410,8 +410,8 @@ void TrackingViewWidget::addNewPlot()
     tp->setAxisAutoScaleRange(QwtPlot::xBottom,d_xRange.first,d_xRange.second);
     tp->setAxisAutoScaleRange(QwtPlot::xTop,d_xRange.first,d_xRange.second);
 
-    tp->setMinimumHeight(200);
-    tp->setMinimumWidth(375);
+//    tp->setMinimumHeight(200);
+//    tp->setMinimumWidth(375);
     tp->installEventFilter(this);
 
     //signal-slot connections go here

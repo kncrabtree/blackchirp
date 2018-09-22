@@ -70,6 +70,11 @@ protected:
 private:
     PlotConfig d_config;
     int getAxisIndex(QwtPlot::Axis a);
+
+    // QWidget interface
+public:
+    virtual QSize sizeHint() const;
+    virtual QSize minimumSizeHint() const;
 };
 
 Q_DECLARE_METATYPE(QwtPlot::Axis)

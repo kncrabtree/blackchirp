@@ -301,14 +301,3 @@ void FidPlot::changeFidColor()
         replot();
     }
 }
-
-
-QSize FidPlot::sizeHint() const
-{
-    return QSize(300,100);
-}
-
-QSize FidPlot::minimumSizeHint() const
-{
-    return QSize(100,100);
-}

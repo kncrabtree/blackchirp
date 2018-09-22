@@ -83,21 +83,23 @@ MainWindow::MainWindow(QWidget *parent) :
     });
 
     QGridLayout *gl = new QGridLayout;
+
     for(int i=0; i<BC_PGEN_NUMCHANNELS; i++)
     {
         QLabel *lbl = new QLabel(QString("Ch%1").arg(i),this);
         lbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
 
         Led *led = new Led(this);
-        gl->addWidget(lbl,i/2,(2*i)%4,1,1,Qt::AlignVCenter);
-        gl->addWidget(led,i/2,((2*i)%4)+1,1,1,Qt::AlignVCenter);
+        gl->addWidget(lbl,i/4,(2*i)%8,1,1,Qt::AlignVCenter);
+        gl->addWidget(led,i/4,((2*i)%8)+1,1,1,Qt::AlignVCenter);
 
         d_ledList.append(qMakePair(lbl,led));
     }
-    gl->setColumnStretch(0,1);
-    gl->setColumnStretch(1,0);
-    gl->setColumnStretch(2,1);
-    gl->setColumnStretch(3,0);
+    for(int i=0; i<8; i++)
+        gl->setColumnStretch(i,(i%2)+1);
+
+    gl->setMargin(3);
+    gl->setContentsMargins(3,3,3,3);
     ui->pulseConfigBox->setLayout(gl);
 
     auto *clockBox = new QGroupBox(QString("Clocks"),this);
@@ -146,6 +148,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     gl = static_cast<QGridLayout*>(ui->gasControlBox->layout());
     QGridLayout *gl2 = static_cast<QGridLayout*>(ui->flowStatusBox->layout());
+    gl2->setMargin(3);
+    gl2->setContentsMargins(3,3,3,3);
+    gl->setContentsMargins(3,3,3,3);
+    gl->setMargin(3);
     QWidget *lastFocusWidget = nullptr;
     for(int i=0; i<BC_FLOW_NUMCHANNELS; i++)
     {

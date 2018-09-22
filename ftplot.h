@@ -58,11 +58,6 @@ private:
 
     QColor getColor(QColor startingColor);
 
-
-    // QWidget interface
-public:
-    virtual QSize sizeHint() const;
-    virtual QSize minimumSizeHint() const;
 };
 
 #endif // FTPLOT_H

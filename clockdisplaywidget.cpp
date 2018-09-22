@@ -8,6 +8,8 @@
 ClockDisplayWidget::ClockDisplayWidget(QWidget *parent) : QWidget(parent)
 {
     auto *fl = new QFormLayout(this);
+    fl->setMargin(3);
+    fl->setContentsMargins(3,3,3,3);
 
     auto ct = BlackChirp::allClockTypes();
 

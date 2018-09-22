@@ -2,14 +2,6 @@
 <ui version="4.0">
  <class>LifControlWidget</class>
  <widget class="QWidget" name="LifControlWidget">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>786</width>
-    <height>388</height>
-   </rect>
-  </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>

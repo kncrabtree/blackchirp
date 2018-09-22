@@ -429,3 +429,14 @@ int ZoomPanPlot::getAxisIndex(QwtPlot::Axis a)
     return i;
 }
 
+
+
+QSize ZoomPanPlot::sizeHint() const
+{
+    return QSize(150,100);
+}
+
+QSize ZoomPanPlot::minimumSizeHint() const
+{
+    return QSize(150,100);
+}

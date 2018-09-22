@@ -48,11 +48,6 @@ private:
 protected:
     void filterData();
 
-
-    // QWidget interface
-public:
-    virtual QSize sizeHint() const;
-    virtual QSize minimumSizeHint() const;
 };
 
 #include <qwt6/qwt_scale_draw.h>

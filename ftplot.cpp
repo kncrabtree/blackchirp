@@ -487,14 +487,3 @@ void FtPlot::newPeakList(const QList<QPointF> l)
     p_peakData->setSamples(l.toVector());
     replot();
 }
-
-
-QSize FtPlot::sizeHint() const
-{
-    return QSize(300,100);
-}
-
-QSize FtPlot::minimumSizeHint() const
-{
-    return QSize(100,100);
-}

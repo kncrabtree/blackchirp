@@ -2,14 +2,6 @@
 <ui version="4.0">
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>1168</width>
-    <height>676</height>
-   </rect>
-  </property>
   <property name="windowTitle">
    <string>BlackChirp</string>
   </property>
@@ -20,9 +12,14 @@
   <widget class="QWidget" name="centralWidget">
    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1">
     <item>
-     <layout class="QVBoxLayout" name="instrumentStatusLayout" stretch="0,1,0,0,0,0,0">
+     <layout class="QVBoxLayout" name="instrumentStatusLayout" stretch="0,0,0,0,0,0,0">
       <item>
        <widget class="QLabel" name="label">
+        <property name="font">
+         <font>
+          <pointsize>8</pointsize>
+         </font>
+        </property>
         <property name="text">
          <string>Instrument Status</string>
         </property>
@@ -38,6 +35,11 @@
         </property>
         <item row="0" column="0">
          <widget class="QLabel" name="exptLabel">
+          <property name="font">
+           <font>
+            <pointsize>8</pointsize>
+           </font>
+          </property>
           <property name="text">
            <string>Expt</string>
           </property>
@@ -45,6 +47,11 @@
         </item>
         <item row="0" column="1">
          <widget class="QSpinBox" name="exptSpinBox">
+          <property name="font">
+           <font>
+            <pointsize>8</pointsize>
+           </font>
+          </property>
           <property name="focusPolicy">
            <enum>Qt::ClickFocus</enum>
           </property>
@@ -66,10 +73,30 @@
       </item>
       <item>
        <widget class="QGroupBox" name="flowStatusBox">
+        <property name="font">
+         <font>
+          <pointsize>8</pointsize>
+         </font>
+        </property>
         <property name="title">
          <string>Flow Status</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_2">
+         <property name="leftMargin">
+          <number>3</number>
+         </property>
+         <property name="topMargin">
+          <number>3</number>
+         </property>
+         <property name="rightMargin">
+          <number>3</number>
+         </property>
+         <property name="bottomMargin">
+          <number>3</number>
+         </property>
+         <property name="spacing">
+          <number>3</number>
+         </property>
          <item row="0" column="1">
           <widget class="QDoubleSpinBox" name="pressureDoubleSpinBox">
            <property name="focusPolicy">
@@ -113,6 +140,11 @@
       </item>
       <item>
        <widget class="QGroupBox" name="pulseConfigBox">
+        <property name="font">
+         <font>
+          <pointsize>8</pointsize>
+         </font>
+        </property>
         <property name="title">
          <string>Pulse Configuration</string>
         </property>
@@ -123,16 +155,15 @@
         <property name="orientation">
          <enum>Qt::Vertical</enum>
         </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>40</height>
-         </size>
-        </property>
        </spacer>
       </item>
       <item>
        <widget class="QLabel" name="label_2">
+        <property name="font">
+         <font>
+          <pointsize>8</pointsize>
+         </font>
+        </property>
         <property name="text">
          <string>FTMW Progress</string>
         </property>
@@ -143,6 +174,11 @@
       </item>
       <item>
        <widget class="QProgressBar" name="ftmwProgressBar">
+        <property name="font">
+         <font>
+          <pointsize>8</pointsize>
+         </font>
+        </property>
         <property name="value">
          <number>0</number>
         </property>
@@ -156,7 +192,7 @@
        <enum>QTabWidget::East</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="controlTab">
        <attribute name="icon">
@@ -299,13 +335,13 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1168</width>
-     <height>18</height>
+     <width>939</width>
+     <height>27</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuHardware">
     <property name="title">
-     <string>Hardware</string>
+     <string>Ha&amp;rdware</string>
     </property>
     <addaction name="actionSleep"/>
     <addaction name="separator"/>
@@ -354,6 +390,12 @@
    <addaction name="menuView"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
+   <property name="iconSize">
+    <size>
+     <width>14</width>
+     <height>14</height>
+    </size>
+   </property>
    <property name="toolButtonStyle">
     <enum>Qt::ToolButtonTextBesideIcon</enum>
    </property>
