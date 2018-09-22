@@ -12,19 +12,18 @@ PulsePlot::PulsePlot(QWidget *parent) :
 
     int numChannels = BC_PGEN_NUMCHANNELS;
 
-    setTitle(QwtText("Pulses"));
-
     setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
     setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
 
-    QFont labelFont(QString("sans serif"),8);
+    QFont labelFont(QString("sans-serif"),8);
     QwtText xLabel(QString("Time (<span>&mu;</span>s)"));
     xLabel.setFont(labelFont);
     setAxisTitle(QwtPlot::xBottom, xLabel);
-    enableAxis(QwtPlot::yLeft,false);
+
 
 
     setAxisAutoScaleRange(QwtPlot::yLeft,0.0,numChannels*1.5);
+
 
     QPen p(QPalette().color(QPalette::Text));
     QPen dotP(p);
@@ -59,6 +58,8 @@ PulsePlot::PulsePlot(QWidget *parent) :
 
     }
 
+    setAxisOverride(QwtPlot::yLeft);
+    enableAxis(QwtPlot::yLeft,false);
     replot();
 }
 

@@ -49,6 +49,12 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    for(int i=0; i<ui->tabWidget->count(); i++)
+    {
+        ui->tabWidget->widget(i)->layout()->setContentsMargins(0,0,0,0);
+        ui->tabWidget->widget(i)->layout()->setMargin(0);
+    }
+
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
     ui->exptSpinBox->blockSignals(true);
@@ -100,6 +106,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     gl->setMargin(3);
     gl->setContentsMargins(3,3,3,3);
+    gl->setSpacing(3);
     ui->pulseConfigBox->setLayout(gl);
 
     auto *clockBox = new QGroupBox(QString("Clocks"),this);
@@ -149,9 +156,11 @@ MainWindow::MainWindow(QWidget *parent) :
     gl = static_cast<QGridLayout*>(ui->gasControlBox->layout());
     QGridLayout *gl2 = static_cast<QGridLayout*>(ui->flowStatusBox->layout());
     gl2->setMargin(3);
+    gl2->setSpacing(3);
     gl2->setContentsMargins(3,3,3,3);
     gl->setContentsMargins(3,3,3,3);
     gl->setMargin(3);
+    gl->setSpacing(3);
     QWidget *lastFocusWidget = nullptr;
     for(int i=0; i<BC_FLOW_NUMCHANNELS; i++)
     {

@@ -73,7 +73,7 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
 
         ch.cfgButton = new QToolButton(this);
         ch.cfgButton->setIcon(QIcon(":/icons/configure.png"));
-        ch.cfgButton->setIconSize(QSize(10,10));
+        ch.cfgButton->setIconSize(QSize(12,12));
         ui->pulseConfigBoxLayout->addWidget(ch.cfgButton,i+1,col,1,1);
         connect(ch.cfgButton,&QToolButton::clicked,[=](){ launchChannelConfig(i); } );
         col++;
