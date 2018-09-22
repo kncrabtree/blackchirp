@@ -103,7 +103,7 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
 
     p_ftmw->setChecked(true);
 #ifndef BC_MOTOR
-    p_ftmw->setEnabled(false);
+    p_ftmw->setCheckable(false);
 #endif
 #else
     p_lif = new QGroupBox(QString("LIF"),this);
@@ -171,6 +171,9 @@ int WizardStartPage::nextId() const
 
 bool WizardStartPage::isComplete() const
 {
+    if(!p_ftmw->isCheckable())
+        return true;
+
     bool out = p_ftmw->isChecked();
 #ifdef BC_LIF
     out = out || p_lif->isChecked();
