@@ -2,6 +2,14 @@
 <ui version="4.0">
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>676</width>
+    <height>289</height>
+   </rect>
+  </property>
   <property name="windowTitle">
    <string>BlackChirp</string>
   </property>
@@ -12,7 +20,7 @@
   <widget class="QWidget" name="centralWidget">
    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1">
     <item>
-     <layout class="QVBoxLayout" name="instrumentStatusLayout" stretch="0,0,0,0,0,0,0">
+     <layout class="QVBoxLayout" name="instrumentStatusLayout" stretch="0,0,0,0,1,0,0">
       <item>
        <widget class="QLabel" name="label">
         <property name="font">
@@ -31,10 +39,19 @@
       <item>
        <layout class="QFormLayout" name="formLayout">
         <property name="fieldGrowthPolicy">
-         <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+         <enum>QFormLayout::ExpandingFieldsGrow</enum>
+        </property>
+        <property name="formAlignment">
+         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
         </property>
         <item row="0" column="0">
          <widget class="QLabel" name="exptLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="font">
            <font>
             <pointsize>8</pointsize>
@@ -43,10 +60,19 @@
           <property name="text">
            <string>Expt</string>
           </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
          </widget>
         </item>
         <item row="0" column="1">
          <widget class="QSpinBox" name="exptSpinBox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="font">
            <font>
             <pointsize>8</pointsize>
@@ -154,6 +180,12 @@
        <spacer name="verticalSpacer">
         <property name="orientation">
          <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
         </property>
        </spacer>
       </item>
@@ -335,8 +367,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>939</width>
-     <height>27</height>
+     <width>676</width>
+     <height>18</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuHardware">

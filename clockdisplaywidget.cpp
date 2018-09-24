@@ -2,6 +2,7 @@
 
 #include <QFormLayout>
 #include <QDoubleSpinBox>
+#include <QLabel>
 
 #include "rfconfig.h"
 
@@ -33,10 +34,13 @@ ClockDisplayWidget::ClockDisplayWidget(QWidget *parent) : QWidget(parent)
         box->setToolTip(tt);
         box->blockSignals(true);
 
-        fl->addRow(key,box);
+        auto *lbl = new QLabel(key);
+        lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+        lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+
+        fl->addRow(lbl,box);
         d_boxes.insert(type,box);
     }
-
 
     setLayout(fl);
 }

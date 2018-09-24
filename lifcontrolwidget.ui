@@ -2,10 +2,30 @@
 <ui version="4.0">
  <class>LifControlWidget</class>
  <widget class="QWidget" name="LifControlWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>182</width>
+    <height>261</height>
+   </rect>
+  </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
@@ -37,6 +57,12 @@
           </property>
           <item row="0" column="0">
            <widget class="QLabel" name="lIFVScaleLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string>LIF V Scale</string>
             </property>
@@ -57,6 +83,12 @@
           </item>
           <item row="1" column="0">
            <widget class="QLabel" name="sampleRateLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string>Sample Rate</string>
             </property>
@@ -83,6 +115,12 @@
           </item>
           <item row="2" column="0">
            <widget class="QLabel" name="samplesLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string>Samples</string>
             </property>
@@ -106,6 +144,12 @@
           </item>
           <item row="3" column="0">
            <widget class="QLabel" name="refEnabledLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string>Ref Enabled</string>
             </property>
@@ -116,6 +160,12 @@
           </item>
           <item row="4" column="0">
            <widget class="QLabel" name="refVScaleLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string>Ref V Scale</string>
             </property>
