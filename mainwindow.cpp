@@ -236,6 +236,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->ftViewWidget,&FtmwViewWidget::rollingAverageShotsChanged,p_am,&AcquisitionManager::changeRollingAverageShots);
     connect(ui->ftViewWidget,&FtmwViewWidget::rollingAverageReset,p_am,&AcquisitionManager::resetRollingAverage);
     connect(p_am,&AcquisitionManager::newFtmwConfig,ui->ftViewWidget,&FtmwViewWidget::updateFtmw);
+    connect(p_am,&AcquisitionManager::newFidList,ui->ftViewWidget,&FtmwViewWidget::updateLiveFidList);
     connect(p_am,&AcquisitionManager::snapshotComplete,ui->ftViewWidget,&FtmwViewWidget::snapshotTaken);
 
     QThread *amThread = new QThread(this);

@@ -12,6 +12,10 @@
 #include "flowconfig.h"
 #include "ioboardconfig.h"
 
+//these are included because they define datatypes needed by qRegisterMetaType in main.cpp
+#include "ft.h"
+#include "ftworker.h"
+
 #ifdef BC_LIF
 #include "lifconfig.h"
 #endif

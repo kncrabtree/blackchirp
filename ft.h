@@ -17,7 +17,7 @@ public:
     Ft &operator=(const Ft &);
     ~Ft();
 
-    void setPoint(int i, QPointF pt);
+    void setPoint(int i, QPointF pt, double ignoreRange = 0.0);
     QPointF &operator[](int i);
 
     int size() const;

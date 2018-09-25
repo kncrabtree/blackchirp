@@ -38,9 +38,8 @@ public:
         int zeroPadFactor;
         bool removeDC;
         double scalingFactor;
+        double autoScaleIgnoreMHz;
         BlackChirp::FtWindowFunction windowFunction;
-
-        FidProcessingSettings() : startUs(-1.0), endUs(-1.0), zeroPadFactor(0), removeDC(false), scalingFactor(1.0), windowFunction(BlackChirp::Boxcar) {}
     };
 
     /*!
@@ -73,8 +72,8 @@ public slots:
      \param fid Fid to analyze
      \return QPair<QVector<QPointF>, double> Resulting FT magnitude spectrum in XY format and maximum Y value
     */
-    Ft doFT(const Fid fid, const FidProcessingSettings &settings);
-    void doFtDiff(const Fid ref, const Fid diff, const FidProcessingSettings &settings);
+    Ft doFT(const Fid fid, const FtWorker::FidProcessingSettings &settings);
+    void doFtDiff(const Fid ref, const Fid diff, const FtWorker::FidProcessingSettings &settings);
 
     /*!
      \brief Perform truncation, high-pass, and exponential filtering on an Fid
@@ -82,7 +81,7 @@ public slots:
      \param f Fid to filter
      \return QVector<double> Filtered Fid
     */
-    QVector<double> filterFid(const Fid fid, const FidProcessingSettings &settings);
+    QVector<double> filterFid(const Fid fid, const FtWorker::FidProcessingSettings &settings);
 
     void prepareForDisplay(const QVector<double> fid, double spacing);
 
@@ -105,5 +104,7 @@ private:
     void winKaiserBessel(int n, double beta);
 
 };
+
+Q_DECLARE_METATYPE(FtWorker::FidProcessingSettings)
 
 #endif // FTWORKER_H

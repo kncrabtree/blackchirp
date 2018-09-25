@@ -39,13 +39,16 @@ Ft::~Ft()
 
 }
 
-void Ft::setPoint(int i, QPointF pt)
+void Ft::setPoint(int i, QPointF pt, double ignoreRange)
 {
     if(i >= 0 && i < data->ftData.size())
     {
         data->ftData[i] = pt;
-        data->yMin = qMin(pt.y(),data->yMin);
-        data->yMax = qMax(pt.y(),data->yMax);
+        if(qAbs(pt.x()-data->loFreq) > ignoreRange)
+        {
+            data->yMin = qMin(pt.y(),data->yMin);
+            data->yMax = qMax(pt.y(),data->yMax);
+        }
     }
 }
 

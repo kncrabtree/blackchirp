@@ -13,6 +13,8 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
 {
     ui->setupUi(this);
 
+    d_currentProcessingSettings = FtWorker::FidProcessingSettings { -1.0, -1.0, 0, false, 1.0, 50.0, BlackChirp::Boxcar };
+
     p_liveThread = new QThread(this);
     d_threadList << p_liveThread;
 
@@ -97,9 +99,13 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
         p_liveFtw = new FtWorker(d_liveFtwId);
         p_liveFtw->moveToThread(p_liveThread);
         connect(p_liveThread,&QThread::finished,p_liveFtw,&FtWorker::deleteLater);
+        connect(p_liveFtw,&FtWorker::fidDone,this,&FtmwViewWidget::fidProcessed);
+        connect(p_liveFtw,&FtWorker::ftDone,this,&FtmwViewWidget::ftDone);
+        p_liveThread->start();
 
         d_currentExptNum = e.number();
 
+        ui->verticalLayout->setStretch(0,1);
         ui->liveFidPlot->show();
         ui->liveFtPlot->show();
 
@@ -112,6 +118,8 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
         }
         if(config.type() == BlackChirp::FtmwLoScan)
             d_mode = BothSB;
+        else
+            d_mode = Live;
     }
     else
     {        
@@ -132,7 +140,7 @@ void FtmwViewWidget::updateLiveFidList(const FidList fl, int segment)
     if(p_liveThread->isRunning())
     {
         d_currentLiveFid = fl.first();
-        ///TODO: process
+        QMetaObject::invokeMethod(p_liveFtw,"doFT",Q_ARG(Fid,d_currentLiveFid),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings));
     }
 
     if(segment == d_segment1 && d_frame1 < fl.size() && d_frame1 >= 0)
@@ -289,6 +297,7 @@ void FtmwViewWidget::snapshotTaken()
 
 void FtmwViewWidget::experimentComplete()
 {
+    ui->verticalLayout->setStretch(0,0);
     ui->liveFidPlot->hide();
     ui->liveFtPlot->hide();
 
