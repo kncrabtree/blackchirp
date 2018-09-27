@@ -28,7 +28,7 @@
 #include <qwt6/qwt_symbol.h>
 
 FtPlot::FtPlot(QString id, QWidget *parent) :
-    ZoomPanPlot(QString("FtPlot"+id),parent), d_number(0), d_currentUnits(BlackChirp::FtPlotmV)
+    ZoomPanPlot(QString("FtPlot"+id),parent), d_number(0), d_id(id), d_currentUnits(BlackChirp::FtPlotV)
 {
     //make axis label font smaller
     this->setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
@@ -42,6 +42,8 @@ FtPlot::FtPlot(QString id, QWidget *parent) :
     QwtText llabel(QString("FT "+id));
     llabel.setFont(QFont(QString("sans-serif"),8));
     this->setAxisTitle(QwtPlot::yLeft,llabel);
+
+    configureUnits(BlackChirp::FtPlotuV);
 
     QSettings s;
     s.beginGroup(d_name);
@@ -118,7 +120,7 @@ void FtPlot::prepareForExperiment(const Experiment e)
     else
     {
         p_curveData->setVisible(true);
-        setAxisAutoScaleRange(QwtPlot::xBottom,c.ftMin(),c.ftMax());
+        setAxisAutoScaleRange(QwtPlot::xBottom,c.ftMinMHz(),c.ftMaxMHz());
     }
     autoScale();
     QSettings s;
@@ -127,9 +129,10 @@ void FtPlot::prepareForExperiment(const Experiment e)
 
 void FtPlot::newFt(const Ft ft)
 {
-    d_currentFt = ft;
     if(ft.isEmpty())
         return;
+
+    d_currentFt = ft;
 
     setAxisAutoScaleRange(QwtPlot::yLeft,ft.yMin(),ft.yMax());
     setAxisAutoScaleRange(QwtPlot::xBottom,ft.minFreq(),ft.maxFreq());
@@ -165,7 +168,8 @@ void FtPlot::filterData()
         double min = d_currentFt.at(dataIndex).y(), max = min;
         int minIndex = dataIndex, maxIndex = dataIndex;
         int numPnts = 0;
-        while(dataIndex+1 < d_currentFt.size() && map.transform(d_currentFt.at(dataIndex).x()) < pixel+1.0)
+        double nextPixelX = map.invTransform(pixel+1.0);
+        while(dataIndex+1 < d_currentFt.size() && d_currentFt.at(dataIndex).x() < nextPixelX)
         {
             if(d_currentFt.at(dataIndex).y() < min)
             {
@@ -427,58 +431,35 @@ void FtPlot::exportXY()
 
 void FtPlot::configureUnits(BlackChirp::FtPlotUnits u)
 {
+    if(u == d_currentUnits)
+        return;
+
+    d_currentUnits = u;
     QwtText title = axisTitle(QwtPlot::yLeft);
-    double scf = 1.0;
-    double oldScf = 1.0;
 
     switch(u)
     {
     case BlackChirp::FtPlotV:
-        title.setText(QString("FT (V)"));
-        scf = 1.0;
+        title.setText(QString("FT "+d_id+" (V)"));
         break;
     case BlackChirp::FtPlotmV:
-        title.setText(QString("FT (mV)"));
-        scf = 1e3;
+        title.setText(QString("FT "+d_id+" (mV)"));
         break;
     case BlackChirp::FtPlotuV:
-        title.setText(QString::fromUtf16(u"FT (µV)"));
-        scf = 1e6;
+        title.setText(QString("FT "+d_id+QString::fromUtf16(u" (µV)")));
         break;
     case BlackChirp::FtPlotnV:
-        title.setText(QString("FT (nV)"));
-        scf = 1e9;
+        title.setText(QString("FT "+d_id+" (nV)"));
         break;
     default:
         break;
     }
 
-    switch(d_currentUnits)
-    {
-    case BlackChirp::FtPlotV:
-        oldScf = 1.0;
-        break;
-    case BlackChirp::FtPlotmV:
-        oldScf = 1e3;
-        break;
-    case BlackChirp::FtPlotuV:
-        oldScf = 1e6;
-        break;
-    case BlackChirp::FtPlotnV:
-        oldScf = 1e9;
-        break;
-    default:
-        break;
-    }
 
-    d_currentUnits = u;
-
-    QSettings s;
-    s.setValue(QString("ftUnits"),d_currentUnits);
 
     setAxisTitle(QwtPlot::yLeft,title);
-    emit unitsChanged(scf);
-    emit scalingChange(scf/oldScf);
+//    emit unitsChanged(scf);
+//    emit scalingChange(scf/oldScf);
 }
 
 void FtPlot::newPeakList(const QList<QPointF> l)

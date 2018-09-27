@@ -229,3 +229,21 @@ BlackChirp::ClockType BlackChirp::clockType(QString key)
 
     return ReferenceClock;
 }
+
+
+double BlackChirp::getFtScalingFactor(BlackChirp::FtPlotUnits u)
+{
+    switch(u)
+    {
+    case FtPlotV:
+        return 1.0;
+    case FtPlotmV:
+        return 1e3;
+    case FtPlotuV:
+        return 1e6;
+    case FtPlotnV:
+        return 1e9;
+    default:
+        return 1.0;
+    }
+}

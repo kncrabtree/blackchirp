@@ -48,8 +48,9 @@ public:
     QVector<qint64> extractChirp() const;
     QVector<qint64> extractChirp(const QByteArray b) const;
     QString errorString() const;
-    double ftMin() const;
-    double ftMax() const;
+    double ftMinMHz() const;
+    double ftMaxMHz() const;
+    double fidDurationUs() const;
     QPair<int,int> chirpRange() const;
     bool writeFids(int num, int snapNum = -1) const;
     static bool writeFidFile(int num, FidList list, QString path = QString(""));

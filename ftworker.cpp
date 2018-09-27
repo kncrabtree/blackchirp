@@ -8,7 +8,7 @@
 FtWorker::FtWorker(int i, QObject *parent) :
     QObject(parent), d_id(i), real(NULL), work(NULL), d_numPnts(0)
 {
-    d_lastProcSettings = FidProcessingSettings { -1.0, -1.0, 0, false, 1.0, 50.0, BlackChirp::Boxcar };
+    d_lastProcSettings = FidProcessingSettings { -1.0, -1.0, 0, false, BlackChirp::FtPlotuV, 50.0, BlackChirp::Boxcar };
 }
 
 Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings)
@@ -64,6 +64,7 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings)
 
     int i;
     double np = static_cast<double>(d_numPnts);
+    double scf = BlackChirp::getFtScalingFactor(settings.units);
     for(i=1; i<d_numPnts-i; i++)
     {
         //calculate x value
@@ -75,7 +76,7 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings)
 
         //calculate magnitude and update max
         //note: Normalize output, and convert to mV
-        double coef_mag = sqrt(coef_real*coef_real + coef_imag*coef_imag)/rawSize*settings.scalingFactor;
+        double coef_mag = sqrt(coef_real*coef_real + coef_imag*coef_imag)/rawSize*scf;
 
         if(fid.sideband() == BlackChirp::UpperSideband)
             spectrum.setPoint(i, QPointF(x1,coef_mag),settings.autoScaleIgnoreMHz);
@@ -85,7 +86,7 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings)
     if(i==d_numPnts-i)
     {
         QPointF p(probe + sign*(double)i/np/spacing,
-                   sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/rawSize*settings.scalingFactor);
+                   sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/rawSize*scf);
 
         if(fid.sideband() == BlackChirp::UpperSideband)
             spectrum.setPoint(i,p,settings.autoScaleIgnoreMHz);

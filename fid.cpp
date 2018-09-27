@@ -163,6 +163,11 @@ int Fid::size() const
     return data->fid.size();
 }
 
+bool Fid::isEmpty() const
+{
+    return data->fid.isEmpty();
+}
+
 double Fid::at(const int i) const
 {
     return atNorm(i)*data->vMult;

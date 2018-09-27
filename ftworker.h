@@ -37,7 +37,7 @@ public:
         double endUs;
         int zeroPadFactor;
         bool removeDC;
-        double scalingFactor;
+        BlackChirp::FtPlotUnits units;
         double autoScaleIgnoreMHz;
         BlackChirp::FtWindowFunction windowFunction;
     };

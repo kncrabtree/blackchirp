@@ -67,11 +67,11 @@ void PeakFindWidget::prepareForExperiment(const Experiment e)
         setEnabled(true);
 
         QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-        d_minFreq = qBound(e.ftmwConfig().ftMin(),s.value(QString("peakFind/minFreq"),e.ftmwConfig().ftMin()).toDouble(),e.ftmwConfig().ftMax());
-        d_maxFreq = qBound(e.ftmwConfig().ftMin(),s.value(QString("peakFind/maxFreq"),e.ftmwConfig().ftMax()).toDouble(),e.ftmwConfig().ftMax());
+        d_minFreq = qBound(e.ftmwConfig().ftMinMHz(),s.value(QString("peakFind/minFreq"),e.ftmwConfig().ftMinMHz()).toDouble(),e.ftmwConfig().ftMaxMHz());
+        d_maxFreq = qBound(e.ftmwConfig().ftMinMHz(),s.value(QString("peakFind/maxFreq"),e.ftmwConfig().ftMaxMHz()).toDouble(),e.ftmwConfig().ftMaxMHz());
         d_snr = s.value(QString("peakFind/snr"),3.0).toDouble();
         d_winSize = s.value(QString("peakFind/windowSize"),11).toInt();
-        d_freqRange = qMakePair(e.ftmwConfig().ftMin(),e.ftmwConfig().ftMax());
+        d_freqRange = qMakePair(e.ftmwConfig().ftMinMHz(),e.ftmwConfig().ftMaxMHz());
         d_polyOrder = s.value(QString("peakFind/polyOrder"),6).toInt();
         if(e.ftmwConfig().type() == BlackChirp::FtmwPeakUp)
             d_number = 0;

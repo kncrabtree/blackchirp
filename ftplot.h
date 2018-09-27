@@ -54,6 +54,7 @@ private:
     QwtPlotGrid *p_plotGrid;
     Ft d_currentFt;
     int d_number;
+    QString d_id;
     BlackChirp::FtPlotUnits d_currentUnits;
 
     QColor getColor(QColor startingColor);

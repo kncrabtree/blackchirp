@@ -12,6 +12,10 @@
 #include <QtWidgets/QSplitter>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
+#include <QtWidgets/QToolBar>
+#include <QtWidgets/QToolButton>
+#include <QtWidgets/QMenu>
+#include <QtWidgets/QWidgetAction>
 #include <QList>
 
 
@@ -19,6 +23,7 @@
 #include "ftworker.h"
 #include "fidplot.h"
 #include "ftplot.h"
+#include "ftmwprocessingwidget.h"
 
 class QThread;
 class FtmwSnapshotWidget;
@@ -55,14 +60,19 @@ signals:
 public slots:
     void updateLiveFidList(const FidList fl, int segment);
     void updateFtmw(const FtmwConfig f);
+    void updateProcessingSettings(FtWorker::FidProcessingSettings s);
+    void storeProcessingSettings();
 
     void fidProcessed(const QVector<QPointF> fidData, int workerId);
     void ftDone(const Ft ft, int workerId);
     void updateMainPlot();
+    void reprocessAll();
+    void reprocess(const QList<int> ignore = QList<int>());
+    void process(int id, const Fid f);
 
     void modeChanged(MainPlotMode newMode);
     void snapshotTaken();
-    void experimentComplete();
+    void experimentComplete(const Experiment e);
     void snapshotLoadError(QString msg);
     void snapListUpdate();
     void snapRefChanged();
@@ -74,23 +84,32 @@ private:
 
     FtmwConfig d_ftmwConfig;
     FtWorker::FidProcessingSettings d_currentProcessingSettings;
-
-    bool d_replotWhenDone, d_processing;
     int d_currentExptNum;
     MainPlotMode d_mode;
-
     FidList d_liveFidList;
-    Fid d_currentLiveFid, d_currentFid1, d_currentFid2;
-    Ft d_currentLiveFt, d_currentFt1, d_currentFt2;
-    int d_frame1, d_frame2, d_segment1, d_segment2;
 
-    QThread *p_liveThread;
-    FtWorker *p_liveFtw, *p_mainFtw, *p_plot1Ftw, *p_plot2Ftw;
-    QList<QThread*> d_threadList;
+    struct WorkerStatus {
+        FtWorker *worker;
+        QThread *thread;
+        bool busy;
+        bool reprocessWhenDone;
+    };
 
+    struct PlotStatus {
+        FidPlot *fidPlot;
+        FtPlot *ftPlot;
+        Fid fid;
+        Ft ft;
+        int frame; //only used for plot1 and plot2
+        int segment; //only used for plot1 and plot2
+    };
+
+    QList<int> d_workerIds;
+    QHash<int,WorkerStatus> d_workersStatus;
+    QHash<int,PlotStatus> d_plotStatus;
     QString d_path;
+    const int d_liveFtwId = 0, d_mainFtwId = 3, d_plot1FtwId = 1, d_plot2FtwId = 2;
 
-    static const int d_liveFtwId = 0, d_mainFtwId = 3, d_plot1FtwId = 1, d_plot2FtwId = 2;
 };
 
 QT_BEGIN_NAMESPACE
@@ -117,6 +136,9 @@ public:
     FtPlot *ftPlot2;
     QWidget *snapshotWidget2;
     FtPlot *mainFtPlot;
+    QToolBar *toolBar;
+    QMenu *processingMenu;
+    FtmwProcessingWidget *processingWidget;
 
     void setupUi(QWidget *FtmwViewWidget)
     {
@@ -228,7 +250,21 @@ public:
         splitter->setStretchFactor(0,1);
         splitter->setStretchFactor(1,2);
 
+        toolBar = new QToolBar;
+        auto *processingAct =toolBar->addAction(QIcon(QString(":/icons/labplot-xy-fourier-transform-curve.svg")),QString("FID Processing Settings"));
+        auto *processingBtn = dynamic_cast<QToolButton*>(toolBar->widgetForAction(processingAct));
+        processingMenu = new QMenu;
+        auto processingWa = new QWidgetAction(processingMenu);
+        processingWidget = new FtmwProcessingWidget;
+        processingWa->setDefaultWidget(processingWidget);
+        processingMenu->addAction(processingWa);
+        processingBtn->setMenu(processingMenu);
+        processingBtn->setPopupMode(QToolButton::InstantPopup);
+
+
+
         auto vbl = new QVBoxLayout;
+        vbl->addWidget(toolBar,0);
         vbl->addWidget(exptLabel,0);
         vbl->addWidget(splitter,1);
         FtmwViewWidget->setLayout(vbl);

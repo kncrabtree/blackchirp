@@ -192,7 +192,7 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
         out->setLayout(vbl);
 
         p_ftmw->prepareForExperiment(d_experiment);
-        p_ftmw->updateFtmw(d_experiment.ftmwConfig());
+//        p_ftmw->updateFtmw(d_experiment.ftmwConfig());
 //        if(!d_experiment.ftmwConfig().fidList().isEmpty())
 //            p_ftmw->updateShotsLabel(d_experiment.ftmwConfig().fidList().first().shots());
 
@@ -220,7 +220,7 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
                 p_ftmw->snapshotTaken();
         }
 
-        p_ftmw->experimentComplete();
+        p_ftmw->experimentComplete(d_experiment);
     }
 
 

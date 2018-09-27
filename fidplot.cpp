@@ -147,7 +147,8 @@ void FidPlot::filterData()
         double min = d_currentFid.at(dataIndex).y(), max = min;
         int minIndex = dataIndex, maxIndex = dataIndex;
         int numPnts = 0;
-        while(dataIndex+1 < d_currentFid.size() && map.transform(d_currentFid.at(dataIndex).x()*1e6) < pixel+1.0)
+        double nextPixelX = map.invTransform(pixel+1.0)/1e6;
+        while(dataIndex+1 < d_currentFid.size() && d_currentFid.at(dataIndex).x() < nextPixelX)
         {
             if(d_currentFid.at(dataIndex).y() < min)
             {

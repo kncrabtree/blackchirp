@@ -287,7 +287,7 @@ QString FtmwConfig::errorString() const
     return data->errorString;
 }
 
-double FtmwConfig::ftMin() const
+double FtmwConfig::ftMinMHz() const
 {
     double sign = 1.0;
     if(rfConfig().downMixSideband() == BlackChirp::LowerSideband)
@@ -297,7 +297,7 @@ double FtmwConfig::ftMin() const
     return qMin(lo,lastFreq);
 }
 
-double FtmwConfig::ftMax() const
+double FtmwConfig::ftMaxMHz() const
 {
     double sign = 1.0;
     if(rfConfig().downMixSideband() == BlackChirp::LowerSideband)
@@ -305,6 +305,14 @@ double FtmwConfig::ftMax() const
     double lo = rfConfig().clockFrequency(BlackChirp::DownConversionLO);
     double lastFreq = lo + sign*data->scopeConfig.sampleRate/(1e6*2.0);
     return qMax(lo,lastFreq);
+}
+
+double FtmwConfig::fidDurationUs() const
+{
+    double sr = scopeConfig().sampleRate;
+    double rl = static_cast<double>(scopeConfig().recordLength);
+
+    return rl/sr*1e6;
 }
 
 QPair<int, int> FtmwConfig::chirpRange() const

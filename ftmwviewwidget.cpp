@@ -2,56 +2,77 @@
 
 #include <QThread>
 #include <QMessageBox>
+#include <QMenu>
+#include <QToolButton>
+#include <QCheckBox>
+#include <QDoubleSpinBox>
+#include <QWidgetAction>
+#include <QFormLayout>
 
 #include "ftworker.h"
 #include "ftmwsnapshotwidget.h"
 
 FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     QWidget(parent),
-    ui(new Ui::FtmwViewWidget), d_replotWhenDone(false), d_processing(false), d_currentExptNum(-1),
-    d_mode(Live), d_frame1(0), d_frame2(0), d_segment1(0), d_segment2(0), d_path(path)
+    ui(new Ui::FtmwViewWidget), d_currentExptNum(-1), d_mode(Live), d_path(path)
 {
     ui->setupUi(this);
 
-    d_currentProcessingSettings = FtWorker::FidProcessingSettings { -1.0, -1.0, 0, false, 1.0, 50.0, BlackChirp::Boxcar };
+    QSettings s;
+    s.beginGroup(QString("fidProcessing"));
+    double start = s.value(QString("startUs"),-1.0).toDouble();
+    double end = s.value(QString("endUs"),-1.0).toDouble();
+    int zeroPad = s.value(QString("zeroPad"),0).toInt();
+    bool rdc = s.value(QString("removeDC"),false).toBool();
+    auto units = static_cast<BlackChirp::FtPlotUnits>(s.value(QString("ftUnits"),BlackChirp::FtPlotuV).toInt());
+    double asIg = s.value(QString("autoscaleIgnoreMHz"),0.0).toDouble();
+    auto winf = static_cast<BlackChirp::FtWindowFunction>(s.value(QString("windowFunction"),BlackChirp::Boxcar).toInt());
+    s.endGroup();
 
-    p_liveThread = new QThread(this);
-    d_threadList << p_liveThread;
+    d_currentProcessingSettings = FtWorker::FidProcessingSettings { start, end, zeroPad, rdc, units, asIg, winf };
+    ui->processingWidget->applySettings(d_currentProcessingSettings);
+    d_workerIds << d_liveFtwId << d_mainFtwId << d_plot1FtwId << d_plot2FtwId;
 
-    p_liveFtw = nullptr;
+    for(int i=0; i<d_workerIds.size(); i++)
+    {
+        int id = d_workerIds.at(i);
+        if(id == d_liveFtwId)
+            d_workersStatus.insert(d_liveFtwId, WorkerStatus { nullptr, new QThread(this), false, false} );
+        else
+        {
+            WorkerStatus ws { new FtWorker(id), new QThread(this), false, false};
+            connect(ws.thread,&QThread::finished,ws.worker,&FtWorker::deleteLater);
+            connect(ws.worker,&FtWorker::ftDone,this,&FtmwViewWidget::ftDone);
+            connect(ws.worker,&FtWorker::fidDone,this,&FtmwViewWidget::fidProcessed);
+            ws.worker->moveToThread(ws.thread);
+            ws.thread->start();
+            d_workersStatus.insert(id,ws);
+        }
 
-    p_mainFtw = new FtWorker(d_mainFtwId);
-    auto *mthread = new QThread(this);
-    d_threadList << mthread;
-    p_mainFtw->moveToThread(mthread);
+        if(id == d_liveFtwId)
+            d_plotStatus.insert(id,PlotStatus { ui->liveFidPlot, ui->liveFtPlot, Fid(), Ft(), 0, 0 });
+        else if(id == d_plot1FtwId)
+            d_plotStatus.insert(id,PlotStatus { ui->fidPlot1, ui->ftPlot1, Fid(), Ft(), 0, 0 });
+        else if(id == d_plot2FtwId)
+            d_plotStatus.insert(id,PlotStatus { ui->fidPlot2, ui->ftPlot2, Fid(), Ft(), 0, 0 });
+        //don't need to add one of these for the main plot; it's special
 
-    p_plot1Ftw = new FtWorker(d_plot1FtwId);
-    auto *p1thread = new QThread(this);
-    d_threadList << p1thread;
-    p_plot1Ftw->moveToThread(p1thread);
-
-    p_plot2Ftw = new FtWorker(d_plot2FtwId);
-    auto *p2thread = new QThread(this);
-    d_threadList << p2thread;
-    p_plot2Ftw->moveToThread(p2thread);
+    }
 
     ui->snapshotWidget1->hide();
     ui->snapshotWidget2->hide();
 
-    ///TODO: load processing settings from settings
-    ///TODO: Make signal/slot connections for workers
+    connect(ui->processingWidget,&FtmwProcessingWidget::settingsUpdated,this,&FtmwViewWidget::updateProcessingSettings);
+    connect(ui->processingMenu,&QMenu::aboutToHide,this,&FtmwViewWidget::storeProcessingSettings);
 
 }
 
 FtmwViewWidget::~FtmwViewWidget()
 {
-    for(int i=0; i<d_threadList.size(); i++)
+    for(auto it=d_workersStatus.begin(); it != d_workersStatus.end(); it++)
     {
-        if(d_threadList.at(i)->isRunning())
-        {
-            d_threadList[i]->quit();
-            d_threadList[i]->wait();
-        }
+        it.value().thread->quit();
+        it.value().thread->wait();
     }
 
     delete ui;
@@ -77,31 +98,32 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
 //    ui->peakFindWidget->prepareForExperiment(e);
 
     ui->liveFtPlot->prepareForExperiment(e);
+    ui->processingWidget->prepareForExperient(e);
     ui->ftPlot1->prepareForExperiment(e);
     ui->ftPlot2->prepareForExperiment(e);
     ui->mainFtPlot->prepareForExperiment(e);
 
     d_liveFidList.clear();
-    d_currentLiveFid = Fid();
-    d_currentFid1 = Fid();
-    d_currentFid2 = Fid();
-    d_currentLiveFt = Ft();
-    d_currentFt1 = Ft();
-    d_currentFt2 = Ft();
-
-    d_frame1 = 0;
-    d_frame2 = 0;
-    d_segment1 = 0;
-    d_segment2 = 0;
+    for(auto it = d_plotStatus.begin(); it != d_plotStatus.end(); it++)
+    {
+        it.value().fid = Fid();
+        it.value().ft = Ft();
+        it.value().frame = 0;
+        it.value().segment = 0;
+    }
 
     if(config.isEnabled())
     {
-        p_liveFtw = new FtWorker(d_liveFtwId);
-        p_liveFtw->moveToThread(p_liveThread);
-        connect(p_liveThread,&QThread::finished,p_liveFtw,&FtWorker::deleteLater);
-        connect(p_liveFtw,&FtWorker::fidDone,this,&FtmwViewWidget::fidProcessed);
-        connect(p_liveFtw,&FtWorker::ftDone,this,&FtmwViewWidget::ftDone);
-        p_liveThread->start();
+        auto ws = d_workersStatus.value(d_liveFtwId);
+        ws.worker = new FtWorker(d_liveFtwId);
+        ws.worker->moveToThread(ws.thread);
+        connect(ws.thread,&QThread::finished,ws.worker,&FtWorker::deleteLater);
+        connect(ws.worker,&FtWorker::fidDone,this,&FtmwViewWidget::fidProcessed);
+        connect(ws.worker,&FtWorker::ftDone,this,&FtmwViewWidget::ftDone);
+        ws.busy = false;
+        ws.reprocessWhenDone = false;
+        ws.thread->start();
+        d_workersStatus.insert(d_liveFtwId,ws);
 
         d_currentExptNum = e.number();
 
@@ -137,113 +159,139 @@ void FtmwViewWidget::updateLiveFidList(const FidList fl, int segment)
 
     d_liveFidList = fl;
 
-    if(p_liveThread->isRunning())
+    for(auto it = d_plotStatus.begin(); it != d_plotStatus.end(); it++)
     {
-        d_currentLiveFid = fl.first();
-        QMetaObject::invokeMethod(p_liveFtw,"doFT",Q_ARG(Fid,d_currentLiveFid),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings));
-    }
+        if(d_workersStatus.value(it.key()).thread->isRunning())
+        {
+            Fid f = fl.first();
+            if(it.key() != d_liveFtwId)
+            {
+                if(segment == it.value().segment && it.value().frame < fl.size() && it.value().frame > 0)
+                    f = fl.at(it.value().frame);
+            }
 
-    if(segment == d_segment1 && d_frame1 < fl.size() && d_frame1 >= 0)
-    {
-        ///TODO: figure out whether to use snapshots to modify
-        /// Then need to reprocess
-        d_currentFid1 = fl.at(d_frame1);
+            it.value().fid = f;
+            process(it.key(),f);
+        }
     }
-
-    if(segment == d_segment2 && d_frame2 < fl.size() && d_frame2 >= 0)
-    {
-        ///TODO: figure out whether to use snapshots to modify
-        /// Then need to reprocess
-        d_currentFid2 = fl.at(d_frame2);
-    }
-
 }
 
 void FtmwViewWidget::updateFtmw(const FtmwConfig f)
 {
     d_ftmwConfig = f;
 
-    d_currentFid1 = f.singleFid(d_frame1,d_segment1);
-    d_currentFid2 = f.singleFid(d_frame2,d_segment2);
+    for(auto it = d_plotStatus.begin(); it != d_plotStatus.end(); it++)
+    {
+        if(it.key() == d_liveFtwId)
+            continue;
 
-    ///TODO: process. Also figure out if main plot needs to be reprocessed.
+        it.value().fid = f.singleFid(it.value().frame,it.value().segment);
+    }
+
+    reprocess(QList<int>{ d_liveFtwId });
 
 }
 
-void FtmwViewWidget::fidProcessed(const QVector<QPointF> fidData, int workerId)
+void FtmwViewWidget::updateProcessingSettings(FtWorker::FidProcessingSettings s)
 {
-    FidPlot *plot = nullptr;
-
-    switch(workerId)
+    d_currentProcessingSettings = s;
+    QList<int> ignore;
+    switch(d_mode)
     {
-    case d_liveFtwId:
-        plot = ui->liveFidPlot;
-        break;
-    case d_plot1FtwId:
-        plot = ui->fidPlot1;
-        break;
-    case d_plot2FtwId:
-        plot = ui->fidPlot2;
-        break;
+    case UpperSB:
+    case LowerSB:
+    case BothSB:
+        ignore << d_mainFtwId;
     default:
         break;
     }
 
-    if(plot != nullptr)
+    if(ui->liveFidPlot->isVisible())
     {
-        if(plot->isVisible())
-            plot->receiveProcessedFid(fidData);
+        ui->liveFidPlot->setFtStart(s.startUs);
+        ui->liveFidPlot->setFtEnd(s.endUs);
+    }
+    ui->fidPlot1->setFtStart(s.startUs);
+    ui->fidPlot1->setFtEnd(s.endUs);
+    ui->fidPlot2->setFtStart(s.startUs);
+    ui->fidPlot2->setFtEnd(s.endUs);
+
+    reprocess(ignore);
+}
+
+void FtmwViewWidget::storeProcessingSettings()
+{
+    QSettings s;
+    s.beginGroup(QString("fidProcessing"));
+    s.setValue(QString("startUs"),d_currentProcessingSettings.startUs);
+    s.setValue(QString("endUs"),d_currentProcessingSettings.endUs);
+    s.setValue(QString("autoscaleIgnoreMHz"),d_currentProcessingSettings.autoScaleIgnoreMHz);
+    s.setValue(QString("zeroPad"),d_currentProcessingSettings.zeroPadFactor);
+    s.setValue(QString("removeDC"),d_currentProcessingSettings.removeDC);
+    s.setValue(QString("windowFunction"),static_cast<int>(d_currentProcessingSettings.windowFunction));
+    s.setValue(QString("ftUnits"),static_cast<int>(d_currentProcessingSettings.units));
+    s.endGroup();
+    s.sync();
+
+    reprocessAll();
+}
+
+void FtmwViewWidget::fidProcessed(const QVector<QPointF> fidData, int workerId)
+{
+    if(d_plotStatus.contains(workerId))
+    {
+//        if(d_plotStatus.value(workerId).fidPlot->isVisible())
+            d_plotStatus[workerId].fidPlot->receiveProcessedFid(fidData);
     }
 }
 
 void FtmwViewWidget::ftDone(const Ft ft, int workerId)
 {
-    FtPlot *plot = nullptr;
-
-    switch (workerId) {
-    case d_liveFtwId:
-        plot = ui->liveFtPlot;
-        d_currentLiveFt = ft;
-        if(d_mode == Live)
-            updateMainPlot();
-        break;
-    case d_plot1FtwId:
-        plot = ui->ftPlot1;
-        d_currentFt1 = ft;
-        if(d_mode == FT1 || d_mode == FT1mFT2 || d_mode == FT2mFT1)
-            updateMainPlot();
-        break;
-    case d_plot2FtwId:
-        plot = ui->ftPlot2;
-        d_currentFt2 = ft;
-        if(d_mode == FT2 || d_mode == FT1mFT2 || d_mode == FT2mFT1)
-            updateMainPlot();
-        break;
-    case d_mainFtwId:
-        plot = ui->mainFtPlot;
-        break;
-    default:
-        break;
-    }
-
-    if(plot != nullptr)
+    if(d_plotStatus.contains(workerId))
     {
-        if(plot->isVisible())
-            plot->newFt(ft);
+//        if(d_plotStatus.value(workerId).ftPlot->isVisible())
+//        {
+            d_plotStatus[workerId].ft = ft;
+            d_plotStatus[workerId].ftPlot->configureUnits(d_currentProcessingSettings.units);
+            d_plotStatus[workerId].ftPlot->newFt(ft);
+//        }
+
+        switch(d_mode) {
+        case Live:
+        case FT1:
+        case FT2:
+        case FT1mFT2:
+        case FT2mFT1:
+            updateMainPlot();
+            break;
+        default:
+            break;
+        }
     }
+    else
+    {
+        //this is the main plot
+        ui->mainFtPlot->newFt(ft);
+    }
+
+    d_workersStatus[workerId].busy = false;
+    if(d_workersStatus.value(workerId).reprocessWhenDone)
+        process(workerId,d_plotStatus.value(workerId).fid);
 }
 
 void FtmwViewWidget::updateMainPlot()
 {
+    ui->mainFtPlot->configureUnits(d_currentProcessingSettings.units);
+
     switch(d_mode) {
     case Live:
-        ui->mainFtPlot->newFt(d_currentLiveFt);
+        ui->mainFtPlot->newFt(d_plotStatus.value(d_liveFtwId).ft);
         break;
     case FT1:
-        ui->mainFtPlot->newFt(d_currentFt1);
+        ui->mainFtPlot->newFt(d_plotStatus.value(d_plot1FtwId).ft);
         break;
     case FT2:
-        ui->mainFtPlot->newFt(d_currentFt2);
+        ui->mainFtPlot->newFt(d_plotStatus.value(d_plot2FtwId).ft);
         break;
     case FT1mFT2:
         ///TODO: FT difference
@@ -257,6 +305,44 @@ void FtmwViewWidget::updateMainPlot()
         break;
     case BothSB:
         break;
+    }
+}
+
+void FtmwViewWidget::reprocessAll()
+{
+    reprocess();
+}
+
+void FtmwViewWidget::reprocess(const QList<int> ignore)
+{
+    for(auto it=d_workersStatus.constBegin(); it != d_workersStatus.constEnd(); it++)
+    {
+        if(!ignore.contains(it.key()))
+        {
+            if(it.key() == d_mainFtwId)
+                updateMainPlot();
+            else
+               process(it.key(),d_plotStatus.value(it.key()).fid);
+        }
+    }
+}
+
+void FtmwViewWidget::process(int id, const Fid f)
+{
+    if(f.isEmpty())
+        return;
+
+    auto ws = d_workersStatus.value(id);
+    if(ws.thread->isRunning() && ws.worker != nullptr)
+    {
+        if(ws.busy)
+            d_workersStatus[id].reprocessWhenDone = true;
+        else
+        {
+            d_workersStatus[id].busy = true;
+            d_workersStatus[id].reprocessWhenDone = false;
+            QMetaObject::invokeMethod(ws.worker,"doFT",Q_ARG(Fid,f),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings));
+        }
     }
 }
 
@@ -295,22 +381,29 @@ void FtmwViewWidget::snapshotTaken()
 
 }
 
-void FtmwViewWidget::experimentComplete()
+void FtmwViewWidget::experimentComplete(const Experiment e)
 {
-    ui->verticalLayout->setStretch(0,0);
-    ui->liveFidPlot->hide();
-    ui->liveFtPlot->hide();
-
-    if(p_liveThread->isRunning())
+    if(e.ftmwConfig().isEnabled())
     {
-        p_liveThread->quit();
-        p_liveThread->wait();
+        ui->verticalLayout->setStretch(0,0);
+        ui->liveFidPlot->hide();
+        ui->liveFtPlot->hide();
 
-        p_liveFtw = nullptr;
+        updateFtmw(e.ftmwConfig());
+
+        if(d_workersStatus.value(d_liveFtwId).thread->isRunning())
+        {
+            d_workersStatus[d_liveFtwId].thread->quit();
+            d_workersStatus[d_liveFtwId].thread->wait();
+
+            d_workersStatus[d_liveFtwId].worker = nullptr;
+        }
+
+        if(d_mode == Live)
+            modeChanged(FT1);
+
+        reprocessAll();
     }
-
-    if(d_mode == Live)
-        modeChanged(FT1);
 }
 
 void FtmwViewWidget::snapshotLoadError(QString msg)

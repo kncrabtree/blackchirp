@@ -41,5 +41,7 @@
         <file>icons/bc_logo_med.png</file>
         <file>icons/bc_logo_large.png</file>
         <file>icons/motorscan.png</file>
+        <file>icons/labplot-xy-fourier-filter-curve.svg</file>
+        <file>icons/labplot-xy-fourier-transform-curve.svg</file>
     </qresource>
 </RCC>

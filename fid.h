@@ -106,6 +106,8 @@ public:
      \return int Number of points
     */
     int size() const;
+
+    bool isEmpty() const;
     /*!
      \brief Get voltage at specified index
 
