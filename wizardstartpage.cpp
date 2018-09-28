@@ -166,7 +166,7 @@ int WizardStartPage::nextId() const
         return ExperimentWizard::RfConfigPage;
 #endif
 
-    return startingFtmwPage();
+    return ExperimentWizard::RfConfigPage;
 }
 
 bool WizardStartPage::isComplete() const
@@ -232,7 +232,10 @@ bool WizardStartPage::validatePage()
      ///TODO: use offset info!
 
      e.setFtmwConfig(ftc);
-     e.setFtmwEnabled(p_ftmw->isChecked());
+     if(p_ftmw->isCheckable())
+         e.setFtmwEnabled(p_ftmw->isChecked());
+     else
+         e.setFtmwEnabled(true);
 
 
 #ifdef BC_LIF
