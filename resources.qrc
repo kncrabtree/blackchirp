@@ -43,5 +43,8 @@
         <file>icons/motorscan.png</file>
         <file>icons/labplot-xy-fourier-filter-curve.svg</file>
         <file>icons/labplot-xy-fourier-transform-curve.svg</file>
+        <file>icons/view-media-visualization.svg</file>
+        <file>icons/plot1.svg</file>
+        <file>icons/plot2.svg</file>
     </qresource>
 </RCC>

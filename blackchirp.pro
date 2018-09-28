@@ -49,6 +49,7 @@ DISTFILES += \
     COPYING \
     COPYING.qwt \
     COPYING.lesser \
-    README
+    README \
+    icons/view-media-visualization.svg
 
 

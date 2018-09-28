@@ -65,10 +65,12 @@ public slots:
 
     void fidProcessed(const QVector<QPointF> fidData, int workerId);
     void ftDone(const Ft ft, int workerId);
+    void ftDiffDone(const Ft ft);
     void updateMainPlot();
     void reprocessAll();
     void reprocess(const QList<int> ignore = QList<int>());
     void process(int id, const Fid f);
+    void processDiff(const Fid f1, const Fid f2);
 
     void modeChanged(MainPlotMode newMode);
     void snapshotTaken();
@@ -139,6 +141,14 @@ public:
     QToolBar *toolBar;
     QMenu *processingMenu;
     FtmwProcessingWidget *processingWidget;
+    QAction *liveAction;
+    QAction *ft1Action;
+    QAction *ft2Action;
+    QAction *ft12DiffAction;
+    QAction *ft21DiffAction;
+    QAction *usAction;
+    QAction *lsAction;
+    QAction *bsAction;
 
     void setupUi(QWidget *FtmwViewWidget)
     {
@@ -251,6 +261,7 @@ public:
         splitter->setStretchFactor(1,2);
 
         toolBar = new QToolBar;
+        toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
         auto *processingAct =toolBar->addAction(QIcon(QString(":/icons/labplot-xy-fourier-transform-curve.svg")),QString("FID Processing Settings"));
         auto *processingBtn = dynamic_cast<QToolButton*>(toolBar->widgetForAction(processingAct));
         processingMenu = new QMenu;
@@ -261,6 +272,50 @@ public:
         processingBtn->setMenu(processingMenu);
         processingBtn->setPopupMode(QToolButton::InstantPopup);
 
+
+        auto mainModeAct = toolBar->addAction(QIcon(QString(":/icons/view-media-visualization.svg")),QString("Main Plot Mode"));
+        auto mmaButton = dynamic_cast<QToolButton*>(toolBar->widgetForAction(mainModeAct));
+        auto mmaMenu = new QMenu;
+        auto mmaag = new QActionGroup(mmaMenu);
+        mmaag->setExclusive(true);
+
+        liveAction = mmaMenu->addAction(QString("Live"));
+        liveAction->setCheckable(true);
+        mmaag->addAction(liveAction);
+
+        ft1Action = mmaMenu->addAction(QString("FT 1"));
+        ft1Action->setCheckable(true);
+        mmaag->addAction(ft1Action);
+
+        ft2Action = mmaMenu->addAction(QString("FT 2"));
+        ft2Action->setCheckable(true);
+        mmaag->addAction(ft2Action);
+
+        ft12DiffAction = mmaMenu->addAction(QString("FT 1 - FT 2"));
+        ft12DiffAction->setCheckable(true);
+        mmaag->addAction(ft12DiffAction);
+
+        ft21DiffAction = mmaMenu->addAction(QString("FT 2 - FT 1"));
+        ft21DiffAction->setCheckable(true);
+        mmaag->addAction(ft21DiffAction);
+
+        usAction = mmaMenu->addAction(QString("Upper Sideband"));
+        usAction->setCheckable(true);
+        mmaag->addAction(usAction);
+
+        lsAction = mmaMenu->addAction(QString("Lower Sideband"));
+        lsAction->setCheckable(true);
+        mmaag->addAction(lsAction);
+
+        bsAction = mmaMenu->addAction(QString("Both Sidebands"));
+        bsAction->setCheckable(true);
+        mmaag->addAction(bsAction);
+
+        mmaButton->setMenu(mmaMenu);
+        mmaButton->setPopupMode(QToolButton::InstantPopup);
+
+        toolBar->addAction(QIcon(":/icons/plot1.svg"),QString("Plot 1 Options"));
+        toolBar->addAction(QIcon(":/icons/plot2.svg"),QString("Plot 2 Options"));
 
 
         auto vbl = new QVBoxLayout;

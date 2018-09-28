@@ -44,6 +44,8 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
             connect(ws.thread,&QThread::finished,ws.worker,&FtWorker::deleteLater);
             connect(ws.worker,&FtWorker::ftDone,this,&FtmwViewWidget::ftDone);
             connect(ws.worker,&FtWorker::fidDone,this,&FtmwViewWidget::fidProcessed);
+            if(id == d_mainFtwId)
+                connect(ws.worker,&FtWorker::ftDiffDone,this,&FtmwViewWidget::ftDiffDone);
             ws.worker->moveToThread(ws.thread);
             ws.thread->start();
             d_workersStatus.insert(id,ws);
@@ -64,6 +66,15 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
 
     connect(ui->processingWidget,&FtmwProcessingWidget::settingsUpdated,this,&FtmwViewWidget::updateProcessingSettings);
     connect(ui->processingMenu,&QMenu::aboutToHide,this,&FtmwViewWidget::storeProcessingSettings);
+
+    connect(ui->liveAction,&QAction::triggered,this,[=]() { modeChanged(Live); });
+    connect(ui->ft1Action,&QAction::triggered,this,[=]() { modeChanged(FT1); });
+    connect(ui->ft2Action,&QAction::triggered,this,[=]() { modeChanged(FT2); });
+    connect(ui->ft12DiffAction,&QAction::triggered,this,[=]() { modeChanged(FT1mFT2); });
+    connect(ui->ft21DiffAction,&QAction::triggered,this,[=]() { modeChanged(FT2mFT1); });
+    connect(ui->usAction,&QAction::triggered,this,[=]() { modeChanged(UpperSB); });
+    connect(ui->lsAction,&QAction::triggered,this,[=]() { modeChanged(LowerSB); });
+    connect(ui->bsAction,&QAction::triggered,this,[=]() { modeChanged(BothSB); });
 
 }
 
@@ -131,6 +142,8 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
         ui->liveFidPlot->show();
         ui->liveFtPlot->show();
 
+        ui->liveAction->setEnabled(true);
+
         if(config.type() == BlackChirp::FtmwPeakUp)
         {
 
@@ -139,9 +152,20 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
 //            connect(ui->rollingAverageResetButton,&QPushButton::clicked,this,&FtmwViewWidget::rollingAverageReset,Qt::UniqueConnection);
         }
         if(config.type() == BlackChirp::FtmwLoScan)
-            d_mode = BothSB;
+        {
+//            d_mode = BothSB;
+            ui->bsAction->setEnabled(true);
+            ui->usAction->setEnabled(true);
+            ui->lsAction->setEnabled(true);
+            ui->bsAction->trigger();
+        }
         else
-            d_mode = Live;
+        {
+            ui->liveAction->trigger();
+            ui->bsAction->setEnabled(false);
+            ui->usAction->setEnabled(false);
+            ui->lsAction->setEnabled(false);
+        }
     }
     else
     {        
@@ -206,7 +230,7 @@ void FtmwViewWidget::updateProcessingSettings(FtWorker::FidProcessingSettings s)
         break;
     }
 
-    if(ui->liveFidPlot->isVisible())
+    if(!ui->liveFidPlot->isHidden())
     {
         ui->liveFidPlot->setFtStart(s.startUs);
         ui->liveFidPlot->setFtEnd(s.endUs);
@@ -240,7 +264,7 @@ void FtmwViewWidget::fidProcessed(const QVector<QPointF> fidData, int workerId)
 {
     if(d_plotStatus.contains(workerId))
     {
-//        if(d_plotStatus.value(workerId).fidPlot->isVisible())
+        if(!d_plotStatus.value(workerId).fidPlot->isHidden())
             d_plotStatus[workerId].fidPlot->receiveProcessedFid(fidData);
     }
 }
@@ -249,12 +273,12 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
 {
     if(d_plotStatus.contains(workerId))
     {
-//        if(d_plotStatus.value(workerId).ftPlot->isVisible())
-//        {
+        if(!d_plotStatus.value(workerId).ftPlot->isHidden())
+        {
             d_plotStatus[workerId].ft = ft;
             d_plotStatus[workerId].ftPlot->configureUnits(d_currentProcessingSettings.units);
             d_plotStatus[workerId].ftPlot->newFt(ft);
-//        }
+        }
 
         switch(d_mode) {
         case Live:
@@ -279,6 +303,19 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
         process(workerId,d_plotStatus.value(workerId).fid);
 }
 
+void FtmwViewWidget::ftDiffDone(const Ft ft)
+{
+    ui->mainFtPlot->newFt(ft);
+
+    d_workersStatus[d_mainFtwId].busy = false;
+    if(d_workersStatus.value(d_mainFtwId).reprocessWhenDone)
+    {
+        //need to set the reprocess flag here in case mode has changed since job started
+        d_workersStatus[d_mainFtwId].reprocessWhenDone = false;
+        updateMainPlot();
+    }
+}
+
 void FtmwViewWidget::updateMainPlot()
 {
     ui->mainFtPlot->configureUnits(d_currentProcessingSettings.units);
@@ -294,10 +331,10 @@ void FtmwViewWidget::updateMainPlot()
         ui->mainFtPlot->newFt(d_plotStatus.value(d_plot2FtwId).ft);
         break;
     case FT1mFT2:
-        ///TODO: FT difference
+        processDiff(d_plotStatus.value(d_plot1FtwId).fid,d_plotStatus.value(d_plot2FtwId).fid);
         break;
     case FT2mFT1:
-        ///TODO: FT difference
+        processDiff(d_plotStatus.value(d_plot2FtwId).fid,d_plotStatus.value(d_plot1FtwId).fid);
         break;
     case UpperSB:
         break;
@@ -322,7 +359,7 @@ void FtmwViewWidget::reprocess(const QList<int> ignore)
             if(it.key() == d_mainFtwId)
                 updateMainPlot();
             else
-               process(it.key(),d_plotStatus.value(it.key()).fid);
+                process(it.key(),d_plotStatus.value(it.key()).fid);
         }
     }
 }
@@ -343,6 +380,22 @@ void FtmwViewWidget::process(int id, const Fid f)
             d_workersStatus[id].reprocessWhenDone = false;
             QMetaObject::invokeMethod(ws.worker,"doFT",Q_ARG(Fid,f),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings));
         }
+    }
+}
+
+void FtmwViewWidget::processDiff(const Fid f1, const Fid f2)
+{
+    if(f1.isEmpty() || f2.isEmpty())
+        return;
+
+    auto ws = d_workersStatus.value(d_mainFtwId);
+    if(ws.busy)
+        d_workersStatus[d_mainFtwId].reprocessWhenDone = true;
+    else
+    {
+         d_workersStatus[d_mainFtwId].busy = true;
+         d_workersStatus[d_mainFtwId].reprocessWhenDone = false;
+         QMetaObject::invokeMethod(ws.worker,"doFtDiff",Q_ARG(Fid,f1),Q_ARG(Fid,f2),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings));
     }
 }
 
@@ -389,7 +442,6 @@ void FtmwViewWidget::experimentComplete(const Experiment e)
         ui->liveFidPlot->hide();
         ui->liveFtPlot->hide();
 
-        updateFtmw(e.ftmwConfig());
 
         if(d_workersStatus.value(d_liveFtwId).thread->isRunning())
         {
@@ -400,9 +452,11 @@ void FtmwViewWidget::experimentComplete(const Experiment e)
         }
 
         if(d_mode == Live)
-            modeChanged(FT1);
+            ui->ft1Action->trigger();
 
-        reprocessAll();
+        ui->liveAction->setEnabled(false);
+
+        updateFtmw(e.ftmwConfig());
     }
 }
 

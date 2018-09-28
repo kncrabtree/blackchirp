@@ -139,7 +139,7 @@ void FtWorker::doFtDiff(const Fid ref, const Fid diff, const FidProcessingSettin
 
     d_lastProcSettings = settings;
 
-    emit ftDiffDone(out,d_id);
+    emit ftDiffDone(out);
 
 }
 

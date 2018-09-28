@@ -63,7 +63,7 @@ signals:
     */
     void fidDone(const QVector<QPointF> fid, int);
 
-    void ftDiffDone(const Ft ft, int);
+    void ftDiffDone(const Ft ft);
 
 public slots:
     /*!
