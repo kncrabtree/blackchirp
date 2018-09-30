@@ -82,6 +82,7 @@ public:
     qint64 totalShots() const;
     qint64 completedSegmentShots() const;
     bool canAdvance(qint64 shots) const;
+    int numSegments() const;
 
     QHash<BlackChirp::ClockType,ClockFreq> getClocks() const;
     double clockFrequency(BlackChirp::ClockType t) const;

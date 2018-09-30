@@ -110,8 +110,8 @@ FidPlot::FidPlot(QString id, QWidget *parent) :
 
 void FidPlot::receiveProcessedFid(const QVector<QPointF> d)
 {
-    if(d.size() < 2)
-        return;
+//    if(d.size() < 2)
+//        return;
 
     d_currentFid = d;
 
@@ -122,7 +122,10 @@ void FidPlot::receiveProcessedFid(const QVector<QPointF> d)
 void FidPlot::filterData()
 {
     if(d_currentFid.size()<2)
+    {
+        p_curve->setSamples(QVector<QPointF>());
         return;
+    }
 
     double firstPixel = 0.0;
     double lastPixel = canvas()->width();

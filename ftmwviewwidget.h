@@ -24,6 +24,7 @@
 #include "fidplot.h"
 #include "ftplot.h"
 #include "ftmwprocessingwidget.h"
+#include "ftmwplotconfigwidget.h"
 
 class QThread;
 class FtmwSnapshotWidget;
@@ -62,6 +63,8 @@ public slots:
     void updateFtmw(const FtmwConfig f);
     void updateProcessingSettings(FtWorker::FidProcessingSettings s);
     void storeProcessingSettings();
+    void changeFrame(int id, int frameNum);
+    void changeSegment(int id, int segmentNum);
 
     void fidProcessed(const QVector<QPointF> fidData, int workerId);
     void ftDone(const Ft ft, int workerId);
@@ -87,6 +90,7 @@ private:
     FtmwConfig d_ftmwConfig;
     FtWorker::FidProcessingSettings d_currentProcessingSettings;
     int d_currentExptNum;
+    int d_currentSegment;
     MainPlotMode d_mode;
     FidList d_liveFidList;
 
@@ -111,6 +115,8 @@ private:
     QHash<int,PlotStatus> d_plotStatus;
     QString d_path;
     const int d_liveFtwId = 0, d_mainFtwId = 3, d_plot1FtwId = 1, d_plot2FtwId = 2;
+
+    void updateFid(int id);
 
 };
 
@@ -149,6 +155,8 @@ public:
     QAction *usAction;
     QAction *lsAction;
     QAction *bsAction;
+    FtmwPlotConfigWidget *plot1ConfigWidget;
+    FtmwPlotConfigWidget *plot2ConfigWidget;
 
     void setupUi(QWidget *FtmwViewWidget)
     {
@@ -314,8 +322,26 @@ public:
         mmaButton->setMenu(mmaMenu);
         mmaButton->setPopupMode(QToolButton::InstantPopup);
 
-        toolBar->addAction(QIcon(":/icons/plot1.svg"),QString("Plot 1 Options"));
-        toolBar->addAction(QIcon(":/icons/plot2.svg"),QString("Plot 2 Options"));
+        auto plot1Action = toolBar->addAction(QIcon(":/icons/plot1.svg"),QString("Plot 1 Options"));
+        auto plot1Button = dynamic_cast<QToolButton*>(toolBar->widgetForAction(plot1Action));
+        auto plot1Menu = new QMenu;
+        auto plot1wa = new QWidgetAction(plot1Menu);
+        plot1ConfigWidget = new FtmwPlotConfigWidget;
+        plot1wa->setDefaultWidget(plot1ConfigWidget);
+        plot1Menu->addAction(plot1wa);
+        plot1Button->setMenu(plot1Menu);
+        plot1Button->setPopupMode(QToolButton::InstantPopup);
+
+
+        auto plot2Action = toolBar->addAction(QIcon(":/icons/plot2.svg"),QString("Plot 2 Options"));
+        auto plot2Button = dynamic_cast<QToolButton*>(toolBar->widgetForAction(plot2Action));
+        auto plot2Menu = new QMenu;
+        auto plot2wa = new QWidgetAction(plot2Menu);
+        plot2ConfigWidget = new FtmwPlotConfigWidget;
+        plot2wa->setDefaultWidget(plot2ConfigWidget);
+        plot2Menu->addAction(plot2wa);
+        plot2Button->setMenu(plot2Menu);
+        plot2Button->setPopupMode(QToolButton::InstantPopup);
 
 
         auto vbl = new QVBoxLayout;

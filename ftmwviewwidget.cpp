@@ -14,7 +14,7 @@
 
 FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     QWidget(parent),
-    ui(new Ui::FtmwViewWidget), d_currentExptNum(-1), d_mode(Live), d_path(path)
+    ui(new Ui::FtmwViewWidget), d_currentExptNum(-1), d_currentSegment(0), d_mode(Live), d_path(path)
 {
     ui->setupUi(this);
 
@@ -67,6 +67,19 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     connect(ui->processingWidget,&FtmwProcessingWidget::settingsUpdated,this,&FtmwViewWidget::updateProcessingSettings);
     connect(ui->processingMenu,&QMenu::aboutToHide,this,&FtmwViewWidget::storeProcessingSettings);
 
+    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::frameChanged,this,[=](int v){
+        changeFrame(d_plot1FtwId,v);
+    });
+    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::segmentChanged,this,[=](int v){
+        changeSegment(d_plot1FtwId,v);
+    });
+    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::frameChanged,this,[=](int v){
+        changeFrame(d_plot2FtwId,v);
+    });
+    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::segmentChanged,this,[=](int v){
+        changeSegment(d_plot2FtwId,v);
+    });
+
     connect(ui->liveAction,&QAction::triggered,this,[=]() { modeChanged(Live); });
     connect(ui->ft1Action,&QAction::triggered,this,[=]() { modeChanged(FT1); });
     connect(ui->ft2Action,&QAction::triggered,this,[=]() { modeChanged(FT2); });
@@ -113,8 +126,11 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
     ui->ftPlot1->prepareForExperiment(e);
     ui->ftPlot2->prepareForExperiment(e);
     ui->mainFtPlot->prepareForExperiment(e);
+    ui->plot1ConfigWidget->prepareForExperiment(e);
+    ui->plot2ConfigWidget->prepareForExperiment(e);
 
     d_liveFidList.clear();
+    d_currentSegment = 0;
     for(auto it = d_plotStatus.begin(); it != d_plotStatus.end(); it++)
     {
         it.value().fid = Fid();
@@ -182,6 +198,7 @@ void FtmwViewWidget::updateLiveFidList(const FidList fl, int segment)
         return;
 
     d_liveFidList = fl;
+    d_currentSegment = segment;
 
     for(auto it = d_plotStatus.begin(); it != d_plotStatus.end(); it++)
     {
@@ -190,12 +207,19 @@ void FtmwViewWidget::updateLiveFidList(const FidList fl, int segment)
             Fid f = fl.first();
             if(it.key() != d_liveFtwId)
             {
-                if(segment == it.value().segment && it.value().frame < fl.size() && it.value().frame > 0)
+                if(segment == it.value().segment && it.value().frame < fl.size())
+                {
                     f = fl.at(it.value().frame);
+                    it.value().fid = f;
+                    process(it.key(),f);
+                }
+            }
+            else
+            {
+                it.value().fid = f;
+                process(it.key(),f);
             }
 
-            it.value().fid = f;
-            process(it.key(),f);
         }
     }
 }
@@ -258,6 +282,24 @@ void FtmwViewWidget::storeProcessingSettings()
     s.sync();
 
     reprocessAll();
+}
+
+void FtmwViewWidget::changeFrame(int id, int frameNum)
+{
+    if(d_plotStatus.contains(id))
+    {
+        d_plotStatus[id].frame = frameNum;
+        updateFid(id);
+    }
+}
+
+void FtmwViewWidget::changeSegment(int id, int segmentNum)
+{
+    if(d_plotStatus.contains(id))
+    {
+        d_plotStatus[id].segment = segmentNum;
+        updateFid(id);
+    }
 }
 
 void FtmwViewWidget::fidProcessed(const QVector<QPointF> fidData, int workerId)
@@ -366,8 +408,8 @@ void FtmwViewWidget::reprocess(const QList<int> ignore)
 
 void FtmwViewWidget::process(int id, const Fid f)
 {
-    if(f.isEmpty())
-        return;
+//    if(f.isEmpty())
+//        return;
 
     auto ws = d_workersStatus.value(id);
     if(ws.thread->isRunning() && ws.worker != nullptr)
@@ -511,5 +553,22 @@ void FtmwViewWidget::finalizedSnapList(const FidList l)
 //    }
 
     emit finalized(d_currentExptNum);
+}
+
+void FtmwViewWidget::updateFid(int id)
+{
+    int seg = d_plotStatus.value(id).segment;
+    int frame = d_plotStatus.value(id).frame;
+
+    if(seg == d_currentSegment)
+    {
+        if(frame >= 0 && frame < d_liveFidList.size())
+            d_plotStatus[id].fid = d_liveFidList.at(frame);
+    }
+    else
+        d_plotStatus[id].fid = d_ftmwConfig.singleFid(frame,seg);
+
+    process(id, d_plotStatus.value(id).fid);
+
 }
 

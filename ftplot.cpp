@@ -129,13 +129,21 @@ void FtPlot::prepareForExperiment(const Experiment e)
 
 void FtPlot::newFt(const Ft ft)
 {
-    if(ft.isEmpty())
-        return;
+//    if(ft.isEmpty())
+//        return;
 
     d_currentFt = ft;
 
-    setAxisAutoScaleRange(QwtPlot::yLeft,ft.yMin(),ft.yMax());
-    setAxisAutoScaleRange(QwtPlot::xBottom,ft.minFreq(),ft.maxFreq());
+    if(ft.isEmpty())
+    {
+        setAxisAutoScaleRange(QwtPlot::yLeft,0.0,0.0);
+//        setAxisAutoScaleRange(QwtPlot::xBottom,ft.minFreq(),ft.maxFreq());
+    }
+    else
+    {
+        setAxisAutoScaleRange(QwtPlot::yLeft,ft.yMin(),ft.yMax());
+        setAxisAutoScaleRange(QwtPlot::xBottom,ft.minFreq(),ft.maxFreq());
+    }
     filterData();
     replot();
 }
@@ -143,7 +151,10 @@ void FtPlot::newFt(const Ft ft)
 void FtPlot::filterData()
 {
     if(d_currentFt.size() < 2)
+    {
+        p_curveData->setSamples(QVector<QPointF>());
         return;
+    }
 
     double firstPixel = 0.0;
     double lastPixel = canvas()->width();

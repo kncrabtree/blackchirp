@@ -44,6 +44,7 @@ public:
     Fid fidTemplate() const;
     bool processingPaused() const;
     int numFrames() const;
+    int numSegments() const;
     FidList parseWaveform(const QByteArray b) const;
     QVector<qint64> extractChirp() const;
     QVector<qint64> extractChirp(const QByteArray b) const;

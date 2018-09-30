@@ -72,13 +72,20 @@ QDateTime FtmwConfig::targetTime() const
 
 Fid FtmwConfig::singleFid(int frame, int segment) const
 {
+    int i = qBound(0,frame,data->fidList.size()-1);
+
+    if(data->multipleFidLists)
+    {
+        if(segment >= 0 && segment < data->multiFidStorage.size())
+            return data->multiFidStorage.at(segment).at(i);
+        else
+            return Fid();
+    }
+
     if(data->fidList.isEmpty())
         return Fid();
 
-    int i = qBound(0,frame,data->fidList.size()-1);
 
-    if(data->multipleFidLists && segment >= 0 && segment < data->multiFidStorage.size())
-        return data->multiFidStorage.at(i).at(segment);
 
     return data->fidList.at(i);
 }
@@ -148,6 +155,11 @@ bool FtmwConfig::processingPaused() const
 int FtmwConfig::numFrames() const
 {
     return (scopeConfig().summaryFrame && !scopeConfig().manualFrameAverage) ? 1 : scopeConfig().numFrames;
+}
+
+int FtmwConfig::numSegments() const
+{
+    return data->rfConfig.numSegments();
 }
 
 FidList FtmwConfig::parseWaveform(const QByteArray b) const
@@ -553,7 +565,7 @@ bool FtmwConfig::setFidsData(const QList<QVector<qint64> > newList)
 bool FtmwConfig::addFids(const QByteArray rawData, int shift)
 {
     FidList newList = parseWaveform(rawData);
-    if(data->completedShots > 0)
+    if(!data->fidList.isEmpty())
     {
         if(newList.size() != data->fidList.size())
         {
@@ -791,7 +803,26 @@ void FtmwConfig::loadFids(const int num, const QString path)
         }
     }
 
-    ///TODO: Load from .mfd file
+    QFile mfd(BlackChirp::getExptFile(num,BlackChirp::MultiFidFile,path));
+    if(mfd.open(QIODevice::ReadOnly))
+    {
+        QDataStream d(&mfd);
+        QByteArray magic;
+        d >> magic;
+        if(magic.startsWith("BCFID"))
+        {
+            if(magic.endsWith("v1.0"))
+            {
+                QList<FidList> dat;
+                d >> dat;
+                data->multiFidStorage = dat;
+                if(!dat.isEmpty() && !dat.first().isEmpty())
+                    data->fidTemplate = dat.first().first();
+                data->fidTemplate.setData(QVector<qint64>());
+            }
+        }
+        mfd.close();
+    }
 }
 
 void FtmwConfig::parseLine(const QString key, const QVariant val)

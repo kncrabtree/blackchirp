@@ -25,7 +25,8 @@ SOURCES += mainwindow.cpp \
     $$PWD/clocktablemodel.cpp \
     $$PWD/clockdisplaywidget.cpp \
     $$PWD/digitizerconfigwidget.cpp \
-    $$PWD/ftmwprocessingwidget.cpp
+    $$PWD/ftmwprocessingwidget.cpp \
+    $$PWD/ftmwplotconfigwidget.cpp
 
 HEADERS += mainwindow.h \
     $$PWD/ftmwviewwidget.h \
@@ -54,7 +55,8 @@ HEADERS += mainwindow.h \
     $$PWD/clocktablemodel.h \
     $$PWD/clockdisplaywidget.h \
     $$PWD/digitizerconfigwidget.h \
-    $$PWD/ftmwprocessingwidget.h
+    $$PWD/ftmwprocessingwidget.h \
+    $$PWD/ftmwplotconfigwidget.h
 
 FORMS += mainwindow.ui \
     $$PWD/communicationdialog.ui \

@@ -140,6 +140,7 @@ int main(int argc, char *argv[])
     qRegisterMetaType<FidList>("FidList");
     qRegisterMetaType<FtWorker::FidProcessingSettings>("FtWorker::FidProcessingSettings");
     qRegisterMetaType<Ft>("Ft");
+    qRegisterMetaType<FtmwConfig>("FtmwConfig");
     qRegisterMetaType<RfConfig>("RfConfig");
     qRegisterMetaType<QVector<QPointF> >("QVector<QPointF>");
     qRegisterMetaType<QVector<double>>("Vector<double>");

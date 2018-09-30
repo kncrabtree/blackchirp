@@ -14,7 +14,11 @@ FtWorker::FtWorker(int i, QObject *parent) :
 Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings)
 {
     if(fid.size() < 2)
+    {
+        emit fidDone(QVector<QPointF>(),d_id);
+        emit ftDone(Ft(), d_id);
         return Ft();
+    }
 
     double rawSize = static_cast<double>(fid.size());
 
@@ -120,7 +124,8 @@ void FtWorker::doFtDiff(const Fid ref, const Fid diff, const FidProcessingSettin
     Ft d = doFT(diff,settings);
     blockSignals(false);
 
-    Ft out = r;
+    Ft out(r.size(),r.loFreq());
+
     if(qFuzzyCompare(r.loFreq(),d.loFreq()))
     {
 

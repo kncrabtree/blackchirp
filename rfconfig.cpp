@@ -553,6 +553,14 @@ bool RfConfig::canAdvance(qint64 shots) const
     return shots >= target;
 }
 
+int RfConfig::numSegments() const
+{
+    if(data->clockConfigList.isEmpty())
+        return 1;
+
+    return data->clockConfigList.size();
+}
+
 QHash<BlackChirp::ClockType, RfConfig::ClockFreq> RfConfig::getClocks() const
 {
     return data->currentClocks;
