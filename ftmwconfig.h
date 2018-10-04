@@ -81,6 +81,7 @@ public:
     void loadFids(const int num, const QString path = QString(""));
     void parseLine(const QString key, const QVariant val);
     void loadChirps(const int num, const QString path = QString(""));
+    void loadClocks(const int num, const QString path = QString(""));
 
     void saveToSettings() const;
     static FtmwConfig loadFromSettings();

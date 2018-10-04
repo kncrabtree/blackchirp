@@ -95,6 +95,9 @@ public:
     double calculateChirpFreq(double awgFreq) const;
     double calculateAwgFreq(double chirpFreq) const;
 
+    QString clockStepsString() const;
+    void loadClockSteps(int num, QString path);
+
 private:
     QSharedDataPointer<RfConfigData> data;
 

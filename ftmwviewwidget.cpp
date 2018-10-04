@@ -14,7 +14,7 @@
 
 FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     QWidget(parent),
-    ui(new Ui::FtmwViewWidget), d_currentExptNum(-1), d_currentSegment(0), d_mode(Live), d_path(path)
+    ui(new Ui::FtmwViewWidget), d_currentExptNum(-1), d_currentSegment(-1), d_mode(Live), d_path(path)
 {
     ui->setupUi(this);
 
@@ -480,6 +480,8 @@ void FtmwViewWidget::experimentComplete(const Experiment e)
 {
     if(e.ftmwConfig().isEnabled())
     {
+        d_currentSegment = -1;
+
         ui->verticalLayout->setStretch(0,0);
         ui->liveFidPlot->hide();
         ui->liveFtPlot->hide();

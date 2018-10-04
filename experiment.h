@@ -108,6 +108,7 @@ public:
     void finalSave() const;
     bool saveHeader() const;
     bool saveChirpFile() const;
+    bool saveClockFile() const;
     bool saveTimeFile() const;
     QString timeDataText() const;
     void snapshot(int snapNum, const Experiment other) const;

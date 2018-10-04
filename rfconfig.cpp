@@ -2,6 +2,8 @@
 
 #include <QSettings>
 #include <QPair>
+#include <QTextStream>
+#include <QFile>
 
 class RfConfigData : public QSharedData
 {
@@ -631,6 +633,80 @@ double RfConfig::calculateAwgFreq(double chirpFreq) const
         awg = awg - cf;
 
     return awg/awgMult();
+
+}
+
+QString RfConfig::clockStepsString() const
+{
+    QString o;
+    QTextStream out(&o);
+    QString nl("\n");
+    QString tab("\t");
+
+    out << QString("#The blank line is important! Do not remove it.") << nl;
+
+    for(int i=0; i<data->clockConfigList.size(); i++)
+    {
+        out << nl;
+        auto d = data->clockConfigList.at(i);
+        for(auto it = d.constBegin(); it != d.constEnd(); it++)
+        {
+            out << nl;
+            out << static_cast<int>(it.key()) << tab;
+            out << it.value().hwKey << tab;
+            out << it.value().output << tab;
+            out << static_cast<int>(it.value().op) << tab;
+            out << it.value().factor << tab;
+            out << QString::number(it.value().desiredFreqMHz,'f',6);
+        }
+    }
+
+    out.flush();
+    return o;
+}
+
+void RfConfig::loadClockSteps(int num, QString path)
+{
+    QFile f(BlackChirp::getExptFile(num,BlackChirp::ClockFile,path));
+    if(!f.open(QIODevice::ReadOnly))
+        return;
+
+    QHash<BlackChirp::ClockType,ClockFreq> thisHash;
+
+    while(!f.atEnd())
+    {
+        QString line = f.readLine().trimmed();
+        if(line.startsWith(QString("#")))
+            continue;
+
+        if(line.isEmpty()) //start a new QHash
+        {
+            if(!thisHash.isEmpty())
+            {
+                data->clockConfigList.append(thisHash);
+                thisHash.clear();
+                continue;
+            }
+            
+            continue;
+        }
+
+        QStringList l = line.split(QString("\t"));
+
+        //each line should have 6 fields
+        if(l.size() < 6)
+            continue;
+
+        auto key = static_cast<BlackChirp::ClockType>(l.at(0).trimmed().toInt());
+        auto hwKey = l.at(1).trimmed();
+        auto output = l.at(2).trimmed().toInt();
+        auto op = static_cast<MultOperation>(l.at(3).trimmed().toInt());
+        auto factor = l.at(4).trimmed().toDouble();
+        auto freq = l.at(5).trimmed().toDouble();
+
+        ClockFreq cf { freq, op, factor, hwKey, output };
+        thisHash.insert(key,cf);
+    }
 
 }
 

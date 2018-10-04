@@ -85,6 +85,7 @@ Experiment::Experiment(const int num, QString exptPath) : data(new ExperimentDat
         {
             data->ftmwCfg.loadChirps(num,exptPath);
             data->ftmwCfg.loadFids(num,exptPath);
+            data->ftmwCfg.loadClocks(num,exptPath);
         }
 
 #ifdef BC_LIF
@@ -529,6 +530,14 @@ void Experiment::setInitialized()
                     .arg(BlackChirp::getExptFile(num,BlackChirp::ChirpFile));
             return;
         }
+
+        if(!saveClockFile())
+        {
+            data->isInitialized = false;
+            data->errorString = QString("Could not open the file %1 for writing.")
+                    .arg(BlackChirp::getExptFile(num,BlackChirp::ClockFile));
+            return;
+        }
     }
 
 
@@ -842,6 +851,25 @@ bool Experiment::saveChirpFile() const
     }
     else
         return false;
+}
+
+bool Experiment::saveClockFile() const
+{
+    QFile rfc(BlackChirp::getExptFile(data->number,BlackChirp::ClockFile));
+    QString txt = data->ftmwCfg.rfConfig().clockStepsString();
+    if(txt.isEmpty())
+        return true;
+
+    if(rfc.open(QIODevice::WriteOnly))
+    {
+        QTextStream t(&rfc);
+        t << txt;
+        t.flush();
+        rfc.close();
+        return true;
+    }
+
+    return false;
 }
 
 bool Experiment::saveTimeFile() const

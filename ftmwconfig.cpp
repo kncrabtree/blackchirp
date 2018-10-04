@@ -806,6 +806,7 @@ void FtmwConfig::loadFids(const int num, const QString path)
     QFile mfd(BlackChirp::getExptFile(num,BlackChirp::MultiFidFile,path));
     if(mfd.open(QIODevice::ReadOnly))
     {
+        data->multipleFidLists = true;
         QDataStream d(&mfd);
         QByteArray magic;
         d >> magic;
@@ -904,6 +905,11 @@ void FtmwConfig::loadChirps(const int num, const QString path)
 {
     ///TODO: Figure out the future of loading chirps from disk
     data->rfConfig.addChirpConfig(ChirpConfig(num,path));
+}
+
+void FtmwConfig::loadClocks(const int num, const QString path)
+{
+    data->rfConfig.loadClockSteps(num,path);
 }
 
 void FtmwConfig::saveToSettings() const

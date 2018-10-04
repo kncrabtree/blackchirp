@@ -282,7 +282,8 @@ enum ExptFileType {
     SnapFile,
     TimeFile,
     LogFile,
-    MotorFile
+    MotorFile,
+    ClockFile
 };
 
 struct ValidationItem {
