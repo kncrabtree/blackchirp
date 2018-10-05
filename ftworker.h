@@ -7,6 +7,8 @@
 #include <QPair>
 
 #include <gsl/gsl_fft_real.h>
+#include <gsl/gsl_interp.h>
+#include <gsl/gsl_spline.h>
 
 #include "analysis.h"
 #include "fid.h"
@@ -48,6 +50,7 @@ public:
      \param parent
     */
     explicit FtWorker(int i, QObject *parent = nullptr);
+    ~FtWorker();
 
     const int d_id;
 
@@ -90,7 +93,13 @@ private:
     gsl_fft_real_workspace *work; /*!< Memory for GNU Scientific Library FFT operations */
     int d_numPnts; /*!< Number of points used to allocate last wavetable and workspace */
 
+    gsl_spline *p_spline;
+    gsl_interp_accel *p_accel;
+    int d_numSplinePoints;
+
     FidProcessingSettings d_lastProcSettings;
+
+    Ft resample(double f0, double spacing, const Ft ft);
 
 
     //store a precalculated window function for speed

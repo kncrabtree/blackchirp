@@ -18,6 +18,7 @@ public:
     ~Ft();
 
     void setPoint(int i, QPointF pt, double ignoreRange = 0.0);
+    void resize(int n, double ignoreRange = 0.0);
     QPointF &operator[](int i);
 
     int size() const;
@@ -29,6 +30,8 @@ public:
     double loFreq() const;
     double yMin() const;
     double yMax() const;
+    QVector<double> xData() const;
+    QVector<double> yData() const;
 
 private:
     QSharedDataPointer<FtData> data;

@@ -52,6 +52,21 @@ void Ft::setPoint(int i, QPointF pt, double ignoreRange)
     }
 }
 
+void Ft::resize(int n, double ignoreRange)
+{
+    data->ftData.resize(n);
+    data->yMin = 0.0;
+    data->yMax = 0.0;
+    for(int i=0; i<data->ftData.size(); i++)
+    {
+        if(qAbs(data->ftData.at(i).x()-data->loFreq) > ignoreRange)
+        {
+            data->yMin = qMin(data->ftData.at(i).y(),data->yMin);
+            data->yMax = qMax(data->ftData.at(i).y(),data->yMax);
+        }
+    }
+}
+
 QPointF &Ft::operator[](int i)
 {
     return data->ftData[i];
@@ -121,5 +136,25 @@ double Ft::yMin() const
 double Ft::yMax() const
 {
     return data->yMax;
+}
+
+QVector<double> Ft::xData() const
+{
+    QVector<double> out;
+    out.resize(data->ftData.size());
+    for(int i=0; i<data->ftData.size(); i++)
+        out[i] = data->ftData.at(i).x();
+
+    return out;
+}
+
+QVector<double> Ft::yData() const
+{
+    QVector<double> out;
+    out.resize(data->ftData.size());
+    for(int i=0; i<data->ftData.size(); i++)
+        out[i] = data->ftData.at(i).y();
+
+    return out;
 }
 

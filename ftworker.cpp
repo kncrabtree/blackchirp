@@ -6,9 +6,23 @@
 #include <gsl/gsl_sf.h>
 
 FtWorker::FtWorker(int i, QObject *parent) :
-    QObject(parent), d_id(i), real(NULL), work(NULL), d_numPnts(0)
+    QObject(parent), d_id(i), real(NULL), work(NULL), d_numPnts(0), p_spline(nullptr),
+    p_accel(nullptr), d_numSplinePoints(0)
 {
     d_lastProcSettings = FidProcessingSettings { -1.0, -1.0, 0, false, BlackChirp::FtPlotuV, 50.0, BlackChirp::Boxcar };
+}
+
+FtWorker::~FtWorker()
+{
+    if(p_spline != nullptr)
+        gsl_spline_free(p_spline);
+    if(p_accel != nullptr)
+        gsl_interp_accel_free(p_accel);
+    if(real != nullptr)
+    {
+        gsl_fft_real_wavetable_free(real);
+        gsl_fft_real_workspace_free(work);
+    }
 }
 
 Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings)
@@ -116,7 +130,7 @@ void FtWorker::doFtDiff(const Fid ref, const Fid diff, const FidProcessingSettin
     if(ref.size() != diff.size() || ref.sideband() != diff.sideband())
         return;
 
-    if(!qFuzzyCompare(ref.spacing(),diff.spacing()) || !qFuzzyCompare(ref.probeFreq(),diff.probeFreq()))
+    if(!qFuzzyCompare(ref.spacing(),diff.spacing()))
         return;
 
     blockSignals(true);
@@ -138,8 +152,75 @@ void FtWorker::doFtDiff(const Fid ref, const Fid diff, const FidProcessingSettin
     }
     else
     {
-        //need to create a resampled FT...
-        ///TODO
+        Ft drs = resample(r.loFreq(),r.xSpacing(),d);
+        out = Ft(r.size() + drs.size(),r.loFreq());
+        int rIndex = 0, dIndex = 0, totalPoints = 0;
+        bool done = false;
+        while(!done)
+        {
+            if(rIndex < r.size() && dIndex < drs.size())
+            {
+                double rx = r.at(rIndex).x();
+                double dx = drs.at(dIndex).x();
+
+                if(qAbs(rx-dx) < r.xSpacing()) //frequencies the same; difference and increment both
+                {
+                    out.setPoint(totalPoints,QPointF(rx,r.at(rIndex).y()-drs.at(dIndex).y()));
+                    dIndex++;
+                    rIndex++;
+                }
+                else
+                {
+                    if(rx < dx)
+                    {
+                        if(rIndex < r.size())
+                        {
+                            out.setPoint(totalPoints,QPointF(rx,r.at(rIndex).y()));
+                            rIndex++;
+                        }
+                        else
+                        {
+                            out.setPoint(totalPoints,QPointF(dx,-drs.at(dIndex).y()));
+                            dIndex++;
+                        }
+                    }
+                    else
+                    {
+                        if(dIndex < drs.size())
+                        {
+                            out.setPoint(totalPoints,QPointF(dx,-drs.at(dIndex).y()));
+                            dIndex++;
+                        }
+                        else
+                        {
+                            out.setPoint(totalPoints,QPointF(rx,r.at(rIndex).y()));
+                            rIndex++;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if(rIndex < r.size())
+                {
+                    out.setPoint(totalPoints,QPointF(r.at(rIndex).x(),r.at(rIndex).y()));
+                    rIndex++;
+                }
+                else
+                {
+                    out.setPoint(totalPoints,QPointF(drs.at(dIndex).x(),-drs.at(dIndex).y()));
+                    dIndex++;
+                }
+            }
+
+            totalPoints++;
+
+            if(rIndex == r.size() && dIndex == drs.size())
+                done = true;
+        }
+
+        out.resize(totalPoints);
+
     }
 
     d_lastProcSettings = settings;
@@ -236,6 +317,78 @@ void FtWorker::prepareForDisplay(const QVector<double> fid, double spacing)
     }
 
     emit fidDone(out,d_id);
+}
+
+Ft FtWorker::resample(double f0, double spacing, const Ft ft)
+{
+    if(ft.isEmpty() || ft.size() < 2 || spacing == 0.0)
+        return Ft();
+
+    spacing = qAbs(spacing);
+    double thisSpacing = ft.at(1).x() - ft.at(0).x();
+
+    if(qFuzzyCompare(f0,ft.loFreq()) && qFuzzyCompare(qAbs(spacing),qAbs(thisSpacing)))
+        return Ft();
+
+
+    double minF = ft.minFreq();
+    double maxF = ft.maxFreq();
+    double direction = thisSpacing > 0 ? 1.0 : -1.0;
+
+    //find sample point closest to, but greater than minf
+    double firstPt = f0 + ceil((minF-f0)/spacing)*spacing;
+
+    int numPoints = floor((maxF-firstPt)/spacing);
+
+    //allocate or reallocate gsl_spline object
+    if(ft.size() != d_numSplinePoints)
+    {
+        d_numSplinePoints = ft.size();
+
+        if(p_spline != nullptr)
+            gsl_spline_free(p_spline);
+
+        p_spline = gsl_spline_alloc(gsl_interp_cspline,d_numSplinePoints);
+
+        if(p_accel != nullptr)
+        {
+            gsl_interp_accel_free(p_accel);
+            p_accel = gsl_interp_accel_alloc();
+        }
+    }
+
+    if(p_accel == nullptr)
+        p_accel = gsl_interp_accel_alloc();
+
+    //set up spline object with FT data
+    auto xd = ft.xData();
+    auto yd = ft.yData();
+    bool reverse = false;
+    if(xd.last() < xd.first())
+    {
+        reverse = true;
+        std::reverse(xd.begin(),xd.end());
+        std::reverse(yd.begin(),yd.end());
+    }
+
+    gsl_spline_init(p_spline,xd.constData(),yd.constData(),d_numSplinePoints);
+
+    int index = 0;
+    Ft out(numPoints,ft.loFreq());
+
+    while(index < numPoints)
+    {
+        double x = firstPt + static_cast<double>(index)*spacing*direction;
+        double y = gsl_spline_eval(p_spline,x,p_accel);
+        int i = index;
+        if(reverse)
+            i = numPoints - index - 1;
+        out.setPoint(i,QPointF(x,y));
+        index++;
+    }
+
+    return out;
+
 }
 
 void FtWorker::makeWinf(int n, BlackChirp::FtWindowFunction f)
