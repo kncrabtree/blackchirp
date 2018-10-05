@@ -158,3 +158,8 @@ QVector<double> Ft::yData() const
     return out;
 }
 
+QVector<QPointF> Ft::toVector() const
+{
+    return data->ftData;
+}
+

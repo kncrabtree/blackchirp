@@ -150,6 +150,7 @@ int main(int argc, char *argv[])
     qRegisterMetaType<BlackChirp::FtWindowFunction>("BlackChirp::FtWindowFunction");
     qRegisterMetaType<QList<QPointF>>("QList<QPointF>");
     qRegisterMetaType<BlackChirp::ClockType>("BlackChirp::ClockType");
+    qRegisterMetaType<BlackChirp::Sideband>("BlackChirp::Sideband");
 #ifdef BC_LIF
     qRegisterMetaType<LifTrace>("LifTrace");
     qRegisterMetaType<QPair<QPoint,BlackChirp::LifPoint>>("QPair<QPoint,BlackChirp::LifPoint>");

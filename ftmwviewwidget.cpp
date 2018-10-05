@@ -338,6 +338,7 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
     {
         //this is the main plot
         ui->mainFtPlot->newFt(ft);
+        ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
     }
 
     d_workersStatus[workerId].busy = false;
@@ -379,8 +380,10 @@ void FtmwViewWidget::updateMainPlot()
         processDiff(d_plotStatus.value(d_plot2FtwId).fid,d_plotStatus.value(d_plot1FtwId).fid);
         break;
     case UpperSB:
+        processSideband(BlackChirp::UpperSideband);
         break;
     case LowerSB:
+        processSideband(BlackChirp::LowerSideband);
         break;
     case BothSB:
         break;
@@ -435,9 +438,29 @@ void FtmwViewWidget::processDiff(const Fid f1, const Fid f2)
         d_workersStatus[d_mainFtwId].reprocessWhenDone = true;
     else
     {
+        ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
+        d_workersStatus[d_mainFtwId].busy = true;
+        d_workersStatus[d_mainFtwId].reprocessWhenDone = false;
+        QMetaObject::invokeMethod(ws.worker,"doFtDiff",Q_ARG(Fid,f1),Q_ARG(Fid,f2),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings));
+    }
+}
+
+void FtmwViewWidget::processSideband(BlackChirp::Sideband sb)
+{
+    auto ws = d_workersStatus.value(d_mainFtwId);
+    if(ws.busy)
+        d_workersStatus[d_mainFtwId].reprocessWhenDone = true;
+    else
+    {
+        ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
          d_workersStatus[d_mainFtwId].busy = true;
          d_workersStatus[d_mainFtwId].reprocessWhenDone = false;
-         QMetaObject::invokeMethod(ws.worker,"doFtDiff",Q_ARG(Fid,f1),Q_ARG(Fid,f2),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings));
+
+         FidList fl;
+         for(int i=0; i<d_ftmwConfig.multiFidList().size(); i++)
+             fl << d_ftmwConfig.singleFid(d_plotStatus.value(d_plot1FtwId).frame,i);
+
+         QMetaObject::invokeMethod(ws.worker,"processSideband",Q_ARG(FidList,fl),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings),Q_ARG(BlackChirp::Sideband,sb));
     }
 }
 

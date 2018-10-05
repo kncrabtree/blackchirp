@@ -32,6 +32,7 @@ public:
     double yMax() const;
     QVector<double> xData() const;
     QVector<double> yData() const;
+    QVector<QPointF> toVector() const;
 
 private:
     QSharedDataPointer<FtData> data;

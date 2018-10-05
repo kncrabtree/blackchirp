@@ -229,6 +229,117 @@ void FtWorker::doFtDiff(const Fid ref, const Fid diff, const FidProcessingSettin
 
 }
 
+Ft FtWorker::processSideband(const FidList fl, const FtWorker::FidProcessingSettings &settings, BlackChirp::Sideband sb)
+{
+    //this will FT all of the FIDs and resample them on a common grid
+    QList<Ft> ftList = makeSidebandList(fl,settings,sb);
+
+    if(ftList.size() == 1)
+    {
+        emit ftDone(ftList.first(),d_id);
+        return ftList.first();
+    }
+
+    QVector<int> indices;
+    indices.resize(ftList.size());
+
+    QVector<QPointF> dataPointsList;
+    dataPointsList.reserve(ftList.size()*ftList.first().size());
+
+    //want to make sure frequency increases monotonically as we iterate through fidlist
+    //Fts ALWAYS go from low frequency to high
+    if(ftList.first().loFreq() > ftList.last().loFreq())
+        std::reverse(ftList.begin(),ftList.end());
+
+    while(true)
+    {
+        double thisPointY = 0.0;
+        double thisPointX = 0.0;
+        double numPoints = 0.0;
+
+        for(int i=0; i<indices.size(); i++)
+        {
+            if(indices.at(i) < ftList.at(i).size())
+            {
+                thisPointX = ftList.at(i).at(indices.at(i)).x();
+                break;
+            }
+        }
+
+        for(int i=0; i<indices.size(); i++)
+        {
+            if(indices.at(i) < ftList.at(i).size())
+            {
+                if(qAbs(thisPointX - ftList.at(i).at(indices.at(i)).x()) < ftList.at(i).xSpacing())
+                {
+                    double y = ftList.at(i).at(indices.at(i)).y();
+                    if(y>0)
+                    {
+                        thisPointY += log10(y);
+                        numPoints += 1.0;
+                    }
+                    indices[i]++;
+                }
+            }
+        }
+
+        if(numPoints < 1.0)
+            dataPointsList.append(QPointF(thisPointX,thisPointY));
+        else
+            dataPointsList.append(QPointF(thisPointX,pow(10.0,thisPointY/numPoints)));
+
+        bool done = true;
+        for(int i=0; i<indices.size(); i++)
+        {
+            if(indices.at(i) < ftList.at(i).size())
+            {
+                done = false;
+                break;
+            }
+        }
+
+        if(done)
+            break;
+    }
+
+    Ft out(dataPointsList.size(),0.0);
+    for(int i=0; i<dataPointsList.size(); i++)
+        out.setPoint(i,dataPointsList.at(i));
+
+    emit ftDone(out,d_id);
+    return out;
+}
+
+QList<Ft> FtWorker::makeSidebandList(const FidList fl, const FidProcessingSettings &settings, BlackChirp::Sideband sb)
+{
+    if(fl.isEmpty())
+        return QList<Ft>();
+
+    Fid f = fl.first();
+    f.setSideband(sb);
+
+    QList<Ft> out;
+
+    blockSignals(true);
+    Ft ft1 = doFT(f,settings);
+    out << ft1;
+
+    double f0 = ft1.loFreq();
+    double sp = ft1.xSpacing();
+    for(int i=1; i<fl.size(); i++)
+    {
+        f = fl.at(i);
+        f.setSideband(sb);
+        ft1 = doFT(f,settings);
+        auto rsft = resample(f0,sp,ft1);
+        out << rsft;
+    }
+    blockSignals(false);
+
+    return out;
+
+}
+
 QVector<double> FtWorker::filterFid(const Fid fid, const FidProcessingSettings &settings)
 {
 
