@@ -74,7 +74,7 @@ Experiment AD9914::prepareForExperiment(Experiment exp)
     d_enabledForExperiment = true;
 
     auto cc = exp.ftmwConfig().chirpConfig();
-    auto seg = cc.chirpList().first().first();
+    auto seg = cc.chirpList().constFirst().constFirst();
 
     //calculate ramp parameters (as close as possible)
     seg.startFreqMHz = 0.0;

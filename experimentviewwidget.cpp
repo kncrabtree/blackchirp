@@ -194,7 +194,7 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
         p_ftmw->prepareForExperiment(d_experiment);
 //        p_ftmw->updateFtmw(d_experiment.ftmwConfig());
 //        if(!d_experiment.ftmwConfig().fidList().isEmpty())
-//            p_ftmw->updateShotsLabel(d_experiment.ftmwConfig().fidList().first().shots());
+//            p_ftmw->updateShotsLabel(d_experiment.ftmwConfig().fidList().constFirst().shots());
 
         //check for snap file
         QFile snp(BlackChirp::getExptFile(d_experiment.number(),BlackChirp::SnapFile,path));
@@ -207,7 +207,7 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
                 if(line.startsWith("fid"))
                 {
                     QByteArrayList l = line.split('\t');
-                    if(!l.isEmpty() && l.last().trimmed().toInt() > 0)
+                    if(!l.isEmpty() && l.constLast().trimmed().toInt() > 0)
                     {
                         fids = true;
                         break;
@@ -346,7 +346,7 @@ QWidget *ExperimentViewWidget::buildLogWidget(QString path)
                 if(l.size() < 2)
                     continue;
 
-                p_lh->logMessageWithTime(l.last(),BlackChirp::LogWarning,QDateTime::fromString(l.first()));
+                p_lh->logMessageWithTime(l.constLast(),BlackChirp::LogWarning,QDateTime::fromString(l.constFirst()));
                 continue;
             }
             if(line.contains(QString(": [ERROR] ")))
@@ -355,7 +355,7 @@ QWidget *ExperimentViewWidget::buildLogWidget(QString path)
                 if(l.size() < 2)
                     continue;
 
-                p_lh->logMessageWithTime(l.last(),BlackChirp::LogError,QDateTime::fromString(l.first()));
+                p_lh->logMessageWithTime(l.constLast(),BlackChirp::LogError,QDateTime::fromString(l.constFirst()));
                 continue;
             }
             if(line.contains(QString(": [HIGHLIGHT] ")))
@@ -364,7 +364,7 @@ QWidget *ExperimentViewWidget::buildLogWidget(QString path)
                 if(l.size() < 2)
                     continue;
 
-                p_lh->logMessageWithTime(l.last(),BlackChirp::LogHighlight,QDateTime::fromString(l.first()));
+                p_lh->logMessageWithTime(l.constLast(),BlackChirp::LogHighlight,QDateTime::fromString(l.constFirst()));
                 continue;
             }
             else
@@ -378,7 +378,7 @@ QWidget *ExperimentViewWidget::buildLogWidget(QString path)
                 for(int i=2; i<l.size(); i++)
                     theLine+=QString(": ")+l.at(i);
 
-                p_lh->logMessageWithTime(theLine,BlackChirp::LogNormal,QDateTime::fromString(l.first()));
+                p_lh->logMessageWithTime(theLine,BlackChirp::LogNormal,QDateTime::fromString(l.constFirst()));
             }
         }
         f.close();

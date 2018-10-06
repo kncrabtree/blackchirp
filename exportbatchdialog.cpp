@@ -52,7 +52,7 @@ void ExportBatchDialog::accept()
     std::sort(range.begin(),range.end());
 
     //test path
-    QString fileName = ui->pathLineEdit->text() + QString("/expt%1.txt").arg(range.first());
+    QString fileName = ui->pathLineEdit->text() + QString("/expt%1.txt").arg(range.constFirst());
     QFile f(fileName);
     if(!f.open(QIODevice::WriteOnly))
     {
@@ -90,7 +90,7 @@ void ExportBatchDialog::accept()
 
     if(!errorList.isEmpty())
     {
-        QString errList = QString("%1").arg(errorList.first());
+        QString errList = QString("%1").arg(errorList.constFirst());
         for(int i=1; i<errList.size(); i++)
             errList.append(QString(" %1").arg(errorList.at(i)));
 

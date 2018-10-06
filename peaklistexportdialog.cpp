@@ -104,7 +104,7 @@ void PeakListExportDialog::insertShot()
 {
     QModelIndexList l = ui->shotsTableView->selectionModel()->selectedRows();
     if(!l.isEmpty())
-        p_sm->insertEntry(l.first().row());
+        p_sm->insertEntry(l.constFirst().row());
 }
 
 void PeakListExportDialog::removeShots()

@@ -475,7 +475,7 @@ void ChirpTableModel::setNumChirps(int num)
         if(!d_chirpList.isEmpty())
         {
             for(int i=d_chirpList.size(); i<num; i++)
-                d_chirpList.append(d_chirpList.first());
+                d_chirpList.append(d_chirpList.constFirst());
         }
         else
         {

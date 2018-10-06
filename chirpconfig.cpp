@@ -79,7 +79,7 @@ bool ChirpConfig::allChirpsIdentical() const
     if(data->chirpList.size() <= 1)
         return true;
 
-    QList<BlackChirp::ChirpSegment> firstList = data->chirpList.first();
+    QList<BlackChirp::ChirpSegment> firstList = data->chirpList.constFirst();
 
     for(int i=1; i<data->chirpList.size(); i++)
     {
@@ -426,9 +426,9 @@ QString ChirpConfig::toString() const
 
     if(allChirpsIdentical())
     {
-        for(int i=0; i<data->chirpList.first().size(); i++)
+        for(int i=0; i<data->chirpList.constFirst().size(); i++)
         {
-            BlackChirp::ChirpSegment s = data->chirpList.first().at(i);
+            BlackChirp::ChirpSegment s = data->chirpList.constFirst().at(i);
             if(s.empty)
                 out.append(QString("\nEmptySegment\t%1").arg(s.durationUs,0,'f',4));
             else
@@ -474,7 +474,7 @@ void ChirpConfig::parseFileLine(QByteArray line)
         if(l.size() < 2)
             return;
 
-        QByteArray key = l.first().trimmed();
+        QByteArray key = l.constFirst().trimmed();
         QByteArray val = l.at(1).trimmed();
 
         if(key.contains(QByteArray("PreChirpProtection")))
@@ -597,7 +597,7 @@ void ChirpConfig::setNumChirps(const int n)
         if(!data->chirpList.isEmpty())
         {
             for(int i=numChirps(); i<n; i++)
-                data->chirpList.append(data->chirpList.first());
+                data->chirpList.append(data->chirpList.constFirst());
         }
         else
         {
@@ -707,7 +707,7 @@ void ChirpConfig::saveToSettings(int index) const
     }
     else
     {
-        QList<BlackChirp::ChirpSegment> segmentList = chirpList().first();
+        QList<BlackChirp::ChirpSegment> segmentList = chirpList().constFirst();
 
         s.beginWriteArray(QString("segments"));
         for(int i=0; i<segmentList.size(); i++)

@@ -204,7 +204,7 @@ void FtmwViewWidget::updateLiveFidList(const FidList fl, int segment)
     {
         if(d_workersStatus.value(it.key()).thread->isRunning())
         {
-            Fid f = fl.first();
+            Fid f = fl.constFirst();
             if(it.key() != d_liveFtwId)
             {
                 if(segment == it.value().segment && it.value().frame < fl.size())
@@ -596,7 +596,7 @@ void FtmwViewWidget::finalizedSnapList(const FidList l)
 {
 //    Q_ASSERT(l.size() > 0);
 //    d_currentFidList = l;
-//    updateShotsLabel(l.first().shots());
+//    updateShotsLabel(l.constFirst().shots());
 
 //    if(ui->snapshotCheckbox->isChecked())
 //    {

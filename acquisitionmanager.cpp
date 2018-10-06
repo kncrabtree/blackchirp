@@ -421,7 +421,7 @@ bool AcquisitionManager::calculateShift(const QByteArray b)
     QVector<qint64> newChirp = d_currentExperiment.ftmwConfig().extractChirp(b);
     if(newChirp.isEmpty())
         return true;
-    Fid avgFid = d_currentExperiment.ftmwConfig().fidList().first();
+    Fid avgFid = d_currentExperiment.ftmwConfig().fidList().constFirst();
 
     int max = 5;
     float thresh = 1.15; // fractional improvement needed to adjust shift

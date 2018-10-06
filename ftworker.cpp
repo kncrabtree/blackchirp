@@ -242,19 +242,19 @@ Ft FtWorker::processSideband(const FidList fl, const FtWorker::FidProcessingSett
 
     if(ftList.size() == 1)
     {
-        emit ftDone(ftList.first(),d_id);
-        return ftList.first();
+        emit ftDone(ftList.constFirst(),d_id);
+        return ftList.constFirst();
     }
 
     QVector<int> indices;
     indices.resize(ftList.size());
 
     Ft out(0,0.0);
-    out.reserve(ftList.size()*ftList.first().size());
+    out.reserve(ftList.size()*ftList.constFirst().size());
 
     //want to make sure frequency increases monotonically as we iterate through fidlist
     //Fts ALWAYS go from low frequency to high
-    if(ftList.first().loFreq() > ftList.last().loFreq())
+    if(ftList.constFirst().loFreq() > ftList.constLast().loFreq())
         std::reverse(ftList.begin(),ftList.end());
 
     while(true)
@@ -362,7 +362,7 @@ QList<Ft> FtWorker::makeSidebandList(const FidList fl, const FidProcessingSettin
     if(fl.isEmpty())
         return QList<Ft>();
 
-    Fid f = fl.first();
+    Fid f = fl.constFirst();
     f.setSideband(sb);
 
     QList<Ft> out;
@@ -523,7 +523,7 @@ Ft FtWorker::resample(double f0, double spacing, const Ft ft)
     auto xd = ft.xData();
     auto yd = ft.yData();
     bool reverse = false;
-    if(xd.last() < xd.first())
+    if(xd.constLast() < xd.constFirst())
     {
         reverse = true;
         std::reverse(xd.begin(),xd.end());

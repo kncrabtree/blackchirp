@@ -277,7 +277,7 @@ bool RfConfig::prepareForAcquisition()
     }
 
     if(!data->clockConfigList.isEmpty())
-        data->currentClocks = data->clockConfigList.first();
+        data->currentClocks = data->clockConfigList.constFirst();
 
     if(data->currentClocks.isEmpty())
         return false;
@@ -415,7 +415,7 @@ void RfConfig::addClockStep(double upLoMHz, double downLoMHz)
     setClockDesiredFreq(BlackChirp::UpConversionLO,upLoMHz);
     setClockDesiredFreq(BlackChirp::DownConversionLO,downLoMHz);
     data->clockConfigList.append(data->currentClocks);
-    data->currentClocks = data->clockConfigList.first();
+    data->currentClocks = data->clockConfigList.constFirst();
 }
 
 void RfConfig::clearClockSteps()

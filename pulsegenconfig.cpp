@@ -112,7 +112,7 @@ void PulseGenConfig::parseLine(QString key, QVariant val)
             if(l.size() < 3)
                 return;
 
-            QString subKey = l.last();
+            QString subKey = l.constLast();
             int index = l.at(1).toInt();
 
             while(data->config.size() <= index)

@@ -109,12 +109,12 @@ QVector<qint64> FtmwConfig::rawFidList() const
     if(outSize == 0)
         return QVector<qint64>();
 
-    outSize*=data->fidList.first().size();
+    outSize*=data->fidList.constFirst().size();
 
     QVector<qint64> out(outSize);
     for(int i=0; i<data->fidList.size(); i++)
     {
-        int offset = i*data->fidList.first().size();
+        int offset = i*data->fidList.constFirst().size();
         for(int j=0; j<data->fidList.at(i).size(); j++)
             out[offset+j] = data->fidList.at(i).atRaw(j);
     }
@@ -274,7 +274,7 @@ QVector<qint64> FtmwConfig::extractChirp() const
     {
         auto r = chirpRange();
         if(r.first >= 0 && r.second >= 0)
-            out = dat.first().rawData().mid(r.first, r.second - r.first);
+            out = dat.constFirst().rawData().mid(r.first, r.second - r.first);
     }
 
     return out;
@@ -288,7 +288,7 @@ QVector<qint64> FtmwConfig::extractChirp(const QByteArray b) const
     {
         FidList l = parseWaveform(b);
         if(!l.isEmpty())
-            out = l.first().rawData().mid(r.first, r.second - r.first);
+            out = l.constFirst().rawData().mid(r.first, r.second - r.first);
     }
 
     return out;
@@ -341,9 +341,9 @@ QPair<int, int> FtmwConfig::chirpRange() const
     //we assume that the scope is triggered at the beginning of the protection pulse
 
     double chirpStart = (cc.preChirpGateDelay() + cc.preChirpProtectionDelay() - data->scopeConfig.trigDelay*1e6)*1e-6;
-    int startSample = qBound(BC_FTMW_MAXSHIFT,qRound(chirpStart*data->scopeConfig.sampleRate) + BC_FTMW_MAXSHIFT,data->fidList.first().size() - BC_FTMW_MAXSHIFT);
+    int startSample = qBound(BC_FTMW_MAXSHIFT,qRound(chirpStart*data->scopeConfig.sampleRate) + BC_FTMW_MAXSHIFT,data->fidList.constFirst().size() - BC_FTMW_MAXSHIFT);
     double chirpEnd = chirpStart + cc.chirpDuration(0)*1e-6;
-    int endSample = qBound(BC_FTMW_MAXSHIFT,qRound(chirpEnd*data->scopeConfig.sampleRate) - BC_FTMW_MAXSHIFT,data->fidList.first().size() - BC_FTMW_MAXSHIFT);
+    int endSample = qBound(BC_FTMW_MAXSHIFT,qRound(chirpEnd*data->scopeConfig.sampleRate) - BC_FTMW_MAXSHIFT,data->fidList.constFirst().size() - BC_FTMW_MAXSHIFT);
 
     if(startSample > endSample)
         qSwap(startSample,endSample);
@@ -493,7 +493,7 @@ bool FtmwConfig::increment()
     {
         //get number of shots of current FidList.
         //ask rfconfig if this is enough to advance segment
-        if(data->rfConfig.canAdvance(data->fidList.first().shots()))
+        if(data->rfConfig.canAdvance(data->fidList.constFirst().shots()))
         {
             //place fid list in storage
             int oldIndex = data->rfConfig.currentIndex();
@@ -632,9 +632,9 @@ bool FtmwConfig::subtractFids(const FtmwConfig other)
             //if numbers of shots are equal, then no new data have been added for this chunk.
             //Write an empty list of fids.
             //Otherwise, get the difference.
-            if(otherList.at(i).first().shots() == data->multiFidStorage.at(i).first().shots())
+            if(otherList.at(i).constFirst().shots() == data->multiFidStorage.at(i).constFirst().shots())
                 data->multiFidStorage[i] = FidList();
-            else if(otherList.at(i).first().shots() < data->multiFidStorage.at(i).first().shots())
+            else if(otherList.at(i).constFirst().shots() < data->multiFidStorage.at(i).constFirst().shots())
             {
                 for(int j=0; j<data->multiFidStorage.at(i).size(); j++)
                     data->multiFidStorage[i][j] -= otherList.at(i).at(j);
@@ -741,7 +741,7 @@ void FtmwConfig::loadFids(const int num, const QString path)
                 d >> dat;
                 data->fidList = dat;
                 if(!dat.isEmpty())
-                    data->fidTemplate = dat.first();
+                    data->fidTemplate = dat.constFirst();
                 data->fidTemplate.setData(QVector<qint64>());
             }
         }
@@ -763,7 +763,7 @@ void FtmwConfig::loadFids(const int num, const QString path)
                 {
                     QStringList l = line.split(QString("\t"));
                     bool ok = false;
-                    int n = l.last().trimmed().toInt(&ok);
+                    int n = l.constLast().trimmed().toInt(&ok);
                     if(ok)
                     {
                         parseSuccess = true;
@@ -817,8 +817,8 @@ void FtmwConfig::loadFids(const int num, const QString path)
                 QList<FidList> dat;
                 d >> dat;
                 data->multiFidStorage = dat;
-                if(!dat.isEmpty() && !dat.first().isEmpty())
-                    data->fidTemplate = dat.first().first();
+                if(!dat.isEmpty() && !dat.constFirst().isEmpty())
+                    data->fidTemplate = dat.constFirst().constFirst();
                 data->fidTemplate.setData(QVector<qint64>());
             }
         }

@@ -46,7 +46,7 @@ Experiment::Experiment(const int num, QString exptPath) : data(new ExperimentDat
             if(l.size() < 2)
                 continue;
 
-            QString key = l.first();
+            QString key = l.constFirst();
             QVariant val = QVariant(l.at(1));
 
             if(key.startsWith(QString("Ftmw")) || key.startsWith(QString("RfConfig")))
@@ -329,7 +329,7 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
 
             if(key.contains(QString("flow.")))
             {
-                QString channel = key.split(QString(".")).last();
+                QString channel = key.split(QString(".")).constLast();
                 label = QString("FlowConfigChannel.%1.Average").arg(channel);
                 units = QString("sccm");
             }
@@ -350,7 +350,7 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
             if(val.first.isEmpty())
                 continue;
 
-            if(val.first.first().canConvert(QVariant::Double))
+            if(val.first.constFirst().canConvert(QVariant::Double))
             {
                 double mean = 0.0;
                 for(int i=0; i<val.first.size(); i++)
@@ -935,7 +935,7 @@ QString Experiment::timeDataText() const
     if(!plot.isEmpty())
     {
         t << QString("#PlotData\n\n");
-        QString name = plot.first().first;
+        QString name = plot.constFirst().first;
 
         t << name << QString("_%1").arg(data->number);
         for(int i=1; i<plot.size(); i++)
@@ -948,14 +948,14 @@ QString Experiment::timeDataText() const
         {
             t << nl;
 
-            if(i >= plot.first().second.size())
+            if(i >= plot.constFirst().second.size())
                 t << QString("NaN");
             else
             {
-                if(plot.first().second.at(i).canConvert(QVariant::Double))
-                    t << plot.first().second.at(i).toDouble();
+                if(plot.constFirst().second.at(i).canConvert(QVariant::Double))
+                    t << plot.constFirst().second.at(i).toDouble();
                 else
-                    t << plot.first().second.at(i).toString();
+                    t << plot.constFirst().second.at(i).toString();
             }
 
             for(int j=1; j<plot.size(); j++)
@@ -976,7 +976,7 @@ QString Experiment::timeDataText() const
     if(!noPlot.isEmpty())
     {
         t << QString("\n\n#NoPlotData\n\n");
-        QString name = noPlot.first().first;
+        QString name = noPlot.constFirst().first;
 
         t << name << QString("_%1").arg(data->number);
         for(int i=1; i<noPlot.size(); i++)
@@ -989,14 +989,14 @@ QString Experiment::timeDataText() const
         {
             t << nl;
 
-            if(i >= noPlot.first().second.size())
+            if(i >= noPlot.constFirst().second.size())
                 t << QString("NaN");
             else
             {
-                if(noPlot.first().second.at(i).canConvert(QVariant::Double))
-                    t << noPlot.first().second.at(i).toDouble();
+                if(noPlot.constFirst().second.at(i).canConvert(QVariant::Double))
+                    t << noPlot.constFirst().second.at(i).toDouble();
                 else
-                    t << noPlot.first().second.at(i).toString();
+                    t << noPlot.constFirst().second.at(i).toString();
             }
 
             for(int j=1; j<noPlot.size(); j++)
@@ -1094,10 +1094,10 @@ void Experiment::exportAscii(const QString fileName) const
             t.setRealNumberNotation(QTextStream::ScientificNotation);
             t.setRealNumberPrecision(12);
 
-            for(int i=0; i<ftmwConfig().fidList().first().size(); i++)
+            for(int i=0; i<ftmwConfig().fidList().constFirst().size(); i++)
             {
                 t << nl;
-                t << ftmwConfig().fidList().first().at(i);
+                t << ftmwConfig().fidList().constFirst().at(i);
                 for(int j=1; j<ftmwConfig().fidList().size(); j++)
                 {
                     t << tab;

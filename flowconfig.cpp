@@ -149,7 +149,7 @@ void FlowConfig::parseLine(const QString key, const QVariant val)
             if(l.size() < 3)
                 return;
 
-            QString subKey = l.last();
+            QString subKey = l.constLast();
             int index = l.at(1).toInt();
 
             while(data->configList.size() <= index)

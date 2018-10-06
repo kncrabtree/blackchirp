@@ -232,13 +232,13 @@ void IOBoardConfig::parseLine(QString key, QVariant val)
             if(l.size() < 3)
                 return;
 
-            QString subKey = l.last();
+            QString subKey = l.constLast();
             int index = l.at(1).toInt();
 
             QMap<int,BlackChirp::IOBoardChannel> *map = nullptr;
-            if(l.first().endsWith(QString("Analog")))
+            if(l.constFirst().endsWith(QString("Analog")))
                 map = &data->analog;
-            else if(l.first().endsWith(QString("Digital")))
+            else if(l.constFirst().endsWith(QString("Digital")))
                 map = &data->digital;
 
             if(map == nullptr)

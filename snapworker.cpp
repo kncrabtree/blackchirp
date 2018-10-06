@@ -43,7 +43,7 @@ void SnapWorker::calculateFidList(int exptNum, const FidList allList, const QLis
             return;
         }
 
-        out = parseFile(exptNum,snapList.first());
+        out = parseFile(exptNum,snapList.constFirst());
         if(out.isEmpty())
         {
             emit fidListComplete(out);

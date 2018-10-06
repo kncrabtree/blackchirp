@@ -121,8 +121,8 @@ double Ft::minFreq() const
     if(isEmpty())
         return -1;
 
-    auto p0 = data->ftData.first();
-    auto p1 = data->ftData.last();
+    auto p0 = data->ftData.constFirst();
+    auto p1 = data->ftData.constLast();
 
     return qMin(p0.x(),p1.x());
 }
@@ -132,8 +132,8 @@ double Ft::maxFreq() const
     if(isEmpty())
         return -1;
 
-    auto p0 = data->ftData.first();
-    auto p1 = data->ftData.last();
+    auto p0 = data->ftData.constFirst();
+    auto p1 = data->ftData.constLast();
 
     return qMax(p0.x(),p1.x());
 }

@@ -124,7 +124,7 @@ void ChirpConfigWidget::setRfConfig(const RfConfig c)
         auto thiscc = rfc.getChirpConfig();
         if(!thiscc.chirpList().isEmpty())
         {
-            if(thiscc.chirpList().first().size() > 1)
+            if(thiscc.chirpList().constFirst().size() > 1)
             {
                 thiscc.setChirpList(QList<QList<BlackChirp::ChirpSegment>>());
                 rfc.setChirpConfig(thiscc);

@@ -159,7 +159,7 @@ bool FtmwSnapshotWidget::readSnapshots()
             {
                 QStringList l = line.split(QString("\t"));
                 bool ok = false;
-                int n = l.last().trimmed().toInt(&ok);
+                int n = l.constLast().trimmed().toInt(&ok);
                 if(ok)
                 {
                     parseSuccess = true;
@@ -325,16 +325,16 @@ void FtmwSnapshotWidget::finalize()
                 emit experimentLogMessage(d_num,QString("All snapshots kept."),BlackChirp::LogNormal,d_path);
         }
         else if(snaps.size() == 1)
-            emit experimentLogMessage(d_num,QString("Removed snapshot %1.").arg(snaps.first()),BlackChirp::LogNormal,d_path);
+            emit experimentLogMessage(d_num,QString("Removed snapshot %1.").arg(snaps.constFirst()),BlackChirp::LogNormal,d_path);
         else if(snaps.size() == 2)
         {
             std::stable_sort(snaps.begin(),snaps.end());
-            emit experimentLogMessage(d_num,QString("Removed snapshots %1 and %2.").arg(snaps.first()).arg(snaps.last()),BlackChirp::LogNormal,d_path);
+            emit experimentLogMessage(d_num,QString("Removed snapshots %1 and %2.").arg(snaps.constFirst()).arg(snaps.constLast()),BlackChirp::LogNormal,d_path);
         }
         else
         {
             std::stable_sort(snaps.begin(),snaps.end());
-            QString snapString = QString("and %1").arg(snaps.last());
+            QString snapString = QString("and %1").arg(snaps.constLast());
             for(int i = snaps.size()-2; i>=0; i--)
                 snapString.prepend(QString("%1, ").arg(snaps.at(i)));
             emit experimentLogMessage(d_num,QString("Removed snapshots %1.").arg(snapString),BlackChirp::LogNormal,d_path);
@@ -346,7 +346,7 @@ void FtmwSnapshotWidget::finalize()
     else
         emit experimentLogMessage(d_num,QString("Remainder of shots removed."),BlackChirp::LogNormal,d_path);
 
-    emit experimentLogMessage(d_num,QString("Final number of shots: %1").arg(d_snapList.first().shots()),BlackChirp::LogNormal,d_path);
+    emit experimentLogMessage(d_num,QString("Final number of shots: %1").arg(d_snapList.constFirst().shots()),BlackChirp::LogNormal,d_path);
 
 
     //delete snapshot files

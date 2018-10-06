@@ -23,8 +23,8 @@ QList<QPointF> PeakFinder::findPeaks(const QVector<QPointF> ft, double minF, dou
     Eigen::VectorXd c = d_coefs.col(2);
     int halfWin = c.rows()/2;
 
-    int startIndex = qAbs((minF - ft.first().x())/(ft.last().x()-ft.first().x())*((double)ft.size()-1.0));
-    int endIndex = qAbs((maxF - ft.first().x())/(ft.last().x()-ft.first().x())*((double)ft.size()-1.0));
+    int startIndex = qAbs((minF - ft.constFirst().x())/(ft.constLast().x()-ft.constFirst().x())*((double)ft.size()-1.0));
+    int endIndex = qAbs((maxF - ft.constFirst().x())/(ft.constLast().x()-ft.constFirst().x())*((double)ft.size()-1.0));
     if(endIndex < startIndex)
         qSwap(startIndex,endIndex);
 

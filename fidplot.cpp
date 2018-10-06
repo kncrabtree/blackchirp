@@ -257,7 +257,7 @@ void FidPlot::setFtStart(double start)
 {
     double v = start;
     if(!d_currentFid.isEmpty())
-        v = qBound(0.0,start,qMin(d_ftMarkers.second->value().x(),d_currentFid.last().x()*1e6));
+        v = qBound(0.0,start,qMin(d_ftMarkers.second->value().x(),d_currentFid.constLast().x()*1e6));
 
     d_ftMarkers.first->setValue(v,0.0);
     emit ftStartChanged(v);
@@ -269,7 +269,7 @@ void FidPlot::setFtEnd(double end)
 {
     double v = end;
     if(!d_currentFid.isEmpty())
-        v = qBound(d_ftMarkers.first->value().x(),end,d_currentFid.last().x()*1e6);
+        v = qBound(d_ftMarkers.first->value().x(),end,d_currentFid.constLast().x()*1e6);
 
     d_ftMarkers.second->setValue(v,0.0);
     emit ftEndChanged(v);

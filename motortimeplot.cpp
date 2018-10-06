@@ -31,8 +31,8 @@ void MotorTimePlot::prepareForScan(const MotorScan s)
 
 void MotorTimePlot::updateData(QVector<QPointF> d)
 {
-    double min = d.first().y();
-    double max = d.first().y();
+    double min = d.constFirst().y();
+    double max = d.constFirst().y();
     for(int i=0; i<d.size(); i++)
     {
         min = qMin(d.at(i).y(),min);
