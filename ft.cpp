@@ -72,6 +72,21 @@ QPointF &Ft::operator[](int i)
     return data->ftData[i];
 }
 
+void Ft::reserve(int n)
+{
+    data->ftData.reserve(n);
+}
+
+void Ft::append(QPointF pt, double ignoreRange)
+{
+    data->ftData.append(pt);
+    if(qAbs(pt.x()-data->loFreq) > ignoreRange)
+    {
+        data->yMax = qMax(data->yMax,pt.y());
+        data->yMin = qMin(data->yMin,pt.y());
+    }
+}
+
 int Ft::size() const
 {
     return data->ftData.size();

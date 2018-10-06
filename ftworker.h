@@ -78,6 +78,7 @@ public slots:
     Ft doFT(const Fid fid, const FtWorker::FidProcessingSettings &settings);
     void doFtDiff(const Fid ref, const Fid diff, const FtWorker::FidProcessingSettings &settings);
     Ft processSideband(const FidList fl, const FtWorker::FidProcessingSettings &settings, BlackChirp::Sideband sb);
+    void processBothSidebands(const FidList fl, const FtWorker::FidProcessingSettings &settings);
 
     /*!
      \brief Perform truncation, high-pass, and exponential filtering on an Fid

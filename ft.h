@@ -20,6 +20,8 @@ public:
     void setPoint(int i, QPointF pt, double ignoreRange = 0.0);
     void resize(int n, double ignoreRange = 0.0);
     QPointF &operator[](int i);
+    void reserve(int n);
+    void append(QPointF pt, double ignoreRange = 0.0);
 
     int size() const;
     bool isEmpty() const;

@@ -234,6 +234,12 @@ Ft FtWorker::processSideband(const FidList fl, const FtWorker::FidProcessingSett
     //this will FT all of the FIDs and resample them on a common grid
     QList<Ft> ftList = makeSidebandList(fl,settings,sb);
 
+    if(ftList.isEmpty())
+    {
+        emit ftDone(Ft(),d_id);
+        return Ft();
+    }
+
     if(ftList.size() == 1)
     {
         emit ftDone(ftList.first(),d_id);
@@ -243,8 +249,8 @@ Ft FtWorker::processSideband(const FidList fl, const FtWorker::FidProcessingSett
     QVector<int> indices;
     indices.resize(ftList.size());
 
-    QVector<QPointF> dataPointsList;
-    dataPointsList.reserve(ftList.size()*ftList.first().size());
+    Ft out(0,0.0);
+    out.reserve(ftList.size()*ftList.first().size());
 
     //want to make sure frequency increases monotonically as we iterate through fidlist
     //Fts ALWAYS go from low frequency to high
@@ -284,9 +290,9 @@ Ft FtWorker::processSideband(const FidList fl, const FtWorker::FidProcessingSett
         }
 
         if(numPoints < 1.0)
-            dataPointsList.append(QPointF(thisPointX,thisPointY));
+            out.append(QPointF(thisPointX,thisPointY));
         else
-            dataPointsList.append(QPointF(thisPointX,pow(10.0,thisPointY/numPoints)));
+            out.append(QPointF(thisPointX,pow(10.0,thisPointY/numPoints)));
 
         bool done = true;
         for(int i=0; i<indices.size(); i++)
@@ -302,12 +308,53 @@ Ft FtWorker::processSideband(const FidList fl, const FtWorker::FidProcessingSett
             break;
     }
 
-    Ft out(dataPointsList.size(),0.0);
-    for(int i=0; i<dataPointsList.size(); i++)
-        out.setPoint(i,dataPointsList.at(i));
-
     emit ftDone(out,d_id);
     return out;
+}
+
+void FtWorker::processBothSidebands(const FidList fl, const FtWorker::FidProcessingSettings &settings)
+{
+    blockSignals(true);
+    Ft upper = processSideband(fl,settings,BlackChirp::UpperSideband);
+    Ft lower = processSideband(fl,settings,BlackChirp::LowerSideband);
+    blockSignals(false);
+
+    Ft out(0,0.0);
+    out.reserve(upper.size() + lower.size());
+
+    int li=0, ui=0;
+
+    while(true)
+    {
+        QPointF pt;
+
+        if(li < lower.size())
+        {
+            pt = lower.at(li);
+            if(qAbs(pt.x()-upper.at(ui).x()) < lower.xSpacing())
+            {
+                pt.setY(pt.y() + upper.at(ui).y());
+                ui++;
+            }
+
+            li++;
+        }
+        else
+        {
+            pt = upper.at(ui);
+            ui++;
+        }
+        out.append(pt);
+
+        if(ui < upper.size() || li < lower.size())
+            continue;
+
+        break;
+
+    }
+
+    emit ftDone(out,d_id);
+
 }
 
 QList<Ft> FtWorker::makeSidebandList(const FidList fl, const FidProcessingSettings &settings, BlackChirp::Sideband sb)
@@ -320,6 +367,7 @@ QList<Ft> FtWorker::makeSidebandList(const FidList fl, const FidProcessingSettin
 
     QList<Ft> out;
 
+    bool sigsBlocked = signalsBlocked();
     blockSignals(true);
     Ft ft1 = doFT(f,settings);
     out << ft1;
@@ -334,7 +382,7 @@ QList<Ft> FtWorker::makeSidebandList(const FidList fl, const FidProcessingSettin
         auto rsft = resample(f0,sp,ft1);
         out << rsft;
     }
-    blockSignals(false);
+    blockSignals(sigsBlocked);
 
     return out;
 

@@ -75,6 +75,7 @@ public slots:
     void process(int id, const Fid f);
     void processDiff(const Fid f1, const Fid f2);
     void processSideband(BlackChirp::Sideband sb);
+    void processBothSidebands();
 
     void modeChanged(MainPlotMode newMode);
     void snapshotTaken();

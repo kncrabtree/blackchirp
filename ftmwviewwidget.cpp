@@ -322,6 +322,9 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
             d_plotStatus[workerId].ftPlot->newFt(ft);
         }
 
+        d_plotStatus[workerId].fidPlot->setCursor(Qt::CrossCursor);
+        d_plotStatus[workerId].ftPlot->setCursor(Qt::CrossCursor);
+
         switch(d_mode) {
         case Live:
         case FT1:
@@ -343,12 +346,18 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
 
     d_workersStatus[workerId].busy = false;
     if(d_workersStatus.value(workerId).reprocessWhenDone)
-        process(workerId,d_plotStatus.value(workerId).fid);
+    {
+        if(workerId == d_mainFtwId)
+            updateMainPlot();
+        else
+            process(workerId,d_plotStatus.value(workerId).fid);
+    }
 }
 
 void FtmwViewWidget::ftDiffDone(const Ft ft)
 {
     ui->mainFtPlot->newFt(ft);
+    ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
 
     d_workersStatus[d_mainFtwId].busy = false;
     if(d_workersStatus.value(d_mainFtwId).reprocessWhenDone)
@@ -386,6 +395,7 @@ void FtmwViewWidget::updateMainPlot()
         processSideband(BlackChirp::LowerSideband);
         break;
     case BothSB:
+        processBothSidebands();
         break;
     }
 }
@@ -413,7 +423,6 @@ void FtmwViewWidget::process(int id, const Fid f)
 {
 //    if(f.isEmpty())
 //        return;
-
     auto ws = d_workersStatus.value(id);
     if(ws.thread->isRunning() && ws.worker != nullptr)
     {
@@ -421,6 +430,8 @@ void FtmwViewWidget::process(int id, const Fid f)
             d_workersStatus[id].reprocessWhenDone = true;
         else
         {
+            d_plotStatus[id].fidPlot->setCursor(Qt::BusyCursor);
+            d_plotStatus[id].ftPlot->setCursor(Qt::BusyCursor);
             d_workersStatus[id].busy = true;
             d_workersStatus[id].reprocessWhenDone = false;
             QMetaObject::invokeMethod(ws.worker,"doFT",Q_ARG(Fid,f),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings));
@@ -452,15 +463,41 @@ void FtmwViewWidget::processSideband(BlackChirp::Sideband sb)
         d_workersStatus[d_mainFtwId].reprocessWhenDone = true;
     else
     {
-        ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
-         d_workersStatus[d_mainFtwId].busy = true;
-         d_workersStatus[d_mainFtwId].reprocessWhenDone = false;
+        FidList fl;
+        for(int i=0; i<d_ftmwConfig.multiFidList().size(); i++)
+            fl << d_ftmwConfig.singleFid(d_plotStatus.value(d_plot1FtwId).frame,i);
 
-         FidList fl;
-         for(int i=0; i<d_ftmwConfig.multiFidList().size(); i++)
-             fl << d_ftmwConfig.singleFid(d_plotStatus.value(d_plot1FtwId).frame,i);
+        if(!fl.isEmpty())
+        {
+            ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
+            d_workersStatus[d_mainFtwId].busy = true;
+            d_workersStatus[d_mainFtwId].reprocessWhenDone = false;
 
-         QMetaObject::invokeMethod(ws.worker,"processSideband",Q_ARG(FidList,fl),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings),Q_ARG(BlackChirp::Sideband,sb));
+            QMetaObject::invokeMethod(ws.worker,"processSideband",Q_ARG(FidList,fl),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings),Q_ARG(BlackChirp::Sideband,sb));
+        }
+    }
+}
+
+void FtmwViewWidget::processBothSidebands()
+{
+    auto ws = d_workersStatus.value(d_mainFtwId);
+    if(ws.busy)
+        d_workersStatus[d_mainFtwId].reprocessWhenDone = true;
+    else
+    {
+        FidList fl;
+        for(int i=0; i<d_ftmwConfig.multiFidList().size(); i++)
+            fl << d_ftmwConfig.singleFid(d_plotStatus.value(d_plot1FtwId).frame,i);
+
+        if(!fl.isEmpty())
+        {
+            ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
+            d_workersStatus[d_mainFtwId].busy = true;
+            d_workersStatus[d_mainFtwId].reprocessWhenDone = false;
+
+
+            QMetaObject::invokeMethod(ws.worker,"processBothSidebands",Q_ARG(FidList,fl),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings));
+        }
     }
 }
 
