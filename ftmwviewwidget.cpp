@@ -242,6 +242,7 @@ void FtmwViewWidget::updateFtmw(const FtmwConfig f)
 
 void FtmwViewWidget::updateProcessingSettings(FtWorker::FidProcessingSettings s)
 {
+    //skip main plot because it will be updated when menu is closed
     d_currentProcessingSettings = s;
     QList<int> ignore;
     switch(d_mode)

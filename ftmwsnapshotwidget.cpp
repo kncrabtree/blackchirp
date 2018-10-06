@@ -78,34 +78,6 @@ bool FtmwSnapshotWidget::isEmpty() const
     return p_lw->count() == 0;
 }
 
-FidList FtmwSnapshotWidget::getSnapList() const
-{
-    return d_snapList;
-}
-
-int FtmwSnapshotWidget::snapListSize() const
-{
-    return d_snapList.size();
-}
-
-Fid FtmwSnapshotWidget::getSnapFid(int i) const
-{
-    Q_ASSERT(i < d_snapList.size());
-    return d_snapList.at(i);
-}
-
-Fid FtmwSnapshotWidget::getRefFid(int i)
-{
-    Q_ASSERT(p_refBox->value() < count());
-    return p_sw->parseFile(d_num,p_refBox->value(),d_path).at(i);
-}
-
-Fid FtmwSnapshotWidget::getDiffFid(int i)
-{
-    Q_ASSERT(p_diffBox->value() < count());
-    return p_sw->parseFile(d_num,p_diffBox->value(),d_path).at(i);
-}
-
 QSize FtmwSnapshotWidget::sizeHint() const
 {
     return QSize(100,300);

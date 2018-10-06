@@ -40,6 +40,11 @@ bool FtmwConfig::isChirpScoringEnabled() const
     return data->chirpScoringEnabled;
 }
 
+bool FtmwConfig::hasMultiFidLists() const
+{
+    return data->multipleFidLists;
+}
+
 double FtmwConfig::chirpRMSThreshold() const
 {
     return data->chirpRMSThreshold;
@@ -496,11 +501,7 @@ bool FtmwConfig::increment()
         if(data->rfConfig.canAdvance(data->fidList.constFirst().shots()))
         {
             //place fid list in storage
-            int oldIndex = data->rfConfig.currentIndex();
-            if(oldIndex == data->multiFidStorage.size())
-                data->multiFidStorage << data->fidList;
-            else
-                data->multiFidStorage[oldIndex] = data->fidList;
+            storeFids();
 
             //get fid list from storage or clear it for new data
             int newIndex = data->rfConfig.advanceClockStep();
@@ -667,6 +668,23 @@ void FtmwConfig::clocksReady()
 {
     data->fidTemplate.setProbeFreq(rfConfig().clockFrequency(BlackChirp::DownConversionLO));
     data->processingPaused = false;
+}
+
+void FtmwConfig::storeFids()
+{
+    if(data->multipleFidLists)
+    {
+        int oldIndex = data->rfConfig.currentIndex();
+        if(oldIndex == data->multiFidStorage.size())
+            data->multiFidStorage << data->fidList;
+        else
+            data->multiFidStorage[oldIndex] = data->fidList;
+    }
+}
+
+void FtmwConfig::setMultiFidList(const QList<FidList> l)
+{
+    data->multiFidStorage = l;
 }
 
 bool FtmwConfig::isComplete() const

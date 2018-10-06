@@ -27,6 +27,7 @@ public:
     bool isEnabled() const;
     bool isPhaseCorrectionEnabled() const;
     bool isChirpScoringEnabled() const;
+    bool hasMultiFidLists() const;
     double chirpRMSThreshold() const;
     double chirpOffsetUs() const;
     BlackChirp::FtmwType type() const;
@@ -74,6 +75,8 @@ public:
     void setScopeConfig(const BlackChirp::FtmwScopeConfig &other);
     void setRfConfig(const RfConfig other);
     void clocksReady();
+    void storeFids();
+    void setMultiFidList(const QList<FidList> l);
 
 
     bool isComplete() const;

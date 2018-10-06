@@ -1017,7 +1017,7 @@ QString Experiment::timeDataText() const
     return out;
 }
 
-void Experiment::snapshot(int snapNum, const Experiment other) const
+void Experiment::snapshot(int snapNum, const Experiment other)
 {
     if(data->isDummy)
         return;
@@ -1027,6 +1027,8 @@ void Experiment::snapshot(int snapNum, const Experiment other) const
     if(ftmwConfig().isEnabled())
     {
         FtmwConfig cf = ftmwConfig();
+        cf.storeFids();
+
         if(other.number() == data->number && other.isInitialized())
         {
             if(cf.subtractFids(other.ftmwConfig()))
