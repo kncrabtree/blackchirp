@@ -333,7 +333,7 @@ void FtWorker::processBothSidebands(const FidList fl, const FtWorker::FidProcess
             pt = lower.at(li);
             if(qAbs(pt.x()-upper.at(ui).x()) < lower.xSpacing())
             {
-                pt.setY(pt.y() + upper.at(ui).y());
+                pt.setY((pt.y() + upper.at(ui).y())/2.0);
                 ui++;
             }
 
