@@ -1017,7 +1017,7 @@ QString Experiment::timeDataText() const
     return out;
 }
 
-void Experiment::snapshot(int snapNum, const Experiment other)
+void Experiment::snapshot(int snapNum, const Experiment other) const
 {
     if(data->isDummy)
         return;

@@ -59,7 +59,7 @@ signals:
     void finalized(int);
 
 public slots:
-    void updateLiveFidList(const FidList fl, int segment);
+    void updateLiveFidList(const FtmwConfig c, int segment);
     void updateFtmw(const FtmwConfig f);
     void updateProcessingSettings(FtWorker::FidProcessingSettings s);
     void storeProcessingSettings();
@@ -94,8 +94,7 @@ private:
     int d_currentExptNum;
     int d_currentSegment;
     MainPlotMode d_mode;
-    FidList d_liveFidList;
-
+\
     struct WorkerStatus {
         FtWorker *worker;
         QThread *thread;

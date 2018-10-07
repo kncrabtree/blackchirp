@@ -5,7 +5,12 @@
 
 #include "experiment.h"
 
+class QThread;
+class QListWidget;
 class QSpinBox;
+class QPushButton;
+class QRadioButton;
+class SnapWorker;
 
 class FtmwPlotConfigWidget : public QWidget
 {
@@ -23,6 +28,15 @@ public slots:
 
 private:
     QSpinBox *p_frameBox, *p_segmentBox;
+    QListWidget *p_lw;
+    QRadioButton *p_allButton, *p_recentButton, *p_selectedButton;
+    QPushButton *p_finalizeButton, *p_selectAllButton, *p_selectNoneButton;
+    QThread *p_workerThread;
+    SnapWorker *p_sw;
+
+    int d_num;
+    bool d_busy, d_updateWhenDone;
+    QString d_path;
 };
 
 #endif // FTMWPLOTCONFIGWIDGET_H

@@ -596,6 +596,40 @@ bool FtmwConfig::addFids(const QByteArray rawData, int shift)
     return true;
 }
 
+void FtmwConfig::addFids(const FtmwConfig other)
+{
+    if(data->multipleFidLists)
+    {
+        auto l = other.multiFidList();
+        for(int i=0; i<l.size(); i++)
+        {
+            if(data->multiFidStorage.size() == i)
+                data->multiFidStorage.append(l.at(i));
+            else
+            {
+                if(data->multiFidStorage.at(i).size() != l.at(i).size())
+                    data->multiFidStorage[i] = l.at(i);
+                else
+                {
+                    for(int j=0; j<data->multiFidStorage.at(i).size(); j++)
+                        data->multiFidStorage[i][j] += l.at(i).at(j);
+                }
+            }
+        }
+    }
+    else
+    {
+        auto l = other.fidList();
+        for(int i=0; i<l.size(); i++)
+        {
+            if(data->fidList.size() == i)
+                data->fidList.append(l.at(i));
+            else
+                data->fidList[i] += l.at(i);
+        }
+    }
+}
+
 bool FtmwConfig::subtractFids(const FtmwConfig other)
 {
     if(!data->multipleFidLists)
@@ -818,6 +852,8 @@ void FtmwConfig::loadFids(const int num, const QString path)
                     }
                 }
             }
+
+            snp.close();
         }
     }
 

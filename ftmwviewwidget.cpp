@@ -129,7 +129,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
     ui->plot1ConfigWidget->prepareForExperiment(e);
     ui->plot2ConfigWidget->prepareForExperiment(e);
 
-    d_liveFidList.clear();
+    d_ftmwConfig.fidList().clear();
     d_currentSegment = 0;
     for(auto it = d_plotStatus.begin(); it != d_plotStatus.end(); it++)
     {
@@ -192,13 +192,14 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
 
 }
 
-void FtmwViewWidget::updateLiveFidList(const FidList fl, int segment)
+void FtmwViewWidget::updateLiveFidList(const FtmwConfig c, int segment)
 {
-    if(fl.isEmpty())
+    if(c.fidList().isEmpty())
         return;
 
-    d_liveFidList = fl;
+    d_ftmwConfig = c;
     d_currentSegment = segment;
+    auto fl = c.fidList();
 
     for(auto it = d_plotStatus.begin(); it != d_plotStatus.end(); it++)
     {
@@ -625,8 +626,8 @@ void FtmwViewWidget::updateFid(int id)
 
     if(seg == d_currentSegment)
     {
-        if(frame >= 0 && frame < d_liveFidList.size())
-            d_plotStatus[id].fid = d_liveFidList.at(frame);
+        if(frame >= 0 && frame < d_ftmwConfig.fidList().size())
+            d_plotStatus[id].fid = d_ftmwConfig.fidList().at(frame);
     }
     else
         d_plotStatus[id].fid = d_ftmwConfig.singleFid(frame,seg);

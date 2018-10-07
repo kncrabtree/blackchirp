@@ -158,7 +158,7 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 //        emit logMessage(QString("Elapsed time: %1 ms, avg: %2").arg(t).arg(total/count));
 
         int segment = qMax(0,d_currentExperiment.ftmwConfig().rfConfig().currentIndex());
-        emit newFidList(d_currentExperiment.ftmwConfig().fidList(),segment);
+        emit newFidList(d_currentExperiment.ftmwConfig(),segment);
 
         bool advanceSegment = d_currentExperiment.incrementFtmw();
 

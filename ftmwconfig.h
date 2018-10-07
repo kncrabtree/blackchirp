@@ -70,6 +70,7 @@ public:
     void setTargetTime(const QDateTime time);
     bool setFidsData(const QList<QVector<qint64>> newList);
     bool addFids(const QByteArray rawData, int shift = 0);
+    void addFids(const FtmwConfig other);
     bool subtractFids(const FtmwConfig other);
     void resetFids();
     void setScopeConfig(const BlackChirp::FtmwScopeConfig &other);
@@ -85,6 +86,7 @@ public:
     void parseLine(const QString key, const QVariant val);
     void loadChirps(const int num, const QString path = QString(""));
     void loadClocks(const int num, const QString path = QString(""));
+
 
     void saveToSettings() const;
     static FtmwConfig loadFromSettings();

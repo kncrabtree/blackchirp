@@ -7,6 +7,7 @@
 #include <QSpinBox>
 #include <QLabel>
 #include <QPushButton>
+#include <QRadioButton>
 #include <QListWidgetItem>
 #include <QFile>
 #include <QThread>
@@ -25,24 +26,32 @@ FtmwSnapshotWidget::FtmwSnapshotWidget(int num, const QString path, QWidget *par
 
     QVBoxLayout *vbl = new QVBoxLayout;
 
+    QFormLayout *fl = new QFormLayout;
+
+    p_allButton = new QRadioButton;
+    p_allButton->setChecked(true);
+
+    auto allL = new QLabel(QString("All"));
+    allL->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
+    fl->addRow(allL,p_allButton);
+
+    p_recentButton = new QRadioButton;
+
+    auto rl = new QLabel(QString("Most Recent"));
+    rl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
+    fl->addRow(rl,p_recentButton);
+
+    p_selectedButton = new QRadioButton;
+    auto sl = new QLabel(QString("Selected"));
+    sl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
+    fl->addRow(sl,p_selectedButton);
+
+    vbl->addLayout(fl,0);
+
     p_lw = new QListWidget(this);
     connect(p_lw,&QListWidget::itemChanged,this,&FtmwSnapshotWidget::updateSnapList);
     vbl->addWidget(p_lw,1);
 
-    QFormLayout *fl = new QFormLayout;
-    p_refBox = new QSpinBox(this);
-    p_refBox->setRange(1,1);
-    p_refBox->setEnabled(false);
-    connect(p_refBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwSnapshotWidget::refChanged);
-    fl->addRow(QString("Ref Snapshot"),p_refBox);
-
-    p_diffBox = new QSpinBox(this);
-    p_diffBox->setRange(1,1);
-    p_diffBox->setEnabled(false);
-    connect(p_diffBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwSnapshotWidget::diffChanged);
-    fl->addRow(QString("Diff Snapshot"),p_diffBox);
-
-    vbl->addLayout(fl,0);
 
     p_finalizeButton = new QPushButton(QString(" Finalize"));
     p_finalizeButton->setEnabled(false);
@@ -83,28 +92,9 @@ QSize FtmwSnapshotWidget::sizeHint() const
     return QSize(100,300);
 }
 
-void FtmwSnapshotWidget::setFidList(const FidList l)
-{
-    d_totalFidList = l;
-}
-
 void FtmwSnapshotWidget::setSelectionEnabled(bool en)
 {
     p_lw->setEnabled(en);
-}
-
-void FtmwSnapshotWidget::setDiffMode(bool en)
-{
-    if(count() > 1)
-    {
-        p_refBox->setEnabled(en);
-        p_diffBox->setEnabled(en);
-    }
-    else
-    {
-        p_refBox->setEnabled(false);
-        p_diffBox->setEnabled(false);
-    }
 }
 
 void FtmwSnapshotWidget::setFinalizeEnabled(bool en)
@@ -182,8 +172,6 @@ bool FtmwSnapshotWidget::readSnapshots()
                 }
             }
         }
-        p_refBox->setRange(0,count()-2);
-        p_diffBox->setRange(0,count()-2);
         updateSnapList();
         snp.close();
     }
@@ -229,8 +217,8 @@ void FtmwSnapshotWidget::updateSnapList()
         p_lw->blockSignals(false);
     }
 
-    QMetaObject::invokeMethod(p_sw,"calculateFidList",Q_ARG(int,d_num),Q_ARG(const FidList,d_totalFidList),
-                              Q_ARG(const QList<int>,snapList),Q_ARG(bool,subtract));
+//    QMetaObject::invokeMethod(p_sw,"calculateFidList",Q_ARG(int,d_num),Q_ARG(const FidList,d_totalFidList),
+//                              Q_ARG(const QList<int>,snapList),Q_ARG(bool,subtract));
     d_busy = true;
     d_updateWhenDone = false;
     setEnabled(false);
@@ -243,7 +231,7 @@ void FtmwSnapshotWidget::snapListUpdated(const FidList l)
 {
     d_busy = false;
 
-    d_snapList = l;
+//    d_snapList = l;
     emit snapListChanged();
 
     if(d_updateWhenDone)
@@ -257,11 +245,11 @@ void FtmwSnapshotWidget::snapListUpdated(const FidList l)
 
 void FtmwSnapshotWidget::finalize()
 {
-    if(d_snapList.isEmpty())
-    {
-        QMessageBox::critical(qobject_cast<QWidget*>(parent()),QString("Finalize Error"),QString("Cannot finalize because the snapshot list is empty."),QMessageBox::Ok);
-        return;
-    }
+//    if(d_snapList.isEmpty())
+//    {
+//        QMessageBox::critical(qobject_cast<QWidget*>(parent()),QString("Finalize Error"),QString("Cannot finalize because the snapshot list is empty."),QMessageBox::Ok);
+//        return;
+//    }
 
     int ret = QMessageBox::question(qobject_cast<QWidget*>(parent()),QString("Discard snapshots?"),QString("If you continue, the currently-selected snapshots will be combined, and the FID output file overwritten.\nThe snapshots themselves will be deleted.\n\nAre you sure you wish to proceed?"),QMessageBox::Yes|QMessageBox::No,QMessageBox::No);
 
@@ -269,11 +257,11 @@ void FtmwSnapshotWidget::finalize()
         return;
 
     //write fid file
-    if(!FtmwConfig::writeFidFile(d_num,d_snapList,d_path))
-    {
-        QMessageBox::critical(qobject_cast<QWidget*>(parent()),QString("Save failed!"),QString("Could not write FID file!"),QMessageBox::Ok);
-        return;
-    }
+//    if(!FtmwConfig::writeFidFile(d_num,d_snapList,d_path))
+//    {
+//        QMessageBox::critical(qobject_cast<QWidget*>(parent()),QString("Save failed!"),QString("Could not write FID file!"),QMessageBox::Ok);
+//        return;
+//    }
 
     bool remainderKept = (p_lw->item(count()-1)->data(Qt::CheckStateRole) == Qt::Checked ? true : false);
     QList<int> snaps;
@@ -318,7 +306,7 @@ void FtmwSnapshotWidget::finalize()
     else
         emit experimentLogMessage(d_num,QString("Remainder of shots removed."),BlackChirp::LogNormal,d_path);
 
-    emit experimentLogMessage(d_num,QString("Final number of shots: %1").arg(d_snapList.constFirst().shots()),BlackChirp::LogNormal,d_path);
+//    emit experimentLogMessage(d_num,QString("Final number of shots: %1").arg(d_snapList.constFirst().shots()),BlackChirp::LogNormal,d_path);
 
 
     //delete snapshot files
@@ -367,6 +355,6 @@ void FtmwSnapshotWidget::finalize()
     Experiment e(d_num,d_path);
     e.saveHeader();
 
-    emit finalizedList(d_snapList);
+//    emit finalizedList(d_snapList);
 
 }

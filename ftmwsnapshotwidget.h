@@ -33,7 +33,6 @@ signals:
 
 public slots:
     void setSelectionEnabled(bool en);
-    void setDiffMode(bool en);
     void setFinalizeEnabled(bool en);
     bool readSnapshots();
     void updateSnapList();
@@ -42,7 +41,7 @@ public slots:
 
 private:
     QListWidget *p_lw;
-    QRadioButton *p_allButton, *p_selectedButton;
+    QRadioButton *p_allButton, *p_recentButton, *p_selectedButton;
     QPushButton *p_finalizeButton, *p_selectAllButton, *p_selectNoneButton;
     QThread *p_workerThread;
     SnapWorker *p_sw;
