@@ -20,61 +20,10 @@
 FtmwSnapshotWidget::FtmwSnapshotWidget(int num, const QString path, QWidget *parent) : QWidget(parent), d_num(num), d_busy(false),
     d_updateWhenDone(false), d_path(path)
 {
-    QVBoxLayout *vl = new QVBoxLayout;
-    QGroupBox *gb = new QGroupBox(QString("Snapshot Control"));
-    vl->addWidget(gb);
-
-    QVBoxLayout *vbl = new QVBoxLayout;
-
-    QFormLayout *fl = new QFormLayout;
-
-    p_allButton = new QRadioButton;
-    p_allButton->setChecked(true);
-
-    auto allL = new QLabel(QString("All"));
-    allL->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
-    fl->addRow(allL,p_allButton);
-
-    p_recentButton = new QRadioButton;
-
-    auto rl = new QLabel(QString("Most Recent"));
-    rl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
-    fl->addRow(rl,p_recentButton);
-
-    p_selectedButton = new QRadioButton;
-    auto sl = new QLabel(QString("Selected"));
-    sl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
-    fl->addRow(sl,p_selectedButton);
-
-    vbl->addLayout(fl,0);
-
-    p_lw = new QListWidget(this);
-    connect(p_lw,&QListWidget::itemChanged,this,&FtmwSnapshotWidget::updateSnapList);
-    vbl->addWidget(p_lw,1);
-
-
-    p_finalizeButton = new QPushButton(QString(" Finalize"));
-    p_finalizeButton->setEnabled(false);
-    p_finalizeButton->setIcon(QIcon(QString(":/icons/check.png")));
-    vbl->addWidget(p_finalizeButton,0);
-
-    gb->setLayout(vbl);
-
-    setLayout(vl);
-
-    p_workerThread = new QThread(this);
-    p_sw = new SnapWorker();
-    p_sw->moveToThread(p_workerThread);
-    connect(p_workerThread,&QThread::finished,p_sw,&SnapWorker::deleteLater);
-    connect(p_sw,&SnapWorker::fidListComplete,this,&FtmwSnapshotWidget::snapListUpdated);
-    p_workerThread->start();
-
 }
 
 FtmwSnapshotWidget::~FtmwSnapshotWidget()
 {
-    p_workerThread->quit();
-    p_workerThread->wait();
 }
 
 int FtmwSnapshotWidget::count() const

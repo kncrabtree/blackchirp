@@ -8,13 +8,15 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QCheckBox>
 #include <QListWidgetItem>
 #include <QFile>
 #include <QThread>
 #include <QMessageBox>
 
+#include "snapworker.h"
 
-FtmwPlotConfigWidget::FtmwPlotConfigWidget(QWidget *parent) : QWidget(parent)
+FtmwPlotConfigWidget::FtmwPlotConfigWidget(QString path, QWidget *parent) : QWidget(parent), d_num(-1), d_busy(false), d_updateWhenDone(false), d_path(path)
 {
     auto vbl = new QVBoxLayout;
 
@@ -51,18 +53,21 @@ FtmwPlotConfigWidget::FtmwPlotConfigWidget(QWidget *parent) : QWidget(parent)
 
     p_allButton = new QRadioButton;
     p_allButton->setChecked(true);
+    p_allButton->setToolTip(QString("Include all shots taken since beginning of experiment."));
 
     auto allL = new QLabel(QString("All"));
     allL->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
     fl->addRow(allL,p_allButton);
 
     p_recentButton = new QRadioButton;
+    p_recentButton->setToolTip(QString("Only show shots taken after the most recent snapshot."));
 
-    auto rl = new QLabel(QString("Most Recent"));
+    auto rl = new QLabel(QString("Current Shots"));
     rl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
     fl->addRow(rl,p_recentButton);
 
     p_selectedButton = new QRadioButton;
+    p_selectedButton->setToolTip(QString("Only show shots taken suring the intervals selected below."));
     auto sl = new QLabel(QString("Selected"));
     sl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
     fl->addRow(sl,p_selectedButton);
@@ -81,6 +86,12 @@ FtmwPlotConfigWidget::FtmwPlotConfigWidget(QWidget *parent) : QWidget(parent)
 //    connect(p_lw,&QListWidget::itemChanged,this,&FtmwSnapshotWidget::updateSnapList);
     vbl->addWidget(p_lw,1);
 
+    p_remainderBox = new QCheckBox(QString("Include FIDs since last snapshot?"));
+    p_remainderBox->setToolTip(QString("Check to include all shots taken after the most recent snapshot."));
+    p_remainderBox->setChecked(true);
+
+    vbl->addWidget(p_remainderBox,0);
+
     p_finalizeButton = new QPushButton(QString(" Finalize"));
     p_finalizeButton->setEnabled(false);
     p_finalizeButton->setIcon(QIcon(QString(":/icons/check.png")));
@@ -94,12 +105,40 @@ FtmwPlotConfigWidget::FtmwPlotConfigWidget(QWidget *parent) : QWidget(parent)
     p_selectAllButton->setEnabled(false);
     p_selectNoneButton->setEnabled(false);
     p_lw->setEnabled(false);
+    p_remainderBox->setEnabled(false);
     p_finalizeButton->setEnabled(false);
+
+    p_workerThread = new QThread(this);
+    p_sw = new SnapWorker;
+    connect(p_workerThread,&QThread::finished,p_sw,&SnapWorker::deleteLater);
+    p_sw->moveToThread(p_workerThread);
+    p_workerThread->start();
+}
+
+FtmwPlotConfigWidget::~FtmwPlotConfigWidget()
+{
+    p_workerThread->quit();
+    p_workerThread->wait();
 }
 
 void FtmwPlotConfigWidget::prepareForExperiment(const Experiment e)
 {
     blockSignals(true);
+
+    d_num = e.number();
+
+    p_allButton->setChecked(true);
+    p_remainderBox->setChecked(true);
+
+    //these things only become enabled once snapshots have been taken
+    p_allButton->setEnabled(false);
+    p_recentButton->setEnabled(false);
+    p_selectedButton->setEnabled(false);
+    p_selectAllButton->setEnabled(false);
+    p_selectNoneButton->setEnabled(false);
+    p_lw->setEnabled(false);
+    p_remainderBox->setEnabled(false);
+    p_finalizeButton->setEnabled(false);
 
     if(e.ftmwConfig().isEnabled())
     {
@@ -117,6 +156,7 @@ void FtmwPlotConfigWidget::prepareForExperiment(const Experiment e)
         p_segmentBox->setRange(1,1);
         p_segmentBox->setEnabled(false);
     }
+
 
     blockSignals(false);
 }

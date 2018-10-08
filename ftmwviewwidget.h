@@ -89,7 +89,7 @@ public slots:
 private:
     Ui::FtmwViewWidget *ui;
 
-    FtmwConfig d_ftmwConfig;
+    FtmwConfig d_ftmwConfig, d_snap1Config, d_snap2Config;
     FtWorker::FidProcessingSettings d_currentProcessingSettings;
     int d_currentExptNum;
     int d_currentSegment;
@@ -109,6 +109,7 @@ private:
         Ft ft;
         int frame; //only used for plot1 and plot2
         int segment; //only used for plot1 and plot2
+        bool snapshot; //only used for plot1 and plot2
     };
 
     QList<int> d_workerIds;
@@ -134,16 +135,12 @@ public:
     FidPlot *liveFidPlot;
     FtPlot *liveFtPlot;
     QHBoxLayout *plots12Layout;
-    QVBoxLayout *fid1Layout;
     QHBoxLayout *plot1Layout;
     FidPlot *fidPlot1;
     FtPlot *ftPlot1;
-    QWidget *snapshotWidget1;
-    QVBoxLayout *fid2Layout;
-    QHBoxLayout *plot2ayout;
+    QHBoxLayout *plot2Layout;
     FidPlot *fidPlot2;
     FtPlot *ftPlot2;
-    QWidget *snapshotWidget2;
     FtPlot *mainFtPlot;
     QToolBar *toolBar;
     QMenu *processingMenu;
@@ -159,7 +156,7 @@ public:
     FtmwPlotConfigWidget *plot1ConfigWidget;
     FtmwPlotConfigWidget *plot2ConfigWidget;
 
-    void setupUi(QWidget *FtmwViewWidget)
+    void setupUi(QWidget *FtmwViewWidget, QString path)
     {
         if (FtmwViewWidget->objectName().isEmpty())
             FtmwViewWidget->setObjectName(QStringLiteral("FtmwViewWidget"));
@@ -202,8 +199,6 @@ public:
 
         plots12Layout = new QHBoxLayout();
         plots12Layout->setObjectName(QStringLiteral("plots12Layout"));
-        fid1Layout = new QVBoxLayout();
-        fid1Layout->setObjectName(QStringLiteral("fid1Layout"));
         plot1Layout = new QHBoxLayout();
         plot1Layout->setObjectName(QStringLiteral("plot1Layout"));
         fidPlot1 = new FidPlot(QString("1"),widget);
@@ -216,45 +211,22 @@ public:
 
         plot1Layout->addWidget(ftPlot1);
 
+        plots12Layout->addLayout(plot1Layout);
 
-        fid1Layout->addLayout(plot1Layout);
-
-        snapshotWidget1 = new QWidget(widget);
-        snapshotWidget1->setObjectName(QStringLiteral("snapshotWidget1"));
-
-        fid1Layout->addWidget(snapshotWidget1);
-
-        fid1Layout->setStretch(0, 1);
-        fid1Layout->setStretch(1, 1);
-
-        plots12Layout->addLayout(fid1Layout);
-
-        fid2Layout = new QVBoxLayout();
-        fid2Layout->setObjectName(QStringLiteral("fid2Layout"));
-        plot2ayout = new QHBoxLayout();
-        plot2ayout->setObjectName(QStringLiteral("plot2ayout"));
+        plot2Layout = new QHBoxLayout();
+        plot2Layout->setObjectName(QStringLiteral("plot2ayout"));
         fidPlot2 = new FidPlot(QString("2"),widget);
         fidPlot2->setObjectName(QStringLiteral("fidPlot2"));
 
-        plot2ayout->addWidget(fidPlot2);
+        plot2Layout->addWidget(fidPlot2);
 
         ftPlot2 = new FtPlot(QString("2"),widget);
         ftPlot2->setObjectName(QStringLiteral("ftPlot2"));
 
-        plot2ayout->addWidget(ftPlot2);
+        plot2Layout->addWidget(ftPlot2);
 
 
-        fid2Layout->addLayout(plot2ayout);
-
-        snapshotWidget2 = new QWidget(widget);
-        snapshotWidget2->setObjectName(QStringLiteral("snapshotWidget2"));
-
-        fid2Layout->addWidget(snapshotWidget2);
-
-        fid2Layout->setStretch(0, 1);
-        fid2Layout->setStretch(1, 1);
-
-        plots12Layout->addLayout(fid2Layout);
+        plots12Layout->addLayout(plot2Layout);
 
 
         verticalLayout->addLayout(plots12Layout,1);
@@ -327,7 +299,7 @@ public:
         auto plot1Button = dynamic_cast<QToolButton*>(toolBar->widgetForAction(plot1Action));
         auto plot1Menu = new QMenu;
         auto plot1wa = new QWidgetAction(plot1Menu);
-        plot1ConfigWidget = new FtmwPlotConfigWidget;
+        plot1ConfigWidget = new FtmwPlotConfigWidget(path);
         plot1wa->setDefaultWidget(plot1ConfigWidget);
         plot1Menu->addAction(plot1wa);
         plot1Button->setMenu(plot1Menu);
@@ -338,7 +310,7 @@ public:
         auto plot2Button = dynamic_cast<QToolButton*>(toolBar->widgetForAction(plot2Action));
         auto plot2Menu = new QMenu;
         auto plot2wa = new QWidgetAction(plot2Menu);
-        plot2ConfigWidget = new FtmwPlotConfigWidget;
+        plot2ConfigWidget = new FtmwPlotConfigWidget(path);
         plot2wa->setDefaultWidget(plot2ConfigWidget);
         plot2Menu->addAction(plot2wa);
         plot2Button->setMenu(plot2Menu);

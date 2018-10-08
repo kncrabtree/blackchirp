@@ -16,7 +16,7 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     QWidget(parent),
     ui(new Ui::FtmwViewWidget), d_currentExptNum(-1), d_currentSegment(-1), d_mode(Live), d_path(path)
 {
-    ui->setupUi(this);
+    ui->setupUi(this,d_path);
 
     QSettings s;
     s.beginGroup(QString("fidProcessing"));
@@ -52,17 +52,14 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
         }
 
         if(id == d_liveFtwId)
-            d_plotStatus.insert(id,PlotStatus { ui->liveFidPlot, ui->liveFtPlot, Fid(), Ft(), 0, 0 });
+            d_plotStatus.insert(id,PlotStatus { ui->liveFidPlot, ui->liveFtPlot, Fid(), Ft(), 0, 0, false });
         else if(id == d_plot1FtwId)
-            d_plotStatus.insert(id,PlotStatus { ui->fidPlot1, ui->ftPlot1, Fid(), Ft(), 0, 0 });
+            d_plotStatus.insert(id,PlotStatus { ui->fidPlot1, ui->ftPlot1, Fid(), Ft(), 0, 0, false });
         else if(id == d_plot2FtwId)
-            d_plotStatus.insert(id,PlotStatus { ui->fidPlot2, ui->ftPlot2, Fid(), Ft(), 0, 0 });
+            d_plotStatus.insert(id,PlotStatus { ui->fidPlot2, ui->ftPlot2, Fid(), Ft(), 0, 0, false });
         //don't need to add one of these for the main plot; it's special
 
     }
-
-    ui->snapshotWidget1->hide();
-    ui->snapshotWidget2->hide();
 
     connect(ui->processingWidget,&FtmwProcessingWidget::settingsUpdated,this,&FtmwViewWidget::updateProcessingSettings);
     connect(ui->processingMenu,&QMenu::aboutToHide,this,&FtmwViewWidget::storeProcessingSettings);
@@ -129,7 +126,6 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
     ui->plot1ConfigWidget->prepareForExperiment(e);
     ui->plot2ConfigWidget->prepareForExperiment(e);
 
-    d_ftmwConfig.fidList().clear();
     d_currentSegment = 0;
     for(auto it = d_plotStatus.begin(); it != d_plotStatus.end(); it++)
     {
@@ -189,6 +185,8 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
     }
 
     d_ftmwConfig = config;
+    d_snap1Config = config;
+    d_snap2Config = config;
 
 }
 
@@ -201,6 +199,7 @@ void FtmwViewWidget::updateLiveFidList(const FtmwConfig c, int segment)
     d_currentSegment = segment;
     auto fl = c.fidList();
 
+
     for(auto it = d_plotStatus.begin(); it != d_plotStatus.end(); it++)
     {
         if(d_workersStatus.value(it.key()).thread->isRunning())
@@ -210,6 +209,7 @@ void FtmwViewWidget::updateLiveFidList(const FtmwConfig c, int segment)
             {
                 if(segment == it.value().segment && it.value().frame < fl.size())
                 {
+                    ///TODO: Snapshot calculation?
                     f = fl.at(it.value().frame);
                     it.value().fid = f;
                     process(it.key(),f);
@@ -234,6 +234,7 @@ void FtmwViewWidget::updateFtmw(const FtmwConfig f)
         if(it.key() == d_liveFtwId)
             continue;
 
+        ///TODO: snapshot calculation?
         it.value().fid = f.singleFid(it.value().frame,it.value().segment);
     }
 
@@ -460,6 +461,8 @@ void FtmwViewWidget::processDiff(const Fid f1, const Fid f2)
 
 void FtmwViewWidget::processSideband(BlackChirp::Sideband sb)
 {
+    ///TODO: Add selection of which plot's frames and snapshots to track
+    /// Should not need to initiate snapshot calculation
     auto ws = d_workersStatus.value(d_mainFtwId);
     if(ws.busy)
         d_workersStatus[d_mainFtwId].reprocessWhenDone = true;
@@ -482,6 +485,8 @@ void FtmwViewWidget::processSideband(BlackChirp::Sideband sb)
 
 void FtmwViewWidget::processBothSidebands()
 {
+    ///TODO: Add selection of which plot's frames and snapshots to track
+    /// Should not need to initiate snapshot calculation
     auto ws = d_workersStatus.value(d_mainFtwId);
     if(ws.busy)
         d_workersStatus[d_mainFtwId].reprocessWhenDone = true;
@@ -623,6 +628,8 @@ void FtmwViewWidget::updateFid(int id)
 {
     int seg = d_plotStatus.value(id).segment;
     int frame = d_plotStatus.value(id).frame;
+
+    ///TODO: handle snapshot
 
     if(seg == d_currentSegment)
     {

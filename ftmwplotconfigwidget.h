@@ -11,12 +11,14 @@ class QSpinBox;
 class QPushButton;
 class QRadioButton;
 class SnapWorker;
+class QCheckBox;
 
 class FtmwPlotConfigWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit FtmwPlotConfigWidget(QWidget *parent = nullptr);
+    explicit FtmwPlotConfigWidget(QString path = QString(""), QWidget *parent = nullptr);
+    ~FtmwPlotConfigWidget();
 
     void prepareForExperiment(const Experiment e);
 
@@ -31,6 +33,7 @@ private:
     QListWidget *p_lw;
     QRadioButton *p_allButton, *p_recentButton, *p_selectedButton;
     QPushButton *p_finalizeButton, *p_selectAllButton, *p_selectNoneButton;
+    QCheckBox *p_remainderBox;
     QThread *p_workerThread;
     SnapWorker *p_sw;
 
