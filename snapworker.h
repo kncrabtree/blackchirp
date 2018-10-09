@@ -3,21 +3,23 @@
 
 #include <QObject>
 
-#include "fid.h"
+#include "ftmwconfig.h"
 
 class SnapWorker : public QObject
 {
     Q_OBJECT
 public:
     explicit SnapWorker(QObject *parent = 0);
-    FidList parseFile(int exptNum, int snapNum = -1, QString path = QString(""));
 
 signals:
-    void fidListComplete(const FidList);
+    void fidsUpdated(const FtmwConfig);
 
 public slots:
-    void calculateFidList(int exptNum, const FidList allList, const QList<int> snapList, bool subtractFromFull);
+    void calculateSnapshots(FtmwConfig allFids, const QList<int> snaps, bool includeRemainder, int num, QString path);
 
 };
 
 #endif // SNAPWORKER_H
+
+
+

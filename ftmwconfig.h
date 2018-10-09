@@ -83,6 +83,7 @@ public:
     bool isComplete() const;
     QMap<QString,QPair<QVariant,QString> > headerMap() const;
     void loadFids(const int num, const QString path = QString(""));
+    void loadFidsFromSnapshots(const int num, const QString path = QString(""), const QList<int> snaps = QList<int>());
     void parseLine(const QString key, const QVariant val);
     void loadChirps(const int num, const QString path = QString(""));
     void loadClocks(const int num, const QString path = QString(""));

@@ -54,6 +54,7 @@ FtmwPlotConfigWidget::FtmwPlotConfigWidget(QString path, QWidget *parent) : QWid
     p_allButton = new QRadioButton;
     p_allButton->setChecked(true);
     p_allButton->setToolTip(QString("Include all shots taken since beginning of experiment."));
+    connect(p_allButton,&QRadioButton::toggled,this,&FtmwPlotConfigWidget::configureSnapControls);
 
     auto allL = new QLabel(QString("All"));
     allL->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
@@ -61,6 +62,7 @@ FtmwPlotConfigWidget::FtmwPlotConfigWidget(QString path, QWidget *parent) : QWid
 
     p_recentButton = new QRadioButton;
     p_recentButton->setToolTip(QString("Only show shots taken after the most recent snapshot."));
+    connect(p_recentButton,&QRadioButton::toggled,this,&FtmwPlotConfigWidget::configureSnapControls);
 
     auto rl = new QLabel(QString("Current Shots"));
     rl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
@@ -71,6 +73,7 @@ FtmwPlotConfigWidget::FtmwPlotConfigWidget(QString path, QWidget *parent) : QWid
     auto sl = new QLabel(QString("Selected"));
     sl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
     fl->addRow(sl,p_selectedButton);
+    connect(p_selectedButton,&QRadioButton::toggled,this,&FtmwPlotConfigWidget::configureSnapControls);
 
     gb->setLayout(fl);
     vbl->addWidget(gb);
@@ -127,17 +130,11 @@ void FtmwPlotConfigWidget::prepareForExperiment(const Experiment e)
 
     d_num = e.number();
 
-    p_allButton->setChecked(true);
-    p_remainderBox->setChecked(true);
+    p_lw->clear();
 
     //these things only become enabled once snapshots have been taken
-    p_allButton->setEnabled(false);
-    p_recentButton->setEnabled(false);
-    p_selectedButton->setEnabled(false);
-    p_selectAllButton->setEnabled(false);
-    p_selectNoneButton->setEnabled(false);
-    p_lw->setEnabled(false);
-    p_remainderBox->setEnabled(false);
+    configureSnapControls();
+    p_remainderBox->setChecked(true);
     p_finalizeButton->setEnabled(false);
 
     if(e.ftmwConfig().isEnabled())
@@ -159,4 +156,81 @@ void FtmwPlotConfigWidget::prepareForExperiment(const Experiment e)
 
 
     blockSignals(false);
+}
+
+void FtmwPlotConfigWidget::experimentComplete(const Experiment e)
+{
+    Q_UNUSED(e)
+
+    if(p_lw->count() > 0)
+        p_finalizeButton->setEnabled(true);
+}
+
+void FtmwPlotConfigWidget::snapshotTaken()
+{
+    QFile snp(BlackChirp::getExptFile(d_num,BlackChirp::SnapFile,d_path));
+    if(snp.open(QIODevice::ReadOnly))
+    {
+        int numSnaps = 0;
+        while(!snp.atEnd())
+        {
+            QString line = snp.readLine();
+            if(line.startsWith(QString("fid")) || line.startsWith(QString("mfd")))
+            {
+                QStringList l = line.split(QString("\t"));
+                bool ok = false;
+                int n = l.constLast().trimmed().toInt(&ok);
+                if(ok)
+                {
+                    numSnaps = n;
+                    break;
+                }
+            }
+        }
+
+
+        if(numSnaps > 0)
+        {
+            for(int i = p_lw->count(); i < numSnaps; i++)
+            {
+                QListWidgetItem *item = new QListWidgetItem(QString("Snapshot %1").arg(i));
+                item->setFlags(Qt::ItemIsEnabled|Qt::ItemIsUserCheckable);
+                if(!p_lw->isEnabled())
+                    item->setCheckState(Qt::Checked);
+                else
+                    item->setCheckState(Qt::Unchecked);
+                p_lw->insertItem(i,item);
+            }
+        }
+//        updateSnapList();
+        snp.close();
+    }
+
+    configureSnapControls();
+}
+
+void FtmwPlotConfigWidget::configureSnapControls()
+{
+    if(p_lw->count() > 0)
+    {
+        p_recentButton->setEnabled(true);
+        p_selectedButton->setEnabled(true);
+        p_selectAllButton->setEnabled(p_selectedButton->isChecked());
+        p_selectNoneButton->setEnabled(p_selectedButton->isChecked());
+        p_lw->setEnabled(p_selectedButton->isChecked());
+        p_remainderBox->setEnabled(p_selectedButton->isChecked());
+    }
+    else
+    {
+        p_allButton->blockSignals(true);
+        p_allButton->setChecked(true);
+        p_allButton->blockSignals(false);
+
+        p_recentButton->setEnabled(false);
+        p_selectedButton->setEnabled(false);
+        p_selectAllButton->setEnabled(false);
+        p_selectNoneButton->setEnabled(false);
+        p_lw->setEnabled(false);
+        p_remainderBox->setEnabled(false);
+    }
 }

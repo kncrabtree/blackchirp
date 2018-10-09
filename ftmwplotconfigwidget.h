@@ -21,12 +21,15 @@ public:
     ~FtmwPlotConfigWidget();
 
     void prepareForExperiment(const Experiment e);
+    void experimentComplete(const Experiment e);
+    void snapshotTaken();
 
 signals:
     void frameChanged(int frameNum);
     void segmentChanged(int segNum);
 
 public slots:
+    void configureSnapControls();
 
 private:
     QSpinBox *p_frameBox, *p_segmentBox;

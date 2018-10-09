@@ -880,6 +880,86 @@ void FtmwConfig::loadFids(const int num, const QString path)
     }
 }
 
+void FtmwConfig::loadFidsFromSnapshots(const int num, const QString path, const QList<int> snaps)
+{
+    if(data->multipleFidLists)
+    {
+        data->multiFidStorage.clear();
+
+        for(int i=0; i<snaps.size(); i++)
+        {
+            QFile mfd(BlackChirp::getExptFile(num,BlackChirp::MultiFidFile,path,snaps.at(i)));
+            if(mfd.open(QIODevice::ReadOnly))
+            {
+                QDataStream d(&mfd);
+                QByteArray magic;
+                d >> magic;
+                if(magic.startsWith("BCFID"))
+                {
+                    if(magic.endsWith("v1.0"))
+                    {
+                        QList<FidList> dat;
+                        d >> dat;
+                        if(data->multiFidStorage.isEmpty())
+                        {
+                            data->multiFidStorage = dat;
+                            if(!dat.isEmpty() && !dat.constFirst().isEmpty())
+                                data->fidTemplate = dat.constFirst().constFirst();
+                            data->fidTemplate.setData(QVector<qint64>());
+                        }
+                        else
+                        {
+                            for(int j=0; j<data->multiFidStorage.size() && j<dat.size(); j++)
+                            {
+                                for(int k=0; k<data->multiFidStorage.at(j).size() && k<dat.at(j).size(); k++)
+                                    data->multiFidStorage[j][k] += dat.at(j).at(k);
+                            }
+                        }
+                    }
+                }
+                mfd.close();
+
+            }
+        }
+    }
+    else
+    {
+        data->fidList.clear();
+        for(int i=0; i<snaps.size(); i++)
+        {
+            QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,path,snaps.at(i)));
+            if(fid.open(QIODevice::ReadOnly))
+            {
+                QDataStream d(&fid);
+                QByteArray magic;
+                d >> magic;
+                if(magic.startsWith("BCFID"))
+                {
+                    if(magic.endsWith("v1.0"))
+                    {
+                        FidList dat;
+                        d >> dat;
+                        if(data->fidList.isEmpty())
+                        {
+                            data->fidList= dat;
+                            if(!dat.isEmpty())
+                                data->fidTemplate = dat.constFirst();
+                            data->fidTemplate.setData(QVector<qint64>());
+                        }
+                        else
+                        {
+                            for(int j=0; j<data->multiFidStorage.size() && j<dat.size(); j++)
+                                data->fidList[j] += dat.at(j);
+                        }
+                    }
+                }
+
+                fid.close();
+            }
+        }
+    }
+}
+
 void FtmwConfig::parseLine(const QString key, const QVariant val)
 {
     if(key.startsWith(QString("FtmwScope")))

@@ -519,6 +519,9 @@ void FtmwViewWidget::snapshotTaken()
     if(d_currentExptNum < 1)
         return;
 
+    ui->plot1ConfigWidget->snapshotTaken();
+    ui->plot2ConfigWidget->snapshotTaken();
+
 //    if(p_snapWidget == nullptr)
 //    {
 //        p_snapWidget = new FtmwSnapshotWidget(d_currentExptNum,d_path,this);
@@ -545,6 +548,9 @@ void FtmwViewWidget::snapshotTaken()
 
 void FtmwViewWidget::experimentComplete(const Experiment e)
 {
+    ui->plot1ConfigWidget->experimentComplete(e);
+    ui->plot2ConfigWidget->experimentComplete(e);
+
     if(e.ftmwConfig().isEnabled())
     {
         d_currentSegment = -1;
