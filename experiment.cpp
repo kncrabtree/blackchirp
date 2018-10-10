@@ -29,6 +29,7 @@ Experiment::Experiment(const int num, QString exptPath) : data(new ExperimentDat
     if(!d.exists())
         return;
 
+    data->path = exptPath;
     data->iobCfg = IOBoardConfig(false);
 
     ///TODO: RfConfig...
@@ -739,6 +740,18 @@ void Experiment::addValidationItem(const BlackChirp::ValidationItem &i)
     data->validationConditions.insert(i.key,i);
 }
 
+void Experiment::finalizeFtmwSnapshots(const FtmwConfig final)
+{
+    data->ftmwCfg = final;
+    data->ftmwCfg.finalizeSnapshots(data->number,data->path);
+
+    QFile hdr(BlackChirp::getExptFile(data->number,BlackChirp::HeaderFile,data->path));
+    if(hdr.exists())
+        hdr.copy(hdr.fileName().append(QString(".orig")));
+    saveHeader();
+
+}
+
 #ifdef BC_MOTOR
 MotorScan Experiment::motorScan() const
 {
@@ -1032,10 +1045,10 @@ void Experiment::snapshot(int snapNum, const Experiment other) const
         if(other.number() == data->number && other.isInitialized())
         {
             if(cf.subtractFids(other.ftmwConfig()))
-                cf.writeFids(data->number,snapNum);
+                cf.writeFids(data->number,data->path,snapNum);
         }
         else
-            cf.writeFids(data->number,snapNum);
+            cf.writeFids(data->number,data->path,snapNum);
     }
 
 #ifdef BC_LIF

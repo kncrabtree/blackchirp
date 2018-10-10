@@ -54,8 +54,7 @@ public:
     double ftMaxMHz() const;
     double fidDurationUs() const;
     QPair<int,int> chirpRange() const;
-    bool writeFids(int num, int snapNum = -1) const;
-    static bool writeFidFile(int num, FidList list, QString path = QString(""));
+    bool writeFids(int num, QString path = QString(""), int snapNum = -1) const;
 
     bool prepareForAcquisition();
     void setEnabled(bool en = true);
@@ -78,6 +77,7 @@ public:
     void clocksReady();
     void storeFids();
     void setMultiFidList(const QList<FidList> l);
+    void finalizeSnapshots(int num, QString path = QString(""));
 
 
     bool isComplete() const;

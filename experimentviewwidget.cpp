@@ -138,8 +138,8 @@ void ExperimentViewWidget::ftmwFinalized(int num)
     {
         p_tabWidget->removeTab(0);
         p_tabWidget->insertTab(0,buildHeaderWidget(),QIcon(QString(":/icons/header.png")),QString("Header"));
-//        if(p_ftmw != nullptr)
-//            p_ftmw->checkRemoveSnapWidget(num);
+        if(p_ftmw != nullptr)
+            p_ftmw->snapshotsFinalizedUpdateUi(num);
 
         emit notifyUiFinalized(num);
 

@@ -16,7 +16,7 @@
 
 #include "snapworker.h"
 
-FtmwPlotConfigWidget::FtmwPlotConfigWidget(QString path, QWidget *parent) : QWidget(parent), d_num(-1), d_busy(false), d_updateWhenDone(false), d_path(path)
+FtmwPlotConfigWidget::FtmwPlotConfigWidget(int id, QString path, QWidget *parent) : QWidget(parent), d_num(-1), d_id(id), d_busy(false), d_updateWhenDone(false), d_path(path)
 {
     auto vbl = new QVBoxLayout;
 
@@ -27,7 +27,7 @@ FtmwPlotConfigWidget::FtmwPlotConfigWidget(QString path, QWidget *parent) : QWid
     p_frameBox->setEnabled(false);
     p_frameBox->setKeyboardTracking(false);
     connect(p_frameBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,[=](int v){
-        emit frameChanged(v-1);
+        emit frameChanged(d_id,v-1);
     });
 
     auto flbl = new QLabel("Frame Number");
@@ -39,7 +39,7 @@ FtmwPlotConfigWidget::FtmwPlotConfigWidget(QString path, QWidget *parent) : QWid
     p_segmentBox->setEnabled(false);
     p_segmentBox->setKeyboardTracking(false);
     connect(p_segmentBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,[=](int v){
-        emit segmentChanged(v-1);
+        emit segmentChanged(d_id,v-1);
     });
 
     auto slbl = new QLabel("Segment Number");
@@ -50,11 +50,11 @@ FtmwPlotConfigWidget::FtmwPlotConfigWidget(QString path, QWidget *parent) : QWid
 
     fl = new QFormLayout;
     auto gb = new QGroupBox(QString("Snapshot Control"));
-
     p_allButton = new QRadioButton;
     p_allButton->setChecked(true);
     p_allButton->setToolTip(QString("Include all shots taken since beginning of experiment."));
     connect(p_allButton,&QRadioButton::toggled,this,&FtmwPlotConfigWidget::configureSnapControls);
+    connect(p_allButton,&QRadioButton::toggled,this,&FtmwPlotConfigWidget::process);
 
     auto allL = new QLabel(QString("All"));
     allL->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
@@ -63,6 +63,7 @@ FtmwPlotConfigWidget::FtmwPlotConfigWidget(QString path, QWidget *parent) : QWid
     p_recentButton = new QRadioButton;
     p_recentButton->setToolTip(QString("Only show shots taken after the most recent snapshot."));
     connect(p_recentButton,&QRadioButton::toggled,this,&FtmwPlotConfigWidget::configureSnapControls);
+    connect(p_recentButton,&QRadioButton::toggled,this,&FtmwPlotConfigWidget::process);
 
     auto rl = new QLabel(QString("Current Shots"));
     rl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
@@ -74,6 +75,7 @@ FtmwPlotConfigWidget::FtmwPlotConfigWidget(QString path, QWidget *parent) : QWid
     sl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
     fl->addRow(sl,p_selectedButton);
     connect(p_selectedButton,&QRadioButton::toggled,this,&FtmwPlotConfigWidget::configureSnapControls);
+    connect(p_selectedButton,&QRadioButton::toggled,this,&FtmwPlotConfigWidget::process);
 
     gb->setLayout(fl);
     vbl->addWidget(gb);
@@ -86,12 +88,13 @@ FtmwPlotConfigWidget::FtmwPlotConfigWidget(QString path, QWidget *parent) : QWid
     vbl->addLayout(hbl);
 
     p_lw = new QListWidget(this);
-//    connect(p_lw,&QListWidget::itemChanged,this,&FtmwSnapshotWidget::updateSnapList);
+    connect(p_lw,&QListWidget::itemChanged,this,&FtmwPlotConfigWidget::process);
     vbl->addWidget(p_lw,1);
 
     p_remainderBox = new QCheckBox(QString("Include FIDs since last snapshot?"));
     p_remainderBox->setToolTip(QString("Check to include all shots taken after the most recent snapshot."));
     p_remainderBox->setChecked(true);
+    connect(p_remainderBox,&QCheckBox::toggled,this,&FtmwPlotConfigWidget::process);
 
     vbl->addWidget(p_remainderBox,0);
 
@@ -114,6 +117,7 @@ FtmwPlotConfigWidget::FtmwPlotConfigWidget(QString path, QWidget *parent) : QWid
     p_workerThread = new QThread(this);
     p_sw = new SnapWorker;
     connect(p_workerThread,&QThread::finished,p_sw,&SnapWorker::deleteLater);
+    connect(p_sw,&SnapWorker::processingComplete,this,&FtmwPlotConfigWidget::processingComplete);
     p_sw->moveToThread(p_workerThread);
     p_workerThread->start();
 }
@@ -202,11 +206,15 @@ void FtmwPlotConfigWidget::snapshotTaken()
                 p_lw->insertItem(i,item);
             }
         }
-//        updateSnapList();
         snp.close();
     }
 
     configureSnapControls();
+}
+
+bool FtmwPlotConfigWidget::isSnapshotActive()
+{
+    return !p_allButton->isChecked();
 }
 
 void FtmwPlotConfigWidget::configureSnapControls()
@@ -233,4 +241,133 @@ void FtmwPlotConfigWidget::configureSnapControls()
         p_lw->setEnabled(false);
         p_remainderBox->setEnabled(false);
     }
+}
+
+void FtmwPlotConfigWidget::process()
+{
+    if(d_ftmwToProcess.completedShots() < 1)
+        return;
+
+    if(d_busy)
+        d_updateWhenDone = true;
+    else
+    {
+        d_updateWhenDone = false;
+        processFtmwConfig(d_ftmwToProcess);
+    }
+}
+
+void FtmwPlotConfigWidget::processFtmwConfig(const FtmwConfig ref)
+{
+    d_ftmwToProcess = ref;
+    if(d_busy)
+        d_updateWhenDone = true;
+    else
+    {
+        d_updateWhenDone = false;
+        if(isSnapshotActive())
+        {
+            bool rem = p_remainderBox->isChecked();
+            QList<int> snaps;
+            Qt::CheckState c = Qt::Checked;
+            if(rem)
+                c = Qt::Unchecked;
+
+            for(int i=0; i<p_lw->count(); i++)
+            {
+                if(p_lw->item(i)->checkState() == c)
+                    snaps << i;
+            }
+
+            QMetaObject::invokeMethod(p_sw,"calculateSnapshots",Q_ARG(FtmwConfig,ref),Q_ARG(QList<int>,snaps),Q_ARG(bool,rem),Q_ARG(int,d_num),Q_ARG(QString,d_path));
+
+            setEnabled(false);
+            setCursor(Qt::BusyCursor);
+        }
+    }
+}
+
+void FtmwPlotConfigWidget::processingComplete(const FtmwConfig out)
+{
+    d_busy = false;
+    unsetCursor();
+    setEnabled(true);
+
+    emit snapshotsProcessed(d_id,out);
+
+    if(d_updateWhenDone)
+        processFtmwConfig(d_ftmwToProcess);
+
+}
+
+void FtmwPlotConfigWidget::selectAll()
+{
+    p_lw->blockSignals(true);
+    for(int i=0; i<p_lw->count(); i++)
+        p_lw->item(i)->setCheckState(Qt::Checked);
+    p_lw->blockSignals(false);
+
+    process();
+}
+
+void FtmwPlotConfigWidget::selectNone()
+{
+    p_lw->blockSignals(true);
+    for(int i=0; i<p_lw->count(); i++)
+        p_lw->item(i)->setCheckState(Qt::Unchecked);
+    p_lw->blockSignals(false);
+
+    process();
+}
+
+void FtmwPlotConfigWidget::finalizeSnapshots()
+{
+    int ret = QMessageBox::question(this,QString("Finalize Snapshots?"),QString("If you continue, the currently-selected snapshots will be combined, and the output file overwritten.\nThe snapshots themselves will be deleted.\n\nAre you sure you wish to proceed?"),QMessageBox::Yes|QMessageBox::No,QMessageBox::No);
+
+    if(ret == QMessageBox::No)
+        return;
+
+    d_updateWhenDone = false;
+    d_busy = false;
+
+    if(isSnapshotActive())
+    {
+        bool rem = p_remainderBox->isChecked();
+        QList<int> snaps;
+        Qt::CheckState c = Qt::Checked;
+        if(rem)
+            c = Qt::Unchecked;
+
+        for(int i=0; i<p_lw->count(); i++)
+        {
+            if(p_lw->item(i)->checkState() == c)
+                snaps << i;
+        }
+
+        QMetaObject::invokeMethod(p_sw,"finalizeSnapshots",Q_ARG(FtmwConfig,d_ftmwToProcess),Q_ARG(QList<int>,snaps),Q_ARG(bool,rem),Q_ARG(int,d_num),Q_ARG(QString,d_path));
+
+        setEnabled(false);
+        setCursor(Qt::BusyCursor);
+    }
+
+}
+
+void FtmwPlotConfigWidget::finalizeComplete(const FtmwConfig out)
+{
+    setEnabled(true);
+    unsetCursor();
+    clearAll();
+
+    emit snapshotsFinalized(out);
+}
+
+void FtmwPlotConfigWidget::clearAll()
+{
+    p_lw->blockSignals(true);
+    p_lw->clear();
+    p_lw->blockSignals(false);
+
+    p_finalizeButton->setEnabled(false);
+    p_allButton->setChecked(true);
+    configureSnapControls();
 }

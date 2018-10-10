@@ -31,31 +31,31 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
 
     d_currentProcessingSettings = FtWorker::FidProcessingSettings { start, end, zeroPad, rdc, units, asIg, winf };
     ui->processingWidget->applySettings(d_currentProcessingSettings);
-    d_workerIds << d_liveFtwId << d_mainFtwId << d_plot1FtwId << d_plot2FtwId;
+    d_workerIds << d_liveId << d_mainId << d_plot1Id << d_plot2Id;
 
     for(int i=0; i<d_workerIds.size(); i++)
     {
         int id = d_workerIds.at(i);
-        if(id == d_liveFtwId)
-            d_workersStatus.insert(d_liveFtwId, WorkerStatus { nullptr, new QThread(this), false, false} );
+        if(id == d_liveId)
+            d_workersStatus.insert(d_liveId, WorkerStatus { nullptr, new QThread(this), false, false} );
         else
         {
             WorkerStatus ws { new FtWorker(id), new QThread(this), false, false};
             connect(ws.thread,&QThread::finished,ws.worker,&FtWorker::deleteLater);
             connect(ws.worker,&FtWorker::ftDone,this,&FtmwViewWidget::ftDone);
             connect(ws.worker,&FtWorker::fidDone,this,&FtmwViewWidget::fidProcessed);
-            if(id == d_mainFtwId)
+            if(id == d_mainId)
                 connect(ws.worker,&FtWorker::ftDiffDone,this,&FtmwViewWidget::ftDiffDone);
             ws.worker->moveToThread(ws.thread);
             ws.thread->start();
             d_workersStatus.insert(id,ws);
         }
 
-        if(id == d_liveFtwId)
+        if(id == d_liveId)
             d_plotStatus.insert(id,PlotStatus { ui->liveFidPlot, ui->liveFtPlot, Fid(), Ft(), 0, 0, false });
-        else if(id == d_plot1FtwId)
+        else if(id == d_plot1Id)
             d_plotStatus.insert(id,PlotStatus { ui->fidPlot1, ui->ftPlot1, Fid(), Ft(), 0, 0, false });
-        else if(id == d_plot2FtwId)
+        else if(id == d_plot2Id)
             d_plotStatus.insert(id,PlotStatus { ui->fidPlot2, ui->ftPlot2, Fid(), Ft(), 0, 0, false });
         //don't need to add one of these for the main plot; it's special
 
@@ -64,18 +64,14 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     connect(ui->processingWidget,&FtmwProcessingWidget::settingsUpdated,this,&FtmwViewWidget::updateProcessingSettings);
     connect(ui->processingMenu,&QMenu::aboutToHide,this,&FtmwViewWidget::storeProcessingSettings);
 
-    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::frameChanged,this,[=](int v){
-        changeFrame(d_plot1FtwId,v);
-    });
-    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::segmentChanged,this,[=](int v){
-        changeSegment(d_plot1FtwId,v);
-    });
-    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::frameChanged,this,[=](int v){
-        changeFrame(d_plot2FtwId,v);
-    });
-    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::segmentChanged,this,[=](int v){
-        changeSegment(d_plot2FtwId,v);
-    });
+    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::frameChanged,this,&FtmwViewWidget::changeFrame);
+    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::segmentChanged,this,&FtmwViewWidget::changeSegment);
+    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::snapshotsProcessed,this,&FtmwViewWidget::snapshotsProcessed);
+    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::snapshotsFinalized,this,&FtmwViewWidget::snapshotsFinalized);
+    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::frameChanged,this,&FtmwViewWidget::changeFrame);
+    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::segmentChanged,this,&FtmwViewWidget::changeSegment);
+    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::snapshotsProcessed,this,&FtmwViewWidget::snapshotsProcessed);
+    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::snapshotsFinalized,this,&FtmwViewWidget::snapshotsFinalized);
 
     connect(ui->liveAction,&QAction::triggered,this,[=]() { modeChanged(Live); });
     connect(ui->ft1Action,&QAction::triggered,this,[=]() { modeChanged(FT1); });
@@ -137,8 +133,8 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
 
     if(config.isEnabled())
     {
-        auto ws = d_workersStatus.value(d_liveFtwId);
-        ws.worker = new FtWorker(d_liveFtwId);
+        auto ws = d_workersStatus.value(d_liveId);
+        ws.worker = new FtWorker(d_liveId);
         ws.worker->moveToThread(ws.thread);
         connect(ws.thread,&QThread::finished,ws.worker,&FtWorker::deleteLater);
         connect(ws.worker,&FtWorker::fidDone,this,&FtmwViewWidget::fidProcessed);
@@ -146,7 +142,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
         ws.busy = false;
         ws.reprocessWhenDone = false;
         ws.thread->start();
-        d_workersStatus.insert(d_liveFtwId,ws);
+        d_workersStatus.insert(d_liveId,ws);
 
         d_currentExptNum = e.number();
 
@@ -205,14 +201,30 @@ void FtmwViewWidget::updateLiveFidList(const FtmwConfig c, int segment)
         if(d_workersStatus.value(it.key()).thread->isRunning())
         {
             Fid f = fl.constFirst();
-            if(it.key() != d_liveFtwId)
+            if(it.key() != d_liveId)
             {
                 if(segment == it.value().segment && it.value().frame < fl.size())
                 {
-                    ///TODO: Snapshot calculation?
-                    f = fl.at(it.value().frame);
-                    it.value().fid = f;
-                    process(it.key(),f);
+                    bool processFid = true;
+                    if(it.key() == d_plot1Id)
+                    {
+                        ui->plot1ConfigWidget->processFtmwConfig(c);
+                        if(ui->plot1ConfigWidget->isSnapshotActive())
+                            processFid = false;
+                    }
+                    else if(it.key() == d_plot2Id)
+                    {
+                        ui->plot2ConfigWidget->processFtmwConfig(c);
+                        if(ui->plot2ConfigWidget->isSnapshotActive())
+                            processFid = false;
+                    }
+
+                    if(processFid)
+                    {
+                        f = fl.at(it.value().frame);
+                        it.value().fid = f;
+                        process(it.key(),f);
+                    }
                 }
             }
             else
@@ -228,17 +240,29 @@ void FtmwViewWidget::updateLiveFidList(const FtmwConfig c, int segment)
 void FtmwViewWidget::updateFtmw(const FtmwConfig f)
 {
     d_ftmwConfig = f;
+    QList<int> ignore{ d_liveId };
 
     for(auto it = d_plotStatus.begin(); it != d_plotStatus.end(); it++)
     {
-        if(it.key() == d_liveFtwId)
+        if(it.key() == d_liveId)
             continue;
 
         ///TODO: snapshot calculation?
+
+        if(it.key() == d_plot1Id && ui->plot1ConfigWidget->isSnapshotActive())
+        {
+            ignore << it.key();
+            ui->plot1ConfigWidget->processFtmwConfig(f);
+        }
+        else if(it.key() == d_plot2Id && ui->plot2ConfigWidget->isSnapshotActive())
+        {
+            ignore << it.key();
+            ui->plot2ConfigWidget->processFtmwConfig(f);
+        }
         it.value().fid = f.singleFid(it.value().frame,it.value().segment);
     }
 
-    reprocess(QList<int>{ d_liveFtwId });
+    reprocess(ignore);
 
 }
 
@@ -252,7 +276,7 @@ void FtmwViewWidget::updateProcessingSettings(FtWorker::FidProcessingSettings s)
     case UpperSB:
     case LowerSB:
     case BothSB:
-        ignore << d_mainFtwId;
+        ignore << d_mainId;
     default:
         break;
     }
@@ -350,7 +374,7 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
     d_workersStatus[workerId].busy = false;
     if(d_workersStatus.value(workerId).reprocessWhenDone)
     {
-        if(workerId == d_mainFtwId)
+        if(workerId == d_mainId)
             updateMainPlot();
         else
             process(workerId,d_plotStatus.value(workerId).fid);
@@ -362,11 +386,11 @@ void FtmwViewWidget::ftDiffDone(const Ft ft)
     ui->mainFtPlot->newFt(ft);
     ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
 
-    d_workersStatus[d_mainFtwId].busy = false;
-    if(d_workersStatus.value(d_mainFtwId).reprocessWhenDone)
+    d_workersStatus[d_mainId].busy = false;
+    if(d_workersStatus.value(d_mainId).reprocessWhenDone)
     {
         //need to set the reprocess flag here in case mode has changed since job started
-        d_workersStatus[d_mainFtwId].reprocessWhenDone = false;
+        d_workersStatus[d_mainId].reprocessWhenDone = false;
         updateMainPlot();
     }
 }
@@ -377,19 +401,19 @@ void FtmwViewWidget::updateMainPlot()
 
     switch(d_mode) {
     case Live:
-        ui->mainFtPlot->newFt(d_plotStatus.value(d_liveFtwId).ft);
+        ui->mainFtPlot->newFt(d_plotStatus.value(d_liveId).ft);
         break;
     case FT1:
-        ui->mainFtPlot->newFt(d_plotStatus.value(d_plot1FtwId).ft);
+        ui->mainFtPlot->newFt(d_plotStatus.value(d_plot1Id).ft);
         break;
     case FT2:
-        ui->mainFtPlot->newFt(d_plotStatus.value(d_plot2FtwId).ft);
+        ui->mainFtPlot->newFt(d_plotStatus.value(d_plot2Id).ft);
         break;
     case FT1mFT2:
-        processDiff(d_plotStatus.value(d_plot1FtwId).fid,d_plotStatus.value(d_plot2FtwId).fid);
+        processDiff(d_plotStatus.value(d_plot1Id).fid,d_plotStatus.value(d_plot2Id).fid);
         break;
     case FT2mFT1:
-        processDiff(d_plotStatus.value(d_plot2FtwId).fid,d_plotStatus.value(d_plot1FtwId).fid);
+        processDiff(d_plotStatus.value(d_plot2Id).fid,d_plotStatus.value(d_plot1Id).fid);
         break;
     case UpperSB:
         processSideband(BlackChirp::UpperSideband);
@@ -414,7 +438,7 @@ void FtmwViewWidget::reprocess(const QList<int> ignore)
     {
         if(!ignore.contains(it.key()))
         {
-            if(it.key() == d_mainFtwId)
+            if(it.key() == d_mainId)
                 updateMainPlot();
             else
                 process(it.key(),d_plotStatus.value(it.key()).fid);
@@ -447,36 +471,44 @@ void FtmwViewWidget::processDiff(const Fid f1, const Fid f2)
     if(f1.isEmpty() || f2.isEmpty())
         return;
 
-    auto ws = d_workersStatus.value(d_mainFtwId);
+    auto ws = d_workersStatus.value(d_mainId);
     if(ws.busy)
-        d_workersStatus[d_mainFtwId].reprocessWhenDone = true;
+        d_workersStatus[d_mainId].reprocessWhenDone = true;
     else
     {
         ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
-        d_workersStatus[d_mainFtwId].busy = true;
-        d_workersStatus[d_mainFtwId].reprocessWhenDone = false;
+        d_workersStatus[d_mainId].busy = true;
+        d_workersStatus[d_mainId].reprocessWhenDone = false;
         QMetaObject::invokeMethod(ws.worker,"doFtDiff",Q_ARG(Fid,f1),Q_ARG(Fid,f2),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings));
     }
 }
 
 void FtmwViewWidget::processSideband(BlackChirp::Sideband sb)
 {
-    ///TODO: Add selection of which plot's frames and snapshots to track
-    /// Should not need to initiate snapshot calculation
-    auto ws = d_workersStatus.value(d_mainFtwId);
+    auto ws = d_workersStatus.value(d_mainId);
     if(ws.busy)
-        d_workersStatus[d_mainFtwId].reprocessWhenDone = true;
+        d_workersStatus[d_mainId].reprocessWhenDone = true;
     else
     {
         FidList fl;
-        for(int i=0; i<d_ftmwConfig.multiFidList().size(); i++)
-            fl << d_ftmwConfig.singleFid(d_plotStatus.value(d_plot1FtwId).frame,i);
+        FtmwConfig c = d_ftmwConfig;
+        int id = d_plot1Id;
+        if(ui->mainPlotFollowSpinBox->value() == 2)
+            id = d_plot2Id;
+
+        if(ui->plot1ConfigWidget->isSnapshotActive() && ui->mainPlotFollowSpinBox->value() == 1)
+            c = d_snap1Config;
+        else if(ui->plot2ConfigWidget->isSnapshotActive() && ui->mainPlotFollowSpinBox->value() == 2)
+            c = d_snap2Config;
+
+        for(int i=0; i<c.multiFidList().size(); i++)
+            fl << c.singleFid(d_plotStatus.value(id).frame,i);
 
         if(!fl.isEmpty())
         {
             ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
-            d_workersStatus[d_mainFtwId].busy = true;
-            d_workersStatus[d_mainFtwId].reprocessWhenDone = false;
+            d_workersStatus[d_mainId].busy = true;
+            d_workersStatus[d_mainId].reprocessWhenDone = false;
 
             QMetaObject::invokeMethod(ws.worker,"processSideband",Q_ARG(FidList,fl),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings),Q_ARG(BlackChirp::Sideband,sb));
         }
@@ -485,22 +517,30 @@ void FtmwViewWidget::processSideband(BlackChirp::Sideband sb)
 
 void FtmwViewWidget::processBothSidebands()
 {
-    ///TODO: Add selection of which plot's frames and snapshots to track
-    /// Should not need to initiate snapshot calculation
-    auto ws = d_workersStatus.value(d_mainFtwId);
+    auto ws = d_workersStatus.value(d_mainId);
     if(ws.busy)
-        d_workersStatus[d_mainFtwId].reprocessWhenDone = true;
+        d_workersStatus[d_mainId].reprocessWhenDone = true;
     else
     {
         FidList fl;
-        for(int i=0; i<d_ftmwConfig.multiFidList().size(); i++)
-            fl << d_ftmwConfig.singleFid(d_plotStatus.value(d_plot1FtwId).frame,i);
+        FtmwConfig c = d_ftmwConfig;
+        int id = d_plot1Id;
+        if(ui->mainPlotFollowSpinBox->value() == 2)
+            id = d_plot2Id;
+
+        if(ui->plot1ConfigWidget->isSnapshotActive() && ui->mainPlotFollowSpinBox->value() == 1)
+            c = d_snap1Config;
+        else if(ui->plot2ConfigWidget->isSnapshotActive() && ui->mainPlotFollowSpinBox->value() == 2)
+            c = d_snap2Config;
+
+        for(int i=0; i<c.multiFidList().size(); i++)
+            fl << c.singleFid(d_plotStatus.value(id).frame,i);
 
         if(!fl.isEmpty())
         {
             ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
-            d_workersStatus[d_mainFtwId].busy = true;
-            d_workersStatus[d_mainFtwId].reprocessWhenDone = false;
+            d_workersStatus[d_mainId].busy = true;
+            d_workersStatus[d_mainId].reprocessWhenDone = false;
 
 
             QMetaObject::invokeMethod(ws.worker,"processBothSidebands",Q_ARG(FidList,fl),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings));
@@ -522,28 +562,52 @@ void FtmwViewWidget::snapshotTaken()
     ui->plot1ConfigWidget->snapshotTaken();
     ui->plot2ConfigWidget->snapshotTaken();
 
-//    if(p_snapWidget == nullptr)
-//    {
-//        p_snapWidget = new FtmwSnapshotWidget(d_currentExptNum,d_path,this);
-//        connect(p_snapWidget,&FtmwSnapshotWidget::loadFailed,this,&FtmwViewWidget::snapshotLoadError);
-//        connect(p_snapWidget,&FtmwSnapshotWidget::snapListChanged,this,&FtmwViewWidget::snapListUpdate);
-//        connect(p_snapWidget,&FtmwSnapshotWidget::refChanged,this,&FtmwViewWidget::snapRefChanged);
-//        connect(p_snapWidget,&FtmwSnapshotWidget::diffChanged,this,&FtmwViewWidget::snapDiffChanged);
-//        connect(p_snapWidget,&FtmwSnapshotWidget::finalizedList,this,&FtmwViewWidget::finalizedSnapList);
-//        connect(p_snapWidget,&FtmwSnapshotWidget::experimentLogMessage,this,&FtmwViewWidget::experimentLogMessage);
-//        p_snapWidget->setSelectionEnabled(false);
-//        p_snapWidget->setDiffMode(false);
-//        p_snapWidget->setFinalizeEnabled(false);
-//        if(!ui->controlFrame->isVisible())
-//            p_snapWidget->setVisible(false);
-//        ui->rightLayout->addWidget(p_snapWidget);
-//    }
+}
 
-//    p_snapWidget->setFidList(d_currentFidList);
+void FtmwViewWidget::snapshotsProcessed(int id, const FtmwConfig c)
+{
+    if(id != d_plot1Id && id != d_plot2Id)
+        return;
 
-//    if(p_snapWidget->readSnapshots())
-//        ui->snapDiffButton->setEnabled(true);
+    if(id == d_plot1Id)
+    {
+        d_snap1Config = c;
+        if(ui->plot1ConfigWidget->isSnapshotActive())
+            updateFid(id);
+    }
+    else
+    {
+        d_snap2Config = c;
+        if(ui->plot2ConfigWidget->isSnapshotActive())
+            updateFid(id);
+    }
 
+
+}
+
+void FtmwViewWidget::snapshotsFinalized(const FtmwConfig out)
+{
+    d_ftmwConfig = out;
+
+    Experiment e(d_currentExptNum,d_path);
+    qint64 oldNum = e.ftmwConfig().completedShots();
+    e.finalizeFtmwSnapshots(out);
+    emit experimentLogMessage(e.number(),QString("Finalized snapshots. Old completed shots: %1. New completed shots: %2").arg(oldNum).arg(e.ftmwConfig().completedShots()));
+
+
+    reprocessAll();
+    emit finalized(d_currentExptNum);
+
+    snapshotsFinalizedUpdateUi(d_currentExptNum);
+}
+
+void FtmwViewWidget::snapshotsFinalizedUpdateUi(int num)
+{
+    if(num == d_currentExptNum)
+    {
+        ui->plot1ConfigWidget->clearAll();
+        ui->plot2ConfigWidget->clearAll();
+    }
 }
 
 void FtmwViewWidget::experimentComplete(const Experiment e)
@@ -560,12 +624,12 @@ void FtmwViewWidget::experimentComplete(const Experiment e)
         ui->liveFtPlot->hide();
 
 
-        if(d_workersStatus.value(d_liveFtwId).thread->isRunning())
+        if(d_workersStatus.value(d_liveId).thread->isRunning())
         {
-            d_workersStatus[d_liveFtwId].thread->quit();
-            d_workersStatus[d_liveFtwId].thread->wait();
+            d_workersStatus[d_liveId].thread->quit();
+            d_workersStatus[d_liveId].thread->wait();
 
-            d_workersStatus[d_liveFtwId].worker = nullptr;
+            d_workersStatus[d_liveId].worker = nullptr;
         }
 
         if(d_mode == Live)
@@ -577,73 +641,33 @@ void FtmwViewWidget::experimentComplete(const Experiment e)
     }
 }
 
-void FtmwViewWidget::snapshotLoadError(QString msg)
-{
-//    p_snapWidget->setEnabled(false);
-//    p_snapWidget->deleteLater();
-//    p_snapWidget = nullptr;
-//    if(ui->snapDiffButton->isChecked())
-//        ui->singleFrameButton->setChecked(true);
-
-//    ui->snapDiffButton->setEnabled(false);
-
-//    QMessageBox::warning(this,QString("Snapshot Load Error"),msg,QMessageBox::Ok);
-}
-
-void FtmwViewWidget::snapListUpdate()
-{
-//    if(d_mode == BlackChirp::FtmwViewSnapDiff || ui->snapshotCheckbox->isChecked())
-//        updateFtPlot();
-}
-
-void FtmwViewWidget::snapRefChanged()
-{
-//    if(d_mode == BlackChirp::FtmwViewSnapDiff)
-//    {
-//        d_currentRefFid = p_snapWidget->getRefFid(ui->frameBox->value()-1);
-//        updateFtPlot();
-//    }
-}
-
-void FtmwViewWidget::finalizedSnapList(const FidList l)
-{
-//    Q_ASSERT(l.size() > 0);
-//    d_currentFidList = l;
-//    updateShotsLabel(l.constFirst().shots());
-
-//    if(ui->snapshotCheckbox->isChecked())
-//    {
-//        ui->snapshotCheckbox->blockSignals(true);
-//        ui->snapshotCheckbox->setChecked(false);
-//        ui->snapshotCheckbox->setEnabled(false);
-//        ui->snapshotCheckbox->blockSignals(false);
-//    }
-
-//    if(d_mode == BlackChirp::FtmwViewSnapDiff)
-//    {
-//        ui->singleFrameButton->blockSignals(true);
-//        ui->singleFrameButton->setChecked(true);
-//        ui->singleFrameButton->blockSignals(false);
-//        d_mode = BlackChirp::FtmwViewSingle;
-//    }
-
-    emit finalized(d_currentExptNum);
-}
-
 void FtmwViewWidget::updateFid(int id)
 {
     int seg = d_plotStatus.value(id).segment;
     int frame = d_plotStatus.value(id).frame;
 
-    ///TODO: handle snapshot
+    bool snap = false;
+    FtmwConfig c = d_ftmwConfig;
+    if(id == d_plot1Id)
+    {
+        snap = ui->plot1ConfigWidget->isSnapshotActive();
+        if(snap)
+            c = d_snap1Config;
+    }
+    else if(id == d_plot2Id)
+    {
+        snap = ui->plot2ConfigWidget->isSnapshotActive();
+        if(snap)
+            c = d_snap2Config;
+    }
 
-    if(seg == d_currentSegment)
+    if(seg == d_currentSegment && !snap)
     {
         if(frame >= 0 && frame < d_ftmwConfig.fidList().size())
             d_plotStatus[id].fid = d_ftmwConfig.fidList().at(frame);
     }
     else
-        d_plotStatus[id].fid = d_ftmwConfig.singleFid(frame,seg);
+        d_plotStatus[id].fid = c.singleFid(frame,seg);
 
     process(id, d_plotStatus.value(id).fid);
 

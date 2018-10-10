@@ -16,6 +16,7 @@
 #include <QtWidgets/QToolButton>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QWidgetAction>
+#include <QtWidgets/QFormLayout>
 #include <QList>
 
 
@@ -79,11 +80,10 @@ public slots:
 
     void modeChanged(MainPlotMode newMode);
     void snapshotTaken();
+    void snapshotsProcessed(int id, const FtmwConfig c);
+    void snapshotsFinalized(const FtmwConfig out);
+    void snapshotsFinalizedUpdateUi(int num);
     void experimentComplete(const Experiment e);
-    void snapshotLoadError(QString msg);
-    void snapListUpdate();
-    void snapRefChanged();
-    void finalizedSnapList(const FidList l);
 
 
 private:
@@ -116,7 +116,7 @@ private:
     QHash<int,WorkerStatus> d_workersStatus;
     QHash<int,PlotStatus> d_plotStatus;
     QString d_path;
-    const int d_liveFtwId = 0, d_mainFtwId = 3, d_plot1FtwId = 1, d_plot2FtwId = 2;
+    const int d_liveId = 0, d_mainId = 3, d_plot1Id = 1, d_plot2Id = 2;
 
     void updateFid(int id);
 
@@ -153,6 +153,7 @@ public:
     QAction *usAction;
     QAction *lsAction;
     QAction *bsAction;
+    QSpinBox *mainPlotFollowSpinBox;
     FtmwPlotConfigWidget *plot1ConfigWidget;
     FtmwPlotConfigWidget *plot2ConfigWidget;
 
@@ -292,6 +293,21 @@ public:
         bsAction->setCheckable(true);
         mmaag->addAction(bsAction);
 
+        auto flwWa = new QWidgetAction(mmaMenu);
+        auto flwW = new QWidget;
+        auto flwFl = new QFormLayout;
+        mainPlotFollowSpinBox = new QSpinBox;
+        mainPlotFollowSpinBox->setRange(1,2);
+        mainPlotFollowSpinBox->setToolTip(QString("When not mirroring another plot or calculating a simple difference, the main plot needs to know what frame and snapshot to look at.\n\n(e.g., when plotting the sideband spectra in LO Scan mode)\n\nThis box selects which plot's frame and snapshot settings to use."));
+
+        auto flwL = new QLabel("Frame/Snaps Follow Plot");
+        flwL->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
+
+        flwFl->addRow(flwL,mainPlotFollowSpinBox);
+        flwW->setLayout(flwFl);
+        flwWa->setDefaultWidget(flwW);
+        mmaMenu->addAction(flwWa);
+
         mmaButton->setMenu(mmaMenu);
         mmaButton->setPopupMode(QToolButton::InstantPopup);
 
@@ -299,7 +315,7 @@ public:
         auto plot1Button = dynamic_cast<QToolButton*>(toolBar->widgetForAction(plot1Action));
         auto plot1Menu = new QMenu;
         auto plot1wa = new QWidgetAction(plot1Menu);
-        plot1ConfigWidget = new FtmwPlotConfigWidget(path);
+        plot1ConfigWidget = new FtmwPlotConfigWidget(1,path);
         plot1wa->setDefaultWidget(plot1ConfigWidget);
         plot1Menu->addAction(plot1wa);
         plot1Button->setMenu(plot1Menu);
@@ -310,7 +326,7 @@ public:
         auto plot2Button = dynamic_cast<QToolButton*>(toolBar->widgetForAction(plot2Action));
         auto plot2Menu = new QMenu;
         auto plot2wa = new QWidgetAction(plot2Menu);
-        plot2ConfigWidget = new FtmwPlotConfigWidget(path);
+        plot2ConfigWidget = new FtmwPlotConfigWidget(2,path);
         plot2wa->setDefaultWidget(plot2ConfigWidget);
         plot2Menu->addAction(plot2wa);
         plot2Button->setMenu(plot2Menu);

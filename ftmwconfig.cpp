@@ -356,11 +356,11 @@ QPair<int, int> FtmwConfig::chirpRange() const
     return qMakePair(startSample,endSample);
 }
 
-bool FtmwConfig::writeFids(int num, int snapNum) const
+bool FtmwConfig::writeFids(int num, QString path, int snapNum) const
 {
     if(!data->multipleFidLists)
     {
-        QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,QString(""),snapNum));
+        QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,path,snapNum));
         if(fid.open(QIODevice::WriteOnly))
         {
             QDataStream d(&fid);
@@ -374,7 +374,7 @@ bool FtmwConfig::writeFids(int num, int snapNum) const
     }
     else
     {
-        QFile fid(BlackChirp::getExptFile(num,BlackChirp::MultiFidFile,QString(""),snapNum));
+        QFile fid(BlackChirp::getExptFile(num,BlackChirp::MultiFidFile,path,snapNum));
         if(fid.open(QIODevice::WriteOnly))
         {
             QDataStream d(&fid);
@@ -386,21 +386,6 @@ bool FtmwConfig::writeFids(int num, int snapNum) const
         else
             return false;
     }
-}
-
-bool FtmwConfig::writeFidFile(int num, FidList list, QString path)
-{
-    QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,path));
-    if(fid.open(QIODevice::WriteOnly))
-    {
-        QDataStream d(&fid);
-        d << Fid::magicString();
-        d << list;
-        fid.close();
-        return true;
-    }
-    else
-        return false;
 }
 
 bool FtmwConfig::prepareForAcquisition()
@@ -719,6 +704,83 @@ void FtmwConfig::storeFids()
 void FtmwConfig::setMultiFidList(const QList<FidList> l)
 {
     data->multiFidStorage = l;
+}
+
+void FtmwConfig::finalizeSnapshots(int num, QString path)
+{
+    //write current fid or mfd file
+    //load snap file; get number of snapshots
+    //delete all snapshot files
+    //delete snap file
+    //recalculate completed shots
+    writeFids(num,path);
+
+    QFile snp(BlackChirp::getExptFile(num,BlackChirp::SnapFile,path));
+    int snaps = 0;
+    if(snp.open(QIODevice::ReadOnly))
+    {
+        QByteArrayList l;
+        while(!snp.atEnd())
+        {
+            QByteArray line = snp.readLine();
+            if(!line.isEmpty() && !line.startsWith("fid") && !line.startsWith("mfd"))
+                l.append(line);
+            else
+            {
+                auto ll = QString(line).split(QString("\t"));
+                if(ll.size() >= 2)
+                    snaps = ll.at(1).trimmed().toInt();
+            }
+        }
+        snp.close();
+
+        //if there's anything left (eg LIF snapshots), rewrite the file with those
+        if(!l.isEmpty())
+        {
+            snp.open(QIODevice::WriteOnly);
+            while(!l.isEmpty())
+                snp.write(l.takeFirst());
+            snp.close();
+        }
+        else
+            snp.remove();
+    }
+
+    for(int i=0; i<snaps; i++)
+    {
+        if(!data->multipleFidLists)
+        {
+            QFile snap(BlackChirp::getExptFile(num,BlackChirp::FidFile,path,i));
+            if(snap.exists())
+                snap.remove();
+        }
+        else
+        {
+            QFile snap(BlackChirp::getExptFile(num,BlackChirp::MultiFidFile,path,i));
+            if(snap.exists())
+                snap.remove();
+        }
+    }
+
+    qint64 ts = 0;
+    if(data->multipleFidLists)
+    {
+        for(int i=0; i<data->multiFidStorage.size(); i++)
+        {
+            auto fl = data->multiFidStorage.at(i);
+            for(int j=0; j<fl.size(); j++)
+                ts += fl.at(j).shots();
+        }
+    }
+    else
+    {
+        for(int i=0; i<data->fidList.size(); i++)
+            ts += data->fidList.at(i).shots();
+    }
+
+    data->completedShots = ts;
+
+
 }
 
 bool FtmwConfig::isComplete() const

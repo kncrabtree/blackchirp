@@ -11,7 +11,7 @@ SnapWorker::SnapWorker(QObject *parent) : QObject(parent)
 
 }
 
-void SnapWorker::calculateSnapshots(FtmwConfig allFids, const QList<int> snaps, bool includeRemainder, int num, QString path)
+FtmwConfig SnapWorker::calculateSnapshots(FtmwConfig allFids, const QList<int> snaps, bool includeRemainder, int num, QString path)
 {
 
     if(includeRemainder)
@@ -23,6 +23,16 @@ void SnapWorker::calculateSnapshots(FtmwConfig allFids, const QList<int> snaps, 
     else
         allFids.loadFidsFromSnapshots(num,path,snaps);
 
-    emit fidsUpdated(allFids);
+    emit processingComplete(allFids);
+    return allFids;
+}
+
+void SnapWorker::finalizeSnapshots(FtmwConfig allFids, const QList<int> snaps, bool includeRemainder, int num, QString path)
+{
+    blockSignals(true);
+    FtmwConfig out = calculateSnapshots(allFids,snaps,includeRemainder,num,path);
+    blockSignals(false);
+
+    emit finalProcessingComplete(out);
 }
 

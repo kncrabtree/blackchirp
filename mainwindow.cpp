@@ -853,6 +853,7 @@ void MainWindow::viewExperiment()
         ExperimentViewWidget *evw = new ExperimentViewWidget(num,path);
         connect(this,&MainWindow::closing,evw,&ExperimentViewWidget::close);
         connect(ui->ftViewWidget,&FtmwViewWidget::finalized,evw,&ExperimentViewWidget::ftmwFinalized);
+        connect(evw,&ExperimentViewWidget::notifyUiFinalized,ui->ftViewWidget,&FtmwViewWidget::snapshotsFinalizedUpdateUi);
         evw->show();
         evw->raise();
     }

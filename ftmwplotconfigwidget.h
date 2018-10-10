@@ -17,19 +17,30 @@ class FtmwPlotConfigWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit FtmwPlotConfigWidget(QString path = QString(""), QWidget *parent = nullptr);
+    explicit FtmwPlotConfigWidget(int id, QString path = QString(""), QWidget *parent = nullptr);
     ~FtmwPlotConfigWidget();
 
     void prepareForExperiment(const Experiment e);
     void experimentComplete(const Experiment e);
     void snapshotTaken();
+    bool isSnapshotActive();
 
 signals:
-    void frameChanged(int frameNum);
-    void segmentChanged(int segNum);
+    void frameChanged(int id, int frameNum);
+    void segmentChanged(int id, int segNum);
+    void snapshotsProcessed(int id, const FtmwConfig);
+    void snapshotsFinalized(const FtmwConfig);
 
 public slots:
     void configureSnapControls();
+    void process();
+    void processFtmwConfig(const FtmwConfig ref);
+    void processingComplete(const FtmwConfig out);
+    void selectAll();
+    void selectNone();
+    void finalizeSnapshots();
+    void finalizeComplete(const FtmwConfig out);
+    void clearAll();
 
 private:
     QSpinBox *p_frameBox, *p_segmentBox;
@@ -40,9 +51,10 @@ private:
     QThread *p_workerThread;
     SnapWorker *p_sw;
 
-    int d_num;
+    int d_num, d_id;
     bool d_busy, d_updateWhenDone;
     QString d_path;
+    FtmwConfig d_ftmwToProcess;
 };
 
 #endif // FTMWPLOTCONFIGWIDGET_H

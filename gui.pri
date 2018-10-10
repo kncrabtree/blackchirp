@@ -14,7 +14,6 @@ SOURCES += mainwindow.cpp \
     $$PWD/led.cpp \
     $$PWD/ioboardconfigdialog.cpp \
     $$PWD/experimentviewwidget.cpp \
-    $$PWD/ftmwsnapshotwidget.cpp \
     $$PWD/quickexptdialog.cpp \
     $$PWD/batchsequencedialog.cpp \
     $$PWD/exportbatchdialog.cpp \
@@ -44,7 +43,6 @@ HEADERS += mainwindow.h \
     $$PWD/led.h \
     $$PWD/ioboardconfigdialog.h \
     $$PWD/experimentviewwidget.h \
-    $$PWD/ftmwsnapshotwidget.h \
     $$PWD/quickexptdialog.h \
     $$PWD/batchsequencedialog.h \
     $$PWD/exportbatchdialog.h \

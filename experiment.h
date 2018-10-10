@@ -80,6 +80,7 @@ public:
     void setValidationItems(const QMap<QString,BlackChirp::ValidationItem> m);
     void addValidationItem(const QString key, const double min, const double max);
     void addValidationItem(const BlackChirp::ValidationItem &i);
+    void finalizeFtmwSnapshots(const FtmwConfig final);
 
 #ifdef BC_LIF
     bool isLifWaiting() const;
@@ -125,7 +126,8 @@ class ExperimentData : public QSharedData
 {
 public:
     ExperimentData() : number(0), timeDataInterval(300), autoSaveShotsInterval(10000), lastSnapshot(0), isInitialized(false),
-        isAborted(false), isDummy(false), hardwareSuccess(true), endLogMessageCode(BlackChirp::LogHighlight)
+        isAborted(false), isDummy(false), hardwareSuccess(true), endLogMessageCode(BlackChirp::LogHighlight),
+        path(QString(""))
 #ifdef BC_LIF
     ,  waitForLifSet(false)
 #endif
@@ -151,6 +153,8 @@ public:
     IOBoardConfig iobCfg;
     QMap<QString,QPair<QList<QVariant>,bool>> timeDataMap;
     QMap<QString,BlackChirp::ValidationItem> validationConditions;
+
+    QString path;
 
 #ifdef BC_LIF
     LifConfig lifCfg;
