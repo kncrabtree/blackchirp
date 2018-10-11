@@ -148,21 +148,14 @@ void FidPlot::filterData()
     for(double pixel = firstPixel; pixel<lastPixel; pixel+=1.0)
     {
         double min = d_currentFid.at(dataIndex).y(), max = min;
-        int minIndex = dataIndex, maxIndex = dataIndex;
         int numPnts = 0;
         double nextPixelX = map.invTransform(pixel+1.0)/1e6;
         while(dataIndex+1 < d_currentFid.size() && d_currentFid.at(dataIndex).x() < nextPixelX)
         {
-            if(d_currentFid.at(dataIndex).y() < min)
-            {
-                min = d_currentFid.at(dataIndex).y();
-                minIndex = dataIndex;
-            }
-            if(d_currentFid.at(dataIndex).y() > max)
-            {
-                max = d_currentFid.at(dataIndex).y();
-                maxIndex = dataIndex;
-            }
+            auto pt = d_currentFid.at(dataIndex);
+            min = qMin(pt.y(),min);
+            max = qMax(pt.y(),max);
+
             dataIndex++;
             numPnts++;
         }
@@ -180,8 +173,8 @@ void FidPlot::filterData()
             filtered.append(QPointF(d_currentFid.at(dataIndex-1).x()*1e6,d_currentFid.at(dataIndex-1).y()));
         else if (numPnts > 1)
         {
-            QPointF first(map.invTransform(pixel),d_currentFid.at(minIndex).y());
-            QPointF second(map.invTransform(pixel),d_currentFid.at(maxIndex).y());
+            QPointF first(map.invTransform(pixel),min);
+            QPointF second(map.invTransform(pixel),max);
             filtered.append(first);
             filtered.append(second);
         }

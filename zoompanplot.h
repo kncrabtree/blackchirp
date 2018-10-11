@@ -75,6 +75,10 @@ private:
 public:
     virtual QSize sizeHint() const;
     virtual QSize minimumSizeHint() const;
+
+    // QWidget interface
+protected:
+    virtual void showEvent(QShowEvent *event);
 };
 
 Q_DECLARE_METATYPE(QwtPlot::Axis)

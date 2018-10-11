@@ -17,6 +17,7 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QWidgetAction>
 #include <QtWidgets/QFormLayout>
+#include <QtWidgets/QPushButton>
 #include <QList>
 
 
@@ -117,6 +118,7 @@ private:
     QHash<int,PlotStatus> d_plotStatus;
     QString d_path;
     const int d_liveId = 0, d_mainId = 3, d_plot1Id = 1, d_plot2Id = 2;
+    const QString d_shotsString = QString("Shots: %1");
 
     void updateFid(int id);
 
@@ -156,6 +158,9 @@ public:
     QSpinBox *mainPlotFollowSpinBox;
     FtmwPlotConfigWidget *plot1ConfigWidget;
     FtmwPlotConfigWidget *plot2ConfigWidget;
+    QSpinBox *averagesSpinbox;
+    QPushButton *resetAveragesButton;
+    QLabel *shotsLabel;
 
     void setupUi(QWidget *FtmwViewWidget, QString path)
     {
@@ -331,6 +336,40 @@ public:
         plot2Menu->addAction(plot2wa);
         plot2Button->setMenu(plot2Menu);
         plot2Button->setPopupMode(QToolButton::InstantPopup);
+
+        auto peakupAction = toolBar->addAction(QIcon(":/icons/averaging.svg"),QString("Peak Up Options"));
+        auto peakupButton = dynamic_cast<QToolButton*>(toolBar->widgetForAction(peakupAction));
+        auto peakupMenu = new QMenu;
+        auto peakupWa = new QWidgetAction(peakupMenu);
+        auto peakupWidget = new QWidget;
+        auto peakupFl = new QFormLayout;
+        averagesSpinbox = new QSpinBox;
+        averagesSpinbox->setRange(1,__INT_MAX__);
+        averagesSpinbox->setEnabled(false);
+        averagesSpinbox->setSingleStep(25);
+        averagesSpinbox->setKeyboardTracking(false);
+        auto avgLbl = new QLabel(QString("Averages"));
+        avgLbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
+        peakupFl->addRow(avgLbl,averagesSpinbox);
+
+        resetAveragesButton = new QPushButton(QIcon(":/icons/reset.svg"),QString("Reset Averages"));
+        resetAveragesButton->setEnabled(false);
+        peakupFl->addRow(resetAveragesButton);
+
+        peakupWidget->setLayout(peakupFl);
+        peakupWa->setDefaultWidget(peakupWidget);
+        peakupMenu->addAction(peakupWa);
+        peakupButton->setMenu(peakupMenu);
+        peakupButton->setPopupMode(QToolButton::InstantPopup);
+
+        auto *spacer = new QWidget;
+        spacer->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Minimum);
+        toolBar->addWidget(spacer);
+
+        shotsLabel = new QLabel("Shots: 0");
+        shotsLabel->setAlignment(Qt::AlignVCenter|Qt::AlignRight);
+        shotsLabel->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
+        toolBar->addWidget(shotsLabel);
 
 
         auto vbl = new QVBoxLayout;

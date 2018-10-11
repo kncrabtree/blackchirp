@@ -177,21 +177,14 @@ void FtPlot::filterData()
     for(double pixel = firstPixel; pixel<lastPixel; pixel+=1.0)
     {
         double min = d_currentFt.at(dataIndex).y(), max = min;
-        int minIndex = dataIndex, maxIndex = dataIndex;
         int numPnts = 0;
         double nextPixelX = map.invTransform(pixel+1.0);
         while(dataIndex+1 < d_currentFt.size() && d_currentFt.at(dataIndex).x() < nextPixelX)
         {
-            if(d_currentFt.at(dataIndex).y() < min)
-            {
-                min = d_currentFt.at(dataIndex).y();
-                minIndex = dataIndex;
-            }
-            if(d_currentFt.at(dataIndex).y() > max)
-            {
-                max = d_currentFt.at(dataIndex).y();
-                maxIndex = dataIndex;
-            }
+            auto pt = d_currentFt.at(dataIndex);
+            min = qMin(pt.y(),min);
+            max = qMax(pt.y(),max);
+
             dataIndex++;
             numPnts++;
         }
@@ -200,8 +193,8 @@ void FtPlot::filterData()
             filtered.append(d_currentFt.at(dataIndex-1));
         else if (numPnts > 1)
         {
-            QPointF first(map.invTransform(pixel),d_currentFt.at(minIndex).y());
-            QPointF second(map.invTransform(pixel),d_currentFt.at(maxIndex).y());
+            QPointF first(map.invTransform(pixel),min);
+            QPointF second(map.invTransform(pixel),max);
             filtered.append(first);
             filtered.append(second);
         }

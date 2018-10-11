@@ -110,6 +110,8 @@ void ZoomPanPlot::setName(QString name)
 
 void ZoomPanPlot::replot()
 {
+    if(!isVisible())
+        return;
 
     //figure out which axes to show
     QwtPlotItemList l = itemList();
@@ -439,4 +441,11 @@ QSize ZoomPanPlot::sizeHint() const
 QSize ZoomPanPlot::minimumSizeHint() const
 {
     return QSize(150,100);
+}
+
+
+void ZoomPanPlot::showEvent(QShowEvent *event)
+{
+    Q_UNUSED(event)
+    replot();
 }

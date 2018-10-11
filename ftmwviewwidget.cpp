@@ -81,6 +81,9 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     connect(ui->lsAction,&QAction::triggered,this,[=]() { modeChanged(LowerSB); });
     connect(ui->bsAction,&QAction::triggered,this,[=]() { modeChanged(BothSB); });
 
+    connect(ui->averagesSpinbox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::rollingAverageShotsChanged,Qt::UniqueConnection);
+    connect(ui->resetAveragesButton,&QPushButton::clicked,this,&FtmwViewWidget::rollingAverageReset,Qt::UniqueConnection);
+
 }
 
 FtmwViewWidget::~FtmwViewWidget()
@@ -104,6 +107,8 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
 
     if(!ui->exptLabel->isVisible())
         ui->exptLabel->setVisible(true);
+
+    ui->shotsLabel->setText(d_shotsString.arg(0));
 
     ui->liveFidPlot->prepareForExperiment(e);
     ui->liveFidPlot->setVisible(true);
@@ -151,13 +156,13 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
 
         ui->liveAction->setEnabled(true);
 
-        if(config.type() == BlackChirp::FtmwPeakUp)
-        {
+        ui->averagesSpinbox->blockSignals(true);
+        ui->averagesSpinbox->setValue(config.targetShots());
+        ui->averagesSpinbox->blockSignals(false);
 
-            ///TODO: Implement these elsewhere!
-//            connect(ui->rollingAverageSpinbox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::rollingAverageShotsChanged,Qt::UniqueConnection);
-//            connect(ui->rollingAverageResetButton,&QPushButton::clicked,this,&FtmwViewWidget::rollingAverageReset,Qt::UniqueConnection);
-        }
+        ui->resetAveragesButton->setEnabled(config.type() == BlackChirp::FtmwPeakUp);
+        ui->averagesSpinbox->setEnabled(config.type() == BlackChirp::FtmwPeakUp);
+
         if(config.type() == BlackChirp::FtmwLoScan)
         {
 //            d_mode = BothSB;
@@ -176,7 +181,8 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
     }
     else
     {        
-
+        ui->resetAveragesButton->setEnabled(false);
+        ui->averagesSpinbox->setEnabled(false);
     }
 
     d_ftmwConfig = config;
@@ -193,6 +199,8 @@ void FtmwViewWidget::updateLiveFidList(const FtmwConfig c, int segment)
     d_ftmwConfig = c;
     d_currentSegment = segment;
     auto fl = c.fidList();
+
+    ui->shotsLabel->setText(d_shotsString.arg(c.completedShots()));
 
 
     for(auto it = d_plotStatus.begin(); it != d_plotStatus.end(); it++)
@@ -361,6 +369,10 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
             updateMainPlot();
             break;
         default:
+            if(workerId == d_plot1Id && ui->plot1ConfigWidget->isSnapshotActive() && ui->mainPlotFollowSpinBox->value() == 1)
+                updateMainPlot();
+            else if(workerId == d_plot2Id && ui->plot2ConfigWidget->isSnapshotActive() && ui->mainPlotFollowSpinBox->value() == 2)
+                updateMainPlot();
             break;
         }
     }
@@ -572,18 +584,14 @@ void FtmwViewWidget::snapshotsProcessed(int id, const FtmwConfig c)
     if(id == d_plot1Id)
     {
         d_snap1Config = c;
-//        if(ui->plot1ConfigWidget->isSnapshotActive())
-        updateFid(id);
-        if(ui->mainPlotFollowSpinBox->value() == d_plot1Id)
-            updateMainPlot();
+        if(ui->plot1ConfigWidget->isSnapshotActive())
+            updateFid(id);
     }
     else
     {
         d_snap2Config = c;
-//        if(ui->plot2ConfigWidget->isSnapshotActive())
-        updateFid(id);
-        if(ui->mainPlotFollowSpinBox->value() == d_plot1Id)
-            updateMainPlot();
+        if(ui->plot2ConfigWidget->isSnapshotActive())
+            updateFid(id);
     }
 
 }
@@ -596,6 +604,8 @@ void FtmwViewWidget::snapshotsFinalized(const FtmwConfig out)
     qint64 oldNum = e.ftmwConfig().completedShots();
     e.finalizeFtmwSnapshots(out);
     emit experimentLogMessage(e.number(),QString("Finalized snapshots. Old completed shots: %1. New completed shots: %2").arg(oldNum).arg(e.ftmwConfig().completedShots()));
+
+    ui->shotsLabel->setText(d_shotsString.arg(e.ftmwConfig().completedShots()));
 
 
     reprocessAll();
