@@ -99,10 +99,10 @@ bool Ft::isEmpty() const
 
 QPointF Ft::at(int i) const
 {
-    if(i >= 0 && i < data->ftData.size())
-        return data->ftData.at(i);
+//    if(i >= 0 && i < data->ftData.size())
+    return data->ftData.at(i);
 
-    return QPointF();
+//    return QPointF();
 }
 
 double Ft::xSpacing() const

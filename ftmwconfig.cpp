@@ -77,22 +77,16 @@ QDateTime FtmwConfig::targetTime() const
 
 Fid FtmwConfig::singleFid(int frame, int segment) const
 {
-    int i = qBound(0,frame,data->fidList.size()-1);
 
     if(data->multipleFidLists)
     {
         if(segment >= 0 && segment < data->multiFidStorage.size())
-            return data->multiFidStorage.at(segment).at(i);
+            return data->multiFidStorage.at(segment).value(frame,Fid());
         else
             return Fid();
     }
 
-    if(data->fidList.isEmpty())
-        return Fid();
-
-
-
-    return data->fidList.at(i);
+    return data->fidList.value(frame,Fid());
 }
 
 FidList FtmwConfig::fidList() const
@@ -401,7 +395,7 @@ bool FtmwConfig::prepareForAcquisition()
         f.setVMult(f.vMult()/256.0);
     data->fidTemplate = f;
 
-    if(!data->rfConfig.prepareForAcquisition())
+    if(!data->rfConfig.prepareForAcquisition(type()))
     {
         data->errorString = QString("Invalid RF/Chirp configuration.");
         return false;
@@ -766,16 +760,12 @@ void FtmwConfig::finalizeSnapshots(int num, QString path)
     if(data->multipleFidLists)
     {
         for(int i=0; i<data->multiFidStorage.size(); i++)
-        {
-            auto fl = data->multiFidStorage.at(i);
-            for(int j=0; j<fl.size(); j++)
-                ts += fl.at(j).shots();
-        }
+            ts += data->multiFidStorage.at(i).constFirst().shots();
     }
     else
     {
         for(int i=0; i<data->fidList.size(); i++)
-            ts += data->fidList.at(i).shots();
+            ts += data->fidList.constFirst().shots();
     }
 
     data->completedShots = ts;
@@ -861,64 +851,7 @@ void FtmwConfig::loadFids(const int num, const QString path)
         }
         fid.close();
     }
-
-    if(data->fidList.isEmpty())
-    {
-        //try to reconstruct from snapshots, if any
-        QFile snp(BlackChirp::getExptFile(num,BlackChirp::SnapFile,path));
-        if(snp.exists() && snp.open(QIODevice::ReadOnly))
-        {
-            bool parseSuccess = false;
-            int numSnaps = 0;
-            while(!snp.atEnd())
-            {
-                QString line = snp.readLine();
-                if(line.startsWith(QString("fid")))
-                {
-                    QStringList l = line.split(QString("\t"));
-                    bool ok = false;
-                    int n = l.constLast().trimmed().toInt(&ok);
-                    if(ok)
-                    {
-                        parseSuccess = true;
-                        numSnaps = n;
-                        break;
-                    }
-                }
-            }
-
-            if(parseSuccess && numSnaps > 0)
-            {
-                for(int i=0; i<numSnaps; i++)
-                {
-                    FidList in;
-                    QFile f(BlackChirp::getExptFile(num,BlackChirp::FidFile,path,i));
-                    if(f.exists() && f.open(QIODevice::ReadOnly))
-                    {
-                        QDataStream d(&f);
-                        QByteArray magic;
-                        d >> magic;
-                        if(magic.startsWith("BCFID"))
-                        {
-                            if(magic.endsWith("v1.0"))
-                                d >> in;
-                        }
-                        f.close();
-                        if(data->fidList.isEmpty())
-                            data->fidList = in;
-                        else if(data->fidList.size() == in.size())
-                        {
-                            for(int j=0; j<data->fidList.size(); j++)
-                                data->fidList[j] += in.at(j);
-                        }
-                    }
-                }
-            }
-
-            snp.close();
-        }
-    }
-
+    
     QFile mfd(BlackChirp::getExptFile(num,BlackChirp::MultiFidFile,path));
     if(mfd.open(QIODevice::ReadOnly))
     {
@@ -940,6 +873,53 @@ void FtmwConfig::loadFids(const int num, const QString path)
         }
         mfd.close();
     }
+
+    if(data->fidList.isEmpty() && data->multiFidStorage.isEmpty())
+    {
+        //try to reconstruct from snapshots, if any
+        QFile snp(BlackChirp::getExptFile(num,BlackChirp::SnapFile,path));
+        if(snp.exists() && snp.open(QIODevice::ReadOnly))
+        {
+            bool parseSuccess = false;
+            bool multiFid = false;
+            int numSnaps = 0;
+            while(!snp.atEnd())
+            {
+                QString line = snp.readLine();
+                if(line.startsWith(QString("fid")) || line.startsWith(QString("mfd")))
+                {
+                    if(line.startsWith(QString("mfd")))
+                        multiFid = true;
+
+                    QStringList l = line.split(QString("\t"));
+                    bool ok = false;
+                    int n = l.constLast().trimmed().toInt(&ok);
+                    if(ok)
+                    {
+                        parseSuccess = true;
+                        numSnaps = n;
+                        break;
+                    }
+                    
+                }
+                
+            }
+            
+            QList<int> snaps;
+            for(int i=0; i<numSnaps; i++)
+                snaps << i;
+
+            if(parseSuccess && numSnaps > 0)
+            {
+                data->multipleFidLists = multiFid;
+                loadFidsFromSnapshots(num,path,snaps);
+            }
+
+            snp.close();
+        }
+    }
+
+    
 }
 
 void FtmwConfig::loadFidsFromSnapshots(const int num, const QString path, const QList<int> snaps)
@@ -971,10 +951,15 @@ void FtmwConfig::loadFidsFromSnapshots(const int num, const QString path, const 
                         }
                         else
                         {
-                            for(int j=0; j<data->multiFidStorage.size() && j<dat.size(); j++)
+                            for(int j=0; j<dat.size(); j++)
                             {
-                                for(int k=0; k<data->multiFidStorage.at(j).size() && k<dat.at(j).size(); k++)
-                                    data->multiFidStorage[j][k] += dat.at(j).at(k);
+                                if(j == data->multiFidStorage.size())
+                                    data->multiFidStorage << dat.at(j);
+                                else
+                                {
+                                    for(int k=0; k<dat.at(j).size() && k<data->multiFidStorage.at(j).size(); k++)
+                                        data->multiFidStorage[j][k] += dat.at(j).at(k);
+                                }
                             }
                         }
                     }
@@ -1010,7 +995,7 @@ void FtmwConfig::loadFidsFromSnapshots(const int num, const QString path, const 
                         }
                         else
                         {
-                            for(int j=0; j<data->multiFidStorage.size() && j<dat.size(); j++)
+                            for(int j=0; j<data->fidList.size() && j<dat.size(); j++)
                                 data->fidList[j] += dat.at(j);
                         }
                     }
@@ -1082,6 +1067,8 @@ void FtmwConfig::parseLine(const QString key, const QVariant val)
             data->type = (BlackChirp::FtmwType)val.toInt();
         if(key.endsWith(QString("TargetShots")))
             data->targetShots = val.toInt();
+        if(key.endsWith(QString("CompletedShots")))
+            data->completedShots = val.toInt();
         if(key.endsWith(QString("TargetTime")))
             data->targetTime = val.toDateTime();
         if(key.endsWith(QString("PhaseCorrection")))

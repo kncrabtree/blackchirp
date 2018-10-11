@@ -196,30 +196,8 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
 //        if(!d_experiment.ftmwConfig().fidList().isEmpty())
 //            p_ftmw->updateShotsLabel(d_experiment.ftmwConfig().fidList().constFirst().shots());
 
-        //check for snap file
-        QFile snp(BlackChirp::getExptFile(d_experiment.number(),BlackChirp::SnapFile,path));
-        if(snp.exists() && snp.open(QIODevice::ReadOnly))
-        {
-            bool fids = false;
-            while(!snp.atEnd())
-            {
-                QByteArray line = snp.readLine();
-                if(line.startsWith("fid"))
-                {
-                    QByteArrayList l = line.split('\t');
-                    if(!l.isEmpty() && l.constLast().trimmed().toInt() > 0)
-                    {
-                        fids = true;
-                        break;
-                    }
-                }
-            }
-            snp.close();
 
-            if(fids)
-                p_ftmw->snapshotTaken();
-        }
-
+        p_ftmw->snapshotTaken();
         p_ftmw->experimentComplete(d_experiment);
     }
 

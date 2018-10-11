@@ -10,7 +10,6 @@
 #include <QFormLayout>
 
 #include "ftworker.h"
-#include "ftmwsnapshotwidget.h"
 
 FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     QWidget(parent),
@@ -259,7 +258,8 @@ void FtmwViewWidget::updateFtmw(const FtmwConfig f)
             ignore << it.key();
             ui->plot2ConfigWidget->processFtmwConfig(f);
         }
-        it.value().fid = f.singleFid(it.value().frame,it.value().segment);
+        else
+            it.value().fid = f.singleFid(it.value().frame,it.value().segment);
     }
 
     reprocess(ignore);
@@ -572,16 +572,19 @@ void FtmwViewWidget::snapshotsProcessed(int id, const FtmwConfig c)
     if(id == d_plot1Id)
     {
         d_snap1Config = c;
-        if(ui->plot1ConfigWidget->isSnapshotActive())
-            updateFid(id);
+//        if(ui->plot1ConfigWidget->isSnapshotActive())
+        updateFid(id);
+        if(ui->mainPlotFollowSpinBox->value() == d_plot1Id)
+            updateMainPlot();
     }
     else
     {
         d_snap2Config = c;
-        if(ui->plot2ConfigWidget->isSnapshotActive())
-            updateFid(id);
+//        if(ui->plot2ConfigWidget->isSnapshotActive())
+        updateFid(id);
+        if(ui->mainPlotFollowSpinBox->value() == d_plot1Id)
+            updateMainPlot();
     }
-
 
 }
 

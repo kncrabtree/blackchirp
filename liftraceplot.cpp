@@ -499,6 +499,8 @@ void LifTracePlot::filterData()
     QwtScaleMap map = canvasMap(QwtPlot::xBottom);
 
     QVector<QPointF> lifFiltered, refFiltered;
+    lifFiltered.reserve(2*canvas()->width()+2);
+    refFiltered.reserve(2*canvas()->width()+2);
     double yMin = 0.0, yMax = 0.0;
 
     //find first data point that is in the range of the plot

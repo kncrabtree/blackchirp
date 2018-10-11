@@ -45,7 +45,7 @@ public:
     QMap<QString,QPair<QVariant,QString> > headerMap() const;
     void parseLine(const QString key, const QVariant val);
 
-    bool prepareForAcquisition();
+    bool prepareForAcquisition(BlackChirp::FtmwType t);
     void setAwgMult(const double m);
     void setUpMixSideband(const BlackChirp::Sideband s);
     void setChirpMult(const double m);

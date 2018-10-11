@@ -320,6 +320,28 @@ void FtWorker::processBothSidebands(const FidList fl, const FtWorker::FidProcess
     blockSignals(false);
 
     Ft out(0,0.0);
+    if(upper.size() < 2)
+    {
+        if(lower.size() < 2)
+        {
+            emit ftDone(out,d_id);
+            return;
+        }
+        else
+        {
+            emit ftDone(lower,d_id);
+            return;
+        }
+    }
+    else
+    {
+        if(lower.size() < 2)
+        {
+            emit ftDone(upper,d_id);
+            return;
+        }
+    }
+
     out.reserve(upper.size() + lower.size());
 
     int li=0, ui=0;
@@ -372,15 +394,29 @@ QList<Ft> FtWorker::makeSidebandList(const FidList fl, const FidProcessingSettin
     Ft ft1 = doFT(f,settings);
     out << ft1;
 
-    double f0 = ft1.loFreq();
-    double sp = ft1.xSpacing();
+    double f0 = 0.0;
+    double sp = -1.0;
+
+
     for(int i=1; i<fl.size(); i++)
     {
         f = fl.at(i);
         f.setSideband(sb);
         ft1 = doFT(f,settings);
-        auto rsft = resample(f0,sp,ft1);
-        out << rsft;
+        if(!ft1.isEmpty())
+        {
+            if(sp < 0.0)
+            {
+                f0 = ft1.loFreq();
+                sp = ft1.xSpacing();
+            }
+            out << ft1;
+        }
+        else
+        {
+            auto rsft = resample(f0,sp,ft1);
+            out << rsft;
+        }
     }
     blockSignals(sigsBlocked);
 

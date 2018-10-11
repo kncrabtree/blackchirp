@@ -83,6 +83,8 @@ FtmwPlotConfigWidget::FtmwPlotConfigWidget(int id, QString path, QWidget *parent
     auto hbl = new QHBoxLayout;
     p_selectAllButton = new QPushButton(QString("Select All"));
     p_selectNoneButton = new QPushButton(QString("Select None"));
+    connect(p_selectAllButton,&QPushButton::clicked,this,&FtmwPlotConfigWidget::selectAll);
+    connect(p_selectNoneButton,&QPushButton::clicked,this,&FtmwPlotConfigWidget::selectNone);
     hbl->addWidget(p_selectAllButton);
     hbl->addWidget(p_selectNoneButton);
     vbl->addLayout(hbl);
@@ -101,6 +103,7 @@ FtmwPlotConfigWidget::FtmwPlotConfigWidget(int id, QString path, QWidget *parent
     p_finalizeButton = new QPushButton(QString(" Finalize"));
     p_finalizeButton->setEnabled(false);
     p_finalizeButton->setIcon(QIcon(QString(":/icons/check.png")));
+    connect(p_finalizeButton,&QPushButton::clicked,this,&FtmwPlotConfigWidget::finalizeSnapshots);
     vbl->addWidget(p_finalizeButton,0);
 
     setLayout(vbl);
@@ -118,6 +121,7 @@ FtmwPlotConfigWidget::FtmwPlotConfigWidget(int id, QString path, QWidget *parent
     p_sw = new SnapWorker;
     connect(p_workerThread,&QThread::finished,p_sw,&SnapWorker::deleteLater);
     connect(p_sw,&SnapWorker::processingComplete,this,&FtmwPlotConfigWidget::processingComplete);
+    connect(p_sw,&SnapWorker::finalProcessingComplete,this,&FtmwPlotConfigWidget::finalizeComplete);
     p_sw->moveToThread(p_workerThread);
     p_workerThread->start();
 }
@@ -148,6 +152,8 @@ void FtmwPlotConfigWidget::prepareForExperiment(const Experiment e)
 
         p_segmentBox->setRange(1,e.ftmwConfig().numSegments());
         p_segmentBox->setEnabled(true);
+
+        p_allButton->setEnabled(true);
     }
     else
     {
@@ -156,6 +162,8 @@ void FtmwPlotConfigWidget::prepareForExperiment(const Experiment e)
 
         p_segmentBox->setRange(1,1);
         p_segmentBox->setEnabled(false);
+
+        p_allButton->setEnabled(false);
     }
 
 
@@ -164,7 +172,7 @@ void FtmwPlotConfigWidget::prepareForExperiment(const Experiment e)
 
 void FtmwPlotConfigWidget::experimentComplete(const Experiment e)
 {
-    Q_UNUSED(e)
+    processFtmwConfig(e.ftmwConfig());
 
     if(p_lw->count() > 0)
         p_finalizeButton->setEnabled(true);
@@ -269,21 +277,31 @@ void FtmwPlotConfigWidget::processFtmwConfig(const FtmwConfig ref)
         {
             bool rem = p_remainderBox->isChecked();
             QList<int> snaps;
-            Qt::CheckState c = Qt::Checked;
-            if(rem)
-                c = Qt::Unchecked;
-
-            for(int i=0; i<p_lw->count(); i++)
+            if(p_selectedButton->isChecked())
             {
-                if(p_lw->item(i)->checkState() == c)
+                Qt::CheckState c = Qt::Checked;
+                if(rem)
+                    c = Qt::Unchecked;
+
+                for(int i=0; i<p_lw->count(); i++)
+                {
+                    if(p_lw->item(i)->checkState() == c)
+                        snaps << i;
+                }
+            }
+            else
+            {
+                rem = true;
+                for(int i=0; i<p_lw->count(); i++)
                     snaps << i;
             }
 
             QMetaObject::invokeMethod(p_sw,"calculateSnapshots",Q_ARG(FtmwConfig,ref),Q_ARG(QList<int>,snaps),Q_ARG(bool,rem),Q_ARG(int,d_num),Q_ARG(QString,d_path));
 
-            setEnabled(false);
             setCursor(Qt::BusyCursor);
         }
+        else
+            processingComplete(d_ftmwToProcess);
     }
 }
 
@@ -291,7 +309,6 @@ void FtmwPlotConfigWidget::processingComplete(const FtmwConfig out)
 {
     d_busy = false;
     unsetCursor();
-    setEnabled(true);
 
     emit snapshotsProcessed(d_id,out);
 
@@ -334,27 +351,36 @@ void FtmwPlotConfigWidget::finalizeSnapshots()
     {
         bool rem = p_remainderBox->isChecked();
         QList<int> snaps;
-        Qt::CheckState c = Qt::Checked;
-        if(rem)
-            c = Qt::Unchecked;
-
-        for(int i=0; i<p_lw->count(); i++)
+        if(p_selectedButton->isChecked())
         {
-            if(p_lw->item(i)->checkState() == c)
+            Qt::CheckState c = Qt::Checked;
+            if(rem)
+                c = Qt::Unchecked;
+
+            for(int i=0; i<p_lw->count(); i++)
+            {
+                if(p_lw->item(i)->checkState() == c)
+                    snaps << i;
+            }
+        }
+        else
+        {
+            rem = true;
+            for(int i=0; i<p_lw->count(); i++)
                 snaps << i;
         }
 
         QMetaObject::invokeMethod(p_sw,"finalizeSnapshots",Q_ARG(FtmwConfig,d_ftmwToProcess),Q_ARG(QList<int>,snaps),Q_ARG(bool,rem),Q_ARG(int,d_num),Q_ARG(QString,d_path));
 
-        setEnabled(false);
         setCursor(Qt::BusyCursor);
     }
+    else
+        finalizeComplete(d_ftmwToProcess);
 
 }
 
 void FtmwPlotConfigWidget::finalizeComplete(const FtmwConfig out)
 {
-    setEnabled(true);
     unsetCursor();
     clearAll();
 

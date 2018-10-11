@@ -241,8 +241,10 @@ void RfConfig::parseLine(const QString key, const QVariant val)
         data->downMixSideband = val.toString().startsWith(QString("Upper")) ? BlackChirp::UpperSideband : BlackChirp::LowerSideband;
     if(key.endsWith(QString("CommonLO")))
         data->commonUpDownLO = val.toBool();
-    if(key.endsWith(QString("TatgetSweeps")))
+    if(key.endsWith(QString("TargetSweeps")))
         data->targetSweeps = val.toInt();
+    if(key.endsWith(QString("CompletedSweeps")))
+        data->completedSweeps = val.toInt();
     if(key.endsWith(QString("ShotsPerClockStep")))
         data->shotsPerClockConfig = val.toInt();
     if(key.contains("Clock."))
@@ -265,7 +267,7 @@ void RfConfig::parseLine(const QString key, const QVariant val)
     }
 }
 
-bool RfConfig::prepareForAcquisition()
+bool RfConfig::prepareForAcquisition(BlackChirp::FtmwType t)
 {
     if(data->chirps.isEmpty())
         return false;
@@ -276,11 +278,15 @@ bool RfConfig::prepareForAcquisition()
             return false;
     }
 
+    if(t != BlackChirp::FtmwLoScan)
+        data->clockConfigList.clear();
+
     if(!data->clockConfigList.isEmpty())
         data->currentClocks = data->clockConfigList.constFirst();
 
     if(data->currentClocks.isEmpty())
         return false;
+
 
     data->currentClockIndex = 0;
     data->completedSweeps = 0;
