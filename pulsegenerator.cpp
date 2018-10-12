@@ -54,10 +54,12 @@ bool PulseGenerator::setAll(const PulseGenConfig cc)
     return success;
 }
 
+#ifdef BC_LIF
 bool PulseGenerator::setLifDelay(double d)
 {
     return set(BC_PGEN_LIFCHANNEL,BlackChirp::PulseDelay,d);
 }
+#endif
 
 void PulseGenerator::readAll()
 {

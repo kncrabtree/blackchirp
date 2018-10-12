@@ -16,8 +16,10 @@ Valon5009::Valon5009(int clockNum, QObject *parent) :
     s.beginGroup(d_subKey);
     d_minFreqMHz = s.value(QString("minFreqMHz"),500.0).toDouble();
     d_maxFreqMHz = s.value(QString("maxFreqMHz"),6000.0).toDouble();
+    d_lockToExt10MHz = s.value(QString("lockToExt10MHz"),true).toBool();
     s.setValue(QString("minFreqMHz"),d_minFreqMHz);
     s.setValue(QString("maxFreqMHz"),d_maxFreqMHz);
+    s.setValue(QString("lockToExt10MHz"),d_lockToExt10MHz);
     s.endGroup();
     s.endGroup();
 
@@ -160,4 +162,35 @@ double Valon5009::readHwFrequency(int outputIndex)
     }
 
     return f;
+}
+
+
+Experiment Valon5009::prepareForExperiment(Experiment exp)
+{
+    if(d_lockToExt10MHz)
+    {
+        valonWriteCmd(QString("REFS 1\r"));
+        valonWriteCmd(QString("REF 10 MHz\r"));
+        auto resp = valonQueryCmd(QString("LOCK?\r"));
+        if(resp.contains("not locked"))
+        {
+            exp.setHardwareFailed();
+            exp.setErrorString(QString("Could not lock %1 to external reference.").arg(d_prettyName));
+            return exp;
+        }
+    }
+    else
+    {
+        valonWriteCmd(QString("REFS 0\r"));
+        valonWriteCmd(QString("REF 20 MHz\r"));
+        auto resp = valonQueryCmd(QString("LOCK?\r"));
+        if(resp.contains("not locked"))
+        {
+            exp.setHardwareFailed();
+            exp.setErrorString(QString("Could not lock %1 to internal reference.").arg(d_prettyName));
+            return exp;
+        }
+    }
+
+    return Clock::prepareForExperiment(exp);
 }

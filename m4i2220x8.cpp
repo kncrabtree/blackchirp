@@ -207,8 +207,14 @@ Experiment M4i2220x8::prepareForExperiment(Experiment exp)
 
 
     //Configure clock source
-    spcm_dwSetParam_i32(p_handle,SPC_CLOCKMODE,SPC_CM_EXTREFCLOCK);
-    spcm_dwSetParam_i32(p_handle,SPC_REFERENCECLOCK,1250000000);
+    auto clocks = exp.ftmwConfig().rfConfig().getClocks();
+    if(clocks.contains(BlackChirp::DigitizerClock))
+    {
+        spcm_dwSetParam_i32(p_handle,SPC_CLOCKMODE,SPC_CM_EXTREFCLOCK);
+        spcm_dwSetParam_i32(p_handle,SPC_REFERENCECLOCK,qRound(clocks.value(BlackChirp::DigitizerClock).desiredFreqMHz*1e6));
+    }
+    else
+        spcm_dwSetParam_i32(p_handle,SPC_CLOCKMODE,SPC_CM_INTPLL);
 
     // Configure sample rate
     spcm_dwSetParam_i64(p_handle,SPC_SAMPLERATE,static_cast<qint64>(sc.sampleRate));

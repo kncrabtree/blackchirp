@@ -155,6 +155,7 @@ void PulseConfigWidget::makeInternalConnections()
     connect(this,&PulseConfigWidget::changeSetting,ui->pulsePlot,&PulsePlot::newSetting);
 }
 
+#ifdef BC_LIF
 void PulseConfigWidget::configureLif(double startingDelay)
 {
     if(d_widgetList.isEmpty())
@@ -170,18 +171,20 @@ void PulseConfigWidget::configureLif(double startingDelay)
     ui->pulsePlot->newSetting(BC_PGEN_LIFCHANNEL,BlackChirp::PulseName,QString("LIF"));
 
 }
+#endif
 
 void PulseConfigWidget::configureChirp()
 {
     if(d_widgetList.isEmpty())
         return;
-
+/*
     d_widgetList.at(BC_PGEN_AWGCHANNEL).onButton->setChecked(true);
     d_widgetList.at(BC_PGEN_AWGCHANNEL).onButton->setEnabled(false);
     d_widgetList.at(BC_PGEN_AWGCHANNEL).label->setText(QString("AWG"));
     d_widgetList.at(BC_PGEN_AWGCHANNEL).nameEdit->setText(QString("AWG"));
     d_widgetList.at(BC_PGEN_AWGCHANNEL).nameEdit->setEnabled(false);
     ui->pulsePlot->newSetting(BC_PGEN_AWGCHANNEL,BlackChirp::PulseName,QString("AWG"));
+    */
 }
 
 void PulseConfigWidget::launchChannelConfig(int ch)

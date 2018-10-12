@@ -24,7 +24,10 @@ public slots:
     virtual bool setAll(const PulseGenConfig cc);
 
     virtual bool setRepRate(double d) =0;
+
+#ifdef BC_LIF
     virtual bool setLifDelay(double d);
+#endif
 
 signals:
     void settingUpdate(int,BlackChirp::PulseSetting,QVariant);

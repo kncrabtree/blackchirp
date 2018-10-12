@@ -39,9 +39,10 @@ public:
     PulseGenConfig getConfig();
 
     void makeInternalConnections();
-    void configureLif(double startingDelay);
     void configureChirp();
-
+#ifdef BC_LIF
+    void configureLif(double startingDelay);
+#endif
 
 signals:
     void changeSetting(int,BlackChirp::PulseSetting,QVariant);

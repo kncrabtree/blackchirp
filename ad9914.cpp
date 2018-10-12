@@ -1,5 +1,8 @@
 #include "ad9914.h"
 
+#include <QSerialPort>
+//#include <QTimer>
+
 #include <math.h>
 
 AD9914::AD9914(QObject *parent) : AWG(parent)
@@ -16,7 +19,7 @@ AD9914::AD9914(QObject *parent) : AWG(parent)
     s.setValue(QString("sampleRate"),d_clockFreqHz);
     s.setValue(QString("maxSamples"),1e9);
     s.setValue(QString("minFreq"),0.0);
-    s.setValue(QString("maxFreq"),d_clockFreqHz*0.4);
+    s.setValue(QString("maxFreq"),d_clockFreqHz*0.4/1e6);
     s.setValue(QString("hasProtectionPulse"),false);
     s.setValue(QString("hasAmpEnablePulse"),false);
     s.setValue(QString("rampOnly"),true);
@@ -33,7 +36,14 @@ bool AD9914::testConnection()
         return false;
     }
 
+//    auto port = dynamic_cast<QSerialPort*>(p_comm->device());
+//    port->setDataTerminalReady(true);
+//    port->setRequestToSend(true);
+
+    p_comm->device()->readAll();
     QByteArray resp = p_comm->queryCmd(QString("ID\n"));
+    resp = p_comm->queryCmd(QString("ID\n"));
+//    port->setDataTerminalReady(true);
 
     if(resp.isEmpty())
     {
@@ -58,9 +68,10 @@ bool AD9914::testConnection()
 void AD9914::initialize()
 {
     p_comm->initialize();
-    p_comm->setReadOptions(100,true,QByteArray("\n"));
+    p_comm->setReadOptions(1000,true,QByteArray("\n"));
 
     testConnection();
+//    QTimer::singleShot(2000,this,&AD9914::testConnection);
 }
 
 Experiment AD9914::prepareForExperiment(Experiment exp)
@@ -73,8 +84,25 @@ Experiment AD9914::prepareForExperiment(Experiment exp)
 
     d_enabledForExperiment = true;
 
+    auto rfc = exp.ftmwConfig().rfConfig();
     auto cc = exp.ftmwConfig().chirpConfig();
     auto seg = cc.chirpList().constFirst().constFirst();
+
+    auto clocks = rfc.getClocks();
+    if(clocks.contains(BlackChirp::AwgClock))
+    {
+        d_clockFreqHz = clocks.value(BlackChirp::AwgClock).desiredFreqMHz*1e6;
+        QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+        s.beginGroup(d_key);
+        s.beginGroup(d_subKey);
+        d_clockFreqHz = s.value(QString("sampleRate"),3.75e9).toDouble();
+        s.setValue(QString("sampleRate"),d_clockFreqHz);
+        s.setValue(QString("maxFreq"),d_clockFreqHz*0.4);
+        s.endGroup();
+        s.endGroup();
+
+        s.sync();
+    }
 
     //calculate ramp parameters (as close as possible)
     seg.startFreqMHz = 0.0;
@@ -126,7 +154,6 @@ Experiment AD9914::prepareForExperiment(Experiment exp)
     l2 << seg;
     l << l2;
     cc.setChirpList(l);
-    ///TODO: Deal with this for RfConfig
 
 
     QByteArray resp = p_comm->queryCmd(QString("IN\n"));
@@ -216,6 +243,11 @@ Experiment AD9914::prepareForExperiment(Experiment exp)
             return exp;
         }
     }
+
+    rfc.setChirpConfig(cc);
+    auto ftmwc = exp.ftmwConfig();
+    ftmwc.setRfConfig(rfc);
+    exp.setFtmwConfig(ftmwc);
 
     return exp;
 

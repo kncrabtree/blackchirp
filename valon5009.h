@@ -28,6 +28,12 @@ private:
     bool valonWriteCmd(QString cmd);
     QByteArray valonQueryCmd(QString cmd);
 
+    bool d_lockToExt10MHz;
+
+
+    // HardwareObject interface
+public slots:
+    Experiment prepareForExperiment(Experiment exp);
 };
 
 #endif // VALON5009_H
