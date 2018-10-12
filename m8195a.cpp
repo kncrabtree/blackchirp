@@ -51,7 +51,7 @@ bool M8195A::testConnection()
         return false;
     }
 
-    if(!resp.startsWith(QByteArray("KEYSIGHT TECHNOLOGIES,M8195A")))
+    if(!resp.startsWith(QByteArray("Keysight Technologies,M8195A")))
     {
         emit connected(false,QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp.trimmed())).arg(QString(resp.toHex())));
         return false;
