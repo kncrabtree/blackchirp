@@ -643,10 +643,10 @@ void MainWindow::updatePulseLed(int index, BlackChirp::PulseSetting s, QVariant 
         return;
 
     switch(s) {
-    case BlackChirp::PulseName:
+    case BlackChirp::PulseNameSetting:
         d_ledList.at(index).first->setText(val.toString());
         break;
-    case BlackChirp::PulseEnabled:
+    case BlackChirp::PulseEnabledSetting:
         d_ledList.at(index).second->setState(val.toBool());
         break;
     default:

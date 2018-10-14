@@ -11,6 +11,7 @@ class QDoubleSpinBox;
 class QPushButton;
 class QToolButton;
 class QLineEdit;
+class QComboBox;
 
 namespace Ui {
 class PulseConfigWidget;
@@ -34,11 +35,11 @@ public:
         QPushButton *levelButton;
         QDoubleSpinBox *delayStepBox;
         QDoubleSpinBox *widthStepBox;
+        QComboBox *roleBox;
     };
 
-    PulseGenConfig getConfig();
+    PulseGenConfig getConfig() const;
 
-    void makeInternalConnections();
     void configureChirp();
 #ifdef BC_LIF
     void configureLif(double startingDelay);
@@ -59,6 +60,7 @@ private:
     Ui::PulseConfigWidget *ui;
 
     QList<ChWidgets> d_widgetList;
+    PulseGenConfig d_config;
 
 
 };

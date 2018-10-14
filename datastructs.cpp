@@ -162,7 +162,6 @@ void BlackChirp::setExportDir(const QString fileName)
     s.setValue(QString("exportPath"),newPath);
 }
 
-
 QString BlackChirp::clockPrettyName(BlackChirp::ClockType t)
 {
     switch (t) {
@@ -250,3 +249,42 @@ double BlackChirp::getFtScalingFactor(BlackChirp::FtPlotUnits u)
         return 1.0;
     }
 }
+
+QString BlackChirp::getPulseName(BlackChirp::PulseRole ch)
+{
+    switch (ch) {
+    case GasPulseRole:
+        return QString("Gas");
+    case DcPulseRole:
+        return QString("DC");
+    case AwgPulseRole:
+        return QString("AWG");
+    case ProtPulseRole:
+        return QString("Prot");
+    case AmpPulseRole:
+        return QString("Amp");
+    case LaserPulseRole:
+        return QString("Laser");
+    case LifScopePulseRole:
+        return QString("LIF");
+    case MotorScopePulseRole:
+        return QString("Motor");
+    case ExcimerRole:
+        return QString("XMer");
+    case NoPulseRole:
+        return QString("None");
+    default:
+        return QString("");
+    }
+}
+
+QList<BlackChirp::PulseRole> BlackChirp::allPulseRoles()
+{
+    QList<BlackChirp::PulseRole> out;
+    out << NoPulseRole << GasPulseRole << DcPulseRole << AwgPulseRole
+        << ProtPulseRole << AmpPulseRole << LaserPulseRole << LifScopePulseRole
+        << MotorScopePulseRole << ExcimerRole;
+
+    return out;
+}
+

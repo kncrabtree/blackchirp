@@ -64,7 +64,22 @@ enum MotorAxis {
 };
 
 enum PulseActiveLevel { PulseLevelActiveLow, PulseLevelActiveHigh };
-enum PulseSetting { PulseDelay, PulseWidth, PulseEnabled, PulseLevel, PulseName };
+enum PulseSetting { PulseDelaySetting, PulseWidthSetting, PulseEnabledSetting, PulseLevelSetting, PulseNameSetting, PulseRoleSetting };
+enum PulseRole {
+    NoPulseRole,
+    GasPulseRole,
+    DcPulseRole,
+    AwgPulseRole,
+    ProtPulseRole,
+    AmpPulseRole,
+    LaserPulseRole,
+    LifScopePulseRole,
+    MotorScopePulseRole,
+    ExcimerRole
+};
+
+QList<PulseRole> allPulseRoles();
+QString getPulseName(PulseRole ch);
 
 enum FtWindowFunction {
     Bartlett,
@@ -269,8 +284,10 @@ struct PulseChannelConfig {
     double delay;
     double width;
     PulseActiveLevel level;
+    PulseRole role;
 
-    PulseChannelConfig() : channel(-1), enabled(false), delay(-1.0), width(-1.0), level(PulseLevelActiveHigh) {}
+    PulseChannelConfig() : channel(-1), channelName(QString("")), enabled(false), delay(-1.0),
+        width(-1.0), level(PulseLevelActiveHigh), role(NoPulseRole) {}
 };
 
 enum ExptFileType {
@@ -328,6 +345,8 @@ Q_DECLARE_METATYPE(BlackChirp::ScopeTriggerSlope)
 Q_DECLARE_METATYPE(BlackChirp::LifPoint)
 Q_DECLARE_METATYPE(BlackChirp::LogMessageCode)
 Q_DECLARE_METATYPE(BlackChirp::PulseActiveLevel)
+Q_DECLARE_METATYPE(BlackChirp::PulseSetting)
+Q_DECLARE_METATYPE(BlackChirp::PulseRole)
 Q_DECLARE_METATYPE(BlackChirp::LifScanOrder)
 Q_DECLARE_METATYPE(BlackChirp::LifCompleteMode)
 Q_DECLARE_METATYPE(BlackChirp::ValidationItem)

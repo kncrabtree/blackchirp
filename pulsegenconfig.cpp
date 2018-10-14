@@ -47,20 +47,23 @@ QVariant PulseGenConfig::setting(const int index, const BlackChirp::PulseSetting
 
     switch(s)
     {
-    case BlackChirp::PulseDelay:
+    case BlackChirp::PulseDelaySetting:
         return data->config.at(index).delay;
         break;
-    case BlackChirp::PulseWidth:
+    case BlackChirp::PulseWidthSetting:
         return data->config.at(index).width;
         break;
-    case BlackChirp::PulseEnabled:
+    case BlackChirp::PulseEnabledSetting:
         return data->config.at(index).enabled;
         break;
-    case BlackChirp::PulseLevel:
+    case BlackChirp::PulseLevelSetting:
         return data->config.at(index).level;
         break;
-    case BlackChirp::PulseName:
+    case BlackChirp::PulseNameSetting:
         return data->config.at(index).channelName;
+        break;
+    case BlackChirp::PulseRoleSetting:
+        return data->config.at(index).role;
         break;
     default:
         break;
@@ -94,6 +97,7 @@ QMap<QString, QPair<QVariant, QString> > PulseGenConfig::headerMap() const
         out.insert(QString("PulseGen.%1.Delay").arg(i),qMakePair(QString::number(data->config.at(i).delay,'f',3),QString::fromUtf16(u"µs")));
         out.insert(QString("PulseGen.%1.Width").arg(i),qMakePair(QString::number(data->config.at(i).width,'f',3),QString::fromUtf16(u"µs")));
         out.insert(QString("PulseGen.%1.Level").arg(i),qMakePair(data->config.at(i).level,QString("")));
+        out.insert(QString("PulseGen.%1.Role").arg(i),qMakePair(data->config.at(i).role,BlackChirp::getPulseName(data->config.at(i).role)));
     }
     out.insert(QString("PulseGenRepRate"),qMakePair(QString::number(data->repRate,'f',1),QString("Hz")));
 
@@ -123,7 +127,10 @@ void PulseGenConfig::parseLine(QString key, QVariant val)
             }
 
             if(subKey.endsWith(QString("Name")))
-                data->config[index].channelName = val.toString();
+            {
+                if(data->config.at(index).role == BlackChirp::NoPulseRole)
+                    data->config[index].channelName = val.toString();
+            }
             if(subKey.endsWith(QString("Enabled")))
                 data->config[index].enabled = val.toBool();
             if(subKey.endsWith(QString("Delay")))
@@ -132,6 +139,11 @@ void PulseGenConfig::parseLine(QString key, QVariant val)
                 data->config[index].width = val.toDouble();
             if(subKey.endsWith(QString("Level")))
                 data->config[index].level = (BlackChirp::PulseActiveLevel)val.toInt();
+            if(subKey.endsWith(QString("Role")))
+            {
+                data->config[index].role = static_cast<BlackChirp::PulseRole>(val.toInt());
+                data->config[index].channelName = BlackChirp::getPulseName(data->config.at(index).role);
+            }
         }
     }
 }
@@ -143,21 +155,28 @@ void PulseGenConfig::set(const int index, const BlackChirp::PulseSetting s, cons
 
     switch(s)
     {
-    case BlackChirp::PulseDelay:
+    case BlackChirp::PulseDelaySetting:
         data->config[index].delay = val.toDouble();
         break;
-    case BlackChirp::PulseWidth:
+    case BlackChirp::PulseWidthSetting:
         data->config[index].width = val.toDouble();
         break;
-    case BlackChirp::PulseEnabled:
+    case BlackChirp::PulseEnabledSetting:
         data->config[index].enabled = val.toBool();
         break;
-    case BlackChirp::PulseLevel:
+    case BlackChirp::PulseLevelSetting:
         data->config[index].level = static_cast<BlackChirp::PulseActiveLevel>(val.toInt());
         break;
-    case BlackChirp::PulseName:
-        data->config[index].channelName = val.toString();
+    case BlackChirp::PulseNameSetting:
+        if(data->config.at(index).role == BlackChirp::NoPulseRole)
+            data->config[index].channelName = val.toString();
+        else
+            data->config[index].channelName = BlackChirp::getPulseName(data->config.at(index).role);
         break;
+    case BlackChirp::PulseRoleSetting:
+        data->config[index].role = static_cast<BlackChirp::PulseRole>(val.toInt());
+        if(data->config.at(index).role != BlackChirp::NoPulseRole)
+            data->config[index].channelName = BlackChirp::getPulseName(data->config.at(index).role);
     default:
         break;
     }
@@ -168,14 +187,33 @@ void PulseGenConfig::set(const int index, const BlackChirp::PulseChannelConfig c
     if(index < 0 || index >= data->config.size())
         return;
 
-    set(index,BlackChirp::PulseDelay,cc.delay);
-    set(index,BlackChirp::PulseWidth,cc.width);
-    set(index,BlackChirp::PulseEnabled,cc.enabled);
-    set(index,BlackChirp::PulseLevel,cc.level);
-    set(index,BlackChirp::PulseName,cc.channelName);
+    set(index,BlackChirp::PulseDelaySetting,cc.delay);
+    set(index,BlackChirp::PulseWidthSetting,cc.width);
+    set(index,BlackChirp::PulseEnabledSetting,cc.enabled);
+    set(index,BlackChirp::PulseLevelSetting,cc.level);
+    set(index,BlackChirp::PulseNameSetting,cc.channelName);
+    set(index,BlackChirp::PulseRoleSetting,cc.role);
 }
 
-void PulseGenConfig::add(const QString name, const bool enabled, const double delay, const double width, const BlackChirp::PulseActiveLevel level)
+void PulseGenConfig::set(BlackChirp::PulseRole role, const BlackChirp::PulseSetting s, const QVariant val)
+{
+    for(int i=0; i<data->config.size(); i++)
+    {
+        if(data->config.at(i).role == role)
+            set(i,s,val);
+    }
+}
+
+void PulseGenConfig::set(BlackChirp::PulseRole role, const BlackChirp::PulseChannelConfig cc)
+{
+    for(int i=0; i<data->config.size(); i++)
+    {
+        if(data->config.at(i).role == role)
+            set(i,cc);
+    }
+}
+
+void PulseGenConfig::add(const QString name, const bool enabled, const double delay, const double width, const BlackChirp::PulseActiveLevel level, const BlackChirp::PulseRole role)
 {
     BlackChirp::PulseChannelConfig cc;
     cc.channel = data->config.size()+1;
@@ -184,6 +222,9 @@ void PulseGenConfig::add(const QString name, const bool enabled, const double de
     cc.delay = delay;
     cc.width = width;
     cc.level = level;
+    cc.role = role;
+    if(role != BlackChirp::NoPulseRole)
+        cc.channelName = BlackChirp::getPulseName(role);
 
     data->config.append(cc);
 }

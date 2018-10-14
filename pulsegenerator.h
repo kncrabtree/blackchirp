@@ -13,6 +13,7 @@ public:
     virtual ~PulseGenerator();
 
 public slots:
+    virtual void initialize();
     PulseGenConfig config() const { return d_config; }
     virtual QVariant read(const int index, const BlackChirp::PulseSetting s) =0;
     virtual double readRepRate() =0;

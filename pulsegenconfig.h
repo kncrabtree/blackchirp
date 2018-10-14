@@ -31,7 +31,9 @@ public:
 
     void set(const int index, const BlackChirp::PulseSetting s, const QVariant val);
     void set(const int index, const BlackChirp::PulseChannelConfig cc);
-    void add(const QString name, const bool enabled, const double delay, const double width, const BlackChirp::PulseActiveLevel level);
+    void set(BlackChirp::PulseRole role, const BlackChirp::PulseSetting s, const QVariant val);
+    void set(BlackChirp::PulseRole role, const BlackChirp::PulseChannelConfig cc);
+    void add(const QString name, const bool enabled, const double delay, const double width, const BlackChirp::PulseActiveLevel level, const BlackChirp::PulseRole role = BlackChirp::NoPulseRole);
     void setRepRate(const double r);
 
 private:

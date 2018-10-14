@@ -46,30 +46,7 @@ bool VirtualPulseGenerator::testConnection()
 
 void VirtualPulseGenerator::initialize()
 {
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-
-    s.beginReadArray(QString("channels"));
-    for(int i=0; i<BC_PGEN_NUMCHANNELS; i++)
-    {
-        s.setArrayIndex(i);
-        QString name = s.value(QString("name"),QString("Ch%1").arg(i)).toString();
-        double d = s.value(QString("defaultDelay"),0.0).toDouble();
-        double w = s.value(QString("defaultWidth"),0.050).toDouble();
-        QVariant lvl = s.value(QString("level"),BlackChirp::PulseLevelActiveHigh);
-        bool en = s.value(QString("defaultEnabled"),false).toBool();
-
-        if(lvl == QVariant(BlackChirp::PulseLevelActiveHigh))
-            d_config.add(name,en,d,w,BlackChirp::PulseLevelActiveHigh);
-        else
-            d_config.add(name,en,d,w,BlackChirp::PulseLevelActiveLow);
-    }
-    s.endArray();
-
-    d_config.setRepRate(s.value(QString("repRate"),10.0).toDouble());
-    s.endGroup();
-    s.endGroup();
+    PulseGenerator::initialize();
 
     testConnection();
 }
@@ -107,6 +84,14 @@ double VirtualPulseGenerator::readRepRate()
 bool VirtualPulseGenerator::set(const int index, const BlackChirp::PulseSetting s, const QVariant val)
 {
     d_config.set(index,s,val);
+    if(s == BlackChirp::PulseRoleSetting)
+    {
+        if(static_cast<BlackChirp::PulseRole>(val.toInt()) != BlackChirp::NoPulseRole)
+        {
+            d_config.set(index,BlackChirp::PulseNameSetting,BlackChirp::getPulseName(static_cast<BlackChirp::PulseRole>(val.toInt())));
+            read(index,BlackChirp::PulseNameSetting);
+        }
+    }
     read(index,s);
     return true;
 }

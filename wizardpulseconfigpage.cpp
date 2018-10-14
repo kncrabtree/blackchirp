@@ -14,7 +14,6 @@ WizardPulseConfigPage::WizardPulseConfigPage(QWidget *parent) :
     QVBoxLayout *vbl = new QVBoxLayout();
 
     p_pcw = new PulseConfigWidget(this);
-    p_pcw->makeInternalConnections();
     vbl->addWidget(p_pcw);
 
     setLayout(vbl);
@@ -52,5 +51,6 @@ bool WizardPulseConfigPage::validatePage()
     auto e = getExperiment();
     e.setPulseGenConfig(p_pcw->getConfig());
     emit experimentUpdate(e);
+
     return true;
 }
