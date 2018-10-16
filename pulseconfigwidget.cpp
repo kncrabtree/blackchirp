@@ -9,6 +9,7 @@
 #include <QDialog>
 #include <QFormLayout>
 #include <QDialogButtonBox>
+#include <QMessageBox>
 
 PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
     QWidget(parent),
@@ -159,7 +160,6 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
     s.endGroup();
 
     setFocusPolicy(Qt::TabFocus);
-    connect(this,&PulseConfigWidget::changeSetting,ui->pulsePlot,&PulsePlot::newSetting);
 }
 
 PulseConfigWidget::~PulseConfigWidget()
@@ -172,36 +172,157 @@ PulseGenConfig PulseConfigWidget::getConfig() const
     return d_config;
 }
 
-#ifdef BC_LIF
-void PulseConfigWidget::configureLif(double startingDelay)
+void PulseConfigWidget::configureForWizard()
 {
-    if(d_widgetList.isEmpty())
+    connect(this,&PulseConfigWidget::changeSetting,this,&PulseConfigWidget::newSetting);
+}
+
+#ifdef BC_LIF
+void PulseConfigWidget::configureLif(const LifConfig c)
+{
+    if(d_widgetList.isEmpty() || !c.isEnabled())
         return;
 
-    d_widgetList.at(BC_PGEN_LIFCHANNEL).delayBox->setValue(startingDelay);
-    d_widgetList.at(BC_PGEN_LIFCHANNEL).delayBox->setEnabled(false);
-    d_widgetList.at(BC_PGEN_LIFCHANNEL).onButton->setChecked(true);
-    d_widgetList.at(BC_PGEN_LIFCHANNEL).onButton->setEnabled(false);
-    d_widgetList.at(BC_PGEN_LIFCHANNEL).label->setText(QString("LIF"));
-    d_widgetList.at(BC_PGEN_LIFCHANNEL).nameEdit->setText(QString("LIF"));
-    d_widgetList.at(BC_PGEN_LIFCHANNEL).nameEdit->setEnabled(false);
-    ui->pulsePlot->newSetting(BC_PGEN_LIFCHANNEL,BlackChirp::PulseNameSetting,QString("LIF"));
+    auto channels = d_config.channelsForRole(BlackChirp::LaserPulseRole);
+    if(channels.isEmpty())
+    {
+        QMessageBox::warning(this,QString("Cannot configure LIF laser pulse"),QString("No channel has been configured for the \"Laser\" role.\n\nPlease select a channel for the Laser role, then refresh this page (go back one page and then come back to this one) in order to proceed."),QMessageBox::Ok,QMessageBox::Ok);
+        return;
+    }
 
+    auto delay = c.delayRange().first;
+
+    d_config.set(BlackChirp::LaserPulseRole,BlackChirp::PulseDelaySetting,delay);
+    d_config.set(BlackChirp::LaserPulseRole,BlackChirp::PulseEnabledSetting,true);
+    setFromConfig(d_config);
+
+    for(int i=0; i<channels.size(); i++)
+    {
+        auto ch = channels.at(i);
+        d_widgetList.at(ch).delayBox->setEnabled(false);
+        d_widgetList.at(ch).onButton->setEnabled(false);
+        d_widgetList.at(ch).cfgButton->setEnabled(false);
+    }
 }
 #endif
 
-void PulseConfigWidget::configureChirp()
+void PulseConfigWidget::configureFtmw(const FtmwConfig c)
 {
+    if(!c.isEnabled())
+        return;
+
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("awg"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    bool awgHasProt = s.value(QString("hasProtectionPulse"),false).toBool();
+    bool awgHasAmpEnable = s.value(QString("hasAmpEnablePulse"),false).toBool();
+    s.endGroup();
+    s.endGroup();
+
+    auto protChannels = d_config.channelsForRole(BlackChirp::ProtPulseRole);
+    auto awgChannels = d_config.channelsForRole(BlackChirp::AwgPulseRole);
+    auto ampChannels = d_config.channelsForRole(BlackChirp::AmpPulseRole);
+
+    if(!awgHasProt && protChannels.isEmpty())
+        QMessageBox::warning(this,QString("Cannot configure protection pulse"),QString("No channel has been configured for the \"Prot\" role, and your AWG does not produce its own protection signal.\n\nBlackchirp cannot guarantee that your receiver amp will be protected!\n\nIf you wish for Blackchirp to generate a protection pulse, select a channel for the Prot role and refresh this page (go back one page and then come back to this one)."),QMessageBox::Ok,QMessageBox::Ok);
+
+    if(!awgHasProt && awgChannels.isEmpty())
+        QMessageBox::warning(this,QString("Cannot configure protection pulse"),QString("No channel has been configured for the \"AWG\" role, and your AWG does not produce its own protection signal.\n\nBlackchirp cannot guarantee that your receiver amp will be protected because it does not know when your AWG is triggered!\n\nIf you wish for Blackchirp to generate a protection pulse, select a channel for the AWG role and refresh this page (go back one page and then come back to this one)."),QMessageBox::Ok,QMessageBox::Ok);
+
+    if(!awgHasProt && c.chirpConfig(0).numChirps() > 1)
+        QMessageBox::warning(this,QString("Warning: multiple chirps"),QString("You have requested multiple chirps, and your AWG cannot generate its own protection signal.\nBlackchirp does not know how to configure your delay generator in a burst mode to generate a protection signal with each chirp.\n\nProceed at your own risk."),QMessageBox::Ok,QMessageBox::Ok);
+
     if(d_widgetList.isEmpty())
         return;
-/*
-    d_widgetList.at(BC_PGEN_AWGCHANNEL).onButton->setChecked(true);
-    d_widgetList.at(BC_PGEN_AWGCHANNEL).onButton->setEnabled(false);
-    d_widgetList.at(BC_PGEN_AWGCHANNEL).label->setText(QString("AWG"));
-    d_widgetList.at(BC_PGEN_AWGCHANNEL).nameEdit->setText(QString("AWG"));
-    d_widgetList.at(BC_PGEN_AWGCHANNEL).nameEdit->setEnabled(false);
-    ui->pulsePlot->newSetting(BC_PGEN_AWGCHANNEL,BlackChirp::PulseName,QString("AWG"));
-*/
+
+    auto cc = c.chirpConfig();
+    d_config.set(BlackChirp::AwgPulseRole,BlackChirp::PulseEnabledSetting,true);
+    auto l = d_config.setting(BlackChirp::AwgPulseRole,BlackChirp::PulseDelaySetting);
+
+    if(l.size() > 1)
+    {
+        d_config.set(BlackChirp::AwgPulseRole,BlackChirp::PulseDelaySetting,l.constFirst());
+        d_config.set(BlackChirp::AwgPulseRole,BlackChirp::PulseWidthSetting,d_config.setting(BlackChirp::AmpPulseRole,BlackChirp::PulseWidthSetting).constFirst().toDouble());
+    }
+
+    if(!l.isEmpty())
+    {
+        double awgStart = l.constFirst().toDouble();
+        if(!awgHasProt)
+        {
+            double protStart = awgStart - cc.preChirpProtectionDelay() - cc.preChirpGateDelay();
+            if(protStart < 0.0)
+            {
+                awgStart -= protStart;
+                d_config.set(BlackChirp::AwgPulseRole,BlackChirp::PulseDelaySetting,awgStart);
+                protStart = 0.0;
+            }
+
+            double protWidth = cc.totalProtectionWidth();
+
+            d_config.set(BlackChirp::ProtPulseRole,BlackChirp::PulseDelaySetting,protStart);
+            d_config.set(BlackChirp::ProtPulseRole,BlackChirp::PulseWidthSetting,protWidth);
+            d_config.set(BlackChirp::ProtPulseRole,BlackChirp::PulseEnabledSetting,true);
+        }
+
+        bool checkProt = false;
+        if(!awgHasAmpEnable)
+        {
+            double gateStart = awgStart - cc.preChirpGateDelay();
+            if(gateStart < 0.0)
+            {
+                awgStart -= gateStart;
+                d_config.set(BlackChirp::AwgPulseRole,BlackChirp::PulseDelaySetting,awgStart);
+                gateStart = 0.0;
+                checkProt = true;
+            }
+
+            double gateWidth = cc.totalGateWidth();
+
+            d_config.set(BlackChirp::AmpPulseRole,BlackChirp::PulseDelaySetting,gateStart);
+            d_config.set(BlackChirp::AmpPulseRole,BlackChirp::PulseWidthSetting,gateWidth);
+            d_config.set(BlackChirp::AmpPulseRole,BlackChirp::PulseEnabledSetting,true);
+        }
+
+        if(!awgHasProt && checkProt)
+        {
+            double protStart = awgStart - cc.preChirpProtectionDelay() - cc.preChirpGateDelay();
+            double protWidth = cc.totalProtectionWidth();
+
+            d_config.set(BlackChirp::ProtPulseRole,BlackChirp::PulseDelaySetting,protStart);
+            d_config.set(BlackChirp::ProtPulseRole,BlackChirp::PulseWidthSetting,protWidth);
+        }
+    }
+
+    setFromConfig(d_config);
+
+    for(int i=0; i<awgChannels.size(); i++)
+    {
+        auto ch = awgChannels.at(i);
+        d_widgetList.at(ch).onButton->setEnabled(false);
+        d_widgetList.at(ch).delayBox->setEnabled(false);
+        d_widgetList.at(ch).cfgButton->setEnabled(false);
+    }
+
+    for(int i=0; i<protChannels.size(); i++)
+    {
+        auto ch = protChannels.at(i);
+        d_widgetList.at(ch).onButton->setEnabled(false);
+        d_widgetList.at(ch).delayBox->setEnabled(false);
+        d_widgetList.at(ch).widthBox->setEnabled(false);
+        d_widgetList.at(ch).cfgButton->setEnabled(false);
+    }
+
+    for(int i=0; i<ampChannels.size(); i++)
+    {
+        auto ch = ampChannels.at(i);
+        d_widgetList.at(ch).onButton->setEnabled(false);
+        d_widgetList.at(ch).delayBox->setEnabled(false);
+        d_widgetList.at(ch).widthBox->setEnabled(false);
+        d_widgetList.at(ch).cfgButton->setEnabled(false);
+    }
+
+
 }
 
 void PulseConfigWidget::launchChannelConfig(int ch)

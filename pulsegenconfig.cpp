@@ -72,6 +72,18 @@ QVariant PulseGenConfig::setting(const int index, const BlackChirp::PulseSetting
     return QVariant();
 }
 
+QList<QVariant> PulseGenConfig::setting(BlackChirp::PulseRole role, const BlackChirp::PulseSetting s) const
+{
+    QList<QVariant> out;
+    for(int i=0; i<data->config.size(); i++)
+    {
+        if(data->config.at(i).role == role)
+            out << setting(i,s);
+    }
+
+    return out;
+}
+
 BlackChirp::PulseChannelConfig PulseGenConfig::settings(const int index) const
 {
     if(index < 0 || index >= data->config.size())
@@ -79,6 +91,18 @@ BlackChirp::PulseChannelConfig PulseGenConfig::settings(const int index) const
 
     return data->config.at(index);
 
+}
+
+QList<int> PulseGenConfig::channelsForRole(BlackChirp::PulseRole role) const
+{
+    QList<int> out;
+    for(int i=0; i<data->config.size(); i++)
+    {
+        if(data->config.at(i).role == role)
+            out << i;
+    }
+
+    return out;
 }
 
 double PulseGenConfig::repRate() const

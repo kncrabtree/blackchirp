@@ -70,6 +70,7 @@ bool PulseGenerator::setChannel(const int index, const BlackChirp::PulseChannelC
     success &= set(index,BlackChirp::PulseDelaySetting,cc.delay);
     success &= set(index,BlackChirp::PulseWidthSetting,cc.width);
     success &= set(index,BlackChirp::PulseLevelSetting,cc.level);
+    set(index,BlackChirp::PulseRoleSetting,cc.role);
 
     return success;
 }

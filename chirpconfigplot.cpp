@@ -10,7 +10,7 @@
 
 #include "chirpconfig.h"
 
-ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(QString("ChirpConfigPlot"),parent), d_protectionEnabled(true), d_ampEnablePulseEnabled(true)
+ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(QString("ChirpConfigPlot"),parent)
 {
 
     //make axis label font smaller
@@ -37,12 +37,12 @@ ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(QString("ChirpCo
     p_ampEnableCurve= new QwtPlotCurve(QString("Amp Enable"));
     color = s.value(QString("ampEnableColor"),pal.brightText().color()).value<QColor>();
     p_ampEnableCurve->setPen(QPen(color));
-//    p_ampEnableCurve->attach(this);
+    p_ampEnableCurve->attach(this);
 
     p_protectionCurve = new QwtPlotCurve(QString("Protection"));
     color = s.value(QString("protectionColor"),pal.brightText().color()).value<QColor>();
     p_protectionCurve->setPen(QPen(color));
-//    p_protectionCurve->attach(this);
+    p_protectionCurve->attach(this);
 
     setAxisAutoScaleRange(QwtPlot::yLeft,-1.0,1.0);
 
@@ -90,25 +90,19 @@ void ChirpConfigPlot::newChirp(const ChirpConfig cc)
         double protectionEndTime = chirpEndTime + cc.postChirpProtectionDelay();
 
         //build protection data
-        if(d_protectionEnabled)
-        {
-            protectionData.append(QPointF(segmentStartTime,0.0));
-            protectionData.append(QPointF(segmentStartTime,1.0));
-            protectionData.append(QPointF(protectionEndTime,1.0));
-            protectionData.append(QPointF(protectionEndTime,0.0));
-        }
+        protectionData.append(QPointF(segmentStartTime,0.0));
+        protectionData.append(QPointF(segmentStartTime,1.0));
+        protectionData.append(QPointF(protectionEndTime,1.0));
+        protectionData.append(QPointF(protectionEndTime,0.0));
 
 
         //build Enable data
-        if(d_ampEnablePulseEnabled)
-        {
-            ampData.append(QPointF(segmentStartTime,0.0));
-            ampData.append(QPointF(twtEnableTime,0.0));
-            ampData.append(QPointF(twtEnableTime,1.0));
-            ampData.append(QPointF(twtEndTime,1.0));
-            ampData.append(QPointF(twtEndTime,0.0));
-            ampData.append(QPointF(protectionEndTime,0.0));
-        }
+        ampData.append(QPointF(segmentStartTime,0.0));
+        ampData.append(QPointF(twtEnableTime,0.0));
+        ampData.append(QPointF(twtEnableTime,1.0));
+        ampData.append(QPointF(twtEndTime,1.0));
+        ampData.append(QPointF(twtEndTime,0.0));
+        ampData.append(QPointF(protectionEndTime,0.0));
 
     }
 
@@ -139,22 +133,6 @@ void ChirpConfigPlot::buildContextMenu(QMouseEvent *me)
         protAction->setEnabled(false);
 
     menu->popup(me->globalPos());
-}
-
-void ChirpConfigPlot::setProtectionEnabled(bool en)
-{
-    d_protectionEnabled = en;
-    p_protectionCurve->detach();
-    if(en)
-        p_protectionCurve->attach(this);
-}
-
-void ChirpConfigPlot::setAmpEnablePulseEnabled(bool en)
-{
-    d_ampEnablePulseEnabled = en;
-    p_ampEnableCurve->detach();
-    if(en)
-        p_ampEnableCurve->attach(this);
 }
 
 void ChirpConfigPlot::setCurveColor(QwtPlotCurve *c)

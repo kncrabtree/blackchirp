@@ -28,14 +28,6 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
         ui->chirpsSpinBox->setEnabled(false);
     }
 
-    s.beginGroup(QString("awg"));
-    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-    bool hasProtectionPulse = s.value(QString("hasProtectionPulse"),true).toBool();
-    bool hasAmpEnablePulse = s.value(QString("hasAmpEnablePulse"),true).toBool();
-    d_rampOnly = s.value(QString("rampOnly"),false).toBool();
-    s.endGroup();
-    s.endGroup();
-
     s.beginGroup(QString("protectionLimits"));
     double minPreProt = s.value(QString("minPreChirpProtectionDelayUs"),0.010).toDouble();
     double minPreGate = s.value(QString("minPreChirpGateDelayUs"),0.100).toDouble();
@@ -52,24 +44,6 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     ui->preChirpDelaySpinBox->setMinimum(minPreGate*1000);
     ui->postChirpDelaySpinBox->setMinimum(minPostGate*1000);
     ui->postChirpProtectionSpinBox->setMinimum(minPostProt*1000);
-
-    if(!hasProtectionPulse && BC_PGEN_PROTCHANNEL < 0)
-    {
-        ui->preChirpProtectionSpinBox->setRange(0,0);
-        ui->preChirpProtectionSpinBox->setEnabled(false);
-        ui->postChirpProtectionSpinBox->setRange(0,0);
-        ui->postChirpProtectionSpinBox->setEnabled(false);
-    }
-    ui->chirpPlot->setProtectionEnabled(hasProtectionPulse);
-
-    if(!hasAmpEnablePulse && BC_PGEN_AMPGATECHANNEL < 0)
-    {
-        ui->preChirpDelaySpinBox->setRange(0,0);
-        ui->preChirpDelaySpinBox->setEnabled(false);
-        ui->postChirpDelaySpinBox->setRange(0,0);
-        ui->postChirpDelaySpinBox->setEnabled(false);
-    }
-    ui->chirpPlot->setAmpEnablePulseEnabled(hasAmpEnablePulse);
 
 
     connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::setButtonStates);

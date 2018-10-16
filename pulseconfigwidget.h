@@ -5,6 +5,8 @@
 #include <QList>
 
 #include "pulsegenconfig.h"
+#include "lifconfig.h"
+#include "ftmwconfig.h"
 
 class QLabel;
 class QDoubleSpinBox;
@@ -40,9 +42,11 @@ public:
 
     PulseGenConfig getConfig() const;
 
-    void configureChirp();
+    void configureForWizard();
+
+    void configureFtmw(const FtmwConfig c);
 #ifdef BC_LIF
-    void configureLif(double startingDelay);
+    void configureLif(const LifConfig c);
 #endif
 
 signals:

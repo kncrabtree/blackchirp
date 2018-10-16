@@ -16,14 +16,10 @@ public:
 public slots:
     void newChirp(const ChirpConfig cc);
     void buildContextMenu(QMouseEvent *me);
-    void setProtectionEnabled(bool en = true);
-    void setAmpEnablePulseEnabled(bool en = true);
 
 private:
     QwtPlotCurve *p_ampEnableCurve, *p_protectionCurve, *p_chirpCurve;
     QVector<QPointF> d_chirpData;
-    bool d_protectionEnabled;
-    bool d_ampEnablePulseEnabled;
 
     void setCurveColor(QwtPlotCurve *c);
 

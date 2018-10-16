@@ -24,7 +24,9 @@ public:
     int size() const;
     bool isEmpty() const;
     QVariant setting(const int index, const BlackChirp::PulseSetting s) const;
+    QList<QVariant> setting(BlackChirp::PulseRole role, const BlackChirp::PulseSetting s) const;
     BlackChirp::PulseChannelConfig settings(const int index) const;
+    QList<int> channelsForRole(BlackChirp::PulseRole role) const;
     double repRate() const;
     QMap<QString,QPair<QVariant,QString>> headerMap() const;
     void parseLine(QString key, QVariant val);

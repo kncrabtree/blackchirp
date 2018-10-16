@@ -20,6 +20,7 @@ public:
 
 private:
     PulseConfigWidget *p_pcw;
+    bool d_firstInitialization;
 
 };
 

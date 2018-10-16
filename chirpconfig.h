@@ -26,6 +26,8 @@ public:
     double preChirpGateDelay() const;
     double postChirpGateDelay() const;
     double postChirpProtectionDelay() const;
+    double totalProtectionWidth() const;
+    double totalGateWidth() const;
     int numChirps() const;
     double chirpInterval() const;
     bool allChirpsIdentical() const;

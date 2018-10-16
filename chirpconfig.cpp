@@ -64,6 +64,16 @@ double ChirpConfig::postChirpProtectionDelay() const
     return data->protectionDelaysUs.second;
 }
 
+double ChirpConfig::totalProtectionWidth() const
+{
+    return data->protectionDelaysUs.first + data->gateDelaysUs.first + chirpDuration(0) + data->protectionDelaysUs.second;
+}
+
+double ChirpConfig::totalGateWidth() const
+{
+    return data->gateDelaysUs.first + chirpDuration(0) + data->gateDelaysUs.second;
+}
+
 int ChirpConfig::numChirps() const
 {
     return data->chirpList.size();

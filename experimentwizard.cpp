@@ -40,7 +40,7 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
     d_pages << digitizerConfigPage;
 
     auto pulseConfigPage = new WizardPulseConfigPage(this);
-    d_pages << digitizerConfigPage;
+    d_pages << pulseConfigPage;
 
     auto validationPage = new WizardValidationPage(this);
     d_pages << validationPage;
