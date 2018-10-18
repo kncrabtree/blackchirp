@@ -36,20 +36,29 @@ bool AD9914::testConnection()
         return false;
     }
 
-//    auto port = dynamic_cast<QSerialPort*>(p_comm->device());
-//    port->setDataTerminalReady(true);
-//    port->setRequestToSend(true);
-
-    p_comm->device()->readAll();
-    QByteArray resp = p_comm->queryCmd(QString("ID\n"));
-    resp = p_comm->queryCmd(QString("ID\n"));
-//    port->setDataTerminalReady(true);
-
-    if(resp.isEmpty())
+    QByteArray resp;
+    int count = 0;
+    while(true)
     {
-        emit connected(false,QString("Did not respond to ID query."));
-        return false;
+        count++;
+        resp = p_comm->queryCmd(QString("ID\n"));
+
+        if(resp.isEmpty())
+        {
+            emit connected(false,QString("Did not respond to ID query."));
+            return false;
+        }
+
+        if(!resp.startsWith("SUCCESS"))
+            break;
+
+        if(count > 4)
+        {
+            emit connected(false,QString("Could not communicate after 5 attempts."));
+            return false;
+        }
     }
+
 
     if(!resp.startsWith(QByteArray("AD9914")))
     {
@@ -71,7 +80,7 @@ void AD9914::initialize()
     p_comm->setReadOptions(1000,true,QByteArray("\n"));
 
     testConnection();
-//    QTimer::singleShot(2000,this,&AD9914::testConnection);
+//    QTimer::singleShot(4000,this,&AD9914::testConnection);
 }
 
 Experiment AD9914::prepareForExperiment(Experiment exp)

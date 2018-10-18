@@ -39,20 +39,13 @@ FTMWSCOPE=2
 AWG=2
 
 #Clocks. Include in a space-delimited list, up to 5 numbers
+#Definitions: (0 = FixedClock, 1 = Valon5009, 2 = Valon2015)
 #For example:
 #CLOCKS=0 0 1 3 2
 CLOCKS=0 0
 
 #Pulse generator (0 = virtual, 1 = Quantum Composers 9528+, 2 = Quantum Composers 9518)
 PGEN=2
-#pulse generator channel definitions (0 = A, 1 = B, etc...)
-#Can set any of these to -1 to ignore, but some functionality may be limited.
-#PGEN_AWG sets which channel is used to trigger the chirp. Helps locate chirp for phase correction
-#PGEN_PROT sets which channel is used to trigger protection switch. Set to -1 if AWG generates the protection signal
-#PGEN_AMP_GATE sets which channel controls amplifier gate. Set to -1 if this is done by AWG
-PGEN_AWG=1
-PGEN_PROT=2
-PGEN_AMP_GATE=3
 #num channels
 PGEN_CHANNELS=8
 
@@ -89,9 +82,6 @@ FTMWSCOPE=0
 AWG=0
 CLOCKS=0 0
 PGEN=0
-PGEN_AWG=-1
-PGEN_PROT=-1
-PGEN_AMP_GATE=-1
 PGEN_CHANNELS=8
 FC=0
 FC_CHANNELS=4
@@ -186,7 +176,7 @@ motor {
 
 DEFINES += BC_FTMWSCOPE=$$FTMWSCOPE
 DEFINES += BC_AWG=$$AWG
-DEFINES += BC_PGEN=$$PGEN BC_PGEN_AWGCHANNEL=$$PGEN_AWG BC_PGEN_PROTCHANNEL=$$PGEN_PROT BC_PGEN_AMPGATECHANNEL=$$PGEN_AMP_GATE BC_PGEN_NUMCHANNELS=$$PGEN_CHANNELS
+DEFINES += BC_PGEN=$$PGEN BC_PGEN_NUMCHANNELS=$$PGEN_CHANNELS
 DEFINES += BC_FLOWCONTROLLER=$$FC  BC_FLOW_NUMCHANNELS=$$FC_CHANNELS
 DEFINES += BC_IOBOARD=$$IOBOARD
 
@@ -202,7 +192,7 @@ equals(FTMWSCOPE,0) {
 RESOURCES += virtualdata.qrc
 }
 
-CLOCK_HW = FixedClock Valon5009
+CLOCK_HW = FixedClock Valon5009 Valon5015
 
 for(num, 0..$$size(CLOCKS)) {
 N = $$member(CLOCKS,$$num)
@@ -217,4 +207,8 @@ DEFINES += BC_CLOCK_FIXED
 
 contains(CLOCKS,1) {
 DEFINES += BC_CLOCK_VALON5009
+}
+
+contains(CLOCKS,2) {
+DEFINES += BC_CLOCK_VALON5015
 }

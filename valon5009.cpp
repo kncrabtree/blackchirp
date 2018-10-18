@@ -102,8 +102,8 @@ QByteArray Valon5009::valonQueryCmd(QString cmd)
     resp = resp.trimmed();
     while(true)
     {
-        if(resp.startsWith("-") || resp.startsWith(">") || resp.startsWith("1") || resp.startsWith("2"))
-            resp = resp.mid(1);
+        if(resp.startsWith("-1->") || resp.startsWith("-2->"))
+            resp = resp.mid(4);
         else
             break;
     }

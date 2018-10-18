@@ -26,10 +26,11 @@ HEADERS += \
     $$PWD/virtualpressurecontroller.h \
     $$PWD/intellisysiqplus.h \
     $$PWD/m4i2220x8.h \
-	$$PWD/fixedclock.h \
-	$$PWD/dsox92004a.h \
-	$$PWD/m8195a.h \
-	$$PWD/ad9914.h
+    $$PWD/fixedclock.h \
+    $$PWD/dsox92004a.h \
+    $$PWD/m8195a.h \
+    $$PWD/ad9914.h \
+    $$PWD/valon5015.h
 
 SOURCES += \
     $$PWD/virtualftmwscope.cpp \
@@ -57,10 +58,11 @@ SOURCES += \
     $$PWD/virtualpressurecontroller.cpp  \
     $$PWD/intellisysiqplus.cpp \
     $$PWD/m4i2220x8.cpp \
-	$$PWD/fixedclock.cpp \
-	$$PWD/dsox92004a.cpp \
-	$$PWD/m8195a.cpp \
-	$$PWD/ad9914.cpp
+    $$PWD/fixedclock.cpp \
+    $$PWD/dsox92004a.cpp \
+    $$PWD/m8195a.cpp \
+    $$PWD/ad9914.cpp \
+    $$PWD/valon5015.cpp
 
 } else {
 
@@ -118,6 +120,10 @@ contains(CLOCKS,0) {
 contains(CLOCKS,1) {
         HEADERS += $$PWD/valon5009.h
         SOURCES += $$PWD/valon5009.cpp
+}
+contains(CLOCKS,2) {
+        HEADERS += $$PWD/valon5015.h
+        SOURCES += $$PWD/valon5015.cpp
 }
 
 equals(PGEN,0) {
