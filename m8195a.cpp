@@ -186,7 +186,7 @@ Experiment M8195A::prepareForExperiment(Experiment exp)
         p_comm->writeCmd(QString("\n"));
 
 
-        QByteArray resp = p_comm->queryCmd(QString("SYS:ERR?\n"));
+        QByteArray resp = p_comm->queryCmd(QString("SYST:ERR?\n"));
         if(!resp.startsWith('0'))
         {
             exp.setErrorString(QString("Could not write waveform data to AWG. Error %1. Header was: %2").arg(QString(resp)).arg(header));
