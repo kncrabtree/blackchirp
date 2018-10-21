@@ -119,7 +119,8 @@ Experiment M8195A::prepareForExperiment(Experiment exp)
         return exp;
     }
 
-    int chunkSize = 1e6;
+    //each transfer must align with 256-sample memory vectors
+    int chunkSize = 1 << 20;
     int chunks = static_cast<int>(ceil(static_cast<double>(data.size())/static_cast<double>(chunkSize)));
     int currentChunk = 0;
 
@@ -131,7 +132,9 @@ Experiment M8195A::prepareForExperiment(Experiment exp)
     {
         chunkData.clear();
         int startIndex = currentChunk*chunkSize;
-        int endIndex = qMin((currentChunk+1)*chunkSize,data.size());
+        //if this chunk runs past the data size, pad with zeros until we reach nearest
+        //multiple of 256
+        int endIndex = qMin((currentChunk+1)*chunkSize,data.size()+(data.size()%256));
         int numPnts = endIndex - startIndex;
 
         //AWG has analog and marker values interleaved
@@ -140,14 +143,20 @@ Experiment M8195A::prepareForExperiment(Experiment exp)
             qint8 low = -127;
             qint8 high = 127;
             //convert doubles to qint8: -1.0 --> -127, +1.0 --> 127
-            qint8 chirpVal = qBound(low,static_cast<qint8>(round(data.at(startIndex+i).y()*127.0)),high);
+            qint8 chirpVal = 0;
+            if(startIndex + i < data.size())
+                 chirpVal = qBound(low,static_cast<qint8>(round(data.at(startIndex+i).y()*127.0)),high);
 
             //markers are binary switches: marker 1 (ch 3) is bit 0; marker 2 (ch 4) is bit 1
             qint8 markerVal = 0;
-            if(markerData.at(startIndex+i).first) //marker 1 (protection)
-                markerVal++;
-            if(markerData.at(startIndex+i).second) //marker 2 (amp gate)
-                markerVal+=2;
+
+            if(startIndex + i < data.size())
+            {
+                if(markerData.at(startIndex+i).first) //marker 1 (protection)
+                    markerVal++;
+                if(markerData.at(startIndex+i).second) //marker 2 (amp gate)
+                    markerVal+=2;
+            }
 
             chunkData.append(chirpVal).append(markerVal);
         }
