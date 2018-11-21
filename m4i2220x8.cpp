@@ -208,7 +208,7 @@ Experiment M4i2220x8::prepareForExperiment(Experiment exp)
 
     //Configure clock source
     auto clocks = exp.ftmwConfig().rfConfig().getClocks();
-    if(clocks.contains(BlackChirp::DigitizerClock))
+    if(clocks.contains(BlackChirp::DigitizerClock) && !clocks.value(BlackChirp::DigitizerClock).hwKey.isEmpty())
     {
         spcm_dwSetParam_i32(p_handle,SPC_CLOCKMODE,SPC_CM_EXTREFCLOCK);
         spcm_dwSetParam_i32(p_handle,SPC_REFERENCECLOCK,qRound(clocks.value(BlackChirp::DigitizerClock).desiredFreqMHz*1e6));
@@ -226,12 +226,14 @@ Experiment M4i2220x8::prepareForExperiment(Experiment exp)
 
 
 
+
+    spcm_dwSetParam_i32(p_handle,SPC_TRIG_ORMASK,SPC_TMASK_NONE);
+    spcm_dwSetParam_i32(p_handle,SPC_TRIG_ORMASK,SPC_TMASK_EXT0);
+
     if(sc.slope == BlackChirp::RisingEdge)
         spcm_dwSetParam_i32(p_handle,SPC_TRIG_EXT0_MODE,SPC_TM_POS);
     else
         spcm_dwSetParam_i32(p_handle,SPC_TRIG_EXT0_MODE,SPC_TM_NEG);
-
-    spcm_dwSetParam_i32(p_handle,SPC_TRIG_ORMASK,SPC_TMASK_EXT0);
 
 //    spcm_dwSetParam_i32(p_handle,SPC_TRIG_TERM,1);
     spcm_dwSetParam_i32(p_handle,SPC_TRIG_EXT0_LEVEL0,static_cast<qint32>(round(sc.trigLevel*1000.0)));
@@ -274,7 +276,7 @@ Experiment M4i2220x8::prepareForExperiment(Experiment exp)
     //configure record length
     spcm_dwSetParam_i64(p_handle,SPC_MEMSIZE,Q_UINT64_C(2147483648));
     spcm_dwSetParam_i64(p_handle,SPC_SEGMENTSIZE,static_cast<qint64>(sc.recordLength));
-    spcm_dwSetParam_i64(p_handle,SPC_POSTTRIGGER,static_cast<qint64>(sc.recordLength-32));
+    spcm_dwSetParam_i64(p_handle,SPC_POSTTRIGGER,static_cast<qint64>(sc.recordLength-6400));
     spcm_dwSetParam_i64(p_handle,SPC_LOOPS,static_cast<qint64>(16000000));
 
     d_bufferSize = sc.recordLength*dataWidth*sc.numFrames*10;

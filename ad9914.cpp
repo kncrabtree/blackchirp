@@ -38,6 +38,8 @@ bool AD9914::testConnection()
 
     QByteArray resp;
     int count = 0;
+
+//    dynamic_cast<QSerialPort*>(p_comm->device())->setDataTerminalReady(true);
     while(true)
     {
         count++;
@@ -174,84 +176,96 @@ Experiment AD9914::prepareForExperiment(Experiment exp)
         return exp;
     }
 
-    resp = p_comm->queryCmd(QString("OE1\n"));
-    {
-        if(!resp.startsWith(QByteArray("SUCCESS")))
-        {
-            exp.setHardwareFailed();
-            exp.setErrorString(QString("Could not enable %1 DR Over Output").arg(d_prettyName));
-            emit hardwareFailure();
-            return exp;
-        }
-    }
+//    p_comm->writeCmd(QString("IN\n"));
 
-    resp = p_comm->queryCmd(QString("LL%1\n").arg(QString(startHex)));
-    {
-        if(!resp.startsWith(QByteArray("SUCCESS")))
-        {
-            exp.setHardwareFailed();
-            exp.setErrorString(QString("Could not set %1 Lower Limit to %2").arg(d_prettyName).arg(QString(startHex)));
-            emit hardwareFailure();
-            return exp;
-        }
-    }
+    d_settingsHex.clear();
+    d_settingsHex.reserve(44);
+    d_settingsHex.append(startHex);
+    d_settingsHex.append(endHex);
+    d_settingsHex.append(stepHex);
+    d_settingsHex.append(stepHex);
+    d_settingsHex.append(dtHex);
+    d_settingsHex.append(dtHex);
+    d_settingsHex.append("12");
 
-    resp = p_comm->queryCmd(QString("UL%1\n").arg(QString(endHex)));
-    {
-        if(!resp.startsWith(QByteArray("SUCCESS")))
-        {
-            exp.setHardwareFailed();
-            exp.setErrorString(QString("Could not set %1 Upper Limit to %2").arg(d_prettyName).arg(QString(endHex)));
-            emit hardwareFailure();
-            return exp;
-        }
-    }
+//    resp = p_comm->queryCmd(QString("OE1\n"));
+//    {
+//        if(!resp.startsWith(QByteArray("SUCCESS")))
+//        {
+//            exp.setHardwareFailed();
+//            exp.setErrorString(QString("Could not enable %1 DR Over Output").arg(d_prettyName));
+//            emit hardwareFailure();
+//            return exp;
+//        }
+//    }
 
+//    resp = p_comm->queryCmd(QString("LL%1\n").arg(QString(startHex)));
+//    {
+//        if(!resp.startsWith(QByteArray("SUCCESS")))
+//        {
+//            exp.setHardwareFailed();
+//            exp.setErrorString(QString("Could not set %1 Lower Limit to %2").arg(d_prettyName).arg(QString(startHex)));
+//            emit hardwareFailure();
+//            return exp;
+//        }
+//    }
 
-    //these falling slope parameters should not matter, but set them anyways
-    resp = p_comm->queryCmd(QString("FS%1\n").arg(QString(stepHex)));
-    {
-        if(!resp.startsWith(QByteArray("SUCCESS")))
-        {
-            exp.setHardwareFailed();
-            exp.setErrorString(QString("Could not set %1 Falling Step Size to %2").arg(d_prettyName).arg(QString(stepHex)));
-            emit hardwareFailure();
-            return exp;
-        }
-    }
-    resp = p_comm->queryCmd(QString("NS%1\n").arg(QString(dtHex)));
-    {
-        if(!resp.startsWith(QByteArray("SUCCESS")))
-        {
-            exp.setHardwareFailed();
-            exp.setErrorString(QString("Could not set %1 Negative Slope to %2").arg(d_prettyName).arg(QString(dtHex)));
-            emit hardwareFailure();
-            return exp;
-        }
-    }
+//    resp = p_comm->queryCmd(QString("UL%1\n").arg(QString(endHex)));
+//    {
+//        if(!resp.startsWith(QByteArray("SUCCESS")))
+//        {
+//            exp.setHardwareFailed();
+//            exp.setErrorString(QString("Could not set %1 Upper Limit to %2").arg(d_prettyName).arg(QString(endHex)));
+//            emit hardwareFailure();
+//            return exp;
+//        }
+//    }
 
 
-    resp = p_comm->queryCmd(QString("RS%1\n").arg(QString(stepHex)));
-    {
-        if(!resp.startsWith(QByteArray("SUCCESS")))
-        {
-            exp.setHardwareFailed();
-            exp.setErrorString(QString("Could not set %1 Rising Step Size to %2").arg(d_prettyName).arg(QString(stepHex)));
-            emit hardwareFailure();
-            return exp;
-        }
-    }
+//    //these falling slope parameters should not matter, but set them anyways
+//    resp = p_comm->queryCmd(QString("FS%1\n").arg(QString(stepHex)));
+//    {
+//        if(!resp.startsWith(QByteArray("SUCCESS")))
+//        {
+//            exp.setHardwareFailed();
+//            exp.setErrorString(QString("Could not set %1 Falling Step Size to %2").arg(d_prettyName).arg(QString(stepHex)));
+//            emit hardwareFailure();
+//            return exp;
+//        }
+//    }
+//    resp = p_comm->queryCmd(QString("NS%1\n").arg(QString(dtHex)));
+//    {
+//        if(!resp.startsWith(QByteArray("SUCCESS")))
+//        {
+//            exp.setHardwareFailed();
+//            exp.setErrorString(QString("Could not set %1 Negative Slope to %2").arg(d_prettyName).arg(QString(dtHex)));
+//            emit hardwareFailure();
+//            return exp;
+//        }
+//    }
 
-    resp = p_comm->queryCmd(QString("PS%1\n").arg(QString(dtHex)));
-    {
-        if(!resp.startsWith(QByteArray("SUCCESS")))
-        {
-            exp.setHardwareFailed();
-            exp.setErrorString(QString("Could not set %1 Positive Slope to %2").arg(d_prettyName).arg(QString(dtHex)));
-            emit hardwareFailure();
-            return exp;
-        }
-    }
+
+//    resp = p_comm->queryCmd(QString("RS%1\n").arg(QString(stepHex)));
+//    {
+//        if(!resp.startsWith(QByteArray("SUCCESS")))
+//        {
+//            exp.setHardwareFailed();
+//            exp.setErrorString(QString("Could not set %1 Rising Step Size to %2").arg(d_prettyName).arg(QString(stepHex)));
+//            emit hardwareFailure();
+//            return exp;
+//        }
+//    }
+
+//    resp = p_comm->queryCmd(QString("PS%1\n").arg(QString(dtHex)));
+//    {
+//        if(!resp.startsWith(QByteArray("SUCCESS")))
+//        {
+//            exp.setHardwareFailed();
+//            exp.setErrorString(QString("Could not set %1 Positive Slope to %2").arg(d_prettyName).arg(QString(dtHex)));
+//            emit hardwareFailure();
+//            return exp;
+//        }
+//    }
 
     rfc.setChirpConfig(cc);
     auto ftmwc = exp.ftmwConfig();
@@ -265,13 +279,16 @@ Experiment AD9914::prepareForExperiment(Experiment exp)
 void AD9914::beginAcquisition()
 {
     if(d_enabledForExperiment)
-        p_comm->queryCmd(QString("RD2\n")); //enable ramp, no dwell-high
+    {
+        p_comm->writeCmd(QString("SA%1\n").arg(QString(d_settingsHex)));
+        p_comm->writeCmd(QString("SA%1\n").arg(QString(d_settingsHex)));
+    }
 }
 
 void AD9914::endAcquisition()
 {
     if(d_enabledForExperiment)
-        p_comm->queryCmd(QString("RD4\n")); //disable ramp
+        p_comm->writeCmd(QString("IN\n")); //disable ramp
 }
 
 void AD9914::readTimeData()

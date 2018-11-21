@@ -20,6 +20,7 @@ public slots:
     void readTimeData();
 
 private:
+    QByteArray d_settingsHex;
     double d_clockFreqHz;
 };
 
