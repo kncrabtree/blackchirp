@@ -466,7 +466,7 @@ void RfConfig::addChirpConfig(ChirpConfig cc)
         s.endGroup();
 
         if(rawClockFrequency(BlackChirp::AwgClock) > 0.0)
-            cc.setAwgSampleRate(rawClockFrequency(BlackChirp::AwgClock));
+            cc.setAwgSampleRate(rawClockFrequency(BlackChirp::AwgClock)*1e6);
         else
             cc.setAwgSampleRate(sampleRate);
     }

@@ -102,6 +102,9 @@ Experiment ClockManager::ClockManager::prepareForExperiment(Experiment exp)
         auto type = i.key();
         auto d = i.value();
 
+        if(d.hwKey.isEmpty())
+            continue;
+
         //find correct clock
         Clock *c = nullptr;
         for(int j=0; j<d_clockList.size(); j++)

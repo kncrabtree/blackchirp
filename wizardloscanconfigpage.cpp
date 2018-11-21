@@ -77,7 +77,7 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
 
 
 
-    p_downBox = new QGroupBox("Upconversion LO");
+    p_downBox = new QGroupBox("Downconversion LO");
 
     p_downStartBox = new QDoubleSpinBox;
     p_downStartBox->setDecimals(6);
@@ -256,6 +256,33 @@ void WizardLoScanConfigPage::initializePage()
         s.endGroup();
         s.endGroup();
     }
+
+    auto clocks = d_rfConfig.getClocks();
+    auto upLoClock = clocks.value(BlackChirp::UpConversionLO);
+    if(upLoClock.op == RfConfig::Multiply)
+    {
+        upMinFreq*=upLoClock.factor;
+        upMaxFreq*=upLoClock.factor;
+    }
+    else
+    {
+        upMinFreq/=upLoClock.factor;
+        upMaxFreq/=upLoClock.factor;
+    }
+
+
+    auto downLoClock = clocks.value(BlackChirp::DownConversionLO);
+    if(downLoClock.op == RfConfig::Multiply)
+    {
+        downMinFreq*=downLoClock.factor;
+        downMaxFreq*=downLoClock.factor;
+    }
+    else
+    {
+        downMinFreq/=downLoClock.factor;
+        downMaxFreq/=downLoClock.factor;
+    }
+
 
     p_upStartBox->setRange(upMinFreq,upMaxFreq);
     p_upEndBox->setRange(upMinFreq,upMaxFreq);
