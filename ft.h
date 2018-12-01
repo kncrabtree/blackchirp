@@ -22,6 +22,7 @@ public:
     QPointF &operator[](int i);
     void reserve(int n);
     void append(QPointF pt, double ignoreRange = 0.0);
+    void trim(double minOffset, double maxOffset);
 
     int size() const;
     bool isEmpty() const;

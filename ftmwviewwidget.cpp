@@ -81,6 +81,9 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     connect(ui->lsAction,&QAction::triggered,this,[=]() { modeChanged(LowerSB); });
     connect(ui->bsAction,&QAction::triggered,this,[=]() { modeChanged(BothSB); });
 
+    connect(ui->minFtSegBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),this,&FtmwViewWidget::updateSidebandFreqs);
+    connect(ui->maxFtSegBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),this,&FtmwViewWidget::updateSidebandFreqs);
+
     connect(ui->averagesSpinbox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::rollingAverageShotsChanged,Qt::UniqueConnection);
     connect(ui->resetAveragesButton,&QPushButton::clicked,this,&FtmwViewWidget::rollingAverageReset,Qt::UniqueConnection);
 
@@ -163,12 +166,24 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
         ui->resetAveragesButton->setEnabled(config.type() == BlackChirp::FtmwPeakUp);
         ui->averagesSpinbox->setEnabled(config.type() == BlackChirp::FtmwPeakUp);
 
+        ui->minFtSegBox->blockSignals(true);
+        ui->minFtSegBox->setRange(0.0,config.ftNyquistMHz());
+        ui->minFtSegBox->setValue(0.0);
+        ui->minFtSegBox->blockSignals(false);
+
+        ui->maxFtSegBox->blockSignals(true);
+        ui->maxFtSegBox->setRange(0.0,config.ftNyquistMHz());
+        ui->maxFtSegBox->setValue(ui->maxFtSegBox->maximum());
+        ui->maxFtSegBox->blockSignals(false);
+
         if(config.type() == BlackChirp::FtmwLoScan)
         {
 //            d_mode = BothSB;
             ui->bsAction->setEnabled(true);
             ui->usAction->setEnabled(true);
             ui->lsAction->setEnabled(true);
+            ui->minFtSegBox->setEnabled(true);
+            ui->maxFtSegBox->setEnabled(true);
             ui->bsAction->trigger();
         }
         else
@@ -177,6 +192,8 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
             ui->bsAction->setEnabled(false);
             ui->usAction->setEnabled(false);
             ui->lsAction->setEnabled(false);
+            ui->minFtSegBox->setEnabled(false);
+            ui->maxFtSegBox->setEnabled(false);
         }
     }
     else
@@ -521,8 +538,10 @@ void FtmwViewWidget::processSideband(BlackChirp::Sideband sb)
             ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
             d_workersStatus[d_mainId].busy = true;
             d_workersStatus[d_mainId].reprocessWhenDone = false;
+            double minF = ui->minFtSegBox->value();
+            double maxF = ui->maxFtSegBox->value();
 
-            QMetaObject::invokeMethod(ws.worker,"processSideband",Q_ARG(FidList,fl),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings),Q_ARG(BlackChirp::Sideband,sb));
+            QMetaObject::invokeMethod(ws.worker,"processSideband",Q_ARG(FidList,fl),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings),Q_ARG(BlackChirp::Sideband,sb),Q_ARG(double,minF),Q_ARG(double,maxF));
         }
     }
 }
@@ -553,11 +572,18 @@ void FtmwViewWidget::processBothSidebands()
             ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
             d_workersStatus[d_mainId].busy = true;
             d_workersStatus[d_mainId].reprocessWhenDone = false;
+            double minF = ui->minFtSegBox->value();
+            double maxF = ui->maxFtSegBox->value();
 
-
-            QMetaObject::invokeMethod(ws.worker,"processBothSidebands",Q_ARG(FidList,fl),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings));
+            QMetaObject::invokeMethod(ws.worker,"processBothSidebands",Q_ARG(FidList,fl),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings),Q_ARG(double,minF),Q_ARG(double,maxF));
         }
     }
+}
+
+void FtmwViewWidget::updateSidebandFreqs()
+{
+    if(d_mode == BothSB || d_mode == UpperSB || d_mode == LowerSB)
+        reprocess(QList<int>{d_liveId,d_plot1Id,d_plot2Id});
 }
 
 void FtmwViewWidget::modeChanged(MainPlotMode newMode)

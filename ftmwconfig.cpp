@@ -318,6 +318,11 @@ double FtmwConfig::ftMaxMHz() const
     return qMax(lo,lastFreq);
 }
 
+double FtmwConfig::ftNyquistMHz() const
+{
+    return data->scopeConfig.sampleRate/(1e6*2.0);
+}
+
 double FtmwConfig::fidDurationUs() const
 {
     double sr = scopeConfig().sampleRate;

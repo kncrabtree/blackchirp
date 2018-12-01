@@ -87,6 +87,38 @@ void Ft::append(QPointF pt, double ignoreRange)
     }
 }
 
+void Ft::trim(double minOffset, double maxOffset)
+{
+    double sp = xSpacing();
+    QVector<QPointF> newData;
+    newData.reserve(data->ftData.size());
+    data->yMin = 0.0;
+    data->yMax = 0.0;
+    bool reverse = false;
+    if(data->ftData.constLast().x() < data->ftData.constFirst().x())
+        reverse = true;
+    for(int i=0; i<data->ftData.size(); i++)
+    {
+        if(reverse)
+            i = data->ftData.size()-1-i;
+
+        double thisOffset = qAbs(data->ftData.at(i).x() - data->loFreq);
+        if(thisOffset < minOffset || thisOffset > maxOffset)
+            continue;
+
+        if(reverse)
+            newData.prepend(data->ftData.at(i));
+        else
+            newData.append(data->ftData.at(i));
+
+        data->yMax = qMax(data->yMax,data->ftData.at(i).y());
+        data->yMin = qMin(data->yMin,data->ftData.at(i).y());
+    }
+
+    data->ftData = newData;
+
+}
+
 int Ft::size() const
 {
     return data->ftData.size();

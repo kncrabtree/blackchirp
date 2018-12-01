@@ -229,10 +229,10 @@ void FtWorker::doFtDiff(const Fid ref, const Fid diff, const FidProcessingSettin
 
 }
 
-Ft FtWorker::processSideband(const FidList fl, const FtWorker::FidProcessingSettings &settings, BlackChirp::Sideband sb)
+Ft FtWorker::processSideband(const FidList fl, const FtWorker::FidProcessingSettings &settings, BlackChirp::Sideband sb,double minFreq, double maxFreq)
 {
     //this will FT all of the FIDs and resample them on a common grid
-    QList<Ft> ftList = makeSidebandList(fl,settings,sb);
+    QList<Ft> ftList = makeSidebandList(fl,settings,sb,minFreq,maxFreq);
 
     if(ftList.isEmpty())
     {
@@ -312,11 +312,11 @@ Ft FtWorker::processSideband(const FidList fl, const FtWorker::FidProcessingSett
     return out;
 }
 
-void FtWorker::processBothSidebands(const FidList fl, const FtWorker::FidProcessingSettings &settings)
+void FtWorker::processBothSidebands(const FidList fl, const FtWorker::FidProcessingSettings &settings, double minFreq, double maxFreq)
 {
     blockSignals(true);
-    Ft upper = processSideband(fl,settings,BlackChirp::UpperSideband);
-    Ft lower = processSideband(fl,settings,BlackChirp::LowerSideband);
+    Ft upper = processSideband(fl,settings,BlackChirp::UpperSideband,minFreq,maxFreq);
+    Ft lower = processSideband(fl,settings,BlackChirp::LowerSideband,minFreq,maxFreq);
     blockSignals(false);
 
     Ft out(0,0.0);
@@ -379,7 +379,7 @@ void FtWorker::processBothSidebands(const FidList fl, const FtWorker::FidProcess
 
 }
 
-QList<Ft> FtWorker::makeSidebandList(const FidList fl, const FidProcessingSettings &settings, BlackChirp::Sideband sb)
+QList<Ft> FtWorker::makeSidebandList(const FidList fl, const FidProcessingSettings &settings, BlackChirp::Sideband sb, double minFreq, double maxFreq)
 {
     if(fl.isEmpty())
         return QList<Ft>();
@@ -392,6 +392,7 @@ QList<Ft> FtWorker::makeSidebandList(const FidList fl, const FidProcessingSettin
     bool sigsBlocked = signalsBlocked();
     blockSignals(true);
     Ft ft1 = doFT(f,settings);
+    ft1.trim(minFreq,maxFreq);
     out << ft1;
 
     double f0 = 0.0;
@@ -403,6 +404,7 @@ QList<Ft> FtWorker::makeSidebandList(const FidList fl, const FidProcessingSettin
         f = fl.at(i);
         f.setSideband(sb);
         ft1 = doFT(f,settings);
+        ft1.trim(minFreq,maxFreq);
         if(!ft1.isEmpty())
         {
             if(sp < 0.0)
@@ -520,7 +522,7 @@ Ft FtWorker::resample(double f0, double spacing, const Ft ft)
         return Ft();
 
     spacing = qAbs(spacing);
-    double thisSpacing = ft.at(1).x() - ft.at(0).x();
+    double thisSpacing = ft.xSpacing();
 
     if(qFuzzyCompare(f0,ft.loFreq()) && qFuzzyCompare(qAbs(spacing),qAbs(thisSpacing)))
         return Ft();

@@ -52,6 +52,7 @@ public:
     QString errorString() const;
     double ftMinMHz() const;
     double ftMaxMHz() const;
+    double ftNyquistMHz() const;
     double fidDurationUs() const;
     QPair<int,int> chirpRange() const;
     bool writeFids(int num, QString path = QString(""), int snapNum = -1) const;

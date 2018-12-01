@@ -77,8 +77,8 @@ public slots:
     */
     Ft doFT(const Fid fid, const FtWorker::FidProcessingSettings &settings);
     void doFtDiff(const Fid ref, const Fid diff, const FtWorker::FidProcessingSettings &settings);
-    Ft processSideband(const FidList fl, const FtWorker::FidProcessingSettings &settings, BlackChirp::Sideband sb);
-    void processBothSidebands(const FidList fl, const FtWorker::FidProcessingSettings &settings);
+    Ft processSideband(const FidList fl, const FtWorker::FidProcessingSettings &settings, BlackChirp::Sideband sb, double minFreq = 0.0, double maxFreq = -1.0);
+    void processBothSidebands(const FidList fl, const FtWorker::FidProcessingSettings &settings, double minFreq = 0.0, double maxFreq = -1.0);
 
     /*!
      \brief Perform truncation, high-pass, and exponential filtering on an Fid
@@ -101,7 +101,7 @@ private:
 
     FidProcessingSettings d_lastProcSettings;
 
-    QList<Ft> makeSidebandList(const FidList fl, const FtWorker::FidProcessingSettings &settings, BlackChirp::Sideband sb);
+    QList<Ft> makeSidebandList(const FidList fl, const FtWorker::FidProcessingSettings &settings, BlackChirp::Sideband sb, double minFreq = 0.0, double maxFreq = -1.0);
     Ft resample(double f0, double spacing, const Ft ft);
 
 

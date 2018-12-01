@@ -78,6 +78,7 @@ public slots:
     void processDiff(const Fid f1, const Fid f2);
     void processSideband(BlackChirp::Sideband sb);
     void processBothSidebands();
+    void updateSidebandFreqs();
 
     void modeChanged(MainPlotMode newMode);
     void snapshotTaken();
@@ -161,6 +162,8 @@ public:
     QSpinBox *averagesSpinbox;
     QPushButton *resetAveragesButton;
     QLabel *shotsLabel;
+    QDoubleSpinBox *minFtSegBox;
+    QDoubleSpinBox *maxFtSegBox;
 
     void setupUi(QWidget *FtmwViewWidget, QString path)
     {
@@ -309,6 +312,26 @@ public:
         flwL->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
 
         flwFl->addRow(flwL,mainPlotFollowSpinBox);
+
+        minFtSegBox = new QDoubleSpinBox;
+        minFtSegBox->setRange(0.0,100.0);
+        minFtSegBox->setDecimals(3);
+        minFtSegBox->setSuffix(QString(" MHz"));
+        minFtSegBox->setKeyboardTracking(false);
+        minFtSegBox->setToolTip(QString("Minimum offset frequency included in sideband deconvilution algorithm."));
+
+        flwFl->addRow(QString("Sideband Start"),minFtSegBox);
+
+        maxFtSegBox = new QDoubleSpinBox;
+        maxFtSegBox->setRange(0.0,100.0);
+        maxFtSegBox->setDecimals(3);
+        maxFtSegBox->setValue(100.0);
+        maxFtSegBox->setSuffix(QString(" MHz"));
+        maxFtSegBox->setKeyboardTracking(false);
+        maxFtSegBox->setToolTip(QString("Maximum offset frequency included in sideband deconvilution algorithm."));
+
+        flwFl->addRow(QString("Sideband End"),maxFtSegBox);
+
         flwW->setLayout(flwFl);
         flwWa->setDefaultWidget(flwW);
         mmaMenu->addAction(flwWa);
