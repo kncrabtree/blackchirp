@@ -93,11 +93,27 @@ Experiment M8195A::prepareForExperiment(Experiment exp)
     s.endGroup();
 
     if(triggered)
-        p_comm->writeCmd(QString(":INIT:CONT 0;:INIT:GATE 0;:ARM:TRIG:SOUR TRIG;:TRIG:SOUR:ENAB TRIG;:ARM:TRIG:LEV 1.5;:ARM:TRIG:SLOP POS;:ARM:TRIG:OPER SYNC\n"));
+    {
+        if(!m8195aWrite(QString(":INIT:CONT 0;:INIT:GATE 0;:ARM:TRIG:SOUR TRIG;:TRIG:SOUR:ENAB TRIG;:ARM:TRIG:LEV 1.5;:ARM:TRIG:SLOP POS;:ARM:TRIG:OPER SYNC\n")))
+        {
+            exp.setErrorString(QString("Could not initialize trigger settings."));
+            return exp;
+        }
+    }
     else
-        p_comm->writeCmd(QString(":INIT:CONT 1;:INIT:GATE 0\n"));
+    {
+        if(!m8195aWrite(QString(":INIT:CONT 1;:INIT:GATE 0\n")))
+        {
+            exp.setErrorString(QString("Could not initialize continuous signal generation."));
+            return exp;
+        }
+    }
 
-    p_comm->writeCmd(QString(":TRAC:DEL:ALL\n"));
+    if(!m8195aWrite(QString(":TRAC:DEL:ALL\n")))
+    {
+        exp.setErrorString(QString("Could not delete old traces."));
+        return exp;
+    }
 
     auto data = exp.ftmwConfig().chirpConfig().getChirpMicroseconds();
     auto markerData = exp.ftmwConfig().chirpConfig().getMarkerData();
@@ -224,4 +240,19 @@ void M8195A::endAcquisition()
 
 void M8195A::readTimeData()
 {
+}
+
+bool M8195A::m8195aWrite(const QString cmd)
+{
+    if(!p_comm->writeCmd(cmd))
+        return false;
+
+    QByteArray resp = p_comm->queryCmd(QString("SYST:ERR?\n"));
+    if(!resp.startsWith('0'))
+    {
+       emit logMessage(QString("Could not write waveform data to AWG. Error %1. Command was: %2").arg(QString(resp)).arg(cmd),BlackChirp::LogError);
+        return false;
+    }
+
+    return true;
 }

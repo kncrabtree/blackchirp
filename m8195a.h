@@ -17,6 +17,9 @@ public slots:
     virtual void beginAcquisition();
     virtual void endAcquisition();
     virtual void readTimeData();
+
+private:
+    bool m8195aWrite(const QString cmd);
 };
 
 #endif // M8195A_H
