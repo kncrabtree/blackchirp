@@ -79,10 +79,18 @@ Experiment M8195A::prepareForExperiment(Experiment exp)
         return exp;
 
     p_comm->writeCmd(QString("*CLS;*RST\n"));
-    p_comm->writeCmd(QString(":INST:DACM Marker;:INST:MEM:EXT:RDIV DIV1;TRAC1:MMOD EXT\n"));
+    if(!m8195aWrite(QString(":INST:DACM Marker;:INST:MEM:EXT:RDIV DIV1;:TRAC1:MMOD EXT\n")))
+    {
+        exp.setErrorString(QString("Could not initialize instrument settings."));
+        return exp;
+    }
 
     //external reference (TODO: interface with more general clock system?)
-    p_comm->writeCmd(QString(":ROSC:SOUR EXT;:ROSC:FREQ 10000000\n"));
+    if(!m8195aWrite(QString(":ROSC:SOUR EXT;:ROSC:FREQ 10000000\n")))
+    {
+        exp.setErrorString(QString("Could not set to external reference."));
+        return exp;
+    }
 
     //external triggering
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
