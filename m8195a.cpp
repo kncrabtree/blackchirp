@@ -16,6 +16,7 @@ M8195A::M8195A(QObject *parent) : AWG(parent)
     double awgMaxSamples = s.value(QString("maxSamples"),2e9).toDouble();
     double awgMinFreq = s.value(QString("minFreq"),0.0).toDouble();
     double awgMaxFreq = s.value(QString("maxFreq"),26500.0).toDouble();
+    bool async = s.value(QString("asyncTrig"),true).toBool();
     bool pp = s.value(QString("hasProtectionPulse"),true).toBool();
     bool ep = s.value(QString("hasAmpEnablePulse"),true).toBool();
     bool ro = s.value(QString("rampOnly"),false).toBool();
@@ -28,6 +29,7 @@ M8195A::M8195A(QObject *parent) : AWG(parent)
     s.setValue(QString("hasAmpEnablePulse"),ep);
     s.setValue(QString("rampOnly"),ro);
     s.setValue(QString("triggered"),triggered);
+    s.setValue(QString("asyncTrig"),async);
     s.endGroup();
     s.endGroup();
     s.sync();
@@ -97,12 +99,18 @@ Experiment M8195A::prepareForExperiment(Experiment exp)
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
     bool triggered = s.value(QString("triggered"),true).toBool();
+    double samplerate = s.value(QString("sampleRate"),65e9).toDouble();
+    bool async = s.value(QString("asyncTrig"),true);
     s.endGroup();
     s.endGroup();
 
     if(triggered)
     {
-        if(!m8195aWrite(QString(":INIT:CONT 0;:INIT:GATE 0;:ARM:TRIG:SOUR TRIG;:TRIG:SOUR:ENAB TRIG;:ARM:TRIG:LEV 1.5;:ARM:TRIG:SLOP POS;:ARM:TRIG:OPER SYNC\n")))
+        QString trig("SYNC");
+        if(async)
+            trig.prepend(QString("A"));
+
+        if(!m8195aWrite(QString(":INIT:CONT 0;:INIT:GATE 0;:ARM:TRIG:SOUR TRIG;:TRIG:SOUR:ENAB TRIG;:ARM:TRIG:LEV 1.5;:ARM:TRIG:SLOP POS;:ARM:TRIG:OPER %1\n").arg(trig)))
         {
             exp.setErrorString(QString("Could not initialize trigger settings."));
             return exp;
@@ -115,6 +123,18 @@ Experiment M8195A::prepareForExperiment(Experiment exp)
             exp.setErrorString(QString("Could not initialize continuous signal generation."));
             return exp;
         }
+    }
+
+    if(!m8195aWrite(QString(":VOLTAGE 1.0\n")))
+    {
+        exp.setErrorString(QString("Could not set output voltage."));
+        return exp;
+    }
+
+    if(!m8195aWrite(QString(":FREQ:RAST %1\n").arg(samplerate,0,'E',1)))
+    {
+        exp.setErrorString(QString("Could not set sample rate."));
+        return exp;
     }
 
     if(!m8195aWrite(QString(":TRAC:DEL:ALL\n")))
@@ -133,7 +153,7 @@ Experiment M8195A::prepareForExperiment(Experiment exp)
         return exp;
     }
 
-    int len = data.size();
+    int len = data.size() + (data.size()%256);
 
     QByteArray id = p_comm->queryCmd(QString(":TRAC1:DEF:NEW? %1\n").arg(len)).trimmed();
     if(id.isEmpty())
