@@ -151,7 +151,7 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
     if(lastFocusWidget != nullptr)
         setTabOrder(lastFocusWidget,ui->repRateBox);
 
-    connect(ui->repRateBox,vc,this,&PulseConfigWidget::changeRepRate);
+    connect(ui->repRateBox,vc,this,&PulseConfigWidget::setRepRate);
 
     updateHardwareLimits();
 
@@ -477,6 +477,7 @@ void PulseConfigWidget::newRepRate(double r)
     ui->repRateBox->setValue(r);
     ui->repRateBox->blockSignals(false);
     ui->pulsePlot->newRepRate(r);
+    d_config.setRepRate(r);
 }
 
 void PulseConfigWidget::updateHardwareLimits()
@@ -511,4 +512,11 @@ void PulseConfigWidget::updateHardwareLimits()
         }
     }
 
+}
+
+void PulseConfigWidget::setRepRate(const double r)
+{
+    ui->pulsePlot->newRepRate(r);
+    d_config.setRepRate(r);
+    emit changeRepRate(r);
 }

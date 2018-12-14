@@ -81,6 +81,7 @@ QStringList Valon5015::channelNames()
 
 Experiment Valon5015::prepareForExperiment(Experiment exp)
 {
+    valonWriteCmd(QString("PWR 13\r"));
     if(d_lockToExt10MHz)
     {
         valonWriteCmd(QString("REFS 1\r"));

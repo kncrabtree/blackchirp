@@ -59,6 +59,7 @@ public slots:
     void setFromConfig(const PulseGenConfig c);
     void newRepRate(double r);
     void updateHardwareLimits();
+    void setRepRate(const double r);
 
 private:
     Ui::PulseConfigWidget *ui;

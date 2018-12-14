@@ -404,6 +404,11 @@ void RfConfig::setClockFreqInfo(BlackChirp::ClockType t, double targetFreqMHz, d
 
 void RfConfig::setClockFreqInfo(BlackChirp::ClockType t, const ClockFreq &cf)
 {
+    if(cf.hwKey.isEmpty())
+    {
+        data->currentClocks.remove(t);
+        return;
+    }
     if(commonLO() && t == BlackChirp::UpConversionLO)
         data->currentClocks.insert(BlackChirp::DownConversionLO,cf);
     if(commonLO() && t == BlackChirp::DownConversionLO)
