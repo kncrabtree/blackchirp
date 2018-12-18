@@ -89,7 +89,6 @@ void Ft::append(QPointF pt, double ignoreRange)
 
 void Ft::trim(double minOffset, double maxOffset)
 {
-    double sp = xSpacing();
     QVector<QPointF> newData;
     newData.reserve(data->ftData.size());
     data->yMin = 0.0;
