@@ -38,7 +38,10 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_orderBox->addItem(QString("Frequency First"),QVariant::fromValue(BlackChirp::LifOrderFrequencyFirst));
     p_orderBox->addItem(QString("Delay First"),QVariant::fromValue(BlackChirp::LifOrderDelayFirst));
     p_orderBox->setToolTip(QString("Controls the order in which the delay and laser frequency will be changed during the scan.\n\nFrequency first: Acquire spectrum at single delay point, then increment delay and repeat.\nDelay first: Acquire time trace at a single frequency, then increment frequency and repeat.\n\nNote that the order is irrelevant if either the delay or frequency is set to a single point."));
-    ofl->addRow(QString("Scan order"),p_orderBox);
+    auto *lbl = new QLabel(QString("Scan order"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    ofl->addRow(lbl,p_orderBox);
 
     p_completeBox = new QComboBox(this);
     p_completeBox->addItem(QString("Stop integrating when all points acquired."),
@@ -46,7 +49,10 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_completeBox->addItem(QString("Continue integrating until entire experiment is complete."),
                            QVariant::fromValue(BlackChirp::LifContinueUntilExperimentComplete));
     p_completeBox->setToolTip(QString("Configures behavior if LIF scan finishes before the rest of the experiment.\n\nStop integrating: Once all points are acquired, no more shots will be integrated.\nContinue: Scan will return to beginning and continue integrating data until remainder of experiment is completed or aborted.\n\n This setting is not applicable if LIF is the only measurement being made or if other parts of the experiment finish before LIF."));
-    ofl->addRow(QString("Completion behavior"),p_completeBox);
+    lbl = new QLabel(QString("Completion Behavior"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    ofl->addRow(lbl,p_completeBox);
 
     optionsBox->setLayout(ofl);
     vbl->addWidget(optionsBox,0);
@@ -59,7 +65,10 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_delaySingle = new QCheckBox(this);
     p_delaySingle->setChecked(s.value(QString("lifConfig/delaySingle"),false).toBool());
     p_delaySingle->setToolTip(QString("If checked, the LIF delay will not change during the scan, and will remain at the value in the start box."));
-    delayFl->addRow(QString("Single Point"),p_delaySingle);
+    lbl = new QLabel(QString("Single Point"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    delayFl->addRow(lbl,p_delaySingle);
 
     p_delayStart = new QDoubleSpinBox(this);
     p_delayStart->setRange(0.0,100000.0);
@@ -67,7 +76,10 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_delayStart->setSuffix(QString::fromUtf16(u" µs"));
     p_delayStart->setSingleStep(10.0);
     p_delayStart->setToolTip(QString("Starting delay for LIF measurement. For a single delay scan, this will be the value used."));
-    delayFl->addRow(QString("Start"),p_delayStart);
+    lbl = new QLabel(QString("Start"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    delayFl->addRow(lbl,p_delayStart);
 
     p_delayEnd = new QDoubleSpinBox(this);
     p_delayEnd->setRange(0.0,100000.0);
@@ -75,7 +87,10 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_delayEnd->setSuffix(QString::fromUtf16(u" µs"));
     p_delayEnd->setSingleStep(10.0);
     p_delayEnd->setToolTip(QString("Ending delay for LIF measurement. May be greater or less than starting delay, and need not be an integral number of steps from start.\nIf |end-start| < step, the delay will remain at the starting value as if the single point box were checked."));
-    delayFl->addRow(QString("End"),p_delayEnd);
+    lbl = new QLabel(QString("End"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    delayFl->addRow(lbl,p_delayEnd);
 
     p_delayStep = new QDoubleSpinBox(this);
     p_delayStep->setRange(0.05,100.0);
@@ -83,7 +98,10 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_delayStep->setSingleStep(1.0);
     p_delayStep->setSuffix(QString::fromUtf16(u" µs"));
     p_delayStep->setToolTip(QString("Step size between delay points."));
-    delayFl->addRow(QString("Step Size"),p_delayStep);
+    lbl = new QLabel(QString("Step Size"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    delayFl->addRow(lbl,p_delayStep);
 
     QPushButton *delayButton = new QPushButton(QString("Set to Start"),this);
     delayFl->addWidget(delayButton);
@@ -99,7 +117,10 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_laserSingle = new QCheckBox(this);
     p_laserSingle->setChecked(s.value(QString("lifConfig/laserSingle"),false).toBool());
     p_laserSingle->setToolTip(QString("If checked, the LIF laser frequency will not change during the scan, and will remain at the value in the start box."));
-    laserFl->addRow(QString("Single Point"),p_laserSingle);
+    lbl = new QLabel(QString("Single Point"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    laserFl->addRow(lbl,p_laserSingle);
 
     s.beginGroup(QString("lifLaser"));
     s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
@@ -110,7 +131,10 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_laserStart->setSuffix(QString::fromUtf16(u" cm⁻¹"));
     p_laserStart->setSingleStep(100.0);
     p_laserStart->setToolTip(QString("Starting frequency for LIF measurement. For a single frequency scan, this will be the value used."));
-    laserFl->addRow(QString("Start"),p_laserStart);
+    lbl = new QLabel(QString("Start"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    laserFl->addRow(lbl,p_laserStart);
 
 
     p_laserEnd = new QDoubleSpinBox(this);
@@ -120,7 +144,10 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_laserEnd->setSuffix(QString::fromUtf16(u" cm⁻¹"));
     p_laserEnd->setSingleStep(100.0);
     p_laserEnd->setToolTip(QString("Ending laser frequency for LIF measurement. May be greater or less than starting frequency, and need not be an integral number of steps from start.\nIf |end-start| < step, the frequency will remain at the starting value as if the single point box were checked."));
-    laserFl->addRow(QString("End"),p_laserEnd);
+    lbl = new QLabel(QString("End"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    laserFl->addRow(lbl,p_laserEnd);
     s.endGroup();
     s.endGroup();
 
@@ -130,7 +157,10 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     p_laserStep->setSingleStep(1.0);
     p_laserStep->setSuffix(QString::fromUtf16(u" cm⁻¹"));
     p_laserStep->setToolTip(QString("Step size between frequency points."));
-    laserFl->addRow(QString("Step Size"),p_laserStep);
+    lbl = new QLabel(QString("Step Size"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    laserFl->addRow(lbl,p_laserStep);
 
     QPushButton *laserButton = new QPushButton(QString("Set to Start"),this);
     laserFl->addWidget(laserButton);

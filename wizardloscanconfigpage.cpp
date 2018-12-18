@@ -73,6 +73,8 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     upgl->addWidget(new QLabel("Size"),2,2);
     upgl->addWidget(p_upMajorStepBox,2,3);
 
+    upgl->addItem(new QSpacerItem(0,0,QSizePolicy::Minimum,QSizePolicy::Expanding),3,0);
+
     p_upBox->setLayout(upgl);
 
 
@@ -144,6 +146,8 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     downgl->addWidget(p_fixedDownLoBox,3,0,1,2,Qt::AlignLeft);
     downgl->addWidget(p_constantDownOffsetBox,3,2,1,2,Qt::AlignLeft);
 
+    downgl->addItem(new QSpacerItem(0,0,QSizePolicy::Minimum,QSizePolicy::Expanding),4,0);
+
     p_downBox->setLayout(downgl);
 
     auto *otherBox = new QGroupBox(QString("Scan Settings"));
@@ -153,14 +157,22 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     p_shotsPerStepBox->setRange(1,__INT_MAX__);
     p_shotsPerStepBox->setSingleStep(1000);
     p_shotsPerStepBox->setToolTip(QString("Number of shots to acquire at each step (major and minor)."));
-    fl->addRow(QString("Shots/Point"),p_shotsPerStepBox);
+
+    auto lbl = new QLabel(QString("Shots.Point"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
+    fl->addRow(lbl,p_shotsPerStepBox);
 
 
     p_targetSweepsBox = new QSpinBox;
     p_targetSweepsBox->setRange(1,__INT_MAX__);
     p_targetSweepsBox->setToolTip(QString("Number of sweeps through the total LO range.\nExperiment will end when this number is reached."));
-    fl->addRow(QString("Target Sweeps"),p_targetSweepsBox);
+    lbl = new QLabel(QString("Target Sweeps"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
+    fl->addRow(lbl,p_targetSweepsBox);
     otherBox->setLayout(fl);
+
 
     auto *hbl = new QHBoxLayout;
     hbl->addWidget(otherBox);

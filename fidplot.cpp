@@ -217,9 +217,9 @@ void FidPlot::prepareForExperiment(const Experiment e)
         d_ftMarkers.first->setVisible(true);
         d_ftMarkers.second->setVisible(true);
 
-        double maxTime = c.scopeConfig().recordLength/c.scopeConfig().sampleRate*1e6;
+        double maxTime = (static_cast<double>(c.scopeConfig().recordLength)-1.0)/c.scopeConfig().sampleRate*1e6;
         double ftEnd = d_ftMarkers.second->xValue();
-        if(ftEnd < 0.0 || ftEnd < d_ftMarkers.first->xValue() || ftEnd > maxTime)
+        if(ftEnd <= 0.0 || ftEnd <= d_ftMarkers.first->xValue() || ftEnd > maxTime)
             d_ftMarkers.second->setXValue(maxTime);
 
         emit ftStartChanged(d_ftMarkers.first->xValue());

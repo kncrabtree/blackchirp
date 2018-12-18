@@ -9,6 +9,7 @@
 #include <QDateTimeEdit>
 #include <QDoubleSpinBox>
 #include <QComboBox>
+#include <QLabel>
 
 #include "experimentwizard.h"
 
@@ -39,29 +40,47 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
                                        "When this number is reached, the experiment ends in Target Shots mode, while an exponentially weighted moving average engages in Peak Up mode.\n\n"
                                        "If this box is disabled, it is either irrelevant or will be configured on a later page (e.g. in Multiple LO mode)."));
     p_ftmwShotsBox->setSingleStep(5000);
-    fl->addRow(QString("Shots"),p_ftmwShotsBox);
+
+    auto lbl = new QLabel(QString("Shots"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    fl->addRow(lbl,p_ftmwShotsBox);
 
     p_ftmwTargetTimeBox = new QDateTimeEdit(this);
     p_ftmwTargetTimeBox->setDisplayFormat(QString("yyyy-MM-dd h:mm:ss AP"));
     p_ftmwTargetTimeBox->setMaximumDateTime(QDateTime::currentDateTime().addSecs(__INT_MAX__));
     p_ftmwTargetTimeBox->setCurrentSection(QDateTimeEdit::HourSection);
     p_ftmwTargetTimeBox->setToolTip(QString("The time at which an experiment in Target Time mode will complete. If disabled, this setting is irrelevant."));
-    fl->addRow(QString("Stop Time"),p_ftmwTargetTimeBox);
+
+    lbl = new QLabel(QString("Stop Time"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    fl->addRow(lbl,p_ftmwTargetTimeBox);
 
     p_phaseCorrectionBox = new QCheckBox(this);
     p_phaseCorrectionBox->setToolTip(QString("If checked, Blackchirp will optimize the autocorrelation of the chirp during the acquisition.\n\nFor this to work, the chirp must be part of the signal recorded by the digitizer."));
-    fl->addRow(QString("Phase Correction"),p_phaseCorrectionBox);
+
+    lbl = new QLabel(QString("Phase Correction"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    fl->addRow(lbl,p_phaseCorrectionBox);
 
     p_chirpScoringBox = new QCheckBox(this);
     p_chirpScoringBox->setToolTip(QString("If checked, Blackchirp will compare the RMS of the chirp in each new waveform with that of the current average chirp RMS.\nIf less than threshold*averageRMS, the FID will be rejected."));
-    fl->addRow(QString("Chirp Scoring"),p_chirpScoringBox);
+    lbl = new QLabel(QString("Chirp Scoring"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    fl->addRow(lbl,p_chirpScoringBox);
 
     p_thresholdBox = new QDoubleSpinBox(this);
     p_thresholdBox->setRange(0.0,1.0);
     p_thresholdBox->setSingleStep(0.05);
     p_thresholdBox->setValue(0.9);
     p_thresholdBox->setDecimals(3);
-    fl->addRow(QString("Chirp Threshold"),p_thresholdBox);
+    lbl = new QLabel(QString("Chirp Threshold"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    fl->addRow(lbl,p_thresholdBox);
 
     p_chirpOffsetBox = new QDoubleSpinBox(this);
     p_chirpOffsetBox->setRange(-0.00001,100.0);
@@ -71,10 +90,14 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     p_chirpOffsetBox->setSuffix(QString::fromUtf16(u" μs"));
     p_chirpOffsetBox->setSpecialValueText(QString("Automatic"));
     p_chirpOffsetBox->setToolTip(QString("The time at which the chirp starts (used for phase correction and chirp scoring).\n\nIf automatic, Blackchirp assumes the digitizer is triggered at the start of the protection pulse,\nand accounts for the digitizer trigger position."));
-    fl->addRow(QString("Chirp Start"),p_chirpOffsetBox);
+    lbl = new QLabel(QString("Chirp Start"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    fl->addRow(lbl,p_chirpOffsetBox);
 
     p_ftmw->setLayout(fl);
 
+    auto *fl2 = new QFormLayout(this);
 
     auto *sgb = new QGroupBox(QString("Common Settings"));
     p_auxDataIntervalBox = new QSpinBox(this);
@@ -83,6 +106,10 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     p_auxDataIntervalBox->setSingleStep(300);
     p_auxDataIntervalBox->setSuffix(QString(" s"));
     p_auxDataIntervalBox->setToolTip(QString("Interval for auxilliary data readings (e.g., flows, pressure, etc.)"));
+    lbl = new QLabel(QString("Time Data Interval"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    fl2->addRow(lbl,p_auxDataIntervalBox);
 
     p_snapshotBox = new QSpinBox(this);
     p_snapshotBox->setRange(1<<8,(1<<30)-1);
@@ -92,9 +119,10 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     p_snapshotBox->setSuffix(QString(" shots"));
     p_snapshotBox->setToolTip(QString("Interval for taking experiment snapshots (i.e., autosaving)."));
 
-    auto *fl2 = new QFormLayout(this);
-    fl2->addRow(QString("Time Data Interval"),p_auxDataIntervalBox);
-    fl2->addRow(QString("Snapshot Interval"),p_snapshotBox);
+    lbl = new QLabel(QString("Snapshot Interval"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    fl2->addRow(lbl,p_snapshotBox);
     sgb->setLayout(fl2);
 
 

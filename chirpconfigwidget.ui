@@ -223,11 +223,17 @@
        </layout>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_3">
+       <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,1">
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
            <widget class="QLabel" name="label">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string>Current Chirp</string>
             </property>
@@ -280,6 +286,12 @@
         </property>
         <item row="1" column="0">
          <widget class="QLabel" name="preChirpDelayLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Pre-Chirp Delay</string>
           </property>
@@ -309,6 +321,12 @@
         </item>
         <item row="3" column="0">
          <widget class="QLabel" name="protectionDelayLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Post-Chirp Protection</string>
           </property>
@@ -341,6 +359,12 @@
         </item>
         <item row="4" column="0">
          <widget class="QLabel" name="chirpsLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Chirps</string>
           </property>
@@ -364,6 +388,12 @@
         </item>
         <item row="5" column="0">
          <widget class="QLabel" name="chirpIntervalLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Chirp Interval</string>
           </property>
@@ -396,6 +426,12 @@
         </item>
         <item row="0" column="0">
          <widget class="QLabel" name="preChirpProtectionLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Pre-Chirp Protection</string>
           </property>
@@ -422,6 +458,12 @@
         </item>
         <item row="2" column="0">
          <widget class="QLabel" name="postChirpDelayLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Post-Chirp Delay</string>
           </property>

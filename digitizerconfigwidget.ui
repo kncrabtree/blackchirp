@@ -27,6 +27,12 @@
         </property>
         <item row="0" column="0">
          <widget class="QLabel" name="fIDChannelLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>FID Channel</string>
           </property>
@@ -47,6 +53,12 @@
         </item>
         <item row="1" column="0">
          <widget class="QLabel" name="verticalScaleLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Vertical Scale</string>
           </property>
@@ -76,6 +88,12 @@
         </item>
         <item row="2" column="0">
          <widget class="QLabel" name="triggerChannelLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Trigger Channel</string>
           </property>
@@ -99,6 +117,12 @@
         </item>
         <item row="5" column="0">
          <widget class="QLabel" name="triggerSlopeLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Trigger Slope</string>
           </property>
@@ -109,6 +133,12 @@
         </item>
         <item row="6" column="0">
          <widget class="QLabel" name="sampleRateLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Sample Rate</string>
           </property>
@@ -123,6 +153,12 @@
         </item>
         <item row="7" column="0">
          <widget class="QLabel" name="recordLengthLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Record Length</string>
           </property>
@@ -152,6 +188,12 @@
         </item>
         <item row="8" column="0">
          <widget class="QLabel" name="bytesPointLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Bytes/point</string>
           </property>
@@ -172,6 +214,12 @@
         </item>
         <item row="9" column="0">
          <widget class="QLabel" name="fastFrameEnabledLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Fast Frame?</string>
           </property>
@@ -186,6 +234,12 @@
         </item>
         <item row="10" column="0">
          <widget class="QLabel" name="framesLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Frames</string>
           </property>
@@ -206,6 +260,12 @@
         </item>
         <item row="11" column="0">
          <widget class="QLabel" name="summaryFrameLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Average Frames?</string>
           </property>
@@ -216,6 +276,12 @@
         </item>
         <item row="3" column="0">
          <widget class="QLabel" name="triggerDelayLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Trigger Delay</string>
           </property>
@@ -236,6 +302,12 @@
         </item>
         <item row="4" column="0">
          <widget class="QLabel" name="triggerLevelLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Trigger Level</string>
           </property>
@@ -262,6 +334,12 @@
         </item>
         <item row="12" column="0">
          <widget class="QLabel" name="blockAverageLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Block Average?</string>
           </property>
@@ -272,6 +350,12 @@
         </item>
         <item row="13" column="0">
          <widget class="QLabel" name="averagesLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Averages</string>
           </property>
