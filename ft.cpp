@@ -133,7 +133,17 @@ QPointF Ft::at(int i) const
 //    if(i >= 0 && i < data->ftData.size())
     return data->ftData.at(i);
 
-//    return QPointF();
+    //    return QPointF();
+}
+
+QPointF Ft::constFirst() const
+{
+    return data->ftData.constFirst();
+}
+
+QPointF Ft::constLast() const
+{
+    return data->ftData.constLast();
 }
 
 double Ft::xSpacing() const

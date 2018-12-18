@@ -48,5 +48,6 @@
         <file>icons/plot2.svg</file>
         <file>icons/reset.svg</file>
         <file>icons/averaging.svg</file>
+        <file>icons/peak-find.svg</file>
     </qresource>
 </RCC>

@@ -3,8 +3,7 @@
 
 #include <QObject>
 
-#include <QVector>
-#include <QPointF>
+#include "ft.h"
 
 #include <eigen3/Eigen/Core>
 
@@ -18,7 +17,7 @@ signals:
     void peakList(const QList<QPointF>);
 
 public slots:
-    QList<QPointF> findPeaks(const QVector<QPointF> ft, double minF, double maxF, double minSNR);
+    QList<QPointF> findPeaks(const Ft ft, double minF, double maxF, double minSNR);
     void calcCoefs(int winSize, int polyOrder);
 
 private:

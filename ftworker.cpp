@@ -404,9 +404,9 @@ QList<Ft> FtWorker::makeSidebandList(const FidList fl, const FidProcessingSettin
         f = fl.at(i);
         f.setSideband(sb);
         ft1 = doFT(f,settings);
-        ft1.trim(minFreq,maxFreq);
         if(!ft1.isEmpty())
         {
+            ft1.trim(minFreq,maxFreq);
             if(sp < 0.0)
             {
                 f0 = ft1.loFreq();

@@ -11,13 +11,11 @@
 
 #include "peaklistexportdialog.h"
 
-PeakFindWidget::PeakFindWidget(QWidget *parent) :
+PeakFindWidget::PeakFindWidget(Ft ft, QWidget *parent):
     QWidget(parent),
     ui(new Ui::PeakFindWidget), d_number(0), d_busy(false), d_waiting(false)
 {
     ui->setupUi(this);
-
-    setEnabled(false);
 
     p_thread = new QThread(this);
     p_pf = new PeakFinder;
@@ -38,6 +36,20 @@ PeakFindWidget::PeakFindWidget(QWidget *parent) :
     connect(ui->optionsButton,&QPushButton::clicked,this,&PeakFindWidget::launchOptionsDialog);
     connect(ui->exportButton,&QPushButton::clicked,this,&PeakFindWidget::launchExportDialog);
 
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    d_minFreq = s.value(QString("peakFind/minFreq"),ft.minFreq()).toDouble();
+    d_maxFreq = s.value(QString("peakFind/maxFreq"),ft.maxFreq()).toDouble();
+    d_snr = s.value(QString("peakFind/snr"),5.0).toDouble();
+    d_winSize = s.value(QString("peakFind/windowSize"),11).toInt();
+    d_polyOrder = s.value(QString("peakFind/polyOrder"),6).toInt();
+
+    if(d_minFreq > ft.maxFreq())
+        d_minFreq = ft.minFreq();
+    if(d_maxFreq < d_minFreq)
+        d_maxFreq = ft.maxFreq();
+
+    d_currentFt = ft;
+
 }
 
 PeakFindWidget::~PeakFindWidget()
@@ -48,52 +60,7 @@ PeakFindWidget::~PeakFindWidget()
 
 }
 
-void PeakFindWidget::prepareForExperiment(const Experiment e)
-{
-    //clear table
-    p_listModel->clearPeakList();
-
-    ui->findButton->setEnabled(false);
-    ui->removeButton->setEnabled(false);
-    ui->exportButton->setEnabled(false);
-
-    d_currentFt.clear();
-
-    d_busy = false;
-    d_waiting = false;
-
-    if(e.ftmwConfig().isEnabled())
-    {
-        setEnabled(true);
-
-        QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-        d_minFreq = qBound(e.ftmwConfig().ftMinMHz(),s.value(QString("peakFind/minFreq"),e.ftmwConfig().ftMinMHz()).toDouble(),e.ftmwConfig().ftMaxMHz());
-        d_maxFreq = qBound(e.ftmwConfig().ftMinMHz(),s.value(QString("peakFind/maxFreq"),e.ftmwConfig().ftMaxMHz()).toDouble(),e.ftmwConfig().ftMaxMHz());
-        d_snr = s.value(QString("peakFind/snr"),3.0).toDouble();
-        d_winSize = s.value(QString("peakFind/windowSize"),11).toInt();
-        d_freqRange = qMakePair(e.ftmwConfig().ftMinMHz(),e.ftmwConfig().ftMaxMHz());
-        d_polyOrder = s.value(QString("peakFind/polyOrder"),6).toInt();
-        if(e.ftmwConfig().type() == BlackChirp::FtmwPeakUp)
-            d_number = 0;
-        else
-            d_number = e.number();
-
-        if(d_winSize < d_polyOrder+1)
-            d_winSize = d_polyOrder+1;
-
-        if(!(d_winSize % 2))
-            d_winSize++;
-
-        if(d_minFreq > d_maxFreq)
-            qSwap(d_minFreq,d_maxFreq);
-
-        QMetaObject::invokeMethod(p_pf,"calcCoefs",Qt::BlockingQueuedConnection,Q_ARG(int,d_winSize),Q_ARG(int,d_polyOrder));
-    }
-    else
-        setEnabled(false);
-}
-
-void PeakFindWidget::newFt(const QVector<QPointF> ft)
+void PeakFindWidget::newFt(const Ft ft)
 {
     d_currentFt = ft;
 
@@ -126,7 +93,7 @@ void PeakFindWidget::findPeaks()
     if(!d_busy)
     {
         d_busy = true;
-        QMetaObject::invokeMethod(p_pf,"findPeaks",Q_ARG(const QVector<QPointF>,d_currentFt),Q_ARG(double,d_minFreq),Q_ARG(double,d_maxFreq),Q_ARG(double,d_snr));
+        QMetaObject::invokeMethod(p_pf,"findPeaks",Q_ARG(const Ft,d_currentFt),Q_ARG(double,d_minFreq),Q_ARG(double,d_maxFreq),Q_ARG(double,d_snr));
         d_waiting = false;
     }
     else
@@ -171,14 +138,14 @@ void PeakFindWidget::launchOptionsDialog()
 
     QDoubleSpinBox *minBox = new QDoubleSpinBox(&d);
     minBox->setDecimals(3);
-    minBox->setRange(d_freqRange.first,d_freqRange.second);
+    minBox->setRange(d_currentFt.minFreq(),d_currentFt.maxFreq());
     minBox->setValue(d_minFreq);
     minBox->setSuffix(QString(" MHz"));
     fl->addRow(QString("Min Frequency"),minBox);
 
     QDoubleSpinBox *maxBox = new QDoubleSpinBox(&d);
     maxBox->setDecimals(3);
-    maxBox->setRange(d_freqRange.first,d_freqRange.second);
+    maxBox->setRange(d_currentFt.minFreq(),d_currentFt.maxFreq());
     maxBox->setValue(d_maxFreq);
     maxBox->setSuffix(QString(" MHz"));
     fl->addRow(QString("Max Frequency"),maxBox);

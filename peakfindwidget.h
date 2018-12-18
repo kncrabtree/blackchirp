@@ -21,16 +21,14 @@ class PeakFindWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit PeakFindWidget(QWidget *parent = 0);
+    explicit PeakFindWidget(Ft ft, QWidget *parent = 0);
     ~PeakFindWidget();
-
-    void prepareForExperiment(const Experiment e);
 
 signals:
     void peakList(const QList<QPointF>);
 
 public slots:
-    void newFt(const QVector<QPointF> ft);
+    void newFt(const Ft ft);
     void newPeakList(const QList<QPointF> pl);
     void findPeaks();
     void removeSelected();
@@ -54,8 +52,7 @@ private:
     int d_number;
     bool d_busy;
     bool d_waiting;
-    QVector<QPointF> d_currentFt;
-    QPair<double,double> d_freqRange;
+    Ft d_currentFt;
     QThread *p_thread;
 };
 

@@ -9,7 +9,7 @@ PeakFinder::PeakFinder(QObject *parent) : QObject(parent)
     calcCoefs(11,6);
 }
 
-QList<QPointF> PeakFinder::findPeaks(const QVector<QPointF> ft, double minF, double maxF, double minSNR)
+QList<QPointF> PeakFinder::findPeaks(const Ft ft, double minF, double maxF, double minSNR)
 {
     if(ft.size() < d_window)
     {

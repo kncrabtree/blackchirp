@@ -127,6 +127,11 @@ void FtPlot::prepareForExperiment(const Experiment e)
     configureUnits(static_cast<BlackChirp::FtPlotUnits>(s.value(QString("ftUnits"),BlackChirp::FtPlotmV).toInt()));
 }
 
+Ft FtPlot::currentFt() const
+{
+    return d_currentFt;
+}
+
 void FtPlot::newFt(const Ft ft)
 {
 //    if(ft.isEmpty())

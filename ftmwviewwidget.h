@@ -30,6 +30,7 @@
 
 class QThread;
 class FtmwSnapshotWidget;
+class PeakFindWidget;
 
 namespace Ui {
 class FtmwViewWidget;
@@ -87,6 +88,8 @@ public slots:
     void snapshotsFinalizedUpdateUi(int num);
     void experimentComplete(const Experiment e);
 
+    void launchPeakFinder();
+
 
 private:
     Ui::FtmwViewWidget *ui;
@@ -117,6 +120,7 @@ private:
     QList<int> d_workerIds;
     QHash<int,WorkerStatus> d_workersStatus;
     QHash<int,PlotStatus> d_plotStatus;
+    PeakFindWidget *p_pfw;
     QString d_path;
     const int d_liveId = 0, d_mainId = 3, d_plot1Id = 1, d_plot2Id = 2;
     const QString d_shotsString = QString("Shots: %1");
@@ -164,6 +168,7 @@ public:
     QLabel *shotsLabel;
     QDoubleSpinBox *minFtSegBox;
     QDoubleSpinBox *maxFtSegBox;
+    QAction *peakFindAction;
 
     void setupUi(QWidget *FtmwViewWidget, QString path)
     {
@@ -384,6 +389,9 @@ public:
         peakupMenu->addAction(peakupWa);
         peakupButton->setMenu(peakupMenu);
         peakupButton->setPopupMode(QToolButton::InstantPopup);
+
+        peakFindAction = toolBar->addAction(QIcon(":/icons/peak-find.svg"),QString("Peak Find"));
+        peakFindAction->setEnabled(false);
 
         auto *spacer = new QWidget;
         spacer->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Minimum);

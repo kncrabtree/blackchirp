@@ -25,6 +25,7 @@ public:
     ~FtPlot();
 
     void prepareForExperiment(const Experiment e);
+    Ft currentFt() const;
 
 signals:
     void pzfChanged(int);

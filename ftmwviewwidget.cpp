@@ -10,12 +10,15 @@
 #include <QFormLayout>
 
 #include "ftworker.h"
+#include "peakfindwidget.h"
 
 FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     QWidget(parent),
     ui(new Ui::FtmwViewWidget), d_currentExptNum(-1), d_currentSegment(-1), d_mode(Live), d_path(path)
 {
     ui->setupUi(this,d_path);
+
+    p_pfw = nullptr;
 
     QSettings s;
     s.beginGroup(QString("fidProcessing"));
@@ -81,6 +84,8 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     connect(ui->lsAction,&QAction::triggered,this,[=]() { modeChanged(LowerSB); });
     connect(ui->bsAction,&QAction::triggered,this,[=]() { modeChanged(BothSB); });
 
+    connect(ui->peakFindAction,&QAction::triggered,this,&FtmwViewWidget::launchPeakFinder);
+
     connect(ui->minFtSegBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),this,&FtmwViewWidget::updateSidebandFreqs);
     connect(ui->maxFtSegBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),this,&FtmwViewWidget::updateSidebandFreqs);
 
@@ -97,6 +102,9 @@ FtmwViewWidget::~FtmwViewWidget()
         it.value().thread->wait();
     }
 
+    if(p_pfw != nullptr)
+        p_pfw->close();
+
     delete ui;
 }
 
@@ -107,6 +115,13 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
         ui->exptLabel->setText(QString("Peak Up Mode"));
     else
         ui->exptLabel->setText(QString("Experiment %1").arg(e.number()));
+
+
+    if(p_pfw != nullptr)
+    {
+        p_pfw->close();
+        p_pfw = nullptr;
+    }
 
     if(!ui->exptLabel->isVisible())
         ui->exptLabel->setVisible(true);
@@ -202,6 +217,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
         ui->averagesSpinbox->setEnabled(false);
     }
 
+    ui->peakFindAction->setEnabled(false);
     d_ftmwConfig = config;
     d_snap1Config = config;
     d_snap2Config = config;
@@ -270,8 +286,6 @@ void FtmwViewWidget::updateFtmw(const FtmwConfig f)
     {
         if(it.key() == d_liveId)
             continue;
-
-        ///TODO: snapshot calculation?
 
         if(it.key() == d_plot1Id && ui->plot1ConfigWidget->isSnapshotActive())
         {
@@ -398,6 +412,8 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
         //this is the main plot
         ui->mainFtPlot->newFt(ft);
         ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
+        if(p_pfw != nullptr)
+            p_pfw->newFt(ft);
     }
 
     d_workersStatus[workerId].busy = false;
@@ -427,16 +443,23 @@ void FtmwViewWidget::ftDiffDone(const Ft ft)
 void FtmwViewWidget::updateMainPlot()
 {
     ui->mainFtPlot->configureUnits(d_currentProcessingSettings.units);
+    ui->peakFindAction->setEnabled(true);
 
     switch(d_mode) {
     case Live:
         ui->mainFtPlot->newFt(d_plotStatus.value(d_liveId).ft);
+        if(p_pfw != nullptr)
+            p_pfw->newFt(d_plotStatus.value(d_liveId).ft);
         break;
     case FT1:
         ui->mainFtPlot->newFt(d_plotStatus.value(d_plot1Id).ft);
+        if(p_pfw != nullptr)
+            p_pfw->newFt(d_plotStatus.value(d_plot1Id).ft);
         break;
     case FT2:
         ui->mainFtPlot->newFt(d_plotStatus.value(d_plot2Id).ft);
+        if(p_pfw != nullptr)
+            p_pfw->newFt(d_plotStatus.value(d_plot2Id).ft);
         break;
     case FT1mFT2:
         processDiff(d_plotStatus.value(d_plot1Id).fid,d_plotStatus.value(d_plot2Id).fid);
@@ -678,6 +701,36 @@ void FtmwViewWidget::experimentComplete(const Experiment e)
 
         updateFtmw(e.ftmwConfig());
     }
+}
+
+void FtmwViewWidget::launchPeakFinder()
+{
+    if(p_pfw != nullptr)
+    {
+        p_pfw->activateWindow();
+        p_pfw->raise();
+        return;
+    }
+
+    p_pfw = new PeakFindWidget(ui->mainFtPlot->currentFt());
+    if(d_currentExptNum > 0)
+        p_pfw->setWindowTitle(QString("Peak List: Experiment %1").arg(d_currentExptNum));
+    else
+        p_pfw->setWindowTitle(QString("Peak List"));
+
+    p_pfw->setAttribute(Qt::WA_DeleteOnClose);
+
+    connect(d_workersStatus.value(d_mainId).worker,&FtWorker::ftDone,p_pfw,&PeakFindWidget::newFt);
+    connect(p_pfw,&PeakFindWidget::peakList,ui->mainFtPlot,&FtPlot::newPeakList);
+    connect(p_pfw,&PeakFindWidget::destroyed,[=](){
+        p_pfw = nullptr;
+        ui->mainFtPlot->newPeakList(QList<QPointF>());
+    });
+
+    p_pfw->show();
+    p_pfw->activateWindow();
+    p_pfw->raise();
+
 }
 
 void FtmwViewWidget::updateFid(int id)

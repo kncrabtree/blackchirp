@@ -27,6 +27,8 @@ public:
     int size() const;
     bool isEmpty() const;
     QPointF at(int i) const;
+    QPointF constFirst() const;
+    QPointF constLast() const;
     double xSpacing() const;
     double minFreq() const;
     double maxFreq() const;
