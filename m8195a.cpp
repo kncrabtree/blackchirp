@@ -100,7 +100,7 @@ Experiment M8195A::prepareForExperiment(Experiment exp)
     s.beginGroup(d_subKey);
     bool triggered = s.value(QString("triggered"),true).toBool();
     double samplerate = s.value(QString("sampleRate"),65e9).toDouble();
-    bool async = s.value(QString("asyncTrig"),true);
+    bool async = s.value(QString("asyncTrig"),true).toBool();
     s.endGroup();
     s.endGroup();
 
