@@ -5,6 +5,7 @@
 
 #include "experiment.h"
 #include "motorscan.h"
+#include "analysis.h"
 
 class MotorSliderWidget;
 
@@ -30,6 +31,11 @@ private:
     QList<MotorSliderWidget*> d_sliders;
 
     MotorScan d_currentScan;
+
+    int d_winSize = 21, d_polyOrder = 3;
+    bool d_smooth = true;
+    Eigen::MatrixXd d_coefs;
+
 };
 
 #endif // MOTORDISPLAYWIDGET_H

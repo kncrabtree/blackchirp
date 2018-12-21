@@ -22,6 +22,8 @@ MotorDisplayWidget::MotorDisplayWidget(QWidget *parent) :
 
     for(int i=0; i<d_sliders.size();i++)
         connect(d_sliders.at(i),&MotorSliderWidget::valueChanged,this,&MotorDisplayWidget::updatePlots);
+
+    d_coefs = Analysis::calcSavGolCoefs(d_winSize,d_polyOrder);
 }
 
 MotorDisplayWidget::~MotorDisplayWidget()
@@ -60,18 +62,39 @@ void MotorDisplayWidget::newMotorData(const MotorScan s)
 
 void MotorDisplayWidget::updatePlots()
 {
-    //prepare slices; update plots
-    QVector<double> sliceZPlot = d_currentScan.slice(ui->motorZSpectrogramPlot->leftAxis(),ui->motorZSpectrogramPlot->bottomAxis()
-                                         ,ui->zSlider1->axis(),ui->zSlider1->currentIndex(),
-                                         ui->zSlider2->axis(),ui->zSlider2->currentIndex());
+    if(d_smooth)
+    {
+        //prepare smoothed slices; update plots
+        QVector<double> sliceZPlot = d_currentScan.smoothSlice(ui->motorZSpectrogramPlot->leftAxis(),ui->motorZSpectrogramPlot->bottomAxis()
+                                                         ,ui->zSlider1->axis(),ui->zSlider1->currentIndex(),
+                                                         ui->zSlider2->axis(),ui->zSlider2->currentIndex(),d_coefs);
 
-    ui->motorZSpectrogramPlot->updateData(sliceZPlot,d_currentScan.numPoints(ui->motorZSpectrogramPlot->bottomAxis()));
+        ui->motorZSpectrogramPlot->updateData(sliceZPlot,d_currentScan.numPoints(ui->motorZSpectrogramPlot->bottomAxis()));
 
-    QVector<double> sliceXYPlot = d_currentScan.slice(ui->motorXYSpectrogramPlot->leftAxis(),ui->motorXYSpectrogramPlot->bottomAxis()
-                                         ,ui->xySlider1->axis(),ui->xySlider1->currentIndex(),
-                                         ui->xySlider2->axis(),ui->xySlider2->currentIndex());
-    ui->motorXYSpectrogramPlot->updateData(sliceXYPlot,d_currentScan.numPoints(ui->motorXYSpectrogramPlot->bottomAxis()));
+        QVector<double> sliceXYPlot = d_currentScan.smoothSlice(ui->motorXYSpectrogramPlot->leftAxis(),ui->motorXYSpectrogramPlot->bottomAxis()
+                                                          ,ui->xySlider1->axis(),ui->xySlider1->currentIndex(),
+                                                          ui->xySlider2->axis(),ui->xySlider2->currentIndex(),d_coefs);
+        ui->motorXYSpectrogramPlot->updateData(sliceXYPlot,d_currentScan.numPoints(ui->motorXYSpectrogramPlot->bottomAxis()));
 
-    QVector<QPointF> timeTrace = d_currentScan.tTrace(ui->timeXSlider->currentIndex(),ui->timeYSlider->currentIndex(),ui->timeZSlider->currentIndex());
-    ui->motorTimePlot->updateData(timeTrace);
+        QVector<QPointF> timeTrace = d_currentScan.smoothtTrace(ui->timeXSlider->currentIndex(),ui->timeYSlider->currentIndex(),ui->timeZSlider->currentIndex(),d_coefs);
+        ui->motorTimePlot->updateData(timeTrace);
+    }
+
+    else
+    {
+        //show raw data; no smoothing
+        QVector<double> sliceZPlot = d_currentScan.slice(ui->motorZSpectrogramPlot->leftAxis(),ui->motorZSpectrogramPlot->bottomAxis()
+                                                         ,ui->zSlider1->axis(),ui->zSlider1->currentIndex(),
+                                                         ui->zSlider2->axis(),ui->zSlider2->currentIndex());
+
+        ui->motorZSpectrogramPlot->updateData(sliceZPlot,d_currentScan.numPoints(ui->motorZSpectrogramPlot->bottomAxis()));
+
+        QVector<double> sliceXYPlot = d_currentScan.slice(ui->motorXYSpectrogramPlot->leftAxis(),ui->motorXYSpectrogramPlot->bottomAxis()
+                                                          ,ui->xySlider1->axis(),ui->xySlider1->currentIndex(),
+                                                          ui->xySlider2->axis(),ui->xySlider2->currentIndex());
+        ui->motorXYSpectrogramPlot->updateData(sliceXYPlot,d_currentScan.numPoints(ui->motorXYSpectrogramPlot->bottomAxis()));
+
+        QVector<QPointF> timeTrace = d_currentScan.tTrace(ui->timeXSlider->currentIndex(),ui->timeYSlider->currentIndex(),ui->timeZSlider->currentIndex());
+        ui->motorTimePlot->updateData(timeTrace);
+    }
 }

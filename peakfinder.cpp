@@ -1,7 +1,5 @@
 #include "peakfinder.h"
 
-#include <eigen3/Eigen/SVD>
-
 #include "analysis.h"
 
 PeakFinder::PeakFinder(QObject *parent) : QObject(parent)
@@ -90,27 +88,7 @@ void PeakFinder::calcCoefs(int winSize, int polyOrder)
     d_window = winSize;
     d_polyOrder = polyOrder;
 
-    Eigen::MatrixXd xm(d_polyOrder+1,d_window);
-    Eigen::MatrixXd bm(d_polyOrder+1,d_polyOrder+1);
-
-    for(int i=0; i<xm.rows(); i++)
-    {
-        for(int j=0; j<(int)xm.cols(); j++)
-        {
-            int z = j - (d_window/2);
-            double val = pow((double)z,(double)i);
-            xm(i,j) = val;
-        }
-    }
-
-    for(int i=0; i<bm.rows(); i++)
-    {
-        for(int j=0; j<bm.cols(); j++)
-            bm(i,j) = (i == j ? 1.0 : 0.0);
-    }
-
-    Eigen::JacobiSVD<Eigen::MatrixXd,Eigen::FullPivHouseholderQRPreconditioner> svd(xm, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    d_coefs = svd.solve(bm);
+    d_coefs = Analysis::calcSavGolCoefs(d_window,d_polyOrder);
 
 }
 
