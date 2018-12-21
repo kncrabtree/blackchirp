@@ -341,11 +341,32 @@ void PulseConfigWidget::launchChannelConfig(int ch)
 
     ChWidgets chw = d_widgetList.at(ch);
 
-    fl->addRow(QString("Channel Name"),chw.nameEdit);
-    fl->addRow(QString("Active Level"),chw.levelButton);
-    fl->addRow(QString("Delay Step Size"),chw.delayStepBox);
-    fl->addRow(QString("Width Step Size"),chw.widthStepBox);
-    fl->addRow(QString("Role"),chw.roleBox);
+    auto lbl = new QLabel(QString("Channel Name"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    fl->addRow(lbl,chw.nameEdit);
+
+    lbl = new QLabel(QString("Active Level"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    fl->addRow(lbl,chw.levelButton);
+
+    lbl = new QLabel(QString("Delay Step Size"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    fl->addRow(lbl,chw.delayStepBox);
+
+    lbl = new QLabel(QString("Width Step Size"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    fl->addRow(lbl,chw.widthStepBox);
+
+    lbl = new QLabel(QString("Role"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    fl->addRow(lbl,chw.roleBox);
+
+
 
     chw.nameEdit->show();
     chw.levelButton->show();

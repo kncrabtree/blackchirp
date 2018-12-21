@@ -32,7 +32,11 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     p_ftmwTypeBox->addItem(QString("Peak Up"),QVariant::fromValue(BlackChirp::FtmwPeakUp));
     p_ftmwTypeBox->addItem(QString("LO Scan"),QVariant::fromValue(BlackChirp::FtmwLoScan));
     p_ftmwTypeBox->setCurrentIndex(0);
-    fl->addRow(QString("Type"),p_ftmwTypeBox);
+
+    auto lbl = new QLabel(QString("Type"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    fl->addRow(lbl,p_ftmwTypeBox);
 
     p_ftmwShotsBox = new QSpinBox(this);
     p_ftmwShotsBox->setRange(1,__INT_MAX__);
@@ -41,7 +45,7 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
                                        "If this box is disabled, it is either irrelevant or will be configured on a later page (e.g. in Multiple LO mode)."));
     p_ftmwShotsBox->setSingleStep(5000);
 
-    auto lbl = new QLabel(QString("Shots"));
+    lbl = new QLabel(QString("Shots"));
     lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
     lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
     fl->addRow(lbl,p_ftmwShotsBox);

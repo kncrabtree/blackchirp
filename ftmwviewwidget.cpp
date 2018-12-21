@@ -63,6 +63,14 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
 
     }
 
+    for(auto it = d_plotStatus.begin(); it != d_plotStatus.end(); it++)
+    {
+        it.value().fidPlot->blockSignals(true);
+        it.value().fidPlot->setFtStart(start);
+        it.value().fidPlot->setFtEnd(end);
+        it.value().fidPlot->blockSignals(false);
+    }
+
     connect(ui->processingWidget,&FtmwProcessingWidget::settingsUpdated,this,&FtmwViewWidget::updateProcessingSettings);
     connect(ui->processingMenu,&QMenu::aboutToHide,this,&FtmwViewWidget::storeProcessingSettings);
 
