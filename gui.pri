@@ -102,7 +102,6 @@ motor {
 			   $$PWD/motorstatuswidget.cpp
 
 	FORMS += \
-			   $$PWD/motordisplaywidget.ui \
 			   $$PWD/motorscopeconfigwidget.ui \
 			   $$PWD/motorscanconfigwidget.ui \
 			   $$PWD/motorstatuswidget.ui

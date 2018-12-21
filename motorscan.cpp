@@ -510,7 +510,7 @@ QVector<QPointF> MotorScan::tTrace(int x, int y, int z) const
 QVector<QPointF> MotorScan::smoothtTrace(int x, int y, int z, Eigen::MatrixXd coefs) const
 {
     QVector<QPointF> out(tPoints());
-    QVector<double> tSmooth = Analysis::savGolSmooth(coefs,0,data->zyxtData.at(x).at(y).at(z));
+    QVector<double> tSmooth = Analysis::savGolSmooth(coefs,0,data->zyxtData.at(z).at(y).at(x));
     for(int t=0; t<tPoints(); t++)
         out[t] = QPointF(tVal(t),tSmooth.at(t));
 

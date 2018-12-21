@@ -183,12 +183,20 @@ QVector<double> Analysis::savGolSmooth(const Eigen::MatrixXd coefs, int derivati
     Eigen::VectorXd c = coefs.col(derivativeOrder);
     int halfWin = c.rows()/2;
     double pf = static_cast<double>(factorial(derivativeOrder))/pow(dx,static_cast<double>(derivativeOrder));
-    for(int i=halfWin; i<d.size()-halfWin; i++)
+    for(int i=0; i<d.size(); i++)
     {
+
         //apply savitsky-golay smoothing
         double val = 0.0;
         for(int j=0; j<c.rows(); j++)
-            val += c(j)*d.at(i+j-halfWin);
+        {
+            if(i+j-halfWin < 0)
+                val += c(j)*d.at(-(i+j-halfWin));
+            else if(i+j-halfWin >= d.size())
+                val += c(j)*d.at(i-j-halfWin);
+            else
+                val += c(j)*d.at(i+j-halfWin);
+        }
         out[i] = pf*val;
     }
 
@@ -220,7 +228,14 @@ double Analysis::savGolSmoothPoint(int i, const Eigen::MatrixXd coefs, int deriv
 
     double out = 0.0;
     for(int j=0; j<c.rows(); j++)
-        out += c(j)*d.at(i+j-halfWin);
+    {
+        if(i+j-halfWin < 0)
+            out += c(j)*d.at(-(i+j-halfWin));
+        else if(i+j-halfWin >= d.size())
+            out += c(j)*d.at(i-j-halfWin);
+        else
+            out += c(j)*d.at(i+j-halfWin);
+    }
 
     double pf = static_cast<double>(factorial(derivativeOrder))/pow(dx,static_cast<double>(derivativeOrder));
     return pf*out;
