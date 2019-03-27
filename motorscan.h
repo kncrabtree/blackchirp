@@ -10,6 +10,7 @@
 #include <qwt6/qwt_matrix_raster_data.h>
 
 #include "datastructs.h"
+#include "analysis.h"
 
 class MotorScanData;
 class QwtMatrixRasterData;
@@ -44,6 +45,7 @@ public:
     QPair<double,double> interval(BlackChirp::MotorAxis axis) const;
 
     double value(int x, int y, int z, int t) const;
+    double smoothValue(int x, int y, int z, int t, Eigen::MatrixXd coefs) const;
 
     bool writeMotorFile(int num) const;
 
@@ -55,7 +57,9 @@ public:
     QVector3D currentPos() const;
 
     QVector<double> slice(BlackChirp::MotorAxis xAxis, BlackChirp::MotorAxis yAxis, BlackChirp::MotorAxis otherAxis1, int otherPoint1, BlackChirp::MotorAxis otherAxis2, int otherPoint2) const;
+    QVector<double> smoothSlice(BlackChirp::MotorAxis xAxis, BlackChirp::MotorAxis yAxis, BlackChirp::MotorAxis otherAxis1, int otherPoint1, BlackChirp::MotorAxis otherAxis2, int otherPoint2, Eigen::MatrixXd coefs) const;
     QVector<QPointF> tTrace(int x, int y, int z) const;
+    QVector<QPointF> smoothtTrace(int x, int y, int z, Eigen::MatrixXd coefs) const;
     BlackChirp::MotorScopeConfig scopeConfig() const;
 
     void parseLine(QString key, QVariant val);

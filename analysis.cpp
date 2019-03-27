@@ -148,3 +148,96 @@ QPair<double,double> Analysis::medianFilterMeanStDev(double dat[], int n)
     //not reached
     return qMakePair(0.0,1.0);
 }
+
+Eigen::MatrixXd Analysis::calcSavGolCoefs(int winSize, int polyOrder)
+{
+    Eigen::MatrixXd xm(polyOrder+1,winSize);
+    Eigen::MatrixXd bm(polyOrder+1,polyOrder+1);
+
+    for(int i=0; i<xm.rows(); i++)
+    {
+        for(int j=0; j<(int)xm.cols(); j++)
+        {
+            int z = j - (winSize/2);
+            double val = pow((double)z,(double)i);
+            xm(i,j) = val;
+        }
+    }
+
+    for(int i=0; i<bm.rows(); i++)
+    {
+        for(int j=0; j<bm.cols(); j++)
+            bm(i,j) = (i == j ? 1.0 : 0.0);
+    }
+
+    Eigen::JacobiSVD<Eigen::MatrixXd,Eigen::FullPivHouseholderQRPreconditioner> svd(xm, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    return svd.solve(bm);
+}
+
+QVector<double> Analysis::savGolSmooth(const Eigen::MatrixXd coefs, int derivativeOrder, QVector<double> d, double dx)
+{
+    QVector<double> out(d.size());
+    if(derivativeOrder >= coefs.cols())
+        return out;
+
+    Eigen::VectorXd c = coefs.col(derivativeOrder);
+    int halfWin = c.rows()/2;
+    double pf = static_cast<double>(factorial(derivativeOrder))/pow(dx,static_cast<double>(derivativeOrder));
+    for(int i=0; i<d.size(); i++)
+    {
+
+        //apply savitsky-golay smoothing
+        double val = 0.0;
+        for(int j=0; j<c.rows(); j++)
+        {
+            if(i+j-halfWin < 0)
+                val += c(j)*d.at(-(i+j-halfWin));
+            else if(i+j-halfWin >= d.size())
+                val += c(j)*d.at(i-j-halfWin);
+            else
+                val += c(j)*d.at(i+j-halfWin);
+        }
+        out[i] = pf*val;
+    }
+
+    return out;
+
+}
+
+int Analysis::factorial(int x)
+{
+    if(x>10)
+        return 0;
+
+    return (x == 1 || x == 0) ? 1 : x*factorial(x-1);
+}
+
+double Analysis::savGolSmoothPoint(int i, const Eigen::MatrixXd coefs, int derivativeOrder, QVector<double> d, double dx)
+{
+    if(derivativeOrder >= coefs.cols())
+        return 0.0;
+
+    if(i < 0 || i >= d.size())
+        return 0.0;
+
+    Eigen::VectorXd c = coefs.col(derivativeOrder);
+    int halfWin = c.rows()/2;
+
+    if(i < halfWin || i >= d.size()-halfWin)
+        return d.at(i);
+
+    double out = 0.0;
+    for(int j=0; j<c.rows(); j++)
+    {
+        if(i+j-halfWin < 0)
+            out += c(j)*d.at(-(i+j-halfWin));
+        else if(i+j-halfWin >= d.size())
+            out += c(j)*d.at(i-j-halfWin);
+        else
+            out += c(j)*d.at(i+j-halfWin);
+    }
+
+    double pf = static_cast<double>(factorial(derivativeOrder))/pow(dx,static_cast<double>(derivativeOrder));
+    return pf*out;
+
+}

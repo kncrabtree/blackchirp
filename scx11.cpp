@@ -148,6 +148,10 @@ bool Scx11::testConnection()
         return false;
     }
 
+    //set speed of Z axis
+    p_comm->writeCmd(QString("@3@3\n"));
+    p_comm->writeCmd(QString("VR 10\n"));
+
 
     emit connected();
     p_limitTimer->start();

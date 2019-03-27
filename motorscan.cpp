@@ -267,6 +267,11 @@ double MotorScan::value(int x, int y, int z, int t) const
     return data->zyxtData.at(z).at(y).at(x).at(t);
 }
 
+double MotorScan::smoothValue(int x, int y, int z, int t, Eigen::MatrixXd coefs) const
+{
+    return Analysis::savGolSmoothPoint(t,coefs,0,data->zyxtData.at(z).at(y).at(x));
+}
+
 bool MotorScan::writeMotorFile(int num) const
 {
     QFile motor(BlackChirp::getExptFile(num,BlackChirp::MotorFile));
@@ -401,6 +406,94 @@ QVector<double> MotorScan::slice(BlackChirp::MotorAxis xAxis, BlackChirp::MotorA
 
 }
 
+QVector<double> MotorScan::smoothSlice(BlackChirp::MotorAxis xAxis, BlackChirp::MotorAxis yAxis, BlackChirp::MotorAxis otherAxis1, int otherPoint1, BlackChirp::MotorAxis otherAxis2, int otherPoint2, Eigen::MatrixXd coefs) const
+{
+
+    if(xAxis == yAxis || xAxis == otherAxis1 || xAxis == otherAxis2 || yAxis == otherAxis1 ||
+            yAxis == otherAxis2 || otherAxis1 == otherAxis2)
+        return QVector<double>();
+
+    int i,j, k=otherPoint1, l=otherPoint2;
+    int *x, *y, *z, *t;
+
+    switch(xAxis)
+    {
+    case BlackChirp::MotorX:
+        x = &i;
+        break;
+    case BlackChirp::MotorY:
+        y = &i;
+        break;
+    case BlackChirp::MotorZ:
+        z = &i;
+        break;
+    case BlackChirp::MotorT:
+        t = &i;
+        break;
+    }
+
+    switch(yAxis)
+    {
+    case BlackChirp::MotorX:
+        x = &j;
+        break;
+    case BlackChirp::MotorY:
+        y = &j;
+        break;
+    case BlackChirp::MotorZ:
+        z = &j;
+        break;
+    case BlackChirp::MotorT:
+        t = &j;
+        break;
+    }
+
+    switch(otherAxis1)
+    {
+    case BlackChirp::MotorX:
+        x = &k;
+        break;
+    case BlackChirp::MotorY:
+        y = &k;
+        break;
+    case BlackChirp::MotorZ:
+        z = &k;
+        break;
+    case BlackChirp::MotorT:
+        t = &k;
+        break;
+    }
+
+    switch(otherAxis2)
+    {
+    case BlackChirp::MotorX:
+        x = &l;
+        break;
+    case BlackChirp::MotorY:
+        y = &l;
+        break;
+    case BlackChirp::MotorZ:
+        z = &l;
+        break;
+    case BlackChirp::MotorT:
+        t = &l;
+        break;
+    }
+
+    QVector<double> out(numPoints(xAxis)*numPoints(yAxis));
+    int idx = 0;
+    for(i=0; i<numPoints(xAxis); i++)
+    {
+        for(j=0; j<numPoints(yAxis); j++)
+        {
+            out[idx] = smoothValue(*x,*y,*z,*t,coefs);
+            idx++;
+        }
+    }
+
+    return out;
+}
+
 QVector<QPointF> MotorScan::tTrace(int x, int y, int z) const
 {
     QVector<QPointF> out(tPoints());
@@ -412,6 +505,16 @@ QVector<QPointF> MotorScan::tTrace(int x, int y, int z) const
 
     return out;
 
+}
+
+QVector<QPointF> MotorScan::smoothtTrace(int x, int y, int z, Eigen::MatrixXd coefs) const
+{
+    QVector<QPointF> out(tPoints());
+    QVector<double> tSmooth = Analysis::savGolSmooth(coefs,0,data->zyxtData.at(z).at(y).at(x));
+    for(int t=0; t<tPoints(); t++)
+        out[t] = QPointF(tVal(t),tSmooth.at(t));
+
+    return out;
 }
 
 BlackChirp::MotorScopeConfig MotorScan::scopeConfig() const
