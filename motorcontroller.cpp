@@ -15,7 +15,8 @@ Experiment MotorController::prepareForExperiment(Experiment exp)
 {
 
     d_enabledForExperiment = exp.motorScan().isEnabled();
-    prepareForMotorScan(exp.motorScan());
+    if(d_enabledForExperiment)
+        prepareForMotorScan(exp.motorScan());
     return exp;
 }
 

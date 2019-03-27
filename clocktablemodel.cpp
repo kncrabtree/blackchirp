@@ -337,7 +337,13 @@ QWidget *ClockTableDelegate::createEditor(QWidget *parent, const QStyleOptionVie
             double maxFreq = s.value(QString("maxFreqMHz"),1e7).toDouble();
             s.endGroup();
             s.endGroup();
-            sb->setRange(minFreq,maxFreq);
+            //rescale range according to mult/div settings
+            double factor = index.model()->data(index.model()->index(index.row(),3),Qt::EditRole).toDouble();
+            RfConfig::MultOperation op = index.model()->data(index.model()->index(index.row(),2),Qt::EditRole).value<RfConfig::MultOperation>();
+            if(op == RfConfig::Multiply)
+                sb->setRange(minFreq*factor,maxFreq*factor);
+            else
+                sb->setRange(minFreq/factor,maxFreq/factor);
         }
         else
             sb->setRange(0.0,1e7);
