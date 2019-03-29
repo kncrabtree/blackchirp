@@ -128,24 +128,25 @@ void VirtualFtmwScope::readWaveform()
         if(d_configuration.fastFrameEnabled && !d_configuration.summaryFrame)
         {
             frames = d_configuration.numFrames;
-            out.resize(d_simulatedData.size()*d_configuration.bytesPerPoint*d_configuration.numFrames);
+            out.resize(d_configuration.recordLength*d_configuration.bytesPerPoint*d_configuration.numFrames);
         }
         else
-            out.resize(d_simulatedData.size()*d_configuration.bytesPerPoint);
+            out.resize(d_configuration.recordLength*d_configuration.bytesPerPoint);
 
 
         for(int i=0; i<frames; i++)
         {
-            for(int j=0; j<d_simulatedData.size(); j++)
+            for(int j=0; j<d_configuration.recordLength; j++)
             {
-                double dat = d_simulatedData.at(j);
+                //using the value function here because j could exceed simulated data size
+                double dat = d_simulatedData.value(j);
 
 
                 if(d_configuration.bytesPerPoint == 1)
                 {
                     int noise = (rand()%32)-16;
                     qint8 n = qBound(-128,((int)(dat/d_configuration.yMult)+noise),127);
-                    out[d_simulatedData.size()*i + j] = n;
+                    out[d_configuration.recordLength*i + j] = n;
                 }
                 else
                 {
@@ -163,8 +164,8 @@ void VirtualFtmwScope::readWaveform()
                         byte1 = (n & 0xff00) >> 8;
                         byte2 = (n & 0x00ff);
                     }
-                    out[d_simulatedData.size()*2*i + 2*j] = byte1;
-                    out[d_simulatedData.size()*2*i + 2*j + 1] = byte2;
+                    out[d_configuration.recordLength*2*i + 2*j] = byte1;
+                    out[d_configuration.recordLength*2*i + 2*j + 1] = byte2;
                 }
             }
         }
