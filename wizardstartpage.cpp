@@ -228,7 +228,20 @@ void WizardStartPage::initializePage()
 #endif
 
 #ifdef BC_MOTOR
-    p_motor->setChecked(e.motorScan().isEnabled());
+    if(e.motorScan().isEnabled())
+    {
+        p_motor->setChecked(true);
+        p_ftmw->setEnabled(false);
+        p_ftmw->setChecked(false);
+#ifdef BC_LIF
+        p_lif->setChecked(false);
+        p_lif->setEnabled(false);
+#endif
+    }
+    else
+    {
+        p_motor->setChecked(false);
+    }
 #endif
 
     p_ftmwTypeBox->setCurrentIndex(p_ftmwTypeBox->findData(QVariant::fromValue(e.ftmwConfig().type())));
