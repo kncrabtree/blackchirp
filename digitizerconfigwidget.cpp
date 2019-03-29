@@ -153,13 +153,16 @@ void DigitizerConfigWidget::configureUI()
     }
 
 
-    if(ui->fastFrameEnabledCheckBox->isEnabled())
+    if(ui->fastFrameEnabledCheckBox->isChecked())
     {
         ui->framesSpinBox->setEnabled(ui->fastFrameEnabledCheckBox->isChecked());
         ui->summaryFrameCheckBox->setEnabled(ui->fastFrameEnabledCheckBox->isChecked());
     }
     else
         ui->framesSpinBox->setValue(1);
+
+    ui->framesSpinBox->setEnabled(ui->fastFrameEnabledCheckBox->isChecked());
+
 
 }
 
