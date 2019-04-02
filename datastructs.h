@@ -73,7 +73,7 @@ enum PulseRole {
     ProtPulseRole,
     AmpPulseRole,
     LaserPulseRole,
-    LifScopePulseRole,
+    LifPulseRole,
     MotorScopePulseRole,
     ExcimerRole
 };

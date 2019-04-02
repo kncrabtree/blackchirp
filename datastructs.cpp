@@ -265,7 +265,7 @@ QString BlackChirp::getPulseName(BlackChirp::PulseRole ch)
         return QString("Amp");
     case LaserPulseRole:
         return QString("Laser");
-    case LifScopePulseRole:
+    case LifPulseRole:
         return QString("LIF");
     case MotorScopePulseRole:
         return QString("Motor");
@@ -282,7 +282,7 @@ QList<BlackChirp::PulseRole> BlackChirp::allPulseRoles()
 {
     QList<BlackChirp::PulseRole> out;
     out << NoPulseRole << GasPulseRole << DcPulseRole << AwgPulseRole
-        << ProtPulseRole << AmpPulseRole << LaserPulseRole << LifScopePulseRole
+        << ProtPulseRole << AmpPulseRole << LaserPulseRole << LifPulseRole
         << MotorScopePulseRole << ExcimerRole;
 
     return out;

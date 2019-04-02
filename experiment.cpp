@@ -32,8 +32,6 @@ Experiment::Experiment(const int num, QString exptPath) : data(new ExperimentDat
     data->path = exptPath;
     data->iobCfg = IOBoardConfig(false);
 
-    ///TODO: RfConfig...
-
     QFile hdr(BlackChirp::getExptFile(num,BlackChirp::HeaderFile,exptPath));
     if(hdr.open(QIODevice::ReadOnly))
     {

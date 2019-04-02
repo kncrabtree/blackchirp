@@ -186,14 +186,14 @@ void PulseConfigWidget::configureLif(const LifConfig c)
     auto channels = d_config.channelsForRole(BlackChirp::LaserPulseRole);
     if(channels.isEmpty())
     {
-        QMessageBox::warning(this,QString("Cannot configure LIF laser pulse"),QString("No channel has been configured for the \"Laser\" role.\n\nPlease select a channel for the Laser role, then refresh this page (go back one page and then come back to this one) in order to proceed."),QMessageBox::Ok,QMessageBox::Ok);
+        QMessageBox::warning(this,QString("Cannot configure LIF pulse"),QString("No channel has been configured for the \"LIF\" role.\n\nPlease select a channel for the LIF role, then refresh this page (go back one page and then come back to this one) in order to proceed."),QMessageBox::Ok,QMessageBox::Ok);
         return;
     }
 
     auto delay = c.delayRange().first;
 
-    d_config.set(BlackChirp::LaserPulseRole,BlackChirp::PulseDelaySetting,delay);
-    d_config.set(BlackChirp::LaserPulseRole,BlackChirp::PulseEnabledSetting,true);
+    d_config.set(BlackChirp::LifPulseRole,BlackChirp::PulseDelaySetting,delay);
+    d_config.set(BlackChirp::LifPulseRole,BlackChirp::PulseEnabledSetting,true);
     setFromConfig(d_config);
 
     for(int i=0; i<channels.size(); i++)
