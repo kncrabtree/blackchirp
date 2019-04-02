@@ -232,7 +232,7 @@ void HardwareManager::initialize()
             d_hardwareList[i].second = thread;
         }
 
-#ifdef BB_GPIBCONTROLLER
+#ifdef BC_GPIBCONTROLLER
         obj->buildCommunication(gpib);
 #else
         obj->buildCommunication();
