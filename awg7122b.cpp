@@ -135,11 +135,6 @@ void AWG7122B::endAcquisition()
         p_comm->queryCmd(QString("*OPC?\n"));
     }
 }
-
-void AWG7122B::readTimeData()
-{
-}
-
 QString AWG7122B::getWaveformKey(const ChirpConfig cc)
 {
     //step 1: identify waveform containing chirp; write it if it's not already there

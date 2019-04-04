@@ -40,9 +40,20 @@ void VirtualIOBoard::endAcquisition()
 {
 }
 
-void VirtualIOBoard::readTimeData()
+
+QList<QPair<QString, QVariant> > VirtualIOBoard::readAuxPlotData()
 {
-    QList<QPair<QString,QVariant>> outPlot, outNoPlot;
+    return auxData(true);
+}
+
+QList<QPair<QString, QVariant> > VirtualIOBoard::readAuxNoPlotData()
+{
+    return auxData(false);
+}
+
+QList<QPair<QString, QVariant> > VirtualIOBoard::auxData(bool plot)
+{
+    QList<QPair<QString,QVariant>> out;
 
     auto it = d_config.analogList().constBegin();
     for(;it!=d_config.analogList().constEnd();it++)
@@ -51,10 +62,8 @@ void VirtualIOBoard::readTimeData()
         if(ch.enabled)
         {
             double val = static_cast<double>((qrand() % 20000) - 10000)/1000.0;
-            if(ch.plot)
-                outPlot.append(qMakePair(QString("ain.%1").arg(it.key()),val));
-            else
-                outNoPlot.append(qMakePair(QString("ain.%1").arg(it.key()),val));
+            if(ch.plot == plot)
+                out.append(qMakePair(QString("ain.%1").arg(it.key()),val));
         }
     }
     it = d_config.digitalList().constBegin();
@@ -64,14 +73,10 @@ void VirtualIOBoard::readTimeData()
         if(ch.enabled)
         {
             int val = qrand() % 2;
-            if(ch.plot)
-                outPlot.append(qMakePair(QString("din.%1").arg(it.key()),val));
-            else
-                outNoPlot.append(qMakePair(QString("din.%1").arg(it.key()),val));
+            if(ch.plot == plot)
+                out.append(qMakePair(QString("din.%1").arg(it.key()),val));
         }
     }
 
-    emit timeDataRead(outPlot);
-    emit timeDataReadNoPlot(outNoPlot);
-
+    return out;
 }

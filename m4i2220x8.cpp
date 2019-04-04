@@ -344,10 +344,6 @@ void M4i2220x8::endAcquisition()
 
 }
 
-void M4i2220x8::readTimeData()
-{
-}
-
 void M4i2220x8::readWaveform()
 {
     //check to see if a data block is ready

@@ -35,9 +35,9 @@ protected:
     double d_setPoint;
     bool d_pressureControlMode;
 
+
     // HardwareObject interface
-public slots:
-    virtual void readTimeData();
+    virtual QList<QPair<QString, QVariant> > readAuxPlotData();
 };
 
 #if BC_PCONTROLLER == 1

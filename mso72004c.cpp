@@ -642,10 +642,6 @@ void MSO72004C::endAcquisition()
     }
 }
 
-void MSO72004C::readTimeData()
-{
-}
-
 void MSO72004C::readWaveform()
 {
     if(!d_waitingForReply) // if for some reason the readyread signal weren't disconnected, don't eat all the bytes

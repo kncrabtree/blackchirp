@@ -118,10 +118,6 @@ void AWG70002a::endAcquisition()
     }
 }
 
-void AWG70002a::readTimeData()
-{
-}
-
 QString AWG70002a::getWaveformKey(const ChirpConfig cc)
 {
     //step 1: identify waveform containing chirp; write it if it's not already there

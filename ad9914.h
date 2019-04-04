@@ -18,7 +18,6 @@ public slots:
     Experiment prepareForExperiment(Experiment exp);
     void beginAcquisition();
     void endAcquisition();
-    void readTimeData();
 
 private:
     QByteArray d_settingsHex;

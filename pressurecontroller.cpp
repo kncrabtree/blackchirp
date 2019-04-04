@@ -15,9 +15,9 @@ PressureController::~PressureController()
 }
 
 
-void PressureController::readTimeData()
+QList<QPair<QString, QVariant> > PressureController::readAuxPlotData()
 {
     QList<QPair<QString,QVariant>> out;
-    out.append(qMakePair(QString("chamberPressure"),d_pressure));
-    emit timeDataRead(out);
+    out.append(qMakePair(QString("chamberPressure"),readPressure()));
+    return out;
 }

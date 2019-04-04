@@ -65,10 +65,6 @@ void VirtualPulseGenerator::endAcquisition()
 {
 }
 
-void VirtualPulseGenerator::readTimeData()
-{
-}
-
 QVariant VirtualPulseGenerator::read(const int index, const BlackChirp::PulseSetting s)
 {
     emit settingUpdate(index,s,d_config.setting(index,s));

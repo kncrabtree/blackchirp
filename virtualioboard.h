@@ -16,7 +16,14 @@ public slots:
     Experiment prepareForExperiment(Experiment exp);
     void beginAcquisition();
     void endAcquisition();
-    void readTimeData();
+
+    // HardwareObject interface
+protected:
+    virtual QList<QPair<QString, QVariant> > readAuxPlotData();
+    virtual QList<QPair<QString, QVariant> > readAuxNoPlotData();
+
+private:
+    QList<QPair<QString, QVariant> > auxData(bool plot);
 };
 
 #endif // VIRTUALIOBOARD_H

@@ -22,15 +22,3 @@ Experiment MotorOscilloscope::prepareForExperiment(Experiment exp)
     }
     return exp;
 }
-
-void MotorOscilloscope::beginAcquisition()
-{
-}
-
-void MotorOscilloscope::endAcquisition()
-{
-}
-
-void MotorOscilloscope::readTimeData()
-{
-}

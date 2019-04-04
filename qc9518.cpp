@@ -350,8 +350,3 @@ void Qc9518::endAcquisition()
 {
     pGenWriteCmd(QString(":SYSTEM:KLOCK 0\n"));
 }
-
-void Qc9518::readTimeData()
-{
-
-}

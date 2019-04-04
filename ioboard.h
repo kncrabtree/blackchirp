@@ -13,7 +13,7 @@ public:
     virtual ~IOBoard();
 
 public slots:
-    void readSettings();
+    virtual void readSettings();
 
 protected:
     IOBoardConfig d_config;

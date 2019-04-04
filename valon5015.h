@@ -17,7 +17,6 @@ public slots:
     void initialize();
     void beginAcquisition();
     void endAcquisition();
-    void readTimeData();
     QStringList channelNames();
 
     Experiment prepareForExperiment(Experiment exp);

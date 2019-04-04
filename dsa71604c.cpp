@@ -639,10 +639,6 @@ void Dsa71604c::endAcquisition()
     }
 }
 
-void Dsa71604c::readTimeData()
-{
-}
-
 void Dsa71604c::readWaveform()
 {
     if(!d_waitingForReply) // if for some reason the readyread signal weren't disconnected, don't eat all the bytes

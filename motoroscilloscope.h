@@ -18,9 +18,6 @@ public slots:
     // HardwareObject interface
 public slots:
     Experiment prepareForExperiment(Experiment exp);
-    void beginAcquisition();
-    void endAcquisition();
-    void readTimeData();
 
 signals:
     void traceAcquired(QVector<double> d);

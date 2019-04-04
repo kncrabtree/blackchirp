@@ -249,11 +249,9 @@ void HardwareManager::initialize()
             emit logMessage(QString("%1: %2").arg(obj->name()).arg(msg),mc);
         });
         connect(obj,&HardwareObject::connected,[=](bool success, QString msg){ connectionResult(obj,success,msg); });
-        connect(obj,&HardwareObject::timeDataRead,[=](const QList<QPair<QString,QVariant>> l){ emit timeData(l,true); });
-        connect(obj,&HardwareObject::timeDataReadNoPlot,[=](const QList<QPair<QString,QVariant>> l){ emit timeData(l,false); });
+        connect(obj,&HardwareObject::timeDataRead,[=](const QList<QPair<QString,QVariant>> l,bool plot){ emit timeData(l,plot); });
         connect(this,&HardwareManager::beginAcquisition,obj,&HardwareObject::beginAcquisition);
         connect(this,&HardwareManager::endAcquisition,obj,&HardwareObject::endAcquisition);
-        connect(this,&HardwareManager::readTimeData,obj,&HardwareObject::readTimeData);
 
         if(thread != nullptr)
         {
@@ -405,9 +403,9 @@ void HardwareManager::getTimeData()
     {
         HardwareObject *obj = d_hardwareList.at(i).first;
         if(obj->thread() == thread())
-            obj->readTimeData();
+            obj->bcReadTimeData();
         else
-            QMetaObject::invokeMethod(obj,"readTimeData");
+            QMetaObject::invokeMethod(obj,"bcReadTimeData");
     }
 }
 

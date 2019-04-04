@@ -65,10 +65,6 @@ void Valon5009::endAcquisition()
 {
 }
 
-void Valon5009::readTimeData()
-{
-}
-
 bool Valon5009::valonWriteCmd(QString cmd)
 {
     if(!p_comm->writeCmd(cmd))

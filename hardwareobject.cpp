@@ -54,6 +54,21 @@ void HardwareObject::bcTestConnection()
     emit connected(success,errorString(),QPrivateSignal());
 }
 
+void HardwareObject::bcReadTimeData()
+{
+    if(!d_isConnected)
+        return;
+
+    auto pl = readAuxPlotData();
+    if(!pl.isEmpty())
+        emit timeDataRead(pl,true,QPrivateSignal());
+
+    auto npl = readAuxNoPlotData();
+    if(!npl.isEmpty())
+        emit timeDataRead(npl,false,QPrivateSignal());
+
+}
+
 void HardwareObject::readSettings()
 {
 
@@ -98,6 +113,16 @@ void HardwareObject::buildCommunication(QObject *gc)
         connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
         connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
     }
+}
+
+QList<QPair<QString, QVariant> > HardwareObject::readAuxPlotData()
+{
+    return QList<QPair<QString,QVariant>>();
+}
+
+QList<QPair<QString, QVariant> > HardwareObject::readAuxNoPlotData()
+{
+    return QList<QPair<QString,QVariant>>();
 }
 
 void HardwareObject::sleep(bool b)

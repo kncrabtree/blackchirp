@@ -19,7 +19,6 @@ public slots:
     Experiment prepareForExperiment(Experiment exp);
     void beginAcquisition();
     void endAcquisition();
-    void readTimeData();
 
     // LifScope interface
     void setLifVScale(double scale);

@@ -65,10 +65,6 @@ void FixedClock::endAcquisition()
 {
 }
 
-void FixedClock::readTimeData()
-{
-}
-
 bool FixedClock::setHwFrequency(double freqMHz, int outputIndex)
 {
     d_currentFrequencyList[outputIndex] = freqMHz;

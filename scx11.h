@@ -32,7 +32,7 @@ public slots:
     bool testConnection();
     void initialize();
     void beginAcquisition();
-    void readTimeData();
+    void endAcquisition();
 
     // MotorController interface
 public slots:

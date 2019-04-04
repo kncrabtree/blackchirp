@@ -282,7 +282,3 @@ void AD9914::endAcquisition()
     if(d_enabledForExperiment)
         p_comm->writeCmd(QString("IN\n")); //disable ramp
 }
-
-void AD9914::readTimeData()
-{
-}

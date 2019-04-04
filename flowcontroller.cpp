@@ -89,9 +89,7 @@ void FlowController::readAll()
     readPressureControlMode();
 }
 
-
-
-void FlowController::readTimeData()
+QList<QPair<QString, QVariant> > FlowController::readAuxPlotData()
 {
     QList<QPair<QString,QVariant>> out;
     out.append(qMakePair(QString("gasPressure"),d_config.pressure()));
@@ -100,5 +98,6 @@ void FlowController::readTimeData()
         if(d_config.setting(i,BlackChirp::FlowSettingEnabled).toBool())
             out.append(qMakePair(QString("flow.%1").arg(i),d_config.setting(i,BlackChirp::FlowSettingFlow)));
     }
-    emit timeDataRead(out);
+
+    return out;
 }

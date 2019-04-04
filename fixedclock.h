@@ -16,7 +16,6 @@ public slots:
     void initialize();
     void beginAcquisition();
     void endAcquisition();
-    void readTimeData();
 
     // Clock interface
 protected:

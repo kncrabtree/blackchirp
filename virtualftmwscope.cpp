@@ -115,10 +115,6 @@ void VirtualFtmwScope::endAcquisition()
     d_simulatedTimer->stop();
 }
 
-void VirtualFtmwScope::readTimeData()
-{
-}
-
 void VirtualFtmwScope::readWaveform()
 {
     //    d_testTime.restart();

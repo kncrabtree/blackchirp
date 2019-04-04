@@ -438,10 +438,6 @@ void DSOx92004A::endAcquisition()
     }
 }
 
-void DSOx92004A::readTimeData()
-{
-}
-
 void DSOx92004A::readWaveform()
 {
     disconnect(p_socket,&QTcpSocket::readyRead,this,&DSOx92004A::readWaveform);

@@ -172,7 +172,7 @@ void Scx11::beginAcquisition()
 {
 }
 
-void Scx11::readTimeData()
+void Scx11::endAcquisition()
 {
 }
 

@@ -19,7 +19,6 @@ public slots:
     Experiment prepareForExperiment(Experiment exp);
     void beginAcquisition();
     void endAcquisition();
-    void readTimeData();
 
     // FtmwScope interface
 public slots:

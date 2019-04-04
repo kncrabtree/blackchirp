@@ -30,7 +30,6 @@ public slots:
     Experiment prepareForExperiment(Experiment exp);
     void beginAcquisition();
     void endAcquisition();
-    void readTimeData();
 };
 
 #endif // QC9518_H

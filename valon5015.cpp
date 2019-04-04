@@ -63,10 +63,6 @@ void Valon5015::endAcquisition()
 {
 }
 
-void Valon5015::readTimeData()
-{
-}
-
 QStringList Valon5015::channelNames()
 {
     return QStringList { QString("Source 1") };

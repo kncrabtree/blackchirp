@@ -41,9 +41,6 @@ public slots:
     void updateInterval();
     virtual void readNext();
 
-    // HardwareObject interface
-    void readTimeData();
-
 protected:
     FlowConfig d_config;
     QTimer *p_readTimer;
@@ -52,6 +49,10 @@ protected:
     void readAll();
 
 
+
+    // HardwareObject interface
+protected:
+    virtual QList<QPair<QString, QVariant> > readAuxPlotData();
 };
 
 #if BC_FLOWCONTROLLER == 1

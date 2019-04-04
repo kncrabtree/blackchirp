@@ -32,10 +32,6 @@ protected:
     QPair<double,double> d_xRange, d_yRange, d_zRange;
     double d_xRestingPos, d_yRestingPos, d_zRestingPos;
     QTimer *p_limitTimer;
-
-    // HardwareObject interface
-public slots:
-    virtual void endAcquisition();
 };
 
 #if BC_MOTORCONTROLLER==1

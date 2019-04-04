@@ -125,10 +125,6 @@ void Qc9528::endAcquisition()
     pGenWriteCmd(QString(":SYSTEM:KLOCK 0\r\n"));
 }
 
-void Qc9528::readTimeData()
-{
-}
-
 QVariant Qc9528::read(const int index, const BlackChirp::PulseSetting s)
 {
     QVariant out;

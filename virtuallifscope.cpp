@@ -77,10 +77,6 @@ void VirtualLifScope::endAcquisition()
 {
 }
 
-void VirtualLifScope::readTimeData()
-{
-}
-
 void VirtualLifScope::setLifVScale(double scale)
 {
     d_config.vScale1 = scale;

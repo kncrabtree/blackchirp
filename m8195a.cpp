@@ -261,10 +261,6 @@ void M8195A::endAcquisition()
     }
 }
 
-void M8195A::readTimeData()
-{
-}
-
 bool M8195A::m8195aWrite(const QString cmd)
 {
     if(!p_comm->writeCmd(cmd))

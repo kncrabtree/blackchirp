@@ -137,6 +137,10 @@ void LifSpectrogramPlot::prepareForExperiment(const LifConfig c)
     {
         d_firstPoint = false;
 
+        p_spectrogramData->setInterval(Qt::YAxis,QwtInterval(0.0,1.0));
+        p_spectrogramData->setInterval(Qt::XAxis,QwtInterval(0.0,1,0));
+        p_spectrogramData->setInterval(Qt::ZAxis,QwtInterval(0.0,1.0));
+
         setAxisAutoScaleRange(QwtPlot::xBottom,0.0,1.0);
         setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
     }

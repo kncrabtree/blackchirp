@@ -29,6 +29,12 @@ private:
 
     bool configure();
     void closeConnection();
+    QList<QPair<QString, QVariant> > auxData(bool plot);
+
+    // HardwareObject interface
+protected:
+    virtual QList<QPair<QString, QVariant> > readAuxPlotData();
+    virtual QList<QPair<QString, QVariant> > readAuxNoPlotData();
 };
 
 #endif // LABJACKU3_H

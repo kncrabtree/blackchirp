@@ -60,7 +60,3 @@ void VirtualAwg::beginAcquisition()
 void VirtualAwg::endAcquisition()
 {
 }
-
-void VirtualAwg::readTimeData()
-{
-}

@@ -48,7 +48,3 @@ bool VirtualGpibController::setAddress(int a)
     return true;
 }
 
-
-void VirtualGpibController::readTimeData()
-{
-}

@@ -25,8 +25,3 @@ bool MotorController::prepareForMotorScan(const MotorScan ms)
     Q_UNUSED(ms)
     return true;
 }
-
-
-void MotorController::endAcquisition()
-{
-}

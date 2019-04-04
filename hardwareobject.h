@@ -110,12 +110,12 @@ signals:
      */
     void hardwareFailure();
 
-    void timeDataRead(const QList<QPair<QString,QVariant>>);
-    void timeDataReadNoPlot(const QList<QPair<QString,QVariant>>);
+    void timeDataRead(const QList<QPair<QString,QVariant>>,bool,QPrivateSignal);
 	
 public slots:
     void bcInitInstrument();
     void bcTestConnection();
+    void bcReadTimeData();
 
     virtual void readSettings();
 
@@ -129,7 +129,6 @@ public slots:
 
     virtual void beginAcquisition() =0;
     virtual void endAcquisition() =0;
-    virtual void readTimeData() =0;
 
     virtual void buildCommunication(QObject *gc = nullptr);
 
@@ -150,6 +149,9 @@ protected:
      * \return Whether attempt was successful
      */
     virtual bool testConnection() =0;
+
+    virtual QList<QPair<QString,QVariant>> readAuxPlotData();
+    virtual QList<QPair<QString,QVariant>> readAuxNoPlotData();
 
     CommunicationProtocol *p_comm;
     bool d_isCritical;

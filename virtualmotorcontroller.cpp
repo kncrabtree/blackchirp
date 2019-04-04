@@ -69,7 +69,7 @@ void VirtualMotorController::beginAcquisition()
 {
 }
 
-void VirtualMotorController::readTimeData()
+void VirtualMotorController::endAcquisition()
 {
 }
 
