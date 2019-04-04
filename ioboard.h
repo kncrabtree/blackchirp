@@ -12,6 +12,9 @@ public:
     explicit IOBoard(QObject *parent = nullptr);
     virtual ~IOBoard();
 
+public slots:
+    void readSettings();
+
 protected:
     IOBoardConfig d_config;
     int d_numAnalog;
@@ -19,7 +22,6 @@ protected:
     int d_reservedAnalog;
     int d_reservedDigital;
 
-    void readSettings();
 
 };
 

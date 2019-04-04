@@ -6,7 +6,15 @@ VirtualAwg::VirtualAwg(QObject *parent) : AWG(parent)
     d_prettyName = QString("Virtual Arbitrary Waveform Generator");
     d_commType = CommunicationProtocol::Virtual;
     d_threaded = false;
+}
 
+VirtualAwg::~VirtualAwg()
+{
+
+}
+
+void VirtualAwg::readSettings()
+{
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
@@ -29,22 +37,15 @@ VirtualAwg::VirtualAwg(QObject *parent) : AWG(parent)
     s.sync();
 }
 
-VirtualAwg::~VirtualAwg()
-{
-
-}
-
 
 
 bool VirtualAwg::testConnection()
 {
-    emit connected();
     return true;
 }
 
 void VirtualAwg::initialize()
 {
-    testConnection();
 }
 
 Experiment VirtualAwg::prepareForExperiment(Experiment exp)

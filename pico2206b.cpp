@@ -12,7 +12,15 @@ Pico2206B::Pico2206B(QObject *parent) : MotorOscilloscope(parent), d_acquiring(f
     d_commType = CommunicationProtocol::Custom;
 
     d_handle = 0;
+}
 
+Pico2206B::~Pico2206B()
+{
+    closeConnection();
+}
+
+void Pico2206B::readSettings()
+{
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
     s.beginGroup(d_key);
@@ -41,27 +49,18 @@ Pico2206B::Pico2206B(QObject *parent) : MotorOscilloscope(parent), d_acquiring(f
     s.endGroup();
 }
 
-Pico2206B::~Pico2206B()
-{
-    closeConnection();
-}
-
 bool Pico2206B::testConnection()
 {
+    d_acquiring = false;
     p_acquisitionTimer->stop();
     closeConnection();
 
     status = ps2000aOpenUnit(&d_handle, NULL);
     if(status != PICO_OK)
     {
-        emit connected(false);
-        emit logMessage(QString("Pico2206B opening failed. Error code: %1").arg(status));
+        d_errorString = QString("Pico2206B opening failed. Error code: %1").arg(status);
         return false;
     }
-
-    emit connected();
-
-    //configure(d_config);
 
     return true;
 
@@ -72,11 +71,6 @@ void Pico2206B::initialize()
     p_acquisitionTimer = new QTimer(this);
     connect(p_acquisitionTimer,&QTimer::timeout,this,&Pico2206B::endScopeAcquisition);
     p_acquisitionTimer->setInterval(10);
-
-    d_acquiring = false;
-
-    testConnection();
-
 
 }
 

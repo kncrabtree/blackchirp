@@ -9,7 +9,15 @@ VirtualFtmwScope::VirtualFtmwScope(QObject *parent) :
     d_subKey = QString("virtual");
     d_prettyName = QString("Virtual FTMW Oscilloscope");
     d_commType = CommunicationProtocol::Virtual;
+}
 
+VirtualFtmwScope::~VirtualFtmwScope()
+{
+
+}
+
+void VirtualFtmwScope::readSettings()
+{
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
@@ -37,11 +45,6 @@ VirtualFtmwScope::VirtualFtmwScope(QObject *parent) :
     s.endGroup();
 }
 
-VirtualFtmwScope::~VirtualFtmwScope()
-{
-
-}
-
 
 
 bool VirtualFtmwScope::testConnection()
@@ -51,8 +54,6 @@ bool VirtualFtmwScope::testConnection()
     int shotInterval = s.value(QString("%1/%2/shotIntervalMs").arg(key()).arg(subKey()),200).toInt();
     d_simulatedTimer->setInterval(shotInterval);
 
-
-    emit connected();
     return true;
 }
 
@@ -85,7 +86,6 @@ void VirtualFtmwScope::initialize()
 
     d_simulatedTimer = new QTimer(this);
     connect(d_simulatedTimer,&QTimer::timeout,this,&FtmwScope::readWaveform, Qt::UniqueConnection);
-    testConnection();
 }
 
 Experiment VirtualFtmwScope::prepareForExperiment(Experiment exp)

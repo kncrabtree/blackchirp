@@ -6,7 +6,15 @@ VirtualPulseGenerator::VirtualPulseGenerator(QObject *parent) : PulseGenerator(p
     d_prettyName = QString("Virtual Pulse Generator");
     d_commType = CommunicationProtocol::Virtual;
     d_threaded = false;
+}
 
+VirtualPulseGenerator::~VirtualPulseGenerator()
+{
+
+}
+
+void VirtualPulseGenerator::readSettings()
+{
     QSettings s(QSettings::SystemScope, QApplication::organizationName(), QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
@@ -26,11 +34,6 @@ VirtualPulseGenerator::VirtualPulseGenerator(QObject *parent) : PulseGenerator(p
     s.sync();
 }
 
-VirtualPulseGenerator::~VirtualPulseGenerator()
-{
-
-}
-
 
 
 bool VirtualPulseGenerator::testConnection()
@@ -40,15 +43,12 @@ bool VirtualPulseGenerator::testConnection()
     blockSignals(false);
 
     emit configUpdate(d_config);
-    emit connected();
     return true;
 }
 
 void VirtualPulseGenerator::initialize()
 {
     PulseGenerator::initialize();
-
-    testConnection();
 }
 
 Experiment VirtualPulseGenerator::prepareForExperiment(Experiment exp)

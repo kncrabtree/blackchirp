@@ -8,7 +8,10 @@ M8195A::M8195A(QObject *parent) : AWG(parent)
     d_prettyName = QString("Arbitrary Waveform Generator M8195A");
     d_commType = CommunicationProtocol::Tcp;
     d_threaded = false;
+}
 
+void M8195A::readSettings()
+{
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
@@ -39,23 +42,18 @@ M8195A::M8195A(QObject *parent) : AWG(parent)
 
 bool M8195A::testConnection()
 {
-    if(!p_comm->testConnection())
-    {
-        emit connected(false,QString("TCP error."));
-        return false;
-    }
 
     QByteArray resp = p_comm->queryCmd(QString("*IDN?\n"));
 
     if(resp.isEmpty())
     {
-        emit connected(false,QString("Did not respond to ID query."));
+        d_errorString = QString("Did not respond to ID query.");
         return false;
     }
 
     if(!resp.startsWith(QByteArray("Keysight Technologies,M8195A")))
     {
-        emit connected(false,QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp.trimmed())).arg(QString(resp.toHex())));
+        d_errorString = QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp.trimmed())).arg(QString(resp.toHex()));
         return false;
     }
 
@@ -63,15 +61,12 @@ bool M8195A::testConnection()
 
     p_comm->writeCmd(QString("*CLS\n"));
 
-    emit connected();
     return true;
 }
 
 void M8195A::initialize()
 {
-    p_comm->initialize();
     p_comm->setReadOptions(10000,true,QByteArray("\n"));
-    testConnection();
 }
 
 Experiment M8195A::prepareForExperiment(Experiment exp)

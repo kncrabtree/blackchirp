@@ -10,8 +10,19 @@ M4i2220x8::M4i2220x8(QObject *parent) : FtmwScope(parent), p_handle(nullptr)
     d_commType = CommunicationProtocol::Custom;
     d_threaded = true;
 
+}
 
+M4i2220x8::~M4i2220x8()
+{
+    if(p_handle != nullptr)
+    {
+        spcm_vClose(p_handle);
+        p_handle = nullptr;
+    }
+}
 
+void M4i2220x8::readSettings()
+{
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
@@ -55,17 +66,6 @@ M4i2220x8::M4i2220x8(QObject *parent) : FtmwScope(parent), p_handle(nullptr)
 
     s.endGroup();
     s.endGroup();
-
-    p_timer = new QTimer(this);
-}
-
-M4i2220x8::~M4i2220x8()
-{
-    if(p_handle != nullptr)
-    {
-        spcm_vClose(p_handle);
-        p_handle = nullptr;
-    }
 }
 
 
@@ -89,7 +89,7 @@ bool M4i2220x8::testConnection()
 
     if(p_handle == nullptr)
     {
-        emit connected(false,QString("Could not connect to digitizer. Verify that %1 exists and is accessible.").arg(QString(path)));
+        d_errorString = QString("Could not connect to digitizer. Verify that %1 exists and is accessible.").arg(QString(path));
         return false;
     }
 
@@ -108,7 +108,7 @@ bool M4i2220x8::testConnection()
     QByteArray errText(1000,'\0');
     if(spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
     {
-        emit connected(false, QString::fromLatin1(errText));
+        d_errorString =  QString::fromLatin1(errText);
         return false;
     }
 
@@ -116,13 +116,12 @@ bool M4i2220x8::testConnection()
                     .arg(cType).arg(serialNo).arg(driVer >> 24).arg((driVer >> 16) & 0xff).arg(driVer & 0xffff)
                     .arg(kerVer >> 24).arg((kerVer >> 16) & 0xff).arg(kerVer & 0xffff));
 
-    emit connected();
     return true;
 }
 
 void M4i2220x8::initialize()
 {
-    testConnection();
+    p_timer = new QTimer(this);
 }
 
 Experiment M4i2220x8::prepareForExperiment(Experiment exp)

@@ -13,6 +13,7 @@ public:
     // HardwareObject interface
 public slots:
     bool testConnection();
+    void readSettings();
     void initialize();
     Experiment prepareForExperiment(Experiment exp);
     void beginAcquisition();

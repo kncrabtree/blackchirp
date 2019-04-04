@@ -9,6 +9,14 @@ FixedClock::FixedClock(int clockNum, QObject *parent) : Clock(clockNum, parent)
     d_numOutputs = 5;
     d_isTunable = false;
 
+    for(int i=0; i<d_numOutputs; i++)
+        d_currentFrequencyList << 0.0;
+
+    Clock::prepareMultFactors();
+}
+
+void FixedClock::readSettings()
+{
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
@@ -18,17 +26,11 @@ FixedClock::FixedClock(int clockNum, QObject *parent) : Clock(clockNum, parent)
     s.setValue(QString("maxFreqMHz"),d_maxFreqMHz);
     s.endGroup();
     s.endGroup();
-
-    for(int i=0; i<d_numOutputs; i++)
-        d_currentFrequencyList << 0.0;
-
-    Clock::prepareMultFactors();
 }
 
 
 bool FixedClock::testConnection()
 {
-    emit connected();
     return true;
 }
 
@@ -53,9 +55,6 @@ void FixedClock::initialize()
     s.endArray();
     s.endGroup();
     s.endGroup();
-
-    testConnection();
-
 }
 
 void FixedClock::beginAcquisition()

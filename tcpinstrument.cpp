@@ -94,11 +94,11 @@ bool TcpInstrument::connectSocket()
     p_socket->connectToHost(d_ip,d_port);
     if(!p_socket->waitForConnected(1000))
     {
-        emit logMessage(QString("Could not connect to %1:%2. %3").arg(d_ip).arg(d_port).arg(p_device->errorString()),BlackChirp::LogError);
+        d_errorString = QString("Could not connect to %1:%2. %3").arg(d_ip).arg(d_port).arg(p_device->errorString());
         return false;
     }
     p_socket->setSocketOption(QAbstractSocket::KeepAliveOption,1);
-//    p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
+
     return true;
 }
 

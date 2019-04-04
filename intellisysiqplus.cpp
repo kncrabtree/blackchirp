@@ -30,26 +30,33 @@ IntellisysIQPlus::IntellisysIQPlus(QObject *parent) : PressureController(parent)
     d_readOnly = false;
 }
 
+void IntellisysIQPlus::readSettings()
+{
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
+    d_minFreqMHz = s.value(QString("minFreqMHz"),0.0).toDouble();
+    d_maxFreqMHz = s.value(QString("maxFreqMHz"),1e7).toDouble();
+    s.setValue(QString("minFreqMHz"),d_minFreqMHz);
+    s.setValue(QString("maxFreqMHz"),d_maxFreqMHz);
+    s.endGroup();
+    s.endGroup();
+}
+
 
 bool IntellisysIQPlus::testConnection()
 {
     p_readTimer->stop();
 
-    if(!p_comm->testConnection())
-    {
-        emit connected(false,QString("RS232 error"));
-        return false;
-    }
-
     QByteArray resp = p_comm->queryCmd(QString("R38\n"));
     if(resp.isEmpty())
     {
-        emit connected(false,QString("Pressure controller did not response"));
+        d_errorString = QString("Pressure controller did not response");
         return false;
     }
     if(!resp.startsWith("XIQ")) // should be "IQ+3" based on manual, real resp: "XIQ Rev 4.33 27-Feb-2013"
     {
-        emit connected(false,QString("Wrong pressure controller connected:%1").arg(QString(resp.trimmed())));
+        d_errorString = QString("Wrong pressure controller connected:%1").arg(QString(resp.trimmed()));
         return false;
     }
 
@@ -60,7 +67,7 @@ bool IntellisysIQPlus::testConnection()
         resp = p_comm->queryCmd(QString("R26\n"));
         if(!resp.startsWith("T11"))
         {
-            emit connected(false,QString("Could not set the pressure controller to pressure control mode").arg(QString(resp.trimmed())));
+            d_errorString = QString("Could not set the pressure controller to pressure control mode").arg(QString(resp.trimmed()));
             return false;
         }
     }
@@ -71,11 +78,9 @@ bool IntellisysIQPlus::testConnection()
     double num = resp.mid(f+2,l-f-2).trimmed().toDouble();
     if(num != fullScale)
     {
-        emit connected(false,QString("Full scale (%1 Torr) is not matched with setting value (%2 Torr)").arg(num,0,'f',2).arg(fullScale,0,'f',2));
+        d_errorString = QString("Full scale (%1 Torr) is not matched with setting value (%2 Torr)").arg(num,0,'f',2).arg(fullScale,0,'f',2);
         return false;
     }
-
-    emit connected();
 
     p_readTimer->start();
     return true;
@@ -83,14 +88,12 @@ bool IntellisysIQPlus::testConnection()
 
 void IntellisysIQPlus::initialize()
 {
-    p_comm->initialize();
     p_comm->setReadOptions(1000,true,QByteArray("\r\n"));
 
     p_readTimer = new QTimer(this);
     p_readTimer->setInterval(200);
     connect(p_readTimer,&QTimer::timeout,this,&IntellisysIQPlus::readPressure);
     connect(this,&IntellisysIQPlus::hardwareFailure,p_readTimer,&QTimer::stop);
-    testConnection();
 }
 
 Experiment IntellisysIQPlus::prepareForExperiment(Experiment exp)
@@ -111,8 +114,9 @@ double IntellisysIQPlus::readPressure()
     QByteArray resp = p_comm->queryCmd(QString("R5\n"));
     if((resp.isEmpty()) || (!resp.startsWith("P+")))
     {
-        emit connected(false,QString("Could not read chamber pressure"));
-        return false;
+        d_errorString = QString("Could not read chamber pressure");
+        emit hardwareFailure();
+        return -1.0;
     }
     int f = resp.indexOf('+');
     int l = resp.size();
@@ -132,16 +136,18 @@ double IntellisysIQPlus::setPressureSetpoint(const double val)
     QByteArray resp = p_comm->queryCmd(QString("R1\n"));
     if((resp.isEmpty()) || (!resp.startsWith("S1+")))
     {
-        emit connected(false,QString("Could not read chamber pressure set point"));
-        return false;
+        d_errorString = QString("Could not read chamber pressure set point");
+        emit hardwareFailure();
+        return -1.0;
     }
     int f = resp.indexOf('+');
     int l = resp.size();
     double num_check = resp.mid(f+1,l-f-1).trimmed().toDouble();
     if(qAbs(num_check - num)>=0.01)
     {
-        emit connected(false,QString("Fail to set chamber pressure set point"));
-        return false;
+        d_errorString = QString("Failed to set chamber pressure set point");
+        emit hardwareFailure();
+        return -1.0;
     }
 
     p_readTimer->start();

@@ -8,6 +8,16 @@ VirtualPressureController::VirtualPressureController(QObject *parent) : Pressure
     d_prettyName = QString("Virtual Pressure Controller");
     d_commType = CommunicationProtocol::Virtual;
 
+    d_readOnly = false;
+
+}
+
+VirtualPressureController::~VirtualPressureController()
+{
+}
+
+void VirtualPressureController::readSettings()
+{
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
     s.beginGroup(d_key);
@@ -25,19 +35,11 @@ VirtualPressureController::VirtualPressureController(QObject *parent) : Pressure
 
     s.endGroup();
     s.endGroup();
-
-    d_readOnly = false;
-
-}
-
-VirtualPressureController::~VirtualPressureController()
-{
 }
 
 
 bool VirtualPressureController::testConnection()
 {
-    emit connected();
     p_readTimer->start();
     return true;
 }
@@ -50,7 +52,6 @@ void VirtualPressureController::initialize()
 
     randPressure = static_cast<double>((qrand() % 65536)) / 65536.0 * 9.9 + 0.05;
     emit logMessage(QString("%1").arg(randPressure,0,'f',3));
-    testConnection();
 }
 
 Experiment VirtualPressureController::prepareForExperiment(Experiment exp)

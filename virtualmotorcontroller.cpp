@@ -10,7 +10,10 @@ VirtualMotorController::VirtualMotorController(QObject *parent) :
     d_subKey = QString("virtual");
     d_prettyName = QString("Virtual Motor Controller");
     d_commType = CommunicationProtocol::Virtual;
+}
 
+void VirtualMotorController::readSettings()
+{
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
@@ -49,20 +52,17 @@ VirtualMotorController::VirtualMotorController(QObject *parent) :
 
     s.endGroup();
     s.endGroup();
-
 }
 
 
 
 bool VirtualMotorController::testConnection()
 {
-    emit connected();
     return true;
 }
 
 void VirtualMotorController::initialize()
 {
-    testConnection();
 }
 
 void VirtualMotorController::beginAcquisition()

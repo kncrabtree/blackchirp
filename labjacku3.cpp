@@ -24,6 +24,12 @@ LabjackU3::LabjackU3(QObject *parent) :
     d_reservedAnalog = 0; //if you have specific channels implemented; this should be nonzero
     d_reservedDigital = 0; //if you have counters, timers, or other dedicated digital I/O lines, this should be nonzero
 
+}
+
+void LabjackU3::readSettings()
+{
+    IOBoard::readSettings();
+
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
@@ -34,9 +40,9 @@ LabjackU3::LabjackU3(QObject *parent) :
     s.setValue(QString("key"),QString("serialNo"));
     s.setValue(QString("min"),0);
     s.endArray();
+    d_serialNo = s.value(QString("serialNo"),3).toInt();
     s.endGroup();
     s.endGroup();
-
 }
 
 bool LabjackU3::configure()
@@ -70,23 +76,13 @@ void LabjackU3::closeConnection()
 
 bool LabjackU3::testConnection()
 {
-    readSettings();
-
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-
-    d_serialNo = s.value(QString("serialNo"),3).toInt();
-    s.endGroup();
-    s.endGroup();
-
     if(d_handle != nullptr)
         closeConnection();
 
     d_handle = openUSBConnection(d_serialNo);
     if(d_handle == nullptr)
     {
-        emit connected(false,QString("Could not open USB connection."));
+        d_errorString = QString("Could not open USB connection.");
         return false;
     }
 
@@ -94,18 +90,17 @@ bool LabjackU3::testConnection()
     if(getCalibrationInfo(d_handle,&d_calInfo)< 0)
     {
         closeConnection();
-        emit connected(false,QString("Could not retrieve calibration info."));
+        d_errorString = QString("Could not retrieve calibration info.");
         return false;
     }
 
     if(!configure())
     {
         closeConnection();
-        emit connected(false,QString("Could not configure."));
+        d_errorString = QString("Could not configure.");
         return false;
     }
 
-    emit connected();
     emit logMessage(QString("ID response: %1").arg(d_calInfo.prodID));
     return true;
 
@@ -113,7 +108,6 @@ bool LabjackU3::testConnection()
 
 void LabjackU3::initialize()
 {
-    testConnection();
 }
 
 Experiment LabjackU3::prepareForExperiment(Experiment exp)

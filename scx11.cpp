@@ -6,6 +6,10 @@ Scx11::Scx11(QObject *parent) : MotorController(parent), d_idle(true)
     d_prettyName = QString("Motor controller SCX11");
     d_commType = CommunicationProtocol::Rs232;
 
+}
+
+void Scx11::readSettings()
+{
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
@@ -47,19 +51,12 @@ Scx11::Scx11(QObject *parent) : MotorController(parent), d_idle(true)
     d_xRange = qMakePair(d_channels.at(0).min,d_channels.at(0).max);
     d_yRange = qMakePair(d_channels.at(1).min,d_channels.at(1).max);
     d_zRange = qMakePair(d_channels.at(2).min,d_channels.at(2).max);
-
 }
 
 
 
 bool Scx11::testConnection()
 {
-    if(!p_comm->testConnection())
-    {
-        emit connected(false,QString("RS232 error"));
-        return false;
-    }
-
     QByteArray resp;
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
@@ -72,14 +69,14 @@ bool Scx11::testConnection()
         resp = p_comm->queryCmd(QString("@%1@%1\n").arg(d_channels.at(i).id));
         if(resp.isEmpty())
         {
-            emit connected(false,QString("Could not communicate with %1 axis").arg(d_channels.at(i).name));
+            d_errorString = QString("Could not communicate with %1 axis").arg(d_channels.at(i).name);
             return false;
         }
 
         resp = p_comm->queryCmd(QString("VER\n"));
         if(resp.isEmpty())
         {
-            emit connected(false,QString("Could not get version info from %1 axis").arg(d_channels.at(i).name));
+            d_errorString = QString("Could not get version info from %1 axis").arg(d_channels.at(i).name);
             return false;
         }
 
@@ -88,14 +85,14 @@ bool Scx11::testConnection()
             QByteArray t = p_comm->queryCmd(QString("ECHO=0\n"));
             if(t.isEmpty())
             {
-                emit connected(false,QString("Could not disable echo on %1 axis").arg(d_channels.at(i).name));
+                d_errorString = QString("Could not disable echo on %1 axis").arg(d_channels.at(i).name);
                 return false;
             }
 
             resp = p_comm->queryCmd(QString("VER\n"));
             if(resp.isEmpty())
             {
-                emit connected(false,QString("Could not get version info from %1 axis").arg(d_channels.at(i).name));
+                d_errorString = QString("Could not get version info from %1 axis").arg(d_channels.at(i).name);
                 return false;
             }
         }
@@ -103,14 +100,14 @@ bool Scx11::testConnection()
 
         if(!resp.startsWith("SCX11"))
         {
-            emit connected(false, QString("Could not connect to SCX11. ID response: %1").arg(QString(resp.trimmed())));
+            d_errorString =  QString("Could not connect to SCX11. ID response: %1").arg(QString(resp.trimmed()));
             return false;
         }
 
         QByteArray t = p_comm->queryCmd(QString("VERBOSE=1\n"));
         if(t.isEmpty())
         {
-            emit connected(false,QString("Could not enable verbose mode on %1 axis").arg(d_channels.at(i).name));
+            d_errorString = QString("Could not enable verbose mode on %1 axis").arg(d_channels.at(i).name);
             return false;
         }
 
@@ -119,7 +116,7 @@ bool Scx11::testConnection()
         resp = p_comm->queryCmd(QString("SIGLSN\n"));
         if(!resp.contains("=1"))
         {
-            emit connected(false,QString("%1 axis is not at its negative limit. Move it there manually and reconnect.").arg(d_channels.at(i).name));
+            d_errorString = QString("%1 axis is not at its negative limit. Move it there manually and reconnect.").arg(d_channels.at(i).name);
             return false;
         }
 
@@ -130,7 +127,7 @@ bool Scx11::testConnection()
         t = p_comm->queryCmd(QString("PC=%1\n").arg(-homeOffset,0,'f',3));
         if(t.isEmpty())
         {
-            emit connected(false,QString("Could not set initial home offset on %1 axis").arg(d_channels.at(i).axis));
+            d_errorString = QString("Could not set initial home offset on %1 axis").arg(d_channels.at(i).axis);
             return false;
         }
 
@@ -144,7 +141,7 @@ bool Scx11::testConnection()
     d_idle = true;
     if(!readCurrentPosition())
     {
-        emit connected(false,QString("Could not read current position."));
+        d_errorString = QString("Could not read current position.");
         return false;
     }
 
@@ -153,7 +150,6 @@ bool Scx11::testConnection()
     p_comm->writeCmd(QString("VR 10\n"));
 
 
-    emit connected();
     p_limitTimer->start();
     d_nextRead = 0;
     return true;
@@ -161,13 +157,11 @@ bool Scx11::testConnection()
 
 void Scx11::initialize()
 {
-    p_comm->initialize();
     p_comm->setReadOptions(1000,true,QByteArray(">"));
 
     p_motionTimer = new QTimer(this);
     p_motionTimer->setInterval(50);
 
-    testConnection();
     connect(this,&Scx11::hardwareFailure,p_limitTimer,&QTimer::stop);
     connect(this,&Scx11::hardwareFailure,p_motionTimer,&QTimer::stop);
     connect(p_motionTimer,&QTimer::timeout,this,&Scx11::checkMotion);

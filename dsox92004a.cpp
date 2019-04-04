@@ -8,7 +8,10 @@ DSOx92004A::DSOx92004A(QObject *parent) : FtmwScope(parent)
     d_subKey = QString("DSOx92004A");
     d_prettyName = QString("Ftmw Oscilloscope DSOx92004A");
     d_commType = CommunicationProtocol::Tcp;
+}
 
+void DSOx92004A::readSettings()
+{
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
@@ -45,17 +48,12 @@ DSOx92004A::DSOx92004A(QObject *parent) : FtmwScope(parent)
 
 bool DSOx92004A::testConnection()
 {
-    if(!p_comm->testConnection())
-    {
-        emit connected(false);
-        return false;
-    }
 
     QByteArray resp = p_comm->queryCmd(QString("*IDN?\n"));
 
     if(resp.isEmpty())
     {
-        emit connected(false,QString("Did not respond to ID query."));
+        d_errorString = QString("Did not respond to ID query.");
         return false;
     }
 
@@ -64,26 +62,21 @@ bool DSOx92004A::testConnection()
 
     if(!resp.startsWith(QByteArray("KEYSIGHT TECHNOLOGIES,DSOX92004A")))
     {
-        emit connected(false,QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())));
+        d_errorString = QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex()));
         return false;
     }
 
     emit logMessage(QString("ID response: %1").arg(QString(resp)));
-    emit connected();
     return true;
 
 }
 
 void DSOx92004A::initialize()
 {
-    p_comm->initialize();
     p_comm->setReadOptions(1000,true,QByteArray("\n"));
     p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
 
-//    p_queryTimer = new QTimer(this);
-//    connect(p_queryTimer,&QTimer::timeout,this,&DSOx92004A::readWaveform);
-    testConnection();
 }
 
 Experiment DSOx92004A::prepareForExperiment(Experiment exp)

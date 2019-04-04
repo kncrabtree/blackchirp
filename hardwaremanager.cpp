@@ -257,12 +257,12 @@ void HardwareManager::initialize()
 
         if(thread != nullptr)
         {
-            connect(thread,&QThread::started,obj,&HardwareObject::initialize);
+            connect(thread,&QThread::started,obj,&HardwareObject::bcInitInstrument);
             connect(thread,&QThread::finished,obj,&HardwareObject::deleteLater);
             obj->moveToThread(thread);
         }
         else
-            obj->initialize();
+            obj->bcInitInstrument();
 
     }
 
@@ -301,8 +301,6 @@ void HardwareManager::connectionResult(HardwareObject *obj, bool success, QStrin
             emit logMessage(msg,code);
     }
 
-    obj->setConnected(success);
-
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.setValue(QString("%1/connected").arg(obj->key()),success);
     s.sync();
@@ -318,7 +316,6 @@ void HardwareManager::hardwareFailure()
         return;
 
     disconnect(obj,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure);
-    obj->setConnected(false);
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.setValue(QString("%1/connected").arg(obj->key()),false);
@@ -373,11 +370,10 @@ void HardwareManager::testAll()
     for(int i=0; i<d_hardwareList.size(); i++)
     {
         HardwareObject *obj = d_hardwareList.at(i).first;
-        obj->setConnected(false);
         if(obj->thread() == thread())
-            obj->testConnection();
+            obj->bcTestConnection();
         else
-            QMetaObject::invokeMethod(obj,"testConnection");
+            QMetaObject::invokeMethod(obj,"bcTestConnection");
     }
 
     checkStatus();
@@ -397,9 +393,9 @@ void HardwareManager::testObjectConnection(const QString type, const QString key
     else
     {
         if(obj->thread() == thread())
-            obj->testConnection();
+            obj->bcTestConnection();
         else
-            QMetaObject::invokeMethod(obj,"testConnection");
+            QMetaObject::invokeMethod(obj,"bcTestConnection");
     }
 }
 

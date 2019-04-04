@@ -10,6 +10,18 @@ VirtualLifScope::VirtualLifScope(QObject *parent) :
     d_prettyName = QString("Virtual LIF Oscilloscope");
     d_commType = CommunicationProtocol::Virtual;
 
+    setLifVScale(0.02);
+    setRefVScale(0.02);
+    setHorizontalConfig(1e9,1000);
+}
+
+VirtualLifScope::~VirtualLifScope()
+{
+
+}
+
+void VirtualLifScope::readSettings()
+{
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
@@ -26,30 +38,18 @@ VirtualLifScope::VirtualLifScope(QObject *parent) :
     s.endGroup();
     s.endGroup();
     s.sync();
-
-    setLifVScale(0.02);
-    setRefVScale(0.02);
-    setHorizontalConfig(1e9,1000);
-}
-
-VirtualLifScope::~VirtualLifScope()
-{
-
 }
 
 
 
 bool VirtualLifScope::testConnection()
 {
-    emit connected();
     return true;
 }
 
 void VirtualLifScope::initialize()
 {
-    ///NOTE: consider moving ranges and range-checking to base class from constructor
 
-    testConnection();
     QTimer *test = new QTimer(this);
     test->setInterval(200);
     connect(test,&QTimer::timeout,this,&VirtualLifScope::queryScope);

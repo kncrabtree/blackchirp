@@ -8,7 +8,10 @@ VirtualMotorScope::VirtualMotorScope(QObject *parent) : MotorOscilloscope(parent
     d_prettyName = QString("Virtual Motor Oscilloscope");
     d_threaded = false;
     d_commType = CommunicationProtocol::Virtual;
+}
 
+void VirtualMotorScope::readSettings()
+{
     //establish settings parameters (min/max sample rate, vertical scale, etc)
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
@@ -44,20 +47,17 @@ VirtualMotorScope::VirtualMotorScope(QObject *parent) : MotorOscilloscope(parent
 
     s.endGroup();
     s.endGroup();
-
 }
 
 
 
 bool VirtualMotorScope::testConnection()
 {
-    emit connected();
     return true;
 }
 
 void VirtualMotorScope::initialize()
 {
-    testConnection();
     p_testTimer = new QTimer(this);
     p_testTimer->setInterval(200);
     connect(p_testTimer,&QTimer::timeout,this,&VirtualMotorScope::queryScope);

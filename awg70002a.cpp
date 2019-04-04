@@ -11,6 +11,10 @@ AWG70002a::AWG70002a(QObject *parent) :
     d_commType = CommunicationProtocol::Tcp;
     d_threaded = false;
 
+}
+
+void AWG70002a::readSettings()
+{
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
@@ -31,30 +35,23 @@ AWG70002a::AWG70002a(QObject *parent) :
     s.endGroup();
     s.endGroup();
     s.sync();
-
 }
 
 
 
 bool AWG70002a::testConnection()
 {
-    if(!p_comm->testConnection())
-    {
-        emit connected(false,QString("TCP error."));
-        return false;
-    }
-
     QByteArray resp = p_comm->queryCmd(QString("*IDN?\n"));
 
     if(resp.isEmpty())
     {
-        emit connected(false,QString("Did not respond to ID query."));
+        d_errorString = QString("Did not respond to ID query.");
         return false;
     }
 
     if(!resp.startsWith(QByteArray("TEKTRONIX,AWG70002A")))
     {
-        emit connected(false,QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp.trimmed())).arg(QString(resp.toHex())));
+        d_errorString = QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp.trimmed())).arg(QString(resp.toHex()));
         return false;
     }
 
@@ -65,15 +62,12 @@ bool AWG70002a::testConnection()
     if(resp.trimmed().toInt() > 0)
         resp = p_comm->queryCmd(QString("System:Error:All?\n"));
 
-    emit connected();
     return true;
 }
 
 void AWG70002a::initialize()
 {
-    p_comm->initialize();
     p_comm->setReadOptions(10000,true,QByteArray("\n"));
-    testConnection();
 }
 
 Experiment AWG70002a::prepareForExperiment(Experiment exp)

@@ -19,14 +19,11 @@ VirtualIOBoard::VirtualIOBoard(QObject *parent) :
 
 bool VirtualIOBoard::testConnection()
 {
-    readSettings();
-    emit connected();
     return true;
 }
 
 void VirtualIOBoard::initialize()
 {
-    testConnection();
 }
 
 Experiment VirtualIOBoard::prepareForExperiment(Experiment exp)

@@ -45,9 +45,6 @@ bool Rs232Instrument::testConnection()
         return true;
     }
     else
-    {
-        emit logMessage(p_device->errorString(),BlackChirp::LogError);
         return false;
-    }
 }
 

@@ -11,12 +11,13 @@ public:
 
     // HardwareObject interface
 public slots:
-    virtual bool testConnection();
-    virtual void initialize();
-    virtual Experiment prepareForExperiment(Experiment exp);
-    virtual void beginAcquisition();
-    virtual void endAcquisition();
-    virtual void readTimeData();
+    void readSettings();
+    bool testConnection();
+    void initialize();
+    Experiment prepareForExperiment(Experiment exp);
+    void beginAcquisition();
+    void endAcquisition();
+    void readTimeData();
 
 private:
     bool m8195aWrite(const QString cmd);

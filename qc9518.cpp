@@ -7,7 +7,10 @@ Qc9518::Qc9518(QObject *parent) :
     d_prettyName = QString("Pulse Generator QC 9518");
     d_commType = CommunicationProtocol::Rs232;
     d_threaded = false;
+}
 
+void Qc9518::readSettings()
+{
     QSettings s(QSettings::SystemScope, QApplication::organizationName(), QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
@@ -25,30 +28,23 @@ Qc9518::Qc9518(QObject *parent) :
     s.endGroup();
     s.endGroup();
     s.sync();
-
 }
 
 
 
 bool Qc9518::testConnection()
 {
-    if(!p_comm->testConnection())
-    {
-	   emit connected(false);
-        return false;
-    }
-
     QByteArray resp = p_comm->queryCmd(QString("*IDN?\n"));
 
     if(resp.isEmpty())
     {
-        emit connected(false,QString("No response to ID query."));
+        d_errorString = QString("No response to ID query.");
         return false;
     }
 
     if(!resp.startsWith(QByteArray("9518+")))
     {
-        emit connected(false,QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp.trimmed())).arg(QString(resp.toHex())));
+        d_errorString = QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp.trimmed())).arg(QString(resp.toHex()));
         return false;
     }
 
@@ -62,7 +58,6 @@ bool Qc9518::testConnection()
     pGenWriteCmd(QString(":SYSTEM:KLOCK 0\n"));
 
     emit configUpdate(d_config);
-    emit connected();
     return true;
 
 }
@@ -72,9 +67,7 @@ void Qc9518::initialize()
     //set up config
     PulseGenerator::initialize();
 
-    p_comm->initialize();
     p_comm->setReadOptions(100,true,QByteArray("\r\n"));
-    testConnection();
 }
 
 QVariant Qc9518::read(const int index, const BlackChirp::PulseSetting s)

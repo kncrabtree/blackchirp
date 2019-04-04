@@ -11,6 +11,15 @@ Dsa71604c::Dsa71604c(QObject *parent) :
     d_prettyName = QString("Ftmw Oscilloscope DSA71604C");
     d_commType = CommunicationProtocol::Tcp;
 
+}
+
+Dsa71604c::~Dsa71604c()
+{
+
+}
+
+void Dsa71604c::readSettings()
+{
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
@@ -42,12 +51,6 @@ Dsa71604c::Dsa71604c(QObject *parent) :
     s.endArray();
     s.endGroup();
     s.endGroup();
-
-}
-
-Dsa71604c::~Dsa71604c()
-{
-
 }
 
 
@@ -55,19 +58,13 @@ Dsa71604c::~Dsa71604c()
 bool Dsa71604c::testConnection()
 {
 
-    if(!p_comm->testConnection())
-    {
-        emit connected(false);
-        return false;
-    }
-
     p_comm->writeCmd(QString("*CLS\n"));
     p_comm->writeCmd(QString("*CLS\n"));
     QByteArray resp = scopeQueryCmd(QString("*IDN?\n"));
 
     if(resp.isEmpty())
     {
-        emit connected(false,QString("Did not respond to ID query."));
+        d_errorString = QString("Did not respond to ID query.");
         return false;
     }
 
@@ -75,12 +72,11 @@ bool Dsa71604c::testConnection()
     {
         if(resp.length() > 50)
             resp = resp.mid(0,50);
-        emit connected(false,QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())));
+        d_errorString = QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex()));
         return false;
     }
 
     emit logMessage(QString("ID response: %1").arg(QString(resp)));
-    emit connected();
     return true;
 }
 
@@ -88,13 +84,11 @@ void Dsa71604c::initialize()
 {
     p_scopeTimeout = new QTimer(this);
 
-    p_comm->initialize();
     p_comm->setReadOptions(3000,true,QByteArray("\n"));
     p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
     connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),this,&Dsa71604c::socketError);
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
     p_socket->setSocketOption(QAbstractSocket::KeepAliveOption,1);
-    testConnection();
 }
 
 Experiment Dsa71604c::prepareForExperiment(Experiment exp)

@@ -8,7 +8,10 @@ Qc9528::Qc9528(QObject *parent) :
     d_commType = CommunicationProtocol::Rs232;
     d_threaded = false;
 
+}
 
+void Qc9528::readSettings()
+{
     QSettings s(QSettings::SystemScope, QApplication::organizationName(), QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
@@ -35,23 +38,17 @@ Qc9528::Qc9528(QObject *parent) :
 
 bool Qc9528::testConnection()
 {
-    if(!p_comm->testConnection())
-    {
-        emit connected(false,QString("RS232 error."));
-        return false;
-    }
-
     QByteArray resp = p_comm->queryCmd(QString("*IDN?\r\n"));
 
     if(resp.isEmpty())
     {
-        emit connected(false,QString("No response to ID query."));
+        d_errorString = QString("No response to ID query.");
         return false;
     }
 
     if(!resp.startsWith(QByteArray("QC,9528")))
     {
-        emit connected(false,QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp.trimmed())).arg(QString(resp.toHex())));
+        d_errorString = QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp.trimmed())).arg(QString(resp.toHex()));
         return false;
     }
 
@@ -66,14 +63,14 @@ bool Qc9528::testConnection()
         resp = p_comm->queryCmd(QString(":PULSE0:ICLOCK?\r\n"));
         if(resp.isEmpty())
         {
-            emit connected(false,QString("No response to external clock source query."));
+            d_errorString = QString("No response to external clock source query.");
             return false;
         }
         if(!resp.startsWith("EXT10"))
         {
             if(!pGenWriteCmd(QString(":PULSE0:ICL EXT10\r\n")))
             {
-                emit connected(false,QString("Could not set clock source to external 10 MHz."));
+                d_errorString = QString("Could not set clock source to external 10 MHz.");
                 return false;
             }
         }
@@ -81,24 +78,23 @@ bool Qc9528::testConnection()
 
     if(!pGenWriteCmd(QString(":PULSE0:GATE:MODE DIS\r\n")))
     {
-        emit connected(false,QString("Could not disable gate mode."));
+        d_errorString = QString("Could not disable gate mode.");
         return false;
     }
 
     if(!pGenWriteCmd(QString(":PULSE0:TRIG:MODE DIS\r\n")))
     {
-        emit connected(false,QString("Could not disable external trigger mode."));
+        d_errorString = QString("Could not disable external trigger mode.");
         return false;
     }
 
     if(!pGenWriteCmd(QString(":PULSE0:STATE 1\n")))
     {
-        emit connected(false,QString("Could not start pulsing."));
+        d_errorString = QString("Could not start pulsing.");
         return false;
     }
 
     emit configUpdate(d_config);
-    emit connected();
     return true;
 
 }
@@ -107,9 +103,7 @@ void Qc9528::initialize()
 {
     PulseGenerator::initialize();
 
-    p_comm->initialize();
     p_comm->setReadOptions(100,true,QByteArray("\r\n"));
-    testConnection();
 }
 
 Experiment Qc9528::prepareForExperiment(Experiment exp)

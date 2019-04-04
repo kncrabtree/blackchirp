@@ -70,16 +70,22 @@ QByteArray CommunicationProtocol::queryCmd(QString cmd, bool suppressError)
 
     if(ret == -1)
     {
-        emit hardwareFailure();
-        emit logMessage(QString("Could not write query. (query = %1)").arg(cmd),BlackChirp::LogError);
+        if(!suppressError)
+        {
+            emit hardwareFailure();
+            emit logMessage(QString("Could not write query. (query = %1)").arg(cmd),BlackChirp::LogError);
+        }
         return QByteArray();
     }
 
     while (p_device->bytesToWrite() > 0) {
         if(!p_device->waitForBytesWritten(30000))
         {
-            emit hardwareFailure();
-            emit logMessage(QString("Timed out while waiting for query write. Query = %1").arg(cmd),BlackChirp::LogError);
+            if(!suppressError)
+            {
+                emit hardwareFailure();
+                emit logMessage(QString("Timed out while waiting for query write. Query = %1").arg(cmd),BlackChirp::LogError);
+            }
             return QByteArray();
         }
     }
@@ -89,8 +95,11 @@ QByteArray CommunicationProtocol::queryCmd(QString cmd, bool suppressError)
     {
         if(!p_device->waitForReadyRead(d_timeOut))
         {
-            emit hardwareFailure();
-            emit logMessage(QString("Did not respond to query. (query = %1)").arg(cmd),BlackChirp::LogError);
+            if(!suppressError)
+            {
+                emit hardwareFailure();
+                emit logMessage(QString("Did not respond to query. (query = %1)").arg(cmd),BlackChirp::LogError);
+            }
             return QByteArray();
         }
 
@@ -127,5 +136,24 @@ QByteArray CommunicationProtocol::queryCmd(QString cmd, bool suppressError)
         }
         return out;
     }
+}
+
+QString CommunicationProtocol::errorString()
+{
+    QString out = d_errorString;
+    d_errorString.clear();
+    return out;
+}
+
+bool CommunicationProtocol::bcTestConnection()
+{
+    bool success = testConnection();
+    if(!success)
+    {
+        if(d_errorString.isEmpty() && p_device)
+            d_errorString = p_device->errorString();
+    }
+
+    return success;
 }
 

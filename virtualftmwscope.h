@@ -15,6 +15,7 @@ public:
 
     // HardwareObject interface
 public slots:
+    void readSettings();
     bool testConnection();
     void initialize();
     Experiment prepareForExperiment(Experiment exp);

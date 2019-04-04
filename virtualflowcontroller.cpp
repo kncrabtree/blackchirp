@@ -20,14 +20,12 @@ bool VirtualFlowController::testConnection()
     updateInterval();
     p_readTimer->start();
 
-    emit connected();
     return true;
 }
 
 void VirtualFlowController::initialize()
 {
     FlowController::initialize();
-    testConnection();
 }
 
 Experiment VirtualFlowController::prepareForExperiment(Experiment exp)

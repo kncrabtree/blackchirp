@@ -10,11 +10,51 @@
 #endif
 
 HardwareObject::HardwareObject(QObject *parent) :
-    QObject(parent), d_isCritical(true), d_threaded(true), d_enabledForExperiment(true)
+    QObject(parent), d_isCritical(true), d_threaded(true), d_enabledForExperiment(true), d_isConnected(false)
 {
 }
 
 HardwareObject::~HardwareObject()
+{
+
+}
+
+QString HardwareObject::errorString()
+{
+    QString out = d_errorString;
+    d_errorString.clear();
+    return out;
+}
+
+void HardwareObject::bcInitInstrument()
+{
+    if(p_comm)
+        p_comm->initialize();
+
+    readSettings();
+    initialize();
+    bcTestConnection();
+
+    connect(this,&HardwareObject::hardwareFailure,[=](){ d_isConnected = false; });
+}
+
+void HardwareObject::bcTestConnection()
+{
+    d_isConnected = false;
+    if(p_comm)
+    {
+        if(!p_comm->bcTestConnection())
+        {
+            emit connected(false,p_comm->errorString(),QPrivateSignal());
+            return;
+        }
+    }
+    bool success = testConnection();
+    d_isConnected = success;
+    emit connected(success,errorString(),QPrivateSignal());
+}
+
+void HardwareObject::readSettings()
 {
 
 }

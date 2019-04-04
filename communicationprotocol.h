@@ -31,6 +31,7 @@ public:
     QString key() { return d_key; }
     CommType type() { return d_type; }
     QIODevice *device() { return p_device; }
+    QString errorString();
 
     /*!
      * \brief Convenience function for setting read options
@@ -45,17 +46,20 @@ signals:
     void hardwareFailure();
 
 public slots:
+    bool bcTestConnection();
     virtual void initialize() =0;
-    virtual bool testConnection() =0;
 
 protected:
     const CommType d_type;
     QString d_key;
     QString d_prettyName;
+    QString d_errorString;
 
     QByteArray d_readTerminator; /*!< Termination characters that indicate a message from the device is complete. */
     bool d_useTermChar; /*!< If true, a read operation is complete when the message ends with d_readTerminator */
     int d_timeOut; /*!< Timeout for read operation, in ms */
+
+    virtual bool testConnection() =0;
 
     QIODevice *p_device = nullptr;
 };

@@ -12,21 +12,16 @@ PrologixGpibLan::PrologixGpibLan(QObject *parent) :
 
 bool PrologixGpibLan::testConnection()
 {
-    if(!p_comm->testConnection())
-    {
-        emit connected(false);
-        return false;
-    }
 
     QByteArray resp = p_comm->queryCmd(QString("++ver\n"));
     if(resp.isEmpty())
     {
-        emit connected(false,QString("%1 gave a null response to ID query").arg(d_prettyName));
+        d_errorString = QString("%1 gave a null response to ID query").arg(d_prettyName);
         return false;
     }
     if(!resp.startsWith("Prologix GPIB-ETHERNET Controller"))
     {
-        emit connected(false,QString("%1 response invalid. Received: %2").arg(d_prettyName).arg(QString(resp)));
+        d_errorString = QString("%1 response invalid. Received: %2").arg(d_prettyName).arg(QString(resp));
         return false;
     }
 
@@ -38,15 +33,12 @@ bool PrologixGpibLan::testConnection()
 
     readAddress();
 
-    emit connected();
     return true;
 }
 
 void PrologixGpibLan::initialize()
 {
-    p_comm->initialize();
     p_comm->setReadOptions(1000,true,QByteArray("\n"));
-    testConnection();
 }
 
 bool PrologixGpibLan::readAddress()

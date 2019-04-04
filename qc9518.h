@@ -10,6 +10,7 @@ public:
 
 	// HardwareObject interface
 public slots:
+    void readSettings();
 	bool testConnection();
 	void initialize();
 	void sleep(bool b);

@@ -11,7 +11,52 @@ AD9914::AD9914(QObject *parent) : AWG(parent)
     d_prettyName = QString("AD9914 Direct Digital Synthesizer");
     d_commType = CommunicationProtocol::Rs232;
     d_threaded = false;
+}
 
+
+bool AD9914::testConnection()
+{
+    QByteArray resp;
+    int count = 0;
+
+//    dynamic_cast<QSerialPort*>(p_comm->device())->setDataTerminalReady(true);
+    while(true)
+    {
+        count++;
+        resp = p_comm->queryCmd(QString("ID\n"));
+
+        if(resp.isEmpty())
+        {
+            d_errorString = QString("Did not respond to ID query.");
+            return false;
+        }
+
+        if(!resp.startsWith("SUCCESS"))
+            break;
+
+        if(count > 4)
+        {
+            d_errorString = QString("Could not communicate after 5 attempts.");
+            return false;
+        }
+    }
+
+
+    if(!resp.startsWith(QByteArray("AD9914")))
+    {
+       d_errorString = QString("ID response invalid. Response: %1").arg(QString(resp));
+        return false;
+    }
+
+    emit logMessage(QString("ID response: %1").arg(QString(resp.trimmed())));
+
+    p_comm->writeCmd(QString("IN\n"));
+
+    return true;
+}
+
+void AD9914::readSettings()
+{
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
@@ -27,62 +72,9 @@ AD9914::AD9914(QObject *parent) : AWG(parent)
     s.endGroup();
 }
 
-
-bool AD9914::testConnection()
-{
-    if(!p_comm->testConnection())
-    {
-        emit(connected(false));
-        return false;
-    }
-
-    QByteArray resp;
-    int count = 0;
-
-//    dynamic_cast<QSerialPort*>(p_comm->device())->setDataTerminalReady(true);
-    while(true)
-    {
-        count++;
-        resp = p_comm->queryCmd(QString("ID\n"));
-
-        if(resp.isEmpty())
-        {
-            emit connected(false,QString("Did not respond to ID query."));
-            return false;
-        }
-
-        if(!resp.startsWith("SUCCESS"))
-            break;
-
-        if(count > 4)
-        {
-            emit connected(false,QString("Could not communicate after 5 attempts."));
-            return false;
-        }
-    }
-
-
-    if(!resp.startsWith(QByteArray("AD9914")))
-    {
-        emit connected(false,QString("ID response invalid. Response: %1").arg(QString(resp)));
-        return false;
-    }
-
-    emit logMessage(QString("ID response: %1").arg(QString(resp.trimmed())));
-
-    p_comm->writeCmd(QString("IN\n"));
-
-    emit connected();
-    return true;
-}
-
 void AD9914::initialize()
 {
-    p_comm->initialize();
     p_comm->setReadOptions(1000,true,QByteArray("\n"));
-
-    testConnection();
-//    QTimer::singleShot(4000,this,&AD9914::testConnection);
 }
 
 Experiment AD9914::prepareForExperiment(Experiment exp)

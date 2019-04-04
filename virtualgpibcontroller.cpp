@@ -17,13 +17,11 @@ VirtualGpibController::~VirtualGpibController()
 
 bool VirtualGpibController::testConnection()
 {
-	emit connected();
 	return true;
 }
 
 void VirtualGpibController::initialize()
 {
-    testConnection();
 }
 
 Experiment VirtualGpibController::prepareForExperiment(Experiment exp)

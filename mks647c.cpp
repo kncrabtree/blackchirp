@@ -36,19 +36,10 @@ Mks647c::Mks647c(QObject *parent) :
     }
 }
 
-
-
 bool Mks647c::testConnection()
 {
-    if(!p_comm->testConnection())
-    {
-        emit connected(false);
-        return false;
-    }
 
-    p_comm->blockSignals(true);
-    QByteArray resp = p_comm->queryCmd(QString("ID;\r\n"));
-    p_comm->blockSignals(false);
+    QByteArray resp = p_comm->queryCmd(QString("ID;\r\n"),true);
 
     if(resp.isEmpty())
     {
@@ -56,7 +47,7 @@ bool Mks647c::testConnection()
         resp = p_comm->queryCmd(QString("ID;\r\n"));
         if(resp.isEmpty())
         {
-            emit connected(false,QString("%Null response to ID query"));
+            d_errorString = QString("Null response to ID query");
             return false;
         }
     }
@@ -71,15 +62,15 @@ bool Mks647c::testConnection()
             resp = p_comm->queryCmd(QString("ID;\r\n"));
             if(resp.isEmpty())
             {
-                emit connected(false,QString("Null response to ID query"));
+                d_errorString = QString("Null response to ID query");
                 return false;
             }
             if(resp.startsWith("MGC 647"))
                 done = true;
             else
             {
-                emit connected(false,QString("Invalid response to ID query (response = %1, hex = %2)")
-                               .arg(QString(resp)).arg(QString(resp.toHex())));
+                d_errorString = QString("Invalid response to ID query (response = %1, hex = %2)")
+                               .arg(QString(resp)).arg(QString(resp.toHex()));
                 return false;
             }
         }
@@ -91,17 +82,14 @@ bool Mks647c::testConnection()
 
     p_readTimer->start();
 
-    emit connected();
     return true;
 
 }
 
 void Mks647c::initialize()
 {
-    p_comm->initialize();
     p_comm->setReadOptions(1000,true,QByteArray("\r\n"));
     FlowController::initialize();
-    testConnection();
 }
 
 double Mks647c::setFlowSetpoint(const int ch, const double val)

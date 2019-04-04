@@ -25,16 +25,16 @@
  * HardwareObjects are designed to be used in their own threads for the most part.
  * Because of this, the constructor should generally not be called with a parent, and any QObjects that will be created in the child class with this as the parent should NOT be initialized in the constructor.
  * Generally, a HardwareObject is created, signal-slot connections are made, and then the object is pushed into its own thread.
- * The thread's started() signal is connected to the initialize pure virtual slot, which must be implemented for a child class.
+ * When the thread starts, the bcInitInstrument function is called, which reads settings, calls the initialize() pure virtual function, then calls bcTestConnection().
  * Any functions that need to be called from outside the class (e.g., from the HardwareManager during a scan) should be declared as slots, and QMetaObject::invokeMethod used to activate them (optionally with the Qt::BlockingQueuedConnection flag set if it returns a value or other actions need to wait until it is complete).
  * If for some reason this is not possible, then data members need to be protected by a QMutex to prevent concurrent access.
  * In the initialize function, any QObjects can be created and other settings made, because the object is already in its new thread.
- * The initialize function must call testConnection() before it returns.
  *
- * The testConnection() slot should attempt to establish communication with the physical device and perform some sort of test to make sure that the connection works and that the correct device is targeted.
+ * The testConnection() protected function should attempt to establish communication with the physical device and perform some sort of test to make sure that the connection works and that the correct device is targeted.
  * Usually, this takes the form of an ID query of some type (e.g., *IDN?).
- * After determining if the connection is successful, the testConnection() function MUST emit the connectionResult() signal with the this pointer, a boolean indicating success, and an optional error message that can be displayed in the log along with the failure notification.
- * The testConnection() slot is also called from the communication dialog to re-test a connection that is lost.
+ * If unsuccessful, a message should be stored in d_errorString.
+ * The bcTestConnection() function wraps around the testConnection() function and handles communicating with the rest of the program.
+ * The bcTestConnection() slot is also called from the communication dialog to re-test a connection that is lost.
  *
  * For instruments that do not communicate by GPIB, RS232, or TCP (i.e., a CustomInstrument), a general interface is available to allow the user to specify any information needed to connect to the device (file handles, ID numbers, etc).
  * In the constructor of the implementation, create a QSettings Array with the key: d_key\d_subKey\comm.
@@ -81,12 +81,11 @@ public:
 
     QString subKey() const { return d_subKey; }
 
-    bool isCritical() const { return d_isCritical; }
+    QString errorString();
 
+    bool isCritical() const { return d_isCritical; }
     bool isConnected() const { return d_isConnected; }
     bool isThreaded() const { return d_threaded; }
-    void setConnected(bool connected) { d_isConnected = connected; }
-
 
     CommunicationProtocol::CommType type() { return d_commType; }
 	
@@ -104,12 +103,10 @@ signals:
      * \param bool True if connection is successful
      * \param msg If unsuccessful, an optional message to display on the log tab along with the failure message.
      */
-    void connected(bool success = true,QString msg = QString());
+    void connected(bool success,QString msg,QPrivateSignal);
 
     /*!
-     * \brief Signal emitted if communication to hardware is lost.
-     * \param HardwareObject* This pointer
-     * \param abort If an acquisition is underway, this will begin the abort routine if true
+     * \brief Signal emitted if communication to hardware fails.
      */
     void hardwareFailure();
 
@@ -117,17 +114,10 @@ signals:
     void timeDataReadNoPlot(const QList<QPair<QString,QVariant>>);
 	
 public slots:
-    /*!
-     * \brief Attempt to communicate with hardware. Must emit connectionResult(). Pure virtual.
-     * \return Whether attempt was successful
-     */
-	virtual bool testConnection() =0;
+    void bcInitInstrument();
+    void bcTestConnection();
 
-    /*!
-     * \brief Do any needed initialization prior to connecting to hardware. Pure virtual
-     *
-     */
-	virtual void initialize() =0;
+    virtual void readSettings();
 
     /*!
      * \brief Puts device into a standby mode. Default implementation puts a message in the log.
@@ -147,6 +137,19 @@ protected:
     QString d_prettyName; /*!< Name to be displayed on UI */
     QString d_key; /*!< Name to be used in settings for abstract hardware*/
     QString d_subKey; /*< Name to be used in settings for real hardware*/
+    QString d_errorString;
+
+    /*!
+     * \brief Do any needed initialization prior to connecting to hardware. Pure virtual
+     *
+     */
+    virtual void initialize() =0;
+
+    /*!
+     * \brief Attempt to communicate with hardware. Pure virtual.
+     * \return Whether attempt was successful
+     */
+    virtual bool testConnection() =0;
 
     CommunicationProtocol *p_comm;
     bool d_isCritical;

@@ -39,7 +39,6 @@ QByteArray GpibInstrument::queryCmd(QString cmd)
 
 void GpibInstrument::initialize()
 {
-	testConnection();
 }
 
 bool GpibInstrument::testConnection()

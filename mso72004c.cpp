@@ -11,6 +11,15 @@ MSO72004C::MSO72004C(QObject *parent) :
     d_prettyName = QString("Ftmw Oscilloscope MSO72004C");
     d_commType = CommunicationProtocol::Tcp;
 
+}
+
+MSO72004C::~MSO72004C()
+{
+
+}
+
+void MSO72004C::readSettings()
+{
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
@@ -41,30 +50,17 @@ MSO72004C::MSO72004C(QObject *parent) :
     s.endArray();
     s.endGroup();
     s.endGroup();
-
-}
-
-MSO72004C::~MSO72004C()
-{
-
 }
 
 
 
 bool MSO72004C::testConnection()
 {
-
-    if(!p_comm->testConnection())
-    {
-        emit connected(false);
-        return false;
-    }
-
     QByteArray resp = scopeQueryCmd(QString("*IDN?\n"));
 
     if(resp.isEmpty())
     {
-        emit connected(false,QString("Did not respond to ID query."));
+        d_errorString = QString("Did not respond to ID query.");
         return false;
     }
 
@@ -73,12 +69,11 @@ bool MSO72004C::testConnection()
 
     if(!resp.startsWith(QByteArray("TEKTRONIX,MSO")))
     {
-        emit connected(false,QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())));
+        d_errorString = QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex()));
         return false;
     }
 
     emit logMessage(QString("ID response: %1").arg(QString(resp)));
-    emit connected();
     return true;
 }
 
@@ -86,12 +81,10 @@ void MSO72004C::initialize()
 {
     p_scopeTimeout = new QTimer(this);
 
-    p_comm->initialize();
     p_comm->setReadOptions(1000,true,QByteArray("\n"));
     p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
     connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),this,&MSO72004C::socketError);
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
-    testConnection();
 }
 
 Experiment MSO72004C::prepareForExperiment(Experiment exp)
