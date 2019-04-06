@@ -13,8 +13,6 @@ public:
     // HardwareObject interface
 public slots:
     void readSettings();
-    bool testConnection();
-    void initialize();
     void beginAcquisition();
     void endAcquisition();
     QStringList channelNames();
@@ -23,6 +21,8 @@ public slots:
 
     // Clock interface
 protected:
+    bool testConnection();
+    void initialize();
     bool setHwFrequency(double freqMHz, int outputIndex);
     double readHwFrequency(int outputIndex);
 

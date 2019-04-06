@@ -15,6 +15,7 @@ public:
     virtual ~FlowController();
 
     FlowConfig config() const { return d_config; }
+    int numChannels() const { return d_numChannels; }
 
 signals:
     void channelNameUpdate(int,QString);
@@ -25,7 +26,6 @@ signals:
     void pressureControlMode(bool);
 
 public slots:
-    virtual void initialize();
     virtual double setFlowSetpoint(const int ch, const double val) =0;
     virtual double setPressureSetpoint(const double val) =0;
     virtual void setChannelName(const int ch, const QString name);
@@ -42,9 +42,13 @@ public slots:
     virtual void readNext();
 
 protected:
+    void initialize() final;
+    virtual void fcInitialize() =0;
+
     FlowConfig d_config;
     QTimer *p_readTimer;
     int d_nextRead;
+    int d_numChannels = 0;
 
     void readAll();
 

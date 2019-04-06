@@ -8,11 +8,6 @@ class Mks647c : public FlowController
 public:
     explicit Mks647c(QObject *parent = nullptr);
 
-    // HardwareObject interface
-public slots:
-    bool testConnection();
-    void initialize();
-
     // FlowController interface
 public slots:
     double setFlowSetpoint(const int ch, const double val);
@@ -25,8 +20,14 @@ public slots:
     bool readPressureControlMode();
 
     // HardwareObject interface
-public slots:
     void sleep(bool b);
+
+protected:
+    bool testConnection();
+
+    // FlowController interface
+    virtual void fcInitialize();
+
 
 
 private:

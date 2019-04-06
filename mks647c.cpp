@@ -8,6 +8,7 @@ Mks647c::Mks647c(QObject *parent) :
     d_subKey = QString("mks647c");
     d_prettyName = QString("MKS 647C Flow Control Unit");
     d_commType = CommunicationProtocol::Rs232;
+    d_numChannels = 4;
 
     double b = 28316.847; //scfm --> sccm conversion
     double c = b/60.0; // scfh --> sccm conversion
@@ -86,10 +87,9 @@ bool Mks647c::testConnection()
 
 }
 
-void Mks647c::initialize()
+void Mks647c::fcInitialize()
 {
     p_comm->setReadOptions(1000,true,QByteArray("\r\n"));
-    FlowController::initialize();
 }
 
 double Mks647c::setFlowSetpoint(const int ch, const double val)

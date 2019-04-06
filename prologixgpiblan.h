@@ -13,13 +13,12 @@ public:
 public:
     QString queryTerminator() const;
 
+protected:
     // HardwareObject interface
-public slots:
     bool testConnection();
     void initialize();
 
     // GpibController interface
-protected:
     bool readAddress();
     bool setAddress(int a);
 

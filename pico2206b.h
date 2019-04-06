@@ -15,8 +15,6 @@ public:
     // HardwareObject interface
 public slots:
     void readSettings();
-    bool testConnection();
-    void initialize();
     void beginAcquisition();
     void endAcquisition();
 
@@ -24,6 +22,11 @@ public slots:
 public slots:
     bool configure(const BlackChirp::MotorScopeConfig &sc);
     MotorScan prepareForMotorScan(MotorScan s);
+
+protected:
+    bool testConnection();
+    void initialize();
+
 
 private:
     int16_t d_handle;

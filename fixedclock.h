@@ -12,13 +12,13 @@ public:
     // HardwareObject interface
 public slots:
     void readSettings();
-    bool testConnection();
-    void initialize();
     void beginAcquisition();
     void endAcquisition();
 
     // Clock interface
 protected:
+    bool testConnection();
+    void initialize();
     bool setHwFrequency(double freqMHz, int outputIndex);
     double readHwFrequency(int outputIndex);
 

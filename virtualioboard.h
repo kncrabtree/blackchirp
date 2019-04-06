@@ -11,14 +11,14 @@ public:
 
     // HardwareObject interface
 public slots:
-    bool testConnection();
-    void initialize();
     Experiment prepareForExperiment(Experiment exp);
     void beginAcquisition();
     void endAcquisition();
 
     // HardwareObject interface
 protected:
+    bool testConnection();
+    void initialize();
     virtual QList<QPair<QString, QVariant> > readAuxPlotData();
     virtual QList<QPair<QString, QVariant> > readAuxNoPlotData();
 

@@ -14,8 +14,6 @@ public:
 public slots:
     // HardwareObject interface
     void readSettings();
-    bool testConnection();
-    void initialize();
     Experiment prepareForExperiment(Experiment exp);
     void beginAcquisition();
     void endAcquisition();
@@ -26,6 +24,11 @@ public slots:
     void setHorizontalConfig(double sampleRate, int recLen);
     void queryScope();
     void setRefEnabled(bool en);
+
+protected:
+    bool testConnection();
+    void initialize();
+
 };
 
 #endif // VIRTUALLIFSCOPE_H

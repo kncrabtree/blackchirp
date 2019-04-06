@@ -5,6 +5,7 @@ VirtualFlowController::VirtualFlowController(QObject *parent) : FlowController(p
     d_subKey = QString("virtual");
     d_prettyName = QString("Virtual Flow Controller");
     d_commType = CommunicationProtocol::Virtual;
+    d_numChannels = 4;
 }
 
 VirtualFlowController::~VirtualFlowController()
@@ -23,9 +24,8 @@ bool VirtualFlowController::testConnection()
     return true;
 }
 
-void VirtualFlowController::initialize()
+void VirtualFlowController::fcInitialize()
 {
-    FlowController::initialize();
 }
 
 Experiment VirtualFlowController::prepareForExperiment(Experiment exp)

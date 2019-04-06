@@ -21,3 +21,10 @@ QList<QPair<QString, QVariant> > PressureController::readAuxPlotData()
     out.append(qMakePair(QString("chamberPressure"),readPressure()));
     return out;
 }
+
+
+void PressureController::initialize()
+{
+    pcInitialize();
+    emit isReadOnly(d_readOnly);
+}

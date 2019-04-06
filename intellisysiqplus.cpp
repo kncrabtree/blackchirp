@@ -86,7 +86,7 @@ bool IntellisysIQPlus::testConnection()
     return true;
 }
 
-void IntellisysIQPlus::initialize()
+void IntellisysIQPlus::pcInitialize()
 {
     p_comm->setReadOptions(1000,true,QByteArray("\r\n"));
 

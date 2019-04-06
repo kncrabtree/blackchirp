@@ -11,25 +11,25 @@ public:
 	// HardwareObject interface
 public slots:
     void readSettings();
-	bool testConnection();
-	void initialize();
 	void sleep(bool b);
+    Experiment prepareForExperiment(Experiment exp);
+    void beginAcquisition();
+    void endAcquisition();
 
 	// PulseGenerator interface
-public slots:
     QVariant read(const int index, const BlackChirp::PulseSetting s);
 	double readRepRate();
     bool set(const int index, const BlackChirp::PulseSetting s, const QVariant val);
 	bool setRepRate(double d);
 
+protected:
+    bool testConnection();
+    void initialize();
+
+
 private:
 	bool pGenWriteCmd(QString cmd);
 
-    // HardwareObject interface
-public slots:
-    Experiment prepareForExperiment(Experiment exp);
-    void beginAcquisition();
-    void endAcquisition();
 };
 
 #endif // QC9518_H

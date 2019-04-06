@@ -1,6 +1,6 @@
 #include "flowcontroller.h"
 
-FlowController::FlowController(QObject *parent) : HardwareObject(parent), d_nextRead(BC_FLOW_NUMCHANNELS)
+FlowController::FlowController(QObject *parent) : HardwareObject(parent), d_nextRead(0)
 {
     d_key = QString("flowController");
 
@@ -21,7 +21,7 @@ void FlowController::initialize()
     s.beginGroup(d_subKey);
 
     s.beginReadArray(QString("channels"));
-    for(int i=0;i<BC_FLOW_NUMCHANNELS;i++)
+    for(int i=0;i<d_numChannels;i++)
     {
         s.setArrayIndex(i);
         d_config.add(0.0,s.value(QString("name"),QString("")).toString());
@@ -29,6 +29,8 @@ void FlowController::initialize()
     s.endArray();
     s.endGroup();
     s.endGroup();
+
+    fcInitialize();
 }
 
 void FlowController::setChannelName(const int ch, const QString name)

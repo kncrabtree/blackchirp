@@ -10,12 +10,11 @@ public:
     PressureController(QObject *parent =nullptr);
     virtual ~PressureController();
 
-    bool isReadOnly() const { return d_readOnly; }
-
 signals:
     void pressureUpdate(double);
     void pressureSetpointUpdate(double);
     void pressureControlMode(bool);
+    void isReadOnly(bool);
 
 public slots:
     virtual double readPressure() =0;
@@ -35,9 +34,12 @@ protected:
     double d_setPoint;
     bool d_pressureControlMode;
 
+    virtual void pcInitialize() =0;
+
 
     // HardwareObject interface
     virtual QList<QPair<QString, QVariant> > readAuxPlotData();
+    void initialize() final;
 };
 
 #if BC_PCONTROLLER == 1

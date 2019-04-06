@@ -22,15 +22,16 @@ public:
     // HardwareObject interface
 public slots:
     void readSettings();
-    bool testConnection();
-    void initialize();
     Experiment prepareForExperiment(Experiment exp);
     void beginAcquisition();
     void endAcquisition();
 
     // FtmwScope interface
-public slots:
     void readWaveform();
+
+protected:
+    bool testConnection();
+    void initialize();
 
 private:
     drv_handle p_handle;

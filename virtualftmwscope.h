@@ -16,13 +16,15 @@ public:
     // HardwareObject interface
 public slots:
     void readSettings();
-    bool testConnection();
-    void initialize();
     Experiment prepareForExperiment(Experiment exp);
     void beginAcquisition();
     void endAcquisition();
 
     void readWaveform();
+
+protected:
+    bool testConnection();
+    void initialize();
 
 private:
     QVector<double> d_simulatedData;

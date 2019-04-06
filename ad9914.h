@@ -12,9 +12,7 @@ public:
 
     // HardwareObject interface
 public slots:
-    bool testConnection();
     void readSettings();
-    void initialize();
     Experiment prepareForExperiment(Experiment exp);
     void beginAcquisition();
     void endAcquisition();
@@ -22,6 +20,10 @@ public slots:
 private:
     QByteArray d_settingsHex;
     double d_clockFreqHz;
+
+protected:
+    void initialize();
+    bool testConnection();
 };
 
 #endif // AD9914_H

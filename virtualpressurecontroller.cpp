@@ -44,14 +44,11 @@ bool VirtualPressureController::testConnection()
     return true;
 }
 
-void VirtualPressureController::initialize()
+void VirtualPressureController::pcInitialize()
 {
     p_readTimer = new QTimer(this);
     p_readTimer->setInterval(200);
     connect(p_readTimer,&QTimer::timeout,this,&VirtualPressureController::readPressure);
-
-    randPressure = static_cast<double>((qrand() % 65536)) / 65536.0 * 9.9 + 0.05;
-    emit logMessage(QString("%1").arg(randPressure,0,'f',3));
 }
 
 Experiment VirtualPressureController::prepareForExperiment(Experiment exp)

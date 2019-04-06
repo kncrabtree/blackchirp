@@ -14,8 +14,6 @@ public:
     // HardwareObject interface
 public slots:
     void readSettings();
-    bool testConnection();
-    void initialize();
     Experiment prepareForExperiment(Experiment exp);
     void beginAcquisition();
     void endAcquisition();
@@ -29,6 +27,11 @@ public slots:
     bool readPressureControlMode();
     void openGateValve();
     void closeGateValve();
+
+protected:
+    bool testConnection();
+    void pcInitialize();
+
 
 private:
     double fullScale;

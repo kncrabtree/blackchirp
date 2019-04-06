@@ -18,8 +18,6 @@ public:
     // HardwareObject interface
 public slots:
     void readSettings();
-    bool testConnection();
-    void initialize();
     Experiment prepareForExperiment(Experiment exp);
     void beginAcquisition();
     void endAcquisition();
@@ -27,6 +25,11 @@ public slots:
     void readWaveform();
     void wakeUp();
     void socketError(QAbstractSocket::SocketError e);
+
+protected:
+    bool testConnection();
+    void initialize();
+
 
 private:
     bool d_waitingForReply;

@@ -14,14 +14,16 @@ public:
     // HardwareObject interface
 public slots:
     void readSettings();
-    bool testConnection();
-    void initialize();
 
     // MotorOscilloscope interface
-public slots:
     bool configure(const BlackChirp::MotorScopeConfig &sc);
     MotorScan prepareForMotorScan(MotorScan s);
     void queryScope();
+
+protected:
+    bool testConnection();
+    void initialize();
+
 
 private:
     QTimer *p_testTimer;

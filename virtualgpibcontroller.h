@@ -12,14 +12,14 @@ public:
 
 	// HardwareObject interface
 public slots:
-	bool testConnection();
-	void initialize();
     Experiment prepareForExperiment(Experiment exp);
 	void beginAcquisition();
 	void endAcquisition();
 
 	// GpibController interface
 protected:
+    bool testConnection();
+    void initialize();
     bool readAddress();
     bool setAddress(int a);
 

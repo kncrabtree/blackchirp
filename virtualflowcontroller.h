@@ -12,8 +12,6 @@ public:
 
     // HardwareObject interface
 public slots:
-    bool testConnection();
-    void initialize();
     Experiment prepareForExperiment(Experiment exp);
     void beginAcquisition();
     void endAcquisition();
@@ -28,6 +26,10 @@ public slots:
     double readPressure();
     void setPressureControlMode(bool enabled);
     bool readPressureControlMode();
+
+protected:
+    bool testConnection();
+    void fcInitialize();
 };
 
 #endif // VIRTUALFLOWCONTROLLER_H

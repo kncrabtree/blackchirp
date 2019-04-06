@@ -29,18 +29,19 @@ public:
     // HardwareObject interface
 public slots:
     void readSettings();
-    bool testConnection();
-    void initialize();
     void beginAcquisition();
     void endAcquisition();
 
     // MotorController interface
-public slots:
     bool moveToPosition(double x, double y, double z);
     void moveToRestingPos();
     void checkLimit();
     bool readCurrentPosition();
     void checkMotion();
+
+protected:
+    bool testConnection();
+    void initialize();
 
 private:
     bool d_idle;

@@ -11,8 +11,6 @@ public:
     // HardwareObject interface
 public slots:
     void readSettings();
-    bool testConnection();
-    void initialize();
     void beginAcquisition();
     void endAcquisition();
 
@@ -21,6 +19,8 @@ public:
     QStringList channelNames();
 
 protected:
+    bool testConnection();
+    void initialize();
     bool setHwFrequency(double freqMHz, int outputIndex);
     double readHwFrequency(int outputIndex);
 

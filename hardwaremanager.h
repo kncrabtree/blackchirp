@@ -151,7 +151,7 @@ private:
     int d_responseCount;
     void checkStatus();
 
-    QList<QPair<HardwareObject*,QThread*> > d_hardwareList;
+    QList<HardwareObject*> d_hardwareList;
     FtmwScope *p_ftmwScope;
     AWG *p_awg;
     PulseGenerator *p_pGen;
