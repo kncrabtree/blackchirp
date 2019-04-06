@@ -10,23 +10,23 @@ public:
 
     // FlowController interface
 public slots:
-    double setFlowSetpoint(const int ch, const double val);
-    double setPressureSetpoint(const double val);
-    double readFlowSetpoint(const int ch);
-    double readPressureSetpoint();
-    double readFlow(const int ch);
-    double readPressure();
-    void setPressureControlMode(bool enabled);
-    bool readPressureControlMode();
+    double setFlowSetpoint(const int ch, const double val) override;
+    double setPressureSetpoint(const double val) override;
+    double readFlowSetpoint(const int ch) override;
+    double readPressureSetpoint() override;
+    double readFlow(const int ch) override;
+    double readPressure() override;
+    void setPressureControlMode(bool enabled) override;
+    bool readPressureControlMode() override;
 
     // HardwareObject interface
-    void sleep(bool b);
+    void sleep(bool b) override;
 
 protected:
-    bool testConnection();
+    bool testConnection() override;
 
     // FlowController interface
-    virtual void fcInitialize();
+    virtual void fcInitialize() override;
 
 
 
@@ -39,12 +39,6 @@ private:
 
     QByteArray mksQueryCmd(QString cmd, int respLength);
     int d_maxTries;
-
-    // HardwareObject interface
-public slots:
-    Experiment prepareForExperiment(Experiment exp);
-    void beginAcquisition();
-    void endAcquisition();
 };
 
 #endif // MKS647C_H

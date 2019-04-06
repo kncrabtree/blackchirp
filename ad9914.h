@@ -12,18 +12,18 @@ public:
 
     // HardwareObject interface
 public slots:
-    void readSettings();
-    Experiment prepareForExperiment(Experiment exp);
-    void beginAcquisition();
-    void endAcquisition();
+    void readSettings() override;
+    Experiment prepareForExperiment(Experiment exp) override;
+    void beginAcquisition() override;
+    void endAcquisition() override;
 
 private:
     QByteArray d_settingsHex;
     double d_clockFreqHz;
 
 protected:
-    void initialize();
-    bool testConnection();
+    void initialize() override;
+    bool testConnection() override;
 };
 
 #endif // AD9914_H

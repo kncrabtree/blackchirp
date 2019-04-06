@@ -10,18 +10,13 @@ public:
 	VirtualGpibController(QObject *parent = 0);
 	~VirtualGpibController();
 
-	// HardwareObject interface
-public slots:
-    Experiment prepareForExperiment(Experiment exp);
-	void beginAcquisition();
-	void endAcquisition();
-
-	// GpibController interface
 protected:
-    bool testConnection();
-    void initialize();
-    bool readAddress();
-    bool setAddress(int a);
+    bool testConnection() override;
+    void initialize() override;
+
+    // GpibController interface
+    bool readAddress() override;
+    bool setAddress(int a) override;
 
 };
 

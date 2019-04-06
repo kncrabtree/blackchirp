@@ -32,9 +32,9 @@ bool GpibInstrument::writeBinary(QByteArray dat)
     return p_controller->writeBinary(d_address,dat);
 }
 
-QByteArray GpibInstrument::queryCmd(QString cmd)
+QByteArray GpibInstrument::queryCmd(QString cmd, bool suppressError)
 {
-	return p_controller->queryCmd(d_address,cmd);
+    return p_controller->queryCmd(d_address,cmd,suppressError);
 }
 
 void GpibInstrument::initialize()

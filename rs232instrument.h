@@ -15,8 +15,8 @@ public:
 
 
 public slots:
-	void initialize();
-	bool testConnection();
+    void initialize() override;
+    bool testConnection() override;
 
 };
 

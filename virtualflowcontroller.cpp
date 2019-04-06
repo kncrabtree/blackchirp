@@ -28,19 +28,6 @@ void VirtualFlowController::fcInitialize()
 {
 }
 
-Experiment VirtualFlowController::prepareForExperiment(Experiment exp)
-{
-    return exp;
-}
-
-void VirtualFlowController::beginAcquisition()
-{
-}
-
-void VirtualFlowController::endAcquisition()
-{
-}
-
 double VirtualFlowController::setFlowSetpoint(const int ch, const double val)
 {
     if(ch<0 || ch >= d_config.size())

@@ -9,8 +9,8 @@ public:
     explicit CustomInstrument(QString key, QString subKey, QObject *parent = nullptr);
 
 public slots:
-    void initialize();
-    bool testConnection();
+    void initialize() override;
+    bool testConnection() override;
 };
 
 #endif // CUSTOMINSTRUMENT_H

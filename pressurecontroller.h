@@ -38,8 +38,8 @@ protected:
 
 
     // HardwareObject interface
-    virtual QList<QPair<QString, QVariant> > readAuxPlotData();
-    void initialize() final;
+    virtual QList<QPair<QString, QVariant> > readAuxPlotData() override;
+    void initialize() override final;
 };
 
 #if BC_PCONTROLLER == 1

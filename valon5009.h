@@ -10,30 +10,24 @@ public:
 
     // HardwareObject interface
 public slots:
-    void readSettings();
-    void beginAcquisition();
-    void endAcquisition();
+    void readSettings() override;
 
     // Clock interface
 public:
-    QStringList channelNames();
+    QStringList channelNames() override;
 
 protected:
-    bool testConnection();
-    void initialize();
-    bool setHwFrequency(double freqMHz, int outputIndex);
-    double readHwFrequency(int outputIndex);
+    bool testConnection() override;
+    void initializeClock() override;
+    bool setHwFrequency(double freqMHz, int outputIndex) override;
+    double readHwFrequency(int outputIndex) override;
+    Experiment prepareClock(Experiment exp) override;
 
 private:
     bool valonWriteCmd(QString cmd);
     QByteArray valonQueryCmd(QString cmd);
 
     bool d_lockToExt10MHz;
-
-
-    // HardwareObject interface
-public slots:
-    Experiment prepareForExperiment(Experiment exp);
 };
 
 #endif // VALON5009_H

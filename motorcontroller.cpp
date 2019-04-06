@@ -19,9 +19,3 @@ Experiment MotorController::prepareForExperiment(Experiment exp)
         prepareForMotorScan(exp.motorScan());
     return exp;
 }
-
-bool MotorController::prepareForMotorScan(const MotorScan ms)
-{
-    Q_UNUSED(ms)
-    return true;
-}

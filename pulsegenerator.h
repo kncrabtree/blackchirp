@@ -11,9 +11,13 @@ class PulseGenerator : public HardwareObject
 public:
     PulseGenerator(QObject *parent = nullptr);
     virtual ~PulseGenerator();
+    int numChannels() const { return d_numChannels; }
 
 public slots:
-    virtual void initialize();
+    void initialize() override final;
+    Experiment prepareForExperiment(Experiment exp) override final;
+    void readSettings() override final;
+
     PulseGenConfig config() const { return d_config; }
     virtual QVariant read(const int index, const BlackChirp::PulseSetting s) =0;
     virtual double readRepRate() =0;
@@ -38,11 +42,13 @@ signals:
 protected:
     PulseGenConfig d_config;
     virtual void readAll();
+    virtual void initializePGen() =0;
 
     double d_minWidth;
     double d_maxWidth;
     double d_minDelay;
     double d_maxDelay;
+    int d_numChannels;
 };
 
 

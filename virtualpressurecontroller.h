@@ -12,24 +12,21 @@ public:
 
     // HardwareObject interface
 public slots:
-    void readSettings();
-    Experiment prepareForExperiment(Experiment exp);
-    void beginAcquisition();
-    void endAcquisition();
+    void readSettings() override;
 
     // PressureController interface
 public slots:
-    double readPressure();
-    double setPressureSetpoint(const double val);
-    double readPressureSetpoint();
-    void setPressureControlMode(bool enabled);
-    bool readPressureControlMode();
-    void openGateValve();
-    void closeGateValve();
+    double readPressure() override;
+    double setPressureSetpoint(const double val) override;
+    double readPressureSetpoint() override;
+    void setPressureControlMode(bool enabled) override;
+    bool readPressureControlMode() override;
+    void openGateValve() override;
+    void closeGateValve() override;
 
 protected:
-    bool testConnection();
-    void pcInitialize();
+    bool testConnection() override;
+    void pcInitialize() override;
 
 
 private:

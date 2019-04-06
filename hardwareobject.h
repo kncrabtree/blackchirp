@@ -120,15 +120,14 @@ public slots:
     virtual void readSettings();
 
     /*!
-     * \brief Puts device into a standby mode. Default implementation puts a message in the log.
+     * \brief Puts device into a standby mode.
      * \param b If true, go into standby mode. Else, active mode.
      */
 	virtual void sleep(bool b);
 
-    virtual Experiment prepareForExperiment(Experiment exp) =0;
-
-    virtual void beginAcquisition() =0;
-    virtual void endAcquisition() =0;
+    virtual Experiment prepareForExperiment(Experiment exp) { return exp; }
+    virtual void beginAcquisition(){}
+    virtual void endAcquisition(){}
 
     virtual void buildCommunication(QObject *gc = nullptr);
 

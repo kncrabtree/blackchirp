@@ -9,8 +9,6 @@ Valon5015::Valon5015(int clockNum, QObject *parent) :
     d_threaded = false;
     d_numOutputs = 1;
     d_isTunable = true;
-
-    Clock::prepareMultFactors();
 }
 
 void Valon5015::readSettings()
@@ -50,17 +48,9 @@ bool Valon5015::testConnection()
     return true;
 }
 
-void Valon5015::initialize()
+void Valon5015::initializeClock()
 {
     p_comm->setReadOptions(500,true,QByteArray("\n\r"));
-}
-
-void Valon5015::beginAcquisition()
-{
-}
-
-void Valon5015::endAcquisition()
-{
 }
 
 QStringList Valon5015::channelNames()
@@ -68,7 +58,7 @@ QStringList Valon5015::channelNames()
     return QStringList { QString("Source 1") };
 }
 
-Experiment Valon5015::prepareForExperiment(Experiment exp)
+Experiment Valon5015::prepareClock(Experiment exp)
 {
     valonWriteCmd(QString("PWR 13\r"));
     if(d_lockToExt10MHz)
@@ -80,7 +70,6 @@ Experiment Valon5015::prepareForExperiment(Experiment exp)
         {
             exp.setHardwareFailed();
             exp.setErrorString(QString("Could not lock %1 to external reference.").arg(d_prettyName));
-            return exp;
         }
     }
     else
@@ -92,11 +81,10 @@ Experiment Valon5015::prepareForExperiment(Experiment exp)
         {
             exp.setHardwareFailed();
             exp.setErrorString(QString("Could not lock %1 to internal reference.").arg(d_prettyName));
-            return exp;
         }
     }
 
-    return Clock::prepareForExperiment(exp);
+    return exp;
 }
 
 bool Valon5015::setHwFrequency(double freqMHz, int outputIndex)

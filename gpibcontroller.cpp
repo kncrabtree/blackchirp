@@ -33,7 +33,7 @@ bool GpibController::writeBinary(int address, QByteArray dat)
     return p_comm->writeBinary(dat);
 }
 
-QByteArray GpibController::queryCmd(int address, QString cmd)
+QByteArray GpibController::queryCmd(int address, QString cmd, bool suppressError)
 {
 	if(address != d_currentAddress)
     {
@@ -41,6 +41,6 @@ QByteArray GpibController::queryCmd(int address, QString cmd)
             return QByteArray();
     }
 
-	return p_comm->queryCmd(cmd);
+    return p_comm->queryCmd(cmd, suppressError);
 }
 

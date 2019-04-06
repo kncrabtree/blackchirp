@@ -47,16 +47,3 @@ bool VirtualAwg::testConnection()
 void VirtualAwg::initialize()
 {
 }
-
-Experiment VirtualAwg::prepareForExperiment(Experiment exp)
-{
-    return exp;
-}
-
-void VirtualAwg::beginAcquisition()
-{
-}
-
-void VirtualAwg::endAcquisition()
-{
-}

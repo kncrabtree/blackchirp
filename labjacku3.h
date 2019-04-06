@@ -13,11 +13,8 @@ public:
 
     // HardwareObject interface
 public slots:
-    void readSettings();
-    Experiment prepareForExperiment(Experiment exp);
-    void beginAcquisition();
-    void endAcquisition();
-    void readTimeData();
+    void readIOBSettings() override;
+    Experiment prepareForExperiment(Experiment exp) override;
 
 private:
     HANDLE d_handle;
@@ -31,10 +28,10 @@ private:
 
     // HardwareObject interface
 protected:
-    bool testConnection();
-    void initialize();
-    virtual QList<QPair<QString, QVariant> > readAuxPlotData();
-    virtual QList<QPair<QString, QVariant> > readAuxNoPlotData();
+    bool testConnection() override;
+    void initialize() override;
+    virtual QList<QPair<QString, QVariant> > readAuxPlotData() override;
+    virtual QList<QPair<QString, QVariant> > readAuxNoPlotData() override;
 };
 
 #endif // LABJACKU3_H

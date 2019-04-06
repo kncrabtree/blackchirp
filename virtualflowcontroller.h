@@ -10,26 +10,20 @@ public:
     explicit VirtualFlowController(QObject *parent = nullptr);
     ~VirtualFlowController();
 
-    // HardwareObject interface
 public slots:
-    Experiment prepareForExperiment(Experiment exp);
-    void beginAcquisition();
-    void endAcquisition();
-
-
     // FlowController interface
-    double setFlowSetpoint(const int ch, const double val);
-    double setPressureSetpoint(const double val);
-    double readFlowSetpoint(const int ch);
-    double readPressureSetpoint();
-    double readFlow(const int ch);
-    double readPressure();
-    void setPressureControlMode(bool enabled);
-    bool readPressureControlMode();
+    double setFlowSetpoint(const int ch, const double val) override;
+    double setPressureSetpoint(const double val) override;
+    double readFlowSetpoint(const int ch) override;
+    double readPressureSetpoint() override;
+    double readFlow(const int ch) override;
+    double readPressure() override;
+    void setPressureControlMode(bool enabled) override;
+    bool readPressureControlMode() override;
 
 protected:
-    bool testConnection();
-    void fcInitialize();
+    bool testConnection() override;
+    void fcInitialize() override;
 };
 
 #endif // VIRTUALFLOWCONTROLLER_H

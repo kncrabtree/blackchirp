@@ -12,7 +12,7 @@ public:
 
 	bool writeCmd(int address, QString cmd);
     bool writeBinary(int address, QByteArray dat);
-	QByteArray queryCmd(int address, QString cmd);
+    QByteArray queryCmd(int address, QString cmd, bool suppressError=false);
     virtual QString queryTerminator() const { return QString(); }
 
 protected:

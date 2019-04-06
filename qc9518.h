@@ -10,21 +10,19 @@ public:
 
 	// HardwareObject interface
 public slots:
-    void readSettings();
-	void sleep(bool b);
-    Experiment prepareForExperiment(Experiment exp);
-    void beginAcquisition();
-    void endAcquisition();
+    void sleep(bool b) override;
+    void beginAcquisition() override;
+    void endAcquisition() override;
 
 	// PulseGenerator interface
-    QVariant read(const int index, const BlackChirp::PulseSetting s);
-	double readRepRate();
-    bool set(const int index, const BlackChirp::PulseSetting s, const QVariant val);
-	bool setRepRate(double d);
+    QVariant read(const int index, const BlackChirp::PulseSetting s) override;
+    double readRepRate() override;
+    bool set(const int index, const BlackChirp::PulseSetting s, const QVariant val) override;
+    bool setRepRate(double d) override;
 
 protected:
-    bool testConnection();
-    void initialize();
+    bool testConnection() override;
+    void initializePGen() override;
 
 
 private:

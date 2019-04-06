@@ -50,21 +50,6 @@ void VirtualPressureController::pcInitialize()
     p_readTimer->setInterval(200);
     connect(p_readTimer,&QTimer::timeout,this,&VirtualPressureController::readPressure);
 }
-
-Experiment VirtualPressureController::prepareForExperiment(Experiment exp)
-{
-    return exp;
-}
-
-void VirtualPressureController::beginAcquisition()
-{
-}
-
-void VirtualPressureController::endAcquisition()
-{
-}
-
-
 double VirtualPressureController::readPressure()
 {
     d_pressure = static_cast<double>((qrand() % 65536) - 32768) / 65536.0 * 0.05 + randPressure;

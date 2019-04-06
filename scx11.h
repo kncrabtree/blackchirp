@@ -28,20 +28,19 @@ public:
 
     // HardwareObject interface
 public slots:
-    void readSettings();
-    void beginAcquisition();
-    void endAcquisition();
+    void readSettings() override;
 
     // MotorController interface
-    bool moveToPosition(double x, double y, double z);
-    void moveToRestingPos();
-    void checkLimit();
+    bool moveToPosition(double x, double y, double z) override;
+    void moveToRestingPos() override;
+    void checkLimit() override;
     bool readCurrentPosition();
     void checkMotion();
 
 protected:
-    bool testConnection();
-    void initialize();
+    bool prepareForMotorScan(const MotorScan ms) override;
+    bool testConnection() override;
+    void initialize() override;
 
 private:
     bool d_idle;

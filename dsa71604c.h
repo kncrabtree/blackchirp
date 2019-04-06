@@ -17,18 +17,18 @@ public:
 
     // HardwareObject interface
 public slots:
-    void readSettings();
-    Experiment prepareForExperiment(Experiment exp);
-    void beginAcquisition();
-    void endAcquisition();
+    void readSettings() override;
+    Experiment prepareForExperiment(Experiment exp) override;
+    void beginAcquisition() override;
+    void endAcquisition() override;
 
-    void readWaveform();
+    void readWaveform() override;
     void wakeUp();
     void socketError(QAbstractSocket::SocketError e);
 
 protected:
-    bool testConnection();
-    void initialize();
+    bool testConnection() override;
+    void initialize() override;
 
 
 private:

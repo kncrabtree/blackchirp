@@ -13,21 +13,18 @@ public:
 
 public slots:
     // HardwareObject interface
-    void readSettings();
-    Experiment prepareForExperiment(Experiment exp);
-    void beginAcquisition();
-    void endAcquisition();
+    void readSettings() override;
 
     // LifScope interface
-    void setLifVScale(double scale);
-    void setRefVScale(double scale);
-    void setHorizontalConfig(double sampleRate, int recLen);
-    void queryScope();
-    void setRefEnabled(bool en);
+    void setLifVScale(double scale) override;
+    void setRefVScale(double scale) override;
+    void setHorizontalConfig(double sampleRate, int recLen) override;
+    void queryScope() override;
+    void setRefEnabled(bool en) override;
 
 protected:
-    bool testConnection();
-    void initialize();
+    bool testConnection() override;
+    void initialize() override;
 
 };
 

@@ -189,7 +189,11 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), d_responseC
     s.endArray();
     s.endGroup();
 
-    s.sync();
+    //write settings relevant for configuring UI
+    s.beginGroup(QString("hwUI"));
+    s.setValue(QString("flowChannels"),p_flow->numChannels());
+    s.setValue(QString("pGenChannels"),p_pGen->numChannels());
+    s.endGroup();
 
     for(int i=0;i<d_hardwareList.size();i++)
     {
@@ -234,6 +238,8 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), d_responseC
             connect(t,&QThread::finished,obj,&HardwareObject::deleteLater);
         }
     }
+
+    s.sync();
 }
 
 HardwareManager::~HardwareManager()

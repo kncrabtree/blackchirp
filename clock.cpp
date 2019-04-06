@@ -16,10 +16,11 @@ QStringList Clock::channelNames()
     return QStringList();
 }
 
-void Clock::prepareMultFactors()
+void Clock::initialize()
 {
     for(int i=0; i<d_numOutputs; i++)
         d_multFactors << 1.0;
+    initializeClock();
 }
 
 bool Clock::addRole(BlackChirp::ClockType t, int outputIndex)

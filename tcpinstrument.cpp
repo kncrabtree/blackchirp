@@ -71,7 +71,7 @@ bool TcpInstrument::writeBinary(QByteArray dat)
 
 }
 
-QByteArray TcpInstrument::queryCmd(QString cmd)
+QByteArray TcpInstrument::queryCmd(QString cmd, bool suppressError)
 {
 
     if(dynamic_cast<QTcpSocket*>(p_device)->state() != QTcpSocket::ConnectedState)
@@ -84,7 +84,7 @@ QByteArray TcpInstrument::queryCmd(QString cmd)
         }
     }
 
-    return CommunicationProtocol::queryCmd(cmd);
+    return CommunicationProtocol::queryCmd(cmd, suppressError);
 
 }
 

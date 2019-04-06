@@ -26,7 +26,7 @@ LabjackU3::LabjackU3(QObject *parent) :
 
 }
 
-void LabjackU3::readSettings()
+void LabjackU3::readIOBSettings()
 {
     IOBoard::readSettings();
 
@@ -160,14 +160,6 @@ Experiment LabjackU3::prepareForExperiment(Experiment exp)
 {
     d_config = exp.iobConfig();
     return exp;
-}
-
-void LabjackU3::beginAcquisition()
-{
-}
-
-void LabjackU3::endAcquisition()
-{
 }
 
 

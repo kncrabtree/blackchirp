@@ -24,19 +24,6 @@ void VirtualGpibController::initialize()
 {
 }
 
-Experiment VirtualGpibController::prepareForExperiment(Experiment exp)
-{
-   return exp;
-}
-
-void VirtualGpibController::beginAcquisition()
-{
-}
-
-void VirtualGpibController::endAcquisition()
-{
-}
-
 bool VirtualGpibController::readAddress()
 {
     return true;

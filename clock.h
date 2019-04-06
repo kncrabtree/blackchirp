@@ -37,11 +37,8 @@ public:
     //human-readable names for each output (e.g., Source 1, Source 2, etc)
     virtual QStringList channelNames();
 
-    //This function should be called in the constructor of an implementation
-    //to populate d_multFactors list
-    void prepareMultFactors();
-
 public slots:
+    void initialize() override final;
     bool addRole(BlackChirp::ClockType t, int outputIndex = 0);
     void removeRole(BlackChirp::ClockType t);
     void clearRoles();
@@ -62,12 +59,14 @@ protected:
     QHash<BlackChirp::ClockType,int> d_outputRoles;
     QList<double> d_multFactors;
 
+    virtual void initializeClock() =0;
     virtual bool setHwFrequency(double freqMHz, int outputIndex = 0) =0;
     virtual double readHwFrequency(int outputIndex = 0) =0;
+    virtual Experiment prepareClock(Experiment exp) { return exp; }
 
     // HardwareObject interface
 public slots:
-    virtual Experiment prepareForExperiment(Experiment exp);
+    virtual Experiment prepareForExperiment(Experiment exp) override final;
 };
 
 #endif // CLOCK_H

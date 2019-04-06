@@ -21,17 +21,17 @@ public:
 
     // HardwareObject interface
 public slots:
-    void readSettings();
-    Experiment prepareForExperiment(Experiment exp);
-    void beginAcquisition();
-    void endAcquisition();
+    void readSettings() override;
+    Experiment prepareForExperiment(Experiment exp) override;
+    void beginAcquisition() override;
+    void endAcquisition() override;
 
     // FtmwScope interface
-    void readWaveform();
+    void readWaveform() override;
 
 protected:
-    bool testConnection();
-    void initialize();
+    bool testConnection() override;
+    void initialize() override;
 
 private:
     drv_handle p_handle;

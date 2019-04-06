@@ -10,7 +10,8 @@ PulsePlot::PulsePlot(QWidget *parent) :
     ZoomPanPlot(QString("pulsePlot"),parent)
 {
 
-    int numChannels = BC_PGEN_NUMCHANNELS;
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    int numChannels = s.value(QString("hwUI/pGenChannels"),8).toInt();
 
     setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
     setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));

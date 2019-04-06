@@ -7,34 +7,9 @@ Qc9528::Qc9528(QObject *parent) :
     d_prettyName = QString("Pulse Generator QC 9528");
     d_commType = CommunicationProtocol::Rs232;
     d_threaded = false;
+    d_numChannels = 8;
 
 }
-
-void Qc9528::readSettings()
-{
-    QSettings s(QSettings::SystemScope, QApplication::organizationName(), QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-
-    d_minWidth = s.value(QString("minWidth"),0.004).toDouble();
-    d_maxWidth = s.value(QString("maxWidth"),100000.0).toDouble();
-    d_minDelay = s.value(QString("minDelay"),0.0).toDouble();
-    d_maxDelay = s.value(QString("maxDelay"),100000.0).toDouble();
-    d_forceExtClock = s.value(QString("forceExtClock"),true).toBool();
-
-
-    s.setValue(QString("minWidth"),d_minWidth);
-    s.setValue(QString("maxWidth"),d_maxWidth);
-    s.setValue(QString("minDelay"),d_minDelay);
-    s.setValue(QString("maxDelay"),d_maxDelay);
-    s.setValue(QString("forceExtClock"),d_forceExtClock);
-
-    s.endGroup();
-    s.endGroup();
-    s.sync();
-}
-
-
 
 bool Qc9528::testConnection()
 {
@@ -99,20 +74,9 @@ bool Qc9528::testConnection()
 
 }
 
-void Qc9528::initialize()
+void Qc9528::initializePGen()
 {
-    PulseGenerator::initialize();
-
     p_comm->setReadOptions(100,true,QByteArray("\r\n"));
-}
-
-Experiment Qc9528::prepareForExperiment(Experiment exp)
-{
-    bool success = setAll(exp.pGenConfig());
-    if(!success)
-        exp.setHardwareFailed();
-
-    return exp;
 }
 
 void Qc9528::beginAcquisition()
@@ -368,8 +332,6 @@ void Qc9528::sleep(bool b)
         pGenWriteCmd(QString(":PULSE0:STATE 0\r\n"));
     else
         pGenWriteCmd(QString(":PULSE0:STATE 1\r\n"));
-
-    HardwareObject::sleep(b);
 }
 
 bool Qc9528::pGenWriteCmd(QString cmd)

@@ -30,7 +30,7 @@ Mks647c::Mks647c(QObject *parent) :
                         << f << 1e1*f << 1e2*f << 1e3*f << 1e4*f << 1e5*f << 1e6*f;
 
     d_pressureRangeIndex = d_pressureRangeList.indexOf(1e1);
-    for(int i=0; i<BC_FLOW_NUMCHANNELS; i++)
+    for(int i=0; i<d_numChannels; i++)
     {
         d_rangeIndexList.append(4);
         d_gcfList.append(0.0);
@@ -94,7 +94,7 @@ void Mks647c::fcInitialize()
 
 double Mks647c::setFlowSetpoint(const int ch, const double val)
 {
-    if(ch < 0 || ch >= BC_FLOW_NUMCHANNELS)
+    if(ch < 0 || ch >= d_numChannels)
         return -1.0;
 
     //make sure range and gcf are updated
@@ -210,7 +210,7 @@ double Mks647c::readPressureSetpoint()
 
 double Mks647c::readFlow(const int ch)
 {
-    if(ch < 0 || ch >= BC_FLOW_NUMCHANNELS)
+    if(ch < 0 || ch >= d_numChannels)
         return -1.0;
 
     //read flow range
@@ -386,8 +386,6 @@ void Mks647c::sleep(bool b)
     }
     else
         p_comm->writeCmd(QString("ON0;\r\n"));
-
-    HardwareObject::sleep(b);
 }
 
 QByteArray Mks647c::mksQueryCmd(QString cmd, int respLength)
@@ -408,19 +406,4 @@ QByteArray Mks647c::mksQueryCmd(QString cmd, int respLength)
 //        emit logMessage(QString("Took %1 tries to get valid response").arg(tries));
     }
     return resp;
-}
-
-Experiment Mks647c::prepareForExperiment(Experiment exp)
-{
-    return exp;
-}
-
-void Mks647c::beginAcquisition()
-{
-
-}
-
-void Mks647c::endAcquisition()
-{
-
 }

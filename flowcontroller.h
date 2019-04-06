@@ -42,7 +42,7 @@ public slots:
     virtual void readNext();
 
 protected:
-    void initialize() final;
+    void initialize() override final;
     virtual void fcInitialize() =0;
 
     FlowConfig d_config;

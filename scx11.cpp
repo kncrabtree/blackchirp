@@ -168,14 +168,6 @@ void Scx11::initialize()
 
 }
 
-void Scx11::beginAcquisition()
-{
-}
-
-void Scx11::endAcquisition()
-{
-}
-
 bool Scx11::moveToPosition(double x, double y, double z)
 {
     QList<QPair<double,double>> positions{ qMakePair(d_xPos,x), qMakePair(d_yPos,y), qMakePair(d_zPos,z) };
@@ -312,6 +304,12 @@ void Scx11::checkMotion()
 
     readCurrentPosition();
 
+}
+
+bool Scx11::prepareForMotorScan(const MotorScan ms)
+{
+    Q_UNUSED(ms)
+    return true;
 }
 
 void Scx11::checkLimitOneAxis(BlackChirp::MotorAxis axis)

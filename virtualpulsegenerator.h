@@ -10,23 +10,16 @@ public:
     explicit VirtualPulseGenerator(QObject *parent = nullptr);
     ~VirtualPulseGenerator();
 
-    // HardwareObject interface
-public slots:
-    void readSettings();
-    Experiment prepareForExperiment(Experiment exp);
-    void beginAcquisition();
-    void endAcquisition();
-
     // PulseGenerator interface
-    QVariant read(const int index, const BlackChirp::PulseSetting s);
-    double readRepRate();
+    QVariant read(const int index, const BlackChirp::PulseSetting s) override;
+    double readRepRate() override;
 
-    bool set(const int index, const BlackChirp::PulseSetting s, const QVariant val);
-    bool setRepRate(double d);
+    bool set(const int index, const BlackChirp::PulseSetting s, const QVariant val) override;
+    bool setRepRate(double d) override;
 
 protected:
-    bool testConnection();
-    void initialize();
+    bool testConnection() override;
+    void initializePGen() override {}
 };
 
 #endif // VIRTUALPULSEGENERATOR_H

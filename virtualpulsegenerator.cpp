@@ -6,35 +6,13 @@ VirtualPulseGenerator::VirtualPulseGenerator(QObject *parent) : PulseGenerator(p
     d_prettyName = QString("Virtual Pulse Generator");
     d_commType = CommunicationProtocol::Virtual;
     d_threaded = false;
+    d_numChannels = 8;
 }
 
 VirtualPulseGenerator::~VirtualPulseGenerator()
 {
 
 }
-
-void VirtualPulseGenerator::readSettings()
-{
-    QSettings s(QSettings::SystemScope, QApplication::organizationName(), QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-
-    d_minWidth = s.value(QString("minWidth"),0.004).toDouble();
-    d_maxWidth = s.value(QString("maxWidth"),100000.0).toDouble();
-    d_minDelay = s.value(QString("minDelay"),0.0).toDouble();
-    d_maxDelay = s.value(QString("maxDelay"),100000.0).toDouble();
-
-    s.setValue(QString("minWidth"),d_minWidth);
-    s.setValue(QString("maxWidth"),d_maxWidth);
-    s.setValue(QString("minDelay"),d_minDelay);
-    s.setValue(QString("maxDelay"),d_maxDelay);
-
-    s.endGroup();
-    s.endGroup();
-    s.sync();
-}
-
-
 
 bool VirtualPulseGenerator::testConnection()
 {
@@ -44,25 +22,6 @@ bool VirtualPulseGenerator::testConnection()
 
     emit configUpdate(d_config);
     return true;
-}
-
-void VirtualPulseGenerator::initialize()
-{
-    PulseGenerator::initialize();
-}
-
-Experiment VirtualPulseGenerator::prepareForExperiment(Experiment exp)
-{
-    setAll(exp.pGenConfig());
-    return exp;
-}
-
-void VirtualPulseGenerator::beginAcquisition()
-{
-}
-
-void VirtualPulseGenerator::endAcquisition()
-{
 }
 
 QVariant VirtualPulseGenerator::read(const int index, const BlackChirp::PulseSetting s)

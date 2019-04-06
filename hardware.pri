@@ -35,15 +35,17 @@ HEADERS += \
 	$$PWD/lifscope.h \
 	$$PWD/gpibcontroller.h \
 	$$PWD/gpibinstrument.h \
-        $$PWD/motorcontroller.h \
-        $$PWD/motoroscilloscope.h
+    $$PWD/motorcontroller.h \
+    $$PWD/motoroscilloscope.h \
+    $$PWD/pressurecontroller.h
 
 SOURCES += \
 	$$PWD/lifscope.cpp \
 	$$PWD/gpibcontroller.cpp \
 	$$PWD/gpibinstrument.cpp \
-        $$PWD/motorcontroller.cpp \
-        $$PWD/motoroscilloscope.cpp
+    $$PWD/motorcontroller.cpp \
+    $$PWD/motoroscilloscope.cpp \
+    $$PWD/pressurecontroller.cpp
 } else {
 
 greaterThan(GPIB,-1) {

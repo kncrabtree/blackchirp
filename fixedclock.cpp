@@ -11,8 +11,6 @@ FixedClock::FixedClock(int clockNum, QObject *parent) : Clock(clockNum, parent)
 
     for(int i=0; i<d_numOutputs; i++)
         d_currentFrequencyList << 0.0;
-
-    Clock::prepareMultFactors();
 }
 
 void FixedClock::readSettings()
@@ -34,7 +32,7 @@ bool FixedClock::testConnection()
     return true;
 }
 
-void FixedClock::initialize()
+void FixedClock::initializeClock()
 {
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
@@ -55,14 +53,6 @@ void FixedClock::initialize()
     s.endArray();
     s.endGroup();
     s.endGroup();
-}
-
-void FixedClock::beginAcquisition()
-{
-}
-
-void FixedClock::endAcquisition()
-{
 }
 
 bool FixedClock::setHwFrequency(double freqMHz, int outputIndex)

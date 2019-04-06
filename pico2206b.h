@@ -14,18 +14,18 @@ public:
 
     // HardwareObject interface
 public slots:
-    void readSettings();
-    void beginAcquisition();
-    void endAcquisition();
+    void readSettings() override;
+    void beginAcquisition() override;
+    void endAcquisition() override;
 
     // MotorOscilloscope interface
 public slots:
-    bool configure(const BlackChirp::MotorScopeConfig &sc);
-    MotorScan prepareForMotorScan(MotorScan s);
+    bool configure(const BlackChirp::MotorScopeConfig &sc) override;
+    MotorScan prepareForMotorScan(MotorScan s) override;
 
 protected:
-    bool testConnection();
-    void initialize();
+    bool testConnection() override;
+    void initialize() override;
 
 
 private:

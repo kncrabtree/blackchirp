@@ -10,8 +10,6 @@ Valon5009::Valon5009(int clockNum, QObject *parent) :
     d_numOutputs = 2;
     d_isTunable = true;
 
-    Clock::prepareMultFactors();
-
 }
 
 void Valon5009::readSettings()
@@ -52,18 +50,11 @@ bool Valon5009::testConnection()
     return true;
 }
 
-void Valon5009::initialize()
+void Valon5009::initializeClock()
 {
     p_comm->setReadOptions(500,true,QByteArray("\n\r"));
 }
 
-void Valon5009::beginAcquisition()
-{
-}
-
-void Valon5009::endAcquisition()
-{
-}
 
 bool Valon5009::valonWriteCmd(QString cmd)
 {
@@ -154,7 +145,7 @@ double Valon5009::readHwFrequency(int outputIndex)
 }
 
 
-Experiment Valon5009::prepareForExperiment(Experiment exp)
+Experiment Valon5009::prepareClock(Experiment exp)
 {
     if(d_lockToExt10MHz)
     {
@@ -165,7 +156,6 @@ Experiment Valon5009::prepareForExperiment(Experiment exp)
         {
             exp.setHardwareFailed();
             exp.setErrorString(QString("Could not lock %1 to external reference.").arg(d_prettyName));
-            return exp;
         }
     }
     else
@@ -177,9 +167,8 @@ Experiment Valon5009::prepareForExperiment(Experiment exp)
         {
             exp.setHardwareFailed();
             exp.setErrorString(QString("Could not lock %1 to internal reference.").arg(d_prettyName));
-            return exp;
         }
     }
 
-    return Clock::prepareForExperiment(exp);
+    return exp;
 }

@@ -32,15 +32,6 @@ Experiment VirtualIOBoard::prepareForExperiment(Experiment exp)
     return exp;
 }
 
-void VirtualIOBoard::beginAcquisition()
-{
-}
-
-void VirtualIOBoard::endAcquisition()
-{
-}
-
-
 QList<QPair<QString, QVariant> > VirtualIOBoard::readAuxPlotData()
 {
     return auxData(true);
@@ -79,4 +70,9 @@ QList<QPair<QString, QVariant> > VirtualIOBoard::auxData(bool plot)
     }
 
     return out;
+}
+
+
+void VirtualIOBoard::readIOBSettings()
+{
 }

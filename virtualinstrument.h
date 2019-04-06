@@ -11,8 +11,8 @@ public:
     ~VirtualInstrument();
 
 public slots:
-    void initialize();
-    bool testConnection();
+    void initialize() override;
+    bool testConnection() override;
 };
 
 #endif // VIRTUALINSTRUMENT_H

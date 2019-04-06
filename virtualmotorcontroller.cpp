@@ -65,14 +65,6 @@ void VirtualMotorController::initialize()
 {
 }
 
-void VirtualMotorController::beginAcquisition()
-{
-}
-
-void VirtualMotorController::endAcquisition()
-{
-}
-
 bool VirtualMotorController::moveToPosition(double x, double y, double z)
 {
     d_xPos = x;
@@ -104,4 +96,10 @@ void VirtualMotorController::checkLimit()
     bool pz = fabs(d_zPos-d_zRange.second) < 0.01;
     emit limitStatus(BlackChirp::MotorZ,nz,pz);
 
+}
+
+bool VirtualMotorController::prepareForMotorScan(const MotorScan ms)
+{
+    Q_UNUSED(ms)
+    return true;
 }

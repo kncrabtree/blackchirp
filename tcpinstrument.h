@@ -12,13 +12,13 @@ public:
     explicit TcpInstrument(QString key, QString subKey, QObject *parent = nullptr);
     ~TcpInstrument();
 
-    bool writeCmd(QString cmd);
-    bool writeBinary(QByteArray dat);
-    QByteArray queryCmd(QString cmd);
+    bool writeCmd(QString cmd) override;
+    bool writeBinary(QByteArray dat) override;
+    QByteArray queryCmd(QString cmd, bool suppressError = false) override;
 
 public slots:
-	virtual void initialize();
-	virtual bool testConnection();
+    virtual void initialize() override;
+    virtual bool testConnection() override;
 
 private:
     QString d_ip;

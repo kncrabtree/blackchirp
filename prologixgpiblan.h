@@ -11,16 +11,16 @@ public:
 
     // GpibController interface
 public:
-    QString queryTerminator() const;
+    QString queryTerminator() const override;
 
 protected:
     // HardwareObject interface
-    bool testConnection();
-    void initialize();
+    bool testConnection() override;
+    void initialize() override;
 
     // GpibController interface
-    bool readAddress();
-    bool setAddress(int a);
+    bool readAddress() override;
+    bool setAddress(int a) override;
 
 
 };

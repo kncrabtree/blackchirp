@@ -7,30 +7,8 @@ Qc9518::Qc9518(QObject *parent) :
     d_prettyName = QString("Pulse Generator QC 9518");
     d_commType = CommunicationProtocol::Rs232;
     d_threaded = false;
+    d_numChannels = 8;
 }
-
-void Qc9518::readSettings()
-{
-    QSettings s(QSettings::SystemScope, QApplication::organizationName(), QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-
-    d_minWidth = s.value(QString("minWidth"),0.004).toDouble();
-    d_maxWidth = s.value(QString("maxWidth"),100000.0).toDouble();
-    d_minDelay = s.value(QString("minDelay"),0.0).toDouble();
-    d_maxDelay = s.value(QString("maxDelay"),100000.0).toDouble();
-
-    s.setValue(QString("minWidth"),d_minWidth);
-    s.setValue(QString("maxWidth"),d_maxWidth);
-    s.setValue(QString("minDelay"),d_minDelay);
-    s.setValue(QString("maxDelay"),d_maxDelay);
-
-    s.endGroup();
-    s.endGroup();
-    s.sync();
-}
-
-
 
 bool Qc9518::testConnection()
 {
@@ -62,7 +40,7 @@ bool Qc9518::testConnection()
 
 }
 
-void Qc9518::initialize()
+void Qc9518::initializePGen()
 {
     //set up config
     PulseGenerator::initialize();
@@ -313,8 +291,6 @@ void Qc9518::sleep(bool b)
         pGenWriteCmd(QString(":SPULSE:STATE 0\n"));
     else
         pGenWriteCmd(QString(":SPULSE:STATE 1\n"));
-
-    HardwareObject::sleep(b);
 }
 
 bool Qc9518::pGenWriteCmd(QString cmd)
@@ -330,15 +306,6 @@ bool Qc9518::pGenWriteCmd(QString cmd)
             return true;
     }
     return false;
-}
-
-Experiment Qc9518::prepareForExperiment(Experiment exp)
-{
-    bool success = setAll(exp.pGenConfig());
-    if(!success)
-        exp.setHardwareFailed();
-
-    return exp;
 }
 
 void Qc9518::beginAcquisition()

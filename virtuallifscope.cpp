@@ -56,27 +56,6 @@ void VirtualLifScope::initialize()
     test->start();
 }
 
-Experiment VirtualLifScope::prepareForExperiment(Experiment exp)
-{
-    //if(!qFuzzyCompare(d_config.vScale1,exp.lifConfig().scopeConfig().vScale1))
-    //setLifVScale(exp.lifConfig().scopeConfig().vScale1);
-    //if(!qFuzzyCompare(d_config.vScale2,exp.lifConfig().scopeConfig().vScale2))
-    //setRefVScale(exp.lifConfig().scopeConfig().vScale2);
-    //if(!qFuzzyCompare(d_config.sampleRate,exp.lifConfig().scopeConfig().sampleRate) || d_config.recordLength != exp.lifConfig().scopeConfig().recordLength)
-    //setHorizontalConfig(exp.lifConfig().scopeConfig().sampleRate,exp.lifConfig().scopeConfig().recordLength)
-    //exp.setLifScopeConfig(d_config);
-
-    return exp;
-}
-
-void VirtualLifScope::beginAcquisition()
-{
-}
-
-void VirtualLifScope::endAcquisition()
-{
-}
-
 void VirtualLifScope::setLifVScale(double scale)
 {
     d_config.vScale1 = scale;

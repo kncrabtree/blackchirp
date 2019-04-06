@@ -20,12 +20,13 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
     auto vc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
     QSettings s(QSettings::SystemScope, QApplication::organizationName(), QApplication::applicationName());
     QString subKey = s.value(QString("pGen/subKey"),QString("virtual")).toString();
+    int numChannels = s.value(QString("hwUI/pGenChannels"),8).toInt();
     s.beginGroup(QString("pGen"));
     s.beginGroup(subKey);
     s.beginReadArray(QString("channels"));
     QWidget *lastFocusWidget = nullptr;
     auto roles = BlackChirp::allPulseRoles();
-    for(int i=0; i<BC_PGEN_NUMCHANNELS; i++)
+    for(int i=0; i<numChannels; i++)
     {
         s.setArrayIndex(i);
         ChWidgets ch;

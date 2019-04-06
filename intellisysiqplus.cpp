@@ -5,7 +5,11 @@ IntellisysIQPlus::IntellisysIQPlus(QObject *parent) : PressureController(parent)
     d_subKey = QString("IntellisysIQPlus");
     d_prettyName = QString("Intellisys IQ Plus Pressure Controller");
     d_commType = CommunicationProtocol::Rs232;
+    d_readOnly = false;
+}
 
+void IntellisysIQPlus::readSettings()
+{
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
     s.beginGroup(d_key);
@@ -21,24 +25,9 @@ IntellisysIQPlus::IntellisysIQPlus(QObject *parent) : PressureController(parent)
     s.setValue(QString("decimal"),decimal);
     s.setValue(QString("units"),units);
 
-    fullScale = s.value(QString("fullScale"),10.0).toDouble();
+    d_fullScale = s.value(QString("fullScale"),10.0).toDouble();
     s.setValue(QString("fullScale"),10.0);
 
-    s.endGroup();
-    s.endGroup();
-
-    d_readOnly = false;
-}
-
-void IntellisysIQPlus::readSettings()
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    d_minFreqMHz = s.value(QString("minFreqMHz"),0.0).toDouble();
-    d_maxFreqMHz = s.value(QString("maxFreqMHz"),1e7).toDouble();
-    s.setValue(QString("minFreqMHz"),d_minFreqMHz);
-    s.setValue(QString("maxFreqMHz"),d_maxFreqMHz);
     s.endGroup();
     s.endGroup();
 }
@@ -76,9 +65,9 @@ bool IntellisysIQPlus::testConnection()
     int f = resp.indexOf('N');
     int l = resp.size();
     double num = resp.mid(f+2,l-f-2).trimmed().toDouble();
-    if(num != fullScale)
+    if(num != d_fullScale)
     {
-        d_errorString = QString("Full scale (%1 Torr) is not matched with setting value (%2 Torr)").arg(num,0,'f',2).arg(fullScale,0,'f',2);
+        d_errorString = QString("Full scale (%1 Torr) is not matched with setting value (%2 Torr)").arg(num,0,'f',2).arg(d_fullScale,0,'f',2);
         return false;
     }
 
@@ -96,19 +85,6 @@ void IntellisysIQPlus::pcInitialize()
     connect(this,&IntellisysIQPlus::hardwareFailure,p_readTimer,&QTimer::stop);
 }
 
-Experiment IntellisysIQPlus::prepareForExperiment(Experiment exp)
-{
-    return exp;
-}
-
-void IntellisysIQPlus::beginAcquisition()
-{
-}
-
-void IntellisysIQPlus::endAcquisition()
-{
-}
-
 double IntellisysIQPlus::readPressure()
 {
     QByteArray resp = p_comm->queryCmd(QString("R5\n"));
@@ -121,7 +97,7 @@ double IntellisysIQPlus::readPressure()
     int f = resp.indexOf('+');
     int l = resp.size();
     double num = resp.mid(f+1,l-f-1).trimmed().toDouble();
-    d_pressure = num * fullScale/100.0;
+    d_pressure = num * d_fullScale/100.0;
     emit pressureUpdate(d_pressure);
     return d_pressure;
 }
@@ -129,7 +105,7 @@ double IntellisysIQPlus::readPressure()
 double IntellisysIQPlus::setPressureSetpoint(const double val)
 {
     d_setPoint = val;
-    double num = val * 100.0 / fullScale;
+    double num = val * 100.0 / d_fullScale;
     p_readTimer->stop();
 
     p_comm->writeCmd(QString("S1%1\n").arg(num,0,'f',2,'0'));

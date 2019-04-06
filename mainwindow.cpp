@@ -47,6 +47,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow), d_hardwareConnected(false), d_oneExptDone(false), d_state(Idle), d_logCount(0), d_logIcon(BlackChirp::LogNormal), d_currentExptNum(0)
 {
+    p_hwm = new HardwareManager();
+
     ui->setupUi(this);
 
     for(int i=0; i<ui->tabWidget->count(); i++)
@@ -90,7 +92,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QGridLayout *gl = new QGridLayout;
 
-    for(int i=0; i<BC_PGEN_NUMCHANNELS; i++)
+    for(int i=0; i<s.value(QString("hwUI/pGenChannels"),8).toInt(); i++)
     {
         QLabel *lbl = new QLabel(QString("Ch%1").arg(i),this);
         lbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
@@ -121,7 +123,6 @@ MainWindow::MainWindow(QWidget *parent) :
     d_threadObjectList.append(qMakePair(lhThread,p_lh));
     lhThread->start();
 
-    p_hwm = new HardwareManager();
     connect(p_hwm,&HardwareManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_hwm,&HardwareManager::statusMessage,statusLabel,&QLabel::setText);
     connect(p_hwm,&HardwareManager::hwInitializationComplete,ui->pulseConfigWidget,&PulseConfigWidget::updateHardwareLimits);
@@ -162,7 +163,8 @@ MainWindow::MainWindow(QWidget *parent) :
     gl->setMargin(3);
     gl->setSpacing(3);
     QWidget *lastFocusWidget = nullptr;
-    for(int i=0; i<BC_FLOW_NUMCHANNELS; i++)
+    int flowChannels = s.value(QString("hwUI/flowChannels"),0).toInt();
+    for(int i=0; i<flowChannels; i++)
     {
         FlowWidgets fw;
         fw.nameEdit = new QLineEdit(this);
@@ -205,11 +207,11 @@ MainWindow::MainWindow(QWidget *parent) :
         gl2->addWidget(fw.displayBox,i+1,1,1,1);
         gl2->addWidget(fw.led,i+1,2,1,1);
     }
-    gl->addWidget(new QLabel(QString("Pressure"),this),2+BC_FLOW_NUMCHANNELS,1,1,1,Qt::AlignRight);
-    gl->addWidget(ui->pressureControlBox,2+BC_FLOW_NUMCHANNELS,2,1,1);
-    gl->addWidget(new QLabel(QString("Pressure Control Mode"),this),3+BC_FLOW_NUMCHANNELS,1,1,1,Qt::AlignRight);
-    gl->addWidget(ui->pressureControlButton,3+BC_FLOW_NUMCHANNELS,2,1,1);
-    gl->addItem(new QSpacerItem(10,10,QSizePolicy::Minimum,QSizePolicy::Expanding),4+BC_FLOW_NUMCHANNELS,0,1,3);
+    gl->addWidget(new QLabel(QString("Pressure"),this),2+flowChannels,1,1,1,Qt::AlignRight);
+    gl->addWidget(ui->pressureControlBox,2+flowChannels,2,1,1);
+    gl->addWidget(new QLabel(QString("Pressure Control Mode"),this),3+flowChannels,1,1,1,Qt::AlignRight);
+    gl->addWidget(ui->pressureControlButton,3+flowChannels,2,1,1);
+    gl->addItem(new QSpacerItem(10,10,QSizePolicy::Minimum,QSizePolicy::Expanding),4+flowChannels,0,1,3);
     if(lastFocusWidget != nullptr)
         setTabOrder(lastFocusWidget,ui->pressureControlBox);
 

@@ -13,9 +13,10 @@ public:
     virtual ~IOBoard();
 
 public slots:
-    virtual void readSettings();
+    virtual void readSettings() override final;
 
 protected:
+    virtual void readIOBSettings() =0;
     IOBoardConfig d_config;
     int d_numAnalog;
     int d_numDigital;

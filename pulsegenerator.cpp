@@ -19,7 +19,7 @@ void PulseGenerator::initialize()
     s.beginGroup(d_subKey);
 
     s.beginReadArray(QString("channels"));
-    for(int i=0; i<BC_PGEN_NUMCHANNELS; i++)
+    for(int i=0; i<d_numChannels; i++)
     {
         s.setArrayIndex(i);
         QString name = s.value(QString("name"),QString("Ch%1").arg(i)).toString();
@@ -39,6 +39,36 @@ void PulseGenerator::initialize()
     d_config.setRepRate(s.value(QString("repRate"),10.0).toDouble());
     s.endGroup();
     s.endGroup();
+}
+
+Experiment PulseGenerator::prepareForExperiment(Experiment exp)
+{
+    bool success = setAll(exp.pGenConfig());
+    if(!success)
+        exp.setHardwareFailed();
+
+    return exp;
+}
+
+void PulseGenerator::readSettings()
+{
+    QSettings s(QSettings::SystemScope, QApplication::organizationName(), QApplication::applicationName());
+    s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
+
+    d_minWidth = s.value(QString("minWidth"),0.004).toDouble();
+    d_maxWidth = s.value(QString("maxWidth"),100000.0).toDouble();
+    d_minDelay = s.value(QString("minDelay"),0.0).toDouble();
+    d_maxDelay = s.value(QString("maxDelay"),100000.0).toDouble();
+
+    s.setValue(QString("minWidth"),d_minWidth);
+    s.setValue(QString("maxWidth"),d_maxWidth);
+    s.setValue(QString("minDelay"),d_minDelay);
+    s.setValue(QString("maxDelay"),d_maxDelay);
+
+    s.endGroup();
+    s.endGroup();
+    s.sync();
 }
 
 
@@ -89,13 +119,23 @@ bool PulseGenerator::setAll(const PulseGenConfig cc)
 #ifdef BC_LIF
 bool PulseGenerator::setLifDelay(double d)
 {
-    return set(BC_PGEN_LIFCHANNEL,BlackChirp::PulseDelaySetting,d);
+    bool success = false;
+    auto l = d_config.channelsForRole(BlackChirp::LifPulseRole);
+    for(int i=0; i<l.size(); i++)
+    {
+        if(!set(l.at(i),BlackChirp::PulseDelaySetting,d))
+            return false;
+        else
+            success = true;
+    }
+
+    return success;
 }
 #endif
 
 void PulseGenerator::readAll()
 {
-    for(int i=0;i<BC_PGEN_NUMCHANNELS; i++)
+    for(int i=0;i<d_numChannels; i++)
         read(i);
 
     readRepRate();

@@ -13,16 +13,16 @@ public:
 
 public slots:
     virtual bool configure(const BlackChirp::MotorScopeConfig &sc) =0;
-    virtual MotorScan prepareForMotorScan(MotorScan s) =0;
 
     // HardwareObject interface
 public slots:
-    Experiment prepareForExperiment(Experiment exp);
+    Experiment prepareForExperiment(Experiment exp) override final;
 
 signals:
     void traceAcquired(QVector<double> d);
 
 protected:
+    virtual MotorScan prepareForMotorScan(MotorScan s) =0;
     BlackChirp::MotorScopeConfig d_config;
 
 };

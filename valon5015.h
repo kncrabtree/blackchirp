@@ -12,19 +12,17 @@ public:
 
     // HardwareObject interface
 public slots:
-    void readSettings();
-    void beginAcquisition();
-    void endAcquisition();
-    QStringList channelNames();
+    void readSettings() override;
+    QStringList channelNames() override;
 
-    Experiment prepareForExperiment(Experiment exp);
 
     // Clock interface
 protected:
-    bool testConnection();
-    void initialize();
-    bool setHwFrequency(double freqMHz, int outputIndex);
-    double readHwFrequency(int outputIndex);
+    bool testConnection() override;
+    void initializeClock() override;
+    bool setHwFrequency(double freqMHz, int outputIndex) override;
+    double readHwFrequency(int outputIndex) override;
+    Experiment prepareClock(Experiment exp) override;
 
 private:
     bool valonWriteCmd(QString cmd);

@@ -31,4 +31,6 @@ void IOBoard::readSettings()
     s.endGroup();
 
     s.sync();
+
+    readIOBSettings();
 }

@@ -19,13 +19,13 @@ protected:
 
 	// CommunicationProtocol interface
 public:
-	bool writeCmd(QString cmd);
-    bool writeBinary(QByteArray dat);
-	QByteArray queryCmd(QString cmd);
+    bool writeCmd(QString cmd) override;
+    bool writeBinary(QByteArray dat) override;
+    QByteArray queryCmd(QString cmd, bool suppressError=false) override;
 
 public slots:
-	void initialize();
-	bool testConnection();
+    void initialize() override;
+    bool testConnection() override;
 };
 
 #endif // GPIBINSTRUMENT_H

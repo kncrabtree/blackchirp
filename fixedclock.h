@@ -11,16 +11,14 @@ public:
 
     // HardwareObject interface
 public slots:
-    void readSettings();
-    void beginAcquisition();
-    void endAcquisition();
+    void readSettings() override;
 
     // Clock interface
 protected:
-    bool testConnection();
-    void initialize();
-    bool setHwFrequency(double freqMHz, int outputIndex);
-    double readHwFrequency(int outputIndex);
+    bool testConnection() override;
+    void initializeClock() override;
+    bool setHwFrequency(double freqMHz, int outputIndex) override;
+    double readHwFrequency(int outputIndex) override;
 
 private:
     QList<double> d_currentFrequencyList;
