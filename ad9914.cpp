@@ -273,7 +273,7 @@ void AD9914::beginAcquisition()
     if(d_enabledForExperiment)
     {
         p_comm->writeCmd(QString("SA%1\n").arg(QString(d_settingsHex)));
-        p_comm->writeCmd(QString("SA%1\n").arg(QString(d_settingsHex)));
+//        p_comm->writeCmd(QString("SA%1\n").arg(QString(d_settingsHex)));
     }
 }
 
