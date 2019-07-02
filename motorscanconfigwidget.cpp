@@ -83,6 +83,8 @@ MotorScan MotorScanConfigWidget::toMotorScan()
 {
     MotorScan out;
 
+    out.setEnabled(true);
+
     out.setXPoints(ui->xPointsBox->value());
     out.setYPoints(ui->yPointsBox->value());
     out.setZPoints(ui->zPointsBox->value());
