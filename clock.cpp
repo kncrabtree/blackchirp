@@ -132,5 +132,5 @@ Experiment Clock::prepareForExperiment(Experiment exp)
         exp.setRfConfig(rfc);
     }
 
-    return exp;
+    return prepareClock(exp);
 }
