@@ -326,17 +326,21 @@ QVector<double> MotorScan::slice(BlackChirp::MotorAxis xAxis, BlackChirp::MotorA
 
     int i,j, k=otherPoint1, l=otherPoint2;
     int *x, *y, *z, *t;
+    bool xReverse = false, yReverse = false;
 
     switch(xAxis)
     {
     case BlackChirp::MotorX:
         x = &i;
+        xReverse = (data->dx < 0);
         break;
     case BlackChirp::MotorY:
         y = &i;
+        xReverse = (data->dy < 0);
         break;
     case BlackChirp::MotorZ:
         z = &i;
+        xReverse = (data->dz < 0);
         break;
     case BlackChirp::MotorT:
         t = &i;
@@ -347,12 +351,15 @@ QVector<double> MotorScan::slice(BlackChirp::MotorAxis xAxis, BlackChirp::MotorA
     {
     case BlackChirp::MotorX:
         x = &j;
+        yReverse = (data->dx < 0);
         break;
     case BlackChirp::MotorY:
         y = &j;
+        yReverse = (data->dy < 0);
         break;
     case BlackChirp::MotorZ:
         z = &j;
+        yReverse = (data->dz < 0);
         break;
     case BlackChirp::MotorT:
         t = &j;
@@ -393,12 +400,48 @@ QVector<double> MotorScan::slice(BlackChirp::MotorAxis xAxis, BlackChirp::MotorA
 
     QVector<double> out(numPoints(xAxis)*numPoints(yAxis));
     int idx = 0;
-    for(i=0; i<numPoints(xAxis); i++)
+    if(xReverse)
     {
-        for(j=0; j<numPoints(yAxis); j++)
+        for(i=numPoints(xAxis)-1; i>=0; i--)
         {
-            out[idx] = value(*x,*y,*z,*t);
-            idx++;
+            if(yReverse)
+            {
+                for(j=numPoints(yAxis)-1; j>=0; j--)
+                {
+                    out[idx] = value(*x,*y,*z,*t);
+                    idx++;
+                }
+            }
+            else
+            {
+                for(j=0; j<numPoints(yAxis); j++)
+                {
+                    out[idx] = value(*x,*y,*z,*t);
+                    idx++;
+                }
+            }
+        }
+    }
+    else
+    {
+        for(i=0; i<numPoints(xAxis); i++)
+        {
+            if(yReverse)
+            {
+                for(j=numPoints(yAxis)-1; j>=0; j--)
+                {
+                    out[idx] = value(*x,*y,*z,*t);
+                    idx++;
+                }
+            }
+            else
+            {
+                for(j=0; j<numPoints(yAxis); j++)
+                {
+                    out[idx] = value(*x,*y,*z,*t);
+                    idx++;
+                }
+            }
         }
     }
 
@@ -415,17 +458,21 @@ QVector<double> MotorScan::smoothSlice(BlackChirp::MotorAxis xAxis, BlackChirp::
 
     int i,j, k=otherPoint1, l=otherPoint2;
     int *x, *y, *z, *t;
+    bool xReverse = false, yReverse = false;
 
     switch(xAxis)
     {
     case BlackChirp::MotorX:
         x = &i;
+        xReverse = (data->dx < 0);
         break;
     case BlackChirp::MotorY:
         y = &i;
+        xReverse = (data->dy < 0);
         break;
     case BlackChirp::MotorZ:
         z = &i;
+        xReverse = (data->dz < 0);
         break;
     case BlackChirp::MotorT:
         t = &i;
@@ -436,12 +483,15 @@ QVector<double> MotorScan::smoothSlice(BlackChirp::MotorAxis xAxis, BlackChirp::
     {
     case BlackChirp::MotorX:
         x = &j;
+        yReverse = (data->dx < 0);
         break;
     case BlackChirp::MotorY:
         y = &j;
+        yReverse = (data->dy < 0);
         break;
     case BlackChirp::MotorZ:
         z = &j;
+        yReverse = (data->dz < 0);
         break;
     case BlackChirp::MotorT:
         t = &j;
@@ -482,12 +532,49 @@ QVector<double> MotorScan::smoothSlice(BlackChirp::MotorAxis xAxis, BlackChirp::
 
     QVector<double> out(numPoints(xAxis)*numPoints(yAxis));
     int idx = 0;
-    for(i=0; i<numPoints(xAxis); i++)
+
+    if(xReverse)
     {
-        for(j=0; j<numPoints(yAxis); j++)
+        for(i=numPoints(xAxis)-1; i>=0; i--)
         {
-            out[idx] = smoothValue(*x,*y,*z,*t,coefs);
-            idx++;
+            if(yReverse)
+            {
+                for(j=numPoints(yAxis)-1; j>=0; j--)
+                {
+                    out[idx] = smoothValue(*x,*y,*z,*t,coefs);
+                    idx++;
+                }
+            }
+            else
+            {
+                for(j=0; j<numPoints(yAxis); j++)
+                {
+                    out[idx] = smoothValue(*x,*y,*z,*t,coefs);
+                    idx++;
+                }
+            }
+        }
+    }
+    else
+    {
+        for(i=0; i<numPoints(xAxis); i++)
+        {
+            if(yReverse)
+            {
+                for(j=numPoints(yAxis)-1; j>=0; j--)
+                {
+                    out[idx] = smoothValue(*x,*y,*z,*t,coefs);
+                    idx++;
+                }
+            }
+            else
+            {
+                for(j=0; j<numPoints(yAxis); j++)
+                {
+                    out[idx] = smoothValue(*x,*y,*z,*t,coefs);
+                    idx++;
+                }
+            }
         }
     }
 

@@ -67,9 +67,6 @@ void MotorSliderWidget::setRange(const MotorScan s)
 
 void MotorSliderWidget::setRange(double min, double max, int steps, int decimals)
 {
-    if(max < min)
-        qSwap(max,min);
-
     d_min = min;
     d_max = max;
     d_stepSize = (max - min)/((double)steps-1.0);
@@ -78,7 +75,7 @@ void MotorSliderWidget::setRange(double min, double max, int steps, int decimals
     p_slider->setRange(0,steps-1);
 
     p_dsb->setDecimals(decimals);
-    p_dsb->setRange(min,max);
+    p_dsb->setRange(qMin(min,max),qMax(min,max));
     p_dsb->setSingleStep(d_stepSize);
 
     p_slider->setValue(steps/2);
