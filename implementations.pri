@@ -30,7 +30,8 @@ HEADERS += \
     $$PWD/dsox92004a.h \
     $$PWD/m8195a.h \
     $$PWD/ad9914.h \
-    $$PWD/valon5015.h
+    $$PWD/valon5015.h \
+    $$PWD/mks946.h
 
 SOURCES += \
     $$PWD/virtualftmwscope.cpp \
@@ -62,7 +63,8 @@ SOURCES += \
     $$PWD/dsox92004a.cpp \
     $$PWD/m8195a.cpp \
     $$PWD/ad9914.cpp \
-    $$PWD/valon5015.cpp
+    $$PWD/valon5015.cpp \
+    $$PWD/mks946.cpp
 
 } else {
 
@@ -147,6 +149,10 @@ equals(FC,0) {
 equals(FC,1) {
 	HEADERS += $$PWD/mks647c.h
 	SOURCES += $$PWD/mks647c.cpp
+}
+equals(FC,2) {
+    HEADERS += $$PWD/mks946.h
+    SOURCES += $$PWD/mks946.cpp
 }
 
 

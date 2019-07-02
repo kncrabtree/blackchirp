@@ -4,9 +4,6 @@ FlowController::FlowController(QObject *parent) : HardwareObject(parent), d_next
 {
     d_key = QString("flowController");
 
-    p_readTimer = new QTimer(this);
-    connect(p_readTimer,&QTimer::timeout,this,&FlowController::readNext);
-
 }
 
 FlowController::~FlowController()
@@ -29,6 +26,10 @@ void FlowController::initialize()
     s.endArray();
     s.endGroup();
     s.endGroup();
+
+    p_readTimer = new QTimer(this);
+    connect(p_readTimer,&QTimer::timeout,this,&FlowController::readNext);
+    updateInterval();
 
     fcInitialize();
 }

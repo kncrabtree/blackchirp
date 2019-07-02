@@ -63,6 +63,10 @@ protected:
 #include "mks647c.h"
 class Mks647c;
 typedef Mks647c FlowControllerHardware;
+#elif BC_FLOWCONTROLLER == 2
+#include "mks946.h"
+class Mks946;
+typedef Mks946 FlowControllerHardware;
 #else
 #include "virtualflowcontroller.h"
 class VirtualFlowController;
