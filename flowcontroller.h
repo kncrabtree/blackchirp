@@ -18,36 +18,47 @@ public:
     int numChannels() const { return d_numChannels; }
 
 signals:
-    void channelNameUpdate(int,QString);
-    void flowUpdate(int,double);
-    void pressureUpdate(double);
-    void flowSetpointUpdate(int,double);
-    void pressureSetpointUpdate(double);
-    void pressureControlMode(bool);
+    void channelNameUpdate(int,QString,QPrivateSignal);
+    void flowUpdate(int,double,QPrivateSignal);
+    void pressureUpdate(double,QPrivateSignal);
+    void flowSetpointUpdate(int,double,QPrivateSignal);
+    void pressureSetpointUpdate(double,QPrivateSignal);
+    void pressureControlMode(bool,QPrivateSignal);
 
 public slots:
-    virtual double setFlowSetpoint(const int ch, const double val) =0;
-    virtual double setPressureSetpoint(const double val) =0;
-    virtual void setChannelName(const int ch, const QString name);
+    void setChannelName(const int ch, const QString name);
+    void setPressureControlMode(bool enabled);
+    void setFlowSetpoint(const int ch, const double val);
+    void setPressureSetpoint(const double val);
+    void readFlowSetpoint(const int ch);
+    void readPressureSetpoint();
+    void readFlow(const int ch);
+    void readPressure();
+    void readPressureControlMode();
 
-    virtual double readFlowSetpoint(const int ch) =0;
-    virtual double readPressureSetpoint() =0;
-    virtual double readFlow(const int ch) =0;
-    virtual double readPressure() =0;
 
-    virtual void setPressureControlMode(bool enabled) =0;
-    virtual bool readPressureControlMode() =0;
 
     void updateInterval();
-    virtual void readNext();
+    virtual void poll();
+
+private:
+    virtual void hwSetPressureControlMode(bool enabled) =0;
+    virtual void hwSetFlowSetpoint(const int ch, const double val) =0;
+    virtual void hwSetPressureSetpoint(const double val) =0;
+    virtual double hwReadFlowSetpoint(const int ch) =0;
+    virtual double hwReadPressureSetpoint() =0;
+    virtual double hwReadFlow(const int ch) =0;
+    virtual double hwReadPressure() =0;
+    virtual int hwReadPressureControlMode() =0;
 
 protected:
     void initialize() override final;
+    bool testConnection() override final;
     virtual void fcInitialize() =0;
+    virtual bool fcTestConnection() =0;
 
     FlowConfig d_config;
     QTimer *p_readTimer;
-    int d_nextRead;
     int d_numChannels = 0;
 
     void readAll();

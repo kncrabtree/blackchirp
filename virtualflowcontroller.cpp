@@ -14,13 +14,8 @@ VirtualFlowController::~VirtualFlowController()
 
 
 
-bool VirtualFlowController::testConnection()
+bool VirtualFlowController::fcTestConnection()
 {
-    p_readTimer->stop();
-    readAll();
-    updateInterval();
-    p_readTimer->start();
-
     return true;
 }
 
@@ -28,37 +23,33 @@ void VirtualFlowController::fcInitialize()
 {
 }
 
-double VirtualFlowController::setFlowSetpoint(const int ch, const double val)
+void VirtualFlowController::hwSetFlowSetpoint(const int ch, const double val)
 {
     if(ch<0 || ch >= d_config.size())
-        return -1.0;
+        return;
 
     d_config.set(ch,BlackChirp::FlowSettingSetpoint,val);
-    return readFlowSetpoint(ch);
 }
 
-double VirtualFlowController::setPressureSetpoint(const double val)
+void VirtualFlowController::hwSetPressureSetpoint(const double val)
 {
     d_config.setPressureSetpoint(val);
-    return readPressureSetpoint();
 }
 
-double VirtualFlowController::readFlowSetpoint(const int ch)
+double VirtualFlowController::hwReadFlowSetpoint(const int ch)
 {
     if(ch < 0 || ch >= d_config.size())
         return -1.0;
 
-    emit flowSetpointUpdate(ch,d_config.setting(ch,BlackChirp::FlowSettingSetpoint).toDouble());
     return d_config.setting(ch,BlackChirp::FlowSettingSetpoint).toDouble();
 }
 
-double VirtualFlowController::readPressureSetpoint()
+double VirtualFlowController::hwReadPressureSetpoint()
 {
-    emit pressureSetpointUpdate(d_config.pressureSetpoint());
     return d_config.pressureSetpoint();
 }
 
-double VirtualFlowController::readFlow(const int ch)
+double VirtualFlowController::hwReadFlow(const int ch)
 {
     if(ch < 0 || ch >= d_config.size())
         return -1.0;
@@ -68,26 +59,26 @@ double VirtualFlowController::readFlow(const int ch)
     double flow = sp + noise;
     d_config.set(ch,BlackChirp::FlowSettingFlow,flow);
 
-    emit flowUpdate(ch,d_config.setting(ch,BlackChirp::FlowSettingFlow).toDouble());
-    return d_config.setting(ch,BlackChirp::FlowSettingSetpoint).toDouble();
+    return d_config.setting(ch,BlackChirp::FlowSettingFlow).toDouble();
 }
 
-double VirtualFlowController::readPressure()
+double VirtualFlowController::hwReadPressure()
 {
-    d_config.setPressure(d_config.pressureSetpoint());
-
-    emit pressureUpdate(d_config.pressure());
-    return d_config.pressure();
+    return d_config.pressureSetpoint();
 }
 
-void VirtualFlowController::setPressureControlMode(bool enabled)
+void VirtualFlowController::hwSetPressureControlMode(bool enabled)
 {
     d_config.setPressureControlMode(enabled);
     readPressureControlMode();
 }
 
-bool VirtualFlowController::readPressureControlMode()
+int VirtualFlowController::hwReadPressureControlMode()
 {
-    emit pressureControlMode(d_config.pressureControlMode());
-    return d_config.pressureControlMode();
+    return d_config.pressureControlMode() ? 1 : 0;
+}
+
+void VirtualFlowController::poll()
+{
+    readAll();
 }
