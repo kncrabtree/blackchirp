@@ -12,6 +12,7 @@ import os
 import bcfitting as bcfit
 import concurrent.futures
 import sys
+import scipy.optimize as spopt
 
 class BlackChirpExperiment:
     """
@@ -325,10 +326,13 @@ class BlackChirpExperiment:
                 fidlist_size = struct.unpack(">I", buffer)[0]
                 for i in range(0,fidlist_size):
                     self.fid_list.append(BlackChirpFid(version, fidfile))
-        
-        #if self.d_header_values['LifConfigEnabled'].lower() \
-        #        in ['true', 't', '1', 'yes', 'y']
-        #    with open(path+"/"+str(number)+".lif", 'rb') as liffile:
+#        find out if motorscan config is enabled
+        if self.d_header_values['MotorScanEnabled'].lower() \
+                in ['true','t','1','yes','y']:
+            self.motorScan = BlackChirpMotorScan(number,path=path,headerData=self.d_header_values)
+#        if self.d_header_values['LifConfigEnabled'].lower() \
+#                in ['true', 't', '1', 'yes', 'y']
+#            with open(path+"/"+str(number)+".lif", 'rb') as liffile:
         
         #load in time data
         self.time_data = {}
@@ -374,6 +378,7 @@ class BlackChirpExperiment:
                   +" FID(s) in fid_list.")
             print("Experiment contains "+str(len(self.time_data))
                   +" items in time_data.")
+            print("Experiment contains Motor Scan data")
             
     
     def ft_one(self, index = 0, start = None, end = None, zpf = None, 
@@ -994,7 +999,35 @@ class BlackChirpExperiment:
        
         return x, y, xl, yl, il, sl, param_list, err_list, \
                numpy.array(modelx), numpy.array(modely), cov_list
-            
+
+    def processMotorMotorScan(self,carrierName = None, pressure = None):
+        if pressure is None:
+            pressure = self.time_data['chamberPressure']
+            avgChamberPressureTorr = 0
+            for i in pressure:
+                avgChamberPressureTorr += float(i)
+            avgChamberPressureTorr /= len(pressure)
+            self.chamberPressure = avgChamberPressureTorr
+        else:
+            self.chamberPressure = pressure
+        
+        if carrierName is None:
+            try:
+                carrierName = self.d_header_values['FlowConfigChannel.0.Name']
+            except KeyError:
+                raise KeyError('No carrier gas input, please provide the carrier gas to the function with the carrierName argument')
+
+        self.carrier = CarrierGas(carrierName)
+#        gamma = self.carrier.gamma
+        
+
+        for i in range(self.motorScan.Z_size):
+            for j in range(self.motorScan.Y_size):
+                for k in range(self.motorScan.X_size):
+                    for l in range(self.motorScan.t_size):
+                        self.motorScan.Pratio = round(self.motorScan.data[i,j,k,l]/self.avgChamberPressure,4)
+#                        self.motorscan.data[i,j,k,l] = brentq((MachNumberRootFinder),0.001,200.,args=(Pi,Ps,gamma))
+        return
             
                     
         
@@ -1139,7 +1172,240 @@ class BlackChirpFid:
         
         self.xy_data = numpy.vstack((self.x_data, self.data))
         
+  
+class BlackChirpMotorScan:
+    def __init__(self,number,path=None,headerData=None):
+        if number < 1:
+            raise ValueError('Experiment number must be > 0')
+            
+        self.d_number = number
         
+        millions = number // 1000000
+        thousands = number // 1000
+        
+        self.x0 = 0.
+        self.dx = 1.        
+        self.y0 = 0.
+        self.dy = 1.
+        self.z0 = 0.
+        self.dz = 1.
+        self.t0 = 0.
+        self.dt = 1.
+        
+        if headerData is not None:
+            try:
+                self.x0 = float(headerData['MotorScanXStart'])
+                self.y0 = float(headerData['MotorScanYStart'])
+                self.z0 = float(headerData['MotorScanZStart'])
+                self.dx = float(headerData['MotorScanXStep'])
+                self.dy = float(headerData['MotorScanYStep'])
+                self.dz = float(headerData['MotorScanZStep'])
+                self.dt = float(headerData['MotorScanTStep'])
+            except:
+                pass
+        
+        if path is None:
+            path = "/home/data/blackchirp/experiments/" + str(millions) \
+                   + "/" + str(thousands) + "/" + str(number)
+        
+        mdt = open(path+'/'+'%i.mdt'%number,'rb') 
+        buffer = mdt.read(4)
+        ms_len = struct.unpack(">I",buffer)
+        buffer = mdt.read(ms_len[0])
+        magic_string = buffer.decode('ascii')
+        buffer = mdt.read(4)
+        self.Z_size = struct.unpack(">I", buffer)[0]
+        buffer = mdt.read(4)
+        self.Y_size = struct.unpack(">I", buffer)[0]
+        buffer = mdt.read(4)
+        self.X_size = struct.unpack(">I", buffer)[0]
+        buffer = mdt.read(4)
+        self.T_size = struct.unpack(">I", buffer)[0]
+        
+        self.rawdata = numpy.zeros((self.Z_size,self.Y_size,self.X_size,self.T_size))
+        self.data = numpy.zeros((self.Z_size,self.Y_size,self.X_size,self.T_size))
+        
+        
+        for i in range(self.Z_size):
+            for j in range(self.Y_size):
+                for k in range(self.X_size):
+                    for l in range(self.T_size):
+                        unpacked = struct.unpack(">d", mdt.read(struct.calcsize(">d")))[0]
+                        self.rawdata[i,j,k,l] = unpacked
+                    mdt.read(4)
+                mdt.read(4)
+            mdt.read(4)
+        mdt.close()
+        self.data = self.rawdata/0.0193368
+        
+        self.xMax = self.x0 + self.dx*(self.X_size-1)
+        self.yMax = self.y0 + self.dy*(self.Y_size-1)
+        self.zMax = self.z0 + self.dz*(self.Z_size-1)
+        self.tMax = self.t0 + self.dt*(self.T_size-1)
+        
+    def xPoints(self):
+        return numpy.arange(self.X_size)*self.dx + self.x0
+    
+    def yPoints(self):
+        return numpy.arange(self.y_size)*self.dy + self.y0
+    
+    def zPoints(self):
+        return numpy.arange(self.Z_size)*self.dz + self.z0
+    
+    def tPoints(self):
+        return numpy.arange(self.T_size)*self.dt + self.t0
+        
+    def tSlice(self,x,y,z):
+        if x < 0 or x >= self.X_size:
+            return numpy.zeros(0)
+        if y < 0 or y >= self.Y_size:
+            return numpy.zeros(0)
+        if z < 0 or z >= self.Z_size:
+            return numpy.zeros(0)
+        
+        return self.data[z,y,x,:]
+    
+    def xSlice(self,y,z,t):
+        if t < 0 or t >= self.T_size:
+            return numpy.zeros(0)
+        if y < 0 or y >= self.Y_size:
+            return numpy.zeros(0)
+        if z < 0 or z >= self.Z_size:
+            return numpy.zeros(0)
+        
+        return self.data[z,y,:,t]
+    
+    def ySlice(self,x,z,t):
+        if t < 0 or t >= self.T_size:
+            return numpy.zeros(0)
+        if x < 0 or x >= self.X_size:
+            return numpy.zeros(0)
+        if z < 0 or z >= self.Z_size:
+            return numpy.zeros(0)
+        
+        return self.data[z,:,x,t]
+    
+    def zSlice(self,x,y,t):
+        if t < 0 or t >= self.T_size:
+            return numpy.zeros(0)
+        if x < 0 or x >= self.X_size:
+            return numpy.zeros(0)
+        if y < 0 or y >= self.Y_size:
+            return numpy.zeros(0)
+        
+        return self.data[:,y,x,t]
+    
+    def xySlice(self,z,t):
+        if t < 0 or t >= self.T_size:
+            return numpy.zeros(0)
+        if z < 0 or z >= self.Z_size:
+            return numpy.zeros(0)
+        
+        return self.data[z,:,:,t]
+    
+    def xzSlice(self,y,t):
+        if t < 0 or t >= self.T_size:
+            return numpy.zeros(0)
+        if y < 0 or y >= self.Y_size:
+            return numpy.zeros(0)
+        
+        return self.data[:,y,:,t]
+    
+    def yzSlice(self,x,t):
+        if t < 0 or t >= self.T_size:
+            return numpy.zeros(0)
+        if x < 0 or x >= self.X_size:
+            return numpy.zeros(0)
+        
+        return self.data[:,:,x,t]
+    
+    def xtSlice(self,y,z):
+        if y < 0 or y >= self.Y_size:
+            return numpy.zeros(0)
+        if z < 0 or z >= self.Z_size:
+            return numpy.zeros(0)
+        
+        return self.data[z,y,:,:]
+    
+    def ytSlice(self,x,z):
+        if x < 0 or x >= self.X_size:
+            return numpy.zeros(0)
+        if z < 0 or z >= self.Z_size:
+            return numpy.zeros(0)
+        
+        return self.data[z,:,x,:]
+    
+    def ztSlice(self,x,y):
+        if y < 0 or y >= self.Y_size:
+            return numpy.zeros(0)
+        if x < 0 or x >= self.X_size:
+            return numpy.zeros(0)
+        
+        return self.data[:,y,x,:]
+    
+    def xVal(self,x):
+        if x < 0 or x >= self.X_size:
+            return None
+        
+        return self.x0 + x*self.dx
+    
+    def yVal(self,y):
+        if y < 0 or y >= self.Y_size:
+            return None
+        
+        return self.y0 + y*self.dy
+    
+    def zVal(self,z):
+        if z < 0 or z >= self.Z_size:
+            return None
+        
+        return self.z0 + z*self.dz
+    
+    def tVal(self,t):
+        if t < 0 or t >= self.T_size:
+            return None
+        
+        return self.t0 + t*self.dt
+    
+    def smooth(self,winSize,polyOrder):
+        for i in range(self.Z_size):
+            for j in range(self.Y_size):
+                for k in range(self.X_size):
+                    self.data[i,j,k,:] = spsig.savgol_filter(self.rawdata[i,j,k,:]/0.0193368,winSize,polyOrder)
+                    
+                    
+    def machNumber(self,pi,pStag,gamma):
+        out = spopt.brentq((machNumberRootFinder),1,200.,args=(pi,pStag,gamma))
+        if out < 1 or out > 8:
+            return 0;
+        
+        return out
+        
+        
+        
+class CarrierGas:
+    def __init__(self,Carrier):
+        if Carrier == 'Ar':
+            self.name = Carrier
+            self.mass = 6.6335209e-26
+            self.gamma = 5./3.
+        elif Carrier == 'N2':
+            self.name = Carrier
+            self.mass = 4.6517342e-26
+            self.gamma = 7.0/5.0
+        elif Carrier == 'He':
+            self.name = Carrier
+            self.mass = 6.6464764e-27
+            self.gamma = 5./3.
+        else:
+            raise ValueError('Invalid Carrier Gas, currently accepted values are Ar/N2/He')
+            sys.exit(41)
+    
+def machNumberRootFinder(M, Pi, Ps, gamma):
+    return (((gamma+1)*M*M)/((gamma-1)*M*M+2))**(gamma/(gamma-1))*(gamma+1)/(2*gamma*M*M-gamma+1)**(1/(gamma-1)) - Pi/Ps
+
+
+      
 ############################################################################
 #                          INITIALIZATION                                  #
 ############################################################################
