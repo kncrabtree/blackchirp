@@ -32,6 +32,7 @@ protected:
 
     int d_address;
     int d_pressureChannel;
+    int d_channelOffset; //Some models may have a pressure sensor module on channels 1 and 2, so flow channels would start at 3. This should contain the offset needed to convert logical channels (e.g., 0-3 in BlackChirp) to actual channel number on the device (must be 1-6).
 
     // HardwareObject interface
 public slots:

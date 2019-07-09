@@ -14,9 +14,11 @@ Mks946::Mks946(QObject *parent) : FlowController(parent), d_nextRead(0)
     d_numChannels = s.value(QString("numChannels"),4).toInt();
     d_address = s.value(QString("address"),253).toInt();
     d_pressureChannel = s.value(QString("pressureChannel"),5).toInt();
+    d_channelOffset = s.value(QString("channelOffset"),1).toInt();
     s.setValue(QString("numChannels"),d_numChannels);
     s.setValue(QString("address"),d_address);
     s.setValue(QString("pressureChannel"),d_pressureChannel);
+    s.setValue(QString("channelOffset"),d_channelOffset);
     s.endGroup();
     s.endGroup();
 
@@ -46,28 +48,49 @@ void Mks946::hwSetFlowSetpoint(const int ch, const double val)
         return;
     }
 
+    bool pidActive = false;
+
     //first ensure recipe 1 is active
-    if(!mksWrite(QString("RCP1!")))
+    if(!mksWrite(QString("RCP!1")))
+    {
+        if(d_errorString.contains(QString("166")))
+        {
+            pidActive = true;
+            if(!mksWrite(QString("PID!OFF")))
+            {
+                emit logMessage(QString("Could not disable PID mode to update channel %1 setpoint. Error: %2").arg(ch+1).arg(d_errorString),BlackChirp::LogError);
+                emit hardwareFailure();
+                return;
+            }
+        }
+        else
+        {
+            emit logMessage(d_errorString,BlackChirp::LogError);
+            emit hardwareFailure();
+            return;
+        }
+    }
+
+    if(!pidActive)
+    {
+        //make sure ratio recipe 1 is active
+        if(!mksWrite(QString("RRCP!1")))
+        {
+            emit logMessage(d_errorString,BlackChirp::LogError);
+            emit hardwareFailure();
+            return;
+        }
+    }
+
+    if(!mksWrite(QString("RRQ%1!%2").arg(ch+d_channelOffset).arg(val,0,'E',2,QLatin1Char(' '))))
     {
         emit logMessage(d_errorString,BlackChirp::LogError);
         emit hardwareFailure();
         return;
     }
 
-    //make sure ratio recipe 1 is active
-    if(!mksWrite(QString("RRCP1!")))
-    {
-        emit logMessage(d_errorString,BlackChirp::LogError);
-        emit hardwareFailure();
-        return;
-    }
-
-    if(!mksWrite(QString("RRQ%1:%2").arg(ch).arg(val,0,'E',2,QLatin1Char(' '))))
-    {
-        emit logMessage(d_errorString,BlackChirp::LogError);
-        emit hardwareFailure();
-        return;
-    }
+    if(pidActive)
+        hwSetPressureControlMode(true);
 }
 
 void Mks946::hwSetPressureSetpoint(const double val)
@@ -78,20 +101,38 @@ void Mks946::hwSetPressureSetpoint(const double val)
         return;
     }
 
+    bool pidActive = false;
+
     //first ensure recipe 1 is active
-    if(!mksWrite(QString("RCP1!")))
+    if(!mksWrite(QString("RCP!1")))
+    {
+        if(d_errorString.contains(QString("166")))
+        {
+            pidActive = true;
+            if(!mksWrite(QString("PID!OFF")))
+            {
+                emit logMessage(QString("Could not disable PID mode to change pressure setpoint. Error: %1").arg(d_errorString));
+                emit hardwareFailure();
+                return;
+            }
+        }
+        else
+        {
+            emit logMessage(d_errorString,BlackChirp::LogError);
+            emit hardwareFailure();
+            return;
+        }
+    }
+
+    if(!mksWrite(QString("RPSP!%1").arg(val*1000.0,1,'E',2,QLatin1Char(' '))))
     {
         emit logMessage(d_errorString,BlackChirp::LogError);
         emit hardwareFailure();
         return;
     }
 
-    if(!mksWrite(QString("RPSP!:%1").arg(val,1,'E',2,QLatin1Char(' '))))
-    {
-        emit logMessage(d_errorString,BlackChirp::LogError);
-        emit hardwareFailure();
-        return;
-    }
+    if(pidActive)
+        hwSetPressureControlMode(true);
 }
 
 double Mks946::hwReadFlowSetpoint(const int ch)
@@ -99,28 +140,12 @@ double Mks946::hwReadFlowSetpoint(const int ch)
     if(!isConnected())
         return 0.0;
 
-    //first ensure recipe 1 is active
-    if(!mksWrite(QString("RCP1!")))
-    {
-        emit logMessage(d_errorString,BlackChirp::LogError);
-        emit hardwareFailure();
-        return -1.0;
-    }
-
-    //make sure ratio recipe 1 is active
-    if(!mksWrite(QString("RRCP1!")))
-    {
-        emit logMessage(d_errorString,BlackChirp::LogError);
-        emit hardwareFailure();
-        return -1.0;
-    }
-
-    QByteArray resp = mksQuery(QString("RRQ%1?").arg(ch));
+    QByteArray resp = mksQuery(QString("RRQ%1?").arg(ch+d_channelOffset));
     bool ok = false;
-    double out = resp.toDouble(&ok);
+    double out = resp.mid(2).toDouble(&ok);
     if(!ok)
     {
-        emit logMessage(QString("Received invalid response to channel %1 setpoint query. Response: %2").arg(ch).arg(QString(resp)),BlackChirp::LogError);
+        emit logMessage(QString("Received invalid response to channel %1 setpoint query. Response: %2").arg(ch+1).arg(QString(resp)),BlackChirp::LogError);
         emit hardwareFailure();
         return -1.0;
     }
@@ -133,17 +158,9 @@ double Mks946::hwReadPressureSetpoint()
     if(!isConnected())
         return 0.0;
 
-    //first ensure recipe 1 is active
-    if(!mksWrite(QString("RCP1!")))
-    {
-        emit logMessage(d_errorString,BlackChirp::LogError);
-        emit hardwareFailure();
-        return -1.0;
-    }
-
     QByteArray resp = mksQuery(QString("RPSP?"));
     bool ok = false;
-    double out = resp.toDouble(&ok);
+    double out = resp.mid(2).toDouble(&ok);
     if(!ok)
     {
         emit logMessage(QString("Received invalid response to pressure setpoint query. Response: %1").arg(QString(resp)),BlackChirp::LogError);
@@ -151,7 +168,7 @@ double Mks946::hwReadPressureSetpoint()
         return -1.0;
     }
 
-    return out;
+    return out/1000.0; // convert to kTorr
 }
 
 double Mks946::hwReadFlow(const int ch)
@@ -159,12 +176,15 @@ double Mks946::hwReadFlow(const int ch)
     if(!isConnected())
         return 0.0;
 
-    QByteArray resp = mksQuery(QString("FR%1").arg(ch));
+    QByteArray resp = mksQuery(QString("FR%1?").arg(ch+d_channelOffset));
+    if(resp.contains(QByteArray("MISCONN")))
+        return 0.0;
+
     bool ok = false;
     double out = resp.toDouble(&ok);
     if(!ok)
     {
-        emit logMessage(QString("Received invalid response to flow query for channel %1. Response: %2").arg(ch).arg(QString(resp)),BlackChirp::LogError);
+        emit logMessage(QString("Received invalid response to flow query for channel %1. Response: %2").arg(ch+1).arg(QString(resp)),BlackChirp::LogError);
         emit hardwareFailure();
         return -1.0;
     }
@@ -210,31 +230,56 @@ void Mks946::hwSetPressureControlMode(bool enabled)
         return;
     }
 
-    //first ensure recipe 1 is active
-    if(!mksWrite(QString("RCP1!")))
+    if(enabled)
     {
-        emit logMessage(d_errorString,BlackChirp::LogError);
-        emit hardwareFailure();
-        return;
+        //first ensure recipe 1 is active
+        if(!mksWrite(QString("RCP!1")))
+        {
+            emit logMessage(d_errorString,BlackChirp::LogError);
+            emit hardwareFailure();
+            return;
+        }
+
+        if(!mksWrite(QString("RRCP!1")))
+        {
+            emit logMessage(d_errorString,BlackChirp::LogError);
+            emit hardwareFailure();
+            return;
+        }
+
+        QList<QString> chNames;
+        chNames << QString("A1") << QString("A2") << QString("B1") << QString("B2") << QString("C1") << QString("C2");
+
+        //ensure pressure sensor is set to control channel
+        if(!mksWrite(QString("RPCH!%1").arg(chNames.at(d_pressureChannel-1))))
+        {
+            emit logMessage(d_errorString,BlackChirp::LogError);
+            emit hardwareFailure();
+            return;
+        }
+
+        if(!mksWrite(QString("RDCH!Rat")))
+        {
+            emit logMessage(d_errorString,BlackChirp::LogError);
+            emit hardwareFailure();
+            return;
+        }
+
+        if(!mksWrite(QString("PID!ON")))
+        {
+            emit logMessage(d_errorString,BlackChirp::LogError);
+            emit hardwareFailure();
+            return;
+        }
     }
-
-    //ensure Ratio mode is selected
-    if(!mksWrite(QString("RPCH!:Rat")))
+    else
     {
-        emit logMessage(d_errorString,BlackChirp::LogError);
-        emit hardwareFailure();
-        return;
-    }
-
-    QString s = QString("PID!:ON");
-    if(!enabled)
-        s = QString("PID!:OFF");
-
-    if(!mksWrite(s))
-    {
-        emit logMessage(d_errorString,BlackChirp::LogError);
-        emit hardwareFailure();
-        return;
+        if(!mksWrite(QString("PID!OFF")))
+        {
+            emit logMessage(d_errorString,BlackChirp::LogError);
+            emit hardwareFailure();
+            return;
+        }
     }
 }
 
@@ -244,15 +289,6 @@ int Mks946::hwReadPressureControlMode()
     {
         return -1;
     }
-
-    //first ensure recipe 1 is active
-    if(!mksWrite(QString("RCP1!")))
-    {
-        emit logMessage(d_errorString,BlackChirp::LogError);
-        emit hardwareFailure();
-        return -1;
-    }
-
     QByteArray resp = mksQuery(QString("PID?"));
     if(resp.contains(QByteArray("ON")))
         return 1;
@@ -270,11 +306,13 @@ void Mks946::poll()
     if(d_nextRead < 0 || d_nextRead >= d_numChannels)
     {
         readPressure();
+        readPressureSetpoint();
         d_nextRead = 0;
     }
     else
     {
         readFlow(d_nextRead);
+        readFlowSetpoint(d_nextRead);
         d_nextRead++;
     }
 }
@@ -307,9 +345,22 @@ QByteArray Mks946::mksQuery(QString cmd)
 
 void Mks946::readSettings()
 {
+    //numChannels has to be set on program startup, so don't include it here
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
+    d_address = s.value(QString("address"),253).toInt();
+    d_pressureChannel = s.value(QString("pressureChannel"),5).toInt();
+    d_channelOffset = s.value(QString("channelOffset"),1).toInt();
+    s.setValue(QString("address"),d_address);
+    s.setValue(QString("pressureChannel"),d_pressureChannel);
+    s.setValue(QString("channelOffset"),d_channelOffset);
+    s.endGroup();
+    s.endGroup();
 }
 
 void Mks946::sleep(bool b)
 {
-    Q_UNUSED(b)
+    if(b)
+        setPressureControlMode(false);
 }

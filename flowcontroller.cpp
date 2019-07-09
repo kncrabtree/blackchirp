@@ -43,7 +43,7 @@ bool FlowController::testConnection()
     if(success)
     {
         p_readTimer->start();
-        readAll();
+        QTimer::singleShot(1000,this,&FlowController::readAll);
     }
     return success;
 }
