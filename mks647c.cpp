@@ -3,7 +3,7 @@
 #include <math.h>
 
 Mks647c::Mks647c(QObject *parent) :
-    FlowController(parent), d_maxTries(5)
+    FlowController(parent), d_maxTries(5), d_nextRead(0)
 {
     d_subKey = QString("mks647c");
     d_prettyName = QString("MKS 647C Flow Control Unit");
@@ -37,7 +37,7 @@ Mks647c::Mks647c(QObject *parent) :
     }
 }
 
-bool Mks647c::testConnection()
+bool Mks647c::fcTestConnection()
 {
 
     QByteArray resp = p_comm->queryCmd(QString("ID;\r\n"),true);
@@ -78,11 +78,6 @@ bool Mks647c::testConnection()
     }
     emit logMessage(QString("ID response: %1").arg(QString(resp)));
     emit logMessage(QString("Reading all settings. This will take a few seconds..."));
-
-    readAll();
-
-    p_readTimer->start();
-
     return true;
 
 }
@@ -92,10 +87,10 @@ void Mks647c::fcInitialize()
     p_comm->setReadOptions(1000,true,QByteArray("\r\n"));
 }
 
-double Mks647c::setFlowSetpoint(const int ch, const double val)
+void Mks647c::hwSetFlowSetpoint(const int ch, const double val)
 {
     if(ch < 0 || ch >= d_numChannels)
-        return -1.0;
+        return;
 
     //make sure range and gcf are updated
     readFlow(ch);
@@ -107,11 +102,9 @@ double Mks647c::setFlowSetpoint(const int ch, const double val)
         p_comm->writeCmd(QString("FS%1%2;\r\n").arg(ch+1).arg(sp,4,10,QLatin1Char('0')));
     else
         emit logMessage(QString("Flow setpoint (%1) invalid for current range. Converted value = %2 (valid range: 0-1100)").arg(val).arg(sp),BlackChirp::LogWarning);
-
-    return readFlowSetpoint(ch);
 }
 
-double Mks647c::setPressureSetpoint(const double val)
+void Mks647c::hwSetPressureSetpoint(const double val)
 {
     //make sure we have updated range settings
     readPressure();
@@ -121,11 +114,9 @@ double Mks647c::setPressureSetpoint(const double val)
     if(sp >=0 && sp <=1100)
        p_comm->writeCmd(QString("PS%1;\r\n").arg(sp,4,10,QLatin1Char('0')));
 
-    return readPressureSetpoint();
-
 }
 
-double Mks647c::readFlowSetpoint(const int ch)
+double Mks647c::hwReadFlowSetpoint(const int ch)
 {
     //although we already know the flow range, we need to query it again because of the stupid firmware bug
     QByteArray resp = mksQueryCmd(QString("RA%1R;\r\n").arg(ch+1),2).trimmed();
@@ -163,13 +154,12 @@ double Mks647c::readFlowSetpoint(const int ch)
         p_comm->writeCmd(QString("ON%1;\r\n").arg(ch+1));
 
     double setPoint = sp*d_gasRangeList.at(d_rangeIndexList.at(ch))*d_gcfList.at(ch);
-    d_config.set(ch,BlackChirp::FlowSettingSetpoint,setPoint);
-    emit flowSetpointUpdate(ch,setPoint);
+
     return setPoint;
 
 }
 
-double Mks647c::readPressureSetpoint()
+double Mks647c::hwReadPressureSetpoint()
 {
      //although we already know the pressure range, we need to query it again because of the stupid firmware bug
     QByteArray resp = mksQueryCmd(QString("PUR;\r\n"),2).trimmed();
@@ -203,12 +193,11 @@ double Mks647c::readPressureSetpoint()
 
     //pressure is in units of 0.1% of full scale
     double setPoint = d*d_pressureRangeList.at(d_pressureRangeIndex)*1e-3;
-    d_config.setPressureSetpoint(setPoint);
-    emit pressureSetpointUpdate(setPoint);
+
     return setPoint;
 }
 
-double Mks647c::readFlow(const int ch)
+double Mks647c::hwReadFlow(const int ch)
 {
     if(ch < 0 || ch >= d_numChannels)
         return -1.0;
@@ -283,13 +272,12 @@ double Mks647c::readFlow(const int ch)
 
     d_rangeIndexList[ch] = i;
     d_gcfList[ch] = gcf;
-    d_config.set(ch,BlackChirp::FlowSettingFlow,flow);
-    emit flowUpdate(ch,flow);
+
     return flow;
 
 }
 
-double Mks647c::readPressure()
+double Mks647c::hwReadPressure()
 {
     //read pressure range
     QByteArray resp = mksQueryCmd(QString("PUR;\r\n"),2).trimmed();
@@ -330,14 +318,13 @@ double Mks647c::readPressure()
     }
 
     //pressure is in units of 0.1% of full scale
-    d_config.setPressure(d*d_pressureRangeList.at(i)*1e-3);
+    double pressure = d*d_pressureRangeList.at(i)*1e-3;
     d_pressureRangeIndex = i;
-    emit pressureUpdate(d_config.pressure());
 
-    return d_config.pressure();
+    return pressure;
 }
 
-void Mks647c::setPressureControlMode(bool enabled)
+void Mks647c::hwSetPressureControlMode(bool enabled)
 {
     if(enabled)
         p_comm->writeCmd(QString("PM1;\r\n"));
@@ -348,7 +335,7 @@ void Mks647c::setPressureControlMode(bool enabled)
     readPressureControlMode();
 }
 
-bool Mks647c::readPressureControlMode()
+int Mks647c::hwReadPressureControlMode()
 {
     QByteArray resp = mksQueryCmd(QString("PMR;\r\n"),1).trimmed();
 
@@ -356,7 +343,7 @@ bool Mks647c::readPressureControlMode()
     {
         emit hardwareFailure();
         emit logMessage(QString("No response to pressure control mode query."),BlackChirp::LogError);
-	   return false;
+       return -1;
     }
 
     bool ok = false;
@@ -365,23 +352,34 @@ bool Mks647c::readPressureControlMode()
     {
         emit hardwareFailure();
         emit logMessage(QString("Could not parse pressure control mode response. Response: %1").arg(QString(resp)),BlackChirp::LogError);
-	   return false;
+       return -1;
     }
 
     if(i)
-        d_config.setPressureControlMode(true);
+        return 1;
     else
-        d_config.setPressureControlMode(false);
+        return 0;
+}
 
-    emit pressureControlMode(d_config.pressureControlMode());
-    return d_config.pressureControlMode();
+void Mks647c::poll()
+{
+    if(d_nextRead < 0 || d_nextRead >= d_config.size())
+    {
+        readPressure();
+        d_nextRead = 0;
+    }
+    else
+    {
+        readFlow(d_nextRead);
+        d_nextRead++;
+    }
 }
 
 void Mks647c::sleep(bool b)
 {
     if(b)
     {
-	   setPressureControlMode(false);
+       hwSetPressureControlMode(false);
         p_comm->writeCmd(QString("OF0;\r\n"));
     }
     else

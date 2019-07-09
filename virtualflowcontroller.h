@@ -12,17 +12,18 @@ public:
 
 public slots:
     // FlowController interface
-    double setFlowSetpoint(const int ch, const double val) override;
-    double setPressureSetpoint(const double val) override;
-    double readFlowSetpoint(const int ch) override;
-    double readPressureSetpoint() override;
-    double readFlow(const int ch) override;
-    double readPressure() override;
-    void setPressureControlMode(bool enabled) override;
-    bool readPressureControlMode() override;
+    void hwSetFlowSetpoint(const int ch, const double val) override;
+    void hwSetPressureSetpoint(const double val) override;
+    double hwReadFlowSetpoint(const int ch) override;
+    double hwReadPressureSetpoint() override;
+    double hwReadFlow(const int ch) override;
+    double hwReadPressure() override;
+    void hwSetPressureControlMode(bool enabled) override;
+    int hwReadPressureControlMode() override;
+    void poll() override;
 
 protected:
-    bool testConnection() override;
+    bool fcTestConnection() override;
     void fcInitialize() override;
 };
 
