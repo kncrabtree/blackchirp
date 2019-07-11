@@ -21,6 +21,7 @@ public slots:
 
     bool set(const int index, const BlackChirp::PulseSetting s, const QVariant val) override;
     bool setRepRate(double d) override;
+    void readSettings() override final;
 
 
 protected:

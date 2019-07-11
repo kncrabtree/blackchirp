@@ -16,7 +16,7 @@ public:
 public slots:
     void initialize() override final;
     Experiment prepareForExperiment(Experiment exp) override final;
-    void readSettings() override final;
+    void readSettings() override;
 
     PulseGenConfig config() const { return d_config; }
     virtual QVariant read(const int index, const BlackChirp::PulseSetting s) =0;

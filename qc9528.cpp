@@ -326,6 +326,21 @@ bool Qc9528::setRepRate(double d)
     return true;
 }
 
+void Qc9528::readSettings()
+{
+    PulseGenerator::readSettings();
+
+    QSettings s(QSettings::SystemScope, QApplication::organizationName(), QApplication::applicationName());
+    s.beginGroup(d_key);
+    s.beginGroup(d_subKey);
+    d_forceExtClock = s.value(QString("forceExtClock"),true).toBool();
+    s.setValue(QString("forceExtClock"),d_forceExtClock);
+    s.endGroup();
+    s.endGroup();
+
+    s.sync();
+}
+
 void Qc9528::sleep(bool b)
 {
     if(b)
