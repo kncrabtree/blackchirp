@@ -55,9 +55,9 @@ double VirtualFlowController::hwReadFlow(const int ch)
         return -1.0;
 
     double sp = d_config.setting(ch,BlackChirp::FlowSettingSetpoint).toDouble();
-    double noise = sp*((double)(qrand()%100)-50.0)/1000.0;
-    double flow = sp + noise;
-    d_config.set(ch,BlackChirp::FlowSettingFlow,flow);
+//    double noise = sp*((double)(qrand()%100)-50.0)/1000.0;
+//    double flow = sp + noise;
+    d_config.set(ch,BlackChirp::FlowSettingFlow,sp);
 
     return d_config.setting(ch,BlackChirp::FlowSettingFlow).toDouble();
 }
