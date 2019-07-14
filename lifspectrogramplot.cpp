@@ -99,7 +99,7 @@ void LifSpectrogramPlot::prepareForExperiment(const LifConfig c)
         p_spectrogramData = nullptr;
     }
     p_spectrogramData = new QwtMatrixRasterData;
-    p_spectrogramData->setValueMatrix(QVector<double>(4),2);
+    p_spectrogramData->setValueMatrix(QVector<double>(100),10);
     p_spectrogramData->setResampleMode(QwtMatrixRasterData::BilinearInterpolation);
     d_delayDragging = false;
     d_freqDragging = false;
