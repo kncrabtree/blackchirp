@@ -15,7 +15,7 @@ void IntellisysIQPlus::readSettings()
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
 
-    double min = s.value(QString("min"),-1.0).toDouble();
+    double min = s.value(QString("min"),0.0).toDouble();
     double max = s.value(QString("max"),20.0).toDouble();
     int decimal = s.value(QString("decimal"),4).toInt();
     QString units = s.value(QString("units"),QString("Torr")).toString();
@@ -40,12 +40,12 @@ bool IntellisysIQPlus::testConnection()
     QByteArray resp = p_comm->queryCmd(QString("R38\n"));
     if(resp.isEmpty())
     {
-        d_errorString = QString("Pressure controller did not response");
+        d_errorString = QString("Pressure controller did not respond");
         return false;
     }
     if(!resp.startsWith("XIQ")) // should be "IQ+3" based on manual, real resp: "XIQ Rev 4.33 27-Feb-2013"
     {
-        d_errorString = QString("Wrong pressure controller connected:%1").arg(QString(resp.trimmed()));
+        d_errorString = QString("Wrong pressure controller connected. Model received: %1").arg(QString(resp.trimmed()));
         return false;
     }
 
@@ -67,9 +67,15 @@ bool IntellisysIQPlus::testConnection()
     double num = resp.mid(f+2,l-f-2).trimmed().toDouble();
     if(num != d_fullScale)
     {
-        d_errorString = QString("Full scale (%1 Torr) is not matched with setting value (%2 Torr)").arg(num,0,'f',2).arg(d_fullScale,0,'f',2);
+        d_errorString = QString("Full scale (%1 Torr) does not match value in settings (%2 Torr)").arg(num,0,'f',2).arg(d_fullScale,0,'f',2);
         return false;
     }
+
+    if(readPressureSetpoint() < 0.0)
+        return false;
+
+    //hold the valve at its current position to ensure pressure control is disabled
+    setPressureControlMode(false);
 
     p_readTimer->start();
     return true;
@@ -90,7 +96,7 @@ double IntellisysIQPlus::readPressure()
     QByteArray resp = p_comm->queryCmd(QString("R5\n"));
     if((resp.isEmpty()) || (!resp.startsWith("P+")))
     {
-        d_errorString = QString("Could not read chamber pressure");
+        emit logMessage(QString("Could not read chamber pressure"),BlackChirp::LogError);
         emit hardwareFailure();
         return -1.0;
     }
@@ -109,31 +115,39 @@ double IntellisysIQPlus::setPressureSetpoint(const double val)
     p_readTimer->stop();
 
     p_comm->writeCmd(QString("S1%1\n").arg(num,0,'f',2,'0'));
-    QByteArray resp = p_comm->queryCmd(QString("R1\n"));
-    if((resp.isEmpty()) || (!resp.startsWith("S1+")))
-    {
-        d_errorString = QString("Could not read chamber pressure set point");
-        emit hardwareFailure();
-        return -1.0;
-    }
-    int f = resp.indexOf('+');
-    int l = resp.size();
-    double num_check = resp.mid(f+1,l-f-1).trimmed().toDouble();
+    double num_check = readPressureSetpoint();
     if(qAbs(num_check - num)>=0.01)
     {
-        d_errorString = QString("Failed to set chamber pressure set point");
+        emit logMessage(QString("Failed to set chamber pressure set point"),BlackChirp::LogError);
         emit hardwareFailure();
         return -1.0;
     }
 
     p_readTimer->start();
-    return readPressureSetpoint();
+    return num_check;
 }
 
 double IntellisysIQPlus::readPressureSetpoint()
 {
-    emit pressureSetpointUpdate(d_setPoint);
-    return d_setPoint;
+    QByteArray resp = p_comm->queryCmd(QString("R1\n"));
+    if((resp.isEmpty()) || (!resp.startsWith("S1+")))
+    {
+        emit logMessage(QString("Could not read chamber pressure set point"),BlackChirp::LogError);
+        emit hardwareFailure();
+        return -1.0;
+    }
+    int f = resp.indexOf('+');
+    int l = resp.size();
+    bool ok = false;
+    double out = resp.mid(f+1,l-f-1).trimmed().toDouble(&ok);
+    if(!ok)
+    {
+        emit logMessage(QString("Could not parse pressure setpoint response. Received: %1").arg(QString(resp),BlackChirp::LogError));
+        emit hardwareFailure();
+        return -1.0;
+    }
+    emit pressureSetpointUpdate(out);
+    return out;
 }
 
 void IntellisysIQPlus::setPressureControlMode(bool enabled)

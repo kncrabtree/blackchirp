@@ -14,6 +14,11 @@ PressureController::~PressureController()
 {
 }
 
+bool PressureController::isReadOnly()
+{
+    return d_readOnly;
+}
+
 
 QList<QPair<QString, QVariant> > PressureController::readAuxPlotData()
 {
@@ -26,5 +31,4 @@ QList<QPair<QString, QVariant> > PressureController::readAuxPlotData()
 void PressureController::initialize()
 {
     pcInitialize();
-    emit isReadOnly(d_readOnly);
 }

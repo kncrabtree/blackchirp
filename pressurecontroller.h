@@ -14,7 +14,6 @@ signals:
     void pressureUpdate(double);
     void pressureSetpointUpdate(double);
     void pressureControlMode(bool);
-    void isReadOnly(bool);
 
 public slots:
     virtual double readPressure() =0;
@@ -27,6 +26,7 @@ public slots:
 
     virtual void openGateValve() =0;
     virtual void closeGateValve() =0;
+    bool isReadOnly();
 
 protected:
     bool d_readOnly;

@@ -145,7 +145,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeRepRate,p_hwm,&HardwareManager::setPGenRepRate);
 
 #ifdef BC_PCONTROLLER
-    connect(p_hwm,&HardwareManager::pressureControlReadOnly,this,&MainWindow::configPController);
+    configPController(s.value(QString("hwUI/pControllerReadOnly"),true).toBool());
 #endif
 
     QThread *hwmThread = new QThread(this);

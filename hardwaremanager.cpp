@@ -70,7 +70,6 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), d_responseC
     connect(p_pc,&PressureController::pressureUpdate,this,&HardwareManager::pressureUpdate);
     connect(p_pc,&PressureController::pressureSetpointUpdate,this,&HardwareManager::pressureSetpointUpdate);
     connect(p_pc,&PressureController::pressureControlMode,this,&HardwareManager::pressureControlMode);
-    connect(p_pc,&PressureController::isReadOnly,this,&HardwareManager::pressureControlReadOnly);
     d_hardwareList.append(p_pc);
 #endif
 
@@ -193,6 +192,9 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), d_responseC
     s.beginGroup(QString("hwUI"));
     s.setValue(QString("flowChannels"),p_flow->numChannels());
     s.setValue(QString("pGenChannels"),p_pGen->numChannels());
+#ifdef BC_PCONTROLLER
+    s.setValue(QString("pControllerReadOnly"),p_pc->isReadOnly());
+#endif
     s.endGroup();
 
     for(int i=0;i<d_hardwareList.size();i++)
