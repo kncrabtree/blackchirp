@@ -1184,29 +1184,27 @@ Experiment Experiment::loadFromSettings()
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(QString("lastExperiment"));
 
+    FtmwConfig f = FtmwConfig::loadFromSettings();
     if(s.value(QString("ftmwEnabled"),false).toBool())
-    {
-        FtmwConfig f = FtmwConfig::loadFromSettings();
         f.setEnabled();
-        out.setFtmwConfig(f);
-    }
+    out.setFtmwConfig(f);
 
-#ifdef BC_LIF
+#ifdef BC_LIF   
+    LifConfig l = LifConfig::loadFromSettings();
     if(s.value(QString("lifEnabled"),false).toBool())
-    {
-        LifConfig l = LifConfig::loadFromSettings();
         l.setEnabled();
-        out.setLifConfig(l);
-    }
+
+    out.setLifConfig(l);
 #endif
 
 #ifdef BC_MOTOR
+
+    MotorScan m = MotorScan::fromSettings();
     if(s.value(QString("motorEnabled"),false).toBool())
-    {
-        MotorScan m = MotorScan::fromSettings();
         m.setEnabled();
-        out.setMotorScan(m);
-    }
+
+    out.setMotorScan(m);
+
 #endif
 
     out.setAutoSaveShotsInterval(s.value(QString("autoSaveShots"),10000).toInt());
