@@ -78,13 +78,47 @@ void DigitizerConfigWidget::setFromConfig(const FtmwConfig config)
     ui->recordLengthSpinBox->setValue(sc.recordLength);
     ui->bytesPointSpinBox->setValue(sc.bytesPerPoint);
     ///TODO: Use information from ChirpConfig here
+
+    auto cc = config.chirpConfig();
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+
+    s.beginGroup(QString("ftmwscope"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    bool ba = s.value(QString("canBlockAverage"),false).toBool();
+    s.endGroup();
+    s.endGroup();
     ui->fastFrameEnabledCheckBox->blockSignals(true);
-    ui->fastFrameEnabledCheckBox->setChecked(sc.fastFrameEnabled);
+    if(cc.numChirps() > 1)
+    {
+        ui->fastFrameEnabledCheckBox->setChecked(sc.fastFrameEnabled);
+        ui->framesSpinBox->setValue(cc.numChirps());
+        ui->summaryFrameCheckBox->setChecked(sc.summaryFrame);
+        ui->fastFrameEnabledCheckBox->setEnabled(true);
+        ui->framesSpinBox->setEnabled(true);
+        ui->summaryFrameCheckBox->setEnabled(true);
+    }
+    else
+    {
+        ui->fastFrameEnabledCheckBox->setChecked(false);
+        ui->framesSpinBox->setValue(1);
+        ui->summaryFrameCheckBox->setChecked(false);
+        ui->fastFrameEnabledCheckBox->setEnabled(false);
+        ui->framesSpinBox->setEnabled(false);
+        ui->summaryFrameCheckBox->setEnabled(false);
+    }
     ui->fastFrameEnabledCheckBox->blockSignals(false);
-    ui->framesSpinBox->setValue(sc.numFrames);
-    ui->summaryFrameCheckBox->setChecked(sc.summaryFrame);
-    ui->blockAverageCheckBox->setChecked(sc.blockAverageEnabled);
-    ui->averagesSpinBox->setValue(sc.numAverages);
+    if(!ba)
+    {
+        ui->blockAverageCheckBox->setChecked(false);
+        ui->blockAverageCheckBox->setEnabled(false);
+        ui->averagesSpinBox->setValue(1);
+        ui->averagesSpinBox->setEnabled(false);
+    }
+    else
+    {
+        ui->blockAverageCheckBox->setChecked(sc.blockAverageEnabled);
+        ui->averagesSpinBox->setValue(sc.numAverages);
+    }
 
     configureUI();
     validateSpinboxes();
@@ -117,8 +151,12 @@ FtmwConfig DigitizerConfigWidget::getConfig()
         sc.summaryFrame = canSf;
         sc.manualFrameAverage = !canSf;
     }
+    else
+    {
+        sc.summaryFrame = false;
+        sc.manualFrameAverage = false;
+    }
     sc.numFrames = ui->framesSpinBox->value();
-    sc.summaryFrame = ui->summaryFrameCheckBox->isChecked();
     sc.blockAverageEnabled = ui->blockAverageCheckBox->isChecked();
     sc.numAverages = ui->averagesSpinBox->value();
     d_config.setScopeConfig(sc);
