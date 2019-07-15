@@ -709,6 +709,8 @@ void FtmwViewWidget::experimentComplete(const Experiment e)
 
         updateFtmw(e.ftmwConfig());
     }
+
+    ui->shotsLabel->setText(d_shotsString.arg(e.ftmwConfig().completedShots()));
 }
 
 void FtmwViewWidget::launchPeakFinder()

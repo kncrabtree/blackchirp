@@ -924,6 +924,23 @@ void FtmwConfig::loadFids(const int num, const QString path)
         }
     }
 
+    qint64 ts = 0;
+    if(data->multipleFidLists)
+    {
+        for(int i=0; i<data->multiFidStorage.size(); i++)
+            ts += data->multiFidStorage.at(i).constFirst().shots();
+    }
+    else
+    {
+        for(int i=0; i<data->fidList.size(); i++)
+            ts += data->fidList.constFirst().shots();
+    }
+
+    if(data->scopeConfig.fastFrameEnabled && data->scopeConfig.summaryFrame && !scopeConfig().manualFrameAverage)
+        ts *= data->scopeConfig.numFrames;
+
+    data->completedShots = ts;
+
     
 }
 
