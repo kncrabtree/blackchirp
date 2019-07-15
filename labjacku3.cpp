@@ -28,8 +28,6 @@ LabjackU3::LabjackU3(QObject *parent) :
 
 void LabjackU3::readIOBSettings()
 {
-    IOBoard::readSettings();
-
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
