@@ -146,7 +146,7 @@ double IntellisysIQPlus::readPressureSetpoint()
         emit hardwareFailure();
         return -1.0;
     }
-    emit pressureSetpointUpdate(out);
+    emit pressureSetpointUpdate(out/100.0*d_fullScale);
     return out;
 }
 
