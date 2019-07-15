@@ -41,6 +41,7 @@ void HardwareObject::bcInitInstrument()
 void HardwareObject::bcTestConnection()
 {
     d_isConnected = false;
+    readSettings();
     if(p_comm)
     {
         if(!p_comm->bcTestConnection())
