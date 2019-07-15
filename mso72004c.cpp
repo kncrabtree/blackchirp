@@ -356,7 +356,10 @@ Experiment MSO72004C::prepareForExperiment(Experiment exp)
                 {
                     emit logMessage(QString("Requested number of FastFrames (%1) is different than actual number (%2). %2 frames will be acquired.").arg(numFrames).arg(n));
                 }
-                config.numFrames = n;
+                if(config.summaryFrame)
+                    config.numFrames = n-1;
+                else
+                    config.numFrames = n;
             }
             else
             {
@@ -446,7 +449,7 @@ Experiment MSO72004C::prepareForExperiment(Experiment exp)
     }
 
     //set waveform output settings
-    if(!p_comm->writeCmd(QString(":WFMOUTPRE:ENCDG BIN;BN_FMT RI;BYT_OR LSB;BYT_NR 1\n")))
+    if(!p_comm->writeCmd(QString(":WFMOUTPRE:ENCDG BIN;BN_FMT RI;BYT_OR LSB;BYT_NR %1\n").arg(config.bytesPerPoint)))
     {
         emit logMessage(QString("Could not send waveform output commands."),BlackChirp::LogError);
         exp.setHardwareFailed();
