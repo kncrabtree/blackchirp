@@ -17,18 +17,29 @@ QMap<int, BlackChirp::IOBoardChannel> IOBoardConfigModel::getConfig()
 
 void IOBoardConfigModel::setFromConfig(const IOBoardConfig c)
 {
+    if(d_channelConfig.size() > 0)
+    {
+        beginRemoveRows(QModelIndex(),0,d_channelConfig.size()-1);
+        d_channelConfig.clear();
+        endRemoveRows();
+    }
+
+    auto list = c.analogList();
     if(d_prefix == QString("AIN"))
     {
-        d_channelConfig = c.analogList();
         d_reserved = c.reservedAnalogChannels();
         d_numChannels = c.numAnalogChannels();
     }
     else if(d_prefix == QString("DIN"))
     {
-        d_channelConfig = c.digitalList();
+        list = c.digitalList();
         d_reserved = c.reservedDigitalChannels();
         d_numChannels = c.numDigitalChannels();
     }
+
+    beginInsertRows(QModelIndex(),0,list.size()-1);
+    d_channelConfig = list;
+    endInsertRows();
 
     emit dataChanged(index(0,0),index(d_channelConfig.size(),3));
 }
