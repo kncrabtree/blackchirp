@@ -20,12 +20,8 @@ WizardValidationPage::WizardValidationPage(QWidget *parent) :
 
     QHBoxLayout *hbl = new QHBoxLayout;
 
-    QGroupBox *iobox = new QGroupBox(QString("IO Board"));
-    QVBoxLayout *iol = new QVBoxLayout;
-
-    QLabel *an = new QLabel(QString("Analog Channels"));
-    an->setAlignment(Qt::AlignCenter);
-    iol->addWidget(an,0,Qt::AlignCenter);
+    QGroupBox *anBox = new QGroupBox(QString("IO Board Analog Channels"));
+    QVBoxLayout *abl = new QVBoxLayout;
 
     p_analogView = new QTableView();
     IOBoardConfigModel *anmodel = new IOBoardConfigModel(QString("AIN"),p_analogView);
@@ -33,11 +29,13 @@ WizardValidationPage::WizardValidationPage(QWidget *parent) :
     p_analogView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     p_analogView->horizontalHeader()->setSectionResizeMode(2,QHeaderView::Stretch);
     p_analogView->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-    iol->addWidget(p_analogView,1,Qt::AlignCenter);
+    p_analogView->setMinimumWidth(300);
+    abl->addWidget(p_analogView);
+    anBox->setLayout(abl);
+    hbl->addWidget(anBox,1);
 
-    QLabel *di = new QLabel(QString("Digital Channels"));
-    di->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-    iol->addWidget(di,0,Qt::AlignCenter);
+    QGroupBox *digBox = new QGroupBox(QString("IO Board Digital Channels"));
+    QVBoxLayout *vbl = new QVBoxLayout;
 
     p_digitalView = new QTableView();
     IOBoardConfigModel *dmodel = new IOBoardConfigModel(QString("DIN"),p_digitalView);
@@ -45,27 +43,27 @@ WizardValidationPage::WizardValidationPage(QWidget *parent) :
     p_digitalView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     p_digitalView->horizontalHeader()->setSectionResizeMode(2,QHeaderView::Stretch);
     p_digitalView->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-    iol->addWidget(p_digitalView,1,Qt::AlignCenter);
+    p_digitalView->setMinimumWidth(300);
+    vbl->addWidget(p_digitalView);
+    digBox->setLayout(vbl);
 
-    iobox->setLayout(iol);
-    hbl->addWidget(iobox,1,Qt::AlignCenter);
+    hbl->addWidget(digBox,1);
 
+
+    QGroupBox *valBox = new QGroupBox(QString("Validation"));
     QVBoxLayout *vl = new QVBoxLayout;
-    vl->addStretch(1);
 
-    QLabel *val = new QLabel(QString("Validation"));
-    val->setAlignment(Qt::AlignCenter);
-    vl->addWidget(val,0,Qt::AlignCenter);
-
-    p_validationView = new QTableView;
+    p_validationView = new QTableView();
     ValidationModel *valmodel = new ValidationModel(p_validationView);
     p_validationView->setModel(valmodel);
     p_validationView->setItemDelegateForColumn(0,new CompleterLineEditDelegate);
     p_validationView->setItemDelegateForColumn(1,new ValidationDoubleSpinBoxDelegate);
     p_validationView->setItemDelegateForColumn(2,new ValidationDoubleSpinBoxDelegate);
+//    p_validationView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     p_validationView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     p_validationView->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-    vl->addWidget(p_validationView,1,Qt::AlignCenter);
+    p_validationView->setMinimumWidth(300);
+    vl->addWidget(p_validationView);
 
     QHBoxLayout *tl = new QHBoxLayout;
     tl->addStretch(1);
@@ -81,10 +79,9 @@ WizardValidationPage::WizardValidationPage(QWidget *parent) :
     tl->addWidget(p_removeButton,0);
     tl->addStretch(1);
     vl->addLayout(tl);
+    valBox->setLayout(vl);
 
-    vl->addStretch(1);
-
-    hbl->addLayout(vl,1);
+    hbl->addWidget(valBox,1);
 
     setLayout(hbl);
 
