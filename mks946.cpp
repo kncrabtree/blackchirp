@@ -306,13 +306,13 @@ void Mks946::poll()
     if(d_nextRead < 0 || d_nextRead >= d_numChannels)
     {
         readPressure();
-        readPressureSetpoint();
+//        readPressureSetpoint();
         d_nextRead = 0;
     }
     else
     {
         readFlow(d_nextRead);
-        readFlowSetpoint(d_nextRead);
+//        readFlowSetpoint(d_nextRead);
         d_nextRead++;
     }
 }
