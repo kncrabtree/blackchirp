@@ -16,7 +16,6 @@ public:
     ~WizardLifConfigPage();
 
     void setFromConfig(const LifConfig c);
-    LifConfig getConfig();
 
     // QWizardPage interface
     void initializePage();

@@ -229,21 +229,6 @@ void WizardLifConfigPage::setFromConfig(const LifConfig c)
     //Control widget is set on the fly
 }
 
-LifConfig WizardLifConfigPage::getConfig()
-{
-    LifConfig out;
-    out = p_lifControl->getSettings(out);
-    out.setCompleteMode(p_completeBox->currentData().value<BlackChirp::LifCompleteMode>());
-    out.setOrder(p_orderBox->currentData().value<BlackChirp::LifScanOrder>());
-    out.setDelayParameters(p_delayStart->value(),p_delayEnd->value(),p_delayStep->value());
-    out.setFrequencyParameters(p_laserStart->value(),p_laserEnd->value(),p_laserStep->value());
-
-    out.validate();
-    return out;
-}
-
-
-
 void WizardLifConfigPage::initializePage()
 {
     auto e = getExperiment();
@@ -263,6 +248,7 @@ bool WizardLifConfigPage::validatePage()
     out.validate();
     if(out.isValid())
     {
+        out.setEnabled();
         e.setLifConfig(out);
         emit experimentUpdate(e);
         return true;
