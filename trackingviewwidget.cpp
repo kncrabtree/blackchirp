@@ -16,7 +16,7 @@
 #include "datastructs.h"
 
 
-TrackingViewWidget::TrackingViewWidget(bool viewOnly, QWidget *parent) :
+TrackingViewWidget::TrackingViewWidget(QWidget *parent, bool viewOnly) :
     QWidget(parent), d_viewMode(viewOnly)
 {    
     QSettings s;

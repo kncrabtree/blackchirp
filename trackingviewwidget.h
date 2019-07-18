@@ -17,7 +17,7 @@ class TrackingViewWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit TrackingViewWidget(bool viewOnly = false, QWidget *parent = 0);
+    explicit TrackingViewWidget(QWidget *parent = 0, bool viewOnly = false);
     ~TrackingViewWidget();
 
     //! Associates curves with which plot and axis they're displayed on

@@ -262,7 +262,7 @@ QWidget *ExperimentViewWidget::buildTrackingWidget()
         tracking = new QWidget;
         QVBoxLayout *trackingvl = new QVBoxLayout;
 
-        TrackingViewWidget *tvw = new TrackingViewWidget(true,tracking);
+        TrackingViewWidget *tvw = new TrackingViewWidget(tracking,true);
         trackingvl->addWidget(tvw);
 
         auto timestampList = timeData.value(QString("exptTimeStamp")).first;
