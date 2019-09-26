@@ -283,56 +283,86 @@ class BlackChirpExperiment:
             
         self.d_header_values = {}
         self.d_header_units = {}
+        self.fid_list = []
         
         #read data from header file
-        with open(path+"/"+str(number)+".hdr") as hdr:
-            for line in hdr:
-                if not line:
-                    continue
-                l = line.split('\t')
-                if not l or len(l) < 3:
-                    continue
+        try:
+            with open(path+"/"+str(number)+".hdr") as hdr:
+                for line in hdr:
+                    if not line:
+                        continue
+                    l = line.split('\t')
+                    if not l or len(l) < 3:
+                        continue
+                    
+                    key = l[0].strip()
+                    value = l[1].strip()
+                    unit = l[2].strip()
+                    
+                    self.d_header_values[key] = value
+                    self.d_header_units[key] = unit
+        except (OSError, IOError):
+            #maybe this is BBAcq Data?
+            with open(path+"/"+str(number)+".txt") as txt:
+                thefid = []
+                for line in txt:
+                    if len(line) < 2:
+                        continue
+                    if line.startswith('#'):
+                        l = line.split('\t')
+                        if not l or len(l) < 3:
+                            continue
+                        
+                        key = l[0].strip('#')
+                        value = l[1].strip()
+                        unit = l[2].strip()
+                    
+                        self.d_header_values[key] = value
+                        self.d_header_units[key] = unit
+                    else:
+                        try:
+                            thefid.append(float(line.strip()))
+                        except (ValueError):
+                            pass
                 
-                key = l[0].strip()
-                value = l[1].strip()
-                unit = l[2].strip()
+            self.fid_list.append( BlackChirpFid.fromTextData(thefid,self.d_header_values))
                 
-                self.d_header_values[key] = value
-                self.d_header_units[key] = unit
         
         #find out if ftmw config is enabled
-        self.fid_list = []
-        if self.d_header_values['FtmwConfigEnabled'].lower() \
-                in ['true', 't', '1', 'yes', 'y']:
-            #load FID file
-            with open(path + "/" + str(number) + ".fid", 'rb') as fidfile:
-                buffer = fidfile.read(4)
-                ms_len = struct.unpack(">I", buffer)
-                buffer = fidfile.read(ms_len[0])
-                magic_string = buffer.decode('ascii')
-                if not magic_string.startswith("BCFID"):
-                    raise ValueError("Could not read magic string from "
-                                     + fidfile.name)
-                
-                l = magic_string.split("v")
-                if len(l) < 2:
-                    raise ValueError("Could not determine version \
-                                      number from magic string "
-                                      + magic_string)
-                
-                version = l[1]
-                
-                buffer = fidfile.read(4)
-                fidlist_size = struct.unpack(">I", buffer)[0]
-                for i in range(0,fidlist_size):
-                    self.fid_list.append(BlackChirpFid(version, fidfile))
-#        find out if motorscan config is enabled
-        if self.d_header_values['MotorScanEnabled'].lower() \
-                in ['true','t','1','yes','y']:
-            self.motorScan = BlackChirpMotorScan(number,path=path,headerData=self.d_header_values)
-#        if self.d_header_values['LifConfigEnabled'].lower() \
-#                in ['true', 't', '1', 'yes', 'y']
-#            with open(path+"/"+str(number)+".lif", 'rb') as liffile:
+        try:
+            if self.d_header_values['FtmwConfigEnabled'].lower() \
+                    in ['true', 't', '1', 'yes', 'y']:
+                #load FID file
+                with open(path + "/" + str(number) + ".fid", 'rb') as fidfile:
+                    buffer = fidfile.read(4)
+                    ms_len = struct.unpack(">I", buffer)
+                    buffer = fidfile.read(ms_len[0])
+                    magic_string = buffer.decode('ascii')
+                    if not magic_string.startswith("BCFID"):
+                        raise ValueError("Could not read magic string from "
+                                         + fidfile.name)
+                    
+                    l = magic_string.split("v")
+                    if len(l) < 2:
+                        raise ValueError("Could not determine version \
+                                          number from magic string "
+                                          + magic_string)
+                    
+                    version = l[1]
+                    
+                    buffer = fidfile.read(4)
+                    fidlist_size = struct.unpack(">I", buffer)[0]
+                    for i in range(0,fidlist_size):
+                        self.fid_list.append(BlackChirpFid(version, fidfile))
+    #        find out if motorscan config is enabled
+            if self.d_header_values['MotorScanEnabled'].lower() \
+                    in ['true','t','1','yes','y']:
+                self.motorScan = BlackChirpMotorScan(number,path=path,headerData=self.d_header_values)
+    #        if self.d_header_values['LifConfigEnabled'].lower() \
+    #                in ['true', 't', '1', 'yes', 'y']
+    #            with open(path+"/"+str(number)+".lif", 'rb') as liffile:
+        except (KeyError):
+            pass
         
         #load in time data
         self.time_data = {}
@@ -528,7 +558,7 @@ class BlackChirpExperiment:
         return out_x, out_y
             
                 
-    def find_peaks(self, xarray, yarray, snr=3):
+    def find_peaks(self, xd, yd, snr=3, chunks=50):
         """
         Return lists of peaks in yarray
         
@@ -557,9 +587,9 @@ class BlackChirpExperiment:
         
         Arguments:
         
-            xarray -- Array-like x values
+            xd -- Array-like x values
             
-            yarray -- Array-like y values
+            yd -- Array-like y values
             
             snr -- Minimum SNR for peak detection (default: 3)
 
@@ -580,6 +610,23 @@ class BlackChirpExperiment:
             
         """
         
+        #first remove all 0.0 from y array
+        ii = 0
+        ff = len(yd-1)
+        nz = False
+        for i in range(len(yd)):
+            if yd[i] > 1e-50:
+                nz = True
+                continue
+            if nz:
+                ff = i
+                break
+            else:
+                ii = i
+                
+        yarray = yd[ii:ff]
+        xarray = xd[ii:ff]
+        
         #compute smoothed 2nd derivative for strong peaks
         if not self.quiet:
             print("Computing smoothed second derivative...")
@@ -589,8 +636,10 @@ class BlackChirpExperiment:
             print("Building noise model...")
             
         #build noise model
-        chunks = 50
-        chunk_size = len(yarray)//chunks
+        if chunks < 1:
+            print("Cannot have chunks < 1. Setting to 1")
+            chunks = 1
+        chunk_size = len(yarray)//chunks + 1
         avg = []
         noise = []
         dat = []
@@ -622,7 +671,7 @@ class BlackChirpExperiment:
                 #something went wrong with noise detection... ignore section
                 #probably a chunk containing only 0.0
                 avg.append(0.0)
-                noise.append(1.)
+                noise.append(1.0)
             
             if i + 1 == chunks:
                 outnoise[i*chunk_size:] = noise[i]
@@ -648,7 +697,7 @@ class BlackChirpExperiment:
                     d2y[i-1] > d2y[i] < d2y[i+1] < d2y[i+2]):
                         outx.append(xarray[i])
                         outy.append(yarray[i])
-                        outidx.append(i)
+                        outidx.append(i+ii)
                         outsnr.append(snr_i)
         
         if not self.quiet:
@@ -667,8 +716,12 @@ class BlackChirpExperiment:
             print("Weak   (SNR < 10)  : "+str(weak_count))
             print("Medium (SNR < 100) : "+str(med_count))
             print("Strong (SNR >= 100): "+str(strong_count))
-                        
-        return outx, outy, outidx, outsnr, outnoise, outbaseline
+        
+        obl = numpy.zeros(len(xd))
+        obl[ii:ff] = outbaseline
+        on = numpy.zeros(len(xd))
+        on[ii:ff] = outnoise
+        return outx, outy, outidx, outsnr, on, obl
   
       
     def analyze_fid(self,index=0,f_min = None, f_max=None, snr=3, win=50,
@@ -787,11 +840,14 @@ class BlackChirpExperiment:
             yl : list
                 List of y values from peak finder
                 
-            il : list
-                List of peak indices in original FT
-                
             sl : list
                 List of estimated peak SNRs from peak finder
+                
+            nl : array
+                Estimated noise level for original FT
+                
+            bl : array
+                Estimates baseline for original FT
                 
             pl : list of tuples
                 Optimized fit parameters (y0, A, x0, w) for each peak
@@ -832,7 +888,7 @@ class BlackChirpExperiment:
         
         #it's best to guess a narrow width and let it grow.
         #assume width = 3*(x spacing) by default
-        width = width_factor*(x[1]-x[0])
+        width = abs(width_factor*(x[1]-x[0]))
         
         print("Constructing spectrum chunks for fitting")
         #ideally, we'd fit one peak at a time. This isn't possible when peaks
@@ -904,8 +960,8 @@ class BlackChirpExperiment:
                 upperbound.append(a*5.*wf)
                 lowerbound.append(x[i]-width)
                 upperbound.append(x[i]+width)
-                lowerbound.append(width/10.)
-                upperbound.append(width*10.)
+                lowerbound.append(width/3.)
+                upperbound.append(width*3.)
             
             most_peaks = max(most_peaks,len(peaks))
   
@@ -997,7 +1053,7 @@ class BlackChirpExperiment:
                 del yarray
                 del tmp
        
-        return x, y, xl, yl, il, sl, param_list, err_list, \
+        return x, y, xl, yl, sl, noise, baseline, param_list, err_list, \
                numpy.array(modelx), numpy.array(modely), cov_list
 
     def processMotorMotorScan(self,carrierName = None, pressure = None):
@@ -1172,6 +1228,24 @@ class BlackChirpFid:
         
         self.xy_data = numpy.vstack((self.x_data, self.data))
         
+    @classmethod
+    def fromTextData(self,fid,header):
+        
+        shots = int(header["Shots"])
+        spacing = 1.0/(float(header["Sample rate"])*1e3)
+        probe = float(header["LO Frequency"])
+        
+        self.data = fid
+        self.x_data = numpy.linspace(0.0,(len(fid)-1)*spacing,len(fid))
+        self.spacing = spacing
+        self.shots = shots
+        self.probe_freq = probe
+        self.xy_data = numpy.vstack((self.x_data, self.data))
+        self.size = len(fid)
+        self.sideband = 1.0
+        if header["Sideband"] != "Upper":
+            self.sideband = -1.0
+        return self
   
 class BlackChirpMotorScan:
     def __init__(self,number,path=None,headerData=None):
