@@ -13,6 +13,7 @@ import bcfitting as bcfit
 import concurrent.futures
 import sys
 import scipy.optimize as spopt
+import tabulate
 
 class BlackChirpExperiment:
     """
@@ -85,16 +86,25 @@ class BlackChirpExperiment:
         print_settings -- Print out class attributes to standard output
     """
     
-    _fid_start = 0
-    _fid_end = -1
-    _zpf = 0
-    _ft_min = -1.0
-    _ft_max = -1.0
-    _ft_winf = 'boxcar'
+    _settings = {
+    'fid_start' : 0,
+    'fid_end' : -1,
+    'ft_zpf' : 0,
+    'ft_min' : -1.0,
+    'ft_max' : -1.0,
+    'ft_winf' : 'boxcar',
+    'pf_snr' : 3.0,
+    'pf_chunks' : 50,
+    'pf_medf' : 3.0,
+    'pf_sgorder' : 6,
+    'pf_sgwin' : 11,
+    'an_win' : 50,
+    'an_wf' : 3.0,
+    'an_model' : bcfit.bc_multigauss
+    }
     
     @classmethod
-    def set_ft_defaults(cls,fid_start=None,fid_end=None,zpf=None,ft_min=None,
-                        ft_max=None,ft_winf=None):
+    def set_ft_defaults(cls,**kwargs):
         """
         Set and store default values for FT
         
@@ -120,30 +130,39 @@ class BlackChirpExperiment:
             
             ft_winf -- Window function applied to FID before FT. This must
             be a value understood by scipy.signal.get_window
+            
+            pf_snr -- Signal-to-noise threshold used in peak finding algorithm
+            
+            pf_chunks -- Number of chunks used in baseline estimation
+            
+            pf_medf -- Factor used in median filter for baseline estimation
+            
+            pf_sgorder -- Order of polynomial used in savitzky-golay filter
+            in peak finding algorithm
+            
+            pf_sgwin -- Window size used in savitzky-golay filter
+            in peak finding algorithm. Must be odd
+            
+            an_win -- Window size (in points) used to glob together peaks
+            in fitting routine
+            
+            an_wf -- Width factor for fitting. Multiplied by point spacing to
+            set bounds on peak position in fit function and as an initial
+            guess of linewidth. Should be set to the typical peak width (or
+            slightly smaller) in points.
+            
+            an_model -- Model function used for representing peaks
         """
         
         #store settings
         with shelve.open(os.path.expanduser('~')
                          +'/.config/CrabtreeLab/blackchirp-python') as shf:
-                             
-            if fid_start is not None:
-                cls._fid_start = fid_start
-                shf['fid_start'] = fid_start
-            if fid_end is not None:
-                cls._fid_end = fid_end
-                shf['fid_end'] = fid_end
-            if zpf is not None:
-                cls._zpf = zpf
-                shf['zpf'] = zpf
-            if ft_min is not None:
-                cls._ft_min = ft_min
-                shf['ft_min'] = ft_min
-            if ft_max is not None:
-                cls._ft_max = ft_max
-                shf['ft_max'] = ft_max
-            if ft_winf is not None:
-                cls._ft_winf = ft_winf
-                shf['ft_winf'] = ft_winf
+            for key,val in kwargs.items():
+                if key in cls._settings:
+                    cls._settings[key]=val
+                    shf[key] = val
+                else:
+                    print(str(key)+" is not a recognized setting.")            
         
     
     @classmethod
@@ -158,18 +177,9 @@ class BlackChirpExperiment:
         try:
             with shelve.open(os.path.expanduser('~')
                              +'/.config/CrabtreeLab/blackchirp-python') as shf:
-                if 'fid_start' in shf:
-                    cls._fid_start = shf['fid_start']
-                if 'fid_end' in shf:
-                    cls._fid_end = shf['fid_end']
-                if 'zpf' in shf:
-                    cls._zpf = shf['zpf']
-                if 'ft_min' in shf:
-                    cls._ft_min = shf['ft_min']
-                if 'ft_max' in shf:
-                    cls._ft_max = shf['ft_max']
-                if 'ft_winf' in shf:
-                    cls._ft_winf = shf['ft_winf']
+                for key,val in shf.items():
+                    if key in cls._settings:
+                        cls._settings[key]=val
         except (OSError, IOError):
             print("No persistent settings found; using defaults")
             pass
@@ -182,54 +192,30 @@ class BlackChirpExperiment:
         """
         Print class settings
         """
-    
-        w = 80
-        sb = "".center(w,'*')
-        
-        print(sb)
-        print("BlackChirpExperiment Default Settings".center(w))
-        print(sb)
-        
-        labels = []
-        values = []
-        
-        labels.append("FID Start")
-        values.append(str(cls._fid_start))
-        
-        labels.append("FID End")
-        values.append(str(cls._fid_end))
-        
-        labels.append("Zero Pad Factor")
-        values.append(str(cls._zpf))
-        
-        labels.append("FT Min Frequency")
-        values.append(str(cls._ft_min))
-        
-        labels.append("FT Max Frequency")
-        values.append(str(cls._ft_max))
-        
-        labels.append("Window Function")
-        values.append(str(cls._ft_winf))
-        
-        lw = 0
-        for s in labels:
-            lw = max(len(s),lw)
-        vw = 0
-        for s in values:
-            vw = max(len(s),vw)
-        
-        strs = []
-        for i in range(len(values)):
-            strs.append(labels[i].rjust(lw)+" ..."
-                        +str(' '+values[i]).rjust(vw,'.'))
-        
-        for s in strs:
-            print(s.center(w))
-            
+
         print("")
-        print(str("To modify these values, use BlackChirpExperiment." +
-              "set_ft_defaults()").center(w))
-        print(sb)
+        print("BlackChirpExperiment Default Settings")
+        
+        td = []
+        ttd = []
+        for key, val in cls._settings.items():
+            if len(ttd) == 4:
+                td.append(ttd)
+                ttd = []
+            ttd.append(key)
+            if key == 'an_model':
+                ttd.append(val.__name__)
+            else:
+                ttd.append(str(val))
+            
+        td.append(ttd)
+        
+        print(tabulate.tabulate(td))
+        
+       
+        print(str("To modify these values globally, use BlackChirpExperiment." +
+              "set_ft_defaults()."))
+        print("")
         
         
     
@@ -410,31 +396,40 @@ class BlackChirpExperiment:
                   +" items in time_data.")
             print("Experiment contains Motor Scan data")
             
+    def print_exp_settings(self,f=None):
+        td = []
+        ttd = []
+        for key, val in self._settings.items():
+            if f is None or key.startswith(f):
+                if len(ttd) == 4:
+                    td.append(ttd)
+                    ttd = []
+                ttd.append(key)
+                if key == 'an_model':
+                    ttd.append(val.__name__)
+                else:
+                    ttd.append(str(val))
+            
+        td.append(ttd)
+        
+        print(tabulate.tabulate(td))
+        
+            
     
-    def ft_one(self, index = 0, start = None, end = None, zpf = None, 
-               window_f = None, f_min = None, f_max = None):
+    def ft_one(self, index = 0):
         """
         Return Fourier transform of one FID
         
-        Performs the Fourier transform of a single FID, with options for
-        using only a subset of the data. The range to be included in the FT
-        is given by the optional start and end parameters. These are either
-        point indices (if integer type) or times in microseconds (if floating
-        point type). If end is less than start, then all data following start
-        will be included in the calculation. All points outside the range
-        indicated will be set to 0 prior to FT. If a window function is
-        supplied, the window will be applied to the data between start and
-        end. If zpf is greater than 0, the data will be extended to reach the
-        nth nearest power of 2 and filled with zeroes (for instance, if zpf=1,
-        the data will be extended to the next power of 2, and if zpf=3, the
-        array will be extended to the 3rd nearest power of 2; a factor of 4
-        longer than zpf=1).
+        Performs the Fourier transform of a single FID. The processing
+        settings (start, end, window function, zero padding, etc) are taken
+        from the self._settings dictionary.
         
-        If a setting is not specified, then the current class default value
+        Unless you moke a change, the current class default value
         is used (printed on startup). For a particular instance of the class,
-        the values can also be changed by settings the class attributes
-        directly (e.g., exp._zpf=2). All subsequent FT operations on that
-        instance would use 2 for the zpf instead of the class default value.
+        the values can also be changed by modifying the _settings dictionary
+        directly (e.g., exp._settings['zpf']=2). All subsequent FT operations
+        on that instance would use 2 for the zpf instead of the class default
+        value.
         
         Note: the y-values of the FT are multiplied by 1e3 to bring them
         to more numerically friendly magnitudes
@@ -444,22 +439,12 @@ class BlackChirpExperiment:
         Arguments:
         
             index -- Index of FID in fid_list to FT (default: 0)
-        
-            start -- Point number (or time) for FT start
-        
-            end  -- Point number (or time) for FT end
-        
-            zpf -- Extend with zeros to nth nearest power of 2
-        
-            window_f -- A windowing function (e.g., from scipy.signal). The
-            window function must take a number of points as an argument
-        
-            f_min -- If nonnegative, all frequencies below this value (in
-            MHz) are set to 0
-        
-            f_max -- If nonnegative, all frequencies above this value (in
-            MHz) are set to 0
         """
+        
+        print("")
+        print("Performing FT using following settings")
+        self.print_exp_settings(f="f")
+        
         
         #make a copy of the FID, and keep an easy ref
         f = self.fid_list[index]
@@ -470,12 +455,8 @@ class BlackChirpExperiment:
         s_index = 0
         e_index = f.size
         
-        si = self._fid_start
-        if start is not None:
-            si = start
-        ei = self._fid_end
-        if end is not None:
-            ei = end
+        si = self._settings['fid_start']
+        ei = self._settings['fid_end']
             
         if isinstance(si, float):
             #Interpret start value in microseconds
@@ -494,11 +475,9 @@ class BlackChirpExperiment:
         
         
         #apply window function to region between start and end
+        #todo: catch exception if get_window fails and fall back to boxcar
         win_size = e_index - s_index
-        if window_f is not None:            
-            f_data[s_index:e_index] *= window_f(win_size)
-        else:
-            f_data[s_index:e_index] *= spsig.get_window(self._ft_winf,
+        f_data[s_index:e_index] *= spsig.get_window(self._settings['ft_winf'],
                                                         win_size)
         
         #zero out points outside (start,end) range
@@ -508,9 +487,7 @@ class BlackChirpExperiment:
             f_data[e_index:] = 0.0
         
         #apply zero padding factor
-        z = self._zpf
-        if zpf is not None:
-            z = zpf
+        z = self._settings['ft_zpf']
             
         if z > 0:
             z = int(z)
@@ -539,13 +516,8 @@ class BlackChirpExperiment:
         df = 1.0 / len(f_data) / (f.spacing)
         
         #build output arrays, setting to 0 if outside range (f_min,f_max)
-        fn = self._ft_min
-        if f_min is not None:
-            fn = f_min
-        
-        fx = self._ft_max
-        if f_max is not None:
-            fx = f_max
+        fn = self._settings['ft_min']     
+        fx = self._settings['ft_max']
         
         for i in range(0,nump):
             out_x[i] = f.probe_freq + (f.sideband * df * i)
@@ -558,7 +530,7 @@ class BlackChirpExperiment:
         return out_x, out_y
             
                 
-    def find_peaks(self, xd, yd, snr=3, chunks=50):
+    def find_peaks(self, xd, yd):
         """
         Return lists of peaks in yarray
         
@@ -567,31 +539,32 @@ class BlackChirpExperiment:
         
         Peak finding is based on a noise estimator and 2nd derivative
         procedure. First, a noise model is constructed by breaking the
-        y array into chunks. Within each chunk, the median noise level is
-        iteratively located by calculating the median, removing all points
-        10x greater than the median, and repeating until no more points are
-        removed. After removal of these points, the mean and standard
-        deviation are used to model the baseline offset and noise for that
-        segment.
+        y array into chunks (the number of chunks is determined by
+        self._settings['pf_chunks']. Within each chunk, the median noise level
+        is iteratively located by calculating the median, removing all points
+        self._settings['pf_medf'] times greater than the median, and repeating
+        until no more points are removed. After removal of these points, the
+        mean and standard deviation are used to model the baseline offset and
+        noise for that segment.
         
-        A second derivative of the y array is calculated using a 6th order,
-        11 point Savitzky Golay filtered version of yarray. This smoothed
-        second derivative is used later in the peak finding routine.
+        A second derivative of the y array is calculated using a Savitzky
+        Golay filtered version of yarray. The order and window size of the
+        filter are set by self._settings['pf_sgorder'] and
+        self._settings['pf_sgwin'] respectively. This smoothed second
+        derivative is used later in the peak finding routine.
         
         To locate peaks, the program loops over y array, calculating the SNR
-        at each point. If the SNR is above the threshold, then the second
-        derivative is scanned to see if the point is a local minimum by
-        comparing its value to two 4-point windows ([i-2, i-1, i, i+1] and
-        [i-1,i,i+1,i+2]). If either test returns true, then the point
-        is flagged as a peak and added to the output arrays.
+        at each point. If the SNR is above the threshold set by
+        self._settings['pf_snr'], then the second derivative is scanned to see
+        if the point is a local minimum by comparing its value to two 4-point
+        windows ([i-2, i-1, i, i+1] and [i-1,i,i+1,i+2]). If either test
+        returns true, then the point is flagged as a peak.
         
         Arguments:
         
             xd -- Array-like x values
             
             yd -- Array-like y values
-            
-            snr -- Minimum SNR for peak detection (default: 3)
 
         Returns outx, outy, outidx, outsnr, noise, baseline:
         
@@ -610,6 +583,11 @@ class BlackChirpExperiment:
             
         """
         
+        
+        print("")
+        print("Performing peak finding using following settings")
+        self.print_exp_settings(f='pf')
+        
         #first remove all 0.0 from y array
         ii = 0
         ff = len(yd-1)
@@ -626,16 +604,21 @@ class BlackChirpExperiment:
                 
         yarray = yd[ii:ff]
         xarray = xd[ii:ff]
+            
+        win = self._settings['pf_sgwin']
+        if win < 3:
+            print('pf_sgwin nust be >= 3. Setting to 3.')
+            win = 3
+        if win%2 == 0:
+            print('pf_sgwin must be odd. Setting to '+str(win+1))
+            win = win+1
         
-        #compute smoothed 2nd derivative for strong peaks
-        if not self.quiet:
-            print("Computing smoothed second derivative...")
-        d2y = spsig.savgol_filter(yarray,11,6,deriv=2)
+        order = self._settings['pf_sgorder']
+        d2y = spsig.savgol_filter(yarray,win,order,deriv=2)
         
-        if not self.quiet:
-            print("Building noise model...")
             
         #build noise model
+        chunks = self._settings['pf_chunks']
         if chunks < 1:
             print("Cannot have chunks < 1. Setting to 1")
             chunks = 1
@@ -651,14 +634,14 @@ class BlackChirpExperiment:
             else:
                 dat = yarray[i*chunk_size:(i+1)*chunk_size]
  
-            #Throw out any points that are 10* the median and recalculate
+            #Throw out any points that are 3* the median and recalculate
             #Do this until no points are removed. 
             done = False           
             while not done:
                 if len(dat) == 0:
                     break
                 med = numpy.median(dat)
-                fltr = [d for d in dat if d < 10*med]
+                fltr = [d for d in dat if d < 3*med]
                 if len(fltr) == len(dat):
                     done = True
                 dat = fltr
@@ -687,8 +670,7 @@ class BlackChirpExperiment:
         outidx = []
         outsnr = []
         
-        if not self.quiet:
-            print("Locating peaks...")
+        snr = self._settings['pf_snr']
         #if a point has SNR > threshold, look for local min in 2nd deriv.
         for i in range(2,len(yarray)-2):
             snr_i = (yarray[i] - avg[i // chunk_size])/noise[i // chunk_size]
@@ -724,21 +706,14 @@ class BlackChirpExperiment:
         return outx, outy, outidx, outsnr, on, obl
   
       
-    def analyze_fid(self,index=0,f_min = None, f_max=None, snr=3, win=50,
-                    width_factor=3., mode = "amplitude"):
+    def analyze_fid(self,index=0):
         """
         Perform full FT and peak fitting analysis of a single FID
         
         Analysis is performed in 2 stages: peak finding and peak fitting.
         For the peak finding stage, the ft_one function is used to compute
-        the FT of the FID specified by index. For convenience, the f_min
-        and f_max variables can be passed here; otherwise, the class or
-        experiment values are used. The other parameters (FID start, window
-        function, etc) must be set already (can use exp._fid_start=x to 
-        override class defaults). The zero padding factor for this FT is
-        forced to 0. With this FT, the find_peaks function is used to locate
-        the peaks using the SNR threshold specified by the snr argument
-        (default: 3).
+        the FT of the FID specified by index. The zero padding factor for this
+        FT is forced to 1.
         
         For peak fitting, a second FT with zpf=2 is calculated. The extra
         points help improve the numerical stability of the fitting routines
@@ -747,14 +722,14 @@ class BlackChirpExperiment:
         
         Peak fitting begins by breaking the spectrum into chunks. Starting
         at the first peak, the idea is to make a slice of the spectrum
-        containing 2*win points (in the original FT) centered on the peak.
-        However, additional peaks may lie close enough to affect the quality
-        of the baseline. Therefore, the algorithm looks to see if there is
-        another peak higher in frequency by 2*win points. If not, the
+        containing 2*win points (win = self._settings['an_win']) centered on
+        the peak. However, additional peaks may lie close enough to affect the
+        quality of the baseline. Therefore, the algorithm looks to see if
+        there is another peak higher in frequency by 2*win points. If not, the
         original window (2*win centered on the peak) is used to create a
         slice; otherwise, the window is extended to include the next peak,
         and the process repeats until another higher-frequency peak is not
-        found within 2*window points. Note that the point indices in this
+        found within 2*win points. Note that the point indices in this
         discussion refer to the original FT used for peak finding; the
         actual slices used for fitting come from the zero-padded FT, which
         has a different resolution. The function calculates a resolution
@@ -762,26 +737,35 @@ class BlackChirpExperiment:
         corresponding indices at approximately the same frequency in the
         zero-padded FT.
         
-        For each slice, a set of initial guesses for the parameters to be
-        used in the fit. A parameters tuple is constructed as follows:
+        For each slice, a set of initial guesses for the parameters is
+        used in the fit. Depending on the choice of fitting function (see 
+        below), a parameters tuple is constructed as follows:
             params = (y0, A1, x01, w1, A2, x02, w2, ...)
-        and the parameters are used in the following model equation:
-            f(x) = y0 + sum_i^N Ai * exp( -(x-x0i)^2 / 2*wi^2 )
+                or
+            params = (y0, w, A1, x01, A2, x02, ...),
+            
+        The model equation is determined by self._settings['an_model'], and
+        must be one of the functions defined in bc_fitting. Currently, these
+        are:
+            bc_multigauss:
+                f(x) = y0 + sum_i^N Ai * exp( -(x-x0i)^2 / 2*wi^2 )
+            bc_multigauss_fixw:
+                f(x) = y0 + sum_i^N Ai * exp( -(x-x0i)^2 / 2*w^2 )
+            bc_multigauss_area:
+                f(x) = y0 + sum_i^N Ai/(sqrt(2pi)wi) * exp( -(x-x0i)^2 / 2*wi^2 )
         The initial guesses for each parameter come from:
             y0 : the baseline estimate from peak finding stage
             A : peak finder's y value
             x0 : peak finder's x value
-            w : width_factor*original_FT_spacing (default width factor is 3)
+            w : width_factor*original_FT_spacing (width factor is set by
+            self._settings['an_wf']
         In addition, bounds are set on each parameter:
             y0 : [baseline/5, 5*noise+baseline] (from peak finder)
             A : [A/5, A*5]
             x0 : [x-w, x+w] (assume peak finder is good to ~a few points)
-            w : [w/10, w+10]
+            w : [w/3, w*3]
             
-        The actual fit is performed by bcfitting.bc_fit_multigauss, which
-        is a wrapper around the scipy.optimize.curve_fit function that uses
-        a fit function that accepts an arbitrary number of Gaussian peaks.
-        It uses an analytical Jacobian to accelerate the convergence.
+        
         The fitting is performed in a parallelized manner using the python
         concurrent.future.map function with a ProcessPoolExecutor, which
         will spin out processes to fill all available processor cores on the
@@ -796,35 +780,11 @@ class BlackChirpExperiment:
         with good results; there are (by default) only stright line segments
         connecting the chunks.
         
-        Optionally, by setting mode="area", the program will fit to an area
-        normalized gaussian instead of a height-normalized one:
-            f(x) = y0 + sum_i^N Ai/(sqrt(2pi)wi) * exp( -(x-x0i)^2 / 2*wi^2 )
-        I've found this routine to be less accurate in general, but its
-        quality is improved by more accurate guesses of linewidths.
-        
         Arguments:
         
             index : int (optional, default 0)
                 Index of FID in fid_list to analyze
-            
-            f_min : float (optional, default None)
-                Minimum frequency (in MHz) to include in FT)
-            
-            f_max : float (optional, default None)
-                Maximum frequency (in MHz) to include in FT)
-            
-            snr : float (optional, default 3)
-                Minimum SNR for peak identification
-                
-            win : int (optional, default 50)
-                Window size for chunk construction
-                
-            width_factor : float (optional, default 3)
-                Multiple of FT point spacing for initial peak width guess
-                and for bounds on center frequencies in fitting routine
-                
-            mode : string (optional, default "amplitude")
-                Choose whether to fit peak "area" or "amplitude"
+
                 
         Returns: tuple (x, y, xl, yl, il, sl, pl, el, mx, my, cov)
         
@@ -873,14 +833,17 @@ class BlackChirpExperiment:
                 for all peaks that are fit together
         """
         
-        print("Computing FT with no zero padding")        
-        x, y = self.ft_one(index=index,f_min=f_min,f_max=f_max,zpf=0)
+        oldzpf = self._settings['ft_zpf']
+        self._settings['ft_zpf'] = 1
+        x, y = self.ft_one(index=index)
         
-        print("Performing peak finding on FT")
-        xl, yl, il, sl, noise, baseline = self.find_peaks(x,y,snr)
         
-        print("Computing FT with extra zero padding for fitting")
-        xfit, yfit = self.ft_one(index=index,f_min=f_min,f_max=f_max,zpf=2)
+        xl, yl, il, sl, noise, baseline = self.find_peaks(x,y)
+        
+        self._settings['ft_zpf'] = 2
+        xfit, yfit = self.ft_one(index=index)
+        
+        self._settings['ft_zpf'] = oldzpf
         
         #zero padded FT has higer resolution. One point in x corresponds to
         #more than 1 point in xfit. Calculate resolution factor
@@ -888,9 +851,8 @@ class BlackChirpExperiment:
         
         #it's best to guess a narrow width and let it grow.
         #assume width = 3*(x spacing) by default
-        width = abs(width_factor*(x[1]-x[0]))
+        width = abs(self._settings['an_wf']*(x[1]-x[0]))
         
-        print("Constructing spectrum chunks for fitting")
         #ideally, we'd fit one peak at a time. This isn't possible when peaks
         #are too closely spaced. Set a window size in x space, and find out
         #if any other peaks are within 2 window lengths on either side.
@@ -898,6 +860,7 @@ class BlackChirpExperiment:
         #reverse peak index list so that we can pop elements off the end
         il.reverse()
         
+        f_list = [] # wrapper for fit function
         x_list = [] # x slices
         y_list = [] # y slices
         p_list = [] # parameters
@@ -906,18 +869,9 @@ class BlackChirpExperiment:
         most_peaks = 0
         chunk_index = 0
         total_chunk_size = 0
-        
-        fit_area = True
-        if mode == "amplitude":
-            fit_area = False
             
-        func = bcfit.fit_peaks_gauss            
-        model = bcfit.bc_multigauss
-        wf = 1.
-        if fit_area:
-            func = bcfit.fit_peaks_gauss_area
-            model = bcfit.bc_multigauss_area
-            wf = 5.
+        model = self._settings['an_model']
+        win = self._settings['an_win']
         
         while len(il) > 0:
             #get next peak
@@ -946,22 +900,27 @@ class BlackChirpExperiment:
                 rindex = min(len(y),this_peak + win)
             
             #construct parameter guesses and boundary conditions
-            p = [ baseline[this_peak] ]
+            p = [ baseline[this_peak]]
             lowerbound = [baseline[this_peak] / 5.]
             upperbound = [baseline[this_peak] + 3.*noise[this_peak]]
+            if model.__name__ == 'bc_multigauss_fixw':
+                p.append(width)
+                lowerbound.append(width/3.)
+                upperbound.append(width*3.)
             for i in peaks:
                 a = y[i]
-                if fit_area:
+                if model.__name__ == 'bc_multigauss_area':
                     a *= width*numpy.sqrt(2.*numpy.pi)
                 p.append(a)
                 p.append(x[i])
-                p.append(width)
-                lowerbound.append(a/5./wf)
-                upperbound.append(a*5.*wf)
+                lowerbound.append(a/5.)
+                upperbound.append(a*5.)
                 lowerbound.append(x[i]-width)
                 upperbound.append(x[i]+width)
-                lowerbound.append(width/3.)
-                upperbound.append(width*3.)
+                if model.__name__ != 'bc_multigauss_fixw':
+                    p.append(width)
+                    lowerbound.append(width/3.)
+                    upperbound.append(width*3.)
             
             most_peaks = max(most_peaks,len(peaks))
   
@@ -972,6 +931,7 @@ class BlackChirpExperiment:
             y_list.append(yfit[left:right])
             p_list.append(tuple(p))
             b_list.append([tuple(lowerbound), tuple(upperbound)])
+            f_list.append(model)
             
             #keep track of useful data for later
             the_metadata.append( (chunk_index, total_chunk_size,
@@ -983,7 +943,8 @@ class BlackChirpExperiment:
         num_chunks = len(the_metadata)
         print("Chunks: "+str(num_chunks))
         print("Most peaks in a chunk: "+str(most_peaks))
-        print("Starting fit...")
+        print("Starting fit using following settings")
+        self.print_exp_settings(f='an')
         
         param_list = [] #optimized parameters
         err_list = [] #uncertainties
@@ -1009,7 +970,7 @@ class BlackChirpExperiment:
         
         with concurrent.futures.ProcessPoolExecutor() as exc:
             for xarray, yarray, md, res in zip(x_list,y_list, the_metadata,
-                                 exc.map(func,
+                                 exc.map(bcfit.fit_peaks,f_list,
                                          x_list,y_list,p_list,b_list)):
                                              
                 #get information about which chunk this is
@@ -1042,10 +1003,17 @@ class BlackChirpExperiment:
                 
                 #make parameter and sigma lists
                 for i in range(np):
-                    param_list.append( [popt[0], popt[3*i+1],
-                                         popt[3*i+2], popt[3*i+3]] )
-                    err_list.append( [perr[0], perr[3*i+1],
-                                         perr[3*i+2], perr[3*i+3]] )
+                    if model.__name__ == 'bc_multigauss_fixw':
+                        param_list.append ( [popt[0],popt[1],
+                                             popt[2*i+2],popt[2*i+3]])
+                        err_list.append ( [perr[0],perr[1],
+                                           perr[2*i+2],perr[2*i+3]])
+                    else:
+                        param_list.append( [popt[0], popt[3*i+1],
+                                             popt[3*i+2], popt[3*i+3]] )
+                        err_list.append( [perr[0], perr[3*i+1],
+                                             perr[3*i+2], perr[3*i+3]] )
+                    
                 
                 cov_list.append(pcov)
 

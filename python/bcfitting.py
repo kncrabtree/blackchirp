@@ -60,50 +60,53 @@ def bc_multigauss(x, *args):
         
     """
     
-    out = numpy.empty(len(x))
+    out = numpy.zeros(len(x))
+    out += args[0]
     
-    for i in range(len(x)):
-        out[i] = args[0]
-        for j in range(0, (len(args)-1)//3):
-            out[i] += bc_gauss(x[i], args[3*j+1], args[3*j+2], args[3*j+3])
+    for j in range(0, (len(args)-1)//3):
+        out += bc_gauss(x, args[3*j+1], args[3*j+2], args[3*j+3])
         
     return out
-    
-def bc_multigauss_jac(*params):
+
+
+def bc_multigauss_fixw(x, *args):
     """
-    Calculate Jacobian matrix for multi gaussian function
+    Calculate an array consisting of a sum of Gaussians with baseline
     
-    NOTE: Though faster, the results seem to be worse than when finite
-    differences are used.
+    This function is used in peak fitting to handle an arbitrary number
+    of Gaussian peaks with a common linewidth.
+    
+    The fit parameters are passed in as a packed tuple.
+    The tuple must contain 2n + 2 parameters: element 0 is the baseline
+    offset term, 1 is the width, and then for each peak the tuple contains
+    values for A and x0.
+    
+    Calculation: y0 + \sum_i^N bc_gauss(Ai,x0i,w), where N is the number
+    of peaks
     
     Arguments:
     
-    params : tuple
-        Tuple containing:
-            0: fit parameters (see bc_multigauss)
-            1: x data (array-like)
-            2: y data (array-like)
-            3: function (bc_multigauss)
+    x : array-like
+        The x-values at which to calculate the function
+        
+    args : tuple
+        A tuple that consists of (y0, w, A1, x01, A2, x02, ...)
         
     Returns:
     
-    jac : 2D array
-        2D array (len(x) by len(params)) where element (row, col) =(i,j)
-        contains df(x_i)/dparam_j
+    fdata : 1D array
+        Array containing values of multiple gaussian function at x points
+        
     """
     
-    p = params[0]
-    x = params[1]
-    out = numpy.zeros((len(x),len(p)))
-    for i in range(len(x)):
-        out[i][0] = 1.
-        for j in range((len(p)-1)//3):
-            gval = bc_gauss(x[i],p[3*j+1],p[3*j+2],p[3*j+3])
-            out[i][3*j+1] = gval/p[3*j+1]
-            out[i][3*j+2] = gval*(x[i]-p[3*j+2])/p[3*j+3]**2.
-            out[i][3*j+3] = gval*(x[i]-p[3*j+2])**2./p[3*j+3]**3.
+    out = numpy.zeros(len(x))
+    out += args[0]
+
+    for j in range(0, (len(args)-2)//2):
+        out += bc_gauss(x, args[2*j+2], args[2*j+3], args[1])
+        
+    return out
     
-    return out  
 
 def bc_gauss_area(x, A, x0, w):
     """
@@ -158,52 +161,14 @@ def bc_multigauss_area(x, *args):
         
     """
     
-    out = numpy.empty(len(x))
-    
-    for i in range(len(x)):
-        out[i] = args[0]
-        for j in range(0, (len(args)-1)//3):
-            out[i] += bc_gauss_area(x[i], args[3*j+1], args[3*j+2],
+    out = numpy.zeros(len(x))
+    out += args[0]
+    for j in range(0, (len(args)-1)//3):
+        out += bc_gauss_area(x, args[3*j+1], args[3*j+2],
                                      args[3*j+3])
         
     return out
-    
-def bc_multigauss_area_jac(*params):
-    """
-    Calculate Jacobian matrix for multi gaussian function
-    
-    NOTE: Though faster, the results seem to be worse than when finite
-    differences are used.
-    
-    Arguments:
-    
-    params : tuple
-        Tuple containing:
-            0: fit parameters (see bc_multigauss)
-            1: x data (array-like)
-            2: y data (array-like)
-            3: function (bc_multigauss)
-        
-    Returns:
-    
-    jac : 2D array
-        2D array (len(x) by len(params)) where element (row, col) =(i,j)
-        contains df(x_i)/dparam_j
-    """
-    
-    p = params[0]
-    x = params[1]
-    out = numpy.zeros((len(x),len(p)))
-    for i in range(len(x)):
-        out[i][0] = 1.
-        for j in range((len(p)-1)//3):
-            gval = bc_gauss_area(x[i],p[3*j+1],p[3*j+2],p[3*j+3])
-            out[i][3*j+1] = gval/p[3*j+1]
-            out[i][3*j+2] = gval*(x[i]-p[3*j+2])/p[3*j+3]**2.
-            out[i][3*j+3] = gval*((x[i]-p[3*j+2])**2./p[3*j+3]**3.
-                                  - p[3*j+3]**-1.)
-    
-    return out        
+     
     
     
 def bc_fit_function(params, x, y, function):
@@ -233,7 +198,7 @@ def bc_fit_function(params, x, y, function):
     return function(x,*params) - y
     
     
-def fit_peaks_gauss(*args):
+def fit_peaks(*args):
     """
     Fit yarray = func(xarray, params)
     
@@ -244,7 +209,10 @@ def fit_peaks_gauss(*args):
     
     Arguments:
     
-    *args : tuple (xarray, yarray, params, bounds)
+    *args : tuple (func, xarray, yarray, params, bounds)
+    
+    func : function
+        The function to use for fitting
     
     xarray : array-like
         X values for fitting
@@ -263,70 +231,19 @@ def fit_peaks_gauss(*args):
         
     """
     
-    xarray = args[0]
-    yarray = args[1]
-    params = args[2]
-    bounds = args[3]
+    func = args[0]
+    xarray = args[1]
+    yarray = args[2]
+    params = args[3]
+    bounds = args[4]
     
 
     
     if bounds is not None:
-        res = spopt.curve_fit(bc_multigauss,xarray,yarray,p0=params,
+        res = spopt.curve_fit(func,xarray,yarray,p0=params,
                               bounds=bounds)
     else:
-        res = spopt.curve_fit(bc_multigauss,xarray,yarray,
-                                  p0=params,full_output=True)
-
-    perr = numpy.sqrt(numpy.diag(res[1]))
-    
-    return res[0], res[1], perr
-    
-    
-def fit_peaks_gauss_area(*args):
-    """
-    Fit yarray = func(xarray, params)
-    
-    This function does a least squares fit of the yarray to a sum of
-    gaussians (number determined by params). Internally, this function uses
-    scipy.optimize.leastsq to compute optimize the fit parameters and
-    calculate uncertainties.
-    
-    Arguments:
-    
-    *args : tuple (xarray, yarray, params, bounds)
-    
-    xarray : array-like
-        X values for fitting
-        
-    yarray : array-like
-        Data to fit
-        
-    params : tuple
-        Parameters to fit (must be appropriate for func)
-        
-    bounds : Array of tuples
-        Constraints on parameters. The first tuple contains minimum
-        bounds, the second contains maximum bounds
-        
-    **kwargs : dict. Recognized keys:
-    
-        "method" : "area" or "amplitude"
-        
-    Returns:
-        
-    """
-    
-    xarray = args[0]
-    yarray = args[1]
-    params = args[2]
-    bounds = args[3]
-
-    
-    if bounds is not None:
-        res = spopt.curve_fit(bc_multigauss_area,xarray,yarray,p0=params,
-                              bounds=bounds,jac=bc_multigauss_jac)
-    else:
-        res = spopt.curve_fit(bc_multigauss_area,xarray,yarray,
+        res = spopt.curve_fit(func,xarray,yarray,
                                   p0=params,full_output=True)
 
     perr = numpy.sqrt(numpy.diag(res[1]))
