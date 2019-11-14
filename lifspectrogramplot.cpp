@@ -12,7 +12,7 @@
 
 LifSpectrogramPlot::LifSpectrogramPlot(QWidget *parent) :
     ZoomPanPlot(QString("lifSpectrogram"),parent), d_enabled(false), d_firstPoint(false),
-    d_delayDragging(false), d_freqDragging(false), d_grabDelay(false), d_grabFreq(false), d_zMax(0.0)
+    d_delayDragging(false), d_freqDragging(false), d_grabDelay(false), d_grabFreq(false), d_zMax(0.0), d_zMin(0.0)
 {
     QFont f(QString("sans-serif"),8);
     setAxisFont(QwtPlot::xBottom,f);
@@ -95,8 +95,7 @@ void LifSpectrogramPlot::prepareForExperiment(const LifConfig c)
     d_enabled = c.isEnabled();
     if(p_spectrogramData != nullptr)
     {
-        p_spectrogram->detach();
-        delete p_spectrogramData;
+        p_spectrogram->setData(nullptr);
         p_spectrogramData = nullptr;
     }
 
@@ -110,12 +109,12 @@ void LifSpectrogramPlot::prepareForExperiment(const LifConfig c)
         d_firstPoint = true;
 
         QVector<double> specDat;
-        specDat.resize(c.numDelayPoints()*c.numFrequencyPoints());
+        specDat.resize(c.numDelayPoints()*c.numLaserPoints());
         p_spectrogramData = new QwtMatrixRasterData;
-        p_spectrogramData->setValueMatrix(specDat,c.numFrequencyPoints());
+        p_spectrogramData->setValueMatrix(specDat,c.numLaserPoints());
 
         QPair<double,double> delayRange = c.delayRange();
-        QPair<double,double> freqRange = c.frequencyRange();
+        QPair<double,double> freqRange = c.laserRange();
 
         double fHalfStep = fabs(freqRange.second - freqRange.first)/static_cast<double>(p_spectrogramData->numColumns()-1)/2.0;
         double dHalfStep = fabs(delayRange.second - delayRange.first)/static_cast<double>(p_spectrogramData->numRows()-1)/2.0;
@@ -163,15 +162,16 @@ void LifSpectrogramPlot::prepareForExperiment(const LifConfig c)
     autoScale();
 
     d_zMax = 0.0;
+    d_zMin = 0.0;
 
 }
 
 void LifSpectrogramPlot::updatePoint(int row, int col, double val)
 {
-    if(val > d_zMax)
+    if(val > d_zMax || val < d_zMin)
     {
-        setAxisAutoScaleRange(QwtPlot::yRight,0.0,val);
-        p_spectrogramData->setInterval(Qt::ZAxis,QwtInterval(0.0,val));
+        setAxisAutoScaleRange(QwtPlot::yRight,d_zMin,d_zMax);
+        p_spectrogramData->setInterval(Qt::ZAxis,QwtInterval(d_zMin,d_zMax));
 
         QwtLinearColorMap *map2 = new QwtLinearColorMap(Qt::black,Qt::red);
         map2->addColorStop(0.05,Qt::darkBlue);
@@ -182,10 +182,12 @@ void LifSpectrogramPlot::updatePoint(int row, int col, double val)
         map2->addColorStop(0.9,QColor(0xff,0x66,0));
 
         QwtScaleWidget *rightAxis = axisWidget( QwtPlot::yRight );
-        rightAxis->setColorMap(QwtInterval(0.0,val),map2);
+        rightAxis->setColorMap(QwtInterval(d_zMin,d_zMax),map2);
 
-        d_zMax = val;
     }
+
+    d_zMax = qMax(val,d_zMax);
+    d_zMin = qMin(val,d_zMin);
 
     if(d_firstPoint)
     {
@@ -226,7 +228,7 @@ void LifSpectrogramPlot::replot()
         map2->addColorStop(0.9,QColor(0xff,0x66,0));
 
         QwtScaleWidget *rightAxis = axisWidget( QwtPlot::yRight );
-        rightAxis->setColorMap(QwtInterval(0.0,1.0),map2);
+        rightAxis->setColorMap(QwtInterval(d_zMin,d_zMax),map2);
     }
 
     ZoomPanPlot::replot();

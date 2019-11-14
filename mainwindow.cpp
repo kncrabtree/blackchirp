@@ -298,7 +298,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::hwInitializationComplete,p_lifControlWidget,&LifControlWidget::updateHardwareLimits);
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_lifControlWidget,&LifControlWidget::newTrace);
     connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,p_lifControlWidget,&LifControlWidget::scopeConfigChanged);
+    connect(p_hwm,&HardwareManager::lifLaserPosUpdate,p_lifControlWidget,&LifControlWidget::setLaserPos);
     connect(p_lifControlWidget,&LifControlWidget::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
+    connect(p_lifControlWidget,&LifControlWidget::laserPosUpdate,p_hwm,&HardwareManager::setLifLaserPos);
     connect(p_hwm,&HardwareManager::lifSettingsComplete,p_lifDisplayWidget,&LifDisplayWidget::resetLifPlot);
     connect(p_hwm,&HardwareManager::lifSettingsComplete,p_am,&AcquisitionManager::lifHardwareReady);
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_am,&AcquisitionManager::processLifScopeShot);
@@ -372,9 +374,12 @@ void MainWindow::startExperiment()
 #ifdef BC_LIF
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
     connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
+    connect(p_hwm,&HardwareManager::lifLaserPosUpdate,&wiz,&ExperimentWizard::setCurrentLaserPos);
     connect(&wiz,&ExperimentWizard::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
     connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifControlWidget,&LifControlWidget::checkLifColors);
     connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifDisplayWidget,&LifDisplayWidget::checkLifColors);
+    connect(&wiz,&ExperimentWizard::laserPosUpdate,p_hwm,&HardwareManager::setLifLaserPos);
+    wiz.setCurrentLaserPos(p_lifControlWidget->laserPos());
 #endif
 
     if(wiz.exec() != QDialog::Accepted)

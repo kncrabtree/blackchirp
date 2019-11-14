@@ -3,7 +3,7 @@
 
 #include <QSettings>
 #include <QApplication>
-#include <math.h>
+#include <cmath>
 
 LifControlWidget::LifControlWidget(QWidget *parent) :
     QWidget(parent),
@@ -33,7 +33,7 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
     connect(ui->refEnabledCheckBox,&QCheckBox::toggled,sig);
     connect(ui->refVScaleDoubleSpinBox,dvc,sig);
     connect(ui->lifPlot,&LifTracePlot::colorChanged,this,&LifControlWidget::lifColorChanged);
-
+    connect(ui->laserPosDoubleSpinBox,dvc,this,&LifControlWidget::laserPosUpdate);
     connect(this,&LifControlWidget::newTrace,ui->lifPlot,&LifTracePlot::newTrace);
 
     connect(ui->refEnabledCheckBox,&QCheckBox::toggled,ui->refVScaleDoubleSpinBox,&QDoubleSpinBox::setEnabled);
@@ -53,6 +53,11 @@ LifConfig LifControlWidget::getSettings(LifConfig c)
     c = ui->lifPlot->getSettings(c);
     c.setScopeConfig(toConfig());
     return c;
+}
+
+double LifControlWidget::laserPos() const
+{
+    return ui->laserPosDoubleSpinBox->value();
 }
 
 void LifControlWidget::scopeConfigChanged(const BlackChirp::LifScopeConfig c)
@@ -105,8 +110,8 @@ void LifControlWidget::updateHardwareLimits()
     s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
     double minVS = s.value(QString("minVScale"),0.01).toDouble();
     double maxVS = s.value(QString("maxVScale"),5.0).toDouble();
-    double minSamples = s.value(QString("minSamples"),1000).toInt();
-    double maxSamples = s.value(QString("maxSamples"),10000).toInt();
+    int minSamples = s.value(QString("minSamples"),1000).toInt();
+    int maxSamples = s.value(QString("maxSamples"),10000).toInt();
     s.endGroup();
     s.endGroup();
 
@@ -121,6 +126,15 @@ void LifControlWidget::updateHardwareLimits()
     ui->refVScaleDoubleSpinBox->blockSignals(true);
     ui->refVScaleDoubleSpinBox->setRange(minVS,maxVS);
     ui->refVScaleDoubleSpinBox->blockSignals(false);
+
+    ui->laserPosDoubleSpinBox->configure();
+}
+
+void LifControlWidget::setLaserPos(double pos)
+{
+    ui->laserPosDoubleSpinBox->blockSignals(true);
+    ui->laserPosDoubleSpinBox->setValue(pos);
+    ui->laserPosDoubleSpinBox->blockSignals(false);
 }
 
 BlackChirp::LifScopeConfig LifControlWidget::toConfig() const

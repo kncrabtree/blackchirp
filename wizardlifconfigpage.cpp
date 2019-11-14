@@ -13,6 +13,7 @@
 #include <QComboBox>
 
 #include "lifcontrolwidget.h"
+#include "liflasercontroldoublespinbox.h"
 #include "experimentwizard.h"
 
 WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
@@ -21,7 +22,7 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     setTitle(QString("LIF Configuration"));
     setSubTitle(QString("Configure the parameters for the LIF Acquisition. Oscilloscope settings are immediately applied. Integration gates and shots per point can be set by right-clicking the plot."));
 
-    QVBoxLayout *vbl = new QVBoxLayout;
+    auto *vbl = new QVBoxLayout;
 
     p_lifControl = new LifControlWidget(this);
     connect(this,&WizardLifConfigPage::newTrace,p_lifControl,&LifControlWidget::newTrace);
@@ -31,8 +32,8 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
-    QGroupBox *optionsBox = new QGroupBox(QString("Acquisition Options"));
-    QFormLayout *ofl = new QFormLayout;
+    auto *optionsBox = new QGroupBox(QString("Acquisition Options"));
+    auto *ofl = new QFormLayout;
 
     p_orderBox = new QComboBox(this);
     p_orderBox->addItem(QString("Frequency First"),QVariant::fromValue(BlackChirp::LifOrderFrequencyFirst));
@@ -57,10 +58,10 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     optionsBox->setLayout(ofl);
     vbl->addWidget(optionsBox,0);
 
-    QHBoxLayout *hbl = new QHBoxLayout;
+    auto *hbl = new QHBoxLayout;
 
-    QGroupBox *delayBox = new QGroupBox(QString("LIF Delay"));
-    QFormLayout *delayFl = new QFormLayout;
+    auto *delayBox = new QGroupBox(QString("LIF Delay"));
+    auto *delayFl = new QFormLayout;
 
     p_delaySingle = new QCheckBox(this);
     p_delaySingle->setChecked(s.value(QString("lifConfig/delaySingle"),false).toBool());
@@ -111,8 +112,8 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     hbl->addWidget(delayBox,1);
 
 
-    QGroupBox *laserBox = new QGroupBox(QString("LIF Laser"));
-    QFormLayout *laserFl = new QFormLayout;
+    auto *laserBox = new QGroupBox(QString("LIF Laser"));
+    auto *laserFl = new QFormLayout;
 
     p_laserSingle = new QCheckBox(this);
     p_laserSingle->setChecked(s.value(QString("lifConfig/laserSingle"),false).toBool());
@@ -122,41 +123,26 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
     laserFl->addRow(lbl,p_laserSingle);
 
-    s.beginGroup(QString("lifLaser"));
-    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-    p_laserStart = new QDoubleSpinBox(this);
-    p_laserStart->setRange(s.value(QString("minFreq"),10000.0).toDouble(),
-                           s.value(QString("maxFreq"),100000.0).toDouble());
-    p_laserStart->setDecimals(2);
-    p_laserStart->setSuffix(QString::fromUtf16(u" cm⁻¹"));
-    p_laserStart->setSingleStep(100.0);
-    p_laserStart->setToolTip(QString("Starting frequency for LIF measurement. For a single frequency scan, this will be the value used."));
+    p_laserStart = new LifLaserControlDoubleSpinBox(this);
+    p_laserStart->configure();
+    p_laserStart->setToolTip(QString("Starting position for LIF measurement. For a single frequency scan, this will be the value used."));
     lbl = new QLabel(QString("Start"));
     lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
     lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
     laserFl->addRow(lbl,p_laserStart);
 
 
-    p_laserEnd = new QDoubleSpinBox(this);
-    p_laserEnd->setRange(s.value(QString("minFreq"),10000.0).toDouble(),
-                         s.value(QString("maxFreq"),100000.0).toDouble());
-    p_laserEnd->setDecimals(2);
-    p_laserEnd->setSuffix(QString::fromUtf16(u" cm⁻¹"));
-    p_laserEnd->setSingleStep(100.0);
-    p_laserEnd->setToolTip(QString("Ending laser frequency for LIF measurement. May be greater or less than starting frequency, and need not be an integral number of steps from start.\nIf |end-start| < step, the frequency will remain at the starting value as if the single point box were checked."));
+    p_laserEnd = new LifLaserControlDoubleSpinBox(this);
+    p_laserEnd->configure();
+    p_laserEnd->setToolTip(QString("Ending laser position for LIF measurement. May be greater or less than starting position, and need not be an integral number of steps from start.\nIf |end-start| < step, the position will remain at the starting value as if the single point box were checked."));
     lbl = new QLabel(QString("End"));
     lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
     lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
     laserFl->addRow(lbl,p_laserEnd);
-    s.endGroup();
-    s.endGroup();
 
-    p_laserStep = new QDoubleSpinBox(this);
-    p_laserStep->setRange(0.01,100.0);
-    p_laserStep->setDecimals(2);
-    p_laserStep->setSingleStep(1.0);
-    p_laserStep->setSuffix(QString::fromUtf16(u" cm⁻¹"));
-    p_laserStep->setToolTip(QString("Step size between frequency points."));
+    p_laserStep = new LifLaserControlDoubleSpinBox(this);
+    p_laserStep->configure(true);
+    p_laserStep->setToolTip(QString("Step size between laser position points."));
     lbl = new QLabel(QString("Step Size"));
     lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
     lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
@@ -164,6 +150,9 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
 
     QPushButton *laserButton = new QPushButton(QString("Set to Start"),this);
     laserFl->addWidget(laserButton);
+    connect(laserButton,&QPushButton::clicked,[=](){
+       emit laserPosUpdate(p_laserStart->value());
+    });
 
     laserBox->setLayout(laserFl);
 
@@ -204,14 +193,13 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     connect(this,&WizardLifConfigPage::scopeConfigChanged,p_lifControl,&LifControlWidget::scopeConfigChanged);
     connect(p_lifControl,&LifControlWidget::updateScope,this,&WizardLifConfigPage::updateScope);
     connect(p_lifControl,&LifControlWidget::lifColorChanged,this,&WizardLifConfigPage::lifColorChanged);
+    connect(p_lifControl,&LifControlWidget::laserPosUpdate,this,&WizardLifConfigPage::laserPosUpdate);
 
     registerField(QString("delayStart"),p_delayStart,"value","valueChanged");
 }
 
 WizardLifConfigPage::~WizardLifConfigPage()
-{
-
-}
+= default;
 
 void WizardLifConfigPage::setFromConfig(const LifConfig c)
 {
@@ -221,12 +209,17 @@ void WizardLifConfigPage::setFromConfig(const LifConfig c)
     p_delayStart->setValue(c.delayRange().first);
     p_delayEnd->setValue(c.delayRange().second);
     p_delayStep->setValue(c.delayStep());
-    p_laserSingle->setChecked(c.numFrequencyPoints() == 1);
-    p_laserStart->setValue(c.frequencyRange().first);
-    p_laserEnd->setValue(c.frequencyRange().second);
-    p_laserStep->setValue(c.frequencyStep());
+    p_laserSingle->setChecked(c.numLaserPoints() == 1);
+    p_laserStart->setValue(c.laserRange().first);
+    p_laserEnd->setValue(c.laserRange().second);
+    p_laserStep->setValue(c.laserStep());
 
     //Control widget is set on the fly
+}
+
+void WizardLifConfigPage::setLaserPos(const double pos)
+{
+    p_lifControl->setLaserPos(pos);
 }
 
 void WizardLifConfigPage::initializePage()
@@ -243,7 +236,7 @@ bool WizardLifConfigPage::validatePage()
     out.setCompleteMode(p_completeBox->currentData().value<BlackChirp::LifCompleteMode>());
     out.setOrder(p_orderBox->currentData().value<BlackChirp::LifScanOrder>());
     out.setDelayParameters(p_delayStart->value(),p_delayEnd->value(),p_delayStep->value());
-    out.setFrequencyParameters(p_laserStart->value(),p_laserEnd->value(),p_laserStep->value());
+    out.setLaserParameters(p_laserStart->value(),p_laserEnd->value(),p_laserStep->value());
 
     out.validate();
     if(out.isValid())
@@ -262,6 +255,6 @@ int WizardLifConfigPage::nextId() const
     auto e = getExperiment();
     if(e.ftmwConfig().isEnabled())
         return ExperimentWizard::RfConfigPage;
-    else
-        return ExperimentWizard::PulseConfigPage;
+
+    return ExperimentWizard::PulseConfigPage;
 }

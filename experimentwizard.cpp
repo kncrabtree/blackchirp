@@ -60,11 +60,13 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
 
 #ifdef BC_LIF
     auto lifConfigPage = new WizardLifConfigPage(this);
+    p_lifConfigPage = lifConfigPage;
     d_pages << lifConfigPage;
     connect(this,&ExperimentWizard::newTrace,lifConfigPage,&WizardLifConfigPage::newTrace);
     connect(this,&ExperimentWizard::scopeConfigChanged,lifConfigPage,&WizardLifConfigPage::scopeConfigChanged);
     connect(lifConfigPage,&WizardLifConfigPage::updateScope,this,&ExperimentWizard::updateScope);
     connect(lifConfigPage,&WizardLifConfigPage::lifColorChanged,this,&ExperimentWizard::lifColorChanged);
+    connect(lifConfigPage,&WizardLifConfigPage::laserPosUpdate,this,&ExperimentWizard::laserPosUpdate);
     setPage(LifConfigPage,lifConfigPage);
 #endif
 
@@ -104,8 +106,13 @@ bool ExperimentWizard::sleepWhenDone() const
     return field(QString("sleep")).toBool();
 }
 
+void ExperimentWizard::setCurrentLaserPos(double pos)
+{
+    dynamic_cast<WizardLifConfigPage*>(p_lifConfigPage)->setLaserPos(pos);
+}
+
 
 QSize ExperimentWizard::sizeHint() const
 {
-    return QSize(1000,700);
+    return {1000,700};
 }

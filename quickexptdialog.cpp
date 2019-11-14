@@ -61,8 +61,8 @@ QuickExptDialog::QuickExptDialog(Experiment e, QWidget *parent) :
         html.append(QString("<h1>LIF settings</h1><ul>"));
         html.append(QString("<li>Delay range: %1-%2 &mu;s</li>").arg(e.lifConfig().delayRange().first,0,'f',3).arg(e.lifConfig().delayRange().second,0,'f',3));
         html.append(QString("<li>Delay step: %1 &mu;s</li>").arg(e.lifConfig().delayStep(),0,'f',3));
-        html.append(QString("<li>Frequency range: %1-%2 1/cm</li>").arg(e.lifConfig().frequencyRange().first,0,'f',3).arg(e.lifConfig().frequencyRange().second,0,'f',3));
-        html.append(QString("<li>Frequency step: %1 1/cm</li>").arg(e.lifConfig().frequencyStep(),0,'f',3));
+        html.append(QString("<li>Frequency range: %1-%2 1/cm</li>").arg(e.lifConfig().laserRange().first,0,'f',3).arg(e.lifConfig().laserRange().second,0,'f',3));
+        html.append(QString("<li>Frequency step: %1 1/cm</li>").arg(e.lifConfig().laserStep(),0,'f',3));
         html.append(QString("<li>Shots per point: %1</li>").arg(e.lifConfig().shotsPerPoint()));
         html.append(QString("<li>Total shots: %1</li>").arg(e.lifConfig().totalShots()));
         html.append(QString("</ul>"));

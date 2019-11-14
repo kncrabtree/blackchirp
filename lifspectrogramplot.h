@@ -39,7 +39,7 @@ private:
     bool d_enabled;
     bool d_firstPoint;
     bool d_delayDragging, d_freqDragging, d_grabDelay, d_grabFreq;
-    double d_zMax;
+    double d_zMax, d_zMin;
 
 
     // ZoomPanPlot interface

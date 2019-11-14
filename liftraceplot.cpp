@@ -531,8 +531,9 @@ void LifTracePlot::filterData()
 
         int lifMinIndex = dataIndex, lifMaxIndex = dataIndex, refMinIndex = dataIndex, refMaxIndex = dataIndex;
         int numPnts = 0;
+        double nextPixelX = map.invTransform(pixel+1.0)*1e-9;
 
-        while(dataIndex+1 < lifData.size() && map.transform(lifData.at(dataIndex).x()*1e9) < pixel+1.0)
+        while(dataIndex+1 < lifData.size() && lifData.at(dataIndex).x() < nextPixelX)
         {
             if(lifData.at(dataIndex).y() < lifMin)
             {

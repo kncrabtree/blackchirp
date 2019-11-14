@@ -199,7 +199,7 @@ void AcquisitionManager::processLifScopeShot(const LifTrace t)
             {
                 d_currentExperiment.setLifWaiting(true);
                 emit nextLifPoint(d_currentExperiment.lifConfig().currentDelay(),
-                                  d_currentExperiment.lifConfig().currentFrequency());
+                                  d_currentExperiment.lifConfig().currentLaserPos());
             }
         }
 

@@ -13,8 +13,15 @@ LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    ui->spectrumPlot->setXAxisTitle(QString::fromUtf16(u"Frequency (cm⁻¹)"));
-    ui->spectrumPlot->setPlotTitle(QString("Frequency Slice"));
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(QString("lifLaser"));
+    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
+    QString units = s.value(QString("units"),QString("nm")).toString();
+    s.endGroup();
+    s.endGroup();
+
+    ui->spectrumPlot->setXAxisTitle(QString("Laser Position (%1)").arg(units));
+    ui->spectrumPlot->setPlotTitle(QString("Laser Slice"));
     ui->spectrumPlot->setName(QString("spectrumPlot"));
 
     ui->timeTracePlot->setXAxisTitle(QString::fromUtf16(u"Delay (µs)"));
@@ -61,7 +68,7 @@ void LifDisplayWidget::prepareForExperiment(const LifConfig c)
     d_currentTimeTraceFreqIndex = -1;
     d_currentSpectrumDelayIndex = -1;
 
-    ui->spectrumPlot->setPlotTitle(QString("Frequency Slice"));
+    ui->spectrumPlot->setPlotTitle(QString("Laser Slice"));
     ui->timeTracePlot->setPlotTitle(QString("Time Slice"));
 
 
@@ -77,7 +84,7 @@ void LifDisplayWidget::prepareForExperiment(const LifConfig c)
     else
     {
         d_numDelayPoints = c.numDelayPoints();
-        d_numFrequencyPoints = c.numFrequencyPoints();
+        d_numFrequencyPoints = c.numLaserPoints();
         d_lifData.resize(d_numFrequencyPoints*d_numDelayPoints);
 
         d_delayRange = c.delayRange();
@@ -91,7 +98,7 @@ void LifDisplayWidget::prepareForExperiment(const LifConfig c)
 
         ui->timeTracePlot->prepareForExperiment(d_delayRange.first,d_delayRange.second);
 
-        d_freqRange = c.frequencyRange();
+        d_freqRange = c.laserRange();
         if(d_freqRange.first > d_freqRange.second)
         {
             d_freqReverse = true;

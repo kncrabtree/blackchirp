@@ -184,7 +184,7 @@ void PulseConfigWidget::configureLif(const LifConfig c)
     if(d_widgetList.isEmpty() || !c.isEnabled())
         return;
 
-    auto channels = d_config.channelsForRole(BlackChirp::LaserPulseRole);
+    auto channels = d_config.channelsForRole(BlackChirp::LifPulseRole);
     if(channels.isEmpty())
     {
         QMessageBox::warning(this,QString("Cannot configure LIF pulse"),QString("No channel has been configured for the \"LIF\" role.\n\nPlease select a channel for the LIF role, then refresh this page (go back one page and then come back to this one) in order to proceed."),QMessageBox::Ok,QMessageBox::Ok);
