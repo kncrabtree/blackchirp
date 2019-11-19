@@ -29,6 +29,11 @@ enum ScopeTriggerSlope {
     FallingEdge
 };
 
+enum ScopeSampleOrder {
+    ChannelsSequential,
+    ChannelsInterleaved
+};
+
 enum FtmwType
 {
     FtmwTargetShots,
@@ -185,6 +190,7 @@ struct LifScopeConfig {
     ScopeTriggerSlope slope;
     int bytesPerPoint;
     QDataStream::ByteOrder byteOrder;
+    ScopeSampleOrder channelOrder;
 
     bool refEnabled;
     double vScale1, vScale2;
@@ -192,7 +198,8 @@ struct LifScopeConfig {
 
 
     LifScopeConfig() : sampleRate(0.0), recordLength(0), xIncr(0.0), slope(RisingEdge), bytesPerPoint(1),
-        byteOrder(QDataStream::LittleEndian), refEnabled(false), vScale1(0.0), vScale2(0.0), yMult1(0.0), yMult2(0.0) {}
+        byteOrder(QDataStream::LittleEndian), channelOrder(ChannelsInterleaved), refEnabled(false), vScale1(0.0),
+        vScale2(0.0), yMult1(0.0), yMult2(0.0) {}
 
 
     //Scope config
@@ -213,6 +220,8 @@ struct LifScopeConfig {
         out.insert(prefix+QString("BytesPerPoint"),qMakePair(bytesPerPoint,empty));
         byteOrder == QDataStream::BigEndian ? scratch = QString("BigEndian") : scratch = QString("LittleEndian");
         out.insert(prefix+QString("ByteOrder"),qMakePair(scratch,empty));
+        channelOrder == ChannelsInterleaved ? scratch = QString("Interleaved") : scratch = QString("Sequential");
+        out.insert(prefix+QString("ChannelOrder"),qMakePair(scratch,empty));
 
         return out;
     }

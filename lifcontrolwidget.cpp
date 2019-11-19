@@ -17,7 +17,7 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
 
     ui->lIFVScaleDoubleSpinBox->setValue(s.value(QString("lifConfig/lifVScale"),0.02).toDouble());
     ui->samplesSpinBox->setValue(s.value(QString("lifConfig/samples"),1000).toInt());
-    ui->sampleRateSpinBox->setValue(static_cast<int>(round(s.value(QString("lifConfig/sampleRate"),1e9).toDouble()/1e6)));
+    setSampleRateBox(s.value(QString("lifConfig/sampleRate"),1e9).toDouble());
     ui->refEnabledCheckBox->setChecked(s.value(QString("lifConfig/refEnabled"),false).toBool());
     ui->refVScaleDoubleSpinBox->setValue(s.value(QString("lifConfig/refVScale"),0.02).toDouble());
     ui->refVScaleDoubleSpinBox->setEnabled(ui->refEnabledCheckBox->isChecked());
@@ -27,8 +27,9 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
     auto sig = [=](){ emit updateScope(toConfig()); };
     auto dvc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
     auto ivc = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
+    auto cvc = static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged);
     connect(ui->lIFVScaleDoubleSpinBox,dvc,sig);
-    connect(ui->sampleRateSpinBox,ivc,sig);
+    connect(ui->sampleRateComboBox,cvc,sig);
     connect(ui->samplesSpinBox,ivc,sig);
     connect(ui->refEnabledCheckBox,&QCheckBox::toggled,sig);
     connect(ui->refVScaleDoubleSpinBox,dvc,sig);
@@ -38,7 +39,7 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
 
     connect(ui->refEnabledCheckBox,&QCheckBox::toggled,ui->refVScaleDoubleSpinBox,&QDoubleSpinBox::setEnabled);
 
-    ui->lifPlot->setAxisAutoScaleRange(QwtPlot::xBottom,0.0,static_cast<double>(ui->samplesSpinBox->value())/static_cast<double>(ui->sampleRateSpinBox->value())*1e3);
+    ui->lifPlot->setAxisAutoScaleRange(QwtPlot::xBottom,0.0,static_cast<double>(1.0/ui->sampleRateComboBox->currentData().toDouble()*1e9*ui->samplesSpinBox->value()));
     ui->lifPlot->autoScale();
 
 }
@@ -68,9 +69,9 @@ void LifControlWidget::scopeConfigChanged(const BlackChirp::LifScopeConfig c)
     ui->lIFVScaleDoubleSpinBox->setValue(c.vScale1);
     ui->lIFVScaleDoubleSpinBox->blockSignals(false);
 
-    ui->sampleRateSpinBox->blockSignals(true);
-    ui->sampleRateSpinBox->setValue(static_cast<int>(round(c.sampleRate/1e6)));
-    ui->sampleRateSpinBox->blockSignals(false);
+    ui->sampleRateComboBox->blockSignals(true);
+    setSampleRateBox(c.sampleRate);
+    ui->sampleRateComboBox->blockSignals(false);
 
     ui->samplesSpinBox->blockSignals(true);
     ui->samplesSpinBox->setValue(c.recordLength);
@@ -112,8 +113,37 @@ void LifControlWidget::updateHardwareLimits()
     double maxVS = s.value(QString("maxVScale"),5.0).toDouble();
     int minSamples = s.value(QString("minSamples"),1000).toInt();
     int maxSamples = s.value(QString("maxSamples"),10000).toInt();
+    ui->sampleRateComboBox->blockSignals(true);
+    bool ok = false;
+    double oldrate = ui->sampleRateComboBox->itemData(ui->sampleRateComboBox->currentIndex()).toDouble(&ok);
+    int size = s.beginReadArray(QString("sampleRates"));
+    ui->sampleRateComboBox->clear();
+    if(size > 0)
+    {
+        for(int i=0; i<size; i++)
+        {
+            s.setArrayIndex(i);
+            QString str = s.value(QString("text"),QString("")).toString();
+            double val = s.value(QString("val"),0.0).toDouble();
+
+            ui->sampleRateComboBox->addItem(str,val);
+        }
+    }
+    else
+    {
+        ui->sampleRateComboBox->addItem(QString("1250 MS/s"),1250e6);
+        ui->sampleRateComboBox->addItem(QString("625 MS/s"),625e6);
+        ui->sampleRateComboBox->addItem(QString("312.5 MS/s"),312.5e6);
+        ui->sampleRateComboBox->addItem(QString("156.25 MS/s"),156.25e6);
+        ui->sampleRateComboBox->addItem(QString("78.125 MS/s"),78.125e6);
+        ui->sampleRateComboBox->addItem(QString("39.0625 MS/s"),39.0625e6);
+    }
+    if(ok)
+        setSampleRateBox(oldrate);
+    s.endArray();
     s.endGroup();
     s.endGroup();
+    ui->sampleRateComboBox->blockSignals(false);
 
     ui->lIFVScaleDoubleSpinBox->blockSignals(true);
     ui->lIFVScaleDoubleSpinBox->setRange(minVS,maxVS);
@@ -137,11 +167,27 @@ void LifControlWidget::setLaserPos(double pos)
     ui->laserPosDoubleSpinBox->blockSignals(false);
 }
 
+void LifControlWidget::setSampleRateBox(double rate)
+{
+    int closest = 0;
+    double diff = qAbs(ui->sampleRateComboBox->itemData(0).toDouble()-rate);
+    for(int i=1; i<ui->sampleRateComboBox->count(); i++)
+    {
+        double thisDiff = qAbs(ui->sampleRateComboBox->itemData(i).toDouble()-rate);
+        if(thisDiff<diff)
+        {
+            closest = i;
+            diff = thisDiff;
+        }
+    }
+    ui->sampleRateComboBox->setCurrentIndex(closest);
+}
+
 BlackChirp::LifScopeConfig LifControlWidget::toConfig() const
 {
     BlackChirp::LifScopeConfig out;
     out.vScale1 = ui->lIFVScaleDoubleSpinBox->value();
-    out.sampleRate = static_cast<double>(ui->sampleRateSpinBox->value())*1e6;
+    out.sampleRate = static_cast<double>(ui->sampleRateComboBox->currentData().toDouble());
     out.recordLength = ui->samplesSpinBox->value();
     out.refEnabled = ui->refEnabledCheckBox->isChecked();
     out.vScale2 = ui->refVScaleDoubleSpinBox->value();

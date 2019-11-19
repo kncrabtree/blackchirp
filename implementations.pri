@@ -32,7 +32,8 @@ HEADERS += \
     $$PWD/ad9914.h \
     $$PWD/valon5015.h \
     $$PWD/mks946.h \
-    $$PWD/virtualliflaser.h
+    $$PWD/virtualliflaser.h \
+    $$PWD/m4i2211x8.h
 
 SOURCES += \
     $$PWD/virtualftmwscope.cpp \
@@ -66,7 +67,8 @@ SOURCES += \
     $$PWD/ad9914.cpp \
     $$PWD/valon5015.cpp \
     $$PWD/mks946.cpp \
-    $$PWD/virtualliflaser.cpp
+    $$PWD/virtualliflaser.cpp \
+    $$PWD/m4i2211x8.cpp
 
 } else {
 
@@ -194,7 +196,10 @@ lif {
 		HEADERS += $$PWD/virtuallifscope.h
 		SOURCES += $$PWD/virtuallifscope.cpp
 	}
-
+    equals(LIFSCOPE,1) {
+        HEADERS +=  $$PWD/m4i2211x8.h
+        SOURCES +=  $$PWD/m4i2211x8.cpp
+    }
     equals(LIFLASER,0) {
         HEADERS += $$PWD/virtualliflaser.h
         SOURCES += $$PWD/virtualliflaser.cpp

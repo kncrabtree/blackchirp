@@ -13,6 +13,7 @@ VirtualLifScope::VirtualLifScope(QObject *parent) :
     setLifVScale(0.02);
     setRefVScale(0.02);
     setHorizontalConfig(1e9,1000);
+    setRefEnabled(false);
 }
 
 VirtualLifScope::~VirtualLifScope()
@@ -60,12 +61,14 @@ void VirtualLifScope::setLifVScale(double scale)
 {
     d_config.vScale1 = scale;
     d_config.yMult1 = d_config.vScale1*5.0/pow(2.0,8.0*d_config.bytesPerPoint-1.0);
+    emit configUpdated(d_config);
 }
 
 void VirtualLifScope::setRefVScale(double scale)
 {
     d_config.vScale2 = scale;
     d_config.yMult2 = d_config.vScale2*5.0/pow(2.0,8.0*d_config.bytesPerPoint-1.0);
+    emit configUpdated(d_config);
 }
 
 void VirtualLifScope::setHorizontalConfig(double sampleRate, int recLen)
@@ -73,6 +76,7 @@ void VirtualLifScope::setHorizontalConfig(double sampleRate, int recLen)
     d_config.sampleRate = sampleRate;
     d_config.recordLength = recLen;
     d_config.xIncr = 1.0/sampleRate;
+    emit configUpdated(d_config);
 }
 
 void VirtualLifScope::queryScope()
@@ -151,4 +155,6 @@ void VirtualLifScope::setRefEnabled(bool en)
     s.endGroup();
     s.endGroup();
     s.sync();
+
+    emit configUpdated(d_config);
 }

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>461</width>
-    <height>261</height>
+    <height>267</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -58,8 +58,20 @@
           <layout class="QVBoxLayout" name="verticalLayout_4">
            <item>
             <layout class="QFormLayout" name="formLayout_2">
+             <property name="labelAlignment">
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+             </property>
+             <property name="formAlignment">
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+             </property>
              <item row="0" column="0">
               <widget class="QLabel" name="posLabel">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
                <property name="text">
                 <string>Pos</string>
                </property>
@@ -103,6 +115,9 @@
              </item>
              <item row="0" column="1">
               <widget class="QDoubleSpinBox" name="lIFVScaleDoubleSpinBox">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
                <property name="suffix">
                 <string> V/div</string>
                </property>
@@ -127,25 +142,6 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="1">
-              <widget class="QSpinBox" name="sampleRateSpinBox">
-               <property name="suffix">
-                <string> MS/s</string>
-               </property>
-               <property name="minimum">
-                <number>100</number>
-               </property>
-               <property name="maximum">
-                <number>2000</number>
-               </property>
-               <property name="singleStep">
-                <number>100</number>
-               </property>
-               <property name="value">
-                <number>1000</number>
-               </property>
-              </widget>
-             </item>
              <item row="2" column="0">
               <widget class="QLabel" name="samplesLabel">
                <property name="sizePolicy">
@@ -161,6 +157,9 @@
              </item>
              <item row="2" column="1">
               <widget class="QSpinBox" name="samplesSpinBox">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
                <property name="minimum">
                 <number>1000</number>
                </property>
@@ -206,6 +205,9 @@
              </item>
              <item row="4" column="1">
               <widget class="QDoubleSpinBox" name="refVScaleDoubleSpinBox">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
                <property name="suffix">
                 <string> V/div</string>
                </property>
@@ -216,6 +218,9 @@
                 <double>5.000000000000000</double>
                </property>
               </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QComboBox" name="sampleRateComboBox"/>
              </item>
             </layout>
            </item>

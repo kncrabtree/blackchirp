@@ -34,6 +34,7 @@ public slots:
     void checkLifColors();
     void updateHardwareLimits();
     void setLaserPos(double pos);
+    void setSampleRateBox(double rate);
 
 private:
     Ui::LifControlWidget *ui;

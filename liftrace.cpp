@@ -14,7 +14,16 @@ LifTrace::LifTrace(const BlackChirp::LifScopeConfig &c, const QByteArray b) : da
     data->count = 1;
 
     data->lifData.resize(c.recordLength);
-    for(int i=0; i<c.recordLength; i++)
+    int incr = 1;
+    int refoffset = c.recordLength;
+    if(c.refEnabled && c.channelOrder == BlackChirp::ChannelsInterleaved)
+    {
+        incr = 2;
+        refoffset = 1;
+    }
+
+
+    for(int i=0; i<incr*c.recordLength; i+=incr)
     {
         if(c.bytesPerPoint == 1)
             data->lifData[i] = static_cast<qint16>(b.at(i));
@@ -32,17 +41,17 @@ LifTrace::LifTrace(const BlackChirp::LifScopeConfig &c, const QByteArray b) : da
     if(c.refEnabled)
     {
         data->refData.resize(c.recordLength);
-        for(int i=0; i<c.recordLength; i++)
+        for(int i=c.bytesPerPoint*refoffset; i<incr*c.recordLength; i+=incr)
         {
             if(c.bytesPerPoint == 1)
-                data->refData[i] = static_cast<qint16>(b.at(c.recordLength + i));
+                data->refData[i] = static_cast<qint16>(b.at(i));
             else
             {
                 qint16 dat;
                 if(c.byteOrder == QDataStream::LittleEndian)
-                    dat = (b.at(2*(i+c.recordLength) + 1) << 8) | (b.at(2*(i+c.recordLength)) & 0xff);
+                    dat = (b.at(2*i + 1) << 8) | (b.at(2*(i)) & 0xff);
                 else
-                    dat = (b.at(2*(i+c.recordLength)) << 8) | (b.at(2*(i+c.recordLength) + 1) & 0xff);
+                    dat = (b.at(2*i) << 8) | (b.at(2*i + 1) & 0xff);
                 data->refData[i] = dat;
             }
         }
