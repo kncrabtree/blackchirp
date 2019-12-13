@@ -47,6 +47,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow), d_hardwareConnected(false), d_oneExptDone(false), d_state(Idle), d_logCount(0), d_logIcon(BlackChirp::LogNormal), d_currentExptNum(0)
 {
+    p_pcBox = nullptr;
     p_hwm = new HardwareManager();
 
     ui->setupUi(this);
@@ -381,7 +382,6 @@ void MainWindow::startExperiment()
         return;
 
     BatchManager *bm = new BatchSingle(wiz.getExperiment());
-    bm->setSleep(wiz.sleepWhenDone());
     startBatch(bm);
 }
 
@@ -409,7 +409,6 @@ void MainWindow::quickStart()
     if(ret == QDialog::Accepted)
     {
         BatchManager *bm = new BatchSingle(e);
-        bm->setSleep(d.sleepWhenDone());
         startBatch(bm);
     }
     else if(ret == d.configureResult())
@@ -429,7 +428,6 @@ void MainWindow::startSequence()
         return;
 
     Experiment exp;
-    bool sleep = false;
 
     if(ret == d.quickCode())
     {
@@ -452,7 +450,6 @@ void MainWindow::startSequence()
         if(qeret == QDialog::Accepted)
         {
             exp = e;
-            sleep = qd.sleepWhenDone();
         }
         else if(qeret == qd.configureResult())
             ret = d.configureCode(); //set ret to indicate that the experiment needs to be configured
@@ -477,7 +474,6 @@ void MainWindow::startSequence()
             return;
 
         exp = wiz.getExperiment();
-        sleep = wiz.sleepWhenDone();
     }
 
     d.saveToSettings();
@@ -486,7 +482,6 @@ void MainWindow::startSequence()
     bs->setNumExperiments(d.numExperiments());
     bs->setInterval(d.interval());
     bs->setAutoExport(d.autoExport());
-    bs->setSleep(sleep);
     startBatch(bs);
 
 }
@@ -518,7 +513,8 @@ void MainWindow::batchComplete(bool aborted)
 
     d_oneExptDone = true;
 
-    configureUi(Idle);
+    if(d_state == Acquiring)
+        configureUi(Idle);
 }
 
 void MainWindow::experimentInitialized(const Experiment exp)
@@ -739,14 +735,54 @@ void MainWindow::setLogIcon(BlackChirp::LogMessageCode c)
 
 void MainWindow::sleep(bool s)
 {
-    QMetaObject::invokeMethod(p_hwm,"sleep",Q_ARG(bool,s));
-    if(s)
+    if(d_state == Acquiring)
     {
-        configureUi(Asleep);
-        QMessageBox::information(this,QString("BlackChirp Asleep"),QString("The instrument is asleep. Press the sleep button to re-activate it."),QMessageBox::Ok);
+        QMessageBox mb(this);
+        mb.setWindowTitle(QString("Sleep when complete"));
+        mb.setText(QString("BlackChirp will sleep when the current experiment (or batch) is complete. You may cancel this or abort and sleep immediately."));
+        mb.addButton(QString("Cancel Sleep"),QMessageBox::RejectRole);
+        mb.addButton(QString("Abort and Sleep"),QMessageBox::ActionRole);
+        connect(this,&MainWindow::checkSleep,&mb,&QMessageBox::accept);
+
+        int ret = mb.exec();
+        if(ret == QMessageBox::ActionRole)
+        {
+            ui->actionAbort->trigger();
+            QMetaObject::invokeMethod(p_hwm,"sleep",Q_ARG(bool,true));
+            configureUi(Asleep);
+            ui->actionSleep->blockSignals(true);
+            ui->actionSleep->setChecked(true);
+            ui->actionSleep->blockSignals(false);
+            QMessageBox::information(this,QString("BlackChirp Asleep"),QString("The instrument is asleep. Press the sleep button to re-activate it."),QMessageBox::Ok);
+        }
+        else if(ret == QDialog::Accepted)
+        {
+            QMetaObject::invokeMethod(p_hwm,"sleep",Q_ARG(bool,true));
+            configureUi(Asleep);
+            ui->actionSleep->blockSignals(true);
+            ui->actionSleep->setChecked(true);
+            ui->actionSleep->blockSignals(false);
+            QMessageBox::information(this,QString("BlackChirp Asleep"),QString("The instrument is asleep. Press the sleep button to re-activate it."),QMessageBox::Ok);
+        }
+        else
+        {
+            ui->actionSleep->blockSignals(true);
+            ui->actionSleep->setChecked(false);
+            ui->actionSleep->blockSignals(false);
+        }
     }
     else
-        configureUi(Idle);
+    {
+        QMetaObject::invokeMethod(p_hwm,"sleep",Q_ARG(bool,s));
+        if(s)
+        {
+            configureUi(Asleep);
+            QMessageBox::information(this,QString("BlackChirp Asleep"),QString("The instrument is asleep. Press the sleep button to re-activate it."),QMessageBox::Ok);
+        }
+        else
+            configureUi(Idle);
+    }
+
 }
 
 void MainWindow::viewExperiment()
@@ -1018,6 +1054,7 @@ void MainWindow::configPController(bool readOnly)
     QGroupBox *pgb = new QGroupBox(QString("Chamber Status"));
     pgb->setLayout(hbl);
 
+    p_pcBox = pgb;
     ui->instrumentStatusLayout->insertWidget(2,pgb,0);
 }
 #endif
@@ -1047,6 +1084,8 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(false);
 #endif
+        if(p_pcBox)
+            p_pcBox->setEnabled(false);
         break;
     case Disconnected:
         ui->actionAbort->setEnabled(false);
@@ -1065,6 +1104,8 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(false);
 #endif
+        if(p_pcBox)
+            p_pcBox->setEnabled(false);
         break;
     case Paused:
         ui->actionAbort->setEnabled(true);
@@ -1083,6 +1124,8 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(false);
 #endif
+        if(p_pcBox)
+            p_pcBox->setEnabled(false);
         break;
     case Acquiring:
         ui->actionAbort->setEnabled(true);
@@ -1097,10 +1140,12 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionExport_Batch->setEnabled(false);
         ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
-        ui->actionSleep->setEnabled(false);
+        ui->actionSleep->setEnabled(true);
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(false);
 #endif
+        if(p_pcBox)
+            p_pcBox->setEnabled(false);
         break;
     case Peaking:
         ui->actionAbort->setEnabled(true);
@@ -1119,6 +1164,8 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(true);
 #endif
+        if(p_pcBox)
+            p_pcBox->setEnabled(true);
         break;
     case Idle:
     default:
@@ -1138,6 +1185,8 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(true);
 #endif
+        if(p_pcBox)
+            p_pcBox->setEnabled(true);
         break;
     }
 }
@@ -1153,6 +1202,7 @@ void MainWindow::startBatch(BatchManager *bm)
     connect(p_am,&AcquisitionManager::experimentComplete,ui->ftViewWidget,&FtmwViewWidget::experimentComplete);
     connect(ui->actionAbort,&QAction::triggered,bm,&BatchManager::abort);
     connect(bm,&BatchManager::batchComplete,this,&MainWindow::batchComplete);
+    connect(bm,&BatchManager::batchComplete,this,&MainWindow::checkSleep);
     connect(bm,&BatchManager::batchComplete,d_batchThread,&QThread::quit);
     connect(bm,&BatchManager::batchComplete,p_lh,&LogHandler::endExperimentLog);
     connect(d_batchThread,&QThread::finished,bm,&BatchManager::deleteLater);
@@ -1160,9 +1210,6 @@ void MainWindow::startBatch(BatchManager *bm)
     connect(p_hwm,&HardwareManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated,Qt::UniqueConnection);
     connect(p_am,&AcquisitionManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated,Qt::UniqueConnection);
     connect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort,Qt::UniqueConnection);
-
-    if(bm->sleepWhenComplete())
-        connect(bm,&BatchManager::batchComplete,ui->actionSleep,&QAction::trigger);
 
     ui->trackingViewWidget->initializeForExperiment();
     configureUi(Acquiring);

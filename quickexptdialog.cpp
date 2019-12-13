@@ -121,8 +121,3 @@ QuickExptDialog::~QuickExptDialog()
 {
     delete ui;
 }
-
-bool QuickExptDialog::sleepWhenDone() const
-{
-    return ui->sleepCheckBox->isChecked();
-}

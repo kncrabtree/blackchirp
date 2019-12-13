@@ -1,7 +1,10 @@
+#pragma once
 #ifndef VIRTUALLIFSCOPE_H
 #define VIRTUALLIFSCOPE_H
 
 #include "lifscope.h"
+
+class QTimer;
 
 class VirtualLifScope : public LifScope
 {
@@ -26,6 +29,12 @@ protected:
     bool testConnection() override;
     void initialize() override;
 
+    QTimer *p_timer;
+
+
+    // HardwareObject interface
+public slots:
+    void sleep(bool b) override;
 };
 
 #endif // VIRTUALLIFSCOPE_H

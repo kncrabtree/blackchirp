@@ -68,6 +68,7 @@ signals:
     void startInit();
     void statusMessage(const QString);
     void closing();
+    void checkSleep();
 
 public slots:
     void startExperiment();
@@ -132,6 +133,8 @@ private:
     MotorDisplayWidget *p_motorDisplayWidget;
     MotorStatusWidget *p_motorStatusWidget;
 #endif
+
+    QWidget *p_pcBox;
 
 protected:
     void closeEvent(QCloseEvent *ev);

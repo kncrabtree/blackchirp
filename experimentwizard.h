@@ -35,7 +35,6 @@ public:
     void setPulseConfig(const PulseGenConfig c);
     void setFlowConfig(const FlowConfig c);
     Experiment getExperiment() const;
-    bool sleepWhenDone() const;
 
 public slots:
     void updateExperiment(const Experiment e) { d_experiment = e; }

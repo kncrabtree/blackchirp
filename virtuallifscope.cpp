@@ -50,10 +50,10 @@ bool VirtualLifScope::testConnection()
 void VirtualLifScope::initialize()
 {
 
-    QTimer *test = new QTimer(this);
-    test->setInterval(200);
-    connect(test,&QTimer::timeout,this,&VirtualLifScope::queryScope);
-    test->start();
+    p_timer = new QTimer(this);
+    p_timer->setInterval(200);
+    connect(p_timer,&QTimer::timeout,this,&VirtualLifScope::queryScope);
+    p_timer->start();
 }
 
 void VirtualLifScope::setLifVScale(double scale)
@@ -151,4 +151,15 @@ void VirtualLifScope::setRefEnabled(bool en)
     s.endGroup();
     s.endGroup();
     s.sync();
+}
+
+
+void VirtualLifScope::sleep(bool b)
+{
+    if(b)
+        p_timer->stop();
+    else
+    {
+        p_timer->start();
+    }
 }

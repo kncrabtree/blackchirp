@@ -19,9 +19,6 @@ public:
     explicit BatchManager(BatchType b);
     virtual ~BatchManager();
 
-    void setSleep(bool s) { d_sleep = s; }
-    bool sleepWhenComplete() const { return d_sleep; }
-
 signals:
     void statusMessage(QString);
     void logMessage(QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal);
@@ -38,7 +35,6 @@ public slots:
 
 protected:
     BatchType d_type;
-    bool d_sleep;
 
     virtual void writeReport() =0;
     virtual void processExperiment(const Experiment exp) =0;
