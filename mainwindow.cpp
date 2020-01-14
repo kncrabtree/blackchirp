@@ -739,23 +739,12 @@ void MainWindow::sleep(bool s)
     {
         QMessageBox mb(this);
         mb.setWindowTitle(QString("Sleep when complete"));
-        mb.setText(QString("BlackChirp will sleep when the current experiment (or batch) is complete. You may cancel this or abort and sleep immediately."));
+        mb.setText(QString("BlackChirp will sleep when the current experiment (or batch) is complete."));
         mb.addButton(QString("Cancel Sleep"),QMessageBox::RejectRole);
-        mb.addButton(QString("Abort and Sleep"),QMessageBox::ActionRole);
         connect(this,&MainWindow::checkSleep,&mb,&QMessageBox::accept);
 
         int ret = mb.exec();
-        if(ret == QMessageBox::ActionRole)
-        {
-            ui->actionAbort->trigger();
-            QMetaObject::invokeMethod(p_hwm,"sleep",Q_ARG(bool,true));
-            configureUi(Asleep);
-            ui->actionSleep->blockSignals(true);
-            ui->actionSleep->setChecked(true);
-            ui->actionSleep->blockSignals(false);
-            QMessageBox::information(this,QString("BlackChirp Asleep"),QString("The instrument is asleep. Press the sleep button to re-activate it."),QMessageBox::Ok);
-        }
-        else if(ret == QDialog::Accepted)
+        if(ret == QDialog::Accepted)
         {
             QMetaObject::invokeMethod(p_hwm,"sleep",Q_ARG(bool,true));
             configureUi(Asleep);
