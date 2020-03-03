@@ -24,8 +24,8 @@ __global__ void parseAdd_kernel1byte(int numPoints, char *devNewData, long long 
 __global__ void parseRollAvg_kernel1byte(int numPoints, char *devnewData, long long int *devSum, int offset, qint64 currentShots, qint64 targetShots, int shift)
 {
     int i = offset + blockIdx.x*blockDim.x + threadIdx.x;
-    if(i < numPoints && i - shift < numPoints && i >= 0 && i - shift >= 0)
-        devSum[i] += ((long long int)devnewData[i-shift] << 8);
+    if(i < numPoints && i + shift < numPoints && i >= 0 && i + shift >= 0)
+        devSum[i] += ((long long int)devnewData[i+shift] << 8);
 
     if(i < numPoints && currentShots > targetShots)
     {
@@ -42,12 +42,12 @@ __global__ void parseAdd_kernel2byte(int numPoints, char *devNewData, long long 
     {
         if(le)
         {
-            int16_t dat = (devNewData[2*i+1] << 8 ) | (devNewData[2*i]);
+            int16_t dat = (devNewData[2*(i+shift)+1] << 8 ) | (devNewData[2*(i+shift)]);
             devSum[i] += (long long int)dat;
         }
         else
         {
-            int16_t dat = (devNewData[2*i] << 8 ) | (devNewData[2*i+1]);
+            int16_t dat = (devNewData[2*(i+shift)] << 8 ) | (devNewData[2*(i+shift)+1]);
             devSum[i] += (long long int)dat;
         }
     }
@@ -60,12 +60,12 @@ __global__ void parseRollAvg_kernel2byte(int numPoints, char *devNewData, long l
     {
         if(le)
         {
-            int16_t dat = (devNewData[2*i+1] << 8 ) | (devNewData[2*i]);
+            int16_t dat = (devNewData[2*(i+shift)+1] << 8 ) | (devNewData[2*(i+shift)]);
             devSum[i] += (long long int)dat << 8;
         }
         else
         {
-            int16_t dat = (devNewData[2*i] << 8 ) | (devNewData[2*i+1]);
+            int16_t dat = (devNewData[2*(i+shift)] << 8 ) | (devNewData[2*(i+shift)+1]);
             devSum[i] += (long long int)dat << 8;
         }
     }
@@ -86,12 +86,12 @@ __global__ void parseAdd_kernel4byte(int numPoints, char *devNewData, long long 
     {
         if(le)
         {
-            int32_t dat = (devNewData[4*i+3] << 24 ) | (devNewData[4*i+2] << 16 ) | (devNewData[4*i+1] << 8 ) | (devNewData[4*i]);
+            int32_t dat = (devNewData[4*(i+shift)+3] << 24 ) | (devNewData[4*(i+shift)+2] << 16 ) | (devNewData[4*(i+shift)+1] << 8 ) | (devNewData[4*(i+shift)]);
             devSum[i] += (long long int)dat;
         }
         else
         {
-            int16_t dat = (devNewData[4*i] << 24 ) | (devNewData[4*i+1] << 16 ) | (devNewData[4*i+2] << 8 ) | (devNewData[4*i+3]);
+            int16_t dat = (devNewData[4*(i+shift)] << 24 ) | (devNewData[4*(i+shift)+1] << 16 ) | (devNewData[4*(i+shift)+2] << 8 ) | (devNewData[4*(i+shift)+3]);
             devSum[i] += (long long int)dat;
         }
     }
@@ -168,8 +168,8 @@ bool GpuAverager::initialize(const int pointsPerFrame, const int numFrames, cons
 
     d_pointsPerFrame = pointsPerFrame;
     d_numFrames = numFrames;
-    d_totalPoints = pointsPerFrame*numFrames;
     d_bytesPerPoint = bytesPerPoint;
+    d_totalPoints = pointsPerFrame*numFrames;
     byteOrder == QDataStream::LittleEndian ? d_isLittleEndian = true : d_isLittleEndian = false;
 
     Q_ASSERT(d_pointsPerFrame > 0);

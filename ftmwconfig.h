@@ -46,6 +46,7 @@ public:
     bool processingPaused() const;
     int numFrames() const;
     int numSegments() const;
+    int shotIncrement() const;
     FidList parseWaveform(const QByteArray b) const;
     QVector<qint64> extractChirp() const;
     QVector<qint64> extractChirp(const QByteArray b) const;

@@ -161,6 +161,15 @@ int FtmwConfig::numSegments() const
     return data->rfConfig.numSegments();
 }
 
+int FtmwConfig::shotIncrement() const
+{
+    int increment = scopeConfig().numAverages;
+    if(scopeConfig().fastFrameEnabled && (scopeConfig().manualFrameAverage || scopeConfig().summaryFrame))
+        increment *= scopeConfig().numFrames;
+
+    return increment;
+}
+
 FidList FtmwConfig::parseWaveform(const QByteArray b) const
 {
 
@@ -249,7 +258,7 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
 
         Fid f = fidTemplate();
         f.setData(d);
-        f.setShots(scopeConfig().numAverages);
+        f.setShots(shotIncrement());
 
         if(scopeConfig().fastFrameEnabled && scopeConfig().manualFrameAverage)
         {
@@ -469,14 +478,10 @@ void FtmwConfig::setTargetShots(const qint64 target)
 
 bool FtmwConfig::increment()
 {
-    int increment = scopeConfig().numAverages;
-    if(scopeConfig().fastFrameEnabled && (scopeConfig().manualFrameAverage || scopeConfig().summaryFrame))
-        increment *= scopeConfig().numFrames;
-
     if(type() == BlackChirp::FtmwPeakUp)
-        data->completedShots = qMin(completedShots()+increment,targetShots());
+        data->completedShots = qMin(completedShots()+shotIncrement(),targetShots());
     else
-        data->completedShots+=increment;
+        data->completedShots+=shotIncrement();
 
     if(type() == BlackChirp::FtmwLoScan)
     {
@@ -520,7 +525,7 @@ bool FtmwConfig::setFidsData(const QList<QVector<qint64> > newList)
         {
             Fid f = fidTemplate();
             f.setData(newList.at(i));
-            f.setShots(scopeConfig().numAverages);
+            f.setShots(shotIncrement());
             data->fidList.append(f);
         }
     }
@@ -536,11 +541,10 @@ bool FtmwConfig::setFidsData(const QList<QVector<qint64> > newList)
         for(int i=0; i<data->fidList.size(); i++)
         {
             data->fidList[i].setData(newList.at(i));
-            int increment = scopeConfig().numAverages;
             if(type() == BlackChirp::FtmwPeakUp)
-                data->fidList[i].setShots(qMin(data->fidList.at(i).shots()+increment,targetShots()));
+                data->fidList[i].setShots(qMin(data->fidList.at(i).shots()+shotIncrement(),targetShots()));
             else
-                data->fidList[i].setShots(data->fidList.at(i).shots()+increment);
+                data->fidList[i].setShots(data->fidList.at(i).shots()+shotIncrement());
         }
     }
 
