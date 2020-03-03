@@ -90,12 +90,15 @@ void DigitizerConfigWidget::setFromConfig(const FtmwConfig config)
     ui->fastFrameEnabledCheckBox->blockSignals(true);
     if(cc.numChirps() > 1)
     {
-        ui->fastFrameEnabledCheckBox->setChecked(sc.fastFrameEnabled);
-        ui->framesSpinBox->setValue(cc.numChirps());
-        ui->summaryFrameCheckBox->setChecked(sc.summaryFrame);
         ui->fastFrameEnabledCheckBox->setEnabled(true);
         ui->framesSpinBox->setEnabled(true);
         ui->summaryFrameCheckBox->setEnabled(true);
+        ui->fastFrameEnabledCheckBox->setChecked(true);
+        ui->framesSpinBox->setValue(cc.numChirps());
+        //Allow user to make stupid settings if they want...
+//        ui->fastFrameEnabledCheckBox->setEnabled(false);
+//        ui->framesSpinBox->setEnabled(false);
+        ui->summaryFrameCheckBox->setChecked(sc.summaryFrame);
     }
     else
     {
@@ -149,7 +152,7 @@ FtmwConfig DigitizerConfigWidget::getConfig()
     if(ui->summaryFrameCheckBox->isChecked())
     {
         sc.summaryFrame = canSf;
-        sc.manualFrameAverage = !canSf;
+        sc.manualFrameAverage = false;
     }
     else
     {
@@ -173,6 +176,7 @@ void DigitizerConfigWidget::configureUI()
     s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
     bool ba = s.value(QString("canBlockAverage"),false).toBool();
     bool ffba = s.value(QString("canBlockAndFastFrame"),false).toBool();
+    bool canSf = s.value(QString("canSummaryFrame"),false).toBool();
     bool ff = ui->fastFrameEnabledCheckBox->isChecked();
     s.endGroup();
     s.endGroup();
@@ -193,13 +197,14 @@ void DigitizerConfigWidget::configureUI()
 
     if(ui->fastFrameEnabledCheckBox->isChecked())
     {
-        ui->framesSpinBox->setEnabled(ui->fastFrameEnabledCheckBox->isChecked());
-        ui->summaryFrameCheckBox->setEnabled(ui->fastFrameEnabledCheckBox->isChecked());
+        if(canSf)
+            ui->summaryFrameCheckBox->setEnabled(ui->fastFrameEnabledCheckBox->isChecked());
+        else {
+            ui->summaryFrameCheckBox->setChecked(false);
+            ui->summaryFrameCheckBox->setEnabled(false);
+        }
     }
-    else
-        ui->framesSpinBox->setValue(1);
 
-    ui->framesSpinBox->setEnabled(ui->fastFrameEnabledCheckBox->isChecked());
 
 
 }
