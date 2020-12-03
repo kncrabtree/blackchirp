@@ -14,6 +14,10 @@
 #include "pressurecontroller.h"
 #endif
 
+#ifdef BC_TEMPCONTROLLER
+#include "temperaturecontroller.h"
+#endif
+
 #ifdef BC_GPIBCONTROLLER
 #include "gpibcontroller.h"
 #endif
@@ -71,6 +75,11 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), d_responseC
     connect(p_pc,&PressureController::pressureSetpointUpdate,this,&HardwareManager::pressureSetpointUpdate);
     connect(p_pc,&PressureController::pressureControlMode,this,&HardwareManager::pressureControlMode);
     d_hardwareList.append(p_pc);
+#endif
+
+#ifdef BC_TEMPCONTROLLER
+    p_tc = new TemperatureControllerHardware();
+    d_hardwareList.append(p_tc);
 #endif
 
 #ifdef BC_LIF

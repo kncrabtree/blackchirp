@@ -31,7 +31,8 @@ HEADERS += \
     $$PWD/m8195a.h \
     $$PWD/ad9914.h \
     $$PWD/valon5015.h \
-    $$PWD/mks946.h
+    $$PWD/mks946.h \
+    $$PWD/virtualtemperaturecontroller.h
 
 SOURCES += \
     $$PWD/virtualftmwscope.cpp \
@@ -64,7 +65,8 @@ SOURCES += \
     $$PWD/m8195a.cpp \
     $$PWD/ad9914.cpp \
     $$PWD/valon5015.cpp \
-    $$PWD/mks946.cpp
+    $$PWD/mks946.cpp \
+    $$PWD/virtualtemperaturecontroller.cpp
 
 } else {
 
@@ -186,6 +188,16 @@ equals(PC,1) {
         HEADERS += $$PWD/intellisysiqplus.h
         SOURCES += $$PWD/intellisysiqplus.cpp
 }
+
+equals(TC,0) {
+        HEADERS += $$PWD/virtualtempcontroller.h
+        SOURCES += $$PWD/virtualtempcontroller.cpp
+}
+equals(TC,1) {
+#        HEADERS += $$PWD/intellisysiqplus.h
+#        SOURCES += $$PWD/intellisysiqplus.cpp
+}
+
 
 lif {
 	equals(LIFSCOPE,0) {

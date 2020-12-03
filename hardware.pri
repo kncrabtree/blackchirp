@@ -37,7 +37,8 @@ HEADERS += \
 	$$PWD/gpibinstrument.h \
     $$PWD/motorcontroller.h \
     $$PWD/motoroscilloscope.h \
-    $$PWD/pressurecontroller.h
+    $$PWD/pressurecontroller.h \
+    $$PWD/temperaturecontroller.h
 
 SOURCES += \
 	$$PWD/lifscope.cpp \
@@ -45,7 +46,8 @@ SOURCES += \
 	$$PWD/gpibinstrument.cpp \
     $$PWD/motorcontroller.cpp \
     $$PWD/motoroscilloscope.cpp \
-    $$PWD/pressurecontroller.cpp
+    $$PWD/pressurecontroller.cpp \
+    $$PWD/temperaturecontroller.cpp
 } else {
 
 greaterThan(GPIB,-1) {
@@ -58,6 +60,11 @@ greaterThan(GPIB,-1) {
 greaterThan(PC,-1) {
 	HEADERS += $$PWD/pressurecontroller.h
 	SOURCES += $$PWD/pressurecontroller.cpp
+}
+
+greaterThan(TC,-1) {
+     HEADERS += $$PWD/temperaturecontroller.h
+     SOURCES += $$PWD/temperaturecontroller.cpp
 }
 
 lif {

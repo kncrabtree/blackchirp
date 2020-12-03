@@ -59,6 +59,9 @@ GPIB=-1
 #pressure controller (-1 = none, 0 = virtual, 1 = Intellisys IQ Plus)
 PC=-1
 
+#temperature controller (-1 = none, 0 = virtual, 1 = Lakeshore 218)
+TC=-1
+
 ###### LIF ONLY #####
 #LIF Oscilloscope (0 = virtual, 1 = DPO3012)
 LIFSCOPE=1
@@ -83,6 +86,7 @@ LIFSCOPE=0
 IOBOARD=0
 GPIB=0
 PC=0
+TC=0
 MOTOR=0
 MOTORSCOPE=0
 }
@@ -180,6 +184,10 @@ DEFINES += BC_IOBOARD=$$IOBOARD
 
 !equals(PC,-1) {
         DEFINES += BC_PCONTROLLER=$$PC
+}
+
+!equals(TC,-1) {
+        DEFINES += BC_TEMPCONTROLLER=$$TC
 }
 
 equals(FTMWSCOPE,0) {
