@@ -7,6 +7,8 @@
 #include <qwt6/qwt_color_map.h>
 #include <qwt6/qwt_scale_widget.h>
 #include <qwt6/qwt_interval.h>
+#include <qwt6/qwt_plot_picker.h>
+#include <qwt6/qwt_picker_machine.h>
 
 MotorSpectrogramPlot::MotorSpectrogramPlot(QWidget *parent) : ZoomPanPlot(QString("motorSpectrogramPlot"),parent)
 {
@@ -35,6 +37,14 @@ MotorSpectrogramPlot::MotorSpectrogramPlot(QWidget *parent) : ZoomPanPlot(QStrin
     p_spectrogram->setRenderHint(QwtPlotItem::RenderAntialiased);
     p_spectrogram->setData(p_spectrogramData);
     p_spectrogram->attach(this);
+
+    QwtPlotPicker *picker = new QwtPlotPicker(this->canvas());
+    picker->setAxis(QwtPlot::xBottom,QwtPlot::yLeft);
+    picker->setStateMachine(new QwtPickerClickPointMachine);
+    picker->setMousePattern(QwtEventPattern::MouseSelect1,Qt::RightButton);
+    picker->setTrackerMode(QwtPicker::AlwaysOn);
+    picker->setTrackerPen(QPen(QPalette().color(QPalette::Text)));
+    picker->setEnabled(true);
 
     enableAxis(QwtPlot::yRight);
     setAxisOverride(QwtPlot::yRight);
