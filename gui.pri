@@ -1,4 +1,5 @@
 SOURCES += mainwindow.cpp \
+    $$PWD/customtracker.cpp \
     $$PWD/ftmwviewwidget.cpp \
     $$PWD/ftplot.cpp \
     $$PWD/fidplot.cpp \
@@ -28,6 +29,7 @@ SOURCES += mainwindow.cpp \
     $$PWD/ftmwplotconfigwidget.cpp
 
 HEADERS += mainwindow.h \
+    $$PWD/customtracker.h \
     $$PWD/ftmwviewwidget.h \
     $$PWD/ftplot.h \
     $$PWD/fidplot.h \
