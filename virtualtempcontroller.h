@@ -27,7 +27,7 @@ private:
 
     // TemperatureController interface
 protected:
-    double readHWTemperature() override;
+    QList<double> readHWTemperature() override;
 };
 
 #endif // VIRTUALTEMPCONTROLLER_H

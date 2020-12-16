@@ -8,6 +8,7 @@ VirtualTemperatureController::VirtualTemperatureController(QObject *parent) : Te
     d_subKey = QString("virtual");
     d_prettyName = QString("Virtual Temperature Controller");
     d_commType = CommunicationProtocol::Virtual;
+    d_numChannels= 4;
 
 
 }
@@ -46,13 +47,14 @@ void VirtualTemperatureController::tcInitialize()
 {
     p_readTimer = new QTimer(this);
     p_readTimer->setInterval(200);
-    connect(p_readTimer,&QTimer::timeout,this,&VirtualTemperatureController::readTemperature);
+    connect(p_readTimer,&QTimer::timeout,this,&VirtualTemperatureController::readTemperatures);
 }
 
 
-double VirtualTemperatureController::readHWTemperature()
+QList<double> VirtualTemperatureController::readHWTemperature()
 {
     //not entirely sure what numbers to use here:
-    d_temperature = static_cast<double>((qrand() % 65536) - 32768) / 32768.0 + randTemperature;
-    return d_temperature;
+    for (int i=0; i<d_numChannels;i++)
+        d_temperatureList[i]= static_cast<double>((qrand() % 65536) - 32768) / 32768.0 + 5.0;
+    return d_temperatureList;
 }

@@ -11,21 +11,14 @@ public:
     virtual ~TemperatureController();
 
 signals:
-    void temperatureUpdate(double, QPrivateSignal);
-
-signals:
-    void temperatureUpdate(double);
-    void temperatureSetpointUpdate(double);
-    void temperatureControlMode(bool);
+    void temperatureUpdate(QList<double>, QPrivateSignal);
 
 public slots:
-    virtual double readTemperature();
-
-
-
+    virtual QList<double> readTemperatures();
 
 protected:
-    double d_temperature;
+    int d_numChannels;
+    QList<double> d_temperatureList;
 
     virtual void tcInitialize() =0;
 
@@ -34,7 +27,7 @@ protected:
     virtual QList<QPair<QString, QVariant> > readAuxPlotData() override;
     void initialize() override final;
 protected:
-    virtual double readHWTemperature() = 0;
+    virtual QList<double> readHWTemperature() = 0;
 };
 
 #endif // TEMPERATURECONTROLLER_H

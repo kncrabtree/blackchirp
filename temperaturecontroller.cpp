@@ -10,9 +10,9 @@ TemperatureController::~TemperatureController()
 {
 }
 
-double TemperatureController::readTemperature()
+QList<double> TemperatureController::readTemperatures()
 {
-   double T = readHWTemperature();
+   auto T = readHWTemperature();
    emit temperatureUpdate(T, QPrivateSignal());
    return T;
 }
@@ -20,11 +20,15 @@ double TemperatureController::readTemperature()
 QList<QPair<QString, QVariant> > TemperatureController::readAuxPlotData()
 {
     QList<QPair<QString,QVariant>> out;
-    out.append(qMakePair(QString("temperature"),d_temperature));
+    for (int i=0;i<d_temperatureList.size();i++)
+        out.append(qMakePair(QString("temperature.%1").arg(i),d_temperatureList.at(i)));
     return out;
 }
 
 void TemperatureController::initialize()
 {
+    d_temperatureList.clear();
+    for (int i=0; i<d_numChannels;i++)
+        d_temperatureList.append(0.0);
     tcInitialize();
 }
