@@ -12,9 +12,9 @@ TemperatureController::~TemperatureController()
 
 QList<double> TemperatureController::readTemperatures()
 {
-   auto T = readHWTemperature();
-   emit temperatureUpdate(T, QPrivateSignal());
-   return T;
+   d_temperatureList = readHWTemperature();
+   emit temperatureUpdate(d_temperatureList, QPrivateSignal());
+   return d_temperatureList;
 }
 
 QList<QPair<QString, QVariant> > TemperatureController::readAuxPlotData()

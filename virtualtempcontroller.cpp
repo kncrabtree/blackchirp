@@ -54,7 +54,8 @@ void VirtualTemperatureController::tcInitialize()
 QList<double> VirtualTemperatureController::readHWTemperature()
 {
     //not entirely sure what numbers to use here:
+    QList<double> out;
     for (int i=0; i<d_numChannels;i++)
-        d_temperatureList[i]= static_cast<double>((qrand() % 65536) - 32768) / 32768.0 + 5.0;
-    return d_temperatureList;
+        out.append(static_cast<double>((qrand() % 65536) - 32768) / 32768.0 + 5.0);
+    return out;
 }
