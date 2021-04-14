@@ -504,28 +504,19 @@ class BlackChirpExperiment:
                 s = s << 1
             
             #the resize function automatically sets new elements to 0
-            f_data.resize((s),refcheck=False)
+            #f_data.resize((s),refcheck=False)
+        else:
+            s = f.size
         
-        #compute double-sided DFT.
-        #The DFT contains points//2 + 1 real frequencies
-        ft = numpy.fft.rfft(f_data)
-        nump = len(f_data) // 2 + 1
-        
-        out_y = numpy.empty(nump)
-        out_x = numpy.empty(nump)
-        df = 1.0 / len(f_data) / (f.spacing)
-        
-        #build output arrays, setting to 0 if outside range (f_min,f_max)
-        fn = self._settings['ft_min']     
-        fx = self._settings['ft_max']
-        
-        for i in range(0,nump):
-            out_x[i] = f.probe_freq + (f.sideband * df * i)
-            if ( (fn >= 0.0 and out_x[i] < fn)
-            or (fx > 0.0 and out_x[i] > fx) ):
-                out_y[i]=0.0
-            else:
-                out_y[i] = numpy.absolute(ft[i]) * 1e3
+        #compute FFT
+        ft = scipy.fft.rfft(f_data,n=s)
+        df = 1.0 / (f.spacing)
+        out_x = probe_freq + f.sideband*scipy.fft.rfftfreq(s,df)
+        out_y = numpy.absolute(ft)*1e3
+        if self._settings['ft_min']>0.0:
+            out_y[out_x < self._settings['ft_min']] = 0.0
+        if self._settings['ft_min']>0.0:
+            out_y[out_x > self._settings['ft_max']] = 0.0
 
         return out_x, out_y
             
