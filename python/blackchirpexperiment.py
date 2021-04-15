@@ -6,6 +6,7 @@ Author: Kyle N. Crabtree
 
 import struct
 import numpy
+import scipy.fft as sfft
 import scipy.signal as spsig
 import shelve
 import os
@@ -509,9 +510,9 @@ class BlackChirpExperiment:
             s = f.size
         
         #compute FFT
-        ft = scipy.fft.rfft(f_data,n=s)
-        df = 1.0 / (f.spacing)
-        out_x = probe_freq + f.sideband*scipy.fft.rfftfreq(s,df)
+        ft = sfft.rfft(f_data,n=s)
+        df = f.spacing
+        out_x = f.probe_freq + f.sideband*sfft.rfftfreq(s,df)
         out_y = numpy.absolute(ft)*1e3
         if self._settings['ft_min']>0.0:
             out_y[out_x < self._settings['ft_min']] = 0.0
