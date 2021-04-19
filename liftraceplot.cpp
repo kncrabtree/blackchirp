@@ -8,6 +8,8 @@
 #include <QWidgetAction>
 #include <QSpinBox>
 #include <QFormLayout>
+#include <QFileDialog>
+#include <QMessageBox>
 
 #include <qwt6/qwt_plot_curve.h>
 #include <qwt6/qwt_plot_zoneitem.h>
@@ -237,6 +239,8 @@ void LifTracePlot::traceProcessed(const LifTrace t)
 void LifTracePlot::buildContextMenu(QMouseEvent *me)
 {
     QMenu *m = contextMenu();
+    QAction *exportAction=m->addAction(QString("Export XY..."));
+    connect(exportAction,&QAction::triggered,this,&LifTracePlot::exportXY);
 
     if(!d_displayOnly)
     {
@@ -768,4 +772,29 @@ bool LifTracePlot::eventFilter(QObject *obj, QEvent *ev)
     }
 
     return ZoomPanPlot::eventFilter(obj,ev);
+}
+
+void LifTracePlot::exportXY()
+{
+    QString path = BlackChirp::getExportDir();
+    QString name = QFileDialog::getSaveFileName(this,QString("Export LIF Trace"),path + QString("/lifxy.txt"));
+    if(name.isEmpty())
+        return;
+    QFile f(name);
+    if(!f.open(QIODevice::WriteOnly))
+    {
+        QMessageBox::critical(this,QString("Export Failed"),QString("Could not open file %1 for writing. Please choose a different filename.").arg(name));
+        return;
+    }
+    QApplication::setOverrideCursor(Qt::BusyCursor);
+    f.write(QString("time\tlif").toLatin1());
+    auto d = d_currentTrace.lifToXY();
+    for(int i=0;i<d.size();i++)
+    {
+        f.write(QString("\n%1\t%2").arg(d.at(i).x(),0,'e',6)
+                    .arg(d.at(i).y(),0,'e',12).toLatin1());
+    }
+    f.close();
+    QApplication::restoreOverrideCursor();
+    BlackChirp::setExportDir(name);
 }

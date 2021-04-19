@@ -2,7 +2,7 @@
 
 #include <QTimer>
 
-M4i2211x8::M4i2211x8(QObject *parent) : LifScope (parent), p_m4iBuffer(nullptr), d_timerInterval(50)
+M4i2211x8::M4i2211x8(QObject *parent) : LifScope (parent), p_handle(nullptr), p_m4iBuffer(nullptr), d_timerInterval(50), d_running(false)
 {
     d_subKey = QString("m4i2211x8");
     d_prettyName = QString("Spectrum Instrumentation M4i.2211-x8 Digitizer");
@@ -76,7 +76,7 @@ void M4i2211x8::readSettings()
         for(int i=0; i<6; i++)
         {
             QString txt = QString("%1 MSa/S").arg(round(1.25e3/( 1 << i )),4);
-            double val = 2.5e9/(static_cast<double>( 1 << i));
+            double val = 1.25e9/(static_cast<double>( 1 << i));
             sampleRates << qMakePair(txt,val);
         }
 
@@ -104,6 +104,7 @@ void M4i2211x8::readSettings()
 void M4i2211x8::initialize()
 {
     p_timer = new QTimer(this);
+    connect(p_timer,&QTimer::timeout,this,&M4i2211x8::queryScope);
 }
 
 bool M4i2211x8::testConnection()
@@ -119,6 +120,7 @@ bool M4i2211x8::testConnection()
 
     if(p_handle != nullptr)
     {
+        stopCard();
         spcm_vClose(p_handle);
         p_handle = nullptr;
     }
@@ -177,7 +179,7 @@ bool M4i2211x8::testConnection()
 
     emit configUpdated(d_config);
 
-    spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
+    startCard();
     p_timer->start(d_timerInterval);
 
     return true;
@@ -185,11 +187,9 @@ bool M4i2211x8::testConnection()
 
 void M4i2211x8::setLifVScale(double scale)
 {
-    bool wasRunning = p_timer->isActive();
-    if(wasRunning)
-        p_timer->stop();
 
-    spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_STOP);
+    bool wasRunning = stopCard();
+
     if(scale < 0.35)
         d_config.vScale1 = 0.2;
     else if(scale < 0.75)
@@ -218,20 +218,15 @@ void M4i2211x8::setLifVScale(double scale)
     emit configUpdated(d_config);
 
     if(wasRunning)
-    {
-        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
-        p_timer->start(d_timerInterval);
-    }
+        startCard();
 
 }
 
 void M4i2211x8::setRefVScale(double scale)
 {
-    bool wasRunning = p_timer->isActive();
-    if(wasRunning)
-        p_timer->stop();
 
-    spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_STOP);
+    bool wasRunning = stopCard();
+
     if(scale < 0.35)
         d_config.vScale2 = 0.2;
     else if(scale < 0.75)
@@ -259,22 +254,16 @@ void M4i2211x8::setRefVScale(double scale)
     emit configUpdated(d_config);
 
     if(wasRunning)
-    {
-        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
-        p_timer->start(d_timerInterval);
-    }
+        startCard();
 }
 
 void M4i2211x8::setHorizontalConfig(double sampleRate, int recLen)
 {
-    bool wasRunning = p_timer->isActive();
-    if(wasRunning)
-        p_timer->stop();
+    bool wasRunning = stopCard();
 
     d_config.recordLength = recLen;
     d_config.sampleRate = sampleRate;
 
-    spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_STOP);
     spcm_dwSetParam_i64(p_handle,SPC_SAMPLERATE,static_cast<qint64>(sampleRate));
 
     configureMemory();
@@ -292,27 +281,24 @@ void M4i2211x8::setHorizontalConfig(double sampleRate, int recLen)
     emit configUpdated(d_config);
 
     if(wasRunning)
-    {
-        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
-        p_timer->start(d_timerInterval);
-    }
+        startCard();
 }
 
 void M4i2211x8::setRefEnabled(bool en)
 {
-    bool wasRunning = p_timer->isActive();
-    if(wasRunning)
-        p_timer->stop();
+    bool wasRunning = stopCard();
 
     d_config.refEnabled = en;
-    spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_STOP);
+
     if(en)
         spcm_dwSetParam_i32(p_handle,SPC_CHENABLE,CHANNEL0|CHANNEL1);
     else
         spcm_dwSetParam_i32(p_handle,SPC_CHENABLE,CHANNEL0);
 
     configureMemory();
-    setRefVScale(d_config.vScale2);
+
+    if(en)
+        setRefVScale(d_config.vScale2);
 
     if(errorCheck())
         return;
@@ -327,10 +313,7 @@ void M4i2211x8::setRefEnabled(bool en)
     emit configUpdated(d_config);
 
     if(wasRunning)
-    {
-        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
-        p_timer->start(d_timerInterval);
-    }
+        startCard();
 
 }
 
@@ -346,19 +329,20 @@ void M4i2211x8::queryScope()
             emit logMessage(QString::fromLatin1(errText),BlackChirp::LogError);
 
         emit hardwareFailure();
+        stopCard();
         p_timer->stop();
         return;
     }
 
     if(stat & M2STAT_CARD_READY)
     {
-        spcm_dwDefTransfer_i64(p_handle,SPCM_BUF_DATA,SPCM_DIR_CARDTOPC,0,static_cast<void*>(p_m4iBuffer),0,d_bufferSize);
-        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_DATA_STARTDMA|M2CMD_DATA_WAITDMA);
-
+        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA);
         emit waveformRead(LifTrace(d_config,QByteArray::fromRawData(p_m4iBuffer,d_bufferSize)));
 
-        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_DATA_STOPDMA);
+        startCard();
+
     }
+
 }
 
 bool M4i2211x8::errorCheck()
@@ -366,8 +350,7 @@ bool M4i2211x8::errorCheck()
     QByteArray errText(1000,'\0');
     if(spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
     {
-        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_STOP);
-        spcm_dwInvalidateBuf(p_handle,SPCM_BUF_DATA);
+        stopCard();
 
         d_errorString = QString::fromLatin1(errText);
         emit hardwareFailure();
@@ -385,12 +368,16 @@ bool M4i2211x8::errorCheck()
 
 void M4i2211x8::configureMemory()
 {
+    bool wasRunning = stopCard();
+
     d_bufferSize = d_config.recordLength;
     if(d_config.refEnabled)
         d_bufferSize *= 2;
 
+    spcm_dwInvalidateBuf(p_handle,SPCM_BUF_DATA);
     spcm_dwSetParam_i64(p_handle,SPC_MEMSIZE,static_cast<qint64>(d_bufferSize));
     spcm_dwSetParam_i64(p_handle,SPC_POSTTRIGGER,static_cast<qint64>(d_config.recordLength-32));
+
 
     if(p_m4iBuffer != nullptr)
     {
@@ -399,4 +386,25 @@ void M4i2211x8::configureMemory()
     }
 
     p_m4iBuffer = new char[d_bufferSize];
+
+    if(wasRunning)
+        startCard();
+}
+
+void M4i2211x8::startCard()
+{
+    spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
+    spcm_dwDefTransfer_i64(p_handle,SPCM_BUF_DATA,SPCM_DIR_CARDTOPC,0,static_cast<void*>(p_m4iBuffer),0,static_cast<quint64>(d_bufferSize));
+    d_running = true;
+
+}
+
+bool M4i2211x8::stopCard()
+{
+    bool out = d_running;
+    spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_STOP|M2CMD_DATA_STOPDMA);
+    spcm_dwInvalidateBuf(p_handle,SPCM_BUF_DATA);
+    d_running = false;
+
+    return out;
 }

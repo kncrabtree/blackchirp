@@ -1,9 +1,11 @@
 #include "liftrace.h"
+#include <QtEndian>
+
+#include "analysis.h"
 
 LifTrace::LifTrace() : data(new LifTraceData)
 {
 }
-
 LifTrace::LifTrace(const BlackChirp::LifScopeConfig &c, const QByteArray b) : data(new LifTraceData)
 {
     //reference channel is used to normalize to pulse energy
@@ -16,44 +18,60 @@ LifTrace::LifTrace(const BlackChirp::LifScopeConfig &c, const QByteArray b) : da
     data->lifData.resize(c.recordLength);
     int incr = 1;
     int refoffset = c.recordLength;
-    if(c.refEnabled && c.channelOrder == BlackChirp::ChannelsInterleaved)
+    if(c.refEnabled && (c.channelOrder == BlackChirp::ChannelsInterleaved))
     {
         incr = 2;
         refoffset = 1;
     }
 
-
     for(int i=0; i<incr*c.recordLength; i+=incr)
     {
+        qint64 dat = 0;
         if(c.bytesPerPoint == 1)
-            data->lifData[i] = static_cast<qint16>(b.at(i));
+        {
+            char y = b.at(i);
+            dat = static_cast<qint64>(y);
+        }
         else
         {
-            qint16 dat;
-            if(c.byteOrder == QDataStream::LittleEndian)
-                dat = (b.at(2*i + 1) << 8) | (b.at(2*i) & 0xff);
+            auto y1 = static_cast<quint8>(b.at(2*i));
+            auto y2 = static_cast<quint8>(b.at(2*i + 1));
+            qint16 y = 0;
+            y |= y1;
+            y |= (y2 << 8);
+            if(c.byteOrder == QDataStream::BigEndian)
+                y = qFromBigEndian(y);
             else
-                dat = (b.at(2*i) << 8) | (b.at(2*i + 1) & 0xff);
-            data->lifData[i] = dat;
+                y = qFromLittleEndian(y);
+            dat = static_cast<qint64>(y);
         }
+        data->lifData[i] = dat;
     }
-
     if(c.refEnabled)
     {
         data->refData.resize(c.recordLength);
+        qint64 dat = 0;
         for(int i=c.bytesPerPoint*refoffset; i<incr*c.recordLength; i+=incr)
         {
             if(c.bytesPerPoint == 1)
-                data->refData[i] = static_cast<qint16>(b.at(i));
+            {
+                char y = b.at(i);
+                dat = static_cast<qint64>(y);
+            }
             else
             {
-                qint16 dat;
-                if(c.byteOrder == QDataStream::LittleEndian)
-                    dat = (b.at(2*i + 1) << 8) | (b.at(2*(i)) & 0xff);
+                auto y1 = static_cast<quint8>(b.at(2*i));
+                auto y2 = static_cast<quint8>(b.at(2*i + 1));
+                qint16 y = 0;
+                y |= y1;
+                y |= (y2 << 8);
+                if(c.byteOrder == QDataStream::BigEndian)
+                    y = qFromBigEndian(y);
                 else
-                    dat = (b.at(2*i) << 8) | (b.at(2*i + 1) & 0xff);
-                data->refData[i] = dat;
+                    y = qFromLittleEndian(y);
+                dat = static_cast<qint64>(y);
             }
+            data->refData[i] = dat;
         }
     }
 }
@@ -219,12 +237,10 @@ void LifTrace::rollAvg(const LifTrace &other, int numShots)
     else
     {
         for(int i=0; i<data->lifData.size(); i++)
-            data->lifData[i] = (static_cast<double>(numShots)*(other.lifAtRaw(i) + data->lifData.at(i)))
-                    /static_cast<double>(data->count + other.count());
+            data->lifData[i] = Analysis::intRoundClosest(numShots*(lifAtRaw(i)+other.lifAtRaw(i)),numShots+1);
 
         for(int i=0; i<data->refData.size(); i++)
-            data->refData[i] = (static_cast<double>(numShots)*(other.refAtRaw(i) + data->refData.at(i)))
-                    /static_cast<double>(data->count + other.count());
+            data->refData[i] = Analysis::intRoundClosest(numShots*(refAtRaw(i)+other.refAtRaw(i)),numShots+1);
 
         data->count = numShots;
     }

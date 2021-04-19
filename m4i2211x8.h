@@ -40,8 +40,12 @@ private:
     char *p_m4iBuffer;
     int d_bufferSize;
     int d_timerInterval;
+    bool d_running;
     bool errorCheck();
     void configureMemory();
+
+    void startCard();
+    bool stopCard();
 };
 
 #endif // M4I2211X8_H

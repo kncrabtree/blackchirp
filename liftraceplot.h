@@ -46,6 +46,8 @@ public slots:
 
     void clearPlot();
 
+    void exportXY();
+
 private:
     QwtPlotCurve *p_lif, *p_ref;
     QwtPlotZoneItem *p_lifZone, *p_refZone;
