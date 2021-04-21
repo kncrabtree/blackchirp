@@ -4,6 +4,7 @@
 #include "experimentwizardpage.h"
 
 class QDoubleSpinBox;
+class QSpinBox;
 class QCheckBox;
 class LifControlWidget;
 class LifLaserControlDoubleSpinBox;
@@ -32,8 +33,9 @@ signals:
     void lifColorChanged();
 
 private:
-    QDoubleSpinBox *p_delayStart, *p_delayStep, *p_delayEnd;
-    LifLaserControlDoubleSpinBox *p_laserStart, *p_laserStep, *p_laserEnd;
+    QDoubleSpinBox *p_delayStart, *p_delayStep;
+    LifLaserControlDoubleSpinBox *p_laserStart, *p_laserStep;
+    QSpinBox *p_delayNum, *p_laserNum;
     QCheckBox *p_delaySingle, *p_laserSingle;
     QComboBox *p_orderBox, *p_completeBox;
     LifControlWidget *p_lifControl;

@@ -228,15 +228,6 @@ struct LifScopeConfig {
 
 };
 
-
-struct LifPoint {
-    double mean;
-    double sumsq;
-    quint64 count;
-
-    LifPoint() : mean(0.0), sumsq(0.0), count(0) {}    
-};
-
 struct MotorScopeConfig {
     int dataChannel;
     double verticalScale;
@@ -351,7 +342,6 @@ Q_DECLARE_METATYPE(BlackChirp::Sideband)
 Q_DECLARE_METATYPE(BlackChirp::FlowSetting)
 Q_DECLARE_METATYPE(BlackChirp::FtmwType)
 Q_DECLARE_METATYPE(BlackChirp::ScopeTriggerSlope)
-Q_DECLARE_METATYPE(BlackChirp::LifPoint)
 Q_DECLARE_METATYPE(BlackChirp::LogMessageCode)
 Q_DECLARE_METATYPE(BlackChirp::PulseActiveLevel)
 Q_DECLARE_METATYPE(BlackChirp::PulseSetting)
@@ -363,7 +353,6 @@ Q_DECLARE_METATYPE(BlackChirp::FtPlotUnits)
 Q_DECLARE_METATYPE(BlackChirp::FtWindowFunction)
 Q_DECLARE_METATYPE(BlackChirp::ClockType)
 
-Q_DECLARE_TYPEINFO(BlackChirp::LifPoint,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::ChirpSegment,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::FlowChannelConfig,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::PulseChannelConfig,Q_MOVABLE_TYPE);

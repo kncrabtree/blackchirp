@@ -193,7 +193,7 @@ void AcquisitionManager::processLifScopeShot(const LifTrace t)
         //process trace; only send data to UI if point is complete
         if(d_currentExperiment.addLifWaveform(t))
         {
-            emit lifPointUpdate(d_currentExperiment.lifConfig().lastUpdatedLifPoint());
+            emit lifPointUpdate(d_currentExperiment.lifConfig());
 
             if(!d_currentExperiment.isComplete())
             {

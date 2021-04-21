@@ -26,7 +26,6 @@ public:
 
     bool isEnabled() const;
     bool isComplete() const;
-    bool isValid() const;
     double currentDelay() const;
     double currentLaserPos() const;
     QPair<double,double> delayRange() const;
@@ -41,22 +40,21 @@ public:
     BlackChirp::LifScopeConfig scopeConfig() const;
     BlackChirp::LifScanOrder order() const;
     BlackChirp::LifCompleteMode completeMode() const;
-    QVector<QPointF> timeSlice(int frequencyIndex) const;
-    QVector<QPointF> spectrum(int delayIndex) const;
-    QList<QVector<BlackChirp::LifPoint>> lifData() const;
+    QPair<int,int> lifGate() const;
+    QPair<int,int> refGate() const;
+    QList<QList<LifTrace> > lifData() const;
     QMap<QString,QPair<QVariant,QString> > headerMap() const;
     void parseLine(QString key, QVariant val);
     bool loadLifData(int num, QString path = QString(""));
-    QPair<QPoint,BlackChirp::LifPoint> lastUpdatedLifPoint() const;
     bool writeLifFile(int num) const;
 
     void setEnabled(bool en = true);
-    bool validate();
-    bool allocateMemory();
     void setLifGate(int start, int end);
+    void setLifGate(const QPair<int, int> p);
     void setRefGate(int start, int end);
-    void setDelayParameters(double start, double stop, double step);
-    void setLaserParameters(double start, double stop, double step);
+    void setRefGate(const QPair<int,int> p);
+    void setDelayParameters(double start, double step, int count);
+    void setLaserParameters(double start,  double step, int count);
     void setOrder(BlackChirp::LifScanOrder o);
     void setCompleteMode(BlackChirp::LifCompleteMode mode);
     void setScopeConfig(BlackChirp::LifScopeConfig c);
@@ -70,7 +68,7 @@ public:
 private:
     QSharedDataPointer<LifConfigData> data;
 
-    bool addPoint(double d);
+    bool addTrace(const LifTrace t);
     void increment();
 };
 
@@ -82,16 +80,14 @@ public:
 
     bool enabled {false};
     bool complete {false};
-    bool valid {false};
-    bool memAllocated {false};
     BlackChirp::LifScanOrder order {BlackChirp::LifOrderDelayFirst};
     BlackChirp::LifCompleteMode completeMode{BlackChirp::LifContinueUntilExperimentComplete};
     double delayStartUs {-1.0};
-    double delayEndUs {-1.0};
     double delayStepUs {0.0};
+    int delayPoints {0};
     double laserPosStart {-1.0};
-    double laserPosEnd {-1.0};
     double laserPosStep {0.0};
+    int laserPosPoints {0};
     int lifGateStartPoint {-1};
     int lifGateEndPoint {-1};
     int refGateStartPoint {-1};
@@ -102,12 +98,9 @@ public:
     QPoint lastUpdatedPoint;
 
     BlackChirp::LifScopeConfig scopeConfig;
-    QList<QVector<BlackChirp::LifPoint>> lifData;
+    QList<QList<LifTrace>> lifData;
 
 };
-
-QDataStream &operator<<(QDataStream &stream, const BlackChirp::LifPoint &pt);
-QDataStream &operator>>(QDataStream &stream, BlackChirp::LifPoint &pt);
 
 Q_DECLARE_METATYPE(LifConfig)
 

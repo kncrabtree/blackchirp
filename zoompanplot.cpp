@@ -20,6 +20,7 @@ ZoomPanPlot::ZoomPanPlot(QString name, QWidget *parent) : QwtPlot(parent)
     setName(name);
 
     canvas()->installEventFilter(this);
+    connect(this,&ZoomPanPlot::plotRightClicked,this,&ZoomPanPlot::buildContextMenu);
 }
 
 ZoomPanPlot::~ZoomPanPlot()
@@ -365,6 +366,12 @@ void ZoomPanPlot::zoom(QWheelEvent *we)
     replot();
 }
 
+void ZoomPanPlot::buildContextMenu(QMouseEvent *me)
+{
+    QMenu *m = contextMenu();
+    m->popup(me->globalPos());
+}
+
 QMenu *ZoomPanPlot::contextMenu()
 {
     QMenu *menu = new QMenu();
@@ -446,6 +453,6 @@ QSize ZoomPanPlot::minimumSizeHint() const
 
 void ZoomPanPlot::showEvent(QShowEvent *event)
 {
-    Q_UNUSED(event)
     replot();
+    QWidget::showEvent(event);
 }

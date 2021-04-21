@@ -1,9 +1,11 @@
 #include "lifsliceplot.h"
 
 #include <QSettings>
+#include <QPalette>
 
 #include <qwt6/qwt_plot_curve.h>
 #include <qwt6/qwt_plot_textlabel.h>
+#include <qwt6/qwt_symbol.h>
 
 LifSlicePlot::LifSlicePlot(QWidget *parent) :
     ZoomPanPlot(QString("lifSlicePlot"),parent)
@@ -17,6 +19,8 @@ LifSlicePlot::LifSlicePlot(QWidget *parent) :
 
     p_curve = new QwtPlotCurve(QString("trace"));
     p_curve->setRenderHint(QwtPlotItem::RenderAntialiased);
+    auto pal = QPalette();
+    p_curve->setSymbol(new QwtSymbol(QwtSymbol::Ellipse,palette().text(),QPen(QPalette::Text),QSize(8,8)));
     p_curve->setZ(1.0);
     p_curve->attach(this);
 
@@ -96,7 +100,6 @@ void LifSlicePlot::filterData()
     if(dataIndex-1 >= 0)
         filtered.append(d_currentData.at(dataIndex-1));
 
-    double yMin = 0.0, yMax = 0.0;
     //at this point, dataIndex is at the first point within the range of the plot. loop over pixels, compressing data
     for(double pixel = firstPixel; pixel<lastPixel; pixel+=1.0)
     {
@@ -113,8 +116,6 @@ void LifSlicePlot::filterData()
             numPnts++;
         }
 
-        yMin = qMin(min,yMin);
-        yMax = qMax(max,yMax);
 
 
         if(numPnts == 1)
@@ -131,7 +132,6 @@ void LifSlicePlot::filterData()
     if(dataIndex < d_currentData.size())
         filtered.append(d_currentData.at(dataIndex));
 
-    setAxisAutoScaleRange(QwtPlot::yLeft,yMin,yMax);
 
     //assign data to curve object
     p_curve->setSamples(filtered);

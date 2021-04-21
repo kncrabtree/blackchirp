@@ -504,7 +504,6 @@ void MainWindow::batchComplete(bool aborted)
     disconnect(ui->ftViewWidget,&FtmwViewWidget::rollingAverageShotsChanged,ui->ftmwProgressBar,&QProgressBar::setMaximum);
 
 #ifdef BC_LIF
-    disconnect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_lifDisplayWidget,&LifDisplayWidget::lifShotAcquired);
     p_lifTab->setEnabled(true);
 #endif
 
@@ -573,8 +572,6 @@ void MainWindow::experimentInitialized(const Experiment exp)
     {
         p_lifTab->setEnabled(true);
         p_lifProgressBar->setRange(0,exp.lifConfig().totalShots());
-        connect(p_hwm,&HardwareManager::lifScopeShotAcquired,
-                p_lifDisplayWidget,&LifDisplayWidget::lifShotAcquired,Qt::UniqueConnection);
     }
     else
     {

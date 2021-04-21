@@ -13,7 +13,6 @@ VirtualLifScope::VirtualLifScope(QObject *parent) :
     setLifVScale(0.02);
     setRefVScale(0.02);
     setHorizontalConfig(1e9,1000);
-    setRefEnabled(false);
 }
 
 VirtualLifScope::~VirtualLifScope()
@@ -39,6 +38,8 @@ void VirtualLifScope::readSettings()
     s.endGroup();
     s.endGroup();
     s.sync();
+
+    setRefEnabled(d_config.refEnabled);
 }
 
 

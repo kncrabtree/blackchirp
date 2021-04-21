@@ -89,8 +89,6 @@ FtPlot::FtPlot(QString id, QWidget *parent) :
     p_plotGrid->setMinorPen(p);
     p_plotGrid->attach(this);
 
-    connect(this,&FtPlot::plotRightClicked,this,&FtPlot::buildContextMenu);
-
     setAxisAutoScaleRange(QwtPlot::xBottom,0.0,1.0);
     setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
 
@@ -228,8 +226,8 @@ void FtPlot::buildContextMenu(QMouseEvent *me)
     QAction *peakColorAction = m->addAction(QString("Change Peak Color..."));
     connect(peakColorAction,&QAction::triggered,this,[=]() { changePeakColor(getColor(p_peakData->symbol()->brush().color())); });
 
-//    QAction *exportAction = m->addAction(QString("Export XY..."));
-//    connect(exportAction,&QAction::triggered,this,&FtPlot::exportXY);
+    QAction *exportAction = m->addAction(QString("Export XY..."));
+    connect(exportAction,&QAction::triggered,this,&FtPlot::exportXY);
 
 //    QWidgetAction *wa = new QWidgetAction(m);
 //    QWidget *w = new QWidget(m);

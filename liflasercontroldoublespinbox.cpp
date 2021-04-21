@@ -25,7 +25,7 @@ void LifLaserControlDoubleSpinBox::configure(bool step)
 
     setDecimals(decimals);
     if(step)
-        setRange(pow(10.0,-decimals),max);
+        setRange(-max,max);
     else
         setRange(min,max);
 

@@ -75,8 +75,6 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
     connect(leg,&QwtLegend::checked,this,&LifTracePlot::legendItemClicked);
     insertLegend(leg,QwtPlot::BottomLegend);
 
-    connect(this,&LifTracePlot::plotRightClicked,this,&LifTracePlot::buildContextMenu);
-
     QSettings s2(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     d_lifZoneRange.first = s2.value(QString("lifConfig/lifStart"),-1).toInt();
     d_lifZoneRange.second = s2.value(QString("lifConfig/lifEnd"),-1).toInt();
@@ -109,12 +107,14 @@ void LifTracePlot::setLifGateRange(int begin, int end)
 {
     d_lifZoneRange.first = begin;
     d_lifZoneRange.second = end;
+    updateLifZone();
 }
 
 void LifTracePlot::setRefGateRange(int begin, int end)
 {
     d_refZoneRange.first = begin;
     d_refZoneRange.second = end;
+    updateRefZone();
 }
 
 LifConfig LifTracePlot::getSettings(LifConfig c)
@@ -242,18 +242,19 @@ void LifTracePlot::buildContextMenu(QMouseEvent *me)
     QAction *exportAction=m->addAction(QString("Export XY..."));
     connect(exportAction,&QAction::triggered,this,&LifTracePlot::exportXY);
 
+    QAction *lifZoneAction = m->addAction(QString("Change LIF Gate..."));
+    connect(lifZoneAction,&QAction::triggered,this,&LifTracePlot::changeLifGateRange);
+    if(d_currentTrace.size() == 0 || !p_lifZone->isVisible() || !isEnabled())
+        lifZoneAction->setEnabled(false);
+
+
+    QAction *refZoneAction = m->addAction(QString("Change Ref Gate..."));
+    connect(refZoneAction,&QAction::triggered,this,&LifTracePlot::changeRefGateRange);
+    if(!d_currentTrace.hasRefData() || !p_refZone->isVisible() || !isEnabled())
+        refZoneAction->setEnabled(false);
+
     if(!d_displayOnly)
     {
-        QAction *lifZoneAction = m->addAction(QString("Change LIF Gate..."));
-        connect(lifZoneAction,&QAction::triggered,this,&LifTracePlot::changeLifGateRange);
-        if(d_currentTrace.size() == 0 || !p_lifZone->isVisible() || !isEnabled())
-            lifZoneAction->setEnabled(false);
-
-
-        QAction *refZoneAction = m->addAction(QString("Change Ref Gate..."));
-        connect(refZoneAction,&QAction::triggered,this,&LifTracePlot::changeRefGateRange);
-        if(!d_currentTrace.hasRefData() || !p_refZone->isVisible() || !isEnabled())
-            refZoneAction->setEnabled(false);
 
         m->addSeparator();
 
@@ -505,13 +506,29 @@ void LifTracePlot::filterData()
     QVector<QPointF> lifFiltered, refFiltered;
     lifFiltered.reserve(2*canvas()->width()+2);
     refFiltered.reserve(2*canvas()->width()+2);
-    double yMin = 0.0, yMax = 0.0;
+
+    double yMin = lifData.at(0).y(), yMax = yMin;
+    if(!refData.isEmpty())
+    {
+        yMin = qMin(yMin,refData.at(0).y());
+        yMax = qMax(yMax,refData.at(0).y());
+    }
+
 
     //find first data point that is in the range of the plot
     //note: x data for lif and ref are assumed to be the same!
     int dataIndex = 0;
     while(dataIndex+1 < lifData.size() && map.transform(lifData.at(dataIndex).x()*1e9) < firstPixel)
+    {
         dataIndex++;
+        yMin = qMin(lifData.at(dataIndex).y(),yMin);
+        yMax = qMax(lifData.at(dataIndex).y(),yMax);
+        if(!refData.isEmpty())
+        {
+            yMin = qMin(yMin,refData.at(dataIndex).y());
+            yMax = qMax(yMax,refData.at(dataIndex).y());
+        }
+    }
 
     //add the previous point to the filtered array
     //this will make sure the curve always goes to the edge of the plot
@@ -619,6 +636,17 @@ void LifTracePlot::filterData()
             p.setX(p.x()*1e9);
             refFiltered.append(p);
         }
+
+        for(int i=dataIndex; i<lifData.size(); i++)
+        {
+            yMin = qMin(lifData.at(i).y(),yMin);
+            yMax = qMax(lifData.at(i).y(),yMax);
+            if(!refData.isEmpty())
+            {
+                yMin = qMin(yMin,refData.at(i).y());
+                yMax = qMax(yMax,refData.at(i).y());
+            }
+        }
     }
 
     setAxisAutoScaleRange(QwtPlot::yLeft,yMin,yMax);
@@ -668,6 +696,7 @@ bool LifTracePlot::eventFilter(QObject *obj, QEvent *ev)
             QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
             s.setValue(QString("lifConfig/lifStart"),d_lifZoneRange.first);
             s.setValue(QString("lifConfig/lifEnd"),d_lifZoneRange.second);
+            emit lifGateUpdated(d_lifZoneRange.first,d_lifZoneRange.second);
             ev->accept();
             return true;
         }
@@ -680,6 +709,7 @@ bool LifTracePlot::eventFilter(QObject *obj, QEvent *ev)
             QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
             s.setValue(QString("lifConfig/refStart"),d_refZoneRange.first);
             s.setValue(QString("lifConfig/refEnd"),d_refZoneRange.second);
+            emit refGateUpdated(d_refZoneRange.first,d_refZoneRange.second);
             ev->accept();
             return true;
         }

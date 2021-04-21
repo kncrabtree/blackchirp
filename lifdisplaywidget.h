@@ -27,26 +27,29 @@ signals:
 public slots:
     void checkLifColors();
     void resetLifPlot();
-    void lifShotAcquired(const LifTrace t);
     void prepareForExperiment(const LifConfig c);
-    void updatePoint(QPair<QPoint,BlackChirp::LifPoint> val);
+    void updatePoint(const LifConfig c);
 
     void freqSlice(int delayIndex);
     void delaySlice(int freqIndex);
+    void lifZoneUpdate(int min, int max);
+    void refZoneUpdate(int min, int max);
 
 private:
     Ui::LifDisplayWidget *ui;
 
-    int d_numFrequencyPoints;
-    int d_numDelayPoints;
+    LifConfig d_currentLifConfig;
     bool d_delayReverse, d_freqReverse;
     int d_currentSpectrumDelayIndex, d_currentTimeTraceFreqIndex;
-    QPair<double,double> d_delayRange;
-    QPair<double,double> d_freqRange;
-    QVector<BlackChirp::LifPoint> d_lifData;
+    QVector<double> d_currentIntegratedData;
 
     void updateSpectrum();
     void updateTimeTrace();
+    void updateLifTrace();
+
+    QPair<double, double> integrate(const LifConfig c);
+    QString d_laserUnits;
+
 
 protected:
     void resizeEvent(QResizeEvent *ev);

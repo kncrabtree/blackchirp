@@ -27,6 +27,8 @@ public:
 signals:
     void colorChanged();
     void integralUpdate(double);
+    void lifGateUpdated(int,int);
+    void refGateUpdated(int,int);
 
 public slots:
     void setNumAverages(int n);

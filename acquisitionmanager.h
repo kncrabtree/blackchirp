@@ -53,7 +53,7 @@ signals:
     void snapshotComplete();
 
 #ifdef BC_LIF
-    void lifPointUpdate(QPair<QPoint,BlackChirp::LifPoint>);
+    void lifPointUpdate(const LifConfig);
     void nextLifPoint(double delay, double frequency);
     void lifShotAcquired(int);
 #endif

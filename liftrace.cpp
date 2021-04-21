@@ -45,7 +45,7 @@ LifTrace::LifTrace(const BlackChirp::LifScopeConfig &c, const QByteArray b) : da
                 y = qFromLittleEndian(y);
             dat = static_cast<qint64>(y);
         }
-        data->lifData[i] = dat;
+        data->lifData[i/incr] = dat;
     }
     if(c.refEnabled)
     {
@@ -71,9 +71,20 @@ LifTrace::LifTrace(const BlackChirp::LifScopeConfig &c, const QByteArray b) : da
                     y = qFromLittleEndian(y);
                 dat = static_cast<qint64>(y);
             }
-            data->refData[i] = dat;
+            data->refData[(i-c.bytesPerPoint*refoffset)/incr] = dat;
         }
     }
+}
+
+LifTrace::LifTrace(double lm, double rm, double sp, int count, const QVector<qint64> l, const QVector<qint64> r) :
+    data(new LifTraceData)
+{
+    data->lifYMult = lm;
+    data->refYMult = rm;
+    data->xSpacing = sp;
+    data->count = count;
+    data->lifData = l;
+    data->refData = r;
 }
 
 LifTrace::LifTrace(const LifTrace &rhs) : data(rhs.data)
@@ -117,7 +128,8 @@ double LifTrace::integrate(int gl1, int gl2, int gr1, int gr2) const
     for(int i = gl1; i<gl2-1; i++)
         sum += static_cast<qint64>(data->lifData.at(i)) + static_cast<qint64>(data->lifData.at(i+1));
 
-    double out = static_cast<double>(sum)/2.0*data->lifYMult;
+    //multiply by y spacing and x spacing
+    double out = static_cast<double>(sum)/2.0*data->lifYMult*data->xSpacing;
 
     if(data->count > 1)
         out /= static_cast<double>(data->count);
@@ -135,7 +147,7 @@ double LifTrace::integrate(int gl1, int gl2, int gr1, int gr2) const
     for(int i = gr1; i<gr2-1; i++)
         sum += static_cast<qint64>(data->refData.at(i)) + static_cast<qint64>(data->refData.at(i+1));
 
-    double ref = static_cast<double>(sum)/2.0*data->refYMult;
+    double ref = static_cast<double>(sum)/2.0*data->refYMult*data->xSpacing;
 
     if(data->count > 1)
         ref /= static_cast<double>(data->count);
@@ -145,6 +157,16 @@ double LifTrace::integrate(int gl1, int gl2, int gr1, int gr2) const
         return out;
     else
         return out/ref;
+}
+
+double LifTrace::lifYMult() const
+{
+    return data->lifYMult;
+}
+
+double LifTrace::refYMult() const
+{
+    return data->refYMult;
 }
 
 double LifTrace::spacing() const
@@ -192,6 +214,16 @@ double LifTrace::maxTime() const
         return 0.0;
 
     return static_cast<double>(data->lifData.size()-1.0)*data->xSpacing;
+}
+
+QVector<qint64> LifTrace::lifRaw() const
+{
+    return data->lifData;
+}
+
+QVector<qint64> LifTrace::refRaw() const
+{
+    return data->refData;
 }
 
 qint64 LifTrace::lifAtRaw(int i) const
@@ -246,3 +278,21 @@ void LifTrace::rollAvg(const LifTrace &other, int numShots)
     }
 }
 
+
+QDataStream &operator<<(QDataStream &stream, const LifTrace &t)
+{
+    stream << t.lifYMult() << t.refYMult() << t.spacing() << t.count() << t.lifRaw() << t.refRaw();
+    return stream;
+}
+
+QDataStream &operator>>(QDataStream &stream, LifTrace &t)
+{
+    double ly, ry, x;
+    int c;
+    QVector<qint64> l,r;
+
+    stream >> ly >> ry >> x >> c >> l >> r;
+
+    t = LifTrace(ly,ry,x,c,l,r);
+    return stream;
+}

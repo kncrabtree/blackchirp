@@ -65,6 +65,7 @@ protected:
     virtual void pan(QMouseEvent *me);
     virtual void zoom(QWheelEvent *we);
 
+    virtual void buildContextMenu(QMouseEvent *me);
     virtual QMenu *contextMenu();
 
 private:

@@ -218,19 +218,7 @@ QWidget *ExperimentViewWidget::buildLifWidget()
         out->setLayout(vbl);
 
         lif->prepareForExperiment(d_experiment.lifConfig());
-
-        auto d = d_experiment.lifConfig().lifData();
-        QPoint p;
-        for(int i = 0; i<d.size(); i++)
-        {
-            auto dat = d.at(i);
-            p.setX(i);
-            for(int j=0; j<dat.size(); j++)
-            {
-                p.setY(j);
-                lif->updatePoint(qMakePair(p,dat.at(j)));
-            }
-        }
+        lif->updatePoint(d_experiment.lifConfig());
     }
 
     return out;
