@@ -261,7 +261,13 @@ void M4i2211x8::setHorizontalConfig(double sampleRate, int recLen)
 {
     bool wasRunning = stopCard();
 
-    d_config.recordLength = recLen;
+    //enforce constraint that record length must be a multiple of 32.
+    int rl = (recLen/32) * 32;
+    rl = qMax(32,rl);
+    rl = qMin(rl,65536);
+    if(rl != recLen)
+        emit logMessage(QString("Record length set to %1 instead of %2 because it must be a multiple of 32 between 32 and 65536.").arg(rl).arg(recLen),BlackChirp::LogWarning);
+    d_config.recordLength = rl;
     d_config.sampleRate = sampleRate;
 
     spcm_dwSetParam_i64(p_handle,SPC_SAMPLERATE,static_cast<qint64>(sampleRate));
