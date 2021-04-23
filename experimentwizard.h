@@ -47,11 +47,15 @@ private:
     Experiment d_experiment;
 
 #ifdef BC_LIF
+public slots:
+    void setCurrentLaserPos(double pos);
+
 signals:
-    void newTrace(const LifTrace);
-    void updateScope(const BlackChirp::LifScopeConfig);
-    void scopeConfigChanged(const BlackChirp::LifScopeConfig);
+    void newTrace(LifTrace);
+    void updateScope(BlackChirp::LifScopeConfig);
+    void scopeConfigChanged(BlackChirp::LifScopeConfig);
     void lifColorChanged();
+    void laserPosUpdate(double);
 
 private:
     ExperimentWizardPage *p_lifConfigPage;

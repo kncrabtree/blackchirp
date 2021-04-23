@@ -24,6 +24,7 @@ class PressureController;
 
 #ifdef BC_LIF
 class LifScope;
+class LifLaser;
 #endif
 
 #ifdef BC_MOTOR
@@ -81,9 +82,10 @@ signals:
 #endif
 
 #ifdef BC_LIF
-    void lifScopeShotAcquired(const LifTrace);
-    void lifScopeConfigUpdated(const BlackChirp::LifScopeConfig);
+    void lifScopeShotAcquired(LifTrace);
+    void lifScopeConfigUpdated(BlackChirp::LifScopeConfig);
     void lifSettingsComplete(bool success = true);
+    void lifLaserPosUpdate(double);
 #endif
 
 #ifdef BC_MOTOR
@@ -142,9 +144,10 @@ public slots:
 #endif
 
 #ifdef BC_LIF
-    void setLifParameters(double delay, double frequency);
+    void setLifParameters(double delay, double pos);
     bool setPGenLifDelay(double d);
     void setLifScopeConfig(const BlackChirp::LifScopeConfig c);
+    bool setLifLaserPos(double pos);
 #endif
 
 private:
@@ -165,6 +168,7 @@ private:
 
 #ifdef BC_LIF
     LifScope *p_lifScope;
+    LifLaser *p_lifLaser;
 #endif
 
 #ifdef BC_MOTOR

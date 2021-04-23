@@ -9,12 +9,3 @@ MotorXYPlot::MotorXYPlot(QWidget *parent) : MotorSpectrogramPlot(parent)
     setAxis(QwtPlot::yLeft,BlackChirp::MotorY);
     setAxis(QwtPlot::xBottom,BlackChirp::MotorX);
 }
-
-
-
-void MotorXYPlot::buildContextMenu(QMouseEvent *me)
-{
-    QMenu *m = contextMenu();
-
-    m->popup(me->globalPos());
-}

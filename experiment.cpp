@@ -458,15 +458,7 @@ void Experiment::setInitialized()
     }
 
 #ifdef BC_LIF
-    if(lifConfig().isEnabled())
-    {
-        if(!data->lifCfg.allocateMemory())
-        {
-            setErrorString(QString("Could not allocate memory for LIF experiment."));
-            data->isInitialized = false;
-            return;
-        }
-    }
+    //do any needed initialization for LIF here... nothing to do for now
 #endif
 
 #ifdef BC_MOTOR

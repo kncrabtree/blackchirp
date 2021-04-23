@@ -76,12 +76,14 @@ lif {
 			   $$PWD/lifcontrolwidget.h \
 			   $$PWD/lifdisplaywidget.h \
 			   $$PWD/lifsliceplot.h \
-			   $$PWD/lifspectrogramplot.h
+               $$PWD/lifspectrogramplot.h \
+               $$PWD/liflasercontroldoublespinbox.h
 	SOURCES += $$PWD/liftraceplot.cpp \
 			   $$PWD/lifcontrolwidget.cpp \
 			   $$PWD/lifdisplaywidget.cpp \
 			   $$PWD/lifsliceplot.cpp \
-			   $$PWD/lifspectrogramplot.cpp
+               $$PWD/lifspectrogramplot.cpp \
+               $$PWD/liflasercontroldoublespinbox.cpp
 	FORMS +=   $$PWD/lifcontrolwidget.ui \
 			   $$PWD/lifdisplaywidget.ui
 }

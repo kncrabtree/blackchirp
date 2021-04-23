@@ -2,7 +2,7 @@
 
 #include "liftrace.h"
 #include <QFile>
-#include <math.h>
+#include <cmath>
 
 
 LifConfig::LifConfig() : data(new LifConfigData)
@@ -22,10 +22,7 @@ LifConfig &LifConfig::operator=(const LifConfig &rhs)
     return *this;
 }
 
-LifConfig::~LifConfig()
-{
-
-}
+LifConfig::~LifConfig() = default;
 
 bool LifConfig::isEnabled() const
 {
@@ -40,24 +37,19 @@ bool LifConfig::isComplete() const
     return true;
 }
 
-bool LifConfig::isValid() const
-{
-    return data->valid;
-}
-
 double LifConfig::currentDelay() const
 {
     return static_cast<double>(data->currentDelayIndex)*data->delayStepUs + data->delayStartUs;
 }
 
-double LifConfig::currentFrequency() const
+double LifConfig::currentLaserPos() const
 {
-    return static_cast<double>(data->currentFrequencyIndex)*data->frequencyStep + data->frequencyStart;
+    return static_cast<double>(data->currentFrequencyIndex)*data->laserPosStep + data->laserPosStart;
 }
 
 QPair<double, double> LifConfig::delayRange() const
 {
-    return qMakePair(data->delayStartUs,data->delayEndUs);
+    return qMakePair(data->delayStartUs,data->delayStartUs + data->delayStepUs*data->delayPoints);
 }
 
 double LifConfig::delayStep() const
@@ -65,30 +57,24 @@ double LifConfig::delayStep() const
     return data->delayStepUs;
 }
 
-QPair<double, double> LifConfig::frequencyRange() const
+QPair<double, double> LifConfig::laserRange() const
 {
-    return qMakePair(data->frequencyStart,data->frequencyEnd);
+    return qMakePair(data->laserPosStart,data->laserPosStart + data->laserPosStep*data->laserPosPoints);
 }
 
-double LifConfig::frequencyStep() const
+double LifConfig::laserStep() const
 {
-    return data->frequencyStep;
+    return data->laserPosStep;
 }
 
 int LifConfig::numDelayPoints() const
 {
-    if(fabs(data->delayStartUs-data->delayEndUs) < data->delayStepUs)
-        return 1;
-
-    return static_cast<int>(floor(fabs((data->delayStartUs-data->delayEndUs)/data->delayStepUs)))+1;
+    return data->delayPoints;
 }
 
-int LifConfig::numFrequencyPoints() const
+int LifConfig::numLaserPoints() const
 {
-    if(fabs(data->frequencyStart-data->frequencyEnd) < data->frequencyStep)
-        return 1;
-
-    return static_cast<int>(floor(fabs((data->frequencyStart-data->frequencyEnd)/data->frequencyStep)))+1;
+    return data->laserPosPoints;
 }
 
 int LifConfig::shotsPerPoint() const
@@ -98,7 +84,7 @@ int LifConfig::shotsPerPoint() const
 
 int LifConfig::totalShots() const
 {
-    return numDelayPoints()*numFrequencyPoints()*data->shotsPerPoint;
+    return numDelayPoints()*numLaserPoints()*data->shotsPerPoint;
 }
 
 int LifConfig::completedShots() const
@@ -106,18 +92,11 @@ int LifConfig::completedShots() const
     if(data->complete)
         return totalShots();
 
-    int out;
-    if(data->order == BlackChirp::LifOrderFrequencyFirst)
+    int out = 0;
+    for(int i=0; i < data->lifData.size(); i++)
     {
-        out = data->currentDelayIndex*numFrequencyPoints()*data->shotsPerPoint;
-        out += data->currentFrequencyIndex*data->shotsPerPoint;
-        out += data->lifData.at(data->currentDelayIndex).at(data->currentFrequencyIndex).count;
-    }
-    else
-    {
-        out = data->currentFrequencyIndex*numDelayPoints()*data->shotsPerPoint;
-        out += data->currentDelayIndex*data->shotsPerPoint;
-        out += data->lifData.at(data->currentDelayIndex).at(data->currentFrequencyIndex).count;
+        for(int j=0; j < data->lifData.at(i).size(); j++)
+            out += data->lifData.at(i).at(j).count();
     }
 
     return out;
@@ -138,134 +117,36 @@ BlackChirp::LifCompleteMode LifConfig::completeMode() const
     return data->completeMode;
 }
 
-QVector<QPointF> LifConfig::timeSlice(int frequencyIndex) const
+QPair<int, int> LifConfig::lifGate() const
 {
-    QVector<QPointF> out;
-    out.resize(data->lifData.size());
-
-    if(data->lifData.isEmpty())
-        return out;
-
-    if(frequencyIndex >= numFrequencyPoints())
-        return out;
-
-    if(data->delayStepUs > 0.0)
-    {
-        for(int i=0; i<data->lifData.size()-1; i++)
-        {
-            out[i].setX(data->delayStartUs + static_cast<double>(i)*data->delayStepUs);
-            out[i].setY(data->lifData.at(i).at(frequencyIndex).mean);
-        }
-        out[data->lifData.size()-1].setX(data->delayEndUs);
-        out[data->lifData.size()-1].setY(data->lifData.at(data->lifData.size()-1).at(frequencyIndex).mean);
-    }
-    else
-    {
-        out[0].setX(data->delayEndUs);
-        out[0].setY(data->lifData.at(0).at(frequencyIndex).mean);
-        for(int i=data->lifData.size()-1; i>0; i--)
-        {
-            out[i].setX(data->delayStartUs + static_cast<double>(i)*data->delayStepUs);
-            out[i].setY(data->lifData.at(i).at(frequencyIndex).mean);
-        }
-    }
-
-    return out;
+    return qMakePair(data->lifGateStartPoint,data->lifGateEndPoint);
 }
 
-QVector<QPointF> LifConfig::spectrum(int delayIndex) const
+QPair<int, int> LifConfig::refGate() const
 {
-    QVector<QPointF> out;
-    if(delayIndex >= data->lifData.size())
-        return out;
-
-    out.resize(data->lifData.at(delayIndex).size());
-
-    if(data->frequencyStep > 0.0)
-    {
-        for(int i=0; i<data->lifData.at(delayIndex).size()-1; i++)
-        {
-            out[i].setX(data->frequencyStart + static_cast<double>(i)*data->frequencyStep);
-            out[i].setY(data->lifData.at(delayIndex).at(i).mean);
-        }
-        out[data->lifData.at(delayIndex).size()-1].setX(data->delayEndUs);
-        out[data->lifData.at(delayIndex).size()-1].setY(data->lifData.at(delayIndex).at(data->lifData.at(delayIndex).size()-1).mean);
-    }
-    else
-    {
-        out[0].setX(data->delayEndUs);
-        out[0].setY(data->lifData.at(delayIndex).at(0).mean);
-        for(int i=data->lifData.size()-1; i>0; i--)
-        {
-            out[i].setX(data->frequencyStart + static_cast<double>(i)*data->frequencyStep);
-            out[i].setY(data->lifData.at(delayIndex).at(i).mean);
-        }
-    }
-
-    return out;
+    return qMakePair(data->refGateStartPoint,data->refGateEndPoint);
 }
 
-QList<QVector<BlackChirp::LifPoint> > LifConfig::lifData() const
+QList<QList<LifTrace> > LifConfig::lifData() const
 {
     return data->lifData;
 }
 
 void LifConfig::setEnabled(bool en)
 {
-//    if(!data->valid)
-//        return;
-
     data->enabled = en;
-}
-
-bool LifConfig::validate()
-{
-    data->valid = false;
-
-    if(numDelayPoints() < 1 || numFrequencyPoints() < 1)
-        return false;
-
-    data->valid = true;
-    return true;
-}
-
-bool LifConfig::allocateMemory()
-{
-    if(!data->valid)
-        return false;
-
-    if(!data->enabled)
-        return false;
-
-    //allocate memory for storage
-    for(int i=0; i<numDelayPoints(); i++)
-    {
-        QVector<BlackChirp::LifPoint> d;
-        d.resize(numFrequencyPoints());
-        data->lifData.append(d);
-    }
-
-    //set signs for steps
-    if(numDelayPoints() > 1)
-    {
-        if(data->delayStartUs > data->delayEndUs)
-            data->delayStepUs = -data->delayStepUs;
-    }
-
-    if(numFrequencyPoints() > 1)
-    {
-        if(data->frequencyStart > data->frequencyEnd)
-            data->frequencyStep = -data->frequencyStep;
-    }
-
-    data->memAllocated = true;
-    return true;
 }
 
 void LifConfig::setLifGate(int start, int end)
 {
     data->lifGateStartPoint = start;
     data->lifGateEndPoint = end;
+}
+
+void LifConfig::setLifGate(const QPair<int, int> p)
+{
+    data->lifGateStartPoint = p.first;
+    data->lifGateEndPoint = p.second;
 }
 
 void LifConfig::setRefGate(int start, int end)
@@ -275,18 +156,25 @@ void LifConfig::setRefGate(int start, int end)
     data->refGateEndPoint = end;
 }
 
-void LifConfig::setDelayParameters(double start, double stop, double step)
+void LifConfig::setRefGate(const QPair<int, int> p)
 {
-    data->delayStartUs = start;
-    data->delayEndUs = stop;
-    data->delayStepUs = step;
+    data->scopeConfig.refEnabled = true;
+    data->refGateStartPoint = p.first;
+    data->refGateEndPoint = p.second;
 }
 
-void LifConfig::setFrequencyParameters(double start, double stop, double step)
+void LifConfig::setDelayParameters(double start, double step, int count)
 {
-    data->frequencyStart = start;
-    data->frequencyEnd = stop;
-    data->frequencyStep = step;
+    data->delayStartUs = start;
+    data->delayStepUs = step;
+    data->delayPoints = count;
+}
+
+void LifConfig::setLaserParameters(double start, double step, int count)
+{
+    data->laserPosStart = start;
+    data->laserPosStep = step;
+    data->laserPosPoints = count;
 }
 
 void LifConfig::setOrder(BlackChirp::LifScanOrder o)
@@ -325,30 +213,18 @@ QMap<QString, QPair<QVariant, QString> > LifConfig::headerMap() const
 
     out.insert(prefix+QString("ScanOrder"),qMakePair(so,empty));
     out.insert(prefix+QString("CompleteBehavior"),qMakePair(comp,empty));
-    if(numDelayPoints() > 1)
-    {
-        out.insert(prefix+QString("DelayStart"),
-                   qMakePair(QString::number(data->delayStartUs,'f',3),QString::fromUtf16(u"µs")));
-        out.insert(prefix+QString("DelayStop"),
-                   qMakePair(QString::number(data->delayEndUs,'f',3),QString::fromUtf16(u"µs")));
-        out.insert(prefix+QString("DelayStep"),
-                   qMakePair(QString::number(data->delayStepUs,'f',3),QString::fromUtf16(u"µs")));
-    }
-    else
-        out.insert(prefix+QString("Delay"),
-                   qMakePair(QString::number(data->delayStartUs,'f',3),QString::fromUtf16(u"µs")));
-    if(numFrequencyPoints() > 1)
-    {
-        out.insert(prefix+QString("FrequencyStart"),
-                   qMakePair(QString::number(data->frequencyStart,'f',3),QString("1/cm")));
-        out.insert(prefix+QString("FrequencyStop"),
-                   qMakePair(QString::number(data->frequencyEnd,'f',3),QString("1/cm")));
-        out.insert(prefix+QString("FrequencyStep"),
-                   qMakePair(QString::number(data->frequencyStep,'f',3),QString("1/cm")));
-    }
-    else
-        out.insert(prefix+QString("Frequency"),
-                   qMakePair(QString::number(data->frequencyStart,'f',3),QString("1/cm")));
+    out.insert(prefix+QString("DelayStart"),
+               qMakePair(QString::number(data->delayStartUs,'f',3),QString::fromUtf16(u"µs")));
+    out.insert(prefix+QString("DelayPoints"),
+               qMakePair(QString::number(data->delayPoints),QString("")));
+    out.insert(prefix+QString("DelayStep"),
+               qMakePair(QString::number(data->delayStepUs,'f',3),QString::fromUtf16(u"µs")));
+    out.insert(prefix+QString("FrequencyStart"),
+               qMakePair(QString::number(data->laserPosStart,'f',3),QString("1/cm")));
+    out.insert(prefix+QString("FrequencyPoints"),
+               qMakePair(QString::number(data->laserPosPoints),QString("")));
+    out.insert(prefix+QString("FrequencyStep"),
+               qMakePair(QString::number(data->laserPosStep,'f',3),QString("1/cm")));
 
     out.insert(prefix+QString("ShotsPerPoint"),qMakePair(data->shotsPerPoint,empty));
     out.insert(prefix+QString("LifGateStart"),qMakePair(data->lifGateStartPoint,empty));
@@ -386,16 +262,16 @@ void LifConfig::parseLine(QString key, QVariant val)
         }
         if(key.endsWith(QString("DelayStart")) || key.endsWith(QString("Delay")))
             data->delayStartUs = val.toDouble();
-        if(key.endsWith(QString("DelayStop")))
-            data->delayEndUs = val.toDouble();
+        if(key.endsWith(QString("DelayPoints")))
+            data->delayPoints = val.toInt();
         if(key.endsWith(QString("DelayStep")))
             data->delayStepUs = val.toDouble();
         if(key.endsWith(QString("FrequencyStart")) || key.endsWith(QString("Frequency")))
-            data->frequencyStart = val.toDouble();
-        if(key.endsWith(QString("FrequencyStop")))
-            data->frequencyEnd = val.toDouble();
+            data->laserPosStart = val.toDouble();
+        if(key.endsWith(QString("FrequencyPoints")))
+            data->laserPosPoints = val.toInt();
         if(key.endsWith(QString("FrequencyStep")))
-            data->frequencyStep = val.toDouble();
+            data->laserPosStep = val.toDouble();
         if(key.endsWith(QString("ShotsPerPoint")))
             data->shotsPerPoint = val.toInt();
         if(key.endsWith(QString("LifGateStart")))
@@ -451,35 +327,21 @@ bool LifConfig::loadLifData(int num, const QString path)
             lif.close();
             return false;
         }
-        if(magic.endsWith("v1.0"))
+
+        bool success = false;
+        if(magic.endsWith("v1.1"))
         {
-            QList<QVector<BlackChirp::LifPoint>> l;
+            QList<QList<LifTrace>> l;
             d >> l;
             data->lifData = l;
+            success = true;
         }
 
         lif.close();
-        return true;
+        return success;
     }
 
     return false;
-}
-
-QPair<QPoint, BlackChirp::LifPoint> LifConfig::lastUpdatedLifPoint() const
-{
-    if(data->lastUpdatedPoint.x() < data->lifData.size())
-    {
-        if(data->lastUpdatedPoint.y() < data->lifData.at(data->lastUpdatedPoint.x()).size())
-        {
-            return qMakePair(data->lastUpdatedPoint,data->lifData.at(data->lastUpdatedPoint.x()).at(data->lastUpdatedPoint.y()));
-//            BlackChirp::LifPoint p;
-//            p.mean = static_cast<double>(qrand() % 1000)/100.0;
-//            return qMakePair(data->lastUpdatedPoint,p);
-        }
-    }
-
-    return qMakePair(QPoint(-1,-1),BlackChirp::LifPoint());
-
 }
 
 bool LifConfig::writeLifFile(int num) const
@@ -488,7 +350,7 @@ bool LifConfig::writeLifFile(int num) const
     if(lif.open(QIODevice::WriteOnly))
     {
         QDataStream d(&lif);
-        d << QByteArray("BCLIFv1.0");
+        d << QByteArray("BCLIFv1.1");
         d << data->lifData;
         lif.close();
         return true;
@@ -503,17 +365,8 @@ bool LifConfig::addWaveform(const LifTrace t)
     if(data->complete && data->completeMode == BlackChirp::LifStopWhenComplete)
         return false;
 
-    double d;
-    if(data->scopeConfig.refEnabled)
-        d = t.integrate(data->lifGateStartPoint,data->lifGateEndPoint,data->refGateStartPoint,data->refGateEndPoint);
-    else
-        d = t.integrate(data->lifGateStartPoint,data->lifGateEndPoint);
+    return(addTrace(t));
 
-    bool inc = addPoint(d);
-    if(inc)
-        increment();
-
-    return inc;
 }
 
 void LifConfig::saveToSettings() const
@@ -526,12 +379,12 @@ void LifConfig::saveToSettings() const
     s.setValue(QString("completeMode"),static_cast<int>(completeMode()));
     s.setValue(QString("delaySingle"),(numDelayPoints() == 1));
     s.setValue(QString("delayStart"),data->delayStartUs);
-    s.setValue(QString("delayEnd"),data->delayEndUs);
+    s.setValue(QString("delayPoints"),data->delayPoints);
     s.setValue(QString("delayStep"),data->delayStepUs);
-    s.setValue(QString("laserSingle"),(numFrequencyPoints() == 1));
-    s.setValue(QString("laserStart"),data->frequencyStart);
-    s.setValue(QString("laserEnd"),data->frequencyEnd);
-    s.setValue(QString("laserStep"),data->frequencyStep);
+    s.setValue(QString("laserSingle"),(numLaserPoints() == 1));
+    s.setValue(QString("laserStart"),data->laserPosStart);
+    s.setValue(QString("laserPoints"),data->laserPosPoints);
+    s.setValue(QString("laserStep"),data->laserPosStep);
 
     s.endGroup();
     s.sync();
@@ -546,62 +399,55 @@ LifConfig LifConfig::loadFromSettings()
     LifConfig out;
     out.setCompleteMode(static_cast<BlackChirp::LifCompleteMode>(s.value(QString("completeMode"),0).toInt()));
     out.setOrder(static_cast<BlackChirp::LifScanOrder>(s.value(QString("scanOrder"),0).toInt()));
-    out.setDelayParameters(s.value(QString("delayStart"),1000.0).toDouble(),s.value(QString("delayEnd"),1100.0).toDouble(),s.value(QString("delayStep"),10.0).toDouble());
-    out.setFrequencyParameters(s.value(QString("laserStart"),15000.0).toDouble(),s.value(QString("laserEnd"),15100.0).toDouble(),s.value(QString("laserStep"),5.0).toDouble());
+    out.setDelayParameters(s.value(QString("delayStart"),1000.0).toDouble(),s.value(QString("delayStep"),10.0).toDouble(),s.value(QString("delayPoints"),1).toInt());
+    out.setLaserParameters(s.value(QString("laserStart"),15000.0).toDouble(),s.value(QString("laserStep"),5.0).toDouble(),s.value(QString("laserPoints"),1).toInt());
 
-    out.validate();
     return out;
 }
 
-bool LifConfig::addPoint(const double d)
+bool LifConfig::addTrace(const LifTrace t)
 {
-    int i = data->currentDelayIndex;
-    int j = data->currentFrequencyIndex;
+    if(data->currentDelayIndex >= data->lifData.size())
+    {
+        QList<LifTrace> l;
+        l.append(t);
+        data->lifData.append(l);
+    }
+    else if(data->currentFrequencyIndex >= data->lifData.at(data->currentDelayIndex).size())
+    {
+        data->lifData[data->currentDelayIndex].append(t);
+    }
+    else
+        data->lifData[data->currentDelayIndex][data->currentFrequencyIndex].add(t);
 
-    data->lifData[i][j].count++;
-    double delta = d - data->lifData[i][j].mean;
-    data->lifData[i][j].mean += delta/static_cast<double>(data->lifData[i][j].count);
-    data->lifData[i][j].sumsq += delta*(d - data->lifData[i][j].mean);
+    //return true if we have enough shots for this point on this pass
+    int c = data->lifData.at(data->currentDelayIndex).at(data->currentFrequencyIndex).count();
+    bool inc = !(c % data->shotsPerPoint);
+    if(inc)
+        increment();
+    return inc;
 
-    data->lastUpdatedPoint.setX(i);
-    data->lastUpdatedPoint.setY(j);
-
-    //return true if we've collected shotsPerPoint shots on this pass
-    return !(data->lifData[i][j].count % data->shotsPerPoint);
 }
 
 void LifConfig::increment()
 {
-    if(data->currentDelayIndex+1 >= numDelayPoints() && data->currentFrequencyIndex+1 >= numFrequencyPoints())
+    if(data->currentDelayIndex+1 >= numDelayPoints() && data->currentFrequencyIndex+1 >= numLaserPoints())
         data->complete = true;
 
     if(data->order == BlackChirp::LifOrderFrequencyFirst)
     {
-        if(data->currentFrequencyIndex+1 >= numFrequencyPoints())
+        if(data->currentFrequencyIndex+1 >= numLaserPoints())
             data->currentDelayIndex = (data->currentDelayIndex+1)%numDelayPoints();
 
-        data->currentFrequencyIndex = (data->currentFrequencyIndex+1)%numFrequencyPoints();
+        data->currentFrequencyIndex = (data->currentFrequencyIndex+1)%numLaserPoints();
     }
     else
     {
         if(data->currentDelayIndex+1 >= numDelayPoints())
-            data->currentFrequencyIndex = (data->currentFrequencyIndex+1)%numFrequencyPoints();
+            data->currentFrequencyIndex = (data->currentFrequencyIndex+1)%numLaserPoints();
 
         data->currentDelayIndex = (data->currentDelayIndex+1)%numDelayPoints();
     }
 }
 
 
-
-QDataStream &operator<<(QDataStream &stream, const BlackChirp::LifPoint &pt)
-{
-    stream << pt.count << pt.mean << pt.sumsq;
-    return stream;
-}
-
-
-QDataStream &operator>>(QDataStream &stream, BlackChirp::LifPoint &pt)
-{
-    stream >> pt.count >> pt.mean >> pt.sumsq;
-    return stream;
-}

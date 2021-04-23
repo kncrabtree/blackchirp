@@ -102,8 +102,6 @@ FidPlot::FidPlot(QString id, QWidget *parent) :
     ftEndMarker->setVisible(false);
     d_ftMarkers.second = ftEndMarker;
 
-    connect(this,&FidPlot::plotRightClicked,this,&FidPlot::buildContextMenu);
-
     setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
 
 }

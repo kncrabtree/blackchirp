@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
     qRegisterMetaType<BlackChirp::Sideband>("BlackChirp::Sideband");
 #ifdef BC_LIF
     qRegisterMetaType<LifTrace>("LifTrace");
-    qRegisterMetaType<QPair<QPoint,BlackChirp::LifPoint>>("QPair<QPoint,BlackChirp::LifPoint>");
+    qRegisterMetaType<LifConfig>("LifConfig");
     qRegisterMetaType<BlackChirp::LifScopeConfig>("BlackChirp::LifScopeConfig");
 #endif
 #ifdef BC_MOTOR

@@ -20,6 +20,7 @@
 
 #ifdef BC_LIF
 #include "lifscope.h"
+#include "liflaser.h"
 #endif
 
 #ifdef BC_MOTOR
@@ -78,6 +79,10 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), d_responseC
     connect(p_lifScope,&LifScope::waveformRead,this,&HardwareManager::lifScopeShotAcquired);
     connect(p_lifScope,&LifScope::configUpdated,this,&HardwareManager::lifScopeConfigUpdated);
     d_hardwareList.append(p_lifScope);
+
+    p_lifLaser = new LifLaserHardware();
+    connect(p_lifLaser,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserPosUpdate);
+    d_hardwareList.append(p_lifLaser);
 #endif
 
     p_iob = new IOBoardHardware();
@@ -531,13 +536,15 @@ void HardwareManager::checkStatus()
 }
 
 #ifdef BC_LIF
-void HardwareManager::setLifParameters(double delay, double frequency)
+void HardwareManager::setLifParameters(double delay, double pos)
 {
     bool success = true;
 
     if(!setPGenLifDelay(delay))
         success = false;
-    Q_UNUSED(frequency)
+
+    if(!setLifLaserPos(pos))
+        success = false;
 
     emit lifSettingsComplete(success);
 }
@@ -546,13 +553,13 @@ bool HardwareManager::setPGenLifDelay(double d)
 {
     if(p_pGen->thread() == thread())
         return p_pGen->setLifDelay(d);
-    else
-    {
-        bool out;
-        QMetaObject::invokeMethod(p_pGen,"setLifDelay",Qt::BlockingQueuedConnection,
-                                  Q_RETURN_ARG(bool,out),Q_ARG(double,d));
-        return out;
-    }
+
+
+    bool out;
+    QMetaObject::invokeMethod(p_pGen,"setLifDelay",Qt::BlockingQueuedConnection,
+                              Q_RETURN_ARG(bool,out),Q_ARG(double,d));
+    return out;
+
 }
 
 void HardwareManager::setLifScopeConfig(const BlackChirp::LifScopeConfig c)
@@ -561,5 +568,20 @@ void HardwareManager::setLifScopeConfig(const BlackChirp::LifScopeConfig c)
         p_lifScope->setAll(c);
     else
         QMetaObject::invokeMethod(p_lifScope,"setAll",Q_ARG(BlackChirp::LifScopeConfig,c));
+}
+
+bool HardwareManager::setLifLaserPos(double pos)
+{
+    if(p_lifLaser->thread() == thread())
+    {
+        auto p = p_lifLaser->setPosition(pos);
+        return p > 0.0;
+    }
+
+    double out;
+    QMetaObject::invokeMethod(p_lifLaser,"setPosition",Qt::BlockingQueuedConnection,
+                              Q_RETURN_ARG(double,out),Q_ARG(double,pos));
+    return out > 0.0;
+
 }
 #endif

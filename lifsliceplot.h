@@ -25,6 +25,7 @@ protected:
     void filterData();
 
     QwtPlotCurve *p_curve;
+    QVector<QPointF> d_currentData;
 };
 
 #endif // LIFSLICEPLOT_H

@@ -20,4 +20,5 @@ protected:
 
 };
 
+
 #endif // VIRTUALAWG_H

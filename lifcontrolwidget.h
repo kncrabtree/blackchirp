@@ -16,21 +16,25 @@ class LifControlWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit LifControlWidget(QWidget *parent = 0);
-    ~LifControlWidget();
+    explicit LifControlWidget(QWidget *parent = nullptr);
+    ~LifControlWidget() override;
 
     LifConfig getSettings(LifConfig c);
+    double laserPos() const;
     BlackChirp::LifScopeConfig toConfig() const;
 
 signals:
-    void updateScope(const BlackChirp::LifScopeConfig);
-    void newTrace(const LifTrace);
+    void updateScope(BlackChirp::LifScopeConfig);
+    void newTrace(LifTrace);
     void lifColorChanged();
+    void laserPosUpdate(double pos);
 
 public slots:
-    void scopeConfigChanged(const BlackChirp::LifScopeConfig c);
+    void scopeConfigChanged(BlackChirp::LifScopeConfig c);
     void checkLifColors();
     void updateHardwareLimits();
+    void setLaserPos(double pos);
+    void setSampleRateBox(double rate);
 
 private:
     Ui::LifControlWidget *ui;

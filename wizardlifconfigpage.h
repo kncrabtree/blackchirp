@@ -4,8 +4,10 @@
 #include "experimentwizardpage.h"
 
 class QDoubleSpinBox;
+class QSpinBox;
 class QCheckBox;
 class LifControlWidget;
+class LifLaserControlDoubleSpinBox;
 class QComboBox;
 
 class WizardLifConfigPage : public ExperimentWizardPage
@@ -13,24 +15,27 @@ class WizardLifConfigPage : public ExperimentWizardPage
     Q_OBJECT
 public:
     WizardLifConfigPage(QWidget *parent = nullptr);
-    ~WizardLifConfigPage();
+    ~WizardLifConfigPage() override;
 
-    void setFromConfig(const LifConfig c);
+    void setFromConfig(LifConfig c);
+    void setLaserPos(double pos);
 
     // QWizardPage interface
-    void initializePage();
-    bool validatePage();
-    int nextId() const;
+    void initializePage() override;
+    bool validatePage() override;
+    int nextId() const override;
 
 signals:
-    void newTrace(const LifTrace c);
-    void updateScope(const BlackChirp::LifScopeConfig);
-    void scopeConfigChanged(const BlackChirp::LifScopeConfig);
+    void newTrace(LifTrace c);
+    void updateScope(BlackChirp::LifScopeConfig);
+    void scopeConfigChanged(BlackChirp::LifScopeConfig);
+    void laserPosUpdate(double);
     void lifColorChanged();
 
 private:
-    QDoubleSpinBox *p_delayStart, *p_delayStep, *p_delayEnd;
-    QDoubleSpinBox *p_laserStart, *p_laserStep, *p_laserEnd;
+    QDoubleSpinBox *p_delayStart, *p_delayStep;
+    LifLaserControlDoubleSpinBox *p_laserStart, *p_laserStep;
+    QSpinBox *p_delayNum, *p_laserNum;
     QCheckBox *p_delaySingle, *p_laserSingle;
     QComboBox *p_orderBox, *p_completeBox;
     LifControlWidget *p_lifControl;

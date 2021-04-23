@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>182</width>
-    <height>261</height>
+    <width>461</width>
+    <height>267</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -36,7 +36,7 @@
        <widget class="LifTracePlot" name="lifPlot" native="true"/>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout">
+       <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
          <spacer name="verticalSpacer">
           <property name="orientation">
@@ -51,140 +51,181 @@
          </spacer>
         </item>
         <item>
-         <layout class="QFormLayout" name="formLayout">
-          <property name="fieldGrowthPolicy">
-           <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+         <widget class="QGroupBox" name="laserBox">
+          <property name="title">
+           <string>LIF Laser Control</string>
           </property>
-          <item row="0" column="0">
-           <widget class="QLabel" name="lIFVScaleLabel">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>LIF V Scale</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QDoubleSpinBox" name="lIFVScaleDoubleSpinBox">
-            <property name="suffix">
-             <string> V/div</string>
-            </property>
-            <property name="minimum">
-             <double>0.010000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>5.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="sampleRateLabel">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>Sample Rate</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QSpinBox" name="sampleRateSpinBox">
-            <property name="suffix">
-             <string> MS/s</string>
-            </property>
-            <property name="minimum">
-             <number>100</number>
-            </property>
-            <property name="maximum">
-             <number>2000</number>
-            </property>
-            <property name="singleStep">
-             <number>100</number>
-            </property>
-            <property name="value">
-             <number>1000</number>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="samplesLabel">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>Samples</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QSpinBox" name="samplesSpinBox">
-            <property name="minimum">
-             <number>1000</number>
-            </property>
-            <property name="maximum">
-             <number>10000</number>
-            </property>
-            <property name="singleStep">
-             <number>10000</number>
-            </property>
-            <property name="value">
-             <number>1000</number>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="refEnabledLabel">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>Ref Enabled</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <widget class="QCheckBox" name="refEnabledCheckBox"/>
-          </item>
-          <item row="4" column="0">
-           <widget class="QLabel" name="refVScaleLabel">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>Ref V Scale</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="1">
-           <widget class="QDoubleSpinBox" name="refVScaleDoubleSpinBox">
-            <property name="suffix">
-             <string> V/div</string>
-            </property>
-            <property name="minimum">
-             <double>0.010000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>5.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-         </layout>
+          <layout class="QVBoxLayout" name="verticalLayout_4">
+           <item>
+            <layout class="QFormLayout" name="formLayout_2">
+             <property name="labelAlignment">
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+             </property>
+             <property name="formAlignment">
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLabel" name="posLabel">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>Pos</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="LifLaserControlDoubleSpinBox" name="laserPosDoubleSpinBox">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="scopeBox">
+          <property name="title">
+           <string>LIF Scope Control</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <item>
+            <layout class="QFormLayout" name="formLayout">
+             <property name="fieldGrowthPolicy">
+              <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLabel" name="lIFVScaleLabel">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>LIF V Scale</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QDoubleSpinBox" name="lIFVScaleDoubleSpinBox">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="suffix">
+                <string> V/div</string>
+               </property>
+               <property name="minimum">
+                <double>0.010000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>5.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="sampleRateLabel">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>Sample Rate</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="samplesLabel">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>Samples</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QSpinBox" name="samplesSpinBox">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="minimum">
+                <number>1000</number>
+               </property>
+               <property name="maximum">
+                <number>10000</number>
+               </property>
+               <property name="singleStep">
+                <number>10000</number>
+               </property>
+               <property name="value">
+                <number>1000</number>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="refEnabledLabel">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>Ref Enabled</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QCheckBox" name="refEnabledCheckBox"/>
+             </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="refVScaleLabel">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>Ref V Scale</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="1">
+              <widget class="QDoubleSpinBox" name="refVScaleDoubleSpinBox">
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
+               <property name="suffix">
+                <string> V/div</string>
+               </property>
+               <property name="minimum">
+                <double>0.010000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>5.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QComboBox" name="sampleRateComboBox"/>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
         </item>
         <item>
          <spacer name="verticalSpacer_2">
@@ -212,6 +253,11 @@
    <extends>QWidget</extends>
    <header>liftraceplot.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>LifLaserControlDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>liflasercontroldoublespinbox.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

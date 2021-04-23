@@ -18,7 +18,7 @@ public:
     ~LifSpectrogramPlot();
 
     void prepareForExperiment(const LifConfig c);
-    void updatePoint(int row, int col, double val);
+    void updateData(const QVector<double> d, int numCols, double zMin, double zMax);
 
     void setZMax(double d);
     void replot();
@@ -37,9 +37,7 @@ private:
     QwtPlotSpectrogram *p_spectrogram;
     QwtPlotMarker *p_delayMarker, *p_freqMarker;
     bool d_enabled;
-    bool d_firstPoint;
     bool d_delayDragging, d_freqDragging, d_grabDelay, d_grabFreq;
-    double d_zMax;
 
 
     // ZoomPanPlot interface

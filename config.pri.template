@@ -60,8 +60,11 @@ GPIB=-1
 PC=-1
 
 ###### LIF ONLY #####
-#LIF Oscilloscope (0 = virtual, 1 = DPO3012)
+#LIF Oscilloscope (0 = virtual, 1 = M4i2211x8)
 LIFSCOPE=1
+
+#LIF Laser (0 = virtual, 1 = Opolette)
+LIFLASER=1
 ##### END LIF ONLY #####
 
 ##### MOTOR ONLY #####
@@ -80,6 +83,7 @@ CLOCKS=0 0
 PGEN=0
 FC=0
 LIFSCOPE=0
+LIFLASER=0
 IOBOARD=0
 GPIB=0
 PC=0
@@ -102,10 +106,9 @@ equals(IOBOARD,1)|allhardware {
 	LIBS += -llabjackusb
 }
 
-equals(FTMWSCOPE,3)|allhardware {
+equals(FTMWSCOPE,3)|equals(LIFSCOPE,1)|allhardware {
      LIBS += -lspcm_linux
 }
-
 
 #------------------------------
 # CUDA compiler configuration
@@ -160,6 +163,7 @@ gpu-cuda {
 lif {
 	DEFINES += BC_LIF
 	DEFINES += BC_LIFSCOPE=$$LIFSCOPE
+	DEFINES += BC_LIFLASER=$$LIFLASER
 }
 
 motor {

@@ -23,8 +23,6 @@ MotorSpectrogramPlot::MotorSpectrogramPlot(QWidget *parent) : ZoomPanPlot(QStrin
     d_intervalList.insert(BlackChirp::MotorZ,QwtInterval(0.0,1.0));
     d_intervalList.insert(BlackChirp::MotorT,QwtInterval(0.0,1.0));
 
-    connect(this,&MotorSpectrogramPlot::plotRightClicked,this,&MotorSpectrogramPlot::buildContextMenu);
-
     p_spectrogramData = new QwtMatrixRasterData;
     p_spectrogramData->setInterval(Qt::XAxis,QwtInterval(0.0,1.0));
     p_spectrogramData->setInterval(Qt::YAxis,QwtInterval(0.0,1.0));

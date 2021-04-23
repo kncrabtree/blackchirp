@@ -29,6 +29,11 @@ enum ScopeTriggerSlope {
     FallingEdge
 };
 
+enum ScopeSampleOrder {
+    ChannelsSequential,
+    ChannelsInterleaved
+};
+
 enum FtmwType
 {
     FtmwTargetShots,
@@ -185,6 +190,7 @@ struct LifScopeConfig {
     ScopeTriggerSlope slope;
     int bytesPerPoint;
     QDataStream::ByteOrder byteOrder;
+    ScopeSampleOrder channelOrder;
 
     bool refEnabled;
     double vScale1, vScale2;
@@ -192,7 +198,8 @@ struct LifScopeConfig {
 
 
     LifScopeConfig() : sampleRate(0.0), recordLength(0), xIncr(0.0), slope(RisingEdge), bytesPerPoint(1),
-        byteOrder(QDataStream::LittleEndian), refEnabled(false), vScale1(0.0), vScale2(0.0), yMult1(0.0), yMult2(0.0) {}
+        byteOrder(QDataStream::LittleEndian), channelOrder(ChannelsInterleaved), refEnabled(false), vScale1(0.0),
+        vScale2(0.0), yMult1(0.0), yMult2(0.0) {}
 
 
     //Scope config
@@ -213,19 +220,12 @@ struct LifScopeConfig {
         out.insert(prefix+QString("BytesPerPoint"),qMakePair(bytesPerPoint,empty));
         byteOrder == QDataStream::BigEndian ? scratch = QString("BigEndian") : scratch = QString("LittleEndian");
         out.insert(prefix+QString("ByteOrder"),qMakePair(scratch,empty));
+        channelOrder == ChannelsInterleaved ? scratch = QString("Interleaved") : scratch = QString("Sequential");
+        out.insert(prefix+QString("ChannelOrder"),qMakePair(scratch,empty));
 
         return out;
     }
 
-};
-
-
-struct LifPoint {
-    double mean;
-    double sumsq;
-    quint64 count;
-
-    LifPoint() : mean(0.0), sumsq(0.0), count(0) {}    
 };
 
 struct MotorScopeConfig {
@@ -342,7 +342,6 @@ Q_DECLARE_METATYPE(BlackChirp::Sideband)
 Q_DECLARE_METATYPE(BlackChirp::FlowSetting)
 Q_DECLARE_METATYPE(BlackChirp::FtmwType)
 Q_DECLARE_METATYPE(BlackChirp::ScopeTriggerSlope)
-Q_DECLARE_METATYPE(BlackChirp::LifPoint)
 Q_DECLARE_METATYPE(BlackChirp::LogMessageCode)
 Q_DECLARE_METATYPE(BlackChirp::PulseActiveLevel)
 Q_DECLARE_METATYPE(BlackChirp::PulseSetting)
@@ -354,7 +353,6 @@ Q_DECLARE_METATYPE(BlackChirp::FtPlotUnits)
 Q_DECLARE_METATYPE(BlackChirp::FtWindowFunction)
 Q_DECLARE_METATYPE(BlackChirp::ClockType)
 
-Q_DECLARE_TYPEINFO(BlackChirp::LifPoint,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::ChirpSegment,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::FlowChannelConfig,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::PulseChannelConfig,Q_MOVABLE_TYPE);

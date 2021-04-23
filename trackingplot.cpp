@@ -23,7 +23,6 @@ TrackingPlot::TrackingPlot(QString name, QWidget *parent) : ZoomPanPlot(name, pa
     setAxisFont(QwtPlot::yRight,QFont(QString("sans-serif"),8));
 
     canvas()->installEventFilter(this);
-    connect(this,&TrackingPlot::plotRightClicked,this,&TrackingPlot::buildContextMenu);
 }
 
 TrackingPlot::~TrackingPlot()

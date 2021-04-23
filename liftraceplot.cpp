@@ -8,6 +8,8 @@
 #include <QWidgetAction>
 #include <QSpinBox>
 #include <QFormLayout>
+#include <QFileDialog>
+#include <QMessageBox>
 
 #include <qwt6/qwt_plot_curve.h>
 #include <qwt6/qwt_plot_zoneitem.h>
@@ -73,8 +75,6 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
     connect(leg,&QwtLegend::checked,this,&LifTracePlot::legendItemClicked);
     insertLegend(leg,QwtPlot::BottomLegend);
 
-    connect(this,&LifTracePlot::plotRightClicked,this,&LifTracePlot::buildContextMenu);
-
     QSettings s2(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     d_lifZoneRange.first = s2.value(QString("lifConfig/lifStart"),-1).toInt();
     d_lifZoneRange.second = s2.value(QString("lifConfig/lifEnd"),-1).toInt();
@@ -107,12 +107,14 @@ void LifTracePlot::setLifGateRange(int begin, int end)
 {
     d_lifZoneRange.first = begin;
     d_lifZoneRange.second = end;
+    updateLifZone();
 }
 
 void LifTracePlot::setRefGateRange(int begin, int end)
 {
     d_refZoneRange.first = begin;
     d_refZoneRange.second = end;
+    updateRefZone();
 }
 
 LifConfig LifTracePlot::getSettings(LifConfig c)
@@ -237,19 +239,22 @@ void LifTracePlot::traceProcessed(const LifTrace t)
 void LifTracePlot::buildContextMenu(QMouseEvent *me)
 {
     QMenu *m = contextMenu();
+    QAction *exportAction=m->addAction(QString("Export XY..."));
+    connect(exportAction,&QAction::triggered,this,&LifTracePlot::exportXY);
+
+    QAction *lifZoneAction = m->addAction(QString("Change LIF Gate..."));
+    connect(lifZoneAction,&QAction::triggered,this,&LifTracePlot::changeLifGateRange);
+    if(d_currentTrace.size() == 0 || !p_lifZone->isVisible() || !isEnabled())
+        lifZoneAction->setEnabled(false);
+
+
+    QAction *refZoneAction = m->addAction(QString("Change Ref Gate..."));
+    connect(refZoneAction,&QAction::triggered,this,&LifTracePlot::changeRefGateRange);
+    if(!d_currentTrace.hasRefData() || !p_refZone->isVisible() || !isEnabled())
+        refZoneAction->setEnabled(false);
 
     if(!d_displayOnly)
     {
-        QAction *lifZoneAction = m->addAction(QString("Change LIF Gate..."));
-        connect(lifZoneAction,&QAction::triggered,this,&LifTracePlot::changeLifGateRange);
-        if(d_currentTrace.size() == 0 || !p_lifZone->isVisible() || !isEnabled())
-            lifZoneAction->setEnabled(false);
-
-
-        QAction *refZoneAction = m->addAction(QString("Change Ref Gate..."));
-        connect(refZoneAction,&QAction::triggered,this,&LifTracePlot::changeRefGateRange);
-        if(!d_currentTrace.hasRefData() || !p_refZone->isVisible() || !isEnabled())
-            refZoneAction->setEnabled(false);
 
         m->addSeparator();
 
@@ -501,13 +506,29 @@ void LifTracePlot::filterData()
     QVector<QPointF> lifFiltered, refFiltered;
     lifFiltered.reserve(2*canvas()->width()+2);
     refFiltered.reserve(2*canvas()->width()+2);
-    double yMin = 0.0, yMax = 0.0;
+
+    double yMin = lifData.at(0).y(), yMax = yMin;
+    if(!refData.isEmpty())
+    {
+        yMin = qMin(yMin,refData.at(0).y());
+        yMax = qMax(yMax,refData.at(0).y());
+    }
+
 
     //find first data point that is in the range of the plot
     //note: x data for lif and ref are assumed to be the same!
     int dataIndex = 0;
     while(dataIndex+1 < lifData.size() && map.transform(lifData.at(dataIndex).x()*1e9) < firstPixel)
+    {
         dataIndex++;
+        yMin = qMin(lifData.at(dataIndex).y(),yMin);
+        yMax = qMax(lifData.at(dataIndex).y(),yMax);
+        if(!refData.isEmpty())
+        {
+            yMin = qMin(yMin,refData.at(dataIndex).y());
+            yMax = qMax(yMax,refData.at(dataIndex).y());
+        }
+    }
 
     //add the previous point to the filtered array
     //this will make sure the curve always goes to the edge of the plot
@@ -531,8 +552,9 @@ void LifTracePlot::filterData()
 
         int lifMinIndex = dataIndex, lifMaxIndex = dataIndex, refMinIndex = dataIndex, refMaxIndex = dataIndex;
         int numPnts = 0;
+        double nextPixelX = map.invTransform(pixel+1.0)*1e-9;
 
-        while(dataIndex+1 < lifData.size() && map.transform(lifData.at(dataIndex).x()*1e9) < pixel+1.0)
+        while(dataIndex+1 < lifData.size() && lifData.at(dataIndex).x() < nextPixelX)
         {
             if(lifData.at(dataIndex).y() < lifMin)
             {
@@ -614,6 +636,17 @@ void LifTracePlot::filterData()
             p.setX(p.x()*1e9);
             refFiltered.append(p);
         }
+
+        for(int i=dataIndex; i<lifData.size(); i++)
+        {
+            yMin = qMin(lifData.at(i).y(),yMin);
+            yMax = qMax(lifData.at(i).y(),yMax);
+            if(!refData.isEmpty())
+            {
+                yMin = qMin(yMin,refData.at(i).y());
+                yMax = qMax(yMax,refData.at(i).y());
+            }
+        }
     }
 
     setAxisAutoScaleRange(QwtPlot::yLeft,yMin,yMax);
@@ -663,6 +696,7 @@ bool LifTracePlot::eventFilter(QObject *obj, QEvent *ev)
             QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
             s.setValue(QString("lifConfig/lifStart"),d_lifZoneRange.first);
             s.setValue(QString("lifConfig/lifEnd"),d_lifZoneRange.second);
+            emit lifGateUpdated(d_lifZoneRange.first,d_lifZoneRange.second);
             ev->accept();
             return true;
         }
@@ -675,6 +709,7 @@ bool LifTracePlot::eventFilter(QObject *obj, QEvent *ev)
             QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
             s.setValue(QString("lifConfig/refStart"),d_refZoneRange.first);
             s.setValue(QString("lifConfig/refEnd"),d_refZoneRange.second);
+            emit refGateUpdated(d_refZoneRange.first,d_refZoneRange.second);
             ev->accept();
             return true;
         }
@@ -767,4 +802,29 @@ bool LifTracePlot::eventFilter(QObject *obj, QEvent *ev)
     }
 
     return ZoomPanPlot::eventFilter(obj,ev);
+}
+
+void LifTracePlot::exportXY()
+{
+    QString path = BlackChirp::getExportDir();
+    QString name = QFileDialog::getSaveFileName(this,QString("Export LIF Trace"),path + QString("/lifxy.txt"));
+    if(name.isEmpty())
+        return;
+    QFile f(name);
+    if(!f.open(QIODevice::WriteOnly))
+    {
+        QMessageBox::critical(this,QString("Export Failed"),QString("Could not open file %1 for writing. Please choose a different filename.").arg(name));
+        return;
+    }
+    QApplication::setOverrideCursor(Qt::BusyCursor);
+    f.write(QString("time\tlif").toLatin1());
+    auto d = d_currentTrace.lifToXY();
+    for(int i=0;i<d.size();i++)
+    {
+        f.write(QString("\n%1\t%2").arg(d.at(i).x(),0,'e',6)
+                    .arg(d.at(i).y(),0,'e',12).toLatin1());
+    }
+    f.close();
+    QApplication::restoreOverrideCursor();
+    BlackChirp::setExportDir(name);
 }

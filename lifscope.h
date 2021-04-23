@@ -25,18 +25,17 @@ public slots:
 
 protected:
     BlackChirp::LifScopeConfig d_config;
-    bool d_refEnabled;
 };
 
 #ifdef BC_LIFSCOPE
 #if BC_LIFSCOPE == 1
-#include "dpo3012.h"
-class Dpo3012;
-typedef Dpo3012 LifScopeHardware;
+#include "m4i2211x8.h"
+class M4i2211x8;
+using LifScopeHardware = M4i2211x8;
 #else
 #include "virtuallifscope.h"
 class VirtualLifScope;
-typedef VirtualLifScope LifScopeHardware;
+using LifScopeHardware = VirtualLifScope;
 #endif
 #endif
 

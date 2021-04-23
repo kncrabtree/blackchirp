@@ -9,8 +9,6 @@ class MotorZPlot : public MotorSpectrogramPlot
 public:
     MotorZPlot(QWidget *parent = nullptr);
 
-    // MotorSpectrogramPlot interface
-    void buildContextMenu(QMouseEvent *me);
 };
 
 #endif // MOTORZPLOT_H
