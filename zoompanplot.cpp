@@ -4,11 +4,16 @@
 #include <QMouseEvent>
 #include <QWidgetAction>
 #include <QFormLayout>
+#include <QCheckBox>
 #include <QDoubleSpinBox>
+#include <QSpinBox>
+#include <QLabel>
 #include <QSettings>
 #include <QMenu>
 
 #include <qwt6/qwt_scale_div.h>
+
+#include "customtracker.h"
 
 ZoomPanPlot::ZoomPanPlot(QString name, QWidget *parent) : QwtPlot(parent)
 {
@@ -16,6 +21,8 @@ ZoomPanPlot::ZoomPanPlot(QString name, QWidget *parent) : QwtPlot(parent)
     d_config.axisList.append(AxisConfig(QwtPlot::xTop,QString("Top")));
     d_config.axisList.append(AxisConfig(QwtPlot::yLeft,QString("Left")));
     d_config.axisList.append(AxisConfig(QwtPlot::yRight,QString("Right")));
+
+    p_tracker = new CustomTracker(this->canvas());
 
     setName(name);
 
@@ -105,8 +112,18 @@ void ZoomPanPlot::setName(QString name)
 
     QSettings s;
     for(int i=0; i<d_config.axisList.size(); i++)
+    {
+        auto t = (int)d_config.axisList.at(i).type;
         d_config.axisList[i].zoomFactor = s.value(QString("zoomFactors/%1/%2").arg(d_name)
-                                                  .arg((int)d_config.axisList.at(i).type),0.1).toDouble();
+                                                  .arg(t),0.1).toDouble();
+        int dec = s.value(QString("trackerDecimals/%1/%2").arg(d_name).arg(t),4).toInt();
+        bool sci = s.value(QString("trackerScientific/%1/%2").arg(d_name).arg(t),false).toBool();
+        p_tracker->setDecimals(d_config.axisList.at(i).type,dec);
+        p_tracker->setScientific(d_config.axisList.at(i).type,sci);
+    }
+
+    bool en = s.value(QString("trackerEnabled/%1").arg(d_name),false).toBool();
+    p_tracker->setEnabled(en);
 }
 
 void ZoomPanPlot::replot()
@@ -185,6 +202,33 @@ void ZoomPanPlot::setZoomFactor(QwtPlot::Axis a, double v)
     s.setValue(QString("zoomFactors/%1/%2").arg(d_name)
                        .arg(QVariant(d_config.axisList.at(i).type).toString()),v);
     s.sync();
+}
+
+void ZoomPanPlot::setTrackerEnabled(bool en)
+{
+    QSettings s;
+    s.setValue(QString("trackerEnabled/%1").arg(d_name),en);
+    s.sync();
+
+    p_tracker->setEnabled(en);
+}
+
+void ZoomPanPlot::setTrackerDecimals(QwtPlot::Axis a, int dec)
+{
+    QSettings s;
+    s.setValue(QString("trackerDecimals/%1/%2").arg(d_name).arg((int)a),dec);
+    s.sync();
+
+    p_tracker->setDecimals(a,dec);
+}
+
+void ZoomPanPlot::setTrackerScientific(QwtPlot::Axis a, bool sci)
+{
+    QSettings s;
+    s.setValue(QString("trackerScientific/%1/%2").arg(d_name).arg((int)a),sci);
+    s.sync();
+
+    p_tracker->setScientific(a,sci);
 }
 
 void ZoomPanPlot::setAxisOverride(QwtPlot::Axis axis, bool override)
@@ -380,35 +424,72 @@ QMenu *ZoomPanPlot::contextMenu()
     QAction *asAction = menu->addAction(QString("Autoscale"));
     connect(asAction,&QAction::triggered,this,&ZoomPanPlot::autoScale);
 
-    if(!itemList().isEmpty())
+    QMenu *zoomMenu = menu->addMenu(QString("Wheel zoom factor"));
+    QWidgetAction *zwa = new QWidgetAction(zoomMenu);
+    QWidget *zw = new QWidget(zoomMenu);
+    QFormLayout *zfl = new QFormLayout(zw);
+
+
+    QMenu *trackMenu = menu->addMenu(QString("Tracker"));
+    QWidgetAction *twa = new QWidgetAction(trackMenu);
+    QWidget *tw = new QWidget(zoomMenu);
+    QFormLayout *tfl = new QFormLayout(tw);
+
+    QCheckBox *enBox = new QCheckBox();
+    enBox->setChecked(p_tracker->isEnabled());
+    connect(enBox,&QCheckBox::toggled,this,&ZoomPanPlot::setTrackerEnabled);
+    tfl->addRow(QString("Enabled?"),enBox);
+
+    for(int i=0; i<d_config.axisList.size(); i++)
     {
-        QMenu *zoomMenu = menu->addMenu(QString("Wheel zoom factor"));
-        QWidgetAction *wa = new QWidgetAction(zoomMenu);
-        QWidget *w = new QWidget(zoomMenu);
-        QFormLayout *fl = new QFormLayout(w);
+        const AxisConfig c = d_config.axisList.at(i);
+        if(!axisEnabled(c.type))
+            continue;
 
-        for(int i=0; i<d_config.axisList.size(); i++)
-        {
-            const AxisConfig c = d_config.axisList.at(i);
-            if(!axisEnabled(c.type))
-                continue;
+        QDoubleSpinBox *box = new QDoubleSpinBox();
+        box->setMinimum(0.001);
+        box->setMaximum(0.5);
+        box->setDecimals(3);
+        box->setValue(c.zoomFactor);
+        box->setSingleStep(0.005);
+        box->setKeyboardTracking(false);
+        connect(box,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
+                this,[=](double val){ setZoomFactor(c.type,val); });
 
-            QDoubleSpinBox *box = new QDoubleSpinBox();
-            box->setMinimum(0.001);
-            box->setMaximum(0.5);
-            box->setDecimals(3);
-            box->setValue(c.zoomFactor);
-            box->setSingleStep(0.005);
-            box->setKeyboardTracking(false);
-            connect(box,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-                    this,[=](double val){ setZoomFactor(c.type,val); });
-            fl->addRow(c.name,box);
-        }
+        auto zlbl = new QLabel(c.name);
+        zlbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+        zlbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+        zfl->addRow(zlbl,box);
 
-        w->setLayout(fl);
-        wa->setDefaultWidget(w);
-        zoomMenu->addAction(wa);
+        QSpinBox *decBox = new QSpinBox;
+        decBox->setRange(0,9);
+        decBox->setValue(p_tracker->axisDecimals(c.type));
+        decBox->setKeyboardTracking(false);
+        connect(decBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,[=](int dec){ setTrackerDecimals(c.type,dec); });
+
+        auto lbl = new QLabel(QString("%1 Decimals").arg(c.name));
+        lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+        lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+        tfl->addRow(lbl,decBox);
+
+        QCheckBox *sciBox = new QCheckBox;
+        sciBox->setChecked(p_tracker->axisScientific(c.type));
+        connect(sciBox,&QCheckBox::toggled,this,[=](bool sci){ setTrackerScientific(c.type,sci); });
+
+        auto lbl2 = new QLabel(QString("%1 Scientific").arg(c.name));
+        lbl2->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+        lbl2->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+        tfl->addRow(lbl2,sciBox);
+
     }
+
+    zw->setLayout(zfl);
+    zwa->setDefaultWidget(zw);
+    zoomMenu->addAction(zwa);
+
+    tw->setLayout(tfl);
+    twa->setDefaultWidget(tw);
+    trackMenu->addAction(twa);
 
     return menu;
 

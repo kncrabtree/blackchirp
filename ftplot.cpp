@@ -19,11 +19,10 @@
 #include <QDialogButtonBox>
 #include <QPushButton>
 
-#include <qwt6/qwt_picker_machine.h>
+
 #include <qwt6/qwt_scale_widget.h>
 #include <qwt6/qwt_scale_div.h>
 #include <qwt6/qwt_plot_curve.h>
-#include <qwt6/qwt_plot_picker.h>
 #include <qwt6/qwt_plot_grid.h>
 #include <qwt6/qwt_symbol.h>
 
@@ -67,14 +66,6 @@ FtPlot::FtPlot(QString id, QWidget *parent) :
     p_peakData->setSymbol(sym);
 
     p_peakData->attach(this);
-
-    QwtPlotPicker *picker = new QwtPlotPicker(this->canvas());
-    picker->setAxis(QwtPlot::xBottom,QwtPlot::yLeft);
-    picker->setStateMachine(new QwtPickerClickPointMachine);
-    picker->setMousePattern(QwtEventPattern::MouseSelect1,Qt::RightButton);
-    picker->setTrackerMode(QwtPicker::AlwaysOn);
-    picker->setTrackerPen(QPen(QPalette().color(QPalette::Text)));
-    picker->setEnabled(true);
 
     p_plotGrid = new QwtPlotGrid();
     p_plotGrid->enableX(true);

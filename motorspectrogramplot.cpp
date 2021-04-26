@@ -7,7 +7,7 @@
 #include <qwt6/qwt_color_map.h>
 #include <qwt6/qwt_scale_widget.h>
 #include <qwt6/qwt_interval.h>
-#include <qwt6/qwt_picker_machine.h>
+
 
 #include "customtracker.h"
 
@@ -36,14 +36,6 @@ MotorSpectrogramPlot::MotorSpectrogramPlot(QWidget *parent) : ZoomPanPlot(QStrin
     p_spectrogram->setRenderHint(QwtPlotItem::RenderAntialiased);
     p_spectrogram->setData(p_spectrogramData);
     p_spectrogram->attach(this);
-
-    CustomTracker *tracker = new CustomTracker(this->canvas());
-    tracker->setAxis(QwtPlot::xBottom,QwtPlot::yLeft);
-    tracker->setStateMachine(new QwtPickerClickPointMachine);
-    tracker->setMousePattern(QwtEventPattern::MouseSelect1,Qt::RightButton);
-    tracker->setTrackerMode(QwtPicker::AlwaysOn);
-    tracker->setTrackerPen(QPen(QPalette().color(QPalette::Text)));
-    tracker->setEnabled(true);
 
     enableAxis(QwtPlot::yRight);
     setAxisOverride(QwtPlot::yRight);
@@ -88,14 +80,6 @@ void MotorSpectrogramPlot::prepareForScan(const MotorScan s)
     p_spectrogramData->setInterval(Qt::ZAxis,QwtInterval(0.0,1.0));
 
     autoScale();
-}
-
-void MotorSpectrogramPlot::buildContextMenu(QMouseEvent *me)
-{
-    QMenu *m = contextMenu();
-
-    m->popup(me->globalPos());
-
 }
 
 void MotorSpectrogramPlot::updateData(QVector<double> data, int cols)

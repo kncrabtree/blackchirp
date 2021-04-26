@@ -1,8 +1,6 @@
 #include "motortimeplot.h"
 
 #include <QSettings>
-#include "customtracker.h"
-#include <qwt6/qwt_picker_machine.h>
 
 MotorTimePlot::MotorTimePlot(QWidget *parent) : ZoomPanPlot(QString("motorTimePlot"),parent)
 {
@@ -15,13 +13,6 @@ MotorTimePlot::MotorTimePlot(QWidget *parent) : ZoomPanPlot(QString("motorTimePl
     p_curve->attach(this);
     s.endGroup();
 
-    CustomTracker *tracker = new CustomTracker(this->canvas());
-    tracker->setAxis(QwtPlot::xBottom,QwtPlot::yLeft);
-    tracker->setStateMachine(new QwtPickerClickPointMachine);
-    tracker->setMousePattern(QwtEventPattern::MouseSelect1,Qt::RightButton);
-    tracker->setTrackerMode(QwtPicker::AlwaysOn);
-    tracker->setTrackerPen(QPen(QPalette().color(QPalette::Text)));
-    tracker->setEnabled(true);
 
     QwtText label(QString("P"));
     label.setFont(QFont(QString("sans-serif"),8));

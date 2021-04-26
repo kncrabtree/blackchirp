@@ -17,7 +17,6 @@ public:
 
     void setLabelText(QwtPlot::Axis axis, QString text);
     virtual void prepareForScan(const MotorScan s);
-    virtual void buildContextMenu(QMouseEvent *me);
     BlackChirp::MotorAxis leftAxis() const { return d_leftAxis; }
     BlackChirp::MotorAxis bottomAxis() const { return d_bottomAxis; }
 

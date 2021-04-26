@@ -4,6 +4,7 @@
 #include <qwt6/qwt_plot.h>
 
 class QMenu;
+class CustomTracker;
 
 class ZoomPanPlot : public QwtPlot
 {
@@ -26,6 +27,9 @@ public slots:
     void autoScale();
     virtual void replot();
     void setZoomFactor(QwtPlot::Axis a, double v);
+    void setTrackerEnabled(bool en);
+    void setTrackerDecimals(QwtPlot::Axis a, int dec);
+    void setTrackerScientific(QwtPlot::Axis a, bool sci);
 
 signals:
     void panningStarted();
@@ -34,6 +38,7 @@ signals:
 
 protected:
     QString d_name;
+    CustomTracker *p_tracker;
     struct AxisConfig {
         QwtPlot::Axis type;
         bool autoScale;
