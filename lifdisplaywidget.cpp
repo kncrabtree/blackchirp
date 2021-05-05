@@ -252,9 +252,9 @@ QPair<double,double> LifDisplayWidget::integrate(const LifConfig c)
         {
             int joffset = 0;
             if(d_currentLifConfig.laserStep() < 0.0)
-                joffset = d_currentLifConfig.numDelayPoints()-1;
+                joffset = d_currentLifConfig.numLaserPoints()-1;
 
-            int ii = qAbs(i-ioffset)*c.numDelayPoints();
+            int ii = qAbs(i-ioffset)*c.numLaserPoints();
             int jj = qAbs(j-joffset);
             auto integral = d.at(i).at(j).integrate(c.lifGate().first,c.lifGate().second,c.refGate().first,c.refGate().second);
             d_currentIntegratedData[ii+jj] = integral;
