@@ -39,6 +39,8 @@ void PulseGenerator::initialize()
     d_config.setRepRate(s.value(QString("repRate"),10.0).toDouble());
     s.endGroup();
     s.endGroup();
+
+    initializePGen();
 }
 
 Experiment PulseGenerator::prepareForExperiment(Experiment exp)
