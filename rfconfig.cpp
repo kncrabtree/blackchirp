@@ -647,6 +647,50 @@ double RfConfig::calculateAwgFreq(double chirpFreq) const
 
 }
 
+double RfConfig::calculateChirpAbsOffset(double awgFreq) const
+{
+    return qAbs(calculateChirpFreq(awgFreq) - clockFrequency(BlackChirp::DownConversionLO));
+
+}
+
+QPair<double, double> RfConfig::calculateChirpAbsOffsetRange() const
+{
+    QPair<double,double> out(-1.0,-1.0);
+
+    for(int i=0; i<data->chirps.size(); i++)
+    {
+        auto c = data->chirps.at(i);
+
+        int limit = c.numChirps();
+        if(limit > 1 && c.allChirpsIdentical())
+            limit = 1;
+
+        for(int j=0; j<limit; j++)
+        {
+            auto cc = c.chirpList().at(j);
+            for(int k=0; k < cc.size(); k++)
+            {
+                double f1 = calculateChirpAbsOffset(cc.at(k).startFreqMHz);
+                double f2 = calculateChirpAbsOffset(cc.at(k).endFreqMHz);
+                if(f1 > f2)
+                    qSwap(f1,f2);
+                if((out.first < 0.0) || (out.second < 0.0))
+                {
+                    out.first = f1;
+                    out.second = f2;
+                }
+                else
+                {
+                    out.first = qMin(out.first,f1);
+                    out.second = qMin(out.second,f2);
+                }
+            }
+        }
+    }
+
+    return out;
+}
+
 QString RfConfig::clockStepsString() const
 {
     QString o;

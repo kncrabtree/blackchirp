@@ -94,6 +94,8 @@ public:
 
     double calculateChirpFreq(double awgFreq) const;
     double calculateAwgFreq(double chirpFreq) const;
+    double calculateChirpAbsOffset(double awgFreq) const;
+    QPair<double,double> calculateChirpAbsOffsetRange() const;
 
     QString clockStepsString() const;
     void loadClockSteps(int num, QString path);

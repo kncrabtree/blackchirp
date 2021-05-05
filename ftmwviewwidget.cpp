@@ -189,14 +189,20 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
         ui->resetAveragesButton->setEnabled(config.type() == BlackChirp::FtmwPeakUp);
         ui->averagesSpinbox->setEnabled(config.type() == BlackChirp::FtmwPeakUp);
 
+        auto chirpOffsetRange = config.rfConfig().calculateChirpAbsOffsetRange();
+        if(chirpOffsetRange.first < 0.0)
+            chirpOffsetRange.first = 0.0;
+        if(chirpOffsetRange.second < 0.0)
+            chirpOffsetRange.second = config.ftNyquistMHz();
+
         ui->minFtSegBox->blockSignals(true);
         ui->minFtSegBox->setRange(0.0,config.ftNyquistMHz());
-        ui->minFtSegBox->setValue(0.0);
+        ui->minFtSegBox->setValue(chirpOffsetRange.first);
         ui->minFtSegBox->blockSignals(false);
 
         ui->maxFtSegBox->blockSignals(true);
         ui->maxFtSegBox->setRange(0.0,config.ftNyquistMHz());
-        ui->maxFtSegBox->setValue(ui->maxFtSegBox->maximum());
+        ui->maxFtSegBox->setValue(chirpOffsetRange.second);
         ui->maxFtSegBox->blockSignals(false);
 
         if(config.type() == BlackChirp::FtmwLoScan)
