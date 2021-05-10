@@ -20,12 +20,19 @@ public:
     void setData(const QVector<QPointF> d);
     void setPlotTitle(QString text);
 
+public slots:
+    void exportXY();
+
     // ZoomPanPlot interface
 protected:
     void filterData();
 
     QwtPlotCurve *p_curve;
     QVector<QPointF> d_currentData;
+
+    // ZoomPanPlot interface
+protected:
+    QMenu *contextMenu() override;
 };
 
 #endif // LIFSLICEPLOT_H
