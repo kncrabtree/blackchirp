@@ -415,7 +415,7 @@ bool FtmwConfig::prepareForAcquisition()
         return false;
     }
 
-    if(type() == BlackChirp::FtmwLoScan)
+    if(type() == BlackChirp::FtmwLoScan || type() == BlackChirp::FtmwDrScan)
         data->targetShots = data->rfConfig.totalShots();
 
     data->completedShots = 0;
@@ -483,7 +483,7 @@ bool FtmwConfig::increment()
     else
         data->completedShots+=shotIncrement();
 
-    if(type() == BlackChirp::FtmwLoScan)
+    if(type() == BlackChirp::FtmwLoScan || type() == BlackChirp::FtmwDrScan)
     {
         //get number of shots of current FidList.
         //ask rfconfig if this is enough to advance segment
@@ -791,6 +791,7 @@ bool FtmwConfig::isComplete() const
     {
     case BlackChirp::FtmwTargetShots:
     case BlackChirp::FtmwLoScan:
+    case BlackChirp::FtmwDrScan:
         return completedShots() >= targetShots();
         break;
     case BlackChirp::FtmwTargetTime:

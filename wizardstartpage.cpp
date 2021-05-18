@@ -31,6 +31,7 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     p_ftmwTypeBox->addItem(QString("Forever"),QVariant::fromValue(BlackChirp::FtmwForever));
     p_ftmwTypeBox->addItem(QString("Peak Up"),QVariant::fromValue(BlackChirp::FtmwPeakUp));
     p_ftmwTypeBox->addItem(QString("LO Scan"),QVariant::fromValue(BlackChirp::FtmwLoScan));
+    p_ftmwTypeBox->addItem(QString("DR Scan"),QVariant::fromValue(BlackChirp::FtmwDrScan));
     p_ftmwTypeBox->setCurrentIndex(0);
 
     auto lbl = new QLabel(QString("Type"));

@@ -539,6 +539,7 @@ void MainWindow::experimentInitialized(const Experiment exp)
         switch(exp.ftmwConfig().type()) {
         case BlackChirp::FtmwTargetShots:
         case BlackChirp::FtmwLoScan:
+        case BlackChirp::FtmwDrScan:
             ui->ftmwProgressBar->setRange(0,exp.ftmwConfig().targetShots());
             break;
         case BlackChirp::FtmwTargetTime:

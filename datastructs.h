@@ -40,7 +40,8 @@ enum FtmwType
     FtmwTargetTime,
     FtmwForever,
     FtmwPeakUp,
-    FtmwLoScan
+    FtmwLoScan,
+    FtmwDrScan
 };
 
 enum LifScanOrder {

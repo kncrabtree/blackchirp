@@ -25,9 +25,28 @@ void WizardRfConfigPage::initializePage()
 
 bool WizardRfConfigPage::validatePage()
 {
-    ///TODO: If segmented, check to make sure upconversion and downconversion LOs are set
-
+    //Ensure clocks are set for scan type
+    auto rfc = p_rfc->getRfConfig();
     auto e = getExperiment();
+
+    if(e.ftmwConfig().type() == BlackChirp::FtmwLoScan)
+    {
+        if(rfc.clockHardware(BlackChirp::UpConversionLO).isEmpty())
+            return false;
+
+        if(!rfc.commonLO())
+        {
+            if(rfc.clockHardware(BlackChirp::DownConversionLO).isEmpty())
+                return false;
+        }
+    }
+
+    if(e.ftmwConfig().type() == BlackChirp::FtmwDrScan)
+    {
+        if(rfc.clockHardware(BlackChirp::DRClock).isEmpty())
+            return false;
+    }
+
     e.setRfConfig(p_rfc->getRfConfig());
     emit experimentUpdate(e);
     return true;

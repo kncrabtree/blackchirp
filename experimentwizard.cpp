@@ -3,6 +3,7 @@
 #include "experimentwizardpage.h"
 #include "wizardstartpage.h"
 #include "wizardloscanconfigpage.h"
+#include "wizarddrscanconfigpage.h"
 #include "wizardrfconfigpage.h"
 #include "wizardchirpconfigpage.h"
 #include "wizarddigitizerconfigpage.h"
@@ -30,6 +31,9 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
     auto loScanConfigPage = new WizardLoScanConfigPage(this);
     d_pages << loScanConfigPage;
 
+    auto drScanConfigPage = new WizardDrScanConfigPage(this);
+    d_pages << drScanConfigPage;
+
     auto rfConfigPage = new WizardRfConfigPage(this);
     d_pages << rfConfigPage;
 
@@ -50,6 +54,7 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
 
     setPage(StartPage,startPage);
     setPage(LoScanPage,loScanConfigPage);
+    setPage(DrScanPage,drScanConfigPage);
     setPage(RfConfigPage,rfConfigPage);
     setPage(ChirpConfigPage,chirpConfigPage);
     setPage(DigitizerConfigPage,digitizerConfigPage);

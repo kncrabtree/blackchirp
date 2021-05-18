@@ -1,5 +1,6 @@
 HEADERS += \
     $$PWD/experimentwizard.h \
+    $$PWD/wizarddrscanconfigpage.h \
     $$PWD/wizardstartpage.h \
     $$PWD/wizardchirpconfigpage.h \
     $$PWD/wizardsummarypage.h \
@@ -14,6 +15,7 @@ HEADERS += \
 
 SOURCES += \
     $$PWD/experimentwizard.cpp \
+    $$PWD/wizarddrscanconfigpage.cpp \
     $$PWD/wizardstartpage.cpp \
     $$PWD/wizardchirpconfigpage.cpp \
     $$PWD/wizardsummarypage.cpp \

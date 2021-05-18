@@ -278,7 +278,7 @@ bool RfConfig::prepareForAcquisition(BlackChirp::FtmwType t)
             return false;
     }
 
-    if(t != BlackChirp::FtmwLoScan)
+    if((t != BlackChirp::FtmwLoScan) && (t != BlackChirp::FtmwDrScan))
         data->clockConfigList.clear();
 
     if(!data->clockConfigList.isEmpty())
@@ -421,10 +421,17 @@ void RfConfig::addClockStep(QHash<BlackChirp::ClockType, RfConfig::ClockFreq> h)
     data->clockConfigList.append(h);
 }
 
-void RfConfig::addClockStep(double upLoMHz, double downLoMHz)
+void RfConfig::addLoScanClockStep(double upLoMHz, double downLoMHz)
 {
     setClockDesiredFreq(BlackChirp::UpConversionLO,upLoMHz);
     setClockDesiredFreq(BlackChirp::DownConversionLO,downLoMHz);
+    data->clockConfigList.append(data->currentClocks);
+    data->currentClocks = data->clockConfigList.constFirst();
+}
+
+void RfConfig::addDrScanClockStep(double drFreqMHz)
+{
+    setClockDesiredFreq(BlackChirp::DRClock,drFreqMHz);
     data->clockConfigList.append(data->currentClocks);
     data->currentClocks = data->clockConfigList.constFirst();
 }

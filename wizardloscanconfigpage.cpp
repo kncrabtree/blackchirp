@@ -400,7 +400,7 @@ bool WizardLoScanConfigPage::validatePage()
     d_rfConfig.clearClockSteps();
 
     for(int i=0; i<upLoValues.size() && i<downLoValues.size(); i++)
-        d_rfConfig.addClockStep(upLoValues.at(i),downLoValues.at(i));
+        d_rfConfig.addLoScanClockStep(upLoValues.at(i),downLoValues.at(i));
 
     d_rfConfig.setShotsPerClockStep(p_shotsPerStepBox->value());
     d_rfConfig.setTargetSweeps(p_targetSweepsBox->value());
