@@ -565,10 +565,10 @@ bool RfConfig::canAdvance(qint64 shots) const
 {
     qint64 target = static_cast<qint64>(data->completedSweeps+1)*static_cast<qint64>(data->shotsPerClockConfig);
 
-    //don't return true if this is the last segment!
-    if(data->currentClockIndex + 1 == data->clockConfigList.size()
-            && data->completedSweeps + 1 == data->targetSweeps)
-        return false;
+    //don't return true if this is the last segment! 5/18/21: why? doing this prevents last segment from being stored
+//    if(data->currentClockIndex + 1 == data->clockConfigList.size()
+//            && data->completedSweeps + 1 == data->targetSweeps)
+//        return false;
 
     return shots >= target;
 }

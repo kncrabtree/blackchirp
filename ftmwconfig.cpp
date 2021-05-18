@@ -504,7 +504,9 @@ bool FtmwConfig::increment()
             data->completedShots = data->rfConfig.completedSegmentShots();
 
             data->processingPaused = true;
-            return true;
+
+            //only return true if we're not finished
+            return !isComplete();
         }
     }
 
