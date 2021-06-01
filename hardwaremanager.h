@@ -22,6 +22,10 @@ class ClockManager;
 class PressureController;
 #endif
 
+#ifdef BC_TEMPCONTROLLER
+class TemperatureController;
+#endif
+
 #ifdef BC_LIF
 class LifScope;
 class LifLaser;
@@ -164,6 +168,10 @@ private:
 
 #ifdef BC_PCONTROLLER
     PressureController *p_pc;
+#endif
+
+#ifdef BC_TEMPCONTROLLER
+    TemperatureController *p_tc;
 #endif
 
 #ifdef BC_LIF

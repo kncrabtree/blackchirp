@@ -10,7 +10,7 @@ HEADERS += \
     $$PWD/virtualinstrument.h \
     $$PWD/flowcontroller.h \
     $$PWD/ioboard.h \
-		$$PWD/custominstrument.h \
+	$$PWD/custominstrument.h \
     $$PWD/clockmanager.h \
     $$PWD/clock.h
 
@@ -26,7 +26,7 @@ SOURCES += \
     $$PWD/virtualinstrument.cpp \
     $$PWD/flowcontroller.cpp \
     $$PWD/ioboard.cpp \
-		$$PWD/custominstrument.cpp \
+	$$PWD/custominstrument.cpp \
     $$PWD/clockmanager.cpp \
     $$PWD/clock.cpp
 
@@ -38,7 +38,8 @@ HEADERS += \
     $$PWD/motorcontroller.h \
     $$PWD/motoroscilloscope.h \
     $$PWD/pressurecontroller.h \
-    $$PWD/liflaser.h
+	$$PWD/liflaser.h \
+    $$PWD/temperaturecontroller.h
 
 SOURCES += \
 	$$PWD/lifscope.cpp \
@@ -47,7 +48,9 @@ SOURCES += \
     $$PWD/motorcontroller.cpp \
     $$PWD/motoroscilloscope.cpp \
     $$PWD/pressurecontroller.cpp \
-    $$PWD/liflaser.cpp
+	$$PWD/liflaser.cpp \
+    $$PWD/temperaturecontroller.cpp
+
 } else {
 
 greaterThan(GPIB,-1) {
@@ -60,6 +63,11 @@ greaterThan(GPIB,-1) {
 greaterThan(PC,-1) {
 	HEADERS += $$PWD/pressurecontroller.h
 	SOURCES += $$PWD/pressurecontroller.cpp
+}
+
+greaterThan(TC,-1) {
+     HEADERS += $$PWD/temperaturecontroller.h
+     SOURCES += $$PWD/temperaturecontroller.cpp
 }
 
 lif {

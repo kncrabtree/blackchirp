@@ -33,7 +33,9 @@ HEADERS += \
     $$PWD/valon5015.h \
     $$PWD/mks946.h \
     $$PWD/virtualliflaser.h \
-    $$PWD/m4i2211x8.h
+	$$PWD/m4i2211x8.h \
+	$$PWD/virtualtemperaturecontroller.h \
+	$$PWD/lakeshore218.h
 
 SOURCES += \
     $$PWD/virtualftmwscope.cpp \
@@ -66,9 +68,11 @@ SOURCES += \
     $$PWD/m8195a.cpp \
     $$PWD/ad9914.cpp \
     $$PWD/valon5015.cpp \
-    $$PWD/mks946.cpp \
+	$$PWD/mks946.cpp \
     $$PWD/virtualliflaser.cpp \
-    $$PWD/m4i2211x8.cpp
+	$$PWD/m4i2211x8.cpp \
+	$$PWD/virtualtemperaturecontroller.cpp \
+	$$PWD/lakeshore218.cpp
 
 } else {
 
@@ -190,6 +194,16 @@ equals(PC,1) {
         HEADERS += $$PWD/intellisysiqplus.h
         SOURCES += $$PWD/intellisysiqplus.cpp
 }
+
+equals(TC,0) {
+        HEADERS += $$PWD/virtualtempcontroller.h
+        SOURCES += $$PWD/virtualtempcontroller.cpp
+}
+equals(TC,1) {
+        HEADERS += $$PWD/lakeshore218.h
+		SOURCES += $$PWD/lakeshore218.cpp
+}
+
 
 lif {
 	equals(LIFSCOPE,0) {
