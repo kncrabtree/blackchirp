@@ -26,30 +26,31 @@ TEMPLATE = app
 
 CONFIG += c++11
 
-SOURCES += main.cpp
-RESOURCES += resources.qrc
+SOURCES += $$PWD/src/main.cpp
+RESOURCES += $$PWD/src/resources/resources.qrc
 
-!exists(config.pri) {
-	 error('config.pri file not found. Please copy config.pri.template to config.pri, and then edit config.pri as needed.')
+!exists($$PWD/src/config/config.pri) {
+     error('config.pri file not found in src/config. Please copy src/config/config.pri.template to src/config/config.pri, and then edit src/config/config.pri as needed.')
 }
-include(config.pri)
-include(acquisition.pri)
-include(gui.pri)
-include(data.pri)
-include(hardware.pri)
-include(wizard.pri)
-include(implementations.pri)
+include($$PWD/src/config/config.pri)
+include($$PWD/src/acquisition/acquisition.pri)
+include($$PWD/src/data/data.pri)
+include($$PWD/src/gui/gui.pri)
+include($$PWD/src/hardware/hardware.pri)
+
+gpu-cuda {
+  include($$PWD/src/modules/cuda/cuda.pri)
+}
+
+lif {
+  include($$PWD/src/modules/lif/lif.pri)
+}
+
+motor {
+  include($$PWD/src/modules/motor/motor.pri)
+}
 
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O3
-
-DISTFILES += \
-    52-serial.rules \
-    config.pri.template \
-    COPYING \
-    COPYING.qwt \
-    COPYING.lesser \
-    README \
-    icons/view-media-visualization.svg
 
 
