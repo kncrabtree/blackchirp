@@ -1,5 +1,4 @@
 #include "virtualtempcontroller.h"
-#include "temperaturecontroller.h"
 
 #include <QTimer>
 

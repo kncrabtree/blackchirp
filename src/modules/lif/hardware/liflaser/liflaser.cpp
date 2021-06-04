@@ -1,4 +1,4 @@
-#include "liflaser.h"
+#include <src/modules/lif/hardware/liflaser/liflaser.h>
 
 LifLaser::LifLaser(QObject *parent) : HardwareObject (parent)
 {

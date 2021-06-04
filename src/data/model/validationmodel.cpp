@@ -1,4 +1,4 @@
-#include "validationmodel.h"
+#include <src/data/model/validationmodel.h>
 
 #include <QSettings>
 #include <QApplication>

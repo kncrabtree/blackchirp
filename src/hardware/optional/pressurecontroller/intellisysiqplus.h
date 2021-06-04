@@ -3,7 +3,7 @@
 
 #include <QTimer>
 
-#include "pressurecontroller.h"
+#include <src/hardware/optional/pressurecontroller/pressurecontroller.h>
 
 class IntellisysIQPlus : public PressureController
 {

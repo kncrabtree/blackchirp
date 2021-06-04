@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-#include "experiment.h"
+#include <src/data/experiment/experiment.h>
 
 class QThread;
 class QListWidget;

@@ -1,4 +1,4 @@
-#include "communicationdialog.h"
+#include <src/gui/dialog/communicationdialog.h>
 #include "ui_communicationdialog.h"
 
 #include <QSettings>

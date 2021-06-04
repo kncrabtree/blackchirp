@@ -1,4 +1,4 @@
-#include "experimentviewwidget.h"
+#include <src/gui/widget/experimentviewwidget.h>
 
 #include <QTabWidget>
 #include <QVBoxLayout>
@@ -13,16 +13,16 @@
 #include <QAction>
 #include <QMessageBox>
 
-#include "ftmwviewwidget.h"
-#include "trackingviewwidget.h"
-#include "loghandler.h"
+#include <src/gui/widget/ftmwviewwidget.h>
+#include <src/gui/widget/trackingviewwidget.h>
+#include <src/data/loghandler.h>
 
 #ifdef BC_LIF
-#include "lifdisplaywidget.h"
+#include <src/modules/lif/gui/lifdisplaywidget.h>
 #endif
 
 #ifdef BC_MOTOR
-#include "motordisplaywidget.h"
+#include <src/modules/motor/gui/motordisplaywidget.h>
 #endif
 
 ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *parent) : QWidget(parent), p_ftmw(nullptr), p_lh(nullptr)

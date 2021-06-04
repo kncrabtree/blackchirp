@@ -1,7 +1,7 @@
 #ifndef QC9528_H
 #define QC9528_H
 
-#include "pulsegenerator.h"
+#include <src/hardware/core/pulsegenerator/pulsegenerator.h>
 
 
 class Qc9528 : public PulseGenerator

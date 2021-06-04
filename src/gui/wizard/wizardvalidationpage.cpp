@@ -8,9 +8,9 @@
 #include <QCheckBox>
 #include <QToolButton>
 
-#include "experimentwizard.h"
-#include "ioboardconfigmodel.h"
-#include "validationmodel.h"
+#include <src/gui/wizard/experimentwizard.h>
+#include <src/data/model/ioboardconfigmodel.h>
+#include <src/data/model/validationmodel.h>
 
 WizardValidationPage::WizardValidationPage(QWidget *parent) :
     ExperimentWizardPage(parent)

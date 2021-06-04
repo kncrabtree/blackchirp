@@ -1,4 +1,4 @@
-#include "ioboardconfig.h"
+#include <src/data/experiment/ioboardconfig.h>
 
 #include <QStringList>
 #include <QSettings>

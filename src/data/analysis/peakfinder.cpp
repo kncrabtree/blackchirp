@@ -1,6 +1,6 @@
-#include "peakfinder.h"
+#include <src/data/analysis/peakfinder.h>
 
-#include "analysis.h"
+#include <src/data/analysis/analysis.h>
 
 PeakFinder::PeakFinder(QObject *parent) : QObject(parent)
 {

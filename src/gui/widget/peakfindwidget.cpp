@@ -9,7 +9,7 @@
 #include <QSpinBox>
 #include <QDialogButtonBox>
 
-#include "peaklistexportdialog.h"
+#include <src/gui/dialog/peaklistexportdialog.h>
 
 PeakFindWidget::PeakFindWidget(Ft ft, QWidget *parent):
     QWidget(parent),

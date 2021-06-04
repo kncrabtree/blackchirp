@@ -1,4 +1,4 @@
-#include "ftmwscope.h"
+#include <src/hardware/core/ftmwdigitizer/ftmwscope.h>
 
 FtmwScope::FtmwScope(QObject *parent) : HardwareObject(parent)
 {

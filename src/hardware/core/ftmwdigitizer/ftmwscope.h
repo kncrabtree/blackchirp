@@ -1,11 +1,11 @@
 #ifndef FTMWSCOPE_H
 #define FTMWSCOPE_H
 
-#include "hardwareobject.h"
+#include <src/hardware/core/hardwareobject.h>
 
 #include <QByteArray>
 
-#include "ftmwconfig.h"
+#include <src/data/experiment/ftmwconfig.h>
 
 class FtmwScope : public HardwareObject
 {

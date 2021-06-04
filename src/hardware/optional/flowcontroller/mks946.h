@@ -1,7 +1,7 @@
 #ifndef MKS947_H
 #define MKS947_H
 
-#include "flowcontroller.h"
+#include <src/hardware/optional/flowcontroller/flowcontroller.h>
 
 class Mks946 : public FlowController
 {

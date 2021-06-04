@@ -8,7 +8,7 @@
 #include <QPair>
 #include <QSortFilterProxyModel>
 
-#include "peaklistmodel.h"
+#include <src/data/model/peaklistmodel.h>
 
 namespace Ui {
 class PeakListExportDialog;

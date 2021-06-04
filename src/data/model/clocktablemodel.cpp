@@ -1,4 +1,4 @@
-#include "clocktablemodel.h"
+#include <src/data/model/clocktablemodel.h>
 
 #include <QSettings>
 #include <QComboBox>

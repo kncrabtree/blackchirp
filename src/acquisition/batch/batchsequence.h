@@ -1,7 +1,7 @@
 #ifndef BATCHSEQUENCE_H
 #define BATCHSEQUENCE_H
 
-#include "batchmanager.h"
+#include <src/acquisition/batch/batchmanager.h>
 
 #include <QTimer>
 

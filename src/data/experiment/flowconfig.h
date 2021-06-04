@@ -7,7 +7,7 @@
 #include <QVariant>
 #include <QMetaType>
 
-#include "datastructs.h"
+#include <src/data/datastructs.h>
 
 class FlowConfigData;
 

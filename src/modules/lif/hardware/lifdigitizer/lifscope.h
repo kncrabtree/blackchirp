@@ -1,8 +1,8 @@
 #ifndef LIFSCOPE_H
 #define LIFSCOPE_H
 
-#include "hardwareobject.h"
-#include "lifconfig.h"
+#include <src/hardware/core/hardwareobject.h>
+#include <src/modules/lif/data/lifconfig.h>
 
 class LifScope : public HardwareObject
 {

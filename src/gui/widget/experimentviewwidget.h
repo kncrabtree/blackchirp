@@ -3,8 +3,8 @@
 
 #include <QWidget>
 
-#include "experiment.h"
-#include "datastructs.h"
+#include <src/data/experiment/experiment.h>
+#include <src/data/datastructs.h>
 
 class QTabWidget;
 class LogHandler;

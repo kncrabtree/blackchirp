@@ -1,7 +1,7 @@
 #ifndef VIRTUALFLOWCONTROLLER_H
 #define VIRTUALFLOWCONTROLLER_H
 
-#include "flowcontroller.h"
+#include <src/hardware/optional/flowcontroller/flowcontroller.h>
 
 class VirtualFlowController : public FlowController
 {

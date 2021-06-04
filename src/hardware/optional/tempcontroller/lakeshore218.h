@@ -1,6 +1,6 @@
 #ifndef LAKESHORE218_H
 #define LAKESHORE218_H
-#include "temperaturecontroller.h"
+#include <src/hardware/optional/tempcontroller/temperaturecontroller.h>
 
 
 class Lakeshore218 : public TemperatureController

@@ -1,4 +1,4 @@
-#include "flowcontroller.h"
+#include <src/hardware/optional/flowcontroller/flowcontroller.h>
 
 FlowController::FlowController(QObject *parent) : HardwareObject(parent)
 {

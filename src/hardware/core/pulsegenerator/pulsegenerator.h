@@ -1,9 +1,9 @@
 #ifndef PULSEGENERATOR_H
 #define PULSEGENERATOR_H
 
-#include "hardwareobject.h"
+#include <src/hardware/core/hardwareobject.h>
 
-#include "pulsegenconfig.h"
+#include <src/data/experiment/pulsegenconfig.h>
 
 class PulseGenerator : public HardwareObject
 {

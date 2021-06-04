@@ -1,7 +1,7 @@
 #ifndef VALON5009_H
 #define VALON5009_H
 
-#include "clock.h"
+#include <src/hardware/core/clock/clock.h>
 
 class Valon5009 : public Clock
 {

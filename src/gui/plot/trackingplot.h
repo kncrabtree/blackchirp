@@ -1,7 +1,7 @@
 #ifndef TRACKINGPLOT_H
 #define TRACKINGPLOT_H
 
-#include "zoompanplot.h"
+#include <src/gui/plot/zoompanplot.h>
 
 class QwtPlotCurve;
 

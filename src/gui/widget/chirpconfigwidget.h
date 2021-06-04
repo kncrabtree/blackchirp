@@ -3,8 +3,8 @@
 
 #include <QWidget>
 
-#include "rfconfig.h"
-#include "chirptablemodel.h"
+#include <src/data/experiment/rfconfig.h>
+#include <src/data/model/chirptablemodel.h>
 
 class QSpinBox;
 

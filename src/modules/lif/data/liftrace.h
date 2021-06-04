@@ -9,7 +9,7 @@
 #include <QByteArray>
 #include <QDataStream>
 
-#include "datastructs.h"
+#include <src/data/datastructs.h>
 
 class LifTraceData;
 

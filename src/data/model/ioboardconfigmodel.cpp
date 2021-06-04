@@ -1,4 +1,4 @@
-#include "ioboardconfigmodel.h"
+#include <src/data/model/ioboardconfigmodel.h>
 
 IOBoardConfigModel::IOBoardConfigModel(QString prefix, QObject *parent) :
     QAbstractTableModel(parent), d_prefix(prefix)

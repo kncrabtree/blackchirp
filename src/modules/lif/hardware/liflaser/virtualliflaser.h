@@ -2,7 +2,7 @@
 #ifndef VIRTUALLIFLASER_H
 #define VIRTUALLIFLASER_H
 
-#include "liflaser.h"
+#include <src/modules/lif/hardware/liflaser/liflaser.h>
 
 class VirtualLifLaser : public LifLaser
 {

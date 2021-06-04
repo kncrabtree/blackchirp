@@ -1,4 +1,4 @@
-#include "lifdisplaywidget.h"
+#include <src/modules/lif/gui/lifdisplaywidget.h>
 #include "ui_lifdisplaywidget.h"
 
 #include <QResizeEvent>

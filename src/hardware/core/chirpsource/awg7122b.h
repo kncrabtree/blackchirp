@@ -1,9 +1,9 @@
 #ifndef AWG7122B_H
 #define AWG7122B_H
 
-#include "awg.h"
+#include <src/hardware/core/chirpsource/awg.h>
 
-#include "chirpconfig.h"
+#include <src/data/experiment/chirpconfig.h>
 
 class AWG7122B : public AWG
 {

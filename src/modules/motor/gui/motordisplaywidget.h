@@ -20,14 +20,15 @@
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QWidgetAction>
 #include <QtWidgets/QToolButton>
-#include "motorsliderwidget.h"
-#include "motortimeplot.h"
-#include "motorxyplot.h"
-#include "motorzplot.h"
 
-#include "experiment.h"
-#include "motorscan.h"
-#include "analysis.h"
+#include <src/modules/motor/gui/motorsliderwidget.h>
+#include <src/modules/motor/gui/motortimeplot.h>
+#include <src/modules/motor/gui/motorxyplot.h>
+#include <src/modules/motor/gui/motorzplot.h>
+
+#include <src/data/experiment/experiment.h>
+#include <src/modules/motor/data/motorscan.h>
+#include <src/data/analysis/analysis.h>
 
 class MotorSliderWidget;
 

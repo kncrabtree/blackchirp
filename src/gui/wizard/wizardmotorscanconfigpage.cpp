@@ -3,8 +3,8 @@
 #include <QVBoxLayout>
 #include <QMessageBox>
 
-#include "motorscanconfigwidget.h"
-#include "experimentwizard.h"
+#include <src/modules/motor/gui/motorscanconfigwidget.h>
+#include <src/gui/wizard/experimentwizard.h>
 
 WizardMotorScanConfigPage::WizardMotorScanConfigPage(QWidget *parent) :
     ExperimentWizardPage(parent)

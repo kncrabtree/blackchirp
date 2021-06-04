@@ -8,9 +8,9 @@
 #include <QVariant>
 #include <QMetaType>
 
-#include "fid.h"
-#include "rfconfig.h"
-#include "datastructs.h"
+#include <src/data/experiment/fid.h>
+#include <src/data/experiment/rfconfig.h>
+#include <src/data/datastructs.h>
 
 #define BC_FTMW_MAXSHIFT 50
 

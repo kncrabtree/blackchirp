@@ -2,7 +2,7 @@
 
 #include <math.h>
 
-#include "virtualinstrument.h"
+#include <src/hardware/core/communication/virtualinstrument.h>
 
 VirtualMotorController::VirtualMotorController(QObject *parent) :
     MotorController(parent)

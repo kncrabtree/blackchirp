@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-#include "motorscan.h"
+#include <src/modules/motor/data/motorscan.h>
 
 namespace Ui {
 class MotorScanConfigWidget;

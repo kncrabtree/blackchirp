@@ -1,10 +1,10 @@
 #ifndef LIFTRACEPLOT_H
 #define LIFTRACEPLOT_H
 
-#include "zoompanplot.h"
+#include <src/gui/plot/zoompanplot.h>
 
-#include "lifconfig.h"
-#include "liftrace.h"
+#include <src/modules/lif/data/lifconfig.h>
+#include <src/modules/lif/data/liftrace.h>
 
 class QwtPlotCurve;
 class QwtPlotZoneItem;

@@ -1,7 +1,7 @@
 #ifndef MOTORZPLOT_H
 #define MOTORZPLOT_H
 
-#include "motorspectrogramplot.h"
+#include <src/modules/motor/gui/motorspectrogramplot.h>
 
 class MotorZPlot : public MotorSpectrogramPlot
 {

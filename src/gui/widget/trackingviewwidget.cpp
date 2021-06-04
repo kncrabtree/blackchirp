@@ -12,8 +12,8 @@
 #include <qwt6/qwt_date.h>
 #include <qwt6/qwt_plot_curve.h>
 
-#include "trackingplot.h"
-#include "datastructs.h"
+#include <src/gui/plot/trackingplot.h>
+#include <src/data/datastructs.h>
 
 
 TrackingViewWidget::TrackingViewWidget(QWidget *parent, bool viewOnly) :

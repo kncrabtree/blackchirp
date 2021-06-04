@@ -28,6 +28,7 @@ CONFIG += c++11
 
 SOURCES += $$PWD/src/main.cpp
 RESOURCES += $$PWD/src/resources/resources.qrc
+INCLUDEPATH += $$PWD/src
 
 !exists($$PWD/src/config/config.pri) {
      error('config.pri file not found in src/config. Please copy src/config/config.pri.template to src/config/config.pri, and then edit src/config/config.pri as needed.')

@@ -1,4 +1,4 @@
-#include "ftplot.h"
+#include <src/gui/plot/ftplot.h>
 
 #include <QFont>
 #include <QMouseEvent>

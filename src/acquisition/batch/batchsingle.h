@@ -1,7 +1,7 @@
 #ifndef BATCHSINGLE_H
 #define BATCHSINGLE_H
 
-#include "batchmanager.h"
+#include <src/acquisition/batch/batchmanager.h>
 
 class BatchSingle : public BatchManager
 {

@@ -1,11 +1,11 @@
 #ifndef MOTORTIMEPLOT_H
 #define MOTORTIMEPLOT_H
 
-#include "zoompanplot.h"
+#include <src/gui/plot/zoompanplot.h>
 
 #include <qwt6/qwt_plot_curve.h>
 
-#include "motorscan.h"
+#include <src/modules/motor/data/motorscan.h>
 
 class MotorTimePlot : public ZoomPanPlot
 {

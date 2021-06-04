@@ -1,7 +1,7 @@
 #ifndef CUSTOMINSTRUMENT_H
 #define CUSTOMINSTRUMENT_H
 
-#include "communicationprotocol.h"
+#include <src/hardware/core/communication/communicationprotocol.h>
 
 class CustomInstrument : public CommunicationProtocol
 {

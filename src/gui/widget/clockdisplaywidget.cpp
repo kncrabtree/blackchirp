@@ -4,7 +4,7 @@
 #include <QDoubleSpinBox>
 #include <QLabel>
 
-#include "rfconfig.h"
+#include <src/data/experiment/rfconfig.h>
 
 ClockDisplayWidget::ClockDisplayWidget(QWidget *parent) : QWidget(parent)
 {

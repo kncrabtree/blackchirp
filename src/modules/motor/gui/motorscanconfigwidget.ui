@@ -305,7 +305,7 @@
   <customwidget>
    <class>MotorScopeConfigWidget</class>
    <extends>QWidget</extends>
-   <header>motorscopeconfigwidget.h</header>
+   <header location="global">src/modules/motor/gui/motorscopeconfigwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

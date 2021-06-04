@@ -6,22 +6,22 @@
 #include <QDateTime>
 #include <QMetaType>
 
-#include "ftmwconfig.h"
-#include "datastructs.h"
-#include "pulsegenconfig.h"
-#include "flowconfig.h"
-#include "ioboardconfig.h"
+#include <src/data/experiment/ftmwconfig.h>
+#include <src/data/datastructs.h>
+#include <src/data/experiment/pulsegenconfig.h>
+#include <src/data/experiment/flowconfig.h>
+#include <src/data/experiment/ioboardconfig.h>
 
 //these are included because they define datatypes needed by qRegisterMetaType in main.cpp
-#include "ft.h"
-#include "ftworker.h"
+#include <src/data/analysis/ft.h>
+#include <src/data/analysis/ftworker.h>
 
 #ifdef BC_LIF
-#include "lifconfig.h"
+#include <src/modules/lif/data/lifconfig.h>
 #endif
 
 #ifdef BC_MOTOR
-#include "motorscan.h"
+#include <src/modules/motor/data/motorscan.h>
 #endif
 
 

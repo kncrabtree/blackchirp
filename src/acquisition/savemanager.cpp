@@ -1,8 +1,8 @@
-#include "savemanager.h"
+#include <src/acquisition/savemanager.h>
 
 #include <QFile>
 
-#include "datastructs.h"
+#include <src/data/datastructs.h>
 
 SaveManager::SaveManager(QObject *parent) : QObject(parent), d_snapNum(0)
 {

@@ -1,7 +1,7 @@
 #ifndef M8195A_H
 #define M8195A_H
 
-#include "awg.h"
+#include <src/hardware/core/chirpsource/awg.h>
 
 class M8195A : public AWG
 {

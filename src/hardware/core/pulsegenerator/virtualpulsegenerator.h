@@ -1,7 +1,7 @@
 #ifndef VIRTUALPULSEGENERATOR_H
 #define VIRTUALPULSEGENERATOR_H
 
-#include "pulsegenerator.h"
+#include <src/hardware/core/pulsegenerator/pulsegenerator.h>
 
 class VirtualPulseGenerator : public PulseGenerator
 {

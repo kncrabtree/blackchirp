@@ -1,9 +1,9 @@
 #ifndef LIFSPECTROGRAMPLOT_H
 #define LIFSPECTROGRAMPLOT_H
 
-#include "zoompanplot.h"
+#include <src/gui/plot/zoompanplot.h>
 
-#include "lifconfig.h"
+#include <src/modules/lif/data/lifconfig.h>
 
 class QwtPlotSpectrogram;
 class QwtMatrixRasterData;

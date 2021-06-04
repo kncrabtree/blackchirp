@@ -1,12 +1,12 @@
 #ifndef M412220X8_H
 #define M412220X8_H
 
-#include "ftmwscope.h"
+#include <src/hardware/core/ftmwdigitizer/ftmwscope.h>
 
-#include "spcm/dlltyp.h"
-#include "spcm/regs.h"
-#include "spcm/spcerr.h"
-#include "spcm/spcm_drv.h"
+#include <spcm/dlltyp.h>
+#include <spcm/regs.h>
+#include <spcm/spcerr.h>
+#include <spcm/spcm_drv.h>
 
 
 #include <QTimer>

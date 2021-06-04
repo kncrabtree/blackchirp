@@ -1,7 +1,7 @@
 #ifndef CLOCK_H
 #define CLOCK_H
 
-#include "hardwareobject.h"
+#include <src/hardware/core/hardwareobject.h>
 
 /**
  * @brief The Clock class defines an interface for an oscillator

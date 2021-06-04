@@ -1,7 +1,7 @@
 #ifndef GPIBCONTROLLER_H
 #define GPIBCONTROLLER_H
 
-#include "hardwareobject.h"
+#include <src/hardware/core/hardwareobject.h>
 
 class GpibController : public HardwareObject
 {

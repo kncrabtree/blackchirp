@@ -4,9 +4,9 @@
 #include <QWidget>
 #include <QList>
 
-#include "pulsegenconfig.h"
-#include "lifconfig.h"
-#include "ftmwconfig.h"
+#include <src/data/experiment/pulsegenconfig.h>
+#include <src/modules/lif/data/lifconfig.h>
+#include <src/data/experiment/ftmwconfig.h>
 
 class QLabel;
 class QDoubleSpinBox;

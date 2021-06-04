@@ -1,4 +1,4 @@
-#include "lifcontrolwidget.h"
+#include <src/modules/lif/gui/lifcontrolwidget.h>
 #include "ui_lifcontrolwidget.h"
 
 #include <QSettings>

@@ -6,8 +6,8 @@
 #include <QSettings>
 #include <QMessageBox>
 
-#include "analysis.h"
-#include "experiment.h"
+#include <src/data/analysis/analysis.h>
+#include <src/data/experiment/experiment.h>
 
 ExportBatchDialog::ExportBatchDialog(QWidget *parent) :
     QDialog(parent),

@@ -1,7 +1,7 @@
 #ifndef PRESSURECONTROLLER_H
 #define PRESSURECONTROLLER_H
 
-#include "hardwareobject.h"
+#include <src/hardware/core/hardwareobject.h>
 
 class PressureController : public HardwareObject
 {

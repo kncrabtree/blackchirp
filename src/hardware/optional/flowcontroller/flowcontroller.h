@@ -1,11 +1,11 @@
 #ifndef FLOWCONTROLLER_H
 #define FLOWCONTROLLER_H
 
-#include "hardwareobject.h"
+#include <src/hardware/core/hardwareobject.h>
 
 #include <QTimer>
 
-#include "flowconfig.h"
+#include <src/data/experiment/flowconfig.h>
 
 class FlowController : public HardwareObject
 {

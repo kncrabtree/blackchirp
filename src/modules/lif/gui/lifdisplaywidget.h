@@ -5,9 +5,9 @@
 
 #include <QVector>
 
-#include "datastructs.h"
-#include "liftrace.h"
-#include "lifconfig.h"
+#include <src/data/datastructs.h>
+#include <src/modules/lif/data/liftrace.h>
+#include <src/modules/lif/data/lifconfig.h>
 
 namespace Ui {
 class LifDisplayWidget;

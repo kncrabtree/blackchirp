@@ -1,9 +1,9 @@
 #ifndef IOBOARD_H
 #define IOBOARD_H
 
-#include "hardwareobject.h"
+#include <src/hardware/core/hardwareobject.h>
 
-#include "ioboardconfig.h"
+#include <src/data/experiment/ioboardconfig.h>
 
 class IOBoard : public HardwareObject
 {

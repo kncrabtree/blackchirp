@@ -1,4 +1,4 @@
-#include "digitizerconfigwidget.h"
+#include <src/gui/widget/digitizerconfigwidget.h>
 #include "ui_digitizerconfigwidget.h"
 
 #include <QSettings>

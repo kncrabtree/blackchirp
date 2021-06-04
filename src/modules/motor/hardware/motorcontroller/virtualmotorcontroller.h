@@ -1,7 +1,7 @@
 #ifndef VIRTUALMOTORCONTROLLER_H
 #define VIRTUALMOTORCONTROLLER_H
 
-#include "motorcontroller.h"
+#include <src/modules/motor/hardware/motorcontroller/motorcontroller.h>
 
 class VirtualMotorController : public MotorController
 {

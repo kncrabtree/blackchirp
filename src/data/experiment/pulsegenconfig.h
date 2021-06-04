@@ -7,7 +7,7 @@
 #include <QVariant>
 #include <QMap>
 
-#include "datastructs.h"
+#include <src/data/datastructs.h>
 
 
 class PulseGenConfigData;

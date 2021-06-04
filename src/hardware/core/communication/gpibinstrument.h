@@ -1,8 +1,8 @@
 #ifndef GPIBINSTRUMENT_H
 #define GPIBINSTRUMENT_H
 
-#include "communicationprotocol.h"
-#include "gpibcontroller.h"
+#include <src/hardware/core/communication/communicationprotocol.h>
+#include <src/hardware/optional/gpibcontroller/gpibcontroller.h>
 
 class GpibInstrument : public CommunicationProtocol
 {

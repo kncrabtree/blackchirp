@@ -1,7 +1,7 @@
 #ifndef CHIRPCONFIGPLOT_H
 #define CHIRPCONFIGPLOT_H
 
-#include "zoompanplot.h"
+#include <src/gui/plot/zoompanplot.h>
 
 class ChirpConfig;
 class QwtPlotCurve;

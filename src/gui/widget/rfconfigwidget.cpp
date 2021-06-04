@@ -1,4 +1,4 @@
-#include "rfconfigwidget.h"
+#include <src/gui/widget/rfconfigwidget.h>
 #include "ui_rfconfigwidget.h"
 
 RfConfigWidget::RfConfigWidget(QWidget *parent) :

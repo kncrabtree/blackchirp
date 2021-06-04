@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>461</width>
-    <height>267</height>
+    <height>268</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -251,13 +251,13 @@
   <customwidget>
    <class>LifTracePlot</class>
    <extends>QWidget</extends>
-   <header>liftraceplot.h</header>
+   <header location="global">src/modules/lif/gui/liftraceplot.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>LifLaserControlDoubleSpinBox</class>
    <extends>QDoubleSpinBox</extends>
-   <header>liflasercontroldoublespinbox.h</header>
+   <header location="global">src/modules/lif/gui/liflasercontroldoublespinbox.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -1,7 +1,7 @@
 #ifndef LIFLASER_H
 #define LIFLASER_H
 
-#include "hardwareobject.h"
+#include <src/hardware/core/hardwareobject.h>
 
 class LifLaser : public HardwareObject
 {

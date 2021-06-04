@@ -1,7 +1,7 @@
 #ifndef MKS647C_H
 #define MKS647C_H
 
-#include "flowcontroller.h"
+#include <src/hardware/optional/flowcontroller/flowcontroller.h>
 
 class Mks647c : public FlowController
 {

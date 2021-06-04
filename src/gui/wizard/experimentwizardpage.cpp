@@ -1,4 +1,4 @@
-#include "experimentwizardpage.h"
+#include <src/gui/wizard/experimentwizardpage.h>
 
 ExperimentWizardPage::ExperimentWizardPage(QWidget *parent) : QWizardPage(parent)
 {

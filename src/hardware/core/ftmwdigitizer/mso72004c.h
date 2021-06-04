@@ -1,7 +1,7 @@
 #ifndef MSO72004C_H
 #define MSO72004C_H
 
-#include "ftmwscope.h"
+#include <src/hardware/core/ftmwdigitizer/ftmwscope.h>
 
 #include <QTimer>
 #include <QAbstractSocket>

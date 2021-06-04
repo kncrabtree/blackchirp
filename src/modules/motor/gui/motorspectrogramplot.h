@@ -1,12 +1,12 @@
 #ifndef MOTORSPECTROGRAMPLOT_H
 #define MOTORSPECTROGRAMPLOT_H
 
-#include "zoompanplot.h"
+#include <src/gui/plot/zoompanplot.h>
 
 #include <qwt6/qwt_matrix_raster_data.h>
 #include <qwt6/qwt_plot_spectrogram.h>
 
-#include "motorscan.h"
+#include <src/modules/motor/data/motorscan.h>
 
 class MotorSpectrogramPlot : public ZoomPanPlot
 {

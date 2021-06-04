@@ -1,7 +1,7 @@
-#include "liftrace.h"
+#include <src/modules/lif/data/liftrace.h>
 #include <QtEndian>
 
-#include "analysis.h"
+#include <src/data/analysis/analysis.h>
 
 LifTrace::LifTrace() : data(new LifTraceData)
 {

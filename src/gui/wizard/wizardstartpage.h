@@ -1,7 +1,7 @@
 #ifndef WIZARDSTARTPAGE_H
 #define WIZARDSTARTPAGE_H
 
-#include "experimentwizardpage.h"
+#include <src/gui/wizard/experimentwizardpage.h>
 
 class QGroupBox;
 class QSpinBox;

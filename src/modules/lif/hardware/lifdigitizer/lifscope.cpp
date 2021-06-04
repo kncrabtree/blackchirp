@@ -1,4 +1,4 @@
-#include "lifscope.h"
+#include <src/modules/lif/hardware/lifdigitizer/lifscope.h>
 
 LifScope::LifScope(QObject *parent) :
     HardwareObject(parent)

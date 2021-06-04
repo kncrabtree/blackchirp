@@ -1,4 +1,4 @@
-#include "loghandler.h"
+#include <src/data/loghandler.h>
 #include <QDateTime>
 #include <QDate>
 #include <QApplication>

@@ -6,7 +6,7 @@
 #include <QSettings>
 #include <QApplication>
 
-#include "datastructs.h"
+#include <src/data/datastructs.h>
 
 class CommunicationProtocol : public QObject
 {

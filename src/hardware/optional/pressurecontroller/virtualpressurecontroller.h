@@ -1,7 +1,7 @@
 #ifndef VIRTUALPRESSURECONTROLLER_H
 #define VIRTUALPRESSURECONTROLLER_H
 
-#include "pressurecontroller.h"
+#include <src/hardware/optional/pressurecontroller/pressurecontroller.h>
 
 class VirtualPressureController : public PressureController
 {

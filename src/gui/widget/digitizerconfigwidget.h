@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-#include "ftmwconfig.h"
+#include <src/data/experiment/ftmwconfig.h>
 
 
 class QComboBox;

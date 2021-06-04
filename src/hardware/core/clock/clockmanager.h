@@ -3,8 +3,8 @@
 
 #include <QObject>
 
-#include "datastructs.h"
-#include "experiment.h"
+#include <src/data/datastructs.h>
+#include <src/data/experiment/experiment.h>
 
 class Clock;
 

@@ -10,7 +10,7 @@
 
 #include <QList>
 
-#include "datastructs.h"
+#include <src/data/datastructs.h>
 
 class ValidationModel : public QAbstractTableModel
 {

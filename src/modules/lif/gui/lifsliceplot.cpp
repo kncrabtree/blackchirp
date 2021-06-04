@@ -11,7 +11,7 @@
 #include <qwt6/qwt_symbol.h>
 #include <qwt6/qwt_scale_widget.h>
 
-#include "datastructs.h"
+#include <src/data/datastructs.h>
 
 LifSlicePlot::LifSlicePlot(QWidget *parent) :
     ZoomPanPlot(QString("lifSlicePlot"),parent)

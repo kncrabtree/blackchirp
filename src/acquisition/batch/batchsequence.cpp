@@ -1,4 +1,4 @@
-#include "batchsequence.h"
+#include <src/acquisition/batch/batchsequence.h>
 
 #include <QDir>
 

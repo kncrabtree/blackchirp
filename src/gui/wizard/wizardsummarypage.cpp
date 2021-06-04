@@ -5,7 +5,7 @@
 #include <QHeaderView>
 #include <QCheckBox>
 
-#include "experimentwizard.h"
+#include <src/gui/wizard/experimentwizard.h>
 
 
 WizardSummaryPage::WizardSummaryPage(QWidget *parent) :

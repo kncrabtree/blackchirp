@@ -34,7 +34,7 @@
            <string> Add Segment</string>
           </property>
           <property name="icon">
-           <iconset resource="resources.qrc">
+           <iconset>
             <normaloff>:/icons/add.png</normaloff>:/icons/add.png</iconset>
           </property>
           <property name="iconSize">
@@ -51,7 +51,7 @@
            <string> Insert Segment</string>
           </property>
           <property name="icon">
-           <iconset resource="resources.qrc">
+           <iconset>
             <normaloff>:/icons/go-last.png</normaloff>:/icons/go-last.png</iconset>
           </property>
           <property name="iconSize">
@@ -68,7 +68,7 @@
            <string>Add Empty Segment</string>
           </property>
           <property name="icon">
-           <iconset resource="resources.qrc">
+           <iconset>
             <normaloff>:/icons/add.png</normaloff>:/icons/add.png</iconset>
           </property>
           <property name="iconSize">
@@ -85,7 +85,7 @@
            <string>Insert Empty Segment</string>
           </property>
           <property name="icon">
-           <iconset resource="resources.qrc">
+           <iconset>
             <normaloff>:/icons/go-last.png</normaloff>:/icons/go-last.png</iconset>
           </property>
           <property name="iconSize">
@@ -115,7 +115,7 @@
            <string> Move Up</string>
           </property>
           <property name="icon">
-           <iconset resource="resources.qrc">
+           <iconset>
             <normaloff>:/icons/arrow-up.png</normaloff>:/icons/arrow-up.png</iconset>
           </property>
           <property name="iconSize">
@@ -132,7 +132,7 @@
            <string> Move Down</string>
           </property>
           <property name="icon">
-           <iconset resource="resources.qrc">
+           <iconset>
             <normaloff>:/icons/arrow-down.png</normaloff>:/icons/arrow-down.png</iconset>
           </property>
           <property name="iconSize">
@@ -162,7 +162,7 @@
            <string> Remove</string>
           </property>
           <property name="icon">
-           <iconset resource="resources.qrc">
+           <iconset>
             <normaloff>:/icons/remove.png</normaloff>:/icons/remove.png</iconset>
           </property>
           <property name="iconSize">
@@ -179,7 +179,7 @@
            <string> Clear All</string>
           </property>
           <property name="icon">
-           <iconset resource="resources.qrc">
+           <iconset>
             <normaloff>:/icons/clear.png</normaloff>:/icons/clear.png</iconset>
           </property>
           <property name="iconSize">
@@ -209,7 +209,7 @@
            <string> Load...</string>
           </property>
           <property name="icon">
-           <iconset resource="resources.qrc">
+           <iconset>
             <normaloff>:/icons/open.png</normaloff>:/icons/open.png</iconset>
           </property>
           <property name="iconSize">
@@ -496,7 +496,7 @@
   <customwidget>
    <class>ChirpConfigPlot</class>
    <extends>QWidget</extends>
-   <header>chirpconfigplot.h</header>
+   <header location="global">src/gui/plot/chirpconfigplot.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
@@ -515,8 +515,6 @@
   <tabstop>chirpIntervalDoubleSpinBox</tabstop>
   <tabstop>chirpTable</tabstop>
  </tabstops>
- <resources>
-  <include location="resources.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>

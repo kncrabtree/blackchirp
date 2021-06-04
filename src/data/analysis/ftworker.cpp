@@ -1,4 +1,4 @@
-#include "ftworker.h"
+#include <src/data/analysis/ftworker.h>
 
 #include <QTime>
 

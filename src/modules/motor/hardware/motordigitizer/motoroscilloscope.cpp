@@ -1,4 +1,4 @@
-#include "motoroscilloscope.h"
+#include <src/modules/motor/hardware/motordigitizer/motoroscilloscope.h>
 
 MotorOscilloscope::MotorOscilloscope(QObject *parent) : HardwareObject(parent)
 {

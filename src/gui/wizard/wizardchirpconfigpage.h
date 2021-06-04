@@ -1,7 +1,7 @@
 #ifndef WIZARDCHIRPCONFIGPAGE_H
 #define WIZARDCHIRPCONFIGPAGE_H
 
-#include "experimentwizardpage.h"
+#include <src/gui/wizard/experimentwizardpage.h>
 
 class ChirpConfigWidget;
 class RfConfig;

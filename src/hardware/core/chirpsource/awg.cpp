@@ -1,4 +1,4 @@
-#include "awg.h"
+#include <src/hardware/core/chirpsource/awg.h>
 
 AWG::AWG(QObject *parent) : HardwareObject(parent)
 {

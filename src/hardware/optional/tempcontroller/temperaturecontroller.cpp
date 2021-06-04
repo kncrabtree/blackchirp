@@ -1,4 +1,4 @@
-#include "temperaturecontroller.h"
+#include <src/hardware/optional/tempcontroller/temperaturecontroller.h>
 
 TemperatureController::TemperatureController(QObject *parent) : HardwareObject(parent)
 {

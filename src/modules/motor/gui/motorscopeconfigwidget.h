@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-#include "datastructs.h"
+#include <src/data/datastructs.h>
 
 namespace Ui {
 class MotorScopeConfigWidget;

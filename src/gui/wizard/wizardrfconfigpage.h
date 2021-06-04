@@ -1,9 +1,9 @@
 #ifndef WIZARDRFCONFIGPAGE_H
 #define WIZARDRFCONFIGPAGE_H
 
-#include "experimentwizardpage.h"
+#include <src/gui/wizard/experimentwizardpage.h>
 
-#include "rfconfigwidget.h"
+#include <src/gui/widget/rfconfigwidget.h>
 
 class WizardRfConfigPage : public ExperimentWizardPage
 {

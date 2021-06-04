@@ -10,8 +10,8 @@
 #include <QMap>
 #include <QVariant>
 
-#include "datastructs.h"
-#include "liftrace.h"
+#include <src/data/datastructs.h>
+#include <src/modules/lif/data/liftrace.h>
 
 
 class LifConfigData;

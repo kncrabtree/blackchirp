@@ -1,6 +1,6 @@
 #ifndef TEMPERATURECONTROLLER_H
 #define TEMPERATURECONTROLLER_H
-#include "hardwareobject.h"
+#include <src/hardware/core/hardwareobject.h>
 
 
 class TemperatureController : public HardwareObject

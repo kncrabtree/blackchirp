@@ -1,4 +1,4 @@
-#include "batchmanager.h"
+#include <src/acquisition/batch/batchmanager.h>
 
 BatchManager::BatchManager(BatchManager::BatchType b)
     : QObject(), d_type(b)

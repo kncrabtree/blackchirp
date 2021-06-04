@@ -22,6 +22,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/widget/led.cpp \
     $$PWD/widget/peakfindwidget.cpp \
     $$PWD/widget/pulseconfigwidget.cpp \
+    $$PWD/widget/rfconfigwidget.cpp \
     $$PWD/widget/trackingviewwidget.cpp \
     $$PWD/wizard/experimentwizard.cpp \
     $$PWD/wizard/experimentwizardpage.cpp \
@@ -60,6 +61,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/widget/led.h \
     $$PWD/widget/peakfindwidget.h \
     $$PWD/widget/pulseconfigwidget.h \
+    $$PWD/widget/rfconfigwidget.h \
     $$PWD/widget/trackingviewwidget.h \
     $$PWD/wizard/experimentwizard.h \
     $$PWD/wizard/experimentwizardpage.h \
@@ -84,4 +86,5 @@ FORMS += $$PWD/mainwindow.ui \
     $$PWD/widget/chirpconfigwidget.ui \
     $$PWD/widget/digitizerconfigwidget.ui \
     $$PWD/widget/peakfindwidget.ui \
-    $$PWD/widget/pulseconfigwidget.ui
+    $$PWD/widget/pulseconfigwidget.ui \
+    $$PWD/widget/rfconfigwidget.ui

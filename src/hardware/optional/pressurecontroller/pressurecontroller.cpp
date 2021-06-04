@@ -1,4 +1,4 @@
-#include "pressurecontroller.h"
+#include <src/hardware/optional/pressurecontroller/pressurecontroller.h>
 
 PressureController::PressureController(QObject *parent) : HardwareObject(parent)
 {

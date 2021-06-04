@@ -1,7 +1,7 @@
 #ifndef FIXEDCLOCK_H
 #define FIXEDCLOCK_H
 
-#include "clock.h"
+#include <src/hardware/core/clock/clock.h>
 
 class FixedClock : public Clock
 {

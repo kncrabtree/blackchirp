@@ -1,7 +1,7 @@
 #ifndef VIRTUALGPIBCONTROLLER_H
 #define VIRTUALGPIBCONTROLLER_H
 
-#include "gpibcontroller.h"
+#include <src/hardware/optional/gpibcontroller/gpibcontroller.h>
 
 class VirtualGpibController : public GpibController
 {

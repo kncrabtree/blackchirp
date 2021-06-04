@@ -1,7 +1,7 @@
 #ifndef WIZARDDIGITIZERCONFIGPAGE_H
 #define WIZARDDIGITIZERCONFIGPAGE_H
 
-#include "experimentwizardpage.h"
+#include <src/gui/wizard/experimentwizardpage.h>
 
 class DigitizerConfigWidget;
 

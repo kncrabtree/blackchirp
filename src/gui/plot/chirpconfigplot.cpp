@@ -8,7 +8,7 @@
 #include <qwt6/qwt_legend.h>
 #include <qwt6/qwt_plot_curve.h>
 
-#include "chirpconfig.h"
+#include <src/data/experiment/chirpconfig.h>
 
 ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(QString("ChirpConfigPlot"),parent)
 {

@@ -2,8 +2,8 @@
 #define EXPERIMENTWIZARDPAGE_H
 
 #include <QWizardPage>
-#include "experimentwizard.h"
-#include "experiment.h"
+#include <src/gui/wizard/experimentwizard.h>
+#include <src/data/experiment/experiment.h>
 
 class ExperimentWizardPage : public QWizardPage
 {

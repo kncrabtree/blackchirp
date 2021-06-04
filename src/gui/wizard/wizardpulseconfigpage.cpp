@@ -3,7 +3,7 @@
 #include <QVBoxLayout>
 #include <QMessageBox>
 
-#include "pulseconfigwidget.h"
+#include <src/gui/widget/pulseconfigwidget.h>
 
 WizardPulseConfigPage::WizardPulseConfigPage(QWidget *parent) :
     ExperimentWizardPage(parent), d_firstInitialization(true)

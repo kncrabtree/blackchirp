@@ -1,7 +1,7 @@
 #ifndef VIRTUALAWG_H
 #define VIRTUALAWG_H
 
-#include "awg.h"
+#include <src/hardware/core/chirpsource/awg.h>
 
 class VirtualAwg : public AWG
 {

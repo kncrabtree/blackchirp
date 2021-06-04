@@ -1,7 +1,7 @@
 #ifndef WIZARDSUMMARYPAGE_H
 #define WIZARDSUMMARYPAGE_H
 
-#include "experimentwizardpage.h"
+#include <src/gui/wizard/experimentwizardpage.h>
 
 class QTableWidget;
 

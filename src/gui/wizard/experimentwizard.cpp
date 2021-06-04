@@ -1,22 +1,22 @@
-#include "experimentwizard.h"
+#include <src/gui/wizard/experimentwizard.h>
 
-#include "experimentwizardpage.h"
-#include "wizardstartpage.h"
-#include "wizardloscanconfigpage.h"
-#include "wizardrfconfigpage.h"
-#include "wizardchirpconfigpage.h"
-#include "wizarddigitizerconfigpage.h"
-#include "wizardsummarypage.h"
-#include "wizardpulseconfigpage.h"
-#include "wizardvalidationpage.h"
-#include "batchsingle.h"
+#include <src/gui/wizard/experimentwizardpage.h>
+#include <src/gui/wizard/wizardstartpage.h>
+#include <src/gui/wizard/wizardloscanconfigpage.h>
+#include <src/gui/wizard/wizardrfconfigpage.h>
+#include <src/gui/wizard/wizardchirpconfigpage.h>
+#include <src/gui/wizard/wizarddigitizerconfigpage.h>
+#include <src/gui/wizard/wizardsummarypage.h>
+#include <src/gui/wizard/wizardpulseconfigpage.h>
+#include <src/gui/wizard/wizardvalidationpage.h>
+#include <src/acquisition/batch/batchsingle.h>
 
 #ifdef BC_LIF
-#include "wizardlifconfigpage.h"
+#include <src/gui/wizard/wizardlifconfigpage.h>
 #endif
 
 #ifdef BC_MOTOR
-#include "wizardmotorscanconfigpage.h"
+#include <src/gui/wizard/wizardmotorscanconfigpage.h>
 #endif
 
 ExperimentWizard::ExperimentWizard(QWidget *parent) :

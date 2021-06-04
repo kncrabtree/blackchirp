@@ -1,4 +1,4 @@
-#include "chirptablemodel.h"
+#include <src/data/model/chirptablemodel.h>
 
 #include <QDoubleSpinBox>
 #include <QSettings>

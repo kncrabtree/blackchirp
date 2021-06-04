@@ -3,7 +3,7 @@
 
 #include <QObject>
 
-#include "experiment.h"
+#include <src/data/experiment/experiment.h>
 
 class SaveManager : public QObject
 {

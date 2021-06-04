@@ -1,7 +1,7 @@
 #ifndef WIZARDLOSCANCONFIGPAGE_H
 #define WIZARDLOSCANCONFIGPAGE_H
 
-#include "experimentwizardpage.h"
+#include <src/gui/wizard/experimentwizardpage.h>
 
 class QSpinBox;
 class QDoubleSpinBox;

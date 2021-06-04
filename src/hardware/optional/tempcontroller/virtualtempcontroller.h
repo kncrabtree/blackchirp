@@ -1,6 +1,6 @@
 #ifndef VIRTUALTEMPCONTROLLER_H
 #define VIRTUALTEMPCONTROLLER_H
-#include "temperaturecontroller.h"
+#include <src/hardware/optional/tempcontroller/temperaturecontroller.h>
 
 class VirtualTemperatureController : public TemperatureController
 {

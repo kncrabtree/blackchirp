@@ -4,7 +4,7 @@
 #include <QSerialPort>
 #include <QTimer>
 
-#include "motorcontroller.h"
+#include <src/modules/motor/hardware/motorcontroller/motorcontroller.h>
 
 class Scx11 : public MotorController
 {

@@ -1,7 +1,7 @@
 #ifndef PROLOGIXGPIBLAN_H
 #define PROLOGIXGPIBLAN_H
 
-#include "gpibcontroller.h"
+#include <src/hardware/optional/gpibcontroller/gpibcontroller.h>
 
 class PrologixGpibLan : public GpibController
 {

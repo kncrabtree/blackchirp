@@ -1,4 +1,4 @@
-#include "led.h"
+#include <src/gui/widget/led.h>
 
 #include <QPainter>
 #include <QPalette>

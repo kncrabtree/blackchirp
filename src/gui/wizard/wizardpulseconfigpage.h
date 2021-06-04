@@ -1,7 +1,7 @@
 #ifndef WIZARDPULSECONFIGPAGE_H
 #define WIZARDPULSECONFIGPAGE_H
 
-#include "experimentwizardpage.h"
+#include <src/gui/wizard/experimentwizardpage.h>
 
 class PulseConfigWidget;
 

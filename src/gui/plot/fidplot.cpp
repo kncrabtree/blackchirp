@@ -1,4 +1,4 @@
-#include "fidplot.h"
+#include <src/gui/plot/fidplot.h>
 #include <math.h>
 
 #include <QPalette>

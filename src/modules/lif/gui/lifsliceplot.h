@@ -1,7 +1,7 @@
 #ifndef LIFSLICEPLOT_H
 #define LIFSLICEPLOT_H
 
-#include "zoompanplot.h"
+#include <src/gui/plot/zoompanplot.h>
 
 class QwtPlotCurve;
 class QwtPlotTextLabel;
@@ -14,7 +14,7 @@ public:
     ~LifSlicePlot();
 
     void setXAxisTitle(QString title);
-    void setName(QString name);
+    void setName(QString name) override;
 
     void prepareForExperiment(double xMin, double xMax);
     void setData(const QVector<QPointF> d);
@@ -25,7 +25,7 @@ public slots:
 
     // ZoomPanPlot interface
 protected:
-    void filterData();
+    void filterData() override;
 
     QwtPlotCurve *p_curve;
     QVector<QPointF> d_currentData;

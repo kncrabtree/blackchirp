@@ -1,7 +1,7 @@
 #ifndef AD9914_H
 #define AD9914_H
 
-#include "awg.h"
+#include <src/hardware/core/chirpsource/awg.h>
 
 
 class AD9914 : public AWG

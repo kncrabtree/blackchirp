@@ -1,4 +1,4 @@
-#include "gpibcontroller.h"
+#include <src/hardware/optional/gpibcontroller/gpibcontroller.h>
 
 GpibController::GpibController(QObject *parent) :
 	HardwareObject(parent)

@@ -1,7 +1,7 @@
 #ifndef AWG_H
 #define AWG_H
 
-#include "hardwareobject.h"
+#include <src/hardware/core/hardwareobject.h>
 
 /**
  * @brief The AWG class

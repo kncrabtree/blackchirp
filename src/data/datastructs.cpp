@@ -1,4 +1,4 @@
-#include "datastructs.h"
+#include <src/data/datastructs.h>
 
 #include <QDir>
 

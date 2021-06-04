@@ -4,8 +4,8 @@
 #include <QAbstractTableModel>
 #include <QList>
 
-#include "datastructs.h"
-#include "ioboardconfig.h"
+#include <src/data/datastructs.h>
+#include <src/data/experiment/ioboardconfig.h>
 
 class IOBoardConfigModel : public QAbstractTableModel
 {

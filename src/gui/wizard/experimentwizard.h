@@ -3,7 +3,7 @@
 
 #include <QWizard>
 
-#include "experiment.h"
+#include <src/data/experiment/experiment.h>
 
 class BatchManager;
 class ExperimentWizardPage;

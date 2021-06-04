@@ -15,32 +15,32 @@
 #include <QFileDialog>
 #include <QDir>
 
-#include "communicationdialog.h"
-#include "ioboardconfigdialog.h"
-#include "digitizerconfigwidget.h"
-#include "rfconfigwidget.h"
-#include "experimentwizard.h"
-#include "loghandler.h"
-#include "hardwaremanager.h"
-#include "acquisitionmanager.h"
-#include "batchmanager.h"
-#include "batchsingle.h"
-#include "batchsequence.h"
-#include "led.h"
-#include "experimentviewwidget.h"
-#include "quickexptdialog.h"
-#include "batchsequencedialog.h"
-#include "exportbatchdialog.h"
-#include "motorstatuswidget.h"
-#include "clockdisplaywidget.h"
+#include <src/gui/dialog/communicationdialog.h>
+#include <src/gui/dialog/ioboardconfigdialog.h>
+#include <src/gui/widget/digitizerconfigwidget.h>
+#include <src/gui/widget/rfconfigwidget.h>
+#include <src/gui/wizard/experimentwizard.h>
+#include <src/data/loghandler.h>
+#include <src/hardware/core/hardwaremanager.h>
+#include <src/acquisition/acquisitionmanager.h>
+#include <src/acquisition/batch/batchmanager.h>
+#include <src/acquisition/batch/batchsingle.h>
+#include <src/acquisition/batch/batchsequence.h>
+#include <src/gui/widget/led.h>
+#include <src/gui/widget/experimentviewwidget.h>
+#include <src/gui/dialog/quickexptdialog.h>
+#include <src/gui/dialog/batchsequencedialog.h>
+#include <src/gui/dialog/exportbatchdialog.h>
+#include <src/gui/widget/clockdisplaywidget.h>
 
 #ifdef BC_LIF
-#include "lifdisplaywidget.h"
-#include "lifcontrolwidget.h"
+#include <src/modules/lif/gui/lifdisplaywidget.h>
+#include <src/modules/lif/gui/lifcontrolwidget.h>
 #endif
 
 #ifdef BC_MOTOR
-#include "motordisplaywidget.h"
+#include <src/modules/motor/gui/motordisplaywidget.h>
+#include <src/modules/motor/gui/motorstatuswidget.h>
 #endif
 
 MainWindow::MainWindow(QWidget *parent) :

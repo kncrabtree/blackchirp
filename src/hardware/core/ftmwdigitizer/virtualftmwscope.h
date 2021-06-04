@@ -1,7 +1,7 @@
 #ifndef VIRTUALFTMWSCOPE_H
 #define VIRTUALFTMWSCOPE_H
 
-#include "ftmwscope.h"
+#include <src/hardware/core/ftmwdigitizer/ftmwscope.h>
 
 #include <QVector>
 #include <QTimer>

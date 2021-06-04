@@ -1,7 +1,7 @@
 #ifndef PICO2206B_H
 #define PICO2206B_H
 
-#include "motoroscilloscope.h"
+#include <src/modules/motor/hardware/motordigitizer/motoroscilloscope.h>
 #include <PicoStatus.h>
 #include <ps2000aApi.h>
 

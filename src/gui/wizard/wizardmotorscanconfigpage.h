@@ -1,7 +1,7 @@
 #ifndef WIZARDMOTORSCANCONFIGPAGE_H
 #define WIZARDMOTORSCANCONFIGPAGE_H
 
-#include "experimentwizardpage.h"
+#include <src/gui/wizard/experimentwizardpage.h>
 
 class MotorScanConfigWidget;
 

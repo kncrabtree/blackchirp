@@ -1,13 +1,13 @@
 #ifndef FTPLOT_H
 #define FTPLOT_H
 
-#include "zoompanplot.h"
+#include <src/gui/plot/zoompanplot.h>
 
 #include <QVector>
 #include <QPointF>
 
-#include "experiment.h"
-#include "ft.h"
+#include <src/data/experiment/experiment.h>
+#include <src/data/analysis/ft.h>
 
 class QwtPlotCurve;
 class QwtPlotGrid;

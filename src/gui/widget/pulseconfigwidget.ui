@@ -2,6 +2,14 @@
 <ui version="4.0">
  <class>PulseConfigWidget</class>
  <widget class="QWidget" name="PulseConfigWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>224</width>
+    <height>116</height>
+   </rect>
+  </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
@@ -150,7 +158,7 @@
   <customwidget>
    <class>PulsePlot</class>
    <extends>QWidget</extends>
-   <header location="global">pulseplot.h</header>
+   <header location="global">src/gui/plot/pulseplot.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

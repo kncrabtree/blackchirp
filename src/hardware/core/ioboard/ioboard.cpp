@@ -1,4 +1,4 @@
-#include "ioboard.h"
+#include <src/hardware/core/ioboard/ioboard.h>
 
 IOBoard::IOBoard(QObject *parent) :
     HardwareObject(parent), d_numAnalog(0), d_numDigital(0), d_reservedAnalog(0), d_reservedDigital(0)

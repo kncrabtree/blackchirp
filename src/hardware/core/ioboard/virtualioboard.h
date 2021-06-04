@@ -1,7 +1,7 @@
 #ifndef VIRTUALIOBOARD_H
 #define VIRTUALIOBOARD_H
 
-#include "ioboard.h"
+#include <src/hardware/core/ioboard/ioboard.h>
 
 class VirtualIOBoard : public IOBoard
 {

@@ -58,19 +58,19 @@
   <customwidget>
    <class>LifTracePlot</class>
    <extends>QWidget</extends>
-   <header>liftraceplot.h</header>
+   <header location="global">src/modules/lif/gui/liftraceplot.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>LifSlicePlot</class>
    <extends>QWidget</extends>
-   <header>lifsliceplot.h</header>
+   <header location="global">src/modules/lif/gui/lifsliceplot.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>LifSpectrogramPlot</class>
    <extends>QWidget</extends>
-   <header>lifspectrogramplot.h</header>
+   <header location="global">src/modules/lif/gui/lifspectrogramplot.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

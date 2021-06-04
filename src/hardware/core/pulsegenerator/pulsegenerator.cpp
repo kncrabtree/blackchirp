@@ -1,4 +1,4 @@
-#include "pulsegenerator.h"
+#include <src/hardware/core/pulsegenerator/pulsegenerator.h>
 
 PulseGenerator::PulseGenerator(QObject *parent) :
    HardwareObject(parent), d_minWidth(0.010), d_maxWidth(100000.0), d_minDelay(0.0), d_maxDelay(100000.0)

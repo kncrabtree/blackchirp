@@ -7,7 +7,7 @@ class Led;
 class QLabel;
 class QProgressBar;
 
-#include "experiment.h"
+#include <src/data/experiment/experiment.h>
 
 namespace Ui {
 class MotorStatusWidget;

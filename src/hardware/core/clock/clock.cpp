@@ -1,4 +1,4 @@
-#include "clock.h"
+#include <src/hardware/core/clock/clock.h>
 
 Clock::Clock(int clockNum, QObject *parent) : HardwareObject(parent)
 {

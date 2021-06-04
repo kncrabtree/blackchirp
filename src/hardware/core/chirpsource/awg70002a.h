@@ -1,7 +1,7 @@
 #ifndef AWG70002A_H
 #define AWG70002A_H
 
-#include "awg.h"
+#include <src/hardware/core/chirpsource/awg.h>
 
 class AWG70002a : public AWG
 {

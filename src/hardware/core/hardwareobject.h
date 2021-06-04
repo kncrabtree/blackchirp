@@ -8,9 +8,9 @@
 #include <QList>
 #include <QPair>
 
-#include "datastructs.h"
-#include "communicationprotocol.h"
-#include "experiment.h"
+#include <src/data/datastructs.h>
+#include <src/hardware/core/communication/communicationprotocol.h>
+#include <src/data/experiment/experiment.h>
 
 /*!
  * \brief Abstract base class for all hardware connected to the instrument.

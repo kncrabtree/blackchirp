@@ -1,12 +1,12 @@
 #ifndef M4I2211X8_H
 #define M4I2211X8_H
 
-#include "lifscope.h"
+#include <src/modules/lif/hardware/lifdigitizer/lifscope.h>
 
-#include "spcm/dlltyp.h"
-#include "spcm/regs.h"
-#include "spcm/spcerr.h"
-#include "spcm/spcm_drv.h"
+#include <spcm/dlltyp.h>
+#include <spcm/regs.h>
+#include <spcm/spcerr.h>
+#include <spcm/spcm_drv.h>
 
 class QTimer;
 

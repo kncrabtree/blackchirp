@@ -1,7 +1,7 @@
 #ifndef VALON5015_H
 #define VALON5015_H
 
-#include "clock.h"
+#include <src/hardware/core/clock/clock.h>
 
 
 class Valon5015 : public Clock

@@ -13,9 +13,9 @@
 #include <QLabel>
 #include <QComboBox>
 
-#include "lifcontrolwidget.h"
-#include "liflasercontroldoublespinbox.h"
-#include "experimentwizard.h"
+#include <src/modules/lif/gui/lifcontrolwidget.h>
+#include <src/modules/lif/gui/liflasercontroldoublespinbox.h>
+#include <src/gui/wizard/experimentwizard.h>
 
 WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     ExperimentWizardPage(parent)

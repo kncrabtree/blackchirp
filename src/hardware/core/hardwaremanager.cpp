@@ -1,35 +1,35 @@
-#include "hardwaremanager.h"
+#include <src/hardware/core/hardwaremanager.h>
 
 #include <QSettings>
 
-#include "hardwareobject.h"
-#include "ftmwscope.h"
-#include "clockmanager.h"
-#include "awg.h"
-#include "pulsegenerator.h"
-#include "flowcontroller.h"
-#include "ioboard.h"
+#include <src/hardware/core/hardwareobject.h>
+#include <src/hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <src/hardware/core/clock/clockmanager.h>
+#include <src/hardware/core/chirpsource/awg.h>
+#include <src/hardware/core/pulsegenerator/pulsegenerator.h>
+#include <src/hardware/optional/flowcontroller/flowcontroller.h>
+#include <src/hardware/core/ioboard/ioboard.h>
 
 #ifdef BC_PCONTROLLER
-#include "pressurecontroller.h"
+#include <src/hardware/optional/pressurecontroller/pressurecontroller.h>
 #endif
 
 #ifdef BC_TEMPCONTROLLER
-#include "temperaturecontroller.h"
+#include <src/hardware/optional/tempcontroller/temperaturecontroller.h>
 #endif
 
 #ifdef BC_GPIBCONTROLLER
-#include "gpibcontroller.h"
+#include <src/hardware/optional/gpibcontroller/gpibcontroller.h>
 #endif
 
 #ifdef BC_LIF
-#include "lifscope.h"
-#include "liflaser.h"
+#include <src/modules/lif/hardware/lifdigitizer/lifscope.h>
+#include <src/modules/lif/hardware/liflaser/liflaser.h>
 #endif
 
 #ifdef BC_MOTOR
-#include "motorcontroller.h"
-#include "motoroscilloscope.h"
+#include <src/modules/motor/hardware/motorcontroller/motorcontroller.h>
+#include <src/modules/motor/hardware/motordigitizer/motoroscilloscope.h>
 #endif
 
 HardwareManager::HardwareManager(QObject *parent) : QObject(parent), d_responseCount(0)

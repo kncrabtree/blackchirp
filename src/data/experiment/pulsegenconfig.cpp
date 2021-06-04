@@ -1,4 +1,4 @@
-#include "pulsegenconfig.h"
+#include <src/data/experiment/pulsegenconfig.h>
 
 
 

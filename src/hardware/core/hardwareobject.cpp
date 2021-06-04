@@ -1,12 +1,12 @@
-#include "hardwareobject.h"
+#include <src/hardware/core/hardwareobject.h>
 
-#include "virtualinstrument.h"
-#include "tcpinstrument.h"
-#include "rs232instrument.h"
-#include "custominstrument.h"
+#include <src/hardware/core/communication/virtualinstrument.h>
+#include <src/hardware/core/communication/tcpinstrument.h>
+#include <src/hardware/core/communication/rs232instrument.h>
+#include <src/hardware/core/communication/custominstrument.h>
 
 #ifdef BC_GPIBCONTROLLER
-#include "gpibinstrument.h"
+#include <src/hardware/core/communication/gpibinstrument.h>
 #endif
 
 HardwareObject::HardwareObject(QObject *parent) :

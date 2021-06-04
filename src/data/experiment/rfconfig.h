@@ -3,8 +3,8 @@
 
 #include <QSharedDataPointer>
 
-#include "datastructs.h"
-#include "chirpconfig.h"
+#include <src/data/datastructs.h>
+#include <src/data/experiment/chirpconfig.h>
 
 class RfConfigData;
 

@@ -13,7 +13,6 @@ SOURCES += $$PWD/loghandler.cpp \
     $$PWD/experiment/ioboardconfig.cpp \
     $$PWD/experiment/pulsegenconfig.cpp \
     $$PWD/experiment/rfconfig.cpp \
-    $$PWD/experiment/rfconfigwidget.cpp \
     $$PWD/model/chirptablemodel.cpp \
     $$PWD/model/clocktablemodel.cpp \
     $$PWD/model/ioboardconfigmodel.cpp \
@@ -36,12 +35,8 @@ HEADERS += $$PWD/loghandler.h \
     $$PWD/experiment/ioboardconfig.h \
     $$PWD/experiment/pulsegenconfig.h \
     $$PWD/experiment/rfconfig.h \
-    $$PWD/experiment/rfconfigwidget.h \
     $$PWD/model/chirptablemodel.h \
     $$PWD/model/clocktablemodel.h \
     $$PWD/model/ioboardconfigmodel.h \
     $$PWD/model/peaklistmodel.h \
 	$$PWD/model/validationmodel.h
-
-FORMS += \
-    $$PWD/experiment/rfconfigwidget.ui

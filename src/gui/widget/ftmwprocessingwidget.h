@@ -7,7 +7,7 @@
 #include <QCheckBox>
 #include <QRadioButton>
 
-#include "experiment.h"
+#include <src/data/experiment/experiment.h>
 
 class FtmwProcessingWidget : public QWidget
 {

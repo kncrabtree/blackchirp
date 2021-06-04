@@ -8,7 +8,7 @@
 #include <QVariant>
 #include <QPair>
 
-#include "datastructs.h"
+#include <src/data/datastructs.h>
 
 class ChirpConfigData;
 
