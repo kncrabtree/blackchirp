@@ -12,11 +12,11 @@
 #include <src/acquisition/batch/batchsingle.h>
 
 #ifdef BC_LIF
-#include <src/gui/wizard/wizardlifconfigpage.h>
+#include <src/modules/lif/gui/wizardlifconfigpage.h>
 #endif
 
 #ifdef BC_MOTOR
-#include <src/gui/wizard/wizardmotorscanconfigpage.h>
+#include <src/modules/motor/gui/wizardmotorscanconfigpage.h>
 #endif
 
 ExperimentWizard::ExperimentWizard(QWidget *parent) :

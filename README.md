@@ -1,6 +1,6 @@
 # Blackchirp
 
-![Blackchirp Logo](icons/bc_logo_med.png)
+![Blackchirp Logo](src/resources/icons/bc_logo_med.png)
 
 Data acquisition code for CP-FTMW spectrometers.
 

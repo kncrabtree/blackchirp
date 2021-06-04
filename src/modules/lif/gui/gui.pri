@@ -10,7 +10,8 @@ HEADERS += \
     $$PWD/liflasercontroldoublespinbox.h \
     $$PWD/lifsliceplot.h \
     $$PWD/lifspectrogramplot.h \
-    $$PWD/liftraceplot.h
+    $$PWD/liftraceplot.h \
+    $$PWD/wizardlifconfigpage.h
 
 SOURCES += \
     $$PWD/lifcontrolwidget.cpp \
@@ -18,4 +19,5 @@ SOURCES += \
     $$PWD/liflasercontroldoublespinbox.cpp \
     $$PWD/lifsliceplot.cpp \
     $$PWD/lifspectrogramplot.cpp \
-    $$PWD/liftraceplot.cpp
+    $$PWD/liftraceplot.cpp \
+    $$PWD/wizardlifconfigpage.cpp

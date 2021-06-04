@@ -12,7 +12,8 @@ HEADERS += \
     $$PWD/motorstatuswidget.h \
     $$PWD/motortimeplot.h \
     $$PWD/motorxyplot.h \
-    $$PWD/motorzplot.h
+    $$PWD/motorzplot.h \
+    $$PWD/wizardmotorscanconfigpage.h
 
 SOURCES += \
     $$PWD/motordisplaywidget.cpp \
@@ -23,4 +24,5 @@ SOURCES += \
     $$PWD/motorstatuswidget.cpp \
     $$PWD/motortimeplot.cpp \
     $$PWD/motorxyplot.cpp \
-    $$PWD/motorzplot.cpp
+    $$PWD/motorzplot.cpp \
+    $$PWD/wizardmotorscanconfigpage.cpp
