@@ -159,6 +159,6 @@ bool WizardValidationPage::validatePage()
     for(int i=0; i<l.size(); i++)
         e.addValidationItem(l.at(i));
 
-    emit experimentUpdate(e);
+    
     return true;
 }

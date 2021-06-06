@@ -54,7 +54,7 @@ bool WizardPulseConfigPage::validatePage()
 {
     auto e = getExperiment();
     e.setPulseGenConfig(p_pcw->getConfig());
-    emit experimentUpdate(e);
+    
 
     return true;
 }

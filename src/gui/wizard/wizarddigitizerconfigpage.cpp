@@ -36,7 +36,7 @@ bool WizardDigitizerConfigPage::validatePage()
 {
     auto e = getExperiment();
     e.setFtmwConfig(p_dc->getConfig());
-    emit experimentUpdate(e);
+    
     return true;
 }
 

@@ -406,7 +406,7 @@ bool WizardLoScanConfigPage::validatePage()
     d_rfConfig.setTargetSweeps(p_targetSweepsBox->value());
 
     e.setRfConfig(d_rfConfig);
-    emit experimentUpdate(e);
+    
 
     saveToSettings();
     return true;

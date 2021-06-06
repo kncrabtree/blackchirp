@@ -33,7 +33,7 @@ bool WizardMotorScanConfigPage::validatePage()
     {
         auto e = getExperiment();
         e.setMotorScan(p_mscw->toMotorScan());
-        emit experimentUpdate(e);
+        
         return true;
     }
     return false;

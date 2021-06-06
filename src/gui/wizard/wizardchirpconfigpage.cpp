@@ -50,7 +50,7 @@ bool WizardChirpConfigPage::validatePage()
     auto e = getExperiment();
     auto rfc = p_ccw->getRfConfig();
     e.setRfConfig(rfc);
-    emit experimentUpdate(e);
+
     return true;
 }
 

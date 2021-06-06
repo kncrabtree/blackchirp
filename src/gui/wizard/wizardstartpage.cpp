@@ -297,7 +297,7 @@ bool WizardStartPage::validatePage()
      e.setAutoSaveShotsInterval(p_snapshotBox->value());
      e.setTimeDataInterval(p_auxDataIntervalBox->value());
 
-     emit experimentUpdate(e);
+     
      return true;
 
 }

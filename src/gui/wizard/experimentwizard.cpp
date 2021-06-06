@@ -76,9 +76,6 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
     setPage(MotorScanConfigPage,motorScanConfigPage);
 #endif
 
-    for(int i=0; i<d_pages.size(); i++)
-        connect(d_pages.at(i),&ExperimentWizardPage::experimentUpdate,this,&ExperimentWizard::updateExperiment);
-
     d_experiment = Experiment::loadFromSettings();
 }
 
@@ -96,7 +93,7 @@ void ExperimentWizard::setFlowConfig(const FlowConfig c)
     d_experiment.setFlowConfig(c);
 }
 
-Experiment ExperimentWizard::getExperiment() const
+Experiment& ExperimentWizard::getExperiment()
 {
     return d_experiment;
 }

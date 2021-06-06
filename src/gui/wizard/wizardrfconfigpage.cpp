@@ -29,7 +29,7 @@ bool WizardRfConfigPage::validatePage()
 
     auto e = getExperiment();
     e.setRfConfig(p_rfc->getRfConfig());
-    emit experimentUpdate(e);
+    
     return true;
 }
 

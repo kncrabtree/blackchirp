@@ -34,11 +34,7 @@ public:
 
     void setPulseConfig(const PulseGenConfig c);
     void setFlowConfig(const FlowConfig c);
-    Experiment getExperiment() const;
-
-public slots:
-    void updateExperiment(const Experiment e) { d_experiment = e; }
-
+    Experiment& getExperiment();
 
 private:    
     QList<ExperimentWizardPage*> d_pages;

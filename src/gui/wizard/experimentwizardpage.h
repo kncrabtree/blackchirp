@@ -11,11 +11,8 @@ class ExperimentWizardPage : public QWizardPage
 public:
     ExperimentWizardPage(QWidget *parent = nullptr);
 
-signals:
-    void experimentUpdate(const Experiment);
-
 protected:
-    Experiment getExperiment() const;
+    Experiment& getExperiment() const;
     int startingFtmwPage() const;
 };
 

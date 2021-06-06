@@ -241,7 +241,7 @@ bool WizardLifConfigPage::validatePage()
 
     out.setEnabled();
     e.setLifConfig(out);
-    emit experimentUpdate(e);
+    
     return true;
 
 }
