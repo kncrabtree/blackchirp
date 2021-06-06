@@ -70,11 +70,11 @@ void AWG70002a::initialize()
     p_comm->setReadOptions(10000,true,QByteArray("\n"));
 }
 
-Experiment AWG70002a::prepareForExperiment(Experiment exp)
+bool AWG70002a::prepareForExperiment(Experiment &exp)
 {
     d_enabledForExperiment = exp.ftmwConfig().isEnabled();
     if(!d_enabledForExperiment)
-        return exp;
+        return true;
 
     //encode error by prepending '!' to an error message
     QString wfmName = getWaveformKey(exp.ftmwConfig().chirpConfig());
@@ -84,7 +84,7 @@ Experiment AWG70002a::prepareForExperiment(Experiment exp)
         exp.setErrorString(wfmName.mid(1));
         exp.setHardwareFailed();
         emit hardwareFailure();
-        return exp;
+        return false;
     }
 
     p_comm->writeCmd(QString("Source1:Waveform \"%1\"\n").arg(wfmName));
@@ -93,7 +93,7 @@ Experiment AWG70002a::prepareForExperiment(Experiment exp)
     p_comm->writeCmd(QString("TRIGger:MODE SYNChronous\n"));
 
 
-    return exp;
+    return true;
 }
 
 void AWG70002a::beginAcquisition()

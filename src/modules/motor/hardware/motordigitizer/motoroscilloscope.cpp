@@ -7,7 +7,7 @@ MotorOscilloscope::MotorOscilloscope(QObject *parent) : HardwareObject(parent)
 
 
 
-Experiment MotorOscilloscope::prepareForExperiment(Experiment exp)
+bool MotorOscilloscope::prepareForExperiment(Experiment &exp)
 {
     d_enabledForExperiment = exp.motorScan().isEnabled();
     if(d_enabledForExperiment)
@@ -20,5 +20,5 @@ Experiment MotorOscilloscope::prepareForExperiment(Experiment exp)
         }
         exp.setMotorScan(ms);
     }
-    return exp;
+    return exp.hardwareSuccess();
 }

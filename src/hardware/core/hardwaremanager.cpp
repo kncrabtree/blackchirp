@@ -360,18 +360,20 @@ void HardwareManager::sleep(bool b)
 void HardwareManager::initializeExperiment(Experiment exp)
 {
     //do initialization
-    p_clockManager->prepareForExperiment(exp);
+    bool success = p_clockManager->prepareForExperiment(exp);
 
-    for(int i=0;i<d_hardwareList.size();i++)
-    {
-        HardwareObject *obj = d_hardwareList.at(i);
-        if(obj->thread() != thread())
-            QMetaObject::invokeMethod(obj,"prepareForExperiment",Qt::BlockingQueuedConnection,Q_RETURN_ARG(Experiment,exp),Q_ARG(Experiment,exp));
-        else
-            exp = obj->prepareForExperiment(exp);
+    if(success) {
+        for(int i=0;i<d_hardwareList.size();i++)
+        {
+            HardwareObject *obj = d_hardwareList.at(i);
+            if(obj->thread() != thread())
+                QMetaObject::invokeMethod(obj,"prepareForExperiment",Qt::BlockingQueuedConnection,Q_RETURN_ARG(bool,success),Q_ARG(Experiment &,exp));
+            else
+                success = obj->prepareForExperiment(exp);
 
-        if(!exp.hardwareSuccess())
-            break;
+            if(!success)
+                break;
+        }
     }
 
     //any additional synchronous initialization can be performed here

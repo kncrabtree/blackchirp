@@ -21,7 +21,7 @@ protected:
     void initializeClock() override;
     bool setHwFrequency(double freqMHz, int outputIndex) override;
     double readHwFrequency(int outputIndex) override;
-    Experiment prepareClock(Experiment exp) override;
+    bool prepareClock(Experiment &exp) override;
 
 private:
     bool valonWriteCmd(QString cmd);

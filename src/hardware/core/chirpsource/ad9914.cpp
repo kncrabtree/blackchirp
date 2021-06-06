@@ -77,12 +77,12 @@ void AD9914::initialize()
     p_comm->setReadOptions(1000,true,QByteArray("\n"));
 }
 
-Experiment AD9914::prepareForExperiment(Experiment exp)
+bool AD9914::prepareForExperiment(Experiment &exp)
 {
     if(!exp.ftmwConfig().isEnabled())
     {
         d_enabledForExperiment = false;
-        return exp;
+        return true;
     }
 
     d_enabledForExperiment = true;
@@ -165,7 +165,7 @@ Experiment AD9914::prepareForExperiment(Experiment exp)
         exp.setHardwareFailed();
         exp.setErrorString(QString("Could not initialize %1").arg(d_prettyName));
         emit hardwareFailure();
-        return exp;
+        return false;
     }
 
 //    p_comm->writeCmd(QString("IN\n"));
@@ -264,7 +264,7 @@ Experiment AD9914::prepareForExperiment(Experiment exp)
     ftmwc.setRfConfig(rfc);
     exp.setFtmwConfig(ftmwc);
 
-    return exp;
+    return true;
 
 }
 

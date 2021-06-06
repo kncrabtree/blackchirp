@@ -11,7 +11,7 @@ public:
 
     // HardwareObject interface
 public slots:
-    Experiment prepareForExperiment(Experiment exp) override;
+    bool prepareForExperiment(Experiment &exp) override;
 
     // HardwareObject interface
 protected:

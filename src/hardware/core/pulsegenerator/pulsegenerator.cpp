@@ -43,13 +43,13 @@ void PulseGenerator::initialize()
     initializePGen();
 }
 
-Experiment PulseGenerator::prepareForExperiment(Experiment exp)
+bool PulseGenerator::prepareForExperiment(Experiment &exp)
 {
     bool success = setAll(exp.pGenConfig());
     if(!success)
         exp.setHardwareFailed();
 
-    return exp;
+    return exp.hardwareSuccess();
 }
 
 void PulseGenerator::readSettings()

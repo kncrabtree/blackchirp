@@ -62,11 +62,11 @@ protected:
     virtual void initializeClock() =0;
     virtual bool setHwFrequency(double freqMHz, int outputIndex = 0) =0;
     virtual double readHwFrequency(int outputIndex = 0) =0;
-    virtual Experiment prepareClock(Experiment exp) { return exp; }
+    virtual bool prepareClock(Experiment &exp) { return true; }
 
     // HardwareObject interface
 public slots:
-    virtual Experiment prepareForExperiment(Experiment exp) override final;
+    virtual bool prepareForExperiment(Experiment &exp) override final;
 };
 
 #endif // CLOCK_H

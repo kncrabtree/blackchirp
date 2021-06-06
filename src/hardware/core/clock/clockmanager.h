@@ -37,7 +37,7 @@ signals:
 public slots:
     double setClockFrequency(BlackChirp::ClockType t, double freqMHz);
     double readClockFrequency(BlackChirp::ClockType t);
-    Experiment prepareForExperiment(Experiment exp);
+    bool prepareForExperiment(Experiment &exp);
 
 private:
     QList<Clock*> d_clockList;

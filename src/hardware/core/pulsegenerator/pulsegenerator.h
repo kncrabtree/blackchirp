@@ -15,7 +15,7 @@ public:
 
 public slots:
     void initialize() override final;
-    Experiment prepareForExperiment(Experiment exp) override final;
+    bool prepareForExperiment(Experiment &exp) override final;
     void readSettings() override;
 
     PulseGenConfig config() const { return d_config; }

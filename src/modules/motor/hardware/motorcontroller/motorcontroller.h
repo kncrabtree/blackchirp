@@ -22,12 +22,12 @@ signals:
 
 public slots:
     virtual bool moveToPosition(double x, double y, double z) =0;
-    Experiment prepareForExperiment(Experiment exp) override final;
+    bool prepareForExperiment(Experiment &exp) override final;
     virtual void moveToRestingPos() =0;
     virtual void checkLimit() =0;
 
 protected:
-    virtual bool prepareForMotorScan(const MotorScan ms) =0;
+    virtual bool prepareForMotorScan(Experiment &exp) =0;
     double d_xPos, d_yPos, d_zPos;
     QPair<double,double> d_xRange, d_yRange, d_zRange;
     double d_xRestingPos, d_yRestingPos, d_zRestingPos;

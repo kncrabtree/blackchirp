@@ -79,11 +79,11 @@ void DSOx92004A::initialize()
 
 }
 
-Experiment DSOx92004A::prepareForExperiment(Experiment exp)
+bool DSOx92004A::prepareForExperiment(Experiment &exp)
 {
     d_enabledForExperiment = exp.ftmwConfig().isEnabled();
     if(!d_enabledForExperiment)
-        return exp;
+        return true;
 
     auto config = exp.ftmwConfig().scopeConfig();
 
@@ -91,34 +91,34 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
     if(!scopeCommand(QString("*RST;:SYSTEM:HEADER OFF")))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
 
     if(!scopeCommand(QString(":DISPLAY:MAIN OFF")))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
 
     if(!scopeCommand(QString(":CHANNEL%1:DISPLAY ON").arg(config.fidChannel)))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
     if(!scopeCommand(QString(":CHANNEL%1:INPUT DC50").arg(config.fidChannel)))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
     if(!scopeCommand(QString(":CHANNEL%1:OFFSET 0").arg(config.fidChannel)))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
     if(!scopeCommand(QString(":CHANNEL%1:SCALE %2").arg(config.fidChannel).arg(QString::number(config.vScale,'e',3))))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
 
     //trigger settings
@@ -132,27 +132,27 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
     if(!scopeCommand(QString(":TRIGGER:SWEEP TRIGGERED")))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
     if(!scopeCommand(QString(":TRIGGER:LEVEL %1,%2").arg(trigCh).arg(config.trigLevel,0,'f',3)))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
     if(!scopeCommand(QString(":TRIGGER:MODE EDGE")))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
     if(!scopeCommand(QString(":TRIGGER:EDGE:SOURCE %1").arg(trigCh)))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
     if(!scopeCommand(QString(":TRIGGER:EDGE:SLOPE %1").arg(slope)))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
 
 
@@ -160,7 +160,7 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
     if(!scopeCommand(QString(":TIMEBASE:REFERENCE LEFT")))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
 
 
@@ -171,22 +171,22 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
     if(!scopeCommand(QString(":WAVEFORM:SOURCE CHAN%1").arg(config.fidChannel)))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
     if(!scopeCommand(QString(":WAVEFORM:BYTEORDER LSBFIRST")))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
     if(!scopeCommand(QString(":WAVEFORM:FORMAT WORD")))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
     if(!scopeCommand(QString(":WAVEFORM:STREAMING ON")))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
     config.byteOrder = QDataStream::BigEndian;
     config.bytesPerPoint = 2;
@@ -204,17 +204,17 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
         if(!scopeCommand(QString(":ACQUIRE:MODE SEGMENTED")))
         {
             exp.setHardwareFailed();
-            return exp;
+            return false;
         }
         if(!scopeCommand(QString(":ACQUIRE:SEGMENTED:COUNT %1").arg(config.numFrames)))
         {
             exp.setHardwareFailed();
-            return exp;
+            return false;
         }
         if(!scopeCommand(QString(":WAVEFORM:SEGMENTED:ALL ON")))
         {
             exp.setHardwareFailed();
-            return exp;
+            return false;
         }
     }
     else
@@ -225,7 +225,7 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
         if(!scopeCommand(QString(":ACQUIRE:MODE RTIME")))
         {
             exp.setHardwareFailed();
-            return exp;
+            return false;
         }
     }
 
@@ -235,12 +235,12 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
         if(!scopeCommand(QString(":ACQUIRE:AVERAGE ON")))
         {
             exp.setHardwareFailed();
-            return exp;
+            return false;
         }
         if(!scopeCommand(QString(":ACQUIRE:COUNT %1").arg(config.numAverages)))
         {
             exp.setHardwareFailed();
-            return exp;
+            return false;
         }
         config.blockAverageMultiply = true;
     }
@@ -251,22 +251,22 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
     if(!scopeCommand(QString(":ACQUIRE:SRATE:ANALOG:AUTO OFF")))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
     if(!scopeCommand(QString(":ACQUIRE:SRATE:ANALOG %1").arg(QString::number(config.sampleRate,'g',2))))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
     if(!scopeCommand(QString(":ACQUIRE:POINTS:AUTO OFF")))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
     if(!scopeCommand(QString(":ACQUIRE:POINTS:ANALOG %1").arg(config.recordLength)))
     {
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
 
 
@@ -291,7 +291,7 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
     {
         emit logMessage(QString("Failed to set FID channel. Response to waveform source query: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
 
     //read actual offset and vertical scale
@@ -304,7 +304,7 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
         {
             emit logMessage(QString("Could not parse offset response. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
             exp.setHardwareFailed();
-            return exp;
+            return false;
         }
         config.vOffset = offset;
     }
@@ -312,7 +312,7 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
     {
         emit logMessage(QString("Gave an empty response to offset query."),BlackChirp::LogError);
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
     resp = p_comm->queryCmd(QString(":CHAN%1:SCALE?\n").arg(config.fidChannel));
     if(!resp.isEmpty())
@@ -323,7 +323,7 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
         {
             emit logMessage(QString("Could not parse scale response. Response: %2 (Hex: %3)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
             exp.setHardwareFailed();
-            return exp;
+            return false;
         }
         if(!(fabs(config.vScale-scale) < 0.01))
             emit logMessage(QString("Vertical scale is different than specified. Target: %1 V/div, Scope setting: %2 V/div").arg(QString::number(config.vScale,'f',3))
@@ -334,7 +334,7 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
     {
         emit logMessage(QString("Gave an empty response to scale query."),BlackChirp::LogError);
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
 
     //verify sample rate, record length, and horizontal delay
@@ -347,14 +347,14 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
         {
             emit logMessage(QString("Sample rate query returned an invalid response. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
             exp.setHardwareFailed();
-            return exp;
+            return false;
         }
         if(!(fabs(sRate - config.sampleRate)<1e6))
         {
             emit logMessage(QString("Could not set sample rate successfully. Target: %1 GS/s, Scope setting: %2 GS/s").arg(QString::number(config.sampleRate/1e9,'f',3))
                             .arg(QString::number(sRate/1e9,'f',3)),BlackChirp::LogError);
             exp.setHardwareFailed();
-            return exp;
+            return false;
         }
         config.sampleRate = sRate;
     }
@@ -362,7 +362,7 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
     {
         emit logMessage(QString("Gave an empty response to sample rate query."),BlackChirp::LogError);
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
 
     resp = p_comm->queryCmd(QString(":ACQUIRE:POINTS?\n"));
@@ -374,7 +374,7 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
         {
             emit logMessage(QString("Record length query returned an invalid response. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
             exp.setHardwareFailed();
-            return exp;
+            return false;
         }
         if(!(abs(recLength-config.recordLength) < 1000))
         {
@@ -387,7 +387,7 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
     {
         emit logMessage(QString("Gave an empty response to record length query."),BlackChirp::LogError);
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
 
     resp = p_comm->queryCmd(QString(":TRIGGER:EDGE:SOURCE?\n"));
@@ -395,7 +395,7 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
     {
         emit logMessage(QString("Could not verify trigger channel. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
 
 
@@ -404,14 +404,14 @@ Experiment DSOx92004A::prepareForExperiment(Experiment exp)
     {
         emit logMessage(QString("Could not verify trigger slope. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
 
     d_configuration = config;
     exp.setScopeConfig(config);
     d_acquiring = false;
 
-    return exp;
+    return true;
 
 
 }

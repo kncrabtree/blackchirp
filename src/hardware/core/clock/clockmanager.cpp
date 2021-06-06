@@ -86,10 +86,10 @@ double ClockManager::readClockFrequency(BlackChirp::ClockType t)
     return d_clockRoles.value(t)->readFrequency(t);
 }
 
-Experiment ClockManager::ClockManager::prepareForExperiment(Experiment exp)
+bool ClockManager::prepareForExperiment(Experiment &exp)
 {
     if(!exp.ftmwConfig().isEnabled())
-        return exp;
+        return true;
 
     d_clockRoles.clear();
     for(int i=0; i<d_clockList.size(); i++)
@@ -121,7 +121,7 @@ Experiment ClockManager::ClockManager::prepareForExperiment(Experiment exp)
             exp.setErrorString(QString("Could not find hardware clock for %1 (%2 output %3)")
                                .arg(BlackChirp::clockPrettyName(type)).arg(d.hwKey).arg(d.output));
             exp.setHardwareFailed();
-            return exp;
+            return false;
         }
 
         if(!c->addRole(type,d.output))
@@ -129,7 +129,7 @@ Experiment ClockManager::ClockManager::prepareForExperiment(Experiment exp)
             exp.setErrorString(QString("The output number requested for %1 (%2) is out of range (only %2 outputs are available).")
                                .arg(c->name()).arg(d.output).arg(c->numOutputs()));
             exp.setHardwareFailed();
-            return exp;
+            return false;
         }
 
         d_clockRoles.insertMulti(type,c);
@@ -148,7 +148,7 @@ Experiment ClockManager::ClockManager::prepareForExperiment(Experiment exp)
                                .arg(d.desiredFreqMHz,0,'f',6)
                                .arg(rfc.rawClockFrequency(type),0,'f',6));
             exp.setHardwareFailed();
-            return exp;
+            return false;
         }
 
         if(qAbs(actualFreq-d.desiredFreqMHz) > 0.1)
@@ -165,6 +165,6 @@ Experiment ClockManager::ClockManager::prepareForExperiment(Experiment exp)
     }
 
     exp.setRfConfig(rfc);
-    return exp;
+    return true;
 
 }

@@ -6,31 +6,29 @@
 #include <QFile>
 #include <QTextStream>
 
-Experiment::Experiment() : data(new ExperimentData)
+Experiment::Experiment() : d_number(0), d_timeDataInterval(300), d_autoSaveShotsInterval(10000), d_lastSnapshot(0), d_isInitialized(false),
+    d_isAborted(false), d_isDummy(false), d_hardwareSuccess(true), d_endLogMessageCode(BlackChirp::LogHighlight),
+    d_path(QString(""))
+#ifdef BC_LIF
+,  d_waitForLifSet(false)
+#endif
 {
 
 }
 
-Experiment::Experiment(const Experiment &rhs) : data(rhs.data)
-{
-
-}
-
-Experiment &Experiment::operator=(const Experiment &rhs)
-{
-    if (this != &rhs)
-        data.operator=(rhs.data);
-    return *this;
-}
-
-Experiment::Experiment(const int num, QString exptPath) : data(new ExperimentData)
+Experiment::Experiment(const int num, QString exptPath) : d_number(0), d_timeDataInterval(300), d_autoSaveShotsInterval(10000), d_lastSnapshot(0), d_isInitialized(false),
+    d_isAborted(false), d_isDummy(false), d_hardwareSuccess(true), d_endLogMessageCode(BlackChirp::LogHighlight),
+    d_path(QString(""))
+#ifdef BC_LIF
+,  d_waitForLifSet(false)
+#endif
 {
     QDir d(BlackChirp::getExptDir(num,exptPath));
     if(!d.exists())
         return;
 
-    data->path = exptPath;
-    data->iobCfg = IOBoardConfig(false);
+    d_path = exptPath;
+    d_iobCfg = IOBoardConfig(false);
 
     QFile hdr(BlackChirp::getExptFile(num,BlackChirp::HeaderFile,exptPath));
     if(hdr.open(QIODevice::ReadOnly))
@@ -49,57 +47,57 @@ Experiment::Experiment(const int num, QString exptPath) : data(new ExperimentDat
             QVariant val = QVariant(l.at(1));
 
             if(key.startsWith(QString("Ftmw")) || key.startsWith(QString("RfConfig")))
-                data->ftmwCfg.parseLine(key,val);
+                d_ftmwCfg.parseLine(key,val);
 
 
             if(key.startsWith(QString("Flow")))
-                data->flowCfg.parseLine(key,val);
+                d_flowCfg.parseLine(key,val);
 
             if(key.startsWith(QString("IOBoardConfig")))
-                data->iobCfg.parseLine(key,val);
+                d_iobCfg.parseLine(key,val);
 
             if(key.startsWith(QString("PulseGen")))
-                data->pGenCfg.parseLine(key,val);
+                d_pGenCfg.parseLine(key,val);
 
 #ifdef BC_LIF
             if(key.startsWith(QString("Lif")))
-                data->lifCfg.parseLine(key,val);
+                d_lifCfg.parseLine(key,val);
 #endif
 
 #ifdef BC_MOTOR
             if(key.startsWith(QString("Motor")))
-                data->motorScan.parseLine(key,val);
+                d_motorScan.parseLine(key,val);
 #endif
 
             if(key.startsWith(QString("AutosaveInterval")))
-                data->autoSaveShotsInterval = val.toInt();
+                d_autoSaveShotsInterval = val.toInt();
 
             if(key.startsWith(QString("AuxDataInterval")))
-                data->timeDataInterval = val.toInt();
+                d_timeDataInterval = val.toInt();
         }
 
         hdr.close();
 
-        if(data->ftmwCfg.isEnabled())
+        if(d_ftmwCfg.isEnabled())
         {
-            data->ftmwCfg.loadChirps(num,exptPath);
-            data->ftmwCfg.loadFids(num,exptPath);
-            data->ftmwCfg.loadClocks(num,exptPath);
+            d_ftmwCfg.loadChirps(num,exptPath);
+            d_ftmwCfg.loadFids(num,exptPath);
+            d_ftmwCfg.loadClocks(num,exptPath);
         }
 
 #ifdef BC_LIF
-        if(data->lifCfg.isEnabled())
-            data->lifCfg.loadLifData(num,exptPath);
+        if(d_lifCfg.isEnabled())
+            d_lifCfg.loadLifData(num,exptPath);
 #endif
 
 #ifdef BC_MOTOR
-        if(data->motorScan.isEnabled())
-            data->motorScan.loadMotorData(num,exptPath);
+        if(d_motorScan.isEnabled())
+            d_motorScan.loadMotorData(num,exptPath);
 #endif
     }
     else
     {
-        data->errorString = QString("Could not open header file (%1)").arg(hdr.fileName());
+        d_errorString = QString("Could not open header file (%1)").arg(hdr.fileName());
         return;
     }
 
@@ -152,7 +150,7 @@ Experiment::Experiment(const int num, QString exptPath) : data(new ExperimentDat
                         name += QString(l2.at(j));
 
                     hdrList.append(name);
-                    data->timeDataMap[name] = qMakePair(QList<QVariant>(),plot);
+                    d_timeDataMap[name] = qMakePair(QList<QVariant>(),plot);
                 }
                 lookForHeader = false;
             }
@@ -164,9 +162,9 @@ Experiment::Experiment(const int num, QString exptPath) : data(new ExperimentDat
                 for(int i=0; i<l.size(); i++)
                 {
                     if(hdrList.at(i).contains(QString("TimeStamp")))
-                        data->timeDataMap[hdrList.at(i)].first.append(QDateTime::fromString(l.at(i).trimmed(),Qt::ISODate));
+                        d_timeDataMap[hdrList.at(i)].first.append(QDateTime::fromString(l.at(i).trimmed(),Qt::ISODate));
                     else
-                        data->timeDataMap[hdrList.at(i)].first.append(QString(l.at(i).trimmed()));
+                        d_timeDataMap[hdrList.at(i)].first.append(QString(l.at(i).trimmed()));
                 }
             }
 
@@ -176,7 +174,7 @@ Experiment::Experiment(const int num, QString exptPath) : data(new ExperimentDat
     }
 
 
-    data->number = num;
+    d_number = num;
 
 }
 
@@ -187,137 +185,137 @@ Experiment::~Experiment()
 
 int Experiment::number() const
 {
-    return data->number;
+    return d_number;
 }
 
 QDateTime Experiment::startTime() const
 {
-    return data->startTime;
+    return d_startTime;
 }
 
 int Experiment::timeDataInterval() const
 {
-    return data->timeDataInterval;
+    return d_timeDataInterval;
 }
 
 int Experiment::autoSaveShots() const
 {
-    return data->autoSaveShotsInterval;
+    return d_autoSaveShotsInterval;
 }
 
 bool Experiment::isInitialized() const
 {
-    return data->isInitialized;
+    return d_isInitialized;
 }
 
 bool Experiment::isAborted() const
 {
-    return data->isAborted;
+    return d_isAborted;
 }
 
 bool Experiment::isDummy() const
 {
-    return data->isDummy;
+    return d_isDummy;
 }
 
 FtmwConfig Experiment::ftmwConfig() const
 {
-    return data->ftmwCfg;
+    return d_ftmwCfg;
 }
 
 PulseGenConfig Experiment::pGenConfig() const
 {
-    return data->pGenCfg;
+    return d_pGenCfg;
 }
 
 FlowConfig Experiment::flowConfig() const
 {
-    return data->flowCfg;
+    return d_flowCfg;
 }
 
 IOBoardConfig Experiment::iobConfig() const
 {
-    return data->iobCfg;
+    return d_iobCfg;
 }
 
 bool Experiment::isComplete() const
 {
 #ifdef BC_MOTOR
     //if motor scan is enabled, then not possible to do LIF or FTMW
-    if(data->motorScan.isEnabled())
-        return data->motorScan.isComplete();
+    if(d_motorScan.isEnabled())
+        return d_motorScan.isComplete();
 #endif
 
 #ifdef BC_LIF
     //check each sub expriment!
-    return (data->ftmwCfg.isComplete() && data->lifCfg.isComplete());
+    return (d_ftmwCfg.isComplete() && d_lifCfg.isComplete());
 #endif
 
-    return data->ftmwCfg.isComplete();
+    return d_ftmwCfg.isComplete();
 }
 
 bool Experiment::hardwareSuccess() const
 {
-    return data->hardwareSuccess;
+    return d_hardwareSuccess;
 }
 
 QString Experiment::errorString() const
 {
-    return data->errorString;
+    return d_errorString;
 }
 
 QMap<QString, QPair<QList<QVariant>, bool> > Experiment::timeDataMap() const
 {
-    return data->timeDataMap;
+    return d_timeDataMap;
 }
 
 QString Experiment::startLogMessage() const
 {
-    return data->startLogMessage;
+    return d_startLogMessage;
 }
 
 QString Experiment::endLogMessage() const
 {
-    return data->endLogMessage;
+    return d_endLogMessage;
 }
 
 BlackChirp::LogMessageCode Experiment::endLogMessageCode() const
 {
-    return data->endLogMessageCode;
+    return d_endLogMessageCode;
 }
 
 QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
 {
     QMap<QString, QPair<QVariant, QString> > out;
 
-    out.insert(QString("AuxDataInterval"),qMakePair(data->timeDataInterval,QString("s")));
-    out.insert(QString("AutosaveInterval"),qMakePair(data->autoSaveShotsInterval,QString("shots")));
+    out.insert(QString("AuxDataInterval"),qMakePair(d_timeDataInterval,QString("s")));
+    out.insert(QString("AutosaveInterval"),qMakePair(d_autoSaveShotsInterval,QString("shots")));
 
-    auto it = data->validationConditions.constBegin();
+    auto it = d_validationConditions.constBegin();
     QString prefix("Validation.");
     QString empty("");
-    for(;it != data->validationConditions.constEnd(); it++)
+    for(;it != d_validationConditions.constEnd(); it++)
     {
         out.insert(prefix+it.key()+QString(".Min"),qMakePair(it.value().min,empty));
         out.insert(prefix+it.key()+QString(".Max"),qMakePair(it.value().max,empty));
     }
 
-    out.unite(data->ftmwCfg.headerMap());
-    out.unite(data->pGenCfg.headerMap());
-    out.unite(data->flowCfg.headerMap());
-    out.unite(data->iobCfg.headerMap());
+    out.unite(d_ftmwCfg.headerMap());
+    out.unite(d_pGenCfg.headerMap());
+    out.unite(d_flowCfg.headerMap());
+    out.unite(d_iobCfg.headerMap());
 
 #ifdef BC_LIF
-    out.unite(data->lifCfg.headerMap());
+    out.unite(d_lifCfg.headerMap());
 #endif
 
 #ifdef BC_MOTOR
-    out.unite(data->motorScan.headerMap());
+    out.unite(d_motorScan.headerMap());
 #endif
 
-    if(!data->timeDataMap.isEmpty())
+    if(!d_timeDataMap.isEmpty())
     {
-        foreach(const QString &key, data->timeDataMap.keys())
+        foreach(const QString &key, d_timeDataMap.keys())
         {
             QString label;
             QString units;
@@ -345,7 +343,7 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
             else
                 continue;
 
-            auto val = data->timeDataMap.value(key);
+            auto val = d_timeDataMap.value(key);
             if(val.first.isEmpty())
                 continue;
 
@@ -367,7 +365,7 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
 
 QMap<QString, BlackChirp::ValidationItem> Experiment::validationItems() const
 {
-    return data->validationConditions;
+    return d_validationConditions;
 }
 
 bool Experiment::snapshotReady()
@@ -379,12 +377,12 @@ bool Experiment::snapshotReady()
     {
         if(ftmwConfig().completedShots() > 0)
         {
-            qint64 d = ftmwConfig().completedShots() - data->lastSnapshot;
+            qint64 d = ftmwConfig().completedShots() - d_lastSnapshot;
             if(d > 0)
             {
-                bool out = !(d % static_cast<qint64>(data->autoSaveShotsInterval));
+                bool out = !(d % static_cast<qint64>(d_autoSaveShotsInterval));
                 if(out)
-                    data->lastSnapshot = ftmwConfig().completedShots();
+                    d_lastSnapshot = ftmwConfig().completedShots();
                 return out;
             }
             else
@@ -396,12 +394,12 @@ bool Experiment::snapshotReady()
     {
         if(lifConfig().completedShots() > 0)
         {
-            qint64 d = lifConfig().completedShots() - data->lastSnapshot;
+            qint64 d = lifConfig().completedShots() - d_lastSnapshot;
             if(d > 0)
             {
-                bool out = !(d % static_cast<qint64>(data->autoSaveShotsInterval));
+                bool out = !(d % static_cast<qint64>(d_autoSaveShotsInterval));
                 if(out)
-                    data->lastSnapshot = lifConfig().completedShots();
+                    d_lastSnapshot = lifConfig().completedShots();
                 return out;
             }
             else
@@ -415,12 +413,12 @@ bool Experiment::snapshotReady()
     {
         if(motorScan().completedShots() > 0)
         {
-           qint64 d = static_cast<qint64>(motorScan().completedShots()) - data->lastSnapshot;
+           qint64 d = static_cast<qint64>(motorScan().completedShots()) - d_lastSnapshot;
            if(d>0)
            {
-               bool out = !(d % static_cast<qint64>(data->autoSaveShotsInterval));
+               bool out = !(d % static_cast<qint64>(d_autoSaveShotsInterval));
                if(out)
-                   data->lastSnapshot = motorScan().completedShots();
+                   d_lastSnapshot = motorScan().completedShots();
                return out;
            }
            else
@@ -434,25 +432,25 @@ bool Experiment::snapshotReady()
 
 void Experiment::setTimeDataInterval(const int t)
 {
-    data->timeDataInterval = t;
+    d_timeDataInterval = t;
 }
 
 void Experiment::setAutoSaveShotsInterval(const int s)
 {
-    data->autoSaveShotsInterval = s;
+    d_autoSaveShotsInterval = s;
 }
 
 void Experiment::setInitialized()
 {
     bool initSuccess = true;
-    data->startTime = QDateTime::currentDateTime();
+    d_startTime = QDateTime::currentDateTime();
 
-    if(data->ftmwCfg.isEnabled())
+    if(d_ftmwCfg.isEnabled())
     {
-        if(!data->ftmwCfg.prepareForAcquisition())
+        if(!d_ftmwCfg.prepareForAcquisition())
         {
-            setErrorString(data->ftmwCfg.errorString());
-            data->isInitialized = false;
+            setErrorString(d_ftmwCfg.errorString());
+            d_isInitialized = false;
             return;
         }
     }
@@ -464,28 +462,28 @@ void Experiment::setInitialized()
 #ifdef BC_MOTOR
     if(motorScan().isEnabled())
     {
-        data->motorScan.initialize();
+        d_motorScan.initialize();
     }
 #endif
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     int num = s.value(QString("exptNum"),0).toInt()+1;
-    data->number = num;
+    d_number = num;
 
     if(ftmwConfig().isEnabled() && ftmwConfig().type() == BlackChirp::FtmwPeakUp)
     {
-        data->number = -1;
-        data->startLogMessage = QString("Peak up mode started.");
-        data->endLogMessage = QString("Peak up mode ended.");
-        data->isDummy = true;
-        data->isInitialized = true;
+        d_number = -1;
+        d_startLogMessage = QString("Peak up mode started.");
+        d_endLogMessage = QString("Peak up mode ended.");
+        d_isDummy = true;
+        d_isInitialized = true;
         saveToSettings();
         return;
     }
     else
     {
-        data->startLogMessage = QString("Starting experiment %1.").arg(num);
-        data->endLogMessage = QString("Experiment %1 complete.").arg(num);
+        d_startLogMessage = QString("Starting experiment %1.").arg(num);
+        d_endLogMessage = QString("Experiment %1 complete.").arg(num);
     }
 
 
@@ -495,8 +493,8 @@ void Experiment::setInitialized()
         initSuccess = d.mkpath(d.absolutePath());
         if(!initSuccess)
         {
-            data->isInitialized = false;
-            data->errorString = QString("Could not create the directory %1 for saving.").arg(d.absolutePath());
+            d_isInitialized = false;
+            d_errorString = QString("Could not create the directory %1 for saving.").arg(d.absolutePath());
             return;
         }
     }
@@ -505,34 +503,34 @@ void Experiment::setInitialized()
     //scan header
     if(!saveHeader())
     {
-        data->isInitialized = false;
-        data->errorString = QString("Could not open the file %1 for writing.")
-                .arg(BlackChirp::getExptFile(data->number,BlackChirp::HeaderFile));
+        d_isInitialized = false;
+        d_errorString = QString("Could not open the file %1 for writing.")
+                .arg(BlackChirp::getExptFile(d_number,BlackChirp::HeaderFile));
         return;
     }
 
     //chirp file
-    if(data->ftmwCfg.isEnabled())
+    if(d_ftmwCfg.isEnabled())
     {
         if(!saveChirpFile())
         {
-            data->isInitialized = false;
-            data->errorString = QString("Could not open the file %1 for writing.")
+            d_isInitialized = false;
+            d_errorString = QString("Could not open the file %1 for writing.")
                     .arg(BlackChirp::getExptFile(num,BlackChirp::ChirpFile));
             return;
         }
 
         if(!saveClockFile())
         {
-            data->isInitialized = false;
-            data->errorString = QString("Could not open the file %1 for writing.")
+            d_isInitialized = false;
+            d_errorString = QString("Could not open the file %1 for writing.")
                     .arg(BlackChirp::getExptFile(num,BlackChirp::ClockFile));
             return;
         }
     }
 
 
-    data->isInitialized = initSuccess;
+    d_isInitialized = initSuccess;
 
 
 
@@ -546,25 +544,25 @@ void Experiment::setInitialized()
 
 void Experiment::setAborted()
 {
-    data->isAborted = true;
+    d_isAborted = true;
     if(ftmwConfig().isEnabled() && (ftmwConfig().type() == BlackChirp::FtmwTargetShots || ftmwConfig().type() == BlackChirp::FtmwTargetTime ))
     {
-        data->endLogMessage = QString("Experiment %1 aborted.").arg(number());
-        data->endLogMessageCode = BlackChirp::LogError;
+        d_endLogMessage = QString("Experiment %1 aborted.").arg(number());
+        d_endLogMessageCode = BlackChirp::LogError;
     }
 #ifdef BC_LIF
     else if(lifConfig().isEnabled() && !lifConfig().isComplete())
     {
-        data->endLogMessage = QString("Experiment %1 aborted.").arg(number());
-        data->endLogMessageCode = BlackChirp::LogError;
+        d_endLogMessage = QString("Experiment %1 aborted.").arg(number());
+        d_endLogMessageCode = BlackChirp::LogError;
     }
 #endif
 
 #ifdef BC_MOTOR
     if(motorScan().isEnabled())
     {
-        data->endLogMessage = QString("Experiment %1 aborted.").arg(number());
-        data->endLogMessageCode = BlackChirp::LogError;
+        d_endLogMessage = QString("Experiment %1 aborted.").arg(number());
+        d_endLogMessageCode = BlackChirp::LogError;
     }
 #endif
 
@@ -572,37 +570,37 @@ void Experiment::setAborted()
 
 void Experiment::setDummy()
 {
-    data->isDummy = true;
+    d_isDummy = true;
 }
 
 void Experiment::setFtmwConfig(const FtmwConfig cfg)
 {
-    data->ftmwCfg = cfg;
+    d_ftmwCfg = cfg;
 }
 
 void Experiment::setFtmwEnabled(bool en)
 {
-    data->ftmwCfg.setEnabled(en);
+    d_ftmwCfg.setEnabled(en);
 }
 
 void Experiment::setScopeConfig(const BlackChirp::FtmwScopeConfig &cfg)
 {
-    data->ftmwCfg.setScopeConfig(cfg);
+    d_ftmwCfg.setScopeConfig(cfg);
 }
 
 void Experiment::setRfConfig(const RfConfig cfg)
 {
-    data->ftmwCfg.setRfConfig(cfg);
+    d_ftmwCfg.setRfConfig(cfg);
 }
 
 void Experiment::setIOBoardConfig(const IOBoardConfig cfg)
 {
-    data->iobCfg = cfg;
+    d_iobCfg = cfg;
 }
 
 bool Experiment::setFidsData(const QList<QVector<qint64> > l)
 {
-    if(!data->ftmwCfg.setFidsData(l))
+    if(!d_ftmwCfg.setFidsData(l))
     {
         setErrorString(ftmwConfig().errorString());
         return false;
@@ -613,7 +611,7 @@ bool Experiment::setFidsData(const QList<QVector<qint64> > l)
 
 bool Experiment::addFids(const QByteArray newData, int shift)
 {
-    if(!data->ftmwCfg.addFids(newData,shift))
+    if(!d_ftmwCfg.addFids(newData,shift))
     {
         setErrorString(ftmwConfig().errorString());
         return false;
@@ -624,27 +622,27 @@ bool Experiment::addFids(const QByteArray newData, int shift)
 
 void Experiment::overrideTargetShots(const int target)
 {
-    data->ftmwCfg.setTargetShots(target);
+    d_ftmwCfg.setTargetShots(target);
 }
 
 void Experiment::resetFids()
 {
-    data->ftmwCfg.resetFids();
+    d_ftmwCfg.resetFids();
 }
 
 void Experiment::setPulseGenConfig(const PulseGenConfig c)
 {
-    data->pGenCfg = c;
+    d_pGenCfg = c;
 }
 
 void Experiment::setFlowConfig(const FlowConfig c)
 {
-    data->flowCfg = c;
+    d_flowCfg = c;
 }
 
 void Experiment::setErrorString(const QString str)
 {
-    data->errorString = str;
+    d_errorString = str;
 }
 
 bool Experiment::addTimeData(const QList<QPair<QString, QVariant> > dataList, bool plot)
@@ -656,16 +654,16 @@ bool Experiment::addTimeData(const QList<QPair<QString, QVariant> > dataList, bo
         QString key = dataList.at(i).first;
         QVariant value = dataList.at(i).second;
 
-        if(data->timeDataMap.contains(key))
-            data->timeDataMap[key].first.append(value);
+        if(d_timeDataMap.contains(key))
+            d_timeDataMap[key].first.append(value);
         else
         {
             QList<QVariant> newList;
             newList.append(value);
-            data->timeDataMap.insert(key,qMakePair(newList,plot));
+            d_timeDataMap.insert(key,qMakePair(newList,plot));
         }
 
-        if(data->validationConditions.contains(key))
+        if(d_validationConditions.contains(key))
         {
             //convert key if needed
             QString name = BlackChirp::channelNameLookup(key);
@@ -678,16 +676,16 @@ bool Experiment::addTimeData(const QList<QPair<QString, QVariant> > dataList, bo
             if(!ok)
             {
                 out = false;
-                data->errorString = QString("Aborting because the item \"%1\" (value = %2) cannot be converted to a double.").arg(name).arg(value.toString());
+                d_errorString = QString("Aborting because the item \"%1\" (value = %2) cannot be converted to a double.").arg(name).arg(value.toString());
                 break;
             }
             else
             {
-                const BlackChirp::ValidationItem &vi = data->validationConditions.value(key);
+                const BlackChirp::ValidationItem &vi = d_validationConditions.value(key);
                 if(d < vi.min || d > vi.max)
                 {
                     out = false;
-                    data->errorString = QString("Aborting because %1 is outside specified range (Value = %2, Min = %3, Max = %4).")
+                    d_errorString = QString("Aborting because %1 is outside specified range (Value = %2, Min = %3, Max = %4).")
                             .arg(name).arg(d,0,'g').arg(vi.min,0,'g').arg(vi.max,0,'g');
                     break;
                 }
@@ -701,19 +699,19 @@ bool Experiment::addTimeData(const QList<QPair<QString, QVariant> > dataList, bo
 void Experiment::addTimeStamp()
 {
     QString key("exptTimeStamp");
-    if(data->timeDataMap.contains(key))
-        data->timeDataMap[key].first.append(QDateTime::currentDateTime());
+    if(d_timeDataMap.contains(key))
+        d_timeDataMap[key].first.append(QDateTime::currentDateTime());
     else
     {
         QList<QVariant> newList;
         newList.append(QDateTime::currentDateTime());
-        data->timeDataMap.insert(key,qMakePair(newList,false));
+        d_timeDataMap.insert(key,qMakePair(newList,false));
     }
 }
 
 void Experiment::setValidationItems(const QMap<QString, BlackChirp::ValidationItem> m)
 {
-    data->validationConditions = m;
+    d_validationConditions = m;
 }
 
 void Experiment::addValidationItem(const QString key, const double min, const double max)
@@ -727,15 +725,15 @@ void Experiment::addValidationItem(const QString key, const double min, const do
 
 void Experiment::addValidationItem(const BlackChirp::ValidationItem &i)
 {
-    data->validationConditions.insert(i.key,i);
+    d_validationConditions.insert(i.key,i);
 }
 
 void Experiment::finalizeFtmwSnapshots(const FtmwConfig final)
 {
-    data->ftmwCfg = final;
-    data->ftmwCfg.finalizeSnapshots(data->number,data->path);
+    d_ftmwCfg = final;
+    d_ftmwCfg.finalizeSnapshots(d_number,d_path);
 
-    QFile hdr(BlackChirp::getExptFile(data->number,BlackChirp::HeaderFile,data->path));
+    QFile hdr(BlackChirp::getExptFile(d_number,BlackChirp::HeaderFile,d_path));
     if(hdr.exists())
         hdr.copy(hdr.fileName().append(QString(".orig")));
     saveHeader();
@@ -745,43 +743,43 @@ void Experiment::finalizeFtmwSnapshots(const FtmwConfig final)
 #ifdef BC_MOTOR
 MotorScan Experiment::motorScan() const
 {
-    return data->motorScan;
+    return d_motorScan;
 }
 
 void Experiment::setMotorEnabled(bool en)
 {
-    data->motorScan.setEnabled(en);
+    d_motorScan.setEnabled(en);
 }
 
 void Experiment::setMotorScan(const MotorScan s)
 {
-    data->motorScan = s;
+    d_motorScan = s;
 }
 
 bool Experiment::addMotorTrace(const QVector<double> d)
 {
-    return data->motorScan.addTrace(d);
+    return d_motorScan.addTrace(d);
 }
 #endif
 
 void Experiment::setHardwareFailed()
 {
-    data->hardwareSuccess = false;
+    d_hardwareSuccess = false;
 }
 
 bool Experiment::incrementFtmw()
 {
-    return data->ftmwCfg.increment();
+    return d_ftmwCfg.increment();
 }
 
 void Experiment::setFtmwClocksReady()
 {
-    data->ftmwCfg.clocksReady();
+    d_ftmwCfg.clocksReady();
 }
 
 void Experiment::finalSave() const
 {
-    if(data->isDummy)
+    if(d_isDummy)
         return;
 
     //record validation keys
@@ -789,8 +787,8 @@ void Experiment::finalSave() const
     QString keys = s.value(QString("knownValidationKeys"),QString("")).toString();
     QStringList knownKeyList = keys.split(QChar(';'),QString::SkipEmptyParts);
 
-    auto it = data->timeDataMap.constBegin();
-    while(it != data->timeDataMap.constEnd())
+    auto it = d_timeDataMap.constBegin();
+    while(it != d_timeDataMap.constEnd())
     {
         QString key = it.key();
         if(!knownKeyList.contains(key))
@@ -811,16 +809,16 @@ void Experiment::finalSave() const
     saveHeader();
 
     if(ftmwConfig().isEnabled())
-        ftmwConfig().writeFids(data->number);
+        ftmwConfig().writeFids(d_number);
 
 #ifdef BC_LIF
     if(lifConfig().isEnabled())
-            lifConfig().writeLifFile(data->number);
+            lifConfig().writeLifFile(d_number);
 #endif
 
 #ifdef BC_MOTOR
     if(motorScan().isEnabled())
-        motorScan().writeMotorFile(data->number);
+        motorScan().writeMotorFile(d_number);
 #endif
 
     saveTimeFile();
@@ -828,7 +826,7 @@ void Experiment::finalSave() const
 
 bool Experiment::saveHeader() const
 {
-    QFile hdr(BlackChirp::getExptFile(data->number,BlackChirp::HeaderFile));
+    QFile hdr(BlackChirp::getExptFile(d_number,BlackChirp::HeaderFile));
     if(hdr.open(QIODevice::WriteOnly))
     {
         QTextStream t(&hdr);
@@ -843,11 +841,11 @@ bool Experiment::saveHeader() const
 
 bool Experiment::saveChirpFile() const
 {
-    QFile chp(BlackChirp::getExptFile(data->number,BlackChirp::ChirpFile));
+    QFile chp(BlackChirp::getExptFile(d_number,BlackChirp::ChirpFile));
     if(chp.open(QIODevice::WriteOnly))
     {
         QTextStream t(&chp);
-        t << data->ftmwCfg.chirpConfig().toString();
+        t << d_ftmwCfg.chirpConfig().toString();
         t.flush();
         chp.close();
         return true;
@@ -858,8 +856,8 @@ bool Experiment::saveChirpFile() const
 
 bool Experiment::saveClockFile() const
 {
-    QFile rfc(BlackChirp::getExptFile(data->number,BlackChirp::ClockFile));
-    QString txt = data->ftmwCfg.rfConfig().clockStepsString();
+    QFile rfc(BlackChirp::getExptFile(d_number,BlackChirp::ClockFile));
+    QString txt = d_ftmwCfg.rfConfig().clockStepsString();
     if(txt.isEmpty())
         return true;
 
@@ -877,10 +875,10 @@ bool Experiment::saveClockFile() const
 
 bool Experiment::saveTimeFile() const
 {
-    if(data->timeDataMap.isEmpty())
+    if(d_timeDataMap.isEmpty())
         return true;
 
-    QFile tdt(BlackChirp::getExptFile(data->number,BlackChirp::TimeFile));
+    QFile tdt(BlackChirp::getExptFile(d_number,BlackChirp::TimeFile));
     if(tdt.open(QIODevice::WriteOnly))
     {
         QString tab("\t");
@@ -888,8 +886,8 @@ bool Experiment::saveTimeFile() const
 
         QTextStream t(&tdt);
 
-        auto it = data->timeDataMap.constBegin();
-        for(;it != data->timeDataMap.constEnd(); it++)
+        auto it = d_timeDataMap.constBegin();
+        for(;it != d_timeDataMap.constEnd(); it++)
         {
             QString alias = BlackChirp::channelNameLookup(it.key());
             if(!alias.isEmpty())
@@ -917,9 +915,9 @@ QString Experiment::timeDataText() const
     QString tab("\t");
     QString nl("\n");
 
-    auto it = data->timeDataMap.constBegin();
+    auto it = d_timeDataMap.constBegin();
     int maxPlotSize = 0, maxNoPlotSize = 0;
-    for(;it != data->timeDataMap.constEnd(); it++)
+    for(;it != d_timeDataMap.constEnd(); it++)
     {
         bool p = it.value().second;
         if(p)
@@ -940,11 +938,11 @@ QString Experiment::timeDataText() const
         t << QString("#PlotData\n\n");
         QString name = plot.constFirst().first;
 
-        t << name << QString("_%1").arg(data->number);
+        t << name << QString("_%1").arg(d_number);
         for(int i=1; i<plot.size(); i++)
         {
             name = plot.at(i).first;
-            t << tab << name << QString("_%1").arg(data->number);
+            t << tab << name << QString("_%1").arg(d_number);
         }
 
         for(int i=0; i<maxPlotSize; i++)
@@ -981,11 +979,11 @@ QString Experiment::timeDataText() const
         t << QString("\n\n#NoPlotData\n\n");
         QString name = noPlot.constFirst().first;
 
-        t << name << QString("_%1").arg(data->number);
+        t << name << QString("_%1").arg(d_number);
         for(int i=1; i<noPlot.size(); i++)
         {
             name = noPlot.at(i).first;
-            t << tab <<name << QString("_%1").arg(data->number);
+            t << tab <<name << QString("_%1").arg(d_number);
         }
 
         for(int i=0; i<maxNoPlotSize; i++)
@@ -1022,7 +1020,7 @@ QString Experiment::timeDataText() const
 
 void Experiment::snapshot(int snapNum, const Experiment other) const
 {
-    if(data->isDummy)
+    if(d_isDummy)
         return;
 
     saveHeader();
@@ -1032,23 +1030,23 @@ void Experiment::snapshot(int snapNum, const Experiment other) const
         FtmwConfig cf = ftmwConfig();
         cf.storeFids();
 
-        if(other.number() == data->number && other.isInitialized())
+        if(other.number() == d_number && other.isInitialized())
         {
             if(cf.subtractFids(other.ftmwConfig()))
-                cf.writeFids(data->number,data->path,snapNum);
+                cf.writeFids(d_number,d_path,snapNum);
         }
         else
-            cf.writeFids(data->number,data->path,snapNum);
+            cf.writeFids(d_number,d_path,snapNum);
     }
 
 #ifdef BC_LIF
     if(lifConfig().isEnabled())
-        lifConfig().writeLifFile(data->number);
+        lifConfig().writeLifFile(d_number);
 #endif
 
 #ifdef BC_MOTOR
     if(motorScan().isEnabled())
-        motorScan().writeMotorFile(data->number);
+        motorScan().writeMotorFile(d_number);
 #endif
 
     saveTimeFile();
@@ -1134,29 +1132,29 @@ void Experiment::saveToSettings() const
 
     s.setValue(QString("ftmwEnabled"),ftmwConfig().isEnabled());
     if(ftmwConfig().isEnabled())
-        data->ftmwCfg.saveToSettings();
+        d_ftmwCfg.saveToSettings();
 
 #ifdef BC_LIF
     s.setValue(QString("lifEnabled"),lifConfig().isEnabled());
     if(lifConfig().isEnabled())
-        data->lifCfg.saveToSettings();
+        d_lifCfg.saveToSettings();
 #endif
 
 #ifdef BC_MOTOR
     s.setValue(QString("motorEnabled"),motorScan().isEnabled());
     if(motorScan().isEnabled())
-        data->motorScan.saveToSettings();
+        d_motorScan.saveToSettings();
 #endif
 
     s.setValue(QString("autoSaveShots"),autoSaveShots());
     s.setValue(QString("auxDataInterval"),timeDataInterval());
 
-    data->iobCfg.saveToSettings();
+    d_iobCfg.saveToSettings();
 
     s.remove(QString("validation"));
     s.beginWriteArray(QString("validation"));
     int i=0;
-    foreach(BlackChirp::ValidationItem val,data->validationConditions)
+    foreach(BlackChirp::ValidationItem val,d_validationConditions)
     {
         s.setArrayIndex(i);
         s.setValue(QString("key"),val.key);
@@ -1228,32 +1226,32 @@ Experiment Experiment::loadFromSettings()
 #ifdef BC_LIF
 bool Experiment::isLifWaiting() const
 {
-    return data->waitForLifSet;
+    return d_waitForLifSet;
 }
 
 LifConfig Experiment::lifConfig() const
 {
-    return data->lifCfg;
+    return d_lifCfg;
 }
 
 void Experiment::setLifEnabled(bool en)
 {
-    data->lifCfg.setEnabled(en);
+    d_lifCfg.setEnabled(en);
 }
 
 void Experiment::setLifConfig(const LifConfig cfg)
 {
-    data->lifCfg = cfg;
+    d_lifCfg = cfg;
 }
 
 bool Experiment::addLifWaveform(const LifTrace t)
 {
-    return data->lifCfg.addWaveform(t);
+    return d_lifCfg.addWaveform(t);
 }
 
 void Experiment::setLifWaiting(bool wait)
 {
-    data->waitForLifSet = wait;
+    d_waitForLifSet = wait;
 }
 
 #endif

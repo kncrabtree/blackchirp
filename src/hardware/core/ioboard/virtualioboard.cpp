@@ -26,10 +26,10 @@ void VirtualIOBoard::initialize()
 {
 }
 
-Experiment VirtualIOBoard::prepareForExperiment(Experiment exp)
+bool VirtualIOBoard::prepareForExperiment(Experiment &exp)
 {
     d_config = exp.iobConfig();
-    return exp;
+    return true;
 }
 
 QList<QPair<QString, QVariant> > VirtualIOBoard::readAuxPlotData()

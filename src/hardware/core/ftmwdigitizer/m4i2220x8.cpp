@@ -124,12 +124,12 @@ void M4i2220x8::initialize()
     p_timer = new QTimer(this);
 }
 
-Experiment M4i2220x8::prepareForExperiment(Experiment exp)
+bool M4i2220x8::prepareForExperiment(Experiment &exp)
 {
     if(!exp.ftmwConfig().isEnabled())
     {
         d_enabledForExperiment = false;
-        return exp;
+        return true;
     }
 
     d_enabledForExperiment = true;
@@ -301,10 +301,11 @@ Experiment M4i2220x8::prepareForExperiment(Experiment exp)
         exp.setErrorString(QString("Could not initialize %1. Error message: %2").arg(d_prettyName).arg(QString::fromLatin1(errText)));
         spcm_dwInvalidateBuf(p_handle,SPCM_BUF_DATA);
         delete[] p_m4iBuffer;
+        return false;
     }
 
     exp.setScopeConfig(sc);
-    return exp;
+    return true;
 }
 
 void M4i2220x8::beginAcquisition()

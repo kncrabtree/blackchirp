@@ -58,7 +58,7 @@ QStringList Valon5015::channelNames()
     return QStringList { QString("Source 1") };
 }
 
-Experiment Valon5015::prepareClock(Experiment exp)
+bool Valon5015::prepareClock(Experiment &exp)
 {
     valonWriteCmd(QString("PWR 13\r"));
     if(d_lockToExt10MHz)
@@ -84,7 +84,7 @@ Experiment Valon5015::prepareClock(Experiment exp)
         }
     }
 
-    return exp;
+    return exp.hardwareSuccess();
 }
 
 bool Valon5015::setHwFrequency(double freqMHz, int outputIndex)

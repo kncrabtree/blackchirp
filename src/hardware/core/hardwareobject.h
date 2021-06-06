@@ -125,7 +125,7 @@ public slots:
      */
 	virtual void sleep(bool b);
 
-    virtual Experiment prepareForExperiment(Experiment exp) { return exp; }
+    virtual bool prepareForExperiment(Experiment &exp) { Q_UNUSED(exp) return true; }
     virtual void beginAcquisition(){}
     virtual void endAcquisition(){}
 

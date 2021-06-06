@@ -31,8 +31,6 @@ class Experiment
 {
 public:
     Experiment();
-    Experiment(const Experiment &);
-    Experiment &operator=(const Experiment &);
     Experiment(const int num, QString exptPath = QString(""));
     ~Experiment();
 
@@ -119,50 +117,36 @@ public:
     static Experiment loadFromSettings();
 
 private:
-    QSharedDataPointer<ExperimentData> data;
-};
+    int d_number;
+    QDateTime d_startTime;
+    int d_timeDataInterval;
+    int d_autoSaveShotsInterval;
+    qint64 d_lastSnapshot;
+    bool d_isInitialized;
+    bool d_isAborted;
+    bool d_isDummy;
+    bool d_hardwareSuccess;
+    QString d_errorString;
+    QString d_startLogMessage;
+    QString d_endLogMessage;
+    BlackChirp::LogMessageCode d_endLogMessageCode;
 
-class ExperimentData : public QSharedData
-{
-public:
-    ExperimentData() : number(0), timeDataInterval(300), autoSaveShotsInterval(10000), lastSnapshot(0), isInitialized(false),
-        isAborted(false), isDummy(false), hardwareSuccess(true), endLogMessageCode(BlackChirp::LogHighlight),
-        path(QString(""))
-#ifdef BC_LIF
-    ,  waitForLifSet(false)
-#endif
-    {}
+    FtmwConfig d_ftmwCfg;
+    PulseGenConfig d_pGenCfg;
+    FlowConfig d_flowCfg;
+    IOBoardConfig d_iobCfg;
+    QMap<QString,QPair<QList<QVariant>,bool>> d_timeDataMap;
+    QMap<QString,BlackChirp::ValidationItem> d_validationConditions;
 
-    int number;
-    QDateTime startTime;
-    int timeDataInterval;
-    int autoSaveShotsInterval;
-    qint64 lastSnapshot;
-    bool isInitialized;
-    bool isAborted;
-    bool isDummy;
-    bool hardwareSuccess;
-    QString errorString;
-    QString startLogMessage;
-    QString endLogMessage;
-    BlackChirp::LogMessageCode endLogMessageCode;
-
-    FtmwConfig ftmwCfg;
-    PulseGenConfig pGenCfg;
-    FlowConfig flowCfg;
-    IOBoardConfig iobCfg;
-    QMap<QString,QPair<QList<QVariant>,bool>> timeDataMap;
-    QMap<QString,BlackChirp::ValidationItem> validationConditions;
-
-    QString path;
+    QString d_path;
 
 #ifdef BC_LIF
-    LifConfig lifCfg;
-    bool waitForLifSet;
+    LifConfig d_lifCfg;
+    bool d_waitForLifSet;
 #endif
 
 #ifdef BC_MOTOR
-    MotorScan motorScan;
+    MotorScan d_motorScan;
 #endif
 };
 

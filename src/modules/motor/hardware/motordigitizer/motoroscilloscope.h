@@ -16,7 +16,7 @@ public slots:
 
     // HardwareObject interface
 public slots:
-    Experiment prepareForExperiment(Experiment exp) override final;
+    bool prepareForExperiment(Experiment &exp) override final;
 
 signals:
     void traceAcquired(QVector<double> d);

@@ -13,7 +13,7 @@ public:
     // HardwareObject interface
 public slots:
     void readSettings() override;
-    Experiment prepareForExperiment(Experiment exp) override;
+    bool prepareForExperiment(Experiment &exp) override;
     void beginAcquisition() override;
     void endAcquisition() override;
 

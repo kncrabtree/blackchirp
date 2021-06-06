@@ -154,10 +154,10 @@ void LabjackU3::initialize()
 {
 }
 
-Experiment LabjackU3::prepareForExperiment(Experiment exp)
+bool LabjackU3::prepareForExperiment(Experiment &exp)
 {
     d_config = exp.iobConfig();
-    return exp;
+    return true;
 }
 
 

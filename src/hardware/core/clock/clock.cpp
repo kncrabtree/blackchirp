@@ -108,7 +108,7 @@ double Clock::setFrequency(BlackChirp::ClockType t, double freqMHz)
 }
 
 
-Experiment Clock::prepareForExperiment(Experiment exp)
+bool Clock::prepareForExperiment(Experiment &exp)
 {
     if(exp.ftmwConfig().isEnabled())
     {
@@ -124,7 +124,7 @@ Experiment Clock::prepareForExperiment(Experiment exp)
                 {
                     exp.setErrorString(QString("Could not initialize %1 to %2 MHz").arg(BlackChirp::clockPrettyName(it.key())).arg(it.value().desiredFreqMHz,0,'f',6));
                     exp.setHardwareFailed();
-                    return exp;
+                    return false;
                 }
                 rfc.setClockDesiredFreq(it.key(),val);
             }

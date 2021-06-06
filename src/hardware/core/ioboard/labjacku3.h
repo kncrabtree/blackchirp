@@ -14,7 +14,7 @@ public:
     // HardwareObject interface
 public slots:
     void readIOBSettings() override;
-    Experiment prepareForExperiment(Experiment exp) override;
+    bool prepareForExperiment(Experiment &exp) override;
 
 private:
     HANDLE d_handle;

@@ -306,9 +306,9 @@ void Scx11::checkMotion()
 
 }
 
-bool Scx11::prepareForMotorScan(const MotorScan ms)
+bool Scx11::prepareForMotorScan(Experiment &exp)
 {
-    Q_UNUSED(ms)
+    Q_UNUSED(exp)
     return true;
 }
 

@@ -38,7 +38,7 @@ public slots:
     void checkMotion();
 
 protected:
-    bool prepareForMotorScan(const MotorScan ms) override;
+    bool prepareForMotorScan(Experiment &exp) override;
     bool testConnection() override;
     void initialize() override;
 

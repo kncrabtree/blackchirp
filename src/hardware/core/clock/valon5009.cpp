@@ -145,7 +145,7 @@ double Valon5009::readHwFrequency(int outputIndex)
 }
 
 
-Experiment Valon5009::prepareClock(Experiment exp)
+bool Valon5009::prepareClock(Experiment &exp)
 {
     if(d_lockToExt10MHz)
     {
@@ -170,5 +170,5 @@ Experiment Valon5009::prepareClock(Experiment exp)
         }
     }
 
-    return exp;
+    return exp.hardwareSuccess();
 }

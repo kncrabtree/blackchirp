@@ -69,24 +69,24 @@ void M8195A::initialize()
     p_comm->setReadOptions(10000,true,QByteArray("\n"));
 }
 
-Experiment M8195A::prepareForExperiment(Experiment exp)
+bool M8195A::prepareForExperiment(Experiment &exp)
 {
     d_enabledForExperiment = exp.ftmwConfig().isEnabled();
     if(!d_enabledForExperiment)
-        return exp;
+        return true;
 
     p_comm->writeCmd(QString("*CLS;*RST\n"));
     if(!m8195aWrite(QString(":INST:DACM Marker;:INST:MEM:EXT:RDIV DIV1;:TRAC1:MMOD EXT\n")))
     {
         exp.setErrorString(QString("Could not initialize instrument settings."));
-        return exp;
+        return false;
     }
 
     //external reference (TODO: interface with more general clock system?)
     if(!m8195aWrite(QString(":ROSC:SOUR EXT;:ROSC:FREQ 10000000\n")))
     {
         exp.setErrorString(QString("Could not set to external reference."));
-        return exp;
+        return false;
     }
 
     //external triggering
@@ -108,7 +108,7 @@ Experiment M8195A::prepareForExperiment(Experiment exp)
         if(!m8195aWrite(QString(":INIT:CONT 0;:INIT:GATE 0;:ARM:TRIG:SOUR TRIG;:TRIG:SOUR:ENAB TRIG;:ARM:TRIG:LEV 1.5;:ARM:TRIG:SLOP POS;:ARM:TRIG:OPER %1\n").arg(trig)))
         {
             exp.setErrorString(QString("Could not initialize trigger settings."));
-            return exp;
+            return false;
         }
     }
     else
@@ -116,26 +116,26 @@ Experiment M8195A::prepareForExperiment(Experiment exp)
         if(!m8195aWrite(QString(":INIT:CONT 1;:INIT:GATE 0\n")))
         {
             exp.setErrorString(QString("Could not initialize continuous signal generation."));
-            return exp;
+            return false;
         }
     }
 
     if(!m8195aWrite(QString(":VOLTAGE 1.0\n")))
     {
         exp.setErrorString(QString("Could not set output voltage."));
-        return exp;
+        return false;
     }
 
     if(!m8195aWrite(QString(":FREQ:RAST %1\n").arg(samplerate,0,'E',1)))
     {
         exp.setErrorString(QString("Could not set sample rate."));
-        return exp;
+        return false;
     }
 
     if(!m8195aWrite(QString(":TRAC:DEL:ALL\n")))
     {
         exp.setErrorString(QString("Could not delete old traces."));
-        return exp;
+        return false;
     }
 
     auto data = exp.ftmwConfig().chirpConfig().getChirpMicroseconds();
@@ -145,7 +145,7 @@ Experiment M8195A::prepareForExperiment(Experiment exp)
     {
         exp.setErrorString(QString("Waveform and marker data are not same length. This is a bug; please report it."));
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
 
     int len = data.size() + (data.size()%256);
@@ -155,7 +155,7 @@ Experiment M8195A::prepareForExperiment(Experiment exp)
     {
         exp.setErrorString(QString("Could not create new AWG trace."));
         exp.setHardwareFailed();
-        return exp;
+        return false;
     }
 
     //each transfer must align with 256-sample memory vectors
@@ -239,7 +239,7 @@ Experiment M8195A::prepareForExperiment(Experiment exp)
     if(!success)
         exp.setHardwareFailed();
 
-    return exp;
+    return success;
 
 }
 

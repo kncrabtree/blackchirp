@@ -11,11 +11,11 @@ MotorController::MotorController(QObject *parent) : HardwareObject(parent)
     connect(p_limitTimer,&QTimer::timeout,this,&MotorController::checkLimit);
 }
 
-Experiment MotorController::prepareForExperiment(Experiment exp)
+bool MotorController::prepareForExperiment(Experiment &exp)
 {
 
     d_enabledForExperiment = exp.motorScan().isEnabled();
     if(d_enabledForExperiment)
-        prepareForMotorScan(exp.motorScan());
-    return exp;
+        return prepareForMotorScan(exp);
+    return true;
 }

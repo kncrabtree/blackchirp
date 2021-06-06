@@ -88,11 +88,11 @@ void VirtualFtmwScope::initialize()
     connect(d_simulatedTimer,&QTimer::timeout,this,&FtmwScope::readWaveform, Qt::UniqueConnection);
 }
 
-Experiment VirtualFtmwScope::prepareForExperiment(Experiment exp)
+bool VirtualFtmwScope::prepareForExperiment(Experiment &exp)
 {
     //make a copy of the configuration in which to store settings
     if(!exp.ftmwConfig().isEnabled())
-        return exp;
+        return true;
 
     BlackChirp::FtmwScopeConfig config(exp.ftmwConfig().scopeConfig());
 
@@ -101,7 +101,7 @@ Experiment VirtualFtmwScope::prepareForExperiment(Experiment exp)
     config.xIncr = 1.0/config.sampleRate;
     d_configuration = config;
     exp.setScopeConfig(config);
-    return exp;
+    return true;
 
 }
 

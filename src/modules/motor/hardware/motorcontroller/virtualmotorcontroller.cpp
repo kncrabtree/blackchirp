@@ -98,8 +98,8 @@ void VirtualMotorController::checkLimit()
 
 }
 
-bool VirtualMotorController::prepareForMotorScan(const MotorScan ms)
+bool VirtualMotorController::prepareForMotorScan(Experiment &exp)
 {
-    Q_UNUSED(ms)
+    Q_UNUSED(exp)
     return true;
 }
