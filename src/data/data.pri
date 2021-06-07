@@ -17,7 +17,8 @@ SOURCES += $$PWD/loghandler.cpp \
     $$PWD/model/clocktablemodel.cpp \
     $$PWD/model/ioboardconfigmodel.cpp \
     $$PWD/model/peaklistmodel.cpp \
-	$$PWD/model/validationmodel.cpp
+	$$PWD/model/validationmodel.cpp \
+   $$PWD/storage/settingsstorage.cpp
 
 
 HEADERS += $$PWD/loghandler.h \
@@ -39,4 +40,5 @@ HEADERS += $$PWD/loghandler.h \
     $$PWD/model/clocktablemodel.h \
     $$PWD/model/ioboardconfigmodel.h \
     $$PWD/model/peaklistmodel.h \
-	$$PWD/model/validationmodel.h
+	$$PWD/model/validationmodel.h \
+   $$PWD/storage/settingsstorage.h
