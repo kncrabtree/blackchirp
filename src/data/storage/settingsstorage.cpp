@@ -1,16 +1,43 @@
 #include "settingsstorage.h"
 
-#include <QApplication>
+#include <QCoreApplication>
 
-SettingsStorage::SettingsStorage(const QStringList keys, QSettings::Scope scope) : d_settings{scope,QApplication::organizationName(),QApplication::applicationName()}
+SettingsStorage::SettingsStorage(const QStringList keys, QSettings::Scope scope) : d_settings{scope,QCoreApplication::organizationName(),QCoreApplication::applicationName()}
 {
-    for(auto k : keys)
-        d_settings.beginGroup(k);
+    d_settings.setFallbacksEnabled(false);
+
+    if(keys.isEmpty())
+        d_settings.beginGroup(QString("Blackchirp"));
+    else
+    {
+        for(auto k : keys)
+            d_settings.beginGroup(k);
+    }
 
     readAll();
 }
 
-SettingsStorage::SettingsStorage(const QStringList keys, bool systemWide) : SettingsStorage(keys, systemWide ? QSettings::SystemScope : QSettings::UserScope)
+SettingsStorage::SettingsStorage(const QString orgName, const QString appName, const QStringList keys, QSettings::Scope scope) : d_settings{scope,orgName,appName}
+{
+    d_settings.setFallbacksEnabled(false);
+
+    if(keys.isEmpty())
+        d_settings.beginGroup(QString("Blackchirp"));
+    else
+    {
+        for(auto k : keys)
+            d_settings.beginGroup(k);
+    }
+
+    readAll();
+}
+
+SettingsStorage::SettingsStorage(const QStringList keys, bool systemWide) : SettingsStorage(keys, (systemWide ? QSettings::SystemScope : QSettings::UserScope))
+{
+
+}
+
+SettingsStorage::SettingsStorage(const QString orgName, const QString appName, const QStringList keys, bool systemWide) : SettingsStorage(orgName, appName, keys, (systemWide ? QSettings::SystemScope : QSettings::UserScope))
 {
 
 }
@@ -54,9 +81,9 @@ QVariant SettingsStorage::get(const QString key) const
     return QVariant();
 }
 
-auto SettingsStorage::get(const std::vector<QString> keys) const
+SettingsMap SettingsStorage::getMultiple(const std::vector<QString> keys) const
 {
-    std::map<QString, QVariant> out;
+    SettingsMap out;
     for(auto key : keys)
     {
         if(containsValue(key))
@@ -66,27 +93,31 @@ auto SettingsStorage::get(const std::vector<QString> keys) const
     return out;
 }
 
-auto SettingsStorage::getArray(const QString key) const
+std::vector<SettingsMap> SettingsStorage::getArray(const QString key) const
 {
     if(containsArray(key))
         return d_arrayValues.at(key);
     else
-        return std::vector<std::map<QString,QVariant>>();
+        return std::vector<SettingsMap>();
 }
 
-auto SettingsStorage::getArrayValue(const QString key, std::size_t i) const
+SettingsMap SettingsStorage::getArrayValue(const QString key, std::size_t i) const
 {
     auto v = getArray(key);
     if(i < v.size())
         return v.at(i);
 
-    return std::map<QString,QVariant>();
+    return SettingsMap();
 }
 
 QVariant SettingsStorage::getOrSetDefault(QString key, QVariant defaultValue)
 {
     if(containsValue(key))
         return get(key);
+
+    //ensure this key doesn't match an array
+    if(containsArray(key))
+        return QVariant();
 
     //if we reach this point, there is no value. Store it in settings.
     set(key,defaultValue,true);
@@ -113,7 +144,7 @@ bool SettingsStorage::set(QString key, QVariant value, bool write)
     return true;
 }
 
-auto SettingsStorage::setMultiple(std::map<QString, QVariant> m, bool write)
+std::map<QString,bool> SettingsStorage::setMultiple(std::map<QString, QVariant> m, bool write)
 {
     std::map<QString,bool> out;
     for( auto it = m.cbegin(); it != m.cend(); ++it )
@@ -138,8 +169,7 @@ void SettingsStorage::setArray(QString key, std::vector<std::map<QString, QVaria
     {
         if(array.empty())
         {
-            if(d_settings.contains(key))
-                d_settings.remove(key);
+            d_settings.remove(key);
         }
         else
         {
@@ -173,7 +203,7 @@ void SettingsStorage::save()
         {
             d_settings.setArrayIndex(i);
             auto m = l.at(i);
-            for(auto it2 = m.cbegin(); it2 != m.cend(); ++it)
+            for(auto it2 = m.cbegin(); it2 != m.cend(); ++it2)
                 d_settings.setValue(it2->first,it2->second);
         }
         d_settings.endArray();
@@ -182,59 +212,44 @@ void SettingsStorage::save()
     d_settings.sync();
 }
 
-
-template<typename T>
-T SettingsStorage::get(const QString key) const
-{
-    return get(key).value<T>();
-}
-
 void SettingsStorage::readAll()
 {
-    auto keys = d_settings.childKeys();
+    d_values.clear();
+    d_getters.clear();
+    d_arrayValues.clear();
 
-    for(auto k : keys)
+    auto keys = d_settings.childKeys();
+    auto groups = d_settings.childGroups();
+
+    for(auto g : groups)
     {
-        int n = d_settings.beginReadArray(k);
+        int n = d_settings.beginReadArray(g);
         if(n > 0) //key points to an array
         {
-            std::vector<std::map<QString,QVariant>> l;
+            std::vector<SettingsMap> l;
             l.reserve(n);
             for(int i=0; i<n; ++i)
             {
                 d_settings.setArrayIndex(i);
                 auto arrayKeys = d_settings.childKeys();
-                std::map<QString,QVariant> m;
+                SettingsMap m;
                 for(auto k2 : arrayKeys)
                     m.insert_or_assign(k2,d_settings.value(k2));
                 l.push_back(m);
             }
             d_settings.endArray();
-            d_arrayValues.insert_or_assign(k,l);
+            d_arrayValues.insert_or_assign(g,l);
         }
-        else //key points to a single value
+        else //key points to a non-array subgroup
         {
             d_settings.endArray();
-            d_values.insert_or_assign(k,d_settings.value(k));
         }
 
 
     }
+
+    for(auto k : keys)
+        d_values.insert_or_assign(k,d_settings.value(k));
 }
 
-template<class T, typename Out>
-bool SettingsStorage::registerGetter(QString key, T *obj, Out (T::*getter)() const)
-{
-    //cannot register a getter for an array value
-    if(d_arrayValues.find(key) != d_arrayValues.end())
-        return false;
 
-    auto it = d_values.find(key);
-    if(it != d_values.end())
-        d_values.erase(it->first);
-
-    auto f = [obj, getter](){ return (obj->*getter)(); };
-    d_getters.emplace({key,f});
-
-    return true;
-}
