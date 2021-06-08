@@ -102,17 +102,46 @@ void SettingsStorageTest::testGetter()
     d_double *= 3;
 
     save();
-    readAll();
-    QCOMPARE(get<int>("testInt"),20);
-    QCOMPARE(get<double>("testDouble"),10.1*3);
+    SettingsStorage readOnly({},false);
+
+    QCOMPARE(readOnly.get<int>("testInt"),20);
+    QCOMPARE(readOnly.get<double>("testDouble"),10.1*3);
+
+    d_int = 30;
+    d_double = 5.1;
+
+    QCOMPARE(unRegisterGetter("testInt",true),QVariant(30));
+    QCOMPARE(unRegisterGetter("testDouble",false),QVariant(5.1));
+    QCOMPARE(unRegisterGetter("nonExistentKey"),QVariant());
+    QCOMPARE(unRegisterGetter("testString"),QVariant());
+
+    SettingsStorage readOnly2({},false);
+
+    QCOMPARE(readOnly2.get<int>("testInt"),30);
+    QCOMPARE(readOnly2.get<double>("testDouble"),10.1*3);
+
+    QCOMPARE(registerGetter("testInt",this,&SettingsStorageTest::intGetter),true);
+    QCOMPARE(registerGetter("testDouble",this,&SettingsStorageTest::doubleGetter),true);
+
+    d_int = 50;
+    d_double = 96.1;
+    clearGetters(true);
+    QCOMPARE(get<int>("testInt"),50);
+    QCOMPARE(get<double>("testDouble"),96.1);
+
+    SettingsStorage readOnly3({},false);
+    QCOMPARE(readOnly3.get<int>("testInt"),50);
+    QCOMPARE(readOnly3.get<double>("testDouble"),96.1);
 
 }
 
 void SettingsStorageTest::testGetMultiple()
 {
     initSettingsFile();
+    clearGetters(false);
     readAll();
 
+    d_int = 50;
     //getMultiple should skip any nonexistent keys and keys corresponding to arrays
     registerGetter("testInt",this,&SettingsStorageTest::intGetter);
     auto m = getMultiple({"testInt","testDouble","testString","testEnum","testArray","nonExistentKey" });
@@ -121,7 +150,7 @@ void SettingsStorageTest::testGetMultiple()
 
     QCOMPARE(m.find("testArray"),m.end());
     QCOMPARE(m.find("nonExistentKey"),m.end());
-    QCOMPARE(m.find("testInt")->second,QVariant(d_int));
+    QCOMPARE(m.find("testInt")->second,QVariant(50)); //m should contain d_int at the time it was called
     QCOMPARE(m.find("testDouble")->second,QVariant(1.3e-1));
     QCOMPARE(m.find("testString")->second,QVariant(QString("Hello world!")));
     QCOMPARE(m.find("testEnum")->second,QVariant(TestValue3));
@@ -147,6 +176,7 @@ void SettingsStorageTest::testContains()
 void SettingsStorageTest::testSet()
 {
     initSettingsFile();
+    clearGetters(false);
     readAll();
 
     //change value of int and double, one using a getter
@@ -182,6 +212,7 @@ void SettingsStorageTest::testSet()
 void SettingsStorageTest::testDefault()
 {
     initSettingsFile();
+    clearGetters(false);
     readAll();
 
     QCOMPARE(getOrSetDefault("testInt",1),QVariant(42));

@@ -110,6 +110,43 @@ SettingsMap SettingsStorage::getArrayValue(const QString key, std::size_t i) con
     return SettingsMap();
 }
 
+QVariant SettingsStorage::unRegisterGetter(const QString key, bool write)
+{
+    auto it = d_getters.find(key);
+    if(it == d_getters.end())
+        return QVariant();
+
+    QVariant out = it->second();
+    d_values.insert_or_assign(it->first,out);
+
+    if(write)
+    {
+        d_settings.setValue(it->first,out);
+        d_settings.sync();
+    }
+
+    d_getters.erase(it);
+    return out;
+}
+
+void SettingsStorage::clearGetters(bool write)
+{
+    auto it = d_getters.begin();
+    while(it != d_getters.end())
+    {
+        QVariant v= it->second();
+        d_values.insert_or_assign(it->first,v);
+
+        if(write)
+            d_settings.setValue(it->first,v);
+
+        it = d_getters.erase(it);
+    }
+
+    if(write)
+        d_settings.sync();
+}
+
 QVariant SettingsStorage::getOrSetDefault(QString key, QVariant defaultValue)
 {
     if(containsValue(key))
@@ -215,7 +252,6 @@ void SettingsStorage::save()
 void SettingsStorage::readAll()
 {
     d_values.clear();
-    d_getters.clear();
     d_arrayValues.clear();
 
     auto keys = d_settings.childKeys();
@@ -249,7 +285,10 @@ void SettingsStorage::readAll()
     }
 
     for(auto k : keys)
-        d_values.insert_or_assign(k,d_settings.value(k));
+    {
+        if(d_getters.find(k) == d_getters.end())
+            d_values.insert_or_assign(k,d_settings.value(k));
+    }
 }
 
 
