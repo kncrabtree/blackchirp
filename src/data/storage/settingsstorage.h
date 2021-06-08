@@ -8,12 +8,18 @@
 
 using Getter = std::function<QVariant()>;
 
+/*!
+ * \brief The SettingsStorage class manages persistent settings (through QSettings)
+ *
+ *
+ *
+ */
 class SettingsStorage
 {
 private:
-    SettingsStorage(const QString mainKey, const QStringList subKeys, QSettings::Scope scope);
+    SettingsStorage(const QStringList keys, QSettings::Scope scope);
 public:
-    SettingsStorage(const QString mainKey, const QStringList subKeys = QStringList(), bool systemWide = true);
+    SettingsStorage(const QStringList keys, bool systemWide = true);
     SettingsStorage(const SettingsStorage &) = delete;
     SettingsStorage& operator= (const SettingsStorage &) = delete;
 
@@ -56,6 +62,38 @@ public:
     template<typename T>
     T get(const QString key) const;
 
+    /*!
+     * \brief Gets values associated with a list of keys. Overloaded function
+     *
+     * If a key in the list is not found, then it is skipped. The returned map may be empty.
+     * Recommended usage:
+     *
+     * `SettingsStorage s(mainKey,subKeys,systemWide);
+     * auto x = get( {'key1','key2','key3'} );
+     * auto key1Val = x.at('key1');`
+     *
+     * \param keys The list of keys to search for
+     * \return std::map<QString,QVariant> containing the keys found in the values or getter maps
+     */
+    auto get(const std::vector<QString> keys) const;
+
+    /*!
+     * \brief Gets an array assocated with a key
+     *
+     * An array is a list of maps, each of which has its own keys and values
+     *
+     * \param key The key associated with the array
+     * \return std::vector<QVariant> The array value. An empty vector is returned if the key is not found
+     */
+    auto getArray(const QString key) const;
+
+    /*!
+     * \brief Returns a single map from an array associated with a key
+     * \param key The key of the array
+     * \param i Index of the desired map
+     * \return std::map<QString,QVariant> The selected map, which will be empty if key does not exist or if i is out of bounds for the array
+     */
+    auto getArrayValue(const QString key, std::size_t i) const;
 
 
 protected:
@@ -81,27 +119,80 @@ protected:
 
 
     /*!
-     * \brief registerDefaultSetting
-     * \param key
-     * \param defaultValue
-     * \return
+     * \brief Reads a setting, and sets a default value if it does not exist.
+     *
+     * Searches for and returns the value associated with the indicated key. If the key does not
+     * exist in the settings file, then an entry is created and the default value written.
+     *
+     * The intention of this function is to allow a developer to expose settings that a user may want
+     * to edit in the settings editor. For example, a Clock object has "minFreqMHz" and "maxFreqMHz"
+     * settings that correspond to the actual hardware limits. Those settings are read by the user
+     * interface to set limits on input widgets that control the desired frequency setting. The user
+     * can change these values to (presumably) narrow the range of allowed values. By calling this
+     * function for each setting that should be exposed, an entry will be guaranteed to be created in
+     * the settings file.
+     *
+     * \param key The key for the value to be stored
+     * \param defaultValue The desired default value written to settings if the key does not exist
+     * \return QVariant containing the value associated with the key. If the key did not previously exist, this will equal defaltValue
      */
-    QVariant getDefaultSetting(QString key, QVariant defaultValue);
+    QVariant getOrSetDefault(QString key, QVariant defaultValue);
 
-
+    /*!
+     * \brief Stores a key-value setting
+     *
+     * The value is placed into the values map and associated with the given key. If key already
+     * exists, its value is overwritten; otherwise a new key is created. The operation will not be
+     * completed if the key is associated with a getter function or with an array value.
+     *
+     * The write argument controls whether the new setting is immediately written to persistent storage.
+     * If write is false, then the setting will not be stored until a call to SettingsStorage::save is made.
+     *
+     * \param key The key associated with the value
+     * \param value The value to be stored
+     * \param write If true, write to persistent storage immediately
+     * \return bool Returns whether or not the setting was made. If false, the key is already associated with a getter or array value
+     */
     bool set(QString key, QVariant value, bool write = true);
 
+    /*!
+     * \brief Sets multiple key-value settings
+     *
+     * Calls SettingsStorage::set for each key-value pair in the input map. If the setting was successful
+     * and write is true, the new value is stored in QSettings immediately. The success of each setting
+     * is returned in a map.
+     *
+     * \param m Map of key-value pairs to add
+     * \param write If true, write to QSettings immediately
+     * \return std::map<QString,bool> Contains return value of SettingsStorage::set for each key
+     */
+    auto setMultiple(std::map<QString,QVariant> m, bool write = true);
 
+    /*!
+     * \brief Sets (or unsets) an array value
+     *
+     * Stores a vector of maps that will be written to QSettings using QSettings::beginWriteArray()
+     * Passing an empty array argument will remove the value from QSettings.
+     * Changes to QSettings are made immediately if write is true, and upon the next call to
+     * SettingsStorage::save otherwise
+     *
+     * \param key The key of the array value
+     * \param array The new array value (may be empty)
+     * \param write If true, QSettings is updated immediately
+     */
+    void setArray(QString key, std::vector<std::map<QString,QVariant>> array, bool write = true);
+
+    /*!
+     * \brief Write all values to QSettings.
+     */
+    void save();
 
 private:
-    QString d_mainKey;
-    QStringList d_subKeys;
-    bool d_systemWide;
-
     std::map<QString,QVariant> d_values;
 
     std::map<QString, Getter> d_getters;
-    std::map<QString,std::vector<QVariant>> d_arrayValues;
+    std::map<QString,std::vector<std::map<QString,QVariant>>> d_arrayValues;
+
     QSettings d_settings;
 
     void readAll();
