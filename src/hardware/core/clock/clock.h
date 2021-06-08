@@ -62,7 +62,7 @@ protected:
     virtual void initializeClock() =0;
     virtual bool setHwFrequency(double freqMHz, int outputIndex = 0) =0;
     virtual double readHwFrequency(int outputIndex = 0) =0;
-    virtual bool prepareClock(Experiment &exp) { return true; }
+    virtual bool prepareClock(Experiment &exp) { Q_UNUSED(exp) return true; }
 
     // HardwareObject interface
 public slots:
