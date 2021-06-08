@@ -14,31 +14,82 @@ private:
     SettingsStorage(const QString mainKey, const QStringList subKeys, QSettings::Scope scope);
 public:
     SettingsStorage(const QString mainKey, const QStringList subKeys = QStringList(), bool systemWide = true);
+    SettingsStorage(const SettingsStorage &) = delete;
+    SettingsStorage& operator= (const SettingsStorage &) = delete;
 
-    QVariant get(const QString key) const { return d_values.value(key); };
+    /*!
+     * \brief Returns whether key is in the storage (either as a value or getter)
+     *
+     * \param key The key to search for
+     * \return bool True if key is found
+     */
+    bool containsValue(const QString key) const;
 
+    /*!
+     * \brief Returns whether key is in the storage as an array
+     *
+     * \param key The key to search for
+     * \return bool True if key is found
+     */
+    bool containsArray(const QString key) const;
+
+    /*!
+     * \brief Gets the value of a setting
+     *
+     * If a getter function has been registered (see SettingsStorage::registerGetter), then
+     * that getter function will be called.
+     *
+     * \param key The key associated with the value
+     * \return QVariant The value, or QVariant() if the key is not present
+     */
+    QVariant get(const QString key) const;
+
+    /*!
+     * \brief Gets the value of a settting. Overloaded function.
+     *
+     * Attempts to convert the value to type T using QVariant::value<T>(). See Qt
+     * documentation for a discussion
+     *
+     * \param key The key associated with the value
+     * \return T The value, or a default constructed value if the key is not present
+     */
     template<typename T>
-    T get(const QString key) const { return d_values.value(key).value<T>(); }
+    T get(const QString key) const;
 
+
+
+protected:
     /*!
      * \brief Registers a getter function for a given setting
      *
-     * If a getter is associated with a key, then the value is removed from the values
+     * When a getter is associated with a key, any corresponding key is removed from the values
      * dictionary, and instead the getter function will be called to access the value.
      *
-     * The getter function will be called when saving the settings to disk. By default,
-     * the settings file will not be immediately updated. Set the write parameter to true
-     * to immediately write the current value from the getter function to disk.
+     * The getter function will be called when saving the settings to disk or when calling the
+     * get function.
      *
      * This function only works for single values, not arrays.
      *
      * \param key The key for the value to be stored
-     * \param getter A function pointer to a QVariant
+     * \param obj A pointer to the object containing the getter function
+     * \param getter A member function pointer that returns a type that can be implicitly converted to QVariant
+     *
+     * \return QVariant containing the original value stored. If no value was stored, returns QVariant()
+     */
+    template<class T, typename Out>
+    bool registerGetter(QString key, T* obj, Out (T::*getter)() const);
+
+
+    /*!
+     * \brief registerDefaultSetting
+     * \param key
+     * \param defaultValue
      * \return
      */
+    QVariant getDefaultSetting(QString key, QVariant defaultValue);
 
-    template<class T, typename Out>
-    QVariant registerGetter(QString key, T* obj, Out (T::*getter)());
+
+    bool set(QString key, QVariant value, bool write = true);
 
 
 
@@ -47,19 +98,14 @@ private:
     QStringList d_subKeys;
     bool d_systemWide;
 
-    QVariantMap d_values;
+    std::map<QString,QVariant> d_values;
 
-    QMap<QString, Getter> d_getters;
-    QMap<QString,QVariantList> d_arrayValues;
+    std::map<QString, Getter> d_getters;
+    std::map<QString,std::vector<QVariant>> d_arrayValues;
     QSettings d_settings;
-
-    int test() { return 1; }
-    double test2() { return 2.0; }
-
 
     void readAll();
 
 };
-
 
 #endif // SETTINGSSTORAGE_H

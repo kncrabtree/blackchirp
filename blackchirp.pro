@@ -24,7 +24,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets serialport
 TARGET = blackchirp
 TEMPLATE = app
 
-CONFIG += c++11
+CONFIG += c++17
 
 SOURCES += $$PWD/src/main.cpp
 RESOURCES += $$PWD/src/resources/resources.qrc
