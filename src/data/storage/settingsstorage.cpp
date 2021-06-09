@@ -65,7 +65,7 @@ bool SettingsStorage::containsArray(const QString key) const
     return (d_arrayValues.find(key) != d_arrayValues.end());
 }
 
-QVariant SettingsStorage::get(const QString key) const
+QVariant SettingsStorage::get(const QString key, const QVariant defaultValue) const
 {
     //search for key in values map; return if found
     auto it = d_values.find(key);
@@ -78,7 +78,7 @@ QVariant SettingsStorage::get(const QString key) const
         return it2->second();
 
     //key wasn't found; return empty QVariant
-    return QVariant();
+    return defaultValue;
 }
 
 SettingsMap SettingsStorage::getMultiple(const std::vector<QString> keys) const

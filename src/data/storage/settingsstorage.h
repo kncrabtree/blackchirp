@@ -59,6 +59,11 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  *     //Returns default-constructed value if unsuccessful
  *     int v2 = get<int>("myInt");
  *
+ *     //in either case. a default argument can be supplied, which will be returned if the key
+ *     //is not found.
+ *     QVariant defaultInt = get("myInt",10);
+ *     int defaultInt2 = get<int>("myInt",10);
+ *
  *
  * There is also a SettingsStorage:getMultiple that returns a std::map<QString,Qvariant> containing
  * all keys that match the indicated values.
@@ -200,24 +205,29 @@ public:
      * \brief Gets the value of a setting
      *
      * If a getter function has been registered (see SettingsStorage::registerGetter), then
-     * that getter function will be called.
+     * that getter function will be called. The optional `dwfaultValue` argument is returned
+     * if the key is not found.
      *
      * \param key The key associated with the value
-     * \return QVariant The value, or QVariant() if the key is not present
+     * \param defaultValue The value returned if key is not present (default: QVariant())
+     * \return QVariant The value
      */
-    QVariant get(const QString key) const;
+    QVariant get(const QString key, const QVariant defaultValue = QVariant()) const;
 
     /*!
      * \brief Gets the value of a settting. Overloaded function.
      *
      * Attempts to convert the value to type T using QVariant::value<T>(). See Qt
-     * documentation for a discussion
+     * documentation for a discussion. The optional `defaultValue` argument is returned
+     * if the key is not found. If left blank, a default-constructed value is returned
+     * for any missing keys.
      *
      * \param key The key associated with the value
+     * \param defaultValue The value returned if key is not present
      * \return T The value, or a default constructed value if the key is not present
      */
     template<typename T>
-    inline T get(const QString key) const { return get(key).value<T>(); };
+    inline T get(const QString key, T defaultValue = QVariant().value<T>()) const { return (containsValue(key) ? get(key).value<T>() : defaultValue); };
 
     /*!
      * \brief Gets values associated with a list of keys. Overloaded function

@@ -88,6 +88,13 @@ void SettingsStorageTest::testBaseRead()
         QCOMPARE(m.at("testArrayEnum"),QVariant(TestValue2));
     }
 
+    //default values
+    QCOMPARE(get("nonExistentKey"),QVariant());
+    QCOMPARE(get<int>("nonExistentKey"),0);
+    QCOMPARE(get<double>("nonExistentKey")+1.0,1.0);
+    QCOMPARE(get<int>("nonExistentKey",10),10);
+    QCOMPARE(get<double>("nonExistentKey",12.3),12.3);
+
 }
 
 void SettingsStorageTest::testGetter()
