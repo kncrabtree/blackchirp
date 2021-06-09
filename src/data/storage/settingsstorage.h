@@ -5,6 +5,7 @@
 #include <QVariant>
 #include <QList>
 #include <QSettings>
+#include <QCoreApplication>
 
 using SettingsGetter = std::function<QVariant()>; /*!< Alias for a getter function */
 using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs and variants */
@@ -18,7 +19,10 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  * that needs to be read from. All functions that modify values in QSettings are protected. Classes that
  * wish to use SettingsStorage to write to persistent storage need to inherit SettingsStorage and initialize
  * it in their constructors. SettingsStorage does not inherit any other classes, and it is suitable for use
- * in multiple inheritance with QObject-derived classes.
+ * in multiple inheritance with QObject-derived classes. **However:** classes that inherit from SettingsStorage
+ * will have their assignment and copy constructors deleted! Do not inherit from SettingsStorage in a
+ * class that needs to be passed around by value (such as data storage classes like Experiment). This class
+ * is intended for use with objects that only passed by pointer (e.g., HardwareObject, UI classes, etc).
  *
  * A SettingsStorage object reads and maintains an internal copy of the QSettings keys and values associated
  * with the group/subgroup that it is initialized with. Internally, this is done through the use of two
@@ -36,6 +40,15 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  * is accessed (which by default is located in /home/data/CrabtreeLab on unix systems), or a user-specific one.
  * Settings that should apply to any user account (experiment number, hardware configuration, etc) should set
  * systemWide=true, and settings that are specific to a user (UI colors/preferences) should set systemWide=false.
+ * There is also a constructor specific for looking up hardware-related settings, where the implementation
+ * subkey is determined from QSettings:
+ *
+ *     SettingsStorage::SettingsStorage(const QString hardwareKey, const QString subKey, bool systemWide)
+ *
+ * By leaving the subKey string empty (the default), the subKey string will be looked up in QSettings. Specifying
+ * a subkey with this constructor is equialent to calling the previous constructor with the key and subKey as the two
+ * elements in the keys list.
+ *
  *
  * To create a read-only SettingsStorage object that reads the global Blackchirp settings:
  *
@@ -44,6 +57,13 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  * If instead you need read-only access to the "awg/virtual" group:
  *
  *     SettingsStorage s({"awg","virtual"});
+ *
+ *     //equivalent
+ *     SettingsStorage s2("awg","virtual");
+ *
+ * For read-only access to the settings associated with the current "awg" implementation (determined from QSettings):
+ *
+ *     SettingsStorage s("awg");
  *
  * Finally, for read-only access to the "trackingPlot" group for user-based setting:
  *
@@ -159,10 +179,29 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  */
 class SettingsStorage
 {
-private:
-    explicit SettingsStorage(const QStringList keys, QSettings::Scope scope);
-    explicit SettingsStorage(const QString orgName, const QString appName, const QStringList keys, QSettings::Scope scope);
 public:
+    /*!
+     * \brief Constructor to access settings for a particular piece of hardware
+     *
+     * HardwareObject classes have both a key and subKey associated with them. To enable hardware
+     * to be swapped interchangeably, each implementation stores its settings under a particular
+     * subKey, and the current subKey is stored in settings.
+     *
+     * This constructor, when called with an empty subKey string, reads the current subKey from QSettings.
+     * Alternatively, you can specify the subKey here, which is equivalent to
+     *
+     *     SettingsStorage s({hardwareKey,subKey},systemWide);
+     *
+     * \todo If multiple implementations for a hardware object are incorporated into Blackhirp in the
+     * future, figure out how to deal with this.
+     * \todo Should the list of subKeys be associated with the HardwareManager settings instead?
+     *
+     * \param hardwareKey The key for the hardware to look up
+     * \param subKey The subKey to look up. If empty, the value stored in QSettings will be used
+     * \param systemWide If true, use QSettings::SystemScope. Otherwise, use QSettings::UserScope
+     */
+    SettingsStorage(const QString hardwareKey, const QString subKey = QString(""), bool systemWide = true);
+
     /*!
      * \brief Constructor
      *
@@ -173,6 +212,7 @@ public:
      * \param systemWide If true, use QSettings::SystemScope. Otherwise, use QSettings::UserScope
      */
     SettingsStorage(const QStringList keys = QStringList(), bool systemWide = true);
+
     /*!
      * \brief Constructor that explicitly sets organization name and application name (used for unit tests; should not be used directly).
      *
@@ -182,6 +222,7 @@ public:
      * \param systemWide If true, use QSettings::SystemScope. Otherwise, use QSettings::UserScope
      */
     SettingsStorage(const QString orgName, const QString appName, const QStringList keys = QStringList(), bool systemWide = true);
+
     SettingsStorage(const SettingsStorage &) = delete;
     SettingsStorage& operator= (const SettingsStorage &) = delete;
 
@@ -262,6 +303,7 @@ public:
      */
     SettingsMap getArrayValue(const QString key, std::size_t i) const;
 
+    friend class HardwareSettingsReader;
 
 protected:
     /*!
@@ -406,6 +448,9 @@ protected:
      *
      */
     void readAll();
+
+    explicit SettingsStorage(const QStringList keys, QSettings::Scope scope);
+    explicit SettingsStorage(const QString orgName, const QString appName, const QStringList keys, QSettings::Scope scope);
 
 private:
     SettingsMap d_values;

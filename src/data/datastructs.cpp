@@ -1,6 +1,7 @@
 #include <src/data/datastructs.h>
 
 #include <QDir>
+#include <src/data/storage/settingsstorage.h>
 
 QString BlackChirp::getExptFile(int num, BlackChirp::ExptFileType t, QString path, int snapNum)
 {
@@ -59,8 +60,8 @@ QString BlackChirp::getExptDir(int num, QString path)
     QString out;
     if(path.isEmpty())
     {
-        QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-        QString savePath = s.value(QString("savePath"),QString(".")).toString();
+        SettingsStorage s;
+        auto savePath = s.get<QString>("savePath",".");
         int mil = num/1000000;
         int th = num/1000;
 
@@ -149,9 +150,8 @@ QString BlackChirp::channelNameLookup(QString key)
 
 QString BlackChirp::getExportDir()
 {
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    QString path = s.value(QString("exportPath"),QDir::homePath()).toString();
-    return path;
+    SettingsStorage s;
+    return s.get<QString>("exportPath",QDir::homePath());
 }
 
 

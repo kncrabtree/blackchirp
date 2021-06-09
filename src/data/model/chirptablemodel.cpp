@@ -1,7 +1,7 @@
 #include <src/data/model/chirptablemodel.h>
 
+#include <src/data/storage/settingsstorage.h>
 #include <QDoubleSpinBox>
-#include <QSettings>
 #include <QApplication>
 #include <QCheckBox>
 
@@ -222,13 +222,9 @@ bool ChirpTableModel::setData(const QModelIndex &index, const QVariant &value, i
             }
             else
             {
-                QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-                s.beginGroup(QString("awg"));
-                s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-                d_chirpList[i][index.row()].startFreqMHz = s.value(QString("minFreq"),0.0).toDouble();
-                d_chirpList[i][index.row()].endFreqMHz = s.value(QString("maxFreq"),1000.0).toDouble();
-                s.endGroup();
-                s.endGroup();
+                SettingsStorage s("awg");
+                d_chirpList[i][index.row()].startFreqMHz = s.get<double>("minFreq",0.0);
+                d_chirpList[i][index.row()].endFreqMHz = s.get<double>("maxFreq",1000.0);
             }
             break;
         case 4:
@@ -296,13 +292,9 @@ Qt::ItemFlags ChirpTableModel::flags(const QModelIndex &index) const
 void ChirpTableModel::addSegment(double start, double end, double dur, int pos, bool empty)
 {
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("awg"));
-    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-    double awgMin = s.value(QString("minFreq"),0.0).toDouble();
-    double awgMax = s.value(QString("maxFreq"),1000.0).toDouble();
-    s.endGroup();
-    s.endGroup();
+    SettingsStorage s("awg");
+    double awgMin = s.get<double>("minFreq",0.0);
+    double awgMax = s.get<double>("maxFreq",1000.0);
 
     double startFreq = qBound(awgMin,start,awgMax);
     double endFreq = qBound(awgMin,end,awgMax);
@@ -502,13 +494,9 @@ QWidget *ChirpDoubleSpinBoxDelegate::createEditor(QWidget *parent, const QStyleO
     QDoubleSpinBox *editor = new QDoubleSpinBox(parent);
     QWidget *out = editor;
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("awg"));
-    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-    double awgMin = s.value(QString("minFreq"),0.0).toDouble();
-    double awgMax = s.value(QString("maxFreq"),1000.0).toDouble();
-    s.endGroup();
-    s.endGroup();
+    SettingsStorage s("awg");
+    double awgMin = s.get<double>("minFreq",0.0);
+    double awgMax = s.get<double>("maxFreq",1000.0);
 
     double chirpMin = dynamic_cast<const ChirpTableModel*>(index.model())->calculateChirpFrequency(awgMin);
     double chirpMax = dynamic_cast<const ChirpTableModel*>(index.model())->calculateChirpFrequency(awgMax);

@@ -1,6 +1,15 @@
 #include "settingsstorage.h"
 
-#include <QCoreApplication>
+SettingsStorage::SettingsStorage(const QString hardwareKey, const QString subKey, bool systemWide) :
+    d_settings((systemWide ? QSettings::SystemScope : QSettings::UserScope),QCoreApplication::organizationName(),QCoreApplication::applicationName())
+{
+    d_settings.setFallbacksEnabled(false);
+    d_settings.beginGroup(hardwareKey);
+    if(subKey.isEmpty())
+        d_settings.beginGroup(d_settings.value("subKey","virtual").toString());
+
+    readAll();
+}
 
 SettingsStorage::SettingsStorage(const QStringList keys, QSettings::Scope scope) : d_settings{scope,QCoreApplication::organizationName(),QCoreApplication::applicationName()}
 {

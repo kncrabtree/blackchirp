@@ -2,7 +2,7 @@
 #include <QDateTime>
 #include <QDate>
 #include <QApplication>
-#include <QSettings>
+#include <src/data/storage/settingsstorage.h>
 
 LogHandler::LogHandler(bool logToFile, QObject *parent) :
     QObject(parent), d_logToFile(logToFile)
@@ -164,7 +164,7 @@ QString LogHandler::makeLogFileName()
     else
         month = QString::number(d_currentMonth);
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    return QString("%1/log/%2%3.log").arg(s.value(QString("savePath")).toString()).arg(QDate::currentDate().year()).arg(month);
+    SettingsStorage s;
+    return QString("%1/log/%2%3.log").arg(s.get<QString>("savePath")).arg(QDate::currentDate().year()).arg(month);
 
 }

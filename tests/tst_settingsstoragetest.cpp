@@ -32,6 +32,7 @@ private slots:
     void testSet();
     void testDefault();
     void testSubkeyRead();
+    void testHardwareRead();
 
 
 private:
@@ -255,6 +256,15 @@ void SettingsStorageTest::testSubkeyRead()
     }
 }
 
+void SettingsStorageTest::testHardwareRead()
+{
+    initSettingsFile();
+    SettingsStorage readHardware("hardwareKey",QString(""),false);
+    QCOMPARE(readHardware.get<int>("hardwareInt"),10);
+    QCOMPARE(readHardware.get<double>("hardwareDouble"),44.4);
+    QCOMPARE(readHardware.get<QString>("hardwareName"),QString("My Hardware"));
+}
+
 void SettingsStorageTest::initSettingsFile()
 {
     //clear out any existing settings
@@ -298,6 +308,16 @@ void SettingsStorageTest::initSettingsFile()
         s.setValue("testArrayEnum",TestValue5);
     }
     s.endArray();
+    s.endGroup();
+    s.endGroup();
+
+    //Write settings for hardware
+    s.beginGroup("hardwareKey");
+    s.setValue("subKey","hardwareSubKey");
+    s.beginGroup("hardwareSubKey");
+    s.setValue("hardwareInt",10);
+    s.setValue("hardwareName","My Hardware");
+    s.setValue("hardwareDouble",44.4);
     s.endGroup();
     s.endGroup();
 
