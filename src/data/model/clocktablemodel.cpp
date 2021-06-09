@@ -1,6 +1,7 @@
 #include <src/data/model/clocktablemodel.h>
 
-#include <QSettings>
+#include <src/data/storage/settingsstorage.h>
+
 #include <QComboBox>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
@@ -17,16 +18,15 @@ void ClockTableModel::setConfig(const RfConfig c)
     d_hwInfo.clear();
     d_clockAssignments.clear();
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("clockManager"));
-    int num = s.beginReadArray(QString("hwClocks"));
-    for(int i=0; i<num; i++)
+    SettingsStorage s("clockManager");
+    QString arrKey("hwClocks");
+    auto count = s.getArraySize(arrKey);
+    for(std::size_t i = 0; i < count; ++i)
     {
-        s.setArrayIndex(i);
         ClockHwInfo hw;
-        hw.key = s.value(QString("key"),QString("")).toString();
-        hw.output = s.value(QString("output"),0).toInt();
-        hw.name = s.value(QString("name"),QString("%1-%2").arg(hw.key).arg(hw.output)).toString();
+        hw.key = s.getArrayValue<QString>(arrKey,i,"key","");
+        hw.output = s.getArrayValue<int>(arrKey,i,"output",0);
+        hw.name = s.getArrayValue<QString>(arrKey,i,"name",QString("%1-%2").arg(hw.key).arg(hw.output));
         hw.used = false;
         hw.index = d_hwInfo.size();
         if(!hw.key.isEmpty())
@@ -43,8 +43,6 @@ void ClockTableModel::setConfig(const RfConfig c)
             }
         }
     }
-    s.endArray();
-    s.endGroup();
 
     if(c.commonLO())
         setCommonLo(c.commonLO());
@@ -330,13 +328,10 @@ QWidget *ClockTableDelegate::createEditor(QWidget *parent, const QStyleOptionVie
         if(id >= 0 && id < l.size())
         {
             QString key = l.at(id).key;
-            QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-            s.beginGroup(key);
-            s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-            double minFreq = s.value(QString("minFreqMHz"),0.0).toDouble();
-            double maxFreq = s.value(QString("maxFreqMHz"),1e7).toDouble();
-            s.endGroup();
-            s.endGroup();
+            SettingsStorage s(key,SettingsStorage::Hardware);
+            double minFreq = s.get<double>("minFreqMHz",0.0);
+            double maxFreq = s.get<double>("maxFreqMHz",1e7);
+
             //rescale range according to mult/div settings
             double factor = index.model()->data(index.model()->index(index.row(),3),Qt::EditRole).toDouble();
             RfConfig::MultOperation op = index.model()->data(index.model()->index(index.row(),2),Qt::EditRole).value<RfConfig::MultOperation>();

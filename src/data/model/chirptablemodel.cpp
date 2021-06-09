@@ -222,7 +222,7 @@ bool ChirpTableModel::setData(const QModelIndex &index, const QVariant &value, i
             }
             else
             {
-                SettingsStorage s("awg");
+                SettingsStorage s("awg",SettingsStorage::Hardware);
                 d_chirpList[i][index.row()].startFreqMHz = s.get<double>("minFreq",0.0);
                 d_chirpList[i][index.row()].endFreqMHz = s.get<double>("maxFreq",1000.0);
             }
@@ -292,7 +292,7 @@ Qt::ItemFlags ChirpTableModel::flags(const QModelIndex &index) const
 void ChirpTableModel::addSegment(double start, double end, double dur, int pos, bool empty)
 {
 
-    SettingsStorage s("awg");
+    SettingsStorage s("awg",SettingsStorage::Hardware);
     double awgMin = s.get<double>("minFreq",0.0);
     double awgMax = s.get<double>("maxFreq",1000.0);
 
@@ -494,7 +494,7 @@ QWidget *ChirpDoubleSpinBoxDelegate::createEditor(QWidget *parent, const QStyleO
     QDoubleSpinBox *editor = new QDoubleSpinBox(parent);
     QWidget *out = editor;
 
-    SettingsStorage s("awg");
+    SettingsStorage s("awg",SettingsStorage::Hardware);
     double awgMin = s.get<double>("minFreq",0.0);
     double awgMax = s.get<double>("maxFreq",1000.0);
 

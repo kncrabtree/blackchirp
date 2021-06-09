@@ -1,17 +1,6 @@
 #include "settingsstorage.h"
 
-SettingsStorage::SettingsStorage(const QString hardwareKey, const QString subKey, bool systemWide) :
-    d_settings((systemWide ? QSettings::SystemScope : QSettings::UserScope),QCoreApplication::organizationName(),QCoreApplication::applicationName())
-{
-    d_settings.setFallbacksEnabled(false);
-    d_settings.beginGroup(hardwareKey);
-    if(subKey.isEmpty())
-        d_settings.beginGroup(d_settings.value("subKey","virtual").toString());
-
-    readAll();
-}
-
-SettingsStorage::SettingsStorage(const QStringList keys, QSettings::Scope scope) : d_settings{scope,QCoreApplication::organizationName(),QCoreApplication::applicationName()}
+SettingsStorage::SettingsStorage(const QStringList keys, Type type, QSettings::Scope scope) : d_settings{scope,QCoreApplication::organizationName(),QCoreApplication::applicationName()}
 {
     d_settings.setFallbacksEnabled(false);
 
@@ -19,14 +8,22 @@ SettingsStorage::SettingsStorage(const QStringList keys, QSettings::Scope scope)
         d_settings.beginGroup(QString("Blackchirp"));
     else
     {
-        for(auto k : keys)
-            d_settings.beginGroup(k);
+        if( (type == Hardware) && (keys.size() == 1) )
+        {
+            d_settings.beginGroup(keys.first());
+            d_settings.beginGroup(d_settings.value("subKey","virtual").toString());
+        }
+        else
+        {
+            for(auto k : keys)
+                d_settings.beginGroup(k);
+        }
     }
 
     readAll();
 }
 
-SettingsStorage::SettingsStorage(const QString orgName, const QString appName, const QStringList keys, QSettings::Scope scope) : d_settings{scope,orgName,appName}
+SettingsStorage::SettingsStorage(const QString orgName, const QString appName, const QStringList keys, Type type, QSettings::Scope scope) : d_settings{scope,orgName,appName}
 {
     d_settings.setFallbacksEnabled(false);
 
@@ -34,19 +31,47 @@ SettingsStorage::SettingsStorage(const QString orgName, const QString appName, c
         d_settings.beginGroup(QString("Blackchirp"));
     else
     {
-        for(auto k : keys)
-            d_settings.beginGroup(k);
+        if( (type == Hardware) && (keys.size() == 1) )
+        {
+            d_settings.beginGroup(keys.first());
+            d_settings.beginGroup(d_settings.value("subKey","virtual").toString());
+        }
+        else
+        {
+            for(auto k : keys)
+                d_settings.beginGroup(k);
+        }
     }
 
     readAll();
 }
 
-SettingsStorage::SettingsStorage(const QStringList keys, bool systemWide) : SettingsStorage(keys, (systemWide ? QSettings::SystemScope : QSettings::UserScope))
+SettingsStorage::SettingsStorage(const QStringList keys, Type type, bool systemWide) :
+    SettingsStorage(keys, type, (systemWide ? QSettings::SystemScope : QSettings::UserScope))
 {
 
 }
 
-SettingsStorage::SettingsStorage(const QString orgName, const QString appName, const QStringList keys, bool systemWide) : SettingsStorage(orgName, appName, keys, (systemWide ? QSettings::SystemScope : QSettings::UserScope))
+SettingsStorage::SettingsStorage(const QString orgName, const QString appName, const QStringList keys, Type type, bool systemWide) :
+    SettingsStorage(orgName, appName, keys, type, (systemWide ? QSettings::SystemScope : QSettings::UserScope))
+{
+
+}
+
+SettingsStorage::SettingsStorage(bool systemWide, const QStringList keys) :
+    SettingsStorage(keys, General, (systemWide ? QSettings::SystemScope : QSettings::UserScope))
+{
+
+}
+
+SettingsStorage::SettingsStorage(const char *key, SettingsStorage::Type type, bool systemWide) :
+    SettingsStorage(QStringList(QString(key)),type,(systemWide ? QSettings::SystemScope : QSettings::UserScope))
+{
+
+}
+
+SettingsStorage::SettingsStorage(const QString key, Type type, bool systemWide) :
+    SettingsStorage(QStringList(key),type,(systemWide ? QSettings::SystemScope : QSettings::UserScope))
 {
 
 }
@@ -110,13 +135,31 @@ std::vector<SettingsMap> SettingsStorage::getArray(const QString key) const
         return std::vector<SettingsMap>();
 }
 
-SettingsMap SettingsStorage::getArrayValue(const QString key, std::size_t i) const
+std::size_t SettingsStorage::getArraySize(const QString key) const
+{
+    if(containsArray(key))
+        return d_arrayValues.at(key).size();
+
+    return 0;
+}
+
+SettingsMap SettingsStorage::getArrayMap(const QString key, std::size_t i) const
 {
     auto v = getArray(key);
     if(i < v.size())
         return v.at(i);
 
     return SettingsMap();
+}
+
+QVariant SettingsStorage::getArrayValue(const QString arrayKey, std::size_t i, const QString mapKey, const QVariant defaultValue) const
+{
+    auto m = getArrayMap(arrayKey,i);
+    auto it = m.find(mapKey);
+    if(it != m.end())
+        return it->second;
+
+    return defaultValue;
 }
 
 QVariant SettingsStorage::unRegisterGetter(const QString key, bool write)

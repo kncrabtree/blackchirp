@@ -32,7 +32,7 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  *
  * When initializing SettingsStorage, the standard constructor is
  *
- *     SettingsStorage::SettingsStorage(const QStringList keys, bool systemWide)
+ *     SettingsStorage::SettingsStorage(const QStringList keys, Type type, bool systemWide)
  *
  * QSettings::beginGroup will be called for each key in the keys list. If the list is empty, then
  * the group is set to "Blackchirp". This is done to prevent QSettings form reading in various system-wide
@@ -40,34 +40,37 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  * is accessed (which by default is located in /home/data/CrabtreeLab on unix systems), or a user-specific one.
  * Settings that should apply to any user account (experiment number, hardware configuration, etc) should set
  * systemWide=true, and settings that are specific to a user (UI colors/preferences) should set systemWide=false.
- * There is also a constructor specific for looking up hardware-related settings, where the implementation
- * subkey is determined from QSettings:
+ * If Type is set to Hardware and the length of the keys list is 1, then the program assumes the key in the list
+ * corresponds to a HardwareObject, and the current subKey will be added to the keys list upon opening QSettings.
+ * Alternative forms of the constructor exist that take a const char* or QString specifically for single-key operations.
  *
- *     SettingsStorage::SettingsStorage(const QString hardwareKey, const QString subKey, bool systemWide)
+ *     SettingsStorage::SettingsStorage(const QString key, Type type = General, bool systemWide = true)
+ *     SettingsStorage::SettingsStorage(const char* key, Type type = General, bool systemWide = true)
  *
- * By leaving the subKey string empty (the default), the subKey string will be looked up in QSettings. Specifying
- * a subkey with this constructor is equialent to calling the previous constructor with the key and subKey as the two
- * elements in the keys list.
+ * There is also a form of the constructor that places the systemwide argument first for easier access to General (non-hardware)
+ * settings in User scope:
  *
+ *     SettingsStorage::SettingsStorage(bool systemWide, const QStringList keys = QStringList())
  *
  * To create a read-only SettingsStorage object that reads the global Blackchirp settings:
  *
  *     SettingsStorage s;
  *
+ *     //for user settings: SettingsStorage s(false);
+ *
  * If instead you need read-only access to the "awg/virtual" group:
  *
  *     SettingsStorage s({"awg","virtual"});
  *
- *     //equivalent
- *     SettingsStorage s2("awg","virtual");
  *
  * For read-only access to the settings associated with the current "awg" implementation (determined from QSettings):
  *
- *     SettingsStorage s("awg");
+ *     SettingsStorage s("awg",SettingsStorage::Hardware);
  *
  * Finally, for read-only access to the "trackingPlot" group for user-based setting:
  *
- *     SettingsStorage s({"trackingPlot"},false);
+ *     SettingsStorage s(false,"trackingPlot");
+ *     //alternative: SettingsStorage s("trackingPlot",SettingsStorage::General,false);
  *
  * The value associated with a key can be obtained with one of the SettingsStorage::get functions. If there
  * is an integer associacted with the key "myInt", it can be accessed as:
@@ -91,8 +94,16 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  * Array values can be accessed with the SettingsStorage::getArray function, which returns a const reference
  * to the array as a std::vector<SettingsMap>. The vector will be empty if the key is not found.
  * Alternatively, a reference to a particular SettingsMap within the array can be accesed by index with
- * SettingsStorage::getArrayValue. The returned map will be empty if the index is out of bounds or if the key
- * is not found.
+ * SettingsStorage::getArrayMap. The returned map will be empty if the index is out of bounds or if the key
+ * is not found. Finally, SettingsStorage::getArrayValue may be used to access one individual element in an
+ * array value map by its key, using an interface similar to SettingsStorage::get.
+ *
+ *     //Access "arrayKey" map at index 1, return value associated with "mapKey"
+ *     //If "arrayKey" is not present, 1 is out of bounds, or "mapKey" is not present, v contains defaultValue
+ *     QVariant v = getArrayValue("arrayKey",1,"mapKey",defaultValue);
+ *
+ *     //alternative form using template function; d will contain 1.5 if lookup fails.
+ *     double d = getArrayValue("arrayKey",1,"mapKey",1.5)
  *
  * The SettingsStorage::containsValue and SettingsStorage::containsArray functions can be used to check whether
  * a given key exists for a standard value or an array value, respectively.
@@ -180,27 +191,14 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
 class SettingsStorage
 {
 public:
+
     /*!
-     * \brief Constructor to access settings for a particular piece of hardware
-     *
-     * HardwareObject classes have both a key and subKey associated with them. To enable hardware
-     * to be swapped interchangeably, each implementation stores its settings under a particular
-     * subKey, and the current subKey is stored in settings.
-     *
-     * This constructor, when called with an empty subKey string, reads the current subKey from QSettings.
-     * Alternatively, you can specify the subKey here, which is equivalent to
-     *
-     *     SettingsStorage s({hardwareKey,subKey},systemWide);
-     *
-     * \todo If multiple implementations for a hardware object are incorporated into Blackhirp in the
-     * future, figure out how to deal with this.
-     * \todo Should the list of subKeys be associated with the HardwareManager settings instead?
-     *
-     * \param hardwareKey The key for the hardware to look up
-     * \param subKey The subKey to look up. If empty, the value stored in QSettings will be used
-     * \param systemWide If true, use QSettings::SystemScope. Otherwise, use QSettings::UserScope
+     * \brief Used in constructor to indicate whether a hardware subkey is read from settings
      */
-    SettingsStorage(const QString hardwareKey, const QString subKey = QString(""), bool systemWide = true);
+    enum Type {
+        General, /*!< Use keys list explicitly */
+        Hardware /*!< If keys list has 1 entry, look up subKey for this hardware. */
+    };
 
     /*!
      * \brief Constructor
@@ -209,9 +207,10 @@ public:
      * associated with that (sub)group. If keys is empty, the group is set to "Blackchirp".
      *
      * \param keys The list of group/subgroup keys, passed to QSettings::beginGroup in order
+     * \param type If set to SettingsStorage::Hardware and the length of keys is 1, the subKey for the current hardware will be read from settings and selected.
      * \param systemWide If true, use QSettings::SystemScope. Otherwise, use QSettings::UserScope
      */
-    SettingsStorage(const QStringList keys = QStringList(), bool systemWide = true);
+    SettingsStorage(const QStringList keys = QStringList(), Type type = General, bool systemWide = true);
 
     /*!
      * \brief Constructor that explicitly sets organization name and application name (used for unit tests; should not be used directly).
@@ -219,9 +218,39 @@ public:
      * \param orgName Organization name passed to QSettings constructor
      * \param appName Application name passed to QSettings construstor
      * \param keys The list of group/subgroup keys, passed to QSettings::beginGroup in order
+     * \param type If set to SettingsStorage::Hardware and the length of keys is 1, the subKey for the current hardware will be read from settings and selected.
      * \param systemWide If true, use QSettings::SystemScope. Otherwise, use QSettings::UserScope
      */
-    SettingsStorage(const QString orgName, const QString appName, const QStringList keys = QStringList(), bool systemWide = true);
+    SettingsStorage(const QString orgName, const QString appName, const QStringList keys = QStringList(), Type type = General, bool systemWide = true);
+
+    /*!
+     * \brief Convenience constructor for accessing General settings (avoiding Hardware behavior)
+     *
+     * This form of the constructor is intended to give more convenient access to user settings, but it can be used
+     * for any set of keys. This constructor will not look up keys associated with hardware.
+     *
+     * \param systemWide If true, use QSettings::SystemScope. Otherwise, use QSettings::UserScope
+     * \param keys The list of group/subgroup keys, passed to QSettings::beginGroup in order
+     */
+    explicit SettingsStorage(bool systemWide, const QStringList keys = QStringList());
+
+    /*!
+     * \brief Convenience constructor for a single key
+     *
+     * \param key The key for the group in QSettings. If "", will be set to "Blackchirp"
+     * \param type If set to Hardware, a subKey will be added (default: "virtual")
+     * \param systemWide If true, use QSettings::SystemScope. Otherwise, use QSettings::UserScope
+     */
+    explicit SettingsStorage(const char *key, Type type = General, bool systemWide = true);
+
+    /*!
+     * \brief Convenience constructor for a single key
+     *
+     * \param key The key for the group in QSettings. If "", will be set to "Blackchirp"
+     * \param type If set to Hardware, a subKey will be added (default: "virtual")
+     * \param systemWide If true, use QSettings::SystemScope. Otherwise, use QSettings::UserScope
+     */
+    explicit SettingsStorage(const QString key, Type type = General, bool systemWide = true);
 
     SettingsStorage(const SettingsStorage &) = delete;
     SettingsStorage& operator= (const SettingsStorage &) = delete;
@@ -296,14 +325,54 @@ public:
     std::vector<SettingsMap> getArray(const QString key) const;
 
     /*!
+     * \brief Returns the size of the array value associated with key
+     *
+     * \param key The key of the array value
+     * \return std::size_t The number of maps in the array (0 if key does not exist);
+     */
+    std::size_t getArraySize(const QString key) const;
+
+    /*!
      * \brief Returns a single map from an array associated with a key
      * \param key The key of the array
      * \param i Index of the desired map
      * \return SettingsMap The selected map, which will be empty if key does not exist or if i is out of bounds for the array
      */
-    SettingsMap getArrayValue(const QString key, std::size_t i) const;
+    SettingsMap getArrayMap(const QString key, std::size_t i) const;
 
-    friend class HardwareSettingsReader;
+    /*!
+     * \brief Gets a single value from a map that is part of an array value
+     *
+     * Calls getArrayMap, then searches for mapKey within the returned map (which may be empty).
+     * Returns the stored QVariant or the defaultValue argument, which defaults to QVariant().
+     *
+     * \param arrayKey The key of the array
+     * \param i Index of the desired map
+     * \param mapKey Key of the desired value within the map
+     * \param defaultValue Value returned if arrayKey does not exist **or** i is out of bounds **or** mapKey does not exist (default: QVariant())
+     * \return QVariant contining the desired value or defaultValue
+     */
+    QVariant getArrayValue(const QString arrayKey, std::size_t i, const QString mapKey, const QVariant defaultValue = QVariant()) const;
+
+
+    /*!
+     * \brief Overloaded function. See SettingsStorage::getArrayValue
+     *
+     * \param arrayKey The key of the array
+     * \param i Index of the desired map
+     * \param mapKey Key of the desired value within the map
+     * \param defaultValue Value returned if `arrayKey` does not exist **or** `i` is out of bounds **or** `mapKey` does not exist (dedaults to a default-constructed value)
+     * \return T The value or the defaultValue, as appropriate
+     */
+    template<typename T>
+    inline T getArrayValue(const QString arrayKey, std::size_t i, const QString mapKey, T defaultValue = QVariant().value<T>()) const {
+        auto m = getArrayMap(arrayKey,i);
+        auto it = m.find(mapKey);
+        if(it != m.end())
+            return it->second.value<T>();
+
+        return defaultValue;
+    }
 
 protected:
     /*!
@@ -449,10 +518,10 @@ protected:
      */
     void readAll();
 
-    explicit SettingsStorage(const QStringList keys, QSettings::Scope scope);
-    explicit SettingsStorage(const QString orgName, const QString appName, const QStringList keys, QSettings::Scope scope);
-
 private:
+    explicit SettingsStorage(const QStringList keys, Type type, QSettings::Scope scope);
+    explicit SettingsStorage(const QString orgName, const QString appName, const QStringList keys, Type type, QSettings::Scope scope);
+
     SettingsMap d_values;
 
     std::map<QString, SettingsGetter> d_getters;
