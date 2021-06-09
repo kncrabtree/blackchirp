@@ -79,8 +79,67 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  *     //other initialization
  * }
  *
- * When working with a subclass of SettingsStorage, the object has access to the SettingsStorage::set
- * and SettinngsStorage
+ * When working with a subclass of SettingsStorage, the object has access to the SettingsStorage::set,
+ * SettingsStorage::setMultiple, and SettingsStorage::setArray functions. Each of these takes an optional
+ * bool argument (default true) that controls whther the new value is immedately written to settings.
+ * If false, the value is just stored in memory until a call to SettingsStorage::save() is made. It is
+ * recommended that SettingsStorage::save() is called in the destructor of the child class to ensure that
+ * any changes are written before the object is destroyed. Because of the getter mechanism described below,
+ * it is not possible to call save() in the destructor of SettingsStorage. If the key in a call to one of the
+ * set functions does not exist, a new key-value pair is added.
+ *
+ * In addition, a subclass may call SettingsStorage::readAll at any point to reread all values from settings.
+ * However, any keys associated with a getter will not be read! If this behavior is undesired, first unregister
+ * any getters before calling readAll, ensuring that the optional write parameter is set to false.
+ *
+ * Subclasses may also use the SettingsStorage::getOrSetDefault function to add a new key to the settings. This
+ * function will search for the key and return its value if it exists. If it does not exist, a new entry in the
+ * QSettings file is immediately created with the provided default value. For example:
+ *
+ * `
+ * QVariant out = getOrSetDefault("existingKey",10); //out contains value of "existingKey", which may not be 10
+ * QVariant out2 = getOrSetDefault("newKey",10); //out contains 10; "newKey" added to QSettings
+ * `
+ *
+ * Finally, subclasses may call SettingsStorage::registerGetter to associate a function with a key. Any
+ * subsequent references to that key will call the associated function to retrieve the value. A call to
+ * SettingsStorage::save() will retrieve the value from the stored function to save. In this way, the subclass
+ * does not have to call SettingsStorage::set every time a value changes. This mechanism only works for
+ * single key-value settings, not for array values. Getters may be cleared individually with
+ * SettingsStorage::unRegisterGetter or all at once with SettingsStorage::clearGetters. When unregistered
+ * or cleared, the getter function is called and the value stored in memory for later use/saving. Optionally,
+ * the value can be immediately written to QSettings.
+ *
+ * A getter function must be a const member function that takes no arguments and returns a type known to QVariant.
+ * New types can be made known to QVariant using the Q_DECLARE_METATYPE macro; see the QVariant documentation
+ * for details. An example:
+ *
+ * `
+ * class MyClass : public SettingsStorage()
+ * {
+ * public:
+ *     MyClass();
+ *
+ *     int getInt() const { return d_int; }
+ *
+ * private:
+ *     int d_int = 1;
+ * };
+ *
+ * MyClass::MyClass() : SettingsStorage({},false)
+ * {
+ *     registerGetter("myInt",this,&MyClass::getInt);
+ *     int i = get<int>("myInt"); // i == 1
+ *
+ *     d_int = 10;
+ *     int j = get<int>("myInt"); // j == 10
+ *
+ *     QVariant k = unRegisterGetter("myInt",false); //k == 10; do not write 10 to QSettings
+ *
+ *     d_int = 20;
+ *     int l = get<int>("myInt"); //l == 10
+ * }
+ * `
  *
  */
 class SettingsStorage
@@ -89,7 +148,24 @@ private:
     explicit SettingsStorage(const QStringList keys, QSettings::Scope scope);
     explicit SettingsStorage(const QString orgName, const QString appName, const QStringList keys, QSettings::Scope scope);
 public:
+    /*!
+     * \brief Constructor
+     *
+     * Create a QSettings object initialized to the group (and any subgroups) in the keys list with the indicated scope, and reads all values and arrays
+     * associated with that (sub)group. If keys is empty, the group is set to "Blackchirp".
+     *
+     * \param keys The list of group/subgroup keys, passed to QSettings::beginGroup in order
+     * \param systemWide If true, use QSettings::SystemScope. Otherwise, use QSettings::UserScope
+     */
     SettingsStorage(const QStringList keys = QStringList(), bool systemWide = true);
+    /*!
+     * \brief Constructor that explicitly sets organization name and application name (used for unit tests; should not be used directly).
+     *
+     * \param orgName Organization name passed to QSettings constructor
+     * \param appName Application name passed to QSettings construstor
+     * \param keys The list of group/subgroup keys, passed to QSettings::beginGroup in order
+     * \param systemWide If true, use QSettings::SystemScope. Otherwise, use QSettings::UserScope
+     */
     SettingsStorage(const QString orgName, const QString appName, const QStringList keys = QStringList(), bool systemWide = true);
     SettingsStorage(const SettingsStorage &) = delete;
     SettingsStorage& operator= (const SettingsStorage &) = delete;
@@ -197,9 +273,7 @@ protected:
             d_values.erase(it->first);
 
         auto f = [obj, getter](){ return (obj->*getter)(); };
-        d_getters.emplace(key,f);
-
-        return true;
+        return d_getters.emplace(key,f).second;
     }
 
     /*!
