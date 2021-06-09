@@ -27,7 +27,9 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  * each contain a map consisting of one or more key-value pairs.
  *
  * When initializing SettingsStorage, the standard constructor is
- * `SettingsStorage::SettingsStorage(const QStringList keys, bool systemWide)`.
+ *
+ *     SettingsStorage::SettingsStorage(const QStringList keys, bool systemWide)
+ *
  * QSettings::beginGroup will be called for each key in the keys list. If the list is empty, then
  * the group is set to "Blackchirp". This is done to prevent QSettings form reading in various system-wide
  * garbage on macOS. The `systemWide` argument is used to determine whether the main BlackChirp.conf file
@@ -36,27 +38,27 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  * systemWide=true, and settings that are specific to a user (UI colors/preferences) should set systemWide=false.
  *
  * To create a read-only SettingsStorage object that reads the global Blackchirp settings:
- * `
- * SettingsStorage s;
- * `
+ *
+ *     SettingsStorage s;
  *
  * If instead you need read-only access to the "awg/virtual" group:
- * `
- * SettingsStorage s({"awg","virtual"});
- * `
+ *
+ *     SettingsStorage s({"awg","virtual"});
  *
  * Finally, for read-only access to the "trackingPlot" group for user-based setting:
- * `
- * SettingsStorage s({"trackingPlot"},false);
- * `
+ *
+ *     SettingsStorage s({"trackingPlot"},false);
  *
  * The value associated with a key can be obtained with one of the SettingsStorage::get functions. If there
  * is an integer associacted with the key "myInt", it can be accessed as:
- * `
- * QVariant v = get("myInt"); //returns a QVariant containing "myInt", or QVariant() if "myKey" is not found.
- * int v2 = get<int>("myInt"); //attempts to convert to an integer using QVariant::value.
- *                             //Returns default-constructed value if unsuccessful
- * `
+ *
+ *     //returns a QVariant containing "myInt", or QVariant() if "myKey" is not found.
+ *     QVariant v = get("myInt");
+ *
+ *     //attempts to convert to an integer using QVariant::value.
+ *     //Returns default-constructed value if unsuccessful
+ *     int v2 = get<int>("myInt");
+ *
  *
  * There is also a SettingsStorage:getMultiple that returns a std::map<QString,Qvariant> containing
  * all keys that match the indicated values.
@@ -73,11 +75,12 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  * To obtain write access to persistent storage thogh the SettingsStorage interface, an object must inherit
  * from SettingsStorage: e.g., `class MyClass : public QObject, public SettingsStorage`, and the constructor
  * must initialise SettingsStorage with an initializer; e.g.,
- * `
- * MyClass::MyClass(QObject *parent) : QObject(parent), SettingsStorage({"MyClassKey","MyClassSubkey"},true)
- * {
- *     //other initialization
- * }
+ *
+ *     MyClass::MyClass(QObject *parent) : QObject(parent),
+ *         SettingsStorage({"MyClassKey","MyClassSubkey"},true)
+ *     {
+ *         //other initialization
+ *     }
  *
  * When working with a subclass of SettingsStorage, the object has access to the SettingsStorage::set,
  * SettingsStorage::setMultiple, and SettingsStorage::setArray functions. Each of these takes an optional
@@ -96,10 +99,13 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  * function will search for the key and return its value if it exists. If it does not exist, a new entry in the
  * QSettings file is immediately created with the provided default value. For example:
  *
- * `
- * QVariant out = getOrSetDefault("existingKey",10); //out contains value of "existingKey", which may not be 10
- * QVariant out2 = getOrSetDefault("newKey",10); //out contains 10; "newKey" added to QSettings
- * `
+ *
+ *     QVariant out = getOrSetDefault("existingKey",10);
+ *     //out contains value of "existingKey", which may not be 10
+ *
+ *     QVariant out2 = getOrSetDefault("newKey",10);
+ *     //out contains 10; "newKey" added to QSettings
+ *
  *
  * Finally, subclasses may call SettingsStorage::registerGetter to associate a function with a key. Any
  * subsequent references to that key will call the associated function to retrieve the value. A call to
@@ -114,32 +120,36 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  * New types can be made known to QVariant using the Q_DECLARE_METATYPE macro; see the QVariant documentation
  * for details. An example:
  *
- * `
- * class MyClass : public SettingsStorage()
- * {
- * public:
- *     MyClass();
  *
- *     int getInt() const { return d_int; }
+ *     class MyClass : public SettingsStorage()
+ *     {
+ *     public:
+ *         MyClass();
  *
- * private:
- *     int d_int = 1;
- * };
+ *         int getInt() const { return d_int; }
  *
- * MyClass::MyClass() : SettingsStorage({},false)
- * {
- *     registerGetter("myInt",this,&MyClass::getInt);
- *     int i = get<int>("myInt"); // i == 1
+ *     private:
+ *         int d_int = 1;
+ *     };
  *
- *     d_int = 10;
- *     int j = get<int>("myInt"); // j == 10
+ *     MyClass::MyClass() : SettingsStorage({},false)
+ *     {
+ *         registerGetter("myInt",this,&MyClass::getInt);
+ *         int i = get<int>("myInt");
+ *         // i == 1
  *
- *     QVariant k = unRegisterGetter("myInt",false); //k == 10; do not write 10 to QSettings
+ *         d_int = 10;
+ *         int j = get<int>("myInt");
+ *         // j == 10
  *
- *     d_int = 20;
- *     int l = get<int>("myInt"); //l == 10
- * }
- * `
+ *         QVariant k = unRegisterGetter("myInt",false);
+ *         //k == 10; do not write 10 to QSettings
+ *
+ *         d_int = 20;
+ *         int l = get<int>("myInt");
+ *         //l == 10
+ *     }
+ *
  *
  */
 class SettingsStorage
@@ -215,9 +225,9 @@ public:
      * If a key in the list is not found, then it is skipped. The returned map may be empty.
      * Recommended usage:
      *
-     * `SettingsStorage s(mainKey,subKeys,systemWide);
-     * auto x = get( {'key1','key2','key3'} );
-     * auto key1Val = x.at('key1');`
+     *     SettingsStorage s(mainKey,subKeys,systemWide);
+     *     auto x = get( {'key1','key2','key3'} );
+     *     auto key1Val = x.at('key1');
      *
      * \param keys The list of keys to search for
      * \return Map containing the keys found in the values or getter maps
