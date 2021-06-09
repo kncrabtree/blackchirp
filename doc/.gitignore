@@ -2,3 +2,5 @@ html
 latex
 xml
 man
+build
+doxygen.log

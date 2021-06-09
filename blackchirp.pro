@@ -51,7 +51,7 @@ motor {
   include($$PWD/src/modules/motor/motor.pri)
 }
 
-OTHER_FILES += doc/Doxyfile
+OTHER_FILES += README.md doc/Doxyfile doc/Makefile doc/source/conf.py doc/source/index.rst
 
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O3

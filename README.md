@@ -4,7 +4,7 @@
 
 Data acquisition code for CP-FTMW spectrometers.
 
-Check out the [Project Wiki](https://github.com/kncrabtree/blackchirp/wiki) for details about installation, features, and usage.
+To build the documentation locally, run `make doxygen html` from the doc directory. Building the documentation requires doxygen to be installed, and your python environment must have the sphinx, sphinx_rtd_theme, and breathe packages. Other output formats are possible; see the [Sphinx documentation](https://www.sphinx-doc.org/en/master/). They can be combined, but the make command should always begin with `make doxygen` (e.g., `make doxygen html latexpdf`). You can find the documentation in the doc/build directory.
 
 ## What's New
 
