@@ -42,3 +42,8 @@ HEADERS += $$PWD/loghandler.h \
     $$PWD/model/peaklistmodel.h \
 	$$PWD/model/validationmodel.h \
    $$PWD/storage/settingsstorage.h
+
+DISTFILES += \
+   $$PWD/../../doc/Doxyfile \
+   $$PWD/../../doc/Makefile \
+   $$PWD/../../doc/make.bat

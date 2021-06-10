@@ -10,6 +10,9 @@ Welcome to Blackchirp's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   installation
+   user_guide/user_guide
+
 
 
 Indices and tables
@@ -22,6 +25,10 @@ Indices and tables
 
 Docs
 ====
-
+.. highlight:: cpp
 .. doxygenclass:: SettingsStorage
    :path: ../xml
+   :members:
+   :protected-members:
+   :private-members:
+   :undoc-members:

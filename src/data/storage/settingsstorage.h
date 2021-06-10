@@ -88,7 +88,7 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  *     int defaultInt2 = get<int>("myInt",10);
  *
  *
- * There is also a SettingsStorage:getMultiple that returns a std::map<QString,Qvariant> containing
+ * There is also SettingsStorage::getMultiple that returns a std::map<QString,Qvariant> containing
  * all keys that match the indicated values.
  *
  * Array values can be accessed with the SettingsStorage::getArray function, which returns a const reference
@@ -113,7 +113,7 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  * must initialise SettingsStorage with an initializer; e.g.,
  *
  *     MyClass::MyClass(QObject *parent) : QObject(parent),
- *         SettingsStorage({"MyClassKey","MyClassSubkey"},true)
+ *         SettingsStorage({"MyClassKey","MyClassSubkey"})
  *     {
  *         //other initialization
  *     }
@@ -275,7 +275,7 @@ public:
      * \brief Gets the value of a setting
      *
      * If a getter function has been registered (see SettingsStorage::registerGetter), then
-     * that getter function will be called. The optional `dwfaultValue` argument is returned
+     * that getter function will be called. The optional `defaultValue` argument is returned
      * if the key is not found.
      *
      * \param key The key associated with the value
@@ -305,9 +305,9 @@ public:
      * If a key in the list is not found, then it is skipped. The returned map may be empty.
      * Recommended usage:
      *
-     *     SettingsStorage s(mainKey,subKeys,systemWide);
-     *     auto x = get( {'key1','key2','key3'} );
-     *     auto key1Val = x.at('key1');
+     *     SettingsStorage s(keys,systemWide);
+     *     auto x = get( {"key1","key2","key3"} );
+     *     auto key1Val = x.at("key1");
      *
      * \param keys The list of keys to search for
      * \return Map containing the keys found in the values or getter maps

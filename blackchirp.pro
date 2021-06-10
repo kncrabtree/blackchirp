@@ -36,6 +36,7 @@ INCLUDEPATH += $$PWD/src
 include($$PWD/src/config/config.pri)
 include($$PWD/src/acquisition/acquisition.pri)
 include($$PWD/src/data/data.pri)
+include($$PWD/doc/doc.pri)
 include($$PWD/src/gui/gui.pri)
 include($$PWD/src/hardware/hardware.pri)
 
@@ -51,7 +52,7 @@ motor {
   include($$PWD/src/modules/motor/motor.pri)
 }
 
-OTHER_FILES += README.md doc/Doxyfile doc/Makefile doc/source/conf.py doc/source/index.rst
+OTHER_FILES += README.md
 
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O3
