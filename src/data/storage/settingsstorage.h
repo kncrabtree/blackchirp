@@ -453,7 +453,7 @@ protected:
      * \param defaultValue The desired default value written to settings if the key does not exist
      * \return QVariant containing the value associated with the key. If the key did not previously exist, this will equal defaltValue
      */
-    QVariant getOrSetDefault(QString key, QVariant defaultValue);
+    QVariant getOrSetDefault(const QString key, QVariant defaultValue);
 
     /*!
      * \brief Stores a key-value setting
@@ -470,7 +470,7 @@ protected:
      * \param write If true, write to persistent storage immediately
      * \return bool Returns whether or not the setting was made. If false, the key is already associated with a getter or array value
      */
-    bool set(QString key, QVariant value, bool write = true);
+    bool set(const QString key, const QVariant value, bool write = true);
 
     /*!
      * \brief Sets multiple key-value settings
@@ -483,7 +483,7 @@ protected:
      * \param write If true, write to QSettings immediately
      * \return std::map<QString,bool> Contains return value of SettingsStorage::set for each key
      */
-    std::map<QString,bool> setMultiple(SettingsMap m, bool write = true);
+    std::map<QString,bool> setMultiple(const SettingsMap m, bool write = true);
 
     /*!
      * \brief Sets (or unsets) an array value
@@ -497,7 +497,32 @@ protected:
      * \param array The new array value (may be empty)
      * \param write If true, QSettings is updated immediately
      */
-    void setArray(QString key, std::vector<SettingsMap> array, bool write = true);
+    void setArray(const QString key, const std::vector<SettingsMap> &array, bool write = true);
+
+
+    /*!
+     * \brief Appends a new map onto an array value
+     *
+     * If the key does not match an existing array cariable, it is added. By default,
+     * the new array is not written to settings immediately. This is because QSettings
+     * essentially requires rewriting the entire array every time, and this function
+     * is intended to be called as part of a loop.
+     *
+     * \param key The key of the array value
+     * \param map The new map to append
+     * \param write If true, QSettings is updated immediately (default false)
+     */
+    void appendArrayMap(const QString key, const SettingsMap &map, bool write = false);
+
+    /*!
+     * \brief Clears a value and removes it from QSettings
+     *
+     * This clears a value (or getter) and immediately removes the key from QSettings.
+     * If the key is not found, no action is taken.
+     *
+     * \param key The key to clear
+     */
+    void clearValue(const QString key);
 
     /*!
      * \brief Write all values to QSettings.
@@ -528,6 +553,8 @@ private:
     std::map<QString,std::vector<SettingsMap>> d_arrayValues;
 
     QSettings d_settings;
+
+    void writeArray(const QString key);
 
 
 };

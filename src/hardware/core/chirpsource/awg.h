@@ -3,6 +3,12 @@
 
 #include <src/hardware/core/hardwareobject.h>
 
+namespace BC {
+namespace Key {
+static const QString awg("awg");
+}
+}
+
 /**
  * @brief The AWG class
  *
@@ -31,7 +37,7 @@ class AWG : public HardwareObject
 {
     Q_OBJECT
 public:
-    AWG(QObject *parent);
+    AWG(const QString subKey, QObject *parent);
     virtual ~AWG();
 };
 

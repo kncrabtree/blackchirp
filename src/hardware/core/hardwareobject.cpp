@@ -9,9 +9,17 @@
 #include <src/hardware/core/communication/gpibinstrument.h>
 #endif
 
-HardwareObject::HardwareObject(QObject *parent) :
-    QObject(parent), d_isCritical(true), d_threaded(true), d_enabledForExperiment(true), d_isConnected(false)
+HardwareObject::HardwareObject(const QString key, const QString subKey, const QString name,
+                               QObject *parent, bool threaded, bool critical) :
+    QObject(parent), SettingsStorage({key,subKey},General), d_prettyName(name), d_key(key),
+    d_subKey(subKey), d_isCritical(critical), d_threaded(threaded), d_enabledForExperiment(true),
+    d_isConnected(false)
 {
+    set(BC::Key::hwKey,d_key);
+    set(BC::Key::hwKey,d_subKey);
+    set(BC::Key::hwName,d_prettyName);
+    set(BC::Key::hwCritical,d_isCritical);
+    set(BC::Key::hwThreaded,d_threaded);
 }
 
 HardwareObject::~HardwareObject()
@@ -35,7 +43,10 @@ void HardwareObject::bcInitInstrument()
     initialize();
     bcTestConnection();
 
-    connect(this,&HardwareObject::hardwareFailure,[=](){ d_isConnected = false; });
+    connect(this,&HardwareObject::hardwareFailure,[=](){
+        d_isConnected = false;
+        set(BC::Key::hwConnected,false);
+    });
 }
 
 void HardwareObject::bcTestConnection()
@@ -52,6 +63,7 @@ void HardwareObject::bcTestConnection()
     }
     bool success = testConnection();
     d_isConnected = success;
+    set(BC::Key::hwConnected,success);
     emit connected(success,errorString(),QPrivateSignal());
 }
 

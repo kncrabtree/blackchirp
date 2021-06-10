@@ -32,7 +32,7 @@
 #include <src/modules/motor/hardware/motordigitizer/motoroscilloscope.h>
 #endif
 
-HardwareManager::HardwareManager(QObject *parent) : QObject(parent), d_responseCount(0)
+HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsStorage(BC::Key::hw), d_responseCount(0)
 {
 
 #ifdef BC_GPIBCONTROLLER
@@ -112,114 +112,26 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), d_responseC
 #endif
 
 
+    //write settings relevant for configuring UI
+
+    set("flowChannels",p_flow->numChannels(),false);
+    set(QString("pGenChannels"),p_pGen->numChannels(),false);
+#ifdef BC_PCONTROLLER
+    set(QString("pControllerReadOnly"),p_pc->isReadOnly(),false);
+#endif
+
+
+
     //write arrays of the connected devices for use in the Hardware Settings menu
     //first array is for all objects accessible to the hardware manager
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("hardware"));
-    s.remove("");
-    s.beginWriteArray("instruments");
+    setArray(BC::Key::allHw,{},false);
+    setArray(BC::Key::tcp,{},false);
+    setArray(BC::Key::rs232,{},false);
+    setArray(BC::Key::gpib,{},false);
+    setArray(BC::Key::custom,{},false);
     for(int i=0;i<d_hardwareList.size();i++)
     {
         HardwareObject *obj = d_hardwareList.at(i);
-        s.setArrayIndex(i);
-        s.setValue(QString("key"),obj->key());
-        s.setValue(QString("subKey"),obj->subKey());
-        s.setValue(QString("prettyName"),obj->name());
-        s.setValue(QString("critical"),obj->isCritical());
-    }
-    s.endArray();
-    s.endGroup();
-
-    //now an array for all TCP instruments
-    s.beginGroup(QString("tcp"));
-    s.remove("");
-    s.beginWriteArray("instruments");
-    int index=0;
-    for(int i=0;i<d_hardwareList.size();i++)
-    {
-        if(d_hardwareList.at(i)->type() == CommunicationProtocol::Tcp)
-        {
-            s.setArrayIndex(index);
-            s.setValue(QString("key"),d_hardwareList.at(i)->key());
-            s.setValue(QString("subKey"),d_hardwareList.at(i)->subKey());
-            index++;
-        }
-    }
-    s.endArray();
-    s.endGroup();
-
-    //now an array for all RS232 instruments
-    s.beginGroup(QString("rs232"));
-    s.remove("");
-    s.beginWriteArray("instruments");
-    index=0;
-    for(int i=0;i<d_hardwareList.size();i++)
-    {
-        if(d_hardwareList.at(i)->type() == CommunicationProtocol::Rs232)
-        {
-            s.setArrayIndex(index);
-            s.setValue(QString("key"),d_hardwareList.at(i)->key());
-            s.setValue(QString("subKey"),d_hardwareList.at(i)->subKey());
-            index++;
-        }
-    }
-    s.endArray();
-    s.endGroup();
-
-    //now an array for all GPIB instruments
-    s.beginGroup(QString("gpib"));
-    s.remove("");
-    s.beginWriteArray("instruments");
-    index=0;
-    for(int i=0;i<d_hardwareList.size();i++)
-    {
-       if(d_hardwareList.at(i)->type() == CommunicationProtocol::Gpib)
-        {
-            s.setArrayIndex(index);
-            s.setValue(QString("key"),d_hardwareList.at(i)->key());
-            s.setValue(QString("subKey"),d_hardwareList.at(i)->subKey());
-            index++;
-        }
-    }
-    s.endArray();
-    s.endGroup();
-
-    //now an array for all custom instruments
-    s.beginGroup(QString("custom"));
-    s.remove("");
-    s.beginWriteArray("instruments");
-    index = 0;
-    for(int i=0;i<d_hardwareList.size();i++)
-    {
-       if(d_hardwareList.at(i)->type() == CommunicationProtocol::Custom)
-        {
-            s.setArrayIndex(index);
-            s.setValue(QString("key"),d_hardwareList.at(i)->key());
-            s.setValue(QString("subKey"),d_hardwareList.at(i)->subKey());
-            index++;
-        }
-    }
-    s.endArray();
-    s.endGroup();
-
-    //write settings relevant for configuring UI
-    s.beginGroup(QString("hwUI"));
-    s.setValue(QString("flowChannels"),p_flow->numChannels());
-    s.setValue(QString("pGenChannels"),p_pGen->numChannels());
-#ifdef BC_PCONTROLLER
-    s.setValue(QString("pControllerReadOnly"),p_pc->isReadOnly());
-#endif
-    s.endGroup();
-
-    for(int i=0;i<d_hardwareList.size();i++)
-    {
-        HardwareObject *obj = d_hardwareList.at(i);
-
-
-        s.setValue(QString("%1/prettyName").arg(obj->key()),obj->name());
-        s.setValue(QString("%1/subKey").arg(obj->key()),obj->subKey());
-        s.setValue(QString("%1/connected").arg(obj->key()),false);
-        s.setValue(QString("%1/critical").arg(obj->key()),obj->isCritical());
 
         connect(obj,&HardwareObject::logMessage,[=](QString msg, BlackChirp::LogMessageCode mc){
             emit logMessage(QString("%1: %2").arg(obj->name()).arg(msg),mc);
@@ -228,6 +140,51 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), d_responseC
         connect(obj,&HardwareObject::timeDataRead,[=](const QList<QPair<QString,QVariant>> l,bool plot){ emit timeData(l,plot); });
         connect(this,&HardwareManager::beginAcquisition,obj,&HardwareObject::beginAcquisition);
         connect(this,&HardwareManager::endAcquisition,obj,&HardwareObject::endAcquisition);
+
+
+
+        appendArrayMap(BC::Key::allHw,{
+                           {BC::Key::hwKey,obj->key()},
+                           {BC::Key::hwSubKey,obj->subKey()},
+                           {BC::Key::hwName,obj->name()},
+                           {BC::Key::hwCritical,obj->isCritical()},
+                           {BC::Key::hwThreaded,obj->isThreaded()}
+                       });
+        switch(obj->type())
+        {
+        case CommunicationProtocol::Tcp:
+            appendArrayMap(BC::Key::tcp,{
+                               {BC::Key::hwKey,obj->key()},
+                               {BC::Key::hwSubKey,obj->subKey()},
+                               {BC::Key::hwName,obj->name()}
+                           });
+            break;
+        case CommunicationProtocol::Rs232:
+            appendArrayMap(BC::Key::tcp,{
+                               {BC::Key::hwKey,obj->key()},
+                               {BC::Key::hwSubKey,obj->subKey()},
+                               {BC::Key::hwName,obj->name()}
+                           });
+            break;
+        case CommunicationProtocol::Gpib:
+            appendArrayMap(BC::Key::gpib,{
+                               {BC::Key::hwKey,obj->key()},
+                               {BC::Key::hwSubKey,obj->subKey()},
+                               {BC::Key::hwName,obj->name()}
+                           });
+            break;
+        case CommunicationProtocol::Custom:
+            appendArrayMap(BC::Key::custom,{
+                               {BC::Key::hwKey,obj->key()},
+                               {BC::Key::hwSubKey,obj->subKey()},
+                               {BC::Key::hwName,obj->name()}
+                           });
+            break;
+        default:
+            break;
+        }
+
+
 
 #ifdef BC_GPIBCONTROLLER
         obj->buildCommunication(gpib);
@@ -255,7 +212,8 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), d_responseC
         }
     }
 
-    s.sync();
+
+    save();
 }
 
 HardwareManager::~HardwareManager()
@@ -316,10 +274,6 @@ void HardwareManager::connectionResult(HardwareObject *obj, bool success, QStrin
             emit logMessage(msg,code);
     }
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.setValue(QString("%1/connected").arg(obj->key()),success);
-    s.sync();
-
     emit testComplete(obj->name(),success,msg);
     checkStatus();
 }
@@ -331,10 +285,6 @@ void HardwareManager::hardwareFailure()
         return;
 
     disconnect(obj,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure);
-
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.setValue(QString("%1/connected").arg(obj->key()),false);
-    s.sync();
 
    //TODO: implement re-test like in QtFTM?
     emit abortAcquisition();

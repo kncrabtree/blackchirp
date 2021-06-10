@@ -3,6 +3,11 @@
 
 #include <src/hardware/core/chirpsource/awg.h>
 
+namespace BC {
+namespace Key {
+static const QString ad9914("ad9914");
+}
+}
 
 class AD9914 : public AWG
 {

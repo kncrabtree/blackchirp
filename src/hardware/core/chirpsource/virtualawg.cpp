@@ -1,8 +1,7 @@
 #include "virtualawg.h"
 
-VirtualAwg::VirtualAwg(QObject *parent) : AWG(parent)
+VirtualAwg::VirtualAwg(QObject *parent) : AWG(BC::Key::hwVirtual,parent)
 {
-    d_subKey = QString("virtual");
     d_prettyName = QString("Virtual Arbitrary Waveform Generator");
     d_commType = CommunicationProtocol::Virtual;
     d_threaded = false;

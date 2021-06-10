@@ -8,8 +8,10 @@
 
 #include <src/data/datastructs.h>
 #include <src/data/experiment/experiment.h>
+#include <src/data/storage/settingsstorage.h>
+#include <src/hardware/core/hardwareobject.h>
 
-class HardwareObject;
+
 class FtmwScope;
 class AWG;
 class PulseGenerator;
@@ -36,7 +38,14 @@ class MotorController;
 class MotorOscilloscope;
 #endif
 
-class HardwareManager : public QObject
+namespace BC {
+namespace Key {
+static const QString hw("hardware");
+static const QString allHw("instruments");
+}
+}
+
+class HardwareManager : public QObject, public SettingsStorage
 {
     Q_OBJECT
 public:

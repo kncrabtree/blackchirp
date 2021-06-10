@@ -9,8 +9,20 @@
 #include <QPair>
 
 #include <src/data/datastructs.h>
+#include <src/data/storage/settingsstorage.h>
 #include <src/hardware/core/communication/communicationprotocol.h>
 #include <src/data/experiment/experiment.h>
+
+namespace BC {
+namespace Key {
+static const QString hwKey("key");
+static const QString hwSubKey("subKey");
+static const QString hwName("prettyName");
+static const QString hwConnected("connected");
+static const QString hwCritical("critical");
+static const QString hwThreaded("threaded");
+}
+}
 
 /*!
  * \brief Abstract base class for all hardware connected to the instrument.
@@ -55,7 +67,7 @@
  * For instance, the FlowController turns off gas flows to conserve sample, and the PulseGenerator turns off all pulses.
  * If sleep() is implemented, it is recommneded to explicitly call HardwareObject::sleep(), as this will display a message in the log stating that the device is in fact asleep.
  */
-class HardwareObject : public QObject
+class HardwareObject : public QObject, public SettingsStorage
 {
 	Q_OBJECT
 public:
@@ -64,7 +76,8 @@ public:
      *
      * \param parent Pointer to parent QObject. Should be 0 if it will be in its own thread.
      */
-    explicit HardwareObject(QObject *parent = 0);
+    explicit HardwareObject(const QString key, const QString subKey, const QString name,
+                            QObject *parent = nullptr, bool threaded = true, bool critical = true);
     virtual ~HardwareObject();
 
     /*!

@@ -8,6 +8,16 @@
 
 #include <src/data/datastructs.h>
 
+namespace BC {
+namespace Key {
+static const QString rs232("rs232");
+static const QString tcp("tcp");
+static const QString gpib("gpib");
+static const QString custom("custom");
+static const QString hwVirtual("virtual");
+}
+}
+
 class CommunicationProtocol : public QObject
 {
     Q_OBJECT

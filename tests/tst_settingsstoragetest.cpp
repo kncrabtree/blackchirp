@@ -226,6 +226,17 @@ void SettingsStorageTest::testSet()
     QCOMPARE(l.size(),1);
     QCOMPARE(l.front().at("testArray2Key1"),true);
     QCOMPARE(l.front().at("testArray2Key2"),false);
+
+    //test clearing and appending array maps
+    clearValue("testInt");
+    clearValue("testDouble");
+    appendArrayMap("testArray2",{{"newMapKey",1.0}});
+    save();
+
+    SettingsStorage readOnly3(false);
+    QCOMPARE(readOnly3.get<int>("testInt"),0);
+    QCOMPARE(readOnly3.get<double>("testDouble",11.4),11.4);
+    QCOMPARE(readOnly3.getArrayValue<double>("testArray2",1,"newMapKey",2.0),1.0);
 }
 
 void SettingsStorageTest::testDefault()
