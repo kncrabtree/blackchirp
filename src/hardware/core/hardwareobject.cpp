@@ -16,10 +16,16 @@ HardwareObject::HardwareObject(const QString key, const QString subKey, const QS
     d_isConnected(false)
 {
     set(BC::Key::hwKey,d_key);
-    set(BC::Key::hwKey,d_subKey);
     set(BC::Key::hwName,d_prettyName);
     set(BC::Key::hwCritical,d_isCritical);
     set(BC::Key::hwThreaded,d_threaded);
+
+    //it is necessary to write the subKey one level above the SettingsStorage group, which
+    //is referenced to d_key/d_subKey, so that other parts of the application can determine
+    //the current subKey for looking up settings.
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.setValue(d_key + "/" + BC::Key::hwSubKey,d_subKey);
+    s.sync();
 }
 
 HardwareObject::~HardwareObject()
