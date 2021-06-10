@@ -29,13 +29,13 @@ void WizardDigitizerConfigPage::initializePage()
 {
     ///TODO: Be more flexible here
     auto e = getExperiment();
-    p_dc->setFromConfig(e.ftmwConfig());
+    p_dc->setFromConfig(e->ftmwConfig());
 }
 
 bool WizardDigitizerConfigPage::validatePage()
 {
     auto e = getExperiment();
-    e.setFtmwConfig(p_dc->getConfig());
+    e->setFtmwConfig(p_dc->getConfig());
     
     return true;
 }

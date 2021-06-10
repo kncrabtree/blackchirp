@@ -20,7 +20,7 @@
 #endif
 
 ExperimentWizard::ExperimentWizard(QWidget *parent) :
-    QWizard(parent)
+    QWizard(parent), experiment(Experiment::loadFromSettings())
 {
     setWindowTitle(QString("Experiment Setup"));
 
@@ -75,27 +75,10 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
     d_pages << motorScanConfigPage;
     setPage(MotorScanConfigPage,motorScanConfigPage);
 #endif
-
-    d_experiment = Experiment::loadFromSettings();
 }
 
 ExperimentWizard::~ExperimentWizard()
 { 
-}
-
-void ExperimentWizard::setPulseConfig(const PulseGenConfig c)
-{
-    d_experiment.setPulseGenConfig(c);
-}
-
-void ExperimentWizard::setFlowConfig(const FlowConfig c)
-{
-    d_experiment.setFlowConfig(c);
-}
-
-Experiment& ExperimentWizard::getExperiment()
-{
-    return d_experiment;
 }
 
 QSize ExperimentWizard::sizeHint() const

@@ -29,19 +29,19 @@ void WizardPulseConfigPage::initializePage()
     auto e = getExperiment();
     if(d_firstInitialization)
     {
-        p_pcw->setFromConfig(e.pGenConfig());
+        p_pcw->setFromConfig(e->pGenConfig());
         p_pcw->configureForWizard();
         d_firstInitialization = false;
     }
 
 
 #ifdef BC_LIF
-    if(e.lifConfig().isEnabled())
-        p_pcw->configureLif(e.lifConfig());
+    if(e->lifConfig().isEnabled())
+        p_pcw->configureLif(e->lifConfig());
 #endif
 
-    if(e.ftmwConfig().isEnabled())
-        p_pcw->configureFtmw(e.ftmwConfig());
+    if(e->ftmwConfig().isEnabled())
+        p_pcw->configureFtmw(e->ftmwConfig());
 }
 
 int WizardPulseConfigPage::nextId() const
@@ -53,7 +53,7 @@ int WizardPulseConfigPage::nextId() const
 bool WizardPulseConfigPage::validatePage()
 {
     auto e = getExperiment();
-    e.setPulseGenConfig(p_pcw->getConfig());
+    e->setPulseGenConfig(p_pcw->getConfig());
     
 
     return true;

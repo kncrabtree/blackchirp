@@ -225,7 +225,7 @@ void WizardLifConfigPage::setLaserPos(const double pos)
 void WizardLifConfigPage::initializePage()
 {
     auto e = getExperiment();
-    setFromConfig(e.lifConfig());
+    setFromConfig(e->lifConfig());
 }
 
 bool WizardLifConfigPage::validatePage()
@@ -240,7 +240,7 @@ bool WizardLifConfigPage::validatePage()
 
 
     out.setEnabled();
-    e.setLifConfig(out);
+    e->setLifConfig(out);
     
     return true;
 
@@ -249,7 +249,7 @@ bool WizardLifConfigPage::validatePage()
 int WizardLifConfigPage::nextId() const
 {
     auto e = getExperiment();
-    if(e.ftmwConfig().isEnabled())
+    if(e->ftmwConfig().isEnabled())
         return ExperimentWizard::RfConfigPage;
 
     return ExperimentWizard::PulseConfigPage;

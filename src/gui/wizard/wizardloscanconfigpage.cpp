@@ -236,7 +236,7 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
 void WizardLoScanConfigPage::initializePage()
 {
     auto e = getExperiment();
-    d_rfConfig = e.ftmwConfig().rfConfig();
+    d_rfConfig = e->ftmwConfig().rfConfig();
 
     //get LO hardware
     auto upLO = d_rfConfig.clockHardware(BlackChirp::UpConversionLO);
@@ -405,7 +405,7 @@ bool WizardLoScanConfigPage::validatePage()
     d_rfConfig.setShotsPerClockStep(p_shotsPerStepBox->value());
     d_rfConfig.setTargetSweeps(p_targetSweepsBox->value());
 
-    e.setRfConfig(d_rfConfig);
+    e->setRfConfig(d_rfConfig);
     
 
     saveToSettings();

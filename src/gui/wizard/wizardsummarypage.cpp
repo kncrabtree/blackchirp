@@ -42,7 +42,7 @@ void WizardSummaryPage::initializePage()
 
     auto e = getExperiment();
 
-    auto header = e.headerMap();
+    auto header = e->headerMap();
     auto it = header.constBegin();
     p_tw->setRowCount(header.size());
     int i = 0;

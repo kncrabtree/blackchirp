@@ -223,12 +223,12 @@ void WizardStartPage::initializePage()
     auto e = getExperiment();
 
 #ifdef BC_LIF
-    p_ftmw->setChecked(e.ftmwConfig().isEnabled());
-    p_lif->setChecked(e.lifConfig().isEnabled());
+    p_ftmw->setChecked(e->ftmwConfig().isEnabled());
+    p_lif->setChecked(e->lifConfig().isEnabled());
 #endif
 
 #ifdef BC_MOTOR
-    if(e.motorScan().isEnabled())
+    if(e->motorScan().isEnabled())
     {
         p_motor->setChecked(true);
         p_ftmw->setEnabled(false);
@@ -244,21 +244,21 @@ void WizardStartPage::initializePage()
     }
 #endif
 
-    p_ftmwTypeBox->setCurrentIndex(p_ftmwTypeBox->findData(QVariant::fromValue(e.ftmwConfig().type())));
-    auto shots = e.ftmwConfig().targetShots();
-    if(e.ftmwConfig().hasMultiFidLists())
-        shots = e.ftmwConfig().rfConfig().shotsPerClockStep();
+    p_ftmwTypeBox->setCurrentIndex(p_ftmwTypeBox->findData(QVariant::fromValue(e->ftmwConfig().type())));
+    auto shots = e->ftmwConfig().targetShots();
+    if(e->ftmwConfig().hasMultiFidLists())
+        shots = e->ftmwConfig().rfConfig().shotsPerClockStep();
     p_ftmwShotsBox->setValue(shots);
     p_ftmwTargetTimeBox->setMinimumDateTime(QDateTime::currentDateTime().addSecs(60));
     p_ftmwTargetTimeBox->setDateTime(QDateTime::currentDateTime().addSecs(3600));
-    p_phaseCorrectionBox->setChecked(e.ftmwConfig().isPhaseCorrectionEnabled());
-    p_chirpScoringBox->setChecked(e.ftmwConfig().isChirpScoringEnabled());
-    p_thresholdBox->setValue(e.ftmwConfig().chirpRMSThreshold());
+    p_phaseCorrectionBox->setChecked(e->ftmwConfig().isPhaseCorrectionEnabled());
+    p_chirpScoringBox->setChecked(e->ftmwConfig().isChirpScoringEnabled());
+    p_thresholdBox->setValue(e->ftmwConfig().chirpRMSThreshold());
 
     ///TODO: use chirp offset!
 
-    p_snapshotBox->setValue(e.autoSaveShots());
-    p_auxDataIntervalBox->setValue(e.timeDataInterval());
+    p_snapshotBox->setValue(e->autoSaveShots());
+    p_auxDataIntervalBox->setValue(e->timeDataInterval());
 
     configureUI();
 }
@@ -270,7 +270,7 @@ bool WizardStartPage::validatePage()
     /// Allow changing flow settings?
      auto e = getExperiment();
 
-     auto ftc = e.ftmwConfig();
+     auto ftc = e->ftmwConfig();
      ftc.setType(p_ftmwTypeBox->currentData().value<BlackChirp::FtmwType>());
      ftc.setTargetShots(p_ftmwShotsBox->value());
      ftc.setTargetTime(p_ftmwTargetTimeBox->dateTime());
@@ -279,23 +279,23 @@ bool WizardStartPage::validatePage()
      ftc.setPhaseCorrectionEnabled(p_phaseCorrectionBox->isChecked());
      ///TODO: use offset info!
 
-     e.setFtmwConfig(ftc);
+     e->setFtmwConfig(ftc);
      if(p_ftmw->isCheckable())
-         e.setFtmwEnabled(p_ftmw->isChecked());
+         e->setFtmwEnabled(p_ftmw->isChecked());
      else
-         e.setFtmwEnabled(true);
+         e->setFtmwEnabled(true);
 
 
 #ifdef BC_LIF
-     e.setLifEnabled(p_lif->isChecked());
+     e->setLifEnabled(p_lif->isChecked());
 #endif
 
 #ifdef BC_MOTOR
-     e.setMotorEnabled(p_motor->isChecked());
+     e->setMotorEnabled(p_motor->isChecked());
 #endif
 
-     e.setAutoSaveShotsInterval(p_snapshotBox->value());
-     e.setTimeDataInterval(p_auxDataIntervalBox->value());
+     e->setAutoSaveShotsInterval(p_snapshotBox->value());
+     e->setTimeDataInterval(p_auxDataIntervalBox->value());
 
      
      return true;

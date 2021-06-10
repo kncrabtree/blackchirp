@@ -32,15 +32,11 @@ public:
         SummaryPage
     };
 
-    void setPulseConfig(const PulseGenConfig c);
-    void setFlowConfig(const FlowConfig c);
-    Experiment& getExperiment();
-
+    Experiment experiment;
 private:    
     QList<ExperimentWizardPage*> d_pages;
 
 
-    Experiment d_experiment;
 
 #ifdef BC_LIF
 public slots:

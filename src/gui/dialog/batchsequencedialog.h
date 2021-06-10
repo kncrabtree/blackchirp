@@ -2,12 +2,21 @@
 #define BATCHSEQUENCEDIALOG_H
 
 #include <QDialog>
+#include <src/data/storage/settingsstorage.h>
 
 namespace Ui {
 class BatchSequenceDialog;
 }
 
-class BatchSequenceDialog : public QDialog
+namespace BC {
+namespace Key {
+static const QString batchExperiments("numExpts");
+static const QString batchInterval("interval");
+static const QString batchAutoExport("autoExport");
+}
+}
+
+class BatchSequenceDialog : public QDialog, public SettingsStorage
 {
     Q_OBJECT
 
@@ -17,19 +26,13 @@ public:
 
     void setQuickExptEnabled(bool en);
 
-    int configureCode() const { return d_configureCode; }
-    int quickCode() const { return d_quickCode; }
-
-    int numExperiments() const;
-    int interval() const;
-    bool autoExport() const;
-    void saveToSettings() const;
+    static const int configureCode = 23;
+    static const int quickCode = 27;
 
 private:
     Ui::BatchSequenceDialog *ui;
 
-    const int d_configureCode = 23;
-    const int d_quickCode = 27;
+
 };
 
 #endif // BATCHSEQUENCEDIALOG_H

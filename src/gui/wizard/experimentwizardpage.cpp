@@ -4,15 +4,15 @@ ExperimentWizardPage::ExperimentWizardPage(QWidget *parent) : QWizardPage(parent
 {
 }
 
-Experiment& ExperimentWizardPage::getExperiment() const
+Experiment* ExperimentWizardPage::getExperiment() const
 {
-    return dynamic_cast<ExperimentWizard*>(wizard())->getExperiment();
+    return &dynamic_cast<ExperimentWizard*>(wizard())->experiment;
 }
 
 int ExperimentWizardPage::startingFtmwPage() const
 {
     auto e = getExperiment();
-    switch(e.ftmwConfig().type())
+    switch(e->ftmwConfig().type())
     {
     case BlackChirp::FtmwLoScan:
         return ExperimentWizard::LoScanPage;

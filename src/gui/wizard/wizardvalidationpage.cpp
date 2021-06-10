@@ -133,11 +133,11 @@ QMap<QString, BlackChirp::ValidationItem> WizardValidationPage::getValidation() 
 void WizardValidationPage::initializePage()
 {
     auto e = getExperiment();
-    auto c = e.iobConfig();
+    auto c = e->iobConfig();
 
     dynamic_cast<IOBoardConfigModel*>(p_analogView->model())->setFromConfig(c);
     dynamic_cast<IOBoardConfigModel*>(p_digitalView->model())->setFromConfig(c);
-    dynamic_cast<ValidationModel*>(p_validationView->model())->setFromMap(e.validationItems());
+    dynamic_cast<ValidationModel*>(p_validationView->model())->setFromMap(e->validationItems());
 
     p_analogView->resizeColumnsToContents();
     p_digitalView->resizeColumnsToContents();
@@ -152,12 +152,12 @@ bool WizardValidationPage::validatePage()
     IOBoardConfig c;
     c.setAnalogChannels(static_cast<IOBoardConfigModel*>(p_analogView->model())->getConfig());
     c.setDigitalChannels(static_cast<IOBoardConfigModel*>(p_digitalView->model())->getConfig());
-    e.setIOBoardConfig(c);
+    e->setIOBoardConfig(c);
 
     auto l = static_cast<ValidationModel*>(p_validationView->model())->getList();
-    e.setValidationItems(QMap<QString, BlackChirp::ValidationItem>());
+    e->setValidationItems(QMap<QString, BlackChirp::ValidationItem>());
     for(int i=0; i<l.size(); i++)
-        e.addValidationItem(l.at(i));
+        e->addValidationItem(l.at(i));
 
     
     return true;

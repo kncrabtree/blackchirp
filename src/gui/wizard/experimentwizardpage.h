@@ -12,7 +12,7 @@ public:
     ExperimentWizardPage(QWidget *parent = nullptr);
 
 protected:
-    Experiment& getExperiment() const;
+    Experiment *getExperiment() const;
     int startingFtmwPage() const;
 };
 

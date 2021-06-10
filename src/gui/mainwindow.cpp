@@ -369,8 +369,8 @@ void MainWindow::startExperiment()
         return;
 
     ExperimentWizard wiz(this);
-    wiz.setPulseConfig(ui->pulseConfigWidget->getConfig());
-    wiz.setFlowConfig(getFlowConfig());
+    wiz.experiment.setPulseGenConfig(ui->pulseConfigWidget->getConfig());
+    wiz.experiment.setFlowConfig(getFlowConfig());
 
 #ifdef BC_LIF
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
@@ -386,7 +386,7 @@ void MainWindow::startExperiment()
     if(wiz.exec() != QDialog::Accepted)
         return;
 
-    BatchManager *bm = new BatchSingle(wiz.getExperiment());
+    BatchManager *bm = new BatchSingle(wiz.experiment);
     startBatch(bm);
 }
 
@@ -434,7 +434,7 @@ void MainWindow::startSequence()
 
     Experiment exp;
 
-    if(ret == d.quickCode())
+    if(ret == d.quickCode)
     {
         Experiment e = Experiment::loadFromSettings();
 #ifdef BC_LIF
@@ -457,16 +457,16 @@ void MainWindow::startSequence()
             exp = e;
         }
         else if(qeret == qd.configureResult())
-            ret = d.configureCode(); //set ret to indicate that the experiment needs to be configured
+            ret = d.configureCode; //set ret to indicate that the experiment needs to be configured
         else if(qeret == QDialog::Rejected)
             return;
     }
 
-    if(ret == d.configureCode())
+    if(ret == d.configureCode)
     {
         ExperimentWizard wiz(this);
-        wiz.setPulseConfig(ui->pulseConfigWidget->getConfig());
-        wiz.setFlowConfig(getFlowConfig());
+        wiz.experiment.setPulseGenConfig(ui->pulseConfigWidget->getConfig());
+        wiz.experiment.setFlowConfig(getFlowConfig());
 #ifdef BC_LIF
         connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
         connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
@@ -478,15 +478,15 @@ void MainWindow::startSequence()
         if(wiz.exec() != QDialog::Accepted)
             return;
 
-        exp = wiz.getExperiment();
+        exp = wiz.experiment;
     }
 
-    d.saveToSettings();
+
     BatchSequence *bs = new BatchSequence();
     bs->setExperiment(exp);
-    bs->setNumExperiments(d.numExperiments());
-    bs->setInterval(d.interval());
-    bs->setAutoExport(d.autoExport());
+    bs->setNumExperiments(d.get<int>(BC::Key::batchExperiments));
+    bs->setInterval(d.get<int>(BC::Key::batchInterval));
+    bs->setAutoExport(d.get<bool>(BC::Key::batchAutoExport));
     startBatch(bs);
 
 }

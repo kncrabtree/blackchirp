@@ -20,7 +20,7 @@ WizardRfConfigPage::WizardRfConfigPage(QWidget *parent) : ExperimentWizardPage(p
 void WizardRfConfigPage::initializePage()
 {
     auto e = getExperiment();
-    p_rfc->setRfConfig(e.ftmwConfig().rfConfig());
+    p_rfc->setRfConfig(e->ftmwConfig().rfConfig());
 }
 
 bool WizardRfConfigPage::validatePage()
@@ -28,7 +28,7 @@ bool WizardRfConfigPage::validatePage()
     ///TODO: If segmented, check to make sure upconversion and downconversion LOs are set
 
     auto e = getExperiment();
-    e.setRfConfig(p_rfc->getRfConfig());
+    e->setRfConfig(p_rfc->getRfConfig());
     
     return true;
 }

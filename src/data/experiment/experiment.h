@@ -25,12 +25,12 @@
 #endif
 
 
-class ExperimentData;
-
 class Experiment
 {
 public:
     Experiment();
+    Experiment(const Experiment &) = default;
+    Experiment& operator=(const Experiment &) = default;
     Experiment(const int num, QString exptPath = QString(""));
     ~Experiment();
 

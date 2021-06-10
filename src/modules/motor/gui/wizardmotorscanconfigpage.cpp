@@ -24,7 +24,7 @@ WizardMotorScanConfigPage::WizardMotorScanConfigPage(QWidget *parent) :
 void WizardMotorScanConfigPage::initializePage()
 {
     auto e = getExperiment();
-    p_mscw->setFromMotorScan(e.motorScan());
+    p_mscw->setFromMotorScan(e->motorScan());
 }
 
 bool WizardMotorScanConfigPage::validatePage()
@@ -32,7 +32,7 @@ bool WizardMotorScanConfigPage::validatePage()
     if(p_mscw->validatePage())
     {
         auto e = getExperiment();
-        e.setMotorScan(p_mscw->toMotorScan());
+        e->setMotorScan(p_mscw->toMotorScan());
         
         return true;
     }
