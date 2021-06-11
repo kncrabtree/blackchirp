@@ -1,8 +1,9 @@
 #include <src/hardware/core/clock/clock.h>
 
-Clock::Clock(int clockNum, QObject *parent) : HardwareObject(parent)
+Clock::Clock(int clockNum, const QString subKey, const QString name, CommunicationProtocol::CommType commType,
+             QObject *parent, bool threaded) :
+    HardwareObject(QString("clock%1").arg(clockNum),subKey,name,commType,parent,threaded,true)
 {
-    d_key = QString("clock%1").arg(clockNum);
 }
 
 void Clock::setMultFactor(double d, int output)

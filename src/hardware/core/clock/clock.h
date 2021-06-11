@@ -27,7 +27,9 @@ class Clock : public HardwareObject
 {
     Q_OBJECT
 public:
-    explicit Clock(int clockNum, QObject *parent = nullptr);
+    explicit Clock(int clockNum, const QString subKey, const QString name,
+                   CommunicationProtocol::CommType commType, QObject *parent = nullptr,
+                   bool threaded = false);
 
     int numOutputs() { return d_numOutputs; }
     bool isTunable() { return d_isTunable; }

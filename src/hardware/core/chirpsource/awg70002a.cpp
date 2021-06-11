@@ -4,7 +4,7 @@
 #include <math.h>
 
 AWG70002a::AWG70002a(QObject *parent) :
-    AWG(BC::Key::awg70002a,BC::Key::awg70002aName,CommunicationProtocol::Tcp,parent,false)
+    AWG(BC::Key::awg70002a,BC::Key::awg70002aName,CommunicationProtocol::Tcp,parent)
 {
 }
 

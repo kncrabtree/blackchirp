@@ -38,7 +38,7 @@ class AWG : public HardwareObject
     Q_OBJECT
 public:
     AWG(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
-        QObject *parent = nullptr, bool threaded = true, bool critical = true);
+        QObject *parent = nullptr, bool threaded = false, bool critical = true);
     virtual ~AWG();
 };
 

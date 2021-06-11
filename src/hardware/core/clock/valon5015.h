@@ -3,6 +3,12 @@
 
 #include <src/hardware/core/clock/clock.h>
 
+namespace BC {
+namespace Key {
+static const QString valon5015("valon5015");
+static const QString valon5015Name("Valon Synthesizer 5015");
+}
+}
 
 class Valon5015 : public Clock
 {

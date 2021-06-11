@@ -3,7 +3,7 @@
 #include <math.h>
 
 AWG7122B::AWG7122B(QObject *parent) :
-    AWG(BC::Key::awg7122b,BC::Key::awg7122bName,CommunicationProtocol::Tcp,parent,false)
+    AWG(BC::Key::awg7122b,BC::Key::awg7122bName,CommunicationProtocol::Tcp,parent)
 {
 }
 

@@ -1,7 +1,7 @@
 #include "virtualawg.h"
 
 VirtualAwg::VirtualAwg(QObject *parent) :
-    AWG(BC::Key::hwVirtual,BC::Key::vawgName,CommunicationProtocol::Virtual,parent,false)
+    AWG(BC::Key::hwVirtual,BC::Key::vawgName,CommunicationProtocol::Virtual,parent)
 {
 }
 

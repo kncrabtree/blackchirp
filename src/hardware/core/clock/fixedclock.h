@@ -3,6 +3,13 @@
 
 #include <src/hardware/core/clock/clock.h>
 
+namespace BC {
+namespace Key {
+static const QString fixed("fixed");
+static const QString fixedName("Fixed Clock (#%1)");
+}
+}
+
 class FixedClock : public Clock
 {
     Q_OBJECT

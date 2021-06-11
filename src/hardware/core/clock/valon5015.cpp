@@ -1,12 +1,8 @@
 #include "valon5015.h"
 
 Valon5015::Valon5015(int clockNum, QObject *parent) :
-    Clock(clockNum,parent)
+    Clock(clockNum,BC::Key::valon5015,BC::Key::valon5015Name,CommunicationProtocol::Rs232,parent)
 {
-    d_subKey = QString("valon5015");
-    d_prettyName = QString("Valon Synthesizer 5015");
-    d_commType = CommunicationProtocol::Rs232;
-    d_threaded = false;
     d_numOutputs = 1;
     d_isTunable = true;
 }

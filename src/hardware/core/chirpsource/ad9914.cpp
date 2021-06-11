@@ -5,7 +5,7 @@
 
 #include <math.h>
 
-AD9914::AD9914(QObject *parent) : AWG(BC::Key::ad9914,BC::Key::ad9914Name,CommunicationProtocol::Rs232,parent,false)
+AD9914::AD9914(QObject *parent) : AWG(BC::Key::ad9914,BC::Key::ad9914Name,CommunicationProtocol::Rs232,parent)
 {
 }
 

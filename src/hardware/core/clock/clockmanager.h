@@ -4,9 +4,20 @@
 #include <QObject>
 
 #include <src/data/datastructs.h>
+#include <src/data/storage/settingsstorage.h>
 #include <src/data/experiment/experiment.h>
 
 class Clock;
+
+namespace BC {
+namespace Key {
+static const QString clockManager("clockManager");
+static const QString hwClocks("hwClocks");
+static const QString clockKey("key");
+static const QString clockOutput("output");
+static const QString clockName("name");
+}
+}
 
 /**
  * @brief The ClockManager class associates hardware clocks with their purposes
@@ -22,8 +33,7 @@ class Clock;
  * ClockManager may associate multiple functions with a single hardware object.
  *
  */
-
-class ClockManager : public QObject
+class ClockManager : public QObject, public SettingsStorage
 {
     Q_OBJECT
 public:

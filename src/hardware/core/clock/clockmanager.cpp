@@ -5,7 +5,8 @@
 #include <src/hardware/core/clock/clock.h>
 
 
-ClockManager::ClockManager(QObject *parent) : QObject(parent)
+ClockManager::ClockManager(QObject *parent) : QObject(parent),
+    SettingsStorage(BC::Key::clockManager)
 {
     d_clockTypes = BlackChirp::allClockTypes();
 
@@ -29,31 +30,28 @@ ClockManager::ClockManager(QObject *parent) : QObject(parent)
     d_clockList << new Clock4Hardware(4,this);
 #endif
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("clockManager"));
-    s.beginWriteArray(QString("hwClocks"));
-    int index = 0;
-    for(int i=0; i<d_clockList.size(); i++)
+    setArray(BC::Key::hwClocks,{});
+
+    for(auto c : d_clockList)
     {
-        auto c = d_clockList.at(i);
         auto names = c->channelNames();
         for(int j=0; j<c->numOutputs(); j++)
         {
-            s.setArrayIndex(index);
-            s.setValue(QString("key"),c->key());
-            s.setValue(QString("output"),j);
-            QString pn = c->name();
+            QString pn = c->d_prettyName;
             pn.append(QString(" "));
             if(j < names.size())
                 pn.append(names.at(j));
             else
                 pn.append(QString("Output %1").arg(j));
-            s.setValue(QString("name"),pn);
-            index++;
+
+            appendArrayMap(BC::Key::hwClocks,{
+                               {BC::Key::clockKey,c->d_key},
+                               {BC::Key::clockOutput,j},
+                               {BC::Key::clockName,pn}
+                           });
         }
     }
-    s.endArray();
-    s.endGroup();
+    save();
 
     for(int i=0; i<d_clockList.size(); i++)
     {

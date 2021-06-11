@@ -1,11 +1,8 @@
 #include "fixedclock.h"
 
-FixedClock::FixedClock(int clockNum, QObject *parent) : Clock(clockNum, parent)
+FixedClock::FixedClock(int clockNum, QObject *parent) : Clock(clockNum, BC::Key::fixed,BC::Key::fixedName.arg(clockNum),
+                                                              CommunicationProtocol::None,parent)
 {
-    d_subKey = QString("fixed");
-    d_prettyName = QString("Fixed Clock (#%1)").arg(clockNum);
-    d_threaded = false;
-    d_commType = CommunicationProtocol::None;
     d_numOutputs = 5;
     d_isTunable = false;
 
