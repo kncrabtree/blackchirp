@@ -7,11 +7,18 @@
 
 #include <src/data/experiment/flowconfig.h>
 
+namespace BC {
+namespace Key {
+static const QString flowController("flowController");
+}
+}
+
 class FlowController : public HardwareObject
 {
     Q_OBJECT
 public:
-    FlowController(QObject *parent = nullptr);
+    FlowController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr,
+                   bool threaded = false, bool critical = false);
     virtual ~FlowController();
 
     FlowConfig config() const { return d_config; }

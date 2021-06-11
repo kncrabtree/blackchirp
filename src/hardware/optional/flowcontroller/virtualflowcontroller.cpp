@@ -1,10 +1,8 @@
 #include "virtualflowcontroller.h"
 
-VirtualFlowController::VirtualFlowController(QObject *parent) : FlowController(parent)
+VirtualFlowController::VirtualFlowController(QObject *parent) :
+    FlowController(BC::Key::hwVirtual,BC::Key::virtFCName,CommunicationProtocol::Virtual,parent)
 {
-    d_subKey = QString("virtual");
-    d_prettyName = QString("Virtual Flow Controller");
-    d_commType = CommunicationProtocol::Virtual;
     d_numChannels = 4;
 }
 

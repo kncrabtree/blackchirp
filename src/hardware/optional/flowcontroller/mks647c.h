@@ -3,6 +3,13 @@
 
 #include <src/hardware/optional/flowcontroller/flowcontroller.h>
 
+namespace BC {
+namespace Key {
+static const QString mks647c("mks647c");
+static const QString mks647cName("MKS 647C Flow Control Unit");
+}
+}
+
 class Mks647c : public FlowController
 {
 public:

@@ -3,11 +3,8 @@
 #include <math.h>
 
 Mks647c::Mks647c(QObject *parent) :
-    FlowController(parent), d_maxTries(5), d_nextRead(0)
+    FlowController(BC::Key::mks647c,BC::Key::mks647cName,CommunicationProtocol::Rs232,parent), d_maxTries(5), d_nextRead(0)
 {
-    d_subKey = QString("mks647c");
-    d_prettyName = QString("MKS 647C Flow Control Unit");
-    d_commType = CommunicationProtocol::Rs232;
     d_numChannels = 4;
 
     double b = 28316.847; //scfm --> sccm conversion

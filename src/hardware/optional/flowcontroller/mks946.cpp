@@ -1,12 +1,9 @@
 #include "mks946.h"
 
-Mks946::Mks946(QObject *parent) : FlowController(parent), d_nextRead(0)
+Mks946::Mks946(QObject *parent) :
+    FlowController(BC::Key::mks947,BC::Key::mks947Name,CommunicationProtocol::Rs232, parent),
+    d_nextRead(0)
 {
-    d_subKey = QString("mks946");
-    d_prettyName = QString("MKS 946 Flow Controller");
-    d_threaded = false;
-    d_commType = CommunicationProtocol::Rs232;
-    d_isCritical = false;
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);

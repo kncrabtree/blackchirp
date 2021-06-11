@@ -1,9 +1,9 @@
 #include <src/hardware/optional/flowcontroller/flowcontroller.h>
 
-FlowController::FlowController(QObject *parent) : HardwareObject(parent)
+FlowController::FlowController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
+                               QObject *parent, bool threaded, bool critical) :
+    HardwareObject(BC::Key::flowController,subKey,name,commType,parent,threaded,critical)
 {
-    d_key = QString("flowController");
-
 }
 
 FlowController::~FlowController()
