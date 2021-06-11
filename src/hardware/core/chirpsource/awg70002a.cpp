@@ -4,13 +4,8 @@
 #include <math.h>
 
 AWG70002a::AWG70002a(QObject *parent) :
-    AWG(parent)
+    AWG(BC::Key::awg70002a,BC::Key::awg70002aName,CommunicationProtocol::Tcp,parent,false)
 {
-    d_subKey = QString("awg70002a");
-    d_prettyName = QString("Arbitrary Waveform Generator AWG70002A");
-    d_commType = CommunicationProtocol::Tcp;
-    d_threaded = false;
-
 }
 
 void AWG70002a::readSettings()

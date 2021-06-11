@@ -5,6 +5,13 @@
 
 #include <src/data/experiment/chirpconfig.h>
 
+namespace BC {
+namespace Key {
+static const QString awg7122b("awg7122b");
+static const QString awg7122bName("Arbirtary Waveform Generator AWG7122B");
+}
+}
+
 class AWG7122B : public AWG
 {
     Q_OBJECT

@@ -10,15 +10,17 @@
 #endif
 
 HardwareObject::HardwareObject(const QString key, const QString subKey, const QString name,
+                               CommunicationProtocol::CommType commType,
                                QObject *parent, bool threaded, bool critical) :
     QObject(parent), SettingsStorage({key,subKey},General), d_prettyName(name), d_key(key),
-    d_subKey(subKey), d_isCritical(critical), d_threaded(threaded), d_enabledForExperiment(true),
-    d_isConnected(false)
+    d_subKey(subKey), d_enabledForExperiment(true), d_isCritical(critical), d_threaded(threaded),
+    d_commType(commType), d_isConnected(false)
 {
     set(BC::Key::hwKey,d_key);
     set(BC::Key::hwName,d_prettyName);
     set(BC::Key::hwCritical,d_isCritical);
     set(BC::Key::hwThreaded,d_threaded);
+    set(BC::Key::hwCommType,d_commType);
 
     //it is necessary to write the subKey one level above the SettingsStorage group, which
     //is referenced to d_key/d_subKey, so that other parts of the application can determine

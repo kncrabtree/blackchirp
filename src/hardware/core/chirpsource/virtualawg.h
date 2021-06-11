@@ -3,6 +3,12 @@
 
 #include <src/hardware/core/chirpsource/awg.h>
 
+namespace BC {
+namespace Key {
+static const QString vawgName("Virtual Arbitrary Waveform Generator");
+}
+}
+
 class VirtualAwg : public AWG
 {
     Q_OBJECT

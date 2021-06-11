@@ -3,6 +3,13 @@
 
 #include <src/hardware/core/chirpsource/awg.h>
 
+namespace BC {
+namespace Key {
+static const QString awg70002a("awg70002a");
+static const QString awg70002aName("Arbitrary Waveform Generator AWG70002A");
+}
+}
+
 class AWG70002a : public AWG
 {
     Q_OBJECT

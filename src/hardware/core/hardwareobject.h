@@ -21,6 +21,7 @@ static const QString hwName("prettyName");
 static const QString hwConnected("connected");
 static const QString hwCritical("critical");
 static const QString hwThreaded("threaded");
+static const QString hwCommType("commType");
 }
 }
 
@@ -77,8 +78,13 @@ public:
      * \param parent Pointer to parent QObject. Should be 0 if it will be in its own thread.
      */
     explicit HardwareObject(const QString key, const QString subKey, const QString name,
-                            QObject *parent = nullptr, bool threaded = true, bool critical = true);
+                            CommunicationProtocol::CommType commType, QObject *parent = nullptr,
+                            bool threaded = true, bool critical = true);
     virtual ~HardwareObject();
+
+    const QString d_prettyName; /*!< Name to be displayed on UI */
+    const QString d_key; /*!< Name to be used in settings for abstract hardware*/
+    const QString d_subKey; /*< Name to be used in settings for real hardware*/
 
     /*!
      * \brief Access function for pretty name.
@@ -145,10 +151,9 @@ public slots:
     virtual void buildCommunication(QObject *gc = nullptr);
 
 protected:
-    QString d_prettyName; /*!< Name to be displayed on UI */
-    QString d_key; /*!< Name to be used in settings for abstract hardware*/
-    QString d_subKey; /*< Name to be used in settings for real hardware*/
     QString d_errorString;
+    bool d_enabledForExperiment;
+    CommunicationProtocol *p_comm;
 
     /*!
      * \brief Do any needed initialization prior to connecting to hardware. Pure virtual
@@ -162,16 +167,16 @@ protected:
      */
     virtual bool testConnection() =0;
 
+
+private:
     virtual QList<QPair<QString,QVariant>> readAuxPlotData();
     virtual QList<QPair<QString,QVariant>> readAuxNoPlotData();
 
-    CommunicationProtocol *p_comm;
-    bool d_isCritical;
-    bool d_threaded;
-    bool d_enabledForExperiment;
-    CommunicationProtocol::CommType d_commType;
 
-private:
+    const bool d_isCritical;
+    const bool d_threaded;
+
+    const CommunicationProtocol::CommType d_commType;
     bool d_isConnected;
 
 

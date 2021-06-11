@@ -2,12 +2,8 @@
 
 #include <math.h>
 
-M8195A::M8195A(QObject *parent) : AWG(parent)
+M8195A::M8195A(QObject *parent) : AWG(BC::Key::m8195a,BC::Key::m8195aName,CommunicationProtocol::Tcp,parent,false)
 {
-    d_subKey = QString("m8195a");
-    d_prettyName = QString("Arbitrary Waveform Generator M8195A");
-    d_commType = CommunicationProtocol::Tcp;
-    d_threaded = false;
 }
 
 void M8195A::readSettings()

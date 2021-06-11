@@ -5,11 +5,8 @@
 
 #include <math.h>
 
-AD9914::AD9914(QObject *parent) : AWG(BC::Key::ad9914,parent)
+AD9914::AD9914(QObject *parent) : AWG(BC::Key::ad9914,BC::Key::ad9914Name,CommunicationProtocol::Rs232,parent,false)
 {
-    d_prettyName = QString("AD9914 Direct Digital Synthesizer");
-    d_commType = CommunicationProtocol::Rs232;
-    d_threaded = false;
 }
 
 

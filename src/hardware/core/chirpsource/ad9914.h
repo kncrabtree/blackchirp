@@ -6,6 +6,7 @@
 namespace BC {
 namespace Key {
 static const QString ad9914("ad9914");
+static const QString ad9914Name("AD9914 Direct Digital Synthesizer");
 }
 }
 

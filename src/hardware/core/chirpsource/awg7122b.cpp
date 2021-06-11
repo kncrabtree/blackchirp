@@ -3,14 +3,8 @@
 #include <math.h>
 
 AWG7122B::AWG7122B(QObject *parent) :
-    AWG(parent)
+    AWG(BC::Key::awg7122b,BC::Key::awg7122bName,CommunicationProtocol::Tcp,parent,false)
 {
-    d_subKey = QString("awg7122b");
-    d_prettyName = QString("Arbirtary Waveform Generator AWG7122B");
-    d_commType = CommunicationProtocol::Tcp;
-    d_threaded = false;
-
-
 }
 
 void AWG7122B::readSettings()
