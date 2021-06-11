@@ -33,6 +33,7 @@ private slots:
     void testDefault();
     void testSubkeyRead();
     void testHardwareRead();
+    void testDestruction();
 
 
 private:
@@ -41,6 +42,20 @@ private:
 
     void initSettingsFile();
 
+};
+
+class DestructorTest : public SettingsStorage
+{
+public:
+    DestructorTest() : SettingsStorage("CrabtreeLab","BlackchirpTest",{},General,false) {
+        registerGetter("destructTest",this,&DestructorTest::desructGetter);
+    }
+    virtual ~DestructorTest(){};
+
+    int desructGetter() const { return d_test; }
+
+private:
+    int d_test = 144;
 };
 
 Q_DECLARE_METATYPE(SettingsStorageTest::TestEnum)
@@ -285,6 +300,16 @@ void SettingsStorageTest::testHardwareRead()
     QCOMPARE(readHardware.get<int>("hardwareInt"),10);
     QCOMPARE(readHardware.get<double>("hardwareDouble"),44.4);
     QCOMPARE(readHardware.get<QString>("hardwareName"),QString("My Hardware"));
+}
+
+void SettingsStorageTest::testDestruction()
+{
+    initSettingsFile();
+    DestructorTest *d = new DestructorTest;
+    delete d;
+
+    SettingsStorage readOnly(false);
+    QCOMPARE(readOnly.get<int>("destructTest"),144);
 }
 
 void SettingsStorageTest::initSettingsFile()

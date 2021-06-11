@@ -18,7 +18,14 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  * be created at any point in the code and initialized with the appropriate keys that refer to the group
  * that needs to be read from. All functions that modify values in QSettings are protected. Classes that
  * wish to use SettingsStorage to write to persistent storage need to inherit SettingsStorage and initialize
- * it in their constructors. SettingsStorage does not inherit any other classes, and it is suitable for use
+ * it in their constructors. The settings will be saved automatically when the object is deleted or when
+ * SettingsStorage::save() is called. Note that if any getters have been registered, the objects they refer
+ * to must still exist or the code will crash! A common scenario is to register a getter on an object in the
+ * user interface. If the ui pointer is deleted in the derived class's destructor, then any getter registered
+ * on a UI element will crash! Call SettingsStorage::clearGetters() in the derived class destructor to avoid
+ * this.
+ *
+ * SettingsStorage does not inherit any other classes, and it is suitable for use
  * in multiple inheritance with QObject-derived classes. **However:** classes that inherit from SettingsStorage
  * will have their assignment and copy constructors deleted! Do not inherit from SettingsStorage in a
  * class that needs to be passed around by value (such as data storage classes like Experiment). This class
@@ -26,7 +33,7 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  *
  * A SettingsStorage object reads and maintains an internal copy of the QSettings keys and values associated
  * with the group/subgroup that it is initialized with. Internally, this is done through the use of two
- * assocuative containers (key-value containers): one which represents single key-value pairs,
+ * associative containers (key-value containers): one which represents single key-value pairs,
  * and another that contains array values as structured by QSettings. An array value is a list whose items
  * each contain a map consisting of one or more key-value pairs.
  *
@@ -121,11 +128,8 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  * When working with a subclass of SettingsStorage, the object has access to the SettingsStorage::set,
  * SettingsStorage::setMultiple, and SettingsStorage::setArray functions. Each of these takes an optional
  * bool argument (default true) that controls whther the new value is immedately written to settings.
- * If false, the value is just stored in memory until a call to SettingsStorage::save() is made. It is
- * recommended that SettingsStorage::save() is called in the destructor of the child class to ensure that
- * any changes are written before the object is destroyed. Because of the getter mechanism described below,
- * it is not possible to call save() in the destructor of SettingsStorage. If the key in a call to one of the
- * set functions does not exist, a new key-value pair is added.
+ * If false, the value is just stored in memory until a call to SettingsStorage::save() is made. If the
+ * key in a call to one of the set functions does not exist, a new key-value pair is added.
  *
  * In addition, a subclass may call SettingsStorage::readAll at any point to reread all values from settings.
  * However, any keys associated with a getter will not be read! If this behavior is undesired, first unregister
@@ -251,6 +255,11 @@ public:
      * \param systemWide If true, use QSettings::SystemScope. Otherwise, use QSettings::UserScope
      */
     explicit SettingsStorage(const QString key, Type type = General, bool systemWide = true);
+
+    /*!
+     * \brief Destructor. Saves all values to settings
+     */
+    virtual ~SettingsStorage();
 
     SettingsStorage(const SettingsStorage &) = delete;
     SettingsStorage& operator= (const SettingsStorage &) = delete;
@@ -547,13 +556,17 @@ private:
     explicit SettingsStorage(const QStringList keys, Type type, QSettings::Scope scope);
     explicit SettingsStorage(const QString orgName, const QString appName, const QStringList keys, Type type, QSettings::Scope scope);
 
-    SettingsMap d_values;
+    SettingsMap d_values; /*!< Map of key-value pairs */
 
-    std::map<QString, SettingsGetter> d_getters;
-    std::map<QString,std::vector<SettingsMap>> d_arrayValues;
+    std::map<QString, SettingsGetter> d_getters; /*!< Map containing all registered getters */
+    std::map<QString,std::vector<SettingsMap>> d_arrayValues; /*!< Map containing all array values */
 
-    QSettings d_settings;
+    QSettings d_settings; /*!< Handle to QSettings storage object */
 
+    /*!
+     * \brief Writes a single array to QSettings
+     * \param key Key of the array to write
+     */
     void writeArray(const QString key);
 
 

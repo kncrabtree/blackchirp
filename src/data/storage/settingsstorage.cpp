@@ -76,6 +76,11 @@ SettingsStorage::SettingsStorage(const QString key, Type type, bool systemWide) 
 
 }
 
+SettingsStorage::~SettingsStorage()
+{
+    save();
+}
+
 bool SettingsStorage::containsValue(const QString key) const
 {
     ///TODO: c++20 will have std::map.contains; can just return d_values.contains(key) || d_getters.contains(key)

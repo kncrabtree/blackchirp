@@ -22,7 +22,7 @@ BatchSequenceDialog::BatchSequenceDialog(QWidget *parent) :
 
 BatchSequenceDialog::~BatchSequenceDialog()
 {
-    save();
+    clearGetters(false);
     delete ui;
 }
 
