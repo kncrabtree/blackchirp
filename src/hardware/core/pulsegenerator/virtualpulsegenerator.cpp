@@ -1,11 +1,8 @@
 #include "virtualpulsegenerator.h"
 
-VirtualPulseGenerator::VirtualPulseGenerator(QObject *parent) : PulseGenerator(parent)
+VirtualPulseGenerator::VirtualPulseGenerator(QObject *parent) :
+    PulseGenerator(BC::Key::hwVirtual,BC::Key::vpGen,CommunicationProtocol::Virtual,parent)
 {
-    d_subKey = QString("virtual");
-    d_prettyName = QString("Virtual Pulse Generator");
-    d_commType = CommunicationProtocol::Virtual;
-    d_threaded = false;
     d_numChannels = 8;
 }
 

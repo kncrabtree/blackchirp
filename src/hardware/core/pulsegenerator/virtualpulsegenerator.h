@@ -3,6 +3,10 @@
 
 #include <src/hardware/core/pulsegenerator/pulsegenerator.h>
 
+namespace BC::Key {
+static const QString vpGen("Virtual Pulse Generator");
+}
+
 class VirtualPulseGenerator : public PulseGenerator
 {
     Q_OBJECT

@@ -1,9 +1,9 @@
 #include <src/hardware/core/pulsegenerator/pulsegenerator.h>
 
-PulseGenerator::PulseGenerator(QObject *parent) :
-   HardwareObject(parent), d_minWidth(0.010), d_maxWidth(100000.0), d_minDelay(0.0), d_maxDelay(100000.0)
+PulseGenerator::PulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent, bool threaded, bool critical) :
+    HardwareObject(BC::Key::pGen,subKey,name,commType,parent,threaded,critical),
+    d_minWidth(0.010), d_maxWidth(100000.0), d_minDelay(0.0), d_maxDelay(100000.0)
 {
-    d_key = QString("pGen");
 }
 
 PulseGenerator::~PulseGenerator()

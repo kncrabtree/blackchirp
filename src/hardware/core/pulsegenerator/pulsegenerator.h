@@ -5,11 +5,15 @@
 
 #include <src/data/experiment/pulsegenconfig.h>
 
+namespace BC::Key {
+static const QString pGen("pGen");
+}
+
 class PulseGenerator : public HardwareObject
 {
     Q_OBJECT
 public:
-    PulseGenerator(QObject *parent = nullptr);
+    PulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType,QObject *parent = nullptr,bool threaded = false, bool critical = true);
     virtual ~PulseGenerator();
     int numChannels() const { return d_numChannels; }
 

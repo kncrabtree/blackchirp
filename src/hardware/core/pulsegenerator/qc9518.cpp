@@ -1,12 +1,8 @@
 #include "qc9518.h"
 
 Qc9518::Qc9518(QObject *parent) :
-    PulseGenerator(parent)
+    PulseGenerator(BC::Key::qc9518,BC::Key::qc9518Name,CommunicationProtocol::Rs232,parent)
 {
-    d_subKey = QString("QC9518");
-    d_prettyName = QString("Pulse Generator QC 9518");
-    d_commType = CommunicationProtocol::Rs232;
-    d_threaded = false;
     d_numChannels = 8;
 }
 

@@ -3,6 +3,11 @@
 
 #include <src/hardware/core/pulsegenerator/pulsegenerator.h>
 
+namespace BC::Key {
+static const QString qc9518("QC9518");
+static const QString qc9518Name("Pulse Generator QC 9518");
+}
+
 class Qc9518 : public PulseGenerator
 {
 public:
