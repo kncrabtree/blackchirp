@@ -2,15 +2,11 @@
 
 #include <QTimer>
 
-VirtualTemperatureController::VirtualTemperatureController(QObject *parent) : TemperatureController(parent)
+VirtualTemperatureController::VirtualTemperatureController(QObject *parent) : TemperatureController(BC::Key::hwVirtual,BC::Key::vtcName,CommunicationProtocol::Virtual,parent)
 {
-    d_subKey = QString("virtual");
-    d_prettyName = QString("Virtual Temperature Controller");
-    d_commType = CommunicationProtocol::Virtual;
     d_numChannels= 4;
-
-
 }
+
 void VirtualTemperatureController::readSettings()
 {
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());

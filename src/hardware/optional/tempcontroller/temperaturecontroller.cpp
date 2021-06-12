@@ -1,8 +1,8 @@
 #include <src/hardware/optional/tempcontroller/temperaturecontroller.h>
 
-TemperatureController::TemperatureController(QObject *parent) : HardwareObject(parent)
+TemperatureController::TemperatureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent, bool threaded, bool critical) :
+    HardwareObject(BC::Key::tController,subKey,name,commType,parent,threaded,critical)
 {
-    d_key= QString("tempController");
 
 }
 

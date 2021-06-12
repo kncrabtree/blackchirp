@@ -2,6 +2,10 @@
 #define LAKESHORE218_H
 #include <src/hardware/optional/tempcontroller/temperaturecontroller.h>
 
+namespace BC::Key {
+static const QString lakeshore218("lakeshore218");
+static const QString lakeshore218Name("Lakeshore 218 Temperature Controller");
+}
 
 class Lakeshore218 : public TemperatureController
 {

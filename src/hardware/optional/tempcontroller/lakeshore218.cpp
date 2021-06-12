@@ -1,10 +1,9 @@
 #include "lakeshore218.h"
 
-Lakeshore218::Lakeshore218(QObject *parent) : TemperatureController(parent)
+Lakeshore218::Lakeshore218(QObject *parent) :
+    TemperatureController(BC::Key::lakeshore218,BC::Key::lakeshore218Name,
+                          CommunicationProtocol::Rs232,parent)
 {
-    d_subKey = QString("lakeshore218");
-    d_prettyName = QString("Lakeshore 218");
-    d_commType = CommunicationProtocol::Rs232;
     d_numChannels = 8;
 }
 void Lakeshore218::readSettings()

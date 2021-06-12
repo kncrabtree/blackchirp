@@ -2,12 +2,15 @@
 #define TEMPERATURECONTROLLER_H
 #include <src/hardware/core/hardwareobject.h>
 
+namespace BC::Key {
+static const QString tController("tempController");
+}
 
 class TemperatureController : public HardwareObject
 {
     Q_OBJECT
 public:
-    explicit TemperatureController(QObject *parent =nullptr);
+    explicit TemperatureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent =nullptr, bool threaded = false, bool critical = false);
     virtual ~TemperatureController();
 
 signals:
