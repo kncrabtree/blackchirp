@@ -1,10 +1,8 @@
 #include "intellisysiqplus.h"
 
-IntellisysIQPlus::IntellisysIQPlus(QObject *parent) : PressureController(parent)
+IntellisysIQPlus::IntellisysIQPlus(QObject *parent) :
+    PressureController(BC::Key::iqplus,BC::Key::iqplusName,CommunicationProtocol::Rs232,parent)
 {
-    d_subKey = QString("IntellisysIQPlus");
-    d_prettyName = QString("Intellisys IQ Plus Pressure Controller");
-    d_commType = CommunicationProtocol::Rs232;
     d_readOnly = false;
 }
 

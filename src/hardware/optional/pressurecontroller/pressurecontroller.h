@@ -3,11 +3,15 @@
 
 #include <src/hardware/core/hardwareobject.h>
 
+namespace BC::Key {
+static const QString pController("pressureController");
+}
+
 class PressureController : public HardwareObject
 {
     Q_OBJECT
 public:
-    PressureController(QObject *parent =nullptr);
+    PressureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent =nullptr, bool threaded = false, bool critical=false);
     virtual ~PressureController();
 
 signals:
