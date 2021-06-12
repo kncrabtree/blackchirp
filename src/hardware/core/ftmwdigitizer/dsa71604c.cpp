@@ -4,13 +4,10 @@
 #include <math.h>
 
 Dsa71604c::Dsa71604c(QObject *parent) :
-    FtmwScope(parent), d_waitingForReply(false), d_foundHeader(false),
+    FtmwScope(BC::Key::dsa71604c,BC::Key::dsa71064cName,CommunicationProtocol::Tcp,parent),
+    d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {
-    d_subKey = QString("dsa71604c");
-    d_prettyName = QString("Ftmw Oscilloscope DSA71604C");
-    d_commType = CommunicationProtocol::Tcp;
-
 }
 
 Dsa71604c::~Dsa71604c()

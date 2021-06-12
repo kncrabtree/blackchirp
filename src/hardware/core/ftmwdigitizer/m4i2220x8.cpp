@@ -3,13 +3,9 @@
 #include <math.h>
 
 
-M4i2220x8::M4i2220x8(QObject *parent) : FtmwScope(parent), p_handle(nullptr)
+M4i2220x8::M4i2220x8(QObject *parent) :
+    FtmwScope(BC::Key::m4i2220x8,BC::Key::m4i2220x8Name,CommunicationProtocol::Custom,parent), p_handle(nullptr)
 {
-    d_subKey = QString("m4i2220x8");
-    d_prettyName = QString("Spectrum Instrumentation M4i.2220-x8 Digitizer");
-    d_commType = CommunicationProtocol::Custom;
-    d_threaded = true;
-
 }
 
 M4i2220x8::~M4i2220x8()

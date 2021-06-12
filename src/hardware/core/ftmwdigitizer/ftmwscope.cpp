@@ -1,8 +1,9 @@
 #include <src/hardware/core/ftmwdigitizer/ftmwscope.h>
 
-FtmwScope::FtmwScope(QObject *parent) : HardwareObject(parent)
+FtmwScope::FtmwScope(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent, bool threaded, bool critical) :
+    HardwareObject(BC::Key::ftmwScope,subKey,name,commType,parent,threaded,critical)
 {
-    d_key = QString("ftmwscope");
+
 }
 
 FtmwScope::~FtmwScope()

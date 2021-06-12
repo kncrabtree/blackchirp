@@ -8,6 +8,13 @@
 
 class QTcpSocket;
 
+namespace BC {
+namespace Key {
+static const QString mso72004c("MSO72004C");
+static const QString mso72004cName("Ftmw Oscilloscope MSO72004C");
+}
+}
+
 class MSO72004C : public FtmwScope
 {
     Q_OBJECT

@@ -3,11 +3,9 @@
 #include <QTcpSocket>
 #include <QTimer>
 
-DSOx92004A::DSOx92004A(QObject *parent) : FtmwScope(parent)
+DSOx92004A::DSOx92004A(QObject *parent) :
+    FtmwScope(BC::Key::dsox92004a,BC::Key::dsox92004aName,CommunicationProtocol::Tcp,parent)
 {
-    d_subKey = QString("DSOx92004A");
-    d_prettyName = QString("Ftmw Oscilloscope DSOx92004A");
-    d_commType = CommunicationProtocol::Tcp;
 }
 
 void DSOx92004A::readSettings()

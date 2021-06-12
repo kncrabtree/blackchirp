@@ -7,11 +7,18 @@
 
 #include <src/data/experiment/ftmwconfig.h>
 
+
+namespace BC {
+namespace Key {
+static const QString ftmwScope("ftmwscope");
+}
+}
+
 class FtmwScope : public HardwareObject
 {
     Q_OBJECT
 public:
-    explicit FtmwScope(QObject *parent = nullptr);
+    explicit FtmwScope(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded = true, bool critical = true);
     virtual ~FtmwScope();
 
 signals:

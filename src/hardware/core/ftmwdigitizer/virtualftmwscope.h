@@ -6,6 +6,10 @@
 #include <QVector>
 #include <QTimer>
 
+namespace BC::Key {
+static const QString vftmwName("Virtual FTMW Oscilloscope");
+}
+
 class VirtualFtmwScope : public FtmwScope
 {
     Q_OBJECT

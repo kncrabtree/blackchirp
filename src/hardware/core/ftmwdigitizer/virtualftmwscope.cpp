@@ -4,11 +4,8 @@
 #include <math.h>
 
 VirtualFtmwScope::VirtualFtmwScope(QObject *parent) :
-    FtmwScope(parent)
+    FtmwScope(BC::Key::hwVirtual,BC::Key::vftmwName,CommunicationProtocol::Virtual,parent)
 {
-    d_subKey = QString("virtual");
-    d_prettyName = QString("Virtual FTMW Oscilloscope");
-    d_commType = CommunicationProtocol::Virtual;
 }
 
 VirtualFtmwScope::~VirtualFtmwScope()

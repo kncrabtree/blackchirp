@@ -4,13 +4,10 @@
 #include <math.h>
 
 MSO72004C::MSO72004C(QObject *parent) :
-    FtmwScope(parent), d_waitingForReply(false), d_foundHeader(false),
+    FtmwScope(BC::Key::mso72004c,BC::Key::mso72004cName,CommunicationProtocol::Tcp,parent),
+    d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {
-    d_subKey = QString("MSO72004C");
-    d_prettyName = QString("Ftmw Oscilloscope MSO72004C");
-    d_commType = CommunicationProtocol::Tcp;
-
 }
 
 MSO72004C::~MSO72004C()
