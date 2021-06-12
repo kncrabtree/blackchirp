@@ -1,11 +1,8 @@
 #include "virtualgpibcontroller.h"
 
-VirtualGpibController::VirtualGpibController(QObject *parent) : GpibController(parent)
+VirtualGpibController::VirtualGpibController(QObject *parent) :
+    GpibController(BC::Key::hwVirtual,BC::Key::vgpibName,CommunicationProtocol::Virtual,parent)
 {
-	d_subKey = QString("virtual");
-	d_prettyName = QString("Virtual GPIB Controller");
-    d_isCritical = false;
-    d_commType = CommunicationProtocol::Virtual;
 }
 
 VirtualGpibController::~VirtualGpibController()

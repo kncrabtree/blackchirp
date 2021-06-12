@@ -3,6 +3,11 @@
 
 #include <src/hardware/optional/gpibcontroller/gpibcontroller.h>
 
+namespace BC::Key {
+static const QString prologix("prologixGpibLan");
+static const QString prologixName("Prologix GPIB-LAN Controller");
+}
+
 class PrologixGpibLan : public GpibController
 {
     Q_OBJECT

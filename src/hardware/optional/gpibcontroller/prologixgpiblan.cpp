@@ -1,11 +1,8 @@
 #include "prologixgpiblan.h"
 
 PrologixGpibLan::PrologixGpibLan(QObject *parent) :
-    GpibController(parent)
+    GpibController(BC::Key::prologix,BC::Key::prologixName,CommunicationProtocol::Tcp,parent,true,true)
 {
-    d_subKey = QString("prologixGpibLan");
-    d_prettyName = QString("Prologix GPIB-LAN Controller");
-    d_commType = CommunicationProtocol::Tcp;
 }
 
 

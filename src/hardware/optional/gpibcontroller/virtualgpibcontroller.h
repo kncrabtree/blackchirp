@@ -3,6 +3,10 @@
 
 #include <src/hardware/optional/gpibcontroller/gpibcontroller.h>
 
+namespace BC::Key {
+static const QString vgpibName("Virtual GPIB Controller");
+}
+
 class VirtualGpibController : public GpibController
 {
 	Q_OBJECT

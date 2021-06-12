@@ -3,11 +3,15 @@
 
 #include <src/hardware/core/hardwareobject.h>
 
+namespace BC::Key {
+static const QString gpibController("gpibController");
+}
+
 class GpibController : public HardwareObject
 {
 	Q_OBJECT
 public:
-	GpibController(QObject *parent = nullptr);
+    GpibController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded = true, bool critical = false);
     virtual ~GpibController();
 
 	bool writeCmd(int address, QString cmd);

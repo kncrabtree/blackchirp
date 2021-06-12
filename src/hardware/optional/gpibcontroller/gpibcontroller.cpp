@@ -1,9 +1,8 @@
 #include <src/hardware/optional/gpibcontroller/gpibcontroller.h>
 
-GpibController::GpibController(QObject *parent) :
-	HardwareObject(parent)
+GpibController::GpibController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent, bool threaded, bool critical) :
+    HardwareObject(BC::Key::gpibController,subKey,name,commType,parent,threaded,critical)
 {
-	d_key = QString("gpibController");
 }
 
 GpibController::~GpibController()
