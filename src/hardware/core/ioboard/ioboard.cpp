@@ -1,9 +1,10 @@
 #include <src/hardware/core/ioboard/ioboard.h>
 
-IOBoard::IOBoard(QObject *parent) :
-    HardwareObject(parent), d_numAnalog(0), d_numDigital(0), d_reservedAnalog(0), d_reservedDigital(0)
+IOBoard::IOBoard(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent, bool threaded, bool critical)  :
+    HardwareObject(BC::Key::ioboard, subKey, name, commType, parent, threaded, critical),
+    d_numAnalog(0), d_numDigital(0), d_reservedAnalog(0), d_reservedDigital(0)
 {
-    d_key = QString("ioboard");
+
 }
 
 IOBoard::~IOBoard()

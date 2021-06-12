@@ -1,12 +1,9 @@
 #include "labjacku3.h"
 
 LabjackU3::LabjackU3(QObject *parent) :
-    IOBoard(parent), d_handle(nullptr), d_serialNo(3)
+    IOBoard(BC::Key::labjacku3,BC::Key::labjacku3Name,CommunicationProtocol::Custom,parent),
+    d_handle(nullptr), d_serialNo(3)
 {
-    d_subKey = QString("labjacku3");
-    d_prettyName = QString("Labjack U3 IO Board");
-    d_commType = CommunicationProtocol::Custom;
-
     //note that all "reserved" channels come first!
     //any unreserved channels may be used as arbitrary validation conditions
     //For the U3, there are 16 FIO lines (FIO0-7 and EIO0-7)

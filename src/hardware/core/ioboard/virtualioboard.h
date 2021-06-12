@@ -3,6 +3,10 @@
 
 #include <src/hardware/core/ioboard/ioboard.h>
 
+namespace BC::Key {
+static const QString viobName("Virtual IO Board");
+}
+
 class VirtualIOBoard : public IOBoard
 {
     Q_OBJECT

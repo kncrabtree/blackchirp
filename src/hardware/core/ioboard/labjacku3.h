@@ -5,6 +5,11 @@
 
 #include "u3.h"
 
+namespace BC::Key {
+static const QString labjacku3("labjacku3");
+static const QString labjacku3Name("Labjack U3 IO Board");
+}
+
 class LabjackU3 : public IOBoard
 {
     Q_OBJECT

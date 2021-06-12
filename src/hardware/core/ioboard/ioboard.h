@@ -5,11 +5,15 @@
 
 #include <src/data/experiment/ioboardconfig.h>
 
+namespace BC::Key {
+static const QString ioboard("ioboard");
+}
+
 class IOBoard : public HardwareObject
 {
     Q_OBJECT
 public:
-    explicit IOBoard(QObject *parent = nullptr);
+    explicit IOBoard(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded=true,bool critical=false);
     virtual ~IOBoard();
 
 public slots:
