@@ -6,6 +6,11 @@
 
 #include <src/modules/motor/hardware/motorcontroller/motorcontroller.h>
 
+namespace BC::Key {
+static const QString scx11("scx11");
+static const QString scx11Name("Motor Controller SCX11");
+}
+
 class Scx11 : public MotorController
 {
     Q_OBJECT

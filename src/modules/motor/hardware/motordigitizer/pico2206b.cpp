@@ -4,13 +4,9 @@
 #include <ps2000aApi.h>
 #include <QTimer>
 
-Pico2206B::Pico2206B(QObject *parent) : MotorOscilloscope(parent), d_acquiring(false)
+Pico2206B::Pico2206B(QObject *parent) :
+    MotorOscilloscope(BC::Key::pico,BC::Key::picoName,CommunicationProtocol::Custom,parent), d_acquiring(false)
 {
-    d_subKey = QString("pico2206b");
-    d_prettyName = QString("Pico 2206B Oscilloscope");
-    d_threaded = true;
-    d_commType = CommunicationProtocol::Custom;
-
     d_handle = 0;
 }
 

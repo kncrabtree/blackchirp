@@ -5,6 +5,9 @@
 
 class QTimer;
 
+namespace BC::Key {
+static const QString vmsName("Virtual Motor Digitizer");
+}
 class VirtualMotorScope : public MotorOscilloscope
 {
     Q_OBJECT

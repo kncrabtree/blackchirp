@@ -2,12 +2,9 @@
 
 #include <QTimer>
 
-VirtualMotorScope::VirtualMotorScope(QObject *parent) : MotorOscilloscope(parent)
+VirtualMotorScope::VirtualMotorScope(QObject *parent) :
+    MotorOscilloscope(BC::Key::hwVirtual,BC::Key::vmsName,CommunicationProtocol::Rs232,parent)
 {
-    d_subKey = QString("virtual");
-    d_prettyName = QString("Virtual Motor Oscilloscope");
-    d_threaded = false;
-    d_commType = CommunicationProtocol::Virtual;
 }
 
 void VirtualMotorScope::readSettings()

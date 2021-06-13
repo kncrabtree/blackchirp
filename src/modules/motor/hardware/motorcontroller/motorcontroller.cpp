@@ -2,10 +2,8 @@
 
 #include <QTimer>
 
-MotorController::MotorController(QObject *parent) : HardwareObject(parent)
+MotorController::MotorController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent, bool threaded, bool critical) : HardwareObject(BC::Key::mController,subKey,name,commType,parent,threaded,critical)
 {
-    d_key = QString("motorController");
-
     p_limitTimer = new QTimer(this);
     p_limitTimer->setInterval(200);
     connect(p_limitTimer,&QTimer::timeout,this,&MotorController::checkLimit);

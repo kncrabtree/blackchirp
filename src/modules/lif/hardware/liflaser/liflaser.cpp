@@ -1,8 +1,9 @@
 #include <src/modules/lif/hardware/liflaser/liflaser.h>
 
-LifLaser::LifLaser(QObject *parent) : HardwareObject (parent)
+LifLaser::LifLaser(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent, bool threaded, bool critical) :
+    HardwareObject (BC::Key::lifLaser,subKey,name,commType,parent,threaded,critical)
 {
-    d_key = QString("lifLaser");
+
 }
 
 LifLaser::~LifLaser()

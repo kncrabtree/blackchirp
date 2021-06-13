@@ -3,6 +3,9 @@
 
 #include <src/modules/motor/hardware/motorcontroller/motorcontroller.h>
 
+namespace BC::Key {
+static const QString vmcName("Virtual Motor Controller");
+}
 class VirtualMotorController : public MotorController
 {
     Q_OBJECT

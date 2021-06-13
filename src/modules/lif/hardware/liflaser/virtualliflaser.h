@@ -4,6 +4,10 @@
 
 #include <src/modules/lif/hardware/liflaser/liflaser.h>
 
+namespace BC::Key {
+static const QString vLifLaser("Virtual LIF Laser");
+}
+
 class VirtualLifLaser : public LifLaser
 {
     Q_OBJECT

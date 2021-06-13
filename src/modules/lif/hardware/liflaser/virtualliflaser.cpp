@@ -1,11 +1,8 @@
 #include "virtualliflaser.h"
 
-VirtualLifLaser::VirtualLifLaser(QObject *parent) : LifLaser (parent), d_pos(0.0)
+VirtualLifLaser::VirtualLifLaser(QObject *parent) :
+    LifLaser (BC::Key::hwVirtual,BC::Key::vLifLaser,CommunicationProtocol::Virtual,parent), d_pos(0.0)
 {
-    d_subKey = QString("virtualLifLaser");
-    d_prettyName = QString("Virtual LIF Laser");
-    d_commType = CommunicationProtocol::Virtual;
-
 }
 
 

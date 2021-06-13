@@ -5,11 +5,15 @@
 
 #include <src/modules/motor/data/motorscan.h>
 
+namespace BC::Key {
+static const QString motorScope("motorScope");
+}
+
 class MotorOscilloscope : public HardwareObject
 {
     Q_OBJECT
 public:
-    MotorOscilloscope(QObject *parent = nullptr);
+    MotorOscilloscope(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded=true,bool critical=true);
 
 public slots:
     virtual bool configure(const BlackChirp::MotorScopeConfig &sc) =0;

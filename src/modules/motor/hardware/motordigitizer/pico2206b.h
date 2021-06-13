@@ -5,6 +5,11 @@
 #include <PicoStatus.h>
 #include <ps2000aApi.h>
 
+namespace BC::Key {
+static const QString pico("pico2206b");
+static const QString picoName("Pico 2206B Oscilloscope");
+}
+
 class Pico2206B : public MotorOscilloscope
 {
     Q_OBJECT

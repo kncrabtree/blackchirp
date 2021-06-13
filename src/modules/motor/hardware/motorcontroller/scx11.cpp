@@ -1,11 +1,8 @@
 #include "scx11.h"
 
-Scx11::Scx11(QObject *parent) : MotorController(parent), d_idle(true)
+Scx11::Scx11(QObject *parent) :
+    MotorController(BC::Key::scx11,BC::Key::scx11Name,CommunicationProtocol::Rs232,parent), d_idle(true)
 {
-    d_subKey = QString("scx11");
-    d_prettyName = QString("Motor controller SCX11");
-    d_commType = CommunicationProtocol::Rs232;
-
 }
 
 void Scx11::readSettings()

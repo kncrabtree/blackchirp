@@ -5,11 +5,8 @@
 #include <src/hardware/core/communication/virtualinstrument.h>
 
 VirtualMotorController::VirtualMotorController(QObject *parent) :
-    MotorController(parent)
+    MotorController(BC::Key::hwVirtual,BC::Key::vmcName,CommunicationProtocol::Virtual,parent)
 {
-    d_subKey = QString("virtual");
-    d_prettyName = QString("Virtual Motor Controller");
-    d_commType = CommunicationProtocol::Virtual;
 }
 
 void VirtualMotorController::readSettings()

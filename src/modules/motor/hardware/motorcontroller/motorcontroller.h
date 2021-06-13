@@ -7,11 +7,15 @@
 
 class QTimer;
 
+namespace BC::Key {
+static const QString mController("motorController");
+}
+
 class MotorController : public HardwareObject
 {
     Q_OBJECT
 public:
-    MotorController(QObject *parent = nullptr);
+    MotorController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded=false,bool critical=true);
 
 signals:
     void motionComplete(bool success = true);

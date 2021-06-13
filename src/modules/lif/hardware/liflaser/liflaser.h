@@ -3,11 +3,15 @@
 
 #include <src/hardware/core/hardwareobject.h>
 
+namespace BC::Key {
+static const QString lifLaser("lifLaser");
+}
+
 class LifLaser : public HardwareObject
 {
     Q_OBJECT
 public:
-    LifLaser(QObject *parent = nullptr);
+    LifLaser(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded=false,bool critical=true);
     LifLaser(LifLaser &) =delete;
     LifLaser(LifLaser &&) =delete;
     LifLaser& operator= (const LifLaser &) =delete;

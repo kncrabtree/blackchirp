@@ -1,8 +1,8 @@
 #include <src/modules/motor/hardware/motordigitizer/motoroscilloscope.h>
 
-MotorOscilloscope::MotorOscilloscope(QObject *parent) : HardwareObject(parent)
+MotorOscilloscope::MotorOscilloscope(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent, bool threaded, bool critical) :
+    HardwareObject(BC::Key::motorScope,subKey,name,commType,parent,threaded,critical)
 {
-    d_key = QString("motorScope");
 }
 
 
