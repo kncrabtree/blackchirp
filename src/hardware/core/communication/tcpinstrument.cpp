@@ -1,7 +1,7 @@
 #include "tcpinstrument.h"
 #include <QTime>
 
-TcpInstrument::TcpInstrument(QString key, QString subKey, QObject *parent) : CommunicationProtocol(CommunicationProtocol::Tcp,key,subKey,parent)
+TcpInstrument::TcpInstrument(QString key, QObject *parent) : CommunicationProtocol(key,parent)
 {
 }
 
@@ -13,27 +13,16 @@ TcpInstrument::~TcpInstrument()
 void TcpInstrument::initialize()
 {
     p_device = new QTcpSocket(this);
-
-	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-	QString ip = s.value(key().append(QString("/ip")),QString("")).toString();
-	int port = s.value(key().append(QString("/port")),5000).toInt();
-
-	setSocketConnectionInfo(ip,port);
 }
 
 bool TcpInstrument::testConnection()
 {
+    if(dynamic_cast<QTcpSocket*>(p_device)->state() == QTcpSocket::ConnectedState)
+        disconnectSocket();
 
-	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-	QString ip = s.value(key().append(QString("/ip")),QString("")).toString();
-	int port = s.value(key().append(QString("/port")),5000).toInt();
-
-    if(ip == d_ip && port == d_port && p_device->isOpen())
-		return true;
-
-    disconnectSocket();
-
-    setSocketConnectionInfo(ip,port);
+    SettingsStorage s(d_key,SettingsStorage::Hardware);
+    d_ip = s.get<QString>("ip","");
+    d_port = s.get<int>("port",5000);
 
 	return connectSocket();
 
@@ -105,15 +94,4 @@ bool TcpInstrument::connectSocket()
 void TcpInstrument::disconnectSocket()
 {
     dynamic_cast<QTcpSocket*>(p_device)->disconnectFromHost();
-}
-
-void TcpInstrument::setSocketConnectionInfo(QString ip, int port)
-{
-	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-	s.setValue(key().append(QString("/ip")),ip);
-	s.setValue(key().append(QString("/port")),port);
-	s.sync();
-
-	d_ip = ip;
-	d_port = port;
 }

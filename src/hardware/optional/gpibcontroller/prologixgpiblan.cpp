@@ -13,16 +13,16 @@ bool PrologixGpibLan::testConnection()
     QByteArray resp = p_comm->queryCmd(QString("++ver\n"));
     if(resp.isEmpty())
     {
-        d_errorString = QString("%1 gave a null response to ID query").arg(d_prettyName);
+        d_errorString = QString("%1 gave a null response to ID query").arg(d_name);
         return false;
     }
     if(!resp.startsWith("Prologix GPIB-ETHERNET Controller"))
     {
-        d_errorString = QString("%1 response invalid. Received: %2").arg(d_prettyName).arg(QString(resp));
+        d_errorString = QString("%1 response invalid. Received: %2").arg(d_name).arg(QString(resp));
         return false;
     }
 
-    emit logMessage(QString("%1 ID response: %2").arg(d_prettyName).arg(QString(resp)));
+    emit logMessage(QString("%1 ID response: %2").arg(d_name).arg(QString(resp)));
 
     p_comm->writeCmd(QString("++auto 0\n"));
     p_comm->writeCmd(QString("++savecfg 0\n"));

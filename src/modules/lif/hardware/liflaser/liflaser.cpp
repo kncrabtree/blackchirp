@@ -16,7 +16,7 @@ double LifLaser::readPosition()
     double out = readPos();
     if(out < 0.0)
     {
-        emit logMessage(QString("Could not read position.").arg(d_prettyName),BlackChirp::LogError);
+        emit logMessage(QString("Could not read position.").arg(d_name),BlackChirp::LogError);
         emit hardwareFailure();
     }
     else {

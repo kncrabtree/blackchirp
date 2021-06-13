@@ -82,31 +82,17 @@ public:
                             bool threaded = true, bool critical = true);
     virtual ~HardwareObject();
 
-    const QString d_prettyName; /*!< Name to be displayed on UI */
+    const QString d_name; /*!< Name to be displayed on UI */
     const QString d_key; /*!< Name to be used in settings for abstract hardware*/
     const QString d_subKey; /*< Name to be used in settings for real hardware*/
 
-    /*!
-     * \brief Access function for pretty name.
-     * \return Name for display on UI
-     */
-    QString name() const { return d_prettyName; }
-
-    /*!
-     * \brief Access function for key.
-     * \return Name for use in the settings file
-     */
-    QString key() const { return d_key; }
-
-    QString subKey() const { return d_subKey; }
+    const bool d_critical;
+    const bool d_threaded;
+    const CommunicationProtocol::CommType d_commType;
 
     QString errorString();
 
-    bool isCritical() const { return d_isCritical; }
     bool isConnected() const { return d_isConnected; }
-    bool isThreaded() const { return d_threaded; }
-
-    CommunicationProtocol::CommType type() { return d_commType; }
 	
 signals:
     /*!
@@ -173,10 +159,8 @@ private:
     virtual QList<QPair<QString,QVariant>> readAuxNoPlotData();
 
 
-    const bool d_isCritical;
-    const bool d_threaded;
 
-    const CommunicationProtocol::CommType d_commType;
+
     bool d_isConnected;
 
 

@@ -7,6 +7,7 @@
 #include <QApplication>
 
 #include <src/data/datastructs.h>
+#include <src/data/storage/settingsstorage.h>
 
 namespace BC {
 namespace Key {
@@ -31,15 +32,15 @@ public:
         None
     };
 
-    explicit CommunicationProtocol(CommType type, QString key, QString subKey, QObject *parent = nullptr);
+    explicit CommunicationProtocol(QString key, QObject *parent = nullptr);
     virtual ~CommunicationProtocol();
 
     virtual bool writeCmd(QString cmd);
     virtual bool writeBinary(QByteArray dat);
     virtual QByteArray queryCmd(QString cmd, bool suppressError = false);
 
-    QString key() { return d_key; }
-    CommType type() { return d_type; }
+    const QString d_key;
+
     QIODevice *device() { return p_device; }
     QString errorString();
 
@@ -60,9 +61,6 @@ public slots:
     virtual void initialize() =0;
 
 protected:
-    const CommType d_type;
-    QString d_key;
-    QString d_prettyName;
     QString d_errorString;
 
     QByteArray d_readTerminator; /*!< Termination characters that indicate a message from the device is complete. */

@@ -159,7 +159,7 @@ bool AD9914::prepareForExperiment(Experiment &exp)
     if(!resp.startsWith(QByteArray("SUCCESS")))
     {
         exp.setHardwareFailed();
-        exp.setErrorString(QString("Could not initialize %1").arg(d_prettyName));
+        exp.setErrorString(QString("Could not initialize %1").arg(d_name));
         emit hardwareFailure();
         return false;
     }

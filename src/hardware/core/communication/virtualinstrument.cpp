@@ -1,7 +1,7 @@
 #include <src/hardware/core/communication/virtualinstrument.h>
 
 VirtualInstrument::VirtualInstrument(QString key, QObject *parent) :
-    CommunicationProtocol(CommunicationProtocol::Virtual,key,QString("virtual"),parent)
+    CommunicationProtocol(key,parent)
 {
 
 }

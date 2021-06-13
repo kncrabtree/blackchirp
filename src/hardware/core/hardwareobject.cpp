@@ -12,15 +12,15 @@
 HardwareObject::HardwareObject(const QString key, const QString subKey, const QString name,
                                CommunicationProtocol::CommType commType,
                                QObject *parent, bool threaded, bool critical) :
-    QObject(parent), SettingsStorage({key,subKey},General), d_prettyName(name), d_key(key),
-    d_subKey(subKey), d_enabledForExperiment(true), d_isCritical(critical), d_threaded(threaded),
+    QObject(parent), SettingsStorage({key,subKey},General), d_name(name), d_key(key),
+    d_subKey(subKey), d_enabledForExperiment(true), d_critical(critical), d_threaded(threaded),
     d_commType(commType), d_isConnected(false)
 {
     set(BC::Key::hwKey,d_key);
-    set(BC::Key::hwName,d_prettyName);
-    set(BC::Key::hwCritical,d_isCritical);
-    set(BC::Key::hwThreaded,d_threaded);
-    set(BC::Key::hwCommType,d_commType);
+    set(BC::Key::hwName,d_name);
+    set(BC::Key::hwCritical,critical);
+    set(BC::Key::hwThreaded,threaded);
+    set(BC::Key::hwCommType,commType);
 
     //it is necessary to write the subKey one level above the SettingsStorage group, which
     //is referenced to d_key/d_subKey, so that other parts of the application can determine
@@ -106,19 +106,19 @@ void HardwareObject::buildCommunication(QObject *gc)
     switch(d_commType)
     {
     case CommunicationProtocol::Rs232:
-        p_comm = new Rs232Instrument(d_key,d_subKey,this);
+        p_comm = new Rs232Instrument(d_key,this);
         break;
     case CommunicationProtocol::Tcp:
-        p_comm = new TcpInstrument(d_key,d_subKey,this);
+        p_comm = new TcpInstrument(d_key,this);
         break;
 #ifdef BC_GPIBCONTROLLER
     case CommunicationProtocol::Gpib:
-        p_comm = new GpibInstrument(d_key,d_subKey,c,this);
+        p_comm = new GpibInstrument(d_key,c,this);
         setParent(c);
         break;
 #endif
     case CommunicationProtocol::Custom:
-        p_comm = new CustomInstrument(d_key,d_subKey,this);
+        p_comm = new CustomInstrument(d_key,this);
         break;
     case CommunicationProtocol::Virtual:
         p_comm = new VirtualInstrument(d_key,this);

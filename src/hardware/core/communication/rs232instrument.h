@@ -10,7 +10,7 @@ class Rs232Instrument : public CommunicationProtocol
 {
 	Q_OBJECT
 public:
-    explicit Rs232Instrument(QString key, QString subKey, QObject *parent = 0);
+    explicit Rs232Instrument(QString key, QObject *parent = 0);
     ~Rs232Instrument();
 
 

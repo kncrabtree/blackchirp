@@ -134,7 +134,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
         HardwareObject *obj = d_hardwareList.at(i);
 
         connect(obj,&HardwareObject::logMessage,[=](QString msg, BlackChirp::LogMessageCode mc){
-            emit logMessage(QString("%1: %2").arg(obj->name()).arg(msg),mc);
+            emit logMessage(QString("%1: %2").arg(obj->d_name).arg(msg),mc);
         });
         connect(obj,&HardwareObject::connected,[=](bool success, QString msg){ connectionResult(obj,success,msg); });
         connect(obj,&HardwareObject::timeDataRead,[=](const QList<QPair<QString,QVariant>> l,bool plot){ emit timeData(l,plot); });
@@ -144,40 +144,40 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 
 
         appendArrayMap(BC::Key::allHw,{
-                           {BC::Key::hwKey,obj->key()},
-                           {BC::Key::hwSubKey,obj->subKey()},
-                           {BC::Key::hwName,obj->name()},
-                           {BC::Key::hwCritical,obj->isCritical()},
-                           {BC::Key::hwThreaded,obj->isThreaded()}
+                           {BC::Key::hwKey,obj->d_key},
+                           {BC::Key::hwSubKey,obj->d_subKey},
+                           {BC::Key::hwName,obj->d_name},
+                           {BC::Key::hwCritical,obj->d_critical},
+                           {BC::Key::hwThreaded,obj->d_threaded}
                        });
-        switch(obj->type())
+        switch(obj->d_commType)
         {
         case CommunicationProtocol::Tcp:
             appendArrayMap(BC::Key::tcp,{
-                               {BC::Key::hwKey,obj->key()},
-                               {BC::Key::hwSubKey,obj->subKey()},
-                               {BC::Key::hwName,obj->name()}
+                               {BC::Key::hwKey,obj->d_key},
+                               {BC::Key::hwSubKey,obj->d_subKey},
+                               {BC::Key::hwName,obj->d_name}
                            });
             break;
         case CommunicationProtocol::Rs232:
-            appendArrayMap(BC::Key::tcp,{
-                               {BC::Key::hwKey,obj->key()},
-                               {BC::Key::hwSubKey,obj->subKey()},
-                               {BC::Key::hwName,obj->name()}
+            appendArrayMap(BC::Key::rs232,{
+                               {BC::Key::hwKey,obj->d_key},
+                               {BC::Key::hwSubKey,obj->d_subKey},
+                               {BC::Key::hwName,obj->d_name}
                            });
             break;
         case CommunicationProtocol::Gpib:
             appendArrayMap(BC::Key::gpib,{
-                               {BC::Key::hwKey,obj->key()},
-                               {BC::Key::hwSubKey,obj->subKey()},
-                               {BC::Key::hwName,obj->name()}
+                               {BC::Key::hwKey,obj->d_key},
+                               {BC::Key::hwSubKey,obj->d_subKey},
+                               {BC::Key::hwName,obj->d_name}
                            });
             break;
         case CommunicationProtocol::Custom:
             appendArrayMap(BC::Key::custom,{
-                               {BC::Key::hwKey,obj->key()},
-                               {BC::Key::hwSubKey,obj->subKey()},
-                               {BC::Key::hwName,obj->name()}
+                               {BC::Key::hwKey,obj->d_key},
+                               {BC::Key::hwSubKey,obj->d_subKey},
+                               {BC::Key::hwName,obj->d_name}
                            });
             break;
         default:
@@ -195,11 +195,11 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #ifdef BC_GPIBCONTROLLER
         if(obj == gpib)
             obj->moveToThread(gpibThread);
-        else if(obj->type() == CommunicationProtocol::Gpib)
+        else if(obj->d_commType == CommunicationProtocol::Gpib)
             obj->moveToThread(gpibThread);
         else
 #endif
-        if(obj->isThreaded())
+        if(obj->d_threaded)
             obj->moveToThread(new QThread(this));
         else
             obj->setParent(this);
@@ -238,9 +238,9 @@ void HardwareManager::initialize()
     for(int i=0;i<d_hardwareList.size();i++)
     {
         auto hw = d_hardwareList.at(i);
-        if(hw->type() == CommunicationProtocol::Virtual)
+        if(hw->d_commType == CommunicationProtocol::Virtual)
             emit logMessage(QString("%1 is a virtual instrument. Be cautious about taking real measurements!")
-                            .arg(hw->name()),BlackChirp::LogWarning);
+                            .arg(hw->d_name),BlackChirp::LogWarning);
         if(hw->thread() != thread())
         {
             if(!hw->thread()->isRunning())
@@ -261,20 +261,20 @@ void HardwareManager::connectionResult(HardwareObject *obj, bool success, QStrin
     if(success)
     {
         connect(obj,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure,Qt::UniqueConnection);
-        emit logMessage(obj->name().append(QString(": Connected successfully.")));
+        emit logMessage(obj->d_name + QString(": Connected successfully."));
     }
     else
     {
         disconnect(obj,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure);
         BlackChirp::LogMessageCode code = BlackChirp::LogError;
-        if(!obj->isCritical())
+        if(!obj->d_critical)
             code = BlackChirp::LogWarning;
-        emit logMessage(obj->name().append(QString(": Connection failed!")),code);
+        emit logMessage(obj->d_name + QString(": Connection failed!"),code);
         if(!msg.isEmpty())
             emit logMessage(msg,code);
     }
 
-    emit testComplete(obj->name(),success,msg);
+    emit testComplete(obj->d_name,success,msg);
     checkStatus();
 }
 
@@ -351,7 +351,7 @@ void HardwareManager::testObjectConnection(const QString type, const QString key
     HardwareObject *obj = nullptr;
     for(int i=0; i<d_hardwareList.size();i++)
     {
-        if(d_hardwareList.at(i)->key() == key)
+        if(d_hardwareList.at(i)->d_key == key)
             obj = d_hardwareList.at(i);
     }
     if(obj == nullptr)
@@ -489,7 +489,7 @@ void HardwareManager::checkStatus()
     for(int i=0; i<d_hardwareList.size(); i++)
     {
         HardwareObject *obj = d_hardwareList.at(i);
-        if(!obj->isConnected() && obj->isCritical())
+        if(!obj->isConnected() && obj->d_critical)
             success = false;
     }
 

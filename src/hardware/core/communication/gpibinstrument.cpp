@@ -1,7 +1,7 @@
 #include "gpibinstrument.h"
 
-GpibInstrument::GpibInstrument(QString key, QString subKey, GpibController *c, QObject *parent) :
-	CommunicationProtocol(CommunicationProtocol::Gpib,key,subKey,parent), p_controller(c)
+GpibInstrument::GpibInstrument(QString key, GpibController *c, QObject *parent) :
+    CommunicationProtocol(key,parent), p_controller(c)
 {
 }
 
@@ -43,8 +43,9 @@ void GpibInstrument::initialize()
 
 bool GpibInstrument::testConnection()
 {
-	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-	d_address = s.value(QString("%1/address").arg(key()),1).toInt();
+    SettingsStorage s(d_key,SettingsStorage::Hardware);
+
+    d_address = s.get<int>("address",1);
 
 	return true;
 }

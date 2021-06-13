@@ -37,7 +37,7 @@ ClockManager::ClockManager(QObject *parent) : QObject(parent),
         auto names = c->channelNames();
         for(int j=0; j<c->numOutputs(); j++)
         {
-            QString pn = c->d_prettyName;
+            QString pn = c->d_name;
             pn.append(QString(" "));
             if(j < names.size())
                 pn.append(names.at(j));
@@ -107,7 +107,7 @@ bool ClockManager::prepareForExperiment(Experiment &exp)
         Clock *c = nullptr;
         for(int j=0; j<d_clockList.size(); j++)
         {
-            if(d.hwKey == d_clockList.at(j)->key())
+            if(d.hwKey == d_clockList.at(j)->d_key)
             {
                 c = d_clockList.at(j);
                 break;
@@ -125,7 +125,7 @@ bool ClockManager::prepareForExperiment(Experiment &exp)
         if(!c->addRole(type,d.output))
         {
             exp.setErrorString(QString("The output number requested for %1 (%2) is out of range (only %2 outputs are available).")
-                               .arg(c->name()).arg(d.output).arg(c->numOutputs()));
+                               .arg(c->d_name).arg(d.output).arg(c->numOutputs()));
             exp.setHardwareFailed();
             return false;
         }
@@ -142,7 +142,7 @@ bool ClockManager::prepareForExperiment(Experiment &exp)
         if(actualFreq < 0.0)
         {
             exp.setErrorString(QString("Could not set %1 to %2 MHz (raw frequency = %3 MHz).")
-                               .arg(c->name())
+                               .arg(c->d_name)
                                .arg(d.desiredFreqMHz,0,'f',6)
                                .arg(rfc.rawClockFrequency(type),0,'f',6));
             exp.setHardwareFailed();

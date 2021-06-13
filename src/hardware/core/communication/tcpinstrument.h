@@ -9,7 +9,7 @@ class TcpInstrument : public CommunicationProtocol
 {
 	Q_OBJECT
 public:
-    explicit TcpInstrument(QString key, QString subKey, QObject *parent = nullptr);
+    explicit TcpInstrument(QString key, QObject *parent = nullptr);
     ~TcpInstrument();
 
     bool writeCmd(QString cmd) override;
@@ -26,7 +26,6 @@ private:
 
     bool connectSocket();
     void disconnectSocket();
-	void setSocketConnectionInfo(QString ip, int port);
 	
 };
 

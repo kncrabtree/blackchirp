@@ -6,7 +6,7 @@
 class CustomInstrument : public CommunicationProtocol
 {
 public:
-    explicit CustomInstrument(QString key, QString subKey, QObject *parent = nullptr);
+    explicit CustomInstrument(QString key, QObject *parent = nullptr);
 
 public slots:
     void initialize() override;

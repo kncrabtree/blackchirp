@@ -151,7 +151,7 @@ bool Valon5009::prepareClock(Experiment &exp)
         if(resp.contains("not locked"))
         {
             exp.setHardwareFailed();
-            exp.setErrorString(QString("Could not lock %1 to external reference.").arg(d_prettyName));
+            exp.setErrorString(QString("Could not lock %1 to external reference.").arg(d_name));
         }
     }
     else
@@ -162,7 +162,7 @@ bool Valon5009::prepareClock(Experiment &exp)
         if(resp.contains("not locked"))
         {
             exp.setHardwareFailed();
-            exp.setErrorString(QString("Could not lock %1 to internal reference.").arg(d_prettyName));
+            exp.setErrorString(QString("Could not lock %1 to internal reference.").arg(d_name));
         }
     }
 

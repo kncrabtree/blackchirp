@@ -48,7 +48,7 @@ bool VirtualFtmwScope::testConnection()
 {
     d_simulatedTimer->stop();
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    int shotInterval = s.value(QString("%1/%2/shotIntervalMs").arg(key()).arg(subKey()),200).toInt();
+    int shotInterval = s.value(QString("%1/%2/shotIntervalMs").arg(d_key).arg(d_subKey),200).toInt();
     d_simulatedTimer->setInterval(shotInterval);
 
     return true;
