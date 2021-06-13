@@ -64,6 +64,34 @@ CommunicationDialog::CommunicationDialog(QWidget *parent) :
 	ui->rs232DeviceIDLineEdit->setEnabled(false);
 	ui->baudRateComboBox->setCurrentIndex(-1);
 	ui->baudRateComboBox->setEnabled(false);
+
+    ui->dataBitsComboBox->setCurrentIndex(-1);
+    ui->dataBitsComboBox->setItemData(0,QVariant::fromValue(QSerialPort::Data5));
+    ui->dataBitsComboBox->setItemData(1,QVariant::fromValue(QSerialPort::Data6));
+    ui->dataBitsComboBox->setItemData(2,QVariant::fromValue(QSerialPort::Data7));
+    ui->dataBitsComboBox->setItemData(3,QVariant::fromValue(QSerialPort::Data8));
+    ui->dataBitsComboBox->setEnabled(false);
+
+    ui->stopBitsComboBox->setCurrentIndex(-1);
+    ui->stopBitsComboBox->setItemData(0,QVariant::fromValue(QSerialPort::OneStop));
+    ui->stopBitsComboBox->setItemData(1,QVariant::fromValue(QSerialPort::OneAndHalfStop));
+    ui->stopBitsComboBox->setItemData(2,QVariant::fromValue(QSerialPort::TwoStop));
+    ui->stopBitsComboBox->setEnabled(false);
+
+    ui->parityComboBox->setCurrentIndex(-1);
+    ui->parityComboBox->setItemData(0,QVariant::fromValue(QSerialPort::NoParity));
+    ui->parityComboBox->setItemData(1,QVariant::fromValue(QSerialPort::EvenParity));
+    ui->parityComboBox->setItemData(2,QVariant::fromValue(QSerialPort::OddParity));
+    ui->parityComboBox->setItemData(3,QVariant::fromValue(QSerialPort::SpaceParity));
+    ui->parityComboBox->setItemData(4,QVariant::fromValue(QSerialPort::MarkParity));
+    ui->parityComboBox->setEnabled(false);
+
+    ui->flowControlComboBox->setCurrentIndex(-1);
+    ui->flowControlComboBox->setItemData(0,QVariant::fromValue(QSerialPort::NoFlowControl));
+    ui->flowControlComboBox->setItemData(1,QVariant::fromValue(QSerialPort::HardwareControl));
+    ui->flowControlComboBox->setItemData(2,QVariant::fromValue(QSerialPort::SoftwareControl));
+    ui->flowControlComboBox->setEnabled(false);
+
 	ui->rs232TestButton->setEnabled(false);
 
     ui->customDeviceComboBox->setCurrentIndex(-1);
@@ -148,6 +176,14 @@ void CommunicationDialog::rs232DeviceChanged(int index)
 		ui->rs232DeviceIDLineEdit->setEnabled(false);
 		ui->baudRateComboBox->setCurrentIndex(-1);
 		ui->baudRateComboBox->setEnabled(false);
+        ui->dataBitsComboBox->setCurrentIndex(-1);
+        ui->dataBitsComboBox->setEnabled(false);
+        ui->stopBitsComboBox->setCurrentIndex(-1);
+        ui->stopBitsComboBox->setEnabled(false);
+        ui->parityComboBox->setCurrentIndex(-1);
+        ui->parityComboBox->setEnabled(false);
+        ui->flowControlComboBox->setCurrentIndex(-1);
+        ui->flowControlComboBox->setEnabled(false);
 		ui->rs232TestButton->setEnabled(false);
         return;
 	}
@@ -158,6 +194,7 @@ void CommunicationDialog::rs232DeviceChanged(int index)
     SettingsStorage s(key,SettingsStorage::Hardware);
 	ui->rs232DeviceIDLineEdit->setEnabled(true);
     ui->rs232DeviceIDLineEdit->setText(s.get<QString>(BC::Key::rs232id,""));
+
     auto br = s.get<qint32>(BC::Key::rs232baud,-1);
 	ui->baudRateComboBox->setEnabled(true);
 	ui->baudRateComboBox->setCurrentIndex(-1);
@@ -166,6 +203,26 @@ void CommunicationDialog::rs232DeviceChanged(int index)
         if(br == static_cast<qint32>(ui->baudRateComboBox->itemText(i).toInt()))
 			ui->baudRateComboBox->setCurrentIndex(i);
 	}
+
+    auto idx = ui->dataBitsComboBox->findData(s.get(BC::Key::rs232dataBits,
+                                                    QVariant::fromValue(QSerialPort::Data8)));
+    ui->dataBitsComboBox->setCurrentIndex(qBound(0,idx,ui->dataBitsComboBox->count()-1));
+    ui->dataBitsComboBox->setEnabled(true);
+
+    idx = ui->stopBitsComboBox->findData(s.get(BC::Key::rs232stopBits,
+                                         QVariant::fromValue(QSerialPort::OneStop)));
+    ui->stopBitsComboBox->setCurrentIndex(qBound(0,idx,ui->stopBitsComboBox->count()-1));
+    ui->stopBitsComboBox->setEnabled(true);
+
+    idx = ui->parityComboBox->findData(s.get(BC::Key::rs232parity,
+                                             QVariant::fromValue(QSerialPort::NoParity)));
+    ui->parityComboBox->setCurrentIndex(qBound(0,idx,ui->parityComboBox->count()-1));
+    ui->parityComboBox->setEnabled(true);
+
+    idx = ui->flowControlComboBox->findData(s.get(BC::Key::rs232flowControl,
+                                                  QVariant::fromValue(QSerialPort::NoFlowControl)));
+    ui->flowControlComboBox->setCurrentIndex(qBound(0,idx,ui->flowControlComboBox->count()-1));
+    ui->flowControlComboBox->setEnabled(true);
 
     ui->rs232TestButton->setEnabled(true);
 }
@@ -188,52 +245,48 @@ void CommunicationDialog::customDeviceChanged(int index)
         return;
     }
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    QSettings s2(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    QString key = d_customDevices.at(index).first;
-    QString subKey = d_customDevices.at(index).second;
 
-    s.beginGroup(key);
-    s.beginGroup(subKey);
-    s2.beginGroup(key);
-    s2.beginGroup(subKey);
-    int n = s.beginReadArray(QString("comm"));
-    for(int i=0; i<n; i++)
+    std::size_t idx = static_cast<std::size_t>(index);
+    auto key = d_storage.getArrayValue<QString>(BC::Key::custom,idx,BC::Key::hwKey);
+
+    SettingsStorage s(key,SettingsStorage::Hardware);
+
+    auto count = s.getArraySize(BC::Key::customComm);
+    for(std::size_t i=0; i<count; ++i)
     {
-        s.setArrayIndex(i);
         CustomInfo ci;
-        ci.type = s.value(QString("type"),QString("string")).toString();
-        ci.key = s.value(QString("key"),QString("key")).toString();
-        if(ci.type.startsWith(QString("int"),Qt::CaseInsensitive))
+        ci.type = s.getArrayValue<QString>(BC::Key::customComm,i,
+                                           BC::Key::customType,BC::Key::customString);
+        ci.key = s.getArrayValue<QString>(BC::Key::customComm,i,
+                                          BC::Key::customKey,"key");
+        if(ci.type == BC::Key::customInt)
         {
             QSpinBox *sb = new QSpinBox;
-            sb->setMinimum(s.value(QString("min"),-2147483647).toInt());
-            sb->setMaximum(s.value(QString("max"),2147483647).toInt());
-            sb->setValue(s2.value(ci.key,0).toInt());
+            sb->setMinimum(s.getArrayValue<int>(BC::Key::customComm,i,
+                                                BC::Key::customIntMin,-__INT_MAX__));
+            sb->setMaximum(s.getArrayValue<int>(BC::Key::customComm,i,
+                                                BC::Key::customIntMax,__INT_MAX__));
+            sb->setValue(s.get<int>(ci.key,0));
             ci.displayWidget = sb;
         }
         else
         {
             QLineEdit *le = new QLineEdit;
-            le->setMaxLength(s.value(QString("length"),100).toInt());
-            le->setText(s2.value(ci.key,QString("")).toString());
+            le->setMaxLength(s.getArrayValue(BC::Key::customComm,i,
+                                             BC::Key::customStringMaxLength,255));
+            le->setText(s.get<QString>(ci.key,""));
             ci.displayWidget = le;
         }
 
-        ci.labelWidget = new QLabel(s.value(QString("name"),QString("ID")).toString());
+        ci.labelWidget = new QLabel(s.getArrayValue(BC::Key::customComm,i,
+                                                    BC::Key::customTypeLabel,QString("ID")));
 
         ui->customBoxLayout->insertRow(1,ci.labelWidget,ci.displayWidget);
         d_customInfoList.append(ci);
     }
 
-    if(n > 0)
+    if(count > 0)
         ui->customTestButton->setEnabled(true);
-
-    s.endArray();
-    s.endGroup();
-    s.endGroup();
-    return;
-
 
 }
 
@@ -243,14 +296,21 @@ void CommunicationDialog::testGpib()
 	if(index < 0)
 		return;
 
-	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    QString key = d_gpibDevices.at(index).first;
-    QString subKey = d_gpibDevices.at(index).second;
+    auto i = static_cast<std::size_t>(index);
+    auto key = d_storage.getArrayValue<QString>(BC::Key::gpib,i,BC::Key::hwKey);
+    auto subKey = d_storage.getArrayValue<QString>(BC::Key::gpib,i,BC::Key::hwSubKey);
 
-    s.setValue(QString("%1/%2/address").arg(key).arg(subKey),ui->busAddressSpinBox->value());
+    //one of the few times to invoke QSettings directly: need to edit the settings
+    //for the hardware object itself
+	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(key);
+    s.beginGroup(subKey);
+    s.setValue(BC::Key::gpibAddress,ui->busAddressSpinBox->value());
+    s.endGroup();
+    s.endGroup();
 	s.sync();
 
-	startTest(QString("gpib"),key);
+    startTest(BC::Key::gpib,key);
 }
 
 void CommunicationDialog::testTcp()
@@ -259,15 +319,22 @@ void CommunicationDialog::testTcp()
 	if(index < 0)
 		return;
 
-	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    QString key = d_tcpDevices.at(index).first;
-    QString subKey = d_tcpDevices.at(index).second;
+    auto i = static_cast<std::size_t>(index);
+    auto key = d_storage.getArrayValue<QString>(BC::Key::tcp,i,BC::Key::hwKey);
+    auto subKey = d_storage.getArrayValue<QString>(BC::Key::tcp,i,BC::Key::hwSubKey);
 
-    s.setValue(QString("%1/%2/ip").arg(key).arg(subKey),ui->ipLineEdit->text());
-    s.setValue(QString("%1/%2/port").arg(key).arg(subKey),ui->portSpinBox->value());
+    //one of the few times to invoke QSettings directly: need to edit the settings
+    //for the hardware object itself
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(key);
+    s.beginGroup(subKey);
+    s.setValue(BC::Key::tcpIp,ui->ipLineEdit->text());
+    s.setValue(BC::Key::tcpPort,ui->portSpinBox->value());
+    s.endGroup();
+    s.endGroup();
 	s.sync();
 
-	startTest(QString("tcp"),key);
+    startTest(BC::Key::tcp,key);
 }
 
 void CommunicationDialog::testRs232()
@@ -276,19 +343,26 @@ void CommunicationDialog::testRs232()
 	if(index < 0)
 		return;
 
-	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    QString key = d_rs232Devices.at(index).first;
-    QString subKey = d_rs232Devices.at(index).second;
+    auto i = static_cast<std::size_t>(index);
+    auto key = d_storage.getArrayValue<QString>(BC::Key::rs232,i,BC::Key::hwKey);
+    auto subKey = d_storage.getArrayValue<QString>(BC::Key::rs232,i,BC::Key::hwSubKey);
 
-    s.setValue(QString("%1/%2/id").arg(key).arg(subKey),ui->rs232DeviceIDLineEdit->text());
-	int brIndex = ui->baudRateComboBox->currentIndex();
-	if(brIndex < 0)
-        s.setValue(QString("%1/%2/baudrate").arg(key).arg(subKey),0);
-	else
-        s.setValue(QString("%1/%2/baudrate").arg(key).arg(subKey),ui->baudRateComboBox->itemText(brIndex).toInt());
+    //one of the few times to invoke QSettings directly: need to edit the settings
+    //for the hardware object itself
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    s.beginGroup(key);
+    s.beginGroup(subKey);
+    s.setValue(BC::Key::rs232id,ui->rs232DeviceIDLineEdit->text());
+    s.setValue(BC::Key::rs232baud,ui->baudRateComboBox->currentText().toInt());
+    s.setValue(BC::Key::rs232dataBits,ui->dataBitsComboBox->currentData());
+    s.setValue(BC::Key::rs232stopBits,ui->stopBitsComboBox->currentData());
+    s.setValue(BC::Key::rs232parity,ui->parityComboBox->currentData());
+    s.setValue(BC::Key::rs232flowControl,ui->flowControlComboBox->currentData());
+    s.endGroup();
+    s.endGroup();
 	s.sync();
 
-    startTest(QString("rs232"),key);
+    startTest(BC::Key::rs232,key);
 }
 
 void CommunicationDialog::testCustom()
@@ -297,17 +371,20 @@ void CommunicationDialog::testCustom()
     if(index < 0)
         return;
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    QString key = d_customDevices.at(index).first;
-    QString subKey = d_customDevices.at(index).second;
+    auto i = static_cast<std::size_t>(index);
+    auto key = d_storage.getArrayValue<QString>(BC::Key::custom,i,BC::Key::hwKey);
+    auto subKey = d_storage.getArrayValue<QString>(BC::Key::custom,i,BC::Key::hwSubKey);
 
+    //one of the few times to invoke QSettings directly: need to edit the settings
+    //for the hardware object itself
+    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(key);
     s.beginGroup(subKey);
 
     for(int i=0; i<d_customInfoList.size(); i++)
     {
         auto ci = d_customInfoList.at(i);
-        if(ci.type.startsWith(QString("int")))
+        if(ci.type == BC::Key::customInt)
         {
             auto sb = dynamic_cast<QSpinBox*>(ci.displayWidget);
             s.setValue(ci.key,sb->value());
@@ -323,7 +400,7 @@ void CommunicationDialog::testCustom()
     s.endGroup();
     s.sync();
 
-    startTest(QString("custom"),key);
+    startTest(BC::Key::custom,key);
 }
 
 
@@ -337,6 +414,6 @@ void CommunicationDialog::testComplete(QString device, bool success, QString msg
 		QMessageBox::information(this,QString("Connection Successful"),
 							QString("%1 connected successfully!").arg(device),QMessageBox::Ok);
 	else
-		QMessageBox::critical(this,QString("Connection failed"),
+        QMessageBox::critical(this,QString("Connection Failed"),
 						  QString("%1 connection failed!\n%2").arg(device).arg(msg),QMessageBox::Ok);
 }

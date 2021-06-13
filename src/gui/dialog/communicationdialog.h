@@ -27,7 +27,6 @@ private:
         QString key;
     };
 
-    QList<QPair<QString,QString>> d_gpibDevices, d_tcpDevices, d_rs232Devices, d_customDevices;
     QList<CustomInfo> d_customInfoList;
     SettingsStorage d_storage;
 
