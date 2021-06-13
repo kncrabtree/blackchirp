@@ -3,7 +3,7 @@
 #include <QDir>
 
 BatchSequence::BatchSequence() :
-    BatchManager(BatchManager::Sequence), d_experimentCount(0), d_numExperiments(1), d_intervalSeconds(60), d_autoExport(false), d_waiting(false)
+    BatchManager(BatchManager::Sequence), d_experimentCount(0), d_numExperiments(1), d_intervalSeconds(60), d_waiting(false)
 {
     p_intervalTimer = new QTimer(this);
     p_intervalTimer->setSingleShot(true);
@@ -32,20 +32,7 @@ void BatchSequence::writeReport()
 
 void BatchSequence::processExperiment(const Experiment exp)
 {
-    //if user wants to export, do that here
-    if(d_autoExport)
-    {
-        QString fileName = d_exportPath + QString("/expt%1.txt").arg(exp.number());
-        QFile f(fileName);
-        if(f.open(QIODevice::WriteOnly))
-        {
-            f.close();
-            exp.exportAscii(fileName);
-            emit logMessage(QString("Exported experiment %1 to %2.").arg(exp.number()).arg(fileName));
-        }
-        else
-            emit logMessage(QString("Could not export experiment %1 to %2.").arg(exp.number()).arg(fileName),BlackChirp::LogWarning);
-    }
+    Q_UNUSED(exp);
 }
 
 Experiment BatchSequence::nextExperiment()

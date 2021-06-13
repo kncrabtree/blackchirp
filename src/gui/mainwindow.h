@@ -90,8 +90,6 @@ public slots:
     void setLogIcon(BlackChirp::LogMessageCode c);
     void sleep(bool s);
     void viewExperiment();
-    void exportExperiment();
-    void exportBatch();
 
 #ifdef BC_PCONTROLLER
     void configPController(bool readOnly);

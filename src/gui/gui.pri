@@ -1,7 +1,6 @@
 SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/dialog/batchsequencedialog.cpp \
     $$PWD/dialog/communicationdialog.cpp \
-    $$PWD/dialog/exportbatchdialog.cpp \
     $$PWD/dialog/ioboardconfigdialog.cpp \
     $$PWD/dialog/peaklistexportdialog.cpp \
     $$PWD/dialog/quickexptdialog.cpp \
@@ -39,7 +38,6 @@ SOURCES += $$PWD/mainwindow.cpp \
 HEADERS += $$PWD/mainwindow.h \
     $$PWD/dialog/batchsequencedialog.h \
     $$PWD/dialog/communicationdialog.h \
-    $$PWD/dialog/exportbatchdialog.h \
     $$PWD/dialog/ioboardconfigdialog.h \
     $$PWD/dialog/peaklistexportdialog.h \
     $$PWD/dialog/quickexptdialog.h \
@@ -77,7 +75,6 @@ HEADERS += $$PWD/mainwindow.h \
 FORMS += $$PWD/mainwindow.ui \
     $$PWD/dialog/batchsequencedialog.ui \
     $$PWD/dialog/communicationdialog.ui \
-    $$PWD/dialog/exportbatchdialog.ui \
     $$PWD/dialog/ioboardconfigdialog.ui \
     $$PWD/dialog/peaklistexportdialog.ui \
     $$PWD/dialog/quickexptdialog.ui \

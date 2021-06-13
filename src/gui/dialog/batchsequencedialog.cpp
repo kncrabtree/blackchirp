@@ -13,11 +13,9 @@ BatchSequenceDialog::BatchSequenceDialog(QWidget *parent) :
 
     ui->numberOfExperimentsSpinBox->setValue(get<int>(BC::Key::batchExperiments,1));
     ui->timeBetweenExperimentsSpinBox->setValue(get<int>(BC::Key::batchInterval,300));
-    ui->automaticallyExportCheckBox->setChecked(get<bool>(BC::Key::batchAutoExport,false));
 
     registerGetter(BC::Key::batchExperiments,ui->numberOfExperimentsSpinBox,&QSpinBox::value);
     registerGetter(BC::Key::batchInterval,ui->timeBetweenExperimentsSpinBox,&QSpinBox::value);
-    registerGetter(BC::Key::batchAutoExport,static_cast<QAbstractButton*>(ui->automaticallyExportCheckBox),&QAbstractButton::isChecked);
 }
 
 BatchSequenceDialog::~BatchSequenceDialog()

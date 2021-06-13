@@ -32,17 +32,8 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
     setWindowTitle(QString("Experiment %1").arg(num));
     setAttribute(Qt::WA_DeleteOnClose);
 
-    QToolBar *toolBar = new QToolBar(this);
-    toolBar->setMovable(false);
-    toolBar->setAllowedAreas(Qt::TopToolBarArea);
-    QAction *exportAction = toolBar->addAction(QIcon(QString(":/icons/export.png")),QString("Export Experiment"));
-    connect(exportAction,&QAction::triggered,this,&ExperimentViewWidget::exportAscii);
-    toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-
-
 
     QVBoxLayout *vbl = new QVBoxLayout;
-    vbl->addWidget(toolBar);
 
     if(d_experiment.number() < 1)
     {
@@ -107,29 +98,6 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
 QSize ExperimentViewWidget::sizeHint() const
 {
     return QSize(1024,768);
-}
-
-void ExperimentViewWidget::exportAscii()
-{
-    QString path = BlackChirp::getExportDir();
-
-    QString name = QFileDialog::getSaveFileName(this,QString("Export Experiment"),path + QString("/expt%1.txt").arg(d_experiment.number()));
-
-    if(name.isEmpty())
-        return;
-
-    QFile f(name);
-    if(!f.open(QIODevice::WriteOnly))
-    {
-        QMessageBox::critical(this,QString("Export Failed"),QString("Could not open file %1 for writing. Please choose a different filename.").arg(name));
-        return;
-    }
-
-    f.close();
-
-    BlackChirp::setExportDir(name);
-
-    d_experiment.exportAscii(name);
 }
 
 void ExperimentViewWidget::ftmwFinalized(int num)

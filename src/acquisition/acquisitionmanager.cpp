@@ -269,11 +269,6 @@ void AcquisitionManager::processTimeData(const QList<QPair<QString, QVariant> > 
     }
 }
 
-void AcquisitionManager::exportAsciiFid(const QString s)
-{
-    d_currentExperiment.exportAscii(s);
-}
-
 void AcquisitionManager::clockSettingsComplete()
 {
     d_currentExperiment.setFtmwClocksReady();

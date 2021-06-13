@@ -23,7 +23,6 @@ signals:
     void notifyUiFinalized(int);
 
 public slots:
-    void exportAscii();
     void ftmwFinalized(int num);
 
 private:

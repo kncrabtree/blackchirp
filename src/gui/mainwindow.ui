@@ -7,14 +7,14 @@
     <x>0</x>
     <y>0</y>
     <width>676</width>
-    <height>289</height>
+    <height>309</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>BlackChirp</string>
   </property>
   <property name="windowIcon">
-   <iconset>
+   <iconset resource="../resources/resources.qrc">
     <normaloff>:/icons/bc_logo_small.png</normaloff>:/icons/bc_logo_small.png</iconset>
   </property>
   <widget class="QWidget" name="centralWidget">
@@ -228,7 +228,7 @@
       </property>
       <widget class="QWidget" name="controlTab">
        <attribute name="icon">
-        <iconset>
+        <iconset resource="../resources/resources.qrc">
          <normaloff>:/icons/controltab.png</normaloff>:/icons/controltab.png</iconset>
        </attribute>
        <attribute name="title">
@@ -315,7 +315,7 @@
       </widget>
       <widget class="QWidget" name="ftmwTab">
        <attribute name="icon">
-        <iconset>
+        <iconset resource="../resources/resources.qrc">
          <normaloff>:/icons/chirp.png</normaloff>:/icons/chirp.png</iconset>
        </attribute>
        <attribute name="title">
@@ -329,7 +329,7 @@
       </widget>
       <widget class="QWidget" name="trackingTab">
        <attribute name="icon">
-        <iconset>
+        <iconset resource="../resources/resources.qrc">
          <normaloff>:/icons/dataplots.png</normaloff>:/icons/dataplots.png</iconset>
        </attribute>
        <attribute name="title">
@@ -368,7 +368,7 @@
      <x>0</x>
      <y>0</y>
      <width>676</width>
-     <height>18</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuHardware">
@@ -391,8 +391,6 @@
     <addaction name="actionResume"/>
     <addaction name="actionAbort"/>
     <addaction name="separator"/>
-    <addaction name="actionExport_experiment"/>
-    <addaction name="actionExport_Batch"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -403,7 +401,7 @@
       <string>&amp;Tracking</string>
      </property>
      <property name="icon">
-      <iconset>
+      <iconset resource="../resources/resources.qrc">
        <normaloff>:/icons/dataplots.png</normaloff>:/icons/dataplots.png</iconset>
      </property>
      <addaction name="actionTrackingShow"/>
@@ -444,12 +442,11 @@
    <addaction name="actionAbort"/>
    <addaction name="actionSleep"/>
    <addaction name="actionView_Experiment"/>
-   <addaction name="actionExport_experiment"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionStart_Experiment">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/experiment.png</normaloff>:/icons/experiment.png</iconset>
    </property>
    <property name="text">
@@ -461,7 +458,7 @@
   </action>
   <action name="actionPause">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/pause.png</normaloff>:/icons/pause.png</iconset>
    </property>
    <property name="text">
@@ -473,7 +470,7 @@
   </action>
   <action name="actionResume">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/start.png</normaloff>:/icons/start.png</iconset>
    </property>
    <property name="text">
@@ -485,7 +482,7 @@
   </action>
   <action name="actionAbort">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/abort.png</normaloff>:/icons/abort.png</iconset>
    </property>
    <property name="text">
@@ -497,7 +494,7 @@
   </action>
   <action name="actionCommunication">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/computer.png</normaloff>:/icons/computer.png</iconset>
    </property>
    <property name="text">
@@ -509,7 +506,7 @@
   </action>
   <action name="actionTrackingShow">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/dataplots.png</normaloff>:/icons/dataplots.png</iconset>
    </property>
    <property name="text">
@@ -518,7 +515,7 @@
   </action>
   <action name="action_Graphs">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/num.png</normaloff>:/icons/num.png</iconset>
    </property>
    <property name="text">
@@ -527,7 +524,7 @@
   </action>
   <action name="actionTest_All_Connections">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/connect.png</normaloff>:/icons/connect.png</iconset>
    </property>
    <property name="text">
@@ -542,7 +539,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/sleep.png</normaloff>:/icons/sleep.png</iconset>
    </property>
    <property name="text">
@@ -554,7 +551,7 @@
   </action>
   <action name="actionAutoscale_All">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/autoscale.png</normaloff>:/icons/autoscale.png</iconset>
    </property>
    <property name="text">
@@ -563,7 +560,7 @@
   </action>
   <action name="actionCP_FTMW">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/chirp.png</normaloff>:/icons/chirp.png</iconset>
    </property>
    <property name="text">
@@ -572,7 +569,7 @@
   </action>
   <action name="actionControl">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/controltab.png</normaloff>:/icons/controltab.png</iconset>
    </property>
    <property name="text">
@@ -581,7 +578,7 @@
   </action>
   <action name="actionLog">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/log.png</normaloff>:/icons/log.png</iconset>
    </property>
    <property name="text">
@@ -590,28 +587,16 @@
   </action>
   <action name="actionView_Experiment">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/viewold.png</normaloff>:/icons/viewold.png</iconset>
    </property>
    <property name="text">
     <string>&amp;View Experiment...</string>
    </property>
   </action>
-  <action name="actionExport_experiment">
-   <property name="icon">
-    <iconset>
-     <normaloff>:/icons/export.png</normaloff>:/icons/export.png</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Export Experiment</string>
-   </property>
-   <property name="toolTip">
-    <string>Export experiment to a text file</string>
-   </property>
-  </action>
   <action name="actionQuick_Experiment">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/quickexpt.png</normaloff>:/icons/quickexpt.png</iconset>
    </property>
    <property name="text">
@@ -623,23 +608,11 @@
   </action>
   <action name="actionStart_Sequence">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources/resources.qrc">
      <normaloff>:/icons/sequence.png</normaloff>:/icons/sequence.png</iconset>
    </property>
    <property name="text">
     <string>Start Seq&amp;uence</string>
-   </property>
-  </action>
-  <action name="actionExport_Batch">
-   <property name="icon">
-    <iconset>
-     <normaloff>:/icons/exportbatch.png</normaloff>:/icons/exportbatch.png</iconset>
-   </property>
-   <property name="text">
-    <string>Export &amp;Batch</string>
-   </property>
-   <property name="toolTip">
-    <string>Export several experiments at once.</string>
    </property>
   </action>
  </widget>
@@ -670,6 +643,8 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../resources/resources.qrc"/>
+ </resources>
  <connections/>
 </ui>
