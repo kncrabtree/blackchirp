@@ -5,108 +5,50 @@
 #include <QApplication>
 #include <QMessageBox>
 
+#include <src/hardware/core/hardwaremanager.h>
+
 CommunicationDialog::CommunicationDialog(QWidget *parent) :
      QDialog(parent),
-     ui(new Ui::CommunicationDialog)
+     ui(new Ui::CommunicationDialog), d_storage(BC::Key::hw)
 {
 	ui->setupUi(this);
 
-	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-
 	//populate GPIB devices
-	s.beginGroup(QString("gpib"));
-	int numGpib = s.beginReadArray(QString("instruments"));
-	for(int i=0;i<numGpib;i++)
-	{
-		s.setArrayIndex(i);
-		QString key = s.value(QString("key"),QString("")).toString();
-        QString subKey = s.value(QString("subKey"),QString("")).toString();
+    auto count = d_storage.getArraySize(BC::Key::gpib);
+    for(std::size_t i=0; i<count; ++i)
+        ui->gpibDeviceComboBox->addItem(d_storage.getArrayValue<QString>(BC::Key::gpib,i,BC::Key::hwName),QVariant::fromValue(i));
 
-        if(!key.isEmpty() && !subKey.isEmpty())
-            d_gpibDevices.append(qMakePair(key,subKey));
-	}
-	s.endArray();
-	s.endGroup();
-
-    for(int i=0;i<d_gpibDevices.size();i++)
-	{
-        QString name = s.value(QString("%1/prettyName").arg(d_gpibDevices.at(i).first),d_gpibDevices.at(i).first).toString();
-		ui->gpibDeviceComboBox->addItem(name);
-	}
-
-    if(d_gpibDevices.isEmpty())
+    if(count == 0)
 		ui->gpibBox->setEnabled(false);
 
 	//populate TCP devices
-	s.beginGroup(QString("tcp"));
-	int numTcp = s.beginReadArray(QString("instruments"));
-	for(int i=0;i<numTcp;i++)
+    count = d_storage.getArraySize(BC::Key::tcp);
+    for(std::size_t i=9; i<count; ++i)
 	{
-		s.setArrayIndex(i);
-		QString key = s.value(QString("key"),QString("")).toString();
-        QString subKey = s.value(QString("subKey"),QString("")).toString();
-
-        if(!key.isEmpty() && !subKey.isEmpty())
-            d_tcpDevices.append(qMakePair(key,subKey));
-	}
-	s.endArray();
-	s.endGroup();
-
-    for(int i=0;i<d_tcpDevices.size();i++)
-	{
-        QString name = s.value(QString("%1/prettyName").arg(d_tcpDevices.at(i).first),d_tcpDevices.at(i).first).toString();
-		ui->tcpDeviceComboBox->addItem(name);
+        ui->tcpDeviceComboBox->addItem(d_storage.getArrayValue<QString>(BC::Key::tcp,i,BC::Key::hwName),QVariant::fromValue(i));
 	}
 
-    if(d_tcpDevices.isEmpty())
+    if(count == 0)
 		ui->tcpBox->setEnabled(false);
 
 	//populate RS232 devices
-	s.beginGroup(QString("rs232"));
-	int numRs232 = s.beginReadArray(QString("instruments"));
-	for(int i=0;i<numRs232;i++)
+    count = d_storage.getArraySize(BC::Key::rs232);
+    for(std::size_t i=0; i<count; ++i)
 	{
-		s.setArrayIndex(i);
-		QString key = s.value(QString("key"),QString("")).toString();
-        QString subKey = s.value(QString("subKey"),QString("")).toString();
-
-        if(!key.isEmpty() && !subKey.isEmpty())
-            d_rs232Devices.append(qMakePair(key,subKey));
-	}
-	s.endArray();
-	s.endGroup();
-
-    for(int i=0;i<d_rs232Devices.size();i++)
-	{
-        QString name = s.value(QString("%1/prettyName").arg(d_rs232Devices.at(i).first),d_rs232Devices.at(i).first).toString();
-		ui->rs232DeviceComboBox->addItem(name);
+        ui->rs232DeviceComboBox->addItem(d_storage.getArrayValue<QString>(BC::Key::rs232,i,BC::Key::hwName),QVariant::fromValue(i));
 	}
 
-    if(d_rs232Devices.isEmpty())
+    if(count==0)
         ui->rs232Box->setEnabled(false);
 
     //populate custom devices
-    s.beginGroup(QString("custom"));
-    int numCustom = s.beginReadArray(QString("instruments"));
-    for(int i=0; i<numCustom; i++)
+    count = d_storage.getArraySize(BC::Key::custom);
+    for(std::size_t i=0; i<count; ++i)
     {
-        s.setArrayIndex(i);
-        QString key = s.value(QString("key"),QString("")).toString();
-        QString subKey = s.value(QString("subKey"),QString("")).toString();
-
-        if(!key.isEmpty() && !subKey.isEmpty())
-            d_customDevices.append(qMakePair(key,subKey));
-    }
-    s.endArray();
-    s.endGroup();
-
-    for(int i=0; i<d_customDevices.size(); i++)
-    {
-        QString name = s.value(QString("%1/prettyName").arg(d_customDevices.at(i).first),d_customDevices.at(i).first).toString();
-        ui->customDeviceComboBox->addItem(name);
+        ui->customDeviceComboBox->addItem(d_storage.getArrayValue<QString>(BC::Key::custom,i,BC::Key::hwName),QVariant::fromValue(i));
     }
 
-    if(d_customDevices.isEmpty())
+    if(count == 0)
         ui->customBox->setEnabled(false);
 
     ui->gpibDeviceComboBox->setCurrentIndex(-1);
@@ -164,12 +106,13 @@ void CommunicationDialog::gpibDeviceChanged(int index)
 		return;
 	}
 
-	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    QString key = d_gpibDevices.at(index).first;
-    QString subKey = d_gpibDevices.at(index).second;
+    std::size_t i = static_cast<std::size_t>(index);
+    auto key = d_storage.getArrayValue<QString>(BC::Key::gpib,i,BC::Key::hwKey);
+
+    SettingsStorage s(key,SettingsStorage::Hardware);
 
 	ui->busAddressSpinBox->setEnabled(true);
-    ui->busAddressSpinBox->setValue(s.value(QString("%1/%2/address").arg(key).arg(subKey),0).toInt());
+    ui->busAddressSpinBox->setValue(s.get<int>(BC::Key::gpibAddress,0));
 	ui->gpibTestButton->setEnabled(true);
 
 }
@@ -186,14 +129,14 @@ void CommunicationDialog::tcpDeviceChanged(int index)
 		return;
 	}
 
-	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    QString key = d_tcpDevices.at(index).first;
-    QString subKey = d_tcpDevices.at(index).second;
+    std::size_t i = static_cast<std::size_t>(index);
+    auto key = d_storage.getArrayValue<QString>(BC::Key::tcp,i,BC::Key::hwKey);
 
+    SettingsStorage s(key,SettingsStorage::Hardware);
 	ui->ipLineEdit->setEnabled(true);
-    ui->ipLineEdit->setText(s.value(QString("%1/%2/ip").arg(key).arg(subKey),QString("")).toString());
+    ui->ipLineEdit->setText(s.get<QString>(BC::Key::tcpIp,""));
 	ui->portSpinBox->setEnabled(true);
-    ui->portSpinBox->setValue(s.value(QString("%1/%2/port").arg(key).arg(subKey),0).toInt());
+    ui->portSpinBox->setValue(s.get<int>(BC::Key::tcpPort,0));
 	ui->tcpTestButton->setEnabled(true);
 }
 
@@ -209,18 +152,18 @@ void CommunicationDialog::rs232DeviceChanged(int index)
         return;
 	}
 
-	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    QString key = d_rs232Devices.at(index).first;
-    QString subKey = d_rs232Devices.at(index).second;
+    std::size_t i = static_cast<std::size_t>(index);
+    auto key = d_storage.getArrayValue<QString>(BC::Key::rs232,i,BC::Key::hwKey);
 
+    SettingsStorage s(key,SettingsStorage::Hardware);
 	ui->rs232DeviceIDLineEdit->setEnabled(true);
-    ui->rs232DeviceIDLineEdit->setText(s.value(QString("%1/%2/id").arg(key).arg(subKey),QString("")).toString());
-    int br = s.value(QString("%1/%2/baudrate").arg(key).arg(subKey),-1).toInt();
+    ui->rs232DeviceIDLineEdit->setText(s.get<QString>(BC::Key::rs232id,""));
+    auto br = s.get<qint32>(BC::Key::rs232baud,-1);
 	ui->baudRateComboBox->setEnabled(true);
 	ui->baudRateComboBox->setCurrentIndex(-1);
 	for(int i=0;i<ui->baudRateComboBox->count();i++)
 	{
-		if(br == ui->baudRateComboBox->itemText(i).toInt())
+        if(br == static_cast<qint32>(ui->baudRateComboBox->itemText(i).toInt()))
 			ui->baudRateComboBox->setCurrentIndex(i);
 	}
 

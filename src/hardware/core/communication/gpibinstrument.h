@@ -4,6 +4,10 @@
 #include <src/hardware/core/communication/communicationprotocol.h>
 #include <src/hardware/optional/gpibcontroller/gpibcontroller.h>
 
+namespace BC::Key{
+static const QString gpibAddress("address");
+}
+
 class GpibInstrument : public CommunicationProtocol
 {
 	Q_OBJECT

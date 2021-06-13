@@ -2,6 +2,7 @@
 #define COMMUNICATIONDIALOG_H
 
 #include <QDialog>
+#include <src/data/storage/settingsstorage.h>
 
 namespace Ui {
 class CommunicationDialog;
@@ -28,6 +29,7 @@ private:
 
     QList<QPair<QString,QString>> d_gpibDevices, d_tcpDevices, d_rs232Devices, d_customDevices;
     QList<CustomInfo> d_customInfoList;
+    SettingsStorage d_storage;
 
 	void startTest(QString type, QString key);
 

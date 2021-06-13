@@ -26,17 +26,17 @@ bool Rs232Instrument::testConnection()
 
     SettingsStorage s(d_key,SettingsStorage::Hardware);
 
-    auto baudRate = s.get<qint32>("baudrate",
+    auto baudRate = s.get<qint32>(BC::Key::rs232baud,
                                   57600);
-    auto db = s.get<QSerialPort::DataBits>("databits",
+    auto db = s.get<QSerialPort::DataBits>(BC::Key::rs232dataBits,
                                            QSerialPort::Data8);
-    auto parity = s.get<QSerialPort::Parity>("parity",
+    auto parity = s.get<QSerialPort::Parity>(BC::Key::rs232parity,
                                              QSerialPort::NoParity);
-    auto stop = s.get<QSerialPort::StopBits>("stopbits",
+    auto stop = s.get<QSerialPort::StopBits>(BC::Key::rs232stopBits,
                                              QSerialPort::OneStop);
-    auto fc = s.get<QSerialPort::FlowControl>("flowcontrol",
+    auto fc = s.get<QSerialPort::FlowControl>(BC::Key::rs232flowControl,
                                               QSerialPort::NoFlowControl);
-    auto id = s.get<QString>("id","");
+    auto id = s.get<QString>(BC::Key::rs232id,"");
 
     auto p_sp = dynamic_cast<QSerialPort*>(p_device);
     p_sp->setPortName(id);

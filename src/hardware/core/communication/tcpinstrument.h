@@ -5,6 +5,11 @@
 
 #include <QTcpSocket>
 
+namespace BC::Key {
+static const QString tcpIp("ip");
+static const QString tcpPort("port");
+}
+
 class TcpInstrument : public CommunicationProtocol
 {
 	Q_OBJECT

@@ -11,6 +11,15 @@
 #include <src/data/datastructs.h>
 #include <src/data/storage/settingsstorage.h>
 #include <src/hardware/core/communication/communicationprotocol.h>
+#include <src/hardware/core/communication/virtualinstrument.h>
+#include <src/hardware/core/communication/tcpinstrument.h>
+#include <src/hardware/core/communication/rs232instrument.h>
+#include <src/hardware/core/communication/custominstrument.h>
+
+#ifdef BC_GPIBCONTROLLER
+#include <src/hardware/core/communication/gpibinstrument.h>
+#endif
+
 #include <src/data/experiment/experiment.h>
 
 namespace BC {
