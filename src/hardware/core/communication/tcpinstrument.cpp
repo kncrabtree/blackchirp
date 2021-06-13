@@ -23,7 +23,7 @@ bool TcpInstrument::testConnection()
     SettingsStorage s(d_key,SettingsStorage::Hardware);
     d_ip = s.get<QString>(BC::Key::tcpIp,"");
     d_port = s.get<int>(BC::Key::tcpPort,5000);
-Ei
+
 	return connectSocket();
 
 }

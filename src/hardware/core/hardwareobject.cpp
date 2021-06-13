@@ -1,5 +1,9 @@
 #include <src/hardware/core/hardwareobject.h>
 
+#ifdef BC_GPIBCONTROLLER
+#include <src/hardware/optional/gpibcontroller/gpibcontroller.h>
+#endif
+
 HardwareObject::HardwareObject(const QString key, const QString subKey, const QString name,
                                CommunicationProtocol::CommType commType,
                                QObject *parent, bool threaded, bool critical) :

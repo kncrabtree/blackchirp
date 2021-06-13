@@ -2,7 +2,8 @@
 #define GPIBINSTRUMENT_H
 
 #include <src/hardware/core/communication/communicationprotocol.h>
-#include <src/hardware/optional/gpibcontroller/gpibcontroller.h>
+
+class GpibController;
 
 namespace BC::Key{
 static const QString gpibAddress("address");
