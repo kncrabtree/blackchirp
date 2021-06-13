@@ -13,6 +13,9 @@
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
+import subprocess
+
+subprocess.call('doxygen Doxyfile', shell=True)
 
 
 # -- Project information -----------------------------------------------------
@@ -52,4 +55,6 @@ html_static_path = ['_static']
 
 
 # -- Options for breathe ------------------------------------------------------
+breathe_projects = { 'Blackchirp' : 'xml' }
 breathe_default_project='Blackchirp'
+breathe_default_members=('members','protected-members','private-members','undoc-members')

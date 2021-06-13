@@ -27,8 +27,3 @@ Docs
 ====
 .. highlight:: cpp
 .. doxygenclass:: SettingsStorage
-   :path: ../xml
-   :members:
-   :protected-members:
-   :private-members:
-   :undoc-members:
