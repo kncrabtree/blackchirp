@@ -4,12 +4,8 @@
 #include <math.h>
 
 VirtualLifScope::VirtualLifScope(QObject *parent) :
-    LifScope(parent)
+    LifScope(BC::Key::hwVirtual,BC::Key::vLifScopeName,CommunicationProtocol::Virtual,parent)
 {
-    d_subKey = QString("virtual");
-    d_prettyName = QString("Virtual LIF Oscilloscope");
-    d_commType = CommunicationProtocol::Virtual;
-
     setLifVScale(0.02);
     setRefVScale(0.02);
     setHorizontalConfig(1e9,1000);

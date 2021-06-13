@@ -2,13 +2,10 @@
 
 #include <QTimer>
 
-M4i2211x8::M4i2211x8(QObject *parent) : LifScope (parent), p_handle(nullptr), p_m4iBuffer(nullptr), d_timerInterval(50), d_running(false)
+M4i2211x8::M4i2211x8(QObject *parent) :
+    LifScope (BC::Key::m4i2211x8,BC::Key::m4i2211x8Name,CommunicationProtocol::Custom,parent),
+    p_handle(nullptr), p_m4iBuffer(nullptr), d_timerInterval(50), d_running(false)
 {
-    d_subKey = QString("m4i2211x8");
-    d_prettyName = QString("Spectrum Instrumentation M4i.2211-x8 Digitizer");
-    d_commType = CommunicationProtocol::Custom;
-    d_threaded = true;
-
     //load settings from last use, if possible
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);

@@ -10,6 +10,11 @@
 
 class QTimer;
 
+namespace BC::Key {
+static const QString m4i2211x8("m4i2211x8");
+static const QString m4i2211x8Name("Spectrum Instrumentation M4i.2211-x8 Digitizer");
+}
+
 class M4i2211x8 : public LifScope
 {
     Q_OBJECT

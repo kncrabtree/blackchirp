@@ -4,11 +4,15 @@
 #include <src/hardware/core/hardwareobject.h>
 #include <src/modules/lif/data/lifconfig.h>
 
+namespace BC::Key {
+static const QString lifScope("lifScope");
+}
+
 class LifScope : public HardwareObject
 {
     Q_OBJECT
 public:
-    LifScope(QObject *parent = nullptr);
+    LifScope(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded=true,bool critical=true);
     virtual ~LifScope();
 
 signals:
