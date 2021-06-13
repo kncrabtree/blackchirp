@@ -3,6 +3,7 @@
 #include <src/gui/wizard/experimentwizardpage.h>
 #include <src/gui/wizard/wizardstartpage.h>
 #include <src/gui/wizard/wizardloscanconfigpage.h>
+#include <src/gui/wizard/wizarddrscanconfigpage.h>
 #include <src/gui/wizard/wizardrfconfigpage.h>
 #include <src/gui/wizard/wizardchirpconfigpage.h>
 #include <src/gui/wizard/wizarddigitizerconfigpage.h>
@@ -10,6 +11,7 @@
 #include <src/gui/wizard/wizardpulseconfigpage.h>
 #include <src/gui/wizard/wizardvalidationpage.h>
 #include <src/acquisition/batch/batchsingle.h>
+
 
 #ifdef BC_LIF
 #include <src/modules/lif/gui/wizardlifconfigpage.h>
@@ -29,6 +31,9 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
 
     auto loScanConfigPage = new WizardLoScanConfigPage(this);
     d_pages << loScanConfigPage;
+
+    auto drScanConfigPage = new WizardDrScanConfigPage(this);
+    d_pages << drScanConfigPage;
 
     auto rfConfigPage = new WizardRfConfigPage(this);
     d_pages << rfConfigPage;
@@ -50,6 +55,7 @@ ExperimentWizard::ExperimentWizard(QWidget *parent) :
 
     setPage(StartPage,startPage);
     setPage(LoScanPage,loScanConfigPage);
+    setPage(DrScanPage,drScanConfigPage);
     setPage(RfConfigPage,rfConfigPage);
     setPage(ChirpConfigPage,chirpConfigPage);
     setPage(DigitizerConfigPage,digitizerConfigPage);

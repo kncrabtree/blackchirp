@@ -16,6 +16,8 @@ int ExperimentWizardPage::startingFtmwPage() const
     {
     case BlackChirp::FtmwLoScan:
         return ExperimentWizard::LoScanPage;
+    case BlackChirp::FtmwDrScan:
+        return ExperimentWizard::DrScanPage;
     default:
         return ExperimentWizard::ChirpConfigPage;
     }

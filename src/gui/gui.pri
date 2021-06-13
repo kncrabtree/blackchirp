@@ -28,6 +28,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/wizard/experimentwizardpage.cpp \
     $$PWD/wizard/wizardchirpconfigpage.cpp \
     $$PWD/wizard/wizarddigitizerconfigpage.cpp \
+    $$PWD/wizard/wizarddrscanconfigpage.cpp \
     $$PWD/wizard/wizardloscanconfigpage.cpp \
     $$PWD/wizard/wizardpulseconfigpage.cpp \
     $$PWD/wizard/wizardrfconfigpage.cpp \
@@ -65,6 +66,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/wizard/experimentwizardpage.h \
     $$PWD/wizard/wizardchirpconfigpage.h \
     $$PWD/wizard/wizarddigitizerconfigpage.h \
+    $$PWD/wizard/wizarddrscanconfigpage.h \
     $$PWD/wizard/wizardloscanconfigpage.h \
     $$PWD/wizard/wizardpulseconfigpage.h \
     $$PWD/wizard/wizardrfconfigpage.h \

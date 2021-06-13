@@ -62,7 +62,8 @@ public:
     void setClockFreqInfo(BlackChirp::ClockType t, double targetFreqMHz = 0.0, double factor = 1.0, MultOperation o = Multiply, QString hwKey = QString(""), int output = 0);
     void setClockFreqInfo(BlackChirp::ClockType t, const ClockFreq &cf);
     void addClockStep(QHash<BlackChirp::ClockType,ClockFreq> h);
-    void addClockStep(double upLoMHz, double downLoMHz);
+    void addLoScanClockStep(double upLoMHz, double downLoMHz);
+    void addDrScanClockStep(double drFreqMHz);
     void clearClockSteps();
     void clearChirpConfigs();
     bool setChirpConfig(const ChirpConfig cc, int num=0);
