@@ -1,7 +1,7 @@
 #include "mks946.h"
 
 Mks946::Mks946(QObject *parent) :
-    FlowController(BC::Key::mks947,BC::Key::mks947Name,CommunicationProtocol::Rs232,4,parent),
+    FlowController(BC::Key::mks947,BC::Key::mks947Name,CommunicationProtocol::Rs232,parent),
     d_nextRead(0)
 {
 

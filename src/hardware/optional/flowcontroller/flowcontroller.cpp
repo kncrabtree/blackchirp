@@ -1,9 +1,9 @@
 #include <src/hardware/optional/flowcontroller/flowcontroller.h>
 
 FlowController::FlowController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
-                               int numChannels, QObject *parent, bool threaded, bool critical) :
+                               QObject *parent, bool threaded, bool critical) :
     HardwareObject(BC::Key::flowController,subKey,name,commType,parent,threaded,critical),
-    d_numChannels(numChannels)
+    d_numChannels(getOrSetDefault(BC::Key::flowChannels,4).toInt())
 {
     set(BC::Key::flowChannels,d_numChannels);
 }

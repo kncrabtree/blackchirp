@@ -16,8 +16,7 @@ class FlowController : public HardwareObject
 {
     Q_OBJECT
 public:
-    FlowController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
-                   int numChannels, QObject *parent = nullptr, bool threaded = false, bool critical = false);
+    FlowController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded = false, bool critical = false);
     virtual ~FlowController();
 
     FlowConfig config() const { return d_config; }

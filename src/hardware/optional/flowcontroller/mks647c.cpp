@@ -3,7 +3,7 @@
 #include <math.h>
 
 Mks647c::Mks647c(QObject *parent) :
-    FlowController(BC::Key::mks647c,BC::Key::mks647cName,CommunicationProtocol::Rs232,4,parent), d_maxTries(5), d_nextRead(0)
+    FlowController(BC::Key::mks647c,BC::Key::mks647cName,CommunicationProtocol::Rs232,parent), d_maxTries(5), d_nextRead(0)
 {
     double b = 28316.847; //scfm --> sccm conversion
     double c = b/60.0; // scfh --> sccm conversion

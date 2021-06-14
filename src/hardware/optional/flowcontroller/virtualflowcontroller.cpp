@@ -1,7 +1,7 @@
 #include "virtualflowcontroller.h"
 
 VirtualFlowController::VirtualFlowController(QObject *parent) :
-    FlowController(BC::Key::hwVirtual,BC::Key::virtFCName,CommunicationProtocol::Virtual,4,parent)
+    FlowController(BC::Key::hwVirtual,BC::Key::virtFCName,CommunicationProtocol::Virtual,parent)
 {
 }
 
