@@ -10,6 +10,10 @@
 class QwtPlotCurve;
 class QwtPlotMarker;
 
+namespace BC::Key {
+static const QString pulsePlot("pulsePlot");
+}
+
 class PulsePlot : public ZoomPanPlot
 {
     Q_OBJECT

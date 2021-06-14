@@ -10,6 +10,10 @@ class QwtMatrixRasterData;
 class QwtPlotMarker;
 class QMouseEvent;
 
+namespace BC::Key {
+static const QString lifSpectrogram("lifSpectrogram");
+}
+
 class LifSpectrogramPlot : public ZoomPanPlot
 {
     Q_OBJECT

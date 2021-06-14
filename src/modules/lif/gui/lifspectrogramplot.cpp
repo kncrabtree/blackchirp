@@ -11,7 +11,7 @@
 #include <qwt6/qwt_plot_marker.h>
 
 LifSpectrogramPlot::LifSpectrogramPlot(QWidget *parent) :
-    ZoomPanPlot(QString("lifSpectrogram"),parent), d_enabled(false),
+    ZoomPanPlot(BC::Key::lifSpectrogram,parent), d_enabled(false),
     d_delayDragging(false), d_freqDragging(false), d_grabDelay(false), d_grabFreq(false)
 {
     QFont f(QString("sans-serif"),8);

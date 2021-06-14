@@ -12,6 +12,13 @@
 class QwtPlotCurve;
 class QwtPlotGrid;
 
+namespace BC::Key {
+static const QString ftPlot("FtPlot");
+static const QString ftColor("ftcolor");
+static const QString peakColor("peakColor");
+static const QString gridColor("gridcolor");
+}
+
 class FtPlot : public ZoomPanPlot
 {
     Q_OBJECT
@@ -21,7 +28,7 @@ public:
      * \brief Initializes axes, etc. for the FT plot
      * \param parent Parent widget
      */
-    explicit FtPlot(QString id, QWidget *parent = 0);
+    explicit FtPlot(const QString id, QWidget *parent = 0);
     ~FtPlot();
 
     void prepareForExperiment(const Experiment e);
@@ -38,9 +45,7 @@ public slots:
     void filterData();
     void buildContextMenu(QMouseEvent *me);
 
-    void changeFtColor(QColor c);
     void changeGridColor(QColor c);
-    void changePeakColor(QColor c);
     void exportXY();
     void configureUnits(BlackChirp::FtPlotUnits u);
     void newPeakList(const QList<QPointF> l);
@@ -50,7 +55,7 @@ private:
     /*!
      * \brief The object representing the curve on the plot
      */
-    QwtPlotCurve *p_curveData;
+    QwtPlotCurve *p_curve;
     QwtPlotCurve *p_peakData;
     QwtPlotGrid *p_plotGrid;
     Ft d_currentFt;

@@ -6,6 +6,12 @@
 class ChirpConfig;
 class QwtPlotCurve;
 
+namespace BC::Key {
+static const QString chirpPlot("ChirpConfigPlot");
+static const QString chirpColor("chirpColor");
+static const QString ampColor("ampEnableColor");
+static const QString protectionColor("protectionColor");
+}
 
 class ChirpConfigPlot : public ZoomPanPlot
 {
@@ -20,8 +26,6 @@ public slots:
 private:
     QwtPlotCurve *p_ampEnableCurve, *p_protectionCurve, *p_chirpCurve;
     QVector<QPointF> d_chirpData;
-
-    void setCurveColor(QwtPlotCurve *c);
 
 
     // ZoomPanPlot interface

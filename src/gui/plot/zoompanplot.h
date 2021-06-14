@@ -3,15 +3,31 @@
 
 #include <qwt6/qwt_plot.h>
 
+#include <src/data/storage/settingsstorage.h>
+
 class QMenu;
 class CustomTracker;
+class QwtPlotCurve;
 
-class ZoomPanPlot : public QwtPlot
+
+namespace BC::Key {
+static const QString axes("axes");
+static const QString bottom("Bottom");
+static const QString top("Top");
+static const QString left("Left");
+static const QString right("right");
+static const QString zoomFactor("zoomFactor");
+static const QString trackerDecimals("trackerDecimals");
+static const QString trackerScientific("trackerScientific");
+static const QString trackerEn("trackerEnabled");
+}
+
+class ZoomPanPlot : public QwtPlot, public SettingsStorage
 {
     Q_OBJECT
 
 public:
-    explicit ZoomPanPlot(QString name, QWidget *parent = nullptr);
+    explicit ZoomPanPlot(const QString name, QWidget *parent = nullptr);
     virtual ~ZoomPanPlot();
 
     bool isAutoScale();
@@ -21,7 +37,6 @@ public:
     void setAxisAutoScaleMax(QwtPlot::Axis axis, double max);
     void expandAutoScaleRange(QwtPlot::Axis axis, double newValueMin, double newValueMax);
     void setXRanges(const QwtScaleDiv &bottom, const QwtScaleDiv &top);
-    virtual void setName(QString name);
 
 public slots:
     void autoScale();
@@ -30,6 +45,7 @@ public slots:
     void setTrackerEnabled(bool en);
     void setTrackerDecimals(QwtPlot::Axis a, int dec);
     void setTrackerScientific(QwtPlot::Axis a, bool sci);
+    void setCurveColor(QwtPlotCurve* curve, const QString key, QColor c = QColor());
 
 signals:
     void panningStarted();
@@ -37,7 +53,6 @@ signals:
     void plotRightClicked(QMouseEvent *ev);
 
 protected:
-    QString d_name;
     CustomTracker *p_tracker;
     struct AxisConfig {
         QwtPlot::Axis type;
@@ -48,7 +63,7 @@ protected:
         double zoomFactor;
         QString name;
 
-        explicit AxisConfig(QwtPlot::Axis t, QString n) : type(t), autoScale(true), override(false),
+        explicit AxisConfig(QwtPlot::Axis t, const QString n) : type(t), autoScale(true), override(false),
             min(0.0), max(1.0), zoomFactor(0.1), name(n) {}
     };
 

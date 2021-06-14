@@ -26,8 +26,8 @@
 #include <qwt6/qwt_plot_grid.h>
 #include <qwt6/qwt_symbol.h>
 
-FtPlot::FtPlot(QString id, QWidget *parent) :
-    ZoomPanPlot(QString("FtPlot"+id),parent), d_number(0), d_id(id), d_currentUnits(BlackChirp::FtPlotV)
+FtPlot::FtPlot(const QString id, QWidget *parent) :
+    ZoomPanPlot(BC::Key::ftPlot+id,parent), d_number(0), d_id(id), d_currentUnits(BlackChirp::FtPlotV)
 {
     //make axis label font smaller
     this->setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
@@ -44,21 +44,18 @@ FtPlot::FtPlot(QString id, QWidget *parent) :
 
     configureUnits(BlackChirp::FtPlotuV);
 
-    QSettings s;
-    s.beginGroup(d_name);
     //build and configure curve object
-    p_curveData = new QwtPlotCurve();
-    QColor c = s.value(QString("ftcolor"),palette().color(QPalette::BrightText)).value<QColor>();
-    p_curveData->setPen(QPen(c));
-    p_curveData->setRenderHint(QwtPlotItem::RenderAntialiased);
-    p_curveData->attach(this);
-    p_curveData->setVisible(false);
+    p_curve = new QwtPlotCurve(QString("FT"));
+    setCurveColor(p_curve,BC::Key::ftColor, get<QColor>(BC::Key::ftColor,palette().color(QPalette::BrightText)));
+    p_curve->setRenderHint(QwtPlotItem::RenderAntialiased);
+    p_curve->attach(this);
+    p_curve->setVisible(false);
 
     p_peakData = new QwtPlotCurve(QString("Peaks"));
     p_peakData->setStyle(QwtPlotCurve::NoCurve);
     p_peakData->setRenderHint(QwtPlotCurve::RenderAntialiased);
 
-    c = s.value(QString("peakColor"),QColor(Qt::red)).value<QColor>();
+    auto c = get<QColor>(BC::Key::peakColor,QColor(Qt::red));
     QwtSymbol *sym = new QwtSymbol(QwtSymbol::Ellipse);
     sym->setSize(5);
     sym->setColor(c);
@@ -73,7 +70,7 @@ FtPlot::FtPlot(QString id, QWidget *parent) :
     p_plotGrid->enableY(true);
     p_plotGrid->enableYMin(true);
     QPen p;
-    p.setColor(s.value(QString("gridcolor"),palette().color(QPalette::Light)).value<QColor>());
+    p.setColor(get<QColor>(BC::Key::gridColor,palette().color(QPalette::Light)));
     p.setStyle(Qt::DashLine);
     p_plotGrid->setMajorPen(p);
     p.setStyle(Qt::DotLine);
@@ -82,9 +79,6 @@ FtPlot::FtPlot(QString id, QWidget *parent) :
 
     setAxisAutoScaleRange(QwtPlot::xBottom,0.0,1.0);
     setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
-
-    s.endGroup();
-
 }
 
 FtPlot::~FtPlot()
@@ -97,18 +91,18 @@ void FtPlot::prepareForExperiment(const Experiment e)
     d_number = e.number();
 
     d_currentFt = Ft();
-    p_curveData->setSamples(QVector<QPointF>());
+    p_curve->setSamples(QVector<QPointF>());
     p_peakData->setSamples(QVector<QPointF>());
 
     setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
     if(!c.isEnabled())
     {
-        p_curveData->setVisible(false);
+        p_curve->setVisible(false);
         setAxisAutoScaleRange(QwtPlot::xBottom,0.0,1.0);
     }
     else
     {
-        p_curveData->setVisible(true);
+        p_curve->setVisible(true);
         setAxisAutoScaleRange(QwtPlot::xBottom,c.ftMinMHz(),c.ftMaxMHz());
     }
     autoScale();
@@ -146,7 +140,7 @@ void FtPlot::filterData()
 {
     if(d_currentFt.size() < 2)
     {
-        p_curveData->setSamples(QVector<QPointF>());
+        p_curve->setSamples(QVector<QPointF>());
         return;
     }
 
@@ -198,7 +192,7 @@ void FtPlot::filterData()
         filtered.append(d_currentFt.at(dataIndex));
 
     //assign data to curve object
-    p_curveData->setSamples(filtered);
+    p_curve->setSamples(filtered);
 }
 
 void FtPlot::buildContextMenu(QMouseEvent *me)
@@ -209,98 +203,18 @@ void FtPlot::buildContextMenu(QMouseEvent *me)
     QMenu *m = contextMenu();
 
     QAction *ftColorAction = m->addAction(QString("Change FT Color..."));
-    connect(ftColorAction,&QAction::triggered,this,[=](){ changeFtColor(getColor(p_curveData->pen().color())); });
+    connect(ftColorAction,&QAction::triggered,this,[=](){ setCurveColor(p_curve,BC::Key::ftColor); });
 
     QAction *gridColorAction = m->addAction(QString("Change Grid Color..."));
     connect(gridColorAction,&QAction::triggered,this,[=](){ changeGridColor(getColor(p_plotGrid->majorPen().color())); });
 
     QAction *peakColorAction = m->addAction(QString("Change Peak Color..."));
-    connect(peakColorAction,&QAction::triggered,this,[=]() { changePeakColor(getColor(p_peakData->symbol()->brush().color())); });
+    connect(peakColorAction,&QAction::triggered,this,[=]() { setCurveColor(p_peakData,BC::Key::peakColor); });
 
     QAction *exportAction = m->addAction(QString("Export XY..."));
     connect(exportAction,&QAction::triggered,this,&FtPlot::exportXY);
 
-//    QWidgetAction *wa = new QWidgetAction(m);
-//    QWidget *w = new QWidget(m);
-//    QSpinBox *pzfBox = new QSpinBox(w);
-//    QFormLayout *fl = new QFormLayout();
-
-//    fl->addRow(QString("Zero fill factor"),pzfBox);
-
-//    pzfBox->setRange(0,4);
-//    pzfBox->setSingleStep(1);
-//    pzfBox->setValue(d_pzf);
-//    connect(pzfBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),[=](int p){
-//        d_pzf = p;
-//        emit pzfChanged(p);
-//    });
-
-//    w->setLayout(fl);
-//    wa->setDefaultWidget(w);
-//    m->addAction(wa);
-
-//    QList<QPair<BlackChirp::FtPlotUnits,QString>> unitsList;
-//    unitsList << qMakePair(BlackChirp::FtPlotV,QString("V"));
-//    unitsList << qMakePair(BlackChirp::FtPlotmV,QString("mV"));
-//    unitsList << qMakePair(BlackChirp::FtPlotuV,QString::fromUtf16(u"µV"));
-//    unitsList << qMakePair(BlackChirp::FtPlotnV,QString("nV"));
-
-
-//    QMenu *yMenu = m->addMenu(QString("Y Scaling"));
-//    QActionGroup *scaleGroup = new QActionGroup(yMenu);
-//    scaleGroup->setExclusive(true);
-
-//    for(int i=0; i<unitsList.size(); i++)
-//    {
-//        QAction *a = yMenu->addAction(unitsList.at(i).second);
-//        a->setCheckable(true);
-//        if(unitsList.at(i).first == d_currentUnits)
-//            a->setChecked(true);
-//        else
-//            a->setChecked(false);
-//        connect(a,&QAction::triggered,this,[=](){ configureUnits(unitsList.at(i).first); });
-//    }
-//    yMenu->addActions(scaleGroup->actions());
-
-//    QList<QPair<BlackChirp::FtWindowFunction,QString>> winfList;
-//    winfList << qMakePair(BlackChirp::Bartlett,QString("Bartlett"));
-//    winfList << qMakePair(BlackChirp::Blackman,QString("Blackman"));
-//    winfList << qMakePair(BlackChirp::BlackmanHarris,QString("Blackman-Harris"));
-//    winfList << qMakePair(BlackChirp::Boxcar,QString("Boxcar (none)"));
-//    winfList << qMakePair(BlackChirp::Hamming,QString("Hamming"));
-//    winfList << qMakePair(BlackChirp::Hanning,QString("Hanning"));
-//    winfList << qMakePair(BlackChirp::KaiserBessel14,QString("Kaiser-Bessel, B=14"));
-
-//    QMenu *winfMenu = m->addMenu(QString("Window Function"));
-//    QActionGroup *winfGroup = new QActionGroup(winfMenu);
-//    winfGroup->setExclusive(true);
-
-//    for(int i=0; i<winfList.size(); i++)
-//    {
-//        QAction *a = winfMenu->addAction(winfList.at(i).second);
-//        a->setCheckable(true);
-//        a->setChecked(winfList.at(i).first == d_currentWinf);
-//        connect(a,&QAction::triggered,this,[=](){ setWinf(winfList.at(i).first); });
-//    }
-//    winfMenu->addActions(winfGroup->actions());
-
     m->popup(me->globalPos());
-}
-
-void FtPlot::changeFtColor(QColor c)
-{
-    if(!c.isValid())
-        return;
-
-    QSettings s;
-    s.beginGroup(d_name);
-    s.setValue(QString("ftcolor"),c);
-    s.endGroup();
-    s.sync();
-
-    p_curveData->setPen(QPen(c));
-    replot();
-
 }
 
 void FtPlot::changeGridColor(QColor c)
@@ -308,12 +222,7 @@ void FtPlot::changeGridColor(QColor c)
     if(!c.isValid())
         return;
 
-    QSettings s;
-    s.beginGroup(d_name);
-    s.setValue(QString("gridcolor"),c);
-    s.endGroup();
-    s.sync();
-
+    set(BC::Key::gridColor,c);
 
     QPen p(c);
     p.setStyle(Qt::DashLine);
@@ -321,26 +230,6 @@ void FtPlot::changeGridColor(QColor c)
 
     p.setStyle(Qt::DotLine);
     p_plotGrid->setMinorPen(p);
-    replot();
-}
-
-void FtPlot::changePeakColor(QColor c)
-{
-    if(!c.isValid())
-        return;
-
-    QSettings s;
-    s.beginGroup(d_name);
-    s.setValue(QString("peakColor"),c);
-    s.endGroup();
-    s.sync();
-
-    QwtSymbol *sym = new QwtSymbol(QwtSymbol::Ellipse);
-    sym->setSize(5);
-    sym->setColor(c);
-    sym->setPen(QPen(c));
-    p_peakData->setSymbol(sym);
-
     replot();
 }
 

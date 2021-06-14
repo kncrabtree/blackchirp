@@ -6,6 +6,12 @@
 class QwtPlotCurve;
 class QwtPlotTextLabel;
 
+namespace BC::Key {
+static const QString lifSlicePlot("lifSlicePlot");
+static const QString lifSliceColor("curveColor");
+}
+
+/// \todo This needs to take an argument to differentiate time vs freq slice plots
 class LifSlicePlot : public ZoomPanPlot
 {
     Q_OBJECT
@@ -14,7 +20,6 @@ public:
     ~LifSlicePlot();
 
     void setXAxisTitle(QString title);
-    void setName(QString name) override;
 
     void prepareForExperiment(double xMin, double xMax);
     void setData(const QVector<QPointF> d);

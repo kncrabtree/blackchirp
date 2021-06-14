@@ -6,12 +6,14 @@
 #include <qwt6/qwt_plot_curve.h>
 #include <qwt6/qwt_plot_marker.h>
 
+#include <src/hardware/core/pulsegenerator/pulsegenerator.h>
+
 PulsePlot::PulsePlot(QWidget *parent) :
-    ZoomPanPlot(QString("pulsePlot"),parent)
+    ZoomPanPlot(BC::Key::pulsePlot,parent)
 {
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    int numChannels = s.value(QString("hwUI/pGenChannels"),8).toInt();
+    SettingsStorage s(BC::Key::pGen,Hardware);
+    int numChannels = s.get<int>(BC::Key::pGenChannels,8);
 
     setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
     setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));

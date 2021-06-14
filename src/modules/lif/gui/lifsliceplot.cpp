@@ -14,7 +14,7 @@
 #include <src/data/datastructs.h>
 
 LifSlicePlot::LifSlicePlot(QWidget *parent) :
-    ZoomPanPlot(QString("lifSlicePlot"),parent)
+    ZoomPanPlot(BC::Key::lifSlicePlot,parent)
 {
     setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
     setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
@@ -24,9 +24,10 @@ LifSlicePlot::LifSlicePlot(QWidget *parent) :
     this->setAxisTitle(QwtPlot::yLeft,llabel);
 
     p_curve = new QwtPlotCurve(QString("trace"));
+    p_curve->setSymbol(new QwtSymbol(QwtSymbol::Ellipse,palette().text(),QPen(QPalette::BrightText),QSize(8,8)));
+    setCurveColor(p_curve,BC::Key::lifSliceColor,get<QColor>(BC::Key::lifSliceColor,
+                                                             palette().color(QPalette::BrightText)));
     p_curve->setRenderHint(QwtPlotItem::RenderAntialiased);
-    auto pal = QPalette();
-    p_curve->setSymbol(new QwtSymbol(QwtSymbol::Ellipse,palette().text(),QPen(QPalette::Text),QSize(8,8)));
     p_curve->setZ(1.0);
     p_curve->attach(this);
 
@@ -44,15 +45,6 @@ void LifSlicePlot::setXAxisTitle(QString title)
     this->setAxisTitle(QwtPlot::xBottom,label);
 
     replot();
-}
-
-void LifSlicePlot::setName(QString name)
-{
-    ZoomPanPlot::setName(name);
-
-    QSettings s;
-    QColor c = s.value(QString("%1/curveColor").arg(d_name),QPalette().color(QPalette::Text)).value<QColor>();
-    p_curve->setPen(QPen(c));
 }
 
 void LifSlicePlot::prepareForExperiment(double xMin, double xMax)

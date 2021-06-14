@@ -8,23 +8,47 @@
 #include <QDoubleSpinBox>
 #include <QSpinBox>
 #include <QLabel>
-#include <QSettings>
 #include <QMenu>
+#include <QColorDialog>
 
 #include <qwt6/qwt_scale_div.h>
+#include <qwt6/qwt_plot_curve.h>
+#include <qwt6/qwt_symbol.h>
 
 #include <src/gui/plot/customtracker.h>
 
-ZoomPanPlot::ZoomPanPlot(QString name, QWidget *parent) : QwtPlot(parent)
+
+ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),
+    SettingsStorage(name,SettingsStorage::General,false)
 {
-    d_config.axisList.append(AxisConfig(QwtPlot::xBottom,QString("Bottom")));
-    d_config.axisList.append(AxisConfig(QwtPlot::xTop,QString("Top")));
-    d_config.axisList.append(AxisConfig(QwtPlot::yLeft,QString("Left")));
-    d_config.axisList.append(AxisConfig(QwtPlot::yRight,QString("Right")));
+    d_config.axisList.append(AxisConfig(QwtPlot::xBottom,BC::Key::bottom));
+    d_config.axisList.append(AxisConfig(QwtPlot::xTop,BC::Key::top));
+    d_config.axisList.append(AxisConfig(QwtPlot::yLeft,BC::Key::left));
+    d_config.axisList.append(AxisConfig(QwtPlot::yRight,BC::Key::right));
 
     p_tracker = new CustomTracker(this->canvas());
 
-    setName(name);
+    if(!containsArray(BC::Key::axes))
+    {
+        std::vector<SettingsMap> l;
+        for(int i=0; i<d_config.axisList.size(); i++)
+            l.push_back({ {BC::Key::zoomFactor,0.1},
+                          {BC::Key::trackerDecimals,4},
+                          {BC::Key::trackerScientific,false}});
+        setArray(BC::Key::axes,l);
+    }
+
+    for(int i=0; i<d_config.axisList.size(); i++)
+    {
+        d_config.axisList[i].zoomFactor = getArrayValue<double>(BC::Key::axes,i,BC::Key::zoomFactor,0.1);
+        int dec = getArrayValue<int>(BC::Key::axes,i,BC::Key::trackerDecimals,4);
+        bool sci = getArrayValue<bool>(BC::Key::axes,i,BC::Key::trackerScientific,false);
+        p_tracker->setDecimals(d_config.axisList.at(i).type,dec);
+        p_tracker->setScientific(d_config.axisList.at(i).type,sci);
+    }
+
+    bool en = getOrSetDefault(BC::Key::trackerEn,false).toBool();
+    p_tracker->setEnabled(en);
 
     canvas()->installEventFilter(this);
     connect(this,&ZoomPanPlot::plotRightClicked,this,&ZoomPanPlot::buildContextMenu);
@@ -106,26 +130,6 @@ void ZoomPanPlot::setXRanges(const QwtScaleDiv &bottom, const QwtScaleDiv &top)
     replot();
 }
 
-void ZoomPanPlot::setName(QString name)
-{
-    d_name = name;
-
-    QSettings s;
-    for(int i=0; i<d_config.axisList.size(); i++)
-    {
-        auto t = (int)d_config.axisList.at(i).type;
-        d_config.axisList[i].zoomFactor = s.value(QString("zoomFactors/%1/%2").arg(d_name)
-                                                  .arg(t),0.1).toDouble();
-        int dec = s.value(QString("trackerDecimals/%1/%2").arg(d_name).arg(t),4).toInt();
-        bool sci = s.value(QString("trackerScientific/%1/%2").arg(d_name).arg(t),false).toBool();
-        p_tracker->setDecimals(d_config.axisList.at(i).type,dec);
-        p_tracker->setScientific(d_config.axisList.at(i).type,sci);
-    }
-
-    bool en = s.value(QString("trackerEnabled/%1").arg(d_name),false).toBool();
-    p_tracker->setEnabled(en);
-}
-
 void ZoomPanPlot::replot()
 {
     if(!isVisible())
@@ -198,37 +202,52 @@ void ZoomPanPlot::setZoomFactor(QwtPlot::Axis a, double v)
     int i = getAxisIndex(a);
     d_config.axisList[i].zoomFactor = v;
 
-    QSettings s;
-    s.setValue(QString("zoomFactors/%1/%2").arg(d_name)
-                       .arg(QVariant(d_config.axisList.at(i).type).toString()),v);
-    s.sync();
+    setArrayValue(BC::Key::axes,i,BC::Key::zoomFactor,v);
 }
 
 void ZoomPanPlot::setTrackerEnabled(bool en)
 {
-    QSettings s;
-    s.setValue(QString("trackerEnabled/%1").arg(d_name),en);
-    s.sync();
-
+    set(BC::Key::trackerEn,en);
     p_tracker->setEnabled(en);
 }
 
 void ZoomPanPlot::setTrackerDecimals(QwtPlot::Axis a, int dec)
 {
-    QSettings s;
-    s.setValue(QString("trackerDecimals/%1/%2").arg(d_name).arg((int)a),dec);
-    s.sync();
+    int i = getAxisIndex(a);
+    setArrayValue(BC::Key::axes,i,BC::Key::trackerDecimals,dec);
 
     p_tracker->setDecimals(a,dec);
 }
 
 void ZoomPanPlot::setTrackerScientific(QwtPlot::Axis a, bool sci)
 {
-    QSettings s;
-    s.setValue(QString("trackerScientific/%1/%2").arg(d_name).arg((int)a),sci);
-    s.sync();
+    int i = getAxisIndex(a);
+    setArrayValue(BC::Key::axes,i,BC::Key::trackerScientific,sci);
 
     p_tracker->setScientific(a,sci);
+}
+
+void ZoomPanPlot::setCurveColor(QwtPlotCurve *curve, const QString key, QColor c)
+{
+    if(curve == nullptr)
+        return;
+
+    if(!c.isValid())
+    {
+        QPalette p;
+        auto dc = get<QColor>(key,p.brightText().color());
+        c = QColorDialog::getColor(dc,this,QString("Select color for %1 curve").arg(curve->title().text()));
+        if(!c.isValid())
+            return;
+    }
+
+    curve->setPen(c);
+    auto s = curve->symbol();
+    if(s)
+        curve->setSymbol(new QwtSymbol(s->style(),QBrush(c),QPen(c),s->size()));
+
+    set(key,c);
+    replot();
 }
 
 void ZoomPanPlot::setAxisOverride(QwtPlot::Axis axis, bool override)

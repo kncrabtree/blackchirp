@@ -1,9 +1,5 @@
 #include <src/hardware/core/hardwaremanager.h>
 
-#include <QSettings>
-
-
-
 HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsStorage(BC::Key::hw), d_responseCount(0)
 {
 

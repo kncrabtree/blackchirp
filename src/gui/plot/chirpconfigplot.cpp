@@ -1,7 +1,5 @@
 #include "chirpconfigplot.h"
 
-#include <QSettings>
-#include <QColorDialog>
 #include <QMouseEvent>
 #include <QMenu>
 
@@ -10,15 +8,14 @@
 
 #include <src/data/experiment/chirpconfig.h>
 
-ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(QString("ChirpConfigPlot"),parent)
+ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(BC::Key::chirpPlot,parent)
 {
 
     //make axis label font smaller
     this->setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
     this->setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
 
-    //build axis titles with small font. The <html> etc. tags are needed to display the mu character
-    QwtText blabel(QString("<html><body>Time (&mu;s)</body></html>"));
+    QwtText blabel(QString::fromUtf16(u"Time (μs)"));
     blabel.setFont(QFont(QString("sans-serif"),8));
     this->setAxisTitle(QwtPlot::xBottom,blabel);
 
@@ -26,22 +23,19 @@ ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(QString("ChirpCo
     llabel.setFont(QFont(QString("sans-serif"),8));
     this->setAxisTitle(QwtPlot::yLeft,llabel);
 
-    QSettings s;
     QPalette pal;
+    auto defaultColor = pal.brightText().color();
 
     p_chirpCurve = new QwtPlotCurve(QString("Chirp"));
-    QColor color = s.value(QString("chirpColor"),pal.brightText().color()).value<QColor>();
-    p_chirpCurve->setPen(QPen(color));
+    setCurveColor(p_chirpCurve,BC::Key::chirpColor,get<QColor>(BC::Key::chirpColor,defaultColor));
     p_chirpCurve->attach(this);
 
     p_ampEnableCurve= new QwtPlotCurve(QString("Amp Enable"));
-    color = s.value(QString("ampEnableColor"),pal.brightText().color()).value<QColor>();
-    p_ampEnableCurve->setPen(QPen(color));
+    setCurveColor(p_chirpCurve,BC::Key::ampColor,get<QColor>(BC::Key::ampColor,defaultColor));
     p_ampEnableCurve->attach(this);
 
     p_protectionCurve = new QwtPlotCurve(QString("Protection"));
-    color = s.value(QString("protectionColor"),pal.brightText().color()).value<QColor>();
-    p_protectionCurve->setPen(QPen(color));
+    setCurveColor(p_chirpCurve,BC::Key::protectionColor,get<QColor>(BC::Key::protectionColor,defaultColor));
     p_protectionCurve->attach(this);
 
     setAxisAutoScaleRange(QwtPlot::yLeft,-1.0,1.0);
@@ -118,50 +112,21 @@ void ChirpConfigPlot::buildContextMenu(QMouseEvent *me)
     QMenu *menu = contextMenu();
 
     QAction *chirpAction = menu->addAction(QString("Change chirp color..."));
-    connect(chirpAction,&QAction::triggered,[=](){ setCurveColor(p_chirpCurve); });
+    connect(chirpAction,&QAction::triggered,[=](){ setCurveColor(p_chirpCurve,BC::Key::chirpColor); });
     if(d_chirpData.isEmpty())
         chirpAction->setEnabled(false);
 
     QAction *ampAction = menu->addAction(QString("Change amp enable color..."));
-    connect(ampAction,&QAction::triggered,[=](){ setCurveColor(p_ampEnableCurve); });
+    connect(ampAction,&QAction::triggered,[=](){ setCurveColor(p_ampEnableCurve,BC::Key::ampColor); });
     if(d_chirpData.isEmpty())
         ampAction->setEnabled(false);
 
     QAction *protAction = menu->addAction(QString("Change protection color..."));
-    connect(protAction,&QAction::triggered,[=](){ setCurveColor(p_protectionCurve); });
+    connect(protAction,&QAction::triggered,[=](){ setCurveColor(p_protectionCurve,BC::Key::protectionColor); });
     if(d_chirpData.isEmpty())
         protAction->setEnabled(false);
 
     menu->popup(me->globalPos());
-}
-
-void ChirpConfigPlot::setCurveColor(QwtPlotCurve *c)
-{
-    if(c != nullptr)
-    {
-        QString key;
-        if(c == p_chirpCurve)
-            key = QString("chirpColor");
-        if(c == p_ampEnableCurve)
-            key = QString("ampEnableColor");
-        if(c == p_protectionCurve)
-            key = QString("protectionColor");
-
-        if(key.isEmpty())
-            return;
-
-        QColor color = QColorDialog::getColor(c->pen().color(),this,QString("Choose color"));
-        if(!color.isValid())
-            return;
-
-        c->setPen(color);
-
-        QSettings s;
-        s.setValue(key,color);
-        s.sync();
-
-        replot();
-    }
 }
 
 void ChirpConfigPlot::filterData()

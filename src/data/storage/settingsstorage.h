@@ -508,6 +508,22 @@ protected:
      */
     void setArray(const QString key, const std::vector<SettingsMap> &array, bool write = true);
 
+    /*!
+     * \brief Sets a single value within a map assocuated with an array value
+     *
+     * Attempts to set one key-value pair for the array value specified by `arrayKey` at position `i`.
+     * The write will fail if the array does not exist or if `i` is out of bounds. If the optional
+     * `write` parameter is true, then the updated array will be written to QSettings.
+     *
+     * \param arrayKey Key of the array value
+     * \param i Index of the map within the array
+     * \param key Key for the map
+     * \param value Value to be stored
+     * \param write If true, write updated array to QSettings
+     * \return bool True if setting was successfully made
+     */
+    bool setArrayValue(const QString arrayKey, std::size_t i, const QString key, QVariant value, bool write = true);
+
 
     /*!
      * \brief Appends a new map onto an array value

@@ -238,6 +238,22 @@ bool SettingsStorage::set(const QString key, const QVariant value, bool write)
     return true;
 }
 
+bool SettingsStorage::setArrayValue(const QString arrayKey, std::size_t i, const QString key, QVariant value, bool write)
+{
+    if(!containsArray(arrayKey))
+        return false;
+
+    if(i >= d_arrayValues.at(arrayKey).size())
+        return false;
+
+    d_arrayValues[arrayKey][i].insert_or_assign(key,value);
+
+    if(write)
+        writeArray(arrayKey);
+
+    return true;
+}
+
 void SettingsStorage::appendArrayMap(const QString key, const SettingsMap &map, bool write)
 {
     if(containsArray(key))
@@ -328,6 +344,7 @@ void SettingsStorage::writeArray(const QString key)
             d_settings.setValue(it->first,it->second);
     }
     d_settings.endArray();
+    d_settings.sync();
 }
 
 void SettingsStorage::save()

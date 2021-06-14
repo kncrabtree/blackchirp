@@ -18,38 +18,30 @@
 #include <qwt6/qwt_plot_marker.h>
 #include <qwt6/qwt_plot_curve.h>
 
-FidPlot::FidPlot(QString id, QWidget *parent) :
-    ZoomPanPlot(QString("FidPlot"+id),parent)
+FidPlot::FidPlot(const QString id, QWidget *parent) :
+    ZoomPanPlot(BC::Key::fidPlot+id,parent)
 {
     //make axis label font smaller
     this->setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
     this->setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
 
-    //build axis titles with small font. The <html> etc. tags are needed to display the mu character
-    QwtText blabel(QString("<html><body>Time (&mu;s)</body></html>"));
+    QwtText blabel(QString::fromUtf16(u"Time (μs)"));
     blabel.setFont(QFont(QString("sans-serif"),8));
     this->setAxisTitle(QwtPlot::xBottom,blabel);
 
-    QwtText llabel(QString("FID "+id));
+    QwtText llabel(QString("FID ")+id);
     llabel.setFont(QFont(QString("sans-serif"),8));
     this->setAxisTitle(QwtPlot::yLeft,llabel);
 
-//    this->setAxisScaleDraw(QwtPlot::yLeft,new SciNotationScaleDraw());
-
-
-    p_curve = new QwtPlotCurve();
-    QSettings s;
-    s.beginGroup(d_name);
-    QColor c = s.value(QString("fidcolor"),palette().color(QPalette::Text)).value<QColor>();
-    s.endGroup();
-    p_curve->setPen(QPen(c));
+    p_curve = new QwtPlotCurve(QString("FID"));
+    setCurveColor(p_curve,BC::Key::fidColor,palette().color(QPalette::BrightText));
     p_curve->setRenderHint(QwtPlotItem::RenderAntialiased);
     p_curve->attach(this);
     p_curve->setVisible(false);
 
     QwtPlotMarker *chirpStartMarker = new QwtPlotMarker();
     chirpStartMarker->setLineStyle(QwtPlotMarker::VLine);
-    chirpStartMarker->setLinePen(QPen(QPalette().color(QPalette::Text)));
+    chirpStartMarker->setLinePen(QPen(QPalette().color(QPalette::BrightText)));
     QwtText csLabel(QString("Chirp Start"));
     csLabel.setFont(QFont(QString("sans serif"),6));
     chirpStartMarker->setLabel(csLabel);
@@ -276,23 +268,8 @@ void FidPlot::buildContextMenu(QMouseEvent *me)
     QMenu *menu = contextMenu();
 
     QAction *colorAct = menu->addAction(QString("Change FID color..."));
-    connect(colorAct,&QAction::triggered,this,&FidPlot::changeFidColor);
+    connect(colorAct,&QAction::triggered,[=](){ setCurveColor(p_curve,BC::Key::fidColor); });
 
     menu->popup(me->globalPos());
 
-}
-
-void FidPlot::changeFidColor()
-{
-    QColor c = QColorDialog::getColor(p_curve->pen().color(),this,QString("Select Color"));
-    if(c.isValid())
-    {
-        p_curve->setPen(c);
-
-        QSettings s;
-        s.setValue(QString("fidcolor"),c);
-        s.sync();
-
-        replot();
-    }
 }

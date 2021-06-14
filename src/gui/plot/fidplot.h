@@ -11,6 +11,11 @@
 class QwtPlotMarker;
 class QwtPlotCurve;
 
+namespace BC::Key {
+static const QString fidPlot("FidPlot");
+static const QString fidColor("fidcolor");
+}
+
 /*!
  * \brief The FID Plot
  */
@@ -23,7 +28,7 @@ public:
      * \brief Constructor. Initializes axes and plot options
      * \param parent Parent widget
      */
-    explicit FidPlot(QString id, QWidget *parent = 0);
+    explicit FidPlot(const QString id, QWidget *parent = 0);
 
 signals:
     void ftStartChanged(double);
@@ -36,7 +41,6 @@ public slots:
     void setFtStart(double start);
     void setFtEnd(double end);
     void buildContextMenu(QMouseEvent *me);
-    void changeFidColor();
 
 private:
     QVector<QPointF> d_currentFid;
