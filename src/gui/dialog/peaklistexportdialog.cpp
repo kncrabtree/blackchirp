@@ -1,7 +1,6 @@
 #include "peaklistexportdialog.h"
 #include "ui_peaklistexportdialog.h"
 
-#include <QSettings>
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QTextStream>

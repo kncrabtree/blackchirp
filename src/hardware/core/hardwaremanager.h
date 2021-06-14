@@ -10,32 +10,33 @@
 #include <src/data/experiment/experiment.h>
 #include <src/data/storage/settingsstorage.h>
 #include <src/hardware/core/hardwareobject.h>
-
-
-class FtmwScope;
-class AWG;
-class PulseGenerator;
-class FlowController;
-class IOBoard;
-class MotorController;
-class ClockManager;
+#include <src/hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <src/hardware/core/clock/clockmanager.h>
+#include <src/hardware/core/chirpsource/awg.h>
+#include <src/hardware/core/pulsegenerator/pulsegenerator.h>
+#include <src/hardware/optional/flowcontroller/flowcontroller.h>
+#include <src/hardware/core/ioboard/ioboard.h>
 
 #ifdef BC_PCONTROLLER
-class PressureController;
+#include <src/hardware/optional/pressurecontroller/pressurecontroller.h>
 #endif
 
 #ifdef BC_TEMPCONTROLLER
-class TemperatureController;
+#include <src/hardware/optional/tempcontroller/temperaturecontroller.h>
+#endif
+
+#ifdef BC_GPIBCONTROLLER
+#include <src/hardware/optional/gpibcontroller/gpibcontroller.h>
 #endif
 
 #ifdef BC_LIF
-class LifScope;
-class LifLaser;
+#include <src/modules/lif/hardware/lifdigitizer/lifscope.h>
+#include <src/modules/lif/hardware/liflaser/liflaser.h>
 #endif
 
 #ifdef BC_MOTOR
-class MotorController;
-class MotorOscilloscope;
+#include <src/modules/motor/hardware/motorcontroller/motorcontroller.h>
+#include <src/modules/motor/hardware/motordigitizer/motoroscilloscope.h>
 #endif
 
 namespace BC {

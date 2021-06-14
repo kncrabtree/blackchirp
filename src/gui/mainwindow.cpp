@@ -42,6 +42,10 @@
 #include <src/modules/motor/gui/motorstatuswidget.h>
 #endif
 
+#ifdef BC_PCONTROLLER
+#include <src/hardware/optional/pressurecontroller/pressurecontroller.h>
+#endif
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow), d_hardwareConnected(false), d_oneExptDone(false), d_state(Idle), d_logCount(0), d_logIcon(BlackChirp::LogNormal), d_currentExptNum(0)
@@ -56,8 +60,6 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->tabWidget->widget(i)->layout()->setContentsMargins(0,0,0,0);
         ui->tabWidget->widget(i)->layout()->setMargin(0);
     }
-
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
     ui->exptSpinBox->blockSignals(true);
 
@@ -92,7 +94,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QGridLayout *gl = new QGridLayout;
 
-    for(int i=0; i<s.value(QString("hwUI/pGenChannels"),8).toInt(); i++)
+    SettingsStorage pg(BC::Key::pGen,SettingsStorage::Hardware);
+    for(int i=0; i<pg.get<int>(BC::Key::pGenChannels,8); i++)
     {
         QLabel *lbl = new QLabel(QString("Ch%1").arg(i),this);
         lbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
@@ -145,7 +148,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeRepRate,p_hwm,&HardwareManager::setPGenRepRate);
 
 #ifdef BC_PCONTROLLER
-    configPController(s.value(QString("hwUI/pControllerReadOnly"),true).toBool());
+    SettingsStorage pc(BC::Key::pController,SettingsStorage::Hardware);
+    configPController(pc.get<bool>(BC::Key::pControllerReadOnly,true));
 #endif
 
     QThread *hwmThread = new QThread(this);
@@ -163,7 +167,8 @@ MainWindow::MainWindow(QWidget *parent) :
     gl->setMargin(3);
     gl->setSpacing(3);
     QWidget *lastFocusWidget = nullptr;
-    int flowChannels = s.value(QString("hwUI/flowChannels"),0).toInt();
+    SettingsStorage fc(BC::Key::flowController,SettingsStorage::Hardware);
+    int flowChannels = fc.get<int>(BC::Key::flowChannels,4);
     for(int i=0; i<flowChannels; i++)
     {
         FlowWidgets fw;
@@ -335,8 +340,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_am,&AcquisitionManager::motorDataUpdate,p_motorDisplayWidget,&MotorDisplayWidget::newMotorData);
 #endif
 
-
-    ui->exptSpinBox->setValue(s.value(QString("exptNum"),0).toInt());
+    SettingsStorage bc;
+    ui->exptSpinBox->setValue(bc.get<int>(BC::Key::exptNum,0));
     configureUi(Idle);
 }
 
@@ -893,15 +898,13 @@ void MainWindow::configPController(bool readOnly)
     cplabel->setAlignment(Qt::AlignRight);
     QDoubleSpinBox *cpbox = new QDoubleSpinBox;
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    QString subKey = s.value(QString("pressureController/subKey"),QString("virtual")).toString();
-    s.beginGroup(QString("pressureController"));
-    s.beginGroup(subKey);
+    SettingsStorage s(BC::Key::pController,SettingsStorage::Hardware);
 
-    cpbox->setMinimum(s.value(QString("min"),-1.0).toDouble());
-    cpbox->setMaximum(s.value(QString("max"),20.0).toDouble());
-    cpbox->setDecimals(s.value(QString("decimal"),4).toInt());
-    cpbox->setSuffix(QString(" ")+s.value(QString("units"),QString("Torr")).toString());
+
+    cpbox->setMinimum(s.get<double>(BC::Key::pControllerMin,-1.0));
+    cpbox->setMaximum(s.get<double>(BC::Key::pControllerMax,20.0));
+    cpbox->setDecimals(s.get<int>(BC::Key::pControllerDecimals,4));
+    cpbox->setSuffix(QString(" ")+s.get<QString>(BC::Key::pControllerUnits,"Torr"));
 
     cpbox->setReadOnly(true);
     cpbox->setButtonSymbols(QAbstractSpinBox::NoButtons);
@@ -909,9 +912,6 @@ void MainWindow::configPController(bool readOnly)
     cpbox->blockSignals(true);
 
     connect(p_hwm,&HardwareManager::pressureUpdate,cpbox,&QDoubleSpinBox::setValue);
-
-    s.endGroup();
-    s.endGroup();
 
     hbl->addWidget(cplabel,0);
     hbl->addWidget(cpbox,1);

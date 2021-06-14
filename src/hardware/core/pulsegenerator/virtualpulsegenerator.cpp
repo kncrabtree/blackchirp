@@ -1,9 +1,8 @@
 #include "virtualpulsegenerator.h"
 
 VirtualPulseGenerator::VirtualPulseGenerator(QObject *parent) :
-    PulseGenerator(BC::Key::hwVirtual,BC::Key::vpGen,CommunicationProtocol::Virtual,parent)
+    PulseGenerator(BC::Key::hwVirtual,BC::Key::vpGen,CommunicationProtocol::Virtual,8,parent)
 {
-    d_numChannels = 8;
 }
 
 VirtualPulseGenerator::~VirtualPulseGenerator()

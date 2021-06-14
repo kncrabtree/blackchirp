@@ -1,9 +1,8 @@
 #include "intellisysiqplus.h"
 
 IntellisysIQPlus::IntellisysIQPlus(QObject *parent) :
-    PressureController(BC::Key::iqplus,BC::Key::iqplusName,CommunicationProtocol::Rs232,parent)
+    PressureController(BC::Key::iqplus,BC::Key::iqplusName,CommunicationProtocol::Rs232,false,parent)
 {
-    d_readOnly = false;
 }
 
 void IntellisysIQPlus::readSettings()

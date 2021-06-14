@@ -1,9 +1,8 @@
 #include "qc9518.h"
 
 Qc9518::Qc9518(QObject *parent) :
-    PulseGenerator(BC::Key::qc9518,BC::Key::qc9518Name,CommunicationProtocol::Rs232,parent)
+    PulseGenerator(BC::Key::qc9518,BC::Key::qc9518Name,CommunicationProtocol::Rs232,8,parent)
 {
-    d_numChannels = 8;
 }
 
 bool Qc9518::testConnection()

@@ -7,22 +7,20 @@
 
 #include <src/data/experiment/flowconfig.h>
 
-namespace BC {
-namespace Key {
+namespace BC::Key {
 static const QString flowController("flowController");
-}
+static const QString flowChannels("numChannels");
 }
 
 class FlowController : public HardwareObject
 {
     Q_OBJECT
 public:
-    FlowController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr,
-                   bool threaded = false, bool critical = false);
+    FlowController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
+                   int numChannels, QObject *parent = nullptr, bool threaded = false, bool critical = false);
     virtual ~FlowController();
 
     FlowConfig config() const { return d_config; }
-    int numChannels() const { return d_numChannels; }
 
 signals:
     void channelNameUpdate(int,QString,QPrivateSignal);
@@ -66,7 +64,7 @@ protected:
 
     FlowConfig d_config;
     QTimer *p_readTimer;
-    int d_numChannels = 0;
+    const int d_numChannels;
 
     void readAll();
 
@@ -74,7 +72,7 @@ protected:
 
     // HardwareObject interface
 protected:
-    virtual QList<QPair<QString, QVariant> > readAuxPlotData();
+    virtual QList<QPair<QString, QVariant> > readAuxPlotData() override;
 };
 
 #if BC_FLOWCONTROLLER == 1

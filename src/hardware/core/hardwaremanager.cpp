@@ -2,35 +2,7 @@
 
 #include <QSettings>
 
-#include <src/hardware/core/hardwareobject.h>
-#include <src/hardware/core/ftmwdigitizer/ftmwscope.h>
-#include <src/hardware/core/clock/clockmanager.h>
-#include <src/hardware/core/chirpsource/awg.h>
-#include <src/hardware/core/pulsegenerator/pulsegenerator.h>
-#include <src/hardware/optional/flowcontroller/flowcontroller.h>
-#include <src/hardware/core/ioboard/ioboard.h>
 
-#ifdef BC_PCONTROLLER
-#include <src/hardware/optional/pressurecontroller/pressurecontroller.h>
-#endif
-
-#ifdef BC_TEMPCONTROLLER
-#include <src/hardware/optional/tempcontroller/temperaturecontroller.h>
-#endif
-
-#ifdef BC_GPIBCONTROLLER
-#include <src/hardware/optional/gpibcontroller/gpibcontroller.h>
-#endif
-
-#ifdef BC_LIF
-#include <src/modules/lif/hardware/lifdigitizer/lifscope.h>
-#include <src/modules/lif/hardware/liflaser/liflaser.h>
-#endif
-
-#ifdef BC_MOTOR
-#include <src/modules/motor/hardware/motorcontroller/motorcontroller.h>
-#include <src/modules/motor/hardware/motordigitizer/motoroscilloscope.h>
-#endif
 
 HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsStorage(BC::Key::hw), d_responseCount(0)
 {
@@ -110,17 +82,6 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     connect(p_motorScope,&MotorOscilloscope::traceAcquired,this,&HardwareManager::motorTraceAcquired);
     d_hardwareList.append(p_motorScope);
 #endif
-
-
-    //write settings relevant for configuring UI
-
-    set("flowChannels",p_flow->numChannels(),false);
-    set(QString("pGenChannels"),p_pGen->numChannels(),false);
-#ifdef BC_PCONTROLLER
-    set(QString("pControllerReadOnly"),p_pc->isReadOnly(),false);
-#endif
-
-
 
     //write arrays of the connected devices for use in the Hardware Settings menu
     //first array is for all objects accessible to the hardware manager

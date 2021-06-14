@@ -1,14 +1,13 @@
 #include "mks946.h"
 
 Mks946::Mks946(QObject *parent) :
-    FlowController(BC::Key::mks947,BC::Key::mks947Name,CommunicationProtocol::Rs232, parent),
+    FlowController(BC::Key::mks947,BC::Key::mks947Name,CommunicationProtocol::Rs232,4,parent),
     d_nextRead(0)
 {
 
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(d_key);
     s.beginGroup(d_subKey);
-    d_numChannels = s.value(QString("numChannels"),4).toInt();
     d_address = s.value(QString("address"),253).toInt();
     d_pressureChannel = s.value(QString("pressureChannel"),5).toInt();
     d_channelOffset = s.value(QString("channelOffset"),1).toInt();

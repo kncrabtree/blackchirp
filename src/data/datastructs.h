@@ -9,6 +9,10 @@
 #include <QSettings>
 #include <QApplication>
 
+namespace BC::Key {
+static const QString exptNum("exptNum");
+}
+
 namespace BlackChirp {
 
 enum Sideband {

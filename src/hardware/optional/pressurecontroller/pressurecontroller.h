@@ -5,13 +5,18 @@
 
 namespace BC::Key {
 static const QString pController("pressureController");
+static const QString pControllerMin("min");
+static const QString pControllerMax("max");
+static const QString pControllerDecimals("decimal");
+static const QString pControllerUnits("units");
+static const QString pControllerReadOnly("readOnly");
 }
 
 class PressureController : public HardwareObject
 {
     Q_OBJECT
 public:
-    PressureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent =nullptr, bool threaded = false, bool critical=false);
+    PressureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, bool readOnly, QObject *parent =nullptr, bool threaded = false, bool critical=false);
     virtual ~PressureController();
 
 signals:
@@ -30,10 +35,9 @@ public slots:
 
     virtual void openGateValve() =0;
     virtual void closeGateValve() =0;
-    bool isReadOnly();
 
 protected:
-    bool d_readOnly;
+    const bool d_readOnly;
     double d_pressure;
     double d_setPoint;
     bool d_pressureControlMode;

@@ -7,15 +7,15 @@
 
 namespace BC::Key {
 static const QString pGen("pGen");
+static const QString pGenChannels("numChannels");
 }
 
 class PulseGenerator : public HardwareObject
 {
     Q_OBJECT
 public:
-    PulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType,QObject *parent = nullptr,bool threaded = false, bool critical = true);
+    PulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent = nullptr,bool threaded = false, bool critical = true);
     virtual ~PulseGenerator();
-    int numChannels() const { return d_numChannels; }
 
 public slots:
     void initialize() override final;
@@ -52,7 +52,7 @@ protected:
     double d_maxWidth;
     double d_minDelay;
     double d_maxDelay;
-    int d_numChannels;
+    const int d_numChannels;
 };
 
 

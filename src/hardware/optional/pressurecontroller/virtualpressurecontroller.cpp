@@ -2,9 +2,8 @@
 
 #include <QTimer>
 
-VirtualPressureController::VirtualPressureController(QObject *parent) : PressureController(BC::Key::hwVirtual,BC::Key::vpcName,CommunicationProtocol::Virtual,parent)
+VirtualPressureController::VirtualPressureController(QObject *parent) : PressureController(BC::Key::hwVirtual,BC::Key::vpcName,CommunicationProtocol::Virtual,false,parent)
 {
-    d_readOnly = false;
 }
 
 VirtualPressureController::~VirtualPressureController()
