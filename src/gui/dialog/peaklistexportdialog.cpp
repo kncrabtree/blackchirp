@@ -9,7 +9,7 @@
 #include <src/data/datastructs.h>
 
 PeakListExportDialog::PeakListExportDialog(const QList<QPointF> peakList, int number, QWidget *parent) :
-    QDialog(parent),
+    QDialog(parent), SettingsStorage(BC::Key::plExport),
     ui(new Ui::PeakListExportDialog), d_number(number), d_peakList(peakList)
 {
     ui->setupUi(this);
@@ -17,52 +17,57 @@ PeakListExportDialog::PeakListExportDialog(const QList<QPointF> peakList, int nu
     connect(ui->ftbRadioButton,&QRadioButton::toggled,ui->ftbOptionsBox,&QGroupBox::setEnabled);
     ui->ftbOptionsBox->setEnabled(false);
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("peakListExport"));
-    bool ascii = s.value(QString("ascii"),false).toBool();
-    if(ascii)
-        ui->asciiRadioButton->setChecked(true);
-    else
-        ui->ftbRadioButton->setChecked(true);
+    bool ascii = get<bool>(BC::Key::plAscii,true);
+    ui->asciiRadioButton->setChecked(ascii);
+    ui->ftbRadioButton->setChecked(!ascii);
+    registerGetter(BC::Key::plAscii,
+                   static_cast<QAbstractButton*>(ui->asciiRadioButton),&QAbstractButton::isChecked);
 
-    bool dipoleEn = s.value(QString("dipoleEnabled"),true).toBool();
-    double dipole = s.value(QString("dipole"),1.0).toDouble();
+    bool dipoleEn = get<bool>(BC::Key::plDipoleEn,true);
+    double dipole = get<double>(BC::Key::plDipole,1.0);
     ui->dipoleDoubleSpinBox->setValue(dipole);
     ui->dipoleCheckBox->setChecked(dipoleEn);
     ui->dipoleDoubleSpinBox->setEnabled(dipole);
     connect(ui->dipoleCheckBox,&QCheckBox::toggled,ui->dipoleDoubleSpinBox,&QDoubleSpinBox::setEnabled);
+    registerGetter(BC::Key::plDipoleEn,
+                   static_cast<QAbstractButton*>(ui->dipoleCheckBox),&QAbstractButton::isChecked);
+    registerGetter(BC::Key::plDipole,ui->dipoleDoubleSpinBox,&QDoubleSpinBox::value);
 
-    bool drOnly = s.value(QString("drOnlyEnabled"),false).toBool();
-    double drOnlyThresh = s.value(QString("drOnlyThresh"),1.0).toDouble();
+    bool drOnly = get<bool>(BC::Key::plDrOnlyEn,false);
+    double drOnlyThresh = get<double>(BC::Key::plDrOnlyThresh,1.0);
     ui->drOnlyCheckBox->setChecked(drOnly);
     ui->drOnlyThreshSpinBox->setValue(drOnlyThresh);
     ui->drOnlyThreshSpinBox->setEnabled(drOnly);
     connect(ui->drOnlyCheckBox,&QCheckBox::toggled,ui->drOnlyThreshSpinBox,&QDoubleSpinBox::setEnabled);
+    registerGetter(BC::Key::plDrOnlyEn,
+                   static_cast<QAbstractButton*>(ui->drOnlyCheckBox),&QAbstractButton::isChecked);
+    registerGetter(BC::Key::plDrOnlyThresh,ui->drOnlyThreshSpinBox,&QDoubleSpinBox::value);
 
-    int defaultShots = s.value(QString("defaultShots"),100).toInt();
+    int defaultShots = get<int>(BC::Key::plDefaultShots,100);
     ui->defaultShotsSpinBox->setValue(defaultShots);
+    registerGetter(BC::Key::plDefaultShots,ui->defaultShotsSpinBox,&QSpinBox::value);
 
-    bool drPowerEnabled = s.value(QString("drPowerEnabled"),false).toBool();
-    double drPower = s.value(QString("drPower"),17.0).toDouble();
+    bool drPowerEnabled = get<bool>(BC::Key::plDrPowerEn,false);
+    double drPower = get<double>(BC::Key::plDrPower,17.0);
     ui->drPowerCheckBox->setChecked(drPowerEnabled);
     ui->drPowerDoubleSpinBox->setValue(drPower);
     ui->drPowerDoubleSpinBox->setEnabled(drPowerEnabled);
     connect(ui->drPowerCheckBox,&QCheckBox::toggled,ui->drPowerDoubleSpinBox,&QDoubleSpinBox::setEnabled);
+    registerGetter(BC::Key::plDrPowerEn,
+                   static_cast<QAbstractButton*>(ui->drPowerCheckBox),&QAbstractButton::isChecked);
+    registerGetter(BC::Key::plDrPower,ui->drPowerDoubleSpinBox,&QDoubleSpinBox::value);
 
     p_sm = new ShotsModel(this);
     ui->shotsTableView->setModel(p_sm);
 
     QList<QPair<int,double>> shotsList;
-    int num = s.beginReadArray(QString("shotsTable"));
-    for(int i=0; i<num; i++)
+    std::size_t num = getArraySize(BC::Key::plShotsTab);
+    for(std::size_t i=0; i<num; ++i)
     {
-        s.setArrayIndex(i);
-        int shots = s.value(QString("shots"),100).toInt();
-        double intensity = s.value(QString("intensity"),1.0).toDouble();
+        int shots = getArrayValue<int>(BC::Key::plShotsTab,i,BC::Key::plShots,100);
+        double intensity = getArrayValue<int>(BC::Key::plShotsTab,i,BC::Key::plIntensity,1.0);
         shotsList.append(qMakePair(shots,intensity));
     }
-    s.endArray();
-    s.endGroup();
     p_sm->setList(shotsList);
 
     connect(ui->shotsTableView->selectionModel(),&QItemSelectionModel::selectionChanged,this,&PeakListExportDialog::toggleButtons);
@@ -128,7 +133,6 @@ void PeakListExportDialog::removePeaks()
 
 void PeakListExportDialog::accept()
 {
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     QString savePath = BlackChirp::getExportDir();
 
     QString ext = QString(".txt");
@@ -220,25 +224,12 @@ void PeakListExportDialog::accept()
 
     BlackChirp::setExportDir(name);
 
-    s.beginGroup(QString("peakListExport"));
-    s.setValue(QString("ascii"),ui->asciiRadioButton->isChecked());
-    s.setValue(QString("dipoleEnabled"),ui->dipoleCheckBox->isChecked());
-    s.setValue(QString("dipole"),ui->dipoleDoubleSpinBox->value());
-    s.setValue(QString("drOnlyEnabled"),ui->drOnlyCheckBox->isChecked());
-    s.setValue(QString("drOnlyThresh"),ui->drOnlyThreshSpinBox->value());
-    s.setValue(QString("defaultShots"),ui->defaultShotsSpinBox->value());
-    s.setValue(QString("drPower"),ui->drPowerDoubleSpinBox->value());
-    s.setValue(QString("drPowerEnabled"),ui->drPowerCheckBox->isChecked());
-
-    s.beginWriteArray(QString("shotsTable"));
+    std::vector<SettingsMap> l;
+    l.reserve(shotsList.size());
     for(int i=0; i<shotsList.size(); i++)
-    {
-        s.setArrayIndex(i);
-        s.setValue(QString("shots"),shotsList.at(i).first);
-        s.setValue(QString("intensity"),shotsList.at(i).second);
-    }
-    s.endArray();
-    s.endGroup();
+        l.push_back({ {BC::Key::plShots,shotsList.at(i).first},
+                      {BC::Key::plIntensity,shotsList.at(i).second} });
+    setArray(BC::Key::plShotsTab,l,false);
 
     QDialog::accept();
 }
@@ -373,7 +364,7 @@ QVariant ShotsModel::headerData(int section, Qt::Orientation orientation, int ro
         if(role == Qt::DisplayRole)
         {
             if(section == 0)
-                return QString("Shots");
+                return BC::Key::plShots;
             else if(section == 1)
                 return QString("Intensity Limit");
         }
