@@ -5,6 +5,7 @@
 
 namespace BC::Key {
 static const QString lifLaser("lifLaser");
+static const QString lifLaserUnits("units");
 }
 
 class LifLaser : public HardwareObject

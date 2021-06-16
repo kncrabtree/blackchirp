@@ -14,8 +14,8 @@
 #include <src/data/datastructs.h>
 #include <src/gui/plot/blackchirpplotcurve.h>
 
-LifSlicePlot::LifSlicePlot(QWidget *parent) :
-    ZoomPanPlot(BC::Key::lifSlicePlot,parent)
+LifSlicePlot::LifSlicePlot(const QString name, QWidget *parent) :
+    ZoomPanPlot(name,parent)
 {
     setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
     setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));

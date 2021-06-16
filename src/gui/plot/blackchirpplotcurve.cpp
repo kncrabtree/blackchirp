@@ -87,7 +87,10 @@ void BlackchirpPlotCurve::configurePen()
 void BlackchirpPlotCurve::configureSymbol()
 {
     auto sym = new QwtSymbol();
+    QPalette pal;
     sym->setStyle(get<QwtSymbol::Style>(BC::Key::bcCurveMarker,QwtSymbol::NoSymbol));
+    sym->setColor(get<QColor>(BC::Key::bcCurveColor,pal.color(QPalette::BrightText)));
+    sym->setPen(get<QColor>(BC::Key::bcCurveColor,pal.color(QPalette::BrightText)));
     auto s = get<int>(BC::Key::bcCurveMarkerSize,5);
     sym->setSize(QSize(s,s));
     setSymbol(sym);

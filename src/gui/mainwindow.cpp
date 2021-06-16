@@ -1,5 +1,5 @@
 #include "mainwindow.h"
-#include "ui_mainwindow.h"
+#include "mainwindow_ui.h"
 
 #include <QThread>
 #include <QDialogButtonBox>
@@ -55,10 +55,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->setupUi(this);
 
-    for(int i=0; i<ui->tabWidget->count(); i++)
+    for(int i=0; i<ui->mainTabWidget->count(); i++)
     {
-        ui->tabWidget->widget(i)->layout()->setContentsMargins(0,0,0,0);
-        ui->tabWidget->widget(i)->layout()->setMargin(0);
+        ui->mainTabWidget->widget(i)->layout()->setContentsMargins(0,0,0,0);
+        ui->mainTabWidget->widget(i)->layout()->setMargin(0);
     }
 
     ui->exptSpinBox->blockSignals(true);
@@ -70,25 +70,25 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->statusBar->addWidget(statusLabel);
 
     p_lh = new LogHandler();
-    connect(p_lh,&LogHandler::sendLogMessage,ui->log,&QTextEdit::append);
+    connect(p_lh,&LogHandler::sendLogMessage,ui->logTextEdit,&QTextEdit::append);
     connect(p_lh,&LogHandler::iconUpdate,this,&MainWindow::setLogIcon);
     connect(ui->ftViewWidget,&FtmwViewWidget::experimentLogMessage,p_lh,&LogHandler::experimentLogMessage);
-    connect(ui->tabWidget,&QTabWidget::currentChanged,[=](int i) {
-        if(i == ui->tabWidget->indexOf(ui->logTab))
+    connect(ui->mainTabWidget,&QTabWidget::currentChanged,[=](int i) {
+        if(i == ui->mainTabWidget->indexOf(ui->logTab))
         {
             setLogIcon(BlackChirp::LogNormal);
             if(d_logCount > 0)
             {
                 d_logCount = 0;
-                ui->tabWidget->setTabText(ui->tabWidget->indexOf(ui->logTab),QString("Log"));
+                ui->mainTabWidget->setTabText(ui->mainTabWidget->indexOf(ui->logTab),QString("Log"));
             }
         }
     });
     connect(p_lh,&LogHandler::sendLogMessage,this,[=](){
-        if(ui->tabWidget->currentWidget() != ui->logTab)
+        if(ui->mainTabWidget->currentWidget() != ui->logTab)
         {
             d_logCount++;
-            ui->tabWidget->setTabText(ui->tabWidget->indexOf(ui->logTab),QString("Log (%1)").arg(d_logCount));
+            ui->mainTabWidget->setTabText(ui->mainTabWidget->indexOf(ui->logTab),QString("Log (%1)").arg(d_logCount));
         }
     });
 
@@ -276,10 +276,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionPause,&QAction::triggered,this,&MainWindow::pauseUi);
     connect(ui->actionResume,&QAction::triggered,this,&MainWindow::resumeUi);
     connect(ui->actionCommunication,&QAction::triggered,this,&MainWindow::launchCommunicationDialog);
-    connect(ui->actionCP_FTMW,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(ui->ftmwTab); });
-    connect(ui->actionTrackingShow,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(ui->trackingTab); });
-    connect(ui->actionControl,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(ui->controlTab); });
-    connect(ui->actionLog,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(ui->logTab); });
+    connect(ui->actionCP_FTMW,&QAction::triggered,this,[=](){ ui->mainTabWidget->setCurrentWidget(ui->ftmwTab); });
+    connect(ui->actionTrackingShow,&QAction::triggered,this,[=](){ ui->mainTabWidget->setCurrentWidget(ui->trackingTab); });
+    connect(ui->actionControl,&QAction::triggered,this,[=](){ ui->mainTabWidget->setCurrentWidget(ui->controlTab); });
+    connect(ui->actionLog,&QAction::triggered,this,[=](){ ui->mainTabWidget->setCurrentWidget(ui->logTab); });
     connect(ui->action_Graphs,&QAction::triggered,ui->trackingViewWidget,&TrackingViewWidget::changeNumPlots);
     connect(ui->actionAutoscale_All,&QAction::triggered,ui->trackingViewWidget,&TrackingViewWidget::autoScaleAll);
     connect(ui->actionSleep,&QAction::toggled,this,&MainWindow::sleep);
@@ -287,13 +287,13 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionView_Experiment,&QAction::triggered,this,&MainWindow::viewExperiment);
 #ifdef BC_LIF
     p_lifDisplayWidget = new LifDisplayWidget(this);
-    int lti = ui->tabWidget->insertTab(ui->tabWidget->indexOf(ui->trackingTab),p_lifDisplayWidget,QIcon(QString(":/icons/laser.png")),QString("LIF"));
-    p_lifTab = ui->tabWidget->widget(lti);
+    int lti = ui->mainTabWidget->insertTab(ui->mainTabWidget->indexOf(ui->trackingTab),p_lifDisplayWidget,QIcon(QString(":/icons/laser.png")),QString("LIF"));
+    p_lifTab = ui->mainTabWidget->widget(lti);
     p_lifProgressBar = new QProgressBar(this);
     ui->instrumentStatusLayout->addWidget(new QLabel(QString("LIF Progress")),0,Qt::AlignCenter);
     ui->instrumentStatusLayout->addWidget(p_lifProgressBar);
     p_lifControlWidget = new LifControlWidget(this);
-    ui->controlTopLayout->addWidget(p_lifControlWidget,2);
+    ui->controlTabTopLayout->addWidget(p_lifControlWidget,2);
     p_lifAction = new QAction(QIcon(QString(":/icons/laser.png")),QString("LIF"),this);
     ui->menuView->insertAction(ui->actionLog,p_lifAction);
 
@@ -309,7 +309,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_am,&AcquisitionManager::nextLifPoint,p_hwm,&HardwareManager::setLifParameters);
     connect(p_am,&AcquisitionManager::lifShotAcquired,p_lifProgressBar,&QProgressBar::setValue);
     connect(p_am,&AcquisitionManager::lifPointUpdate,p_lifDisplayWidget,&LifDisplayWidget::updatePoint);
-    connect(p_lifAction,&QAction::triggered,this,[=](){ ui->tabWidget->setCurrentWidget(p_lifTab); });
+    connect(p_lifAction,&QAction::triggered,this,[=](){ ui->mainTabWidget->setCurrentWidget(p_lifTab); });
     connect(p_lifControlWidget,&LifControlWidget::lifColorChanged,
             p_lifDisplayWidget,&LifDisplayWidget::checkLifColors);
     connect(p_lifDisplayWidget,&LifDisplayWidget::lifColorChanged,
@@ -320,12 +320,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
 #ifdef BC_MOTOR
     p_motorDisplayWidget = new MotorDisplayWidget(this);
-    int mti = ui->tabWidget->insertTab(ui->tabWidget->indexOf(ui->trackingTab),p_motorDisplayWidget,QIcon(QString(":/icons/motorscan.png")),QString("Motor"));
-    p_motorTab = ui->tabWidget->widget(mti);
+    int mti = ui->mainTabWidget->insertTab(ui->mainTabWidget->indexOf(ui->trackingTab),p_motorDisplayWidget,QIcon(QString(":/icons/motorscan.png")),QString("Motor"));
+    p_motorTab = ui->mainTabWidget->widget(mti);
 
     p_motorViewAction = new QAction(QIcon(QString(":/icons/motorscan.png")),QString("Motor"),this);
     ui->menuView->insertAction(ui->actionLog,p_motorViewAction);
-    connect(p_motorViewAction,&QAction::triggered,[=](){ ui->tabWidget->setCurrentWidget(p_motorTab);});
+    connect(p_motorViewAction,&QAction::triggered,[=](){ ui->mainTabWidget->setCurrentWidget(p_motorTab);});
 
     p_motorStatusWidget = new MotorStatusWidget(this);
     ui->instrumentStatusLayout->addWidget(p_motorStatusWidget);
@@ -710,30 +710,30 @@ void MainWindow::updatePressureControl(bool en)
 
 void MainWindow::setLogIcon(BlackChirp::LogMessageCode c)
 {
-    if(ui->tabWidget->currentWidget() != ui->logTab)
+    if(ui->mainTabWidget->currentWidget() != ui->logTab)
     {
         switch(c) {
         case BlackChirp::LogWarning:
             if(d_logIcon != BlackChirp::LogError)
             {
-                ui->tabWidget->setTabIcon(ui->tabWidget->indexOf(ui->logTab),QIcon(QString(":/icons/warning.png")));
+                ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab),QIcon(QString(":/icons/warning.png")));
                 d_logIcon = c;
             }
             break;
         case BlackChirp::LogError:
-            ui->tabWidget->setTabIcon(ui->tabWidget->indexOf(ui->logTab),QIcon(QString(":/icons/error.png")));
+            ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab),QIcon(QString(":/icons/error.png")));
             d_logIcon = c;
             break;
         default:
             d_logIcon = c;
-            ui->tabWidget->setTabIcon(ui->tabWidget->indexOf(ui->logTab),QIcon());
+            ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab),QIcon());
             break;
         }
     }
     else
     {
         d_logIcon = BlackChirp::LogNormal;
-        ui->tabWidget->setTabIcon(ui->tabWidget->indexOf(ui->logTab),QIcon());
+        ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab),QIcon());
     }
 }
 

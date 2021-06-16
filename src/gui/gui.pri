@@ -42,6 +42,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/dialog/ioboardconfigdialog.h \
     $$PWD/dialog/peaklistexportdialog.h \
     $$PWD/dialog/quickexptdialog.h \
+    $$PWD/mainwindow_ui.h \
     $$PWD/plot/blackchirpplotcurve.h \
     $$PWD/plot/chirpconfigplot.h \
     $$PWD/plot/customtracker.h \
@@ -74,7 +75,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/wizard/wizardsummarypage.h \
     $$PWD/wizard/wizardvalidationpage.h
 
-FORMS += $$PWD/mainwindow.ui \
+FORMS += \
     $$PWD/dialog/batchsequencedialog.ui \
     $$PWD/dialog/communicationdialog.ui \
     $$PWD/dialog/ioboardconfigdialog.ui \

@@ -1,76 +1,85 @@
 #include <src/modules/lif/gui/lifdisplaywidget.h>
-#include "ui_lifdisplaywidget.h"
 
-#include <QResizeEvent>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
+
+#include <src/data/storage/settingsstorage.h>
+#include <src/modules/lif/gui/lifsliceplot.h>
+#include <src/modules/lif/gui/liftraceplot.h>
+#include <src/modules/lif/gui/lifspectrogramplot.h>
+#include <src/modules/lif/hardware/liflaser/liflaser.h>
 #include <math.h>
 
 #include <qwt6/qwt_matrix_raster_data.h>
 
 LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
-    QWidget(parent),
-    ui(new Ui::LifDisplayWidget), d_delayReverse(false), d_freqReverse(false), d_currentSpectrumDelayIndex(-1), d_currentTimeTraceFreqIndex(-1)
+    QWidget(parent), d_delayReverse(false), d_freqReverse(false), d_currentSpectrumDelayIndex(-1), d_currentTimeTraceFreqIndex(-1)
 {
-    ui->setupUi(this);
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("lifLaser"));
-    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-    d_laserUnits = s.value(QString("units"),QString("nm")).toString();
-    s.endGroup();
-    s.endGroup();
+    SettingsStorage s(BC::Key::lifLaser,SettingsStorage::Hardware);
 
-    ui->spectrumPlot->setXAxisTitle(QString("Laser Position (%1)").arg(d_laserUnits));
-    ui->spectrumPlot->setPlotTitle(QString("Laser Slice"));
-    ui->spectrumPlot->setName(QString("spectrumPlot"));
+    p_freqSlicePlot = new LifSlicePlot(BC::Key::lifSpectrumPlot,this);
+    p_freqSlicePlot->setXAxisTitle(QString("Laser Position (%1)").arg(s.get<QString>(BC::Key::lifLaserUnits,"nm")));
+    p_freqSlicePlot->setPlotTitle(QString("Laser Slice"));
 
-    ui->timeTracePlot->setXAxisTitle(QString::fromUtf16(u"Delay (µs)"));
-    ui->timeTracePlot->setPlotTitle(QString("Time Slice"));
-    ui->timeTracePlot->setName(QString("timeTracePlot"));
+    p_timeSlicePlot = new LifSlicePlot(BC::Key::lifTimePlot,this);
+    p_timeSlicePlot->setXAxisTitle(QString::fromUtf16(u"Delay (µs)"));
+    p_timeSlicePlot->setPlotTitle(QString("Time Slice"));
 
     QwtText title;
     title.setText(QString("Time Trace"));
     title.setFont(QFont("sans-serif",8));
-    ui->lifTracePlot->setTitle(title);
-    ui->lifTracePlot->setDisplayOnly(true);
+    p_lifTracePlot = new LifTracePlot(this);
+    p_lifTracePlot->setTitle(title);
+    p_lifTracePlot->setDisplayOnly(true);
 
-    connect(ui->lifTracePlot,&LifTracePlot::colorChanged,this,&LifDisplayWidget::lifColorChanged);
-    connect(ui->lifTracePlot,&LifTracePlot::lifGateUpdated,this,&LifDisplayWidget::lifZoneUpdate);
-    connect(ui->lifTracePlot,&LifTracePlot::refGateUpdated,this,&LifDisplayWidget::refZoneUpdate);
-    connect(ui->lifSpectrogram,&LifSpectrogramPlot::freqSlice,this,&LifDisplayWidget::freqSlice);
-    connect(ui->lifSpectrogram,&LifSpectrogramPlot::delaySlice,this,&LifDisplayWidget::delaySlice);
+    p_spectrogramPlot = new LifSpectrogramPlot(this);
+
+    connect(p_lifTracePlot,&LifTracePlot::colorChanged,this,&LifDisplayWidget::lifColorChanged);
+    connect(p_lifTracePlot,&LifTracePlot::lifGateUpdated,this,&LifDisplayWidget::lifZoneUpdate);
+    connect(p_lifTracePlot,&LifTracePlot::refGateUpdated,this,&LifDisplayWidget::refZoneUpdate);
+    connect(p_spectrogramPlot,&LifSpectrogramPlot::freqSlice,this,&LifDisplayWidget::freqSlice);
+    connect(p_spectrogramPlot,&LifSpectrogramPlot::delaySlice,this,&LifDisplayWidget::delaySlice);
+
+    auto hbl = new QHBoxLayout;
+    hbl->addWidget(p_lifTracePlot,1);
+    hbl->addWidget(p_timeSlicePlot,1);
+    hbl->addWidget(p_freqSlicePlot,1);
+
+    auto vbl = new QVBoxLayout;
+    vbl->addLayout(hbl,2);
+    vbl->addWidget(p_spectrogramPlot,3);
+
+    setLayout(vbl);
 
 }
 
 LifDisplayWidget::~LifDisplayWidget()
 {
-    delete ui;
 }
 
 void LifDisplayWidget::checkLifColors()
 {
-    ui->lifTracePlot->checkColors();
+    p_lifTracePlot->checkColors();
 }
 
 void LifDisplayWidget::resetLifPlot()
 {
-    ui->lifTracePlot->reset();
+    p_lifTracePlot->reset();
 }
 
 void LifDisplayWidget::prepareForExperiment(const LifConfig c)
 {
-    ui->lifTracePlot->clearPlot();
+    p_lifTracePlot->clearPlot();
 
-
-
-
-    ui->spectrumPlot->setPlotTitle(QString("Laser Slice"));
-    ui->timeTracePlot->setPlotTitle(QString("Time Slice"));
+    p_freqSlicePlot->setPlotTitle(QString("Laser Slice"));
+    p_timeSlicePlot->setPlotTitle(QString("Time Slice"));
 
 
     if(!c.isEnabled())
     {
-        ui->timeTracePlot->prepareForExperiment(0.0,1.0);
-        ui->spectrumPlot->prepareForExperiment(0.0,1.0);
+        p_timeSlicePlot->prepareForExperiment(0.0,1.0);
+        p_freqSlicePlot->prepareForExperiment(0.0,1.0);
         d_currentTimeTraceFreqIndex = -1;
         d_currentSpectrumDelayIndex = -1;
     }
@@ -78,21 +87,21 @@ void LifDisplayWidget::prepareForExperiment(const LifConfig c)
     {
 
         if(c.numDelayPoints() > 1)
-            ui->timeTracePlot->prepareForExperiment(qMin(c.delayRange().first,c.delayRange().second),qMax(c.delayRange().first,c.delayRange().second));
+            p_timeSlicePlot->prepareForExperiment(qMin(c.delayRange().first,c.delayRange().second),qMax(c.delayRange().first,c.delayRange().second));
         else
-            ui->timeTracePlot->prepareForExperiment(qMin(c.delayRange().first + c.delayStep(),c.delayRange().first - c.delayStep()),
+            p_timeSlicePlot->prepareForExperiment(qMin(c.delayRange().first + c.delayStep(),c.delayRange().first - c.delayStep()),
                                                     qMax(c.delayRange().first + c.delayStep(),c.delayRange().first - c.delayStep()));
         if(c.numLaserPoints() > 1)
-            ui->spectrumPlot->prepareForExperiment(qMin(c.laserRange().first,c.laserRange().second),qMax(c.laserRange().first,c.laserRange().second));
+            p_freqSlicePlot->prepareForExperiment(qMin(c.laserRange().first,c.laserRange().second),qMax(c.laserRange().first,c.laserRange().second));
         else
-            ui->spectrumPlot->prepareForExperiment(qMin(c.laserRange().first + c.laserStep(),c.laserRange().first - c.laserStep()),
+            p_freqSlicePlot->prepareForExperiment(qMin(c.laserRange().first + c.laserStep(),c.laserRange().first - c.laserStep()),
                                                     qMax(c.laserRange().first + c.laserStep(),c.laserRange().first - c.laserStep()));
 
         d_currentTimeTraceFreqIndex = 0;
         d_currentSpectrumDelayIndex = 0;
     }
 
-    ui->lifSpectrogram->prepareForExperiment(c);
+    p_spectrogramPlot->prepareForExperiment(c);
     d_currentLifConfig = c;
 }
 
@@ -107,7 +116,7 @@ void LifDisplayWidget::updatePoint(const LifConfig c)
         d_currentLifConfig.setRefGate(rr);
 
     auto zRange = integrate(d_currentLifConfig);
-    ui->lifSpectrogram->updateData(d_currentIntegratedData,d_currentLifConfig.numLaserPoints(),zRange.first,zRange.second);
+    p_spectrogramPlot->updateData(d_currentIntegratedData,d_currentLifConfig.numLaserPoints(),zRange.first,zRange.second);
 
 
     updateTimeTrace();
@@ -178,9 +187,9 @@ void LifDisplayWidget::updateSpectrum()
 
     double dVal = d_currentLifConfig.delayRange().first + d_currentSpectrumDelayIndex*d_currentLifConfig.delayStep();
     QString labelText = QString::fromUtf16(u"Spectrum at %1 µs").arg(dVal,0,'f',2);
-    ui->spectrumPlot->setPlotTitle(labelText);
-    ui->spectrumPlot->setAxisAutoScaleRange(QwtPlot::yLeft,min,max);
-    ui->spectrumPlot->setData(slice);
+    p_freqSlicePlot->setPlotTitle(labelText);
+    p_freqSlicePlot->setAxisAutoScaleRange(QwtPlot::yLeft,min,max);
+    p_freqSlicePlot->setData(slice);
 }
 
 void LifDisplayWidget::updateTimeTrace()
@@ -208,12 +217,13 @@ void LifDisplayWidget::updateTimeTrace()
         min = qMin(min,dat);
     }
 
-    ui->timeTracePlot->setAxisAutoScaleRange(QwtPlot::yLeft,min,max);
+    p_timeSlicePlot->setAxisAutoScaleRange(QwtPlot::yLeft,min,max);
 
+    SettingsStorage s(BC::Key::lifLaser,SettingsStorage::Hardware);
     double fVal = d_currentLifConfig.laserRange().first + d_currentTimeTraceFreqIndex*d_currentLifConfig.laserStep();
-    QString labelText = QString::fromUtf16(u"Time Slice at %1 %2").arg(fVal,0,'f',3).arg(d_laserUnits);
-    ui->timeTracePlot->setPlotTitle(labelText);
-    ui->timeTracePlot->setData(slice);
+    QString labelText = QString::fromUtf16(u"Time Slice at %1 %2").arg(fVal,0,'f',3).arg(s.get<QString>(BC::Key::lifLaserUnits));
+    p_timeSlicePlot->setPlotTitle(labelText);
+    p_timeSlicePlot->setData(slice);
 }
 
 void LifDisplayWidget::updateLifTrace()
@@ -225,16 +235,16 @@ void LifDisplayWidget::updateLifTrace()
         if(d_currentTimeTraceFreqIndex < d.at(d_currentSpectrumDelayIndex).size())
         {
             auto t = d_currentLifConfig.lifData().at(d_currentSpectrumDelayIndex).at(d_currentTimeTraceFreqIndex);
-            ui->lifTracePlot->traceProcessed(t);
-            ui->lifTracePlot->setLifGateRange(d_currentLifConfig.lifGate().first,d_currentLifConfig.lifGate().second);
+            p_lifTracePlot->traceProcessed(t);
+            p_lifTracePlot->setLifGateRange(d_currentLifConfig.lifGate().first,d_currentLifConfig.lifGate().second);
             if(t.hasRefData())
-                ui->lifTracePlot->setRefGateRange(d_currentLifConfig.refGate().first,d_currentLifConfig.refGate().second);
+                p_lifTracePlot->setRefGateRange(d_currentLifConfig.refGate().first,d_currentLifConfig.refGate().second);
         }
         else
-            ui->lifTracePlot->clearPlot();
+            p_lifTracePlot->clearPlot();
     }
     else
-        ui->lifTracePlot->clearPlot();
+        p_lifTracePlot->clearPlot();
 }
 
 QPair<double,double> LifDisplayWidget::integrate(const LifConfig c)
@@ -263,13 +273,4 @@ QPair<double,double> LifDisplayWidget::integrate(const LifConfig c)
         }
     }
     return out;
-}
-
-void LifDisplayWidget::resizeEvent(QResizeEvent *ev)
-{
-    int margin = 5;
-    ui->lifTracePlot->setGeometry(0,0,ev->size().width()/3-margin,2*ev->size().height()/5-margin);
-    ui->timeTracePlot->setGeometry(ev->size().width()/3,0,ev->size().width()/3-margin,2*ev->size().height()/5-margin);
-    ui->spectrumPlot->setGeometry(2*ev->size().width()/3,0,ev->size().width()/3-margin,2*ev->size().height()/5-margin);
-    ui->lifSpectrogram->setGeometry(0,2*ev->size().height()/5,ev->size().width()-margin,3*ev->size().height()/5-margin);
 }

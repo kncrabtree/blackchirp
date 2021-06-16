@@ -1,8 +1,7 @@
  
 
 FORMS += \
-    $$PWD/lifcontrolwidget.ui \
-    $$PWD/lifdisplaywidget.ui
+    $$PWD/lifcontrolwidget.ui
 
 HEADERS += \
     $$PWD/lifcontrolwidget.h \

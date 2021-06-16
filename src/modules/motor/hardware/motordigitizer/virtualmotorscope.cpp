@@ -3,7 +3,7 @@
 #include <QTimer>
 
 VirtualMotorScope::VirtualMotorScope(QObject *parent) :
-    MotorOscilloscope(BC::Key::hwVirtual,BC::Key::vmsName,CommunicationProtocol::Rs232,parent)
+    MotorOscilloscope(BC::Key::hwVirtual,BC::Key::vmsName,CommunicationProtocol::Virtual,parent)
 {
 }
 

@@ -23,12 +23,12 @@
 
 #include <src/modules/motor/gui/motorsliderwidget.h>
 #include <src/modules/motor/gui/motortimeplot.h>
-#include <src/modules/motor/gui/motorxyplot.h>
-#include <src/modules/motor/gui/motorzplot.h>
+#include <src/modules/motor/gui/motorspectrogramplot.h>
 
 #include <src/data/experiment/experiment.h>
 #include <src/modules/motor/data/motorscan.h>
 #include <src/data/analysis/analysis.h>
+#include <src/data/storage/settingsstorage.h>
 
 class MotorSliderWidget;
 
@@ -36,7 +36,13 @@ namespace Ui {
 class MotorDisplayWidget;
 }
 
-class MotorDisplayWidget : public QWidget
+namespace BC::Key {
+static const QString motorDisplay("motorDisplay");
+static const QString motorLargePlot("MotorLargeSpectrogramPlot");
+static const QString motorSmallPlot("MotorSmallSpectrogramPlot");
+}
+
+class MotorDisplayWidget : public QWidget, public SettingsStorage
 {
     Q_OBJECT
 
@@ -74,13 +80,13 @@ class Ui_MotorDisplayWidget
 public:
     QVBoxLayout *verticalLayout;
     QHBoxLayout *horizontalLayout;
-    MotorZPlot *motorZSpectrogramPlot;
-    MotorSliderWidget *zSlider1;
-    MotorSliderWidget *zSlider2;
+    MotorSpectrogramPlot *motorLargeSpectrogramPlot;
+    MotorSliderWidget *largeSlider1;
+    MotorSliderWidget *largeSlider2;
     QHBoxLayout *horizontalLayout_2;
-    MotorXYPlot *motorXYSpectrogramPlot;
-    MotorSliderWidget *xySlider1;
-    MotorSliderWidget *xySlider2;
+    MotorSpectrogramPlot *motorSmallSpectrogramPlot;
+    MotorSliderWidget *smallSlider1;
+    MotorSliderWidget *smallSlider2;
     MotorTimePlot *motorTimePlot;
     MotorSliderWidget *timeXSlider;
     MotorSliderWidget *timeYSlider;
@@ -147,20 +153,19 @@ public:
 
         horizontalLayout = new QHBoxLayout();
         horizontalLayout->setObjectName(QStringLiteral("horizontalLayout"));
-        motorZSpectrogramPlot = new MotorZPlot(MotorDisplayWidget);
-        motorZSpectrogramPlot->setObjectName(QStringLiteral("motorZSpectrogramPlot"));
+        motorLargeSpectrogramPlot = new MotorSpectrogramPlot(BC::Key::motorLargePlot,MotorDisplayWidget);
 
-        horizontalLayout->addWidget(motorZSpectrogramPlot);
+        horizontalLayout->addWidget(motorLargeSpectrogramPlot);
 
-        zSlider1 = new MotorSliderWidget(MotorDisplayWidget);
-        zSlider1->setObjectName(QStringLiteral("zSlider1"));
+        largeSlider1 = new MotorSliderWidget(MotorDisplayWidget);
+        largeSlider1->setObjectName(QStringLiteral("zSlider1"));
 
-        horizontalLayout->addWidget(zSlider1);
+        horizontalLayout->addWidget(largeSlider1);
 
-        zSlider2 = new MotorSliderWidget(MotorDisplayWidget);
-        zSlider2->setObjectName(QStringLiteral("zSlider2"));
+        largeSlider2 = new MotorSliderWidget(MotorDisplayWidget);
+        largeSlider2->setObjectName(QStringLiteral("zSlider2"));
 
-        horizontalLayout->addWidget(zSlider2);
+        horizontalLayout->addWidget(largeSlider2);
 
         horizontalLayout->setStretch(0, 1);
 
@@ -168,20 +173,20 @@ public:
 
         horizontalLayout_2 = new QHBoxLayout();
         horizontalLayout_2->setObjectName(QStringLiteral("horizontalLayout_2"));
-        motorXYSpectrogramPlot = new MotorXYPlot(MotorDisplayWidget);
-        motorXYSpectrogramPlot->setObjectName(QStringLiteral("motorXYSpectrogramPlot"));
+        motorSmallSpectrogramPlot = new MotorSpectrogramPlot(BC::Key::motorSmallPlot,MotorDisplayWidget);
+        motorSmallSpectrogramPlot->setObjectName(QStringLiteral("motorXYSpectrogramPlot"));
 
-        horizontalLayout_2->addWidget(motorXYSpectrogramPlot);
+        horizontalLayout_2->addWidget(motorSmallSpectrogramPlot);
 
-        xySlider1 = new MotorSliderWidget(MotorDisplayWidget);
-        xySlider1->setObjectName(QStringLiteral("xySlider1"));
+        smallSlider1 = new MotorSliderWidget(MotorDisplayWidget);
+        smallSlider1->setObjectName(QStringLiteral("xySlider1"));
 
-        horizontalLayout_2->addWidget(xySlider1);
+        horizontalLayout_2->addWidget(smallSlider1);
 
-        xySlider2 = new MotorSliderWidget(MotorDisplayWidget);
-        xySlider2->setObjectName(QStringLiteral("xySlider2"));
+        smallSlider2 = new MotorSliderWidget(MotorDisplayWidget);
+        smallSlider2->setObjectName(QStringLiteral("xySlider2"));
 
-        horizontalLayout_2->addWidget(xySlider2);
+        horizontalLayout_2->addWidget(smallSlider2);
 
         motorTimePlot = new MotorTimePlot(MotorDisplayWidget);
         motorTimePlot->setObjectName(QStringLiteral("motorTimePlot"));

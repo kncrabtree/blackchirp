@@ -7,7 +7,6 @@ class QwtPlotCurve;
 class QwtPlotTextLabel;
 
 namespace BC::Key {
-static const QString lifSlicePlot("lifSlicePlot");
 static const QString lifSliceCurve("LifSliceCurve");
 }
 
@@ -16,7 +15,7 @@ class LifSlicePlot : public ZoomPanPlot
 {
     Q_OBJECT
 public:
-    LifSlicePlot(QWidget *parent = nullptr);
+    LifSlicePlot(const QString name, QWidget *parent = nullptr);
     ~LifSlicePlot();
 
     void setXAxisTitle(QString title);

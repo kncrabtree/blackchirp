@@ -10,6 +10,10 @@ class QwtPlotCurve;
 class QwtPlotZoneItem;
 class QwtPlotTextLabel;
 
+namespace BC::Key {
+static const QString lifTracePlot("lifTracePlot");
+}
+
 class LifTracePlot : public ZoomPanPlot
 {
     Q_OBJECT

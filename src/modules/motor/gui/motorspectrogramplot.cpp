@@ -11,7 +11,7 @@
 
 #include <src/gui/plot/customtracker.h>
 
-MotorSpectrogramPlot::MotorSpectrogramPlot(QWidget *parent) : ZoomPanPlot(QString("motorSpectrogramPlot"),parent)
+MotorSpectrogramPlot::MotorSpectrogramPlot(const QString name, QWidget *parent) : ZoomPanPlot(name,parent)
 {
     d_max = 1.0;
 
@@ -39,6 +39,29 @@ MotorSpectrogramPlot::MotorSpectrogramPlot(QWidget *parent) : ZoomPanPlot(QStrin
 
     enableAxis(QwtPlot::yRight);
     setAxisOverride(QwtPlot::yRight);
+
+    if(name.contains("Small",Qt::CaseInsensitive))
+    {
+        auto y = getOrSetDefault(BC::Key::leftAxis,QVariant::fromValue(BlackChirp::MotorY)).value<BlackChirp::MotorAxis>();
+        auto x = getOrSetDefault(BC::Key::bottomAxis,QVariant::fromValue(BlackChirp::MotorX)).value<BlackChirp::MotorAxis>();
+        auto s1 = getOrSetDefault(BC::Key::slider1Axis,QVariant::fromValue(BlackChirp::MotorZ)).value<BlackChirp::MotorAxis>();
+        auto s2 = getOrSetDefault(BC::Key::slider2Axis,QVariant::fromValue(BlackChirp::MotorT)).value<BlackChirp::MotorAxis>();
+        setAxis(QwtPlot::yLeft,y);
+        setAxis(QwtPlot::xBottom,x);
+        Q_UNUSED(s1)
+        Q_UNUSED(s2)
+    }
+    else
+    {
+        auto y = getOrSetDefault(BC::Key::leftAxis,QVariant::fromValue(BlackChirp::MotorY)).value<BlackChirp::MotorAxis>();
+        auto x = getOrSetDefault(BC::Key::bottomAxis,QVariant::fromValue(BlackChirp::MotorZ)).value<BlackChirp::MotorAxis>();
+        auto s1 = getOrSetDefault(BC::Key::slider1Axis,QVariant::fromValue(BlackChirp::MotorX)).value<BlackChirp::MotorAxis>();
+        auto s2 = getOrSetDefault(BC::Key::slider2Axis,QVariant::fromValue(BlackChirp::MotorT)).value<BlackChirp::MotorAxis>();
+        setAxis(QwtPlot::yLeft,y);
+        setAxis(QwtPlot::xBottom,x);
+        Q_UNUSED(s1)
+        Q_UNUSED(s2)
+    }
 
 
 }
@@ -141,6 +164,8 @@ void MotorSpectrogramPlot::updatePoint(int row, int col, double val)
 void MotorSpectrogramPlot::setAxis(QwtPlot::Axis plotAxis, BlackChirp::MotorAxis motorAxis)
 {
     QString text;
+
+    /// \todo Figure out how to update slider axes here too
 
     switch (motorAxis) {
     case BlackChirp::MotorX:

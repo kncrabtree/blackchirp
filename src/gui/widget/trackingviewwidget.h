@@ -14,6 +14,7 @@ class TrackingPlot;
 class QwtPlotCurve;
 
 namespace BC::Key {
+static const QString trackingWidget("trackingWidget");
 static const QString numPlots("numPlots");
 static const QString viewonly("View");
 static const QString plot("Plot");
@@ -44,11 +45,7 @@ public:
 public slots:
     void initializeForExperiment();
     void pointUpdated(const QList<QPair<QString,QVariant> > list, bool plot, QDateTime t);
-    void curveVisibilityToggled(QwtPlotCurve *c, bool visible);
-    void curveContextMenuRequested(QwtPlotCurve *c, QMouseEvent *me);
-    void changeCurveColor(int curveIndex);
     void moveCurveToPlot(int curveIndex, int newPlotIndex);
-    void changeCurveAxis(int curveIndex);
     void pushXAxis(int sourcePlotIndex);
     void autoScaleAll();
 

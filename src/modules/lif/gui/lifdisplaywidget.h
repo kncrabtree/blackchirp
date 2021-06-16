@@ -9,8 +9,13 @@
 #include <src/modules/lif/data/liftrace.h>
 #include <src/modules/lif/data/lifconfig.h>
 
-namespace Ui {
-class LifDisplayWidget;
+class LifSlicePlot;
+class LifTracePlot;
+class LifSpectrogramPlot;
+
+namespace BC::Key {
+static const QString lifSpectrumPlot("lifSpectrumPlot");
+static const QString lifTimePlot("lifTimePlot");
 }
 
 class LifDisplayWidget : public QWidget
@@ -36,23 +41,21 @@ public slots:
     void refZoneUpdate(int min, int max);
 
 private:
-    Ui::LifDisplayWidget *ui;
-
     LifConfig d_currentLifConfig;
     bool d_delayReverse, d_freqReverse;
     int d_currentSpectrumDelayIndex, d_currentTimeTraceFreqIndex;
     QVector<double> d_currentIntegratedData;
+
+    LifSlicePlot *p_timeSlicePlot, *p_freqSlicePlot;
+    LifTracePlot *p_lifTracePlot;
+    LifSpectrogramPlot *p_spectrogramPlot;
 
     void updateSpectrum();
     void updateTimeTrace();
     void updateLifTrace();
 
     QPair<double, double> integrate(const LifConfig c);
-    QString d_laserUnits;
 
-
-protected:
-    void resizeEvent(QResizeEvent *ev);
 };
 
 #endif // LIFDISPLAYWIDGET_H

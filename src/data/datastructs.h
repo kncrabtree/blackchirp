@@ -48,29 +48,12 @@ enum FtmwType
     FtmwDrScan
 };
 
-enum LifScanOrder {
-    LifOrderDelayFirst,
-    LifOrderFrequencyFirst
-};
-
-enum LifCompleteMode {
-    LifStopWhenComplete,
-    LifContinueUntilExperimentComplete
-};
-
 
 enum FlowSetting {
     FlowSettingEnabled,
     FlowSettingSetpoint,
     FlowSettingFlow,
     FlowSettingName
-};
-
-enum MotorAxis {
-    MotorX,
-    MotorY,
-    MotorZ,
-    MotorT
 };
 
 enum PulseActiveLevel { PulseLevelActiveLow, PulseLevelActiveHigh };
@@ -188,84 +171,6 @@ struct FtmwScopeConfig {
     }
 };
 
-struct LifScopeConfig {
-    double sampleRate;
-    int recordLength;
-    double xIncr;
-    ScopeTriggerSlope slope;
-    int bytesPerPoint;
-    QDataStream::ByteOrder byteOrder;
-    ScopeSampleOrder channelOrder;
-
-    bool refEnabled;
-    double vScale1, vScale2;
-    double yMult1, yMult2;
-
-
-    LifScopeConfig() : sampleRate(0.0), recordLength(0), xIncr(0.0), slope(RisingEdge), bytesPerPoint(1),
-        byteOrder(QDataStream::LittleEndian), channelOrder(ChannelsInterleaved), refEnabled(false), vScale1(0.0),
-        vScale2(0.0), yMult1(0.0), yMult2(0.0) {}
-
-
-    //Scope config
-    QMap<QString,QPair<QVariant,QString> > headerMap() const
-    {
-        QMap<QString,QPair<QVariant,QString> > out;
-
-        QString scratch;
-        QString prefix = QString("LifScope");
-        QString empty = QString("");
-
-        out.insert(prefix+QString("LifVerticalScale"),qMakePair(QString::number(vScale1,'f',3),QString("V/div")));
-        out.insert(prefix+QString("RefVerticalScale"),qMakePair(QString::number(vScale2,'f',3),QString("V/div")));
-        slope == RisingEdge ? scratch = QString("RisingEdge") : scratch = QString("FallingEdge");
-        out.insert(prefix+QString("TriggerSlope"),qMakePair(scratch,empty));
-        out.insert(prefix+QString("SampleRate"),qMakePair(QString::number(sampleRate/1e9,'f',3),QString("GS/s")));
-        out.insert(prefix+QString("RecordLength"),qMakePair(recordLength,empty));
-        out.insert(prefix+QString("BytesPerPoint"),qMakePair(bytesPerPoint,empty));
-        byteOrder == QDataStream::BigEndian ? scratch = QString("BigEndian") : scratch = QString("LittleEndian");
-        out.insert(prefix+QString("ByteOrder"),qMakePair(scratch,empty));
-        channelOrder == ChannelsInterleaved ? scratch = QString("Interleaved") : scratch = QString("Sequential");
-        out.insert(prefix+QString("ChannelOrder"),qMakePair(scratch,empty));
-
-        return out;
-    }
-
-};
-
-struct MotorScopeConfig {
-    int dataChannel;
-    double verticalScale;
-    int recordLength;
-    double sampleRate;
-    int triggerChannel;
-    BlackChirp::ScopeTriggerSlope slope;
-    QDataStream::ByteOrder byteOrder;
-    int bytesPerPoint;
-
-    QMap<QString,QPair<QVariant,QString> > headerMap() const
-    {
-        QMap<QString,QPair<QVariant,QString> > out;
-
-        QString scratch;
-        QString prefix = QString("MotorScope");
-        QString empty = QString("");
-
-        out.insert(prefix+QString("VerticalScale"),qMakePair(QString::number(verticalScale,'f',3),QString("V/div")));
-        slope == RisingEdge ? scratch = QString("RisingEdge") : scratch = QString("FallingEdge");
-        out.insert(prefix+QString("TriggerSlope"),qMakePair(scratch,empty));
-        out.insert(prefix+QString("SampleRate"),qMakePair(QString::number(sampleRate/1e6,'f',3),QString("MS/s")));
-        out.insert(prefix+QString("RecordLength"),qMakePair(recordLength,empty));
-        out.insert(prefix+QString("BytesPerPoint"),qMakePair(bytesPerPoint,empty));
-        byteOrder == QDataStream::BigEndian ? scratch = QString("BigEndian") : scratch = QString("LittleEndian");
-        out.insert(prefix+QString("ByteOrder"),qMakePair(scratch,empty));
-        out.insert(prefix+QString("TriggerChannel"),qMakePair(QString::number(triggerChannel),empty));
-        out.insert(prefix+QString("DataChannel"),qMakePair(QString::number(dataChannel),empty));
-
-        return out;
-    }
-
-};
 
 
 struct FlowChannelConfig {
@@ -340,6 +245,108 @@ void setExportDir(const QString fileName);
 QString headerMapToString(QMap<QString,QPair<QVariant,QString>> map);
 QString channelNameLookup(QString key);
 
+#ifdef BC_LIF
+
+enum LifScanOrder {
+    LifOrderDelayFirst,
+    LifOrderFrequencyFirst
+};
+
+enum LifCompleteMode {
+    LifStopWhenComplete,
+    LifContinueUntilExperimentComplete
+};
+
+struct LifScopeConfig {
+    double sampleRate;
+    int recordLength;
+    double xIncr;
+    ScopeTriggerSlope slope;
+    int bytesPerPoint;
+    QDataStream::ByteOrder byteOrder;
+    ScopeSampleOrder channelOrder;
+
+    bool refEnabled;
+    double vScale1, vScale2;
+    double yMult1, yMult2;
+
+
+    LifScopeConfig() : sampleRate(0.0), recordLength(0), xIncr(0.0), slope(RisingEdge), bytesPerPoint(1),
+        byteOrder(QDataStream::LittleEndian), channelOrder(ChannelsInterleaved), refEnabled(false), vScale1(0.0),
+        vScale2(0.0), yMult1(0.0), yMult2(0.0) {}
+
+
+    //Scope config
+    QMap<QString,QPair<QVariant,QString> > headerMap() const
+    {
+        QMap<QString,QPair<QVariant,QString> > out;
+
+        QString scratch;
+        QString prefix = QString("LifScope");
+        QString empty = QString("");
+
+        out.insert(prefix+QString("LifVerticalScale"),qMakePair(QString::number(vScale1,'f',3),QString("V/div")));
+        out.insert(prefix+QString("RefVerticalScale"),qMakePair(QString::number(vScale2,'f',3),QString("V/div")));
+        slope == RisingEdge ? scratch = QString("RisingEdge") : scratch = QString("FallingEdge");
+        out.insert(prefix+QString("TriggerSlope"),qMakePair(scratch,empty));
+        out.insert(prefix+QString("SampleRate"),qMakePair(QString::number(sampleRate/1e9,'f',3),QString("GS/s")));
+        out.insert(prefix+QString("RecordLength"),qMakePair(recordLength,empty));
+        out.insert(prefix+QString("BytesPerPoint"),qMakePair(bytesPerPoint,empty));
+        byteOrder == QDataStream::BigEndian ? scratch = QString("BigEndian") : scratch = QString("LittleEndian");
+        out.insert(prefix+QString("ByteOrder"),qMakePair(scratch,empty));
+        channelOrder == ChannelsInterleaved ? scratch = QString("Interleaved") : scratch = QString("Sequential");
+        out.insert(prefix+QString("ChannelOrder"),qMakePair(scratch,empty));
+
+        return out;
+    }
+
+};
+
+#endif
+
+#ifdef BC_MOTOR
+enum MotorAxis {
+    MotorX,
+    MotorY,
+    MotorZ,
+    MotorT
+};
+
+struct MotorScopeConfig {
+    int dataChannel;
+    double verticalScale;
+    int recordLength;
+    double sampleRate;
+    int triggerChannel;
+    BlackChirp::ScopeTriggerSlope slope;
+    QDataStream::ByteOrder byteOrder;
+    int bytesPerPoint;
+
+    QMap<QString,QPair<QVariant,QString> > headerMap() const
+    {
+        QMap<QString,QPair<QVariant,QString> > out;
+
+        QString scratch;
+        QString prefix = QString("MotorScope");
+        QString empty = QString("");
+
+        out.insert(prefix+QString("VerticalScale"),qMakePair(QString::number(verticalScale,'f',3),QString("V/div")));
+        slope == RisingEdge ? scratch = QString("RisingEdge") : scratch = QString("FallingEdge");
+        out.insert(prefix+QString("TriggerSlope"),qMakePair(scratch,empty));
+        out.insert(prefix+QString("SampleRate"),qMakePair(QString::number(sampleRate/1e6,'f',3),QString("MS/s")));
+        out.insert(prefix+QString("RecordLength"),qMakePair(recordLength,empty));
+        out.insert(prefix+QString("BytesPerPoint"),qMakePair(bytesPerPoint,empty));
+        byteOrder == QDataStream::BigEndian ? scratch = QString("BigEndian") : scratch = QString("LittleEndian");
+        out.insert(prefix+QString("ByteOrder"),qMakePair(scratch,empty));
+        out.insert(prefix+QString("TriggerChannel"),qMakePair(QString::number(triggerChannel),empty));
+        out.insert(prefix+QString("DataChannel"),qMakePair(QString::number(dataChannel),empty));
+
+        return out;
+    }
+
+};
+#endif
+
 
 }
 
@@ -351,12 +358,19 @@ Q_DECLARE_METATYPE(BlackChirp::LogMessageCode)
 Q_DECLARE_METATYPE(BlackChirp::PulseActiveLevel)
 Q_DECLARE_METATYPE(BlackChirp::PulseSetting)
 Q_DECLARE_METATYPE(BlackChirp::PulseRole)
-Q_DECLARE_METATYPE(BlackChirp::LifScanOrder)
-Q_DECLARE_METATYPE(BlackChirp::LifCompleteMode)
 Q_DECLARE_METATYPE(BlackChirp::ValidationItem)
 Q_DECLARE_METATYPE(BlackChirp::FtPlotUnits)
 Q_DECLARE_METATYPE(BlackChirp::FtWindowFunction)
 Q_DECLARE_METATYPE(BlackChirp::ClockType)
+
+#ifdef BC_LIF
+Q_DECLARE_METATYPE(BlackChirp::LifScanOrder)
+Q_DECLARE_METATYPE(BlackChirp::LifCompleteMode)
+#endif
+
+#ifdef BC_MOTOR
+Q_DECLARE_METATYPE(BlackChirp::MotorAxis)
+#endif
 
 Q_DECLARE_TYPEINFO(BlackChirp::ChirpSegment,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::FlowChannelConfig,Q_MOVABLE_TYPE);

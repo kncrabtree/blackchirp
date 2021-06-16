@@ -39,7 +39,6 @@ public slots:
     void prepareForExperiment(const Experiment e);
     void setFtStart(double start);
     void setFtEnd(double end);
-    void buildContextMenu(QMouseEvent *me);
 
 private:
     QVector<QPointF> d_currentFid;

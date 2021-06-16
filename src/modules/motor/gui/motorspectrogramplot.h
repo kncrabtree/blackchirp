@@ -8,11 +8,18 @@
 
 #include <src/modules/motor/data/motorscan.h>
 
+namespace BC::Key {
+static const QString leftAxis("leftAxis");
+static const QString bottomAxis("bottomAxis");
+static const QString slider1Axis("slider1Axis");
+static const QString slider2Axis("slider2Axis");
+}
+
 class MotorSpectrogramPlot : public ZoomPanPlot
 {
     Q_OBJECT
 public:
-    MotorSpectrogramPlot(QWidget *parent = nullptr);
+    MotorSpectrogramPlot(const QString name, QWidget *parent = nullptr);
     virtual ~MotorSpectrogramPlot();
 
     void setLabelText(QwtPlot::Axis axis, QString text);
