@@ -14,9 +14,8 @@ class QwtPlotGrid;
 
 namespace BC::Key {
 static const QString ftPlot("FtPlot");
-static const QString ftColor("ftcolor");
-static const QString peakColor("peakColor");
-static const QString gridColor("gridcolor");
+static const QString ftCurve("FT");
+static const QString peakCurve("FTPeaks");
 }
 
 class FtPlot : public ZoomPanPlot
@@ -55,15 +54,12 @@ private:
     /*!
      * \brief The object representing the curve on the plot
      */
-    QwtPlotCurve *p_curve;
-    QwtPlotCurve *p_peakData;
+    BlackchirpPlotCurve *p_curve, *p_peakData;
     QwtPlotGrid *p_plotGrid;
     Ft d_currentFt;
     int d_number;
     QString d_id;
     BlackChirp::FtPlotUnits d_currentUnits;
-
-    QColor getColor(QColor startingColor);
 
 };
 

@@ -2,12 +2,13 @@
 #define ZOOMPANPLOT_H
 
 #include <qwt6/qwt_plot.h>
+#include <qwt6/qwt_symbol.h>
 
 #include <src/data/storage/settingsstorage.h>
 
 class QMenu;
 class CustomTracker;
-class QwtPlotCurve;
+class BlackchirpPlotCurve;
 
 
 namespace BC::Key {
@@ -21,6 +22,8 @@ static const QString trackerDecimals("trackerDecimals");
 static const QString trackerScientific("trackerScientific");
 static const QString trackerEn("trackerEnabled");
 }
+
+/// \todo Handle plot grid in this class
 
 class ZoomPanPlot : public QwtPlot, public SettingsStorage
 {
@@ -37,6 +40,9 @@ public:
     void setAxisAutoScaleMax(QwtPlot::Axis axis, double max);
     void expandAutoScaleRange(QwtPlot::Axis axis, double newValueMin, double newValueMax);
     void setXRanges(const QwtScaleDiv &bottom, const QwtScaleDiv &top);
+    void setMaxIndex(int i){ d_maxIndex = i; }
+
+    const QString d_name;
 
 public slots:
     void autoScale();
@@ -45,14 +51,23 @@ public slots:
     void setTrackerEnabled(bool en);
     void setTrackerDecimals(QwtPlot::Axis a, int dec);
     void setTrackerScientific(QwtPlot::Axis a, bool sci);
-    void setCurveColor(QwtPlotCurve* curve, const QString key, QColor c = QColor());
+
+    void setCurveColor(BlackchirpPlotCurve* curve);
+    void setCurveLineThickness(BlackchirpPlotCurve* curve, double t);
+    void setCurveLineStyle(BlackchirpPlotCurve* curve, Qt::PenStyle s);
+    void setCurveMarker(BlackchirpPlotCurve* curve, QwtSymbol::Style s);
+    void setCurveMarkerSize(BlackchirpPlotCurve* curve, int s);
+    void setCurveVisible(BlackchirpPlotCurve* curve, bool v);
+    void setCurveAxisY(BlackchirpPlotCurve* curve, QwtPlot::Axis a);
 
 signals:
     void panningStarted();
     void panningFinished();
     void plotRightClicked(QMouseEvent *ev);
+    void curveMoveRequested(BlackchirpPlotCurve*, int);
 
 protected:
+    int d_maxIndex;
     CustomTracker *p_tracker;
     struct AxisConfig {
         QwtPlot::Axis type;
@@ -101,7 +116,5 @@ public:
 protected:
     virtual void showEvent(QShowEvent *event);
 };
-
-Q_DECLARE_METATYPE(QwtPlot::Axis)
 
 #endif // ZOOMPANPLOT_H

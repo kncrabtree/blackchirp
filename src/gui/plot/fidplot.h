@@ -9,11 +9,10 @@
 #include <src/data/experiment/experiment.h>
 
 class QwtPlotMarker;
-class QwtPlotCurve;
 
 namespace BC::Key {
 static const QString fidPlot("FidPlot");
-static const QString fidColor("fidcolor");
+static const QString fidCurve("FID");
 }
 
 /*!
@@ -44,7 +43,7 @@ public slots:
 
 private:
     QVector<QPointF> d_currentFid;
-    QwtPlotCurve *p_curve;
+    BlackchirpPlotCurve *p_curve;
 
     QPair<QwtPlotMarker*,QwtPlotMarker*> d_chirpMarkers;
     QPair<QwtPlotMarker*,QwtPlotMarker*> d_ftMarkers;

@@ -8,7 +8,7 @@ class QwtPlotTextLabel;
 
 namespace BC::Key {
 static const QString lifSlicePlot("lifSlicePlot");
-static const QString lifSliceColor("curveColor");
+static const QString lifSliceCurve("LifSliceCurve");
 }
 
 /// \todo This needs to take an argument to differentiate time vs freq slice plots
@@ -32,7 +32,7 @@ public slots:
 protected:
     void filterData() override;
 
-    QwtPlotCurve *p_curve;
+    BlackchirpPlotCurve *p_curve;
     QVector<QPointF> d_currentData;
 
     // ZoomPanPlot interface

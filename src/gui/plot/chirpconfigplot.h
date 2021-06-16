@@ -4,13 +4,13 @@
 #include <src/gui/plot/zoompanplot.h>
 
 class ChirpConfig;
-class QwtPlotCurve;
+class BlackchirpPlotCurve;
 
 namespace BC::Key {
 static const QString chirpPlot("ChirpConfigPlot");
-static const QString chirpColor("chirpColor");
-static const QString ampColor("ampEnableColor");
-static const QString protectionColor("protectionColor");
+static const QString chirpCurve("Chirp");
+static const QString ampCurve("AmpEnable");
+static const QString protCurve("Protection");
 }
 
 class ChirpConfigPlot : public ZoomPanPlot
@@ -21,10 +21,9 @@ public:
 
 public slots:
     void newChirp(const ChirpConfig cc);
-    void buildContextMenu(QMouseEvent *me);
 
 private:
-    QwtPlotCurve *p_ampEnableCurve, *p_protectionCurve, *p_chirpCurve;
+    BlackchirpPlotCurve *p_ampEnableCurve, *p_protectionCurve, *p_chirpCurve;
     QVector<QPointF> d_chirpData;
 
 

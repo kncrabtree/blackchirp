@@ -7,6 +7,11 @@
 
 #include <src/modules/motor/data/motorscan.h>
 
+namespace BC::Key {
+static const QString motorTimePlot("MotorTimePlot");
+static const QString motorTimeCurve("MotorTimeCurve");
+}
+
 class MotorTimePlot : public ZoomPanPlot
 {
     Q_OBJECT
@@ -19,7 +24,7 @@ public slots:
     void updateData(QVector<QPointF> d);
 
 private:
-    QwtPlotCurve *p_curve;
+    BlackchirpPlotCurve *p_curve;
 
     // ZoomPanPlot interface
 protected:

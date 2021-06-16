@@ -16,7 +16,7 @@
 
 #include <qwt6/qwt_plot_canvas.h>
 #include <qwt6/qwt_plot_marker.h>
-#include <qwt6/qwt_plot_curve.h>
+#include <src/gui/plot/blackchirpplotcurve.h>
 
 FidPlot::FidPlot(const QString id, QWidget *parent) :
     ZoomPanPlot(BC::Key::fidPlot+id,parent)
@@ -33,11 +33,8 @@ FidPlot::FidPlot(const QString id, QWidget *parent) :
     llabel.setFont(QFont(QString("sans-serif"),8));
     this->setAxisTitle(QwtPlot::yLeft,llabel);
 
-    p_curve = new QwtPlotCurve(QString("FID"));
-    setCurveColor(p_curve,BC::Key::fidColor,palette().color(QPalette::BrightText));
-    p_curve->setRenderHint(QwtPlotItem::RenderAntialiased);
+    p_curve = new BlackchirpPlotCurve(QString("FID")+id);
     p_curve->attach(this);
-    p_curve->setVisible(false);
 
     QwtPlotMarker *chirpStartMarker = new QwtPlotMarker();
     chirpStartMarker->setLineStyle(QwtPlotMarker::VLine);
@@ -258,18 +255,4 @@ void FidPlot::setFtEnd(double end)
     emit ftEndChanged(v);
 
     QwtPlot::replot();
-}
-
-void FidPlot::buildContextMenu(QMouseEvent *me)
-{
-    if(d_currentFid.size()<2 || !isEnabled())
-        return;
-
-    QMenu *menu = contextMenu();
-
-    QAction *colorAct = menu->addAction(QString("Change FID color..."));
-    connect(colorAct,&QAction::triggered,[=](){ setCurveColor(p_curve,BC::Key::fidColor); });
-
-    menu->popup(me->globalPos());
-
 }

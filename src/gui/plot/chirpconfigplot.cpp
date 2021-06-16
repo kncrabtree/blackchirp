@@ -4,8 +4,8 @@
 #include <QMenu>
 
 #include <qwt6/qwt_legend.h>
-#include <qwt6/qwt_plot_curve.h>
 
+#include <src/gui/plot/blackchirpplotcurve.h>
 #include <src/data/experiment/chirpconfig.h>
 
 ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(BC::Key::chirpPlot,parent)
@@ -23,26 +23,19 @@ ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(BC::Key::chirpPl
     llabel.setFont(QFont(QString("sans-serif"),8));
     this->setAxisTitle(QwtPlot::yLeft,llabel);
 
-    QPalette pal;
-    auto defaultColor = pal.brightText().color();
-
-    p_chirpCurve = new QwtPlotCurve(QString("Chirp"));
-    setCurveColor(p_chirpCurve,BC::Key::chirpColor,get<QColor>(BC::Key::chirpColor,defaultColor));
+    p_chirpCurve = new BlackchirpPlotCurve(BC::Key::chirpCurve);
     p_chirpCurve->attach(this);
 
-    p_ampEnableCurve= new QwtPlotCurve(QString("Amp Enable"));
-    setCurveColor(p_chirpCurve,BC::Key::ampColor,get<QColor>(BC::Key::ampColor,defaultColor));
+    p_ampEnableCurve= new BlackchirpPlotCurve(BC::Key::ampCurve);
     p_ampEnableCurve->attach(this);
 
-    p_protectionCurve = new QwtPlotCurve(QString("Protection"));
-    setCurveColor(p_chirpCurve,BC::Key::protectionColor,get<QColor>(BC::Key::protectionColor,defaultColor));
+    p_protectionCurve = new BlackchirpPlotCurve(BC::Key::protCurve);
     p_protectionCurve->attach(this);
 
     setAxisAutoScaleRange(QwtPlot::yLeft,-1.0,1.0);
 
     insertLegend(new QwtLegend());
 
-    connect(this,&ChirpConfigPlot::plotRightClicked,this,&ChirpConfigPlot::buildContextMenu);
 }
 
 ChirpConfigPlot::~ChirpConfigPlot()
@@ -105,28 +98,6 @@ void ChirpConfigPlot::newChirp(const ChirpConfig cc)
 
     filterData();
     replot();
-}
-
-void ChirpConfigPlot::buildContextMenu(QMouseEvent *me)
-{
-    QMenu *menu = contextMenu();
-
-    QAction *chirpAction = menu->addAction(QString("Change chirp color..."));
-    connect(chirpAction,&QAction::triggered,[=](){ setCurveColor(p_chirpCurve,BC::Key::chirpColor); });
-    if(d_chirpData.isEmpty())
-        chirpAction->setEnabled(false);
-
-    QAction *ampAction = menu->addAction(QString("Change amp enable color..."));
-    connect(ampAction,&QAction::triggered,[=](){ setCurveColor(p_ampEnableCurve,BC::Key::ampColor); });
-    if(d_chirpData.isEmpty())
-        ampAction->setEnabled(false);
-
-    QAction *protAction = menu->addAction(QString("Change protection color..."));
-    connect(protAction,&QAction::triggered,[=](){ setCurveColor(p_protectionCurve,BC::Key::protectionColor); });
-    if(d_chirpData.isEmpty())
-        protAction->setEnabled(false);
-
-    menu->popup(me->globalPos());
 }
 
 void ChirpConfigPlot::filterData()

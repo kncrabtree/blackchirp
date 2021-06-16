@@ -4,6 +4,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/dialog/ioboardconfigdialog.cpp \
     $$PWD/dialog/peaklistexportdialog.cpp \
     $$PWD/dialog/quickexptdialog.cpp \
+    $$PWD/plot/blackchirpplotcurve.cpp \
     $$PWD/plot/chirpconfigplot.cpp \
     $$PWD/plot/customtracker.cpp \
     $$PWD/plot/fidplot.cpp \
@@ -41,6 +42,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/dialog/ioboardconfigdialog.h \
     $$PWD/dialog/peaklistexportdialog.h \
     $$PWD/dialog/quickexptdialog.h \
+    $$PWD/plot/blackchirpplotcurve.h \
     $$PWD/plot/chirpconfigplot.h \
     $$PWD/plot/customtracker.h \
     $$PWD/plot/fidplot.h \

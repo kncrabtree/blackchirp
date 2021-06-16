@@ -22,9 +22,10 @@
 
 #include <qwt6/qwt_scale_widget.h>
 #include <qwt6/qwt_scale_div.h>
-#include <qwt6/qwt_plot_curve.h>
 #include <qwt6/qwt_plot_grid.h>
-#include <qwt6/qwt_symbol.h>
+
+
+#include <src/gui/plot/blackchirpplotcurve.h>
 
 FtPlot::FtPlot(const QString id, QWidget *parent) :
     ZoomPanPlot(BC::Key::ftPlot+id,parent), d_number(0), d_id(id), d_currentUnits(BlackChirp::FtPlotV)
@@ -45,23 +46,10 @@ FtPlot::FtPlot(const QString id, QWidget *parent) :
     configureUnits(BlackChirp::FtPlotuV);
 
     //build and configure curve object
-    p_curve = new QwtPlotCurve(QString("FT"));
-    setCurveColor(p_curve,BC::Key::ftColor, get<QColor>(BC::Key::ftColor,palette().color(QPalette::BrightText)));
-    p_curve->setRenderHint(QwtPlotItem::RenderAntialiased);
+    p_curve = new BlackchirpPlotCurve(BC::Key::ftCurve+id);
     p_curve->attach(this);
-    p_curve->setVisible(false);
 
-    p_peakData = new QwtPlotCurve(QString("Peaks"));
-    p_peakData->setStyle(QwtPlotCurve::NoCurve);
-    p_peakData->setRenderHint(QwtPlotCurve::RenderAntialiased);
-
-    auto c = get<QColor>(BC::Key::peakColor,QColor(Qt::red));
-    QwtSymbol *sym = new QwtSymbol(QwtSymbol::Ellipse);
-    sym->setSize(5);
-    sym->setColor(c);
-    sym->setPen(QPen(c));
-    p_peakData->setSymbol(sym);
-
+    p_peakData = new BlackchirpPlotCurve(BC::Key::peakCurve+id,Qt::NoPen,QwtSymbol::NoSymbol);
     p_peakData->attach(this);
 
     p_plotGrid = new QwtPlotGrid();
@@ -70,7 +58,8 @@ FtPlot::FtPlot(const QString id, QWidget *parent) :
     p_plotGrid->enableY(true);
     p_plotGrid->enableYMin(true);
     QPen p;
-    p.setColor(get<QColor>(BC::Key::gridColor,palette().color(QPalette::Light)));
+    //this will go away soon
+    p.setColor(get<QColor>("gridColor",palette().color(QPalette::Light)));
     p.setStyle(Qt::DashLine);
     p_plotGrid->setMajorPen(p);
     p.setStyle(Qt::DotLine);
@@ -202,15 +191,7 @@ void FtPlot::buildContextMenu(QMouseEvent *me)
 
     QMenu *m = contextMenu();
 
-    QAction *ftColorAction = m->addAction(QString("Change FT Color..."));
-    connect(ftColorAction,&QAction::triggered,this,[=](){ setCurveColor(p_curve,BC::Key::ftColor); });
-
-    QAction *gridColorAction = m->addAction(QString("Change Grid Color..."));
-    connect(gridColorAction,&QAction::triggered,this,[=](){ changeGridColor(getColor(p_plotGrid->majorPen().color())); });
-
-    QAction *peakColorAction = m->addAction(QString("Change Peak Color..."));
-    connect(peakColorAction,&QAction::triggered,this,[=]() { setCurveColor(p_peakData,BC::Key::peakColor); });
-
+    //this will go away soon too
     QAction *exportAction = m->addAction(QString("Export XY..."));
     connect(exportAction,&QAction::triggered,this,&FtPlot::exportXY);
 
@@ -222,7 +203,7 @@ void FtPlot::changeGridColor(QColor c)
     if(!c.isValid())
         return;
 
-    set(BC::Key::gridColor,c);
+    set("gridColor",c);
 
     QPen p(c);
     p.setStyle(Qt::DashLine);
@@ -231,11 +212,6 @@ void FtPlot::changeGridColor(QColor c)
     p.setStyle(Qt::DotLine);
     p_plotGrid->setMinorPen(p);
     replot();
-}
-
-QColor FtPlot::getColor(QColor startingColor)
-{
-    return QColorDialog::getColor(startingColor,this,QString("Select Color"));
 }
 
 void FtPlot::exportXY()

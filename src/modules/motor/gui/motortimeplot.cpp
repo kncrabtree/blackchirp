@@ -1,24 +1,20 @@
 #include "motortimeplot.h"
 
-#include <QSettings>
+#include <src/gui/plot/blackchirpplotcurve.h>
 
-MotorTimePlot::MotorTimePlot(QWidget *parent) : ZoomPanPlot(QString("motorTimePlot"),parent)
+MotorTimePlot::MotorTimePlot(QWidget *parent) : ZoomPanPlot(BC::Key::motorTimePlot,parent)
 {
-    QSettings s;
-    s.beginGroup(d_name);
-    p_curve = new QwtPlotCurve;
-    p_curve->setRenderHint(QwtPlotItem::RenderAntialiased);
-    QColor c = s.value(QString("color"),QPalette().color(QPalette::Text)).value<QColor>();
-    p_curve->setPen(QPen(c));
+
+    p_curve = new BlackchirpPlotCurve(BC::Key::motorTimeCurve);
     p_curve->attach(this);
-    s.endGroup();
+
 
 
     QwtText label(QString("P"));
     label.setFont(QFont(QString("sans-serif"),8));
     setAxisTitle(QwtPlot::yLeft,label);
 
-    label.setText(QString::fromUtf16(u"T (µs)"));
+    label.setText(QString::fromUtf16(u"Time (µs)"));
     setAxisTitle(QwtPlot::xBottom,label);
 }
 

@@ -12,6 +12,7 @@
 #include <qwt6/qwt_scale_widget.h>
 
 #include <src/data/datastructs.h>
+#include <src/gui/plot/blackchirpplotcurve.h>
 
 LifSlicePlot::LifSlicePlot(QWidget *parent) :
     ZoomPanPlot(BC::Key::lifSlicePlot,parent)
@@ -23,11 +24,7 @@ LifSlicePlot::LifSlicePlot(QWidget *parent) :
     llabel.setFont(QFont(QString("sans-serif"),8));
     this->setAxisTitle(QwtPlot::yLeft,llabel);
 
-    p_curve = new QwtPlotCurve(QString("trace"));
-    p_curve->setSymbol(new QwtSymbol(QwtSymbol::Ellipse,palette().text(),QPen(QPalette::BrightText),QSize(8,8)));
-    setCurveColor(p_curve,BC::Key::lifSliceColor,get<QColor>(BC::Key::lifSliceColor,
-                                                             palette().color(QPalette::BrightText)));
-    p_curve->setRenderHint(QwtPlotItem::RenderAntialiased);
+    p_curve = new BlackchirpPlotCurve(BC::Key::lifSliceCurve,Qt::SolidLine,QwtSymbol::Ellipse);
     p_curve->setZ(1.0);
     p_curve->attach(this);
 

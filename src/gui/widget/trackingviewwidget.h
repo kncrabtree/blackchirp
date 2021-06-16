@@ -7,17 +7,24 @@
 #include <QDateTime>
 
 #include <qwt6/qwt_plot.h>
+#include <src/data/storage/settingsstorage.h>
 
 class QGridLayout;
 class TrackingPlot;
 class QwtPlotCurve;
 
-class TrackingViewWidget : public QWidget
+namespace BC::Key {
+static const QString numPlots("numPlots");
+static const QString viewonly("View");
+static const QString plot("Plot");
+}
+
+class TrackingViewWidget : public QWidget, public SettingsStorage
 {
     Q_OBJECT
 
 public:
-    explicit TrackingViewWidget(QWidget *parent = 0, bool viewOnly = false);
+    explicit TrackingViewWidget(const QString name, QWidget *parent = 0, bool viewOnly = false);
     ~TrackingViewWidget();
 
     //! Associates curves with which plot and axis they're displayed on
@@ -31,6 +38,8 @@ public:
         double min;
         double max;
     };
+
+    const QString d_name;
 
 public slots:
     void initializeForExperiment();
@@ -47,7 +56,7 @@ public slots:
 
 
 private:
-    QGridLayout *d_gridLayout = nullptr;
+    QGridLayout *p_gridLayout = nullptr;
     QList<CurveMetaData> d_plotCurves;
     QList<TrackingPlot*> d_allPlots;
     QPair<double,double> d_xRange;
