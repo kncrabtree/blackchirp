@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 #endif
 
     QApplication a(argc, argv);
-    a.setFont(QFont(QString("Liberation Sans"),8));
+    a.setFont(QFont(QString("sans-serif"),8));
 
     //QSettings information
     const QString appName = QString("BlackChirp");

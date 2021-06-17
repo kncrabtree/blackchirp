@@ -10,18 +10,8 @@
 
 ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(BC::Key::chirpPlot,parent)
 {
-
-    //make axis label font smaller
-    this->setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
-    this->setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
-
-    QwtText blabel(QString::fromUtf16(u"Time (μs)"));
-    blabel.setFont(QFont(QString("sans-serif"),8));
-    this->setAxisTitle(QwtPlot::xBottom,blabel);
-
-    QwtText llabel(QString("Chirp (Normalized)"));
-    llabel.setFont(QFont(QString("sans-serif"),8));
-    this->setAxisTitle(QwtPlot::yLeft,llabel);
+    setPlotAxisTitle(QwtPlot::xBottom,QString::fromUtf16(u"Time (μs)"));
+    setPlotAxisTitle(QwtPlot::yLeft,QString("Chirp (Normalized)"));
 
     p_chirpCurve = new BlackchirpPlotCurve(BC::Key::chirpCurve);
     p_chirpCurve->attach(this);
@@ -34,7 +24,7 @@ ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(BC::Key::chirpPl
 
     setAxisAutoScaleRange(QwtPlot::yLeft,-1.0,1.0);
 
-    insertLegend(new QwtLegend());
+    insertLegend(new QwtLegend(this));
 
 }
 

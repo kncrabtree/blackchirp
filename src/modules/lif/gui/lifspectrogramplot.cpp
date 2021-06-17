@@ -4,6 +4,8 @@
 #include <QMenu>
 #include <math.h>
 
+#include <src/modules/lif/hardware/liflaser/liflaser.h>
+
 #include <qwt6/qwt_plot_spectrogram.h>
 #include <qwt6/qwt_matrix_raster_data.h>
 #include <qwt6/qwt_color_map.h>
@@ -14,17 +16,11 @@ LifSpectrogramPlot::LifSpectrogramPlot(QWidget *parent) :
     ZoomPanPlot(BC::Key::lifSpectrogram,parent), d_enabled(false),
     d_delayDragging(false), d_freqDragging(false), d_grabDelay(false), d_grabFreq(false)
 {
-    QFont f(QString("sans-serif"),8);
-    setAxisFont(QwtPlot::xBottom,f);
-    setAxisFont(QwtPlot::yLeft,f);
 
-    QwtText llabel(QString::fromUtf16(u"Delay (µs)"));
-    llabel.setFont(f);
-    setAxisTitle(QwtPlot::yLeft,llabel);
-
-    QwtText blabel(QString::fromUtf16(u"Frequency (cm⁻¹)"));
-    blabel.setFont(f);
-    setAxisTitle(QwtPlot::xBottom,blabel);
+    SettingsStorage s(BC::Key::lifLaser,SettingsStorage::Hardware);
+    setPlotAxisTitle(QwtPlot::yLeft,QString::fromUtf16(u"Delay (µs)"));
+    setPlotAxisTitle(QwtPlot::xBottom,
+                 QString("Laser Postiion (")+s.get<QString>(BC::Key::lifLaserUnits,"nm")+QString(")"));
 
     p_spectrogram = new QwtPlotSpectrogram();
     p_spectrogram->setDisplayMode(QwtPlotSpectrogram::ImageMode);
@@ -46,10 +42,6 @@ LifSpectrogramPlot::LifSpectrogramPlot(QWidget *parent) :
 
     QwtScaleWidget *rightAxis = axisWidget( QwtPlot::yRight );
 
-    QwtText rLabel(QString("LIF (AU)"));
-    rLabel.setFont(f);
-    rightAxis->setTitle(rLabel);
-
     QwtLinearColorMap *map2 = new QwtLinearColorMap(Qt::black,Qt::red);
     map2->addColorStop(0.05,Qt::darkBlue);
     map2->addColorStop(0.1,Qt::blue);
@@ -61,6 +53,7 @@ LifSpectrogramPlot::LifSpectrogramPlot(QWidget *parent) :
     rightAxis->setColorMap(QwtInterval(0.0,1.0),map2);
     rightAxis->setColorBarEnabled(true);
     rightAxis->setColorBarWidth(10);
+    setPlotAxisTitle(QwtPlot::yRight,QString("LIF (AU)"));
 
     p_delayMarker = new QwtPlotMarker();
     p_delayMarker->setLineStyle(QwtPlotMarker::HLine);

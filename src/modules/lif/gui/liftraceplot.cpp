@@ -23,17 +23,9 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
     ZoomPanPlot(BC::Key::lifTracePlot,parent), d_resetNext(true),
     d_lifGateMode(false), d_refGateMode(false), d_displayOnly(false)
 {
-    setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
-    setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
 
-    //build axis titles with small font. The <html> etc. tags are needed to display the mu character
-    QwtText blabel(QString("Time (ns)"));
-    blabel.setFont(QFont(QString("sans-serif"),8));
-    this->setAxisTitle(QwtPlot::xBottom,blabel);
-
-    QwtText llabel(QString("LIF (V)"));
-    llabel.setFont(QFont(QString("sans-serif"),8));
-    this->setAxisTitle(QwtPlot::yLeft,llabel);
+    setPlotAxisTitle(QwtPlot::xBottom,QString("Time (ns)"));
+    setPlotAxisTitle(QwtPlot::yLeft,QString("LIF (V)"));
 
     p_integralLabel = new QwtPlotTextLabel();
     p_integralLabel->setZ(10.0);

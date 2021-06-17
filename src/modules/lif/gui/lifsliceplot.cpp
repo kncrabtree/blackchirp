@@ -17,12 +17,7 @@
 LifSlicePlot::LifSlicePlot(const QString name, QWidget *parent) :
     ZoomPanPlot(name,parent)
 {
-    setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
-    setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
-
-    QwtText llabel(QString("LIF (AU)"));
-    llabel.setFont(QFont(QString("sans-serif"),8));
-    this->setAxisTitle(QwtPlot::yLeft,llabel);
+    this->setPlotAxisTitle(QwtPlot::yLeft,QString("LIF (AU)"));
 
     p_curve = new BlackchirpPlotCurve(BC::Key::lifSliceCurve,Qt::SolidLine,QwtSymbol::Ellipse);
     p_curve->setZ(1.0);
@@ -33,15 +28,6 @@ LifSlicePlot::LifSlicePlot(const QString name, QWidget *parent) :
 LifSlicePlot::~LifSlicePlot()
 {
 
-}
-
-void LifSlicePlot::setXAxisTitle(QString title)
-{
-    QwtText label(title);
-    label.setFont(QFont(QString("sans-serif"),8));
-    this->setAxisTitle(QwtPlot::xBottom,label);
-
-    replot();
 }
 
 void LifSlicePlot::prepareForExperiment(double xMin, double xMax)
@@ -60,14 +46,6 @@ void LifSlicePlot::setData(const QVector<QPointF> d)
     d_currentData = d;
     filterData();
     replot();
-}
-
-void LifSlicePlot::setPlotTitle(QString text)
-{
-    QFont f(QString("sans-serif"),8);
-    QwtText title(text);
-    title.setFont(f);
-    setTitle(title);
 }
 
 void LifSlicePlot::exportXY()

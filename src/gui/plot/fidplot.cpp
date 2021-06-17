@@ -21,17 +21,9 @@
 FidPlot::FidPlot(const QString id, QWidget *parent) :
     ZoomPanPlot(BC::Key::fidPlot+id,parent)
 {
-    //make axis label font smaller
-    this->setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
-    this->setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
 
-    QwtText blabel(QString::fromUtf16(u"Time (μs)"));
-    blabel.setFont(QFont(QString("sans-serif"),8));
-    this->setAxisTitle(QwtPlot::xBottom,blabel);
-
-    QwtText llabel(QString("FID ")+id);
-    llabel.setFont(QFont(QString("sans-serif"),8));
-    this->setAxisTitle(QwtPlot::yLeft,llabel);
+    setPlotAxisTitle(QwtPlot::xBottom,QString::fromUtf16(u"Time (μs)"));
+    setPlotAxisTitle(QwtPlot::yLeft,QString("FID ")+id);
 
     p_curve = new BlackchirpPlotCurve(QString("FID")+id);
     p_curve->attach(this);

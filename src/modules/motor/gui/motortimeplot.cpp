@@ -8,14 +8,8 @@ MotorTimePlot::MotorTimePlot(QWidget *parent) : ZoomPanPlot(BC::Key::motorTimePl
     p_curve = new BlackchirpPlotCurve(BC::Key::motorTimeCurve);
     p_curve->attach(this);
 
-
-
-    QwtText label(QString("P"));
-    label.setFont(QFont(QString("sans-serif"),8));
-    setAxisTitle(QwtPlot::yLeft,label);
-
-    label.setText(QString::fromUtf16(u"Time (µs)"));
-    setAxisTitle(QwtPlot::xBottom,label);
+    setPlotAxisTitle(QwtPlot::yLeft,QString("P"));
+    setPlotAxisTitle(QwtPlot::xBottom,QString::fromUtf16(u"Time (µs)"));
 }
 
 void MotorTimePlot::prepareForScan(const MotorScan s)

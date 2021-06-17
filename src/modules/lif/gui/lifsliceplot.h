@@ -18,11 +18,8 @@ public:
     LifSlicePlot(const QString name, QWidget *parent = nullptr);
     ~LifSlicePlot();
 
-    void setXAxisTitle(QString title);
-
     void prepareForExperiment(double xMin, double xMax);
     void setData(const QVector<QPointF> d);
-    void setPlotTitle(QString text);
 
 public slots:
     void exportXY();

@@ -27,6 +27,11 @@ ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),
     d_config.axisList.append(AxisConfig(QwtPlot::yLeft,BC::Key::left));
     d_config.axisList.append(AxisConfig(QwtPlot::yRight,BC::Key::right));
 
+    setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
+    setAxisFont(QwtPlot::xTop,QFont(QString("sans-serif"),8));
+    setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
+    setAxisFont(QwtPlot::yRight,QFont(QString("sans-serif"),8));
+
     p_tracker = new CustomTracker(this->canvas());
 
     if(!containsArray(BC::Key::axes))
@@ -137,6 +142,24 @@ void ZoomPanPlot::setXRanges(const QwtScaleDiv &bottom, const QwtScaleDiv &top)
     }
 
     d_config.xDirty = true;
+    replot();
+}
+
+void ZoomPanPlot::setPlotTitle(const QString text)
+{
+    QwtText t(text);
+    t.setFont(QApplication::font());
+    setTitle(t);
+
+    replot();
+}
+
+void ZoomPanPlot::setPlotAxisTitle(QwtPlot::Axis a, const QString text)
+{
+    QwtText t(text);
+    t.setFont(QApplication::font());
+    setAxisTitle(a,t);
+
     replot();
 }
 

@@ -19,11 +19,13 @@ LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
     SettingsStorage s(BC::Key::lifLaser,SettingsStorage::Hardware);
 
     p_freqSlicePlot = new LifSlicePlot(BC::Key::lifSpectrumPlot,this);
-    p_freqSlicePlot->setXAxisTitle(QString("Laser Position (%1)").arg(s.get<QString>(BC::Key::lifLaserUnits,"nm")));
+    p_freqSlicePlot->setPlotAxisTitle(QwtPlot::xBottom,
+                                      QString("Laser Position (%1)")
+                                      .arg(s.get<QString>(BC::Key::lifLaserUnits,"nm")));
     p_freqSlicePlot->setPlotTitle(QString("Laser Slice"));
 
     p_timeSlicePlot = new LifSlicePlot(BC::Key::lifTimePlot,this);
-    p_timeSlicePlot->setXAxisTitle(QString::fromUtf16(u"Delay (µs)"));
+    p_timeSlicePlot->setPlotAxisTitle(QwtPlot::xBottom,QString::fromUtf16(u"Delay (µs)"));
     p_timeSlicePlot->setPlotTitle(QString("Time Slice"));
 
     QwtText title;

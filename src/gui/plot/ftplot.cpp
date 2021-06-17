@@ -30,18 +30,9 @@
 FtPlot::FtPlot(const QString id, QWidget *parent) :
     ZoomPanPlot(BC::Key::ftPlot+id,parent), d_number(0), d_id(id), d_currentUnits(BlackChirp::FtPlotV)
 {
-    //make axis label font smaller
-    this->setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
-    this->setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
 
-    //build axis titles with small font
-    QwtText blabel(QString("Frequency (MHz)"));
-    blabel.setFont(QFont(QString("sans-serif"),8));
-    this->setAxisTitle(QwtPlot::xBottom,blabel);
-
-    QwtText llabel(QString("FT "+id));
-    llabel.setFont(QFont(QString("sans-serif"),8));
-    this->setAxisTitle(QwtPlot::yLeft,llabel);
+    setPlotAxisTitle(QwtPlot::xBottom,QString("Frequency (MHz)"));
+    setPlotAxisTitle(QwtPlot::yLeft,QString("FT "+id));
 
     configureUnits(BlackChirp::FtPlotuV);
 

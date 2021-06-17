@@ -15,16 +15,8 @@ PulsePlot::PulsePlot(QWidget *parent) :
     SettingsStorage s(BC::Key::pGen,Hardware);
     int numChannels = s.get<int>(BC::Key::pGenChannels,8);
 
-    setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
-    setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
 
-    QFont labelFont(QString("sans-serif"),8);
-    QwtText xLabel(QString("Time (<span>&mu;</span>s)"));
-    xLabel.setFont(labelFont);
-    setAxisTitle(QwtPlot::xBottom, xLabel);
-
-
-
+    setPlotAxisTitle(QwtPlot::xBottom, QString::fromUtf16(u"Time (μs)"));
     setAxisAutoScaleRange(QwtPlot::yLeft,0.0,numChannels*1.5);
 
 
@@ -49,7 +41,7 @@ PulsePlot::PulsePlot(QWidget *parent) :
 
         QwtPlotMarker *m = new QwtPlotMarker;
         QwtText text;
-        text.setFont(labelFont);
+        text.setFont(QApplication::font());
         text.setColor(QPalette().color(QPalette::Text));
         m->setLabel(text);
         m->setLabelAlignment(Qt::AlignLeft);

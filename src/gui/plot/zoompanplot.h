@@ -46,6 +46,8 @@ public:
     void expandAutoScaleRange(QwtPlot::Axis axis, double newValueMin, double newValueMax);
     void setXRanges(const QwtScaleDiv &bottom, const QwtScaleDiv &top);
     void setMaxIndex(int i){ d_maxIndex = i; }
+    void setPlotTitle(const QString text);
+    void setPlotAxisTitle(QwtPlot::Axis a, const QString text);
 
     const QString d_name;
 

@@ -15,9 +15,6 @@ MotorSpectrogramPlot::MotorSpectrogramPlot(const QString name, QWidget *parent) 
 {
     d_max = 1.0;
 
-    setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
-    setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
-
     d_intervalList.insert(MotorScan::MotorX,QwtInterval(0.0,1.0));
     d_intervalList.insert(MotorScan::MotorY,QwtInterval(0.0,1.0));
     d_intervalList.insert(MotorScan::MotorZ,QwtInterval(0.0,1.0));
@@ -68,13 +65,6 @@ MotorSpectrogramPlot::MotorSpectrogramPlot(const QString name, QWidget *parent) 
 
 MotorSpectrogramPlot::~MotorSpectrogramPlot()
 {
-}
-
-void MotorSpectrogramPlot::setLabelText(QwtPlot::Axis axis, QString text)
-{
-    QwtText label(text);
-    label.setFont(QFont(QString("sans-serif"),8));
-    this->setAxisTitle(axis,label);
 }
 
 void MotorSpectrogramPlot::prepareForScan(const MotorScan s)
@@ -187,7 +177,7 @@ void MotorSpectrogramPlot::setAxis(QwtPlot::Axis plotAxis, MotorScan::MotorAxis 
     else
         d_bottomAxis = motorAxis;
 
-    setLabelText(plotAxis,text);
+    setPlotAxisTitle(plotAxis,text);
 }
 
 

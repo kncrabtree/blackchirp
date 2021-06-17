@@ -35,6 +35,7 @@ public:
     void setLineStyle(Qt::PenStyle s);
     void setMarkerStyle(QwtSymbol::Style s);
     void setMarkerSize(int s);
+    void setCurveData(const QVector<QPointF> d);
 
     /*!
      * \brief Sets curve visibility, and stores to settings
@@ -55,8 +56,13 @@ public:
     void updateFromSettings();
 
 protected:
+    QVector<QPointF> d_data;
+    double d_min, d_max;
     void configurePen();
     void configureSymbol();
+    void filter();
+
+
 };
 
 #endif // BLACKCHIRPPLOTCURVE_H

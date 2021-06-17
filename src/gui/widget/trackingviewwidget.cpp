@@ -150,7 +150,6 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
         QColor color = s.value(QString("color"),palette().color(QPalette::Text)).value<QColor>();
         c->setPen(color);
         c->attach(d_allPlots.at(md.plotIndex));
-        d_allPlots.at(md.plotIndex)->initializeLabel(md.curve,md.isVisible);
 
         s.endGroup();
 
@@ -180,10 +179,6 @@ void TrackingViewWidget::moveCurveToPlot(int curveIndex, int newPlotIndex)
     d_plotCurves[curveIndex].plotIndex = newPlotIndex;
     setAutoScaleYRanges(oldPlotIndex,d_plotCurves.at(curveIndex).axis);
     setAutoScaleYRanges(newPlotIndex,d_plotCurves.at(curveIndex).axis);
-
-    //the new legend label needs to be made checkable
-    d_allPlots.at(newPlotIndex)->initializeLabel
-            (d_plotCurves.at(curveIndex).curve,d_plotCurves.at(curveIndex).isVisible);
 
     //update settings, and replot
     if(!d_viewMode)

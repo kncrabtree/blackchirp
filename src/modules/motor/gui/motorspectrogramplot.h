@@ -22,7 +22,6 @@ public:
     MotorSpectrogramPlot(const QString name, QWidget *parent = nullptr);
     virtual ~MotorSpectrogramPlot();
 
-    void setLabelText(QwtPlot::Axis axis, QString text);
     virtual void prepareForScan(const MotorScan s);
     MotorScan::MotorAxis leftAxis() const { return d_leftAxis; }
     MotorScan::MotorAxis bottomAxis() const { return d_bottomAxis; }
