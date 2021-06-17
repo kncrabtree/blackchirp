@@ -18,10 +18,10 @@ MotorSpectrogramPlot::MotorSpectrogramPlot(const QString name, QWidget *parent) 
     setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
     setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
 
-    d_intervalList.insert(BlackChirp::MotorX,QwtInterval(0.0,1.0));
-    d_intervalList.insert(BlackChirp::MotorY,QwtInterval(0.0,1.0));
-    d_intervalList.insert(BlackChirp::MotorZ,QwtInterval(0.0,1.0));
-    d_intervalList.insert(BlackChirp::MotorT,QwtInterval(0.0,1.0));
+    d_intervalList.insert(MotorScan::MotorX,QwtInterval(0.0,1.0));
+    d_intervalList.insert(MotorScan::MotorY,QwtInterval(0.0,1.0));
+    d_intervalList.insert(MotorScan::MotorZ,QwtInterval(0.0,1.0));
+    d_intervalList.insert(MotorScan::MotorT,QwtInterval(0.0,1.0));
 
     p_spectrogramData = new QwtMatrixRasterData;
     p_spectrogramData->setInterval(Qt::XAxis,QwtInterval(0.0,1.0));
@@ -42,10 +42,10 @@ MotorSpectrogramPlot::MotorSpectrogramPlot(const QString name, QWidget *parent) 
 
     if(name.contains("Small",Qt::CaseInsensitive))
     {
-        auto y = getOrSetDefault(BC::Key::leftAxis,QVariant::fromValue(BlackChirp::MotorY)).value<BlackChirp::MotorAxis>();
-        auto x = getOrSetDefault(BC::Key::bottomAxis,QVariant::fromValue(BlackChirp::MotorX)).value<BlackChirp::MotorAxis>();
-        auto s1 = getOrSetDefault(BC::Key::slider1Axis,QVariant::fromValue(BlackChirp::MotorZ)).value<BlackChirp::MotorAxis>();
-        auto s2 = getOrSetDefault(BC::Key::slider2Axis,QVariant::fromValue(BlackChirp::MotorT)).value<BlackChirp::MotorAxis>();
+        auto y = getOrSetDefault(BC::Key::leftAxis,QVariant::fromValue(MotorScan::MotorY)).value<MotorScan::MotorAxis>();
+        auto x = getOrSetDefault(BC::Key::bottomAxis,QVariant::fromValue(MotorScan::MotorX)).value<MotorScan::MotorAxis>();
+        auto s1 = getOrSetDefault(BC::Key::slider1Axis,QVariant::fromValue(MotorScan::MotorZ)).value<MotorScan::MotorAxis>();
+        auto s2 = getOrSetDefault(BC::Key::slider2Axis,QVariant::fromValue(MotorScan::MotorT)).value<MotorScan::MotorAxis>();
         setAxis(QwtPlot::yLeft,y);
         setAxis(QwtPlot::xBottom,x);
         Q_UNUSED(s1)
@@ -53,10 +53,10 @@ MotorSpectrogramPlot::MotorSpectrogramPlot(const QString name, QWidget *parent) 
     }
     else
     {
-        auto y = getOrSetDefault(BC::Key::leftAxis,QVariant::fromValue(BlackChirp::MotorY)).value<BlackChirp::MotorAxis>();
-        auto x = getOrSetDefault(BC::Key::bottomAxis,QVariant::fromValue(BlackChirp::MotorZ)).value<BlackChirp::MotorAxis>();
-        auto s1 = getOrSetDefault(BC::Key::slider1Axis,QVariant::fromValue(BlackChirp::MotorX)).value<BlackChirp::MotorAxis>();
-        auto s2 = getOrSetDefault(BC::Key::slider2Axis,QVariant::fromValue(BlackChirp::MotorT)).value<BlackChirp::MotorAxis>();
+        auto y = getOrSetDefault(BC::Key::leftAxis,QVariant::fromValue(MotorScan::MotorY)).value<MotorScan::MotorAxis>();
+        auto x = getOrSetDefault(BC::Key::bottomAxis,QVariant::fromValue(MotorScan::MotorZ)).value<MotorScan::MotorAxis>();
+        auto s1 = getOrSetDefault(BC::Key::slider1Axis,QVariant::fromValue(MotorScan::MotorX)).value<MotorScan::MotorAxis>();
+        auto s2 = getOrSetDefault(BC::Key::slider2Axis,QVariant::fromValue(MotorScan::MotorT)).value<MotorScan::MotorAxis>();
         setAxis(QwtPlot::yLeft,y);
         setAxis(QwtPlot::xBottom,x);
         Q_UNUSED(s1)
@@ -92,7 +92,7 @@ void MotorSpectrogramPlot::prepareForScan(const MotorScan s)
     QwtScaleWidget *rightAxis = axisWidget( QwtPlot::yRight );
     rightAxis->setColorMap(QwtInterval(0.0,1.0),map);
 
-    Q_FOREACH(const BlackChirp::MotorAxis &axis, d_intervalList.keys())
+    Q_FOREACH(const MotorScan::MotorAxis &axis, d_intervalList.keys())
     {
         QPair<double,double> p = s.interval(axis);
         d_intervalList[axis] = QwtInterval(p.first,p.second);
@@ -161,23 +161,23 @@ void MotorSpectrogramPlot::updatePoint(int row, int col, double val)
     replot();
 }
 
-void MotorSpectrogramPlot::setAxis(QwtPlot::Axis plotAxis, BlackChirp::MotorAxis motorAxis)
+void MotorSpectrogramPlot::setAxis(QwtPlot::Axis plotAxis, MotorScan::MotorAxis motorAxis)
 {
     QString text;
 
     /// \todo Figure out how to update slider axes here too
 
     switch (motorAxis) {
-    case BlackChirp::MotorX:
+    case MotorScan::MotorX:
         text = QString("X (mm)");
         break;
-    case BlackChirp::MotorY:
+    case MotorScan::MotorY:
         text = QString("Y (mm)");
         break;
-    case BlackChirp::MotorZ:
+    case MotorScan::MotorZ:
         text = QString("Z (mm)");
         break;
-    case BlackChirp::MotorT:
+    case MotorScan::MotorT:
         text = QString::fromUtf16(u"T (µs)");
         break;
     }

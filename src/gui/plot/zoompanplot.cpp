@@ -51,6 +51,15 @@ ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),
     bool en = getOrSetDefault(BC::Key::trackerEn,false).toBool();
     p_tracker->setEnabled(en);
 
+    p_grid = new QwtPlotGrid;
+    p_grid->enableX(true);
+    p_grid->enableXMin(true);
+    p_grid->enableY(true);
+    p_grid->enableYMin(true);
+    configureGridMajorPen();
+    configureGridMinorPen();
+    p_grid->attach(this);
+
     canvas()->installEventFilter(this);
     connect(this,&ZoomPanPlot::plotRightClicked,this,&ZoomPanPlot::buildContextMenu);
 }
@@ -232,7 +241,8 @@ void ZoomPanPlot::setCurveColor(BlackchirpPlotCurve *curve)
 {
     auto c = QColorDialog::getColor(curve->pen().color(),this,
                            QString("Choose a color for the ")+curve->title().text()+QString(" curve"));
-    curve->setColor(c);
+    if(c.isValid())
+        curve->setColor(c);
     replot();
 }
 
@@ -269,6 +279,25 @@ void ZoomPanPlot::setCurveVisible(BlackchirpPlotCurve *curve, bool v)
 void ZoomPanPlot::setCurveAxisY(BlackchirpPlotCurve *curve, QwtPlot::Axis a)
 {
     curve->setCurveAxisY(a);
+    replot();
+}
+
+void ZoomPanPlot::configureGridMajorPen()
+{
+    QPalette p;
+    auto c = get<QColor>(BC::Key::majorGridColor,p.color(QPalette::Light));
+    auto s = get<Qt::PenStyle>(BC::Key::majorGridStyle,Qt::NoPen);
+    p_grid->setMajorPen(c,0.0,s);
+    replot();
+
+}
+
+void ZoomPanPlot::configureGridMinorPen()
+{
+    QPalette p;
+    auto c = get<QColor>(BC::Key::minorGridColor,p.color(QPalette::Light));
+    auto s = get<Qt::PenStyle>(BC::Key::minorGridStyle,Qt::NoPen);
+    p_grid->setMinorPen(c,0.0,s);
     replot();
 }
 
@@ -532,6 +561,87 @@ QMenu *ZoomPanPlot::contextMenu()
     twa->setDefaultWidget(tw);
     trackMenu->addAction(twa);
 
+    auto gridMenu = menu->addMenu(QString("Grid"));
+    auto majorColorAct = gridMenu->addAction(QString("Major Color..."));
+    connect(majorColorAct,&QAction::triggered,[=](){
+        auto c = QColorDialog::getColor(get<QColor>(BC::Key::majorGridColor,Qt::white),this,QString("Select major grid color"));
+        if(c.isValid())
+            set(BC::Key::majorGridColor,c,false);
+        configureGridMajorPen();
+    });
+
+    QWidgetAction *majorwa = new QWidgetAction(gridMenu);
+    QWidget *majorgw = new QWidget(gridMenu);
+    QFormLayout *majorfl = new QFormLayout(majorgw);
+
+    QComboBox *majorPenBox = new QComboBox;
+    majorPenBox->addItem(QString("None"),QVariant::fromValue(Qt::NoPen));
+    majorPenBox->addItem(QString::fromUtf16(u"⸻ "),QVariant::fromValue(Qt::SolidLine));
+    majorPenBox->addItem(QString("- - - "),QVariant::fromValue(Qt::DashLine));
+    majorPenBox->addItem(QString::fromUtf16(u"· · · "),QVariant::fromValue(Qt::DotLine));
+    majorPenBox->addItem(QString::fromUtf16(u"-·-·-"),QVariant::fromValue(Qt::DashDotLine));
+    majorPenBox->addItem(QString::fromUtf16(u"-··-··"),QVariant::fromValue(Qt::DashDotDotLine));
+    majorPenBox->setCurrentIndex(majorPenBox->findData(QVariant::fromValue(get<Qt::PenStyle>(BC::Key::majorGridStyle,Qt::NoPen))));
+    connect(majorPenBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[=](int i){
+        set(BC::Key::majorGridStyle,majorPenBox->itemData(i));
+        configureGridMajorPen();
+    });
+    majorfl->addRow(QString("Major Line Style"),majorPenBox);
+    for(int i=0; i<majorfl->rowCount(); ++i)
+    {
+        auto lbl = qobject_cast<QLabel*>(majorfl->itemAt(i,QFormLayout::LabelRole)->widget());
+        if(lbl)
+        {
+            lbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+            lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+        }
+    }
+
+    majorgw->setLayout(majorfl);
+    majorwa->setDefaultWidget(majorgw);
+    gridMenu->addAction(majorwa);
+
+
+    auto minorColorAct = gridMenu->addAction(QString("Minor Color..."));
+    connect(minorColorAct,&QAction::triggered,[=](){
+        auto c = QColorDialog::getColor(get<QColor>(BC::Key::minorGridColor,Qt::white),this,QString("Select Minor grid color"));
+        if(c.isValid())
+            set(BC::Key::minorGridColor,c,false);
+        configureGridMinorPen();
+    });
+
+    QWidgetAction *minorwa = new QWidgetAction(gridMenu);
+    QWidget *minorgw = new QWidget(gridMenu);
+    QFormLayout *minorfl = new QFormLayout(minorgw);
+
+    QComboBox *minorPenBox = new QComboBox;
+    minorPenBox->addItem(QString("None"),QVariant::fromValue(Qt::NoPen));
+    minorPenBox->addItem(QString::fromUtf16(u"⸻ "),QVariant::fromValue(Qt::SolidLine));
+    minorPenBox->addItem(QString("- - - "),QVariant::fromValue(Qt::DashLine));
+    minorPenBox->addItem(QString::fromUtf16(u"· · · "),QVariant::fromValue(Qt::DotLine));
+    minorPenBox->addItem(QString::fromUtf16(u"-·-·-"),QVariant::fromValue(Qt::DashDotLine));
+    minorPenBox->addItem(QString::fromUtf16(u"-··-··"),QVariant::fromValue(Qt::DashDotDotLine));
+    minorPenBox->setCurrentIndex(minorPenBox->findData(QVariant::fromValue(get<Qt::PenStyle>(BC::Key::minorGridStyle,Qt::NoPen))));
+    connect(minorPenBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[=](int i){
+        set(BC::Key::minorGridStyle,minorPenBox->itemData(i));
+        configureGridMinorPen();
+    });
+    minorfl->addRow(QString("Minor Line Style"),minorPenBox);
+    for(int i=0; i<minorfl->rowCount(); ++i)
+    {
+        auto lbl = qobject_cast<QLabel*>(minorfl->itemAt(i,QFormLayout::LabelRole)->widget());
+        if(lbl)
+        {
+            lbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+            lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+        }
+    }
+
+    minorgw->setLayout(minorfl);
+    minorwa->setDefaultWidget(minorgw);
+    gridMenu->addAction(minorwa);
+
+
     auto curveMenu = menu->addMenu(QString("Curves"));
     for(auto item : itemList(QwtPlotItem::Rtti_PlotCurve))
     {
@@ -583,7 +693,7 @@ QMenu *ZoomPanPlot::contextMenu()
             markerBox->addItem(QString::fromUtf16(u"—"),QVariant::fromValue(QwtSymbol::HLine));
             markerBox->addItem(QString::fromUtf16(u"︱"),QVariant::fromValue(QwtSymbol::VLine));
             markerBox->addItem(QString::fromUtf16(u"✳"),QVariant::fromValue(QwtSymbol::Star1));
-            markerBox->addItem(QString::fromUtf16(u"⭑"),QVariant::fromValue(QwtSymbol::Star2));
+            markerBox->addItem(QString::fromUtf16(u"✶"),QVariant::fromValue(QwtSymbol::Star2));
             markerBox->addItem(QString::fromUtf16(u"⬢"),QVariant::fromValue(QwtSymbol::Hexagon));
             markerBox->setCurrentIndex(markerBox->findData(QVariant::fromValue(curve->symbol()->style())));
             connect(markerBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
@@ -601,6 +711,16 @@ QMenu *ZoomPanPlot::contextMenu()
             visBox->setChecked(curve->isVisible());
             connect(visBox,&QCheckBox::toggled,[=](bool v){ setCurveVisible(curve,v); });
             cfl->addRow(QString("Visible"),visBox);
+
+            for(int i=0; i<cfl->rowCount(); ++i)
+            {
+                auto lbl = qobject_cast<QLabel*>(cfl->itemAt(i,QFormLayout::LabelRole)->widget());
+                if(lbl)
+                {
+                    lbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+                    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+                }
+            }
 
             curveWidget->setLayout(cfl);
             curveWa->setDefaultWidget(curveWidget);

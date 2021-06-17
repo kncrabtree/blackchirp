@@ -52,6 +52,8 @@ public:
 
     int plotIndex() const { return get<int>(BC::Key::bcCurvePlotIndex,0); }
 
+    void updateFromSettings();
+
 protected:
     void configurePen();
     void configureSymbol();

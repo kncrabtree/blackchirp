@@ -24,13 +24,13 @@ public:
 
     void setLabelText(QwtPlot::Axis axis, QString text);
     virtual void prepareForScan(const MotorScan s);
-    BlackChirp::MotorAxis leftAxis() const { return d_leftAxis; }
-    BlackChirp::MotorAxis bottomAxis() const { return d_bottomAxis; }
+    MotorScan::MotorAxis leftAxis() const { return d_leftAxis; }
+    MotorScan::MotorAxis bottomAxis() const { return d_bottomAxis; }
 
 public slots:
     virtual void updateData(QVector<double> data, int cols);
     virtual void updatePoint(int row, int col, double val);
-    virtual void setAxis(QwtPlot::Axis plotAxis, BlackChirp::MotorAxis motorAxis);
+    virtual void setAxis(QwtPlot::Axis plotAxis, MotorScan::MotorAxis motorAxis);
 
 protected:
     void filterData();
@@ -40,8 +40,8 @@ protected:
     QwtPlotSpectrogram *p_spectrogram;
     double d_max, d_min;
     bool d_firstPoint;
-    BlackChirp::MotorAxis d_leftAxis, d_bottomAxis;
-    QMap<BlackChirp::MotorAxis,QwtInterval> d_intervalList;
+    MotorScan::MotorAxis d_leftAxis, d_bottomAxis;
+    QMap<MotorScan::MotorAxis,QwtInterval> d_intervalList;
 
 
     // QwtPlot interface

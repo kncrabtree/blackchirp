@@ -164,21 +164,21 @@ int MotorScan::tPoints() const
     return data->tPoints;
 }
 
-int MotorScan::numPoints(BlackChirp::MotorAxis axis) const
+int MotorScan::numPoints(MotorAxis axis) const
 {
     int out = 0;
 
     switch(axis) {
-    case BlackChirp::MotorX:
+    case MotorX:
         out = xPoints();
         break;
-    case BlackChirp::MotorY:
+    case MotorY:
         out = yPoints();
         break;
-    case BlackChirp::MotorZ:
+    case MotorZ:
         out = zPoints();
         break;
-    case BlackChirp::MotorT:
+    case MotorT:
         out = tPoints();
         break;
     }
@@ -218,7 +218,7 @@ double MotorScan::tVal(int i) const
     return data->t0 + static_cast<double>(i)*data->dt;
 }
 
-double MotorScan::axisValue(BlackChirp::MotorAxis axis, int i) const
+double MotorScan::axisValue(MotorAxis axis, int i) const
 {
     if(i<0 || i >= numPoints(axis))
         return -1.0;
@@ -226,16 +226,16 @@ double MotorScan::axisValue(BlackChirp::MotorAxis axis, int i) const
     double out = -1.0;
 
     switch(axis) {
-    case BlackChirp::MotorX:
+    case MotorX:
         out = xVal(i);
         break;
-    case BlackChirp::MotorY:
+    case MotorY:
         out = yVal(i);
         break;
-    case BlackChirp::MotorZ:
+    case MotorZ:
         out = zVal(i);
         break;
-    case BlackChirp::MotorT:
+    case MotorT:
         out = tVal(i);
         break;
     }
@@ -243,14 +243,14 @@ double MotorScan::axisValue(BlackChirp::MotorAxis axis, int i) const
     return out;
 }
 
-QPair<double, double> MotorScan::range(BlackChirp::MotorAxis axis) const
+QPair<double, double> MotorScan::range(MotorAxis axis) const
 {
     double first = axisValue(axis,0);
     double last = axisValue(axis,numPoints(axis)-1);
     return qMakePair(first,last);
 }
 
-QPair<double, double> MotorScan::interval(BlackChirp::MotorAxis axis) const
+QPair<double, double> MotorScan::interval(MotorAxis axis) const
 {
     double first = axisValue(axis,0);
     double last = axisValue(axis,numPoints(axis)-1);
@@ -317,7 +317,7 @@ QVector3D MotorScan::currentPos() const
     return QVector3D(xVal(data->currentX),yVal(data->currentY),zVal(data->currentZ));
 }
 
-QVector<double> MotorScan::slice(BlackChirp::MotorAxis xAxis, BlackChirp::MotorAxis yAxis, BlackChirp::MotorAxis otherAxis1, int otherPoint1, BlackChirp::MotorAxis otherAxis2, int otherPoint2) const
+QVector<double> MotorScan::slice(MotorAxis xAxis, MotorAxis yAxis, MotorAxis otherAxis1, int otherPoint1, MotorAxis otherAxis2, int otherPoint2) const
 {
 
     if(xAxis == yAxis || xAxis == otherAxis1 || xAxis == otherAxis2 || yAxis == otherAxis1 ||
@@ -330,70 +330,70 @@ QVector<double> MotorScan::slice(BlackChirp::MotorAxis xAxis, BlackChirp::MotorA
 
     switch(xAxis)
     {
-    case BlackChirp::MotorX:
+    case MotorX:
         x = &i;
         xReverse = (data->dx < 0);
         break;
-    case BlackChirp::MotorY:
+    case MotorY:
         y = &i;
         xReverse = (data->dy < 0);
         break;
-    case BlackChirp::MotorZ:
+    case MotorZ:
         z = &i;
         xReverse = (data->dz < 0);
         break;
-    case BlackChirp::MotorT:
+    case MotorT:
         t = &i;
         break;
     }
 
     switch(yAxis)
     {
-    case BlackChirp::MotorX:
+    case MotorX:
         x = &j;
         yReverse = (data->dx < 0);
         break;
-    case BlackChirp::MotorY:
+    case MotorY:
         y = &j;
         yReverse = (data->dy < 0);
         break;
-    case BlackChirp::MotorZ:
+    case MotorZ:
         z = &j;
         yReverse = (data->dz < 0);
         break;
-    case BlackChirp::MotorT:
+    case MotorT:
         t = &j;
         break;
     }
 
     switch(otherAxis1)
     {
-    case BlackChirp::MotorX:
+    case MotorX:
         x = &k;
         break;
-    case BlackChirp::MotorY:
+    case MotorY:
         y = &k;
         break;
-    case BlackChirp::MotorZ:
+    case MotorZ:
         z = &k;
         break;
-    case BlackChirp::MotorT:
+    case MotorT:
         t = &k;
         break;
     }
 
     switch(otherAxis2)
     {
-    case BlackChirp::MotorX:
+    case MotorX:
         x = &l;
         break;
-    case BlackChirp::MotorY:
+    case MotorY:
         y = &l;
         break;
-    case BlackChirp::MotorZ:
+    case MotorZ:
         z = &l;
         break;
-    case BlackChirp::MotorT:
+    case MotorT:
         t = &l;
         break;
     }
@@ -449,7 +449,7 @@ QVector<double> MotorScan::slice(BlackChirp::MotorAxis xAxis, BlackChirp::MotorA
 
 }
 
-QVector<double> MotorScan::smoothSlice(BlackChirp::MotorAxis xAxis, BlackChirp::MotorAxis yAxis, BlackChirp::MotorAxis otherAxis1, int otherPoint1, BlackChirp::MotorAxis otherAxis2, int otherPoint2, Eigen::MatrixXd coefs) const
+QVector<double> MotorScan::smoothSlice(MotorAxis xAxis, MotorAxis yAxis, MotorAxis otherAxis1, int otherPoint1, MotorAxis otherAxis2, int otherPoint2, Eigen::MatrixXd coefs) const
 {
 
     if(xAxis == yAxis || xAxis == otherAxis1 || xAxis == otherAxis2 || yAxis == otherAxis1 ||
@@ -462,70 +462,70 @@ QVector<double> MotorScan::smoothSlice(BlackChirp::MotorAxis xAxis, BlackChirp::
 
     switch(xAxis)
     {
-    case BlackChirp::MotorX:
+    case MotorX:
         x = &i;
         xReverse = (data->dx < 0);
         break;
-    case BlackChirp::MotorY:
+    case MotorY:
         y = &i;
         xReverse = (data->dy < 0);
         break;
-    case BlackChirp::MotorZ:
+    case MotorZ:
         z = &i;
         xReverse = (data->dz < 0);
         break;
-    case BlackChirp::MotorT:
+    case MotorT:
         t = &i;
         break;
     }
 
     switch(yAxis)
     {
-    case BlackChirp::MotorX:
+    case MotorX:
         x = &j;
         yReverse = (data->dx < 0);
         break;
-    case BlackChirp::MotorY:
+    case MotorY:
         y = &j;
         yReverse = (data->dy < 0);
         break;
-    case BlackChirp::MotorZ:
+    case MotorZ:
         z = &j;
         yReverse = (data->dz < 0);
         break;
-    case BlackChirp::MotorT:
+    case MotorT:
         t = &j;
         break;
     }
 
     switch(otherAxis1)
     {
-    case BlackChirp::MotorX:
+    case MotorX:
         x = &k;
         break;
-    case BlackChirp::MotorY:
+    case MotorY:
         y = &k;
         break;
-    case BlackChirp::MotorZ:
+    case MotorZ:
         z = &k;
         break;
-    case BlackChirp::MotorT:
+    case MotorT:
         t = &k;
         break;
     }
 
     switch(otherAxis2)
     {
-    case BlackChirp::MotorX:
+    case MotorX:
         x = &l;
         break;
-    case BlackChirp::MotorY:
+    case MotorY:
         y = &l;
         break;
-    case BlackChirp::MotorZ:
+    case MotorZ:
         z = &l;
         break;
-    case BlackChirp::MotorT:
+    case MotorT:
         t = &l;
         break;
     }

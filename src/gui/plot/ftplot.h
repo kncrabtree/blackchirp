@@ -9,9 +9,6 @@
 #include <src/data/experiment/experiment.h>
 #include <src/data/analysis/ft.h>
 
-class QwtPlotCurve;
-class QwtPlotGrid;
-
 namespace BC::Key {
 static const QString ftPlot("FtPlot");
 static const QString ftCurve("FT");
@@ -44,7 +41,6 @@ public slots:
     void filterData();
     void buildContextMenu(QMouseEvent *me);
 
-    void changeGridColor(QColor c);
     void exportXY();
     void configureUnits(BlackChirp::FtPlotUnits u);
     void newPeakList(const QList<QPointF> l);
@@ -55,7 +51,7 @@ private:
      * \brief The object representing the curve on the plot
      */
     BlackchirpPlotCurve *p_curve, *p_peakData;
-    QwtPlotGrid *p_plotGrid;
+
     Ft d_currentFt;
     int d_number;
     QString d_id;

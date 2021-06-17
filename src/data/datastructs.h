@@ -305,12 +305,6 @@ struct LifScopeConfig {
 #endif
 
 #ifdef BC_MOTOR
-enum MotorAxis {
-    MotorX,
-    MotorY,
-    MotorZ,
-    MotorT
-};
 
 struct MotorScopeConfig {
     int dataChannel;
@@ -366,10 +360,6 @@ Q_DECLARE_METATYPE(BlackChirp::ClockType)
 #ifdef BC_LIF
 Q_DECLARE_METATYPE(BlackChirp::LifScanOrder)
 Q_DECLARE_METATYPE(BlackChirp::LifCompleteMode)
-#endif
-
-#ifdef BC_MOTOR
-Q_DECLARE_METATYPE(BlackChirp::MotorAxis)
 #endif
 
 Q_DECLARE_TYPEINFO(BlackChirp::ChirpSegment,Q_MOVABLE_TYPE);

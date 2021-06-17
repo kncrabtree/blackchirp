@@ -248,13 +248,13 @@ bool Scx11::readCurrentPosition()
         double num = resp.mid(f+1,l-f-1).trimmed().toDouble();
         emit posUpdate(d_channels.at(i).axis, num);
         switch (d_channels.at(i).axis) {
-        case BlackChirp::MotorX:
+        case MotorScan::MotorX:
             d_xPos = num;
             break;
-        case BlackChirp::MotorY:
+        case MotorScan::MotorY:
             d_yPos = num;
             break;
-        case BlackChirp::MotorZ:
+        case MotorScan::MotorZ:
             d_zPos = num;
             break;
         default:
@@ -309,7 +309,7 @@ bool Scx11::prepareForMotorScan(Experiment &exp)
     return true;
 }
 
-void Scx11::checkLimitOneAxis(BlackChirp::MotorAxis axis)
+void Scx11::checkLimitOneAxis(MotorScan::MotorAxis axis)
 {
     AxisInfo ai = axisInfo(axis);
 
@@ -358,36 +358,36 @@ void Scx11::checkLimitOneAxis(BlackChirp::MotorAxis axis)
     return;
 }
 
-BlackChirp::MotorAxis Scx11::axisIndex(int id)
+MotorScan::MotorAxis Scx11::axisIndex(int id)
 {
     switch(id)
     {
     case 0:
-        return BlackChirp::MotorX;
+        return MotorScan::MotorX;
         break;
     case 1:
-        return BlackChirp::MotorY;
+        return MotorScan::MotorY;
         break;
     case 2:
-        return BlackChirp::MotorZ;
+        return MotorScan::MotorZ;
         break;
     default:
-        return BlackChirp::MotorZ;
+        return MotorScan::MotorZ;
         break;
     }
 }
 
-Scx11::AxisInfo Scx11::axisInfo(BlackChirp::MotorAxis axis)
+Scx11::AxisInfo Scx11::axisInfo(MotorScan::MotorAxis axis)
 {
     switch(axis)
     {
-    case BlackChirp::MotorX:
+    case MotorScan::MotorX:
         return(d_channels.at(0));
         break;
-    case BlackChirp::MotorY:
+    case MotorScan::MotorY:
         return(d_channels.at(1));
         break;
-    case BlackChirp::MotorZ:
+    case MotorScan::MotorZ:
         return(d_channels.at(2));
         break;
     default:
@@ -396,17 +396,17 @@ Scx11::AxisInfo Scx11::axisInfo(BlackChirp::MotorAxis axis)
     }
 }
 
-QString Scx11::axisName(BlackChirp::MotorAxis axis)
+QString Scx11::axisName(MotorScan::MotorAxis axis)
 {
     switch(axis)
     {
-    case BlackChirp::MotorX:
+    case MotorScan::MotorX:
         return QString("X");
         break;
-    case BlackChirp::MotorY:
+    case MotorScan::MotorY:
         return QString("Y");
         break;
-    case BlackChirp::MotorZ:
+    case MotorScan::MotorZ:
         return QString("Z");
         break;
     default:

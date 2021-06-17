@@ -740,7 +740,6 @@ void FtmwViewWidget::launchPeakFinder()
     connect(p_pfw,&PeakFindWidget::peakList,ui->mainFtPlot,&FtPlot::newPeakList);
     connect(p_pfw,&PeakFindWidget::destroyed,[=](){
         p_pfw = nullptr;
-        ui->mainFtPlot->newPeakList(QList<QPointF>());
     });
 
     p_pfw->show();

@@ -3,6 +3,7 @@
 
 #include <qwt6/qwt_plot.h>
 #include <qwt6/qwt_symbol.h>
+#include <qwt6/qwt_plot_grid.h>
 
 #include <src/data/storage/settingsstorage.h>
 
@@ -21,6 +22,10 @@ static const QString zoomFactor("zoomFactor");
 static const QString trackerDecimals("trackerDecimals");
 static const QString trackerScientific("trackerScientific");
 static const QString trackerEn("trackerEnabled");
+static const QString majorGridColor("majorGridColor");
+static const QString majorGridStyle("majorGridStyle");
+static const QString minorGridColor("minorGridColor");
+static const QString minorGridStyle("minorGridStyle");
 }
 
 /// \todo Handle plot grid in this class
@@ -59,6 +64,8 @@ public slots:
     void setCurveMarkerSize(BlackchirpPlotCurve* curve, int s);
     void setCurveVisible(BlackchirpPlotCurve* curve, bool v);
     void setCurveAxisY(BlackchirpPlotCurve* curve, QwtPlot::Axis a);
+    void configureGridMajorPen();
+    void configureGridMinorPen();
 
 signals:
     void panningStarted();
@@ -68,6 +75,7 @@ signals:
 
 protected:
     int d_maxIndex;
+    QwtPlotGrid *p_grid;
     CustomTracker *p_tracker;
     struct AxisConfig {
         QwtPlot::Axis type;
@@ -116,5 +124,6 @@ public:
 protected:
     virtual void showEvent(QShowEvent *event);
 };
+
 
 #endif // ZOOMPANPLOT_H

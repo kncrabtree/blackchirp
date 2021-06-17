@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
     qRegisterMetaType<BlackChirp::LifScopeConfig>("BlackChirp::LifScopeConfig");
 #endif
 #ifdef BC_MOTOR
-    qRegisterMetaType<BlackChirp::MotorAxis>("BlackChirp::MotorAxis");
+    qRegisterMetaType<MotorScan::MotorAxis>("MotorScan::MotorAxis");
     qRegisterMetaType<MotorScan>("MotorScan");
 #endif
 

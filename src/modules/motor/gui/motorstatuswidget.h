@@ -33,8 +33,8 @@ public:
 
 public slots:
     void updateRanges();
-    void updatePosition(BlackChirp::MotorAxis axis, double pos);
-    void updateLimit(BlackChirp::MotorAxis axis, bool n, bool p);
+    void updatePosition(MotorScan::MotorAxis axis, double pos);
+    void updateLimit(MotorScan::MotorAxis axis, bool n, bool p);
     void updateProgress(int s);
 
 private:

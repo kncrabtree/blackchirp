@@ -33,7 +33,6 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
     connect(ui->samplesSpinBox,ivc,sig);
     connect(ui->refEnabledCheckBox,&QCheckBox::toggled,sig);
     connect(ui->refVScaleDoubleSpinBox,dvc,sig);
-    connect(ui->lifPlot,&LifTracePlot::colorChanged,this,&LifControlWidget::lifColorChanged);
     connect(ui->laserPosDoubleSpinBox,dvc,this,&LifControlWidget::laserPosUpdate);
     connect(this,&LifControlWidget::newTrace,ui->lifPlot,&LifTracePlot::newTrace);
 

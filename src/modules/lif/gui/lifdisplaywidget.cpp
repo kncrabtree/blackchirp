@@ -35,7 +35,6 @@ LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
 
     p_spectrogramPlot = new LifSpectrogramPlot(this);
 
-    connect(p_lifTracePlot,&LifTracePlot::colorChanged,this,&LifDisplayWidget::lifColorChanged);
     connect(p_lifTracePlot,&LifTracePlot::lifGateUpdated,this,&LifDisplayWidget::lifZoneUpdate);
     connect(p_lifTracePlot,&LifTracePlot::refGateUpdated,this,&LifDisplayWidget::refZoneUpdate);
     connect(p_spectrogramPlot,&LifSpectrogramPlot::freqSlice,this,&LifDisplayWidget::freqSlice);

@@ -95,23 +95,23 @@ void MotorStatusWidget::updateRanges()
     s.endGroup();
     s.endGroup();
 
-    updatePosition(BlackChirp::MotorX,d_x.currentPos);
-    updatePosition(BlackChirp::MotorY,d_y.currentPos);
-    updatePosition(BlackChirp::MotorZ,d_z.currentPos);
+    updatePosition(MotorScan::MotorX,d_x.currentPos);
+    updatePosition(MotorScan::MotorY,d_y.currentPos);
+    updatePosition(MotorScan::MotorZ,d_z.currentPos);
 }
 
-void MotorStatusWidget::updatePosition(BlackChirp::MotorAxis axis, double pos)
+void MotorStatusWidget::updatePosition(MotorScan::MotorAxis axis, double pos)
 {
     AxisWidget *w;
     switch(axis)
     {
-    case BlackChirp::MotorX:
+    case MotorScan::MotorX:
         w = &d_x;
         break;
-    case BlackChirp::MotorY:
+    case MotorScan::MotorY:
         w = &d_y;
         break;
-    case BlackChirp::MotorZ:
+    case MotorScan::MotorZ:
         w = &d_z;
         break;
     default:
@@ -124,19 +124,19 @@ void MotorStatusWidget::updatePosition(BlackChirp::MotorAxis axis, double pos)
     w->positionBar->setValue(barPos);
 }
 
-void MotorStatusWidget::updateLimit(BlackChirp::MotorAxis axis, bool n, bool p)
+void MotorStatusWidget::updateLimit(MotorScan::MotorAxis axis, bool n, bool p)
 {
     switch(axis)
     {
-    case BlackChirp::MotorX:
+    case MotorScan::MotorX:
         d_x.negLimLed->setState(n);
         d_x.posLimLed->setState(p);
         break;
-    case BlackChirp::MotorY:
+    case MotorScan::MotorY:
         d_y.negLimLed->setState(n);
         d_y.posLimLed->setState(p);
         break;
-    case BlackChirp::MotorZ:
+    case MotorScan::MotorZ:
         d_z.negLimLed->setState(n);
         d_z.posLimLed->setState(p);
         break;

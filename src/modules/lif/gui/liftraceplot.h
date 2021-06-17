@@ -12,6 +12,8 @@ class QwtPlotTextLabel;
 
 namespace BC::Key {
 static const QString lifTracePlot("lifTracePlot");
+static const QString lifCurve("lifCurve");
+static const QString refCurve("lifRefCurve");
 }
 
 class LifTracePlot : public ZoomPanPlot
@@ -29,7 +31,6 @@ public:
     void setDisplayOnly(bool b) { d_displayOnly = b; }
 
 signals:
-    void colorChanged();
     void integralUpdate(double);
     void lifGateUpdated(int,int);
     void refGateUpdated(int,int);
@@ -38,12 +39,8 @@ public slots:
     void setNumAverages(int n);
     void newTrace(const LifTrace t);
     void traceProcessed(const LifTrace t);
-    void buildContextMenu(QMouseEvent *me);
-    void buildLegendContextMenu(QwtPlotCurve *c, QMouseEvent *me);
-    void changeLifColor();
-    void changeRefColor();
+    void buildContextMenu(QMouseEvent *me) override;
     void checkColors();
-    void legendItemClicked(QVariant info, bool checked, int index);
     void reset();
     void setIntegralText(double d);
 
@@ -55,7 +52,7 @@ public slots:
     void exportXY();
 
 private:
-    QwtPlotCurve *p_lif, *p_ref;
+    BlackchirpPlotCurve *p_lif, *p_ref;
     QwtPlotZoneItem *p_lifZone, *p_refZone;
     QwtPlotTextLabel *p_integralLabel;
     LifTrace d_currentTrace;
@@ -64,15 +61,15 @@ private:
     QPair<int,int> d_lifZoneRange, d_refZoneRange;
     bool d_displayOnly;
 
-    void initializeLabel(QwtPlotCurve *curve, bool isVisible);
     void updateLifZone();
     void updateRefZone();
 
 
     // ZoomPanPlot interface
 protected:
-    void filterData();
-    bool eventFilter(QObject *obj, QEvent *ev);
+    void filterData() override;
+    bool eventFilter(QObject *obj, QEvent *ev) override;
+    virtual void replot() override;
 };
 
 #endif // LIFTRACEPLOT_H

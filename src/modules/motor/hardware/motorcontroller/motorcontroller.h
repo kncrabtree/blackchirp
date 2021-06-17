@@ -20,9 +20,9 @@ public:
 signals:
     void motionComplete(bool success = true);
     //void limitStatus(bool nx, bool px, bool ny, bool py, bool nz, bool pz);
-    void limitStatus(BlackChirp::MotorAxis axis, bool negLimit, bool posLimit);
+    void limitStatus(MotorScan::MotorAxis axis, bool negLimit, bool posLimit);
 
-    void posUpdate(BlackChirp::MotorAxis axis, double pos);
+    void posUpdate(MotorScan::MotorAxis axis, double pos);
 
 public slots:
     virtual bool moveToPosition(double x, double y, double z) =0;

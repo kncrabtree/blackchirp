@@ -106,8 +106,8 @@ signals:
     void motorTraceAcquired(QVector<double> d);
     void motorMoveComplete(bool);
     void moveMotorToPosition(double x, double y, double z);
-    void motorLimitStatus(BlackChirp::MotorAxis axis, bool negLimit, bool posLimit);
-    void motorPosUpdate(BlackChirp::MotorAxis axis, double pos);
+    void motorLimitStatus(MotorScan::MotorAxis axis, bool negLimit, bool posLimit);
+    void motorPosUpdate(MotorScan::MotorAxis axis, double pos);
     void motorRest();
 #endif
 

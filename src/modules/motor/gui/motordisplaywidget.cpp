@@ -10,13 +10,13 @@ MotorDisplayWidget::MotorDisplayWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    ui->largeSlider1->setAxis(BlackChirp::MotorX);
-    ui->largeSlider2->setAxis(BlackChirp::MotorT);
-    ui->smallSlider1->setAxis(BlackChirp::MotorZ);
-    ui->smallSlider2->setAxis(BlackChirp::MotorT);
-    ui->timeXSlider->setAxis(BlackChirp::MotorX);
-    ui->timeYSlider->setAxis(BlackChirp::MotorY);
-    ui->timeZSlider->setAxis(BlackChirp::MotorZ);
+    ui->largeSlider1->setAxis(MotorScan::MotorX);
+    ui->largeSlider2->setAxis(MotorScan::MotorT);
+    ui->smallSlider1->setAxis(MotorScan::MotorZ);
+    ui->smallSlider2->setAxis(MotorScan::MotorT);
+    ui->timeXSlider->setAxis(MotorScan::MotorX);
+    ui->timeYSlider->setAxis(MotorScan::MotorY);
+    ui->timeZSlider->setAxis(MotorScan::MotorZ);
 
     d_sliders << ui->largeSlider1 << ui->largeSlider2 << ui->smallSlider1 << ui->smallSlider2
               << ui->timeXSlider << ui->timeYSlider << ui->timeZSlider;

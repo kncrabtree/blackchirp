@@ -207,7 +207,11 @@ void SettingsStorage::clearGetters(bool write)
 QVariant SettingsStorage::getOrSetDefault(const QString key, QVariant defaultValue)
 {
     if(containsValue(key))
-        return get(key);
+    {
+        auto out = get(key);
+        if(out.isValid())
+            return out;
+    }
 
     //ensure this key doesn't match an array
     if(containsArray(key))

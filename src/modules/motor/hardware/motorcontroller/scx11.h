@@ -25,7 +25,7 @@ public:
         double offset;
         bool moving;
         double nextPos;
-        BlackChirp::MotorAxis axis;
+        MotorScan::MotorAxis axis;
     };
 
     Scx11(QObject *parent=nullptr);
@@ -50,11 +50,11 @@ protected:
 private:
     bool d_idle;
     int d_nextRead;
-    void checkLimitOneAxis(BlackChirp::MotorAxis axis);
+    void checkLimitOneAxis(MotorScan::MotorAxis axis);
     QList<AxisInfo> d_channels;
-    BlackChirp::MotorAxis axisIndex(int id);
-    AxisInfo axisInfo(BlackChirp::MotorAxis axis);
-    QString axisName(BlackChirp::MotorAxis axis);
+    MotorScan::MotorAxis axisIndex(int id);
+    AxisInfo axisInfo(MotorScan::MotorAxis axis);
+    QString axisName(MotorScan::MotorAxis axis);
 
     QTimer *p_motionTimer;
     AxisInfo d_currentMotionChannel;

@@ -49,22 +49,8 @@ FtPlot::FtPlot(const QString id, QWidget *parent) :
     p_curve = new BlackchirpPlotCurve(BC::Key::ftCurve+id);
     p_curve->attach(this);
 
-    p_peakData = new BlackchirpPlotCurve(BC::Key::peakCurve+id,Qt::NoPen,QwtSymbol::NoSymbol);
+    p_peakData = new BlackchirpPlotCurve(BC::Key::peakCurve+id,Qt::NoPen,QwtSymbol::Ellipse);
     p_peakData->attach(this);
-
-    p_plotGrid = new QwtPlotGrid();
-    p_plotGrid->enableX(true);
-    p_plotGrid->enableXMin(true);
-    p_plotGrid->enableY(true);
-    p_plotGrid->enableYMin(true);
-    QPen p;
-    //this will go away soon
-    p.setColor(get<QColor>("gridColor",palette().color(QPalette::Light)));
-    p.setStyle(Qt::DashLine);
-    p_plotGrid->setMajorPen(p);
-    p.setStyle(Qt::DotLine);
-    p_plotGrid->setMinorPen(p);
-    p_plotGrid->attach(this);
 
     setAxisAutoScaleRange(QwtPlot::xBottom,0.0,1.0);
     setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
@@ -198,22 +184,6 @@ void FtPlot::buildContextMenu(QMouseEvent *me)
     m->popup(me->globalPos());
 }
 
-void FtPlot::changeGridColor(QColor c)
-{
-    if(!c.isValid())
-        return;
-
-    set("gridColor",c);
-
-    QPen p(c);
-    p.setStyle(Qt::DashLine);
-    p_plotGrid->setMajorPen(p);
-
-    p.setStyle(Qt::DotLine);
-    p_plotGrid->setMinorPen(p);
-    replot();
-}
-
 void FtPlot::exportXY()
 {
 
@@ -328,6 +298,9 @@ void FtPlot::configureUnits(BlackChirp::FtPlotUnits u)
 void FtPlot::newPeakList(const QList<QPointF> l)
 {
 
-    p_peakData->setSamples(l.toVector());
+    if(!l.isEmpty())
+        p_peakData->setSamples(l.toVector());
+
+    p_peakData->setCurveVisible(!l.isEmpty());
     replot();
 }

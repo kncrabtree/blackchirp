@@ -68,9 +68,9 @@ bool VirtualMotorController::moveToPosition(double x, double y, double z)
     d_yPos = y;
     d_zPos = z;
 
-    emit posUpdate(BlackChirp::MotorX,d_xPos);
-    emit posUpdate(BlackChirp::MotorY,d_yPos);
-    emit posUpdate(BlackChirp::MotorZ,d_zPos);
+    emit posUpdate(MotorScan::MotorX,d_xPos);
+    emit posUpdate(MotorScan::MotorY,d_yPos);
+    emit posUpdate(MotorScan::MotorZ,d_zPos);
 
     emit motionComplete();
     return true;
@@ -85,13 +85,13 @@ void VirtualMotorController::checkLimit()
 {
     bool nx = fabs(d_xPos-d_xRange.first) < 0.01;
     bool px = fabs(d_xPos-d_xRange.second) < 0.01;
-    emit limitStatus(BlackChirp::MotorX,nx,px);
+    emit limitStatus(MotorScan::MotorX,nx,px);
     bool ny = fabs(d_yPos-d_yRange.first) < 0.01;
     bool py = fabs(d_yPos-d_yRange.second) < 0.01;
-    emit limitStatus(BlackChirp::MotorY,ny,py);
+    emit limitStatus(MotorScan::MotorY,ny,py);
     bool nz = fabs(d_zPos-d_zRange.first) < 0.01;
     bool pz = fabs(d_zPos-d_zRange.second) < 0.01;
-    emit limitStatus(BlackChirp::MotorZ,nz,pz);
+    emit limitStatus(MotorScan::MotorZ,nz,pz);
 
 }
 

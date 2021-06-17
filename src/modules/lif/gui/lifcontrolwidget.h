@@ -26,7 +26,6 @@ public:
 signals:
     void updateScope(BlackChirp::LifScopeConfig);
     void newTrace(LifTrace);
-    void lifColorChanged();
     void laserPosUpdate(double pos);
 
 public slots:

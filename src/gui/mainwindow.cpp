@@ -52,6 +52,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     p_pcBox = nullptr;
     p_hwm = new HardwareManager();
+    qRegisterMetaType<QwtPlot::Axis>("QwtPlot::Axis");
 
     ui->setupUi(this);
 
@@ -310,10 +311,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_am,&AcquisitionManager::lifShotAcquired,p_lifProgressBar,&QProgressBar::setValue);
     connect(p_am,&AcquisitionManager::lifPointUpdate,p_lifDisplayWidget,&LifDisplayWidget::updatePoint);
     connect(p_lifAction,&QAction::triggered,this,[=](){ ui->mainTabWidget->setCurrentWidget(p_lifTab); });
-    connect(p_lifControlWidget,&LifControlWidget::lifColorChanged,
-            p_lifDisplayWidget,&LifDisplayWidget::checkLifColors);
-    connect(p_lifDisplayWidget,&LifDisplayWidget::lifColorChanged,
-            p_lifControlWidget,&LifControlWidget::checkLifColors);
+
 #else
     ui->controlTopLayout->addStretch(1);
 #endif

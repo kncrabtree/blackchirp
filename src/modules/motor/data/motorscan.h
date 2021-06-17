@@ -17,7 +17,16 @@ class QwtMatrixRasterData;
 
 class MotorScan
 {
+    Q_GADGET
 public:
+    enum MotorAxis {
+        MotorX,
+        MotorY,
+        MotorZ,
+        MotorT
+    };
+    Q_ENUM(MotorAxis)
+
     MotorScan();
     MotorScan(const MotorScan &rhs);
     MotorScan &operator=(const MotorScan &rhs);
@@ -34,15 +43,15 @@ public:
     int yPoints() const;
     int zPoints() const;
     int tPoints() const;
-    int numPoints(BlackChirp::MotorAxis axis) const;
+    int numPoints(MotorAxis axis) const;
 
     double xVal(int i) const;
     double yVal(int i) const;
     double zVal(int i) const;
     double tVal(int i) const;
-    double axisValue(BlackChirp::MotorAxis axis, int i) const;
-    QPair<double,double> range(BlackChirp::MotorAxis axis) const;
-    QPair<double,double> interval(BlackChirp::MotorAxis axis) const;
+    double axisValue(MotorAxis axis, int i) const;
+    QPair<double,double> range(MotorAxis axis) const;
+    QPair<double,double> interval(MotorAxis axis) const;
 
     double value(int x, int y, int z, int t) const;
     double smoothValue(int x, int y, int z, int t, Eigen::MatrixXd coefs) const;
@@ -56,8 +65,8 @@ public:
     bool isComplete() const;
     QVector3D currentPos() const;
 
-    QVector<double> slice(BlackChirp::MotorAxis xAxis, BlackChirp::MotorAxis yAxis, BlackChirp::MotorAxis otherAxis1, int otherPoint1, BlackChirp::MotorAxis otherAxis2, int otherPoint2) const;
-    QVector<double> smoothSlice(BlackChirp::MotorAxis xAxis, BlackChirp::MotorAxis yAxis, BlackChirp::MotorAxis otherAxis1, int otherPoint1, BlackChirp::MotorAxis otherAxis2, int otherPoint2, Eigen::MatrixXd coefs) const;
+    QVector<double> slice(MotorAxis xAxis, MotorAxis yAxis, MotorAxis otherAxis1, int otherPoint1, MotorAxis otherAxis2, int otherPoint2) const;
+    QVector<double> smoothSlice(MotorAxis xAxis, MotorAxis yAxis, MotorAxis otherAxis1, int otherPoint1, MotorAxis otherAxis2, int otherPoint2, Eigen::MatrixXd coefs) const;
     QVector<QPointF> tTrace(int x, int y, int z) const;
     QVector<QPointF> smoothtTrace(int x, int y, int z, Eigen::MatrixXd coefs) const;
     BlackChirp::MotorScopeConfig scopeConfig() const;
