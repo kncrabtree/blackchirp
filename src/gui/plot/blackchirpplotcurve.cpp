@@ -81,6 +81,24 @@ void BlackchirpPlotCurve::setCurveData(const QVector<QPointF> d, double min, dou
     }
 }
 
+void BlackchirpPlotCurve::appendPoint(const QPointF p)
+{
+    d_data.append(p);
+    if(d_data.size() == 1)
+    {
+        d_boundingRect.setTopLeft(p);
+        d_boundingRect.setBottomRight(p);
+    }
+    else
+    {
+        d_boundingRect.setLeft(qMin(d_data.first().x(),d_data.last().x()));
+        d_boundingRect.setRight(qMax(d_data.first().x(),d_data.last().x()));
+
+        d_boundingRect.setBottom(qMax(d_boundingRect.bottom(),p.y()));
+        d_boundingRect.setBottom(qMin(d_boundingRect.top(),p.y()));
+    }
+}
+
 void BlackchirpPlotCurve::setCurveVisible(bool v)
 {
     set(BC::Key::bcCurveVisible,v);

@@ -142,6 +142,11 @@ void ZoomPanPlot::replot()
     //figure out which axes to show
     QwtPlotItemList l = itemList();
     bool bottom = false, top = false, left = false, right = false;
+
+    QRectF invalid{1.0,1.0,-2.0,-2.0};
+    for(auto &a : d_config.axisList)
+        a.boundingRect = invalid;
+
     for(int i=0; i<l.size(); ++i)
     {
         if(l.at(i)->yAxis() == QwtPlot::yLeft)
@@ -158,7 +163,7 @@ void ZoomPanPlot::replot()
         if(c)
         {
             auto r = c->boundingRect();
-            if(r.width() < 0.0 || r.height() < 0.0)
+            if(r.width() < 0.0 || r.height() < 0.0 || !c->isVisible())
                 continue;
 
             if(d_config.axisList.at(c->xAxis()).boundingRect.width() >=0.0)
@@ -846,7 +851,7 @@ QMenu *ZoomPanPlot::contextMenu()
                 {
                     QAction *a = moveGroup->addAction(QString("Move to plot %1").arg(j+1));
                     a->setCheckable(true);
-                    if(j == curve->plotIndex())
+                    if(j == (curve->plotIndex() % (d_maxIndex+1)))
                     {
                         a->setEnabled(false);
                         a->setChecked(true);

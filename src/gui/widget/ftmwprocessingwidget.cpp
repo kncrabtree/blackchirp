@@ -16,7 +16,7 @@ FtmwProcessingWidget::FtmwProcessingWidget(QWidget *parent) : QWidget(parent)
     p_startBox->setSingleStep(0.05);
     p_startBox->setValue(0.0);
     p_startBox->setKeyboardTracking(false);
-    p_startBox->setToolTip(QString("tart of data for FT. Points before this will be set to 0."));
+    p_startBox->setToolTip(QString("Start of data for FT. Points before this will be set to 0."));
     auto vc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
     connect(p_startBox,vc,this,&FtmwProcessingWidget::readSettings);
     p_startBox->setSuffix(QString::fromUtf8(" μs"));

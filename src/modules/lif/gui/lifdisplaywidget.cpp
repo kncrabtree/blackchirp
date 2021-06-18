@@ -28,11 +28,8 @@ LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
     p_timeSlicePlot->setPlotAxisTitle(QwtPlot::xBottom,QString::fromUtf16(u"Delay (µs)"));
     p_timeSlicePlot->setPlotTitle(QString("Time Slice"));
 
-    QwtText title;
-    title.setText(QString("Time Trace"));
-    title.setFont(QFont("sans-serif",8));
     p_lifTracePlot = new LifTracePlot(this);
-    p_lifTracePlot->setTitle(title);
+    p_lifTracePlot->setPlotTitle(QString("Time Trace"));
     p_lifTracePlot->setDisplayOnly(true);
 
     p_spectrogramPlot = new LifSpectrogramPlot(this);

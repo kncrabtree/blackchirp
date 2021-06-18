@@ -37,6 +37,7 @@ public:
     void setMarkerSize(int s);
     void setCurveData(const QVector<QPointF> d);
     void setCurveData(const QVector<QPointF> d, double min, double max);
+    void appendPoint(const QPointF p);
     QVector<QPointF> curveData() const { return d_data; }
 
     /*!

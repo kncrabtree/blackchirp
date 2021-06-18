@@ -21,16 +21,13 @@ TrackingViewWidget::TrackingViewWidget(const QString name, QWidget *parent, bool
     QWidget(parent), SettingsStorage(viewOnly ? name + BC::Key::viewonly : name,General,false),
     d_name(viewOnly ? name + BC::Key::viewonly : name), d_viewMode(viewOnly)
 {    
-    int n = get<int>(BC::Key::numPlots,4);
+    int n = getOrSetDefault(BC::Key::numPlots,4).toInt();
     int numPlots = qBound(1,n,9);
     if(numPlots != n)
         set(BC::Key::numPlots,numPlots);
 
     for(int i=0; i<numPlots;i++)
         addNewPlot();
-
-    d_xRange.first = 0.0;
-    d_xRange.second = 0.0;
 
     configureGrid();
 }
@@ -43,8 +40,6 @@ TrackingViewWidget::~TrackingViewWidget()
 void TrackingViewWidget::initializeForExperiment()
 {
     d_plotCurves.clear();
-    d_xRange.first = QwtDate::toDouble(QDateTime::currentDateTime().addSecs(-1));
-    d_xRange.second = QwtDate::toDouble(QDateTime::currentDateTime());
 
     for(int i=0; i<d_allPlots.size(); i++)
     {
@@ -59,22 +54,13 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
         return;
 
     double x = QwtDate::toDouble(t);
-    if(d_plotCurves.isEmpty())
-    {
-        d_xRange.first = x;
-        d_xRange.second = x;
-    }
-    else
-    {
-        d_xRange.second = x;
-    }
 
-    for(int i=0; i<list.size(); i++)
+    for(auto pair : list)
     {
         //first, determine if the QVariant contains a number
         //no need to plot the data if it's not a number
         bool ok = false;
-        double value = list.at(i).second.toDouble(&ok);
+        double value = pair.second.toDouble(&ok);
         if(!ok)
             continue;
 
@@ -83,18 +69,14 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
 
         //locate curve by name and append point
         bool foundCurve = false;
-        for(int j=0; j<d_plotCurves.size(); j++)
+        for(auto c : d_plotCurves)
         {
-            if(list.at(i).first == d_plotCurves.at(j).name)
+            if(pair.first == c->title().text())
             {
-                d_plotCurves[j].data.append(newPoint);
-                d_plotCurves[j].min = qMin(d_plotCurves.at(j).min,value);
-                d_plotCurves[j].max = qMax(d_plotCurves.at(j).max,value);
-                d_plotCurves[j].curve->setSamples(d_plotCurves.at(j).data);
-                if(d_plotCurves.at(j).isVisible)
-                {
-                    d_allPlots.at(d_plotCurves.at(j).plotIndex)->replot();
-                }
+                c->appendPoint(newPoint);
+
+                if(c->isVisible())
+                    c->plot()->replot();
 
                 foundCurve = true;
                 break;
@@ -104,72 +86,31 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
         if(foundCurve)
             continue;
 
-        //if we reach this point, a new curve and metadata struct need to be created
-        QSettings s;
-        CurveMetaData md;
-        md.data.reserve(100);
-        md.data.append(newPoint);
-
-        md.name = list.at(i).first;
-
-        //Create curve
-        QString realName = BlackChirp::channelNameLookup(md.name);
+        //if we reach this point, a new curve and metadata struct needs to be created
+        QString realName = BlackChirp::channelNameLookup(pair.first);
         if(realName.isEmpty())
-            realName = md.name;
+            realName = pair.first;
 
         BlackchirpPlotCurve *c = new BlackchirpPlotCurve(realName);
-        c->setRenderHint(QwtPlotItem::RenderAntialiased);
-        md.curve = c;
-        c->setCurveData(md.data);
+        c->appendPoint({x,value});
+        c->attach(d_allPlots.at(c->plotIndex() % d_allPlots.size()));
+        if(c->isVisible())
+            c->plot()->replot();
 
-        s.beginGroup(QString("trackingWidget/curves/%1").arg(md.name));
-
-        md.axis = s.value(QString("axis"),QwtPlot::yLeft).value<QwtPlot::Axis>();
-        md.plotIndex = s.value(QString("plotIndex"),d_plotCurves.size()).toInt() % d_allPlots.size();
-        md.isVisible = s.value(QString("isVisible"),true).toBool();
-
-        c->setAxes(QwtPlot::xBottom,md.axis);
-        c->setVisible(md.isVisible);
-
-        QColor color = s.value(QString("color"),palette().color(QPalette::Text)).value<QColor>();
-        c->setPen(color);
-        c->attach(d_allPlots.at(md.plotIndex));
-
-        s.endGroup();
-
-        md.min = value;
-        md.max = value;
-
-        d_plotCurves.append(md);
-        d_allPlots.at(md.plotIndex)->replot();
-
+        d_plotCurves.append(c);
     }
 }
 
 
-void TrackingViewWidget::moveCurveToPlot(int curveIndex, int newPlotIndex)
+void TrackingViewWidget::moveCurveToPlot(BlackchirpPlotCurve* c, int newPlotIndex)
 {
-    if(curveIndex < 0 || curveIndex >= d_plotCurves.size() || newPlotIndex < 0 || newPlotIndex >= d_allPlots.size())
-        return;
+    auto oldPlot = c->plot();
+    c->detach();
+    c->setCurvePlotIndex(newPlotIndex % d_allPlots.size());
+    c->attach(d_allPlots.at(c->plotIndex()));
 
-    //note which plot we're starting from, and move curve
-    int oldPlotIndex = d_plotCurves.at(curveIndex).plotIndex;
-    d_plotCurves.at(curveIndex).curve->detach();
-    d_plotCurves.at(curveIndex).curve->attach(d_allPlots.at(newPlotIndex));
-
-    //update metadata, and update autoscale parameters for plots
-    d_plotCurves[curveIndex].plotIndex = newPlotIndex;
-
-    //update settings, and replot
-    if(!d_viewMode)
-    {
-        QSettings s;
-        s.setValue(QString("trackingWidget/curves/%1/plotIndex").arg(d_plotCurves.at(curveIndex).name),
-                   newPlotIndex);
-        s.sync();
-    }
-    d_allPlots.at(oldPlotIndex)->replot();
-    d_allPlots.at(newPlotIndex)->replot();
+    oldPlot->replot();
+    c->plot()->replot();
 }
 
 void TrackingViewWidget::pushXAxis(int sourcePlotIndex)
@@ -215,14 +156,11 @@ void TrackingViewWidget::changeNumPlots()
     }
     else
     {
-        for(int i=0; i < d_plotCurves.size(); i++)
+        for(auto c: d_plotCurves)
         {
             //reassign any curves that are on graphs about to be removed
-            if(d_plotCurves.at(i).plotIndex >= newNum)
-            {
-                int newPlotIndex = d_plotCurves.at(i).plotIndex % newNum;
-                moveCurveToPlot(i,newPlotIndex);
-            }
+            if(c->plotIndex() >= newNum)
+                moveCurveToPlot(c,c->plotIndex() % newNum);
         }
 
         while(newNum < d_allPlots.size())
@@ -253,6 +191,7 @@ void TrackingViewWidget::addNewPlot()
 
 
     int newPlotIndex = d_allPlots.size();
+    connect(tp,&ZoomPanPlot::curveMoveRequested,this,&TrackingViewWidget::moveCurveToPlot);
     connect(tp,&TrackingPlot::axisPushRequested,this,[=](){ pushXAxis(newPlotIndex); });
     connect(tp,&TrackingPlot::autoScaleAllRequested,this,&TrackingViewWidget::autoScaleAll);
 

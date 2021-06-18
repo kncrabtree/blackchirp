@@ -43,8 +43,8 @@ public slots:
 private:
     BlackchirpPlotCurve *p_curve;
 
-//    QPair<QwtPlotMarker*,QwtPlotMarker*> d_chirpMarkers;
-//    QPair<QwtPlotMarker*,QwtPlotMarker*> d_ftMarkers;
+    QPair<QwtPlotMarker*,QwtPlotMarker*> d_chirpMarkers;
+    QPair<QwtPlotMarker*,QwtPlotMarker*> d_ftMarkers;
 
 };
 
