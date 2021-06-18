@@ -38,7 +38,6 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
 
     connect(ui->refEnabledCheckBox,&QCheckBox::toggled,ui->refVScaleDoubleSpinBox,&QDoubleSpinBox::setEnabled);
 
-    ui->lifPlot->setAxisAutoScaleRange(QwtPlot::xBottom,0.0,static_cast<double>(1.0/ui->sampleRateComboBox->currentData().toDouble()*1e9*ui->samplesSpinBox->value()));
     ui->lifPlot->autoScale();
 
 }
@@ -93,7 +92,6 @@ void LifControlWidget::scopeConfigChanged(const BlackChirp::LifScopeConfig c)
     s.setValue(QString("lifConfig/refVScale"),c.vScale2);
     s.sync();
 
-    ui->lifPlot->setAxisAutoScaleRange(QwtPlot::xBottom,0.0,static_cast<double>(c.recordLength)/c.sampleRate*1e9);
     ui->lifPlot->reset();
 
 }

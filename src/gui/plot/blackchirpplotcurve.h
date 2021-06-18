@@ -36,6 +36,8 @@ public:
     void setMarkerStyle(QwtSymbol::Style s);
     void setMarkerSize(int s);
     void setCurveData(const QVector<QPointF> d);
+    void setCurveData(const QVector<QPointF> d, double min, double max);
+    QVector<QPointF> curveData() const { return d_data; }
 
     /*!
      * \brief Sets curve visibility, and stores to settings
@@ -54,15 +56,22 @@ public:
     int plotIndex() const { return get<int>(BC::Key::bcCurvePlotIndex,0); }
 
     void updateFromSettings();
+    void filter();
 
 protected:
     QVector<QPointF> d_data;
-    double d_min, d_max;
+    QRectF d_boundingRect;
+
     void configurePen();
     void configureSymbol();
-    void filter();
+    void setSamples(const QVector<QPointF> d);
+    void calcBoundingRectHeight();
 
 
+
+    // QwtPlotItem interface
+public:
+    QRectF boundingRect() const override;
 };
 
 #endif // BLACKCHIRPPLOTCURVE_H

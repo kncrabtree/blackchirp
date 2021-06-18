@@ -509,7 +509,7 @@ void FtWorker::prepareForDisplay(const QVector<double> fid, double spacing)
     QVector<QPointF> out(fid.size());
     for(int i=0; i<out.size(); i++)
     {
-        out[i].setX(spacing*static_cast<double>(i));
+        out[i].setX(spacing*static_cast<double>(i)*1e6); //convert to us
         out[i].setY(fid.at(i));
     }
 

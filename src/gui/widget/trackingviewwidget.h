@@ -62,8 +62,6 @@ private:
     int findCurveIndex(QwtPlotCurve* c);
     void addNewPlot();
     void configureGrid();
-    void setAutoScaleYRanges(int plotIndex, QwtPlot::Axis axis);
-
 };
 
 #endif // TRACKINGVIEWWIDGET_H

@@ -12,6 +12,7 @@ class QwtPlotMarker;
 
 namespace BC::Key {
 static const QString pulsePlot("pulsePlot");
+static const QString pulseChannel("PulseChannel");
 }
 
 class PulsePlot : public ZoomPanPlot
@@ -30,12 +31,11 @@ public slots:
 
     // ZoomPanPlot interface
 protected:
-    void filterData();
     void replot();
 
 private:
     PulseGenConfig d_config;
-    QList<QPair<QwtPlotCurve*,QwtPlotMarker*>> d_plotItems;
+    QList<QPair<BlackchirpPlotCurve*,QwtPlotMarker*>> d_plotItems;
 
 };
 

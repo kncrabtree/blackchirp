@@ -4,6 +4,7 @@
 #include <qwt6/qwt_plot.h>
 #include <qwt6/qwt_symbol.h>
 #include <qwt6/qwt_plot_grid.h>
+#include <qwt6/qwt_scale_engine.h>
 
 #include <src/data/storage/settingsstorage.h>
 
@@ -40,10 +41,6 @@ public:
 
     bool isAutoScale();
     void resetPlot();
-    void setAxisAutoScaleRange(QwtPlot::Axis axis, double min, double max);
-    void setAxisAutoScaleMin(QwtPlot::Axis axis, double min);
-    void setAxisAutoScaleMax(QwtPlot::Axis axis, double max);
-    void expandAutoScaleRange(QwtPlot::Axis axis, double newValueMin, double newValueMax);
     void setXRanges(const QwtScaleDiv &bottom, const QwtScaleDiv &top);
     void setMaxIndex(int i){ d_maxIndex = i; }
     void setPlotTitle(const QString text);
@@ -81,15 +78,13 @@ protected:
     CustomTracker *p_tracker;
     struct AxisConfig {
         QwtPlot::Axis type;
-        bool autoScale;
-        bool override;
-        double min;
-        double max;
-        double zoomFactor;
+        bool autoScale {true};
+        bool override {false};
+        QRectF boundingRect{1.0,1.0,-2.0,-2.0};
+        double zoomFactor {0.1};
         QString name;
 
-        explicit AxisConfig(QwtPlot::Axis t, const QString n) : type(t), autoScale(true), override(false),
-            min(0.0), max(1.0), zoomFactor(0.1), name(n) {}
+        explicit AxisConfig(QwtPlot::Axis t, const QString n) : type(t), name(n) {}
     };
 
     struct PlotConfig {
@@ -104,7 +99,7 @@ protected:
 
     void setAxisOverride(QwtPlot::Axis axis, bool override = true);
 
-    virtual void filterData() =0;
+    virtual void filterData();
     virtual void resizeEvent(QResizeEvent *ev);
     virtual bool eventFilter(QObject *obj, QEvent *ev);
     virtual void pan(QMouseEvent *me);
@@ -126,6 +121,5 @@ public:
 protected:
     virtual void showEvent(QShowEvent *event);
 };
-
 
 #endif // ZOOMPANPLOT_H

@@ -22,12 +22,6 @@ signals:
 public slots:
     void buildContextMenu(QMouseEvent *me);
 
-
-private:
-
-protected:
-    void filterData();
-
 };
 
 #include <qwt6/qwt_date_scale_draw.h>

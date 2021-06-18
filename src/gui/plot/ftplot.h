@@ -38,7 +38,6 @@ signals:
 
 public slots:
     void newFt(const Ft ft);
-    void filterData();
     void buildContextMenu(QMouseEvent *me);
 
     void exportXY();

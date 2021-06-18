@@ -32,7 +32,6 @@ public slots:
     virtual void setAxis(QwtPlot::Axis plotAxis, MotorScan::MotorAxis motorAxis);
 
 protected:
-    void filterData();
     void recalculateZRange();
 
     QwtMatrixRasterData *p_spectrogramData;
@@ -41,11 +40,6 @@ protected:
     bool d_firstPoint;
     MotorScan::MotorAxis d_leftAxis, d_bottomAxis;
     QMap<MotorScan::MotorAxis,QwtInterval> d_intervalList;
-
-
-    // QwtPlot interface
-public slots:
-    virtual void replot();
 };
 
 #endif // MOTORSPECTROGRAMPLOT_H

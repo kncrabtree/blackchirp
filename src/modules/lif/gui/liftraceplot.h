@@ -67,7 +67,6 @@ private:
 
     // ZoomPanPlot interface
 protected:
-    void filterData() override;
     bool eventFilter(QObject *obj, QEvent *ev) override;
     virtual void replot() override;
 };

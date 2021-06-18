@@ -41,22 +41,11 @@ public slots:
     void setFtEnd(double end);
 
 private:
-    QVector<QPointF> d_currentFid;
     BlackchirpPlotCurve *p_curve;
 
-    QPair<QwtPlotMarker*,QwtPlotMarker*> d_chirpMarkers;
-    QPair<QwtPlotMarker*,QwtPlotMarker*> d_ftMarkers;
+//    QPair<QwtPlotMarker*,QwtPlotMarker*> d_chirpMarkers;
+//    QPair<QwtPlotMarker*,QwtPlotMarker*> d_ftMarkers;
 
-protected:
-    void filterData();
-
-};
-
-#include <qwt6/qwt_scale_draw.h>
-
-class SciNotationScaleDraw : public QwtScaleDraw
-{
-    virtual QwtText label(double d) const { return QwtText(QString("%1").arg(d,4,'e',1)); }
 };
 
 

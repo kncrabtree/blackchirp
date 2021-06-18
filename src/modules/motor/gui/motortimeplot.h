@@ -25,10 +25,6 @@ public slots:
 
 private:
     BlackchirpPlotCurve *p_curve;
-
-    // ZoomPanPlot interface
-protected:
-    void filterData();
 };
 
 #endif // MOTORTIMEPLOT_H

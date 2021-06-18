@@ -77,27 +77,15 @@ void LifDisplayWidget::prepareForExperiment(const LifConfig c)
     p_timeSlicePlot->setPlotTitle(QString("Time Slice"));
 
 
+    p_timeSlicePlot->prepareForExperiment();
+    p_freqSlicePlot->prepareForExperiment();
     if(!c.isEnabled())
     {
-        p_timeSlicePlot->prepareForExperiment(0.0,1.0);
-        p_freqSlicePlot->prepareForExperiment(0.0,1.0);
         d_currentTimeTraceFreqIndex = -1;
         d_currentSpectrumDelayIndex = -1;
     }
     else
     {
-
-        if(c.numDelayPoints() > 1)
-            p_timeSlicePlot->prepareForExperiment(qMin(c.delayRange().first,c.delayRange().second),qMax(c.delayRange().first,c.delayRange().second));
-        else
-            p_timeSlicePlot->prepareForExperiment(qMin(c.delayRange().first + c.delayStep(),c.delayRange().first - c.delayStep()),
-                                                    qMax(c.delayRange().first + c.delayStep(),c.delayRange().first - c.delayStep()));
-        if(c.numLaserPoints() > 1)
-            p_freqSlicePlot->prepareForExperiment(qMin(c.laserRange().first,c.laserRange().second),qMax(c.laserRange().first,c.laserRange().second));
-        else
-            p_freqSlicePlot->prepareForExperiment(qMin(c.laserRange().first + c.laserStep(),c.laserRange().first - c.laserStep()),
-                                                    qMax(c.laserRange().first + c.laserStep(),c.laserRange().first - c.laserStep()));
-
         d_currentTimeTraceFreqIndex = 0;
         d_currentSpectrumDelayIndex = 0;
     }
@@ -189,7 +177,6 @@ void LifDisplayWidget::updateSpectrum()
     double dVal = d_currentLifConfig.delayRange().first + d_currentSpectrumDelayIndex*d_currentLifConfig.delayStep();
     QString labelText = QString::fromUtf16(u"Spectrum at %1 µs").arg(dVal,0,'f',2);
     p_freqSlicePlot->setPlotTitle(labelText);
-    p_freqSlicePlot->setAxisAutoScaleRange(QwtPlot::yLeft,min,max);
     p_freqSlicePlot->setData(slice);
 }
 
@@ -217,8 +204,6 @@ void LifDisplayWidget::updateTimeTrace()
         max = qMax(max,dat);
         min = qMin(min,dat);
     }
-
-    p_timeSlicePlot->setAxisAutoScaleRange(QwtPlot::yLeft,min,max);
 
     SettingsStorage s(BC::Key::lifLaser,SettingsStorage::Hardware);
     double fVal = d_currentLifConfig.laserRange().first + d_currentTimeTraceFreqIndex*d_currentLifConfig.laserStep();

@@ -3,9 +3,12 @@
 #include <QPalette>
 
 BlackchirpPlotCurve::BlackchirpPlotCurve(const QString name,Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker) :
-    SettingsStorage({BC::Key::bcCurve,name},General,false), d_min(0.0), d_max(0.0)
+    SettingsStorage({BC::Key::bcCurve,name},General,false)
 {
     setTitle(name);
+    setItemAttribute(QwtPlotItem::Legend);
+    setItemAttribute(QwtPlotItem::AutoScale);
+    setItemInterest(QwtPlotItem::ScaleInterest);
 
     getOrSetDefault(BC::Key::bcCurveStyle,static_cast<int>(defaultLineStyle));
     getOrSetDefault(BC::Key::bcCurveMarker,static_cast<int>(defaultMarker));
@@ -54,6 +57,28 @@ void BlackchirpPlotCurve::setMarkerSize(int s)
 void BlackchirpPlotCurve::setCurveData(const QVector<QPointF> d)
 {
     d_data = d;
+    d_boundingRect = QRectF(1.0,1.0,-2.0,-2.0);
+
+    if(!d.isEmpty())
+    {
+        d_boundingRect.setLeft(qMin(d.first().x(),d.last().x()));
+        d_boundingRect.setRight(qMax(d.first().x(),d.last().x()));
+        calcBoundingRectHeight();
+    }
+}
+
+void BlackchirpPlotCurve::setCurveData(const QVector<QPointF> d, double min, double max)
+{
+    d_data = d;
+    if(!d.isEmpty())
+    {
+        d_boundingRect.setLeft(qMin(d.first().x(),d.last().x()));
+        d_boundingRect.setRight(qMax(d.first().x(),d.last().x()));
+
+        //according to the Qwt documentation, the bottom of the bounding rect is the max y value
+        d_boundingRect.setBottom(max);
+        d_boundingRect.setTop(min);
+    }
 }
 
 void BlackchirpPlotCurve::setCurveVisible(bool v)
@@ -110,6 +135,27 @@ void BlackchirpPlotCurve::configureSymbol()
     setSymbol(sym);
 }
 
+void BlackchirpPlotCurve::setSamples(const QVector<QPointF> d)
+{
+    QwtPlotCurve::setSamples(d);
+}
+
+void BlackchirpPlotCurve::calcBoundingRectHeight()
+{
+
+    auto top = d_data.first().y();
+    auto bottom = d_data.first().y();
+
+    for(auto p : d_data)
+    {
+        top = qMin(p.y(),top);
+        bottom = qMax(p.y(),bottom);
+    }
+
+    d_boundingRect.setTop(top);
+    d_boundingRect.setBottom(bottom);
+}
+
 void BlackchirpPlotCurve::filter()
 {
     auto p = plot();
@@ -117,6 +163,7 @@ void BlackchirpPlotCurve::filter()
 
     if(d_data.size() < 2.5*w)
     {
+        d_boundingRect = boundingRect();
         setSamples(d_data);
         return;
     }
@@ -132,67 +179,45 @@ void BlackchirpPlotCurve::filter()
     auto end = d_data.cend();
 
     int inc = 1;
-    if(d_data.first().x() > d_data.last().x())
+    auto firstx = d_data.first().x();
+    auto lastx = d_data.last().x();
+    if(firstx > lastx)
     {
         qSwap(start,end);
         inc = -1;
     }
     auto it = start;
 
-
+//    d_boundingRect.setLeft(qMin(firstx,lastx));
+//    d_boundingRect.setRight(qMax(firstx,lastx));
 
     //find first data point that is in the range of the plot
-//    int dataIndex = 0;
     while(map.transform(it->x()) < firstPixel && it != end)
         it += inc;
-
-//    while(dataIndex+1 < d_data.size() && map.transform(d_data.at(dataIndex).x()) < firstPixel)
-//        dataIndex++;
 
     //add the previous point to the filtered array
     //this will make sure the curve always goes to the edge of the plot
     if(it != start)
     {
         it -= inc;
-        filtered.append(it->toPoint());
+        filtered.append({it->x(),it->y()});
         it += inc;
     }
 
-//    if(dataIndex-1 >= 0)
-//        filtered.append(d_data.at(dataIndex-1));
-
-    if(it != end)
-    {
-        d_min = it->y();
-        d_max = it->y();
-    }
-
-//    if(dataIndex < d_data.size())
+//    if(it != end)
 //    {
-//        d_min = d_data.at(dataIndex).y();
-//        d_max = d_data.at(dataIndex).y();
+//        d_boundingRect.setTop(it->y());
+//        d_boundingRect.setBottom(it->y());
 //    }
 
     //at this point, dataIndex is at the first point within the range of the plot. loop over pixels, compressing data
     for(double pixel = firstPixel; pixel<lastPixel; pixel+=1.0)
     {
-//        auto min = d_data.at(dataIndex).y();
-//        auto max = min;
-
         auto min = it->y();
         auto max = it->y();
 
         int numPnts = 0;
         double nextPixelX = map.invTransform(pixel+1.0);
-//        while(dataIndex+1 < d_data.size() && d_data.at(dataIndex).x() < nextPixelX)
-//        {
-//            auto pt = d_data.at(dataIndex);
-//            min = qMin(pt.y(),min);
-//            max = qMax(pt.y(),max);
-
-//            dataIndex++;
-//            numPnts++;
-//        }
 
         while(it != end && it->x() < nextPixelX)
         {
@@ -203,20 +228,11 @@ void BlackchirpPlotCurve::filter()
             numPnts++;
         }
 
-//        if(numPnts == 1)
-//            filtered.append(d_data.at(dataIndex-1));
-//        else if (numPnts > 1)
-//        {
-//            QPointF first(map.invTransform(pixel),min);
-//            QPointF second(map.invTransform(pixel),max);
-//            filtered.append(first);
-//            filtered.append(second);
-//        }
 
         if(numPnts == 1)
         {
             it -= inc;
-            filtered.append(it->toPoint());
+            filtered.append({it->x(),it->y()});
             it += inc;
         }
         else if (numPnts > 1)
@@ -225,17 +241,39 @@ void BlackchirpPlotCurve::filter()
             filtered.append({map.invTransform(pixel),max});
         }
 
-        d_min = qMin(d_min,min);
-        d_max = qMax(d_max,max);
+//        d_boundingRect.setTop(qMin(d_boundingRect.top(),min));
+//        d_boundingRect.setBottom(qMax(d_boundingRect.bottom(),max));
 
     }
 
-//    if(dataIndex < d_data.size())
-//        filtered.append(d_data.at(dataIndex));
-
     if(it != end)
-        filtered.append(it->toPoint());
+        filtered.append({it->x(),it->y()});
 
     setSamples(filtered);
 
+}
+
+
+QRectF BlackchirpPlotCurve::boundingRect() const
+{
+    if(d_data.isEmpty())
+        return QRectF(1.0,1.0,-2.0,-2.0);
+
+    if((d_boundingRect.height() > 0.0) && (d_boundingRect.width() > 0.0))
+        return d_boundingRect;
+
+
+    auto left = qMin(d_data.first().x(),d_data.last().x());
+    auto right = qMax(d_data.first().x(),d_data.last().x());
+
+    auto top = d_data.first().y();
+    auto bottom = d_data.first().y();
+
+    for(auto p : d_data)
+    {
+        top = qMin(p.y(),top);
+        bottom = qMax(p.y(),bottom);
+    }
+
+    return QRectF( QPointF{left,top},QPointF{right,bottom} );
 }

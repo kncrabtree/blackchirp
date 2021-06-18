@@ -67,9 +67,7 @@ LifSpectrogramPlot::LifSpectrogramPlot(QWidget *parent) :
     p_freqMarker->setVisible(false);
     p_freqMarker->attach(this);
 
-    setAxisAutoScaleRange(QwtPlot::yRight,0.0,1.0);
     enableAxis(QwtPlot::yRight);
-
     setAxisOverride(QwtPlot::yRight);
 
     canvas()->installEventFilter(this);
@@ -132,21 +130,12 @@ void LifSpectrogramPlot::prepareForExperiment(const LifConfig c)
         p_spectrogram->setData(p_spectrogramData);
         p_spectrogram->attach(this);
 
-        setAxisAutoScaleRange(QwtPlot::xBottom,fMin,fMax);
-        setAxisAutoScaleRange(QwtPlot::yLeft,dMin,dMax);
-
     }
     else
     {
-        setAxisAutoScaleRange(QwtPlot::xBottom,0.0,1.0);
-        setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
-
         p_delayMarker->setVisible(false);
         p_freqMarker->setVisible(false);
     }
-
-
-    setAxisAutoScaleRange(QwtPlot::yRight,0.0,1.0);
 
 
     autoScale();
@@ -158,7 +147,6 @@ void LifSpectrogramPlot::updateData(const QVector<double> d, int numCols, double
     if(d.size() < 2)
         return;
 
-    setAxisAutoScaleRange(QwtPlot::yRight,zMin,zMax);
     p_spectrogramData->setInterval(Qt::ZAxis,QwtInterval(zMin,zMax));
 
     QwtLinearColorMap *map2 = new QwtLinearColorMap(Qt::black,Qt::red);
@@ -255,10 +243,6 @@ void LifSpectrogramPlot::buildContextMenu(QMouseEvent *me)
     connect(bothCursorAction,&QAction::triggered,[=](){ moveDelayCursor(pos); moveFreqCursor(pos); });
 
     menu->popup(me->globalPos());
-}
-
-void LifSpectrogramPlot::filterData()
-{
 }
 
 bool LifSpectrogramPlot::eventFilter(QObject *obj, QEvent *ev)

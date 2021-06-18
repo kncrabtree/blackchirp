@@ -180,12 +180,6 @@ void MotorSpectrogramPlot::setAxis(QwtPlot::Axis plotAxis, MotorScan::MotorAxis 
     setPlotAxisTitle(plotAxis,text);
 }
 
-
-
-void MotorSpectrogramPlot::filterData()
-{
-}
-
 void MotorSpectrogramPlot::recalculateZRange()
 {
     p_spectrogramData->setInterval(Qt::ZAxis,QwtInterval(d_min,d_max));
@@ -201,18 +195,4 @@ void MotorSpectrogramPlot::recalculateZRange()
     QwtScaleWidget *rightAxis = axisWidget( QwtPlot::yRight );
     rightAxis->setColorMap(QwtInterval(d_min,d_max),map);
     p_spectrogramData->setInterval(Qt::ZAxis,QwtInterval(d_min,d_max));
-}
-
-
-void MotorSpectrogramPlot::replot()
-{
-    setAxisAutoScaleRange(QwtPlot::xBottom,p_spectrogramData->interval(Qt::XAxis).minValue(),
-                          p_spectrogramData->interval(Qt::XAxis).maxValue());
-    setAxisAutoScaleRange(QwtPlot::yLeft,p_spectrogramData->interval(Qt::YAxis).minValue(),
-                          p_spectrogramData->interval(Qt::YAxis).maxValue());
-    setAxisAutoScaleRange(QwtPlot::yRight,p_spectrogramData->interval(Qt::ZAxis).minValue(),
-                          p_spectrogramData->interval(Qt::ZAxis).maxValue());
-
-    ZoomPanPlot::replot();
-
 }

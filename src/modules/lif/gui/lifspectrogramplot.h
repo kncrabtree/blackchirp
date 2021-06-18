@@ -46,7 +46,6 @@ private:
 
     // ZoomPanPlot interface
 protected:
-    void filterData();
     bool eventFilter(QObject *obj, QEvent *ev);
 };
 

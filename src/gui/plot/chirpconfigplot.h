@@ -24,12 +24,6 @@ public slots:
 
 private:
     BlackchirpPlotCurve *p_ampEnableCurve, *p_protectionCurve, *p_chirpCurve;
-    QVector<QPointF> d_chirpData;
-
-
-    // ZoomPanPlot interface
-protected:
-    void filterData();
 };
 
 #endif // CHIRPCONFIGPLOT_H

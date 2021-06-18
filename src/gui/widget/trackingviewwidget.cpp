@@ -49,8 +49,6 @@ void TrackingViewWidget::initializeForExperiment()
     for(int i=0; i<d_allPlots.size(); i++)
     {
         d_allPlots[i]->resetPlot();
-        d_allPlots[i]->setAxisAutoScaleRange(QwtPlot::xBottom,d_xRange.first,d_xRange.second);
-        d_allPlots[i]->setAxisAutoScaleRange(QwtPlot::xTop,d_xRange.first,d_xRange.second);
         d_allPlots[i]->autoScale();
     }
 }
@@ -65,22 +63,10 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
     {
         d_xRange.first = x;
         d_xRange.second = x;
-
-        for(int i=0;i<d_allPlots.size(); i++)
-        {
-            d_allPlots[i]->setAxisAutoScaleRange(QwtPlot::xBottom,x,x);
-            d_allPlots[i]->setAxisAutoScaleRange(QwtPlot::xTop,x,x);
-        }
     }
     else
     {
         d_xRange.second = x;
-
-        for(int i=0;i<d_allPlots.size(); i++)
-        {
-            d_allPlots[i]->setAxisAutoScaleMax(QwtPlot::xBottom,x);
-            d_allPlots[i]->setAxisAutoScaleMax(QwtPlot::xTop,x);
-        }
     }
 
     for(int i=0; i<list.size(); i++)
@@ -107,8 +93,6 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
                 d_plotCurves[j].curve->setSamples(d_plotCurves.at(j).data);
                 if(d_plotCurves.at(j).isVisible)
                 {
-                    d_allPlots.at(d_plotCurves.at(j).plotIndex)->expandAutoScaleRange(
-                                d_plotCurves.at(j).axis,d_plotCurves.at(j).min,d_plotCurves.at(j).max);
                     d_allPlots.at(d_plotCurves.at(j).plotIndex)->replot();
                 }
 
@@ -133,10 +117,10 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
         if(realName.isEmpty())
             realName = md.name;
 
-        QwtPlotCurve *c = new QwtPlotCurve(realName);
+        BlackchirpPlotCurve *c = new BlackchirpPlotCurve(realName);
         c->setRenderHint(QwtPlotItem::RenderAntialiased);
         md.curve = c;
-        c->setSamples(md.data);
+        c->setCurveData(md.data);
 
         s.beginGroup(QString("trackingWidget/curves/%1").arg(md.name));
 
@@ -155,8 +139,6 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
 
         md.min = value;
         md.max = value;
-        if(md.isVisible)
-            d_allPlots.at(md.plotIndex)->setAxisAutoScaleRange(md.axis,md.min,md.max);
 
         d_plotCurves.append(md);
         d_allPlots.at(md.plotIndex)->replot();
@@ -177,8 +159,6 @@ void TrackingViewWidget::moveCurveToPlot(int curveIndex, int newPlotIndex)
 
     //update metadata, and update autoscale parameters for plots
     d_plotCurves[curveIndex].plotIndex = newPlotIndex;
-    setAutoScaleYRanges(oldPlotIndex,d_plotCurves.at(curveIndex).axis);
-    setAutoScaleYRanges(newPlotIndex,d_plotCurves.at(curveIndex).axis);
 
     //update settings, and replot
     if(!d_viewMode)
@@ -265,8 +245,6 @@ void TrackingViewWidget::addNewPlot()
 
     TrackingPlot *tp = new TrackingPlot(d_name + BC::Key::plot + QString::number(d_allPlots.size()),this);
 
-    tp->setAxisAutoScaleRange(QwtPlot::xBottom,d_xRange.first,d_xRange.second);
-    tp->setAxisAutoScaleRange(QwtPlot::xTop,d_xRange.first,d_xRange.second);
     tp->setMaxIndex(get<int>(BC::Key::numPlots,1)-1);
 
 //    tp->setMinimumHeight(200);
@@ -397,34 +375,4 @@ void TrackingViewWidget::configureGrid()
         break;
     }
 
-}
-
-void TrackingViewWidget::setAutoScaleYRanges(int plotIndex, QwtPlot::Axis axis)
-{
-    double min;
-    double max;
-    bool foundCurve = false;
-    for(int i=0;i<d_plotCurves.size(); i++)
-    {
-        const CurveMetaData c = d_plotCurves.at(i);
-        if(c.plotIndex == plotIndex && axis == c.axis && c.isVisible)
-        {
-            if(!foundCurve)
-            {
-                foundCurve = true;
-                min = c.min;
-                max = c.max;
-            }
-            else
-            {
-                min = qMin(c.min,min);
-                max = qMax(c.max,max);
-            }
-        }
-    }
-
-    if(foundCurve)
-        d_allPlots[plotIndex]->setAxisAutoScaleRange(axis,min,max);
-    else
-        d_allPlots[plotIndex]->setAxisAutoScaleRange(axis,0.0,1.0);
 }

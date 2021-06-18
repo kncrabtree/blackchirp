@@ -30,6 +30,7 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
     p_integralLabel = new QwtPlotTextLabel();
     p_integralLabel->setZ(10.0);
     p_integralLabel->attach(this);
+    p_integralLabel->setItemAttribute(QwtPlotItem::AutoScale,false);
 
     p_lif = new BlackchirpPlotCurve(BC::Key::lifCurve);
     p_lif->setZ(1.0);
@@ -40,12 +41,14 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
     p_lifZone = new QwtPlotZoneItem();
     p_lifZone->setOrientation(Qt::Vertical);
     p_lifZone->setZ(2.0);
+    p_lifZone->setItemAttribute(QwtPlotItem::AutoScale,false);
 
 
 
     p_refZone = new QwtPlotZoneItem();
     p_refZone->setOrientation(Qt::Vertical);
     p_refZone->setZ(2.0);
+    p_refZone->setItemAttribute(QwtPlotItem::AutoScale,false);
 
 
     insertLegend( new QwtLegend(this),QwtPlot::BottomLegend);
@@ -138,6 +141,8 @@ void LifTracePlot::traceProcessed(const LifTrace t)
     }
 
     d_currentTrace = t;
+    p_lif->setCurveData(t.lifToXY());
+    p_ref->setCurveData(t.refToXY());
 
     if(t.hasRefData())
         emit integralUpdate(t.integrate(d_lifZoneRange.first,d_lifZoneRange.second,d_refZoneRange.first,d_refZoneRange.second));
@@ -170,9 +175,6 @@ void LifTracePlot::traceProcessed(const LifTrace t)
         }
     }
 
-    setAxisAutoScaleRange(QwtPlot::xBottom,0.0,
-                          d_currentTrace.spacing()*static_cast<double>(d_currentTrace.size())*1e9);
-
     if(p_lif->plot() != this)
         p_lif->attach(this);
 
@@ -201,7 +203,6 @@ void LifTracePlot::traceProcessed(const LifTrace t)
             p_refZone->detach();
     }
 
-    filterData();
     replot();
 }
 
@@ -346,175 +347,6 @@ void LifTracePlot::updateRefZone()
     p_refZone->setInterval(x1,x2);
 
     emit integralUpdate(d_currentTrace.integrate(d_lifZoneRange.first,d_lifZoneRange.second,d_refZoneRange.first,d_refZoneRange.second));
-}
-
-void LifTracePlot::filterData()
-{
-    if(d_currentTrace.size() < 2)
-        return;
-
-    QVector<QPointF> lifData = d_currentTrace.lifToXY();
-    QVector<QPointF> refData;
-    if(d_currentTrace.hasRefData())
-        refData = d_currentTrace.refToXY();
-
-
-    double firstPixel = 0.0;
-    double lastPixel = canvas()->width();
-    QwtScaleMap map = canvasMap(QwtPlot::xBottom);
-
-    QVector<QPointF> lifFiltered, refFiltered;
-    lifFiltered.reserve(2*canvas()->width()+2);
-    refFiltered.reserve(2*canvas()->width()+2);
-
-    double yMin = lifData.at(0).y(), yMax = yMin;
-    if(!refData.isEmpty())
-    {
-        yMin = qMin(yMin,refData.at(0).y());
-        yMax = qMax(yMax,refData.at(0).y());
-    }
-
-
-    //find first data point that is in the range of the plot
-    //note: x data for lif and ref are assumed to be the same!
-    int dataIndex = 0;
-    while(dataIndex+1 < lifData.size() && map.transform(lifData.at(dataIndex).x()*1e9) < firstPixel)
-    {
-        dataIndex++;
-        yMin = qMin(lifData.at(dataIndex).y(),yMin);
-        yMax = qMax(lifData.at(dataIndex).y(),yMax);
-        if(!refData.isEmpty())
-        {
-            yMin = qMin(yMin,refData.at(dataIndex).y());
-            yMax = qMax(yMax,refData.at(dataIndex).y());
-        }
-    }
-
-    //add the previous point to the filtered array
-    //this will make sure the curve always goes to the edge of the plot
-    if(dataIndex-1 >= 0)
-    {
-        lifFiltered.append(lifData.at(dataIndex-1));
-        if(d_currentTrace.hasRefData())
-            refFiltered.append(refData.at(dataIndex-1));
-    }
-
-    //at this point, dataIndex is at the first point within the range of the plot. loop over pixels, compressing data
-    for(double pixel = firstPixel; pixel<lastPixel; pixel+=1.0)
-    {
-        double lifMin = lifData.at(dataIndex).y(), lifMax = lifMin;
-        double refMin = 0.0, refMax = 0.0;
-        if(d_currentTrace.hasRefData())
-        {
-            refMin = refData.at(dataIndex).y();
-            refMax = refMin;
-        }
-
-        int lifMinIndex = dataIndex, lifMaxIndex = dataIndex, refMinIndex = dataIndex, refMaxIndex = dataIndex;
-        int numPnts = 0;
-        double nextPixelX = map.invTransform(pixel+1.0)*1e-9;
-
-        while(dataIndex+1 < lifData.size() && lifData.at(dataIndex).x() < nextPixelX)
-        {
-            if(lifData.at(dataIndex).y() < lifMin)
-            {
-                lifMin = lifData.at(dataIndex).y();
-                lifMinIndex = dataIndex;
-            }
-            if(lifData.at(dataIndex).y() > lifMax)
-            {
-                lifMax = lifData.at(dataIndex).y();
-                lifMaxIndex = dataIndex;
-            }
-            if(d_currentTrace.hasRefData())
-            {
-                if(refData.at(dataIndex).y() < refMin)
-                {
-                    refMin = refData.at(dataIndex).y();
-                    refMinIndex = dataIndex;
-                }
-                if(refData.at(dataIndex).y() > refMax)
-                {
-                    refMax = refData.at(dataIndex).y();
-                    refMaxIndex = dataIndex;
-                }
-            }
-
-            dataIndex++;
-            numPnts++;
-        }
-        if(lifFiltered.isEmpty())
-        {
-            yMin = lifMin;
-            yMax = lifMax;
-            if(d_currentTrace.hasRefData())
-            {
-                yMin = qMin(lifMin,refMin);
-                yMax = qMax(lifMax,refMax);
-            }
-        }
-        else
-        {
-            yMin = qMin(lifMin,yMin);
-            yMax = qMax(lifMax,yMax);
-            if(d_currentTrace.hasRefData())
-            {
-                yMin = qMin(yMin,refMin);
-                yMax = qMax(yMax,refMax);
-            }
-        }
-        if(numPnts == 1)
-        {
-            lifFiltered.append(QPointF(lifData.at(dataIndex-1).x()*1e9,lifData.at(dataIndex-1).y()));
-            if(d_currentTrace.hasRefData())
-                refFiltered.append(QPointF(lifData.at(dataIndex-1).x()*1e9,refData.at(dataIndex-1).y()));
-        }
-        else if (numPnts > 1)
-        {
-            QPointF first(map.invTransform(pixel),lifData.at(lifMinIndex).y());
-            QPointF second(map.invTransform(pixel),lifData.at(lifMaxIndex).y());
-            lifFiltered.append(first);
-            lifFiltered.append(second);
-            if(d_currentTrace.hasRefData())
-            {
-                QPointF refFirst(map.invTransform(pixel),refData.at(refMinIndex).y());
-                QPointF refSecond(map.invTransform(pixel),refData.at(refMaxIndex).y());
-                refFiltered.append(refFirst);
-                refFiltered.append(refSecond);
-            }
-        }
-    }
-
-    if(dataIndex < lifData.size())
-    {
-        QPointF p = lifData.at(dataIndex);
-        p.setX(p.x()*1e9);
-        lifFiltered.append(p);
-        if(d_currentTrace.hasRefData())
-        {
-            p = refData.at(dataIndex);
-            p.setX(p.x()*1e9);
-            refFiltered.append(p);
-        }
-
-        for(int i=dataIndex; i<lifData.size(); i++)
-        {
-            yMin = qMin(lifData.at(i).y(),yMin);
-            yMax = qMax(lifData.at(i).y(),yMax);
-            if(!refData.isEmpty())
-            {
-                yMin = qMin(yMin,refData.at(i).y());
-                yMax = qMax(yMax,refData.at(i).y());
-            }
-        }
-    }
-
-    setAxisAutoScaleRange(QwtPlot::yLeft,yMin,yMax);
-    //assign data to curve object
-    p_lif->setSamples(lifFiltered);
-    if(d_currentTrace.hasRefData())
-        p_ref->setSamples(refFiltered);
-
 }
 
 bool LifTracePlot::eventFilter(QObject *obj, QEvent *ev)

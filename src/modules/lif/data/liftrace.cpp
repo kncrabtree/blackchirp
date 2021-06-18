@@ -181,7 +181,7 @@ QVector<QPointF> LifTrace::lifToXY() const
 
     for(int i=0; i<data->lifData.size(); i++)
     {
-        out[i].setX(static_cast<double>(i)*data->xSpacing);
+        out[i].setX(static_cast<double>(i)*data->xSpacing*1e9); //convert to ns
         if(data->count == 1)
             out[i].setY(static_cast<double>(data->lifData.at(i))*data->lifYMult);
         else
@@ -198,7 +198,7 @@ QVector<QPointF> LifTrace::refToXY() const
 
     for(int i=0; i<data->refData.size(); i++)
     {
-        out[i].setX(static_cast<double>(i)*data->xSpacing);
+        out[i].setX(static_cast<double>(i)*data->xSpacing*1e9); // convert to ns
         if(data->count == 1)
             out[i].setY(static_cast<double>(data->refData.at(i))*data->refYMult);
         else

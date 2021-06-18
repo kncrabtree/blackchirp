@@ -14,30 +14,12 @@ MotorTimePlot::MotorTimePlot(QWidget *parent) : ZoomPanPlot(BC::Key::motorTimePl
 
 void MotorTimePlot::prepareForScan(const MotorScan s)
 {
-    setAxisAutoScaleRange(QwtPlot::xBottom,s.tVal(0),s.tVal(s.tPoints()-1));
-    setAxisAutoScaleRange(QwtPlot::yLeft,0.0,1.0);
-
-    p_curve->setSamples(QVector<QPointF>());
+    Q_UNUSED(s)
+    p_curve->setCurveData(QVector<QPointF>());
 }
 
 void MotorTimePlot::updateData(QVector<QPointF> d)
 {
-    double min = d.constFirst().y();
-    double max = d.constFirst().y();
-    for(int i=0; i<d.size(); i++)
-    {
-        min = qMin(d.at(i).y(),min);
-        max = qMax(d.at(i).y(),max);
-    }
-
-    p_curve->setSamples(d);
-    setAxisAutoScaleRange(QwtPlot::yLeft,min,max);
+    p_curve->setCurveData(d);
     replot();
-}
-
-
-
-
-void MotorTimePlot::filterData()
-{
 }

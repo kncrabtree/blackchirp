@@ -14,6 +14,7 @@
 #include <QColorDialog>
 
 #include <qwt6/qwt_scale_div.h>
+#include <qwt6/qwt_plot_marker.h>
 #include <src/gui/plot/blackchirpplotcurve.h>
 
 #include <src/gui/plot/customtracker.h>
@@ -22,15 +23,17 @@
 ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),
     SettingsStorage(name,SettingsStorage::General,false), d_name(name), d_maxIndex(0)
 {
-    d_config.axisList.append(AxisConfig(QwtPlot::xBottom,BC::Key::bottom));
-    d_config.axisList.append(AxisConfig(QwtPlot::xTop,BC::Key::top));
+    //it is important for the axes to be appended in the order of their enum values
     d_config.axisList.append(AxisConfig(QwtPlot::yLeft,BC::Key::left));
     d_config.axisList.append(AxisConfig(QwtPlot::yRight,BC::Key::right));
+    d_config.axisList.append(AxisConfig(QwtPlot::xBottom,BC::Key::bottom));
+    d_config.axisList.append(AxisConfig(QwtPlot::xTop,BC::Key::top));
 
-    setAxisFont(QwtPlot::xBottom,QFont(QString("sans-serif"),8));
-    setAxisFont(QwtPlot::xTop,QFont(QString("sans-serif"),8));
-    setAxisFont(QwtPlot::yLeft,QFont(QString("sans-serif"),8));
-    setAxisFont(QwtPlot::yRight,QFont(QString("sans-serif"),8));
+    for(auto d : d_config.axisList)
+    {
+        setAxisFont(d.type,QApplication::font());
+        axisScaleEngine(d.type)->setAttribute(QwtScaleEngine::Floating);
+    }
 
     p_tracker = new CustomTracker(this->canvas());
 
@@ -88,9 +91,6 @@ bool ZoomPanPlot::isAutoScale()
 void ZoomPanPlot::resetPlot()
 {
     detachItems();
-    for(int i=0;i<d_config.axisList.size();i++)
-        setAxisAutoScaleRange(d_config.axisList.at(i).type,0.0,1.0);
-
     autoScale();
 }
 
@@ -103,31 +103,6 @@ void ZoomPanPlot::autoScale()
     d_config.panning = false;
 
     replot();
-}
-
-void ZoomPanPlot::setAxisAutoScaleRange(QwtPlot::Axis axis, double min, double max)
-{
-    int i = getAxisIndex(axis);
-    d_config.axisList[i].min = min;
-    d_config.axisList[i].max = max;
-}
-
-void ZoomPanPlot::setAxisAutoScaleMin(QwtPlot::Axis axis, double min)
-{
-    int i = getAxisIndex(axis);
-    d_config.axisList[i].min = min;
-}
-
-void ZoomPanPlot::setAxisAutoScaleMax(QwtPlot::Axis axis, double max)
-{
-    int i = getAxisIndex(axis);
-    d_config.axisList[i].max = max;
-}
-
-void ZoomPanPlot::expandAutoScaleRange(QwtPlot::Axis axis, double newValueMin, double newValueMax)
-{
-    int i = getAxisIndex(axis);
-    setAxisAutoScaleRange(axis,qMin(newValueMin,d_config.axisList.at(i).min),qMax(newValueMax,d_config.axisList.at(i).max));
 }
 
 void ZoomPanPlot::setXRanges(const QwtScaleDiv &bottom, const QwtScaleDiv &top)
@@ -150,8 +125,6 @@ void ZoomPanPlot::setPlotTitle(const QString text)
     QwtText t(text);
     t.setFont(QApplication::font());
     setTitle(t);
-
-    replot();
 }
 
 void ZoomPanPlot::setPlotAxisTitle(QwtPlot::Axis a, const QString text)
@@ -159,8 +132,6 @@ void ZoomPanPlot::setPlotAxisTitle(QwtPlot::Axis a, const QString text)
     QwtText t(text);
     t.setFont(QApplication::font());
     setAxisTitle(a,t);
-
-    replot();
 }
 
 void ZoomPanPlot::replot()
@@ -171,7 +142,7 @@ void ZoomPanPlot::replot()
     //figure out which axes to show
     QwtPlotItemList l = itemList();
     bool bottom = false, top = false, left = false, right = false;
-    for(int i=0; i<l.size(); i++)
+    for(int i=0; i<l.size(); ++i)
     {
         if(l.at(i)->yAxis() == QwtPlot::yLeft)
             left = true;
@@ -181,6 +152,47 @@ void ZoomPanPlot::replot()
             bottom = true;
         if(l.at(i)->xAxis() == QwtPlot::xTop)
             top = true;
+
+        //update bounding rects
+        auto c = dynamic_cast<BlackchirpPlotCurve*>(l.at(i));
+        if(c)
+        {
+            auto r = c->boundingRect();
+            if(r.width() < 0.0 || r.height() < 0.0)
+                continue;
+
+            if(d_config.axisList.at(c->xAxis()).boundingRect.width() >=0.0)
+                d_config.axisList[c->xAxis()].boundingRect |= r;
+            else
+                d_config.axisList[c->xAxis()].boundingRect = r;
+            if(d_config.axisList.at(c->yAxis()).boundingRect.height() >=0.0)
+                d_config.axisList[c->yAxis()].boundingRect |= r;
+            else
+                d_config.axisList[c->yAxis()].boundingRect = r;
+        }
+
+        auto m = dynamic_cast<QwtPlotMarker*>(l.at(i));
+        if(m && m->testItemAttribute(QwtPlotItem::AutoScale))
+        {
+            auto r = m->boundingRect();
+
+            if(r.width() >= 0.0)
+            {
+                if(d_config.axisList.at(m->xAxis()).boundingRect.width() >=0.0)
+                    d_config.axisList[m->xAxis()].boundingRect |= r;
+                else
+                    d_config.axisList[m->xAxis()].boundingRect = r;
+            }
+
+            if(r.height() >= 0.0)
+            {
+                if(d_config.axisList.at(m->yAxis()).boundingRect.height() >=0.0)
+                    d_config.axisList[m->yAxis()].boundingRect |= r;
+                else
+                    d_config.axisList[m->yAxis()].boundingRect = r;
+            }
+
+        }
     }
 
     if(!d_config.axisList.at(getAxisIndex(QwtPlot::yLeft)).override)
@@ -208,9 +220,16 @@ void ZoomPanPlot::replot()
         const AxisConfig c = d_config.axisList.at(i);
         if(c.autoScale)
         {
-            setAxisScale(c.type,c.min,c.max);
-            if(c.type == QwtPlot::xBottom || c.type == QwtPlot::xTop)
+
+            if((c.type == QwtPlot::xBottom) || (c.type == QwtPlot::xTop))
+            {
+                setAxisScale(c.type,c.boundingRect.left(),c.boundingRect.right());
                 redrawXAxis = true;
+            }
+            else
+            {
+                setAxisScale(c.type,c.boundingRect.top(),c.boundingRect.bottom());
+            }
         }
     }
 
@@ -329,6 +348,34 @@ void ZoomPanPlot::setAxisOverride(QwtPlot::Axis axis, bool override)
     d_config.axisList[getAxisIndex(axis)].override = override;
 }
 
+void ZoomPanPlot::filterData()
+{
+    auto l = itemList();
+    for(int i=0; i<d_config.axisList.size(); ++i)
+        d_config.axisList[i].boundingRect = QRectF{ QPointF{1.0,1.0}, QPointF{-2.0,-2.0} };
+    for(auto item : l)
+    {
+        auto c = dynamic_cast<BlackchirpPlotCurve*>(item);
+        if(c)
+        {
+            c->filter();
+            auto r = c->boundingRect();
+            if(r.width() <= 0.0 || r.height() <= 0.0)
+                continue;
+
+            if(d_config.axisList.at(c->yAxis()).boundingRect.height() >=0.0)
+                d_config.axisList[c->yAxis()].boundingRect |= r;
+            else
+                d_config.axisList[c->yAxis()].boundingRect = r;
+
+            if(d_config.axisList.at(c->xAxis()).boundingRect.width() >=0.0)
+                d_config.axisList[c->xAxis()].boundingRect |= r;
+            else
+                d_config.axisList[c->xAxis()].boundingRect = r;
+        }
+    }
+}
+
 void ZoomPanPlot::resizeEvent(QResizeEvent *ev)
 {
     QwtPlot::resizeEvent(ev);
@@ -413,9 +460,8 @@ void ZoomPanPlot::pan(QMouseEvent *me)
     QPoint delta = d_config.panClickPos - me->pos();
     d_config.xDirty = true;
 
-    for(int i=0; i<d_config.axisList.size(); i++)
+    for(auto c : d_config.axisList)
     {
-        const AxisConfig c = d_config.axisList.at(i);
         if(c.override)
             continue;
 
@@ -423,15 +469,26 @@ void ZoomPanPlot::pan(QMouseEvent *me)
         double scaleMax = axisScaleDiv(c.type).upperBound();
 
         double d;
-        if(c.type == QwtPlot::xBottom || c.type == QwtPlot::xTop)
+        bool xAxis = (c.type == QwtPlot::xBottom || c.type == QwtPlot::xTop);
+        double min, max;
+        if(xAxis)
+        {
             d = (scaleMax - scaleMin)/(double)canvas()->width()*delta.x();
+            min = c.boundingRect.left();
+            max = c.boundingRect.right();
+        }
         else
+        {
             d = -(scaleMax - scaleMin)/(double)canvas()->height()*delta.y();
+            min = c.boundingRect.top();
+            max = c.boundingRect.bottom();
+        }
 
-        if(scaleMin + d < c.min)
-            d = c.min - scaleMin;
-        if(scaleMax + d > c.max)
-            d = c.max - scaleMax;
+        if(scaleMin + d < min)
+            d = min - scaleMin;
+        if(scaleMax + d > max)
+            d = max - scaleMax;
+
 
         setAxisScale(c.type,scaleMin + d, scaleMax + d);
     }
@@ -475,23 +532,32 @@ void ZoomPanPlot::zoom(QWheelEvent *we)
         double scaleMax = axisScaleDiv(c.type).upperBound();
         double factor = c.zoomFactor;
         int mousePosInt;
-        if(c.type == QwtPlot::xBottom || c.type == QwtPlot::xTop)
+
+        bool xAxis = (c.type == QwtPlot::xBottom || c.type == QwtPlot::xTop);
+        double min,max;
+        if(xAxis)
         {
             mousePosInt = we->pos().x();
             d_config.xDirty = true;
+            min = c.boundingRect.left();
+            max = c.boundingRect.right();
         }
         else
+        {
             mousePosInt = we->pos().y();
+            min = c.boundingRect.top();
+            max = c.boundingRect.bottom();
+        }
 
         double mousePos = qBound(scaleMin,canvasMap(c.type).invTransform(mousePosInt),scaleMax);
 
         scaleMin += qAbs(mousePos-scaleMin)*factor*(double)numSteps;
         scaleMax -= qAbs(mousePos-scaleMax)*factor*(double)numSteps;
 
-        scaleMin = qMax(scaleMin,c.min);
-        scaleMax = qMin(scaleMax,c.max);
+//        scaleMin = qMax(scaleMin,min);
+//        scaleMax = qMin(scaleMax,max);
 
-        if(scaleMin <= c.min && scaleMax >= c.max)
+        if(scaleMin <= min && scaleMax >= max)
             d_config.axisList[i].autoScale = true;
         else
         {
@@ -803,26 +869,7 @@ QMenu *ZoomPanPlot::contextMenu()
 
 int ZoomPanPlot::getAxisIndex(QwtPlot::Axis a)
 {
-    int i;
-    switch (a) {
-    case QwtPlot::xBottom:
-        i=0;
-        break;
-    case QwtPlot::xTop:
-        i=1;
-        break;
-    case QwtPlot::yLeft:
-        i=2;
-        break;
-    case QwtPlot::yRight:
-        i=3;
-        break;
-    default:
-        i = 0;
-        break;
-    }
-
-    return i;
+    return static_cast<int>(a);
 }
 
 

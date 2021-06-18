@@ -6,6 +6,7 @@
 #include <qwt6/qwt_plot_curve.h>
 #include <qwt6/qwt_plot_marker.h>
 
+#include <src/gui/plot/blackchirpplotcurve.h>
 #include <src/hardware/core/pulsegenerator/pulsegenerator.h>
 
 PulsePlot::PulsePlot(QWidget *parent) :
@@ -17,44 +18,60 @@ PulsePlot::PulsePlot(QWidget *parent) :
 
 
     setPlotAxisTitle(QwtPlot::xBottom, QString::fromUtf16(u"Time (μs)"));
-    setAxisAutoScaleRange(QwtPlot::yLeft,0.0,numChannels*1.5);
+
+    //disable floating for this axis
+    axisScaleEngine(QwtPlot::yLeft)->setAttribute(QwtScaleEngine::Floating,false);
 
 
-    QPen p(QPalette().color(QPalette::Text));
-    QPen dotP(p);
-    dotP.setStyle(Qt::DotLine);
     for(int i=0; i<numChannels; i++)
     {
         double midpoint = (double)(numChannels - 1 - i)*1.5 + 0.75;
         double top = (double)(numChannels-i)*1.5;
 
-        QwtPlotMarker *sep = new QwtPlotMarker;
-        sep->setLineStyle(QwtPlotMarker::HLine);
-        sep->setLinePen(dotP);
-        sep->setYValue(top);
-        sep->attach(this);
-
-        QwtPlotCurve *c = new QwtPlotCurve;
-        c->setPen(p);
+        BlackchirpPlotCurve *c = new BlackchirpPlotCurve(BC::Key::pulseChannel+QString::number(i));
         c->attach(this);
         c->setVisible(false);
+
+        auto p = c->pen();
+        p.setWidth(0);
+        p.setStyle(Qt::DotLine);
+
+        QwtPlotMarker *sep = new QwtPlotMarker;
+        sep->setLineStyle(QwtPlotMarker::HLine);
+        sep->setLinePen(p);
+        sep->setYValue(top);
+        sep->attach(this);
+        sep->setItemAttribute(QwtPlotItem::AutoScale);
+
+        p.setStyle(Qt::NoPen);
+        QwtPlotMarker *sep2 = new QwtPlotMarker;
+        sep2->setLineStyle(QwtPlotMarker::HLine);
+        sep2->setLinePen(p);
+        sep2->setYValue(top);
+        sep2->setYAxis(QwtPlot::yRight);
+        sep2->attach(this);
+        sep2->setItemAttribute(QwtPlotItem::AutoScale);
+
+
 
         QwtPlotMarker *m = new QwtPlotMarker;
         QwtText text;
         text.setFont(QApplication::font());
-        text.setColor(QPalette().color(QPalette::Text));
+        text.setColor(p.color());
         m->setLabel(text);
         m->setLabelAlignment(Qt::AlignLeft);
         m->setValue(0.0, midpoint);
         m->attach(this);
         m->setVisible(false);
 
-        d_plotItems.append(QPair<QwtPlotCurve*,QwtPlotMarker*>(c,m));
+        d_plotItems.append({c,m});
 
     }
 
     setAxisOverride(QwtPlot::yLeft);
     enableAxis(QwtPlot::yLeft,false);
+    setAxisOverride(QwtPlot::yRight);
+    enableAxis(QwtPlot::yRight,false);
     replot();
 }
 
@@ -89,11 +106,6 @@ void PulsePlot::newRepRate(double d)
 }
 
 
-
-void PulsePlot::filterData()
-{
-}
-
 void PulsePlot::replot()
 {
     if(d_config.isEmpty())
@@ -103,7 +115,7 @@ void PulsePlot::replot()
             d_plotItems.at(i).first->setVisible(false);
             d_plotItems.at(i).second->setVisible(false);
         }
-        setAxisAutoScaleRange(QwtPlot::xBottom,0.0,1.0);
+
         ZoomPanPlot::replot();
         return;
     }
@@ -116,7 +128,6 @@ void PulsePlot::replot()
             maxTime = qMax(maxTime,d_config.at(i).delay + d_config.at(i).width);
     }
     maxTime *= 1.25;
-    setAxisAutoScaleRange(QwtPlot::xBottom,0.0,maxTime);
 
     for(int i=0; i<d_config.size() && i <d_plotItems.size(); i++)
     {
@@ -138,7 +149,7 @@ void PulsePlot::replot()
         }
         data.append(QPointF(maxTime,channelOff));
 
-        d_plotItems.at(i).first->setSamples(data);
+        d_plotItems.at(i).first->setCurveData(data);
         if(!d_plotItems.at(i).first->isVisible())
             d_plotItems.at(i).first->setVisible(true);
         if(c.channelName != d_plotItems.at(i).second->label().text())

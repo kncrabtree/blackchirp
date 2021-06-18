@@ -18,22 +18,14 @@ public:
     LifSlicePlot(const QString name, QWidget *parent = nullptr);
     ~LifSlicePlot();
 
-    void prepareForExperiment(double xMin, double xMax);
+    void prepareForExperiment();
     void setData(const QVector<QPointF> d);
 
 public slots:
     void exportXY();
 
-    // ZoomPanPlot interface
 protected:
-    void filterData() override;
-
     BlackchirpPlotCurve *p_curve;
-    QVector<QPointF> d_currentData;
-
-    // ZoomPanPlot interface
-protected:
-    QMenu *contextMenu() override;
 };
 
 #endif // LIFSLICEPLOT_H

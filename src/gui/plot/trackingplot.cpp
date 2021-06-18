@@ -35,8 +35,3 @@ void TrackingPlot::buildContextMenu(QMouseEvent *me)
 
     menu->popup(me->globalPos());
 }
-
-void TrackingPlot::filterData()
-{
-}
-
