@@ -737,11 +737,13 @@ QMenu *ZoomPanPlot::contextMenu()
 
 
     auto curveMenu = menu->addMenu(QString("Curves"));
+    int count = 0;
     for(auto item : itemList(QwtPlotItem::Rtti_PlotCurve))
     {
         auto curve = dynamic_cast<BlackchirpPlotCurve*>(item);
         if(curve != nullptr)
         {
+            ++count;
             auto m = curveMenu->addMenu(curve->title().text());
 
 
@@ -867,6 +869,8 @@ QMenu *ZoomPanPlot::contextMenu()
 
         }
     }
+    if(count == 0)
+        curveMenu->setEnabled(false);
 
     return menu;
 
