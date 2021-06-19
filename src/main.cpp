@@ -148,7 +148,6 @@ int main(int argc, char *argv[])
     qRegisterMetaType<BlackChirp::PulseSetting>("BlackChirp::PulseSetting");
     qRegisterMetaType<BlackChirp::PulseRole>("BlackChirp::PulseRole");
     qRegisterMetaType<PulseGenConfig>("PulseGenConfig");
-    qRegisterMetaType<BlackChirp::FtWindowFunction>("BlackChirp::FtWindowFunction");
     qRegisterMetaType<QList<QPointF>>("QList<QPointF>");
     qRegisterMetaType<BlackChirp::ClockType>("BlackChirp::ClockType");
     qRegisterMetaType<BlackChirp::Sideband>("BlackChirp::Sideband");

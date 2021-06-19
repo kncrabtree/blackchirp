@@ -33,15 +33,34 @@
 class FtWorker : public QObject
 {
     Q_OBJECT
-public: 
+public:
+    enum FtUnits {
+        FtV = 0,
+        FtmV = 3,
+        FtuV = 6,
+        FtnV = 9
+    };
+    Q_ENUM(FtUnits)
+
+    enum FtWindowFunction {
+        Bartlett,
+        Boxcar,
+        Blackman,
+        BlackmanHarris,
+        Hamming,
+        Hanning,
+        KaiserBessel14
+    };
+    Q_ENUM(FtWindowFunction)
+
     struct FidProcessingSettings {
         double startUs;
         double endUs;
         int zeroPadFactor;
         bool removeDC;
-        BlackChirp::FtPlotUnits units;
+        FtUnits units;
         double autoScaleIgnoreMHz;
-        BlackChirp::FtWindowFunction windowFunction;
+        FtWindowFunction windowFunction;
     };
 
     /*!
@@ -107,7 +126,7 @@ private:
 
     //store a precalculated window function for speed
     QVector<double> d_winf;
-    void makeWinf(int n,BlackChirp::FtWindowFunction f);
+    void makeWinf(int n,FtWindowFunction f);
     void winBartlett(int n);
     void winBlackman(int n);
     void winBlackmanHarris(int n);

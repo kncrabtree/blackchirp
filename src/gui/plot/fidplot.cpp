@@ -2,7 +2,6 @@
 #include <math.h>
 
 #include <QPalette>
-#include <QSettings>
 #include <QApplication>
 #include <QMenu>
 #include <QDoubleSpinBox>

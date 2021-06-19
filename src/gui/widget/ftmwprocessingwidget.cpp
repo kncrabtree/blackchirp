@@ -3,10 +3,9 @@
 
 #include <QLabel>
 #include <QMenu>
-#include <QFrame>
-#include <QButtonGroup>
 
-FtmwProcessingWidget::FtmwProcessingWidget(QWidget *parent) : QWidget(parent)
+FtmwProcessingWidget::FtmwProcessingWidget(QWidget *parent) :
+    QWidget(parent), SettingsStorage(BC::Key::ftmwProcWidget)
 {
     auto fl = new QFormLayout;
 
@@ -14,7 +13,7 @@ FtmwProcessingWidget::FtmwProcessingWidget(QWidget *parent) : QWidget(parent)
     p_startBox->setMinimum(0.0);
     p_startBox->setDecimals(4);
     p_startBox->setSingleStep(0.05);
-    p_startBox->setValue(0.0);
+    p_startBox->setValue(get<double>(BC::Key::fidStart,0.0));
     p_startBox->setKeyboardTracking(false);
     p_startBox->setToolTip(QString("Start of data for FT. Points before this will be set to 0."));
     auto vc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
@@ -29,7 +28,7 @@ FtmwProcessingWidget::FtmwProcessingWidget(QWidget *parent) : QWidget(parent)
     p_endBox->setMinimum(0.0);
     p_endBox->setDecimals(4);
     p_endBox->setSingleStep(0.05);
-    p_endBox->setValue(p_endBox->maximum());
+    p_endBox->setValue(get<double>(BC::Key::fidEnd,p_endBox->maximum()));
     p_endBox->setKeyboardTracking(false);
     p_endBox->setToolTip(QString("End of data for FT. Points after this will be set to 0."));
     connect(p_endBox,vc,this,&FtmwProcessingWidget::readSettings);
@@ -42,7 +41,7 @@ FtmwProcessingWidget::FtmwProcessingWidget(QWidget *parent) : QWidget(parent)
     p_autoScaleIgnoreBox = new QDoubleSpinBox;
     p_autoScaleIgnoreBox->setRange(0.0,1000.0);
     p_autoScaleIgnoreBox->setDecimals(1);
-    p_autoScaleIgnoreBox->setValue(0.0);
+    p_autoScaleIgnoreBox->setValue(get<double>(BC::Key::autoscaleIgnore,0.0));
     p_autoScaleIgnoreBox->setSuffix(QString(" MHz"));
     p_autoScaleIgnoreBox->setKeyboardTracking(false);
     connect(p_autoScaleIgnoreBox,vc,this,&FtmwProcessingWidget::readSettings);
@@ -54,7 +53,7 @@ FtmwProcessingWidget::FtmwProcessingWidget(QWidget *parent) : QWidget(parent)
 
     p_zeroPadBox = new QSpinBox;
     p_zeroPadBox->setRange(0,4);
-    p_zeroPadBox->setValue(0);
+    p_zeroPadBox->setValue(get<int>(BC::Key::zeroPad));
     p_zeroPadBox->setSpecialValueText(QString("None"));
     p_zeroPadBox->setKeyboardTracking(false);
     auto ivc = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
@@ -66,6 +65,7 @@ FtmwProcessingWidget::FtmwProcessingWidget(QWidget *parent) : QWidget(parent)
     fl->addRow(zpl,p_zeroPadBox);
 
     p_removeDCBox = new QCheckBox;
+    p_removeDCBox->setChecked(get<bool>(BC::Key::removeDC,false));
     p_removeDCBox->setToolTip(QString("Subtract any DC offset in the FID."));
     connect(p_removeDCBox,&QCheckBox::toggled,this,&FtmwProcessingWidget::readSettings);
 
@@ -74,89 +74,55 @@ FtmwProcessingWidget::FtmwProcessingWidget(QWidget *parent) : QWidget(parent)
     rdcl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
     fl->addRow(rdcl,p_removeDCBox);
 
-    auto f = new QFrame;
-    f->setFixedHeight(3);
-    f->setFrameStyle(QFrame::HLine);
-    f->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-//    f->setFrameShadow(QFrame::Sunken);
-    f->setLineWidth(1);
-//    f->setContentsMargins(0,1,0,1);
-    fl->addRow(f);
-
-    auto wfl = new QLabel("FT Window Function");
-    wfl->setAlignment(Qt::AlignCenter);
+    auto wfl = new QLabel("Window");
     wfl->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding);
-    fl->addRow(wfl);
 
-    d_windowTypes.insert(BlackChirp::Bartlett,QString("Bartlett"));
-    d_windowTypes.insert(BlackChirp::Boxcar,QString("Boxcar (None)"));
-    d_windowTypes.insert(BlackChirp::Blackman,QString("Blackman"));
-    d_windowTypes.insert(BlackChirp::BlackmanHarris,QString("Blackman-Harris"));
-    d_windowTypes.insert(BlackChirp::Hamming,QString("Hamming"));
-    d_windowTypes.insert(BlackChirp::Hanning,QString("Hanning"));
-    d_windowTypes.insert(BlackChirp::KaiserBessel14,QString("Kaiser-Bessel"));
+    p_winfBox = new QComboBox;
+    p_winfBox->addItem(QString("None"),FtWorker::Boxcar);
+    p_winfBox->addItem(QString("Bartlett"),FtWorker::Bartlett);
+    p_winfBox->addItem(QString("Blackman"),FtWorker::Blackman);
+    p_winfBox->addItem(QString("Blackman-Harris"),FtWorker::BlackmanHarris);
+    p_winfBox->addItem(QString("Hamming"),FtWorker::Hamming);
+    p_winfBox->addItem(QString("Hanning"),FtWorker::Hanning);
+    p_winfBox->addItem(QString("Kaiser-Bessel"),FtWorker::KaiserBessel14);
 
-    auto winfGroup = new QButtonGroup;
-    winfGroup->setExclusive(true);
-    auto bc = static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked);
-    connect(winfGroup,bc,this,&FtmwProcessingWidget::readSettings);
+    p_winfBox->setCurrentIndex(p_winfBox->findData(get<FtWorker::FtWindowFunction>(BC::Key::ftWinf,FtWorker::Boxcar)));
+    connect(p_winfBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this,&FtmwProcessingWidget::readSettings);
 
-    for(auto it=d_windowTypes.constBegin(); it!=d_windowTypes.constEnd(); it++)
-    {
-        auto button = new QRadioButton;
-        if(it.key() == BlackChirp::Boxcar)
-            button->setChecked(true);
-        winfGroup->addButton(button);
+    fl->addRow(wfl,p_winfBox);
 
-        d_windowButtons.insert(it.key(),button);
-        auto label = new QLabel(it.value());
-        label->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
-        fl->addRow(label,button);
 
-    }
-
-    auto f2 = new QFrame;
-    f2->setFixedHeight(3);
-    f2->setFrameStyle(QFrame::HLine);
-    f2->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-//    f->setFrameShadow(QFrame::Sunken);
-    f2->setLineWidth(1);
-//    f->setContentsMargins(0,1,0,1);
-    fl->addRow(f2);
-
-    auto ufl = new QLabel("FT Vertical Units");
-    ufl->setAlignment(Qt::AlignCenter);
+    auto ufl = new QLabel("FT Units");
     ufl->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding);
-    fl->addRow(ufl);
 
-    d_ftUnits.insert(BlackChirp::FtPlotV,QString("V"));
-    d_ftUnits.insert(BlackChirp::FtPlotmV,QString("mV"));
-    d_ftUnits.insert(BlackChirp::FtPlotuV,QString::fromUtf16(u"μV"));
-    d_ftUnits.insert(BlackChirp::FtPlotnV,QString("nV"));
 
-    auto unitsGroup = new QButtonGroup;
-    unitsGroup->setExclusive(true);
-    connect(unitsGroup,bc,this,&FtmwProcessingWidget::readSettings);
-
-    for(auto it=d_ftUnits.constBegin(); it!=d_ftUnits.constEnd(); it++)
-    {
-        auto button = new QRadioButton;
-        if(it.key() == BlackChirp::FtPlotuV)
-            button->setChecked(true);
-
-        unitsGroup->addButton(button);
-        d_unitsButtons.insert(it.key(),button);
-        auto label = new QLabel(it.value());
-        label->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
-        fl->addRow(label,button);
-
-    }
-
+    p_unitsBox = new QComboBox;
+    p_unitsBox->addItem(QString("V"),FtWorker::FtV);
+    p_unitsBox->addItem(QString("mV"),FtWorker::FtmV);
+    p_unitsBox->addItem(QString::fromUtf16(u"μV"),FtWorker::FtuV);
+    p_unitsBox->addItem(QString("nV"),FtWorker::FtnV);
+    connect(p_unitsBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this,&FtmwProcessingWidget::readSettings);
+    fl->addRow(ufl,p_unitsBox);
 
     setLayout(fl);
 }
 
-void FtmwProcessingWidget::prepareForExperient(const Experiment e)
+FtWorker::FidProcessingSettings FtmwProcessingWidget::getSettings()
+{
+    double start = p_startBox->value();
+    double stop = p_endBox->value();
+    bool rdc = p_removeDCBox->isChecked();
+    int zeroPad = p_zeroPadBox->value();
+    double ignore = p_autoScaleIgnoreBox->value();
+    auto units = p_unitsBox->currentData().value<FtWorker::FtUnits>();
+    auto winf = p_winfBox->currentData().value<FtWorker::FtWindowFunction>();
+
+    return { start, stop, zeroPad, rdc, units, ignore, winf };
+}
+
+void FtmwProcessingWidget::prepareForExperient(const Experiment &e)
 {
     setEnabled(e.ftmwConfig().isEnabled());
 
@@ -166,23 +132,6 @@ void FtmwProcessingWidget::prepareForExperient(const Experiment e)
         p_endBox->setRange(0.0,e.ftmwConfig().fidDurationUs());
     }
 
-}
-
-void FtmwProcessingWidget::applySettings(FtWorker::FidProcessingSettings s)
-{
-    blockSignals(true);
-
-    p_startBox->setValue(qBound(0.0,s.startUs,s.endUs));
-    p_endBox->setValue(s.endUs);
-    p_autoScaleIgnoreBox->setValue(s.autoScaleIgnoreMHz);
-    p_zeroPadBox->setValue(s.zeroPadFactor);
-    p_removeDCBox->setChecked(s.removeDC);
-    d_windowButtons[s.windowFunction]->setChecked(true);
-    d_unitsButtons[s.units]->setChecked(true);
-
-    blockSignals(false);
-
-    readSettings();
 }
 
 void FtmwProcessingWidget::readSettings()
@@ -195,33 +144,13 @@ void FtmwProcessingWidget::readSettings()
     bool rdc = p_removeDCBox->isChecked();
     int zeroPad = p_zeroPadBox->value();
     double ignore = p_autoScaleIgnoreBox->value();
-    auto units = BlackChirp::FtPlotuV;
-    auto winf = BlackChirp::Boxcar;
+    auto units = p_unitsBox->currentData().value<FtWorker::FtUnits>();
+    auto winf = p_winfBox->currentData().value<FtWorker::FtWindowFunction>();
 
     p_startBox->setMaximum(stop);
     p_endBox->setMinimum(start);
 
-
-    for(auto it = d_unitsButtons.constBegin(); it != d_unitsButtons.constEnd(); it++)
-    {
-        if(it.value()->isChecked())
-        {
-            units = it.key();
-            break;
-        }
-    }
-
-    for(auto it = d_windowButtons.constBegin(); it != d_windowButtons.constEnd(); it++)
-    {
-        if(it.value()->isChecked())
-        {
-            winf = it.key();
-            break;
-        }
-    }
-
-
-    emit settingsUpdated(FtWorker::FidProcessingSettings{ start, stop, zeroPad, rdc, units, ignore, winf });
+    emit settingsUpdated({ start, stop, zeroPad, rdc, units, ignore, winf });
 
 }
 

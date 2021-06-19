@@ -8,6 +8,7 @@
 
 #include <src/data/experiment/experiment.h>
 #include <src/data/analysis/ft.h>
+#include <src/data/analysis/ftworker.h>
 
 namespace BC::Key {
 static const QString ftPlot("FtPlot");
@@ -19,7 +20,6 @@ class FtPlot : public ZoomPanPlot
 {
     Q_OBJECT
 public:
-
     /*!
      * \brief Initializes axes, etc. for the FT plot
      * \param parent Parent widget
@@ -30,18 +30,12 @@ public:
     void prepareForExperiment(const Experiment e);
     Ft currentFt() const;
 
-signals:
-    void pzfChanged(int);
-    void unitsChanged(double newScf);
-    void scalingChange(double scfRatio);
-    void winfChanged(BlackChirp::FtWindowFunction);
-
 public slots:
     void newFt(const Ft ft);
     void buildContextMenu(QMouseEvent *me);
 
     void exportXY();
-    void configureUnits(BlackChirp::FtPlotUnits u);
+    void configureUnits(FtWorker::FtUnits u);
     void newPeakList(const QList<QPointF> l);
 
 
@@ -54,7 +48,6 @@ private:
     Ft d_currentFt;
     int d_number;
     QString d_id;
-    BlackChirp::FtPlotUnits d_currentUnits;
 
 };
 

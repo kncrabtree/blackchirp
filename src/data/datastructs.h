@@ -74,16 +74,6 @@ enum PulseRole {
 QList<PulseRole> allPulseRoles();
 QString getPulseName(PulseRole ch);
 
-enum FtWindowFunction {
-    Bartlett,
-    Boxcar,
-    Blackman,
-    BlackmanHarris,
-    Hamming,
-    Hanning,
-    KaiserBessel14
-};
-
 //NOTE: be sure to edit the functions below if adding a new clock type
 enum ClockType {
     UpConversionLO,
@@ -229,15 +219,6 @@ struct IOBoardChannel {
     IOBoardChannel(const IOBoardChannel &other) : enabled(other.enabled), name(other.name), plot(other.plot) {}
 };
 
-enum FtPlotUnits {
-    FtPlotV,
-    FtPlotmV,
-    FtPlotuV,
-    FtPlotnV
-};
-
-double getFtScalingFactor(FtPlotUnits u);
-
 QString getExptFile(int num, BlackChirp::ExptFileType t, QString path = QString(""), int snapNum = -1);
 QString getExptDir(int num, QString path = QString(""));
 QString getExportDir();
@@ -353,8 +334,6 @@ Q_DECLARE_METATYPE(BlackChirp::PulseActiveLevel)
 Q_DECLARE_METATYPE(BlackChirp::PulseSetting)
 Q_DECLARE_METATYPE(BlackChirp::PulseRole)
 Q_DECLARE_METATYPE(BlackChirp::ValidationItem)
-Q_DECLARE_METATYPE(BlackChirp::FtPlotUnits)
-Q_DECLARE_METATYPE(BlackChirp::FtWindowFunction)
 Q_DECLARE_METATYPE(BlackChirp::ClockType)
 
 #ifdef BC_LIF

@@ -20,19 +20,19 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
 
     p_pfw = nullptr;
 
-    QSettings s;
-    s.beginGroup(QString("fidProcessing"));
-    double start = s.value(QString("startUs"),-1.0).toDouble();
-    double end = s.value(QString("endUs"),-1.0).toDouble();
-    int zeroPad = s.value(QString("zeroPad"),0).toInt();
-    bool rdc = s.value(QString("removeDC"),false).toBool();
-    auto units = static_cast<BlackChirp::FtPlotUnits>(s.value(QString("ftUnits"),BlackChirp::FtPlotuV).toInt());
-    double asIg = s.value(QString("autoscaleIgnoreMHz"),0.0).toDouble();
-    auto winf = static_cast<BlackChirp::FtWindowFunction>(s.value(QString("windowFunction"),BlackChirp::Boxcar).toInt());
-    s.endGroup();
+//    QSettings s;
+//    s.beginGroup(QString("fidProcessing"));
+//    double start = s.value(QString("startUs"),-1.0).toDouble();
+//    double end = s.value(QString("endUs"),-1.0).toDouble();
+//    int zeroPad = s.value(QString("zeroPad"),0).toInt();
+//    bool rdc = s.value(QString("removeDC"),false).toBool();
+//    auto units = static_cast<BlackChirp::FtPlotUnits>(s.value(QString("ftUnits"),BlackChirp::FtPlotuV).toInt());
+//    double asIg = s.value(QString("autoscaleIgnoreMHz"),0.0).toDouble();
+//    auto winf = static_cast<BlackChirp::FtWindowFunction>(s.value(QString("windowFunction"),BlackChirp::Boxcar).toInt());
+//    s.endGroup();
 
-    d_currentProcessingSettings = FtWorker::FidProcessingSettings { start, end, zeroPad, rdc, units, asIg, winf };
-    ui->processingWidget->applySettings(d_currentProcessingSettings);
+    d_currentProcessingSettings = ui->processingWidget->getSettings();
+
     d_workerIds << d_liveId << d_mainId << d_plot1Id << d_plot2Id;
 
     for(int i=0; i<d_workerIds.size(); i++)
@@ -66,8 +66,8 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     for(auto it = d_plotStatus.begin(); it != d_plotStatus.end(); it++)
     {
         it.value().fidPlot->blockSignals(true);
-        it.value().fidPlot->setFtStart(start);
-        it.value().fidPlot->setFtEnd(end);
+        it.value().fidPlot->setFtStart(d_currentProcessingSettings.startUs);
+        it.value().fidPlot->setFtEnd(d_currentProcessingSettings.endUs);
         it.value().fidPlot->blockSignals(false);
     }
 
@@ -349,17 +349,17 @@ void FtmwViewWidget::updateProcessingSettings(FtWorker::FidProcessingSettings s)
 
 void FtmwViewWidget::storeProcessingSettings()
 {
-    QSettings s;
-    s.beginGroup(QString("fidProcessing"));
-    s.setValue(QString("startUs"),d_currentProcessingSettings.startUs);
-    s.setValue(QString("endUs"),d_currentProcessingSettings.endUs);
-    s.setValue(QString("autoscaleIgnoreMHz"),d_currentProcessingSettings.autoScaleIgnoreMHz);
-    s.setValue(QString("zeroPad"),d_currentProcessingSettings.zeroPadFactor);
-    s.setValue(QString("removeDC"),d_currentProcessingSettings.removeDC);
-    s.setValue(QString("windowFunction"),static_cast<int>(d_currentProcessingSettings.windowFunction));
-    s.setValue(QString("ftUnits"),static_cast<int>(d_currentProcessingSettings.units));
-    s.endGroup();
-    s.sync();
+//    QSettings s;
+//    s.beginGroup(QString("fidProcessing"));
+//    s.setValue(QString("startUs"),d_currentProcessingSettings.startUs);
+//    s.setValue(QString("endUs"),d_currentProcessingSettings.endUs);
+//    s.setValue(QString("autoscaleIgnoreMHz"),d_currentProcessingSettings.autoScaleIgnoreMHz);
+//    s.setValue(QString("zeroPad"),d_currentProcessingSettings.zeroPadFactor);
+//    s.setValue(QString("removeDC"),d_currentProcessingSettings.removeDC);
+//    s.setValue(QString("windowFunction"),static_cast<int>(d_currentProcessingSettings.windowFunction));
+//    s.setValue(QString("ftUnits"),static_cast<int>(d_currentProcessingSettings.units));
+//    s.endGroup();
+//    s.sync();
 
     reprocessAll();
 }

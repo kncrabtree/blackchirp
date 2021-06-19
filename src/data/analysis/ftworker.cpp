@@ -9,7 +9,7 @@ FtWorker::FtWorker(int i, QObject *parent) :
     QObject(parent), d_id(i), real(NULL), work(NULL), d_numPnts(0), p_spline(nullptr),
     p_accel(nullptr), d_numSplinePoints(0)
 {
-    d_lastProcSettings = FidProcessingSettings { -1.0, -1.0, 0, false, BlackChirp::FtPlotuV, 50.0, BlackChirp::Boxcar };
+    d_lastProcSettings = FidProcessingSettings { -1.0, -1.0, 0, false, FtuV, 50.0, Boxcar };
 }
 
 FtWorker::~FtWorker()
@@ -82,7 +82,7 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings)
 
     int i;
     double np = static_cast<double>(d_numPnts);
-    double scf = BlackChirp::getFtScalingFactor(settings.units);
+    double scf = pow(10.,static_cast<double>(settings.units));
     for(i=1; i<d_numPnts-i; i++)
     {
         //calculate x value
@@ -487,7 +487,7 @@ QVector<double> FtWorker::filterFid(const Fid fid, const FidProcessingSettings &
         if(i > ei)
             break;
 
-        if(settings.windowFunction == BlackChirp::Boxcar)
+        if(settings.windowFunction == Boxcar)
             out[i] = data.at(i);
         else
             out[i] = data.at(i)*d_winf.at(i-si);
@@ -588,7 +588,7 @@ Ft FtWorker::resample(double f0, double spacing, const Ft ft)
 
 }
 
-void FtWorker::makeWinf(int n, BlackChirp::FtWindowFunction f)
+void FtWorker::makeWinf(int n, FtWindowFunction f)
 {
     if(f == d_lastProcSettings.windowFunction && d_winf.size() == n)
         return;
@@ -598,25 +598,25 @@ void FtWorker::makeWinf(int n, BlackChirp::FtWindowFunction f)
 
     switch(f)
     {
-    case BlackChirp::Bartlett:
+    case Bartlett:
         winBartlett(n);
         break;
-    case BlackChirp::Blackman:
+    case Blackman:
         winBlackman(n);
         break;
-    case BlackChirp::BlackmanHarris:
+    case BlackmanHarris:
         winBlackmanHarris(n);
         break;
-    case BlackChirp::Hamming:
+    case Hamming:
         winHamming(n);
         break;
-    case BlackChirp::Hanning:
+    case Hanning:
         winHanning(n);
         break;
-    case BlackChirp::KaiserBessel14:
+    case KaiserBessel14:
         winKaiserBessel(n,14.0);
         break;
-    case BlackChirp::Boxcar:
+    case Boxcar:
     default:
         d_winf.fill(1.0);
         break;

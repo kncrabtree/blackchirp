@@ -28,13 +28,11 @@
 #include <src/gui/plot/blackchirpplotcurve.h>
 
 FtPlot::FtPlot(const QString id, QWidget *parent) :
-    ZoomPanPlot(BC::Key::ftPlot+id,parent), d_number(0), d_id(id), d_currentUnits(BlackChirp::FtPlotV)
+    ZoomPanPlot(BC::Key::ftPlot+id,parent), d_number(0), d_id(id)
 {
 
     setPlotAxisTitle(QwtPlot::xBottom,QString("Frequency (MHz)"));
     setPlotAxisTitle(QwtPlot::yLeft,QString("FT "+id));
-
-    configureUnits(BlackChirp::FtPlotuV);
 
     //build and configure curve object
     p_curve = new BlackchirpPlotCurve(BC::Key::ftCurve+id);
@@ -60,9 +58,6 @@ void FtPlot::prepareForExperiment(const Experiment e)
     p_curve->setVisible(c.isEnabled());
 
     autoScale();
-
-    QSettings s;
-    configureUnits(static_cast<BlackChirp::FtPlotUnits>(s.value(QString("ftUnits"),BlackChirp::FtPlotmV).toInt()));
 }
 
 Ft FtPlot::currentFt() const
@@ -167,26 +162,23 @@ void FtPlot::exportXY()
 
 }
 
-void FtPlot::configureUnits(BlackChirp::FtPlotUnits u)
+void FtPlot::configureUnits(FtWorker::FtUnits u)
 {
-    if(u == d_currentUnits)
-        return;
 
-    d_currentUnits = u;
     QwtText title = axisTitle(QwtPlot::yLeft);
 
     switch(u)
     {
-    case BlackChirp::FtPlotV:
+    case FtWorker::FtV:
         title.setText(QString("FT "+d_id+" (V)"));
         break;
-    case BlackChirp::FtPlotmV:
+    case FtWorker::FtmV:
         title.setText(QString("FT "+d_id+" (mV)"));
         break;
-    case BlackChirp::FtPlotuV:
+    case FtWorker::FtuV:
         title.setText(QString("FT "+d_id+QString::fromUtf16(u" (µV)")));
         break;
-    case BlackChirp::FtPlotnV:
+    case FtWorker::FtnV:
         title.setText(QString("FT "+d_id+" (nV)"));
         break;
     default:
