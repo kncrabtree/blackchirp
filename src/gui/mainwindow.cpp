@@ -16,7 +16,6 @@
 #include <QDir>
 
 #include <src/gui/dialog/communicationdialog.h>
-#include <src/gui/dialog/ioboardconfigdialog.h>
 #include <src/gui/widget/digitizerconfigwidget.h>
 #include <src/gui/widget/rfconfigwidget.h>
 #include <src/gui/wizard/experimentwizard.h>
