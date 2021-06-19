@@ -39,6 +39,7 @@ public:
     void setCurveData(const QVector<QPointF> d, double min, double max);
     void appendPoint(const QPointF p);
     QVector<QPointF> curveData() const { return d_data; }
+    QString name() const { return title().text(); }
 
     /*!
      * \brief Sets curve visibility, and stores to settings

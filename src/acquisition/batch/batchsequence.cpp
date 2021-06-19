@@ -8,8 +8,6 @@ BatchSequence::BatchSequence() :
     p_intervalTimer = new QTimer(this);
     p_intervalTimer->setSingleShot(true);
     connect(p_intervalTimer,&QTimer::timeout,this,[=](){ d_waiting = false; emit beginExperiment(nextExperiment()); });
-
-    d_exportPath = BlackChirp::getExportDir();
 }
 
 
