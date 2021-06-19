@@ -395,6 +395,8 @@ protected:
      *
      * This function only works for single values, not arrays.
      *
+     * This form of registerGetter is intended for use with member function pointers
+     *
      * \param key The key for the value to be stored
      * \param obj A pointer to the object containing the getter function
      * \param getter A member function pointer that returns a type that can be implicitly converted to QVariant
@@ -413,6 +415,42 @@ protected:
             d_values.erase(it->first);
 
         auto f = [obj, getter](){ return (obj->*getter)(); };
+        return d_getters.emplace(key,f).second;
+    }
+
+    /*!
+     * \brief Registers a getter function for a given setting (overloaded function)
+     *
+     * When a getter is associated with a key, any corresponding key is removed from the values
+     * dictionary, and instead the getter function will be called to access the value.
+     *
+     * The getter function will be called when saving the settings to disk or when calling the
+     * get function.
+     *
+     * This function only works for single values, not arrays.
+     *
+     * This form of registerGetter is used with lambda functions. For example:
+     *
+     *     int x = 3;
+     *     auto f = std::function<int ()> { [x](){ return x + 1; }
+     *     registerGetter("myInt",f);
+     *     auto y = get<int>("myInt")
+     *     //y == 4
+     *
+     * See FtmwProcessingWidget::FtmwProcessingWidget for more practical example.
+     *
+     */
+    template<typename T>
+    bool registerGetter(const QString key, std::function<T()> f)
+    {
+        //cannot register a getter for an array value
+        if(d_arrayValues.find(key) != d_arrayValues.end())
+            return false;
+
+        auto it = d_values.find(key);
+        if(it != d_values.end())
+            d_values.erase(it->first);
+
         return d_getters.emplace(key,f).second;
     }
 

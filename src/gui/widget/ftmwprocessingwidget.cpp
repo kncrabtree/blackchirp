@@ -20,6 +20,8 @@ FtmwProcessingWidget::FtmwProcessingWidget(QWidget *parent) :
     connect(p_startBox,vc,this,&FtmwProcessingWidget::readSettings);
     p_startBox->setSuffix(QString::fromUtf8(" μs"));
 
+    registerGetter(BC::Key::fidStart,p_startBox,&QDoubleSpinBox::value);
+
     auto sl = new QLabel(QString("FT Start"));
     sl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
     fl->addRow(sl,p_startBox);
@@ -34,6 +36,8 @@ FtmwProcessingWidget::FtmwProcessingWidget(QWidget *parent) :
     connect(p_endBox,vc,this,&FtmwProcessingWidget::readSettings);
     p_endBox->setSuffix(QString::fromUtf8(" μs"));
 
+    registerGetter(BC::Key::fidEnd,p_endBox,&QDoubleSpinBox::value);
+
     auto el = new QLabel(QString("FT End"));
     el->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
     fl->addRow(el,p_endBox);
@@ -46,6 +50,8 @@ FtmwProcessingWidget::FtmwProcessingWidget(QWidget *parent) :
     p_autoScaleIgnoreBox->setKeyboardTracking(false);
     connect(p_autoScaleIgnoreBox,vc,this,&FtmwProcessingWidget::readSettings);
     p_autoScaleIgnoreBox->setToolTip(QString("Points within this frequency of the LO are ignored when calculating the autoscale minimum and maximum."));
+
+    registerGetter(BC::Key::autoscaleIgnore,p_autoScaleIgnoreBox,&QDoubleSpinBox::value);
 
     auto asl = new QLabel(QString("VScale Ignore"));
     asl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
@@ -60,6 +66,8 @@ FtmwProcessingWidget::FtmwProcessingWidget(QWidget *parent) :
     connect(p_zeroPadBox,ivc,this,&FtmwProcessingWidget::readSettings);
     p_zeroPadBox->setToolTip(QString("Pad FID with zeroes until length extends to a power of 2.\n1 = next power of 2, 2 = second power of 2, etc."));
 
+    registerGetter(BC::Key::zeroPad,p_zeroPadBox,&QSpinBox::value);
+
     auto zpl = new QLabel(QString("Zero Pad"));
     zpl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
     fl->addRow(zpl,p_zeroPadBox);
@@ -69,6 +77,7 @@ FtmwProcessingWidget::FtmwProcessingWidget(QWidget *parent) :
     p_removeDCBox->setToolTip(QString("Subtract any DC offset in the FID."));
     connect(p_removeDCBox,&QCheckBox::toggled,this,&FtmwProcessingWidget::readSettings);
 
+    registerGetter(BC::Key::removeDC,static_cast<QAbstractButton*>(p_removeDCBox),&QCheckBox::isChecked);
 
     auto rdcl = new QLabel(QString("Remove DC"));
     rdcl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
@@ -90,6 +99,10 @@ FtmwProcessingWidget::FtmwProcessingWidget(QWidget *parent) :
     connect(p_winfBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this,&FtmwProcessingWidget::readSettings);
 
+    registerGetter(BC::Key::ftWinf,
+                   std::function<FtWorker::FtWindowFunction ()>
+    { [this] () {return this->p_winfBox->currentData().value<FtWorker::FtWindowFunction>();}});
+
     fl->addRow(wfl,p_winfBox);
 
 
@@ -105,8 +118,17 @@ FtmwProcessingWidget::FtmwProcessingWidget(QWidget *parent) :
     connect(p_unitsBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this,&FtmwProcessingWidget::readSettings);
     fl->addRow(ufl,p_unitsBox);
+    p_unitsBox->setCurrentIndex(p_unitsBox->findData(get<FtWorker::FtUnits>(BC::Key::ftUnits,FtWorker::FtV)));
+
+    registerGetter(BC::Key::ftUnits,
+                   std::function<FtWorker::FtUnits ()>
+    { [this](){ return this->p_unitsBox->currentData().value<FtWorker::FtUnits>(); }});
 
     setLayout(fl);
+}
+
+FtmwProcessingWidget::~FtmwProcessingWidget()
+{
 }
 
 FtWorker::FidProcessingSettings FtmwProcessingWidget::getSettings()
@@ -139,18 +161,10 @@ void FtmwProcessingWidget::readSettings()
     if(signalsBlocked())
         return;
 
-    double start = p_startBox->value();
-    double stop = p_endBox->value();
-    bool rdc = p_removeDCBox->isChecked();
-    int zeroPad = p_zeroPadBox->value();
-    double ignore = p_autoScaleIgnoreBox->value();
-    auto units = p_unitsBox->currentData().value<FtWorker::FtUnits>();
-    auto winf = p_winfBox->currentData().value<FtWorker::FtWindowFunction>();
+    p_startBox->setMaximum(p_endBox->value());
+    p_endBox->setMinimum(p_startBox->value());
 
-    p_startBox->setMaximum(stop);
-    p_endBox->setMinimum(start);
-
-    emit settingsUpdated({ start, stop, zeroPad, rdc, units, ignore, winf });
+    emit settingsUpdated(getSettings());
 
 }
 

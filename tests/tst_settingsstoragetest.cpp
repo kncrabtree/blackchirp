@@ -27,6 +27,7 @@ private slots:
     void cleanupTestCase();
     void testBaseRead();
     void testGetter();
+    void testGetterLambda();
     void testGetMultiple();
     void testContains();
     void testSet();
@@ -166,6 +167,19 @@ void SettingsStorageTest::testGetter()
     SettingsStorage readOnly3(false);
     QCOMPARE(readOnly3.get<int>("testInt"),50);
     QCOMPARE(readOnly3.get<double>("testDouble"),96.1);
+
+    int x = 3;
+    registerGetter("testLambda",std::function<int()>{[x]() { return x + 1; }});
+    QCOMPARE(get<int>("testLambda",0),4);
+
+}
+
+void SettingsStorageTest::testGetterLambda()
+{
+//    initSettingsFile();
+//    clearGetters(false);
+//    readAll();
+
 
 }
 

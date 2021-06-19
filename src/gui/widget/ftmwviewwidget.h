@@ -255,13 +255,13 @@ public:
         splitter->setStretchFactor(0,1);
         splitter->setStretchFactor(1,2);
 
-        toolBar = new QToolBar;
+        toolBar = new QToolBar(FtmwViewWidget);
         toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
         auto *processingAct =toolBar->addAction(QIcon(QString(":/icons/labplot-xy-fourier-transform-curve.svg")),QString("FID Processing Settings"));
         auto *processingBtn = dynamic_cast<QToolButton*>(toolBar->widgetForAction(processingAct));
-        processingMenu = new QMenu;
+        processingMenu = new QMenu(toolBar);
         auto processingWa = new QWidgetAction(processingMenu);
-        processingWidget = new FtmwProcessingWidget;
+        processingWidget = new FtmwProcessingWidget(FtmwViewWidget);
         processingWa->setDefaultWidget(processingWidget);
         processingMenu->addAction(processingWa);
         processingBtn->setMenu(processingMenu);

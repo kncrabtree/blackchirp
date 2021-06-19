@@ -27,6 +27,7 @@ class FtmwProcessingWidget : public QWidget, public SettingsStorage
     Q_OBJECT
 public:
     explicit FtmwProcessingWidget(QWidget *parent = 0);
+    ~FtmwProcessingWidget();
     FtWorker::FidProcessingSettings getSettings();
 
 signals:
