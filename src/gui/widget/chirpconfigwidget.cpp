@@ -1,26 +1,22 @@
 #include "chirpconfigwidget.h"
 #include "ui_chirpconfigwidget.h"
 
-#include <QSettings>
 #include <QMessageBox>
 #include <QSpinBox>
 #include <QInputDialog>
 
+#include <src/hardware/core/ftmwdigitizer/ftmwscope.h>
+
 ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
-    QWidget(parent),
+    QWidget(parent), SettingsStorage(BC::Key::ChirpConfigWidget),
     ui(new Ui::ChirpConfigWidget), p_ctm(new ChirpTableModel(this)), d_rampOnly(false)
 {
     ui->setupUi(this);
     ui->chirpTable->setModel(p_ctm);
     ui->chirpTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-
-    s.beginGroup(QString("ftmwscope"));
-    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-    bool ff = s.value(QString("canFastFrame"),false).toBool();
-    s.endGroup();
-    s.endGroup();
+    SettingsStorage s(BC::Key::ftmwScope,SettingsStorage::Hardware);
+    bool ff = s.get<bool>(BC::Key::fastFrame,false);
 
     if(!ff)
     {
@@ -28,22 +24,22 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
         ui->chirpsSpinBox->setEnabled(false);
     }
 
-    s.beginGroup(QString("protectionLimits"));
-    double minPreProt = s.value(QString("minPreChirpProtectionDelayUs"),0.010).toDouble();
-    double minPreGate = s.value(QString("minPreChirpGateDelayUs"),0.100).toDouble();
-    double minPostGate = s.value(QString("minPostChirpGateDelayUs"),0.0).toDouble();
-    double minPostProt = s.value(QString("minPostChirpProtectionDelayUs"),0.100).toDouble();
+    QString us = QString::fromUtf16(u" μs");
+    double minPreProt = getOrSetDefault(BC::Key::minPreProt,0.0).toDouble();
+    double minPreGate = getOrSetDefault(BC::Key::minPreGate,0.0).toDouble();
+    double minPostGate = getOrSetDefault(BC::Key::minPostGate,-0.5).toDouble();
+    double minPostProt = getOrSetDefault(BC::Key::minPostProt,0.0).toDouble();
 
-    s.setValue(QString("minPreChirpProtectionDelayUs"),minPreProt);
-    s.setValue(QString("minPreChirpGateDelayUs"),minPreGate);
-    s.setValue(QString("minPostChirpGateDelayUs"),minPostGate);
-    s.setValue(QString("minPostChirpProtectionDelayUs"),minPostProt);
-    s.endGroup();
+    ui->preChirpProtectionDoubleSpinBox->setMinimum(minPreProt);
+    ui->preChirpDelayDoubleSpinBox->setMinimum(minPreGate);
+    ui->postChirpDelayDoubleSpinBox->setMinimum(minPostGate);
+    ui->postChirpProtectionDoubleSpinBox->setMinimum(minPostProt);
 
-    ui->preChirpProtectionSpinBox->setMinimum(minPreProt*1000);
-    ui->preChirpDelaySpinBox->setMinimum(minPreGate*1000);
-    ui->postChirpDelaySpinBox->setMinimum(minPostGate*1000);
-    ui->postChirpProtectionSpinBox->setMinimum(minPostProt*1000);
+    ui->preChirpDelayDoubleSpinBox->setSuffix(us);
+    ui->preChirpProtectionDoubleSpinBox->setSuffix(us);
+    ui->postChirpDelayDoubleSpinBox->setSuffix(us);
+    ui->postChirpProtectionDoubleSpinBox->setSuffix(us);
+    ui->chirpIntervalDoubleSpinBox->setSuffix(us);
 
 
     connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::setButtonStates);
@@ -67,10 +63,10 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
 
     auto vc = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
     auto dvc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
-    connect(ui->preChirpProtectionSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
-    connect(ui->preChirpDelaySpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
-    connect(ui->postChirpDelaySpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
-    connect(ui->postChirpProtectionSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
+    connect(ui->preChirpProtectionDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot);
+    connect(ui->preChirpDelayDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot);
+    connect(ui->postChirpDelayDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot);
+    connect(ui->postChirpProtectionDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot);
     connect(ui->chirpsSpinBox,vc,p_ctm,&ChirpTableModel::setNumChirps);
     connect(ui->chirpsSpinBox,vc,ui->currentChirpBox,&QSpinBox::setMaximum);
     connect(ui->chirpsSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
@@ -112,10 +108,10 @@ void ChirpConfigWidget::setRfConfig(const RfConfig c)
     clearList(false);
     auto cc = c.getChirpConfig();
 
-    ui->preChirpProtectionSpinBox->setValue(cc.preChirpProtectionDelay()*1000);
-    ui->preChirpDelaySpinBox->setValue(cc.preChirpGateDelay()*1000);
-    ui->postChirpDelaySpinBox->setValue(cc.postChirpGateDelay()*1000);
-    ui->postChirpProtectionSpinBox->setValue(cc.postChirpProtectionDelay()*1000);
+    ui->preChirpProtectionDoubleSpinBox->setValue(cc.preChirpProtectionDelay());
+    ui->preChirpDelayDoubleSpinBox->setValue(cc.preChirpGateDelay());
+    ui->postChirpDelayDoubleSpinBox->setValue(cc.postChirpGateDelay());
+    ui->postChirpProtectionDoubleSpinBox->setValue(cc.postChirpProtectionDelay());
     ui->chirpsSpinBox->setValue(cc.numChirps());
     if(!cc.chirpList().isEmpty())
     {
@@ -170,10 +166,10 @@ RfConfig ChirpConfigWidget::getRfConfig()
     for(int i=0; i<rfc.numChirpConfigs(); i++)
     {
         auto cc = rfc.getChirpConfig(i);
-        cc.setPreChirpProtectionDelay(ui->preChirpProtectionSpinBox->value()/1e3);
-        cc.setPreChirpGateDelay(ui->preChirpDelaySpinBox->value()/1e3);
-        cc.setPostChirpGateDelay(ui->postChirpDelaySpinBox->value()/1e3);
-        cc.setPostChirpProtectionDelay(ui->postChirpProtectionSpinBox->value()/1e3);
+        cc.setPreChirpProtectionDelay(ui->preChirpProtectionDoubleSpinBox->value());
+        cc.setPreChirpGateDelay(ui->preChirpDelayDoubleSpinBox->value()/1e3);
+        cc.setPostChirpGateDelay(ui->postChirpDelayDoubleSpinBox->value()/1e3);
+        cc.setPostChirpProtectionDelay(ui->postChirpProtectionDoubleSpinBox->value());
         cc.setNumChirps(ui->chirpsSpinBox->value());
         cc.setChirpInterval(ui->chirpIntervalDoubleSpinBox->value());
         rfc.setChirpConfig(cc,i);
@@ -307,8 +303,8 @@ void ChirpConfigWidget::clear()
 
 void ChirpConfigWidget::load()
 {
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    int e = s.value(QString("exptNum"),0).toInt();
+    SettingsStorage s;
+    int e = s.get<int>(BC::Key::exptNum,0);
     if(e < 1)
     {
         QMessageBox::critical(this,QString("Cannot Load Chirp"),QString("Cannot load chirp because no experiments have been performed."),QMessageBox::Ok);
@@ -330,10 +326,10 @@ void ChirpConfigWidget::load()
     //use chirp
     auto vc = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
     auto dvc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
-    disconnect(ui->preChirpProtectionSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
-    disconnect(ui->preChirpDelaySpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
-    disconnect(ui->postChirpDelaySpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
-    disconnect(ui->postChirpProtectionSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
+    disconnect(ui->preChirpProtectionDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot);
+    disconnect(ui->preChirpDelayDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot);
+    disconnect(ui->postChirpDelayDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot);
+    disconnect(ui->postChirpProtectionDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot);
     disconnect(ui->chirpsSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
     disconnect(ui->chirpIntervalDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot);
     disconnect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::updateChirpPlot);
@@ -341,10 +337,10 @@ void ChirpConfigWidget::load()
     p_ctm->setApplyToAll(true);
     clearList(false);
 
-    ui->preChirpDelaySpinBox->setValue(qRound(cc.preChirpGateDelay()*1e3));
-    ui->preChirpProtectionSpinBox->setValue(qRound(cc.preChirpProtectionDelay()*1e3));
-    ui->postChirpDelaySpinBox->setValue(qRound(cc.postChirpGateDelay()*1e3));
-    ui->postChirpProtectionSpinBox->setValue(qRound(cc.postChirpProtectionDelay()*1e3));
+    ui->preChirpDelayDoubleSpinBox->setValue(qRound(cc.preChirpGateDelay()));
+    ui->preChirpProtectionDoubleSpinBox->setValue(qRound(cc.preChirpProtectionDelay()));
+    ui->postChirpDelayDoubleSpinBox->setValue(qRound(cc.postChirpGateDelay()));
+    ui->postChirpProtectionDoubleSpinBox->setValue(qRound(cc.postChirpProtectionDelay()));
     ui->chirpsSpinBox->setValue(cc.numChirps());
     ui->chirpIntervalDoubleSpinBox->setValue(cc.chirpInterval());
     p_ctm->setNumChirps(cc.numChirps());
@@ -375,10 +371,10 @@ void ChirpConfigWidget::load()
     }
 
 
-    connect(ui->preChirpProtectionSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot,Qt::UniqueConnection);
-    connect(ui->preChirpDelaySpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot,Qt::UniqueConnection);
-    connect(ui->postChirpDelaySpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot,Qt::UniqueConnection);
-    connect(ui->postChirpProtectionSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot,Qt::UniqueConnection);
+    connect(ui->preChirpProtectionDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot,Qt::UniqueConnection);
+    connect(ui->preChirpDelayDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot,Qt::UniqueConnection);
+    connect(ui->postChirpDelayDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot,Qt::UniqueConnection);
+    connect(ui->postChirpProtectionDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot,Qt::UniqueConnection);
     connect(ui->chirpsSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot,Qt::UniqueConnection);
     connect(ui->chirpIntervalDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot,Qt::UniqueConnection);
     connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::updateChirpPlot,Qt::UniqueConnection);

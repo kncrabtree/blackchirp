@@ -567,7 +567,7 @@ void ZoomPanPlot::zoom(QWheelEvent *we)
         else
         {
             d_config.axisList[i].autoScale = false;
-            setAxisScale(c.type,scaleMin,scaleMax);
+            setAxisScale(c.type,qMax(min,scaleMin),qMin(max,scaleMax));
         }
     }
 

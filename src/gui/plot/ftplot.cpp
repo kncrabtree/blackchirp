@@ -3,7 +3,6 @@
 #include <QFont>
 #include <QMouseEvent>
 #include <QEvent>
-#include <QSettings>
 #include <QMenu>
 #include <QAction>
 #include <QActionGroup>

@@ -3,6 +3,7 @@
 
 #include <QWidget>
 
+#include <src/data/storage/settingsstorage.h>
 #include <src/data/experiment/rfconfig.h>
 #include <src/data/model/chirptablemodel.h>
 
@@ -12,7 +13,21 @@ namespace Ui {
 class ChirpConfigWidget;
 }
 
-class ChirpConfigWidget : public QWidget
+namespace BC::Key {
+static const QString ChirpConfigWidget("ChirpConfigWidget");
+static const QString minPreProt("minPreChirpProtectionUs");
+static const QString minPreGate("minPreChirpGateDelayUs");
+static const QString minPostProt("minPostChirpGateDelayUs");
+static const QString minPostGate("minPostChirpProtectionDelayUs");
+}
+
+/*!
+ * \brief The ChirpConfigWidget class
+ *
+ * The post chirp gate and post chirp protection are both measured with respect to the end of the chirp!
+ *
+ */
+class ChirpConfigWidget : public QWidget, public SettingsStorage
 {
     Q_OBJECT
 

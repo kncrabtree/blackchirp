@@ -34,7 +34,7 @@
            <string> Add Segment</string>
           </property>
           <property name="icon">
-           <iconset>
+           <iconset resource="../../resources/resources.qrc">
             <normaloff>:/icons/add.png</normaloff>:/icons/add.png</iconset>
           </property>
           <property name="iconSize">
@@ -51,7 +51,7 @@
            <string> Insert Segment</string>
           </property>
           <property name="icon">
-           <iconset>
+           <iconset resource="../../resources/resources.qrc">
             <normaloff>:/icons/go-last.png</normaloff>:/icons/go-last.png</iconset>
           </property>
           <property name="iconSize">
@@ -68,7 +68,7 @@
            <string>Add Empty Segment</string>
           </property>
           <property name="icon">
-           <iconset>
+           <iconset resource="../../resources/resources.qrc">
             <normaloff>:/icons/add.png</normaloff>:/icons/add.png</iconset>
           </property>
           <property name="iconSize">
@@ -85,7 +85,7 @@
            <string>Insert Empty Segment</string>
           </property>
           <property name="icon">
-           <iconset>
+           <iconset resource="../../resources/resources.qrc">
             <normaloff>:/icons/go-last.png</normaloff>:/icons/go-last.png</iconset>
           </property>
           <property name="iconSize">
@@ -115,7 +115,7 @@
            <string> Move Up</string>
           </property>
           <property name="icon">
-           <iconset>
+           <iconset resource="../../resources/resources.qrc">
             <normaloff>:/icons/arrow-up.png</normaloff>:/icons/arrow-up.png</iconset>
           </property>
           <property name="iconSize">
@@ -132,7 +132,7 @@
            <string> Move Down</string>
           </property>
           <property name="icon">
-           <iconset>
+           <iconset resource="../../resources/resources.qrc">
             <normaloff>:/icons/arrow-down.png</normaloff>:/icons/arrow-down.png</iconset>
           </property>
           <property name="iconSize">
@@ -162,7 +162,7 @@
            <string> Remove</string>
           </property>
           <property name="icon">
-           <iconset>
+           <iconset resource="../../resources/resources.qrc">
             <normaloff>:/icons/remove.png</normaloff>:/icons/remove.png</iconset>
           </property>
           <property name="iconSize">
@@ -179,7 +179,7 @@
            <string> Clear All</string>
           </property>
           <property name="icon">
-           <iconset>
+           <iconset resource="../../resources/resources.qrc">
             <normaloff>:/icons/clear.png</normaloff>:/icons/clear.png</iconset>
           </property>
           <property name="iconSize">
@@ -209,7 +209,7 @@
            <string> Load...</string>
           </property>
           <property name="icon">
-           <iconset>
+           <iconset resource="../../resources/resources.qrc">
             <normaloff>:/icons/open.png</normaloff>:/icons/open.png</iconset>
           </property>
           <property name="iconSize">
@@ -297,28 +297,6 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
-         <widget class="QSpinBox" name="preChirpDelaySpinBox">
-          <property name="toolTip">
-           <string>After t0 pulse (which sends TWT enable and protection signals), how long to wait before starting chirp.</string>
-          </property>
-          <property name="keyboardTracking">
-           <bool>false</bool>
-          </property>
-          <property name="suffix">
-           <string> ns</string>
-          </property>
-          <property name="minimum">
-           <number>100</number>
-          </property>
-          <property name="maximum">
-           <number>1000000</number>
-          </property>
-          <property name="singleStep">
-           <number>10</number>
-          </property>
-         </widget>
-        </item>
         <item row="3" column="0">
          <widget class="QLabel" name="protectionDelayLabel">
           <property name="sizePolicy">
@@ -329,31 +307,6 @@
           </property>
           <property name="text">
            <string>Post-Chirp Protection</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QSpinBox" name="postChirpProtectionSpinBox">
-          <property name="toolTip">
-           <string>Following chirp, how long to wait before closing protection switch.</string>
-          </property>
-          <property name="keyboardTracking">
-           <bool>false</bool>
-          </property>
-          <property name="suffix">
-           <string> ns</string>
-          </property>
-          <property name="minimum">
-           <number>100</number>
-          </property>
-          <property name="maximum">
-           <number>1000000</number>
-          </property>
-          <property name="singleStep">
-           <number>10</number>
-          </property>
-          <property name="value">
-           <number>300</number>
           </property>
          </widget>
         </item>
@@ -408,7 +361,7 @@
            <bool>false</bool>
           </property>
           <property name="suffix">
-           <string> us</string>
+           <string/>
           </property>
           <property name="decimals">
            <number>1</number>
@@ -437,25 +390,6 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="1">
-         <widget class="QSpinBox" name="preChirpProtectionSpinBox">
-          <property name="keyboardTracking">
-           <bool>false</bool>
-          </property>
-          <property name="suffix">
-           <string> ns</string>
-          </property>
-          <property name="minimum">
-           <number>10</number>
-          </property>
-          <property name="maximum">
-           <number>1000000</number>
-          </property>
-          <property name="singleStep">
-           <number>10</number>
-          </property>
-         </widget>
-        </item>
         <item row="2" column="0">
          <widget class="QLabel" name="postChirpDelayLabel">
           <property name="sizePolicy">
@@ -469,19 +403,73 @@
           </property>
          </widget>
         </item>
+        <item row="0" column="1">
+         <widget class="QDoubleSpinBox" name="preChirpProtectionDoubleSpinBox">
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+          <property name="decimals">
+           <number>3</number>
+          </property>
+          <property name="maximum">
+           <double>100.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.010000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QDoubleSpinBox" name="preChirpDelayDoubleSpinBox">
+          <property name="toolTip">
+           <string>After t0 pulse (which sends TWT enable and protection signals), how long to wait before starting chirp.</string>
+          </property>
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+          <property name="decimals">
+           <number>3</number>
+          </property>
+          <property name="maximum">
+           <double>100.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.010000000000000</double>
+          </property>
+         </widget>
+        </item>
         <item row="2" column="1">
-         <widget class="QSpinBox" name="postChirpDelaySpinBox">
+         <widget class="QDoubleSpinBox" name="postChirpDelayDoubleSpinBox">
           <property name="toolTip">
            <string>Following chirp, how long to wait before disabling TWT.</string>
           </property>
-          <property name="suffix">
-           <string> ns</string>
+          <property name="decimals">
+           <number>3</number>
           </property>
           <property name="maximum">
-           <number>1000000</number>
+           <double>100.000000000000000</double>
           </property>
           <property name="singleStep">
-           <number>10</number>
+           <double>0.010000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QDoubleSpinBox" name="postChirpProtectionDoubleSpinBox">
+          <property name="toolTip">
+           <string>Following chirp, how long to wait before closing protection switch.</string>
+          </property>
+          <property name="keyboardTracking">
+           <bool>false</bool>
+          </property>
+          <property name="decimals">
+           <number>3</number>
+          </property>
+          <property name="maximum">
+           <double>100.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.010000000000000</double>
           </property>
          </widget>
         </item>
@@ -508,13 +496,15 @@
   <tabstop>removeButton</tabstop>
   <tabstop>clearButton</tabstop>
   <tabstop>loadButton</tabstop>
-  <tabstop>preChirpProtectionSpinBox</tabstop>
-  <tabstop>preChirpDelaySpinBox</tabstop>
-  <tabstop>postChirpProtectionSpinBox</tabstop>
+  <tabstop>preChirpProtectionDoubleSpinBox</tabstop>
+  <tabstop>preChirpDelayDoubleSpinBox</tabstop>
+  <tabstop>postChirpProtectionDoubleSpinBox</tabstop>
   <tabstop>chirpsSpinBox</tabstop>
   <tabstop>chirpIntervalDoubleSpinBox</tabstop>
   <tabstop>chirpTable</tabstop>
  </tabstops>
- <resources/>
+ <resources>
+  <include location="../../resources/resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

@@ -1,6 +1,5 @@
 #include "pulseplot.h"
 
-#include <QSettings>
 #include <QApplication>
 
 #include <qwt6/qwt_plot_curve.h>

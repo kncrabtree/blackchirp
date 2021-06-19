@@ -78,6 +78,7 @@ void ChirpConfigPlot::newChirp(const ChirpConfig cc)
 
     }
 
+    p_chirpCurve->setCurveData(chirpData);
     p_ampEnableCurve->setCurveData(ampData);
     p_protectionCurve->setCurveData(protectionData);
 

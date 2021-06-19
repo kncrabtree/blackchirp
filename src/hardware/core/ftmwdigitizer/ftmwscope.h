@@ -8,10 +8,9 @@
 #include <src/data/experiment/ftmwconfig.h>
 
 
-namespace BC {
-namespace Key {
+namespace BC::Key {
 static const QString ftmwScope("ftmwscope");
-}
+static const QString fastFrame("canFastFrame");
 }
 
 class FtmwScope : public HardwareObject
