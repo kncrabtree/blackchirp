@@ -457,7 +457,8 @@ void FtmwViewWidget::ftDiffDone(const Ft ft)
 void FtmwViewWidget::updateMainPlot()
 {
     ui->mainFtPlot->configureUnits(d_currentProcessingSettings.units);
-    ui->peakFindAction->setEnabled(true);
+    if(!ui->mainFtPlot->currentFt().isEmpty())
+        ui->peakFindAction->setEnabled(true);
 
     switch(d_mode) {
     case Live:
