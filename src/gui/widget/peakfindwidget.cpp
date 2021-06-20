@@ -1,7 +1,6 @@
 #include "peakfindwidget.h"
 #include "ui_peakfindwidget.h"
 
-#include <QSettings>
 #include <QThread>
 #include <QDialog>
 #include <QFormLayout>
@@ -12,7 +11,7 @@
 #include <src/gui/dialog/peaklistexportdialog.h>
 
 PeakFindWidget::PeakFindWidget(Ft ft, QWidget *parent):
-    QWidget(parent),
+    QWidget(parent), SettingsStorage(BC::Key::peakFind),
     ui(new Ui::PeakFindWidget), d_number(0), d_busy(false), d_waiting(false)
 {
     ui->setupUi(this);
@@ -36,12 +35,11 @@ PeakFindWidget::PeakFindWidget(Ft ft, QWidget *parent):
     connect(ui->optionsButton,&QPushButton::clicked,this,&PeakFindWidget::launchOptionsDialog);
     connect(ui->exportButton,&QPushButton::clicked,this,&PeakFindWidget::launchExportDialog);
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    d_minFreq = s.value(QString("peakFind/minFreq"),ft.minFreq()).toDouble();
-    d_maxFreq = s.value(QString("peakFind/maxFreq"),ft.maxFreq()).toDouble();
-    d_snr = s.value(QString("peakFind/snr"),5.0).toDouble();
-    d_winSize = s.value(QString("peakFind/windowSize"),11).toInt();
-    d_polyOrder = s.value(QString("peakFind/polyOrder"),6).toInt();
+    d_minFreq = get<double>(BC::Key::pfMinFreq,ft.minFreq());
+    d_maxFreq = get<double>(BC::Key::pfMaxFreq,ft.maxFreq());
+    d_snr = get<double>(BC::Key::pfSnr,5.0);
+    d_winSize = get<int>(BC::Key::pfWinSize,11);
+    d_polyOrder = get<int>(BC::Key::pfOrder,6);
 
     if(d_minFreq > ft.maxFreq())
         d_minFreq = ft.minFreq();
@@ -93,7 +91,7 @@ void PeakFindWidget::findPeaks()
     if(!d_busy)
     {
         d_busy = true;
-        QMetaObject::invokeMethod(p_pf,"findPeaks",Q_ARG(const Ft,d_currentFt),Q_ARG(double,d_minFreq),Q_ARG(double,d_maxFreq),Q_ARG(double,d_snr));
+        QMetaObject::invokeMethod(p_pf,[this](){ p_pf->findPeaks(d_currentFt,d_minFreq,d_maxFreq,d_snr); });
         d_waiting = false;
     }
     else
@@ -194,7 +192,7 @@ void PeakFindWidget::launchOptionsDialog()
             ws++;
 
         if(minFreq > maxFreq)
-            qSwap(d_minFreq,d_maxFreq);
+            qSwap(minFreq,maxFreq);
 
         d_minFreq = minFreq;
         d_maxFreq = maxFreq;
@@ -202,15 +200,14 @@ void PeakFindWidget::launchOptionsDialog()
         d_polyOrder = po;
         d_snr = snrBox->value();
 
-        QMetaObject::invokeMethod(p_pf,"calcCoefs",Qt::BlockingQueuedConnection,Q_ARG(int,d_winSize),Q_ARG(int,d_polyOrder));
+        QMetaObject::invokeMethod(p_pf,[this](){p_pf->calcCoefs(d_winSize,d_polyOrder);});
 
-        QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-        s.setValue(QString("peakFind/minFreq"),d_minFreq);
-        s.setValue(QString("peakFind/maxFreq"),d_maxFreq);
-        s.setValue(QString("peakFind/snr"),d_snr);
-        s.setValue(QString("peakFind/windowSize"),d_winSize);
-        s.setValue(QString("peakFind/polyOrder"),d_polyOrder);
-        s.sync();
+        set(BC::Key::pfMinFreq,d_minFreq,false);
+        set(BC::Key::pfMaxFreq,d_maxFreq,false);
+        set(BC::Key::pfSnr,d_snr,false);
+        set(BC::Key::pfWinSize,d_winSize,false);
+        set(BC::Key::pfOrder,d_polyOrder,false);
+        save();
     }
 
 }

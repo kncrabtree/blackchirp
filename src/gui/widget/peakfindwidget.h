@@ -8,6 +8,7 @@
 #include <QVector>
 #include <QPointF>
 
+#include <src/data/storage/settingsstorage.h>
 #include <src/data/experiment/experiment.h>
 #include <src/data/analysis/peakfinder.h>
 #include <src/data/model/peaklistmodel.h>
@@ -16,7 +17,16 @@ namespace Ui {
 class PeakFindWidget;
 }
 
-class PeakFindWidget : public QWidget
+namespace BC::Key {
+static const QString peakFind("peakFind");
+static const QString pfMinFreq("minFreq");
+static const QString pfMaxFreq("maxFreq");
+static const QString pfSnr("snr");
+static const QString pfWinSize("winSize");
+static const QString pfOrder("polyOrder");
+}
+
+class PeakFindWidget : public QWidget, public SettingsStorage
 {
     Q_OBJECT
 
