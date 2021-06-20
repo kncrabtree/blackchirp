@@ -20,17 +20,6 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
 
     p_pfw = nullptr;
 
-//    QSettings s;
-//    s.beginGroup(QString("fidProcessing"));
-//    double start = s.value(QString("startUs"),-1.0).toDouble();
-//    double end = s.value(QString("endUs"),-1.0).toDouble();
-//    int zeroPad = s.value(QString("zeroPad"),0).toInt();
-//    bool rdc = s.value(QString("removeDC"),false).toBool();
-//    auto units = static_cast<BlackChirp::FtPlotUnits>(s.value(QString("ftUnits"),BlackChirp::FtPlotuV).toInt());
-//    double asIg = s.value(QString("autoscaleIgnoreMHz"),0.0).toDouble();
-//    auto winf = static_cast<BlackChirp::FtWindowFunction>(s.value(QString("windowFunction"),BlackChirp::Boxcar).toInt());
-//    s.endGroup();
-
     d_currentProcessingSettings = ui->processingWidget->getSettings();
 
     d_workerIds << d_liveId << d_mainId << d_plot1Id << d_plot2Id;
@@ -72,7 +61,7 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     }
 
     connect(ui->processingWidget,&FtmwProcessingWidget::settingsUpdated,this,&FtmwViewWidget::updateProcessingSettings);
-    connect(ui->processingMenu,&QMenu::aboutToHide,this,&FtmwViewWidget::storeProcessingSettings);
+    connect(ui->processingMenu,&QMenu::aboutToHide,[this](){this->reprocess();});
 
     connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::frameChanged,this,&FtmwViewWidget::changeFrame);
     connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::segmentChanged,this,&FtmwViewWidget::changeSegment);
@@ -347,23 +336,6 @@ void FtmwViewWidget::updateProcessingSettings(FtWorker::FidProcessingSettings s)
     reprocess(ignore);
 }
 
-void FtmwViewWidget::storeProcessingSettings()
-{
-//    QSettings s;
-//    s.beginGroup(QString("fidProcessing"));
-//    s.setValue(QString("startUs"),d_currentProcessingSettings.startUs);
-//    s.setValue(QString("endUs"),d_currentProcessingSettings.endUs);
-//    s.setValue(QString("autoscaleIgnoreMHz"),d_currentProcessingSettings.autoScaleIgnoreMHz);
-//    s.setValue(QString("zeroPad"),d_currentProcessingSettings.zeroPadFactor);
-//    s.setValue(QString("removeDC"),d_currentProcessingSettings.removeDC);
-//    s.setValue(QString("windowFunction"),static_cast<int>(d_currentProcessingSettings.windowFunction));
-//    s.setValue(QString("ftUnits"),static_cast<int>(d_currentProcessingSettings.units));
-//    s.endGroup();
-//    s.sync();
-
-    reprocessAll();
-}
-
 void FtmwViewWidget::changeFrame(int id, int frameNum)
 {
     if(d_plotStatus.contains(id))
@@ -492,11 +464,6 @@ void FtmwViewWidget::updateMainPlot()
         processBothSidebands();
         break;
     }
-}
-
-void FtmwViewWidget::reprocessAll()
-{
-    reprocess();
 }
 
 void FtmwViewWidget::reprocess(const QList<int> ignore)
@@ -672,7 +639,7 @@ void FtmwViewWidget::snapshotsFinalized(const FtmwConfig out)
     ui->shotsLabel->setText(d_shotsString.arg(e.ftmwConfig().completedShots()));
 
 
-    reprocessAll();
+    reprocess();
     emit finalized(d_currentExptNum);
 
     snapshotsFinalizedUpdateUi(d_currentExptNum);

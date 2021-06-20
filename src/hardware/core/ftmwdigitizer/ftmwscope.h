@@ -10,7 +10,13 @@
 
 namespace BC::Key {
 static const QString ftmwScope("ftmwscope");
-static const QString fastFrame("canFastFrame");
+static const QString multiRecord("canMultiRecord");
+static const QString blockAverage("canBlockAverage");
+static const QString summaryRecord("canMultiRecordSummary");
+static const QString multiBlock("canBlockAndMultiRecord");
+static const QString sampleRates("sampleRates");
+static const QString srText("text");
+static const QString srValue("val");
 }
 
 class FtmwScope : public HardwareObject

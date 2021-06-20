@@ -1,8 +1,10 @@
 #include <src/gui/widget/digitizerconfigwidget.h>
 #include "ui_digitizerconfigwidget.h"
 
-#include <QSettings>
 #include <QApplication>
+#include <QDoubleValidator>
+
+#include <src/hardware/core/ftmwdigitizer/ftmwscope.h>
 
 DigitizerConfigWidget::DigitizerConfigWidget(QWidget *parent) :
     QWidget(parent),
@@ -11,34 +13,28 @@ DigitizerConfigWidget::DigitizerConfigWidget(QWidget *parent) :
     ui->setupUi(this);
 
     ///TODO: Customize more UI settings according to Hardware limits for ftmwscope implementation
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
-    s.beginGroup(QString("ftmwscope"));
-    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-    int size = s.beginReadArray(QString("sampleRates"));
-    if(size > 0)
+    SettingsStorage s(BC::Key::ftmwScope,SettingsStorage::Hardware);
+    auto sr = s.getArray(BC::Key::sampleRates);
+    if(sr.size() > 0)
     {
-        for(int i=0; i<size; i++)
+        for(auto m : sr)
         {
-            s.setArrayIndex(i);
-            QString str = s.value(QString("text"),QString("")).toString();
-            double val = s.value(QString("val"),0.0).toDouble();
-            ui->sampleRateComboBox->addItem(str,val);
+            auto txt = m.find(BC::Key::srText);
+            auto val = m.find(BC::Key::srValue);
+            if(txt != m.end() && val != m.end())
+                ui->sampleRateComboBox->addItem(txt->second.toString(),val->second);
         }
     }
     else
     {
-        ui->sampleRateComboBox->addItem(QString("2 GS/s"),2e9);
-        ui->sampleRateComboBox->addItem(QString("5 GS/s"),5e9);
-        ui->sampleRateComboBox->addItem(QString("10 GS/s"),10e9);
-        ui->sampleRateComboBox->addItem(QString("20 GS/s"),20e9);
-        ui->sampleRateComboBox->addItem(QString("50 GS/s"),50e9);
-        ui->sampleRateComboBox->addItem(QString("100 GS/s"),100e9);
+        //this code is not tested!
+        ui->sampleRateComboBox->setEditable(true);
+        auto v = new QDoubleValidator(this);
+        v->setRange(0,1e11,0);
+        v->setNotation(QDoubleValidator::ScientificNotation);
+        ui->sampleRateComboBox->setValidator(v);
     }
-    s.endArray();
-
-    s.endGroup();
-    s.endGroup();
 
     ui->triggerSlopeComboBox->addItem(QString("Rising Edge"),QVariant::fromValue(BlackChirp::RisingEdge));
     ui->triggerSlopeComboBox->addItem(QString("Falling Edge"),QVariant::fromValue(BlackChirp::FallingEdge));
@@ -73,20 +69,29 @@ void DigitizerConfigWidget::setFromConfig(const FtmwConfig config)
     ui->triggerChannelSpinBox->blockSignals(false);
     ui->triggerDelayDoubleSpinBox->setValue(sc.trigDelay*1e6);
     ui->triggerLevelDoubleSpinBox->setValue(sc.trigLevel);
-    setComboBoxIndex(ui->triggerSlopeComboBox,qVariantFromValue(sc.slope));
-    setComboBoxIndex(ui->sampleRateComboBox,sc.sampleRate);
+    ui->triggerSlopeComboBox->setCurrentIndex(ui->triggerSlopeComboBox->findData(qVariantFromValue(sc.slope)));
+    int index = ui->sampleRateComboBox->findData(sc.sampleRate);
+    if(index < 0)
+    {
+        if(!ui->sampleRateComboBox->isEditable())
+        {
+            ui->sampleRateComboBox->setEditable(true);
+            auto v = new QDoubleValidator(this);
+            v->setRange(0,1e11,0);
+            v->setNotation(QDoubleValidator::ScientificNotation);
+            ui->sampleRateComboBox->setValidator(v);
+        }
+    }
+    ui->sampleRateComboBox->setCurrentIndex(index);
     ui->recordLengthSpinBox->setValue(sc.recordLength);
     ui->bytesPointSpinBox->setValue(sc.bytesPerPoint);
     ///TODO: Use information from ChirpConfig here
 
     auto cc = config.chirpConfig();
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
-    s.beginGroup(QString("ftmwscope"));
-    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-    bool ba = s.value(QString("canBlockAverage"),false).toBool();
-    s.endGroup();
-    s.endGroup();
+    SettingsStorage s(BC::Key::ftmwScope,SettingsStorage::Hardware);
+    bool ba = s.get<bool>(BC::Key::blockAverage,false);
+
     ui->fastFrameEnabledCheckBox->blockSignals(true);
     if(cc.numChirps() > 1)
     {
@@ -130,13 +135,8 @@ void DigitizerConfigWidget::setFromConfig(const FtmwConfig config)
 FtmwConfig DigitizerConfigWidget::getConfig()
 {
     ///TODO: this should be enforced elsewhere
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-
-    s.beginGroup(QString("ftmwscope"));
-    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-    bool canSf = s.value(QString("canSummaryFrame"),false).toBool();
-    s.endGroup();
-    s.endGroup();
+    SettingsStorage s(BC::Key::ftmwScope,SettingsStorage::Hardware);
+    bool canSf = s.get(BC::Key::summaryRecord,false);
 
     BlackChirp::FtmwScopeConfig sc;
     sc.fidChannel = ui->fIDChannelSpinBox->value();
@@ -170,16 +170,11 @@ FtmwConfig DigitizerConfigWidget::getConfig()
 void DigitizerConfigWidget::configureUI()
 {
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-
-    s.beginGroup(QString("ftmwscope"));
-    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-    bool ba = s.value(QString("canBlockAverage"),false).toBool();
-    bool ffba = s.value(QString("canBlockAndFastFrame"),false).toBool();
-    bool canSf = s.value(QString("canSummaryFrame"),false).toBool();
+    SettingsStorage s(BC::Key::ftmwScope,SettingsStorage::Hardware);
+    bool canSf = s.get(BC::Key::summaryRecord,false);
+    bool ba = s.get<bool>(BC::Key::blockAverage,false);
+    bool ffba = s.get<bool>(BC::Key::multiBlock);
     bool ff = ui->fastFrameEnabledCheckBox->isChecked();
-    s.endGroup();
-    s.endGroup();
 
     if(!ba || (!ffba && ff))
     {
@@ -239,24 +234,4 @@ void DigitizerConfigWidget::validateSpinboxes()
     blockSignals(false);
 
 
-}
-
-void DigitizerConfigWidget::setComboBoxIndex(QComboBox *box, QVariant value)
-{
-    for(int i=0; i<box->count(); i++)
-    {
-        if(box == ui->sampleRateComboBox)
-        {
-            if(qAbs(box->itemData(i).toDouble() - value.toDouble()) < 1.0)
-            {
-                box->setCurrentIndex(i);
-                return;
-            }
-        }
-        if(box->itemData(i) == value)
-        {
-            box->setCurrentIndex(i);
-            return;
-        }
-    }
 }

@@ -65,7 +65,6 @@ public slots:
     void updateLiveFidList(const FtmwConfig c, int segment);
     void updateFtmw(const FtmwConfig f);
     void updateProcessingSettings(FtWorker::FidProcessingSettings s);
-    void storeProcessingSettings();
     void changeFrame(int id, int frameNum);
     void changeSegment(int id, int segmentNum);
 
@@ -73,7 +72,6 @@ public slots:
     void ftDone(const Ft ft, int workerId);
     void ftDiffDone(const Ft ft);
     void updateMainPlot();
-    void reprocessAll();
     void reprocess(const QList<int> ignore = QList<int>());
     void process(int id, const Fid f);
     void processDiff(const Fid f1, const Fid f2);

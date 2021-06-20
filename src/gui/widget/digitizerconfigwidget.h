@@ -26,7 +26,6 @@ public:
 public slots:
     void configureUI();
     void validateSpinboxes();
-    void setComboBoxIndex(QComboBox *box, QVariant value);
 
 private:
     Ui::DigitizerConfigWidget *ui;
