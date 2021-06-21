@@ -20,7 +20,7 @@ bool VirtualPulseGenerator::testConnection()
     return true;
 }
 
-QVariant VirtualPulseGenerator::read(const int index, const BlackChirp::PulseSetting s)
+QVariant VirtualPulseGenerator::read(const int index, const PulseGenConfig::Setting s)
 {
     emit settingUpdate(index,s,d_config.setting(index,s));
     return d_config.setting(index,s);
@@ -32,15 +32,16 @@ double VirtualPulseGenerator::readRepRate()
     return d_config.repRate();
 }
 
-bool VirtualPulseGenerator::set(const int index, const BlackChirp::PulseSetting s, const QVariant val)
+bool VirtualPulseGenerator::set(const int index, const PulseGenConfig::Setting s, const QVariant val)
 {
     d_config.set(index,s,val);
-    if(s == BlackChirp::PulseRoleSetting)
+    if(s == PulseGenConfig::RoleSetting)
     {
-        if(static_cast<BlackChirp::PulseRole>(val.toInt()) != BlackChirp::NoPulseRole)
+        auto r = val.value<PulseGenConfig::Role>();
+        if(r != PulseGenConfig::NoRole)
         {
-            d_config.set(index,BlackChirp::PulseNameSetting,BlackChirp::getPulseName(static_cast<BlackChirp::PulseRole>(val.toInt())));
-            read(index,BlackChirp::PulseNameSetting);
+            d_config.set(index,PulseGenConfig::NameSetting,PulseGenConfig::roles.value(r));
+            read(index,PulseGenConfig::NameSetting);
         }
     }
     read(index,s);

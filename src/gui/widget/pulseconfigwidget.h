@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QList>
 
+#include <src/data/storage/settingsstorage.h>
 #include <src/data/experiment/pulsegenconfig.h>
 #include <src/modules/lif/data/lifconfig.h>
 #include <src/data/experiment/ftmwconfig.h>
@@ -19,7 +20,16 @@ namespace Ui {
 class PulseConfigWidget;
 }
 
-class PulseConfigWidget : public QWidget
+namespace BC::Key::PulseWidget {
+static const QString key{"PulseWidget"};
+static const QString name{"name"};
+static const QString channels("channels");
+static const QString delayStep{"delayStepUs"};
+static const QString widthStep("widthStepUs");
+static const QString role("role");
+}
+
+class PulseConfigWidget : public QWidget, public SettingsStorage
 {
     Q_OBJECT
 
@@ -50,15 +60,15 @@ public:
 #endif
 
 signals:
-    void changeSetting(int,BlackChirp::PulseSetting,QVariant);
+    void changeSetting(int,PulseGenConfig::Setting,QVariant);
     void changeRepRate(double);
 
 public slots:
     void launchChannelConfig(int ch);
-    void newSetting(int index,BlackChirp::PulseSetting s,QVariant val);
+    void newSetting(int index,PulseGenConfig::Setting s,QVariant val);
     void setFromConfig(const PulseGenConfig c);
     void newRepRate(double r);
-    void updateHardwareLimits();
+    void updateFromSettings();
     void setRepRate(const double r);
 
 private:

@@ -7,35 +7,83 @@
 #include <QVariant>
 #include <QMap>
 
-#include <src/data/datastructs.h>
-
 
 class PulseGenConfigData;
 
 class PulseGenConfig
 {
+    Q_GADGET
 public:
+    enum ActiveLevel { ActiveLow, ActiveHigh };
+    enum Setting { DelaySetting, WidthSetting, EnabledSetting, LevelSetting, NameSetting, RoleSetting };
+    enum Role {
+        NoRole,
+        GasRole,
+        DcRole,
+        AwgRole,
+        ProtRole,
+        AmpRole,
+        LaserRole,
+        ExcimerRole
+#ifdef BC_LIF
+        ,LifRole
+#endif
+#ifdef BC_MOTOR
+        ,MotorRole
+#endif
+    };
+    Q_ENUM(ActiveLevel)
+    Q_ENUM(Setting)
+    Q_ENUM(Role)
+
+    struct ChannelConfig {
+        QString channelName{""};
+        bool enabled{false};
+        double delay{0.0};
+        double width{1.0};
+        ActiveLevel level{ActiveHigh};
+        Role role{NoRole};
+    };
+
+    static const inline QMap<Role,QString> roles {
+        {NoRole,"None"},
+        {GasRole,"Gas"},
+        {DcRole,"DC"},
+        {AwgRole,"Awg"},
+        {ProtRole,"Prot"},
+        {AmpRole,"Amp"},
+        {LaserRole,"Laser"},
+        {ExcimerRole,"XMer"}
+#ifdef BC_LIF
+        ,{LifRole,"LIF"}
+#endif
+#ifdef BC_MOTOR
+        ,{MotorRole,"Motor"}
+#endif
+    };
+    static const inline std::map<Role,QString> stdRoles = roles.toStdMap();
+
     PulseGenConfig();
     PulseGenConfig(const PulseGenConfig &);
     PulseGenConfig &operator=(const PulseGenConfig &);
     ~PulseGenConfig();
 
-    BlackChirp::PulseChannelConfig at(const int i) const;
+    ChannelConfig at(const int i) const;
     int size() const;
     bool isEmpty() const;
-    QVariant setting(const int index, const BlackChirp::PulseSetting s) const;
-    QList<QVariant> setting(BlackChirp::PulseRole role, const BlackChirp::PulseSetting s) const;
-    BlackChirp::PulseChannelConfig settings(const int index) const;
-    QList<int> channelsForRole(BlackChirp::PulseRole role) const;
+    QVariant setting(const int index, const Setting s) const;
+    QList<QVariant> setting(Role role, const Setting s) const;
+    ChannelConfig settings(const int index) const;
+    QList<int> channelsForRole(Role role) const;
     double repRate() const;
     QMap<QString,QPair<QVariant,QString>> headerMap() const;
     void parseLine(QString key, QVariant val);
 
-    void set(const int index, const BlackChirp::PulseSetting s, const QVariant val);
-    void set(const int index, const BlackChirp::PulseChannelConfig cc);
-    void set(BlackChirp::PulseRole role, const BlackChirp::PulseSetting s, const QVariant val);
-    void set(BlackChirp::PulseRole role, const BlackChirp::PulseChannelConfig cc);
-    void add(const QString name, const bool enabled, const double delay, const double width, const BlackChirp::PulseActiveLevel level, const BlackChirp::PulseRole role = BlackChirp::NoPulseRole);
+    void set(const int index, const Setting s, const QVariant val);
+    void set(const int index, const ChannelConfig cc);
+    void set(Role role, const Setting s, const QVariant val);
+    void set(Role role, const ChannelConfig cc);
+    void addChannel();
     void setRepRate(const double r);
 
 private:
@@ -45,8 +93,10 @@ private:
 class PulseGenConfigData : public QSharedData
 {
 public:
-    QList<BlackChirp::PulseChannelConfig> config;
+    QList<PulseGenConfig::ChannelConfig> config;
     double repRate;
 };
+
+Q_DECLARE_TYPEINFO(PulseGenConfig::ChannelConfig,Q_MOVABLE_TYPE);
 
 #endif // PULSEGENCONFIG_H

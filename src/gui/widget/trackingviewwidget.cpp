@@ -1,13 +1,11 @@
 #include "trackingviewwidget.h"
 
-#include <QSettings>
 #include <QInputDialog>
 #include <QColorDialog>
 #include <QMenu>
 #include <QActionGroup>
 #include <QMouseEvent>
 #include <QGridLayout>
-#include <QApplication>
 
 #include <qwt6/qwt_date.h>
 #include <qwt6/qwt_plot_curve.h>
@@ -143,11 +141,7 @@ void TrackingViewWidget::changeNumPlots()
         return;
 
     if(!d_viewMode)
-    {
-        QSettings s;
-        s.setValue(QString("trackingWidget/numPlots"),newNum);
-        s.sync();
-    }
+        set(BC::Key::numPlots,newNum);
 
     if(newNum > d_allPlots.size())
     {

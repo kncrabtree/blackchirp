@@ -15,10 +15,10 @@ public:
     ~VirtualPulseGenerator();
 
     // PulseGenerator interface
-    QVariant read(const int index, const BlackChirp::PulseSetting s) override;
+    QVariant read(const int index, const PulseGenConfig::Setting s) override;
     double readRepRate() override;
 
-    bool set(const int index, const BlackChirp::PulseSetting s, const QVariant val) override;
+    bool set(const int index, const PulseGenConfig::Setting s, const QVariant val) override;
     bool setRepRate(double d) override;
 
 protected:

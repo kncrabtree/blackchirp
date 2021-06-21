@@ -1,7 +1,6 @@
 #include "pulseconfigwidget.h"
 #include "ui_pulseconfigwidget.h"
 
-#include <QSettings>
 #include <QPushButton>
 #include <QToolButton>
 #include <QComboBox>
@@ -11,63 +10,63 @@
 #include <QDialogButtonBox>
 #include <QMessageBox>
 
+#include <src/hardware/core/pulsegenerator/pulsegenerator.h>
+#include <src/hardware/core/chirpsource/awg.h>
+
 PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
-    QWidget(parent),
+    QWidget(parent), SettingsStorage(BC::Key::PulseWidget::key),
     ui(new Ui::PulseConfigWidget)
 {
     ui->setupUi(this);    
 
     auto vc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
-    QSettings s(QSettings::SystemScope, QApplication::organizationName(), QApplication::applicationName());
-    QString subKey = s.value(QString("pGen/subKey"),QString("virtual")).toString();
-    int numChannels = s.value(QString("hwUI/pGenChannels"),8).toInt();
-    s.beginGroup(QString("pGen"));
-    s.beginGroup(subKey);
-    s.beginReadArray(QString("channels"));
+    SettingsStorage s(BC::Key::PGen::key,Hardware);
+    int numChannels = s.get<int>(BC::Key::PGen::numChannels);
+    if(!containsArray(BC::Key::PulseWidget::channels))
+        setArray(BC::Key::PulseWidget::channels,{});
+
     QWidget *lastFocusWidget = nullptr;
-    auto roles = BlackChirp::allPulseRoles();
     for(int i=0; i<numChannels; i++)
     {
-        s.setArrayIndex(i);
+        d_config.addChannel();
+
+        while(static_cast<std::size_t>(i) >= getArraySize(BC::Key::PulseWidget::channels))
+            appendArrayMap(BC::Key::PulseWidget::channels,{});
+
+        //values will be set later
         ChWidgets ch;
         int col = 0;
 
-        ch.label = new QLabel(s.value(QString("name"),QString("Ch%1").arg(i)).toString(),this);
+        ch.label = new QLabel(this);
         ch.label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         ui->pulseConfigBoxLayout->addWidget(ch.label,i+1,col,1,1);
         col++;
 
         ch.delayBox = new QDoubleSpinBox(this);
         ch.delayBox->setKeyboardTracking(false);
-        ch.delayBox->setRange(0.0,100000.0);
         ch.delayBox->setDecimals(3);
         ch.delayBox->setSuffix(QString::fromUtf16(u" µs"));
-        ch.delayBox->setValue(s.value(QString("defaultDelay"),0.0).toDouble());
-        ch.delayBox->setSingleStep(s.value(QString("delayStep"),1.0).toDouble());
+        ch.delayBox->setSingleStep(s.getArrayValue<double>(BC::Key::PulseWidget::channels,i,
+                                                           BC::Key::PulseWidget::delayStep,1.0));
         ui->pulseConfigBoxLayout->addWidget(ch.delayBox,i+1,col,1,1);
-        connect(ch.delayBox,vc,this,[=](double val){ emit changeSetting(i,BlackChirp::PulseDelaySetting,val); } );
+        connect(ch.delayBox,vc,this,[=](double val){ emit changeSetting(i,PulseGenConfig::DelaySetting,val); } );
         col++;
 
         ch.widthBox = new QDoubleSpinBox(this);
         ch.widthBox->setKeyboardTracking(false);
-        ch.widthBox->setRange(0.010,100000.0);
         ch.widthBox->setDecimals(3);
         ch.widthBox->setSuffix(QString::fromUtf16(u" µs"));
-        ch.widthBox->setValue(s.value(QString("defaultWidth"),0.050).toDouble());
-        ch.widthBox->setSingleStep(s.value(QString("widthStep"),1.0).toDouble());
+        ch.widthBox->setSingleStep(get<double>(BC::Key::PulseWidget::widthStep,1.0));
         ui->pulseConfigBoxLayout->addWidget(ch.widthBox,i+1,col,1,1);
-        connect(ch.widthBox,vc,this,[=](double val){ emit changeSetting(i,BlackChirp::PulseWidthSetting,val); } );
+        connect(ch.widthBox,vc,this,[=](double val){ emit changeSetting(i,PulseGenConfig::WidthSetting,val); } );
         col++;
 
         ch.onButton = new QPushButton(this);
         ch.onButton->setCheckable(true);
-        ch.onButton->setChecked(s.value(QString("defaultEnabled"),false).toBool());
-        if(ch.onButton->isChecked())
-            ch.onButton->setText(QString("On"));
-        else
-            ch.onButton->setText(QString("Off"));
+        ch.onButton->setChecked(false);
+        ch.onButton->setText(QString("Off"));
         ui->pulseConfigBoxLayout->addWidget(ch.onButton,i+1,col,1,1);
-        connect(ch.onButton,&QPushButton::toggled,this,[=](bool en){ emit changeSetting(i,BlackChirp::PulseEnabledSetting,en); } );
+        connect(ch.onButton,&QPushButton::toggled,this,[=](bool en){ emit changeSetting(i,PulseGenConfig::EnabledSetting,en); } );
         connect(ch.onButton,&QPushButton::toggled,this,[=](bool en){
             if(en)
                 ch.onButton->setText(QString("On"));
@@ -89,16 +88,9 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
 
         ch.levelButton = new QPushButton(this);
         ch.levelButton->setCheckable(true);
-        if(static_cast<BlackChirp::PulseActiveLevel>(s.value(QString("level"),BlackChirp::PulseLevelActiveHigh).toInt()) == BlackChirp::PulseLevelActiveHigh)
-        {
-            ch.levelButton->setChecked(true);
-            ch.levelButton->setText(QString("Active High"));
-        }
-        else
-        {
-            ch.levelButton->setChecked(false);
-            ch.levelButton->setText(QString("Active Low"));
-        }
+        ch.levelButton->setChecked(true);
+        ch.levelButton->setText(QString("Active High"));
+
         connect(ch.levelButton,&QPushButton::toggled,[=](bool en){
             if(en)
                 ch.levelButton->setText(QString("Active High"));
@@ -111,31 +103,28 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
         ch.delayStepBox->setDecimals(3);
         ch.delayStepBox->setRange(0.001,1000.0);
         ch.delayStepBox->setSuffix(QString::fromUtf16(u" µs"));
-        ch.delayStepBox->setValue(s.value(QString("delayStep"),1.0).toDouble());
         ch.delayStepBox->hide();
 
         ch.widthStepBox = new QDoubleSpinBox(this);
         ch.widthStepBox->setDecimals(3);
         ch.widthStepBox->setRange(0.001,1000.0);
         ch.widthStepBox->setSuffix(QString::fromUtf16(u" µs"));
-        ch.widthStepBox->setValue(s.value(QString("widthStep"),1.0).toDouble());
         ch.widthStepBox->hide();
 
         ch.roleBox = new QComboBox(this);
-        for(int i=0; i<roles.size(); i++)
-            ch.roleBox->addItem(BlackChirp::getPulseName(roles.at(i)),roles.at(i));
-        auto role = static_cast<BlackChirp::PulseRole>(s.value(QString("role"),BlackChirp::NoPulseRole).toInt());
-        ch.roleBox->setCurrentIndex(roles.indexOf(role));
+        for(auto it : PulseGenConfig::stdRoles)
+            ch.roleBox->addItem(it.second,it.first);
         ch.roleBox->hide();
-        connect(ch.roleBox,&QComboBox::currentTextChanged,this,[=](QString t) {
-            if(t.contains("None"))
+        connect(ch.roleBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[ch,i](int index) {
+            auto r = ch.roleBox->itemData(index).value<PulseGenConfig::Role>();
+            if(r == PulseGenConfig::NoRole)
             {
                 ch.nameEdit->setText(QString("Ch%1").arg(i));
                 ch.nameEdit->setEnabled(true);
             }
             else
             {
-                ch.nameEdit->setText(t);
+                ch.nameEdit->setText(PulseGenConfig::roles.value(r));
                 ch.nameEdit->setEnabled(false);
             }
         });
@@ -154,11 +143,7 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
 
     connect(ui->repRateBox,vc,this,&PulseConfigWidget::setRepRate);
 
-    updateHardwareLimits();
-
-    s.endArray();
-    s.endGroup();
-    s.endGroup();
+    updateFromSettings();
 
     setFocusPolicy(Qt::TabFocus);
 }
@@ -184,7 +169,7 @@ void PulseConfigWidget::configureLif(const LifConfig c)
     if(d_widgetList.isEmpty() || !c.isEnabled())
         return;
 
-    auto channels = d_config.channelsForRole(BlackChirp::LifPulseRole);
+    auto channels = d_config.channelsForRole(PulseGenConfig::LifRole);
     if(channels.isEmpty())
     {
         QMessageBox::warning(this,QString("Cannot configure LIF pulse"),QString("No channel has been configured for the \"LIF\" role.\n\nPlease select a channel for the LIF role, then refresh this page (go back one page and then come back to this one) in order to proceed."),QMessageBox::Ok,QMessageBox::Ok);
@@ -193,8 +178,8 @@ void PulseConfigWidget::configureLif(const LifConfig c)
 
     auto delay = c.delayRange().first;
 
-    d_config.set(BlackChirp::LifPulseRole,BlackChirp::PulseDelaySetting,delay);
-    d_config.set(BlackChirp::LifPulseRole,BlackChirp::PulseEnabledSetting,true);
+    d_config.set(PulseGenConfig::LifRole,PulseGenConfig::DelaySetting,delay);
+    d_config.set(PulseGenConfig::LifRole,PulseGenConfig::EnabledSetting,true);
     setFromConfig(d_config);
 
     for(int i=0; i<channels.size(); i++)
@@ -212,17 +197,13 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig c)
     if(!c.isEnabled())
         return;
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("awg"));
-    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-    bool awgHasProt = s.value(QString("hasProtectionPulse"),false).toBool();
-    bool awgHasAmpEnable = s.value(QString("hasAmpEnablePulse"),false).toBool();
-    s.endGroup();
-    s.endGroup();
+    SettingsStorage s(BC::Key::AWG::key,Hardware);
+    bool awgHasProt = s.get<bool>(BC::Key::AWG::prot,false);
+    bool awgHasAmpEnable = s.get<bool>(BC::Key::AWG::amp,false);
 
-    auto protChannels = d_config.channelsForRole(BlackChirp::ProtPulseRole);
-    auto awgChannels = d_config.channelsForRole(BlackChirp::AwgPulseRole);
-    auto ampChannels = d_config.channelsForRole(BlackChirp::AmpPulseRole);
+    auto protChannels = d_config.channelsForRole(PulseGenConfig::ProtRole);
+    auto awgChannels = d_config.channelsForRole(PulseGenConfig::AwgRole);
+    auto ampChannels = d_config.channelsForRole(PulseGenConfig::AmpRole);
 
     if(!awgHasProt && protChannels.isEmpty())
         QMessageBox::warning(this,QString("Cannot configure protection pulse"),QString("No channel has been configured for the \"Prot\" role, and your AWG does not produce its own protection signal.\n\nBlackchirp cannot guarantee that your receiver amp will be protected!\n\nIf you wish for Blackchirp to generate a protection pulse, select a channel for the Prot role and refresh this page (go back one page and then come back to this one)."),QMessageBox::Ok,QMessageBox::Ok);
@@ -237,13 +218,13 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig c)
         return;
 
     auto cc = c.chirpConfig();
-    d_config.set(BlackChirp::AwgPulseRole,BlackChirp::PulseEnabledSetting,true);
-    auto l = d_config.setting(BlackChirp::AwgPulseRole,BlackChirp::PulseDelaySetting);
+    d_config.set(PulseGenConfig::AwgRole,PulseGenConfig::EnabledSetting,true);
+    auto l = d_config.setting(PulseGenConfig::AwgRole,PulseGenConfig::DelaySetting);
 
     if(l.size() > 1)
     {
-        d_config.set(BlackChirp::AwgPulseRole,BlackChirp::PulseDelaySetting,l.constFirst());
-        d_config.set(BlackChirp::AwgPulseRole,BlackChirp::PulseWidthSetting,d_config.setting(BlackChirp::AmpPulseRole,BlackChirp::PulseWidthSetting).constFirst().toDouble());
+        d_config.set(PulseGenConfig::AwgRole,PulseGenConfig::DelaySetting,l.constFirst());
+        d_config.set(PulseGenConfig::AwgRole,PulseGenConfig::WidthSetting,d_config.setting(PulseGenConfig::AmpRole,PulseGenConfig::WidthSetting).constFirst().toDouble());
     }
 
     if(!l.isEmpty())
@@ -255,15 +236,15 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig c)
             if(protStart < 0.0)
             {
                 awgStart -= protStart;
-                d_config.set(BlackChirp::AwgPulseRole,BlackChirp::PulseDelaySetting,awgStart);
+                d_config.set(PulseGenConfig::AwgRole,PulseGenConfig::DelaySetting,awgStart);
                 protStart = 0.0;
             }
 
             double protWidth = cc.totalProtectionWidth();
 
-            d_config.set(BlackChirp::ProtPulseRole,BlackChirp::PulseDelaySetting,protStart);
-            d_config.set(BlackChirp::ProtPulseRole,BlackChirp::PulseWidthSetting,protWidth);
-            d_config.set(BlackChirp::ProtPulseRole,BlackChirp::PulseEnabledSetting,true);
+            d_config.set(PulseGenConfig::ProtRole,PulseGenConfig::DelaySetting,protStart);
+            d_config.set(PulseGenConfig::ProtRole,PulseGenConfig::WidthSetting,protWidth);
+            d_config.set(PulseGenConfig::ProtRole,PulseGenConfig::EnabledSetting,true);
         }
 
         bool checkProt = false;
@@ -273,16 +254,16 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig c)
             if(gateStart < 0.0)
             {
                 awgStart -= gateStart;
-                d_config.set(BlackChirp::AwgPulseRole,BlackChirp::PulseDelaySetting,awgStart);
+                d_config.set(PulseGenConfig::AwgRole,PulseGenConfig::DelaySetting,awgStart);
                 gateStart = 0.0;
                 checkProt = true;
             }
 
             double gateWidth = cc.totalGateWidth();
 
-            d_config.set(BlackChirp::AmpPulseRole,BlackChirp::PulseDelaySetting,gateStart);
-            d_config.set(BlackChirp::AmpPulseRole,BlackChirp::PulseWidthSetting,gateWidth);
-            d_config.set(BlackChirp::AmpPulseRole,BlackChirp::PulseEnabledSetting,true);
+            d_config.set(PulseGenConfig::AmpRole,PulseGenConfig::DelaySetting,gateStart);
+            d_config.set(PulseGenConfig::AmpRole,PulseGenConfig::WidthSetting,gateWidth);
+            d_config.set(PulseGenConfig::AmpRole,PulseGenConfig::EnabledSetting,true);
         }
 
         if(!awgHasProt && checkProt)
@@ -290,8 +271,8 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig c)
             double protStart = awgStart - cc.preChirpProtectionDelay() - cc.preChirpGateDelay();
             double protWidth = cc.totalProtectionWidth();
 
-            d_config.set(BlackChirp::ProtPulseRole,BlackChirp::PulseDelaySetting,protStart);
-            d_config.set(BlackChirp::ProtPulseRole,BlackChirp::PulseWidthSetting,protWidth);
+            d_config.set(PulseGenConfig::ProtRole,PulseGenConfig::DelaySetting,protStart);
+            d_config.set(PulseGenConfig::ProtRole,PulseGenConfig::WidthSetting,protWidth);
         }
     }
 
@@ -381,46 +362,38 @@ void PulseConfigWidget::launchChannelConfig(int ch)
     d.setLayout(vbl);
     if(d.exec() == QDialog::Accepted)
     {
-        QSettings s(QSettings::SystemScope, QApplication::organizationName(), QApplication::applicationName());
-        QString subKey = s.value(QString("pGen/subKey"),QString("virtual")).toString();
-        s.beginGroup(QString("pGen"));;
-        s.beginGroup(subKey);
-        s.beginWriteArray(QString("channels"));
-        s.setArrayIndex(ch);
 
         chw.delayBox->setSingleStep(chw.delayStepBox->value());
-        s.setValue(QString("delayStep"),chw.delayStepBox->value());
+        setArrayValue(BC::Key::PulseWidget::channels,ch,BC::Key::PulseWidget::delayStep,
+                      chw.delayStepBox->value(),false);
 
         chw.widthBox->setSingleStep(chw.widthStepBox->value());
-        s.setValue(QString("widthStep"),chw.widthStepBox->value());
+        setArrayValue(BC::Key::PulseWidget::channels,ch,BC::Key::PulseWidget::widthStep,
+                      chw.widthStepBox->value(),false);
 
         if(chw.levelButton->isChecked())
         {
-            s.setValue(QString("level"),BlackChirp::PulseLevelActiveHigh);
-            d_config.set(ch,BlackChirp::PulseLevelSetting,QVariant::fromValue(BlackChirp::PulseLevelActiveHigh));
-            emit changeSetting(ch,BlackChirp::PulseLevelSetting,QVariant::fromValue(BlackChirp::PulseLevelActiveHigh));
+            d_config.set(ch,PulseGenConfig::LevelSetting,QVariant::fromValue(PulseGenConfig::ActiveHigh));
+            emit changeSetting(ch,PulseGenConfig::LevelSetting,QVariant::fromValue(PulseGenConfig::ActiveHigh));
         }
         else
         {
-            s.setValue(QString("level"),BlackChirp::PulseLevelActiveLow);
-            d_config.set(ch,BlackChirp::PulseLevelSetting,QVariant::fromValue(BlackChirp::PulseLevelActiveLow));
-            emit changeSetting(ch,BlackChirp::PulseLevelSetting,QVariant::fromValue(BlackChirp::PulseLevelActiveLow));
+            d_config.set(ch,PulseGenConfig::LevelSetting,QVariant::fromValue(PulseGenConfig::ActiveLow));
+            emit changeSetting(ch,PulseGenConfig::LevelSetting,QVariant::fromValue(PulseGenConfig::ActiveLow));
         }
 
-        s.setValue(QString("role"),chw.roleBox->currentData());
-        d_config.set(ch,BlackChirp::PulseRoleSetting,static_cast<BlackChirp::PulseRole>(chw.roleBox->currentData().toInt()));
-        emit changeSetting(ch,BlackChirp::PulseRoleSetting,d_config.at(ch).role);
+        setArrayValue(BC::Key::PulseWidget::channels,ch,
+                      BC::Key::PulseWidget::role,chw.roleBox->currentData(),false);
+        d_config.set(ch,PulseGenConfig::RoleSetting,chw.roleBox->currentData());
+        emit changeSetting(ch,PulseGenConfig::RoleSetting,d_config.at(ch).role);
 
         chw.label->setText(chw.nameEdit->text());
-        s.setValue(QString("name"),chw.nameEdit->text());
-        d_config.set(ch,BlackChirp::PulseNameSetting,chw.nameEdit->text());
-        emit changeSetting(ch,BlackChirp::PulseNameSetting,chw.nameEdit->text());
+        //this is the last setting to save; write the array
+        setArrayValue(BC::Key::PulseWidget::channels,ch,
+                      BC::Key::PulseWidget::name,chw.nameEdit->text(),true);
+        d_config.set(ch,PulseGenConfig::NameSetting,chw.nameEdit->text());
+        emit changeSetting(ch,PulseGenConfig::NameSetting,chw.nameEdit->text());
 
-
-        s.endArray();
-        s.endGroup();
-        s.endGroup();
-        s.sync();
 
         ui->pulsePlot->newConfig(d_config);
     }
@@ -438,7 +411,7 @@ void PulseConfigWidget::launchChannelConfig(int ch)
 
 }
 
-void PulseConfigWidget::newSetting(int index, BlackChirp::PulseSetting s, QVariant val)
+void PulseConfigWidget::newSetting(int index, PulseGenConfig::Setting s, QVariant val)
 {
     if(index < 0 || index > d_widgetList.size())
         return;
@@ -446,24 +419,21 @@ void PulseConfigWidget::newSetting(int index, BlackChirp::PulseSetting s, QVaria
     blockSignals(true);
 
     switch(s) {
-    case BlackChirp::PulseNameSetting:
-        d_widgetList.at(index).label->setText(val.toString());
-        d_widgetList.at(index).nameEdit->setText(val.toString());
-        break;
-    case BlackChirp::PulseDelaySetting:
+    case PulseGenConfig::DelaySetting:
         d_widgetList.at(index).delayBox->setValue(val.toDouble());
         break;
-    case BlackChirp::PulseWidthSetting:
+    case PulseGenConfig::WidthSetting:
         d_widgetList.at(index).widthBox->setValue(val.toDouble());
         break;
-    case BlackChirp::PulseLevelSetting:
-        d_widgetList.at(index).levelButton->setChecked(val == QVariant(BlackChirp::PulseLevelActiveHigh));
+    case PulseGenConfig::LevelSetting:
+        d_widgetList.at(index).levelButton->setChecked(val == QVariant(PulseGenConfig::ActiveHigh));
         break;
-    case BlackChirp::PulseEnabledSetting:
+    case PulseGenConfig::EnabledSetting:
         d_widgetList.at(index).onButton->setChecked(val.toBool());
         break;
-    case BlackChirp::PulseRoleSetting:
-        d_widgetList.at(index).roleBox->setCurrentIndex(d_widgetList.at(index).roleBox->findData(val));
+    case PulseGenConfig::NameSetting:
+    case PulseGenConfig::RoleSetting:
+    default:
         break;
     }
 
@@ -475,18 +445,21 @@ void PulseConfigWidget::newSetting(int index, BlackChirp::PulseSetting s, QVaria
 
 void PulseConfigWidget::setFromConfig(const PulseGenConfig c)
 {
-    d_config = c;
     blockSignals(true);
     for(int i=0; i<c.size(); i++)
     {
-        d_widgetList.at(i).label->setText(c.at(i).channelName);
-        d_widgetList.at(i).nameEdit->setText(c.at(i).channelName);
+        d_config.set(i,PulseGenConfig::DelaySetting,c.at(i).delay);
+        d_config.set(i,PulseGenConfig::WidthSetting,c.at(i).width);
+        d_config.set(i,PulseGenConfig::LevelSetting,c.at(i).level);
+        d_config.set(i,PulseGenConfig::EnabledSetting,c.at(i).enabled);
+
+
         d_widgetList.at(i).delayBox->setValue(c.at(i).delay);
         d_widgetList.at(i).widthBox->setValue(c.at(i).width);
-        d_widgetList.at(i).levelButton->setChecked(c.at(i).level == BlackChirp::PulseLevelActiveHigh);
+        d_widgetList.at(i).levelButton->setChecked(c.at(i).level == PulseGenConfig::ActiveHigh);
         d_widgetList.at(i).onButton->setChecked(c.at(i).enabled);
-        d_widgetList.at(i).roleBox->setCurrentIndex(d_widgetList.at(i).roleBox->findData(c.at(i).role));
     }
+    d_config.setRepRate(c.repRate());
     ui->repRateBox->setValue(c.repRate());
     blockSignals(false);
 
@@ -502,36 +475,56 @@ void PulseConfigWidget::newRepRate(double r)
     d_config.setRepRate(r);
 }
 
-void PulseConfigWidget::updateHardwareLimits()
+void PulseConfigWidget::updateFromSettings()
 {
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("pGen"));
-    s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-    double minWidth = s.value(QString("minWidth"),0.01).toDouble();
-    double maxWidth = s.value(QString("maxWidth"),1e5).toDouble();
-    double minDelay = s.value(QString("minDelay"),0.0).toDouble();
-    double maxDelay = s.value(QString("maxDelay"),1e5).toDouble();
-    s.endGroup();
-    s.endGroup();
-
+    SettingsStorage s(BC::Key::PGen::key,Hardware);
     for(int i=0; i<d_widgetList.size(); i++)
     {
-        QDoubleSpinBox *wid = d_widgetList.at(i).widthBox;
-        QDoubleSpinBox *del = d_widgetList.at(i).delayBox;
+        auto chw = d_widgetList.at(i);
 
-        if(del != nullptr)
+        if(chw.delayBox != nullptr)
         {
-            del->blockSignals(true);
-            del->setRange(minDelay,maxDelay);
-            del->blockSignals(false);
+            chw.delayBox->blockSignals(true);
+            chw.delayBox->setRange(s.get<double>(BC::Key::PGen::minDelay,0.0),
+                          s.get<double>(BC::Key::PGen::maxDelay,1e5));
+            chw.delayBox->blockSignals(false);
         }
 
-        if(wid != nullptr)
+        if(chw.widthBox != nullptr)
         {
-            wid->blockSignals(true);
-            wid->setRange(minWidth,maxWidth);
-            wid->blockSignals(false);
+            chw.widthBox->blockSignals(true);
+            chw.widthBox->setRange(s.get<double>(BC::Key::PGen::minWidth,0.010),
+                          s.get<double>(BC::Key::PGen::maxWidth,1e5));
+            chw.widthBox->blockSignals(false);
         }
+
+        auto r = getArrayValue<PulseGenConfig::Role>(BC::Key::PulseWidget::channels,i,
+                               BC::Key::PulseWidget::role,PulseGenConfig::NoRole);
+        if(chw.roleBox != nullptr)
+            chw.roleBox->setCurrentIndex(chw.roleBox->findData(QVariant::fromValue(r)));
+
+        auto n = getArrayValue<QString>(BC::Key::PulseWidget::channels,i,
+                                        BC::Key::PulseWidget::name,QString("Ch")+QString::number(i+1));
+
+        d_config.set(i,PulseGenConfig::RoleSetting,r);
+        d_config.set(i,PulseGenConfig::NameSetting,n);
+
+        if(chw.label != nullptr)
+            chw.label->setText(n);
+
+        if(chw.nameEdit != nullptr)
+            chw.nameEdit->setText(n);
+
+        ui->pulsePlot->newSetting(i,PulseGenConfig::NameSetting,n);
+
+        if(chw.delayStepBox != nullptr)
+            chw.delayStepBox->setValue(getArrayValue<double>(BC::Key::PulseWidget::channels,i,
+                                                             BC::Key::PulseWidget::delayStep,1.0));
+
+        if(chw.widthStepBox != nullptr)
+            chw.widthStepBox->setValue(getArrayValue<double>(BC::Key::PulseWidget::channels,i,
+                                                             BC::Key::PulseWidget::widthStep,1.0));
+
     }
 
 }

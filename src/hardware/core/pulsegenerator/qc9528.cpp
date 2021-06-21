@@ -83,7 +83,7 @@ void Qc9528::endAcquisition()
     pGenWriteCmd(QString(":SYSTEM:KLOCK 0\r\n"));
 }
 
-QVariant Qc9528::read(const int index, const BlackChirp::PulseSetting s)
+QVariant Qc9528::read(const int index, const PulseGenConfig::Setting s)
 {
     QVariant out;
     QByteArray resp;
@@ -91,7 +91,7 @@ QVariant Qc9528::read(const int index, const BlackChirp::PulseSetting s)
         return out;
 
     switch (s) {
-    case BlackChirp::PulseDelaySetting:
+    case PulseGenConfig::DelaySetting:
         resp = p_comm->queryCmd(QString(":PULSE%1:DELAY?\r\n").arg(index+1));
         if(!resp.isEmpty())
         {
@@ -104,7 +104,7 @@ QVariant Qc9528::read(const int index, const BlackChirp::PulseSetting s)
             }
         }
         break;
-    case BlackChirp::PulseWidthSetting:
+    case PulseGenConfig::WidthSetting:
         resp = p_comm->queryCmd(QString(":PULSE%1:WIDTH?\r\n").arg(index+1));
         if(!resp.isEmpty())
         {
@@ -117,7 +117,7 @@ QVariant Qc9528::read(const int index, const BlackChirp::PulseSetting s)
             }
         }
         break;
-    case BlackChirp::PulseEnabledSetting:
+    case PulseGenConfig::EnabledSetting:
         resp = p_comm->queryCmd(QString(":PULSE%1:STATE?\r\n").arg(index+1));
         if(!resp.isEmpty())
         {
@@ -130,28 +130,24 @@ QVariant Qc9528::read(const int index, const BlackChirp::PulseSetting s)
             }
         }
         break;
-    case BlackChirp::PulseLevelSetting:
+    case PulseGenConfig::LevelSetting:
         resp = p_comm->queryCmd(QString(":PULSE%1:POLARITY?\r\n").arg(index+1));
         if(!resp.isEmpty())
         {
             if(QString(resp).startsWith(QString("NORM"),Qt::CaseInsensitive))
             {
-                out = static_cast<int>(BlackChirp::PulseLevelActiveHigh);
+                out = QVariant::fromValue(PulseGenConfig::ActiveHigh);
                 d_config.set(index,s,out);
             }
             else if(QString(resp).startsWith(QString("INV"),Qt::CaseInsensitive))
             {
-                out = static_cast<int>(BlackChirp::PulseLevelActiveLow);
+                out = QVariant::fromValue(PulseGenConfig::ActiveLow);
                 d_config.set(index,s,out);
             }
         }
         break;
-    case BlackChirp::PulseNameSetting:
-        out = d_config.at(index).channelName;
-        break;
-    case BlackChirp::PulseRoleSetting:
-        out = d_config.at(index).role;
-        break;
+    case PulseGenConfig::NameSetting:
+    case PulseGenConfig::RoleSetting:
     default:
         break;
     }
@@ -179,7 +175,7 @@ double Qc9528::readRepRate()
     return rr;
 }
 
-bool Qc9528::set(const int index, const BlackChirp::PulseSetting s, const QVariant val)
+bool Qc9528::set(const int index, const PulseGenConfig::Setting s, const QVariant val)
 {
     if(index < 0 || index >= d_config.size())
         return false;
@@ -189,7 +185,7 @@ bool Qc9528::set(const int index, const BlackChirp::PulseSetting s, const QVaria
     QString target;
 
     switch (s) {
-    case BlackChirp::PulseDelaySetting:
+    case PulseGenConfig::DelaySetting:
         setting = QString("delay");
         target = QString::number(val.toDouble());
         if(val.toDouble() < d_minDelay || val.toDouble() > d_maxDelay)
@@ -210,7 +206,7 @@ bool Qc9528::set(const int index, const BlackChirp::PulseSetting s, const QVaria
             }
         }
         break;
-    case BlackChirp::PulseWidthSetting:
+    case PulseGenConfig::WidthSetting:
         setting = QString("width");
         target = QString::number(val.toDouble());
         if(val.toDouble() < d_minWidth || val.toDouble() > d_maxWidth)
@@ -231,13 +227,13 @@ bool Qc9528::set(const int index, const BlackChirp::PulseSetting s, const QVaria
             }
         }
         break;
-    case BlackChirp::PulseLevelSetting:
+    case PulseGenConfig::LevelSetting:
         setting = QString("active level");
-        target = val.toInt() == static_cast<int>(d_config.at(index).level) ? QString("active high") : QString("active low");
-        if(val.toInt() != static_cast<int>(d_config.at(index).level))
+        target = val.value<PulseGenConfig::ActiveLevel>() == d_config.at(index).level ? QString("active high") : QString("active low");
+        if(val.value<PulseGenConfig::ActiveLevel>() != d_config.at(index).level)
         {
             bool success = false;
-            if(val.toInt() == static_cast<int>(BlackChirp::PulseLevelActiveHigh))
+            if(val.value<PulseGenConfig::ActiveLevel>() == PulseGenConfig::ActiveHigh)
                 success = pGenWriteCmd(QString(":PULSE%1:POLARITY NORM\r\n").arg(index+1));
             else
                 success = pGenWriteCmd(QString(":PULSE%1:POLARITY INV\r\n").arg(index+1));
@@ -252,7 +248,7 @@ bool Qc9528::set(const int index, const BlackChirp::PulseSetting s, const QVaria
             }
         }
         break;
-    case BlackChirp::PulseEnabledSetting:
+    case PulseGenConfig::EnabledSetting:
         setting = QString("enabled");
         target = val.toBool() ? QString("true") : QString("false");
         if(val.toBool() != d_config.at(index).enabled)
@@ -274,25 +270,21 @@ bool Qc9528::set(const int index, const BlackChirp::PulseSetting s, const QVaria
 
         }
         break;
-    case BlackChirp::PulseNameSetting:
+    case PulseGenConfig::NameSetting:
         d_config.set(index,s,val);
-        read(index,s);
         break;
-    case BlackChirp::PulseRoleSetting:
-        d_config.set(index,s,val);
-        if(static_cast<BlackChirp::PulseRole>(val.toInt()) != BlackChirp::NoPulseRole)
-        {
-            d_config.set(index,BlackChirp::PulseNameSetting,BlackChirp::getPulseName(static_cast<BlackChirp::PulseRole>(val.toInt())));
-            read(index,BlackChirp::PulseNameSetting);
-        }
-        read(index,s);
+    case PulseGenConfig::RoleSetting:
+        if(val.value<PulseGenConfig::Role>() != PulseGenConfig::NoRole)
+            d_config.set(index,PulseGenConfig::NameSetting,PulseGenConfig::roles.value(val.value<PulseGenConfig::Role>()));
+        break;
     default:
         break;
     }
 
+
     if(!out)
         emit logMessage(QString("Could not set %1 to %2. Current value is %3.")
-                        .arg(setting).arg(target).arg(read(index,s).toString()));
+                        .arg(setting).arg(target).arg(read(index,s).toString()),BlackChirp::LogWarning);
 
     return out;
 }
@@ -305,7 +297,7 @@ bool Qc9528::setRepRate(double d)
     if(!pGenWriteCmd(QString(":PULSE0:PERIOD %1\r\n").arg(1.0/d,0,'f',9)))
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not set reprate to %1 Hz (%2 s)").arg(d,0,'f',1).arg(1.0/d,0,'f',9));
+        emit logMessage(QString("Could not set reprate to %1 Hz (%2 s)").arg(d,0,'f',1).arg(1.0/d,0,'f',9),BlackChirp::LogError);
         return false;
     }
 
@@ -313,7 +305,7 @@ bool Qc9528::setRepRate(double d)
     if(rr < 0.0)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not set reprate to %1 Hz (%2 s), Value is %3 Hz.").arg(d,0,'f',1).arg(1.0/d,0,'f',9).arg(rr,0,'f',1));
+        emit logMessage(QString("Could not set reprate to %1 Hz (%2 s), Value is %3 Hz.").arg(d,0,'f',1).arg(1.0/d,0,'f',9).arg(rr,0,'f',1),BlackChirp::LogError);
         return false;
     }
 

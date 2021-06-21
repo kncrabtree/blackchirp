@@ -1,11 +1,11 @@
 #include <src/hardware/core/pulsegenerator/pulsegenerator.h>
 
 PulseGenerator::PulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent, bool threaded, bool critical) :
-    HardwareObject(BC::Key::pGen,subKey,name,commType,parent,threaded,critical),
+    HardwareObject(BC::Key::PGen::key,subKey,name,commType,parent,threaded,critical),
     d_minWidth(0.010), d_maxWidth(100000.0), d_minDelay(0.0), d_maxDelay(100000.0),
     d_numChannels(numChannels)
 {
-    SettingsStorage::set(BC::Key::pGenChannels,d_numChannels,true);
+    SettingsStorage::set(BC::Key::PGen::numChannels,d_numChannels,true);
 }
 
 PulseGenerator::~PulseGenerator()
@@ -15,32 +15,8 @@ PulseGenerator::~PulseGenerator()
 
 void PulseGenerator::initialize()
 {
-    //set up config
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-
-    s.beginReadArray(QString("channels"));
     for(int i=0; i<d_numChannels; i++)
-    {
-        s.setArrayIndex(i);
-        QString name = s.value(QString("name"),QString("Ch%1").arg(i)).toString();
-        double d = s.value(QString("defaultDelay"),0.0).toDouble();
-        double w = s.value(QString("defaultWidth"),0.050).toDouble();
-        QVariant lvl = s.value(QString("level"),BlackChirp::PulseLevelActiveHigh);
-        bool en = s.value(QString("defaultEnabled"),false).toBool();
-        auto role = static_cast<BlackChirp::PulseRole>(s.value(QString("role"),BlackChirp::NoPulseRole).toInt());
-
-        if(lvl == QVariant(BlackChirp::PulseLevelActiveHigh))
-            d_config.add(name,en,d,w,BlackChirp::PulseLevelActiveHigh,role);
-        else
-            d_config.add(name,en,d,w,BlackChirp::PulseLevelActiveLow,role);
-    }
-    s.endArray();
-
-    d_config.setRepRate(s.value(QString("repRate"),10.0).toDouble());
-    s.endGroup();
-    s.endGroup();
+        d_config.addChannel();
 
     initializePGen();
 }
@@ -76,35 +52,33 @@ void PulseGenerator::readSettings()
 }
 
 
-BlackChirp::PulseChannelConfig PulseGenerator::read(const int index)
+PulseGenConfig::ChannelConfig PulseGenerator::read(const int index)
 {
-    BlackChirp::PulseChannelConfig out = d_config.settings(index);
+    PulseGenConfig::ChannelConfig out = d_config.settings(index);
     bool ok = false;
-    out.channelName = read(index,BlackChirp::PulseNameSetting).toString();
-    out.delay = read(index,BlackChirp::PulseDelaySetting).toDouble(&ok);
+    out.delay = read(index,PulseGenConfig::DelaySetting).toDouble(&ok);
     if(!ok)
         return out;
-    out.width = read(index,BlackChirp::PulseWidthSetting).toDouble(&ok);
+    out.width = read(index,PulseGenConfig::WidthSetting).toDouble(&ok);
     if(!ok)
         return out;
-    out.enabled = read(index,BlackChirp::PulseEnabledSetting).toBool();
-    out.level = read(index,BlackChirp::PulseLevelSetting).value<BlackChirp::PulseActiveLevel>();
-    out.role = static_cast<BlackChirp::PulseRole>(read(index,BlackChirp::PulseRoleSetting).toInt());
+    out.enabled = read(index,PulseGenConfig::EnabledSetting).toBool();
+    out.level = read(index,PulseGenConfig::LevelSetting).value<PulseGenConfig::ActiveLevel>();
 
     return out;
 }
 
 
-bool PulseGenerator::setChannel(const int index, const BlackChirp::PulseChannelConfig cc)
+bool PulseGenerator::setChannel(const int index, const PulseGenConfig::ChannelConfig &cc)
 {
     bool success = true;
 
-    success &= set(index,BlackChirp::PulseNameSetting,cc.channelName);
-    success &= set(index,BlackChirp::PulseEnabledSetting,cc.enabled);
-    success &= set(index,BlackChirp::PulseDelaySetting,cc.delay);
-    success &= set(index,BlackChirp::PulseWidthSetting,cc.width);
-    success &= set(index,BlackChirp::PulseLevelSetting,cc.level);
-    set(index,BlackChirp::PulseRoleSetting,cc.role);
+    success &= set(index,PulseGenConfig::NameSetting,cc.channelName);
+    success &= set(index,PulseGenConfig::EnabledSetting,cc.enabled);
+    success &= set(index,PulseGenConfig::DelaySetting,cc.delay);
+    success &= set(index,PulseGenConfig::WidthSetting,cc.width);
+    success &= set(index,PulseGenConfig::LevelSetting,cc.level);
+    set(index,PulseGenConfig::RoleSetting,cc.role);
 
     return success;
 }
@@ -124,10 +98,10 @@ bool PulseGenerator::setAll(const PulseGenConfig cc)
 bool PulseGenerator::setLifDelay(double d)
 {
     bool success = false;
-    auto l = d_config.channelsForRole(BlackChirp::LifPulseRole);
+    auto l = d_config.channelsForRole(PulseGenConfig::LifRole);
     for(int i=0; i<l.size(); i++)
     {
-        if(!set(l.at(i),BlackChirp::PulseDelaySetting,d))
+        if(!set(l.at(i),PulseGenConfig::DelaySetting,d))
             return false;
         else
             success = true;

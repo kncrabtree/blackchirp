@@ -12,8 +12,8 @@ PulsePlot::PulsePlot(QWidget *parent) :
     ZoomPanPlot(BC::Key::pulsePlot,parent)
 {
 
-    SettingsStorage s(BC::Key::pGen,Hardware);
-    int numChannels = s.get<int>(BC::Key::pGenChannels,8);
+    SettingsStorage s(BC::Key::PGen::key,Hardware);
+    int numChannels = s.get<int>(BC::Key::PGen::numChannels,8);
 
 
     setPlotAxisTitle(QwtPlot::xBottom, QString::fromUtf16(u"Time (μs)"));
@@ -90,7 +90,7 @@ void PulsePlot::newConfig(const PulseGenConfig c)
     replot();
 }
 
-void PulsePlot::newSetting(int index, BlackChirp::PulseSetting s, QVariant val)
+void PulsePlot::newSetting(int index, PulseGenConfig::Setting s, QVariant val)
 {
     if(index < 0 || index > d_config.size())
         return;
@@ -130,12 +130,12 @@ void PulsePlot::replot()
 
     for(int i=0; i<d_config.size() && i <d_plotItems.size(); i++)
     {
-        BlackChirp::PulseChannelConfig c = d_config.at(i);
+        auto c = d_config.at(i);
         double channelOff = (double)(d_config.size()-1-i)*1.5 + 0.25;
         double channelOn = (double)(d_config.size()-1-i)*1.5 + 1.25;
         QVector<QPointF> data;
 
-        if(c.level == BlackChirp::PulseLevelActiveLow)
+        if(c.level == PulseGenConfig::ActiveLow)
             qSwap(channelOff,channelOn);
 
         data.append(QPointF(0.0,channelOff));

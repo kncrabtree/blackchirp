@@ -82,7 +82,7 @@ public slots:
     void resumeUi();
     void launchCommunicationDialog();
     void updatePulseLeds(const PulseGenConfig cc);
-    void updatePulseLed(int index,BlackChirp::PulseSetting s, QVariant val);
+    void updatePulseLed(int index,PulseGenConfig::Setting s, QVariant val);
     void updateFlow(int ch, double val);
     void updateFlowName(int ch, QString name);
     void updateFlowSetpoint(int ch, double val);

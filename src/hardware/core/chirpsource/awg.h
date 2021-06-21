@@ -3,10 +3,10 @@
 
 #include <src/hardware/core/hardwareobject.h>
 
-namespace BC {
-namespace Key {
-static const QString awg("awg");
-}
+namespace BC::Key::AWG {
+static const QString key("awg");
+static const QString prot("hasProtectionPulse");
+static const QString amp("hasAmpEnablePulse");
 }
 
 /**

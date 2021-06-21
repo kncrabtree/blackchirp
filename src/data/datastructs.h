@@ -15,6 +15,20 @@ static const QString exptNum("exptNum");
 
 namespace BlackChirp {
 
+template<typename T>
+QString getEnumName(std::map<T,QString> m, T key) {
+    auto it = m.find(key);
+    if(it != m.end())
+        return it->second;
+
+    return QString("");
+}
+
+template<typename T>
+QString getEnumName(QMap<T,QString> m, T key) {
+    return m.value(key);
+}
+
 enum Sideband {
     UpperSideband,
     LowerSideband
@@ -56,23 +70,6 @@ enum FlowSetting {
     FlowSettingName
 };
 
-enum PulseActiveLevel { PulseLevelActiveLow, PulseLevelActiveHigh };
-enum PulseSetting { PulseDelaySetting, PulseWidthSetting, PulseEnabledSetting, PulseLevelSetting, PulseNameSetting, PulseRoleSetting };
-enum PulseRole {
-    NoPulseRole,
-    GasPulseRole,
-    DcPulseRole,
-    AwgPulseRole,
-    ProtPulseRole,
-    AmpPulseRole,
-    LaserPulseRole,
-    LifPulseRole,
-    MotorScopePulseRole,
-    ExcimerRole
-};
-
-QList<PulseRole> allPulseRoles();
-QString getPulseName(PulseRole ch);
 
 //NOTE: be sure to edit the functions below if adding a new clock type
 enum ClockType {
@@ -175,19 +172,6 @@ struct ChirpSegment {
     double durationUs;
     double alphaUs;
     bool empty;
-};
-
-struct PulseChannelConfig {
-    int channel;
-    QString channelName;
-    bool enabled;
-    double delay;
-    double width;
-    PulseActiveLevel level;
-    PulseRole role;
-
-    PulseChannelConfig() : channel(-1), channelName(QString("")), enabled(false), delay(-1.0),
-        width(-1.0), level(PulseLevelActiveHigh), role(NoPulseRole) {}
 };
 
 enum ExptFileType {
@@ -330,9 +314,6 @@ Q_DECLARE_METATYPE(BlackChirp::FlowSetting)
 Q_DECLARE_METATYPE(BlackChirp::FtmwType)
 Q_DECLARE_METATYPE(BlackChirp::ScopeTriggerSlope)
 Q_DECLARE_METATYPE(BlackChirp::LogMessageCode)
-Q_DECLARE_METATYPE(BlackChirp::PulseActiveLevel)
-Q_DECLARE_METATYPE(BlackChirp::PulseSetting)
-Q_DECLARE_METATYPE(BlackChirp::PulseRole)
 Q_DECLARE_METATYPE(BlackChirp::ValidationItem)
 Q_DECLARE_METATYPE(BlackChirp::ClockType)
 
@@ -343,7 +324,6 @@ Q_DECLARE_METATYPE(BlackChirp::LifCompleteMode)
 
 Q_DECLARE_TYPEINFO(BlackChirp::ChirpSegment,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::FlowChannelConfig,Q_MOVABLE_TYPE);
-Q_DECLARE_TYPEINFO(BlackChirp::PulseChannelConfig,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::ValidationItem,Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::IOBoardChannel,Q_PRIMITIVE_TYPE);
 

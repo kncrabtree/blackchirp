@@ -77,7 +77,7 @@ signals:
     void clockFrequencyUpdate(BlackChirp::ClockType, double);
     void allClocksReady();
 
-    void pGenSettingUpdate(int,BlackChirp::PulseSetting,QVariant);
+    void pGenSettingUpdate(int,PulseGenConfig::Setting,QVariant);
     void pGenConfigUpdate(const PulseGenConfig);
     void pGenRepRateUpdate(double);
 
@@ -141,7 +141,7 @@ public slots:
 
     void setClocks(const RfConfig rfc);
 
-    void setPGenSetting(int index, BlackChirp::PulseSetting s, QVariant val);
+    void setPGenSetting(int index, PulseGenConfig::Setting s, QVariant val);
     void setPGenConfig(const PulseGenConfig c);
     void setPGenRepRate(double r);
 

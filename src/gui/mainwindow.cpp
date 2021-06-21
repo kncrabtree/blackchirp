@@ -94,10 +94,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QGridLayout *gl = new QGridLayout;
 
-    SettingsStorage pg(BC::Key::pGen,SettingsStorage::Hardware);
-    for(int i=0; i<pg.get<int>(BC::Key::pGenChannels,8); i++)
+    SettingsStorage pg(BC::Key::PGen::key,SettingsStorage::Hardware);
+    SettingsStorage pw(BC::Key::PulseWidget::key);
+    for(int i=0; i<pg.get<int>(BC::Key::PGen::numChannels,8); i++)
     {
-        QLabel *lbl = new QLabel(QString("Ch%1").arg(i),this);
+        auto txt = pw.getArrayValue<QString>(BC::Key::PulseWidget::channels,i,
+                                             BC::Key::PulseWidget::name,"Ch"+QString::number(i));
+        QLabel *lbl = new QLabel(txt,this);
         lbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
 
         Led *led = new Led(this);
@@ -128,7 +131,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(p_hwm,&HardwareManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_hwm,&HardwareManager::statusMessage,statusLabel,&QLabel::setText);
-    connect(p_hwm,&HardwareManager::hwInitializationComplete,ui->pulseConfigWidget,&PulseConfigWidget::updateHardwareLimits);
+    connect(p_hwm,&HardwareManager::hwInitializationComplete,ui->pulseConfigWidget,&PulseConfigWidget::updateFromSettings);
     connect(p_hwm,&HardwareManager::allHardwareConnected,this,&MainWindow::hardwareInitialized);
     connect(p_hwm,&HardwareManager::clockFrequencyUpdate,clockWidget,&ClockDisplayWidget::updateFrequency);
     connect(p_hwm,&HardwareManager::pGenConfigUpdate,ui->pulseConfigWidget,&PulseConfigWidget::setFromConfig);
@@ -384,6 +387,7 @@ void MainWindow::startExperiment()
     if(wiz.exec() != QDialog::Accepted)
         return;
 
+    ui->pulseConfigWidget->updateFromSettings();
     BatchManager *bm = new BatchSingle(wiz.experiment);
     startBatch(bm);
 }
@@ -476,6 +480,7 @@ void MainWindow::startSequence()
         if(wiz.exec() != QDialog::Accepted)
             return;
 
+        ui->pulseConfigWidget->updateFromSettings();
         exp = wiz.experiment;
     }
 
@@ -630,22 +635,19 @@ void MainWindow::launchCommunicationDialog()
 void MainWindow::updatePulseLeds(const PulseGenConfig cc)
 {
     for(int i=0; i<d_ledList.size() && i < cc.size(); i++)
-    {
-        d_ledList.at(i).first->setText(cc.at(i).channelName);
         d_ledList.at(i).second->setState(cc.at(i).enabled);
-    }
 }
 
-void MainWindow::updatePulseLed(int index, BlackChirp::PulseSetting s, QVariant val)
+void MainWindow::updatePulseLed(int index, PulseGenConfig::Setting s, QVariant val)
 {
     if(index < 0 || index >= d_ledList.size())
         return;
 
     switch(s) {
-    case BlackChirp::PulseNameSetting:
+    case PulseGenConfig::NameSetting:
         d_ledList.at(index).first->setText(val.toString());
         break;
-    case BlackChirp::PulseEnabledSetting:
+    case PulseGenConfig::EnabledSetting:
         d_ledList.at(index).second->setState(val.toBool());
         break;
     default:

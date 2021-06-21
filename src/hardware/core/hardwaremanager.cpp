@@ -343,7 +343,7 @@ void HardwareManager::setClocks(const RfConfig rfc)
     emit allClocksReady();
 }
 
-void HardwareManager::setPGenSetting(int index, BlackChirp::PulseSetting s, QVariant val)
+void HardwareManager::setPGenSetting(int index, PulseGenConfig::Setting s, QVariant val)
 {
     if(p_pGen->thread() == thread())
     {
@@ -351,7 +351,7 @@ void HardwareManager::setPGenSetting(int index, BlackChirp::PulseSetting s, QVar
         return;
     }
 
-    QMetaObject::invokeMethod(p_pGen,"set",Q_ARG(int,index),Q_ARG(BlackChirp::PulseSetting,s),Q_ARG(QVariant,val));
+    QMetaObject::invokeMethod(p_pGen,"set",Q_ARG(int,index),Q_ARG(PulseGenConfig::Setting,s),Q_ARG(QVariant,val));
 }
 
 void HardwareManager::setPGenConfig(const PulseGenConfig c)

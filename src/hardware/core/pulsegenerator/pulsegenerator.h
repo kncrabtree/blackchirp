@@ -5,9 +5,13 @@
 
 #include <src/data/experiment/pulsegenconfig.h>
 
-namespace BC::Key {
-static const QString pGen("pGen");
-static const QString pGenChannels("numChannels");
+namespace BC::Key::PGen {
+static const QString key("pGen");
+static const QString numChannels("numChannels");
+static const QString minWidth("minWidth");
+static const QString maxWidth("maxWidth");
+static const QString minDelay("minDelay");
+static const QString maxDelay("maxDelay");
 }
 
 class PulseGenerator : public HardwareObject
@@ -23,13 +27,13 @@ public slots:
     void readSettings() override;
 
     PulseGenConfig config() const { return d_config; }
-    virtual QVariant read(const int index, const BlackChirp::PulseSetting s) =0;
+    virtual QVariant read(const int index, const PulseGenConfig::Setting s) =0;
     virtual double readRepRate() =0;
 
-    virtual BlackChirp::PulseChannelConfig read(const int index);
+    virtual PulseGenConfig::ChannelConfig read(const int index);
 
-    virtual bool set(const int index, const BlackChirp::PulseSetting s, const QVariant val) =0;
-    virtual bool setChannel(const int index, const BlackChirp::PulseChannelConfig cc);
+    virtual bool set(const int index, const PulseGenConfig::Setting s, const QVariant val) =0;
+    virtual bool setChannel(const int index, const PulseGenConfig::ChannelConfig &cc);
     virtual bool setAll(const PulseGenConfig cc);
 
     virtual bool setRepRate(double d) =0;
@@ -39,7 +43,7 @@ public slots:
 #endif
 
 signals:
-    void settingUpdate(int,BlackChirp::PulseSetting,QVariant);
+    void settingUpdate(int,PulseGenConfig::Setting,QVariant);
     void configUpdate(const PulseGenConfig);
     void repRateUpdate(double);
 
