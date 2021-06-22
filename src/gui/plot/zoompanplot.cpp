@@ -56,7 +56,7 @@ ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),
         p_tracker->setScientific(d_config.axisList.at(i).type,sci);
     }
 
-    bool en = getOrSetDefault(BC::Key::trackerEn,false).toBool();
+    bool en = getOrSetDefault(BC::Key::trackerEn,false);
     p_tracker->setEnabled(en);
 
     p_grid = new QwtPlotGrid;

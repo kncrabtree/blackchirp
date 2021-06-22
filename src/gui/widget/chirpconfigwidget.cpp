@@ -25,10 +25,10 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     }
 
     QString us = QString::fromUtf16(u" μs");
-    double minPreProt = getOrSetDefault(BC::Key::minPreProt,0.0).toDouble();
-    double minPreGate = getOrSetDefault(BC::Key::minPreGate,0.0).toDouble();
-    double minPostGate = getOrSetDefault(BC::Key::minPostGate,-0.5).toDouble();
-    double minPostProt = getOrSetDefault(BC::Key::minPostProt,0.0).toDouble();
+    double minPreProt = getOrSetDefault(BC::Key::minPreProt,0.0);
+    double minPreGate = getOrSetDefault(BC::Key::minPreGate,0.0);
+    double minPostGate = getOrSetDefault(BC::Key::minPostGate,-0.5);
+    double minPostProt = getOrSetDefault(BC::Key::minPostProt,0.0);
 
     ui->preChirpProtectionDoubleSpinBox->setMinimum(minPreProt);
     ui->preChirpDelayDoubleSpinBox->setMinimum(minPreGate);

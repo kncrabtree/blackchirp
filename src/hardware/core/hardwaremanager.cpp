@@ -101,40 +101,40 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 
 
         appendArrayMap(BC::Key::allHw,{
-                           {BC::Key::hwKey,obj->d_key},
-                           {BC::Key::hwSubKey,obj->d_subKey},
-                           {BC::Key::hwName,obj->d_name},
-                           {BC::Key::hwCritical,obj->d_critical},
-                           {BC::Key::hwThreaded,obj->d_threaded}
+                           {BC::Key::HW::key,obj->d_key},
+                           {BC::Key::HW::subKey,obj->d_subKey},
+                           {BC::Key::HW::name,obj->d_name},
+                           {BC::Key::HW::critical,obj->d_critical},
+                           {BC::Key::HW::threaded,obj->d_threaded}
                        });
         switch(obj->d_commType)
         {
         case CommunicationProtocol::Tcp:
             appendArrayMap(BC::Key::tcp,{
-                               {BC::Key::hwKey,obj->d_key},
-                               {BC::Key::hwSubKey,obj->d_subKey},
-                               {BC::Key::hwName,obj->d_name}
+                               {BC::Key::HW::key,obj->d_key},
+                               {BC::Key::HW::subKey,obj->d_subKey},
+                               {BC::Key::HW::name,obj->d_name}
                            });
             break;
         case CommunicationProtocol::Rs232:
             appendArrayMap(BC::Key::rs232,{
-                               {BC::Key::hwKey,obj->d_key},
-                               {BC::Key::hwSubKey,obj->d_subKey},
-                               {BC::Key::hwName,obj->d_name}
+                               {BC::Key::HW::key,obj->d_key},
+                               {BC::Key::HW::subKey,obj->d_subKey},
+                               {BC::Key::HW::name,obj->d_name}
                            });
             break;
         case CommunicationProtocol::Gpib:
             appendArrayMap(BC::Key::gpib,{
-                               {BC::Key::hwKey,obj->d_key},
-                               {BC::Key::hwSubKey,obj->d_subKey},
-                               {BC::Key::hwName,obj->d_name}
+                               {BC::Key::HW::key,obj->d_key},
+                               {BC::Key::HW::subKey,obj->d_subKey},
+                               {BC::Key::HW::name,obj->d_name}
                            });
             break;
         case CommunicationProtocol::Custom:
             appendArrayMap(BC::Key::custom,{
-                               {BC::Key::hwKey,obj->d_key},
-                               {BC::Key::hwSubKey,obj->d_subKey},
-                               {BC::Key::hwName,obj->d_name}
+                               {BC::Key::HW::key,obj->d_key},
+                               {BC::Key::HW::subKey,obj->d_subKey},
+                               {BC::Key::HW::name,obj->d_name}
                            });
             break;
         default:

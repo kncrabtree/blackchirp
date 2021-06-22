@@ -12,17 +12,17 @@ HardwareObject::HardwareObject(const QString key, const QString subKey, const QS
     d_commType(commType), d_enabledForExperiment(true),
     d_isConnected(false)
 {
-    set(BC::Key::hwKey,d_key);
-    set(BC::Key::hwName,d_name);
-    set(BC::Key::hwCritical,critical);
-    set(BC::Key::hwThreaded,threaded);
-    set(BC::Key::hwCommType,commType);
+    set(BC::Key::HW::key,d_key);
+    set(BC::Key::HW::name,d_name);
+    set(BC::Key::HW::critical,critical);
+    set(BC::Key::HW::threaded,threaded);
+    set(BC::Key::HW::commType,commType);
 
     //it is necessary to write the subKey one level above the SettingsStorage group, which
     //is referenced to d_key/d_subKey, so that other parts of the application can determine
     //the current subKey for looking up settings.
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.setValue(d_key + "/" + BC::Key::hwSubKey,d_subKey);
+    s.setValue(d_key + "/" + BC::Key::HW::subKey,d_subKey);
     s.sync();
 }
 
@@ -49,7 +49,7 @@ void HardwareObject::bcInitInstrument()
 
     connect(this,&HardwareObject::hardwareFailure,[=](){
         d_isConnected = false;
-        set(BC::Key::hwConnected,false);
+        set(BC::Key::HW::connected,false);
     });
 }
 
@@ -67,7 +67,7 @@ void HardwareObject::bcTestConnection()
     }
     bool success = testConnection();
     d_isConnected = success;
-    set(BC::Key::hwConnected,success);
+    set(BC::Key::HW::connected,success);
     emit connected(success,errorString(),QPrivateSignal());
 }
 

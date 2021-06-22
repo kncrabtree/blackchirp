@@ -5,8 +5,16 @@
 
 #include <math.h>
 
-AD9914::AD9914(QObject *parent) : AWG(BC::Key::ad9914,BC::Key::ad9914Name,CommunicationProtocol::Rs232,parent)
+AD9914::AD9914(QObject *parent) : AWG(BC::Key::AWG::ad9914,BC::Key::AWG::ad9914Name,CommunicationProtocol::Rs232,parent)
 {
+    setDefault(BC::Key::AWG::rate,3.75e9);
+    setDefault(BC::Key::AWG::samples,1e9);
+    setDefault(BC::Key::AWG::min,0.0);
+    setDefault(BC::Key::AWG::max,3.75e9*0.4/1e6);
+    setDefault(BC::Key::AWG::prot,false);
+    setDefault(BC::Key::AWG::amp,false);
+    setDefault(BC::Key::AWG::rampOnly,true);
+    setDefault(BC::Key::AWG::triggered,true);
 }
 
 
@@ -51,23 +59,6 @@ bool AD9914::testConnection()
     return true;
 }
 
-void AD9914::readSettings()
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    d_clockFreqHz = s.value(QString("sampleRate"),3.75e9).toDouble();
-    s.setValue(QString("sampleRate"),d_clockFreqHz);
-    s.setValue(QString("maxSamples"),1e9);
-    s.setValue(QString("minFreq"),0.0);
-    s.setValue(QString("maxFreq"),d_clockFreqHz*0.4/1e6);
-    s.setValue(QString("hasProtectionPulse"),false);
-    s.setValue(QString("hasAmpEnablePulse"),false);
-    s.setValue(QString("rampOnly"),true);
-    s.endGroup();
-    s.endGroup();
-}
-
 void AD9914::initialize()
 {
     p_comm->setReadOptions(1000,true,QByteArray("\n"));
@@ -90,18 +81,12 @@ bool AD9914::prepareForExperiment(Experiment &exp)
     auto clocks = rfc.getClocks();
     if(clocks.contains(BlackChirp::AwgClock))
     {
-        d_clockFreqHz = clocks.value(BlackChirp::AwgClock).desiredFreqMHz*1e6;
-        QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-        s.beginGroup(d_key);
-        s.beginGroup(d_subKey);
-        d_clockFreqHz = s.value(QString("sampleRate"),3.75e9).toDouble();
-        s.setValue(QString("sampleRate"),d_clockFreqHz);
-        s.setValue(QString("maxFreq"),d_clockFreqHz*0.4);
-        s.endGroup();
-        s.endGroup();
-
-        s.sync();
+        auto cf = clocks.value(BlackChirp::AwgClock).desiredFreqMHz*1e6;
+        set(BC::Key::AWG::rate,cf);
+        set(BC::Key::AWG::max,cf*0.4);
     }
+
+    auto clockFreqHz = get<double>(BC::Key::AWG::rate);
 
     //calculate ramp parameters (as close as possible)
     seg.startFreqMHz = 0.0;
@@ -119,12 +104,12 @@ bool AD9914::prepareForExperiment(Experiment &exp)
 
     while(!done)
     {
-        double dt = static_cast<double>(dtVal)*24.0/d_clockFreqHz * 1e6; //units microseconds
+        double dt = static_cast<double>(dtVal)*24.0/clockFreqHz * 1e6; //units microseconds
         int hSteps = static_cast<int>(floor(seg.durationUs/dt));
         double actDur = dt*static_cast<double>(hSteps);
 
         double rawStep = (endFreqHz-startFreqHz)/static_cast<double>(hSteps-1);
-        int stepCode = static_cast<int>(floor(static_cast<double>(Q_INT64_C(4294967296))*rawStep/d_clockFreqHz));
+        int stepCode = static_cast<int>(floor(static_cast<double>(Q_INT64_C(4294967296))*rawStep/clockFreqHz));
         if(stepCode < 0x01000000)
         {
             dtVal++;
@@ -133,13 +118,13 @@ bool AD9914::prepareForExperiment(Experiment &exp)
 
         done = true;
 
-        double actStep = stepCode*d_clockFreqHz/static_cast<double>(Q_INT64_C(4294967296));
+        double actStep = stepCode*clockFreqHz/static_cast<double>(Q_INT64_C(4294967296));
         double actEndHz = startFreqHz+static_cast<double>(hSteps-1)*actStep;
         seg.durationUs = actDur;
         seg.endFreqMHz = actEndHz/1e6;
 
 
-        int endFreqCode = static_cast<int>(round(actEndHz / d_clockFreqHz * static_cast<double>(Q_INT64_C(4294967296))));
+        int endFreqCode = static_cast<int>(round(actEndHz / clockFreqHz * static_cast<double>(Q_INT64_C(4294967296))));
 
         startHex = QByteArray("00000000");
         endHex = QString("%1").arg(endFreqCode,8,16,QChar('0')).toLatin1();

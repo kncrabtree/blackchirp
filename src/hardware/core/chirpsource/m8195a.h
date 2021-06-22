@@ -10,6 +10,12 @@ static const QString m8195aName("Arbitrary Waveform Generator M8195A");
 }
 }
 
+/*!
+ * \brief The M8195A class
+ *
+ * The chirp is sent to output 1; protection to output 3, amp gate to output 4
+ *
+ */
 class M8195A : public AWG
 {
     Q_OBJECT
@@ -18,7 +24,6 @@ public:
 
     // HardwareObject interface
 public slots:
-    void readSettings() override;
     bool prepareForExperiment(Experiment &exp) override;
     void beginAcquisition() override;
     void endAcquisition() override;

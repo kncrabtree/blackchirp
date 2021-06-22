@@ -15,7 +15,7 @@ CommunicationDialog::CommunicationDialog(QWidget *parent) :
 	//populate GPIB devices
     auto count = d_storage.getArraySize(BC::Key::gpib);
     for(std::size_t i=0; i<count; ++i)
-        ui->gpibDeviceComboBox->addItem(d_storage.getArrayValue<QString>(BC::Key::gpib,i,BC::Key::hwName),QVariant::fromValue(i));
+        ui->gpibDeviceComboBox->addItem(d_storage.getArrayValue<QString>(BC::Key::gpib,i,BC::Key::HW::name),QVariant::fromValue(i));
 
     if(count == 0)
 		ui->gpibBox->setEnabled(false);
@@ -24,7 +24,7 @@ CommunicationDialog::CommunicationDialog(QWidget *parent) :
     count = d_storage.getArraySize(BC::Key::tcp);
     for(std::size_t i=9; i<count; ++i)
 	{
-        ui->tcpDeviceComboBox->addItem(d_storage.getArrayValue<QString>(BC::Key::tcp,i,BC::Key::hwName),QVariant::fromValue(i));
+        ui->tcpDeviceComboBox->addItem(d_storage.getArrayValue<QString>(BC::Key::tcp,i,BC::Key::HW::name),QVariant::fromValue(i));
 	}
 
     if(count == 0)
@@ -34,7 +34,7 @@ CommunicationDialog::CommunicationDialog(QWidget *parent) :
     count = d_storage.getArraySize(BC::Key::rs232);
     for(std::size_t i=0; i<count; ++i)
 	{
-        ui->rs232DeviceComboBox->addItem(d_storage.getArrayValue<QString>(BC::Key::rs232,i,BC::Key::hwName),QVariant::fromValue(i));
+        ui->rs232DeviceComboBox->addItem(d_storage.getArrayValue<QString>(BC::Key::rs232,i,BC::Key::HW::name),QVariant::fromValue(i));
 	}
 
     if(count==0)
@@ -44,7 +44,7 @@ CommunicationDialog::CommunicationDialog(QWidget *parent) :
     count = d_storage.getArraySize(BC::Key::custom);
     for(std::size_t i=0; i<count; ++i)
     {
-        ui->customDeviceComboBox->addItem(d_storage.getArrayValue<QString>(BC::Key::custom,i,BC::Key::hwName),QVariant::fromValue(i));
+        ui->customDeviceComboBox->addItem(d_storage.getArrayValue<QString>(BC::Key::custom,i,BC::Key::HW::name),QVariant::fromValue(i));
     }
 
     if(count == 0)
@@ -134,7 +134,7 @@ void CommunicationDialog::gpibDeviceChanged(int index)
 	}
 
     std::size_t i = static_cast<std::size_t>(index);
-    auto key = d_storage.getArrayValue<QString>(BC::Key::gpib,i,BC::Key::hwKey);
+    auto key = d_storage.getArrayValue<QString>(BC::Key::gpib,i,BC::Key::HW::key);
 
     SettingsStorage s(key,SettingsStorage::Hardware);
 
@@ -157,7 +157,7 @@ void CommunicationDialog::tcpDeviceChanged(int index)
 	}
 
     std::size_t i = static_cast<std::size_t>(index);
-    auto key = d_storage.getArrayValue<QString>(BC::Key::tcp,i,BC::Key::hwKey);
+    auto key = d_storage.getArrayValue<QString>(BC::Key::tcp,i,BC::Key::HW::key);
 
     SettingsStorage s(key,SettingsStorage::Hardware);
 	ui->ipLineEdit->setEnabled(true);
@@ -188,7 +188,7 @@ void CommunicationDialog::rs232DeviceChanged(int index)
 	}
 
     std::size_t i = static_cast<std::size_t>(index);
-    auto key = d_storage.getArrayValue<QString>(BC::Key::rs232,i,BC::Key::hwKey);
+    auto key = d_storage.getArrayValue<QString>(BC::Key::rs232,i,BC::Key::HW::key);
 
     SettingsStorage s(key,SettingsStorage::Hardware);
 	ui->rs232DeviceIDLineEdit->setEnabled(true);
@@ -246,7 +246,7 @@ void CommunicationDialog::customDeviceChanged(int index)
 
 
     std::size_t idx = static_cast<std::size_t>(index);
-    auto key = d_storage.getArrayValue<QString>(BC::Key::custom,idx,BC::Key::hwKey);
+    auto key = d_storage.getArrayValue<QString>(BC::Key::custom,idx,BC::Key::HW::key);
 
     SettingsStorage s(key,SettingsStorage::Hardware);
 
@@ -296,8 +296,8 @@ void CommunicationDialog::testGpib()
 		return;
 
     auto i = static_cast<std::size_t>(index);
-    auto key = d_storage.getArrayValue<QString>(BC::Key::gpib,i,BC::Key::hwKey);
-    auto subKey = d_storage.getArrayValue<QString>(BC::Key::gpib,i,BC::Key::hwSubKey);
+    auto key = d_storage.getArrayValue<QString>(BC::Key::gpib,i,BC::Key::HW::key);
+    auto subKey = d_storage.getArrayValue<QString>(BC::Key::gpib,i,BC::Key::HW::subKey);
 
     //one of the few times to invoke QSettings directly: need to edit the settings
     //for the hardware object itself
@@ -319,8 +319,8 @@ void CommunicationDialog::testTcp()
 		return;
 
     auto i = static_cast<std::size_t>(index);
-    auto key = d_storage.getArrayValue<QString>(BC::Key::tcp,i,BC::Key::hwKey);
-    auto subKey = d_storage.getArrayValue<QString>(BC::Key::tcp,i,BC::Key::hwSubKey);
+    auto key = d_storage.getArrayValue<QString>(BC::Key::tcp,i,BC::Key::HW::key);
+    auto subKey = d_storage.getArrayValue<QString>(BC::Key::tcp,i,BC::Key::HW::subKey);
 
     //one of the few times to invoke QSettings directly: need to edit the settings
     //for the hardware object itself
@@ -343,8 +343,8 @@ void CommunicationDialog::testRs232()
 		return;
 
     auto i = static_cast<std::size_t>(index);
-    auto key = d_storage.getArrayValue<QString>(BC::Key::rs232,i,BC::Key::hwKey);
-    auto subKey = d_storage.getArrayValue<QString>(BC::Key::rs232,i,BC::Key::hwSubKey);
+    auto key = d_storage.getArrayValue<QString>(BC::Key::rs232,i,BC::Key::HW::key);
+    auto subKey = d_storage.getArrayValue<QString>(BC::Key::rs232,i,BC::Key::HW::subKey);
 
     //one of the few times to invoke QSettings directly: need to edit the settings
     //for the hardware object itself
@@ -371,8 +371,8 @@ void CommunicationDialog::testCustom()
         return;
 
     auto i = static_cast<std::size_t>(index);
-    auto key = d_storage.getArrayValue<QString>(BC::Key::custom,i,BC::Key::hwKey);
-    auto subKey = d_storage.getArrayValue<QString>(BC::Key::custom,i,BC::Key::hwSubKey);
+    auto key = d_storage.getArrayValue<QString>(BC::Key::custom,i,BC::Key::HW::key);
+    auto subKey = d_storage.getArrayValue<QString>(BC::Key::custom,i,BC::Key::HW::subKey);
 
     //one of the few times to invoke QSettings directly: need to edit the settings
     //for the hardware object itself

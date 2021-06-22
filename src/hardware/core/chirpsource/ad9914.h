@@ -3,11 +3,9 @@
 
 #include <src/hardware/core/chirpsource/awg.h>
 
-namespace BC {
-namespace Key {
+namespace BC::Key::AWG {
 static const QString ad9914("ad9914");
 static const QString ad9914Name("AD9914 Direct Digital Synthesizer");
-}
 }
 
 class AD9914 : public AWG
@@ -18,14 +16,12 @@ public:
 
     // HardwareObject interface
 public slots:
-    void readSettings() override;
     bool prepareForExperiment(Experiment &exp) override;
     void beginAcquisition() override;
     void endAcquisition() override;
 
 private:
     QByteArray d_settingsHex;
-    double d_clockFreqHz;
 
 protected:
     void initialize() override;

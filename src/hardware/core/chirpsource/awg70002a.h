@@ -3,13 +3,17 @@
 
 #include <src/hardware/core/chirpsource/awg.h>
 
-namespace BC {
-namespace Key {
+namespace BC::Key::AWG {
 static const QString awg70002a("awg70002a");
 static const QString awg70002aName("Arbitrary Waveform Generator AWG70002A");
 }
-}
 
+/*!
+ * \brief The AWG70002a class
+ *
+ * Chirp is sent to output 1; Protection to marker 1, amp gate to marker 2
+ *
+ */
 class AWG70002a : public AWG
 {
     Q_OBJECT
@@ -18,7 +22,6 @@ public:
 
     // HardwareObject interface
 public slots:
-    void readSettings() override;
     bool prepareForExperiment(Experiment &exp) override;
     void beginAcquisition() override;
     void endAcquisition() override;

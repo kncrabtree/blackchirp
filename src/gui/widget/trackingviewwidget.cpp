@@ -19,7 +19,7 @@ TrackingViewWidget::TrackingViewWidget(const QString name, QWidget *parent, bool
     QWidget(parent), SettingsStorage(viewOnly ? name + BC::Key::viewonly : name,General,false),
     d_name(viewOnly ? name + BC::Key::viewonly : name), d_viewMode(viewOnly)
 {    
-    int n = getOrSetDefault(BC::Key::numPlots,4).toInt();
+    int n = getOrSetDefault(BC::Key::numPlots,4);
     int numPlots = qBound(1,n,9);
     if(numPlots != n)
         set(BC::Key::numPlots,numPlots);

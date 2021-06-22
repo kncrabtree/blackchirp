@@ -7,6 +7,15 @@ namespace BC::Key::AWG {
 static const QString key("awg");
 static const QString prot("hasProtectionPulse");
 static const QString amp("hasAmpEnablePulse");
+static const QString min("minFreqMHz");
+static const QString max("maxFreqMHz");
+static const QString rampOnly("rampOnly");
+static const QString rate("sampleRateHz");
+static const QString samples("maxSamples");
+static const QString triggered("triggered");
+static const QString hashes("wfmHashes");
+static const QString wfmName("name");
+static const QString wfmHash("hash");
 }
 
 /**

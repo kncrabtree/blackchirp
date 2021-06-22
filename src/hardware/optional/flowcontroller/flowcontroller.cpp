@@ -3,7 +3,7 @@
 FlowController::FlowController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
                                QObject *parent, bool threaded, bool critical) :
     HardwareObject(BC::Key::flowController,subKey,name,commType,parent,threaded,critical),
-    d_numChannels(getOrSetDefault(BC::Key::flowChannels,4).toInt())
+    d_numChannels(getOrSetDefault(BC::Key::flowChannels,4))
 {
     set(BC::Key::flowChannels,d_numChannels);
 }

@@ -104,7 +104,7 @@ bool SettingsStorage::containsArray(const QString key) const
     return (d_arrayValues.find(key) != d_arrayValues.end());
 }
 
-QVariant SettingsStorage::get(const QString key, const QVariant defaultValue) const
+QVariant SettingsStorage::get(const QString key, const QVariant &defaultValue) const
 {
     //search for key in values map; return if found
     auto it = d_values.find(key);
@@ -204,7 +204,7 @@ void SettingsStorage::clearGetters(bool write)
         d_settings.sync();
 }
 
-QVariant SettingsStorage::getOrSetDefault(const QString key, QVariant defaultValue)
+QVariant SettingsStorage::getOrSetDefault(const QString key, const QVariant defaultValue)
 {
     if(containsValue(key))
     {
@@ -222,7 +222,15 @@ QVariant SettingsStorage::getOrSetDefault(const QString key, QVariant defaultVal
     return defaultValue;
 }
 
-bool SettingsStorage::set(const QString key, const QVariant value, bool write)
+void SettingsStorage::setDefault(const QString key, const QVariant defaultValue)
+{
+    if(containsValue(key) || containsArray(key))
+        return;
+
+    set(key,defaultValue,true);
+}
+
+bool SettingsStorage::set(const QString key, const QVariant &value, bool write)
 {
     //make sure there is no getter or array associated with this key
     if(containsArray(key))
@@ -242,7 +250,7 @@ bool SettingsStorage::set(const QString key, const QVariant value, bool write)
     return true;
 }
 
-bool SettingsStorage::setArrayValue(const QString arrayKey, std::size_t i, const QString key, QVariant value, bool write)
+bool SettingsStorage::setArrayValue(const QString arrayKey, std::size_t i, const QString key, const QVariant &value, bool write)
 {
     if(!containsArray(arrayKey))
         return false;

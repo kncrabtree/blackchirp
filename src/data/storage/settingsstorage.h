@@ -135,9 +135,11 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  * However, any keys associated with a getter will not be read! If this behavior is undesired, first unregister
  * any getters before calling readAll, ensuring that the optional write parameter is set to false.
  *
- * Subclasses may also use the SettingsStorage::getOrSetDefault function to add a new key to the settings. This
- * function will search for the key and return its value if it exists. If it does not exist, a new entry in the
- * QSettings file is immediately created with the provided default value. For example:
+ * Subclasses may also use the SettingsStorage::setDefault or SettingsStorage::getOrSetDefault functions
+ * to add a new key to the settings. In either case, if the key already exists, the value remains unmodified.
+ * If it does not exist, a new entry in the QSettings file is immediately created with the provided default value.
+ * The getOrSetDefault function will return the value in the settings, while the setDefault function can be used
+ * if the value is not needed immediately. For example:
  *
  *
  *     QVariant out = getOrSetDefault("existingKey",10);
@@ -145,6 +147,12 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
  *
  *     QVariant out2 = getOrSetDefault("newKey",10);
  *     //out contains 10; "newKey" added to QSettings
+ *
+ *     setDefault("newKey2",20);
+ *     //get<int>("newKey2") returns 20
+ *
+ *     setDefault("newKey",20);
+ *     //get<int>("newKey") returns 10, as this key was already added above.
  *
  *
  * Finally, subclasses may call SettingsStorage::registerGetter to associate a function with a key. Any
@@ -291,7 +299,7 @@ public:
      * \param defaultValue The value returned if key is not present (default: QVariant())
      * \return QVariant The value
      */
-    QVariant get(const QString key, const QVariant defaultValue = QVariant()) const;
+    QVariant get(const QString key, const QVariant &defaultValue = QVariant()) const;
 
     /*!
      * \brief Gets the value of a settting. Overloaded function.
@@ -306,7 +314,7 @@ public:
      * \return T The value, or a default constructed value if the key is not present
      */
     template<typename T>
-    inline T get(const QString key, T defaultValue = QVariant().value<T>()) const { return (containsValue(key) ? get(key).value<T>() : defaultValue); };
+    inline T get(const QString key, const T &defaultValue = QVariant().value<T>()) const { return (containsValue(key) ? get(key).value<T>() : defaultValue); };
 
     /*!
      * \brief Gets values associated with a list of keys. Overloaded function
@@ -500,7 +508,46 @@ protected:
      * \param defaultValue The desired default value written to settings if the key does not exist
      * \return QVariant containing the value associated with the key. If the key did not previously exist, this will equal defaltValue
      */
-    QVariant getOrSetDefault(const QString key, QVariant defaultValue);
+    QVariant getOrSetDefault(const QString key, const QVariant defaultValue);
+
+    /*!
+     * \brief Reads a settings, and sets a default value if it does not exist
+     *
+     * Templated version of getOrSetDefault
+     *
+     * \param key The key for the value to be stored
+     * \param defaultValue The desired default value written to settings if the key does not exist
+     * \return T The value asspciated with the key. If the key did not previously exist, this will equal defaltValue
+     *
+     */
+    template<typename T>
+    T getOrSetDefault(const QString key, const T &defaultValue) {
+        QVariant out = getOrSetDefault(key,QVariant::fromValue(defaultValue));
+        return out.value<T>();
+    }
+
+    /*!
+     * \brief Sets a default value if none exists
+     *
+     * If a value already exists corresponding to a key, no action is taken.
+     *
+     * \param key The key for the value
+     * \param defaultValue Value to set if key is not found.
+     */
+    void setDefault(const QString key, const QVariant defaultValue);
+
+    /*!
+     * \brief Sets a default value if none exists. Overloaded function
+     *
+     * If a value already exists corresponding to a key, no action is taken.
+     *
+     * \param key The key for the value
+     * \param defaultValue Value to set if key is not found.
+     */
+    template<typename T>
+    void setDefault(const QString key, const T &defaultValue) {
+        setDefault(key,QVariant::fromValue(defaultValue));
+    }
 
     /*!
      * \brief Stores a key-value setting
@@ -517,7 +564,27 @@ protected:
      * \param write If true, write to persistent storage immediately
      * \return bool Returns whether or not the setting was made. If false, the key is already associated with a getter or array value
      */
-    bool set(const QString key, const QVariant value, bool write = true);
+    bool set(const QString key, const QVariant &value, bool write = true);
+
+    /*!
+     * \brief Stores a key-value setting. Overloaded function
+     *
+     * The value is placed into the values map and associated with the given key. If key already
+     * exists, its value is overwritten; otherwise a new key is created. The operation will not be
+     * completed if the key is associated with a getter function or with an array value.
+     *
+     * The write argument controls whether the new setting is immediately written to persistent storage.
+     * If write is false, then the setting will not be stored until a call to SettingsStorage::save is made.
+     *
+     * \param key The key associated with the value
+     * \param value The value to be stored
+     * \param write If true, write to persistent storage immediately
+     * \return bool Returns whether or not the setting was made. If false, the key is already associated with a getter or array value
+     */
+    template<typename T>
+    bool set(const QString key, const T &value, bool write = true) {
+        return set(key,QVariant::fromValue(value),write);
+    }
 
     /*!
      * \brief Sets multiple key-value settings
@@ -560,8 +627,26 @@ protected:
      * \param write If true, write updated array to QSettings
      * \return bool True if setting was successfully made
      */
-    bool setArrayValue(const QString arrayKey, std::size_t i, const QString key, QVariant value, bool write = true);
+    bool setArrayValue(const QString arrayKey, std::size_t i, const QString key, const QVariant &value, bool write = true);
 
+    /*!
+     * \brief Sets a single value within a map assocuated with an array value. Overloaded function
+     *
+     * Attempts to set one key-value pair for the array value specified by `arrayKey` at position `i`.
+     * The write will fail if the array does not exist or if `i` is out of bounds. If the optional
+     * `write` parameter is true, then the updated array will be written to QSettings.
+     *
+     * \param arrayKey Key of the array value
+     * \param i Index of the map within the array
+     * \param key Key for the map
+     * \param value Value to be stored
+     * \param write If true, write updated array to QSettings
+     * \return bool True if setting was successfully made
+     */
+    template<typename T>
+    bool setArrayValue(const QString arrayKey, std::size_t i, const QString key, const T &value, bool write = true) {
+        return setArrayValue(arrayKey,i,key,QVariant::fromValue(value),write);
+    }
 
     /*!
      * \brief Appends a new map onto an array value

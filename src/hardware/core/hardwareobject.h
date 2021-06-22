@@ -22,16 +22,14 @@
 
 #include <src/data/experiment/experiment.h>
 
-namespace BC {
-namespace Key {
-static const QString hwKey("key");
-static const QString hwSubKey("subKey");
-static const QString hwName("prettyName");
-static const QString hwConnected("connected");
-static const QString hwCritical("critical");
-static const QString hwThreaded("threaded");
-static const QString hwCommType("commType");
-}
+namespace BC::Key::HW {
+static const QString key("key");
+static const QString subKey("subKey");
+static const QString name("prettyName");
+static const QString connected("connected");
+static const QString critical("critical");
+static const QString threaded("threaded");
+static const QString commType("commType");
 }
 
 /*!

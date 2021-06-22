@@ -3,34 +3,16 @@
 #include <math.h>
 
 AWG7122B::AWG7122B(QObject *parent) :
-    AWG(BC::Key::awg7122b,BC::Key::awg7122bName,CommunicationProtocol::Tcp,parent)
+    AWG(BC::Key::AWG::awg7122b,BC::Key::AWG::awg7122bName,CommunicationProtocol::Tcp,parent)
 {
-}
-
-void AWG7122B::readSettings()
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    double awgRate = s.value(QString("sampleRate"),24e9).toDouble();
-    double awgMaxSamples = s.value(QString("maxSamples"),2e9).toDouble();
-    double awgMinFreq = s.value(QString("minFreq"),50.0).toDouble();
-    double awgMaxFreq = s.value(QString("maxFreq"),12000.0).toDouble();
-    bool pp = s.value(QString("hasProtectionPulse"),true).toBool();
-    bool ep = s.value(QString("hasAmpEnablePulse"),true).toBool();
-    bool ro = s.value(QString("rampOnly"),false).toBool();
-    d_triggered = s.value(QString("triggered"),false).toBool();
-    s.setValue(QString("sampleRate"),awgRate);
-    s.setValue(QString("maxSmaples"),awgMaxSamples);
-    s.setValue(QString("minFreq"),awgMinFreq);
-    s.setValue(QString("maxFreq"),awgMaxFreq);
-    s.setValue(QString("hasProtectionPulse"),pp);
-    s.setValue(QString("hasAmpEnablePulse"),ep);
-    s.setValue(QString("rampOnly"),ro);
-    s.setValue(QString("triggered"),d_triggered);
-    s.endGroup();
-    s.endGroup();
-    s.sync();
+    setDefault(BC::Key::AWG::rate,24e9);
+    setDefault(BC::Key::AWG::samples,2e9);
+    setDefault(BC::Key::AWG::min,50.0);
+    setDefault(BC::Key::AWG::max,12000.0);
+    setDefault(BC::Key::AWG::prot,true);
+    setDefault(BC::Key::AWG::amp,true);
+    setDefault(BC::Key::AWG::rampOnly,false);
+    setDefault(BC::Key::AWG::triggered,false);
 }
 
 
@@ -146,20 +128,16 @@ QString AWG7122B::getWaveformKey(const ChirpConfig cc)
                 .arg(d_name).arg(QString(resp)).arg(QString(resp.toHex()));
 
     //get list of known hashes/waveforms
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     QList<QPair<QString,QString>> hashList;
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    int nEntries = s.beginReadArray(QString("wfmHashes"));
+    int nEntries = getArraySize(BC::Key::AWG::hashes);
+    hashList.reserve(nEntries+1);
     for(int i=0; i<nEntries; i++)
     {
-        s.setArrayIndex(i);
-        QString name = s.value(QString("name"),QString("")).toString();
-        QString hash = s.value(QString("hash"),QString("")).toString();
+        auto name = getArrayValue(BC::Key::AWG::hashes,i,BC::Key::AWG::wfmName,QString(""));
+        auto hash = getArrayValue(BC::Key::AWG::hashes,i,BC::Key::AWG::wfmHash,QString(""));
         if(!name.isEmpty() && !hash.isEmpty())
             hashList.append(qMakePair(name,hash));
     }
-    s.endArray();
 
     //look up list of waveforms from AWG
     QStringList wfmNames;
@@ -204,18 +182,11 @@ QString AWG7122B::getWaveformKey(const ChirpConfig cc)
         out = nameMatch;
 
     //write new hash list
-    s.beginWriteArray(QString("wfmHashes"));
-    for(int i=0; i<hashList.size(); i++)
-    {
-        s.setArrayIndex(i);
-        s.setValue(QString("name"),hashList.at(i).first);
-        s.setValue(QString("hash"),hashList.at(i).second);
-    }
-
-    s.endArray();
-    s.endGroup();
-    s.endGroup();
-    s.sync();
+    std::vector<SettingsMap> m;
+    m.reserve(hashList.size());
+    for(auto p : hashList)
+        m.push_back({ {BC::Key::AWG::wfmName,p.first}, {BC::Key::AWG::wfmHash,p.second}});
+    setArray(BC::Key::AWG::hashes,m);
 
     return out;
 }

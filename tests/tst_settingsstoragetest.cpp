@@ -18,6 +18,7 @@ public:
         TestValue4,
         TestValue5
     };
+    Q_ENUM(TestEnum)
 
     int intGetter() const { return d_int; }
     double doubleGetter() const { return d_double; }
@@ -27,7 +28,6 @@ private slots:
     void cleanupTestCase();
     void testBaseRead();
     void testGetter();
-    void testGetterLambda();
     void testGetMultiple();
     void testContains();
     void testSet();
@@ -112,8 +112,8 @@ void SettingsStorageTest::testBaseRead()
     QCOMPARE(get("nonExistentKey"),QVariant());
     QCOMPARE(get<int>("nonExistentKey"),0);
     QCOMPARE(get<double>("nonExistentKey")+1.0,1.0);
-    QCOMPARE(get<int>("nonExistentKey",10),10);
-    QCOMPARE(get<double>("nonExistentKey",12.3),12.3);
+    QCOMPARE(get("nonExistentKey",10),10);
+    QCOMPARE(get("nonExistentKey",12.3),12.3);
 
     //reading from map directly
     QCOMPARE(getArrayValue("testArray",3,"testArrayInt"),QVariant(3));
@@ -171,15 +171,6 @@ void SettingsStorageTest::testGetter()
     int x = 3;
     registerGetter("testLambda",std::function<int()>{[x]() { return x + 1; }});
     QCOMPARE(get<int>("testLambda",0),4);
-
-}
-
-void SettingsStorageTest::testGetterLambda()
-{
-//    initSettingsFile();
-//    clearGetters(false);
-//    readAll();
-
 
 }
 
@@ -274,9 +265,9 @@ void SettingsStorageTest::testDefault()
     clearGetters(false);
     readAll();
 
-    QCOMPARE(getOrSetDefault("testInt",1),QVariant(42));
-    QCOMPARE(getOrSetDefault("newKey",1000),QVariant(1000));
-    QCOMPARE(getOrSetDefault("testArray",2),QVariant());
+    QCOMPARE(getOrSetDefault("testInt",1),42);
+    QCOMPARE(getOrSetDefault("newKey",1000),1000);
+    QCOMPARE(getOrSetDefault("testArray",2),0);
 
     SettingsStorage readOnly(false);
     QCOMPARE(readOnly.containsValue("newKey"),true);

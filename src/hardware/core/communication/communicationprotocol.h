@@ -31,6 +31,7 @@ public:
         Custom,
         None
     };
+    Q_ENUM(CommType)
 
     explicit CommunicationProtocol(QString key, QObject *parent = nullptr);
     virtual ~CommunicationProtocol();

@@ -4,34 +4,14 @@
 
 M8195A::M8195A(QObject *parent) : AWG(BC::Key::m8195a,BC::Key::m8195aName,CommunicationProtocol::Tcp,parent)
 {
-}
-
-void M8195A::readSettings()
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    double awgRate = s.value(QString("sampleRate"),65e9).toDouble();
-    double awgMaxSamples = s.value(QString("maxSamples"),2e9).toDouble();
-    double awgMinFreq = s.value(QString("minFreq"),0.0).toDouble();
-    double awgMaxFreq = s.value(QString("maxFreq"),26500.0).toDouble();
-    bool async = s.value(QString("asyncTrig"),true).toBool();
-    bool pp = s.value(QString("hasProtectionPulse"),true).toBool();
-    bool ep = s.value(QString("hasAmpEnablePulse"),true).toBool();
-    bool ro = s.value(QString("rampOnly"),false).toBool();
-    bool triggered = s.value(QString("triggered"),true).toBool();
-    s.setValue(QString("sampleRate"),awgRate);
-    s.setValue(QString("maxSmaples"),awgMaxSamples);
-    s.setValue(QString("minFreq"),awgMinFreq);
-    s.setValue(QString("maxFreq"),awgMaxFreq);
-    s.setValue(QString("hasProtectionPulse"),pp);
-    s.setValue(QString("hasAmpEnablePulse"),ep);
-    s.setValue(QString("rampOnly"),ro);
-    s.setValue(QString("triggered"),triggered);
-    s.setValue(QString("asyncTrig"),async);
-    s.endGroup();
-    s.endGroup();
-    s.sync();
+    setDefault(BC::Key::AWG::rate,65e9);
+    setDefault(BC::Key::AWG::samples,2e9);
+    setDefault(BC::Key::AWG::min,0.0);
+    setDefault(BC::Key::AWG::max,26500.0);
+    setDefault(BC::Key::AWG::prot,true);
+    setDefault(BC::Key::AWG::amp,true);
+    setDefault(BC::Key::AWG::rampOnly,false);
+    setDefault(BC::Key::AWG::triggered,true);
 }
 
 
@@ -86,20 +66,15 @@ bool M8195A::prepareForExperiment(Experiment &exp)
     }
 
     //external triggering
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    bool triggered = s.value(QString("triggered"),true).toBool();
-    double samplerate = s.value(QString("sampleRate"),65e9).toDouble();
-    bool async = s.value(QString("asyncTrig"),true).toBool();
-    s.endGroup();
-    s.endGroup();
+    bool triggered = get<bool>(BC::Key::AWG::triggered);
+    double samplerate = get<bool>(BC::Key::AWG::rate);
+
 
     if(triggered)
     {
-        QString trig("SYNC");
-        if(async)
-            trig.prepend(QString("A"));
+        QString trig("ASYNC");
+//        if(async)
+//            trig.prepend(QString("A"));
 
         if(!m8195aWrite(QString(":INIT:CONT 0;:INIT:GATE 0;:ARM:TRIG:SOUR TRIG;:TRIG:SOUR:ENAB TRIG;:ARM:TRIG:LEV 1.5;:ARM:TRIG:SLOP POS;:ARM:TRIG:OPER %1\n").arg(trig)))
         {
