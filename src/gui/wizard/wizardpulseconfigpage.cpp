@@ -6,7 +6,7 @@
 #include <src/gui/widget/pulseconfigwidget.h>
 
 WizardPulseConfigPage::WizardPulseConfigPage(QWidget *parent) :
-    ExperimentWizardPage(parent), d_firstInitialization(true)
+    ExperimentWizardPage(BC::Key::WizPulse::key,parent), d_firstInitialization(true)
 {
     setTitle("Configure Pulses");
     setSubTitle("Some settings may be made automatically (e.g., LIF delays).");

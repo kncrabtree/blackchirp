@@ -8,7 +8,7 @@
 #include <src/gui/wizard/experimentwizard.h>
 
 WizardChirpConfigPage::WizardChirpConfigPage(QWidget *parent) :
-    ExperimentWizardPage(parent)
+    ExperimentWizardPage(BC::Key::WizChirp::key,parent)
 {
     setTitle(QString("Configure FTMW Chirp"));
 

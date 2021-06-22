@@ -6,6 +6,10 @@
 class ChirpConfigWidget;
 class RfConfig;
 
+namespace BC::Key::WizChirp {
+static const QString key("WizardChirpConfigPage");
+}
+
 class WizardChirpConfigPage : public ExperimentWizardPage
 {
     Q_OBJECT

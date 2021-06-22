@@ -2,9 +2,12 @@
 
 #include <QDoubleSpinBox>
 #include <QSpinBox>
+#include <QLabel>
 #include <QFormLayout>
 
-WizardDrScanConfigPage::WizardDrScanConfigPage(QWidget *parent) : ExperimentWizardPage(parent)
+#include <src/hardware/core/clock/clock.h>
+
+WizardDrScanConfigPage::WizardDrScanConfigPage(QWidget *parent) : ExperimentWizardPage(BC::Key::WizDR::key,parent)
 {
     setTitle(QString("Configure DR Scan"));
     setSubTitle(QString("Hover over the various fields for more information."));
@@ -14,6 +17,7 @@ WizardDrScanConfigPage::WizardDrScanConfigPage(QWidget *parent) : ExperimentWiza
     p_startBox->setSuffix(QString(" MHz"));
     p_startBox->setSingleStep(1000.0);
     p_startBox->setRange(0,1e9);
+    p_startBox->setValue(get<double>(BC::Key::WizDR::start,p_startBox->minimum()));
     p_startBox->setToolTip(QString("Starting DR frequency."));
     p_startBox->setKeyboardTracking(false);
 
@@ -23,6 +27,7 @@ WizardDrScanConfigPage::WizardDrScanConfigPage(QWidget *parent) : ExperimentWiza
     p_stepSizeBox->setSuffix(QString(" MHz"));
     p_stepSizeBox->setSingleStep(0.1);
     p_stepSizeBox->setRange(-1e9,1e9);
+    p_stepSizeBox->setValue(get<double>(BC::Key::WizDR::step,1.0));
     p_stepSizeBox->setToolTip(QString("DR step size (can be negative)."));
     p_stepSizeBox->setKeyboardTracking(false);
 
@@ -30,6 +35,7 @@ WizardDrScanConfigPage::WizardDrScanConfigPage(QWidget *parent) : ExperimentWiza
     p_numStepsBox = new QSpinBox;
     p_numStepsBox->setRange(2,__INT_MAX__);
     p_numStepsBox->setToolTip(QString("Number of steps to take."));
+    p_numStepsBox->setValue(get<int>(BC::Key::WizDR::numSteps,100));
     p_numStepsBox->setKeyboardTracking(false);
 
 
@@ -43,6 +49,7 @@ WizardDrScanConfigPage::WizardDrScanConfigPage(QWidget *parent) : ExperimentWiza
     p_shotsBox = new QSpinBox;
     p_shotsBox->setRange(0,__INT_MAX__);
     p_shotsBox->setSingleStep(100);
+    p_shotsBox->setValue(get<int>(BC::Key::WizDR::shots,100));
     p_shotsBox->setToolTip(QString("Number of shots to acquire at each DR point."));
 
 
@@ -54,6 +61,13 @@ WizardDrScanConfigPage::WizardDrScanConfigPage(QWidget *parent) : ExperimentWiza
     l->addRow(QString("End"),p_endBox);
     l->addRow(QString("Shots Per Step"),p_shotsBox);
 
+    for(int i=0; i<l->rowCount(); i++)
+    {
+        auto lbl = static_cast<QLabel*>(l->itemAt(i,QFormLayout::LabelRole)->widget());
+        lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+        lbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+    }
+
     setLayout(l);
 
     auto vc = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
@@ -63,7 +77,10 @@ WizardDrScanConfigPage::WizardDrScanConfigPage(QWidget *parent) : ExperimentWiza
     connect(p_stepSizeBox,dvc,this,&WizardDrScanConfigPage::updateEndBox);
     connect(p_numStepsBox,vc,this,&WizardDrScanConfigPage::updateEndBox);
 
-    loadFromSettings();
+    registerGetter(BC::Key::WizDR::start,p_startBox,&QDoubleSpinBox::value);
+    registerGetter(BC::Key::WizDR::step,p_stepSizeBox,&QDoubleSpinBox::value);
+    registerGetter(BC::Key::WizDR::numSteps,p_numStepsBox,&QSpinBox::value);
+    registerGetter(BC::Key::WizDR::shots,p_shotsBox,&QSpinBox::value);
 
 }
 
@@ -78,15 +95,9 @@ void WizardDrScanConfigPage::initializePage()
     if(drClock.isEmpty())
         return;
 
-     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-     s.beginGroup(drClock);
-     s.beginGroup(s.value(QString("subKey"),QString("fixed")).toString());
-
-     double minFreq = s.value(QString("minFreqMHz"),0.0).toDouble();
-     double maxFreq = s.value(QString("maxFreqMHz"),1e7).toDouble();
-
-     s.endGroup();
-     s.endGroup();
+     SettingsStorage s(drClock,Hardware);
+     double minFreq = s.get<double>(BC::Key::Clock::minFreq,0.0);
+     double maxFreq = s.get<double>(BC::Key::Clock::maxFreq,1e7);
 
      auto clocks = d_rfConfig.getClocks();
      auto drc = clocks.value(BlackChirp::DRClock);
@@ -131,7 +142,6 @@ bool WizardDrScanConfigPage::validatePage()
 
     e->setRfConfig(d_rfConfig);
 
-    saveToSettings();
     return true;
 
 
@@ -163,41 +173,4 @@ void WizardDrScanConfigPage::updateEndBox()
         end = p_startBox->value() + static_cast<double>(p_numStepsBox->value()-1)*p_stepSizeBox->value();
     }
     p_endBox->setValue(end);
-}
-
-void WizardDrScanConfigPage::saveToSettings() const
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("lastDrScan"));
-
-    s.setValue(QString("startFreqMHz"),p_startBox->value());
-    s.setValue(QString("stepSizeMHz"),p_stepSizeBox->value());
-    s.setValue(QString("numSteps"),p_numStepsBox->value());
-    s.setValue(QString("numShots"),p_shotsBox->value());
-
-    s.endGroup();
-    s.sync();
-}
-
-void WizardDrScanConfigPage::loadFromSettings()
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("lastDrScan"));
-
-    p_startBox->blockSignals(true);
-    p_stepSizeBox->blockSignals(true);
-    p_numStepsBox->blockSignals(true);
-
-    p_startBox->setValue(s.value(QString("startFreqMHz"),p_startBox->minimum()).toDouble());
-    p_stepSizeBox->setValue(s.value(QString("stepSizeMHz"),1.0).toDouble());
-    p_numStepsBox->setValue(s.value(QString("numSteps"),100).toInt());
-    p_shotsBox->setValue(s.value(QString("numShots"),100).toInt());
-
-    p_startBox->blockSignals(false);
-    p_stepSizeBox->blockSignals(false);
-    p_numStepsBox->blockSignals(false);
-
-    updateEndBox();
-
-    s.endGroup();
 }

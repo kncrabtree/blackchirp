@@ -7,7 +7,7 @@
 #include <src/gui/wizard/experimentwizard.h>
 
 WizardDigitizerConfigPage::WizardDigitizerConfigPage(QWidget *parent) :
-    ExperimentWizardPage(parent)
+    ExperimentWizardPage(BC::Key::WizFtDig::key,parent)
 {
     setTitle(QString("Configure Digitizer"));
 

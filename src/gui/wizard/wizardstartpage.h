@@ -10,6 +10,10 @@ class QCheckBox;
 class QComboBox;
 class QDoubleSpinBox;
 
+namespace BC::Key::WizStart {
+static const QString key{"WizardStartPage"};
+}
+
 class WizardStartPage : public ExperimentWizardPage
 {
     Q_OBJECT

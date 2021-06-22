@@ -9,6 +9,10 @@
 
 class QToolButton;
 
+namespace BC::Key::WizVal {
+static const QString key("WizardValidationPage");
+}
+
 class WizardValidationPage : public ExperimentWizardPage
 {
 public:

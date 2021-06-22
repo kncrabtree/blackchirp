@@ -14,7 +14,7 @@
 #include <src/gui/wizard/experimentwizard.h>
 
 WizardStartPage::WizardStartPage(QWidget *parent) :
-    ExperimentWizardPage(parent)
+    ExperimentWizardPage(BC::Key::WizStart::key,parent)
 {
     setTitle(QString("Configure Experiment"));
     setSubTitle(QString("Choose which type(s) of experiment you wish to perform."));

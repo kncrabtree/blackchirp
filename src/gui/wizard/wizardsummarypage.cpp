@@ -9,7 +9,7 @@
 
 
 WizardSummaryPage::WizardSummaryPage(QWidget *parent) :
-    ExperimentWizardPage(parent)
+    ExperimentWizardPage(BC::Key::WizSummary::key,parent)
 {
     setTitle(QString("Experiment Summary"));
     setSubTitle(QString("The settings shown below will be used for this experiment. If anything is incorrect, use the back button to make changes."));

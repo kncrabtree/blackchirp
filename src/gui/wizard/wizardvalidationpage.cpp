@@ -13,7 +13,7 @@
 #include <src/data/model/validationmodel.h>
 
 WizardValidationPage::WizardValidationPage(QWidget *parent) :
-    ExperimentWizardPage(parent)
+    ExperimentWizardPage(BC::Key::WizVal::key,parent)
 {
     setTitle(QString("Validation Settings"));
     setSubTitle(QString("Configure IO board channels and set up conditions that will automatically abort the experiment."));

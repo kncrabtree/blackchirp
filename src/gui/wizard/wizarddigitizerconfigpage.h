@@ -5,6 +5,10 @@
 
 class DigitizerConfigWidget;
 
+namespace BC::Key::WizFtDig {
+static const QString key("WizardFtmwDigitizerPage");
+}
+
 class WizardDigitizerConfigPage : public ExperimentWizardPage
 {
     Q_OBJECT

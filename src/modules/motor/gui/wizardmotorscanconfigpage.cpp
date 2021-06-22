@@ -7,7 +7,7 @@
 #include <src/gui/wizard/experimentwizard.h>
 
 WizardMotorScanConfigPage::WizardMotorScanConfigPage(QWidget *parent) :
-    ExperimentWizardPage(parent)
+    ExperimentWizardPage(BC::Key::WizMotor::key,parent)
 {
     setTitle(QString("Motor Scan Configuration"));
     setSubTitle(QString("Configure the parameters of the motor scan."));

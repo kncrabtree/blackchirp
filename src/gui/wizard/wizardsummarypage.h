@@ -5,6 +5,10 @@
 
 class QTableWidget;
 
+namespace BC::Key::WizSummary {
+static const QString key("WizardSummaryPage");
+}
+
 class WizardSummaryPage : public ExperimentWizardPage
 {
     Q_OBJECT

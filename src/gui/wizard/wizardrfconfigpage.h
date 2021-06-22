@@ -5,6 +5,10 @@
 
 #include <src/gui/widget/rfconfigwidget.h>
 
+namespace BC::Key::WizRf {
+static const QString key("WizardRfConfigPage");
+}
+
 class WizardRfConfigPage : public ExperimentWizardPage
 {
     Q_OBJECT

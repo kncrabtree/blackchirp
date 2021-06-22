@@ -10,7 +10,10 @@
 #include <QFormLayout>
 #include <QCheckBox>
 
-WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWizardPage(parent)
+#include <src/hardware/core/clock/clock.h>
+
+WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) :
+    ExperimentWizardPage(BC::Key::WizLoScan::key,parent)
 {
     setTitle(QString("Configure LO Scan"));
     setSubTitle(QString("Hover over the various fields for more information."));
@@ -22,6 +25,7 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     p_upStartBox->setSuffix(QString(" MHz"));
     p_upStartBox->setSingleStep(1000.0);
     p_upStartBox->setRange(0.0,1e9);
+    p_upStartBox->setValue(get<double>(BC::Key::WizLoScan::upStart,0.0));
     p_upStartBox->setToolTip(QString("Starting major step LO frequency.\nChanging this value will update the major step size."));
     p_upStartBox->setKeyboardTracking(false);
 
@@ -30,11 +34,13 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     p_upEndBox->setSuffix(QString(" MHz"));
     p_upEndBox->setSingleStep(1000.0);
     p_upEndBox->setRange(0.0,1e9);
+    p_upEndBox->setValue(get<double>(BC::Key::WizLoScan::upEnd,1000.0));
     p_upEndBox->setToolTip(QString("Ending LO frequency (including major and minor steps).\nThis is a limit; the frequency will not exceed this value.\nChanging this value will update the major step size."));
     p_upEndBox->setKeyboardTracking(false);
 
     p_upNumMinorBox = new QSpinBox;
     p_upNumMinorBox->setRange(1,10);
+    p_upNumMinorBox->setValue(get<int>(BC::Key::WizLoScan::upNumMinor,1));
     p_upNumMinorBox->setToolTip(QString("Number of minor (small) steps to take per major step.\nThe sign is determined automatically."));
 
     p_upMinorStepBox = new QDoubleSpinBox;
@@ -42,11 +48,13 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     p_upMinorStepBox->setSuffix(QString(" MHz"));
     p_upMinorStepBox->setSingleStep(1.0);
     p_upMinorStepBox->setRange(0.0,1e9);
+    p_upMinorStepBox->setValue(get<double>(BC::Key::WizLoScan::upMinorStep,0.0));
     p_upMinorStepBox->setToolTip(QString("Minor step size, if number of minor steps > 1.\nMay change the number of major steps."));
     p_upMinorStepBox->setKeyboardTracking(false);
 
     p_upNumMajorBox = new QSpinBox;
     p_upNumMajorBox->setRange(2,100000);
+    p_upNumMajorBox->setValue(get<int>(BC::Key::WizLoScan::upNumMajor,2));
     p_upNumMajorBox->setToolTip(QString("Number of major steps desired.\nChanging this will update the major step size."));
 
     p_upMajorStepBox = new QDoubleSpinBox;
@@ -54,6 +62,7 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     p_upMajorStepBox->setSuffix(QString(" MHz"));
     p_upMajorStepBox->setSingleStep(100.0);
     p_upMajorStepBox->setRange(0.0,1e9);
+    p_upMajorStepBox->setValue(get<double>(BC::Key::WizLoScan::upMajorStep,1000.0));
     p_upMajorStepBox->setToolTip(QString("Desired major step size.\nChanging this will update the number of major steps."));
     p_upMajorStepBox->setKeyboardTracking(false);
 
@@ -86,6 +95,7 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     p_downStartBox->setSuffix(QString(" MHz"));
     p_downStartBox->setSingleStep(1000.0);
     p_downStartBox->setRange(0.0,1e9);
+    p_downStartBox->setValue(get<double>(BC::Key::WizLoScan::downStart,0.0));
     p_downStartBox->setToolTip(QString("Starting major step LO frequency."));
     p_downStartBox->setKeyboardTracking(false);
 
@@ -94,11 +104,13 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     p_downEndBox->setSuffix(QString(" MHz"));
     p_downEndBox->setSingleStep(1000.0);
     p_downEndBox->setRange(0.0,1e9);
+    p_downEndBox->setValue(get<double>(BC::Key::WizLoScan::downEnd,1000.0));
     p_downEndBox->setToolTip(QString("Ending LO frequency (including major and minor steps).\nThis is a limit; the frequency will not exceed this value.\nChanging this value will update the major step size."));
     p_downEndBox->setKeyboardTracking(false);
 
     p_downNumMinorBox = new QSpinBox;
     p_downNumMinorBox->setRange(1,10);
+    p_downNumMinorBox->setValue(get<int>(BC::Key::WizLoScan::downNumMinor,1));
     p_downNumMinorBox->setToolTip(QString("Number of minor (small) steps to take per major step.\nThe sign is determined automatically."));
 
     p_downMinorStepBox = new QDoubleSpinBox;
@@ -106,11 +118,13 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     p_downMinorStepBox->setSuffix(QString(" MHz"));
     p_downMinorStepBox->setSingleStep(1.0);
     p_downMinorStepBox->setRange(0.0,1e9);
+    p_downMinorStepBox->setValue(get<double>(BC::Key::WizLoScan::downMinorStep,0.0));
     p_downMinorStepBox->setToolTip(QString("Minor step size, if number of minor steps > 1.\nMay change the number of major steps."));
     p_downMinorStepBox->setKeyboardTracking(false);
 
     p_downNumMajorBox = new QSpinBox;
     p_downNumMajorBox->setRange(2,100000);
+    p_downNumMajorBox->setValue(get<int>(BC::Key::WizLoScan::downNumMajor,2));
     p_downNumMajorBox->setToolTip(QString("Number of major steps desired.\nChanging this will update the major step size."));
 
     p_downMajorStepBox = new QDoubleSpinBox;
@@ -118,14 +132,17 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     p_downMajorStepBox->setSuffix(QString(" MHz"));
     p_downMajorStepBox->setSingleStep(100.0);
     p_downMajorStepBox->setRange(0.0,1e9);
+    p_downMajorStepBox->setValue(get<double>(BC::Key::WizLoScan::downMajorStep,1000.0));
     p_downMajorStepBox->setToolTip(QString("Desired major step size.\nChanging this will update the number of major steps."));
     p_downMajorStepBox->setKeyboardTracking(false);
 
     p_fixedDownLoBox = new QCheckBox(QString("Fixed Frequency"));
     p_fixedDownLoBox->setToolTip(QString("If checked, the downconversion frequency will be set to the start value for all points."));
+    p_fixedDownLoBox->setChecked(get<bool>(BC::Key::WizLoScan::downFixed,false));
 
     p_constantDownOffsetBox = new QCheckBox(QString("Constant Offset"));
     p_constantDownOffsetBox->setToolTip(QString("If checked, the downconversion frequency will maintain a constant difference from the upconversion LO.\nThe difference will be kept at the difference of the start frequencies."));
+    p_constantDownOffsetBox->setChecked(get<bool>(BC::Key::WizLoScan::constOffset,false));
 
     auto *downgl = new QGridLayout;
     downgl->addWidget(new QLabel("Start"),0,0,Qt::AlignRight);
@@ -229,7 +246,22 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) : ExperimentWiza
     connect(p_constantDownOffsetBox,&QCheckBox::toggled,this,&WizardLoScanConfigPage::constantOffsetChanged);
     connect(p_fixedDownLoBox,&QCheckBox::toggled,this,&WizardLoScanConfigPage::fixedChanged);
 
-    loadFromSettings();
+    registerGetter(BC::Key::WizLoScan::upStart,p_upStartBox,&QDoubleSpinBox::value);
+    registerGetter(BC::Key::WizLoScan::upEnd,p_upEndBox,&QDoubleSpinBox::value);
+    registerGetter(BC::Key::WizLoScan::upNumMinor,p_upNumMinorBox,&QSpinBox::value);
+    registerGetter(BC::Key::WizLoScan::upMinorStep,p_upMinorStepBox,&QDoubleSpinBox::value);
+    registerGetter(BC::Key::WizLoScan::upNumMajor,p_upNumMajorBox,&QSpinBox::value);
+    registerGetter(BC::Key::WizLoScan::upMajorStep,p_upMajorStepBox,&QDoubleSpinBox::value);
+
+    registerGetter(BC::Key::WizLoScan::downStart,p_downStartBox,&QDoubleSpinBox::value);
+    registerGetter(BC::Key::WizLoScan::downEnd,p_downEndBox,&QDoubleSpinBox::value);
+    registerGetter(BC::Key::WizLoScan::downNumMinor,p_downNumMinorBox,&QSpinBox::value);
+    registerGetter(BC::Key::WizLoScan::downMinorStep,p_downMinorStepBox,&QDoubleSpinBox::value);
+    registerGetter(BC::Key::WizLoScan::downNumMajor,p_downNumMajorBox,&QSpinBox::value);
+    registerGetter(BC::Key::WizLoScan::downMajorStep,p_downMajorStepBox,&QDoubleSpinBox::value);
+
+    registerGetter(BC::Key::WizLoScan::downFixed,static_cast<QAbstractButton*>(p_fixedDownLoBox),&QCheckBox::isChecked);
+    registerGetter(BC::Key::WizLoScan::constOffset,static_cast<QAbstractButton*>(p_constantDownOffsetBox),&QCheckBox::isChecked);
 
 }
 
@@ -245,28 +277,20 @@ void WizardLoScanConfigPage::initializePage()
     if(upLO.isEmpty())
         return;
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(upLO);
-    s.beginGroup(s.value(QString("subKey"),QString("fixed")).toString());
+    SettingsStorage s(upLO,Hardware);
 
-    double upMinFreq = s.value(QString("minFreqMHz"),0.0).toDouble();
-    double upMaxFreq = s.value(QString("maxFreqMHz"),1e7).toDouble();
-
-    s.endGroup();
-    s.endGroup();
+    double upMinFreq = s.get<double>(BC::Key::Clock::minFreq,0.0);
+    double upMaxFreq = s.get<double>(BC::Key::Clock::maxFreq,1e7);
 
     double downMinFreq = upMinFreq;
     double downMaxFreq = upMaxFreq;
 
     if(!d_rfConfig.commonLO() && upLO != downLO)
     {
-        s.beginGroup(downLO);
-        s.beginGroup(s.value(QString("subKey"),QString("fixed")).toString());
-        downMinFreq = s.value(QString("minFreqMHz"),0.0).toDouble();
-        downMaxFreq = s.value(QString("maxFreqMHz"),1e7).toDouble();
+        SettingsStorage s2(downLO,Hardware);
 
-        s.endGroup();
-        s.endGroup();
+        downMinFreq = s2.get<double>(BC::Key::Clock::minFreq,0.0);
+        downMaxFreq = s2.get<double>(BC::Key::Clock::maxFreq,1e7);
     }
 
     auto clocks = d_rfConfig.getClocks();
@@ -408,7 +432,6 @@ bool WizardLoScanConfigPage::validatePage()
     e->setRfConfig(d_rfConfig);
     
 
-    saveToSettings();
     return true;
 }
 
@@ -625,57 +648,6 @@ void WizardLoScanConfigPage::constantOffsetChanged(bool co)
     p_downNumMajorBox->setEnabled(!co);
     p_downNumMinorBox->setEnabled(!co);
     p_fixedDownLoBox->setEnabled(!co);
-}
-
-void WizardLoScanConfigPage::saveToSettings() const
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("lastLoScan"));
-
-    s.setValue(QString("upStart"),p_upStartBox->value());
-    s.setValue(QString("upEnd"),p_upEndBox->value());
-    s.setValue(QString("upNumMinor"),p_upNumMinorBox->value());
-    s.setValue(QString("upMinorStep"),p_upMinorStepBox->value());
-    s.setValue(QString("upNumMajor"),p_upNumMajorBox->value());
-    s.setValue(QString("upMajorStep"),p_upMajorStepBox->value());
-
-    s.setValue(QString("downStart"),p_downStartBox->value());
-    s.setValue(QString("downEnd"),p_downEndBox->value());
-    s.setValue(QString("downNumMinor"),p_downNumMinorBox->value());
-    s.setValue(QString("downMinorStep"),p_downMinorStepBox->value());
-    s.setValue(QString("downNumMajor"),p_downNumMajorBox->value());
-    s.setValue(QString("downMajorStep"),p_downMajorStepBox->value());
-
-    s.setValue(QString("downFixed"),p_fixedDownLoBox->isChecked());
-    s.setValue(QString("downConstantOffset"),p_constantDownOffsetBox->isChecked());
-
-    s.endGroup();
-    s.sync();
-}
-
-void WizardLoScanConfigPage::loadFromSettings()
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("lastLoScan"));
-
-    p_upStartBox->setValue(s.value(QString("upStart"),0).toDouble());
-    p_upEndBox->setValue(s.value(QString("upEnd"),1000.0).toDouble());
-    p_upNumMinorBox->setValue(s.value(QString("upNumMinor"),1).toInt());
-    p_upMinorStepBox->setValue(s.value(QString("upMinorStep"),0.0).toDouble());
-    p_upNumMajorBox->setValue(s.value(QString("upNumMajor"),2).toInt());
-    p_upMajorStepBox->setValue(s.value(QString("upMajorStep"),1000.0).toDouble());
-
-    p_downStartBox->setValue(s.value(QString("downStart"),0).toDouble());
-    p_downEndBox->setValue(s.value(QString("downEnd"),1000.0).toDouble());
-    p_downNumMinorBox->setValue(s.value(QString("downNumMinor"),1).toInt());
-    p_downMinorStepBox->setValue(s.value(QString("downMinorStep"),0.0).toDouble());
-    p_downNumMajorBox->setValue(s.value(QString("downNumMajor"),2).toInt());
-    p_downMajorStepBox->setValue(s.value(QString("downMajorStep"),1000.0).toDouble());
-
-    p_fixedDownLoBox->setChecked(s.value(QString("downFixed"),false).toBool());
-    p_constantDownOffsetBox->setChecked(s.value(QString("downConstantOffset"),false).toBool());
-
-    s.endGroup();
 }
 
 double WizardLoScanConfigPage::calculateMajorStepSize(BlackChirp::ClockType t)

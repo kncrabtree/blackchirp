@@ -23,6 +23,11 @@
  *
  */
 
+namespace BC::Key::Clock {
+static const QString minFreq("minFreqMHz");
+static const QString maxFreq("maxFreqMHz");
+}
+
 class Clock : public HardwareObject
 {
     Q_OBJECT

@@ -10,6 +10,10 @@ class LifControlWidget;
 class LifLaserControlDoubleSpinBox;
 class QComboBox;
 
+namespace BC::Key::WizLif {
+static const QString key("WizardLifConfigPage");
+}
+
 class WizardLifConfigPage : public ExperimentWizardPage
 {
     Q_OBJECT

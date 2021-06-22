@@ -1,6 +1,7 @@
 #include <src/gui/wizard/experimentwizardpage.h>
 
-ExperimentWizardPage::ExperimentWizardPage(QWidget *parent) : QWizardPage(parent)
+ExperimentWizardPage::ExperimentWizardPage(const QString key, QWidget *parent) :
+    QWizardPage(parent), SettingsStorage(key)
 {
 }
 

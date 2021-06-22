@@ -8,6 +8,27 @@ class QDoubleSpinBox;
 class QGroupBox;
 class QCheckBox;
 
+namespace BC::Key::WizLoScan {
+static const QString key("WizardLoScanPage");
+
+static const QString upStart("upStart");
+static const QString upEnd("upEnd");
+static const QString upNumMinor("upNumMinor");
+static const QString upMinorStep("upMinorStep");
+static const QString upNumMajor("upNumMajor");
+static const QString upMajorStep("upMajorStep");
+
+static const QString downStart("downStart");
+static const QString downEnd("downEnd");
+static const QString downNumMinor("downNumMinor");
+static const QString downMinorStep("downMinorStep");
+static const QString downNumMajor("downNumMajor");
+static const QString downMajorStep("downMajorStep");
+
+static const QString downFixed("downFixed");
+static const QString constOffset("downConstatntOffset");
+}
+
 class WizardLoScanConfigPage : public ExperimentWizardPage
 {
     Q_OBJECT
@@ -30,10 +51,6 @@ public slots:
     void majorStepSizeChanged(BlackChirp::ClockType t, double val);
     void fixedChanged(bool fixed);
     void constantOffsetChanged(bool co);
-
-protected:
-    void saveToSettings() const;
-    void loadFromSettings();
 
 private:
     QSpinBox *p_upNumMinorBox, *p_downNumMinorBox, *p_upNumMajorBox, *p_downNumMajorBox, *p_shotsPerStepBox, *p_targetSweepsBox;

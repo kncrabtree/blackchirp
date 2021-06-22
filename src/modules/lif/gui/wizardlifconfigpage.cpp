@@ -18,7 +18,7 @@
 #include <src/gui/wizard/experimentwizard.h>
 
 WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
-    ExperimentWizardPage(parent)
+    ExperimentWizardPage(BC::Key::WizLif::key,parent)
 {
     setTitle(QString("LIF Configuration"));
     setSubTitle(QString("Configure the parameters for the LIF Acquisition. Oscilloscope settings are immediately applied. Integration gates and shots per point can be set by right-clicking the plot."));

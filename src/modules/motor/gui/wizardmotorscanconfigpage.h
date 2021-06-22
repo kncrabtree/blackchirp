@@ -5,6 +5,10 @@
 
 class MotorScanConfigWidget;
 
+namespace BC::Key::WizMotor {
+static const QString key("WizardMotorPage");
+}
+
 class WizardMotorScanConfigPage : public ExperimentWizardPage
 {
 public:
