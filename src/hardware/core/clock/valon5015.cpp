@@ -1,27 +1,12 @@
 #include "valon5015.h"
 
 Valon5015::Valon5015(int clockNum, QObject *parent) :
-    Clock(clockNum,BC::Key::valon5015,BC::Key::valon5015Name,CommunicationProtocol::Rs232,parent)
+    Clock(clockNum,1,true,BC::Key::valon5015,BC::Key::valon5015Name,CommunicationProtocol::Rs232,parent)
 {
-    d_numOutputs = 1;
-    d_isTunable = true;
+    setDefault(BC::Key::Clock::minFreq,500.0);
+    setDefault(BC::Key::Clock::maxFreq,15000.0);
+    setDefault(BC::Key::Clock::lock,false);
 }
-
-void Valon5015::readSettings()
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    d_minFreqMHz = s.value(QString("minFreqMHz"),500.0).toDouble();
-    d_maxFreqMHz = s.value(QString("maxFreqMHz"),15000.0).toDouble();
-    d_lockToExt10MHz = s.value(QString("lockToExt10MHz"),false).toBool();
-    s.setValue(QString("minFreqMHz"),d_minFreqMHz);
-    s.setValue(QString("maxFreqMHz"),d_maxFreqMHz);
-    s.setValue(QString("lockToExt10MHz"),d_lockToExt10MHz);
-    s.endGroup();
-    s.endGroup();
-}
-
 
 bool Valon5015::testConnection()
 {
@@ -49,15 +34,10 @@ void Valon5015::initializeClock()
     p_comm->setReadOptions(500,true,QByteArray("\n\r"));
 }
 
-QStringList Valon5015::channelNames()
-{
-    return QStringList { QString("Source 1") };
-}
-
 bool Valon5015::prepareClock(Experiment &exp)
 {
     valonWriteCmd(QString("PWR 13\r"));
-    if(d_lockToExt10MHz)
+    if(get<bool>(BC::Key::Clock::lock))
     {
         valonWriteCmd(QString("REFS 1\r"));
         valonWriteCmd(QString("REF 10 MHz\r"));

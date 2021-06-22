@@ -16,10 +16,6 @@ class FixedClock : public Clock
 public:
     FixedClock(int clockNum, QObject *parent = nullptr);
 
-    // HardwareObject interface
-public slots:
-    void readSettings() override;
-
     // Clock interface
 protected:
     bool testConnection() override;

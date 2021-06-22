@@ -76,11 +76,6 @@ class Valon5009;
 class Valon5015;
 #endif
 
-#ifdef BC_CLOCK_VALON5015
-#include "valon5015.h"
-class Valon5015;
-#endif
-
 #ifdef BC_CLOCK_0
 typedef BC_CLOCK_0 Clock0Hardware;
 #endif

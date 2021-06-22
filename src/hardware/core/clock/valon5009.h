@@ -15,13 +15,9 @@ class Valon5009 : public Clock
 public:
     explicit Valon5009(int clockNum, QObject *parent = nullptr);
 
-    // HardwareObject interface
-public slots:
-    void readSettings() override;
-
     // Clock interface
 public:
-    QStringList channelNames() override;
+    QStringList channelNames() override { return {"Source 1","Source 2"}; }
 
 protected:
     bool testConnection() override;
@@ -33,8 +29,6 @@ protected:
 private:
     bool valonWriteCmd(QString cmd);
     QByteArray valonQueryCmd(QString cmd);
-
-    bool d_lockToExt10MHz;
 };
 
 #endif // VALON5009_H

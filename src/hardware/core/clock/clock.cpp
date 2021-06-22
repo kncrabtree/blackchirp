@@ -1,8 +1,9 @@
 #include <src/hardware/core/clock/clock.h>
 
-Clock::Clock(int clockNum, const QString subKey, const QString name, CommunicationProtocol::CommType commType,
+Clock::Clock(int clockNum, int numOutputs, bool tunable, const QString subKey, const QString name, CommunicationProtocol::CommType commType,
              QObject *parent, bool threaded) :
-    HardwareObject(QString("clock%1").arg(clockNum),subKey,name,commType,parent,threaded,true)
+    HardwareObject(QString("clock%1").arg(clockNum),subKey,name,commType,parent,threaded,true), d_numOutputs(numOutputs),
+    d_isTunable(tunable)
 {
 }
 
@@ -85,10 +86,13 @@ double Clock::setFrequency(BlackChirp::ClockType t, double freqMHz)
     int output = d_outputRoles.value(t);
     double hwFreqMHz = freqMHz/d_multFactors.at(output);
 
-    if(hwFreqMHz < d_minFreqMHz || hwFreqMHz > d_maxFreqMHz)
+    auto min = get<double>(BC::Key::Clock::minFreq);
+    auto max = get<double>(BC::Key::Clock::maxFreq);
+
+    if(hwFreqMHz < min || hwFreqMHz > max)
     {
         emit logMessage(QString("Desired frequency (%1 MHz) is outside the clock's range (%2 - %3 MHz). Frequency has not been changed.")
-                        .arg(hwFreqMHz,0,'f',3).arg(d_minFreqMHz,0,'f',3).arg(d_maxFreqMHz,0,'f',3),
+                        .arg(hwFreqMHz,0,'f',3).arg(min,0,'f',3).arg(max,0,'f',3),
                         BlackChirp::LogWarning);
         return -1.0;
     }

@@ -18,8 +18,7 @@ public:
 
     // HardwareObject interface
 public slots:
-    void readSettings() override;
-    QStringList channelNames() override;
+    QStringList channelNames() override { return {"Source 1"}; }
 
 
     // Clock interface
@@ -32,9 +31,6 @@ protected:
 
 private:
     bool valonWriteCmd(QString cmd);
-    QByteArray valonQueryCmd(QString cmd);
-
-    bool d_lockToExt10MHz;
-};
+    QByteArray valonQueryCmd(QString cmd);};
 
 #endif // VALON5015_H

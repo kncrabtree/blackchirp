@@ -26,13 +26,14 @@
 namespace BC::Key::Clock {
 static const QString minFreq("minFreqMHz");
 static const QString maxFreq("maxFreqMHz");
+static const QString lock("lockExternal");
 }
 
 class Clock : public HardwareObject
 {
     Q_OBJECT
 public:
-    explicit Clock(int clockNum, const QString subKey, const QString name,
+    explicit Clock(int clockNum, int numOutputs, bool tunable, const QString subKey, const QString name,
                    CommunicationProtocol::CommType commType, QObject *parent = nullptr,
                    bool threaded = false);
 
@@ -58,14 +59,14 @@ public slots:
 signals:
     void frequencyUpdate(BlackChirp::ClockType, double);
 
-
-protected:
+private:
     int d_numOutputs;
     bool d_isTunable;
-    double d_minFreqMHz, d_maxFreqMHz;
     QHash<BlackChirp::ClockType,int> d_outputRoles;
     QList<double> d_multFactors;
 
+
+protected:
     virtual void initializeClock() =0;
     virtual bool setHwFrequency(double freqMHz, int outputIndex = 0) =0;
     virtual double readHwFrequency(int outputIndex = 0) =0;
