@@ -8,11 +8,9 @@
 
 class QTcpSocket;
 
-namespace BC {
-namespace Key {
+namespace BC::Key::FtmwScope {
 static const QString dsa71604c("dsa71604c");
 static const QString dsa71064cName("Ftmw Oscilloscope DSA71604C");
-}
 }
 
 class Dsa71604c : public FtmwScope
@@ -24,7 +22,6 @@ public:
 
     // HardwareObject interface
 public slots:
-    void readSettings() override;
     bool prepareForExperiment(Experiment &exp) override;
     void beginAcquisition() override;
     void endAcquisition() override;

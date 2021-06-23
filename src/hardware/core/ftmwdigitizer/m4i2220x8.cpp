@@ -4,8 +4,30 @@
 
 
 M4i2220x8::M4i2220x8(QObject *parent) :
-    FtmwScope(BC::Key::m4i2220x8,BC::Key::m4i2220x8Name,CommunicationProtocol::Custom,parent), p_handle(nullptr)
+    FtmwScope(BC::Key::FtmwScope::m4i2220x8,BC::Key::FtmwScope::m4i2220x8Name,CommunicationProtocol::Custom,parent), p_handle(nullptr)
 {
+    setDefault(BC::Key::FtmwScope::blockAverage,true);
+    setDefault(BC::Key::FtmwScope::multiRecord,true);
+    setDefault(BC::Key::FtmwScope::summaryRecord,false);
+    setDefault(BC::Key::FtmwScope::multiBlock,false);
+    setDefault(BC::Key::FtmwScope::bandwidth,1250.0);
+
+    if(!containsArray(BC::Key::FtmwScope::sampleRates))
+        setArray(BC::Key::FtmwScope::sampleRates,{
+                     {{BC::Key::FtmwScope::srText,"78.125 MSa/s"},{BC::Key::FtmwScope::srValue,2.5e9/32}},
+                     {{BC::Key::FtmwScope::srText,"156.25 MSa/s"},{BC::Key::FtmwScope::srValue,2.5e9/16}},
+                     {{BC::Key::FtmwScope::srText,"312.5 MSa/s"},{BC::Key::FtmwScope::srValue,2.5e9/8}},
+                     {{BC::Key::FtmwScope::srText,"625 MSa/s"},{BC::Key::FtmwScope::srValue,2.5e9/4}},
+                     {{BC::Key::FtmwScope::srText,"1250 GSa/s"},{BC::Key::FtmwScope::srValue,2.5e9/2}},
+                     {{BC::Key::FtmwScope::srText,"2500 MSa/s"},{BC::Key::FtmwScope::srValue,2.5e9}}
+                 });
+
+    if(!containsArray(BC::Key::Custom::comm))
+        setArray(BC::Key::Custom::comm, {
+                    {{BC::Key::Custom::key,"devPath"},
+                     {BC::Key::Custom::type,BC::Key::Custom::stringKey},
+                     {BC::Key::Custom::label,"Device Path"}}
+                 });
 }
 
 M4i2220x8::~M4i2220x8()
@@ -17,62 +39,9 @@ M4i2220x8::~M4i2220x8()
     }
 }
 
-void M4i2220x8::readSettings()
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-
-    s.setValue(QString("canBlockAverage"),true);
-    s.setValue(QString("canFastFrame"),true);
-    s.setValue(QString("canSummaryFrame"),false);
-    s.setValue(QString("canBlockAndFastFrame"),false);
-
-    double bandwidth = s.value(QString("bandwidth"),1250.0).toDouble();
-    s.setValue(QString("bandwidth"),bandwidth);
-
-    if(s.beginReadArray(QString("sampleRates")) < 1)
-    {
-        s.endArray();
-
-        QList<QPair<QString,double>> sampleRates;
-        for(int i=0; i<6; i++)
-        {
-            QString txt = QString("%1 MSa/S").arg(round(2.5e3/( 1 << i )),4);
-            double val = 2.5e9/(static_cast<double>( 1 << i));
-            sampleRates << qMakePair(txt,val);
-        }
-
-        s.beginWriteArray(QString("sampleRates"));
-        for(int i=0; i<sampleRates.size(); i++)
-        {
-            s.setArrayIndex(i);
-            s.setValue(QString("text"),sampleRates.at(i).first);
-            s.setValue(QString("val"),sampleRates.at(i).second);
-        }
-    }
-
-    s.endArray();
-    s.beginWriteArray(QString("comm"));
-    s.setArrayIndex(0);
-    s.setValue(QString("name"),QString("Device Path"));
-    s.setValue(QString("key"),QString("devPath"));
-    s.setValue(QString("type"),QString("string"));
-    s.endArray();
-
-    s.endGroup();
-    s.endGroup();
-}
-
-
 bool M4i2220x8::testConnection()
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    QByteArray path = s.value(QString("devPath"),QString("/dev/spcm0")).toString().toLatin1();
-    s.endGroup();
-    s.endGroup();
+{    
+    auto path = getArrayValue(BC::Key::Custom::comm,0,"devPath",QString("/dev/spcm0"));
 
     if(p_handle != nullptr)
     {
@@ -80,7 +49,7 @@ bool M4i2220x8::testConnection()
         p_handle = nullptr;
     }
 
-    p_handle = spcm_hOpen(path.data());
+    p_handle = spcm_hOpen(path.toLatin1().constData());
 
 
     if(p_handle == nullptr)

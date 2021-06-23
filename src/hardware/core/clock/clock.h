@@ -3,6 +3,12 @@
 
 #include <src/hardware/core/hardwareobject.h>
 
+namespace BC::Key::Clock {
+static const QString minFreq("minFreqMHz");
+static const QString maxFreq("maxFreqMHz");
+static const QString lock("lockExternal");
+}
+
 /**
  * @brief The Clock class defines an interface for an oscillator
  *
@@ -22,13 +28,6 @@
  *
  *
  */
-
-namespace BC::Key::Clock {
-static const QString minFreq("minFreqMHz");
-static const QString maxFreq("maxFreqMHz");
-static const QString lock("lockExternal");
-}
-
 class Clock : public HardwareObject
 {
     Q_OBJECT

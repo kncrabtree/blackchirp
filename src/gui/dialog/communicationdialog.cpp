@@ -250,35 +250,35 @@ void CommunicationDialog::customDeviceChanged(int index)
 
     SettingsStorage s(key,SettingsStorage::Hardware);
 
-    auto count = s.getArraySize(BC::Key::customComm);
+    auto count = s.getArraySize(BC::Key::Custom::comm);
     for(std::size_t i=0; i<count; ++i)
     {
         CustomInfo ci;
-        ci.type = s.getArrayValue<QString>(BC::Key::customComm,i,
-                                           BC::Key::customType,BC::Key::customString);
-        ci.key = s.getArrayValue<QString>(BC::Key::customComm,i,
-                                          BC::Key::customKey,"key");
-        if(ci.type == BC::Key::customInt)
+        ci.type = s.getArrayValue(BC::Key::Custom::comm,i,
+                                           BC::Key::Custom::type,BC::Key::Custom::stringKey);
+        ci.key = s.getArrayValue(BC::Key::Custom::comm,i,
+                                          BC::Key::Custom::key,QString("key"));
+        if(ci.type == BC::Key::Custom::intKey)
         {
             QSpinBox *sb = new QSpinBox;
-            sb->setMinimum(s.getArrayValue<int>(BC::Key::customComm,i,
-                                                BC::Key::customIntMin,-__INT_MAX__));
-            sb->setMaximum(s.getArrayValue<int>(BC::Key::customComm,i,
-                                                BC::Key::customIntMax,__INT_MAX__));
-            sb->setValue(s.get<int>(ci.key,0));
+            sb->setMinimum(s.getArrayValue(BC::Key::Custom::comm,i,
+                                                BC::Key::Custom::intMin,-__INT_MAX__));
+            sb->setMaximum(s.getArrayValue(BC::Key::Custom::comm,i,
+                                                BC::Key::Custom::intMax,__INT_MAX__));
+            sb->setValue(s.get(ci.key,0));
             ci.displayWidget = sb;
         }
         else
         {
             QLineEdit *le = new QLineEdit;
-            le->setMaxLength(s.getArrayValue(BC::Key::customComm,i,
-                                             BC::Key::customStringMaxLength,255));
-            le->setText(s.get<QString>(ci.key,""));
+            le->setMaxLength(s.getArrayValue(BC::Key::Custom::comm,i,
+                                             BC::Key::Custom::maxLen,255));
+            le->setText(s.get(ci.key,QString("")));
             ci.displayWidget = le;
         }
 
-        ci.labelWidget = new QLabel(s.getArrayValue(BC::Key::customComm,i,
-                                                    BC::Key::customTypeLabel,QString("ID")));
+        ci.labelWidget = new QLabel(s.getArrayValue(BC::Key::Custom::comm,i,
+                                                    BC::Key::Custom::label,QString("ID")));
 
         ui->customBoxLayout->insertRow(1,ci.labelWidget,ci.displayWidget);
         d_customInfoList.append(ci);
@@ -383,7 +383,7 @@ void CommunicationDialog::testCustom()
     for(int i=0; i<d_customInfoList.size(); i++)
     {
         auto ci = d_customInfoList.at(i);
-        if(ci.type == BC::Key::customInt)
+        if(ci.type == BC::Key::Custom::intKey)
         {
             auto sb = dynamic_cast<QSpinBox*>(ci.displayWidget);
             s.setValue(ci.key,sb->value());

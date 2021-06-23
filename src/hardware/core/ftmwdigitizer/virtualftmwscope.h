@@ -6,8 +6,9 @@
 #include <QVector>
 #include <QTimer>
 
-namespace BC::Key {
+namespace BC::Key::FtmwScope {
 static const QString vftmwName("Virtual FTMW Oscilloscope");
+static const QString interval("shotIntervalMs");
 }
 
 class VirtualFtmwScope : public FtmwScope
@@ -19,7 +20,6 @@ public:
 
     // HardwareObject interface
 public slots:
-    void readSettings() override;
     bool prepareForExperiment(Experiment &exp) override;
     void beginAcquisition() override;
     void endAcquisition() override;

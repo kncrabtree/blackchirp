@@ -14,14 +14,14 @@ DigitizerConfigWidget::DigitizerConfigWidget(QWidget *parent) :
 
     ///TODO: Customize more UI settings according to Hardware limits for ftmwscope implementation
 
-    SettingsStorage s(BC::Key::ftmwScope,SettingsStorage::Hardware);
-    auto sr = s.getArray(BC::Key::sampleRates);
+    SettingsStorage s(BC::Key::FtmwScope::ftmwScope,SettingsStorage::Hardware);
+    auto sr = s.getArray(BC::Key::FtmwScope::sampleRates);
     if(sr.size() > 0)
     {
         for(auto m : sr)
         {
-            auto txt = m.find(BC::Key::srText);
-            auto val = m.find(BC::Key::srValue);
+            auto txt = m.find(BC::Key::FtmwScope::srText);
+            auto val = m.find(BC::Key::FtmwScope::srValue);
             if(txt != m.end() && val != m.end())
                 ui->sampleRateComboBox->addItem(txt->second.toString(),val->second);
         }
@@ -89,8 +89,8 @@ void DigitizerConfigWidget::setFromConfig(const FtmwConfig config)
 
     auto cc = config.chirpConfig();
 
-    SettingsStorage s(BC::Key::ftmwScope,SettingsStorage::Hardware);
-    bool ba = s.get<bool>(BC::Key::blockAverage,false);
+    SettingsStorage s(BC::Key::FtmwScope::ftmwScope,SettingsStorage::Hardware);
+    bool ba = s.get(BC::Key::FtmwScope::blockAverage,false);
 
     ui->fastFrameEnabledCheckBox->blockSignals(true);
     if(cc.numChirps() > 1)
@@ -135,8 +135,8 @@ void DigitizerConfigWidget::setFromConfig(const FtmwConfig config)
 FtmwConfig DigitizerConfigWidget::getConfig()
 {
     ///TODO: this should be enforced elsewhere
-    SettingsStorage s(BC::Key::ftmwScope,SettingsStorage::Hardware);
-    bool canSf = s.get(BC::Key::summaryRecord,false);
+    SettingsStorage s(BC::Key::FtmwScope::ftmwScope,SettingsStorage::Hardware);
+    bool canSf = s.get(BC::Key::FtmwScope::summaryRecord,false);
 
     BlackChirp::FtmwScopeConfig sc;
     sc.fidChannel = ui->fIDChannelSpinBox->value();
@@ -170,10 +170,10 @@ FtmwConfig DigitizerConfigWidget::getConfig()
 void DigitizerConfigWidget::configureUI()
 {
 
-    SettingsStorage s(BC::Key::ftmwScope,SettingsStorage::Hardware);
-    bool canSf = s.get(BC::Key::summaryRecord,false);
-    bool ba = s.get<bool>(BC::Key::blockAverage,false);
-    bool ffba = s.get<bool>(BC::Key::multiBlock);
+    SettingsStorage s(BC::Key::FtmwScope::ftmwScope,SettingsStorage::Hardware);
+    bool canSf = s.get(BC::Key::FtmwScope::summaryRecord,false);
+    bool ba = s.get(BC::Key::FtmwScope::blockAverage,false);
+    bool ffba = s.get(BC::Key::FtmwScope::multiBlock,false);
     bool ff = ui->fastFrameEnabledCheckBox->isChecked();
 
     if(!ba || (!ffba && ff))

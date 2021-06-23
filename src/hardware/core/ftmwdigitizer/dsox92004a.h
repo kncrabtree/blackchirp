@@ -5,11 +5,9 @@
 
 class QTcpSocket;
 
-namespace BC {
-namespace Key {
+namespace BC::Key::FtmwScope {
 static const QString dsox92004a("DSOx92004A");
 static const QString dsox92004aName("Ftmw Oscilloscope DSOx92004A");
-}
 }
 
 class DSOx92004A : public FtmwScope

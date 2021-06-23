@@ -4,53 +4,31 @@
 #include <math.h>
 
 Dsa71604c::Dsa71604c(QObject *parent) :
-    FtmwScope(BC::Key::dsa71604c,BC::Key::dsa71064cName,CommunicationProtocol::Tcp,parent),
+    FtmwScope(BC::Key::FtmwScope::dsa71604c,BC::Key::FtmwScope::dsa71064cName,CommunicationProtocol::Tcp,parent),
     d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {
+    setDefault(BC::Key::FtmwScope::blockAverage,false);
+    setDefault(BC::Key::FtmwScope::multiRecord,true);
+    setDefault(BC::Key::FtmwScope::summaryRecord,true);
+    setDefault(BC::Key::FtmwScope::multiBlock,false);
+    setDefault(BC::Key::FtmwScope::bandwidth,16000.0);
+
+    if(!containsArray(BC::Key::FtmwScope::sampleRates))
+        setArray(BC::Key::FtmwScope::sampleRates,{
+                     {{BC::Key::FtmwScope::srText,"2 GSa/s"},{BC::Key::FtmwScope::srValue,2e9}},
+                       {{BC::Key::FtmwScope::srText,"5 GSa/s"},{BC::Key::FtmwScope::srValue,5e9}},
+                       {{BC::Key::FtmwScope::srText,"10 GSa/s"},{BC::Key::FtmwScope::srValue,10e9}},
+                       {{BC::Key::FtmwScope::srText,"20 GSa/s"},{BC::Key::FtmwScope::srValue,20e9}},
+                       {{BC::Key::FtmwScope::srText,"50 GSa/s"},{BC::Key::FtmwScope::srValue,50e9}},
+                       {{BC::Key::FtmwScope::srText,"100 GSa/s"},{BC::Key::FtmwScope::srValue,100e9}}
+                     });
 }
 
 Dsa71604c::~Dsa71604c()
 {
 
 }
-
-void Dsa71604c::readSettings()
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-
-    s.setValue(QString("canBlockAverage"),false);
-    s.setValue(QString("canFastFrame"),true);
-    s.setValue(QString("canSummaryFrame"),true);
-    s.setValue(QString("canBlockAndFastFrame"),false);
-
-    double bandwidth = s.value(QString("bandwidth"),16000.0).toDouble();
-    s.setValue(QString("bandwidth"),bandwidth);
-
-    if(s.beginReadArray(QString("sampleRates")) < 1)
-    {
-        s.endArray();
-        QList<QPair<QString,double>> sampleRates;
-        sampleRates << qMakePair(QString("2 GSa/s"),2e9) << qMakePair(QString("5 GSa/s"),5e9)  << qMakePair(QString("10 GSa/s"),10e9)
-                    << qMakePair(QString("20 GSa/s"),20e9) << qMakePair(QString("50 GSa/s"),50e9)  << qMakePair(QString("100 GSa/s"),100e9);
-
-        s.beginWriteArray(QString("sampleRates"));
-        for(int i=0; i<sampleRates.size(); i++)
-        {
-            s.setArrayIndex(i);
-            s.setValue(QString("text"),sampleRates.at(i).first);
-            s.setValue(QString("val"),sampleRates.at(i).second);
-        }
-    }
-
-    s.endArray();
-    s.endGroup();
-    s.endGroup();
-}
-
-
 
 bool Dsa71604c::testConnection()
 {

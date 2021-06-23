@@ -4,45 +4,26 @@
 #include <QTimer>
 
 DSOx92004A::DSOx92004A(QObject *parent) :
-    FtmwScope(BC::Key::dsox92004a,BC::Key::dsox92004aName,CommunicationProtocol::Tcp,parent)
+    FtmwScope(BC::Key::FtmwScope::dsox92004a,BC::Key::FtmwScope::dsox92004aName,CommunicationProtocol::Tcp,parent)
 {
+    setDefault(BC::Key::FtmwScope::blockAverage,true);
+    setDefault(BC::Key::FtmwScope::multiRecord,true);
+    setDefault(BC::Key::FtmwScope::summaryRecord,false);
+    setDefault(BC::Key::FtmwScope::multiBlock,false); setDefault(BC::Key::FtmwScope::bandwidth,20000.0);
+
+    if(!containsArray(BC::Key::FtmwScope::sampleRates))
+        setArray(BC::Key::FtmwScope::sampleRates,{
+                     {{BC::Key::FtmwScope::srText,"1 GSa/s"},{BC::Key::FtmwScope::srValue,1e9}},
+                     {{BC::Key::FtmwScope::srText,"1.25 GSa/s"},{BC::Key::FtmwScope::srValue,1.25e9}},
+                     {{BC::Key::FtmwScope::srText,"2 GSa/s"},{BC::Key::FtmwScope::srValue,2e9}},
+                     {{BC::Key::FtmwScope::srText,"2.5 GSa/s"},{BC::Key::FtmwScope::srValue,2.5e9}},
+                     {{BC::Key::FtmwScope::srText,"4 GSa/s"},{BC::Key::FtmwScope::srValue,4e9}},
+                     {{BC::Key::FtmwScope::srText,"10 GSa/s"},{BC::Key::FtmwScope::srValue,10e9}},
+                     {{BC::Key::FtmwScope::srText,"20 GSa/s"},{BC::Key::FtmwScope::srValue,20e9}},
+                     {{BC::Key::FtmwScope::srText,"40 GSa/s"},{BC::Key::FtmwScope::srValue,40e9}},
+                     {{BC::Key::FtmwScope::srText,"80 GSa/s"},{BC::Key::FtmwScope::srValue,80e9}}
+                 });
 }
-
-void DSOx92004A::readSettings()
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-
-    s.setValue(QString("canBlockAverage"),true);
-    s.setValue(QString("canFastFrame"),true);
-    s.setValue(QString("canSummaryFrame"),false);
-    s.setValue(QString("canBlockAndFastFrame"),false);
-
-    double bandwidth = s.value(QString("bandwidth"),20000.0).toDouble();
-    s.setValue(QString("bandwidth"),bandwidth);
-
-    if(s.beginReadArray(QString("sampleRates")) < 1)
-    {
-        s.endArray();
-        QList<QPair<QString,double>> sampleRates;
-        sampleRates << qMakePair(QString("1 GSa/s"),1e9) << qMakePair(QString("1.25 GSa/s"),1.25e9)  << qMakePair(QString("2 GSa/s"),2e9)
-                    << qMakePair(QString("2.5 GSa/s"),2.5e9) << qMakePair(QString("4 GSa/s"),4e9) << qMakePair(QString("5 GSa/s"),5e9)  << qMakePair(QString("10 GSa/s"),10e9)
-                    << qMakePair(QString("20 GSa/s"),20e9) << qMakePair(QString("40 GSa/s"),40e9)  << qMakePair(QString("80 GSa/s"),80e9);
-
-        s.beginWriteArray(QString("sampleRates"));
-        for(int i=0; i<sampleRates.size(); i++)
-        {
-            s.setArrayIndex(i);
-            s.setValue(QString("text"),sampleRates.at(i).first);
-            s.setValue(QString("val"),sampleRates.at(i).second);
-        }
-        s.endArray();
-    }
-    s.endGroup();
-    s.endGroup();
-}
-
 
 bool DSOx92004A::testConnection()
 {

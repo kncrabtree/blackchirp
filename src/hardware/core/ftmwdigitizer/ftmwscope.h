@@ -8,12 +8,13 @@
 #include <src/data/experiment/ftmwconfig.h>
 
 
-namespace BC::Key {
+namespace BC::Key::FtmwScope {
 static const QString ftmwScope("ftmwscope");
 static const QString multiRecord("canMultiRecord");
 static const QString blockAverage("canBlockAverage");
 static const QString summaryRecord("canMultiRecordSummary");
 static const QString multiBlock("canBlockAndMultiRecord");
+static const QString bandwidth("bandwidthMHz");
 static const QString sampleRates("sampleRates");
 static const QString srText("text");
 static const QString srValue("val");

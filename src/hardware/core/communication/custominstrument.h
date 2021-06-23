@@ -3,16 +3,16 @@
 
 #include <src/hardware/core/communication/communicationprotocol.h>
 
-namespace BC::Key {
-static const QString customComm("comm");
-static const QString customType("type");
-static const QString customKey("key");
-static const QString customInt("int");
-static const QString customIntMin("min");
-static const QString customIntMax("max");
-static const QString customString("string");
-static const QString customStringMaxLength("length");
-static const QString customTypeLabel("name");
+namespace BC::Key::Custom {
+static const QString comm("comm");
+static const QString type("type");
+static const QString key("key");
+static const QString intKey("int");
+static const QString intMin("min");
+static const QString intMax("max");
+static const QString stringKey("string");
+static const QString maxLen("length");
+static const QString label("name");
 }
 
 class CustomInstrument : public CommunicationProtocol
