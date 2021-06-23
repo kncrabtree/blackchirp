@@ -1,7 +1,7 @@
 #include "virtualioboard.h"
 
 VirtualIOBoard::VirtualIOBoard(QObject *parent) :
-    IOBoard(BC::Key::hwVirtual,BC::Key::viobName,CommunicationProtocol::Custom,parent)
+    IOBoard(BC::Key::hwVirtual,BC::Key::IOB::viobName,CommunicationProtocol::Custom,parent)
 {
     //See labjacku3.cpp for an explanation of these parameters
     d_numAnalog = 4;

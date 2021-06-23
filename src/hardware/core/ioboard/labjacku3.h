@@ -5,7 +5,7 @@
 
 #include "u3.h"
 
-namespace BC::Key {
+namespace BC::Key::IOB {
 static const QString labjacku3("labjacku3");
 static const QString labjacku3Name("Labjack U3 IO Board");
 }

@@ -1,7 +1,7 @@
 #include "labjacku3.h"
 
 LabjackU3::LabjackU3(QObject *parent) :
-    IOBoard(BC::Key::labjacku3,BC::Key::labjacku3Name,CommunicationProtocol::Custom,parent),
+    IOBoard(BC::Key::IOB::labjacku3,BC::Key::IOB::labjacku3Name,CommunicationProtocol::Custom,parent),
     d_handle(nullptr), d_serialNo(3)
 {
     //note that all "reserved" channels come first!

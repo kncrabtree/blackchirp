@@ -5,7 +5,7 @@
 
 #include <src/data/experiment/ioboardconfig.h>
 
-namespace BC::Key {
+namespace BC::Key::IOB {
 static const QString ioboard("ioboard");
 }
 
