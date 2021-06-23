@@ -12,6 +12,9 @@ static const QString minWidth("minWidth");
 static const QString maxWidth("maxWidth");
 static const QString minDelay("minDelay");
 static const QString maxDelay("maxDelay");
+static const QString minRepRate("minRepRateHz");
+static const QString maxRepRate("maxRepRateHz");
+static const QString lockExternal("lockExternal");
 }
 
 class PulseGenerator : public HardwareObject
@@ -24,39 +27,52 @@ public:
 public slots:
     void initialize() override final;
     bool prepareForExperiment(Experiment &exp) override final;
-    void readSettings() override;
 
     PulseGenConfig config() const { return d_config; }
-    virtual QVariant read(const int index, const PulseGenConfig::Setting s) =0;
-    virtual double readRepRate() =0;
+    void readChannel(const int index);
+    double readRepRate();
 
-    virtual PulseGenConfig::ChannelConfig read(const int index);
 
-    virtual bool set(const int index, const PulseGenConfig::Setting s, const QVariant val) =0;
-    virtual bool setChannel(const int index, const PulseGenConfig::ChannelConfig &cc);
-    virtual bool setAll(const PulseGenConfig cc);
+    bool setPGenSetting(const int index, const PulseGenConfig::Setting s, const QVariant val);
+    bool setChannel(const int index, const PulseGenConfig::ChannelConfig &cc);
+    bool setAll(const PulseGenConfig cc);
+    bool setRepRate(double d);
 
-    virtual bool setRepRate(double d) =0;
 
 #ifdef BC_LIF
     virtual bool setLifDelay(double d);
 #endif
 
 signals:
-    void settingUpdate(int,PulseGenConfig::Setting,QVariant);
-    void configUpdate(const PulseGenConfig);
-    void repRateUpdate(double);
+    void settingUpdate(int,PulseGenConfig::Setting,QVariant,QPrivateSignal);
+    void configUpdate(const PulseGenConfig,QPrivateSignal);
+    void repRateUpdate(double,QPrivateSignal);
+
+private:
+    PulseGenConfig d_config;
 
 protected:
-    PulseGenConfig d_config;
-    virtual void readAll();
+    void readAll();
+
     virtual void initializePGen() =0;
 
-    double d_minWidth;
-    double d_maxWidth;
-    double d_minDelay;
-    double d_maxDelay;
+    virtual bool setChWidth(const int index, const double width) =0;
+    virtual bool setChDelay(const int index, const double delay) =0;
+    virtual bool setChActiveLevel(const int index, const PulseGenConfig::ActiveLevel level) =0;
+    virtual bool setChEnabled(const int index, const bool en) =0;
+    virtual bool setHwRepRate(double rr) =0;
+
+    virtual double readChWidth(const int index) =0;
+    virtual double readChDelay(const int index) =0;
+    virtual PulseGenConfig::ActiveLevel readChActiveLevel(const int index) =0;
+    virtual bool readChEnabled(const int index) =0;
+    virtual double readHwRepRate() =0;
+
     const int d_numChannels;
+
+#if BC_PGEN==0
+    friend class VirtualPulseGenerator;
+#endif
 };
 
 

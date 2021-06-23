@@ -527,6 +527,8 @@ void PulseConfigWidget::updateFromSettings()
 
     }
 
+    ui->repRateBox->setRange(s.get(BC::Key::PGen::minRepRate,0.01),s.get(BC::Key::PGen::maxRepRate,1e5));
+
 }
 
 void PulseConfigWidget::setRepRate(const double r)

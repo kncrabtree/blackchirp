@@ -3,6 +3,13 @@
 Qc9518::Qc9518(QObject *parent) :
     PulseGenerator(BC::Key::qc9518,BC::Key::qc9518Name,CommunicationProtocol::Rs232,8,parent)
 {
+    setDefault(BC::Key::PGen::minWidth,0.004);
+    setDefault(BC::Key::PGen::maxWidth,1e5);
+    setDefault(BC::Key::PGen::minDelay,0.0);
+    setDefault(BC::Key::PGen::maxDelay,1e5);
+    setDefault(BC::Key::PGen::minRepRate,0.01);
+    setDefault(BC::Key::PGen::maxRepRate,1e5);
+    setDefault(BC::Key::PGen::lockExternal,false);
 }
 
 bool Qc9518::testConnection()
@@ -23,14 +30,10 @@ bool Qc9518::testConnection()
 
     emit logMessage(QString("ID response: %1").arg(QString(resp.trimmed())));
 
-    blockSignals(true);
-    readAll();
-    blockSignals(false);
-
     pGenWriteCmd(QString(":SPULSE:STATE 1\n"));
     pGenWriteCmd(QString(":SYSTEM:KLOCK 0\n"));
+    readAll();
 
-    emit configUpdate(d_config);
     return true;
 
 }
@@ -41,238 +44,6 @@ void Qc9518::initializePGen()
     PulseGenerator::initialize();
 
     p_comm->setReadOptions(100,true,QByteArray("\r\n"));
-}
-
-QVariant Qc9518::read(const int index, const PulseGenConfig::Setting s)
-{
-    QVariant out;
-    QByteArray resp;
-    if(index < 0 || index >= d_config.size())
-        return out;
-
-    switch (s) {
-    case PulseGenConfig::DelaySetting:
-        resp = p_comm->queryCmd(QString(":PULSE%1:DELAY?\n").arg(index+1));
-        if(!resp.isEmpty())
-        {
-            bool ok = false;
-            double val = resp.trimmed().toDouble(&ok)*1e6;
-            if(ok)
-            {
-                out = val;
-                d_config.set(index,s,val);
-            }
-        }
-        break;
-    case PulseGenConfig::WidthSetting:
-        resp = p_comm->queryCmd(QString(":PULSE%1:WIDTH?\n").arg(index+1));
-        if(!resp.isEmpty())
-        {
-            bool ok = false;
-            double val = resp.trimmed().toDouble(&ok)*1e6;
-            if(ok)
-            {
-                out = val;
-                d_config.set(index,s,val);
-            }
-        }
-        break;
-    case PulseGenConfig::EnabledSetting:
-        resp = p_comm->queryCmd(QString(":PULSE%1:STATE?\n").arg(index+1));
-        if(!resp.isEmpty())
-        {
-            bool ok = false;
-            int val = resp.trimmed().toInt(&ok);
-            if(ok)
-            {
-                out = static_cast<bool>(val);
-                d_config.set(index,s,val);
-            }
-        }
-        break;
-    case PulseGenConfig::LevelSetting:
-        resp = p_comm->queryCmd(QString(":PULSE%1:POLARITY?\n").arg(index+1));
-        if(!resp.isEmpty())
-        {
-            if(QString(resp).startsWith(QString("NORM"),Qt::CaseInsensitive))
-                d_config.set(index,s,QVariant::fromValue(PulseGenConfig::ActiveHigh));
-            else if(QString(resp).startsWith(QString("INV"),Qt::CaseInsensitive))
-                d_config.set(index,s,QVariant::fromValue(PulseGenConfig::ActiveLow));
-        }
-        break;
-    case PulseGenConfig::NameSetting:
-        out = d_config.at(index).channelName;
-        break;
-    case PulseGenConfig::RoleSetting:
-        out = d_config.at(index).role;
-        break;
-    default:
-        break;
-    }
-
-    if(out.isValid())
-        emit settingUpdate(index,s,out);
-
-    return out;
-}
-
-double Qc9518::readRepRate()
-{
-    QByteArray resp = p_comm->queryCmd(QString(":SPULSE:PERIOD?\n"));
-    if(resp.isEmpty())
-        return -1.0;
-
-    bool ok = false;
-    double period = resp.trimmed().toDouble(&ok);
-    if(!ok || period < 0.000001)
-        return -1.0;
-
-    double rr = 1.0/period;
-    d_config.setRepRate(rr);
-    emit repRateUpdate(rr);
-    return rr;
-}
-
-bool Qc9518::set(const int index, const PulseGenConfig::Setting s, const QVariant val)
-{
-    if(index < 0 || index >= d_config.size())
-        return false;
-
-    bool out = true;
-    QString setting;
-    QString target;
-
-    switch (s) {
-    case PulseGenConfig::DelaySetting:
-        setting = QString("delay");
-        target = QString::number(val.toDouble());
-	   if(val.toDouble() < d_minDelay || val.toDouble() > d_maxDelay)
-	   {
-		   emit logMessage(QString("Requested delay (%1) is outside valid range (%2 - %3)").arg(target).arg(d_minDelay).arg(d_maxDelay));
-		   out = false;
-	   }
-	   else if(qAbs(val.toDouble() - d_config.at(index).delay) > 0.001)
-        {
-            bool success = pGenWriteCmd(QString(":PULSE%1:DELAY %2\n").arg(index+1).arg(val.toDouble()/1e6,0,'f',9));
-            if(!success)
-                out = false;
-            else
-            {
-                double newVal = read(index,s).toDouble();
-                if(qAbs(newVal-val.toDouble()) > 0.001)
-                    out = false;
-            }
-        }
-        break;
-    case PulseGenConfig::WidthSetting:
-        setting = QString("width");
-        target = QString::number(val.toDouble());
-	   if(val.toDouble() < d_minWidth || val.toDouble() > d_maxWidth)
-	   {
-		   emit logMessage(QString("Requested width (%1) is outside valid range (%2 - %3)").arg(target).arg(d_minWidth).arg(d_maxWidth));
-		   out = false;
-	   }
-	   else if(qAbs(val.toDouble() - d_config.at(index).width) > 0.001)
-        {
-            bool success = pGenWriteCmd(QString(":PULSE%1:WIDTH %2\n").arg(index+1).arg(val.toDouble()/1e6,0,'f',9));
-            if(!success)
-                out = false;
-            else
-            {
-                double newVal = read(index,s).toDouble();
-                if(qAbs(newVal-val.toDouble()) > 0.001)
-                    out = false;
-            }
-        }
-        break;
-    case PulseGenConfig::LevelSetting:
-        setting = QString("active level");
-        target = val.value<PulseGenConfig::ActiveLevel>() == d_config.at(index).level ? QString("active high") : QString("active low");
-        if(val.value<PulseGenConfig::ActiveLevel>() !=d_config.at(index).level)
-        {
-            bool success = false;
-            if(val.value<PulseGenConfig::ActiveLevel>() == PulseGenConfig::ActiveHigh)
-                success = pGenWriteCmd(QString(":PULSE%1:POLARITY NORM\n").arg(index+1));
-            else
-                success = pGenWriteCmd(QString(":PULSE%1:POLARITY INV\n").arg(index+1));
-
-            if(!success)
-                out = false;
-            else
-            {
-                int lvl = read(index,s).toInt();
-                if(lvl != val.toInt())
-                    out = false;
-            }
-        }
-        break;
-    case PulseGenConfig::EnabledSetting:
-        setting = QString("enabled");
-        target = val.toBool() ? QString("true") : QString("false");
-        if(val.toBool() != d_config.at(index).enabled)
-        {
-            bool success = false;
-            if(val.toBool())
-                success = pGenWriteCmd(QString(":PULSE%1:STATE 1\n").arg(index+1));
-            else
-                success = pGenWriteCmd(QString(":PULSE%1:STATE 0\n").arg(index+1));
-
-            if(!success)
-                out = false;
-            else
-            {
-                bool en = read(index,s).toBool();
-                if(en != val.toBool())
-                    out = false;
-            }
-
-        }
-        break;
-    case PulseGenConfig::NameSetting:
-        d_config.set(index,s,val);
-        read(index,s);
-        break;
-    case PulseGenConfig::RoleSetting:
-        d_config.set(index,s,val);
-        if(val.value<PulseGenConfig::Role>() != PulseGenConfig::NoRole)
-        {
-            d_config.set(index,PulseGenConfig::NameSetting,PulseGenConfig::roles.value(val.value<PulseGenConfig::Role>()));
-            read(index,PulseGenConfig::NameSetting);
-        }
-        read(index,s);
-        break;
-    default:
-        break;
-    }
-
-    if(!out)
-        emit logMessage(QString("Could not set %1 to %2. Current value is %3.")
-                        .arg(setting).arg(target).arg(read(index,s).toString()),BlackChirp::LogWarning);
-
-    return out;
-}
-
-bool Qc9518::setRepRate(double d)
-{
-    if(d < 0.01 || d > 20.0)
-        return false;
-
-    if(!pGenWriteCmd(QString(":SPULSE:PERIOD %1\n").arg(1.0/d,0,'f',9)))
-    {
-        emit hardwareFailure();
-        emit logMessage(QString("Could not set reprate to %1 Hz (%2 s)").arg(d,0,'f',1).arg(1.0/d,0,'f',9));
-        return false;
-    }
-
-    double rr = readRepRate();
-    if(rr < 0.0)
-    {
-        emit hardwareFailure();
-        emit logMessage(QString("Could not set reprate to %1 Hz (%2 s), Value is %3 Hz.").arg(d,0,'f',1).arg(1.0/d,0,'f',9).arg(rr,0,'f',1));
-        return false;
-    }
-
-    return true;
 }
 
 void Qc9518::sleep(bool b)
@@ -290,11 +61,14 @@ bool Qc9518::pGenWriteCmd(QString cmd)
     {
         QByteArray resp = p_comm->queryCmd(cmd);
         if(resp.isEmpty())
-            return false;
+            break;
 
         if(resp.startsWith("ok"))
             return true;
     }
+
+    emit hardwareFailure();
+    emit logMessage(QString("Error writing command %1").arg(cmd),BlackChirp::LogError);
     return false;
 }
 
@@ -306,4 +80,115 @@ void Qc9518::beginAcquisition()
 void Qc9518::endAcquisition()
 {
     pGenWriteCmd(QString(":SYSTEM:KLOCK 0\n"));
+}
+
+bool Qc9518::setChWidth(const int index, const double width)
+{
+    return pGenWriteCmd(QString(":PULSE%1:WIDTH %2\r\n").arg(index+1).arg(width/1e6,0,'f',9));
+}
+
+bool Qc9518::setChDelay(const int index, const double delay)
+{
+     return pGenWriteCmd(QString(":PULSE%1:DELAY %2\r\n").arg(index+1).arg(delay,0,'f',9));
+}
+
+bool Qc9518::setChActiveLevel(const int index, const PulseGenConfig::ActiveLevel level)
+{
+    if(level == PulseGenConfig::ActiveHigh)
+        return pGenWriteCmd(QString(":PULSE%1:POLARITY NORM\r\n").arg(index+1));
+
+    return pGenWriteCmd(QString(":PULSE%1:POLARITY INV\r\n").arg(index+1));
+}
+
+bool Qc9518::setChEnabled(const int index, const bool en)
+{
+    if(en)
+        return pGenWriteCmd(QString(":PULSE%1:STATE 1\r\n").arg(index+1));
+
+    return pGenWriteCmd(QString(":PULSE%1:STATE 0\r\n").arg(index+1));
+}
+
+bool Qc9518::setHwRepRate(double rr)
+{
+    return pGenWriteCmd(QString(":SPULSE:PERIOD %1\r\n").arg(1.0/rr,0,'f',9));
+}
+
+double Qc9518::readChWidth(const int index)
+{
+    auto resp = p_comm->queryCmd(QString(":PULSE%1:DELAY?\r\n").arg(index+1));
+    if(!resp.isEmpty())
+    {
+        bool ok = false;
+        double val = resp.trimmed().toDouble(&ok)*1e6;
+        if(ok)
+            return val;
+    }
+
+    emit hardwareFailure();
+    emit logMessage(QString("Could not read channel %1 width. Response: %2").arg(index).arg(QString(resp)));
+    return nan("");
+}
+
+double Qc9518::readChDelay(const int index)
+{
+    auto resp = p_comm->queryCmd(QString(":PULSE%1:WIDTH?\r\n").arg(index+1));
+    if(!resp.isEmpty())
+    {
+        bool ok = false;
+        double val = resp.trimmed().toDouble(&ok)*1e6;
+        if(ok)
+            return val;
+    }
+
+    emit hardwareFailure();
+    emit logMessage(QString("Could not read channel %1 delay. Response: %2").arg(index).arg(QString(resp)));
+    return nan("");
+}
+
+PulseGenConfig::ActiveLevel Qc9518::readChActiveLevel(const int index)
+{
+    auto resp = p_comm->queryCmd(QString(":PULSE%1:POLARITY?\r\n").arg(index+1));
+    if(!resp.isEmpty())
+    {
+        if(QString(resp).startsWith(QString("NORM"),Qt::CaseInsensitive))
+            return PulseGenConfig::ActiveHigh;
+        else if(QString(resp).startsWith(QString("INV"),Qt::CaseInsensitive))
+            return PulseGenConfig::ActiveLow;
+    }
+
+    emit hardwareFailure();
+    emit logMessage(QString("Could not read channel %1 active level. Response: %2").arg(index).arg(QString(resp)));
+    return PulseGenConfig::ActiveInvalid;
+}
+
+bool Qc9518::readChEnabled(const int index)
+{
+    auto resp = p_comm->queryCmd(QString(":PULSE%1:STATE?\r\n").arg(index+1));
+    if(!resp.isEmpty())
+    {
+        bool ok = false;
+        int val = resp.trimmed().toInt(&ok);
+        if(ok)
+            return static_cast<bool>(val);
+    }
+
+    emit hardwareFailure();
+    emit logMessage(QString("Could not read channel %1 enabled state. Response: %2").arg(index).arg(QString(resp)));
+    return false;
+}
+
+double Qc9518::readHwRepRate()
+{
+    QByteArray resp = p_comm->queryCmd(QString(":SPULSE:PERIOD?\r\n"));
+    if(!resp.isEmpty())
+    {
+        bool ok = false;
+        double period = resp.trimmed().toDouble(&ok);
+        if(ok && period > 0.0)
+            return 1.0/period;
+    }
+
+    emit hardwareFailure();
+    emit logMessage(QString("Could not read rep rate. Response: %1").arg(QString(resp)));
+    return nan("");
 }

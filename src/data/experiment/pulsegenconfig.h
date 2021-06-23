@@ -14,7 +14,7 @@ class PulseGenConfig
 {
     Q_GADGET
 public:
-    enum ActiveLevel { ActiveLow, ActiveHigh };
+    enum ActiveLevel { ActiveInvalid = -1, ActiveLow, ActiveHigh };
     enum Setting { DelaySetting, WidthSetting, EnabledSetting, LevelSetting, NameSetting, RoleSetting };
     enum Role {
         NoRole,

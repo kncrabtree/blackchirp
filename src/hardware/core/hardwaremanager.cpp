@@ -345,29 +345,17 @@ void HardwareManager::setClocks(const RfConfig rfc)
 
 void HardwareManager::setPGenSetting(int index, PulseGenConfig::Setting s, QVariant val)
 {
-    if(p_pGen->thread() == thread())
-    {
-        p_pGen->set(index,s,val);
-        return;
-    }
-
-    QMetaObject::invokeMethod(p_pGen,"set",Q_ARG(int,index),Q_ARG(PulseGenConfig::Setting,s),Q_ARG(QVariant,val));
+    QMetaObject::invokeMethod(p_pGen,[this,index,s,val](){ p_pGen->setPGenSetting(index,s,val); });
 }
 
 void HardwareManager::setPGenConfig(const PulseGenConfig c)
 {
-    if(p_pGen->thread() == thread())
-        p_pGen->setAll(c);
-    else
-        QMetaObject::invokeMethod(p_pGen,"setAll",Q_ARG(PulseGenConfig,c));
+    QMetaObject::invokeMethod(p_pGen,[this,c](){ p_pGen->setAll(c); });
 }
 
 void HardwareManager::setPGenRepRate(double r)
 {
-    if(p_pGen->thread() == thread())
-        p_pGen->setRepRate(r);
-    else
-        QMetaObject::invokeMethod(p_pGen,"setRepRate",Q_ARG(double,r));
+    QMetaObject::invokeMethod(p_pGen,[this,r](){ p_pGen->setRepRate(r); });
 }
 
 void HardwareManager::setFlowChannelName(int index, QString name)
