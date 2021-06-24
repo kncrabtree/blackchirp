@@ -3,7 +3,7 @@
 #include <math.h>
 
 Mks647c::Mks647c(QObject *parent) :
-    FlowController(BC::Key::mks647c,BC::Key::mks647cName,CommunicationProtocol::Rs232,parent), d_maxTries(5), d_nextRead(0)
+    FlowController(BC::Key::Flow::mks647c,BC::Key::Flow::mks647cName,CommunicationProtocol::Rs232,parent), d_maxTries(5), d_nextRead(0)
 {
     double b = 28316.847; //scfm --> sccm conversion
     double c = b/60.0; // scfh --> sccm conversion
@@ -25,7 +25,7 @@ Mks647c::Mks647c(QObject *parent) :
                         << f << 1e1*f << 1e2*f << 1e3*f << 1e4*f << 1e5*f << 1e6*f;
 
     d_pressureRangeIndex = d_pressureRangeList.indexOf(1e1);
-    for(int i=0; i<d_numChannels; i++)
+    for(int i=0; i<get(BC::Key::Flow::flowChannels,4); i++)
     {
         d_rangeIndexList.append(4);
         d_gcfList.append(0.0);
@@ -84,9 +84,6 @@ void Mks647c::fcInitialize()
 
 void Mks647c::hwSetFlowSetpoint(const int ch, const double val)
 {
-    if(ch < 0 || ch >= d_numChannels)
-        return;
-
     //make sure range and gcf are updated
     readFlow(ch);
 
@@ -194,9 +191,6 @@ double Mks647c::hwReadPressureSetpoint()
 
 double Mks647c::hwReadFlow(const int ch)
 {
-    if(ch < 0 || ch >= d_numChannels)
-        return -1.0;
-
     //read flow range
     QByteArray resp = mksQueryCmd(QString("RA%1R;\r\n").arg(ch+1),2).trimmed();
 
@@ -358,7 +352,7 @@ int Mks647c::hwReadPressureControlMode()
 
 void Mks647c::poll()
 {
-    if(d_nextRead < 0 || d_nextRead >= d_config.size())
+    if(d_nextRead < 0 || d_nextRead >= get(BC::Key::Flow::flowChannels,4))
     {
         readPressure();
         d_nextRead = 0;

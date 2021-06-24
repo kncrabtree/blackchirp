@@ -62,15 +62,6 @@ enum FtmwType
     FtmwDrScan
 };
 
-
-enum FlowSetting {
-    FlowSettingEnabled,
-    FlowSettingSetpoint,
-    FlowSettingFlow,
-    FlowSettingName
-};
-
-
 //NOTE: be sure to edit the functions below if adding a new clock type
 enum ClockType {
     UpConversionLO,
@@ -156,14 +147,6 @@ struct FtmwScopeConfig {
 
         return out;
     }
-};
-
-
-
-struct FlowChannelConfig {
-    bool enabled;
-    double setpoint;
-    QString name;
 };
 
 struct ChirpSegment {
@@ -310,7 +293,6 @@ struct MotorScopeConfig {
 }
 
 Q_DECLARE_METATYPE(BlackChirp::Sideband)
-Q_DECLARE_METATYPE(BlackChirp::FlowSetting)
 Q_DECLARE_METATYPE(BlackChirp::FtmwType)
 Q_DECLARE_METATYPE(BlackChirp::ScopeTriggerSlope)
 Q_DECLARE_METATYPE(BlackChirp::LogMessageCode)
@@ -323,7 +305,6 @@ Q_DECLARE_METATYPE(BlackChirp::LifCompleteMode)
 #endif
 
 Q_DECLARE_TYPEINFO(BlackChirp::ChirpSegment,Q_MOVABLE_TYPE);
-Q_DECLARE_TYPEINFO(BlackChirp::FlowChannelConfig,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::ValidationItem,Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::IOBoardChannel,Q_PRIMITIVE_TYPE);
 

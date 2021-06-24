@@ -13,20 +13,37 @@ class FlowConfigData;
 
 class FlowConfig
 {
+    Q_GADGET
 public:
+    struct FlowChannel {
+        bool enabled;
+        double setpoint;
+        double flow;
+        QString name;
+    };
+
+
+    enum FlowChSetting {
+        Enabled,
+        Setpoint,
+        Flow,
+        Name
+    };
+    Q_ENUM(FlowChSetting)
+
     FlowConfig();
     FlowConfig(const FlowConfig &);
     FlowConfig &operator=(const FlowConfig &);
     ~FlowConfig();
 
-    QVariant setting(int index, BlackChirp::FlowSetting s) const;
+    QVariant setting(int index, FlowChSetting s) const;
     double pressureSetpoint() const;
     double pressure() const;
     bool pressureControlMode() const;
     int size() const;
 
     void add(double set = 0.0, QString name = QString(""));
-    void set(int index, BlackChirp::FlowSetting s, QVariant val);
+    void set(int index, FlowChSetting s, QVariant val);
     void setPressure(double p);
     void setPressureSetpoint(double s);
     void setPressureControlMode(bool en);
@@ -44,12 +61,13 @@ class FlowConfigData : public QSharedData
 public:
     FlowConfigData() : pressureSetpoint(0.0), pressure(0.0), pressureControlMode(false) {}
 
-    QList<BlackChirp::FlowChannelConfig> configList;
+    QList<FlowConfig::FlowChannel> configList;
     double pressureSetpoint;
 
-    QList<double> flowList;
     double pressure;
     bool pressureControlMode;
 };
+
+Q_DECLARE_TYPEINFO(FlowConfig::FlowChannel,Q_MOVABLE_TYPE);
 
 #endif // FLOWCONFIG_H

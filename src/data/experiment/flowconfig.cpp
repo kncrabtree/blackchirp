@@ -21,23 +21,23 @@ FlowConfig::~FlowConfig()
 
 }
 
-QVariant FlowConfig::setting(int index, BlackChirp::FlowSetting s) const
+QVariant FlowConfig::setting(int index, FlowChSetting s) const
 {
     QVariant out;
     if(index < 0 || index > data->configList.size())
         return out;
 
     switch(s) {
-    case BlackChirp::FlowSettingEnabled:
+    case Enabled:
         out = data->configList.at(index).enabled;
         break;
-    case BlackChirp::FlowSettingSetpoint:
+    case Setpoint:
         out = data->configList.at(index).setpoint;
         break;
-    case BlackChirp::FlowSettingFlow:
-        out = data->flowList.at(index);
+    case Flow:
+        out = data->configList.at(index).flow;
         break;
-    case BlackChirp::FlowSettingName:
+    case Name:
         out = data->configList.at(index).name;
         break;
     }
@@ -68,34 +68,34 @@ int FlowConfig::size() const
 
 void FlowConfig::add(double set, QString name)
 {
-    BlackChirp::FlowChannelConfig cc;
-    cc.enabled = !(qFuzzyCompare(1.0+set,1.0));
+    FlowChannel cc;
+    cc.enabled = !qFuzzyCompare(1.0+set,1.0);
     cc.name = name;
     cc.setpoint = set;
+    cc.flow = 0.0;
     data->configList.append(cc);
-    data->flowList.append(0.0);
 }
 
-void FlowConfig::set(int index, BlackChirp::FlowSetting s, QVariant val)
+void FlowConfig::set(int index, FlowChSetting s, QVariant val)
 {
     if(index < 0 || index > data->configList.size())
         return;
 
     switch(s) {
-    case BlackChirp::FlowSettingEnabled:
+    case Enabled:
         //this is handled automatically by the setpoint case
         break;
-    case BlackChirp::FlowSettingSetpoint:
+    case Setpoint:
         data->configList[index].setpoint = val.toDouble();
         if(qFuzzyCompare(1.0+data->configList.at(index).setpoint,1.0))
             data->configList[index].enabled = false;
         else
             data->configList[index].enabled = true;
         break;
-    case BlackChirp::FlowSettingFlow:
-        data->flowList[index] = val.toDouble();
+    case Flow:
+        data->configList[index].flow = val.toDouble();
         break;
-    case BlackChirp::FlowSettingName:
+    case Name:
         data->configList[index].name = val.toString();
         break;
     }
@@ -153,7 +153,7 @@ void FlowConfig::parseLine(const QString key, const QVariant val)
             int index = l.at(1).toInt();
 
             while(data->configList.size() <= index)
-                data->configList.append(BlackChirp::FlowChannelConfig());
+                data->configList.append(FlowChannel());
 
             if(subKey.contains(QString("Name")))
             {

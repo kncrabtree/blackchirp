@@ -3,11 +3,12 @@
 
 #include <src/hardware/optional/flowcontroller/flowcontroller.h>
 
-namespace BC {
-namespace Key {
+namespace BC::Key::Flow {
 static const QString mks947("mks947");
 static const QString mks947Name("MKS 946 Flow Controller");
-}
+static const QString address("address");
+static const QString pressureChannel("pressureChannel");
+static const QString offset("channelOffset");
 }
 
 class Mks946 : public FlowController

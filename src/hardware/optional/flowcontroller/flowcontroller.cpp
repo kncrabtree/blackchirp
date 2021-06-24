@@ -2,10 +2,9 @@
 
 FlowController::FlowController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
                                QObject *parent, bool threaded, bool critical) :
-    HardwareObject(BC::Key::flowController,subKey,name,commType,parent,threaded,critical),
-    d_numChannels(getOrSetDefault(BC::Key::flowChannels,4))
+    HardwareObject(BC::Key::Flow::flowController,subKey,name,commType,parent,threaded,critical),
+    d_numChannels(getOrSetDefault(BC::Key::Flow::flowChannels,4))
 {
-    set(BC::Key::flowChannels,d_numChannels);
 }
 
 FlowController::~FlowController()
@@ -53,7 +52,7 @@ bool FlowController::testConnection()
 void FlowController::setChannelName(const int ch, const QString name)
 {
     if(ch < d_config.size())
-        d_config.set(ch,BlackChirp::FlowSettingName,name);
+        d_config.set(ch,FlowConfig::Name,name);
 
     emit channelNameUpdate(ch,name,QPrivateSignal());
 
@@ -77,6 +76,11 @@ void FlowController::setPressureControlMode(bool enabled)
 
 void FlowController::setFlowSetpoint(const int ch, const double val)
 {
+    if(ch < 0 || ch >= d_numChannels)
+    {
+        emit logMessage(QString("Invalid flow channel (%1) requested. Valid channels are 0-%2").arg(ch).arg(d_numChannels));
+        return;
+    }
     hwSetFlowSetpoint(ch,val);
     readFlowSetpoint(ch);
 }
@@ -89,10 +93,15 @@ void FlowController::setPressureSetpoint(const double val)
 
 void FlowController::readFlowSetpoint(const int ch)
 {
+    if(ch < 0 || ch >= d_numChannels)
+    {
+        emit logMessage(QString("Invalid flow channel (%1) requested. Valid channels are 0-%2").arg(ch).arg(d_numChannels));
+        return;
+    }
     double sp = hwReadFlowSetpoint(ch);
     if(sp > -1e-10)
     {
-        d_config.set(ch,BlackChirp::FlowSettingSetpoint,sp);
+        d_config.set(ch,FlowConfig::Setpoint,sp);
         emit flowSetpointUpdate(ch,sp,QPrivateSignal());
     }
 }
@@ -110,10 +119,15 @@ void FlowController::readPressureSetpoint()
 
 void FlowController::readFlow(const int ch)
 {
+    if(ch < 0 || ch >= d_numChannels)
+    {
+        emit logMessage(QString("Invalid flow channel (%1) requested. Valid channels are 0-%2").arg(ch).arg(d_numChannels));
+        return;
+    }
     double flow = hwReadFlow(ch);
     if(flow>-1.0)
     {
-        d_config.set(ch,BlackChirp::FlowSettingFlow,flow);
+        d_config.set(ch,FlowConfig::Flow,flow);
         emit flowUpdate(ch,flow,QPrivateSignal());
     }
 }
@@ -158,7 +172,7 @@ void FlowController::readAll()
 {
     for(int i=0; i<d_config.size(); i++)
     {
-        emit channelNameUpdate(i,d_config.setting(i,BlackChirp::FlowSettingName).toString(),QPrivateSignal());
+        emit channelNameUpdate(i,d_config.setting(i,FlowConfig::Name).toString(),QPrivateSignal());
         readFlow(i);
         readFlowSetpoint(i);
     }
@@ -174,8 +188,8 @@ QList<QPair<QString, QVariant> > FlowController::readAuxPlotData()
     out.append(qMakePair(QString("gasPressure"),d_config.pressure()));
     for(int i=0; i<d_config.size(); i++)
     {
-        if(d_config.setting(i,BlackChirp::FlowSettingEnabled).toBool())
-            out.append(qMakePair(QString("flow.%1").arg(i),d_config.setting(i,BlackChirp::FlowSettingFlow)));
+        if(d_config.setting(i,FlowConfig::Enabled).toBool())
+            out.append(qMakePair(QString("flow.%1").arg(i),d_config.setting(i,FlowConfig::Flow)));
     }
 
     return out;

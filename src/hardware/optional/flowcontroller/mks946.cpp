@@ -1,25 +1,13 @@
 #include "mks946.h"
 
 Mks946::Mks946(QObject *parent) :
-    FlowController(BC::Key::mks947,BC::Key::mks947Name,CommunicationProtocol::Rs232,parent),
+    FlowController(BC::Key::Flow::mks947,BC::Key::Flow::mks947Name,CommunicationProtocol::Rs232,parent),
     d_nextRead(0)
 {
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    d_address = s.value(QString("address"),253).toInt();
-    d_pressureChannel = s.value(QString("pressureChannel"),5).toInt();
-    d_channelOffset = s.value(QString("channelOffset"),1).toInt();
-    s.setValue(QString("numChannels"),d_numChannels);
-    s.setValue(QString("address"),d_address);
-    s.setValue(QString("pressureChannel"),d_pressureChannel);
-    s.setValue(QString("channelOffset"),d_channelOffset);
-    s.endGroup();
-    s.endGroup();
-
-    s.sync();
-
+    d_address = getOrSetDefault(BC::Key::Flow::address,253);
+    d_pressureChannel = getOrSetDefault(BC::Key::Flow::pressureChannel,5);
+    d_channelOffset = getOrSetDefault(BC::Key::Flow::offset,1);
 }
 
 
@@ -299,7 +287,7 @@ int Mks946::hwReadPressureControlMode()
 
 void Mks946::poll()
 {
-    if(d_nextRead < 0 || d_nextRead >= d_numChannels)
+    if(d_nextRead < 0 || d_nextRead >= get(BC::Key::Flow::flowChannels,4))
     {
         readPressure();
 //        readPressureSetpoint();

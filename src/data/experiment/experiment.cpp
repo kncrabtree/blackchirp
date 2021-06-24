@@ -322,7 +322,7 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
 
             QList<QString> flowNames;
             for(int i=0; i<flowConfig().size(); i++)
-                flowNames.append(flowConfig().setting(i,BlackChirp::FlowSettingName).toString());
+                flowNames.append(flowConfig().setting(i,FlowConfig::Name).toString());
 
             if(key.contains(QString("flow.")))
             {

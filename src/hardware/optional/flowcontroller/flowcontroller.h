@@ -7,9 +7,10 @@
 
 #include <src/data/experiment/flowconfig.h>
 
-namespace BC::Key {
+namespace BC::Key::Flow {
 static const QString flowController("flowController");
 static const QString flowChannels("numChannels");
+static const QString interval("intervalMs");
 }
 
 class FlowController : public HardwareObject
@@ -55,23 +56,25 @@ private:
     virtual double hwReadPressure() =0;
     virtual int hwReadPressureControlMode() =0;
 
+    FlowConfig d_config;
+    QTimer *p_readTimer;
+    const int d_numChannels;
+
 protected:
     void initialize() override final;
     bool testConnection() override final;
     virtual void fcInitialize() =0;
     virtual bool fcTestConnection() =0;
 
-    FlowConfig d_config;
-    QTimer *p_readTimer;
-    const int d_numChannels;
-
     void readAll();
-
-
 
     // HardwareObject interface
 protected:
     virtual QList<QPair<QString, QVariant> > readAuxPlotData() override;
+
+#if BC_FLOWCONTROLLER == 0
+    friend class VirtualFlowController;
+#endif
 };
 
 #if BC_FLOWCONTROLLER == 1

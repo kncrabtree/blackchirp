@@ -170,8 +170,8 @@ MainWindow::MainWindow(QWidget *parent) :
     gl->setMargin(3);
     gl->setSpacing(3);
     QWidget *lastFocusWidget = nullptr;
-    SettingsStorage fc(BC::Key::flowController,SettingsStorage::Hardware);
-    int flowChannels = fc.get<int>(BC::Key::flowChannels,4);
+    SettingsStorage fc(BC::Key::Flow::flowController,SettingsStorage::Hardware);
+    int flowChannels = fc.get(BC::Key::Flow::flowChannels,4);
     for(int i=0; i<flowChannels; i++)
     {
         FlowWidgets fw;
