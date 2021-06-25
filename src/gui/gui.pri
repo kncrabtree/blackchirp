@@ -18,6 +18,8 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/widget/ftmwplotconfigwidget.cpp \
     $$PWD/widget/ftmwprocessingwidget.cpp \
     $$PWD/widget/ftmwviewwidget.cpp \
+    $$PWD/widget/gascontrolwidget.cpp \
+    $$PWD/widget/gasflowdisplaywidget.cpp \
     $$PWD/widget/led.cpp \
     $$PWD/widget/peakfindwidget.cpp \
     $$PWD/widget/pulseconfigwidget.cpp \
@@ -56,6 +58,8 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/widget/ftmwplotconfigwidget.h \
     $$PWD/widget/ftmwprocessingwidget.h \
     $$PWD/widget/ftmwviewwidget.h \
+    $$PWD/widget/gascontrolwidget.h \
+    $$PWD/widget/gasflowdisplaywidget.h \
     $$PWD/widget/led.h \
     $$PWD/widget/peakfindwidget.h \
     $$PWD/widget/pulseconfigwidget.h \

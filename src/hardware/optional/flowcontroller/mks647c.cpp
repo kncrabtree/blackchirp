@@ -2,8 +2,11 @@
 
 #include <math.h>
 
+using namespace BC::Key::Flow;
+
 Mks647c::Mks647c(QObject *parent) :
-    FlowController(BC::Key::Flow::mks647c,BC::Key::Flow::mks647cName,CommunicationProtocol::Rs232,parent), d_maxTries(5), d_nextRead(0)
+    FlowController(mks647c,mks647cName,CommunicationProtocol::Rs232,parent),
+    d_maxTries(5), d_nextRead(0)
 {
     double b = 28316.847; //scfm --> sccm conversion
     double c = b/60.0; // scfh --> sccm conversion
@@ -25,10 +28,25 @@ Mks647c::Mks647c(QObject *parent) :
                         << f << 1e1*f << 1e2*f << 1e3*f << 1e4*f << 1e5*f << 1e6*f;
 
     d_pressureRangeIndex = d_pressureRangeList.indexOf(1e1);
-    for(int i=0; i<get(BC::Key::Flow::flowChannels,4); i++)
+    for(int i=0; i<get(flowChannels,4); i++)
     {
         d_rangeIndexList.append(4);
         d_gcfList.append(0.0);
+    }
+
+    setDefault(pUnits,QString("kTorr"));
+    setDefault(pMax,10.0);
+    setDefault(pDec,3);
+
+    if(!containsArray(channels))
+    {
+        std::vector<SettingsMap> l;
+        int ch = get(flowChannels,4);
+        l.reserve(ch);
+        for(int i=0; i<ch; ++i)
+            l.push_back({{chUnits,QString("sccm")},{chMax,500.0},{chDecimals,2}});
+
+        setArray(channels,l);
     }
 }
 
@@ -352,7 +370,7 @@ int Mks647c::hwReadPressureControlMode()
 
 void Mks647c::poll()
 {
-    if(d_nextRead < 0 || d_nextRead >= get(BC::Key::Flow::flowChannels,4))
+    if(d_nextRead < 0 || d_nextRead >= get(flowChannels,4))
     {
         readPressure();
         d_nextRead = 0;

@@ -30,6 +30,7 @@
 #include <src/gui/dialog/quickexptdialog.h>
 #include <src/gui/dialog/batchsequencedialog.h>
 #include <src/gui/widget/clockdisplaywidget.h>
+#include <gui/widget/gascontrolwidget.h>
 
 #ifdef BC_LIF
 #include <src/modules/lif/gui/lifdisplaywidget.h>
@@ -63,8 +64,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->exptSpinBox->blockSignals(true);
 
-    auto vc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
-
     QLabel *statusLabel = new QLabel(this);
     connect(this,&MainWindow::statusMessage,statusLabel,&QLabel::setText);
     ui->statusBar->addWidget(statusLabel);
@@ -91,6 +90,7 @@ MainWindow::MainWindow(QWidget *parent) :
             ui->mainTabWidget->setTabText(ui->mainTabWidget->indexOf(ui->logTab),QString("Log (%1)").arg(d_logCount));
         }
     });
+
 
     QGridLayout *gl = new QGridLayout;
 
@@ -131,24 +131,31 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(p_hwm,&HardwareManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_hwm,&HardwareManager::statusMessage,statusLabel,&QLabel::setText);
-    connect(p_hwm,&HardwareManager::hwInitializationComplete,ui->pulseConfigWidget,&PulseConfigWidget::updateFromSettings);
     connect(p_hwm,&HardwareManager::allHardwareConnected,this,&MainWindow::hardwareInitialized);
+
     connect(p_hwm,&HardwareManager::clockFrequencyUpdate,clockWidget,&ClockDisplayWidget::updateFrequency);
+
+    connect(p_hwm,&HardwareManager::hwInitializationComplete,ui->pulseConfigWidget,&PulseConfigWidget::updateFromSettings);
     connect(p_hwm,&HardwareManager::pGenConfigUpdate,ui->pulseConfigWidget,&PulseConfigWidget::setFromConfig);
     connect(p_hwm,&HardwareManager::pGenSettingUpdate,ui->pulseConfigWidget,&PulseConfigWidget::newSetting);
     connect(p_hwm,&HardwareManager::pGenConfigUpdate,this,&MainWindow::updatePulseLeds);
     connect(p_hwm,&HardwareManager::pGenSettingUpdate,this,&MainWindow::updatePulseLed);
-    connect(p_hwm,&HardwareManager::flowUpdate,this,&MainWindow::updateFlow);
-    connect(p_hwm,&HardwareManager::flowNameUpdate,this,&MainWindow::updateFlowName);
-    connect(p_hwm,&HardwareManager::flowSetpointUpdate,this,&MainWindow::updateFlowSetpoint);
-    connect(p_hwm,&HardwareManager::gasPressureUpdate,ui->pressureDoubleSpinBox,&QDoubleSpinBox::setValue);
-    connect(p_hwm,&HardwareManager::gasPressureSetpointUpdate,this,&MainWindow::updatePressureSetpoint);
-    connect(p_hwm,&HardwareManager::gasPressureControlMode,this,&MainWindow::updatePressureControl);
-    connect(ui->pressureControlButton,&QPushButton::clicked,p_hwm,&HardwareManager::setGasPressureControlMode);
-    connect(ui->pressureControlBox,vc,p_hwm,&HardwareManager::setGasPressureSetpoint);
     connect(p_hwm,&HardwareManager::pGenRepRateUpdate,ui->pulseConfigWidget,&PulseConfigWidget::newRepRate);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeSetting,p_hwm,&HardwareManager::setPGenSetting);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeRepRate,p_hwm,&HardwareManager::setPGenRepRate);
+
+    connect(p_hwm,&HardwareManager::flowUpdate,ui->gasFlowDisplayWidget,&GasFlowDisplayWidget::updateFlow);
+    connect(p_hwm,&HardwareManager::flowSetpointUpdate,ui->gasFlowDisplayWidget,&GasFlowDisplayWidget::updateFlowSetpoint);
+    connect(p_hwm,&HardwareManager::gasPressureUpdate,ui->gasFlowDisplayWidget,&GasFlowDisplayWidget::updatePressure);
+    connect(p_hwm,&HardwareManager::gasPressureControlMode,ui->gasFlowDisplayWidget,&GasFlowDisplayWidget::updatePressureControl);
+    connect(ui->gasControlWidget,&GasControlWidget::nameUpdate,ui->gasFlowDisplayWidget,&GasFlowDisplayWidget::updateFlowName);
+
+    connect(p_hwm,&HardwareManager::flowSetpointUpdate,ui->gasControlWidget,&GasControlWidget::updateGasSetpoint);
+    connect(p_hwm,&HardwareManager::gasPressureSetpointUpdate,ui->gasControlWidget,&GasControlWidget::updatePressureSetpoint);
+    connect(p_hwm,&HardwareManager::gasPressureControlMode,ui->gasControlWidget,&GasControlWidget::updatePressureControl);
+    connect(ui->gasControlWidget,&GasControlWidget::pressureControlUpdate,p_hwm,&HardwareManager::setGasPressureControlMode);
+    connect(ui->gasControlWidget,&GasControlWidget::pressureSetpointUpdate,p_hwm,&HardwareManager::setGasPressureSetpoint);
+    connect(ui->gasControlWidget,&GasControlWidget::gasSetpointUpdate,p_hwm,&HardwareManager::setFlowSetpoint);
 
 #ifdef BC_PCONTROLLER
     SettingsStorage pc(BC::Key::pController,SettingsStorage::Hardware);
@@ -161,78 +168,7 @@ MainWindow::MainWindow(QWidget *parent) :
     p_hwm->moveToThread(hwmThread);
     d_threadObjectList.append(qMakePair(hwmThread,p_hwm));
 
-    gl = static_cast<QGridLayout*>(ui->gasControlBox->layout());
-    QGridLayout *gl2 = static_cast<QGridLayout*>(ui->flowStatusBox->layout());
-    gl2->setMargin(3);
-    gl2->setSpacing(3);
-    gl2->setContentsMargins(3,3,3,3);
-    gl->setContentsMargins(3,3,3,3);
-    gl->setMargin(3);
-    gl->setSpacing(3);
-    QWidget *lastFocusWidget = nullptr;
-    SettingsStorage fc(BC::Key::Flow::flowController,SettingsStorage::Hardware);
-    int flowChannels = fc.get(BC::Key::Flow::flowChannels,4);
-    for(int i=0; i<flowChannels; i++)
-    {
-        FlowWidgets fw;
-        fw.nameEdit = new QLineEdit(this);
-        connect(fw.nameEdit,&QLineEdit::editingFinished,[=](){
-            QMetaObject::invokeMethod(p_hwm,"setFlowChannelName",Q_ARG(int,i),Q_ARG(QString,fw.nameEdit->text()));
-        });
 
-        fw.controlBox = new QDoubleSpinBox(this);
-        fw.controlBox->setSuffix(QString(" sccm"));
-        fw.controlBox->setRange(0.0,10000.0);
-        fw.controlBox->setSpecialValueText(QString("Off"));
-        fw.controlBox->setKeyboardTracking(false);
-        connect(fw.controlBox,vc,[=](double val){
-            QMetaObject::invokeMethod(p_hwm,"setFlowSetpoint",Q_ARG(int,i),Q_ARG(double,val));
-        });
-        lastFocusWidget = fw.controlBox;
-
-        fw.nameLabel = new QLabel(QString("Ch%1").arg(i+1),this);
-        fw.nameLabel->setMinimumWidth(QFontMetrics(QFont(QString("sans-serif"))).width(QString("MMMMMMMM")));
-        fw.nameLabel->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-
-        fw.led = new Led(this);
-
-        fw.displayBox = new QDoubleSpinBox(this);
-        fw.displayBox->setRange(-9999.9,9999.9);
-        fw.displayBox->setDecimals(2);
-        fw.displayBox->setSuffix(QString(" sccm"));
-        fw.displayBox->blockSignals(true);
-        fw.displayBox->setReadOnly(true);
-        fw.displayBox->setFocusPolicy(Qt::ClickFocus);
-        fw.displayBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
-
-        d_flowWidgets.append(fw);
-
-        gl->addWidget(new QLabel(QString::number(i+1),this),1+i,0,1,1);
-        gl->addWidget(fw.nameEdit,i+1,1,1,1);
-        gl->addWidget(fw.controlBox,i+1,2,1,1);
-
-        gl2->addWidget(fw.nameLabel,i+1,0,1,1,Qt::AlignRight);
-        gl2->addWidget(fw.displayBox,i+1,1,1,1);
-        gl2->addWidget(fw.led,i+1,2,1,1);
-    }
-    gl->addWidget(new QLabel(QString("Pressure"),this),2+flowChannels,1,1,1,Qt::AlignRight);
-    gl->addWidget(ui->pressureControlBox,2+flowChannels,2,1,1);
-    gl->addWidget(new QLabel(QString("Pressure Control Mode"),this),3+flowChannels,1,1,1,Qt::AlignRight);
-    gl->addWidget(ui->pressureControlButton,3+flowChannels,2,1,1);
-    gl->addItem(new QSpacerItem(10,10,QSizePolicy::Minimum,QSizePolicy::Expanding),4+flowChannels,0,1,3);
-    if(lastFocusWidget != nullptr)
-        setTabOrder(lastFocusWidget,ui->pressureControlBox);
-
-    setTabOrder(ui->pressureControlBox,ui->pressureControlButton);
-    setTabOrder(ui->pressureControlButton,ui->pulseConfigWidget);
-
-    ui->pressureDoubleSpinBox->blockSignals(true);
-    connect(ui->pressureControlButton,&QPushButton::toggled,[=](bool en){
-        if(en)
-            ui->pressureControlButton->setText(QString("On"));
-        else
-            ui->pressureControlButton->setText(QString("Off"));
-    });
 
     p_am = new AcquisitionManager();
     connect(p_am,&AcquisitionManager::logMessage,p_lh,&LogHandler::logMessage);
@@ -271,7 +207,7 @@ MainWindow::MainWindow(QWidget *parent) :
         amThread->start();
     });
 
-    d_batchThread = new QThread(this);
+    p_batchThread = new QThread(this);
 
     connect(ui->actionStart_Experiment,&QAction::triggered,this,&MainWindow::startExperiment);
     connect(ui->actionQuick_Experiment,&QAction::triggered,this,&MainWindow::quickStart);
@@ -366,12 +302,12 @@ void MainWindow::initializeHardware()
 
 void MainWindow::startExperiment()
 {
-    if(d_batchThread->isRunning())
+    if(p_batchThread->isRunning())
         return;
 
     ExperimentWizard wiz(this);
     wiz.experiment.setPulseGenConfig(ui->pulseConfigWidget->getConfig());
-    wiz.experiment.setFlowConfig(getFlowConfig());
+    wiz.experiment.setFlowConfig(ui->gasControlWidget->getFlowConfig());
 
 #ifdef BC_LIF
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
@@ -394,7 +330,7 @@ void MainWindow::startExperiment()
 
 void MainWindow::quickStart()
 {
-    if(d_batchThread->isRunning())
+    if(p_batchThread->isRunning())
         return;
 
     Experiment e = Experiment::loadFromSettings();
@@ -406,7 +342,7 @@ void MainWindow::quickStart()
         e.setLifConfig(lc);
     }
 #endif
-    e.setFlowConfig(getFlowConfig());
+    e.setFlowConfig(ui->gasControlWidget->getFlowConfig());
     e.setPulseGenConfig(ui->pulseConfigWidget->getConfig());
 
     //create a popup summary of experiment.
@@ -424,7 +360,7 @@ void MainWindow::quickStart()
 
 void MainWindow::startSequence()
 {
-    if(d_batchThread->isRunning())
+    if(p_batchThread->isRunning())
         return;
 
     BatchSequenceDialog d(this);
@@ -447,7 +383,7 @@ void MainWindow::startSequence()
             e.setLifConfig(lc);
         }
 #endif
-        e.setFlowConfig(getFlowConfig());
+        e.setFlowConfig(ui->gasControlWidget->getFlowConfig());
         e.setPulseGenConfig(ui->pulseConfigWidget->getConfig());
 
         //create a popup summary of experiment.
@@ -468,7 +404,7 @@ void MainWindow::startSequence()
     {
         ExperimentWizard wiz(this);
         wiz.experiment.setPulseGenConfig(ui->pulseConfigWidget->getConfig());
-        wiz.experiment.setFlowConfig(getFlowConfig());
+        wiz.experiment.setFlowConfig(ui->gasControlWidget->getFlowConfig());
 #ifdef BC_LIF
         connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
         connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
@@ -655,58 +591,6 @@ void MainWindow::updatePulseLed(int index, PulseGenConfig::Setting s, QVariant v
     }
 }
 
-void MainWindow::updateFlow(int ch, double val)
-{
-    if(ch < 0 || ch >= d_flowWidgets.size())
-        return;
-
-    d_flowWidgets.at(ch).displayBox->setValue(val);
-}
-
-void MainWindow::updateFlowName(int ch, QString name)
-{
-    if(ch < 0 || ch >= d_flowWidgets.size())
-        return;
-
-    if(name.isEmpty())
-        d_flowWidgets.at(ch).nameLabel->setText(QString("Ch%1").arg(ch+1));
-    else
-    {
-        d_flowWidgets.at(ch).nameLabel->setText(name.mid(0,9));
-        d_flowWidgets.at(ch).nameEdit->blockSignals(true);
-        d_flowWidgets.at(ch).nameEdit->setText(name);
-        d_flowWidgets.at(ch).nameEdit->blockSignals(false);
-    }
-}
-
-void MainWindow::updateFlowSetpoint(int ch, double val)
-{
-    if(ch < 0 || ch >= d_flowWidgets.size())
-        return;
-
-    d_flowWidgets.at(ch).controlBox->blockSignals(true);
-    d_flowWidgets.at(ch).controlBox->setValue(val);
-    d_flowWidgets.at(ch).controlBox->blockSignals(false);
-
-    if(qFuzzyCompare(1.0,val+1.0))
-        d_flowWidgets.at(ch).led->setState(false);
-    else
-        d_flowWidgets.at(ch).led->setState(true);
-}
-
-void MainWindow::updatePressureSetpoint(double val)
-{
-    ui->pressureControlBox->blockSignals(true);
-    ui->pressureControlBox->setValue(val);
-    ui->pressureControlBox->blockSignals(false);
-}
-
-void MainWindow::updatePressureControl(bool en)
-{
-    ui->pressureControlButton->setChecked(en);
-    ui->pressureLed->setState(en);
-}
-
 void MainWindow::setLogIcon(BlackChirp::LogMessageCode c)
 {
     if(ui->mainTabWidget->currentWidget() != ui->logTab)
@@ -807,7 +691,7 @@ void MainWindow::viewExperiment()
     fl->addRow(hl);
 
     int lastCompletedExperiment = ui->exptSpinBox->value();
-    if(d_batchThread->isRunning() && d_currentExptNum == lastCompletedExperiment)
+    if(p_batchThread->isRunning() && d_currentExptNum == lastCompletedExperiment)
         lastCompletedExperiment--;
 
     if(lastCompletedExperiment < 1)
@@ -1119,7 +1003,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
 
 void MainWindow::startBatch(BatchManager *bm)
 {
-    connect(d_batchThread,&QThread::started,bm,&BatchManager::beginNextExperiment);
+    connect(p_batchThread,&QThread::started,bm,&BatchManager::beginNextExperiment);
     connect(bm,&BatchManager::statusMessage,this,&MainWindow::statusMessage);
     connect(bm,&BatchManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(bm,&BatchManager::beginExperiment,p_lh,&LogHandler::endExperimentLog);
@@ -1129,9 +1013,9 @@ void MainWindow::startBatch(BatchManager *bm)
     connect(ui->actionAbort,&QAction::triggered,bm,&BatchManager::abort);
     connect(bm,&BatchManager::batchComplete,this,&MainWindow::batchComplete);
     connect(bm,&BatchManager::batchComplete,this,&MainWindow::checkSleep);
-    connect(bm,&BatchManager::batchComplete,d_batchThread,&QThread::quit);
+    connect(bm,&BatchManager::batchComplete,p_batchThread,&QThread::quit);
     connect(bm,&BatchManager::batchComplete,p_lh,&LogHandler::endExperimentLog);
-    connect(d_batchThread,&QThread::finished,bm,&BatchManager::deleteLater);
+    connect(p_batchThread,&QThread::finished,bm,&BatchManager::deleteLater);
 
     connect(p_hwm,&HardwareManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated,Qt::UniqueConnection);
     connect(p_am,&AcquisitionManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated,Qt::UniqueConnection);
@@ -1139,24 +1023,13 @@ void MainWindow::startBatch(BatchManager *bm)
 
     ui->trackingViewWidget->initializeForExperiment();
     configureUi(Acquiring);
-    bm->moveToThread(d_batchThread);
-    d_batchThread->start();
-}
-
-FlowConfig MainWindow::getFlowConfig()
-{
-    FlowConfig cfg;
-    cfg.setPressureControlMode(ui->pressureControlButton->isChecked());
-    cfg.setPressureSetpoint(ui->pressureControlBox->value());
-    for(int i=0; i<d_flowWidgets.size(); i++)
-        cfg.add(d_flowWidgets.at(i).controlBox->value(),d_flowWidgets.at(i).nameEdit->text());
-
-    return cfg;
+    bm->moveToThread(p_batchThread);
+    p_batchThread->start();
 }
 
 void MainWindow::closeEvent(QCloseEvent *ev)
 {
-    if(d_batchThread->isRunning())
+    if(p_batchThread->isRunning())
         ev->ignore();
     else
     {

@@ -31,7 +31,6 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 
     p_flow = new FlowControllerHardware();
     connect(p_flow,&FlowController::flowUpdate,this,&HardwareManager::flowUpdate);
-    connect(p_flow,&FlowController::channelNameUpdate,this,&HardwareManager::flowNameUpdate);
     connect(p_flow,&FlowController::flowSetpointUpdate,this,&HardwareManager::flowSetpointUpdate);
     connect(p_flow,&FlowController::pressureUpdate,this,&HardwareManager::gasPressureUpdate);
     connect(p_flow,&FlowController::pressureSetpointUpdate,this,&HardwareManager::gasPressureSetpointUpdate);
@@ -356,14 +355,6 @@ void HardwareManager::setPGenConfig(const PulseGenConfig c)
 void HardwareManager::setPGenRepRate(double r)
 {
     QMetaObject::invokeMethod(p_pGen,[this,r](){ p_pGen->setRepRate(r); });
-}
-
-void HardwareManager::setFlowChannelName(int index, QString name)
-{
-    if(p_flow->thread() == thread())
-        p_flow->setChannelName(index,name);
-    else
-        QMetaObject::invokeMethod(p_flow,"setChannelName",Q_ARG(int,index),Q_ARG(QString,name));
 }
 
 void HardwareManager::setFlowSetpoint(int index, double val)

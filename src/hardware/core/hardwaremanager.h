@@ -82,7 +82,6 @@ signals:
     void pGenRepRateUpdate(double);
 
     void flowUpdate(int,double);
-    void flowNameUpdate(int,QString);
     void flowSetpointUpdate(int,double);
     void gasPressureUpdate(double);
     void gasPressureSetpointUpdate(double);
@@ -145,7 +144,6 @@ public slots:
     void setPGenConfig(const PulseGenConfig c);
     void setPGenRepRate(double r);
 
-    void setFlowChannelName(int index, QString name);
     void setFlowSetpoint(int index, double val);
     void setGasPressureSetpoint(double val);
     void setGasPressureControlMode(bool en);

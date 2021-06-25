@@ -29,6 +29,8 @@
 #include <src/gui/widget/led.h>
 #include <src/gui/widget/pulseconfigwidget.h>
 #include <src/gui/widget/trackingviewwidget.h>
+#include <gui/widget/gascontrolwidget.h>
+#include <gui/widget/gasflowdisplaywidget.h>
 
 class Ui_MainWindow
 {
@@ -57,10 +59,7 @@ public:
     QLabel *exptLabel;
     QSpinBox *exptSpinBox;
     QGroupBox *flowStatusBox;
-    QGridLayout *flowStatusLayout;
-    QDoubleSpinBox *pressureDoubleSpinBox;
-    QLabel *pressureLabel;
-    Led *pressureLed;
+    GasFlowDisplayWidget *gasFlowDisplayWidget;
     QGroupBox *pulseConfigBox;
     QSpacerItem *statusSpacer;
     QLabel *ftmwProgressLabel;
@@ -71,12 +70,7 @@ public:
     QHBoxLayout *controlTabTopLayout;
     QVBoxLayout *gasControlLayout;
     QGroupBox *gasControlBox;
-    QGridLayout *gasControlBoxLayout;
-    QLabel *emptyGasHeaderLabel;
-    QDoubleSpinBox *pressureControlBox;
-    QLabel *gasNameLabel;
-    QPushButton *pressureControlButton;
-    QLabel *gasSetpointLabel;
+    GasControlWidget *gasControlWidget;
     PulseConfigWidget *pulseConfigWidget;
     QWidget *ftmwTab;
     QVBoxLayout *ftmwTabLayout;
@@ -240,31 +234,9 @@ public:
         flowStatusBox = new QGroupBox(centralWidget);
         flowStatusBox->setObjectName(QString::fromUtf8("flowStatusBox"));
         flowStatusBox->setFont(font);
-        flowStatusLayout = new QGridLayout(flowStatusBox);
-        flowStatusLayout->setSpacing(3);
-        flowStatusLayout->setContentsMargins(11, 11, 11, 11);
-        flowStatusLayout->setObjectName(QString::fromUtf8("gridLayout_2"));
-        flowStatusLayout->setContentsMargins(3, 3, 3, 3);
-        pressureDoubleSpinBox = new QDoubleSpinBox(flowStatusBox);
-        pressureDoubleSpinBox->setObjectName(QString::fromUtf8("pressureDoubleSpinBox"));
-        pressureDoubleSpinBox->setFocusPolicy(Qt::ClickFocus);
-        pressureDoubleSpinBox->setReadOnly(true);
-        pressureDoubleSpinBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
-        pressureDoubleSpinBox->setMinimum(-100.000000000000000);
-        pressureDoubleSpinBox->setMaximum(100.000000000000000);
 
-        flowStatusLayout->addWidget(pressureDoubleSpinBox, 0, 1, 1, 1);
-
-        pressureLabel = new QLabel(flowStatusBox);
-        pressureLabel->setObjectName(QString::fromUtf8("pressureLabel"));
-        pressureLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        flowStatusLayout->addWidget(pressureLabel, 0, 0, 1, 1);
-
-        pressureLed = new Led(flowStatusBox);
-        pressureLed->setObjectName(QString::fromUtf8("pressureLed"));
-
-        flowStatusLayout->addWidget(pressureLed, 0, 2, 1, 1);
+        gasFlowDisplayWidget = new GasFlowDisplayWidget;
+        flowStatusBox->setLayout(gasFlowDisplayWidget->layout());
 
 
         instrumentStatusLayout->addWidget(flowStatusBox);
@@ -312,46 +284,13 @@ public:
         gasControlLayout = new QVBoxLayout();
         gasControlLayout->setSpacing(6);
         gasControlLayout->setObjectName(QString::fromUtf8("gasControlLayout"));
-        gasControlBox = new QGroupBox(controlTab);
+
+        gasControlBox = new QGroupBox;
         gasControlBox->setObjectName(QString::fromUtf8("gasControlBox"));
-        QSizePolicy sizePolicy2(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        sizePolicy2.setHorizontalStretch(0);
-        sizePolicy2.setVerticalStretch(0);
-        sizePolicy2.setHeightForWidth(gasControlBox->sizePolicy().hasHeightForWidth());
-        gasControlBox->setSizePolicy(sizePolicy2);
-        gasControlBoxLayout = new QGridLayout(gasControlBox);
-        gasControlBoxLayout->setSpacing(6);
-        gasControlBoxLayout->setContentsMargins(11, 11, 11, 11);
-        gasControlBoxLayout->setObjectName(QString::fromUtf8("gridLayout"));
-        emptyGasHeaderLabel = new QLabel(gasControlBox);
-        emptyGasHeaderLabel->setObjectName(QString::fromUtf8("label_7"));
 
-        gasControlBoxLayout->addWidget(emptyGasHeaderLabel, 0, 0, 1, 1);
-
-        pressureControlBox = new QDoubleSpinBox(gasControlBox);
-        pressureControlBox->setObjectName(QString::fromUtf8("pressureControlBox"));
-        pressureControlBox->setDecimals(3);
-        pressureControlBox->setMaximum(10.000000000000000);
-
-        gasControlBoxLayout->addWidget(pressureControlBox, 1, 2, 1, 1);
-
-        gasNameLabel = new QLabel(gasControlBox);
-        gasNameLabel->setObjectName(QString::fromUtf8("label_4"));
-        gasNameLabel->setAlignment(Qt::AlignCenter);
-
-        gasControlBoxLayout->addWidget(gasNameLabel, 0, 1, 1, 1);
-
-        pressureControlButton = new QPushButton(gasControlBox);
-        pressureControlButton->setObjectName(QString::fromUtf8("pressureControlButton"));
-        pressureControlButton->setCheckable(true);
-        pressureControlButton->setChecked(false);
-
-        gasControlBoxLayout->addWidget(pressureControlButton, 2, 2, 1, 1);
-
-        gasSetpointLabel = new QLabel(gasControlBox);
-        gasSetpointLabel->setObjectName(QString::fromUtf8("label_3"));
-
-        gasControlBoxLayout->addWidget(gasSetpointLabel, 0, 2, 1, 1);
+        gasControlWidget = new GasControlWidget(centralWidget);
+        gasControlBox->setLayout(gasControlWidget->layout());
+        gasFlowDisplayWidget->initChannelNames(gasControlWidget->getGasNames());
 
 
         gasControlLayout->addWidget(gasControlBox);
@@ -412,7 +351,7 @@ public:
 
         mainLayout->setStretch(1, 1);
         MainWindow->setCentralWidget(centralWidget);
-        menuBar = new QMenuBar(MainWindow);
+        menuBar = new QMenuBar(centralWidget);
         menuBar->setObjectName(QString::fromUtf8("menuBar"));
         menuBar->setGeometry(QRect(0, 0, 676, 23));
         menuHardware = new QMenu(menuBar);
@@ -425,12 +364,12 @@ public:
         menuTracking->setObjectName(QString::fromUtf8("menuTracking_2"));
         menuTracking->setIcon(icon6);
         MainWindow->setMenuBar(menuBar);
-        mainToolBar = new QToolBar(MainWindow);
+        mainToolBar = new QToolBar(centralWidget);
         mainToolBar->setObjectName(QString::fromUtf8("mainToolBar"));
         mainToolBar->setIconSize(QSize(14, 14));
         mainToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
         MainWindow->addToolBar(Qt::TopToolBarArea, mainToolBar);
-        statusBar = new QStatusBar(MainWindow);
+        statusBar = new QStatusBar(centralWidget);
         statusBar->setObjectName(QString::fromUtf8("statusBar"));
         MainWindow->setStatusBar(statusBar);
 
@@ -522,17 +461,9 @@ public:
         exptSpinBox->setToolTip(QApplication::translate("MainWindow", "Number of the most recent experiment", nullptr));
 #endif // QT_NO_TOOLTIP
         flowStatusBox->setTitle(QApplication::translate("MainWindow", "Flow Status", nullptr));
-        pressureDoubleSpinBox->setPrefix(QString());
-        pressureDoubleSpinBox->setSuffix(QApplication::translate("MainWindow", " kTorr", nullptr));
-        pressureLabel->setText(QApplication::translate("MainWindow", "Pressure", nullptr));
         pulseConfigBox->setTitle(QApplication::translate("MainWindow", "Pulse Configuration", nullptr));
         ftmwProgressLabel->setText(QApplication::translate("MainWindow", "FTMW Progress", nullptr));
         gasControlBox->setTitle(QApplication::translate("MainWindow", "Gas Control", nullptr));
-        emptyGasHeaderLabel->setText(QString());
-        pressureControlBox->setSuffix(QApplication::translate("MainWindow", " kTorr", nullptr));
-        gasNameLabel->setText(QApplication::translate("MainWindow", "Name", nullptr));
-        pressureControlButton->setText(QApplication::translate("MainWindow", "Off", nullptr));
-        gasSetpointLabel->setText(QApplication::translate("MainWindow", "Setpoint", nullptr));
         mainTabWidget->setTabText(mainTabWidget->indexOf(controlTab), QApplication::translate("MainWindow", "Control", nullptr));
         mainTabWidget->setTabText(mainTabWidget->indexOf(ftmwTab), QApplication::translate("MainWindow", "CP-FTMW", nullptr));
         mainTabWidget->setTabText(mainTabWidget->indexOf(trackingTab), QApplication::translate("MainWindow", "Tracking", nullptr));

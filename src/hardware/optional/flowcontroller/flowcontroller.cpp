@@ -1,10 +1,16 @@
 #include <src/hardware/optional/flowcontroller/flowcontroller.h>
 
+using namespace BC::Key::Flow;
+
 FlowController::FlowController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
                                QObject *parent, bool threaded, bool critical) :
-    HardwareObject(BC::Key::Flow::flowController,subKey,name,commType,parent,threaded,critical),
-    d_numChannels(getOrSetDefault(BC::Key::Flow::flowChannels,4))
+    HardwareObject(flowController,subKey,name,commType,parent,threaded,critical),
+    d_numChannels(getOrSetDefault(flowChannels,4))
 {
+    for(int i=0; i<d_numChannels; ++i)
+        d_config.add({});
+
+    setDefault(interval,333);
 }
 
 FlowController::~FlowController()
@@ -14,24 +20,9 @@ FlowController::~FlowController()
 
 void FlowController::initialize()
 {
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-
-    s.beginReadArray(QString("channels"));
-    for(int i=0;i<d_numChannels;i++)
-    {
-        s.setArrayIndex(i);
-        d_config.add(0.0,s.value(QString("name"),QString("")).toString());
-    }
-    s.endArray();
-    s.endGroup();
-    s.endGroup();
-
     p_readTimer = new QTimer(this);
     connect(p_readTimer,&QTimer::timeout,this,&FlowController::poll);
     connect(this,&FlowController::hardwareFailure,p_readTimer,&QTimer::stop);
-    updateInterval();
 
     fcInitialize();
 }
@@ -39,7 +30,7 @@ void FlowController::initialize()
 bool FlowController::testConnection()
 {
     p_readTimer->stop();
-    updateInterval();
+    p_readTimer->setInterval(get(interval,333));
     bool success = fcTestConnection();
     if(success)
     {
@@ -53,19 +44,6 @@ void FlowController::setChannelName(const int ch, const QString name)
 {
     if(ch < d_config.size())
         d_config.set(ch,FlowConfig::Name,name);
-
-    emit channelNameUpdate(ch,name,QPrivateSignal());
-
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-
-    s.beginWriteArray(QString("channels"));
-    s.setArrayIndex(ch);
-    s.setValue(QString("name"),name);
-    s.endArray();
-    s.endGroup();
-    s.endGroup();
 }
 
 void FlowController::setPressureControlMode(bool enabled)
@@ -152,17 +130,6 @@ void FlowController::readPressureControlMode()
     emit pressureControlMode(ret==1,QPrivateSignal());
 }
 
-void FlowController::updateInterval()
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    int interval = s.value(QString("pollIntervalMs"),333).toInt();
-    s.endGroup();
-    s.endGroup();
-    p_readTimer->setInterval(interval);
-}
-
 void FlowController::poll()
 {
 
@@ -172,7 +139,6 @@ void FlowController::readAll()
 {
     for(int i=0; i<d_config.size(); i++)
     {
-        emit channelNameUpdate(i,d_config.setting(i,FlowConfig::Name).toString(),QPrivateSignal());
         readFlow(i);
         readFlowSetpoint(i);
     }

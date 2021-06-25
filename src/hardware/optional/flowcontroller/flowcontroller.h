@@ -11,19 +11,26 @@ namespace BC::Key::Flow {
 static const QString flowController("flowController");
 static const QString flowChannels("numChannels");
 static const QString interval("intervalMs");
+static const QString pUnits("pressureUnits");
+static const QString pDec("pressureDecimals");
+static const QString pMax("pressureMax");
+static const QString channels("channels");
+static const QString chUnits("units");
+static const QString chDecimals("decimals");
+static const QString chMax("max");
 }
 
 class FlowController : public HardwareObject
 {
     Q_OBJECT
 public:
-    FlowController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded = false, bool critical = false);
+    FlowController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
+                   QObject *parent = nullptr, bool threaded = false, bool critical = false);
     virtual ~FlowController();
 
     FlowConfig config() const { return d_config; }
 
 signals:
-    void channelNameUpdate(int,QString,QPrivateSignal);
     void flowUpdate(int,double,QPrivateSignal);
     void pressureUpdate(double,QPrivateSignal);
     void flowSetpointUpdate(int,double,QPrivateSignal);
@@ -41,9 +48,6 @@ public slots:
     void readPressure();
     void readPressureControlMode();
 
-
-
-    void updateInterval();
     virtual void poll();
 
 private:

@@ -55,14 +55,6 @@ public:
         Asleep
     };
 
-    struct FlowWidgets {
-        QLineEdit *nameEdit;
-        QDoubleSpinBox *controlBox;
-        Led *led;
-        QLabel *nameLabel;
-        QDoubleSpinBox *displayBox;
-    };
-
     void initializeHardware();
 
 signals:
@@ -83,11 +75,6 @@ public slots:
     void launchCommunicationDialog();
     void updatePulseLeds(const PulseGenConfig cc);
     void updatePulseLed(int index,PulseGenConfig::Setting s, QVariant val);
-    void updateFlow(int ch, double val);
-    void updateFlowName(int ch, QString name);
-    void updateFlowSetpoint(int ch, double val);
-    void updatePressureSetpoint(double val);
-    void updatePressureControl(bool en);
     void setLogIcon(BlackChirp::LogMessageCode c);
     void sleep(bool s);
     void viewExperiment();
@@ -100,18 +87,16 @@ private:
     Ui::MainWindow *ui;
     QList<QPair<QThread*,QObject*> > d_threadObjectList;
     QList<QPair<QLabel*,Led*>> d_ledList;
-    QList<FlowWidgets> d_flowWidgets;
     LogHandler *p_lh;
     HardwareManager *p_hwm;
     AcquisitionManager *p_am;
 
     bool d_hardwareConnected;
     bool d_oneExptDone;
-    QThread *d_batchThread;
+    QThread *p_batchThread;
 
     void configureUi(ProgramState s);
     void startBatch(BatchManager *bm);
-    FlowConfig getFlowConfig();
 
     ProgramState d_state;
     int d_logCount;

@@ -1,8 +1,25 @@
 #include "virtualflowcontroller.h"
 
+using namespace BC::Key::Flow;
+
 VirtualFlowController::VirtualFlowController(QObject *parent) :
-    FlowController(BC::Key::hwVirtual,BC::Key::virtFCName,CommunicationProtocol::Virtual,parent)
+    FlowController(BC::Key::hwVirtual,virtFCName,CommunicationProtocol::Virtual,parent)
 {
+
+    setDefault(pUnits,QString("kTorr"));
+    setDefault(pMax,10.0);
+    setDefault(pDec,3);
+
+    if(!containsArray(channels))
+    {
+        std::vector<SettingsMap> l;
+        int ch = get(flowChannels,4);
+        l.reserve(ch);
+        for(int i=0; i<ch; ++i)
+            l.push_back({{chUnits,QString("sccm")},{chMax,10000.0},{chDecimals,3}});
+
+        setArray(channels,l);
+    }
 }
 
 VirtualFlowController::~VirtualFlowController()
@@ -67,7 +84,6 @@ double VirtualFlowController::hwReadPressure()
 void VirtualFlowController::hwSetPressureControlMode(bool enabled)
 {
     d_config.setPressureControlMode(enabled);
-    readPressureControlMode();
 }
 
 int VirtualFlowController::hwReadPressureControlMode()

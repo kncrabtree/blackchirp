@@ -3,10 +3,8 @@
 
 #include <src/hardware/optional/flowcontroller/flowcontroller.h>
 
-namespace BC {
-namespace Key {
+namespace BC::Key::Flow {
 static const QString virtFCName("Virtual Flow Controller");
-}
 }
 
 class VirtualFlowController : public FlowController

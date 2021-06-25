@@ -1,13 +1,28 @@
 #include "mks946.h"
 
+using namespace BC::Key::Flow;
 Mks946::Mks946(QObject *parent) :
-    FlowController(BC::Key::Flow::mks947,BC::Key::Flow::mks947Name,CommunicationProtocol::Rs232,parent),
+    FlowController(mks947,mks947Name,CommunicationProtocol::Rs232,parent),
     d_nextRead(0)
 {
+    setDefault(address,253);
+    setDefault(offset,1);
+    setDefault(pressureChannel,5);
 
-    d_address = getOrSetDefault(BC::Key::Flow::address,253);
-    d_pressureChannel = getOrSetDefault(BC::Key::Flow::pressureChannel,5);
-    d_channelOffset = getOrSetDefault(BC::Key::Flow::offset,1);
+    setDefault(pUnits,QString("kTorr"));
+    setDefault(pMax,10.0);
+    setDefault(pDec,3);
+
+    if(!containsArray(channels))
+    {
+        std::vector<SettingsMap> l;
+        int ch = get(flowChannels,4);
+        l.reserve(ch);
+        for(int i=0; i<ch; ++i)
+            l.push_back({{chUnits,QString("sccm")},{chMax,10000.0},{chDecimals,1}});
+
+        setArray(channels,l);
+    }
 }
 
 
@@ -66,7 +81,7 @@ void Mks946::hwSetFlowSetpoint(const int ch, const double val)
         }
     }
 
-    if(!mksWrite(QString("RRQ%1!%2").arg(ch+d_channelOffset).arg(val,0,'E',2,QLatin1Char(' '))))
+    if(!mksWrite(QString("RRQ%1!%2").arg(ch+get(offset,1)).arg(val,0,'E',2,QLatin1Char(' '))))
     {
         emit logMessage(d_errorString,BlackChirp::LogError);
         emit hardwareFailure();
@@ -124,7 +139,7 @@ double Mks946::hwReadFlowSetpoint(const int ch)
     if(!isConnected())
         return 0.0;
 
-    QByteArray resp = mksQuery(QString("RRQ%1?").arg(ch+d_channelOffset));
+    QByteArray resp = mksQuery(QString("RRQ%1?").arg(ch+get(offset,1)));
     bool ok = false;
     double out = resp.mid(2).toDouble(&ok);
     if(!ok)
@@ -160,7 +175,7 @@ double Mks946::hwReadFlow(const int ch)
     if(!isConnected())
         return 0.0;
 
-    QByteArray resp = mksQuery(QString("FR%1?").arg(ch+d_channelOffset));
+    QByteArray resp = mksQuery(QString("FR%1?").arg(ch+get(offset,1)));
     if(resp.contains(QByteArray("MISCONN")))
         return 0.0;
 
@@ -181,7 +196,7 @@ double Mks946::hwReadPressure()
     if(!isConnected())
         return 0.0;
 
-    QByteArray resp = mksQuery(QString("PR%1?").arg(d_pressureChannel));
+    QByteArray resp = mksQuery(QString("PR%1?").arg(get(pressureChannel,5)));
     if(resp.contains(QByteArray("LO")))
         return 0.0;
 
@@ -194,7 +209,7 @@ double Mks946::hwReadPressure()
     }
 
     if(resp.contains(QByteArray("ATM")))
-        return 10.0;
+        return get(pMax,10.0);
 
     bool ok = false;
     double out = resp.toDouble(&ok);
@@ -235,7 +250,7 @@ void Mks946::hwSetPressureControlMode(bool enabled)
         chNames << QString("A1") << QString("A2") << QString("B1") << QString("B2") << QString("C1") << QString("C2");
 
         //ensure pressure sensor is set to control channel
-        if(!mksWrite(QString("RPCH!%1").arg(chNames.at(d_pressureChannel-1))))
+        if(!mksWrite(QString("RPCH!%1").arg(chNames.at(get(pressureChannel,5)-1))))
         {
             emit logMessage(d_errorString,BlackChirp::LogError);
             emit hardwareFailure();
@@ -308,7 +323,7 @@ void Mks946::fcInitialize()
 
 bool Mks946::mksWrite(QString cmd)
 {
-    QByteArray resp = p_comm->queryCmd(QString("@%1%2;FF").arg(d_address,3,10,QChar('0')).arg(cmd));
+    QByteArray resp = p_comm->queryCmd(QString("@%1%2;FF").arg(get(address,253),3,10,QChar('0')).arg(cmd));
     if(resp.contains(QByteArray("ACK")))
         return true;
 
@@ -318,29 +333,14 @@ bool Mks946::mksWrite(QString cmd)
 
 QByteArray Mks946::mksQuery(QString cmd)
 {
-    QByteArray resp = p_comm->queryCmd(QString("@%1%2;FF").arg(d_address,3,10,QChar('0')).arg(cmd));
+    int a = get(address,253);
+    QByteArray resp = p_comm->queryCmd(QString("@%1%2;FF").arg(a,3,10,QChar('0')).arg(cmd));
 
-    if(!resp.startsWith(QString("@%1ACK").arg(d_address,3,10,QChar('0')).toLatin1()))
+    if(!resp.startsWith(QString("@%1ACK").arg(a,3,10,QChar('0')).toLatin1()))
         return resp;
 
     //chop off prefix
     return resp.mid(7);
-}
-
-void Mks946::readSettings()
-{
-    //numChannels has to be set on program startup, so don't include it here
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    d_address = s.value(QString("address"),253).toInt();
-    d_pressureChannel = s.value(QString("pressureChannel"),5).toInt();
-    d_channelOffset = s.value(QString("channelOffset"),1).toInt();
-    s.setValue(QString("address"),d_address);
-    s.setValue(QString("pressureChannel"),d_pressureChannel);
-    s.setValue(QString("channelOffset"),d_channelOffset);
-    s.endGroup();
-    s.endGroup();
 }
 
 void Mks946::sleep(bool b)
