@@ -3,51 +3,69 @@
 
 #include <src/hardware/core/hardwareobject.h>
 
-namespace BC::Key {
-static const QString pController("pressureController");
-static const QString pControllerMin("min");
-static const QString pControllerMax("max");
-static const QString pControllerDecimals("decimal");
-static const QString pControllerUnits("units");
-static const QString pControllerReadOnly("readOnly");
+namespace BC::Key::PController {
+static const QString key("pressureController");
+static const QString min("min");
+static const QString max("max");
+static const QString decimals("decimal");
+static const QString units("units");
+static const QString readOnly("readOnly");
+static const QString readInterval("intervalMs");
 }
 
 class PressureController : public HardwareObject
 {
     Q_OBJECT
 public:
-    PressureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, bool readOnly, QObject *parent =nullptr, bool threaded = false, bool critical=false);
+    PressureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
+                       bool ro, QObject *parent =nullptr, bool threaded = false, bool critical=false);
     virtual ~PressureController();
 
 signals:
-    void pressureUpdate(double);
-    void pressureSetpointUpdate(double);
-    void pressureControlMode(bool);
+    void pressureUpdate(double,QPrivateSignal);
+    void pressureSetpointUpdate(double,QPrivateSignal);
+    void pressureControlMode(bool,QPrivateSignal);
 
 public slots:
-    virtual double readPressure() =0;
-    virtual double setPressureSetpoint(const double val) =0;
-
-    virtual double readPressureSetpoint() =0;
-
-    virtual void setPressureControlMode(bool enabled) =0;
-    virtual bool readPressureControlMode() =0;
-
-    virtual void openGateValve() =0;
-    virtual void closeGateValve() =0;
+    double readPressure();
+    void setPressureSetpoint(const double val);
+    void readPressureSetpoint();
+    void setPressureControlMode(bool enabled);
+    void readPressureControlMode();
+    void openGateValve();
+    void closeGateValve();
 
 protected:
     const bool d_readOnly;
-    double d_pressure;
-    double d_setPoint;
-    bool d_pressureControlMode;
+    virtual double hwReadPressure() =0;
+    virtual double hwSetPressureSetpoint(const double val) =0;
+
+    virtual double hwReadPressureSetpoint() =0;
+
+    virtual void hwSetPressureControlMode(bool enabled) =0;
+    virtual int hwReadPressureControlMode() =0;
+
+    virtual void hwOpenGateValve() =0;
+    virtual void hwCloseGateValve() =0;
 
     virtual void pcInitialize() =0;
-
+    virtual bool pcTestConnection() =0;
 
     // HardwareObject interface
     virtual QList<QPair<QString, QVariant> > readAuxPlotData() override;
     void initialize() override final;
+    bool testConnection() override final;
+
+private:
+    QTimer *p_readTimer;
+    double d_pressure;
+    double d_setPoint;
+    bool d_pressureControlMode;
+
+#if BC_PCONTROLLER == 0
+    friend class VirtualPressureController;
+#endif
+
 };
 
 #if BC_PCONTROLLER == 1

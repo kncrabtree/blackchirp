@@ -158,8 +158,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->gasControlWidget,&GasControlWidget::gasSetpointUpdate,p_hwm,&HardwareManager::setFlowSetpoint);
 
 #ifdef BC_PCONTROLLER
-    SettingsStorage pc(BC::Key::pController,SettingsStorage::Hardware);
-    configPController(pc.get<bool>(BC::Key::pControllerReadOnly,true));
+    SettingsStorage pc(BC::Key::PController::key,SettingsStorage::Hardware);
+    configPController(pc.get(BC::Key::PController::readOnly,true));
 #endif
 
     QThread *hwmThread = new QThread(this);
@@ -781,13 +781,14 @@ void MainWindow::configPController(bool readOnly)
     cplabel->setAlignment(Qt::AlignRight);
     QDoubleSpinBox *cpbox = new QDoubleSpinBox;
 
-    SettingsStorage s(BC::Key::pController,SettingsStorage::Hardware);
+    using namespace BC::Key::PController;
+    SettingsStorage s(key,SettingsStorage::Hardware);
 
 
-    cpbox->setMinimum(s.get<double>(BC::Key::pControllerMin,-1.0));
-    cpbox->setMaximum(s.get<double>(BC::Key::pControllerMax,20.0));
-    cpbox->setDecimals(s.get<int>(BC::Key::pControllerDecimals,4));
-    cpbox->setSuffix(QString(" ")+s.get<QString>(BC::Key::pControllerUnits,"Torr"));
+    cpbox->setMinimum(s.get(min,-1.0));
+    cpbox->setMaximum(s.get(max,20.0));
+    cpbox->setDecimals(s.get(decimals,4));
+    cpbox->setSuffix(QString(" ")+s.get(units,QString("")));
 
     cpbox->setReadOnly(true);
     cpbox->setButtonSymbols(QAbstractSpinBox::NoButtons);
