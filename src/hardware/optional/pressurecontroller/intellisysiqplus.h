@@ -3,7 +3,7 @@
 
 #include <QTimer>
 
-#include <src/hardware/optional/pressurecontroller/pressurecontroller.h>
+#include <hardware/optional/pressurecontroller/pressurecontroller.h>
 
 namespace BC::Key::PController {
 static const QString iqplus("IntellisysIQPlus");

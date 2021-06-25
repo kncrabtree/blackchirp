@@ -1,10 +1,10 @@
-#include <src/gui/dialog/communicationdialog.h>
+#include <gui/dialog/communicationdialog.h>
 #include "ui_communicationdialog.h"
 
 #include <QApplication>
 #include <QMessageBox>
 
-#include <src/hardware/core/hardwaremanager.h>
+#include <hardware/core/hardwaremanager.h>
 
 CommunicationDialog::CommunicationDialog(QWidget *parent) :
      QDialog(parent),

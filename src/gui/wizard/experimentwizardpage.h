@@ -2,9 +2,9 @@
 #define EXPERIMENTWIZARDPAGE_H
 
 #include <QWizardPage>
-#include <src/gui/wizard/experimentwizard.h>
-#include <src/data/experiment/experiment.h>
-#include <src/data/storage/settingsstorage.h>
+#include <gui/wizard/experimentwizard.h>
+#include <data/experiment/experiment.h>
+#include <data/storage/settingsstorage.h>
 
 class ExperimentWizardPage : public QWizardPage, public SettingsStorage
 {

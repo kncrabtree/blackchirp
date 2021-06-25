@@ -1,4 +1,4 @@
-#include <src/data/experiment/experiment.h>
+#include <data/experiment/experiment.h>
 
 #include <QSettings>
 #include <QApplication>

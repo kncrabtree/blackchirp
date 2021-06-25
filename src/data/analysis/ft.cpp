@@ -1,4 +1,4 @@
-#include <src/data/analysis/ft.h>
+#include <data/analysis/ft.h>
 
 class FtData : public QSharedData
 {

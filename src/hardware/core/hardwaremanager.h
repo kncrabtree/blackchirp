@@ -6,37 +6,37 @@
 #include <QList>
 #include <QThread>
 
-#include <src/data/datastructs.h>
-#include <src/data/experiment/experiment.h>
-#include <src/data/storage/settingsstorage.h>
-#include <src/hardware/core/hardwareobject.h>
-#include <src/hardware/core/ftmwdigitizer/ftmwscope.h>
-#include <src/hardware/core/clock/clockmanager.h>
-#include <src/hardware/core/chirpsource/awg.h>
-#include <src/hardware/core/pulsegenerator/pulsegenerator.h>
-#include <src/hardware/optional/flowcontroller/flowcontroller.h>
-#include <src/hardware/core/ioboard/ioboard.h>
+#include <data/datastructs.h>
+#include <data/experiment/experiment.h>
+#include <data/storage/settingsstorage.h>
+#include <hardware/core/hardwareobject.h>
+#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/clock/clockmanager.h>
+#include <hardware/core/chirpsource/awg.h>
+#include <hardware/core/pulsegenerator/pulsegenerator.h>
+#include <hardware/optional/flowcontroller/flowcontroller.h>
+#include <hardware/core/ioboard/ioboard.h>
 
 #ifdef BC_PCONTROLLER
-#include <src/hardware/optional/pressurecontroller/pressurecontroller.h>
+#include <hardware/optional/pressurecontroller/pressurecontroller.h>
 #endif
 
 #ifdef BC_TEMPCONTROLLER
-#include <src/hardware/optional/tempcontroller/temperaturecontroller.h>
+#include <hardware/optional/tempcontroller/temperaturecontroller.h>
 #endif
 
 #ifdef BC_GPIBCONTROLLER
-#include <src/hardware/optional/gpibcontroller/gpibcontroller.h>
+#include <hardware/optional/gpibcontroller/gpibcontroller.h>
 #endif
 
 #ifdef BC_LIF
-#include <src/modules/lif/hardware/lifdigitizer/lifscope.h>
-#include <src/modules/lif/hardware/liflaser/liflaser.h>
+#include <modules/lif/hardware/lifdigitizer/lifscope.h>
+#include <modules/lif/hardware/liflaser/liflaser.h>
 #endif
 
 #ifdef BC_MOTOR
-#include <src/modules/motor/hardware/motorcontroller/motorcontroller.h>
-#include <src/modules/motor/hardware/motordigitizer/motoroscilloscope.h>
+#include <modules/motor/hardware/motorcontroller/motorcontroller.h>
+#include <modules/motor/hardware/motordigitizer/motoroscilloscope.h>
 #endif
 
 namespace BC {

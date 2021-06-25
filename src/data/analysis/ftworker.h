@@ -10,9 +10,9 @@
 #include <gsl/gsl_interp.h>
 #include <gsl/gsl_spline.h>
 
-#include <src/data/analysis/analysis.h>
-#include <src/data/analysis/ft.h>
-#include <src/data/experiment/fid.h>
+#include <data/analysis/analysis.h>
+#include <data/analysis/ft.h>
+#include <data/experiment/fid.h>
 
 
 

@@ -7,7 +7,7 @@
 #include <QSlider>
 #include <QDoubleSpinBox>
 
-#include <src/modules/motor/data/motorscan.h>
+#include <modules/motor/data/motorscan.h>
 
 class MotorSliderWidget : public QWidget
 {

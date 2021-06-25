@@ -3,8 +3,8 @@
 #include <QVBoxLayout>
 #include <QDialogButtonBox>
 
-#include <src/gui/widget/digitizerconfigwidget.h>
-#include <src/gui/wizard/experimentwizard.h>
+#include <gui/widget/digitizerconfigwidget.h>
+#include <gui/wizard/experimentwizard.h>
 
 WizardDigitizerConfigPage::WizardDigitizerConfigPage(QWidget *parent) :
     ExperimentWizardPage(BC::Key::WizFtDig::key,parent)

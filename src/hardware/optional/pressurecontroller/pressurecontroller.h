@@ -1,7 +1,7 @@
 #ifndef PRESSURECONTROLLER_H
 #define PRESSURECONTROLLER_H
 
-#include <src/hardware/core/hardwareobject.h>
+#include <hardware/core/hardwareobject.h>
 
 namespace BC::Key::PController {
 static const QString key("pressureController");

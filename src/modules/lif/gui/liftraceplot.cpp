@@ -16,7 +16,7 @@
 #include <qwt6/qwt_legend_label.h>
 #include <qwt6/qwt_plot_textlabel.h>
 
-#include <src/gui/plot/blackchirpplotcurve.h>
+#include <gui/plot/blackchirpplotcurve.h>
 
 
 LifTracePlot::LifTracePlot(QWidget *parent) :

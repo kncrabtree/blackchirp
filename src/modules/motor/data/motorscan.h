@@ -9,8 +9,8 @@
 
 #include <qwt6/qwt_matrix_raster_data.h>
 
-#include <src/data/datastructs.h>
-#include <src/data/analysis/analysis.h>
+#include <data/datastructs.h>
+#include <data/analysis/analysis.h>
 
 class MotorScanData;
 class QwtMatrixRasterData;

@@ -1,4 +1,4 @@
-#include <src/gui/plot/ftplot.h>
+#include <gui/plot/ftplot.h>
 
 #include <QFont>
 #include <QMouseEvent>
@@ -24,7 +24,7 @@
 #include <qwt6/qwt_plot_grid.h>
 
 
-#include <src/gui/plot/blackchirpplotcurve.h>
+#include <gui/plot/blackchirpplotcurve.h>
 
 FtPlot::FtPlot(const QString id, QWidget *parent) :
     ZoomPanPlot(BC::Key::ftPlot+id,parent), d_number(0), d_id(id)

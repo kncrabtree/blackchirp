@@ -1,4 +1,4 @@
-#include <src/data/analysis/analysis.h>
+#include <data/analysis/analysis.h>
 
 #include <QtAlgorithms>
 #include <math.h>

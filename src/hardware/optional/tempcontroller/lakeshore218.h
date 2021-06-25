@@ -1,6 +1,6 @@
 #ifndef LAKESHORE218_H
 #define LAKESHORE218_H
-#include <src/hardware/optional/tempcontroller/temperaturecontroller.h>
+#include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
 namespace BC::Key {
 static const QString lakeshore218("lakeshore218");

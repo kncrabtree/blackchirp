@@ -1,9 +1,9 @@
-#include <src/modules/motor/gui/motorstatuswidget.h>
+#include <modules/motor/gui/motorstatuswidget.h>
 #include "ui_motorstatuswidget.h"
 
 #include <QSettings>
 
-#include <src/gui/widget/led.h>
+#include <gui/widget/led.h>
 
 MotorStatusWidget::MotorStatusWidget(QWidget *parent) :
     QWidget(parent),

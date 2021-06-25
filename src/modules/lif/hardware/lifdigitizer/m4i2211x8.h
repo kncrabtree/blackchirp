@@ -1,7 +1,7 @@
 #ifndef M4I2211X8_H
 #define M4I2211X8_H
 
-#include <src/modules/lif/hardware/lifdigitizer/lifscope.h>
+#include <modules/lif/hardware/lifdigitizer/lifscope.h>
 
 #include <spcm/dlltyp.h>
 #include <spcm/regs.h>

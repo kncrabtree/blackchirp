@@ -1,9 +1,9 @@
 #ifndef AWG7122B_H
 #define AWG7122B_H
 
-#include <src/hardware/core/chirpsource/awg.h>
+#include <hardware/core/chirpsource/awg.h>
 
-#include <src/data/experiment/chirpconfig.h>
+#include <data/experiment/chirpconfig.h>
 
 namespace BC::Key::AWG {
 static const QString awg7122b("awg7122b");

@@ -1,7 +1,7 @@
 #ifndef QC9528_H
 #define QC9528_H
 
-#include <src/hardware/core/pulsegenerator/pulsegenerator.h>
+#include <hardware/core/pulsegenerator/pulsegenerator.h>
 
 namespace BC::Key {
 static const QString qc9528("qc9528");

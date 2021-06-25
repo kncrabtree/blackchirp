@@ -1,7 +1,7 @@
 #ifndef GPIBINSTRUMENT_H
 #define GPIBINSTRUMENT_H
 
-#include <src/hardware/core/communication/communicationprotocol.h>
+#include <hardware/core/communication/communicationprotocol.h>
 
 class GpibController;
 

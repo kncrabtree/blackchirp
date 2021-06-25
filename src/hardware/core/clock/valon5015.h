@@ -1,7 +1,7 @@
 #ifndef VALON5015_H
 #define VALON5015_H
 
-#include <src/hardware/core/clock/clock.h>
+#include <hardware/core/clock/clock.h>
 
 namespace BC {
 namespace Key {

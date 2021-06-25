@@ -2,7 +2,7 @@
 #ifndef VIRTUALLIFLASER_H
 #define VIRTUALLIFLASER_H
 
-#include <src/modules/lif/hardware/liflaser/liflaser.h>
+#include <modules/lif/hardware/liflaser/liflaser.h>
 
 namespace BC::Key {
 static const QString vLifLaser("Virtual LIF Laser");

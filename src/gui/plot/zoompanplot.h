@@ -6,7 +6,7 @@
 #include <qwt6/qwt_plot_grid.h>
 #include <qwt6/qwt_scale_engine.h>
 
-#include <src/data/storage/settingsstorage.h>
+#include <data/storage/settingsstorage.h>
 
 class QMenu;
 class CustomTracker;

@@ -1,11 +1,11 @@
 #ifndef PULSEPLOT_H
 #define PULSEPLOT_H
 
-#include <src/gui/plot/zoompanplot.h>
+#include <gui/plot/zoompanplot.h>
 
 #include <QList>
 
-#include <src/data/experiment/pulsegenconfig.h>
+#include <data/experiment/pulsegenconfig.h>
 
 class QwtPlotCurve;
 class QwtPlotMarker;

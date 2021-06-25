@@ -21,12 +21,12 @@
 #include <QList>
 
 
-#include <src/data/experiment/experiment.h>
-#include <src/data/analysis/ftworker.h>
-#include <src/gui/plot/fidplot.h>
-#include <src/gui/plot/ftplot.h>
-#include <src/gui/widget/ftmwprocessingwidget.h>
-#include <src/gui/widget/ftmwplotconfigwidget.h>
+#include <data/experiment/experiment.h>
+#include <data/analysis/ftworker.h>
+#include <gui/plot/fidplot.h>
+#include <gui/plot/ftplot.h>
+#include <gui/widget/ftmwprocessingwidget.h>
+#include <gui/widget/ftmwplotconfigwidget.h>
 
 class QThread;
 class FtmwSnapshotWidget;

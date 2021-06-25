@@ -1,7 +1,7 @@
 #ifndef CHIRPCONFIGPLOT_H
 #define CHIRPCONFIGPLOT_H
 
-#include <src/gui/plot/zoompanplot.h>
+#include <gui/plot/zoompanplot.h>
 
 class ChirpConfig;
 class BlackchirpPlotCurve;

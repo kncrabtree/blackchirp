@@ -1,6 +1,6 @@
-#include <src/acquisition/acquisitionmanager.h>
+#include <acquisition/acquisitionmanager.h>
 
-#include <src/acquisition/savemanager.h>
+#include <acquisition/savemanager.h>
 
 #include <math.h>
 

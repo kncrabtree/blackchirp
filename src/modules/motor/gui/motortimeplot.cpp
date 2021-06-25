@@ -1,6 +1,6 @@
 #include "motortimeplot.h"
 
-#include <src/gui/plot/blackchirpplotcurve.h>
+#include <gui/plot/blackchirpplotcurve.h>
 
 MotorTimePlot::MotorTimePlot(QWidget *parent) : ZoomPanPlot(BC::Key::motorTimePlot,parent)
 {

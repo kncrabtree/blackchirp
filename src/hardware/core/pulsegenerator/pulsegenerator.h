@@ -1,9 +1,9 @@
 #ifndef PULSEGENERATOR_H
 #define PULSEGENERATOR_H
 
-#include <src/hardware/core/hardwareobject.h>
+#include <hardware/core/hardwareobject.h>
 
-#include <src/data/experiment/pulsegenconfig.h>
+#include <data/experiment/pulsegenconfig.h>
 
 namespace BC::Key::PGen {
 static const QString key("pGen");

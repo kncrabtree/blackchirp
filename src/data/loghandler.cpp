@@ -1,8 +1,8 @@
-#include <src/data/loghandler.h>
+#include <data/loghandler.h>
 #include <QDateTime>
 #include <QDate>
 #include <QApplication>
-#include <src/data/storage/settingsstorage.h>
+#include <data/storage/settingsstorage.h>
 
 LogHandler::LogHandler(bool logToFile, QObject *parent) :
     QObject(parent), d_logToFile(logToFile)

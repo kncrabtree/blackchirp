@@ -1,11 +1,11 @@
 #ifndef FLOWCONTROLLER_H
 #define FLOWCONTROLLER_H
 
-#include <src/hardware/core/hardwareobject.h>
+#include <hardware/core/hardwareobject.h>
 
 #include <QTimer>
 
-#include <src/data/experiment/flowconfig.h>
+#include <data/experiment/flowconfig.h>
 
 namespace BC::Key::Flow {
 static const QString flowController("flowController");

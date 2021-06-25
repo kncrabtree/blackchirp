@@ -1,10 +1,10 @@
-#include <src/data/analysis/snapworker.h>
+#include <data/analysis/snapworker.h>
 
 #include <QFile>
 #include <QDataStream>
 #include <QByteArray>
 
-#include <src/data/datastructs.h>
+#include <data/datastructs.h>
 
 SnapWorker::SnapWorker(QObject *parent) : QObject(parent)
 {

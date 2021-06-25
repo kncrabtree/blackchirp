@@ -9,7 +9,7 @@
 #include <QFormLayout>
 #include <QCheckBox>
 
-#include <src/hardware/core/clock/clock.h>
+#include <hardware/core/clock/clock.h>
 
 WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) :
     ExperimentWizardPage(BC::Key::WizLoScan::key,parent)

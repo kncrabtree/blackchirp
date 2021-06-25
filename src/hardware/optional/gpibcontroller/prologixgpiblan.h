@@ -1,7 +1,7 @@
 #ifndef PROLOGIXGPIBLAN_H
 #define PROLOGIXGPIBLAN_H
 
-#include <src/hardware/optional/gpibcontroller/gpibcontroller.h>
+#include <hardware/optional/gpibcontroller/gpibcontroller.h>
 
 namespace BC::Key {
 static const QString prologix("prologixGpibLan");

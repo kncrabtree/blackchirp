@@ -1,9 +1,9 @@
 #ifndef MOTOROSCILLOSCOPE_H
 #define MOTOROSCILLOSCOPE_H
 
-#include <src/hardware/core/hardwareobject.h>
+#include <hardware/core/hardwareobject.h>
 
-#include <src/modules/motor/data/motorscan.h>
+#include <modules/motor/data/motorscan.h>
 
 namespace BC::Key {
 static const QString motorScope("motorScope");

@@ -5,9 +5,9 @@
 
 #include <QVector>
 
-#include <src/data/datastructs.h>
-#include <src/modules/lif/data/liftrace.h>
-#include <src/modules/lif/data/lifconfig.h>
+#include <data/datastructs.h>
+#include <modules/lif/data/liftrace.h>
+#include <modules/lif/data/lifconfig.h>
 
 class LifSlicePlot;
 class LifTracePlot;

@@ -4,8 +4,8 @@
 #include <QDialogButtonBox>
 #include <QSpinBox>
 
-#include <src/gui/widget/chirpconfigwidget.h>
-#include <src/gui/wizard/experimentwizard.h>
+#include <gui/widget/chirpconfigwidget.h>
+#include <gui/wizard/experimentwizard.h>
 
 WizardChirpConfigPage::WizardChirpConfigPage(QWidget *parent) :
     ExperimentWizardPage(BC::Key::WizChirp::key,parent)

@@ -1,4 +1,4 @@
-#include <src/hardware/optional/flowcontroller/flowcontroller.h>
+#include <hardware/optional/flowcontroller/flowcontroller.h>
 
 using namespace BC::Key::Flow;
 

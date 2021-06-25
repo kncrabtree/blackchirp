@@ -1,6 +1,6 @@
 #ifndef TEMPERATURECONTROLLER_H
 #define TEMPERATURECONTROLLER_H
-#include <src/hardware/core/hardwareobject.h>
+#include <hardware/core/hardwareobject.h>
 
 namespace BC::Key {
 static const QString tController("tempController");

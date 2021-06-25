@@ -1,10 +1,10 @@
-#include <src/gui/widget/digitizerconfigwidget.h>
+#include <gui/widget/digitizerconfigwidget.h>
 #include "ui_digitizerconfigwidget.h"
 
 #include <QApplication>
 #include <QDoubleValidator>
 
-#include <src/hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/ftmwdigitizer/ftmwscope.h>
 
 DigitizerConfigWidget::DigitizerConfigWidget(QWidget *parent) :
     QWidget(parent),

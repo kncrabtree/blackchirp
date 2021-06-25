@@ -1,7 +1,7 @@
 #ifndef VIRTUALFLOWCONTROLLER_H
 #define VIRTUALFLOWCONTROLLER_H
 
-#include <src/hardware/optional/flowcontroller/flowcontroller.h>
+#include <hardware/optional/flowcontroller/flowcontroller.h>
 
 namespace BC::Key::Flow {
 static const QString virtFCName("Virtual Flow Controller");

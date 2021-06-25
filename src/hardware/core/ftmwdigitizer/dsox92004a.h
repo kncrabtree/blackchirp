@@ -1,7 +1,7 @@
 #ifndef DSOX92004A_H
 #define DSOX92004A_H
 
-#include <src/hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/ftmwdigitizer/ftmwscope.h>
 
 class QTcpSocket;
 

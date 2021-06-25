@@ -1,7 +1,7 @@
 #ifndef VIRTUALAWG_H
 #define VIRTUALAWG_H
 
-#include <src/hardware/core/chirpsource/awg.h>
+#include <hardware/core/chirpsource/awg.h>
 
 namespace BC {
 namespace Key {

@@ -1,4 +1,4 @@
-#include <src/data/model/peaklistmodel.h>
+#include <data/model/peaklistmodel.h>
 
 PeakListModel::PeakListModel(QObject *parent) : QAbstractTableModel(parent)
 {

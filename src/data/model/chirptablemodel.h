@@ -5,7 +5,7 @@
 
 #include <QList>
 
-#include <src/data/experiment/rfconfig.h>
+#include <data/experiment/rfconfig.h>
 
 class ChirpTableModel : public QAbstractTableModel
 {

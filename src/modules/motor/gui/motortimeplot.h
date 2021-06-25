@@ -1,11 +1,11 @@
 #ifndef MOTORTIMEPLOT_H
 #define MOTORTIMEPLOT_H
 
-#include <src/gui/plot/zoompanplot.h>
+#include <gui/plot/zoompanplot.h>
 
 #include <qwt6/qwt_plot_curve.h>
 
-#include <src/modules/motor/data/motorscan.h>
+#include <modules/motor/data/motorscan.h>
 
 namespace BC::Key {
 static const QString motorTimePlot("MotorTimePlot");

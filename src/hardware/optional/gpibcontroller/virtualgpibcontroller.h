@@ -1,7 +1,7 @@
 #ifndef VIRTUALGPIBCONTROLLER_H
 #define VIRTUALGPIBCONTROLLER_H
 
-#include <src/hardware/optional/gpibcontroller/gpibcontroller.h>
+#include <hardware/optional/gpibcontroller/gpibcontroller.h>
 
 namespace BC::Key {
 static const QString vgpibName("Virtual GPIB Controller");

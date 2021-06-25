@@ -1,6 +1,6 @@
-#include <src/data/experiment/fid.h>
+#include <data/experiment/fid.h>
 
-#include <src/data/analysis/analysis.h>
+#include <data/analysis/analysis.h>
 
 Fid::Fid() : data(new FidData)
 {

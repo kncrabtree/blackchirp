@@ -5,7 +5,7 @@
 #include <QSpinBox>
 #include <QInputDialog>
 
-#include <src/hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/ftmwdigitizer/ftmwscope.h>
 
 ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     QWidget(parent), SettingsStorage(BC::Key::ChirpConfigWidget),

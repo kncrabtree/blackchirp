@@ -25,10 +25,10 @@
 #include <QtWidgets/QToolBar>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
-#include <src/gui/widget/ftmwviewwidget.h>
-#include <src/gui/widget/led.h>
-#include <src/gui/widget/pulseconfigwidget.h>
-#include <src/gui/widget/trackingviewwidget.h>
+#include <gui/widget/ftmwviewwidget.h>
+#include <gui/widget/led.h>
+#include <gui/widget/pulseconfigwidget.h>
+#include <gui/widget/trackingviewwidget.h>
 #include <gui/widget/gascontrolwidget.h>
 #include <gui/widget/gasflowdisplaywidget.h>
 

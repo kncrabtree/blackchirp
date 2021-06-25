@@ -8,7 +8,7 @@
 #include <QSpinBox>
 #include <QDialogButtonBox>
 
-#include <src/gui/dialog/peaklistexportdialog.h>
+#include <gui/dialog/peaklistexportdialog.h>
 
 PeakFindWidget::PeakFindWidget(Ft ft, QWidget *parent):
     QWidget(parent), SettingsStorage(BC::Key::peakFind),

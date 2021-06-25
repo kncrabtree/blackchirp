@@ -1,4 +1,4 @@
-#include <src/modules/motor/gui/motordisplaywidget.h>
+#include <modules/motor/gui/motordisplaywidget.h>
 
 #include <algorithm>
 

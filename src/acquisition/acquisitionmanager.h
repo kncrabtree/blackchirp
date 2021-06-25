@@ -7,15 +7,15 @@
 #include <QTimer>
 #include <QThread>
 
-#include <src/data/datastructs.h>
-#include <src/data/experiment/experiment.h>
+#include <data/datastructs.h>
+#include <data/experiment/experiment.h>
 
 #ifdef BC_CUDA
-#include <src/modules/cuda/gpuaverager.h>
+#include <modules/cuda/gpuaverager.h>
 #endif
 
 #ifdef BC_MOTOR
-#include <src/modules/motor/data/motorscan.h>
+#include <modules/motor/data/motorscan.h>
 #endif
 
 class AcquisitionManager : public QObject

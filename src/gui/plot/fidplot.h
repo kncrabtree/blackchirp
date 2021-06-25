@@ -1,12 +1,12 @@
 #ifndef FIDPLOT_H
 #define FIDPLOT_H
 
-#include <src/gui/plot/zoompanplot.h>
+#include <gui/plot/zoompanplot.h>
 
 #include <QPointF>
 #include <QPair>
 
-#include <src/data/experiment/experiment.h>
+#include <data/experiment/experiment.h>
 
 class QwtPlotMarker;
 

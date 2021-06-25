@@ -5,8 +5,8 @@
 #include <QString>
 #include <QFile>
 
-#include <src/data/datastructs.h>
-#include <src/data/experiment/experiment.h>
+#include <data/datastructs.h>
+#include <data/experiment/experiment.h>
 
 class LogHandler : public QObject
 {

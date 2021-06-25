@@ -1,4 +1,4 @@
-#include <src/hardware/core/communication/virtualinstrument.h>
+#include <hardware/core/communication/virtualinstrument.h>
 
 VirtualInstrument::VirtualInstrument(QString key, QObject *parent) :
     CommunicationProtocol(key,parent)

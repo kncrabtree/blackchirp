@@ -1,13 +1,13 @@
-#include <src/modules/lif/gui/lifdisplaywidget.h>
+#include <modules/lif/gui/lifdisplaywidget.h>
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
-#include <src/data/storage/settingsstorage.h>
-#include <src/modules/lif/gui/lifsliceplot.h>
-#include <src/modules/lif/gui/liftraceplot.h>
-#include <src/modules/lif/gui/lifspectrogramplot.h>
-#include <src/modules/lif/hardware/liflaser/liflaser.h>
+#include <data/storage/settingsstorage.h>
+#include <modules/lif/gui/lifsliceplot.h>
+#include <modules/lif/gui/liftraceplot.h>
+#include <modules/lif/gui/lifspectrogramplot.h>
+#include <modules/lif/hardware/liflaser/liflaser.h>
 #include <math.h>
 
 #include <qwt6/qwt_matrix_raster_data.h>

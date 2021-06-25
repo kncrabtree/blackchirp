@@ -2,7 +2,7 @@
 #ifndef VIRTUALLIFSCOPE_H
 #define VIRTUALLIFSCOPE_H
 
-#include <src/modules/lif/hardware/lifdigitizer/lifscope.h>
+#include <modules/lif/hardware/lifdigitizer/lifscope.h>
 
 class QTimer;
 

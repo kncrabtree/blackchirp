@@ -8,10 +8,10 @@
 #include <QVector>
 #include <QPointF>
 
-#include <src/data/storage/settingsstorage.h>
-#include <src/data/experiment/experiment.h>
-#include <src/data/analysis/peakfinder.h>
-#include <src/data/model/peaklistmodel.h>
+#include <data/storage/settingsstorage.h>
+#include <data/experiment/experiment.h>
+#include <data/analysis/peakfinder.h>
+#include <data/model/peaklistmodel.h>
 
 namespace Ui {
 class PeakFindWidget;

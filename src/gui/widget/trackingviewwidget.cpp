@@ -10,9 +10,9 @@
 #include <qwt6/qwt_date.h>
 #include <qwt6/qwt_plot_curve.h>
 
-#include <src/gui/plot/trackingplot.h>
-#include <src/gui/plot/blackchirpplotcurve.h>
-#include <src/data/datastructs.h>
+#include <gui/plot/trackingplot.h>
+#include <gui/plot/blackchirpplotcurve.h>
+#include <data/datastructs.h>
 
 
 TrackingViewWidget::TrackingViewWidget(const QString name, QWidget *parent, bool viewOnly) :

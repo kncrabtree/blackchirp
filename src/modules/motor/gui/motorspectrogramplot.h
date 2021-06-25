@@ -1,12 +1,12 @@
 #ifndef MOTORSPECTROGRAMPLOT_H
 #define MOTORSPECTROGRAMPLOT_H
 
-#include <src/gui/plot/zoompanplot.h>
+#include <gui/plot/zoompanplot.h>
 
 #include <qwt6/qwt_matrix_raster_data.h>
 #include <qwt6/qwt_plot_spectrogram.h>
 
-#include <src/modules/motor/data/motorscan.h>
+#include <modules/motor/data/motorscan.h>
 
 namespace BC::Key {
 static const QString leftAxis("leftAxis");

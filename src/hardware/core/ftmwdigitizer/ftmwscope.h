@@ -1,11 +1,11 @@
 #ifndef FTMWSCOPE_H
 #define FTMWSCOPE_H
 
-#include <src/hardware/core/hardwareobject.h>
+#include <hardware/core/hardwareobject.h>
 
 #include <QByteArray>
 
-#include <src/data/experiment/ftmwconfig.h>
+#include <data/experiment/ftmwconfig.h>
 
 
 namespace BC::Key::FtmwScope {

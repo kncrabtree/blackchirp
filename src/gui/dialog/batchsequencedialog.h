@@ -2,7 +2,7 @@
 #define BATCHSEQUENCEDIALOG_H
 
 #include <QDialog>
-#include <src/data/storage/settingsstorage.h>
+#include <data/storage/settingsstorage.h>
 
 namespace Ui {
 class BatchSequenceDialog;

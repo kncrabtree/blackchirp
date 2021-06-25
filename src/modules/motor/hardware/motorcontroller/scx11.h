@@ -4,7 +4,7 @@
 #include <QSerialPort>
 #include <QTimer>
 
-#include <src/modules/motor/hardware/motorcontroller/motorcontroller.h>
+#include <modules/motor/hardware/motorcontroller/motorcontroller.h>
 
 namespace BC::Key {
 static const QString scx11("scx11");

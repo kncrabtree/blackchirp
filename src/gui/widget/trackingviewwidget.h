@@ -7,7 +7,7 @@
 #include <QDateTime>
 
 #include <qwt6/qwt_plot.h>
-#include <src/data/storage/settingsstorage.h>
+#include <data/storage/settingsstorage.h>
 
 class QGridLayout;
 class TrackingPlot;

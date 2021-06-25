@@ -1,7 +1,7 @@
 #ifndef RS232INSTRUMENT_H
 #define RS232INSTRUMENT_H
 
-#include <src/hardware/core/communication/communicationprotocol.h>
+#include <hardware/core/communication/communicationprotocol.h>
 
 #include <QtSerialPort/qserialport.h>
 #include <QtSerialPort/qserialportinfo.h>

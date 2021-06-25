@@ -1,9 +1,9 @@
 #ifndef MOTORCONTROLLER_H
 #define MOTORCONTROLLER_H
 
-#include <src/hardware/core/hardwareobject.h>
+#include <hardware/core/hardwareobject.h>
 
-#include <src/modules/motor/data/motorscan.h>
+#include <modules/motor/data/motorscan.h>
 
 class QTimer;
 

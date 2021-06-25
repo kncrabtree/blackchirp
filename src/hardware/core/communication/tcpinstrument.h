@@ -1,7 +1,7 @@
 #ifndef TCPINSTRUMENT_H
 #define TCPINSTRUMENT_H
 
-#include <src/hardware/core/communication/communicationprotocol.h>
+#include <hardware/core/communication/communicationprotocol.h>
 
 #include <QTcpSocket>
 

@@ -1,4 +1,4 @@
-#include <src/gui/plot/zoompanplot.h>
+#include <gui/plot/zoompanplot.h>
 
 #include <QApplication>
 #include <QMouseEvent>
@@ -15,9 +15,9 @@
 
 #include <qwt6/qwt_scale_div.h>
 #include <qwt6/qwt_plot_marker.h>
-#include <src/gui/plot/blackchirpplotcurve.h>
+#include <gui/plot/blackchirpplotcurve.h>
 
-#include <src/gui/plot/customtracker.h>
+#include <gui/plot/customtracker.h>
 
 
 ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),

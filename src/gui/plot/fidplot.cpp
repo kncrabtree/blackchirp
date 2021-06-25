@@ -1,4 +1,4 @@
-#include <src/gui/plot/fidplot.h>
+#include <gui/plot/fidplot.h>
 #include <math.h>
 
 #include <QPalette>
@@ -15,7 +15,7 @@
 
 #include <qwt6/qwt_plot_canvas.h>
 #include <qwt6/qwt_plot_marker.h>
-#include <src/gui/plot/blackchirpplotcurve.h>
+#include <gui/plot/blackchirpplotcurve.h>
 
 FidPlot::FidPlot(const QString id, QWidget *parent) :
     ZoomPanPlot(BC::Key::fidPlot+id,parent)

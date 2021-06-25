@@ -11,8 +11,8 @@
 #include <qwt6/qwt_symbol.h>
 #include <qwt6/qwt_scale_widget.h>
 
-#include <src/data/datastructs.h>
-#include <src/gui/plot/blackchirpplotcurve.h>
+#include <data/datastructs.h>
+#include <gui/plot/blackchirpplotcurve.h>
 
 LifSlicePlot::LifSlicePlot(const QString name, QWidget *parent) :
     ZoomPanPlot(name,parent)

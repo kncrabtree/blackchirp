@@ -6,7 +6,7 @@
 #include <QMap>
 #include <QVariant>
 
-#include <src/data/datastructs.h>
+#include <data/datastructs.h>
 
 class IOBoardConfigData;
 

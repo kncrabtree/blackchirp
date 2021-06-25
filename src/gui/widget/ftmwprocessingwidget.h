@@ -7,9 +7,9 @@
 #include <QCheckBox>
 #include <QComboBox>
 
-#include <src/data/storage/settingsstorage.h>
-#include <src/data/experiment/experiment.h>
-#include <src/data/analysis/ftworker.h>
+#include <data/storage/settingsstorage.h>
+#include <data/experiment/experiment.h>
+#include <data/analysis/ftworker.h>
 
 namespace BC::Key {
 static const QString ftmwProcWidget("ftmwProcessingWidget");

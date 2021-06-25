@@ -1,9 +1,9 @@
 #ifndef WIZARDRFCONFIGPAGE_H
 #define WIZARDRFCONFIGPAGE_H
 
-#include <src/gui/wizard/experimentwizardpage.h>
+#include <gui/wizard/experimentwizardpage.h>
 
-#include <src/gui/widget/rfconfigwidget.h>
+#include <gui/widget/rfconfigwidget.h>
 
 namespace BC::Key::WizRf {
 static const QString key("WizardRfConfigPage");

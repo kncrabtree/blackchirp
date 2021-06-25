@@ -1,7 +1,7 @@
 #ifndef AWG_H
 #define AWG_H
 
-#include <src/hardware/core/hardwareobject.h>
+#include <hardware/core/hardwareobject.h>
 
 namespace BC::Key::AWG {
 static const QString key("awg");

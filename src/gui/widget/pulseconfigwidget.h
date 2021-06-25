@@ -4,10 +4,10 @@
 #include <QWidget>
 #include <QList>
 
-#include <src/data/storage/settingsstorage.h>
-#include <src/data/experiment/pulsegenconfig.h>
-#include <src/modules/lif/data/lifconfig.h>
-#include <src/data/experiment/ftmwconfig.h>
+#include <data/storage/settingsstorage.h>
+#include <data/experiment/pulsegenconfig.h>
+#include <modules/lif/data/lifconfig.h>
+#include <data/experiment/ftmwconfig.h>
 
 class QLabel;
 class QDoubleSpinBox;

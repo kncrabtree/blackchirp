@@ -11,7 +11,7 @@
 #include <QComboBox>
 #include <QLabel>
 
-#include <src/gui/wizard/experimentwizard.h>
+#include <gui/wizard/experimentwizard.h>
 
 WizardStartPage::WizardStartPage(QWidget *parent) :
     ExperimentWizardPage(BC::Key::WizStart::key,parent)

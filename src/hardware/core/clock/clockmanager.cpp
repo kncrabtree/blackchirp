@@ -2,7 +2,7 @@
 
 #include <QSettings>
 
-#include <src/hardware/core/clock/clock.h>
+#include <hardware/core/clock/clock.h>
 
 
 ClockManager::ClockManager(QObject *parent) : QObject(parent),

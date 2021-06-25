@@ -3,9 +3,9 @@
 
 #include <QWidget>
 
-#include <src/data/storage/settingsstorage.h>
-#include <src/data/experiment/rfconfig.h>
-#include <src/data/model/chirptablemodel.h>
+#include <data/storage/settingsstorage.h>
+#include <data/experiment/rfconfig.h>
+#include <data/model/chirptablemodel.h>
 
 class QSpinBox;
 

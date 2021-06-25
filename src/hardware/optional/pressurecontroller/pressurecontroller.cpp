@@ -1,4 +1,4 @@
-#include <src/hardware/optional/pressurecontroller/pressurecontroller.h>
+#include <hardware/optional/pressurecontroller/pressurecontroller.h>
 
 #include <QTimer>
 

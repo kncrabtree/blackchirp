@@ -1,7 +1,7 @@
 #ifndef VIRTUALPULSEGENERATOR_H
 #define VIRTUALPULSEGENERATOR_H
 
-#include <src/hardware/core/pulsegenerator/pulsegenerator.h>
+#include <hardware/core/pulsegenerator/pulsegenerator.h>
 
 namespace BC::Key {
 static const QString vpGen("Virtual Pulse Generator");

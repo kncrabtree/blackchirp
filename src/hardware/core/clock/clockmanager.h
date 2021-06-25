@@ -3,9 +3,9 @@
 
 #include <QObject>
 
-#include <src/data/datastructs.h>
-#include <src/data/storage/settingsstorage.h>
-#include <src/data/experiment/experiment.h>
+#include <data/datastructs.h>
+#include <data/storage/settingsstorage.h>
+#include <data/experiment/experiment.h>
 
 class Clock;
 

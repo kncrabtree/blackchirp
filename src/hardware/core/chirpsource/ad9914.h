@@ -1,7 +1,7 @@
 #ifndef AD9914_H
 #define AD9914_H
 
-#include <src/hardware/core/chirpsource/awg.h>
+#include <hardware/core/chirpsource/awg.h>
 
 namespace BC::Key::AWG {
 static const QString ad9914("ad9914");

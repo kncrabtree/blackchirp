@@ -1,7 +1,7 @@
 #ifndef GPIBCONTROLLER_H
 #define GPIBCONTROLLER_H
 
-#include <src/hardware/core/hardwareobject.h>
+#include <hardware/core/hardwareobject.h>
 
 namespace BC::Key {
 static const QString gpibController("gpibController");

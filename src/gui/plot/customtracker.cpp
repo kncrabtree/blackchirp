@@ -1,4 +1,4 @@
-#include <src/gui/plot/customtracker.h>
+#include <gui/plot/customtracker.h>
 
 #include <qwt6/qwt_scale_map.h>
 #include <qwt6/qwt_picker_machine.h>

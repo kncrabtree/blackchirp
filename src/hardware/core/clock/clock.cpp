@@ -1,4 +1,4 @@
-#include <src/hardware/core/clock/clock.h>
+#include <hardware/core/clock/clock.h>
 
 Clock::Clock(int clockNum, int numOutputs, bool tunable, const QString subKey, const QString name, CommunicationProtocol::CommType commType,
              QObject *parent, bool threaded) :

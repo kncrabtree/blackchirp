@@ -1,9 +1,9 @@
 #ifndef IOBOARD_H
 #define IOBOARD_H
 
-#include <src/hardware/core/hardwareobject.h>
+#include <hardware/core/hardwareobject.h>
 
-#include <src/data/experiment/ioboardconfig.h>
+#include <data/experiment/ioboardconfig.h>
 
 namespace BC::Key::IOB {
 static const QString ioboard("ioboard");

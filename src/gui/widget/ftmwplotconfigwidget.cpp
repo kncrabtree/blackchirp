@@ -1,4 +1,4 @@
-#include <src/gui/widget/ftmwplotconfigwidget.h>
+#include <gui/widget/ftmwplotconfigwidget.h>
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -14,7 +14,7 @@
 #include <QThread>
 #include <QMessageBox>
 
-#include <src/data/analysis/snapworker.h>
+#include <data/analysis/snapworker.h>
 
 FtmwPlotConfigWidget::FtmwPlotConfigWidget(int id, QString path, QWidget *parent) : QWidget(parent), d_num(-1), d_id(id), d_busy(false), d_updateWhenDone(false), d_path(path)
 {

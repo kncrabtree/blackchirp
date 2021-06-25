@@ -1,7 +1,7 @@
 #ifndef M412220X8_H
 #define M412220X8_H
 
-#include <src/hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/ftmwdigitizer/ftmwscope.h>
 
 #include <spcm/dlltyp.h>
 #include <spcm/regs.h>

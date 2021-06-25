@@ -1,7 +1,7 @@
-#include <src/data/datastructs.h>
+#include <data/datastructs.h>
 
 #include <QDir>
-#include <src/data/storage/settingsstorage.h>
+#include <data/storage/settingsstorage.h>
 
 QString BlackChirp::getExptFile(int num, BlackChirp::ExptFileType t, QString path, int snapNum)
 {

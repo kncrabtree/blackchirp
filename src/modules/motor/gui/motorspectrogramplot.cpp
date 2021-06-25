@@ -1,4 +1,4 @@
-#include <src/modules/motor/gui/motorspectrogramplot.h>
+#include <modules/motor/gui/motorspectrogramplot.h>
 
 #include <QMenu>
 #include <QMouseEvent>
@@ -9,7 +9,7 @@
 #include <qwt6/qwt_interval.h>
 
 
-#include <src/gui/plot/customtracker.h>
+#include <gui/plot/customtracker.h>
 
 MotorSpectrogramPlot::MotorSpectrogramPlot(const QString name, QWidget *parent) : ZoomPanPlot(name,parent)
 {

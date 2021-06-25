@@ -1,4 +1,4 @@
-#include <src/acquisition/batch/batchsingle.h>
+#include <acquisition/batch/batchsingle.h>
 
 BatchSingle::BatchSingle(const Experiment e) : BatchManager(BatchManager::SingleExperiment), d_exp(e), d_complete(false)
 {

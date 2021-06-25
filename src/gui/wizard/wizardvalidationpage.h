@@ -1,11 +1,11 @@
 #ifndef WIZARDVALIDATIONPAGE_H
 #define WIZARDVALIDATIONPAGE_H
 
-#include <src/gui/wizard/experimentwizardpage.h>
+#include <gui/wizard/experimentwizardpage.h>
 
 #include <QTableView>
 
-#include <src/data/experiment/ioboardconfig.h>
+#include <data/experiment/ioboardconfig.h>
 
 class QToolButton;
 

@@ -1,6 +1,6 @@
 #include "gpibinstrument.h"
 
-#include <src/hardware/optional/gpibcontroller/gpibcontroller.h>
+#include <hardware/optional/gpibcontroller/gpibcontroller.h>
 
 GpibInstrument::GpibInstrument(QString key, GpibController *c, QObject *parent) :
     CommunicationProtocol(key,parent), p_controller(c)

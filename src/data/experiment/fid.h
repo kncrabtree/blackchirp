@@ -8,7 +8,7 @@
 #include <QMetaType>
 #include <QDataStream>
 
-#include <src/data/datastructs.h>
+#include <data/datastructs.h>
 
 class FidData;
 

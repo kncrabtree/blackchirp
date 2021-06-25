@@ -3,7 +3,7 @@
 
 #include <QObject>
 
-#include <src/data/experiment/ftmwconfig.h>
+#include <data/experiment/ftmwconfig.h>
 
 class SnapWorker : public QObject
 {

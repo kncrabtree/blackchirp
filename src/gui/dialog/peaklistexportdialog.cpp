@@ -5,7 +5,7 @@
 #include <QMessageBox>
 #include <QTextStream>
 
-#include <src/data/datastructs.h>
+#include <data/datastructs.h>
 
 PeakListExportDialog::PeakListExportDialog(const QList<QPointF> peakList, int number, QWidget *parent) :
     QDialog(parent), SettingsStorage(BC::Key::plExport),

@@ -1,4 +1,4 @@
-#include <src/modules/motor/data/motorscan.h>
+#include <modules/motor/data/motorscan.h>
 
 #include <QSettings>
 #include <QApplication>

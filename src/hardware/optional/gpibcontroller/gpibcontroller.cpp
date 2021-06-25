@@ -1,4 +1,4 @@
-#include <src/hardware/optional/gpibcontroller/gpibcontroller.h>
+#include <hardware/optional/gpibcontroller/gpibcontroller.h>
 
 GpibController::GpibController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent, bool threaded, bool critical) :
     HardwareObject(BC::Key::gpibController,subKey,name,commType,parent,threaded,critical)

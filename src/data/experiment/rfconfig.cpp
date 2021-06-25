@@ -1,4 +1,4 @@
-#include <src/data/experiment/rfconfig.h>
+#include <data/experiment/rfconfig.h>
 
 #include <QSettings>
 #include <QPair>

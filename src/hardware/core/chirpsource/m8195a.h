@@ -1,7 +1,7 @@
 #ifndef M8195A_H
 #define M8195A_H
 
-#include <src/hardware/core/chirpsource/awg.h>
+#include <hardware/core/chirpsource/awg.h>
 
 namespace BC {
 namespace Key {

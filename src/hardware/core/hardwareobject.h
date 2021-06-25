@@ -8,19 +8,19 @@
 #include <QList>
 #include <QPair>
 
-#include <src/data/datastructs.h>
-#include <src/data/storage/settingsstorage.h>
-#include <src/hardware/core/communication/communicationprotocol.h>
-#include <src/hardware/core/communication/virtualinstrument.h>
-#include <src/hardware/core/communication/tcpinstrument.h>
-#include <src/hardware/core/communication/rs232instrument.h>
-#include <src/hardware/core/communication/custominstrument.h>
+#include <data/datastructs.h>
+#include <data/storage/settingsstorage.h>
+#include <hardware/core/communication/communicationprotocol.h>
+#include <hardware/core/communication/virtualinstrument.h>
+#include <hardware/core/communication/tcpinstrument.h>
+#include <hardware/core/communication/rs232instrument.h>
+#include <hardware/core/communication/custominstrument.h>
 
 #ifdef BC_GPIBCONTROLLER
-#include <src/hardware/core/communication/gpibinstrument.h>
+#include <hardware/core/communication/gpibinstrument.h>
 #endif
 
-#include <src/data/experiment/experiment.h>
+#include <data/experiment/experiment.h>
 
 namespace BC::Key::HW {
 static const QString key("key");

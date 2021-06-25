@@ -1,6 +1,6 @@
-#include <src/data/model/clocktablemodel.h>
+#include <data/model/clocktablemodel.h>
 
-#include <src/data/storage/settingsstorage.h>
+#include <data/storage/settingsstorage.h>
 
 #include <QComboBox>
 #include <QSpinBox>

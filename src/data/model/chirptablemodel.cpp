@@ -1,6 +1,6 @@
-#include <src/data/model/chirptablemodel.h>
+#include <data/model/chirptablemodel.h>
 
-#include <src/data/storage/settingsstorage.h>
+#include <data/storage/settingsstorage.h>
 #include <QDoubleSpinBox>
 #include <QApplication>
 #include <QCheckBox>

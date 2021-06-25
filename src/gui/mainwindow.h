@@ -5,8 +5,8 @@
 #include <QList>
 #include <QPair>
 
-#include <src/gui/plot/zoompanplot.h>
-#include <src/data/experiment/experiment.h>
+#include <gui/plot/zoompanplot.h>
+#include <data/experiment/experiment.h>
 
 class QThread;
 class QCloseEvent;

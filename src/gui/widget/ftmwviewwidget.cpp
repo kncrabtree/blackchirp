@@ -1,4 +1,4 @@
-#include <src/gui/widget/ftmwviewwidget.h>
+#include <gui/widget/ftmwviewwidget.h>
 
 #include <QThread>
 #include <QMessageBox>
@@ -9,8 +9,8 @@
 #include <QWidgetAction>
 #include <QFormLayout>
 
-#include <src/data/analysis/ftworker.h>
-#include <src/gui/widget/peakfindwidget.h>
+#include <data/analysis/ftworker.h>
+#include <gui/widget/peakfindwidget.h>
 
 FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     QWidget(parent),

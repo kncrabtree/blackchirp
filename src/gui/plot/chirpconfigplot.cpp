@@ -5,8 +5,8 @@
 
 #include <qwt6/qwt_legend.h>
 
-#include <src/gui/plot/blackchirpplotcurve.h>
-#include <src/data/experiment/chirpconfig.h>
+#include <gui/plot/blackchirpplotcurve.h>
+#include <data/experiment/chirpconfig.h>
 
 ChirpConfigPlot::ChirpConfigPlot(QWidget *parent) : ZoomPanPlot(BC::Key::chirpPlot,parent)
 {

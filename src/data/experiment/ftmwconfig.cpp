@@ -1,4 +1,4 @@
-#include <src/data/experiment/ftmwconfig.h>
+#include <data/experiment/ftmwconfig.h>
 
 #include <QFile>
 #include <QtEndian>

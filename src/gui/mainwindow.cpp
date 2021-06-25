@@ -15,35 +15,35 @@
 #include <QFileDialog>
 #include <QDir>
 
-#include <src/gui/dialog/communicationdialog.h>
-#include <src/gui/widget/digitizerconfigwidget.h>
-#include <src/gui/widget/rfconfigwidget.h>
-#include <src/gui/wizard/experimentwizard.h>
-#include <src/data/loghandler.h>
-#include <src/hardware/core/hardwaremanager.h>
-#include <src/acquisition/acquisitionmanager.h>
-#include <src/acquisition/batch/batchmanager.h>
-#include <src/acquisition/batch/batchsingle.h>
-#include <src/acquisition/batch/batchsequence.h>
-#include <src/gui/widget/led.h>
-#include <src/gui/widget/experimentviewwidget.h>
-#include <src/gui/dialog/quickexptdialog.h>
-#include <src/gui/dialog/batchsequencedialog.h>
-#include <src/gui/widget/clockdisplaywidget.h>
+#include <gui/dialog/communicationdialog.h>
+#include <gui/widget/digitizerconfigwidget.h>
+#include <gui/widget/rfconfigwidget.h>
+#include <gui/wizard/experimentwizard.h>
+#include <data/loghandler.h>
+#include <hardware/core/hardwaremanager.h>
+#include <acquisition/acquisitionmanager.h>
+#include <acquisition/batch/batchmanager.h>
+#include <acquisition/batch/batchsingle.h>
+#include <acquisition/batch/batchsequence.h>
+#include <gui/widget/led.h>
+#include <gui/widget/experimentviewwidget.h>
+#include <gui/dialog/quickexptdialog.h>
+#include <gui/dialog/batchsequencedialog.h>
+#include <gui/widget/clockdisplaywidget.h>
 #include <gui/widget/gascontrolwidget.h>
 
 #ifdef BC_LIF
-#include <src/modules/lif/gui/lifdisplaywidget.h>
-#include <src/modules/lif/gui/lifcontrolwidget.h>
+#include <modules/lif/gui/lifdisplaywidget.h>
+#include <modules/lif/gui/lifcontrolwidget.h>
 #endif
 
 #ifdef BC_MOTOR
-#include <src/modules/motor/gui/motordisplaywidget.h>
-#include <src/modules/motor/gui/motorstatuswidget.h>
+#include <modules/motor/gui/motordisplaywidget.h>
+#include <modules/motor/gui/motorstatuswidget.h>
 #endif
 
 #ifdef BC_PCONTROLLER
-#include <src/hardware/optional/pressurecontroller/pressurecontroller.h>
+#include <hardware/optional/pressurecontroller/pressurecontroller.h>
 #endif
 
 MainWindow::MainWindow(QWidget *parent) :

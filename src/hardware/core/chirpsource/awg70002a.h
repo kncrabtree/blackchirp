@@ -1,7 +1,7 @@
 #ifndef AWG70002A_H
 #define AWG70002A_H
 
-#include <src/hardware/core/chirpsource/awg.h>
+#include <hardware/core/chirpsource/awg.h>
 
 namespace BC::Key::AWG {
 static const QString awg70002a("awg70002a");

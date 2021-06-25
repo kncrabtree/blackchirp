@@ -1,4 +1,4 @@
-#include <src/gui/widget/ftmwprocessingwidget.h>
+#include <gui/widget/ftmwprocessingwidget.h>
 #include <QFormLayout>
 
 #include <QLabel>

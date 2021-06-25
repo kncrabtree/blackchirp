@@ -1,8 +1,8 @@
 #ifndef LIFSCOPE_H
 #define LIFSCOPE_H
 
-#include <src/hardware/core/hardwareobject.h>
-#include <src/modules/lif/data/lifconfig.h>
+#include <hardware/core/hardwareobject.h>
+#include <modules/lif/data/lifconfig.h>
 
 namespace BC::Key {
 static const QString lifScope("lifScope");

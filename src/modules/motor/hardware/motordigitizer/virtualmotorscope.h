@@ -1,7 +1,7 @@
 #ifndef VIRTUALMOTORSCOPE_H
 #define VIRTUALMOTORSCOPE_H
 
-#include <src/modules/motor/hardware/motordigitizer/motoroscilloscope.h>
+#include <modules/motor/hardware/motordigitizer/motoroscilloscope.h>
 
 class QTimer;
 

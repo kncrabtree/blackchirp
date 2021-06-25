@@ -1,6 +1,6 @@
 #include "blackchirpcsv.h"
 
-//#include <src/gui/plot/blackchirpplotcurve.h>
+//#include <gui/plot/blackchirpplotcurve.h>
 
 BlackchirpCSV::BlackchirpCSV()
 {

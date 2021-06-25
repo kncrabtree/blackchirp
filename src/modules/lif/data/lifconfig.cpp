@@ -1,6 +1,6 @@
-#include <src/modules/lif/data/lifconfig.h>
+#include <modules/lif/data/lifconfig.h>
 
-#include <src/modules/lif/data/liftrace.h>
+#include <modules/lif/data/liftrace.h>
 #include <QFile>
 #include <cmath>
 

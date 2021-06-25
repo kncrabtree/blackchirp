@@ -1,14 +1,14 @@
 #ifndef FTPLOT_H
 #define FTPLOT_H
 
-#include <src/gui/plot/zoompanplot.h>
+#include <gui/plot/zoompanplot.h>
 
 #include <QVector>
 #include <QPointF>
 
-#include <src/data/experiment/experiment.h>
-#include <src/data/analysis/ft.h>
-#include <src/data/analysis/ftworker.h>
+#include <data/experiment/experiment.h>
+#include <data/analysis/ft.h>
+#include <data/analysis/ftworker.h>
 
 namespace BC::Key {
 static const QString ftPlot("FtPlot");

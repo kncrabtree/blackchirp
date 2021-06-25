@@ -3,8 +3,8 @@
 
 #include <QWidget>
 
-#include <src/data/experiment/rfconfig.h>
-#include <src/data/model/clocktablemodel.h>
+#include <data/experiment/rfconfig.h>
+#include <data/model/clocktablemodel.h>
 
 namespace Ui {
 class RfConfigWidget;

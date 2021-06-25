@@ -3,7 +3,7 @@
 
 #include <QDialog>
 
-#include <src/data/experiment/experiment.h>
+#include <data/experiment/experiment.h>
 
 namespace Ui {
 class QuickExptDialog;

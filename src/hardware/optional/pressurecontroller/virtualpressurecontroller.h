@@ -1,7 +1,7 @@
 #ifndef VIRTUALPRESSURECONTROLLER_H
 #define VIRTUALPRESSURECONTROLLER_H
 
-#include <src/hardware/optional/pressurecontroller/pressurecontroller.h>
+#include <hardware/optional/pressurecontroller/pressurecontroller.h>
 
 namespace BC::Key {
 static const QString vpcName("Virtual Pressure Controller");

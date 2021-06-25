@@ -1,7 +1,7 @@
 #ifndef VIRTUALINSTRUMENT_H
 #define VIRTUALINSTRUMENT_H
 
-#include <src/hardware/core/communication/communicationprotocol.h>
+#include <hardware/core/communication/communicationprotocol.h>
 
 class VirtualInstrument : public CommunicationProtocol
 {

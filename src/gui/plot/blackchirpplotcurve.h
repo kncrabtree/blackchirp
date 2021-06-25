@@ -8,7 +8,7 @@
 Q_DECLARE_METATYPE(QwtSymbol::Style)
 Q_DECLARE_METATYPE(QwtPlot::Axis)
 
-#include <src/data/storage/settingsstorage.h>
+#include <data/storage/settingsstorage.h>
 
 namespace BC::Key {
 static const QString bcCurve("curve");

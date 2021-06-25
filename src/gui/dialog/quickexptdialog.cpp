@@ -1,4 +1,4 @@
-#include <src/gui/dialog/quickexptdialog.h>
+#include <gui/dialog/quickexptdialog.h>
 #include "ui_quickexptdialog.h"
 
 QuickExptDialog::QuickExptDialog(Experiment e, QWidget *parent) :

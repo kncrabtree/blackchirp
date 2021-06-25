@@ -1,4 +1,4 @@
-#include <src/data/experiment/flowconfig.h>
+#include <data/experiment/flowconfig.h>
 
 FlowConfig::FlowConfig() : data(new FlowConfigData)
 {

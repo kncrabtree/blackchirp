@@ -1,24 +1,24 @@
-#include <src/gui/wizard/experimentwizard.h>
+#include <gui/wizard/experimentwizard.h>
 
-#include <src/gui/wizard/experimentwizardpage.h>
-#include <src/gui/wizard/wizardstartpage.h>
-#include <src/gui/wizard/wizardloscanconfigpage.h>
-#include <src/gui/wizard/wizarddrscanconfigpage.h>
-#include <src/gui/wizard/wizardrfconfigpage.h>
-#include <src/gui/wizard/wizardchirpconfigpage.h>
-#include <src/gui/wizard/wizarddigitizerconfigpage.h>
-#include <src/gui/wizard/wizardsummarypage.h>
-#include <src/gui/wizard/wizardpulseconfigpage.h>
-#include <src/gui/wizard/wizardvalidationpage.h>
-#include <src/acquisition/batch/batchsingle.h>
+#include <gui/wizard/experimentwizardpage.h>
+#include <gui/wizard/wizardstartpage.h>
+#include <gui/wizard/wizardloscanconfigpage.h>
+#include <gui/wizard/wizarddrscanconfigpage.h>
+#include <gui/wizard/wizardrfconfigpage.h>
+#include <gui/wizard/wizardchirpconfigpage.h>
+#include <gui/wizard/wizarddigitizerconfigpage.h>
+#include <gui/wizard/wizardsummarypage.h>
+#include <gui/wizard/wizardpulseconfigpage.h>
+#include <gui/wizard/wizardvalidationpage.h>
+#include <acquisition/batch/batchsingle.h>
 
 
 #ifdef BC_LIF
-#include <src/modules/lif/gui/wizardlifconfigpage.h>
+#include <modules/lif/gui/wizardlifconfigpage.h>
 #endif
 
 #ifdef BC_MOTOR
-#include <src/modules/motor/gui/wizardmotorscanconfigpage.h>
+#include <modules/motor/gui/wizardmotorscanconfigpage.h>
 #endif
 
 ExperimentWizard::ExperimentWizard(QWidget *parent) :

@@ -1,7 +1,7 @@
 #ifndef CUSTOMINSTRUMENT_H
 #define CUSTOMINSTRUMENT_H
 
-#include <src/hardware/core/communication/communicationprotocol.h>
+#include <hardware/core/communication/communicationprotocol.h>
 
 namespace BC::Key::Custom {
 static const QString comm("comm");

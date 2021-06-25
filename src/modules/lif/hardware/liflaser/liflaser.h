@@ -1,7 +1,7 @@
 #ifndef LIFLASER_H
 #define LIFLASER_H
 
-#include <src/hardware/core/hardwareobject.h>
+#include <hardware/core/hardwareobject.h>
 
 namespace BC::Key {
 static const QString lifLaser("lifLaser");

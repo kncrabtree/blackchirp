@@ -6,8 +6,8 @@
 #include <QSettings>
 #include <QApplication>
 
-#include <src/data/datastructs.h>
-#include <src/data/storage/settingsstorage.h>
+#include <data/datastructs.h>
+#include <data/storage/settingsstorage.h>
 
 namespace BC {
 namespace Key {

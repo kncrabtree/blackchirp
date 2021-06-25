@@ -1,4 +1,4 @@
-#include <src/modules/motor/hardware/motorcontroller/motorcontroller.h>
+#include <modules/motor/hardware/motorcontroller/motorcontroller.h>
 
 #include <QTimer>
 

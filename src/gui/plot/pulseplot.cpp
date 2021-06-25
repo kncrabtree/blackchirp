@@ -5,8 +5,8 @@
 #include <qwt6/qwt_plot_curve.h>
 #include <qwt6/qwt_plot_marker.h>
 
-#include <src/gui/plot/blackchirpplotcurve.h>
-#include <src/hardware/core/pulsegenerator/pulsegenerator.h>
+#include <gui/plot/blackchirpplotcurve.h>
+#include <hardware/core/pulsegenerator/pulsegenerator.h>
 
 PulsePlot::PulsePlot(QWidget *parent) :
     ZoomPanPlot(BC::Key::pulsePlot,parent)

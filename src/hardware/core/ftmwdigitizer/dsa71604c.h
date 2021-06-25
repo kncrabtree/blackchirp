@@ -1,7 +1,7 @@
 #ifndef DSA71604C_H
 #define DSA71604C_H
 
-#include <src/hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/ftmwdigitizer/ftmwscope.h>
 
 #include <QTimer>
 #include <QAbstractSocket>

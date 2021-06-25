@@ -5,7 +5,7 @@
 #include <QLabel>
 #include <QFormLayout>
 
-#include <src/hardware/core/clock/clock.h>
+#include <hardware/core/clock/clock.h>
 
 WizardDrScanConfigPage::WizardDrScanConfigPage(QWidget *parent) : ExperimentWizardPage(BC::Key::WizDR::key,parent)
 {

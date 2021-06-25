@@ -1,7 +1,7 @@
 #ifndef LIFSLICEPLOT_H
 #define LIFSLICEPLOT_H
 
-#include <src/gui/plot/zoompanplot.h>
+#include <gui/plot/zoompanplot.h>
 
 class QwtPlotCurve;
 class QwtPlotTextLabel;

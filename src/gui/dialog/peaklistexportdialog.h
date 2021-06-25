@@ -8,8 +8,8 @@
 #include <QPair>
 #include <QSortFilterProxyModel>
 
-#include <src/data/model/peaklistmodel.h>
-#include <src/data/storage/settingsstorage.h>
+#include <data/model/peaklistmodel.h>
+#include <data/storage/settingsstorage.h>
 
 namespace Ui {
 class PeakListExportDialog;

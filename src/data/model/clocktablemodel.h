@@ -3,8 +3,8 @@
 
 #include <QAbstractTableModel>
 
-#include <src/data/experiment/rfconfig.h>
-#include <src/data/datastructs.h>
+#include <data/experiment/rfconfig.h>
+#include <data/datastructs.h>
 
 class ClockTableModel : public QAbstractTableModel
 {

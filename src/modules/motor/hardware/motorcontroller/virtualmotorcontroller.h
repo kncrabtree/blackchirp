@@ -1,7 +1,7 @@
 #ifndef VIRTUALMOTORCONTROLLER_H
 #define VIRTUALMOTORCONTROLLER_H
 
-#include <src/modules/motor/hardware/motorcontroller/motorcontroller.h>
+#include <modules/motor/hardware/motorcontroller/motorcontroller.h>
 
 namespace BC::Key {
 static const QString vmcName("Virtual Motor Controller");

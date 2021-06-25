@@ -1,7 +1,7 @@
 #ifndef FIXEDCLOCK_H
 #define FIXEDCLOCK_H
 
-#include <src/hardware/core/clock/clock.h>
+#include <hardware/core/clock/clock.h>
 
 namespace BC {
 namespace Key {

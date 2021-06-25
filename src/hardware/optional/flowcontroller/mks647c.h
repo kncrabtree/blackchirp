@@ -1,7 +1,7 @@
 #ifndef MKS647C_H
 #define MKS647C_H
 
-#include <src/hardware/optional/flowcontroller/flowcontroller.h>
+#include <hardware/optional/flowcontroller/flowcontroller.h>
 
 namespace BC::Key::Flow {
 static const QString mks647c("mks647c");

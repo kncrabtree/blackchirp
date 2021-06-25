@@ -1,4 +1,4 @@
-#include <src/hardware/core/communication/communicationprotocol.h>
+#include <hardware/core/communication/communicationprotocol.h>
 
 CommunicationProtocol::CommunicationProtocol(QString key, QObject *parent) :
     QObject(parent),d_key(key), d_useTermChar(false), d_timeOut(1000)

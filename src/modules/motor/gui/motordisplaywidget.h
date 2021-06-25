@@ -21,14 +21,14 @@
 #include <QtWidgets/QWidgetAction>
 #include <QtWidgets/QToolButton>
 
-#include <src/modules/motor/gui/motorsliderwidget.h>
-#include <src/modules/motor/gui/motortimeplot.h>
-#include <src/modules/motor/gui/motorspectrogramplot.h>
+#include <modules/motor/gui/motorsliderwidget.h>
+#include <modules/motor/gui/motortimeplot.h>
+#include <modules/motor/gui/motorspectrogramplot.h>
 
-#include <src/data/experiment/experiment.h>
-#include <src/modules/motor/data/motorscan.h>
-#include <src/data/analysis/analysis.h>
-#include <src/data/storage/settingsstorage.h>
+#include <data/experiment/experiment.h>
+#include <modules/motor/data/motorscan.h>
+#include <data/analysis/analysis.h>
+#include <data/storage/settingsstorage.h>
 
 class MotorSliderWidget;
 

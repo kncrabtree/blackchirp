@@ -1,4 +1,4 @@
-#include <src/data/experiment/chirpconfig.h>
+#include <data/experiment/chirpconfig.h>
 
 #include <QSettings>
 #include <QApplication>

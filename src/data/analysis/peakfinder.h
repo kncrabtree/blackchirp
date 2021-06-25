@@ -3,7 +3,7 @@
 
 #include <QObject>
 
-#include <src/data/analysis/ft.h>
+#include <data/analysis/ft.h>
 
 #include <eigen3/Eigen/Core>
 

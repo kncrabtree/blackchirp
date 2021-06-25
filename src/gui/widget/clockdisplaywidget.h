@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-#include <src/data/datastructs.h>
+#include <data/datastructs.h>
 
 class QDoubleSpinBox;
 

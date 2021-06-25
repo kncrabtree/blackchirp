@@ -10,8 +10,8 @@
 #include <QDialogButtonBox>
 #include <QMessageBox>
 
-#include <src/hardware/core/pulsegenerator/pulsegenerator.h>
-#include <src/hardware/core/chirpsource/awg.h>
+#include <hardware/core/pulsegenerator/pulsegenerator.h>
+#include <hardware/core/chirpsource/awg.h>
 
 PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
     QWidget(parent), SettingsStorage(BC::Key::PulseWidget::key),

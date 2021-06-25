@@ -4,7 +4,7 @@
 #include <QMenu>
 #include <math.h>
 
-#include <src/modules/lif/hardware/liflaser/liflaser.h>
+#include <modules/lif/hardware/liflaser/liflaser.h>
 
 #include <qwt6/qwt_plot_spectrogram.h>
 #include <qwt6/qwt_matrix_raster_data.h>
