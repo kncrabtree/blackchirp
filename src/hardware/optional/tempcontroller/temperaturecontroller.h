@@ -2,35 +2,57 @@
 #define TEMPERATURECONTROLLER_H
 #include <hardware/core/hardwareobject.h>
 
-namespace BC::Key {
-static const QString tController("tempController");
+class QTimer;
+
+namespace BC::Key::TC {
+static const QString key("tempController");
+static const QString interval("intervalMs");
+static const QString channels("channels");
+static const QString units("units");
+static const QString name("name");
+static const QString enabled("enabled");
+static const QString decimals("decimal");
 }
 
 class TemperatureController : public HardwareObject
 {
     Q_OBJECT
 public:
-    explicit TemperatureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent =nullptr, bool threaded = false, bool critical = false);
+    explicit TemperatureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int channels, QObject *parent =nullptr, bool threaded = false, bool critical = false);
     virtual ~TemperatureController();
 
+    int numChannels() const { return d_numChannels; }
+
 signals:
-    void temperatureUpdate(QList<double>, QPrivateSignal);
+    void temperatureListUpdate(QList<double>, QPrivateSignal);
+    void temperatureUpdate(int, double, QPrivateSignal);
 
 public slots:
-    virtual QList<double> readTemperatures();
-
-protected:
-    int d_numChannels;
-    QList<double> d_temperatureList;
-
-    virtual void tcInitialize() =0;
+    QList<double> readAll();
+    double readTemperature(const int ch);
 
 
     // HardwareObject interface
+protected:
     virtual QList<QPair<QString, QVariant> > readAuxPlotData() override;
     void initialize() override final;
-protected:
-    virtual QList<double> readHWTemperature() = 0;
+    bool testConnection() override final;
+
+    virtual void tcInitialize() =0;
+    virtual bool tcTestConnection() =0;
+    virtual QList<double> readHWTemperatures() = 0;
+    virtual double readHwTemperature(const int ch) =0;
+    virtual void poll();
+
+private:
+    const int d_numChannels;
+    QList<double> d_temperatureList;
+    QTimer *p_readTimer;
+
+#if BC_TEMPCONTROLLER == 0
+    friend class VirtualTemperatureController;
+#endif
+
 };
 
 #endif // TEMPERATURECONTROLLER_H

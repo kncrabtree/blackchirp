@@ -1,26 +1,14 @@
 #include "lakeshore218.h"
 
+using namespace BC::Key::TC;
+
 Lakeshore218::Lakeshore218(QObject *parent) :
-    TemperatureController(BC::Key::lakeshore218,BC::Key::lakeshore218Name,
-                          CommunicationProtocol::Rs232,parent)
+    TemperatureController(lakeshore218,lakeshore218Name,
+                          CommunicationProtocol::Rs232,8,parent)
 {
-    d_numChannels = 8;
-}
-void Lakeshore218::readSettings()
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-
-
-    QString units = s.value(QString("units"),QString("K")).toString();
-    s.setValue(QString("units"), units);
-    s.endGroup();
-    s.endGroup();
 }
 
-bool Lakeshore218::testConnection()
+bool Lakeshore218::tcTestConnection()
 {
     QByteArray resp = p_comm->queryCmd(QString("QIDN?\r\n"));
 
@@ -46,14 +34,14 @@ void Lakeshore218::tcInitialize()
     p_comm->setReadOptions(500, true,QByteArray("\r\n"));
 }
 
-QList<double> Lakeshore218::readHWTemperature()
+QList<double> Lakeshore218::readHWTemperatures()
 {
     QByteArray temp = p_comm->queryCmd(QString("KRDG?0\r\n"));
     auto l = temp.split(',');
     QList<double> out;
-    if (l.size() != d_numChannels)
+    if (l.size() != numChannels())
     {
-        emit logMessage(QString("Could not parse temperature response. The response was %1").arg(QString(temp)));
+        emit logMessage(QString("Could not parse temperature response. The response was %1").arg(QString(temp)),BlackChirp::LogError);
         emit hardwareFailure();
         return out;
     }
@@ -61,6 +49,21 @@ QList<double> Lakeshore218::readHWTemperature()
     for (int i=0;i<l.size();i++)
         out.append(l.at(i).toDouble());
     return out;
+}
+
+double Lakeshore218::readHwTemperature(const int ch)
+{
+    QByteArray temp = p_comm->queryCmd(QString("KRDG?%1\r\n").arg(ch+1));
+    bool ok = false;
+    double t = temp.toDouble(&ok);
+    if(!ok)
+    {
+        emit logMessage(QString("Could not parse temperature response (%1)").arg(QString(temp)),BlackChirp::LogError);
+        emit hardwareFailure();
+        return nan("");
+    }
+
+    return t;
 }
 
 QStringList Lakeshore218::channelNames()

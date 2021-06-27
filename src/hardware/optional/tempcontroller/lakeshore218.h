@@ -2,7 +2,7 @@
 #define LAKESHORE218_H
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
-namespace BC::Key {
+namespace BC::Key::TC {
 static const QString lakeshore218("lakeshore218");
 static const QString lakeshore218Name("Lakeshore 218 Temperature Controller");
 }
@@ -15,14 +15,15 @@ public:
 
     // HardwareObject interface
 public slots:
-    void readSettings() override;
     QStringList channelNames();
     // TemperatureController interface
 protected:
-    bool testConnection() override;
+    bool tcTestConnection() override;
     void tcInitialize() override;
 
-    QList<double> readHWTemperature() override;
+    QList<double> readHWTemperatures() override;
+    double readHwTemperature(const int ch) override;
+
 private:
     QTimer *p_readTimer;
 

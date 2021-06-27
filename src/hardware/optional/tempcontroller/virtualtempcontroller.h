@@ -13,25 +13,18 @@ public:
     VirtualTemperatureController(QObject *parent =nullptr);
     ~VirtualTemperatureController();
 
-    // HardwareObject interface
-public slots:
-    void readSettings() override;
 
     // TemperatureController interface
 public slots:
 
 protected:
-    bool testConnection() override;
+    bool tcTestConnection() override;
     void tcInitialize() override;
 
-
-private:
-    QTimer *p_readTimer;
-    double randTemperature;
-
     // TemperatureController interface
 protected:
-    QList<double> readHWTemperature() override;
+    QList<double> readHWTemperatures() override;
+    double readHwTemperature(const int ch) override;
 };
 
 #endif // VIRTUALTEMPCONTROLLER_H
