@@ -31,8 +31,6 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
 
     vbl->addWidget(p_lifControl,1);
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-
     auto *optionsBox = new QGroupBox(QString("Acquisition Options"));
     auto *ofl = new QFormLayout;
 
@@ -65,7 +63,6 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     auto *delayFl = new QFormLayout;
 
     p_delaySingle = new QCheckBox(this);
-    p_delaySingle->setChecked(s.value(QString("lifConfig/delaySingle"),false).toBool());
     p_delaySingle->setToolTip(QString("If checked, the LIF delay will not change during the scan, and will remain at the value in the start box."));
     lbl = new QLabel(QString("Single Point"));
     lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
@@ -115,7 +112,6 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     auto *laserFl = new QFormLayout;
 
     p_laserSingle = new QCheckBox(this);
-    p_laserSingle->setChecked(s.value(QString("lifConfig/laserSingle"),false).toBool());
     p_laserSingle->setToolTip(QString("If checked, the LIF laser frequency will not change during the scan, and will remain at the value in the start box."));
     lbl = new QLabel(QString("Single Point"));
     lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
