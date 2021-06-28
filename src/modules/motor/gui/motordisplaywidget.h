@@ -36,10 +36,13 @@ namespace Ui {
 class MotorDisplayWidget;
 }
 
-namespace BC::Key {
+namespace BC::Key::MotorDisplay {
 static const QString motorDisplay("motorDisplay");
 static const QString motorLargePlot("MotorLargeSpectrogramPlot");
 static const QString motorSmallPlot("MotorSmallSpectrogramPlot");
+static const QString smooth("smooth");
+static const QString winSize("winSize");
+static const QString polyOrder("polyOrder");
 }
 
 class MotorDisplayWidget : public QWidget, public SettingsStorage
@@ -99,6 +102,8 @@ public:
 
     void setupUi(QWidget *MotorDisplayWidget)
     {
+        using namespace BC::Key::MotorDisplay;
+
         if (MotorDisplayWidget->objectName().isEmpty())
             MotorDisplayWidget->setObjectName(QStringLiteral("MotorDisplayWidget"));
         MotorDisplayWidget->resize(843, 504);
@@ -153,7 +158,7 @@ public:
 
         horizontalLayout = new QHBoxLayout();
         horizontalLayout->setObjectName(QStringLiteral("horizontalLayout"));
-        motorLargeSpectrogramPlot = new MotorSpectrogramPlot(BC::Key::motorLargePlot,MotorDisplayWidget);
+        motorLargeSpectrogramPlot = new MotorSpectrogramPlot(motorLargePlot,MotorDisplayWidget);
 
         horizontalLayout->addWidget(motorLargeSpectrogramPlot);
 
@@ -173,7 +178,7 @@ public:
 
         horizontalLayout_2 = new QHBoxLayout();
         horizontalLayout_2->setObjectName(QStringLiteral("horizontalLayout_2"));
-        motorSmallSpectrogramPlot = new MotorSpectrogramPlot(BC::Key::motorSmallPlot,MotorDisplayWidget);
+        motorSmallSpectrogramPlot = new MotorSpectrogramPlot(motorSmallPlot,MotorDisplayWidget);
         motorSmallSpectrogramPlot->setObjectName(QStringLiteral("motorXYSpectrogramPlot"));
 
         horizontalLayout_2->addWidget(motorSmallSpectrogramPlot);

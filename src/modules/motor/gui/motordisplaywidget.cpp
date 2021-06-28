@@ -4,8 +4,10 @@
 
 #include <QSettings>
 
+using namespace BC::Key::MotorDisplay;
+
 MotorDisplayWidget::MotorDisplayWidget(QWidget *parent) :
-    QWidget(parent), SettingsStorage(BC::Key::motorDisplay),
+    QWidget(parent), SettingsStorage(motorDisplay),
     ui(new Ui::MotorDisplayWidget)
 {
     ui->setupUi(this);
@@ -24,14 +26,13 @@ MotorDisplayWidget::MotorDisplayWidget(QWidget *parent) :
     for(int i=0; i<d_sliders.size();i++)
         connect(d_sliders.at(i),&MotorSliderWidget::valueChanged,this,&MotorDisplayWidget::updatePlots);
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    ui->smoothBox->setChecked(s.value(QString("motorDisplay/smooth"),false).toBool());
-    ui->winBox->setValue(s.value(QString("motorDisplay/winSize"),21).toInt());
-    ui->polyBox->setValue(s.value(QString("motorDisplay/polyOrder"),3).toInt());
-    s.setValue(QString("motorDisplay/smooth"),ui->smoothBox->isChecked());
-    s.setValue(QString("motorDisplay/winSize"),ui->winBox->value());
-    s.setValue(QString("motorDisplay/polyOrder"),ui->polyBox->value());
-    s.sync();
+    ui->smoothBox->setChecked(getOrSetDefault(smooth,false));
+    ui->winBox->setValue(getOrSetDefault(winSize,21));
+    ui->polyBox->setValue(getOrSetDefault(polyOrder,3));
+
+    registerGetter(smooth,static_cast<QAbstractButton*>(ui->smoothBox),&QCheckBox::isChecked);
+    registerGetter(winSize,ui->winBox,&QSpinBox::value);
+    registerGetter(polyOrder,ui->polyBox,&QSpinBox::value);
 
     updateCoefs();
 
@@ -43,6 +44,7 @@ MotorDisplayWidget::MotorDisplayWidget(QWidget *parent) :
 
 MotorDisplayWidget::~MotorDisplayWidget()
 {
+    clearGetters(false);
     delete ui;
 }
 
@@ -130,10 +132,6 @@ void MotorDisplayWidget::smoothBoxChecked(bool checked)
 {
     ui->winBox->setEnabled(checked);
     ui->polyBox->setEnabled(checked);
-
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.setValue(QString("motorDisplay/smooth"),checked);
-    s.sync();
 
     updatePlots();
 }
