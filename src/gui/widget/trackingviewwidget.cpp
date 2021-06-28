@@ -221,8 +221,8 @@ void TrackingViewWidget::configureGrid()
         p_gridLayout->addWidget(d_allPlots[2],2,0,1,1);
         p_gridLayout->setRowStretch(0,1);
         p_gridLayout->setRowStretch(1,1);
+        p_gridLayout->setRowStretch(2,1);
         p_gridLayout->setColumnStretch(0,1);
-        p_gridLayout->setColumnStretch(1,1);
         break;
     case 4:
         p_gridLayout->addWidget(d_allPlots[0],0,0,1,1);
@@ -238,8 +238,8 @@ void TrackingViewWidget::configureGrid()
         p_gridLayout->addWidget(d_allPlots[0],0,0,1,2);
         p_gridLayout->addWidget(d_allPlots[1],0,2,1,2);
         p_gridLayout->addWidget(d_allPlots[2],0,4,1,2);
-        p_gridLayout->addWidget(d_allPlots[3],1,0,1,2);
-        p_gridLayout->addWidget(d_allPlots[4],1,3,1,2);
+        p_gridLayout->addWidget(d_allPlots[3],1,0,1,3);
+        p_gridLayout->addWidget(d_allPlots[4],1,3,1,3);
         p_gridLayout->setRowStretch(0,1);
         p_gridLayout->setRowStretch(1,1);
         for(int i=0; i<6; ++i)
