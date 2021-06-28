@@ -7,9 +7,27 @@
 
 class QTimer;
 
-namespace BC::Key {
-static const QString mController("motorController");
+namespace BC::Key::MC {
+static const QString key("motorController");
+static const QString mInterval("motionIntervalMs");
+static const QString lInterval("limitIntervalMs");
+static const QString channels("channels");
+static const QString type("type");
+static const QString min("min");
+static const QString max("max");
+static const QString id("id");
+static const QString offset("offset");
+static const QString rest("restingPos");
+static const QString units("units");
+static const QString axName("name");
+static const QString decimal("decimals");
+static const QString xIndex("xIndex");
+static const QString yIndex("yIndex");
+static const QString zIndex("zIndex");
 }
+
+using Limits = QPair<bool,bool>;
+using AxisInfo = QPair<int,QString>;
 
 class MotorController : public HardwareObject
 {
@@ -18,24 +36,36 @@ public:
     MotorController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded=false,bool critical=true);
 
 signals:
-    void motionComplete(bool success = true);
+    void motionComplete(bool success, QPrivateSignal);
     //void limitStatus(bool nx, bool px, bool ny, bool py, bool nz, bool pz);
-    void limitStatus(MotorScan::MotorAxis axis, bool negLimit, bool posLimit);
-
-    void posUpdate(MotorScan::MotorAxis axis, double pos);
+    void limitStatus(MotorScan::MotorAxis axis, bool negLimit, bool posLimit, QPrivateSignal);
+    void posUpdate(MotorScan::MotorAxis axis, double pos, QPrivateSignal);
 
 public slots:
-    virtual bool moveToPosition(double x, double y, double z) =0;
     bool prepareForExperiment(Experiment &exp) override final;
-    virtual void moveToRestingPos() =0;
-    virtual void checkLimit() =0;
+    bool moveToPosition(double x, double y, double z);
+    void moveToRestingPos();
+    void readCurrentPosition();
+    void checkMotion();
+    void checkLimits();
 
-protected:
+protected:   
+    AxisInfo getAxisInfo(MotorScan::MotorAxis a) const;
+    virtual void mcInitialize() =0;
+    virtual bool mcTestConnection() =0;
     virtual bool prepareForMotorScan(Experiment &exp) =0;
-    double d_xPos, d_yPos, d_zPos;
-    QPair<double,double> d_xRange, d_yRange, d_zRange;
-    double d_xRestingPos, d_yRestingPos, d_zRestingPos;
-    QTimer *p_limitTimer;
+    virtual bool hwMoveToPosition(double x, double y, double z) = 0;
+    virtual Limits hwCheckLimits(MotorScan::MotorAxis axis) =0;
+    virtual double hwReadPosition(MotorScan::MotorAxis axis) =0;
+    virtual bool hwCheckAxisMotion(MotorScan::MotorAxis axis) =0;
+    virtual bool hwStopMotion(MotorScan::MotorAxis axis) =0;
+
+private:
+    void initialize() override final;
+    bool testConnection() override final;
+    QMap<MotorScan::MotorAxis,bool> d_moving;
+    bool d_idle;
+    QTimer *p_limitTimer, *p_motionTimer;
 };
 
 #if BC_MOTORCONTROLLER==1
