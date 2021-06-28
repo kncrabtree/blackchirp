@@ -6,10 +6,12 @@ SOURCES += $$PWD/loghandler.cpp \
     $$PWD/analysis/peakfinder.cpp \
     $$PWD/analysis/snapworker.cpp \
     $$PWD/experiment/chirpconfig.cpp \
+    $$PWD/experiment/digitizerconfig.cpp \
     $$PWD/experiment/experiment.cpp \
     $$PWD/experiment/fid.cpp \
     $$PWD/experiment/flowconfig.cpp \
     $$PWD/experiment/ftmwconfig.cpp \
+    $$PWD/experiment/ftmwdigitizerconfig.cpp \
     $$PWD/experiment/ioboardconfig.cpp \
     $$PWD/experiment/pulsegenconfig.cpp \
     $$PWD/experiment/rfconfig.cpp \
@@ -30,10 +32,12 @@ HEADERS += $$PWD/loghandler.h \
     $$PWD/analysis/peakfinder.h \
     $$PWD/analysis/snapworker.h \
     $$PWD/experiment/chirpconfig.h \
+    $$PWD/experiment/digitizerconfig.h \
     $$PWD/experiment/experiment.h \
     $$PWD/experiment/fid.h \
     $$PWD/experiment/flowconfig.h \
     $$PWD/experiment/ftmwconfig.h \
+    $$PWD/experiment/ftmwdigitizerconfig.h \
     $$PWD/experiment/ioboardconfig.h \
     $$PWD/experiment/pulsegenconfig.h \
     $$PWD/experiment/rfconfig.h \

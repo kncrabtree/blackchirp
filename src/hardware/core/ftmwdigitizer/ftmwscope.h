@@ -6,21 +6,15 @@
 #include <QByteArray>
 
 #include <data/experiment/ftmwconfig.h>
+#include <data/experiment/ftmwdigitizerconfig.h>
 
 
 namespace BC::Key::FtmwScope {
 static const QString ftmwScope("ftmwscope");
-static const QString multiRecord("canMultiRecord");
-static const QString blockAverage("canBlockAverage");
-static const QString summaryRecord("canMultiRecordSummary");
-static const QString multiBlock("canBlockAndMultiRecord");
 static const QString bandwidth("bandwidthMHz");
-static const QString sampleRates("sampleRates");
-static const QString srText("text");
-static const QString srValue("val");
 }
 
-class FtmwScope : public HardwareObject
+class FtmwScope : public HardwareObject, protected FtmwDigitizerConfig
 {
     Q_OBJECT
 public:
@@ -32,10 +26,6 @@ signals:
 
 public slots:
     virtual void readWaveform() =0;
-
-
-protected:
-    BlackChirp::FtmwScopeConfig d_configuration;
 
 };
 

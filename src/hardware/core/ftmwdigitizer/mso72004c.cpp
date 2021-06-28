@@ -3,25 +3,38 @@
 #include <QTcpSocket>
 #include <math.h>
 
+using namespace BC::Key::FtmwScope;
+using namespace BC::Key::Digi;
+
 MSO72004C::MSO72004C(QObject *parent) :
-    FtmwScope(BC::Key::FtmwScope::mso72004c,BC::Key::FtmwScope::mso72004cName,CommunicationProtocol::Tcp,parent),
+    FtmwScope(mso72004c,mso72004cName,CommunicationProtocol::Tcp,parent),
     d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {
-    setDefault(BC::Key::FtmwScope::blockAverage,false);
-    setDefault(BC::Key::FtmwScope::multiRecord,true);
-    setDefault(BC::Key::FtmwScope::summaryRecord,true);
-    setDefault(BC::Key::FtmwScope::multiBlock,false);
-    setDefault(BC::Key::FtmwScope::bandwidth,16000.0);
+    setDefault(numChannels,4);
+    setDefault(hasAuxChannel,true);
+    setDefault(minFullScale,5e-2);
+    setDefault(maxFullScale,2.0);
+    setDefault(minVOffset,-2.0);
+    setDefault(maxVOffset,2.0);
+    setDefault(minTrigDelay,-10.0);
+    setDefault(maxTrigDelay,10.0);
+    setDefault(minTrigLevel,-5.0);
+    setDefault(maxTrigLevel,5.0);
+    setDefault(blockAverage,true);
+    setDefault(multiRecord,true);
+    setDefault(multiBlock,false);
+    setDefault(maxBytes,2);
+    setDefault(bandwidth,16000.0);
 
-    if(!containsArray(BC::Key::FtmwScope::sampleRates))
-        setArray(BC::Key::FtmwScope::sampleRates,{
-                     {{BC::Key::FtmwScope::srText,"2 GSa/s"},{BC::Key::FtmwScope::srValue,2e9}},
-                       {{BC::Key::FtmwScope::srText,"5 GSa/s"},{BC::Key::FtmwScope::srValue,5e9}},
-                       {{BC::Key::FtmwScope::srText,"10 GSa/s"},{BC::Key::FtmwScope::srValue,10e9}},
-                       {{BC::Key::FtmwScope::srText,"20 GSa/s"},{BC::Key::FtmwScope::srValue,20e9}},
-                       {{BC::Key::FtmwScope::srText,"50 GSa/s"},{BC::Key::FtmwScope::srValue,50e9}},
-                       {{BC::Key::FtmwScope::srText,"100 GSa/s"},{BC::Key::FtmwScope::srValue,100e9}}
+    if(!containsArray(sampleRates))
+        setArray(sampleRates,{
+                     {{srText,"2 GSa/s"},{srValue,2e9}},
+                       {{srText,"5 GSa/s"},{srValue,5e9}},
+                       {{srText,"10 GSa/s"},{srValue,10e9}},
+                       {{srText,"20 GSa/s"},{srValue,20e9}},
+                       {{srText,"50 GSa/s"},{srValue,50e9}},
+                       {{srText,"100 GSa/s"},{srValue,100e9}}
                      });
 }
 

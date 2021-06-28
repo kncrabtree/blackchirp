@@ -10,6 +10,7 @@
 
 #include <data/experiment/fid.h>
 #include <data/experiment/rfconfig.h>
+#include <data/experiment/ftmwdigitizerconfig.h>
 #include <data/datastructs.h>
 
 #define BC_FTMW_MAXSHIFT 50
@@ -39,7 +40,7 @@ public:
     FidList fidList(int segment) const;
     QVector<qint64> rawFidList() const;
     QList<FidList> multiFidList() const;
-    BlackChirp::FtmwScopeConfig scopeConfig() const;
+    FtmwDigitizerConfig scopeConfig() const;
     RfConfig rfConfig() const;
     ChirpConfig chirpConfig(int num = 0) const;
     Fid fidTemplate() const;
@@ -74,7 +75,7 @@ public:
     void addFids(const FtmwConfig other);
     bool subtractFids(const FtmwConfig other);
     void resetFids();
-    void setScopeConfig(const BlackChirp::FtmwScopeConfig &other);
+    void setScopeConfig(const FtmwDigitizerConfig &other);
     void setRfConfig(const RfConfig other);
     void clocksReady();
     void storeFids();
@@ -120,7 +121,7 @@ public:
     FidList fidList;
     QList<FidList> multiFidStorage;
 
-    BlackChirp::FtmwScopeConfig scopeConfig;
+    FtmwDigitizerConfig scopeConfig;
     RfConfig rfConfig;
     Fid fidTemplate;
     QString errorString;

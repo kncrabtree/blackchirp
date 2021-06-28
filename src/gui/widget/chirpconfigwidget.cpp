@@ -16,7 +16,7 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     ui->chirpTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
     SettingsStorage s(BC::Key::FtmwScope::ftmwScope,SettingsStorage::Hardware);
-    bool ff = s.get(BC::Key::FtmwScope::multiRecord,false);
+    bool ff = s.get(BC::Key::Digi::multiRecord,false);
 
     if(!ff)
     {

@@ -69,11 +69,12 @@ void TemperatureController::initialize()
 bool TemperatureController::testConnection()
 {
     p_readTimer->stop();
-    if(tcTestConnection())
-    {
-        readAll();
-        p_readTimer->start();
-    }
+    if(!tcTestConnection())
+        return false;
+
+    readAll();
+    p_readTimer->start();
+    return true;
 }
 
 void TemperatureController::poll()

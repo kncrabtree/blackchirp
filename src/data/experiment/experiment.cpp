@@ -583,7 +583,7 @@ void Experiment::setFtmwEnabled(bool en)
     d_ftmwCfg.setEnabled(en);
 }
 
-void Experiment::setScopeConfig(const BlackChirp::FtmwScopeConfig &cfg)
+void Experiment::setScopeConfig(const FtmwDigitizerConfig &cfg)
 {
     d_ftmwCfg.setScopeConfig(cfg);
 }

@@ -5,6 +5,7 @@
 
 #include <gui/widget/digitizerconfigwidget.h>
 #include <gui/wizard/experimentwizard.h>
+#include <hardware/core/ftmwdigitizer/ftmwscope.h>
 
 WizardDigitizerConfigPage::WizardDigitizerConfigPage(QWidget *parent) :
     ExperimentWizardPage(BC::Key::WizFtDig::key,parent)
@@ -12,7 +13,7 @@ WizardDigitizerConfigPage::WizardDigitizerConfigPage(QWidget *parent) :
     setTitle(QString("Configure Digitizer"));
 
     QVBoxLayout *vbl = new QVBoxLayout(this);
-    p_dc = new DigitizerConfigWidget(this);
+    p_dc = new DigitizerConfigWidget("FtmwDigitizerWidget",BC::Key::FtmwScope::ftmwScope,this);
 
     vbl->addWidget(p_dc);
 
@@ -28,14 +29,14 @@ WizardDigitizerConfigPage::~WizardDigitizerConfigPage()
 void WizardDigitizerConfigPage::initializePage()
 {
     ///TODO: Be more flexible here
-    auto e = getExperiment();
-    p_dc->setFromConfig(e->ftmwConfig());
+//    auto e = getExperiment();
+//    p_dc->setFromConfig(e->ftmwConfig());
 }
 
 bool WizardDigitizerConfigPage::validatePage()
 {
-    auto e = getExperiment();
-    e->setFtmwConfig(p_dc->getConfig());
+//    auto e = getExperiment();
+//    e->setFtmwConfig(p_dc->getConfig());
     
     return true;
 }

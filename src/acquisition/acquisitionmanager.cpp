@@ -36,8 +36,8 @@ void AcquisitionManager::beginExperiment(Experiment exp)
     {
         //prepare GPU Averager
         auto sc = exp.ftmwConfig().scopeConfig();
-        bool success = gpuAvg.initialize(sc.recordLength,exp.ftmwConfig().numFrames(),
-                                         sc.bytesPerPoint,sc.byteOrder);
+        bool success = gpuAvg.initialize(sc.d_recordLength,exp.ftmwConfig().numFrames(),
+                                         sc.d_bytesPerPoint,sc.d_byteOrder);
         if(!success)
         {
             emit logMessage(gpuAvg.getErrorString(),BlackChirp::LogError);
