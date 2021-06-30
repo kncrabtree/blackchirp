@@ -120,7 +120,7 @@ QVariant SettingsStorage::get(const QString key, const QVariant &defaultValue) c
     return defaultValue;
 }
 
-SettingsMap SettingsStorage::getMultiple(const std::vector<QString> keys) const
+SettingsStorage::SettingsMap SettingsStorage::getMultiple(const std::vector<QString> keys) const
 {
     SettingsMap out;
     for(auto key : keys)
@@ -132,7 +132,7 @@ SettingsMap SettingsStorage::getMultiple(const std::vector<QString> keys) const
     return out;
 }
 
-std::vector<SettingsMap> SettingsStorage::getArray(const QString key) const
+std::vector<SettingsStorage::SettingsMap> SettingsStorage::getArray(const QString key) const
 {
     if(containsArray(key))
         return d_arrayValues.at(key);
@@ -148,7 +148,7 @@ std::size_t SettingsStorage::getArraySize(const QString key) const
     return 0;
 }
 
-SettingsMap SettingsStorage::getArrayMap(const QString key, std::size_t i) const
+SettingsStorage::SettingsMap SettingsStorage::getArrayMap(const QString key, std::size_t i) const
 {
     auto v = getArray(key);
     if(i < v.size())

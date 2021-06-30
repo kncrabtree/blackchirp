@@ -7,9 +7,6 @@
 #include <QSettings>
 #include <QCoreApplication>
 
-using SettingsGetter = std::function<QVariant()>; /*!< Alias for a getter function */
-using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs and variants */
-
 /*!
  * \brief The SettingsStorage class manages persistent settings (through QSettings)
  *
@@ -203,6 +200,9 @@ using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strongs 
 class SettingsStorage
 {
 public:
+
+    using SettingsGetter = std::function<QVariant()>; /*!< Alias for a getter function */
+    using SettingsMap = std::map<QString,QVariant>; /*!< Alias for a map of strings and variants */
 
     /*!
      * \brief Used in constructor to indicate whether a hardware subkey is read from settings
