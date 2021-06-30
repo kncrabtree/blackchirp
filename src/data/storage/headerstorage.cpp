@@ -42,7 +42,7 @@ std::size_t HeaderStorage::arrayStoreSize(const QString key) const
     return 0;
 }
 
-HeaderStrings HeaderStorage::getStrings()
+HeaderStorage::HeaderStrings HeaderStorage::getStrings()
 {
 
     prepareToSave();
@@ -108,8 +108,8 @@ bool HeaderStorage::storeLine(const QStringList l)
     if(!arrKey.isEmpty())
     {
         bool ok = false;
-        std::size_t i = index.toInt(&ok);
-        if(!ok || i < 0)
+        std::size_t i = index.toUInt(&ok);
+        if(!ok)
             return false;
 
         storeArrayValue(arrKey,i,key,QVariant::fromValue(val),unit);
@@ -118,6 +118,14 @@ bool HeaderStorage::storeLine(const QStringList l)
         store(key,QVariant::fromValue(val),unit);
 
     return true;
+}
+
+void HeaderStorage::readComplete()
+{
+    loadComplete();
+
+    for(auto child : d_children)
+        child->loadComplete();
 }
 
 void HeaderStorage::addChild(HeaderStorage *other)

@@ -4,10 +4,6 @@
 #include <QObject>
 #include <QVariant>
 
-using ValueUnit = std::pair<QVariant,QString>; /*<! Alias */
-using HeaderMap = std::map<QString,ValueUnit>;
-using HeaderArray = std::vector<HeaderMap>;
-using HeaderStrings = std::multimap<QString,std::tuple<QString,QString,QString,QString,QString>>;
 
 /*!
  * \brief Base class for objects that read/write to an experiment header file
@@ -40,11 +36,22 @@ using HeaderStrings = std::multimap<QString,std::tuple<QString,QString,QString,Q
  * called. This function determines if the object key stored in the line is associated with
  * this object or one of its children, and if so, it adds the value to its internal
  * containers (or is passed to the child, as appropriate). Once this is complete, subclasses
- * can extract the values using the retrieve() and retrieveArrayValue() functions.
+ * can extract the values using the retrieve() and retrieveArrayValue() functions. This should
+ * be done in the loadComplete() virtual function, which is called after all of the lines
+ * in the header have beem processed.
  */
 class HeaderStorage
 {
 public:
+    using ValueUnit = std::pair<QVariant,QString>;
+    using HeaderMap = std::map<QString,ValueUnit>;
+    using HeaderArray = std::vector<HeaderMap>;
+    using HeaderStrings = std::multimap<QString,std::tuple<QString,QString,QString,QString,QString>>;
+
+    /*!
+     * \brief Constructor. Sets the object key, which should be unique to the most derived class
+     * \param objKey The object key. Values written to the header file will be associated with this string
+     */
     HeaderStorage(const QString objKey);
 
 protected:
@@ -56,6 +63,15 @@ protected:
      *
      */
     virtual void prepareToSave() =0;
+
+    /*!
+     * \brief Called when all header lines have been processed when reading
+     *
+     * Subclasses should perform their initialization here by using retrieve() and
+     * retrieveArrayValue() as appropriate.
+     *
+     */
+    virtual void loadComplete() =0;
 
     const QString d_objKey; /*<! Object key used for storage */
 
@@ -223,6 +239,11 @@ public:
      * \return bool whether the value was added to this object or a child.
      */
     bool storeLine(const QStringList l);
+
+    /*!
+     * \brief Calls loadComplete() on self and all children
+     */
+    void readComplete();
 
     /*!
      * \brief Adds a pointer to a child HeaderStorage object
