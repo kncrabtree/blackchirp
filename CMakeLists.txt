@@ -20,8 +20,12 @@ enable_testing()
 add_executable(tst_settingsstoragetest tests/tst_settingsstoragetest.cpp src/data/storage/settingsstorage.cpp)
 add_test(NAME tst_settingsstoragetest COMMAND tst_settingsstoragetest)
 
+add_executable(tst_headerstoragetest tests/tst_headerstoragetest.cpp src/data/storage/headerstorage.cpp)
+add_test(NAME tst_headerstoragetest COMMAND tst_headerstoragetest)
+
 add_executable(tst_blackchirpcsvtest tests/tst_blackchirpcsv.cpp src/data/storage/blackchirpcsv.cpp)
 add_test(NAME tst_blackchirpcsvtest COMMAND tst_blackchirpcsvtest)
 
 target_link_libraries(tst_settingsstoragetest PRIVATE Qt5::Gui Qt5::Test)
+target_link_libraries(tst_headerstoragetest PRIVATE Qt5::Gui Qt5::Test)
 target_link_libraries(tst_blackchirpcsvtest PRIVATE Qt5::Gui Qt5::Test)

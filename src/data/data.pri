@@ -21,6 +21,7 @@ SOURCES += $$PWD/loghandler.cpp \
     $$PWD/model/peaklistmodel.cpp \
 	$$PWD/model/validationmodel.cpp \
     $$PWD/storage/blackchirpcsv.cpp \
+    $$PWD/storage/headerstorage.cpp \
    $$PWD/storage/settingsstorage.cpp
 
 
@@ -47,6 +48,7 @@ HEADERS += $$PWD/loghandler.h \
     $$PWD/model/peaklistmodel.h \
 	$$PWD/model/validationmodel.h \
     $$PWD/storage/blackchirpcsv.h \
+    $$PWD/storage/headerstorage.h \
    $$PWD/storage/settingsstorage.h
 
 DISTFILES += \
