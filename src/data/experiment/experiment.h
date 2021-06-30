@@ -6,6 +6,7 @@
 #include <QDateTime>
 #include <QMetaType>
 
+#include <data/storage/headerstorage.h>
 #include <data/experiment/ftmwconfig.h>
 #include <data/datastructs.h>
 #include <data/experiment/pulsegenconfig.h>
@@ -24,9 +25,16 @@
 #include <modules/motor/data/motorscan.h>
 #endif
 
+namespace BC::Store::Exp {
+static const QString key("Experiment");
+static const QString num("Number");
+static const QString timeData("TimeDataInterval");
+static const QString autoSave("AutoSaveShotsInterval");
+}
 
-class Experiment
+class Experiment : private HeaderStorage
 {
+    Q_GADGET
 public:
     Experiment();
     Experiment(const Experiment &) = default;
@@ -104,31 +112,31 @@ public:
     bool incrementFtmw();
     void setFtmwClocksReady();
 
-    void finalSave() const;
-    bool saveHeader() const;
+    void finalSave();
+    bool saveHeader();
     bool saveChirpFile() const;
     bool saveClockFile() const;
     bool saveTimeFile() const;
     QString timeDataText() const;
-    void snapshot(int snapNum, const Experiment other) const;
+    void snapshot(int snapNum, const Experiment other);
 
     void saveToSettings() const;
     static Experiment loadFromSettings();
 
 private:
-    int d_number;
+    int d_number{0};
     QDateTime d_startTime;
-    int d_timeDataInterval;
-    int d_autoSaveShotsInterval;
-    qint64 d_lastSnapshot;
-    bool d_isInitialized;
-    bool d_isAborted;
-    bool d_isDummy;
-    bool d_hardwareSuccess;
+    int d_timeDataInterval{300};
+    int d_autoSaveShotsInterval{10000};
+    qint64 d_lastSnapshot{0};
+    bool d_isInitialized{false};
+    bool d_isAborted{false};
+    bool d_isDummy{false};
+    bool d_hardwareSuccess{false};
     QString d_errorString;
     QString d_startLogMessage;
     QString d_endLogMessage;
-    BlackChirp::LogMessageCode d_endLogMessageCode;
+    BlackChirp::LogMessageCode d_endLogMessageCode{BlackChirp::LogNormal};
 
     FtmwConfig d_ftmwCfg;
     PulseGenConfig d_pGenCfg;
@@ -141,12 +149,17 @@ private:
 
 #ifdef BC_LIF
     LifConfig d_lifCfg;
-    bool d_waitForLifSet;
+    bool d_waitForLifSet{false};
 #endif
 
 #ifdef BC_MOTOR
     MotorScan d_motorScan;
 #endif
+
+    // HeaderStorage interface
+protected:
+    void prepareToSave() override;
+    void loadComplete() override;
 };
 
 Q_DECLARE_METATYPE(Experiment)

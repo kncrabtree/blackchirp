@@ -9,12 +9,11 @@ BlackchirpCSV::BlackchirpCSV()
 
 bool BlackchirpCSV::writeXY(QIODevice &device, const QVector<QPointF> d, const QString prefix)
 {
+    using namespace BC::CSV;
     if(!device.open(QIODevice::WriteOnly))
         return false;
 
     QTextStream t(&device);
-    t.setRealNumberNotation(d_notation);
-    t.setRealNumberPrecision(d_precision);
 
     if(prefix.isEmpty())
         t << x << del << y;
@@ -22,18 +21,19 @@ bool BlackchirpCSV::writeXY(QIODevice &device, const QVector<QPointF> d, const Q
         t << prefix << sep << x << del << prefix << sep << y;
 
     for(auto it = d.constBegin(); it != d.constEnd(); it++)
-        t << nl << it->x() << del << it->y();
+        t << nl << QVariant{it->x()}.toString() << del << QVariant{it->y()}.toString();
 
+    device.close();
     return true;
 }
+
 bool BlackchirpCSV::writeMultiple(QIODevice &device, const std::vector<QVector<QPointF> > &l, const std::vector<QString> &n)
 {
+    using namespace BC::CSV;
     if(!device.open(QIODevice::WriteOnly|QIODevice::Text))
         return false;
 
     QTextStream t(&device);
-    t.setRealNumberNotation(d_notation);
-    t.setRealNumberPrecision(d_precision);
 
     //create a title for every element of l, and determine max size
     int max = 0;
@@ -57,12 +57,35 @@ bool BlackchirpCSV::writeMultiple(QIODevice &device, const std::vector<QVector<Q
             if(j > 0)
                 t << del;
             if(i <l.at(j).size())
-                t << l.at(j).at(i).x() << del << l.at(j).at(i).y();
+                t << QVariant{l.at(j).at(i).x()}.toString() << del << QVariant{l.at(j).at(i).y()}.toString();
             else
                 t << del;
         }
 
     }
 
+    device.close();
+    return true;
+}
+
+bool BlackchirpCSV::writeHeader(QIODevice &device, const std::multimap<QString, std::tuple<QString, QString, QString, QString, QString> > header)
+{
+    using namespace BC::CSV;
+    if(!device.open(QIODevice::WriteOnly|QIODevice::Text))
+        return false;
+
+    QTextStream t(&device);
+
+    t << ok << del << ak << del << ai << del << vk << del << vv << del << vu;
+
+    for(auto it = header.cbegin(); it != header.cend(); ++it)
+        t << nl << it->first << del
+          << std::get<0>(it->second) << del
+          << std::get<1>(it->second) << del
+          << std::get<2>(it->second) << del
+          << std::get<3>(it->second) << del
+          << std::get<4>(it->second);
+
+    device.close();
     return true;
 }

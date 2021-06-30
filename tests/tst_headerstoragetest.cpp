@@ -1,6 +1,7 @@
 #include <QtTest>
 
 #include <src/data/storage/headerstorage.h>
+#include <src/data/storage/blackchirpcsv.h>
 
 #include <iostream>
 
@@ -89,6 +90,7 @@ private slots:
     void testStoreRetrieve();
     void testChild();
     void testStrings();
+    void testCSV();
 };
 
 void HeaderStorageTest::initTestCase()
@@ -203,6 +205,52 @@ void HeaderStorageTest::testStrings()
     QCOMPARE(retrieveArrayValue("testArray",0,"testArrayDouble",2e-5),1e-2);
     QCOMPARE(retrieveArrayValue("testArray",0,"testArrayDouble",2e-5),2e-5);
 
+}
+
+void HeaderStorageTest::testCSV()
+{
+    store("testInt",10);
+    store("testDouble",42.1,"V");
+    store("testEnum",Test3);
+
+    storeArrayValue("testArray",0,"testArrayInt",100);
+    storeArrayValue("testArray",0,"testArrayDouble",1e-2,"V");
+
+    int cn = c.d_myStringList.size();
+    auto sl = c.d_myStringList;
+
+    BlackchirpCSV csv;
+    QByteArray b;
+    QBuffer f(&b);
+    QCOMPARE(csv.writeHeader(f,getStrings()),true);
+
+    f.open(QIODevice::ReadOnly);
+    while(!f.atEnd())
+    {
+        auto l = QString(f.readLine().trimmed()).split(',');
+        if(l.size() == 6)
+            storeLine(l);
+    }
+
+    readComplete();
+
+    QCOMPARE(retrieve<int>("testInt"),10);
+    QCOMPARE(retrieve<int>("testInt"),0);
+    QCOMPARE(retrieve("testInt",30),30);
+    QCOMPARE(retrieve("testEnum",Test1),Test3);
+    QCOMPARE(retrieve("testDouble",90.0),42.1);
+
+    QCOMPARE(c.d_myInt,20);
+    QCOMPARE(c.d_myString,QString("Hello!"));
+    QCOMPARE(c.d_myEnum,Child::Child2);
+    QCOMPARE(c.d_myStringList.size(),cn);
+    for(int i = 0; i<cn; ++i)
+        QCOMPARE(c.d_myStringList.at(i),sl.at(i));
+
+    QTextStream t(stdout);
+    t << "\n\n" << b << "\n\n";
+
+    t << staticMetaObject.className() << "\n\n";
 }
 
 QTEST_MAIN(HeaderStorageTest)

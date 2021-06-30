@@ -1,27 +1,17 @@
 #include <data/experiment/experiment.h>
 
-#include <QSettings>
+#include <data/storage/blackchirpcsv.h>
+
 #include <QApplication>
 #include <QDir>
 #include <QFile>
 #include <QTextStream>
 
-Experiment::Experiment() : d_number(0), d_timeDataInterval(300), d_autoSaveShotsInterval(10000), d_lastSnapshot(0), d_isInitialized(false),
-    d_isAborted(false), d_isDummy(false), d_hardwareSuccess(true), d_endLogMessageCode(BlackChirp::LogHighlight),
-    d_path(QString(""))
-#ifdef BC_LIF
-,  d_waitForLifSet(false)
-#endif
+Experiment::Experiment() : HeaderStorage(BC::Store::Exp::key)
 {
-
 }
 
-Experiment::Experiment(const int num, QString exptPath) : d_number(0), d_timeDataInterval(300), d_autoSaveShotsInterval(10000), d_lastSnapshot(0), d_isInitialized(false),
-    d_isAborted(false), d_isDummy(false), d_hardwareSuccess(true), d_endLogMessageCode(BlackChirp::LogHighlight),
-    d_path(QString(""))
-#ifdef BC_LIF
-,  d_waitForLifSet(false)
-#endif
+Experiment::Experiment(const int num, QString exptPath) : HeaderStorage(BC::Store::Exp::key)
 {
     QDir d(BlackChirp::getExptDir(num,exptPath));
     if(!d.exists())
@@ -777,7 +767,7 @@ void Experiment::setFtmwClocksReady()
     d_ftmwCfg.clocksReady();
 }
 
-void Experiment::finalSave() const
+void Experiment::finalSave()
 {
     if(d_isDummy)
         return;
@@ -824,19 +814,11 @@ void Experiment::finalSave() const
     saveTimeFile();
 }
 
-bool Experiment::saveHeader() const
+bool Experiment::saveHeader()
 {
     QFile hdr(BlackChirp::getExptFile(d_number,BlackChirp::HeaderFile));
-    if(hdr.open(QIODevice::WriteOnly))
-    {
-        QTextStream t(&hdr);
-        t << BlackChirp::headerMapToString(headerMap());
-        t.flush();
-        hdr.close();
-        return true;
-    }
-    else
-        return false;
+    BlackchirpCSV csv;
+    return csv.writeHeader(hdr,getStrings());
 }
 
 bool Experiment::saveChirpFile() const
@@ -1018,7 +1000,7 @@ QString Experiment::timeDataText() const
     return out;
 }
 
-void Experiment::snapshot(int snapNum, const Experiment other) const
+void Experiment::snapshot(int snapNum, const Experiment other)
 {
     if(d_isDummy)
         return;
@@ -1148,6 +1130,22 @@ Experiment Experiment::loadFromSettings()
     s.endGroup();
 
     return out;
+}
+
+void Experiment::prepareToSave()
+{
+    using namespace BC::Store::Exp;
+    store(num,d_number);
+    store(timeData,d_timeDataInterval,QString("s"));
+    store(autoSave,d_autoSaveShotsInterval,QString("shots"));
+}
+
+void Experiment::loadComplete()
+{
+    using namespace BC::Store::Exp;
+    d_number = retrieve<int>(num);
+    d_timeDataInterval = retrieve<int>(timeData);
+    d_autoSaveShotsInterval = retrieve<int>(autoSave);
 }
 
 

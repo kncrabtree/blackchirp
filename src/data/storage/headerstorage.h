@@ -53,6 +53,7 @@ public:
      * \param objKey The object key. Values written to the header file will be associated with this string
      */
     HeaderStorage(const QString objKey);
+    virtual ~HeaderStorage() {}
 
 protected:
     /*!
@@ -73,7 +74,7 @@ protected:
      */
     virtual void loadComplete() =0;
 
-    const QString d_objKey; /*<! Object key used for storage */
+    QString d_objKey; /*!< Object key used for storage. Should not be modified! */
 
     /*!
      * \brief Stores a value-unit pair for writing

@@ -8,6 +8,23 @@
 
 //class BlackchirpPlotCurve;
 
+namespace BC::CSV {
+
+static const QString del{","};
+static const QString nl{"\n"};
+static const QString x{"x"};
+static const QString y{"y"};
+static const QString sep{"_"};
+
+static const QString ok{"ObjKey"};
+static const QString ak{"ArrayKey"};
+static const QString ai{"ArrayIndex"};
+static const QString vk{"ValueKey"};
+static const QString vv{"Value"};
+static const QString vu{"Units"};
+
+}
+
 /*!
  * \brief Convenience class for reading/writing CSV files
  *
@@ -19,22 +36,17 @@ class BlackchirpCSV
 public:
     BlackchirpCSV();
 
-    void setScientificNotation(bool sci = true) { sci ? d_notation = QTextStream::ScientificNotation :
-                                                d_notation = QTextStream::FixedNotation; }
-    void setPrecision(int p) { d_precision = qBound(0,p,15); }
-
     bool writeXY(QIODevice &device, const QVector<QPointF> d, const QString prefix = "");
     bool writeMultiple(QIODevice &device, const std::vector<QVector<QPointF>> &l, const std::vector<QString> &n = {});
 
     template<typename T>
     bool writeY(QIODevice &device, const QVector<T> d, QString title="")
     {
+        using namespace BC::CSV;
         if(!device.open(QIODevice::WriteOnly | QIODevice::Text))
             return false;
 
         QTextStream t(&device);
-        t.setRealNumberNotation(d_notation);
-        t.setRealNumberPrecision(d_precision);
 
         if(title.isEmpty())
             t << y;
@@ -42,14 +54,16 @@ public:
             t << title;
 
         for(auto it = d.constBegin(); it != d.constEnd(); it++)
-            t << nl << *it;
+            t << nl << QVariant{*it}.toString();
 
+        device.close();
         return true;
     }
 
     template<typename T>
     bool writeYMultiple(QIODevice &device, std::initializer_list<QString> titles, std::initializer_list<QVector<T>> l)
     {
+        using namespace BC::CSV;
         if(titles.size() != l.size())
             return false;
 
@@ -57,9 +71,6 @@ public:
             return false;
 
         QTextStream t(&device);
-        t.setRealNumberNotation(d_notation);
-        t.setRealNumberPrecision(d_precision);
-
         QVector<QVector<T>> list{l};
 
         auto it = titles.begin();
@@ -80,23 +91,17 @@ public:
                 if(j>0)
                     t << del;
                 if(i < list.at(j).size())
-                    t << list.at(j).at(i);
+                    t << QVariant{list.at(j).at(i)}.toString();
             }
         }
 
+        device.close();
         return true;
 
     }
 
-    const QString del{","};
-    const QString nl{"\n"};
-    const QString x{"x"};
-    const QString y{"y"};
-    const QString sep{"_"};
+    bool writeHeader(QIODevice &device, const std::multimap<QString,std::tuple<QString,QString,QString,QString,QString>> header);
 
-private:
-    QTextStream::RealNumberNotation d_notation{QTextStream::FixedNotation};
-    int d_precision{6};
 };
 
 #endif // BLACKCHIRPCSV_H
