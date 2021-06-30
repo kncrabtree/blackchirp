@@ -4,6 +4,11 @@
 #include <QObject>
 #include <QVariant>
 
+using ValueUnit = std::pair<QVariant,QString>; /*<! Alias */
+using HeaderMap = std::map<QString,ValueUnit>;
+using HeaderArray = std::vector<HeaderMap>;
+using HeaderStrings = std::multimap<QString,std::tuple<QString,QString,QString,QString,QString>>;
+
 /*!
  * \brief Base class for objects that read/write to an experiment header file
  *
@@ -14,17 +19,29 @@
  * - Array Index: Indicates which array index the array value is associated with
  * - Key: Identifies the specific variable
  * - Value: The value
- * - Unit: Units associated with the value (write only; not read)
+ * - Unit: Units associated with the value
  *
+ * Similar to SettingsStorage, this class stores data in associative containers either as
+ * individual key-value pairs or as part of an array of maps. Values are added using the
+ * store() or storeArrayValue() functions as appropriate, and they can be read back with the
+ * retrieve() or retrieveArrayValue() functions. When read, the value is removed from the
+ * HeaderStorage internal containers. Subclasses should store values by implementing the
+ * prepareToSave() function, which is called right before data are formatted for writing. The
+ * getStrings() function grabs all of the keys, values, and units, packages them into strings,
+ * and returns them as a std::multimap for writing.
  *
+ * In addition, a HeaderStorage object may have a list of children HeaderStorage objects.
+ * For practical usage, the Experiment class will be the main HeaaderStorage object, and
+ * the, e.g., FtmwConfig class is added as one of its children. The FtmwConfig class in turn
+ * has the FtmwDigitizer, RfConfig, etc as children. The getStrings() function also grabs
+ * data from the children.
  *
+ * When an object is to be reconstructed from the header file, the storeLine function is
+ * called. This function determines if the object key stored in the line is associated with
+ * this object or one of its children, and if so, it adds the value to its internal
+ * containers (or is passed to the child, as appropriate). Once this is complete, subclasses
+ * can extract the values using the retrieve() and retrieveArrayValue() functions.
  */
-
-using ValueUnit = std::pair<QVariant,QString>;
-using HeaderMap = std::map<QString,ValueUnit>;
-using HeaderArray = std::vector<HeaderMap>;
-using HeaderStrings = std::multimap<QString,std::tuple<QString,QString,QString,QString,QString>>;
-
 class HeaderStorage
 {
 public:
