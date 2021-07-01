@@ -6,8 +6,11 @@
 
 #include <data/storage/settingsstorage.h>
 #include <data/experiment/pulsegenconfig.h>
-#include <modules/lif/data/lifconfig.h>
 #include <data/experiment/ftmwconfig.h>
+
+#ifdef BC_LIF
+#include <modules/lif/data/lifconfig.h>
+#endif
 
 class QLabel;
 class QDoubleSpinBox;

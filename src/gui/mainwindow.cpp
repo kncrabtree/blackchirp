@@ -251,7 +251,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_lifAction,&QAction::triggered,this,[=](){ ui->mainTabWidget->setCurrentWidget(p_lifTab); });
 
 #else
-    ui->controlTopLayout->addStretch(1);
+    ui->controlTabTopLayout->addStretch(1);
 #endif
 
 #ifdef BC_MOTOR
