@@ -57,9 +57,14 @@ void Fid::setVMult(const double vm)
     data->vMult = vm;
 }
 
-void Fid::setShots(const qint64 s)
+void Fid::setShots(const quint64 s)
 {
     data->shots = s;
+}
+
+void Fid::detach()
+{
+    data->fid.detach();
 }
 
 Fid &Fid::operator +=(const Fid other)
@@ -223,7 +228,7 @@ double Fid::atNorm(const int i) const
         return (double)data->fid.at(i);
 }
 
-qint64 Fid::shots() const
+quint64 Fid::shots() const
 {
     return data->shots;
 }

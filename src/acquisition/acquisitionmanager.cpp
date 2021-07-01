@@ -130,7 +130,7 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 #ifndef BC_CUDA
         success = d_currentExperiment.addFids(b,d_currentShift);
 #else
-        QList<QVector<qint64> >  l;
+        QVector<QVector<qint64> >  l;
         if(d_currentExperiment.ftmwConfig().type() == BlackChirp::FtmwPeakUp)
             l = gpuAvg.parseAndRollAvg(b.constData(),d_currentExperiment.ftmwConfig().completedShots()+d_currentExperiment.ftmwConfig().shotIncrement(),
                                        d_currentExperiment.ftmwConfig().targetShots(),d_currentShift);
@@ -176,7 +176,8 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
         if(advanceSegment)
         {
 #ifdef BC_CUDA
-            gpuAvg.setCurrentData(d_currentExperiment.ftmwConfig().rawFidList());
+            ///TODO: Figure out how to deal with this
+//            gpuAvg.setCurrentData(d_currentExperiment.ftmwConfig().rawFidList());
 #endif
             emit newClockSettings(d_currentExperiment.ftmwConfig().rfConfig());
             emit newFtmwConfig(d_currentExperiment.ftmwConfig());
@@ -403,118 +404,120 @@ void AcquisitionManager::finishAcquisition()
 
 bool AcquisitionManager::calculateShift(const QByteArray b)
 {
-    if(!d_currentExperiment.ftmwConfig().isEnabled())
-        return true;
+//    if(!d_currentExperiment.ftmwConfig().isEnabled())
+//        return true;
 
-    if(d_currentExperiment.ftmwConfig().fidList().isEmpty())
-        return true;
+//    if(d_currentExperiment.ftmwConfig().fidList().isEmpty())
+//        return true;
 
-    if(d_currentExperiment.ftmwConfig().completedShots() < 100)
-        return true;
+//    if(d_currentExperiment.ftmwConfig().completedShots() < 100)
+//        return true;
 
-    //first, we need to extract the chirp from b
-    auto r = d_currentExperiment.ftmwConfig().chirpRange();
-    QVector<qint64> newChirp = d_currentExperiment.ftmwConfig().extractChirp(b);
-    if(newChirp.isEmpty())
-        return true;
-    Fid avgFid = d_currentExperiment.ftmwConfig().fidList().constFirst();
+//    //first, we need to extract the chirp from b
+//    auto r = d_currentExperiment.ftmwConfig().chirpRange();
+//    QVector<qint64> newChirp = d_currentExperiment.ftmwConfig().extractChirp(b);
+//    if(newChirp.isEmpty())
+//        return true;
+//    Fid avgFid = d_currentExperiment.ftmwConfig().fidList().constFirst();
 
-    int max = 5;
-    float thresh = 1.15; // fractional improvement needed to adjust shift
-    int shift = d_currentShift;
-    float fomCenter = calculateFom(newChirp,avgFid,r,shift);
-    float fomDown = calculateFom(newChirp,avgFid,r,shift-1);
-    float fomUp = calculateFom(newChirp,avgFid,r,shift+1);
-    bool done = false;
-    while(!done && qAbs(shift-d_currentShift) < max)
-    {
-        if(fomCenter > fomDown && fomCenter > fomUp)
-            done = true;
-        else if((fomDown-fomCenter) > (fomUp-fomCenter))
-        {
-            if(fomDown > thresh*fomCenter)
-            {
-                shift--;
-                fomUp = fomCenter;
-                fomCenter = fomDown;
-                fomDown = calculateFom(newChirp,avgFid,r,shift-1);
-            }
-            else
-                done = true;
-        }
-        else
-        {
-            if(fomUp > thresh*fomCenter)
-            {
-                shift++;
-                fomDown = fomCenter;
-                fomCenter = fomUp;
-                fomUp = calculateFom(newChirp,avgFid,r,shift+1);
-            }
-            else
-                done = true;
-        }
-    }
+//    int max = 5;
+//    float thresh = 1.15; // fractional improvement needed to adjust shift
+//    int shift = d_currentShift;
+//    float fomCenter = calculateFom(newChirp,avgFid,r,shift);
+//    float fomDown = calculateFom(newChirp,avgFid,r,shift-1);
+//    float fomUp = calculateFom(newChirp,avgFid,r,shift+1);
+//    bool done = false;
+//    while(!done && qAbs(shift-d_currentShift) < max)
+//    {
+//        if(fomCenter > fomDown && fomCenter > fomUp)
+//            done = true;
+//        else if((fomDown-fomCenter) > (fomUp-fomCenter))
+//        {
+//            if(fomDown > thresh*fomCenter)
+//            {
+//                shift--;
+//                fomUp = fomCenter;
+//                fomCenter = fomDown;
+//                fomDown = calculateFom(newChirp,avgFid,r,shift-1);
+//            }
+//            else
+//                done = true;
+//        }
+//        else
+//        {
+//            if(fomUp > thresh*fomCenter)
+//            {
+//                shift++;
+//                fomDown = fomCenter;
+//                fomCenter = fomUp;
+//                fomUp = calculateFom(newChirp,avgFid,r,shift+1);
+//            }
+//            else
+//                done = true;
+//        }
+//    }
 
-    if(!done)
-    {
-        emit logMessage(QString("Calculated shift for this FID exceeded maximum permissible shift of %1 points. Fid rejected.").arg(max),BlackChirp::LogWarning);
-        return false;
-    }
-
-    if(qAbs(d_currentShift - shift) > 0)
-    {
-        if(fomCenter < 0.9*d_lastFom)
-        {
-            emit logMessage(QString("Shot rejected. FOM (%1) is less than 90% of last FOM (%2)").arg(fomCenter,0,'e',2).arg(d_lastFom,0,'e',2));
-            return false;
-        }
-
-        emit logMessage(QString("Shift changed from %1 to %2. FOMs: (%3, %4, %5)").arg(d_currentShift).arg(shift)
-                        .arg(fomDown,0,'e',2).arg(fomCenter,0,'e',2).arg(fomUp,0,'e',2));
-        d_currentShift = shift;
+//    if(!done)
+//    {
+//        emit logMessage(QString("Calculated shift for this FID exceeded maximum permissible shift of %1 points. Fid rejected.").arg(max),BlackChirp::LogWarning);
 //        return false;
-    }
-    if(qAbs(shift) > BC_FTMW_MAXSHIFT)
-    {
-        emit logMessage(QString("Total shift exceeds maximum range (%1). Aborting experiment.").arg(BC_FTMW_MAXSHIFT),BlackChirp::LogError);
-        abort();
-        return false;
-    }
+//    }
 
-    d_lastFom = fomCenter;
+//    if(qAbs(d_currentShift - shift) > 0)
+//    {
+//        if(fomCenter < 0.9*d_lastFom)
+//        {
+//            emit logMessage(QString("Shot rejected. FOM (%1) is less than 90% of last FOM (%2)").arg(fomCenter,0,'e',2).arg(d_lastFom,0,'e',2));
+//            return false;
+//        }
+
+//        emit logMessage(QString("Shift changed from %1 to %2. FOMs: (%3, %4, %5)").arg(d_currentShift).arg(shift)
+//                        .arg(fomDown,0,'e',2).arg(fomCenter,0,'e',2).arg(fomUp,0,'e',2));
+//        d_currentShift = shift;
+////        return false;
+//    }
+//    if(qAbs(shift) > BC_FTMW_MAXSHIFT)
+//    {
+//        emit logMessage(QString("Total shift exceeds maximum range (%1). Aborting experiment.").arg(BC_FTMW_MAXSHIFT),BlackChirp::LogError);
+//        abort();
+//        return false;
+//    }
+
+//    d_lastFom = fomCenter;
+//    return true;
     return true;
-
 
 }
 
 bool AcquisitionManager::scoreChirp(const QByteArray b)
 {
-    if(!d_currentExperiment.ftmwConfig().isEnabled())
-        return true;
+//    if(!d_currentExperiment.ftmwConfig().isEnabled())
+//        return true;
 
-    if(d_currentExperiment.ftmwConfig().fidList().isEmpty())
-        return true;
+//    if(d_currentExperiment.ftmwConfig().fidList().isEmpty())
+//        return true;
 
-    if(d_currentExperiment.ftmwConfig().completedShots() < 20)
-        return true;
+//    if(d_currentExperiment.ftmwConfig().completedShots() < 20)
+//        return true;
 
-    //Extract chirp from this waveform (1st frame)
-    QVector<qint64> newChirp = d_currentExperiment.ftmwConfig().extractChirp(b);
-    if(newChirp.isEmpty())
-        return true;
+//    //Extract chirp from this waveform (1st frame)
+//    QVector<qint64> newChirp = d_currentExperiment.ftmwConfig().extractChirp(b);
+//    if(newChirp.isEmpty())
+//        return true;
 
-    //Calculate chirp RMS
-    double newChirpRMS = calculateChirpRMS(newChirp,d_currentExperiment.ftmwConfig().fidTemplate().vMult());
+//    //Calculate chirp RMS
+//    double newChirpRMS = calculateChirpRMS(newChirp,d_currentExperiment.ftmwConfig().fidTemplate().vMult());
 
-    //Get current RMS
-    QVector<qint64> currentChirp = d_currentExperiment.ftmwConfig().extractChirp();
-    double currentRMS = calculateChirpRMS(currentChirp,d_currentExperiment.ftmwConfig().fidTemplate().vMult(),d_currentExperiment.ftmwConfig().completedShots());
+//    //Get current RMS
+//    QVector<qint64> currentChirp = d_currentExperiment.ftmwConfig().extractChirp();
+//    double currentRMS = calculateChirpRMS(currentChirp,d_currentExperiment.ftmwConfig().fidTemplate().vMult(),d_currentExperiment.ftmwConfig().completedShots());
 
-//    emit logMessage(QString("This RMS: %1\tAVG RMS: %2").arg(newChirpRMS,0,'e',2).arg(currentRMS,0,'e',2));
+////    emit logMessage(QString("This RMS: %1\tAVG RMS: %2").arg(newChirpRMS,0,'e',2).arg(currentRMS,0,'e',2));
 
-    //The chirp is good if its RMS is greater than threshold*currentRMS.
-    return newChirpRMS > currentRMS*d_currentExperiment.ftmwConfig().chirpRMSThreshold();
+//    //The chirp is good if its RMS is greater than threshold*currentRMS.
+//    return newChirpRMS > currentRMS*d_currentExperiment.ftmwConfig().chirpRMSThreshold();
+
+    return true;
 
 }
 

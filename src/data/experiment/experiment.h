@@ -75,7 +75,7 @@ public:
     void setScopeConfig(const FtmwDigitizerConfig &cfg);
     void setRfConfig(const RfConfig cfg);
     void setIOBoardConfig(const IOBoardConfig cfg);
-    bool setFidsData(const QList<QVector<qint64>> l);
+    bool setFidsData(const QVector<QVector<qint64> > l);
     bool addFids(const QByteArray newData, int shift = 0);
     void overrideTargetShots(const int target);
     void resetFids();
@@ -129,7 +129,7 @@ private:
     QDateTime d_startTime;
     int d_timeDataInterval{300};
     int d_autoSaveShotsInterval{10000};
-    qint64 d_lastSnapshot{0};
+    quint64 d_lastSnapshot{0};
     bool d_isInitialized{false};
     bool d_isAborted{false};
     bool d_isDummy{false};

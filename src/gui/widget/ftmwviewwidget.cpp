@@ -108,6 +108,7 @@ FtmwViewWidget::~FtmwViewWidget()
 void FtmwViewWidget::prepareForExperiment(const Experiment e)
 {
     FtmwConfig config = e.ftmwConfig();
+    p_fidStorage = config.storage();
     if(config.type() == BlackChirp::FtmwPeakUp)
         ui->exptLabel->setText(QString("Peak Up Mode"));
     else
@@ -229,14 +230,13 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
 
 void FtmwViewWidget::updateLiveFidList(const FtmwConfig c, int segment)
 {
-    if(c.fidList().isEmpty())
-        return;
+    auto fl = p_fidStorage->getCurrentFidList();
+    d_currentSegment = p_fidStorage->getCurrentIndex();
 
-    d_ftmwConfig = c;
+//    d_ftmwConfig = c;
     d_currentSegment = segment;
-    auto fl = c.fidList();
 
-    ui->shotsLabel->setText(d_shotsString.arg(c.completedShots()));
+    ui->shotsLabel->setText(d_shotsString.arg(p_fidStorage->currentSegmentShots()));
 
 
     for(auto it = d_plotStatus.begin(); it != d_plotStatus.end(); it++)
@@ -251,13 +251,13 @@ void FtmwViewWidget::updateLiveFidList(const FtmwConfig c, int segment)
                     bool processFid = true;
                     if(it.key() == d_plot1Id)
                     {
-                        ui->plot1ConfigWidget->processFtmwConfig(c);
+//                        ui->plot1ConfigWidget->processFtmwConfig(c);
                         if(ui->plot1ConfigWidget->isSnapshotActive())
                             processFid = false;
                     }
                     else if(it.key() == d_plot2Id)
                     {
-                        ui->plot2ConfigWidget->processFtmwConfig(c);
+//                        ui->plot2ConfigWidget->processFtmwConfig(c);
                         if(ui->plot2ConfigWidget->isSnapshotActive())
                             processFid = false;
                     }
@@ -301,7 +301,7 @@ void FtmwViewWidget::updateFtmw(const FtmwConfig f)
             ui->plot2ConfigWidget->processFtmwConfig(f);
         }
         else
-            it.value().fid = f.singleFid(it.value().frame,it.value().segment);
+            it.value().fid = p_fidStorage->getFidList(it.value().segment).at(it.value().frame);
     }
 
     reprocess(ignore);
@@ -519,6 +519,7 @@ void FtmwViewWidget::processDiff(const Fid f1, const Fid f2)
 
 void FtmwViewWidget::processSideband(BlackChirp::Sideband sb)
 {
+    ///TODO: Make this work with the shared storage
     auto ws = d_workersStatus.value(d_mainId);
     if(ws.busy)
         d_workersStatus[d_mainId].reprocessWhenDone = true;
@@ -535,8 +536,8 @@ void FtmwViewWidget::processSideband(BlackChirp::Sideband sb)
         else if(ui->plot2ConfigWidget->isSnapshotActive() && ui->mainPlotFollowSpinBox->value() == 2)
             c = d_snap2Config;
 
-        for(int i=0; i<c.multiFidList().size(); i++)
-            fl << c.singleFid(d_plotStatus.value(id).frame,i);
+//        for(int i=0; i<c.multiFidList().size(); i++)
+//            fl << c.singleFid(d_plotStatus.value(id).frame,i);
 
         if(!fl.isEmpty())
         {
@@ -553,6 +554,7 @@ void FtmwViewWidget::processSideband(BlackChirp::Sideband sb)
 
 void FtmwViewWidget::processBothSidebands()
 {
+    ///TODO: Make this work with the shared storage
     auto ws = d_workersStatus.value(d_mainId);
     if(ws.busy)
         d_workersStatus[d_mainId].reprocessWhenDone = true;
@@ -569,8 +571,8 @@ void FtmwViewWidget::processBothSidebands()
         else if(ui->plot2ConfigWidget->isSnapshotActive() && ui->mainPlotFollowSpinBox->value() == 2)
             c = d_snap2Config;
 
-        for(int i=0; i<c.multiFidList().size(); i++)
-            fl << c.singleFid(d_plotStatus.value(id).frame,i);
+//        for(int i=0; i<c.multiFidList().size(); i++)
+//            fl << c.singleFid(d_plotStatus.value(id).frame,i);
 
         if(!fl.isEmpty())
         {
@@ -738,11 +740,12 @@ void FtmwViewWidget::updateFid(int id)
 
     if(seg == d_currentSegment && !snap)
     {
-        if(frame >= 0 && frame < d_ftmwConfig.fidList().size())
-            d_plotStatus[id].fid = d_ftmwConfig.fidList().at(frame);
+        auto fl = p_fidStorage->getCurrentFidList();
+        if(frame >= 0 && frame < fl.size())
+            d_plotStatus[id].fid = fl.at(frame);
     }
     else
-        d_plotStatus[id].fid = c.singleFid(frame,seg);
+        d_plotStatus[id].fid = p_fidStorage->getFidList(seg).at(frame);
 
     process(id, d_plotStatus.value(id).fid);
 

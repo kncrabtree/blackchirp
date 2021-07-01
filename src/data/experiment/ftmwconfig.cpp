@@ -5,22 +5,7 @@
 #include <QFile>
 #include <QtEndian>
 
-FtmwConfig::FtmwConfig() : data(new FtmwConfigData)
-{
-
-}
-
-FtmwConfig::FtmwConfig(const FtmwConfig &rhs) : data(rhs.data)
-{
-
-}
-
-FtmwConfig &FtmwConfig::operator=(const FtmwConfig &rhs)
-{
-    if (this != &rhs)
-        data.operator=(rhs.data);
-    return *this;
-}
+#include <data/storage/fidsinglestorage.h>
 
 FtmwConfig::~FtmwConfig()
 {
@@ -29,147 +14,115 @@ FtmwConfig::~FtmwConfig()
 
 bool FtmwConfig::isEnabled() const
 {
-    return data->isEnabled;
+    return d_isEnabled;
 }
 
 bool FtmwConfig::isPhaseCorrectionEnabled() const
 {
-    return data->phaseCorrectionEnabled;
+    return d_phaseCorrectionEnabled;
 }
 
 bool FtmwConfig::isChirpScoringEnabled() const
 {
-    return data->chirpScoringEnabled;
-}
-
-bool FtmwConfig::hasMultiFidLists() const
-{
-    return data->multipleFidLists;
+    return d_chirpScoringEnabled;
 }
 
 double FtmwConfig::chirpRMSThreshold() const
 {
-    return data->chirpRMSThreshold;
+    return d_chirpRMSThreshold;
 }
 
 double FtmwConfig::chirpOffsetUs() const
 {
-    return data->chirpOffsetUs;
+    return d_chirpOffsetUs;
 }
 
 BlackChirp::FtmwType FtmwConfig::type() const
 {
-    return data->type;
+    return d_type;
 }
 
-qint64 FtmwConfig::targetShots() const
+quint64 FtmwConfig::targetShots() const
 {
-    return data->targetShots;
+    return d_targetShots;
 }
 
-qint64 FtmwConfig::completedShots() const
+quint64 FtmwConfig::completedShots() const
 {
-    return data->completedShots;
+    return p_fidStorage->completedShots();
 }
 
 QDateTime FtmwConfig::targetTime() const
 {
-    return data->targetTime;
+    return d_targetTime;
 }
 
-Fid FtmwConfig::singleFid(int frame, int segment) const
-{
+//QVector<qint64> FtmwConfig::rawFidList() const
+//{
+//    int outSize = d_fidList.size();
+//    if(outSize == 0)
+//        return QVector<qint64>();
 
-    if(data->multipleFidLists)
-    {
-        if(segment >= 0 && segment < data->multiFidStorage.size())
-            return data->multiFidStorage.at(segment).value(frame,Fid());
-        else
-            return Fid();
-    }
+//    outSize*=d_fidList.constFirst().size();
 
-    return data->fidList.value(frame,Fid());
-}
+//    QVector<qint64> out(outSize);
+//    for(int i=0; i<d_fidList.size(); i++)
+//    {
+//        int offset = i*d_fidList.constFirst().size();
+//        for(int j=0; j<d_fidList.at(i).size(); j++)
+//            out[offset+j] = d_fidList.at(i).atRaw(j);
+//    }
 
-FidList FtmwConfig::fidList() const
-{
-    return data->fidList;
-}
+//    return out;
+//}
 
-FidList FtmwConfig::fidList(int segment) const
-{
-    if(data->multipleFidLists && segment < data->multiFidStorage.size() && segment >= 0)
-        return data->multiFidStorage.at(segment);
-
-    return data->fidList;
-}
-
-QVector<qint64> FtmwConfig::rawFidList() const
-{
-    int outSize = data->fidList.size();
-    if(outSize == 0)
-        return QVector<qint64>();
-
-    outSize*=data->fidList.constFirst().size();
-
-    QVector<qint64> out(outSize);
-    for(int i=0; i<data->fidList.size(); i++)
-    {
-        int offset = i*data->fidList.constFirst().size();
-        for(int j=0; j<data->fidList.at(i).size(); j++)
-            out[offset+j] = data->fidList.at(i).atRaw(j);
-    }
-
-    return out;
-}
-
-QList<FidList> FtmwConfig::multiFidList() const
-{
-    return data->multiFidStorage;
-}
+//QList<FidList> FtmwConfig::multiFidList() const
+//{
+//    return d_multiFidStorage;
+//}
 
 FtmwDigitizerConfig FtmwConfig::scopeConfig() const
 {
-    return data->scopeConfig;
+    return d_scopeConfig;
 }
 
 RfConfig FtmwConfig::rfConfig() const
 {
-    return data->rfConfig;
+    return d_rfConfig;
 }
 
 ChirpConfig FtmwConfig::chirpConfig(int num) const
 {
-    return data->rfConfig.getChirpConfig(num);
+    return d_rfConfig.getChirpConfig(num);
 }
 
 Fid FtmwConfig::fidTemplate() const
 {
-    return data->fidTemplate;
+    return d_fidTemplate;
 }
 
 bool FtmwConfig::processingPaused() const
 {
-    return data->processingPaused;
+    return d_processingPaused;
 }
 
 int FtmwConfig::numFrames() const
 {
-    return data->scopeConfig.d_numRecords;
+    return d_scopeConfig.d_numRecords;
 }
 
 int FtmwConfig::numSegments() const
 {
-    return data->rfConfig.numSegments();
+    return d_rfConfig.numSegments();
 }
 
-int FtmwConfig::shotIncrement() const
+quint64 FtmwConfig::shotIncrement() const
 {
-    int increment = 1;
-    if(data->scopeConfig.d_blockAverage)
-        increment *= data->scopeConfig.d_numAverages;
-    if(data->scopeConfig.d_multiRecord)
-        increment *= data->scopeConfig.d_numRecords;
+    quint64 increment = 1;
+    if(d_scopeConfig.d_blockAverage)
+        increment *= d_scopeConfig.d_numAverages;
+    if(d_scopeConfig.d_multiRecord)
+        increment *= d_scopeConfig.d_numRecords;
 
     return increment;
 }
@@ -177,7 +130,7 @@ int FtmwConfig::shotIncrement() const
 FidList FtmwConfig::parseWaveform(const QByteArray b) const
 {
 
-    int np = data->scopeConfig.d_recordLength;
+    int np = d_scopeConfig.d_recordLength;
     FidList out;
     //read raw data into vector in 64 bit integer form
     for(int j=0;j<numFrames();j++)
@@ -205,12 +158,12 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
             */
 
 
-            if(data->scopeConfig.d_bytesPerPoint == 1)
+            if(d_scopeConfig.d_bytesPerPoint == 1)
             {
                 char y = b.at(j*np+i);
                 dat = static_cast<qint64>(y);
             }
-            else if(data->scopeConfig.d_bytesPerPoint == 2)
+            else if(d_scopeConfig.d_bytesPerPoint == 2)
             {
                 auto y1 = static_cast<quint8>(b.at(2*(j*np+i)));
                 auto y2 = static_cast<quint8>(b.at(2*(j*np+i) + 1));
@@ -219,7 +172,7 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
                 y |= y1;
                 y |= (y2 << 8);
 
-                if(data->scopeConfig.d_byteOrder == QDataStream::BigEndian)
+                if(d_scopeConfig.d_byteOrder == QDataStream::BigEndian)
                     y = qFromBigEndian(y);
                 else
                     y = qFromLittleEndian(y);
@@ -239,7 +192,7 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
                 y |= (y3 << 16);
                 y |= (y4 << 24);
 
-                if(data->scopeConfig.d_byteOrder == QDataStream::BigEndian)
+                if(d_scopeConfig.d_byteOrder == QDataStream::BigEndian)
                     y = qFromBigEndian(y);
                 else
                     y = qFromLittleEndian(y);
@@ -270,13 +223,13 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
 QVector<qint64> FtmwConfig::extractChirp() const
 {
     QVector<qint64> out;
-    FidList dat = fidList();
-    if(!dat.isEmpty())
-    {
-        auto r = chirpRange();
-        if(r.first >= 0 && r.second >= 0)
-            out = dat.constFirst().rawData().mid(r.first, r.second - r.first);
-    }
+//    FidList dat = fidList();
+//    if(!dat.isEmpty())
+//    {
+//        auto r = chirpRange();
+//        if(r.first >= 0 && r.second >= 0)
+//            out = dat.constFirst().rawData().mid(r.first, r.second - r.first);
+//    }
 
     return out;
 }
@@ -297,7 +250,7 @@ QVector<qint64> FtmwConfig::extractChirp(const QByteArray b) const
 
 QString FtmwConfig::errorString() const
 {
-    return data->errorString;
+    return d_errorString;
 }
 
 double FtmwConfig::ftMinMHz() const
@@ -322,71 +275,71 @@ double FtmwConfig::ftMaxMHz() const
 
 double FtmwConfig::ftNyquistMHz() const
 {
-    return data->scopeConfig.d_sampleRate/(1e6*2.0);
+    return d_scopeConfig.d_sampleRate/(1e6*2.0);
 }
 
 double FtmwConfig::fidDurationUs() const
 {
-    double sr = data->scopeConfig.d_sampleRate;
-    double rl = static_cast<double>(data->scopeConfig.d_recordLength);
+    double sr = d_scopeConfig.d_sampleRate;
+    double rl = static_cast<double>(d_scopeConfig.d_recordLength);
 
     return rl/sr*1e6;
 }
 
 QPair<int, int> FtmwConfig::chirpRange() const
 {
-    //want to return [first,last) samples for chirp.
-    //TODO: handle multiple chirps
-    auto cc = rfConfig().getChirpConfig();
-    if(cc.chirpList().isEmpty())
-        return qMakePair(-1,-1);
+//    //want to return [first,last) samples for chirp.
+//    //TODO: handle multiple chirps
+//    auto cc = rfConfig().getChirpConfig();
+//    if(cc.chirpList().isEmpty())
+//        return qMakePair(-1,-1);
 
-    if(data->fidList.isEmpty())
-        return qMakePair(-1,-1);
+//    if(d_fidList.isEmpty())
+//        return qMakePair(-1,-1);
 
-    //we assume that the scope is triggered at the beginning of the protection pulse
+//    //we assume that the scope is triggered at the beginning of the protection pulse
 
-    double chirpStart = (cc.preChirpGateDelay() + cc.preChirpProtectionDelay() - data->scopeConfig.d_triggerDelayUSec)*1e-6;
-    int startSample = qBound(BC_FTMW_MAXSHIFT,qRound(chirpStart*data->scopeConfig.d_sampleRate) + BC_FTMW_MAXSHIFT,data->fidList.constFirst().size() - BC_FTMW_MAXSHIFT);
-    double chirpEnd = chirpStart + cc.chirpDuration(0)*1e-6;
-    int endSample = qBound(BC_FTMW_MAXSHIFT,qRound(chirpEnd*data->scopeConfig.d_sampleRate) - BC_FTMW_MAXSHIFT,data->fidList.constFirst().size() - BC_FTMW_MAXSHIFT);
+//    double chirpStart = (cc.preChirpGateDelay() + cc.preChirpProtectionDelay() - d_scopeConfig.d_triggerDelayUSec)*1e-6;
+//    int startSample = qBound(BC_FTMW_MAXSHIFT,qRound(chirpStart*d_scopeConfig.d_sampleRate) + BC_FTMW_MAXSHIFT,d_fidList.constFirst().size() - BC_FTMW_MAXSHIFT);
+//    double chirpEnd = chirpStart + cc.chirpDuration(0)*1e-6;
+//    int endSample = qBound(BC_FTMW_MAXSHIFT,qRound(chirpEnd*d_scopeConfig.d_sampleRate) - BC_FTMW_MAXSHIFT,d_fidList.constFirst().size() - BC_FTMW_MAXSHIFT);
 
-    if(startSample > endSample)
-        qSwap(startSample,endSample);
+//    if(startSample > endSample)
+//        qSwap(startSample,endSample);
 
-    return qMakePair(startSample,endSample);
+//    return qMakePair(startSample,endSample);
 }
 
 bool FtmwConfig::writeFids(int num, QString path, int snapNum) const
 {
-    if(!data->multipleFidLists)
-    {
-        QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,path,snapNum));
-        if(fid.open(QIODevice::WriteOnly))
-        {
-            QDataStream d(&fid);
-            d << Fid::magicString();
-            d << data->fidList;
-            fid.close();
-            return true;
-        }
-        else
-            return false;
-    }
-    else
-    {
-        QFile fid(BlackChirp::getExptFile(num,BlackChirp::MultiFidFile,path,snapNum));
-        if(fid.open(QIODevice::WriteOnly))
-        {
-            QDataStream d(&fid);
-            d << Fid::magicString();
-            d << data->multiFidStorage;
-            fid.close();
-            return true;
-        }
-        else
-            return false;
-    }
+//    if(!d_multipleFidLists)
+//    {
+//        QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,path,snapNum));
+//        if(fid.open(QIODevice::WriteOnly))
+//        {
+//            QDataStream d(&fid);
+//            d << Fid::magicString();
+//            d << d_fidList;
+//            fid.close();
+//            return true;
+//        }
+//        else
+//            return false;
+//    }
+//    else
+//    {
+//        QFile fid(BlackChirp::getExptFile(num,BlackChirp::MultiFidFile,path,snapNum));
+//        if(fid.open(QIODevice::WriteOnly))
+//        {
+//            QDataStream d(&fid);
+//            d << Fid::magicString();
+//            d << d_multiFidStorage;
+//            fid.close();
+//            return true;
+//        }
+//        else
+//            return false;
+//    }
 }
 
 bool FtmwConfig::initialize()
@@ -394,24 +347,26 @@ bool FtmwConfig::initialize()
     double df = rfConfig().clockFrequency(BlackChirp::DownConversionLO);
     auto sb = rfConfig().downMixSideband();
 
-    Fid f(data->scopeConfig.xIncr(),df,QVector<qint64>(0),sb,data->scopeConfig.yMult(data->scopeConfig.d_fidChannel),1);
+    Fid f(d_scopeConfig.xIncr(),df,QVector<qint64>(0),sb,d_scopeConfig.yMult(d_scopeConfig.d_fidChannel),1);
 
     //in peak up mode, data points will be shifted by 8 bits (x256), so the multiplier
     //needs to decrease by a factor of 256
     if(type() == BlackChirp::FtmwPeakUp)
         f.setVMult(f.vMult()/256.0);
-    data->fidTemplate = f;
+    d_fidTemplate = f;
 
-    if(!data->rfConfig.prepareForAcquisition(type()))
+    if(!d_rfConfig.prepareForAcquisition(type()))
     {
-        data->errorString = QString("Invalid RF/Chirp configuration.");
+        d_errorString = QString("Invalid RF/Chirp configuration.");
         return false;
     }
 
     if(type() == BlackChirp::FtmwLoScan || type() == BlackChirp::FtmwDrScan)
-        data->targetShots = data->rfConfig.totalShots();
+        d_targetShots = d_rfConfig.totalShots();
 
-    data->completedShots = 0;
+    p_fidStorage = std::make_shared<FidSingleStorage>(QString(""),scopeConfig().d_numRecords);
+
+//    d_completedShots = 0;
 
     return true;
 
@@ -420,271 +375,200 @@ bool FtmwConfig::initialize()
 
 void FtmwConfig::setEnabled(bool en)
 {
-    data->isEnabled = en;
+    d_isEnabled = en;
 }
 
 void FtmwConfig::setPhaseCorrectionEnabled(bool enabled)
 {
-    data->phaseCorrectionEnabled = enabled;
+    d_phaseCorrectionEnabled = enabled;
 }
 
 void FtmwConfig::setChirpScoringEnabled(bool enabled)
 {
-    data->chirpScoringEnabled = enabled;
+    d_chirpScoringEnabled = enabled;
 }
 
 void FtmwConfig::setChirpRMSThreshold(double t)
 {
-    data->chirpRMSThreshold = t;
+    d_chirpRMSThreshold = t;
 }
 
 void FtmwConfig::setChirpOffsetUs(double o)
 {
-    data->chirpOffsetUs = o;
+    d_chirpOffsetUs = o;
 }
 
 void FtmwConfig::setFidTemplate(const Fid f)
 {
-    data->fidTemplate = f;
+    d_fidTemplate = f;
 }
 
 void FtmwConfig::setType(const BlackChirp::FtmwType type)
 {
-    data->type = type;
-    switch (type) {
-    case BlackChirp::FtmwPeakUp:
-    case BlackChirp::FtmwTargetShots:
-    case BlackChirp::FtmwTargetTime:
-    case BlackChirp::FtmwForever:
-        data->multipleFidLists = false;
-        break;
-    default:
-        data->multipleFidLists = true;
-        break;
-    }
+    d_type = type;
 }
 
 void FtmwConfig::setTargetShots(const qint64 target)
 {
-    data->targetShots = target;
+    d_targetShots = target;
 }
 
 bool FtmwConfig::advance()
 {
-    if(type() == BlackChirp::FtmwPeakUp)
-        data->completedShots = qMin(completedShots()+shotIncrement(),targetShots());
-    else
-        data->completedShots+=shotIncrement();
-
-    if(type() == BlackChirp::FtmwLoScan || type() == BlackChirp::FtmwDrScan)
+    auto fs = p_fidStorage.get();
+//    d_completedShots = fs->completedShots();
+    auto s = fs->currentSegmentShots();
+    if(d_rfConfig.canAdvance(s))
     {
-        //get number of shots of current FidList.
-        //ask rfconfig if this is enough to advance segment
-        if(data->rfConfig.canAdvance(data->fidList.constFirst().shots()))
-        {
-            //place fid list in storage
-            storeFids();
+        d_processingPaused = true;
+        //adjust number of completed shots in case the increment does not go evenly into
+        //segment shots
+//        d_completedShots = d_rfConfig.completedSegmentShots();
+        return !isComplete();
 
-            //get fid list from storage or clear it for new data
-            int newIndex = data->rfConfig.advanceClockStep();
-            if(newIndex < data->multiFidStorage.size())
-                data->fidList = data->multiFidStorage[newIndex];
-            else
-                data->fidList.clear();
-
-            //adjust number of completed shots in case the increment does not go evenly into
-            //segment shots
-            data->completedShots = data->rfConfig.completedSegmentShots();
-
-            data->processingPaused = true;
-
-            //only return true if we're not finished
-            return !isComplete();
-        }
     }
 
-
     return false;
+
 }
 
 void FtmwConfig::setTargetTime(const QDateTime time)
 {
-    data->targetTime = time;
+    d_targetTime = time;
 }
 
-bool FtmwConfig::setFidsData(const QList<QVector<qint64> > newList)
+#ifdef BC_CUDA
+bool FtmwConfig::setFidsData(const QVector<QVector<qint64> > newList)
 {
-    if(data->fidList.isEmpty())
+    FidList l;
+    l.reserve(newList.size());
+    auto fs = p_fidStorage.get();
+    auto s = fs->currentSegmentShots();
+    for(int i=0; i<newList.size(); i++)
     {
-        for(int i=0; i<newList.size(); i++)
-        {
-            Fid f = fidTemplate();
-            f.setData(newList.at(i));
-            f.setShots(shotIncrement());
-            data->fidList.append(f);
-        }
-    }
-    else
-    {
-        if(newList.size() != data->fidList.size())
-        {
-            data->errorString = QString("Could not set new FID list data. List sizes are not equal (new = %1, current = %2)")
-                    .arg(newList.size()).arg(data->fidList.size());
-            return false;
-        }
-
-        for(int i=0; i<data->fidList.size(); i++)
-        {
-            data->fidList[i].setData(newList.at(i));
-            if(type() == BlackChirp::FtmwPeakUp)
-                data->fidList[i].setShots(qMin(data->fidList.at(i).shots()+shotIncrement(),targetShots()));
-            else
-                data->fidList[i].setShots(data->fidList.at(i).shots()+shotIncrement());
-        }
+        Fid f = fidTemplate();
+        f.setData(newList.at(i));
+        f.setShots(s+shotIncrement());
+        l.append(f);
     }
 
-    return true;
+    return p_fidStorage.get()->setFidsData(l);
 }
+#endif
 
 bool FtmwConfig::addFids(const QByteArray rawData, int shift)
 {
     FidList newList = parseWaveform(rawData);
-    if(!data->fidList.isEmpty())
-    {
-        if(newList.size() != data->fidList.size())
-        {
-            data->errorString = QString("Could not set new FID list data. List sizes are not equal (new = %1, current = %2)")
-                    .arg(newList.size()).arg(data->fidList.size());
-            return false;
-        }
-
-        if(type() == BlackChirp::FtmwPeakUp)
-        {
-            if(targetShots() > 1)
-            {
-                for(int i=0; i<data->fidList.size(); i++)
-                    newList[i].rollingAverage(data->fidList.at(i),targetShots(),shift);
-            }
-            else
-                data->fidList = newList;
-        }
-        else
-        {
-            for(int i=0; i<data->fidList.size(); i++)
-                newList[i].add(data->fidList.at(i),shift);
-        }
-    }
-    data->fidList = newList;
-
-    return true;
+    return p_fidStorage.get()->addFids(newList,shift);
 }
 
-void FtmwConfig::addFids(const FtmwConfig other)
-{
-    if(data->multipleFidLists)
-    {
-        auto l = other.multiFidList();
-        for(int i=0; i<l.size(); i++)
-        {
-            if(data->multiFidStorage.size() == i)
-                data->multiFidStorage.append(l.at(i));
-            else
-            {
-                if(data->multiFidStorage.at(i).size() != l.at(i).size())
-                    data->multiFidStorage[i] = l.at(i);
-                else
-                {
-                    for(int j=0; j<data->multiFidStorage.at(i).size(); j++)
-                        data->multiFidStorage[i][j] += l.at(i).at(j);
-                }
-            }
-        }
-    }
-    else
-    {
-        auto l = other.fidList();
-        for(int i=0; i<l.size(); i++)
-        {
-            if(data->fidList.size() == i)
-                data->fidList.append(l.at(i));
-            else
-                data->fidList[i] += l.at(i);
-        }
-    }
-}
+//void FtmwConfig::addFids(const FtmwConfig other)
+//{
+//    if(d_multipleFidLists)
+//    {
+//        auto l = other.multiFidList();
+//        for(int i=0; i<l.size(); i++)
+//        {
+//            if(d_multiFidStorage.size() == i)
+//                d_multiFidStorage.append(l.at(i));
+//            else
+//            {
+//                if(d_multiFidStorage.at(i).size() != l.at(i).size())
+//                    d_multiFidStorage[i] = l.at(i);
+//                else
+//                {
+//                    for(int j=0; j<d_multiFidStorage.at(i).size(); j++)
+//                        d_multiFidStorage[i][j] += l.at(i).at(j);
+//                }
+//            }
+//        }
+//    }
+//    else
+//    {
+//        auto l = other.fidList();
+//        for(int i=0; i<l.size(); i++)
+//        {
+//            if(d_fidList.size() == i)
+//                d_fidList.append(l.at(i));
+//            else
+//                d_fidList[i] += l.at(i);
+//        }
+//    }
+//}
 
 bool FtmwConfig::subtractFids(const FtmwConfig other)
 {
-    if(!data->multipleFidLists)
-    {
-        auto otherList = other.fidList();
+//    if(!d_multipleFidLists)
+//    {
+//        auto otherList = other.fidList();
 
-        if(otherList.size() != data->fidList.size())
-            return false;
+//        if(otherList.size() != d_fidList.size())
+//            return false;
 
-        for(int i=0; i<otherList.size(); i++)
-        {
-            if(otherList.at(i).size() != data->fidList.at(i).size())
-                return false;
+//        for(int i=0; i<otherList.size(); i++)
+//        {
+//            if(otherList.at(i).size() != d_fidList.at(i).size())
+//                return false;
 
-            if(otherList.at(i).shots() >= data->fidList.at(i).shots())
-                return false;
-        }
+//            if(otherList.at(i).shots() >= d_fidList.at(i).shots())
+//                return false;
+//        }
 
-        for(int i=0; i<data->fidList.size(); i++)
-            data->fidList[i] -= otherList.at(i);
+//        for(int i=0; i<d_fidList.size(); i++)
+//            d_fidList[i] -= otherList.at(i);
 
-    }
-    else
-    {
-        auto otherList = other.multiFidList();
+//    }
+//    else
+//    {
+//        auto otherList = other.multiFidList();
 
-        for(int i=0; i<data->multiFidStorage.size(); i++)
-        {
-            if(i >= otherList.size())
-                continue;
+//        for(int i=0; i<d_multiFidStorage.size(); i++)
+//        {
+//            if(i >= otherList.size())
+//                continue;
 
-            if(otherList.at(i).size() != data->multiFidStorage.at(i).size() || data->multiFidStorage.at(i).isEmpty())
-                return false;
+//            if(otherList.at(i).size() != d_multiFidStorage.at(i).size() || d_multiFidStorage.at(i).isEmpty())
+//                return false;
 
-            //if numbers of shots are equal, then no new data have been added for this chunk.
-            //Write an empty list of fids.
-            //Otherwise, get the difference.
-            if(otherList.at(i).constFirst().shots() == data->multiFidStorage.at(i).constFirst().shots())
-                data->multiFidStorage[i] = FidList();
-            else if(otherList.at(i).constFirst().shots() < data->multiFidStorage.at(i).constFirst().shots())
-            {
-                for(int j=0; j<data->multiFidStorage.at(i).size(); j++)
-                    data->multiFidStorage[i][j] -= otherList.at(i).at(j);
-            }
-            else
-                return false;
-        }
-    }
+//            //if numbers of shots are equal, then no new data have been added for this chunk.
+//            //Write an empty list of fids.
+//            //Otherwise, get the difference.
+//            if(otherList.at(i).constFirst().shots() == d_multiFidStorage.at(i).constFirst().shots())
+//                d_multiFidStorage[i] = FidList();
+//            else if(otherList.at(i).constFirst().shots() < d_multiFidStorage.at(i).constFirst().shots())
+//            {
+//                for(int j=0; j<d_multiFidStorage.at(i).size(); j++)
+//                    d_multiFidStorage[i][j] -= otherList.at(i).at(j);
+//            }
+//            else
+//                return false;
+//        }
+//    }
 
     return true;
 }
 
 void FtmwConfig::resetFids()
 {
-    data->fidList.clear();
-    data->completedShots = 0;
+    p_fidStorage.get()->reset();
+//    d_fidList.clear();
+//    d_completedShots = 0;
 }
 
 void FtmwConfig::setScopeConfig(const FtmwDigitizerConfig &other)
 {
-    data->scopeConfig = other;
+    d_scopeConfig = other;
 }
 
 void FtmwConfig::setRfConfig(const RfConfig other)
 {
-    data->rfConfig = other;
+    d_rfConfig = other;
 }
 
 void FtmwConfig::hwReady()
 {
-    data->fidTemplate.setProbeFreq(rfConfig().clockFrequency(BlackChirp::DownConversionLO));
-    data->processingPaused = false;
+    d_fidTemplate.setProbeFreq(rfConfig().clockFrequency(BlackChirp::DownConversionLO));
+    d_processingPaused = false;
 }
 
 int FtmwConfig::perMilComplete() const
@@ -701,23 +585,6 @@ bool FtmwConfig::indefinite() const
         return true;
 
     return false;
-}
-
-void FtmwConfig::storeFids()
-{
-    if(data->multipleFidLists)
-    {
-        int oldIndex = data->rfConfig.currentIndex();
-        if(oldIndex == data->multiFidStorage.size())
-            data->multiFidStorage << data->fidList;
-        else
-            data->multiFidStorage[oldIndex] = data->fidList;
-    }
-}
-
-void FtmwConfig::setMultiFidList(const QList<FidList> l)
-{
-    data->multiFidStorage = l;
 }
 
 void FtmwConfig::finalizeSnapshots(int num, QString path)
@@ -760,37 +627,42 @@ void FtmwConfig::finalizeSnapshots(int num, QString path)
             snp.remove();
     }
 
-    for(int i=0; i<snaps; i++)
-    {
-        if(!data->multipleFidLists)
-        {
-            QFile snap(BlackChirp::getExptFile(num,BlackChirp::FidFile,path,i));
-            if(snap.exists())
-                snap.remove();
-        }
-        else
-        {
-            QFile snap(BlackChirp::getExptFile(num,BlackChirp::MultiFidFile,path,i));
-            if(snap.exists())
-                snap.remove();
-        }
-    }
+//    for(int i=0; i<snaps; i++)
+//    {
+//        if(!d_multipleFidLists)
+//        {
+//            QFile snap(BlackChirp::getExptFile(num,BlackChirp::FidFile,path,i));
+//            if(snap.exists())
+//                snap.remove();
+//        }
+//        else
+//        {
+//            QFile snap(BlackChirp::getExptFile(num,BlackChirp::MultiFidFile,path,i));
+//            if(snap.exists())
+//                snap.remove();
+//        }
+//    }
 
-    qint64 ts = 0;
-    if(data->multipleFidLists)
-    {
-        for(int i=0; i<data->multiFidStorage.size(); i++)
-            ts += data->multiFidStorage.at(i).constFirst().shots();
-    }
-    else
-    {
-        for(int i=0; i<data->fidList.size(); i++)
-            ts += data->fidList.constFirst().shots();
-    }
+//    qint64 ts = 0;
+//    if(d_multipleFidLists)
+//    {
+//        for(int i=0; i<d_multiFidStorage.size(); i++)
+//            ts += d_multiFidStorage.at(i).constFirst().shots();
+//    }
+//    else
+//    {
+//        for(int i=0; i<d_fidList.size(); i++)
+//            ts += d_fidList.constFirst().shots();
+//    }
 
-    data->completedShots = ts;
+//    d_completedShots = ts;
 
 
+}
+
+std::shared_ptr<FidStorageBase> FtmwConfig::storage()
+{
+    return p_fidStorage;
 }
 
 bool FtmwConfig::isComplete() const
@@ -840,16 +712,16 @@ QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
         out.insert(prefix+QString("TargetShots"),qMakePair(targetShots(),empty));
     if(type() == BlackChirp::FtmwTargetTime)
         out.insert(prefix+QString("TargetTime"),qMakePair(targetTime(),empty));
-    out.insert(prefix+QString("CompletedShots"),qMakePair(data->completedShots,empty));
+//    out.insert(prefix+QString("CompletedShots"),qMakePair(d_completedShots,empty));
     out.insert(prefix+QString("FidVMult"),qMakePair(QString::number(fidTemplate().vMult(),'g',12),QString("V")));
-    out.insert(prefix+QString("PhaseCorrection"),qMakePair(data->phaseCorrectionEnabled,QString("")));
-    out.insert(prefix+QString("ChirpScoring"),qMakePair(data->chirpScoringEnabled,QString("")));
-    out.insert(prefix+QString("ChirpRMSThreshold"),qMakePair(QString::number(data->chirpRMSThreshold,'f',3),empty));
-    out.insert(prefix+QString("ChirpOffset"),qMakePair(QString::number(data->chirpOffsetUs,'f',4),QString::fromUtf16(u" μs")));
+    out.insert(prefix+QString("PhaseCorrection"),qMakePair(d_phaseCorrectionEnabled,QString("")));
+    out.insert(prefix+QString("ChirpScoring"),qMakePair(d_chirpScoringEnabled,QString("")));
+    out.insert(prefix+QString("ChirpRMSThreshold"),qMakePair(QString::number(d_chirpRMSThreshold,'f',3),empty));
+    out.insert(prefix+QString("ChirpOffset"),qMakePair(QString::number(d_chirpOffsetUs,'f',4),QString::fromUtf16(u" μs")));
 
 
-//    out.unite(data->scopeConfig.headerMap());
-    out.unite(data->rfConfig.headerMap());
+//    out.unite(scopeConfig.headerMap());
+    out.unite(d_rfConfig.headerMap());
 
     return out;
 
@@ -857,197 +729,197 @@ QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
 
 void FtmwConfig::loadFids(const int num, const QString path)
 {
-    QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,path));
-    if(fid.open(QIODevice::ReadOnly))
-    {
-        QDataStream d(&fid);
-        QByteArray magic;
-        d >> magic;
-        if(magic.startsWith("BCFID"))
-        {
-            if(magic.endsWith("v1.0"))
-            {
-                FidList dat;
-                d >> dat;
-                data->fidList = dat;
-                if(!dat.isEmpty())
-                    data->fidTemplate = dat.constFirst();
-                data->fidTemplate.setData(QVector<qint64>());
-            }
-        }
-        fid.close();
-    }
+//    QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,path));
+//    if(fid.open(QIODevice::ReadOnly))
+//    {
+//        QDataStream d(&fid);
+//        QByteArray magic;
+//        d >> magic;
+//        if(magic.startsWith("BCFID"))
+//        {
+//            if(magic.endsWith("v1.0"))
+//            {
+//                FidList dat;
+//                d >> dat;
+//                d_fidList = dat;
+//                if(!dat.isEmpty())
+//                    d_fidTemplate = dat.constFirst();
+//                d_fidTemplate.setData(QVector<qint64>());
+//            }
+//        }
+//        fid.close();
+//    }
     
-    QFile mfd(BlackChirp::getExptFile(num,BlackChirp::MultiFidFile,path));
-    if(mfd.open(QIODevice::ReadOnly))
-    {
-        data->multipleFidLists = true;
-        QDataStream d(&mfd);
-        QByteArray magic;
-        d >> magic;
-        if(magic.startsWith("BCFID"))
-        {
-            if(magic.endsWith("v1.0"))
-            {
-                QList<FidList> dat;
-                d >> dat;
-                data->multiFidStorage = dat;
-                if(!dat.isEmpty() && !dat.constFirst().isEmpty())
-                    data->fidTemplate = dat.constFirst().constFirst();
-                data->fidTemplate.setData(QVector<qint64>());
-            }
-        }
-        mfd.close();
-    }
+//    QFile mfd(BlackChirp::getExptFile(num,BlackChirp::MultiFidFile,path));
+//    if(mfd.open(QIODevice::ReadOnly))
+//    {
+//        d_multipleFidLists = true;
+//        QDataStream d(&mfd);
+//        QByteArray magic;
+//        d >> magic;
+//        if(magic.startsWith("BCFID"))
+//        {
+//            if(magic.endsWith("v1.0"))
+//            {
+//                QList<FidList> dat;
+//                d >> dat;
+//                d_multiFidStorage = dat;
+//                if(!dat.isEmpty() && !dat.constFirst().isEmpty())
+//                    d_fidTemplate = dat.constFirst().constFirst();
+//                d_fidTemplate.setData(QVector<qint64>());
+//            }
+//        }
+//        mfd.close();
+//    }
 
-    if(data->fidList.isEmpty() && data->multiFidStorage.isEmpty())
-    {
-        //try to reconstruct from snapshots, if any
-        QFile snp(BlackChirp::getExptFile(num,BlackChirp::SnapFile,path));
-        if(snp.exists() && snp.open(QIODevice::ReadOnly))
-        {
-            bool parseSuccess = false;
-            bool multiFid = false;
-            int numSnaps = 0;
-            while(!snp.atEnd())
-            {
-                QString line = snp.readLine();
-                if(line.startsWith(QString("fid")) || line.startsWith(QString("mfd")))
-                {
-                    if(line.startsWith(QString("mfd")))
-                        multiFid = true;
+//    if(d_fidList.isEmpty() && d_multiFidStorage.isEmpty())
+//    {
+//        //try to reconstruct from snapshots, if any
+//        QFile snp(BlackChirp::getExptFile(num,BlackChirp::SnapFile,path));
+//        if(snp.exists() && snp.open(QIODevice::ReadOnly))
+//        {
+//            bool parseSuccess = false;
+//            bool multiFid = false;
+//            int numSnaps = 0;
+//            while(!snp.atEnd())
+//            {
+//                QString line = snp.readLine();
+//                if(line.startsWith(QString("fid")) || line.startsWith(QString("mfd")))
+//                {
+//                    if(line.startsWith(QString("mfd")))
+//                        multiFid = true;
 
-                    QStringList l = line.split(QString("\t"));
-                    bool ok = false;
-                    int n = l.constLast().trimmed().toInt(&ok);
-                    if(ok)
-                    {
-                        parseSuccess = true;
-                        numSnaps = n;
-                        break;
-                    }
+//                    QStringList l = line.split(QString("\t"));
+//                    bool ok = false;
+//                    int n = l.constLast().trimmed().toInt(&ok);
+//                    if(ok)
+//                    {
+//                        parseSuccess = true;
+//                        numSnaps = n;
+//                        break;
+//                    }
                     
-                }
+//                }
                 
-            }
+//            }
             
-            QList<int> snaps;
-            for(int i=0; i<numSnaps; i++)
-                snaps << i;
+//            QList<int> snaps;
+//            for(int i=0; i<numSnaps; i++)
+//                snaps << i;
 
-            if(parseSuccess && numSnaps > 0)
-            {
-                data->multipleFidLists = multiFid;
-                loadFidsFromSnapshots(num,path,snaps);
-            }
+//            if(parseSuccess && numSnaps > 0)
+//            {
+//                d_multipleFidLists = multiFid;
+//                loadFidsFromSnapshots(num,path,snaps);
+//            }
 
-            snp.close();
-        }
-    }
+//            snp.close();
+//        }
+//    }
 
-    qint64 ts = 0;
-    if(data->multipleFidLists)
-    {
-        for(int i=0; i<data->multiFidStorage.size(); i++)
-            ts += data->multiFidStorage.at(i).constFirst().shots();
-    }
-    else
-    {
-        for(int i=0; i<data->fidList.size(); i++)
-            ts += data->fidList.constFirst().shots();
-    }
+//    qint64 ts = 0;
+//    if(d_multipleFidLists)
+//    {
+//        for(int i=0; i<d_multiFidStorage.size(); i++)
+//            ts += d_multiFidStorage.at(i).constFirst().shots();
+//    }
+//    else
+//    {
+//        for(int i=0; i<d_fidList.size(); i++)
+//            ts += d_fidList.constFirst().shots();
+//    }
 
-//    if(data->scopeConfig.fastFrameEnabled && data->scopeConfig.summaryFrame && !scopeConfig().manualFrameAverage)
-//        ts *= data->scopeConfig.numFrames;
+////    if(scopeConfig.fastFrameEnabled && scopeConfig.summaryFrame && !scopeConfig().manualFrameAverage)
+////        ts *= scopeConfig.numFrames;
 
-    data->completedShots = ts;
+//    d_completedShots = ts;
 
     
 }
 
 void FtmwConfig::loadFidsFromSnapshots(const int num, const QString path, const QList<int> snaps)
 {
-    if(data->multipleFidLists)
-    {
-        data->multiFidStorage.clear();
+//    if(d_multipleFidLists)
+//    {
+//        d_multiFidStorage.clear();
 
-        for(int i=0; i<snaps.size(); i++)
-        {
-            QFile mfd(BlackChirp::getExptFile(num,BlackChirp::MultiFidFile,path,snaps.at(i)));
-            if(mfd.open(QIODevice::ReadOnly))
-            {
-                QDataStream d(&mfd);
-                QByteArray magic;
-                d >> magic;
-                if(magic.startsWith("BCFID"))
-                {
-                    if(magic.endsWith("v1.0"))
-                    {
-                        QList<FidList> dat;
-                        d >> dat;
-                        if(data->multiFidStorage.isEmpty())
-                        {
-                            data->multiFidStorage = dat;
-                            if(!dat.isEmpty() && !dat.constFirst().isEmpty())
-                                data->fidTemplate = dat.constFirst().constFirst();
-                            data->fidTemplate.setData(QVector<qint64>());
-                        }
-                        else
-                        {
-                            for(int j=0; j<dat.size(); j++)
-                            {
-                                if(j == data->multiFidStorage.size())
-                                    data->multiFidStorage << dat.at(j);
-                                else
-                                {
-                                    for(int k=0; k<dat.at(j).size() && k<data->multiFidStorage.at(j).size(); k++)
-                                        data->multiFidStorage[j][k] += dat.at(j).at(k);
-                                }
-                            }
-                        }
-                    }
-                }
-                mfd.close();
+//        for(int i=0; i<snaps.size(); i++)
+//        {
+//            QFile mfd(BlackChirp::getExptFile(num,BlackChirp::MultiFidFile,path,snaps.at(i)));
+//            if(mfd.open(QIODevice::ReadOnly))
+//            {
+//                QDataStream d(&mfd);
+//                QByteArray magic;
+//                d >> magic;
+//                if(magic.startsWith("BCFID"))
+//                {
+//                    if(magic.endsWith("v1.0"))
+//                    {
+//                        QList<FidList> dat;
+//                        d >> dat;
+//                        if(d_multiFidStorage.isEmpty())
+//                        {
+//                            d_multiFidStorage = dat;
+//                            if(!dat.isEmpty() && !dat.constFirst().isEmpty())
+//                                d_fidTemplate = dat.constFirst().constFirst();
+//                            d_fidTemplate.setData(QVector<qint64>());
+//                        }
+//                        else
+//                        {
+//                            for(int j=0; j<dat.size(); j++)
+//                            {
+//                                if(j == d_multiFidStorage.size())
+//                                    d_multiFidStorage << dat.at(j);
+//                                else
+//                                {
+//                                    for(int k=0; k<dat.at(j).size() && k<d_multiFidStorage.at(j).size(); k++)
+//                                        d_multiFidStorage[j][k] += dat.at(j).at(k);
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//                mfd.close();
 
-            }
-        }
-    }
-    else
-    {
-        data->fidList.clear();
-        for(int i=0; i<snaps.size(); i++)
-        {
-            QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,path,snaps.at(i)));
-            if(fid.open(QIODevice::ReadOnly))
-            {
-                QDataStream d(&fid);
-                QByteArray magic;
-                d >> magic;
-                if(magic.startsWith("BCFID"))
-                {
-                    if(magic.endsWith("v1.0"))
-                    {
-                        FidList dat;
-                        d >> dat;
-                        if(data->fidList.isEmpty())
-                        {
-                            data->fidList= dat;
-                            if(!dat.isEmpty())
-                                data->fidTemplate = dat.constFirst();
-                            data->fidTemplate.setData(QVector<qint64>());
-                        }
-                        else
-                        {
-                            for(int j=0; j<data->fidList.size() && j<dat.size(); j++)
-                                data->fidList[j] += dat.at(j);
-                        }
-                    }
-                }
+//            }
+//        }
+//    }
+//    else
+//    {
+//        d_fidList.clear();
+//        for(int i=0; i<snaps.size(); i++)
+//        {
+//            QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,path,snaps.at(i)));
+//            if(fid.open(QIODevice::ReadOnly))
+//            {
+//                QDataStream d(&fid);
+//                QByteArray magic;
+//                d >> magic;
+//                if(magic.startsWith("BCFID"))
+//                {
+//                    if(magic.endsWith("v1.0"))
+//                    {
+//                        FidList dat;
+//                        d >> dat;
+//                        if(d_fidList.isEmpty())
+//                        {
+//                            d_fidList= dat;
+//                            if(!dat.isEmpty())
+//                                d_fidTemplate = dat.constFirst();
+//                            d_fidTemplate.setData(QVector<qint64>());
+//                        }
+//                        else
+//                        {
+//                            for(int j=0; j<d_fidList.size() && j<dat.size(); j++)
+//                                d_fidList[j] += dat.at(j);
+//                        }
+//                    }
+//                }
 
-                fid.close();
-            }
-        }
-    }
+//                fid.close();
+//            }
+//        }
+//    }
 }
 
 void FtmwConfig::parseLine(const QString key, const QVariant val)
@@ -1055,87 +927,87 @@ void FtmwConfig::parseLine(const QString key, const QVariant val)
 //    if(key.startsWith(QString("FtmwScope")))
 //    {
 //        if(key.endsWith(QString("FidChannel")))
-//            data->scopeConfig.fidChannel = val.toInt();
+//            scopeConfig.fidChannel = val.toInt();
 //        if(key.endsWith(QString("VerticalScale")))
-//            data->scopeConfig.vScale = val.toDouble();
+//            scopeConfig.vScale = val.toDouble();
 //        if(key.endsWith(QString("VerticalOffset")))
-//            data->scopeConfig.vOffset = val.toDouble();
+//            scopeConfig.vOffset = val.toDouble();
 //        if(key.endsWith(QString("TriggerChannel")))
 //        {
 //            if(val.toString().contains(QString("AuxIn")))
-//                data->scopeConfig.trigChannel = 0;
+//                scopeConfig.trigChannel = 0;
 //            else
-//                data->scopeConfig.trigChannel = val.toInt();
+//                scopeConfig.trigChannel = val.toInt();
 //        }
 //        if(key.endsWith(QString("TriggerDelay")))
-//            data->scopeConfig.trigDelay = val.toDouble();
+//            scopeConfig.trigDelay = val.toDouble();
 //        if(key.endsWith(QString("TriggerLevel")))
-//            data->scopeConfig.trigLevel = val.toDouble();
+//            scopeConfig.trigLevel = val.toDouble();
 //        if(key.endsWith(QString("TriggerSlope")))
 //        {
 //            if(val.toString().contains(QString("Rising")))
-//                data->scopeConfig.slope = BlackChirp::RisingEdge;
+//                scopeConfig.slope = BlackChirp::RisingEdge;
 //            else
-//                data->scopeConfig.slope = BlackChirp::FallingEdge;
+//                scopeConfig.slope = BlackChirp::FallingEdge;
 //        }
 //        if(key.endsWith(QString("SampleRate")))
-//            data->scopeConfig.sampleRate = val.toDouble()*1e9;
+//            scopeConfig.sampleRate = val.toDouble()*1e9;
 //        if(key.endsWith(QString("RecordLength")))
-//            data->scopeConfig.recordLength = val.toInt();
+//            scopeConfig.recordLength = val.toInt();
 //        if(key.endsWith(QString("FastFrame")))
-//            data->scopeConfig.fastFrameEnabled = val.toBool();
+//            scopeConfig.fastFrameEnabled = val.toBool();
 //        if(key.endsWith(QString("SummaryFrame")))
-//            data->scopeConfig.summaryFrame = val.toBool();
+//            scopeConfig.summaryFrame = val.toBool();
 //        if(key.endsWith(QString("BlockAverage")))
-//            data->scopeConfig.blockAverageEnabled = val.toBool();
+//            scopeConfig.blockAverageEnabled = val.toBool();
 //        if(key.endsWith(QString("NumAverages")))
-//            data->scopeConfig.numAverages = val.toInt();
+//            scopeConfig.numAverages = val.toInt();
 //        if(key.endsWith(QString("BytesPerPoint")))
-//            data->scopeConfig.bytesPerPoint = val.toInt();
+//            scopeConfig.bytesPerPoint = val.toInt();
 //        if(key.endsWith(QString("NumFrames")))
-//            data->scopeConfig.numFrames = val.toInt();
+//            scopeConfig.numFrames = val.toInt();
 //        if(key.endsWith(QString("ByteOrder")))
 //        {
 //            if(val.toString().contains(QString("BigEndian")))
-//                data->scopeConfig.byteOrder = QDataStream::BigEndian;
+//                scopeConfig.byteOrder = QDataStream::BigEndian;
 //            else
-//                data->scopeConfig.byteOrder = QDataStream::LittleEndian;
+//                scopeConfig.byteOrder = QDataStream::LittleEndian;
 //        }
 //    }
     if(key.startsWith(QString("FtmwConfig")))
     {
         if(key.endsWith(QString("Enabled")))
-            data->isEnabled = val.toBool();
+            d_isEnabled = val.toBool();
         if(key.endsWith(QString("Type")))
-            data->type = (BlackChirp::FtmwType)val.toInt();
+            d_type = (BlackChirp::FtmwType)val.toInt();
         if(key.endsWith(QString("TargetShots")))
-            data->targetShots = val.toInt();
-        if(key.endsWith(QString("CompletedShots")))
-            data->completedShots = val.toInt();
+            d_targetShots = val.toInt();
+//        if(key.endsWith(QString("CompletedShots")))
+//            d_completedShots = val.toInt();
         if(key.endsWith(QString("TargetTime")))
-            data->targetTime = val.toDateTime();
+            d_targetTime = val.toDateTime();
         if(key.endsWith(QString("PhaseCorrection")))
-            data->phaseCorrectionEnabled = val.toBool();
+            d_phaseCorrectionEnabled = val.toBool();
         if(key.endsWith(QString("ChirpScoring")))
-            data->chirpScoringEnabled = val.toBool();
+            d_chirpScoringEnabled = val.toBool();
         if(key.endsWith(QString("ChirpRMSThreshold")))
-            data->chirpRMSThreshold = val.toDouble();
+            d_chirpRMSThreshold = val.toDouble();
         if(key.endsWith(QString("ChirpOffset")))
-            data->chirpOffsetUs = val.toDouble();
+            d_chirpOffsetUs = val.toDouble();
     }
     else if(key.startsWith(QString("RfConfig")))
-        data->rfConfig.parseLine(key,val);
+        d_rfConfig.parseLine(key,val);
 }
 
 void FtmwConfig::loadChirps(const int num, const QString path)
 {
     ///TODO: Figure out the future of loading chirps from disk
-    data->rfConfig.addChirpConfig(ChirpConfig(num,path));
+    d_rfConfig.addChirpConfig(ChirpConfig(num,path));
 }
 
 void FtmwConfig::loadClocks(const int num, const QString path)
 {
-    data->rfConfig.loadClockSteps(num,path);
+    d_rfConfig.loadClockSteps(num,path);
 }
 
 void FtmwConfig::saveToSettings() const
@@ -1169,7 +1041,7 @@ void FtmwConfig::saveToSettings() const
 
     s.endGroup();
 
-    data->rfConfig.saveToSettings();
+    d_rfConfig.saveToSettings();
 
 
 }

@@ -246,9 +246,10 @@ void WizardStartPage::initializePage()
 #endif
 
     p_ftmwTypeBox->setCurrentIndex(p_ftmwTypeBox->findData(QVariant::fromValue(e->ftmwConfig().type())));
+    ///TODO: make sure shotsPerClockStep is always set correctly!
     auto shots = e->ftmwConfig().targetShots();
-    if(e->ftmwConfig().hasMultiFidLists())
-        shots = e->ftmwConfig().rfConfig().shotsPerClockStep();
+//    if(e->ftmwConfig().hasMultiFidLists())
+//    shots = e->ftmwConfig().rfConfig().shotsPerClockStep();
     p_ftmwShotsBox->setValue(shots);
     p_ftmwTargetTimeBox->setMinimumDateTime(QDateTime::currentDateTime().addSecs(60));
     p_ftmwTargetTimeBox->setDateTime(QDateTime::currentDateTime().addSecs(3600));

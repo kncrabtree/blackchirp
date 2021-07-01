@@ -1,13 +1,13 @@
-#ifndef FTMWCONFIG_H
+﻿#ifndef FTMWCONFIG_H
 #define FTMWCONFIG_H
-
-#include <QSharedDataPointer>
 
 #include <QDateTime>
 #include <QDataStream>
 #include <QVariant>
 #include <QMetaType>
+#include <memory>
 
+#include <data/storage/fidstoragebase.h>
 #include <data/experiment/fid.h>
 #include <data/experiment/rfconfig.h>
 #include <data/experiment/ftmwdigitizerconfig.h>
@@ -16,14 +16,13 @@
 
 #define BC_FTMW_MAXSHIFT 50
 
-class FtmwConfigData;
 
 class FtmwConfig : public ExperimentObjective
 {
 public:
-    FtmwConfig();
-    FtmwConfig(const FtmwConfig &);
-    FtmwConfig &operator=(const FtmwConfig &);
+    FtmwConfig() {};
+    FtmwConfig(const FtmwConfig &) =default;
+    FtmwConfig &operator=(const FtmwConfig &) =default;
     ~FtmwConfig();
 
     bool initialize() override;
@@ -37,18 +36,14 @@ public:
     bool isEnabled() const;
     bool isPhaseCorrectionEnabled() const;
     bool isChirpScoringEnabled() const;
-    bool hasMultiFidLists() const;
     double chirpRMSThreshold() const;
     double chirpOffsetUs() const;
     BlackChirp::FtmwType type() const;
-    qint64 targetShots() const;
-    qint64 completedShots() const;
+    quint64 targetShots() const;
+    quint64 completedShots() const;
     QDateTime targetTime() const;
-    Fid singleFid(int frame=0, int segment=0) const;
-    FidList fidList() const;
-    FidList fidList(int segment) const;
-    QVector<qint64> rawFidList() const;
-    QList<FidList> multiFidList() const;
+//    QVector<qint64> rawFidList() const;
+//    QList<FidList> multiFidList() const;
     FtmwDigitizerConfig scopeConfig() const;
     RfConfig rfConfig() const;
     ChirpConfig chirpConfig(int num = 0) const;
@@ -56,7 +51,7 @@ public:
     bool processingPaused() const;
     int numFrames() const;
     int numSegments() const;
-    int shotIncrement() const;
+    quint64 shotIncrement() const;
     FidList parseWaveform(const QByteArray b) const;
     QVector<qint64> extractChirp() const;
     QVector<qint64> extractChirp(const QByteArray b) const;
@@ -77,16 +72,16 @@ public:
     void setType(const BlackChirp::FtmwType type);
     void setTargetShots(const qint64 target);
     void setTargetTime(const QDateTime time);
-    bool setFidsData(const QList<QVector<qint64>> newList);
+#ifdef BC_CUDA
+    bool setFidsData(const QVector<QVector<qint64> > newList);
+#endif
     bool addFids(const QByteArray rawData, int shift = 0);
-    void addFids(const FtmwConfig other);
     bool subtractFids(const FtmwConfig other);
     void resetFids();
     void setScopeConfig(const FtmwDigitizerConfig &other);
     void setRfConfig(const RfConfig other);
-    void storeFids();
-    void setMultiFidList(const QList<FidList> l);
     void finalizeSnapshots(int num, QString path = QString(""));
+    std::shared_ptr<FidStorageBase> storage();
 
 
     QMap<QString,QPair<QVariant,QString> > headerMap() const;
@@ -101,38 +96,27 @@ public:
     static FtmwConfig loadFromSettings();
 
 private:
-    QSharedDataPointer<FtmwConfigData> data;
+    bool d_isEnabled{false};
+    bool d_phaseCorrectionEnabled{false};
+    bool d_chirpScoringEnabled{false};
+    double d_chirpRMSThreshold{0.0};
+    double d_chirpOffsetUs{-1.0};
+    BlackChirp::FtmwType d_type{BlackChirp::FtmwForever};
+    quint64 d_targetShots{0};
+//    quint64 d_completedShots{0};
+    QDateTime d_targetTime;
+    std::shared_ptr<FidStorageBase> p_fidStorage;
 
-};
+//    bool d_multipleFidLists{false};
+//    FidList d_fidList;
+//    QList<FidList> d_multiFidStorage;
 
-class FtmwConfigData : public QSharedData
-{
-public:
-    FtmwConfigData() : isEnabled(false), phaseCorrectionEnabled(false), chirpScoringEnabled(false), chirpRMSThreshold(0.0),
-        chirpOffsetUs(-1.0), type(BlackChirp::FtmwForever), targetShots(-1), completedShots(0), multipleFidLists(false),
-        processingPaused(false) {}
+    FtmwDigitizerConfig d_scopeConfig;
+    RfConfig d_rfConfig;
+    Fid d_fidTemplate;
+    QString d_errorString;
 
-    bool isEnabled;
-    bool phaseCorrectionEnabled;
-    bool chirpScoringEnabled;
-    double chirpRMSThreshold;
-    double chirpOffsetUs;
-    BlackChirp::FtmwType type;
-    qint64 targetShots;
-    qint64 completedShots;
-    QDateTime targetTime;
-
-    bool multipleFidLists;
-    FidList fidList;
-    QList<FidList> multiFidStorage;
-
-    FtmwDigitizerConfig scopeConfig;
-    RfConfig rfConfig;
-    Fid fidTemplate;
-    QString errorString;
-
-    bool processingPaused;
-
+    bool d_processingPaused{false};
 };
 
 

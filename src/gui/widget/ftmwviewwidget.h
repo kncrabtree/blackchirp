@@ -93,6 +93,7 @@ private:
     Ui::FtmwViewWidget *ui;
 
     FtmwConfig d_ftmwConfig, d_snap1Config, d_snap2Config;
+    std::shared_ptr<FidStorageBase> p_fidStorage;
     FtWorker::FidProcessingSettings d_currentProcessingSettings;
     int d_currentExptNum;
     int d_currentSegment;

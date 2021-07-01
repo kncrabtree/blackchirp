@@ -11,22 +11,22 @@ SaveManager::SaveManager(QObject *parent) : QObject(parent), d_snapNum(0)
 
 void SaveManager::snapshot(Experiment &e)
 {
-    e.snapshot(d_snapNum,d_lastExperiment);
-    d_snapNum++;
-    d_lastExperiment = e;
+//    e.snapshot(d_snapNum,d_lastExperiment);
+//    d_snapNum++;
+//    d_lastExperiment = e;
 
-    QFile snp(BlackChirp::getExptFile(e.number(),BlackChirp::SnapFile));
-    if(snp.open(QIODevice::WriteOnly))
-    {
-        if(e.ftmwConfig().isEnabled())
-        {
-            if(e.ftmwConfig().hasMultiFidLists())
-                snp.write(QByteArray("mfd\t") + QByteArray::number(d_snapNum) + QByteArray("\n"));
-            else
-                snp.write(QByteArray("fid\t") + QByteArray::number(d_snapNum) + QByteArray("\n"));
-        }
-        snp.close();
-    }
+//    QFile snp(BlackChirp::getExptFile(e.number(),BlackChirp::SnapFile));
+//    if(snp.open(QIODevice::WriteOnly))
+//    {
+//        if(e.ftmwConfig().isEnabled())
+//        {
+//            if(e.ftmwConfig().hasMultiFidLists())
+//                snp.write(QByteArray("mfd\t") + QByteArray::number(d_snapNum) + QByteArray("\n"));
+//            else
+//                snp.write(QByteArray("fid\t") + QByteArray::number(d_snapNum) + QByteArray("\n"));
+//        }
+//        snp.close();
+//    }
 
     emit snapshotComplete();
 }

@@ -247,9 +247,9 @@ bool GpuAverager::initialize(const int pointsPerFrame, const int numFrames, cons
 
 }
 
-QList<QVector<qint64> > GpuAverager::parseAndAdd(const char *newDataIn, const int shift)
+QVector<QVector<qint64> > GpuAverager::parseAndAdd(const char *newDataIn, const int shift)
 {
-    QList<QVector<qint64> > out;
+    QVector<QVector<qint64> > out;
     if(!d_isInitialized)
     {
         d_errorMsg = QString("Cannot process scope data because GPU was not initialized successfully.");
@@ -299,9 +299,9 @@ QList<QVector<qint64> > GpuAverager::parseAndAdd(const char *newDataIn, const in
 
 }
 
-QList<QVector<qint64> > GpuAverager::parseAndRollAvg(const char *newDataIn, const qint64 currentShots, const qint64 targetShots, const int shift)
+QVector<QVector<qint64> > GpuAverager::parseAndRollAvg(const char *newDataIn, const qint64 currentShots, const qint64 targetShots, const int shift)
 {
-    QList<QVector<qint64> > out;
+    QVector<QVector<qint64> > out;
     if(!d_isInitialized)
     {
         d_errorMsg = QString("Cannot process scope data because GPU was not initialized successfully.");

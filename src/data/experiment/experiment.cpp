@@ -588,7 +588,7 @@ void Experiment::setIOBoardConfig(const IOBoardConfig cfg)
     d_iobCfg = cfg;
 }
 
-bool Experiment::setFidsData(const QList<QVector<qint64> > l)
+bool Experiment::setFidsData(const QVector<QVector<qint64> > l)
 {
     if(!d_ftmwCfg.setFidsData(l))
     {
@@ -1007,19 +1007,19 @@ void Experiment::snapshot(int snapNum, const Experiment other)
 
     saveHeader();
 
-    if(ftmwConfig().isEnabled())
-    {
-        FtmwConfig cf = ftmwConfig();
-        cf.storeFids();
+//    if(ftmwConfig().isEnabled())
+//    {
+//        FtmwConfig cf = ftmwConfig();
+////        cf.storeFids();
 
-        if(other.number() == d_number && other.isInitialized())
-        {
-            if(cf.subtractFids(other.ftmwConfig()))
-                cf.writeFids(d_number,d_path,snapNum);
-        }
-        else
-            cf.writeFids(d_number,d_path,snapNum);
-    }
+//        if(other.number() == d_number && other.isInitialized())
+//        {
+//            if(cf.subtractFids(other.ftmwConfig()))
+//                cf.writeFids(d_number,d_path,snapNum);
+//        }
+//        else
+//            cf.writeFids(d_number,d_path,snapNum);
+//    }
 
 #ifdef BC_LIF
     if(lifConfig().isEnabled())

@@ -88,7 +88,9 @@ public:
 
     void setVMult(const double vm);
 
-    void setShots(const qint64 s);
+    void setShots(const quint64 s);
+
+    void detach();
 
     Fid &operator +=(const Fid other);
     Fid &operator +=(const QVector<qint64> other);
@@ -148,7 +150,7 @@ public:
 
     double atNorm(const int i) const;
 
-    qint64 shots() const;
+    quint64 shots() const;
 
     BlackChirp::Sideband sideband() const;
 
@@ -179,22 +181,18 @@ QDataStream &operator>>(QDataStream &stream, Fid &fid);
 */
 class FidData : public QSharedData {
 public:
-/*!
- \brief Default constructor
-
-*/
-    FidData() : spacing(5e-7), probeFreq(0.0), vMult(1.0), shots(1), fid(QVector<qint64>(0)), sideband(BlackChirp::UpperSideband) {}
-
-    double spacing;
-    double probeFreq;
-    double vMult;
-    qint64 shots;
+    FidData () {}
+    double spacing{1.0};
+    double probeFreq{0.0};
+    double vMult{1.0};
+    quint64 shots{0};
     QVector<qint64> fid;
-    BlackChirp::Sideband sideband;
+    BlackChirp::Sideband sideband{BlackChirp::UpperSideband};
 };
 
 Q_DECLARE_METATYPE(Fid)
-typedef QList<Fid> FidList;
+Q_DECLARE_TYPEINFO(Fid,Q_MOVABLE_TYPE);
+using FidList = QVector<Fid>;
 Q_DECLARE_TYPEINFO(FidList,Q_MOVABLE_TYPE);
 
 #endif // FID_H
