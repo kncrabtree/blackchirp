@@ -31,6 +31,7 @@ void AcquisitionManager::beginExperiment(Experiment exp)
         return;
     }
 
+
 #ifdef BC_CUDA
     if(exp.ftmwConfig().isEnabled())
     {
@@ -65,8 +66,8 @@ void AcquisitionManager::beginExperiment(Experiment exp)
     SaveManager *sm = new SaveManager();
     connect(sm,&SaveManager::finalSaveComplete,p_saveThread,&QThread::quit);
     connect(sm,&SaveManager::finalSaveComplete,this,&AcquisitionManager::experimentComplete);
-    connect(this,&AcquisitionManager::doFinalSave,sm,&SaveManager::finalSave);
-    connect(this,&AcquisitionManager::takeSnapshot,sm,&SaveManager::snapshot);
+//    connect(this,&AcquisitionManager::doFinalSave,sm,&SaveManager::finalSave);
+//    connect(this,&AcquisitionManager::takeSnapshot,sm,&SaveManager::snapshot);
     connect(sm,&SaveManager::snapshotComplete,this,&AcquisitionManager::snapshotComplete);
     connect(p_saveThread,&QThread::finished,sm,&SaveManager::deleteLater);
     sm->moveToThread(p_saveThread);

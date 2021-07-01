@@ -437,7 +437,7 @@ void Experiment::setInitialized()
 
     if(d_ftmwCfg.isEnabled())
     {
-        if(!d_ftmwCfg.prepareForAcquisition())
+        if(!d_ftmwCfg.initialize())
         {
             setErrorString(d_ftmwCfg.errorString());
             d_isInitialized = false;
@@ -759,12 +759,12 @@ void Experiment::setHardwareFailed()
 
 bool Experiment::incrementFtmw()
 {
-    return d_ftmwCfg.increment();
+    return d_ftmwCfg.advance();
 }
 
 void Experiment::setFtmwClocksReady()
 {
-    d_ftmwCfg.clocksReady();
+    d_ftmwCfg.hwReady();
 }
 
 void Experiment::finalSave()

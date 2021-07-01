@@ -1,5 +1,7 @@
 #include <data/experiment/ftmwconfig.h>
 
+#include <math.h>
+
 #include <QFile>
 #include <QtEndian>
 
@@ -387,7 +389,7 @@ bool FtmwConfig::writeFids(int num, QString path, int snapNum) const
     }
 }
 
-bool FtmwConfig::prepareForAcquisition()
+bool FtmwConfig::initialize()
 {
     double df = rfConfig().clockFrequency(BlackChirp::DownConversionLO);
     auto sb = rfConfig().downMixSideband();
@@ -467,7 +469,7 @@ void FtmwConfig::setTargetShots(const qint64 target)
     data->targetShots = target;
 }
 
-bool FtmwConfig::increment()
+bool FtmwConfig::advance()
 {
     if(type() == BlackChirp::FtmwPeakUp)
         data->completedShots = qMin(completedShots()+shotIncrement(),targetShots());
@@ -679,10 +681,26 @@ void FtmwConfig::setRfConfig(const RfConfig other)
     data->rfConfig = other;
 }
 
-void FtmwConfig::clocksReady()
+void FtmwConfig::hwReady()
 {
     data->fidTemplate.setProbeFreq(rfConfig().clockFrequency(BlackChirp::DownConversionLO));
     data->processingPaused = false;
+}
+
+int FtmwConfig::perMilComplete() const
+{
+    if(indefinite())
+        return 0;
+
+    return static_cast<int>(floor(static_cast<double>(completedShots())/static_cast<double>(targetShots()) * 1000.0));
+}
+
+bool FtmwConfig::indefinite() const
+{
+    if(type() == BlackChirp::FtmwForever)
+        return true;
+
+    return false;
 }
 
 void FtmwConfig::storeFids()
@@ -798,6 +816,11 @@ bool FtmwConfig::isComplete() const
     }
 
     //not reached
+    return false;
+}
+
+bool FtmwConfig::abort()
+{
     return false;
 }
 

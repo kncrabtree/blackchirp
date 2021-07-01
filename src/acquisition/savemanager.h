@@ -17,8 +17,8 @@ signals:
     void fatalSaveError(QString);
 
 public slots:
-    void snapshot(const Experiment e);
-    void finalSave(const Experiment e);
+    void snapshot(Experiment &e);
+    void finalSave(Experiment &e);
 
 private:
     int d_snapNum;

@@ -12,18 +12,27 @@
 #include <data/experiment/rfconfig.h>
 #include <data/experiment/ftmwdigitizerconfig.h>
 #include <data/datastructs.h>
+#include <data/experiment/experimentobjective.h>
 
 #define BC_FTMW_MAXSHIFT 50
 
 class FtmwConfigData;
 
-class FtmwConfig
+class FtmwConfig : public ExperimentObjective
 {
 public:
     FtmwConfig();
     FtmwConfig(const FtmwConfig &);
     FtmwConfig &operator=(const FtmwConfig &);
     ~FtmwConfig();
+
+    bool initialize() override;
+    bool advance() override;
+    void hwReady() override;
+    int perMilComplete() const override;
+    bool indefinite() const override;
+    bool isComplete() const override;
+    bool abort() override;
 
     bool isEnabled() const;
     bool isPhaseCorrectionEnabled() const;
@@ -59,7 +68,6 @@ public:
     QPair<int,int> chirpRange() const;
     bool writeFids(int num, QString path = QString(""), int snapNum = -1) const;
 
-    bool prepareForAcquisition();
     void setEnabled(bool en = true);
     void setPhaseCorrectionEnabled(bool enabled);
     void setChirpScoringEnabled(bool enabled);
@@ -68,7 +76,6 @@ public:
     void setFidTemplate(const Fid f);
     void setType(const BlackChirp::FtmwType type);
     void setTargetShots(const qint64 target);
-    bool increment();
     void setTargetTime(const QDateTime time);
     bool setFidsData(const QList<QVector<qint64>> newList);
     bool addFids(const QByteArray rawData, int shift = 0);
@@ -77,13 +84,11 @@ public:
     void resetFids();
     void setScopeConfig(const FtmwDigitizerConfig &other);
     void setRfConfig(const RfConfig other);
-    void clocksReady();
     void storeFids();
     void setMultiFidList(const QList<FidList> l);
     void finalizeSnapshots(int num, QString path = QString(""));
 
 
-    bool isComplete() const;
     QMap<QString,QPair<QVariant,QString> > headerMap() const;
     void loadFids(const int num, const QString path = QString(""));
     void loadFidsFromSnapshots(const int num, const QString path = QString(""), const QList<int> snaps = QList<int>());

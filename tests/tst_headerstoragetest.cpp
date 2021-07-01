@@ -249,8 +249,6 @@ void HeaderStorageTest::testCSV()
 
     QTextStream t(stdout);
     t << "\n\n" << b << "\n\n";
-
-    t << staticMetaObject.className() << "\n\n";
 }
 
 QTEST_MAIN(HeaderStorageTest)

@@ -1,7 +1,8 @@
 #ifndef EXPERIMENT_H
 #define EXPERIMENT_H
 
-#include <QSharedDataPointer>
+#include <memory>
+
 #include <QPair>
 #include <QDateTime>
 #include <QMetaType>

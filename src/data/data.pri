@@ -8,6 +8,7 @@ SOURCES += $$PWD/loghandler.cpp \
     $$PWD/experiment/chirpconfig.cpp \
     $$PWD/experiment/digitizerconfig.cpp \
     $$PWD/experiment/experiment.cpp \
+    $$PWD/experiment/experimentobjective.cpp \
     $$PWD/experiment/fid.cpp \
     $$PWD/experiment/flowconfig.cpp \
     $$PWD/experiment/ftmwconfig.cpp \
@@ -35,6 +36,7 @@ HEADERS += $$PWD/loghandler.h \
     $$PWD/experiment/chirpconfig.h \
     $$PWD/experiment/digitizerconfig.h \
     $$PWD/experiment/experiment.h \
+    $$PWD/experiment/experimentobjective.h \
     $$PWD/experiment/fid.h \
     $$PWD/experiment/flowconfig.h \
     $$PWD/experiment/ftmwconfig.h \

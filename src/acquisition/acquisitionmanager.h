@@ -48,8 +48,8 @@ signals:
 
     void newFidList(const FtmwConfig, int);
     void newFtmwConfig(const FtmwConfig);
-    void takeSnapshot(const Experiment);
-    void doFinalSave(const Experiment);
+    void takeSnapshot(Experiment);
+    void doFinalSave(Experiment);
     void snapshotComplete();
 
 #ifdef BC_LIF

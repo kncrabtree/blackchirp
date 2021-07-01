@@ -20,7 +20,7 @@ enable_testing()
 add_executable(tst_settingsstoragetest tests/tst_settingsstoragetest.cpp src/data/storage/settingsstorage.cpp)
 add_test(NAME tst_settingsstoragetest COMMAND tst_settingsstoragetest)
 
-add_executable(tst_headerstoragetest tests/tst_headerstoragetest.cpp src/data/storage/headerstorage.cpp)
+add_executable(tst_headerstoragetest tests/tst_headerstoragetest.cpp src/data/storage/headerstorage.cpp src/data/storage/blackchirpcsv.cpp)
 add_test(NAME tst_headerstoragetest COMMAND tst_headerstoragetest)
 
 add_executable(tst_blackchirpcsvtest tests/tst_blackchirpcsv.cpp src/data/storage/blackchirpcsv.cpp)
