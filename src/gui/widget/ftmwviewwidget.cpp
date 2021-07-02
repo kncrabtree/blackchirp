@@ -105,7 +105,7 @@ FtmwViewWidget::~FtmwViewWidget()
     delete ui;
 }
 
-void FtmwViewWidget::prepareForExperiment(const Experiment e)
+void FtmwViewWidget::prepareForExperiment(const Experiment &e)
 {
     FtmwConfig config = e.ftmwConfig();
     p_fidStorage = config.storage();
@@ -230,6 +230,8 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
 
 void FtmwViewWidget::updateLiveFidList(const FtmwConfig c, int segment)
 {
+    (void)c;
+#pragma message("UpdateLiveFidList needs work")
     auto fl = p_fidStorage->getCurrentFidList();
     d_currentSegment = p_fidStorage->getCurrentIndex();
 
@@ -282,6 +284,7 @@ void FtmwViewWidget::updateLiveFidList(const FtmwConfig c, int segment)
 
 void FtmwViewWidget::updateFtmw(const FtmwConfig f)
 {
+#pragma message("This function will not be called anymore; figure out what to do")
     d_ftmwConfig = f;
     QList<int> ignore{ d_liveId };
 
@@ -519,7 +522,7 @@ void FtmwViewWidget::processDiff(const Fid f1, const Fid f2)
 
 void FtmwViewWidget::processSideband(BlackChirp::Sideband sb)
 {
-    ///TODO: Make this work with the shared storage
+#pragma message("Make processSideband work with shared storage")
     auto ws = d_workersStatus.value(d_mainId);
     if(ws.busy)
         d_workersStatus[d_mainId].reprocessWhenDone = true;
@@ -554,7 +557,7 @@ void FtmwViewWidget::processSideband(BlackChirp::Sideband sb)
 
 void FtmwViewWidget::processBothSidebands()
 {
-    ///TODO: Make this work with the shared storage
+#pragma message("Make processBothSidebands work with shared storage")
     auto ws = d_workersStatus.value(d_mainId);
     if(ws.busy)
         d_workersStatus[d_mainId].reprocessWhenDone = true;
@@ -656,37 +659,38 @@ void FtmwViewWidget::snapshotsFinalizedUpdateUi(int num)
     }
 }
 
-void FtmwViewWidget::experimentComplete(const Experiment e)
+void FtmwViewWidget::experimentComplete()
 {
-    ui->plot1ConfigWidget->experimentComplete(e);
-    ui->plot2ConfigWidget->experimentComplete(e);
+#pragma message("FtmwWidget experimentComplete needs update")
+//    ui->plot1ConfigWidget->experimentComplete(e);
+//    ui->plot2ConfigWidget->experimentComplete(e);
 
-    if(e.ftmwConfig().isEnabled())
-    {
-        d_currentSegment = -1;
+//    if(e.ftmwConfig().isEnabled())
+//    {
+//        d_currentSegment = -1;
 
-        ui->verticalLayout->setStretch(0,0);
-        ui->liveFidPlot->hide();
-        ui->liveFtPlot->hide();
+//        ui->verticalLayout->setStretch(0,0);
+//        ui->liveFidPlot->hide();
+//        ui->liveFtPlot->hide();
 
 
-        if(d_workersStatus.value(d_liveId).thread->isRunning())
-        {
-            d_workersStatus[d_liveId].thread->quit();
-            d_workersStatus[d_liveId].thread->wait();
+//        if(d_workersStatus.value(d_liveId).thread->isRunning())
+//        {
+//            d_workersStatus[d_liveId].thread->quit();
+//            d_workersStatus[d_liveId].thread->wait();
 
-            d_workersStatus[d_liveId].worker = nullptr;
-        }
+//            d_workersStatus[d_liveId].worker = nullptr;
+//        }
 
-        if(d_mode == Live)
-            ui->ft1Action->trigger();
+//        if(d_mode == Live)
+//            ui->ft1Action->trigger();
 
-        ui->liveAction->setEnabled(false);
+//        ui->liveAction->setEnabled(false);
 
-        updateFtmw(e.ftmwConfig());
-    }
+//        updateFtmw(e.ftmwConfig());
+//    }
 
-    ui->shotsLabel->setText(d_shotsString.arg(e.ftmwConfig().completedShots()));
+//    ui->shotsLabel->setText(d_shotsString.arg(e.ftmwConfig().completedShots()));
 }
 
 void FtmwViewWidget::launchPeakFinder()

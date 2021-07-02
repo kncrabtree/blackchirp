@@ -2,12 +2,20 @@
 
 #include <QDir>
 
-BatchSequence::BatchSequence() :
-    BatchManager(BatchManager::Sequence), d_experimentCount(0), d_numExperiments(1), d_intervalSeconds(60), d_waiting(false)
+BatchSequence::BatchSequence(std::shared_ptr<Experiment> e, int numExpts, int intervalSeconds) :
+    BatchManager(BatchManager::Sequence), d_experimentCount(0), d_numExperiments(numExpts),
+    d_intervalSeconds(intervalSeconds), d_waiting(false)
 {
+    d_expTemplate = *e.get();
+    d_CurrentExp = std::make_shared<Experiment>(d_expTemplate);
+
     p_intervalTimer = new QTimer(this);
     p_intervalTimer->setSingleShot(true);
-    connect(p_intervalTimer,&QTimer::timeout,this,[=](){ d_waiting = false; emit beginExperiment(nextExperiment()); });
+    connect(p_intervalTimer,&QTimer::timeout,this,[=](){
+        d_waiting = false;
+        d_CurrentExp = std::make_shared<Experiment>(d_expTemplate);
+        emit beginExperiment();
+    });
 }
 
 
@@ -28,14 +36,13 @@ void BatchSequence::writeReport()
     //not generating reports for this
 }
 
-void BatchSequence::processExperiment(const Experiment exp)
+void BatchSequence::processExperiment()
 {
-    Q_UNUSED(exp);
 }
 
-Experiment BatchSequence::nextExperiment()
+std::shared_ptr<Experiment> BatchSequence::currentExperiment()
 {
-    return d_exp;
+    return d_CurrentExp;
 }
 
 bool BatchSequence::isComplete()
@@ -49,7 +56,7 @@ void BatchSequence::beginNextExperiment()
     //set waiting to true so that this can be aborted if necessary
     if(d_experimentCount == 0)
     {
-        emit beginExperiment(d_exp);
+        emit beginExperiment();
     }
     else if(d_experimentCount < d_numExperiments)
     {

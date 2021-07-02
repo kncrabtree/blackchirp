@@ -11,6 +11,8 @@ SaveManager::SaveManager(QObject *parent) : QObject(parent), d_snapNum(0)
 
 void SaveManager::snapshot(Experiment &e)
 {
+    (void)e;
+#pragma message ("Snapshot implementation still needed")
 //    e.snapshot(d_snapNum,d_lastExperiment);
 //    d_snapNum++;
 //    d_lastExperiment = e;

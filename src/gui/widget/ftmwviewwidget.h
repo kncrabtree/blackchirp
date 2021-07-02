@@ -53,7 +53,7 @@ public:
 
     explicit FtmwViewWidget(QWidget *parent = 0, QString path = QString(""));
     ~FtmwViewWidget();
-    void prepareForExperiment(const Experiment e);
+    void prepareForExperiment(const Experiment &e);
 
 signals:
     void rollingAverageShotsChanged(int);
@@ -84,7 +84,7 @@ public slots:
     void snapshotsProcessed(int id, const FtmwConfig c);
     void snapshotsFinalized(const FtmwConfig out);
     void snapshotsFinalizedUpdateUi(int num);
-    void experimentComplete(const Experiment e);
+    void experimentComplete();
 
     void launchPeakFinder();
 

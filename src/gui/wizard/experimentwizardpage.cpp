@@ -5,9 +5,9 @@ ExperimentWizardPage::ExperimentWizardPage(const QString key, QWidget *parent) :
 {
 }
 
-Experiment* ExperimentWizardPage::getExperiment() const
+std::shared_ptr<Experiment> ExperimentWizardPage::getExperiment() const
 {
-    return &dynamic_cast<ExperimentWizard*>(wizard())->experiment;
+    return dynamic_cast<ExperimentWizard*>(wizard())->experiment;
 }
 
 int ExperimentWizardPage::startingFtmwPage() const

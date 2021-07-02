@@ -1,6 +1,7 @@
 #include <acquisition/batch/batchsingle.h>
 
-BatchSingle::BatchSingle(const Experiment e) : BatchManager(BatchManager::SingleExperiment), d_exp(e), d_complete(false)
+BatchSingle::BatchSingle(std::shared_ptr<Experiment> e) : BatchManager(BatchManager::SingleExperiment),
+    d_exp(e), d_complete(false)
 {
 }
 
@@ -19,13 +20,11 @@ void BatchSingle::writeReport()
     //no report to write
 }
 
-void BatchSingle::processExperiment(const Experiment exp)
+void BatchSingle::processExperiment()
 {
-    //no processing needs to be done
-    Q_UNUSED(exp)
 }
 
-Experiment BatchSingle::nextExperiment()
+std::shared_ptr<Experiment> BatchSingle::currentExperiment()
 {
     //only one experiment, so set complete to true and return it
     d_complete = true;

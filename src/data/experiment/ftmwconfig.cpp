@@ -308,10 +308,17 @@ QPair<int, int> FtmwConfig::chirpRange() const
 //        qSwap(startSample,endSample);
 
 //    return qMakePair(startSample,endSample);
+#pragma message("Implement chirpRange")
+    return {0,0};
 }
 
 bool FtmwConfig::writeFids(int num, QString path, int snapNum) const
 {
+    (void)num;
+    (void)path;
+    (void)snapNum;
+#pragma message("Figure out writeFids")
+    return true;
 //    if(!d_multipleFidLists)
 //    {
 //        QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,path,snapNum));
@@ -498,6 +505,8 @@ bool FtmwConfig::addFids(const QByteArray rawData, int shift)
 
 bool FtmwConfig::subtractFids(const FtmwConfig other)
 {
+    (void)other;
+#pragma message("Figure out what to do with subtractFids")
 //    if(!d_multipleFidLists)
 //    {
 //        auto otherList = other.fidList();
@@ -627,6 +636,9 @@ void FtmwConfig::finalizeSnapshots(int num, QString path)
             snp.remove();
     }
 
+    (void)snaps;
+#pragma message("finalizeSnapshots behavior - what to do?")
+
 //    for(int i=0; i<snaps; i++)
 //    {
 //        if(!d_multipleFidLists)
@@ -729,6 +741,9 @@ QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
 
 void FtmwConfig::loadFids(const int num, const QString path)
 {
+    (void)num;
+    (void)path;
+#pragma message("How to deal with loading FIDs?")
 //    QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,path));
 //    if(fid.open(QIODevice::ReadOnly))
 //    {
@@ -839,6 +854,10 @@ void FtmwConfig::loadFids(const int num, const QString path)
 
 void FtmwConfig::loadFidsFromSnapshots(const int num, const QString path, const QList<int> snaps)
 {
+    (void)num;
+    (void)path;
+    (void)snaps;
+#pragma message("Snapshot issue")
 //    if(d_multipleFidLists)
 //    {
 //        d_multiFidStorage.clear();

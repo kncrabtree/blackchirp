@@ -2,6 +2,7 @@
 #define EXPERIMENTWIZARD_H
 
 #include <QWizard>
+#include <memory>
 
 #include <data/experiment/experiment.h>
 
@@ -12,7 +13,7 @@ class ExperimentWizard : public QWizard
 {
     Q_OBJECT
 public:
-    ExperimentWizard(QWidget *parent = 0);
+    ExperimentWizard(int num = 0, QWidget *parent = 0);
     ~ExperimentWizard();
 
     enum Page {
@@ -33,7 +34,7 @@ public:
         SummaryPage
     };
 
-    Experiment experiment;
+    std::shared_ptr<Experiment> experiment;
 private:    
     QList<ExperimentWizardPage*> d_pages;
 

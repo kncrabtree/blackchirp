@@ -166,7 +166,7 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
 
 
         p_ftmw->snapshotTaken();
-        p_ftmw->experimentComplete(d_experiment);
+        p_ftmw->experimentComplete();
     }
 
 

@@ -34,7 +34,9 @@ bool FidStorageBase::save()
 bool FidStorageBase::saveFidList(const FidList l, int i)
 {
     ///todo
-
+    (void)l;
+    (void)i;
+#pragma message("Write implememtnation for saveFidList")
     return true;
 }
 

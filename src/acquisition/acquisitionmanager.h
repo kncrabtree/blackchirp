@@ -35,10 +35,9 @@ public:
 signals:
     void logMessage(const QString,const BlackChirp::LogMessageCode = BlackChirp::LogNormal);
     void statusMessage(const QString);
-    void experimentInitialized(const Experiment);
-    void experimentComplete(const Experiment);
+    void experimentInitialized();
+    void experimentComplete();
     void ftmwUpdateProgress(qint64);
-    void ftmwNumShots(qint64);
     void newClockSettings(const RfConfig);
     void beginAcquisition();
     void endAcquisition();
@@ -46,10 +45,8 @@ signals:
     void timeData(const QList<QPair<QString,QVariant>>, bool plot=true, QDateTime t = QDateTime::currentDateTime());
     void motorRest();
 
-    void newFidList(const FtmwConfig, int);
-    void newFtmwConfig(const FtmwConfig);
-    void takeSnapshot(Experiment);
-    void doFinalSave(Experiment);
+    void takeSnapshot(std::shared_ptr<Experiment>);
+    void doFinalSave(std::shared_ptr<Experiment>);
     void snapshotComplete();
 
 #ifdef BC_LIF
@@ -65,7 +62,7 @@ signals:
 #endif
 
 public slots:
-    void beginExperiment(Experiment exp);
+    void beginExperiment(std::shared_ptr<Experiment> exp);
     void processFtmwScopeShot(const QByteArray b);
     void changeRollingAverageShots(int newShots);
     void resetRollingAverage();
@@ -87,7 +84,7 @@ public slots:
 #endif
 
 private:
-    Experiment d_currentExperiment;
+    std::shared_ptr<Experiment> d_currentExperiment;
     AcquisitionState d_state;
     QTimer *d_timeDataTimer = nullptr;
     QThread *p_saveThread;

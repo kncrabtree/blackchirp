@@ -6,7 +6,7 @@
 class BatchSingle : public BatchManager
 {
 public:
-    BatchSingle(const Experiment e);
+    BatchSingle(std::shared_ptr<Experiment> e);
     ~BatchSingle();
 
 public slots:
@@ -15,11 +15,11 @@ public slots:
     // BatchManager interface
 protected:
     void writeReport();
-    void processExperiment(const Experiment exp);
-    Experiment nextExperiment();
+    void processExperiment();
+    std::shared_ptr<Experiment> currentExperiment();
     bool isComplete();
 
-    Experiment d_exp;
+    std::shared_ptr<Experiment> d_exp;
     bool d_complete;
 };
 

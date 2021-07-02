@@ -26,6 +26,9 @@ public:
 
     void setQuickExptEnabled(bool en);
 
+    int numExperiments() const;
+    int interval() const;
+
     static const int configureCode = 23;
     static const int quickCode = 27;
 

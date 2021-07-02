@@ -14,7 +14,7 @@ class QuickExptDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit QuickExptDialog(Experiment e, QWidget *parent = 0);
+    explicit QuickExptDialog(std::shared_ptr<Experiment> e, QWidget *parent = 0);
     ~QuickExptDialog();
 
     int configureResult() const { return d_configureResult; }

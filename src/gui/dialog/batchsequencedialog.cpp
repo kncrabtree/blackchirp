@@ -30,3 +30,13 @@ void BatchSequenceDialog::setQuickExptEnabled(bool en)
     ui->configureButton->setDefault(!en);
     ui->quickButton->setDefault(en);
 }
+
+int BatchSequenceDialog::numExperiments() const
+{
+    return ui->numberOfExperimentsSpinBox->value();
+}
+
+int BatchSequenceDialog::interval() const
+{
+    return ui->timeBetweenExperimentsSpinBox->value();
+}

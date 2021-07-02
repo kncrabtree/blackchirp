@@ -5,7 +5,7 @@ SettingsStorage::SettingsStorage(const QStringList keys, Type type, QSettings::S
     d_settings.setFallbacksEnabled(false);
 
     if(keys.isEmpty())
-        d_settings.beginGroup(QString("Blackchirp"));
+        d_settings.beginGroup(BC::Key::BC);
     else
     {
         if( (type == Hardware) && (keys.size() == 1) )

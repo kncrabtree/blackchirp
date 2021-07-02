@@ -27,7 +27,7 @@ public slots:
 	//access functions for transmitting messages to UI
     void logMessage(const QString text, const BlackChirp::LogMessageCode type=BlackChirp::LogNormal);
     void logMessageWithTime(const QString text, const BlackChirp::LogMessageCode type=BlackChirp::LogNormal, QDateTime t = QDateTime::currentDateTime());
-    void beginExperimentLog(const Experiment e);
+    void beginExperimentLog(int num, QString msg);
     void endExperimentLog();
     void experimentLogMessage(int num, QString text, BlackChirp::LogMessageCode type = BlackChirp::LogNormal, QString path = QString(""));
 

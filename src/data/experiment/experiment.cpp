@@ -1,6 +1,7 @@
 #include <data/experiment/experiment.h>
 
 #include <data/storage/blackchirpcsv.h>
+#include <data/storage/settingsstorage.h>
 
 #include <QApplication>
 #include <QDir>
@@ -11,7 +12,7 @@ Experiment::Experiment() : HeaderStorage(BC::Store::Exp::key)
 {
 }
 
-Experiment::Experiment(const int num, QString exptPath) : HeaderStorage(BC::Store::Exp::key)
+Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : HeaderStorage(BC::Store::Exp::key)
 {
     QDir d(BlackChirp::getExptDir(num,exptPath));
     if(!d.exists())
@@ -20,70 +21,45 @@ Experiment::Experiment(const int num, QString exptPath) : HeaderStorage(BC::Stor
     d_path = exptPath;
     d_iobCfg = IOBoardConfig(false);
 
+#pragma message("Add children for Experiment loading")
+
+
     QFile hdr(BlackChirp::getExptFile(num,BlackChirp::HeaderFile,exptPath));
     if(hdr.open(QIODevice::ReadOnly))
     {
         while(!hdr.atEnd())
         {
-            QString line = QString(hdr.readLine());
-            if(line.isEmpty())
+            auto l = hdr.readLine();
+            if(l.isEmpty())
                 continue;
 
-            QStringList l = line.split(QString("\t"));
-            if(l.size() < 2)
-                continue;
-
-            QString key = l.constFirst();
-            QVariant val = QVariant(l.at(1));
-
-            if(key.startsWith(QString("Ftmw")) || key.startsWith(QString("RfConfig")))
-                d_ftmwCfg.parseLine(key,val);
-
-
-            if(key.startsWith(QString("Flow")))
-                d_flowCfg.parseLine(key,val);
-
-            if(key.startsWith(QString("IOBoardConfig")))
-                d_iobCfg.parseLine(key,val);
-
-            if(key.startsWith(QString("PulseGen")))
-                d_pGenCfg.parseLine(key,val);
-
-#ifdef BC_LIF
-            if(key.startsWith(QString("Lif")))
-                d_lifCfg.parseLine(key,val);
-#endif
-
-#ifdef BC_MOTOR
-            if(key.startsWith(QString("Motor")))
-                d_motorScan.parseLine(key,val);
-#endif
-
-            if(key.startsWith(QString("AutosaveInterval")))
-                d_autoSaveShotsInterval = val.toInt();
-
-            if(key.startsWith(QString("AuxDataInterval")))
-                d_timeDataInterval = val.toInt();
+            auto list = QString(l).trimmed().split(',');
+            if(list.size() == 6)
+                storeLine(list);
         }
-
         hdr.close();
+        readComplete();
 
-        if(d_ftmwCfg.isEnabled())
+        if(!headerOnly)
         {
-            d_ftmwCfg.loadChirps(num,exptPath);
-            d_ftmwCfg.loadFids(num,exptPath);
-            d_ftmwCfg.loadClocks(num,exptPath);
-        }
+            if(d_ftmwCfg.isEnabled())
+            {
+#pragma message("What should be moved to header?")
+                d_ftmwCfg.loadChirps(num,exptPath);
+                d_ftmwCfg.loadFids(num,exptPath);
+                d_ftmwCfg.loadClocks(num,exptPath);
+            }
 
 #ifdef BC_LIF
-        if(d_lifCfg.isEnabled())
-            d_lifCfg.loadLifData(num,exptPath);
+            if(d_lifCfg.isEnabled())
+                d_lifCfg.loadLifData(num,exptPath);
 #endif
 
 #ifdef BC_MOTOR
-        if(d_motorScan.isEnabled())
-            d_motorScan.loadMotorData(num,exptPath);
+            if(d_motorScan.isEnabled())
+                d_motorScan.loadMotorData(num,exptPath);
 #endif
+        }
     }
     else
     {
@@ -171,11 +147,6 @@ Experiment::Experiment(const int num, QString exptPath) : HeaderStorage(BC::Stor
 Experiment::~Experiment()
 {
 
-}
-
-bool Experiment::isInitialized() const
-{
-    return d_isInitialized;
 }
 
 bool Experiment::isAborted() const
@@ -405,18 +376,62 @@ void Experiment::setAutoSaveShotsInterval(const int s)
     d_autoSaveShotsInterval = s;
 }
 
-void Experiment::setInitialized()
+bool Experiment::initialize()
 {
     bool initSuccess = true;
     d_startTime = QDateTime::currentDateTime();
+#pragma message("Add children to initialized experiment")
+
+
+    SettingsStorage s;
+
+    int num = s.get(BC::Key::exptNum,0)+1;
+    d_number = num;
+
+    if(ftmwConfig().isEnabled() && ftmwConfig().type() == BlackChirp::FtmwPeakUp)
+    {
+        d_number = -1;
+        d_startLogMessage = QString("Peak up mode started.");
+        d_endLogMessage = QString("Peak up mode ended.");
+        d_isDummy = true;
+//        saveToSettings();
+//        return true;
+    }
+    else
+    {
+        d_startLogMessage = QString("Starting experiment %1.").arg(num);
+        d_endLogMessage = QString("Experiment %1 complete.").arg(num);
+    }
+
+    if(!d_isDummy)
+    {
+        QDir d(BlackChirp::getExptDir(num));
+        if(d.exists())
+        {
+            d_errorString = QString("The directory %1 already exists. Update the experiment number or change the experiment path in program settings").arg(d.absolutePath());
+            return false;
+        }
+        if(!d.mkpath(d.absolutePath()))
+        {
+            d_errorString = QString("Could not create the directory %1 for saving.").arg(d.absolutePath());
+            return false;
+        }
+
+        //here we've created the directory, so update expt number even if something goes wrong
+        //one of the few cases where direct usage of QSettings is needed
+        QSettings set(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+        set.beginGroup(BC::Key::BC);
+        set.setValue(BC::Key::exptNum,num);
+        set.endGroup();
+    }
+
 
     if(d_ftmwCfg.isEnabled())
     {
         if(!d_ftmwCfg.initialize())
         {
             setErrorString(d_ftmwCfg.errorString());
-            d_isInitialized = false;
-            return;
+            return false;
         }
     }
 
@@ -431,47 +446,15 @@ void Experiment::setInitialized()
     }
 #endif
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    int num = s.value(QString("exptNum"),0).toInt()+1;
-    d_number = num;
-
-    if(ftmwConfig().isEnabled() && ftmwConfig().type() == BlackChirp::FtmwPeakUp)
-    {
-        d_number = -1;
-        d_startLogMessage = QString("Peak up mode started.");
-        d_endLogMessage = QString("Peak up mode ended.");
-        d_isDummy = true;
-        d_isInitialized = true;
-        saveToSettings();
-        return;
-    }
-    else
-    {
-        d_startLogMessage = QString("Starting experiment %1.").arg(num);
-        d_endLogMessage = QString("Experiment %1 complete.").arg(num);
-    }
-
-
-    QDir d(BlackChirp::getExptDir(num));
-    if(!d.exists())
-    {
-        initSuccess = d.mkpath(d.absolutePath());
-        if(!initSuccess)
-        {
-            d_isInitialized = false;
-            d_errorString = QString("Could not create the directory %1 for saving.").arg(d.absolutePath());
-            return;
-        }
-    }
 
     //write headers; chirps, etc
     //scan header
     if(!saveHeader())
     {
-        d_isInitialized = false;
+#pragma message("Update saving header")
         d_errorString = QString("Could not open the file %1 for writing.")
                 .arg(BlackChirp::getExptFile(d_number,BlackChirp::HeaderFile));
-        return;
+        return false;
     }
 
     //chirp file
@@ -479,31 +462,20 @@ void Experiment::setInitialized()
     {
         if(!saveChirpFile())
         {
-            d_isInitialized = false;
             d_errorString = QString("Could not open the file %1 for writing.")
                     .arg(BlackChirp::getExptFile(num,BlackChirp::ChirpFile));
-            return;
+            return false;
         }
 
         if(!saveClockFile())
         {
-            d_isInitialized = false;
             d_errorString = QString("Could not open the file %1 for writing.")
                     .arg(BlackChirp::getExptFile(num,BlackChirp::ClockFile));
-            return;
+            return false;
         }
     }
 
-
-    d_isInitialized = initSuccess;
-
-
-
-    if(initSuccess)
-    {
-        s.setValue(QString("exptNum"),d_number);
-        saveToSettings();
-    }
+    return true;
 
 }
 
@@ -978,6 +950,10 @@ void Experiment::snapshot(int snapNum, const Experiment other)
         return;
 
     saveHeader();
+
+    (void)snapNum;
+    (void)other;
+#pragma message("Implement snapshot")
 
 //    if(ftmwConfig().isEnabled())
 //    {

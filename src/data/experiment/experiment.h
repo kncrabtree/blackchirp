@@ -40,15 +40,15 @@ public:
     Experiment();
     Experiment(const Experiment &) = default;
     Experiment& operator=(const Experiment &) = default;
-    Experiment(const int num, QString exptPath = QString(""));
+    Experiment(const int num, QString exptPath = QString(""), bool headerOnly = false);
     ~Experiment();
 
-    bool isInitialized() const;
     bool isAborted() const;
     const FtmwConfig& ftmwConfig() const;
     PulseGenConfig pGenConfig() const;
     FlowConfig flowConfig() const;
     IOBoardConfig iobConfig() const;
+    bool isDummy() const { return d_isDummy; }
     bool isComplete() const;
     bool hardwareSuccess() const;
     QString errorString() const;
@@ -62,7 +62,7 @@ public:
 
     void setTimeDataInterval(const int t);
     void setAutoSaveShotsInterval(const int s);
-    void setInitialized();
+    bool initialize();
     void abort();
     void setFtmwConfig(const FtmwConfig cfg);
     void setFtmwEnabled(bool en = true);
@@ -134,7 +134,6 @@ private:
     bool d_isAborted{false};
     bool d_isDummy{false};
     bool d_hardwareSuccess{false};
-    bool d_isInitialized{false};
 
     FtmwConfig d_ftmwCfg;
     PulseGenConfig d_pGenCfg;
@@ -161,5 +160,6 @@ protected:
 };
 
 Q_DECLARE_METATYPE(Experiment)
+Q_DECLARE_METATYPE(std::shared_ptr<Experiment>)
 
 #endif // EXPERIMENT_H

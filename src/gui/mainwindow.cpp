@@ -69,6 +69,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->statusBar->addWidget(statusLabel);
 
     p_lh = new LogHandler();
+    connect(this,&MainWindow::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_lh,&LogHandler::sendLogMessage,ui->logTextEdit,&QTextEdit::append);
     connect(p_lh,&LogHandler::iconUpdate,this,&MainWindow::setLogIcon);
     connect(ui->ftViewWidget,&FtmwViewWidget::experimentLogMessage,p_lh,&LogHandler::experimentLogMessage);
@@ -173,7 +174,6 @@ MainWindow::MainWindow(QWidget *parent) :
     p_am = new AcquisitionManager();
     connect(p_am,&AcquisitionManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_am,&AcquisitionManager::statusMessage,statusLabel,&QLabel::setText);
-    connect(p_am,&AcquisitionManager::experimentInitialized,this,&MainWindow::experimentInitialized);
     connect(p_am,&AcquisitionManager::ftmwUpdateProgress,ui->ftmwProgressBar,&QProgressBar::setValue);
 //    connect(p_am,&AcquisitionManager::ftmwNumShots,ui->ftViewWidget,&FtmwViewWidget::updateShotsLabel);
     connect(ui->actionPause,&QAction::triggered,p_am,&AcquisitionManager::pause);
@@ -181,8 +181,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionAbort,&QAction::triggered,p_am,&AcquisitionManager::abort);
     connect(ui->ftViewWidget,&FtmwViewWidget::rollingAverageShotsChanged,p_am,&AcquisitionManager::changeRollingAverageShots);
     connect(ui->ftViewWidget,&FtmwViewWidget::rollingAverageReset,p_am,&AcquisitionManager::resetRollingAverage);
-    connect(p_am,&AcquisitionManager::newFtmwConfig,ui->ftViewWidget,&FtmwViewWidget::updateFtmw);
-    connect(p_am,&AcquisitionManager::newFidList,ui->ftViewWidget,&FtmwViewWidget::updateLiveFidList);
     connect(p_am,&AcquisitionManager::snapshotComplete,ui->ftViewWidget,&FtmwViewWidget::snapshotTaken);
     connect(p_am,&AcquisitionManager::doFinalSave,ui->ftViewWidget,&FtmwViewWidget::experimentComplete);
 
@@ -305,9 +303,9 @@ void MainWindow::startExperiment()
     if(p_batchThread->isRunning())
         return;
 
-    ExperimentWizard wiz(this);
-    wiz.experiment.setPulseGenConfig(ui->pulseConfigWidget->getConfig());
-    wiz.experiment.setFlowConfig(ui->gasControlWidget->getFlowConfig());
+    ExperimentWizard wiz(-1,this);
+    wiz.experiment->setPulseGenConfig(ui->pulseConfigWidget->getConfig());
+    wiz.experiment->setFlowConfig(ui->gasControlWidget->getFlowConfig());
 
 #ifdef BC_LIF
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
@@ -333,7 +331,16 @@ void MainWindow::quickStart()
     if(p_batchThread->isRunning())
         return;
 
-    Experiment e = Experiment::loadFromSettings();
+    SettingsStorage s;
+    int num = s.get(BC::Key::exptNum,0);
+    QString path = s.get(BC::Key::savePath,QString(""));
+    if(num < 1)
+    {
+        startExperiment();
+        return;
+    }
+
+    std::shared_ptr<Experiment> e = std::make_shared<Experiment>(num,path,true);
 #ifdef BC_LIF
     if(e.lifConfig().isEnabled())
     {
@@ -342,8 +349,8 @@ void MainWindow::quickStart()
         e.setLifConfig(lc);
     }
 #endif
-    e.setFlowConfig(ui->gasControlWidget->getFlowConfig());
-    e.setPulseGenConfig(ui->pulseConfigWidget->getConfig());
+    e->setFlowConfig(ui->gasControlWidget->getFlowConfig());
+    e->setPulseGenConfig(ui->pulseConfigWidget->getConfig());
 
     //create a popup summary of experiment.
     QuickExptDialog d(e,this);
@@ -370,11 +377,14 @@ void MainWindow::startSequence()
     if(ret == QDialog::Rejected)
         return;
 
-    Experiment exp;
+    std::shared_ptr<Experiment> exp;
+    SettingsStorage s;
+    int num = s.get(BC::Key::exptNum,0);
+    QString path = s.get(BC::Key::savePath,QString(""));
 
     if(ret == d.quickCode)
     {
-        Experiment e = Experiment::loadFromSettings();
+        exp = std::make_shared<Experiment>(num,path,true);
 #ifdef BC_LIF
         if(e.lifConfig().isEnabled())
         {
@@ -383,17 +393,15 @@ void MainWindow::startSequence()
             e.setLifConfig(lc);
         }
 #endif
-        e.setFlowConfig(ui->gasControlWidget->getFlowConfig());
-        e.setPulseGenConfig(ui->pulseConfigWidget->getConfig());
+        exp->setFlowConfig(ui->gasControlWidget->getFlowConfig());
+        exp->setPulseGenConfig(ui->pulseConfigWidget->getConfig());
 
         //create a popup summary of experiment.
-        QuickExptDialog qd(e,this);
+        QuickExptDialog qd(exp,this);
         int qeret = qd.exec();
 
         if(qeret == QDialog::Accepted)
-        {
-            exp = e;
-        }
+            ret = QDialog::Accepted;
         else if(qeret == qd.configureResult())
             ret = d.configureCode; //set ret to indicate that the experiment needs to be configured
         else if(qeret == QDialog::Rejected)
@@ -402,9 +410,9 @@ void MainWindow::startSequence()
 
     if(ret == d.configureCode)
     {
-        ExperimentWizard wiz(this);
-        wiz.experiment.setPulseGenConfig(ui->pulseConfigWidget->getConfig());
-        wiz.experiment.setFlowConfig(ui->gasControlWidget->getFlowConfig());
+        ExperimentWizard wiz(-1,this);
+        wiz.experiment->setPulseGenConfig(ui->pulseConfigWidget->getConfig());
+        wiz.experiment->setFlowConfig(ui->gasControlWidget->getFlowConfig());
 #ifdef BC_LIF
         connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
         connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
@@ -421,11 +429,7 @@ void MainWindow::startSequence()
     }
 
 
-    BatchSequence *bs = new BatchSequence();
-    bs->setExperiment(exp);
-    bs->setNumExperiments(d.get<int>(BC::Key::batchExperiments));
-    bs->setInterval(d.get<int>(BC::Key::batchInterval));
-    bs->setAutoExport(d.get<bool>(BC::Key::batchAutoExport));
+    BatchSequence *bs = new BatchSequence(exp,d.numExperiments(),d.interval());
     startBatch(bs);
 
 }
@@ -460,39 +464,42 @@ void MainWindow::batchComplete(bool aborted)
         configureUi(Idle);
 }
 
-void MainWindow::experimentInitialized(const Experiment exp)
+void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
 {   
-    if(!exp.isInitialized())
-		return;
+    SettingsStorage s;
+    ui->exptSpinBox->setValue(s.get<int>(BC::Key::exptNum));
 
-    if(exp.d_number > 0)
-        ui->exptSpinBox->setValue(exp.d_number);
+    if(!p_batchThread->isRunning())
+        return;
 
-    d_currentExptNum = exp.d_number;
+    if(!exp->hardwareSuccess())
+    {
+        emit logMessage(exp->errorString(),BlackChirp::LogError);
+        p_batchThread->quit();
+        return;
+    }
+
+    if(!exp->initialize())
+    {
+        emit logMessage(QString("Could not initialize experiment."),BlackChirp::LogError);
+        if(!exp->errorString().isEmpty())
+            emit logMessage(exp->errorString(),BlackChirp::LogError);
+        p_batchThread->quit();
+        return;
+    }
+
+    d_currentExptNum = exp->d_number;
 
     ui->ftmwProgressBar->setValue(0);
-    ui->ftViewWidget->prepareForExperiment(exp);
+    ui->ftViewWidget->prepareForExperiment(*exp);
+    ui->trackingViewWidget->initializeForExperiment();
 
-	if(exp.ftmwConfig().isEnabled())
+    if(exp->ftmwConfig().isEnabled())
 	{
-        switch(exp.ftmwConfig().type()) {
-        case BlackChirp::FtmwTargetShots:
-        case BlackChirp::FtmwLoScan:
-        case BlackChirp::FtmwDrScan:
-            ui->ftmwProgressBar->setRange(0,exp.ftmwConfig().targetShots());
-            break;
-        case BlackChirp::FtmwTargetTime:
-            ui->ftmwProgressBar->setRange(0,static_cast<int>(exp.d_startTime.secsTo(exp.ftmwConfig().targetTime())));
-            break;
-        case BlackChirp::FtmwPeakUp:
-            ui->ftmwProgressBar->setRange(0,exp.ftmwConfig().targetShots());
-            connect(ui->ftViewWidget,&FtmwViewWidget::rollingAverageShotsChanged,ui->ftmwProgressBar,&QProgressBar::setMaximum,Qt::UniqueConnection);
-            configureUi(Peaking);
-            break;
-        default:
-			ui->ftmwProgressBar->setRange(0,0);
-            break;
-        }
+        if(exp->ftmwConfig().indefinite())
+            ui->ftmwProgressBar->setRange(0,0);
+        else
+            ui->ftmwProgressBar->setRange(0,1000);
 	}
     else
     {
@@ -502,6 +509,7 @@ void MainWindow::experimentInitialized(const Experiment exp)
     }
 
 #ifdef BC_LIF
+#pragma message("Update LIF progress bar")
     p_lifProgressBar->setValue(0);
     p_lifDisplayWidget->prepareForExperiment(exp.lifConfig());
     if(exp.lifConfig().isEnabled())
@@ -523,20 +531,22 @@ void MainWindow::experimentInitialized(const Experiment exp)
     p_motorTab->setEnabled(exp.motorScan().isEnabled());
 #endif
 
-    if(exp.d_number > 0)
+    if(!exp->isDummy())
     {
         if(p_lh->thread() == thread())
-            p_lh->beginExperimentLog(exp);
+            p_lh->beginExperimentLog(exp->d_number,exp->d_startLogMessage);
         else
-            QMetaObject::invokeMethod(p_lh,"beginExperimentLog",Q_ARG(const Experiment,exp));
+            QMetaObject::invokeMethod(p_lh,[this,exp](){p_lh->beginExperimentLog(exp->d_number,exp->d_startLogMessage);});
     }
     else
     {
         if(p_lh->thread() == thread())
-            p_lh->logMessage(exp.startLogMessage(),BlackChirp::LogHighlight);
+            p_lh->logMessage(exp->d_startLogMessage,BlackChirp::LogHighlight);
         else
-            QMetaObject::invokeMethod(p_lh,"logMessage",Q_ARG(const QString,exp.startLogMessage()),Q_ARG(BlackChirp::LogMessageCode,BlackChirp::LogHighlight));
+            emit logMessage(exp->d_startLogMessage,BlackChirp::LogHighlight);
     }
+
+
 }
 
 void MainWindow::hardwareInitialized(bool success)
@@ -1008,7 +1018,7 @@ void MainWindow::startBatch(BatchManager *bm)
     connect(bm,&BatchManager::statusMessage,this,&MainWindow::statusMessage);
     connect(bm,&BatchManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(bm,&BatchManager::beginExperiment,p_lh,&LogHandler::endExperimentLog);
-    connect(bm,&BatchManager::beginExperiment,p_hwm,&HardwareManager::initializeExperiment);
+    connect(bm,&BatchManager::beginExperiment,[this,bm](){p_hwm->initializeExperiment(bm->currentExperiment());});
     connect(p_am,&AcquisitionManager::experimentComplete,bm,&BatchManager::experimentComplete);
     connect(p_am,&AcquisitionManager::experimentComplete,ui->ftViewWidget,&FtmwViewWidget::experimentComplete);
     connect(ui->actionAbort,&QAction::triggered,bm,&BatchManager::abort);
@@ -1022,7 +1032,7 @@ void MainWindow::startBatch(BatchManager *bm)
     connect(p_am,&AcquisitionManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated,Qt::UniqueConnection);
     connect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort,Qt::UniqueConnection);
 
-    ui->trackingViewWidget->initializeForExperiment();
+//    ui->trackingViewWidget->initializeForExperiment();
     configureUi(Acquiring);
     bm->moveToThread(p_batchThread);
     p_batchThread->start();

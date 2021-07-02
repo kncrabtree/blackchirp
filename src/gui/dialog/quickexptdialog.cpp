@@ -1,7 +1,7 @@
 #include <gui/dialog/quickexptdialog.h>
 #include "ui_quickexptdialog.h"
 
-QuickExptDialog::QuickExptDialog(Experiment e, QWidget *parent) :
+QuickExptDialog::QuickExptDialog(std::shared_ptr<Experiment> e, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::QuickExptDialog)
 {
@@ -14,35 +14,35 @@ QuickExptDialog::QuickExptDialog(Experiment e, QWidget *parent) :
     QString html;
 
     //generate summary text and insert header details into table widget
-    if(e.ftmwConfig().isEnabled())
+    if(e->ftmwConfig().isEnabled())
     {
         html.append(QString("<h1>FTMW settings</h1>"));
         html.append(QString("<ul>"));
-        if(e.ftmwConfig().type() == BlackChirp::FtmwTargetShots)
+        if(e->ftmwConfig().type() == BlackChirp::FtmwTargetShots)
         {
             html.append(QString("<li>Mode: Target Shots</li>"));
-            html.append(QString("<li>Shots: %1</li>").arg(e.ftmwConfig().targetShots()));
+            html.append(QString("<li>Shots: %1</li>").arg(e->ftmwConfig().targetShots()));
         }
-        else if(e.ftmwConfig().type() == BlackChirp::FtmwPeakUp)
+        else if(e->ftmwConfig().type() == BlackChirp::FtmwPeakUp)
         {
             html.append(QString("<li>Mode: Peak Up</li>"));
-            html.append(QString("<li>Shots: %1</li>").arg(e.ftmwConfig().targetShots()));
+            html.append(QString("<li>Shots: %1</li>").arg(e->ftmwConfig().targetShots()));
         }
-        else if(e.ftmwConfig().type() == BlackChirp::FtmwTargetTime)
+        else if(e->ftmwConfig().type() == BlackChirp::FtmwTargetTime)
         {
             html.append(QString("<li>Mode: Target Time</li>"));
-            html.append(QString("<li>End time: %1</li>").arg(e.ftmwConfig().targetTime().toString()));
+            html.append(QString("<li>End time: %1</li>").arg(e->ftmwConfig().targetTime().toString()));
         }
-        else if(e.ftmwConfig().type() == BlackChirp::FtmwForever)
+        else if(e->ftmwConfig().type() == BlackChirp::FtmwForever)
         {
             html.append(QString("<li>Mode: Forever</li>"));
         }
-        html.append(QString("<li>Chirps: %1</li>").arg(e.ftmwConfig().chirpConfig().numChirps()));
-        html.append(QString("<li>Sample rate: %1 GS/s</li>").arg(e.ftmwConfig().scopeConfig().d_sampleRate/1e9,0,'f',0));
-        html.append(QString("<li>Record length: %1</li>").arg(e.ftmwConfig().scopeConfig().d_recordLength));
-        if(e.ftmwConfig().chirpConfig().numChirps() > 1)
+        html.append(QString("<li>Chirps: %1</li>").arg(e->ftmwConfig().chirpConfig().numChirps()));
+        html.append(QString("<li>Sample rate: %1 GS/s</li>").arg(e->ftmwConfig().scopeConfig().d_sampleRate/1e9,0,'f',0));
+        html.append(QString("<li>Record length: %1</li>").arg(e->ftmwConfig().scopeConfig().d_recordLength));
+        if(e->ftmwConfig().chirpConfig().numChirps() > 1)
         {
-            html.append(QString("<li>Chirp spacing: %1 &mu;s</li>").arg(e.ftmwConfig().chirpConfig().chirpInterval(),0,'f',1));
+            html.append(QString("<li>Chirp spacing: %1 &mu;s</li>").arg(e->ftmwConfig().chirpConfig().chirpInterval(),0,'f',1));
         }
         html.append(QString("</ul>"));
     }
@@ -97,7 +97,8 @@ QuickExptDialog::QuickExptDialog(Experiment e, QWidget *parent) :
     ui->tableWidget->setEditTriggers(QTableWidget::NoEditTriggers);
     ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
 
-    auto header = e.headerMap();
+#pragma message("Update experiment summary")
+    auto header = e->headerMap();
     auto it = header.constBegin();
     ui->tableWidget->setRowCount(header.size());
     int i = 0;

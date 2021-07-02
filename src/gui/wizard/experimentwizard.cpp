@@ -21,9 +21,13 @@
 #include <modules/motor/gui/wizardmotorscanconfigpage.h>
 #endif
 
-ExperimentWizard::ExperimentWizard(QWidget *parent) :
-    QWizard(parent), experiment(Experiment::loadFromSettings())
+ExperimentWizard::ExperimentWizard(int num, QWidget *parent) :
+    QWizard(parent)
 {
+#pragma message("How to initialize from previous experiment?")
+    (void)num;
+    experiment = std::make_shared<Experiment>();
+
     setWindowTitle(QString("Experiment Setup"));
 
     auto startPage = new WizardStartPage(this);

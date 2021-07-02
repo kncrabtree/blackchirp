@@ -11,6 +11,7 @@
 
 namespace BC::Key {
 static const QString exptNum("exptNum");
+static const QString savePath("savePath");
 }
 
 namespace BlackChirp {

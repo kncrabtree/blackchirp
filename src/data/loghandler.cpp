@@ -93,11 +93,11 @@ void LogHandler::logMessageWithTime(const QString text, const BlackChirp::LogMes
     emit sendLogMessage(out);
 }
 
-void LogHandler::beginExperimentLog(const Experiment e)
+void LogHandler::beginExperimentLog(int num, QString msg)
 {
-    d_exptLog.setFileName(BlackChirp::getExptFile(e.d_number,BlackChirp::LogFile));
+    d_exptLog.setFileName(BlackChirp::getExptFile(num,BlackChirp::LogFile));
     d_exptLog.open(QIODevice::WriteOnly);
-    logMessage(e.startLogMessage(),BlackChirp::LogHighlight);
+    logMessage(msg,BlackChirp::LogHighlight);
 }
 
 void LogHandler::endExperimentLog()

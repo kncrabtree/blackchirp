@@ -58,6 +58,7 @@ public:
     void initializeHardware();
 
 signals:
+    void logMessage(const QString, BlackChirp::LogMessageCode);
     void startInit();
     void statusMessage(const QString);
     void closing();
@@ -68,7 +69,7 @@ public slots:
     void quickStart();
     void startSequence();
     void batchComplete(bool aborted);
-    void experimentInitialized(const Experiment exp);
+    void experimentInitialized(std::shared_ptr<Experiment> exp);
     void hardwareInitialized(bool success);
     void pauseUi();
     void resumeUi();

@@ -68,7 +68,7 @@ signals:
     void testComplete(QString,bool,QString);
     void beginAcquisition();
     void abortAcquisition();
-    void experimentInitialized(Experiment);
+    void experimentInitialized(std::shared_ptr<Experiment>);
     void endAcquisition();
     void timeData(const QList<QPair<QString,QVariant>>,bool plot,QDateTime t = QDateTime::currentDateTime());
 
@@ -131,7 +131,7 @@ public slots:
 
     void sleep(bool b);
 
-    void initializeExperiment(Experiment exp);
+    void initializeExperiment(std::shared_ptr<Experiment> exp);
 
     void testAll();
     void testObjectConnection(const QString type, const QString key);

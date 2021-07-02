@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
     lockFile.setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner|QFileDevice::ReadGroup|QFileDevice::ReadOther);
     lockFile.close();
 
-    qRegisterMetaType<Experiment>("Experiment");
+    qRegisterMetaType<std::shared_ptr<Experiment>>();
     qRegisterMetaType<Fid>("Fid");
     qRegisterMetaType<FidList>("FidList");
     qRegisterMetaType<FtWorker::FidProcessingSettings>("FtWorker::FidProcessingSettings");

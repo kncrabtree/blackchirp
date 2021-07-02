@@ -263,26 +263,30 @@ void HardwareManager::sleep(bool b)
     }
 }
 
-void HardwareManager::initializeExperiment(Experiment exp)
+void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
 {
     //do initialization
-    bool success = p_clockManager->prepareForExperiment(exp);
+    bool success = p_clockManager->prepareForExperiment(*exp);
 
     if(success) {
         for(int i=0;i<d_hardwareList.size();i++)
         {
             HardwareObject *obj = d_hardwareList.at(i);
             if(obj->thread() != thread())
-                QMetaObject::invokeMethod(obj,"prepareForExperiment",Qt::BlockingQueuedConnection,Q_RETURN_ARG(bool,success),Q_ARG(Experiment &,exp));
+                QMetaObject::invokeMethod(obj,[obj,exp](){
+                    return obj->prepareForExperiment(*exp);
+                },Qt::BlockingQueuedConnection,&success);
             else
-                success = obj->prepareForExperiment(exp);
+                success = obj->prepareForExperiment(*exp);
 
             if(!success)
                 break;
         }
     }
 
-    //any additional synchronous initialization can be performed here
+    //any additional synchronous initialization can be performed here, before experimentInitialized() is emitted
+
+
     emit experimentInitialized(exp);
 
 }
@@ -295,7 +299,7 @@ void HardwareManager::testAll()
         if(obj->thread() == thread())
             obj->bcTestConnection();
         else
-            QMetaObject::invokeMethod(obj,"bcTestConnection");
+            QMetaObject::invokeMethod(obj,[obj](){obj->bcTestConnection();});
     }
 
     checkStatus();
@@ -317,7 +321,7 @@ void HardwareManager::testObjectConnection(const QString type, const QString key
         if(obj->thread() == thread())
             obj->bcTestConnection();
         else
-            QMetaObject::invokeMethod(obj,"bcTestConnection");
+            QMetaObject::invokeMethod(obj,[obj](){obj->bcTestConnection();});
     }
 }
 
@@ -329,7 +333,7 @@ void HardwareManager::getTimeData()
         if(obj->thread() == thread())
             obj->bcReadTimeData();
         else
-            QMetaObject::invokeMethod(obj,"bcReadTimeData");
+            QMetaObject::invokeMethod(obj,[obj](){obj->bcReadTimeData();});
     }
 }
 

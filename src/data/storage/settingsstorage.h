@@ -7,6 +7,10 @@
 #include <QSettings>
 #include <QCoreApplication>
 
+namespace BC::Key {
+static const QString BC("Blackchirp");
+}
+
 /*!
  * \brief The SettingsStorage class manages persistent settings (through QSettings)
  *

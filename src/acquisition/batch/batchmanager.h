@@ -16,17 +16,18 @@ public:
         Sequence
     };
 
+    virtual std::shared_ptr<Experiment> currentExperiment() =0;
     explicit BatchManager(BatchType b);
     virtual ~BatchManager();
 
 signals:
     void statusMessage(QString);
     void logMessage(QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal);
-    void beginExperiment(Experiment);
+    void beginExperiment();
     void batchComplete(bool aborted);
 
 public slots:
-    void experimentComplete(const Experiment exp);
+    void experimentComplete();
     virtual void beginNextExperiment();
 
     //NOTE: Abort is only used if user wants to stop _between_ experiments.
@@ -37,8 +38,7 @@ protected:
     BatchType d_type;
 
     virtual void writeReport() =0;
-    virtual void processExperiment(const Experiment exp) =0;
-    virtual Experiment nextExperiment() =0;
+    virtual void processExperiment() =0;
     virtual bool isComplete() =0;
 };
 

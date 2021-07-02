@@ -11,33 +11,35 @@ BatchManager::~BatchManager()
 
 }
 
-void BatchManager::experimentComplete(const Experiment exp)
+void BatchManager::experimentComplete()
 {
-    if(!exp.errorString().isEmpty())
-        emit logMessage(exp.errorString(),BlackChirp::LogError);
+    auto exp = currentExperiment();
+    if(!exp->errorString().isEmpty())
+        emit logMessage(exp->errorString(),BlackChirp::LogError);
 
-    if(!exp.isInitialized() || !exp.hardwareSuccess())
-    {
-        writeReport();
-        emit batchComplete(true);
-        return;
-    }
+    //as of v1.0 these conditions are not possible I think
+//    if(!exp->isInitialized() || !exp->hardwareSuccess())
+//    {
+//        writeReport();
+//        emit batchComplete(true);
+//        return;
+//    }
 
-    emit logMessage(exp.endLogMessage(),exp.endLogMessageCode());
+    emit logMessage(exp->endLogMessage(),exp->endLogMessageCode());
 
-    processExperiment(exp);
-    if(!exp.isAborted() && !isComplete())
+    processExperiment();
+    if(!exp->isAborted() && !isComplete())
         beginNextExperiment();
     else
     {
         writeReport();
-        emit batchComplete(exp.isAborted());
+        emit batchComplete(exp->isAborted());
     }
 
 }
 
 void BatchManager::beginNextExperiment()
 {
-    emit beginExperiment(nextExperiment());
+    emit beginExperiment();
 }
 
