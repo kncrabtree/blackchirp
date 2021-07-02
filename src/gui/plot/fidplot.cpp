@@ -93,7 +93,7 @@ void FidPlot::receiveProcessedFid(const QVector<QPointF> d)
 
 void FidPlot::prepareForExperiment(const Experiment e)
 {     
-    FtmwConfig c = e.ftmwConfig();
+    auto &c = e.ftmwConfig();
     p_curve->setCurveData(QVector<QPointF>());
 
     if(!c.isEnabled())

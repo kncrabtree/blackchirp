@@ -35,7 +35,7 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
 
     QVBoxLayout *vbl = new QVBoxLayout;
 
-    if(d_experiment.number() < 1)
+    if(d_experiment.d_number < 1)
     {
         QLabel *errLabel = new QLabel(d_experiment.errorString());
         errLabel->setAlignment(Qt::AlignCenter);
@@ -102,7 +102,7 @@ QSize ExperimentViewWidget::sizeHint() const
 
 void ExperimentViewWidget::ftmwFinalized(int num)
 {
-    if(num == d_experiment.number())
+    if(num == d_experiment.d_number)
     {
         p_tabWidget->removeTab(0);
         p_tabWidget->insertTab(0,buildHeaderWidget(),QIcon(QString(":/icons/header.png")),QString("Header"));
@@ -263,7 +263,7 @@ QWidget *ExperimentViewWidget::buildLogWidget(QString path)
     vbl->addWidget(te);
     log->setLayout(vbl);
 
-    QFile f(BlackChirp::getExptFile(d_experiment.number(),BlackChirp::LogFile,path));
+    QFile f(BlackChirp::getExptFile(d_experiment.d_number,BlackChirp::LogFile,path));
     if(f.open(QIODevice::ReadOnly))
     {
         while(!f.atEnd())

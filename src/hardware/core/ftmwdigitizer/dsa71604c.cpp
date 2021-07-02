@@ -95,7 +95,8 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     if(!d_enabledForExperiment)
         return true;
 
-    BlackChirp::FtmwScopeConfig config(exp.ftmwConfig().scopeConfig());
+    static_cast<FtmwDigitizerConfig>(*this) = exp.ftmwConfig().scopeConfig();
+
     disconnect(p_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform);
 
     //disable ugly headers
@@ -107,7 +108,7 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     }
 
     //write data transfer commands
-    if(!p_comm->writeCmd(QString(":DATA:SOURCE CH%1;START 1;STOP 1E12\n").arg(config.fidChannel)))
+    if(!p_comm->writeCmd(QString(":DATA:SOURCE CH%1;START 1;STOP 1E12\n").arg(d_fidChannel)))
     {
         emit logMessage(QString("Could not write :DATA commands."),BlackChirp::LogError);
         exp.setHardwareFailed();

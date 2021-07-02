@@ -259,8 +259,8 @@ void WizardStartPage::initializePage()
 
     ///TODO: use chirp offset!
 
-    p_snapshotBox->setValue(e->autoSaveShots());
-    p_auxDataIntervalBox->setValue(e->timeDataInterval());
+    p_snapshotBox->setValue(e->d_autoSaveShotsInterval);
+    p_auxDataIntervalBox->setValue(e->d_timeDataInterval);
 
     configureUI();
 }

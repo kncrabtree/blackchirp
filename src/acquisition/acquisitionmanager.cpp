@@ -76,13 +76,13 @@ void AcquisitionManager::beginExperiment(Experiment exp)
     d_state = Acquiring;
     emit statusMessage(QString("Acquiring"));
 
-    if(d_currentExperiment.timeDataInterval() > 0)
+    if(d_currentExperiment.d_timeDataInterval > 0)
     {
         if(d_timeDataTimer == nullptr)
             d_timeDataTimer = new QTimer(this);
         getTimeData();
         connect(d_timeDataTimer,&QTimer::timeout,this,&AcquisitionManager::getTimeData,Qt::UniqueConnection);
-        d_timeDataTimer->start(d_currentExperiment.timeDataInterval()*1000);
+        d_timeDataTimer->start(d_currentExperiment.d_timeDataInterval*1000);
     }
     emit beginAcquisition();
 
@@ -165,7 +165,7 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 
         if(d_currentExperiment.ftmwConfig().type() == BlackChirp::FtmwTargetTime)
         {
-            qint64 elapsedSecs = d_currentExperiment.startTime().secsTo(QDateTime::currentDateTime());
+            qint64 elapsedSecs = d_currentExperiment.d_startTime.secsTo(QDateTime::currentDateTime());
             emit ftmwUpdateProgress(elapsedSecs);
         }
         else
@@ -298,7 +298,7 @@ void AcquisitionManager::abort()
 {
     if(d_state == Paused || d_state == Acquiring)
     {
-        d_currentExperiment.setAborted();
+        d_currentExperiment.abort();
         //save!
 #ifdef BC_MOTOR
         if(d_currentExperiment.motorScan().isEnabled())
@@ -399,7 +399,7 @@ void AcquisitionManager::finishAcquisition()
     d_timeDataTimer->stop();
 
     emit doFinalSave(d_currentExperiment);
-    emit statusMessage(QString("Saving experiment %1").arg(d_currentExperiment.number()));
+    emit statusMessage(QString("Saving experiment %1").arg(d_currentExperiment.d_number));
 }
 
 bool AcquisitionManager::calculateShift(const QByteArray b)

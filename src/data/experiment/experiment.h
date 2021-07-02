@@ -43,14 +43,9 @@ public:
     Experiment(const int num, QString exptPath = QString(""));
     ~Experiment();
 
-    int number() const;
-    QDateTime startTime() const;
-    int timeDataInterval() const;
-    int autoSaveShots() const;
     bool isInitialized() const;
     bool isAborted() const;
-    bool isDummy() const;
-    FtmwConfig ftmwConfig() const;
+    const FtmwConfig& ftmwConfig() const;
     PulseGenConfig pGenConfig() const;
     FlowConfig flowConfig() const;
     IOBoardConfig iobConfig() const;
@@ -68,14 +63,15 @@ public:
     void setTimeDataInterval(const int t);
     void setAutoSaveShotsInterval(const int s);
     void setInitialized();
-    void setAborted();
-    void setDummy();
+    void abort();
     void setFtmwConfig(const FtmwConfig cfg);
     void setFtmwEnabled(bool en = true);
     void setScopeConfig(const FtmwDigitizerConfig &cfg);
     void setRfConfig(const RfConfig cfg);
     void setIOBoardConfig(const IOBoardConfig cfg);
+#ifdef BC_CUDA
     bool setFidsData(const QVector<QVector<qint64> > l);
+#endif
     bool addFids(const QByteArray newData, int shift = 0);
     void overrideTargetShots(const int target);
     void resetFids();
@@ -124,20 +120,21 @@ public:
     void saveToSettings() const;
     static Experiment loadFromSettings();
 
-private:
     int d_number{0};
     QDateTime d_startTime;
     int d_timeDataInterval{300};
     int d_autoSaveShotsInterval{10000};
-    quint64 d_lastSnapshot{0};
-    bool d_isInitialized{false};
-    bool d_isAborted{false};
-    bool d_isDummy{false};
-    bool d_hardwareSuccess{false};
     QString d_errorString;
     QString d_startLogMessage;
     QString d_endLogMessage;
     BlackChirp::LogMessageCode d_endLogMessageCode{BlackChirp::LogNormal};
+
+private:
+    quint64 d_lastSnapshot{0};
+    bool d_isAborted{false};
+    bool d_isDummy{false};
+    bool d_hardwareSuccess{false};
+    bool d_isInitialized{false};
 
     FtmwConfig d_ftmwCfg;
     PulseGenConfig d_pGenCfg;

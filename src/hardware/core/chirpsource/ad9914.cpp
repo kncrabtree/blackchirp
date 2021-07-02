@@ -241,9 +241,7 @@ bool AD9914::prepareForExperiment(Experiment &exp)
 //    }
 
     rfc.setChirpConfig(cc);
-    auto ftmwc = exp.ftmwConfig();
-    ftmwc.setRfConfig(rfc);
-    exp.setFtmwConfig(ftmwc);
+    exp.setRfConfig(rfc);
 
     return true;
 

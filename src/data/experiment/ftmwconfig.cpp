@@ -81,7 +81,7 @@ QDateTime FtmwConfig::targetTime() const
 //    return d_multiFidStorage;
 //}
 
-FtmwDigitizerConfig FtmwConfig::scopeConfig() const
+const FtmwDigitizerConfig& FtmwConfig::scopeConfig() const
 {
     return d_scopeConfig;
 }

@@ -173,26 +173,6 @@ Experiment::~Experiment()
 
 }
 
-int Experiment::number() const
-{
-    return d_number;
-}
-
-QDateTime Experiment::startTime() const
-{
-    return d_startTime;
-}
-
-int Experiment::timeDataInterval() const
-{
-    return d_timeDataInterval;
-}
-
-int Experiment::autoSaveShots() const
-{
-    return d_autoSaveShotsInterval;
-}
-
 bool Experiment::isInitialized() const
 {
     return d_isInitialized;
@@ -203,12 +183,7 @@ bool Experiment::isAborted() const
     return d_isAborted;
 }
 
-bool Experiment::isDummy() const
-{
-    return d_isDummy;
-}
-
-FtmwConfig Experiment::ftmwConfig() const
+const FtmwConfig &Experiment::ftmwConfig() const
 {
     return d_ftmwCfg;
 }
@@ -526,18 +501,18 @@ void Experiment::setInitialized()
 
     if(initSuccess)
     {
-        s.setValue(QString("exptNum"),number());
+        s.setValue(QString("exptNum"),d_number);
         saveToSettings();
     }
 
 }
 
-void Experiment::setAborted()
+void Experiment::abort()
 {
     d_isAborted = true;
     if(ftmwConfig().isEnabled() && (ftmwConfig().type() == BlackChirp::FtmwTargetShots || ftmwConfig().type() == BlackChirp::FtmwTargetTime ))
     {
-        d_endLogMessage = QString("Experiment %1 aborted.").arg(number());
+        d_endLogMessage = QString("Experiment %1 aborted.").arg(d_number);
         d_endLogMessageCode = BlackChirp::LogError;
     }
 #ifdef BC_LIF
@@ -556,11 +531,6 @@ void Experiment::setAborted()
     }
 #endif
 
-}
-
-void Experiment::setDummy()
-{
-    d_isDummy = true;
 }
 
 void Experiment::setFtmwConfig(const FtmwConfig cfg)
@@ -588,6 +558,7 @@ void Experiment::setIOBoardConfig(const IOBoardConfig cfg)
     d_iobCfg = cfg;
 }
 
+#ifdef BC_CUDA
 bool Experiment::setFidsData(const QVector<QVector<qint64> > l)
 {
     if(!d_ftmwCfg.setFidsData(l))
@@ -598,6 +569,7 @@ bool Experiment::setFidsData(const QVector<QVector<qint64> > l)
 
     return true;
 }
+#endif
 
 bool Experiment::addFids(const QByteArray newData, int shift)
 {
@@ -1056,8 +1028,8 @@ void Experiment::saveToSettings() const
         d_motorScan.saveToSettings();
 #endif
 
-    s.setValue(QString("autoSaveShots"),autoSaveShots());
-    s.setValue(QString("auxDataInterval"),timeDataInterval());
+    s.setValue(QString("autoSaveShots"),d_autoSaveShotsInterval);
+    s.setValue(QString("auxDataInterval"),d_timeDataInterval);
 
     d_iobCfg.saveToSettings();
 

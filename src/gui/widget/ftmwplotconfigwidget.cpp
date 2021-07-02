@@ -136,7 +136,7 @@ void FtmwPlotConfigWidget::prepareForExperiment(const Experiment e)
 {
     blockSignals(true);
 
-    d_num = e.number();
+    d_num = e.d_number;
 
     p_lw->clear();
 

@@ -465,10 +465,10 @@ void MainWindow::experimentInitialized(const Experiment exp)
     if(!exp.isInitialized())
 		return;
 
-    if(exp.number() > 0)
-        ui->exptSpinBox->setValue(exp.number());
+    if(exp.d_number > 0)
+        ui->exptSpinBox->setValue(exp.d_number);
 
-    d_currentExptNum = exp.number();
+    d_currentExptNum = exp.d_number;
 
     ui->ftmwProgressBar->setValue(0);
     ui->ftViewWidget->prepareForExperiment(exp);
@@ -482,7 +482,7 @@ void MainWindow::experimentInitialized(const Experiment exp)
             ui->ftmwProgressBar->setRange(0,exp.ftmwConfig().targetShots());
             break;
         case BlackChirp::FtmwTargetTime:
-            ui->ftmwProgressBar->setRange(0,static_cast<int>(exp.startTime().secsTo(exp.ftmwConfig().targetTime())));
+            ui->ftmwProgressBar->setRange(0,static_cast<int>(exp.d_startTime.secsTo(exp.ftmwConfig().targetTime())));
             break;
         case BlackChirp::FtmwPeakUp:
             ui->ftmwProgressBar->setRange(0,exp.ftmwConfig().targetShots());
@@ -523,7 +523,7 @@ void MainWindow::experimentInitialized(const Experiment exp)
     p_motorTab->setEnabled(exp.motorScan().isEnabled());
 #endif
 
-    if(exp.number() > 0)
+    if(exp.d_number > 0)
     {
         if(p_lh->thread() == thread())
             p_lh->beginExperimentLog(exp);

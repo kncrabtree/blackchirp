@@ -90,7 +90,7 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
     if(!d_enabledForExperiment)
         return true;
 
-    BlackChirp::FtmwScopeConfig config(exp.ftmwConfig().scopeConfig());
+    static_cast<FtmwDigitizerConfig>(*this) = exp.ftmwConfig().scopeConfig();
     disconnect(p_socket,&QTcpSocket::readyRead,this,&MSO72004C::readWaveform);
 
     //disable ugly headers

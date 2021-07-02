@@ -44,7 +44,7 @@ public:
     QDateTime targetTime() const;
 //    QVector<qint64> rawFidList() const;
 //    QList<FidList> multiFidList() const;
-    FtmwDigitizerConfig scopeConfig() const;
+    const FtmwDigitizerConfig &scopeConfig() const;
     RfConfig rfConfig() const;
     ChirpConfig chirpConfig(int num = 0) const;
     Fid fidTemplate() const;

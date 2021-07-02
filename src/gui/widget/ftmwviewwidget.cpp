@@ -112,7 +112,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
     if(config.type() == BlackChirp::FtmwPeakUp)
         ui->exptLabel->setText(QString("Peak Up Mode"));
     else
-        ui->exptLabel->setText(QString("Experiment %1").arg(e.number()));
+        ui->exptLabel->setText(QString("Experiment %1").arg(e.d_number));
 
 
     if(p_pfw != nullptr)
@@ -164,7 +164,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment e)
         ws.thread->start();
         d_workersStatus.insert(d_liveId,ws);
 
-        d_currentExptNum = e.number();
+        d_currentExptNum = e.d_number;
 
         ui->verticalLayout->setStretch(0,1);
         ui->liveFidPlot->show();
@@ -636,7 +636,7 @@ void FtmwViewWidget::snapshotsFinalized(const FtmwConfig out)
     Experiment e(d_currentExptNum,d_path);
     qint64 oldNum = e.ftmwConfig().completedShots();
     e.finalizeFtmwSnapshots(out);
-    emit experimentLogMessage(e.number(),QString("Finalized snapshots. Old completed shots: %1. New completed shots: %2").arg(oldNum).arg(e.ftmwConfig().completedShots()));
+    emit experimentLogMessage(e.d_number,QString("Finalized snapshots. Old completed shots: %1. New completed shots: %2").arg(oldNum).arg(e.ftmwConfig().completedShots()));
 
     ui->shotsLabel->setText(d_shotsString.arg(e.ftmwConfig().completedShots()));
 

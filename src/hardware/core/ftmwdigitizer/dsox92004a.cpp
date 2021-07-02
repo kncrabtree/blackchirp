@@ -64,7 +64,7 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
     if(!d_enabledForExperiment)
         return true;
 
-    auto config = exp.ftmwConfig().scopeConfig();
+    static_cast<FtmwDigitizerConfig>(*this) = exp.ftmwConfig().scopeConfig();
 
     //disable ugly headers
     if(!scopeCommand(QString("*RST;:SYSTEM:HEADER OFF")))
