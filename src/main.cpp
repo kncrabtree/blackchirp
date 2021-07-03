@@ -218,7 +218,11 @@ int main(int argc, char *argv[])
 #endif
 
     MainWindow w;
-    QApplication::connect(ls,&QLocalServer::newConnection,&w,&MainWindow::raise);
+    QApplication::connect(ls,&QLocalServer::newConnection,[&w](){
+        w.raise();
+        w.setWindowState(Qt::WindowMaximized|Qt::WindowActive);
+    });
+
     w.showMaximized();
     w.initializeHardware();
     int ret = a.exec();
