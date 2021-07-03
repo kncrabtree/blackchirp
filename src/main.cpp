@@ -8,6 +8,9 @@
 #include <QDir>
 #include <QProcessEnvironment>
 #include <gsl/gsl_errno.h>
+#include <QSharedMemory>
+#include <QLocalServer>
+#include <QLocalSocket>
 
 #ifdef Q_OS_UNIX
 #include <sys/stat.h>
@@ -25,14 +28,65 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     a.setFont(QFont(QString("sans-serif"),8));
 
+
     //QSettings information
     const QString appName = QString("BlackChirp");
+
+    QSharedMemory *m;
+    QLocalServer *ls;
+    struct Mem {
+        char name[32];
+    };
+
+#ifdef Q_OS_UNIX
+    //This will delete the shared memory if Blackchirp crashed last time
+    m = new QSharedMemory(appName);
+    m->attach();
+    delete m;
+#endif
+    m = new QSharedMemory(appName);
+    if(m->create(sizeof(Mem)))
+    {
+        if(!m->lock())
+        {
+            delete m;
+            return -255;
+        }
+
+        auto mem = static_cast<Mem*>(m->data());
+        sprintf(mem->name,"Blackchirp");
+
+        QLocalServer::removeServer(appName);
+        ls = new QLocalServer;
+        ls->setSocketOptions(QLocalServer::WorldAccessOption);
+        ls->listen(appName);
+        m->unlock();
+    }
+    else
+    {
+        if(m->error() == QSharedMemory::AlreadyExists)
+        {
+            auto socket = new QLocalSocket;
+            socket->connectToServer(appName);
+            socket->waitForConnected(1000);
+            delete m;
+            delete socket;
+            return 0;
+        }
+    }
+
+
     const QString lockFileName = QString("lock_blackchirp.lock");
+
 #ifdef Q_OS_MSDOS
     QString appDataPath = QString("c:/data");
 #else
     QString appDataPath = QString("/home/data");
 #endif
+    QApplication::setApplicationName(appName);
+    QApplication::setOrganizationDomain(QString("crabtreelab.ucdavis.edu"));
+    QApplication::setOrganizationName(QString("CrabtreeLab"));
+    QSettings::setPath(QSettings::NativeFormat,QSettings::SystemScope,appDataPath);
 
     QProcessEnvironment se = QProcessEnvironment::systemEnvironment();
     if(se.contains(QString("BC_DATADIR")))
@@ -43,11 +97,6 @@ int main(int argc, char *argv[])
 
         appDataPath = ad;
     }
-
-    QApplication::setApplicationName(appName);
-    QApplication::setOrganizationDomain(QString("crabtreelab.ucdavis.edu"));
-    QApplication::setOrganizationName(QString("CrabtreeLab"));
-    QSettings::setPath(QSettings::NativeFormat,QSettings::SystemScope,appDataPath);
     const QString lockFilePath = QString("%1/%2").arg(appDataPath).arg(QApplication::organizationName());
 
     //test to make sure data path is writable
@@ -91,49 +140,49 @@ int main(int argc, char *argv[])
     incompatibleApps.append(qMakePair(QString("lock_qtftm.lock"),QString("QtFTM")));
 
 
-    QFile lockFile;
-    for(int i=0;i<incompatibleApps.size();i++)
-    {
-        QString title = incompatibleApps.at(i).second;
-        QString fileName;
-        if(incompatibleApps.at(i).first.startsWith(QString("!")))
-            fileName = incompatibleApps.at(i).first.mid(1);
-        else
-            fileName = QString("%1/%2").arg(lockFilePath).arg(incompatibleApps.at(i).first);
+//    QFile lockFile;
+//    for(int i=0;i<incompatibleApps.size();i++)
+//    {
+//        QString title = incompatibleApps.at(i).second;
+//        QString fileName;
+//        if(incompatibleApps.at(i).first.startsWith(QString("!")))
+//            fileName = incompatibleApps.at(i).first.mid(1);
+//        else
+//            fileName = QString("%1/%2").arg(lockFilePath).arg(incompatibleApps.at(i).first);
 
-        lockFile.setFileName(fileName);
-        qint64 pid = 0;
-        bool ok = false;
-        if(lockFile.exists())
-        {
-            QString uName = QFileInfo(lockFile).owner();
+//        lockFile.setFileName(fileName);
+//        qint64 pid = 0;
+//        bool ok = false;
+//        if(lockFile.exists())
+//        {
+//            QString uName = QFileInfo(lockFile).owner();
 
-            if(lockFile.open(QIODevice::ReadOnly))
-                pid = lockFile.readLine().trimmed().toInt(&ok);
+//            if(lockFile.open(QIODevice::ReadOnly))
+//                pid = lockFile.readLine().trimmed().toInt(&ok);
 
-            if(!ok)
-                QMessageBox::critical(nullptr,QString("%1 Error").arg(appName),QString("An instance of %1 is running as user %2, and it must be closed before %3 be started.\n\nIf you are sure no other instance is running, delete the lock file (%4) and restart.").arg(title).arg(uName).arg(appName).arg(fileName));
-            else
-                QMessageBox::critical(nullptr,QString("%1 Error").arg(appName),QString("An instance of %1 is running under PID %2 as user %3, and it must be closed before %4 can be started.\n\nIf process %2 has been terminated, delete the lock file (%5) and restart.").arg(title).arg(pid).arg(uName).arg(appName).arg(fileName));
+//            if(!ok)
+//                QMessageBox::critical(nullptr,QString("%1 Error").arg(appName),QString("An instance of %1 is running as user %2, and it must be closed before %3 be started.\n\nIf you are sure no other instance is running, delete the lock file (%4) and restart.").arg(title).arg(uName).arg(appName).arg(fileName));
+//            else
+//                QMessageBox::critical(nullptr,QString("%1 Error").arg(appName),QString("An instance of %1 is running under PID %2 as user %3, and it must be closed before %4 can be started.\n\nIf process %2 has been terminated, delete the lock file (%5) and restart.").arg(title).arg(pid).arg(uName).arg(appName).arg(fileName));
 
-            if(lockFile.isOpen())
-                lockFile.close();
+//            if(lockFile.isOpen())
+//                lockFile.close();
 
-            return -1;
-        }
-    }
+//            return -1;
+//        }
+//    }
 
-    QString fileName = QString("%1/%2").arg(lockFilePath).arg(lockFileName);
-    lockFile.setFileName(fileName);
+//    QString fileName = QString("%1/%2").arg(lockFilePath).arg(lockFileName);
+//    lockFile.setFileName(fileName);
 
-    if(!lockFile.open(QIODevice::WriteOnly))
-    {
-        QMessageBox::critical(nullptr,QString("%1 Error").arg(appName),QString("Could not write lock file to %1. Ensure this location has write permissions enabled for your user.").arg(fileName));
-        return -1;
-    }
-    lockFile.write(QString("%1\n\nStarted by user %2 at %3.").arg(a.applicationPid()).arg(QFileInfo(lockFile).owner()).arg(QDateTime::currentDateTime().toString(Qt::ISODate)).toLatin1());
-    lockFile.setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner|QFileDevice::ReadGroup|QFileDevice::ReadOther);
-    lockFile.close();
+//    if(!lockFile.open(QIODevice::WriteOnly))
+//    {
+//        QMessageBox::critical(nullptr,QString("%1 Error").arg(appName),QString("Could not write lock file to %1. Ensure this location has write permissions enabled for your user.").arg(fileName));
+//        return -1;
+//    }
+//    lockFile.write(QString("%1\n\nStarted by user %2 at %3.").arg(a.applicationPid()).arg(QFileInfo(lockFile).owner()).arg(QDateTime::currentDateTime().toString(Qt::ISODate)).toLatin1());
+//    lockFile.setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner|QFileDevice::ReadGroup|QFileDevice::ReadOther);
+//    lockFile.close();
 
     qRegisterMetaType<std::shared_ptr<Experiment>>();
     qRegisterMetaType<Fid>("Fid");
@@ -169,9 +218,12 @@ int main(int argc, char *argv[])
 #endif
 
     MainWindow w;
+    QApplication::connect(ls,&QLocalServer::newConnection,&w,&MainWindow::raise);
     w.showMaximized();
     w.initializeHardware();
     int ret = a.exec();
-    lockFile.remove();
+//    lockFile.remove();
+    delete m;
+    delete ls;
     return ret;
 }
