@@ -31,8 +31,13 @@ bool FidSingleStorage::addFids(const FidList other, int shift)
     if(other.size() != d_currentFidList.size())
         return false;
 
-    for(int i=0; i<d_currentFidList.size(); i++)
-        d_currentFidList[i].add(other.at(i),shift);
+    if(d_currentFidList.constFirst().size() == 0)
+        d_currentFidList = other;
+    else
+    {
+        for(int i=0; i<d_currentFidList.size(); i++)
+            d_currentFidList[i].add(other.at(i),shift);
+    }
 
     return true;
 }
@@ -69,8 +74,4 @@ FidList FidSingleStorage::getCurrentFidList()
 int FidSingleStorage::getCurrentIndex()
 {
     return 0;
-}
-
-void FidSingleStorage::reset()
-{
 }

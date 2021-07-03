@@ -1,37 +1,38 @@
-#ifndef FIDSINGLESTORAGE_H
-#define FIDSINGLESTORAGE_H
-
-#include <QMutex>
+#ifndef FIDPEAKUPSTORAGE_H
+#define FIDPEAKUPSTORAGE_H
 
 #include <data/storage/fidstoragebase.h>
+#include <QMutex>
 
-class FidSingleStorage : public FidStorageBase
+
+class FidPeakUpStorage : public FidStorageBase
 {
 public:
-    FidSingleStorage(const QString path, int numRecords=1);
-    ~FidSingleStorage();
+    FidPeakUpStorage(int numRecords, quint64 targetShots);
+    ~FidPeakUpStorage();
 
     // FidStorageBase interface
-protected:
     quint64 completedShots() override;
     quint64 currentSegmentShots() override;
     bool addFids(const FidList other, int shift) override;
     FidList getFidList(std::size_t i) override;
     FidList getCurrentFidList() override;
-    void _advance() override;
     int getCurrentIndex() override;
-
 #ifdef BC_CUDA
     bool setFidsData(const FidList other) override;
 #endif
 
+    void reset();
+    void setTargetShots(quint64 s);
+
+protected:
+    void _advance() override;
+
 private:
-    QMutex *p_mutex;
+    quint64 d_targetShots;
     FidList d_currentFidList;
 
-    // FidStorageBase interface
-protected:
+    QMutex *p_mutex;
 };
 
-
-#endif // FIDSINGLESTORAGE_H
+#endif // FIDPEAKUPSTORAGE_H

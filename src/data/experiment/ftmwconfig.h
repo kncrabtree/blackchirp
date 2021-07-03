@@ -77,11 +77,10 @@ public:
 #endif
     bool addFids(const QByteArray rawData, int shift = 0);
     bool subtractFids(const FtmwConfig other);
-    void resetFids();
     void setScopeConfig(const FtmwDigitizerConfig &other);
     void setRfConfig(const RfConfig other);
     void finalizeSnapshots(int num, QString path = QString(""));
-    std::shared_ptr<FidStorageBase> storage();
+    std::shared_ptr<FidStorageBase> storage() const;
 
 
     QMap<QString,QPair<QVariant,QString> > headerMap() const;

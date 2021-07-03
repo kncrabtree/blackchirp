@@ -56,8 +56,6 @@ public:
     void prepareForExperiment(const Experiment &e);
 
 signals:
-    void rollingAverageShotsChanged(int);
-    void rollingAverageReset();
     void experimentLogMessage(int,QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal,QString=QString(""));
     void finalized(int);
 
@@ -86,13 +84,16 @@ public slots:
     void snapshotsFinalizedUpdateUi(int num);
     void experimentComplete();
 
+    void changeRollingAverageShots(int shots);
+    void resetRollingAverage();
+
     void launchPeakFinder();
 
 
 private:
     Ui::FtmwViewWidget *ui;
 
-    FtmwConfig d_ftmwConfig, d_snap1Config, d_snap2Config;
+//    FtmwConfig d_ftmwConfig, d_snap1Config, d_snap2Config;
     std::shared_ptr<FidStorageBase> p_fidStorage;
     FtWorker::FidProcessingSettings d_currentProcessingSettings;
     int d_currentExptNum;

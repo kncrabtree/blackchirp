@@ -21,7 +21,6 @@ public:
     virtual bool addFids(const FidList other, int shift =0) =0;
     virtual FidList getFidList(std::size_t i=0) =0;
     virtual FidList getCurrentFidList() =0;
-    virtual void reset() =0;
     void advance();
     bool save();
 #ifdef BC_CUDA

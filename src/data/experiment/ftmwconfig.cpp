@@ -6,6 +6,7 @@
 #include <QtEndian>
 
 #include <data/storage/fidsinglestorage.h>
+#include <data/storage/fidpeakupstorage.h>
 
 FtmwConfig::~FtmwConfig()
 {
@@ -557,13 +558,6 @@ bool FtmwConfig::subtractFids(const FtmwConfig other)
     return true;
 }
 
-void FtmwConfig::resetFids()
-{
-    p_fidStorage.get()->reset();
-//    d_fidList.clear();
-//    d_completedShots = 0;
-}
-
 void FtmwConfig::setScopeConfig(const FtmwDigitizerConfig &other)
 {
     d_scopeConfig = other;
@@ -672,7 +666,7 @@ void FtmwConfig::finalizeSnapshots(int num, QString path)
 
 }
 
-std::shared_ptr<FidStorageBase> FtmwConfig::storage()
+std::shared_ptr<FidStorageBase> FtmwConfig::storage() const
 {
     return p_fidStorage;
 }

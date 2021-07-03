@@ -554,16 +554,6 @@ bool Experiment::addFids(const QByteArray newData, int shift)
     return true;
 }
 
-void Experiment::overrideTargetShots(const int target)
-{
-    d_ftmwCfg.setTargetShots(target);
-}
-
-void Experiment::resetFids()
-{
-    d_ftmwCfg.resetFids();
-}
-
 void Experiment::setPulseGenConfig(const PulseGenConfig c)
 {
     d_pGenCfg = c;

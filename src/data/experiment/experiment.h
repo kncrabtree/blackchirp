@@ -73,8 +73,6 @@ public:
     bool setFidsData(const QVector<QVector<qint64> > l);
 #endif
     bool addFids(const QByteArray newData, int shift = 0);
-    void overrideTargetShots(const int target);
-    void resetFids();
     void setPulseGenConfig(const PulseGenConfig c);
     void setFlowConfig(const FlowConfig c);
     void setErrorString(const QString str);

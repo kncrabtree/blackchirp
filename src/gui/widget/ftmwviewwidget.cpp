@@ -11,6 +11,8 @@
 
 #include <data/analysis/ftworker.h>
 #include <gui/widget/peakfindwidget.h>
+#include <data/storage/fidsinglestorage.h>
+#include <data/storage/fidpeakupstorage.h>
 
 FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     QWidget(parent),
@@ -86,8 +88,8 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     connect(ui->minFtSegBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),this,&FtmwViewWidget::updateSidebandFreqs);
     connect(ui->maxFtSegBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),this,&FtmwViewWidget::updateSidebandFreqs);
 
-    connect(ui->averagesSpinbox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::rollingAverageShotsChanged,Qt::UniqueConnection);
-    connect(ui->resetAveragesButton,&QPushButton::clicked,this,&FtmwViewWidget::rollingAverageReset,Qt::UniqueConnection);
+    connect(ui->averagesSpinbox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::changeRollingAverageShots,Qt::UniqueConnection);
+    connect(ui->resetAveragesButton,&QPushButton::clicked,this,&FtmwViewWidget::resetRollingAverage,Qt::UniqueConnection);
 
 }
 
@@ -107,9 +109,9 @@ FtmwViewWidget::~FtmwViewWidget()
 
 void FtmwViewWidget::prepareForExperiment(const Experiment &e)
 {
-    FtmwConfig config = e.ftmwConfig();
-    p_fidStorage = config.storage();
-    if(config.type() == BlackChirp::FtmwPeakUp)
+
+    p_fidStorage = e.ftmwConfig().storage();
+    if(e.ftmwConfig().type() == BlackChirp::FtmwPeakUp)
         ui->exptLabel->setText(QString("Peak Up Mode"));
     else
         ui->exptLabel->setText(QString("Experiment %1").arg(e.d_number));
@@ -151,7 +153,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         it.value().segment = 0;
     }
 
-    if(config.isEnabled())
+    if(e.ftmwConfig().isEnabled())
     {
         auto ws = d_workersStatus.value(d_liveId);
         ws.worker = new FtWorker(d_liveId);
@@ -173,29 +175,29 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         ui->liveAction->setEnabled(true);
 
         ui->averagesSpinbox->blockSignals(true);
-        ui->averagesSpinbox->setValue(config.targetShots());
+        ui->averagesSpinbox->setValue(e.ftmwConfig().targetShots());
         ui->averagesSpinbox->blockSignals(false);
 
-        ui->resetAveragesButton->setEnabled(config.type() == BlackChirp::FtmwPeakUp);
-        ui->averagesSpinbox->setEnabled(config.type() == BlackChirp::FtmwPeakUp);
+        ui->resetAveragesButton->setEnabled(e.ftmwConfig().type() == BlackChirp::FtmwPeakUp);
+        ui->averagesSpinbox->setEnabled(e.ftmwConfig().type() == BlackChirp::FtmwPeakUp);
 
-        auto chirpOffsetRange = config.rfConfig().calculateChirpAbsOffsetRange();
+        auto chirpOffsetRange = e.ftmwConfig().rfConfig().calculateChirpAbsOffsetRange();
         if(chirpOffsetRange.first < 0.0)
             chirpOffsetRange.first = 0.0;
         if(chirpOffsetRange.second < 0.0)
-            chirpOffsetRange.second = config.ftNyquistMHz();
+            chirpOffsetRange.second = e.ftmwConfig().ftNyquistMHz();
 
         ui->minFtSegBox->blockSignals(true);
-        ui->minFtSegBox->setRange(0.0,config.ftNyquistMHz());
+        ui->minFtSegBox->setRange(0.0,e.ftmwConfig().ftNyquistMHz());
         ui->minFtSegBox->setValue(chirpOffsetRange.first);
         ui->minFtSegBox->blockSignals(false);
 
         ui->maxFtSegBox->blockSignals(true);
-        ui->maxFtSegBox->setRange(0.0,config.ftNyquistMHz());
+        ui->maxFtSegBox->setRange(0.0,e.ftmwConfig().ftNyquistMHz());
         ui->maxFtSegBox->setValue(chirpOffsetRange.second);
         ui->maxFtSegBox->blockSignals(false);
 
-        if(config.type() == BlackChirp::FtmwLoScan)
+        if(e.ftmwConfig().type() == BlackChirp::FtmwLoScan)
         {
 //            d_mode = BothSB;
             ui->bsAction->setEnabled(true);
@@ -222,9 +224,9 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
     }
 
     ui->peakFindAction->setEnabled(false);
-    d_ftmwConfig = config;
-    d_snap1Config = config;
-    d_snap2Config = config;
+//    d_ftmwConfig = config;
+//    d_snap1Config = config;
+//    d_snap2Config = config;
 
 }
 
@@ -285,7 +287,7 @@ void FtmwViewWidget::updateLiveFidList(const FtmwConfig c, int segment)
 void FtmwViewWidget::updateFtmw(const FtmwConfig f)
 {
 #pragma message("This function will not be called anymore; figure out what to do")
-    d_ftmwConfig = f;
+//    d_ftmwConfig = f;
     QList<int> ignore{ d_liveId };
 
     for(auto it = d_plotStatus.begin(); it != d_plotStatus.end(); it++)
@@ -522,25 +524,27 @@ void FtmwViewWidget::processDiff(const Fid f1, const Fid f2)
 
 void FtmwViewWidget::processSideband(BlackChirp::Sideband sb)
 {
-#pragma message("Make processSideband work with shared storage")
     auto ws = d_workersStatus.value(d_mainId);
     if(ws.busy)
         d_workersStatus[d_mainId].reprocessWhenDone = true;
     else
     {
         FidList fl;
-        FtmwConfig c = d_ftmwConfig;
+
         int id = d_plot1Id;
         if(ui->mainPlotFollowSpinBox->value() == 2)
             id = d_plot2Id;
 
-        if(ui->plot1ConfigWidget->isSnapshotActive() && ui->mainPlotFollowSpinBox->value() == 1)
-            c = d_snap1Config;
-        else if(ui->plot2ConfigWidget->isSnapshotActive() && ui->mainPlotFollowSpinBox->value() == 2)
-            c = d_snap2Config;
+//        if(ui->plot1ConfigWidget->isSnapshotActive() && ui->mainPlotFollowSpinBox->value() == 1)
+//            c = d_snap1Config;
+//        else if(ui->plot2ConfigWidget->isSnapshotActive() && ui->mainPlotFollowSpinBox->value() == 2)
+//            c = d_snap2Config;
 
-//        for(int i=0; i<c.multiFidList().size(); i++)
-//            fl << c.singleFid(d_plotStatus.value(id).frame,i);
+
+#pragma message("Rework sideband processing so that it's not monolithic")
+        auto n = p_fidStorage->d_numRecords;
+        for(int i=0; i<n; i++)
+            fl << p_fidStorage->getFidList(i).at(d_plotStatus.value(id).frame);
 
         if(!fl.isEmpty())
         {
@@ -557,25 +561,20 @@ void FtmwViewWidget::processSideband(BlackChirp::Sideband sb)
 
 void FtmwViewWidget::processBothSidebands()
 {
-#pragma message("Make processBothSidebands work with shared storage")
+#pragma message("Rework sideband processing so that it's not monolithic")
     auto ws = d_workersStatus.value(d_mainId);
     if(ws.busy)
         d_workersStatus[d_mainId].reprocessWhenDone = true;
     else
     {
         FidList fl;
-        FtmwConfig c = d_ftmwConfig;
         int id = d_plot1Id;
         if(ui->mainPlotFollowSpinBox->value() == 2)
             id = d_plot2Id;
 
-        if(ui->plot1ConfigWidget->isSnapshotActive() && ui->mainPlotFollowSpinBox->value() == 1)
-            c = d_snap1Config;
-        else if(ui->plot2ConfigWidget->isSnapshotActive() && ui->mainPlotFollowSpinBox->value() == 2)
-            c = d_snap2Config;
-
-//        for(int i=0; i<c.multiFidList().size(); i++)
-//            fl << c.singleFid(d_plotStatus.value(id).frame,i);
+        auto n = p_fidStorage->d_numRecords;
+        for(int i=0; i<n; i++)
+            fl << p_fidStorage->getFidList(i).at(d_plotStatus.value(id).frame);
 
         if(!fl.isEmpty())
         {
@@ -617,25 +616,27 @@ void FtmwViewWidget::snapshotsProcessed(int id, const FtmwConfig c)
     if(id != d_plot1Id && id != d_plot2Id)
         return;
 
-    if(id == d_plot1Id)
-    {
-        d_snap1Config = c;
-        if(ui->plot1ConfigWidget->isSnapshotActive())
-            updateFid(id);
-    }
-    else
-    {
-        d_snap2Config = c;
-        if(ui->plot2ConfigWidget->isSnapshotActive())
-            updateFid(id);
-    }
+//    if(id == d_plot1Id)
+//    {
+//        d_snap1Config = c;
+//        if(ui->plot1ConfigWidget->isSnapshotActive())
+//            updateFid(id);
+//    }
+//    else
+//    {
+//        d_snap2Config = c;
+//        if(ui->plot2ConfigWidget->isSnapshotActive())
+//            updateFid(id);
+//    }
+
+#pragma message("Snapshot processing")
 
 }
 
 void FtmwViewWidget::snapshotsFinalized(const FtmwConfig out)
 {
-    d_ftmwConfig = out;
-
+//    d_ftmwConfig = out;
+#pragma message("Snapshot processing")
     Experiment e(d_currentExptNum,d_path);
     qint64 oldNum = e.ftmwConfig().completedShots();
     e.finalizeFtmwSnapshots(out);
@@ -690,7 +691,26 @@ void FtmwViewWidget::experimentComplete()
 //        updateFtmw(e.ftmwConfig());
 //    }
 
-//    ui->shotsLabel->setText(d_shotsString.arg(e.ftmwConfig().completedShots()));
+    //    ui->shotsLabel->setText(d_shotsString.arg(e.ftmwConfig().completedShots()));
+}
+
+void FtmwViewWidget::changeRollingAverageShots(int shots)
+{
+    if(shots < 1)
+        return;
+
+    auto p = dynamic_cast<FidPeakUpStorage*>(p_fidStorage.get());
+    if(p != nullptr)
+        p->setTargetShots(static_cast<quint64>(shots));
+}
+
+void FtmwViewWidget::resetRollingAverage()
+{
+    auto p = dynamic_cast<FidPeakUpStorage*>(p_fidStorage.get());
+    if(p != nullptr)
+        p->reset();
+
+    ///TODO update UI?
 }
 
 void FtmwViewWidget::launchPeakFinder()
@@ -727,20 +747,22 @@ void FtmwViewWidget::updateFid(int id)
     int seg = d_plotStatus.value(id).segment;
     int frame = d_plotStatus.value(id).frame;
 
+#pragma message("Rerite updateFid function")
+
     bool snap = false;
-    FtmwConfig c = d_ftmwConfig;
-    if(id == d_plot1Id)
-    {
-        snap = ui->plot1ConfigWidget->isSnapshotActive();
-        if(snap)
-            c = d_snap1Config;
-    }
-    else if(id == d_plot2Id)
-    {
-        snap = ui->plot2ConfigWidget->isSnapshotActive();
-        if(snap)
-            c = d_snap2Config;
-    }
+//    FtmwConfig c = d_ftmwConfig;
+//    if(id == d_plot1Id)
+//    {
+//        snap = ui->plot1ConfigWidget->isSnapshotActive();
+//        if(snap)
+//            c = d_snap1Config;
+//    }
+//    else if(id == d_plot2Id)
+//    {
+//        snap = ui->plot2ConfigWidget->isSnapshotActive();
+//        if(snap)
+//            c = d_snap2Config;
+//    }
 
     if(seg == d_currentSegment && !snap)
     {

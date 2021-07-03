@@ -64,8 +64,6 @@ signals:
 public slots:
     void beginExperiment(std::shared_ptr<Experiment> exp);
     void processFtmwScopeShot(const QByteArray b);
-    void changeRollingAverageShots(int newShots);
-    void resetRollingAverage();
     void getTimeData();
     void processTimeData(const QList<QPair<QString,QVariant>> timeDataList, bool plot);
     void clockSettingsComplete();

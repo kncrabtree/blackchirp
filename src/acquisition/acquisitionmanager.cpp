@@ -200,24 +200,6 @@ void AcquisitionManager::lifHardwareReady(bool success)
 }
 #endif
 
-void AcquisitionManager::changeRollingAverageShots(int newShots)
-{
-    if(d_state == Acquiring && d_currentExperiment->ftmwConfig().isEnabled() && d_currentExperiment->ftmwConfig().type() == BlackChirp::FtmwPeakUp)
-        d_currentExperiment->overrideTargetShots(newShots);
-}
-
-void AcquisitionManager::resetRollingAverage()
-{
-    if(d_state == Acquiring && d_currentExperiment->ftmwConfig().isEnabled() && d_currentExperiment->ftmwConfig().type() == BlackChirp::FtmwPeakUp)
-    {
-        d_currentExperiment->resetFids();
-#ifdef BC_CUDA
-#pragma message("Move to FTMWConfig")
-        gpuAvg.resetAverage();
-#endif
-    }
-}
-
 void AcquisitionManager::getTimeData()
 {
     if(d_state == Acquiring)

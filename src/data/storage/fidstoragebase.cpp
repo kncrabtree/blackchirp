@@ -36,7 +36,10 @@ bool FidStorageBase::saveFidList(const FidList l, int i)
     ///todo
     (void)l;
     (void)i;
-#pragma message("Write implememtnation for saveFidList")
+    if(d_path.isEmpty())
+        return true;
+
+#pragma message("Write implementation for saveFidList")
     return true;
 }
 
