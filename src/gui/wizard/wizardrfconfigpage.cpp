@@ -20,7 +20,7 @@ WizardRfConfigPage::WizardRfConfigPage(QWidget *parent) : ExperimentWizardPage(B
 void WizardRfConfigPage::initializePage()
 {
     auto e = getExperiment();
-    p_rfc->setRfConfig(e->ftmwConfig().rfConfig());
+    p_rfc->setRfConfig(e->d_ftmwCfg.rfConfig());
 }
 
 bool WizardRfConfigPage::validatePage()
@@ -32,7 +32,7 @@ bool WizardRfConfigPage::validatePage()
     
 
 
-    if(e->ftmwConfig().type() == BlackChirp::FtmwLoScan)
+    if(e->d_ftmwCfg.type() == FtmwConfig::LO_Scan)
     {
         if(rfc.clockHardware(BlackChirp::UpConversionLO).isEmpty())
             return false;
@@ -44,7 +44,7 @@ bool WizardRfConfigPage::validatePage()
         }
     }
 
-    if(e->ftmwConfig().type() == BlackChirp::FtmwDrScan)
+    if(e->d_ftmwCfg.type() == FtmwConfig::DR_Scan)
     {
         if(rfc.clockHardware(BlackChirp::DRClock).isEmpty())
             return false;

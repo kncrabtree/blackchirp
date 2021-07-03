@@ -88,7 +88,7 @@ WizardDrScanConfigPage::WizardDrScanConfigPage(QWidget *parent) : ExperimentWiza
 void WizardDrScanConfigPage::initializePage()
 {
     auto e = getExperiment();
-    d_rfConfig = e->ftmwConfig().rfConfig();
+    d_rfConfig = e->d_ftmwCfg.rfConfig();
 
     //Get DR hardware
     auto drClock = d_rfConfig.clockHardware(BlackChirp::DRClock);

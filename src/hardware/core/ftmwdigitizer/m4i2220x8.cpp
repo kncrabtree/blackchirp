@@ -91,7 +91,7 @@ void M4i2220x8::initialize()
 
 bool M4i2220x8::prepareForExperiment(Experiment &exp)
 {
-    if(!exp.ftmwConfig().isEnabled())
+    if(!exp.d_ftmwCfg.isEnabled())
     {
         d_enabledForExperiment = false;
         return true;
@@ -102,7 +102,7 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
     //first, reset the card so all registers are in default states
     spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_RESET);
 
-    static_cast<FtmwDigitizerConfig>(*this) = exp.ftmwConfig().scopeConfig();
+    static_cast<FtmwDigitizerConfig>(*this) = exp.d_ftmwCfg.scopeConfig();
 
     //this card only has 1 channel, so enable it and disable all others regardless of user's entry
     if(sc.fidChannel != 1)
@@ -171,7 +171,7 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
 
 
     //Configure clock source
-    auto clocks = exp.ftmwConfig().rfConfig().getClocks();
+    auto clocks = exp.d_ftmwCfg.rfConfig().getClocks();
     if(clocks.contains(BlackChirp::DigitizerClock) && !clocks.value(BlackChirp::DigitizerClock).hwKey.isEmpty())
     {
         spcm_dwSetParam_i32(p_handle,SPC_CLOCKMODE,SPC_CM_EXTREFCLOCK);

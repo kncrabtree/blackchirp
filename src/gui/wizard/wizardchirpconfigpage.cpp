@@ -32,7 +32,7 @@ void WizardChirpConfigPage::initializePage()
 {
     //get rfConfig
     auto e = getExperiment();
-    p_ccw->setRfConfig(e->ftmwConfig().rfConfig());
+    p_ccw->setRfConfig(e->d_ftmwCfg.rfConfig());
     p_ccw->updateChirpPlot();
 
 }

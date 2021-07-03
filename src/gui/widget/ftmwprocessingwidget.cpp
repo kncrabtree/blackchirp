@@ -146,12 +146,12 @@ FtWorker::FidProcessingSettings FtmwProcessingWidget::getSettings()
 
 void FtmwProcessingWidget::prepareForExperient(const Experiment &e)
 {
-    setEnabled(e.ftmwConfig().isEnabled());
+    setEnabled(e.d_ftmwCfg.isEnabled());
 
-    if(e.ftmwConfig().isEnabled())
+    if(e.d_ftmwCfg.isEnabled())
     {
-        p_startBox->setRange(0.0,e.ftmwConfig().fidDurationUs());
-        p_endBox->setRange(0.0,e.ftmwConfig().fidDurationUs());
+        p_startBox->setRange(0.0,e.d_ftmwCfg.fidDurationUs());
+        p_endBox->setRange(0.0,e.d_ftmwCfg.fidDurationUs());
     }
 
 }

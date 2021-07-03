@@ -30,7 +30,7 @@ void WizardDigitizerConfigPage::initializePage()
 {
     ///TODO: Be more flexible here
 //    auto e = getExperiment();
-//    p_dc->setFromConfig(e->ftmwConfig());
+//    p_dc->setFromConfig(e->d_ftmwCfg);
 }
 
 bool WizardDigitizerConfigPage::validatePage()

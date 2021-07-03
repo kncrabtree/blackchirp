@@ -50,12 +50,12 @@ void AWG70002a::initialize()
 
 bool AWG70002a::prepareForExperiment(Experiment &exp)
 {
-    d_enabledForExperiment = exp.ftmwConfig().isEnabled();
+    d_enabledForExperiment = exp.d_ftmwCfg.isEnabled();
     if(!d_enabledForExperiment)
         return true;
 
     //encode error by prepending '!' to an error message
-    QString wfmName = getWaveformKey(exp.ftmwConfig().chirpConfig());
+    QString wfmName = getWaveformKey(exp.d_ftmwCfg.chirpConfig());
 
     if(wfmName.startsWith(QChar('!')))
     {

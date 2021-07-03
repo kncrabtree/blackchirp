@@ -40,8 +40,8 @@ void WizardPulseConfigPage::initializePage()
         p_pcw->configureLif(e->lifConfig());
 #endif
 
-    if(e->ftmwConfig().isEnabled())
-        p_pcw->configureFtmw(e->ftmwConfig());
+    if(e->d_ftmwCfg.isEnabled())
+        p_pcw->configureFtmw(e->d_ftmwCfg);
 }
 
 int WizardPulseConfigPage::nextId() const

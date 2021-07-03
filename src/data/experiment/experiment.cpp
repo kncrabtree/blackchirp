@@ -154,11 +154,6 @@ bool Experiment::isAborted() const
     return d_isAborted;
 }
 
-const FtmwConfig &Experiment::ftmwConfig() const
-{
-    return d_ftmwCfg;
-}
-
 PulseGenConfig Experiment::pGenConfig() const
 {
     return d_pGenCfg;
@@ -309,16 +304,16 @@ bool Experiment::snapshotReady()
     if(isComplete())
         return false;
 
-    if(ftmwConfig().isEnabled())
+    if(d_ftmwCfg.isEnabled())
     {
-        if(ftmwConfig().completedShots() > 0)
+        if(d_ftmwCfg.completedShots() > 0)
         {
-            qint64 d = ftmwConfig().completedShots() - d_lastSnapshot;
+            qint64 d = d_ftmwCfg.completedShots() - d_lastSnapshot;
             if(d > 0)
             {
                 bool out = !(d % static_cast<qint64>(d_autoSaveShotsInterval));
                 if(out)
-                    d_lastSnapshot = ftmwConfig().completedShots();
+                    d_lastSnapshot = d_ftmwCfg.completedShots();
                 return out;
             }
             else
@@ -388,7 +383,7 @@ bool Experiment::initialize()
     int num = s.get(BC::Key::exptNum,0)+1;
     d_number = num;
 
-    if(ftmwConfig().isEnabled() && ftmwConfig().type() == BlackChirp::FtmwPeakUp)
+    if(d_ftmwCfg.isEnabled() && d_ftmwCfg.type() == FtmwConfig::Peak_Up)
     {
         d_number = -1;
         d_startLogMessage = QString("Peak up mode started.");
@@ -482,7 +477,7 @@ bool Experiment::initialize()
 void Experiment::abort()
 {
     d_isAborted = true;
-    if(ftmwConfig().isEnabled() && (ftmwConfig().type() == BlackChirp::FtmwTargetShots || ftmwConfig().type() == BlackChirp::FtmwTargetTime ))
+    if(d_ftmwCfg.isEnabled() && (d_ftmwCfg.type() == FtmwConfig::Target_Shots || d_ftmwCfg.type() == FtmwConfig::Target_Duration ))
     {
         d_endLogMessage = QString("Experiment %1 aborted.").arg(d_number);
         d_endLogMessageCode = BlackChirp::LogError;
@@ -535,7 +530,7 @@ bool Experiment::setFidsData(const QVector<QVector<qint64> > l)
 {
     if(!d_ftmwCfg.setFidsData(l))
     {
-        setErrorString(ftmwConfig().errorString());
+        setErrorString(d_ftmwCfg.errorString());
         return false;
     }
 
@@ -547,7 +542,7 @@ bool Experiment::addFids(const QByteArray newData, int shift)
 {
     if(!d_ftmwCfg.addFids(newData,shift))
     {
-        setErrorString(ftmwConfig().errorString());
+        setErrorString(d_ftmwCfg.errorString());
         return false;
     }
 
@@ -732,8 +727,8 @@ void Experiment::finalSave()
 
     saveHeader();
 
-    if(ftmwConfig().isEnabled())
-        ftmwConfig().writeFids(d_number);
+    if(d_ftmwCfg.isEnabled())
+        d_ftmwCfg.writeFids(d_number);
 
 #ifdef BC_LIF
     if(lifConfig().isEnabled())
@@ -945,14 +940,14 @@ void Experiment::snapshot(int snapNum, const Experiment other)
     (void)other;
 #pragma message("Implement snapshot")
 
-//    if(ftmwConfig().isEnabled())
+//    if(d_ftmwCfg.isEnabled())
 //    {
-//        FtmwConfig cf = ftmwConfig();
+//        FtmwConfig cf = d_ftmwCfg;
 ////        cf.storeFids();
 
 //        if(other.number() == d_number && other.isInitialized())
 //        {
-//            if(cf.subtractFids(other.ftmwConfig()))
+//            if(cf.subtractFids(other.d_ftmwCfg))
 //                cf.writeFids(d_number,d_path,snapNum);
 //        }
 //        else
@@ -978,8 +973,8 @@ void Experiment::saveToSettings() const
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(QString("lastExperiment"));
 
-    s.setValue(QString("ftmwEnabled"),ftmwConfig().isEnabled());
-    if(ftmwConfig().isEnabled())
+    s.setValue(QString("ftmwEnabled"),d_ftmwCfg.isEnabled());
+    if(d_ftmwCfg.isEnabled())
         d_ftmwCfg.saveToSettings();
 
 #ifdef BC_LIF

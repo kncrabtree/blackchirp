@@ -244,7 +244,7 @@ bool WizardLifConfigPage::validatePage()
 int WizardLifConfigPage::nextId() const
 {
     auto e = getExperiment();
-    if(e->ftmwConfig().isEnabled())
+    if(e->d_ftmwCfg.isEnabled())
         return ExperimentWizard::RfConfigPage;
 
     return ExperimentWizard::PulseConfigPage;

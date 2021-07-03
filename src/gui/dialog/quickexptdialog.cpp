@@ -14,35 +14,35 @@ QuickExptDialog::QuickExptDialog(std::shared_ptr<Experiment> e, QWidget *parent)
     QString html;
 
     //generate summary text and insert header details into table widget
-    if(e->ftmwConfig().isEnabled())
+    if(e->d_ftmwCfg.isEnabled())
     {
         html.append(QString("<h1>FTMW settings</h1>"));
         html.append(QString("<ul>"));
-        if(e->ftmwConfig().type() == BlackChirp::FtmwTargetShots)
+        if(e->d_ftmwCfg.type() == FtmwConfig::Target_Shots)
         {
             html.append(QString("<li>Mode: Target Shots</li>"));
-            html.append(QString("<li>Shots: %1</li>").arg(e->ftmwConfig().targetShots()));
+            html.append(QString("<li>Shots: %1</li>").arg(e->d_ftmwCfg.targetShots()));
         }
-        else if(e->ftmwConfig().type() == BlackChirp::FtmwPeakUp)
+        else if(e->d_ftmwCfg.type() == FtmwConfig::Peak_Up)
         {
             html.append(QString("<li>Mode: Peak Up</li>"));
-            html.append(QString("<li>Shots: %1</li>").arg(e->ftmwConfig().targetShots()));
+            html.append(QString("<li>Shots: %1</li>").arg(e->d_ftmwCfg.targetShots()));
         }
-        else if(e->ftmwConfig().type() == BlackChirp::FtmwTargetTime)
+        else if(e->d_ftmwCfg.type() == FtmwConfig::Target_Duration)
         {
             html.append(QString("<li>Mode: Target Time</li>"));
-            html.append(QString("<li>End time: %1</li>").arg(e->ftmwConfig().targetTime().toString()));
+            html.append(QString("<li>End time: %1</li>").arg(e->d_ftmwCfg.targetTime().toString()));
         }
-        else if(e->ftmwConfig().type() == BlackChirp::FtmwForever)
+        else if(e->d_ftmwCfg.type() == FtmwConfig::Forever)
         {
             html.append(QString("<li>Mode: Forever</li>"));
         }
-        html.append(QString("<li>Chirps: %1</li>").arg(e->ftmwConfig().chirpConfig().numChirps()));
-        html.append(QString("<li>Sample rate: %1 GS/s</li>").arg(e->ftmwConfig().scopeConfig().d_sampleRate/1e9,0,'f',0));
-        html.append(QString("<li>Record length: %1</li>").arg(e->ftmwConfig().scopeConfig().d_recordLength));
-        if(e->ftmwConfig().chirpConfig().numChirps() > 1)
+        html.append(QString("<li>Chirps: %1</li>").arg(e->d_ftmwCfg.chirpConfig().numChirps()));
+        html.append(QString("<li>Sample rate: %1 GS/s</li>").arg(e->d_ftmwCfg.scopeConfig().d_sampleRate/1e9,0,'f',0));
+        html.append(QString("<li>Record length: %1</li>").arg(e->d_ftmwCfg.scopeConfig().d_recordLength));
+        if(e->d_ftmwCfg.chirpConfig().numChirps() > 1)
         {
-            html.append(QString("<li>Chirp spacing: %1 &mu;s</li>").arg(e->ftmwConfig().chirpConfig().chirpInterval(),0,'f',1));
+            html.append(QString("<li>Chirp spacing: %1 &mu;s</li>").arg(e->d_ftmwCfg.chirpConfig().chirpInterval(),0,'f',1));
         }
         html.append(QString("</ul>"));
     }

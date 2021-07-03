@@ -53,16 +53,6 @@ enum ScopeSampleOrder {
     ChannelsInterleaved
 };
 
-enum FtmwType
-{
-    FtmwTargetShots,
-    FtmwTargetTime,
-    FtmwForever,
-    FtmwPeakUp,
-    FtmwLoScan,
-    FtmwDrScan
-};
-
 //NOTE: be sure to edit the functions below if adding a new clock type
 enum ClockType {
     UpConversionLO,
@@ -294,7 +284,6 @@ struct MotorScopeConfig {
 }
 
 Q_DECLARE_METATYPE(BlackChirp::Sideband)
-Q_DECLARE_METATYPE(BlackChirp::FtmwType)
 Q_DECLARE_METATYPE(BlackChirp::ScopeTriggerSlope)
 Q_DECLARE_METATYPE(BlackChirp::LogMessageCode)
 Q_DECLARE_METATYPE(BlackChirp::ValidationItem)

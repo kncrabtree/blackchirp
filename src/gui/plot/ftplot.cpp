@@ -53,7 +53,7 @@ void FtPlot::prepareForExperiment(const Experiment e)
     p_curve->setCurveData(QVector<QPointF>());
     p_peakData->setCurveData(QVector<QPointF>());
 
-    p_curve->setVisible(e.ftmwConfig().isEnabled());
+    p_curve->setVisible(e.d_ftmwCfg.isEnabled());
 
     autoScale();
 }

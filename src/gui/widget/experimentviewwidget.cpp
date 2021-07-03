@@ -54,7 +54,7 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
     if(hdr != nullptr)
         p_tabWidget->addTab(hdr,QIcon(QString(":/icons/header.png")),QString("Header"));
 
-    if(d_experiment.ftmwConfig().isEnabled())
+    if(d_experiment.d_ftmwCfg.isEnabled())
     {
         QWidget *ftmw = buildFtmwWidget(path);
         if(ftmw != nullptr)
@@ -150,7 +150,7 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
 {
     QWidget *out = nullptr;
     p_ftmw = nullptr;
-    if(d_experiment.ftmwConfig().isEnabled())
+    if(d_experiment.d_ftmwCfg.isEnabled())
     {
         out = new QWidget;
         QVBoxLayout *vbl = new QVBoxLayout;
@@ -160,9 +160,9 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
         out->setLayout(vbl);
 
         p_ftmw->prepareForExperiment(d_experiment);
-//        p_ftmw->updateFtmw(d_experiment.ftmwConfig());
-//        if(!d_experiment.ftmwConfig().fidList().isEmpty())
-//            p_ftmw->updateShotsLabel(d_experiment.ftmwConfig().fidList().constFirst().shots());
+//        p_ftmw->updateFtmw(d_experiment.d_ftmwCfg);
+//        if(!d_experiment.d_ftmwCfg.fidList().isEmpty())
+//            p_ftmw->updateShotsLabel(d_experiment.d_ftmwCfg.fidList().constFirst().shots());
 
 
         p_ftmw->snapshotTaken();

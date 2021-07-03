@@ -86,14 +86,14 @@ double ClockManager::readClockFrequency(BlackChirp::ClockType t)
 
 bool ClockManager::prepareForExperiment(Experiment &exp)
 {
-    if(!exp.ftmwConfig().isEnabled())
+    if(!exp.d_ftmwCfg.isEnabled())
         return true;
 
     d_clockRoles.clear();
     for(int i=0; i<d_clockList.size(); i++)
         d_clockList[i]->clearRoles();
 
-    auto rfc = exp.ftmwConfig().rfConfig();
+    auto rfc = exp.d_ftmwCfg.rfConfig();
     auto map = rfc.getClocks();
     for(auto i = map.constBegin(); i != map.constEnd(); i++)
     {

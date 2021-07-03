@@ -6,15 +6,17 @@
 #include <QCheckBox>
 #include <QSpinBox>
 #include <QGroupBox>
-#include <QDateTimeEdit>
 #include <QDoubleSpinBox>
 #include <QComboBox>
 #include <QLabel>
+#include <QMetaEnum>
 
 #include <gui/wizard/experimentwizard.h>
 
+using namespace BC::Key::WizStart;
+
 WizardStartPage::WizardStartPage(QWidget *parent) :
-    ExperimentWizardPage(BC::Key::WizStart::key,parent)
+    ExperimentWizardPage(key,parent)
 {
     setTitle(QString("Configure Experiment"));
     setSubTitle(QString("Choose which type(s) of experiment you wish to perform."));
@@ -23,83 +25,87 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
 
     p_ftmw = new QGroupBox(QString("FTMW"),this);
     p_ftmw->setCheckable(true);
+    p_ftmw->setChecked(get(ftmw,true));
+    registerGetter(ftmw,p_ftmw,&QGroupBox::isChecked);
     connect(p_ftmw,&QGroupBox::toggled,this,&WizardStartPage::completeChanged);
 
     p_ftmwTypeBox = new QComboBox(this);
-    p_ftmwTypeBox->addItem(QString("Target Shots"),QVariant::fromValue(BlackChirp::FtmwTargetShots));
-    p_ftmwTypeBox->addItem(QString("Target Time"),QVariant::fromValue(BlackChirp::FtmwTargetTime));
-    p_ftmwTypeBox->addItem(QString("Forever"),QVariant::fromValue(BlackChirp::FtmwForever));
-    p_ftmwTypeBox->addItem(QString("Peak Up"),QVariant::fromValue(BlackChirp::FtmwPeakUp));
-    p_ftmwTypeBox->addItem(QString("LO Scan"),QVariant::fromValue(BlackChirp::FtmwLoScan));
-    p_ftmwTypeBox->addItem(QString("DR Scan"),QVariant::fromValue(BlackChirp::FtmwDrScan));
-    p_ftmwTypeBox->setCurrentIndex(0);
+    auto t = QMetaEnum::fromType<FtmwConfig::FtmwType>();
+    auto num = t.keyCount();
+    for(int i=0; i<num; ++i)
+        p_ftmwTypeBox->addItem(QString(t.key(i)).replace(QChar('_'),QChar(' ')),
+                               static_cast<FtmwConfig::FtmwType>(t.value(i)));
 
-    auto lbl = new QLabel(QString("Type"));
-    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
-    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
-    fl->addRow(lbl,p_ftmwTypeBox);
+    p_ftmwTypeBox->setCurrentIndex(get(ftmwType,0));
+    registerGetter(ftmwType,p_ftmwTypeBox,&QComboBox::currentIndex);
+    fl->addRow("Type",p_ftmwTypeBox);
 
     p_ftmwShotsBox = new QSpinBox(this);
     p_ftmwShotsBox->setRange(1,__INT_MAX__);
     p_ftmwShotsBox->setToolTip(QString("Number of FIDs to average.\n"
                                        "When this number is reached, the experiment ends in Target Shots mode, while an exponentially weighted moving average engages in Peak Up mode.\n\n"
-                                       "If this box is disabled, it is either irrelevant or will be configured on a later page (e.g. in Multiple LO mode)."));
+                                       "If this box is disabled, it is either irrelevant or will be configured on a later page (e.g. in LO/DR Scan mode)."));
     p_ftmwShotsBox->setSingleStep(5000);
+    p_ftmwShotsBox->setValue(get(ftmwShots,10000));
+    registerGetter(ftmwShots,p_ftmwShotsBox,&QSpinBox::value);
+    fl->addRow("Shots",p_ftmwShotsBox);
 
-    lbl = new QLabel(QString("Shots"));
-    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
-    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
-    fl->addRow(lbl,p_ftmwShotsBox);
+    p_ftmwTargetDurationBox = new QSpinBox(this);
+    p_ftmwTargetDurationBox->setRange(1,__INT_MAX__);
+    p_ftmwTargetDurationBox->setSingleStep(30);
+    p_ftmwTargetDurationBox->setSuffix(" min");
+    p_ftmwTargetDurationBox->setToolTip(QString("Duration of experiment in Target Duration mode."));
+    p_ftmwTargetDurationBox->setValue(get(ftmwDuration,60));
+    fl->addRow("Duration",p_ftmwTargetDurationBox);
 
-    p_ftmwTargetTimeBox = new QDateTimeEdit(this);
-    p_ftmwTargetTimeBox->setDisplayFormat(QString("yyyy-MM-dd h:mm:ss AP"));
-    p_ftmwTargetTimeBox->setMaximumDateTime(QDateTime::currentDateTime().addSecs(__INT_MAX__));
-    p_ftmwTargetTimeBox->setCurrentSection(QDateTimeEdit::HourSection);
-    p_ftmwTargetTimeBox->setToolTip(QString("The time at which an experiment in Target Time mode will complete. If disabled, this setting is irrelevant."));
-
-    lbl = new QLabel(QString("Stop Time"));
-    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
-    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
-    fl->addRow(lbl,p_ftmwTargetTimeBox);
+    p_endTimeLabel = new QLabel;
+    p_endTimeLabel->setAlignment(Qt::AlignCenter);
+    p_endTimeLabel->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    auto dt = QDateTime::currentDateTime().addSecs(p_ftmwTargetDurationBox->value()*60);
+    p_endTimeLabel->setText(d_endText.arg(dt.toString("yyyy-MM-dd h:mm AP")));
+    fl->addRow(p_endTimeLabel);
 
     p_phaseCorrectionBox = new QCheckBox(this);
-    p_phaseCorrectionBox->setToolTip(QString("If checked, Blackchirp will optimize the autocorrelation of the chirp during the acquisition.\n\nFor this to work, the chirp must be part of the signal recorded by the digitizer."));
-
-    lbl = new QLabel(QString("Phase Correction"));
-    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
-    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
-    fl->addRow(lbl,p_phaseCorrectionBox);
+    p_phaseCorrectionBox->setToolTip(QString("If checked, Blackchirp will optimize the autocorrelation of the chirp during the acquisition.\n\nFor this to work, the chirp must be part of the signal recorded by the digitizer and must not saturate the digitizer."));
+    p_phaseCorrectionBox->setChecked(get(ftmwPhase,false));
+    registerGetter<QAbstractButton>(ftmwPhase,p_phaseCorrectionBox,
+                   &QCheckBox::isChecked);
+    fl->addRow("Phase Correction",p_phaseCorrectionBox);
 
     p_chirpScoringBox = new QCheckBox(this);
-    p_chirpScoringBox->setToolTip(QString("If checked, Blackchirp will compare the RMS of the chirp in each new waveform with that of the current average chirp RMS.\nIf less than threshold*averageRMS, the FID will be rejected."));
-    lbl = new QLabel(QString("Chirp Scoring"));
-    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
-    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
-    fl->addRow(lbl,p_chirpScoringBox);
+    p_chirpScoringBox->setToolTip(QString("If checked, Blackchirp will compare the RMS of the chirp in each new waveform with that of the current average chirp RMS.\nIf less than threshold*averageRMS, the FID will be rejected.\n\nFor this to work, the chirp must be part of the signal recorded by the digitizer and must not saturate the digitizer."));
+    p_chirpScoringBox->setChecked(get(ftmwScoring,false));
+    registerGetter<QAbstractButton>(ftmwScoring,p_chirpScoringBox,&QCheckBox::isChecked);
+    fl->addRow("Chirp Scoring",p_chirpScoringBox);
 
     p_thresholdBox = new QDoubleSpinBox(this);
     p_thresholdBox->setRange(0.0,1.0);
     p_thresholdBox->setSingleStep(0.05);
-    p_thresholdBox->setValue(0.9);
     p_thresholdBox->setDecimals(3);
-    lbl = new QLabel(QString("Chirp Threshold"));
-    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
-    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
-    fl->addRow(lbl,p_thresholdBox);
+    p_thresholdBox->setValue(get(ftmwThresh,0.9));
+    registerGetter(ftmwThresh,p_thresholdBox,&QDoubleSpinBox::value);
+    fl->addRow("Chirp Threshold",p_thresholdBox);
 
     p_chirpOffsetBox = new QDoubleSpinBox(this);
     p_chirpOffsetBox->setRange(-0.00001,100.0);
     p_chirpOffsetBox->setDecimals(5);
     p_chirpOffsetBox->setSingleStep(0.1);
-    p_chirpOffsetBox->setValue(-1.0);
     p_chirpOffsetBox->setSuffix(QString::fromUtf16(u" μs"));
     p_chirpOffsetBox->setSpecialValueText(QString("Automatic"));
     p_chirpOffsetBox->setToolTip(QString("The time at which the chirp starts (used for phase correction and chirp scoring).\n\nIf automatic, Blackchirp assumes the digitizer is triggered at the start of the protection pulse,\nand accounts for the digitizer trigger position."));
-    lbl = new QLabel(QString("Chirp Start"));
-    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
-    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
-    fl->addRow(lbl,p_chirpOffsetBox);
+    p_chirpOffsetBox->setValue(get(ftmwOffset,p_chirpOffsetBox->minimum()));
+    registerGetter(ftmwOffset,p_chirpOffsetBox,&QDoubleSpinBox::value);
+    fl->addRow("Chirp Start",p_chirpOffsetBox);
 
+    for(int i=0; i<fl->rowCount(); ++i)
+    {
+        auto lbl = dynamic_cast<QLabel*>(fl->itemAt(i,QFormLayout::LabelRole)->widget());
+        if(lbl != nullptr)
+        {
+            lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+            lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+        }
+    }
     p_ftmw->setLayout(fl);
 
     auto *fl2 = new QFormLayout(this);
@@ -107,33 +113,37 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     auto *sgb = new QGroupBox(QString("Common Settings"));
     p_auxDataIntervalBox = new QSpinBox(this);
     p_auxDataIntervalBox->setRange(5,__INT_MAX__);
-    p_auxDataIntervalBox->setValue(300);
     p_auxDataIntervalBox->setSingleStep(300);
     p_auxDataIntervalBox->setSuffix(QString(" s"));
     p_auxDataIntervalBox->setToolTip(QString("Interval for auxilliary data readings (e.g., flows, pressure, etc.)"));
-    lbl = new QLabel(QString("Time Data Interval"));
-    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
-    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
-    fl2->addRow(lbl,p_auxDataIntervalBox);
+    p_auxDataIntervalBox->setValue(get(auxInterval,300));
+    registerGetter(auxInterval,p_auxDataIntervalBox,&QSpinBox::value);
+    fl2->addRow("Aux Data Interval",p_auxDataIntervalBox);
 
-    p_snapshotBox = new QSpinBox(this);
-    p_snapshotBox->setRange(1<<8,(1<<30)-1);
-    p_snapshotBox->setValue(20000);
-    p_snapshotBox->setSingleStep(5000);
-    p_snapshotBox->setPrefix(QString("every "));
-    p_snapshotBox->setSuffix(QString(" shots"));
-    p_snapshotBox->setToolTip(QString("Interval for taking experiment snapshots (i.e., autosaving)."));
+    p_autosaveBox = new QSpinBox(this);
+    p_autosaveBox->setRange(0,100);
+    p_autosaveBox->setSpecialValueText("Disabled");
+    p_autosaveBox->setSuffix(QString(" hour"));
+    p_autosaveBox->setToolTip(QString("Interval for autosaving."));
+    p_autosaveBox->setValue(get(autosave,0));
+    registerGetter(autosave,p_autosaveBox,&QSpinBox::value);
+    fl2->addRow("Autosave Interval",p_autosaveBox);
 
-    lbl = new QLabel(QString("Snapshot Interval"));
-    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
-    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
-    fl2->addRow(lbl,p_snapshotBox);
+
+    for(int i=0; i<fl2->rowCount(); ++i)
+    {
+        auto lbl = dynamic_cast<QLabel*>(fl2->itemAt(i,QFormLayout::LabelRole)->widget());
+        if(lbl != nullptr)
+        {
+            lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+            lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+        }
+    }
     sgb->setLayout(fl2);
 
 
 
 #ifndef BC_LIF
-
     p_ftmw->setChecked(true);
 #ifndef BC_MOTOR
     p_ftmw->setCheckable(false);
@@ -178,6 +188,9 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     connect(p_ftmwTypeBox,&QComboBox::currentTextChanged,this,&WizardStartPage::configureUI);
     connect(p_chirpScoringBox,&QCheckBox::toggled,this,&WizardStartPage::configureUI);
     connect(p_phaseCorrectionBox,&QCheckBox::toggled,this,&WizardStartPage::configureUI);
+
+    using namespace std::chrono;
+    d_timerId = startTimer(5s);
 }
 
 WizardStartPage::~WizardStartPage()
@@ -223,65 +236,58 @@ void WizardStartPage::initializePage()
 {
     auto e = getExperiment();
 
+    if(e->d_number > 0)
+    {
+
 #ifdef BC_LIF
-    p_ftmw->setChecked(e->ftmwConfig().isEnabled());
-    p_lif->setChecked(e->lifConfig().isEnabled());
+        p_ftmw->setChecked(e->d_ftmwCfg.isEnabled());
+        p_lif->setChecked(e->lifConfig().isEnabled());
 #endif
 
 #ifdef BC_MOTOR
-    if(e->motorScan().isEnabled())
-    {
-        p_motor->setChecked(true);
-        p_ftmw->setEnabled(false);
-        p_ftmw->setChecked(false);
+        if(e->motorScan().isEnabled())
+        {
+            p_motor->setChecked(true);
+            p_ftmw->setEnabled(false);
+            p_ftmw->setChecked(false);
 #ifdef BC_LIF
-        p_lif->setChecked(false);
-        p_lif->setEnabled(false);
+            p_lif->setChecked(false);
+            p_lif->setEnabled(false);
 #endif
-    }
-    else
-    {
-        p_motor->setChecked(false);
-    }
+        }
+        else
+        {
+            p_motor->setChecked(false);
+        }
 #endif
 
-    p_ftmwTypeBox->setCurrentIndex(p_ftmwTypeBox->findData(QVariant::fromValue(e->ftmwConfig().type())));
-    ///TODO: make sure shotsPerClockStep is always set correctly!
-    auto shots = e->ftmwConfig().targetShots();
-//    if(e->ftmwConfig().hasMultiFidLists())
-//    shots = e->ftmwConfig().rfConfig().shotsPerClockStep();
-    p_ftmwShotsBox->setValue(shots);
-    p_ftmwTargetTimeBox->setMinimumDateTime(QDateTime::currentDateTime().addSecs(60));
-    p_ftmwTargetTimeBox->setDateTime(QDateTime::currentDateTime().addSecs(3600));
-    p_phaseCorrectionBox->setChecked(e->ftmwConfig().isPhaseCorrectionEnabled());
-    p_chirpScoringBox->setChecked(e->ftmwConfig().isChirpScoringEnabled());
-    p_thresholdBox->setValue(e->ftmwConfig().chirpRMSThreshold());
+        p_ftmwTypeBox->setCurrentIndex(p_ftmwTypeBox->findData(QVariant::fromValue(e->d_ftmwCfg.type())));
+        p_ftmwShotsBox->setValue(e->d_ftmwCfg.targetShots());
+        p_phaseCorrectionBox->setChecked(e->d_ftmwCfg.isPhaseCorrectionEnabled());
+        p_chirpScoringBox->setChecked(e->d_ftmwCfg.isChirpScoringEnabled());
+        p_thresholdBox->setValue(e->d_ftmwCfg.chirpRMSThreshold());
 
-    ///TODO: use chirp offset!
+        ///TODO: use chirp offset!
 
-    p_snapshotBox->setValue(e->d_autoSaveShotsInterval);
-    p_auxDataIntervalBox->setValue(e->d_timeDataInterval);
+        p_autosaveBox->setValue(e->d_autoSaveShotsInterval);
+        p_auxDataIntervalBox->setValue(e->d_timeDataInterval);
+    }
 
     configureUI();
 }
 
 bool WizardStartPage::validatePage()
 {
-    ///TODO: In the future, allow user to choose old experiment to repeat!
-    ///Be sure to give user the options to use current pulse settings.
-    /// Allow changing flow settings?
      auto e = getExperiment();
 
-     auto ftc = e->ftmwConfig();
-     ftc.setType(p_ftmwTypeBox->currentData().value<BlackChirp::FtmwType>());
-     ftc.setTargetShots(p_ftmwShotsBox->value());
-     ftc.setTargetTime(p_ftmwTargetTimeBox->dateTime());
-     ftc.setChirpScoringEnabled(p_chirpScoringBox->isChecked());
-     ftc.setChirpRMSThreshold(p_thresholdBox->value());
-     ftc.setPhaseCorrectionEnabled(p_phaseCorrectionBox->isChecked());
+     e->d_ftmwCfg.setType(p_ftmwTypeBox->currentData().value<FtmwConfig::FtmwType>());
+     e->d_ftmwCfg.setTargetShots(p_ftmwShotsBox->value());
+     e->d_ftmwCfg.d_duration = p_ftmwTargetDurationBox->value();
+     e->d_ftmwCfg.setChirpScoringEnabled(p_chirpScoringBox->isChecked());
+     e->d_ftmwCfg.setChirpRMSThreshold(p_thresholdBox->value());
+     e->d_ftmwCfg.setPhaseCorrectionEnabled(p_phaseCorrectionBox->isChecked());
      ///TODO: use offset info!
 
-     e->setFtmwConfig(ftc);
      if(p_ftmw->isCheckable())
          e->setFtmwEnabled(p_ftmw->isChecked());
      else
@@ -296,7 +302,7 @@ bool WizardStartPage::validatePage()
      e->setMotorEnabled(p_motor->isChecked());
 #endif
 
-     e->setAutoSaveShotsInterval(p_snapshotBox->value());
+     e->setAutoSaveShotsInterval(p_autosaveBox->value());
      e->setTimeDataInterval(p_auxDataIntervalBox->value());
 
      
@@ -306,25 +312,33 @@ bool WizardStartPage::validatePage()
 
 void WizardStartPage::configureUI()
 {
-    auto type = p_ftmwTypeBox->currentData().value<BlackChirp::FtmwType>();
+    auto type = p_ftmwTypeBox->currentData().value<FtmwConfig::FtmwType>();
+
     switch(type)
     {
-    case BlackChirp::FtmwForever:
-    case BlackChirp::FtmwPeakUp:
-    case BlackChirp::FtmwTargetShots:
-        p_ftmwShotsBox->setEnabled(true);
-        p_ftmwTargetTimeBox->setEnabled(false);
-        break;
-    case BlackChirp::FtmwTargetTime:
+    case FtmwConfig::Target_Duration:
         p_ftmwShotsBox->setEnabled(false);
-        p_ftmwTargetTimeBox->setEnabled(true);
+        p_ftmwTargetDurationBox->setEnabled(true);
+        p_endTimeLabel->setEnabled(true);
         break;
     default:
-        p_ftmwShotsBox->setEnabled(false);
-        p_ftmwTargetTimeBox->setEnabled(false);
+        p_ftmwShotsBox->setEnabled(true);
+        p_ftmwTargetDurationBox->setEnabled(false);
+        p_endTimeLabel->setEnabled(false);
         break;
     }
 
     p_chirpOffsetBox->setEnabled(p_phaseCorrectionBox->isChecked() || p_chirpScoringBox->isChecked());
     p_thresholdBox->setEnabled(p_chirpScoringBox->isChecked());
+}
+
+
+void WizardStartPage::timerEvent(QTimerEvent *event)
+{
+    if(event->timerId() == d_timerId)
+    {
+        auto dt = QDateTime::currentDateTime().addSecs(p_ftmwTargetDurationBox->value()*60);
+        p_endTimeLabel->setText(d_endText.arg(dt.toString("yyyy-MM-dd h:mm AP")));
+        event->accept();
+    }
 }

@@ -38,7 +38,7 @@ double FtmwConfig::chirpOffsetUs() const
     return d_chirpOffsetUs;
 }
 
-BlackChirp::FtmwType FtmwConfig::type() const
+FtmwConfig::FtmwType FtmwConfig::type() const
 {
     return d_type;
 }
@@ -205,7 +205,7 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
             //in peak up mode, add 8 bits of padding so that there are empty bits to fill when
             //the rolling average kicks in.
             //Note that this could lead to overflow problems if bytesPerPoint = 4 and the # of averages is large
-            if(type() == BlackChirp::FtmwPeakUp)
+            if(type() == Peak_Up)
                 dat = dat << 8;
 
             d[i] = dat;
@@ -359,17 +359,17 @@ bool FtmwConfig::initialize()
 
     //in peak up mode, data points will be shifted by 8 bits (x256), so the multiplier
     //needs to decrease by a factor of 256
-    if(type() == BlackChirp::FtmwPeakUp)
+    if(type() == Peak_Up)
         f.setVMult(f.vMult()/256.0);
     d_fidTemplate = f;
 
-    if(!d_rfConfig.prepareForAcquisition(type()))
+    if(!d_rfConfig.prepareForAcquisition())
     {
         d_errorString = QString("Invalid RF/Chirp configuration.");
         return false;
     }
 
-    if(type() == BlackChirp::FtmwLoScan || type() == BlackChirp::FtmwDrScan)
+    if(type() == LO_Scan || type() == DR_Scan)
         d_targetShots = d_rfConfig.totalShots();
 
     p_fidStorage = std::make_shared<FidSingleStorage>(QString(""),scopeConfig().d_numRecords);
@@ -411,7 +411,7 @@ void FtmwConfig::setFidTemplate(const Fid f)
     d_fidTemplate = f;
 }
 
-void FtmwConfig::setType(const BlackChirp::FtmwType type)
+void FtmwConfig::setType(const FtmwType type)
 {
     d_type = type;
 }
@@ -584,7 +584,7 @@ int FtmwConfig::perMilComplete() const
 
 bool FtmwConfig::indefinite() const
 {
-    if(type() == BlackChirp::FtmwForever)
+    if(type() == Forever)
         return true;
 
     return false;
@@ -678,20 +678,21 @@ bool FtmwConfig::isComplete() const
 
     switch(type())
     {
-    case BlackChirp::FtmwTargetShots:
-    case BlackChirp::FtmwLoScan:
-    case BlackChirp::FtmwDrScan:
+    case Target_Shots:
+    case LO_Scan:
+    case DR_Scan:
         return completedShots() >= targetShots();
         break;
-    case BlackChirp::FtmwTargetTime:
+    case Target_Duration:
         return QDateTime::currentDateTime() >= targetTime();
         break;
-    case BlackChirp::FtmwForever:
-    case BlackChirp::FtmwPeakUp:
+    case Forever:
+    case Peak_Up:
     default:
         return false;
         break;
     }
+
 
     //not reached
     return false;
@@ -714,10 +715,10 @@ QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
         return out;
 
     out.insert(prefix+QString("Type"),qMakePair((int)type(),empty));
-    if(type() == BlackChirp::FtmwTargetShots)
-        out.insert(prefix+QString("TargetShots"),qMakePair(targetShots(),empty));
-    if(type() == BlackChirp::FtmwTargetTime)
-        out.insert(prefix+QString("TargetTime"),qMakePair(targetTime(),empty));
+//    if(type() == BlackChirp::Target_Shots)
+//        out.insert(prefix+QString("TargetShots"),qMakePair(targetShots(),empty));
+//    if(type() == BlackChirp::Target_Time)
+//        out.insert(prefix+QString("TargetTime"),qMakePair(targetTime(),empty));
 //    out.insert(prefix+QString("CompletedShots"),qMakePair(d_completedShots,empty));
     out.insert(prefix+QString("FidVMult"),qMakePair(QString::number(fidTemplate().vMult(),'g',12),QString("V")));
     out.insert(prefix+QString("PhaseCorrection"),qMakePair(d_phaseCorrectionEnabled,QString("")));
@@ -991,8 +992,8 @@ void FtmwConfig::parseLine(const QString key, const QVariant val)
     {
         if(key.endsWith(QString("Enabled")))
             d_isEnabled = val.toBool();
-        if(key.endsWith(QString("Type")))
-            d_type = (BlackChirp::FtmwType)val.toInt();
+//        if(key.endsWith(QString("Type")))
+//            d_type = (BlackChirp::FtmwType)val.toInt();
         if(key.endsWith(QString("TargetShots")))
             d_targetShots = val.toInt();
 //        if(key.endsWith(QString("CompletedShots")))
@@ -1066,7 +1067,7 @@ FtmwConfig FtmwConfig::loadFromSettings()
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(QString("lastFtmwConfig"));
 
-    out.setType(static_cast<BlackChirp::FtmwType>(s.value(QString("mode"),0).toInt()));
+//    out.setType(static_cast<BlackChirp::FtmwType>(s.value(QString("mode"),0).toInt()));
     out.setTargetShots(s.value(QString("targetShots"),10000).toInt());
     out.setTargetTime(QDateTime::currentDateTime().addMSecs(s.value(QString("targetTime"),3600000).toInt()));
     out.setPhaseCorrectionEnabled(s.value(QString("phaseCorrection"),false).toBool());

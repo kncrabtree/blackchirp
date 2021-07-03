@@ -19,11 +19,25 @@
 
 class FtmwConfig : public ExperimentObjective
 {
+    Q_GADGET
 public:
+    enum FtmwType
+    {
+        Target_Shots,
+        Target_Duration,
+        Forever,
+        Peak_Up,
+        LO_Scan,
+        DR_Scan
+    };
+    Q_ENUM(FtmwType)
+
     FtmwConfig() {};
     FtmwConfig(const FtmwConfig &) =default;
     FtmwConfig &operator=(const FtmwConfig &) =default;
     ~FtmwConfig();
+
+    int d_duration;
 
     bool initialize() override;
     bool advance() override;
@@ -38,7 +52,7 @@ public:
     bool isChirpScoringEnabled() const;
     double chirpRMSThreshold() const;
     double chirpOffsetUs() const;
-    BlackChirp::FtmwType type() const;
+    FtmwType type() const;
     quint64 targetShots() const;
     quint64 completedShots() const;
     QDateTime targetTime() const;
@@ -69,7 +83,7 @@ public:
     void setChirpRMSThreshold(double t);
     void setChirpOffsetUs(double o);
     void setFidTemplate(const Fid f);
-    void setType(const BlackChirp::FtmwType type);
+    void setType(const FtmwType type);
     void setTargetShots(const qint64 target);
     void setTargetTime(const QDateTime time);
 #ifdef BC_CUDA
@@ -100,7 +114,7 @@ private:
     bool d_chirpScoringEnabled{false};
     double d_chirpRMSThreshold{0.0};
     double d_chirpOffsetUs{-1.0};
-    BlackChirp::FtmwType d_type{BlackChirp::FtmwForever};
+    FtmwType d_type{Forever};
     quint64 d_targetShots{0};
 //    quint64 d_completedShots{0};
     QDateTime d_targetTime;

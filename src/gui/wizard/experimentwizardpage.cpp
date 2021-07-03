@@ -13,11 +13,11 @@ std::shared_ptr<Experiment> ExperimentWizardPage::getExperiment() const
 int ExperimentWizardPage::startingFtmwPage() const
 {
     auto e = getExperiment();
-    switch(e->ftmwConfig().type())
+    switch(e->d_ftmwCfg.type())
     {
-    case BlackChirp::FtmwLoScan:
+    case FtmwConfig::LO_Scan:
         return ExperimentWizard::LoScanPage;
-    case BlackChirp::FtmwDrScan:
+    case FtmwConfig::DR_Scan:
         return ExperimentWizard::DrScanPage;
     default:
         return ExperimentWizard::ChirpConfigPage;

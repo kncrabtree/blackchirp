@@ -86,11 +86,11 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
     //If this frequently fails, I recommend turning verbose headers on and writing a custom query command that verifies the header response, retrying until a valid reply is received.
 
     //make a copy of the configuration in which to store settings
-    d_enabledForExperiment = exp.ftmwConfig().isEnabled();
+    d_enabledForExperiment = exp.d_ftmwCfg.isEnabled();
     if(!d_enabledForExperiment)
         return true;
 
-    static_cast<FtmwDigitizerConfig>(*this) = exp.ftmwConfig().scopeConfig();
+    static_cast<FtmwDigitizerConfig>(*this) = exp.d_ftmwCfg.scopeConfig();
     disconnect(p_socket,&QTcpSocket::readyRead,this,&MSO72004C::readWaveform);
 
     //disable ugly headers

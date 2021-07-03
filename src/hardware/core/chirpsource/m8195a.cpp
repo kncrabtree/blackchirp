@@ -47,7 +47,7 @@ void M8195A::initialize()
 
 bool M8195A::prepareForExperiment(Experiment &exp)
 {
-    d_enabledForExperiment = exp.ftmwConfig().isEnabled();
+    d_enabledForExperiment = exp.d_ftmwCfg.isEnabled();
     if(!d_enabledForExperiment)
         return true;
 
@@ -109,8 +109,8 @@ bool M8195A::prepareForExperiment(Experiment &exp)
         return false;
     }
 
-    auto data = exp.ftmwConfig().chirpConfig().getChirpMicroseconds();
-    auto markerData = exp.ftmwConfig().chirpConfig().getMarkerData();
+    auto data = exp.d_ftmwCfg.chirpConfig().getChirpMicroseconds();
+    auto markerData = exp.d_ftmwCfg.chirpConfig().getMarkerData();
 
     if(data.size() != markerData.size())
     {

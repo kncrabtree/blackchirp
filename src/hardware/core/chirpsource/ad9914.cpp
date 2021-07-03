@@ -66,7 +66,7 @@ void AD9914::initialize()
 
 bool AD9914::prepareForExperiment(Experiment &exp)
 {
-    if(!exp.ftmwConfig().isEnabled())
+    if(!exp.d_ftmwCfg.isEnabled())
     {
         d_enabledForExperiment = false;
         return true;
@@ -74,8 +74,8 @@ bool AD9914::prepareForExperiment(Experiment &exp)
 
     d_enabledForExperiment = true;
 
-    auto rfc = exp.ftmwConfig().rfConfig();
-    auto cc = exp.ftmwConfig().chirpConfig();
+    auto rfc = exp.d_ftmwCfg.rfConfig();
+    auto cc = exp.d_ftmwCfg.chirpConfig();
     auto seg = cc.chirpList().constFirst().constFirst();
 
     auto clocks = rfc.getClocks();

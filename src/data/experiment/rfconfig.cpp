@@ -267,8 +267,9 @@ void RfConfig::parseLine(const QString key, const QVariant val)
     }
 }
 
-bool RfConfig::prepareForAcquisition(BlackChirp::FtmwType t)
+bool RfConfig::prepareForAcquisition()
 {
+#pragma message("Change initialization of clock steps - how to handle loading from prev expt?")
     if(data->chirps.isEmpty())
         return false;
 
@@ -278,8 +279,8 @@ bool RfConfig::prepareForAcquisition(BlackChirp::FtmwType t)
             return false;
     }
 
-    if((t != BlackChirp::FtmwLoScan) && (t != BlackChirp::FtmwDrScan))
-        data->clockConfigList.clear();
+//    if((t != BlackChirp::LO_Scan) && (t != BlackChirp::DR_Scan))
+//        data->clockConfigList.clear();
 
     if(!data->clockConfigList.isEmpty())
         data->currentClocks = data->clockConfigList.constFirst();
@@ -543,22 +544,22 @@ int RfConfig::completedSweeps() const
     return data->completedSweeps;
 }
 
-qint64 RfConfig::totalShots() const
+quint64 RfConfig::totalShots() const
 {
-    return static_cast<qint64>(data->shotsPerClockConfig)
-            *static_cast<qint64>(data->clockConfigList.size())
-            *static_cast<qint64>(data->targetSweeps);
+    return static_cast<quint64>(data->shotsPerClockConfig)
+            *static_cast<quint64>(data->clockConfigList.size())
+            *static_cast<quint64>(data->targetSweeps);
 }
 
-qint64 RfConfig::completedSegmentShots() const
+quint64 RfConfig::completedSegmentShots() const
 {
-    qint64 completedSweepShots = static_cast<qint64>(data->completedSweeps)
-            *static_cast<qint64>(data->shotsPerClockConfig)
-            *static_cast<qint64>(data->clockConfigList.size());
+    quint64 completedSweepShots = static_cast<quint64>(data->completedSweeps)
+            *static_cast<quint64>(data->shotsPerClockConfig)
+            *static_cast<quint64>(data->clockConfigList.size());
 
     return completedSweepShots +
-            static_cast<qint64>(data->shotsPerClockConfig)
-            *static_cast<qint64>(data->currentClockIndex);
+            static_cast<quint64>(data->shotsPerClockConfig)
+            *static_cast<quint64>(data->currentClockIndex);
 }
 
 bool RfConfig::canAdvance(qint64 shots) const

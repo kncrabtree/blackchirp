@@ -5,13 +5,23 @@
 
 class QGroupBox;
 class QSpinBox;
-class QDateTimeEdit;
 class QCheckBox;
 class QComboBox;
 class QDoubleSpinBox;
+class QLabel;
 
 namespace BC::Key::WizStart {
 static const QString key{"WizardStartPage"};
+static const QString ftmw{"FtmwEnabled"};
+static const QString ftmwType{"FtmwType"};
+static const QString ftmwShots("FtmwShots");
+static const QString ftmwDuration("FtmwDuration");
+static const QString ftmwPhase("FtmwPhaseCorrection");
+static const QString ftmwScoring("FtmwChirpScoring");
+static const QString ftmwThresh("FtmwChirpScoringThreshold");
+static const QString ftmwOffset("FtmwChirpOffset");
+static const QString auxInterval("AuxDataInterval");
+static const QString autosave("AutosaveInterval");
 }
 
 class WizardStartPage : public ExperimentWizardPage
@@ -22,10 +32,10 @@ public:
     ~WizardStartPage();
 
     // QWizardPage interface
-    int nextId() const;
-    bool isComplete() const;
-    void initializePage();
-    bool validatePage();
+    int nextId() const override;
+    bool isComplete() const override;
+    void initializePage() override;
+    bool validatePage() override;
 
 public slots:
     void configureUI();
@@ -39,14 +49,20 @@ private:
     QGroupBox *p_motor;
 #endif
 
-    QSpinBox *p_auxDataIntervalBox, *p_snapshotBox, *p_ftmwShotsBox;
+    QSpinBox *p_auxDataIntervalBox, *p_autosaveBox, *p_ftmwShotsBox, *p_ftmwTargetDurationBox;
     QComboBox *p_ftmwTypeBox;
-    QDateTimeEdit *p_ftmwTargetTimeBox;
     QCheckBox *p_phaseCorrectionBox, *p_chirpScoringBox;
     QDoubleSpinBox *p_thresholdBox, *p_chirpOffsetBox;
+    QLabel *p_endTimeLabel;
+    int d_timerId;
+    QString d_endText{"Est. end: %1"};
 
 
 
+
+    // QObject interface
+protected:
+    void timerEvent(QTimerEvent *event) override;
 };
 
 #endif // WIZARDSTARTPAGE_H

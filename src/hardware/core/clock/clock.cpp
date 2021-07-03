@@ -115,9 +115,9 @@ double Clock::setFrequency(BlackChirp::ClockType t, double freqMHz)
 
 bool Clock::prepareForExperiment(Experiment &exp)
 {
-    if(exp.ftmwConfig().isEnabled())
+    if(exp.d_ftmwCfg.isEnabled())
     {
-        auto rfc = exp.ftmwConfig().rfConfig();
+        auto rfc = exp.d_ftmwCfg.rfConfig();
         auto clocks = rfc.getClocks();
         for(auto it = clocks.constBegin(); it != clocks.constEnd(); it++)
         {

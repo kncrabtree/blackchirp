@@ -267,7 +267,7 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) :
 void WizardLoScanConfigPage::initializePage()
 {
     auto e = getExperiment();
-    d_rfConfig = e->ftmwConfig().rfConfig();
+    d_rfConfig = e->d_ftmwCfg.rfConfig();
 
     //get LO hardware
     auto upLO = d_rfConfig.clockHardware(BlackChirp::UpConversionLO);

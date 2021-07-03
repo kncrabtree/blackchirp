@@ -43,8 +43,10 @@ public:
     Experiment(const int num, QString exptPath = QString(""), bool headerOnly = false);
     ~Experiment();
 
+    FtmwConfig d_ftmwCfg;
+
     bool isAborted() const;
-    const FtmwConfig& ftmwConfig() const;
+
     PulseGenConfig pGenConfig() const;
     FlowConfig flowConfig() const;
     IOBoardConfig iobConfig() const;
@@ -133,7 +135,6 @@ private:
     bool d_isDummy{false};
     bool d_hardwareSuccess{false};
 
-    FtmwConfig d_ftmwCfg;
     PulseGenConfig d_pGenCfg;
     FlowConfig d_flowCfg;
     IOBoardConfig d_iobCfg;

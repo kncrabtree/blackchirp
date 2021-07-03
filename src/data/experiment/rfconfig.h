@@ -45,7 +45,7 @@ public:
     QMap<QString,QPair<QVariant,QString> > headerMap() const;
     void parseLine(const QString key, const QVariant val);
 
-    bool prepareForAcquisition(BlackChirp::FtmwType t);
+    bool prepareForAcquisition();
     void setAwgMult(const double m);
     void setUpMixSideband(const BlackChirp::Sideband s);
     void setChirpMult(const double m);
@@ -80,8 +80,8 @@ public:
     int shotsPerClockStep() const;
     int currentIndex() const;
     int completedSweeps() const;
-    qint64 totalShots() const;
-    qint64 completedSegmentShots() const;
+    quint64 totalShots() const;
+    quint64 completedSegmentShots() const;
     bool canAdvance(qint64 shots) const;
     int numSegments() const;
 
