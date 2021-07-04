@@ -5,6 +5,9 @@
 #include <QTextStream>
 #include <QFile>
 
+#include <data/storage/settingsstorage.h>
+#include <hardware/core/chirpsource/awg.h>
+
 class RfConfigData : public QSharedData
 {
 public:
@@ -116,9 +119,6 @@ void RfConfig::saveToSettings() const
         s.endArray();
     }
 
-    for(int i=0; i<data->chirps.size(); i++)
-        data->chirps.at(i).saveToSettings(i);
-
     s.endGroup();
     s.sync();
 }
@@ -179,14 +179,6 @@ RfConfig RfConfig::loadFromSettings()
     s.endArray();
 
 
-    num = s.beginReadArray(QString("chirpConfigs"));
-    s.endArray();
-    for(int i=0; i<num; i++)
-    {
-        auto cc = ChirpConfig::loadFromSettings(i);
-        out.addChirpConfig(cc);
-    }
-
     s.endGroup();
 
     return out;
@@ -224,8 +216,6 @@ QMap<QString, QPair<QVariant, QString> > RfConfig::headerMap() const
             out.insert(p2+QString("HwKey"),qMakePair(c.hwKey,empty));
         }
     }
-    ///TODO: Handle multiple chirpconfigs?
-    out.unite(getChirpConfig().headerMap());
     return out;
 }
 
@@ -470,18 +460,14 @@ void RfConfig::addChirpConfig(ChirpConfig cc)
 {
     if(data->chirps.isEmpty())
     {
-        QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-
-        s.beginGroup(QString("awg"));
-        s.beginGroup(s.value(QString("subKey"),QString("virtual")).toString());
-        double sampleRate = s.value(QString("sampleRate"),1e9).toDouble();
-        s.endGroup();
-        s.endGroup();
+        using namespace BC::Key::AWG;
+        SettingsStorage s(key,SettingsStorage::Hardware);
+        double sr = s.get(rate,16e9);
 
         if(rawClockFrequency(BlackChirp::AwgClock) > 0.0)
             cc.setAwgSampleRate(rawClockFrequency(BlackChirp::AwgClock)*1e6);
         else
-            cc.setAwgSampleRate(sampleRate);
+            cc.setAwgSampleRate(sr);
     }
     data->chirps.append(cc);
 }

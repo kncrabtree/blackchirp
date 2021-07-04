@@ -34,7 +34,7 @@ int ChirpTableModel::columnCount(const QModelIndex &parent) const
 
 QVariant ChirpTableModel::data(const QModelIndex &index, int role) const
 {
-    QList<BlackChirp::ChirpSegment> segmentList = d_chirpList.at(d_currentChirp);
+    auto segmentList = d_chirpList.at(d_currentChirp);
     if(index.row() >= segmentList.size())
         return QVariant();
 
@@ -303,17 +303,12 @@ void ChirpTableModel::addSegment(double start, double end, double dur, int pos, 
     if(end < 0.0)
         endFreq = awgMax;
 
-    BlackChirp::ChirpSegment cs;
-    cs.startFreqMHz = startFreq;
-    cs.endFreqMHz = endFreq;
-    cs.durationUs = dur;
-    cs.alphaUs = (end-start)/dur;
-    cs.empty = empty;
+    ChirpConfig::ChirpSegment cs{startFreq,endFreq,dur,(end-start)/dur,empty};
 
     if(d_chirpList.isEmpty())
     {
         d_currentChirp = 0;
-        QList<BlackChirp::ChirpSegment> l;
+        QVector<ChirpConfig::ChirpSegment> l;
         l << cs;
         beginInsertRows(QModelIndex(),0,0);
         d_chirpList << l;
@@ -390,7 +385,7 @@ void ChirpTableModel::moveSegments(int first, int last, int delta)
 
     for(int j=ul; j<ll; j++)
     {
-        QList<BlackChirp::ChirpSegment> chunk = d_chirpList.at(j).mid(first,last-first+1);
+        auto chunk = d_chirpList.at(j).mid(first,last-first+1);
 
         //remove selected rows
         for(int i=0; i<last-first+1; i++)
@@ -427,7 +422,7 @@ double ChirpTableModel::calculateChirpFrequency(double f) const
     return d_currentRfConfig.calculateChirpFreq(f);
 }
 
-QList<QList<BlackChirp::ChirpSegment>> ChirpTableModel::chirpList() const
+QVector<QVector<ChirpConfig::ChirpSegment> > ChirpTableModel::chirpList() const
 {
     return d_chirpList;
 }
@@ -472,7 +467,7 @@ void ChirpTableModel::setNumChirps(int num)
         else
         {
             for(int i=d_chirpList.size(); i<num; i++)
-                d_chirpList.append(QList<BlackChirp::ChirpSegment>());
+                d_chirpList.append(QVector<ChirpConfig::ChirpSegment>());
         }
     }
     else if(num < d_chirpList.size())

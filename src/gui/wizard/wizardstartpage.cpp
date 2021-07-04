@@ -99,11 +99,15 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
 
     for(int i=0; i<fl->rowCount(); ++i)
     {
-        auto lbl = dynamic_cast<QLabel*>(fl->itemAt(i,QFormLayout::LabelRole)->widget());
-        if(lbl != nullptr)
+        auto w = fl->itemAt(i,QFormLayout::LabelRole);
+        if(w != nullptr)
         {
-            lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
-            lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+            auto lbl = dynamic_cast<QLabel*>(w->widget());
+            if(lbl != nullptr)
+            {
+                lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+                lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+            }
         }
     }
     p_ftmw->setLayout(fl);

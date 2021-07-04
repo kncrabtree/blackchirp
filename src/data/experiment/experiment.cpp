@@ -752,17 +752,8 @@ bool Experiment::saveHeader()
 
 bool Experiment::saveChirpFile() const
 {
-    QFile chp(BlackChirp::getExptFile(d_number,BlackChirp::ChirpFile));
-    if(chp.open(QIODevice::WriteOnly))
-    {
-        QTextStream t(&chp);
-        t << d_ftmwCfg.chirpConfig().toString();
-        t.flush();
-        chp.close();
-        return true;
-    }
-    else
-        return false;
+#pragma message("This should go to RF Config")
+    return d_ftmwCfg.chirpConfig().writeChirpFile(d_number);
 }
 
 bool Experiment::saveClockFile() const

@@ -1,26 +1,44 @@
 #ifndef CHIRPCONFIG_H
 #define CHIRPCONFIG_H
 
-#include <QSharedDataPointer>
+#include <QtGlobal>
 #include <QPointF>
 #include <QVector>
 #include <QMap>
 #include <QVariant>
 #include <QPair>
 
-#include <data/datastructs.h>
+#include <data/storage/headerstorage.h>
 
-class ChirpConfigData;
+namespace BC::Store::CC {
+static const QString key("ChirpConfig");
+static const QString preProt("PreProtectionUs");
+static const QString postProt("PostProtectionUs");
+static const QString preGate("PreGateUs");
+static const QString postGate("PostGateUs");
+static const QString interval("IntervalUs");
+static const QString sampleRate("SampleRatePerUs");
+static const QString sampleInterval("SampleIntervalUs");
+}
 
 //note: all time units are microseconds; all frequency units are MHz
-class ChirpConfig
+class ChirpConfig : public HeaderStorage
 {
 public:
+    struct ChirpSegment {
+        double startFreqMHz;
+        double endFreqMHz;
+        double durationUs;
+        double alphaUs;
+        bool empty;
+    };
+
     ChirpConfig();
-    ChirpConfig(const ChirpConfig &);
-    ChirpConfig &operator=(const ChirpConfig &);
     ChirpConfig(int num, QString path = QString(""));
     ~ChirpConfig();
+
+    void readChirpFile(int num, QString path = QString(""));
+    bool writeChirpFile(int num, QString path = QString(""));
 
     double preChirpProtectionDelay() const;
     double preChirpGateDelay() const;
@@ -32,7 +50,7 @@ public:
     double chirpInterval() const;
     bool allChirpsIdentical() const;
 
-    QList<QList<BlackChirp::ChirpSegment>> chirpList() const;
+    QVector<QVector<ChirpSegment>> chirpList() const;
     double segmentStartFreq(int chirp, int segment) const;
     double segmentEndFreq(int chirp, int segment) const;
     double segmentDuration(int chirp, int segment) const;
@@ -44,8 +62,6 @@ public:
     QVector<QPointF> getChirpMicroseconds() const;
     QVector<QPointF> getChirpSegmentMicroSeconds(double t1, double t2) const;
     QVector<QPair<bool,bool>> getMarkerData() const;
-    QMap<QString,QPair<QVariant,QString>> headerMap() const;
-    QString toString() const;
 
     void setAwgSampleRate(const double samplesPerSecond);
     void setPreChirpProtectionDelay(const double d);
@@ -56,42 +72,38 @@ public:
     void setChirpInterval(const double i);
     void addSegment(const double startMHz, const double endMHz, const double durationUs, const int chirpNum = -1);
     void addEmptySegment(const double durationUs, const int chirpNum = -1);
-    void setChirpList(const QList<QList<BlackChirp::ChirpSegment> > l);
-
-    void saveToSettings(int index) const;
-    static ChirpConfig loadFromSettings(int index);
+    void setChirpList(const QVector<QVector<ChirpSegment> > l);
 
 private:
-    QSharedDataPointer<ChirpConfigData> data;
+    struct Markers {
+        double preProt{0.5};
+        double postProt{0.5};
+        double preGate{0.5};
+        double postGate{0.5};
+    } d_markers;
+
+    double d_chirpInterval{-1.0}; //units: us
+
+
+    //working data to improve efficiency; do not record to disk!
+    double d_sampleRateSperUS; //awg rate, samples per microecond
+    double d_sampleIntervalUS; //awg sample interval in microseconds
 
     int getFirstSample(double time) const;
     int getLastSample(double time) const;
     double getSampleTime(const int sample) const;
-    double calculateChirp(const BlackChirp::ChirpSegment segment, const double t, const double phase) const;
-    double calculateEndingPhaseRadians(const BlackChirp::ChirpSegment segment, const double endingTime, const double startingPhase) const;
+    double calculateChirp(const ChirpSegment segment, const double t, const double phase) const;
+    double calculateEndingPhaseRadians(const ChirpSegment segment, const double endingTime, const double startingPhase) const;
 
-    void parseFileLine(QByteArray line);
+    QVector<QVector<ChirpSegment>> d_chirpList;
+
+
+    // HeaderStorage interface
+protected:
+    void prepareToSave() override;
+    void loadComplete() override;
 };
 
-class ChirpConfigData : public QSharedData
-{
-public:
-    //note: postChirpDelay initialized to 0.0 for backwards compatibility
-    ChirpConfigData() : protectionDelaysUs(qMakePair(0.5,0.5)), gateDelaysUs(qMakePair(0.5,0.0)), chirpInterval(-1.0) {}
-
-    QPair<double,double> protectionDelaysUs;
-    QPair<double,double> gateDelaysUs;
-    double chirpInterval; //units: us
-
-
-    //working data to improve efficiency; do not record to disk!
-    double sampleRateSperS; //awg rate, samples per second
-    double sampleRateSperUS; //awg rate, samples per microecond
-    double sampleIntervalS; //awg sample interval in seconds
-    double sampleIntervalUS; //awg sample interval in microseconds
-
-    QList<QList<BlackChirp::ChirpSegment>> chirpList;
-
-};
+Q_DECLARE_TYPEINFO(ChirpConfig::ChirpSegment,Q_PRIMITIVE_TYPE);
 
 #endif // CHIRPCONFIG_H

@@ -140,14 +140,6 @@ struct FtmwScopeConfig {
     }
 };
 
-struct ChirpSegment {
-    double startFreqMHz;
-    double endFreqMHz;
-    double durationUs;
-    double alphaUs;
-    bool empty;
-};
-
 enum ExptFileType {
     HeaderFile,
     ChirpFile,
@@ -294,7 +286,6 @@ Q_DECLARE_METATYPE(BlackChirp::LifScanOrder)
 Q_DECLARE_METATYPE(BlackChirp::LifCompleteMode)
 #endif
 
-Q_DECLARE_TYPEINFO(BlackChirp::ChirpSegment,Q_MOVABLE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::ValidationItem,Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(BlackChirp::IOBoardChannel,Q_PRIMITIVE_TYPE);
 

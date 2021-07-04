@@ -29,7 +29,7 @@ public:
     double calculateAwgFrequency(double f) const;
     double calculateChirpFrequency(double f) const;
 
-    QList<QList<BlackChirp::ChirpSegment>> chirpList() const;
+    QVector<QVector<ChirpConfig::ChirpSegment>> chirpList() const;
     void setRfConfig(const RfConfig c){ d_currentRfConfig = c; }
     RfConfig getRfConfig();
 
@@ -42,8 +42,8 @@ signals:
     void modelChanged();
 
 private:
-    QList<QList<BlackChirp::ChirpSegment>> d_chirpList;
-    QList<BlackChirp::ChirpSegment> d_currentData;
+    QVector<QVector<ChirpConfig::ChirpSegment>> d_chirpList;
+    QVector<ChirpConfig::ChirpSegment> d_currentData;
     RfConfig d_currentRfConfig;
     int d_currentChirp;
     bool d_applyToAll;

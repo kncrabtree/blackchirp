@@ -10,8 +10,6 @@ BlackchirpCSV::BlackchirpCSV()
 bool BlackchirpCSV::writeXY(QIODevice &device, const QVector<QPointF> d, const QString prefix)
 {
     using namespace BC::CSV;
-    if(!device.open(QIODevice::WriteOnly))
-        return false;
 
     QTextStream t(&device);
 
@@ -23,15 +21,12 @@ bool BlackchirpCSV::writeXY(QIODevice &device, const QVector<QPointF> d, const Q
     for(auto it = d.constBegin(); it != d.constEnd(); it++)
         t << nl << QVariant{it->x()}.toString() << del << QVariant{it->y()}.toString();
 
-    device.close();
     return true;
 }
 
 bool BlackchirpCSV::writeMultiple(QIODevice &device, const std::vector<QVector<QPointF> > &l, const std::vector<QString> &n)
 {
     using namespace BC::CSV;
-    if(!device.open(QIODevice::WriteOnly|QIODevice::Text))
-        return false;
 
     QTextStream t(&device);
 
@@ -63,16 +58,12 @@ bool BlackchirpCSV::writeMultiple(QIODevice &device, const std::vector<QVector<Q
         }
 
     }
-
-    device.close();
     return true;
 }
 
 bool BlackchirpCSV::writeHeader(QIODevice &device, const std::multimap<QString, std::tuple<QString, QString, QString, QString, QString> > header)
 {
     using namespace BC::CSV;
-    if(!device.open(QIODevice::WriteOnly|QIODevice::Text))
-        return false;
 
     QTextStream t(&device);
 
@@ -86,6 +77,19 @@ bool BlackchirpCSV::writeHeader(QIODevice &device, const std::multimap<QString, 
           << std::get<3>(it->second) << del
           << std::get<4>(it->second);
 
-    device.close();
     return true;
+}
+
+void BlackchirpCSV::writeLine(QTextStream &t, const QVariantList l)
+{
+    using namespace BC::CSV;
+
+    if(l.isEmpty())
+        return;
+
+    t << l.constFirst().toString();
+    int num = l.size();
+    for(int i=1; i<num; i++)
+        t << del << l.at(i).toString();
+    t << nl;
 }

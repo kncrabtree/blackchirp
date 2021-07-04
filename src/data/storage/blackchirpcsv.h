@@ -102,6 +102,8 @@ public:
 
     bool writeHeader(QIODevice &device, const std::multimap<QString,std::tuple<QString,QString,QString,QString,QString>> header);
 
+    void writeLine(QTextStream &t, const QVariantList l);
+
 };
 
 #endif // BLACKCHIRPCSV_H
