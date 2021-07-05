@@ -231,7 +231,7 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
         out.insert(prefix+it.key()+QString(".Max"),qMakePair(it.value().max,empty));
     }
 
-    out.unite(d_ftmwCfg.headerMap());
+//    out.unite(d_ftmwCfg.headerMap());
     out.unite(d_pGenCfg.headerMap());
     out.unite(d_flowCfg.headerMap());
     out.unite(d_iobCfg.headerMap());
@@ -931,9 +931,9 @@ void Experiment::saveToSettings() const
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(QString("lastExperiment"));
 
-    s.setValue(QString("ftmwEnabled"),d_ftmwCfg.d_isEnabled);
-    if(d_ftmwCfg.d_isEnabled)
-        d_ftmwCfg.saveToSettings();
+//    s.setValue(QString("ftmwEnabled"),d_ftmwCfg.d_isEnabled);
+//    if(d_ftmwCfg.d_isEnabled)
+//        d_ftmwCfg.saveToSettings();
 
 #ifdef BC_LIF
     s.setValue(QString("lifEnabled"),lifConfig().isEnabled());

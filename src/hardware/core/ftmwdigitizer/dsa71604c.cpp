@@ -91,11 +91,11 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     //If this frequently fails, I recommend turning verbose headers on and writing a custom query command that verifies the header response, retrying until a valid reply is received.
 
     //make a copy of the configuration in which to store settings
-    d_enabledForExperiment = exp.d_ftmwCfg.isEnabled();
+    d_enabledForExperiment = exp.d_ftmwCfg.d_isEnabled;
     if(!d_enabledForExperiment)
         return true;
 
-    static_cast<FtmwDigitizerConfig>(*this) = exp.d_ftmwCfg.scopeConfig();
+    static_cast<FtmwDigitizerConfig>(*this) = exp.d_ftmwCfg.d_scopeConfig;
 
     disconnect(p_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform);
 

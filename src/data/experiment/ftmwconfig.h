@@ -16,8 +16,20 @@
 
 #define BC_FTMW_MAXSHIFT 50
 
+namespace BC::Store::FTMW {
+static const QString key("FtmwConfig");
+static const QString duration("Duration");
+static const QString enabled("Enabled");
+static const QString phase("PhaseCorrectionEnabled");
+static const QString chirp("ChirpScoringEnabled");
+static const QString chirpThresh("ChirpRMSThreshold");
+static const QString chirpOffset("ChirpOffset");
+static const QString type("Type");
+static const QString tShots("TargetShots");
+}
 
-class FtmwConfig : public ExperimentObjective
+
+class FtmwConfig : public ExperimentObjective, public HeaderStorage
 {
     Q_GADGET
 public:
@@ -32,12 +44,12 @@ public:
     };
     Q_ENUM(FtmwType)
 
-    FtmwConfig() {};
+    FtmwConfig();
     FtmwConfig(const FtmwConfig &) =default;
     FtmwConfig &operator=(const FtmwConfig &) =default;
     ~FtmwConfig();
 
-    int d_duration;
+    int d_duration{0};
     bool d_isEnabled{false};
     bool d_phaseCorrectionEnabled{false};
     bool d_chirpScoringEnabled{false};
@@ -62,7 +74,6 @@ public:
     quint64 completedShots() const;
     QDateTime targetTime() const;
 
-    const FtmwDigitizerConfig &scopeConfig() const;
     bool processingPaused() const;
     quint64 shotIncrement() const;
     FidList parseWaveform(const QByteArray b) const;
@@ -85,23 +96,21 @@ public:
     void finalizeSnapshots(int num, QString path = QString(""));
     std::shared_ptr<FidStorageBase> storage() const;
 
-
-    QMap<QString,QPair<QVariant,QString> > headerMap() const;
     void loadFids(const int num, const QString path = QString(""));
     void loadFidsFromSnapshots(const int num, const QString path = QString(""), const QList<int> snaps = QList<int>());
-    void parseLine(const QString key, const QVariant val);
     void loadChirps(const int num, const QString path = QString(""));
     void loadClocks(const int num, const QString path = QString(""));
-
-
-    void saveToSettings() const;
-    static FtmwConfig loadFromSettings();
 
 private:
     std::shared_ptr<FidStorageBase> p_fidStorage;
     QDateTime d_targetTime;
     Fid d_fidTemplate;
     bool d_processingPaused{false};
+
+    // HeaderStorage interface
+protected:
+    void prepareToSave() override;
+    void loadComplete() override;
 };
 
 
