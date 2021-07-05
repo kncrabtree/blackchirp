@@ -87,16 +87,6 @@ const FtmwDigitizerConfig& FtmwConfig::scopeConfig() const
     return d_scopeConfig;
 }
 
-RfConfig FtmwConfig::rfConfig() const
-{
-    return d_rfConfig;
-}
-
-ChirpConfig FtmwConfig::chirpConfig(int num) const
-{
-    return d_rfConfig.getChirpConfig(num);
-}
-
 Fid FtmwConfig::fidTemplate() const
 {
     return d_fidTemplate;
@@ -257,9 +247,9 @@ QString FtmwConfig::errorString() const
 double FtmwConfig::ftMinMHz() const
 {
     double sign = 1.0;
-    if(rfConfig().d_downMixSideband == RfConfig::LowerSideband)
+    if(d_rfConfig.d_downMixSideband == RfConfig::LowerSideband)
         sign = -1.0;
-    double lo = rfConfig().clockFrequency(RfConfig::DownLO);
+    double lo = d_rfConfig.clockFrequency(RfConfig::DownLO);
     double lastFreq = lo + sign*ftNyquistMHz();
     return qMin(lo,lastFreq);
 }
@@ -267,9 +257,9 @@ double FtmwConfig::ftMinMHz() const
 double FtmwConfig::ftMaxMHz() const
 {
     double sign = 1.0;
-    if(rfConfig().d_downMixSideband == RfConfig::LowerSideband)
+    if(d_rfConfig.d_downMixSideband == RfConfig::LowerSideband)
         sign = -1.0;
-    double lo = rfConfig().clockFrequency(RfConfig::DownLO);
+    double lo = d_rfConfig.clockFrequency(RfConfig::DownLO);
     double lastFreq = lo + sign*ftNyquistMHz();
     return qMax(lo,lastFreq);
 }
@@ -291,7 +281,7 @@ QPair<int, int> FtmwConfig::chirpRange() const
 {
 //    //want to return [first,last) samples for chirp.
 //    //TODO: handle multiple chirps
-//    auto cc = rfConfig().getChirpConfig();
+//    auto cc = d_rfConfig.getChirpConfig();
 //    if(cc.chirpList().isEmpty())
 //        return qMakePair(-1,-1);
 
@@ -352,8 +342,8 @@ bool FtmwConfig::writeFids(int num, QString path, int snapNum) const
 
 bool FtmwConfig::initialize()
 {
-    double df = rfConfig().clockFrequency(RfConfig::DownLO);
-    auto sb = rfConfig().d_downMixSideband;
+    double df = d_rfConfig.clockFrequency(RfConfig::DownLO);
+    auto sb = d_rfConfig.d_downMixSideband;
 
     Fid f(d_scopeConfig.xIncr(),df,QVector<qint64>(0),sb,d_scopeConfig.yMult(d_scopeConfig.d_fidChannel),1);
 
@@ -568,7 +558,7 @@ void FtmwConfig::setRfConfig(const RfConfig other)
 
 void FtmwConfig::hwReady()
 {
-    d_fidTemplate.setProbeFreq(rfConfig().clockFrequency(RfConfig::DownLO));
+    d_fidTemplate.setProbeFreq(d_rfConfig.clockFrequency(RfConfig::DownLO));
     d_processingPaused = false;
 }
 

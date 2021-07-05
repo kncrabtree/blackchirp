@@ -57,7 +57,7 @@ public:
 
     void configureForWizard();
 
-    void configureFtmw(const FtmwConfig c);
+    void configureFtmw(const FtmwConfig &c);
 #ifdef BC_LIF
     void configureLif(const LifConfig c);
 #endif

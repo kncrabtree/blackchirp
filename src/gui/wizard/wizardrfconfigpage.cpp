@@ -20,7 +20,7 @@ WizardRfConfigPage::WizardRfConfigPage(QWidget *parent) : ExperimentWizardPage(B
 void WizardRfConfigPage::initializePage()
 {
     auto e = getExperiment();
-    p_rfc->setRfConfig(e->d_ftmwCfg.rfConfig());
+    p_rfc->setRfConfig(e->d_ftmwCfg.d_rfConfig);
 }
 
 bool WizardRfConfigPage::validatePage()
@@ -28,7 +28,7 @@ bool WizardRfConfigPage::validatePage()
     //Ensure clocks are set for scan type
     auto rfc = p_rfc->getRfConfig();
     auto e = getExperiment();
-    e->setRfConfig(p_rfc->getRfConfig());
+    e->d_ftmwCfg.d_rfConfig = p_rfc->getRfConfig();
     
 
 

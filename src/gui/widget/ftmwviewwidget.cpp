@@ -181,7 +181,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         ui->resetAveragesButton->setEnabled(e.d_ftmwCfg.type() == FtmwConfig::Peak_Up);
         ui->averagesSpinbox->setEnabled(e.d_ftmwCfg.type() == FtmwConfig::Peak_Up);
 
-        auto chirpOffsetRange = e.d_ftmwCfg.rfConfig().calculateChirpAbsOffsetRange();
+        auto chirpOffsetRange = e.d_ftmwCfg.d_rfConfig.calculateChirpAbsOffsetRange();
         if(chirpOffsetRange.first < 0.0)
             chirpOffsetRange.first = 0.0;
         if(chirpOffsetRange.second < 0.0)

@@ -192,7 +192,7 @@ void PulseConfigWidget::configureLif(const LifConfig c)
 }
 #endif
 
-void PulseConfigWidget::configureFtmw(const FtmwConfig c)
+void PulseConfigWidget::configureFtmw(const FtmwConfig &c)
 {
     if(!c.isEnabled())
         return;
@@ -211,13 +211,13 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig c)
     if(!awgHasProt && awgChannels.isEmpty())
         QMessageBox::warning(this,QString("Cannot configure protection pulse"),QString("No channel has been configured for the \"AWG\" role, and your AWG does not produce its own protection signal.\n\nBlackchirp cannot guarantee that your receiver amp will be protected because it does not know when your AWG is triggered!\n\nIf you wish for Blackchirp to generate a protection pulse, select a channel for the AWG role and refresh this page (go back one page and then come back to this one)."),QMessageBox::Ok,QMessageBox::Ok);
 
-    if(!awgHasProt && c.chirpConfig(0).numChirps() > 1)
+    if(!awgHasProt && c.d_rfConfig.getChirpConfig(0).numChirps() > 1)
         QMessageBox::warning(this,QString("Warning: multiple chirps"),QString("You have requested multiple chirps, and your AWG cannot generate its own protection signal.\nBlackchirp does not know how to configure your delay generator in a burst mode to generate a protection signal with each chirp.\n\nProceed at your own risk."),QMessageBox::Ok,QMessageBox::Ok);
 
     if(d_widgetList.isEmpty())
         return;
 
-    auto cc = c.chirpConfig();
+    auto cc = c.d_rfConfig.getChirpConfig();
     d_config.set(PulseGenConfig::AwgRole,PulseGenConfig::EnabledSetting,true);
     auto l = d_config.setting(PulseGenConfig::AwgRole,PulseGenConfig::DelaySetting);
 

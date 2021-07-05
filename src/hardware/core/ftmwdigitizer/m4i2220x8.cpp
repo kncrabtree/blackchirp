@@ -171,8 +171,8 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
 
 
     //Configure clock source
-    auto clocks = exp.d_ftmwCfg.rfConfig().getClocks();
-    if(clocks.contains(BlackChirp::DigRef) && !clocks.value(BlackChirp::DigRef).hwKey.isEmpty())
+    auto clocks = exp.d_ftmwCfg.d_rfConfig.getClocks();
+    if(clocks.contains(RfConfig::DigRef) && !clocks.value(RfConfig::DigRef).hwKey.isEmpty())
     {
         spcm_dwSetParam_i32(p_handle,SPC_CLOCKMODE,SPC_CM_EXTREFCLOCK);
         spcm_dwSetParam_i32(p_handle,SPC_REFERENCECLOCK,qRound(clocks.value(BlackChirp::DigRef).desiredFreqMHz*1e6));

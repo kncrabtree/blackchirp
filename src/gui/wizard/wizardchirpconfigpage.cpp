@@ -32,7 +32,7 @@ void WizardChirpConfigPage::initializePage()
 {
     //get rfConfig
     auto e = getExperiment();
-    p_ccw->setRfConfig(e->d_ftmwCfg.rfConfig());
+    p_ccw->setRfConfig(e->d_ftmwCfg.d_rfConfig);
     p_ccw->updateChirpPlot();
 
 }
@@ -49,7 +49,7 @@ bool WizardChirpConfigPage::validatePage()
     ///TODO: Smarter validation?
     auto e = getExperiment();
     auto rfc = p_ccw->getRfConfig();
-    e->setRfConfig(rfc);
+    e->d_ftmwCfg.d_rfConfig = rfc;
 
     return true;
 }

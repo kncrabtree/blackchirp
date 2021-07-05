@@ -96,8 +96,7 @@ bool ClockManager::prepareForExperiment(Experiment &exp)
     for(int i=0; i<d_clockList.size(); i++)
         d_clockList[i]->clearRoles();
 
-    auto rfc = exp.d_ftmwCfg.rfConfig();
-    auto map = rfc.getClocks();
+    auto map = exp.d_ftmwCfg.d_rfConfig.getClocks();
     for(auto i = map.constBegin(); i != map.constEnd(); i++)
     {
         auto type = i.key();
@@ -149,11 +148,10 @@ bool ClockManager::prepareForExperiment(Experiment &exp)
             exp.setErrorString(QString("Could not set %1 to %2 MHz (raw frequency = %3 MHz).")
                                .arg(c->d_name)
                                .arg(d.desiredFreqMHz,0,'f',6)
-                               .arg(rfc.rawClockFrequency(type),0,'f',6));
+                               .arg(exp.d_ftmwCfg.d_rfConfig.rawClockFrequency(type),0,'f',6));
             exp.setHardwareFailed();
             return false;
         }
-
         if(qAbs(actualFreq-d.desiredFreqMHz) > 0.1)
         {
             emit logMessage(QString("Actual frequency of %1 (%2 MHz) is more than 100 kHz from desired frequency (%3 MHz)")
@@ -164,10 +162,9 @@ bool ClockManager::prepareForExperiment(Experiment &exp)
 
         d.desiredFreqMHz = actualFreq;
 
-        rfc.setClockFreqInfo(type,d);
+        exp.d_ftmwCfg.d_rfConfig.setClockFreqInfo(type,d);
     }
 
-    exp.setRfConfig(rfc);
     return true;
 
 }

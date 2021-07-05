@@ -74,14 +74,13 @@ bool AD9914::prepareForExperiment(Experiment &exp)
 
     d_enabledForExperiment = true;
 
-    auto rfc = exp.d_ftmwCfg.rfConfig();
-    auto cc = exp.d_ftmwCfg.chirpConfig();
-    auto seg = cc.chirpList().constFirst().constFirst();
+//    auto rfc = exp.d_ftmwCfg.rfConfig();
+    auto seg = exp.d_ftmwCfg.d_rfConfig.getChirpConfig().chirpList().constFirst().constFirst();
 
-    auto clocks = rfc.getClocks();
-    if(clocks.contains(BlackChirp::AwgRef))
+    auto clocks = exp.d_ftmwCfg.d_rfConfig.getClocks();
+    if(clocks.contains(RfConfig::AwgRef))
     {
-        auto cf = clocks.value(BlackChirp::AwgRef).desiredFreqMHz*1e6;
+        auto cf = clocks.value(RfConfig::AwgRef).desiredFreqMHz*1e6;
         set(BC::Key::AWG::rate,cf);
         set(BC::Key::AWG::max,cf*0.4);
     }
@@ -133,11 +132,7 @@ bool AD9914::prepareForExperiment(Experiment &exp)
     }
 
     //store actual chirp settings
-    QList<QList<BlackChirp::ChirpSegment>> l;
-    QList<BlackChirp::ChirpSegment> l2;
-    l2 << seg;
-    l << l2;
-    cc.setChirpList(l);
+    exp.d_ftmwCfg.d_rfConfig.setChirpList({{seg}});
 
 
     QByteArray resp = p_comm->queryCmd(QString("IN\n"));
@@ -149,8 +144,6 @@ bool AD9914::prepareForExperiment(Experiment &exp)
         return false;
     }
 
-//    p_comm->writeCmd(QString("IN\n"));
-
     d_settingsHex.clear();
     d_settingsHex.reserve(44);
     d_settingsHex.append(startHex);
@@ -161,87 +154,6 @@ bool AD9914::prepareForExperiment(Experiment &exp)
     d_settingsHex.append(dtHex);
     d_settingsHex.append("12");
 
-//    resp = p_comm->queryCmd(QString("OE1\n"));
-//    {
-//        if(!resp.startsWith(QByteArray("SUCCESS")))
-//        {
-//            exp.setHardwareFailed();
-//            exp.setErrorString(QString("Could not enable %1 DR Over Output").arg(d_prettyName));
-//            emit hardwareFailure();
-//            return exp;
-//        }
-//    }
-
-//    resp = p_comm->queryCmd(QString("LL%1\n").arg(QString(startHex)));
-//    {
-//        if(!resp.startsWith(QByteArray("SUCCESS")))
-//        {
-//            exp.setHardwareFailed();
-//            exp.setErrorString(QString("Could not set %1 Lower Limit to %2").arg(d_prettyName).arg(QString(startHex)));
-//            emit hardwareFailure();
-//            return exp;
-//        }
-//    }
-
-//    resp = p_comm->queryCmd(QString("UL%1\n").arg(QString(endHex)));
-//    {
-//        if(!resp.startsWith(QByteArray("SUCCESS")))
-//        {
-//            exp.setHardwareFailed();
-//            exp.setErrorString(QString("Could not set %1 Upper Limit to %2").arg(d_prettyName).arg(QString(endHex)));
-//            emit hardwareFailure();
-//            return exp;
-//        }
-//    }
-
-
-//    //these falling slope parameters should not matter, but set them anyways
-//    resp = p_comm->queryCmd(QString("FS%1\n").arg(QString(stepHex)));
-//    {
-//        if(!resp.startsWith(QByteArray("SUCCESS")))
-//        {
-//            exp.setHardwareFailed();
-//            exp.setErrorString(QString("Could not set %1 Falling Step Size to %2").arg(d_prettyName).arg(QString(stepHex)));
-//            emit hardwareFailure();
-//            return exp;
-//        }
-//    }
-//    resp = p_comm->queryCmd(QString("NS%1\n").arg(QString(dtHex)));
-//    {
-//        if(!resp.startsWith(QByteArray("SUCCESS")))
-//        {
-//            exp.setHardwareFailed();
-//            exp.setErrorString(QString("Could not set %1 Negative Slope to %2").arg(d_prettyName).arg(QString(dtHex)));
-//            emit hardwareFailure();
-//            return exp;
-//        }
-//    }
-
-
-//    resp = p_comm->queryCmd(QString("RS%1\n").arg(QString(stepHex)));
-//    {
-//        if(!resp.startsWith(QByteArray("SUCCESS")))
-//        {
-//            exp.setHardwareFailed();
-//            exp.setErrorString(QString("Could not set %1 Rising Step Size to %2").arg(d_prettyName).arg(QString(stepHex)));
-//            emit hardwareFailure();
-//            return exp;
-//        }
-//    }
-
-//    resp = p_comm->queryCmd(QString("PS%1\n").arg(QString(dtHex)));
-//    {
-//        if(!resp.startsWith(QByteArray("SUCCESS")))
-//        {
-//            exp.setHardwareFailed();
-//            exp.setErrorString(QString("Could not set %1 Positive Slope to %2").arg(d_prettyName).arg(QString(dtHex)));
-//            emit hardwareFailure();
-//            return exp;
-//        }
-//    }
-
-    rfc.setChirpConfig(cc);
-    exp.setRfConfig(rfc);
 
     return true;
 

@@ -37,6 +37,8 @@ public:
     FtmwConfig &operator=(const FtmwConfig &) =default;
     ~FtmwConfig();
 
+    RfConfig d_rfConfig;
+
     int d_duration;
 
     bool initialize() override;
@@ -59,8 +61,6 @@ public:
 //    QVector<qint64> rawFidList() const;
 //    QList<FidList> multiFidList() const;
     const FtmwDigitizerConfig &scopeConfig() const;
-    RfConfig rfConfig() const;
-    ChirpConfig chirpConfig(int num = 0) const;
     Fid fidTemplate() const;
     bool processingPaused() const;
     int numFrames() const;
@@ -125,7 +125,6 @@ private:
 //    QList<FidList> d_multiFidStorage;
 
     FtmwDigitizerConfig d_scopeConfig;
-    RfConfig d_rfConfig;
     Fid d_fidTemplate;
     QString d_errorString;
 

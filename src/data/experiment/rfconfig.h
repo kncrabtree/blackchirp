@@ -90,6 +90,7 @@ public:
     void clearChirpConfigs();
     bool setChirpConfig(const ChirpConfig cc, int num=0);
     void addChirpConfig(ChirpConfig cc);
+    void setChirpList(const QVector<QVector<ChirpConfig::ChirpSegment>> l, int num=0);
     int advanceClockStep();
 
 

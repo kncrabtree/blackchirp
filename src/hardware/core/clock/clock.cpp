@@ -119,8 +119,7 @@ bool Clock::prepareForExperiment(Experiment &exp)
 {
     if(exp.d_ftmwCfg.isEnabled())
     {
-        auto rfc = exp.d_ftmwCfg.rfConfig();
-        auto clocks = rfc.getClocks();
+        auto clocks = exp.d_ftmwCfg.d_rfConfig.getClocks();
         for(auto it = clocks.constBegin(); it != clocks.constEnd(); it++)
         {
             if(hasRole(it.key()))
@@ -136,10 +135,9 @@ bool Clock::prepareForExperiment(Experiment &exp)
                     exp.setHardwareFailed();
                     return false;
                 }
-                rfc.setClockDesiredFreq(it.key(),val);
+                exp.d_ftmwCfg.d_rfConfig.setClockDesiredFreq(it.key(),val);
             }
         }
-        exp.setRfConfig(rfc);
     }
 
     return prepareClock(exp);

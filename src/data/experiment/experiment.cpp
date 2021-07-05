@@ -753,13 +753,13 @@ bool Experiment::saveHeader()
 bool Experiment::saveChirpFile() const
 {
 #pragma message("This should go to RF Config")
-    return d_ftmwCfg.chirpConfig().writeChirpFile(d_number);
+    return d_ftmwCfg.d_rfConfig.getChirpConfig().writeChirpFile(d_number);
 }
 
 bool Experiment::saveClockFile() const
 {
 #pragma message("Figure out save heirarchy")
-    return d_ftmwCfg.rfConfig().writeClockFile(d_number,QString(""));
+    return d_ftmwCfg.d_rfConfig.writeClockFile(d_number,QString(""));
 }
 
 bool Experiment::saveTimeFile() const

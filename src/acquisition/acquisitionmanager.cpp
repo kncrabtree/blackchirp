@@ -152,7 +152,8 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 #pragma message("Move to FTMWconfig")
 //            gpuAvg.setCurrentData(d_currentExperiment.d_ftmwCfg.rawFidList());
 #endif
-            emit newClockSettings(d_currentExperiment->d_ftmwCfg.rfConfig());
+#pragma message("Fix clock settings signal")
+            emit newClockSettings(d_currentExperiment->d_ftmwCfg.d_rfConfig);
         }
     }
 

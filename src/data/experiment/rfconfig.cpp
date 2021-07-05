@@ -205,6 +205,12 @@ void RfConfig::addChirpConfig(ChirpConfig cc)
     d_chirps.append(cc);
 }
 
+void RfConfig::setChirpList(const QVector<QVector<ChirpConfig::ChirpSegment> > l, int num)
+{
+    if(num>=0 && num < d_chirps.size())
+        d_chirps[num].setChirpList(l);
+}
+
 int RfConfig::advanceClockStep()
 {
     d_currentClockIndex++;
