@@ -37,9 +37,18 @@ public:
     FtmwConfig &operator=(const FtmwConfig &) =default;
     ~FtmwConfig();
 
-    RfConfig d_rfConfig;
-
     int d_duration;
+    bool d_isEnabled{false};
+    bool d_phaseCorrectionEnabled{false};
+    bool d_chirpScoringEnabled{false};
+    double d_chirpRMSThreshold{0.0};
+    double d_chirpOffsetUs{-1.0};
+    FtmwType d_type{Forever};
+    quint64 d_targetShots{0};
+
+    FtmwDigitizerConfig d_scopeConfig;
+    RfConfig d_rfConfig;
+    QString d_errorString;
 
     bool initialize() override;
     bool advance() override;
@@ -49,27 +58,16 @@ public:
     bool isComplete() const override;
     bool abort() override;
 
-    bool isEnabled() const;
-    bool isPhaseCorrectionEnabled() const;
-    bool isChirpScoringEnabled() const;
-    double chirpRMSThreshold() const;
-    double chirpOffsetUs() const;
-    FtmwType type() const;
-    quint64 targetShots() const;
+
     quint64 completedShots() const;
     QDateTime targetTime() const;
-//    QVector<qint64> rawFidList() const;
-//    QList<FidList> multiFidList() const;
+
     const FtmwDigitizerConfig &scopeConfig() const;
-    Fid fidTemplate() const;
     bool processingPaused() const;
-    int numFrames() const;
-    int numSegments() const;
     quint64 shotIncrement() const;
     FidList parseWaveform(const QByteArray b) const;
     QVector<qint64> extractChirp() const;
     QVector<qint64> extractChirp(const QByteArray b) const;
-    QString errorString() const;
     double ftMinMHz() const;
     double ftMaxMHz() const;
     double ftNyquistMHz() const;
@@ -77,22 +75,13 @@ public:
     QPair<int,int> chirpRange() const;
     bool writeFids(int num, QString path = QString(""), int snapNum = -1) const;
 
-    void setEnabled(bool en = true);
-    void setPhaseCorrectionEnabled(bool enabled);
-    void setChirpScoringEnabled(bool enabled);
-    void setChirpRMSThreshold(double t);
-    void setChirpOffsetUs(double o);
-    void setFidTemplate(const Fid f);
-    void setType(const FtmwType type);
-    void setTargetShots(const qint64 target);
-    void setTargetTime(const QDateTime time);
+
 #ifdef BC_CUDA
     bool setFidsData(const QVector<QVector<qint64> > newList);
 #endif
     bool addFids(const QByteArray rawData, int shift = 0);
     bool subtractFids(const FtmwConfig other);
     void setScopeConfig(const FtmwDigitizerConfig &other);
-    void setRfConfig(const RfConfig other);
     void finalizeSnapshots(int num, QString path = QString(""));
     std::shared_ptr<FidStorageBase> storage() const;
 
@@ -109,25 +98,9 @@ public:
     static FtmwConfig loadFromSettings();
 
 private:
-    bool d_isEnabled{false};
-    bool d_phaseCorrectionEnabled{false};
-    bool d_chirpScoringEnabled{false};
-    double d_chirpRMSThreshold{0.0};
-    double d_chirpOffsetUs{-1.0};
-    FtmwType d_type{Forever};
-    quint64 d_targetShots{0};
-//    quint64 d_completedShots{0};
-    QDateTime d_targetTime;
     std::shared_ptr<FidStorageBase> p_fidStorage;
-
-//    bool d_multipleFidLists{false};
-//    FidList d_fidList;
-//    QList<FidList> d_multiFidStorage;
-
-    FtmwDigitizerConfig d_scopeConfig;
+    QDateTime d_targetTime;
     Fid d_fidTemplate;
-    QString d_errorString;
-
     bool d_processingPaused{false};
 };
 

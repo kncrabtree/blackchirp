@@ -13,41 +13,6 @@ FtmwConfig::~FtmwConfig()
 
 }
 
-bool FtmwConfig::isEnabled() const
-{
-    return d_isEnabled;
-}
-
-bool FtmwConfig::isPhaseCorrectionEnabled() const
-{
-    return d_phaseCorrectionEnabled;
-}
-
-bool FtmwConfig::isChirpScoringEnabled() const
-{
-    return d_chirpScoringEnabled;
-}
-
-double FtmwConfig::chirpRMSThreshold() const
-{
-    return d_chirpRMSThreshold;
-}
-
-double FtmwConfig::chirpOffsetUs() const
-{
-    return d_chirpOffsetUs;
-}
-
-FtmwConfig::FtmwType FtmwConfig::type() const
-{
-    return d_type;
-}
-
-quint64 FtmwConfig::targetShots() const
-{
-    return d_targetShots;
-}
-
 quint64 FtmwConfig::completedShots() const
 {
     return p_fidStorage->completedShots();
@@ -57,6 +22,7 @@ QDateTime FtmwConfig::targetTime() const
 {
     return d_targetTime;
 }
+
 
 //QVector<qint64> FtmwConfig::rawFidList() const
 //{
@@ -87,24 +53,9 @@ const FtmwDigitizerConfig& FtmwConfig::scopeConfig() const
     return d_scopeConfig;
 }
 
-Fid FtmwConfig::fidTemplate() const
-{
-    return d_fidTemplate;
-}
-
 bool FtmwConfig::processingPaused() const
 {
     return d_processingPaused;
-}
-
-int FtmwConfig::numFrames() const
-{
-    return d_scopeConfig.d_numRecords;
-}
-
-int FtmwConfig::numSegments() const
-{
-    return d_rfConfig.numSegments();
 }
 
 quint64 FtmwConfig::shotIncrement() const
@@ -124,7 +75,7 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
     int np = d_scopeConfig.d_recordLength;
     FidList out;
     //read raw data into vector in 64 bit integer form
-    for(int j=0;j<numFrames();j++)
+    for(int j=0;j<d_scopeConfig.d_numRecords;j++)
     {
         QVector<qint64> d(np);
 
@@ -195,13 +146,13 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
             //in peak up mode, add 8 bits of padding so that there are empty bits to fill when
             //the rolling average kicks in.
             //Note that this could lead to overflow problems if bytesPerPoint = 4 and the # of averages is large
-            if(type() == Peak_Up)
+            if(d_type == Peak_Up)
                 dat = dat << 8;
 
             d[i] = dat;
         }
 
-        Fid f = fidTemplate();
+        Fid f = d_fidTemplate;
         f.setData(d);
         f.setShots(shotIncrement());
 
@@ -237,11 +188,6 @@ QVector<qint64> FtmwConfig::extractChirp(const QByteArray b) const
     }
 
     return out;
-}
-
-QString FtmwConfig::errorString() const
-{
-    return d_errorString;
 }
 
 double FtmwConfig::ftMinMHz() const
@@ -349,7 +295,7 @@ bool FtmwConfig::initialize()
 
     //in peak up mode, data points will be shifted by 8 bits (x256), so the multiplier
     //needs to decrease by a factor of 256
-    if(type() == Peak_Up)
+    if(d_type == Peak_Up)
         f.setVMult(f.vMult()/256.0);
     d_fidTemplate = f;
 
@@ -359,9 +305,9 @@ bool FtmwConfig::initialize()
         return false;
     }
 
-    if(type() == LO_Scan || type() == DR_Scan)
+    if(d_type == LO_Scan || d_type == DR_Scan)
         d_targetShots = d_rfConfig.totalShots();
-    if(type() == Target_Duration)
+    if(d_type == Target_Duration)
         d_targetTime = QDateTime::currentDateTime().addSecs(d_duration*60);
 
     p_fidStorage = std::make_shared<FidSingleStorage>(QString(""),scopeConfig().d_numRecords);
@@ -369,46 +315,6 @@ bool FtmwConfig::initialize()
     return true;
 
 
-}
-
-void FtmwConfig::setEnabled(bool en)
-{
-    d_isEnabled = en;
-}
-
-void FtmwConfig::setPhaseCorrectionEnabled(bool enabled)
-{
-    d_phaseCorrectionEnabled = enabled;
-}
-
-void FtmwConfig::setChirpScoringEnabled(bool enabled)
-{
-    d_chirpScoringEnabled = enabled;
-}
-
-void FtmwConfig::setChirpRMSThreshold(double t)
-{
-    d_chirpRMSThreshold = t;
-}
-
-void FtmwConfig::setChirpOffsetUs(double o)
-{
-    d_chirpOffsetUs = o;
-}
-
-void FtmwConfig::setFidTemplate(const Fid f)
-{
-    d_fidTemplate = f;
-}
-
-void FtmwConfig::setType(const FtmwType type)
-{
-    d_type = type;
-}
-
-void FtmwConfig::setTargetShots(const qint64 target)
-{
-    d_targetShots = target;
 }
 
 bool FtmwConfig::advance()
@@ -426,11 +332,6 @@ bool FtmwConfig::advance()
 
     return false;
 
-}
-
-void FtmwConfig::setTargetTime(const QDateTime time)
-{
-    d_targetTime = time;
 }
 
 #ifdef BC_CUDA
@@ -551,11 +452,6 @@ void FtmwConfig::setScopeConfig(const FtmwDigitizerConfig &other)
     d_scopeConfig = other;
 }
 
-void FtmwConfig::setRfConfig(const RfConfig other)
-{
-    d_rfConfig = other;
-}
-
 void FtmwConfig::hwReady()
 {
     d_fidTemplate.setProbeFreq(d_rfConfig.clockFrequency(RfConfig::DownLO));
@@ -567,12 +463,12 @@ int FtmwConfig::perMilComplete() const
     if(indefinite())
         return 0;
 
-    return static_cast<int>(floor(static_cast<double>(completedShots())/static_cast<double>(targetShots()) * 1000.0));
+    return static_cast<int>(floor(static_cast<double>(completedShots())/static_cast<double>(d_targetShots) * 1000.0));
 }
 
 bool FtmwConfig::indefinite() const
 {
-    if(type() == Forever)
+    if(d_type == Forever)
         return true;
 
     return false;
@@ -661,18 +557,18 @@ std::shared_ptr<FidStorageBase> FtmwConfig::storage() const
 
 bool FtmwConfig::isComplete() const
 {
-    if(!isEnabled())
+    if(d_isEnabled)
         return true;
 
-    switch(type())
+    switch(d_type)
     {
     case Target_Shots:
     case LO_Scan:
     case DR_Scan:
-        return completedShots() >= targetShots();
+        return completedShots() >= d_targetShots;
         break;
     case Target_Duration:
-        return QDateTime::currentDateTime() >= targetTime();
+        return QDateTime::currentDateTime() >= d_targetTime;
         break;
     case Forever:
     case Peak_Up:
@@ -695,24 +591,24 @@ QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
 {
     QMap<QString, QPair<QVariant, QString> > out;
 
-    QString prefix = QString("FtmwConfig");
-    QString empty = QString("");
+//    QString prefix = QString("FtmwConfig");
+//    QString empty = QString("");
 
-    out.insert(prefix+QString("Enabled"),qMakePair(isEnabled(),empty));
-    if(!isEnabled())
-        return out;
+//    out.insert(prefix+QString("Enabled"),qMakePair(isEnabled(),empty));
+//    if(!isEnabled())
+//        return out;
 
-    out.insert(prefix+QString("Type"),qMakePair((int)type(),empty));
-//    if(type() == BlackChirp::Target_Shots)
-//        out.insert(prefix+QString("TargetShots"),qMakePair(targetShots(),empty));
-//    if(type() == BlackChirp::Target_Time)
-//        out.insert(prefix+QString("TargetTime"),qMakePair(targetTime(),empty));
-//    out.insert(prefix+QString("CompletedShots"),qMakePair(d_completedShots,empty));
-    out.insert(prefix+QString("FidVMult"),qMakePair(QString::number(fidTemplate().vMult(),'g',12),QString("V")));
-    out.insert(prefix+QString("PhaseCorrection"),qMakePair(d_phaseCorrectionEnabled,QString("")));
-    out.insert(prefix+QString("ChirpScoring"),qMakePair(d_chirpScoringEnabled,QString("")));
-    out.insert(prefix+QString("ChirpRMSThreshold"),qMakePair(QString::number(d_chirpRMSThreshold,'f',3),empty));
-    out.insert(prefix+QString("ChirpOffset"),qMakePair(QString::number(d_chirpOffsetUs,'f',4),QString::fromUtf16(u" μs")));
+//    out.insert(prefix+QString("Type"),qMakePair((int)type(),empty));
+////    if(type() == BlackChirp::Target_Shots)
+////        out.insert(prefix+QString("TargetShots"),qMakePair(targetShots(),empty));
+////    if(type() == BlackChirp::Target_Time)
+////        out.insert(prefix+QString("TargetTime"),qMakePair(targetTime(),empty));
+////    out.insert(prefix+QString("CompletedShots"),qMakePair(d_completedShots,empty));
+//    out.insert(prefix+QString("FidVMult"),qMakePair(QString::number(fidTemplate().vMult(),'g',12),QString("V")));
+//    out.insert(prefix+QString("PhaseCorrection"),qMakePair(d_phaseCorrectionEnabled,QString("")));
+//    out.insert(prefix+QString("ChirpScoring"),qMakePair(d_chirpScoringEnabled,QString("")));
+//    out.insert(prefix+QString("ChirpRMSThreshold"),qMakePair(QString::number(d_chirpRMSThreshold,'f',3),empty));
+//    out.insert(prefix+QString("ChirpOffset"),qMakePair(QString::number(d_chirpOffsetUs,'f',4),QString::fromUtf16(u" μs")));
 
 
 //    out.unite(scopeConfig.headerMap());
@@ -1018,13 +914,13 @@ void FtmwConfig::saveToSettings() const
 
     s.beginGroup(QString("lastFtmwConfig"));
 
-    s.setValue(QString("mode"),static_cast<int>(type()));
-    s.setValue(QString("targetShots"),targetShots());
-    s.setValue(QString("targetTime"),QDateTime::currentDateTime().msecsTo(targetTime()));
-    s.setValue(QString("phaseCorrection"),isPhaseCorrectionEnabled());
-    s.setValue(QString("chirpScoring"),isChirpScoringEnabled());
-    s.setValue(QString("chirpOffsetUs"),chirpOffsetUs());
-    s.setValue(QString("chirpRMSThreshold"),chirpRMSThreshold());
+//    s.setValue(QString("mode"),static_cast<int>(type()));
+//    s.setValue(QString("targetShots"),targetShots());
+//    s.setValue(QString("targetTime"),QDateTime::currentDateTime().msecsTo(targetTime()));
+//    s.setValue(QString("phaseCorrection"),isPhaseCorrectionEnabled());
+//    s.setValue(QString("chirpScoring"),isChirpScoringEnabled());
+//    s.setValue(QString("chirpOffsetUs"),chirpOffsetUs());
+//    s.setValue(QString("chirpRMSThreshold"),chirpRMSThreshold());
 
 //    s.setValue(QString("fidChannel"),scopeConfig().fidChannel);
 //    s.setValue(QString("vScale"),scopeConfig().vScale);
@@ -1056,12 +952,12 @@ FtmwConfig FtmwConfig::loadFromSettings()
     s.beginGroup(QString("lastFtmwConfig"));
 
 //    out.setType(static_cast<BlackChirp::FtmwType>(s.value(QString("mode"),0).toInt()));
-    out.setTargetShots(s.value(QString("targetShots"),10000).toInt());
-    out.setTargetTime(QDateTime::currentDateTime().addMSecs(s.value(QString("targetTime"),3600000).toInt()));
-    out.setPhaseCorrectionEnabled(s.value(QString("phaseCorrection"),false).toBool());
-    out.setChirpScoringEnabled(s.value(QString("chirpScoring"),false).toBool());
-    out.setChirpRMSThreshold(s.value(QString("chirpRMSThreshold"),0.0).toDouble());
-    out.setChirpOffsetUs(s.value(QString("chirpOffsetUs"),-1.0).toDouble());
+//    out.setTargetShots(s.value(QString("targetShots"),10000).toInt());
+//    out.setTargetTime(QDateTime::currentDateTime().addMSecs(s.value(QString("targetTime"),3600000).toInt()));
+//    out.setPhaseCorrectionEnabled(s.value(QString("phaseCorrection"),false).toBool());
+//    out.setChirpScoringEnabled(s.value(QString("chirpScoring"),false).toBool());
+//    out.setChirpRMSThreshold(s.value(QString("chirpRMSThreshold"),0.0).toDouble());
+//    out.setChirpOffsetUs(s.value(QString("chirpOffsetUs"),-1.0).toDouble());
 
     BlackChirp::FtmwScopeConfig sc;
     sc.fidChannel = s.value(QString("fidChannel"),1).toInt();

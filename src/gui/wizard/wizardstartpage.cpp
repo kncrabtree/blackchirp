@@ -265,11 +265,11 @@ void WizardStartPage::initializePage()
         }
 #endif
 
-        p_ftmwTypeBox->setCurrentIndex(p_ftmwTypeBox->findData(QVariant::fromValue(e->d_ftmwCfg.type())));
-        p_ftmwShotsBox->setValue(e->d_ftmwCfg.targetShots());
-        p_phaseCorrectionBox->setChecked(e->d_ftmwCfg.isPhaseCorrectionEnabled());
-        p_chirpScoringBox->setChecked(e->d_ftmwCfg.isChirpScoringEnabled());
-        p_thresholdBox->setValue(e->d_ftmwCfg.chirpRMSThreshold());
+        p_ftmwTypeBox->setCurrentIndex(p_ftmwTypeBox->findData(QVariant::fromValue(e->d_ftmwCfg.d_type)));
+        p_ftmwShotsBox->setValue(e->d_ftmwCfg.d_targetShots);
+        p_phaseCorrectionBox->setChecked(e->d_ftmwCfg.d_phaseCorrectionEnabled);
+        p_chirpScoringBox->setChecked(e->d_ftmwCfg.d_chirpScoringEnabled);
+        p_thresholdBox->setValue(e->d_ftmwCfg.d_chirpRMSThreshold);
 
         ///TODO: use chirp offset!
 
@@ -284,18 +284,18 @@ bool WizardStartPage::validatePage()
 {
      auto e = getExperiment();
 
-     e->d_ftmwCfg.setType(p_ftmwTypeBox->currentData().value<FtmwConfig::FtmwType>());
-     e->d_ftmwCfg.setTargetShots(p_ftmwShotsBox->value());
+     e->d_ftmwCfg.d_type = p_ftmwTypeBox->currentData().value<FtmwConfig::FtmwType>();
+     e->d_ftmwCfg.d_targetShots = p_ftmwShotsBox->value();
      e->d_ftmwCfg.d_duration = p_ftmwTargetDurationBox->value();
-     e->d_ftmwCfg.setChirpScoringEnabled(p_chirpScoringBox->isChecked());
-     e->d_ftmwCfg.setChirpRMSThreshold(p_thresholdBox->value());
-     e->d_ftmwCfg.setPhaseCorrectionEnabled(p_phaseCorrectionBox->isChecked());
+     e->d_ftmwCfg.d_chirpScoringEnabled = p_chirpScoringBox->isChecked();
+     e->d_ftmwCfg.d_chirpRMSThreshold = p_thresholdBox->value();
+     e->d_ftmwCfg.d_phaseCorrectionEnabled = p_phaseCorrectionBox->isChecked();
      ///TODO: use offset info!
 
      if(p_ftmw->isCheckable())
-         e->setFtmwEnabled(p_ftmw->isChecked());
+         e->d_ftmwCfg.d_isEnabled = p_ftmw->isChecked();
      else
-         e->setFtmwEnabled(true);
+         e->d_ftmwCfg.d_isEnabled = true;
 
 
 #ifdef BC_LIF

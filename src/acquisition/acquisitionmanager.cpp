@@ -88,7 +88,7 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 //    static int total = 0;
 //    static int count = 0;
     if(d_state == Acquiring
-            && d_currentExperiment->d_ftmwCfg.isEnabled()
+            && d_currentExperiment->d_ftmwCfg.d_isEnabled
             && !d_currentExperiment->d_ftmwCfg.isComplete()
             && !d_currentExperiment->d_ftmwCfg.processingPaused())
     {
@@ -97,14 +97,14 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 //        testTime.start();
         bool success = true;
 
-        if(d_currentExperiment->d_ftmwCfg.isChirpScoringEnabled())
+        if(d_currentExperiment->d_ftmwCfg.d_chirpScoringEnabled)
         {
             success = scoreChirp(b);
             if(!success)
                 return;
         }
 
-        if(d_currentExperiment->d_ftmwCfg.isPhaseCorrectionEnabled())
+        if(d_currentExperiment->d_ftmwCfg.d_phaseCorrectionEnabled)
         {
             success = calculateShift(b);
             if(!success)
@@ -209,7 +209,7 @@ void AcquisitionManager::getTimeData()
 
         d_currentExperiment->addTimeStamp();
 
-        if(d_currentExperiment->d_ftmwCfg.isEnabled())
+        if(d_currentExperiment->d_ftmwCfg.d_isEnabled)
         {
             QList<QPair<QString,QVariant>> l { qMakePair(QString("ftmwShots"),d_currentExperiment->d_ftmwCfg.completedShots()) };
             d_currentExperiment->addTimeData(l,true);

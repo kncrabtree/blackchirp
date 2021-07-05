@@ -89,7 +89,7 @@ double ClockManager::readClockFrequency(RfConfig::ClockType t)
 
 bool ClockManager::prepareForExperiment(Experiment &exp)
 {
-    if(!exp.d_ftmwCfg.isEnabled())
+    if(!exp.d_ftmwCfg.d_isEnabled)
         return true;
 
     d_clockRoles.clear();

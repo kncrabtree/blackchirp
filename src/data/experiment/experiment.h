@@ -66,10 +66,6 @@ public:
     void setAutoSaveShotsInterval(const int s);
     bool initialize();
     void abort();
-    void setFtmwConfig(const FtmwConfig cfg);
-    void setFtmwEnabled(bool en = true);
-    void setScopeConfig(const FtmwDigitizerConfig &cfg);
-    void setRfConfig(const RfConfig cfg);
     void setIOBoardConfig(const IOBoardConfig cfg);
 #ifdef BC_CUDA
     bool setFidsData(const QVector<QVector<qint64> > l);

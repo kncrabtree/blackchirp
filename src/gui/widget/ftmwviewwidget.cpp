@@ -111,7 +111,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
 {
 
     p_fidStorage = e.d_ftmwCfg.storage();
-    if(e.d_ftmwCfg.type() == FtmwConfig::Peak_Up)
+    if(e.d_ftmwCfg.d_type == FtmwConfig::Peak_Up)
         ui->exptLabel->setText(QString("Peak Up Mode"));
     else
         ui->exptLabel->setText(QString("Experiment %1").arg(e.d_number));
@@ -153,7 +153,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         it.value().segment = 0;
     }
 
-    if(e.d_ftmwCfg.isEnabled())
+    if(e.d_ftmwCfg.d_isEnabled)
     {
         auto ws = d_workersStatus.value(d_liveId);
         ws.worker = new FtWorker(d_liveId);
@@ -175,11 +175,11 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         ui->liveAction->setEnabled(true);
 
         ui->averagesSpinbox->blockSignals(true);
-        ui->averagesSpinbox->setValue(e.d_ftmwCfg.targetShots());
+        ui->averagesSpinbox->setValue(e.d_ftmwCfg.d_targetShots);
         ui->averagesSpinbox->blockSignals(false);
 
-        ui->resetAveragesButton->setEnabled(e.d_ftmwCfg.type() == FtmwConfig::Peak_Up);
-        ui->averagesSpinbox->setEnabled(e.d_ftmwCfg.type() == FtmwConfig::Peak_Up);
+        ui->resetAveragesButton->setEnabled(e.d_ftmwCfg.d_type == FtmwConfig::Peak_Up);
+        ui->averagesSpinbox->setEnabled(e.d_ftmwCfg.d_type == FtmwConfig::Peak_Up);
 
         auto chirpOffsetRange = e.d_ftmwCfg.d_rfConfig.calculateChirpAbsOffsetRange();
         if(chirpOffsetRange.first < 0.0)
@@ -197,7 +197,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         ui->maxFtSegBox->setValue(chirpOffsetRange.second);
         ui->maxFtSegBox->blockSignals(false);
 
-        if(e.d_ftmwCfg.type() == FtmwConfig::LO_Scan)
+        if(e.d_ftmwCfg.d_type == FtmwConfig::LO_Scan)
         {
 //            d_mode = BothSB;
             ui->bsAction->setEnabled(true);

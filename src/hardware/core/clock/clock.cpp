@@ -117,7 +117,7 @@ double Clock::setFrequency(RfConfig::ClockType t, double freqMHz)
 
 bool Clock::prepareForExperiment(Experiment &exp)
 {
-    if(exp.d_ftmwCfg.isEnabled())
+    if(exp.d_ftmwCfg.d_isEnabled)
     {
         auto clocks = exp.d_ftmwCfg.d_rfConfig.getClocks();
         for(auto it = clocks.constBegin(); it != clocks.constEnd(); it++)

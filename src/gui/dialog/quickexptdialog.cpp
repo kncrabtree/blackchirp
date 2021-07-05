@@ -14,26 +14,26 @@ QuickExptDialog::QuickExptDialog(std::shared_ptr<Experiment> e, QWidget *parent)
     QString html;
 
     //generate summary text and insert header details into table widget
-    if(e->d_ftmwCfg.isEnabled())
+    if(e->d_ftmwCfg.d_isEnabled)
     {
         html.append(QString("<h1>FTMW settings</h1>"));
         html.append(QString("<ul>"));
-        if(e->d_ftmwCfg.type() == FtmwConfig::Target_Shots)
+        if(e->d_ftmwCfg.d_type == FtmwConfig::Target_Shots)
         {
             html.append(QString("<li>Mode: Target Shots</li>"));
-            html.append(QString("<li>Shots: %1</li>").arg(e->d_ftmwCfg.targetShots()));
+            html.append(QString("<li>Shots: %1</li>").arg(e->d_ftmwCfg.d_targetShots));
         }
-        else if(e->d_ftmwCfg.type() == FtmwConfig::Peak_Up)
+        else if(e->d_ftmwCfg.d_type == FtmwConfig::Peak_Up)
         {
             html.append(QString("<li>Mode: Peak Up</li>"));
-            html.append(QString("<li>Shots: %1</li>").arg(e->d_ftmwCfg.targetShots()));
+            html.append(QString("<li>Shots: %1</li>").arg(e->d_ftmwCfg.d_targetShots));
         }
-        else if(e->d_ftmwCfg.type() == FtmwConfig::Target_Duration)
+        else if(e->d_ftmwCfg.d_type == FtmwConfig::Target_Duration)
         {
             html.append(QString("<li>Mode: Target Time</li>"));
             html.append(QString("<li>End time: %1</li>").arg(e->d_ftmwCfg.targetTime().toString()));
         }
-        else if(e->d_ftmwCfg.type() == FtmwConfig::Forever)
+        else if(e->d_ftmwCfg.d_type == FtmwConfig::Forever)
         {
             html.append(QString("<li>Mode: Forever</li>"));
         }

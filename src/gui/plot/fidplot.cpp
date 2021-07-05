@@ -96,7 +96,7 @@ void FidPlot::prepareForExperiment(const Experiment e)
     auto &c = e.d_ftmwCfg;
     p_curve->setCurveData(QVector<QPointF>());
 
-    if(!c.isEnabled())
+    if(!c.d_isEnabled)
     {
         p_curve->setVisible(false);
 
@@ -120,7 +120,7 @@ void FidPlot::prepareForExperiment(const Experiment e)
         emit ftStartChanged(d_ftMarkers.first->xValue());
         emit ftEndChanged(d_ftMarkers.second->xValue());
 
-        bool displayMarkers = c.isPhaseCorrectionEnabled() || c.isChirpScoringEnabled();
+        bool displayMarkers = c.d_phaseCorrectionEnabled || c.d_chirpScoringEnabled;
         if(displayMarkers)
         {
             ///TODO: Update this calculation!

@@ -42,7 +42,7 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
 
         if(!headerOnly)
         {
-            if(d_ftmwCfg.isEnabled())
+            if(d_ftmwCfg.d_isEnabled)
             {
 #pragma message("What should be moved to header?")
                 d_ftmwCfg.loadChirps(num,exptPath);
@@ -304,7 +304,7 @@ bool Experiment::snapshotReady()
     if(isComplete())
         return false;
 
-    if(d_ftmwCfg.isEnabled())
+    if(d_ftmwCfg.d_isEnabled)
     {
         if(d_ftmwCfg.completedShots() > 0)
         {
@@ -383,7 +383,7 @@ bool Experiment::initialize()
     int num = s.get(BC::Key::exptNum,0)+1;
     d_number = num;
 
-    if(d_ftmwCfg.isEnabled() && d_ftmwCfg.type() == FtmwConfig::Peak_Up)
+    if(d_ftmwCfg.d_isEnabled && d_ftmwCfg.d_type == FtmwConfig::Peak_Up)
     {
         d_number = -1;
         d_startLogMessage = QString("Peak up mode started.");
@@ -421,11 +421,11 @@ bool Experiment::initialize()
     }
 
 
-    if(d_ftmwCfg.isEnabled())
+    if(d_ftmwCfg.d_isEnabled)
     {
         if(!d_ftmwCfg.initialize())
         {
-            setErrorString(d_ftmwCfg.errorString());
+            setErrorString(d_ftmwCfg.d_errorString);
             return false;
         }
     }
@@ -453,7 +453,7 @@ bool Experiment::initialize()
     }
 
     //chirp file
-    if(d_ftmwCfg.isEnabled())
+    if(d_ftmwCfg.d_isEnabled)
     {
         if(!saveChirpFile())
         {
@@ -477,7 +477,7 @@ bool Experiment::initialize()
 void Experiment::abort()
 {
     d_isAborted = true;
-    if(d_ftmwCfg.isEnabled() && (d_ftmwCfg.type() == FtmwConfig::Target_Shots || d_ftmwCfg.type() == FtmwConfig::Target_Duration ))
+    if(d_ftmwCfg.d_isEnabled && (d_ftmwCfg.d_type == FtmwConfig::Target_Shots || d_ftmwCfg.d_type == FtmwConfig::Target_Duration ))
     {
         d_endLogMessage = QString("Experiment %1 aborted.").arg(d_number);
         d_endLogMessageCode = BlackChirp::LogError;
@@ -498,26 +498,6 @@ void Experiment::abort()
     }
 #endif
 
-}
-
-void Experiment::setFtmwConfig(const FtmwConfig cfg)
-{
-    d_ftmwCfg = cfg;
-}
-
-void Experiment::setFtmwEnabled(bool en)
-{
-    d_ftmwCfg.setEnabled(en);
-}
-
-void Experiment::setScopeConfig(const FtmwDigitizerConfig &cfg)
-{
-    d_ftmwCfg.setScopeConfig(cfg);
-}
-
-void Experiment::setRfConfig(const RfConfig cfg)
-{
-    d_ftmwCfg.setRfConfig(cfg);
 }
 
 void Experiment::setIOBoardConfig(const IOBoardConfig cfg)
@@ -542,7 +522,7 @@ bool Experiment::addFids(const QByteArray newData, int shift)
 {
     if(!d_ftmwCfg.addFids(newData,shift))
     {
-        setErrorString(d_ftmwCfg.errorString());
+        setErrorString(d_ftmwCfg.d_errorString);
         return false;
     }
 
@@ -727,7 +707,7 @@ void Experiment::finalSave()
 
     saveHeader();
 
-    if(d_ftmwCfg.isEnabled())
+    if(d_ftmwCfg.d_isEnabled)
         d_ftmwCfg.writeFids(d_number);
 
 #ifdef BC_LIF
@@ -951,8 +931,8 @@ void Experiment::saveToSettings() const
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(QString("lastExperiment"));
 
-    s.setValue(QString("ftmwEnabled"),d_ftmwCfg.isEnabled());
-    if(d_ftmwCfg.isEnabled())
+    s.setValue(QString("ftmwEnabled"),d_ftmwCfg.d_isEnabled);
+    if(d_ftmwCfg.d_isEnabled)
         d_ftmwCfg.saveToSettings();
 
 #ifdef BC_LIF
@@ -995,10 +975,10 @@ Experiment Experiment::loadFromSettings()
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(QString("lastExperiment"));
 
-    FtmwConfig f = FtmwConfig::loadFromSettings();
-    if(s.value(QString("ftmwEnabled"),false).toBool())
-        f.setEnabled();
-    out.setFtmwConfig(f);
+//    FtmwConfig f = FtmwConfig::loadFromSettings();
+//    if(s.value(QString("ftmwEnabled"),false).toBool())
+//        f.setEnabled();
+//    out.setFtmwConfig(f);
 
 #ifdef BC_LIF   
     LifConfig l = LifConfig::loadFromSettings();

@@ -54,7 +54,7 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
     if(hdr != nullptr)
         p_tabWidget->addTab(hdr,QIcon(QString(":/icons/header.png")),QString("Header"));
 
-    if(d_experiment.d_ftmwCfg.isEnabled())
+    if(d_experiment.d_ftmwCfg.d_isEnabled)
     {
         QWidget *ftmw = buildFtmwWidget(path);
         if(ftmw != nullptr)
@@ -150,7 +150,7 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
 {
     QWidget *out = nullptr;
     p_ftmw = nullptr;
-    if(d_experiment.d_ftmwCfg.isEnabled())
+    if(d_experiment.d_ftmwCfg.d_isEnabled)
     {
         out = new QWidget;
         QVBoxLayout *vbl = new QVBoxLayout;

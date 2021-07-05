@@ -86,7 +86,7 @@ void VirtualFtmwScope::initialize()
 bool VirtualFtmwScope::prepareForExperiment(Experiment &exp)
 {
     //make a copy of the configuration in which to store settings
-    if(!exp.d_ftmwCfg.isEnabled())
+    if(!exp.d_ftmwCfg.d_isEnabled)
         return true;
 
     static_cast<FtmwDigitizerConfig>(*this) = exp.d_ftmwCfg.scopeConfig();

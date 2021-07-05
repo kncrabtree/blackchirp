@@ -32,7 +32,7 @@ bool WizardRfConfigPage::validatePage()
     
 
 
-    if(e->d_ftmwCfg.type() == FtmwConfig::LO_Scan)
+    if(e->d_ftmwCfg.d_type == FtmwConfig::LO_Scan)
     {
         if(rfc.clockHardware(RfConfig::UpLO).isEmpty())
             return false;
@@ -44,13 +44,13 @@ bool WizardRfConfigPage::validatePage()
         }
     }
 
-    if(e->d_ftmwCfg.type() == FtmwConfig::DR_Scan)
+    if(e->d_ftmwCfg.d_type == FtmwConfig::DR_Scan)
     {
         if(rfc.clockHardware(RfConfig::DRClock).isEmpty())
             return false;
     }
 
-    e->setRfConfig(p_rfc->getRfConfig());
+    e->d_ftmwCfg.d_rfConfig = getRfConfig();
 
 
     return true;
