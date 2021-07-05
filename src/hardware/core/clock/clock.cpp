@@ -1,8 +1,10 @@
 #include <hardware/core/clock/clock.h>
 
+#include <QMetaEnum>
+
 Clock::Clock(int clockNum, int numOutputs, bool tunable, const QString subKey, const QString name, CommunicationProtocol::CommType commType,
-             QObject *parent, bool threaded) :
-    HardwareObject(QString("clock%1").arg(clockNum),subKey,name,commType,parent,threaded,true), d_numOutputs(numOutputs),
+             QObject *parent) :
+    HardwareObject(QString("clock%1").arg(clockNum),subKey,name,commType,parent,false,true), d_numOutputs(numOutputs),
     d_isTunable(tunable)
 {
 }
@@ -25,7 +27,7 @@ void Clock::initialize()
     initializeClock();
 }
 
-bool Clock::addRole(BlackChirp::ClockType t, int outputIndex)
+bool Clock::addRole(RfConfig::ClockType t, int outputIndex)
 {
     if(outputIndex >= d_numOutputs)
         return false;
@@ -34,7 +36,7 @@ bool Clock::addRole(BlackChirp::ClockType t, int outputIndex)
     return true;
 }
 
-void Clock::removeRole(BlackChirp::ClockType t)
+void Clock::removeRole(RfConfig::ClockType t)
 {
     d_outputRoles.remove(t);
 }
@@ -44,7 +46,7 @@ void Clock::clearRoles()
     d_outputRoles.clear();
 }
 
-bool Clock::hasRole(BlackChirp::ClockType t)
+bool Clock::hasRole(RfConfig::ClockType t)
 {
     return d_outputRoles.contains(t);
 }
@@ -65,7 +67,7 @@ void Clock::readAll()
     }
 }
 
-double Clock::readFrequency(BlackChirp::ClockType t)
+double Clock::readFrequency(RfConfig::ClockType t)
 {
     if(!hasRole(t))
         return -1.0;
@@ -78,7 +80,7 @@ double Clock::readFrequency(BlackChirp::ClockType t)
     return out;
 }
 
-double Clock::setFrequency(BlackChirp::ClockType t, double freqMHz)
+double Clock::setFrequency(RfConfig::ClockType t, double freqMHz)
 {
     if(!hasRole(t))
         return -1.0;
@@ -127,7 +129,10 @@ bool Clock::prepareForExperiment(Experiment &exp)
                 double val = setFrequency(it.key(),c.desiredFreqMHz);
                 if(val < 0.0)
                 {
-                    exp.setErrorString(QString("Could not initialize %1 to %2 MHz").arg(BlackChirp::clockPrettyName(it.key())).arg(it.value().desiredFreqMHz,0,'f',6));
+                    exp.setErrorString(QString("Could not initialize %1 to %2 MHz")
+                                       .arg(QMetaEnum::fromType<RfConfig::ClockType>()
+                                            .valueToKey(it.key()))
+                                       .arg(it.value().desiredFreqMHz,0,'f',6));
                     exp.setHardwareFailed();
                     return false;
                 }

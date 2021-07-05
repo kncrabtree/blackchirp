@@ -1,6 +1,6 @@
 #include "clockmanager.h"
 
-#include <QSettings>
+#include <QMetaEnum>
 
 #include <hardware/core/clock/clock.h>
 
@@ -8,7 +8,6 @@
 ClockManager::ClockManager(QObject *parent) : QObject(parent),
     SettingsStorage(BC::Key::clockManager)
 {
-    d_clockTypes = BlackChirp::allClockTypes();
 
 #ifdef BC_CLOCK_0
     d_clockList << new Clock0Hardware(0,this);
@@ -62,22 +61,26 @@ ClockManager::ClockManager(QObject *parent) : QObject(parent),
 
 }
 
-double ClockManager::setClockFrequency(BlackChirp::ClockType t, double freqMHz)
+double ClockManager::setClockFrequency(RfConfig::ClockType t, double freqMHz)
 {
     if(!d_clockRoles.contains(t))
     {
-        emit logMessage(QString("No clock configured for use as %1").arg(BlackChirp::clockPrettyName(t)),BlackChirp::LogWarning);
+        emit logMessage(QString("No clock configured for use as %1")
+                        .arg(QMetaEnum::fromType<RfConfig::ClockType>().valueToKey(t)),
+                        BlackChirp::LogWarning);
         return -1.0;
     }
 
     return d_clockRoles.value(t)->setFrequency(t,freqMHz);
 }
 
-double ClockManager::readClockFrequency(BlackChirp::ClockType t)
+double ClockManager::readClockFrequency(RfConfig::ClockType t)
 {
     if(!d_clockRoles.contains(t))
     {
-        emit logMessage(QString("No clock configured for use as %1").arg(BlackChirp::clockPrettyName(t)),BlackChirp::LogWarning);
+        emit logMessage(QString("No clock configured for use as %1")
+                        .arg(QMetaEnum::fromType<RfConfig::ClockType>().valueToKey(t)),
+                        BlackChirp::LogWarning);
         return -1.0;
     }
 
@@ -117,7 +120,9 @@ bool ClockManager::prepareForExperiment(Experiment &exp)
         if(c == nullptr)
         {
             exp.setErrorString(QString("Could not find hardware clock for %1 (%2 output %3)")
-                               .arg(BlackChirp::clockPrettyName(type)).arg(d.hwKey).arg(d.output));
+                               .arg(QMetaEnum::fromType<RfConfig::ClockType>()
+                                    .valueToKey(type))
+                                    .arg(d.hwKey).arg(d.output));
             exp.setHardwareFailed();
             return false;
         }
@@ -152,7 +157,7 @@ bool ClockManager::prepareForExperiment(Experiment &exp)
         if(qAbs(actualFreq-d.desiredFreqMHz) > 0.1)
         {
             emit logMessage(QString("Actual frequency of %1 (%2 MHz) is more than 100 kHz from desired frequency (%3 MHz)")
-                            .arg(BlackChirp::clockPrettyName(type))
+                            .arg(QMetaEnum::fromType<RfConfig::ClockType>().valueToKey(type))
                             .arg(actualFreq,0,'f',6)
                             .arg(d.desiredFreqMHz,0,'f',6));
         }

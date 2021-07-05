@@ -79,9 +79,9 @@ bool AD9914::prepareForExperiment(Experiment &exp)
     auto seg = cc.chirpList().constFirst().constFirst();
 
     auto clocks = rfc.getClocks();
-    if(clocks.contains(BlackChirp::AwgClock))
+    if(clocks.contains(BlackChirp::AwgRef))
     {
-        auto cf = clocks.value(BlackChirp::AwgClock).desiredFreqMHz*1e6;
+        auto cf = clocks.value(BlackChirp::AwgRef).desiredFreqMHz*1e6;
         set(BC::Key::AWG::rate,cf);
         set(BC::Key::AWG::max,cf*0.4);
     }

@@ -91,7 +91,7 @@ void WizardDrScanConfigPage::initializePage()
     d_rfConfig = e->d_ftmwCfg.rfConfig();
 
     //Get DR hardware
-    auto drClock = d_rfConfig.clockHardware(BlackChirp::DRClock);
+    auto drClock = d_rfConfig.clockHardware(RfConfig::DRClock);
     if(drClock.isEmpty())
         return;
 
@@ -100,7 +100,7 @@ void WizardDrScanConfigPage::initializePage()
      double maxFreq = s.get<double>(BC::Key::Clock::maxFreq,1e7);
 
      auto clocks = d_rfConfig.getClocks();
-     auto drc = clocks.value(BlackChirp::DRClock);
+     auto drc = clocks.value(RfConfig::DRClock);
      if(drc.op == RfConfig::Multiply)
      {
          minFreq*=drc.factor;
@@ -137,8 +137,8 @@ bool WizardDrScanConfigPage::validatePage()
         d_rfConfig.addDrScanClockStep(thisFreq);
     }
 
-    d_rfConfig.setTargetSweeps(1);
-    d_rfConfig.setShotsPerClockStep(p_shotsBox->value());
+    d_rfConfig.d_targetSweeps = 1;
+    d_rfConfig.d_shotsPerClockConfig = p_shotsBox->value();
 
     e->setRfConfig(d_rfConfig);
 

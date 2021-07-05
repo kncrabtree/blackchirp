@@ -16,25 +16,6 @@ static const QString savePath("savePath");
 
 namespace BlackChirp {
 
-template<typename T>
-QString getEnumName(std::map<T,QString> m, T key) {
-    auto it = m.find(key);
-    if(it != m.end())
-        return it->second;
-
-    return QString("");
-}
-
-template<typename T>
-QString getEnumName(QMap<T,QString> m, T key) {
-    return m.value(key);
-}
-
-enum Sideband {
-    UpperSideband,
-    LowerSideband
-};
-
 enum LogMessageCode {
     LogNormal,
     LogWarning,
@@ -52,22 +33,6 @@ enum ScopeSampleOrder {
     ChannelsSequential,
     ChannelsInterleaved
 };
-
-//NOTE: be sure to edit the functions below if adding a new clock type
-enum ClockType {
-    UpConversionLO,
-    DownConversionLO,
-    AwgClock,
-    DRClock,
-    DigitizerClock,
-    ReferenceClock
-};
-inline bool operator <(ClockType &t1, ClockType &t2) { return static_cast<int>(t1) < static_cast<int>(t2); }
-
-QList<ClockType> allClockTypes();
-QString clockPrettyName(ClockType t);
-QString clockKey(ClockType t);
-BlackChirp::ClockType clockType(QString key);
 
 
 struct FtmwScopeConfig {
@@ -275,11 +240,9 @@ struct MotorScopeConfig {
 
 }
 
-Q_DECLARE_METATYPE(BlackChirp::Sideband)
 Q_DECLARE_METATYPE(BlackChirp::ScopeTriggerSlope)
 Q_DECLARE_METATYPE(BlackChirp::LogMessageCode)
 Q_DECLARE_METATYPE(BlackChirp::ValidationItem)
-Q_DECLARE_METATYPE(BlackChirp::ClockType)
 
 #ifdef BC_LIF
 Q_DECLARE_METATYPE(BlackChirp::LifScanOrder)

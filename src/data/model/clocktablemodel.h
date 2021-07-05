@@ -4,7 +4,6 @@
 #include <QAbstractTableModel>
 
 #include <data/experiment/rfconfig.h>
-#include <data/datastructs.h>
 
 class ClockTableModel : public QAbstractTableModel
 {
@@ -28,9 +27,9 @@ public slots:
 
 private:
     RfConfig d_rfConfig;
-    QList<BlackChirp::ClockType> d_clockTypes;
     QList<ClockHwInfo> d_hwInfo;
-    QMap<BlackChirp::ClockType,int> d_clockAssignments;
+    QVector<RfConfig::ClockType> d_clockTypes;
+    QHash<RfConfig::ClockType,int> d_clockAssignments;
 
     // QAbstractItemModel interface
 public:

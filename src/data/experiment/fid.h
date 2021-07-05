@@ -8,7 +8,7 @@
 #include <QMetaType>
 #include <QDataStream>
 
-#include <data/datastructs.h>
+#include <data/experiment/rfconfig.h>
 
 class FidData;
 
@@ -47,7 +47,7 @@ public:
  \param p Probe frequency (MHz)
  \param d Data vector
 */
-    Fid(const double sp, const double p, const QVector<qint64> d, BlackChirp::Sideband sb = BlackChirp::UpperSideband, double vMult = 1.0, qint64 shots = 1);
+    Fid(const double sp, const double p, const QVector<qint64> d, RfConfig::Sideband sb = RfConfig::UpperSideband, double vMult = 1.0, qint64 shots = 1);
 
 
 /*!
@@ -84,7 +84,7 @@ public:
     */
     void setData(const QVector<qint64> d);
 
-    void setSideband(const BlackChirp::Sideband sb);
+    void setSideband(const RfConfig::Sideband sb);
 
     void setVMult(const double vm);
 
@@ -152,7 +152,7 @@ public:
 
     quint64 shots() const;
 
-    BlackChirp::Sideband sideband() const;
+    RfConfig::Sideband sideband() const;
 
     /*!
      * \brief Calculates max frequency of FT from the probe frequency and spacing
@@ -187,7 +187,7 @@ public:
     double vMult{1.0};
     quint64 shots{0};
     QVector<qint64> fid;
-    BlackChirp::Sideband sideband{BlackChirp::UpperSideband};
+    RfConfig::Sideband sideband{RfConfig::UpperSideband};
 };
 
 Q_DECLARE_METATYPE(Fid)

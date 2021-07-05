@@ -73,7 +73,7 @@ public slots:
     void reprocess(const QList<int> ignore = QList<int>());
     void process(int id, const Fid f);
     void processDiff(const Fid f1, const Fid f2);
-    void processSideband(BlackChirp::Sideband sb);
+    void processSideband(RfConfig::Sideband sb);
     void processBothSidebands();
     void updateSidebandFreqs();
 

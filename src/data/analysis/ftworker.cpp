@@ -63,7 +63,7 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings)
     double spacing = fid.spacing()*1.0e6;
     double probe = fid.probeFreq();
     double sign = 1.0;
-    if(fid.sideband() == BlackChirp::LowerSideband)
+    if(fid.sideband() == RfConfig::LowerSideband)
         sign = -1.0;
 
 
@@ -75,7 +75,7 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings)
     //see http://www.gnu.org/software/gsl/manual/html_node/Mixed_002dradix-FFT-routines-for-real-data.html
     //first point is DC; block it!
     //always make sure that data go from low to high frequency
-    if(fid.sideband() == BlackChirp::UpperSideband)
+    if(fid.sideband() == RfConfig::UpperSideband)
         spectrum.setPoint(0,QPointF(probe,0.0),settings.autoScaleIgnoreMHz);
     else
         spectrum.setPoint(spectrumSize-1,QPointF(probe,0.0),settings.autoScaleIgnoreMHz);
@@ -96,7 +96,7 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings)
         //note: Normalize output, and convert to mV
         double coef_mag = sqrt(coef_real*coef_real + coef_imag*coef_imag)/rawSize*scf;
 
-        if(fid.sideband() == BlackChirp::UpperSideband)
+        if(fid.sideband() == RfConfig::UpperSideband)
             spectrum.setPoint(i, QPointF(x1,coef_mag),settings.autoScaleIgnoreMHz);
         else
             spectrum.setPoint(spectrumSize-1-i,QPointF(x1,coef_mag),settings.autoScaleIgnoreMHz);
@@ -106,7 +106,7 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings)
         QPointF p(probe + sign*(double)i/np/spacing,
                    sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/rawSize*scf);
 
-        if(fid.sideband() == BlackChirp::UpperSideband)
+        if(fid.sideband() == RfConfig::UpperSideband)
             spectrum.setPoint(i,p,settings.autoScaleIgnoreMHz);
         else
             spectrum.setPoint(spectrumSize-1-i,p,settings.autoScaleIgnoreMHz);
@@ -229,7 +229,7 @@ void FtWorker::doFtDiff(const Fid ref, const Fid diff, const FidProcessingSettin
 
 }
 
-Ft FtWorker::processSideband(const FidList fl, const FtWorker::FidProcessingSettings &settings, BlackChirp::Sideband sb,double minFreq, double maxFreq)
+Ft FtWorker::processSideband(const FidList fl, const FtWorker::FidProcessingSettings &settings, RfConfig::Sideband sb,double minFreq, double maxFreq)
 {
     //this will FT all of the FIDs and resample them on a common grid
     QList<Ft> ftList = makeSidebandList(fl,settings,sb,minFreq,maxFreq);
@@ -315,8 +315,8 @@ Ft FtWorker::processSideband(const FidList fl, const FtWorker::FidProcessingSett
 void FtWorker::processBothSidebands(const FidList fl, const FtWorker::FidProcessingSettings &settings, double minFreq, double maxFreq)
 {
     blockSignals(true);
-    Ft upper = processSideband(fl,settings,BlackChirp::UpperSideband,minFreq,maxFreq);
-    Ft lower = processSideband(fl,settings,BlackChirp::LowerSideband,minFreq,maxFreq);
+    Ft upper = processSideband(fl,settings,RfConfig::UpperSideband,minFreq,maxFreq);
+    Ft lower = processSideband(fl,settings,RfConfig::LowerSideband,minFreq,maxFreq);
     blockSignals(false);
 
     Ft out(0,0.0);
@@ -379,7 +379,7 @@ void FtWorker::processBothSidebands(const FidList fl, const FtWorker::FidProcess
 
 }
 
-QList<Ft> FtWorker::makeSidebandList(const FidList fl, const FidProcessingSettings &settings, BlackChirp::Sideband sb, double minFreq, double maxFreq)
+QList<Ft> FtWorker::makeSidebandList(const FidList fl, const FidProcessingSettings &settings, RfConfig::Sideband sb, double minFreq, double maxFreq)
 {
     if(fl.isEmpty())
         return QList<Ft>();

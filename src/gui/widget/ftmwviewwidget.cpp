@@ -460,10 +460,10 @@ void FtmwViewWidget::updateMainPlot()
         processDiff(d_plotStatus.value(d_plot2Id).fid,d_plotStatus.value(d_plot1Id).fid);
         break;
     case UpperSB:
-        processSideband(BlackChirp::UpperSideband);
+        processSideband(RfConfig::UpperSideband);
         break;
     case LowerSB:
-        processSideband(BlackChirp::LowerSideband);
+        processSideband(RfConfig::LowerSideband);
         break;
     case BothSB:
         processBothSidebands();
@@ -522,7 +522,7 @@ void FtmwViewWidget::processDiff(const Fid f1, const Fid f2)
     }
 }
 
-void FtmwViewWidget::processSideband(BlackChirp::Sideband sb)
+void FtmwViewWidget::processSideband(RfConfig::Sideband sb)
 {
     auto ws = d_workersStatus.value(d_mainId);
     if(ws.busy)
@@ -554,7 +554,7 @@ void FtmwViewWidget::processSideband(BlackChirp::Sideband sb)
             double minF = ui->minFtSegBox->value();
             double maxF = ui->maxFtSegBox->value();
 
-            QMetaObject::invokeMethod(ws.worker,"processSideband",Q_ARG(FidList,fl),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings),Q_ARG(BlackChirp::Sideband,sb),Q_ARG(double,minF),Q_ARG(double,maxF));
+            QMetaObject::invokeMethod(ws.worker,"processSideband",Q_ARG(FidList,fl),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings),Q_ARG(RfConfig::Sideband,sb),Q_ARG(double,minF),Q_ARG(double,maxF));
         }
     }
 }

@@ -758,21 +758,8 @@ bool Experiment::saveChirpFile() const
 
 bool Experiment::saveClockFile() const
 {
-    QFile rfc(BlackChirp::getExptFile(d_number,BlackChirp::ClockFile));
-    QString txt = d_ftmwCfg.rfConfig().clockStepsString();
-    if(txt.isEmpty())
-        return true;
-
-    if(rfc.open(QIODevice::WriteOnly))
-    {
-        QTextStream t(&rfc);
-        t << txt;
-        t.flush();
-        rfc.close();
-        return true;
-    }
-
-    return false;
+#pragma message("Figure out save heirarchy")
+    return d_ftmwCfg.rfConfig().writeClockFile(d_number,QString(""));
 }
 
 bool Experiment::saveTimeFile() const

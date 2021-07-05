@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-#include <data/datastructs.h>
+#include <data/experiment/rfconfig.h>
 
 class QDoubleSpinBox;
 
@@ -16,10 +16,10 @@ public:
 signals:
 
 public slots:
-    void updateFrequency(BlackChirp::ClockType t, double f);
+    void updateFrequency(RfConfig::ClockType t, double f);
 
 private:
-    QHash<BlackChirp::ClockType,QDoubleSpinBox*> d_boxes;
+    QHash<RfConfig::ClockType,QDoubleSpinBox*> d_boxes;
 };
 
 #endif // CLOCKDISPLAYWIDGET_H

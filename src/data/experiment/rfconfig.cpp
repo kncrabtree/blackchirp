@@ -1,61 +1,16 @@
 #include <data/experiment/rfconfig.h>
 
-#include <QSettings>
 #include <QPair>
 #include <QTextStream>
+#include <QSaveFile>
 #include <QFile>
 
 #include <data/storage/settingsstorage.h>
+#include <data/storage/blackchirpcsv.h>
 #include <hardware/core/chirpsource/awg.h>
 
-class RfConfigData : public QSharedData
+RfConfig::RfConfig() : HeaderStorage(BC::Store::RFC::key)
 {
-public:
-    RfConfigData() : awgMult(1.0), upMixSideband(BlackChirp::UpperSideband), chirpMult(1.0),
-        downMixSideband(BlackChirp::UpperSideband), commonUpDownLO(false),
-        currentClockIndex(-1), completedSweeps(-1), targetSweeps(-1), shotsPerClockConfig(-1) {}
-
-    //Upconversion chain
-    double awgMult;
-    BlackChirp::Sideband upMixSideband;
-    double chirpMult;
-
-    //downconversion chain
-    BlackChirp::Sideband downMixSideband;
-
-    //Logical clocks:
-    QHash<BlackChirp::ClockType,RfConfig::ClockFreq> currentClocks;
-
-    //options
-    bool commonUpDownLO;
-
-    //multiple clock setups
-    QList<QHash<BlackChirp::ClockType,RfConfig::ClockFreq>> clockConfigList;
-    int currentClockIndex;
-    int completedSweeps;
-    int targetSweeps;
-    int shotsPerClockConfig;
-
-
-
-    //chirps
-    QList<ChirpConfig> chirps;
-};
-
-RfConfig::RfConfig() : data(new RfConfigData)
-{
-}
-
-RfConfig::RfConfig(const RfConfig &rhs) : data(rhs.data)
-{
-
-}
-
-RfConfig &RfConfig::operator=(const RfConfig &rhs)
-{
-    if (this != &rhs)
-        data.operator=(rhs.data);
-    return *this;
 }
 
 RfConfig::~RfConfig()
@@ -63,264 +18,29 @@ RfConfig::~RfConfig()
 
 }
 
-void RfConfig::saveToSettings() const
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-
-    s.beginGroup(QString("lastRfConfig"));
-    s.setValue(QString("awgMult"),awgMult());
-    s.setValue(QString("upSideband"),upMixSideband());
-    s.setValue(QString("chirpMult"),chirpMult());
-    s.setValue(QString("downSideband"),downMixSideband());
-    s.setValue(QString("commonLO"),commonLO());
-    s.setValue(QString("targetSweeps"),data->targetSweeps);
-    s.setValue(QString("shotsPerClockConfig"),data->shotsPerClockConfig);
-    s.beginWriteArray(QString("clocks"));
-    int index = 0;
-    if(!data->currentClocks.isEmpty())
-    {
-        for(auto it=data->currentClocks.constBegin(); it != data->currentClocks.constEnd(); it++)
-        {
-            s.setArrayIndex(index);
-            auto c = it.value();
-            s.setValue(QString("type"),it.key());
-            s.setValue(QString("desiredFreqMHz"),c.desiredFreqMHz);
-            s.setValue(QString("factor"),c.factor);
-            s.setValue(QString("op"),c.op);
-            s.setValue(QString("output"),c.output);
-            s.setValue(QString("hwKey"),c.hwKey);
-            index++;
-        }
-    }
-    s.endArray();
-    if(!data->clockConfigList.isEmpty())
-    {
-        s.beginWriteArray(QString("clockSteps"));
-        for(int i=0; i<data->clockConfigList.size(); i++)
-        {
-            s.setArrayIndex(i);
-            auto c = data->clockConfigList.at(i);
-            index = 0;
-            s.beginWriteArray(QString("clocks"));
-            for(auto it=c.constBegin(); it != c.constEnd(); it++)
-            {
-                s.setArrayIndex(index);
-                auto c = it.value();
-                s.setValue(QString("type"),it.key());
-                s.setValue(QString("desiredFreqMHz"),c.desiredFreqMHz);
-                s.setValue(QString("factor"),c.factor);
-                s.setValue(QString("op"),c.op);
-                s.setValue(QString("output"),c.output);
-                s.setValue(QString("hwKey"),c.hwKey);
-                index++;
-            }
-            s.endArray();
-        }
-        s.endArray();
-    }
-
-    s.endGroup();
-    s.sync();
-}
-
-RfConfig RfConfig::loadFromSettings()
-{
-    RfConfig out;
-    out.setCommonLO(false); //this will be set properly after clocks are loaded
-
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-
-    s.beginGroup(QString("lastRfConfig"));
-
-    int num = s.beginReadArray(QString("clocks"));
-    for(int i=0; i<num; i++)
-    {
-        s.setArrayIndex(i);
-        ClockFreq cf;
-        auto type = static_cast<BlackChirp::ClockType>(s.value(QString("type"),BlackChirp::UpConversionLO).toInt());
-        cf.desiredFreqMHz = s.value(QString("desiredFreqMHz"),0.0).toDouble();
-        cf.factor = s.value(QString("factor"),1.0).toDouble();
-        cf.op = static_cast<MultOperation>(s.value(QString("op"),Multiply).toInt());
-        cf.hwKey = s.value(QString("hwKey"),QString("")).toString();
-        cf.output = s.value(QString("output"),0).toInt();
-        out.setClockFreqInfo(type,cf);
-    }
-    s.endArray();
-
-    out.setAwgMult(s.value(QString("awgMult"),1.0).toDouble());
-    out.setUpMixSideband(static_cast<BlackChirp::Sideband>(s.value(QString("upSideband"),BlackChirp::UpperSideband).toInt()));
-    out.setChirpMult(s.value(QString("chirpMult"),1.0).toDouble());
-    out.setDownMixSideband(static_cast<BlackChirp::Sideband>(s.value(QString("downSideband"),BlackChirp::UpperSideband).toInt()));
-    out.setCommonLO(s.value(QString("commonLO"),false).toBool());
-    out.setTargetSweeps(s.value(QString("targetSweeps"),-1).toInt());
-    out.setShotsPerClockStep(s.value(QString("shotsPerClockConfig"),-1).toInt());
-
-    int num2 = s.beginReadArray(QString("clockSteps"));
-    for(int j=0; j<num2; j++)
-    {
-        s.setArrayIndex(j);
-        num = s.beginReadArray(QString("clocks"));
-        QHash<BlackChirp::ClockType,ClockFreq> h;
-        for(int i=0; i<num; i++)
-        {
-            s.setArrayIndex(i);
-            ClockFreq cf;
-            auto type = static_cast<BlackChirp::ClockType>(s.value(QString("type"),BlackChirp::UpConversionLO).toInt());
-            cf.desiredFreqMHz = s.value(QString("desiredFreqMHz"),0.0).toDouble();
-            cf.factor = s.value(QString("factor"),1.0).toDouble();
-            cf.op = static_cast<MultOperation>(s.value(QString("op"),Multiply).toInt());
-            cf.hwKey = s.value(QString("hwKey"),QString("")).toString();
-            cf.output = s.value(QString("output"),0).toInt();
-            h.insert(type,cf);
-        }
-        s.endArray();
-        out.addClockStep(h);
-    }
-    s.endArray();
-
-
-    s.endGroup();
-
-    return out;
-}
-
-QMap<QString, QPair<QVariant, QString> > RfConfig::headerMap() const
-{
-    QMap<QString, QPair<QVariant, QString> > out;
-
-    QString prefix = QString("RfConfig");
-    QString empty = QString("");
-    QString upper = QString("Upper");
-    QString lower = QString("Lower");
-    QString m = QString("Multiply");
-    QString d = QString("Divide");
-
-    out.insert(prefix+QString("AwgMult"),qMakePair(awgMult(),empty));
-    out.insert(prefix+QString("UpMixSideband"),qMakePair(upMixSideband() == BlackChirp::UpperSideband ? upper : lower,empty));
-    out.insert(prefix+QString("ChirpMult"),qMakePair(chirpMult(),empty));
-    out.insert(prefix+QString("DownMixSideband"),qMakePair(downMixSideband() == BlackChirp::UpperSideband ? upper : lower,empty));
-    out.insert(prefix+QString("CommonLO"),qMakePair(commonLO(),empty));
-    out.insert(prefix+QString("TargetSweeps"),qMakePair(targetSweeps(),empty));
-    out.insert(prefix+QString("ShotsPerClockStep"),qMakePair(shotsPerClockStep(),empty));
-    auto l = getClocks();
-    if(!l.isEmpty())
-    {
-        for(auto it = l.constBegin(); it != l.constEnd(); it++)
-        {
-            QString p2 = prefix+QString("Clock.")+BlackChirp::clockKey(it.key())+QString(".");
-            ClockFreq c = it.value();
-            out.insert(p2+QString("Frequency"),qMakePair(c.desiredFreqMHz,QString("MHz")));
-            out.insert(p2+QString("Factor"),qMakePair(c.factor,empty));
-            out.insert(p2+QString("Op"),qMakePair(c.op == Multiply ? m : d,empty));
-            out.insert(p2+QString("Output"),qMakePair(c.output,empty));
-            out.insert(p2+QString("HwKey"),qMakePair(c.hwKey,empty));
-        }
-    }
-    return out;
-}
-
-void RfConfig::parseLine(const QString key, const QVariant val)
-{
-    if(key.endsWith(QString("AwgMult")))
-        data->awgMult = val.toDouble();
-    if(key.endsWith(QString("UpMixSideband")))
-        data->upMixSideband = val.toString().startsWith(QString("Upper")) ? BlackChirp::UpperSideband : BlackChirp::LowerSideband;
-    if(key.endsWith(QString("ChirpMult")))
-        data->chirpMult = val.toDouble();
-    if(key.endsWith(QString("DownMixSideband")))
-        data->downMixSideband = val.toString().startsWith(QString("Upper")) ? BlackChirp::UpperSideband : BlackChirp::LowerSideband;
-    if(key.endsWith(QString("CommonLO")))
-        data->commonUpDownLO = val.toBool();
-    if(key.endsWith(QString("TargetSweeps")))
-        data->targetSweeps = val.toInt();
-    if(key.endsWith(QString("CompletedSweeps")))
-        data->completedSweeps = val.toInt();
-    if(key.endsWith(QString("ShotsPerClockStep")))
-        data->shotsPerClockConfig = val.toInt();
-    if(key.contains("Clock."))
-    {
-        auto l = key.split(QString("."));
-        if(l.size() < 3)
-            return;
-        auto type = BlackChirp::clockType(l.at(1));
-        auto subkey = l.at(2);
-        if(subkey.startsWith(QString("Frequency")))
-            setClockDesiredFreq(type,val.toDouble());
-        if(subkey.startsWith(QString("Factor")))
-            setClockFactor(type,val.toDouble());
-        if(subkey.startsWith(QString("Op")))
-            setClockOp(type,val.toString().startsWith(QString("Multiply")) ? Multiply : Divide);
-        if(subkey.startsWith(QString("Output")))
-            setClockOutputNum(type,val.toInt());
-        if(subkey.startsWith(QString("HwKey")))
-            setClockHwKey(type,val.toString());
-    }
-}
-
 bool RfConfig::prepareForAcquisition()
 {
-#pragma message("Change initialization of clock steps - how to handle loading from prev expt?")
-    if(data->chirps.isEmpty())
+    if(d_chirps.isEmpty())
         return false;
 
-    for(int i=0; i<data->chirps.size(); i++)
+    for(int i=0; i<d_chirps.size(); i++)
     {
-        if(data->chirps.at(i).chirpList().isEmpty())
+        if(d_chirps.at(i).chirpList().isEmpty())
             return false;
     }
 
-//    if((t != BlackChirp::LO_Scan) && (t != BlackChirp::DR_Scan))
-//        data->clockConfigList.clear();
+    //LO and DR scans populate the clock config list.
+    //If empty, there is only 1 config, so set it from the template
+    if(d_clockConfigs.isEmpty())
+        d_clockConfigs.append(d_clockTemplate);
 
-    if(!data->clockConfigList.isEmpty())
-        data->currentClocks = data->clockConfigList.constFirst();
-
-    if(data->currentClocks.isEmpty())
-        return false;
-
-
-    data->currentClockIndex = 0;
-    data->completedSweeps = 0;
+    d_currentClockIndex = 0;
+    d_completedSweeps = 0;
 
     return true;
 }
 
-void RfConfig::setAwgMult(const double m)
-{
-    data->awgMult = m;
-}
-
-void RfConfig::setUpMixSideband(const BlackChirp::Sideband s)
-{
-    data->upMixSideband = s;
-}
-
-void RfConfig::setChirpMult(const double m)
-{
-    data->chirpMult = m;
-}
-
-void RfConfig::setDownMixSideband(const BlackChirp::Sideband s)
-{
-    data->downMixSideband = s;
-}
-
-void RfConfig::setCommonLO(bool b)
-{
-    data->commonUpDownLO = b;
-}
-
-void RfConfig::setShotsPerClockStep(int s)
-{
-    data->shotsPerClockConfig = s;
-}
-
-void RfConfig::setTargetSweeps(int s)
-{
-    data->targetSweeps = s;
-}
-
-void RfConfig::setClockDesiredFreq(BlackChirp::ClockType t, double targetFreqMHz)
+void RfConfig::setClockDesiredFreq(ClockType t, double targetFreqMHz)
 {
     if(!getClocks().contains(t))
         setClockFreqInfo(t);
@@ -330,7 +50,7 @@ void RfConfig::setClockDesiredFreq(BlackChirp::ClockType t, double targetFreqMHz
     setClockFreqInfo(t,c);
 }
 
-void RfConfig::setClockFactor(BlackChirp::ClockType t, double factor)
+void RfConfig::setClockFactor(ClockType t, double factor)
 {
     if(!getClocks().contains(t))
         setClockFreqInfo(t);
@@ -340,7 +60,7 @@ void RfConfig::setClockFactor(BlackChirp::ClockType t, double factor)
     setClockFreqInfo(t,c);
 }
 
-void RfConfig::setClockOp(BlackChirp::ClockType t, RfConfig::MultOperation o)
+void RfConfig::setClockOp(ClockType t, RfConfig::MultOperation o)
 {
     if(!getClocks().contains(t))
         setClockFreqInfo(t);
@@ -350,7 +70,7 @@ void RfConfig::setClockOp(BlackChirp::ClockType t, RfConfig::MultOperation o)
     setClockFreqInfo(t,c);
 }
 
-void RfConfig::setClockOutputNum(BlackChirp::ClockType t, int output)
+void RfConfig::setClockOutputNum(ClockType t, int output)
 {
     if(!getClocks().contains(t))
         setClockFreqInfo(t);
@@ -360,7 +80,7 @@ void RfConfig::setClockOutputNum(BlackChirp::ClockType t, int output)
     setClockFreqInfo(t,c);
 }
 
-void RfConfig::setClockHwKey(BlackChirp::ClockType t, QString key)
+void RfConfig::setClockHwKey(ClockType t, QString key)
 {
     if(!getClocks().contains(t))
         setClockFreqInfo(t);
@@ -370,7 +90,7 @@ void RfConfig::setClockHwKey(BlackChirp::ClockType t, QString key)
     setClockFreqInfo(t,c);
 }
 
-void RfConfig::setClockHwInfo(BlackChirp::ClockType t, QString hwKey, int output)
+void RfConfig::setClockHwInfo(ClockType t, QString hwKey, int output)
 {
     if(!getClocks().contains(t))
         setClockFreqInfo(t);
@@ -381,7 +101,7 @@ void RfConfig::setClockHwInfo(BlackChirp::ClockType t, QString hwKey, int output
     setClockFreqInfo(t,c);
 }
 
-void RfConfig::setClockFreqInfo(BlackChirp::ClockType t, double targetFreqMHz, double factor, RfConfig::MultOperation o, QString hwKey, int output)
+void RfConfig::setClockFreqInfo(ClockType t, double targetFreqMHz, double factor, RfConfig::MultOperation o, QString hwKey, int output)
 {
     ClockFreq f;
     f.desiredFreqMHz = targetFreqMHz;
@@ -393,61 +113,74 @@ void RfConfig::setClockFreqInfo(BlackChirp::ClockType t, double targetFreqMHz, d
     setClockFreqInfo(t,f);
 }
 
-void RfConfig::setClockFreqInfo(BlackChirp::ClockType t, const ClockFreq &cf)
+void RfConfig::setClockFreqInfo(ClockType t, const ClockFreq &cf)
 {
     if(cf.hwKey.isEmpty())
     {
-        data->currentClocks.remove(t);
+        d_clockTemplate.remove(t);
         return;
     }
-    if(commonLO() && t == BlackChirp::UpConversionLO)
-        data->currentClocks.insert(BlackChirp::DownConversionLO,cf);
-    if(commonLO() && t == BlackChirp::DownConversionLO)
-        data->currentClocks.insert(BlackChirp::UpConversionLO,cf);
-    data->currentClocks.insert(t,cf);
+    if(d_commonUpDownLO && t == UpLO)
+        d_clockTemplate.insert(DownLO,cf);
+    if(d_commonUpDownLO && t == DownLO)
+        d_clockTemplate.insert(UpLO,cf);
+    d_clockTemplate.insert(t,cf);
 }
 
-void RfConfig::addClockStep(QHash<BlackChirp::ClockType, RfConfig::ClockFreq> h)
+void RfConfig::addClockStep(QHash<ClockType, RfConfig::ClockFreq> h)
 {
-    data->clockConfigList.append(h);
+    d_clockConfigs.append(h);
 }
 
 void RfConfig::addLoScanClockStep(double upLoMHz, double downLoMHz)
 {
-    setClockDesiredFreq(BlackChirp::UpConversionLO,upLoMHz);
-    setClockDesiredFreq(BlackChirp::DownConversionLO,downLoMHz);
-    data->clockConfigList.append(data->currentClocks);
-    data->currentClocks = data->clockConfigList.constFirst();
+    //make a copy of the clock template
+    auto c{d_clockTemplate};
+
+    //these functions will modify d_clockTemplate
+    setClockDesiredFreq(UpLO,upLoMHz);
+    setClockDesiredFreq(DownLO,downLoMHz);
+    d_clockConfigs.append(d_clockTemplate);
+
+    //restore template
+    d_clockTemplate = c;
 }
 
 void RfConfig::addDrScanClockStep(double drFreqMHz)
 {
-    setClockDesiredFreq(BlackChirp::DRClock,drFreqMHz);
-    data->clockConfigList.append(data->currentClocks);
-    data->currentClocks = data->clockConfigList.constFirst();
+    //make a copy of the clock template
+    auto c{d_clockTemplate};
+
+    //modify d_clockTemplate
+    setClockDesiredFreq(DRClock,drFreqMHz);
+    d_clockConfigs.append(d_clockTemplate);
+
+    //restore
+    d_clockTemplate = c;
 }
 
 void RfConfig::clearClockSteps()
 {
-    data->clockConfigList.clear();
+    d_currentClockIndex = 0;
+    d_clockConfigs.clear();
 }
 
 void RfConfig::clearChirpConfigs()
 {
-    data->chirps.clear();
+    d_chirps.clear();
 }
 
 bool RfConfig::setChirpConfig(const ChirpConfig cc, int num)
 {
-    if(data->chirps.isEmpty() && num == 0)
+    if(d_chirps.isEmpty() && num == 0)
     {
-        data->chirps.append(cc);
+        d_chirps.append(cc);
         return true;
     }
 
-    if(num < data->chirps.size())
+    if(num < d_chirps.size())
     {
-        data->chirps[num] = cc;
+        d_chirps[num] = cc;
         return true;
     }
 
@@ -458,103 +191,62 @@ bool RfConfig::setChirpConfig(const ChirpConfig cc, int num)
 
 void RfConfig::addChirpConfig(ChirpConfig cc)
 {
-    if(data->chirps.isEmpty())
+    if(d_chirps.isEmpty())
     {
         using namespace BC::Key::AWG;
         SettingsStorage s(key,SettingsStorage::Hardware);
         double sr = s.get(rate,16e9);
 
-        if(rawClockFrequency(BlackChirp::AwgClock) > 0.0)
-            cc.setAwgSampleRate(rawClockFrequency(BlackChirp::AwgClock)*1e6);
+        if(rawClockFrequency(AwgRef) > 0.0)
+            cc.setAwgSampleRate(rawClockFrequency(AwgRef)*1e6);
         else
             cc.setAwgSampleRate(sr);
     }
-    data->chirps.append(cc);
+    d_chirps.append(cc);
 }
 
 int RfConfig::advanceClockStep()
 {
-    data->currentClockIndex++;
-    if(data->currentClockIndex >= data->clockConfigList.size())
+    d_currentClockIndex++;
+    if(d_currentClockIndex >= d_clockConfigs.size())
     {
-        data->currentClockIndex = 0;
-        data->completedSweeps++;
+        d_currentClockIndex = 0;
+        d_completedSweeps++;
     }
-    data->currentClocks = data->clockConfigList.at(data->currentClockIndex);
 
-    return data->currentClockIndex;
-}
-
-double RfConfig::awgMult() const
-{
-    return data->awgMult;
-}
-
-BlackChirp::Sideband RfConfig::upMixSideband() const
-{
-    return data->upMixSideband;
-}
-
-double RfConfig::chirpMult() const
-{
-    return data->chirpMult;
-}
-
-BlackChirp::Sideband RfConfig::downMixSideband() const
-{
-    return data->downMixSideband;
-}
-
-bool RfConfig::commonLO() const
-{
-    return data->commonUpDownLO;
-}
-
-int RfConfig::targetSweeps() const
-{
-    return data->targetSweeps;
-}
-
-int RfConfig::shotsPerClockStep() const
-{
-    return data->shotsPerClockConfig;
-}
-
-int RfConfig::currentIndex() const
-{
-    return data->currentClockIndex;
+    return d_currentClockIndex;
 }
 
 int RfConfig::completedSweeps() const
 {
-    return data->completedSweeps;
+    return d_completedSweeps;
 }
 
 quint64 RfConfig::totalShots() const
 {
-    return static_cast<quint64>(data->shotsPerClockConfig)
-            *static_cast<quint64>(data->clockConfigList.size())
-            *static_cast<quint64>(data->targetSweeps);
+    return static_cast<quint64>(d_shotsPerClockConfig)
+            *static_cast<quint64>(d_clockConfigs.size())
+            *static_cast<quint64>(d_targetSweeps);
 }
 
 quint64 RfConfig::completedSegmentShots() const
 {
-    quint64 completedSweepShots = static_cast<quint64>(data->completedSweeps)
-            *static_cast<quint64>(data->shotsPerClockConfig)
-            *static_cast<quint64>(data->clockConfigList.size());
+    quint64 completedSweepShots = static_cast<quint64>(d_completedSweeps)
+            *static_cast<quint64>(d_shotsPerClockConfig)
+            *static_cast<quint64>(d_clockConfigs.size());
 
     return completedSweepShots +
-            static_cast<quint64>(data->shotsPerClockConfig)
-            *static_cast<quint64>(data->currentClockIndex);
+            static_cast<quint64>(d_shotsPerClockConfig)
+            *static_cast<quint64>(d_currentClockIndex);
 }
 
 bool RfConfig::canAdvance(qint64 shots) const
 {
-    qint64 target = static_cast<qint64>(data->completedSweeps+1)*static_cast<qint64>(data->shotsPerClockConfig);
+    qint64 target = static_cast<qint64>(d_completedSweeps+1)*static_cast<qint64>(d_shotsPerClockConfig);
 
     //don't return true if this is the last segment! 5/18/21: why? doing this prevents last segment from being stored
-//    if(data->currentClockIndex + 1 == data->clockConfigList.size()
-//            && data->completedSweeps + 1 == data->targetSweeps)
+//    if(currentClockIndex + 1 == clockConfigList.size()
+//            && completedSweeps + 1 == targetSweeps)
 //        return false;
 
     return shots >= target;
@@ -562,88 +254,91 @@ bool RfConfig::canAdvance(qint64 shots) const
 
 int RfConfig::numSegments() const
 {
-    if(data->clockConfigList.isEmpty())
+    if(d_clockConfigs.isEmpty())
         return 1;
 
-    return data->clockConfigList.size();
+    return d_clockConfigs.size();
 }
 
-QHash<BlackChirp::ClockType, RfConfig::ClockFreq> RfConfig::getClocks() const
+QHash<RfConfig::ClockType, RfConfig::ClockFreq> RfConfig::getClocks() const
 {
-    return data->currentClocks;
+    if(d_currentClockIndex >=0 && d_currentClockIndex < d_clockConfigs.size())
+        return d_clockConfigs.at(d_currentClockIndex);
+
+    return d_clockTemplate;
 }
 
-double RfConfig::clockFrequency(BlackChirp::ClockType t) const
+double RfConfig::clockFrequency(ClockType t) const
 {
-    if(data->currentClocks.contains(t))
-        return data->currentClocks.value(t).desiredFreqMHz;
+    if(d_clockTemplate.contains(t))
+        return d_clockTemplate.value(t).desiredFreqMHz;
     else
         return -1.0;
 }
 
-double RfConfig::rawClockFrequency(BlackChirp::ClockType t) const
+double RfConfig::rawClockFrequency(ClockType t) const
 {
-    if(data->currentClocks.contains(t))
-        return getRawFrequency(data->currentClocks.value(t));
+    if(d_clockTemplate.contains(t))
+        return getRawFrequency(d_clockTemplate.value(t));
     else
         return -1.0;
 }
 
-QString RfConfig::clockHardware(BlackChirp::ClockType t) const
+QString RfConfig::clockHardware(ClockType t) const
 {
-    if(data->currentClocks.contains(t))
-        return data->currentClocks.value(t).hwKey;
+    if(d_clockTemplate.contains(t))
+        return d_clockTemplate.value(t).hwKey;
     else
         return QString("");
 }
 
 ChirpConfig RfConfig::getChirpConfig(int num) const
 {
-    if(num < data->chirps.size())
-        return data->chirps.at(num);
+    if(num < d_chirps.size())
+        return d_chirps.at(num);
 
     return ChirpConfig();
 }
 
 int RfConfig::numChirpConfigs() const
 {
-    return data->chirps.size();
+    return d_chirps.size();
 }
 
 bool RfConfig::isComplete() const
 {
-    return data->completedSweeps >= data->targetSweeps;
+    return d_completedSweeps >= d_targetSweeps;
 }
 
 double RfConfig::calculateChirpFreq(double awgFreq) const
 {
-    double cf = clockFrequency(BlackChirp::UpConversionLO);
-    double chirp = awgFreq*awgMult();
-    if(upMixSideband() == BlackChirp::LowerSideband)
+    double cf = clockFrequency(UpLO);
+    double chirp = awgFreq*d_awgMult;
+    if(d_upMixSideband == LowerSideband)
         chirp = cf - chirp;
     else
         chirp = cf + chirp;
 
-    return chirp*chirpMult();
+    return chirp*d_chirpMult;
 
 }
 
 double RfConfig::calculateAwgFreq(double chirpFreq) const
 {
-    double cf = clockFrequency(BlackChirp::UpConversionLO);
-    double awg = chirpFreq/chirpMult();
-    if(upMixSideband() == BlackChirp::LowerSideband)
+    double cf = clockFrequency(UpLO);
+    double awg = chirpFreq/d_chirpMult;
+    if(d_upMixSideband == LowerSideband)
         awg = cf - awg;
     else
         awg = awg - cf;
 
-    return awg/awgMult();
+    return awg/d_awgMult;
 
 }
 
 double RfConfig::calculateChirpAbsOffset(double awgFreq) const
 {
-    return qAbs(calculateChirpFreq(awgFreq) - clockFrequency(BlackChirp::DownConversionLO));
+    return qAbs(calculateChirpFreq(awgFreq) - clockFrequency(DownLO));
 
 }
 
@@ -651,9 +346,9 @@ QPair<double, double> RfConfig::calculateChirpAbsOffsetRange() const
 {
     QPair<double,double> out(-1.0,-1.0);
 
-    for(int i=0; i<data->chirps.size(); i++)
+    for(int i=0; i<d_chirps.size(); i++)
     {
-        auto c = data->chirps.at(i);
+        auto c = d_chirps.at(i);
 
         int limit = c.numChirps();
         if(limit > 1 && c.allChirpsIdentical())
@@ -685,78 +380,75 @@ QPair<double, double> RfConfig::calculateChirpAbsOffsetRange() const
     return out;
 }
 
-QString RfConfig::clockStepsString() const
+bool RfConfig::writeClockFile(int num, QString path) const
 {
-    QString o;
-    QTextStream out(&o);
-    QString nl("\n");
-    QString tab("\t");
-
-    out << QString("#The blank line is important! Do not remove it.") << nl;
-
-    for(int i=0; i<data->clockConfigList.size(); i++)
+    QSaveFile f(BlackChirp::getExptFile(num,BlackChirp::ClockFile,path));
+    if(f.open(QIODevice::WriteOnly|QIODevice::Text))
     {
-        out << nl;
-        auto d = data->clockConfigList.at(i);
-        for(auto it = d.constBegin(); it != d.constEnd(); it++)
+        QTextStream t(&f);
+        BlackchirpCSV csv;
+        csv.writeLine(t,{"Index","ClockType","FreqMHz","Operation","Factor","HwKey","OutputNum"});
+        for(int i=0;i<d_clockConfigs.size(); ++i)
         {
-            out << nl;
-            out << static_cast<int>(it.key()) << tab;
-            out << it.value().hwKey << tab;
-            out << it.value().output << tab;
-            out << static_cast<int>(it.value().op) << tab;
-            out << it.value().factor << tab;
-            out << QString::number(it.value().desiredFreqMHz,'f',6);
+            for(auto it=d_clockConfigs.at(i).cbegin(); it!=d_clockConfigs.at(i).cend(); ++it)
+            {
+                csv.writeLine(t,{
+                                  i,
+                                  it.key(),
+                                  it.value().desiredFreqMHz,
+                                  it.value().op,
+                                  it.value().factor,
+                                  it.value().hwKey,
+                                  it.value().output
+                              });
+            }
         }
+        return f.commit();
     }
 
-    out.flush();
-    return o;
+    return false;
 }
 
 void RfConfig::loadClockSteps(int num, QString path)
 {
     QFile f(BlackChirp::getExptFile(num,BlackChirp::ClockFile,path));
-    if(!f.open(QIODevice::ReadOnly))
-        return;
-
-    QHash<BlackChirp::ClockType,ClockFreq> thisHash;
-
-    while(!f.atEnd())
+    if(f.open(QIODevice::ReadOnly))
     {
-        QString line = f.readLine().trimmed();
-        if(line.startsWith(QString("#")))
-            continue;
-
-        if(line.isEmpty()) //start a new QHash
+        while(!f.atEnd())
         {
-            if(!thisHash.isEmpty())
-            {
-                data->clockConfigList.append(thisHash);
-                thisHash.clear();
+            auto l = f.readLine();
+            if(l.isEmpty() || l.startsWith("Index"))
                 continue;
+
+            auto list = QString(l).trimmed().split(',');
+            if(list.size() == 7)
+            {
+                bool ok = false;
+                int index = list.at(0).toInt(&ok);
+                if(!ok)
+                    continue;
+                ClockType type = QVariant(list.at(1)).value<ClockType>();
+                double freq = list.at(2).toDouble(&ok);
+                if(!ok)
+                    continue;
+                MultOperation m = QVariant(list.at(3)).value<MultOperation>();
+                double factor = list.at(4).toDouble(&ok);
+                if(!ok)
+                    continue;
+                QString hwKey = list.at(5);
+                int output = list.at(6).toInt(&ok);
+                if(!ok)
+                    continue;
+
+                while(d_clockConfigs.size() <= index)
+                    d_clockConfigs.append(QHash<ClockType,ClockFreq>());
+
+                d_clockConfigs[index].insert(type,{freq,m,factor,hwKey,output});
             }
-            
-            continue;
         }
-
-        QStringList l = line.split(QString("\t"));
-
-        //each line should have 6 fields
-        if(l.size() < 6)
-            continue;
-
-        auto key = static_cast<BlackChirp::ClockType>(l.at(0).trimmed().toInt());
-        auto hwKey = l.at(1).trimmed();
-        auto output = l.at(2).trimmed().toInt();
-        auto op = static_cast<MultOperation>(l.at(3).trimmed().toInt());
-        auto factor = l.at(4).trimmed().toDouble();
-        auto freq = l.at(5).trimmed().toDouble();
-
-        ClockFreq cf { freq, op, factor, hwKey, output };
-        thisHash.insert(key,cf);
+        if(!d_clockConfigs.isEmpty())
+            d_clockTemplate = d_clockConfigs.constFirst();
     }
-
 }
 
 double RfConfig::getRawFrequency(RfConfig::ClockFreq f) const
@@ -771,3 +463,28 @@ double RfConfig::getRawFrequency(RfConfig::ClockFreq f) const
     }
 }
 
+
+
+void RfConfig::prepareToSave()
+{
+    using namespace BC::Store::RFC;
+    store(commonLO,d_commonUpDownLO);
+    store(targetSweeps,d_targetSweeps);
+    store(shots,d_shotsPerClockConfig);
+    store(awgM,d_awgMult);
+    store(upSB,d_upMixSideband);
+    store(chirpM,d_chirpMult);
+    store(downSB,d_downMixSideband);
+}
+
+void RfConfig::loadComplete()
+{
+    using namespace BC::Store::RFC;
+    d_commonUpDownLO = retrieve(commonLO,false);
+    d_targetSweeps = retrieve(targetSweeps,1);
+    d_shotsPerClockConfig = retrieve(shots,0);
+    d_awgMult = retrieve(awgM,1.0);
+    d_upMixSideband = retrieve(upSB,UpperSideband);
+    d_chirpMult = retrieve(chirpM,1.0);
+    d_downMixSideband = retrieve(downSB,UpperSideband);
+}

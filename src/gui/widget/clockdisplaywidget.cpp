@@ -3,25 +3,22 @@
 #include <QFormLayout>
 #include <QDoubleSpinBox>
 #include <QLabel>
+#include <QMetaEnum>
 
 #include <data/experiment/rfconfig.h>
 
 ClockDisplayWidget::ClockDisplayWidget(QWidget *parent) : QWidget(parent)
 {
-    auto *fl = new QFormLayout(this);
+    auto *fl = new QFormLayout();
     fl->setMargin(3);
     fl->setContentsMargins(3,3,3,3);
     fl->setSpacing(3);
 
-    auto ct = BlackChirp::allClockTypes();
+    auto ct = QMetaEnum::fromType<RfConfig::ClockType>();
 
-    auto rfc = RfConfig::loadFromSettings();
-
-    for(int i=0; i<ct.size(); i++)
+    for(int i=0; i<ct.keyCount(); i++)
     {
-        auto type = ct.at(i);
-        auto key = BlackChirp::clockKey(type);
-        auto tt = BlackChirp::clockPrettyName(type);
+        auto key = ct.key(i);
 
         auto *box = new QDoubleSpinBox(this);
         box->setRange(-1.0,1e7);
@@ -30,8 +27,7 @@ ClockDisplayWidget::ClockDisplayWidget(QWidget *parent) : QWidget(parent)
         box->setButtonSymbols(QAbstractSpinBox::NoButtons);
         box->setReadOnly(true);
         box->setSpecialValueText(QString("Not Yet Set"));
-        box->setValue(rfc.clockFrequency(type));
-        box->setToolTip(tt);
+        box->setValue(-1.0);
         box->blockSignals(true);
 
         auto *lbl = new QLabel(key);
@@ -39,13 +35,13 @@ ClockDisplayWidget::ClockDisplayWidget(QWidget *parent) : QWidget(parent)
         lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
 
         fl->addRow(lbl,box);
-        d_boxes.insert(type,box);
+        d_boxes.insert(static_cast<RfConfig::ClockType>(ct.value(i)),box);
     }
 
     setLayout(fl);
 }
 
-void ClockDisplayWidget::updateFrequency(BlackChirp::ClockType t, double f)
+void ClockDisplayWidget::updateFrequency(RfConfig::ClockType t, double f)
 {
     auto box = d_boxes.value(t);
     box->setValue(f);

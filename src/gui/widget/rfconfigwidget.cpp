@@ -7,10 +7,10 @@ RfConfigWidget::RfConfigWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    ui->upconversionSidebandComboBox->addItem(QString("Upper"),BlackChirp::UpperSideband);
-    ui->downconversionSidebandComboBox->addItem(QString("Upper"),BlackChirp::UpperSideband);
-    ui->upconversionSidebandComboBox->addItem(QString("Lower"),BlackChirp::LowerSideband);
-    ui->downconversionSidebandComboBox->addItem(QString("Lower"),BlackChirp::LowerSideband);
+    ui->upconversionSidebandComboBox->addItem(QString("Upper"),RfConfig::UpperSideband);
+    ui->downconversionSidebandComboBox->addItem(QString("Upper"),RfConfig::UpperSideband);
+    ui->upconversionSidebandComboBox->addItem(QString("Lower"),RfConfig::LowerSideband);
+    ui->downconversionSidebandComboBox->addItem(QString("Lower"),RfConfig::LowerSideband);
 
     p_ctm = new ClockTableModel();
     ui->clockTableView->setModel(p_ctm);
@@ -28,21 +28,21 @@ RfConfigWidget::~RfConfigWidget()
 
 void RfConfigWidget::setRfConfig(const RfConfig c)
 {
-    ui->awgMultBox->setValue(qRound(c.awgMult()));
+    ui->awgMultBox->setValue(qRound(c.d_awgMult));
 
-    if(c.upMixSideband() == BlackChirp::UpperSideband)
+    if(c.d_upMixSideband == RfConfig::UpperSideband)
         ui->upconversionSidebandComboBox->setCurrentIndex(0);
     else
         ui->upconversionSidebandComboBox->setCurrentIndex(1);
-    if(c.downMixSideband() == BlackChirp::UpperSideband)
+    if(c.d_downMixSideband == RfConfig::UpperSideband)
         ui->downconversionSidebandComboBox->setCurrentIndex(0);
     else
         ui->downconversionSidebandComboBox->setCurrentIndex(1);
 
-    ui->chirpMultiplicationSpinBox->setValue(qRound(c.chirpMult()));
+    ui->chirpMultiplicationSpinBox->setValue(qRound(c.d_chirpMult));
 
     ui->commonLoCheckBox->blockSignals(true);
-    ui->commonLoCheckBox->setChecked(c.commonLO());
+    ui->commonLoCheckBox->setChecked(c.d_commonUpDownLO);
     ui->commonLoCheckBox->blockSignals(false);
 
     p_ctm->setConfig(c);
@@ -53,11 +53,11 @@ RfConfig RfConfigWidget::getRfConfig()
 {
     auto rfc = p_ctm->getRfConfig();
 
-    rfc.setAwgMult(static_cast<double>(ui->awgMultBox->value()));
-    rfc.setUpMixSideband(static_cast<BlackChirp::Sideband>(ui->upconversionSidebandComboBox->currentData().toInt()));
-    rfc.setChirpMult(static_cast<double>(ui->chirpMultiplicationSpinBox->value()));
-    rfc.setDownMixSideband(static_cast<BlackChirp::Sideband>(ui->downconversionSidebandComboBox->currentData().toInt()));
-    rfc.setCommonLO(ui->commonLoCheckBox->isChecked());
+    rfc.d_awgMult = static_cast<double>(ui->awgMultBox->value());
+    rfc.d_upMixSideband = (ui->upconversionSidebandComboBox->currentData().value<RfConfig::Sideband>());
+    rfc.d_chirpMult = static_cast<double>(ui->chirpMultiplicationSpinBox->value());
+    rfc.d_downMixSideband = ui->downconversionSidebandComboBox->currentData().value<RfConfig::Sideband>();
+    rfc.d_commonUpDownLO = ui->commonLoCheckBox->isChecked();
 
     return rfc;
 }

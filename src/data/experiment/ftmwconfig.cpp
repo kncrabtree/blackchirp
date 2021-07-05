@@ -257,9 +257,9 @@ QString FtmwConfig::errorString() const
 double FtmwConfig::ftMinMHz() const
 {
     double sign = 1.0;
-    if(rfConfig().downMixSideband() == BlackChirp::LowerSideband)
+    if(rfConfig().d_downMixSideband == RfConfig::LowerSideband)
         sign = -1.0;
-    double lo = rfConfig().clockFrequency(BlackChirp::DownConversionLO);
+    double lo = rfConfig().clockFrequency(RfConfig::DownLO);
     double lastFreq = lo + sign*ftNyquistMHz();
     return qMin(lo,lastFreq);
 }
@@ -267,9 +267,9 @@ double FtmwConfig::ftMinMHz() const
 double FtmwConfig::ftMaxMHz() const
 {
     double sign = 1.0;
-    if(rfConfig().downMixSideband() == BlackChirp::LowerSideband)
+    if(rfConfig().d_downMixSideband == RfConfig::LowerSideband)
         sign = -1.0;
-    double lo = rfConfig().clockFrequency(BlackChirp::DownConversionLO);
+    double lo = rfConfig().clockFrequency(RfConfig::DownLO);
     double lastFreq = lo + sign*ftNyquistMHz();
     return qMax(lo,lastFreq);
 }
@@ -352,8 +352,8 @@ bool FtmwConfig::writeFids(int num, QString path, int snapNum) const
 
 bool FtmwConfig::initialize()
 {
-    double df = rfConfig().clockFrequency(BlackChirp::DownConversionLO);
-    auto sb = rfConfig().downMixSideband();
+    double df = rfConfig().clockFrequency(RfConfig::DownLO);
+    auto sb = rfConfig().d_downMixSideband;
 
     Fid f(d_scopeConfig.xIncr(),df,QVector<qint64>(0),sb,d_scopeConfig.yMult(d_scopeConfig.d_fidChannel),1);
 
@@ -371,10 +371,10 @@ bool FtmwConfig::initialize()
 
     if(type() == LO_Scan || type() == DR_Scan)
         d_targetShots = d_rfConfig.totalShots();
+    if(type() == Target_Duration)
+        d_targetTime = QDateTime::currentDateTime().addSecs(d_duration*60);
 
     p_fidStorage = std::make_shared<FidSingleStorage>(QString(""),scopeConfig().d_numRecords);
-
-//    d_completedShots = 0;
 
     return true;
 
@@ -429,9 +429,7 @@ bool FtmwConfig::advance()
     if(d_rfConfig.canAdvance(s))
     {
         d_processingPaused = true;
-        //adjust number of completed shots in case the increment does not go evenly into
-        //segment shots
-//        d_completedShots = d_rfConfig.completedSegmentShots();
+        d_rfConfig.advanceClockStep();
         return !isComplete();
 
     }
@@ -570,7 +568,7 @@ void FtmwConfig::setRfConfig(const RfConfig other)
 
 void FtmwConfig::hwReady()
 {
-    d_fidTemplate.setProbeFreq(rfConfig().clockFrequency(BlackChirp::DownConversionLO));
+    d_fidTemplate.setProbeFreq(rfConfig().clockFrequency(RfConfig::DownLO));
     d_processingPaused = false;
 }
 
@@ -728,7 +726,7 @@ QMap<QString, QPair<QVariant, QString> > FtmwConfig::headerMap() const
 
 
 //    out.unite(scopeConfig.headerMap());
-    out.unite(d_rfConfig.headerMap());
+//    out.unite(d_rfConfig.headerMap());
 
     return out;
 
@@ -1009,8 +1007,8 @@ void FtmwConfig::parseLine(const QString key, const QVariant val)
         if(key.endsWith(QString("ChirpOffset")))
             d_chirpOffsetUs = val.toDouble();
     }
-    else if(key.startsWith(QString("RfConfig")))
-        d_rfConfig.parseLine(key,val);
+//    else if(key.startsWith(QString("RfConfig")))
+//        d_rfConfig.parseLine(key,val);
 }
 
 void FtmwConfig::loadChirps(const int num, const QString path)
@@ -1055,7 +1053,7 @@ void FtmwConfig::saveToSettings() const
 
     s.endGroup();
 
-    d_rfConfig.saveToSettings();
+//    d_rfConfig.saveToSettings();
 
 
 }
@@ -1091,7 +1089,7 @@ FtmwConfig FtmwConfig::loadFromSettings()
     sc.blockAverageEnabled = s.value(QString("blockAverage"),false).toBool();
     sc.numAverages = s.value(QString("numAverages"),1).toInt();
 //    out.setScopeConfig(sc);
-    out.setRfConfig(RfConfig::loadFromSettings());
+//    out.setRfConfig(RfConfig::loadFromSettings());
 
     return out;
 }

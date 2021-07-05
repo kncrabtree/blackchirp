@@ -22,6 +22,7 @@ ChirpConfig::ChirpConfig() : HeaderStorage(BC::Store::CC::key)
 
 ChirpConfig::ChirpConfig(int num, QString path) : HeaderStorage(BC::Store::CC::key)
 {
+#pragma message("Remove this constructor")
     QFile hdr(BlackChirp::getExptFile(num,BlackChirp::HeaderFile,path));
     if(hdr.open(QIODevice::ReadOnly))
     {

@@ -43,12 +43,12 @@ public:
     virtual int nextId() const;
 
 public slots:
-    void startChanged(BlackChirp::ClockType t, double val);
-    void endChanged(BlackChirp::ClockType t, double val);
-    void minorStepChanged(BlackChirp::ClockType t, int val);
-    void minorStepSizeChanged(BlackChirp::ClockType t, double val);
-    void majorStepChanged(BlackChirp::ClockType t, int val);
-    void majorStepSizeChanged(BlackChirp::ClockType t, double val);
+    void startChanged(RfConfig::ClockType t, double val);
+    void endChanged(RfConfig::ClockType t, double val);
+    void minorStepChanged(RfConfig::ClockType t, int val);
+    void minorStepSizeChanged(RfConfig::ClockType t, double val);
+    void majorStepChanged(RfConfig::ClockType t, int val);
+    void majorStepSizeChanged(RfConfig::ClockType t, double val);
     void fixedChanged(bool fixed);
     void constantOffsetChanged(bool co);
 
@@ -60,7 +60,7 @@ private:
 
     RfConfig d_rfConfig;
 
-    double calculateMajorStepSize(BlackChirp::ClockType t);
+    double calculateMajorStepSize(RfConfig::ClockType t);
 };
 
 #endif // WIZARDLOSCANCONFIGPAGE_H

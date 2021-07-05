@@ -33,8 +33,7 @@ class Clock : public HardwareObject
     Q_OBJECT
 public:
     explicit Clock(int clockNum, int numOutputs, bool tunable, const QString subKey, const QString name,
-                   CommunicationProtocol::CommType commType, QObject *parent = nullptr,
-                   bool threaded = false);
+                   CommunicationProtocol::CommType commType, QObject *parent = nullptr);
 
     int numOutputs() { return d_numOutputs; }
     bool isTunable() { return d_isTunable; }
@@ -46,22 +45,22 @@ public:
 
 public slots:
     void initialize() override final;
-    bool addRole(BlackChirp::ClockType t, int outputIndex = 0);
-    void removeRole(BlackChirp::ClockType t);
+    bool addRole(RfConfig::ClockType t, int outputIndex = 0);
+    void removeRole(RfConfig::ClockType t);
     void clearRoles();
-    bool hasRole(BlackChirp::ClockType t);
+    bool hasRole(RfConfig::ClockType t);
 
     void readAll();
-    double readFrequency(BlackChirp::ClockType t);
-    double setFrequency(BlackChirp::ClockType t, double freqMHz);
+    double readFrequency(RfConfig::ClockType t);
+    double setFrequency(RfConfig::ClockType t, double freqMHz);
 
 signals:
-    void frequencyUpdate(BlackChirp::ClockType, double);
+    void frequencyUpdate(RfConfig::ClockType, double);
 
 private:
     int d_numOutputs;
     bool d_isTunable;
-    QHash<BlackChirp::ClockType,int> d_outputRoles;
+    QHash<RfConfig::ClockType,int> d_outputRoles;
     QList<double> d_multFactors;
 
 

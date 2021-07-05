@@ -3,13 +3,19 @@
 
 #include <QSharedDataPointer>
 
-#include <data/datastructs.h>
+#include <data/storage/headerstorage.h>
 #include <data/experiment/chirpconfig.h>
 
-class RfConfigData;
-
-///TODO: Write .rfc file!
-///Might make sense to wait for the big BlackChirpDataStorage refactor though!
+namespace BC::Store::RFC {
+static const QString key("RfConfig");
+static const QString commonLO("CommonUpDownLO");
+static const QString targetSweeps("TargetSweeps");
+static const QString shots("ShotsPerClockConfig");
+static const QString awgM("AwgMult");
+static const QString upSB("UpconversionSideband");
+static const QString chirpM("ChirpMult");
+static const QString downSB("DownconversionSideband");
+}
 
 /**
  * @brief Configuration for RF/Microwave sources
@@ -18,14 +24,31 @@ class RfConfigData;
  * FtmwConfig class and the Chirp/Ramp configuration. This
  * helps to facilitate multiple acquisition types (e.g., segmented)
  */
-class RfConfig
+class RfConfig : public HeaderStorage
 {
+    Q_GADGET
 public:
-
     enum MultOperation {
         Multiply,
         Divide
     };
+    Q_ENUM(MultOperation)
+
+    enum Sideband {
+        UpperSideband,
+        LowerSideband
+    };
+    Q_ENUM(Sideband)
+
+    enum ClockType {
+        UpLO,
+        DownLO,
+        AwgRef,
+        DRClock,
+        DigRef,
+        ComRef
+    };
+    Q_ENUM(ClockType)
 
     struct ClockFreq {
         double desiredFreqMHz;
@@ -36,32 +59,31 @@ public:
     };
 
     RfConfig();
-    RfConfig(const RfConfig &);
-    RfConfig &operator=(const RfConfig &);
     ~RfConfig();
 
-    void saveToSettings() const;
-    static RfConfig loadFromSettings();
-    QMap<QString,QPair<QVariant,QString> > headerMap() const;
-    void parseLine(const QString key, const QVariant val);
+    //options
+    bool d_commonUpDownLO{false};
+    int d_targetSweeps{1};
+    int d_shotsPerClockConfig{0};
+
+    //Upconversion chain
+    double d_awgMult{1.0};
+    Sideband d_upMixSideband{UpperSideband};
+    double d_chirpMult{1.0};
+
+    //downconversion chain
+    Sideband d_downMixSideband{UpperSideband};
 
     bool prepareForAcquisition();
-    void setAwgMult(const double m);
-    void setUpMixSideband(const BlackChirp::Sideband s);
-    void setChirpMult(const double m);
-    void setDownMixSideband(const BlackChirp::Sideband s);
-    void setCommonLO(bool b);
-    void setShotsPerClockStep(int s);
-    void setTargetSweeps(int s);
-    void setClockDesiredFreq(BlackChirp::ClockType t, double targetFreqMHz);
-    void setClockFactor(BlackChirp::ClockType t, double factor);
-    void setClockOp(BlackChirp::ClockType t, MultOperation o);
-    void setClockOutputNum(BlackChirp::ClockType t, int output);
-    void setClockHwKey(BlackChirp::ClockType t, QString key);
-    void setClockHwInfo(BlackChirp::ClockType t, QString hwKey, int output);
-    void setClockFreqInfo(BlackChirp::ClockType t, double targetFreqMHz = 0.0, double factor = 1.0, MultOperation o = Multiply, QString hwKey = QString(""), int output = 0);
-    void setClockFreqInfo(BlackChirp::ClockType t, const ClockFreq &cf);
-    void addClockStep(QHash<BlackChirp::ClockType,ClockFreq> h);
+    void setClockDesiredFreq(ClockType t, double targetFreqMHz);
+    void setClockFactor(ClockType t, double factor);
+    void setClockOp(ClockType t, MultOperation o);
+    void setClockOutputNum(ClockType t, int output);
+    void setClockHwKey(ClockType t, QString key);
+    void setClockHwInfo(ClockType t, QString hwKey, int output);
+    void setClockFreqInfo(ClockType t, double targetFreqMHz = 0.0, double factor = 1.0, MultOperation o = Multiply, QString hwKey = QString(""), int output = 0);
+    void setClockFreqInfo(ClockType t, const ClockFreq &cf);
+    void addClockStep(QHash<ClockType,ClockFreq> h);
     void addLoScanClockStep(double upLoMHz, double downLoMHz);
     void addDrScanClockStep(double drFreqMHz);
     void clearClockSteps();
@@ -71,24 +93,16 @@ public:
     int advanceClockStep();
 
 
-    double awgMult() const;
-    BlackChirp::Sideband upMixSideband() const;
-    double chirpMult() const;
-    BlackChirp::Sideband downMixSideband() const;
-    bool commonLO() const;
-    int targetSweeps() const;
-    int shotsPerClockStep() const;
-    int currentIndex() const;
     int completedSweeps() const;
     quint64 totalShots() const;
     quint64 completedSegmentShots() const;
     bool canAdvance(qint64 shots) const;
     int numSegments() const;
 
-    QHash<BlackChirp::ClockType,ClockFreq> getClocks() const;
-    double clockFrequency(BlackChirp::ClockType t) const;
-    double rawClockFrequency(BlackChirp::ClockType t) const;
-    QString clockHardware(BlackChirp::ClockType t) const;
+    QHash<ClockType,ClockFreq> getClocks() const;
+    double clockFrequency(ClockType t) const;
+    double rawClockFrequency(ClockType t) const;
+    QString clockHardware(ClockType t) const;
     ChirpConfig getChirpConfig(int num=0) const;
     int numChirpConfigs() const;
     bool isComplete() const;
@@ -98,13 +112,25 @@ public:
     double calculateChirpAbsOffset(double awgFreq) const;
     QPair<double,double> calculateChirpAbsOffsetRange() const;
 
-    QString clockStepsString() const;
+    bool writeClockFile(int num, QString path) const;
     void loadClockSteps(int num, QString path);
 
 private:
-    QSharedDataPointer<RfConfigData> data;
+    //clocks
+    QHash<ClockType,ClockFreq> d_clockTemplate;
+    QVector<QHash<ClockType,RfConfig::ClockFreq>> d_clockConfigs;
+    int d_currentClockIndex{0};
+    int d_completedSweeps{0};
+
+    //chirps
+    QVector<ChirpConfig> d_chirps;
 
     double getRawFrequency(ClockFreq f) const;
+
+    // HeaderStorage interface
+protected:
+    void prepareToSave() override;
+    void loadComplete() override;
 };
 
 Q_DECLARE_METATYPE(RfConfig)

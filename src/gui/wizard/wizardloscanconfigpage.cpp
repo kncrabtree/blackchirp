@@ -201,45 +201,45 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) :
     auto dvc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
 
     connect(p_upStartBox,dvc,[=](double v){
-        startChanged(BlackChirp::UpConversionLO,v);
+        startChanged(RfConfig::UpLO,v);
     });
     connect(p_downStartBox,dvc,[=](double v){
-        startChanged(BlackChirp::DownConversionLO,v);
+        startChanged(RfConfig::DownLO,v);
     });
 
     connect(p_upEndBox,dvc,[=](double v){
-        endChanged(BlackChirp::UpConversionLO,v);
+        endChanged(RfConfig::UpLO,v);
     });
     connect(p_downEndBox,dvc,[=](double v){
-        endChanged(BlackChirp::DownConversionLO,v);
+        endChanged(RfConfig::DownLO,v);
     });
 
     connect(p_upMajorStepBox,dvc,[=](double v){
-       majorStepSizeChanged(BlackChirp::UpConversionLO,v);
+       majorStepSizeChanged(RfConfig::UpLO,v);
     });
     connect(p_downMajorStepBox,dvc,[=](double v){
-       majorStepSizeChanged(BlackChirp::DownConversionLO,v);
+       majorStepSizeChanged(RfConfig::DownLO,v);
     });
 
     connect(p_upMinorStepBox,dvc,[=](double v){
-       minorStepSizeChanged(BlackChirp::UpConversionLO,v);
+       minorStepSizeChanged(RfConfig::UpLO,v);
     });
     connect(p_downMinorStepBox,dvc,[=](double v){
-       minorStepSizeChanged(BlackChirp::DownConversionLO,v);
+       minorStepSizeChanged(RfConfig::DownLO,v);
     });
 
     connect(p_upNumMinorBox,vc,[=](int v){
-       minorStepChanged(BlackChirp::UpConversionLO,v);
+       minorStepChanged(RfConfig::UpLO,v);
     });
     connect(p_downNumMinorBox,vc,[=](int v){
-       minorStepChanged(BlackChirp::DownConversionLO,v);
+       minorStepChanged(RfConfig::DownLO,v);
     });
 
     connect(p_upNumMajorBox,vc,[=](int v){
-       majorStepChanged(BlackChirp::UpConversionLO,v);
+       majorStepChanged(RfConfig::UpLO,v);
     });
     connect(p_downNumMajorBox,vc,[=](int v){
-       majorStepChanged(BlackChirp::DownConversionLO,v);
+       majorStepChanged(RfConfig::DownLO,v);
     });
 
     connect(p_constantDownOffsetBox,&QCheckBox::toggled,this,&WizardLoScanConfigPage::constantOffsetChanged);
@@ -270,8 +270,8 @@ void WizardLoScanConfigPage::initializePage()
     d_rfConfig = e->d_ftmwCfg.rfConfig();
 
     //get LO hardware
-    auto upLO = d_rfConfig.clockHardware(BlackChirp::UpConversionLO);
-    auto downLO = d_rfConfig.clockHardware(BlackChirp::DownConversionLO);
+    auto upLO = d_rfConfig.clockHardware(RfConfig::UpLO);
+    auto downLO = d_rfConfig.clockHardware(RfConfig::DownLO);
 
     if(upLO.isEmpty())
         return;
@@ -284,7 +284,7 @@ void WizardLoScanConfigPage::initializePage()
     double downMinFreq = upMinFreq;
     double downMaxFreq = upMaxFreq;
 
-    if(!d_rfConfig.commonLO() && upLO != downLO)
+    if(!d_rfConfig.d_commonUpDownLO && upLO != downLO)
     {
         SettingsStorage s2(downLO,Hardware);
 
@@ -293,7 +293,7 @@ void WizardLoScanConfigPage::initializePage()
     }
 
     auto clocks = d_rfConfig.getClocks();
-    auto upLoClock = clocks.value(BlackChirp::UpConversionLO);
+    auto upLoClock = clocks.value(RfConfig::UpLO);
     if(upLoClock.op == RfConfig::Multiply)
     {
         upMinFreq*=upLoClock.factor;
@@ -306,7 +306,7 @@ void WizardLoScanConfigPage::initializePage()
     }
 
 
-    auto downLoClock = clocks.value(BlackChirp::DownConversionLO);
+    auto downLoClock = clocks.value(RfConfig::DownLO);
     if(downLoClock.op == RfConfig::Multiply)
     {
         downMinFreq*=downLoClock.factor;
@@ -329,11 +329,11 @@ void WizardLoScanConfigPage::initializePage()
     p_downMajorStepBox->setRange(1.0,downMaxFreq-downMinFreq);
     p_downMinorStepBox->setRange(0.0,downMaxFreq-downMinFreq);
 
-    p_shotsPerStepBox->setValue(d_rfConfig.shotsPerClockStep());
-    p_targetSweepsBox->setValue(d_rfConfig.targetSweeps());
+    p_shotsPerStepBox->setValue(d_rfConfig.d_shotsPerClockConfig);
+    p_targetSweepsBox->setValue(d_rfConfig.d_targetSweeps);
 
-    p_downBox->setDisabled(d_rfConfig.commonLO());
-    if(d_rfConfig.commonLO())
+    p_downBox->setDisabled(d_rfConfig.d_commonUpDownLO);
+    if(d_rfConfig.d_commonUpDownLO)
     {
         p_downStartBox->blockSignals(true);
         p_downStartBox->setValue(p_upStartBox->value());
@@ -360,8 +360,8 @@ void WizardLoScanConfigPage::initializePage()
         p_downMajorStepBox->blockSignals(false);
     }
 
-    p_targetSweepsBox->setValue(d_rfConfig.targetSweeps());
-    p_shotsPerStepBox->setValue(d_rfConfig.shotsPerClockStep());
+    p_targetSweepsBox->setValue(d_rfConfig.d_targetSweeps);
+    p_shotsPerStepBox->setValue(d_rfConfig.d_shotsPerClockConfig);
 }
 
 bool WizardLoScanConfigPage::validatePage()
@@ -397,7 +397,7 @@ bool WizardLoScanConfigPage::validatePage()
     if(end < start)
         direction *= -1.0;
 
-    if(d_rfConfig.commonLO())
+    if(d_rfConfig.d_commonUpDownLO)
         downLoValues = upLoValues;
     else if(p_fixedDownLoBox->isChecked())
     {
@@ -425,8 +425,8 @@ bool WizardLoScanConfigPage::validatePage()
     for(int i=0; i<upLoValues.size() && i<downLoValues.size(); i++)
         d_rfConfig.addLoScanClockStep(upLoValues.at(i),downLoValues.at(i));
 
-    d_rfConfig.setShotsPerClockStep(p_shotsPerStepBox->value());
-    d_rfConfig.setTargetSweeps(p_targetSweepsBox->value());
+    d_rfConfig.d_shotsPerClockConfig = p_shotsPerStepBox->value();
+    d_rfConfig.d_targetSweeps = p_targetSweepsBox->value();
 
     e->setRfConfig(d_rfConfig);
     
@@ -444,15 +444,15 @@ int WizardLoScanConfigPage::nextId() const
     return ExperimentWizard::ChirpConfigPage;
 }
 
-void WizardLoScanConfigPage::startChanged(BlackChirp::ClockType t, double val)
+void WizardLoScanConfigPage::startChanged(RfConfig::ClockType t, double val)
 {
-    if(d_rfConfig.commonLO() && t == BlackChirp::UpConversionLO)
+    if(d_rfConfig.d_commonUpDownLO && t == RfConfig::UpLO)
     {
         p_downStartBox->setValue(val);
     }
 
     QDoubleSpinBox *box = p_upMajorStepBox;
-    if(t == BlackChirp::DownConversionLO)
+    if(t == RfConfig::DownLO)
         box = p_downMajorStepBox;
 
     box->blockSignals(true);
@@ -461,15 +461,15 @@ void WizardLoScanConfigPage::startChanged(BlackChirp::ClockType t, double val)
 
 }
 
-void WizardLoScanConfigPage::endChanged(BlackChirp::ClockType t, double val)
+void WizardLoScanConfigPage::endChanged(RfConfig::ClockType t, double val)
 {
-    if(d_rfConfig.commonLO() && t == BlackChirp::UpConversionLO)
+    if(d_rfConfig.d_commonUpDownLO && t == RfConfig::UpLO)
     {
         p_downEndBox->setValue(val);
     }
 
     QDoubleSpinBox *box = p_upMajorStepBox;
-    if(t == BlackChirp::DownConversionLO)
+    if(t == RfConfig::DownLO)
         box = p_downMajorStepBox;
 
     box->blockSignals(true);
@@ -478,7 +478,7 @@ void WizardLoScanConfigPage::endChanged(BlackChirp::ClockType t, double val)
 
 }
 
-void WizardLoScanConfigPage::minorStepChanged(BlackChirp::ClockType t, int val)
+void WizardLoScanConfigPage::minorStepChanged(RfConfig::ClockType t, int val)
 {
     Q_UNUSED(t)
 
@@ -521,7 +521,7 @@ void WizardLoScanConfigPage::minorStepChanged(BlackChirp::ClockType t, int val)
 
     //calculate new major step sizes
     QDoubleSpinBox *box = p_upMajorStepBox;
-    if(t == BlackChirp::DownConversionLO)
+    if(t == RfConfig::DownLO)
         box = p_downMajorStepBox;
 
     box->blockSignals(true);
@@ -531,16 +531,16 @@ void WizardLoScanConfigPage::minorStepChanged(BlackChirp::ClockType t, int val)
 
 }
 
-void WizardLoScanConfigPage::minorStepSizeChanged(BlackChirp::ClockType t, double val)
+void WizardLoScanConfigPage::minorStepSizeChanged(RfConfig::ClockType t, double val)
 {
-    if(d_rfConfig.commonLO() && t == BlackChirp::UpConversionLO)
+    if(d_rfConfig.d_commonUpDownLO && t == RfConfig::UpLO)
     {
         p_downMinorStepBox->setValue(val);
     }
 
     p_upEndBox->blockSignals(true);
     p_downEndBox->blockSignals(true);
-    if(t == BlackChirp::UpConversionLO)
+    if(t == RfConfig::UpLO)
     {
         double start = p_upStartBox->value();
         double end = p_upEndBox->value();
@@ -569,7 +569,7 @@ void WizardLoScanConfigPage::minorStepSizeChanged(BlackChirp::ClockType t, doubl
 
     //calculate new major step sizes
     QDoubleSpinBox *box = p_upMajorStepBox;
-    if(t == BlackChirp::DownConversionLO)
+    if(t == RfConfig::DownLO)
         box = p_downMajorStepBox;
 
     box->blockSignals(true);
@@ -578,7 +578,7 @@ void WizardLoScanConfigPage::minorStepSizeChanged(BlackChirp::ClockType t, doubl
 
 }
 
-void WizardLoScanConfigPage::majorStepChanged(BlackChirp::ClockType t, int val)
+void WizardLoScanConfigPage::majorStepChanged(RfConfig::ClockType t, int val)
 {
     Q_UNUSED(t)
 
@@ -593,23 +593,23 @@ void WizardLoScanConfigPage::majorStepChanged(BlackChirp::ClockType t, int val)
 
 
     p_upMajorStepBox->blockSignals(true);
-    p_upMajorStepBox->setValue(calculateMajorStepSize(BlackChirp::UpConversionLO));
+    p_upMajorStepBox->setValue(calculateMajorStepSize(RfConfig::UpLO));
     p_upMajorStepBox->blockSignals(false);
 
     p_downMajorStepBox->blockSignals(true);
-    p_downMajorStepBox->setValue(calculateMajorStepSize(BlackChirp::DownConversionLO));
+    p_downMajorStepBox->setValue(calculateMajorStepSize(RfConfig::DownLO));
     p_downMajorStepBox->blockSignals(false);
 
 }
 
-void WizardLoScanConfigPage::majorStepSizeChanged(BlackChirp::ClockType t, double val)
+void WizardLoScanConfigPage::majorStepSizeChanged(RfConfig::ClockType t, double val)
 {
     double start = p_upStartBox->value();
     double end = p_upEndBox->value();
     double minorStep = p_upMinorStepBox->value();
     int numMinor = p_upNumMinorBox->value();
     int numMajor = p_upNumMajorBox->value();
-    if(t == BlackChirp::DownConversionLO)
+    if(t == RfConfig::DownLO)
     {
         start = p_upStartBox->value();
         end = p_upEndBox->value();
@@ -649,9 +649,9 @@ void WizardLoScanConfigPage::constantOffsetChanged(bool co)
     p_fixedDownLoBox->setEnabled(!co);
 }
 
-double WizardLoScanConfigPage::calculateMajorStepSize(BlackChirp::ClockType t)
+double WizardLoScanConfigPage::calculateMajorStepSize(RfConfig::ClockType t)
 {
-    if(t == BlackChirp::UpConversionLO)
+    if(t == RfConfig::UpLO)
     {
         //calculate new step size
         int numMinor = p_upNumMinorBox->value();

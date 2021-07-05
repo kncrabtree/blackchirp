@@ -5,11 +5,13 @@
 #include <QComboBox>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
+#include <QMetaEnum>
 
 ClockTableModel::ClockTableModel(QObject *parent) : QAbstractTableModel(parent)
 {
-    d_clockTypes = BlackChirp::allClockTypes();
-
+    QMetaEnum ct = QMetaEnum::fromType<RfConfig::ClockType>();
+    for(int i=0; i<ct.keyCount(); ++i)
+        d_clockTypes.append(static_cast<RfConfig::ClockType>(ct.value(i)));
 }
 
 void ClockTableModel::setConfig(const RfConfig c)
@@ -44,8 +46,8 @@ void ClockTableModel::setConfig(const RfConfig c)
         }
     }
 
-    if(c.commonLO())
-        setCommonLo(c.commonLO());
+    if(c.d_commonUpDownLO)
+        setCommonLo(c.d_commonUpDownLO);
 
     emit dataChanged(index(0,0),index(d_clockTypes.size(),5));
 }
@@ -57,22 +59,22 @@ RfConfig ClockTableModel::getRfConfig() const
 
 void ClockTableModel::setCommonLo(bool b)
 {
-    d_rfConfig.setCommonLO(b);
+    d_rfConfig.d_commonUpDownLO = b;
     if(b)
     {
-        d_rfConfig.setClockFreqInfo(BlackChirp::DownConversionLO,d_rfConfig.getClocks().value(BlackChirp::UpConversionLO));
-        if(d_clockAssignments.contains(BlackChirp::UpConversionLO))
+        d_rfConfig.setClockFreqInfo(RfConfig::DownLO,d_rfConfig.getClocks().value(RfConfig::UpLO));
+        if(d_clockAssignments.contains(RfConfig::UpLO))
         {
-            d_clockAssignments.insert(BlackChirp::DownConversionLO,d_clockAssignments.value(BlackChirp::UpConversionLO));
+            d_clockAssignments.insert(RfConfig::DownLO,d_clockAssignments.value(RfConfig::UpLO));
         }
     }
     else
     {
-        d_rfConfig.setClockHwInfo(BlackChirp::DownConversionLO,QString(""),0);
-        d_clockAssignments.remove(BlackChirp::DownConversionLO);
+        d_rfConfig.setClockHwInfo(RfConfig::DownLO,QString(""),0);
+        d_clockAssignments.remove(RfConfig::DownLO);
     }
 
-    int downRow = d_clockTypes.indexOf(BlackChirp::DownConversionLO);
+    int downRow = d_clockTypes.indexOf(RfConfig::DownLO);
     emit dataChanged(index(downRow,1),index(downRow,5));
 
 }
@@ -131,7 +133,7 @@ QVariant ClockTableModel::data(const QModelIndex &index, int role) const
         switch(index.column())
         {
         case 0:
-            return BlackChirp::clockPrettyName(type);
+            return QMetaEnum::fromType<RfConfig::ClockType>().valueToKey(type);
         case 1:
             if(d_clockAssignments.contains(type))
                 return d_hwInfo.at(d_clockAssignments.value(type)).name;
@@ -181,7 +183,8 @@ QVariant ClockTableModel::data(const QModelIndex &index, int role) const
         switch (index.column()) {
         case 1:
             return QString("The hardware clock used for the %1.\nSelect \"None\" if not applicable.")
-                    .arg(BlackChirp::clockPrettyName(d_clockTypes.at(index.row())));
+                    .arg(QMetaEnum::fromType<RfConfig::ClockType>()
+                         .valueToKey(d_clockTypes.at(index.row())));
         case 2:
             return QString("Select whether a frequency multiplier or divider is used on this clock.\nIf none, you may select either and enter a factor of 1.");
         case 3:
@@ -221,8 +224,8 @@ bool ClockTableModel::setData(const QModelIndex &index, const QVariant &value, i
         {
             d_hwInfo[value.toInt()].used = true;
             d_clockAssignments.insert(type,value.toInt());
-            if(type == d_clockTypes.indexOf(BlackChirp::UpConversionLO) && d_rfConfig.commonLO())
-                d_clockAssignments.insert(BlackChirp::DownConversionLO,value.toInt());
+            if(type == d_clockTypes.indexOf(RfConfig::UpLO) && d_rfConfig.d_commonUpDownLO)
+                d_clockAssignments.insert(RfConfig::DownLO,value.toInt());
 
             d_rfConfig.setClockHwInfo(type,d_hwInfo.at(value.toInt()).key,d_hwInfo.at(value.toInt()).output);
         }
@@ -273,7 +276,7 @@ Qt::ItemFlags ClockTableModel::flags(const QModelIndex &index) const
 {
     if(index.row() < d_clockTypes.size())
     {
-        if(d_rfConfig.commonLO() && index.row() == d_clockTypes.indexOf(BlackChirp::DownConversionLO) && index.column() > 0)
+        if(d_rfConfig.d_commonUpDownLO && index.row() == d_clockTypes.indexOf(RfConfig::DownLO) && index.column() > 0)
             return 0;
 
         if(index.column() > 0)

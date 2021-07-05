@@ -34,19 +34,19 @@ bool WizardRfConfigPage::validatePage()
 
     if(e->d_ftmwCfg.type() == FtmwConfig::LO_Scan)
     {
-        if(rfc.clockHardware(BlackChirp::UpConversionLO).isEmpty())
+        if(rfc.clockHardware(RfConfig::UpLO).isEmpty())
             return false;
 
-        if(!rfc.commonLO())
+        if(!rfc.d_commonUpDownLO)
         {
-            if(rfc.clockHardware(BlackChirp::DownConversionLO).isEmpty())
+            if(rfc.clockHardware(RfConfig::DownLO).isEmpty())
                 return false;
         }
     }
 
     if(e->d_ftmwCfg.type() == FtmwConfig::DR_Scan)
     {
-        if(rfc.clockHardware(BlackChirp::DRClock).isEmpty())
+        if(rfc.clockHardware(RfConfig::DRClock).isEmpty())
             return false;
     }
 

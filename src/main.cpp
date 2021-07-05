@@ -194,12 +194,8 @@ int main(int argc, char *argv[])
     qRegisterMetaType<QVector<QPointF> >("QVector<QPointF>");
     qRegisterMetaType<QVector<double>>("Vector<double>");
     qRegisterMetaType<QList<QPair<QString,QVariant> >>("QList<QPair<QString,QVariant> >");
-    qRegisterMetaType<PulseGenConfig::Setting>("PulseGenConfig::PulseSetting");
-    qRegisterMetaType<PulseGenConfig::Role>("PulseGenConfig::PulseRole");
     qRegisterMetaType<PulseGenConfig>("PulseGenConfig");
     qRegisterMetaType<QList<QPointF>>("QList<QPointF>");
-    qRegisterMetaType<BlackChirp::ClockType>("BlackChirp::ClockType");
-    qRegisterMetaType<BlackChirp::Sideband>("BlackChirp::Sideband");
 #ifdef BC_LIF
     qRegisterMetaType<LifTrace>("LifTrace");
     qRegisterMetaType<LifConfig>("LifConfig");

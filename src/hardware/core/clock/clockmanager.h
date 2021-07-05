@@ -3,7 +3,6 @@
 
 #include <QObject>
 
-#include <data/datastructs.h>
 #include <data/storage/settingsstorage.h>
 #include <data/experiment/experiment.h>
 
@@ -38,21 +37,21 @@ class ClockManager : public QObject, public SettingsStorage
     Q_OBJECT
 public:
     explicit ClockManager(QObject *parent = nullptr);
-    QList<Clock*> clockList() { return d_clockList; }
 
 signals:
     void logMessage(QString, BlackChirp::LogMessageCode mc = BlackChirp::LogNormal);
-    void clockFrequencyUpdate(BlackChirp::ClockType, double);
+    void clockFrequencyUpdate(RfConfig::ClockType, double);
 
 public slots:
-    double setClockFrequency(BlackChirp::ClockType t, double freqMHz);
-    double readClockFrequency(BlackChirp::ClockType t);
+    double setClockFrequency(RfConfig::ClockType t, double freqMHz);
+    double readClockFrequency(RfConfig::ClockType t);
     bool prepareForExperiment(Experiment &exp);
 
 private:
-    QList<Clock*> d_clockList;
-    QList<BlackChirp::ClockType> d_clockTypes;
-    QMap<BlackChirp::ClockType,Clock*> d_clockRoles;
+    QVector<Clock*> d_clockList;
+    QHash<RfConfig::ClockType,Clock*> d_clockRoles;
+
+    friend class HardwareManager;
 
 };
 
@@ -77,21 +76,21 @@ class Valon5015;
 #endif
 
 #ifdef BC_CLOCK_0
-typedef BC_CLOCK_0 Clock0Hardware;
+using Clock0Hardware = BC_CLOCK_0;
 #endif
 
 #ifdef BC_CLOCK_1
-typedef BC_CLOCK_1 Clock1Hardware;
+using Clock1Hardware = BC_CLOCK_1;
 #endif
 
 #ifdef BC_CLOCK_2
-typedef BC_CLOCK_2 Clock2Hardware;
+using Clock2Hardware = BC_CLOCK_2;
 #endif
 
 #ifdef BC_CLOCK_3
-typedef BC_CLOCK_3 Clock3Hardware;
+using Clock3Hardware = BC_CLOCK_3;
 #endif
 
 #ifdef BC_CLOCK_4
-typedef BC_CLOCK_4 Clock4Hardware;
+using Clock4Hardware = BC_CLOCK_4;
 #endif

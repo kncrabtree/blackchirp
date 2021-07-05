@@ -19,7 +19,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     p_clockManager = new ClockManager(this);
     connect(p_clockManager,&ClockManager::logMessage,this,&HardwareManager::logMessage);
     connect(p_clockManager,&ClockManager::clockFrequencyUpdate,this,&HardwareManager::clockFrequencyUpdate);
-    auto cl = p_clockManager->clockList();
+    auto cl = p_clockManager->d_clockList;
     for(int i=0; i<cl.size(); i++)
         d_hardwareList.append(cl.at(i));
 

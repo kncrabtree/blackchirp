@@ -74,7 +74,7 @@ signals:
 
     void ftmwScopeShotAcquired(const QByteArray);
 
-    void clockFrequencyUpdate(BlackChirp::ClockType, double);
+    void clockFrequencyUpdate(RfConfig::ClockType, double);
     void allClocksReady();
 
     void pGenSettingUpdate(int,PulseGenConfig::Setting,QVariant);
