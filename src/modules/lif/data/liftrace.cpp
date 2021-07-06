@@ -39,7 +39,7 @@ LifTrace::LifTrace(const BlackChirp::LifScopeConfig &c, const QByteArray b) : da
             qint16 y = 0;
             y |= y1;
             y |= (y2 << 8);
-            if(c.byteOrder == QDataStream::BigEndian)
+            if(c.byteOrder == DigitizerConfig::BigEndian)
                 y = qFromBigEndian(y);
             else
                 y = qFromLittleEndian(y);
@@ -65,7 +65,7 @@ LifTrace::LifTrace(const BlackChirp::LifScopeConfig &c, const QByteArray b) : da
                 qint16 y = 0;
                 y |= y1;
                 y |= (y2 << 8);
-                if(c.byteOrder == QDataStream::BigEndian)
+                if(c.byteOrder == DigitizerConfig::BigEndian)
                     y = qFromBigEndian(y);
                 else
                     y = qFromLittleEndian(y);

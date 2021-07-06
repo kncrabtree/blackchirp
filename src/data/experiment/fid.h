@@ -40,14 +40,6 @@ public:
  \param Fid FID to copy
 */
     Fid(const Fid &);
-/*!
- \brief Constructor with explicit initialization
-
- \param sp Spacing (s)
- \param p Probe frequency (MHz)
- \param d Data vector
-*/
-    Fid(const double sp, const double p, const QVector<qint64> d, RfConfig::Sideband sb = RfConfig::UpperSideband, double vMult = 1.0, qint64 shots = 1);
 
 
 /*!
@@ -164,15 +156,9 @@ public:
 
     double vMult() const;
 
-    static QByteArray magicString();
-
 private:
     QSharedDataPointer<FidData> data; /*!< The internal data storage object */
 };
-
-//DataStream operators
-QDataStream &operator<<(QDataStream &stream, const Fid fid);
-QDataStream &operator>>(QDataStream &stream, Fid &fid);
 
 /*!
  \brief Internal data for Fid

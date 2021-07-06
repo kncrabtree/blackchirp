@@ -69,6 +69,12 @@ public:
     };
     Q_ENUM(TriggerSlope)
 
+    enum ByteOrder {
+        BigEndian = QDataStream::BigEndian,
+        LittleEndian = QDataStream::LittleEndian
+    };
+    Q_ENUM(ByteOrder)
+
     DigitizerConfig(const QString key);
 
     //vertical channels
@@ -87,7 +93,7 @@ public:
 
     //data transfer
     int d_bytesPerPoint{0};
-    QDataStream::ByteOrder d_byteOrder{QDataStream::LittleEndian};
+    ByteOrder d_byteOrder{LittleEndian};
 
     //averaging
     bool d_blockAverage{false};
@@ -110,6 +116,5 @@ protected:
 
 Q_DECLARE_TYPEINFO(DigitizerConfig::AnalogChannel,Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(DigitizerConfig::DigitalChannel,Q_PRIMITIVE_TYPE);
-Q_DECLARE_METATYPE(QDataStream::ByteOrder)
 
 #endif // DIGITIZERCONFIG_H

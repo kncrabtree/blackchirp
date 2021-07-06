@@ -19,7 +19,7 @@ M4i2211x8::M4i2211x8(QObject *parent) :
     s.endGroup();
 
     d_config.bytesPerPoint = 1;
-    d_config.byteOrder = QDataStream::LittleEndian;
+    d_config.byteOrder = DigitizerConfig::LittleEndian;
     d_config.yMult1 = d_config.vScale1/128.0;
     d_config.yMult2 = d_config.vScale2/128.0;
     d_config.xIncr = 1.0/d_config.sampleRate;

@@ -57,7 +57,8 @@ private:
     int d_timerId;
     QString d_endText{"Est. end: %1"};
 
-
+private slots:
+    void updateLabel();
 
 
     // QObject interface

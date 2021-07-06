@@ -167,7 +167,7 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
         exp.setHardwareFailed();
         return false;
     }
-    config.byteOrder = QDataStream::BigEndian;
+    config.byteOrder = DigitizerConfig::BigEndian;
     config.bytesPerPoint = 2;
 
 

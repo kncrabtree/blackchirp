@@ -76,8 +76,6 @@ int main(int argc, char *argv[])
     }
 
 
-    const QString lockFileName = QString("lock_blackchirp.lock");
-
 #ifdef Q_OS_MSDOS
     QString appDataPath = QString("c:/data");
 #else
@@ -130,67 +128,11 @@ int main(int argc, char *argv[])
     QDir saveDir(s.value(QString("savePath")).toString());
     saveDir.mkpath(QString("log"));
 
-    //look for lock files from other applications that need same hardware resources
-
-    //list containing lockfile names and application names
-    QList<QPair<QString,QString> > incompatibleApps;
-    //add other apps here
-    //if the app is from a different organization (e.g. CfA Spectroscopy Lab instead of CrabtreeLab), enter full path to lockfile and prepend with !
-    incompatibleApps.append(qMakePair(lockFileName,appName));
-    incompatibleApps.append(qMakePair(QString("lock_qtftm.lock"),QString("QtFTM")));
-
-
-//    QFile lockFile;
-//    for(int i=0;i<incompatibleApps.size();i++)
-//    {
-//        QString title = incompatibleApps.at(i).second;
-//        QString fileName;
-//        if(incompatibleApps.at(i).first.startsWith(QString("!")))
-//            fileName = incompatibleApps.at(i).first.mid(1);
-//        else
-//            fileName = QString("%1/%2").arg(lockFilePath).arg(incompatibleApps.at(i).first);
-
-//        lockFile.setFileName(fileName);
-//        qint64 pid = 0;
-//        bool ok = false;
-//        if(lockFile.exists())
-//        {
-//            QString uName = QFileInfo(lockFile).owner();
-
-//            if(lockFile.open(QIODevice::ReadOnly))
-//                pid = lockFile.readLine().trimmed().toInt(&ok);
-
-//            if(!ok)
-//                QMessageBox::critical(nullptr,QString("%1 Error").arg(appName),QString("An instance of %1 is running as user %2, and it must be closed before %3 be started.\n\nIf you are sure no other instance is running, delete the lock file (%4) and restart.").arg(title).arg(uName).arg(appName).arg(fileName));
-//            else
-//                QMessageBox::critical(nullptr,QString("%1 Error").arg(appName),QString("An instance of %1 is running under PID %2 as user %3, and it must be closed before %4 can be started.\n\nIf process %2 has been terminated, delete the lock file (%5) and restart.").arg(title).arg(pid).arg(uName).arg(appName).arg(fileName));
-
-//            if(lockFile.isOpen())
-//                lockFile.close();
-
-//            return -1;
-//        }
-//    }
-
-//    QString fileName = QString("%1/%2").arg(lockFilePath).arg(lockFileName);
-//    lockFile.setFileName(fileName);
-
-//    if(!lockFile.open(QIODevice::WriteOnly))
-//    {
-//        QMessageBox::critical(nullptr,QString("%1 Error").arg(appName),QString("Could not write lock file to %1. Ensure this location has write permissions enabled for your user.").arg(fileName));
-//        return -1;
-//    }
-//    lockFile.write(QString("%1\n\nStarted by user %2 at %3.").arg(a.applicationPid()).arg(QFileInfo(lockFile).owner()).arg(QDateTime::currentDateTime().toString(Qt::ISODate)).toLatin1());
-//    lockFile.setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner|QFileDevice::ReadGroup|QFileDevice::ReadOther);
-//    lockFile.close();
-
     qRegisterMetaType<std::shared_ptr<Experiment>>();
     qRegisterMetaType<Fid>("Fid");
     qRegisterMetaType<FidList>("FidList");
     qRegisterMetaType<FtWorker::FidProcessingSettings>("FtWorker::FidProcessingSettings");
     qRegisterMetaType<Ft>("Ft");
-    qRegisterMetaType<FtmwConfig>("FtmwConfig");
-    qRegisterMetaType<RfConfig>("RfConfig");
     qRegisterMetaType<QVector<QPointF> >("QVector<QPointF>");
     qRegisterMetaType<QVector<double>>("Vector<double>");
     qRegisterMetaType<QList<QPair<QString,QVariant> >>("QList<QPair<QString,QVariant> >");
@@ -215,8 +157,8 @@ int main(int argc, char *argv[])
 
     MainWindow w;
     QApplication::connect(ls,&QLocalServer::newConnection,[&w](){
-        w.raise();
         w.setWindowState(Qt::WindowMaximized|Qt::WindowActive);
+        w.raise();
     });
 
     w.showMaximized();

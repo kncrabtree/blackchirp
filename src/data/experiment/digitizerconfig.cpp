@@ -83,7 +83,7 @@ void DigitizerConfig::loadComplete()
     d_triggerLevel = retrieve(trigLevel,0.0);
     d_triggerDelayUSec = retrieve(trigDelay,0.0);
     d_bytesPerPoint = retrieve(bpp,1);
-    d_byteOrder = retrieve(bo,QDataStream::LittleEndian);
+    d_byteOrder = retrieve(bo,DigitizerConfig::LittleEndian);
     d_sampleRate = retrieve(sRate,0.0);
     d_recordLength = retrieve(recLen,0);
     d_blockAverage = retrieve(blockAvg,false);

@@ -162,7 +162,7 @@ void GpuAverager::freeMemory()
         cudaStreamDestroy(d_streamList.takeFirst());
 }
 
-bool GpuAverager::initialize(const int pointsPerFrame, const int numFrames, const int bytesPerPoint, QDataStream::ByteOrder byteOrder)
+bool GpuAverager::initialize(const int pointsPerFrame, const int numFrames, const int bytesPerPoint, DigitizerConfig::ByteOrder byteOrder)
 {
     freeMemory();
 
@@ -170,7 +170,7 @@ bool GpuAverager::initialize(const int pointsPerFrame, const int numFrames, cons
     d_numFrames = numFrames;
     d_bytesPerPoint = bytesPerPoint;
     d_totalPoints = pointsPerFrame*numFrames;
-    byteOrder == QDataStream::LittleEndian ? d_isLittleEndian = true : d_isLittleEndian = false;
+    byteOrder == DigitizerConfig::LittleEndian ? d_isLittleEndian = true : d_isLittleEndian = false;
 
     Q_ASSERT(d_pointsPerFrame > 0);
     if(d_pointsPerFrame <= 0)

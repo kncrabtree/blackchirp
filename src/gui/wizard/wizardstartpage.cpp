@@ -59,11 +59,12 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     fl->addRow("Duration",p_ftmwTargetDurationBox);
 
     p_endTimeLabel = new QLabel;
-    p_endTimeLabel->setAlignment(Qt::AlignCenter);
+    p_endTimeLabel->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
     p_endTimeLabel->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
     auto dt = QDateTime::currentDateTime().addSecs(p_ftmwTargetDurationBox->value()*60);
     p_endTimeLabel->setText(d_endText.arg(dt.toString("yyyy-MM-dd h:mm AP")));
     fl->addRow(p_endTimeLabel);
+    connect(p_ftmwTargetDurationBox,qOverload<int>(&QSpinBox::valueChanged),this,&WizardStartPage::updateLabel);
 
     p_phaseCorrectionBox = new QCheckBox(this);
     p_phaseCorrectionBox->setToolTip(QString("If checked, Blackchirp will optimize the autocorrelation of the chirp during the acquisition.\n\nFor this to work, the chirp must be part of the signal recorded by the digitizer and must not saturate the digitizer."));
@@ -267,12 +268,27 @@ void WizardStartPage::initializePage()
 
         if(e->ftmwEnabled())
         {
-            p_ftmwTypeBox->setCurrentIndex(p_ftmwTypeBox->findData(QVariant::fromValue(e->ftmwConfig()->d_type)));
-            p_ftmwShotsBox->setValue(e->ftmwConfig()->d_targetShots);
+            auto type = e->ftmwConfig()->d_type;
+            p_ftmwTypeBox->setCurrentIndex(p_ftmwTypeBox->findData(QVariant::fromValue(type)));
             p_phaseCorrectionBox->setChecked(e->ftmwConfig()->d_phaseCorrectionEnabled);
             p_chirpScoringBox->setChecked(e->ftmwConfig()->d_chirpScoringEnabled);
             p_thresholdBox->setValue(e->ftmwConfig()->d_chirpRMSThreshold);
             ///TODO: use chirp offset!
+
+            switch(type) {
+            case FtmwConfig::Target_Shots:
+            case FtmwConfig::Peak_Up:
+            case FtmwConfig::DR_Scan:
+            case FtmwConfig::LO_Scan:
+                p_ftmwShotsBox->setValue(e->ftmwConfig()->d_objective);
+                break;
+            case FtmwConfig::Target_Duration:
+                p_ftmwTargetDurationBox->setValue(e->ftmwConfig()->d_objective);
+                break;
+            default:
+                break;
+            }
+
         }
 
 
@@ -292,8 +308,9 @@ bool WizardStartPage::validatePage()
          auto type = p_ftmwTypeBox->currentData().value<FtmwConfig::FtmwType>();
          auto ftmw = e->enableFtmw(type);
 
-         ftmw->d_targetShots = p_ftmwShotsBox->value();
-         ftmw->d_duration = p_ftmwTargetDurationBox->value();
+         ftmw->d_objective = p_ftmwShotsBox->value();
+         if(type == FtmwConfig::Target_Duration)
+             ftmw->d_objective = p_ftmwTargetDurationBox->value();
          ftmw->d_chirpScoringEnabled = p_chirpScoringBox->isChecked();
          ftmw->d_chirpRMSThreshold = p_thresholdBox->value();
          ftmw->d_phaseCorrectionEnabled = p_phaseCorrectionBox->isChecked();
@@ -340,13 +357,18 @@ void WizardStartPage::configureUI()
     p_thresholdBox->setEnabled(p_chirpScoringBox->isChecked());
 }
 
+void WizardStartPage::updateLabel()
+{
+    auto dt = QDateTime::currentDateTime().addSecs(p_ftmwTargetDurationBox->value()*60);
+    p_endTimeLabel->setText(d_endText.arg(dt.toString("yyyy-MM-dd h:mm AP")));
+}
+
 
 void WizardStartPage::timerEvent(QTimerEvent *event)
 {
     if(event->timerId() == d_timerId)
     {
-        auto dt = QDateTime::currentDateTime().addSecs(p_ftmwTargetDurationBox->value()*60);
-        p_endTimeLabel->setText(d_endText.arg(dt.toString("yyyy-MM-dd h:mm AP")));
+        updateLabel();
         event->accept();
     }
 }

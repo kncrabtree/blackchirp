@@ -96,7 +96,7 @@ void VirtualLifScope::queryScope()
             qint16 dat = (qrand() % 65536) - 32768;
             qint8 datmsb = dat / 256;
             qint8 datlsb = dat % 256;
-            if(d_config.byteOrder == QDataStream::LittleEndian)
+            if(d_config.byteOrder == DigitizerConfig::LittleEndian)
             {
                 out[2*i] = datlsb;
                 out[2*i+1] = datmsb;
@@ -123,7 +123,7 @@ void VirtualLifScope::queryScope()
                 qint16 dat = (qrand() % 65536) - 32768;
                 qint8 datmsb = dat / 256;
                 qint8 datlsb = dat % 256;
-                if(d_config.byteOrder == QDataStream::LittleEndian)
+                if(d_config.byteOrder == DigitizerConfig::LittleEndian)
                 {
                    out[2*i] = datlsb;
                    out[2*i+1] = datmsb;

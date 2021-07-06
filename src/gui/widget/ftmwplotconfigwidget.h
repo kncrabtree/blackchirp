@@ -28,18 +28,18 @@ public:
 signals:
     void frameChanged(int id, int frameNum);
     void segmentChanged(int id, int segNum);
-    void snapshotsProcessed(int id, const FtmwConfig);
-    void snapshotsFinalized(const FtmwConfig);
+//    void snapshotsProcessed(int id, const FtmwConfig);
+//    void snapshotsFinalized(const FtmwConfig);
 
 public slots:
     void configureSnapControls();
     void process();
-    void processFtmwConfig(const FtmwConfig ref);
-    void processingComplete(const FtmwConfig out);
+//    void processFtmwConfig(const FtmwConfig ref);
+//    void processingComplete(const FtmwConfig out);
     void selectAll();
     void selectNone();
     void finalizeSnapshots();
-    void finalizeComplete(const FtmwConfig out);
+//    void finalizeComplete(const FtmwConfig out);
     void clearAll();
 
 private:
@@ -54,7 +54,7 @@ private:
     int d_num, d_id;
     bool d_busy, d_updateWhenDone;
     QString d_path;
-    FtmwConfig d_ftmwToProcess;
+//    FtmwConfig d_ftmwToProcess;
 };
 
 #endif // FTMWPLOTCONFIGWIDGET_H

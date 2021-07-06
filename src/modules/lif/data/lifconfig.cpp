@@ -305,9 +305,9 @@ void LifConfig::parseLine(QString key, QVariant val)
         if(key.endsWith(QString("ByteOrder")))
         {
             if(val.toString().contains(QString("Little")))
-                data->scopeConfig.byteOrder = QDataStream::LittleEndian;
+                data->scopeConfig.byteOrder = DigitizerConfig::LittleEndian;
             else
-                data->scopeConfig.byteOrder = QDataStream::BigEndian;
+                data->scopeConfig.byteOrder = DigitizerConfig::BigEndian;
         }
 
     }

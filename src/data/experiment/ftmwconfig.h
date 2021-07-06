@@ -1,7 +1,6 @@
 ﻿#ifndef FTMWCONFIG_H
 #define FTMWCONFIG_H
 
-#include <QDateTime>
 #include <QDataStream>
 #include <QVariant>
 #include <QMetaType>
@@ -49,14 +48,13 @@ public:
     FtmwConfig &operator=(const FtmwConfig &) =default;
     virtual ~FtmwConfig();
 
-    int d_duration{0};
     bool d_isEnabled{false};
     bool d_phaseCorrectionEnabled{false};
     bool d_chirpScoringEnabled{false};
     double d_chirpRMSThreshold{0.0};
     double d_chirpOffsetUs{-1.0};
     FtmwType d_type{Forever};
-    quint64 d_targetShots{0};
+    quint64 d_objective{0};
 
     FtmwDigitizerConfig d_scopeConfig;
     RfConfig d_rfConfig;
@@ -65,14 +63,11 @@ public:
     bool initialize() override;
     bool advance() override;
     void hwReady() override;
-    int perMilComplete() const override;
-    bool indefinite() const override;
-    bool isComplete() const override;
     bool abort() override;
 
+    virtual bool indefinite() const override { return false; }
 
     quint64 completedShots() const;
-    QDateTime targetTime() const;
 
     bool processingPaused() const;
     quint64 shotIncrement() const;
@@ -91,7 +86,7 @@ public:
     bool setFidsData(const QVector<QVector<qint64> > newList);
 #endif
     bool addFids(const QByteArray rawData, int shift = 0);
-    bool subtractFids(const FtmwConfig other);
+//    bool subtractFids(const FtmwConfig other);
     void setScopeConfig(const FtmwDigitizerConfig &other);
     void finalizeSnapshots(int num, QString path = QString(""));
     std::shared_ptr<FidStorageBase> storage() const;
@@ -103,7 +98,6 @@ public:
 
 private:
     std::shared_ptr<FidStorageBase> p_fidStorage;
-    QDateTime d_targetTime;
     Fid d_fidTemplate;
     bool d_processingPaused{false};
 
@@ -111,6 +105,11 @@ private:
 protected:
     void prepareToSave() override;
     void loadComplete() override;
+    virtual quint8 bitShift() const { return 0; }
+    virtual bool _init() =0;
+    virtual void _prepareToSave() =0;
+    virtual void _loadComplete() =0;
+    virtual std::shared_ptr<FidStorageBase> createStorage() =0;
 };
 
 

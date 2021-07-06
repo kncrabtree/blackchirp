@@ -64,7 +64,7 @@ void VirtualMotorScope::initialize()
 bool VirtualMotorScope::configure(const BlackChirp::MotorScopeConfig &sc)
 {
     BlackChirp::MotorScopeConfig out = sc;
-    out.byteOrder = QDataStream::BigEndian;
+    out.byteOrder = DigitizerConfig::BigEndian;
     out.bytesPerPoint = 2;
 
     d_config = out;

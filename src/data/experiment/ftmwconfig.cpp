@@ -5,13 +5,12 @@
 #include <QFile>
 #include <QtEndian>
 
-#include <data/storage/fidsinglestorage.h>
 #include <data/storage/fidpeakupstorage.h>
 
 FtmwConfig::FtmwConfig() : HeaderStorage(BC::Store::FTMW::key)
 {
-    addChild(&d_rfConfig);
-    addChild(&d_scopeConfig);
+//    addChild(&d_rfConfig);
+//    addChild(&d_scopeConfig);
 }
 
 FtmwConfig::~FtmwConfig()
@@ -22,11 +21,6 @@ FtmwConfig::~FtmwConfig()
 quint64 FtmwConfig::completedShots() const
 {
     return p_fidStorage->completedShots();
-}
-
-QDateTime FtmwConfig::targetTime() const
-{
-    return d_targetTime;
 }
 
 bool FtmwConfig::processingPaused() const
@@ -63,7 +57,7 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
             for(int k = 0; k<scopeConfig().bytesPerPoint; k++)
             {
                 int thisIndex = k;
-                if(scopeConfig().byteOrder == QDataStream::BigEndian)
+                if(scopeConfig().byteOrder == DigitizerConfig::BigEndian)
                     thisIndex = scopeConfig().bytesPerPoint - k;
 
                 dat |= (static_cast<quint8>(b.at(scopeConfig().bytesPerPoint*(j*np+i)+thisIndex)) << (8*k));
@@ -90,7 +84,7 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
                 y |= y1;
                 y |= (y2 << 8);
 
-                if(d_scopeConfig.d_byteOrder == QDataStream::BigEndian)
+                if(d_scopeConfig.d_byteOrder == DigitizerConfig::BigEndian)
                     y = qFromBigEndian(y);
                 else
                     y = qFromLittleEndian(y);
@@ -110,7 +104,7 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
                 y |= (y3 << 16);
                 y |= (y4 << 24);
 
-                if(d_scopeConfig.d_byteOrder == QDataStream::BigEndian)
+                if(d_scopeConfig.d_byteOrder == DigitizerConfig::BigEndian)
                     y = qFromBigEndian(y);
                 else
                     y = qFromLittleEndian(y);
@@ -119,11 +113,8 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
             }
 
 
-            //in peak up mode, add 8 bits of padding so that there are empty bits to fill when
-            //the rolling average kicks in.
-            //Note that this could lead to overflow problems if bytesPerPoint = 4 and the # of averages is large
-            if(d_type == Peak_Up)
-                dat = dat << 8;
+            //some modes (eg peakup) may add additional padding bits for averaging
+            dat = dat << bitShift();
 
             d[i] = dat;
         }
@@ -267,12 +258,13 @@ bool FtmwConfig::initialize()
     double df = d_rfConfig.clockFrequency(RfConfig::DownLO);
     auto sb = d_rfConfig.d_downMixSideband;
 
-    Fid f(d_scopeConfig.xIncr(),df,QVector<qint64>(0),sb,d_scopeConfig.yMult(d_scopeConfig.d_fidChannel),1);
+    Fid f;//(d_scopeConfig.xIncr(),df,QVector<qint64>(0),sb,d_scopeConfig.yMult(d_scopeConfig.d_fidChannel),0);
+    f.setSpacing(d_scopeConfig.xIncr());
+    f.setSideband(sb);
+    f.setProbeFreq(df);
+    //divide Vmult by 2^bitShift in case extra padding bits are added
+    f.setVMult(d_scopeConfig.yMult(d_scopeConfig.d_fidChannel)/pow(2,bitShift()));
 
-    //in peak up mode, data points will be shifted by 8 bits (x256), so the multiplier
-    //needs to decrease by a factor of 256
-    if(d_type == Peak_Up)
-        f.setVMult(f.vMult()/256.0);
     d_fidTemplate = f;
 
     if(!d_rfConfig.prepareForAcquisition())
@@ -281,14 +273,9 @@ bool FtmwConfig::initialize()
         return false;
     }
 
-    if(d_type == LO_Scan || d_type == DR_Scan)
-        d_targetShots = d_rfConfig.totalShots();
-    if(d_type == Target_Duration)
-        d_targetTime = QDateTime::currentDateTime().addSecs(d_duration*60);
+    p_fidStorage = createStorage();
 
-    p_fidStorage = std::make_shared<FidSingleStorage>(QString(""),d_scopeConfig.d_numRecords);
-
-    return true;
+    return _init();
 
 
 }
@@ -368,59 +355,59 @@ bool FtmwConfig::addFids(const QByteArray rawData, int shift)
 //    }
 //}
 
-bool FtmwConfig::subtractFids(const FtmwConfig other)
-{
-    (void)other;
-#pragma message("Figure out what to do with subtractFids")
-//    if(!d_multipleFidLists)
-//    {
-//        auto otherList = other.fidList();
+//bool FtmwConfig::subtractFids(const FtmwConfig other)
+//{
+//    (void)other;
+//#pragma message("Figure out what to do with subtractFids")
+////    if(!d_multipleFidLists)
+////    {
+////        auto otherList = other.fidList();
 
-//        if(otherList.size() != d_fidList.size())
-//            return false;
+////        if(otherList.size() != d_fidList.size())
+////            return false;
 
-//        for(int i=0; i<otherList.size(); i++)
-//        {
-//            if(otherList.at(i).size() != d_fidList.at(i).size())
-//                return false;
+////        for(int i=0; i<otherList.size(); i++)
+////        {
+////            if(otherList.at(i).size() != d_fidList.at(i).size())
+////                return false;
 
-//            if(otherList.at(i).shots() >= d_fidList.at(i).shots())
-//                return false;
-//        }
+////            if(otherList.at(i).shots() >= d_fidList.at(i).shots())
+////                return false;
+////        }
 
-//        for(int i=0; i<d_fidList.size(); i++)
-//            d_fidList[i] -= otherList.at(i);
+////        for(int i=0; i<d_fidList.size(); i++)
+////            d_fidList[i] -= otherList.at(i);
 
-//    }
-//    else
-//    {
-//        auto otherList = other.multiFidList();
+////    }
+////    else
+////    {
+////        auto otherList = other.multiFidList();
 
-//        for(int i=0; i<d_multiFidStorage.size(); i++)
-//        {
-//            if(i >= otherList.size())
-//                continue;
+////        for(int i=0; i<d_multiFidStorage.size(); i++)
+////        {
+////            if(i >= otherList.size())
+////                continue;
 
-//            if(otherList.at(i).size() != d_multiFidStorage.at(i).size() || d_multiFidStorage.at(i).isEmpty())
-//                return false;
+////            if(otherList.at(i).size() != d_multiFidStorage.at(i).size() || d_multiFidStorage.at(i).isEmpty())
+////                return false;
 
-//            //if numbers of shots are equal, then no new data have been added for this chunk.
-//            //Write an empty list of fids.
-//            //Otherwise, get the difference.
-//            if(otherList.at(i).constFirst().shots() == d_multiFidStorage.at(i).constFirst().shots())
-//                d_multiFidStorage[i] = FidList();
-//            else if(otherList.at(i).constFirst().shots() < d_multiFidStorage.at(i).constFirst().shots())
-//            {
-//                for(int j=0; j<d_multiFidStorage.at(i).size(); j++)
-//                    d_multiFidStorage[i][j] -= otherList.at(i).at(j);
-//            }
-//            else
-//                return false;
-//        }
-//    }
+////            //if numbers of shots are equal, then no new data have been added for this chunk.
+////            //Write an empty list of fids.
+////            //Otherwise, get the difference.
+////            if(otherList.at(i).constFirst().shots() == d_multiFidStorage.at(i).constFirst().shots())
+////                d_multiFidStorage[i] = FidList();
+////            else if(otherList.at(i).constFirst().shots() < d_multiFidStorage.at(i).constFirst().shots())
+////            {
+////                for(int j=0; j<d_multiFidStorage.at(i).size(); j++)
+////                    d_multiFidStorage[i][j] -= otherList.at(i).at(j);
+////            }
+////            else
+////                return false;
+////        }
+////    }
 
-    return true;
-}
+//    return true;
+//}
 
 void FtmwConfig::setScopeConfig(const FtmwDigitizerConfig &other)
 {
@@ -431,22 +418,6 @@ void FtmwConfig::hwReady()
 {
     d_fidTemplate.setProbeFreq(d_rfConfig.clockFrequency(RfConfig::DownLO));
     d_processingPaused = false;
-}
-
-int FtmwConfig::perMilComplete() const
-{
-    if(indefinite())
-        return 0;
-
-    return static_cast<int>(floor(static_cast<double>(completedShots())/static_cast<double>(d_targetShots) * 1000.0));
-}
-
-bool FtmwConfig::indefinite() const
-{
-    if(d_type == Forever)
-        return true;
-
-    return false;
 }
 
 void FtmwConfig::finalizeSnapshots(int num, QString path)
@@ -530,32 +501,6 @@ std::shared_ptr<FidStorageBase> FtmwConfig::storage() const
     return p_fidStorage;
 }
 
-bool FtmwConfig::isComplete() const
-{
-    if(d_isEnabled)
-        return true;
-
-    switch(d_type)
-    {
-    case Target_Shots:
-    case LO_Scan:
-    case DR_Scan:
-        return completedShots() >= d_targetShots;
-        break;
-    case Target_Duration:
-        return QDateTime::currentDateTime() >= d_targetTime;
-        break;
-    case Forever:
-    case Peak_Up:
-    default:
-        return false;
-        break;
-    }
-
-
-    //not reached
-    return false;
-}
 
 bool FtmwConfig::abort()
 {
@@ -778,31 +723,24 @@ void FtmwConfig::loadClocks(const int num, const QString path)
 void FtmwConfig::prepareToSave()
 {
     using namespace BC::Store::FTMW;
-    store(enabled,d_isEnabled);
-    if(d_isEnabled)
-    {
-        if(d_type == Target_Duration)
-            store(duration,d_duration,"min");
-        store(phase,d_phaseCorrectionEnabled);
-        store(chirp,d_chirpScoringEnabled);
-        if(d_chirpScoringEnabled)
-            store(chirpThresh,d_chirpRMSThreshold);
-        if(d_chirpScoringEnabled || d_phaseCorrectionEnabled)
-            store(chirpOffset,d_chirpOffsetUs,QString::fromUtf8("μs"));
-        if(d_targetShots > 0)
-            store(tShots,d_targetShots);
-    }
+    store(phase,d_phaseCorrectionEnabled);
+    store(chirp,d_chirpScoringEnabled);
+    if(d_chirpScoringEnabled)
+        store(chirpThresh,d_chirpRMSThreshold);
+    if(d_chirpScoringEnabled || d_phaseCorrectionEnabled)
+        store(chirpOffset,d_chirpOffsetUs,QString::fromUtf8("μs"));
+
+    _prepareToSave();
 }
 
 void FtmwConfig::loadComplete()
 {
     using namespace BC::Store::FTMW;
-    d_isEnabled = retrieve(enabled,false);
-    d_duration = retrieve(duration,0);
     d_phaseCorrectionEnabled = retrieve(phase,false);
     d_chirpScoringEnabled = retrieve(chirp,false);
     d_chirpRMSThreshold = retrieve(chirpThresh,0.0);
     d_chirpOffsetUs = retrieve(chirpOffset,0.0);
     d_type = retrieve(type,Forever);
-    d_targetShots = retrieve(tShots,0);
+
+    _loadComplete();
 }

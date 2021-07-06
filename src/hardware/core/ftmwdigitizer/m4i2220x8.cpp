@@ -253,7 +253,7 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
     spcm_dwDefTransfer_i64(p_handle,SPCM_BUF_DATA,SPCM_DIR_CARDTOPC,4096*4,static_cast<void*>(p_m4iBuffer),0,d_bufferSize);
 
     sc.yMult = sc.vScale/128.0;
-    sc.byteOrder = QDataStream::LittleEndian;
+    sc.byteOrder = DigitizerConfig::LittleEndian;
     sc.vOffset = 0.0;
     sc.yOff = 0;
     sc.xIncr = 1.0/sc.sampleRate;

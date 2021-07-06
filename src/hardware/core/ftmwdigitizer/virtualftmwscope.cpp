@@ -139,7 +139,7 @@ void VirtualFtmwScope::readWaveform()
                     qint16 n = qBound(-32768,((int)(dat/yMult(d_fidChannel))+noise),32767);
                     quint8 byte1;
                     quint8 byte2;
-                    if(d_byteOrder == QDataStream::LittleEndian)
+                    if(d_byteOrder == DigitizerConfig::LittleEndian)
                     {
                         byte1 = (n & 0x00ff);
                         byte2 = (n & 0xff00) >> 8;

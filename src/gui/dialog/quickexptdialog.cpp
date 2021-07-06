@@ -21,17 +21,17 @@ QuickExptDialog::QuickExptDialog(std::shared_ptr<Experiment> e, QWidget *parent)
         if(e->ftmwConfig()->d_type == FtmwConfig::Target_Shots)
         {
             html.append(QString("<li>Mode: Target Shots</li>"));
-            html.append(QString("<li>Shots: %1</li>").arg(e->ftmwConfig()->d_targetShots));
+            html.append(QString("<li>Shots: %1</li>").arg(e->ftmwConfig()->d_objective));
         }
         else if(e->ftmwConfig()->d_type == FtmwConfig::Peak_Up)
         {
             html.append(QString("<li>Mode: Peak Up</li>"));
-            html.append(QString("<li>Shots: %1</li>").arg(e->ftmwConfig()->d_targetShots));
+            html.append(QString("<li>Shots: %1</li>").arg(e->ftmwConfig()->d_objective));
         }
         else if(e->ftmwConfig()->d_type == FtmwConfig::Target_Duration)
         {
-            html.append(QString("<li>Mode: Target Time</li>"));
-            html.append(QString("<li>End time: %1</li>").arg(e->ftmwConfig()->targetTime().toString()));
+            html.append(QString("<li>Mode: Target Duration</li>"));
+            html.append(QString("<li>Duration: %1 min</li>").arg(e->ftmwConfig()->d_objective));
         }
         else if(e->ftmwConfig()->d_type == FtmwConfig::Forever)
         {

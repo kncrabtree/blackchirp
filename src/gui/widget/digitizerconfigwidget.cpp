@@ -110,8 +110,8 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
     registerGetter(lBytes,p_bytesPerPointBox,&QSpinBox::value);
 
     p_byteOrderBox = new QComboBox;
-    p_byteOrderBox->addItem("Little Endian",QDataStream::LittleEndian);
-    p_byteOrderBox->addItem("Big Endian",QDataStream::BigEndian);
+    p_byteOrderBox->addItem("Little Endian",DigitizerConfig::LittleEndian);
+    p_byteOrderBox->addItem("Big Endian",DigitizerConfig::BigEndian);
     p_byteOrderBox->setCurrentIndex(get(lByteOrder,0));
     registerGetter(lByteOrder,p_byteOrderBox,&QComboBox::currentIndex);
 

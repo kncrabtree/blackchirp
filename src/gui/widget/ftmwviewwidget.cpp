@@ -67,12 +67,12 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
 
     connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::frameChanged,this,&FtmwViewWidget::changeFrame);
     connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::segmentChanged,this,&FtmwViewWidget::changeSegment);
-    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::snapshotsProcessed,this,&FtmwViewWidget::snapshotsProcessed);
-    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::snapshotsFinalized,this,&FtmwViewWidget::snapshotsFinalized);
+//    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::snapshotsProcessed,this,&FtmwViewWidget::snapshotsProcessed);
+//    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::snapshotsFinalized,this,&FtmwViewWidget::snapshotsFinalized);
     connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::frameChanged,this,&FtmwViewWidget::changeFrame);
     connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::segmentChanged,this,&FtmwViewWidget::changeSegment);
-    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::snapshotsProcessed,this,&FtmwViewWidget::snapshotsProcessed);
-    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::snapshotsFinalized,this,&FtmwViewWidget::snapshotsFinalized);
+//    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::snapshotsProcessed,this,&FtmwViewWidget::snapshotsProcessed);
+//    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::snapshotsFinalized,this,&FtmwViewWidget::snapshotsFinalized);
 
     connect(ui->liveAction,&QAction::triggered,this,[=]() { modeChanged(Live); });
     connect(ui->ft1Action,&QAction::triggered,this,[=]() { modeChanged(FT1); });
@@ -175,7 +175,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         ui->liveAction->setEnabled(true);
 
         ui->averagesSpinbox->blockSignals(true);
-        ui->averagesSpinbox->setValue(e.ftmwConfig()->d_targetShots);
+        ui->averagesSpinbox->setValue(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up ? e.ftmwConfig()->d_objective : 0);
         ui->averagesSpinbox->blockSignals(false);
 
         ui->resetAveragesButton->setEnabled(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up);
@@ -230,9 +230,8 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
 
 }
 
-void FtmwViewWidget::updateLiveFidList(const FtmwConfig c, int segment)
+void FtmwViewWidget::updateLiveFidList(int segment)
 {
-    (void)c;
 #pragma message("UpdateLiveFidList needs work")
     auto fl = p_fidStorage->getCurrentFidList();
     d_currentSegment = p_fidStorage->getCurrentIndex();
@@ -284,7 +283,7 @@ void FtmwViewWidget::updateLiveFidList(const FtmwConfig c, int segment)
     }
 }
 
-void FtmwViewWidget::updateFtmw(const FtmwConfig f)
+void FtmwViewWidget::updateFtmw()
 {
 #pragma message("This function will not be called anymore; figure out what to do")
 //    d_ftmwCfg = f;
@@ -298,12 +297,12 @@ void FtmwViewWidget::updateFtmw(const FtmwConfig f)
         if(it.key() == d_plot1Id && ui->plot1ConfigWidget->isSnapshotActive())
         {
             ignore << it.key();
-            ui->plot1ConfigWidget->processFtmwConfig(f);
+//            ui->plot1ConfigWidget->processFtmwConfig(f);
         }
         else if(it.key() == d_plot2Id && ui->plot2ConfigWidget->isSnapshotActive())
         {
             ignore << it.key();
-            ui->plot2ConfigWidget->processFtmwConfig(f);
+//            ui->plot2ConfigWidget->processFtmwConfig(f);
         }
         else
             it.value().fid = p_fidStorage->getFidList(it.value().segment).at(it.value().frame);
@@ -611,7 +610,7 @@ void FtmwViewWidget::snapshotTaken()
 
 }
 
-void FtmwViewWidget::snapshotsProcessed(int id, const FtmwConfig c)
+void FtmwViewWidget::snapshotsProcessed(int id)
 {
     if(id != d_plot1Id && id != d_plot2Id)
         return;
@@ -633,7 +632,7 @@ void FtmwViewWidget::snapshotsProcessed(int id, const FtmwConfig c)
 
 }
 
-void FtmwViewWidget::snapshotsFinalized(const FtmwConfig out)
+void FtmwViewWidget::snapshotsFinalized()
 {
 //    d_ftmwCfg = out;
 #pragma message("Snapshot processing")

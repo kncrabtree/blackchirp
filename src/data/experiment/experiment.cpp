@@ -2,6 +2,7 @@
 
 #include <data/storage/blackchirpcsv.h>
 #include <data/storage/settingsstorage.h>
+#include <data/experiment/ftmwconfigtypes.h>
 
 #include <QApplication>
 #include <QDir>
@@ -13,8 +14,28 @@ Experiment::Experiment() : HeaderStorage(BC::Store::Exp::key)
 }
 
 Experiment::Experiment(const Experiment &other) :
-    HeaderStorage(BC::Store::Exp::key), pu_ftmwConfig(std::make_unique<FtmwConfig>(*other.ftmwConfig()))
+    HeaderStorage(BC::Store::Exp::key)
 {
+    if(other.ftmwConfig() != nullptr)
+    {
+        switch(other.ftmwConfig()->d_type)
+        {
+        case FtmwConfig::Target_Shots:
+            pu_ftmwConfig = std::make_unique<FtmwConfigSingle>(*other.ftmwConfig());
+            break;
+        case FtmwConfig::Target_Duration:
+            pu_ftmwConfig = std::make_unique<FtmwConfigDuration>(*other.ftmwConfig());
+            break;
+        case FtmwConfig::Peak_Up:
+            pu_ftmwConfig = std::make_unique<FtmwConfigPeakUp>(*other.ftmwConfig());
+            break;
+        case FtmwConfig::Forever:
+            pu_ftmwConfig = std::make_unique<FtmwConfigForever>(*other.ftmwConfig());
+            break;
+        default:
+            break;
+        }
+    }
 
 }
 
@@ -383,8 +404,24 @@ bool Experiment::snapshotReady()
 
 FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
 {
-    ///TODO: polymorphic creation
-    pu_ftmwConfig = std::make_unique<FtmwConfig>();
+    switch(type) {
+    case FtmwConfig::Target_Shots:
+        pu_ftmwConfig = std::make_unique<FtmwConfigSingle>();
+        break;
+    case FtmwConfig::Target_Duration:
+        pu_ftmwConfig = std::make_unique<FtmwConfigDuration>();
+        break;
+    case FtmwConfig::Peak_Up:
+        pu_ftmwConfig = std::make_unique<FtmwConfigPeakUp>();
+        break;
+    case FtmwConfig::Forever:
+        pu_ftmwConfig = std::make_unique<FtmwConfigForever>();
+        break;
+    default:
+        break;
+    }
+
+//    pu_ftmwConfig = std::make_unique<FtmwConfig>();
     pu_ftmwConfig->d_type = type;
     return pu_ftmwConfig.get();
 }

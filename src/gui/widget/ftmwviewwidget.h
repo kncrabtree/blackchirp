@@ -60,8 +60,8 @@ signals:
     void finalized(int);
 
 public slots:
-    void updateLiveFidList(const FtmwConfig c, int segment);
-    void updateFtmw(const FtmwConfig f);
+    void updateLiveFidList(int segment);
+    void updateFtmw();
     void updateProcessingSettings(FtWorker::FidProcessingSettings s);
     void changeFrame(int id, int frameNum);
     void changeSegment(int id, int segmentNum);
@@ -79,8 +79,8 @@ public slots:
 
     void modeChanged(MainPlotMode newMode);
     void snapshotTaken();
-    void snapshotsProcessed(int id, const FtmwConfig c);
-    void snapshotsFinalized(const FtmwConfig out);
+    void snapshotsProcessed(int id);
+    void snapshotsFinalized();
     void snapshotsFinalizedUpdateUi(int num);
     void experimentComplete();
 

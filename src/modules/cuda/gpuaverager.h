@@ -7,6 +7,7 @@
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
+#include <data/experiment/digitizerconfig.h>
 
 class GpuAverager {
 
@@ -14,7 +15,7 @@ public:
     explicit GpuAverager();
     ~GpuAverager();
 
-    bool initialize(const int pointsPerFrame, const int numFrames, const int bytesPerPoint, QDataStream::ByteOrder byteOrder);
+    bool initialize(const int pointsPerFrame, const int numFrames, const int bytesPerPoint, DigitizerConfig::ByteOrder byteOrder);
     QVector<QVector<qint64> > parseAndAdd(const char *newDataIn, const int shift = 0);
     QVector<QVector<qint64> > parseAndRollAvg(const char *newDataIn, const qint64 currentShots, const qint64 targetShots, const int shift = 0);
     void resetAverage();

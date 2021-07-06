@@ -662,9 +662,9 @@ void MotorScan::parseLine(QString key, QVariant val)
         if(key.endsWith(QString("ByteOrder")))
         {
             if(val.toString().contains(QString("Big")))
-                data->scopeConfig.byteOrder = QDataStream::BigEndian;
+                data->scopeConfig.byteOrder = DigitizerConfig::BigEndian;
             else
-                data->scopeConfig.byteOrder = QDataStream::LittleEndian;
+                data->scopeConfig.byteOrder = DigitizerConfig::LittleEndian;
         }
         if(key.endsWith(QString("TriggerChannel")))
             data->scopeConfig.triggerChannel = val.toInt();

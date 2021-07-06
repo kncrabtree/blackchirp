@@ -498,7 +498,7 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
             exp.setHardwareFailed();
             return false;
         }
-        config.byteOrder = QDataStream::LittleEndian;
+        config.byteOrder = DigitizerConfig::LittleEndian;
 
         //verify number of frames
         if(config.fastFrameEnabled && !config.summaryFrame && l.at(3).toInt() != config.numFrames)
