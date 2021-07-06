@@ -47,7 +47,7 @@ public:
     FtmwConfig();
     FtmwConfig(const FtmwConfig &) =default;
     FtmwConfig &operator=(const FtmwConfig &) =default;
-    ~FtmwConfig();
+    virtual ~FtmwConfig();
 
     int d_duration{0};
     bool d_isEnabled{false};

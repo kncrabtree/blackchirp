@@ -20,9 +20,9 @@ void SaveManager::snapshot(Experiment &e)
 //    QFile snp(BlackChirp::getExptFile(e.number(),BlackChirp::SnapFile));
 //    if(snp.open(QIODevice::WriteOnly))
 //    {
-//        if(e.d_ftmwCfg.isEnabled())
+//        if(e.ftmwEnabled())
 //        {
-//            if(e.d_ftmwCfg.hasMultiFidLists())
+//            if(e.ftmwConfig()->hasMultiFidLists())
 //                snp.write(QByteArray("mfd\t") + QByteArray::number(d_snapNum) + QByteArray("\n"));
 //            else
 //                snp.write(QByteArray("fid\t") + QByteArray::number(d_snapNum) + QByteArray("\n"));

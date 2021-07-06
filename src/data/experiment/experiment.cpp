@@ -12,6 +12,12 @@ Experiment::Experiment() : HeaderStorage(BC::Store::Exp::key)
 {
 }
 
+Experiment::Experiment(const Experiment &other) :
+    HeaderStorage(BC::Store::Exp::key), pu_ftmwConfig(std::make_unique<FtmwConfig>(*other.ftmwConfig()))
+{
+
+}
+
 Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : HeaderStorage(BC::Store::Exp::key)
 {
     QDir d(BlackChirp::getExptDir(num,exptPath));
@@ -42,12 +48,12 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
 
         if(!headerOnly)
         {
-            if(d_ftmwCfg.d_isEnabled)
+            if(ftmwEnabled())
             {
 #pragma message("What should be moved to header?")
-                d_ftmwCfg.loadChirps(num,exptPath);
-                d_ftmwCfg.loadFids(num,exptPath);
-                d_ftmwCfg.loadClocks(num,exptPath);
+                pu_ftmwConfig->loadChirps(num,exptPath);
+                pu_ftmwConfig->loadFids(num,exptPath);
+                pu_ftmwConfig->loadClocks(num,exptPath);
             }
 
 #ifdef BC_LIF
@@ -154,6 +160,16 @@ bool Experiment::isAborted() const
     return d_isAborted;
 }
 
+bool Experiment::ftmwEnabled() const
+{
+    return pu_ftmwConfig.get() != nullptr;
+}
+
+FtmwConfig *Experiment::ftmwConfig() const
+{
+    return pu_ftmwConfig.get();
+}
+
 PulseGenConfig Experiment::pGenConfig() const
 {
     return d_pGenCfg;
@@ -182,7 +198,11 @@ bool Experiment::isComplete() const
     return (d_ftmwCfg.isComplete() && d_lifCfg.isComplete());
 #endif
 
-    return d_ftmwCfg.isComplete();
+    ///TODO: Use experiment objective list
+    if(ftmwEnabled())
+        return pu_ftmwConfig->isComplete();
+
+    return true;
 }
 
 bool Experiment::hardwareSuccess() const
@@ -303,62 +323,70 @@ bool Experiment::snapshotReady()
 {
     if(isComplete())
         return false;
+#pragma message ("Snapshots need work")
+//    if(d_ftmwCfg.d_isEnabled)
+//    {
+//        if(d_ftmwCfg.completedShots() > 0)
+//        {
+//            qint64 d = d_ftmwCfg.completedShots() - d_lastSnapshot;
+//            if(d > 0)
+//            {
+//                bool out = !(d % static_cast<qint64>(d_autoSaveShotsInterval));
+//                if(out)
+//                    d_lastSnapshot = d_ftmwCfg.completedShots();
+//                return out;
+//            }
+//            else
+//                return false;
+//        }
+//    }
+//#ifdef BC_LIF
+//    else if(lifConfig().isEnabled())
+//    {
+//        if(lifConfig().completedShots() > 0)
+//        {
+//            qint64 d = lifConfig().completedShots() - d_lastSnapshot;
+//            if(d > 0)
+//            {
+//                bool out = !(d % static_cast<qint64>(d_autoSaveShotsInterval));
+//                if(out)
+//                    d_lastSnapshot = lifConfig().completedShots();
+//                return out;
+//            }
+//            else
+//                return false;
+//        }
+//    }
+//#endif
 
-    if(d_ftmwCfg.d_isEnabled)
-    {
-        if(d_ftmwCfg.completedShots() > 0)
-        {
-            qint64 d = d_ftmwCfg.completedShots() - d_lastSnapshot;
-            if(d > 0)
-            {
-                bool out = !(d % static_cast<qint64>(d_autoSaveShotsInterval));
-                if(out)
-                    d_lastSnapshot = d_ftmwCfg.completedShots();
-                return out;
-            }
-            else
-                return false;
-        }
-    }
-#ifdef BC_LIF
-    else if(lifConfig().isEnabled())
-    {
-        if(lifConfig().completedShots() > 0)
-        {
-            qint64 d = lifConfig().completedShots() - d_lastSnapshot;
-            if(d > 0)
-            {
-                bool out = !(d % static_cast<qint64>(d_autoSaveShotsInterval));
-                if(out)
-                    d_lastSnapshot = lifConfig().completedShots();
-                return out;
-            }
-            else
-                return false;
-        }
-    }
-#endif
-
-#ifdef BC_MOTOR
-    if(motorScan().isEnabled())
-    {
-        if(motorScan().completedShots() > 0)
-        {
-           qint64 d = static_cast<qint64>(motorScan().completedShots()) - d_lastSnapshot;
-           if(d>0)
-           {
-               bool out = !(d % static_cast<qint64>(d_autoSaveShotsInterval));
-               if(out)
-                   d_lastSnapshot = motorScan().completedShots();
-               return out;
-           }
-           else
-               return false;
-        }
-    }
-#endif
+//#ifdef BC_MOTOR
+//    if(motorScan().isEnabled())
+//    {
+//        if(motorScan().completedShots() > 0)
+//        {
+//           qint64 d = static_cast<qint64>(motorScan().completedShots()) - d_lastSnapshot;
+//           if(d>0)
+//           {
+//               bool out = !(d % static_cast<qint64>(d_autoSaveShotsInterval));
+//               if(out)
+//                   d_lastSnapshot = motorScan().completedShots();
+//               return out;
+//           }
+//           else
+//               return false;
+//        }
+//    }
+//#endif
 
     return false;
+}
+
+FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
+{
+    ///TODO: polymorphic creation
+    pu_ftmwConfig = std::make_unique<FtmwConfig>();
+    pu_ftmwConfig->d_type = type;
+    return pu_ftmwConfig.get();
 }
 
 void Experiment::setTimeDataInterval(const int t)
@@ -383,7 +411,7 @@ bool Experiment::initialize()
     int num = s.get(BC::Key::exptNum,0)+1;
     d_number = num;
 
-    if(d_ftmwCfg.d_isEnabled && d_ftmwCfg.d_type == FtmwConfig::Peak_Up)
+    if(ftmwEnabled() && pu_ftmwConfig->d_type == FtmwConfig::Peak_Up)
     {
         d_number = -1;
         d_startLogMessage = QString("Peak up mode started.");
@@ -421,11 +449,11 @@ bool Experiment::initialize()
     }
 
 
-    if(d_ftmwCfg.d_isEnabled)
+    if(ftmwEnabled())
     {
-        if(!d_ftmwCfg.initialize())
+        if(!pu_ftmwConfig->initialize())
         {
-            setErrorString(d_ftmwCfg.d_errorString);
+            setErrorString(pu_ftmwConfig->d_errorString);
             return false;
         }
     }
@@ -453,7 +481,7 @@ bool Experiment::initialize()
     }
 
     //chirp file
-    if(d_ftmwCfg.d_isEnabled)
+    if(ftmwEnabled())
     {
         if(!saveChirpFile())
         {
@@ -477,7 +505,7 @@ bool Experiment::initialize()
 void Experiment::abort()
 {
     d_isAborted = true;
-    if(d_ftmwCfg.d_isEnabled && (d_ftmwCfg.d_type == FtmwConfig::Target_Shots || d_ftmwCfg.d_type == FtmwConfig::Target_Duration ))
+    if(ftmwEnabled() && (pu_ftmwConfig->d_type == FtmwConfig::Target_Shots || pu_ftmwConfig->d_type == FtmwConfig::Target_Duration ))
     {
         d_endLogMessage = QString("Experiment %1 aborted.").arg(d_number);
         d_endLogMessageCode = BlackChirp::LogError;
@@ -508,9 +536,9 @@ void Experiment::setIOBoardConfig(const IOBoardConfig cfg)
 #ifdef BC_CUDA
 bool Experiment::setFidsData(const QVector<QVector<qint64> > l)
 {
-    if(!d_ftmwCfg.setFidsData(l))
+    if(!pu_ftmwConfig->setFidsData(l))
     {
-        setErrorString(d_ftmwCfg.errorString());
+        setErrorString(pu_ftmwConfig->d_errorString);
         return false;
     }
 
@@ -520,9 +548,9 @@ bool Experiment::setFidsData(const QVector<QVector<qint64> > l)
 
 bool Experiment::addFids(const QByteArray newData, int shift)
 {
-    if(!d_ftmwCfg.addFids(newData,shift))
+    if(!pu_ftmwConfig->addFids(newData,shift))
     {
-        setErrorString(d_ftmwCfg.d_errorString);
+        setErrorString(pu_ftmwConfig->d_errorString);
         return false;
     }
 
@@ -627,17 +655,18 @@ void Experiment::addValidationItem(const BlackChirp::ValidationItem &i)
     d_validationConditions.insert(i.key,i);
 }
 
-void Experiment::finalizeFtmwSnapshots(const FtmwConfig final)
-{
-    d_ftmwCfg = final;
-    d_ftmwCfg.finalizeSnapshots(d_number,d_path);
+#pragma message("Finalize Snapshots issue")
+//void Experiment::finalizeFtmwSnapshots(const FtmwConfig final)
+//{
+//    d_ftmwCfg = final;
+//    d_ftmwCfg.finalizeSnapshots(d_number,d_path);
 
-    QFile hdr(BlackChirp::getExptFile(d_number,BlackChirp::HeaderFile,d_path));
-    if(hdr.exists())
-        hdr.copy(hdr.fileName().append(QString(".orig")));
-    saveHeader();
+//    QFile hdr(BlackChirp::getExptFile(d_number,BlackChirp::HeaderFile,d_path));
+//    if(hdr.exists())
+//        hdr.copy(hdr.fileName().append(QString(".orig")));
+//    saveHeader();
 
-}
+//}
 
 #ifdef BC_MOTOR
 MotorScan Experiment::motorScan() const
@@ -668,12 +697,12 @@ void Experiment::setHardwareFailed()
 
 bool Experiment::incrementFtmw()
 {
-    return d_ftmwCfg.advance();
+    return pu_ftmwConfig->advance();
 }
 
 void Experiment::setFtmwClocksReady()
 {
-    d_ftmwCfg.hwReady();
+    pu_ftmwConfig->hwReady();
 }
 
 void Experiment::finalSave()
@@ -707,8 +736,8 @@ void Experiment::finalSave()
 
     saveHeader();
 
-    if(d_ftmwCfg.d_isEnabled)
-        d_ftmwCfg.writeFids(d_number);
+    if(ftmwEnabled())
+        pu_ftmwConfig->writeFids(d_number);
 
 #ifdef BC_LIF
     if(lifConfig().isEnabled())
@@ -733,13 +762,13 @@ bool Experiment::saveHeader()
 bool Experiment::saveChirpFile() const
 {
 #pragma message("This should go to RF Config")
-    return d_ftmwCfg.d_rfConfig.getChirpConfig().writeChirpFile(d_number);
+    return pu_ftmwConfig->d_rfConfig.getChirpConfig().writeChirpFile(d_number);
 }
 
 bool Experiment::saveClockFile() const
 {
 #pragma message("Figure out save heirarchy")
-    return d_ftmwCfg.d_rfConfig.writeClockFile(d_number,QString(""));
+    return pu_ftmwConfig->d_rfConfig.writeClockFile(d_number,QString(""));
 }
 
 bool Experiment::saveTimeFile() const
@@ -898,7 +927,7 @@ void Experiment::snapshot(int snapNum, const Experiment other)
     (void)other;
 #pragma message("Implement snapshot")
 
-//    if(d_ftmwCfg.isEnabled())
+//    if(ftmwEnabled())
 //    {
 //        FtmwConfig cf = d_ftmwCfg;
 ////        cf.storeFids();
@@ -968,60 +997,60 @@ void Experiment::saveToSettings() const
 
 }
 
-Experiment Experiment::loadFromSettings()
-{
-    Experiment out;
+//Experiment Experiment::loadFromSettings()
+//{
+//    Experiment out;
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("lastExperiment"));
+//    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+//    s.beginGroup(QString("lastExperiment"));
 
-//    FtmwConfig f = FtmwConfig::loadFromSettings();
-//    if(s.value(QString("ftmwEnabled"),false).toBool())
-//        f.setEnabled();
-//    out.setFtmwConfig(f);
+////    FtmwConfig f = FtmwConfig::loadFromSettings();
+////    if(s.value(QString("ftmwEnabled"),false).toBool())
+////        f.setEnabled();
+////    out.setFtmwConfig(f);
 
-#ifdef BC_LIF   
-    LifConfig l = LifConfig::loadFromSettings();
-    if(s.value(QString("lifEnabled"),false).toBool())
-        l.setEnabled();
+//#ifdef BC_LIF
+//    LifConfig l = LifConfig::loadFromSettings();
+//    if(s.value(QString("lifEnabled"),false).toBool())
+//        l.setEnabled();
 
-    out.setLifConfig(l);
-#endif
+//    out.setLifConfig(l);
+//#endif
 
-#ifdef BC_MOTOR
+//#ifdef BC_MOTOR
 
-    MotorScan m = MotorScan::fromSettings();
-    if(s.value(QString("motorEnabled"),false).toBool())
-        m.setEnabled();
+//    MotorScan m = MotorScan::fromSettings();
+//    if(s.value(QString("motorEnabled"),false).toBool())
+//        m.setEnabled();
 
-    out.setMotorScan(m);
+//    out.setMotorScan(m);
 
-#endif
+//#endif
 
-    out.setAutoSaveShotsInterval(s.value(QString("autoSaveShots"),10000).toInt());
-    out.setTimeDataInterval(s.value(QString("auxDataInterval"),300).toInt());
+//    out.setAutoSaveShotsInterval(s.value(QString("autoSaveShots"),10000).toInt());
+//    out.setTimeDataInterval(s.value(QString("auxDataInterval"),300).toInt());
 
-    out.setIOBoardConfig(IOBoardConfig());
+//    out.setIOBoardConfig(IOBoardConfig());
 
-    int num = s.beginReadArray(QString("validation"));
-    for(int i=0; i<num; i++)
-    {
-        s.setArrayIndex(i);
-        bool ok = false;
-        QString key = s.value(QString("key")).toString();
-        double min = s.value(QString("min")).toDouble(&ok);
-        if(ok)
-        {
-            double max = s.value(QString("max")).toDouble(&ok);
-            if(ok && !key.isEmpty())
-                out.addValidationItem(key,min,max);
-        }
-    }
-    s.endArray();
-    s.endGroup();
+//    int num = s.beginReadArray(QString("validation"));
+//    for(int i=0; i<num; i++)
+//    {
+//        s.setArrayIndex(i);
+//        bool ok = false;
+//        QString key = s.value(QString("key")).toString();
+//        double min = s.value(QString("min")).toDouble(&ok);
+//        if(ok)
+//        {
+//            double max = s.value(QString("max")).toDouble(&ok);
+//            if(ok && !key.isEmpty())
+//                out.addValidationItem(key,min,max);
+//        }
+//    }
+//    s.endArray();
+//    s.endGroup();
 
-    return out;
-}
+//    return out;
+//}
 
 void Experiment::prepareToSave()
 {
@@ -1029,6 +1058,11 @@ void Experiment::prepareToSave()
     store(num,d_number);
     store(timeData,d_timeDataInterval,QString("s"));
     store(autoSave,d_autoSaveShotsInterval,QString("shots"));
+    if(pu_ftmwConfig.get() != nullptr)
+    {
+        store(ftmwEn,true);
+        store(ftmwType,pu_ftmwConfig->d_type);
+    }
 }
 
 void Experiment::loadComplete()
@@ -1037,6 +1071,11 @@ void Experiment::loadComplete()
     d_number = retrieve<int>(num);
     d_timeDataInterval = retrieve<int>(timeData);
     d_autoSaveShotsInterval = retrieve<int>(autoSave);
+    if(retrieve(ftmwEn,false))
+    {
+        auto type = retrieve(ftmwType,FtmwConfig::Forever);
+        addChild(enableFtmw(type));
+    }
 }
 
 

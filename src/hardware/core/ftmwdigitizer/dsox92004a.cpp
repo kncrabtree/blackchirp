@@ -60,11 +60,11 @@ void DSOx92004A::initialize()
 
 bool DSOx92004A::prepareForExperiment(Experiment &exp)
 {
-    d_enabledForExperiment = exp.d_ftmwCfg.d_isEnabled;
+    d_enabledForExperiment = exp.ftmwEnabled();
     if(!d_enabledForExperiment)
         return true;
 
-    static_cast<FtmwDigitizerConfig>(*this) = exp.d_ftmwCfg.d_scopeConfig;
+    static_cast<FtmwDigitizerConfig>(*this) = exp.ftmwConfig()->d_scopeConfig;
 
     //disable ugly headers
     if(!scopeCommand(QString("*RST;:SYSTEM:HEADER OFF")))

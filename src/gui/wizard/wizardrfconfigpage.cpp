@@ -20,7 +20,7 @@ WizardRfConfigPage::WizardRfConfigPage(QWidget *parent) : ExperimentWizardPage(B
 void WizardRfConfigPage::initializePage()
 {
     auto e = getExperiment();
-    p_rfc->setRfConfig(e->d_ftmwCfg.d_rfConfig);
+    p_rfc->setRfConfig(e->ftmwConfig()->d_rfConfig);
 }
 
 bool WizardRfConfigPage::validatePage()
@@ -28,11 +28,11 @@ bool WizardRfConfigPage::validatePage()
     //Ensure clocks are set for scan type
     auto rfc = p_rfc->getRfConfig();
     auto e = getExperiment();
-    e->d_ftmwCfg.d_rfConfig = p_rfc->getRfConfig();
+    e->ftmwConfig()->d_rfConfig = p_rfc->getRfConfig();
     
 
 
-    if(e->d_ftmwCfg.d_type == FtmwConfig::LO_Scan)
+    if(e->ftmwConfig()->d_type == FtmwConfig::LO_Scan)
     {
         if(rfc.clockHardware(RfConfig::UpLO).isEmpty())
             return false;
@@ -44,13 +44,13 @@ bool WizardRfConfigPage::validatePage()
         }
     }
 
-    if(e->d_ftmwCfg.d_type == FtmwConfig::DR_Scan)
+    if(e->ftmwConfig()->d_type == FtmwConfig::DR_Scan)
     {
         if(rfc.clockHardware(RfConfig::DRClock).isEmpty())
             return false;
     }
 
-    e->d_ftmwCfg.d_rfConfig = getRfConfig();
+    e->ftmwConfig()->d_rfConfig = getRfConfig();
 
 
     return true;

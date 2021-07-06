@@ -93,10 +93,7 @@ void FidPlot::receiveProcessedFid(const QVector<QPointF> d)
 
 void FidPlot::prepareForExperiment(const Experiment e)
 {     
-    auto &c = e.d_ftmwCfg;
-    p_curve->setCurveData(QVector<QPointF>());
-
-    if(!c.d_isEnabled)
+    if(!e.ftmwEnabled())
     {
         p_curve->setVisible(false);
 
@@ -104,36 +101,42 @@ void FidPlot::prepareForExperiment(const Experiment e)
         d_chirpMarkers.second->setVisible(false);
         d_ftMarkers.first->setVisible(false);
         d_ftMarkers.second->setVisible(false);
+
+        autoScale();
+        return;
     }
-    else
+
+    auto c = e.ftmwConfig();
+    p_curve->setCurveData(QVector<QPointF>());
+
+    p_curve->setVisible(true);
+
+    d_ftMarkers.first->setVisible(true);
+    d_ftMarkers.second->setVisible(true);
+
+    double maxTime = (static_cast<double>(c->d_scopeConfig.d_recordLength)-1.0)/c->d_scopeConfig.d_sampleRate*1e6;
+    double ftEnd = d_ftMarkers.second->xValue();
+    if(ftEnd <= 0.0 || ftEnd <= d_ftMarkers.first->xValue() || ftEnd > maxTime)
+        d_ftMarkers.second->setXValue(maxTime);
+
+    emit ftStartChanged(d_ftMarkers.first->xValue());
+    emit ftEndChanged(d_ftMarkers.second->xValue());
+
+    bool displayMarkers = c->d_phaseCorrectionEnabled || c->d_chirpScoringEnabled;
+    if(displayMarkers)
     {
-        p_curve->setVisible(true);
+        ///TODO: Update this calculation!
+        double chirpStart = c->d_rfConfig.getChirpConfig().preChirpGateDelay() +
+                c->d_rfConfig.getChirpConfig().preChirpProtectionDelay() -
+                c->d_scopeConfig.d_triggerDelayUSec;
+        double chirpEnd = chirpStart + c->d_rfConfig.getChirpConfig().chirpDuration(0);
 
-        d_ftMarkers.first->setVisible(true);
-        d_ftMarkers.second->setVisible(true);
-
-        double maxTime = (static_cast<double>(c.d_scopeConfig.d_recordLength)-1.0)/c.d_scopeConfig.d_sampleRate*1e6;
-        double ftEnd = d_ftMarkers.second->xValue();
-        if(ftEnd <= 0.0 || ftEnd <= d_ftMarkers.first->xValue() || ftEnd > maxTime)
-            d_ftMarkers.second->setXValue(maxTime);
-
-        emit ftStartChanged(d_ftMarkers.first->xValue());
-        emit ftEndChanged(d_ftMarkers.second->xValue());
-
-        bool displayMarkers = c.d_phaseCorrectionEnabled || c.d_chirpScoringEnabled;
-        if(displayMarkers)
-        {
-            ///TODO: Update this calculation!
-            double chirpStart = c.d_rfConfig.getChirpConfig().preChirpGateDelay() + c.d_rfConfig.getChirpConfig().preChirpProtectionDelay() - c.d_scopeConfig.d_triggerDelayUSec;
-            double chirpEnd = chirpStart + c.d_rfConfig.getChirpConfig().chirpDuration(0);
-
-            d_chirpMarkers.first->setValue(chirpStart,0.0);
-            d_chirpMarkers.second->setValue(chirpEnd,0.0);
-        }
-
-        d_chirpMarkers.first->setVisible(displayMarkers);
-        d_chirpMarkers.second->setVisible(displayMarkers);
+        d_chirpMarkers.first->setValue(chirpStart,0.0);
+        d_chirpMarkers.second->setValue(chirpEnd,0.0);
     }
+
+    d_chirpMarkers.first->setVisible(displayMarkers);
+    d_chirpMarkers.second->setVisible(displayMarkers);
 
     autoScale();
 }

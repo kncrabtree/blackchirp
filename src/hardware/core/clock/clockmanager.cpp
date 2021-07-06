@@ -89,14 +89,14 @@ double ClockManager::readClockFrequency(RfConfig::ClockType t)
 
 bool ClockManager::prepareForExperiment(Experiment &exp)
 {
-    if(!exp.d_ftmwCfg.d_isEnabled)
+    if(!exp.ftmwEnabled())
         return true;
 
     d_clockRoles.clear();
     for(int i=0; i<d_clockList.size(); i++)
         d_clockList[i]->clearRoles();
 
-    auto map = exp.d_ftmwCfg.d_rfConfig.getClocks();
+    auto map = exp.ftmwConfig()->d_rfConfig.getClocks();
     for(auto i = map.constBegin(); i != map.constEnd(); i++)
     {
         auto type = i.key();
@@ -148,7 +148,7 @@ bool ClockManager::prepareForExperiment(Experiment &exp)
             exp.setErrorString(QString("Could not set %1 to %2 MHz (raw frequency = %3 MHz).")
                                .arg(c->d_name)
                                .arg(d.desiredFreqMHz,0,'f',6)
-                               .arg(exp.d_ftmwCfg.d_rfConfig.rawClockFrequency(type),0,'f',6));
+                               .arg(exp.ftmwConfig()->d_rfConfig.rawClockFrequency(type),0,'f',6));
             exp.setHardwareFailed();
             return false;
         }
@@ -162,7 +162,7 @@ bool ClockManager::prepareForExperiment(Experiment &exp)
 
         d.desiredFreqMHz = actualFreq;
 
-        exp.d_ftmwCfg.d_rfConfig.setClockFreqInfo(type,d);
+        exp.ftmwConfig()->d_rfConfig.setClockFreqInfo(type,d);
     }
 
     return true;

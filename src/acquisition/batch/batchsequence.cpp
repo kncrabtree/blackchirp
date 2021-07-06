@@ -6,14 +6,14 @@ BatchSequence::BatchSequence(std::shared_ptr<Experiment> e, int numExpts, int in
     BatchManager(BatchManager::Sequence), d_experimentCount(0), d_numExperiments(numExpts),
     d_intervalSeconds(intervalSeconds), d_waiting(false)
 {
-    d_expTemplate = *e.get();
-    d_CurrentExp = std::make_shared<Experiment>(d_expTemplate);
+    pu_expTemplate = std::make_unique<Experiment>(*e.get());
+    ps_CurrentExp = e;
 
     p_intervalTimer = new QTimer(this);
     p_intervalTimer->setSingleShot(true);
     connect(p_intervalTimer,&QTimer::timeout,this,[=](){
         d_waiting = false;
-        d_CurrentExp = std::make_shared<Experiment>(d_expTemplate);
+        ps_CurrentExp = std::make_shared<Experiment>(*pu_expTemplate.get());
         emit beginExperiment();
     });
 }
@@ -42,7 +42,7 @@ void BatchSequence::processExperiment()
 
 std::shared_ptr<Experiment> BatchSequence::currentExperiment()
 {
-    return d_CurrentExp;
+    return ps_CurrentExp;
 }
 
 bool BatchSequence::isComplete()

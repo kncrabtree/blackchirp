@@ -244,7 +244,7 @@ void WizardStartPage::initializePage()
     {
 
 #ifdef BC_LIF
-        p_ftmw->setChecked(e->d_ftmwCfg.isEnabled());
+        p_ftmw->setChecked(e->ftmwEnabled());
         p_lif->setChecked(e->lifConfig().isEnabled());
 #endif
 
@@ -265,13 +265,16 @@ void WizardStartPage::initializePage()
         }
 #endif
 
-        p_ftmwTypeBox->setCurrentIndex(p_ftmwTypeBox->findData(QVariant::fromValue(e->d_ftmwCfg.d_type)));
-        p_ftmwShotsBox->setValue(e->d_ftmwCfg.d_targetShots);
-        p_phaseCorrectionBox->setChecked(e->d_ftmwCfg.d_phaseCorrectionEnabled);
-        p_chirpScoringBox->setChecked(e->d_ftmwCfg.d_chirpScoringEnabled);
-        p_thresholdBox->setValue(e->d_ftmwCfg.d_chirpRMSThreshold);
+        if(e->ftmwEnabled())
+        {
+            p_ftmwTypeBox->setCurrentIndex(p_ftmwTypeBox->findData(QVariant::fromValue(e->ftmwConfig()->d_type)));
+            p_ftmwShotsBox->setValue(e->ftmwConfig()->d_targetShots);
+            p_phaseCorrectionBox->setChecked(e->ftmwConfig()->d_phaseCorrectionEnabled);
+            p_chirpScoringBox->setChecked(e->ftmwConfig()->d_chirpScoringEnabled);
+            p_thresholdBox->setValue(e->ftmwConfig()->d_chirpRMSThreshold);
+            ///TODO: use chirp offset!
+        }
 
-        ///TODO: use chirp offset!
 
         p_autosaveBox->setValue(e->d_autoSaveShotsInterval);
         p_auxDataIntervalBox->setValue(e->d_timeDataInterval);
@@ -284,18 +287,19 @@ bool WizardStartPage::validatePage()
 {
      auto e = getExperiment();
 
-     e->d_ftmwCfg.d_type = p_ftmwTypeBox->currentData().value<FtmwConfig::FtmwType>();
-     e->d_ftmwCfg.d_targetShots = p_ftmwShotsBox->value();
-     e->d_ftmwCfg.d_duration = p_ftmwTargetDurationBox->value();
-     e->d_ftmwCfg.d_chirpScoringEnabled = p_chirpScoringBox->isChecked();
-     e->d_ftmwCfg.d_chirpRMSThreshold = p_thresholdBox->value();
-     e->d_ftmwCfg.d_phaseCorrectionEnabled = p_phaseCorrectionBox->isChecked();
-     ///TODO: use offset info!
+     if(p_ftmw->isChecked() || !p_ftmw->isCheckable())
+     {
+         auto type = p_ftmwTypeBox->currentData().value<FtmwConfig::FtmwType>();
+         auto ftmw = e->enableFtmw(type);
 
-     if(p_ftmw->isCheckable())
-         e->d_ftmwCfg.d_isEnabled = p_ftmw->isChecked();
-     else
-         e->d_ftmwCfg.d_isEnabled = true;
+         ftmw->d_targetShots = p_ftmwShotsBox->value();
+         ftmw->d_duration = p_ftmwTargetDurationBox->value();
+         ftmw->d_chirpScoringEnabled = p_chirpScoringBox->isChecked();
+         ftmw->d_chirpRMSThreshold = p_thresholdBox->value();
+         ftmw->d_phaseCorrectionEnabled = p_phaseCorrectionBox->isChecked();
+         ///TODO: use offset info!
+     }
+
 
 
 #ifdef BC_LIF

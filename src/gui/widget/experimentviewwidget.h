@@ -26,7 +26,7 @@ public slots:
     void ftmwFinalized(int num);
 
 private:
-    Experiment d_experiment;
+    std::unique_ptr<Experiment> pu_experiment;
     QTabWidget *p_tabWidget;
     FtmwViewWidget *p_ftmw;
     LogHandler *p_lh;

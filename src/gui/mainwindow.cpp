@@ -491,9 +491,9 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
     ui->ftViewWidget->prepareForExperiment(*exp);
     ui->trackingViewWidget->initializeForExperiment();
 
-    if(exp->d_ftmwCfg.d_isEnabled)
+    if(exp->ftmwEnabled())
 	{
-        if(exp->d_ftmwCfg.indefinite())
+        if(exp->ftmwConfig()->indefinite())
             ui->ftmwProgressBar->setRange(0,0);
         else
             ui->ftmwProgressBar->setRange(0,1000);

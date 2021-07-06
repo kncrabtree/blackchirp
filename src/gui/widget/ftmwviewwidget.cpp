@@ -110,8 +110,8 @@ FtmwViewWidget::~FtmwViewWidget()
 void FtmwViewWidget::prepareForExperiment(const Experiment &e)
 {
 
-    p_fidStorage = e.d_ftmwCfg.storage();
-    if(e.d_ftmwCfg.d_type == FtmwConfig::Peak_Up)
+    p_fidStorage = e.ftmwConfig()->storage();
+    if(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up)
         ui->exptLabel->setText(QString("Peak Up Mode"));
     else
         ui->exptLabel->setText(QString("Experiment %1").arg(e.d_number));
@@ -153,7 +153,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         it.value().segment = 0;
     }
 
-    if(e.d_ftmwCfg.d_isEnabled)
+    if(e.ftmwEnabled())
     {
         auto ws = d_workersStatus.value(d_liveId);
         ws.worker = new FtWorker(d_liveId);
@@ -175,29 +175,29 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         ui->liveAction->setEnabled(true);
 
         ui->averagesSpinbox->blockSignals(true);
-        ui->averagesSpinbox->setValue(e.d_ftmwCfg.d_targetShots);
+        ui->averagesSpinbox->setValue(e.ftmwConfig()->d_targetShots);
         ui->averagesSpinbox->blockSignals(false);
 
-        ui->resetAveragesButton->setEnabled(e.d_ftmwCfg.d_type == FtmwConfig::Peak_Up);
-        ui->averagesSpinbox->setEnabled(e.d_ftmwCfg.d_type == FtmwConfig::Peak_Up);
+        ui->resetAveragesButton->setEnabled(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up);
+        ui->averagesSpinbox->setEnabled(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up);
 
-        auto chirpOffsetRange = e.d_ftmwCfg.d_rfConfig.calculateChirpAbsOffsetRange();
+        auto chirpOffsetRange = e.ftmwConfig()->d_rfConfig.calculateChirpAbsOffsetRange();
         if(chirpOffsetRange.first < 0.0)
             chirpOffsetRange.first = 0.0;
         if(chirpOffsetRange.second < 0.0)
-            chirpOffsetRange.second = e.d_ftmwCfg.ftNyquistMHz();
+            chirpOffsetRange.second = e.ftmwConfig()->ftNyquistMHz();
 
         ui->minFtSegBox->blockSignals(true);
-        ui->minFtSegBox->setRange(0.0,e.d_ftmwCfg.ftNyquistMHz());
+        ui->minFtSegBox->setRange(0.0,e.ftmwConfig()->ftNyquistMHz());
         ui->minFtSegBox->setValue(chirpOffsetRange.first);
         ui->minFtSegBox->blockSignals(false);
 
         ui->maxFtSegBox->blockSignals(true);
-        ui->maxFtSegBox->setRange(0.0,e.d_ftmwCfg.ftNyquistMHz());
+        ui->maxFtSegBox->setRange(0.0,e.ftmwConfig()->ftNyquistMHz());
         ui->maxFtSegBox->setValue(chirpOffsetRange.second);
         ui->maxFtSegBox->blockSignals(false);
 
-        if(e.d_ftmwCfg.d_type == FtmwConfig::LO_Scan)
+        if(e.ftmwConfig()->d_type == FtmwConfig::LO_Scan)
         {
 //            d_mode = BothSB;
             ui->bsAction->setEnabled(true);
@@ -638,11 +638,11 @@ void FtmwViewWidget::snapshotsFinalized(const FtmwConfig out)
 //    d_ftmwCfg = out;
 #pragma message("Snapshot processing")
     Experiment e(d_currentExptNum,d_path);
-    qint64 oldNum = e.d_ftmwCfg.completedShots();
-    e.finalizeFtmwSnapshots(out);
-    emit experimentLogMessage(e.d_number,QString("Finalized snapshots. Old completed shots: %1. New completed shots: %2").arg(oldNum).arg(e.d_ftmwCfg.completedShots()));
+    qint64 oldNum = e.ftmwConfig()->completedShots();
+//    e.finalizeFtmwSnapshots(out);
+    emit experimentLogMessage(e.d_number,QString("Finalized snapshots. Old completed shots: %1. New completed shots: %2").arg(oldNum).arg(e.ftmwConfig()->completedShots()));
 
-    ui->shotsLabel->setText(d_shotsString.arg(e.d_ftmwCfg.completedShots()));
+    ui->shotsLabel->setText(d_shotsString.arg(e.ftmwConfig()->completedShots()));
 
 
     reprocess();
@@ -666,7 +666,7 @@ void FtmwViewWidget::experimentComplete()
 //    ui->plot1ConfigWidget->experimentComplete(e);
 //    ui->plot2ConfigWidget->experimentComplete(e);
 
-//    if(e.d_ftmwCfg.isEnabled())
+//    if(e.ftmwEnabled())
 //    {
 //        d_currentSegment = -1;
 
@@ -691,7 +691,7 @@ void FtmwViewWidget::experimentComplete()
 //        updateFtmw(e.d_ftmwCfg);
 //    }
 
-    //    ui->shotsLabel->setText(d_shotsString.arg(e.d_ftmwCfg.completedShots()));
+    //    ui->shotsLabel->setText(d_shotsString.arg(e.ftmwConfig()->completedShots()));
 }
 
 void FtmwViewWidget::changeRollingAverageShots(int shots)

@@ -117,9 +117,9 @@ double Clock::setFrequency(RfConfig::ClockType t, double freqMHz)
 
 bool Clock::prepareForExperiment(Experiment &exp)
 {
-    if(exp.d_ftmwCfg.d_isEnabled)
+    if(exp.ftmwEnabled())
     {
-        auto clocks = exp.d_ftmwCfg.d_rfConfig.getClocks();
+        auto clocks = exp.ftmwConfig()->d_rfConfig.getClocks();
         for(auto it = clocks.constBegin(); it != clocks.constEnd(); it++)
         {
             if(hasRole(it.key()))
@@ -135,7 +135,7 @@ bool Clock::prepareForExperiment(Experiment &exp)
                     exp.setHardwareFailed();
                     return false;
                 }
-                exp.d_ftmwCfg.d_rfConfig.setClockDesiredFreq(it.key(),val);
+                exp.ftmwConfig()->d_rfConfig.setClockDesiredFreq(it.key(),val);
             }
         }
     }

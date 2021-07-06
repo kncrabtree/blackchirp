@@ -194,9 +194,6 @@ void PulseConfigWidget::configureLif(const LifConfig c)
 
 void PulseConfigWidget::configureFtmw(const FtmwConfig &c)
 {
-    if(!c.d_isEnabled)
-        return;
-
     SettingsStorage s(BC::Key::AWG::key,Hardware);
     bool awgHasProt = s.get<bool>(BC::Key::AWG::prot,false);
     bool awgHasAmpEnable = s.get<bool>(BC::Key::AWG::amp,false);

@@ -318,7 +318,7 @@ bool FtmwConfig::setFidsData(const QVector<QVector<qint64> > newList)
     auto s = fs->currentSegmentShots();
     for(int i=0; i<newList.size(); i++)
     {
-        Fid f = fidTemplate();
+        Fid f = d_fidTemplate;
         f.setData(newList.at(i));
         f.setShots(s+shotIncrement());
         l.append(f);

@@ -145,12 +145,12 @@ void FtmwPlotConfigWidget::prepareForExperiment(const Experiment e)
     p_remainderBox->setChecked(true);
     p_finalizeButton->setEnabled(false);
 
-    if(e.d_ftmwCfg.d_isEnabled)
+    if(e.ftmwEnabled())
     {
-        p_frameBox->setRange(1,e.d_ftmwCfg.d_scopeConfig.d_numRecords);
+        p_frameBox->setRange(1,e.ftmwConfig()->d_scopeConfig.d_numRecords);
         p_frameBox->setEnabled(true);
 
-        p_segmentBox->setRange(1,e.d_ftmwCfg.d_rfConfig.numSegments());
+        p_segmentBox->setRange(1,e.ftmwConfig()->d_rfConfig.numSegments());
         p_segmentBox->setEnabled(true);
 
         p_allButton->setEnabled(true);
@@ -172,7 +172,7 @@ void FtmwPlotConfigWidget::prepareForExperiment(const Experiment e)
 
 void FtmwPlotConfigWidget::experimentComplete(const Experiment e)
 {
-    processFtmwConfig(e.d_ftmwCfg);
+//    processFtmwConfig(e.d_ftmwCfg);
 
     if(p_lw->count() > 0)
         p_finalizeButton->setEnabled(true);

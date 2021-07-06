@@ -66,7 +66,7 @@ void AD9914::initialize()
 
 bool AD9914::prepareForExperiment(Experiment &exp)
 {
-    if(!exp.d_ftmwCfg.isEnabled())
+    if(!exp.ftmwEnabled())
     {
         d_enabledForExperiment = false;
         return true;
@@ -74,10 +74,10 @@ bool AD9914::prepareForExperiment(Experiment &exp)
 
     d_enabledForExperiment = true;
 
-//    auto rfc = exp.d_ftmwCfg.rfConfig();
-    auto seg = exp.d_ftmwCfg.d_rfConfig.getChirpConfig().chirpList().constFirst().constFirst();
+//    auto rfc = exp.ftmwConfig()->rfConfig();
+    auto seg = exp.ftmwConfig()->d_rfConfig.getChirpConfig().chirpList().constFirst().constFirst();
 
-    auto clocks = exp.d_ftmwCfg.d_rfConfig.getClocks();
+    auto clocks = exp.ftmwConfig()->d_rfConfig.getClocks();
     if(clocks.contains(RfConfig::AwgRef))
     {
         auto cf = clocks.value(RfConfig::AwgRef).desiredFreqMHz*1e6;
@@ -132,7 +132,7 @@ bool AD9914::prepareForExperiment(Experiment &exp)
     }
 
     //store actual chirp settings
-    exp.d_ftmwCfg.d_rfConfig.setChirpList({{seg}});
+    exp.ftmwConfig()->d_rfConfig.setChirpList({{seg}});
 
 
     QByteArray resp = p_comm->queryCmd(QString("IN\n"));

@@ -27,7 +27,7 @@
 
 ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *parent) : QWidget(parent), p_ftmw(nullptr), p_lh(nullptr)
 {
-    d_experiment = Experiment(num,path);
+    pu_experiment = std::make_unique<Experiment>(num,path);
     setWindowFlags(Qt::Window);
     setWindowTitle(QString("Experiment %1").arg(num));
     setAttribute(Qt::WA_DeleteOnClose);
@@ -35,9 +35,9 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
 
     QVBoxLayout *vbl = new QVBoxLayout;
 
-    if(d_experiment.d_number < 1)
+    if(pu_experiment->d_number < 1)
     {
-        QLabel *errLabel = new QLabel(d_experiment.errorString());
+        QLabel *errLabel = new QLabel(pu_experiment->errorString());
         errLabel->setAlignment(Qt::AlignCenter);
         errLabel->setWordWrap(true);
         vbl->addWidget(errLabel);
@@ -54,7 +54,7 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
     if(hdr != nullptr)
         p_tabWidget->addTab(hdr,QIcon(QString(":/icons/header.png")),QString("Header"));
 
-    if(d_experiment.d_ftmwCfg.d_isEnabled)
+    if(pu_experiment->ftmwEnabled())
     {
         QWidget *ftmw = buildFtmwWidget(path);
         if(ftmw != nullptr)
@@ -102,7 +102,7 @@ QSize ExperimentViewWidget::sizeHint() const
 
 void ExperimentViewWidget::ftmwFinalized(int num)
 {
-    if(num == d_experiment.d_number)
+    if(num == pu_experiment->d_number)
     {
         p_tabWidget->removeTab(0);
         p_tabWidget->insertTab(0,buildHeaderWidget(),QIcon(QString(":/icons/header.png")),QString("Header"));
@@ -131,7 +131,7 @@ QWidget *ExperimentViewWidget::buildHeaderWidget()
     tw->setHorizontalHeaderItem(2,new QTableWidgetItem(QString("Unit")));
     tw->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
-    auto header = d_experiment.headerMap();
+    auto header = pu_experiment->headerMap();
     auto hdrit = header.constBegin();
     tw->setRowCount(header.size());
     for(int i=0; hdrit != header.constEnd(); i++, hdrit++)
@@ -150,7 +150,7 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
 {
     QWidget *out = nullptr;
     p_ftmw = nullptr;
-    if(d_experiment.d_ftmwCfg.d_isEnabled)
+    if(pu_experiment->ftmwEnabled())
     {
         out = new QWidget;
         QVBoxLayout *vbl = new QVBoxLayout;
@@ -159,10 +159,10 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
         vbl->addWidget(p_ftmw);
         out->setLayout(vbl);
 
-        p_ftmw->prepareForExperiment(d_experiment);
+        p_ftmw->prepareForExperiment(*pu_experiment);
 //        p_ftmw->updateFtmw(d_experiment.d_ftmwCfg);
-//        if(!d_experiment.d_ftmwCfg.fidList().isEmpty())
-//            p_ftmw->updateShotsLabel(d_experiment.d_ftmwCfg.fidList().constFirst().shots());
+//        if(!d_experiment.ftmwConfig()->fidList().isEmpty())
+//            p_ftmw->updateShotsLabel(d_experiment.ftmwConfig()->fidList().constFirst().shots());
 
 
         p_ftmw->snapshotTaken();
@@ -197,7 +197,7 @@ QWidget *ExperimentViewWidget::buildTrackingWidget()
 {
     //tracking page
     QWidget *tracking = nullptr;
-    auto timeData = d_experiment.timeDataMap();
+    auto timeData = pu_experiment->timeDataMap();
     bool showWidget = false;
     auto trkit = timeData.constBegin();
     if(!timeData.isEmpty())
@@ -263,7 +263,7 @@ QWidget *ExperimentViewWidget::buildLogWidget(QString path)
     vbl->addWidget(te);
     log->setLayout(vbl);
 
-    QFile f(BlackChirp::getExptFile(d_experiment.d_number,BlackChirp::LogFile,path));
+    QFile f(BlackChirp::getExptFile(pu_experiment->d_number,BlackChirp::LogFile,path));
     if(f.open(QIODevice::ReadOnly))
     {
         while(!f.atEnd())

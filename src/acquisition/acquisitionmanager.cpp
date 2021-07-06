@@ -25,12 +25,12 @@ void AcquisitionManager::beginExperiment(std::shared_ptr<Experiment> exp)
 {
 
 #ifdef BC_CUDA
-//    if(exp.d_ftmwCfg.isEnabled())
+//    if(exp.ftmwEnabled())
 //    {
 //#pragma message("GPU averager needs to move to FTMW config")
 //        //prepare GPU Averager
-//        auto sc = exp.d_ftmwCfg.scopeConfig();
-//        bool success = gpuAvg.initialize(sc.d_recordLength,exp.d_ftmwCfg.numFrames(),
+//        auto sc = exp.ftmwConfig()->scopeConfig();
+//        bool success = gpuAvg.initialize(sc.d_recordLength,exp.ftmwConfig()->numFrames(),
 //                                         sc.d_bytesPerPoint,sc.d_byteOrder);
 //        if(!success)
 //        {
@@ -88,23 +88,23 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 //    static int total = 0;
 //    static int count = 0;
     if(d_state == Acquiring
-            && d_currentExperiment->d_ftmwCfg.d_isEnabled
-            && !d_currentExperiment->d_ftmwCfg.isComplete()
-            && !d_currentExperiment->d_ftmwCfg.processingPaused())
+            && d_currentExperiment->ftmwEnabled()
+            && !d_currentExperiment->ftmwConfig()->isComplete()
+            && !d_currentExperiment->ftmwConfig()->processingPaused())
     {
 
 //        QTime testTime;
 //        testTime.start();
         bool success = true;
 
-        if(d_currentExperiment->d_ftmwCfg.d_chirpScoringEnabled)
+        if(d_currentExperiment->ftmwConfig()->d_chirpScoringEnabled)
         {
             success = scoreChirp(b);
             if(!success)
                 return;
         }
 
-        if(d_currentExperiment->d_ftmwCfg.d_phaseCorrectionEnabled)
+        if(d_currentExperiment->ftmwConfig()->d_phaseCorrectionEnabled)
         {
             success = calculateShift(b);
             if(!success)
@@ -116,9 +116,9 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 
 #pragma message("Move GPU code to FTMWconfig")
 //        QVector<QVector<qint64> >  l;
-//        if(d_currentExperiment->d_ftmwCfg.type() == BlackChirp::FtmwPeakUp)
-//            l = gpuAvg.parseAndRollAvg(b.constData(),d_currentExperiment.d_ftmwCfg.completedShots()+d_currentExperiment.d_ftmwCfg.shotIncrement(),
-//                                       d_currentExperiment->d_ftmwCfg.targetShots(),d_currentShift);
+//        if(d_currentExperiment->ftmwConfig()->type() == BlackChirp::FtmwPeakUp)
+//            l = gpuAvg.parseAndRollAvg(b.constData(),d_currentExperiment.ftmwConfig()->completedShots()+d_currentExperiment.ftmwConfig()->shotIncrement(),
+//                                       d_currentExperiment->ftmwConfig()->targetShots(),d_currentShift);
 //        else
 //            l = gpuAvg.parseAndAdd(b.constData(),d_currentShift);
 
@@ -150,10 +150,10 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
         {
 #ifdef BC_CUDA
 #pragma message("Move to FTMWconfig")
-//            gpuAvg.setCurrentData(d_currentExperiment.d_ftmwCfg.rawFidList());
+//            gpuAvg.setCurrentData(d_currentExperiment.ftmwConfig()->rawFidList());
 #endif
 #pragma message("Fix clock settings signal")
-            emit newClockSettings(d_currentExperiment->d_ftmwCfg.d_rfConfig);
+            emit newClockSettings(d_currentExperiment->ftmwConfig()->d_rfConfig);
         }
     }
 
@@ -209,9 +209,9 @@ void AcquisitionManager::getTimeData()
 
         d_currentExperiment->addTimeStamp();
 
-        if(d_currentExperiment->d_ftmwCfg.d_isEnabled)
+        if(d_currentExperiment->ftmwEnabled())
         {
-            QList<QPair<QString,QVariant>> l { qMakePair(QString("ftmwShots"),d_currentExperiment->d_ftmwCfg.completedShots()) };
+            QList<QPair<QString,QVariant>> l { qMakePair(QString("ftmwShots"),d_currentExperiment->ftmwConfig()->completedShots()) };
             d_currentExperiment->addTimeData(l,true);
             emit timeData(l,true);
         }
@@ -363,21 +363,21 @@ bool AcquisitionManager::calculateShift(const QByteArray b)
 {
     (void) b;
 #pragma message("Implement calculateShift")
-//    if(!d_currentExperiment.d_ftmwCfg.isEnabled())
+//    if(!d_currentExperiment.ftmwEnabled())
 //        return true;
 
-//    if(d_currentExperiment.d_ftmwCfg.fidList().isEmpty())
+//    if(d_currentExperiment.ftmwConfig()->fidList().isEmpty())
 //        return true;
 
-//    if(d_currentExperiment.d_ftmwCfg.completedShots() < 100)
+//    if(d_currentExperiment.ftmwConfig()->completedShots() < 100)
 //        return true;
 
 //    //first, we need to extract the chirp from b
-//    auto r = d_currentExperiment.d_ftmwCfg.chirpRange();
-//    QVector<qint64> newChirp = d_currentExperiment.d_ftmwCfg.extractChirp(b);
+//    auto r = d_currentExperiment.ftmwConfig()->chirpRange();
+//    QVector<qint64> newChirp = d_currentExperiment.ftmwConfig()->extractChirp(b);
 //    if(newChirp.isEmpty())
 //        return true;
-//    Fid avgFid = d_currentExperiment.d_ftmwCfg.fidList().constFirst();
+//    Fid avgFid = d_currentExperiment.ftmwConfig()->fidList().constFirst();
 
 //    int max = 5;
 //    float thresh = 1.15; // fractional improvement needed to adjust shift
@@ -452,31 +452,31 @@ bool AcquisitionManager::scoreChirp(const QByteArray b)
 {
     (void)b;
 #pragma message("Implement scoreChirp")
-//    if(!d_currentExperiment.d_ftmwCfg.isEnabled())
+//    if(!d_currentExperiment.ftmwEnabled())
 //        return true;
 
-//    if(d_currentExperiment.d_ftmwCfg.fidList().isEmpty())
+//    if(d_currentExperiment.ftmwConfig()->fidList().isEmpty())
 //        return true;
 
-//    if(d_currentExperiment.d_ftmwCfg.completedShots() < 20)
+//    if(d_currentExperiment.ftmwConfig()->completedShots() < 20)
 //        return true;
 
 //    //Extract chirp from this waveform (1st frame)
-//    QVector<qint64> newChirp = d_currentExperiment.d_ftmwCfg.extractChirp(b);
+//    QVector<qint64> newChirp = d_currentExperiment.ftmwConfig()->extractChirp(b);
 //    if(newChirp.isEmpty())
 //        return true;
 
 //    //Calculate chirp RMS
-//    double newChirpRMS = calculateChirpRMS(newChirp,d_currentExperiment.d_ftmwCfg.fidTemplate().vMult());
+//    double newChirpRMS = calculateChirpRMS(newChirp,d_currentExperiment.ftmwConfig()->fidTemplate().vMult());
 
 //    //Get current RMS
-//    QVector<qint64> currentChirp = d_currentExperiment.d_ftmwCfg.extractChirp();
-//    double currentRMS = calculateChirpRMS(currentChirp,d_currentExperiment.d_ftmwCfg.fidTemplate().vMult(),d_currentExperiment.d_ftmwCfg.completedShots());
+//    QVector<qint64> currentChirp = d_currentExperiment.ftmwConfig()->extractChirp();
+//    double currentRMS = calculateChirpRMS(currentChirp,d_currentExperiment.ftmwConfig()->fidTemplate().vMult(),d_currentExperiment.ftmwConfig()->completedShots());
 
 ////    emit logMessage(QString("This RMS: %1\tAVG RMS: %2").arg(newChirpRMS,0,'e',2).arg(currentRMS,0,'e',2));
 
 //    //The chirp is good if its RMS is greater than threshold*currentRMS.
-//    return newChirpRMS > currentRMS*d_currentExperiment.d_ftmwCfg.chirpRMSThreshold();
+//    return newChirpRMS > currentRMS*d_currentExperiment.ftmwConfig()->chirpRMSThreshold();
 
     return true;
 

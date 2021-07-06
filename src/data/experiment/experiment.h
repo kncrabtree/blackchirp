@@ -31,6 +31,8 @@ static const QString key("Experiment");
 static const QString num("Number");
 static const QString timeData("TimeDataInterval");
 static const QString autoSave("AutoSaveShotsInterval");
+static const QString ftmwEn("FtmwEnabled");
+static const QString ftmwType("FtmwType");
 }
 
 class Experiment : private HeaderStorage
@@ -38,15 +40,16 @@ class Experiment : private HeaderStorage
     Q_GADGET
 public:
     Experiment();
-    Experiment(const Experiment &) = default;
-    Experiment& operator=(const Experiment &) = default;
+    Experiment(const Experiment &other);
     Experiment(const int num, QString exptPath = QString(""), bool headerOnly = false);
     ~Experiment();
 
-    FtmwConfig d_ftmwCfg;
+//    FtmwConfig d_ftmwCfg;
 
     bool isAborted() const;
 
+    bool ftmwEnabled() const;
+    FtmwConfig* ftmwConfig() const;
     PulseGenConfig pGenConfig() const;
     FlowConfig flowConfig() const;
     IOBoardConfig iobConfig() const;
@@ -62,6 +65,7 @@ public:
     QMap<QString,BlackChirp::ValidationItem> validationItems() const;
     bool snapshotReady();
 
+    FtmwConfig* enableFtmw(FtmwConfig::FtmwType type);
     void setTimeDataInterval(const int t);
     void setAutoSaveShotsInterval(const int s);
     bool initialize();
@@ -79,7 +83,7 @@ public:
     void setValidationItems(const QMap<QString,BlackChirp::ValidationItem> m);
     void addValidationItem(const QString key, const double min, const double max);
     void addValidationItem(const BlackChirp::ValidationItem &i);
-    void finalizeFtmwSnapshots(const FtmwConfig final);
+//    void finalizeFtmwSnapshots(const FtmwConfig final);
 
 #ifdef BC_LIF
     bool isLifWaiting() const;
@@ -114,7 +118,7 @@ public:
     void snapshot(int snapNum, const Experiment other);
 
     void saveToSettings() const;
-    static Experiment loadFromSettings();
+//    static Experiment loadFromSettings();
 
     int d_number{0};
     QDateTime d_startTime;
@@ -131,6 +135,7 @@ private:
     bool d_isDummy{false};
     bool d_hardwareSuccess{false};
 
+    std::unique_ptr<FtmwConfig> pu_ftmwConfig;
     PulseGenConfig d_pGenCfg;
     FlowConfig d_flowCfg;
     IOBoardConfig d_iobCfg;

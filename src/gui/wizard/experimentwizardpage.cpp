@@ -13,7 +13,7 @@ std::shared_ptr<Experiment> ExperimentWizardPage::getExperiment() const
 int ExperimentWizardPage::startingFtmwPage() const
 {
     auto e = getExperiment();
-    switch(e->d_ftmwCfg.d_type)
+    switch(e->ftmwConfig()->d_type)
     {
     case FtmwConfig::LO_Scan:
         return ExperimentWizard::LoScanPage;

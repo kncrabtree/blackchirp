@@ -88,7 +88,7 @@ WizardDrScanConfigPage::WizardDrScanConfigPage(QWidget *parent) : ExperimentWiza
 void WizardDrScanConfigPage::initializePage()
 {
     auto e = getExperiment();
-    d_rfConfig = e->d_ftmwCfg.d_rfConfig;
+    d_rfConfig = e->ftmwConfig()->d_rfConfig;
 
     //Get DR hardware
     auto drClock = d_rfConfig.clockHardware(RfConfig::DRClock);
@@ -140,7 +140,7 @@ bool WizardDrScanConfigPage::validatePage()
     d_rfConfig.d_targetSweeps = 1;
     d_rfConfig.d_shotsPerClockConfig = p_shotsBox->value();
 
-    e->d_ftmwCfg.d_rfConfig = d_rfConfig;
+    e->ftmwConfig()->d_rfConfig = d_rfConfig;
 
     return true;
 
