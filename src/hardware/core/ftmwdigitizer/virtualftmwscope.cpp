@@ -20,9 +20,9 @@ VirtualFtmwScope::VirtualFtmwScope(QObject *parent) :
     setDefault(minTrigLevel,-5.0);
     setDefault(maxTrigLevel,5.0);
     setDefault(maxRecordLength,100000000);
-    setDefault(blockAverage,true);
+    setDefault(canBlockAverage,true);
     setDefault(maxAverages,100);
-    setDefault(multiRecord,true);
+    setDefault(canMultiRecord,true);
     setDefault(maxRecords,100);
     setDefault(multiBlock,false);
     setDefault(maxBytes,2);

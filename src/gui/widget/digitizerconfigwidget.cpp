@@ -210,7 +210,7 @@ The actual number of records able to be acquired may be limited by the record le
     registerGetter(lNumRecords,p_numRecordsBox,&QSpinBox::value);
 
 
-    if(!s.get(blockAverage,false))
+    if(!s.get(canBlockAverage,false))
     {
         p_blockAverageBox->setChecked(false);
         p_blockAverageBox->setEnabled(false);
@@ -218,7 +218,7 @@ The actual number of records able to be acquired may be limited by the record le
         p_numAveragesBox->setEnabled(false);
     }
 
-    if(!s.get(multiRecord,false))
+    if(!s.get(canMultiRecord,false))
     {
         p_multiRecordBox->setChecked(false);
         p_multiRecordBox->setEnabled(false);

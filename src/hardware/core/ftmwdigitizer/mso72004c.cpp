@@ -21,8 +21,8 @@ MSO72004C::MSO72004C(QObject *parent) :
     setDefault(maxTrigDelay,10.0);
     setDefault(minTrigLevel,-5.0);
     setDefault(maxTrigLevel,5.0);
-    setDefault(blockAverage,true);
-    setDefault(multiRecord,true);
+    setDefault(canBlockAverage,true);
+    setDefault(canMultiRecord,true);
     setDefault(multiBlock,false);
     setDefault(maxBytes,2);
     setDefault(bandwidth,16000.0);

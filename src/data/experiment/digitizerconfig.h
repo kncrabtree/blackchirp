@@ -3,6 +3,9 @@
 
 #include <QObject>
 #include <QDataStream>
+#include <set>
+
+#include <data/storage/headerstorage.h>
 
 namespace BC::Key::Digi {
 static const QString numChannels("numChannels");
@@ -16,9 +19,9 @@ static const QString maxTrigDelay("maxTrigDelayUs");
 static const QString minTrigLevel("minTrigLevel");
 static const QString maxTrigLevel("maxTrigLevel");
 static const QString maxRecordLength("maxRecordLength");
-static const QString multiRecord("canMultiRecord");
+static const QString canMultiRecord("canMultiRecord");
 static const QString maxRecords("maxRecords");
-static const QString blockAverage("canBlockAverage");
+static const QString canBlockAverage("canBlockAverage");
 static const QString maxAverages("maxAverages");
 static const QString multiBlock("canBlockAndMultiRecord");
 static const QString maxBytes("maxBytesPerPoint");
@@ -27,15 +30,37 @@ static const QString srText("text");
 static const QString srValue("val");
 }
 
-class DigitizerConfig
+namespace BC::Store::Digi {
+static const QString an("AnalogChannel");
+static const QString dig("DigitalChannel");
+static const QString en("Enabled");
+static const QString fs("FullScale");
+static const QString offset("VerticalOffset");
+static const QString trigSlope("TriggerEdge");
+static const QString trigCh("TriggerChannel");
+static const QString trigDelay("TriggerDelay");
+static const QString trigLevel("TriggerLevel");
+static const QString bpp("BytesPerPoint");
+static const QString bo("ByteOrder");
+static const QString sRate("SampleRate");
+static const QString recLen("RecordLength");
+static const QString blockAvg("BlockAverageEnabled");
+static const QString numAvg("BlockAverages");
+static const QString multiRec("MultiRecordEnabled");
+static const QString multiRecNum("MultiRecordNum");
+}
+
+class DigitizerConfig : public HeaderStorage
 {
     Q_GADGET
 public:
-    struct Channel {
-        int channelNum{0};
-        bool enabled{false};
+    struct AnalogChannel {
         double fullScale{0.0};
         double offset{0.0};
+    };
+
+    struct DigitalChannel {
+
     };
 
     enum TriggerSlope {
@@ -44,10 +69,11 @@ public:
     };
     Q_ENUM(TriggerSlope)
 
-    DigitizerConfig();
+    DigitizerConfig(const QString key);
 
     //vertical channels
-    QList<Channel> d_channels;
+    std::map<int,AnalogChannel> d_analogChannels;
+    std::map<int,DigitalChannel> d_digitalChannels;
 
     //triggering
     int d_triggerChannel{0};
@@ -75,8 +101,15 @@ public:
     double yMult(int ch) const;
 
 
+
+    // HeaderStorage interface
+protected:
+    virtual void prepareToSave() override;
+    virtual void loadComplete() override;
 };
 
-Q_DECLARE_TYPEINFO(DigitizerConfig::Channel,Q_PRIMITIVE_TYPE);
+Q_DECLARE_TYPEINFO(DigitizerConfig::AnalogChannel,Q_PRIMITIVE_TYPE);
+Q_DECLARE_TYPEINFO(DigitizerConfig::DigitalChannel,Q_PRIMITIVE_TYPE);
+Q_DECLARE_METATYPE(QDataStream::ByteOrder)
 
 #endif // DIGITIZERCONFIG_H

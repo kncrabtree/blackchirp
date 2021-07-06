@@ -10,7 +10,8 @@
 
 FtmwConfig::FtmwConfig() : HeaderStorage(BC::Store::FTMW::key)
 {
-
+    addChild(&d_rfConfig);
+    addChild(&d_scopeConfig);
 }
 
 FtmwConfig::~FtmwConfig()
