@@ -60,7 +60,7 @@ signals:
     void finalized(int);
 
 public slots:
-    void updateLiveFidList(int segment);
+    void updateLiveFidList();
     void updateFtmw();
     void updateProcessingSettings(FtWorker::FidProcessingSettings s);
     void changeFrame(int id, int frameNum);
@@ -98,8 +98,9 @@ private:
     FtWorker::FidProcessingSettings d_currentProcessingSettings;
     int d_currentExptNum;
     int d_currentSegment;
+    int d_liveTimerId;
     MainPlotMode d_mode;
-\
+
     struct WorkerStatus {
         FtWorker *worker;
         QThread *thread;
@@ -127,6 +128,10 @@ private:
 
     void updateFid(int id);
 
+
+    // QObject interface
+protected:
+    void timerEvent(QTimerEvent *event) override;
 };
 
 QT_BEGIN_NAMESPACE

@@ -296,12 +296,13 @@ void ChirpTableModel::addSegment(double start, double end, double dur, int pos, 
     double awgMin = s.get<double>("minFreq",0.0);
     double awgMax = s.get<double>("maxFreq",1000.0);
 
+    if(start < 0.0)
+        start = awgMin;
+    if(end < 0.0)
+        end = awgMax;
+
     double startFreq = qBound(awgMin,start,awgMax);
     double endFreq = qBound(awgMin,end,awgMax);
-    if(start < 0.0)
-        startFreq = awgMin;
-    if(end < 0.0)
-        endFreq = awgMax;
 
     ChirpConfig::ChirpSegment cs{startFreq,endFreq,dur,(end-start)/dur,empty};
 

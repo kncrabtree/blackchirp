@@ -216,6 +216,8 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
             ui->minFtSegBox->setEnabled(false);
             ui->maxFtSegBox->setEnabled(false);
         }
+
+        d_liveTimerId = startTimer(500);
     }
     else
     {        
@@ -230,14 +232,14 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
 
 }
 
-void FtmwViewWidget::updateLiveFidList(int segment)
+void FtmwViewWidget::updateLiveFidList()
 {
 #pragma message("UpdateLiveFidList needs work")
     auto fl = p_fidStorage->getCurrentFidList();
-    d_currentSegment = p_fidStorage->getCurrentIndex();
+    if(fl.isEmpty())
+        return;
 
-//    d_ftmwCfg = c;
-    d_currentSegment = segment;
+    d_currentSegment = p_fidStorage->getCurrentIndex();
 
     ui->shotsLabel->setText(d_shotsString.arg(p_fidStorage->currentSegmentShots()));
 
@@ -246,10 +248,9 @@ void FtmwViewWidget::updateLiveFidList(int segment)
     {
         if(d_workersStatus.value(it.key()).thread->isRunning())
         {
-            Fid f = fl.constFirst();
             if(it.key() != d_liveId)
             {
-                if(segment == it.value().segment && it.value().frame < fl.size())
+                if(d_currentSegment == it.value().segment && it.value().frame < fl.size())
                 {
                     bool processFid = true;
                     if(it.key() == d_plot1Id)
@@ -267,7 +268,7 @@ void FtmwViewWidget::updateLiveFidList(int segment)
 
                     if(processFid)
                     {
-                        f = fl.at(it.value().frame);
+                        auto f = fl.at(it.value().frame);
                         it.value().fid = f;
                         process(it.key(),f);
                     }
@@ -275,6 +276,7 @@ void FtmwViewWidget::updateLiveFidList(int segment)
             }
             else
             {
+                auto f = fl.constFirst();
                 it.value().fid = f;
                 process(it.key(),f);
             }
@@ -499,7 +501,9 @@ void FtmwViewWidget::process(int id, const Fid f)
             d_plotStatus[id].ftPlot->setCursor(Qt::BusyCursor);
             d_workersStatus[id].busy = true;
             d_workersStatus[id].reprocessWhenDone = false;
-            QMetaObject::invokeMethod(ws.worker,"doFT",Q_ARG(Fid,f),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings));
+            QMetaObject::invokeMethod(ws.worker,[ws,f,this](){
+                ws.worker->doFT(f,d_currentProcessingSettings);
+            });
         }
     }
 }
@@ -517,7 +521,10 @@ void FtmwViewWidget::processDiff(const Fid f1, const Fid f2)
         ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
         d_workersStatus[d_mainId].busy = true;
         d_workersStatus[d_mainId].reprocessWhenDone = false;
-        QMetaObject::invokeMethod(ws.worker,"doFtDiff",Q_ARG(Fid,f1),Q_ARG(Fid,f2),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings));
+        QMetaObject::invokeMethod(ws.worker,[ws,f1,f2,this](){
+            ws.worker->doFtDiff(f1,f2,d_currentProcessingSettings);
+        });
+
     }
 }
 
@@ -553,7 +560,9 @@ void FtmwViewWidget::processSideband(RfConfig::Sideband sb)
             double minF = ui->minFtSegBox->value();
             double maxF = ui->maxFtSegBox->value();
 
-            QMetaObject::invokeMethod(ws.worker,"processSideband",Q_ARG(FidList,fl),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings),Q_ARG(RfConfig::Sideband,sb),Q_ARG(double,minF),Q_ARG(double,maxF));
+            QMetaObject::invokeMethod(ws.worker,[ws,fl,this,sb,minF,maxF](){
+                ws.worker->processSideband(fl,d_currentProcessingSettings,sb,minF,maxF);
+            });
         }
     }
 }
@@ -583,7 +592,9 @@ void FtmwViewWidget::processBothSidebands()
             double minF = ui->minFtSegBox->value();
             double maxF = ui->maxFtSegBox->value();
 
-            QMetaObject::invokeMethod(ws.worker,"processBothSidebands",Q_ARG(FidList,fl),Q_ARG(FtWorker::FidProcessingSettings,d_currentProcessingSettings),Q_ARG(double,minF),Q_ARG(double,maxF));
+            QMetaObject::invokeMethod(ws.worker,[ws,fl,this,minF,maxF](){
+                ws.worker->processBothSidebands(fl,d_currentProcessingSettings,minF,maxF);
+            });
         }
     }
 }
@@ -776,3 +787,13 @@ void FtmwViewWidget::updateFid(int id)
 
 }
 
+
+
+void FtmwViewWidget::timerEvent(QTimerEvent *event)
+{
+    if(event->timerId() == d_liveId)
+    {
+        updateLiveFidList();
+        event->accept();
+    }
+}

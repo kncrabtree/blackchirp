@@ -85,16 +85,12 @@ void AcquisitionManager::beginExperiment(std::shared_ptr<Experiment> exp)
 
 void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 {
-//    static int total = 0;
-//    static int count = 0;
     if(d_state == Acquiring
             && d_currentExperiment->ftmwEnabled()
             && !d_currentExperiment->ftmwConfig()->isComplete()
             && !d_currentExperiment->ftmwConfig()->processingPaused())
     {
 
-//        QTime testTime;
-//        testTime.start();
         bool success = true;
 
         if(d_currentExperiment->ftmwConfig()->d_chirpScoringEnabled)

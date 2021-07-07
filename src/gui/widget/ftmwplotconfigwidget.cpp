@@ -16,7 +16,8 @@
 
 #include <data/analysis/snapworker.h>
 
-FtmwPlotConfigWidget::FtmwPlotConfigWidget(int id, QString path, QWidget *parent) : QWidget(parent), d_num(-1), d_id(id), d_busy(false), d_updateWhenDone(false), d_path(path)
+FtmwPlotConfigWidget::FtmwPlotConfigWidget(int id, QString path, QWidget *parent) :
+    QWidget(parent), d_num(-1), d_id(id), d_busy(false), d_updateWhenDone(false), d_path(path)
 {
     auto vbl = new QVBoxLayout;
 
