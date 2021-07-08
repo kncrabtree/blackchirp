@@ -276,34 +276,22 @@ QHash<RfConfig::ClockType, RfConfig::ClockFreq> RfConfig::getClocks() const
 
 double RfConfig::clockFrequency(ClockType t) const
 {
-    if(d_clockTemplate.contains(t))
-        return d_clockTemplate.value(t).desiredFreqMHz;
-    else
-        return -1.0;
+    return d_clockTemplate.value(t).desiredFreqMHz;
 }
 
 double RfConfig::rawClockFrequency(ClockType t) const
 {
-    if(d_clockTemplate.contains(t))
-        return getRawFrequency(d_clockTemplate.value(t));
-    else
-        return -1.0;
+    return getRawFrequency(d_clockTemplate.value(t));
 }
 
 QString RfConfig::clockHardware(ClockType t) const
 {
-    if(d_clockTemplate.contains(t))
-        return d_clockTemplate.value(t).hwKey;
-    else
-        return QString("");
+    return d_clockTemplate.value(t).hwKey;
 }
 
 ChirpConfig RfConfig::getChirpConfig(int num) const
 {
-    if(num < d_chirps.size())
-        return d_chirps.at(num);
-
-    return ChirpConfig();
+    return d_chirps.value(num,ChirpConfig());
 }
 
 int RfConfig::numChirpConfigs() const

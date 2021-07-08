@@ -15,6 +15,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/widget/clockdisplaywidget.cpp \
     $$PWD/widget/digitizerconfigwidget.cpp \
     $$PWD/widget/experimentviewwidget.cpp \
+    $$PWD/widget/ftmwdigitizerconfigwidget.cpp \
     $$PWD/widget/ftmwplotconfigwidget.cpp \
     $$PWD/widget/ftmwprocessingwidget.cpp \
     $$PWD/widget/ftmwviewwidget.cpp \
@@ -55,6 +56,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/widget/clockdisplaywidget.h \
     $$PWD/widget/digitizerconfigwidget.h \
     $$PWD/widget/experimentviewwidget.h \
+    $$PWD/widget/ftmwdigitizerconfigwidget.h \
     $$PWD/widget/ftmwplotconfigwidget.h \
     $$PWD/widget/ftmwprocessingwidget.h \
     $$PWD/widget/ftmwviewwidget.h \

@@ -16,12 +16,12 @@ using namespace BC::Key::Digi;
 using namespace BC::Key::DigiWidget;
 
 DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QString digHwKey, QWidget *parent) :
-    QWidget(parent), SettingsStorage(widgetKey)
+    QWidget(parent), SettingsStorage(widgetKey), d_hwKey(digHwKey)
 {
 
     auto hbl = new QHBoxLayout;
 
-    SettingsStorage s(digHwKey,Hardware);
+    SettingsStorage s(d_hwKey,Hardware);
 
     auto chvbl = new QVBoxLayout;
 
@@ -50,6 +50,8 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
 
         connect(chBox,&QGroupBox::toggled,fsBox,&QDoubleSpinBox::setEnabled);
         connect(chBox,&QGroupBox::toggled,voBox,&QDoubleSpinBox::setEnabled);
+        connect(chBox,&QGroupBox::toggled,this,&DigitizerConfigWidget::configureAnalogBoxes);
+        connect(chBox,&QGroupBox::toggled,this,&DigitizerConfigWidget::edited);
         chBox->setChecked(getArrayValue(dwChannels,i,chEnabled,false));
 
         fl->addRow("Full Scale",fsBox);
@@ -269,6 +271,7 @@ The actual number of records able to be acquired may be limited by the record le
     hbl->addLayout(vl,1);
 
     setLayout(hbl);
+    configureAnalogBoxes();
 }
 
 DigitizerConfigWidget::~DigitizerConfigWidget()
@@ -284,4 +287,147 @@ DigitizerConfigWidget::~DigitizerConfigWidget()
                     });
     }
     setArray(dwChannels,l,false);
+}
+
+int DigitizerConfigWidget::numAnalogChecked()
+{
+    int out = 0;
+    for(auto &ch : d_channelWidgets)
+    {
+        if(ch.channelBox->isChecked())
+            ++out;
+    }
+
+    return out;
+}
+
+int DigitizerConfigWidget::numDigitalChecked()
+{
+    return 0;
+}
+
+void DigitizerConfigWidget::setFromConfig(const DigitizerConfig &c)
+{
+    for(auto &ch : c.d_analogChannels)
+    {
+        d_channelWidgets[ch.first].channelBox->setChecked(true);
+        d_channelWidgets[ch.first].vOffsetBox->setValue(ch.second.offset);
+        d_channelWidgets[ch.first].fullScaleBox->setValue(ch.second.fullScale);
+    }
+
+    ///TODO: Digital channels
+
+     p_triggerSourceBox->setValue(c.d_triggerChannel);
+     p_triggerDelayBox->setValue(c.d_triggerDelayUSec);
+     p_triggerLevelBox->setValue(c.d_triggerLevel);
+     p_triggerSlopeBox->setCurrentIndex(p_triggerSlopeBox->findData(c.d_triggerSlope));
+
+     if(p_sampleRateBox->isEditable())
+         p_sampleRateBox->setEditText(QString::number(c.d_sampleRate,'e',6));
+     else
+         p_sampleRateBox->setCurrentIndex(p_sampleRateBox->findData(c.d_sampleRate));
+     p_recLengthBox->setValue(c.d_recordLength);
+
+     p_bytesPerPointBox->setValue(c.d_bytesPerPoint);
+     p_byteOrderBox->setCurrentIndex(p_byteOrderBox->findData(c.d_byteOrder));
+
+     SettingsStorage s(d_hwKey,Hardware);
+     if(s.get(canBlockAverage,false))
+     {
+         p_blockAverageBox->setChecked(c.d_blockAverage);
+         p_numAveragesBox->setValue(c.d_numAverages);
+     }
+     else
+         p_numAveragesBox->setValue(1);
+
+     if(s.get(canMultiRecord,false))
+     {
+         p_multiRecordBox->setChecked(c.d_multiRecord);
+         p_numRecordsBox->setValue(c.d_numRecords);
+     }
+     else
+         p_numRecordsBox->setValue(1);
+}
+
+void DigitizerConfigWidget::toConfig(DigitizerConfig &c)
+{
+    c.d_analogChannels.clear();
+    for(int i=0; i<d_channelWidgets.size(); ++i)
+    {
+        auto &ch = d_channelWidgets.at(i);
+        if(ch.channelBox->isChecked())
+            c.d_analogChannels.insert_or_assign(i,DigitizerConfig::AnalogChannel{ch.fullScaleBox->value(),
+                                                                                 ch.vOffsetBox->value()});
+    }
+
+    c.d_digitalChannels.clear();
+    ///TODO: Digital channels
+
+    c.d_triggerChannel = p_triggerSourceBox->value();
+    c.d_triggerLevel = p_triggerLevelBox->value();
+    c.d_triggerSlope = p_triggerSlopeBox->currentData().value<DigitizerConfig::TriggerSlope>();
+    c.d_triggerDelayUSec = p_triggerDelayBox->value();
+
+    if(p_sampleRateBox->isEditable())
+        c.d_sampleRate = p_sampleRateBox->currentText().toDouble();
+    else
+        c.d_sampleRate = p_sampleRateBox->currentData().toDouble();
+    c.d_recordLength = p_recLengthBox->value();
+
+    c.d_bytesPerPoint = p_bytesPerPointBox->value();
+    c.d_byteOrder = p_byteOrderBox->currentData().value<DigitizerConfig::ByteOrder>();
+
+    c.d_blockAverage = p_blockAverageBox->isChecked();
+    if(c.d_blockAverage)
+        c.d_numAverages = p_numAveragesBox->value();
+    else
+    {
+        p_numAveragesBox->setValue(1);
+        c.d_numAverages = 1;
+    }
+
+    c.d_multiRecord = p_multiRecordBox->isChecked();
+    if(c.d_multiRecord)
+        c.d_numRecords = p_numRecordsBox->value();
+    else
+    {
+        p_numRecordsBox->setValue(1);
+        c.d_numRecords = 1;
+    }
+}
+
+void DigitizerConfigWidget::configureAnalogBoxes()
+{
+    if(d_maxAnalogEnabled < 0)
+        return;
+
+    int checked = numAnalogChecked();
+    if(checked < d_maxAnalogEnabled)
+    {
+        for(auto &ch : d_channelWidgets)
+            ch.channelBox->setEnabled(true);
+    }
+    else if(checked == d_maxAnalogEnabled)
+    {
+        for(auto &ch : d_channelWidgets)
+            ch.channelBox->setEnabled(ch.channelBox->isChecked());
+    }
+    else
+    {
+        checked = 0;
+        for(auto &ch : d_channelWidgets)
+        {
+            if(checked == d_maxAnalogEnabled)
+            {
+                ch.channelBox->setChecked(false);
+                ch.channelBox->setEnabled(false);
+            }
+            else
+            {
+                ch.channelBox->setEnabled(ch.channelBox->isChecked());
+                if(ch.channelBox->isChecked())
+                    ++checked;
+            }
+        }
+    }
 }

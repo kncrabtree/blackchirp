@@ -3,7 +3,7 @@
 
 #include <gui/wizard/experimentwizardpage.h>
 
-class DigitizerConfigWidget;
+class FtmwDigitizerConfigWidget;
 
 namespace BC::Key::WizFtDig {
 static const QString key("WizardFtmwDigitizerPage");
@@ -21,9 +21,10 @@ public:
     void initializePage();
     bool validatePage();
     int nextId() const;
+    bool isComplete() const;
 
 private:
-    DigitizerConfigWidget *p_dc;
+    FtmwDigitizerConfigWidget *p_dc;
 };
 
 #endif // WIZARDDIGITIZERCONFIGPAGE_H

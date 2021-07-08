@@ -51,11 +51,11 @@ public:
     Q_ENUM(ClockType)
 
     struct ClockFreq {
-        double desiredFreqMHz;
-        MultOperation op;
-        double factor;
-        QString hwKey;
-        int output;
+        double desiredFreqMHz{0.0};
+        MultOperation op{Multiply};
+        double factor{1.0};
+        QString hwKey{""};
+        int output{0};
     };
 
     RfConfig();

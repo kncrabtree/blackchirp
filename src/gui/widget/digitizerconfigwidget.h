@@ -4,6 +4,7 @@
 #include <QWidget>
 
 #include <data/storage/settingsstorage.h>
+#include <data/experiment/digitizerconfig.h>
 
 class QGroupBox;
 class QDoubleSpinBox;
@@ -43,7 +44,22 @@ public:
         QDoubleSpinBox *vOffsetBox;
     };
 
-private:
+    int d_maxAnalogEnabled{-1};
+    int d_maxDigitalEnabled{-1};
+
+    int numAnalogChecked();
+    int numDigitalChecked();
+
+    void setFromConfig(const DigitizerConfig &c);
+    void toConfig(DigitizerConfig &c);
+
+signals:
+    void edited();
+
+public slots:
+    void configureAnalogBoxes();
+
+protected:
     QList<ChannelWidgets> d_channelWidgets;
 
     QSpinBox *p_triggerSourceBox;
@@ -61,8 +77,7 @@ private:
     QCheckBox *p_multiRecordBox;
     QSpinBox *p_numRecordsBox;
 
-
-signals:
+    const QString d_hwKey;
 
 };
 
