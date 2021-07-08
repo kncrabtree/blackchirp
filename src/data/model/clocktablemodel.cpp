@@ -1,44 +1,96 @@
 #include <data/model/clocktablemodel.h>
 
-#include <data/storage/settingsstorage.h>
+#include <hardware/core/clock/clockmanager.h>
 
 #include <QComboBox>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
 #include <QMetaEnum>
 
-ClockTableModel::ClockTableModel(QObject *parent) : QAbstractTableModel(parent)
+ClockTableModel::ClockTableModel(QObject *parent) :
+    QAbstractTableModel(parent), SettingsStorage(BC::Key::ClockTable::ctKey)
 {
     QMetaEnum ct = QMetaEnum::fromType<RfConfig::ClockType>();
     for(int i=0; i<ct.keyCount(); ++i)
+    {
         d_clockTypes.append(static_cast<RfConfig::ClockType>(ct.value(i)));
+        d_clockConfigs.insert(static_cast<RfConfig::ClockType>(ct.value(i)),{});
+    }
+
+    SettingsStorage s(BC::Key::Clock::clockManager);
+    QString arrKey(BC::Key::Clock::hwClocks);
+    auto count = s.getArraySize(arrKey);
+    QStringList keys;
+    for(std::size_t i = 0; i < count; ++i)
+    {
+        ClockHwInfo hw;
+        hw.used = false;
+        hw.index = d_hwInfo.size();
+        hw.hwKey = s.getArrayValue<QString>(arrKey,i,BC::Key::Clock::clockKey,"");
+        hw.output = s.getArrayValue<int>(arrKey,i,BC::Key::Clock::clockOutput,0);
+        hw.name = s.getArrayValue<QString>(arrKey,i,BC::Key::Clock::clockName,QString("%1-%2").arg(hw.hwKey).arg(hw.output));
+        if(!hw.hwKey.isEmpty())
+        {
+            d_hwInfo << hw;
+            if(!keys.contains(hw.hwKey))
+                keys << hw.hwKey;
+        }
+    }
+
+    using namespace BC::Key::ClockTable;
+    count = getArraySize(ctClocks);
+    for(std::size_t i=0; i<count; ++i)
+    {
+        auto type = getArrayValue(ctClocks,i,ctClockType,RfConfig::UpLO);
+        auto hwKey = getArrayValue(ctClocks,i,ctHwKey,QString(""));
+        if(keys.contains(hwKey))
+        {
+            auto output = getArrayValue(ctClocks,i,ctOutput,0);
+            auto op = getArrayValue(ctClocks,i,ctOp,RfConfig::Multiply);
+            auto factor = getArrayValue(ctClocks,i,ctFactor,1.0);
+            auto freq = getArrayValue(ctClocks,i,ctFreq,0.0);
+
+            d_clockConfigs[type] = {freq,op,factor,hwKey,output};
+        }
+    }
+}
+
+ClockTableModel::~ClockTableModel()
+{
+    using namespace BC::Key::ClockTable;
+    setArray(ctClocks,{});
+    int i=0;
+    for(auto it = d_clockConfigs.cbegin(); it != d_clockConfigs.cend(); ++it)
+    {
+        if(it.value().hwKey.isEmpty())
+            continue;
+
+        setArrayValue(ctClocks,i,ctClockType,it.key(),false);
+        setArrayValue(ctClocks,i,ctHwKey,it.value().hwKey,false);
+        setArrayValue(ctClocks,i,ctOutput,it.value().output,false);
+        setArrayValue(ctClocks,i,ctOp,it.value().op,false);
+        setArrayValue(ctClocks,i,ctFactor,it.value().factor,false);
+        setArrayValue(ctClocks,i,ctFreq,it.value().desiredFreqMHz,false);
+
+        ++i;
+    }
 }
 
 void ClockTableModel::setConfig(const RfConfig c)
 {
     d_rfConfig = c;
-    d_hwInfo.clear();
     d_clockAssignments.clear();
 
-    SettingsStorage s("clockManager");
-    QString arrKey("hwClocks");
-    auto count = s.getArraySize(arrKey);
-    for(std::size_t i = 0; i < count; ++i)
-    {
-        ClockHwInfo hw;
-        hw.key = s.getArrayValue<QString>(arrKey,i,"key","");
-        hw.output = s.getArrayValue<int>(arrKey,i,"output",0);
-        hw.name = s.getArrayValue<QString>(arrKey,i,"name",QString("%1-%2").arg(hw.key).arg(hw.output));
-        hw.used = false;
-        hw.index = d_hwInfo.size();
-        if(!hw.key.isEmpty())
-            d_hwInfo << hw;
 
-        if(!d_rfConfig.getClocks().isEmpty())
+
+    if(!d_rfConfig.getClocks().isEmpty())
+    {
+        for(auto it = d_rfConfig.getClocks().constBegin(); it!=d_rfConfig.getClocks().constEnd(); it++)
         {
-            for(auto it = d_rfConfig.getClocks().constBegin(); it!=d_rfConfig.getClocks().constEnd(); it++)
+            for(auto &hw : d_hwInfo)
             {
-                if(!hw.key.isEmpty() && it.value().hwKey == hw.key && it.value().output == hw.output)
+                if(!hw.hwKey.isEmpty() && it.value().hwKey == hw.hwKey &&
+                        it.value().output == hw.output)
                 {
                     d_clockAssignments.insert(it.key(),hw.index);
                 }
@@ -49,7 +101,7 @@ void ClockTableModel::setConfig(const RfConfig c)
     if(c.d_commonUpDownLO)
         setCommonLo(c.d_commonUpDownLO);
 
-    emit dataChanged(index(0,0),index(d_clockTypes.size(),5));
+    emit dataChanged(index(0,0),index(d_clockConfigs.size(),5));
 }
 
 RfConfig ClockTableModel::getRfConfig() const
@@ -84,7 +136,7 @@ void ClockTableModel::setCommonLo(bool b)
 int ClockTableModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent)
-    return d_clockTypes.size();
+    return d_clockConfigs.size();
 }
 
 int ClockTableModel::columnCount(const QModelIndex &parent) const
@@ -95,7 +147,7 @@ int ClockTableModel::columnCount(const QModelIndex &parent) const
 
 QVariant ClockTableModel::data(const QModelIndex &index, int role) const
 {
-    if(index.row() > d_clockTypes.size())
+    if(index.row() > d_clockConfigs.size())
         return QVariant();
 
     if(role == Qt::TextAlignmentRole)
@@ -205,7 +257,7 @@ bool ClockTableModel::setData(const QModelIndex &index, const QVariant &value, i
     if(role != Qt::EditRole)
         return false;
 
-    if(index.row() > d_clockTypes.size())
+    if(index.row() > d_clockConfigs.size())
         return false;
 
     auto type = d_clockTypes.at(index.row());
@@ -227,7 +279,7 @@ bool ClockTableModel::setData(const QModelIndex &index, const QVariant &value, i
             if(type == d_clockTypes.indexOf(RfConfig::UpLO) && d_rfConfig.d_commonUpDownLO)
                 d_clockAssignments.insert(RfConfig::DownLO,value.toInt());
 
-            d_rfConfig.setClockHwInfo(type,d_hwInfo.at(value.toInt()).key,d_hwInfo.at(value.toInt()).output);
+            d_rfConfig.setClockHwInfo(type,d_hwInfo.at(value.toInt()).hwKey,d_hwInfo.at(value.toInt()).output);
         }
         break;
     case 2:
@@ -274,7 +326,7 @@ QVariant ClockTableModel::headerData(int section, Qt::Orientation orientation, i
 
 Qt::ItemFlags ClockTableModel::flags(const QModelIndex &index) const
 {
-    if(index.row() < d_clockTypes.size())
+    if(index.row() < d_clockConfigs.size())
     {
         if(d_rfConfig.d_commonUpDownLO && index.row() == d_clockTypes.indexOf(RfConfig::DownLO) && index.column() > 0)
             return 0;
@@ -330,10 +382,10 @@ QWidget *ClockTableDelegate::createEditor(QWidget *parent, const QStyleOptionVie
         QDoubleSpinBox *sb = new QDoubleSpinBox(parent);
         if(id >= 0 && id < l.size())
         {
-            QString key = l.at(id).key;
+            QString key = l.at(id).hwKey;
             SettingsStorage s(key,SettingsStorage::Hardware);
-            double minFreq = s.get<double>("minFreqMHz",0.0);
-            double maxFreq = s.get<double>("maxFreqMHz",1e7);
+            double minFreq = s.get<double>(BC::Key::Clock::minFreq,0.0);
+            double maxFreq = s.get<double>(BC::Key::Clock::maxFreq,1e7);
 
             //rescale range according to mult/div settings
             double factor = index.model()->data(index.model()->index(index.row(),3),Qt::EditRole).toDouble();

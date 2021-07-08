@@ -2,20 +2,34 @@
 #define CLOCKTABLEMODEL_H
 
 #include <QAbstractTableModel>
+#include <data/storage/settingsstorage.h>
 
 #include <data/experiment/rfconfig.h>
 
-class ClockTableModel : public QAbstractTableModel
+namespace BC::Key::ClockTable {
+static const QString ctKey("ClockConfigTable");
+static const QString ctClocks("clocks");
+static const QString ctClockType("type");
+static const QString ctHwKey("hwKey");
+static const QString ctOutput("output");
+static const QString ctOp("operation");
+static const QString ctFactor("factor");
+static const QString ctFreq("freqMHz");
+}
+
+class ClockTableModel : public QAbstractTableModel, public SettingsStorage
 {
     Q_OBJECT
 public:
     explicit ClockTableModel(QObject *parent = nullptr);
+    ~ClockTableModel();
+
     struct ClockHwInfo {
         int index;
         bool used;
-        QString key;
-        int output;
         QString name;
+        QString hwKey;
+        int output;
     };
 
     QList<ClockHwInfo> getHwInfo() const { return d_hwInfo; }
@@ -29,6 +43,7 @@ private:
     RfConfig d_rfConfig;
     QList<ClockHwInfo> d_hwInfo;
     QVector<RfConfig::ClockType> d_clockTypes;
+    QHash<RfConfig::ClockType,RfConfig::ClockFreq> d_clockConfigs;
     QHash<RfConfig::ClockType,int> d_clockAssignments;
 
     // QAbstractItemModel interface

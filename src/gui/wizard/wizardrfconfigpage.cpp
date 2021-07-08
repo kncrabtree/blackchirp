@@ -20,7 +20,8 @@ WizardRfConfigPage::WizardRfConfigPage(QWidget *parent) : ExperimentWizardPage(B
 void WizardRfConfigPage::initializePage()
 {
     auto e = getExperiment();
-    p_rfc->setRfConfig(e->ftmwConfig()->d_rfConfig);
+    if(e->d_number > 0)
+        p_rfc->setRfConfig(e->ftmwConfig()->d_rfConfig);
 }
 
 bool WizardRfConfigPage::validatePage()

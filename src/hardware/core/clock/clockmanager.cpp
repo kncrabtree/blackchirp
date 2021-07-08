@@ -4,9 +4,10 @@
 
 #include <hardware/core/clock/clock.h>
 
+using namespace BC::Key::Clock;
 
 ClockManager::ClockManager(QObject *parent) : QObject(parent),
-    SettingsStorage(BC::Key::clockManager)
+    SettingsStorage(clockManager)
 {
 
 #ifdef BC_CLOCK_0
@@ -29,7 +30,7 @@ ClockManager::ClockManager(QObject *parent) : QObject(parent),
     d_clockList << new Clock4Hardware(4,this);
 #endif
 
-    setArray(BC::Key::hwClocks,{});
+    setArray(hwClocks,{});
 
     for(auto c : d_clockList)
     {
@@ -43,10 +44,10 @@ ClockManager::ClockManager(QObject *parent) : QObject(parent),
             else
                 pn.append(QString("Output %1").arg(j));
 
-            appendArrayMap(BC::Key::hwClocks,{
-                               {BC::Key::clockKey,c->d_key},
-                               {BC::Key::clockOutput,j},
-                               {BC::Key::clockName,pn}
+            appendArrayMap(hwClocks,{
+                               {clockKey,c->d_key},
+                               {clockOutput,j},
+                               {clockName,pn}
                            });
         }
     }
