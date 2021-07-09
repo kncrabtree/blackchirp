@@ -32,7 +32,10 @@ void WizardChirpConfigPage::initializePage()
 {
     //get rfConfig
     auto e = getExperiment();
-    p_ccw->setRfConfig(e->ftmwConfig()->d_rfConfig);
+    p_ccw->initialize(std::make_shared<RfConfig>(e->ftmwConfig()->d_rfConfig));
+    if(e->d_number > 0)
+        p_ccw->setFromRfConfig();
+
     p_ccw->updateChirpPlot();
 
 }
@@ -48,8 +51,7 @@ bool WizardChirpConfigPage::validatePage()
 {
     ///TODO: Smarter validation?
     auto e = getExperiment();
-    auto rfc = p_ccw->getRfConfig();
-    e->ftmwConfig()->d_rfConfig = rfc;
+    e->ftmwConfig()->d_rfConfig = p_ccw->getRfConfig();
 
     return true;
 }

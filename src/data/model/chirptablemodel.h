@@ -2,17 +2,32 @@
 #define CHIRPTABLEMODEL_H
 
 #include <QAbstractTableModel>
+#include <data/storage/settingsstorage.h>
 
 #include <QList>
+#include <memory>
 
 #include <data/experiment/rfconfig.h>
 
-class ChirpTableModel : public QAbstractTableModel
+namespace BC::Key::ChirpTableModel {
+static const QString key("ChirpTableModel");
+static const QString ctChirps("chirps");
+static const QString chirpIndex("chirpIndex");
+static const QString segIndex("segmentIndex");
+static const QString start("startFreqMHz");
+static const QString end("endFreqMHz");
+static const QString duration("durationUs");
+static const QString empty("empty");
+}
+
+class ChirpTableModel : public QAbstractTableModel, public SettingsStorage
 {
     Q_OBJECT
 public:
     ChirpTableModel(QObject *parent = 0);
     ~ChirpTableModel();
+
+    bool d_allIdentical;
 
     // QAbstractItemModel interface
     int rowCount(const QModelIndex &parent) const;
@@ -30,12 +45,12 @@ public:
     double calculateChirpFrequency(double f) const;
 
     QVector<QVector<ChirpConfig::ChirpSegment>> chirpList() const;
-    void setRfConfig(const RfConfig c){ d_currentRfConfig = c; }
-    RfConfig getRfConfig();
+    void initialize(std::shared_ptr<RfConfig> p);
+    void setFromRfConfig();
+    void updateRfConfig();
 
 public slots:
     void setCurrentChirp(int i);
-    void setApplyToAll(bool a2a) { d_applyToAll = a2a; }
     void setNumChirps(int num);
 
 signals:
@@ -44,9 +59,9 @@ signals:
 private:
     QVector<QVector<ChirpConfig::ChirpSegment>> d_chirpList;
     QVector<ChirpConfig::ChirpSegment> d_currentData;
-    RfConfig d_currentRfConfig;
+    std::shared_ptr<RfConfig> ps_rfConfig;
     int d_currentChirp;
-    bool d_applyToAll;
+
 
 
 };

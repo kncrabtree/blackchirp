@@ -74,7 +74,7 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     connect(ui->chirpsSpinBox,vc,this,&ChirpConfigWidget::setButtonStates);
     connect(ui->chirpIntervalDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot);
     connect(ui->currentChirpBox,vc,[=](int val){ p_ctm->setCurrentChirp(val-1); });
-    connect(ui->applyToAllBox,&QCheckBox::toggled,p_ctm,&ChirpTableModel::setApplyToAll);
+    connect(ui->applyToAllBox,&QCheckBox::toggled,[this](bool en){p_ctm->d_allIdentical = en;});
 
     ui->chirpTable->setItemDelegate(new ChirpDoubleSpinBoxDelegate);
 
@@ -86,27 +86,32 @@ ChirpConfigWidget::~ChirpConfigWidget()
     delete ui;
 }
 
-void ChirpConfigWidget::setRfConfig(const RfConfig c)
+void ChirpConfigWidget::initialize(std::shared_ptr<RfConfig> p)
+{
+    ps_rfConfig = p;
+    p_ctm->initialize(p);
+}
+
+void ChirpConfigWidget::setFromRfConfig()
 {
     if(d_rampOnly)
     {
-        auto rfc = c;
-        auto thiscc = rfc.getChirpConfig();
+        auto thiscc = ps_rfConfig->getChirpConfig();
         if(!thiscc.chirpList().isEmpty())
         {
             if(thiscc.chirpList().constFirst().size() > 1)
             {
                 thiscc.setChirpList(QVector<QVector<ChirpConfig::ChirpSegment>>());
-                rfc.setChirpConfig(thiscc);
+                ps_rfConfig->setChirpConfig(thiscc);
             }
         }
-        p_ctm->setRfConfig(rfc);
+        p_ctm->setFromRfConfig();
     }
     else
-        p_ctm->setRfConfig(c);
+        p_ctm->setFromRfConfig();
 
     clearList(false);
-    auto cc = c.getChirpConfig();
+    auto cc = ps_rfConfig->getChirpConfig();
 
     ui->preChirpProtectionDoubleSpinBox->setValue(cc.preChirpProtectionDelay());
     ui->preChirpDelayDoubleSpinBox->setValue(cc.preChirpGateDelay());
@@ -121,66 +126,72 @@ void ChirpConfigWidget::setRfConfig(const RfConfig c)
 
         if(cc.allChirpsIdentical())
         {
-            p_ctm->setApplyToAll(true);
+            p_ctm->d_allIdentical = true;
             ui->applyToAllBox->setChecked(true);
-            for(int j=0; j<cc.chirpList().at(0).size(); j++)
-            {
-                double dur = qBound(0.1,cc.segmentDuration(0,j),100000.0);
-
-                if(cc.chirpList().at(0).at(j).empty)
-                    p_ctm->addSegment(0.0,0.0,dur,p_ctm->rowCount(QModelIndex()),true);
-                else
-                    p_ctm->addSegment(cc.segmentStartFreq(0,j),cc.segmentEndFreq(0,j),dur,p_ctm->rowCount(QModelIndex()));
-            }
         }
-        else
-        {
-            p_ctm->setApplyToAll(false);
-            ui->applyToAllBox->setChecked(false);
-            ui->applyToAllBox->setEnabled(false);
-            for(int i=0; i<cc.chirpList().size(); i++)
-            {
-                p_ctm->setCurrentChirp(i);
-                for(int j=0; j<cc.chirpList().at(i).size(); j++)
-                {
-                    double dur = qBound(0.1,cc.segmentDuration(i,j),100000.0);
+        p_ctm->setFromRfConfig();
+//            for(int j=0; j<cc.chirpList().at(0).size(); j++)
+//            {
+//                double dur = qBound(0.1,cc.segmentDuration(0,j),100000.0);
 
-                    if(cc.chirpList().at(i).at(j).empty)
-                        p_ctm->addSegment(0.0,0.0,dur,p_ctm->rowCount(QModelIndex()),true);
-                    else
-                        p_ctm->addSegment(cc.segmentStartFreq(i,j),cc.segmentEndFreq(i,j),dur,p_ctm->rowCount(QModelIndex()));
-                }
-            }
-            p_ctm->setCurrentChirp(0);
-        }
+//                if(cc.chirpList().at(0).at(j).empty)
+//                    p_ctm->addSegment(0.0,0.0,dur,p_ctm->rowCount(QModelIndex()),true);
+//                else
+//                    p_ctm->addSegment(cc.segmentStartFreq(0,j),cc.segmentEndFreq(0,j),dur,p_ctm->rowCount(QModelIndex()));
+//            }
+//        }
+//        else
+//        {
+//            p_ctm->setApplyToAll(false);
+//            ui->applyToAllBox->setChecked(false);
+//            ui->applyToAllBox->setEnabled(false);
+//            for(int i=0; i<cc.chirpList().size(); i++)
+//            {
+//                p_ctm->setCurrentChirp(i);
+//                for(int j=0; j<cc.chirpList().at(i).size(); j++)
+//                {
+//                    double dur = qBound(0.1,cc.segmentDuration(i,j),100000.0);
+
+//                    if(cc.chirpList().at(i).at(j).empty)
+//                        p_ctm->addSegment(0.0,0.0,dur,p_ctm->rowCount(QModelIndex()),true);
+//                    else
+//                        p_ctm->addSegment(cc.segmentStartFreq(i,j),cc.segmentEndFreq(i,j),dur,p_ctm->rowCount(QModelIndex()));
+//                }
+//            }
+//            p_ctm->setCurrentChirp(0);
+//        }
     }
 
     ui->currentChirpBox->setValue(1);
 }
 
-RfConfig ChirpConfigWidget::getRfConfig()
+void ChirpConfigWidget::updateRfConfig()
 {
     ///TODO: Handle multiple chirp configs
-    auto rfc = p_ctm->getRfConfig();
+    p_ctm->updateRfConfig();
 
-    for(int i=0; i<rfc.numChirpConfigs(); i++)
+    for(int i=0; i<ps_rfConfig->numChirpConfigs(); i++)
     {
-        auto cc = rfc.getChirpConfig(i);
+        auto cc = ps_rfConfig->getChirpConfig(i);
         cc.setPreChirpProtectionDelay(ui->preChirpProtectionDoubleSpinBox->value());
         cc.setPreChirpGateDelay(ui->preChirpDelayDoubleSpinBox->value()/1e3);
         cc.setPostChirpGateDelay(ui->postChirpDelayDoubleSpinBox->value()/1e3);
         cc.setPostChirpProtectionDelay(ui->postChirpProtectionDoubleSpinBox->value());
         cc.setNumChirps(ui->chirpsSpinBox->value());
         cc.setChirpInterval(ui->chirpIntervalDoubleSpinBox->value());
-        rfc.setChirpConfig(cc,i);
+        ps_rfConfig->setChirpConfig(cc,i);
     }
-
-    return rfc;
 }
 
 QSpinBox *ChirpConfigWidget::numChirpsBox() const
 {
     return ui->chirpsSpinBox;
+}
+
+const RfConfig &ChirpConfigWidget::getRfConfig()
+{
+    updateRfConfig();
+    return *ps_rfConfig;
 }
 
 void ChirpConfigWidget::enableEditing(bool enabled)
@@ -217,9 +228,9 @@ void ChirpConfigWidget::setButtonStates()
 
     //get number of chirps associated with current chirp config
     ///TODO: Handle >1 CC
-    auto cc = getRfConfig().getChirpConfig();
-    ui->currentChirpBox->setRange(1,qMax(1,cc.numChirps()));
-    ui->applyToAllBox->setEnabled(cc.allChirpsIdentical());
+    auto cl = p_ctm->chirpList();
+    ui->currentChirpBox->setRange(1,qMax(1,cl.size()));
+    ui->applyToAllBox->setEnabled(p_ctm->d_allIdentical);
 }
 
 void ChirpConfigWidget::addSegment()
@@ -334,7 +345,7 @@ void ChirpConfigWidget::load()
     disconnect(ui->chirpIntervalDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot);
     disconnect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::updateChirpPlot);
 
-    p_ctm->setApplyToAll(true);
+    p_ctm->d_allIdentical = true;
     clearList(false);
 
     ui->preChirpDelayDoubleSpinBox->setValue(qRound(cc.preChirpGateDelay()));
@@ -351,7 +362,7 @@ void ChirpConfigWidget::load()
         {
             ui->applyToAllBox->setEnabled(true);
             ui->applyToAllBox->setChecked(true);
-            p_ctm->setApplyToAll(true);
+            p_ctm->d_allIdentical = true;
             p_ctm->addSegment(cc.segmentStartFreq(0,i),cc.segmentEndFreq(0,i),cc.segmentDuration(0,i),-1,cc.segmentEmpty(0,i));
         }
     }
@@ -359,7 +370,7 @@ void ChirpConfigWidget::load()
     {
         ui->applyToAllBox->setEnabled(false);
         ui->applyToAllBox->setChecked(false);
-        p_ctm->setApplyToAll(false);
+        p_ctm->d_allIdentical = false;
         for(int j=0; j<cc.chirpList().size(); j++)
         {
             p_ctm->setCurrentChirp(j);
@@ -380,19 +391,16 @@ void ChirpConfigWidget::load()
     connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::updateChirpPlot,Qt::UniqueConnection);
 
     ///TODO: deal with return value, handle >1 CC
-    auto rfc = getRfConfig();
     emit chirpConfigChanged();
-    ui->chirpPlot->newChirp(rfc.getChirpConfig());
+    ui->chirpPlot->newChirp(ps_rfConfig->getChirpConfig());
     setButtonStates();
 
 }
 
 void ChirpConfigWidget::updateChirpPlot()
 {
-    auto rfc =getRfConfig();
-
     emit chirpConfigChanged();
-    ui->chirpPlot->newChirp(rfc.getChirpConfig());
+    ui->chirpPlot->newChirp(ps_rfConfig->getChirpConfig());
 }
 
 bool ChirpConfigWidget::isSelectionContiguous(QModelIndexList l)

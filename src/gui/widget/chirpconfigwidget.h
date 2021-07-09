@@ -7,6 +7,8 @@
 #include <data/experiment/rfconfig.h>
 #include <data/model/chirptablemodel.h>
 
+#include <memory>
+
 class QSpinBox;
 
 namespace Ui {
@@ -35,9 +37,10 @@ public:
     explicit ChirpConfigWidget(QWidget *parent = 0);
     ~ChirpConfigWidget();
 
-    void setRfConfig(const RfConfig c);
-    RfConfig getRfConfig();
+    void initialize(std::shared_ptr<RfConfig> p);
+    void setFromRfConfig();
     QSpinBox *numChirpsBox() const;
+    const RfConfig &getRfConfig();
 
 public slots:
     void enableEditing(bool enabled);
@@ -59,9 +62,11 @@ signals:
 
 
 private:
+    void updateRfConfig();
     Ui::ChirpConfigWidget *ui;
     ChirpTableModel *p_ctm;
     bool d_rampOnly;
+    std::shared_ptr<RfConfig> ps_rfConfig;
 
     bool isSelectionContiguous(QModelIndexList l);
     void clearList(bool replot=true);
