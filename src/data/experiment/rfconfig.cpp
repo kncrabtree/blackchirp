@@ -9,7 +9,7 @@
 #include <data/storage/blackchirpcsv.h>
 #include <hardware/core/chirpsource/awg.h>
 
-RfConfig::RfConfig() : HeaderStorage(BC::Store::RFC::key)
+RfConfig::RfConfig() : HeaderStorage(BC::Store::RFC::key), d_currentClockIndex{0}
 {
 }
 
@@ -40,77 +40,20 @@ bool RfConfig::prepareForAcquisition()
     return true;
 }
 
-void RfConfig::setClockDesiredFreq(ClockType t, double targetFreqMHz)
+void RfConfig::setCurrentClocks(const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks)
 {
-    if(!getClocks().contains(t))
-        setClockFreqInfo(t);
-
-    auto c = getClocks().value(t);
-    c.desiredFreqMHz = targetFreqMHz;
-    setClockFreqInfo(t,c);
+    if(!d_clockConfigs.isEmpty())
+        d_clockConfigs[d_currentClockIndex] = clocks;
+    else
+        d_clockTemplate = clocks;
 }
 
-void RfConfig::setClockFactor(ClockType t, double factor)
+void RfConfig::setClockDesiredFreq(RfConfig::ClockType t, double f)
 {
-    if(!getClocks().contains(t))
-        setClockFreqInfo(t);
-
-    auto c = getClocks().value(t);
-    c.factor = factor;
-    setClockFreqInfo(t,c);
-}
-
-void RfConfig::setClockOp(ClockType t, RfConfig::MultOperation o)
-{
-    if(!getClocks().contains(t))
-        setClockFreqInfo(t);
-
-    auto c = getClocks().value(t);
-    c.op = o;
-    setClockFreqInfo(t,c);
-}
-
-void RfConfig::setClockOutputNum(ClockType t, int output)
-{
-    if(!getClocks().contains(t))
-        setClockFreqInfo(t);
-
-    auto c = getClocks().value(t);
-    c.output = output;
-    setClockFreqInfo(t,c);
-}
-
-void RfConfig::setClockHwKey(ClockType t, QString key)
-{
-    if(!getClocks().contains(t))
-        setClockFreqInfo(t);
-
-    auto c = getClocks().value(t);
-    c.hwKey = key;
-    setClockFreqInfo(t,c);
-}
-
-void RfConfig::setClockHwInfo(ClockType t, QString hwKey, int output)
-{
-    if(!getClocks().contains(t))
-        setClockFreqInfo(t);
-
-    auto c = getClocks().value(t);
-    c.hwKey = hwKey;
-    c.output = output;
-    setClockFreqInfo(t,c);
-}
-
-void RfConfig::setClockFreqInfo(ClockType t, double targetFreqMHz, double factor, RfConfig::MultOperation o, QString hwKey, int output)
-{
-    ClockFreq f;
-    f.desiredFreqMHz = targetFreqMHz;
-    f.factor = factor;
-    f.op = o;
-    f.hwKey = hwKey;
-    f.output = output;
-
-    setClockFreqInfo(t,f);
+    if(!d_clockConfigs.isEmpty())
+        d_clockConfigs[d_currentClockIndex][t].desiredFreqMHz = f;
+    else
+        d_clockTemplate[t].desiredFreqMHz = f;
 }
 
 void RfConfig::setClockFreqInfo(ClockType t, const ClockFreq &cf)
@@ -137,13 +80,9 @@ void RfConfig::addLoScanClockStep(double upLoMHz, double downLoMHz)
     //make a copy of the clock template
     auto c{d_clockTemplate};
 
-    //these functions will modify d_clockTemplate
-    setClockDesiredFreq(UpLO,upLoMHz);
-    setClockDesiredFreq(DownLO,downLoMHz);
-    d_clockConfigs.append(d_clockTemplate);
-
-    //restore template
-    d_clockTemplate = c;
+    c[UpLO].desiredFreqMHz = upLoMHz;
+    c[DownLO].desiredFreqMHz = downLoMHz;
+    d_clockConfigs.append(c);
 }
 
 void RfConfig::addDrScanClockStep(double drFreqMHz)
@@ -151,12 +90,9 @@ void RfConfig::addDrScanClockStep(double drFreqMHz)
     //make a copy of the clock template
     auto c{d_clockTemplate};
 
-    //modify d_clockTemplate
-    setClockDesiredFreq(DRClock,drFreqMHz);
-    d_clockConfigs.append(d_clockTemplate);
+    c[DRClock].desiredFreqMHz = drFreqMHz;
+    d_clockConfigs.append(c);
 
-    //restore
-    d_clockTemplate = c;
 }
 
 void RfConfig::clearClockSteps()

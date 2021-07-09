@@ -20,10 +20,10 @@ private:
 
     // QWizardPage interface
 public:
-    RfConfig getRfConfig() { return p_rfc->getRfConfig(); }
     virtual void initializePage();
     virtual bool validatePage();
     virtual int nextId() const;
+    virtual bool isComplete() const;
 };
 
 #endif // WIZARDRFCONFIGPAGE_H

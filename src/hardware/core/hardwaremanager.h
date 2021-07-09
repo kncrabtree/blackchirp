@@ -75,7 +75,7 @@ signals:
     void ftmwScopeShotAcquired(const QByteArray);
 
     void clockFrequencyUpdate(RfConfig::ClockType, double);
-    void allClocksReady();
+    void allClocksReady(QHash<RfConfig::ClockType,RfConfig::ClockFreq>);
 
     void pGenSettingUpdate(int,PulseGenConfig::Setting,QVariant);
     void pGenConfigUpdate(const PulseGenConfig);
@@ -138,7 +138,7 @@ public slots:
 
     void getTimeData();
 
-    void setClocks(const RfConfig rfc);
+    void setClocks(QHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
 
     void setPGenSetting(int index, PulseGenConfig::Setting s, QVariant val);
     void setPGenConfig(const PulseGenConfig c);

@@ -149,7 +149,7 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 //            gpuAvg.setCurrentData(d_currentExperiment.ftmwConfig()->rawFidList());
 #endif
 #pragma message("Fix clock settings signal")
-            emit newClockSettings(d_currentExperiment->ftmwConfig()->d_rfConfig);
+            emit newClockSettings(d_currentExperiment->ftmwConfig()->d_rfConfig.getClocks());
         }
     }
 
@@ -223,9 +223,10 @@ void AcquisitionManager::processTimeData(const QList<QPair<QString, QVariant> > 
     }
 }
 
-void AcquisitionManager::clockSettingsComplete()
+void AcquisitionManager::clockSettingsComplete(const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks)
 {
-    d_currentExperiment->setFtmwClocksReady();
+    d_currentExperiment->ftmwConfig()->d_rfConfig.setCurrentClocks(clocks);
+    d_currentExperiment->ftmwConfig()->hwReady();
 }
 
 void AcquisitionManager::pause()

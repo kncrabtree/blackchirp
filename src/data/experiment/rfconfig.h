@@ -75,13 +75,8 @@ public:
     Sideband d_downMixSideband{UpperSideband};
 
     bool prepareForAcquisition();
-    void setClockDesiredFreq(ClockType t, double targetFreqMHz);
-    void setClockFactor(ClockType t, double factor);
-    void setClockOp(ClockType t, MultOperation o);
-    void setClockOutputNum(ClockType t, int output);
-    void setClockHwKey(ClockType t, QString key);
-    void setClockHwInfo(ClockType t, QString hwKey, int output);
-    void setClockFreqInfo(ClockType t, double targetFreqMHz = 0.0, double factor = 1.0, MultOperation o = Multiply, QString hwKey = QString(""), int output = 0);
+    void setCurrentClocks(const QHash<ClockType,ClockFreq> clocks);
+    void setClockDesiredFreq(ClockType t, double f);
     void setClockFreqInfo(ClockType t, const ClockFreq &cf);
     void addClockStep(QHash<ClockType,ClockFreq> h);
     void addLoScanClockStep(double upLoMHz, double downLoMHz);
@@ -136,5 +131,7 @@ protected:
 
 Q_DECLARE_METATYPE(RfConfig)
 Q_DECLARE_METATYPE(RfConfig::MultOperation)
+Q_DECLARE_METATYPE(RfConfig::ClockType)
+Q_DECLARE_METATYPE(RfConfig::ClockFreq)
 
 #endif // RFCONFIG_H

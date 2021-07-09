@@ -33,14 +33,15 @@ public:
     };
 
     QList<ClockHwInfo> getHwInfo() const { return d_hwInfo; }
-    void setConfig(const RfConfig c);
-    RfConfig getRfConfig() const;
+    void setFromConfig(const RfConfig &c);
+    void toRfConfig(RfConfig &c) const;
+    QString getHwKey(RfConfig::ClockType type) const;
 
 public slots:
     void setCommonLo(bool b);
 
 private:
-    RfConfig d_rfConfig;
+    bool d_commonUpDownLO;
     QList<ClockHwInfo> d_hwInfo;
     QVector<RfConfig::ClockType> d_clockTypes;
     QHash<RfConfig::ClockType,RfConfig::ClockFreq> d_clockConfigs;

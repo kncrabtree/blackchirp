@@ -8,7 +8,8 @@
 #include <QMetaEnum>
 
 ClockTableModel::ClockTableModel(QObject *parent) :
-    QAbstractTableModel(parent), SettingsStorage(BC::Key::ClockTable::ctKey)
+    QAbstractTableModel(parent), SettingsStorage(BC::Key::ClockTable::ctKey),
+    d_commonUpDownLO{false}
 {
     QMetaEnum ct = QMetaEnum::fromType<RfConfig::ClockType>();
     for(int i=0; i<ct.keyCount(); ++i)
@@ -51,6 +52,12 @@ ClockTableModel::ClockTableModel(QObject *parent) :
             auto freq = getArrayValue(ctClocks,i,ctFreq,0.0);
 
             d_clockConfigs[type] = {freq,op,factor,hwKey,output};
+            for(int j=0; j<d_hwInfo.size(); ++j)
+            {
+                auto &hw = d_hwInfo.at(j);
+                if(hw.hwKey == hwKey && hw.output == output)
+                    d_clockAssignments.insert(type,j);
+            }
         }
     }
 }
@@ -62,30 +69,26 @@ ClockTableModel::~ClockTableModel()
     int i=0;
     for(auto it = d_clockConfigs.cbegin(); it != d_clockConfigs.cend(); ++it)
     {
-        if(it.value().hwKey.isEmpty())
-            continue;
-
-        setArrayValue(ctClocks,i,ctClockType,it.key(),false);
-        setArrayValue(ctClocks,i,ctHwKey,it.value().hwKey,false);
-        setArrayValue(ctClocks,i,ctOutput,it.value().output,false);
-        setArrayValue(ctClocks,i,ctOp,it.value().op,false);
-        setArrayValue(ctClocks,i,ctFactor,it.value().factor,false);
-        setArrayValue(ctClocks,i,ctFreq,it.value().desiredFreqMHz,false);
+        appendArrayMap(ctClocks,{
+            {ctClockType,it.key()},
+            {ctHwKey,it.value().hwKey},
+            {ctOutput,it.value().output},
+            {ctOp,it.value().op},
+            {ctFactor,it.value().factor},
+            {ctFreq,it.value().desiredFreqMHz}
+        },false);
 
         ++i;
     }
 }
 
-void ClockTableModel::setConfig(const RfConfig c)
+void ClockTableModel::setFromConfig(const RfConfig &c)
 {
-    d_rfConfig = c;
     d_clockAssignments.clear();
 
-
-
-    if(!d_rfConfig.getClocks().isEmpty())
+    if(!c.getClocks().isEmpty())
     {
-        for(auto it = d_rfConfig.getClocks().constBegin(); it!=d_rfConfig.getClocks().constEnd(); it++)
+        for(auto it = c.getClocks().constBegin(); it!=c.getClocks().constEnd(); it++)
         {
             for(auto &hw : d_hwInfo)
             {
@@ -104,17 +107,23 @@ void ClockTableModel::setConfig(const RfConfig c)
     emit dataChanged(index(0,0),index(d_clockConfigs.size(),5));
 }
 
-RfConfig ClockTableModel::getRfConfig() const
+void ClockTableModel::toRfConfig(RfConfig &c) const
 {
-    return d_rfConfig;
+    for(auto it = d_clockConfigs.cbegin(); it != d_clockConfigs.cend(); ++it)
+        c.setClockFreqInfo(it.key(),it.value());
+}
+
+QString ClockTableModel::getHwKey(RfConfig::ClockType type) const
+{
+    return d_clockConfigs.value(type,{}).hwKey;
 }
 
 void ClockTableModel::setCommonLo(bool b)
 {
-    d_rfConfig.d_commonUpDownLO = b;
+    d_commonUpDownLO = b;
     if(b)
     {
-        d_rfConfig.setClockFreqInfo(RfConfig::DownLO,d_rfConfig.getClocks().value(RfConfig::UpLO));
+        d_clockConfigs[RfConfig::DownLO] = d_clockConfigs[RfConfig::UpLO];
         if(d_clockAssignments.contains(RfConfig::UpLO))
         {
             d_clockAssignments.insert(RfConfig::DownLO,d_clockAssignments.value(RfConfig::UpLO));
@@ -122,7 +131,7 @@ void ClockTableModel::setCommonLo(bool b)
     }
     else
     {
-        d_rfConfig.setClockHwInfo(RfConfig::DownLO,QString(""),0);
+        d_clockConfigs[RfConfig::DownLO] = {};
         d_clockAssignments.remove(RfConfig::DownLO);
     }
 
@@ -168,17 +177,7 @@ QVariant ClockTableModel::data(const QModelIndex &index, int role) const
     }
 
     auto type = d_clockTypes.at(index.row());
-    RfConfig::ClockFreq c;
-    if(d_rfConfig.getClocks().contains(type))
-        c = d_rfConfig.getClocks().value(type);
-    else
-    {
-        c.desiredFreqMHz = 0.0;
-        c.factor = 1.0;
-        c.hwKey = QString("");
-        c.op = RfConfig::Multiply;
-        c.output = 0;
-    }
+    auto c = d_clockConfigs.value(type,{});
 
     if(role == Qt::DisplayRole)
     {
@@ -197,7 +196,7 @@ QVariant ClockTableModel::data(const QModelIndex &index, int role) const
             else
                 return QString::fromUtf16(u"÷");
         case 3:
-            if(d_rfConfig.getClocks().value(type).op == RfConfig::Multiply)
+            if(c.op == RfConfig::Multiply)
                 return QString::fromUtf16(u"×").append(QString::number(c.factor,'f',0));
             else
                 return QString::fromUtf16(u"÷").append(QString::number(c.factor,'f',0));
@@ -271,25 +270,27 @@ bool ClockTableModel::setData(const QModelIndex &index, const QVariant &value, i
             d_clockAssignments.remove(type);
         }
         if(value.toInt() < 0)
-            d_rfConfig.setClockHwInfo(type,QString(""),0);
+            d_clockConfigs[type] = {};
         else
         {
             d_hwInfo[value.toInt()].used = true;
             d_clockAssignments.insert(type,value.toInt());
-            if(type == d_clockTypes.indexOf(RfConfig::UpLO) && d_rfConfig.d_commonUpDownLO)
+            if(type == d_clockTypes.indexOf(RfConfig::UpLO) && d_commonUpDownLO)
                 d_clockAssignments.insert(RfConfig::DownLO,value.toInt());
 
-            d_rfConfig.setClockHwInfo(type,d_hwInfo.at(value.toInt()).hwKey,d_hwInfo.at(value.toInt()).output);
+            auto &hw = d_hwInfo.at(value.toInt());
+            d_clockConfigs[type].hwKey = hw.hwKey;
+            d_clockConfigs[type].output = hw.output;
         }
         break;
     case 2:
-        d_rfConfig.setClockOp(type,static_cast<RfConfig::MultOperation>(value.toInt()));
+        d_clockConfigs[type].op = value.value<RfConfig::MultOperation>();
         break;
     case 3:
-        d_rfConfig.setClockFactor(type,value.toDouble());
+        d_clockConfigs[type].factor = value.toDouble();
         break;
     case 4:
-        d_rfConfig.setClockDesiredFreq(type,value.toDouble());
+        d_clockConfigs[type].desiredFreqMHz = value.toDouble();
         break;
     default:
         return false;
@@ -328,7 +329,7 @@ Qt::ItemFlags ClockTableModel::flags(const QModelIndex &index) const
 {
     if(index.row() < d_clockConfigs.size())
     {
-        if(d_rfConfig.d_commonUpDownLO && index.row() == d_clockTypes.indexOf(RfConfig::DownLO) && index.column() > 0)
+        if(d_commonUpDownLO && index.row() == d_clockTypes.indexOf(RfConfig::DownLO) && index.column() > 0)
             return 0;
 
         if(index.column() > 0)

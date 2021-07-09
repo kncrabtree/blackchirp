@@ -337,13 +337,12 @@ void HardwareManager::getTimeData()
     }
 }
 
-void HardwareManager::setClocks(const RfConfig rfc)
+void HardwareManager::setClocks(QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks)
 {
-    auto l = rfc.getClocks();
-    for(auto it = l.constBegin(); it != l.constEnd(); it++)
-        p_clockManager->setClockFrequency(it.key(),it.value().desiredFreqMHz);
+    for(auto it = clocks.begin(); it != clocks.end(); ++it)
+        it.value().desiredFreqMHz = p_clockManager->setClockFrequency(it.key(),                                                                      it.value().desiredFreqMHz);
 
-    emit allClocksReady();
+    emit allClocksReady(clocks);
 }
 
 void HardwareManager::setPGenSetting(int index, PulseGenConfig::Setting s, QVariant val)

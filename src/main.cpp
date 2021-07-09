@@ -136,6 +136,7 @@ int main(int argc, char *argv[])
     qRegisterMetaType<QVector<QPointF> >("QVector<QPointF>");
     qRegisterMetaType<QVector<double>>("Vector<double>");
     qRegisterMetaType<QList<QPair<QString,QVariant> >>("QList<QPair<QString,QVariant> >");
+    qRegisterMetaType<QHash<RfConfig::ClockType, RfConfig::ClockFreq>>();
     qRegisterMetaType<PulseGenConfig>("PulseGenConfig");
     qRegisterMetaType<QList<QPointF>>("QList<QPointF>");
 #ifdef BC_LIF
