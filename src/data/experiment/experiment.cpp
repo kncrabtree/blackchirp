@@ -438,7 +438,6 @@ void Experiment::setAutoSaveShotsInterval(const int s)
 
 bool Experiment::initialize()
 {
-    bool initSuccess = true;
     d_startTime = QDateTime::currentDateTime();
 #pragma message("Add children to initialized experiment")
 
@@ -509,7 +508,7 @@ bool Experiment::initialize()
 
     //write headers; chirps, etc
     //scan header
-    if(!saveHeader())
+    if(!d_isDummy && !saveHeader())
     {
 #pragma message("Update saving header")
         d_errorString = QString("Could not open the file %1 for writing.")
@@ -518,7 +517,7 @@ bool Experiment::initialize()
     }
 
     //chirp file
-    if(ftmwEnabled())
+    if(ftmwEnabled() && !d_isDummy)
     {
         if(!saveChirpFile())
         {
@@ -726,11 +725,6 @@ bool Experiment::addMotorTrace(const QVector<double> d)
     return d_motorScan.addTrace(d);
 }
 #endif
-
-void Experiment::setHardwareFailed()
-{
-    d_hardwareSuccess = false;
-}
 
 bool Experiment::incrementFtmw()
 {

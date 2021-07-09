@@ -103,7 +103,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     if(!p_comm->writeCmd(QString(":HEADER OFF\n")))
     {
         emit logMessage(QString("Could not disable verbose header mode."),BlackChirp::LogError);
-        exp.setHardwareFailed();
         return false;
     }
 
@@ -111,7 +110,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     if(!p_comm->writeCmd(QString(":DATA:SOURCE CH%1;START 1;STOP 1E12\n").arg(d_fidChannel)))
     {
         emit logMessage(QString("Could not write :DATA commands."),BlackChirp::LogError);
-        exp.setHardwareFailed();
         return false;
     }
 
@@ -123,8 +121,8 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     QByteArray resp = scopeQueryCmd(QString(":DATA:SOURCE?\n"));
     if(resp.isEmpty() || !resp.contains(QString("CH%1").arg(config.fidChannel).toLatin1()))
     {
-        emit logMessage(QString("Failed to set FID channel. Response to data source query: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
-        exp.setHardwareFailed();
+        emit logMessage(QString("Failed to set FID channel. Response to data source query: %1 (Hex: %2)").
+                        arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
         return false;
     }
 
@@ -132,7 +130,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     if(!p_comm->writeCmd(QString("CH%1:BANDWIDTH FULL; COUPLING AC;OFFSET 0;SCALE %2\n").arg(config.fidChannel).arg(QString::number(config.vScale,'g',4))))
     {
         emit logMessage(QString("Failed to write channel settings."),BlackChirp::LogError);
-        exp.setHardwareFailed();
         return false;
     }
 
@@ -144,8 +141,9 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
         double offset = resp.trimmed().toDouble(&ok);
         if(!ok)
         {
-            emit logMessage(QString("Could not parse offset response. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
+            emit logMessage(QString("Could not parse offset response. Response: %1 (Hex: %2)")
+                            .arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
+
             return false;
         }
         config.vOffset = offset;
@@ -153,7 +151,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     else
     {
         emit logMessage(QString("Gave an empty response to offset query."),BlackChirp::LogError);
-        exp.setHardwareFailed();
         return false;
     }
     resp = scopeQueryCmd(QString(":CH%1:SCALE?\n").arg(config.fidChannel));
@@ -163,19 +160,19 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
         double scale = resp.trimmed().toDouble(&ok);
         if(!ok)
         {
-            emit logMessage(QString("Could not parse scale response. Response: %2 (Hex: %3)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
+            emit logMessage(QString("Could not parse scale response. Response: %2 (Hex: %3)")
+                            .arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
             return false;
         }
         if(!(fabs(config.vScale-scale) < 0.01))
-            emit logMessage(QString("Vertical scale is different than specified. Target: %1 V/div, Scope setting: %2 V/div").arg(QString::number(config.vScale,'f',3))
+            emit logMessage(QString("Vertical scale is different than specified. Target: %1 V/div, Scope setting: %2 V/div")
+                            .arg(QString::number(config.vScale,'f',3))
                             .arg(QString::number(scale,'f',3)),BlackChirp::LogWarning);
         config.vScale = scale;
     }
     else
     {
         emit logMessage(QString("Gave an empty response to scale query."),BlackChirp::LogError);
-        exp.setHardwareFailed();
         return false;
     }
 
@@ -184,7 +181,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
                          .arg(QString::number(config.trigDelay,'g',6)).arg(QString::number(config.sampleRate,'g',6)).arg(config.recordLength)))
     {
         emit logMessage(QString("Could not apply horizontal settings."),BlackChirp::LogError);
-        exp.setHardwareFailed();
         return false;
     }
 
@@ -196,15 +192,15 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
         double sRate = resp.trimmed().toDouble(&ok);
         if(!ok)
         {
-            emit logMessage(QString("Sample rate query returned an invalid response. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
+            emit logMessage(QString("Sample rate query returned an invalid response. Response: %1 (Hex: %2)")
+                            .arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
             return false;
         }
         if(!(fabs(sRate - config.sampleRate)<1e6))
         {
-            emit logMessage(QString("Could not set sample rate successfully. Target: %1 GS/s, Scope setting: %2 GS/s").arg(QString::number(config.sampleRate/1e9,'f',3))
+            emit logMessage(QString("Could not set sample rate successfully. Target: %1 GS/s, Scope setting: %2 GS/s")
+                            .arg(QString::number(config.sampleRate/1e9,'f',3))
                             .arg(QString::number(sRate/1e9,'f',3)),BlackChirp::LogError);
-            exp.setHardwareFailed();
             return false;
         }
         config.sampleRate = sRate;
@@ -212,7 +208,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     else
     {
         emit logMessage(QString("Gave an empty response to sample rate query."),BlackChirp::LogError);
-        exp.setHardwareFailed();
         return false;
     }
     resp = scopeQueryCmd(QString(":HORIZONTAL:MODE:RECORDLENGTH?\n"));
@@ -222,15 +217,15 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
         int recLength = resp.trimmed().toInt(&ok);
         if(!ok)
         {
-            emit logMessage(QString("Record length query returned an invalid response. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
+            emit logMessage(QString("Record length query returned an invalid response. Response: %1 (Hex: %2)")
+                            .arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
             return false;
         }
         if(!(abs(recLength-config.recordLength) < 1000))
         {
-            emit logMessage(QString("Could not set record length successfully! Target: %1, Scope setting: %2").arg(QString::number(config.recordLength))
-                            .arg(QString::number(recLength)),BlackChirp::LogError);
-            exp.setHardwareFailed();
+            emit logMessage(QString("Could not set record length successfully! Target: %1, Scope setting: %2")
+                            .arg(QString::number(config.recordLength))
+                            .arg(QString::number(recLength)),BlackChirp::LogError); 
             return false;
         }
         config.recordLength = recLength;
@@ -238,7 +233,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     else
     {
         emit logMessage(QString("Gave an empty response to record length query."),BlackChirp::LogError);
-        exp.setHardwareFailed();
         return false;
     }
     resp = scopeQueryCmd(QString(":HORIZONTAL:DELAY:TIME?\n"));
@@ -248,15 +242,15 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
         double delay = resp.trimmed().toDouble(&ok);
         if(!ok)
         {
-            emit logMessage(QString("Trigger delay query returned an invalid response. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
+            emit logMessage(QString("Trigger delay query returned an invalid response. Response: %1 (Hex: %2)")
+                            .arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
             return false;
         }
         if(!qFuzzyCompare(1.0+delay,1.0+config.trigDelay))
         {
-            emit logMessage(QString("Could not set trigger delay successfully! Target: %1, Scope setting: %2").arg(QString::number(config.trigDelay))
-                            .arg(QString::number(delay)),BlackChirp::LogError);
-            exp.setHardwareFailed();
+            emit logMessage(QString("Could not set trigger delay successfully! Target: %1, Scope setting: %2")
+                            .arg(QString::number(config.trigDelay))
+                            .arg(QString::number(delay)),BlackChirp::LogError);    
             return false;
         }
         config.trigDelay = delay;
@@ -264,7 +258,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     else
     {
         emit logMessage(QString("Gave an empty response to trigger delay query."),BlackChirp::LogError);
-        exp.setHardwareFailed();
         return false;
     }
 
@@ -278,15 +271,13 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
             bool ffState = (bool)resp.trimmed().toInt(&ok);
             if(!ok || ffState)
             {
-                emit logMessage(QString("Could not disable FastFrame mode."),BlackChirp::LogError);
-                exp.setHardwareFailed();
+                emit logMessage(QString("Could not disable FastFrame mode."),BlackChirp::LogError);    
                 return false;
             }
         }
         else
         {
             emit logMessage(QString("Gave an empty response to FastFrame state query."),BlackChirp::LogError);
-            exp.setHardwareFailed();
             return false;
         }
     }
@@ -301,14 +292,12 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
             if(!ok || !ffState)
             {
                 emit logMessage(QString("Could not enable FastFrame mode."),BlackChirp::LogError);
-                exp.setHardwareFailed();
                 return false;
             }
         }
         else
         {
             emit logMessage(QString("Gave an empty response to FastFrame state query."),BlackChirp::LogError);
-            exp.setHardwareFailed();
             return false;
         }
 
@@ -321,7 +310,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
             if(!ok || maxFrames < 1)
             {
                 emit logMessage(QString("Could not determine maximum number of frames in FastFrame mode."),BlackChirp::LogError);
-                exp.setHardwareFailed();
                 return false;
             }
 
@@ -344,8 +332,8 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
                 int n = resp.trimmed().toInt(&ok);
                 if(!ok)
                 {
-                    emit logMessage(QString("FastFrame count query returned an invalid response. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
-                    exp.setHardwareFailed();
+                    emit logMessage(QString("FastFrame count query returned an invalid response. Response: %1 (Hex: %2)")
+                                    .arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
                     return false;
                 }
                 if(n != numFrames)
@@ -360,7 +348,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
             else
             {
                 emit logMessage(QString("Gave an empty response to FastFrame count query."),BlackChirp::LogError);
-                exp.setHardwareFailed();
                 return false;
             }
 
@@ -372,15 +359,14 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
             {
                 if(!QString(resp).contains(sumfConfig,Qt::CaseInsensitive))
                 {
-                    emit logMessage(QString("Could not configure FastFrame summary frame to %1. Response: %2 (Hex: %3)").arg(sumfConfig).arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
-                    exp.setHardwareFailed();
+                    emit logMessage(QString("Could not configure FastFrame summary frame to %1. Response: %2 (Hex: %3)")
+                                    .arg(sumfConfig).arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
                     return false;
                 }
             }
             else
             {
                 emit logMessage(QString("Gave an empty response to FastFrame summary frame query."),BlackChirp::LogError);
-                exp.setHardwareFailed();
                 return false;
             }
             if(config.summaryFrame)
@@ -389,7 +375,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
                 if(!p_comm->writeCmd(QString(":DATA:FRAMESTART 100000;FRAMESTOP 100000\n")))
                 {
                     emit logMessage(QString("Could not configure summary frame."),BlackChirp::LogError);
-                    exp.setHardwareFailed();
                     return false;
                 }
             }
@@ -399,7 +384,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
                 if(!p_comm->writeCmd(QString(":DATA:FRAMESTART 1;FRAMESTOP 100000\n")))
                 {
                     emit logMessage(QString("Could not configure frames."),BlackChirp::LogError);
-                    exp.setHardwareFailed();
                     return false;
                 }
             }
@@ -407,7 +391,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
         else
         {
             emit logMessage(QString("Gave an empty response to FastFrame max frames query."),BlackChirp::LogError);
-            exp.setHardwareFailed();
             return false;
         }
     }
@@ -424,22 +407,21 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     {
         if(!QString(resp).contains(trigCh,Qt::CaseInsensitive))
         {
-            emit logMessage(QString("Could not verify trigger channel. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
+            emit logMessage(QString("Could not verify trigger channel. Response: %1 (Hex: %2)")
+                            .arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
             return false;
         }
 
         if(!QString(resp).contains(slope,Qt::CaseInsensitive))
         {
-            emit logMessage(QString("Could not verify trigger slope. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
+            emit logMessage(QString("Could not verify trigger slope. Response: %1 (Hex: %2)")
+                            .arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
             return false;
         }
     }
     else
     {
         emit logMessage(QString("Gave an empty response to trigger query."),BlackChirp::LogError);
-        exp.setHardwareFailed();
         return false;
     }
 
@@ -447,7 +429,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     if(!p_comm->writeCmd(QString(":WFMOUTPRE:ENCDG BIN;BN_FMT RI;BYT_OR LSB;BYT_NR %1\n").arg(config.bytesPerPoint)))
     {
         emit logMessage(QString("Could not send waveform output commands."),BlackChirp::LogError);
-        exp.setHardwareFailed();
         return false;
     }
 
@@ -455,7 +436,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     if(!p_comm->writeCmd(QString(":ACQUIRE:MODE SAMPLE;STOPAFTER RUNSTOP;STATE RUN\n")))
     {
         emit logMessage(QString("Could not send acquisition commands."),BlackChirp::LogError);
-        exp.setHardwareFailed();
         return false;
     }
 
@@ -475,8 +455,8 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
         QStringList l = QString(resp.trimmed()).split(QChar(';'),QString::SkipEmptyParts);
         if(l.size() < 9)
         {
-            emit logMessage(QString("Could not parse response to waveform output settings query. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
+            emit logMessage(QString("Could not parse response to waveform output settings query. Response: %1 (Hex: %2)")
+                            .arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
             return false;
         }
 
@@ -484,15 +464,14 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
         if(!l.at(0).contains(QString("BIN"),Qt::CaseInsensitive))
         {
             emit logMessage(QString("Waveform encoding could not be set to binary. Response: %1 (Hex: %2)")
-                            .arg(l.at(0)).arg(QString(l.at(0).toLatin1().toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
+                            .arg(l.at(0)).arg(QString(l.at(0).toLatin1().toHex())),BlackChirp::LogError);  
             return false;
         }
         //check binary format
         if(!l.at(1).contains(QString("RI"),Qt::CaseInsensitive))
         {
-            emit logMessage(QString("Waveform format could not be set to signed integer. Response: %1 (Hex: %2)").arg(l.at(1)).arg(QString(l.at(1).toLatin1().toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
+            emit logMessage(QString("Waveform format could not be set to signed integer. Response: %1 (Hex: %2)")
+                            .arg(l.at(1)).arg(QString(l.at(1).toLatin1().toHex())),BlackChirp::LogError);
             return false;
         }
         //check byte order
@@ -500,7 +479,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
         {
             emit logMessage(QString("Waveform format could not be set to least significant byte first. Response: %1 (Hex: %2)")
                             .arg(l.at(2)).arg(QString(l.at(2).toLatin1().toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
             return false;
         }
         config.byteOrder = DigitizerConfig::LittleEndian;
@@ -510,14 +488,12 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
         {
             emit logMessage(QString("Waveform contains the wrong number of frames. Target: %1, Actual: %2. Response: %3 (Hex: %4)")
                             .arg(config.numFrames).arg(l.at(3).toInt()).arg(l.at(3)).arg(QString(l.at(3).toLatin1().toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
             return false;
         }
         else if (config.summaryFrame && l.at(3).toInt() != 1)
         {
             emit logMessage(QString("Waveform contains the wrong number of frames. Target: 1 summary frame, Actual: %1. Response: %2 (Hex: %3)")
                             .arg(l.at(3).toInt()).arg(l.at(3)).arg(QString(l.at(3).toLatin1().toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
             return false;
         }
         //verify record length
@@ -527,7 +503,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
         {
             emit logMessage(QString("Could not parse waveform record length response. Response: %1 (Hex: %2)")
                             .arg(l.at(4)).arg(QString(l.at(4).toLatin1().toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
             return false;
         }
         if(recLen != config.recordLength)
@@ -542,7 +517,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
         {
             emit logMessage(QString("Could not parse waveform Y multiplier response. Response: %1 (Hex: %2)")
                             .arg(l.at(5)).arg(QString(l.at(5).toLatin1().toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
             return false;
         }
         config.yMult = ym;
@@ -552,7 +526,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
         {
             emit logMessage(QString("Could not parse waveform Y offset response. Response: %1 (Hex: %2)")
                             .arg(l.at(6)).arg(QString(l.at(6).toLatin1().toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
             return false;
         }
         config.yOff = (int)round(yo);
@@ -562,7 +535,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
         {
             emit logMessage(QString("Could not parse waveform X increment response. Response: %1 (Hex: %2)")
                             .arg(l.at(7)).arg(QString(l.at(7).toLatin1().toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
             return false;
         }
         config.xIncr = xi;
@@ -572,7 +544,6 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
         {
             emit logMessage(QString("Invalid response to bytes per point query. Response: %1 (Hex: %2)")
                             .arg(l.at(8)).arg(QString(l.at(8).toLatin1().toHex())),BlackChirp::LogError);
-            exp.setHardwareFailed();
             return false;
         }
         config.bytesPerPoint = bpp;

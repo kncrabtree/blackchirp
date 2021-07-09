@@ -9,6 +9,7 @@ HEADERS += \
 equals(FTMWSCOPE,0) {
     HEADERS += $$PWD/virtualftmwscope.h
 	SOURCES += $$PWD/virtualftmwscope.cpp
+	RESOURCES += $$PWD/../../../resources/virtualdata.qrc
 }
 
 equals(FTMWSCOPE,1) {

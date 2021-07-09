@@ -132,7 +132,6 @@ bool Clock::prepareForExperiment(Experiment &exp)
                                        .arg(QMetaEnum::fromType<RfConfig::ClockType>()
                                             .valueToKey(it.key()))
                                        .arg(it.value().desiredFreqMHz,0,'f',6));
-                    exp.setHardwareFailed();
                     return false;
                 }
                 exp.ftmwConfig()->d_rfConfig.setClockDesiredFreq(it.key(),val);

@@ -477,8 +477,9 @@ void ChirpTableModel::initialize(std::shared_ptr<RfConfig> p)
     ps_rfConfig = p;
 }
 
-void ChirpTableModel::setFromRfConfig()
+void ChirpTableModel::setFromRfConfig(std::shared_ptr<RfConfig> p)
 {
+    ps_rfConfig = p;
     removeRows(0,d_chirpList.at(d_currentChirp).size(),QModelIndex());
     d_chirpList.clear();
     d_currentChirp = 0;
@@ -491,11 +492,6 @@ void ChirpTableModel::setFromRfConfig()
         endInsertRows();
         emit modelChanged();
     }
-}
-
-void ChirpTableModel::updateRfConfig()
-{
-    ps_rfConfig->setChirpList(chirpList());
 }
 
 void ChirpTableModel::setCurrentChirp(int i)

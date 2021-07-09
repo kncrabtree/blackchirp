@@ -44,8 +44,8 @@ bool Valon5015::prepareClock(Experiment &exp)
         auto resp = valonQueryCmd(QString("LOCK?\r"));
         if(resp.contains("not locked"))
         {
-            exp.setHardwareFailed();
             exp.setErrorString(QString("Could not lock %1 to external reference.").arg(d_name));
+            return false;
         }
     }
     else
@@ -55,12 +55,12 @@ bool Valon5015::prepareClock(Experiment &exp)
         auto resp = valonQueryCmd(QString("LOCK?\r"));
         if(resp.contains("not locked"))
         {
-            exp.setHardwareFailed();
             exp.setErrorString(QString("Could not lock %1 to internal reference.").arg(d_name));
+            return false;
         }
     }
 
-    return exp.hardwareSuccess();
+    return true;
 }
 
 bool Valon5015::setHwFrequency(double freqMHz, int outputIndex)

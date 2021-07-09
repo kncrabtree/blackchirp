@@ -115,7 +115,6 @@ bool M8195A::prepareForExperiment(Experiment &exp)
     if(data.size() != markerData.size())
     {
         exp.setErrorString(QString("Waveform and marker data are not same length. This is a bug; please report it."));
-        exp.setHardwareFailed();
         return false;
     }
 
@@ -125,7 +124,6 @@ bool M8195A::prepareForExperiment(Experiment &exp)
     if(id.isEmpty())
     {
         exp.setErrorString(QString("Could not create new AWG trace."));
-        exp.setHardwareFailed();
         return false;
     }
 
@@ -206,9 +204,6 @@ bool M8195A::prepareForExperiment(Experiment &exp)
 
         currentChunk++;
     }
-
-    if(!success)
-        exp.setHardwareFailed();
 
     return success;
 

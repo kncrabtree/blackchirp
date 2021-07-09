@@ -262,7 +262,6 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
     QByteArray errText(1000,'\0');
     if(spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
     {
-        exp.setHardwareFailed();
         exp.setErrorString(QString("Could not initialize %1. Error message: %2").arg(d_name).arg(QString::fromLatin1(errText)));
         spcm_dwInvalidateBuf(p_handle,SPCM_BUF_DATA);
         delete[] p_m4iBuffer;

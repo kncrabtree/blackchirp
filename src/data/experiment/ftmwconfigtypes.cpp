@@ -10,6 +10,10 @@
  *
  * ****************************************/
 
+FtmwConfigSingle::FtmwConfigSingle() : FtmwConfig()
+{
+}
+
 FtmwConfigSingle::FtmwConfigSingle(const FtmwConfig &other) : FtmwConfig(other)
 {
     auto o = dynamic_cast<const FtmwConfigSingle*>(&other);
@@ -55,6 +59,11 @@ std::shared_ptr<FidStorageBase> FtmwConfigSingle::createStorage()
  * ****************************************/
 
 
+FtmwConfigPeakUp::FtmwConfigPeakUp() : FtmwConfig()
+{
+
+}
+
 FtmwConfigPeakUp::FtmwConfigPeakUp(const FtmwConfig &other) : FtmwConfig(other)
 {
     auto o = dynamic_cast<const FtmwConfigPeakUp*>(&other);
@@ -80,6 +89,8 @@ quint8 FtmwConfigPeakUp::bitShift() const
 bool FtmwConfigPeakUp::_init()
 {
     d_targetShots = d_objective;
+
+    static_cast<FidPeakUpStorage*>(storage().get())->setTargetShots(d_targetShots);
     return true;
 }
 
@@ -93,7 +104,7 @@ void FtmwConfigPeakUp::_loadComplete()
 
 std::shared_ptr<FidStorageBase> FtmwConfigPeakUp::createStorage()
 {
-    return std::make_shared<FidPeakUpStorage>(d_scopeConfig.d_numRecords,d_targetShots);
+    return std::make_shared<FidPeakUpStorage>(d_scopeConfig.d_numRecords);
 }
 
 
@@ -103,6 +114,11 @@ std::shared_ptr<FidStorageBase> FtmwConfigPeakUp::createStorage()
  *
  * ****************************************/
 
+
+FtmwConfigDuration::FtmwConfigDuration() : FtmwConfig()
+{
+
+}
 
 FtmwConfigDuration::FtmwConfigDuration(const FtmwConfig &other) : FtmwConfig(other)
 {
@@ -149,6 +165,11 @@ std::shared_ptr<FidStorageBase> FtmwConfigDuration::createStorage()
     return std::make_shared<FidSingleStorage>("",d_scopeConfig.d_numRecords);
 }
 
+
+FtmwConfigForever::FtmwConfigForever() : FtmwConfig()
+{
+
+}
 
 FtmwConfigForever::FtmwConfigForever(const FtmwConfig &other) : FtmwConfig(other)
 {

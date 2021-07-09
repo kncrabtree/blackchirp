@@ -16,6 +16,8 @@ public:
     const QString d_path;
     const int d_numRecords;
 
+    void setFidTemplate(const Fid f);
+
     virtual quint64 completedShots() =0;
     virtual quint64 currentSegmentShots() =0;
     virtual bool addFids(const FidList other, int shift =0) =0;
@@ -34,6 +36,7 @@ protected:
     FidList newFidList() const;
 
 private:
+    Fid d_fidTemplate;
     bool saveFidList(const FidList l, int i);
 
 };

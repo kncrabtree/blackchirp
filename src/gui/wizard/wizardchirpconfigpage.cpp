@@ -14,7 +14,6 @@ WizardChirpConfigPage::WizardChirpConfigPage(QWidget *parent) :
 
     p_ccw = new ChirpConfigWidget(this);
     connect(p_ccw,&ChirpConfigWidget::chirpConfigChanged,this,&WizardChirpConfigPage::completeChanged);
-    registerField(QString("numChirps"),p_ccw->numChirpsBox());
 
     QVBoxLayout *vbl = new QVBoxLayout(this);
     vbl->addWidget(p_ccw);
@@ -32,9 +31,10 @@ void WizardChirpConfigPage::initializePage()
 {
     //get rfConfig
     auto e = getExperiment();
-    p_ccw->initialize(std::make_shared<RfConfig>(e->ftmwConfig()->d_rfConfig));
     if(e->d_number > 0)
-        p_ccw->setFromRfConfig();
+        p_ccw->setFromRfConfig(std::make_shared<RfConfig>(e->ftmwConfig()->d_rfConfig));
+    else
+        p_ccw->initialize(std::make_shared<RfConfig>(e->ftmwConfig()->d_rfConfig));
 
     p_ccw->updateChirpPlot();
 

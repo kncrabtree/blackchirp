@@ -22,11 +22,7 @@ void PulseGenerator::initialize()
 
 bool PulseGenerator::prepareForExperiment(Experiment &exp)
 {
-    bool success = setAll(exp.pGenConfig());
-    if(!success)
-        exp.setHardwareFailed();
-
-    return exp.hardwareSuccess();
+    return setAll(exp.pGenConfig());
 }
 
 

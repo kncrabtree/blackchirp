@@ -46,8 +46,7 @@ public:
 
     QVector<QVector<ChirpConfig::ChirpSegment>> chirpList() const;
     void initialize(std::shared_ptr<RfConfig> p);
-    void setFromRfConfig();
-    void updateRfConfig();
+    void setFromRfConfig(std::shared_ptr<RfConfig> p);
 
 public slots:
     void setCurrentChirp(int i);

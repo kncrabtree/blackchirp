@@ -15,10 +15,10 @@ bool MotorOscilloscope::prepareForExperiment(Experiment &exp)
         MotorScan ms = prepareForMotorScan(exp.motorScan());
         if(ms.hardwareError())
         {
-            exp.setHardwareFailed();
             exp.setErrorString(QString("Failed to prepare %1 for scan").arg(d_name));
+            return false;
         }
         exp.setMotorScan(ms);
     }
-    return exp.hardwareSuccess();
+    return true;
 }

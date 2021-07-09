@@ -8,7 +8,7 @@
 class FidPeakUpStorage : public FidStorageBase
 {
 public:
-    FidPeakUpStorage(int numRecords, quint64 targetShots);
+    FidPeakUpStorage(int numRecords);
     ~FidPeakUpStorage();
 
     // FidStorageBase interface
@@ -29,7 +29,7 @@ protected:
     void _advance() override;
 
 private:
-    quint64 d_targetShots;
+    quint64 d_targetShots{1};
     FidList d_currentFidList;
 
     QMutex *p_mutex;

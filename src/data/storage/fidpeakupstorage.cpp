@@ -1,7 +1,7 @@
 #include "fidpeakupstorage.h"
 
-FidPeakUpStorage::FidPeakUpStorage(int numRecords, quint64 targetShots) :
-    FidStorageBase(QString(""),numRecords), d_targetShots(targetShots), p_mutex(new QMutex)
+FidPeakUpStorage::FidPeakUpStorage(int numRecords) :
+    FidStorageBase(QString(""),numRecords), p_mutex(new QMutex)
 {
     d_currentFidList = newFidList();
 }

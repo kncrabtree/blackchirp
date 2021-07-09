@@ -188,7 +188,7 @@ MainWindow::MainWindow(QWidget *parent) :
     d_threadObjectList.append(qMakePair(amThread,p_am));
 
 
-    connect(p_hwm,&HardwareManager::experimentInitialized,p_am,&AcquisitionManager::beginExperiment);
+    connect(p_hwm,&HardwareManager::experimentInitialized,this,&MainWindow::experimentInitialized);
     connect(p_hwm,&HardwareManager::ftmwScopeShotAcquired,p_am,&AcquisitionManager::processFtmwScopeShot);
     connect(p_am,&AcquisitionManager::newClockSettings,p_hwm,&HardwareManager::setClocks);
     connect(p_hwm,&HardwareManager::allClocksReady,p_am,&AcquisitionManager::clockSettingsComplete);
@@ -473,6 +473,7 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
     {
         emit logMessage(exp->errorString(),BlackChirp::LogError);
         p_batchThread->quit();
+        configureUi(Idle);
         return;
     }
 
@@ -482,6 +483,7 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
         if(!exp->errorString().isEmpty())
             emit logMessage(exp->errorString(),BlackChirp::LogError);
         p_batchThread->quit();
+        configureUi(Idle);
         return;
     }
 
@@ -542,6 +544,8 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
         else
             emit logMessage(exp->d_startLogMessage,BlackChirp::LogHighlight);
     }
+
+    QMetaObject::invokeMethod(p_am,[this,exp](){p_am->beginExperiment(exp);});
 
 
 }

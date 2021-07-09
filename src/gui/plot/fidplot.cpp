@@ -91,7 +91,7 @@ void FidPlot::receiveProcessedFid(const QVector<QPointF> d)
     replot();
 }
 
-void FidPlot::prepareForExperiment(const Experiment e)
+void FidPlot::prepareForExperiment(const Experiment &e)
 {     
     if(!e.ftmwEnabled())
     {

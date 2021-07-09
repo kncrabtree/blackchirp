@@ -351,8 +351,13 @@ void AcquisitionManager::finishAcquisition()
     disconnect(d_timeDataTimer,&QTimer::timeout,this,&AcquisitionManager::getTimeData);
     d_timeDataTimer->stop();
 
-    emit doFinalSave(d_currentExperiment);
-    emit statusMessage(QString("Saving experiment %1").arg(d_currentExperiment->d_number));
+    if(!d_currentExperiment->isDummy())
+    {
+        emit doFinalSave(d_currentExperiment);
+        emit statusMessage(QString("Saving experiment %1").arg(d_currentExperiment->d_number));
+    }
+    else
+        emit experimentComplete();
     d_currentExperiment.reset();
 }
 

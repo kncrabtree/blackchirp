@@ -672,6 +672,7 @@ void FtmwViewWidget::snapshotsFinalizedUpdateUi(int num)
 
 void FtmwViewWidget::experimentComplete()
 {
+    killTimer(d_liveTimerId);
 #pragma message("FtmwWidget experimentComplete needs update")
 //    ui->plot1ConfigWidget->experimentComplete(e);
 //    ui->plot2ConfigWidget->experimentComplete(e);
@@ -791,7 +792,7 @@ void FtmwViewWidget::updateFid(int id)
 
 void FtmwViewWidget::timerEvent(QTimerEvent *event)
 {
-    if(event->timerId() == d_liveId)
+    if(event->timerId() == d_liveTimerId)
     {
         updateLiveFidList();
         event->accept();

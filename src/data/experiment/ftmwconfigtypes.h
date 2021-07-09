@@ -7,7 +7,7 @@
 class FtmwConfigSingle : public FtmwConfig
 {
 public:
-    FtmwConfigSingle() {}
+    FtmwConfigSingle();
     FtmwConfigSingle(const FtmwConfig &other);
     ~FtmwConfigSingle() {}
 
@@ -30,7 +30,7 @@ private:
 class FtmwConfigPeakUp : public FtmwConfig
 {
 public:
-    FtmwConfigPeakUp() {}
+    FtmwConfigPeakUp();
     FtmwConfigPeakUp(const FtmwConfig &other);
     ~FtmwConfigPeakUp() {}
 
@@ -54,7 +54,7 @@ private:
 class FtmwConfigDuration : public FtmwConfig
 {
 public:
-    FtmwConfigDuration() {}
+    FtmwConfigDuration();
     FtmwConfigDuration(const FtmwConfig &other);
     ~FtmwConfigDuration() {}
 
@@ -77,7 +77,7 @@ private:
 class FtmwConfigForever : public FtmwConfig
 {
 public:
-    FtmwConfigForever() {}
+    FtmwConfigForever();
     FtmwConfigForever(const FtmwConfig &other);
     ~FtmwConfigForever() {}
 

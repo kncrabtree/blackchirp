@@ -15,12 +15,19 @@ namespace Ui {
 class ChirpConfigWidget;
 }
 
-namespace BC::Key {
-static const QString ChirpConfigWidget("ChirpConfigWidget");
+namespace BC::Key::ChirpConfigWidget {
+static const QString key("ChirpConfigWidget");
 static const QString minPreProt("minPreChirpProtectionUs");
 static const QString minPreGate("minPreChirpGateDelayUs");
 static const QString minPostProt("minPostChirpGateDelayUs");
 static const QString minPostGate("minPostChirpProtectionDelayUs");
+static const QString preProt("preChirpProtectionUs");
+static const QString postProt("postChirpProtectionUs");
+static const QString preGate("preChirpGateUs");
+static const QString postGate("postChirpGateUs");
+static const QString numChirps("numChirps");
+static const QString interval("chirpIntervalUs");
+static const QString applyAll("applyToAll");
 }
 
 /*!
@@ -38,8 +45,7 @@ public:
     ~ChirpConfigWidget();
 
     void initialize(std::shared_ptr<RfConfig> p);
-    void setFromRfConfig();
-    QSpinBox *numChirpsBox() const;
+    void setFromRfConfig(std::shared_ptr<RfConfig> p);
     const RfConfig &getRfConfig();
 
 public slots:
@@ -66,6 +72,7 @@ private:
     Ui::ChirpConfigWidget *ui;
     ChirpTableModel *p_ctm;
     bool d_rampOnly;
+    double d_awgSampleRate;
     std::shared_ptr<RfConfig> ps_rfConfig;
 
     bool isSelectionContiguous(QModelIndexList l);

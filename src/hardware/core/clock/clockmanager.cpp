@@ -123,7 +123,6 @@ bool ClockManager::prepareForExperiment(Experiment &exp)
                                .arg(QMetaEnum::fromType<RfConfig::ClockType>()
                                     .valueToKey(type))
                                     .arg(d.hwKey).arg(d.output));
-            exp.setHardwareFailed();
             return false;
         }
 
@@ -131,7 +130,6 @@ bool ClockManager::prepareForExperiment(Experiment &exp)
         {
             exp.setErrorString(QString("The output number requested for %1 (%2) is out of range (only %2 outputs are available).")
                                .arg(c->d_name).arg(d.output).arg(c->numOutputs()));
-            exp.setHardwareFailed();
             return false;
         }
 
@@ -150,7 +148,6 @@ bool ClockManager::prepareForExperiment(Experiment &exp)
                                .arg(c->d_name)
                                .arg(d.desiredFreqMHz,0,'f',6)
                                .arg(exp.ftmwConfig()->d_rfConfig.rawClockFrequency(type),0,'f',6));
-            exp.setHardwareFailed();
             return false;
         }
         if(qAbs(actualFreq-d.desiredFreqMHz) > 0.1)

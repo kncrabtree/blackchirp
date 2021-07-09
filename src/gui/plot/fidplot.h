@@ -36,7 +36,7 @@ signals:
 
 public slots:
     void receiveProcessedFid(const QVector<QPointF> d);
-    void prepareForExperiment(const Experiment e);
+    void prepareForExperiment(const Experiment &e);
     void setFtStart(double start);
     void setFtEnd(double end);
 

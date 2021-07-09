@@ -44,6 +44,8 @@ public:
     Experiment(const int num, QString exptPath = QString(""), bool headerOnly = false);
     ~Experiment();
 
+    bool d_hardwareSuccess{false};
+
 //    FtmwConfig d_ftmwCfg;
 
     bool isAborted() const;
@@ -101,7 +103,6 @@ public:
     bool addMotorTrace(const QVector<double> d);
 #endif
 
-    void setHardwareFailed();
     /**
      * @brief incrementFtmw
      * @return Boolean that indicates a new segment needs to start
@@ -133,7 +134,6 @@ private:
     quint64 d_lastSnapshot{0};
     bool d_isAborted{false};
     bool d_isDummy{false};
-    bool d_hardwareSuccess{false};
 
     std::unique_ptr<FtmwConfig> pu_ftmwConfig;
     PulseGenConfig d_pGenCfg;

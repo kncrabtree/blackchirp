@@ -274,7 +274,7 @@ bool FtmwConfig::initialize()
     }
 
     p_fidStorage = createStorage();
-
+    p_fidStorage->setFidTemplate(d_fidTemplate);
     return _init();
 
 
@@ -417,6 +417,7 @@ void FtmwConfig::setScopeConfig(const FtmwDigitizerConfig &other)
 void FtmwConfig::hwReady()
 {
     d_fidTemplate.setProbeFreq(d_rfConfig.clockFrequency(RfConfig::DownLO));
+    p_fidStorage->setFidTemplate(d_fidTemplate);
     d_processingPaused = false;
 }
 

@@ -133,10 +133,10 @@ void Fid::copyAdd(const qint64 *other, const unsigned int offset)
     data->shots++;
 }
 
-void Fid::rollingAverage(const Fid other, qint64 targetShots, int shift)
+void Fid::rollingAverage(const Fid other, quint64 targetShots, int shift)
 {
     Q_ASSERT(size() == other.size());
-    qint64 totalShots = shots() + other.shots();
+    quint64 totalShots = shots() + other.shots();
     if(totalShots <= targetShots)
         add(other,shift);
     else

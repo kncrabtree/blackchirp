@@ -9,6 +9,11 @@ FidStorageBase::~FidStorageBase()
 {
 }
 
+void FidStorageBase::setFidTemplate(const Fid f)
+{
+    d_fidTemplate = f;
+}
+
 void FidStorageBase::advance()
 {
     save();
@@ -46,7 +51,9 @@ bool FidStorageBase::saveFidList(const FidList l, int i)
 FidList FidStorageBase::newFidList() const
 {
     FidList out;
-    out.resize(d_numRecords);
+    out.reserve(d_numRecords);
+    for(int i=0; i<d_numRecords; ++i)
+        out << d_fidTemplate;
     return out;
 }
 
