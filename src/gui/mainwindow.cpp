@@ -180,7 +180,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionResume,&QAction::triggered,p_am,&AcquisitionManager::resume);
     connect(ui->actionAbort,&QAction::triggered,p_am,&AcquisitionManager::abort);
     connect(p_am,&AcquisitionManager::snapshotComplete,ui->ftViewWidget,&FtmwViewWidget::snapshotTaken);
-    connect(p_am,&AcquisitionManager::doFinalSave,ui->ftViewWidget,&FtmwViewWidget::experimentComplete);
+    connect(p_am,&AcquisitionManager::experimentComplete,ui->ftViewWidget,&FtmwViewWidget::experimentComplete);
 
     QThread *amThread = new QThread(this);
     connect(amThread,&QThread::finished,p_am,&AcquisitionManager::deleteLater);
