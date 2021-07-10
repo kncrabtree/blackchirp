@@ -5,7 +5,7 @@
 #include <modules/lif/data/lifconfig.h>
 
 namespace BC::Key {
-static const QString lifScope("lifScope");
+static const QString lifScope("LifDigitizer");
 }
 
 class LifScope : public HardwareObject

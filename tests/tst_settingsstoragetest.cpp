@@ -48,7 +48,7 @@ private:
 class DestructorTest : public SettingsStorage
 {
 public:
-    DestructorTest() : SettingsStorage("CrabtreeLab","BlackchirpTest",{},General,false) {
+    DestructorTest() : SettingsStorage("CrabtreeLab","BlackchirpTest",{},General) {
         registerGetter("destructTest",this,&DestructorTest::desructGetter);
     }
     virtual ~DestructorTest(){};
@@ -61,7 +61,7 @@ private:
 
 Q_DECLARE_METATYPE(SettingsStorageTest::TestEnum)
 
-SettingsStorageTest::SettingsStorageTest() : SettingsStorage("CrabtreeLab","BlackchirpTest",{},General,false)
+SettingsStorageTest::SettingsStorageTest() : SettingsStorage("CrabtreeLab","BlackchirpTest",{},General)
 {
     QCoreApplication::setApplicationName("BlackchirpTest");
     QCoreApplication::setOrganizationName("CrabtreeLab");
@@ -137,7 +137,7 @@ void SettingsStorageTest::testGetter()
     d_double *= 3;
 
     save();
-    SettingsStorage readOnly(false);
+    SettingsStorage readOnly;
 
     QCOMPARE(readOnly.get<int>("testInt"),20);
     QCOMPARE(readOnly.get<double>("testDouble"),10.1*3);
@@ -150,7 +150,7 @@ void SettingsStorageTest::testGetter()
     QCOMPARE(unRegisterGetter("nonExistentKey"),QVariant());
     QCOMPARE(unRegisterGetter("testString"),QVariant());
 
-    SettingsStorage readOnly2(false);
+    SettingsStorage readOnly2;
 
     QCOMPARE(readOnly2.get<int>("testInt"),30);
     QCOMPARE(readOnly2.get<double>("testDouble"),10.1*3);
@@ -164,7 +164,7 @@ void SettingsStorageTest::testGetter()
     QCOMPARE(get<int>("testInt"),50);
     QCOMPARE(get<double>("testDouble"),96.1);
 
-    SettingsStorage readOnly3(false);
+    SettingsStorage readOnly3;
     QCOMPARE(readOnly3.get<int>("testInt"),50);
     QCOMPARE(readOnly3.get<double>("testDouble"),96.1);
 
@@ -224,7 +224,7 @@ void SettingsStorageTest::testSet()
     set("testDouble",0.5,false);
 
     //at this point, readOnly should contain original values; nothing has been saved
-    SettingsStorage readOnly(false);
+    SettingsStorage readOnly;
     QCOMPARE(readOnly.get("testInt"),QVariant(42));
     QCOMPARE(readOnly.get("testDouble"),QVariant(1.3e-1));
 
@@ -237,7 +237,7 @@ void SettingsStorageTest::testSet()
 
     setArray("testArray2", { {{"testArray2Key1",true},{"testArray2Key2",false}}},true);
 
-    SettingsStorage readOnly2(false);
+    SettingsStorage readOnly2;
     QCOMPARE(readOnly2.get("testDouble"),QVariant(5.5));
     QCOMPARE(readOnly2.get("testString"),QVariant("Different string"));
     QCOMPARE(readOnly2.containsArray("testArray"),false);
@@ -253,7 +253,7 @@ void SettingsStorageTest::testSet()
     appendArrayMap("testArray2",{{"newMapKey",1.0}});
     save();
 
-    SettingsStorage readOnly3(false);
+    SettingsStorage readOnly3;
     QCOMPARE(readOnly3.get<int>("testInt"),0);
     QCOMPARE(readOnly3.get<double>("testDouble",11.4),11.4);
     QCOMPARE(readOnly3.getArrayValue<double>("testArray2",1,"newMapKey",2.0),1.0);
@@ -269,7 +269,7 @@ void SettingsStorageTest::testDefault()
     QCOMPARE(getOrSetDefault("newKey",1000),1000);
     QCOMPARE(getOrSetDefault("testArray",2),0);
 
-    SettingsStorage readOnly(false);
+    SettingsStorage readOnly;
     QCOMPARE(readOnly.containsValue("newKey"),true);
     QCOMPARE(readOnly.get("newKey"),QVariant(1000));
 }
@@ -277,7 +277,7 @@ void SettingsStorageTest::testDefault()
 void SettingsStorageTest::testSubkeyRead()
 {
     initSettingsFile();
-    SettingsStorage readOnly({"readOnly","subKey"},General,false);
+    SettingsStorage readOnly({"readOnly","subKey"},General);
 
     QCOMPARE(readOnly.get("testInt").toInt(),420);
     QCOMPARE(readOnly.get<int>("testInt"),420);
@@ -301,7 +301,7 @@ void SettingsStorageTest::testSubkeyRead()
 void SettingsStorageTest::testHardwareRead()
 {
     initSettingsFile();
-    SettingsStorage readHardware("hardwareKey",Hardware,false);
+    SettingsStorage readHardware("hardwareKey",Hardware);
     QCOMPARE(readHardware.get<int>("hardwareInt"),10);
     QCOMPARE(readHardware.get<double>("hardwareDouble"),44.4);
     QCOMPARE(readHardware.get<QString>("hardwareName"),QString("My Hardware"));
@@ -313,7 +313,7 @@ void SettingsStorageTest::testDestruction()
     DestructorTest *d = new DestructorTest;
     delete d;
 
-    SettingsStorage readOnly(false);
+    SettingsStorage readOnly;
     QCOMPARE(readOnly.get<int>("destructTest"),144);
 }
 

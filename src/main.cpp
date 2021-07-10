@@ -1,27 +1,26 @@
+#include <data/storage/settingsstorage.h>
 #include <gui/mainwindow.h>
+#include <gui/dialog/bcsavepathdialog.h>
+
+#include <memory>
+
 #include <QApplication>
-#include <QFile>
 #include <QMessageBox>
-#include <QSettings>
-#include <QDesktopServices>
-#include <QDateTime>
 #include <QDir>
-#include <QProcessEnvironment>
-#include <gsl/gsl_errno.h>
 #include <QSharedMemory>
 #include <QLocalServer>
 #include <QLocalSocket>
+#include <QProcess>
+
+#include <gsl/gsl_errno.h>
 
 #ifdef Q_OS_UNIX
-#include <sys/stat.h>
 #include <signal.h>
 #endif
 
 int main(int argc, char *argv[])
 {
-    //all files (besides lock file) created with this program should have 664 permissions (directories 775)
 #ifdef Q_OS_UNIX
-    umask(S_IWOTH);
     signal(SIGPIPE,SIG_IGN);
 #endif
 
@@ -30,34 +29,31 @@ int main(int argc, char *argv[])
 
 
     //QSettings information
-    const QString appName = QString("BlackChirp");
+    const QString appName = QString("Blackchirp");
 
-    QSharedMemory *m;
-    QLocalServer *ls;
+    std::unique_ptr<QSharedMemory> m;
+    std::unique_ptr<QLocalServer> ls;
     struct Mem {
         char name[32];
     };
 
 #ifdef Q_OS_UNIX
     //This will delete the shared memory if Blackchirp crashed last time
-    m = new QSharedMemory(appName);
+    m = std::make_unique<QSharedMemory>(appName);
     m->attach();
-    delete m;
+    m.reset();
 #endif
-    m = new QSharedMemory(appName);
+    m = std::make_unique<QSharedMemory>(appName);
     if(m->create(sizeof(Mem)))
     {
         if(!m->lock())
-        {
-            delete m;
             return -255;
-        }
 
         auto mem = static_cast<Mem*>(m->data());
         sprintf(mem->name,"Blackchirp");
 
         QLocalServer::removeServer(appName);
-        ls = new QLocalServer;
+        ls = std::make_unique<QLocalServer>();
         ls->setSocketOptions(QLocalServer::WorldAccessOption);
         ls->listen(appName);
         m->unlock();
@@ -66,67 +62,53 @@ int main(int argc, char *argv[])
     {
         if(m->error() == QSharedMemory::AlreadyExists)
         {
-            auto socket = new QLocalSocket;
+            auto socket = std::make_unique<QLocalSocket>();
             socket->connectToServer(appName);
             socket->waitForConnected(1000);
-            delete m;
-            delete socket;
             return 0;
         }
+
+        return -255;
     }
 
-
-#ifdef Q_OS_MSDOS
-    QString appDataPath = QString("c:/data");
-#else
-    QString appDataPath = QString("/home/data");
-#endif
     QApplication::setApplicationName(appName);
     QApplication::setOrganizationDomain(QString("crabtreelab.ucdavis.edu"));
     QApplication::setOrganizationName(QString("CrabtreeLab"));
-    QSettings::setPath(QSettings::NativeFormat,QSettings::SystemScope,appDataPath);
 
-    QProcessEnvironment se = QProcessEnvironment::systemEnvironment();
-    if(se.contains(QString("BC_DATADIR")))
+    SettingsStorage s;
+    auto savePath = s.get(BC::Key::savePath,QString(""));
+
+    if(savePath.isEmpty())
     {
-        QString ad = se.value(QString("BC_DATADIR"));
-        if(ad.endsWith(QChar('/')))
-            ad.chop(1);
+        QMessageBox::information(nullptr,QString("Welcome to Blackchirp!"),
+                                 QString(
+R"000(It appears you are running Blackchirp for the first time, or you have just upgraded from a previous version. To get started, you first need to choose a directory where Blackchirp will store its data. In the directory you choose, three folders will be created:
 
-        appDataPath = ad;
+        experiments - Location where all experimental data are recorded
+        log - Location of log messages and monitoring data
+        export - Default location for extra exported files
+
+Please note that if you are upgrading from an old version (<1.0.0) of Blackchirp, it is not recommended that you use the same storage folder as your old version, as all file formats have changed.
+)000"));
+
+        BCSavePathDialog d;
+        int ret = d.exec();
+        if(ret == QDialog::Rejected)
+            return 0;
+
+        MainWindow w;
+        w.initializeHardware();
+
+        QMessageBox::information(nullptr,QString("Hardware Configuration"),QString(
+R"000(Next, you can configure the communication settings for the hardware connected to your computer. After exiting the following dialog, Blackchirp will restart and will use the settings you have chosen. You may change these later in the  Hardware > Communication menu.
+)000"));
+
+        w.launchCommunicationDialog(false);
+
+        qApp->quit();
+        QProcess::startDetached(qApp->arguments().constFirst(),qApp->arguments().mid(1));
+
     }
-    const QString lockFilePath = QString("%1/%2").arg(appDataPath).arg(QApplication::organizationName());
-
-    //test to make sure data path is writable
-    QDir home(appDataPath);
-    if(!home.exists())
-    {
-        QMessageBox::critical(nullptr,QString("%1 Error").arg(appName),QString("The directory %1 does not exist!\n\nIn order to run %2, the directory %1 must exist and be writable by all users.").arg(appDataPath).arg(appName));
-        return -1;
-    }
-
-    if(!home.cd(QApplication::organizationName()))
-    {
-        if(!home.mkpath(QApplication::organizationName()))
-            QMessageBox::critical(nullptr,QString("%1 Error").arg(appName),QString("Could not create folder %1 for application configuration storage. Check the permissions of the path and try again.").arg(lockFilePath));
-    }
-
-    QFile testFile(QString("%1/test").arg(home.absolutePath()));
-    if(!testFile.open(QIODevice::WriteOnly))
-    {
-        QMessageBox::critical(nullptr,QString("%1 Error").arg(appName),QString("Could not write to directory %1!\n\nIn order to run %2, the directory %1 must exist and be writable by all users.").arg(appDataPath).arg(appName));
-        return -1;
-    }
-    testFile.close();
-    testFile.remove();
-
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.setValue(QString("lastRun"),QDateTime::currentDateTime().toString(Qt::ISODate));
-    s.setValue(QString("savePath"),QString("%1/%2").arg(appDataPath).arg(appName.toLower()));
-
-    //create needed directories
-    QDir saveDir(s.value(QString("savePath")).toString());
-    saveDir.mkpath(QString("log"));
 
     qRegisterMetaType<std::shared_ptr<Experiment>>();
     qRegisterMetaType<Fid>("Fid");
@@ -157,16 +139,15 @@ int main(int argc, char *argv[])
 #endif
 
     MainWindow w;
-    QApplication::connect(ls,&QLocalServer::newConnection,[&w](){
+    QApplication::connect(ls.get(),&QLocalServer::newConnection,[&w](){
         w.setWindowState(Qt::WindowMaximized|Qt::WindowActive);
         w.raise();
+        w.show();
     });
 
     w.showMaximized();
     w.initializeHardware();
     int ret = a.exec();
-//    lockFile.remove();
-    delete m;
-    delete ls;
+
     return ret;
 }

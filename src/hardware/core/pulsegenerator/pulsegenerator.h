@@ -6,7 +6,7 @@
 #include <data/experiment/pulsegenconfig.h>
 
 namespace BC::Key::PGen {
-static const QString key("pGen");
+static const QString key("PulseGenerator");
 static const QString numChannels("numChannels");
 static const QString minWidth("minWidth");
 static const QString maxWidth("maxWidth");

@@ -1,6 +1,6 @@
 #include "settingsstorage.h"
 
-SettingsStorage::SettingsStorage(const QStringList keys, Type type, QSettings::Scope scope) : d_settings{scope,QCoreApplication::organizationName(),QCoreApplication::applicationName()}
+SettingsStorage::SettingsStorage(const QStringList keys, Type type) : d_settings{QCoreApplication::organizationName(),QCoreApplication::applicationName()}
 {
     d_settings.setFallbacksEnabled(false);
 
@@ -23,12 +23,12 @@ SettingsStorage::SettingsStorage(const QStringList keys, Type type, QSettings::S
     readAll();
 }
 
-SettingsStorage::SettingsStorage(const QString orgName, const QString appName, const QStringList keys, Type type, QSettings::Scope scope) : d_settings{scope,orgName,appName}
+SettingsStorage::SettingsStorage(const QString orgName, const QString appName, const QStringList keys, Type type) : d_settings{orgName,appName}
 {
     d_settings.setFallbacksEnabled(false);
 
     if(keys.isEmpty())
-        d_settings.beginGroup(QString("Blackchirp"));
+        d_settings.beginGroup(BC::Key::BC);
     else
     {
         if( (type == Hardware) && (keys.size() == 1) )
@@ -46,32 +46,8 @@ SettingsStorage::SettingsStorage(const QString orgName, const QString appName, c
     readAll();
 }
 
-SettingsStorage::SettingsStorage(const QStringList keys, Type type, bool systemWide) :
-    SettingsStorage(keys, type, (systemWide ? QSettings::SystemScope : QSettings::UserScope))
-{
-
-}
-
-SettingsStorage::SettingsStorage(const QString orgName, const QString appName, const QStringList keys, Type type, bool systemWide) :
-    SettingsStorage(orgName, appName, keys, type, (systemWide ? QSettings::SystemScope : QSettings::UserScope))
-{
-
-}
-
-SettingsStorage::SettingsStorage(bool systemWide, const QStringList keys) :
-    SettingsStorage(keys, General, (systemWide ? QSettings::SystemScope : QSettings::UserScope))
-{
-
-}
-
-SettingsStorage::SettingsStorage(const char *key, SettingsStorage::Type type, bool systemWide) :
-    SettingsStorage(QStringList(QString(key)),type,(systemWide ? QSettings::SystemScope : QSettings::UserScope))
-{
-
-}
-
-SettingsStorage::SettingsStorage(const QString key, Type type, bool systemWide) :
-    SettingsStorage(QStringList(key),type,(systemWide ? QSettings::SystemScope : QSettings::UserScope))
+SettingsStorage::SettingsStorage(const QString key, Type type) :
+    SettingsStorage(QStringList(key),type)
 {
 
 }

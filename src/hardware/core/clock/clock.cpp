@@ -4,7 +4,7 @@
 
 Clock::Clock(int clockNum, int numOutputs, bool tunable, const QString subKey, const QString name, CommunicationProtocol::CommType commType,
              QObject *parent) :
-    HardwareObject(QString("clock%1").arg(clockNum),subKey,name,commType,parent,false,true), d_numOutputs(numOutputs),
+    HardwareObject(QString("Clock%1").arg(clockNum),subKey,name,commType,parent,false,true), d_numOutputs(numOutputs),
     d_isTunable(tunable)
 {
 }

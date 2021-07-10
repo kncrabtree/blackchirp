@@ -4,7 +4,7 @@
 #include <hardware/core/hardwareobject.h>
 
 namespace BC::Key::PController {
-static const QString key("pressureController");
+static const QString key("PressureController");
 static const QString min("min");
 static const QString max("max");
 static const QString decimals("decimal");

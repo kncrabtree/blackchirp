@@ -4,7 +4,7 @@
 #include <hardware/core/hardwareobject.h>
 
 namespace BC::Key {
-static const QString lifLaser("lifLaser");
+static const QString lifLaser("LifLaser");
 static const QString lifLaserUnits("units");
 }
 

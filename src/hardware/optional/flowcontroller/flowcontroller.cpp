@@ -56,7 +56,7 @@ void FlowController::setFlowSetpoint(const int ch, const double val)
 {
     if(ch < 0 || ch >= d_numChannels)
     {
-        emit logMessage(QString("Invalid flow channel (%1) requested. Valid channels are 0-%2").arg(ch).arg(d_numChannels));
+        emit logMessage(QString("Invalid flow channel (%1) requested. Valid channels are 0-%2").arg(ch).arg(d_numChannels-1));
         return;
     }
     hwSetFlowSetpoint(ch,val);
@@ -99,7 +99,7 @@ void FlowController::readFlow(const int ch)
 {
     if(ch < 0 || ch >= d_numChannels)
     {
-        emit logMessage(QString("Invalid flow channel (%1) requested. Valid channels are 0-%2").arg(ch).arg(d_numChannels));
+        emit logMessage(QString("Invalid flow channel (%1) requested. Valid channels are 0-%2").arg(ch).arg(d_numChannels-1));
         return;
     }
     double flow = hwReadFlow(ch);

@@ -9,6 +9,8 @@
 
 namespace BC::Key {
 static const QString BC("Blackchirp");
+static const QString exptNum("exptNum");
+static const QString savePath("savePath");
 }
 
 /*!
@@ -224,9 +226,8 @@ public:
      *
      * \param keys The list of group/subgroup keys, passed to QSettings::beginGroup in order
      * \param type If set to SettingsStorage::Hardware and the length of keys is 1, the subKey for the current hardware will be read from settings and selected.
-     * \param systemWide If true, use QSettings::SystemScope. Otherwise, use QSettings::UserScope
      */
-    SettingsStorage(const QStringList keys = QStringList(), Type type = General, bool systemWide = true);
+    SettingsStorage(const QStringList keys = QStringList(), Type type = General);
 
     /*!
      * \brief Constructor that explicitly sets organization name and application name (used for unit tests; should not be used directly).
@@ -237,18 +238,7 @@ public:
      * \param type If set to SettingsStorage::Hardware and the length of keys is 1, the subKey for the current hardware will be read from settings and selected.
      * \param systemWide If true, use QSettings::SystemScope. Otherwise, use QSettings::UserScope
      */
-    SettingsStorage(const QString orgName, const QString appName, const QStringList keys = QStringList(), Type type = General, bool systemWide = true);
-
-    /*!
-     * \brief Convenience constructor for accessing General settings (avoiding Hardware behavior)
-     *
-     * This form of the constructor is intended to give more convenient access to user settings, but it can be used
-     * for any set of keys. This constructor will not look up keys associated with hardware.
-     *
-     * \param systemWide If true, use QSettings::SystemScope. Otherwise, use QSettings::UserScope
-     * \param keys The list of group/subgroup keys, passed to QSettings::beginGroup in order
-     */
-    explicit SettingsStorage(bool systemWide, const QStringList keys = QStringList());
+    SettingsStorage(const QString orgName, const QString appName, const QStringList keys = QStringList(), Type type = General);
 
     /*!
      * \brief Convenience constructor for a single key
@@ -257,16 +247,7 @@ public:
      * \param type If set to Hardware, a subKey will be added (default: "virtual")
      * \param systemWide If true, use QSettings::SystemScope. Otherwise, use QSettings::UserScope
      */
-    explicit SettingsStorage(const char *key, Type type = General, bool systemWide = true);
-
-    /*!
-     * \brief Convenience constructor for a single key
-     *
-     * \param key The key for the group in QSettings. If "", will be set to "Blackchirp"
-     * \param type If set to Hardware, a subKey will be added (default: "virtual")
-     * \param systemWide If true, use QSettings::SystemScope. Otherwise, use QSettings::UserScope
-     */
-    explicit SettingsStorage(const QString key, Type type = General, bool systemWide = true);
+    SettingsStorage(const QString key, Type type = General);
 
     /*!
      * \brief Destructor. Saves all values to settings

@@ -1,5 +1,6 @@
 SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/dialog/batchsequencedialog.cpp \
+    $$PWD/dialog/bcsavepathdialog.cpp \
     $$PWD/dialog/communicationdialog.cpp \
     $$PWD/dialog/peaklistexportdialog.cpp \
     $$PWD/dialog/quickexptdialog.cpp \
@@ -40,6 +41,7 @@ SOURCES += $$PWD/mainwindow.cpp \
 
 HEADERS += $$PWD/mainwindow.h \
     $$PWD/dialog/batchsequencedialog.h \
+    $$PWD/dialog/bcsavepathdialog.h \
     $$PWD/dialog/communicationdialog.h \
     $$PWD/dialog/peaklistexportdialog.h \
     $$PWD/dialog/quickexptdialog.h \

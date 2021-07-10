@@ -21,7 +21,7 @@
 
 
 ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),
-    SettingsStorage(name,SettingsStorage::General,false), d_name(name), d_maxIndex(0)
+    SettingsStorage(name,SettingsStorage::General), d_name(name), d_maxIndex(0)
 {
     //it is important for the axes to be appended in the order of their enum values
     d_config.axisList.append(AxisConfig(QwtPlot::yLeft,BC::Key::left));

@@ -4,7 +4,7 @@
 #include <hardware/core/hardwareobject.h>
 
 namespace BC::Key::AWG {
-static const QString key("awg");
+static const QString key("AWG");
 static const QString prot("hasProtectionPulse");
 static const QString amp("hasAmpEnablePulse");
 static const QString min("minFreqMHz");

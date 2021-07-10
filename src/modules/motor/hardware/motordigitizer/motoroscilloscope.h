@@ -6,7 +6,7 @@
 #include <modules/motor/data/motorscan.h>
 
 namespace BC::Key {
-static const QString motorScope("motorScope");
+static const QString motorScope("MotorDigitizer");
 }
 
 class MotorOscilloscope : public HardwareObject

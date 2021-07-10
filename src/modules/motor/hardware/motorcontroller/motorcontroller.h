@@ -8,7 +8,7 @@
 class QTimer;
 
 namespace BC::Key::MC {
-static const QString key("motorController");
+static const QString key("MotorController");
 static const QString mInterval("motionIntervalMs");
 static const QString lInterval("limitIntervalMs");
 static const QString channels("channels");

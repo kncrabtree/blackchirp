@@ -3,7 +3,7 @@
 #include <QPalette>
 
 BlackchirpPlotCurve::BlackchirpPlotCurve(const QString name,Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker) :
-    SettingsStorage({BC::Key::bcCurve,name},General,false)
+    SettingsStorage({BC::Key::bcCurve,name},General)
 {
     setTitle(name);
     setItemAttribute(QwtPlotItem::Legend);

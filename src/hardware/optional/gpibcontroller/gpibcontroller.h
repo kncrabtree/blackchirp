@@ -4,7 +4,7 @@
 #include <hardware/core/hardwareobject.h>
 
 namespace BC::Key {
-static const QString gpibController("gpibController");
+static const QString gpibController("GpibController");
 }
 
 class GpibController : public HardwareObject

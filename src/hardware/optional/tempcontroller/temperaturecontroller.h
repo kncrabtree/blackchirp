@@ -5,7 +5,7 @@
 class QTimer;
 
 namespace BC::Key::TC {
-static const QString key("tempController");
+static const QString key("TemperatureController");
 static const QString interval("intervalMs");
 static const QString channels("channels");
 static const QString units("units");

@@ -73,7 +73,7 @@ public slots:
     void hardwareInitialized(bool success);
     void pauseUi();
     void resumeUi();
-    void launchCommunicationDialog();
+    void launchCommunicationDialog(bool parent = true);
     void updatePulseLeds(const PulseGenConfig cc);
     void updatePulseLed(int index,PulseGenConfig::Setting s, QVariant val);
     void setLogIcon(BlackChirp::LogMessageCode c);

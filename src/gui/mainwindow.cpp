@@ -570,9 +570,13 @@ void MainWindow::resumeUi()
     configureUi(Acquiring);
 }
 
-void MainWindow::launchCommunicationDialog()
+void MainWindow::launchCommunicationDialog(bool parent)
 {
-    CommunicationDialog d(this);
+    QWidget *p = nullptr;
+    if(parent)
+        p = this;
+
+    CommunicationDialog d(p);
     connect(&d,&CommunicationDialog::testConnection,p_hwm,&HardwareManager::testObjectConnection);
     connect(p_hwm,&HardwareManager::testComplete,&d,&CommunicationDialog::testComplete);
 

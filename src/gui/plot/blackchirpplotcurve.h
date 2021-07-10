@@ -11,7 +11,7 @@ Q_DECLARE_METATYPE(QwtPlot::Axis)
 #include <data/storage/settingsstorage.h>
 
 namespace BC::Key {
-static const QString bcCurve("curve");
+static const QString bcCurve("Curve");
 static const QString bcCurveColor("color");
 static const QString bcCurveStyle("style");
 static const QString bcCurveThickness("thickness");

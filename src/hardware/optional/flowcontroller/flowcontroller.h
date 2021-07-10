@@ -8,7 +8,7 @@
 #include <data/experiment/flowconfig.h>
 
 namespace BC::Key::Flow {
-static const QString flowController("flowController");
+static const QString flowController("FlowController");
 static const QString flowChannels("numChannels");
 static const QString interval("intervalMs");
 static const QString pUnits("pressureUnits");

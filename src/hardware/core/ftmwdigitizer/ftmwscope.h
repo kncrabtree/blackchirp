@@ -10,7 +10,7 @@
 
 
 namespace BC::Key::FtmwScope {
-static const QString ftmwScope("ftmwscope");
+static const QString ftmwScope("FtmwDigitizer");
 static const QString bandwidth("bandwidthMHz");
 }
 
