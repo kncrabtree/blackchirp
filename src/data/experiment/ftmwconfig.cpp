@@ -273,8 +273,7 @@ bool FtmwConfig::initialize()
         return false;
     }
 
-    p_fidStorage = createStorage();
-    p_fidStorage->setFidTemplate(d_fidTemplate);
+    p_fidStorage = createStorage(d_number);
     return _init();
 
 
@@ -288,6 +287,7 @@ bool FtmwConfig::advance()
     {
         d_processingPaused = true;
         d_rfConfig.advanceClockStep();
+        p_fidStorage->advance();
         return !isComplete();
 
     }
@@ -417,7 +417,6 @@ void FtmwConfig::setScopeConfig(const FtmwDigitizerConfig &other)
 void FtmwConfig::hwReady()
 {
     d_fidTemplate.setProbeFreq(d_rfConfig.clockFrequency(RfConfig::DownLO));
-    p_fidStorage->setFidTemplate(d_fidTemplate);
     d_processingPaused = false;
 }
 

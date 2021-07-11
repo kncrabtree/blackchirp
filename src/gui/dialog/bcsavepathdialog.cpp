@@ -118,21 +118,21 @@ void BCSavePathDialog::apply()
         }
     }
 
-    if(!d.cd("experiments"))
+    if(!d.cd(BC::Key::exptDir))
     {
-        if(!d.mkpath("experiments"))
+        if(!d.mkpath(BC::Key::exptDir))
         {
             QMessageBox::critical(this,"Blackchirp Error",QString("Could not create experiments directory in %1.\nPlease choose a different location.").arg(d.absolutePath()));
             return;
         }
 
-        if(!d.mkpath("log"))
+        if(!d.mkpath(BC::Key::logDir))
         {
             QMessageBox::critical(this,"Blackchirp Error",QString("Could not create log directory in %1.\nPlease choose a different location.").arg(d.absolutePath()));
             return;
         }
 
-        if(!d.mkpath("exports"))
+        if(!d.mkpath(BC::Key::exportDir))
         {
             QMessageBox::critical(this,"Blackchirp Error",QString("Could not create exports directory in %1.\nPlease choose a different location.").arg(d.absolutePath()));
             return;

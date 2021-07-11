@@ -1,12 +1,10 @@
 #include "fidsinglestorage.h"
 
-FidSingleStorage::FidSingleStorage(const QString path, int numRecords) : FidStorageBase(path,numRecords),
+FidSingleStorage::FidSingleStorage(int numRecords, int num, QString path) : FidStorageBase(numRecords,num,path),
     p_mutex(new QMutex)
 {
 
     ///TODO: attempt to load from disk!
-
-    d_currentFidList = newFidList();
 }
 
 FidSingleStorage::~FidSingleStorage()
@@ -74,4 +72,12 @@ FidList FidSingleStorage::getCurrentFidList()
 int FidSingleStorage::getCurrentIndex()
 {
     return 0;
+}
+
+void FidSingleStorage::autoSave()
+{
+    ++d_lastAutosave;
+
+    auto fl = getCurrentFidList();
+    saveFidList(fl,d_lastAutosave);
 }

@@ -10,21 +10,22 @@ class FidStorageBase
 {
 
 public:
-    FidStorageBase(const QString path, int numRecords);
+    FidStorageBase(int numRecords, int number = -1, QString path = "");
     virtual ~FidStorageBase();
 
-    const QString d_path;
+    const int d_number;
     const int d_numRecords;
+    const QString d_path;
 
-    void setFidTemplate(const Fid f);
 
     virtual quint64 completedShots() =0;
     virtual quint64 currentSegmentShots() =0;
     virtual bool addFids(const FidList other, int shift =0) =0;
     virtual FidList getFidList(std::size_t i=0) =0;
     virtual FidList getCurrentFidList() =0;
+    virtual void autoSave() =0;
     void advance();
-    bool save();
+    void save();
 #ifdef BC_CUDA
     virtual bool setFidsData(const FidList other) =0;
 #endif
@@ -32,12 +33,11 @@ public:
 
 protected:
     virtual void _advance() =0;
-
-    FidList newFidList() const;
+    void saveFidList(const FidList l, int i);
+    FidList loadFidList(int i);
 
 private:
-    Fid d_fidTemplate;
-    bool saveFidList(const FidList l, int i);
+    QVector<Fid> d_templateList;
 
 };
 //std::deque<std::map<int,FidList>::iterator> d_cache;

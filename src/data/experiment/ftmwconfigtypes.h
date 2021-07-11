@@ -20,7 +20,7 @@ protected:
     bool _init() override;
     void _prepareToSave() override;
     void _loadComplete() override;
-    std::shared_ptr<FidStorageBase> createStorage() override;
+    std::shared_ptr<FidStorageBase> createStorage(int num, QString path="") override;
 
 private:
     quint64 d_targetShots;
@@ -44,7 +44,7 @@ protected:
     bool _init() override;
     void _prepareToSave() override;
     void _loadComplete() override;
-    std::shared_ptr<FidStorageBase> createStorage() override;
+    std::shared_ptr<FidStorageBase> createStorage(int num, QString path="") override;
 
 private:
     quint64 d_targetShots;
@@ -67,7 +67,7 @@ protected:
     bool _init() override;
     void _prepareToSave() override;
     void _loadComplete() override;
-    std::shared_ptr<FidStorageBase> createStorage() override;
+    std::shared_ptr<FidStorageBase> createStorage(int num, QString path="") override;
 
 private:
     QDateTime d_startTime, d_targetTime;
@@ -91,7 +91,7 @@ protected:
     bool _init() override;
     void _prepareToSave() override;
     void _loadComplete() override;
-    std::shared_ptr<FidStorageBase> createStorage() override;
+    std::shared_ptr<FidStorageBase> createStorage(int num, QString path="") override;
 };
 
 #endif // FTMWCONFIGTYPES_H

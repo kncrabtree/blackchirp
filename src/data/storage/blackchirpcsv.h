@@ -5,12 +5,14 @@
 #include <QTextStream>
 #include <QVector>
 #include <QPointF>
+#include <QDir>
+#include <data/experiment/fid.h>
 
 //class BlackchirpPlotCurve;
 
 namespace BC::CSV {
 
-static const QString del{","};
+static const QString del{";"};
 static const QString nl{"\n"};
 static const QString x{"x"};
 static const QString y{"y"};
@@ -22,6 +24,9 @@ static const QString ai{"ArrayIndex"};
 static const QString vk{"ValueKey"};
 static const QString vv{"Value"};
 static const QString vu{"Units"};
+
+static const QString fidparams{"fidparams.csv"};
+static const QString fidDir("fid");
 
 }
 
@@ -36,11 +41,11 @@ class BlackchirpCSV
 public:
     BlackchirpCSV();
 
-    bool writeXY(QIODevice &device, const QVector<QPointF> d, const QString prefix = "");
-    bool writeMultiple(QIODevice &device, const std::vector<QVector<QPointF>> &l, const std::vector<QString> &n = {});
+    static bool writeXY(QIODevice &device, const QVector<QPointF> d, const QString prefix = "");
+    static bool writeMultiple(QIODevice &device, const std::vector<QVector<QPointF>> &l, const std::vector<QString> &n = {});
 
     template<typename T>
-    bool writeY(QIODevice &device, const QVector<T> d, QString title="")
+    static bool writeY(QIODevice &device, const QVector<T> d, QString title="")
     {
         using namespace BC::CSV;
         if(!device.open(QIODevice::WriteOnly | QIODevice::Text))
@@ -61,7 +66,7 @@ public:
     }
 
     template<typename T>
-    bool writeYMultiple(QIODevice &device, std::initializer_list<QString> titles, std::initializer_list<QVector<T>> l)
+    static bool writeYMultiple(QIODevice &device, std::initializer_list<QString> titles, std::initializer_list<QVector<T>> l)
     {
         using namespace BC::CSV;
         if(titles.size() != l.size())
@@ -100,9 +105,16 @@ public:
 
     }
 
-    bool writeHeader(QIODevice &device, const std::multimap<QString,std::tuple<QString,QString,QString,QString,QString>> header);
+    static bool writeHeader(QIODevice &device, const std::multimap<QString,std::tuple<QString,QString,QString,QString,QString>> header);
 
-    void writeLine(QTextStream &t, const QVariantList l);
+    static void writeLine(QTextStream &t, const QVariantList l);
+
+    static void writeFidList(QIODevice &device, const FidList l);
+
+    static QVariantList readLine(QIODevice &device);
+    static QVector<qint64> readFidLine(QIODevice &device);
+
+    static QDir exptDir(int num, QString path="");
 
 };
 

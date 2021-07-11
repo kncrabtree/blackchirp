@@ -47,9 +47,9 @@ void FtmwConfigSingle::_loadComplete()
     d_targetShots = retrieve(BC::Store::FTMW::tShots,0);
 }
 
-std::shared_ptr<FidStorageBase> FtmwConfigSingle::createStorage()
+std::shared_ptr<FidStorageBase> FtmwConfigSingle::createStorage(int num, QString path)
 {
-    return std::make_shared<FidSingleStorage>(QString(""),d_scopeConfig.d_numRecords);
+    return std::make_shared<FidSingleStorage>(d_scopeConfig.d_numRecords,num,path);
 }
 
 /******************************************
@@ -102,8 +102,10 @@ void FtmwConfigPeakUp::_loadComplete()
 {
 }
 
-std::shared_ptr<FidStorageBase> FtmwConfigPeakUp::createStorage()
+std::shared_ptr<FidStorageBase> FtmwConfigPeakUp::createStorage(int num, QString path)
 {
+    Q_UNUSED(num)
+    Q_UNUSED(path)
     return std::make_shared<FidPeakUpStorage>(d_scopeConfig.d_numRecords);
 }
 
@@ -160,9 +162,9 @@ void FtmwConfigDuration::_loadComplete()
     d_objective = retrieve(BC::Store::FTMW::duration,0);
 }
 
-std::shared_ptr<FidStorageBase> FtmwConfigDuration::createStorage()
+std::shared_ptr<FidStorageBase> FtmwConfigDuration::createStorage(int num, QString path)
 {
-    return std::make_shared<FidSingleStorage>("",d_scopeConfig.d_numRecords);
+    return std::make_shared<FidSingleStorage>(d_scopeConfig.d_numRecords,num,path);
 }
 
 
@@ -203,7 +205,7 @@ void FtmwConfigForever::_loadComplete()
 {
 }
 
-std::shared_ptr<FidStorageBase> FtmwConfigForever::createStorage()
+std::shared_ptr<FidStorageBase> FtmwConfigForever::createStorage(int num, QString path)
 {
-    return std::make_shared<FidSingleStorage>("",d_scopeConfig.d_numRecords);
+    return std::make_shared<FidSingleStorage>(d_scopeConfig.d_numRecords,num,path);
 }

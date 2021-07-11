@@ -210,6 +210,11 @@ qint64 Fid::atRaw(const int i) const
     return data->fid.at(i);
 }
 
+qint64 Fid::valueRaw(const int i) const
+{
+    return data->fid.value(i,0);
+}
+
 double Fid::atNorm(const int i) const
 {
     if(data->shots > 1)

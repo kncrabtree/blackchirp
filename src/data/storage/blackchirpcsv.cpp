@@ -1,6 +1,7 @@
 #include "blackchirpcsv.h"
 
 //#include <gui/plot/blackchirpplotcurve.h>
+#include <data/storage/settingsstorage.h>
 
 BlackchirpCSV::BlackchirpCSV()
 {
@@ -92,4 +93,69 @@ void BlackchirpCSV::writeLine(QTextStream &t, const QVariantList l)
     for(int i=1; i<num; i++)
         t << del << l.at(i).toString();
     t << nl;
+}
+
+void BlackchirpCSV::writeFidList(QIODevice &device, const FidList l)
+{
+    using namespace BC::CSV;
+
+    QTextStream t(&device);
+
+    t << "fid0";
+    auto maxSize = l.constFirst().size();
+    for(int i=1; i<l.size(); ++i)
+    {
+        t << del << "fid" << QString::number(i);
+        maxSize = qMax(maxSize,l.at(i).size());
+    }
+
+    for(int i=0; i<maxSize; ++i)
+    {
+        t << nl << QString::number(l.constFirst().valueRaw(i),36);
+
+        for(int j=1; j<l.size(); ++j)
+            t << del << QString::number(l.at(j).valueRaw(i),36);
+    }
+}
+
+QVariantList BlackchirpCSV::readLine(QIODevice &device)
+{
+    QVariantList out;
+    auto l = QString(device.readLine()).trimmed();
+    if(l.isEmpty())
+        return out;
+    auto list = l.split(BC::CSV::del);
+    for(auto &str : list)
+        out << str;
+
+    return out;
+
+}
+
+QVector<qint64> BlackchirpCSV::readFidLine(QIODevice &device)
+{
+    QVector<qint64> out;
+    auto l = QString(device.readLine()).trimmed();
+    if(l.isEmpty())
+        return out;
+    auto list = l.split(BC::CSV::del);
+    for(auto &str : list)
+        out << str.toLongLong(nullptr,36);
+
+    return out;
+
+}
+
+QDir BlackchirpCSV::exptDir(int num, QString path)
+{
+    int mil = num/1000000;
+    int th = num/1000;
+    SettingsStorage s;
+    QDir out(path.isEmpty() ? s.get(BC::Key::savePath,QString("")) : path);
+    out.cd(BC::Key::exptDir);
+    out.cd(QString::number(mil));
+    out.cd(QString::number(th));
+    out.cd(QString::number(num));
+
+    return out;
 }

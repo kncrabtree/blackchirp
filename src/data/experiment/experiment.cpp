@@ -72,6 +72,8 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
             if(ftmwEnabled())
             {
 #pragma message("What should be moved to header?")
+                //note: need to rethink this after creating control file
+                pu_ftmwConfig->d_number = num;
                 pu_ftmwConfig->loadChirps(num,exptPath);
                 pu_ftmwConfig->loadFids(num,exptPath);
                 pu_ftmwConfig->loadClocks(num,exptPath);
@@ -462,9 +464,10 @@ bool Experiment::initialize()
         d_endLogMessage = QString("Experiment %1 complete.").arg(num);
     }
 
+    QDir d(BlackChirp::getExptDir(num));
+
     if(!d_isDummy)
     {
-        QDir d(BlackChirp::getExptDir(num));
         if(d.exists())
         {
             d_errorString = QString("The directory %1 already exists. Update the experiment number or change the experiment path in program settings").arg(d.absolutePath());
@@ -487,6 +490,7 @@ bool Experiment::initialize()
 
     if(ftmwEnabled())
     {
+        pu_ftmwConfig->d_number = d_number;
         if(!pu_ftmwConfig->initialize())
         {
             setErrorString(pu_ftmwConfig->d_errorString);
@@ -768,7 +772,7 @@ void Experiment::finalSave()
     saveHeader();
 
     if(ftmwEnabled())
-        pu_ftmwConfig->writeFids(d_number);
+        pu_ftmwConfig->storage()->save();
 
 #ifdef BC_LIF
     if(lifConfig().isEnabled())

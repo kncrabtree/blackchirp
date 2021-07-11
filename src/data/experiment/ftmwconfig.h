@@ -109,7 +109,7 @@ protected:
     virtual bool _init() =0;
     virtual void _prepareToSave() =0;
     virtual void _loadComplete() =0;
-    virtual std::shared_ptr<FidStorageBase> createStorage() =0;
+    virtual std::shared_ptr<FidStorageBase> createStorage(int num, QString path="") =0;
 };
 
 

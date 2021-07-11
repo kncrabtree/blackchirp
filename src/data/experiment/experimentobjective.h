@@ -16,6 +16,8 @@ public:
     virtual bool indefinite() const =0;
     virtual bool isComplete() const =0;
     virtual bool abort() =0;
+
+    int d_number{-1};
 };
 
 #endif // EXPERIMENTOBJECTIVE_H

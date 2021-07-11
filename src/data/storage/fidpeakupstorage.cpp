@@ -1,9 +1,8 @@
 #include "fidpeakupstorage.h"
 
 FidPeakUpStorage::FidPeakUpStorage(int numRecords) :
-    FidStorageBase(QString(""),numRecords), p_mutex(new QMutex)
+    FidStorageBase(numRecords), p_mutex(new QMutex)
 {
-    d_currentFidList = newFidList();
 }
 
 FidPeakUpStorage::~FidPeakUpStorage()
@@ -55,12 +54,16 @@ FidList FidPeakUpStorage::getCurrentFidList()
 void FidPeakUpStorage::reset()
 {
     QMutexLocker l(p_mutex);
-    d_currentFidList = newFidList();
+    d_currentFidList.clear();
 }
 
 int FidPeakUpStorage::getCurrentIndex()
 {
     return 0;
+}
+
+void FidPeakUpStorage::autoSave()
+{
 }
 
 void FidPeakUpStorage::_advance()
@@ -77,7 +80,7 @@ void FidPeakUpStorage::setTargetShots(quint64 s)
 bool FidPeakUpStorage::setFidsData(const FidList other)
 {
     QMutexLocker l(p_mutex);
-    if(other.size() != d_currentFidList.size())
+    if(!d_currentFidList.isEmpty() && (other.size() != d_currentFidList.size()))
         return false;
 
     d_currentFidList = other;
