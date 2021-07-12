@@ -1,6 +1,9 @@
 #ifndef BLACKCHIRPCSV_H
 #define BLACKCHIRPCSV_H
 
+#define _STR(x) #x
+#define STRINGIFY(x) _STR(x)
+
 #include <QIODevice>
 #include <QTextStream>
 #include <QVector>
@@ -24,6 +27,12 @@ static const QString ai{"ArrayIndex"};
 static const QString vk{"ValueKey"};
 static const QString vv{"Value"};
 static const QString vu{"Units"};
+
+static const QString configFile("config.csv");
+static const QString headerFile("header.csv");
+static const QString chirpFile("chirps.csv");
+static const QString clockFile("clocks.csv");
+static const QString auxFile("auxdata.csv");
 
 static const QString fidparams{"fidparams.csv"};
 static const QString fidDir("fid");

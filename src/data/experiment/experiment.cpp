@@ -5,8 +5,8 @@
 #include <data/experiment/ftmwconfigtypes.h>
 
 #include <QApplication>
-#include <QDir>
 #include <QFile>
+#include <QDir>
 #include <QTextStream>
 
 Experiment::Experiment() : HeaderStorage(BC::Store::Exp::key)
@@ -390,8 +390,6 @@ bool Experiment::initialize()
         d_startLogMessage = QString("Peak up mode started.");
         d_endLogMessage = QString("Peak up mode ended.");
         d_isDummy = true;
-//        saveToSettings();
-//        return true;
     }
     else
     {
@@ -399,13 +397,13 @@ bool Experiment::initialize()
         d_endLogMessage = QString("Experiment %1 complete.").arg(num);
     }
 
-    QDir d(BlackChirp::getExptDir(num));
+    QDir d(BlackchirpCSV::exptDir(num));
 
     if(!d_isDummy)
     {
         if(d.exists())
         {
-            d_errorString = QString("The directory %1 already exists. Update the experiment number or change the experiment path in program settings").arg(d.absolutePath());
+            d_errorString = QString("The directory %1 already exists. Update the experiment number or change the experiment path.").arg(d.absolutePath());
             return false;
         }
         if(!d.mkpath(d.absolutePath()))
@@ -431,6 +429,7 @@ bool Experiment::initialize()
             d_errorString = pu_ftmwConfig->d_errorString;
             return false;
         }
+        addChild(pu_ftmwConfig.get());
     }
 
 #ifdef BC_LIF
@@ -445,31 +444,28 @@ bool Experiment::initialize()
 #endif
 
 
-    //write headers; chirps, etc
-    //scan header
-    if(!d_isDummy && !saveHeader())
+    //write config file, header file; chirps file, and clocks file as appropriate
+    if(!d_isDummy)
     {
-#pragma message("Update saving header")
-        d_errorString = QString("Could not open the file %1 for writing.")
-                .arg(BlackChirp::getExptFile(d_number,BlackChirp::HeaderFile));
-        return false;
-    }
-
-    //chirp file
-    if(ftmwEnabled() && !d_isDummy)
-    {
-        if(!saveChirpFile())
-        {
-            d_errorString = QString("Could not open the file %1 for writing.")
-                    .arg(BlackChirp::getExptFile(num,BlackChirp::ChirpFile));
+        if(!saveHeader())
             return false;
-        }
 
-        if(!saveClockFile())
+        //chirp file
+        if(ftmwEnabled())
         {
-            d_errorString = QString("Could not open the file %1 for writing.")
-                    .arg(BlackChirp::getExptFile(num,BlackChirp::ClockFile));
-            return false;
+            if(!saveChirpFile())
+            {
+                d_errorString = QString("Could not open the file %1 for writing.")
+                        .arg(BlackChirp::getExptFile(num,BlackChirp::ChirpFile));
+                return false;
+            }
+
+            if(!saveClockFile())
+            {
+                d_errorString = QString("Could not open the file %1 for writing.")
+                        .arg(BlackChirp::getExptFile(num,BlackChirp::ClockFile));
+                return false;
+            }
         }
     }
 
@@ -641,34 +637,38 @@ void Experiment::finalSave()
     if(d_isDummy)
         return;
 
-    //record validation keys
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    QString keys = s.value(QString("knownValidationKeys"),QString("")).toString();
-    QStringList knownKeyList = keys.split(QChar(';'),QString::SkipEmptyParts);
+//    //record validation keys
+//    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+//    QString keys = s.value(QString("knownValidationKeys"),QString("")).toString();
+//    QStringList knownKeyList = keys.split(QChar(';'),QString::SkipEmptyParts);
 
-    auto it = d_timeDataMap.constBegin();
-    while(it != d_timeDataMap.constEnd())
-    {
-        QString key = it.key();
-        if(!knownKeyList.contains(key))
-            knownKeyList.append(key);
-        it++;
-    }
+//    auto it = d_timeDataMap.constBegin();
+//    while(it != d_timeDataMap.constEnd())
+//    {
+//        QString key = it.key();
+//        if(!knownKeyList.contains(key))
+//            knownKeyList.append(key);
+//        it++;
+//    }
 
-    keys.clear();
-    if(knownKeyList.size() > 0)
-    {
-        keys = knownKeyList.at(0);
-        for(int i=1; i<knownKeyList.size();i++)
-            keys.append(QString(";%1").arg(knownKeyList.at(i)));
+//    keys.clear();
+//    if(knownKeyList.size() > 0)
+//    {
+//        keys = knownKeyList.at(0);
+//        for(int i=1; i<knownKeyList.size();i++)
+//            keys.append(QString(";%1").arg(knownKeyList.at(i)));
 
-        s.setValue(QString("knownValidationKeys"),keys);
-    }
+//        s.setValue(QString("knownValidationKeys"),keys);
+//    }
 
-    saveHeader();
+//    saveHeader();
 
     if(ftmwEnabled())
-        pu_ftmwConfig->storage()->save();
+    {
+        auto f = pu_ftmwConfig->storage()->save();
+        if(f.isRunning())
+            f.waitForFinished();
+    }
 
 #ifdef BC_LIF
     if(lifConfig().isEnabled())
@@ -680,14 +680,47 @@ void Experiment::finalSave()
         motorScan().writeMotorFile(d_number);
 #endif
 
-    saveTimeFile();
+//    saveTimeFile();
+}
+
+bool Experiment::saveConfig()
+{
+    QDir d(BlackchirpCSV::exptDir(d_number));
+    QFile cfg(d.absoluteFilePath(BC::CSV::configFile));
+    if(!cfg.open(QIODevice::WriteOnly|QIODevice::Text))
+    {
+        d_errorString = QString("Could not open the file %1 for writing.")
+                .arg(d.absoluteFilePath(BC::CSV::configFile));
+        return false;
+    }
+
+    QTextStream t(&cfg);
+    BlackchirpCSV::writeLine(t,{"key","value"});
+    BlackchirpCSV::writeLine(t,{"BCMajorVersion",BC_MAJOR_VERSION});
+    BlackchirpCSV::writeLine(t,{"BCMinorVersion",BC_MINOR_VERSION});
+    BlackchirpCSV::writeLine(t,{"BCPatchVersion",BC_PATCH_VERSION});
+    BlackchirpCSV::writeLine(t,{"BCReleaseVersion",STRINGIFY(BC_RELEASE_VERSION)});
+    BlackchirpCSV::writeLine(t,{"BCBuildVersion",STRINGIFY(BC_BUILD_VERSION)});
+    BlackchirpCSV::writeLine(t,{"CsvDelimiter",BC::CSV::del});
+    if(ftmwEnabled())
+        BlackchirpCSV::writeLine(t,{"FtmwType",ftmwConfig()->d_type});
+
+#pragma message("Write hardware list")
+    return true;
 }
 
 bool Experiment::saveHeader()
 {
-    QFile hdr(BlackChirp::getExptFile(d_number,BlackChirp::HeaderFile));
-    BlackchirpCSV csv;
-    return csv.writeHeader(hdr,getStrings());
+    QDir d(BlackchirpCSV::exptDir(d_number));
+    QFile hdr(d.absoluteFilePath(BC::CSV::headerFile));
+    if(!hdr.open(QIODevice::WriteOnly|QIODevice::Text))
+    {
+        d_errorString = QString("Could not open the file %1 for writing.")
+                .arg(d.absoluteFilePath(BC::CSV::headerFile));
+        return false;
+    }
+
+    return BlackchirpCSV::writeHeader(hdr,getStrings());
 }
 
 bool Experiment::saveChirpFile() const
@@ -704,34 +737,35 @@ bool Experiment::saveClockFile() const
 
 bool Experiment::saveTimeFile() const
 {
-    if(d_timeDataMap.isEmpty())
-        return true;
+    return true;
+//    if(d_timeDataMap.isEmpty())
+//        return true;
 
-    QFile tdt(BlackChirp::getExptFile(d_number,BlackChirp::TimeFile));
-    if(tdt.open(QIODevice::WriteOnly))
-    {
-        QString tab("\t");
-        QString nl("\n");
+//    QFile tdt(BlackChirp::getExptFile(d_number,BlackChirp::TimeFile));
+//    if(tdt.open(QIODevice::WriteOnly))
+//    {
+//        QString tab("\t");
+//        QString nl("\n");
 
-        QTextStream t(&tdt);
+//        QTextStream t(&tdt);
 
-        auto it = d_timeDataMap.constBegin();
-        for(;it != d_timeDataMap.constEnd(); it++)
-        {
-            QString alias = BlackChirp::channelNameLookup(it.key());
-            if(!alias.isEmpty())
-                t << QString("#Alias") << tab << alias << tab << it.key() << nl;
+//        auto it = d_timeDataMap.constBegin();
+//        for(;it != d_timeDataMap.constEnd(); it++)
+//        {
+//            QString alias = BlackChirp::channelNameLookup(it.key());
+//            if(!alias.isEmpty())
+//                t << QString("#Alias") << tab << alias << tab << it.key() << nl;
 
-        }
+//        }
 
-        t << QString("\n\n");
-        t << timeDataText();
-        t.flush();
-        tdt.close();
-        return true;
-    }
-    else
-        return false;
+//        t << QString("\n\n");
+//        t << timeDataText();
+//        t.flush();
+//        tdt.close();
+//        return true;
+//    }
+//    else
+//        return false;
 }
 
 QString Experiment::timeDataText() const
@@ -852,7 +886,7 @@ void Experiment::snapshot(int snapNum, const Experiment other)
     if(d_isDummy)
         return;
 
-    saveHeader();
+//    saveHeader();
 
     (void)snapNum;
     (void)other;
@@ -882,49 +916,49 @@ void Experiment::snapshot(int snapNum, const Experiment other)
         motorScan().writeMotorFile(d_number);
 #endif
 
-    saveTimeFile();
+//    saveTimeFile();
 }
 
 void Experiment::saveToSettings() const
 {
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("lastExperiment"));
+//    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+//    s.beginGroup(QString("lastExperiment"));
 
-//    s.setValue(QString("ftmwEnabled"),d_ftmwCfg.d_isEnabled);
-//    if(d_ftmwCfg.d_isEnabled)
-//        d_ftmwCfg.saveToSettings();
+////    s.setValue(QString("ftmwEnabled"),d_ftmwCfg.d_isEnabled);
+////    if(d_ftmwCfg.d_isEnabled)
+////        d_ftmwCfg.saveToSettings();
 
-#ifdef BC_LIF
-    s.setValue(QString("lifEnabled"),lifConfig().isEnabled());
-    if(lifConfig().isEnabled())
-        d_lifCfg.saveToSettings();
-#endif
+//#ifdef BC_LIF
+//    s.setValue(QString("lifEnabled"),lifConfig().isEnabled());
+//    if(lifConfig().isEnabled())
+//        d_lifCfg.saveToSettings();
+//#endif
 
-#ifdef BC_MOTOR
-    s.setValue(QString("motorEnabled"),motorScan().isEnabled());
-    if(motorScan().isEnabled())
-        d_motorScan.saveToSettings();
-#endif
+//#ifdef BC_MOTOR
+//    s.setValue(QString("motorEnabled"),motorScan().isEnabled());
+//    if(motorScan().isEnabled())
+//        d_motorScan.saveToSettings();
+//#endif
 
-    s.setValue(QString("autoSaveInterval"),d_autoSaveIntervalHours);
-    s.setValue(QString("auxDataInterval"),d_timeDataInterval);
+//    s.setValue(QString("autoSaveInterval"),d_autoSaveIntervalHours);
+//    s.setValue(QString("auxDataInterval"),d_timeDataInterval);
 
-    d_iobCfg.saveToSettings();
+//    d_iobCfg.saveToSettings();
 
-    s.remove(QString("validation"));
-    s.beginWriteArray(QString("validation"));
-    int i=0;
-    foreach(BlackChirp::ValidationItem val,d_validationConditions)
-    {
-        s.setArrayIndex(i);
-        s.setValue(QString("key"),val.key);
-        s.setValue(QString("min"),qMin(val.min,val.max));
-        s.setValue(QString("max"),qMax(val.min,val.max));
-        i++;
-    }
-    s.endArray();
-    s.endGroup();
+//    s.remove(QString("validation"));
+//    s.beginWriteArray(QString("validation"));
+//    int i=0;
+//    foreach(BlackChirp::ValidationItem val,d_validationConditions)
+//    {
+//        s.setArrayIndex(i);
+//        s.setValue(QString("key"),val.key);
+//        s.setValue(QString("min"),qMin(val.min,val.max));
+//        s.setValue(QString("max"),qMax(val.min,val.max));
+//        i++;
+//    }
+//    s.endArray();
+//    s.endGroup();
 
 }
 

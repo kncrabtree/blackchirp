@@ -1,8 +1,7 @@
 #ifndef FIDSTORAGEBASE_H
 #define FIDSTORAGEBASE_H
 
-#include <deque>
-#include <map>
+#include <QFuture>
 
 #include <data/experiment/fid.h>
 
@@ -25,7 +24,7 @@ public:
     virtual FidList getCurrentFidList() =0;
     virtual void autoSave() =0;
     void advance();
-    void save();
+    QFuture<void> save();
 #ifdef BC_CUDA
     virtual bool setFidsData(const FidList other) =0;
 #endif
@@ -33,16 +32,12 @@ public:
 
 protected:
     virtual void _advance() =0;
-    void saveFidList(const FidList l, int i);
-    FidList loadFidList(int i);
+    QFuture<void> saveFidList(const FidList l, int i);
+    QFuture<FidList> loadFidList(int i);
 
 private:
     QVector<Fid> d_templateList;
 
 };
-//std::deque<std::map<int,FidList>::iterator> d_cache;
-//std::map<int,FidList> d_memStorage;
-//std::vector<quint64> d_completedShots;
-//int d_currentIndex;
 
 #endif // FIDSTORAGEBASE_H

@@ -312,17 +312,17 @@ QPair<double, double> RfConfig::calculateChirpAbsOffsetRange() const
 
 bool RfConfig::writeClockFile(int num, QString path) const
 {
-    QSaveFile f(BlackChirp::getExptFile(num,BlackChirp::ClockFile,path));
+    QDir d(BlackchirpCSV::exptDir(num,path));
+    QSaveFile f(d.absoluteFilePath(BC::CSV::clockFile));
     if(f.open(QIODevice::WriteOnly|QIODevice::Text))
     {
         QTextStream t(&f);
-        BlackchirpCSV csv;
-        csv.writeLine(t,{"Index","ClockType","FreqMHz","Operation","Factor","HwKey","OutputNum"});
+        BlackchirpCSV::writeLine(t,{"Index","ClockType","FreqMHz","Operation","Factor","HwKey","OutputNum"});
         for(int i=0;i<d_clockConfigs.size(); ++i)
         {
             for(auto it=d_clockConfigs.at(i).cbegin(); it!=d_clockConfigs.at(i).cend(); ++it)
             {
-                csv.writeLine(t,{
+                BlackchirpCSV::writeLine(t,{
                                   i,
                                   it.key(),
                                   it.value().desiredFreqMHz,

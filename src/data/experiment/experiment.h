@@ -105,6 +105,8 @@ public:
     void abort();
     bool snapshotReady();
     void finalSave();
+
+    bool saveConfig();
     bool saveHeader();
     bool saveChirpFile() const;
     bool saveClockFile() const;

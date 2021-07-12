@@ -101,18 +101,18 @@ void ChirpConfig::readChirpFile(int num, QString path)
 
 bool ChirpConfig::writeChirpFile(int num, QString path)
 {
-    QSaveFile f(BlackChirp::getExptFile(num,BlackChirp::ChirpFile,path));
+    QDir d(BlackchirpCSV::exptDir(num,path));
+    QSaveFile f(d.absoluteFilePath(BC::CSV::chirpFile));
     if(f.open(QIODevice::WriteOnly|QIODevice::Text))
     {
         QTextStream t(&f);
-        BlackchirpCSV csv;
-        csv.writeLine(t,{"Chirp","Segment","StartMHz","EndMHz","DurationUs","Alpha","Empty"});
+        BlackchirpCSV::writeLine(t,{"Chirp","Segment","StartMHz","EndMHz","DurationUs","Alpha","Empty"});
         for(int i=0; i<d_chirpList.size(); ++i)
         {
             for(int j=0; j<d_chirpList.at(i).size(); ++j)
             {
                 auto &seg = d_chirpList.at(i).at(j);
-                csv.writeLine(t,{i,j,seg.startFreqMHz,seg.endFreqMHz,
+                BlackchirpCSV::writeLine(t,{i,j,seg.startFreqMHz,seg.endFreqMHz,
                                  seg.durationUs,seg.alphaUs,seg.empty});
             }
         }

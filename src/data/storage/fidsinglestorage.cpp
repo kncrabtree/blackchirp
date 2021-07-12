@@ -76,6 +76,8 @@ int FidSingleStorage::getCurrentIndex()
 
 void FidSingleStorage::autoSave()
 {
+    //note: d_lastAutosave starts at 0, so this increments it to 1 on first call.
+    //autosaves will be numbered starting from 1, and final data will be numbered 0
     ++d_lastAutosave;
 
     auto fl = getCurrentFidList();

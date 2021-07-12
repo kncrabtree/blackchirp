@@ -30,7 +30,7 @@ protected:
 private:
     QMutex *p_mutex;
     FidList d_currentFidList;
-    int d_lastAutosave{-1};
+    int d_lastAutosave{0};
 
 
 };
