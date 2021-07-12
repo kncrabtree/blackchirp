@@ -119,17 +119,17 @@ bool ClockManager::prepareForExperiment(Experiment &exp)
 
         if(c == nullptr)
         {
-            exp.setErrorString(QString("Could not find hardware clock for %1 (%2 output %3)")
+            exp.d_errorString = QString("Could not find hardware clock for %1 (%2 output %3)")
                                .arg(QMetaEnum::fromType<RfConfig::ClockType>()
                                     .valueToKey(type))
-                                    .arg(d.hwKey).arg(d.output));
+                                    .arg(d.hwKey).arg(d.output);
             return false;
         }
 
         if(!c->addRole(type,d.output))
         {
-            exp.setErrorString(QString("The output number requested for %1 (%2) is out of range (only %2 outputs are available).")
-                               .arg(c->d_name).arg(d.output).arg(c->numOutputs()));
+            exp.d_errorString = QString("The output number requested for %1 (%2) is out of range (only %2 outputs are available).")
+                               .arg(c->d_name).arg(d.output).arg(c->numOutputs());
             return false;
         }
 
@@ -144,10 +144,10 @@ bool ClockManager::prepareForExperiment(Experiment &exp)
         double actualFreq = c->setFrequency(type,d.desiredFreqMHz);
         if(actualFreq < 0.0)
         {
-            exp.setErrorString(QString("Could not set %1 to %2 MHz (raw frequency = %3 MHz).")
+            exp.d_errorString = QString("Could not set %1 to %2 MHz (raw frequency = %3 MHz).")
                                .arg(c->d_name)
                                .arg(d.desiredFreqMHz,0,'f',6)
-                               .arg(exp.ftmwConfig()->d_rfConfig.rawClockFrequency(type),0,'f',6));
+                               .arg(exp.ftmwConfig()->d_rfConfig.rawClockFrequency(type),0,'f',6);
             return false;
         }
         if(qAbs(actualFreq-d.desiredFreqMHz) > 0.1)

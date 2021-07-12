@@ -128,10 +128,10 @@ bool Clock::prepareForExperiment(Experiment &exp)
                 double val = setFrequency(it.key(),c.desiredFreqMHz);
                 if(val < 0.0)
                 {
-                    exp.setErrorString(QString("Could not initialize %1 to %2 MHz")
+                    exp.d_errorString = QString("Could not initialize %1 to %2 MHz")
                                        .arg(QMetaEnum::fromType<RfConfig::ClockType>()
                                             .valueToKey(it.key()))
-                                       .arg(it.value().desiredFreqMHz,0,'f',6));
+                                       .arg(it.value().desiredFreqMHz,0,'f',6);
                     return false;
                 }
                 exp.ftmwConfig()->d_rfConfig.setClockDesiredFreq(it.key(),val);

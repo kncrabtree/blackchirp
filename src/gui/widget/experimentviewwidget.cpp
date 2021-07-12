@@ -37,7 +37,7 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
 
     if(pu_experiment->d_number < 1)
     {
-        QLabel *errLabel = new QLabel(pu_experiment->errorString());
+        QLabel *errLabel = new QLabel(pu_experiment->d_errorString);
         errLabel->setAlignment(Qt::AlignCenter);
         errLabel->setWordWrap(true);
         vbl->addWidget(errLabel);

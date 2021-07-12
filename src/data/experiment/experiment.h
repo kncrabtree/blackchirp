@@ -45,41 +45,39 @@ public:
     ~Experiment();
 
     bool d_hardwareSuccess{false};
+    int d_number{0};
+    QDateTime d_startTime;
+    int d_timeDataInterval{300};
+    int d_autoSaveIntervalHours{10000};
+    QString d_errorString;
+    QString d_startLogMessage;
+    QString d_endLogMessage;
+    BlackChirp::LogMessageCode d_endLogMessageCode{BlackChirp::LogNormal};
 
-//    FtmwConfig d_ftmwCfg;
+    inline bool isAborted()  const { return d_isAborted; }
+    inline bool isDummy() const { return d_isDummy; }
 
-    bool isAborted() const;
 
-    bool ftmwEnabled() const;
-    FtmwConfig* ftmwConfig() const;
-    PulseGenConfig pGenConfig() const;
-    FlowConfig flowConfig() const;
-    IOBoardConfig iobConfig() const;
-    bool isDummy() const { return d_isDummy; }
+    inline bool ftmwEnabled() const { return pu_ftmwConfig.get() != nullptr; }
+    FtmwConfig* enableFtmw(FtmwConfig::FtmwType type);
+    inline FtmwConfig* ftmwConfig() const {return pu_ftmwConfig.get(); }
+    bool incrementFtmw();
+    void setFtmwClocksReady();
+
+
+    inline PulseGenConfig pGenConfig() const { return d_pGenCfg; }
+    inline FlowConfig flowConfig() const { return d_flowCfg; }
+    inline IOBoardConfig iobConfig() const { return d_iobCfg; }
     bool isComplete() const;
-    bool hardwareSuccess() const;
-    QString errorString() const;
     QMap<QString,QPair<QList<QVariant>,bool>> timeDataMap() const;
-    QString startLogMessage() const;
-    QString endLogMessage() const;
     BlackChirp::LogMessageCode endLogMessageCode() const;
     QMap<QString, QPair<QVariant,QString>> headerMap() const;
     QMap<QString,BlackChirp::ValidationItem> validationItems() const;
-    bool snapshotReady();
 
-    FtmwConfig* enableFtmw(FtmwConfig::FtmwType type);
-    void setTimeDataInterval(const int t);
-    void setAutoSaveShotsInterval(const int s);
-    bool initialize();
-    void abort();
     void setIOBoardConfig(const IOBoardConfig cfg);
-#ifdef BC_CUDA
-    bool setFidsData(const QVector<QVector<qint64> > l);
-#endif
-    bool addFids(const QByteArray newData, int shift = 0);
-    void setPulseGenConfig(const PulseGenConfig c);
-    void setFlowConfig(const FlowConfig c);
-    void setErrorString(const QString str);
+    void setPulseGenConfig(const PulseGenConfig c) { d_pGenCfg = c; }
+    void setFlowConfig(const FlowConfig c) { d_flowCfg = c; }
+
     bool addTimeData(const QList<QPair<QString, QVariant> > dataList, bool plot);
     void addTimeStamp();
     void setValidationItems(const QMap<QString,BlackChirp::ValidationItem> m);
@@ -103,13 +101,9 @@ public:
     bool addMotorTrace(const QVector<double> d);
 #endif
 
-    /**
-     * @brief incrementFtmw
-     * @return Boolean that indicates a new segment needs to start
-     */
-    bool incrementFtmw();
-    void setFtmwClocksReady();
-
+    bool initialize();
+    void abort();
+    bool snapshotReady();
     void finalSave();
     bool saveHeader();
     bool saveChirpFile() const;
@@ -121,14 +115,6 @@ public:
     void saveToSettings() const;
 //    static Experiment loadFromSettings();
 
-    int d_number{0};
-    QDateTime d_startTime;
-    int d_timeDataInterval{300};
-    int d_autoSaveShotsInterval{10000};
-    QString d_errorString;
-    QString d_startLogMessage;
-    QString d_endLogMessage;
-    BlackChirp::LogMessageCode d_endLogMessageCode{BlackChirp::LogNormal};
 
 private:
     quint64 d_lastSnapshot{0};

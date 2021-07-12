@@ -469,9 +469,9 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
     if(!p_batchThread->isRunning())
         return;
 
-    if(!exp->hardwareSuccess())
+    if(!exp->d_hardwareSuccess)
     {
-        emit logMessage(exp->errorString(),BlackChirp::LogError);
+        emit logMessage(exp->d_errorString,BlackChirp::LogError);
         p_batchThread->quit();
         configureUi(Idle);
         return;
@@ -480,8 +480,8 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
     if(!exp->initialize())
     {
         emit logMessage(QString("Could not initialize experiment."),BlackChirp::LogError);
-        if(!exp->errorString().isEmpty())
-            emit logMessage(exp->errorString(),BlackChirp::LogError);
+        if(!exp->d_errorString.isEmpty())
+            emit logMessage(exp->d_errorString,BlackChirp::LogError);
         p_batchThread->quit();
         configureUi(Idle);
         return;

@@ -292,7 +292,7 @@ void WizardStartPage::initializePage()
         }
 
 
-        p_autosaveBox->setValue(e->d_autoSaveShotsInterval);
+        p_autosaveBox->setValue(e->d_autoSaveIntervalHours);
         p_auxDataIntervalBox->setValue(e->d_timeDataInterval);
     }
 
@@ -327,8 +327,8 @@ bool WizardStartPage::validatePage()
      e->setMotorEnabled(p_motor->isChecked());
 #endif
 
-     e->setAutoSaveShotsInterval(p_autosaveBox->value());
-     e->setTimeDataInterval(p_auxDataIntervalBox->value());
+     e->d_autoSaveIntervalHours = p_autosaveBox->value();
+     e->d_timeDataInterval = p_auxDataIntervalBox->value();
 
      
      return true;

@@ -108,7 +108,7 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
         }
 
 
-        success = d_currentExperiment->addFids(b,d_currentShift);
+        success = d_currentExperiment->ftmwConfig()->addFids(b,d_currentShift);
 
 #pragma message("Move GPU code to FTMWconfig")
 //        QVector<QVector<qint64> >  l;
@@ -129,7 +129,7 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 
         if(!success)
         {
-            emit logMessage(d_currentExperiment->errorString(),BlackChirp::LogError);
+            emit logMessage(d_currentExperiment->d_errorString,BlackChirp::LogError);
             abort();
             return;
         }

@@ -178,36 +178,6 @@ Experiment::~Experiment()
 
 }
 
-bool Experiment::isAborted() const
-{
-    return d_isAborted;
-}
-
-bool Experiment::ftmwEnabled() const
-{
-    return pu_ftmwConfig.get() != nullptr;
-}
-
-FtmwConfig *Experiment::ftmwConfig() const
-{
-    return pu_ftmwConfig.get();
-}
-
-PulseGenConfig Experiment::pGenConfig() const
-{
-    return d_pGenCfg;
-}
-
-FlowConfig Experiment::flowConfig() const
-{
-    return d_flowCfg;
-}
-
-IOBoardConfig Experiment::iobConfig() const
-{
-    return d_iobCfg;
-}
-
 bool Experiment::isComplete() const
 {
 #ifdef BC_MOTOR
@@ -228,34 +198,9 @@ bool Experiment::isComplete() const
     return true;
 }
 
-bool Experiment::hardwareSuccess() const
-{
-    return d_hardwareSuccess;
-}
-
-QString Experiment::errorString() const
-{
-    return d_errorString;
-}
-
 QMap<QString, QPair<QList<QVariant>, bool> > Experiment::timeDataMap() const
 {
     return d_timeDataMap;
-}
-
-QString Experiment::startLogMessage() const
-{
-    return d_startLogMessage;
-}
-
-QString Experiment::endLogMessage() const
-{
-    return d_endLogMessage;
-}
-
-BlackChirp::LogMessageCode Experiment::endLogMessageCode() const
-{
-    return d_endLogMessageCode;
 }
 
 QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
@@ -263,7 +208,7 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
     QMap<QString, QPair<QVariant, QString> > out;
 
     out.insert(QString("AuxDataInterval"),qMakePair(d_timeDataInterval,QString("s")));
-    out.insert(QString("AutosaveInterval"),qMakePair(d_autoSaveShotsInterval,QString("shots")));
+    out.insert(QString("AutosaveInterval"),qMakePair(d_autoSaveIntervalHours,QString("hr")));
 
     auto it = d_validationConditions.constBegin();
     QString prefix("Validation.");
@@ -428,16 +373,6 @@ FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
     return pu_ftmwConfig.get();
 }
 
-void Experiment::setTimeDataInterval(const int t)
-{
-    d_timeDataInterval = t;
-}
-
-void Experiment::setAutoSaveShotsInterval(const int s)
-{
-    d_autoSaveShotsInterval = s;
-}
-
 bool Experiment::initialize()
 {
     d_startTime = QDateTime::currentDateTime();
@@ -493,7 +428,7 @@ bool Experiment::initialize()
         pu_ftmwConfig->d_number = d_number;
         if(!pu_ftmwConfig->initialize())
         {
-            setErrorString(pu_ftmwConfig->d_errorString);
+            d_errorString = pu_ftmwConfig->d_errorString;
             return false;
         }
     }
@@ -571,45 +506,6 @@ void Experiment::abort()
 void Experiment::setIOBoardConfig(const IOBoardConfig cfg)
 {
     d_iobCfg = cfg;
-}
-
-#ifdef BC_CUDA
-bool Experiment::setFidsData(const QVector<QVector<qint64> > l)
-{
-    if(!pu_ftmwConfig->setFidsData(l))
-    {
-        setErrorString(pu_ftmwConfig->d_errorString);
-        return false;
-    }
-
-    return true;
-}
-#endif
-
-bool Experiment::addFids(const QByteArray newData, int shift)
-{
-    if(!pu_ftmwConfig->addFids(newData,shift))
-    {
-        setErrorString(pu_ftmwConfig->d_errorString);
-        return false;
-    }
-
-    return true;
-}
-
-void Experiment::setPulseGenConfig(const PulseGenConfig c)
-{
-    d_pGenCfg = c;
-}
-
-void Experiment::setFlowConfig(const FlowConfig c)
-{
-    d_flowCfg = c;
-}
-
-void Experiment::setErrorString(const QString str)
-{
-    d_errorString = str;
 }
 
 bool Experiment::addTimeData(const QList<QPair<QString, QVariant> > dataList, bool plot)
@@ -1011,7 +907,7 @@ void Experiment::saveToSettings() const
         d_motorScan.saveToSettings();
 #endif
 
-    s.setValue(QString("autoSaveShots"),d_autoSaveShotsInterval);
+    s.setValue(QString("autoSaveInterval"),d_autoSaveIntervalHours);
     s.setValue(QString("auxDataInterval"),d_timeDataInterval);
 
     d_iobCfg.saveToSettings();
@@ -1092,7 +988,7 @@ void Experiment::prepareToSave()
     using namespace BC::Store::Exp;
     store(num,d_number);
     store(timeData,d_timeDataInterval,QString("s"));
-    store(autoSave,d_autoSaveShotsInterval,QString("shots"));
+    store(autoSave,d_autoSaveIntervalHours,QString("shots"));
     if(pu_ftmwConfig.get() != nullptr)
     {
         store(ftmwEn,true);
@@ -1105,7 +1001,7 @@ void Experiment::loadComplete()
     using namespace BC::Store::Exp;
     d_number = retrieve<int>(num);
     d_timeDataInterval = retrieve<int>(timeData);
-    d_autoSaveShotsInterval = retrieve<int>(autoSave);
+    d_autoSaveIntervalHours = retrieve<int>(autoSave);
     if(retrieve(ftmwEn,false))
     {
         auto type = retrieve(ftmwType,FtmwConfig::Forever);
