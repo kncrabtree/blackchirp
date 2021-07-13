@@ -21,7 +21,8 @@ HardwareObject::HardwareObject(const QString key, const QString subKey, const QS
     //it is necessary to write the subKey one level above the SettingsStorage group, which
     //is referenced to d_key/d_subKey, so that other parts of the application can determine
     //the current subKey for looking up settings.
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    QSettings s(QApplication::organizationName(),QApplication::applicationName());
+    s.setFallbacksEnabled(false);
     s.setValue(d_key + "/" + BC::Key::HW::subKey,d_subKey);
     s.sync();
 }

@@ -104,3 +104,12 @@ void ExperimentWizard::setCurrentLaserPos(double pos)
 #endif
 
 
+
+
+void ExperimentWizard::reject()
+{
+    for(auto page : d_pages)
+        page->discardChanges();
+
+    QDialog::reject();
+}

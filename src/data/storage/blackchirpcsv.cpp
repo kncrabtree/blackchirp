@@ -95,6 +95,14 @@ void BlackchirpCSV::writeLine(QTextStream &t, const QVariantList l)
     t << nl;
 }
 
+QString BlackchirpCSV::formatInt64(qint64 n)
+{
+    if(n>=0)
+        return QString::number(n,36);
+    else
+        return QString("-")+QString::number(qAbs(n),36);
+}
+
 void BlackchirpCSV::writeFidList(QIODevice &device, const FidList l)
 {
     using namespace BC::CSV;
@@ -111,10 +119,10 @@ void BlackchirpCSV::writeFidList(QIODevice &device, const FidList l)
 
     for(int i=0; i<maxSize; ++i)
     {
-        t << nl << QString::number(l.constFirst().valueRaw(i),36);
+        t << nl << formatInt64(l.constFirst().valueRaw(i));
 
         for(int j=1; j<l.size(); ++j)
-            t << del << QString::number(l.at(j).valueRaw(i),36);
+            t << del << formatInt64(l.at(j).valueRaw(i));
     }
 }
 
@@ -144,6 +152,58 @@ QVector<qint64> BlackchirpCSV::readFidLine(QIODevice &device)
 
     return out;
 
+}
+
+bool BlackchirpCSV::exptDirExists(int num)
+{
+    int mil = num/1000000;
+    int th = num/1000;
+    SettingsStorage s;
+    QDir out(s.get(BC::Key::savePath,QString("")));
+    if(!out.cd(BC::Key::exptDir))
+        return false;
+    if(!out.cd(QString::number(mil)))
+        return false;
+    if(!out.cd(QString::number(th)))
+        return false;
+    if(!out.cd(QString::number(num)))
+        return false;
+
+    return true;
+}
+
+bool BlackchirpCSV::createExptDir(int num)
+{
+    QString mil = QString::number(num/1000000);
+    QString th = QString::number(num/1000);
+    QString n = QString::number(num);
+
+    SettingsStorage s;
+    QDir out(s.get(BC::Key::savePath,QString("")));
+    if(!out.cd(BC::Key::exptDir))
+        return false;
+
+    if(!out.cd(mil))
+    {
+        if(!out.mkdir(mil))
+            return false;
+        if(!out.cd(mil))
+            return false;
+    }
+    if(!out.cd(th))
+    {
+        if(!out.mkdir(th))
+            return false;
+        if(!out.cd(th))
+            return false;
+    }
+    if(!out.cd(n))
+    {
+        if(!out.mkdir(n))
+            return false;
+    }
+
+    return true;
 }
 
 QDir BlackchirpCSV::exptDir(int num, QString path)

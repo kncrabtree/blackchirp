@@ -463,9 +463,6 @@ void MainWindow::batchComplete(bool aborted)
 
 void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
 {   
-    SettingsStorage s;
-    ui->exptSpinBox->setValue(s.get<int>(BC::Key::exptNum));
-
     if(!p_batchThread->isRunning())
         return;
 
@@ -486,6 +483,9 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
         configureUi(Idle);
         return;
     }
+
+    if(exp->d_number > 0)
+        ui->exptSpinBox->setValue(exp->d_number);
 
     d_currentExptNum = exp->d_number;
 

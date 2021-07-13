@@ -63,7 +63,11 @@ private:
 
     // QWidget interface
 public:
-    virtual QSize sizeHint() const;
+    virtual QSize sizeHint() const override;
+
+    // QDialog interface
+public slots:
+    void reject() override;
 };
 
 #endif // EXPERIMENTWIZARD_H

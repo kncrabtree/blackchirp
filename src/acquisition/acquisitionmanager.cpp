@@ -47,26 +47,26 @@ void AcquisitionManager::beginExperiment(std::shared_ptr<Experiment> exp)
     //prepare data files, savemanager, fidmanager, etc
     d_currentExperiment = exp;
 
-    SaveManager *sm = new SaveManager();
-    connect(sm,&SaveManager::finalSaveComplete,p_saveThread,&QThread::quit);
-    connect(sm,&SaveManager::finalSaveComplete,this,&AcquisitionManager::experimentComplete);
-//    connect(this,&AcquisitionManager::doFinalSave,sm,&SaveManager::finalSave);
-//    connect(this,&AcquisitionManager::takeSnapshot,sm,&SaveManager::snapshot);
-    connect(sm,&SaveManager::snapshotComplete,this,&AcquisitionManager::snapshotComplete);
-    connect(p_saveThread,&QThread::finished,sm,&SaveManager::deleteLater);
-    sm->moveToThread(p_saveThread);
-    p_saveThread->start();
+//    SaveManager *sm = new SaveManager();
+//    connect(sm,&SaveManager::finalSaveComplete,p_saveThread,&QThread::quit);
+//    connect(sm,&SaveManager::finalSaveComplete,this,&AcquisitionManager::experimentComplete);
+////    connect(this,&AcquisitionManager::doFinalSave,sm,&SaveManager::finalSave);
+////    connect(this,&AcquisitionManager::takeSnapshot,sm,&SaveManager::snapshot);
+//    connect(sm,&SaveManager::snapshotComplete,this,&AcquisitionManager::snapshotComplete);
+//    connect(p_saveThread,&QThread::finished,sm,&SaveManager::deleteLater);
+//    sm->moveToThread(p_saveThread);
+//    p_saveThread->start();
 
     d_state = Acquiring;
     emit statusMessage(QString("Acquiring"));
 
     if(d_currentExperiment->d_timeDataInterval > 0)
     {
-        if(d_timeDataTimer == nullptr)
-            d_timeDataTimer = new QTimer(this);
-        getTimeData();
-        connect(d_timeDataTimer,&QTimer::timeout,this,&AcquisitionManager::getTimeData,Qt::UniqueConnection);
-        d_timeDataTimer->start(d_currentExperiment->d_timeDataInterval*1000);
+//        if(d_timeDataTimer == nullptr)
+//            d_timeDataTimer = new QTimer(this);
+//        getTimeData();
+//        connect(d_timeDataTimer,&QTimer::timeout,this,&AcquisitionManager::getTimeData,Qt::UniqueConnection);
+//        d_timeDataTimer->start(d_currentExperiment->d_timeDataInterval*1000);
     }
     emit beginAcquisition();
 
@@ -348,16 +348,17 @@ void AcquisitionManager::finishAcquisition()
     d_state = Idle;
     d_currentShift = 0;
 
-    disconnect(d_timeDataTimer,&QTimer::timeout,this,&AcquisitionManager::getTimeData);
-    d_timeDataTimer->stop();
+//    disconnect(d_timeDataTimer,&QTimer::timeout,this,&AcquisitionManager::getTimeData);
+//    d_timeDataTimer->stop();
 
     if(!d_currentExperiment->isDummy())
     {
-        emit doFinalSave(d_currentExperiment);
         emit statusMessage(QString("Saving experiment %1").arg(d_currentExperiment->d_number));
+        d_currentExperiment->finalSave();
+//        emit doFinalSave(d_currentExperiment);
     }
-    else
-        emit experimentComplete();
+
+    emit experimentComplete();
     d_currentExperiment.reset();
 }
 

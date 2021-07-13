@@ -119,7 +119,7 @@
           <string> Hz</string>
          </property>
          <property name="decimals">
-          <number>1</number>
+          <number>2</number>
          </property>
          <property name="minimum">
           <double>0.100000000000000</double>

@@ -18,6 +18,7 @@ private slots:
     void testExportMultipleDiffLength();
     void testExportY();
     void testExportYMulitple();
+    void testFidConversion();
 };
 
 void BlackchirpCSVTest::initTestCase()
@@ -43,16 +44,21 @@ void BlackchirpCSVTest::testExportXY()
     BlackchirpCSV csv;
     QByteArray b;
     QBuffer f(&b);
+    f.open(QIODevice::WriteOnly|QIODevice::Text);
     QCOMPARE(csv.writeXY(f,d),true);
-    QCOMPARE(b.startsWith("x,y"),true);
+    f.close();
+
+    QCOMPARE(b.startsWith("x;y"),true);
 
     QTextStream t(stdout);
     t << "\n\n" << b << "\n\n";
 
     b.clear();
 
+    f.open(QIODevice::WriteOnly|QIODevice::Text);
     QCOMPARE(csv.writeXY(f,d,"sin"),true);
-    QCOMPARE(b.startsWith("sin_x,sin_y"),true);
+    f.close();
+    QCOMPARE(b.startsWith("sin_x;sin_y"),true);
     t << "\n\n" << b << "\n\n";
 }
 
@@ -71,16 +77,20 @@ void BlackchirpCSVTest::testExportMultiple()
     BlackchirpCSV csv;
     QByteArray b;
     QBuffer f(&b);
+    f.open(QIODevice::WriteOnly|QIODevice::Text);
     QCOMPARE(csv.writeMultiple(f,{dsin,dcos},{}),true);
-    QCOMPARE(b.startsWith("x0,y0,x1,y1"),true);
+    f.close();
+    QCOMPARE(b.startsWith("x0;y0;x1;y1"),true);
 
     QTextStream t(stdout);
     t << "\n\n" << b << "\n\n";
 
     b.clear();
 
+    f.open(QIODevice::WriteOnly|QIODevice::Text);
     QCOMPARE(csv.writeMultiple(f,{dsin,dcos},{"sin","cos"}),true);
-    QCOMPARE(b.startsWith("sin_x,sin_y,cos_x,cos_y"),true);
+    f.close();
+    QCOMPARE(b.startsWith("sin_x;sin_y;cos_x;cos_y"),true);
 
     t << "\n\n" << b << "\n\n";
 }
@@ -105,8 +115,10 @@ void BlackchirpCSVTest::testExportMultipleDiffLength()
     BlackchirpCSV csv;
     QByteArray b;
     QBuffer f(&b);
+    f.open(QIODevice::WriteOnly|QIODevice::Text);
     QCOMPARE(csv.writeMultiple(f,{dsin,dcos},{}),true);
-    QCOMPARE(b.startsWith("x0,y0,x1,y1"),true);
+    f.close();
+    QCOMPARE(b.startsWith("x0;y0;x1;y1"),true);
 
     QTextStream t(stdout);
     t << "\n\n" << b << "\n\n";
@@ -123,7 +135,9 @@ void BlackchirpCSVTest::testExportY()
     BlackchirpCSV csv;
     QByteArray b;
     QBuffer f(&b);
+    f.open(QIODevice::WriteOnly|QIODevice::Text);
     QCOMPARE(csv.writeY(f,y,"sin"),true);
+    f.close();
     QCOMPARE(b.startsWith("sin"),true);
 
     QTextStream t(stdout);
@@ -133,7 +147,9 @@ void BlackchirpCSVTest::testExportY()
     y2 << "H" << "e" << "l" << "l" << "o" << "!";
 
     b.clear();
+    f.open(QIODevice::WriteOnly|QIODevice::Text);
     QCOMPARE(csv.writeY(f,y2),true);
+    f.close();
     QCOMPARE(b.startsWith("y"),true);
 
     t << "\n\n" << b << "\n\n";
@@ -142,7 +158,9 @@ void BlackchirpCSVTest::testExportY()
     y3 << 12 << 1 << 0xff;
 
     b.clear();
+    f.open(QIODevice::WriteOnly|QIODevice::Text);
     QCOMPARE(csv.writeY(f,y3,"int"),true);
+    f.close();
     QCOMPARE(b.startsWith("int"),true);
 
     t << "\n\n" << b << "\n\n";
@@ -164,10 +182,32 @@ void BlackchirpCSVTest::testExportYMulitple()
     BlackchirpCSV csv;
     QByteArray b;
     QBuffer f(&b);
+    f.open(QIODevice::WriteOnly|QIODevice::Text);
     QCOMPARE(csv.writeYMultiple(f,{"double","int","string"},{y1,y2,y3}),true);
+    f.close();
 
     QTextStream t(stdout);
     t << "\n\n" << b << "\n\n";
+}
+
+void BlackchirpCSVTest::testFidConversion()
+{
+    QTextStream t(stdout);
+
+    qint64 n1,n2,n3;
+    n1 = 20;
+    n2 = -20;
+    n3 = -100;
+
+
+
+    t << n1 << ";" << n2 << ";" << n3 << "\n\n";
+
+    t << BlackchirpCSV::formatInt64(n1) << ";" << BlackchirpCSV::formatInt64(n2) << ";" << BlackchirpCSV::formatInt64(n3) << "\n\n";
+
+    t << BlackchirpCSV::formatInt64(n2).toLongLong(nullptr,36) << "\n\n";
+
+
 }
 
 QTEST_MAIN(BlackchirpCSVTest)

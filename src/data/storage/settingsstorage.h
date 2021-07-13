@@ -24,12 +24,13 @@ static const QString exportDir("exports");
  * be created at any point in the code and initialized with the appropriate keys that refer to the group
  * that needs to be read from. All functions that modify values in QSettings are protected. Classes that
  * wish to use SettingsStorage to write to persistent storage need to inherit SettingsStorage and initialize
- * it in their constructors. The settings will be saved automatically when the object is deleted or when
- * SettingsStorage::save() is called. Note that if any getters have been registered, the objects they refer
- * to must still exist or the code will crash! A common scenario is to register a getter on an object in the
- * user interface. If the ui pointer is deleted in the derived class's destructor, then any getter registered
- * on a UI element will crash! Call SettingsStorage::clearGetters() in the derived class destructor to avoid
- * this.
+ * it in their constructors. If any of the set/register functions are called, values will be written to storage
+ * during the function call (if the optional write argument is true) or when the object is deleted.
+ * To prevent automatic saving, see SettingsStorage::discardValues(). This will not affect previously-written values though!
+ * Note that if any getters have been registered, the objects they refer to must still exist or the code
+ * will crash! A common scenario is to register a getter on an object in the user interface. If the ui
+ * pointer is deleted in the derived class's destructor, then any getter registered on a UI element will
+ * crash! Call SettingsStorage::clearGetters() in the derived class destructor to avoid this.
  *
  * SettingsStorage does not inherit any other classes, and it is suitable for use
  * in multiple inheritance with QObject-derived classes. **However:** classes that inherit from SettingsStorage
@@ -379,6 +380,12 @@ public:
         return defaultValue;
     }
 
+    /*!
+     * \brief Controls whether changes are wrtten to QSettings
+     * \param discard If true, settings are not saved.
+     */
+    void discardChanges(bool discard = true) { d_discard = discard; }
+
 protected:
     /*!
      * \brief Registers a getter function for a given setting
@@ -405,6 +412,8 @@ protected:
         //cannot register a getter for an array value
         if(d_arrayValues.find(key) != d_arrayValues.end())
             return false;
+
+        d_discard = false;
 
         auto it = d_values.find(key);
         if(it != d_values.end())
@@ -442,6 +451,8 @@ protected:
         //cannot register a getter for an array value
         if(d_arrayValues.find(key) != d_arrayValues.end())
             return false;
+
+        d_discard = false;
 
         auto it = d_values.find(key);
         if(it != d_values.end())
@@ -684,6 +695,7 @@ private:
     explicit SettingsStorage(const QString orgName, const QString appName, const QStringList keys, Type type, QSettings::Scope scope);
 
     SettingsMap d_values; /*!< Map of key-value pairs */
+    bool d_discard{true}; /*! If set to true, changes will not be stored to QSettings */
 
     std::map<QString, SettingsGetter> d_getters; /*!< Map containing all registered getters */
     std::map<QString,std::vector<SettingsMap>> d_arrayValues; /*!< Map containing all array values */

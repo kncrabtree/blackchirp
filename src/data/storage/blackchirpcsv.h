@@ -118,11 +118,19 @@ public:
 
     static void writeLine(QTextStream &t, const QVariantList l);
 
+    static QString formatInt64(qint64 n);
     static void writeFidList(QIODevice &device, const FidList l);
 
     static QVariantList readLine(QIODevice &device);
     static QVector<qint64> readFidLine(QIODevice &device);
 
+    /*!
+     * \brief Checks for existence of experiment directory
+     * \param Experiment number
+     * \return True if experiment folder exists
+     */
+    static bool exptDirExists(int num);
+    static bool createExptDir(int num);
     static QDir exptDir(int num, QString path="");
 
 };

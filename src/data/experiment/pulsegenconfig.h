@@ -94,7 +94,7 @@ class PulseGenConfigData : public QSharedData
 {
 public:
     QList<PulseGenConfig::ChannelConfig> config;
-    double repRate;
+    double repRate{1.0};
 };
 
 Q_DECLARE_TYPEINFO(PulseGenConfig::ChannelConfig,Q_MOVABLE_TYPE);

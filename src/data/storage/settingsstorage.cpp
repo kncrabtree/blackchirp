@@ -152,7 +152,7 @@ QVariant SettingsStorage::unRegisterGetter(const QString key, bool write)
     QVariant out = it->second();
     d_values.insert_or_assign(it->first,out);
 
-    if(write)
+    if(write && !d_discard)
     {
         d_settings.setValue(it->first,out);
         d_settings.sync();
@@ -170,18 +170,20 @@ void SettingsStorage::clearGetters(bool write)
         QVariant v= it->second();
         d_values.insert_or_assign(it->first,v);
 
-        if(write)
+        if(write && !d_discard)
             d_settings.setValue(it->first,v);
 
         it = d_getters.erase(it);
     }
 
-    if(write)
+    if(write && !d_discard)
         d_settings.sync();
 }
 
 QVariant SettingsStorage::getOrSetDefault(const QString key, const QVariant defaultValue)
 {
+    d_discard = false;
+
     if(containsValue(key))
     {
         auto out = get(key);
@@ -200,6 +202,8 @@ QVariant SettingsStorage::getOrSetDefault(const QString key, const QVariant defa
 
 void SettingsStorage::setDefault(const QString key, const QVariant defaultValue)
 {
+    d_discard = false;
+
     if(containsValue(key) || containsArray(key))
         return;
 
@@ -216,6 +220,7 @@ bool SettingsStorage::set(const QString key, const QVariant &value, bool write)
         return false;
 
     d_values.insert_or_assign(key,value);
+    d_discard = false;
 
     if(write)
     {
@@ -235,6 +240,7 @@ bool SettingsStorage::setArrayValue(const QString arrayKey, std::size_t i, const
         return false;
 
     d_arrayValues[arrayKey][i].insert_or_assign(key,value);
+    d_discard = false;
 
     if(write)
         writeArray(arrayKey);
@@ -244,6 +250,7 @@ bool SettingsStorage::setArrayValue(const QString arrayKey, std::size_t i, const
 
 void SettingsStorage::appendArrayMap(const QString key, const SettingsMap &map, bool write)
 {
+    d_discard = false;
     if(containsArray(key))
         d_arrayValues[key].push_back(map);
     else
@@ -255,12 +262,14 @@ void SettingsStorage::appendArrayMap(const QString key, const SettingsMap &map, 
 
 void SettingsStorage::clearValue(const QString key)
 {
+    d_discard = false;
+
     auto it = d_values.find(key);
     if(it != d_values.end())
     {
         d_settings.remove(key);
-        d_values.erase(it);
         d_settings.sync();
+        d_values.erase(it);
         return;
     }
 
@@ -268,8 +277,8 @@ void SettingsStorage::clearValue(const QString key)
     if(it2 != d_getters.end())
     {
         d_settings.remove(key);
-        d_getters.erase(it2);
         d_settings.sync();
+        d_getters.erase(it2);
         return;
     }
 
@@ -277,12 +286,14 @@ void SettingsStorage::clearValue(const QString key)
 
 std::map<QString,bool> SettingsStorage::setMultiple(const std::map<QString, QVariant> m, bool write)
 {
+    d_discard = false;
+
     std::map<QString,bool> out;
     for( auto it = m.cbegin(); it != m.cend(); ++it )
     {
         bool success = set(it->first,it->second);
         out.insert({it->first,success});
-        if(success && write)
+        if(success && write && !d_discard)
             d_settings.setValue(it->first,it->second);
     }
 
@@ -296,6 +307,8 @@ void SettingsStorage::setArray(const QString key, const std::vector<std::map<QSt
 {
     //passing an empty array will erase the value from the settings array and from QSettings
     d_arrayValues.insert_or_assign(key,array);
+    d_discard = false;
+
     if(write)
     {
         if(array.empty())
@@ -321,6 +334,8 @@ void SettingsStorage::setArray(const QString key, const std::vector<std::map<QSt
 
 void SettingsStorage::writeArray(const QString key)
 {
+    d_discard = false;
+
     d_settings.remove(key);
     d_settings.beginWriteArray(key);
     auto l = d_arrayValues.at(key);
@@ -337,6 +352,9 @@ void SettingsStorage::writeArray(const QString key)
 
 void SettingsStorage::save()
 {
+    if(d_discard)
+        return;
+
     for(auto it = d_values.cbegin(); it != d_values.cend(); ++it)
         d_settings.setValue(it->first,it->second);
 

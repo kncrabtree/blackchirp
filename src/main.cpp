@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     a.setFont(QFont(QString("sans-serif"),8));
 
 
-    //QSettings information
+
     const QString appName = QString("Blackchirp");
 
     std::unique_ptr<QSharedMemory> m;
@@ -71,6 +71,7 @@ int main(int argc, char *argv[])
         return -255;
     }
 
+    //QSettings information
     QApplication::setApplicationName(appName);
     QApplication::setOrganizationDomain(QString("crabtreelab.ucdavis.edu"));
     QApplication::setOrganizationName(QString("CrabtreeLab"));

@@ -379,9 +379,11 @@ bool Experiment::initialize()
 #pragma message("Add children to initialized experiment")
 
 
-    SettingsStorage s;
+    int num = -1;
 
-    int num = s.get(BC::Key::exptNum,0)+1;
+
+    SettingsStorage s;
+    num = s.get(BC::Key::exptNum,0)+1;
     d_number = num;
 
     if(ftmwEnabled() && pu_ftmwConfig->d_type == FtmwConfig::Peak_Up)
@@ -397,27 +399,28 @@ bool Experiment::initialize()
         d_endLogMessage = QString("Experiment %1 complete.").arg(num);
     }
 
-    QDir d(BlackchirpCSV::exptDir(num));
-
     if(!d_isDummy)
     {
-        if(d.exists())
+        if(BlackchirpCSV::exptDirExists(num))
         {
+            QDir d(BlackchirpCSV::exptDir(num));
             d_errorString = QString("The directory %1 already exists. Update the experiment number or change the experiment path.").arg(d.absolutePath());
             return false;
         }
-        if(!d.mkpath(d.absolutePath()))
+        if(!BlackchirpCSV::createExptDir(num))
         {
-            d_errorString = QString("Could not create the directory %1 for saving.").arg(d.absolutePath());
+            d_errorString = QString("Could not create experiment directory for saving. Choose a different location.");
             return false;
         }
 
         //here we've created the directory, so update expt number even if something goes wrong
         //one of the few cases where direct usage of QSettings is needed
-        QSettings set(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+        QSettings set{QCoreApplication::organizationName(),QCoreApplication::applicationName()};
+        set.setFallbacksEnabled(false);
         set.beginGroup(BC::Key::BC);
         set.setValue(BC::Key::exptNum,num);
         set.endGroup();
+        set.sync();
     }
 
 
@@ -447,6 +450,9 @@ bool Experiment::initialize()
     //write config file, header file; chirps file, and clocks file as appropriate
     if(!d_isDummy)
     {
+        if(!saveConfig())
+            return false;
+
         if(!saveHeader())
             return false;
 

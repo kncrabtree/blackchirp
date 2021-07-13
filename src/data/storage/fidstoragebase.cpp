@@ -56,7 +56,9 @@ QFuture<void> FidStorageBase::saveFidList(const FidList l, int i)
     QDir d{BlackchirpCSV::exptDir(d_number,d_path)};
     if(!d.cd(BC::CSV::fidDir))
     {
-        if(!d.mkpath(d.absolutePath()))
+        if(!d.mkdir(BC::CSV::fidDir))
+            return QFuture<void>();
+        if(!d.cd(BC::CSV::fidDir))
             return QFuture<void>();
     }
 
@@ -74,7 +76,7 @@ QFuture<void> FidStorageBase::saveFidList(const FidList l, int i)
             {
                 auto &f = tl.at(idx);
                 csv.writeLine(txt,{idx,f.spacing(),
-                                   f.probeFreq(),f.vMult(),f.shots(),f.sideband(),f.size()});
+                                   f.probeFreq(),f.vMult(),f.shots(),f.sideband(),l.constFirst().size()});
             }
             if(!hdr.commit())
                 return;

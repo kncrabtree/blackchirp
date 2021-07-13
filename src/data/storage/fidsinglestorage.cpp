@@ -15,6 +15,9 @@ FidSingleStorage::~FidSingleStorage()
 quint64 FidSingleStorage::completedShots()
 {
     QMutexLocker l(p_mutex);
+    if(d_currentFidList.isEmpty())
+        return 0;
+
     return d_currentFidList.constFirst().shots();
 }
 
@@ -26,13 +29,12 @@ quint64 FidSingleStorage::currentSegmentShots()
 bool FidSingleStorage::addFids(const FidList other, int shift)
 {
     QMutexLocker l(p_mutex);
-    if(other.size() != d_currentFidList.size())
-        return false;
-
-    if(d_currentFidList.constFirst().size() == 0)
+    if(d_currentFidList.isEmpty())
         d_currentFidList = other;
     else
     {
+        if(other.size() != d_currentFidList.size())
+            return false;
         for(int i=0; i<d_currentFidList.size(); i++)
             d_currentFidList[i].add(other.at(i),shift);
     }
@@ -44,7 +46,7 @@ bool FidSingleStorage::addFids(const FidList other, int shift)
 bool FidSingleStorage::setFidsData(const FidList other)
 {
     QMutexLocker l(p_mutex);
-    if(other.size() != d_currentFidList.size())
+    if(!d_currentFidList.isEmpty() && (other.size() != d_currentFidList.size()))
         return false;
 
     d_currentFidList = other;

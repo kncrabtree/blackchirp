@@ -15,15 +15,17 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+include_directories(src)
+
 enable_testing()
 
 add_executable(tst_settingsstoragetest tests/tst_settingsstoragetest.cpp src/data/storage/settingsstorage.cpp)
 add_test(NAME tst_settingsstoragetest COMMAND tst_settingsstoragetest)
 
-add_executable(tst_headerstoragetest tests/tst_headerstoragetest.cpp src/data/storage/headerstorage.cpp src/data/storage/blackchirpcsv.cpp)
+add_executable(tst_headerstoragetest tests/tst_headerstoragetest.cpp src/data/storage/headerstorage.cpp src/data/storage/settingsstorage.cpp src/data/storage/blackchirpcsv.cpp src/data/experiment/fid.cpp src/data/analysis/analysis.cpp)
 add_test(NAME tst_headerstoragetest COMMAND tst_headerstoragetest)
 
-add_executable(tst_blackchirpcsvtest tests/tst_blackchirpcsv.cpp src/data/storage/blackchirpcsv.cpp)
+add_executable(tst_blackchirpcsvtest tests/tst_blackchirpcsv.cpp src/data/storage/blackchirpcsv.cpp src/data/storage/settingsstorage.cpp src/data/experiment/fid.cpp src/data/analysis/analysis.cpp)
 add_test(NAME tst_blackchirpcsvtest COMMAND tst_blackchirpcsvtest)
 
 target_link_libraries(tst_settingsstoragetest PRIVATE Qt5::Gui Qt5::Test)

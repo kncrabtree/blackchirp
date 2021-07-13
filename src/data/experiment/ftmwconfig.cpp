@@ -33,8 +33,6 @@ quint64 FtmwConfig::shotIncrement() const
     quint64 increment = 1;
     if(d_scopeConfig.d_blockAverage)
         increment *= d_scopeConfig.d_numAverages;
-    if(d_scopeConfig.d_multiRecord)
-        increment *= d_scopeConfig.d_numRecords;
 
     return increment;
 }

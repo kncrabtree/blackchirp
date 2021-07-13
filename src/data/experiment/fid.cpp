@@ -112,7 +112,6 @@ void Fid::add(const qint64 *other, const unsigned int offset)
 
 void Fid::add(const Fid other, int shift)
 {
-    Q_ASSERT(size() == other.size());
     if(shift == 0)
         *this += other;
     else
@@ -120,7 +119,7 @@ void Fid::add(const Fid other, int shift)
         for(int i=0; i<size(); i++)
         {
             if(i+shift >=0 && i >= 0 && i+shift < size() && i < size())
-                data->fid[i+shift] += other.atRaw(i);
+                data->fid[i+shift] += other.valueRaw(i);
         }
 
         data->shots += other.shots();
@@ -135,18 +134,17 @@ void Fid::copyAdd(const qint64 *other, const unsigned int offset)
 
 void Fid::rollingAverage(const Fid other, quint64 targetShots, int shift)
 {
-    Q_ASSERT(size() == other.size());
     quint64 totalShots = shots() + other.shots();
     if(totalShots <= targetShots)
         add(other,shift);
     else
     {
-        for(int i=0; i<other.size(); i++)
+        for(int i=0; i<data->fid.size(); i++)
         {
             if(i+shift >=0 && i+shift < size())
-                data->fid[i+shift] = Analysis::intRoundClosest(targetShots*(atRaw(i+shift) + other.atRaw(i)),totalShots);
+                data->fid[i+shift] = Analysis::intRoundClosest(targetShots*(atRaw(i+shift) + other.valueRaw(i)),totalShots);
             else
-                data->fid[i] = Analysis::intRoundClosest(targetShots*atRaw(i),totalShots);
+                data->fid[i] = Analysis::intRoundClosest(targetShots*valueRaw(i),totalShots);
         }
 
         data->shots = targetShots;
