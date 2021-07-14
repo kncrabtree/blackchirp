@@ -22,7 +22,7 @@ class AcquisitionManager : public QObject
 {
     Q_OBJECT
 public:
-    explicit AcquisitionManager(QObject *parent = 0);
+    explicit AcquisitionManager(QObject *parent = nullptr);
     ~AcquisitionManager();
 
     enum AcquisitionState
@@ -33,16 +33,15 @@ public:
     };
 
 signals:
-    void logMessage(const QString,const BlackChirp::LogMessageCode = BlackChirp::LogNormal);
-    void statusMessage(const QString);
-    void experimentInitialized();
+    void logMessage(QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal);
+    void statusMessage(QString);
     void experimentComplete();
     void ftmwUpdateProgress(qint64);
     void newClockSettings(QHash<RfConfig::ClockType,RfConfig::ClockFreq>);
     void beginAcquisition();
     void endAcquisition();
-    void timeDataSignal();
-    void timeData(const QList<QPair<QString,QVariant>>, bool plot=true, QDateTime t = QDateTime::currentDateTime());
+    void auxDataSignal();
+    void auxData(AuxDataStorage::AuxDataMap,QDateTime);
     void motorRest();
 
     void takeSnapshot(std::shared_ptr<Experiment>);
@@ -64,8 +63,7 @@ signals:
 public slots:
     void beginExperiment(std::shared_ptr<Experiment> exp);
     void processFtmwScopeShot(const QByteArray b);
-    void getTimeData();
-    void processTimeData(const QList<QPair<QString,QVariant>> timeDataList, bool plot);
+    void processAuxData(AuxDataStorage::AuxDataMap m);
     void clockSettingsComplete(const QHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
     void pause();
     void resume();
@@ -84,11 +82,11 @@ public slots:
 private:
     std::shared_ptr<Experiment> d_currentExperiment;
     AcquisitionState d_state;
-    QTimer *d_timeDataTimer = nullptr;
-    QThread *p_saveThread;
     int d_currentShift;
     float d_lastFom;
+    int d_auxTimerId;
 
+    void auxDataTick();
     void checkComplete();
     void finishAcquisition();
     bool calculateShift(const QByteArray b);
@@ -105,6 +103,10 @@ private:
 #endif
 
 
+
+    // QObject interface
+protected:
+    void timerEvent(QTimerEvent *event) override;
 };
 
 #endif // ACQUISITIONMANAGER_H

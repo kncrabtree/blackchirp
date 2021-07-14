@@ -49,11 +49,19 @@ double TemperatureController::readTemperature(const int ch)
     return t;
 }
 
-QList<QPair<QString, QVariant> > TemperatureController::readAuxPlotData()
+bool TemperatureController::prepareForExperiment(Experiment &e)
 {
-    QList<QPair<QString,QVariant>> out;
     for (int i=0;i<d_temperatureList.size();i++)
-        out.append(qMakePair(QString("temperature.%1").arg(i),d_temperatureList.at(i)));
+        e.auxData()->registerKey(d_key,d_subKey,BC::Aux::TC::temperature.arg(i));
+
+    return true;
+}
+
+AuxDataStorage::AuxDataMap TemperatureController::readAuxData()
+{
+    AuxDataStorage::AuxDataMap out;
+    for (int i=0;i<d_temperatureList.size();i++)
+        out.insert({BC::Aux::TC::temperature.arg(i),d_temperatureList.at(i)});
     return out;
 }
 

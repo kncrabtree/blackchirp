@@ -1,12 +1,9 @@
 #include <acquisition/acquisitionmanager.h>
 
-#include <acquisition/savemanager.h>
-
 #include <math.h>
 
 AcquisitionManager::AcquisitionManager(QObject *parent) : QObject(parent), d_state(Idle), d_currentShift(0), d_lastFom(0.0)
 {
-    p_saveThread = new QThread(this);
 #ifdef BC_MOTOR
     d_waitingForMotor = false;
 #endif
@@ -14,11 +11,6 @@ AcquisitionManager::AcquisitionManager(QObject *parent) : QObject(parent), d_sta
 
 AcquisitionManager::~AcquisitionManager()
 {
-    if(p_saveThread->isRunning())
-    {
-        p_saveThread->quit();
-        p_saveThread->wait();
-    }
 }
 
 void AcquisitionManager::beginExperiment(std::shared_ptr<Experiment> exp)
@@ -44,29 +36,18 @@ void AcquisitionManager::beginExperiment(std::shared_ptr<Experiment> exp)
 
     d_currentShift = 0;
     d_lastFom = 0.0;
-    //prepare data files, savemanager, fidmanager, etc
     d_currentExperiment = exp;
-
-//    SaveManager *sm = new SaveManager();
-//    connect(sm,&SaveManager::finalSaveComplete,p_saveThread,&QThread::quit);
-//    connect(sm,&SaveManager::finalSaveComplete,this,&AcquisitionManager::experimentComplete);
-////    connect(this,&AcquisitionManager::doFinalSave,sm,&SaveManager::finalSave);
-////    connect(this,&AcquisitionManager::takeSnapshot,sm,&SaveManager::snapshot);
-//    connect(sm,&SaveManager::snapshotComplete,this,&AcquisitionManager::snapshotComplete);
-//    connect(p_saveThread,&QThread::finished,sm,&SaveManager::deleteLater);
-//    sm->moveToThread(p_saveThread);
-//    p_saveThread->start();
 
     d_state = Acquiring;
     emit statusMessage(QString("Acquiring"));
 
     if(d_currentExperiment->d_timeDataInterval > 0)
     {
-//        if(d_timeDataTimer == nullptr)
-//            d_timeDataTimer = new QTimer(this);
-//        getTimeData();
-//        connect(d_timeDataTimer,&QTimer::timeout,this,&AcquisitionManager::getTimeData,Qt::UniqueConnection);
-//        d_timeDataTimer->start(d_currentExperiment->d_timeDataInterval*1000);
+        if(d_currentExperiment->ftmwEnabled())
+            d_currentExperiment->auxData()->registerKey(QString("Ftmw"),QString("Shots"));
+
+        auxDataTick();
+        d_auxTimerId = startTimer(d_currentExperiment->d_timeDataInterval*1000);
     }
     emit beginAcquisition();
 
@@ -197,28 +178,12 @@ void AcquisitionManager::lifHardwareReady(bool success)
 }
 #endif
 
-void AcquisitionManager::getTimeData()
-{
-    if(d_state == Acquiring)
-    {
-        emit timeDataSignal();
-
-        d_currentExperiment->addTimeStamp();
-
-        if(d_currentExperiment->ftmwEnabled())
-        {
-            QList<QPair<QString,QVariant>> l { qMakePair(QString("ftmwShots"),d_currentExperiment->ftmwConfig()->completedShots()) };
-            d_currentExperiment->addTimeData(l,true);
-            emit timeData(l,true);
-        }
-    }
-}
-
-void AcquisitionManager::processTimeData(const QList<QPair<QString, QVariant> > timeDataList, bool plot)
+void AcquisitionManager::processAuxData(AuxDataStorage::AuxDataMap m)
 {
 	if(d_state == Acquiring)
 	{
-        if(!d_currentExperiment->addTimeData(timeDataList,plot))
+        emit auxData(m,d_currentExperiment->auxData()->currentPointTime());
+        if(!d_currentExperiment->addAuxData(m))
             abort();
     }
 }
@@ -264,6 +229,15 @@ void AcquisitionManager::abort()
 #endif
         finishAcquisition();
     }
+}
+
+void AcquisitionManager::auxDataTick()
+{
+    d_currentExperiment->auxData()->startNewPoint();
+    if(d_currentExperiment->ftmwEnabled())
+        processAuxData({{AuxDataStorage::makeKey("Ftmw","Shots"),
+                         d_currentExperiment->ftmwConfig()->completedShots()}});
+    emit auxDataSignal();
 }
 
 #ifdef BC_MOTOR
@@ -524,3 +498,10 @@ double AcquisitionManager::calculateChirpRMS(const QVector<qint64> chirp, double
     return sqrt(sum);
 }
 
+
+
+void AcquisitionManager::timerEvent(QTimerEvent *event)
+{
+    if(d_state == Acquiring && event->timerId() == d_auxTimerId)
+        auxDataTick();
+}

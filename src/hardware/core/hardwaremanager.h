@@ -70,15 +70,15 @@ signals:
     void abortAcquisition();
     void experimentInitialized(std::shared_ptr<Experiment>);
     void endAcquisition();
-    void timeData(const QList<QPair<QString,QVariant>>,bool plot,QDateTime t = QDateTime::currentDateTime());
+    void auxData(AuxDataStorage::AuxDataMap);
 
-    void ftmwScopeShotAcquired(const QByteArray);
+    void ftmwScopeShotAcquired(QByteArray);
 
     void clockFrequencyUpdate(RfConfig::ClockType, double);
     void allClocksReady(QHash<RfConfig::ClockType,RfConfig::ClockFreq>);
 
     void pGenSettingUpdate(int,PulseGenConfig::Setting,QVariant);
-    void pGenConfigUpdate(const PulseGenConfig);
+    void pGenConfigUpdate(PulseGenConfig);
     void pGenRepRateUpdate(double);
 
     void flowUpdate(int,double);
@@ -136,7 +136,7 @@ public slots:
     void testAll();
     void testObjectConnection(const QString type, const QString key);
 
-    void getTimeData();
+    void getAuxData();
 
     void setClocks(QHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
 

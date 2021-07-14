@@ -8,6 +8,7 @@
 #include <QMetaType>
 
 #include <data/storage/headerstorage.h>
+#include <data/storage/auxdatastorage.h>
 #include <data/experiment/ftmwconfig.h>
 #include <data/datastructs.h>
 #include <data/experiment/pulsegenconfig.h>
@@ -64,12 +65,12 @@ public:
     bool incrementFtmw();
     void setFtmwClocksReady();
 
+    AuxDataStorage *auxData() const { return pu_auxData.get(); }
 
     inline PulseGenConfig pGenConfig() const { return d_pGenCfg; }
     inline FlowConfig flowConfig() const { return d_flowCfg; }
     inline IOBoardConfig iobConfig() const { return d_iobCfg; }
     bool isComplete() const;
-    QMap<QString,QPair<QList<QVariant>,bool>> timeDataMap() const;
     BlackChirp::LogMessageCode endLogMessageCode() const;
     QMap<QString, QPair<QVariant,QString>> headerMap() const;
     QMap<QString,BlackChirp::ValidationItem> validationItems() const;
@@ -78,8 +79,7 @@ public:
     void setPulseGenConfig(const PulseGenConfig c) { d_pGenCfg = c; }
     void setFlowConfig(const FlowConfig c) { d_flowCfg = c; }
 
-    bool addTimeData(const QList<QPair<QString, QVariant> > dataList, bool plot);
-    void addTimeStamp();
+    bool addAuxData(AuxDataStorage::AuxDataMap m);
     void setValidationItems(const QMap<QString,BlackChirp::ValidationItem> m);
     void addValidationItem(const QString key, const double min, const double max);
     void addValidationItem(const BlackChirp::ValidationItem &i);
@@ -110,8 +110,6 @@ public:
     bool saveHeader();
     bool saveChirpFile() const;
     bool saveClockFile() const;
-    bool saveTimeFile() const;
-    QString timeDataText() const;
     void snapshot(int snapNum, const Experiment other);
 
     void saveToSettings() const;
@@ -124,10 +122,10 @@ private:
     bool d_isDummy{false};
 
     std::unique_ptr<FtmwConfig> pu_ftmwConfig;
+    std::unique_ptr<AuxDataStorage> pu_auxData;
     PulseGenConfig d_pGenCfg;
     FlowConfig d_flowCfg;
     IOBoardConfig d_iobCfg;
-    QMap<QString,QPair<QList<QVariant>,bool>> d_timeDataMap;
     QMap<QString,BlackChirp::ValidationItem> d_validationConditions;
 
     QString d_path;

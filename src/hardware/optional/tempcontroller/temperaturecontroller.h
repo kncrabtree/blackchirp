@@ -14,6 +14,10 @@ static const QString enabled("enabled");
 static const QString decimals("decimal");
 }
 
+namespace BC::Aux::TC {
+static const QString temperature("temperature.%1");
+}
+
 class TemperatureController : public HardwareObject
 {
     Q_OBJECT
@@ -34,7 +38,8 @@ public slots:
 
     // HardwareObject interface
 protected:
-    virtual QList<QPair<QString, QVariant> > readAuxPlotData() override;
+    bool prepareForExperiment(Experiment &e) override final;
+    virtual AuxDataStorage::AuxDataMap readAuxData() override;
     void initialize() override final;
     bool testConnection() override final;
 

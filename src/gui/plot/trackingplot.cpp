@@ -7,6 +7,8 @@
 #include <qwt6/qwt_legend.h>
 #include <qwt6/qwt_plot_curve.h>
 
+#include <gui/plot/customtracker.h>
+
 TrackingPlot::TrackingPlot(QString name, QWidget *parent) : ZoomPanPlot(name, parent)
 {
     QwtLegend *l = new QwtLegend;
@@ -14,6 +16,8 @@ TrackingPlot::TrackingPlot(QString name, QWidget *parent) : ZoomPanPlot(name, pa
 
     setAxisScaleDraw(QwtPlot::xBottom,new TimeScaleDraw);
     setAxisScaleDraw(QwtPlot::xTop,new TimeScaleDraw);
+
+    p_tracker->setHorizontalTimeAxis(true);
 
 }
 

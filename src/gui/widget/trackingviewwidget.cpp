@@ -46,19 +46,16 @@ void TrackingViewWidget::initializeForExperiment()
     }
 }
 
-void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > list, bool plot, QDateTime t)
+void TrackingViewWidget::pointUpdated(const AuxDataStorage::AuxDataMap m, const QDateTime t)
 {
-    if(!plot)
-        return;
-
     double x = QwtDate::toDouble(t);
 
-    for(auto pair : list)
+    for(auto &[key,val] : m)
     {
         //first, determine if the QVariant contains a number
         //no need to plot the data if it's not a number
         bool ok = false;
-        double value = pair.second.toDouble(&ok);
+        double value = val.toDouble(&ok);
         if(!ok)
             continue;
 
@@ -69,7 +66,7 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
         bool foundCurve = false;
         for(auto c : d_plotCurves)
         {
-            if(pair.first == c->title().text())
+            if(key == c->title().text())
             {
                 c->appendPoint(newPoint);
 
@@ -85,9 +82,9 @@ void TrackingViewWidget::pointUpdated(const QList<QPair<QString, QVariant> > lis
             continue;
 
         //if we reach this point, a new curve and metadata struct needs to be created
-        QString realName = BlackChirp::channelNameLookup(pair.first);
+        QString realName = BlackChirp::channelNameLookup(key);
         if(realName.isEmpty())
-            realName = pair.first;
+            realName = key;
 
         BlackchirpPlotCurve *c = new BlackchirpPlotCurve(realName);
         c->appendPoint({x,value});

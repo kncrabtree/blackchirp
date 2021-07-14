@@ -194,8 +194,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::allClocksReady,p_am,&AcquisitionManager::clockSettingsComplete);
     connect(p_am,&AcquisitionManager::beginAcquisition,p_hwm,&HardwareManager::beginAcquisition);
     connect(p_am,&AcquisitionManager::endAcquisition,p_hwm,&HardwareManager::endAcquisition);
-    connect(p_am,&AcquisitionManager::timeDataSignal,p_hwm,&HardwareManager::getTimeData);
-    connect(p_hwm,&HardwareManager::timeData,p_am,&AcquisitionManager::processTimeData);
+    connect(p_am,&AcquisitionManager::auxDataSignal,p_hwm,&HardwareManager::getAuxData);
+    connect(p_hwm,&HardwareManager::auxData,p_am,&AcquisitionManager::processAuxData);
 
 
     connect(this,&MainWindow::startInit,[=](){
@@ -434,8 +434,7 @@ void MainWindow::startSequence()
 
 void MainWindow::batchComplete(bool aborted)
 {
-    disconnect(p_hwm,&HardwareManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated);
-    disconnect(p_am,&AcquisitionManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated);
+    disconnect(p_am,&AcquisitionManager::auxData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated);
     disconnect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort);
 
 #ifdef BC_LIF
@@ -1033,8 +1032,7 @@ void MainWindow::startBatch(BatchManager *bm)
     connect(bm,&BatchManager::batchComplete,p_lh,&LogHandler::endExperimentLog);
     connect(p_batchThread,&QThread::finished,bm,&BatchManager::deleteLater);
 
-    connect(p_hwm,&HardwareManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated,Qt::UniqueConnection);
-    connect(p_am,&AcquisitionManager::timeData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated,Qt::UniqueConnection);
+    connect(p_am,&AcquisitionManager::auxData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated,Qt::UniqueConnection);
     connect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort,Qt::UniqueConnection);
 
 //    ui->trackingViewWidget->initializeForExperiment();

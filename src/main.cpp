@@ -122,6 +122,7 @@ R"000(Next, you can configure the communication settings for the hardware connec
     qRegisterMetaType<QHash<RfConfig::ClockType, RfConfig::ClockFreq>>();
     qRegisterMetaType<PulseGenConfig>("PulseGenConfig");
     qRegisterMetaType<QList<QPointF>>("QList<QPointF>");
+    qRegisterMetaType<AuxDataStorage::AuxDataMap>();
 #ifdef BC_LIF
     qRegisterMetaType<LifTrace>("LifTrace");
     qRegisterMetaType<LifConfig>("LifConfig");

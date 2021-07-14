@@ -40,6 +40,18 @@ bool FlowController::testConnection()
     return success;
 }
 
+bool FlowController::prepareForExperiment(Experiment &e)
+{
+    e.auxData()->registerKey(d_key,d_subKey,BC::Aux::Flow::pressure);
+    for(int i=0; i<d_config.size(); i++)
+    {
+        if(d_config.setting(i,FlowConfig::Enabled).toBool())
+            e.auxData()->registerKey(d_key,d_subKey,BC::Aux::Flow::flow.arg(i));
+    }
+
+    return true;
+}
+
 void FlowController::setChannelName(const int ch, const QString name)
 {
     if(ch < d_config.size())
@@ -148,14 +160,14 @@ void FlowController::readAll()
     readPressureControlMode();
 }
 
-QList<QPair<QString, QVariant> > FlowController::readAuxPlotData()
+AuxDataStorage::AuxDataMap FlowController::readAuxData()
 {
-    QList<QPair<QString,QVariant>> out;
-    out.append(qMakePair(QString("gasPressure"),d_config.pressure()));
+    AuxDataStorage::AuxDataMap out;
+    out.insert({BC::Aux::Flow::pressure,d_config.pressure()});
     for(int i=0; i<d_config.size(); i++)
     {
         if(d_config.setting(i,FlowConfig::Enabled).toBool())
-            out.append(qMakePair(QString("flow.%1").arg(i),d_config.setting(i,FlowConfig::Flow)));
+            out.insert({BC::Aux::Flow::flow.arg(i),d_config.setting(i,FlowConfig::Flow)});
     }
 
     return out;

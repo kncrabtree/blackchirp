@@ -13,6 +13,10 @@ static const QString readOnly("readOnly");
 static const QString readInterval("intervalMs");
 }
 
+namespace BC::Aux::PController {
+static const QString pressure{"chamberPressure"};
+}
+
 class PressureController : public HardwareObject
 {
     Q_OBJECT
@@ -52,7 +56,8 @@ protected:
     virtual bool pcTestConnection() =0;
 
     // HardwareObject interface
-    virtual QList<QPair<QString, QVariant> > readAuxPlotData() override;
+    bool prepareForExperiment(Experiment &e) override;
+    virtual AuxDataStorage::AuxDataMap readAuxData() override;
     void initialize() override final;
     bool testConnection() override final;
 

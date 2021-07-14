@@ -67,14 +67,12 @@ void LabjackU3::closeConnection()
     d_handle = nullptr;
 }
 
-QList<QPair<QString, QVariant> > LabjackU3::auxData(bool plot)
+AuxDataStorage::AuxDataMap LabjackU3::auxData(bool plot)
 {
-    QList<QPair<QString,QVariant>> out;
+    AuxDataStorage::AuxDataMap out;
 
-    auto it = d_config.analogList().constBegin();
-
-
-    for(;it!=d_config.analogList().constEnd();it++)
+#pragma message("Redo all of this")
+    for(auto it = d_config.analogList().constBegin();it!=d_config.analogList().constEnd();it++)
     {
         auto ch = it.value();
         if(ch.enabled)
@@ -88,11 +86,11 @@ QList<QPair<QString, QVariant> > LabjackU3::auxData(bool plot)
                 return out;
             }
             if(ch.plot == plot)
-                out.append(qMakePair(QString("ain.%1").arg(it.key()),val));
+                out.insert({QString("ain.%1").arg(it.key()),val});
         }
     }
-    it = d_config.digitalList().constBegin();
-    for(;it != d_config.digitalList().constEnd(); it++)
+
+    for(auto it = d_config.digitalList().constBegin();it != d_config.digitalList().constEnd(); it++)
     {
         auto ch = it.value();
         if(ch.enabled)
@@ -106,7 +104,7 @@ QList<QPair<QString, QVariant> > LabjackU3::auxData(bool plot)
                 return out;
             }
             if(ch.plot == plot)
-                out.append(qMakePair(QString("din.%1").arg(it.key()),static_cast<int>(val)));
+                out.insert({QString("din.%1").arg(it.key()),static_cast<int>(val)});
         }
     }
 
@@ -158,12 +156,12 @@ bool LabjackU3::prepareForExperiment(Experiment &exp)
 }
 
 
-QList<QPair<QString, QVariant> > LabjackU3::readAuxPlotData()
+AuxDataStorage::AuxDataMap LabjackU3::readAuxData()
 {
     return auxData(true);
 }
 
-QList<QPair<QString, QVariant> > LabjackU3::readAuxNoPlotData()
+AuxDataStorage::AuxDataMap LabjackU3::readValidationData()
 {
     return auxData(false);
 }

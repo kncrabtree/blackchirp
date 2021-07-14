@@ -10,6 +10,7 @@
 
 #include <data/datastructs.h>
 #include <data/storage/settingsstorage.h>
+#include <data/storage/auxdatastorage.h>
 #include <hardware/core/communication/communicationprotocol.h>
 #include <hardware/core/communication/virtualinstrument.h>
 #include <hardware/core/communication/tcpinstrument.h>
@@ -122,7 +123,7 @@ signals:
      */
     void hardwareFailure();
 
-    void timeDataRead(const QList<QPair<QString,QVariant>>,bool,QPrivateSignal);
+    void auxDataRead(QString,QString,AuxDataStorage::AuxDataMap,QPrivateSignal);
 	
 public slots:
     void bcInitInstrument();
@@ -162,8 +163,8 @@ protected:
 
 
 private:
-    virtual QList<QPair<QString,QVariant>> readAuxPlotData();
-    virtual QList<QPair<QString,QVariant>> readAuxNoPlotData();
+    virtual AuxDataStorage::AuxDataMap readAuxData();
+    virtual AuxDataStorage::AuxDataMap readValidationData();
 
 
 

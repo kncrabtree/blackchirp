@@ -77,14 +77,9 @@ void HardwareObject::bcReadTimeData()
     if(!d_isConnected)
         return;
 
-    auto pl = readAuxPlotData();
-    if(!pl.isEmpty())
-        emit timeDataRead(pl,true,QPrivateSignal());
-
-    auto npl = readAuxNoPlotData();
-    if(!npl.isEmpty())
-        emit timeDataRead(npl,false,QPrivateSignal());
-
+    auto pl = readAuxData();
+    if(!pl.empty())
+        emit auxDataRead(d_key,d_subKey,pl,QPrivateSignal());
 }
 
 void HardwareObject::readSettings()
@@ -133,14 +128,14 @@ void HardwareObject::buildCommunication(QObject *gc)
     }
 }
 
-QList<QPair<QString, QVariant> > HardwareObject::readAuxPlotData()
+AuxDataStorage::AuxDataMap HardwareObject::readAuxData()
 {
-    return QList<QPair<QString,QVariant>>();
+    return AuxDataStorage::AuxDataMap();
 }
 
-QList<QPair<QString, QVariant> > HardwareObject::readAuxNoPlotData()
+AuxDataStorage::AuxDataMap HardwareObject::readValidationData()
 {
-    return QList<QPair<QString,QVariant>>();
+    return AuxDataStorage::AuxDataMap();
 }
 
 void HardwareObject::sleep(bool b)

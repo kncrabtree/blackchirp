@@ -69,11 +69,17 @@ void PressureController::closeGateValve()
     hwCloseGateValve();
 }
 
-
-QList<QPair<QString, QVariant> > PressureController::readAuxPlotData()
+bool PressureController::prepareForExperiment(Experiment &e)
 {
-    QList<QPair<QString,QVariant>> out;
-    out.append(qMakePair(QString("chamberPressure"),readPressure()));
+    e.auxData()->registerKey(d_key,d_subKey,BC::Aux::PController::pressure);
+    return true;
+}
+
+
+AuxDataStorage::AuxDataMap PressureController::readAuxData()
+{
+    AuxDataStorage::AuxDataMap out;
+    out.insert({BC::Aux::PController::pressure,readPressure()});
     return out;
 }
 

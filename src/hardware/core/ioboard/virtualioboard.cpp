@@ -24,43 +24,54 @@ void VirtualIOBoard::initialize()
 bool VirtualIOBoard::prepareForExperiment(Experiment &exp)
 {
     d_config = exp.iobConfig();
+
+    for(auto it = d_config.analogList().constBegin();it!=d_config.analogList().constEnd();it++)
+    {
+        if(it.value().enabled)
+            exp.auxData()->registerKey(d_key,d_subKey,QString("ain.%1").arg(it.key()));
+    }
+    for(auto it = d_config.digitalList().constBegin();it!=d_config.digitalList().constEnd();it++)
+    {
+        if(it.value().enabled)
+            exp.auxData()->registerKey(d_key,d_subKey,QString("din.%1").arg(it.key()));
+    }
+
     return true;
 }
 
-QList<QPair<QString, QVariant> > VirtualIOBoard::readAuxPlotData()
+AuxDataStorage::AuxDataMap VirtualIOBoard::readAuxData()
 {
     return auxData(true);
 }
 
-QList<QPair<QString, QVariant> > VirtualIOBoard::readAuxNoPlotData()
+AuxDataStorage::AuxDataMap VirtualIOBoard::readValidationData()
 {
     return auxData(false);
 }
 
-QList<QPair<QString, QVariant> > VirtualIOBoard::auxData(bool plot)
+AuxDataStorage::AuxDataMap VirtualIOBoard::auxData(bool plot)
 {
-    QList<QPair<QString,QVariant>> out;
+    AuxDataStorage::AuxDataMap out;
 
-    auto it = d_config.analogList().constBegin();
-    for(;it!=d_config.analogList().constEnd();it++)
+    for(auto it = d_config.analogList().constBegin();it!=d_config.analogList().constEnd();it++)
     {
         auto ch = it.value();
         if(ch.enabled)
         {
             double val = static_cast<double>((qrand() % 20000) - 10000)/1000.0;
             if(ch.plot == plot)
-                out.append(qMakePair(QString("ain.%1").arg(it.key()),val));
+                out.insert({QString("ain.%1").arg(it.key()),val});
         }
     }
-    it = d_config.digitalList().constBegin();
-    for(;it != d_config.digitalList().constEnd(); it++)
+
+    for(auto it = d_config.digitalList().constBegin();it != d_config.digitalList().constEnd(); it++)
     {
         auto ch = it.value();
         if(ch.enabled)
         {
             int val = qrand() % 2;
             if(ch.plot == plot)
-                out.append(qMakePair(QString("din.%1").arg(it.key()),val));
+                out.insert({QString("din.%1").arg(it.key()),val});
         }
     }
 

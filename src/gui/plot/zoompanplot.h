@@ -18,7 +18,7 @@ static const QString axes("axes");
 static const QString bottom("Bottom");
 static const QString top("Top");
 static const QString left("Left");
-static const QString right("right");
+static const QString right("Right");
 static const QString zoomFactor("zoomFactor");
 static const QString trackerDecimals("trackerDecimals");
 static const QString trackerScientific("trackerScientific");

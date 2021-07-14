@@ -20,6 +20,11 @@ static const QString chDecimals("decimals");
 static const QString chMax("max");
 }
 
+namespace BC::Aux::Flow {
+static const QString pressure{"pressure"};
+static const QString flow{"flow.%1"};
+}
+
 class FlowController : public HardwareObject
 {
     Q_OBJECT
@@ -67,6 +72,7 @@ private:
 protected:
     void initialize() override final;
     bool testConnection() override final;
+    bool prepareForExperiment(Experiment &e) override final;
     virtual void fcInitialize() =0;
     virtual bool fcTestConnection() =0;
 
@@ -74,7 +80,7 @@ protected:
 
     // HardwareObject interface
 protected:
-    virtual QList<QPair<QString, QVariant> > readAuxPlotData() override;
+    virtual AuxDataStorage::AuxDataMap readAuxData() override;
 
 #if BC_FLOWCONTROLLER == 0
     friend class VirtualFlowController;

@@ -8,6 +8,7 @@
 
 #include <qwt6/qwt_plot.h>
 #include <data/storage/settingsstorage.h>
+#include <data/storage/auxdatastorage.h>
 
 class QGridLayout;
 class TrackingPlot;
@@ -32,7 +33,7 @@ public:
 
 public slots:
     void initializeForExperiment();
-    void pointUpdated(const QList<QPair<QString,QVariant> > list, bool plot, QDateTime t);
+    void pointUpdated(const AuxDataStorage::AuxDataMap m, const QDateTime t = QDateTime::currentDateTime());
     void moveCurveToPlot(BlackchirpPlotCurve *c, int newPlotIndex);
     void pushXAxis(int sourcePlotIndex);
     void autoScaleAll();

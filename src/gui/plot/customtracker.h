@@ -17,6 +17,7 @@ public:
 
     int axisDecimals(QwtPlot::Axis a) const { return d_details.value(a).decimals; };
     bool axisScientific(QwtPlot::Axis a) const { return d_details.value(a).scientific; };
+    void setHorizontalTimeAxis(bool b) { d_hTime = b; }
 
 public slots:
     void setDecimals(QwtPlot::Axis axis, int decimals);
@@ -32,6 +33,8 @@ private:
                                        {QwtPlot::xTop,QString("T")},
                                        {QwtPlot::yLeft,QString("L")},
                                        {QwtPlot::yRight,QString("R")}};
+
+    bool d_hTime{false};
 };
 
 #endif // CUSTOMTRACKER_H

@@ -29,14 +29,14 @@ private:
 
     bool configure();
     void closeConnection();
-    QList<QPair<QString, QVariant> > auxData(bool plot);
+    AuxDataStorage::AuxDataMap auxData(bool plot);
 
     // HardwareObject interface
 protected:
     bool testConnection() override;
     void initialize() override;
-    virtual QList<QPair<QString, QVariant> > readAuxPlotData() override;
-    virtual QList<QPair<QString, QVariant> > readAuxNoPlotData() override;
+    virtual AuxDataStorage::AuxDataMap readAuxData() override;
+    virtual AuxDataStorage::AuxDataMap readValidationData() override;
 };
 
 #endif // LABJACKU3_H

@@ -93,7 +93,12 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
             emit logMessage(QString("%1: %2").arg(obj->d_name).arg(msg),mc);
         });
         connect(obj,&HardwareObject::connected,[=](bool success, QString msg){ connectionResult(obj,success,msg); });
-        connect(obj,&HardwareObject::timeDataRead,[=](const QList<QPair<QString,QVariant>> l,bool plot){ emit timeData(l,plot); });
+        connect(obj,&HardwareObject::auxDataRead,[=](const QString s1, const QString s2, AuxDataStorage::AuxDataMap m){
+            AuxDataStorage::AuxDataMap out;
+            for(auto it = m.begin(); it != m.end(); ++it)
+                out.insert({AuxDataStorage::makeKey(s1,s2,it->first),it->second});
+            emit auxData(out);
+        });
         connect(this,&HardwareManager::beginAcquisition,obj,&HardwareObject::beginAcquisition);
         connect(this,&HardwareManager::endAcquisition,obj,&HardwareObject::endAcquisition);
 
@@ -326,11 +331,10 @@ void HardwareManager::testObjectConnection(const QString type, const QString key
     }
 }
 
-void HardwareManager::getTimeData()
+void HardwareManager::getAuxData()
 {
-    for(int i=0; i<d_hardwareList.size(); i++)
+    for(auto obj : d_hardwareList)
     {
-        HardwareObject *obj = d_hardwareList.at(i);
         if(obj->thread() == thread())
             obj->bcReadTimeData();
         else

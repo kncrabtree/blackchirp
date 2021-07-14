@@ -2,6 +2,7 @@
 
 #include <qwt6/qwt_scale_map.h>
 #include <qwt6/qwt_picker_machine.h>
+#include <qwt6/qwt_date.h>
 
 CustomTracker::CustomTracker(QWidget *canvas) : QwtPlotPicker(canvas)
 {
@@ -18,7 +19,7 @@ QwtText CustomTracker::trackerText(const QPoint &pos) const
 
     QPalette p;
     QColor bg( p.window().color() );
-    bg.setAlpha( 128 );
+    bg.setAlpha( 200 );
 
     QStringList l;
 
@@ -33,7 +34,9 @@ QwtText CustomTracker::trackerText(const QPoint &pos) const
             auto val = pos.y();
             if(it.key() == QwtPlot::xBottom || it.key() == QwtPlot::xTop)
                 val = pos.x();
-            if(s)
+            if((it.key() == QwtPlot::xBottom || it.key() == QwtPlot::xTop) && d_hTime)
+                l.append(text.arg(QwtDate::toDateTime(map.invTransform(val),Qt::LocalTime).toString(QString("M/d h:mm:ss"))));
+            else if(s)
                 l.append(text.arg(map.invTransform(val),0,'E',d));
             else
                 l.append(text.arg(map.invTransform(val),0,'f',d));

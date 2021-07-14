@@ -197,21 +197,21 @@ QWidget *ExperimentViewWidget::buildTrackingWidget()
 {
     //tracking page
     QWidget *tracking = nullptr;
-    auto timeData = pu_experiment->timeDataMap();
+//    auto timeData = pu_experiment->timeDataMap();
     bool showWidget = false;
-    auto trkit = timeData.constBegin();
-    if(!timeData.isEmpty())
-    {
-        for(;trkit != timeData.constEnd(); trkit++)
-        {
-            if(trkit.value().second == true && trkit.value().first.size() > 1)
-            {
-                showWidget = true;
-                break;
-            }
+//    auto trkit = timeData.constBegin();
+//    if(!timeData.isEmpty())
+//    {
+//        for(;trkit != timeData.constEnd(); trkit++)
+//        {
+//            if(trkit.value().second == true && trkit.value().first.size() > 1)
+//            {
+//                showWidget = true;
+//                break;
+//            }
 
-        }
-    }
+//        }
+//    }
 
     if(showWidget)
     {
@@ -221,30 +221,30 @@ QWidget *ExperimentViewWidget::buildTrackingWidget()
         TrackingViewWidget *tvw = new TrackingViewWidget(BC::Key::trackingWidget,tracking,true);
         trackingvl->addWidget(tvw);
 
-        auto timestampList = timeData.value(QString("exptTimeStamp")).first;
+//        auto timestampList = timeData.value(QString("exptTimeStamp")).first;
 
-        trkit = timeData.constBegin();
-        for(;trkit != timeData.constEnd(); trkit++)
-        {
-            if(!trkit.value().second)
-                continue;
+//        trkit = timeData.constBegin();
+//        for(;trkit != timeData.constEnd(); trkit++)
+//        {
+//            if(!trkit.value().second)
+//                continue;
 
-            auto list = trkit.value().first;
-            if(list.size() != timestampList.size())
-                continue;
+//            auto list = trkit.value().first;
+//            if(list.size() != timestampList.size())
+//                continue;
 
-            for(int i=0; i<list.size(); i++)
-            {
-                bool ok = false;
-                double d = list.at(i).toDouble(&ok);
-                if(ok)
-                {
-                    QList<QPair<QString,QVariant>> newList;
-                    newList.append(qMakePair(trkit.key(),d));
-                    tvw->pointUpdated(newList,true,timestampList.at(i).toDateTime());
-                }
-            }
-        }
+//            for(int i=0; i<list.size(); i++)
+//            {
+//                bool ok = false;
+//                double d = list.at(i).toDouble(&ok);
+//                if(ok)
+//                {
+//                    QList<QPair<QString,QVariant>> newList;
+//                    newList.append(qMakePair(trkit.key(),d));
+//                    tvw->pointUpdated(newList,true,timestampList.at(i).toDateTime());
+//                }
+//            }
+//        }
 
         tracking->setLayout(trackingvl);
     }

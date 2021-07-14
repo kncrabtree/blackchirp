@@ -56,6 +56,7 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     p_ftmwTargetDurationBox->setSuffix(" min");
     p_ftmwTargetDurationBox->setToolTip(QString("Duration of experiment in Target Duration mode."));
     p_ftmwTargetDurationBox->setValue(get(ftmwDuration,60));
+    registerGetter(ftmwDuration,p_ftmwTargetDurationBox,&QSpinBox::value);
     fl->addRow("Duration",p_ftmwTargetDurationBox);
 
     p_endTimeLabel = new QLabel;

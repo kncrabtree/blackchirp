@@ -11,6 +11,7 @@
 
 Experiment::Experiment() : HeaderStorage(BC::Store::Exp::key)
 {
+    pu_auxData = std::make_unique<AuxDataStorage>();
 }
 
 Experiment::Experiment(const Experiment &other) :
@@ -36,6 +37,8 @@ Experiment::Experiment(const Experiment &other) :
             break;
         }
     }
+
+    pu_auxData = std::make_unique<AuxDataStorage>(*other.auxData());
 
 }
 
@@ -96,77 +99,77 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
         return;
     }
 
-    //load time data
-    QFile tdt(BlackChirp::getExptFile(num,BlackChirp::TimeFile,exptPath));
-    if(tdt.open(QIODevice::ReadOnly))
-    {
-        bool plot = true;
-        bool lookForHeader = true;
-        QStringList hdrList;
+//    //load time data
+//    QFile tdt(BlackChirp::getExptFile(num,BlackChirp::TimeFile,exptPath));
+//    if(tdt.open(QIODevice::ReadOnly))
+//    {
+//        bool plot = true;
+//        bool lookForHeader = true;
+//        QStringList hdrList;
 
-        while(!tdt.atEnd())
-        {
-            QByteArray line = tdt.readLine().trimmed();
+//        while(!tdt.atEnd())
+//        {
+//            QByteArray line = tdt.readLine().trimmed();
 
-            if(line.isEmpty())
-                continue;
+//            if(line.isEmpty())
+//                continue;
 
-            if(line.startsWith('#'))
-            {
-                if(line.endsWith("NoPlotData"))
-                {
-                    plot = false;
-                    lookForHeader = true;
-                    hdrList.clear();
-                    continue;
-                }
-                else if(line.endsWith("PlotData"))
-                {
-                    plot = true;
-                    lookForHeader = true;
-                    hdrList.clear();
-                    continue;
-                }
-                else
-                    continue;
-            }
+//            if(line.startsWith('#'))
+//            {
+//                if(line.endsWith("NoPlotData"))
+//                {
+//                    plot = false;
+//                    lookForHeader = true;
+//                    hdrList.clear();
+//                    continue;
+//                }
+//                else if(line.endsWith("PlotData"))
+//                {
+//                    plot = true;
+//                    lookForHeader = true;
+//                    hdrList.clear();
+//                    continue;
+//                }
+//                else
+//                    continue;
+//            }
 
-            QByteArrayList l = line.split('\t');
-            if(l.isEmpty())
-                continue;
+//            QByteArrayList l = line.split('\t');
+//            if(l.isEmpty())
+//                continue;
 
-            if(lookForHeader)
-            {
-                for(int i=0; i<l.size(); i++)
-                {
-                    QByteArrayList l2 = l.at(i).split('_');
-                    QString name;
-                    for(int j=0; j<l2.size()-1; j++)
-                        name += QString(l2.at(j));
+//            if(lookForHeader)
+//            {
+//                for(int i=0; i<l.size(); i++)
+//                {
+//                    QByteArrayList l2 = l.at(i).split('_');
+//                    QString name;
+//                    for(int j=0; j<l2.size()-1; j++)
+//                        name += QString(l2.at(j));
 
-                    hdrList.append(name);
-                    d_timeDataMap[name] = qMakePair(QList<QVariant>(),plot);
-                }
-                lookForHeader = false;
-            }
-            else
-            {
-                if(l.size() != hdrList.size())
-                    continue;
+//                    hdrList.append(name);
+//                    d_timeDataMap[name] = qMakePair(QList<QVariant>(),plot);
+//                }
+//                lookForHeader = false;
+//            }
+//            else
+//            {
+//                if(l.size() != hdrList.size())
+//                    continue;
 
-                for(int i=0; i<l.size(); i++)
-                {
-                    if(hdrList.at(i).contains(QString("TimeStamp")))
-                        d_timeDataMap[hdrList.at(i)].first.append(QDateTime::fromString(l.at(i).trimmed(),Qt::ISODate));
-                    else
-                        d_timeDataMap[hdrList.at(i)].first.append(QString(l.at(i).trimmed()));
-                }
-            }
+//                for(int i=0; i<l.size(); i++)
+//                {
+//                    if(hdrList.at(i).contains(QString("TimeStamp")))
+//                        d_timeDataMap[hdrList.at(i)].first.append(QDateTime::fromString(l.at(i).trimmed(),Qt::ISODate));
+//                    else
+//                        d_timeDataMap[hdrList.at(i)].first.append(QString(l.at(i).trimmed()));
+//                }
+//            }
 
-        }
+//        }
 
-        tdt.close();
-    }
+//        tdt.close();
+//    }
 
 
     d_number = num;
@@ -198,11 +201,6 @@ bool Experiment::isComplete() const
     return true;
 }
 
-QMap<QString, QPair<QList<QVariant>, bool> > Experiment::timeDataMap() const
-{
-    return d_timeDataMap;
-}
-
 QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
 {
     QMap<QString, QPair<QVariant, QString> > out;
@@ -232,52 +230,52 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
     out.unite(d_motorScan.headerMap());
 #endif
 
-    if(!d_timeDataMap.isEmpty())
-    {
-        foreach(const QString &key, d_timeDataMap.keys())
-        {
-            QString label;
-            QString units;
+//    if(!d_timeDataMap.isEmpty())
+//    {
+//        foreach(const QString &key, d_timeDataMap.keys())
+//        {
+//            QString label;
+//            QString units;
 
-            QList<QString> flowNames;
-            for(int i=0; i<flowConfig().size(); i++)
-                flowNames.append(flowConfig().setting(i,FlowConfig::Name).toString());
+//            QList<QString> flowNames;
+//            for(int i=0; i<flowConfig().size(); i++)
+//                flowNames.append(flowConfig().setting(i,FlowConfig::Name).toString());
 
-            if(key.contains(QString("flow.")))
-            {
-                QString channel = key.split(QString(".")).constLast();
-                label = QString("FlowConfigChannel.%1.Average").arg(channel);
-                units = QString("sccm");
-            }
-            else if(key == QString("gasPressure"))
-            {
-                label = QString("FlowConfigPressureAverage");
-                units = QString("kTorr");
-            }
-            else if(flowNames.contains(key))
-            {
-                label = QString("FlowConfigChannel.%1.Average").arg(flowNames.indexOf(key));
-                units = QString("sccm");
-            }
-            else
-                continue;
+//            if(key.contains(QString("flow.")))
+//            {
+//                QString channel = key.split(QString(".")).constLast();
+//                label = QString("FlowConfigChannel.%1.Average").arg(channel);
+//                units = QString("sccm");
+//            }
+//            else if(key == QString("gasPressure"))
+//            {
+//                label = QString("FlowConfigPressureAverage");
+//                units = QString("kTorr");
+//            }
+//            else if(flowNames.contains(key))
+//            {
+//                label = QString("FlowConfigChannel.%1.Average").arg(flowNames.indexOf(key));
+//                units = QString("sccm");
+//            }
+//            else
+//                continue;
 
-            auto val = d_timeDataMap.value(key);
-            if(val.first.isEmpty())
-                continue;
+//            auto val = d_timeDataMap.value(key);
+//            if(val.first.isEmpty())
+//                continue;
 
-            if(val.first.constFirst().canConvert(QVariant::Double))
-            {
-                double mean = 0.0;
-                for(int i=0; i<val.first.size(); i++)
-                    mean += val.first.at(i).toDouble();
-                mean /= static_cast<double>(val.first.size());
+//            if(val.first.constFirst().canConvert(QVariant::Double))
+//            {
+//                double mean = 0.0;
+//                for(int i=0; i<val.first.size(); i++)
+//                    mean += val.first.at(i).toDouble();
+//                mean /= static_cast<double>(val.first.size());
 
-                out.insert(label,qMakePair(QString::number(mean,'f',3),units));
-            }
+//                out.insert(label,qMakePair(QString::number(mean,'f',3),units));
+//            }
 
-        }
-    }
+//        }
+//    }
 
     return out;
 }
@@ -423,6 +421,7 @@ bool Experiment::initialize()
         set.sync();
     }
 
+    pu_auxData->d_number = d_number;
 
     if(ftmwEnabled())
     {
@@ -510,24 +509,14 @@ void Experiment::setIOBoardConfig(const IOBoardConfig cfg)
     d_iobCfg = cfg;
 }
 
-bool Experiment::addTimeData(const QList<QPair<QString, QVariant> > dataList, bool plot)
+bool Experiment::addAuxData(AuxDataStorage::AuxDataMap m)
 {
     //return false if scan should be aborted
     bool out = true;
-    for(int i=0; i<dataList.size(); i++)
+
+#pragma message("Redo validation conditions")
+    for(auto &[key,val] : m)
     {
-        QString key = dataList.at(i).first;
-        QVariant value = dataList.at(i).second;
-
-        if(d_timeDataMap.contains(key))
-            d_timeDataMap[key].first.append(value);
-        else
-        {
-            QList<QVariant> newList;
-            newList.append(value);
-            d_timeDataMap.insert(key,qMakePair(newList,plot));
-        }
-
         if(d_validationConditions.contains(key))
         {
             //convert key if needed
@@ -536,12 +525,12 @@ bool Experiment::addTimeData(const QList<QPair<QString, QVariant> > dataList, bo
                 name = key;
 
             bool ok = false;
-            double d = value.toDouble(&ok);
+            double d = val.toDouble(&ok);
 
             if(!ok)
             {
                 out = false;
-                d_errorString = QString("Aborting because the item \"%1\" (value = %2) cannot be converted to a double.").arg(name).arg(value.toString());
+                d_errorString = QString("Aborting because the item \"%1\" (value = %2) cannot be converted to a double.").arg(name).arg(val.toString());
                 break;
             }
             else
@@ -558,20 +547,9 @@ bool Experiment::addTimeData(const QList<QPair<QString, QVariant> > dataList, bo
         }
     }
 
-    return out;
-}
+    auxData()->addDataPoints(m);
 
-void Experiment::addTimeStamp()
-{
-    QString key("exptTimeStamp");
-    if(d_timeDataMap.contains(key))
-        d_timeDataMap[key].first.append(QDateTime::currentDateTime());
-    else
-    {
-        QList<QVariant> newList;
-        newList.append(QDateTime::currentDateTime());
-        d_timeDataMap.insert(key,qMakePair(newList,false));
-    }
+    return out;
 }
 
 void Experiment::setValidationItems(const QMap<QString, BlackChirp::ValidationItem> m)
@@ -707,7 +685,7 @@ bool Experiment::saveConfig()
     BlackchirpCSV::writeLine(t,{"BCPatchVersion",BC_PATCH_VERSION});
     BlackchirpCSV::writeLine(t,{"BCReleaseVersion",STRINGIFY(BC_RELEASE_VERSION)});
     BlackchirpCSV::writeLine(t,{"BCBuildVersion",STRINGIFY(BC_BUILD_VERSION)});
-    BlackchirpCSV::writeLine(t,{"CsvDelimiter",BC::CSV::del});
+    BlackchirpCSV::writeLine(t,{"CsvDelimiter",BC::CSV::del.toLatin1().toHex()});
     if(ftmwEnabled())
         BlackchirpCSV::writeLine(t,{"FtmwType",ftmwConfig()->d_type});
 
@@ -739,152 +717,6 @@ bool Experiment::saveClockFile() const
 {
 #pragma message("Figure out save heirarchy")
     return pu_ftmwConfig->d_rfConfig.writeClockFile(d_number,QString(""));
-}
-
-bool Experiment::saveTimeFile() const
-{
-    return true;
-//    if(d_timeDataMap.isEmpty())
-//        return true;
-
-//    QFile tdt(BlackChirp::getExptFile(d_number,BlackChirp::TimeFile));
-//    if(tdt.open(QIODevice::WriteOnly))
-//    {
-//        QString tab("\t");
-//        QString nl("\n");
-
-//        QTextStream t(&tdt);
-
-//        auto it = d_timeDataMap.constBegin();
-//        for(;it != d_timeDataMap.constEnd(); it++)
-//        {
-//            QString alias = BlackChirp::channelNameLookup(it.key());
-//            if(!alias.isEmpty())
-//                t << QString("#Alias") << tab << alias << tab << it.key() << nl;
-
-//        }
-
-//        t << QString("\n\n");
-//        t << timeDataText();
-//        t.flush();
-//        tdt.close();
-//        return true;
-//    }
-//    else
-//        return false;
-}
-
-QString Experiment::timeDataText() const
-{
-    QString out;
-    QList<QPair<QString,QList<QVariant>>> plot, noPlot;
-    QTextStream t(&out);
-    t.setRealNumberNotation(QTextStream::ScientificNotation);
-    t.setRealNumberPrecision(6);
-    QString tab("\t");
-    QString nl("\n");
-
-    auto it = d_timeDataMap.constBegin();
-    int maxPlotSize = 0, maxNoPlotSize = 0;
-    for(;it != d_timeDataMap.constEnd(); it++)
-    {
-        bool p = it.value().second;
-        if(p)
-        {
-            plot.append(qMakePair(it.key(),it.value().first));
-            maxPlotSize = qMax(it.value().first.size(),maxPlotSize);
-        }
-        else
-        {
-            noPlot.append(qMakePair(it.key(),it.value().first));
-            maxNoPlotSize = qMax(it.value().first.size(),maxNoPlotSize);
-        }
-    }
-
-
-    if(!plot.isEmpty())
-    {
-        t << QString("#PlotData\n\n");
-        QString name = plot.constFirst().first;
-
-        t << name << QString("_%1").arg(d_number);
-        for(int i=1; i<plot.size(); i++)
-        {
-            name = plot.at(i).first;
-            t << tab << name << QString("_%1").arg(d_number);
-        }
-
-        for(int i=0; i<maxPlotSize; i++)
-        {
-            t << nl;
-
-            if(i >= plot.constFirst().second.size())
-                t << QString("NaN");
-            else
-            {
-                if(plot.constFirst().second.at(i).canConvert(QVariant::Double))
-                    t << plot.constFirst().second.at(i).toDouble();
-                else
-                    t << plot.constFirst().second.at(i).toString();
-            }
-
-            for(int j=1; j<plot.size(); j++)
-            {
-                if(i >= plot.at(j).second.size())
-                    t << tab << QString("NaN");
-                else
-                {
-                    if(plot.at(j).second.at(i).canConvert(QVariant::Double))
-                        t << tab << plot.at(j).second.at(i).toDouble();
-                    else
-                        t << tab << plot.at(j).second.at(i).toString();
-                }
-            }
-        }
-    }
-
-    if(!noPlot.isEmpty())
-    {
-        t << QString("\n\n#NoPlotData\n\n");
-        QString name = noPlot.constFirst().first;
-
-        t << name << QString("_%1").arg(d_number);
-        for(int i=1; i<noPlot.size(); i++)
-        {
-            name = noPlot.at(i).first;
-            t << tab <<name << QString("_%1").arg(d_number);
-        }
-
-        for(int i=0; i<maxNoPlotSize; i++)
-        {
-            t << nl;
-
-            if(i >= noPlot.constFirst().second.size())
-                t << QString("NaN");
-            else
-            {
-                if(noPlot.constFirst().second.at(i).canConvert(QVariant::Double))
-                    t << noPlot.constFirst().second.at(i).toDouble();
-                else
-                    t << noPlot.constFirst().second.at(i).toString();
-            }
-
-            for(int j=1; j<noPlot.size(); j++)
-            {
-                if(i >= noPlot.at(j).second.size())
-                    t << tab << QString("NaN");
-                else
-                {
-                    if(noPlot.at(j).second.at(i).canConvert(QVariant::Double))
-                        t << tab << noPlot.at(j).second.at(i).toDouble();
-                    else
-                        t << tab <<noPlot.at(j).second.at(i).toString();
-                }
-            }
-        }
-    }
-    t.flush();
-    return out;
 }
 
 void Experiment::snapshot(int snapNum, const Experiment other)
