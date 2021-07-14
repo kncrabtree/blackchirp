@@ -71,6 +71,7 @@ signals:
     void experimentInitialized(std::shared_ptr<Experiment>);
     void endAcquisition();
     void auxData(AuxDataStorage::AuxDataMap);
+    void rollingData(AuxDataStorage::AuxDataMap,QDateTime);
 
     void ftmwScopeShotAcquired(QByteArray);
 

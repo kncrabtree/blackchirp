@@ -14,7 +14,7 @@
 #include <QMessageBox>
 
 #include <gui/widget/ftmwviewwidget.h>
-#include <gui/widget/trackingviewwidget.h>
+#include <gui/widget/auxdataviewwidget.h>
 #include <data/loghandler.h>
 
 #ifdef BC_LIF
@@ -218,7 +218,7 @@ QWidget *ExperimentViewWidget::buildTrackingWidget()
         tracking = new QWidget;
         QVBoxLayout *trackingvl = new QVBoxLayout;
 
-        TrackingViewWidget *tvw = new TrackingViewWidget(BC::Key::trackingWidget,tracking,true);
+        AuxDataViewWidget *tvw = new AuxDataViewWidget(BC::Key::auxDataWidget,tracking,true);
         trackingvl->addWidget(tvw);
 
 //        auto timestampList = timeData.value(QString("exptTimeStamp")).first;

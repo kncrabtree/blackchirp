@@ -1,4 +1,4 @@
-#include "trackingviewwidget.h"
+#include "auxdataviewwidget.h"
 
 #include <QInputDialog>
 #include <QColorDialog>
@@ -13,9 +13,10 @@
 #include <gui/plot/trackingplot.h>
 #include <gui/plot/blackchirpplotcurve.h>
 #include <data/datastructs.h>
+#include <data/storage/blackchirpcsv.h>
 
 
-TrackingViewWidget::TrackingViewWidget(const QString name, QWidget *parent, bool viewOnly) :
+AuxDataViewWidget::AuxDataViewWidget(const QString name, QWidget *parent, bool viewOnly) :
     QWidget(parent), SettingsStorage(viewOnly ? name + BC::Key::viewonly : name,General),
     d_name(viewOnly ? name + BC::Key::viewonly : name), d_viewMode(viewOnly)
 {    
@@ -30,12 +31,12 @@ TrackingViewWidget::TrackingViewWidget(const QString name, QWidget *parent, bool
     configureGrid();
 }
 
-TrackingViewWidget::~TrackingViewWidget()
+AuxDataViewWidget::~AuxDataViewWidget()
 {
 
 }
 
-void TrackingViewWidget::initializeForExperiment()
+void AuxDataViewWidget::initializeForExperiment()
 {
     d_plotCurves.clear();
 
@@ -46,7 +47,7 @@ void TrackingViewWidget::initializeForExperiment()
     }
 }
 
-void TrackingViewWidget::pointUpdated(const AuxDataStorage::AuxDataMap m, const QDateTime t)
+void AuxDataViewWidget::pointUpdated(const AuxDataStorage::AuxDataMap m, const QDateTime t)
 {
     double x = QwtDate::toDouble(t);
 
@@ -76,6 +77,8 @@ void TrackingViewWidget::pointUpdated(const AuxDataStorage::AuxDataMap m, const 
                 foundCurve = true;
                 break;
             }
+
+            purgeOldPoints(c);
         }
 
         if(foundCurve)
@@ -97,7 +100,7 @@ void TrackingViewWidget::pointUpdated(const AuxDataStorage::AuxDataMap m, const 
 }
 
 
-void TrackingViewWidget::moveCurveToPlot(BlackchirpPlotCurve* c, int newPlotIndex)
+void AuxDataViewWidget::moveCurveToPlot(BlackchirpPlotCurve* c, int newPlotIndex)
 {
     auto oldPlot = c->plot();
     c->detach();
@@ -108,7 +111,7 @@ void TrackingViewWidget::moveCurveToPlot(BlackchirpPlotCurve* c, int newPlotInde
     c->plot()->replot();
 }
 
-void TrackingViewWidget::pushXAxis(int sourcePlotIndex)
+void AuxDataViewWidget::pushXAxis(int sourcePlotIndex)
 {
     if(sourcePlotIndex < 0 || sourcePlotIndex >= d_allPlots.size())
         return;
@@ -123,13 +126,13 @@ void TrackingViewWidget::pushXAxis(int sourcePlotIndex)
     }
 }
 
-void TrackingViewWidget::autoScaleAll()
+void AuxDataViewWidget::autoScaleAll()
 {
     for(int i=0; i<d_allPlots.size(); i++)
         d_allPlots.at(i)->autoScale();
 }
 
-void TrackingViewWidget::changeNumPlots()
+void AuxDataViewWidget::changeNumPlots()
 {
     bool ok = true;
     int newNum = QInputDialog::getInt(this,QString("BC: Change Number of Tracking Plots"),QString("Number of plots:"),d_allPlots.size(),1,9,1,&ok);
@@ -166,12 +169,8 @@ void TrackingViewWidget::changeNumPlots()
 
 }
 
-void TrackingViewWidget::addNewPlot()
+void AuxDataViewWidget::addNewPlot()
 {
-    QString name = QString("TrackingPlot%1").arg(d_allPlots.size());
-    if(d_viewMode)
-        name = QString("TrackingPlotView%1").arg(d_allPlots.size());
-
     TrackingPlot *tp = new TrackingPlot(d_name + BC::Key::plot + QString::number(d_allPlots.size()),this);
 
     tp->setMaxIndex(get<int>(BC::Key::numPlots,1)-1);
@@ -182,15 +181,15 @@ void TrackingViewWidget::addNewPlot()
 
 
     int newPlotIndex = d_allPlots.size();
-    connect(tp,&ZoomPanPlot::curveMoveRequested,this,&TrackingViewWidget::moveCurveToPlot);
+    connect(tp,&ZoomPanPlot::curveMoveRequested,this,&AuxDataViewWidget::moveCurveToPlot);
     connect(tp,&TrackingPlot::axisPushRequested,this,[=](){ pushXAxis(newPlotIndex); });
-    connect(tp,&TrackingPlot::autoScaleAllRequested,this,&TrackingViewWidget::autoScaleAll);
+    connect(tp,&TrackingPlot::autoScaleAllRequested,this,&AuxDataViewWidget::autoScaleAll);
 
     d_allPlots.append(tp);
 
 }
 
-void TrackingViewWidget::configureGrid()
+void AuxDataViewWidget::configureGrid()
 {
     if(d_allPlots.size() < 1)
         return;
@@ -305,4 +304,63 @@ void TrackingViewWidget::configureGrid()
         break;
     }
 
+}
+
+RollingDataWidget::RollingDataWidget(const QString name, QWidget *parent) : AuxDataViewWidget(name,parent,false)
+{
+
+}
+
+void RollingDataWidget::pointUpdated(const AuxDataStorage::AuxDataMap m, const QDateTime dt)
+{
+    QDir d = BlackchirpCSV::trackingDir();
+    auto year = QString::number(dt.date().year());
+    auto month = QString::number(dt.date().month()).rightJustified(2,'0');
+    if(!d.cd(year))
+    {
+        d.mkdir(year);
+        d.cd(year);
+    }
+    if(!d.cd(year+month))
+    {
+        d.mkdir(year+month);
+        d.cd(year+month);
+    }
+
+    for(auto &[key,val] : m)
+    {
+        bool writeheader = false;
+        QFile f(d.absoluteFilePath(key));
+        QTextStream t(&f);
+        if(!f.exists())
+            writeheader = true;
+
+        if(f.open(QIODevice::Append|QIODevice::Text))
+        {
+            if(writeheader)
+                BlackchirpCSV::writeLine(t,{"timestamp","epochtime",key});
+            BlackchirpCSV::writeLine(t,{dt.toString(),dt.toSecsSinceEpoch(),val});
+        }
+    }
+
+    AuxDataViewWidget::pointUpdated(m,dt);
+}
+
+void RollingDataWidget::purgeOldPoints(BlackchirpPlotCurve *c)
+{
+    auto d = c->curveData();
+    int first = 0;
+    if(d.constFirst().x() < QwtDate::toDouble(QDateTime::currentDateTime().addSecs(-5400*d_hourRange)))
+    {
+        auto cutoff = QwtDate::toDouble(QDateTime::currentDateTime().addSecs(-3600*d_hourRange));
+        while(first < d.size() && d.at(first).x() < cutoff)
+            first++;
+
+        d = d.mid(first);
+        c->setCurveData(d);
+        static_cast<ZoomPanPlot*>(c->plot())->overrideAxisAutoScaleRange(
+                    QwtPlot::xBottom,cutoff,QwtDate::toDouble(QDateTime::currentDateTime()));
+        static_cast<ZoomPanPlot*>(c->plot())->overrideAxisAutoScaleRange(
+                    QwtPlot::xTop,cutoff,QwtDate::toDouble(QDateTime::currentDateTime()));
+    }
 }

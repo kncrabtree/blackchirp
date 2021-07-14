@@ -105,6 +105,33 @@ void ZoomPanPlot::autoScale()
     replot();
 }
 
+void ZoomPanPlot::overrideAxisAutoScaleRange(QwtPlot::Axis a, double min, double max)
+{
+    auto &c = d_config.axisList[getAxisIndex(a)];
+    c.overrideAutoScaleRange = true;
+    if(a == QwtPlot::xTop || a == QwtPlot::xBottom)
+    {
+        c.overrideRect.setLeft(min);
+        c.overrideRect.setRight(max);
+    }
+    else
+    {
+        c.overrideRect.setTop(min);
+        c.overrideRect.setBottom(max);
+    }
+
+    replot();
+}
+
+void ZoomPanPlot::clearAxisAutoScaleOverride(QwtPlot::Axis a)
+{
+    auto &c = d_config.axisList[getAxisIndex(a)];
+    c.overrideAutoScaleRange = false;
+    c.overrideRect = {1.0,1.0,-2.0,-2.0};
+
+    replot();
+}
+
 void ZoomPanPlot::setXRanges(const QwtScaleDiv &bottom, const QwtScaleDiv &top)
 {
     setAxisScale(QwtPlot::xBottom,bottom.lowerBound(),bottom.upperBound());
@@ -228,12 +255,18 @@ void ZoomPanPlot::replot()
 
             if((c.type == QwtPlot::xBottom) || (c.type == QwtPlot::xTop))
             {
-                setAxisScale(c.type,c.boundingRect.left(),c.boundingRect.right());
+                if(c.overrideAutoScaleRange)
+                    setAxisScale(c.type,c.overrideRect.left(),c.overrideRect.right());
+                else
+                    setAxisScale(c.type,c.boundingRect.left(),c.boundingRect.right());
                 redrawXAxis = true;
             }
             else
             {
-                setAxisScale(c.type,c.boundingRect.top(),c.boundingRect.bottom());
+                if(c.overrideAutoScaleRange)
+                    setAxisScale(c.type,c.overrideRect.top(),c.overrideRect.bottom());
+                else
+                    setAxisScale(c.type,c.boundingRect.top(),c.boundingRect.bottom());
             }
         }
     }

@@ -12,6 +12,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/plot/pulseplot.cpp \
     $$PWD/plot/trackingplot.cpp \
     $$PWD/plot/zoompanplot.cpp \
+    $$PWD/widget/auxdataviewwidget.cpp \
     $$PWD/widget/chirpconfigwidget.cpp \
     $$PWD/widget/clockdisplaywidget.cpp \
     $$PWD/widget/digitizerconfigwidget.cpp \
@@ -26,7 +27,6 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/widget/peakfindwidget.cpp \
     $$PWD/widget/pulseconfigwidget.cpp \
     $$PWD/widget/rfconfigwidget.cpp \
-    $$PWD/widget/trackingviewwidget.cpp \
     $$PWD/wizard/experimentwizard.cpp \
     $$PWD/wizard/experimentwizardpage.cpp \
     $$PWD/wizard/wizardchirpconfigpage.cpp \
@@ -54,6 +54,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/plot/pulseplot.h \
     $$PWD/plot/trackingplot.h \
     $$PWD/plot/zoompanplot.h \
+    $$PWD/widget/auxdataviewwidget.h \
     $$PWD/widget/chirpconfigwidget.h \
     $$PWD/widget/clockdisplaywidget.h \
     $$PWD/widget/digitizerconfigwidget.h \
@@ -68,7 +69,6 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/widget/peakfindwidget.h \
     $$PWD/widget/pulseconfigwidget.h \
     $$PWD/widget/rfconfigwidget.h \
-    $$PWD/widget/trackingviewwidget.h \
     $$PWD/wizard/experimentwizard.h \
     $$PWD/wizard/experimentwizardpage.h \
     $$PWD/wizard/wizardchirpconfigpage.h \

@@ -28,7 +28,7 @@
 #include <gui/widget/ftmwviewwidget.h>
 #include <gui/widget/led.h>
 #include <gui/widget/pulseconfigwidget.h>
-#include <gui/widget/trackingviewwidget.h>
+#include <gui/widget/auxdataviewwidget.h>
 #include <gui/widget/gascontrolwidget.h>
 #include <gui/widget/gasflowdisplaywidget.h>
 
@@ -40,11 +40,14 @@ public:
     QAction *actionResume;
     QAction *actionAbort;
     QAction *actionCommunication;
-    QAction *actionTrackingShow;
-    QAction *action_Graphs;
+    QAction *actionAuxDataShow;
+    QAction *actionRollingDataShow;
+    QAction *action_AuxGraphs;
+    QAction *action_RollingGraphs;
     QAction *actionTest_All_Connections;
     QAction *actionSleep;
-    QAction *actionAutoscale_All;
+    QAction *actionAutoscale_Rolling;
+    QAction *actionAutoscale_Aux;
     QAction *actionCP_FTMW;
     QAction *actionControl;
     QAction *actionLog;
@@ -75,9 +78,12 @@ public:
     QWidget *ftmwTab;
     QVBoxLayout *ftmwTabLayout;
     FtmwViewWidget *ftViewWidget;
-    QWidget *trackingTab;
-    QVBoxLayout *trackingViewLayout;
-    TrackingViewWidget *trackingViewWidget;
+    QWidget *auxDataTab;
+    QVBoxLayout *auxDataViewLayout;
+    AuxDataViewWidget *auxDataViewWidget;
+    QWidget *rollingDataTab;
+    QVBoxLayout *rollingDataViewLayout;
+    RollingDataWidget *rollingDataViewWidget;
     QWidget *logTab;
     QVBoxLayout *logTabLayout;
     QTextEdit *logTextEdit;
@@ -85,7 +91,8 @@ public:
     QMenu *menuHardware;
     QMenu *menuAcquisition;
     QMenu *menuView;
-    QMenu *menuTracking;
+    QMenu *menuRollingData;
+    QMenu *menuAuxData;
     QToolBar *mainToolBar;
     QStatusBar *statusBar;
 
@@ -122,16 +129,22 @@ public:
         QIcon icon5;
         icon5.addFile(QString::fromUtf8(":/icons/computer.png"), QSize(), QIcon::Normal, QIcon::Off);
         actionCommunication->setIcon(icon5);
-        actionTrackingShow = new QAction(MainWindow);
-        actionTrackingShow->setObjectName(QString::fromUtf8("actionTrackingShow"));
+        actionAuxDataShow = new QAction(MainWindow);
+        actionAuxDataShow->setObjectName(QString::fromUtf8("actionAuxDataShow"));
         QIcon icon6;
         icon6.addFile(QString::fromUtf8(":/icons/dataplots.png"), QSize(), QIcon::Normal, QIcon::Off);
-        actionTrackingShow->setIcon(icon6);
-        action_Graphs = new QAction(MainWindow);
-        action_Graphs->setObjectName(QString::fromUtf8("action_Graphs"));
+        actionAuxDataShow->setIcon(icon6);
+        actionRollingDataShow = new QAction(MainWindow);
+        actionRollingDataShow->setObjectName(QString::fromUtf8("actionRollingDataShow"));
+        actionRollingDataShow->setIcon(icon6);
+        action_AuxGraphs = new QAction(MainWindow);
+        action_AuxGraphs->setObjectName(QString::fromUtf8("action_AuxGraphs"));
         QIcon icon7;
         icon7.addFile(QString::fromUtf8(":/icons/num.png"), QSize(), QIcon::Normal, QIcon::Off);
-        action_Graphs->setIcon(icon7);
+        action_AuxGraphs->setIcon(icon7);
+        action_RollingGraphs = new QAction(MainWindow);
+        action_RollingGraphs->setObjectName(QString::fromUtf8("action_RollingGraphs"));
+        action_RollingGraphs->setIcon(icon7);
         actionTest_All_Connections = new QAction(MainWindow);
         actionTest_All_Connections->setObjectName(QString::fromUtf8("actionTest_All_Connections"));
         QIcon icon8;
@@ -143,11 +156,14 @@ public:
         QIcon icon9;
         icon9.addFile(QString::fromUtf8(":/icons/sleep.png"), QSize(), QIcon::Normal, QIcon::Off);
         actionSleep->setIcon(icon9);
-        actionAutoscale_All = new QAction(MainWindow);
-        actionAutoscale_All->setObjectName(QString::fromUtf8("actionAutoscale_All"));
+        actionAutoscale_Aux = new QAction(MainWindow);
+        actionAutoscale_Aux->setObjectName(QString::fromUtf8("actionAutoscale_Aux"));
         QIcon icon10;
         icon10.addFile(QString::fromUtf8(":/icons/autoscale.png"), QSize(), QIcon::Normal, QIcon::Off);
-        actionAutoscale_All->setIcon(icon10);
+        actionAutoscale_Aux->setIcon(icon10);
+        actionAutoscale_Rolling = new QAction(MainWindow);
+        actionAutoscale_Rolling->setObjectName(QString::fromUtf8("actionAutoscale_Rolling"));
+        actionAutoscale_Rolling->setIcon(icon10);
         actionCP_FTMW = new QAction(MainWindow);
         actionCP_FTMW->setObjectName(QString::fromUtf8("actionCP_FTMW"));
         QIcon icon11;
@@ -320,18 +336,37 @@ public:
         ftmwTabLayout->addWidget(ftViewWidget);
 
         mainTabWidget->addTab(ftmwTab, icon11, QString());
-        trackingTab = new QWidget();
-        trackingTab->setObjectName(QString::fromUtf8("trackingTab"));
-        trackingViewLayout = new QVBoxLayout(trackingTab);
-        trackingViewLayout->setSpacing(6);
-        trackingViewLayout->setContentsMargins(11, 11, 11, 11);
-        trackingViewLayout->setObjectName(QString::fromUtf8("verticalLayout_4"));
-        trackingViewWidget = new TrackingViewWidget(BC::Key::trackingWidget,trackingTab);
-        trackingViewWidget->setObjectName(QString::fromUtf8("trackingViewWidget"));
 
-        trackingViewLayout->addWidget(trackingViewWidget);
 
-        mainTabWidget->addTab(trackingTab, icon6, QString());
+        rollingDataTab = new QWidget();
+        rollingDataTab->setObjectName(QString::fromUtf8("rollingDataTab"));
+        rollingDataViewLayout = new QVBoxLayout(rollingDataTab);
+        rollingDataViewLayout->setSpacing(6);
+        rollingDataViewLayout->setContentsMargins(11, 11, 11, 11);
+        rollingDataViewLayout->setObjectName(QString::fromUtf8("rollingDataViewLayout"));
+        rollingDataViewWidget = new RollingDataWidget(BC::Key::rollingDataWidget,rollingDataTab);
+        rollingDataViewWidget->setObjectName(QString::fromUtf8("rollingDataViewWidget"));
+
+        rollingDataViewLayout->addWidget(rollingDataViewWidget);
+
+        mainTabWidget->addTab(rollingDataTab, icon6, QString());
+
+
+        auxDataTab = new QWidget();
+        auxDataTab->setObjectName(QString::fromUtf8("auxDataTab"));
+        auxDataViewLayout = new QVBoxLayout(auxDataTab);
+        auxDataViewLayout->setSpacing(6);
+        auxDataViewLayout->setContentsMargins(11, 11, 11, 11);
+        auxDataViewLayout->setObjectName(QString::fromUtf8("auxDataViewLayout"));
+        auxDataViewWidget = new AuxDataViewWidget(BC::Key::auxDataWidget,auxDataTab);
+        auxDataViewWidget->setObjectName(QString::fromUtf8("auxDataViewWidget"));
+
+        auxDataViewLayout->addWidget(auxDataViewWidget);
+
+        mainTabWidget->addTab(auxDataTab, icon6, QString());
+
+
+
         logTab = new QWidget();
         logTab->setObjectName(QString::fromUtf8("logTab"));
         logTabLayout = new QVBoxLayout(logTab);
@@ -360,9 +395,12 @@ public:
         menuAcquisition->setObjectName(QString::fromUtf8("menuAcquisition"));
         menuView = new QMenu(menuBar);
         menuView->setObjectName(QString::fromUtf8("menuView"));
-        menuTracking = new QMenu(menuView);
-        menuTracking->setObjectName(QString::fromUtf8("menuTracking_2"));
-        menuTracking->setIcon(icon6);
+        menuAuxData = new QMenu(menuView);
+        menuAuxData->setObjectName(QString::fromUtf8("menuAuxData"));
+        menuAuxData->setIcon(icon6);
+        menuRollingData = new QMenu(menuView);
+        menuRollingData->setObjectName(QString::fromUtf8("menuRollingData"));
+        menuRollingData->setIcon(icon6);
         MainWindow->setMenuBar(menuBar);
         mainToolBar = new QToolBar(centralWidget);
         mainToolBar->setObjectName(QString::fromUtf8("mainToolBar"));
@@ -389,13 +427,17 @@ public:
         menuAcquisition->addSeparator();
         menuView->addAction(actionControl);
         menuView->addAction(actionCP_FTMW);
-        menuView->addAction(menuTracking->menuAction());
+        menuView->addAction(menuRollingData->menuAction());
+        menuView->addAction(menuAuxData->menuAction());
         menuView->addAction(actionLog);
         menuView->addSeparator();
         menuView->addAction(actionView_Experiment);
-        menuTracking->addAction(actionTrackingShow);
-        menuTracking->addAction(actionAutoscale_All);
-        menuTracking->addAction(action_Graphs);
+        menuRollingData->addAction(actionRollingDataShow);
+        menuRollingData->addAction(actionAutoscale_Rolling);
+        menuRollingData->addAction(action_RollingGraphs);
+        menuAuxData->addAction(actionAuxDataShow);
+        menuAuxData->addAction(actionAutoscale_Aux);
+        menuAuxData->addAction(action_AuxGraphs);
         mainToolBar->addAction(actionStart_Experiment);
         mainToolBar->addAction(actionQuick_Experiment);
         mainToolBar->addAction(actionPause);
@@ -435,8 +477,10 @@ public:
 #ifndef QT_NO_SHORTCUT
         actionCommunication->setShortcut(QApplication::translate("MainWindow", "Ctrl+H", nullptr));
 #endif // QT_NO_SHORTCUT
-        actionTrackingShow->setText(QApplication::translate("MainWindow", "&Show", nullptr));
-        action_Graphs->setText(QApplication::translate("MainWindow", "# &Graphs...", nullptr));
+        actionAuxDataShow->setText(QApplication::translate("MainWindow", "&Show", nullptr));
+        actionRollingDataShow->setText(QApplication::translate("MainWindow", "&Show", nullptr));
+        action_AuxGraphs->setText(QApplication::translate("MainWindow", "# &Graphs...", nullptr));
+        action_RollingGraphs->setText(QApplication::translate("MainWindow", "# &Graphs...", nullptr));
         actionTest_All_Connections->setText(QApplication::translate("MainWindow", "&Test All Connections", nullptr));
 #ifndef QT_NO_SHORTCUT
         actionTest_All_Connections->setShortcut(QApplication::translate("MainWindow", "Ctrl+T", nullptr));
@@ -445,7 +489,8 @@ public:
 #ifndef QT_NO_SHORTCUT
         actionSleep->setShortcut(QApplication::translate("MainWindow", "F8", nullptr));
 #endif // QT_NO_SHORTCUT
-        actionAutoscale_All->setText(QApplication::translate("MainWindow", "&Autoscale All", nullptr));
+        actionAutoscale_Rolling->setText(QApplication::translate("MainWindow", "&Autoscale All", nullptr));
+        actionAutoscale_Aux->setText(QApplication::translate("MainWindow", "&Autoscale All", nullptr));
         actionCP_FTMW->setText(QApplication::translate("MainWindow", "&CP-FTMW", nullptr));
         actionControl->setText(QApplication::translate("MainWindow", "C&ontrol", nullptr));
         actionLog->setText(QApplication::translate("MainWindow", "Lo&g", nullptr));
@@ -466,12 +511,14 @@ public:
         gasControlBox->setTitle(QApplication::translate("MainWindow", "Gas Control", nullptr));
         mainTabWidget->setTabText(mainTabWidget->indexOf(controlTab), QApplication::translate("MainWindow", "Control", nullptr));
         mainTabWidget->setTabText(mainTabWidget->indexOf(ftmwTab), QApplication::translate("MainWindow", "CP-FTMW", nullptr));
-        mainTabWidget->setTabText(mainTabWidget->indexOf(trackingTab), QApplication::translate("MainWindow", "Tracking", nullptr));
+        mainTabWidget->setTabText(mainTabWidget->indexOf(rollingDataTab), QApplication::translate("MainWindow", "Rolling Data", nullptr));
+        mainTabWidget->setTabText(mainTabWidget->indexOf(auxDataTab), QApplication::translate("MainWindow", "Aux Data", nullptr));
         mainTabWidget->setTabText(mainTabWidget->indexOf(logTab), QApplication::translate("MainWindow", "Log", nullptr));
         menuHardware->setTitle(QApplication::translate("MainWindow", "Ha&rdware", nullptr));
         menuAcquisition->setTitle(QApplication::translate("MainWindow", "Ac&quisition", nullptr));
         menuView->setTitle(QApplication::translate("MainWindow", "&View", nullptr));
-        menuTracking->setTitle(QApplication::translate("MainWindow", "&Tracking", nullptr));
+        menuRollingData->setTitle(QApplication::translate("MainWindow", "&Rolling Data", nullptr));
+        menuAuxData->setTitle(QApplication::translate("MainWindow", "&Aux Data", nullptr));
     } // retranslateUi
 
 };

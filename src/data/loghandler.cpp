@@ -2,15 +2,13 @@
 #include <QDateTime>
 #include <QDate>
 #include <QApplication>
-#include <data/storage/settingsstorage.h>
+#include <data/storage/blackchirpcsv.h>
 
 LogHandler::LogHandler(bool logToFile, QObject *parent) :
     QObject(parent), d_logToFile(logToFile)
 {
     qRegisterMetaType<BlackChirp::LogMessageCode>("BlackChirp::MessageCode");
     d_currentMonth = QDate::currentDate().month();
-    d_logFile.setFileName(makeLogFileName());
-    d_logFile.open(QIODevice::Append);
 }
 
 LogHandler::~LogHandler()
@@ -128,15 +126,17 @@ void LogHandler::experimentLogMessage(int num, QString text, BlackChirp::LogMess
 void LogHandler::writeToFile(const QString text, const BlackChirp::LogMessageCode type, QDateTime t)
 {
     QDate now = QDate::currentDate();
-    if(now.month() != d_currentMonth)
+    if(!d_logFile.isOpen() || now.month() != d_currentMonth)
     {
         d_currentMonth = now.month();
-        QString newLogFile = makeLogFileName();
+        QDir d = BlackchirpCSV::logDir();
+
+        QString month = QString::number(d_currentMonth).rightJustified(2,'0');
 
         if(d_logFile.isOpen())
             d_logFile.close();
 
-        d_logFile.setFileName(newLogFile);
+        d_logFile.setFileName(d.absoluteFilePath(QString::number(now.year()) + month + ".log"));
 
         d_logFile.open(QIODevice::Append);
     }
@@ -154,17 +154,4 @@ void LogHandler::writeToFile(const QString text, const BlackChirp::LogMessageCod
         d_exptLog.write(msg.toLatin1());
         d_exptLog.flush();
     }
-}
-
-QString LogHandler::makeLogFileName()
-{
-    QString month;
-    if(d_currentMonth < 10)
-        month = QString("0%1").arg(d_currentMonth);
-    else
-        month = QString::number(d_currentMonth);
-
-    SettingsStorage s;
-    return QString("%1/log/%2%3.log").arg(s.get<QString>("savePath")).arg(QDate::currentDate().year()).arg(month);
-
 }

@@ -132,6 +132,9 @@ public:
     static bool exptDirExists(int num);
     static bool createExptDir(int num);
     static QDir exptDir(int num, QString path="");
+    static QDir logDir();
+    static QDir textExportDir();
+    static QDir trackingDir();
 
 };
 

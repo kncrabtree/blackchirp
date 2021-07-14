@@ -219,3 +219,27 @@ QDir BlackchirpCSV::exptDir(int num, QString path)
 
     return out;
 }
+
+QDir BlackchirpCSV::logDir()
+{
+    SettingsStorage s;
+    QDir out(s.get(BC::Key::savePath,QString("")));
+    out.cd(BC::Key::logDir);
+    return out;
+}
+
+QDir BlackchirpCSV::textExportDir()
+{
+    SettingsStorage s;
+    QDir out(s.get(BC::Key::savePath,QString("")));
+    out.cd(BC::Key::exportDir);
+    return out;
+}
+
+QDir BlackchirpCSV::trackingDir()
+{
+    SettingsStorage s;
+    QDir out(s.get(BC::Key::savePath,QString("")));
+    out.cd(BC::Key::trackingDir);
+    return out;
+}

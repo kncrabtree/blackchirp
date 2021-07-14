@@ -52,6 +52,9 @@ void HardwareObject::bcInitInstrument()
         d_isConnected = false;
         set(BC::Key::HW::connected,false);
     });
+    auto interval = get(BC::Key::HW::rInterval,0)*1000;
+    if(interval > 0)
+        d_rollingDataTimerId = startTimer(interval);
 }
 
 void HardwareObject::bcTestConnection()
@@ -80,6 +83,15 @@ void HardwareObject::bcReadTimeData()
     auto pl = readAuxData();
     if(!pl.empty())
         emit auxDataRead(d_key,d_subKey,pl,QPrivateSignal());
+}
+
+void HardwareObject::setRollingTimerInterval(int interval)
+{
+    set(BC::Key::HW::rInterval,interval);
+    if(d_rollingDataTimerId >= 0)
+        killTimer(d_rollingDataTimerId);
+
+    d_rollingDataTimerId = startTimer(interval*1000);
 }
 
 void HardwareObject::readSettings()
@@ -141,4 +153,18 @@ AuxDataStorage::AuxDataMap HardwareObject::readValidationData()
 void HardwareObject::sleep(bool b)
 {
     Q_UNUSED(b)
+}
+
+
+void HardwareObject::timerEvent(QTimerEvent *event)
+{
+    if(d_isConnected && event->timerId() == d_rollingDataTimerId)
+    {
+        auto rd = readAuxData();
+        emit rollingDataRead(d_key,d_subKey,rd,QPrivateSignal());
+        event->accept();
+        return;
+    }
+
+    return QObject::timerEvent(event);
 }

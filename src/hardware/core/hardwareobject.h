@@ -31,6 +31,7 @@ static const QString connected("connected");
 static const QString critical("critical");
 static const QString threaded("threaded");
 static const QString commType("commType");
+static const QString rInterval("rollingDataIntervalSec");
 }
 
 /*!
@@ -124,11 +125,13 @@ signals:
     void hardwareFailure();
 
     void auxDataRead(QString,QString,AuxDataStorage::AuxDataMap,QPrivateSignal);
+    void rollingDataRead(QString,QString,AuxDataStorage::AuxDataMap,QPrivateSignal);
 	
 public slots:
     void bcInitInstrument();
     void bcTestConnection();
     void bcReadTimeData();
+    void setRollingTimerInterval(int interval);
 
     virtual void readSettings();
 
@@ -170,9 +173,14 @@ private:
 
 
     bool d_isConnected;
+    int d_rollingDataTimerId{-1};
 
 
 	
+
+    // QObject interface
+protected:
+    void timerEvent(QTimerEvent *event) override;
 };
 
 #endif // HARDWAREOBJECT_H

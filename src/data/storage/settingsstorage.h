@@ -13,7 +13,8 @@ static const QString exptNum("exptNum");
 static const QString savePath("savePath");
 static const QString exptDir("experiments");
 static const QString logDir("log");
-static const QString exportDir("exports");
+static const QString exportDir("textexports");
+static const QString trackingDir("trackingdata");
 }
 
 /*!

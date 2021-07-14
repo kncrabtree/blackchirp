@@ -99,6 +99,12 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
                 out.insert({AuxDataStorage::makeKey(s1,s2,it->first),it->second});
             emit auxData(out);
         });
+        connect(obj,&HardwareObject::rollingDataRead,[=](const QString s1, const QString s2, AuxDataStorage::AuxDataMap m){
+            AuxDataStorage::AuxDataMap out;
+            for(auto it = m.begin(); it != m.end(); ++it)
+                out.insert({AuxDataStorage::makeKey(s1,s2,it->first),it->second});
+            emit rollingData(out,QDateTime::currentDateTime());
+        });
         connect(this,&HardwareManager::beginAcquisition,obj,&HardwareObject::beginAcquisition);
         connect(this,&HardwareManager::endAcquisition,obj,&HardwareObject::endAcquisition);
 

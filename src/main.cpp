@@ -83,11 +83,12 @@ int main(int argc, char *argv[])
     {
         QMessageBox::information(nullptr,QString("Welcome to Blackchirp!"),
                                  QString(
-R"000(It appears you are running Blackchirp for the first time, or you have just upgraded from a previous version. To get started, you first need to choose a directory where Blackchirp will store its data. In the directory you choose, three folders will be created:
+R"000(It appears you are running Blackchirp for the first time, or you have just upgraded from a previous version. To get started, you first need to choose a directory where Blackchirp will store its data. In the directory you choose, four folders will be created:
 
         experiments - Location where all experimental data are recorded
-        log - Location of log messages and monitoring data
-        export - Default location for extra exported files
+        log - Location of log messages
+        textexports - Default location for manually exported csv files
+        tracking - Location for temporal monitoring data
 
 Please note that if you are upgrading from an old version (<1.0.0) of Blackchirp, it is not recommended that you use the same storage folder as your old version, as all file formats have changed.
 )000"));

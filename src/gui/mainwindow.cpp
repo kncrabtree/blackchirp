@@ -196,6 +196,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_am,&AcquisitionManager::endAcquisition,p_hwm,&HardwareManager::endAcquisition);
     connect(p_am,&AcquisitionManager::auxDataSignal,p_hwm,&HardwareManager::getAuxData);
     connect(p_hwm,&HardwareManager::auxData,p_am,&AcquisitionManager::processAuxData);
+    connect(p_hwm,&HardwareManager::rollingData,ui->rollingDataViewWidget,&RollingDataWidget::pointUpdated);
 
 
     connect(this,&MainWindow::startInit,[=](){
@@ -212,11 +213,14 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionResume,&QAction::triggered,this,&MainWindow::resumeUi);
     connect(ui->actionCommunication,&QAction::triggered,this,&MainWindow::launchCommunicationDialog);
     connect(ui->actionCP_FTMW,&QAction::triggered,this,[=](){ ui->mainTabWidget->setCurrentWidget(ui->ftmwTab); });
-    connect(ui->actionTrackingShow,&QAction::triggered,this,[=](){ ui->mainTabWidget->setCurrentWidget(ui->trackingTab); });
     connect(ui->actionControl,&QAction::triggered,this,[=](){ ui->mainTabWidget->setCurrentWidget(ui->controlTab); });
     connect(ui->actionLog,&QAction::triggered,this,[=](){ ui->mainTabWidget->setCurrentWidget(ui->logTab); });
-    connect(ui->action_Graphs,&QAction::triggered,ui->trackingViewWidget,&TrackingViewWidget::changeNumPlots);
-    connect(ui->actionAutoscale_All,&QAction::triggered,ui->trackingViewWidget,&TrackingViewWidget::autoScaleAll);
+    connect(ui->actionAuxDataShow,&QAction::triggered,this,[=](){ ui->mainTabWidget->setCurrentWidget(ui->auxDataTab); });
+    connect(ui->action_AuxGraphs,&QAction::triggered,ui->auxDataViewWidget,&AuxDataViewWidget::changeNumPlots);
+    connect(ui->actionAutoscale_Aux,&QAction::triggered,ui->auxDataViewWidget,&AuxDataViewWidget::autoScaleAll);
+    connect(ui->actionRollingDataShow,&QAction::triggered,this,[=](){ ui->mainTabWidget->setCurrentWidget(ui->rollingDataTab); });
+    connect(ui->action_RollingGraphs,&QAction::triggered,ui->rollingDataViewWidget,&RollingDataWidget::changeNumPlots);
+    connect(ui->actionAutoscale_Rolling,&QAction::triggered,ui->rollingDataViewWidget,&RollingDataWidget::autoScaleAll);
     connect(ui->actionSleep,&QAction::toggled,this,&MainWindow::sleep);
     connect(ui->actionTest_All_Connections,&QAction::triggered,p_hwm,&HardwareManager::testAll);
     connect(ui->actionView_Experiment,&QAction::triggered,this,&MainWindow::viewExperiment);
@@ -434,7 +438,7 @@ void MainWindow::startSequence()
 
 void MainWindow::batchComplete(bool aborted)
 {
-    disconnect(p_am,&AcquisitionManager::auxData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated);
+    disconnect(p_am,&AcquisitionManager::auxData,ui->auxDataViewWidget,&AuxDataViewWidget::pointUpdated);
     disconnect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort);
 
 #ifdef BC_LIF
@@ -490,7 +494,7 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
 
     ui->ftmwProgressBar->setValue(0);
     ui->ftViewWidget->prepareForExperiment(*exp);
-    ui->trackingViewWidget->initializeForExperiment();
+    ui->auxDataViewWidget->initializeForExperiment();
 
     if(exp->ftmwEnabled())
 	{
@@ -1032,7 +1036,7 @@ void MainWindow::startBatch(BatchManager *bm)
     connect(bm,&BatchManager::batchComplete,p_lh,&LogHandler::endExperimentLog);
     connect(p_batchThread,&QThread::finished,bm,&BatchManager::deleteLater);
 
-    connect(p_am,&AcquisitionManager::auxData,ui->trackingViewWidget,&TrackingViewWidget::pointUpdated,Qt::UniqueConnection);
+    connect(p_am,&AcquisitionManager::auxData,ui->auxDataViewWidget,&AuxDataViewWidget::pointUpdated,Qt::UniqueConnection);
     connect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort,Qt::UniqueConnection);
 
 //    ui->trackingViewWidget->initializeForExperiment();

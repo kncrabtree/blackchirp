@@ -503,5 +503,12 @@ double AcquisitionManager::calculateChirpRMS(const QVector<qint64> chirp, double
 void AcquisitionManager::timerEvent(QTimerEvent *event)
 {
     if(d_state == Acquiring && event->timerId() == d_auxTimerId)
+    {
         auxDataTick();
+        event->accept();
+        return;
+    }
+
+    QObject::timerEvent(event);
+
 }

@@ -50,6 +50,8 @@ public:
 
 public slots:
     void autoScale();
+    void overrideAxisAutoScaleRange(QwtPlot::Axis a, double min, double max);
+    void clearAxisAutoScaleOverride(QwtPlot::Axis a);
     virtual void replot();
     void setZoomFactor(QwtPlot::Axis a, double v);
     void setTrackerEnabled(bool en);
@@ -80,6 +82,8 @@ protected:
         QwtPlot::Axis type;
         bool autoScale {true};
         bool override {false};
+        bool overrideAutoScaleRange {false};
+        QRectF overrideRect{1.0,1.0,-2.0,-2.0};
         QRectF boundingRect{1.0,1.0,-2.0,-2.0};
         double zoomFactor {0.1};
         QString name;
