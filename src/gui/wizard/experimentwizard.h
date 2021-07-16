@@ -30,6 +30,7 @@ public:
         MotorScanConfigPage,
 #endif
         PulseConfigPage,
+        IOBoardConfigPage,
         ValidationPage,
         SummaryPage
     };

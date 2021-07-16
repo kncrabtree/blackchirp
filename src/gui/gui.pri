@@ -23,6 +23,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/widget/ftmwviewwidget.cpp \
     $$PWD/widget/gascontrolwidget.cpp \
     $$PWD/widget/gasflowdisplaywidget.cpp \
+    $$PWD/widget/ioboardconfigwidget.cpp \
     $$PWD/widget/led.cpp \
     $$PWD/widget/peakfindwidget.cpp \
     $$PWD/widget/pulseconfigwidget.cpp \
@@ -32,12 +33,13 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/wizard/wizardchirpconfigpage.cpp \
     $$PWD/wizard/wizarddigitizerconfigpage.cpp \
     $$PWD/wizard/wizarddrscanconfigpage.cpp \
+	$$PWD/wizard/wizardioboardconfigpage.cpp \
     $$PWD/wizard/wizardloscanconfigpage.cpp \
     $$PWD/wizard/wizardpulseconfigpage.cpp \
     $$PWD/wizard/wizardrfconfigpage.cpp \
     $$PWD/wizard/wizardstartpage.cpp \
     $$PWD/wizard/wizardsummarypage.cpp \
-    $$PWD/wizard/wizardvalidationpage.cpp
+	$$PWD/wizard/wizardvalidationpage.cpp
 
 HEADERS += $$PWD/mainwindow.h \
     $$PWD/dialog/batchsequencedialog.h \
@@ -65,6 +67,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/widget/ftmwviewwidget.h \
     $$PWD/widget/gascontrolwidget.h \
     $$PWD/widget/gasflowdisplaywidget.h \
+    $$PWD/widget/ioboardconfigwidget.h \
     $$PWD/widget/led.h \
     $$PWD/widget/peakfindwidget.h \
     $$PWD/widget/pulseconfigwidget.h \
@@ -74,12 +77,13 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/wizard/wizardchirpconfigpage.h \
     $$PWD/wizard/wizarddigitizerconfigpage.h \
     $$PWD/wizard/wizarddrscanconfigpage.h \
+	$$PWD/wizard/wizardioboardconfigpage.h \
     $$PWD/wizard/wizardloscanconfigpage.h \
     $$PWD/wizard/wizardpulseconfigpage.h \
     $$PWD/wizard/wizardrfconfigpage.h \
     $$PWD/wizard/wizardstartpage.h \
     $$PWD/wizard/wizardsummarypage.h \
-    $$PWD/wizard/wizardvalidationpage.h
+	$$PWD/wizard/wizardvalidationpage.h
 
 FORMS += \
     $$PWD/dialog/batchsequencedialog.ui \

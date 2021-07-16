@@ -11,12 +11,14 @@ Dsa71604c::Dsa71604c(QObject *parent) :
     d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {
-    setDefault(numChannels,4);
-    setDefault(hasAuxChannel,true);
+    setDefault(numAnalogChannels,4);
+    setDefault(numDigitalChannels,0);
+    setDefault(hasAuxTriggerChannel,true);
     setDefault(minFullScale,5e-2);
     setDefault(maxFullScale,2.0);
     setDefault(minVOffset,-2.0);
     setDefault(maxVOffset,2.0);
+    setDefault(isTriggered,true);
     setDefault(minTrigDelay,-10.0);
     setDefault(maxTrigDelay,10.0);
     setDefault(minTrigLevel,-5.0);

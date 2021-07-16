@@ -14,22 +14,15 @@ public:
     explicit VirtualIOBoard(QObject *parent = nullptr);
 
     // HardwareObject interface
-public slots:
-    bool prepareForExperiment(Experiment &exp) override;
-
-    // HardwareObject interface
 protected:
     bool testConnection() override;
     void initialize() override;
-    virtual AuxDataStorage::AuxDataMap readAuxData() override;
-    virtual AuxDataStorage::AuxDataMap readValidationData() override;
 
-private:
-    AuxDataStorage::AuxDataMap auxData(bool plot);
 
     // IOBoard interface
 protected:
-    void readIOBSettings() override;
+    std::map<int, double> readAnalogChannels() override;
+    std::map<int, bool> readDigitalChannels() override;
 };
 
 #endif // VIRTUALIOBOARD_H

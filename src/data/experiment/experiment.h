@@ -55,6 +55,8 @@ public:
     QString d_endLogMessage;
     BlackChirp::LogMessageCode d_endLogMessageCode{BlackChirp::LogNormal};
 
+    IOBoardConfig d_iobCfg;
+
     inline bool isAborted()  const { return d_isAborted; }
     inline bool isDummy() const { return d_isDummy; }
 
@@ -69,7 +71,7 @@ public:
 
     inline PulseGenConfig pGenConfig() const { return d_pGenCfg; }
     inline FlowConfig flowConfig() const { return d_flowCfg; }
-    inline IOBoardConfig iobConfig() const { return d_iobCfg; }
+//    inline IOBoardConfig iobConfig() const { return d_iobCfg; }
     bool isComplete() const;
     BlackChirp::LogMessageCode endLogMessageCode() const;
     QMap<QString, QPair<QVariant,QString>> headerMap() const;
@@ -125,7 +127,6 @@ private:
     std::unique_ptr<AuxDataStorage> pu_auxData;
     PulseGenConfig d_pGenCfg;
     FlowConfig d_flowCfg;
-    IOBoardConfig d_iobCfg;
     QMap<QString,BlackChirp::ValidationItem> d_validationConditions;
 
     QString d_path;

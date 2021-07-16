@@ -46,7 +46,7 @@ void WizardPulseConfigPage::initializePage()
 
 int WizardPulseConfigPage::nextId() const
 {
-    return ExperimentWizard::ValidationPage;
+    return ExperimentWizard::IOBoardConfigPage;
 }
 
 

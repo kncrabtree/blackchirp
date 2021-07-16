@@ -9,6 +9,7 @@
 #include <QDoubleSpinBox>
 #include <QCheckBox>
 #include <QLabel>
+#include <QScrollArea>
 
 #include <data/experiment/digitizerconfig.h>
 
@@ -23,11 +24,13 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
 
     SettingsStorage s(d_hwKey,Hardware);
 
+    auto sa = new QScrollArea;
+    auto anContainer = new QWidget;
     auto chvbl = new QVBoxLayout;
 
-    for(int i=0; i<s.get(numChannels,4); ++i)
+    for(int i=0; i<s.get(numAnalogChannels,4); ++i)
     {
-        auto chBox = new QGroupBox(QString("Ch ")+QString::number(i+1));
+        auto chBox = new QGroupBox(QString("Analog Ch ")+QString::number(i+1));
         chBox->setCheckable(true);
 
         auto fl = new QFormLayout;
@@ -38,21 +41,21 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
         fsBox->setPrefix("± ");
         fsBox->setSuffix(" V");
         fsBox->setSingleStep(fsBox->minimum());
-        fsBox->setValue(getArrayValue(dwChannels,i,lFullScale,fsBox->minimum()));
+        fsBox->setValue(getArrayValue(dwAnChannels,i,lFullScale,fsBox->minimum()));
 
         auto voBox = new QDoubleSpinBox;
         voBox->setDecimals(3);
         voBox->setRange(s.get(minVOffset,-5.0),s.get(maxVOffset,5.0));
         voBox->setSuffix(" V");
         voBox->setSingleStep((voBox->maximum() - voBox->minimum())/100.0);
-        voBox->setValue(getArrayValue(dwChannels,i,lVOffset,0.0));
+        voBox->setValue(getArrayValue(dwAnChannels,i,lVOffset,0.0));
         chBox->setLayout(fl);
 
         connect(chBox,&QGroupBox::toggled,fsBox,&QDoubleSpinBox::setEnabled);
         connect(chBox,&QGroupBox::toggled,voBox,&QDoubleSpinBox::setEnabled);
         connect(chBox,&QGroupBox::toggled,this,&DigitizerConfigWidget::configureAnalogBoxes);
         connect(chBox,&QGroupBox::toggled,this,&DigitizerConfigWidget::edited);
-        chBox->setChecked(getArrayValue(dwChannels,i,chEnabled,false));
+        chBox->setChecked(getArrayValue(dwAnChannels,i,chEnabled,false));
 
         fl->addRow("Full Scale",fsBox);
         fl->addRow("Offset",voBox);
@@ -65,12 +68,60 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
         }
 
         chBox->setLayout(fl);
-        d_channelWidgets.append({chBox,fsBox,voBox});
+        d_anChannelWidgets.append({chBox,fsBox,voBox});
         chvbl->addWidget(chBox,1);
     }
 
     chvbl->addSpacerItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::Expanding));
-    hbl->addLayout(chvbl,1);
+    anContainer->setLayout(chvbl);
+    sa->setWidget(anContainer);
+    sa->setWidgetResizable(true);
+    hbl->addWidget(sa,1);
+
+    int dch = s.get(numDigitalChannels,0);
+    if(dch > 0)
+    {
+        auto dchvbl = new QVBoxLayout;
+        auto digBox = new QGroupBox("Digital Channels");
+        auto innervlb = new QVBoxLayout;
+        auto dgl = new QGridLayout;
+        dgl->addWidget(new QLabel("Channel"),0,0,1,1,Qt::AlignCenter);
+        dgl->addWidget(new QLabel("Read?"),0,1,1,1,Qt::AlignCenter);
+        dgl->addWidget(new QLabel("Role"),0,2,1,1,Qt::AlignCenter);
+
+        for(int i=0; i<dch; ++i)
+        {
+            auto lbl = new QLabel(QString::number(i+1));
+            lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
+            lbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+            dgl->addWidget(lbl,i+1,0,1,1,Qt::AlignCenter);
+
+            auto readBox = new QCheckBox;
+            readBox->setChecked(getArrayValue(dwDigChannels,i,chEnabled,false));
+            dgl->addWidget(readBox,i+1,1,1,1,Qt::AlignCenter);
+
+            auto roleBox = new QComboBox;
+            if(readBox->isChecked())
+                roleBox->setEnabled(false);
+            dgl->addWidget(roleBox,i+1,2,1,1,Qt::AlignCenter);
+
+            connect(readBox,&QCheckBox::toggled,roleBox,&QComboBox::setDisabled);
+
+            d_digChannelWidgets.append({readBox,roleBox});
+        }
+
+        dgl->setColumnStretch(0,0);
+        dgl->setColumnStretch(1,0);
+        dgl->setColumnStretch(2,1);
+
+        innervlb->addLayout(dgl,0);
+        innervlb->addSpacerItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::Expanding));
+
+        digBox->setLayout(innervlb);
+        dchvbl->addWidget(digBox);
+        hbl->addWidget(digBox);
+    }
+
 
     auto vl = new QVBoxLayout;
 
@@ -136,13 +187,13 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
     auto tfl = new QFormLayout;
 
     p_triggerSourceBox = new QSpinBox;
-    if(s.get(hasAuxChannel,true))
+    if(s.get(hasAuxTriggerChannel,true))
     {
-        p_triggerSourceBox->setRange(0,s.get(numChannels,4));
+        p_triggerSourceBox->setRange(0,s.get(numAnalogChannels,4));
         p_triggerSourceBox->setSpecialValueText("Aux");
     }
     else
-        p_triggerSourceBox->setRange(1,s.get(numChannels,4));
+        p_triggerSourceBox->setRange(1,s.get(numAnalogChannels,4));
     p_triggerSourceBox->setValue(get(lTrigSource,0));
     registerGetter(lTrigSource,p_triggerSourceBox,&QSpinBox::value);
 
@@ -180,6 +231,9 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
 
     tBox->setLayout(tfl);
     vl->addWidget(tBox,1);
+
+    if(!s.get(isTriggered,true))
+        tBox->setEnabled(false);
 
     auto aBox = new QGroupBox("Acquisition Setup");
     auto afl = new QFormLayout;
@@ -277,8 +331,8 @@ The actual number of records able to be acquired may be limited by the record le
 DigitizerConfigWidget::~DigitizerConfigWidget()
 {
     std::vector<SettingsMap> l;
-    l.reserve(d_channelWidgets.size());
-    for(auto ch : d_channelWidgets)
+    l.reserve(d_anChannelWidgets.size());
+    for(auto ch : d_anChannelWidgets)
     {
         l.push_back({
                         {chEnabled,ch.channelBox->isChecked()},
@@ -286,13 +340,13 @@ DigitizerConfigWidget::~DigitizerConfigWidget()
                         {lVOffset,ch.vOffsetBox->value()}
                     });
     }
-    setArray(dwChannels,l,false);
+    setArray(dwAnChannels,l,false);
 }
 
 int DigitizerConfigWidget::numAnalogChecked()
 {
     int out = 0;
-    for(auto &ch : d_channelWidgets)
+    for(auto &ch : d_anChannelWidgets)
     {
         if(ch.channelBox->isChecked())
             ++out;
@@ -310,9 +364,9 @@ void DigitizerConfigWidget::setFromConfig(const DigitizerConfig &c)
 {
     for(auto &ch : c.d_analogChannels)
     {
-        d_channelWidgets[ch.first].channelBox->setChecked(true);
-        d_channelWidgets[ch.first].vOffsetBox->setValue(ch.second.offset);
-        d_channelWidgets[ch.first].fullScaleBox->setValue(ch.second.fullScale);
+        d_anChannelWidgets[ch.first].channelBox->setChecked(true);
+        d_anChannelWidgets[ch.first].vOffsetBox->setValue(ch.second.offset);
+        d_anChannelWidgets[ch.first].fullScaleBox->setValue(ch.second.fullScale);
     }
 
     ///TODO: Digital channels
@@ -352,16 +406,26 @@ void DigitizerConfigWidget::setFromConfig(const DigitizerConfig &c)
 void DigitizerConfigWidget::toConfig(DigitizerConfig &c)
 {
     c.d_analogChannels.clear();
-    for(int i=0; i<d_channelWidgets.size(); ++i)
+    for(int i=0; i<d_anChannelWidgets.size(); ++i)
     {
-        auto &ch = d_channelWidgets.at(i);
+        auto &ch = d_anChannelWidgets.at(i);
         if(ch.channelBox->isChecked())
-            c.d_analogChannels.insert_or_assign(i,DigitizerConfig::AnalogChannel{ch.fullScaleBox->value(),
+            c.d_analogChannels.insert_or_assign(i+1,DigitizerConfig::AnalogChannel{ch.fullScaleBox->value(),
                                                                                  ch.vOffsetBox->value()});
     }
 
     c.d_digitalChannels.clear();
-    ///TODO: Digital channels
+    for(int i=0; i<d_digChannelWidgets.size(); ++i)
+    {
+        auto &ch = d_digChannelWidgets.at(i);
+        if(ch.readBox->isChecked())
+            c.d_digitalChannels.insert_or_assign(i+1,DigitizerConfig::DigitalChannel{true,-1});
+        else
+        {
+            if(ch.roleBox->currentIndex() >= 0 && ch.roleBox->currentData().toInt() >= 0)
+                c.d_digitalChannels.insert_or_assign(i+1,DigitizerConfig::DigitalChannel{false,ch.roleBox->currentData().toInt()});
+        }
+    }
 
     c.d_triggerChannel = p_triggerSourceBox->value();
     c.d_triggerLevel = p_triggerLevelBox->value();
@@ -404,18 +468,18 @@ void DigitizerConfigWidget::configureAnalogBoxes()
     int checked = numAnalogChecked();
     if(checked < d_maxAnalogEnabled)
     {
-        for(auto &ch : d_channelWidgets)
+        for(auto &ch : d_anChannelWidgets)
             ch.channelBox->setEnabled(true);
     }
     else if(checked == d_maxAnalogEnabled)
     {
-        for(auto &ch : d_channelWidgets)
+        for(auto &ch : d_anChannelWidgets)
             ch.channelBox->setEnabled(ch.channelBox->isChecked());
     }
     else
     {
         checked = 0;
-        for(auto &ch : d_channelWidgets)
+        for(auto &ch : d_anChannelWidgets)
         {
             if(checked == d_maxAnalogEnabled)
             {

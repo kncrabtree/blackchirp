@@ -9,25 +9,24 @@ namespace BC::Key::IOB {
 static const QString ioboard("IOBoard");
 }
 
-class IOBoard : public HardwareObject
+class IOBoard : public HardwareObject, public IOBoardConfig
 {
     Q_OBJECT
 public:
     explicit IOBoard(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded=true,bool critical=false);
     virtual ~IOBoard();
 
-public slots:
-    virtual void readSettings() override final;
-
 protected:
-    virtual void readIOBSettings() =0;
-    IOBoardConfig d_config;
-    int d_numAnalog;
-    int d_numDigital;
-    int d_reservedAnalog;
-    int d_reservedDigital;
+    virtual std::map<int,double> readAnalogChannels() =0;
+    virtual std::map<int,bool> readDigitalChannels() =0;
 
+private:
+    AuxDataStorage::AuxDataMap readAuxData() override;
+    AuxDataStorage::AuxDataMap readValidationData() override;
 
+    // HardwareObject interface
+public slots:
+    bool prepareForExperiment(Experiment &exp) override;
 };
 
 #ifdef BC_IOBOARD

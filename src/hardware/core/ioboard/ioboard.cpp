@@ -1,10 +1,10 @@
 #include <hardware/core/ioboard/ioboard.h>
 
 IOBoard::IOBoard(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent, bool threaded, bool critical)  :
-    HardwareObject(BC::Key::IOB::ioboard, subKey, name, commType, parent, threaded, critical),
-    d_numAnalog(0), d_numDigital(0), d_reservedAnalog(0), d_reservedDigital(0)
+    HardwareObject(BC::Key::IOB::ioboard, subKey, name, commType, parent, threaded, critical), IOBoardConfig()
 {
-
+    using namespace BC::Key::Digi;
+    setDefault(isTriggered,false);
 }
 
 IOBoard::~IOBoard()
@@ -12,26 +12,50 @@ IOBoard::~IOBoard()
 
 }
 
-void IOBoard::readSettings()
+AuxDataStorage::AuxDataMap IOBoard::readAuxData()
 {
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
+    AuxDataStorage::AuxDataMap out;
+    auto m = readAnalogChannels();
+    for(auto it = m.cbegin(); it != m.cend(); ++it)
+    {
+        auto name = analogName(it->first);
+        if(!name.isEmpty())
+            out.insert({name+"."+BC::Aux::IOB::ain.arg(it->first),it->second});
+        else
+            out.insert({BC::Aux::IOB::ain.arg(it->first),it->second});
+    }
 
-    d_numAnalog = qBound(0,s.value(QString("numAnalog"),4).toInt(),16);
-    d_numDigital = qBound(0,s.value(QString("numDigital"),16-d_numAnalog).toInt(),16);
-    d_reservedAnalog = qMin(d_numAnalog,s.value(QString("reservedAnalog"),0).toInt());
-    d_reservedDigital = qMin(d_numDigital,s.value(QString("reservedDigital"),0).toInt());
+    return out;
+}
 
-    s.setValue(QString("numAnalog"),d_numAnalog);
-    s.setValue(QString("numDigital"),d_numDigital);
-    s.setValue(QString("reservedAnalog"),d_reservedAnalog);
-    s.setValue(QString("reservedDigital"),d_reservedDigital);
+AuxDataStorage::AuxDataMap IOBoard::readValidationData()
+{
+    AuxDataStorage::AuxDataMap out;
+    auto m = readDigitalChannels();
+    for(auto it = m.cbegin(); it != m.cend(); ++it)
+    {
+        auto name = digitalName(it->first);
+        if(!name.isEmpty())
+            out.insert({name+"."+BC::Aux::IOB::din.arg(it->first),it->second});
+        else
+            out.insert({BC::Aux::IOB::din.arg(it->first),it->second});
+    }
 
-    s.endGroup();
-    s.endGroup();
+    return out;
+}
 
-    s.sync();
+bool IOBoard::prepareForExperiment(Experiment &exp)
+{
+    static_cast<IOBoardConfig&>(*this) = exp.d_iobCfg;
 
-    readIOBSettings();
+    for(auto it = d_analogChannels.cbegin();it!=d_analogChannels.cend();++it)
+    {
+        auto name = analogName(it->first);
+        if(!name.isEmpty())
+            exp.auxData()->registerKey(d_key,d_subKey,name+"."+BC::Aux::IOB::ain.arg(it->first));
+        else
+            exp.auxData()->registerKey(d_key,d_subKey,BC::Aux::IOB::ain.arg(it->first));
+    }
+
+    return true;
 }

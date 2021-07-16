@@ -49,7 +49,7 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
         return;
 
     d_path = exptPath;
-    d_iobCfg = IOBoardConfig(false);
+    d_iobCfg = IOBoardConfig();
 
 #pragma message("Add children for Experiment loading")
 
@@ -220,7 +220,7 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
 //    out.unite(d_ftmwCfg.headerMap());
     out.unite(d_pGenCfg.headerMap());
     out.unite(d_flowCfg.headerMap());
-    out.unite(d_iobCfg.headerMap());
+//    out.unite(d_iobCfg.headerMap());
 
 #ifdef BC_LIF
     out.unite(d_lifCfg.headerMap());

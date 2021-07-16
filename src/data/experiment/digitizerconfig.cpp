@@ -37,6 +37,8 @@ void DigitizerConfig::prepareToSave()
     for(auto it = d_digitalChannels.cbegin(); it != d_digitalChannels.cend(); ++it)
     {
         storeArrayValue(dig,it->first,en,true);
+        storeArrayValue(dig,it->first,digInp,it->second.input);
+        storeArrayValue(dig,it->first,digRole,it->second.role);
     }
 
     store(trigCh,d_triggerChannel);
@@ -73,7 +75,7 @@ void DigitizerConfig::loadComplete()
         bool e = retrieveArrayValue(dig,i,en,false);
         if(e)
         {
-            DigitalChannel c{};
+            DigitalChannel c{retrieveArrayValue(dig,i,digInp,false),retrieveArrayValue(dig,i,digRole,-1)};
             d_digitalChannels.insert_or_assign(i,c);
         }
     }

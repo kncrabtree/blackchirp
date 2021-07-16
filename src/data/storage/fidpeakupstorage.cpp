@@ -35,7 +35,7 @@ bool FidPeakUpStorage::addFids(const FidList other, int shift)
         if(other.size() != d_currentFidList.size())
             return false;
         for(int i=0; i<d_currentFidList.size(); i++)
-            d_currentFidList[i].add(other.at(i),shift);
+            d_currentFidList[i].rollingAverage(other.at(i),d_targetShots,shift);
     }
 
     return true;

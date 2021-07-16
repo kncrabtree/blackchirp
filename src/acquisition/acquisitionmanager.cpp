@@ -190,8 +190,11 @@ void AcquisitionManager::processAuxData(AuxDataStorage::AuxDataMap m)
 
 void AcquisitionManager::clockSettingsComplete(const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks)
 {
-    d_currentExperiment->ftmwConfig()->d_rfConfig.setCurrentClocks(clocks);
-    d_currentExperiment->ftmwConfig()->hwReady();
+    if(d_state == Acquiring && d_currentExperiment->ftmwEnabled())
+    {
+        d_currentExperiment->ftmwConfig()->d_rfConfig.setCurrentClocks(clocks);
+        d_currentExperiment->ftmwConfig()->hwReady();
+    }
 }
 
 void AcquisitionManager::pause()

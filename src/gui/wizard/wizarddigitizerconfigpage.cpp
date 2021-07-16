@@ -9,7 +9,8 @@
 WizardDigitizerConfigPage::WizardDigitizerConfigPage(QWidget *parent) :
     ExperimentWizardPage(BC::Key::WizFtDig::key,parent)
 {
-    setTitle(QString("Configure Digitizer"));
+    setTitle(QString("Configure FTMW Digitizer"));
+    setSubTitle("Only one analog channel may be selected; this should be the channel to which the spectrometer output is connected.");
 
     QVBoxLayout *vbl = new QVBoxLayout(this);
     p_dc = new FtmwDigitizerConfigWidget(this);

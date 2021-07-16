@@ -9,6 +9,7 @@
 #include <gui/wizard/wizarddigitizerconfigpage.h>
 #include <gui/wizard/wizardsummarypage.h>
 #include <gui/wizard/wizardpulseconfigpage.h>
+#include <gui/wizard/wizardioboardconfigpage.h>
 #include <gui/wizard/wizardvalidationpage.h>
 #include <acquisition/batch/batchsingle.h>
 
@@ -51,6 +52,9 @@ ExperimentWizard::ExperimentWizard(int num, QWidget *parent) :
     auto pulseConfigPage = new WizardPulseConfigPage(this);
     d_pages << pulseConfigPage;
 
+    auto iobConfigPage = new WizardIOBoardConfigPage(this);
+    d_pages << iobConfigPage;
+
     auto validationPage = new WizardValidationPage(this);
     d_pages << validationPage;
 
@@ -64,6 +68,7 @@ ExperimentWizard::ExperimentWizard(int num, QWidget *parent) :
     setPage(ChirpConfigPage,chirpConfigPage);
     setPage(DigitizerConfigPage,digitizerConfigPage);
     setPage(PulseConfigPage,pulseConfigPage);
+    setPage(IOBoardConfigPage,iobConfigPage);
     setPage(ValidationPage,validationPage);
     setPage(SummaryPage,summaryPage);
 

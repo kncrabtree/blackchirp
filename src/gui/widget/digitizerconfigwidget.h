@@ -13,7 +13,9 @@ class QComboBox;
 class QCheckBox;
 
 namespace BC::Key::DigiWidget {
-static const QString dwChannels("channels");
+static const QString dwAnChannels("channels");
+static const QString dwDigChannels("digitalChannels");
+static const QString roleIndex("roleIndex");
 static const QString lFullScale("lastFullScale");
 static const QString lVOffset("lastVOffset");
 static const QString chEnabled("enabled");
@@ -38,10 +40,15 @@ public:
     explicit DigitizerConfigWidget(const QString widgetKey, const QString digHwKey, QWidget *parent = nullptr);
     virtual ~DigitizerConfigWidget();
 
-    struct ChannelWidgets {
+    struct AnalogChannelWidgets {
         QGroupBox *channelBox;
         QDoubleSpinBox *fullScaleBox;
         QDoubleSpinBox *vOffsetBox;
+    };
+
+    struct DigitalChannelWidgets {
+        QCheckBox *readBox;
+        QComboBox *roleBox;
     };
 
     int d_maxAnalogEnabled{-1};
@@ -60,7 +67,8 @@ public slots:
     void configureAnalogBoxes();
 
 protected:
-    QList<ChannelWidgets> d_channelWidgets;
+    QList<AnalogChannelWidgets> d_anChannelWidgets;
+    QList<DigitalChannelWidgets> d_digChannelWidgets;
 
     QSpinBox *p_triggerSourceBox;
     QComboBox *p_triggerSlopeBox;

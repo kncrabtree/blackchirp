@@ -19,7 +19,7 @@ public:
     explicit WizardValidationPage(QWidget *parent = nullptr);
 
 private:
-    QTableView *p_analogView, *p_digitalView, *p_validationView;
+    QTableView *p_validationView;
     QToolButton *p_addButton, *p_removeButton;
 
     // QWizardPage interface
@@ -28,7 +28,6 @@ public:
     virtual void initializePage();
     virtual bool validatePage();
 
-    IOBoardConfig getConfig() const;
     QMap<QString,BlackChirp::ValidationItem> getValidation() const;
 
 };

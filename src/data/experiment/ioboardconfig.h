@@ -1,47 +1,41 @@
 #ifndef IOBOARDCONFIG_H
 #define IOBOARDCONFIG_H
 
-#include <QSharedDataPointer>
+#include <data/experiment/digitizerconfig.h>
 
-#include <QMap>
-#include <QVariant>
+namespace BC::Key::Digi {
+static const QString iob{"IOBoardDigitizer"};
+}
 
-#include <data/datastructs.h>
+namespace BC::Store::Digi {
+static const QString anName{"AnalogNames"};
+static const QString digName("DigitalNames");
+static const QString name{"Name"};
+}
 
-class IOBoardConfigData;
+namespace BC::Aux::IOB {
+static const QString ain{"ain%1"};
+static const QString din{"din%1"};
+}
 
-class IOBoardConfig
+class IOBoardConfig : public DigitizerConfig
 {
 public:
-    IOBoardConfig(bool fromSettings = true);
-    IOBoardConfig(const IOBoardConfig &);
-    IOBoardConfig &operator=(const IOBoardConfig &);
-    ~IOBoardConfig();
+    IOBoardConfig();
 
-    void setAnalogChannel(int ch, bool enabled, QString name, bool plot);
-    void setDigitalChannel(int ch, bool enabled, QString name, bool plot);
-    void setAnalogChannels(const  QMap<int,BlackChirp::IOBoardChannel> l);
-    void setDigitalChannels(const QMap<int, BlackChirp::IOBoardChannel> l);
+    void setAnalogName(int ch, const QString name);
+    void setDigitalName(int ch, const QString name);
+    QString analogName(int ch) const;
+    QString digitalName(int ch) const;
 
-    int numAnalogChannels() const;
-    int numDigitalChannels() const;
-    int reservedAnalogChannels() const;
-    int reservedDigitalChannels() const;
-    bool isAnalogChEnabled(int ch) const;
-    bool isDigitalChEnabled(int ch) const;
-    QString analogChannelName(int ch) const;
-    QString digitalChannelName(int ch) const;
-    bool plotAnalogChannel(int ch) const;
-    bool plotDigitalChannel(int ch) const;
-    QMap<int,BlackChirp::IOBoardChannel> analogList() const;
-    QMap<int,BlackChirp::IOBoardChannel> digitalList() const;
-
-    QMap<QString,QPair<QVariant,QString>> headerMap() const;
-    void parseLine(QString key, QVariant val);
-    void saveToSettings() const;
+    // HeaderStorage interface
+protected:
+    void prepareToSave() override;
+    void loadComplete() override;
 
 private:
-    QSharedDataPointer<IOBoardConfigData> data;
+    std::map<int,QString> d_analogNames;
+    std::map<int,QString> d_digitalNames;
 };
 
 #endif // IOBOARDCONFIG_H

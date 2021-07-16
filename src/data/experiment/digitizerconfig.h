@@ -8,12 +8,14 @@
 #include <data/storage/headerstorage.h>
 
 namespace BC::Key::Digi {
-static const QString numChannels("numChannels");
-static const QString hasAuxChannel("hasAuxChannel");
+static const QString numAnalogChannels("numAnalogChannels");
+static const QString hasAuxTriggerChannel("hasAuxTriggerChannel");
+static const QString numDigitalChannels("numDigitalChannels");
 static const QString minFullScale("minFullScale");
 static const QString maxFullScale("maxFullScale");
 static const QString minVOffset("minVOffset");
 static const QString maxVOffset("maxVOffset");
+static const QString isTriggered("isTriggered");
 static const QString minTrigDelay("minTrigDelayUs");
 static const QString maxTrigDelay("maxTrigDelayUs");
 static const QString minTrigLevel("minTrigLevel");
@@ -33,6 +35,8 @@ static const QString srValue("val");
 namespace BC::Store::Digi {
 static const QString an("AnalogChannel");
 static const QString dig("DigitalChannel");
+static const QString digInp("Input");
+static const QString digRole("Role");
 static const QString en("Enabled");
 static const QString fs("FullScale");
 static const QString offset("VerticalOffset");
@@ -60,7 +64,8 @@ public:
     };
 
     struct DigitalChannel {
-
+        bool input{true};
+        int role{-1};
     };
 
     enum TriggerSlope {

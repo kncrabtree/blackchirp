@@ -11,6 +11,7 @@ WizardChirpConfigPage::WizardChirpConfigPage(QWidget *parent) :
     ExperimentWizardPage(BC::Key::WizChirp::key,parent)
 {
     setTitle(QString("Configure FTMW Chirp"));
+    setSubTitle("If your chirp source does not have digital markers for protection and amplifier gating, these values will be assigned to the Prot and Amp Pulse roles of the Pulse Generator (if applicable).");
 
     p_ccw = new ChirpConfigWidget(this);
     connect(p_ccw,&ChirpConfigWidget::chirpConfigChanged,this,&WizardChirpConfigPage::completeChanged);
