@@ -102,6 +102,8 @@ public:
     QString errorString();
 
     bool isConnected() const { return d_isConnected; }
+
+    virtual QStringList validationKeys() const { return {}; }
 	
 signals:
     /*!
@@ -124,13 +126,14 @@ signals:
      */
     void hardwareFailure();
 
-    void auxDataRead(QString,QString,AuxDataStorage::AuxDataMap,QPrivateSignal);
-    void rollingDataRead(QString,QString,AuxDataStorage::AuxDataMap,QPrivateSignal);
+    void auxDataRead(AuxDataStorage::AuxDataMap,QPrivateSignal);
+    void validationDataRead(AuxDataStorage::AuxDataMap,QPrivateSignal);
+    void rollingDataRead(AuxDataStorage::AuxDataMap,QPrivateSignal);
 	
 public slots:
     void bcInitInstrument();
     void bcTestConnection();
-    void bcReadTimeData();
+    void bcReadAuxData();
     void setRollingTimerInterval(int interval);
 
     virtual void readSettings();
@@ -168,9 +171,6 @@ protected:
 private:
     virtual AuxDataStorage::AuxDataMap readAuxData();
     virtual AuxDataStorage::AuxDataMap readValidationData();
-
-
-
 
     bool d_isConnected;
     int d_rollingDataTimerId{-1};

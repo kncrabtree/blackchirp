@@ -8,6 +8,7 @@
 namespace BC::Key::IOB {
 static const QString labjacku3("labjacku3");
 static const QString labjacku3Name("Labjack U3 IO Board");
+static const QString serialNo("serialNo");
 }
 
 class LabjackU3 : public IOBoard
@@ -15,11 +16,6 @@ class LabjackU3 : public IOBoard
     Q_OBJECT
 public:
     explicit LabjackU3(QObject *parent = nullptr);
-
-    // HardwareObject interface
-public slots:
-    void readIOBSettings() override;
-    bool prepareForExperiment(Experiment &exp) override;
 
 private:
     HANDLE d_handle;
@@ -29,14 +25,11 @@ private:
 
     bool configure();
     void closeConnection();
-    AuxDataStorage::AuxDataMap auxData(bool plot);
 
     // HardwareObject interface
 protected:
     bool testConnection() override;
     void initialize() override;
-    virtual AuxDataStorage::AuxDataMap readAuxData() override;
-    virtual AuxDataStorage::AuxDataMap readValidationData() override;
 };
 
 #endif // LABJACKU3_H

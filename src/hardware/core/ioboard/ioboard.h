@@ -16,6 +16,8 @@ public:
     explicit IOBoard(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded=true,bool critical=false);
     virtual ~IOBoard();
 
+    virtual QStringList validationKeys() const override;
+
 protected:
     virtual std::map<int,double> readAnalogChannels() =0;
     virtual std::map<int,bool> readDigitalChannels() =0;

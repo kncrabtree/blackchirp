@@ -64,6 +64,7 @@ public slots:
     void beginExperiment(std::shared_ptr<Experiment> exp);
     void processFtmwScopeShot(const QByteArray b);
     void processAuxData(AuxDataStorage::AuxDataMap m);
+    void processValidationData(AuxDataStorage::AuxDataMap m);
     void clockSettingsComplete(const QHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
     void pause();
     void resume();

@@ -18,17 +18,19 @@ class WizardValidationPage : public ExperimentWizardPage
 public:
     explicit WizardValidationPage(QWidget *parent = nullptr);
 
+    void setValidationKeys(std::map<QString,QStringList> m);
+
 private:
     QTableView *p_validationView;
     QToolButton *p_addButton, *p_removeButton;
+
+    std::map<QString,QStringList> d_validationKeys;
 
     // QWizardPage interface
 public:
     int nextId() const;
     virtual void initializePage();
     virtual bool validatePage();
-
-    QMap<QString,BlackChirp::ValidationItem> getValidation() const;
 
 };
 

@@ -36,6 +36,7 @@ public:
     };
 
     std::shared_ptr<Experiment> experiment;
+    void setValidationKeys(const std::map<QString,QStringList> &m);
 private:    
     QList<ExperimentWizardPage*> d_pages;
 

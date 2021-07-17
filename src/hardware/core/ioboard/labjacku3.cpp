@@ -4,40 +4,44 @@ LabjackU3::LabjackU3(QObject *parent) :
     IOBoard(BC::Key::IOB::labjacku3,BC::Key::IOB::labjacku3Name,CommunicationProtocol::Custom,parent),
     d_handle(nullptr), d_serialNo(3)
 {
-    //note that all "reserved" channels come first!
-    //any unreserved channels may be used as arbitrary validation conditions
     //For the U3, there are 16 FIO lines (FIO0-7 and EIO0-7)
     //These are indexed 0-15.
     //if numAnalog is 4, then 0-3 will be analog, and 4-15 will be digital.
-    //if d_reservedAnalog is 2, then only channels 2 and 3 wil be available for use as analog validation conditions
-    //similar statements apply to digital lines
-    //note that in the program, DIO0 will refer to the first digital channel, but if d_numAnalog changes,
+    //note that in the program, dio1 will refer to the first digital channel, but if d_numAnalog changes,
     //DIO0 will refer to a different physical pin!
-    //Be wary of chaning the number of analog and digital channels
+    //Be wary of changing the number of analog and digital channels
+    using namespace BC::Key::Digi;
 
-    //These are default example settings. You can override them in the settings file
-    d_numAnalog = 4; //for U3-LV, can be 0-16, but numAnalog+numDigital must be <= 16. (for U3-HV, numAnalog must be >=4
-    d_numDigital = 16-d_numAnalog;
-    d_reservedAnalog = 0; //if you have specific channels implemented; this should be nonzero
-    d_reservedDigital = 0; //if you have counters, timers, or other dedicated digital I/O lines, this should be nonzero
+    setDefault(numAnalogChannels,8);
+    setDefault(numDigitalChannels,8);
+    setDefault(hasAuxTriggerChannel,false);
+    setDefault(minFullScale,2.44);
+    setDefault(maxFullScale,2.44);
+    setDefault(minVOffset,0.0);
+    setDefault(maxVOffset,0.0);
+    setDefault(isTriggered,false);
+    setDefault(minTrigDelay,0.0);
+    setDefault(maxTrigDelay,0.0);
+    setDefault(minTrigLevel,0.0);
+    setDefault(maxTrigLevel,0.0);
+    setDefault(maxRecordLength,1);
+    setDefault(canBlockAverage,false);
+    setDefault(canMultiRecord,false);
+    setDefault(multiBlock,false);
+    setDefault(maxBytes,2);
 
-}
+    if(!containsArray(sampleRates))
+        setArray(sampleRates,{
+                     {{srText,"N/A"},{srValue,0.0}},
+                 });
 
-void LabjackU3::readIOBSettings()
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    s.beginWriteArray(QString("comm"));
-    s.setArrayIndex(0);
-    s.setValue(QString("name"),QString("Serial No"));
-    s.setValue(QString("type"),QString("int"));
-    s.setValue(QString("key"),QString("serialNo"));
-    s.setValue(QString("min"),0);
-    s.endArray();
-    d_serialNo = s.value(QString("serialNo"),3).toInt();
-    s.endGroup();
-    s.endGroup();
+    if(!containsArray(BC::Key::Custom::comm))
+        setArray(BC::Key::Custom::comm, {
+                    {{BC::Key::Custom::key,BC::Key::IOB::serialNo},
+                     {BC::Key::Custom::type,BC::Key::Custom::intKey},
+                     {BC::Key::Custom::label,"Serial Number"}}
+                 });
+
 }
 
 bool LabjackU3::configure()
@@ -67,57 +71,13 @@ void LabjackU3::closeConnection()
     d_handle = nullptr;
 }
 
-AuxDataStorage::AuxDataMap LabjackU3::auxData(bool plot)
-{
-    AuxDataStorage::AuxDataMap out;
-
-#pragma message("Redo all of this")
-    for(auto it = d_config.analogList().constBegin();it!=d_config.analogList().constEnd();it++)
-    {
-        auto ch = it.value();
-        if(ch.enabled)
-        {
-            double val;
-            long error = eAIN(d_handle,&d_calInfo,1,0,it.key()+d_config.reservedAnalogChannels(),32,&val,0,0,0,0,0,0);
-            if(error)
-            {
-                emit logMessage(QString("eAIN function call returned error code %1").arg(error),BlackChirp::LogError);
-                emit hardwareFailure();
-                return out;
-            }
-            if(ch.plot == plot)
-                out.insert({QString("ain.%1").arg(it.key()),val});
-        }
-    }
-
-    for(auto it = d_config.digitalList().constBegin();it != d_config.digitalList().constEnd(); it++)
-    {
-        auto ch = it.value();
-        if(ch.enabled)
-        {
-            long val;
-            long error = eDI(d_handle,1,it.key()+d_config.reservedDigitalChannels()+d_config.numAnalogChannels(),&val);
-            if(error)
-            {
-                emit logMessage(QString("eDI function call returned error code %1").arg(error),BlackChirp::LogError);
-                emit hardwareFailure();
-                return out;
-            }
-            if(ch.plot == plot)
-                out.insert({QString("din.%1").arg(it.key()),static_cast<int>(val)});
-        }
-    }
-
-    return out;
-}
-
-
 
 bool LabjackU3::testConnection()
 {
     if(d_handle != nullptr)
         closeConnection();
 
+    d_serialNo = getArrayValue(BC::Key::Custom::comm,0,BC::Key::IOB::serialNo,3);
     d_handle = openUSBConnection(d_serialNo);
     if(d_handle == nullptr)
     {
@@ -147,21 +107,4 @@ bool LabjackU3::testConnection()
 
 void LabjackU3::initialize()
 {
-}
-
-bool LabjackU3::prepareForExperiment(Experiment &exp)
-{
-    d_config = exp.iobConfig();
-    return true;
-}
-
-
-AuxDataStorage::AuxDataMap LabjackU3::readAuxData()
-{
-    return auxData(true);
-}
-
-AuxDataStorage::AuxDataMap LabjackU3::readValidationData()
-{
-    return auxData(false);
 }

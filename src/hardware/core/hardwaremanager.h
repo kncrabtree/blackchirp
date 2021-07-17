@@ -71,6 +71,7 @@ signals:
     void experimentInitialized(std::shared_ptr<Experiment>);
     void endAcquisition();
     void auxData(AuxDataStorage::AuxDataMap);
+    void validationData(AuxDataStorage::AuxDataMap);
     void rollingData(AuxDataStorage::AuxDataMap,QDateTime);
 
     void ftmwScopeShotAcquired(QByteArray);
@@ -162,6 +163,9 @@ public slots:
     void setLifScopeConfig(const BlackChirp::LifScopeConfig c);
     bool setLifLaserPos(double pos);
 #endif
+
+public:
+    std::map<QString,QStringList> validationKeys() const;
 
 private:
     int d_responseCount;

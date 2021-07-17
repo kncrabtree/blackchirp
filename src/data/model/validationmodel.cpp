@@ -1,99 +1,75 @@
 #include <data/model/validationmodel.h>
 
-#include <QSettings>
-#include <QApplication>
 
 ValidationModel::ValidationModel(QObject *parent) :
-     QAbstractTableModel(parent)
+     QAbstractTableModel(parent), SettingsStorage(BC::Key::Validation::key)
 {
-	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(QString("lastExperiment"));
-	int total = s.beginReadArray(QString("validation"));
-	for(int i=0; i<total; i++)
-	{
-		s.setArrayIndex(i);
-		QString key = s.value(QString("key"),QString("")).toString();
-		double min = s.value(QString("min"),0.0).toDouble();
-		double max = s.value(QString("max"),1.0).toDouble();
+    using namespace BC::Key::Validation;
+    auto n = getArraySize(items);
+    for(std::size_t i=0; i<n; ++i)
+    {
+        auto ok = getArrayValue(items,i,objKey,QString(""));
+        auto vk = getArrayValue(items,i,valKey,QString(""));
+        auto minv = getArrayValue(items,i,min,0.0);
+        auto maxv = getArrayValue(items,i,max,1.0);
 
-		if(!key.isEmpty())
-            addNewItem(key,min,max);
-	}
-	s.endArray();
-	s.endGroup();
+        if(!ok.isEmpty() && !vk.isEmpty())
+            d_modelData.append({ok,vk,minv,maxv});
+    }
 }
 
 ValidationModel::~ValidationModel()
 {
-
-}
-
-void ValidationModel::setFromMap(const QMap<QString, BlackChirp::ValidationItem> l)
-{
-    d_validationList.clear();
-
-    if(!l.isEmpty())
+    using namespace BC::Key::Validation;
+    setArray(items,{},false);
+    for(int i=0; i<d_modelData.size(); ++i)
     {
-        for(auto it = l.constBegin(); it != l.constEnd(); it++)
-            d_validationList << it.value();
+        appendArrayMap(items,{
+                           {objKey,d_modelData.at(i).at(0)},
+                           {valKey,d_modelData.at(i).at(1)},
+                           {min,d_modelData.at(i).at(2)},
+                           {max,d_modelData.at(i).at(3)}
+                       },false);
     }
-
-    emit dataChanged(index(0,0),index(d_validationList.size(),3));
 }
-
 
 
 int ValidationModel::rowCount(const QModelIndex &parent) const
 {
 	Q_UNUSED(parent)
 	
-	return d_validationList.size();
+    return d_modelData.size();
 }
 
 int ValidationModel::columnCount(const QModelIndex &parent) const
 {
 	Q_UNUSED(parent)
 	
-    return 3;
+    return 4;
 }
 
 QVariant ValidationModel::data(const QModelIndex &index, int role) const
 {
 	QVariant out;
-	if(index.row() < 0 || index.row() >= d_validationList.size())
+    if(index.row() < 0 || index.row() >= d_modelData.size())
 		return out;
-	
-	if(role == Qt::DisplayRole)
+
+    if(role == Qt::DisplayRole)
+        out = d_modelData.at(index.row()).at(index.column());
+    if(role == Qt::EditRole)
 	{
 		switch (index.column()) {
-		case 0:
-			out = d_validationList.at(index.row()).key;
+        case 0:
+        case 1:
+            out = d_modelData.at(index.row()).at(index.column()).toString();
+            break;
+        case 2:
+        case 3:
+            out = d_modelData.at(index.row()).at(index.column()).toDouble();
+            break;
+        default:
 			break;
-		case 1:
-			out = QString::number(d_validationList.at(index.row()).min,'g');
-			break;
-		case 2:
-			out = QString::number(d_validationList.at(index.row()).max,'g');
-			break;
-		default:
-			break;
-		}
-	}
-	else if(role == Qt::EditRole)
-	{
-		switch (index.column()) {
-		case 0:
-			out = d_validationList.at(index.row()).key;
-			break;
-		case 1:
-			out = d_validationList.at(index.row()).min;
-			break;
-		case 2:
-			out = d_validationList.at(index.row()).max;
-			break;
-		default:
-			break;
-		}
+        }
 	}
 	
 	return out;
@@ -104,29 +80,14 @@ bool ValidationModel::setData(const QModelIndex &index, const QVariant &value, i
 	if(role != Qt::EditRole)
 		return false;
 	
-	if(index.row() < 0 || index.row() >= d_validationList.size())
+    if(index.row() < 0 || index.row() >= d_modelData.size())
 		return false;
+
+    d_modelData[index.row()][index.column()] = value;
+
+    emit dataChanged(index,index);
 	
-	bool success = false;
-	switch(index.column()) {
-	case 0:
-		d_validationList[index.row()].key = value.toString();
-		success = true;
-		break;
-	case 1:
-		d_validationList[index.row()].min = value.toDouble();
-		success = true;
-		break;
-	case 2:
-		d_validationList[index.row()].max = value.toDouble();
-		success = true;
-		break;
-	}
-	
-	if(success)
-		emit dataChanged(index,index);
-	
-	return success;
+    return true;
 }
 
 QVariant ValidationModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -139,12 +100,15 @@ QVariant ValidationModel::headerData(int section, Qt::Orientation orientation, i
 		{
 			switch (section) {
 			case 0:
-				out = QString("Key");
+                out = QString("Object Key");
 				break;
-			case 1:
+            case 1:
+                out = QString("Value Key");
+                break;
+            case 2:
 				out = QString("Min");
 				break;
-			case 2:
+            case 3:
 				out = QString("Max");
 				break;
 			default:
@@ -155,12 +119,15 @@ QVariant ValidationModel::headerData(int section, Qt::Orientation orientation, i
 		{
 			switch (section) {
 			case 0:
-				out = QString("The key for the validation item.\nThis is usually the string shown on the plots, but there are some exceptions.\nFor instance, refer to analog and digital channels of IOBoard by e.g. AIN3 or DIN7.");
+                out = QString("The object key for the validation item.\nA typical data name is ObjKey.subkey.[name].ValueKey (where name is optional).");
 				break;
-			case 1:
+            case 1:
+                out = QString("The value key for the validation item.\nA typical data name is ObjKey.subkey.[name].ValueKey (where name is optional).");
+                break;
+            case 2:
                 out = QString("Minimum valid value. If the value read is lower, the experiment will be aborted.");
 				break;
-			case 2:
+            case 3:
                 out = QString("Maximum valid value. If the value read is higher, the experiment will be aborted.");
 				break;
 			default:
@@ -179,12 +146,12 @@ QVariant ValidationModel::headerData(int section, Qt::Orientation orientation, i
 
 bool ValidationModel::removeRows(int row, int count, const QModelIndex &parent)
 {
-	if(row < 0 || row+count > d_validationList.size() || d_validationList.isEmpty())
+    if(row < 0 || row+count > d_modelData.size() || d_modelData.isEmpty())
 	        return false;
 	
 	beginRemoveRows(parent,row,row+count-1);
 	for(int i=0; i<count; i++)
-		d_validationList.removeAt(row);
+        d_modelData.removeAt(row);
 	endRemoveRows();
 	
 	return true;
@@ -192,41 +159,17 @@ bool ValidationModel::removeRows(int row, int count, const QModelIndex &parent)
 
 Qt::ItemFlags ValidationModel::flags(const QModelIndex &index) const
 {
-	if(index.row() < 0 || index.row() >= d_validationList.size())
+    if(index.row() < 0 || index.row() >= d_modelData.size())
 		return Qt::NoItemFlags;
 	
-	return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
+    return Qt::ItemIsEnabled | Qt::ItemIsEditable;
 }
 
-void ValidationModel::addNewItem(QString k, double min, double max)
+void ValidationModel::addNewItem()
 {
-    BlackChirp::ValidationItem v;
-	v.key = k;
-	v.min = min;
-	v.max = max;
-	
-	beginInsertRows(QModelIndex(),d_validationList.size(),d_validationList.size());
-	d_validationList.append(v);
-	endInsertRows();
-}
-
-QList<BlackChirp::ValidationItem> ValidationModel::getList()
-{
-    //first, remove any items with empty keys
-    for(int i = d_validationList.size()-1; i >= 0; i--)
-    {
-        if(d_validationList.at(i).key.isEmpty())
-            removeRows(i,1,QModelIndex());
-    }
-
-    //now, make sure min<max
-    for(int i=0; i<d_validationList.size(); i++)
-    {
-        if(d_validationList.at(i).min > d_validationList.at(i).max)
-            qSwap(d_validationList[i].min,d_validationList[i].max);
-    }
-
-	return d_validationList;
+    beginInsertRows(QModelIndex(),d_modelData.size(),d_modelData.size());
+    d_modelData.append({"","",0.0,1.0});
+    endInsertRows();
 }
 
 ValidationDoubleSpinBoxDelegate::ValidationDoubleSpinBoxDelegate(QObject *parent) :
@@ -250,7 +193,7 @@ QWidget *ValidationDoubleSpinBoxDelegate::createEditor(QWidget *parent, const QS
 
 void ValidationDoubleSpinBoxDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
-	if(index.column() == 1 || index.column() == 2)
+    if(index.column() == 2 || index.column() == 3)
 		static_cast<QDoubleSpinBox*>(editor)->setValue(index.model()->data(index,Qt::EditRole).toDouble());
 		
 }
@@ -276,16 +219,34 @@ CompleterLineEditDelegate::CompleterLineEditDelegate(QObject *parent) :
 QWidget *CompleterLineEditDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
 	Q_UNUSED(option)
-	Q_UNUSED(index)
+
+    auto &m = static_cast<const ValidationModel*>(index.model())->d_validationKeys;
+
+    QStringList keys;
+    if(index.column() == 0)
+    {
+        for(auto it = m.cbegin(); it != m.cend(); ++it)
+        {
+            if(!it->first.isEmpty())
+                keys.append(it->first);
+        }
+    }
+    else
+    {
+        //this abomination gets the value of column 0 for the current row
+        auto k1 = index.model()->data(index.model()->index(index.row(),0)).toString();
+        auto it = m.find(k1);
+        if(it != m.end())
+            keys.append(it->second);
+    }
 	
 	QLineEdit *le = new QLineEdit(parent);
 	
-	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-	QStringList knownKeys = s.value(QString("knownValidationKeys"),QString("")).toString().split(QChar(';'),QString::SkipEmptyParts);
-	if(!knownKeys.isEmpty())
+    if(!keys.isEmpty())
 	{
-		QCompleter *comp = new QCompleter(knownKeys,le);
+        QCompleter *comp = new QCompleter(keys,le);
 		comp->setCaseSensitivity(Qt::CaseInsensitive);
+        comp->setCompletionMode(QCompleter::UnfilteredPopupCompletion);
 		le->setCompleter(comp);
 	}
 
@@ -294,7 +255,7 @@ QWidget *CompleterLineEditDelegate::createEditor(QWidget *parent, const QStyleOp
 
 void CompleterLineEditDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
-	if(index.column() == 0)
+    if(index.column() == 0 || index.column() == 1)
 		static_cast<QLineEdit*>(editor)->setText(index.model()->data(index,Qt::EditRole).toString());
 }
 

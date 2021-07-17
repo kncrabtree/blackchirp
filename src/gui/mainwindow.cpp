@@ -196,6 +196,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_am,&AcquisitionManager::endAcquisition,p_hwm,&HardwareManager::endAcquisition);
     connect(p_am,&AcquisitionManager::auxDataSignal,p_hwm,&HardwareManager::getAuxData);
     connect(p_hwm,&HardwareManager::auxData,p_am,&AcquisitionManager::processAuxData);
+    connect(p_hwm,&HardwareManager::validationData,p_am,&AcquisitionManager::processValidationData);
     connect(p_hwm,&HardwareManager::rollingData,ui->rollingDataViewWidget,&RollingDataWidget::pointUpdated);
 
 
@@ -308,6 +309,7 @@ void MainWindow::startExperiment()
     ExperimentWizard wiz(-1,this);
     wiz.experiment->setPulseGenConfig(ui->pulseConfigWidget->getConfig());
     wiz.experiment->setFlowConfig(ui->gasControlWidget->getFlowConfig());
+    wiz.setValidationKeys(p_hwm->validationKeys());
 
 #ifdef BC_LIF
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);

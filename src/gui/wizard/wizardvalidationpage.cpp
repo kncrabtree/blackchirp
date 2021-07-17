@@ -15,7 +15,12 @@ WizardValidationPage::WizardValidationPage(QWidget *parent) :
     ExperimentWizardPage(BC::Key::WizVal::key,parent)
 {
     setTitle(QString("Validation Settings"));
-    setSubTitle(QString("Set up conditions that will automatically abort the experiment."));
+    setSubTitle(QString(
+R"000(Set up conditions that will automatically abort the experiment if a measured value falls outside a certain range. Each validation condition is identified by 2 keys: one referring to the object that generates the data (e.g., FlowController), and the other to the specific value (e.g., flow1). On the Aux/Rolling Data tabs, these data sources appear as curves with the titles:
+
+    ObjKey.subkey.[name].ValueKey
+
+where [name] is optional. Known ObjKeys will autocomplete when typing in the table below, and once a valid ObjKey is entered, the known ValueKeys will be available by autocomplete in the second column.)000"));
 
     QVBoxLayout *vl = new QVBoxLayout;
 
@@ -23,11 +28,11 @@ WizardValidationPage::WizardValidationPage(QWidget *parent) :
     ValidationModel *valmodel = new ValidationModel(p_validationView);
     p_validationView->setModel(valmodel);
     p_validationView->setItemDelegateForColumn(0,new CompleterLineEditDelegate);
-    p_validationView->setItemDelegateForColumn(1,new ValidationDoubleSpinBoxDelegate);
+    p_validationView->setItemDelegateForColumn(1,new CompleterLineEditDelegate);
     p_validationView->setItemDelegateForColumn(2,new ValidationDoubleSpinBoxDelegate);
+    p_validationView->setItemDelegateForColumn(3,new ValidationDoubleSpinBoxDelegate);
     p_validationView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     p_validationView->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-    p_validationView->setMinimumWidth(300);
     vl->addWidget(p_validationView);
 
     QHBoxLayout *tl = new QHBoxLayout;
@@ -67,6 +72,12 @@ WizardValidationPage::WizardValidationPage(QWidget *parent) :
     });
 }
 
+void WizardValidationPage::setValidationKeys(std::map<QString, QStringList> m)
+{
+    d_validationKeys = m;
+    static_cast<ValidationModel*>(p_validationView->model())->d_validationKeys = m;
+}
+
 
 
 int WizardValidationPage::nextId() const
@@ -74,23 +85,25 @@ int WizardValidationPage::nextId() const
     return ExperimentWizard::SummaryPage;
 }
 
-QMap<QString, BlackChirp::ValidationItem> WizardValidationPage::getValidation() const
-{
-    auto l = static_cast<ValidationModel*>(p_validationView->model())->getList();
-    QMap<QString,BlackChirp::ValidationItem> out;
-    for(int i=0; i<l.size(); i++)
-        out.insert(l.at(i).key,l.at(i));
-    return out;
-}
-
 
 void WizardValidationPage::initializePage()
 {
-    auto e = getExperiment();
+    auto model = p_validationView->model();
+    for(int i=model->rowCount()-1; i>=0; --i)
+    {
+        auto ok = model->data(model->index(i,0)).toString();
+        auto vk = model->data(model->index(i,1)).toString();
 
-    dynamic_cast<ValidationModel*>(p_validationView->model())->setFromMap(e->validationItems());
+        auto it = d_validationKeys.find(ok);
+        if(it == d_validationKeys.end())
+        {
+            model->removeRow(i);
+            continue;
+        }
 
-    p_validationView->resizeColumnsToContents();
+        if(!it->second.contains(vk))
+            model->removeRow(i);
+    }
 
 }
 
@@ -98,11 +111,29 @@ bool WizardValidationPage::validatePage()
 {
     auto e = getExperiment();
 
-    auto l = static_cast<ValidationModel*>(p_validationView->model())->getList();
-    e->setValidationItems(QMap<QString, BlackChirp::ValidationItem>());
-    for(int i=0; i<l.size(); i++)
-        e->addValidationItem(l.at(i));
+    auto model = p_validationView->model();
+    ExperimentValidator::ValidationMap m;
+    for(int i=0; i<model->rowCount(); ++i)
+    {
+        auto k1 = model->data(model->index(i,0),Qt::DisplayRole).toString();
+        auto k2 = model->data(model->index(i,1),Qt::DisplayRole).toString();
+        auto min = model->data(model->index(i,2),Qt::DisplayRole).toDouble();
+        auto max = model->data(model->index(i,3),Qt::DisplayRole).toDouble();
 
+        if(k1.isEmpty() || k2.isEmpty())
+            continue;
+
+        if(max < min)
+            qSwap(min,max);
+
+        auto it = m.find(k1);
+        if(it == m.end())
+            m.insert({k1,{{k2,{min,max}}}});
+        else
+            it->second.insert({k2,{min,max}});
+    }
+
+    e->setValidationMap(m);
     
     return true;
 }

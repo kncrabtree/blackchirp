@@ -8,33 +8,39 @@
 #include <QLineEdit>
 #include <QCompleter>
 
-#include <QList>
+#include <data/experiment/experimentvalidator.h>
+#include <data/storage/settingsstorage.h>
 
-#include <data/datastructs.h>
+namespace BC::Key::Validation {
+static const QString key{"ValidationTable"};
+static const QString items("items");
+static const QString objKey("objKey");
+static const QString valKey("valueKey");
+static const QString min("min");
+static const QString max("max");
+}
 
-class ValidationModel : public QAbstractTableModel
+class ValidationModel : public QAbstractTableModel, public SettingsStorage
 {
 	Q_OBJECT
 public:
 	ValidationModel(QObject *parent = nullptr);
 	~ValidationModel();
-
-    void setFromMap(const QMap<QString, BlackChirp::ValidationItem> l);
 	
 	// QAbstractItemModel interface
-	int rowCount(const QModelIndex &parent) const;
-	int columnCount(const QModelIndex &parent) const;
+    int rowCount(const QModelIndex &parent = QModelIndex()) const;
+    int columnCount(const QModelIndex &parent = QModelIndex()) const;
 	QVariant data(const QModelIndex &index, int role) const;
 	bool setData(const QModelIndex &index, const QVariant &value, int role);
 	QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 	bool removeRows(int row, int count, const QModelIndex &parent);
 	Qt::ItemFlags flags(const QModelIndex &index) const;
 	
-    void addNewItem(QString k = QString(""), double min = 0.0, double max = 1.0);
-    QList<BlackChirp::ValidationItem> getList();
+    void addNewItem();
+    std::map<QString,QStringList> d_validationKeys;
 	
 private:
-    QList<BlackChirp::ValidationItem> d_validationList;
+    QVector<QVariantList> d_modelData;
 };
 
 class ValidationDoubleSpinBoxDelegate : public QStyledItemDelegate

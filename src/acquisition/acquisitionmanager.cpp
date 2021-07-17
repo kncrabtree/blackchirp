@@ -188,6 +188,18 @@ void AcquisitionManager::processAuxData(AuxDataStorage::AuxDataMap m)
     }
 }
 
+void AcquisitionManager::processValidationData(AuxDataStorage::AuxDataMap m)
+{
+    if(d_state == Acquiring)
+    {
+        for(auto &[key,val] : m)
+        {
+            if(!d_currentExperiment->validateItem(key,val))
+                abort();
+        }
+    }
+}
+
 void AcquisitionManager::clockSettingsComplete(const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks)
 {
     if(d_state == Acquiring && d_currentExperiment->ftmwEnabled())

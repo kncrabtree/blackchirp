@@ -12,6 +12,7 @@
 Experiment::Experiment() : HeaderStorage(BC::Store::Exp::key)
 {
     pu_auxData = std::make_unique<AuxDataStorage>();
+    pu_validator = std::make_unique<ExperimentValidator>();
 }
 
 Experiment::Experiment(const Experiment &other) :
@@ -38,7 +39,8 @@ Experiment::Experiment(const Experiment &other) :
         }
     }
 
-    pu_auxData = std::make_unique<AuxDataStorage>(*other.auxData());
+    pu_auxData = std::make_unique<AuxDataStorage>(*other.pu_auxData);
+    pu_validator = std::make_unique<ExperimentValidator>(*other.pu_validator);
 
 }
 
@@ -208,14 +210,14 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
     out.insert(QString("AuxDataInterval"),qMakePair(d_timeDataInterval,QString("s")));
     out.insert(QString("AutosaveInterval"),qMakePair(d_autoSaveIntervalHours,QString("hr")));
 
-    auto it = d_validationConditions.constBegin();
-    QString prefix("Validation.");
-    QString empty("");
-    for(;it != d_validationConditions.constEnd(); it++)
-    {
-        out.insert(prefix+it.key()+QString(".Min"),qMakePair(it.value().min,empty));
-        out.insert(prefix+it.key()+QString(".Max"),qMakePair(it.value().max,empty));
-    }
+//    auto it = d_validationConditions.constBegin();
+//    QString prefix("Validation.");
+//    QString empty("");
+//    for(;it != d_validationConditions.constEnd(); it++)
+//    {
+//        out.insert(prefix+it.key()+QString(".Min"),qMakePair(it.value().min,empty));
+//        out.insert(prefix+it.key()+QString(".Max"),qMakePair(it.value().max,empty));
+//    }
 
 //    out.unite(d_ftmwCfg.headerMap());
     out.unite(d_pGenCfg.headerMap());
@@ -278,11 +280,6 @@ QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
 //    }
 
     return out;
-}
-
-QMap<QString, BlackChirp::ValidationItem> Experiment::validationItems() const
-{
-    return d_validationConditions;
 }
 
 bool Experiment::snapshotReady()
@@ -514,37 +511,10 @@ bool Experiment::addAuxData(AuxDataStorage::AuxDataMap m)
     //return false if scan should be aborted
     bool out = true;
 
-#pragma message("Redo validation conditions")
     for(auto &[key,val] : m)
     {
-        if(d_validationConditions.contains(key))
-        {
-            //convert key if needed
-            QString name = BlackChirp::channelNameLookup(key);
-            if(name.isEmpty())
-                name = key;
-
-            bool ok = false;
-            double d = val.toDouble(&ok);
-
-            if(!ok)
-            {
-                out = false;
-                d_errorString = QString("Aborting because the item \"%1\" (value = %2) cannot be converted to a double.").arg(name).arg(val.toString());
-                break;
-            }
-            else
-            {
-                const BlackChirp::ValidationItem &vi = d_validationConditions.value(key);
-                if(d < vi.min || d > vi.max)
-                {
-                    out = false;
-                    d_errorString = QString("Aborting because %1 is outside specified range (Value = %2, Min = %3, Max = %4).")
-                            .arg(name).arg(d,0,'g').arg(vi.min,0,'g').arg(vi.max,0,'g');
-                    break;
-                }
-            }
-        }
+        if(!validateItem(key,val))
+            break;
     }
 
     auxData()->addDataPoints(m);
@@ -552,23 +522,18 @@ bool Experiment::addAuxData(AuxDataStorage::AuxDataMap m)
     return out;
 }
 
-void Experiment::setValidationItems(const QMap<QString, BlackChirp::ValidationItem> m)
+void Experiment::setValidationMap(const ExperimentValidator::ValidationMap &m)
 {
-    d_validationConditions = m;
+    pu_validator->setValidationMap(m);
 }
 
-void Experiment::addValidationItem(const QString key, const double min, const double max)
+bool Experiment::validateItem(const QString key, const QVariant val)
 {
-    BlackChirp::ValidationItem val;
-    val.key = key;
-    val.min = qMin(min,max);
-    val.max = qMax(min,max);
-    addValidationItem(val);
-}
+    bool out = pu_validator->validate(key,val);
+    if(!out)
+        d_errorString = pu_validator->errorString();
 
-void Experiment::addValidationItem(const BlackChirp::ValidationItem &i)
-{
-    d_validationConditions.insert(i.key,i);
+    return out;
 }
 
 #pragma message("Finalize Snapshots issue")

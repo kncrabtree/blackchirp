@@ -12,8 +12,7 @@ HardwareObject::HardwareObject(const QString key, const QString subKey, const QS
     d_commType(commType), d_enabledForExperiment(true),
     d_isConnected(false)
 {
-    set(BC::Key::HW::key,d_key);
-    set(BC::Key::HW::name,d_name);
+    set(BC::Key::HW::key,d_key); set(BC::Key::HW::name,d_name);
     set(BC::Key::HW::critical,critical);
     set(BC::Key::HW::threaded,threaded);
     set(BC::Key::HW::commType,commType);
@@ -75,14 +74,18 @@ void HardwareObject::bcTestConnection()
     emit connected(success,errorString(),QPrivateSignal());
 }
 
-void HardwareObject::bcReadTimeData()
+void HardwareObject::bcReadAuxData()
 {
     if(!d_isConnected)
         return;
 
     auto pl = readAuxData();
     if(!pl.empty())
-        emit auxDataRead(d_key,d_subKey,pl,QPrivateSignal());
+        emit auxDataRead(pl,QPrivateSignal());
+
+    auto vl = readValidationData();
+    if(!vl.empty())
+        emit validationDataRead(pl,QPrivateSignal());
 }
 
 void HardwareObject::setRollingTimerInterval(int interval)
@@ -142,12 +145,12 @@ void HardwareObject::buildCommunication(QObject *gc)
 
 AuxDataStorage::AuxDataMap HardwareObject::readAuxData()
 {
-    return AuxDataStorage::AuxDataMap();
+    return {};
 }
 
 AuxDataStorage::AuxDataMap HardwareObject::readValidationData()
 {
-    return AuxDataStorage::AuxDataMap();
+    return {};
 }
 
 void HardwareObject::sleep(bool b)
@@ -161,7 +164,7 @@ void HardwareObject::timerEvent(QTimerEvent *event)
     if(d_isConnected && event->timerId() == d_rollingDataTimerId)
     {
         auto rd = readAuxData();
-        emit rollingDataRead(d_key,d_subKey,rd,QPrivateSignal());
+        emit rollingDataRead(rd,QPrivateSignal());
         event->accept();
         return;
     }

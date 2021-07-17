@@ -96,6 +96,11 @@ ExperimentWizard::~ExperimentWizard()
 { 
 }
 
+void ExperimentWizard::setValidationKeys(const std::map<QString, QStringList> &m)
+{
+    static_cast<WizardValidationPage*>(page(ValidationPage))->setValidationKeys(m);
+}
+
 QSize ExperimentWizard::sizeHint() const
 {
     return {1000,700};

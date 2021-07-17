@@ -12,6 +12,22 @@ IOBoard::~IOBoard()
 
 }
 
+QStringList IOBoard::validationKeys() const
+{
+    using namespace BC::Key::Digi;
+    int an = get(numAnalogChannels,0);
+    int dn = get(numDigitalChannels,0);
+
+    QStringList out;
+    out.reserve(an+dn);
+    for(int i=0; i<an; ++i)
+        out.append(BC::Aux::IOB::ain.arg(i+1));
+    for(int i=0; i<dn; ++i)
+        out.append(BC::Aux::IOB::din.arg(i+1));
+
+    return out;
+}
+
 AuxDataStorage::AuxDataMap IOBoard::readAuxData()
 {
     AuxDataStorage::AuxDataMap out;
@@ -40,8 +56,6 @@ AuxDataStorage::AuxDataMap IOBoard::readValidationData()
         else
             out.insert({BC::Aux::IOB::din.arg(it->first),it->second});
     }
-
-    return out;
 }
 
 bool IOBoard::prepareForExperiment(Experiment &exp)
@@ -56,6 +70,10 @@ bool IOBoard::prepareForExperiment(Experiment &exp)
         else
             exp.auxData()->registerKey(d_key,d_subKey,BC::Aux::IOB::ain.arg(it->first));
     }
+
+    //note: digital channels should not be registered because they do not need to be plotted and
+    //saved to disk. their only purpose is to potentially abort the experiment if they are set
+    //as a validation condition.
 
     return true;
 }

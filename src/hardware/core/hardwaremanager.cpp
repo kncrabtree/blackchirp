@@ -93,16 +93,22 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
             emit logMessage(QString("%1: %2").arg(obj->d_name).arg(msg),mc);
         });
         connect(obj,&HardwareObject::connected,[=](bool success, QString msg){ connectionResult(obj,success,msg); });
-        connect(obj,&HardwareObject::auxDataRead,[=](const QString s1, const QString s2, AuxDataStorage::AuxDataMap m){
+        connect(obj,&HardwareObject::auxDataRead,[obj,this](AuxDataStorage::AuxDataMap m){
             AuxDataStorage::AuxDataMap out;
-            for(auto it = m.begin(); it != m.end(); ++it)
-                out.insert({AuxDataStorage::makeKey(s1,s2,it->first),it->second});
+            for(auto it = m.cbegin(); it != m.cend(); ++it)
+                out.insert({AuxDataStorage::makeKey(obj->d_key,obj->d_subKey,it->first),it->second});
             emit auxData(out);
         });
-        connect(obj,&HardwareObject::rollingDataRead,[=](const QString s1, const QString s2, AuxDataStorage::AuxDataMap m){
+        connect(obj,&HardwareObject::auxDataRead,[obj,this](AuxDataStorage::AuxDataMap m){
             AuxDataStorage::AuxDataMap out;
-            for(auto it = m.begin(); it != m.end(); ++it)
-                out.insert({AuxDataStorage::makeKey(s1,s2,it->first),it->second});
+            for(auto it = m.cbegin(); it != m.cend(); ++it)
+                out.insert({AuxDataStorage::makeKey(obj->d_key,obj->d_subKey,it->first),it->second});
+            emit validationData(out);
+        });
+        connect(obj,&HardwareObject::rollingDataRead,[obj,this](AuxDataStorage::AuxDataMap m){
+            AuxDataStorage::AuxDataMap out;
+            for(auto it = m.cbegin(); it != m.cend(); ++it)
+                out.insert({AuxDataStorage::makeKey(obj->d_key,obj->d_subKey,it->first),it->second});
             emit rollingData(out,QDateTime::currentDateTime());
         });
         connect(this,&HardwareManager::beginAcquisition,obj,&HardwareObject::beginAcquisition);
@@ -342,16 +348,16 @@ void HardwareManager::getAuxData()
     for(auto obj : d_hardwareList)
     {
         if(obj->thread() == thread())
-            obj->bcReadTimeData();
+            obj->bcReadAuxData();
         else
-            QMetaObject::invokeMethod(obj,[obj](){obj->bcReadTimeData();});
+            QMetaObject::invokeMethod(obj,[obj](){obj->bcReadAuxData();});
     }
 }
 
 void HardwareManager::setClocks(QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks)
 {
     for(auto it = clocks.begin(); it != clocks.end(); ++it)
-        it.value().desiredFreqMHz = p_clockManager->setClockFrequency(it.key(),                                                                      it.value().desiredFreqMHz);
+        it.value().desiredFreqMHz = p_clockManager->setClockFrequency(it.key(),it.value().desiredFreqMHz);
 
     emit allClocksReady(clocks);
 }
@@ -393,6 +399,15 @@ void HardwareManager::setGasPressureControlMode(bool en)
         p_flow->setPressureControlMode(en);
     else
         QMetaObject::invokeMethod(p_flow,"setPressureControlMode",Q_ARG(bool,en));
+}
+
+std::map<QString, QStringList> HardwareManager::validationKeys() const
+{
+    std::map<QString, QStringList> out;
+    for(auto obj : d_hardwareList)
+        out.insert_or_assign(obj->d_key,obj->validationKeys());
+
+    return out;
 }
 
 #ifdef BC_PCONTROLLER

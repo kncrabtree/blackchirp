@@ -9,6 +9,7 @@
 
 #include <data/storage/headerstorage.h>
 #include <data/storage/auxdatastorage.h>
+#include <data/experiment/experimentvalidator.h>
 #include <data/experiment/ftmwconfig.h>
 #include <data/datastructs.h>
 #include <data/experiment/pulsegenconfig.h>
@@ -75,16 +76,14 @@ public:
     bool isComplete() const;
     BlackChirp::LogMessageCode endLogMessageCode() const;
     QMap<QString, QPair<QVariant,QString>> headerMap() const;
-    QMap<QString,BlackChirp::ValidationItem> validationItems() const;
 
     void setIOBoardConfig(const IOBoardConfig cfg);
     void setPulseGenConfig(const PulseGenConfig c) { d_pGenCfg = c; }
     void setFlowConfig(const FlowConfig c) { d_flowCfg = c; }
 
     bool addAuxData(AuxDataStorage::AuxDataMap m);
-    void setValidationItems(const QMap<QString,BlackChirp::ValidationItem> m);
-    void addValidationItem(const QString key, const double min, const double max);
-    void addValidationItem(const BlackChirp::ValidationItem &i);
+    void setValidationMap(const ExperimentValidator::ValidationMap &m);
+    bool validateItem(const QString key, const QVariant val);
 //    void finalizeFtmwSnapshots(const FtmwConfig final);
 
 #ifdef BC_LIF
@@ -127,7 +126,7 @@ private:
     std::unique_ptr<AuxDataStorage> pu_auxData;
     PulseGenConfig d_pGenCfg;
     FlowConfig d_flowCfg;
-    QMap<QString,BlackChirp::ValidationItem> d_validationConditions;
+    std::unique_ptr<ExperimentValidator> pu_validator;
 
     QString d_path;
 
