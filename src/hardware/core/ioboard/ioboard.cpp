@@ -56,6 +56,8 @@ AuxDataStorage::AuxDataMap IOBoard::readValidationData()
         else
             out.insert({BC::Aux::IOB::din.arg(it->first),it->second});
     }
+
+    return out;
 }
 
 bool IOBoard::prepareForExperiment(Experiment &exp)

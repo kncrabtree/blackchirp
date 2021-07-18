@@ -26,7 +26,7 @@ static const QString bcCurvePlotIndex("plotIndex");
 class BlackchirpPlotCurve : public QwtPlotCurve, public SettingsStorage
 {
 public:
-    BlackchirpPlotCurve(const QString name,
+    BlackchirpPlotCurve(const QString key, const QString title=QString(""),
                         Qt::PenStyle defaultLineStyle = Qt::SolidLine,
                         QwtSymbol::Style defaultMarker = QwtSymbol::NoSymbol);
 
@@ -40,6 +40,7 @@ public:
     void appendPoint(const QPointF p);
     QVector<QPointF> curveData() const { return d_data; }
     QString name() const { return title().text(); }
+    QString key() const { return d_key; }
 
     /*!
      * \brief Sets curve visibility, and stores to settings
@@ -60,7 +61,8 @@ public:
     void updateFromSettings();
     void filter();
 
-protected:
+private:
+    const QString d_key;
     QVector<QPointF> d_data;
     QRectF d_boundingRect;
 

@@ -14,7 +14,7 @@ static const QString savePath("savePath");
 static const QString exptDir("experiments");
 static const QString logDir("log");
 static const QString exportDir("textexports");
-static const QString trackingDir("trackingdata");
+static const QString trackingDir("rollingdata");
 }
 
 /*!
@@ -135,7 +135,7 @@ static const QString trackingDir("trackingdata");
  *
  * When working with a subclass of SettingsStorage, the object has access to the SettingsStorage::set,
  * SettingsStorage::setMultiple, and SettingsStorage::setArray functions. Each of these takes an optional
- * bool argument (default true) that controls whther the new value is immedately written to settings.
+ * bool argument (default false) that controls whther the new value is immedately written to settings.
  * If false, the value is just stored in memory until a call to SettingsStorage::save() is made. If the
  * key in a call to one of the set functions does not exist, a new key-value pair is added.
  *
@@ -414,7 +414,7 @@ protected:
         if(d_arrayValues.find(key) != d_arrayValues.end())
             return false;
 
-        d_discard = false;
+        d_edited = true;
 
         auto it = d_values.find(key);
         if(it != d_values.end())
@@ -453,7 +453,7 @@ protected:
         if(d_arrayValues.find(key) != d_arrayValues.end())
             return false;
 
-        d_discard = false;
+        d_edited = true;
 
         auto it = d_values.find(key);
         if(it != d_values.end())
@@ -474,10 +474,10 @@ protected:
      * If the write parameter is true, the current value is written to persistent storage.
      *
      * \param key The key associated with the getter
-     * \param write If true, value is written to persistent storage
+     * \param write If true, value is written to persistent storage immediately (default false)
      * \return QVariant containing return value of getter call, or empty QVariant if no getter was found.
      */
-    QVariant unRegisterGetter(const QString key, bool write = true);
+    QVariant unRegisterGetter(const QString key, bool write = false);
 
     /*!
      * \brief Removes all getter functions
@@ -487,7 +487,7 @@ protected:
      *
      * \param write If true, values are written to persistent storage
      */
-    void clearGetters(bool write = true);
+    void clearGetters(bool write = false);
 
 
     /*!
@@ -564,7 +564,7 @@ protected:
      * \param write If true, write to persistent storage immediately
      * \return bool Returns whether or not the setting was made. If false, the key is already associated with a getter or array value
      */
-    bool set(const QString key, const QVariant &value, bool write = true);
+    bool set(const QString key, const QVariant &value, bool write = false);
 
     /*!
      * \brief Stores a key-value setting. Overloaded function
@@ -582,7 +582,7 @@ protected:
      * \return bool Returns whether or not the setting was made. If false, the key is already associated with a getter or array value
      */
     template<typename T>
-    bool set(const QString key, const T &value, bool write = true) {
+    bool set(const QString key, const T &value, bool write = false) {
         return set(key,QVariant::fromValue(value),write);
     }
 
@@ -597,7 +597,7 @@ protected:
      * \param write If true, write to QSettings immediately
      * \return std::map<QString,bool> Contains return value of SettingsStorage::set for each key
      */
-    std::map<QString,bool> setMultiple(const SettingsMap m, bool write = true);
+    std::map<QString,bool> setMultiple(const SettingsMap m, bool write = false);
 
     /*!
      * \brief Sets (or unsets) an array value
@@ -611,7 +611,7 @@ protected:
      * \param array The new array value (may be empty)
      * \param write If true, QSettings is updated immediately
      */
-    void setArray(const QString key, const std::vector<SettingsMap> &array, bool write = true);
+    void setArray(const QString key, const std::vector<SettingsMap> &array, bool write = false);
 
     /*!
      * \brief Sets a single value within a map assocuated with an array value
@@ -627,7 +627,7 @@ protected:
      * \param write If true, write updated array to QSettings
      * \return bool True if setting was successfully made
      */
-    bool setArrayValue(const QString arrayKey, std::size_t i, const QString key, const QVariant &value, bool write = true);
+    bool setArrayValue(const QString arrayKey, std::size_t i, const QString key, const QVariant &value, bool write = false);
 
     /*!
      * \brief Sets a single value within a map assocuated with an array value. Overloaded function
@@ -644,7 +644,7 @@ protected:
      * \return bool True if setting was successfully made
      */
     template<typename T>
-    bool setArrayValue(const QString arrayKey, std::size_t i, const QString key, const T &value, bool write = true) {
+    bool setArrayValue(const QString arrayKey, std::size_t i, const QString key, const T &value, bool write = false) {
         return setArrayValue(arrayKey,i,key,QVariant::fromValue(value),write);
     }
 
@@ -696,7 +696,8 @@ private:
     explicit SettingsStorage(const QString orgName, const QString appName, const QStringList keys, Type type, QSettings::Scope scope);
 
     SettingsMap d_values; /*!< Map of key-value pairs */
-    bool d_discard{true}; /*! If set to true, changes will not be stored to QSettings */
+    bool d_discard{false}; /*! If set to true, changes will not be stored to QSettings */
+    bool d_edited{false}; /*! Set to true when a value is changed. */
 
     std::map<QString, SettingsGetter> d_getters; /*!< Map containing all registered getters */
     std::map<QString,std::vector<SettingsMap>> d_arrayValues; /*!< Map containing all array values */

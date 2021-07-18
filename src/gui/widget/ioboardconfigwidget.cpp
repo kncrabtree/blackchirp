@@ -66,6 +66,29 @@ IOBoardConfigWidget::IOBoardConfigWidget(QWidget *parent) :
 
 IOBoardConfigWidget::~IOBoardConfigWidget()
 {
+    using namespace BC::Key::Digi;
+    using namespace BC::Key::DigiWidget;
+    SettingsStorage s(d_hwKey,Hardware);
+
+
+    for(int i=0; i<p_analogNameWidget->rowCount(); ++i)
+    {
+        auto text = p_analogNameWidget->item(i,0)->text();
+        if((std::size_t) i == getArraySize(dwAnChannels))
+            appendArrayMap(dwAnChannels,{{channelName,text}});
+        else
+            setArrayValue(dwAnChannels,i,channelName,text);
+    }
+
+    for(int i=0; i<p_digitalNameWidget->rowCount(); ++i)
+    {
+        auto text = p_digitalNameWidget->item(i,0)->text();
+        if((std::size_t) i == getArraySize(dwDigChannels))
+            appendArrayMap(dwDigChannels,{{channelName,text}});
+        else
+            setArrayValue(dwDigChannels,i,channelName,text);
+    }
+
 }
 
 void IOBoardConfigWidget::setFromConfig(const IOBoardConfig &cfg)

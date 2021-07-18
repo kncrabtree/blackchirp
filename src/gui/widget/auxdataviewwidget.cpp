@@ -65,9 +65,15 @@ void AuxDataViewWidget::pointUpdated(const AuxDataStorage::AuxDataMap m, const Q
 
         //locate curve by name and append point
         bool foundCurve = false;
+
+        auto l = key.split(".",QString::SkipEmptyParts);
+        QString realKey = key;
+        if(l.size() >= 2)
+            realKey = QString("%1.%2").arg(l.constFirst(),l.constLast());
+
         for(auto c : d_plotCurves)
         {
-            if(key == c->title().text())
+            if(realKey == c->key())
             {
                 c->appendPoint(newPoint);
 
@@ -85,11 +91,11 @@ void AuxDataViewWidget::pointUpdated(const AuxDataStorage::AuxDataMap m, const Q
             continue;
 
         //if we reach this point, a new curve and metadata struct needs to be created
-        QString realName = BlackChirp::channelNameLookup(key);
-        if(realName.isEmpty())
-            realName = key;
+        QString title = realKey;
+        if(l.size() > 3)
+            title = l.at(l.size()-2);
 
-        BlackchirpPlotCurve *c = new BlackchirpPlotCurve(realName);
+        BlackchirpPlotCurve *c = new BlackchirpPlotCurve(realKey,title);
         c->appendPoint({x,value});
         c->attach(d_allPlots.at(c->plotIndex() % d_allPlots.size()));
         if(c->isVisible())
@@ -330,7 +336,7 @@ void RollingDataWidget::pointUpdated(const AuxDataStorage::AuxDataMap m, const Q
     for(auto &[key,val] : m)
     {
         bool writeheader = false;
-        QFile f(d.absoluteFilePath(key));
+        QFile f(d.absoluteFilePath(key)+".csv");
         QTextStream t(&f);
         if(!f.exists())
             writeheader = true;

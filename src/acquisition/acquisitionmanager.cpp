@@ -132,6 +132,8 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 #pragma message("Fix clock settings signal")
             emit newClockSettings(d_currentExperiment->ftmwConfig()->d_rfConfig.getClocks());
         }
+
+        emit ftmwUpdateProgress(d_currentExperiment->ftmwConfig()->perMilComplete());
     }
 
     checkComplete();
@@ -195,7 +197,10 @@ void AcquisitionManager::processValidationData(AuxDataStorage::AuxDataMap m)
         for(auto &[key,val] : m)
         {
             if(!d_currentExperiment->validateItem(key,val))
+            {
                 abort();
+                break;
+            }
         }
     }
 }

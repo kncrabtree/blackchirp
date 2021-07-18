@@ -16,21 +16,14 @@ WizardValidationPage::WizardValidationPage(QWidget *parent) :
 {
     setTitle(QString("Validation Settings"));
     setSubTitle(QString(
-R"000(Set up conditions that will automatically abort the experiment if a measured value falls outside a certain range. Each validation condition is identified by 2 keys: one referring to the object that generates the data (e.g., FlowController), and the other to the specific value (e.g., flow1). On the Aux/Rolling Data tabs, these data sources appear as curves with the titles:
-
-    ObjKey.subkey.[name].ValueKey
-
-where [name] is optional. Known ObjKeys will autocomplete when typing in the table below, and once a valid ObjKey is entered, the known ValueKeys will be available by autocomplete in the second column.)000"));
+R"000(Set up conditions that will automatically abort the experiment if a measured value falls outside a certain range. Each validation condition is identified by 2 keys: one referring to the object that generates the data (e.g., FlowController), and the other to the specific value (e.g., flow1).)000"));
 
     QVBoxLayout *vl = new QVBoxLayout;
 
     p_validationView = new QTableView();
     ValidationModel *valmodel = new ValidationModel(p_validationView);
     p_validationView->setModel(valmodel);
-    p_validationView->setItemDelegateForColumn(0,new CompleterLineEditDelegate);
-    p_validationView->setItemDelegateForColumn(1,new CompleterLineEditDelegate);
-    p_validationView->setItemDelegateForColumn(2,new ValidationDoubleSpinBoxDelegate);
-    p_validationView->setItemDelegateForColumn(3,new ValidationDoubleSpinBoxDelegate);
+    p_validationView->setItemDelegate(new ValidationDelegate(valmodel));
     p_validationView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     p_validationView->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     vl->addWidget(p_validationView);

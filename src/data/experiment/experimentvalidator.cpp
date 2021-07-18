@@ -33,7 +33,7 @@ bool ExperimentValidator::validate(const QString key, const QVariant val)
                         if( (v < min) || (v > max) )
                         {
                             out = false;
-                            d_errorString = QString("Reading for %1 (%2) is outside the allowed range. (%3 - %4). Aborting.")
+                            d_errorString = QString("Reading for %1 (%2) is outside the allowed range (%3 - %4). Aborting.")
                                     .arg(key).arg(val.toString()).
                                     arg(QVariant(min).toString()).arg(QVariant(max).toString());
                         }

@@ -37,28 +37,8 @@ enum ExptFileType {
     ClockFile
 };
 
-struct ValidationItem {
-    QString key;
-    double min;
-    double max;
-};
-
-struct IOBoardChannel {
-    bool enabled;
-    QString name;
-    bool plot;
-
-    IOBoardChannel() {}
-    IOBoardChannel(bool e, QString n, bool p) : enabled(e), name(n), plot(p) {}
-    IOBoardChannel(const IOBoardChannel &other) : enabled(other.enabled), name(other.name), plot(other.plot) {}
-};
-
 QString getExptFile(int num, BlackChirp::ExptFileType t, QString path = QString(""), int snapNum = -1);
 QString getExptDir(int num, QString path = QString(""));
-QString getExportDir();
-void setExportDir(const QString fileName);
-QString headerMapToString(QMap<QString,QPair<QVariant,QString>> map);
-QString channelNameLookup(QString key);
 
 #ifdef BC_LIF
 
@@ -160,15 +140,11 @@ struct MotorScopeConfig {
 }
 
 Q_DECLARE_METATYPE(BlackChirp::LogMessageCode)
-Q_DECLARE_METATYPE(BlackChirp::ValidationItem)
 
 #ifdef BC_LIF
 Q_DECLARE_METATYPE(BlackChirp::LifScanOrder)
 Q_DECLARE_METATYPE(BlackChirp::LifCompleteMode)
 #endif
-
-Q_DECLARE_TYPEINFO(BlackChirp::ValidationItem,Q_PRIMITIVE_TYPE);
-Q_DECLARE_TYPEINFO(BlackChirp::IOBoardChannel,Q_PRIMITIVE_TYPE);
 
 #endif // DATASTRUCTS_H
 

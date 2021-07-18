@@ -138,6 +138,12 @@ void BCSavePathDialog::apply()
             return;
         }
 
+        if(!d.mkpath(BC::Key::trackingDir))
+        {
+            QMessageBox::critical(this,"Blackchirp Error",QString("Could not create tracking data directory in %1.\nPlease choose a different location.").arg(d.absolutePath()));
+            return;
+        }
+
         p_expBox->setValue(1);
         p_buttons->button(QDialogButtonBox::Save)->setEnabled(true);
     }

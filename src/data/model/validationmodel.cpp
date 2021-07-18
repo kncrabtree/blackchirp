@@ -1,5 +1,7 @@
 #include <data/model/validationmodel.h>
 
+#include <QDoubleValidator>
+
 
 ValidationModel::ValidationModel(QObject *parent) :
      QAbstractTableModel(parent), SettingsStorage(BC::Key::Validation::key)
@@ -162,7 +164,7 @@ Qt::ItemFlags ValidationModel::flags(const QModelIndex &index) const
     if(index.row() < 0 || index.row() >= d_modelData.size())
 		return Qt::NoItemFlags;
 	
-    return Qt::ItemIsEnabled | Qt::ItemIsEditable;
+    return Qt::ItemIsEnabled | Qt::ItemIsEditable | Qt::ItemIsSelectable;
 }
 
 void ValidationModel::addNewItem()
@@ -172,53 +174,23 @@ void ValidationModel::addNewItem()
     endInsertRows();
 }
 
-ValidationDoubleSpinBoxDelegate::ValidationDoubleSpinBoxDelegate(QObject *parent) :
+ValidationDelegate::ValidationDelegate(QObject *parent) :
      QStyledItemDelegate(parent)
 {
 	
 }
 
-QWidget *ValidationDoubleSpinBoxDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
+QWidget *ValidationDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
 	Q_UNUSED(option)
-	Q_UNUSED(index)
-	
-	QDoubleSpinBox *editor = new QDoubleSpinBox(parent);
-	editor->setMinimum(-1e200);
-	editor->setMaximum(1e200);
-	editor->setDecimals(3);
-	
-	return editor;
-}
 
-void ValidationDoubleSpinBoxDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
-{
     if(index.column() == 2 || index.column() == 3)
-		static_cast<QDoubleSpinBox*>(editor)->setValue(index.model()->data(index,Qt::EditRole).toDouble());
-		
-}
-
-void ValidationDoubleSpinBoxDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
-{
-	double val = static_cast<QDoubleSpinBox*>(editor)->value();
-	model->setData(index,val);
-}
-
-void ValidationDoubleSpinBoxDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const
-{
-	editor->setGeometry(option.rect);
-	Q_UNUSED(index)
-}
-
-CompleterLineEditDelegate::CompleterLineEditDelegate(QObject *parent) :
-     QStyledItemDelegate(parent)
-{
-	
-}
-
-QWidget *CompleterLineEditDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
-{
-	Q_UNUSED(option)
+    {
+        auto out = new QLineEdit(parent);
+        QValidator *v = new QDoubleValidator(out);
+        out->setValidator(v);
+        return out;
+    }
 
     auto &m = static_cast<const ValidationModel*>(index.model())->d_validationKeys;
 
@@ -233,39 +205,48 @@ QWidget *CompleterLineEditDelegate::createEditor(QWidget *parent, const QStyleOp
     }
     else
     {
-        //this abomination gets the value of column 0 for the current row
         auto k1 = index.model()->data(index.model()->index(index.row(),0)).toString();
         auto it = m.find(k1);
         if(it != m.end())
             keys.append(it->second);
     }
 	
-	QLineEdit *le = new QLineEdit(parent);
+    auto out = new QComboBox(parent);
 	
     if(!keys.isEmpty())
 	{
-        QCompleter *comp = new QCompleter(keys,le);
+        QCompleter *comp = new QCompleter(keys,out);
 		comp->setCaseSensitivity(Qt::CaseInsensitive);
         comp->setCompletionMode(QCompleter::UnfilteredPopupCompletion);
-		le->setCompleter(comp);
+        out->setCompleter(comp);
+
+        for(auto k : keys)
+            out->addItem(k);
 	}
 
-	return le;
+    return out;
 }
 
-void CompleterLineEditDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
+void ValidationDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
     if(index.column() == 0 || index.column() == 1)
-		static_cast<QLineEdit*>(editor)->setText(index.model()->data(index,Qt::EditRole).toString());
+        static_cast<QComboBox*>(editor)->setCurrentIndex(
+                static_cast<QComboBox*>(editor)->findText(
+                    index.model()->data(index,Qt::EditRole).toString()));
+    else
+        static_cast<QLineEdit*>(editor)->setText(index.model()->data(index,Qt::EditRole).toString());
+
 }
 
-void CompleterLineEditDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
+void ValidationDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
 {
-	QString key = static_cast<QLineEdit*>(editor)->text();
-	model->setData(index,key);
+    if(index.column() == 0 || index.column() == 1)
+        model->setData(index,static_cast<QComboBox*>(editor)->currentText());
+    else
+        model->setData(index,static_cast<QLineEdit*>(editor)->text().toDouble());
 }
 
-void CompleterLineEditDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const
+void ValidationDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
 	editor->setGeometry(option.rect);
 	Q_UNUSED(index)

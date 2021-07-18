@@ -46,7 +46,7 @@ std::map<int, double> VirtualIOBoard::readAnalogChannels()
 {
     std::map<int,double> out;
     for(auto it = d_analogChannels.begin(); it != d_analogChannels.cend(); ++it)
-        out.insert({it->first,static_cast<double>(qrand() % 2 << d_bytesPerPoint*8)/
+        out.insert({it->first,static_cast<double>(qrand() % (2 << d_bytesPerPoint*8))/
                     (2 << d_bytesPerPoint*8)*it->second.fullScale});
 
     return out;

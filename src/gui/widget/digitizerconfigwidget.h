@@ -16,6 +16,7 @@ namespace BC::Key::DigiWidget {
 static const QString dwAnChannels("channels");
 static const QString dwDigChannels("digitalChannels");
 static const QString roleIndex("roleIndex");
+static const QString digRead("digitalRead");
 static const QString lFullScale("lastFullScale");
 static const QString lVOffset("lastVOffset");
 static const QString chEnabled("enabled");
@@ -67,8 +68,8 @@ public slots:
     void configureAnalogBoxes();
 
 protected:
-    QList<AnalogChannelWidgets> d_anChannelWidgets;
-    QList<DigitalChannelWidgets> d_digChannelWidgets;
+    QVector<AnalogChannelWidgets> d_anChannelWidgets;
+    QVector<DigitalChannelWidgets> d_digChannelWidgets;
 
     QSpinBox *p_triggerSourceBox;
     QComboBox *p_triggerSlopeBox;

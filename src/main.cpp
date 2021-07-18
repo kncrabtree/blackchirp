@@ -87,8 +87,8 @@ R"000(It appears you are running Blackchirp for the first time, or you have just
 
         experiments - Location where all experimental data are recorded
         log - Location of log messages
+        rollingdata - Location for temporal monitoring data
         textexports - Default location for manually exported csv files
-        tracking - Location for temporal monitoring data
 
 Please note that if you are upgrading from an old version (<1.0.0) of Blackchirp, it is not recommended that you use the same storage folder as your old version, as all file formats have changed.
 )000"));

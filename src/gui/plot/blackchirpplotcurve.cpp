@@ -2,10 +2,14 @@
 
 #include <QPalette>
 
-BlackchirpPlotCurve::BlackchirpPlotCurve(const QString name,Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker) :
-    SettingsStorage({BC::Key::bcCurve,name},General)
+BlackchirpPlotCurve::BlackchirpPlotCurve(const QString key, const QString title, Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker) :
+    SettingsStorage({BC::Key::bcCurve,key},General), d_key{key}
 {
-    setTitle(name);
+    if(!title.isEmpty())
+        setTitle(title);
+    else
+        setTitle(key);
+
     setItemAttribute(QwtPlotItem::Legend);
     setItemAttribute(QwtPlotItem::AutoScale);
     setItemInterest(QwtPlotItem::ScaleInterest);

@@ -330,17 +330,40 @@ The actual number of records able to be acquired may be limited by the record le
 
 DigitizerConfigWidget::~DigitizerConfigWidget()
 {
-    std::vector<SettingsMap> l;
-    l.reserve(d_anChannelWidgets.size());
-    for(auto ch : d_anChannelWidgets)
+    for(int i=0; i < d_anChannelWidgets.size(); ++i)
     {
-        l.push_back({
-                        {chEnabled,ch.channelBox->isChecked()},
-                        {lFullScale,ch.fullScaleBox->value()},
-                        {lVOffset,ch.vOffsetBox->value()}
-                    });
+        auto &ch = d_anChannelWidgets.at(i);
+        SettingsMap m{
+            {chEnabled,ch.channelBox->isChecked()},
+            {lFullScale,ch.fullScaleBox->value()},
+            {lVOffset,ch.vOffsetBox->value()}
+        };
+
+        if((std::size_t)i == getArraySize(dwAnChannels))
+            appendArrayMap(dwAnChannels,m);
+        else
+        {
+            for(auto &[k,v] : m)
+                setArrayValue(dwAnChannels,i,k,v);
+        }
     }
-    setArray(dwAnChannels,l,false);
+
+    for(int i=0; i<d_digChannelWidgets.size(); ++i)
+    {
+        auto &ch = d_digChannelWidgets.at(i);
+        SettingsMap m{
+            {digRead,ch.readBox->isChecked()},
+            {roleIndex,ch.roleBox->currentIndex()}
+        };
+
+        if((std::size_t) i == getArraySize(dwDigChannels))
+            appendArrayMap(dwDigChannels,m);
+        else
+        {
+            for(auto &[k,v] : m)
+                setArrayValue(dwDigChannels,i,k,v);
+        }
+    }
 }
 
 int DigitizerConfigWidget::numAnalogChecked()

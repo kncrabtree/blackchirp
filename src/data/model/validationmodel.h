@@ -43,24 +43,11 @@ private:
     QVector<QVariantList> d_modelData;
 };
 
-class ValidationDoubleSpinBoxDelegate : public QStyledItemDelegate
+class ValidationDelegate : public QStyledItemDelegate
 {
 	Q_OBJECT
 public:
-    ValidationDoubleSpinBoxDelegate(QObject *parent = nullptr);
-	
-	// QAbstractItemDelegate interface
-	QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-	void setEditorData(QWidget *editor, const QModelIndex &index) const;
-	void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const;
-	void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-};
-
-class CompleterLineEditDelegate : public QStyledItemDelegate
-{
-	Q_OBJECT
-public:
-	CompleterLineEditDelegate(QObject *parent = nullptr);
+    ValidationDelegate(QObject *parent = nullptr);
 	
 	// QAbstractItemDelegate interface
 	QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const;

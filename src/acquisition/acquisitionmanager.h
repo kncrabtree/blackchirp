@@ -36,7 +36,7 @@ signals:
     void logMessage(QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal);
     void statusMessage(QString);
     void experimentComplete();
-    void ftmwUpdateProgress(qint64);
+    void ftmwUpdateProgress(int);
     void newClockSettings(QHash<RfConfig::ClockType,RfConfig::ClockFreq>);
     void beginAcquisition();
     void endAcquisition();

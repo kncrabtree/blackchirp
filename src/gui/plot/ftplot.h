@@ -32,9 +32,7 @@ public:
 
 public slots:
     void newFt(const Ft ft);
-    void buildContextMenu(QMouseEvent *me);
 
-    void exportXY();
     void configureUnits(FtWorker::FtUnits u);
     void newPeakList(const QList<QPointF> l);
 
