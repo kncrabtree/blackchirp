@@ -241,7 +241,6 @@ public:
      * \param appName Application name passed to QSettings construstor
      * \param keys The list of group/subgroup keys, passed to QSettings::beginGroup in order
      * \param type If set to SettingsStorage::Hardware and the length of keys is 1, the subKey for the current hardware will be read from settings and selected.
-     * \param systemWide If true, use QSettings::SystemScope. Otherwise, use QSettings::UserScope
      */
     SettingsStorage(const QString orgName, const QString appName, const QStringList keys = QStringList(), Type type = General);
 
@@ -250,7 +249,6 @@ public:
      *
      * \param key The key for the group in QSettings. If "", will be set to "Blackchirp"
      * \param type If set to Hardware, a subKey will be added (default: "virtual")
-     * \param systemWide If true, use QSettings::SystemScope. Otherwise, use QSettings::UserScope
      */
     SettingsStorage(const QString key, Type type = General);
 

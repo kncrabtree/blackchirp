@@ -298,7 +298,7 @@ void CommunicationDialog::testGpib()
 
     //one of the few times to invoke QSettings directly: need to edit the settings
     //for the hardware object itself
-	QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    QSettings s(QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(key);
     s.beginGroup(subKey);
     s.setValue(BC::Key::GPIB::gpibAddress,ui->busAddressSpinBox->value());
@@ -321,7 +321,7 @@ void CommunicationDialog::testTcp()
 
     //one of the few times to invoke QSettings directly: need to edit the settings
     //for the hardware object itself
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    QSettings s(QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(key);
     s.beginGroup(subKey);
     s.setValue(BC::Key::TCP::ip,ui->ipLineEdit->text());
@@ -346,7 +346,7 @@ void CommunicationDialog::testRs232()
     using namespace BC::Key::RS232;
     //one of the few times to invoke QSettings directly: need to edit the settings
     //for the hardware object itself
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    QSettings s(QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(key);
     s.beginGroup(subKey);
     s.setValue(BC::Key::RS232::id,ui->rs232DeviceIDLineEdit->text());
@@ -374,7 +374,7 @@ void CommunicationDialog::testCustom()
 
     //one of the few times to invoke QSettings directly: need to edit the settings
     //for the hardware object itself
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
+    QSettings s(QApplication::organizationName(),QApplication::applicationName());
     s.beginGroup(key);
     s.beginGroup(subKey);
 
