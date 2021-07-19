@@ -11,23 +11,23 @@ ClockManager::ClockManager(QObject *parent) : QObject(parent),
 {
 
 #ifdef BC_CLOCK_0
-    d_clockList << new Clock0Hardware(0,this);
+    d_clockList << new Clock0Hardware(0);
 #endif
 
 #ifdef BC_CLOCK_1
-    d_clockList << new Clock1Hardware(1,this);
+    d_clockList << new Clock1Hardware(1);
 #endif
 
 #ifdef BC_CLOCK_2
-    d_clockList << new Clock2Hardware(2,this);
+    d_clockList << new Clock2Hardware(2);
 #endif
 
 #ifdef BC_CLOCK_3
-    d_clockList << new Clock3Hardware(3,this);
+    d_clockList << new Clock3Hardware(3);
 #endif
 
 #ifdef BC_CLOCK_4
-    d_clockList << new Clock4Hardware(4,this);
+    d_clockList << new Clock4Hardware(4);
 #endif
 
     setArray(hwClocks,{});

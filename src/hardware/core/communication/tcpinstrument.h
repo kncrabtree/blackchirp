@@ -5,9 +5,9 @@
 
 #include <QTcpSocket>
 
-namespace BC::Key {
-static const QString tcpIp("ip");
-static const QString tcpPort("port");
+namespace BC::Key::TCP {
+static const QString ip("ip");
+static const QString port("port");
 }
 
 class TcpInstrument : public CommunicationProtocol

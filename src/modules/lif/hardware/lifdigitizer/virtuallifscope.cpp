@@ -4,7 +4,7 @@
 #include <math.h>
 
 VirtualLifScope::VirtualLifScope(QObject *parent) :
-    LifScope(BC::Key::hwVirtual,BC::Key::vLifScopeName,CommunicationProtocol::Virtual,parent)
+    LifScope(BC::Key::Comm::hwVirtual,BC::Key::vLifScopeName,CommunicationProtocol::Virtual,parent)
 {
     setLifVScale(0.02);
     setRefVScale(0.02);

@@ -7,7 +7,7 @@ using namespace BC::Key::FtmwScope;
 using namespace BC::Key::Digi;
 
 VirtualFtmwScope::VirtualFtmwScope(QObject *parent) :
-    FtmwScope(BC::Key::hwVirtual,vftmwName,CommunicationProtocol::Virtual,parent)
+    FtmwScope(BC::Key::Comm::hwVirtual,vftmwName,CommunicationProtocol::Virtual,parent)
 {
     setDefault(numAnalogChannels,4);
     setDefault(numDigitalChannels,0);

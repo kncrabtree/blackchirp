@@ -17,12 +17,13 @@ void TcpInstrument::initialize()
 
 bool TcpInstrument::testConnection()
 {
+    using namespace BC::Key::TCP;
     if(dynamic_cast<QTcpSocket*>(p_device)->state() == QTcpSocket::ConnectedState)
         disconnectSocket();
 
     SettingsStorage s(d_key,SettingsStorage::Hardware);
-    d_ip = s.get<QString>(BC::Key::tcpIp,"");
-    d_port = s.get<int>(BC::Key::tcpPort,5000);
+    d_ip = s.get<QString>(ip,"");
+    d_port = s.get<int>(port,5000);
 
 	return connectSocket();
 

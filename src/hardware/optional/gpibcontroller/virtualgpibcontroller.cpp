@@ -1,7 +1,7 @@
 #include "virtualgpibcontroller.h"
 
 VirtualGpibController::VirtualGpibController(QObject *parent) :
-    GpibController(BC::Key::hwVirtual,BC::Key::vgpibName,CommunicationProtocol::Virtual,parent)
+    GpibController(BC::Key::Comm::hwVirtual,BC::Key::vgpibName,CommunicationProtocol::Virtual,parent)
 {
 }
 

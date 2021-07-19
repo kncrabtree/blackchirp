@@ -92,32 +92,6 @@ MainWindow::MainWindow(QWidget *parent) :
         }
     });
 
-
-    QGridLayout *gl = new QGridLayout;
-
-    SettingsStorage pg(BC::Key::PGen::key,SettingsStorage::Hardware);
-    SettingsStorage pw(BC::Key::PulseWidget::key);
-    for(int i=0; i<pg.get<int>(BC::Key::PGen::numChannels,8); i++)
-    {
-        auto txt = pw.getArrayValue<QString>(BC::Key::PulseWidget::channels,i,
-                                             BC::Key::PulseWidget::name,"Ch"+QString::number(i));
-        QLabel *lbl = new QLabel(txt,this);
-        lbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-
-        Led *led = new Led(this);
-        gl->addWidget(lbl,i/4,(2*i)%8,1,1,Qt::AlignVCenter);
-        gl->addWidget(led,i/4,((2*i)%8)+1,1,1,Qt::AlignVCenter);
-
-        d_ledList.append(qMakePair(lbl,led));
-    }
-    for(int i=0; i<8; i++)
-        gl->setColumnStretch(i,(i%2)+1);
-
-    gl->setMargin(3);
-    gl->setContentsMargins(3,3,3,3);
-    gl->setSpacing(3);
-    ui->pulseConfigBox->setLayout(gl);
-
     auto *clockBox = new QGroupBox(QString("Clocks"),this);
     auto *clockWidget = new ClockDisplayWidget(this);
     clockBox->setLayout(clockWidget->layout());
@@ -125,6 +99,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     QThread *lhThread = new QThread(this);
+    lhThread->setObjectName("LogHandlerThread");
     connect(lhThread,&QThread::finished,p_lh,&LogHandler::deleteLater);
     p_lh->moveToThread(lhThread);
     d_threadObjectList.append(qMakePair(lhThread,p_lh));
@@ -139,8 +114,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::hwInitializationComplete,ui->pulseConfigWidget,&PulseConfigWidget::updateFromSettings);
     connect(p_hwm,&HardwareManager::pGenConfigUpdate,ui->pulseConfigWidget,&PulseConfigWidget::setFromConfig);
     connect(p_hwm,&HardwareManager::pGenSettingUpdate,ui->pulseConfigWidget,&PulseConfigWidget::newSetting);
-    connect(p_hwm,&HardwareManager::pGenConfigUpdate,this,&MainWindow::updatePulseLeds);
-    connect(p_hwm,&HardwareManager::pGenSettingUpdate,this,&MainWindow::updatePulseLed);
+    connect(p_hwm,&HardwareManager::pGenConfigUpdate,ui->pulseStatusBox,&PulseStatusBox::updatePulseLeds);
+    connect(p_hwm,&HardwareManager::pGenSettingUpdate,ui->pulseStatusBox,&PulseStatusBox::updatePulseLed);
     connect(p_hwm,&HardwareManager::pGenRepRateUpdate,ui->pulseConfigWidget,&PulseConfigWidget::newRepRate);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeSetting,p_hwm,&HardwareManager::setPGenSetting);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeRepRate,p_hwm,&HardwareManager::setPGenRepRate);
@@ -164,6 +139,7 @@ MainWindow::MainWindow(QWidget *parent) :
 #endif
 
     QThread *hwmThread = new QThread(this);
+    hwmThread->setObjectName("HardwareManagerThread");
     connect(hwmThread,&QThread::started,p_hwm,&HardwareManager::initialize);
     connect(hwmThread,&QThread::finished,p_hwm,&HardwareManager::deleteLater);
     p_hwm->moveToThread(hwmThread);
@@ -182,6 +158,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_am,&AcquisitionManager::experimentComplete,ui->ftViewWidget,&FtmwViewWidget::experimentComplete);
 
     QThread *amThread = new QThread(this);
+    amThread->setObjectName("AcquisitionManagerThread");
     connect(amThread,&QThread::finished,p_am,&AcquisitionManager::deleteLater);
     p_am->moveToThread(amThread);
     d_threadObjectList.append(qMakePair(amThread,p_am));
@@ -205,6 +182,7 @@ MainWindow::MainWindow(QWidget *parent) :
     });
 
     p_batchThread = new QThread(this);
+    p_batchThread->setObjectName("BatchManagerThread");
 
     connect(ui->actionStart_Experiment,&QAction::triggered,this,&MainWindow::startExperiment);
     connect(ui->actionQuick_Experiment,&QAction::triggered,this,&MainWindow::quickStart);
@@ -283,14 +261,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
-    while(!d_threadObjectList.isEmpty())
-    {
-        QPair<QThread*,QObject*> p = d_threadObjectList.takeFirst();
-
-        p.first->quit();
-        p.first->wait();
-    }
-
     delete ui;
 }
 
@@ -585,29 +555,6 @@ void MainWindow::launchCommunicationDialog(bool parent)
     connect(p_hwm,&HardwareManager::testComplete,&d,&CommunicationDialog::testComplete);
 
     d.exec();
-}
-
-void MainWindow::updatePulseLeds(const PulseGenConfig cc)
-{
-    for(int i=0; i<d_ledList.size() && i < cc.size(); i++)
-        d_ledList.at(i).second->setState(cc.at(i).enabled);
-}
-
-void MainWindow::updatePulseLed(int index, PulseGenConfig::Setting s, QVariant val)
-{
-    if(index < 0 || index >= d_ledList.size())
-        return;
-
-    switch(s) {
-    case PulseGenConfig::NameSetting:
-        d_ledList.at(index).first->setText(val.toString());
-        break;
-    case PulseGenConfig::EnabledSetting:
-        d_ledList.at(index).second->setState(val.toBool());
-        break;
-    default:
-        break;
-    }
 }
 
 void MainWindow::setLogIcon(BlackChirp::LogMessageCode c)
@@ -1052,7 +999,16 @@ void MainWindow::closeEvent(QCloseEvent *ev)
         ev->ignore();
     else
     {
-        ev->accept();
         emit closing();
+
+        while(!d_threadObjectList.isEmpty())
+        {
+            QPair<QThread*,QObject*> p = d_threadObjectList.takeFirst();
+
+            p.first->quit();
+            p.first->wait();
+        }
+
+        ev->accept();
     }
 }

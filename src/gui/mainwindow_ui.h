@@ -31,6 +31,7 @@
 #include <gui/widget/auxdataviewwidget.h>
 #include <gui/widget/gascontrolwidget.h>
 #include <gui/widget/gasflowdisplaywidget.h>
+#include <gui/widget/pulsestatusbox.h>
 
 class Ui_MainWindow
 {
@@ -63,7 +64,7 @@ public:
     QSpinBox *exptSpinBox;
     QGroupBox *flowStatusBox;
     GasFlowDisplayWidget *gasFlowDisplayWidget;
-    QGroupBox *pulseConfigBox;
+    PulseStatusBox *pulseStatusBox;
     QSpacerItem *statusSpacer;
     QLabel *ftmwProgressLabel;
     QProgressBar *ftmwProgressBar;
@@ -257,11 +258,11 @@ public:
 
         instrumentStatusLayout->addWidget(flowStatusBox);
 
-        pulseConfigBox = new QGroupBox(centralWidget);
-        pulseConfigBox->setObjectName(QString::fromUtf8("pulseConfigBox"));
-        pulseConfigBox->setFont(font);
+        pulseStatusBox = new PulseStatusBox(centralWidget);
+        pulseStatusBox->setObjectName(QString::fromUtf8("pulseStatusBox"));
+        pulseStatusBox->setFont(font);
 
-        instrumentStatusLayout->addWidget(pulseConfigBox);
+        instrumentStatusLayout->addWidget(pulseStatusBox);
 
         statusSpacer = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
 
@@ -506,7 +507,6 @@ public:
         exptSpinBox->setToolTip(QApplication::translate("MainWindow", "Number of the most recent experiment", nullptr));
 #endif // QT_NO_TOOLTIP
         flowStatusBox->setTitle(QApplication::translate("MainWindow", "Flow Status", nullptr));
-        pulseConfigBox->setTitle(QApplication::translate("MainWindow", "Pulse Configuration", nullptr));
         ftmwProgressLabel->setText(QApplication::translate("MainWindow", "FTMW Progress", nullptr));
         gasControlBox->setTitle(QApplication::translate("MainWindow", "Gas Control", nullptr));
         mainTabWidget->setTabText(mainTabWidget->indexOf(controlTab), QApplication::translate("MainWindow", "Control", nullptr));

@@ -1,53 +1,87 @@
 #include <hardware/core/hardwaremanager.h>
 
-HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsStorage(BC::Key::hw), d_responseCount(0)
-{
+#include <hardware/core/hardwareobject.h>
+#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+#include <hardware/core/clock/clockmanager.h>
+#include <hardware/core/chirpsource/awg.h>
+#include <hardware/core/pulsegenerator/pulsegenerator.h>
+#include <hardware/optional/flowcontroller/flowcontroller.h>
+#include <hardware/core/ioboard/ioboard.h>
 
-#ifdef BC_GPIBCONTROLLER
-    GpibController *gpib = new GpibControllerHardware();
-    QThread *gpibThread = new QThread(this);
-    d_hardwareList.append(gpib);
-#endif
-
-    p_ftmwScope = new FtmwScopeHardware();
-    connect(p_ftmwScope,&FtmwScope::shotAcquired,this,&HardwareManager::ftmwScopeShotAcquired);
-    d_hardwareList.append(p_ftmwScope);
-
-    p_awg = new AwgHardware();
-    d_hardwareList.append(p_awg);
-
-    p_clockManager = new ClockManager(this);
-    connect(p_clockManager,&ClockManager::logMessage,this,&HardwareManager::logMessage);
-    connect(p_clockManager,&ClockManager::clockFrequencyUpdate,this,&HardwareManager::clockFrequencyUpdate);
-    auto cl = p_clockManager->d_clockList;
-    for(int i=0; i<cl.size(); i++)
-        d_hardwareList.append(cl.at(i));
-
-    p_pGen = new PulseGeneratorHardware();
-    connect(p_pGen,&PulseGenerator::settingUpdate,this,&HardwareManager::pGenSettingUpdate);
-    connect(p_pGen,&PulseGenerator::configUpdate,this,&HardwareManager::pGenConfigUpdate);
-    connect(p_pGen,&PulseGenerator::repRateUpdate,this,&HardwareManager::pGenRepRateUpdate);
-    d_hardwareList.append(p_pGen);
-
-    p_flow = new FlowControllerHardware();
-    connect(p_flow,&FlowController::flowUpdate,this,&HardwareManager::flowUpdate);
-    connect(p_flow,&FlowController::flowSetpointUpdate,this,&HardwareManager::flowSetpointUpdate);
-    connect(p_flow,&FlowController::pressureUpdate,this,&HardwareManager::gasPressureUpdate);
-    connect(p_flow,&FlowController::pressureSetpointUpdate,this,&HardwareManager::gasPressureSetpointUpdate);
-    connect(p_flow,&FlowController::pressureControlMode,this,&HardwareManager::gasPressureControlMode);
-    d_hardwareList.append(p_flow);
+#include <QThread>
 
 #ifdef BC_PCONTROLLER
-    p_pc = new PressureControllerHardware();
-    connect(p_pc,&PressureController::pressureUpdate,this,&HardwareManager::pressureUpdate);
-    connect(p_pc,&PressureController::pressureSetpointUpdate,this,&HardwareManager::pressureSetpointUpdate);
-    connect(p_pc,&PressureController::pressureControlMode,this,&HardwareManager::pressureControlMode);
-    d_hardwareList.append(p_pc);
+#include <hardware/optional/pressurecontroller/pressurecontroller.h>
 #endif
 
 #ifdef BC_TEMPCONTROLLER
-    p_tc = new TemperatureControllerHardware();
-    d_hardwareList.append(p_tc);
+#include <hardware/optional/tempcontroller/temperaturecontroller.h>
+#endif
+
+#ifdef BC_GPIBCONTROLLER
+#include <hardware/optional/gpibcontroller/gpibcontroller.h>
+#endif
+
+#ifdef BC_LIF
+#include <modules/lif/hardware/lifdigitizer/lifscope.h>
+#include <modules/lif/hardware/liflaser/liflaser.h>
+#endif
+
+#ifdef BC_MOTOR
+#include <modules/motor/hardware/motorcontroller/motorcontroller.h>
+#include <modules/motor/hardware/motordigitizer/motoroscilloscope.h>
+#endif
+
+HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsStorage(BC::Key::hw)
+{
+
+#ifdef BC_GPIBCONTROLLER
+    auto gpib = new GpibControllerHardware;
+    QThread *gpibThread = new QThread(this);
+    gpibThread->setObjectName(gpib->d_key+"Thread");
+    connect(gpibThread,&QThread::started,gpib,&HardwareObject::bcInitInstrument);
+    d_hardwareMap.emplace(gpib->d_key,gpib);
+#endif
+
+    auto ftmwScope = new FtmwScopeHardware;
+    connect(ftmwScope,&FtmwScope::shotAcquired,this,&HardwareManager::ftmwScopeShotAcquired);
+    d_hardwareMap.emplace(ftmwScope->d_key,ftmwScope);
+
+    auto awg =new AwgHardware;
+    d_hardwareMap.emplace(awg->d_key,awg);
+
+    pu_clockManager = std::make_unique<ClockManager>();
+    connect(pu_clockManager.get(),&ClockManager::logMessage,this,&HardwareManager::logMessage);
+    connect(pu_clockManager.get(),&ClockManager::clockFrequencyUpdate,this,&HardwareManager::clockFrequencyUpdate);
+    auto cl = pu_clockManager->d_clockList;
+    for(int i=0; i<cl.size(); i++)
+        d_hardwareMap.emplace(cl.at(i)->d_key,cl.at(i));
+
+    auto pGen = new PulseGeneratorHardware;
+    connect(pGen,&PulseGenerator::settingUpdate,this,&HardwareManager::pGenSettingUpdate);
+    connect(pGen,&PulseGenerator::configUpdate,this,&HardwareManager::pGenConfigUpdate);
+    connect(pGen,&PulseGenerator::repRateUpdate,this,&HardwareManager::pGenRepRateUpdate);
+    d_hardwareMap.emplace(pGen->d_key,pGen);
+
+    auto flow = new FlowControllerHardware;
+    connect(flow,&FlowController::flowUpdate,this,&HardwareManager::flowUpdate);
+    connect(flow,&FlowController::flowSetpointUpdate,this,&HardwareManager::flowSetpointUpdate);
+    connect(flow,&FlowController::pressureUpdate,this,&HardwareManager::gasPressureUpdate);
+    connect(flow,&FlowController::pressureSetpointUpdate,this,&HardwareManager::gasPressureSetpointUpdate);
+    connect(flow,&FlowController::pressureControlMode,this,&HardwareManager::gasPressureControlMode);
+    d_hardwareMap.emplace(flow->d_key,flow);
+
+#ifdef BC_PCONTROLLER
+    auto pc = new PressureControllerHardware;
+    connect(pc,&PressureController::pressureUpdate,this,&HardwareManager::pressureUpdate);
+    connect(pc,&PressureController::pressureSetpointUpdate,this,&HardwareManager::pressureSetpointUpdate);
+    connect(pc,&PressureController::pressureControlMode,this,&HardwareManager::pressureControlMode);
+    d_hardwareMap.emplace(pc->d_key,pc);
+#endif
+
+#ifdef BC_TEMPCONTROLLER
+    auto tc = new TemperatureControllerHardware;
+    d_hardwareMap.emplace(tc->d_key,tc);
 #endif
 
 #ifdef BC_LIF
@@ -61,8 +95,8 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     d_hardwareList.append(p_lifLaser);
 #endif
 
-    p_iob = new IOBoardHardware();
-    d_hardwareList.append(p_iob);
+    auto iob = new IOBoardHardware;
+    d_hardwareMap.emplace(iob->d_key,iob);
 
 #ifdef BC_MOTOR
     p_mc = new MotorControllerHardware();
@@ -81,18 +115,17 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     //write arrays of the connected devices for use in the Hardware Settings menu
     //first array is for all objects accessible to the hardware manager
     setArray(BC::Key::allHw,{},false);
-    setArray(BC::Key::tcp,{},false);
-    setArray(BC::Key::rs232,{},false);
-    setArray(BC::Key::gpib,{},false);
-    setArray(BC::Key::custom,{},false);
-    for(int i=0;i<d_hardwareList.size();i++)
-    {
-        HardwareObject *obj = d_hardwareList.at(i);
-
-        connect(obj,&HardwareObject::logMessage,[=](QString msg, BlackChirp::LogMessageCode mc){
+    setArray(BC::Key::Comm::tcp,{},false);
+    setArray(BC::Key::Comm::rs232,{},false);
+    setArray(BC::Key::Comm::gpib,{},false);
+    setArray(BC::Key::Comm::custom,{},false);
+    for(auto hwit = d_hardwareMap.cbegin(); hwit != d_hardwareMap.cend(); ++hwit)
+    {        
+        auto obj = hwit->second;
+        connect(obj,&HardwareObject::logMessage,[this,obj](QString msg, BlackChirp::LogMessageCode mc){
             emit logMessage(QString("%1: %2").arg(obj->d_name).arg(msg),mc);
         });
-        connect(obj,&HardwareObject::connected,[=](bool success, QString msg){ connectionResult(obj,success,msg); });
+        connect(obj,&HardwareObject::connected,[obj,this](bool success, QString msg){ connectionResult(obj,success,msg); });
         connect(obj,&HardwareObject::auxDataRead,[obj,this](AuxDataStorage::AuxDataMap m){
             AuxDataStorage::AuxDataMap out;
             for(auto it = m.cbegin(); it != m.cend(); ++it)
@@ -126,28 +159,28 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
         switch(obj->d_commType)
         {
         case CommunicationProtocol::Tcp:
-            appendArrayMap(BC::Key::tcp,{
+            appendArrayMap(BC::Key::Comm::tcp,{
                                {BC::Key::HW::key,obj->d_key},
                                {BC::Key::HW::subKey,obj->d_subKey},
                                {BC::Key::HW::name,obj->d_name}
                            });
             break;
         case CommunicationProtocol::Rs232:
-            appendArrayMap(BC::Key::rs232,{
+            appendArrayMap(BC::Key::Comm::rs232,{
                                {BC::Key::HW::key,obj->d_key},
                                {BC::Key::HW::subKey,obj->d_subKey},
                                {BC::Key::HW::name,obj->d_name}
                            });
             break;
         case CommunicationProtocol::Gpib:
-            appendArrayMap(BC::Key::gpib,{
+            appendArrayMap(BC::Key::Comm::gpib,{
                                {BC::Key::HW::key,obj->d_key},
                                {BC::Key::HW::subKey,obj->d_subKey},
                                {BC::Key::HW::name,obj->d_name}
                            });
             break;
         case CommunicationProtocol::Custom:
-            appendArrayMap(BC::Key::custom,{
+            appendArrayMap(BC::Key::Comm::custom,{
                                {BC::Key::HW::key,obj->d_key},
                                {BC::Key::HW::subKey,obj->d_subKey},
                                {BC::Key::HW::name,obj->d_name}
@@ -166,61 +199,62 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #endif
 
 #ifdef BC_GPIBCONTROLLER
-        if(obj == gpib)
+        if(hwit->first == BC::Key::gpibController)
             obj->moveToThread(gpibThread);
         else if(obj->d_commType == CommunicationProtocol::Gpib)
             obj->moveToThread(gpibThread);
         else
 #endif
         if(obj->d_threaded)
-            obj->moveToThread(new QThread(this));
+        {
+            auto t = new QThread(this);
+            t->setObjectName(obj->d_key+"Thread");
+            obj->moveToThread(t);
+            connect(t,&QThread::started,obj,&HardwareObject::bcInitInstrument);
+        }
         else
             obj->setParent(this);
 
-        QThread *t = d_hardwareList.at(i)->thread();
-        if(t != thread())
-        {
-            connect(t,&QThread::started,obj,&HardwareObject::bcInitInstrument);
-            connect(t,&QThread::finished,obj,&HardwareObject::deleteLater);
-        }
     }
-
 
     save();
 }
 
 HardwareManager::~HardwareManager()
 {
-    //note, the hardwareObjects are deleted when the threads exit
-    while(!d_hardwareList.isEmpty())
+    //stop all threads
+    for(auto &[key,obj] : d_hardwareMap)
     {
-        auto hw = d_hardwareList.takeFirst();
-        if(hw->thread() != thread())
+        Q_UNUSED(key)
+        if(obj->d_threaded)
         {
-            hw->thread()->quit();
-            hw->thread()->wait();
+            obj->thread()->quit();
+            obj->thread()->wait();
         }
-        else
-            hw->deleteLater();
     }
 }
 
 void HardwareManager::initialize()
 {
     //start all threads and initizlize hw
-    for(int i=0;i<d_hardwareList.size();i++)
+    for(auto it = d_hardwareMap.cbegin(); it != d_hardwareMap.cend(); ++it)
     {
-        auto hw = d_hardwareList.at(i);
+        auto hw = it->second;
         if(hw->d_commType == CommunicationProtocol::Virtual)
             emit logMessage(QString("%1 is a virtual instrument. Be cautious about taking real measurements!")
                             .arg(hw->d_name),BlackChirp::LogWarning);
-        if(hw->thread() != thread())
+        if(hw->d_threaded)
         {
             if(!hw->thread()->isRunning())
                 hw->thread()->start();
         }
         else
-            hw->bcInitInstrument();
+        {
+            if(hw->d_key != BC::Key::gpibController && hw->d_commType != CommunicationProtocol::Gpib)
+                hw->setParent(this);
+
+            QMetaObject::invokeMethod(hw,&HardwareObject::bcInitInstrument);
+        }
     }
 
     emit hwInitializationComplete();
@@ -228,7 +262,7 @@ void HardwareManager::initialize()
 
 void HardwareManager::connectionResult(HardwareObject *obj, bool success, QString msg)
 {
-    if(d_responseCount < d_hardwareList.size())
+    if(d_responseCount < d_hardwareMap.size())
         d_responseCount++;
 
     if(success)
@@ -267,28 +301,23 @@ void HardwareManager::hardwareFailure()
 
 void HardwareManager::sleep(bool b)
 {
-    for(int i=0; i<d_hardwareList.size(); i++)
+    for(auto it = d_hardwareMap.cbegin(); it != d_hardwareMap.cend(); ++it)
     {
-        HardwareObject *obj = d_hardwareList.at(i);
+        auto obj = it->second;
         if(obj->isConnected())
-        {
-            if(obj->thread() == thread())
-                obj->sleep(b);
-            else
-                QMetaObject::invokeMethod(obj,"sleep",Q_ARG(bool,b));
-        }
+            QMetaObject::invokeMethod(obj,[obj,b](){ obj->sleep(b); });
     }
 }
 
 void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
 {
     //do initialization
-    bool success = p_clockManager->prepareForExperiment(*exp);
+    bool success = pu_clockManager->prepareForExperiment(*exp);
 
     if(success) {
-        for(int i=0;i<d_hardwareList.size();i++)
+        for(auto it = d_hardwareMap.cbegin(); it != d_hardwareMap.cend(); ++it)
         {
-            HardwareObject *obj = d_hardwareList.at(i);
+            auto obj = it->second;
             if(obj->thread() != thread())
                 QMetaObject::invokeMethod(obj,[obj,exp](){
                     return obj->prepareForExperiment(*exp);
@@ -311,13 +340,10 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
 
 void HardwareManager::testAll()
 {
-    for(int i=0; i<d_hardwareList.size(); i++)
+    for(auto it = d_hardwareMap.cbegin(); it != d_hardwareMap.cend(); ++it)
     {
-        HardwareObject *obj = d_hardwareList.at(i);
-        if(obj->thread() == thread())
-            obj->bcTestConnection();
-        else
-            QMetaObject::invokeMethod(obj,[obj](){obj->bcTestConnection();});
+        auto obj = it->second;
+        QMetaObject::invokeMethod(obj,&HardwareObject::bcTestConnection);
     }
 
     checkStatus();
@@ -326,86 +352,82 @@ void HardwareManager::testAll()
 void HardwareManager::testObjectConnection(const QString type, const QString key)
 {
     Q_UNUSED(type)
-    HardwareObject *obj = nullptr;
-    for(int i=0; i<d_hardwareList.size();i++)
-    {
-        if(d_hardwareList.at(i)->d_key == key)
-            obj = d_hardwareList.at(i);
-    }
-    if(obj == nullptr)
+    auto it = d_hardwareMap.find(key);
+    if(it == d_hardwareMap.end())
         emit testComplete(key,false,QString("Device not found!"));
     else
     {
-        if(obj->thread() == thread())
-            obj->bcTestConnection();
-        else
-            QMetaObject::invokeMethod(obj,[obj](){obj->bcTestConnection();});
+        auto obj = it->second;
+        QMetaObject::invokeMethod(obj,&HardwareObject::bcTestConnection);
     }
 }
 
 void HardwareManager::getAuxData()
 {
-    for(auto obj : d_hardwareList)
+    for(auto it = d_hardwareMap.cbegin(); it != d_hardwareMap.cend(); ++it)
     {
-        if(obj->thread() == thread())
-            obj->bcReadAuxData();
-        else
-            QMetaObject::invokeMethod(obj,[obj](){obj->bcReadAuxData();});
+        auto obj = it->second;
+        QMetaObject::invokeMethod(obj,&HardwareObject::bcReadAuxData);
     }
 }
 
 void HardwareManager::setClocks(QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks)
 {
+
     for(auto it = clocks.begin(); it != clocks.end(); ++it)
-        it.value().desiredFreqMHz = p_clockManager->setClockFrequency(it.key(),it.value().desiredFreqMHz);
+        it.value().desiredFreqMHz = pu_clockManager->setClockFrequency(it.key(),it.value().desiredFreqMHz);
 
     emit allClocksReady(clocks);
 }
 
 void HardwareManager::setPGenSetting(int index, PulseGenConfig::Setting s, QVariant val)
 {
-    QMetaObject::invokeMethod(p_pGen,[this,index,s,val](){ p_pGen->setPGenSetting(index,s,val); });
+    auto pGen = findHardware<PulseGenerator>(BC::Key::PGen::key);
+    if(pGen)
+        QMetaObject::invokeMethod(pGen,[pGen,index,s,val](){ pGen->setPGenSetting(index,s,val); });
+
 }
 
 void HardwareManager::setPGenConfig(const PulseGenConfig c)
 {
-    QMetaObject::invokeMethod(p_pGen,[this,c](){ p_pGen->setAll(c); });
+    auto pGen = findHardware<PulseGenerator>(BC::Key::PGen::key);
+    if(pGen)
+        QMetaObject::invokeMethod(pGen,[pGen,c](){ pGen->setAll(c); });
 }
 
 void HardwareManager::setPGenRepRate(double r)
 {
-    QMetaObject::invokeMethod(p_pGen,[this,r](){ p_pGen->setRepRate(r); });
+    auto pGen = findHardware<PulseGenerator>(BC::Key::PGen::key);
+    if(pGen)
+        QMetaObject::invokeMethod(pGen,[pGen,r](){ pGen->setRepRate(r); });
 }
 
 void HardwareManager::setFlowSetpoint(int index, double val)
 {
-    if(p_flow->thread() == thread())
-        p_flow->setFlowSetpoint(index,val);
-    else
-        QMetaObject::invokeMethod(p_flow,"setFlowSetpoint",Q_ARG(int,index),Q_ARG(double,val));
+    auto flow = findHardware<FlowController>(BC::Key::Flow::flowController);
+    if(flow)
+        QMetaObject::invokeMethod(flow,[flow,index,val](){flow->setFlowSetpoint(index,val);});
 }
 
 void HardwareManager::setGasPressureSetpoint(double val)
 {
-    if(p_flow->thread() == thread())
-        p_flow->setPressureSetpoint(val);
-    else
-        QMetaObject::invokeMethod(p_flow,"setPressureSetpoint",Q_ARG(double,val));
+    auto flow = findHardware<FlowController>(BC::Key::Flow::flowController);
+    if(flow)
+        QMetaObject::invokeMethod(flow,[flow,val](){flow->setPressureSetpoint(val);});
 }
 
 void HardwareManager::setGasPressureControlMode(bool en)
 {
-    if(p_flow->thread() == thread())
-        p_flow->setPressureControlMode(en);
-    else
-        QMetaObject::invokeMethod(p_flow,"setPressureControlMode",Q_ARG(bool,en));
+    auto flow = findHardware<FlowController>(BC::Key::Flow::flowController);
+    if(flow)
+        QMetaObject::invokeMethod(flow,[flow,en](){flow->setPressureControlMode(en);});
 }
 
 std::map<QString, QStringList> HardwareManager::validationKeys() const
 {
     std::map<QString, QStringList> out;
-    for(auto obj : d_hardwareList)
-        out.insert_or_assign(obj->d_key,obj->validationKeys());
+    for(auto &[key,obj] : d_hardwareMap)
+        out.insert_or_assign(key,obj->validationKeys());
 
     return out;
 }
@@ -413,47 +435,43 @@ std::map<QString, QStringList> HardwareManager::validationKeys() const
 #ifdef BC_PCONTROLLER
 void HardwareManager::setPressureSetpoint(double val)
 {
-    if(p_pc->thread() == thread())
-        p_pc->setPressureSetpoint(val);
-    else
-        QMetaObject::invokeMethod(p_pc,"setPressureSetpoint",Q_ARG(double,val));
+    auto pc = findHardware<PressureController>(BC::Key::PController::key);
+    if(pc)
+        QMetaObject::invokeMethod(pc,[pc,val](){pc->setPressureSetpoint(val);});
 }
 
 void HardwareManager::setPressureControlMode(bool en)
 {
-    if(p_pc->thread() == thread())
-        p_pc->setPressureControlMode(en);
-    else
-        QMetaObject::invokeMethod(p_pc,"setPressureControlMode",Q_ARG(bool,en));
+    auto pc = findHardware<PressureController>(BC::Key::PController::key);
+    if(pc)
+        QMetaObject::invokeMethod(pc,[pc,en](){pc->setPressureControlMode(en);});
 }
 
 void HardwareManager::openGateValve()
 {
-    if(p_pc->thread() == thread())
-        p_pc->openGateValve();
-    else
-        QMetaObject::invokeMethod(p_pc,"openGateValve");
+    auto pc = findHardware<PressureController>(BC::Key::PController::key);
+    if(pc)
+        QMetaObject::invokeMethod(pc,&PressureController::openGateValve);
 }
 
 void HardwareManager::closeGateValve()
 {
-    if(p_pc->thread() == thread())
-        p_pc->closeGateValve();
-    else
-        QMetaObject::invokeMethod(p_pc,"closeGateValve");
+    auto pc = findHardware<PressureController>(BC::Key::PController::key);
+    if(pc)
+        QMetaObject::invokeMethod(pc,&PressureController::closeGateValve);
 }
 #endif
 
 void HardwareManager::checkStatus()
 {
     //gotta wait until all instruments have responded
-    if(d_responseCount < d_hardwareList.size())
+    if(d_responseCount < d_hardwareMap.size())
         return;
 
     bool success = true;
-    for(int i=0; i<d_hardwareList.size(); i++)
+    for(auto &[key,obj] : d_hardwareMap)
     {
-        HardwareObject *obj = d_hardwareList.at(i);
+        Q_UNUSED(key)
         if(!obj->isConnected() && obj->d_critical)
             success = false;
     }

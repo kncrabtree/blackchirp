@@ -1,7 +1,7 @@
 #include "virtualpulsegenerator.h"
 
 VirtualPulseGenerator::VirtualPulseGenerator(QObject *parent) :
-    PulseGenerator(BC::Key::hwVirtual,BC::Key::vpGen,CommunicationProtocol::Virtual,8,parent)
+    PulseGenerator(BC::Key::Comm::hwVirtual,BC::Key::vpGen,CommunicationProtocol::Virtual,8,parent)
 {
     setDefault(BC::Key::PGen::minWidth,0.010);
     setDefault(BC::Key::PGen::maxWidth,1e5);

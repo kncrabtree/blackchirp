@@ -3,7 +3,7 @@
 using namespace BC::Key::Flow;
 
 VirtualFlowController::VirtualFlowController(QObject *parent) :
-    FlowController(BC::Key::hwVirtual,virtFCName,CommunicationProtocol::Virtual,parent)
+    FlowController(BC::Key::Comm::hwVirtual,virtFCName,CommunicationProtocol::Virtual,parent)
 {
 
     setDefault(pUnits,QString("kTorr"));

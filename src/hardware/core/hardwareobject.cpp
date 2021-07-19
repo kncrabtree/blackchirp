@@ -41,7 +41,11 @@ QString HardwareObject::errorString()
 void HardwareObject::bcInitInstrument()
 {
     if(p_comm)
+    {
+        if(p_comm->thread() != thread())
+            p_comm->moveToThread(thread());
         p_comm->initialize();
+    }
 
     readSettings();
     initialize();

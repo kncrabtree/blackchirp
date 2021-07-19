@@ -2,48 +2,18 @@
 #define HARDWAREMANAGER_H
 
 #include <QObject>
-
-#include <QList>
-#include <QThread>
-
+#include <memory>
 #include <data/datastructs.h>
 #include <data/experiment/experiment.h>
+#include <data/storage/auxdatastorage.h>
 #include <data/storage/settingsstorage.h>
-#include <hardware/core/hardwareobject.h>
-#include <hardware/core/ftmwdigitizer/ftmwscope.h>
-#include <hardware/core/clock/clockmanager.h>
-#include <hardware/core/chirpsource/awg.h>
-#include <hardware/core/pulsegenerator/pulsegenerator.h>
-#include <hardware/optional/flowcontroller/flowcontroller.h>
-#include <hardware/core/ioboard/ioboard.h>
 
-#ifdef BC_PCONTROLLER
-#include <hardware/optional/pressurecontroller/pressurecontroller.h>
-#endif
+class HardwareObject;
+class ClockManager;
 
-#ifdef BC_TEMPCONTROLLER
-#include <hardware/optional/tempcontroller/temperaturecontroller.h>
-#endif
-
-#ifdef BC_GPIBCONTROLLER
-#include <hardware/optional/gpibcontroller/gpibcontroller.h>
-#endif
-
-#ifdef BC_LIF
-#include <modules/lif/hardware/lifdigitizer/lifscope.h>
-#include <modules/lif/hardware/liflaser/liflaser.h>
-#endif
-
-#ifdef BC_MOTOR
-#include <modules/motor/hardware/motorcontroller/motorcontroller.h>
-#include <modules/motor/hardware/motordigitizer/motoroscilloscope.h>
-#endif
-
-namespace BC {
-namespace Key {
+namespace BC::Key {
 static const QString hw("hardware");
 static const QString allHw("instruments");
-}
 }
 
 class HardwareManager : public QObject, public SettingsStorage
@@ -168,23 +138,31 @@ public:
     std::map<QString,QStringList> validationKeys() const;
 
 private:
-    int d_responseCount;
+    std::size_t d_responseCount{0};
     void checkStatus();
 
-    QList<HardwareObject*> d_hardwareList;
-    FtmwScope *p_ftmwScope;
-    AWG *p_awg;
-    PulseGenerator *p_pGen;
-    FlowController *p_flow;
-    IOBoard *p_iob;
-    ClockManager *p_clockManager;
+    std::map<QString,HardwareObject*> d_hardwareMap;
+    std::unique_ptr<ClockManager> pu_clockManager;
+
+    template<class T>
+    T* findHardware(const QString key){
+        auto it = d_hardwareMap.find(key);
+        return it == d_hardwareMap.end() ? nullptr : static_cast<T*>(it->second);
+    }
+
+//    FtmwScope *p_ftmwScope;
+//    AWG *p_awg;
+//    PulseGenerator *p_pGen;
+//    FlowController *p_flow;
+//    IOBoard *p_iob;
+//    ClockManager *p_clockManager;
 
 #ifdef BC_PCONTROLLER
-    PressureController *p_pc;
+//    PressureController *p_pc;
 #endif
 
 #ifdef BC_TEMPCONTROLLER
-    TemperatureController *p_tc;
+//    TemperatureController *p_tc;
 #endif
 
 #ifdef BC_LIF

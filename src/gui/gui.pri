@@ -27,6 +27,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/widget/led.cpp \
     $$PWD/widget/peakfindwidget.cpp \
     $$PWD/widget/pulseconfigwidget.cpp \
+   $$PWD/widget/pulsestatusbox.cpp \
     $$PWD/widget/rfconfigwidget.cpp \
     $$PWD/wizard/experimentwizard.cpp \
     $$PWD/wizard/experimentwizardpage.cpp \
@@ -71,6 +72,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/widget/led.h \
     $$PWD/widget/peakfindwidget.h \
     $$PWD/widget/pulseconfigwidget.h \
+   $$PWD/widget/pulsestatusbox.h \
     $$PWD/widget/rfconfigwidget.h \
     $$PWD/wizard/experimentwizard.h \
     $$PWD/wizard/experimentwizardpage.h \

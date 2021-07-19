@@ -47,7 +47,7 @@ bool GpibInstrument::testConnection()
 {
     SettingsStorage s(d_key,SettingsStorage::Hardware);
 
-    d_address = s.get<int>(BC::Key::gpibAddress,1);
+    d_address = s.get<int>(BC::Key::GPIB::gpibAddress,1);
 
 	return true;
 }

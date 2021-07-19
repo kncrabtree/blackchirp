@@ -5,7 +5,7 @@
 using namespace BC::Key::PController;
 
 VirtualPressureController::VirtualPressureController(QObject *parent) :
-    PressureController(BC::Key::hwVirtual,BC::Key::vpcName,CommunicationProtocol::Virtual,false,parent)
+    PressureController(BC::Key::Comm::hwVirtual,BC::Key::vpcName,CommunicationProtocol::Virtual,false,parent)
 {
     setDefault(min,-1.0);
     setDefault(max,20.0);

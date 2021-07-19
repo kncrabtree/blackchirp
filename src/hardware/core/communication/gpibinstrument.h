@@ -5,7 +5,7 @@
 
 class GpibController;
 
-namespace BC::Key{
+namespace BC::Key::GPIB {
 static const QString gpibAddress("address");
 }
 

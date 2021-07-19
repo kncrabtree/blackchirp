@@ -1,7 +1,7 @@
 #include "prologixgpiblan.h"
 
 PrologixGpibLan::PrologixGpibLan(QObject *parent) :
-    GpibController(BC::Key::prologix,BC::Key::prologixName,CommunicationProtocol::Tcp,parent,true,true)
+    GpibController(BC::Key::prologix,BC::Key::prologixName,CommunicationProtocol::Tcp,parent)
 {
 }
 

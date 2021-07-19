@@ -1,7 +1,7 @@
 #include "virtualioboard.h"
 
 VirtualIOBoard::VirtualIOBoard(QObject *parent) :
-    IOBoard(BC::Key::hwVirtual,BC::Key::IOB::viobName,CommunicationProtocol::Virtual,parent)
+    IOBoard(BC::Key::Comm::hwVirtual,BC::Key::IOB::viobName,CommunicationProtocol::Virtual,parent)
 {
     using namespace BC::Key::Digi;
 

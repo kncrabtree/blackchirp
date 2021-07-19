@@ -1,7 +1,7 @@
 #include "virtualliflaser.h"
 
 VirtualLifLaser::VirtualLifLaser(QObject *parent) :
-    LifLaser (BC::Key::hwVirtual,BC::Key::vLifLaser,CommunicationProtocol::Virtual,parent), d_pos(0.0)
+    LifLaser (BC::Key::Comm::hwVirtual,BC::Key::vLifLaser,CommunicationProtocol::Virtual,parent), d_pos(0.0)
 {
 }
 
