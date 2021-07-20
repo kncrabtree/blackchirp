@@ -62,7 +62,8 @@ AuxDataStorage::AuxDataMap IOBoard::readValidationData()
 
 bool IOBoard::prepareForExperiment(Experiment &exp)
 {
-    static_cast<IOBoardConfig&>(*this) = exp.d_iobCfg;
+    if(exp.iobConfig())
+        static_cast<IOBoardConfig&>(*this) = *exp.iobConfig();
 
     for(auto it = d_analogChannels.cbegin();it!=d_analogChannels.cend();++it)
     {

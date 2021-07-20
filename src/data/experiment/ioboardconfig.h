@@ -8,8 +8,6 @@ static const QString iob{"IOBoardDigitizer"};
 }
 
 namespace BC::Store::Digi {
-static const QString anName{"AnalogNames"};
-static const QString digName("DigitalNames");
 static const QString name{"Name"};
 }
 

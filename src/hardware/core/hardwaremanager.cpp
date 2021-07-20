@@ -7,6 +7,7 @@
 #include <hardware/core/pulsegenerator/pulsegenerator.h>
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 #include <hardware/core/ioboard/ioboard.h>
+#include <hardware/optional/gpibcontroller/gpibcontroller.h>
 
 #include <QThread>
 
@@ -18,9 +19,7 @@
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 #endif
 
-#ifdef BC_GPIBCONTROLLER
-#include <hardware/optional/gpibcontroller/gpibcontroller.h>
-#endif
+
 
 #ifdef BC_LIF
 #include <modules/lif/hardware/lifdigitizer/lifscope.h>
@@ -34,21 +33,10 @@
 
 HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsStorage(BC::Key::hw)
 {
-
-#ifdef BC_GPIBCONTROLLER
-    auto gpib = new GpibControllerHardware;
-    QThread *gpibThread = new QThread(this);
-    gpibThread->setObjectName(gpib->d_key+"Thread");
-    connect(gpibThread,&QThread::started,gpib,&HardwareObject::bcInitInstrument);
-    d_hardwareMap.emplace(gpib->d_key,gpib);
-#endif
-
+    //Required hardware: FtmwScope and Clocks
     auto ftmwScope = new FtmwScopeHardware;
     connect(ftmwScope,&FtmwScope::shotAcquired,this,&HardwareManager::ftmwScopeShotAcquired);
     d_hardwareMap.emplace(ftmwScope->d_key,ftmwScope);
-
-    auto awg =new AwgHardware;
-    d_hardwareMap.emplace(awg->d_key,awg);
 
     pu_clockManager = std::make_unique<ClockManager>();
     connect(pu_clockManager.get(),&ClockManager::logMessage,this,&HardwareManager::logMessage);
@@ -57,12 +45,30 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     for(int i=0; i<cl.size(); i++)
         d_hardwareMap.emplace(cl.at(i)->d_key,cl.at(i));
 
+#ifdef BC_AWG
+    auto awg =new AwgHardware;
+    d_hardwareMap.emplace(awg->d_key,awg);
+#endif
+
+#ifdef BC_GPIBCONTROLLER
+    auto gpib = new GpibControllerHardware;
+    QThread *gpibThread = new QThread(this);
+    gpibThread->setObjectName(gpib->d_key+"Thread");
+    connect(gpibThread,&QThread::started,gpib,&HardwareObject::bcInitInstrument);
+    d_hardwareMap.emplace(gpib->d_key,gpib);
+#else
+    auto gpib = nullptr;
+#endif
+
+#ifdef BC_PGEN
     auto pGen = new PulseGeneratorHardware;
     connect(pGen,&PulseGenerator::settingUpdate,this,&HardwareManager::pGenSettingUpdate);
     connect(pGen,&PulseGenerator::configUpdate,this,&HardwareManager::pGenConfigUpdate);
     connect(pGen,&PulseGenerator::repRateUpdate,this,&HardwareManager::pGenRepRateUpdate);
     d_hardwareMap.emplace(pGen->d_key,pGen);
+#endif
 
+#ifdef BC_FLOWCONTROLLER
     auto flow = new FlowControllerHardware;
     connect(flow,&FlowController::flowUpdate,this,&HardwareManager::flowUpdate);
     connect(flow,&FlowController::flowSetpointUpdate,this,&HardwareManager::flowSetpointUpdate);
@@ -70,6 +76,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     connect(flow,&FlowController::pressureSetpointUpdate,this,&HardwareManager::gasPressureSetpointUpdate);
     connect(flow,&FlowController::pressureControlMode,this,&HardwareManager::gasPressureControlMode);
     d_hardwareMap.emplace(flow->d_key,flow);
+#endif
 
 #ifdef BC_PCONTROLLER
     auto pc = new PressureControllerHardware;
@@ -84,6 +91,11 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     d_hardwareMap.emplace(tc->d_key,tc);
 #endif
 
+#ifdef BC_IOBOARD
+    auto iob = new IOBoardHardware;
+    d_hardwareMap.emplace(iob->d_key,iob);
+#endif
+
 #ifdef BC_LIF
     p_lifScope = new LifScopeHardware();
     connect(p_lifScope,&LifScope::waveformRead,this,&HardwareManager::lifScopeShotAcquired);
@@ -94,9 +106,6 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     connect(p_lifLaser,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserPosUpdate);
     d_hardwareList.append(p_lifLaser);
 #endif
-
-    auto iob = new IOBoardHardware;
-    d_hardwareMap.emplace(iob->d_key,iob);
 
 #ifdef BC_MOTOR
     p_mc = new MotorControllerHardware();
@@ -125,7 +134,9 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
         connect(obj,&HardwareObject::logMessage,[this,obj](QString msg, BlackChirp::LogMessageCode mc){
             emit logMessage(QString("%1: %2").arg(obj->d_name).arg(msg),mc);
         });
-        connect(obj,&HardwareObject::connected,[obj,this](bool success, QString msg){ connectionResult(obj,success,msg); });
+        connect(obj,&HardwareObject::connected,[obj,this](bool success, QString msg){
+            connectionResult(obj,success,msg);
+        });
         connect(obj,&HardwareObject::auxDataRead,[obj,this](AuxDataStorage::AuxDataMap m){
             AuxDataStorage::AuxDataMap out;
             for(auto it = m.cbegin(); it != m.cend(); ++it)
@@ -190,22 +201,13 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
             break;
         }
 
-
-
-#ifdef BC_GPIBCONTROLLER
         obj->buildCommunication(gpib);
-#else
-        obj->buildCommunication();
-#endif
 
-#ifdef BC_GPIBCONTROLLER
         if(hwit->first == BC::Key::gpibController)
             obj->moveToThread(gpibThread);
         else if(obj->d_commType == CommunicationProtocol::Gpib)
             obj->moveToThread(gpibThread);
-        else
-#endif
-        if(obj->d_threaded)
+        else if(obj->d_threaded)
         {
             auto t = new QThread(this);
             t->setObjectName(obj->d_key+"Thread");
@@ -214,7 +216,6 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
         }
         else
             obj->setParent(this);
-
     }
 
     save();
@@ -293,7 +294,6 @@ void HardwareManager::hardwareFailure()
 
     disconnect(obj,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure);
 
-   //TODO: implement re-test like in QtFTM?
     emit abortAcquisition();
 
     checkStatus();

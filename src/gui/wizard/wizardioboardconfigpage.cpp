@@ -22,13 +22,18 @@ void WizardIOBoardConfigPage::initializePage()
 {
     auto e = getExperiment();
     if(e->d_number > 0)
-        p_iobWidget->setFromConfig(e->d_iobCfg);
+    {
+        if(e->iobConfig())
+            p_iobWidget->setFromConfig(*e->iobConfig());
+    }
 }
 
 bool WizardIOBoardConfigPage::validatePage()
 {
     auto e = getExperiment();
-    p_iobWidget->toConfig(e->d_iobCfg);
+    IOBoardConfig cfg;
+    p_iobWidget->toConfig(cfg);
+    e->setIOBoardConfig(cfg);
 
     return true;
 }

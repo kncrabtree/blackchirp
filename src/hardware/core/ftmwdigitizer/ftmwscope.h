@@ -29,7 +29,7 @@ public slots:
 
 };
 
-#ifdef BC_FTMWSCOPE
+
 #if BC_FTMWSCOPE == 1
 #include "dsa71604c.h"
 class Dsa71604c;
@@ -51,6 +51,6 @@ typedef DSOx92004A FtmwScopeHardware;
 class VirtualFtmwScope;
 typedef VirtualFtmwScope FtmwScopeHardware;
 #endif
-#endif
+
 
 #endif // FTMWSCOPE_H

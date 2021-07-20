@@ -26,7 +26,7 @@ protected:
 	int d_currentAddress;
 };
 
-
+#ifdef BC_GPIBCONTROLLER
 #if BC_GPIBCONTROLLER == 1
 #include "prologixgpiblan.h"
 class PrologixGpibLan;
@@ -35,6 +35,7 @@ typedef PrologixGpibLan GpibControllerHardware;
 #include "virtualgpibcontroller.h"
 class VirtualGpibController;
 typedef VirtualGpibController GpibControllerHardware;
+#endif
 #endif
 
 #endif // GPIBCONTROLLER_H

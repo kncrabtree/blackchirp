@@ -56,8 +56,6 @@ public:
     QString d_endLogMessage;
     BlackChirp::LogMessageCode d_endLogMessageCode{BlackChirp::LogNormal};
 
-    IOBoardConfig d_iobCfg;
-
     inline bool isAborted()  const { return d_isAborted; }
     inline bool isDummy() const { return d_isDummy; }
 
@@ -70,6 +68,8 @@ public:
 
     AuxDataStorage *auxData() const { return pu_auxData.get(); }
 
+    IOBoardConfig *iobConfig() const { return pu_iobCfg.get(); }
+
     inline PulseGenConfig pGenConfig() const { return d_pGenCfg; }
     inline FlowConfig flowConfig() const { return d_flowCfg; }
 //    inline IOBoardConfig iobConfig() const { return d_iobCfg; }
@@ -77,7 +77,7 @@ public:
     BlackChirp::LogMessageCode endLogMessageCode() const;
     QMap<QString, QPair<QVariant,QString>> headerMap() const;
 
-    void setIOBoardConfig(const IOBoardConfig cfg);
+    void setIOBoardConfig(const IOBoardConfig &cfg);
     void setPulseGenConfig(const PulseGenConfig c) { d_pGenCfg = c; }
     void setFlowConfig(const FlowConfig c) { d_flowCfg = c; }
 
@@ -124,6 +124,7 @@ private:
 
     std::unique_ptr<FtmwConfig> pu_ftmwConfig;
     std::unique_ptr<AuxDataStorage> pu_auxData;
+    std::unique_ptr<IOBoardConfig> pu_iobCfg;
     PulseGenConfig d_pGenCfg;
     FlowConfig d_flowCfg;
     std::unique_ptr<ExperimentValidator> pu_validator;

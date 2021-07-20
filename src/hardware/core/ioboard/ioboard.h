@@ -36,7 +36,7 @@ public slots:
 #include "labjacku3.h"
 class LabjackU3;
 typedef LabjackU3 IOBoardHardware;
-#else
+#elif BC_IOBOARD == 0
 #include "virtualioboard.h"
 class VirtualIOBoard;
 typedef VirtualIOBoard IOBoardHardware;

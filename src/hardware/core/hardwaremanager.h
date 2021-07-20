@@ -150,30 +150,6 @@ private:
         return it == d_hardwareMap.end() ? nullptr : static_cast<T*>(it->second);
     }
 
-//    FtmwScope *p_ftmwScope;
-//    AWG *p_awg;
-//    PulseGenerator *p_pGen;
-//    FlowController *p_flow;
-//    IOBoard *p_iob;
-//    ClockManager *p_clockManager;
-
-#ifdef BC_PCONTROLLER
-//    PressureController *p_pc;
-#endif
-
-#ifdef BC_TEMPCONTROLLER
-//    TemperatureController *p_tc;
-#endif
-
-#ifdef BC_LIF
-    LifScope *p_lifScope;
-    LifLaser *p_lifLaser;
-#endif
-
-#ifdef BC_MOTOR
-    MotorController *p_mc;
-    MotorOscilloscope *p_motorScope;
-#endif
 };
 
 #endif // HARDWAREMANAGER_H

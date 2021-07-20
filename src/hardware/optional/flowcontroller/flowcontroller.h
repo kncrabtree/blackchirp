@@ -87,6 +87,7 @@ protected:
 #endif
 };
 
+#ifdef BC_FLOWCONTROLLER
 #if BC_FLOWCONTROLLER == 1
 #include "mks647c.h"
 class Mks647c;
@@ -99,6 +100,7 @@ typedef Mks946 FlowControllerHardware;
 #include "virtualflowcontroller.h"
 class VirtualFlowController;
 typedef VirtualFlowController FlowControllerHardware;
+#endif
 #endif
 
 #endif // FLOWCONTROLLER_H

@@ -40,6 +40,7 @@ Experiment::Experiment(const Experiment &other) :
     }
 
     pu_auxData = std::make_unique<AuxDataStorage>(*other.pu_auxData);
+    pu_iobCfg = std::make_unique<IOBoardConfig>(*other.pu_iobCfg);
     pu_validator = std::make_unique<ExperimentValidator>(*other.pu_validator);
 
 }
@@ -51,7 +52,6 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
         return;
 
     d_path = exptPath;
-    d_iobCfg = IOBoardConfig();
 
 #pragma message("Add children for Experiment loading")
 
@@ -431,6 +431,9 @@ bool Experiment::initialize()
         addChild(pu_ftmwConfig.get());
     }
 
+    if(pu_iobCfg)
+        addChild(pu_iobCfg.get());
+
 #ifdef BC_LIF
     //do any needed initialization for LIF here... nothing to do for now
 #endif
@@ -501,9 +504,9 @@ void Experiment::abort()
 
 }
 
-void Experiment::setIOBoardConfig(const IOBoardConfig cfg)
+void Experiment::setIOBoardConfig(const IOBoardConfig &cfg)
 {
-    d_iobCfg = cfg;
+    pu_iobCfg = std::make_unique<IOBoardConfig>(cfg);
 }
 
 bool Experiment::addAuxData(AuxDataStorage::AuxDataMap m)
