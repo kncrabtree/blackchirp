@@ -2,9 +2,39 @@
 
 #include <data/storage/blackchirpcsv.h>
 
-AuxDataStorage::AuxDataStorage(int number, const QString path) : d_number(number), d_path(path)
+AuxDataStorage::AuxDataStorage(BlackchirpCSV *csv, int number, const QString path) : d_number(number), d_path(path)
 {
+    auto d = BlackchirpCSV::exptDir(number,path);
+    QFile aux = d.absoluteFilePath(BC::CSV::auxFile);
+    if(aux.open(QIODevice::ReadOnly|QIODevice::Text))
+    {
+        int count = 0;
+        auto keys = QStringList();
+        while(!aux.atEnd())
+        {
+            auto l = csv->readLine(aux);
+            if(l.isEmpty())
+                continue;
 
+            if(l.constFirst().toString() == QString("timestamp"))
+            {
+                count = l.size();
+                for(int i=3;i<count; ++i)
+                    keys.append(l.at(i).toString());
+
+                continue;
+            }
+
+            if(l.size() != count)
+                continue;
+
+            AuxDataMap m;
+            for(int i=3; i<count; ++i)
+                m.insert_or_assign(keys.at(i-3),l.at(i));
+
+            d_savedData.push_back({QDateTime::fromString(l.constFirst().toString()),m});
+        }
+    }
 }
 
 void AuxDataStorage::registerKey(const QString objKey, const QString key)
@@ -75,4 +105,9 @@ void AuxDataStorage::startNewPoint()
 
     d_currentPoint.dateTime = QDateTime::currentDateTime();
     d_currentPoint.map.clear();
+}
+
+std::vector<std::pair<QDateTime, AuxDataStorage::AuxDataMap> > AuxDataStorage::savedData() const
+{
+    return d_savedData;
 }

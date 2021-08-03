@@ -55,7 +55,7 @@ bool AWG70002a::prepareForExperiment(Experiment &exp)
         return true;
 
     //encode error by prepending '!' to an error message
-    QString wfmName = getWaveformKey(exp.ftmwConfig()->d_rfConfig.getChirpConfig());
+    QString wfmName = getWaveformKey(exp.ftmwConfig()->d_rfConfig.d_chirpConfig);
 
     if(wfmName.startsWith(QChar('!')))
     {

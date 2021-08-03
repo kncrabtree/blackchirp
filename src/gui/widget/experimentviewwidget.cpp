@@ -15,6 +15,7 @@
 
 #include <gui/widget/ftmwviewwidget.h>
 #include <gui/widget/auxdataviewwidget.h>
+#include <data/storage/blackchirpcsv.h>
 #include <data/loghandler.h>
 
 #ifdef BC_LIF
@@ -197,23 +198,8 @@ QWidget *ExperimentViewWidget::buildTrackingWidget()
 {
     //tracking page
     QWidget *tracking = nullptr;
-//    auto timeData = pu_experiment->timeDataMap();
-    bool showWidget = false;
-//    auto trkit = timeData.constBegin();
-//    if(!timeData.isEmpty())
-//    {
-//        for(;trkit != timeData.constEnd(); trkit++)
-//        {
-//            if(trkit.value().second == true && trkit.value().first.size() > 1)
-//            {
-//                showWidget = true;
-//                break;
-//            }
-
-//        }
-//    }
-
-    if(showWidget)
+    auto auxData = pu_experiment->auxData()->savedData();
+    if(auxData.size() > 0)
     {
         tracking = new QWidget;
         QVBoxLayout *trackingvl = new QVBoxLayout;
@@ -221,30 +207,8 @@ QWidget *ExperimentViewWidget::buildTrackingWidget()
         AuxDataViewWidget *tvw = new AuxDataViewWidget(BC::Key::auxDataWidget,tracking,true);
         trackingvl->addWidget(tvw);
 
-//        auto timestampList = timeData.value(QString("exptTimeStamp")).first;
-
-//        trkit = timeData.constBegin();
-//        for(;trkit != timeData.constEnd(); trkit++)
-//        {
-//            if(!trkit.value().second)
-//                continue;
-
-//            auto list = trkit.value().first;
-//            if(list.size() != timestampList.size())
-//                continue;
-
-//            for(int i=0; i<list.size(); i++)
-//            {
-//                bool ok = false;
-//                double d = list.at(i).toDouble(&ok);
-//                if(ok)
-//                {
-//                    QList<QPair<QString,QVariant>> newList;
-//                    newList.append(qMakePair(trkit.key(),d));
-//                    tvw->pointUpdated(newList,true,timestampList.at(i).toDateTime());
-//                }
-//            }
-//        }
+        for(auto &[ts,m] : auxData)
+            tvw->pointUpdated(m,ts);
 
         tracking->setLayout(trackingvl);
     }
@@ -263,7 +227,7 @@ QWidget *ExperimentViewWidget::buildLogWidget(QString path)
     vbl->addWidget(te);
     log->setLayout(vbl);
 
-    QFile f(BlackChirp::getExptFile(pu_experiment->d_number,BlackChirp::LogFile,path));
+    QFile f(BlackchirpCSV::exptDir(pu_experiment->d_number,path).absoluteFilePath("%1.log").arg(pu_experiment->d_number));
     if(f.open(QIODevice::ReadOnly))
     {
         while(!f.atEnd())

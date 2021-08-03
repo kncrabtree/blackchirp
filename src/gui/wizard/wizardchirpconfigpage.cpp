@@ -60,7 +60,7 @@ bool WizardChirpConfigPage::validatePage()
 
 bool WizardChirpConfigPage::isComplete() const
 {
-    auto l = p_ccw->getRfConfig().getChirpConfig().chirpList();
+    auto l = p_ccw->getRfConfig().d_chirpConfig.chirpList();
 
     if(l.isEmpty())
         return false;

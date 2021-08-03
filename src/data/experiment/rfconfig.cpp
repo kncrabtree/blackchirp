@@ -11,6 +11,7 @@
 
 RfConfig::RfConfig() : HeaderStorage(BC::Store::RFC::key), d_currentClockIndex{0}
 {
+    addChild(&d_chirpConfig);
 }
 
 RfConfig::~RfConfig()
@@ -20,14 +21,8 @@ RfConfig::~RfConfig()
 
 bool RfConfig::prepareForAcquisition()
 {
-    if(d_chirps.isEmpty())
+    if(d_chirpConfig.chirpList().isEmpty())
         return false;
-
-    for(int i=0; i<d_chirps.size(); i++)
-    {
-        if(d_chirps.at(i).chirpList().isEmpty())
-            return false;
-    }
 
     //LO and DR scans populate the clock config list.
     //If empty, there is only 1 config, so set it from the template
@@ -101,50 +96,9 @@ void RfConfig::clearClockSteps()
     d_clockConfigs.clear();
 }
 
-void RfConfig::clearChirpConfigs()
+void RfConfig::setChirpConfig(const ChirpConfig &cc)
 {
-    d_chirps.clear();
-}
-
-bool RfConfig::setChirpConfig(const ChirpConfig cc, int num)
-{
-    if(d_chirps.isEmpty() && num == 0)
-    {
-        d_chirps.append(cc);
-        return true;
-    }
-
-    if(num < d_chirps.size())
-    {
-        d_chirps[num] = cc;
-        return true;
-    }
-
-    return false;
-
-
-}
-
-void RfConfig::addChirpConfig(ChirpConfig cc)
-{
-    if(d_chirps.isEmpty())
-    {
-        using namespace BC::Key::AWG;
-        SettingsStorage s(key,SettingsStorage::Hardware);
-        double sr = s.get(rate,16e9);
-
-        if(rawClockFrequency(AwgRef) > 0.0)
-            cc.setAwgSampleRate(rawClockFrequency(AwgRef)*1e6);
-        else
-            cc.setAwgSampleRate(sr);
-    }
-    d_chirps.append(cc);
-}
-
-void RfConfig::setChirpList(const QVector<QVector<ChirpConfig::ChirpSegment> > l, int num)
-{
-    if(num>=0 && num < d_chirps.size())
-        d_chirps[num].setChirpList(l);
+    d_chirpConfig = cc;
 }
 
 int RfConfig::advanceClockStep()
@@ -225,16 +179,6 @@ QString RfConfig::clockHardware(ClockType t) const
     return d_clockTemplate.value(t).hwKey;
 }
 
-ChirpConfig RfConfig::getChirpConfig(int num) const
-{
-    return d_chirps.value(num,ChirpConfig());
-}
-
-int RfConfig::numChirpConfigs() const
-{
-    return d_chirps.size();
-}
-
 bool RfConfig::isComplete() const
 {
     return d_completedSweeps >= d_targetSweeps;
@@ -276,33 +220,28 @@ QPair<double, double> RfConfig::calculateChirpAbsOffsetRange() const
 {
     QPair<double,double> out(-1.0,-1.0);
 
-    for(int i=0; i<d_chirps.size(); i++)
+    int limit = d_chirpConfig.numChirps();
+    if(limit > 1 && d_chirpConfig.allChirpsIdentical())
+        limit = 1;
+
+    for(int j=0; j<limit; j++)
     {
-        auto c = d_chirps.at(i);
-
-        int limit = c.numChirps();
-        if(limit > 1 && c.allChirpsIdentical())
-            limit = 1;
-
-        for(int j=0; j<limit; j++)
+        auto cc = d_chirpConfig.chirpList().at(j);
+        for(int k=0; k < cc.size(); k++)
         {
-            auto cc = c.chirpList().at(j);
-            for(int k=0; k < cc.size(); k++)
+            double f1 = calculateChirpAbsOffset(cc.at(k).startFreqMHz);
+            double f2 = calculateChirpAbsOffset(cc.at(k).endFreqMHz);
+            if(f1 > f2)
+                qSwap(f1,f2);
+            if((out.first < 0.0) || (out.second < 0.0))
             {
-                double f1 = calculateChirpAbsOffset(cc.at(k).startFreqMHz);
-                double f2 = calculateChirpAbsOffset(cc.at(k).endFreqMHz);
-                if(f1 > f2)
-                    qSwap(f1,f2);
-                if((out.first < 0.0) || (out.second < 0.0))
-                {
-                    out.first = f1;
-                    out.second = f2;
-                }
-                else
-                {
-                    out.first = qMin(out.first,f1);
-                    out.second = qMin(out.second,f2);
-                }
+                out.first = f1;
+                out.second = f2;
+            }
+            else
+            {
+                out.first = qMin(out.first,f1);
+                out.second = qMin(out.second,f2);
             }
         }
     }
@@ -310,9 +249,9 @@ QPair<double, double> RfConfig::calculateChirpAbsOffsetRange() const
     return out;
 }
 
-bool RfConfig::writeClockFile(int num, QString path) const
+bool RfConfig::writeClockFile(int num) const
 {
-    QDir d(BlackchirpCSV::exptDir(num,path));
+    QDir d(BlackchirpCSV::exptDir(num));
     QSaveFile f(d.absoluteFilePath(BC::CSV::clockFile));
     if(f.open(QIODevice::WriteOnly|QIODevice::Text))
     {
@@ -339,34 +278,37 @@ bool RfConfig::writeClockFile(int num, QString path) const
     return false;
 }
 
-void RfConfig::loadClockSteps(int num, QString path)
+void RfConfig::loadClockSteps(BlackchirpCSV *csv, int num, QString path)
 {
-    QFile f(BlackChirp::getExptFile(num,BlackChirp::ClockFile,path));
+    QDir d(BlackchirpCSV::exptDir(num,path));
+    QFile f(d.absoluteFilePath(BC::CSV::clockFile));
     if(f.open(QIODevice::ReadOnly))
     {
         while(!f.atEnd())
         {
-            auto l = f.readLine();
-            if(l.isEmpty() || l.startsWith("Index"))
+            auto l = csv->readLine(f);
+            if(l.isEmpty())
                 continue;
 
-            auto list = QString(l).trimmed().split(',');
-            if(list.size() == 7)
+            if(l.startsWith("Index"))
+                continue;
+
+            if(l.size() == 7)
             {
                 bool ok = false;
-                int index = list.at(0).toInt(&ok);
+                int index = l.at(0).toInt(&ok);
                 if(!ok)
                     continue;
-                ClockType type = QVariant(list.at(1)).value<ClockType>();
-                double freq = list.at(2).toDouble(&ok);
+                ClockType type = l.at(1).value<ClockType>();
+                double freq = l.at(2).toDouble(&ok);
                 if(!ok)
                     continue;
-                MultOperation m = QVariant(list.at(3)).value<MultOperation>();
-                double factor = list.at(4).toDouble(&ok);
+                MultOperation m = l.at(3).value<MultOperation>();
+                double factor = l.at(4).toDouble(&ok);
                 if(!ok)
                     continue;
-                QString hwKey = list.at(5);
-                int output = list.at(6).toInt(&ok);
+                QString hwKey = l.at(5).toString();
+                int output = l.at(6).toInt(&ok);
                 if(!ok)
                     continue;
 

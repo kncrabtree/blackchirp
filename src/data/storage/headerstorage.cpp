@@ -79,17 +79,17 @@ HeaderStorage::HeaderStrings HeaderStorage::getStrings()
     return out;
 }
 
-bool HeaderStorage::storeLine(const QStringList l)
+bool HeaderStorage::storeLine(const QVariantList l)
 {
     //no check to make sure l.size() == 6! This should
     //be performed before calling this function.
 
-    auto objKey{l.at(0)};
-    auto arrKey{l.at(1)};
-    auto index{l.at(2)};
-    auto key{l.at(3)};
-    auto val{l.at(4)};
-    auto unit{l.at(5)};
+    auto objKey{l.at(0).toString()};
+    auto arrKey{l.at(1).toString()};
+    auto index{l.at(2).toString()};
+    auto key{l.at(3).toString()};
+    auto val{l.at(4).toString()};
+    auto unit{l.at(5).toString()};
 
     if(objKey != d_objKey)
     {

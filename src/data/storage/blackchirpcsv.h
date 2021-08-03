@@ -28,11 +28,20 @@ static const QString vk{"ValueKey"};
 static const QString vv{"Value"};
 static const QString vu{"Units"};
 
-static const QString configFile("config.csv");
+static const QString versionFile("version.csv");
+static const QString validationFile("validation.csv");
+static const QString objectivesFile("objectives.csv");
+static const QString hwFile("hardware.csv");
 static const QString headerFile("header.csv");
 static const QString chirpFile("chirps.csv");
 static const QString clockFile("clocks.csv");
 static const QString auxFile("auxdata.csv");
+
+static const QString majver{"BCMajorVersion"};
+static const QString minver{"BCMinorVersion"};
+static const QString patchver{"BCPatchVersion"};
+static const QString relver{"BCReleaseVersion"};
+static const QString buildver{"BCBuildVersion"};
 
 static const QString fidparams{"fidparams.csv"};
 static const QString fidDir("fid");
@@ -49,6 +58,7 @@ class BlackchirpCSV
 {
 public:
     BlackchirpCSV();
+    BlackchirpCSV(const int num, const QString path);
 
     static bool writeXY(QIODevice &device, const QVector<QPointF> d, const QString prefix = "");
     static bool writeMultiple(QIODevice &device, const std::vector<QVector<QPointF>> &l, const std::vector<QString> &n = {});
@@ -121,8 +131,7 @@ public:
     static QString formatInt64(qint64 n);
     static void writeFidList(QIODevice &device, const FidList l);
 
-    static QVariantList readLine(QIODevice &device);
-    static QVector<qint64> readFidLine(QIODevice &device);
+    static bool writeVersionFile(int num);
 
     /*!
      * \brief Checks for existence of experiment directory
@@ -135,6 +144,13 @@ public:
     static QDir logDir();
     static QDir textExportDir();
     static QDir trackingDir();
+
+    QVariantList readLine(QIODevice &device);
+    QVector<qint64> readFidLine(QIODevice &device);
+
+private:
+    std::map<QString,QVariant> d_configMap;
+    QString d_delimiter;
 
 };
 

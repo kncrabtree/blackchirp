@@ -2,8 +2,11 @@
 #define FIDSTORAGEBASE_H
 
 #include <QFuture>
+#include <memory>
 
 #include <data/experiment/fid.h>
+
+class BlackchirpCSV;
 
 class FidStorageBase
 {
@@ -37,6 +40,7 @@ protected:
 
 private:
     QVector<Fid> d_templateList;
+    std::unique_ptr<BlackchirpCSV> pu_csv;
 
 };
 

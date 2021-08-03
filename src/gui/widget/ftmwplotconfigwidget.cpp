@@ -133,7 +133,7 @@ FtmwPlotConfigWidget::~FtmwPlotConfigWidget()
     p_workerThread->wait();
 }
 
-void FtmwPlotConfigWidget::prepareForExperiment(const Experiment e)
+void FtmwPlotConfigWidget::prepareForExperiment(const Experiment &e)
 {
     blockSignals(true);
 
@@ -171,7 +171,7 @@ void FtmwPlotConfigWidget::prepareForExperiment(const Experiment e)
     blockSignals(false);
 }
 
-void FtmwPlotConfigWidget::experimentComplete(const Experiment e)
+void FtmwPlotConfigWidget::experimentComplete(const Experiment &e)
 {
 //    processFtmwConfig(e.d_ftmwCfg);
 

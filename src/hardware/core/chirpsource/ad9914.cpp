@@ -75,7 +75,7 @@ bool AD9914::prepareForExperiment(Experiment &exp)
     d_enabledForExperiment = true;
 
 //    auto rfc = exp.ftmwConfig()->rfConfig();
-    auto seg = exp.ftmwConfig()->d_rfConfig.getChirpConfig().chirpList().constFirst().constFirst();
+    auto seg = exp.ftmwConfig()->d_rfConfig.d_chirpConfig.chirpList().constFirst().constFirst();
 
     auto clocks = exp.ftmwConfig()->d_rfConfig.getClocks();
     if(clocks.contains(RfConfig::AwgRef))

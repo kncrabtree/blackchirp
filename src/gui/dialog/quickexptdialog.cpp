@@ -37,12 +37,12 @@ QuickExptDialog::QuickExptDialog(std::shared_ptr<Experiment> e, QWidget *parent)
         {
             html.append(QString("<li>Mode: Forever</li>"));
         }
-        html.append(QString("<li>Chirps: %1</li>").arg(e->ftmwConfig()->d_rfConfig.getChirpConfig().numChirps()));
+        html.append(QString("<li>Chirps: %1</li>").arg(e->ftmwConfig()->d_rfConfig.d_chirpConfig.numChirps()));
         html.append(QString("<li>Sample rate: %1 GS/s</li>").arg(e->ftmwConfig()->d_scopeConfig.d_sampleRate/1e9,0,'f',0));
         html.append(QString("<li>Record length: %1</li>").arg(e->ftmwConfig()->d_scopeConfig.d_recordLength));
-        if(e->ftmwConfig()->d_rfConfig.getChirpConfig().numChirps() > 1)
+        if(e->ftmwConfig()->d_rfConfig.d_chirpConfig.numChirps() > 1)
         {
-            html.append(QString("<li>Chirp spacing: %1 &mu;s</li>").arg(e->ftmwConfig()->d_rfConfig.getChirpConfig().chirpInterval(),0,'f',1));
+            html.append(QString("<li>Chirp spacing: %1 &mu;s</li>").arg(e->ftmwConfig()->d_rfConfig.d_chirpConfig.chirpInterval(),0,'f',1));
         }
         html.append(QString("</ul>"));
     }

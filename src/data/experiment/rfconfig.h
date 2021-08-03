@@ -74,6 +74,9 @@ public:
     //downconversion chain
     Sideband d_downMixSideband{UpperSideband};
 
+    //chirp
+    ChirpConfig d_chirpConfig;
+
     bool prepareForAcquisition();
     void setCurrentClocks(const QHash<ClockType,ClockFreq> clocks);
     void setClockDesiredFreq(ClockType t, double f);
@@ -82,10 +85,7 @@ public:
     void addLoScanClockStep(double upLoMHz, double downLoMHz);
     void addDrScanClockStep(double drFreqMHz);
     void clearClockSteps();
-    void clearChirpConfigs();
-    bool setChirpConfig(const ChirpConfig cc, int num=0);
-    void addChirpConfig(ChirpConfig cc);
-    void setChirpList(const QVector<QVector<ChirpConfig::ChirpSegment>> l, int num=0);
+    void setChirpConfig(const ChirpConfig &cc);
     int advanceClockStep();
 
 
@@ -99,8 +99,6 @@ public:
     double clockFrequency(ClockType t) const;
     double rawClockFrequency(ClockType t) const;
     QString clockHardware(ClockType t) const;
-    ChirpConfig getChirpConfig(int num=0) const;
-    int numChirpConfigs() const;
     bool isComplete() const;
 
     double calculateChirpFreq(double awgFreq) const;
@@ -108,8 +106,8 @@ public:
     double calculateChirpAbsOffset(double awgFreq) const;
     QPair<double,double> calculateChirpAbsOffsetRange() const;
 
-    bool writeClockFile(int num, QString path) const;
-    void loadClockSteps(int num, QString path);
+    bool writeClockFile(int num) const;
+    void loadClockSteps(BlackchirpCSV *csv, int num, QString path);
 
 private:
     //clocks
@@ -117,9 +115,6 @@ private:
     QVector<QHash<ClockType,RfConfig::ClockFreq>> d_clockConfigs;
     int d_currentClockIndex{0};
     int d_completedSweeps{0};
-
-    //chirps
-    QVector<ChirpConfig> d_chirps;
 
     double getRawFrequency(ClockFreq f) const;
 

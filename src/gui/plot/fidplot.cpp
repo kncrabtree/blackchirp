@@ -126,10 +126,10 @@ void FidPlot::prepareForExperiment(const Experiment &e)
     if(displayMarkers)
     {
         ///TODO: Update this calculation!
-        double chirpStart = c->d_rfConfig.getChirpConfig().preChirpGateDelay() +
-                c->d_rfConfig.getChirpConfig().preChirpProtectionDelay() -
+        double chirpStart = c->d_rfConfig.d_chirpConfig.preChirpGateDelay() +
+                c->d_rfConfig.d_chirpConfig.preChirpProtectionDelay() -
                 c->d_scopeConfig.d_triggerDelayUSec;
-        double chirpEnd = chirpStart + c->d_rfConfig.getChirpConfig().chirpDuration(0);
+        double chirpEnd = chirpStart + c->d_rfConfig.d_chirpConfig.chirpDuration(0);
 
         d_chirpMarkers.first->setValue(chirpStart,0.0);
         d_chirpMarkers.second->setValue(chirpEnd,0.0);

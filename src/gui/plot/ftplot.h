@@ -27,7 +27,7 @@ public:
     explicit FtPlot(const QString id, QWidget *parent = 0);
     ~FtPlot();
 
-    void prepareForExperiment(const Experiment e);
+    void prepareForExperiment(const Experiment &e);
     Ft currentFt() const;
 
 public slots:

@@ -93,7 +93,7 @@ void LogHandler::logMessageWithTime(const QString text, const BlackChirp::LogMes
 
 void LogHandler::beginExperimentLog(int num, QString msg)
 {
-    d_exptLog.setFileName(BlackChirp::getExptFile(num,BlackChirp::LogFile));
+    d_exptLog.setFileName(BlackchirpCSV::exptDir(num).absoluteFilePath("%1.log").arg(num));
     d_exptLog.open(QIODevice::WriteOnly);
     logMessage(msg,BlackChirp::LogHighlight);
 }
@@ -114,7 +114,7 @@ void LogHandler::experimentLogMessage(int num, QString text, BlackChirp::LogMess
     if(d_exptLog.isOpen() && d_exptLog.fileName().endsWith(QString("%1.log").arg(num)))
         return;
 
-    QFile f(BlackChirp::getExptFile(num,BlackChirp::LogFile,path));
+    QFile f(BlackchirpCSV::exptDir(num,path).absoluteFilePath("%1.log").arg(num));
     if(f.open(QIODevice::Append))
     {
         QString msg = formatForFile(text,type);

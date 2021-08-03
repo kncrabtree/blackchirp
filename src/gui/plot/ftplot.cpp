@@ -45,7 +45,7 @@ FtPlot::~FtPlot()
 {
 }
 
-void FtPlot::prepareForExperiment(const Experiment e)
+void FtPlot::prepareForExperiment(const Experiment &e)
 {
     d_number = e.d_number;
 

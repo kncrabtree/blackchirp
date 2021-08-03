@@ -432,6 +432,15 @@ std::map<QString, QStringList> HardwareManager::validationKeys() const
     return out;
 }
 
+std::map<QString, QString> HardwareManager::currentHardware() const
+{
+    std::map<QString,QString> out;
+    for(auto &[key,obj] : d_hardwareMap)
+        out.insert_or_assign(key,obj->d_subKey);
+
+    return out;
+}
+
 #ifdef BC_PCONTROLLER
 void HardwareManager::setPressureSetpoint(double val)
 {

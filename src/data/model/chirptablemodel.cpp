@@ -483,7 +483,7 @@ void ChirpTableModel::setFromRfConfig(std::shared_ptr<RfConfig> p)
     removeRows(0,d_chirpList.at(d_currentChirp).size(),QModelIndex());
     d_chirpList.clear();
     d_currentChirp = 0;
-    auto cl = ps_rfConfig->getChirpConfig().chirpList();
+    auto cl = ps_rfConfig->d_chirpConfig.chirpList();
     if(!cl.isEmpty())
     {
         auto s = cl.constFirst().size();

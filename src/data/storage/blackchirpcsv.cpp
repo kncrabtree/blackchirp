@@ -3,9 +3,38 @@
 //#include <gui/plot/blackchirpplotcurve.h>
 #include <data/storage/settingsstorage.h>
 
-BlackchirpCSV::BlackchirpCSV()
+BlackchirpCSV::BlackchirpCSV() : d_delimiter(BC::CSV::del)
 {
 
+}
+
+BlackchirpCSV::BlackchirpCSV(const int num, const QString path)
+{
+    QDir d(BlackchirpCSV::exptDir(num,path));
+    if(!d.exists())
+        return;
+
+    QFile ver(d.absoluteFilePath(BC::CSV::versionFile));
+    d_delimiter = BC::CSV::del;
+
+    if(ver.open(QIODevice::ReadOnly|QIODevice::Text))
+    {
+        //first line contains delimiter
+        auto l = ver.readLine().trimmed();
+        if(!l.isEmpty())
+            d_delimiter = QString(l.at(0));
+
+        while(!ver.atEnd())
+        {
+            auto line = QString(ver.readLine().trimmed());
+            if(line.startsWith("key"))
+                continue;
+
+            auto list = line.split(d_delimiter);
+            if(list.size() == 2)
+                d_configMap.insert_or_assign(list.constFirst(),list.constLast());
+        }
+    }
 }
 
 bool BlackchirpCSV::writeXY(QIODevice &device, const QVector<QPointF> d, const QString prefix)
@@ -126,13 +155,35 @@ void BlackchirpCSV::writeFidList(QIODevice &device, const FidList l)
     }
 }
 
+bool BlackchirpCSV::writeVersionFile(int num)
+{
+    QDir d(BlackchirpCSV::exptDir(num));
+    QFile ver(d.absoluteFilePath(BC::CSV::versionFile));
+    if(!ver.open(QIODevice::WriteOnly|QIODevice::Text))
+        return false;
+
+    using namespace BC::CSV;
+
+    QTextStream t(&ver);
+    //the first line should contain just the delimiter
+    BlackchirpCSV::writeLine(t,{"",""});
+    BlackchirpCSV::writeLine(t,{"key","value"});
+    BlackchirpCSV::writeLine(t,{majver,BC_MAJOR_VERSION});
+    BlackchirpCSV::writeLine(t,{minver,BC_MINOR_VERSION});
+    BlackchirpCSV::writeLine(t,{patchver,BC_PATCH_VERSION});
+    BlackchirpCSV::writeLine(t,{relver,STRINGIFY(BC_RELEASE_VERSION)});
+    BlackchirpCSV::writeLine(t,{buildver,STRINGIFY(BC_BUILD_VERSION)});
+
+    return true;
+}
+
 QVariantList BlackchirpCSV::readLine(QIODevice &device)
 {
     QVariantList out;
     auto l = QString(device.readLine()).trimmed();
     if(l.isEmpty())
         return out;
-    auto list = l.split(BC::CSV::del);
+    auto list = l.split(d_delimiter);
     for(auto &str : list)
         out << str;
 
@@ -146,7 +197,7 @@ QVector<qint64> BlackchirpCSV::readFidLine(QIODevice &device)
     auto l = QString(device.readLine()).trimmed();
     if(l.isEmpty())
         return out;
-    auto list = l.split(BC::CSV::del);
+    auto list = l.split(d_delimiter);
     for(auto &str : list)
         out << str.toLongLong(nullptr,36);
 

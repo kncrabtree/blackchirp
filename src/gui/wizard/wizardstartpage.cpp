@@ -347,6 +347,11 @@ void WizardStartPage::configureUI()
         p_ftmwTargetDurationBox->setEnabled(true);
         p_endTimeLabel->setEnabled(true);
         break;
+    case FtmwConfig::Forever:
+        p_ftmwShotsBox->setEnabled(false);
+        p_ftmwTargetDurationBox->setEnabled(false);
+        p_endTimeLabel->setEnabled(false);
+        break;
     default:
         p_ftmwShotsBox->setEnabled(true);
         p_ftmwTargetDurationBox->setEnabled(false);

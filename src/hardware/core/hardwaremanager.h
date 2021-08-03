@@ -136,6 +136,7 @@ public slots:
 
 public:
     std::map<QString,QStringList> validationKeys() const;
+    std::map<QString,QString> currentHardware() const;
 
 private:
     std::size_t d_responseCount{0};

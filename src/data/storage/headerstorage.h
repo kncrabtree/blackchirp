@@ -239,7 +239,7 @@ public:
      * 6. Unit (optional)
      * \return bool whether the value was added to this object or a child.
      */
-    bool storeLine(const QStringList l);
+    bool storeLine(const QVariantList l);
 
     /*!
      * \brief Calls loadComplete() on self and all children

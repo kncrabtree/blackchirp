@@ -21,68 +21,50 @@ ChirpConfig::ChirpConfig() : HeaderStorage(BC::Store::CC::key)
 {
 }
 
-ChirpConfig::ChirpConfig(int num, QString path) : HeaderStorage(BC::Store::CC::key)
-{
-#pragma message("Remove this constructor")
-    QFile hdr(BlackChirp::getExptFile(num,BlackChirp::HeaderFile,path));
-    if(hdr.open(QIODevice::ReadOnly))
-    {
-        while(!hdr.atEnd())
-        {
-            auto l = hdr.readLine();
-            if(l.isEmpty())
-                continue;
-
-            auto list = QString(l).trimmed().split(',');
-            if(list.size() == 6 && list.constFirst() == BC::Store::CC::key)
-                storeLine(list);
-        }
-        hdr.close();
-        readComplete();
-    }
-
-    readChirpFile(num,path);
-}
-
 ChirpConfig::~ChirpConfig()
 {
 
 }
 
-void ChirpConfig::readChirpFile(int num, QString path)
+void ChirpConfig::readChirpFile(BlackchirpCSV *csv, int num, QString path)
 {
-    QFile f(BlackChirp::getExptFile(num,BlackChirp::ChirpFile,path));
+    auto d = BlackchirpCSV::exptDir(num,path);
+    QFile f(d.absoluteFilePath(BC::CSV::chirpFile));
     if(f.open(QIODevice::ReadOnly))
     {
         while(!f.atEnd())
         {
-            auto l = f.readLine();
-            if(l.isEmpty() || l.startsWith("Chirp"))
+            auto l = csv->readLine(f);
+
+            if(l.isEmpty())
                 continue;
 
-            auto list = QString(l).trimmed().split(',');
-            if(list.size() == 7)
+            if(l.constFirst().toString().startsWith("Chirp"))
+                continue;
+
+
+            if(l.size() == 7)
             {
                 bool ok = false;
-                int chirp = list.at(0).toInt(&ok);
+                int chirp = l.at(0).toInt(&ok);
                 if(!ok)
                     continue;
-                int seg = list.at(1).toInt(&ok);
+                int seg = l.at(1).toInt(&ok);
                 if(!ok)
                     continue;
-                double start = list.at(2).toDouble(&ok);
+                double start = l.at(2).toDouble(&ok);
                 if(!ok)
                     continue;
-                double end = list.at(3).toDouble(&ok);
+                double end = l.at(3).toDouble(&ok);
                 if(!ok)
                     continue;
-                double dur = list.at(4).toDouble(&ok);
+                double dur = l.at(4).toDouble(&ok);
                 if(!ok)
                     continue;
-                double alpha = list.at(5).toDouble(&ok);
+                double alpha = l.at(5).toDouble(&ok);
                 if(!ok)
                     continue;
-                bool empty = QVariant(list.at(6)).toBool();
+                bool empty = QVariant(l.at(6)).toBool();
 
                 ChirpSegment s{start,end,dur,alpha,empty};
                 while(d_chirpList.size() < chirp + 1) {
@@ -95,13 +77,12 @@ void ChirpConfig::readChirpFile(int num, QString path)
                 d_chirpList[chirp][seg] = s;
             }
         }
-        f.close();
     }
 }
 
-bool ChirpConfig::writeChirpFile(int num, QString path)
+bool ChirpConfig::writeChirpFile(int num) const
 {
-    QDir d(BlackchirpCSV::exptDir(num,path));
+    QDir d(BlackchirpCSV::exptDir(num));
     QSaveFile f(d.absoluteFilePath(BC::CSV::chirpFile));
     if(f.open(QIODevice::WriteOnly|QIODevice::Text))
     {

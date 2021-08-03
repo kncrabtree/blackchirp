@@ -62,7 +62,14 @@ FidList FidSingleStorage::getFidList(std::size_t i)
 {
     Q_UNUSED(i)
     QMutexLocker l(p_mutex);
-    return d_currentFidList;
+    if(!d_currentFidList.isEmpty())
+        return d_currentFidList;
+
+    auto fl = loadFidList(0);
+    fl.waitForFinished();
+    d_currentFidList = fl.result();
+
+    return fl.result();
 }
 
 FidList FidSingleStorage::getCurrentFidList()

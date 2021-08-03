@@ -21,6 +21,8 @@ static const QString sampleRate("SampleRatePerUs");
 static const QString sampleInterval("SampleIntervalUs");
 }
 
+class BlackchirpCSV;
+
 //note: all time units are microseconds; all frequency units are MHz
 class ChirpConfig : public HeaderStorage
 {
@@ -34,11 +36,10 @@ public:
     };
 
     ChirpConfig();
-    ChirpConfig(int num, QString path = QString(""));
     ~ChirpConfig();
 
-    void readChirpFile(int num, QString path = QString(""));
-    bool writeChirpFile(int num, QString path = QString(""));
+    void readChirpFile(BlackchirpCSV *csv, int num, QString path = QString(""));
+    bool writeChirpFile(int num) const;
 
     double preChirpProtectionDelay() const;
     double preChirpGateDelay() const;

@@ -20,8 +20,8 @@ public:
     explicit FtmwPlotConfigWidget(int id, QString path = QString(""), QWidget *parent = nullptr);
     ~FtmwPlotConfigWidget();
 
-    void prepareForExperiment(const Experiment e);
-    void experimentComplete(const Experiment e);
+    void prepareForExperiment(const Experiment &e);
+    void experimentComplete(const Experiment &e);
     void snapshotTaken();
     bool isSnapshotActive();
 

@@ -47,42 +47,92 @@ Experiment::Experiment(const Experiment &other) :
 
 Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : HeaderStorage(BC::Store::Exp::key)
 {
-    QDir d(BlackChirp::getExptDir(num,exptPath));
+    QDir d(BlackchirpCSV::exptDir(num,exptPath));
     if(!d.exists())
         return;
 
+    d_number = num;
     d_path = exptPath;
 
-#pragma message("Add children for Experiment loading")
+    //initialize CSV reader
+    auto csv = std::make_shared<BlackchirpCSV>(d_number,exptPath);
 
+    //load hardware list
+    QFile hw(d.absoluteFilePath(BC::CSV::hwFile));
+    if(hw.open(QIODevice::ReadOnly|QIODevice::Text))
+    {
+       while(!hw.atEnd())
+       {
+           auto l = csv->readLine(hw);
+           if(l.size() != 2)
+               continue;
 
-    QFile hdr(BlackChirp::getExptFile(num,BlackChirp::HeaderFile,exptPath));
+           if(l.constFirst().toString() == QString("key"))
+               continue;
+
+           d_hardware.insert_or_assign(l.constFirst().toString(),l.constLast().toString());
+       }
+    }
+
+    //load objectives
+    QFile obj(d.absoluteFilePath(BC::CSV::objectivesFile));
+    if(obj.open(QIODevice::ReadOnly|QIODevice::Text))
+    {
+        while(!obj.atEnd())
+        {
+            auto l = csv->readLine(obj);
+
+            if(l.size() != 2)
+                continue;
+
+            auto key = l.constFirst().toString();
+            if(key == QString("key"))
+                continue;
+
+            if(key == BC::Config::Exp::ftmwType)
+            {
+                auto type = l.constLast().value<FtmwConfig::FtmwType>();
+                enableFtmw(type);
+                pu_ftmwConfig->d_number = num;
+                addChild(pu_ftmwConfig.get());
+            }
+
+#pragma message("Handle LIF")
+        }
+    }
+
+    QFile hdr(d.absoluteFilePath(BC::CSV::headerFile));
     if(hdr.open(QIODevice::ReadOnly))
     {
         while(!hdr.atEnd())
         {
-            auto l = hdr.readLine();
+            auto l = csv->readLine(hdr);
             if(l.isEmpty())
                 continue;
 
-            auto list = QString(l).trimmed().split(',');
-            if(list.size() == 6)
-                storeLine(list);
+            if(l.constFirst().toString() == QString("ObjKey"))
+                continue;
+
+            if(l.size() == 6)
+                storeLine(l);
         }
         hdr.close();
         readComplete();
+    }
+    else
+    {
+        d_errorString = QString("Could not open header file (%1)").arg(hdr.fileName());
+        return;
+    }
+
+    if(ftmwEnabled())
+    {
+        pu_ftmwConfig->d_rfConfig.d_chirpConfig.readChirpFile(csv.get(),num,exptPath);
+        pu_ftmwConfig->d_rfConfig.loadClockSteps(csv.get(),num,exptPath);
 
         if(!headerOnly)
-        {
-            if(ftmwEnabled())
-            {
-#pragma message("What should be moved to header?")
-                //note: need to rethink this after creating control file
-                pu_ftmwConfig->d_number = num;
-                pu_ftmwConfig->loadChirps(num,exptPath);
-                pu_ftmwConfig->loadFids(num,exptPath);
-                pu_ftmwConfig->loadClocks(num,exptPath);
-            }
+            pu_ftmwConfig->loadFids(num,exptPath);
+    }
 
 #ifdef BC_LIF
             if(d_lifCfg.isEnabled())
@@ -93,88 +143,16 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
             if(d_motorScan.isEnabled())
                 d_motorScan.loadMotorData(num,exptPath);
 #endif
-        }
-    }
+
+    //load aux data
+    if(!headerOnly)
+        pu_auxData = std::make_unique<AuxDataStorage>(csv.get(),num,exptPath);
     else
-    {
-        d_errorString = QString("Could not open header file (%1)").arg(hdr.fileName());
-        return;
-    }
+        pu_auxData = std::make_unique<AuxDataStorage>();
 
-//    //load time data
-//    QFile tdt(BlackChirp::getExptFile(num,BlackChirp::TimeFile,exptPath));
-//    if(tdt.open(QIODevice::ReadOnly))
-//    {
-//        bool plot = true;
-//        bool lookForHeader = true;
-//        QStringList hdrList;
+    //load validation conditions
+    pu_validator = std::make_unique<ExperimentValidator>(csv.get(),num,exptPath);
 
-//        while(!tdt.atEnd())
-//        {
-//            QByteArray line = tdt.readLine().trimmed();
-
-//            if(line.isEmpty())
-//                continue;
-
-//            if(line.startsWith('#'))
-//            {
-//                if(line.endsWith("NoPlotData"))
-//                {
-//                    plot = false;
-//                    lookForHeader = true;
-//                    hdrList.clear();
-//                    continue;
-//                }
-//                else if(line.endsWith("PlotData"))
-//                {
-//                    plot = true;
-//                    lookForHeader = true;
-//                    hdrList.clear();
-//                    continue;
-//                }
-//                else
-//                    continue;
-//            }
-
-//            QByteArrayList l = line.split('\t');
-//            if(l.isEmpty())
-//                continue;
-
-//            if(lookForHeader)
-//            {
-//                for(int i=0; i<l.size(); i++)
-//                {
-//                    QByteArrayList l2 = l.at(i).split('_');
-//                    QString name;
-//                    for(int j=0; j<l2.size()-1; j++)
-//                        name += QString(l2.at(j));
-
-//                    hdrList.append(name);
-//                    d_timeDataMap[name] = qMakePair(QList<QVariant>(),plot);
-//                }
-//                lookForHeader = false;
-//            }
-//            else
-//            {
-//                if(l.size() != hdrList.size())
-//                    continue;
-
-//                for(int i=0; i<l.size(); i++)
-//                {
-//                    if(hdrList.at(i).contains(QString("TimeStamp")))
-//                        d_timeDataMap[hdrList.at(i)].first.append(QDateTime::fromString(l.at(i).trimmed(),Qt::ISODate));
-//                    else
-//                        d_timeDataMap[hdrList.at(i)].first.append(QString(l.at(i).trimmed()));
-//                }
-//            }
-
-//        }
-
-//        tdt.close();
-//    }
-
-
-    d_number = num;
 
 }
 
@@ -449,11 +427,28 @@ bool Experiment::initialize()
     //write config file, header file; chirps file, and clocks file as appropriate
     if(!d_isDummy)
     {
-        if(!saveConfig())
+        if(!BlackchirpCSV::writeVersionFile(d_number))
+        {
+            d_errorString = QString("Could not open the file %1 for writing.")
+                    .arg(BlackchirpCSV::exptDir(d_number).absoluteFilePath(BC::CSV::versionFile));
+            return false;
+        }
+
+        if(!saveObjectives())
+            return false;
+
+        if(!saveHardware())
             return false;
 
         if(!saveHeader())
             return false;
+
+        if(!pu_validator->saveValidation(d_number))
+        {
+            d_errorString = QString("Could not open the file %1 for writing.").arg(
+                        BlackchirpCSV::exptDir(d_number).absoluteFilePath(BC::CSV::validationFile));
+            return false;
+        }
 
         //chirp file
         if(ftmwEnabled())
@@ -461,14 +456,14 @@ bool Experiment::initialize()
             if(!saveChirpFile())
             {
                 d_errorString = QString("Could not open the file %1 for writing.")
-                        .arg(BlackChirp::getExptFile(num,BlackChirp::ChirpFile));
+                        .arg(BlackchirpCSV::exptDir(d_number).absoluteFilePath(BC::CSV::chirpFile));
                 return false;
             }
 
             if(!saveClockFile())
             {
                 d_errorString = QString("Could not open the file %1 for writing.")
-                        .arg(BlackChirp::getExptFile(num,BlackChirp::ClockFile));
+                        .arg(BlackchirpCSV::exptDir(d_number).absoluteFilePath(BC::CSV::clockFile));
                 return false;
             }
         }
@@ -635,29 +630,40 @@ void Experiment::finalSave()
 //    saveTimeFile();
 }
 
-bool Experiment::saveConfig()
+bool Experiment::saveObjectives()
 {
     QDir d(BlackchirpCSV::exptDir(d_number));
-    QFile cfg(d.absoluteFilePath(BC::CSV::configFile));
-    if(!cfg.open(QIODevice::WriteOnly|QIODevice::Text))
+    QFile obj(d.absoluteFilePath(BC::CSV::objectivesFile));
+    if(!obj.open(QIODevice::WriteOnly|QIODevice::Text))
     {
         d_errorString = QString("Could not open the file %1 for writing.")
-                .arg(d.absoluteFilePath(BC::CSV::configFile));
+                .arg(d.absoluteFilePath(BC::CSV::objectivesFile));
+    }
+
+    QTextStream t(&obj);
+    BlackchirpCSV::writeLine(t,{"key","value"});
+    if(ftmwEnabled())
+        BlackchirpCSV::writeLine(t,{BC::Config::Exp::ftmwType,pu_ftmwConfig->d_type});
+
+    return true;
+}
+
+bool Experiment::saveHardware()
+{
+    QDir d(BlackchirpCSV::exptDir(d_number));
+    QFile hw(d.absoluteFilePath(BC::CSV::hwFile));
+    if(!hw.open(QIODevice::WriteOnly|QIODevice::Text))
+    {
+        d_errorString = QString("Could not open the file %1 for writing.")
+                .arg(d.absoluteFilePath(BC::CSV::hwFile));
         return false;
     }
 
-    QTextStream t(&cfg);
-    BlackchirpCSV::writeLine(t,{"key","value"});
-    BlackchirpCSV::writeLine(t,{"BCMajorVersion",BC_MAJOR_VERSION});
-    BlackchirpCSV::writeLine(t,{"BCMinorVersion",BC_MINOR_VERSION});
-    BlackchirpCSV::writeLine(t,{"BCPatchVersion",BC_PATCH_VERSION});
-    BlackchirpCSV::writeLine(t,{"BCReleaseVersion",STRINGIFY(BC_RELEASE_VERSION)});
-    BlackchirpCSV::writeLine(t,{"BCBuildVersion",STRINGIFY(BC_BUILD_VERSION)});
-    BlackchirpCSV::writeLine(t,{"CsvDelimiter",BC::CSV::del.toLatin1().toHex()});
-    if(ftmwEnabled())
-        BlackchirpCSV::writeLine(t,{"FtmwType",ftmwConfig()->d_type});
+    QTextStream t(&hw);
+    BlackchirpCSV::writeLine(t,{"key","subKey"});
+    for(auto &[key,subKey] : d_hardware)
+        BlackchirpCSV::writeLine(t,{key,subKey});
 
-#pragma message("Write hardware list")
     return true;
 }
 
@@ -677,14 +683,12 @@ bool Experiment::saveHeader()
 
 bool Experiment::saveChirpFile() const
 {
-#pragma message("This should go to RF Config")
-    return pu_ftmwConfig->d_rfConfig.getChirpConfig().writeChirpFile(d_number);
+    return pu_ftmwConfig->d_rfConfig.d_chirpConfig.writeChirpFile(d_number);
 }
 
 bool Experiment::saveClockFile() const
 {
-#pragma message("Figure out save heirarchy")
-    return pu_ftmwConfig->d_rfConfig.writeClockFile(d_number,QString(""));
+    return pu_ftmwConfig->d_rfConfig.writeClockFile(d_number);
 }
 
 void Experiment::snapshot(int snapNum, const Experiment other)
@@ -842,11 +846,6 @@ void Experiment::loadComplete()
     d_number = retrieve<int>(num);
     d_timeDataInterval = retrieve<int>(timeData);
     d_autoSaveIntervalHours = retrieve<int>(autoSave);
-    if(retrieve(ftmwEn,false))
-    {
-        auto type = retrieve(ftmwType,FtmwConfig::Forever);
-        addChild(enableFtmw(type));
-    }
 }
 
 

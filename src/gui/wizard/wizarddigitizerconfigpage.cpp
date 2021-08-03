@@ -36,7 +36,7 @@ void WizardDigitizerConfigPage::initializePage()
     if(e->d_number > 0)
         p_dc->setFromConfig(e->ftmwConfig()->d_scopeConfig);
 
-    int numChirps = e->ftmwConfig()->d_rfConfig.getChirpConfig().numChirps();
+    int numChirps = e->ftmwConfig()->d_rfConfig.d_chirpConfig.numChirps();
     if(numChirps > 1)
         p_dc->configureForChirp(numChirps);
 
@@ -45,7 +45,7 @@ void WizardDigitizerConfigPage::initializePage()
 bool WizardDigitizerConfigPage::validatePage()
 {
     auto e = getExperiment();
-    int numChirps = e->ftmwConfig()->d_rfConfig.getChirpConfig().numChirps();
+    int numChirps = e->ftmwConfig()->d_rfConfig.d_chirpConfig.numChirps();
 
     if(p_dc->numAnalogChecked() != 1)
         return false;

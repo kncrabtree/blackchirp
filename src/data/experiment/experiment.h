@@ -37,6 +37,10 @@ static const QString ftmwEn("FtmwEnabled");
 static const QString ftmwType("FtmwType");
 }
 
+namespace BC::Config::Exp {
+static const QString ftmwType{"FtmwType"};
+}
+
 class Experiment : private HeaderStorage
 {
     Q_GADGET
@@ -47,6 +51,7 @@ public:
     ~Experiment();
 
     bool d_hardwareSuccess{false};
+    std::map<QString,QString> d_hardware;
     int d_number{0};
     QDateTime d_startTime;
     int d_timeDataInterval{300};
@@ -107,7 +112,8 @@ public:
     bool snapshotReady();
     void finalSave();
 
-    bool saveConfig();
+    bool saveObjectives();
+    bool saveHardware();
     bool saveHeader();
     bool saveChirpFile() const;
     bool saveClockFile() const;

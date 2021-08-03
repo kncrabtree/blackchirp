@@ -27,6 +27,7 @@ static const QString type("Type");
 static const QString tShots("TargetShots");
 }
 
+class BlackchirpCSV;
 
 class FtmwConfig : public ExperimentObjective, public HeaderStorage
 {
@@ -91,10 +92,8 @@ public:
     void finalizeSnapshots(int num, QString path = QString(""));
     std::shared_ptr<FidStorageBase> storage() const;
 
-    void loadFids(const int num, const QString path = QString(""));
+    void loadFids(int num, QString path = QString(""));
     void loadFidsFromSnapshots(const int num, const QString path = QString(""), const QList<int> snaps = QList<int>());
-    void loadChirps(const int num, const QString path = QString(""));
-    void loadClocks(const int num, const QString path = QString(""));
 
 private:
     std::shared_ptr<FidStorageBase> p_fidStorage;

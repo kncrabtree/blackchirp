@@ -109,8 +109,8 @@ bool M8195A::prepareForExperiment(Experiment &exp)
         return false;
     }
 
-    auto data = exp.ftmwConfig()->d_rfConfig.getChirpConfig().getChirpMicroseconds();
-    auto markerData = exp.ftmwConfig()->d_rfConfig.getChirpConfig().getMarkerData();
+    auto data = exp.ftmwConfig()->d_rfConfig.d_chirpConfig.getChirpMicroseconds();
+    auto markerData = exp.ftmwConfig()->d_rfConfig.d_chirpConfig.getMarkerData();
 
     if(data.size() != markerData.size())
     {
