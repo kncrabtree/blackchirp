@@ -110,67 +110,6 @@ double PulseGenConfig::repRate() const
     return data->repRate;
 }
 
-QMap<QString, QPair<QVariant, QString> > PulseGenConfig::headerMap() const
-{
-    QMap<QString, QPair<QVariant, QString> > out;
-
-    for(int i=0; i<data->config.size(); i++)
-    {
-        out.insert(QString("PulseGen.%1.Name").arg(i),qMakePair(data->config.at(i).channelName,QString("")));
-        out.insert(QString("PulseGen.%1.Enabled").arg(i),qMakePair(data->config.at(i).enabled,QString("")));
-        out.insert(QString("PulseGen.%1.Delay").arg(i),qMakePair(QString::number(data->config.at(i).delay,'f',3),QString::fromUtf16(u"µs")));
-        out.insert(QString("PulseGen.%1.Width").arg(i),qMakePair(QString::number(data->config.at(i).width,'f',3),QString::fromUtf16(u"µs")));
-        out.insert(QString("PulseGen.%1.Level").arg(i),qMakePair(data->config.at(i).level,QString("")));
-        out.insert(QString("PulseGen.%1.Role").arg(i),qMakePair(data->config.at(i).role,roles.value(data->config.at(i).role)));
-    }
-    out.insert(QString("PulseGenRepRate"),qMakePair(QString::number(data->repRate,'f',1),QString("Hz")));
-
-    return out;
-}
-
-void PulseGenConfig::parseLine(QString key, QVariant val)
-{
-    if(key.startsWith(QString("PulseGen")))
-    {
-        if(key.endsWith(QString("RepRate")))
-            data->repRate = val.toDouble();
-        else
-        {
-            QStringList l = key.split(QString("."));
-            if(l.size() < 3)
-                return;
-
-            QString subKey = l.constLast();
-            int index = l.at(1).toInt();
-
-            while(data->config.size() <= index)
-            {
-                ChannelConfig c;
-                data->config.append(c);
-            }
-
-            if(subKey.endsWith(QString("Name")))
-            {
-                if(data->config.at(index).role == NoRole)
-                    data->config[index].channelName = val.toString();
-            }
-            if(subKey.endsWith(QString("Enabled")))
-                data->config[index].enabled = val.toBool();
-            if(subKey.endsWith(QString("Delay")))
-                data->config[index].delay = val.toDouble();
-            if(subKey.endsWith(QString("Width")))
-                data->config[index].width = val.toDouble();
-            if(subKey.endsWith(QString("Level")))
-                data->config[index].level = (ActiveLevel)val.toInt();
-            if(subKey.endsWith(QString("Role")))
-            {
-                data->config[index].role = static_cast<Role>(val.toInt());
-                data->config[index].channelName = roles.value(data->config.at(index).role);
-            }
-        }
-    }
-}
-
 void PulseGenConfig::set(const int index, const Setting s, const QVariant val)
 {
     if(index < 0 || index >= data->config.size())

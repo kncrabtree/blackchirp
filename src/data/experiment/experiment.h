@@ -63,6 +63,7 @@ public:
 
     inline bool isAborted()  const { return d_isAborted; }
     inline bool isDummy() const { return d_isDummy; }
+    bool isComplete() const;
 
 
     inline bool ftmwEnabled() const { return pu_ftmwConfig.get() != nullptr; }
@@ -77,10 +78,6 @@ public:
 
     inline PulseGenConfig pGenConfig() const { return d_pGenCfg; }
     inline FlowConfig flowConfig() const { return d_flowCfg; }
-//    inline IOBoardConfig iobConfig() const { return d_iobCfg; }
-    bool isComplete() const;
-    BlackChirp::LogMessageCode endLogMessageCode() const;
-    QMap<QString, QPair<QVariant,QString>> headerMap() const;
 
     void setIOBoardConfig(const IOBoardConfig &cfg);
     void setPulseGenConfig(const PulseGenConfig c) { d_pGenCfg = c; }
@@ -128,12 +125,15 @@ private:
     bool d_isAborted{false};
     bool d_isDummy{false};
 
+    //core ftmw data
     std::unique_ptr<FtmwConfig> pu_ftmwConfig;
     std::unique_ptr<AuxDataStorage> pu_auxData;
+    std::unique_ptr<ExperimentValidator> pu_validator;
+
+    //optional hardware data
     std::unique_ptr<IOBoardConfig> pu_iobCfg;
     PulseGenConfig d_pGenCfg;
     FlowConfig d_flowCfg;
-    std::unique_ptr<ExperimentValidator> pu_validator;
 
     QString d_path;
 

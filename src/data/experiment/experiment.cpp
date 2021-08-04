@@ -41,8 +41,12 @@ Experiment::Experiment(const Experiment &other) :
     }
 
     pu_auxData = std::make_unique<AuxDataStorage>(*other.pu_auxData);
-    pu_iobCfg = std::make_unique<IOBoardConfig>(*other.pu_iobCfg);
+
     pu_validator = std::make_unique<ExperimentValidator>(*other.pu_validator);
+    addChild(pu_validator.get());
+
+    if(other.pu_iobCfg.get() != nullptr)
+        setIOBoardConfig(*other.iobConfig());
 
 }
 
@@ -76,6 +80,8 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
            d_hardware.insert_or_assign(l.constFirst().toString(),l.constLast().toString());
        }
     }
+
+#pragma message("create optional HW config objects here; add as children as needed")
 
     //load objectives
     QFile obj(d.absoluteFilePath(BC::CSV::objectivesFile));
@@ -181,85 +187,6 @@ bool Experiment::isComplete() const
     return true;
 }
 
-QMap<QString, QPair<QVariant, QString> > Experiment::headerMap() const
-{
-    QMap<QString, QPair<QVariant, QString> > out;
-
-    out.insert(QString("AuxDataInterval"),qMakePair(d_timeDataInterval,QString("s")));
-    out.insert(QString("AutosaveInterval"),qMakePair(d_autoSaveIntervalHours,QString("hr")));
-
-//    auto it = d_validationConditions.constBegin();
-//    QString prefix("Validation.");
-//    QString empty("");
-//    for(;it != d_validationConditions.constEnd(); it++)
-//    {
-//        out.insert(prefix+it.key()+QString(".Min"),qMakePair(it.value().min,empty));
-//        out.insert(prefix+it.key()+QString(".Max"),qMakePair(it.value().max,empty));
-//    }
-
-//    out.unite(d_ftmwCfg.headerMap());
-    out.unite(d_pGenCfg.headerMap());
-    out.unite(d_flowCfg.headerMap());
-//    out.unite(d_iobCfg.headerMap());
-
-#ifdef BC_LIF
-    out.unite(d_lifCfg.headerMap());
-#endif
-
-#ifdef BC_MOTOR
-    out.unite(d_motorScan.headerMap());
-#endif
-
-//    if(!d_timeDataMap.isEmpty())
-//    {
-//        foreach(const QString &key, d_timeDataMap.keys())
-//        {
-//            QString label;
-//            QString units;
-
-//            QList<QString> flowNames;
-//            for(int i=0; i<flowConfig().size(); i++)
-//                flowNames.append(flowConfig().setting(i,FlowConfig::Name).toString());
-
-//            if(key.contains(QString("flow.")))
-//            {
-//                QString channel = key.split(QString(".")).constLast();
-//                label = QString("FlowConfigChannel.%1.Average").arg(channel);
-//                units = QString("sccm");
-//            }
-//            else if(key == QString("gasPressure"))
-//            {
-//                label = QString("FlowConfigPressureAverage");
-//                units = QString("kTorr");
-//            }
-//            else if(flowNames.contains(key))
-//            {
-//                label = QString("FlowConfigChannel.%1.Average").arg(flowNames.indexOf(key));
-//                units = QString("sccm");
-//            }
-//            else
-//                continue;
-
-//            auto val = d_timeDataMap.value(key);
-//            if(val.first.isEmpty())
-//                continue;
-
-//            if(val.first.constFirst().canConvert(QVariant::Double))
-//            {
-//                double mean = 0.0;
-//                for(int i=0; i<val.first.size(); i++)
-//                    mean += val.first.at(i).toDouble();
-//                mean /= static_cast<double>(val.first.size());
-
-//                out.insert(label,qMakePair(QString::number(mean,'f',3),units));
-//            }
-
-//        }
-//    }
-
-    return out;
-}
-
 bool Experiment::snapshotReady()
 {
     if(isComplete())
@@ -343,14 +270,13 @@ FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
 
 //    pu_ftmwConfig = std::make_unique<FtmwConfig>();
     pu_ftmwConfig->d_type = type;
+    addChild(pu_ftmwConfig.get());
     return pu_ftmwConfig.get();
 }
 
 bool Experiment::initialize()
 {
     d_startTime = QDateTime::currentDateTime();
-#pragma message("Add children to initialized experiment")
-
 
     int num = -1;
 
@@ -406,11 +332,8 @@ bool Experiment::initialize()
             d_errorString = pu_ftmwConfig->d_errorString;
             return false;
         }
-        addChild(pu_ftmwConfig.get());
     }
 
-    if(pu_iobCfg)
-        addChild(pu_iobCfg.get());
 
 #ifdef BC_LIF
     //do any needed initialization for LIF here... nothing to do for now
@@ -495,6 +418,7 @@ void Experiment::abort()
 void Experiment::setIOBoardConfig(const IOBoardConfig &cfg)
 {
     pu_iobCfg = std::make_unique<IOBoardConfig>(cfg);
+    addChild(iobConfig());
 }
 
 bool Experiment::addAuxData(AuxDataStorage::AuxDataMap m)

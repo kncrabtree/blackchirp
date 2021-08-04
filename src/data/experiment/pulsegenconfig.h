@@ -3,7 +3,7 @@
 
 #include <QSharedDataPointer>
 
-#include <QList>
+#include <QVector>
 #include <QVariant>
 #include <QMap>
 
@@ -76,8 +76,6 @@ public:
     ChannelConfig settings(const int index) const;
     QList<int> channelsForRole(Role role) const;
     double repRate() const;
-    QMap<QString,QPair<QVariant,QString>> headerMap() const;
-    void parseLine(QString key, QVariant val);
 
     void set(const int index, const Setting s, const QVariant val);
     void set(const int index, const ChannelConfig cc);
@@ -93,7 +91,7 @@ private:
 class PulseGenConfigData : public QSharedData
 {
 public:
-    QList<PulseGenConfig::ChannelConfig> config;
+    QVector<PulseGenConfig::ChannelConfig> config;
     double repRate{1.0};
 };
 

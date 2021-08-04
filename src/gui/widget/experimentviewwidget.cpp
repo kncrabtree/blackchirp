@@ -132,17 +132,17 @@ QWidget *ExperimentViewWidget::buildHeaderWidget()
     tw->setHorizontalHeaderItem(2,new QTableWidgetItem(QString("Unit")));
     tw->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
-    auto header = pu_experiment->headerMap();
-    auto hdrit = header.constBegin();
-    tw->setRowCount(header.size());
-    for(int i=0; hdrit != header.constEnd(); i++, hdrit++)
-    {
-        tw->setItem(i,0,new QTableWidgetItem(hdrit.key()));
-        tw->setItem(i,1,new QTableWidgetItem(hdrit.value().first.toString()));
-        tw->setItem(i,2,new QTableWidgetItem(hdrit.value().second));
-    }
-    hdrvl->addWidget(tw);
-    hdr->setLayout(hdrvl);
+//    auto header = pu_experiment->headerMap();
+//    auto hdrit = header.constBegin();
+//    tw->setRowCount(header.size());
+//    for(int i=0; hdrit != header.constEnd(); i++, hdrit++)
+//    {
+//        tw->setItem(i,0,new QTableWidgetItem(hdrit.key()));
+//        tw->setItem(i,1,new QTableWidgetItem(hdrit.value().first.toString()));
+//        tw->setItem(i,2,new QTableWidgetItem(hdrit.value().second));
+//    }
+//    hdrvl->addWidget(tw);
+//    hdr->setLayout(hdrvl);
 
     return hdr;
 }

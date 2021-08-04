@@ -98,20 +98,20 @@ QuickExptDialog::QuickExptDialog(std::shared_ptr<Experiment> e, QWidget *parent)
     ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
 
 #pragma message("Update experiment summary")
-    auto header = e->headerMap();
-    auto it = header.constBegin();
-    ui->tableWidget->setRowCount(header.size());
-    int i = 0;
-    while(it != header.constEnd())
-    {
-        ui->tableWidget->setItem(i,0,new QTableWidgetItem(it.key()));
-        ui->tableWidget->setItem(i,1,new QTableWidgetItem(it.value().first.toString()));
-        ui->tableWidget->setItem(i,2,new QTableWidgetItem(it.value().second));
+//    auto header = e->headerMap();
+//    auto it = header.constBegin();
+//    ui->tableWidget->setRowCount(header.size());
+//    int i = 0;
+//    while(it != header.constEnd())
+//    {
+//        ui->tableWidget->setItem(i,0,new QTableWidgetItem(it.key()));
+//        ui->tableWidget->setItem(i,1,new QTableWidgetItem(it.value().first.toString()));
+//        ui->tableWidget->setItem(i,2,new QTableWidgetItem(it.value().second));
 
-        it++;
-        i++;
-    }
-    ui->tableWidget->resizeColumnsToContents();
+//        it++;
+//        i++;
+//    }
+//    ui->tableWidget->resizeColumnsToContents();
 }
 
 QuickExptDialog::~QuickExptDialog()

@@ -40,24 +40,24 @@ void WizardSummaryPage::initializePage()
 {
     p_tw->clearContents();
 
-    auto e = getExperiment();
+//    auto e = getExperiment();
 
-    auto header = e->headerMap();
-    auto it = header.constBegin();
-    p_tw->setRowCount(header.size());
-    int i = 0;
-    while(it != header.constEnd())
-    {
-        p_tw->setItem(i,0,new QTableWidgetItem(it.key()));
-        p_tw->setItem(i,1,new QTableWidgetItem(it.value().first.toString()));
-        p_tw->setItem(i,2,new QTableWidgetItem(it.value().second));
+//    auto header = e->headerMap();
+//    auto it = header.constBegin();
+//    p_tw->setRowCount(header.size());
+//    int i = 0;
+//    while(it != header.constEnd())
+//    {
+//        p_tw->setItem(i,0,new QTableWidgetItem(it.key()));
+//        p_tw->setItem(i,1,new QTableWidgetItem(it.value().first.toString()));
+//        p_tw->setItem(i,2,new QTableWidgetItem(it.value().second));
 
-        it++;
-        i++;
-    }
-//    p_pte->moveCursor(QTextCursor::Start);
-//    p_pte->ensureCursorVisible();
-    p_tw->resizeColumnsToContents();
+//        it++;
+//        i++;
+//    }
+////    p_pte->moveCursor(QTextCursor::Start);
+////    p_pte->ensureCursorVisible();
+//    p_tw->resizeColumnsToContents();
 }
 
 int WizardSummaryPage::nextId() const
