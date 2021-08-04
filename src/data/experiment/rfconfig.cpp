@@ -337,7 +337,7 @@ double RfConfig::getRawFrequency(RfConfig::ClockFreq f) const
 
 
 
-void RfConfig::prepareToSave()
+void RfConfig::storeValues()
 {
     using namespace BC::Store::RFC;
     store(commonLO,d_commonUpDownLO);
@@ -349,7 +349,7 @@ void RfConfig::prepareToSave()
     store(downSB,d_downMixSideband);
 }
 
-void RfConfig::loadComplete()
+void RfConfig::retrieveValues()
 {
     using namespace BC::Store::RFC;
     d_commonUpDownLO = retrieve(commonLO,false);

@@ -331,6 +331,7 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
     }
 
     exp->d_hardwareSuccess = success;
+    exp->d_hardware = currentHardware();
     //any additional synchronous initialization can be performed here, before experimentInitialized() is emitted
 
 

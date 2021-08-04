@@ -110,11 +110,6 @@ FtmwViewWidget::~FtmwViewWidget()
 void FtmwViewWidget::prepareForExperiment(const Experiment &e)
 {
 
-    p_fidStorage = e.ftmwConfig()->storage();
-    if(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up)
-        ui->exptLabel->setText(QString("Peak Up Mode"));
-    else
-        ui->exptLabel->setText(QString("Experiment %1").arg(e.d_number));
 
 
     if(p_pfw != nullptr)
@@ -154,7 +149,13 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
     }
 
     if(e.ftmwEnabled())
-    {
+    {        
+        p_fidStorage = e.ftmwConfig()->storage();
+        if(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up)
+            ui->exptLabel->setText(QString("Peak Up Mode"));
+        else
+            ui->exptLabel->setText(QString("Experiment %1").arg(e.d_number));
+
         auto ws = d_workersStatus.value(d_liveId);
         ws.worker = new FtWorker(d_liveId);
         ws.worker->moveToThread(ws.thread);
@@ -220,7 +221,9 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         d_liveTimerId = startTimer(500);
     }
     else
-    {        
+    {
+        p_fidStorage.reset();
+        ui->exptLabel->setText(QString("Experiment %1").arg(e.d_number));
         ui->resetAveragesButton->setEnabled(false);
         ui->averagesSpinbox->setEnabled(false);
     }
@@ -677,32 +680,36 @@ void FtmwViewWidget::experimentComplete()
 //    ui->plot1ConfigWidget->experimentComplete(e);
 //    ui->plot2ConfigWidget->experimentComplete(e);
 
-//    if(e.ftmwEnabled())
-//    {
-//        d_currentSegment = -1;
+    if(p_fidStorage)
+    {
+        d_currentSegment = -1;
 
-//        ui->verticalLayout->setStretch(0,0);
-//        ui->liveFidPlot->hide();
-//        ui->liveFtPlot->hide();
+        ui->verticalLayout->setStretch(0,0);
+        ui->liveFidPlot->hide();
+        ui->liveFtPlot->hide();
 
 
-//        if(d_workersStatus.value(d_liveId).thread->isRunning())
-//        {
-//            d_workersStatus[d_liveId].thread->quit();
-//            d_workersStatus[d_liveId].thread->wait();
+        if(d_workersStatus.value(d_liveId).thread->isRunning())
+        {
+            d_workersStatus[d_liveId].thread->quit();
+            d_workersStatus[d_liveId].thread->wait();
 
-//            d_workersStatus[d_liveId].worker = nullptr;
-//        }
+            d_workersStatus[d_liveId].worker = nullptr;
+        }
 
-//        if(d_mode == Live)
-//            ui->ft1Action->trigger();
+        if(d_mode == Live)
+            ui->ft1Action->trigger();
 
-//        ui->liveAction->setEnabled(false);
+        ui->liveAction->setEnabled(false);
 
-//        updateFtmw(e.d_ftmwCfg);
-//    }
 
-    //    ui->shotsLabel->setText(d_shotsString.arg(e.ftmwConfig()->completedShots()));
+        updateFid(d_plot1Id);
+        updateFid(d_plot2Id);
+        updateMainPlot();
+
+        ui->shotsLabel->setText(d_shotsString.arg(p_fidStorage->completedShots()));
+    }
+
 }
 
 void FtmwViewWidget::changeRollingAverageShots(int shots)
@@ -775,7 +782,7 @@ void FtmwViewWidget::updateFid(int id)
 //            c = d_snap2Config;
 //    }
 
-    if(seg == d_currentSegment && !snap)
+    if(seg == d_currentSegment && !snap && id == d_liveId)
     {
         auto fl = p_fidStorage->getCurrentFidList();
         if(frame >= 0 && frame < fl.size())

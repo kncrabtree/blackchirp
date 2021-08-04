@@ -28,8 +28,8 @@ public:
 
     // HeaderStorage interface
 protected:
-    void prepareToSave() override;
-    void loadComplete() override;
+    void storeValues() override;
+    void retrieveValues() override;
 
 private:
     std::map<int,QString> d_analogNames;

@@ -13,6 +13,7 @@ Experiment::Experiment() : HeaderStorage(BC::Store::Exp::key)
 {
     pu_auxData = std::make_unique<AuxDataStorage>();
     pu_validator = std::make_unique<ExperimentValidator>();
+    addChild(pu_validator.get());
 }
 
 Experiment::Experiment(const Experiment &other) :
@@ -56,6 +57,8 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
 
     //initialize CSV reader
     auto csv = std::make_shared<BlackchirpCSV>(d_number,exptPath);
+    pu_validator = std::make_unique<ExperimentValidator>();
+    addChild(pu_validator.get());
 
     //load hardware list
     QFile hw(d.absoluteFilePath(BC::CSV::hwFile));
@@ -149,9 +152,6 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
         pu_auxData = std::make_unique<AuxDataStorage>(csv.get(),num,exptPath);
     else
         pu_auxData = std::make_unique<AuxDataStorage>();
-
-    //load validation conditions
-    pu_validator = std::make_unique<ExperimentValidator>(csv.get(),num,exptPath);
 
 
 }
@@ -442,13 +442,6 @@ bool Experiment::initialize()
 
         if(!saveHeader())
             return false;
-
-        if(!pu_validator->saveValidation(d_number))
-        {
-            d_errorString = QString("Could not open the file %1 for writing.").arg(
-                        BlackchirpCSV::exptDir(d_number).absoluteFilePath(BC::CSV::validationFile));
-            return false;
-        }
 
         //chirp file
         if(ftmwEnabled())
@@ -827,7 +820,7 @@ void Experiment::saveToSettings() const
 //    return out;
 //}
 
-void Experiment::prepareToSave()
+void Experiment::storeValues()
 {
     using namespace BC::Store::Exp;
     store(num,d_number);
@@ -840,7 +833,7 @@ void Experiment::prepareToSave()
     }
 }
 
-void Experiment::loadComplete()
+void Experiment::retrieveValues()
 {
     using namespace BC::Store::Exp;
     d_number = retrieve<int>(num);

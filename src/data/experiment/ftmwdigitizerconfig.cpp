@@ -6,18 +6,18 @@ FtmwDigitizerConfig::FtmwDigitizerConfig() : DigitizerConfig(BC::Store::Digi::ft
 }
 
 
-void FtmwDigitizerConfig::prepareToSave()
+void FtmwDigitizerConfig::storeValues()
 {
     using namespace BC::Store::Digi;
     store(fidCh,d_fidChannel);
 
-    DigitizerConfig::prepareToSave();
+    DigitizerConfig::storeValues();
 }
 
-void FtmwDigitizerConfig::loadComplete()
+void FtmwDigitizerConfig::retrieveValues()
 {
     using namespace BC::Store::Digi;
     d_fidChannel = retrieve(fidCh,0);
 
-    DigitizerConfig::loadComplete();
+    DigitizerConfig::retrieveValues();
 }

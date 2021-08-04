@@ -3,8 +3,6 @@
 FidSingleStorage::FidSingleStorage(int numRecords, int num, QString path) : FidStorageBase(numRecords,num,path),
     p_mutex(new QMutex)
 {
-
-    ///TODO: attempt to load from disk!
 }
 
 FidSingleStorage::~FidSingleStorage()

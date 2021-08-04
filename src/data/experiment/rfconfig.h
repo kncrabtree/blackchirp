@@ -120,8 +120,8 @@ private:
 
     // HeaderStorage interface
 protected:
-    void prepareToSave() override;
-    void loadComplete() override;
+    void storeValues() override;
+    void retrieveValues() override;
 };
 
 Q_DECLARE_METATYPE(RfConfig)

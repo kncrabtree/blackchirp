@@ -22,7 +22,7 @@
  * store() or storeArrayValue() functions as appropriate, and they can be read back with the
  * retrieve() or retrieveArrayValue() functions. When read, the value is removed from the
  * HeaderStorage internal containers. Subclasses should store values by implementing the
- * prepareToSave() function, which is called right before data are formatted for writing. The
+ * storeValues() function, which is called right before data are formatted for writing. The
  * getStrings() function grabs all of the keys, values, and units, packages them into strings,
  * and returns them as a std::multimap for writing.
  *
@@ -37,7 +37,7 @@
  * this object or one of its children, and if so, it adds the value to its internal
  * containers (or is passed to the child, as appropriate). Once this is complete, subclasses
  * can extract the values using the retrieve() and retrieveArrayValue() functions. This should
- * be done in the loadComplete() virtual function, which is called after all of the lines
+ * be done in the retrieveValues() virtual function, which is called after all of the lines
  * in the header have beem processed.
  */
 class HeaderStorage
@@ -63,7 +63,7 @@ protected:
      * (using store and storeArrayValue as desired).
      *
      */
-    virtual void prepareToSave() =0;
+    virtual void storeValues() =0;
 
     /*!
      * \brief Called when all header lines have been processed when reading
@@ -72,7 +72,7 @@ protected:
      * retrieveArrayValue() as appropriate.
      *
      */
-    virtual void loadComplete() =0;
+    virtual void retrieveValues() =0;
 
     QString d_objKey; /*!< Object key used for storage. Should not be modified! */
 
@@ -204,7 +204,7 @@ public:
      * in almost all cases copies of data that already exists elsewhere, the internal
      * maps are cleared out when this operation completes.
      *
-     * HeaderStrings::prepareToSave is called at the beginning of this function.
+     * HeaderStrings::storeValues is called at the beginning of this function.
      *
      * Returned is a std::multimap that contains a tuple of 5 QStrings. The key of the
      * multimap is the object key for the class. The 5 strings are:
@@ -242,7 +242,7 @@ public:
     bool storeLine(const QVariantList l);
 
     /*!
-     * \brief Calls loadComplete() on self and all children
+     * \brief Calls retrieveValues() on self and readComplete() on all children
      */
     void readComplete();
 

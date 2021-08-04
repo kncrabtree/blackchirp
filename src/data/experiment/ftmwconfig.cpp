@@ -600,7 +600,7 @@ void FtmwConfig::loadFidsFromSnapshots(const int num, const QString path, const 
 //    }
 }
 
-void FtmwConfig::prepareToSave()
+void FtmwConfig::storeValues()
 {
     using namespace BC::Store::FTMW;
     store(phase,d_phaseCorrectionEnabled);
@@ -610,17 +610,21 @@ void FtmwConfig::prepareToSave()
     if(d_chirpScoringEnabled || d_phaseCorrectionEnabled)
         store(chirpOffset,d_chirpOffsetUs,QString::fromUtf8("μs"));
 
+    store(type,d_type);
+
     _prepareToSave();
 }
 
-void FtmwConfig::loadComplete()
+void FtmwConfig::retrieveValues()
 {
     using namespace BC::Store::FTMW;
     d_phaseCorrectionEnabled = retrieve(phase,false);
     d_chirpScoringEnabled = retrieve(chirp,false);
     d_chirpRMSThreshold = retrieve(chirpThresh,0.0);
     d_chirpOffsetUs = retrieve(chirpOffset,0.0);
-    d_type = retrieve(type,Forever);
+
+    //don't need to use retrieved type
+    retrieve<FtmwType>(type);
 
     _loadComplete();
 }

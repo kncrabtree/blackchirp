@@ -25,7 +25,7 @@ double DigitizerConfig::yMult(int ch) const
 }
 
 
-void DigitizerConfig::prepareToSave()
+void DigitizerConfig::storeValues()
 {
     using namespace BC::Store::Digi;
     for(auto it = d_analogChannels.cbegin(); it != d_analogChannels.cend(); ++it)
@@ -55,7 +55,7 @@ void DigitizerConfig::prepareToSave()
     store(multiRecNum,d_numRecords);
 }
 
-void DigitizerConfig::loadComplete()
+void DigitizerConfig::retrieveValues()
 {
     using namespace BC::Store::Digi;
     int n = arrayStoreSize(an);

@@ -622,19 +622,19 @@ double ChirpConfig::calculateEndingPhaseRadians(const ChirpSegment segment, cons
 
 
 
-void ChirpConfig::prepareToSave()
+void ChirpConfig::storeValues()
 {
     using namespace BC::Store::CC;
-    store(preProt,d_markers.preProt);
-    store(postProt,d_markers.postProt);
-    store(preGate,d_markers.preGate);
-    store(postGate,d_markers.postGate);
-    store(interval,d_chirpInterval);
-    store(sampleRate,d_sampleRateSperUS);
-    store(sampleInterval,d_sampleIntervalUS);
+    store(preProt,d_markers.preProt,QString::fromUtf8("μs"));
+    store(postProt,d_markers.postProt,QString::fromUtf8("μs"));
+    store(preGate,d_markers.preGate,QString::fromUtf8("μs"));
+    store(postGate,d_markers.postGate,QString::fromUtf8("μs"));
+    store(interval,d_chirpInterval,QString::fromUtf8("μs"));
+    store(sampleRate,d_sampleRateSperUS,QString::fromUtf8("1/μs"));
+    store(sampleInterval,d_sampleIntervalUS,QString::fromUtf8("μs"));
 }
 
-void ChirpConfig::loadComplete()
+void ChirpConfig::retrieveValues()
 {
     using namespace BC::Store::CC;
     d_markers.preProt = retrieve(preProt,0.5);

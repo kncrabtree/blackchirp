@@ -12,13 +12,13 @@
 
 namespace BC::Store::CC {
 static const QString key("ChirpConfig");
-static const QString preProt("PreProtectionUs");
-static const QString postProt("PostProtectionUs");
-static const QString preGate("PreGateUs");
-static const QString postGate("PostGateUs");
-static const QString interval("IntervalUs");
-static const QString sampleRate("SampleRatePerUs");
-static const QString sampleInterval("SampleIntervalUs");
+static const QString preProt("PreProtection");
+static const QString postProt("PostProtection");
+static const QString preGate("PreGate");
+static const QString postGate("PostGate");
+static const QString interval("ChirpInterval");
+static const QString sampleRate("SampleRate");
+static const QString sampleInterval("SampleInterval");
 }
 
 class BlackchirpCSV;
@@ -101,8 +101,8 @@ private:
 
     // HeaderStorage interface
 protected:
-    void prepareToSave() override;
-    void loadComplete() override;
+    void storeValues() override;
+    void retrieveValues() override;
 };
 
 Q_DECLARE_TYPEINFO(ChirpConfig::ChirpSegment,Q_PRIMITIVE_TYPE);

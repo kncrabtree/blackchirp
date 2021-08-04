@@ -37,7 +37,7 @@ QString IOBoardConfig::digitalName(int ch) const
 }
 
 
-void IOBoardConfig::prepareToSave()
+void IOBoardConfig::storeValues()
 {
     using namespace BC::Store::Digi;
 
@@ -46,14 +46,14 @@ void IOBoardConfig::prepareToSave()
     for(auto it = d_digitalNames.cbegin(); it != d_digitalNames.cend(); ++it)
         storeArrayValue(dig,it->first,name,it->second);
 
-    DigitizerConfig::prepareToSave();
+    DigitizerConfig::storeValues();
 }
 
-void IOBoardConfig::loadComplete()
+void IOBoardConfig::retrieveValues()
 {
     using namespace BC::Store::Digi;
 
-    DigitizerConfig::loadComplete();
+    DigitizerConfig::retrieveValues();
 
     for(auto it = d_analogChannels.cbegin(); it != d_analogChannels.cend(); ++it)
     {

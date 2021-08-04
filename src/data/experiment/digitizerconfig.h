@@ -115,8 +115,8 @@ public:
 
     // HeaderStorage interface
 protected:
-    virtual void prepareToSave() override;
-    virtual void loadComplete() override;
+    virtual void storeValues() override;
+    virtual void retrieveValues() override;
 };
 
 Q_DECLARE_TYPEINFO(DigitizerConfig::AnalogChannel,Q_PRIMITIVE_TYPE);
