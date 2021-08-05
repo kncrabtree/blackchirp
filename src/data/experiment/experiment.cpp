@@ -444,6 +444,28 @@ void Experiment::setFlowConfig(const FlowConfig &c)
     }
 }
 
+void Experiment::setPressureControllerConfig(const PressureControllerConfig &c)
+{
+    if(pu_pcConfig.get())
+        *pu_pcConfig = c;
+    else
+    {
+        pu_pcConfig = std::make_unique<PressureControllerConfig>(c);
+        addChild(pcConfig());
+    }
+}
+
+void Experiment::setTempControllerConfig(const TemperatureControllerConfig &c)
+{
+    if(pu_tcConfig.get())
+        *pu_tcConfig = c;
+    else
+    {
+        pu_tcConfig = std::make_unique<TemperatureControllerConfig>(c);
+        addChild(tcConfig());
+    }
+}
+
 bool Experiment::addAuxData(AuxDataStorage::AuxDataMap m)
 {
     //return false if scan should be aborted

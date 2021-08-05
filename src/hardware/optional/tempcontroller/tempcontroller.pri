@@ -12,3 +12,9 @@ equals(TC,1) {
         HEADERS += $$PWD/lakeshore218.h
 		SOURCES += $$PWD/lakeshore218.cpp
 }
+
+HEADERS += \
+    $$PWD/temperaturecontrollerconfig.h
+
+SOURCES += \
+    $$PWD/temperaturecontrollerconfig.cpp

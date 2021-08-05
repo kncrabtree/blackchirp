@@ -23,7 +23,6 @@ protected:
 
     // TemperatureController interface
 protected:
-    QList<double> readHWTemperatures() override;
     double readHwTemperature(const int ch) override;
 };
 

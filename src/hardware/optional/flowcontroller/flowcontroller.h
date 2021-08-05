@@ -86,6 +86,10 @@ protected:
 #if BC_FLOWCONTROLLER == 0
     friend class VirtualFlowController;
 #endif
+
+    // HardwareObject interface
+public:
+    QStringList validationKeys() const override;
 };
 
 #ifdef BC_FLOWCONTROLLER

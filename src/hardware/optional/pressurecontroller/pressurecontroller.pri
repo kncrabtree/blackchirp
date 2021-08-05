@@ -13,3 +13,9 @@ equals(PC,1) {
         HEADERS += $$PWD/intellisysiqplus.h
 		SOURCES += $$PWD/intellisysiqplus.cpp
 }
+
+HEADERS += \
+    $$PWD/pressurecontrollerconfig.h
+
+SOURCES += \
+    $$PWD/pressurecontrollerconfig.cpp

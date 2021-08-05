@@ -23,18 +23,6 @@ void VirtualTemperatureController::tcInitialize()
 {
 }
 
-
-QList<double> VirtualTemperatureController::readHWTemperatures()
-{
-    //not entirely sure what numbers to use here:
-    QList<double> out;
-    out.reserve(d_temperatureList.size());
-    for (int i=0; i<d_temperatureList.size();i++)
-        out << static_cast<double>((qrand() % 65536) - 32768) / 32768.0 + 5.0;
-
-    return out;
-}
-
 double VirtualTemperatureController::readHwTemperature(const int ch)
 {
     Q_UNUSED(ch)

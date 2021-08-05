@@ -7,9 +7,7 @@ using namespace BC::Key::TC;
 TemperatureController::TemperatureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent, bool threaded, bool critical) :
     HardwareObject(key,subKey,name,commType,parent,threaded,critical), d_numChannels(numChannels)
 {
-    d_temperatureList.clear();
-    for (int i=0; i<d_numChannels;i++)
-        d_temperatureList.append(0.0);
+    d_config.setNumChannels(d_numChannels);
 
     if(!containsArray(channels))
     {
@@ -17,11 +15,17 @@ TemperatureController::TemperatureController(const QString subKey, const QString
         l.reserve(d_numChannels);
         for(int i=0; i<d_numChannels; ++i)
             l.push_back({
-                            {name,QString("Ch")+QString::number(i+1)},
-                            {enabled,true},
+                            {chName,QString("Temperature Ch")+QString::number(i+1)},
+                            {enabled,false},
                             {decimals,4}
                         });
         setArray(channels,l);
+    }
+
+    for(int i=0; i<d_numChannels; ++i)
+    {
+        d_config.setEnabled(i,getArrayValue(channels,i,enabled,false));
+        d_config.setName(i,getArrayValue(channels,i,chName,QString("")));
     }
 }
 
@@ -29,20 +33,24 @@ TemperatureController::~TemperatureController()
 {
 }
 
-QList<double> TemperatureController::readAll()
+void TemperatureController::readAll()
 {
-   d_temperatureList = readHWTemperatures();
-   if(d_temperatureList.size() == d_numChannels)
-       emit temperatureListUpdate(d_temperatureList, QPrivateSignal());
-   return d_temperatureList;
+    for(int i=0; i<d_numChannels; ++i)
+    {
+        if(d_config.channelEnabled(i))
+        {
+            if(isnan(readTemperature(i)))
+                break;
+        }
+    }
 }
 
 double TemperatureController::readTemperature(const int ch)
 {
     auto t = readHwTemperature(ch);
-    if(!isnan(t) && ch >=0 && ch < d_temperatureList.size())
+    if(!isnan(t))
     {
-        d_temperatureList[ch] = t;
+        d_config.setTemperature(ch,t);
         emit temperatureUpdate(ch,t,QPrivateSignal());
     }
 
@@ -51,17 +59,36 @@ double TemperatureController::readTemperature(const int ch)
 
 bool TemperatureController::prepareForExperiment(Experiment &e)
 {
-    for (int i=0;i<d_temperatureList.size();i++)
-        e.auxData()->registerKey(d_key,d_subKey,BC::Aux::TC::temperature.arg(i));
 
+    for (int i=0;i<d_numChannels;i++)
+    {
+        if(e.tcConfig())
+        {
+            d_config.setName(i,e.tcConfig()->channelName(i));
+            d_config.setEnabled(i,e.tcConfig()->channelEnabled(i));
+        }
+
+        e.auxData()->registerKey(d_key,d_subKey,BC::Aux::TC::temperature.arg(i));
+    }
+
+    e.setTempControllerConfig(d_config);
     return true;
 }
 
 AuxDataStorage::AuxDataMap TemperatureController::readAuxData()
 {
     AuxDataStorage::AuxDataMap out;
-    for (int i=0;i<d_temperatureList.size();i++)
-        out.insert({BC::Aux::TC::temperature.arg(i),d_temperatureList.at(i)});
+    for (int i=0;i<d_numChannels;i++)
+    {
+        if(d_config.channelEnabled(i))
+        {
+            auto n = d_config.channelName(i);
+            if(n.isEmpty())
+                out.insert({BC::Aux::TC::temperature.arg(i),d_config.temperature(i)});
+            else
+                out.insert({n+"."+BC::Aux::TC::temperature.arg(i),d_config.temperature(i)});
+        }
+    }
     return out;
 }
 
@@ -88,4 +115,14 @@ bool TemperatureController::testConnection()
 void TemperatureController::poll()
 {
     readAll();
+}
+
+
+QStringList TemperatureController::validationKeys() const
+{
+    QStringList out;
+    for(int i=0; i<d_numChannels; ++i)
+        out.append(BC::Aux::TC::temperature.arg(i));
+
+    return out;
 }

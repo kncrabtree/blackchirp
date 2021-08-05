@@ -183,11 +183,27 @@ AuxDataStorage::AuxDataMap FlowController::readAuxData()
 {
     AuxDataStorage::AuxDataMap out;
     out.insert({BC::Aux::Flow::pressure,d_config.pressure()});
-    for(int i=0; i<d_config.size(); i++)
+    for(int i=0; i<d_config.size(); ++i)
     {
+        auto n = d_config.setting(i,FlowConfig::Name).toString();
         if(d_config.setting(i,FlowConfig::Enabled).toBool())
-            out.insert({BC::Aux::Flow::flow.arg(i),d_config.setting(i,FlowConfig::Flow)});
+        {
+            if(n.isEmpty())
+                out.insert({BC::Aux::Flow::flow.arg(i),d_config.setting(i,FlowConfig::Flow)});
+            else
+                out.insert({n+"."+BC::Aux::Flow::flow.arg(i),d_config.setting(i,FlowConfig::Flow)});
+        }
     }
+
+    return out;
+}
+
+
+QStringList FlowController::validationKeys() const
+{
+    QStringList out;
+    for(int i=0; i<d_config.size(); ++i)
+        out.append(BC::Aux::Flow::flow.arg(i));
 
     return out;
 }

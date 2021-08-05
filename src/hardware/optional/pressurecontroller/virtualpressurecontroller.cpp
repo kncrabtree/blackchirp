@@ -30,28 +30,28 @@ void VirtualPressureController::pcInitialize()
 
 double VirtualPressureController::hwReadPressure()
 {
-    return d_pressure;
+    return d_config.d_pressure;
 }
 
 double VirtualPressureController::hwSetPressureSetpoint(const double val)
 {
-    d_setPoint = val;
-    return d_setPoint;
+    d_config.d_setPoint = val;
+    return d_config.d_setPoint;
 }
 
 double VirtualPressureController::hwReadPressureSetpoint()
 {
-    return d_setPoint;
+    return d_config.d_setPoint;
 }
 
 void VirtualPressureController::hwSetPressureControlMode(bool enabled)
 {
-    d_pressureControlMode = enabled;
+    d_config.d_pressureControlMode = enabled;
 }
 
 int VirtualPressureController::hwReadPressureControlMode()
 {
-    return d_pressureControlMode;
+    return d_config.d_pressureControlMode;
 }
 
 void VirtualPressureController::hwOpenGateValve()

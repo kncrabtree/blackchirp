@@ -2,6 +2,8 @@
 #define TEMPERATURECONTROLLER_H
 #include <hardware/core/hardwareobject.h>
 
+#include <hardware/optional/tempcontroller/temperaturecontrollerconfig.h>
+
 class QTimer;
 
 namespace BC::Key::TC {
@@ -9,7 +11,7 @@ static const QString key("TemperatureController");
 static const QString interval("intervalMs");
 static const QString channels("channels");
 static const QString units("units");
-static const QString name("name");
+static const QString chName("name");
 static const QString enabled("enabled");
 static const QString decimals("decimal");
 }
@@ -28,11 +30,10 @@ public:
     int numChannels() const { return d_numChannels; }
 
 signals:
-    void temperatureListUpdate(QList<double>, QPrivateSignal);
     void temperatureUpdate(int, double, QPrivateSignal);
 
 public slots:
-    QList<double> readAll();
+    void readAll();
     double readTemperature(const int ch);
 
 
@@ -45,19 +46,22 @@ protected:
 
     virtual void tcInitialize() =0;
     virtual bool tcTestConnection() =0;
-    virtual QList<double> readHWTemperatures() = 0;
     virtual double readHwTemperature(const int ch) =0;
     virtual void poll();
 
 private:
     const int d_numChannels;
-    QList<double> d_temperatureList;
+    TemperatureControllerConfig d_config;
     QTimer *p_readTimer;
 
 #if BC_TEMPCONTROLLER == 0
     friend class VirtualTemperatureController;
 #endif
 
+
+    // HardwareObject interface
+public:
+    QStringList validationKeys() const override;
 };
 
 #endif // TEMPERATURECONTROLLER_H

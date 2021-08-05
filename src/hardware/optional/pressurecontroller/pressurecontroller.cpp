@@ -8,10 +8,6 @@ PressureController::PressureController(const QString subKey, const QString name,
                                        bool ro, QObject *parent, bool threaded, bool critical) :
     HardwareObject(key,subKey,name,commType,parent,threaded,critical), d_readOnly(ro)
 {
-    d_pressure = 0.0;
-    d_setPoint = 0.0;
-    d_pressureControlMode = false;
-
     set(readOnly,d_readOnly);
 }
 
@@ -23,7 +19,10 @@ double PressureController::readPressure()
 {
     auto p = hwReadPressure();
     if(!isnan(p))
+    {
+        d_config.d_pressure = p;
         emit pressureUpdate(p,QPrivateSignal());
+    }
 
     return p;
 }
@@ -39,7 +38,10 @@ void PressureController::readPressureSetpoint()
 {
     auto v = hwReadPressureSetpoint();
     if(!isnan(v))
+    {
+        d_config.d_setPoint = v;
         emit pressureSetpointUpdate(v,QPrivateSignal());
+    }
 }
 
 void PressureController::setPressureControlMode(bool enabled)
@@ -54,6 +56,7 @@ void PressureController::readPressureControlMode()
     if(i<0)
         return;
 
+    d_config.d_pressureControlMode = static_cast<bool>(i);
     emit pressureControlMode(static_cast<bool>(i),QPrivateSignal());
 }
 
@@ -71,7 +74,15 @@ void PressureController::closeGateValve()
 
 bool PressureController::prepareForExperiment(Experiment &e)
 {
+    if(e.pcConfig())
+    {
+        if(!qFuzzyCompare(d_config.d_setPoint,e.pcConfig()->d_setPoint))
+            setPressureSetpoint(e.pcConfig()->d_setPoint);
+        if(d_config.d_pressureControlMode != e.pcConfig()->d_pressureControlMode)
+            setPressureControlMode(e.pcConfig()->d_pressureControlMode);
+    }
     e.auxData()->registerKey(d_key,d_subKey,BC::Aux::PController::pressure);
+    e.setPressureControllerConfig(d_config);
     return true;
 }
 
@@ -101,4 +112,10 @@ bool PressureController::testConnection()
         p_readTimer->start(get(readInterval,200));
 
     return success;
+}
+
+
+QStringList PressureController::validationKeys() const
+{
+    return {BC::Aux::PController::pressure};
 }

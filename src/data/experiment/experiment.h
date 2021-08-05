@@ -15,6 +15,8 @@
 #include <hardware/optional/pulsegenerator/pulsegenconfig.h>
 #include <hardware/optional/flowcontroller/flowconfig.h>
 #include <hardware/optional/ioboard/ioboardconfig.h>
+#include <hardware/optional/pressurecontroller/pressurecontrollerconfig.h>
+#include <hardware/optional/tempcontroller/temperaturecontrollerconfig.h>
 
 //these are included because they define datatypes needed by qRegisterMetaType in main.cpp
 #include <data/analysis/ft.h>
@@ -75,13 +77,16 @@ public:
     inline AuxDataStorage *auxData() const { return pu_auxData.get(); }
 
     inline IOBoardConfig *iobConfig() const { return pu_iobCfg.get(); }
-
     inline PulseGenConfig *pGenConfig() const { return pu_pGenCfg.get(); }
     inline FlowConfig *flowConfig() const { return pu_flowCfg.get(); }
+    inline PressureControllerConfig *pcConfig() const { return pu_pcConfig.get(); }
+    inline TemperatureControllerConfig *tcConfig() const { return pu_tcConfig.get(); }
 
     void setIOBoardConfig(const IOBoardConfig &cfg);
     void setPulseGenConfig(const PulseGenConfig &c);
     void setFlowConfig(const FlowConfig &c);
+    void setPressureControllerConfig(const PressureControllerConfig &c);
+    void setTempControllerConfig(const TemperatureControllerConfig &c);
 
     bool addAuxData(AuxDataStorage::AuxDataMap m);
     void setValidationMap(const ExperimentValidator::ValidationMap &m);
@@ -134,6 +139,8 @@ private:
     std::unique_ptr<IOBoardConfig> pu_iobCfg;
     std::unique_ptr<PulseGenConfig> pu_pGenCfg;
     std::unique_ptr<FlowConfig> pu_flowCfg;
+    std::unique_ptr<PressureControllerConfig> pu_pcConfig;
+    std::unique_ptr<TemperatureControllerConfig> pu_tcConfig;
 
     QString d_path;
 

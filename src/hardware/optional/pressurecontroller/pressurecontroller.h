@@ -2,6 +2,7 @@
 #define PRESSURECONTROLLER_H
 
 #include <hardware/core/hardwareobject.h>
+#include <hardware/optional/pressurecontroller/pressurecontrollerconfig.h>
 
 namespace BC::Key::PController {
 static const QString key("PressureController");
@@ -63,14 +64,16 @@ protected:
 
 private:
     QTimer *p_readTimer;
-    double d_pressure;
-    double d_setPoint;
-    bool d_pressureControlMode;
+    PressureControllerConfig d_config;
 
 #if BC_PCONTROLLER == 0
     friend class VirtualPressureController;
 #endif
 
+
+    // HardwareObject interface
+public:
+    QStringList validationKeys() const override;
 };
 
 #if BC_PCONTROLLER == 1
