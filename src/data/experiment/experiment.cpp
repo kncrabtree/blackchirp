@@ -433,6 +433,17 @@ void Experiment::setPulseGenConfig(const PulseGenConfig &c)
     }
 }
 
+void Experiment::setFlowConfig(const FlowConfig &c)
+{
+    if(pu_flowCfg.get())
+        *pu_flowCfg = c;
+    else
+    {
+        pu_flowCfg = std::make_unique<FlowConfig>(c);
+        addChild(flowConfig());
+    }
+}
+
 bool Experiment::addAuxData(AuxDataStorage::AuxDataMap m)
 {
     //return false if scan should be aborted
@@ -761,12 +772,7 @@ void Experiment::storeValues()
     using namespace BC::Store::Exp;
     store(num,d_number);
     store(timeData,d_timeDataInterval,QString("s"));
-    store(autoSave,d_autoSaveIntervalHours,QString("shots"));
-    if(pu_ftmwConfig.get() != nullptr)
-    {
-        store(ftmwEn,true);
-        store(ftmwType,pu_ftmwConfig->d_type);
-    }
+    store(autoSave,d_autoSaveIntervalHours,QString("hr"));
 }
 
 void Experiment::retrieveValues()

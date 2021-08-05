@@ -2,14 +2,12 @@
 
 #include <QMetaEnum>
 
-PulseGenConfig::PulseGenConfig() : HeaderStorage(BC::Key::PGenConfig::key)
+PulseGenConfig::PulseGenConfig() : HeaderStorage(BC::Store::PGenConfig::key)
 {
-
 }
 
 PulseGenConfig::~PulseGenConfig()
 {
-
 }
 
 PulseGenConfig::ChannelConfig PulseGenConfig::at(const int i) const

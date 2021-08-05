@@ -77,11 +77,11 @@ public:
     inline IOBoardConfig *iobConfig() const { return pu_iobCfg.get(); }
 
     inline PulseGenConfig *pGenConfig() const { return pu_pGenCfg.get(); }
-    inline FlowConfig flowConfig() const { return d_flowCfg; }
+    inline FlowConfig *flowConfig() const { return pu_flowCfg.get(); }
 
     void setIOBoardConfig(const IOBoardConfig &cfg);
     void setPulseGenConfig(const PulseGenConfig &c);
-    void setFlowConfig(const FlowConfig c) { d_flowCfg = c; }
+    void setFlowConfig(const FlowConfig &c);
 
     bool addAuxData(AuxDataStorage::AuxDataMap m);
     void setValidationMap(const ExperimentValidator::ValidationMap &m);
@@ -133,7 +133,7 @@ private:
     //optional hardware data
     std::unique_ptr<IOBoardConfig> pu_iobCfg;
     std::unique_ptr<PulseGenConfig> pu_pGenCfg;
-    FlowConfig d_flowCfg;
+    std::unique_ptr<FlowConfig> pu_flowCfg;
 
     QString d_path;
 

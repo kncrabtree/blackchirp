@@ -1,25 +1,32 @@
 #ifndef FLOWCONFIG_H
 #define FLOWCONFIG_H
 
-#include <QSharedDataPointer>
+#include <data/storage/headerstorage.h>
 
-#include <QList>
+#include <QVector>
 #include <QVariant>
 #include <QMetaType>
 
-#include <data/datastructs.h>
 
-class FlowConfigData;
+namespace BC::Store::FlowConfig {
+static const QString key("FlowController");
+static const QString channel("Channel");
+static const QString name("Name");
+static const QString enabled("Enabled");
+static const QString setPoint("FlowSetPoint");
+static const QString pSetPoint("PressureSetPoint");
+static const QString pcEnabled("PressureControlEnabled");
+}
 
-class FlowConfig
+class FlowConfig : public HeaderStorage
 {
     Q_GADGET
 public:
     struct FlowChannel {
-        bool enabled;
-        double setpoint;
-        double flow;
-        QString name;
+        bool enabled{false};
+        double setpoint{0.0};
+        double flow{0.0};
+        QString name{""};
     };
 
 
@@ -32,8 +39,6 @@ public:
     Q_ENUM(FlowChSetting)
 
     FlowConfig();
-    FlowConfig(const FlowConfig &);
-    FlowConfig &operator=(const FlowConfig &);
     ~FlowConfig();
 
     QVariant setting(int index, FlowChSetting s) const;
@@ -49,22 +54,20 @@ public:
     void setPressureControlMode(bool en);
 
 private:
-    QSharedDataPointer<FlowConfigData> data;
+    QVector<FlowConfig::FlowChannel> d_configList;
+    double d_pressureSetpoint;
+
+    double d_pressure;
+    bool d_pressureControlMode;
+
+    // HeaderStorage interface
+protected:
+    void storeValues() override;
+    void retrieveValues() override;
 };
 
-
-class FlowConfigData : public QSharedData
-{
-public:
-    FlowConfigData() : pressureSetpoint(0.0), pressure(0.0), pressureControlMode(false) {}
-
-    QList<FlowConfig::FlowChannel> configList;
-    double pressureSetpoint;
-
-    double pressure;
-    bool pressureControlMode;
-};
-
+Q_DECLARE_METATYPE(FlowConfig)
+Q_DECLARE_METATYPE(FlowConfig::FlowChSetting);
 Q_DECLARE_TYPEINFO(FlowConfig::FlowChannel,Q_MOVABLE_TYPE);
 
 #endif // FLOWCONFIG_H

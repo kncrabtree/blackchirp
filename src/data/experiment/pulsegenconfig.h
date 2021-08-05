@@ -7,11 +7,8 @@
 #include <QVariant>
 #include <QMap>
 
-namespace BC::Key::PGenConfig {
-static const QString key{"PulseGenerator"};
-}
-
 namespace BC::Store::PGenConfig {
+static const QString key{"PulseGenerator"};
 static const QString rate("RepRate");
 static const QString channel("Channel");
 static const QString delay("Delay");

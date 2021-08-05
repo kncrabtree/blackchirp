@@ -43,6 +43,7 @@ signals:
     void pressureControlMode(bool,QPrivateSignal);
 
 public slots:
+    void setAll(const FlowConfig &c);
     void setChannelName(const int ch, const QString name);
     void setPressureControlMode(bool enabled);
     void setFlowSetpoint(const int ch, const double val);

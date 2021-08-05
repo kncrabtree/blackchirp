@@ -630,7 +630,7 @@ void ChirpConfig::storeValues()
     store(preGate,d_markers.preGate,QString::fromUtf8("μs"));
     store(postGate,d_markers.postGate,QString::fromUtf8("μs"));
     store(interval,d_chirpInterval,QString::fromUtf8("μs"));
-    store(sampleRate,d_sampleRateSperUS,QString::fromUtf8("1/μs"));
+    store(sampleRate,d_sampleRateSperUS,QString("MHz"));
     store(sampleInterval,d_sampleIntervalUS,QString::fromUtf8("μs"));
 }
 

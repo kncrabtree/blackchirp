@@ -18,6 +18,17 @@ FlowController::~FlowController()
 
 }
 
+void FlowController::setAll(const FlowConfig &c)
+{
+    for(int i=0; i<c.size(); ++i)
+    {
+        setChannelName(i,c.setting(i,FlowConfig::Name).toString());
+        setFlowSetpoint(i,c.setting(i,FlowConfig::Setpoint).toDouble());
+    }
+    setPressureSetpoint(c.pressureSetpoint());
+    setPressureControlMode(c.pressureControlMode());
+}
+
 void FlowController::initialize()
 {
     p_readTimer = new QTimer(this);
@@ -42,12 +53,20 @@ bool FlowController::testConnection()
 
 bool FlowController::prepareForExperiment(Experiment &e)
 {
+    if(e.flowConfig())
+        setAll(*e.flowConfig());
+
+    if(!isConnected())
+        return false;
+
     e.auxData()->registerKey(d_key,d_subKey,BC::Aux::Flow::pressure);
     for(int i=0; i<d_config.size(); i++)
     {
         if(d_config.setting(i,FlowConfig::Enabled).toBool())
             e.auxData()->registerKey(d_key,d_subKey,BC::Aux::Flow::flow.arg(i));
     }
+
+    e.setFlowConfig(d_config);
 
     return true;
 }
