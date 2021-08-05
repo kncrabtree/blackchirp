@@ -29,7 +29,9 @@ void WizardPulseConfigPage::initializePage()
     auto e = getExperiment();
     if(d_firstInitialization)
     {
-        p_pcw->setFromConfig(e->pGenConfig());
+        if(e->pGenConfig())
+            p_pcw->setFromConfig(*e->pGenConfig());
+
         p_pcw->configureForWizard();
         d_firstInitialization = false;
     }

@@ -22,7 +22,10 @@ void PulseGenerator::initialize()
 
 bool PulseGenerator::prepareForExperiment(Experiment &exp)
 {
-    return setAll(exp.pGenConfig());
+    if(exp.pGenConfig())
+        return setAll(*exp.pGenConfig());
+
+    return true;
 }
 
 
@@ -205,7 +208,7 @@ bool PulseGenerator::setChannel(const int index, const PulseGenConfig::ChannelCo
     return success;
 }
 
-bool PulseGenerator::setAll(const PulseGenConfig cc)
+bool PulseGenerator::setAll(const PulseGenConfig &cc)
 {
     blockSignals(true);
     bool success = true;

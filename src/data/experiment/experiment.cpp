@@ -392,33 +392,45 @@ bool Experiment::initialize()
 void Experiment::abort()
 {
     d_isAborted = true;
-    if(ftmwEnabled() && (pu_ftmwConfig->d_type == FtmwConfig::Target_Shots || pu_ftmwConfig->d_type == FtmwConfig::Target_Duration ))
-    {
-        d_endLogMessage = QString("Experiment %1 aborted.").arg(d_number);
-        d_endLogMessageCode = BlackChirp::LogError;
-    }
-#ifdef BC_LIF
-    else if(lifConfig().isEnabled() && !lifConfig().isComplete())
-    {
-        d_endLogMessage = QString("Experiment %1 aborted.").arg(number());
-        d_endLogMessageCode = BlackChirp::LogError;
-    }
-#endif
+    d_endLogMessage = QString("Experiment %1 aborted.").arg(d_number);
+    d_endLogMessageCode = BlackChirp::LogError;
 
-#ifdef BC_MOTOR
-    if(motorScan().isEnabled())
+    if(ftmwEnabled())
     {
-        d_endLogMessage = QString("Experiment %1 aborted.").arg(number());
-        d_endLogMessageCode = BlackChirp::LogError;
+        if(pu_ftmwConfig->d_type == FtmwConfig::Peak_Up)
+        {
+            d_endLogMessageCode = BlackChirp::LogHighlight;
+            d_endLogMessage = QString("Peak up mode ended.");
+        }
+        if(pu_ftmwConfig->d_type == FtmwConfig::Forever)
+        {
+            d_endLogMessage = QString("Experiment %1 complete.").arg(d_number);
+            d_endLogMessageCode = BlackChirp::LogHighlight;
+        }
     }
-#endif
 
 }
 
 void Experiment::setIOBoardConfig(const IOBoardConfig &cfg)
 {
-    pu_iobCfg = std::make_unique<IOBoardConfig>(cfg);
-    addChild(iobConfig());
+    if(pu_iobCfg.get())
+        *pu_iobCfg = cfg;
+    else
+    {
+        pu_iobCfg = std::make_unique<IOBoardConfig>(cfg);
+        addChild(iobConfig());
+    }
+}
+
+void Experiment::setPulseGenConfig(const PulseGenConfig &c)
+{
+    if(pu_pGenCfg.get())
+        *pu_pGenCfg = c;
+    else
+    {
+        pu_pGenCfg = std::make_unique<PulseGenConfig>(c);
+        addChild(pGenConfig());
+    }
 }
 
 bool Experiment::addAuxData(AuxDataStorage::AuxDataMap m)

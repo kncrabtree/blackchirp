@@ -59,7 +59,7 @@ public:
     QString d_errorString;
     QString d_startLogMessage;
     QString d_endLogMessage;
-    BlackChirp::LogMessageCode d_endLogMessageCode{BlackChirp::LogNormal};
+    BlackChirp::LogMessageCode d_endLogMessageCode{BlackChirp::LogHighlight};
 
     inline bool isAborted()  const { return d_isAborted; }
     inline bool isDummy() const { return d_isDummy; }
@@ -72,15 +72,15 @@ public:
     bool incrementFtmw();
     void setFtmwClocksReady();
 
-    AuxDataStorage *auxData() const { return pu_auxData.get(); }
+    inline AuxDataStorage *auxData() const { return pu_auxData.get(); }
 
-    IOBoardConfig *iobConfig() const { return pu_iobCfg.get(); }
+    inline IOBoardConfig *iobConfig() const { return pu_iobCfg.get(); }
 
-    inline PulseGenConfig pGenConfig() const { return d_pGenCfg; }
+    inline PulseGenConfig *pGenConfig() const { return pu_pGenCfg.get(); }
     inline FlowConfig flowConfig() const { return d_flowCfg; }
 
     void setIOBoardConfig(const IOBoardConfig &cfg);
-    void setPulseGenConfig(const PulseGenConfig c) { d_pGenCfg = c; }
+    void setPulseGenConfig(const PulseGenConfig &c);
     void setFlowConfig(const FlowConfig c) { d_flowCfg = c; }
 
     bool addAuxData(AuxDataStorage::AuxDataMap m);
@@ -132,7 +132,7 @@ private:
 
     //optional hardware data
     std::unique_ptr<IOBoardConfig> pu_iobCfg;
-    PulseGenConfig d_pGenCfg;
+    std::unique_ptr<PulseGenConfig> pu_pGenCfg;
     FlowConfig d_flowCfg;
 
     QString d_path;

@@ -1,35 +1,47 @@
 #ifndef PULSEGENCONFIG_H
 #define PULSEGENCONFIG_H
 
-#include <QSharedDataPointer>
+#include <data/storage/headerstorage.h>
 
 #include <QVector>
 #include <QVariant>
 #include <QMap>
 
+namespace BC::Key::PGenConfig {
+static const QString key{"PulseGenerator"};
+}
 
-class PulseGenConfigData;
+namespace BC::Store::PGenConfig {
+static const QString rate("RepRate");
+static const QString channel("Channel");
+static const QString delay("Delay");
+static const QString width("Width");
+static const QString level("ActiveLevel");
+static const QString role("Role");
+static const QString name("Name");
+static const QString enabled("Enabled");
+}
 
-class PulseGenConfig
+class PulseGenConfig : public HeaderStorage
 {
     Q_GADGET
 public:
     enum ActiveLevel { ActiveInvalid = -1, ActiveLow, ActiveHigh };
     enum Setting { DelaySetting, WidthSetting, EnabledSetting, LevelSetting, NameSetting, RoleSetting };
     enum Role {
-        NoRole,
-        GasRole,
-        DcRole,
-        AwgRole,
-        ProtRole,
-        AmpRole,
-        LaserRole,
-        ExcimerRole
+        None,
+        Gas,
+        DC,
+        AWG,
+        Prot,
+        Amp,
+        Laser,
+        XMer
 #ifdef BC_LIF
-        ,LifRole
+        ,LIF
 #endif
 #ifdef BC_MOTOR
-        ,MotorRole
+        ,Motor
 #endif
     };
     Q_ENUM(ActiveLevel)
@@ -42,39 +54,19 @@ public:
         double delay{0.0};
         double width{1.0};
         ActiveLevel level{ActiveHigh};
-        Role role{NoRole};
+        Role role{None};
     };
-
-    static const inline QMap<Role,QString> roles {
-        {NoRole,"None"},
-        {GasRole,"Gas"},
-        {DcRole,"DC"},
-        {AwgRole,"Awg"},
-        {ProtRole,"Prot"},
-        {AmpRole,"Amp"},
-        {LaserRole,"Laser"},
-        {ExcimerRole,"XMer"}
-#ifdef BC_LIF
-        ,{LifRole,"LIF"}
-#endif
-#ifdef BC_MOTOR
-        ,{MotorRole,"Motor"}
-#endif
-    };
-    static const inline std::map<Role,QString> stdRoles = roles.toStdMap();
 
     PulseGenConfig();
-    PulseGenConfig(const PulseGenConfig &);
-    PulseGenConfig &operator=(const PulseGenConfig &);
     ~PulseGenConfig();
 
     ChannelConfig at(const int i) const;
     int size() const;
     bool isEmpty() const;
     QVariant setting(const int index, const Setting s) const;
-    QList<QVariant> setting(Role role, const Setting s) const;
+    QVector<QVariant> setting(Role role, const Setting s) const;
     ChannelConfig settings(const int index) const;
-    QList<int> channelsForRole(Role role) const;
+    QVector<int> channelsForRole(Role role) const;
     double repRate() const;
 
     void set(const int index, const Setting s, const QVariant val);
@@ -85,16 +77,16 @@ public:
     void setRepRate(const double r);
 
 private:
-    QSharedDataPointer<PulseGenConfigData> data;
+    QVector<PulseGenConfig::ChannelConfig> d_config;
+    double d_repRate{1.0};
+
+    // HeaderStorage interface
+protected:
+    void storeValues() override;
+    void retrieveValues() override;
 };
 
-class PulseGenConfigData : public QSharedData
-{
-public:
-    QVector<PulseGenConfig::ChannelConfig> config;
-    double repRate{1.0};
-};
-
+Q_DECLARE_METATYPE(PulseGenConfig)
 Q_DECLARE_TYPEINFO(PulseGenConfig::ChannelConfig,Q_MOVABLE_TYPE);
 
 #endif // PULSEGENCONFIG_H

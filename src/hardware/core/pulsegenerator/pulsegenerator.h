@@ -35,7 +35,7 @@ public slots:
 
     bool setPGenSetting(const int index, const PulseGenConfig::Setting s, const QVariant val);
     bool setChannel(const int index, const PulseGenConfig::ChannelConfig &cc);
-    bool setAll(const PulseGenConfig cc);
+    bool setAll(const PulseGenConfig &cc);
     bool setRepRate(double d);
 
 
@@ -45,7 +45,7 @@ public slots:
 
 signals:
     void settingUpdate(int,PulseGenConfig::Setting,QVariant,QPrivateSignal);
-    void configUpdate(const PulseGenConfig,QPrivateSignal);
+    void configUpdate(PulseGenConfig,QPrivateSignal);
     void repRateUpdate(double,QPrivateSignal);
 
 private:

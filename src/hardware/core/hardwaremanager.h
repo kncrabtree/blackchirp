@@ -113,7 +113,7 @@ public slots:
     void setClocks(QHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
 
     void setPGenSetting(int index, PulseGenConfig::Setting s, QVariant val);
-    void setPGenConfig(const PulseGenConfig c);
+    void setPGenConfig(const PulseGenConfig &c);
     void setPGenRepRate(double r);
 
     void setFlowSetpoint(int index, double val);

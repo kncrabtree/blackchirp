@@ -25,7 +25,7 @@ public:
     PulseGenConfig config();
 
 public slots:
-    void newConfig(const PulseGenConfig c);
+    void newConfig(const PulseGenConfig &c);
     void newSetting(int index, PulseGenConfig::Setting s, QVariant val);
     void newRepRate(double d);
 

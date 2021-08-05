@@ -14,7 +14,7 @@ public:
     explicit PulseStatusBox(QWidget *parent = nullptr);
 
 public slots:
-    void updatePulseLeds(const PulseGenConfig cc);
+    void updatePulseLeds(const PulseGenConfig &cc);
     void updatePulseLed(int index,PulseGenConfig::Setting s, QVariant val);
 
 signals:

@@ -40,7 +40,7 @@ PulseStatusBox::PulseStatusBox(QWidget *parent) : QGroupBox(parent)
     setLayout(gl);
 }
 
-void PulseStatusBox::updatePulseLeds(const PulseGenConfig cc)
+void PulseStatusBox::updatePulseLeds(const PulseGenConfig &cc)
 {
     for(std::size_t i=0; i<d_ledList.size() && (int)i < cc.size(); ++i)
         d_ledList.at(i).second->setState(cc.at(i).enabled);

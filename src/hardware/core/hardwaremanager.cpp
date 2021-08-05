@@ -389,7 +389,7 @@ void HardwareManager::setPGenSetting(int index, PulseGenConfig::Setting s, QVari
 
 }
 
-void HardwareManager::setPGenConfig(const PulseGenConfig c)
+void HardwareManager::setPGenConfig(const PulseGenConfig &c)
 {
     auto pGen = findHardware<PulseGenerator>(BC::Key::PGen::key);
     if(pGen)

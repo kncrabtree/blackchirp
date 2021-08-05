@@ -84,7 +84,7 @@ PulseGenConfig PulsePlot::config()
     return d_config;
 }
 
-void PulsePlot::newConfig(const PulseGenConfig c)
+void PulsePlot::newConfig(const PulseGenConfig &c)
 {
     d_config = c;
     replot();

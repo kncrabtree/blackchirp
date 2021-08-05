@@ -1,6 +1,7 @@
 #include "pulseconfigwidget.h"
 #include "ui_pulseconfigwidget.h"
 
+#include <QMetaEnum>
 #include <QPushButton>
 #include <QToolButton>
 #include <QComboBox>
@@ -49,7 +50,9 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
         ch.delayBox->setSingleStep(s.getArrayValue<double>(BC::Key::PulseWidget::channels,i,
                                                            BC::Key::PulseWidget::delayStep,1.0));
         ui->pulseConfigBoxLayout->addWidget(ch.delayBox,i+1,col,1,1);
-        connect(ch.delayBox,vc,this,[=](double val){ emit changeSetting(i,PulseGenConfig::DelaySetting,val); } );
+        connect(ch.delayBox,vc,[=](double val){
+            emit changeSetting(i,PulseGenConfig::DelaySetting,val);
+        } );
         col++;
 
         ch.widthBox = new QDoubleSpinBox(this);
@@ -112,19 +115,20 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
         ch.widthStepBox->hide();
 
         ch.roleBox = new QComboBox(this);
-        for(auto it : PulseGenConfig::stdRoles)
-            ch.roleBox->addItem(it.second,it.first);
+        QMetaEnum rt = QMetaEnum::fromType<PulseGenConfig::Role>();
+        for(int i=0; i<rt.keyCount(); ++i)
+            ch.roleBox->addItem(rt.key(i),rt.value(i));
         ch.roleBox->hide();
-        connect(ch.roleBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[ch,i](int index) {
+        connect(ch.roleBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[ch,i,rt](int index) {
             auto r = ch.roleBox->itemData(index).value<PulseGenConfig::Role>();
-            if(r == PulseGenConfig::NoRole)
+            if(r == PulseGenConfig::None)
             {
                 ch.nameEdit->setText(QString("Ch%1").arg(i));
                 ch.nameEdit->setEnabled(true);
             }
             else
             {
-                ch.nameEdit->setText(PulseGenConfig::roles.value(r));
+                ch.nameEdit->setText(QString(rt.key(r)));
                 ch.nameEdit->setEnabled(false);
             }
         });
@@ -198,9 +202,9 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig &c)
     bool awgHasProt = s.get<bool>(BC::Key::AWG::prot,false);
     bool awgHasAmpEnable = s.get<bool>(BC::Key::AWG::amp,false);
 
-    auto protChannels = d_config.channelsForRole(PulseGenConfig::ProtRole);
-    auto awgChannels = d_config.channelsForRole(PulseGenConfig::AwgRole);
-    auto ampChannels = d_config.channelsForRole(PulseGenConfig::AmpRole);
+    auto protChannels = d_config.channelsForRole(PulseGenConfig::Prot);
+    auto awgChannels = d_config.channelsForRole(PulseGenConfig::AWG);
+    auto ampChannels = d_config.channelsForRole(PulseGenConfig::Amp);
 
     if(!awgHasProt && protChannels.isEmpty())
         QMessageBox::warning(this,QString("Cannot configure protection pulse"),QString("No channel has been configured for the \"Prot\" role, and your AWG does not produce its own protection signal.\n\nBlackchirp cannot guarantee that your receiver amp will be protected!\n\nIf you wish for Blackchirp to generate a protection pulse, select a channel for the Prot role and refresh this page (go back one page and then come back to this one)."),QMessageBox::Ok,QMessageBox::Ok);
@@ -215,13 +219,13 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig &c)
         return;
 
     auto cc = c.d_rfConfig.d_chirpConfig;
-    d_config.set(PulseGenConfig::AwgRole,PulseGenConfig::EnabledSetting,true);
-    auto l = d_config.setting(PulseGenConfig::AwgRole,PulseGenConfig::DelaySetting);
+    d_config.set(PulseGenConfig::AWG,PulseGenConfig::EnabledSetting,true);
+    auto l = d_config.setting(PulseGenConfig::AWG,PulseGenConfig::DelaySetting);
 
     if(l.size() > 1)
     {
-        d_config.set(PulseGenConfig::AwgRole,PulseGenConfig::DelaySetting,l.constFirst());
-        d_config.set(PulseGenConfig::AwgRole,PulseGenConfig::WidthSetting,d_config.setting(PulseGenConfig::AmpRole,PulseGenConfig::WidthSetting).constFirst().toDouble());
+        d_config.set(PulseGenConfig::AWG,PulseGenConfig::DelaySetting,l.constFirst());
+        d_config.set(PulseGenConfig::AWG,PulseGenConfig::WidthSetting,d_config.setting(PulseGenConfig::Amp,PulseGenConfig::WidthSetting).constFirst().toDouble());
     }
 
     if(!l.isEmpty())
@@ -233,15 +237,15 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig &c)
             if(protStart < 0.0)
             {
                 awgStart -= protStart;
-                d_config.set(PulseGenConfig::AwgRole,PulseGenConfig::DelaySetting,awgStart);
+                d_config.set(PulseGenConfig::AWG,PulseGenConfig::DelaySetting,awgStart);
                 protStart = 0.0;
             }
 
             double protWidth = cc.totalProtectionWidth();
 
-            d_config.set(PulseGenConfig::ProtRole,PulseGenConfig::DelaySetting,protStart);
-            d_config.set(PulseGenConfig::ProtRole,PulseGenConfig::WidthSetting,protWidth);
-            d_config.set(PulseGenConfig::ProtRole,PulseGenConfig::EnabledSetting,true);
+            d_config.set(PulseGenConfig::Prot,PulseGenConfig::DelaySetting,protStart);
+            d_config.set(PulseGenConfig::Prot,PulseGenConfig::WidthSetting,protWidth);
+            d_config.set(PulseGenConfig::Prot,PulseGenConfig::EnabledSetting,true);
         }
 
         bool checkProt = false;
@@ -251,16 +255,16 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig &c)
             if(gateStart < 0.0)
             {
                 awgStart -= gateStart;
-                d_config.set(PulseGenConfig::AwgRole,PulseGenConfig::DelaySetting,awgStart);
+                d_config.set(PulseGenConfig::AWG,PulseGenConfig::DelaySetting,awgStart);
                 gateStart = 0.0;
                 checkProt = true;
             }
 
             double gateWidth = cc.totalGateWidth();
 
-            d_config.set(PulseGenConfig::AmpRole,PulseGenConfig::DelaySetting,gateStart);
-            d_config.set(PulseGenConfig::AmpRole,PulseGenConfig::WidthSetting,gateWidth);
-            d_config.set(PulseGenConfig::AmpRole,PulseGenConfig::EnabledSetting,true);
+            d_config.set(PulseGenConfig::Amp,PulseGenConfig::DelaySetting,gateStart);
+            d_config.set(PulseGenConfig::Amp,PulseGenConfig::WidthSetting,gateWidth);
+            d_config.set(PulseGenConfig::Amp,PulseGenConfig::EnabledSetting,true);
         }
 
         if(!awgHasProt && checkProt)
@@ -268,8 +272,8 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig &c)
             double protStart = awgStart - cc.preChirpProtectionDelay() - cc.preChirpGateDelay();
             double protWidth = cc.totalProtectionWidth();
 
-            d_config.set(PulseGenConfig::ProtRole,PulseGenConfig::DelaySetting,protStart);
-            d_config.set(PulseGenConfig::ProtRole,PulseGenConfig::WidthSetting,protWidth);
+            d_config.set(PulseGenConfig::Prot,PulseGenConfig::DelaySetting,protStart);
+            d_config.set(PulseGenConfig::Prot,PulseGenConfig::WidthSetting,protWidth);
         }
     }
 
@@ -440,7 +444,7 @@ void PulseConfigWidget::newSetting(int index, PulseGenConfig::Setting s, QVarian
     ui->pulsePlot->newSetting(index,s,val);
 }
 
-void PulseConfigWidget::setFromConfig(const PulseGenConfig c)
+void PulseConfigWidget::setFromConfig(const PulseGenConfig &c)
 {
     blockSignals(true);
     for(int i=0; i<c.size(); i++)
@@ -496,7 +500,7 @@ void PulseConfigWidget::updateFromSettings()
         }
 
         auto r = getArrayValue<PulseGenConfig::Role>(BC::Key::PulseWidget::channels,i,
-                               BC::Key::PulseWidget::role,PulseGenConfig::NoRole);
+                               BC::Key::PulseWidget::role,PulseGenConfig::None);
         if(chw.roleBox != nullptr)
             chw.roleBox->setCurrentIndex(chw.roleBox->findData(QVariant::fromValue(r)));
 

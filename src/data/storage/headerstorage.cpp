@@ -130,11 +130,5 @@ void HeaderStorage::readComplete()
 
 void HeaderStorage::addChild(HeaderStorage *other)
 {
-    for(auto child : d_children)
-    {
-        if(child->d_objKey == other->d_objKey)
-            return;
-    }
-
     d_children.push_back(other);
 }

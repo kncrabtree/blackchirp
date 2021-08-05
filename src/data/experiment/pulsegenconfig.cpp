@@ -1,22 +1,10 @@
 #include <data/experiment/pulsegenconfig.h>
 
+#include <QMetaEnum>
 
-
-PulseGenConfig::PulseGenConfig() : data(new PulseGenConfigData)
+PulseGenConfig::PulseGenConfig() : HeaderStorage(BC::Key::PGenConfig::key)
 {
 
-}
-
-PulseGenConfig::PulseGenConfig(const PulseGenConfig &rhs) : data(rhs.data)
-{
-
-}
-
-PulseGenConfig &PulseGenConfig::operator=(const PulseGenConfig &rhs)
-{
-    if (this != &rhs)
-        data.operator=(rhs.data);
-    return *this;
 }
 
 PulseGenConfig::~PulseGenConfig()
@@ -26,44 +14,43 @@ PulseGenConfig::~PulseGenConfig()
 
 PulseGenConfig::ChannelConfig PulseGenConfig::at(const int i) const
 {
-    Q_ASSERT(i < data->config.size());
-    return data->config.at(i);
+    return d_config.value(i);
 }
 
 int PulseGenConfig::size() const
 {
-    return data->config.size();
+    return d_config.size();
 }
 
 bool PulseGenConfig::isEmpty() const
 {
-    return data->config.isEmpty();
+    return d_config.isEmpty();
 }
 
 QVariant PulseGenConfig::setting(const int index, const Setting s) const
 {
-    if(index < 0 || index >= data->config.size())
+    if(index < 0 || index >= d_config.size())
         return QVariant();
 
     switch(s)
     {
     case DelaySetting:
-        return data->config.at(index).delay;
+        return d_config.at(index).delay;
         break;
     case WidthSetting:
-        return data->config.at(index).width;
+        return d_config.at(index).width;
         break;
     case EnabledSetting:
-        return data->config.at(index).enabled;
+        return d_config.at(index).enabled;
         break;
     case LevelSetting:
-        return data->config.at(index).level;
+        return d_config.at(index).level;
         break;
     case NameSetting:
-        return data->config.at(index).channelName;
+        return d_config.at(index).channelName;
         break;
     case RoleSetting:
-        return data->config.at(index).role;
+        return d_config.at(index).role;
         break;
     default:
         break;
@@ -72,12 +59,12 @@ QVariant PulseGenConfig::setting(const int index, const Setting s) const
     return QVariant();
 }
 
-QList<QVariant> PulseGenConfig::setting(Role role, const Setting s) const
+QVector<QVariant> PulseGenConfig::setting(Role role, const Setting s) const
 {
-    QList<QVariant> out;
-    for(int i=0; i<data->config.size(); i++)
+    QVector<QVariant> out;
+    for(int i=0; i<d_config.size(); i++)
     {
-        if(data->config.at(i).role == role)
+        if(d_config.at(i).role == role)
             out << setting(i,s);
     }
 
@@ -86,19 +73,19 @@ QList<QVariant> PulseGenConfig::setting(Role role, const Setting s) const
 
 PulseGenConfig::ChannelConfig PulseGenConfig::settings(const int index) const
 {
-    if(index < 0 || index >= data->config.size())
+    if(index < 0 || index >= d_config.size())
         return ChannelConfig();
 
-    return data->config.at(index);
+    return d_config.at(index);
 
 }
 
-QList<int> PulseGenConfig::channelsForRole(Role role) const
+QVector<int> PulseGenConfig::channelsForRole(Role role) const
 {
-    QList<int> out;
-    for(int i=0; i<data->config.size(); i++)
+    QVector<int> out;
+    for(int i=0; i<d_config.size(); i++)
     {
-        if(data->config.at(i).role == role)
+        if(d_config.at(i).role == role)
             out << i;
     }
 
@@ -107,38 +94,38 @@ QList<int> PulseGenConfig::channelsForRole(Role role) const
 
 double PulseGenConfig::repRate() const
 {
-    return data->repRate;
+    return d_repRate;
 }
 
 void PulseGenConfig::set(const int index, const Setting s, const QVariant val)
 {
-    if(index < 0 || index >= data->config.size())
+    if(index < 0 || index >= d_config.size())
         return;
 
     switch(s)
     {
     case DelaySetting:
-        data->config[index].delay = val.toDouble();
+        d_config[index].delay = val.toDouble();
         break;
     case WidthSetting:
-        data->config[index].width = val.toDouble();
+        d_config[index].width = val.toDouble();
         break;
     case EnabledSetting:
-        data->config[index].enabled = val.toBool();
+        d_config[index].enabled = val.toBool();
         break;
     case LevelSetting:
-        data->config[index].level = val.value<ActiveLevel>();
+        d_config[index].level = val.value<ActiveLevel>();
         break;
     case NameSetting:
-        if(data->config.at(index).role == NoRole)
-            data->config[index].channelName = val.toString();
+        if(d_config.at(index).role == None)
+            d_config[index].channelName = val.toString();
         else
-            data->config[index].channelName = roles.value(data->config.at(index).role);
+            d_config[index].channelName = QString(QMetaEnum::fromType<Role>().key(d_config.at(index).role));
         break;
     case RoleSetting:
-        data->config[index].role = val.value<Role>();
-        if(data->config.at(index).role != NoRole)
-            data->config[index].channelName = roles.value(data->config.at(index).role);
+        d_config[index].role = val.value<Role>();
+        if(d_config.at(index).role != None)
+            d_config[index].channelName = QString(QMetaEnum::fromType<Role>().key(d_config.at(index).role));
     default:
         break;
     }
@@ -146,7 +133,7 @@ void PulseGenConfig::set(const int index, const Setting s, const QVariant val)
 
 void PulseGenConfig::set(const int index, const ChannelConfig cc)
 {
-    if(index < 0 || index >= data->config.size())
+    if(index < 0 || index >= d_config.size())
         return;
 
     set(index,DelaySetting,cc.delay);
@@ -159,29 +146,68 @@ void PulseGenConfig::set(const int index, const ChannelConfig cc)
 
 void PulseGenConfig::set(Role role, const Setting s, const QVariant val)
 {
-    for(int i=0; i<data->config.size(); i++)
+    for(int i=0; i<d_config.size(); i++)
     {
-        if(data->config.at(i).role == role)
+        if(d_config.at(i).role == role)
             set(i,s,val);
     }
 }
 
 void PulseGenConfig::set(Role role, const ChannelConfig cc)
 {
-    for(int i=0; i<data->config.size(); i++)
+    for(int i=0; i<d_config.size(); i++)
     {
-        if(data->config.at(i).role == role)
+        if(d_config.at(i).role == role)
             set(i,cc);
     }
 }
 
 void PulseGenConfig::addChannel()
 {
-    data->config.append(ChannelConfig());
+    d_config.append(ChannelConfig());
 }
 
 void PulseGenConfig::setRepRate(const double r)
 {
-    data->repRate = r;
+    d_repRate = r;
 }
 
+
+
+void PulseGenConfig::storeValues()
+{
+    using namespace BC::Store::PGenConfig;
+    store(rate,d_repRate,QString("Hz"));
+    for(int i=0; i<d_config.size(); ++i)
+    {
+        auto &cc = d_config.at(i);
+        storeArrayValue(channel,i,name,cc.channelName);
+        storeArrayValue(channel,i,delay,cc.delay,QString::fromUtf8("μs"));
+        storeArrayValue(channel,i,width,cc.width,QString::fromUtf8("μs"));
+        storeArrayValue(channel,i,level,cc.level);
+        storeArrayValue(channel,i,enabled,cc.enabled);
+        storeArrayValue(channel,i,role,cc.role);
+    }
+}
+
+void PulseGenConfig::retrieveValues()
+{
+    using namespace BC::Store::PGenConfig;
+    d_repRate = retrieve(rate,0.0);
+    auto n = arrayStoreSize(channel);
+    d_config.clear();
+    d_config.reserve(n);
+    for(std::size_t i =0; i<n; ++i)
+    {
+        ChannelConfig cc {
+                    retrieveArrayValue(channel,i,name,QString("")),
+                    retrieveArrayValue(channel,i,enabled,false),
+                    retrieveArrayValue(channel,i,delay,0.0),
+                    retrieveArrayValue(channel,i,width,1.0),
+                    retrieveArrayValue(channel,i,level,ActiveHigh),
+                    retrieveArrayValue(channel,i,role,None)
+        };
+
+        d_config << cc;
+    }
+}
