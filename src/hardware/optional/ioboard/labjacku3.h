@@ -1,7 +1,7 @@
 #ifndef LABJACKU3_H
 #define LABJACKU3_H
 
-#include <hardware/core/ioboard/ioboard.h>
+#include <hardware/optional/ioboard/ioboard.h>
 
 #include "u3.h"
 

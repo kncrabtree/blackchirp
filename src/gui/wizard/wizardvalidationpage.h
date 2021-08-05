@@ -5,7 +5,7 @@
 
 #include <QTableView>
 
-#include <data/experiment/ioboardconfig.h>
+#include <hardware/optional/ioboard/ioboardconfig.h>
 
 class QToolButton;
 

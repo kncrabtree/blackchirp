@@ -3,7 +3,7 @@
 
 #include <hardware/core/hardwareobject.h>
 
-#include <data/experiment/pulsegenconfig.h>
+#include <hardware/optional/pulsegenerator/pulsegenconfig.h>
 
 namespace BC::Key::PGen {
 static const QString key("PulseGenerator");

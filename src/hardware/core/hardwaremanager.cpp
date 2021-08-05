@@ -3,10 +3,10 @@
 #include <hardware/core/hardwareobject.h>
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
 #include <hardware/core/clock/clockmanager.h>
-#include <hardware/core/chirpsource/awg.h>
-#include <hardware/core/pulsegenerator/pulsegenerator.h>
+#include <hardware/optional/chirpsource/awg.h>
+#include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <hardware/optional/flowcontroller/flowcontroller.h>
-#include <hardware/core/ioboard/ioboard.h>
+#include <hardware/optional/ioboard/ioboard.h>
 #include <hardware/optional/gpibcontroller/gpibcontroller.h>
 
 #include <QThread>

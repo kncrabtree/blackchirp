@@ -11,12 +11,8 @@ SOURCES += $$PWD/loghandler.cpp \
     $$PWD/experiment/experimentobjective.cpp \
     $$PWD/experiment/experimentvalidator.cpp \
     $$PWD/experiment/fid.cpp \
-    $$PWD/experiment/flowconfig.cpp \
     $$PWD/experiment/ftmwconfig.cpp \
     $$PWD/experiment/ftmwconfigtypes.cpp \
-    $$PWD/experiment/ftmwdigitizerconfig.cpp \
-    $$PWD/experiment/ioboardconfig.cpp \
-    $$PWD/experiment/pulsegenconfig.cpp \
     $$PWD/experiment/rfconfig.cpp \
     $$PWD/model/chirptablemodel.cpp \
     $$PWD/model/clocktablemodel.cpp \
@@ -44,12 +40,8 @@ HEADERS += $$PWD/loghandler.h \
     $$PWD/experiment/experimentobjective.h \
     $$PWD/experiment/experimentvalidator.h \
     $$PWD/experiment/fid.h \
-    $$PWD/experiment/flowconfig.h \
     $$PWD/experiment/ftmwconfig.h \
     $$PWD/experiment/ftmwconfigtypes.h \
-    $$PWD/experiment/ftmwdigitizerconfig.h \
-    $$PWD/experiment/ioboardconfig.h \
-    $$PWD/experiment/pulsegenconfig.h \
     $$PWD/experiment/rfconfig.h \
     $$PWD/model/chirptablemodel.h \
     $$PWD/model/clocktablemodel.h \

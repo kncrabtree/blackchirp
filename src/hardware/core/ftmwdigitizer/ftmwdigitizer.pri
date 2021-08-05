@@ -1,9 +1,11 @@
  
 
 SOURCES += \
+    $$PWD/ftmwdigitizerconfig.cpp \
     $$PWD/ftmwscope.cpp
 
 HEADERS += \
+    $$PWD/ftmwdigitizerconfig.h \
     $$PWD/ftmwscope.h
 
 equals(FTMWSCOPE,0) {

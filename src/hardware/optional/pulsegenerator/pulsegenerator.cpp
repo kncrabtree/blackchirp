@@ -1,4 +1,4 @@
-#include <hardware/core/pulsegenerator/pulsegenerator.h>
+#include <hardware/optional/pulsegenerator/pulsegenerator.h>
 
 PulseGenerator::PulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent, bool threaded, bool critical) :
     HardwareObject(BC::Key::PGen::key,subKey,name,commType,parent,threaded,critical),

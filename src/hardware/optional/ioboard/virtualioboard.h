@@ -1,7 +1,7 @@
 #ifndef VIRTUALIOBOARD_H
 #define VIRTUALIOBOARD_H
 
-#include <hardware/core/ioboard/ioboard.h>
+#include <hardware/optional/ioboard/ioboard.h>
 
 namespace BC::Key::IOB {
 static const QString viobName("Virtual IO Board");

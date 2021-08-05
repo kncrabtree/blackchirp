@@ -55,10 +55,10 @@ public:
 
 private:
     QVector<FlowConfig::FlowChannel> d_configList;
-    double d_pressureSetpoint;
+    double d_pressureSetpoint{0.0};
 
-    double d_pressure;
-    bool d_pressureControlMode;
+    double d_pressure{0.0};
+    bool d_pressureControlMode{false};
 
     // HeaderStorage interface
 protected:

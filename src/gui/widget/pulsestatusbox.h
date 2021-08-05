@@ -2,7 +2,7 @@
 #define PULSESTATUSBOX_H
 
 #include <QGroupBox>
-#include <data/experiment/pulsegenconfig.h>
+#include <hardware/optional/pulsegenerator/pulsegenconfig.h>
 
 class QLabel;
 class Led;

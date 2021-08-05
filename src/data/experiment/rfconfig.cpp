@@ -7,7 +7,7 @@
 
 #include <data/storage/settingsstorage.h>
 #include <data/storage/blackchirpcsv.h>
-#include <hardware/core/chirpsource/awg.h>
+#include <hardware/optional/chirpsource/awg.h>
 
 RfConfig::RfConfig() : HeaderStorage(BC::Store::RFC::key), d_currentClockIndex{0}
 {

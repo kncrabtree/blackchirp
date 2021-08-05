@@ -1,9 +1,11 @@
  
 
 HEADERS += \
+    $$PWD/pulsegenconfig.h \
     $$PWD/pulsegenerator.h
 
 SOURCES += \
+    $$PWD/pulsegenconfig.cpp \
     $$PWD/pulsegenerator.cpp
 
 

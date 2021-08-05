@@ -1,24 +1,25 @@
-#ifndef AWG70002A_H
-#define AWG70002A_H
+#ifndef AWG7122B_H
+#define AWG7122B_H
 
-#include <hardware/core/chirpsource/awg.h>
+#include <hardware/optional/chirpsource/awg.h>
+
+#include <data/experiment/chirpconfig.h>
 
 namespace BC::Key::AWG {
-static const QString awg70002a("awg70002a");
-static const QString awg70002aName("Arbitrary Waveform Generator AWG70002A");
+static const QString awg7122b("awg7122b");
+static const QString awg7122bName("Arbirtary Waveform Generator AWG7122B");
 }
 
 /*!
- * \brief The AWG70002a class
+ * \brief The AWG7122B class
  *
  * Chirp is sent to output 1; Protection to marker 1, amp gate to marker 2
- *
  */
-class AWG70002a : public AWG
+class AWG7122B : public AWG
 {
     Q_OBJECT
 public:
-    explicit AWG70002a(QObject *parent = nullptr);
+    explicit AWG7122B(QObject *parent = nullptr);
 
     // HardwareObject interface
 public slots:
@@ -30,9 +31,12 @@ protected:
     bool testConnection() override;
     void initialize() override;
 
+
 private:
     QString getWaveformKey(const ChirpConfig cc);
     QString writeWaveform(const ChirpConfig cc);
+
+    bool d_triggered;
 };
 
-#endif // AWG70002A_H
+#endif // AWG7122B_H

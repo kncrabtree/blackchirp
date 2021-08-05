@@ -6,7 +6,7 @@
 #include <QInputDialog>
 
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
-#include <hardware/core/chirpsource/awg.h>
+#include <hardware/optional/chirpsource/awg.h>
 
 ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     QWidget(parent), SettingsStorage(BC::Key::ChirpConfigWidget::key),

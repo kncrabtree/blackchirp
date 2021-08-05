@@ -5,7 +5,7 @@
 #include <QList>
 
 #include <data/storage/settingsstorage.h>
-#include <data/experiment/pulsegenconfig.h>
+#include <hardware/optional/pulsegenerator/pulsegenconfig.h>
 #include <data/experiment/ftmwconfig.h>
 
 #ifdef BC_LIF

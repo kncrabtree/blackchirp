@@ -12,9 +12,9 @@
 #include <data/experiment/experimentvalidator.h>
 #include <data/experiment/ftmwconfig.h>
 #include <data/datastructs.h>
-#include <data/experiment/pulsegenconfig.h>
-#include <data/experiment/flowconfig.h>
-#include <data/experiment/ioboardconfig.h>
+#include <hardware/optional/pulsegenerator/pulsegenconfig.h>
+#include <hardware/optional/flowcontroller/flowconfig.h>
+#include <hardware/optional/ioboard/ioboardconfig.h>
 
 //these are included because they define datatypes needed by qRegisterMetaType in main.cpp
 #include <data/analysis/ft.h>

@@ -1,23 +1,24 @@
-#ifndef QC9518_H
-#define QC9518_H
+#ifndef QC9528_H
+#define QC9528_H
 
-#include <hardware/core/pulsegenerator/pulsegenerator.h>
+#include <hardware/optional/pulsegenerator/pulsegenerator.h>
 
 namespace BC::Key {
-static const QString qc9518("QC9518");
-static const QString qc9518Name("Pulse Generator QC 9518");
+static const QString qc9528("qc9528");
+static const QString qc9528Name("Pulse Generator QC 9528");
 }
 
-class Qc9518 : public PulseGenerator
+class Qc9528 : public PulseGenerator
 {
 public:
-    explicit Qc9518(QObject *parent = nullptr);
+    explicit Qc9528(QObject *parent = nullptr);
 
-	// HardwareObject interface
+    // HardwareObject interface
 public slots:
-    void sleep(bool b) override;
     void beginAcquisition() override;
     void endAcquisition() override;
+    void sleep(bool b) override;
+
 
 protected:
     bool testConnection() override;
@@ -35,7 +36,8 @@ protected:
 
 
 private:
-	bool pGenWriteCmd(QString cmd);
+    bool pGenWriteCmd(QString cmd);
+
 };
 
-#endif // QC9518_H
+#endif // QC9528_H

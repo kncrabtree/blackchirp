@@ -1,10 +1,12 @@
  
 
 HEADERS += \
-    $$PWD/ioboard.h
+    $$PWD/ioboard.h \
+    $$PWD/ioboardconfig.h
 
 SOURCES += \
-    $$PWD/ioboard.cpp
+    $$PWD/ioboard.cpp \
+    $$PWD/ioboardconfig.cpp
 
 
 equals(IOBOARD,0) {

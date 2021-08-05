@@ -6,7 +6,7 @@
 #include <QByteArray>
 
 #include <data/experiment/ftmwconfig.h>
-#include <data/experiment/ftmwdigitizerconfig.h>
+#include <hardware/core/ftmwdigitizer/ftmwdigitizerconfig.h>
 
 
 namespace BC::Key::FtmwScope {

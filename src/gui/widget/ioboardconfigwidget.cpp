@@ -1,6 +1,6 @@
 #include "ioboardconfigwidget.h"
 
-#include <hardware/core/ioboard/ioboard.h>
+#include <hardware/optional/ioboard/ioboard.h>
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>

@@ -9,7 +9,7 @@
 #include <data/storage/fidstoragebase.h>
 #include <data/experiment/fid.h>
 #include <data/experiment/rfconfig.h>
-#include <data/experiment/ftmwdigitizerconfig.h>
+#include <hardware/core/ftmwdigitizer/ftmwdigitizerconfig.h>
 #include <data/datastructs.h>
 #include <data/experiment/experimentobjective.h>
 

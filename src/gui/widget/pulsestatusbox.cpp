@@ -1,6 +1,6 @@
 #include "pulsestatusbox.h"
 
-#include <hardware/core/pulsegenerator/pulsegenerator.h>
+#include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <gui/widget/pulseconfigwidget.h>
 #include <gui/widget/led.h>
 

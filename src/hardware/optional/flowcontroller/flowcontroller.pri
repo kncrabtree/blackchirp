@@ -16,3 +16,9 @@ equals(FC,2) {
     HEADERS += $$PWD/mks946.h
 	SOURCES += $$PWD/mks946.cpp
 }
+
+HEADERS += \
+    $$PWD/flowconfig.h
+
+SOURCES += \
+    $$PWD/flowconfig.cpp

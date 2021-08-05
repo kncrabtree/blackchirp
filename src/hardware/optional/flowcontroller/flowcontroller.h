@@ -5,7 +5,7 @@
 
 #include <QTimer>
 
-#include <data/experiment/flowconfig.h>
+#include <hardware/optional/flowcontroller/flowconfig.h>
 
 namespace BC::Key::Flow {
 static const QString flowController("FlowController");
