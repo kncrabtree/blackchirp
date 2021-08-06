@@ -24,8 +24,8 @@ public:
     ~HardwareManager();
 
 signals:
-    void logMessage(const QString, const BlackChirp::LogMessageCode = BlackChirp::LogNormal);
-    void statusMessage(const QString);
+    void logMessage(QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal);
+    void statusMessage(QString,int=0);
     void hwInitializationComplete();
 
     void allHardwareConnected(bool);

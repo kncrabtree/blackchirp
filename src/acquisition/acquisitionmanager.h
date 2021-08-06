@@ -34,7 +34,7 @@ public:
 
 signals:
     void logMessage(QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal);
-    void statusMessage(QString);
+    void statusMessage(QString,int=0);
     void experimentComplete();
     void ftmwUpdateProgress(int);
     void newClockSettings(QHash<RfConfig::ClockType,RfConfig::ClockFreq>);

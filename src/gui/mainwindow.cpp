@@ -31,6 +31,7 @@
 #include <gui/dialog/batchsequencedialog.h>
 #include <gui/widget/clockdisplaywidget.h>
 #include <gui/widget/gascontrolwidget.h>
+#include <gui/widget/pressurestatusbox.h>
 
 #ifdef BC_LIF
 #include <modules/lif/gui/lifdisplaywidget.h>
@@ -56,18 +57,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->setupUi(this);
 
-    for(int i=0; i<ui->mainTabWidget->count(); i++)
-    {
-        ui->mainTabWidget->widget(i)->layout()->setContentsMargins(0,0,0,0);
-        ui->mainTabWidget->widget(i)->layout()->setMargin(0);
-    }
-
-    ui->exptSpinBox->blockSignals(true);
-
-    QLabel *statusLabel = new QLabel(this);
-    connect(this,&MainWindow::statusMessage,statusLabel,&QLabel::setText);
-    ui->statusBar->addWidget(statusLabel);
-
     p_lh = new LogHandler();
     connect(this,&MainWindow::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_lh,&LogHandler::sendLogMessage,ui->logTextEdit,&QTextEdit::append);
@@ -92,12 +81,6 @@ MainWindow::MainWindow(QWidget *parent) :
         }
     });
 
-    auto *clockBox = new QGroupBox(QString("Clocks"),this);
-    auto *clockWidget = new ClockDisplayWidget(this);
-    clockBox->setLayout(clockWidget->layout());
-    ui->instrumentStatusLayout->insertWidget(2,clockBox);
-
-
     QThread *lhThread = new QThread(this);
     lhThread->setObjectName("LogHandlerThread");
     connect(lhThread,&QThread::finished,p_lh,&LogHandler::deleteLater);
@@ -106,10 +89,10 @@ MainWindow::MainWindow(QWidget *parent) :
     lhThread->start();
 
     connect(p_hwm,&HardwareManager::logMessage,p_lh,&LogHandler::logMessage);
-    connect(p_hwm,&HardwareManager::statusMessage,statusLabel,&QLabel::setText);
+    connect(p_hwm,&HardwareManager::statusMessage,ui->statusBar,&QStatusBar::showMessage);
     connect(p_hwm,&HardwareManager::allHardwareConnected,this,&MainWindow::hardwareInitialized);
 
-    connect(p_hwm,&HardwareManager::clockFrequencyUpdate,clockWidget,&ClockDisplayWidget::updateFrequency);
+    connect(p_hwm,&HardwareManager::clockFrequencyUpdate,ui->clockWidget,&ClockDisplayWidget::updateFrequency);
 
     connect(p_hwm,&HardwareManager::hwInitializationComplete,ui->pulseConfigWidget,&PulseConfigWidget::updateFromSettings);
     connect(p_hwm,&HardwareManager::pGenConfigUpdate,ui->pulseConfigWidget,&PulseConfigWidget::setFromConfig);
@@ -149,7 +132,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     p_am = new AcquisitionManager();
     connect(p_am,&AcquisitionManager::logMessage,p_lh,&LogHandler::logMessage);
-    connect(p_am,&AcquisitionManager::statusMessage,statusLabel,&QLabel::setText);
+    connect(p_am,&AcquisitionManager::statusMessage,ui->statusBar,&QStatusBar::showMessage);
     connect(p_am,&AcquisitionManager::ftmwUpdateProgress,ui->ftmwProgressBar,&QProgressBar::setValue);
     connect(ui->actionPause,&QAction::triggered,p_am,&AcquisitionManager::pause);
     connect(ui->actionResume,&QAction::triggered,p_am,&AcquisitionManager::resume);
@@ -266,7 +249,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::initializeHardware()
 {
-    emit statusMessage(QString("Initializing hardware..."));
+    ui->statusBar->showMessage(QString("Initializing hardware..."));
     emit startInit();
 }
 
@@ -417,9 +400,9 @@ void MainWindow::batchComplete(bool aborted)
 #endif
 
     if(aborted)
-        emit statusMessage(QString("Experiment aborted"));
+        ui->statusBar->showMessage(QString("Experiment aborted"));
     else
-        emit statusMessage(QString("Experiment complete"));
+        ui->statusBar->showMessage(QString("Experiment complete"));
 
     if(ui->ftmwProgressBar->maximum() == 0)
     {
@@ -528,9 +511,9 @@ void MainWindow::hardwareInitialized(bool success)
 {
 	d_hardwareConnected = success;
     if(success)
-        emit statusMessage(QString("Hardware connected"));
+        ui->statusBar->showMessage(QString("Hardware connected"));
     else
-        emit statusMessage(QString("Hardware error. See log for details."));
+        ui->statusBar->showMessage(QString("Hardware error. See log for details."));
     configureUi(d_state);
 }
 
@@ -742,33 +725,33 @@ void MainWindow::viewExperiment()
 #ifdef BC_PCONTROLLER
 void MainWindow::configPController(bool readOnly)
 {
-    QHBoxLayout *hbl = new QHBoxLayout;
-    QLabel *cplabel = new QLabel(QString("Pressure"));
-    cplabel->setAlignment(Qt::AlignRight);
-    QDoubleSpinBox *cpbox = new QDoubleSpinBox;
+//    QHBoxLayout *hbl = new QHBoxLayout;
+//    QLabel *cplabel = new QLabel(QString("Pressure"));
+//    cplabel->setAlignment(Qt::AlignRight);
+//    QDoubleSpinBox *cpbox = new QDoubleSpinBox;
 
     using namespace BC::Key::PController;
     SettingsStorage s(key,SettingsStorage::Hardware);
 
 
-    cpbox->setMinimum(s.get(min,-1.0));
-    cpbox->setMaximum(s.get(max,20.0));
-    cpbox->setDecimals(s.get(decimals,4));
-    cpbox->setSuffix(QString(" ")+s.get(units,QString("")));
+//    cpbox->setMinimum(s.get(min,-1.0));
+//    cpbox->setMaximum(s.get(max,20.0));
+//    cpbox->setDecimals(s.get(decimals,4));
+//    cpbox->setSuffix(QString(" ")+s.get(units,QString("")));
 
-    cpbox->setReadOnly(true);
-    cpbox->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    cpbox->setKeyboardTracking(false);
-    cpbox->blockSignals(true);
+//    cpbox->setReadOnly(true);
+//    cpbox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+//    cpbox->setKeyboardTracking(false);
+//    cpbox->blockSignals(true);
 
-    connect(p_hwm,&HardwareManager::pressureUpdate,cpbox,&QDoubleSpinBox::setValue);
+//    connect(p_hwm,&HardwareManager::pressureUpdate,cpbox,&QDoubleSpinBox::setValue);
 
-    hbl->addWidget(cplabel,0);
-    hbl->addWidget(cpbox,1);
+//    hbl->addWidget(cplabel,0);
+//    hbl->addWidget(cpbox,1);
     if(!readOnly)
     {
-        Led *pcled = new Led();
-        hbl->addWidget(pcled,0);
+//        Led *pcled = new Led();
+//        hbl->addWidget(pcled,0);
 
         QGroupBox *pcBox = new QGroupBox(QString("Chamber Pressure Control"));
         QHBoxLayout *hbl2 = new QHBoxLayout;
@@ -777,10 +760,10 @@ void MainWindow::configPController(bool readOnly)
         psLabel->setAlignment(Qt::AlignRight);
 
         QDoubleSpinBox *pSetpointBox = new QDoubleSpinBox;
-        pSetpointBox->setMinimum(cpbox->minimum());
-        pSetpointBox->setMaximum(cpbox->maximum());
-        pSetpointBox->setDecimals(cpbox->decimals());
-        pSetpointBox->setSuffix(cpbox->suffix());
+        pSetpointBox->setMinimum(s.get(min,-1.0));
+        pSetpointBox->setMaximum(s.get(max,20.0));
+        pSetpointBox->setDecimals(s.get(decimals,4));
+        pSetpointBox->setSuffix(QString(" ")+s.get(units,QString("")));
 
         pSetpointBox->setSingleStep(qAbs(pSetpointBox->maximum() - pSetpointBox->minimum())/100.0);
         pSetpointBox->setKeyboardTracking(false);
@@ -808,7 +791,7 @@ void MainWindow::configPController(bool readOnly)
                 pControlButton->setText(QString("Off"));
             }
             pControlButton->setChecked(en);
-            pcled->setState(en);
+//            pcled->setState(en);
             pControlButton->blockSignals(false);
         });
 
@@ -840,11 +823,14 @@ void MainWindow::configPController(bool readOnly)
         ui->gasControlLayout->addWidget(pcBox,0);
     }
 
-    QGroupBox *pgb = new QGroupBox(QString("Chamber Status"));
-    pgb->setLayout(hbl);
+//    QGroupBox *pgb = new QGroupBox(QString("Chamber Status"));
+//    pgb->setLayout(hbl);
 
-    p_pcBox = pgb;
-    ui->instrumentStatusLayout->insertWidget(2,pgb,0);
+//    p_pcBox = pgb;
+    auto psb = new PressureStatusBox(this);
+    ui->instrumentStatusLayout->insertWidget(3,psb,0);
+    connect(p_hwm,&HardwareManager::pressureUpdate,psb,&PressureStatusBox::pressureUpdate);
+    connect(p_hwm,&HardwareManager::pressureControlMode,psb,&PressureStatusBox::pressureControlUpdate);
 }
 #endif
 
@@ -971,7 +957,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
 void MainWindow::startBatch(BatchManager *bm)
 {
     connect(p_batchThread,&QThread::started,bm,&BatchManager::beginNextExperiment);
-    connect(bm,&BatchManager::statusMessage,this,&MainWindow::statusMessage);
+    connect(bm,&BatchManager::statusMessage,ui->statusBar,&QStatusBar::showMessage);
     connect(bm,&BatchManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(bm,&BatchManager::beginExperiment,p_lh,&LogHandler::endExperimentLog);
     connect(bm,&BatchManager::beginExperiment,[this,bm](){p_hwm->initializeExperiment(bm->currentExperiment());});

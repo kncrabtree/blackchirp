@@ -21,7 +21,7 @@ public:
     virtual ~BatchManager();
 
 signals:
-    void statusMessage(QString);
+    void statusMessage(QString,int=0);
     void logMessage(QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal);
     void beginExperiment();
     void batchComplete(bool aborted);

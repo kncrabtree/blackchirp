@@ -32,6 +32,7 @@
 #include <gui/widget/gascontrolwidget.h>
 #include <gui/widget/gasflowdisplaywidget.h>
 #include <gui/widget/pulsestatusbox.h>
+#include <gui/widget/clockdisplaywidget.h>
 
 class Ui_MainWindow
 {
@@ -59,9 +60,11 @@ public:
     QHBoxLayout *mainLayout;
     QVBoxLayout *instrumentStatusLayout;
     QLabel *instStatusLabel;
-    QFormLayout *statusLayout;
+    QGridLayout *statusLayout;
     QLabel *exptLabel;
     QSpinBox *exptSpinBox;
+    QGroupBox *clockBox;
+    ClockDisplayWidget *clockWidget;
     QGroupBox *flowStatusBox;
     GasFlowDisplayWidget *gasFlowDisplayWidget;
     PulseStatusBox *pulseStatusBox;
@@ -213,14 +216,13 @@ public:
 
         instrumentStatusLayout->addWidget(instStatusLabel);
 
-        statusLayout = new QFormLayout();
+        statusLayout = new QGridLayout();
         statusLayout->setSpacing(6);
-        statusLayout->setObjectName(QString::fromUtf8("formLayout"));
-        statusLayout->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
-        statusLayout->setFormAlignment(Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter);
+        statusLayout->setObjectName(QString::fromUtf8("statusLayout"));
+
         exptLabel = new QLabel(centralWidget);
         exptLabel->setObjectName(QString::fromUtf8("exptLabel"));
-        QSizePolicy sizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+        QSizePolicy sizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
         sizePolicy.setHorizontalStretch(0);
         sizePolicy.setVerticalStretch(0);
         sizePolicy.setHeightForWidth(exptLabel->sizePolicy().hasHeightForWidth());
@@ -228,7 +230,7 @@ public:
         exptLabel->setFont(font);
         exptLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
 
-        statusLayout->setWidget(0, QFormLayout::LabelRole, exptLabel);
+        statusLayout->addWidget(exptLabel,0,0);
 
         exptSpinBox = new QSpinBox(centralWidget);
         exptSpinBox->setObjectName(QString::fromUtf8("exptSpinBox"));
@@ -242,17 +244,24 @@ public:
         exptSpinBox->setReadOnly(true);
         exptSpinBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
         exptSpinBox->setMaximum(2147483647);
+        exptSpinBox->blockSignals(true);
 
-        statusLayout->setWidget(0, QFormLayout::FieldRole, exptSpinBox);
+        statusLayout->addWidget(exptSpinBox,0,1);
+
 
 
         instrumentStatusLayout->addLayout(statusLayout);
+
+        clockBox = new QGroupBox(QString("Clocks"),centralWidget);
+        clockWidget = new ClockDisplayWidget(centralWidget);
+        clockBox->setLayout(clockWidget->layout());
+        instrumentStatusLayout->addWidget(clockBox);
 
         flowStatusBox = new QGroupBox(centralWidget);
         flowStatusBox->setObjectName(QString::fromUtf8("flowStatusBox"));
         flowStatusBox->setFont(font);
 
-        gasFlowDisplayWidget = new GasFlowDisplayWidget;
+        gasFlowDisplayWidget = new GasFlowDisplayWidget(centralWidget);
         flowStatusBox->setLayout(gasFlowDisplayWidget->layout());
 
 
@@ -281,8 +290,6 @@ public:
         ftmwProgressBar->setValue(0);
 
         instrumentStatusLayout->addWidget(ftmwProgressBar);
-
-        instrumentStatusLayout->setStretch(4, 1);
 
         mainLayout->addLayout(instrumentStatusLayout);
 
@@ -407,6 +414,7 @@ public:
         mainToolBar->setObjectName(QString::fromUtf8("mainToolBar"));
         mainToolBar->setIconSize(QSize(14, 14));
         mainToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        mainToolBar->setMovable(false);
         MainWindow->addToolBar(Qt::TopToolBarArea, mainToolBar);
         statusBar = new QStatusBar(centralWidget);
         statusBar->setObjectName(QString::fromUtf8("statusBar"));
@@ -419,6 +427,7 @@ public:
         menuHardware->addSeparator();
         menuHardware->addAction(actionCommunication);
         menuHardware->addAction(actionTest_All_Connections);
+        menuHardware->addSeparator();
         menuAcquisition->addAction(actionStart_Experiment);
         menuAcquisition->addAction(actionQuick_Experiment);
         menuAcquisition->addAction(actionStart_Sequence);
@@ -450,6 +459,12 @@ public:
         retranslateUi(MainWindow);
 
         mainTabWidget->setCurrentIndex(0);
+
+        for(int i=0; i<mainTabWidget->count(); i++)
+        {
+            mainTabWidget->widget(i)->layout()->setContentsMargins(0,0,0,0);
+            mainTabWidget->widget(i)->layout()->setMargin(0);
+        }
 
 
         QMetaObject::connectSlotsByName(MainWindow);

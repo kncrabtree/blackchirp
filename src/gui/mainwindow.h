@@ -60,7 +60,6 @@ public:
 signals:
     void logMessage(const QString, BlackChirp::LogMessageCode);
     void startInit();
-    void statusMessage(const QString);
     void closing();
     void checkSleep();
 
