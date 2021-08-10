@@ -2,6 +2,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/dialog/batchsequencedialog.cpp \
     $$PWD/dialog/bcsavepathdialog.cpp \
     $$PWD/dialog/communicationdialog.cpp \
+   $$PWD/dialog/hwdialog.cpp \
     $$PWD/dialog/peaklistexportdialog.cpp \
     $$PWD/dialog/quickexptdialog.cpp \
     $$PWD/plot/blackchirpplotcurve.cpp \
@@ -48,6 +49,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/dialog/batchsequencedialog.h \
     $$PWD/dialog/bcsavepathdialog.h \
     $$PWD/dialog/communicationdialog.h \
+   $$PWD/dialog/hwdialog.h \
     $$PWD/dialog/peaklistexportdialog.h \
     $$PWD/dialog/quickexptdialog.h \
     $$PWD/mainwindow_ui.h \

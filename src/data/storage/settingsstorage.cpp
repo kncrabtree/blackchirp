@@ -143,6 +143,26 @@ QVariant SettingsStorage::getArrayValue(const QString arrayKey, std::size_t i, c
     return defaultValue;
 }
 
+QStringList SettingsStorage::keys() const
+{
+    QStringList out;
+    out.reserve(d_values.size());
+    for(auto const &[key,_] : d_values)
+        out << key;
+    
+    return out;
+}
+
+QStringList SettingsStorage::arrayKeys() const
+{
+    QStringList out;
+    out.reserve(d_arrayValues.size());
+    for(auto const &[key,_] : d_arrayValues)
+        out << key;
+    
+    return out;
+}
+
 QVariant SettingsStorage::unRegisterGetter(const QString key, bool write)
 {
     auto it = d_getters.find(key);

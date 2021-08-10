@@ -8,7 +8,6 @@
 #include <QLabel>
 #include <QDoubleSpinBox>
 #include <QLineEdit>
-#include <QDialog>
 #include <QMessageBox>
 #include <QCheckBox>
 #include <QToolButton>
@@ -16,6 +15,7 @@
 #include <QDir>
 
 #include <gui/dialog/communicationdialog.h>
+#include <gui/dialog/hwdialog.h>
 #include <gui/widget/digitizerconfigwidget.h>
 #include <gui/widget/rfconfigwidget.h>
 #include <gui/wizard/experimentwizard.h>
@@ -734,19 +734,18 @@ void MainWindow::viewExperiment()
 
 void MainWindow::launchPressureControlSettings()
 {
-    auto d = new QDialog;
-    d->setWindowTitle("Pressure Control");
-    d->setAttribute(Qt::WA_DeleteOnClose);
-    auto pcw = new PressureControlWidget(d);
+    auto pcw = new PressureControlWidget;
     auto pc = p_hwm->getPressureControllerConfig();
     pcw->initialize(pc);
-    d->setLayout(pcw->layout());
     connect(p_hwm,&HardwareManager::pressureSetpointUpdate,pcw,&PressureControlWidget::pressureSetpointUpdate);
     connect(p_hwm,&HardwareManager::pressureControlMode,pcw,&PressureControlWidget::pressureControlModeUpdate);
     connect(pcw,&PressureControlWidget::setpointChanged,p_hwm,&HardwareManager::setPressureSetpoint);
     connect(pcw,&PressureControlWidget::pressureControlModeChanged,p_hwm,&HardwareManager::setPressureControlMode);
     connect(pcw,&PressureControlWidget::valveOpen,p_hwm,&HardwareManager::openGateValve);
     connect(pcw,&PressureControlWidget::valveClose,p_hwm,&HardwareManager::closeGateValve);
+
+    auto d = new HWDialog(BC::Key::PController::key,pcw);
+    d->setAttribute(Qt::WA_DeleteOnClose);
     d->show();
     d->exec();
 }

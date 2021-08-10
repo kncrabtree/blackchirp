@@ -16,6 +16,7 @@ SOURCES += $$PWD/loghandler.cpp \
     $$PWD/experiment/rfconfig.cpp \
     $$PWD/model/chirptablemodel.cpp \
     $$PWD/model/clocktablemodel.cpp \
+   $$PWD/model/hwsettingsmodel.cpp \
     $$PWD/model/peaklistmodel.cpp \
 	$$PWD/model/validationmodel.cpp \
     $$PWD/storage/auxdatastorage.cpp \
@@ -45,6 +46,7 @@ HEADERS += $$PWD/loghandler.h \
     $$PWD/experiment/rfconfig.h \
     $$PWD/model/chirptablemodel.h \
     $$PWD/model/clocktablemodel.h \
+   $$PWD/model/hwsettingsmodel.h \
     $$PWD/model/peaklistmodel.h \
 	$$PWD/model/validationmodel.h \
     $$PWD/storage/auxdatastorage.h \

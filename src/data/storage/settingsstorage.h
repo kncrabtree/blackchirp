@@ -688,6 +688,20 @@ protected:
      *
      */
     void readAll();
+    
+    /*!
+     * \brief List of all keys for normal (non-array) values
+     * 
+     * \return QStringList
+     */
+    QStringList keys() const;
+    
+    /*!
+     * \brief List of keys for array values
+     * 
+     * \return QStringList
+     */
+    QStringList arrayKeys() const;
 
 private:
     explicit SettingsStorage(const QStringList keys, Type type, QSettings::Scope scope);
