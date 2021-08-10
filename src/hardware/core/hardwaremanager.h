@@ -4,12 +4,15 @@
 #include <QObject>
 #include <memory>
 #include <data/datastructs.h>
-#include <data/experiment/experiment.h>
 #include <data/storage/auxdatastorage.h>
 #include <data/storage/settingsstorage.h>
+#include <data/experiment/rfconfig.h>
+#include <hardware/optional/pulsegenerator/pulsegenconfig.h>
+#include <hardware/optional/pressurecontroller/pressurecontrollerconfig.h>
 
 class HardwareObject;
 class ClockManager;
+class Experiment;
 
 namespace BC::Key {
 static const QString hw("hardware");
@@ -59,12 +62,10 @@ signals:
     void gasPressureSetpointUpdate(double);
     void gasPressureControlMode(bool);
 
-#ifdef BC_PCONTROLLER
     void pressureControlReadOnly(bool);
     void pressureUpdate(double);
     void pressureSetpointUpdate(double);
     void pressureControlMode(bool);
-#endif
 
 #ifdef BC_LIF
     void lifScopeShotAcquired(LifTrace);
@@ -120,12 +121,11 @@ public slots:
     void setGasPressureSetpoint(double val);
     void setGasPressureControlMode(bool en);
 
-#ifdef BC_PCONTROLLER
     void setPressureSetpoint(double val);
     void setPressureControlMode(bool en);
     void openGateValve();
     void closeGateValve();
-#endif
+    PressureControllerConfig getPressureControllerConfig();
 
 #ifdef BC_LIF
     void setLifParameters(double delay, double pos);

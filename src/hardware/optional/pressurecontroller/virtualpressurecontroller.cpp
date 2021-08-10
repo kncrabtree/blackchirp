@@ -12,6 +12,7 @@ VirtualPressureController::VirtualPressureController(QObject *parent) :
     setDefault(decimals,4);
     setDefault(units,QString("Torr"));
     setDefault(readInterval,200);
+    setDefault(hasValve,true);
 }
 
 VirtualPressureController::~VirtualPressureController()

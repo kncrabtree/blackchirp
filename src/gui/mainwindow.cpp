@@ -32,6 +32,7 @@
 #include <gui/widget/clockdisplaywidget.h>
 #include <gui/widget/gascontrolwidget.h>
 #include <gui/widget/pressurestatusbox.h>
+#include <gui/widget/pressurecontrolwidget.h>
 
 #ifdef BC_LIF
 #include <modules/lif/gui/lifdisplaywidget.h>
@@ -43,9 +44,7 @@
 #include <modules/motor/gui/motorstatuswidget.h>
 #endif
 
-#ifdef BC_PCONTROLLER
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
-#endif
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -53,6 +52,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     p_pcBox = nullptr;
     p_hwm = new HardwareManager();
+    auto hwl = p_hwm->currentHardware();
+
     qRegisterMetaType<QwtPlot::Axis>("QwtPlot::Axis");
 
     ui->setupUi(this);
@@ -94,6 +95,20 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(p_hwm,&HardwareManager::clockFrequencyUpdate,ui->clockWidget,&ClockDisplayWidget::updateFrequency);
 
+    //optional hardware
+    //PressureController
+    if(hwl.find(BC::Key::PController::key) != hwl.end())
+    {
+        auto psb = new PressureStatusBox(this);
+        ui->instrumentStatusLayout->insertWidget(3,psb,0);
+        connect(p_hwm,&HardwareManager::pressureUpdate,psb,&PressureStatusBox::pressureUpdate);
+        connect(p_hwm,&HardwareManager::pressureControlMode,psb,&PressureStatusBox::pressureControlUpdate);
+
+        auto act = ui->menuHardware->addAction("Pressure Controller");
+        connect(act,&QAction::triggered,this,&MainWindow::launchPressureControlSettings);
+    }
+
+
     connect(p_hwm,&HardwareManager::hwInitializationComplete,ui->pulseConfigWidget,&PulseConfigWidget::updateFromSettings);
     connect(p_hwm,&HardwareManager::pGenConfigUpdate,ui->pulseConfigWidget,&PulseConfigWidget::setFromConfig);
     connect(p_hwm,&HardwareManager::pGenSettingUpdate,ui->pulseConfigWidget,&PulseConfigWidget::newSetting);
@@ -115,11 +130,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->gasControlWidget,&GasControlWidget::pressureControlUpdate,p_hwm,&HardwareManager::setGasPressureControlMode);
     connect(ui->gasControlWidget,&GasControlWidget::pressureSetpointUpdate,p_hwm,&HardwareManager::setGasPressureSetpoint);
     connect(ui->gasControlWidget,&GasControlWidget::gasSetpointUpdate,p_hwm,&HardwareManager::setFlowSetpoint);
-
-#ifdef BC_PCONTROLLER
-    SettingsStorage pc(BC::Key::PController::key,SettingsStorage::Hardware);
-    configPController(pc.get(BC::Key::PController::readOnly,true));
-#endif
 
     QThread *hwmThread = new QThread(this);
     hwmThread->setObjectName("HardwareManagerThread");
@@ -722,117 +732,49 @@ void MainWindow::viewExperiment()
     }
 }
 
-#ifdef BC_PCONTROLLER
-void MainWindow::configPController(bool readOnly)
+void MainWindow::launchPressureControlSettings()
 {
-//    QHBoxLayout *hbl = new QHBoxLayout;
-//    QLabel *cplabel = new QLabel(QString("Pressure"));
-//    cplabel->setAlignment(Qt::AlignRight);
-//    QDoubleSpinBox *cpbox = new QDoubleSpinBox;
+    auto d = new QDialog;
+    d->setWindowTitle("Pressure Control");
+    d->setAttribute(Qt::WA_DeleteOnClose);
+    auto pcw = new PressureControlWidget(d);
+    auto pc = p_hwm->getPressureControllerConfig();
+    pcw->initialize(pc);
+    d->setLayout(pcw->layout());
+    connect(p_hwm,&HardwareManager::pressureSetpointUpdate,pcw,&PressureControlWidget::pressureSetpointUpdate);
+    connect(p_hwm,&HardwareManager::pressureControlMode,pcw,&PressureControlWidget::pressureControlModeUpdate);
+    connect(pcw,&PressureControlWidget::setpointChanged,p_hwm,&HardwareManager::setPressureSetpoint);
+    connect(pcw,&PressureControlWidget::pressureControlModeChanged,p_hwm,&HardwareManager::setPressureControlMode);
+    connect(pcw,&PressureControlWidget::valveOpen,p_hwm,&HardwareManager::openGateValve);
+    connect(pcw,&PressureControlWidget::valveClose,p_hwm,&HardwareManager::closeGateValve);
+    d->show();
+    d->exec();
+}
 
+void MainWindow::configPController()
+{
     using namespace BC::Key::PController;
     SettingsStorage s(key,SettingsStorage::Hardware);
 
-
-//    cpbox->setMinimum(s.get(min,-1.0));
-//    cpbox->setMaximum(s.get(max,20.0));
-//    cpbox->setDecimals(s.get(decimals,4));
-//    cpbox->setSuffix(QString(" ")+s.get(units,QString("")));
-
-//    cpbox->setReadOnly(true);
-//    cpbox->setButtonSymbols(QAbstractSpinBox::NoButtons);
-//    cpbox->setKeyboardTracking(false);
-//    cpbox->blockSignals(true);
-
-//    connect(p_hwm,&HardwareManager::pressureUpdate,cpbox,&QDoubleSpinBox::setValue);
-
-//    hbl->addWidget(cplabel,0);
-//    hbl->addWidget(cpbox,1);
-    if(!readOnly)
+    if(!s.get(readOnly,true))
     {
-//        Led *pcled = new Led();
-//        hbl->addWidget(pcled,0);
-
         QGroupBox *pcBox = new QGroupBox(QString("Chamber Pressure Control"));
-        QHBoxLayout *hbl2 = new QHBoxLayout;
-
-        QLabel *psLabel = new QLabel("Pressure Setpoint");
-        psLabel->setAlignment(Qt::AlignRight);
-
-        QDoubleSpinBox *pSetpointBox = new QDoubleSpinBox;
-        pSetpointBox->setMinimum(s.get(min,-1.0));
-        pSetpointBox->setMaximum(s.get(max,20.0));
-        pSetpointBox->setDecimals(s.get(decimals,4));
-        pSetpointBox->setSuffix(QString(" ")+s.get(units,QString("")));
-
-        pSetpointBox->setSingleStep(qAbs(pSetpointBox->maximum() - pSetpointBox->minimum())/100.0);
-        pSetpointBox->setKeyboardTracking(false);
-//        pSetpointBox->setEnabled(false);
-
-        QPushButton *pControlButton = new QPushButton("Off");
-        pControlButton->setCheckable(true);
-        pControlButton->setChecked(false);
-
-        connect(p_hwm,&HardwareManager::pressureSetpointUpdate,[=](double val){
-           pSetpointBox->blockSignals(true);
-           pSetpointBox->setValue(val);
-           pSetpointBox->blockSignals(false);
-        });
-        connect(pSetpointBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),p_hwm,&HardwareManager::setPressureSetpoint);
-        connect(pControlButton,&QPushButton::toggled,p_hwm,&HardwareManager::setPressureControlMode);
-        connect(p_hwm,&HardwareManager::pressureControlMode,[=](bool en){
-            pControlButton->blockSignals(true);
-            if(en)
-            {
-                pControlButton->setText(QString("On"));
-            }
-            else
-            {
-                pControlButton->setText(QString("Off"));
-            }
-            pControlButton->setChecked(en);
-//            pcled->setState(en);
-            pControlButton->blockSignals(false);
-        });
-
-        hbl2->addWidget(psLabel,0);
-        hbl2->addWidget(pSetpointBox,1);
-        hbl2->addWidget(pControlButton,0);
-
-        QHBoxLayout *hbl3 = new QHBoxLayout;
-
-//        QLabel *vpLabel = new QLabel("Valve Position");
-//        vpLabel->setAlignment(Qt::AlignRight);
-//        QLabel *vpvLabel = new QLabel("");
-//        vpLabel->setAlignment(Qt::AlignRight);
-
-        QPushButton *pOpenButton = new QPushButton("Open");
-        QPushButton *pCloseButton = new QPushButton("Close");
-        connect(pOpenButton,&QPushButton::clicked,p_hwm,&HardwareManager::openGateValve);
-        connect(pCloseButton,&QPushButton::clicked,p_hwm,&HardwareManager::closeGateValve);
-        hbl3->addWidget(pOpenButton,0);
-        hbl3->addWidget(pCloseButton,0);
-
-        QVBoxLayout *vbl = new QVBoxLayout;
-
-        vbl->addLayout(hbl2);
-        vbl->addLayout(hbl3);
-
-        pcBox->setLayout(vbl);
+        auto pcw = new PressureControlWidget(this);
+        auto pc = p_hwm->getPressureControllerConfig();
+        pcw->initialize(pc);
+        pcBox->setLayout(pcw->layout());
+        connect(p_hwm,&HardwareManager::pressureSetpointUpdate,pcw,&PressureControlWidget::pressureSetpointUpdate);
+        connect(p_hwm,&HardwareManager::pressureControlMode,pcw,&PressureControlWidget::pressureControlModeUpdate);
+        connect(pcw,&PressureControlWidget::setpointChanged,p_hwm,&HardwareManager::setPressureSetpoint);
+        connect(pcw,&PressureControlWidget::pressureControlModeChanged,p_hwm,&HardwareManager::setPressureControlMode);
+        connect(pcw,&PressureControlWidget::valveOpen,p_hwm,&HardwareManager::openGateValve);
+        connect(pcw,&PressureControlWidget::valveClose,p_hwm,&HardwareManager::closeGateValve);
 
         ui->gasControlLayout->addWidget(pcBox,0);
+
     }
 
-//    QGroupBox *pgb = new QGroupBox(QString("Chamber Status"));
-//    pgb->setLayout(hbl);
-
-//    p_pcBox = pgb;
-    auto psb = new PressureStatusBox(this);
-    ui->instrumentStatusLayout->insertWidget(3,psb,0);
-    connect(p_hwm,&HardwareManager::pressureUpdate,psb,&PressureStatusBox::pressureUpdate);
-    connect(p_hwm,&HardwareManager::pressureControlMode,psb,&PressureStatusBox::pressureControlUpdate);
 }
-#endif
 
 void MainWindow::configureUi(MainWindow::ProgramState s)
 {

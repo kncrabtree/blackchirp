@@ -8,16 +8,12 @@
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 #include <hardware/optional/ioboard/ioboard.h>
 #include <hardware/optional/gpibcontroller/gpibcontroller.h>
+#include <hardware/optional/pressurecontroller/pressurecontroller.h>
+#include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
 #include <QThread>
 
-#ifdef BC_PCONTROLLER
-#include <hardware/optional/pressurecontroller/pressurecontroller.h>
-#endif
 
-#ifdef BC_TEMPCONTROLLER
-#include <hardware/optional/tempcontroller/temperaturecontroller.h>
-#endif
 
 
 
@@ -442,7 +438,7 @@ std::map<QString, QString> HardwareManager::currentHardware() const
     return out;
 }
 
-#ifdef BC_PCONTROLLER
+
 void HardwareManager::setPressureSetpoint(double val)
 {
     auto pc = findHardware<PressureController>(BC::Key::PController::key);
@@ -470,7 +466,18 @@ void HardwareManager::closeGateValve()
     if(pc)
         QMetaObject::invokeMethod(pc,&PressureController::closeGateValve);
 }
-#endif
+
+PressureControllerConfig HardwareManager::getPressureControllerConfig()
+{
+    PressureControllerConfig out;
+    auto pc = findHardware<PressureController>(BC::Key::PController::key);
+    if(pc->thread() != thread())
+        QMetaObject::invokeMethod(pc,&PressureController::getConfig,Qt::BlockingQueuedConnection,&out);
+    else
+        out = pc->getConfig();
+
+    return out;
+}
 
 void HardwareManager::checkStatus()
 {

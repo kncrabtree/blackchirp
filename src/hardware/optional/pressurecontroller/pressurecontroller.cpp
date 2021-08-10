@@ -72,6 +72,13 @@ void PressureController::closeGateValve()
     hwCloseGateValve();
 }
 
+PressureControllerConfig PressureController::getConfig() const
+{
+    //make a copy!
+    PressureControllerConfig out(d_config);
+    return out;
+}
+
 bool PressureController::prepareForExperiment(Experiment &e)
 {
     if(e.pcConfig())

@@ -12,6 +12,7 @@ static const QString decimals("decimal");
 static const QString units("units");
 static const QString readOnly("readOnly");
 static const QString readInterval("intervalMs");
+static const QString hasValve("hasValve");
 }
 
 namespace BC::Aux::PController {
@@ -39,6 +40,7 @@ public slots:
     void readPressureControlMode();
     void openGateValve();
     void closeGateValve();
+    PressureControllerConfig getConfig() const;
 
 protected:
     const bool d_readOnly;

@@ -76,10 +76,9 @@ public slots:
     void setLogIcon(BlackChirp::LogMessageCode c);
     void sleep(bool s);
     void viewExperiment();
+    void launchPressureControlSettings();
 
-#ifdef BC_PCONTROLLER
-    void configPController(bool readOnly);
-#endif
+    void configPController();
 
 private:
     Ui::MainWindow *ui;
