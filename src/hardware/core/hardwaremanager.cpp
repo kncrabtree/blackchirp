@@ -437,6 +437,13 @@ void HardwareManager::setFlowSetpoint(int index, double val)
         QMetaObject::invokeMethod(flow,[flow,index,val](){flow->setFlowSetpoint(index,val);});
 }
 
+void HardwareManager::setFlowChannelName(int index, QString name)
+{
+    auto flow = findHardware<FlowController>(BC::Key::Flow::flowController);
+    if(flow)
+        QMetaObject::invokeMethod(flow,[flow,index,name](){flow->setChannelName(index,name);});
+}
+
 void HardwareManager::setGasPressureSetpoint(double val)
 {
     auto flow = findHardware<FlowController>(BC::Key::Flow::flowController);

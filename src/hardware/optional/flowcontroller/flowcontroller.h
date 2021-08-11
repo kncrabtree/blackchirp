@@ -22,7 +22,7 @@ static const QString chMax("max");
 
 namespace BC::Aux::Flow {
 static const QString pressure{"pressure"};
-static const QString flow{"flow.%1"};
+static const QString flow{"flow%1"};
 }
 
 class FlowController : public HardwareObject

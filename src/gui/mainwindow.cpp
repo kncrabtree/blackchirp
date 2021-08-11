@@ -132,6 +132,7 @@ MainWindow::MainWindow(QWidget *parent) :
                 connect(gcw,&GasControlWidget::pressureSetpointUpdate,p_hwm,&HardwareManager::setGasPressureSetpoint);
                 connect(gcw,&GasControlWidget::gasSetpointUpdate,p_hwm,&HardwareManager::setFlowSetpoint);
                 connect(gcw,&GasControlWidget::nameUpdate,w,&GasFlowDisplayBox::updateFlowName);
+                connect(gcw,&GasControlWidget::nameUpdate,p_hwm,&HardwareManager::setFlowChannelName);
 
                 auto d = createHWDialog(key,gcw);
                 connect(d,&QDialog::accepted,w,&GasFlowDisplayBox::applySettings);

@@ -14,6 +14,7 @@ HardwareObject::HardwareObject(const QString key, const QString subKey, const QS
 {
     set(BC::Key::HW::key,d_key); set(BC::Key::HW::name,d_name);
     setDefault(BC::Key::HW::critical,critical);
+    setDefault(BC::Key::HW::rInterval,0);
     set(BC::Key::HW::threaded,threaded);
     set(BC::Key::HW::commType,commType,true);
 
@@ -57,9 +58,6 @@ void HardwareObject::bcInitInstrument()
         d_isConnected = false;
         set(BC::Key::HW::connected,false);
     });
-    auto interval = get(BC::Key::HW::rInterval,0)*1000;
-    if(interval > 0)
-        d_rollingDataTimerId = startTimer(interval);
 }
 
 void HardwareObject::bcTestConnection()
@@ -94,19 +92,17 @@ void HardwareObject::bcReadAuxData()
         emit validationDataRead(pl,QPrivateSignal());
 }
 
-void HardwareObject::setRollingTimerInterval(int interval)
-{
-    set(BC::Key::HW::rInterval,interval);
-    if(d_rollingDataTimerId >= 0)
-        killTimer(d_rollingDataTimerId);
-
-    d_rollingDataTimerId = startTimer(interval*1000);
-}
-
 void HardwareObject::bcReadSettings()
 {
     readAll();
     d_critical = get(BC::Key::HW::critical,true);
+    auto interval = get(BC::Key::HW::rInterval,0);
+
+    if(d_rollingDataTimerId >= 0)
+        killTimer(d_rollingDataTimerId);
+
+    if(interval > 0)
+        d_rollingDataTimerId = startTimer(interval*1000);
 
     readSettings();
 }

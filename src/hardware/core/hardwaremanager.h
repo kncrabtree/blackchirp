@@ -123,6 +123,7 @@ public slots:
     PulseGenConfig getPGenConfig();
 
     void setFlowSetpoint(int index, double val);
+    void setFlowChannelName(int index, QString name);
     void setGasPressureSetpoint(double val);
     void setGasPressureControlMode(bool en);
     FlowConfig getFlowConfig();

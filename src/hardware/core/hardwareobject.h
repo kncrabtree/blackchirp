@@ -134,7 +134,6 @@ public slots:
     void bcInitInstrument();
     void bcTestConnection();
     void bcReadAuxData();
-    void setRollingTimerInterval(int interval);
 
     void bcReadSettings();
 

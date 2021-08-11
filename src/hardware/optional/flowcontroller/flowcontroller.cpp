@@ -189,9 +189,9 @@ AuxDataStorage::AuxDataMap FlowController::readAuxData()
         if(d_config.setting(i,FlowConfig::Enabled).toBool())
         {
             if(n.isEmpty())
-                out.insert({BC::Aux::Flow::flow.arg(i),d_config.setting(i,FlowConfig::Flow)});
+                out.insert({BC::Aux::Flow::flow.arg(i+1),d_config.setting(i,FlowConfig::Flow)});
             else
-                out.insert({n+"."+BC::Aux::Flow::flow.arg(i),d_config.setting(i,FlowConfig::Flow)});
+                out.insert({n+"."+BC::Aux::Flow::flow.arg(i+1),d_config.setting(i,FlowConfig::Flow)});
         }
     }
 
