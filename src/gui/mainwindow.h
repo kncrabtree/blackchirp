@@ -20,6 +20,7 @@ class QLineEdit;
 class QDoubleSpinBox;
 class QProgressBar;
 class QAction;
+class HWDialog;
 
 #ifdef BC_LIF
 class LifControlWidget;
@@ -77,13 +78,13 @@ public slots:
     void sleep(bool s);
     void viewExperiment();
 
-    void launchPressureControlSettings();
-    void launchFlowControlSettings();
+    bool isDialogOpen(const QString key);
+    HWDialog *createHWDialog(const QString key, QStringList forbiddenKeys, QWidget *controlWidget = nullptr);
 
 private:
     Ui::MainWindow *ui;
     QList<QPair<QThread*,QObject*> > d_threadObjectList;
-    QList<QPair<QLabel*,Led*>> d_ledList;
+    std::map<QString,HWDialog*> d_openDialogs;
     LogHandler *p_lh;
     HardwareManager *p_hwm;
     AcquisitionManager *p_am;

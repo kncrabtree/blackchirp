@@ -110,7 +110,26 @@ MainWindow::MainWindow(QWidget *parent) :
         connect(p_hwm,&HardwareManager::gasPressureControlMode,w,&GasFlowDisplayBox::updatePressureControl);
 
         auto act = ui->menuHardware->addAction("Flow Controller");
-        connect(act,&QAction::triggered,this,&MainWindow::launchFlowControlSettings);
+        connect(act,&QAction::triggered,[this,w]{
+
+            if(isDialogOpen(BC::Key::Flow::flowController))
+                return;
+
+            auto gcw = new GasControlWidget;
+            auto fc = p_hwm->getFlowConfig();
+            gcw->initialize(fc);
+            connect(p_hwm,&HardwareManager::flowSetpointUpdate,gcw,&GasControlWidget::updateGasSetpoint);
+            connect(p_hwm,&HardwareManager::gasPressureSetpointUpdate,gcw,&GasControlWidget::updatePressureSetpoint);
+            connect(p_hwm,&HardwareManager::gasPressureControlMode,gcw,&GasControlWidget::updatePressureControl);
+            connect(gcw,&GasControlWidget::pressureControlUpdate,p_hwm,&HardwareManager::setGasPressureControlMode);
+            connect(gcw,&GasControlWidget::pressureSetpointUpdate,p_hwm,&HardwareManager::setGasPressureSetpoint);
+            connect(gcw,&GasControlWidget::gasSetpointUpdate,p_hwm,&HardwareManager::setFlowSetpoint);
+            connect(gcw,&GasControlWidget::nameUpdate,w,&GasFlowDisplayBox::updateFlowName);
+
+            auto d = createHWDialog(BC::Key::Flow::flowController,{},gcw);
+            connect(d,&QDialog::accepted,w,&GasFlowDisplayBox::applySettings);
+
+        });
     }
 
 
@@ -124,7 +143,24 @@ MainWindow::MainWindow(QWidget *parent) :
         connect(p_hwm,&HardwareManager::pressureControlMode,psb,&PressureStatusBox::pressureControlUpdate);
 
         auto act = ui->menuHardware->addAction("Pressure Controller");
-        connect(act,&QAction::triggered,this,&MainWindow::launchPressureControlSettings);
+        connect(act,&QAction::triggered,[this,psb](){
+
+            if(isDialogOpen(BC::Key::PController::key))
+                return;
+
+            auto pcw = new PressureControlWidget;
+            auto pc = p_hwm->getPressureControllerConfig();
+            pcw->initialize(pc);
+            connect(p_hwm,&HardwareManager::pressureSetpointUpdate,pcw,&PressureControlWidget::pressureSetpointUpdate);
+            connect(p_hwm,&HardwareManager::pressureControlMode,pcw,&PressureControlWidget::pressureControlModeUpdate);
+            connect(pcw,&PressureControlWidget::setpointChanged,p_hwm,&HardwareManager::setPressureSetpoint);
+            connect(pcw,&PressureControlWidget::pressureControlModeChanged,p_hwm,&HardwareManager::setPressureControlMode);
+            connect(pcw,&PressureControlWidget::valveOpen,p_hwm,&HardwareManager::openGateValve);
+            connect(pcw,&PressureControlWidget::valveClose,p_hwm,&HardwareManager::closeGateValve);
+
+            auto d = createHWDialog(BC::Key::PController::key,{},pcw);
+            connect(d,&QDialog::accepted,psb,&PressureStatusBox::updateFromSettings);
+        });
     }
 
 
@@ -741,57 +777,37 @@ void MainWindow::viewExperiment()
     }
 }
 
-void MainWindow::launchPressureControlSettings()
+bool MainWindow::isDialogOpen(const QString key)
 {
-    auto pcw = new PressureControlWidget;
-    auto pc = p_hwm->getPressureControllerConfig();
-    pcw->initialize(pc);
-    connect(p_hwm,&HardwareManager::pressureSetpointUpdate,pcw,&PressureControlWidget::pressureSetpointUpdate);
-    connect(p_hwm,&HardwareManager::pressureControlMode,pcw,&PressureControlWidget::pressureControlModeUpdate);
-    connect(pcw,&PressureControlWidget::setpointChanged,p_hwm,&HardwareManager::setPressureSetpoint);
-    connect(pcw,&PressureControlWidget::pressureControlModeChanged,p_hwm,&HardwareManager::setPressureControlMode);
-    connect(pcw,&PressureControlWidget::valveOpen,p_hwm,&HardwareManager::openGateValve);
-    connect(pcw,&PressureControlWidget::valveClose,p_hwm,&HardwareManager::closeGateValve);
+    auto it = d_openDialogs.find(key);
+    if(it != d_openDialogs.end())
+    {
+        auto d = it->second;
+        d->setWindowState(Qt::WindowActive);
+        d->raise();
+        d->show();
+        return true;
+    }
 
-    auto d = new HWDialog(BC::Key::PController::key,{},pcw);
-    connect(d,&QDialog::accepted,[=](){
-        auto w = findChild<QWidget*>(BC::Key::PController::key);
-        if(w)
-        {
-            auto psb = dynamic_cast<PressureStatusBox*>(w);
-            if(psb)
-                psb->updateFromSettings();
-        }
-        QMetaObject::invokeMethod(p_hwm,[=](){ p_hwm->updateObjectSettings(BC::Key::PController::key); });
-    });
-    d->show();
+    return false;
 }
 
-void MainWindow::launchFlowControlSettings()
+HWDialog *MainWindow::createHWDialog(const QString key, QStringList forbiddenKeys, QWidget *controlWidget)
 {
-    auto gcw = new GasControlWidget;
-    auto fc = p_hwm->getFlowConfig();
-    gcw->initialize(fc);
-    connect(p_hwm,&HardwareManager::flowSetpointUpdate,gcw,&GasControlWidget::updateGasSetpoint);
-    connect(p_hwm,&HardwareManager::gasPressureSetpointUpdate,gcw,&GasControlWidget::updatePressureSetpoint);
-    connect(p_hwm,&HardwareManager::gasPressureControlMode,gcw,&GasControlWidget::updatePressureControl);
-    connect(gcw,&GasControlWidget::pressureControlUpdate,p_hwm,&HardwareManager::setGasPressureControlMode);
-    connect(gcw,&GasControlWidget::pressureSetpointUpdate,p_hwm,&HardwareManager::setGasPressureSetpoint);
-    connect(gcw,&GasControlWidget::gasSetpointUpdate,p_hwm,&HardwareManager::setFlowSetpoint);
-    auto w = findChild<QWidget*>(BC::Key::Flow::flowController);
-    auto fsb = dynamic_cast<GasFlowDisplayBox*>(w);
-    if(fsb)
-        connect(gcw,&GasControlWidget::nameUpdate,fsb,&GasFlowDisplayBox::updateFlowName);
-
-    auto d = new HWDialog(BC::Key::Flow::flowController,{},gcw);
-    connect(d,&QDialog::accepted,[=](){
-        gcw->saveSettings();
-        if(fsb)
-            fsb->applySettings();
-        QMetaObject::invokeMethod(p_hwm,[=](){ p_hwm->updateObjectSettings(BC::Key::Flow::flowController); });
+    auto out = new HWDialog(key,forbiddenKeys,controlWidget);
+    d_openDialogs.insert({key,out});
+    auto hwm = p_hwm;
+    connect(out,&HWDialog::accepted,[hwm,key](){
+        QMetaObject::invokeMethod(hwm,[=](){ hwm->updateObjectSettings(key); });
     });
-    d->show();
+    connect(out,&HWDialog::destroyed,[this,key](){
+        auto it = d_openDialogs.find(key);
+        if(it != d_openDialogs.end())
+            d_openDialogs.erase(it);
+    });
 
+    out->show();
+    return out;
 }
 
 void MainWindow::configureUi(MainWindow::ProgramState s)

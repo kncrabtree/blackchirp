@@ -14,6 +14,7 @@
 HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidget, QWidget *parent) : QDialog(parent)
 {
     setAttribute(Qt::WA_DeleteOnClose);
+    setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding);
 
     auto vbl = new QVBoxLayout;
     
@@ -47,6 +48,7 @@ HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidge
     svbl->addWidget(sLabel,0);
     
     p_view = new QTreeView(this);
+    p_view->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Preferred);
     p_model = new HWSettingsModel(key,forbiddenKeys,this);
     p_view->setModel(p_model);
     p_view->resizeColumnToContents(0);
