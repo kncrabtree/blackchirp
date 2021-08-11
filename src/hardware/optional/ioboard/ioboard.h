@@ -29,6 +29,10 @@ private:
     // HardwareObject interface
 public slots:
     bool prepareForExperiment(Experiment &exp) override;
+
+    // HardwareObject interface
+public slots:
+    QStringList forbiddenKeys() const override;
 };
 
 #ifdef BC_IOBOARD

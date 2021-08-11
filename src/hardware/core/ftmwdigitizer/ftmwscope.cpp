@@ -13,3 +13,9 @@ FtmwScope::~FtmwScope()
 
 
 
+
+
+QStringList FtmwScope::forbiddenKeys() const
+{
+    return {BC::Key::Digi::numAnalogChannels, BC::Key::Digi::numDigitalChannels};
+}

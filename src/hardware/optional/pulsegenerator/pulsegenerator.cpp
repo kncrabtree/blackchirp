@@ -276,3 +276,9 @@ void PulseGenerator::readAll()
 
     emit configUpdate(d_config,QPrivateSignal());
 }
+
+
+QStringList PulseGenerator::forbiddenKeys() const
+{
+    return {BC::Key::PGen::numChannels};
+}

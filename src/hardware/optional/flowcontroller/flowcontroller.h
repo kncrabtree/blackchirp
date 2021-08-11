@@ -34,6 +34,7 @@ public:
     virtual ~FlowController();
 
     FlowConfig config() const { return d_config; }
+    QStringList validationKeys() const override;
 
 signals:
     void flowUpdate(int,double,QPrivateSignal);
@@ -55,6 +56,7 @@ public slots:
     void readPressureControlMode();
 
     virtual void poll();
+    QStringList forbiddenKeys() const override;
 
 private:
     virtual void hwSetPressureControlMode(bool enabled) =0;
@@ -87,9 +89,6 @@ protected:
     friend class VirtualFlowController;
 #endif
 
-    // HardwareObject interface
-public:
-    QStringList validationKeys() const override;
 };
 
 #ifdef BC_FLOWCONTROLLER

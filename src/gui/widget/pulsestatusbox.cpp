@@ -14,14 +14,11 @@ PulseStatusBox::PulseStatusBox(QWidget *parent) : QGroupBox(parent)
     QGridLayout *gl = new QGridLayout;
 
     SettingsStorage pg(BC::Key::PGen::key,SettingsStorage::Hardware);
-    SettingsStorage pw(BC::Key::PulseWidget::key);
     int channels = pg.get(BC::Key::PGen::numChannels,8);
     d_ledList.reserve(channels);
     for(int i=0; i<channels; i++)
-    {
-        auto txt = pw.getArrayValue<QString>(BC::Key::PulseWidget::channels,i,
-                                             BC::Key::PulseWidget::name,"Ch"+QString::number(i));
-        QLabel *lbl = new QLabel(txt,this);
+    {       
+        QLabel *lbl = new QLabel(this);
         lbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
 
         Led *led = new Led(this);
@@ -38,6 +35,8 @@ PulseStatusBox::PulseStatusBox(QWidget *parent) : QGroupBox(parent)
     gl->setSpacing(3);
 
     setLayout(gl);
+
+    updateFromSettings();
 }
 
 void PulseStatusBox::updatePulseLeds(const PulseGenConfig &cc)
@@ -60,5 +59,17 @@ void PulseStatusBox::updatePulseLed(int index, PulseGenConfig::Setting s, QVaria
         break;
     default:
         break;
+    }
+}
+
+void PulseStatusBox::updateFromSettings()
+{
+    SettingsStorage pw(BC::Key::PulseWidget::key);
+
+    for(std::size_t i=0; i<d_ledList.size(); i++)
+    {
+        auto txt = pw.getArrayValue<QString>(BC::Key::PulseWidget::channels,i,
+                                             BC::Key::PulseWidget::name,"Ch"+QString::number(i));
+        d_ledList.at(i).first->setText(txt);
     }
 }

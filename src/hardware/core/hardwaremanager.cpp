@@ -314,7 +314,7 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
         for(auto it = d_hardwareMap.cbegin(); it != d_hardwareMap.cend(); ++it)
         {
             auto obj = it->second;
-            if(obj->thread() != thread())
+            if(obj->thread() != QThread::currentThread())
                 QMetaObject::invokeMethod(obj,[obj,exp](){
                     return obj->prepareForExperiment(*exp);
                 },Qt::BlockingQueuedConnection,&success);
@@ -366,6 +366,15 @@ void HardwareManager::updateObjectSettings(const QString key)
         QMetaObject::invokeMethod(obj,&HardwareObject::bcReadSettings);
 }
 
+QStringList HardwareManager::getForbiddenKeys(const QString key) const
+{
+    auto hw = findHardware<HardwareObject>(key);
+    if(hw)
+        return hw->forbiddenKeys();
+
+    return {};
+}
+
 void HardwareManager::getAuxData()
 {
     for(auto it = d_hardwareMap.cbegin(); it != d_hardwareMap.cend(); ++it)
@@ -406,6 +415,21 @@ void HardwareManager::setPGenRepRate(double r)
         QMetaObject::invokeMethod(pGen,[pGen,r](){ pGen->setRepRate(r); });
 }
 
+PulseGenConfig HardwareManager::getPGenConfig()
+{
+    PulseGenConfig out;
+    auto pg = findHardware<PulseGenerator>(BC::Key::PGen::key);
+    if(pg)
+    {
+        if(pg->thread() != QThread::currentThread())
+            QMetaObject::invokeMethod(pg,&PulseGenerator::config,Qt::BlockingQueuedConnection,&out);
+        else
+            out = pg->config();
+    }
+
+    return out;
+}
+
 void HardwareManager::setFlowSetpoint(int index, double val)
 {
     auto flow = findHardware<FlowController>(BC::Key::Flow::flowController);
@@ -431,10 +455,13 @@ FlowConfig HardwareManager::getFlowConfig()
 {
     FlowConfig out;
     auto fc = findHardware<FlowController>(BC::Key::Flow::flowController);
-    if(fc->thread() != thread())
-        QMetaObject::invokeMethod(fc,&FlowController::config,Qt::BlockingQueuedConnection,&out);
-    else
-        out = fc->config();
+    if(fc)
+    {
+        if(fc->thread() != QThread::currentThread())
+            QMetaObject::invokeMethod(fc,&FlowController::config,Qt::BlockingQueuedConnection,&out);
+        else
+            out = fc->config();
+    }
 
     return out;
 }
@@ -490,10 +517,13 @@ PressureControllerConfig HardwareManager::getPressureControllerConfig()
 {
     PressureControllerConfig out;
     auto pc = findHardware<PressureController>(BC::Key::PController::key);
-    if(pc->thread() != thread())
-        QMetaObject::invokeMethod(pc,&PressureController::getConfig,Qt::BlockingQueuedConnection,&out);
-    else
-        out = pc->getConfig();
+    if(pc)
+    {
+        if(pc->thread() != QThread::currentThread())
+            QMetaObject::invokeMethod(pc,&PressureController::getConfig,Qt::BlockingQueuedConnection,&out);
+        else
+            out = pc->getConfig();
+    }
 
     return out;
 }
@@ -531,7 +561,7 @@ void HardwareManager::setLifParameters(double delay, double pos)
 
 bool HardwareManager::setPGenLifDelay(double d)
 {
-    if(p_pGen->thread() == thread())
+    if(p_pGen->thread() == QThread::currentThread())
         return p_pGen->setLifDelay(d);
 
 
@@ -544,7 +574,7 @@ bool HardwareManager::setPGenLifDelay(double d)
 
 void HardwareManager::setLifScopeConfig(const BlackChirp::LifScopeConfig c)
 {
-    if(p_lifScope->thread() == thread())
+    if(p_lifScope->thread() == QThread::currentThread())
         p_lifScope->setAll(c);
     else
         QMetaObject::invokeMethod(p_lifScope,"setAll",Q_ARG(BlackChirp::LifScopeConfig,c));
@@ -552,7 +582,7 @@ void HardwareManager::setLifScopeConfig(const BlackChirp::LifScopeConfig c)
 
 bool HardwareManager::setLifLaserPos(double pos)
 {
-    if(p_lifLaser->thread() == thread())
+    if(p_lifLaser->thread() == QThread::currentThread())
     {
         auto p = p_lifLaser->setPosition(pos);
         return p > 0.0;

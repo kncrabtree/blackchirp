@@ -111,6 +111,7 @@ public slots:
     void testAll();
     void testObjectConnection(const QString type, const QString key);
     void updateObjectSettings(const QString key);
+    QStringList getForbiddenKeys(const QString key) const;
 
     void getAuxData();
 
@@ -119,6 +120,7 @@ public slots:
     void setPGenSetting(int index, PulseGenConfig::Setting s, QVariant val);
     void setPGenConfig(const PulseGenConfig &c);
     void setPGenRepRate(double r);
+    PulseGenConfig getPGenConfig();
 
     void setFlowSetpoint(int index, double val);
     void setGasPressureSetpoint(double val);
@@ -150,7 +152,7 @@ private:
     std::unique_ptr<ClockManager> pu_clockManager;
 
     template<class T>
-    T* findHardware(const QString key){
+    T* findHardware(const QString key) const {
         auto it = d_hardwareMap.find(key);
         return it == d_hardwareMap.end() ? nullptr : static_cast<T*>(it->second);
     }

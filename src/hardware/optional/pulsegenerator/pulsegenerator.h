@@ -28,7 +28,7 @@ public slots:
     void initialize() override final;
     bool prepareForExperiment(Experiment &exp) override final;
 
-    PulseGenConfig config() const { return d_config; }
+    PulseGenConfig config() { readAll(); return d_config; }
     void readChannel(const int index);
     double readRepRate();
 
@@ -73,6 +73,10 @@ protected:
 #if BC_PGEN==0
     friend class VirtualPulseGenerator;
 #endif
+
+    // HardwareObject interface
+public slots:
+    QStringList forbiddenKeys() const override;
 };
 
 

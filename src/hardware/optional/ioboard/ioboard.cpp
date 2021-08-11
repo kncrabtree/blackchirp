@@ -80,3 +80,9 @@ bool IOBoard::prepareForExperiment(Experiment &exp)
 
     return true;
 }
+
+
+QStringList IOBoard::forbiddenKeys() const
+{
+    return {BC::Key::Digi::numAnalogChannels, BC::Key::Digi::numDigitalChannels};
+}

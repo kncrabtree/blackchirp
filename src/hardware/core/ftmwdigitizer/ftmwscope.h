@@ -27,6 +27,10 @@ signals:
 public slots:
     virtual void readWaveform() =0;
 
+
+    // HardwareObject interface
+public slots:
+    QStringList forbiddenKeys() const override;
 };
 
 

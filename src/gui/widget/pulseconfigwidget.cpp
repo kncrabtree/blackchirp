@@ -464,7 +464,7 @@ void PulseConfigWidget::setFromConfig(const PulseGenConfig &c)
     ui->repRateBox->setValue(c.repRate());
     blockSignals(false);
 
-    ui->pulsePlot->newConfig(c);
+    ui->pulsePlot->newConfig(d_config);
 }
 
 void PulseConfigWidget::newRepRate(double r)

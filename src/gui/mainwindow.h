@@ -79,7 +79,7 @@ public slots:
     void viewExperiment();
 
     bool isDialogOpen(const QString key);
-    HWDialog *createHWDialog(const QString key, QStringList forbiddenKeys, QWidget *controlWidget = nullptr);
+    HWDialog *createHWDialog(const QString key, QWidget *controlWidget = nullptr);
 
 private:
     Ui::MainWindow *ui;
@@ -115,8 +115,6 @@ private:
     MotorDisplayWidget *p_motorDisplayWidget;
     MotorStatusWidget *p_motorStatusWidget;
 #endif
-
-    QWidget *p_pcBox;
 
 protected:
     void closeEvent(QCloseEvent *ev);
