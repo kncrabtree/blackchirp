@@ -2,6 +2,7 @@
 
 #include <QTreeView>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QGroupBox>
 #include <QDialogButtonBox>
@@ -10,8 +11,10 @@
 #include <data/model/hwsettingsmodel.h>
 #include <hardware/core/hardwareobject.h>
 
-HWDialog::HWDialog(QString key, QWidget *controlWidget, QWidget *parent) : QDialog(parent)
+HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidget, QWidget *parent) : QDialog(parent)
 {
+    setAttribute(Qt::WA_DeleteOnClose);
+
     auto vbl = new QVBoxLayout;
     
     SettingsStorage s(key,SettingsStorage::Hardware);
@@ -43,26 +46,99 @@ HWDialog::HWDialog(QString key, QWidget *controlWidget, QWidget *parent) : QDial
     sLabel->setAlignment(Qt::AlignCenter);
     svbl->addWidget(sLabel,0);
     
-    auto sView = new QTreeView(this);
-    p_model = new HWSettingsModel(key,this);
-    sView->setModel(p_model);
-    svbl->addWidget(sView,1);
+    p_view = new QTreeView(this);
+    p_model = new HWSettingsModel(key,forbiddenKeys,this);
+    p_view->setModel(p_model);
+    p_view->resizeColumnToContents(0);
+    svbl->addWidget(p_view,1);
+
+    auto hbl = new QHBoxLayout;
+
+    auto ibButton = new QPushButton("Insert Before");
+    ibButton->setEnabled(false);
+    ibButton->setToolTip("Only possible for array values.");
+    connect(ibButton,&QPushButton::clicked,this,&HWDialog::insertBefore);
+
+    auto iaButton = new QPushButton("Insert After");
+    iaButton->setEnabled(false);
+    iaButton->setToolTip("Only possible for array values.");
+    connect(iaButton,&QPushButton::clicked,this,&HWDialog::insertAfter);
+
+    auto rButton = new QPushButton("Remove");
+    rButton->setEnabled(false);
+    rButton->setToolTip("Only possible for array values.");
+    connect(rButton,&QPushButton::clicked,this,&HWDialog::remove);
+
+    connect(p_view,&QTreeView::clicked,[=](const QModelIndex &idx){
+        auto item = p_model->getItem(idx);
+        if(item && item->canAddChildren())
+        {
+            ibButton->setEnabled(true);
+            iaButton->setEnabled(true);
+            rButton->setEnabled(true);
+        }
+        else
+        {
+            ibButton->setEnabled(false);
+            iaButton->setEnabled(false);
+            rButton->setEnabled(false);
+        }
+    });
+
+    hbl->addWidget(ibButton,1);
+    hbl->addWidget(iaButton,1);
+    hbl->addWidget(rButton,1);
+    svbl->addLayout(hbl,0);
     
     sBox->setLayout(svbl);
     vbl->addWidget(sBox);
     
     auto bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Close);
-    connect(bb->button(QDialogButtonBox::Ok),&QAbstractButton::clicked,this,&HWDialog::accept);
-    connect(bb->button(QDialogButtonBox::Cancel),&QAbstractButton::clicked,this,&HWDialog::reject);
+    connect(bb->button(QDialogButtonBox::Ok),&QPushButton::clicked,this,&HWDialog::accept);
+    connect(bb->button(QDialogButtonBox::Close),&QPushButton::clicked,this,&HWDialog::reject);
     
     vbl->addWidget(bb);
     setLayout(vbl);
+}
+
+void HWDialog::insertBefore()
+{
+    auto idx = p_view->currentIndex();
+    auto item = p_model->getItem(idx);
+
+    if(!item->canAddChildren())
+        return;
+
+    p_model->insertRows(idx.row(),1,p_model->parent(idx));
+}
+
+void HWDialog::insertAfter()
+{
+    auto idx = p_view->currentIndex();
+    auto item = p_model->getItem(idx);
+
+    if(!item->canAddChildren())
+        return;
+
+    p_model->insertRows(idx.row()+1,1,p_model->parent(idx));
+}
+
+void HWDialog::remove()
+{
+    auto idx = p_view->currentIndex();
+    auto item = p_model->getItem(idx);
+
+    if(!item->canAddChildren())
+        return;
+
+    p_model->removeRows(idx.row(),1,p_model->parent(idx));
 }
 
 
 void HWDialog::accept()
 {
     //todo
+    p_model->saveChanges();
 
     QDialog::accept();
 }
@@ -73,11 +149,10 @@ void HWDialog::reject()
     p_model->discardChanges(true);
 
     QDialog::reject();
-
 }
 
 
 QSize HWDialog::sizeHint() const
 {
-    return {500,500};
+    return {500,800};
 }

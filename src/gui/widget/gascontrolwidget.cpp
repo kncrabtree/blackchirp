@@ -106,6 +106,20 @@ QStringList GasControlWidget::getGasNames() const
     return out;
 }
 
+void GasControlWidget::saveSettings()
+{
+    save();
+}
+
+void GasControlWidget::initialize(const FlowConfig &cfg)
+{
+     for(int i=0; i<cfg.size(); ++i)
+         updateGasSetpoint(i,cfg.setting(i,FlowConfig::Setpoint).toDouble());
+
+     updatePressureSetpoint(cfg.pressureSetpoint());
+     updatePressureControl(cfg.pressureControlMode());
+}
+
 void GasControlWidget::applySettings()
 {
     using namespace BC::Key::Flow;

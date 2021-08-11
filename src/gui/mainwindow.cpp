@@ -45,6 +45,8 @@
 #endif
 
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
+#include <hardware/optional/flowcontroller/flowcontroller.h>
+#include <hardware/core/ftmwdigitizer/ftmwscope.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -96,10 +98,27 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::clockFrequencyUpdate,ui->clockWidget,&ClockDisplayWidget::updateFrequency);
 
     //optional hardware
+    //FlowController
+    if(hwl.find(BC::Key::Flow::flowController) != hwl.end())
+    {
+        auto w = new GasFlowDisplayBox;
+        w->setObjectName(BC::Key::Flow::flowController);
+        ui->instrumentStatusLayout->insertWidget(3,w,0);
+        connect(p_hwm,&HardwareManager::flowUpdate,w,&GasFlowDisplayBox::updateFlow);
+        connect(p_hwm,&HardwareManager::flowSetpointUpdate,w,&GasFlowDisplayBox::updateFlowSetpoint);
+        connect(p_hwm,&HardwareManager::gasPressureUpdate,w,&GasFlowDisplayBox::updatePressure);
+        connect(p_hwm,&HardwareManager::gasPressureControlMode,w,&GasFlowDisplayBox::updatePressureControl);
+
+        auto act = ui->menuHardware->addAction("Flow Controller");
+        connect(act,&QAction::triggered,this,&MainWindow::launchFlowControlSettings);
+    }
+
+
     //PressureController
     if(hwl.find(BC::Key::PController::key) != hwl.end())
     {
-        auto psb = new PressureStatusBox(this);
+        auto psb = new PressureStatusBox;
+        psb->setObjectName(BC::Key::PController::key);
         ui->instrumentStatusLayout->insertWidget(3,psb,0);
         connect(p_hwm,&HardwareManager::pressureUpdate,psb,&PressureStatusBox::pressureUpdate);
         connect(p_hwm,&HardwareManager::pressureControlMode,psb,&PressureStatusBox::pressureControlUpdate);
@@ -118,18 +137,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeSetting,p_hwm,&HardwareManager::setPGenSetting);
     connect(ui->pulseConfigWidget,&PulseConfigWidget::changeRepRate,p_hwm,&HardwareManager::setPGenRepRate);
 
-    connect(p_hwm,&HardwareManager::flowUpdate,ui->gasFlowDisplayWidget,&GasFlowDisplayWidget::updateFlow);
-    connect(p_hwm,&HardwareManager::flowSetpointUpdate,ui->gasFlowDisplayWidget,&GasFlowDisplayWidget::updateFlowSetpoint);
-    connect(p_hwm,&HardwareManager::gasPressureUpdate,ui->gasFlowDisplayWidget,&GasFlowDisplayWidget::updatePressure);
-    connect(p_hwm,&HardwareManager::gasPressureControlMode,ui->gasFlowDisplayWidget,&GasFlowDisplayWidget::updatePressureControl);
-    connect(ui->gasControlWidget,&GasControlWidget::nameUpdate,ui->gasFlowDisplayWidget,&GasFlowDisplayWidget::updateFlowName);
 
-    connect(p_hwm,&HardwareManager::flowSetpointUpdate,ui->gasControlWidget,&GasControlWidget::updateGasSetpoint);
-    connect(p_hwm,&HardwareManager::gasPressureSetpointUpdate,ui->gasControlWidget,&GasControlWidget::updatePressureSetpoint);
-    connect(p_hwm,&HardwareManager::gasPressureControlMode,ui->gasControlWidget,&GasControlWidget::updatePressureControl);
-    connect(ui->gasControlWidget,&GasControlWidget::pressureControlUpdate,p_hwm,&HardwareManager::setGasPressureControlMode);
-    connect(ui->gasControlWidget,&GasControlWidget::pressureSetpointUpdate,p_hwm,&HardwareManager::setGasPressureSetpoint);
-    connect(ui->gasControlWidget,&GasControlWidget::gasSetpointUpdate,p_hwm,&HardwareManager::setFlowSetpoint);
+
 
     QThread *hwmThread = new QThread(this);
     hwmThread->setObjectName("HardwareManagerThread");
@@ -270,7 +279,7 @@ void MainWindow::startExperiment()
 
     ExperimentWizard wiz(-1,this);
     wiz.experiment->setPulseGenConfig(ui->pulseConfigWidget->getConfig());
-    wiz.experiment->setFlowConfig(ui->gasControlWidget->getFlowConfig());
+    wiz.experiment->setFlowConfig(p_hwm->getFlowConfig());
     wiz.setValidationKeys(p_hwm->validationKeys());
 
 #ifdef BC_LIF
@@ -315,7 +324,7 @@ void MainWindow::quickStart()
         e.setLifConfig(lc);
     }
 #endif
-    e->setFlowConfig(ui->gasControlWidget->getFlowConfig());
+    e->setFlowConfig(p_hwm->getFlowConfig());
     e->setPulseGenConfig(ui->pulseConfigWidget->getConfig());
 
     //create a popup summary of experiment.
@@ -359,7 +368,7 @@ void MainWindow::startSequence()
             e.setLifConfig(lc);
         }
 #endif
-        exp->setFlowConfig(ui->gasControlWidget->getFlowConfig());
+        exp->setFlowConfig(p_hwm->getFlowConfig());
         exp->setPulseGenConfig(ui->pulseConfigWidget->getConfig());
 
         //create a popup summary of experiment.
@@ -378,7 +387,7 @@ void MainWindow::startSequence()
     {
         ExperimentWizard wiz(-1,this);
         wiz.experiment->setPulseGenConfig(ui->pulseConfigWidget->getConfig());
-        wiz.experiment->setFlowConfig(ui->gasControlWidget->getFlowConfig());
+        wiz.experiment->setFlowConfig(p_hwm->getFlowConfig());
 #ifdef BC_LIF
         connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
         connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
@@ -744,34 +753,44 @@ void MainWindow::launchPressureControlSettings()
     connect(pcw,&PressureControlWidget::valveOpen,p_hwm,&HardwareManager::openGateValve);
     connect(pcw,&PressureControlWidget::valveClose,p_hwm,&HardwareManager::closeGateValve);
 
-    auto d = new HWDialog(BC::Key::PController::key,pcw);
-    d->setAttribute(Qt::WA_DeleteOnClose);
+    auto d = new HWDialog(BC::Key::PController::key,{},pcw);
+    connect(d,&QDialog::accepted,[=](){
+        auto w = findChild<QWidget*>(BC::Key::PController::key);
+        if(w)
+        {
+            auto psb = dynamic_cast<PressureStatusBox*>(w);
+            if(psb)
+                psb->updateFromSettings();
+        }
+        QMetaObject::invokeMethod(p_hwm,[=](){ p_hwm->updateObjectSettings(BC::Key::PController::key); });
+    });
     d->show();
-    d->exec();
 }
 
-void MainWindow::configPController()
+void MainWindow::launchFlowControlSettings()
 {
-    using namespace BC::Key::PController;
-    SettingsStorage s(key,SettingsStorage::Hardware);
+    auto gcw = new GasControlWidget;
+    auto fc = p_hwm->getFlowConfig();
+    gcw->initialize(fc);
+    connect(p_hwm,&HardwareManager::flowSetpointUpdate,gcw,&GasControlWidget::updateGasSetpoint);
+    connect(p_hwm,&HardwareManager::gasPressureSetpointUpdate,gcw,&GasControlWidget::updatePressureSetpoint);
+    connect(p_hwm,&HardwareManager::gasPressureControlMode,gcw,&GasControlWidget::updatePressureControl);
+    connect(gcw,&GasControlWidget::pressureControlUpdate,p_hwm,&HardwareManager::setGasPressureControlMode);
+    connect(gcw,&GasControlWidget::pressureSetpointUpdate,p_hwm,&HardwareManager::setGasPressureSetpoint);
+    connect(gcw,&GasControlWidget::gasSetpointUpdate,p_hwm,&HardwareManager::setFlowSetpoint);
+    auto w = findChild<QWidget*>(BC::Key::Flow::flowController);
+    auto fsb = dynamic_cast<GasFlowDisplayBox*>(w);
+    if(fsb)
+        connect(gcw,&GasControlWidget::nameUpdate,fsb,&GasFlowDisplayBox::updateFlowName);
 
-    if(!s.get(readOnly,true))
-    {
-        QGroupBox *pcBox = new QGroupBox(QString("Chamber Pressure Control"));
-        auto pcw = new PressureControlWidget(this);
-        auto pc = p_hwm->getPressureControllerConfig();
-        pcw->initialize(pc);
-        pcBox->setLayout(pcw->layout());
-        connect(p_hwm,&HardwareManager::pressureSetpointUpdate,pcw,&PressureControlWidget::pressureSetpointUpdate);
-        connect(p_hwm,&HardwareManager::pressureControlMode,pcw,&PressureControlWidget::pressureControlModeUpdate);
-        connect(pcw,&PressureControlWidget::setpointChanged,p_hwm,&HardwareManager::setPressureSetpoint);
-        connect(pcw,&PressureControlWidget::pressureControlModeChanged,p_hwm,&HardwareManager::setPressureControlMode);
-        connect(pcw,&PressureControlWidget::valveOpen,p_hwm,&HardwareManager::openGateValve);
-        connect(pcw,&PressureControlWidget::valveClose,p_hwm,&HardwareManager::closeGateValve);
-
-        ui->gasControlLayout->addWidget(pcBox,0);
-
-    }
+    auto d = new HWDialog(BC::Key::Flow::flowController,{},gcw);
+    connect(d,&QDialog::accepted,[=](){
+        gcw->saveSettings();
+        if(fsb)
+            fsb->applySettings();
+        QMetaObject::invokeMethod(p_hwm,[=](){ p_hwm->updateObjectSettings(BC::Key::Flow::flowController); });
+    });
+    d->show();
 
 }
 
@@ -792,7 +811,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
-        ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         ui->actionSleep->setEnabled(true);
 #ifdef BC_LIF
@@ -810,7 +828,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
-        ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         ui->actionSleep->setEnabled(false);
 #ifdef BC_LIF
@@ -828,7 +845,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
-        ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         ui->actionSleep->setEnabled(false);
 #ifdef BC_LIF
@@ -846,7 +862,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
-        ui->gasControlBox->setEnabled(false);
         ui->pulseConfigWidget->setEnabled(false);
         ui->actionSleep->setEnabled(true);
 #ifdef BC_LIF
@@ -864,7 +879,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
-        ui->gasControlBox->setEnabled(true);
         ui->pulseConfigWidget->setEnabled(true);
         ui->actionSleep->setEnabled(false);
 #ifdef BC_LIF
@@ -883,7 +897,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->actionStart_Sequence->setEnabled(true);
         ui->actionCommunication->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
-        ui->gasControlBox->setEnabled(true);
         ui->pulseConfigWidget->setEnabled(true);
         ui->actionSleep->setEnabled(true);
 #ifdef BC_LIF

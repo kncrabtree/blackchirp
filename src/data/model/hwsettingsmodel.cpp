@@ -1,43 +1,53 @@
 #include "hwsettingsmodel.h"
 
-HWSettingsModel::HWSettingsModel(QString key, QObject *parent) :
+#include <hardware/core/hardwareobject.h>
+
+HWSettingsModel::HWSettingsModel(QString key, QStringList forbiddenKeys, QObject *parent) :
     QAbstractItemModel(parent), SettingsStorage(key,Hardware)
 {
-    d_keys = keys();
-    d_arrayKeys = arrayKeys();
+    auto k = keys();
+    auto ak = arrayKeys();
+
+    QVector<QVariant> l{"Key","Value"};
+    pu_rootItem = std::make_unique<HWSettingsItem>(l,false,false,nullptr);
+
+    forbiddenKeys.append({
+        BC::Key::HW::commType, BC::Key::HW::connected,BC::Key::HW::key,
+        BC::Key::HW::name,BC::Key::HW::threaded,BC::Key::Custom::comm
+    });
     
-    //temporary
-    discardChanges(true);
-    
-    QVariantList l{"Key","Value"};
-    pu_rootItem = std::make_unique<HWSettingsItem>(l,false,nullptr);
-    
-    for(auto const &key : d_keys)
+    for(auto const &key : k)
     {
-        QVariantList data{key,get(key)};
-        pu_rootItem->appendChild(new HWSettingsItem(data,true,pu_rootItem.get()));
+        if(forbiddenKeys.contains(key))
+            continue;
+
+        QVector<QVariant> data{key,get(key)};
+        pu_rootItem->appendChild(new HWSettingsItem(data,true,false,pu_rootItem.get()));
     }
     
-    for(auto const &arrayKey : d_arrayKeys)
+    for(auto const &arrayKey : ak)
     {
+        if(forbiddenKeys.contains(arrayKey))
+            continue;
+
         auto v = getArray(arrayKey);
         if(v.size() == 0)
             continue;
         
-        QVariantList arrayData{arrayKey};
-        auto arrayItem = new HWSettingsItem(arrayData,false,pu_rootItem.get());
+        QVector<QVariant> arrayData{arrayKey,""};
+        auto arrayItem = new HWSettingsItem(arrayData,false,false,pu_rootItem.get());
         
         for(std::size_t i=0; i<v.size(); ++i)
         {
             auto d = QVariant::fromValue(i);
-            QVariantList data{d};
-            auto arrayEntry = new HWSettingsItem(data,false,arrayItem);
+            QVector<QVariant> data{d,""};
+            auto arrayEntry = new HWSettingsItem(data,false,true,arrayItem);
             
             auto const &m = v.at(i);
             for(auto const &[key,val] : m)
             {
-                QVariantList itemData{key,val};
-                arrayEntry->appendChild(new HWSettingsItem(itemData,true,arrayEntry));
+                QVector<QVariant> itemData{key,val};
+                arrayEntry->appendChild(new HWSettingsItem(itemData,true,false,arrayEntry));
             }
             
             arrayItem->appendChild(arrayEntry);
@@ -45,6 +55,41 @@ HWSettingsModel::HWSettingsModel(QString key, QObject *parent) :
         
         pu_rootItem->appendChild(arrayItem);
     }
+}
+
+void HWSettingsModel::saveChanges()
+{
+    for(int i=0; i<pu_rootItem->childCount(); ++i)
+    {
+        auto item = pu_rootItem->childAt(i);
+        if(!item)
+            continue;
+
+        if(item->childCount() == 0)
+            set(item->data(0).toString(),item->data(1));
+        else
+        {
+            auto arrayKey = item->data(0).toString();
+            setArray(arrayKey,{});
+            std::vector<SettingsMap> vec;
+            for(int j=0; j<item->childCount(); ++j)
+            {
+                auto arrayItem = item->childAt(j);
+                if(!arrayItem)
+                    continue;
+
+                SettingsMap m;
+                for(int k=0; k<arrayItem->childCount(); ++k)
+                    m.insert_or_assign(arrayItem->childAt(k)->data(0).toString(),
+                                       arrayItem->childAt(k)->data(1));
+
+                vec.push_back(m);
+            }
+            setArray(arrayKey,vec);
+        }
+    }
+
+    save();
 }
 
 
@@ -137,14 +182,54 @@ QVariant HWSettingsModel::headerData(int section, Qt::Orientation orientation, i
 
 bool HWSettingsModel::insertRows(int row, int count, const QModelIndex &parent)
 {
-    ///todo
-    return false;
+    //Rows can only be inserted/removed for array values, and we need to ensure that new items that are created
+    //have the correct keys available for the user to edit.
+    //We get the keys from the first child array item (since they should be the same for all items).
+    if(!parent.isValid())
+        return false;
+
+    auto parentItem = getItem(parent);
+    if(!parentItem)
+        return false;
+    if(parentItem->childCount() == 0)
+        return false;
+
+    //get the list of keys for the array value in settings
+    auto keys = parentItem->childAt(0)->childKeys();
+
+    beginInsertRows(parent,row,row+count-1);
+    bool success = true;
+    for(int i=0; i<count; ++i)
+        success &= parentItem->addChild(row,keys);
+    endInsertRows();
+
+    emit dataChanged(index(0,0,parent),index(rowCount(parent),0,parent),{Qt::DisplayRole});
+
+    return success;
 }
 
 bool HWSettingsModel::removeRows(int row, int count, const QModelIndex &parent)
 {
-    ///todo
-    return false;
+    if(!parent.isValid())
+        return false;
+
+    auto parentItem = getItem(parent);
+    if(!parentItem)
+        return false;
+
+    auto childItem = parentItem->childAt(row);
+    if(!childItem || !childItem->canAddChildren())
+        return false;
+
+    bool success = true;
+    beginRemoveRows(parent,row,row+count-1);
+    for(int i=0;i<count;++i)
+        success &= parentItem->removeChild(row);
+    endRemoveRows();
+
+    emit dataChanged(index(0,0,parent),index(rowCount(parent),0,parent),{Qt::DisplayRole});
+
+    return success;
 }
 
 Qt::ItemFlags HWSettingsModel::flags(const QModelIndex &index) const
@@ -152,7 +237,7 @@ Qt::ItemFlags HWSettingsModel::flags(const QModelIndex &index) const
     auto item = getItem(index);
     if(item)
     {
-        if(item->isEditable())
+        if(item->isEditable() && index.column() == 1)
             return Qt::ItemIsEditable | QAbstractItemModel::flags(index);
         else
             return QAbstractItemModel::flags(index);

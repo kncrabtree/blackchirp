@@ -6,13 +6,17 @@
 
 
 #include <gui/widget/led.h>
+#include <gui/widget/gascontrolwidget.h>
 #include <data/storage/settingsstorage.h>
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 
 using namespace BC::Key::Flow;
 
-GasFlowDisplayWidget::GasFlowDisplayWidget(QWidget *parent) : QWidget(parent)
+GasFlowDisplayBox::GasFlowDisplayBox(QWidget *parent) : QGroupBox(parent)
 {
+
+    setTitle("Flow Status");
+
     QGridLayout *gl = new QGridLayout(this);
     gl->setMargin(3);
     gl->setSpacing(3);
@@ -52,12 +56,16 @@ GasFlowDisplayWidget::GasFlowDisplayWidget(QWidget *parent) : QWidget(parent)
         gl->addWidget(led,i+1,2,1,1);
     }
 
+    setLayout(gl);
+
     applySettings();
 }
 
-void GasFlowDisplayWidget::applySettings()
+void GasFlowDisplayBox::applySettings()
 {
     SettingsStorage fc(flowController,SettingsStorage::Hardware);
+    SettingsStorage gc(BC::Key::GasControl::key);
+
     p_pressureBox->setDecimals(fc.get(pDec,3));
     p_pressureBox->setRange(-fc.get(pMax,10.0),fc.get(pMax,10.0));
     p_pressureBox->setSuffix(QString(" ") + fc.get(pUnits,QString("")));
@@ -69,22 +77,17 @@ void GasFlowDisplayWidget::applySettings()
         b->setRange(-fc.getArrayValue(channels,i,chMax,10000.0),fc.getArrayValue(channels,i,chMax,10000.0));
         b->setSuffix(QString(" ")+fc.getArrayValue(channels,i,chUnits,QString("")));
 
-    }
-
-}
-
-void GasFlowDisplayWidget::initChannelNames(const QStringList l)
-{
-    for(int i=0; i<d_flowWidgets.size(); ++i)
-    {
-        if(i < l.size() && !l.at(i).isEmpty())
-            std::get<0>(d_flowWidgets.at(i))->setText(l.at(i).mid(0,9));
+        auto lbl = std::get<0>(d_flowWidgets.at(i));
+        auto name = gc.getArrayValue(BC::Key::GasControl::channels,i,BC::Key::GasControl::gasName,QString(""));
+        if(name.isEmpty())
+            lbl->setText(QString("Ch%1").arg(i+1));
         else
-            std::get<0>(d_flowWidgets.at(i))->setText(QString("Ch")+QString::number(i+1));
+            lbl->setText(name);
     }
+
 }
 
-void GasFlowDisplayWidget::updateFlow(int ch, double val)
+void GasFlowDisplayBox::updateFlow(int ch, double val)
 {
     if(ch < 0 || ch >= d_flowWidgets.size())
         return;
@@ -92,7 +95,7 @@ void GasFlowDisplayWidget::updateFlow(int ch, double val)
     std::get<1>(d_flowWidgets.at(ch))->setValue(val);
 }
 
-void GasFlowDisplayWidget::updateFlowName(int ch, const QString name)
+void GasFlowDisplayBox::updateFlowName(int ch, const QString name)
 {
     if(ch < 0 || ch >= d_flowWidgets.size())
         return;
@@ -105,7 +108,7 @@ void GasFlowDisplayWidget::updateFlowName(int ch, const QString name)
         lbl->setText(name.mid(0,9));
 }
 
-void GasFlowDisplayWidget::updateFlowSetpoint(int ch, double val)
+void GasFlowDisplayBox::updateFlowSetpoint(int ch, double val)
 {
     if(ch < 0 || ch >= d_flowWidgets.size())
         return;
@@ -117,12 +120,12 @@ void GasFlowDisplayWidget::updateFlowSetpoint(int ch, double val)
         led->setState(true);
 }
 
-void GasFlowDisplayWidget::updatePressureControl(bool en)
+void GasFlowDisplayBox::updatePressureControl(bool en)
 {
     p_pressureLed->setState(en);
 }
 
-void GasFlowDisplayWidget::updatePressure(double p)
+void GasFlowDisplayBox::updatePressure(double p)
 {
     p_pressureBox->setValue(p);
 }

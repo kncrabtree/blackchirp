@@ -15,6 +15,7 @@ public:
 public slots:
     void pressureUpdate(double p);
     void pressureControlUpdate(bool en);
+    void updateFromSettings();
 
 private:
     QDoubleSpinBox *p_cpBox;

@@ -380,6 +380,7 @@ void SettingsStorage::save()
     }
 
     d_settings.sync();
+    d_edited = false;
 }
 
 void SettingsStorage::readAll()
@@ -422,6 +423,8 @@ void SettingsStorage::readAll()
         if(d_getters.find(k) == d_getters.end())
             d_values.insert_or_assign(k,d_settings.value(k));
     }
+
+    d_edited = false;
 }
 
 

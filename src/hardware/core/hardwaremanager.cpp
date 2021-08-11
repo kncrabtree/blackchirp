@@ -359,6 +359,13 @@ void HardwareManager::testObjectConnection(const QString type, const QString key
     }
 }
 
+void HardwareManager::updateObjectSettings(const QString key)
+{
+    auto obj = findHardware<HardwareObject>(key);
+    if(obj)
+        QMetaObject::invokeMethod(obj,&HardwareObject::readSettings);
+}
+
 void HardwareManager::getAuxData()
 {
     for(auto it = d_hardwareMap.cbegin(); it != d_hardwareMap.cend(); ++it)
@@ -418,6 +425,18 @@ void HardwareManager::setGasPressureControlMode(bool en)
     auto flow = findHardware<FlowController>(BC::Key::Flow::flowController);
     if(flow)
         QMetaObject::invokeMethod(flow,[flow,en](){flow->setPressureControlMode(en);});
+}
+
+FlowConfig HardwareManager::getFlowConfig()
+{
+    FlowConfig out;
+    auto fc = findHardware<FlowController>(BC::Key::Flow::flowController);
+    if(fc->thread() != thread())
+        QMetaObject::invokeMethod(fc,&FlowController::config,Qt::BlockingQueuedConnection,&out);
+    else
+        out = fc->config();
+
+    return out;
 }
 
 std::map<QString, QStringList> HardwareManager::validationKeys() const

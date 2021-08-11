@@ -8,14 +8,14 @@ HardwareObject::HardwareObject(const QString key, const QString subKey, const QS
                                CommunicationProtocol::CommType commType,
                                QObject *parent, bool threaded, bool critical) :
     QObject(parent), SettingsStorage({key,subKey},General), d_name(name), d_key(key),
-    d_subKey(subKey), d_critical(critical), d_threaded(threaded),
+    d_subKey(subKey), d_threaded(threaded),
     d_commType(commType), d_enabledForExperiment(true),
     d_isConnected(false)
 {
     set(BC::Key::HW::key,d_key); set(BC::Key::HW::name,d_name);
-    set(BC::Key::HW::critical,critical);
+    setDefault(BC::Key::HW::critical,critical);
     set(BC::Key::HW::threaded,threaded);
-    set(BC::Key::HW::commType,commType);
+    set(BC::Key::HW::commType,commType,true);
 
     //it is necessary to write the subKey one level above the SettingsStorage group, which
     //is referenced to d_key/d_subKey, so that other parts of the application can determine
@@ -24,6 +24,8 @@ HardwareObject::HardwareObject(const QString key, const QString subKey, const QS
     s.setFallbacksEnabled(false);
     s.setValue(d_key + "/" + BC::Key::HW::subKey,d_subKey);
     s.sync();
+
+    d_critical = get(BC::Key::HW::critical,true);
 }
 
 HardwareObject::~HardwareObject()
@@ -103,7 +105,8 @@ void HardwareObject::setRollingTimerInterval(int interval)
 
 void HardwareObject::readSettings()
 {
-
+    readAll();
+    d_critical = get(BC::Key::HW::critical,true);
 }
 
 

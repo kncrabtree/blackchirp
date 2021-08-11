@@ -65,8 +65,6 @@ public:
     QSpinBox *exptSpinBox;
     QGroupBox *clockBox;
     ClockDisplayWidget *clockWidget;
-    QGroupBox *flowStatusBox;
-    GasFlowDisplayWidget *gasFlowDisplayWidget;
     PulseStatusBox *pulseStatusBox;
     QSpacerItem *statusSpacer;
     QLabel *ftmwProgressLabel;
@@ -75,9 +73,6 @@ public:
     QWidget *controlTab;
     QVBoxLayout *controlTabLayout;
     QHBoxLayout *controlTabTopLayout;
-    QVBoxLayout *gasControlLayout;
-    QGroupBox *gasControlBox;
-    GasControlWidget *gasControlWidget;
     PulseConfigWidget *pulseConfigWidget;
     QWidget *ftmwTab;
     QVBoxLayout *ftmwTabLayout;
@@ -257,16 +252,6 @@ public:
         clockBox->setLayout(clockWidget->layout());
         instrumentStatusLayout->addWidget(clockBox);
 
-        flowStatusBox = new QGroupBox(centralWidget);
-        flowStatusBox->setObjectName(QString::fromUtf8("flowStatusBox"));
-        flowStatusBox->setFont(font);
-
-        gasFlowDisplayWidget = new GasFlowDisplayWidget(centralWidget);
-        flowStatusBox->setLayout(gasFlowDisplayWidget->layout());
-
-
-        instrumentStatusLayout->addWidget(flowStatusBox);
-
         pulseStatusBox = new PulseStatusBox(centralWidget);
         pulseStatusBox->setObjectName(QString::fromUtf8("pulseStatusBox"));
         pulseStatusBox->setFont(font);
@@ -305,22 +290,6 @@ public:
         controlTabTopLayout = new QHBoxLayout();
         controlTabTopLayout->setSpacing(6);
         controlTabTopLayout->setObjectName(QString::fromUtf8("controlTopLayout"));
-        gasControlLayout = new QVBoxLayout();
-        gasControlLayout->setSpacing(6);
-        gasControlLayout->setObjectName(QString::fromUtf8("gasControlLayout"));
-
-        gasControlBox = new QGroupBox;
-        gasControlBox->setObjectName(QString::fromUtf8("gasControlBox"));
-
-        gasControlWidget = new GasControlWidget(centralWidget);
-        gasControlBox->setLayout(gasControlWidget->layout());
-        gasFlowDisplayWidget->initChannelNames(gasControlWidget->getGasNames());
-
-
-        gasControlLayout->addWidget(gasControlBox);
-
-        controlTabTopLayout->addLayout(gasControlLayout);
-
 
         controlTabLayout->addLayout(controlTabTopLayout);
 
@@ -521,9 +490,7 @@ public:
 #ifndef QT_NO_TOOLTIP
         exptSpinBox->setToolTip(QApplication::translate("MainWindow", "Number of the most recent experiment", nullptr));
 #endif // QT_NO_TOOLTIP
-        flowStatusBox->setTitle(QApplication::translate("MainWindow", "Flow Status", nullptr));
         ftmwProgressLabel->setText(QApplication::translate("MainWindow", "FTMW Progress", nullptr));
-        gasControlBox->setTitle(QApplication::translate("MainWindow", "Gas Control", nullptr));
         mainTabWidget->setTabText(mainTabWidget->indexOf(controlTab), QApplication::translate("MainWindow", "Control", nullptr));
         mainTabWidget->setTabText(mainTabWidget->indexOf(ftmwTab), QApplication::translate("MainWindow", "CP-FTMW", nullptr));
         mainTabWidget->setTabText(mainTabWidget->indexOf(rollingDataTab), QApplication::translate("MainWindow", "Rolling Data", nullptr));

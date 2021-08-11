@@ -28,8 +28,10 @@ public:
     ~GasControlWidget() {};
     FlowConfig getFlowConfig() const;
     QStringList getGasNames() const;
+    void saveSettings();
 
 public slots:
+    void initialize(const FlowConfig &cfg);
     void applySettings();
     void updateGasSetpoint(int i, double sp);
     void updatePressureSetpoint(double sp);

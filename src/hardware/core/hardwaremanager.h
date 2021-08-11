@@ -7,6 +7,8 @@
 #include <data/storage/auxdatastorage.h>
 #include <data/storage/settingsstorage.h>
 #include <data/experiment/rfconfig.h>
+
+#include <hardware/optional/flowcontroller/flowconfig.h>
 #include <hardware/optional/pulsegenerator/pulsegenconfig.h>
 #include <hardware/optional/pressurecontroller/pressurecontrollerconfig.h>
 
@@ -108,6 +110,7 @@ public slots:
 
     void testAll();
     void testObjectConnection(const QString type, const QString key);
+    void updateObjectSettings(const QString key);
 
     void getAuxData();
 
@@ -120,6 +123,7 @@ public slots:
     void setFlowSetpoint(int index, double val);
     void setGasPressureSetpoint(double val);
     void setGasPressureControlMode(bool en);
+    FlowConfig getFlowConfig();
 
     void setPressureSetpoint(double val);
     void setPressureControlMode(bool en);

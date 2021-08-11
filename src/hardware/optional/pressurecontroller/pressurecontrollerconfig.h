@@ -15,8 +15,8 @@ public:
     PressureControllerConfig();
 
     double d_pressure{0.0};
-    double d_setPoint{1.0};
-    bool d_pressureControlMode{true};
+    double d_setPoint{0.0};
+    bool d_pressureControlMode{false};
 
 
     // HeaderStorage interface

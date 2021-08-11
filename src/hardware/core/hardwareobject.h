@@ -95,7 +95,7 @@ public:
     const QString d_key; /*!< Name to be used in settings for abstract hardware*/
     const QString d_subKey; /*< Name to be used in settings for real hardware*/
 
-    const bool d_critical;
+    bool d_critical;
     const bool d_threaded;
     const CommunicationProtocol::CommType d_commType;
 
@@ -136,7 +136,7 @@ public slots:
     void bcReadAuxData();
     void setRollingTimerInterval(int interval);
 
-    virtual void readSettings();
+    void readSettings();
 
     /*!
      * \brief Puts device into a standby mode.
