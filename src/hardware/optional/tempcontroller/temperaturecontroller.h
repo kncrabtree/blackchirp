@@ -43,6 +43,7 @@ protected:
     virtual AuxDataStorage::AuxDataMap readAuxData() override;
     void initialize() override final;
     bool testConnection() override final;
+    void readSettings() override final;
 
     virtual void tcInitialize() =0;
     virtual bool tcTestConnection() =0;

@@ -103,10 +103,12 @@ void HardwareObject::setRollingTimerInterval(int interval)
     d_rollingDataTimerId = startTimer(interval*1000);
 }
 
-void HardwareObject::readSettings()
+void HardwareObject::bcReadSettings()
 {
     readAll();
     d_critical = get(BC::Key::HW::critical,true);
+
+    readSettings();
 }
 
 

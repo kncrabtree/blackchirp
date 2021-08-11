@@ -44,6 +44,7 @@
 #include <modules/motor/gui/motorstatuswidget.h>
 #endif
 
+#include <hardware/optional/tempcontroller/temperaturecontroller.h>
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
@@ -97,8 +98,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(p_hwm,&HardwareManager::clockFrequencyUpdate,ui->clockWidget,&ClockDisplayWidget::updateFrequency);
 
-    //optional hardware
-    //FlowController
+
     if(hwl.find(BC::Key::Flow::flowController) != hwl.end())
     {
         auto w = new GasFlowDisplayBox;
@@ -133,7 +133,6 @@ MainWindow::MainWindow(QWidget *parent) :
     }
 
 
-    //PressureController
     if(hwl.find(BC::Key::PController::key) != hwl.end())
     {
         auto psb = new PressureStatusBox;
@@ -160,6 +159,17 @@ MainWindow::MainWindow(QWidget *parent) :
 
             auto d = createHWDialog(BC::Key::PController::key,{},pcw);
             connect(d,&QDialog::accepted,psb,&PressureStatusBox::updateFromSettings);
+        });
+    }
+
+    if(hwl.find(BC::Key::TC::key) != hwl.end())
+    {
+        auto act = ui->menuHardware->addAction("Temperature Controller");
+        connect(act,&QAction::triggered,[this](){
+            if(isDialogOpen(BC::Key::TC::key))
+                return;
+
+            createHWDialog(BC::Key::TC::key,{});
         });
     }
 

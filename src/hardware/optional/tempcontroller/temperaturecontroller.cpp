@@ -19,13 +19,7 @@ TemperatureController::TemperatureController(const QString subKey, const QString
                             {enabled,false},
                             {decimals,4}
                         });
-        setArray(channels,l);
-    }
-
-    for(int i=0; i<d_numChannels; ++i)
-    {
-        d_config.setEnabled(i,getArrayValue(channels,i,enabled,false));
-        d_config.setName(i,getArrayValue(channels,i,chName,QString("")));
+        setArray(channels,l,true);
     }
 }
 
@@ -110,6 +104,15 @@ bool TemperatureController::testConnection()
     readAll();
     p_readTimer->start();
     return true;
+}
+
+void TemperatureController::readSettings()
+{
+    for(int i=0; i<d_numChannels; ++i)
+    {
+        d_config.setEnabled(i,getArrayValue(channels,i,enabled,false));
+        d_config.setName(i,getArrayValue(channels,i,chName,QString("")));
+    }
 }
 
 void TemperatureController::poll()

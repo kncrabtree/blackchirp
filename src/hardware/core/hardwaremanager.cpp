@@ -363,7 +363,7 @@ void HardwareManager::updateObjectSettings(const QString key)
 {
     auto obj = findHardware<HardwareObject>(key);
     if(obj)
-        QMetaObject::invokeMethod(obj,&HardwareObject::readSettings);
+        QMetaObject::invokeMethod(obj,&HardwareObject::bcReadSettings);
 }
 
 void HardwareManager::getAuxData()

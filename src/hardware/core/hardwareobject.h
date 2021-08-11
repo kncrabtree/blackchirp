@@ -136,7 +136,7 @@ public slots:
     void bcReadAuxData();
     void setRollingTimerInterval(int interval);
 
-    void readSettings();
+    void bcReadSettings();
 
     /*!
      * \brief Puts device into a standby mode.
@@ -171,6 +171,7 @@ protected:
 private:
     virtual AuxDataStorage::AuxDataMap readAuxData();
     virtual AuxDataStorage::AuxDataMap readValidationData();
+    virtual void readSettings() {}
 
     bool d_isConnected;
     int d_rollingDataTimerId{-1};
