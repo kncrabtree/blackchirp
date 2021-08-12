@@ -41,8 +41,11 @@ signals:
     void clockFrequencyUpdate(RfConfig::ClockType, double);
 
 public slots:
+    void readActiveClocks();
+    QHash<RfConfig::ClockType,RfConfig::ClockFreq> getCurrentClocks();
     double setClockFrequency(RfConfig::ClockType t, double freqMHz);
     double readClockFrequency(RfConfig::ClockType t);
+    bool configureClocks(QHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
     bool prepareForExperiment(Experiment &exp);
 
 private:

@@ -254,6 +254,7 @@ void HardwareManager::initialize()
         }
     }
 
+    pu_clockManager->readActiveClocks();
     emit hwInitializationComplete();
 }
 
@@ -382,6 +383,16 @@ void HardwareManager::getAuxData()
         auto obj = it->second;
         QMetaObject::invokeMethod(obj,&HardwareObject::bcReadAuxData);
     }
+}
+
+QHash<RfConfig::ClockType, RfConfig::ClockFreq> HardwareManager::getClocks()
+{
+    return pu_clockManager->getCurrentClocks();
+}
+
+void HardwareManager::configureClocks(QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks)
+{
+    pu_clockManager->configureClocks(clocks);
 }
 
 void HardwareManager::setClocks(QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks)

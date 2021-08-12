@@ -7,6 +7,9 @@ namespace BC::Key::Clock {
 static const QString minFreq("minFreqMHz");
 static const QString maxFreq("maxFreqMHz");
 static const QString lock("lockExternal");
+static const QString outputs("outputs");
+static const QString mf("multFactor");
+static const QString role("role");
 }
 
 /**
@@ -34,10 +37,13 @@ class Clock : public HardwareObject
 public:
     explicit Clock(int clockNum, int numOutputs, bool tunable, const QString subKey, const QString name,
                    CommunicationProtocol::CommType commType, QObject *parent = nullptr);
+    virtual ~Clock();
 
     int numOutputs() { return d_numOutputs; }
     bool isTunable() { return d_isTunable; }
     void setMultFactor(double d, int output=0);
+    double multFactor(int output=0);
+    int outputForRole(RfConfig::ClockType t);
 
     //implement this function if d_numChannels > 1 to return
     //human-readable names for each output (e.g., Source 1, Source 2, etc)
@@ -61,7 +67,7 @@ private:
     int d_numOutputs;
     bool d_isTunable;
     QHash<RfConfig::ClockType,int> d_outputRoles;
-    QList<double> d_multFactors;
+    QVector<double> d_multFactors;
 
 
 protected:

@@ -63,8 +63,13 @@ void RfConfigWidget::setFromRfConfig(const RfConfig &c)
     ui->commonLoCheckBox->setChecked(c.d_commonUpDownLO);
     ui->commonLoCheckBox->blockSignals(false);
 
-    p_ctm->setFromConfig(c);
+    setClocks(c);
     ui->clockTableView->resizeColumnsToContents();
+}
+
+void RfConfigWidget::setClocks(const RfConfig &c)
+{
+    p_ctm->setFromConfig(c);
 }
 
 void RfConfigWidget::toRfConfig(RfConfig &c)

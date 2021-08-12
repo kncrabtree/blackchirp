@@ -7,12 +7,61 @@ Clock::Clock(int clockNum, int numOutputs, bool tunable, const QString subKey, c
     HardwareObject(QString("Clock%1").arg(clockNum),subKey,name,commType,parent,false,true), d_numOutputs(numOutputs),
     d_isTunable(tunable)
 {
+    using namespace BC::Key::Clock;
+
+    for(int i=0; i<d_numOutputs; i++)
+        d_multFactors << 1.0;
+
+    if(containsArray(outputs))
+    {
+        int n = getArraySize(outputs);
+        for(int i=0; i<n && i<d_numOutputs; ++i)
+        {
+            QVariant type = getArrayValue(outputs,i,role);
+            if(type.isValid())
+                addRole(type.value<RfConfig::ClockType>(),i);
+            auto factor = getArrayValue(outputs,i,mf,1.0);
+            setMultFactor(factor,i);
+        }
+    }
+}
+
+Clock::~Clock()
+{
+    using namespace BC::Key::Clock;
+    setArray(outputs,{});
+
+    for(int i=0; i<d_numOutputs; ++i)
+    {
+        SettingsMap m;
+        for(auto it = d_outputRoles.cbegin(); it != d_outputRoles.cend(); ++it)
+        {
+            if(it.value() == i)
+                m.insert({role,it.key()});
+        }
+        m.insert({mf,d_multFactors.at(i)});
+        appendArrayMap(outputs,m);
+    }
 }
 
 void Clock::setMultFactor(double d, int output)
 {
     if(d > 0.0 && output < d_multFactors.size())
         d_multFactors[output] = d;
+}
+
+double Clock::multFactor(int output)
+{
+    return d_multFactors.value(output);
+}
+
+int Clock::outputForRole(RfConfig::ClockType t)
+{
+    auto it = d_outputRoles.find(t);
+    if(it == d_outputRoles.end())
+        return -1;
+
+    return it.value();
 }
 
 QStringList Clock::channelNames()
@@ -22,8 +71,6 @@ QStringList Clock::channelNames()
 
 void Clock::initialize()
 {
-    for(int i=0; i<d_numOutputs; i++)
-        d_multFactors << 1.0;
     initializeClock();
 }
 
@@ -107,7 +154,7 @@ double Clock::setFrequency(RfConfig::ClockType t, double freqMHz)
     }
 
     double out = readHwFrequency(d_outputRoles.value(t));
-    out *= d_multFactors.at(output);
+    out *= d_multFactors.value(output);
     if(out > 0.0)
         emit frequencyUpdate(t,out);
 

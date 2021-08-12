@@ -25,6 +25,7 @@
 #include <QtWidgets/QToolBar>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
+#include <QtWidgets/QSpacerItem>
 #include <gui/widget/ftmwviewwidget.h>
 #include <gui/widget/led.h>
 #include <gui/widget/auxdataviewwidget.h>
@@ -34,19 +35,23 @@ class Ui_MainWindow
 {
 public:
     QAction *actionStart_Experiment;
-    QAction *actionPause;
-    QAction *actionResume;
-    QAction *actionAbort;
+    QToolButton *acquireButton;
+    QToolButton *pauseButton;
+    QToolButton *resumeButton;
+    QToolButton *abortButton;
+    QToolButton *sleepButton;
+    QToolButton *auxPlotButton;
+    QToolButton *rollingPlotButton;
     QAction *actionCommunication;
     QAction *action_AuxGraphs;
     QAction *action_RollingGraphs;
     QAction *actionTest_All_Connections;
-    QAction *actionSleep;
     QAction *actionAutoscale_Rolling;
     QAction *actionAutoscale_Aux;
     QAction *actionView_Experiment;
     QAction *actionQuick_Experiment;
     QAction *actionStart_Sequence;
+    QAction *actionRfConfig;
     QToolButton *hardwareButton;
     QWidget *centralWidget;
     QHBoxLayout *mainLayout;
@@ -76,7 +81,6 @@ public:
     QMenuBar *menuBar;
     QMenu *menuHardware;
     QMenu *menuAcquisition;
-    QMenu *menuView;
     QMenu *menuRollingData;
     QMenu *menuAuxData;
     QToolBar *mainToolBar;
@@ -86,7 +90,6 @@ public:
     {
         if (MainWindow->objectName().isEmpty())
             MainWindow->setObjectName(QString::fromUtf8("MainWindow"));
-//        MainWindow->resize(676, 309);
         QIcon icon;
         icon.addFile(QString::fromUtf8(":/icons/bc_logo_small.png"), QSize(), QIcon::Normal, QIcon::Off);
         MainWindow->setWindowIcon(icon);
@@ -95,21 +98,24 @@ public:
         QIcon icon1;
         icon1.addFile(QString::fromUtf8(":/icons/experiment.png"), QSize(), QIcon::Normal, QIcon::Off);
         actionStart_Experiment->setIcon(icon1);
-        actionPause = new QAction(MainWindow);
-        actionPause->setObjectName(QString::fromUtf8("actionPause"));
+        pauseButton = new QToolButton(MainWindow);
+        pauseButton->setObjectName(QString::fromUtf8("actionPause"));
+        pauseButton->setToolTip("Pause acquisition");
         QIcon icon2;
         icon2.addFile(QString::fromUtf8(":/icons/pause.png"), QSize(), QIcon::Normal, QIcon::Off);
-        actionPause->setIcon(icon2);
-        actionResume = new QAction(MainWindow);
-        actionResume->setObjectName(QString::fromUtf8("actionResume"));
+        pauseButton->setIcon(icon2);
+        resumeButton = new QToolButton(MainWindow);
+        resumeButton->setObjectName(QString::fromUtf8("actionResume"));
+        resumeButton->setToolTip("Resume acquisition");
         QIcon icon3;
         icon3.addFile(QString::fromUtf8(":/icons/start.png"), QSize(), QIcon::Normal, QIcon::Off);
-        actionResume->setIcon(icon3);
-        actionAbort = new QAction(MainWindow);
-        actionAbort->setObjectName(QString::fromUtf8("actionAbort"));
+        resumeButton->setIcon(icon3);
+        abortButton = new QToolButton(MainWindow);
+        abortButton->setObjectName(QString::fromUtf8("actionAbort"));
+        abortButton->setToolTip("Abort acquistiion");
         QIcon icon4;
         icon4.addFile(QString::fromUtf8(":/icons/abort.png"), QSize(), QIcon::Normal, QIcon::Off);
-        actionAbort->setIcon(icon4);
+        abortButton->setIcon(icon4);
         actionCommunication = new QAction(MainWindow);
         actionCommunication->setObjectName(QString::fromUtf8("actionCommunication"));
         QIcon icon5;
@@ -132,12 +138,13 @@ public:
         QIcon icon8;
         icon8.addFile(QString::fromUtf8(":/icons/connect.png"), QSize(), QIcon::Normal, QIcon::Off);
         actionTest_All_Connections->setIcon(icon8);
-        actionSleep = new QAction(MainWindow);
-        actionSleep->setObjectName(QString::fromUtf8("actionSleep"));
-        actionSleep->setCheckable(true);
+        sleepButton = new QToolButton(MainWindow);
+        sleepButton->setObjectName(QString::fromUtf8("actionSleep"));
+        sleepButton->setCheckable(true);
         QIcon icon9;
         icon9.addFile(QString::fromUtf8(":/icons/sleep.png"), QSize(), QIcon::Normal, QIcon::Off);
-        actionSleep->setIcon(icon9);
+        sleepButton->setIcon(icon9);
+        sleepButton->setToolTip("Toggle sleep mode, putting hardware in a standby state.\nIf pressed during an acquisition, sleep mode will be activated when the acquisition is complete.");
         actionAutoscale_Aux = new QAction(MainWindow);
         actionAutoscale_Aux->setObjectName(QString::fromUtf8("actionAutoscale_Aux"));
         QIcon icon10;
@@ -146,8 +153,10 @@ public:
         actionAutoscale_Rolling = new QAction(MainWindow);
         actionAutoscale_Rolling->setObjectName(QString::fromUtf8("actionAutoscale_Rolling"));
         actionAutoscale_Rolling->setIcon(icon10);
-        QIcon icon11;
-        icon11.addFile(QString::fromUtf8(":/icons/chirp.png"), QSize(), QIcon::Normal, QIcon::Off);
+        QIcon rfIcon;
+        rfIcon.addFile(QString::fromUtf8(":/icons/chirp.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionRfConfig = new QAction("Rf Configuration",MainWindow);
+        actionRfConfig->setIcon(rfIcon);
         QIcon icon12;
         icon12.addFile(QString::fromUtf8(":/icons/controltab.png"), QSize(), QIcon::Normal, QIcon::Off);
         QIcon icon13;
@@ -178,10 +187,19 @@ public:
         instrumentStatusLayout->setObjectName(QString::fromUtf8("instrumentStatusLayout"));
         instStatusLabel = new QLabel(centralWidget);
         instStatusLabel->setObjectName(QString::fromUtf8("label"));
+
+        acquireButton = new QToolButton(MainWindow);
+        acquireButton->setText("Acquire");
+        acquireButton->setToolTip("Start a new acquisition");
+        acquireButton->setIcon(icon1);
+        acquireButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        acquireButton->setPopupMode(QToolButton::InstantPopup);
+
         QIcon hwIcon;
         hwIcon.addFile(QString(":/icons/bc.png"),QSize(), QIcon::Normal, QIcon::Off);
         hardwareButton = new QToolButton(MainWindow);
         hardwareButton->setText("Hardware");
+        hardwareButton->setToolTip("Configure hardware settings");
         hardwareButton->setIcon(hwIcon);
         hardwareButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
         hardwareButton->setPopupMode(QToolButton::InstantPopup);
@@ -189,6 +207,20 @@ public:
         font.setPointSize(8);
         instStatusLabel->setFont(font);
         instStatusLabel->setAlignment(Qt::AlignCenter);
+
+        auxPlotButton = new QToolButton(MainWindow);
+        auxPlotButton->setText(QString("Aux Data"));
+        auxPlotButton->setToolTip("Configure settings for aux data plots");
+        auxPlotButton->setIcon(auxIcon);
+        auxPlotButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        auxPlotButton->setPopupMode(QToolButton::InstantPopup);
+
+        rollingPlotButton = new QToolButton(MainWindow);
+        rollingPlotButton->setText(QString("Rolling Data"));
+        rollingPlotButton->setToolTip("Configure settings for rolling data plots");
+        rollingPlotButton->setIcon(rollIcon);
+        rollingPlotButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        rollingPlotButton->setPopupMode(QToolButton::InstantPopup);
 
         instrumentStatusLayout->addWidget(instStatusLabel);
 
@@ -268,7 +300,7 @@ public:
 
         ftmwTabLayout->addWidget(ftViewWidget);
 
-        mainTabWidget->addTab(ftmwTab, icon11, QString());
+        mainTabWidget->addTab(ftmwTab, rfIcon, QString());
 
 
         rollingDataTab = new QWidget();
@@ -326,12 +358,11 @@ public:
         menuHardware->setObjectName(QString::fromUtf8("menuHardware"));
         menuAcquisition = new QMenu(menuBar);
         menuAcquisition->setObjectName(QString::fromUtf8("menuAcquisition"));
-        menuView = new QMenu(menuBar);
-        menuView->setObjectName(QString::fromUtf8("menuView"));
-        menuAuxData = new QMenu(menuView);
+
+        menuAuxData = new QMenu(auxPlotButton);
         menuAuxData->setObjectName(QString::fromUtf8("menuAuxData"));
         menuAuxData->setIcon(auxIcon);
-        menuRollingData = new QMenu(menuView);
+        menuRollingData = new QMenu(rollingPlotButton);
         menuRollingData->setObjectName(QString::fromUtf8("menuRollingData"));
         menuRollingData->setIcon(rollIcon);
         MainWindow->setMenuBar(menuBar);
@@ -345,38 +376,45 @@ public:
         statusBar->setObjectName(QString::fromUtf8("statusBar"));
         MainWindow->setStatusBar(statusBar);
 
-        menuBar->addAction(menuAcquisition->menuAction());
-        menuBar->addAction(menuView->menuAction());
-        menuHardware->addAction(actionSleep);
         menuHardware->addSeparator();
         menuHardware->addAction(actionCommunication);
         menuHardware->addAction(actionTest_All_Connections);
         menuHardware->addSeparator();
+        menuHardware->addAction(actionRfConfig);
+        menuHardware->addSeparator();
         menuAcquisition->addAction(actionStart_Experiment);
         menuAcquisition->addAction(actionQuick_Experiment);
         menuAcquisition->addAction(actionStart_Sequence);
-        menuAcquisition->addAction(actionPause);
-        menuAcquisition->addAction(actionResume);
-        menuAcquisition->addAction(actionAbort);
         menuAcquisition->addSeparator();
-        menuView->addAction(menuRollingData->menuAction());
-        menuView->addAction(menuAuxData->menuAction());
-        menuView->addSeparator();
-        menuView->addAction(actionView_Experiment);;
         menuRollingData->addAction(actionAutoscale_Rolling);
         menuRollingData->addAction(action_RollingGraphs);
         menuAuxData->addAction(actionAutoscale_Aux);
         menuAuxData->addAction(action_AuxGraphs);
-        mainToolBar->addAction(actionStart_Experiment);
-        mainToolBar->addAction(actionQuick_Experiment);
-        mainToolBar->addAction(actionPause);
-        mainToolBar->addAction(actionResume);
-        mainToolBar->addAction(actionAbort);
-        mainToolBar->addAction(actionSleep);
-        mainToolBar->addAction(actionView_Experiment);
+
+        mainToolBar->addWidget(acquireButton);
+        acquireButton->setMenu(menuAcquisition);
+//        mainToolBar->addAction(actionStart_Experiment);
+//        mainToolBar->addAction(actionQuick_Experiment);
 
         mainToolBar->addWidget(hardwareButton);
         hardwareButton->setMenu(menuHardware);
+
+        mainToolBar->addWidget(rollingPlotButton);
+        rollingPlotButton->setMenu(menuRollingData);
+
+        mainToolBar->addWidget(auxPlotButton);
+        auxPlotButton->setMenu(menuAuxData);
+
+        mainToolBar->addAction(actionView_Experiment);
+
+        auto w = new QWidget(MainWindow);
+        w->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+        mainToolBar->addWidget(w);
+        mainToolBar->addSeparator();
+        mainToolBar->addWidget(pauseButton);
+        mainToolBar->addWidget(resumeButton);
+        mainToolBar->addWidget(abortButton);
+        mainToolBar->addWidget(sleepButton);
 
         retranslateUi(MainWindow);
 
@@ -399,17 +437,17 @@ public:
 #ifndef QT_NO_SHORTCUT
         actionStart_Experiment->setShortcut(QApplication::translate("MainWindow", "F2", nullptr));
 #endif // QT_NO_SHORTCUT
-        actionPause->setText(QApplication::translate("MainWindow", "&Pause", nullptr));
+        pauseButton->setText(QApplication::translate("MainWindow", "&Pause", nullptr));
 #ifndef QT_NO_SHORTCUT
-        actionPause->setShortcut(QApplication::translate("MainWindow", "F4", nullptr));
+        pauseButton->setShortcut(QApplication::translate("MainWindow", "F4", nullptr));
 #endif // QT_NO_SHORTCUT
-        actionResume->setText(QApplication::translate("MainWindow", "&Resume", nullptr));
+        resumeButton->setText(QApplication::translate("MainWindow", "&Resume", nullptr));
 #ifndef QT_NO_SHORTCUT
-        actionResume->setShortcut(QApplication::translate("MainWindow", "F5", nullptr));
+        resumeButton->setShortcut(QApplication::translate("MainWindow", "F5", nullptr));
 #endif // QT_NO_SHORTCUT
-        actionAbort->setText(QApplication::translate("MainWindow", "&Abort", nullptr));
+        abortButton->setText(QApplication::translate("MainWindow", "&Abort", nullptr));
 #ifndef QT_NO_SHORTCUT
-        actionAbort->setShortcut(QApplication::translate("MainWindow", "F6", nullptr));
+        abortButton->setShortcut(QApplication::translate("MainWindow", "F6", nullptr));
 #endif // QT_NO_SHORTCUT
         actionCommunication->setText(QApplication::translate("MainWindow", "&Communication", nullptr));
 #ifndef QT_NO_SHORTCUT
@@ -421,9 +459,9 @@ public:
 #ifndef QT_NO_SHORTCUT
         actionTest_All_Connections->setShortcut(QApplication::translate("MainWindow", "Ctrl+T", nullptr));
 #endif // QT_NO_SHORTCUT
-        actionSleep->setText(QApplication::translate("MainWindow", "&Sleep", nullptr));
+        sleepButton->setText(QApplication::translate("MainWindow", "&Sleep", nullptr));
 #ifndef QT_NO_SHORTCUT
-        actionSleep->setShortcut(QApplication::translate("MainWindow", "F8", nullptr));
+        sleepButton->setShortcut(QApplication::translate("MainWindow", "F8", nullptr));
 #endif // QT_NO_SHORTCUT
         actionAutoscale_Rolling->setText(QApplication::translate("MainWindow", "&Autoscale All", nullptr));
         actionAutoscale_Aux->setText(QApplication::translate("MainWindow", "&Autoscale All", nullptr));
@@ -445,10 +483,9 @@ public:
         mainTabWidget->setTabText(mainTabWidget->indexOf(logTab), QApplication::translate("MainWindow", "Log", nullptr));
 
         menuHardware->setTitle(QApplication::translate("MainWindow", "Hardware", nullptr));
-        menuAcquisition->setTitle(QApplication::translate("MainWindow", "Ac&quisition", nullptr));
-        menuView->setTitle(QApplication::translate("MainWindow", "&View", nullptr));
-        menuRollingData->setTitle(QApplication::translate("MainWindow", "&Rolling Data", nullptr));
-        menuAuxData->setTitle(QApplication::translate("MainWindow", "&Aux Data", nullptr));
+        menuAcquisition->setTitle(QApplication::translate("MainWindow", "Acquisition", nullptr));
+        menuRollingData->setTitle(QApplication::translate("MainWindow", "Rolling Data", nullptr));
+        menuAuxData->setTitle(QApplication::translate("MainWindow", "Aux Data", nullptr));
     } // retranslateUi
 
 };

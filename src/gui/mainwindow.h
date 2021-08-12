@@ -74,6 +74,7 @@ public slots:
     void pauseUi();
     void resumeUi();
     void launchCommunicationDialog(bool parent = true);
+    void launchRfConfigDialog();
     void setLogIcon(BlackChirp::LogMessageCode c);
     void sleep(bool s);
     void viewExperiment();
@@ -84,7 +85,7 @@ public slots:
 private:
     Ui::MainWindow *ui;
     QList<QPair<QThread*,QObject*> > d_threadObjectList;
-    std::map<QString,HWDialog*> d_openDialogs;
+    std::map<QString,QDialog*> d_openDialogs;
     LogHandler *p_lh;
     HardwareManager *p_hwm;
     AcquisitionManager *p_am;

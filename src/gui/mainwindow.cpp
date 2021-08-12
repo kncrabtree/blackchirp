@@ -217,9 +217,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_am,&AcquisitionManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_am,&AcquisitionManager::statusMessage,ui->statusBar,&QStatusBar::showMessage);
     connect(p_am,&AcquisitionManager::ftmwUpdateProgress,ui->ftmwProgressBar,&QProgressBar::setValue);
-    connect(ui->actionPause,&QAction::triggered,p_am,&AcquisitionManager::pause);
-    connect(ui->actionResume,&QAction::triggered,p_am,&AcquisitionManager::resume);
-    connect(ui->actionAbort,&QAction::triggered,p_am,&AcquisitionManager::abort);
+    connect(ui->pauseButton,&QToolButton::triggered,p_am,&AcquisitionManager::pause);
+    connect(ui->resumeButton,&QToolButton::triggered,p_am,&AcquisitionManager::resume);
+    connect(ui->abortButton,&QToolButton::triggered,p_am,&AcquisitionManager::abort);
     connect(p_am,&AcquisitionManager::snapshotComplete,ui->ftViewWidget,&FtmwViewWidget::snapshotTaken);
     connect(p_am,&AcquisitionManager::experimentComplete,ui->ftViewWidget,&FtmwViewWidget::experimentComplete);
 
@@ -253,14 +253,15 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionStart_Experiment,&QAction::triggered,this,&MainWindow::startExperiment);
     connect(ui->actionQuick_Experiment,&QAction::triggered,this,&MainWindow::quickStart);
     connect(ui->actionStart_Sequence,&QAction::triggered,this,&MainWindow::startSequence);
-    connect(ui->actionPause,&QAction::triggered,this,&MainWindow::pauseUi);
-    connect(ui->actionResume,&QAction::triggered,this,&MainWindow::resumeUi);
+    connect(ui->pauseButton,&QToolButton::triggered,this,&MainWindow::pauseUi);
+    connect(ui->resumeButton,&QToolButton::triggered,this,&MainWindow::resumeUi);
     connect(ui->actionCommunication,&QAction::triggered,this,&MainWindow::launchCommunicationDialog);
+    connect(ui->actionRfConfig,&QAction::triggered,this,&MainWindow::launchRfConfigDialog);
     connect(ui->action_AuxGraphs,&QAction::triggered,ui->auxDataViewWidget,&AuxDataViewWidget::changeNumPlots);
     connect(ui->actionAutoscale_Aux,&QAction::triggered,ui->auxDataViewWidget,&AuxDataViewWidget::autoScaleAll);
     connect(ui->action_RollingGraphs,&QAction::triggered,ui->rollingDataViewWidget,&RollingDataWidget::changeNumPlots);
     connect(ui->actionAutoscale_Rolling,&QAction::triggered,ui->rollingDataViewWidget,&RollingDataWidget::autoScaleAll);
-    connect(ui->actionSleep,&QAction::toggled,this,&MainWindow::sleep);
+    connect(ui->sleepButton,&QToolButton::toggled,this,&MainWindow::sleep);
     connect(ui->actionTest_All_Connections,&QAction::triggered,p_hwm,&HardwareManager::testAll);
     connect(ui->actionView_Experiment,&QAction::triggered,this,&MainWindow::viewExperiment);
 #ifdef BC_LIF
@@ -613,6 +614,40 @@ void MainWindow::launchCommunicationDialog(bool parent)
     d.exec();
 }
 
+void MainWindow::launchRfConfigDialog()
+{
+    auto d = new QDialog;
+    auto w = new RfConfigWidget(d);
+    RfConfig cfg;
+    QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks;
+    QMetaObject::invokeMethod(p_hwm,&HardwareManager::getClocks,Qt::BlockingQueuedConnection,&clocks);
+    cfg.setCurrentClocks(clocks);
+    w->setClocks(cfg);
+
+    auto vbl = new QVBoxLayout;
+
+    auto lbl = new QLabel("Settings will be applied when this dialog is closed with the Ok button.");
+    lbl->setWordWrap(true);
+    vbl->addWidget(lbl);
+    vbl->addWidget(w);
+
+    auto bb = new QDialogButtonBox(QDialogButtonBox::Ok|QDialogButtonBox::Cancel,d);
+    connect(bb->button(QDialogButtonBox::Ok),&QPushButton::clicked,d,&QDialog::accept);
+    connect(bb->button(QDialogButtonBox::Cancel),&QPushButton::clicked,d,&QDialog::reject);
+    vbl->addWidget(bb);
+    d->setLayout(vbl);
+
+    connect(d,&QDialog::accepted,[this,w](){
+        RfConfig rfc;
+        w->toRfConfig(rfc);
+        QMetaObject::invokeMethod(p_hwm,[rfc,this](){ p_hwm->configureClocks(rfc.getClocks());} );
+    });
+
+    d_openDialogs.insert({"RfConfig",d});
+    d->show();
+
+}
+
 void MainWindow::setLogIcon(BlackChirp::LogMessageCode c)
 {
     if(ui->mainTabWidget->currentWidget() != ui->logTab)
@@ -657,16 +692,16 @@ void MainWindow::sleep(bool s)
         {
             QMetaObject::invokeMethod(p_hwm,[this](){p_hwm->sleep(true);});
             configureUi(Asleep);
-            ui->actionSleep->blockSignals(true);
-            ui->actionSleep->setChecked(true);
-            ui->actionSleep->blockSignals(false);
+            ui->sleepButton->blockSignals(true);
+            ui->sleepButton->setChecked(true);
+            ui->sleepButton->blockSignals(false);
             QMessageBox::information(this,QString("BlackChirp Asleep"),QString("The instrument is asleep. Press the sleep button to re-activate it."),QMessageBox::Ok);
         }
         else
         {
-            ui->actionSleep->blockSignals(true);
-            ui->actionSleep->setChecked(false);
-            ui->actionSleep->blockSignals(false);
+            ui->sleepButton->blockSignals(true);
+            ui->sleepButton->setChecked(false);
+            ui->sleepButton->blockSignals(false);
         }
     }
     else
@@ -837,86 +872,86 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
     switch(s)
     {
     case Asleep:
-        ui->actionAbort->setEnabled(false);
-        ui->actionPause->setEnabled(false);
-        ui->actionResume->setEnabled(false);
+        ui->abortButton->setEnabled(false);
+        ui->pauseButton->setEnabled(false);
+        ui->resumeButton->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionQuick_Experiment->setEnabled(false);
         ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
-        ui->actionSleep->setEnabled(true);
+        ui->sleepButton->setEnabled(true);
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(false);
 #endif
         break;
     case Disconnected:
-        ui->actionAbort->setEnabled(false);
-        ui->actionPause->setEnabled(false);
-        ui->actionResume->setEnabled(false);
+        ui->abortButton->setEnabled(false);
+        ui->pauseButton->setEnabled(false);
+        ui->resumeButton->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionQuick_Experiment->setEnabled(false);
         ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
-        ui->actionSleep->setEnabled(false);
+        ui->sleepButton->setEnabled(false);
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(false);
 #endif
         break;
     case Paused:
-        ui->actionAbort->setEnabled(true);
-        ui->actionPause->setEnabled(false);
-        ui->actionResume->setEnabled(true);
+        ui->abortButton->setEnabled(true);
+        ui->pauseButton->setEnabled(false);
+        ui->resumeButton->setEnabled(true);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionQuick_Experiment->setEnabled(false);
         ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
-        ui->actionSleep->setEnabled(false);
+        ui->sleepButton->setEnabled(false);
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(false);
 #endif
         break;
     case Acquiring:
-        ui->actionAbort->setEnabled(true);
-        ui->actionPause->setEnabled(true);
-        ui->actionResume->setEnabled(false);
+        ui->abortButton->setEnabled(true);
+        ui->pauseButton->setEnabled(true);
+        ui->resumeButton->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionQuick_Experiment->setEnabled(false);
         ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
-        ui->actionSleep->setEnabled(true);
+        ui->sleepButton->setEnabled(true);
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(false);
 #endif
         break;
     case Peaking:
-        ui->actionAbort->setEnabled(true);
-        ui->actionPause->setEnabled(false);
-        ui->actionResume->setEnabled(false);
+        ui->abortButton->setEnabled(true);
+        ui->pauseButton->setEnabled(false);
+        ui->resumeButton->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(false);
         ui->actionQuick_Experiment->setEnabled(false);
         ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(false);
         ui->actionTest_All_Connections->setEnabled(false);
-        ui->actionSleep->setEnabled(false);
+        ui->sleepButton->setEnabled(false);
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(true);
 #endif
         break;
     case Idle:
     default:
-        ui->actionAbort->setEnabled(false);
-        ui->actionPause->setEnabled(false);
-        ui->actionResume->setEnabled(false);
+        ui->abortButton->setEnabled(false);
+        ui->pauseButton->setEnabled(false);
+        ui->resumeButton->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(true);
         ui->actionQuick_Experiment->setEnabled(d_oneExptDone);
         ui->actionStart_Sequence->setEnabled(true);
         ui->actionCommunication->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
-        ui->actionSleep->setEnabled(true);
+        ui->sleepButton->setEnabled(true);
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(true);
 #endif
@@ -933,7 +968,7 @@ void MainWindow::startBatch(BatchManager *bm)
     connect(bm,&BatchManager::beginExperiment,[this,bm](){p_hwm->initializeExperiment(bm->currentExperiment());});
     connect(p_am,&AcquisitionManager::experimentComplete,bm,&BatchManager::experimentComplete);
     connect(p_am,&AcquisitionManager::experimentComplete,ui->ftViewWidget,&FtmwViewWidget::experimentComplete);
-    connect(ui->actionAbort,&QAction::triggered,bm,&BatchManager::abort);
+    connect(ui->abortButton,&QToolButton::triggered,bm,&BatchManager::abort);
     connect(bm,&BatchManager::batchComplete,this,&MainWindow::batchComplete);
     connect(bm,&BatchManager::batchComplete,this,&MainWindow::checkSleep);
     connect(bm,&BatchManager::batchComplete,p_batchThread,&QThread::quit);

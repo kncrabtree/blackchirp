@@ -115,6 +115,8 @@ public slots:
 
     void getAuxData();
 
+    QHash<RfConfig::ClockType,RfConfig::ClockFreq> getClocks();
+    void configureClocks(QHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
     void setClocks(QHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
 
     void setPGenSetting(int index, PulseGenConfig::Setting s, QVariant val);
