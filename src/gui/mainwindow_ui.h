@@ -47,6 +47,7 @@ public:
     QAction *actionView_Experiment;
     QAction *actionQuick_Experiment;
     QAction *actionStart_Sequence;
+    QToolButton *hardwareButton;
     QWidget *centralWidget;
     QHBoxLayout *mainLayout;
     QVBoxLayout *instrumentStatusLayout;
@@ -114,10 +115,12 @@ public:
         QIcon icon5;
         icon5.addFile(QString::fromUtf8(":/icons/computer.png"), QSize(), QIcon::Normal, QIcon::Off);
         actionCommunication->setIcon(icon5);
-        QIcon icon6;
-        icon6.addFile(QString::fromUtf8(":/icons/dataplots.png"), QSize(), QIcon::Normal, QIcon::Off);
+        QIcon auxIcon;
+        auxIcon.addFile(QString::fromUtf8(":/icons/dataplots.png"), QSize(), QIcon::Normal, QIcon::Off);
         action_AuxGraphs = new QAction(MainWindow);
         action_AuxGraphs->setObjectName(QString::fromUtf8("action_AuxGraphs"));
+        QIcon rollIcon;
+        rollIcon.addFile(QString(":/icons/view-media-visualization.svg"), QSize(), QIcon::Normal, QIcon::Off);
         QIcon icon7;
         icon7.addFile(QString::fromUtf8(":/icons/num.png"), QSize(), QIcon::Normal, QIcon::Off);
         action_AuxGraphs->setIcon(icon7);
@@ -175,6 +178,13 @@ public:
         instrumentStatusLayout->setObjectName(QString::fromUtf8("instrumentStatusLayout"));
         instStatusLabel = new QLabel(centralWidget);
         instStatusLabel->setObjectName(QString::fromUtf8("label"));
+        QIcon hwIcon;
+        hwIcon.addFile(QString(":/icons/bc.png"),QSize(), QIcon::Normal, QIcon::Off);
+        hardwareButton = new QToolButton(MainWindow);
+        hardwareButton->setText("Hardware");
+        hardwareButton->setIcon(hwIcon);
+        hardwareButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        hardwareButton->setPopupMode(QToolButton::InstantPopup);
         QFont font;
         font.setPointSize(8);
         instStatusLabel->setFont(font);
@@ -272,7 +282,7 @@ public:
 
         rollingDataViewLayout->addWidget(rollingDataViewWidget);
 
-        mainTabWidget->addTab(rollingDataTab, icon6, QString());
+        mainTabWidget->addTab(rollingDataTab, rollIcon, QString());
 
 
         auxDataTab = new QWidget();
@@ -286,7 +296,7 @@ public:
 
         auxDataViewLayout->addWidget(auxDataViewWidget);
 
-        mainTabWidget->addTab(auxDataTab, icon6, QString());
+        mainTabWidget->addTab(auxDataTab, auxIcon, QString());
 
 
 
@@ -320,10 +330,10 @@ public:
         menuView->setObjectName(QString::fromUtf8("menuView"));
         menuAuxData = new QMenu(menuView);
         menuAuxData->setObjectName(QString::fromUtf8("menuAuxData"));
-        menuAuxData->setIcon(icon6);
+        menuAuxData->setIcon(auxIcon);
         menuRollingData = new QMenu(menuView);
         menuRollingData->setObjectName(QString::fromUtf8("menuRollingData"));
-        menuRollingData->setIcon(icon6);
+        menuRollingData->setIcon(rollIcon);
         MainWindow->setMenuBar(menuBar);
         mainToolBar = new QToolBar(centralWidget);
         mainToolBar->setObjectName(QString::fromUtf8("mainToolBar"));
@@ -336,7 +346,6 @@ public:
         MainWindow->setStatusBar(statusBar);
 
         menuBar->addAction(menuAcquisition->menuAction());
-        menuBar->addAction(menuHardware->menuAction());
         menuBar->addAction(menuView->menuAction());
         menuHardware->addAction(actionSleep);
         menuHardware->addSeparator();
@@ -365,6 +374,9 @@ public:
         mainToolBar->addAction(actionAbort);
         mainToolBar->addAction(actionSleep);
         mainToolBar->addAction(actionView_Experiment);
+
+        mainToolBar->addWidget(hardwareButton);
+        hardwareButton->setMenu(menuHardware);
 
         retranslateUi(MainWindow);
 
@@ -431,7 +443,8 @@ public:
         mainTabWidget->setTabText(mainTabWidget->indexOf(rollingDataTab), QApplication::translate("MainWindow", "Rolling Data", nullptr));
         mainTabWidget->setTabText(mainTabWidget->indexOf(auxDataTab), QApplication::translate("MainWindow", "Aux Data", nullptr));
         mainTabWidget->setTabText(mainTabWidget->indexOf(logTab), QApplication::translate("MainWindow", "Log", nullptr));
-        menuHardware->setTitle(QApplication::translate("MainWindow", "Ha&rdware", nullptr));
+
+        menuHardware->setTitle(QApplication::translate("MainWindow", "Hardware", nullptr));
         menuAcquisition->setTitle(QApplication::translate("MainWindow", "Ac&quisition", nullptr));
         menuView->setTitle(QApplication::translate("MainWindow", "&View", nullptr));
         menuRollingData->setTitle(QApplication::translate("MainWindow", "&Rolling Data", nullptr));

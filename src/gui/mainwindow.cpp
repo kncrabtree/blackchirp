@@ -655,7 +655,7 @@ void MainWindow::sleep(bool s)
         int ret = mb.exec();
         if(ret == QDialog::Accepted)
         {
-            QMetaObject::invokeMethod(p_hwm,"sleep",Q_ARG(bool,true));
+            QMetaObject::invokeMethod(p_hwm,[this](){p_hwm->sleep(true);});
             configureUi(Asleep);
             ui->actionSleep->blockSignals(true);
             ui->actionSleep->setChecked(true);
@@ -671,7 +671,7 @@ void MainWindow::sleep(bool s)
     }
     else
     {
-        QMetaObject::invokeMethod(p_hwm,"sleep",Q_ARG(bool,s));
+        QMetaObject::invokeMethod(p_hwm,[this,s](){p_hwm->sleep(s);});
         if(s)
         {
             configureUi(Asleep);
