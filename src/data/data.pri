@@ -4,7 +4,6 @@ SOURCES += $$PWD/loghandler.cpp \
     $$PWD/analysis/ft.cpp \
     $$PWD/analysis/ftworker.cpp \
     $$PWD/analysis/peakfinder.cpp \
-    $$PWD/analysis/snapworker.cpp \
     $$PWD/experiment/chirpconfig.cpp \
     $$PWD/experiment/digitizerconfig.cpp \
     $$PWD/experiment/experiment.cpp \
@@ -34,7 +33,6 @@ HEADERS += $$PWD/loghandler.h \
     $$PWD/analysis/ft.h \
     $$PWD/analysis/ftworker.h \
     $$PWD/analysis/peakfinder.h \
-    $$PWD/analysis/snapworker.h \
     $$PWD/experiment/chirpconfig.h \
     $$PWD/experiment/digitizerconfig.h \
     $$PWD/experiment/experiment.h \

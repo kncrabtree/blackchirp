@@ -46,7 +46,7 @@ signals:
 
     void takeSnapshot(std::shared_ptr<Experiment>);
     void doFinalSave(std::shared_ptr<Experiment>);
-    void snapshotComplete();
+    void autosaveComplete();
 
 #ifdef BC_LIF
     void lifPointUpdate(const LifConfig);

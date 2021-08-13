@@ -220,7 +220,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pauseButton,&QToolButton::triggered,p_am,&AcquisitionManager::pause);
     connect(ui->resumeButton,&QToolButton::triggered,p_am,&AcquisitionManager::resume);
     connect(ui->abortButton,&QToolButton::triggered,p_am,&AcquisitionManager::abort);
-    connect(p_am,&AcquisitionManager::snapshotComplete,ui->ftViewWidget,&FtmwViewWidget::snapshotTaken);
+    connect(p_am,&AcquisitionManager::autosaveComplete,ui->ftViewWidget,&FtmwViewWidget::updateAutosaves);
     connect(p_am,&AcquisitionManager::experimentComplete,ui->ftViewWidget,&FtmwViewWidget::experimentComplete);
 
     QThread *amThread = new QThread(this);
@@ -823,8 +823,6 @@ void MainWindow::viewExperiment()
 
         ExperimentViewWidget *evw = new ExperimentViewWidget(num,path);
         connect(this,&MainWindow::closing,evw,&ExperimentViewWidget::close);
-        connect(ui->ftViewWidget,&FtmwViewWidget::finalized,evw,&ExperimentViewWidget::ftmwFinalized);
-        connect(evw,&ExperimentViewWidget::notifyUiFinalized,ui->ftViewWidget,&FtmwViewWidget::snapshotsFinalizedUpdateUi);
         evw->show();
         evw->raise();
     }

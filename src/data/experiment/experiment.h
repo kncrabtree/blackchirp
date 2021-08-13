@@ -56,8 +56,9 @@ public:
     std::map<QString,QString> d_hardware;
     int d_number{0};
     QDateTime d_startTime;
+    QDateTime d_lastAutosaveTime;
     int d_timeDataInterval{300};
-    int d_autoSaveIntervalHours{10000};
+    int d_autoSaveIntervalHours{0};
     QString d_errorString;
     QString d_startLogMessage;
     QString d_endLogMessage;
@@ -111,7 +112,8 @@ public:
 
     bool initialize();
     void abort();
-    bool snapshotReady();
+    bool canAutosave();
+    QFuture<void> autosave();
     void finalSave();
 
     bool saveObjectives();
@@ -119,14 +121,8 @@ public:
     bool saveHeader();
     bool saveChirpFile() const;
     bool saveClockFile() const;
-    void snapshot(int snapNum, const Experiment other);
-
-    void saveToSettings() const;
-//    static Experiment loadFromSettings();
-
 
 private:
-    quint64 d_lastSnapshot{0};
     bool d_isAborted{false};
     bool d_isDummy{false};
 

@@ -1,6 +1,8 @@
 #include <acquisition/acquisitionmanager.h>
 
 #include <math.h>
+#include <QtConcurrent/QtConcurrent>
+#include <QFutureWatcher>
 
 AcquisitionManager::AcquisitionManager(QObject *parent) : QObject(parent), d_state(Idle), d_currentShift(0), d_lastFom(0.0)
 {
@@ -313,9 +315,14 @@ void AcquisitionManager::checkComplete()
 {
     if(d_state == Acquiring)
     {
-        if(d_currentExperiment->snapshotReady())
-            emit takeSnapshot(d_currentExperiment);
+        if(d_currentExperiment->canAutosave())
+        {
+            QFutureWatcher<void> fw;
+            connect(&fw,&QFutureWatcher<void>::finished,this,&AcquisitionManager::autosaveComplete);
 
+            auto future = d_currentExperiment->autosave();
+            fw.setFuture(future);
+        }
         if(d_currentExperiment->isComplete())
         {
 #ifdef BC_MOTOR
@@ -342,14 +349,11 @@ void AcquisitionManager::finishAcquisition()
     d_state = Idle;
     d_currentShift = 0;
 
-//    disconnect(d_timeDataTimer,&QTimer::timeout,this,&AcquisitionManager::getTimeData);
-//    d_timeDataTimer->stop();
 
     if(!d_currentExperiment->isDummy())
     {
         emit statusMessage(QString("Saving experiment %1").arg(d_currentExperiment->d_number));
         d_currentExperiment->finalSave();
-//        emit doFinalSave(d_currentExperiment);
     }
 
     emit experimentComplete();

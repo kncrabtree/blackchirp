@@ -25,7 +25,8 @@ public:
     virtual bool addFids(const FidList other, int shift =0) =0;
     virtual FidList getFidList(std::size_t i=0) =0;
     virtual FidList getCurrentFidList() =0;
-    virtual void autoSave() =0;
+    virtual QFuture<void> autoSave() { return QFuture<void>(); };
+    virtual int numAutosaves() { return 0; }
     void advance();
     QFuture<void> save();
 #ifdef BC_CUDA

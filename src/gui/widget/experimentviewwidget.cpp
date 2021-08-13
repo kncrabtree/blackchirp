@@ -101,21 +101,6 @@ QSize ExperimentViewWidget::sizeHint() const
     return QSize(1024,768);
 }
 
-void ExperimentViewWidget::ftmwFinalized(int num)
-{
-    if(num == pu_experiment->d_number)
-    {
-        p_tabWidget->removeTab(0);
-        p_tabWidget->insertTab(0,buildHeaderWidget(),QIcon(QString(":/icons/header.png")),QString("Header"));
-        if(p_ftmw != nullptr)
-            p_ftmw->snapshotsFinalizedUpdateUi(num);
-
-        emit notifyUiFinalized(num);
-
-        update();
-    }
-}
-
 QWidget *ExperimentViewWidget::buildHeaderWidget()
 {
     QWidget *hdr = new QWidget();
@@ -142,7 +127,7 @@ QWidget *ExperimentViewWidget::buildHeaderWidget()
 //        tw->setItem(i,2,new QTableWidgetItem(hdrit.value().second));
 //    }
 //    hdrvl->addWidget(tw);
-//    hdr->setLayout(hdrvl);
+    hdr->setLayout(hdrvl);
 
     return hdr;
 }
@@ -156,7 +141,6 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
         out = new QWidget;
         QVBoxLayout *vbl = new QVBoxLayout;
         p_ftmw = new FtmwViewWidget(out,path);
-        connect(p_ftmw,&FtmwViewWidget::finalized,this,&ExperimentViewWidget::ftmwFinalized);
         vbl->addWidget(p_ftmw);
         out->setLayout(vbl);
 
@@ -166,7 +150,7 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
 //            p_ftmw->updateShotsLabel(d_experiment.ftmwConfig()->fidList().constFirst().shots());
 
 
-        p_ftmw->snapshotTaken();
+        p_ftmw->updateAutosaves();
         p_ftmw->experimentComplete();
     }
 

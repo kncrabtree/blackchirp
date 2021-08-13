@@ -81,8 +81,6 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
        }
     }
 
-#pragma message("create optional HW config objects here; add as children as needed")
-
     //load objectives
     QFile obj(d.absoluteFilePath(BC::CSV::objectivesFile));
     if(obj.open(QIODevice::ReadOnly|QIODevice::Text))
@@ -187,66 +185,11 @@ bool Experiment::isComplete() const
     return true;
 }
 
-bool Experiment::snapshotReady()
+QFuture<void> Experiment::autosave()
 {
-    if(isComplete())
-        return false;
-#pragma message ("Snapshots need work")
-//    if(d_ftmwCfg.d_isEnabled)
-//    {
-//        if(d_ftmwCfg.completedShots() > 0)
-//        {
-//            qint64 d = d_ftmwCfg.completedShots() - d_lastSnapshot;
-//            if(d > 0)
-//            {
-//                bool out = !(d % static_cast<qint64>(d_autoSaveShotsInterval));
-//                if(out)
-//                    d_lastSnapshot = d_ftmwCfg.completedShots();
-//                return out;
-//            }
-//            else
-//                return false;
-//        }
-//    }
-//#ifdef BC_LIF
-//    else if(lifConfig().isEnabled())
-//    {
-//        if(lifConfig().completedShots() > 0)
-//        {
-//            qint64 d = lifConfig().completedShots() - d_lastSnapshot;
-//            if(d > 0)
-//            {
-//                bool out = !(d % static_cast<qint64>(d_autoSaveShotsInterval));
-//                if(out)
-//                    d_lastSnapshot = lifConfig().completedShots();
-//                return out;
-//            }
-//            else
-//                return false;
-//        }
-//    }
-//#endif
-
-//#ifdef BC_MOTOR
-//    if(motorScan().isEnabled())
-//    {
-//        if(motorScan().completedShots() > 0)
-//        {
-//           qint64 d = static_cast<qint64>(motorScan().completedShots()) - d_lastSnapshot;
-//           if(d>0)
-//           {
-//               bool out = !(d % static_cast<qint64>(d_autoSaveShotsInterval));
-//               if(out)
-//                   d_lastSnapshot = motorScan().completedShots();
-//               return out;
-//           }
-//           else
-//               return false;
-//        }
-//    }
-//#endif
-
-    return false;
+    //if we reach this point, it's time to autosave
+    d_lastAutosaveTime = QDateTime::currentDateTime();
+    return pu_ftmwConfig->storage()->autoSave();
 }
 
 FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
@@ -409,6 +352,23 @@ void Experiment::abort()
         }
     }
 
+}
+
+bool Experiment::canAutosave()
+{
+    if(isComplete() || d_autoSaveIntervalHours < 1 || !d_startTime.isValid())
+        return false;
+
+    auto now = QDateTime::currentDateTime();
+    if(d_lastAutosaveTime.isValid())
+    {
+        if(d_lastAutosaveTime.addSecs(60*d_autoSaveIntervalHours) <= now)
+            return true;
+    }
+    else if(d_startTime.addSecs(60*d_autoSaveIntervalHours) <= now)
+        return true;
+
+    return false;
 }
 
 void Experiment::setIOBoardConfig(const IOBoardConfig &cfg)
@@ -652,142 +612,6 @@ bool Experiment::saveClockFile() const
 {
     return pu_ftmwConfig->d_rfConfig.writeClockFile(d_number);
 }
-
-void Experiment::snapshot(int snapNum, const Experiment other)
-{
-    if(d_isDummy)
-        return;
-
-//    saveHeader();
-
-    (void)snapNum;
-    (void)other;
-#pragma message("Implement snapshot")
-
-//    if(ftmwEnabled())
-//    {
-//        FtmwConfig cf = d_ftmwCfg;
-////        cf.storeFids();
-
-//        if(other.number() == d_number && other.isInitialized())
-//        {
-//            if(cf.subtractFids(other.d_ftmwCfg))
-//                cf.writeFids(d_number,d_path,snapNum);
-//        }
-//        else
-//            cf.writeFids(d_number,d_path,snapNum);
-//    }
-
-#ifdef BC_LIF
-    if(lifConfig().isEnabled())
-        lifConfig().writeLifFile(d_number);
-#endif
-
-#ifdef BC_MOTOR
-    if(motorScan().isEnabled())
-        motorScan().writeMotorFile(d_number);
-#endif
-
-//    saveTimeFile();
-}
-
-void Experiment::saveToSettings() const
-{
-
-//    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-//    s.beginGroup(QString("lastExperiment"));
-
-////    s.setValue(QString("ftmwEnabled"),d_ftmwCfg.d_isEnabled);
-////    if(d_ftmwCfg.d_isEnabled)
-////        d_ftmwCfg.saveToSettings();
-
-//#ifdef BC_LIF
-//    s.setValue(QString("lifEnabled"),lifConfig().isEnabled());
-//    if(lifConfig().isEnabled())
-//        d_lifCfg.saveToSettings();
-//#endif
-
-//#ifdef BC_MOTOR
-//    s.setValue(QString("motorEnabled"),motorScan().isEnabled());
-//    if(motorScan().isEnabled())
-//        d_motorScan.saveToSettings();
-//#endif
-
-//    s.setValue(QString("autoSaveInterval"),d_autoSaveIntervalHours);
-//    s.setValue(QString("auxDataInterval"),d_timeDataInterval);
-
-//    d_iobCfg.saveToSettings();
-
-//    s.remove(QString("validation"));
-//    s.beginWriteArray(QString("validation"));
-//    int i=0;
-//    foreach(BlackChirp::ValidationItem val,d_validationConditions)
-//    {
-//        s.setArrayIndex(i);
-//        s.setValue(QString("key"),val.key);
-//        s.setValue(QString("min"),qMin(val.min,val.max));
-//        s.setValue(QString("max"),qMax(val.min,val.max));
-//        i++;
-//    }
-//    s.endArray();
-//    s.endGroup();
-
-}
-
-//Experiment Experiment::loadFromSettings()
-//{
-//    Experiment out;
-
-//    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-//    s.beginGroup(QString("lastExperiment"));
-
-////    FtmwConfig f = FtmwConfig::loadFromSettings();
-////    if(s.value(QString("ftmwEnabled"),false).toBool())
-////        f.setEnabled();
-////    out.setFtmwConfig(f);
-
-//#ifdef BC_LIF
-//    LifConfig l = LifConfig::loadFromSettings();
-//    if(s.value(QString("lifEnabled"),false).toBool())
-//        l.setEnabled();
-
-//    out.setLifConfig(l);
-//#endif
-
-//#ifdef BC_MOTOR
-
-//    MotorScan m = MotorScan::fromSettings();
-//    if(s.value(QString("motorEnabled"),false).toBool())
-//        m.setEnabled();
-
-//    out.setMotorScan(m);
-
-//#endif
-
-//    out.setAutoSaveShotsInterval(s.value(QString("autoSaveShots"),10000).toInt());
-//    out.setTimeDataInterval(s.value(QString("auxDataInterval"),300).toInt());
-
-//    out.setIOBoardConfig(IOBoardConfig());
-
-//    int num = s.beginReadArray(QString("validation"));
-//    for(int i=0; i<num; i++)
-//    {
-//        s.setArrayIndex(i);
-//        bool ok = false;
-//        QString key = s.value(QString("key")).toString();
-//        double min = s.value(QString("min")).toDouble(&ok);
-//        if(ok)
-//        {
-//            double max = s.value(QString("max")).toDouble(&ok);
-//            if(ok && !key.isEmpty())
-//                out.addValidationItem(key,min,max);
-//        }
-//    }
-//    s.endArray();
-//    s.endGroup();
-
-//    return out;
-//}
 
 void Experiment::storeValues()
 {

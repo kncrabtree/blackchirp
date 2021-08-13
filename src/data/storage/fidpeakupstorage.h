@@ -18,7 +18,6 @@ public:
     FidList getFidList(std::size_t i) override;
     FidList getCurrentFidList() override;
     int getCurrentIndex() override;
-    void autoSave() override;
 #ifdef BC_CUDA
     bool setFidsData(const FidList other) override;
 #endif

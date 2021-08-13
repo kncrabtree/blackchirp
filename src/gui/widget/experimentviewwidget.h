@@ -20,10 +20,6 @@ public:
 
 signals:
     void logMessage(QString msg, BlackChirp::LogMessageCode t = BlackChirp::LogNormal);
-    void notifyUiFinalized(int);
-
-public slots:
-    void ftmwFinalized(int num);
 
 private:
     std::unique_ptr<Experiment> pu_experiment;

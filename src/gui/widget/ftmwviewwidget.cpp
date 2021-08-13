@@ -18,7 +18,7 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     QWidget(parent),
     ui(new Ui::FtmwViewWidget), d_currentExptNum(-1), d_currentSegment(-1), d_mode(Live), d_path(path)
 {
-    ui->setupUi(this,d_path);
+    ui->setupUi(this);
 
     p_pfw = nullptr;
 
@@ -258,14 +258,12 @@ void FtmwViewWidget::updateLiveFidList()
                     bool processFid = true;
                     if(it.key() == d_plot1Id)
                     {
-//                        ui->plot1ConfigWidget->processFtmwConfig(c);
-                        if(ui->plot1ConfigWidget->isSnapshotActive())
+                        if(ui->plot1ConfigWidget->viewingAutosave())
                             processFid = false;
                     }
                     else if(it.key() == d_plot2Id)
                     {
-//                        ui->plot2ConfigWidget->processFtmwConfig(c);
-                        if(ui->plot2ConfigWidget->isSnapshotActive())
+                        if(ui->plot2ConfigWidget->viewingAutosave())
                             processFid = false;
                     }
 
@@ -286,35 +284,6 @@ void FtmwViewWidget::updateLiveFidList()
 
         }
     }
-}
-
-void FtmwViewWidget::updateFtmw()
-{
-#pragma message("This function will not be called anymore; figure out what to do")
-//    d_ftmwCfg = f;
-    QList<int> ignore{ d_liveId };
-
-    for(auto it = d_plotStatus.begin(); it != d_plotStatus.end(); it++)
-    {
-        if(it.key() == d_liveId)
-            continue;
-
-        if(it.key() == d_plot1Id && ui->plot1ConfigWidget->isSnapshotActive())
-        {
-            ignore << it.key();
-//            ui->plot1ConfigWidget->processFtmwConfig(f);
-        }
-        else if(it.key() == d_plot2Id && ui->plot2ConfigWidget->isSnapshotActive())
-        {
-            ignore << it.key();
-//            ui->plot2ConfigWidget->processFtmwConfig(f);
-        }
-        else
-            it.value().fid = p_fidStorage->getFidList(it.value().segment).at(it.value().frame);
-    }
-
-    reprocess(ignore);
-
 }
 
 void FtmwViewWidget::updateProcessingSettings(FtWorker::FidProcessingSettings s)
@@ -395,9 +364,9 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
             updateMainPlot();
             break;
         default:
-            if(workerId == d_plot1Id && ui->plot1ConfigWidget->isSnapshotActive() && ui->mainPlotFollowSpinBox->value() == 1)
+            if(workerId == d_plot1Id && ui->plot1ConfigWidget->viewingAutosave() && ui->mainPlotFollowSpinBox->value() == 1)
                 updateMainPlot();
-            else if(workerId == d_plot2Id && ui->plot2ConfigWidget->isSnapshotActive() && ui->mainPlotFollowSpinBox->value() == 2)
+            else if(workerId == d_plot2Id && ui->plot2ConfigWidget->viewingAutosave() && ui->mainPlotFollowSpinBox->value() == 2)
                 updateMainPlot();
             break;
         }
@@ -544,11 +513,6 @@ void FtmwViewWidget::processSideband(RfConfig::Sideband sb)
         if(ui->mainPlotFollowSpinBox->value() == 2)
             id = d_plot2Id;
 
-//        if(ui->plot1ConfigWidget->isSnapshotActive() && ui->mainPlotFollowSpinBox->value() == 1)
-//            c = d_snap1Config;
-//        else if(ui->plot2ConfigWidget->isSnapshotActive() && ui->mainPlotFollowSpinBox->value() == 2)
-//            c = d_snap2Config;
-
 
 #pragma message("Rework sideband processing so that it's not monolithic")
         auto n = p_fidStorage->d_numRecords;
@@ -614,14 +578,14 @@ void FtmwViewWidget::modeChanged(MainPlotMode newMode)
     updateMainPlot();
 }
 
-void FtmwViewWidget::snapshotTaken()
+void FtmwViewWidget::updateAutosaves()
 {
     if(d_currentExptNum < 1)
         return;
 
-    ui->plot1ConfigWidget->snapshotTaken();
-    ui->plot2ConfigWidget->snapshotTaken();
-
+    int n = p_fidStorage->numAutosaves();
+    ui->plot1ConfigWidget->newAutosave(n);
+    ui->plot2ConfigWidget->newAutosave(n);
 }
 
 void FtmwViewWidget::snapshotsProcessed(int id)
@@ -646,40 +610,9 @@ void FtmwViewWidget::snapshotsProcessed(int id)
 
 }
 
-void FtmwViewWidget::snapshotsFinalized()
-{
-//    d_ftmwCfg = out;
-#pragma message("Snapshot processing")
-    Experiment e(d_currentExptNum,d_path);
-    qint64 oldNum = e.ftmwConfig()->completedShots();
-//    e.finalizeFtmwSnapshots(out);
-    emit experimentLogMessage(e.d_number,QString("Finalized snapshots. Old completed shots: %1. New completed shots: %2").arg(oldNum).arg(e.ftmwConfig()->completedShots()));
-
-    ui->shotsLabel->setText(d_shotsString.arg(e.ftmwConfig()->completedShots()));
-
-
-    reprocess();
-    emit finalized(d_currentExptNum);
-
-    snapshotsFinalizedUpdateUi(d_currentExptNum);
-}
-
-void FtmwViewWidget::snapshotsFinalizedUpdateUi(int num)
-{
-    if(num == d_currentExptNum)
-    {
-        ui->plot1ConfigWidget->clearAll();
-        ui->plot2ConfigWidget->clearAll();
-    }
-}
-
 void FtmwViewWidget::experimentComplete()
 {
     killTimer(d_liveTimerId);
-#pragma message("FtmwWidget experimentComplete needs update")
-//    ui->plot1ConfigWidget->experimentComplete(e);
-//    ui->plot2ConfigWidget->experimentComplete(e);
-
     if(p_fidStorage)
     {
         d_currentSegment = -1;

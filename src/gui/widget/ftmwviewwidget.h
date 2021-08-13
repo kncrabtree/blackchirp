@@ -57,11 +57,9 @@ public:
 
 signals:
     void experimentLogMessage(int,QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal,QString=QString(""));
-    void finalized(int);
 
 public slots:
     void updateLiveFidList();
-    void updateFtmw();
     void updateProcessingSettings(FtWorker::FidProcessingSettings s);
     void changeFrame(int id, int frameNum);
     void changeSegment(int id, int segmentNum);
@@ -78,10 +76,8 @@ public slots:
     void updateSidebandFreqs();
 
     void modeChanged(MainPlotMode newMode);
-    void snapshotTaken();
+    void updateAutosaves();
     void snapshotsProcessed(int id);
-    void snapshotsFinalized();
-    void snapshotsFinalizedUpdateUi(int num);
     void experimentComplete();
 
     void changeRollingAverageShots(int shots);
@@ -175,7 +171,7 @@ public:
     QDoubleSpinBox *maxFtSegBox;
     QAction *peakFindAction;
 
-    void setupUi(QWidget *FtmwViewWidget, QString path)
+    void setupUi(QWidget *FtmwViewWidget)
     {
         if (FtmwViewWidget->objectName().isEmpty())
             FtmwViewWidget->setObjectName(QStringLiteral("FtmwViewWidget"));
@@ -353,7 +349,7 @@ public:
         auto plot1Button = dynamic_cast<QToolButton*>(toolBar->widgetForAction(plot1Action));
         auto plot1Menu = new QMenu;
         auto plot1wa = new QWidgetAction(plot1Menu);
-        plot1ConfigWidget = new FtmwPlotConfigWidget(1,path);
+        plot1ConfigWidget = new FtmwPlotConfigWidget(1);
         plot1wa->setDefaultWidget(plot1ConfigWidget);
         plot1Menu->addAction(plot1wa);
         plot1Button->setMenu(plot1Menu);
@@ -364,7 +360,7 @@ public:
         auto plot2Button = dynamic_cast<QToolButton*>(toolBar->widgetForAction(plot2Action));
         auto plot2Menu = new QMenu;
         auto plot2wa = new QWidgetAction(plot2Menu);
-        plot2ConfigWidget = new FtmwPlotConfigWidget(2,path);
+        plot2ConfigWidget = new FtmwPlotConfigWidget(2);
         plot2wa->setDefaultWidget(plot2ConfigWidget);
         plot2Menu->addAction(plot2wa);
         plot2Button->setMenu(plot2Menu);

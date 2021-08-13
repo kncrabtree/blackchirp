@@ -65,10 +65,6 @@ int FidPeakUpStorage::getCurrentIndex()
     return 0;
 }
 
-void FidPeakUpStorage::autoSave()
-{
-}
-
 void FidPeakUpStorage::_advance()
 {
 }
