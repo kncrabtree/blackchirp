@@ -126,14 +126,14 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     registerGetter(auxInterval,p_auxDataIntervalBox,&QSpinBox::value);
     fl2->addRow("Aux Data Interval",p_auxDataIntervalBox);
 
-    p_autosaveBox = new QSpinBox(this);
-    p_autosaveBox->setRange(0,100);
-    p_autosaveBox->setSpecialValueText("Disabled");
-    p_autosaveBox->setSuffix(QString(" hour"));
-    p_autosaveBox->setToolTip(QString("Interval for autosaving."));
-    p_autosaveBox->setValue(get(autosave,0));
-    registerGetter(autosave,p_autosaveBox,&QSpinBox::value);
-    fl2->addRow("Autosave Interval",p_autosaveBox);
+    p_backupBox = new QSpinBox(this);
+    p_backupBox->setRange(0,100);
+    p_backupBox->setSpecialValueText("Disabled");
+    p_backupBox->setSuffix(QString(" hour"));
+    p_backupBox->setToolTip(QString("Interval for autosaving."));
+    p_backupBox->setValue(get(backup,0));
+    registerGetter(backup,p_backupBox,&QSpinBox::value);
+    fl2->addRow("Backup Interval",p_backupBox);
 
 
     for(int i=0; i<fl2->rowCount(); ++i)
@@ -293,7 +293,7 @@ void WizardStartPage::initializePage()
         }
 
 
-        p_autosaveBox->setValue(e->d_autoSaveIntervalHours);
+        p_backupBox->setValue(e->d_backupIntervalHours);
         p_auxDataIntervalBox->setValue(e->d_timeDataInterval);
     }
 
@@ -328,7 +328,7 @@ bool WizardStartPage::validatePage()
      e->setMotorEnabled(p_motor->isChecked());
 #endif
 
-     e->d_autoSaveIntervalHours = p_autosaveBox->value();
+     e->d_backupIntervalHours = p_backupBox->value();
      e->d_timeDataInterval = p_auxDataIntervalBox->value();
 
      

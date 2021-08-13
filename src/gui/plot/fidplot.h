@@ -2,6 +2,7 @@
 #define FIDPLOT_H
 
 #include <gui/plot/zoompanplot.h>
+#include <qwt6/qwt_plot_textlabel.h>
 
 #include <QPointF>
 #include <QPair>
@@ -39,12 +40,16 @@ public slots:
     void prepareForExperiment(const Experiment &e);
     void setFtStart(double start);
     void setFtEnd(double end);
+    void setNumShots(quint64 shots);
 
 private:
     BlackchirpPlotCurve *p_curve;
+    QwtPlotTextLabel *p_label;
 
     QPair<QwtPlotMarker*,QwtPlotMarker*> d_chirpMarkers;
     QPair<QwtPlotMarker*,QwtPlotMarker*> d_ftMarkers;
+
+    const QString d_shotsText{"Shots: %1"};
 
 };
 

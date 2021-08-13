@@ -9,6 +9,7 @@ public:
     double yMax;
     double loFreq;
     QVector<QPointF> ftData;
+    quint64 shots{0};
 };
 
 Ft::Ft() : data(new FtData)
@@ -118,6 +119,11 @@ void Ft::trim(double minOffset, double maxOffset)
 
 }
 
+void Ft::setNumShots(quint64 shots)
+{
+    data->shots = shots;
+}
+
 int Ft::size() const
 {
     return data->ftData.size();
@@ -217,5 +223,10 @@ QVector<double> Ft::yData() const
 QVector<QPointF> Ft::toVector() const
 {
     return data->ftData;
+}
+
+quint64 Ft::shots() const
+{
+    return data->shots;
 }
 

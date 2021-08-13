@@ -2,6 +2,7 @@
 #define FTPLOT_H
 
 #include <gui/plot/zoompanplot.h>
+#include <qwt6/qwt_plot_textlabel.h>
 
 #include <QVector>
 #include <QPointF>
@@ -35,6 +36,7 @@ public slots:
 
     void configureUnits(FtWorker::FtUnits u);
     void newPeakList(const QList<QPointF> l);
+    void setNumShots(quint64 shots);
 
 
 private:
@@ -42,10 +44,13 @@ private:
      * \brief The object representing the curve on the plot
      */
     BlackchirpPlotCurve *p_curve, *p_peakData;
+    QwtPlotTextLabel *p_label;
 
     Ft d_currentFt;
     int d_number;
     QString d_id;
+
+    const QString d_shotsText{"Shots: %1"};
 
 };
 

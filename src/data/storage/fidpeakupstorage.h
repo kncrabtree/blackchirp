@@ -15,7 +15,6 @@ public:
     quint64 completedShots() override;
     quint64 currentSegmentShots() override;
     bool addFids(const FidList other, int shift) override;
-    FidList getFidList(std::size_t i) override;
     FidList getCurrentFidList() override;
     int getCurrentIndex() override;
 #ifdef BC_CUDA

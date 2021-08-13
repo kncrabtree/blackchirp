@@ -18,6 +18,7 @@
 #include <QtWidgets/QWidgetAction>
 #include <QtWidgets/QFormLayout>
 #include <QtWidgets/QPushButton>
+#include <QFutureWatcher>
 #include <QList>
 
 
@@ -63,7 +64,9 @@ public slots:
     void updateProcessingSettings(FtWorker::FidProcessingSettings s);
     void changeFrame(int id, int frameNum);
     void changeSegment(int id, int segmentNum);
+    void changeBackup(int id, int backupNum);
 
+    void fidLoadComplete(int id);
     void fidProcessed(const QVector<QPointF> fidData, int workerId);
     void ftDone(const Ft ft, int workerId);
     void ftDiffDone(const Ft ft);
@@ -76,8 +79,7 @@ public slots:
     void updateSidebandFreqs();
 
     void modeChanged(MainPlotMode newMode);
-    void updateAutosaves();
-    void snapshotsProcessed(int id);
+    void updateBackups();
     void experimentComplete();
 
     void changeRollingAverageShots(int shots);
@@ -89,8 +91,8 @@ public slots:
 private:
     Ui::FtmwViewWidget *ui;
 
-//    FtmwConfig d_ftmwCfg, d_snap1Config, d_snap2Config;
-    std::shared_ptr<FidStorageBase> p_fidStorage;
+    std::shared_ptr<FidStorageBase> ps_fidStorage;
+
     FtWorker::FidProcessingSettings d_currentProcessingSettings;
     int d_currentExptNum;
     int d_currentSegment;
@@ -109,14 +111,16 @@ private:
         FtPlot *ftPlot;
         Fid fid;
         Ft ft;
-        int frame; //only used for plot1 and plot2
-        int segment; //only used for plot1 and plot2
-        bool snapshot; //only used for plot1 and plot2
+        int frame{0}; //only used for plot1 and plot2
+        int segment{0}; //only used for plot1 and plot2
+        int backup{0}; //only used for plot1 and plot2
+        std::unique_ptr<QFutureWatcher<FidList>> pu_watcher{std::make_unique<QFutureWatcher<FidList>>()};
+        bool loadWhenDone{false};
     };
 
     QList<int> d_workerIds;
     QHash<int,WorkerStatus> d_workersStatus;
-    QHash<int,PlotStatus> d_plotStatus;
+    std::map<int,PlotStatus> d_plotStatus;
     PeakFindWidget *p_pfw;
     QString d_path;
     const int d_liveId = 0, d_mainId = 3, d_plot1Id = 1, d_plot2Id = 2;
@@ -166,7 +170,6 @@ public:
     FtmwPlotConfigWidget *plot2ConfigWidget;
     QSpinBox *averagesSpinbox;
     QPushButton *resetAveragesButton;
-    QLabel *shotsLabel;
     QDoubleSpinBox *minFtSegBox;
     QDoubleSpinBox *maxFtSegBox;
     QAction *peakFindAction;
@@ -312,9 +315,9 @@ public:
         auto flwFl = new QFormLayout;
         mainPlotFollowSpinBox = new QSpinBox;
         mainPlotFollowSpinBox->setRange(1,2);
-        mainPlotFollowSpinBox->setToolTip(QString("When not mirroring another plot or calculating a simple difference, the main plot needs to know what frame and snapshot to look at.\n\n(e.g., when plotting the sideband spectra in LO Scan mode)\n\nThis box selects which plot's frame and snapshot settings to use."));
+        mainPlotFollowSpinBox->setToolTip(QString("When not mirroring another plot or calculating a simple difference, the main plot needs to know what frame, segment, or backup to look at.\n\n(e.g., when plotting the sideband spectra in LO Scan mode). Settings will be taken from the selected plot"));
 
-        auto flwL = new QLabel("Frame/Snaps Follow Plot");
+        auto flwL = new QLabel("Frame/Seg/Backup Follow Plot");
         flwL->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
 
         flwFl->addRow(flwL,mainPlotFollowSpinBox);
@@ -349,7 +352,7 @@ public:
         auto plot1Button = dynamic_cast<QToolButton*>(toolBar->widgetForAction(plot1Action));
         auto plot1Menu = new QMenu;
         auto plot1wa = new QWidgetAction(plot1Menu);
-        plot1ConfigWidget = new FtmwPlotConfigWidget(1);
+        plot1ConfigWidget = new FtmwPlotConfigWidget;
         plot1wa->setDefaultWidget(plot1ConfigWidget);
         plot1Menu->addAction(plot1wa);
         plot1Button->setMenu(plot1Menu);
@@ -360,7 +363,7 @@ public:
         auto plot2Button = dynamic_cast<QToolButton*>(toolBar->widgetForAction(plot2Action));
         auto plot2Menu = new QMenu;
         auto plot2wa = new QWidgetAction(plot2Menu);
-        plot2ConfigWidget = new FtmwPlotConfigWidget(2);
+        plot2ConfigWidget = new FtmwPlotConfigWidget;
         plot2wa->setDefaultWidget(plot2ConfigWidget);
         plot2Menu->addAction(plot2wa);
         plot2Button->setMenu(plot2Menu);
@@ -397,12 +400,6 @@ public:
         auto *spacer = new QWidget;
         spacer->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Minimum);
         toolBar->addWidget(spacer);
-
-        shotsLabel = new QLabel("Shots: 0");
-        shotsLabel->setAlignment(Qt::AlignVCenter|Qt::AlignRight);
-        shotsLabel->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
-        toolBar->addWidget(shotsLabel);
-
 
         auto vbl = new QVBoxLayout;
         vbl->addWidget(toolBar,0);

@@ -11,19 +11,20 @@ class FtmwPlotConfigWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit FtmwPlotConfigWidget(int id, QWidget *parent = nullptr);
+    explicit FtmwPlotConfigWidget(QWidget *parent = nullptr);
     ~FtmwPlotConfigWidget();
 
     void prepareForExperiment(const Experiment &e);
-    void newAutosave(int numAutosaves);
-    bool viewingAutosave();
+    void newBackup(int numBackups);
+    bool viewingBackup();
 
 signals:
-    void frameChanged(int id, int frameNum);
-    void segmentChanged(int id, int segNum);
+    void frameChanged(int);
+    void segmentChanged(int);
+    void backupChanged(int);
 
 private:
-    QSpinBox *p_frameBox, *p_segmentBox, *p_autosaveBox;
+    QSpinBox *p_frameBox, *p_segmentBox, *p_backupBox;
 
     int d_id;
 };

@@ -217,10 +217,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_am,&AcquisitionManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_am,&AcquisitionManager::statusMessage,ui->statusBar,&QStatusBar::showMessage);
     connect(p_am,&AcquisitionManager::ftmwUpdateProgress,ui->ftmwProgressBar,&QProgressBar::setValue);
-    connect(ui->pauseButton,&QToolButton::triggered,p_am,&AcquisitionManager::pause);
-    connect(ui->resumeButton,&QToolButton::triggered,p_am,&AcquisitionManager::resume);
-    connect(ui->abortButton,&QToolButton::triggered,p_am,&AcquisitionManager::abort);
-    connect(p_am,&AcquisitionManager::autosaveComplete,ui->ftViewWidget,&FtmwViewWidget::updateAutosaves);
+    connect(ui->pauseButton,&QToolButton::clicked,p_am,&AcquisitionManager::pause);
+    connect(ui->resumeButton,&QToolButton::clicked,p_am,&AcquisitionManager::resume);
+    connect(ui->abortButton,&QToolButton::clicked,p_am,&AcquisitionManager::abort);
+    connect(p_am,&AcquisitionManager::backupComplete,ui->ftViewWidget,&FtmwViewWidget::updateBackups);
     connect(p_am,&AcquisitionManager::experimentComplete,ui->ftViewWidget,&FtmwViewWidget::experimentComplete);
 
     QThread *amThread = new QThread(this);
@@ -253,8 +253,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionStart_Experiment,&QAction::triggered,this,&MainWindow::startExperiment);
     connect(ui->actionQuick_Experiment,&QAction::triggered,this,&MainWindow::quickStart);
     connect(ui->actionStart_Sequence,&QAction::triggered,this,&MainWindow::startSequence);
-    connect(ui->pauseButton,&QToolButton::triggered,this,&MainWindow::pauseUi);
-    connect(ui->resumeButton,&QToolButton::triggered,this,&MainWindow::resumeUi);
+    connect(ui->pauseButton,&QToolButton::clicked,this,&MainWindow::pauseUi);
+    connect(ui->resumeButton,&QToolButton::clicked,this,&MainWindow::resumeUi);
     connect(ui->actionCommunication,&QAction::triggered,this,&MainWindow::launchCommunicationDialog);
     connect(ui->actionRfConfig,&QAction::triggered,this,&MainWindow::launchRfConfigDialog);
     connect(ui->action_AuxGraphs,&QAction::triggered,ui->auxDataViewWidget,&AuxDataViewWidget::changeNumPlots);
@@ -966,7 +966,7 @@ void MainWindow::startBatch(BatchManager *bm)
     connect(bm,&BatchManager::beginExperiment,[this,bm](){p_hwm->initializeExperiment(bm->currentExperiment());});
     connect(p_am,&AcquisitionManager::experimentComplete,bm,&BatchManager::experimentComplete);
     connect(p_am,&AcquisitionManager::experimentComplete,ui->ftViewWidget,&FtmwViewWidget::experimentComplete);
-    connect(ui->abortButton,&QToolButton::triggered,bm,&BatchManager::abort);
+    connect(ui->abortButton,&QToolButton::clicked,bm,&BatchManager::abort);
     connect(bm,&BatchManager::batchComplete,this,&MainWindow::batchComplete);
     connect(bm,&BatchManager::batchComplete,this,&MainWindow::checkSleep);
     connect(bm,&BatchManager::batchComplete,p_batchThread,&QThread::quit);

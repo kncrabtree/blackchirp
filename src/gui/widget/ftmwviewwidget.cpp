@@ -8,6 +8,7 @@
 #include <QDoubleSpinBox>
 #include <QWidgetAction>
 #include <QFormLayout>
+#include <QtConcurrent/QtConcurrent>
 
 #include <data/analysis/ftworker.h>
 #include <gui/widget/peakfindwidget.h>
@@ -45,34 +46,33 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
         }
 
         if(id == d_liveId)
-            d_plotStatus.insert(id,PlotStatus { ui->liveFidPlot, ui->liveFtPlot, Fid(), Ft(), 0, 0, false });
+            d_plotStatus.emplace(id,PlotStatus { ui->liveFidPlot, ui->liveFtPlot, Fid(), Ft() });
         else if(id == d_plot1Id)
-            d_plotStatus.insert(id,PlotStatus { ui->fidPlot1, ui->ftPlot1, Fid(), Ft(), 0, 0, false });
+            d_plotStatus.emplace(id,PlotStatus { ui->fidPlot1, ui->ftPlot1, Fid(), Ft() });
         else if(id == d_plot2Id)
-            d_plotStatus.insert(id,PlotStatus { ui->fidPlot2, ui->ftPlot2, Fid(), Ft(), 0, 0, false });
+            d_plotStatus.emplace(id,PlotStatus { ui->fidPlot2, ui->ftPlot2, Fid(), Ft() });
         //don't need to add one of these for the main plot; it's special
 
     }
 
-    for(auto it = d_plotStatus.begin(); it != d_plotStatus.end(); it++)
+    for(auto &[key,ps] : d_plotStatus)
     {
-        it.value().fidPlot->blockSignals(true);
-        it.value().fidPlot->setFtStart(d_currentProcessingSettings.startUs);
-        it.value().fidPlot->setFtEnd(d_currentProcessingSettings.endUs);
-        it.value().fidPlot->blockSignals(false);
+        ps.fidPlot->blockSignals(true);
+        ps.fidPlot->setFtStart(d_currentProcessingSettings.startUs);
+        ps.fidPlot->setFtEnd(d_currentProcessingSettings.endUs);
+        ps.fidPlot->blockSignals(false);
     }
 
     connect(ui->processingWidget,&FtmwProcessingWidget::settingsUpdated,this,&FtmwViewWidget::updateProcessingSettings);
     connect(ui->processingMenu,&QMenu::aboutToHide,[this](){this->reprocess();});
 
-    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::frameChanged,this,&FtmwViewWidget::changeFrame);
-    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::segmentChanged,this,&FtmwViewWidget::changeSegment);
-//    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::snapshotsProcessed,this,&FtmwViewWidget::snapshotsProcessed);
-//    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::snapshotsFinalized,this,&FtmwViewWidget::snapshotsFinalized);
-    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::frameChanged,this,&FtmwViewWidget::changeFrame);
-    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::segmentChanged,this,&FtmwViewWidget::changeSegment);
-//    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::snapshotsProcessed,this,&FtmwViewWidget::snapshotsProcessed);
-//    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::snapshotsFinalized,this,&FtmwViewWidget::snapshotsFinalized);
+    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::frameChanged,[this](int v){changeFrame(1,v);});
+    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::segmentChanged,[this](int v){changeSegment(1,v);});
+    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::backupChanged,[this](int v){changeBackup(1,v);});
+    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::frameChanged,[this](int v){changeFrame(2,v);});
+    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::segmentChanged,[this](int v){changeSegment(2,v);});
+    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::backupChanged,[this](int v){changeBackup(2,v);});
+
 
     connect(ui->liveAction,&QAction::triggered,this,[=]() { modeChanged(Live); });
     connect(ui->ft1Action,&QAction::triggered,this,[=]() { modeChanged(FT1); });
@@ -121,8 +121,6 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
     if(!ui->exptLabel->isVisible())
         ui->exptLabel->setVisible(true);
 
-    ui->shotsLabel->setText(d_shotsString.arg(0));
-
     ui->liveFidPlot->prepareForExperiment(e);
     ui->liveFidPlot->setVisible(true);
 
@@ -140,17 +138,23 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
     ui->plot2ConfigWidget->prepareForExperiment(e);
 
     d_currentSegment = 0;
-    for(auto it = d_plotStatus.begin(); it != d_plotStatus.end(); it++)
+    for(auto &[key,ps] : d_plotStatus)
     {
-        it.value().fid = Fid();
-        it.value().ft = Ft();
-        it.value().frame = 0;
-        it.value().segment = 0;
+        ps.fid = Fid();
+        ps.ft = Ft();
+        ps.frame = 0;
+        ps.segment = 0;
+        ps.backup = 0;
+        ps.loadWhenDone = false;
+        ps.pu_watcher.reset();
+        ps.pu_watcher = std::make_unique<QFutureWatcher<FidList>>();
+        int id = key;
+        connect(ps.pu_watcher.get(),&QFutureWatcher<FidList>::finished,[this,id](){ fidLoadComplete(id); });
     }
 
     if(e.ftmwEnabled())
     {        
-        p_fidStorage = e.ftmwConfig()->storage();
+        ps_fidStorage = e.ftmwConfig()->storage();
         if(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up)
             ui->exptLabel->setText(QString("Peak Up Mode"));
         else
@@ -222,64 +226,57 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
     }
     else
     {
-        p_fidStorage.reset();
+        ps_fidStorage.reset();
         ui->exptLabel->setText(QString("Experiment %1").arg(e.d_number));
         ui->resetAveragesButton->setEnabled(false);
         ui->averagesSpinbox->setEnabled(false);
     }
 
     ui->peakFindAction->setEnabled(false);
-//    d_ftmwCfg = config;
-//    d_snap1Config = config;
-//    d_snap2Config = config;
 
 }
 
 void FtmwViewWidget::updateLiveFidList()
 {
-#pragma message("UpdateLiveFidList needs work")
-    auto fl = p_fidStorage->getCurrentFidList();
+    auto fl = ps_fidStorage->getCurrentFidList();
     if(fl.isEmpty())
         return;
 
-    d_currentSegment = p_fidStorage->getCurrentIndex();
+    d_currentSegment = ps_fidStorage->getCurrentIndex();
 
-    ui->shotsLabel->setText(d_shotsString.arg(p_fidStorage->currentSegmentShots()));
-
-
-    for(auto it = d_plotStatus.begin(); it != d_plotStatus.end(); it++)
+    for(auto &[key,ps] : d_plotStatus)
     {
-        if(d_workersStatus.value(it.key()).thread->isRunning())
+        if(d_workersStatus.value(key).thread->isRunning())
         {
-            if(it.key() != d_liveId)
+            if(key != d_liveId)
             {
-                if(d_currentSegment == it.value().segment && it.value().frame < fl.size())
+                if(d_currentSegment == ps.segment && ps.frame < fl.size())
                 {
                     bool processFid = true;
-                    if(it.key() == d_plot1Id)
+                    if(key == d_plot1Id)
                     {
-                        if(ui->plot1ConfigWidget->viewingAutosave())
+                        if(ui->plot1ConfigWidget->viewingBackup())
                             processFid = false;
                     }
-                    else if(it.key() == d_plot2Id)
+                    else if(key == d_plot2Id)
                     {
-                        if(ui->plot2ConfigWidget->viewingAutosave())
+                        if(ui->plot2ConfigWidget->viewingBackup())
                             processFid = false;
                     }
 
                     if(processFid)
                     {
-                        auto f = fl.at(it.value().frame);
-                        it.value().fid = f;
-                        process(it.key(),f);
+                        auto f = fl.at(ps.frame);
+                        ps.fid = f;
+                        process(key,f);
                     }
                 }
             }
             else
             {
                 auto f = fl.constFirst();
-                it.value().fid = f;
-                process(it.key(),f);
+                ps.fid = f;
+                process(key,f);
             }
 
         }
@@ -316,44 +313,76 @@ void FtmwViewWidget::updateProcessingSettings(FtWorker::FidProcessingSettings s)
 
 void FtmwViewWidget::changeFrame(int id, int frameNum)
 {
-    if(d_plotStatus.contains(id))
+    auto it = d_plotStatus.find(id);
+    if(it != d_plotStatus.end())
     {
-        d_plotStatus[id].frame = frameNum;
+        it->second.frame = frameNum;
         updateFid(id);
     }
 }
 
 void FtmwViewWidget::changeSegment(int id, int segmentNum)
 {
-    if(d_plotStatus.contains(id))
+    auto it = d_plotStatus.find(id);
+    if(it != d_plotStatus.end())
     {
-        d_plotStatus[id].segment = segmentNum;
+        it->second.segment = segmentNum;
         updateFid(id);
+    }
+}
+
+void FtmwViewWidget::changeBackup(int id, int backupNum)
+{
+    auto it = d_plotStatus.find(id);
+    if(it != d_plotStatus.end())
+    {
+        it->second.backup = backupNum;
+        updateFid(id);
+    }
+}
+
+void FtmwViewWidget::fidLoadComplete(int id)
+{
+    auto &ps = d_plotStatus[id];
+    if(ps.loadWhenDone)
+    {
+        ps.loadWhenDone = false;
+        updateFid(id);
+    }
+    else
+    {
+        auto list = ps.pu_watcher->result();
+        ps.fid = list.at(ps.frame);
+        process(id, ps.fid);
     }
 }
 
 void FtmwViewWidget::fidProcessed(const QVector<QPointF> fidData, int workerId)
 {
-    if(d_plotStatus.contains(workerId))
+    auto it = d_plotStatus.find(workerId);
+    if(it != d_plotStatus.end())
     {
-        if(!d_plotStatus.value(workerId).fidPlot->isHidden())
-            d_plotStatus[workerId].fidPlot->receiveProcessedFid(fidData);
+        auto &ps = it->second;
+        if(!ps.fidPlot->isHidden())
+            ps.fidPlot->receiveProcessedFid(fidData);
     }
 }
 
 void FtmwViewWidget::ftDone(const Ft ft, int workerId)
 {
-    if(d_plotStatus.contains(workerId))
+    auto it = d_plotStatus.find(workerId);
+    if(it != d_plotStatus.end())
     {
-        if(!d_plotStatus.value(workerId).ftPlot->isHidden())
+        auto &ps = it->second;
+        if(!ps.ftPlot->isHidden())
         {
-            d_plotStatus[workerId].ft = ft;
-            d_plotStatus[workerId].ftPlot->configureUnits(d_currentProcessingSettings.units);
-            d_plotStatus[workerId].ftPlot->newFt(ft);
+            ps.ft = ft;
+            ps.ftPlot->configureUnits(d_currentProcessingSettings.units);
+            ps.ftPlot->newFt(ft);
         }
 
-        d_plotStatus[workerId].fidPlot->setCursor(Qt::CrossCursor);
-        d_plotStatus[workerId].ftPlot->setCursor(Qt::CrossCursor);
+        ps.fidPlot->setCursor(Qt::CrossCursor);
+        ps.ftPlot->setCursor(Qt::CrossCursor);
 
         switch(d_mode) {
         case Live:
@@ -364,9 +393,9 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
             updateMainPlot();
             break;
         default:
-            if(workerId == d_plot1Id && ui->plot1ConfigWidget->viewingAutosave() && ui->mainPlotFollowSpinBox->value() == 1)
+            if(workerId == d_plot1Id && ui->plot1ConfigWidget->viewingBackup() && ui->mainPlotFollowSpinBox->value() == 1)
                 updateMainPlot();
-            else if(workerId == d_plot2Id && ui->plot2ConfigWidget->viewingAutosave() && ui->mainPlotFollowSpinBox->value() == 2)
+            else if(workerId == d_plot2Id && ui->plot2ConfigWidget->viewingBackup() && ui->mainPlotFollowSpinBox->value() == 2)
                 updateMainPlot();
             break;
         }
@@ -386,7 +415,7 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
         if(workerId == d_mainId)
             updateMainPlot();
         else
-            process(workerId,d_plotStatus.value(workerId).fid);
+            process(workerId,d_plotStatus[workerId].fid);
     }
 }
 
@@ -412,25 +441,25 @@ void FtmwViewWidget::updateMainPlot()
 
     switch(d_mode) {
     case Live:
-        ui->mainFtPlot->newFt(d_plotStatus.value(d_liveId).ft);
+        ui->mainFtPlot->newFt(d_plotStatus[d_liveId].ft);
         if(p_pfw != nullptr)
-            p_pfw->newFt(d_plotStatus.value(d_liveId).ft);
+            p_pfw->newFt(d_plotStatus[d_liveId].ft);
         break;
     case FT1:
-        ui->mainFtPlot->newFt(d_plotStatus.value(d_plot1Id).ft);
+        ui->mainFtPlot->newFt(d_plotStatus[d_plot1Id].ft);
         if(p_pfw != nullptr)
-            p_pfw->newFt(d_plotStatus.value(d_plot1Id).ft);
+            p_pfw->newFt(d_plotStatus[d_plot1Id].ft);
         break;
     case FT2:
-        ui->mainFtPlot->newFt(d_plotStatus.value(d_plot2Id).ft);
+        ui->mainFtPlot->newFt(d_plotStatus[d_plot2Id].ft);
         if(p_pfw != nullptr)
-            p_pfw->newFt(d_plotStatus.value(d_plot2Id).ft);
+            p_pfw->newFt(d_plotStatus[d_plot2Id].ft);
         break;
     case FT1mFT2:
-        processDiff(d_plotStatus.value(d_plot1Id).fid,d_plotStatus.value(d_plot2Id).fid);
+        processDiff(d_plotStatus[d_plot1Id].fid,d_plotStatus[d_plot2Id].fid);
         break;
     case FT2mFT1:
-        processDiff(d_plotStatus.value(d_plot2Id).fid,d_plotStatus.value(d_plot1Id).fid);
+        processDiff(d_plotStatus[d_plot2Id].fid,d_plotStatus[d_plot1Id].fid);
         break;
     case UpperSB:
         processSideband(RfConfig::UpperSideband);
@@ -453,7 +482,7 @@ void FtmwViewWidget::reprocess(const QList<int> ignore)
             if(it.key() == d_mainId)
                 updateMainPlot();
             else
-                process(it.key(),d_plotStatus.value(it.key()).fid);
+                process(it.key(),d_plotStatus[it.key()].fid);
         }
     }
 }
@@ -469,6 +498,7 @@ void FtmwViewWidget::process(int id, const Fid f)
             d_workersStatus[id].reprocessWhenDone = true;
         else
         {
+            d_plotStatus[id].fidPlot->setNumShots(f.shots());
             d_plotStatus[id].fidPlot->setCursor(Qt::BusyCursor);
             d_plotStatus[id].ftPlot->setCursor(Qt::BusyCursor);
             d_workersStatus[id].busy = true;
@@ -515,9 +545,9 @@ void FtmwViewWidget::processSideband(RfConfig::Sideband sb)
 
 
 #pragma message("Rework sideband processing so that it's not monolithic")
-        auto n = p_fidStorage->d_numRecords;
-        for(int i=0; i<n; i++)
-            fl << p_fidStorage->getFidList(i).at(d_plotStatus.value(id).frame);
+//        auto n = p_fidStorage->d_numRecords;
+//        for(int i=0; i<n; i++)
+//            fl << p_fidStorage->loadFidList(i).at(d_plotStatus.value(id).frame);
 
         if(!fl.isEmpty())
         {
@@ -547,9 +577,9 @@ void FtmwViewWidget::processBothSidebands()
         if(ui->mainPlotFollowSpinBox->value() == 2)
             id = d_plot2Id;
 
-        auto n = p_fidStorage->d_numRecords;
-        for(int i=0; i<n; i++)
-            fl << p_fidStorage->getFidList(i).at(d_plotStatus.value(id).frame);
+//        auto n = p_fidStorage->d_numRecords;
+//        for(int i=0; i<n; i++)
+//            fl << p_fidStorage->loadFidList(i).at(d_plotStatus.value(id).frame);
 
         if(!fl.isEmpty())
         {
@@ -578,42 +608,20 @@ void FtmwViewWidget::modeChanged(MainPlotMode newMode)
     updateMainPlot();
 }
 
-void FtmwViewWidget::updateAutosaves()
+void FtmwViewWidget::updateBackups()
 {
     if(d_currentExptNum < 1)
         return;
 
-    int n = p_fidStorage->numAutosaves();
-    ui->plot1ConfigWidget->newAutosave(n);
-    ui->plot2ConfigWidget->newAutosave(n);
-}
-
-void FtmwViewWidget::snapshotsProcessed(int id)
-{
-    if(id != d_plot1Id && id != d_plot2Id)
-        return;
-
-//    if(id == d_plot1Id)
-//    {
-//        d_snap1Config = c;
-//        if(ui->plot1ConfigWidget->isSnapshotActive())
-//            updateFid(id);
-//    }
-//    else
-//    {
-//        d_snap2Config = c;
-//        if(ui->plot2ConfigWidget->isSnapshotActive())
-//            updateFid(id);
-//    }
-
-#pragma message("Snapshot processing")
-
+    int n = ps_fidStorage->numBackups();
+    ui->plot1ConfigWidget->newBackup(n);
+    ui->plot2ConfigWidget->newBackup(n);
 }
 
 void FtmwViewWidget::experimentComplete()
 {
     killTimer(d_liveTimerId);
-    if(p_fidStorage)
+    if(ps_fidStorage)
     {
         d_currentSegment = -1;
 
@@ -639,8 +647,6 @@ void FtmwViewWidget::experimentComplete()
         updateFid(d_plot1Id);
         updateFid(d_plot2Id);
         updateMainPlot();
-
-        ui->shotsLabel->setText(d_shotsString.arg(p_fidStorage->completedShots()));
     }
 
 }
@@ -650,14 +656,14 @@ void FtmwViewWidget::changeRollingAverageShots(int shots)
     if(shots < 1)
         return;
 
-    auto p = dynamic_cast<FidPeakUpStorage*>(p_fidStorage.get());
+    auto p = dynamic_cast<FidPeakUpStorage*>(ps_fidStorage.get());
     if(p != nullptr)
         p->setTargetShots(static_cast<quint64>(shots));
 }
 
 void FtmwViewWidget::resetRollingAverage()
 {
-    auto p = dynamic_cast<FidPeakUpStorage*>(p_fidStorage.get());
+    auto p = dynamic_cast<FidPeakUpStorage*>(ps_fidStorage.get());
     if(p != nullptr)
         p->reset();
 
@@ -695,37 +701,33 @@ void FtmwViewWidget::launchPeakFinder()
 
 void FtmwViewWidget::updateFid(int id)
 {
-    int seg = d_plotStatus.value(id).segment;
-    int frame = d_plotStatus.value(id).frame;
+    if(id == d_mainId)
+        return;
 
-#pragma message("Rerite updateFid function")
+    auto &ps = d_plotStatus[id];
+    int seg = ps.segment;
+    int frame = ps.frame;
+    int backup = ps.backup;
 
-    bool snap = false;
-//    FtmwConfig c = d_ftmwCfg;
-//    if(id == d_plot1Id)
-//    {
-//        snap = ui->plot1ConfigWidget->isSnapshotActive();
-//        if(snap)
-//            c = d_snap1Config;
-//    }
-//    else if(id == d_plot2Id)
-//    {
-//        snap = ui->plot2ConfigWidget->isSnapshotActive();
-//        if(snap)
-//            c = d_snap2Config;
-//    }
-
-    if(seg == d_currentSegment && !snap && id == d_liveId)
+    if(seg == d_currentSegment && id == d_liveId)
     {
-        auto fl = p_fidStorage->getCurrentFidList();
+        auto fl = ps_fidStorage->getCurrentFidList();
         if(frame >= 0 && frame < fl.size())
-            d_plotStatus[id].fid = fl.at(frame);
+            ps.fid = fl.at(frame);
+
+        process(id, ps.fid);
     }
     else
-        d_plotStatus[id].fid = p_fidStorage->getFidList(seg).at(frame);
+    {
+        // only acquisition modes with 1 segment have backups right now... might change this later!
+        if(backup > 0)
+            seg = backup;
 
-    process(id, d_plotStatus.value(id).fid);
-
+        if(ps.pu_watcher->isRunning())
+            ps.loadWhenDone = true;
+        else
+            ps.pu_watcher->setFuture(QtConcurrent::run([this,seg](){ return ps_fidStorage->loadFidList(seg); }));
+    }
 }
 
 

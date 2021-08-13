@@ -41,13 +41,6 @@ bool FidPeakUpStorage::addFids(const FidList other, int shift)
     return true;
 }
 
-FidList FidPeakUpStorage::getFidList(std::size_t i)
-{
-    Q_UNUSED(i)
-    QMutexLocker l(p_mutex);
-    return d_currentFidList;
-}
-
 FidList FidPeakUpStorage::getCurrentFidList()
 {
     QMutexLocker l(p_mutex);

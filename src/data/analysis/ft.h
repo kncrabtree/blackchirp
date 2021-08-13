@@ -23,6 +23,7 @@ public:
     void reserve(int n);
     void append(QPointF pt, double ignoreRange = 0.0);
     void trim(double minOffset, double maxOffset);
+    void setNumShots(quint64 shots);
 
     int size() const;
     bool isEmpty() const;
@@ -38,6 +39,7 @@ public:
     QVector<double> xData() const;
     QVector<double> yData() const;
     QVector<QPointF> toVector() const;
+    quint64 shots() const;
 
 private:
     QSharedDataPointer<FtData> data;

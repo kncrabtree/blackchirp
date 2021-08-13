@@ -39,6 +39,19 @@ FtPlot::FtPlot(const QString id, QWidget *parent) :
 
     p_peakData = new BlackchirpPlotCurve(BC::Key::peakCurve+id,"",Qt::NoPen,QwtSymbol::Ellipse);
     p_peakData->attach(this);
+
+    QPalette p;
+    QColor bg( p.window().color() );
+    bg.setAlpha( 200 );
+
+    p_label = new QwtPlotTextLabel;
+    QwtText text(d_shotsText.arg(0));
+    text.setColor(p.text().color());
+    text.setBackgroundBrush( QBrush( bg ) );
+    text.setRenderFlags(Qt::AlignRight|Qt::AlignTop);
+    p_label->setText(text);
+    p_label->setZ(200.);
+    p_label->attach(this);
 }
 
 FtPlot::~FtPlot()
@@ -67,6 +80,7 @@ void FtPlot::newFt(const Ft ft)
 {
     d_currentFt = ft;
     p_curve->setCurveData(ft.toVector(),ft.yMin(),ft.yMax());
+    setNumShots(ft.shots());
     replot();
 }
 
@@ -109,4 +123,11 @@ void FtPlot::newPeakList(const QList<QPointF> l)
 
     p_peakData->setCurveVisible(!l.isEmpty());
     replot();
+}
+
+void FtPlot::setNumShots(quint64 shots)
+{
+    auto text = p_label->text();
+    text.setText(d_shotsText.arg(shots));
+    p_label->setText(text);
 }

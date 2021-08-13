@@ -315,13 +315,11 @@ void AcquisitionManager::checkComplete()
 {
     if(d_state == Acquiring)
     {
-        if(d_currentExperiment->canAutosave())
+        if(d_currentExperiment->canBackup())
         {
             QFutureWatcher<void> fw;
-            connect(&fw,&QFutureWatcher<void>::finished,this,&AcquisitionManager::autosaveComplete);
-
-            auto future = d_currentExperiment->autosave();
-            fw.setFuture(future);
+            connect(&fw,&QFutureWatcher<void>::finished,this,&AcquisitionManager::backupComplete);
+            fw.setFuture(QtConcurrent::run([this]{ d_currentExperiment->backup(); }));
         }
         if(d_currentExperiment->isComplete())
         {

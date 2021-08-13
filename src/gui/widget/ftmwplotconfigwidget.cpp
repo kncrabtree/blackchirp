@@ -14,8 +14,8 @@
 #include <QThread>
 #include <QMessageBox>
 
-FtmwPlotConfigWidget::FtmwPlotConfigWidget(int id, QWidget *parent) :
-    QWidget(parent), d_id(id)
+FtmwPlotConfigWidget::FtmwPlotConfigWidget(QWidget *parent) :
+    QWidget(parent)
 {
     auto vbl = new QVBoxLayout;
 
@@ -25,8 +25,8 @@ FtmwPlotConfigWidget::FtmwPlotConfigWidget(int id, QWidget *parent) :
     p_frameBox->setRange(1,1);
     p_frameBox->setEnabled(false);
     p_frameBox->setKeyboardTracking(false);
-    connect(p_frameBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,[=](int v){
-        emit frameChanged(d_id,v-1);
+    connect(p_frameBox,qOverload<int>(&QSpinBox::valueChanged),[this](int v){
+        emit frameChanged(v-1);
     });
 
     auto flbl = new QLabel("Frame Number");
@@ -37,18 +37,23 @@ FtmwPlotConfigWidget::FtmwPlotConfigWidget(int id, QWidget *parent) :
     p_segmentBox->setRange(1,1);
     p_segmentBox->setEnabled(false);
     p_segmentBox->setKeyboardTracking(false);
-    connect(p_segmentBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,[=](int v){
-        emit segmentChanged(d_id,v-1);
+    connect(p_segmentBox,qOverload<int>(&QSpinBox::valueChanged),[this](int v){
+        emit segmentChanged(v-1);
     });
 
     auto slbl = new QLabel("Segment Number");
     slbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
     fl->addRow(slbl,p_segmentBox);
 
-    p_autosaveBox = new QSpinBox;
-    p_autosaveBox->setRange(0,0);
-    p_autosaveBox->setEnabled(false);
-    p_autosaveBox->setSpecialValueText("All");
+    p_backupBox = new QSpinBox;
+    p_backupBox->setRange(0,0);
+    p_backupBox->setEnabled(false);
+    p_backupBox->setSpecialValueText("All");
+
+    auto blbl = new QLabel("Backup Number");
+    blbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
+    fl->addRow(blbl,p_backupBox);
+    connect(p_backupBox,qOverload<int>(&QSpinBox::valueChanged),this,&FtmwPlotConfigWidget::backupChanged);
 
     vbl->addLayout(fl);
 
@@ -65,8 +70,8 @@ void FtmwPlotConfigWidget::prepareForExperiment(const Experiment &e)
     blockSignals(true);
 
     //these things only become enabled once snapshots have been taken
-    p_autosaveBox->setRange(0,0);
-    p_autosaveBox->setEnabled(false);
+    p_backupBox->setRange(0,0);
+    p_backupBox->setEnabled(false);
 
     if(e.ftmwEnabled())
     {
@@ -89,14 +94,14 @@ void FtmwPlotConfigWidget::prepareForExperiment(const Experiment &e)
     blockSignals(false);
 }
 
-void FtmwPlotConfigWidget::newAutosave(int numAutosaves)
+void FtmwPlotConfigWidget::newBackup(int numBackups)
 {
-    p_autosaveBox->setMaximum(numAutosaves);
-    p_autosaveBox->setEnabled(true);
+    p_backupBox->setMaximum(numBackups);
+    p_backupBox->setEnabled(true);
 }
 
-bool FtmwPlotConfigWidget::viewingAutosave()
+bool FtmwPlotConfigWidget::viewingBackup()
 {
-    return p_autosaveBox->value()>0;
+    return p_backupBox->value()>0;
 }
 

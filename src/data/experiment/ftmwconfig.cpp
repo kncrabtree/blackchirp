@@ -273,6 +273,7 @@ bool FtmwConfig::initialize()
     }
 
     p_fidStorage = createStorage(d_number);
+    d_lastAutosaveTime = QDateTime::currentDateTime();
     return _init();
 
 
@@ -280,15 +281,23 @@ bool FtmwConfig::initialize()
 
 bool FtmwConfig::advance()
 {
-    auto fs = p_fidStorage.get();
-    auto s = fs->currentSegmentShots();
-    if(d_rfConfig.canAdvance(s))
+    auto s = p_fidStorage->currentSegmentShots();
+    auto now = QDateTime::currentDateTime();
+    if(d_rfConfig.numSegments() > 1 && d_rfConfig.canAdvance(s))
     {
         d_processingPaused = true;
         d_rfConfig.advanceClockStep();
         p_fidStorage->advance();
+        d_lastAutosaveTime = now;
         return !isComplete();
-
+    }
+    else
+    {
+        if(d_lastAutosaveTime.addSecs(60) <= now)
+        {
+            p_fidStorage->save();
+            d_lastAutosaveTime = now;
+        }
     }
 
     return false;

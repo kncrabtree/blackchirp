@@ -15,10 +15,9 @@ FidSingleStorage::FidSingleStorage(int numRecords, int num, QString path) : FidS
         {
             auto num = entry.split('.').first().toInt();
             if(num>0)
-                d_lastAutosave++;
+                d_lastBackup++;
         }
     }
-
 }
 
 FidSingleStorage::~FidSingleStorage()
@@ -72,20 +71,6 @@ void FidSingleStorage::_advance()
 {
 }
 
-FidList FidSingleStorage::getFidList(std::size_t i)
-{
-
-    QMutexLocker l(p_mutex);
-    if(!d_currentFidList.isEmpty())
-        return d_currentFidList;
-
-    auto fl = loadFidList(i);
-    fl.waitForFinished();
-    d_currentFidList = fl.result();
-
-    return fl.result();
-}
-
 FidList FidSingleStorage::getCurrentFidList()
 {
     QMutexLocker l(p_mutex);
@@ -97,17 +82,17 @@ int FidSingleStorage::getCurrentIndex()
     return 0;
 }
 
-QFuture<void> FidSingleStorage::autoSave()
+void FidSingleStorage::backup()
 {
-    //note: d_lastAutosave starts at 0, so this increments it to 1 on first call.
-    //autosaves will be numbered starting from 1, and final data will be numbered 0
-    ++d_lastAutosave;
+    //note: d_lastBackup starts at 0, so this increments it to 1 on first call.
+    //backups will be numbered starting from 1, and final data will be numbered 0
+    ++d_lastBackup;
 
     auto fl = getCurrentFidList();
-    return saveFidList(fl,d_lastAutosave);
+    saveFidList(fl,d_lastBackup);
 }
 
-int FidSingleStorage::numAutosaves()
+int FidSingleStorage::numBackups()
 {
-    return d_lastAutosave;
+    return d_lastBackup;
 }

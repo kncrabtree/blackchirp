@@ -82,6 +82,21 @@ FidPlot::FidPlot(const QString id, QWidget *parent) :
     ftEndMarker->setVisible(false);
     d_ftMarkers.second = ftEndMarker;
 
+    QPalette p;
+    QColor bg( p.window().color() );
+    bg.setAlpha( 200 );
+
+    p_label = new QwtPlotTextLabel;
+    QwtText text(d_shotsText.arg(0));
+    text.setColor(p.text().color());
+    text.setBackgroundBrush( QBrush( bg ) );
+    text.setRenderFlags(Qt::AlignRight|Qt::AlignTop);
+    p_label->setZ(200.);
+    p_label->setText(text);
+    p_label->attach(this);
+
+
+
 }
 
 void FidPlot::receiveProcessedFid(const QVector<QPointF> d)
@@ -166,4 +181,11 @@ void FidPlot::setFtEnd(double end)
     emit ftEndChanged(v);
 
     replot();
+}
+
+void FidPlot::setNumShots(quint64 shots)
+{
+    auto text = p_label->text();
+    text.setText(d_shotsText.arg(shots));
+    p_label->setText(text);
 }

@@ -1,7 +1,7 @@
 ﻿#ifndef FTMWCONFIG_H
 #define FTMWCONFIG_H
 
-#include <QDataStream>
+#include <QDateTime>
 #include <QVariant>
 #include <QMetaType>
 #include <memory>
@@ -99,6 +99,7 @@ private:
     std::shared_ptr<FidStorageBase> p_fidStorage;
     Fid d_fidTemplate;
     bool d_processingPaused{false};
+    QDateTime d_lastAutosaveTime;
 
     // HeaderStorage interface
 protected:

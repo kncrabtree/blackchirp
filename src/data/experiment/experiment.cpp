@@ -185,11 +185,11 @@ bool Experiment::isComplete() const
     return true;
 }
 
-QFuture<void> Experiment::autosave()
+void Experiment::backup()
 {
-    //if we reach this point, it's time to autosave
-    d_lastAutosaveTime = QDateTime::currentDateTime();
-    return pu_ftmwConfig->storage()->autoSave();
+    //if we reach this point, it's time to backup
+    d_lastBackupTime = QDateTime::currentDateTime();
+    pu_ftmwConfig->storage()->backup();
 }
 
 FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
@@ -354,18 +354,18 @@ void Experiment::abort()
 
 }
 
-bool Experiment::canAutosave()
+bool Experiment::canBackup()
 {
-    if(isComplete() || d_autoSaveIntervalHours < 1 || !d_startTime.isValid())
+    if(isComplete() || d_backupIntervalHours < 1 || !d_startTime.isValid())
         return false;
 
     auto now = QDateTime::currentDateTime();
-    if(d_lastAutosaveTime.isValid())
+    if(d_lastBackupTime.isValid())
     {
-        if(d_lastAutosaveTime.addSecs(60*d_autoSaveIntervalHours) <= now)
+        if(d_lastBackupTime.addSecs(3600*d_backupIntervalHours) <= now)
             return true;
     }
-    else if(d_startTime.addSecs(60*d_autoSaveIntervalHours) <= now)
+    else if(d_startTime.addSecs(3600*d_backupIntervalHours) <= now)
         return true;
 
     return false;
@@ -533,11 +533,7 @@ void Experiment::finalSave()
 //    saveHeader();
 
     if(ftmwEnabled())
-    {
-        auto f = pu_ftmwConfig->storage()->save();
-        if(f.isRunning())
-            f.waitForFinished();
-    }
+        pu_ftmwConfig->storage()->save();
 
 #ifdef BC_LIF
     if(lifConfig().isEnabled())
@@ -618,7 +614,7 @@ void Experiment::storeValues()
     using namespace BC::Store::Exp;
     store(num,d_number);
     store(timeData,d_timeDataInterval,QString("s"));
-    store(autoSave,d_autoSaveIntervalHours,QString("hr"));
+    store(backupInterval,d_backupIntervalHours,QString("hr"));
 }
 
 void Experiment::retrieveValues()
@@ -626,7 +622,7 @@ void Experiment::retrieveValues()
     using namespace BC::Store::Exp;
     d_number = retrieve<int>(num);
     d_timeDataInterval = retrieve<int>(timeData);
-    d_autoSaveIntervalHours = retrieve<int>(autoSave);
+    d_backupIntervalHours = retrieve<int>(backupInterval);
 }
 
 

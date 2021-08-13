@@ -126,7 +126,7 @@ QWidget *ExperimentViewWidget::buildHeaderWidget()
 //        tw->setItem(i,1,new QTableWidgetItem(hdrit.value().first.toString()));
 //        tw->setItem(i,2,new QTableWidgetItem(hdrit.value().second));
 //    }
-//    hdrvl->addWidget(tw);
+    hdrvl->addWidget(tw);
     hdr->setLayout(hdrvl);
 
     return hdr;
@@ -145,15 +145,9 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
         out->setLayout(vbl);
 
         p_ftmw->prepareForExperiment(*pu_experiment);
-//        p_ftmw->updateFtmw(d_experiment.d_ftmwCfg);
-//        if(!d_experiment.ftmwConfig()->fidList().isEmpty())
-//            p_ftmw->updateShotsLabel(d_experiment.ftmwConfig()->fidList().constFirst().shots());
-
-
-        p_ftmw->updateAutosaves();
+        p_ftmw->updateBackups();
         p_ftmw->experimentComplete();
     }
-
 
     return out;
 }

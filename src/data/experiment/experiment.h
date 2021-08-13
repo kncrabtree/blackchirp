@@ -34,7 +34,7 @@ namespace BC::Store::Exp {
 static const QString key("Experiment");
 static const QString num("Number");
 static const QString timeData("TimeDataInterval");
-static const QString autoSave("AutoSaveShotsInterval");
+static const QString backupInterval("BackupInterval");
 static const QString ftmwEn("FtmwEnabled");
 static const QString ftmwType("FtmwType");
 }
@@ -56,9 +56,9 @@ public:
     std::map<QString,QString> d_hardware;
     int d_number{0};
     QDateTime d_startTime;
-    QDateTime d_lastAutosaveTime;
+    QDateTime d_lastBackupTime;
     int d_timeDataInterval{300};
-    int d_autoSaveIntervalHours{0};
+    int d_backupIntervalHours{0};
     QString d_errorString;
     QString d_startLogMessage;
     QString d_endLogMessage;
@@ -112,8 +112,8 @@ public:
 
     bool initialize();
     void abort();
-    bool canAutosave();
-    QFuture<void> autosave();
+    bool canBackup();
+    void backup();
     void finalSave();
 
     bool saveObjectives();

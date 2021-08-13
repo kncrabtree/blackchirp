@@ -21,7 +21,7 @@ static const QString ftmwScoring("FtmwChirpScoring");
 static const QString ftmwThresh("FtmwChirpScoringThreshold");
 static const QString ftmwOffset("FtmwChirpOffset");
 static const QString auxInterval("AuxDataInterval");
-static const QString autosave("AutosaveInterval");
+static const QString backup("BackupInterval");
 }
 
 class WizardStartPage : public ExperimentWizardPage
@@ -49,7 +49,7 @@ private:
     QGroupBox *p_motor;
 #endif
 
-    QSpinBox *p_auxDataIntervalBox, *p_autosaveBox, *p_ftmwShotsBox, *p_ftmwTargetDurationBox;
+    QSpinBox *p_auxDataIntervalBox, *p_backupBox, *p_ftmwShotsBox, *p_ftmwTargetDurationBox;
     QComboBox *p_ftmwTypeBox;
     QCheckBox *p_phaseCorrectionBox, *p_chirpScoringBox;
     QDoubleSpinBox *p_thresholdBox, *p_chirpOffsetBox;

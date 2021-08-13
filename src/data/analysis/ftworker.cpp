@@ -117,6 +117,8 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings)
 
     }
 
+    spectrum.setNumShots(fid.shots());
+
     //the signal is used for asynchronous purposes (in UI classes), and the return value for synchronous (in non-UI classes)
     emit ftDone(spectrum,d_id);
 

@@ -1,8 +1,8 @@
 #ifndef FIDSTORAGEBASE_H
 #define FIDSTORAGEBASE_H
 
-#include <QFuture>
 #include <memory>
+#include <QDateTime>
 
 #include <data/experiment/fid.h>
 
@@ -23,21 +23,20 @@ public:
     virtual quint64 completedShots() =0;
     virtual quint64 currentSegmentShots() =0;
     virtual bool addFids(const FidList other, int shift =0) =0;
-    virtual FidList getFidList(std::size_t i=0) =0;
     virtual FidList getCurrentFidList() =0;
-    virtual QFuture<void> autoSave() { return QFuture<void>(); };
-    virtual int numAutosaves() { return 0; }
+    virtual void backup() { return; };
+    virtual int numBackups() { return 0; }
     void advance();
-    QFuture<void> save();
+    void save();
 #ifdef BC_CUDA
     virtual bool setFidsData(const FidList other) =0;
 #endif
     virtual int getCurrentIndex() =0;
+    FidList loadFidList(int i);
 
 protected:
     virtual void _advance() =0;
-    QFuture<void> saveFidList(const FidList l, int i);
-    QFuture<FidList> loadFidList(int i);
+    void saveFidList(const FidList l, int i);
 
 private:
     QVector<Fid> d_templateList;

@@ -15,11 +15,10 @@ public:
     quint64 completedShots() override;
     quint64 currentSegmentShots() override;
     bool addFids(const FidList other, int shift) override;
-    FidList getFidList(std::size_t i) override;
     FidList getCurrentFidList() override;
     int getCurrentIndex() override;
-    QFuture<void> autoSave() override;
-    int numAutosaves() override;
+    void backup() override;
+    int numBackups() override;
 
 #ifdef BC_CUDA
     bool setFidsData(const FidList other) override;
@@ -31,8 +30,7 @@ protected:
 private:
     QMutex *p_mutex;
     FidList d_currentFidList;
-    int d_lastAutosave{0};
-
+    int d_lastBackup{0};
 
 };
 
