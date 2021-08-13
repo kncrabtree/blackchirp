@@ -24,22 +24,6 @@ enum ScopeSampleOrder {
     ChannelsInterleaved
 };
 
-enum ExptFileType {
-    HeaderFile,
-    ChirpFile,
-    FidFile,
-    MultiFidFile,
-    LifFile,
-    SnapFile,
-    TimeFile,
-    LogFile,
-    MotorFile,
-    ClockFile
-};
-
-QString getExptFile(int num, BlackChirp::ExptFileType t, QString path = QString(""), int snapNum = -1);
-QString getExptDir(int num, QString path = QString(""));
-
 #ifdef BC_LIF
 
 enum LifScanOrder {

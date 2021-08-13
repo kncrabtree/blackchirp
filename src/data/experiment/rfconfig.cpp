@@ -266,7 +266,7 @@ bool RfConfig::writeClockFile(int num) const
                                   it.key(),
                                   it.value().desiredFreqMHz,
                                   it.value().op,
-                                  it.value().factor,
+                                  QVariant(it.value().factor),
                                   it.value().hwKey,
                                   it.value().output
                               });

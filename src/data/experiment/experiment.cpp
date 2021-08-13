@@ -456,19 +456,6 @@ bool Experiment::validateItem(const QString key, const QVariant val)
     return out;
 }
 
-#pragma message("Finalize Snapshots issue")
-//void Experiment::finalizeFtmwSnapshots(const FtmwConfig final)
-//{
-//    d_ftmwCfg = final;
-//    d_ftmwCfg.finalizeSnapshots(d_number,d_path);
-
-//    QFile hdr(BlackChirp::getExptFile(d_number,BlackChirp::HeaderFile,d_path));
-//    if(hdr.exists())
-//        hdr.copy(hdr.fileName().append(QString(".orig")));
-//    saveHeader();
-
-//}
-
 #ifdef BC_MOTOR
 MotorScan Experiment::motorScan() const
 {

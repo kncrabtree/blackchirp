@@ -84,7 +84,7 @@ FidPlot::FidPlot(const QString id, QWidget *parent) :
 
     QPalette p;
     QColor bg( p.window().color() );
-    bg.setAlpha( 200 );
+    bg.setAlpha( 232 );
 
     p_label = new QwtPlotTextLabel;
     QwtText text(d_shotsText.arg(0));

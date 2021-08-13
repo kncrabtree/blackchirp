@@ -1,5 +1,4 @@
 SOURCES += $$PWD/loghandler.cpp \
-    $$PWD/datastructs.cpp \
     $$PWD/analysis/analysis.cpp \
     $$PWD/analysis/ft.cpp \
     $$PWD/analysis/ftworker.cpp \

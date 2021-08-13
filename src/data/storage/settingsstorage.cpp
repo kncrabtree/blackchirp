@@ -148,7 +148,10 @@ QStringList SettingsStorage::keys() const
     QStringList out;
     out.reserve(d_values.size());
     for(auto const &[key,_] : d_values)
+    {
+        (void)_;
         out << key;
+    }
     
     return out;
 }
@@ -158,7 +161,10 @@ QStringList SettingsStorage::arrayKeys() const
     QStringList out;
     out.reserve(d_arrayValues.size());
     for(auto const &[key,_] : d_arrayValues)
+    {
+        (void)_;
         out << key;
+    }
     
     return out;
 }

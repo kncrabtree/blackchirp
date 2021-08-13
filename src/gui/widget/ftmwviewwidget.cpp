@@ -57,6 +57,7 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
 
     for(auto &[key,ps] : d_plotStatus)
     {
+        (void)key;
         ps.fidPlot->blockSignals(true);
         ps.fidPlot->setFtStart(d_currentProcessingSettings.startUs);
         ps.fidPlot->setFtEnd(d_currentProcessingSettings.endUs);

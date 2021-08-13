@@ -80,20 +80,15 @@ public:
     double ftNyquistMHz() const;
     double fidDurationUs() const;
     QPair<int,int> chirpRange() const;
-    bool writeFids(int num, QString path = QString(""), int snapNum = -1) const;
-
 
 #ifdef BC_CUDA
     bool setFidsData(const QVector<QVector<qint64> > newList);
 #endif
     bool addFids(const QByteArray rawData, int shift = 0);
-//    bool subtractFids(const FtmwConfig other);
     void setScopeConfig(const FtmwDigitizerConfig &other);
-    void finalizeSnapshots(int num, QString path = QString(""));
     std::shared_ptr<FidStorageBase> storage() const;
 
     void loadFids(int num, QString path = QString(""));
-    void loadFidsFromSnapshots(const int num, const QString path = QString(""), const QList<int> snaps = QList<int>());
 
 private:
     std::shared_ptr<FidStorageBase> p_fidStorage;

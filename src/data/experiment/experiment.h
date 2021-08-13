@@ -92,7 +92,6 @@ public:
     bool addAuxData(AuxDataStorage::AuxDataMap m);
     void setValidationMap(const ExperimentValidator::ValidationMap &m);
     bool validateItem(const QString key, const QVariant val);
-//    void finalizeFtmwSnapshots(const FtmwConfig final);
 
 #ifdef BC_LIF
     bool isLifWaiting() const;

@@ -215,49 +215,12 @@ QPair<int, int> FtmwConfig::chirpRange() const
     return {0,0};
 }
 
-bool FtmwConfig::writeFids(int num, QString path, int snapNum) const
-{
-    (void)num;
-    (void)path;
-    (void)snapNum;
-#pragma message("Figure out writeFids")
-    return true;
-//    if(!d_multipleFidLists)
-//    {
-//        QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,path,snapNum));
-//        if(fid.open(QIODevice::WriteOnly))
-//        {
-//            QDataStream d(&fid);
-//            d << Fid::magicString();
-//            d << d_fidList;
-//            fid.close();
-//            return true;
-//        }
-//        else
-//            return false;
-//    }
-//    else
-//    {
-//        QFile fid(BlackChirp::getExptFile(num,BlackChirp::MultiFidFile,path,snapNum));
-//        if(fid.open(QIODevice::WriteOnly))
-//        {
-//            QDataStream d(&fid);
-//            d << Fid::magicString();
-//            d << d_multiFidStorage;
-//            fid.close();
-//            return true;
-//        }
-//        else
-//            return false;
-//    }
-}
-
 bool FtmwConfig::initialize()
 {
     double df = d_rfConfig.clockFrequency(RfConfig::DownLO);
     auto sb = d_rfConfig.d_downMixSideband;
 
-    Fid f;//(d_scopeConfig.xIncr(),df,QVector<qint64>(0),sb,d_scopeConfig.yMult(d_scopeConfig.d_fidChannel),0);
+    Fid f;
     f.setSpacing(d_scopeConfig.xIncr());
     f.setSideband(sb);
     f.setProbeFreq(df);
@@ -329,94 +292,6 @@ bool FtmwConfig::addFids(const QByteArray rawData, int shift)
     return p_fidStorage.get()->addFids(newList,shift);
 }
 
-//void FtmwConfig::addFids(const FtmwConfig other)
-//{
-//    if(d_multipleFidLists)
-//    {
-//        auto l = other.multiFidList();
-//        for(int i=0; i<l.size(); i++)
-//        {
-//            if(d_multiFidStorage.size() == i)
-//                d_multiFidStorage.append(l.at(i));
-//            else
-//            {
-//                if(d_multiFidStorage.at(i).size() != l.at(i).size())
-//                    d_multiFidStorage[i] = l.at(i);
-//                else
-//                {
-//                    for(int j=0; j<d_multiFidStorage.at(i).size(); j++)
-//                        d_multiFidStorage[i][j] += l.at(i).at(j);
-//                }
-//            }
-//        }
-//    }
-//    else
-//    {
-//        auto l = other.fidList();
-//        for(int i=0; i<l.size(); i++)
-//        {
-//            if(d_fidList.size() == i)
-//                d_fidList.append(l.at(i));
-//            else
-//                d_fidList[i] += l.at(i);
-//        }
-//    }
-//}
-
-//bool FtmwConfig::subtractFids(const FtmwConfig other)
-//{
-//    (void)other;
-//#pragma message("Figure out what to do with subtractFids")
-////    if(!d_multipleFidLists)
-////    {
-////        auto otherList = other.fidList();
-
-////        if(otherList.size() != d_fidList.size())
-////            return false;
-
-////        for(int i=0; i<otherList.size(); i++)
-////        {
-////            if(otherList.at(i).size() != d_fidList.at(i).size())
-////                return false;
-
-////            if(otherList.at(i).shots() >= d_fidList.at(i).shots())
-////                return false;
-////        }
-
-////        for(int i=0; i<d_fidList.size(); i++)
-////            d_fidList[i] -= otherList.at(i);
-
-////    }
-////    else
-////    {
-////        auto otherList = other.multiFidList();
-
-////        for(int i=0; i<d_multiFidStorage.size(); i++)
-////        {
-////            if(i >= otherList.size())
-////                continue;
-
-////            if(otherList.at(i).size() != d_multiFidStorage.at(i).size() || d_multiFidStorage.at(i).isEmpty())
-////                return false;
-
-////            //if numbers of shots are equal, then no new data have been added for this chunk.
-////            //Write an empty list of fids.
-////            //Otherwise, get the difference.
-////            if(otherList.at(i).constFirst().shots() == d_multiFidStorage.at(i).constFirst().shots())
-////                d_multiFidStorage[i] = FidList();
-////            else if(otherList.at(i).constFirst().shots() < d_multiFidStorage.at(i).constFirst().shots())
-////            {
-////                for(int j=0; j<d_multiFidStorage.at(i).size(); j++)
-////                    d_multiFidStorage[i][j] -= otherList.at(i).at(j);
-////            }
-////            else
-////                return false;
-////        }
-////    }
-
-//    return true;
-//}
-
 void FtmwConfig::setScopeConfig(const FtmwDigitizerConfig &other)
 {
     d_scopeConfig = other;
@@ -426,82 +301,6 @@ void FtmwConfig::hwReady()
 {
     d_fidTemplate.setProbeFreq(d_rfConfig.clockFrequency(RfConfig::DownLO));
     d_processingPaused = false;
-}
-
-void FtmwConfig::finalizeSnapshots(int num, QString path)
-{
-    //write current fid or mfd file
-    //load snap file; get number of snapshots
-    //delete all snapshot files
-    //delete snap file
-    //recalculate completed shots
-    writeFids(num,path);
-
-    QFile snp(BlackChirp::getExptFile(num,BlackChirp::SnapFile,path));
-    int snaps = 0;
-    if(snp.open(QIODevice::ReadOnly))
-    {
-        QByteArrayList l;
-        while(!snp.atEnd())
-        {
-            QByteArray line = snp.readLine();
-            if(!line.isEmpty() && !line.startsWith("fid") && !line.startsWith("mfd"))
-                l.append(line);
-            else
-            {
-                auto ll = QString(line).split(QString("\t"));
-                if(ll.size() >= 2)
-                    snaps = ll.at(1).trimmed().toInt();
-            }
-        }
-        snp.close();
-
-        //if there's anything left (eg LIF snapshots), rewrite the file with those
-        if(!l.isEmpty())
-        {
-            snp.open(QIODevice::WriteOnly);
-            while(!l.isEmpty())
-                snp.write(l.takeFirst());
-            snp.close();
-        }
-        else
-            snp.remove();
-    }
-
-    (void)snaps;
-#pragma message("finalizeSnapshots behavior - what to do?")
-
-//    for(int i=0; i<snaps; i++)
-//    {
-//        if(!d_multipleFidLists)
-//        {
-//            QFile snap(BlackChirp::getExptFile(num,BlackChirp::FidFile,path,i));
-//            if(snap.exists())
-//                snap.remove();
-//        }
-//        else
-//        {
-//            QFile snap(BlackChirp::getExptFile(num,BlackChirp::MultiFidFile,path,i));
-//            if(snap.exists())
-//                snap.remove();
-//        }
-//    }
-
-//    qint64 ts = 0;
-//    if(d_multipleFidLists)
-//    {
-//        for(int i=0; i<d_multiFidStorage.size(); i++)
-//            ts += d_multiFidStorage.at(i).constFirst().shots();
-//    }
-//    else
-//    {
-//        for(int i=0; i<d_fidList.size(); i++)
-//            ts += d_fidList.constFirst().shots();
-//    }
-
-//    d_completedShots = ts;
-
-
 }
 
 std::shared_ptr<FidStorageBase> FtmwConfig::storage() const
@@ -518,95 +317,6 @@ bool FtmwConfig::abort()
 void FtmwConfig::loadFids(int num, QString path)
 {
     p_fidStorage = createStorage(num,path);
-}
-
-void FtmwConfig::loadFidsFromSnapshots(const int num, const QString path, const QList<int> snaps)
-{
-    (void)num;
-    (void)path;
-    (void)snaps;
-#pragma message("Snapshot issue")
-//    if(d_multipleFidLists)
-//    {
-//        d_multiFidStorage.clear();
-
-//        for(int i=0; i<snaps.size(); i++)
-//        {
-//            QFile mfd(BlackChirp::getExptFile(num,BlackChirp::MultiFidFile,path,snaps.at(i)));
-//            if(mfd.open(QIODevice::ReadOnly))
-//            {
-//                QDataStream d(&mfd);
-//                QByteArray magic;
-//                d >> magic;
-//                if(magic.startsWith("BCFID"))
-//                {
-//                    if(magic.endsWith("v1.0"))
-//                    {
-//                        QList<FidList> dat;
-//                        d >> dat;
-//                        if(d_multiFidStorage.isEmpty())
-//                        {
-//                            d_multiFidStorage = dat;
-//                            if(!dat.isEmpty() && !dat.constFirst().isEmpty())
-//                                d_fidTemplate = dat.constFirst().constFirst();
-//                            d_fidTemplate.setData(QVector<qint64>());
-//                        }
-//                        else
-//                        {
-//                            for(int j=0; j<dat.size(); j++)
-//                            {
-//                                if(j == d_multiFidStorage.size())
-//                                    d_multiFidStorage << dat.at(j);
-//                                else
-//                                {
-//                                    for(int k=0; k<dat.at(j).size() && k<d_multiFidStorage.at(j).size(); k++)
-//                                        d_multiFidStorage[j][k] += dat.at(j).at(k);
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-//                mfd.close();
-
-//            }
-//        }
-//    }
-//    else
-//    {
-//        d_fidList.clear();
-//        for(int i=0; i<snaps.size(); i++)
-//        {
-//            QFile fid(BlackChirp::getExptFile(num,BlackChirp::FidFile,path,snaps.at(i)));
-//            if(fid.open(QIODevice::ReadOnly))
-//            {
-//                QDataStream d(&fid);
-//                QByteArray magic;
-//                d >> magic;
-//                if(magic.startsWith("BCFID"))
-//                {
-//                    if(magic.endsWith("v1.0"))
-//                    {
-//                        FidList dat;
-//                        d >> dat;
-//                        if(d_fidList.isEmpty())
-//                        {
-//                            d_fidList= dat;
-//                            if(!dat.isEmpty())
-//                                d_fidTemplate = dat.constFirst();
-//                            d_fidTemplate.setData(QVector<qint64>());
-//                        }
-//                        else
-//                        {
-//                            for(int j=0; j<d_fidList.size() && j<dat.size(); j++)
-//                                d_fidList[j] += dat.at(j);
-//                        }
-//                    }
-//                }
-
-//                fid.close();
-//            }
-//        }
-//    }
 }
 
 void FtmwConfig::storeValues()
