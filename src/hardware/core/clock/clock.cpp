@@ -74,6 +74,14 @@ void Clock::initialize()
     initializeClock();
 }
 
+bool Clock::testConnection()
+{
+    auto out = testClockConnection();
+    if(out)
+        readAll();
+    return out;
+}
+
 bool Clock::addRole(RfConfig::ClockType t, int outputIndex)
 {
     if(outputIndex >= d_numOutputs)
@@ -108,7 +116,7 @@ void Clock::readAll()
             break;
         for(auto it = d_outputRoles.constBegin(); it != d_outputRoles.constEnd(); it++)
         {
-            if(it.value() == 1)
+            if(it.value() == i)
                 emit frequencyUpdate(it.key(),f);
         }
     }
@@ -155,7 +163,7 @@ double Clock::setFrequency(RfConfig::ClockType t, double freqMHz)
 
     double out = readHwFrequency(d_outputRoles.value(t));
     out *= d_multFactors.value(output);
-    if(out > 0.0)
+    if(!isnan(out))
         emit frequencyUpdate(t,out);
 
     return out;

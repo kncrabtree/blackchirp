@@ -30,7 +30,7 @@ public:
     ~RfConfigWidget();
 
     void setFromRfConfig(const RfConfig &c);
-    void setClocks(const RfConfig &c);
+    void setClocks(const QHash<RfConfig::ClockType, RfConfig::ClockFreq> c);
     void toRfConfig(RfConfig &c);
     QString getHwKey(RfConfig::ClockType type) const;
     bool commonLO() const;

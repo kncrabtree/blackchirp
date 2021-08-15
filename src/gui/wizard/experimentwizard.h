@@ -37,6 +37,8 @@ public:
 
     std::shared_ptr<Experiment> experiment;
     void setValidationKeys(const std::map<QString,QStringList> &m);
+    QHash<RfConfig::ClockType, RfConfig::ClockFreq> d_clocks;
+
 private:    
     QList<ExperimentWizardPage*> d_pages;
 

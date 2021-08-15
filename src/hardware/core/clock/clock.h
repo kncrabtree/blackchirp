@@ -51,6 +51,7 @@ public:
 
 public slots:
     void initialize() override final;
+    bool testConnection() override final;
     bool addRole(RfConfig::ClockType t, int outputIndex = 0);
     void removeRole(RfConfig::ClockType t);
     void clearRoles();
@@ -72,6 +73,7 @@ private:
 
 protected:
     virtual void initializeClock() =0;
+    virtual bool testClockConnection() =0;
     virtual bool setHwFrequency(double freqMHz, int outputIndex = 0) =0;
     virtual double readHwFrequency(int outputIndex = 0) =0;
     virtual bool prepareClock(Experiment &exp) { Q_UNUSED(exp) return true; }

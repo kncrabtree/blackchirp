@@ -63,13 +63,13 @@ void RfConfigWidget::setFromRfConfig(const RfConfig &c)
     ui->commonLoCheckBox->setChecked(c.d_commonUpDownLO);
     ui->commonLoCheckBox->blockSignals(false);
 
-    setClocks(c);
+    setClocks(c.getClocks());
     ui->clockTableView->resizeColumnsToContents();
 }
 
-void RfConfigWidget::setClocks(const RfConfig &c)
+void RfConfigWidget::setClocks(const QHash<RfConfig::ClockType, RfConfig::ClockFreq> c)
 {
-    p_ctm->setFromConfig(c);
+    p_ctm->setClocks(c);
 }
 
 void RfConfigWidget::toRfConfig(RfConfig &c)

@@ -233,7 +233,7 @@ HardwareManager::~HardwareManager()
 
 void HardwareManager::initialize()
 {
-    //start all threads and initizlize hw
+    //start all threads and initialize hw
     for(auto it = d_hardwareMap.cbegin(); it != d_hardwareMap.cend(); ++it)
     {
         auto hw = it->second;
@@ -254,7 +254,6 @@ void HardwareManager::initialize()
         }
     }
 
-    pu_clockManager->readActiveClocks();
     emit hwInitializationComplete();
 }
 

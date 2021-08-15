@@ -20,7 +20,7 @@ public:
     QStringList channelNames() override { return {"Source 1","Source 2"}; }
 
 protected:
-    bool testConnection() override;
+    bool testClockConnection() override;
     void initializeClock() override;
     bool setHwFrequency(double freqMHz, int outputIndex) override;
     double readHwFrequency(int outputIndex) override;

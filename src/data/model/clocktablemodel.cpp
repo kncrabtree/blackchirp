@@ -82,13 +82,13 @@ ClockTableModel::~ClockTableModel()
     }
 }
 
-void ClockTableModel::setFromConfig(const RfConfig &c)
+void ClockTableModel::setClocks(const QHash<RfConfig::ClockType, RfConfig::ClockFreq> c)
 {
     d_clockAssignments.clear();
 
-    if(!c.getClocks().isEmpty())
+    if(!c.isEmpty())
     {
-        for(auto it = c.getClocks().constBegin(); it!=c.getClocks().constEnd(); it++)
+        for(auto it = c.constBegin(); it!=c.constEnd(); it++)
         {
             for(auto &hw : d_hwInfo)
             {
@@ -96,10 +96,16 @@ void ClockTableModel::setFromConfig(const RfConfig &c)
                         it.value().output == hw.output)
                 {
                     d_clockAssignments.insert(it.key(),hw.index);
+                    d_clockConfigs[it.key()] = it.value();
                 }
             }
         }
     }
+}
+
+void ClockTableModel::setFromConfig(const RfConfig &c)
+{
+    setClocks(c.getClocks());
 
     if(c.d_commonUpDownLO)
         setCommonLo(c.d_commonUpDownLO);

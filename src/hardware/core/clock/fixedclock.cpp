@@ -1,18 +1,35 @@
 #include "fixedclock.h"
 
-FixedClock::FixedClock(int clockNum, QObject *parent) : Clock(clockNum,5,false,BC::Key::fixed,BC::Key::fixedName.arg(clockNum),
-                                                              CommunicationProtocol::None,parent)
+FixedClock::FixedClock(int clockNum, QObject *parent) :
+    Clock(clockNum,5,false,BC::Key::Clock::fixed,BC::Key::Clock::fixedName.arg(clockNum),CommunicationProtocol::None,parent)
 {
-    for(int i=0; i<5; i++)
-        d_currentFrequencyList << 0.0;
+    using namespace BC::Key::Clock;
+    if(containsArray(ch))
+    {
+        for(int i=0; i<5; ++i)
+            d_currentFrequencyList << getArrayValue(ch,i,freq,0.0);
+    }
+    else
+    {
+        for(int i=0; i<5; i++)
+            d_currentFrequencyList << 0.0;
+    }
 
-    setDefault(BC::Key::Clock::minFreq,0.0);
-    setDefault(BC::Key::Clock::maxFreq,1e7);
-    setDefault(BC::Key::Clock::lock,true);
+    setDefault(minFreq,0.0);
+    setDefault(maxFreq,1e7);
+    setDefault(lock,true);
+}
+
+FixedClock::~FixedClock()
+{
+    using namespace BC::Key::Clock;
+    setArray(ch,{});
+    for(int i=0; i<5; ++i)
+        appendArrayMap(ch,{{freq,d_currentFrequencyList.value(i)}});
 }
 
 
-bool FixedClock::testConnection()
+bool FixedClock::testClockConnection()
 {
     return true;
 }
@@ -31,4 +48,12 @@ bool FixedClock::setHwFrequency(double freqMHz, int outputIndex)
 double FixedClock::readHwFrequency(int outputIndex)
 {
     return d_currentFrequencyList.at(outputIndex);
+}
+
+
+QStringList FixedClock::forbiddenKeys() const
+{
+    auto out = Clock::forbiddenKeys();
+    out.append(BC::Key::Clock::ch);
+    return out;
 }

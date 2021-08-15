@@ -23,6 +23,8 @@ void WizardRfConfigPage::initializePage()
     auto e = getExperiment();
     if(e->d_number > 0)
         p_rfc->setFromRfConfig(e->ftmwConfig()->d_rfConfig);
+    else
+        p_rfc->setClocks(static_cast<ExperimentWizard*>(wizard())->d_clocks);
 }
 
 bool WizardRfConfigPage::validatePage()

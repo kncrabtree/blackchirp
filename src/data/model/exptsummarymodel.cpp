@@ -15,14 +15,14 @@ ExptSummaryModel::ExptSummaryModel(Experiment *exp, QObject *parent) : QAbstract
     for(auto const &[obj,tpl] : hdr)
     {
         auto arrayKey = std::get<0>(tpl);
-        auto arrayIdxStr = std::get<1>(tpl);
+        auto arrayIdxStr = std::get<1>(tpl).isEmpty() ? QString("") : QString::number(std::get<1>(tpl).toInt() + 1);
         auto key = std::get<2>(tpl);
         auto val = std::get<3>(tpl);
         auto unit = std::get<4>(tpl);
 
 
         auto thisItem = arrayIdxStr.isEmpty() ? new ExptTreeItem({obj,key,val,unit}) :
-                                                  new ExptTreeItem({arrayIdxStr,key,val,unit});
+                                                  new ExptTreeItem({"",key,val,unit});
 
         if(!currentObject || (currentObject->data(0).toString() != obj))
         {

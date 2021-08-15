@@ -334,10 +334,14 @@ void MainWindow::startExperiment()
     if(p_batchThread->isRunning())
         return;
 
+    QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks;
+    QMetaObject::invokeMethod(p_hwm,&HardwareManager::getClocks,Qt::BlockingQueuedConnection,&clocks);
+
     ExperimentWizard wiz(-1,this);
     wiz.experiment->setPulseGenConfig(p_hwm->getPGenConfig());
     wiz.experiment->setFlowConfig(p_hwm->getFlowConfig());
     wiz.setValidationKeys(p_hwm->validationKeys());
+    wiz.d_clocks = clocks;
 
 #ifdef BC_LIF
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
@@ -618,11 +622,9 @@ void MainWindow::launchRfConfigDialog()
 {
     auto d = new QDialog;
     auto w = new RfConfigWidget(d);
-    RfConfig cfg;
     QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks;
     QMetaObject::invokeMethod(p_hwm,&HardwareManager::getClocks,Qt::BlockingQueuedConnection,&clocks);
-    cfg.setCurrentClocks(clocks);
-    w->setClocks(cfg);
+    w->setClocks(clocks);
 
     auto vbl = new QVBoxLayout;
 

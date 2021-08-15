@@ -9,7 +9,7 @@ Valon5009::Valon5009(int clockNum, QObject *parent) :
 }
 
 
-bool Valon5009::testConnection()
+bool Valon5009::testClockConnection()
 {
     QByteArray resp = valonQueryCmd(QString("ID\r"));
 

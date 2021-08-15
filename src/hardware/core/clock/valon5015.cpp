@@ -8,7 +8,7 @@ Valon5015::Valon5015(int clockNum, QObject *parent) :
     setDefault(BC::Key::Clock::lock,false);
 }
 
-bool Valon5015::testConnection()
+bool Valon5015::testClockConnection()
 {
     QByteArray resp = valonQueryCmd(QString("ID\r"));
 

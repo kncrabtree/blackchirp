@@ -33,6 +33,7 @@ public:
     };
 
     QList<ClockHwInfo> getHwInfo() const { return d_hwInfo; }
+    void setClocks(const QHash<RfConfig::ClockType,RfConfig::ClockFreq> c);
     void setFromConfig(const RfConfig &c);
     void toRfConfig(RfConfig &c) const;
     QString getHwKey(RfConfig::ClockType type) const;
