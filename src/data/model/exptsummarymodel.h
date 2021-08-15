@@ -41,11 +41,22 @@ public:
     void setParent(ExptTreeItem *parent) { p_parent = parent; }
     ExptTreeItem *parent() const { return p_parent; }
     ExptTreeItem *childAt(int row) const { return d_children.value(row); }
+    ExptTreeItem *findChild(const QString key) {
+        for(auto child : d_children)
+        {
+            if(child->data(0) == key)
+                return child;
+        }
+        return nullptr;
+    }
     int childCount() const { return d_children.size(); }
     int columnCount() const { return d_data.size(); }
     QVariant data(int column) const { return d_data.value(column); }
     int row() const {
         return p_parent ? p_parent->d_children.indexOf(const_cast<ExptTreeItem*>(this)) : 0;
+    }
+    void sortChildren() {
+        std::sort(d_children.begin(),d_children.end(),[](ExptTreeItem *a, ExptTreeItem *b){ return a->data(0) < b->data(0);});
     }
 
 private:

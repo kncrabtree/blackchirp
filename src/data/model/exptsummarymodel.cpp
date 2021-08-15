@@ -5,7 +5,7 @@ ExptSummaryModel::ExptSummaryModel(Experiment *exp, QObject *parent) : QAbstract
     if(!exp)
         return;
 
-    QStringList l{"Object","Key","Value","Unit"};
+    QStringList l{"Object/Key","Value","Unit"};
     pu_rootItem = std::make_unique<ExptTreeItem>(l,nullptr);
 
     auto hdr = exp->getSummary();
@@ -21,12 +21,11 @@ ExptSummaryModel::ExptSummaryModel(Experiment *exp, QObject *parent) : QAbstract
         auto unit = std::get<4>(tpl);
 
 
-        auto thisItem = arrayIdxStr.isEmpty() ? new ExptTreeItem({obj,key,val,unit}) :
-                                                  new ExptTreeItem({"",key,val,unit});
+        auto thisItem = new ExptTreeItem({key,val,unit});
 
         if(!currentObject || (currentObject->data(0).toString() != obj))
         {
-            currentObject = new ExptTreeItem({obj,"","",""},pu_rootItem.get());
+            currentObject = new ExptTreeItem({obj,"",""},pu_rootItem.get());
             pu_rootItem->appendChild(currentObject);
             currentArray = nullptr;
             currentArrayItem = nullptr;
@@ -41,13 +40,13 @@ ExptSummaryModel::ExptSummaryModel(Experiment *exp, QObject *parent) : QAbstract
         {
             if(!currentArray || (currentArray->data(0) != arrayKey))
             {
-                currentArray = new ExptTreeItem({arrayKey,"","",""},currentObject);
+                currentArray = new ExptTreeItem({arrayKey,"",""},currentObject);
                 currentObject->appendChild(currentArray);
             }
 
             if(!currentArrayItem || (currentArrayItem->data(0) != arrayIdxStr))
             {
-                currentArrayItem = new ExptTreeItem({arrayIdxStr,"","",""},currentArray);
+                currentArrayItem = new ExptTreeItem({arrayIdxStr,"",""},currentArray);
                 currentArray->appendChild(currentArrayItem);
             }
 
@@ -57,6 +56,77 @@ ExptSummaryModel::ExptSummaryModel(Experiment *exp, QObject *parent) : QAbstract
 
     }
 
+    if(exp->ftmwEnabled())
+    {
+        //chirps
+        auto chirpConfigItem = pu_rootItem->findChild(BC::Store::CC::key);
+        if(chirpConfigItem)
+        {
+            auto chirpRootItem = new ExptTreeItem({"Chirps","",""},chirpConfigItem);
+            chirpConfigItem->appendChild(chirpRootItem);
+            auto cl = exp->ftmwConfig()->d_rfConfig.d_chirpConfig.chirpList();
+            for(int i=0; i<cl.size(); ++i)
+            {
+                ExptTreeItem *chirpItem = new ExptTreeItem({QString("Chirp %1").arg(i+1),"",""},chirpRootItem);
+                chirpRootItem->appendChild(chirpItem);
+                auto c = cl.at(i);
+                for(int j=0; j<c.size(); ++j)
+                {
+                    ExptTreeItem *segItem = new ExptTreeItem({QString("Segment %1").arg(j+1),"",""},chirpItem);
+                    chirpItem->appendChild(segItem);
+                    auto &seg = c.at(j);
+                    if(!seg.empty)
+                    {
+                        segItem->appendChild(new ExptTreeItem({"Start",QVariant(seg.startFreqMHz).toString(),"MHz"},segItem));
+                        segItem->appendChild(new ExptTreeItem({"End",QVariant(seg.endFreqMHz).toString(),"MHz"},segItem));
+                    }
+                    else
+                        segItem->appendChild(new ExptTreeItem({"Empty",QVariant(true).toString(),""},segItem));
+                    segItem->appendChild(new ExptTreeItem({"Duration",QVariant(seg.durationUs).toString(),
+                                                           QString::fromUtf8("μs")},segItem));
+
+                }
+            }
+
+            chirpConfigItem->sortChildren();
+        }
+
+        //clock configuration
+        auto rfConfigItem = pu_rootItem->findChild(BC::Store::RFC::key);
+        if(rfConfigItem)
+        {
+            auto clockRootItem = new ExptTreeItem({"Clock Configs","",""},rfConfigItem);
+            rfConfigItem->appendChild(clockRootItem);
+            auto cs = exp->ftmwConfig()->d_rfConfig.clockSteps();
+            for(int i=0; i<cs.size(); ++i)
+            {
+                auto clocks = cs.at(i);
+                ExptTreeItem *stepItem = new ExptTreeItem({QString("Clock Step %1").arg(i+1),"",""},clockRootItem);
+                clockRootItem->appendChild(stepItem);
+                for(auto it = clocks.cbegin(); it != clocks.cend(); ++it)
+                {
+                    ExptTreeItem *clockItem = new ExptTreeItem({QVariant::fromValue<RfConfig::ClockType>(it.key()).toString()
+                                                                ,"",""},stepItem);
+                    stepItem->appendChild(clockItem);
+                    auto &cf = it.value();
+                    clockItem->appendChild(new ExptTreeItem({"Clock",cf.hwKey,""},clockItem));
+                    clockItem->appendChild(new ExptTreeItem({"Output",QString::number(cf.output),""},clockItem));
+                    clockItem->appendChild(new ExptTreeItem({"Frequency",QVariant(cf.desiredFreqMHz).toString(),"MHz"},clockItem));
+                    clockItem->appendChild(new ExptTreeItem({"Operation",
+                                                             QVariant::fromValue<RfConfig::MultOperation>(cf.op).toString(),
+                                                             ""},clockItem));
+                    clockItem->appendChild(new ExptTreeItem({"Factor",QVariant(cf.factor).toString(),""},clockItem));
+                }
+                stepItem->sortChildren();
+            }
+            rfConfigItem->sortChildren();
+        }
+
+    }
+
+
+    for(int i=0;i<pu_rootItem->childCount(); ++i)
+        pu_rootItem->childAt(i)->sortChildren();
 }
 
 

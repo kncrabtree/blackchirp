@@ -95,6 +95,7 @@ public:
     bool canAdvance(qint64 shots) const;
     int numSegments() const;
 
+    QVector<QHash<ClockType,RfConfig::ClockFreq>> clockSteps() const;
     QHash<ClockType,ClockFreq> getClocks() const;
     double clockFrequency(ClockType t) const;
     double rawClockFrequency(ClockType t) const;

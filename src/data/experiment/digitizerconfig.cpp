@@ -27,18 +27,19 @@ double DigitizerConfig::yMult(int ch) const
 
 void DigitizerConfig::storeValues()
 {
+    //store chanenel numbers as 0-indexed
     using namespace BC::Store::Digi;
     for(auto it = d_analogChannels.cbegin(); it != d_analogChannels.cend(); ++it)
     {
-        storeArrayValue(an,it->first,en,true);
-        storeArrayValue(an,it->first,fs,it->second.fullScale,"V");
-        storeArrayValue(an,it->first,offset,it->second.offset,"V");
+        storeArrayValue(an,it->first-1,en,true);
+        storeArrayValue(an,it->first-1,fs,it->second.fullScale,"V");
+        storeArrayValue(an,it->first-1,offset,it->second.offset,"V");
     }
     for(auto it = d_digitalChannels.cbegin(); it != d_digitalChannels.cend(); ++it)
     {
-        storeArrayValue(dig,it->first,en,true);
-        storeArrayValue(dig,it->first,digInp,it->second.input);
-        storeArrayValue(dig,it->first,digRole,it->second.role);
+        storeArrayValue(dig,it->first-1,en,true);
+        storeArrayValue(dig,it->first-1,digInp,it->second.input);
+        storeArrayValue(dig,it->first-1,digRole,it->second.role);
     }
 
     store(trigCh,d_triggerChannel);
@@ -57,6 +58,8 @@ void DigitizerConfig::storeValues()
 
 void DigitizerConfig::retrieveValues()
 {
+    //note: all channels are 1-indexed to allow for aux channel to be 0
+    //but channels are stored as 0-indexed
     using namespace BC::Store::Digi;
     int n = arrayStoreSize(an);
     for(int i=0; i<n; ++i)
@@ -64,9 +67,9 @@ void DigitizerConfig::retrieveValues()
         bool e = retrieveArrayValue(an,i,en,false);
         if(e)
         {
-            AnalogChannel c{retrieveArrayValue(an,i,fs,0.0),
-                        retrieveArrayValue(an,i,offset,0.0)};
-            d_analogChannels.insert_or_assign(i,c);
+            AnalogChannel c{retrieveArrayValue(an,i+1,fs,0.0),
+                        retrieveArrayValue(an,i+1,offset,0.0)};
+            d_analogChannels.insert_or_assign(i+1,c);
         }
     }
     n = arrayStoreSize(dig);
@@ -75,8 +78,8 @@ void DigitizerConfig::retrieveValues()
         bool e = retrieveArrayValue(dig,i,en,false);
         if(e)
         {
-            DigitalChannel c{retrieveArrayValue(dig,i,digInp,false),retrieveArrayValue(dig,i,digRole,-1)};
-            d_digitalChannels.insert_or_assign(i,c);
+            DigitalChannel c{retrieveArrayValue(dig,i,digInp,false),retrieveArrayValue(dig,i+1,digRole,-1)};
+            d_digitalChannels.insert_or_assign(i+1,c);
         }
     }
 

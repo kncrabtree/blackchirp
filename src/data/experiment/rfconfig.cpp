@@ -156,6 +156,14 @@ int RfConfig::numSegments() const
     return d_clockConfigs.size();
 }
 
+QVector<QHash<RfConfig::ClockType, RfConfig::ClockFreq> > RfConfig::clockSteps() const
+{
+    if(d_clockConfigs.isEmpty())
+        return {d_clockTemplate};
+
+    return d_clockConfigs;
+}
+
 QHash<RfConfig::ClockType, RfConfig::ClockFreq> RfConfig::getClocks() const
 {
     if(d_currentClockIndex >=0 && d_currentClockIndex < d_clockConfigs.size())
