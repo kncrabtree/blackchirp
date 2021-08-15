@@ -258,6 +258,17 @@ public:
      */
     void addChild(HeaderStorage *other);
 
+    /*!
+     * \brief Removes a pointer to a child HeaderStorage object
+     *
+     * The caller is responsible for deleting the object if needed.
+     *
+     * \param child Pointer to the child to remove
+     *
+     * \return HeaderStorage* Pointer to the removed child, or nullptr if no child is found
+     */
+    HeaderStorage* removeChild(HeaderStorage *child);
+
 private:
     HeaderMap d_values;
     std::map<QString,HeaderArray> d_arrayValues;

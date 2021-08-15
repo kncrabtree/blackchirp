@@ -132,3 +132,16 @@ void HeaderStorage::addChild(HeaderStorage *other)
 {
     d_children.push_back(other);
 }
+
+HeaderStorage *HeaderStorage::removeChild(HeaderStorage *child)
+{
+    HeaderStorage *out = nullptr;
+
+    for(auto it = d_children.begin(); it != d_children.end(); ++it)
+    {
+        if((*it) == child)
+            return *d_children.erase(it);
+    }
+
+    return out;
+}

@@ -21,9 +21,6 @@ protected:
     void _prepareToSave() override;
     void _loadComplete() override;
     std::shared_ptr<FidStorageBase> createStorage(int num, QString path="") override;
-
-private:
-    quint64 d_targetShots;
 };
 
 
@@ -45,9 +42,6 @@ protected:
     void _prepareToSave() override;
     void _loadComplete() override;
     std::shared_ptr<FidStorageBase> createStorage(int num, QString path="") override;
-
-private:
-    quint64 d_targetShots;
 };
 
 

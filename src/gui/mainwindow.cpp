@@ -642,6 +642,12 @@ void MainWindow::launchRfConfigDialog()
         w->toRfConfig(rfc);
         QMetaObject::invokeMethod(p_hwm,[rfc,this](){ p_hwm->configureClocks(rfc.getClocks());} );
     });
+    connect(d,&QDialog::finished,d,&QDialog::deleteLater);
+    connect(d,&QDialog::destroyed,[this](){
+        auto it = d_openDialogs.find("RfConfig");
+        if(it != d_openDialogs.end())
+            d_openDialogs.erase(it);
+    });
 
     d_openDialogs.insert({"RfConfig",d});
     d->show();
@@ -851,6 +857,7 @@ HWDialog *MainWindow::createHWDialog(const QString key, QWidget *controlWidget)
     connect(out,&HWDialog::accepted,[hwm,key](){
         QMetaObject::invokeMethod(hwm,[=](){ hwm->updateObjectSettings(key); });
     });
+    connect(out,&QDialog::finished,out,&QDialog::deleteLater);
     connect(out,&HWDialog::destroyed,[this,key](){
         auto it = d_openDialogs.find(key);
         if(it != d_openDialogs.end())

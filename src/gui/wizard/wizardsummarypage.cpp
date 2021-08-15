@@ -1,11 +1,12 @@
 #include "wizardsummarypage.h"
 
 #include <QVBoxLayout>
-#include <QTableWidget>
+#include <QTreeView>
 #include <QHeaderView>
 #include <QCheckBox>
 
 #include <gui/wizard/experimentwizard.h>
+#include <data/model/exptsummarymodel.h>
 
 
 WizardSummaryPage::WizardSummaryPage(QWidget *parent) :
@@ -15,17 +16,10 @@ WizardSummaryPage::WizardSummaryPage(QWidget *parent) :
     setSubTitle(QString("The settings shown below will be used for this experiment. If anything is incorrect, use the back button to make changes."));
 
     QVBoxLayout *vbl = new QVBoxLayout(this);
-    p_tw = new QTableWidget(this);
-    p_tw->setColumnCount(3);
-    p_tw->setEditTriggers(QTableWidget::NoEditTriggers);
-    p_tw->setSelectionBehavior(QAbstractItemView::SelectRows);
+    p_tv = new QTreeView(this);
 
-    p_tw->setHorizontalHeaderItem(0,new QTableWidgetItem(QString("Key")));
-    p_tw->setHorizontalHeaderItem(1,new QTableWidgetItem(QString("Value")));
-    p_tw->setHorizontalHeaderItem(2,new QTableWidgetItem(QString("Unit")));
-    p_tw->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
-    vbl->addWidget(p_tw);
+    vbl->addWidget(p_tv);
     setLayout(vbl);
 
 }
@@ -38,26 +32,13 @@ WizardSummaryPage::~WizardSummaryPage()
 
 void WizardSummaryPage::initializePage()
 {
-    p_tw->clearContents();
+    auto e = getExperiment().get();
+    if(p_model)
+        p_model->deleteLater();
 
-//    auto e = getExperiment();
-
-//    auto header = e->headerMap();
-//    auto it = header.constBegin();
-//    p_tw->setRowCount(header.size());
-//    int i = 0;
-//    while(it != header.constEnd())
-//    {
-//        p_tw->setItem(i,0,new QTableWidgetItem(it.key()));
-//        p_tw->setItem(i,1,new QTableWidgetItem(it.value().first.toString()));
-//        p_tw->setItem(i,2,new QTableWidgetItem(it.value().second));
-
-//        it++;
-//        i++;
-//    }
-////    p_pte->moveCursor(QTextCursor::Start);
-////    p_pte->ensureCursorVisible();
-//    p_tw->resizeColumnsToContents();
+    p_model = new ExptSummaryModel(e,this);
+    p_tv->setModel(p_model);
+    p_tv->header()->setSectionResizeMode(QHeaderView::Stretch);
 }
 
 int WizardSummaryPage::nextId() const

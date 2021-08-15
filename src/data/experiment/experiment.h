@@ -1,6 +1,9 @@
 #ifndef EXPERIMENT_H
 #define EXPERIMENT_H
 
+#define _STR(x) #x
+#define STRINGIFY(x) _STR(x)
+
 #include <memory>
 
 #include <QPair>
@@ -37,6 +40,11 @@ static const QString timeData("TimeDataInterval");
 static const QString backupInterval("BackupInterval");
 static const QString ftmwEn("FtmwEnabled");
 static const QString ftmwType("FtmwType");
+static const QString majver{"BCMajorVersion"};
+static const QString minver{"BCMinorVersion"};
+static const QString patchver{"BCPatchVersion"};
+static const QString relver{"BCReleaseVersion"};
+static const QString buildver{"BCBuildVersion"};
 }
 
 namespace BC::Config::Exp {
@@ -63,10 +71,17 @@ public:
     QString d_startLogMessage;
     QString d_endLogMessage;
     BlackChirp::LogMessageCode d_endLogMessageCode{BlackChirp::LogHighlight};
+    QString d_majorVersion{STRINGIFY(BC_MAJOR_VERSION)};
+    QString d_minorVersion{STRINGIFY(BC_MINOR_VERSION)};
+    QString d_patchVersion{STRINGIFY(BC_PATCH_VERSION)};
+    QString d_releaseVersion{STRINGIFY(BC_RELEASE_VERSION)};
+    QString d_buildVersion{STRINGIFY(BC_BUILD_VERSION)};
+
 
     inline bool isAborted()  const { return d_isAborted; }
     inline bool isDummy() const { return d_isDummy; }
     bool isComplete() const;
+    HeaderStrings getSummary();
 
 
     inline bool ftmwEnabled() const { return pu_ftmwConfig.get() != nullptr; }

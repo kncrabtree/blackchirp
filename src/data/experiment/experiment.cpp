@@ -185,6 +185,19 @@ bool Experiment::isComplete() const
     return true;
 }
 
+HeaderStorage::HeaderStrings Experiment::getSummary()
+{
+    auto out = getStrings();
+
+    QString _{""};
+
+    //add hardware information
+    for(auto const &[key,val] : d_hardware)
+        out.insert({"Hardware",{_,_,key,val,_}});
+
+    return out;
+}
+
 void Experiment::backup()
 {
     //if we reach this point, it's time to backup
@@ -194,6 +207,12 @@ void Experiment::backup()
 
 FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
 {
+    if(pu_ftmwConfig.get())
+    {
+        removeChild(pu_ftmwConfig.get());
+        pu_ftmwConfig.reset();
+    }
+
     switch(type) {
     case FtmwConfig::Target_Shots:
         pu_ftmwConfig = std::make_unique<FtmwConfigSingle>();
@@ -211,7 +230,6 @@ FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
         break;
     }
 
-//    pu_ftmwConfig = std::make_unique<FtmwConfig>();
     pu_ftmwConfig->d_type = type;
     addChild(pu_ftmwConfig.get());
     return pu_ftmwConfig.get();
@@ -220,6 +238,11 @@ FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
 bool Experiment::initialize()
 {
     d_startTime = QDateTime::currentDateTime();
+    d_majorVersion = STRINGIFY(BC_MAJOR_VERSION);
+    d_minorVersion = STRINGIFY(BC_MINOR_VERSION);
+    d_patchVersion = STRINGIFY(BC_PATCH_VERSION);
+    d_releaseVersion = STRINGIFY(BC_RELEASE_VERSION);
+    d_buildVersion = STRINGIFY(BC_BUILD_VERSION);
 
     int num = -1;
 
@@ -602,6 +625,11 @@ void Experiment::storeValues()
     store(num,d_number);
     store(timeData,d_timeDataInterval,QString("s"));
     store(backupInterval,d_backupIntervalHours,QString("hr"));
+    store(majver,d_majorVersion);
+    store(minver,d_minorVersion);
+    store(patchver,d_patchVersion);
+    store(relver,d_releaseVersion);
+    store(buildver,d_buildVersion);
 }
 
 void Experiment::retrieveValues()
@@ -610,6 +638,11 @@ void Experiment::retrieveValues()
     d_number = retrieve<int>(num);
     d_timeDataInterval = retrieve<int>(timeData);
     d_backupIntervalHours = retrieve<int>(backupInterval);
+    d_majorVersion = retrieve<int>(majver);
+    d_minorVersion = retrieve<int>(minver);
+    d_patchVersion = retrieve<int>(patchver);
+    d_releaseVersion = retrieve<int>(relver);
+    d_buildVersion = retrieve<int>(buildver);
 }
 
 

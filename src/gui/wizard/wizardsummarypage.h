@@ -3,7 +3,8 @@
 
 #include <gui/wizard/experimentwizardpage.h>
 
-class QTableWidget;
+class QTreeView;
+class ExptSummaryModel;
 
 namespace BC::Key::WizSummary {
 static const QString key("WizardSummaryPage");
@@ -21,7 +22,8 @@ public:
     int nextId() const;
 
 private:
-    QTableWidget *p_tw;
+    QTreeView *p_tv;
+    ExptSummaryModel *p_model{nullptr};
 };
 
 #endif // WIZARDSUMMARYPAGE_H

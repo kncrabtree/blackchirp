@@ -16,35 +16,30 @@ FtmwConfigSingle::FtmwConfigSingle() : FtmwConfig()
 
 FtmwConfigSingle::FtmwConfigSingle(const FtmwConfig &other) : FtmwConfig(other)
 {
-    auto o = dynamic_cast<const FtmwConfigSingle*>(&other);
-    if(o)
-        d_targetShots = o->d_targetShots;
 }
 
 int FtmwConfigSingle::perMilComplete() const
 {
-    return (1000*completedShots())/d_targetShots;
+    return (1000*completedShots())/d_objective;
 }
 
 bool FtmwConfigSingle::isComplete() const
 {
-    return completedShots() >= d_targetShots;
+    return completedShots() >= d_objective;
 }
 
 bool FtmwConfigSingle::_init()
 {
-    d_targetShots = d_objective;
     return true;
 }
 
 void FtmwConfigSingle::_prepareToSave()
 {
-    store(BC::Store::FTMW::tShots,d_targetShots);
+    store(BC::Store::FTMW::tShots,d_objective);
 }
 
 void FtmwConfigSingle::_loadComplete()
 {
-    d_targetShots = retrieve(BC::Store::FTMW::tShots,0);
 }
 
 std::shared_ptr<FidStorageBase> FtmwConfigSingle::createStorage(int num, QString path)
@@ -66,14 +61,11 @@ FtmwConfigPeakUp::FtmwConfigPeakUp() : FtmwConfig()
 
 FtmwConfigPeakUp::FtmwConfigPeakUp(const FtmwConfig &other) : FtmwConfig(other)
 {
-    auto o = dynamic_cast<const FtmwConfigPeakUp*>(&other);
-    if(o)
-        d_targetShots = o->d_targetShots;
 }
 
 int FtmwConfigPeakUp::perMilComplete() const
 {
-    return (1000*completedShots())/d_targetShots;
+    return (1000*completedShots())/d_objective;
 }
 
 bool FtmwConfigPeakUp::isComplete() const
@@ -88,14 +80,13 @@ quint8 FtmwConfigPeakUp::bitShift() const
 
 bool FtmwConfigPeakUp::_init()
 {
-    d_targetShots = d_objective;
-
-    static_cast<FidPeakUpStorage*>(storage().get())->setTargetShots(d_targetShots);
+    static_cast<FidPeakUpStorage*>(storage().get())->setTargetShots(d_objective);
     return true;
 }
 
 void FtmwConfigPeakUp::_prepareToSave()
 {
+    store(BC::Store::FTMW::tShots,d_objective);
 }
 
 void FtmwConfigPeakUp::_loadComplete()
