@@ -13,7 +13,7 @@ class ExperimentWizard : public QWizard
 {
     Q_OBJECT
 public:
-    ExperimentWizard(Experiment *exp, std::map<QString, QString> hw, QWidget *parent = 0);
+    ExperimentWizard(Experiment *exp, const std::map<QString, QString> &hw, QWidget *parent = 0);
     ~ExperimentWizard();
 
     enum Page {

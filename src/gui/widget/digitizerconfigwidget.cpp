@@ -402,7 +402,7 @@ void DigitizerConfigWidget::setFromConfig(const DigitizerConfig &c)
      if(p_sampleRateBox->isEditable())
          p_sampleRateBox->setEditText(QString::number(c.d_sampleRate,'e',6));
      else
-         p_sampleRateBox->setCurrentIndex(p_sampleRateBox->findData(c.d_sampleRate));
+         p_sampleRateBox->setCurrentIndex(p_sampleRateBox->findData(QVariant(c.d_sampleRate)));
      p_recLengthBox->setValue(c.d_recordLength);
 
      p_bytesPerPointBox->setValue(c.d_bytesPerPoint);

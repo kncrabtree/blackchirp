@@ -10,7 +10,7 @@ SOURCES += $$PWD/flowcontroller.cpp \
 
     equals(FC,0) {
 	    HEADERS += $$PWD/virtualflowcontroller.h
-		SOURCES += $$PWD/virtualflowcontroller.h
+		SOURCES += $$PWD/virtualflowcontroller.cpp
 	}
 	equals(FC,1) {
 	    HEADERS += $$PWD/mks647c.h

@@ -9,8 +9,9 @@ SOURCES += \
     $$PWD/pulsegenerator.cpp
 
 !lessThan(PGEN,0) {
-    BC_PGEN = $$PGEN
-	equals(PGEN,0) {
+    DEFINES += BC_PGEN=$$PGEN
+
+    equals(PGEN,0) {
 	    HEADERS += $$PWD/virtualpulsegenerator.h
 		SOURCES += $$PWD/virtualpulsegenerator.cpp
 	}

@@ -2,8 +2,15 @@
 #define QUICKEXPTDIALOG_H
 
 #include <QDialog>
+#include <memory>
 
-#include <data/experiment/experiment.h>
+class Experiment;
+class ExperimentSummaryWidget;
+class QLabel;
+class QSpinBox;
+class QCheckBox;
+class QFormLayout;
+class QPushButton;
 
 namespace Ui {
 class QuickExptDialog;
@@ -12,18 +19,30 @@ class QuickExptDialog;
 class QuickExptDialog : public QDialog
 {
     Q_OBJECT
-
 public:
-    explicit QuickExptDialog(std::shared_ptr<Experiment> e, QWidget *parent = 0);
-    ~QuickExptDialog();
+    enum QeResult {
+        New=1000,
+        Configure,
+        Start,
+    };
+    explicit QuickExptDialog(QWidget *parent = nullptr);
 
-    int configureResult() const { return d_configureResult; }
-    bool sleepWhenDone() const;
+    void setHardware(const std::map<QString,QString> &hwl);
+    bool useCurrentSettings(const QString key);
+    int exptNumber() const;
+
+private slots:
+    void loadExperiment(int num);
 
 private:
-    Ui::QuickExptDialog *ui;
-
     const int d_configureResult = 17;
+    QSpinBox *p_expSpinBox;
+    QLabel *p_warningLabel;
+    QFormLayout *p_hwLayout;
+    QPushButton *p_cfgButton, *p_startButton;
+    ExperimentSummaryWidget *p_esw;
+    std::map<QString,QString> d_hardware;
+    std::map<QString,QCheckBox*> d_hwBoxes;
 };
 
 #endif // QUICKEXPTDIALOG_H

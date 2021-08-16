@@ -99,7 +99,6 @@ FORMS += \
     $$PWD/dialog/batchsequencedialog.ui \
     $$PWD/dialog/communicationdialog.ui \
     $$PWD/dialog/peaklistexportdialog.ui \
-    $$PWD/dialog/quickexptdialog.ui \
     $$PWD/widget/chirpconfigwidget.ui \
     $$PWD/widget/digitizerconfigwidget.ui \
     $$PWD/widget/peakfindwidget.ui \

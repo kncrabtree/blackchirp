@@ -179,7 +179,7 @@ void ChirpConfigWidget::setFromRfConfig(std::shared_ptr<RfConfig> p)
 void ChirpConfigWidget::updateRfConfig()
 {
     auto l = p_ctm->chirpList();
-    auto cc = ps_rfConfig->d_chirpConfig;
+    auto &cc = ps_rfConfig->d_chirpConfig;
     cc.setPreChirpProtectionDelay(ui->preChirpProtectionDoubleSpinBox->value());
     cc.setPreChirpGateDelay(ui->preChirpDelayDoubleSpinBox->value());
     cc.setPostChirpGateDelay(ui->postChirpDelayDoubleSpinBox->value());
@@ -188,7 +188,6 @@ void ChirpConfigWidget::updateRfConfig()
     cc.setChirpInterval(ui->chirpIntervalDoubleSpinBox->value());
     cc.setChirpList(l);
     cc.setAwgSampleRate(d_awgSampleRate);
-    ps_rfConfig->setChirpConfig(cc);
 }
 
 const RfConfig &ChirpConfigWidget::getRfConfig()

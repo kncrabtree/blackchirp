@@ -55,7 +55,7 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow), d_hardwareConnected(false), d_oneExptDone(false), d_state(Idle), d_logCount(0), d_logIcon(BlackChirp::LogNormal), d_currentExptNum(0)
+    ui(new Ui::MainWindow)
 {
     p_hwm = new HardwareManager();
     auto hwl = p_hwm->currentHardware();
@@ -339,12 +339,12 @@ void MainWindow::startExperiment()
 
     auto exp = std::make_shared<Experiment>();
     auto hwl = p_hwm->currentHardware();
+    if(hwl.find(BC::Key::PGen::key) != hwl.end())
+        exp->setPulseGenConfig(p_hwm->getPGenConfig());
+    if(hwl.find(BC::Key::Flow::flowController) != hwl.end())
+        exp->setFlowConfig(p_hwm->getFlowConfig());
 
     ExperimentWizard wiz(exp.get(),hwl,this);
-    if(hwl.find(BC::Key::PGen::key) != hwl.end())
-        wiz.p_experiment->setPulseGenConfig(p_hwm->getPGenConfig());
-    if(hwl.find(BC::Key::Flow::flowController) != hwl.end())
-        wiz.p_experiment->setFlowConfig(p_hwm->getFlowConfig());
     wiz.setValidationKeys(p_hwm->validationKeys());
     wiz.d_clocks = clocks;
 
@@ -371,38 +371,43 @@ void MainWindow::quickStart()
     if(p_batchThread->isRunning())
         return;
 
-//    SettingsStorage s;
-//    int num = s.get(BC::Key::exptNum,0);
-//    QString path = s.get(BC::Key::savePath,QString(""));
-//    if(num < 1)
-//    {
-//        startExperiment();
-//        return;
-//    }
+    QuickExptDialog d(this);
+    auto hwl = p_hwm->currentHardware();
+    d.setHardware(hwl);
+    int ret = d.exec();
+    if(ret == QDialog::Rejected)
+        return;
+    else if(ret == QuickExptDialog::New)
+    {
+        startExperiment();
+        return;
+    }
 
-//    std::shared_ptr<Experiment> e = std::make_shared<Experiment>(num,path,true);
-//#ifdef BC_LIF
-//    if(e.lifConfig().isEnabled())
-//    {
-//        LifConfig lc = e.lifConfig();
-//        lc = p_lifControlWidget->getSettings(lc);
-//        e.setLifConfig(lc);
-//    }
-//#endif
-//    e->setFlowConfig(p_hwm->getFlowConfig());
-//    e->setPulseGenConfig(p_hwm->getPGenConfig());
+    auto exp = std::make_shared<Experiment>(d.exptNumber(),"",true);
+    if((hwl.find(BC::Key::PGen::key) != hwl.end()) && d.useCurrentSettings(BC::Key::PGen::key))
+        exp->setPulseGenConfig(p_hwm->getPGenConfig());
+    if((hwl.find(BC::Key::PGen::key) != hwl.end()) && d.useCurrentSettings(BC::Key::Flow::flowController))
+        exp->setFlowConfig(p_hwm->getFlowConfig());
+    if((hwl.find(BC::Key::PController::key) != hwl.end()) && d.useCurrentSettings(BC::Key::PController::key))
+        exp->setPressureControllerConfig(p_hwm->getPressureControllerConfig());
 
-//    //create a popup summary of experiment.
-//    QuickExptDialog d(e,this);
-//    int ret = d.exec();
+    if(ret == QuickExptDialog::Start)
+    {
+        BatchManager *bm = new BatchSingle(exp);
+        startBatch(bm);
+        return;
+    }
 
-//    if(ret == QDialog::Accepted)
-//    {
-//        BatchManager *bm = new BatchSingle(e);
-//        startBatch(bm);
-//    }
-//    else if(ret == d.configureResult())
-//        startExperiment();
+    ExperimentWizard wiz(exp.get(),hwl,this);
+    wiz.setValidationKeys(p_hwm->validationKeys());
+    if(exp->ftmwEnabled())
+        wiz.d_clocks = exp->ftmwConfig()->d_rfConfig.getClocks();
+
+    if(wiz.exec() != QDialog::Accepted)
+        return;
+
+    BatchManager *bm = new BatchSingle(exp);
+    startBatch(bm);
 }
 
 void MainWindow::startSequence()
@@ -494,8 +499,6 @@ void MainWindow::batchComplete(bool aborted)
     }
 
     ui->ftmwTab->setEnabled(true);
-
-    d_oneExptDone = true;
 
     if(d_state == Acquiring)
         configureUi(Idle);
@@ -959,7 +962,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         ui->pauseButton->setEnabled(false);
         ui->resumeButton->setEnabled(false);
         ui->actionStart_Experiment->setEnabled(true);
-        ui->actionQuick_Experiment->setEnabled(d_oneExptDone);
+        ui->actionQuick_Experiment->setEnabled(true);
         ui->actionStart_Sequence->setEnabled(true);
         ui->actionCommunication->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);

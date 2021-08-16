@@ -90,17 +90,16 @@ private:
     HardwareManager *p_hwm;
     AcquisitionManager *p_am;
 
-    bool d_hardwareConnected;
-    bool d_oneExptDone;
+    bool d_hardwareConnected{false};
     QThread *p_batchThread;
 
     void configureUi(ProgramState s);
     void startBatch(BatchManager *bm);
 
-    ProgramState d_state;
-    int d_logCount;
-    BlackChirp::LogMessageCode d_logIcon;
-    int d_currentExptNum;
+    ProgramState d_state{Idle};
+    int d_logCount{0};
+    BlackChirp::LogMessageCode d_logIcon{BlackChirp::LogNormal};
+    int d_currentExptNum{0};
 
 #ifdef BC_LIF
     QWidget *p_lifTab;

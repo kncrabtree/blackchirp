@@ -1,120 +1,180 @@
 #include <gui/dialog/quickexptdialog.h>
-#include "ui_quickexptdialog.h"
 
-QuickExptDialog::QuickExptDialog(std::shared_ptr<Experiment> e, QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::QuickExptDialog)
+#include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QGridLayout>
+#include <QFormLayout>
+#include <QSpacerItem>
+#include <QLabel>
+#include <QSpinBox>
+#include <QCheckBox>
+#include <QPushButton>
+#include <QGroupBox>
+
+#include <data/experiment/experiment.h>
+#include <data/storage/settingsstorage.h>
+#include <gui/widget/experimentsummarywidget.h>
+
+#include <hardware/optional/flowcontroller/flowcontroller.h>
+#include <hardware/optional/pulsegenerator/pulsegenerator.h>
+#include <hardware/optional/pressurecontroller/pressurecontroller.h>
+
+QuickExptDialog::QuickExptDialog(QWidget *parent) :
+    QDialog(parent)
 {
-    ui->setupUi(this);
+    setWindowTitle("Quick Experiment");
+    auto vbl = new QVBoxLayout;
 
-    connect(ui->cancelButton,&QPushButton::clicked,this,&QuickExptDialog::reject);
-    connect(ui->configureButton,&QPushButton::clicked,this,[=](){ done(d_configureResult); });
-    connect(ui->startButton,&QPushButton::clicked,this,&QuickExptDialog::accept);
+    auto tophbl = new QHBoxLayout;
+    auto egb = new QGroupBox("Experiment");
+    auto gl = new QGridLayout;
 
-    QString html;
+    gl->addWidget(new QLabel("Number"),0,0);
 
-    //generate summary text and insert header details into table widget
-    if(e->ftmwEnabled())
+    SettingsStorage s;
+    int expNum = s.get(BC::Key::exptNum,0);
+    p_expSpinBox = new QSpinBox;
+    if(expNum < 1)
     {
-        html.append(QString("<h1>FTMW settings</h1>"));
-        html.append(QString("<ul>"));
-        if(e->ftmwConfig()->d_type == FtmwConfig::Target_Shots)
-        {
-            html.append(QString("<li>Mode: Target Shots</li>"));
-            html.append(QString("<li>Shots: %1</li>").arg(e->ftmwConfig()->d_objective));
-        }
-        else if(e->ftmwConfig()->d_type == FtmwConfig::Peak_Up)
-        {
-            html.append(QString("<li>Mode: Peak Up</li>"));
-            html.append(QString("<li>Shots: %1</li>").arg(e->ftmwConfig()->d_objective));
-        }
-        else if(e->ftmwConfig()->d_type == FtmwConfig::Target_Duration)
-        {
-            html.append(QString("<li>Mode: Target Duration</li>"));
-            html.append(QString("<li>Duration: %1 min</li>").arg(e->ftmwConfig()->d_objective));
-        }
-        else if(e->ftmwConfig()->d_type == FtmwConfig::Forever)
-        {
-            html.append(QString("<li>Mode: Forever</li>"));
-        }
-        html.append(QString("<li>Chirps: %1</li>").arg(e->ftmwConfig()->d_rfConfig.d_chirpConfig.numChirps()));
-        html.append(QString("<li>Sample rate: %1 GS/s</li>").arg(e->ftmwConfig()->d_scopeConfig.d_sampleRate/1e9,0,'f',0));
-        html.append(QString("<li>Record length: %1</li>").arg(e->ftmwConfig()->d_scopeConfig.d_recordLength));
-        if(e->ftmwConfig()->d_rfConfig.d_chirpConfig.numChirps() > 1)
-        {
-            html.append(QString("<li>Chirp spacing: %1 &mu;s</li>").arg(e->ftmwConfig()->d_rfConfig.d_chirpConfig.chirpInterval(),0,'f',1));
-        }
-        html.append(QString("</ul>"));
+        p_expSpinBox->setRange(0,0);
+        p_expSpinBox->setSpecialValueText("N/A");
     }
-    else
-    {
-        html.append(QString("<h1>FTMW disabled</h1>"));
-    }
+    p_expSpinBox->setRange(1,expNum);
+    connect(p_expSpinBox,qOverload<int>(&QSpinBox::valueChanged),this,&QuickExptDialog::loadExperiment);
 
-#ifdef BC_LIF
-    if(e.lifConfig().isEnabled())
-    {
-        html.append(QString("<h1>LIF settings</h1><ul>"));
-        html.append(QString("<li>Delay range: %1-%2 &mu;s</li>").arg(e.lifConfig().delayRange().first,0,'f',3).arg(e.lifConfig().delayRange().second,0,'f',3));
-        html.append(QString("<li>Delay step: %1 &mu;s</li>").arg(e.lifConfig().delayStep(),0,'f',3));
-        html.append(QString("<li>Frequency range: %1-%2 1/cm</li>").arg(e.lifConfig().laserRange().first,0,'f',3).arg(e.lifConfig().laserRange().second,0,'f',3));
-        html.append(QString("<li>Frequency step: %1 1/cm</li>").arg(e.lifConfig().laserStep(),0,'f',3));
-        html.append(QString("<li>Shots per point: %1</li>").arg(e.lifConfig().shotsPerPoint()));
-        html.append(QString("<li>Total shots: %1</li>").arg(e.lifConfig().totalShots()));
-        html.append(QString("</ul>"));
-    }
-    else
-    {
-        html.append(QString("<h1>LIF disabled</h1>"));
-    }
-#endif
+    gl->addWidget(p_expSpinBox,0,1);
 
-#ifdef BC_MOTOR
-    if(e.motorScan().isEnabled())
-    {
-        html.append(QString("<h1>Motor Scan Settings</h1><ul>"));
-        html.append(QString("<li>X Range: %1-%2 mm</li>")
-                    .arg(e.motorScan().xVal(0)).arg(e.motorScan().xVal(e.motorScan().xPoints()-1)));
-        html.append(QString("<li>X Points: %1</li>").arg(e.motorScan().xPoints()));
-        html.append(QString("<li>Y Range: %1-%2 mm</li>")
-                    .arg(e.motorScan().yVal(0)).arg(e.motorScan().yVal(e.motorScan().yPoints()-1)));
-        html.append(QString("<li>Y Points: %1</li>").arg(e.motorScan().yPoints()));
-        html.append(QString("<li>Z Range: %1-%2 mm</li>")
-                    .arg(e.motorScan().zVal(0)).arg(e.motorScan().zVal(e.motorScan().zPoints()-1)));
-        html.append(QString("<li>Z Points: %1</li>").arg(e.motorScan().zPoints()));
-        html.append(QString("<li>Shots Per Point: %1</li>").arg(e.motorScan().shotsPerPoint()));
-        html.append(QString("</ul>"));
-    }
-#endif
+    p_warningLabel = new QLabel;
+    p_warningLabel->setWordWrap(true);
+    p_warningLabel->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
+    p_warningLabel->setMinimumSize({0,60});
+    gl->addWidget(p_warningLabel,1,0,1,2);
 
-    ui->textEdit->insertHtml(html);
+    gl->setColumnStretch(0,0);
+    gl->setColumnStretch(1,1);
+    gl->setRowStretch(0,0);
+    gl->setRowStretch(1,1);
+    egb->setLayout(gl);
+    tophbl->addWidget(egb,1);
 
-    ui->tableWidget->setHorizontalHeaderItem(0,new QTableWidgetItem(QString("Key")));
-    ui->tableWidget->setHorizontalHeaderItem(1,new QTableWidgetItem(QString("Value")));
-    ui->tableWidget->setHorizontalHeaderItem(2,new QTableWidgetItem(QString("Unit")));
-    ui->tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    ui->tableWidget->setColumnCount(3);
-    ui->tableWidget->setEditTriggers(QTableWidget::NoEditTriggers);
-    ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+    auto hwgb = new QGroupBox("Use Current Settings");
+    hwgb->setToolTip("If checked, the experiment will use the current settings\nrather than the saved settings for this hardware item.");
 
-#pragma message("Update experiment summary")
-//    auto header = e->headerMap();
-//    auto it = header.constBegin();
-//    ui->tableWidget->setRowCount(header.size());
-//    int i = 0;
-//    while(it != header.constEnd())
-//    {
-//        ui->tableWidget->setItem(i,0,new QTableWidgetItem(it.key()));
-//        ui->tableWidget->setItem(i,1,new QTableWidgetItem(it.value().first.toString()));
-//        ui->tableWidget->setItem(i,2,new QTableWidgetItem(it.value().second));
+    p_hwLayout = new QFormLayout;
+    hwgb->setLayout(p_hwLayout);
+    tophbl->addWidget(hwgb,1);
+    vbl->addLayout(tophbl,0);
 
-//        it++;
-//        i++;
-//    }
-//    ui->tableWidget->resizeColumnsToContents();
+    p_esw = new ExperimentSummaryWidget;
+    vbl->addWidget(p_esw,1);
+
+    auto bl = new QHBoxLayout;
+    auto ne = new QPushButton("New Experiment");
+    p_cfgButton = new QPushButton("Configure Experiment");
+    p_startButton = new QPushButton("Start Experiment");
+    auto cb = new QPushButton("Cancel");
+
+    p_cfgButton->setEnabled(false);
+    p_startButton->setEnabled(false);
+
+    bl->addWidget(ne);
+    bl->addWidget(p_cfgButton);
+    bl->addItem(new QSpacerItem(0,0,QSizePolicy::Expanding,QSizePolicy::Fixed));
+    bl->addWidget(p_startButton);
+    bl->addWidget(cb);
+
+    connect(ne,&QPushButton::clicked,[this](){ done(New); });
+    connect(p_cfgButton,&QPushButton::clicked,[this](){ done(Configure); });
+    connect(p_startButton,&QPushButton::clicked,[this](){ done(Start); });
+    connect(cb,&QPushButton::clicked,this,&QuickExptDialog::reject);
+
+    vbl->addLayout(bl);
+
+    setLayout(vbl);
 }
 
-QuickExptDialog::~QuickExptDialog()
+void QuickExptDialog::setHardware(const std::map<QString, QString> &hwl)
 {
-    delete ui;
+    d_hardware = hwl;
+
+    std::vector<QString> optHw{ BC::Key::PController::key, BC::Key::Flow::flowController, BC::Key::PGen::key};
+
+    for(auto hw : optHw)
+    {
+        auto it = d_hardware.find(hw);
+        if(it != d_hardware.end())
+        {
+            auto cb = new QCheckBox;
+            cb->setChecked(true);
+            auto lbl = new QLabel(it->first);
+
+            p_hwLayout->addRow(lbl,cb);
+            d_hwBoxes.insert({it->first,cb});
+        }
+    }
+
+    p_expSpinBox->setValue(p_expSpinBox->maximum());
+}
+
+bool QuickExptDialog::useCurrentSettings(const QString key)
+{
+    auto it = d_hwBoxes.find(key);
+    if(it != d_hwBoxes.end())
+        return it->second->isChecked();
+
+    return true;
+}
+
+int QuickExptDialog::exptNumber() const
+{
+    return p_expSpinBox->value();
+}
+
+void QuickExptDialog::loadExperiment(int num)
+{
+    Experiment exp(num,"",true);
+    p_esw->setExperiment(&exp);
+
+    bool hwIdentical = true;
+    if(d_hardware.size() != exp.d_hardware.size())
+        hwIdentical = false;
+    else
+    {
+        for(auto const &[key,val] : d_hardware)
+        {
+            auto it = exp.d_hardware.find(key);
+            if(it == exp.d_hardware.end() || it->second != val)
+            {
+                hwIdentical = false;
+                break;
+            }
+        }
+    }
+
+    p_cfgButton->setEnabled(hwIdentical);
+    p_startButton->setEnabled(hwIdentical);
+
+    if(!hwIdentical)
+    {
+        p_warningLabel->setText(QString("Error: Cannot repeat experiment %1 because the current hardware configuration is different.").arg(p_expSpinBox->value()));
+        p_warningLabel->setStyleSheet("QLabel { color : red; font-weight : bold; }");
+        return;
+    }
+
+    if(exp.d_majorVersion != QString(STRINGIFY(BC_MAJOR_VERSION)))
+    {
+        p_warningLabel->setText(QString("Error: Cannot repeat experiment %1 because it was recorded with a different major version of Blackchirp.").arg(p_expSpinBox->value()));
+        p_warningLabel->setStyleSheet("QLabel { color : red; font-weight : bold; }");
+        p_cfgButton->setEnabled(false);
+        p_startButton->setEnabled(false);
+        return;
+    }
+    else if(exp.d_minorVersion != QString(STRINGIFY(BC_MINOR_VERSION)))
+    {
+        p_warningLabel->setText(QString("Warning: Experiment %1 was recorded with a different minor version of Blackchirp. Some settings may not work correctly.\n\nIt is strongly recommended that you configure this experiment manually.").arg(p_expSpinBox->value()));
+        p_warningLabel->setStyleSheet("QLabel { font-weight : bold; }");
+        return;
+    }
+
+    p_warningLabel->clear();
 }

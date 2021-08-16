@@ -25,7 +25,7 @@
 #include <modules/motor/gui/wizardmotorscanconfigpage.h>
 #endif
 
-ExperimentWizard::ExperimentWizard(Experiment *exp, std::map<QString,QString> hw, QWidget *parent) :
+ExperimentWizard::ExperimentWizard(Experiment *exp, const std::map<QString, QString> &hw, QWidget *parent) :
     QWizard(parent), p_experiment(exp)
 {
     setWindowTitle(QString("Experiment Setup"));

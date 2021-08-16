@@ -306,6 +306,10 @@ bool WizardStartPage::validatePage()
 
      if(p_ftmw->isChecked() || !p_ftmw->isCheckable())
      {
+         RfConfig cfg;
+         if(e->d_number > 0 && e->ftmwEnabled())
+             cfg = e->ftmwConfig()->d_rfConfig;
+
          auto type = p_ftmwTypeBox->currentData().value<FtmwConfig::FtmwType>();
          auto ftmw = e->enableFtmw(type);
 
@@ -315,6 +319,8 @@ bool WizardStartPage::validatePage()
          ftmw->d_chirpScoringEnabled = p_chirpScoringBox->isChecked();
          ftmw->d_chirpRMSThreshold = p_thresholdBox->value();
          ftmw->d_phaseCorrectionEnabled = p_phaseCorrectionBox->isChecked();
+         if(e->d_number > 0 && e->ftmwEnabled())
+             ftmw->d_rfConfig = cfg;
          ///TODO: use offset info!
      }
 

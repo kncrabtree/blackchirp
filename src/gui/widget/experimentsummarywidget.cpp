@@ -50,5 +50,5 @@ void ExperimentSummaryWidget::setExperiment(Experiment *exp)
 
 QSize ExperimentSummaryWidget::sizeHint() const
 {
-    return {800,600};
+    return {500,600};
 }
