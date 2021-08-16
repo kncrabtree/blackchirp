@@ -33,7 +33,7 @@
 #include <gui/widget/experimentviewwidget.h>
 #include <gui/dialog/quickexptdialog.h>
 #include <gui/dialog/batchsequencedialog.h>
-#include <gui/widget/clockdisplaywidget.h>
+#include <gui/widget/clockdisplaybox.h>
 #include <gui/widget/gascontrolwidget.h>
 #include <gui/widget/pressurestatusbox.h>
 #include <gui/widget/pressurecontrolwidget.h>
@@ -99,7 +99,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::statusMessage,ui->statusBar,&QStatusBar::showMessage);
     connect(p_hwm,&HardwareManager::allHardwareConnected,this,&MainWindow::hardwareInitialized);
 
-    connect(p_hwm,&HardwareManager::clockFrequencyUpdate,ui->clockWidget,&ClockDisplayWidget::updateFrequency);
+    connect(p_hwm,&HardwareManager::clockFrequencyUpdate,ui->clockBox,&ClockDisplayBox::updateFrequency);
 
 
     for(auto it = hwl.cbegin(); it != hwl.cend(); ++it)
@@ -337,9 +337,14 @@ void MainWindow::startExperiment()
     QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks;
     QMetaObject::invokeMethod(p_hwm,&HardwareManager::getClocks,Qt::BlockingQueuedConnection,&clocks);
 
-    ExperimentWizard wiz(-1,this);
-    wiz.experiment->setPulseGenConfig(p_hwm->getPGenConfig());
-    wiz.experiment->setFlowConfig(p_hwm->getFlowConfig());
+    auto exp = std::make_shared<Experiment>();
+    auto hwl = p_hwm->currentHardware();
+
+    ExperimentWizard wiz(exp.get(),hwl,this);
+    if(hwl.find(BC::Key::PGen::key) != hwl.end())
+        wiz.p_experiment->setPulseGenConfig(p_hwm->getPGenConfig());
+    if(hwl.find(BC::Key::Flow::flowController) != hwl.end())
+        wiz.p_experiment->setFlowConfig(p_hwm->getFlowConfig());
     wiz.setValidationKeys(p_hwm->validationKeys());
     wiz.d_clocks = clocks;
 
@@ -357,7 +362,7 @@ void MainWindow::startExperiment()
     if(wiz.exec() != QDialog::Accepted)
         return;
 
-    BatchManager *bm = new BatchSingle(wiz.experiment);
+    BatchManager *bm = new BatchSingle(exp);
     startBatch(bm);
 }
 
@@ -366,38 +371,38 @@ void MainWindow::quickStart()
     if(p_batchThread->isRunning())
         return;
 
-    SettingsStorage s;
-    int num = s.get(BC::Key::exptNum,0);
-    QString path = s.get(BC::Key::savePath,QString(""));
-    if(num < 1)
-    {
-        startExperiment();
-        return;
-    }
+//    SettingsStorage s;
+//    int num = s.get(BC::Key::exptNum,0);
+//    QString path = s.get(BC::Key::savePath,QString(""));
+//    if(num < 1)
+//    {
+//        startExperiment();
+//        return;
+//    }
 
-    std::shared_ptr<Experiment> e = std::make_shared<Experiment>(num,path,true);
-#ifdef BC_LIF
-    if(e.lifConfig().isEnabled())
-    {
-        LifConfig lc = e.lifConfig();
-        lc = p_lifControlWidget->getSettings(lc);
-        e.setLifConfig(lc);
-    }
-#endif
-    e->setFlowConfig(p_hwm->getFlowConfig());
-    e->setPulseGenConfig(p_hwm->getPGenConfig());
+//    std::shared_ptr<Experiment> e = std::make_shared<Experiment>(num,path,true);
+//#ifdef BC_LIF
+//    if(e.lifConfig().isEnabled())
+//    {
+//        LifConfig lc = e.lifConfig();
+//        lc = p_lifControlWidget->getSettings(lc);
+//        e.setLifConfig(lc);
+//    }
+//#endif
+//    e->setFlowConfig(p_hwm->getFlowConfig());
+//    e->setPulseGenConfig(p_hwm->getPGenConfig());
 
-    //create a popup summary of experiment.
-    QuickExptDialog d(e,this);
-    int ret = d.exec();
+//    //create a popup summary of experiment.
+//    QuickExptDialog d(e,this);
+//    int ret = d.exec();
 
-    if(ret == QDialog::Accepted)
-    {
-        BatchManager *bm = new BatchSingle(e);
-        startBatch(bm);
-    }
-    else if(ret == d.configureResult())
-        startExperiment();
+//    if(ret == QDialog::Accepted)
+//    {
+//        BatchManager *bm = new BatchSingle(e);
+//        startBatch(bm);
+//    }
+//    else if(ret == d.configureResult())
+//        startExperiment();
 }
 
 void MainWindow::startSequence()
@@ -405,66 +410,66 @@ void MainWindow::startSequence()
     if(p_batchThread->isRunning())
         return;
 
-    BatchSequenceDialog d(this);
-    d.setQuickExptEnabled(d_oneExptDone);
-    int ret = d.exec();
+//    BatchSequenceDialog d(this);
+//    d.setQuickExptEnabled(d_oneExptDone);
+//    int ret = d.exec();
 
-    if(ret == QDialog::Rejected)
-        return;
+//    if(ret == QDialog::Rejected)
+//        return;
 
-    std::shared_ptr<Experiment> exp;
-    SettingsStorage s;
-    int num = s.get(BC::Key::exptNum,0);
-    QString path = s.get(BC::Key::savePath,QString(""));
+//    std::shared_ptr<Experiment> exp;
+//    SettingsStorage s;
+//    int num = s.get(BC::Key::exptNum,0);
+//    QString path = s.get(BC::Key::savePath,QString(""));
 
-    if(ret == d.quickCode)
-    {
-        exp = std::make_shared<Experiment>(num,path,true);
-#ifdef BC_LIF
-        if(e.lifConfig().isEnabled())
-        {
-            LifConfig lc = e.lifConfig();
-            lc = p_lifControlWidget->getSettings(lc);
-            e.setLifConfig(lc);
-        }
-#endif
-        exp->setFlowConfig(p_hwm->getFlowConfig());
-        exp->setPulseGenConfig(p_hwm->getPGenConfig());
+//    if(ret == d.quickCode)
+//    {
+//        exp = std::make_shared<Experiment>(num,path,true);
+//#ifdef BC_LIF
+//        if(e.lifConfig().isEnabled())
+//        {
+//            LifConfig lc = e.lifConfig();
+//            lc = p_lifControlWidget->getSettings(lc);
+//            e.setLifConfig(lc);
+//        }
+//#endif
+//        exp->setFlowConfig(p_hwm->getFlowConfig());
+//        exp->setPulseGenConfig(p_hwm->getPGenConfig());
 
-        //create a popup summary of experiment.
-        QuickExptDialog qd(exp,this);
-        int qeret = qd.exec();
+//        //create a popup summary of experiment.
+//        QuickExptDialog qd(exp,this);
+//        int qeret = qd.exec();
 
-        if(qeret == QDialog::Accepted)
-            ret = QDialog::Accepted;
-        else if(qeret == qd.configureResult())
-            ret = d.configureCode; //set ret to indicate that the experiment needs to be configured
-        else if(qeret == QDialog::Rejected)
-            return;
-    }
+//        if(qeret == QDialog::Accepted)
+//            ret = QDialog::Accepted;
+//        else if(qeret == qd.configureResult())
+//            ret = d.configureCode; //set ret to indicate that the experiment needs to be configured
+//        else if(qeret == QDialog::Rejected)
+//            return;
+//    }
 
-    if(ret == d.configureCode)
-    {
-        ExperimentWizard wiz(-1,this);
-        wiz.experiment->setPulseGenConfig(p_hwm->getPGenConfig());
-        wiz.experiment->setFlowConfig(p_hwm->getFlowConfig());
-#ifdef BC_LIF
-        connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
-        connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
-        connect(&wiz,&ExperimentWizard::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
-        connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifControlWidget,&LifControlWidget::checkLifColors);
-        connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifDisplayWidget,&LifDisplayWidget::checkLifColors);
-#endif
+//    if(ret == d.configureCode)
+//    {
+//        ExperimentWizard wiz(-1,this);
+//        wiz.p_experiment->setPulseGenConfig(p_hwm->getPGenConfig());
+//        wiz.p_experiment->setFlowConfig(p_hwm->getFlowConfig());
+//#ifdef BC_LIF
+//        connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
+//        connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
+//        connect(&wiz,&ExperimentWizard::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
+//        connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifControlWidget,&LifControlWidget::checkLifColors);
+//        connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifDisplayWidget,&LifDisplayWidget::checkLifColors);
+//#endif
 
-        if(wiz.exec() != QDialog::Accepted)
-            return;
+//        if(wiz.exec() != QDialog::Accepted)
+//            return;
 
-        exp = wiz.experiment;
-    }
+//        exp = wiz.p_experiment;
+//    }
 
 
-    BatchSequence *bs = new BatchSequence(exp,d.numExperiments(),d.interval());
-    startBatch(bs);
+//    BatchSequence *bs = new BatchSequence(exp,d.numExperiments(),d.interval());
+//    startBatch(bs);
 
 }
 

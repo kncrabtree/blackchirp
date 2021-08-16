@@ -27,14 +27,14 @@ protected:
 };
 
 #ifdef BC_GPIBCONTROLLER
-#if BC_GPIBCONTROLLER == 1
-#include "prologixgpiblan.h"
-class PrologixGpibLan;
-typedef PrologixGpibLan GpibControllerHardware;
-#else
+#if BC_GPIBCONTROLLER == 0
 #include "virtualgpibcontroller.h"
 class VirtualGpibController;
 typedef VirtualGpibController GpibControllerHardware;
+#elif BC_GPIBCONTROLLER == 1
+#include "prologixgpiblan.h"
+class PrologixGpibLan;
+typedef PrologixGpibLan GpibControllerHardware;
 #endif
 #endif
 

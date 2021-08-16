@@ -29,9 +29,7 @@ WizardSummaryPage::~WizardSummaryPage()
 
 void WizardSummaryPage::initializePage()
 {
-    auto e = getExperiment().get();
-    p_sw->setExperiment(e);
-
+    p_sw->setExperiment(getExperiment());
 }
 
 int WizardSummaryPage::nextId() const

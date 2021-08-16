@@ -16,10 +16,7 @@
 #include <hardware/core/communication/tcpinstrument.h>
 #include <hardware/core/communication/rs232instrument.h>
 #include <hardware/core/communication/custominstrument.h>
-
-#ifdef BC_GPIBCONTROLLER
 #include <hardware/core/communication/gpibinstrument.h>
-#endif
 
 #include <data/experiment/experiment.h>
 

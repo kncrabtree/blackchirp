@@ -13,7 +13,7 @@ public:
     ExperimentWizardPage(const QString key, QWidget *parent = nullptr);
 
 protected:
-    std::shared_ptr<Experiment> getExperiment() const;
+    Experiment* getExperiment() const;
     int startingFtmwPage() const;
 };
 

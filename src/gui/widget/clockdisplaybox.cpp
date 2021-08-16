@@ -1,18 +1,18 @@
-#include "clockdisplaywidget.h"
+#include "clockdisplaybox.h"
 
-#include <QFormLayout>
+#include <QGridLayout>
 #include <QDoubleSpinBox>
 #include <QLabel>
 #include <QMetaEnum>
 
 #include <data/experiment/rfconfig.h>
 
-ClockDisplayWidget::ClockDisplayWidget(QWidget *parent) : QWidget(parent)
+ClockDisplayBox::ClockDisplayBox(QWidget *parent) : QGroupBox(parent)
 {
-    auto *fl = new QFormLayout();
-    fl->setMargin(3);
-    fl->setContentsMargins(3,3,3,3);
-    fl->setSpacing(3);
+    setTitle("Clocks");
+    auto gl = new QGridLayout;
+    gl->setSpacing(3);
+    gl->setContentsMargins(3,3,3,3);
 
     auto ct = QMetaEnum::fromType<RfConfig::ClockType>();
 
@@ -26,24 +26,32 @@ ClockDisplayWidget::ClockDisplayWidget(QWidget *parent) : QWidget(parent)
         box->setSuffix(QString(" MHz"));
         box->setButtonSymbols(QAbstractSpinBox::NoButtons);
         box->setReadOnly(true);
-        box->setSpecialValueText(QString("Not Yet Set"));
+        box->setSpecialValueText(QString("Not Configured"));
         box->setValue(-1.0);
         box->blockSignals(true);
 
         auto *lbl = new QLabel(key);
         lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
-        lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
 
-        fl->addRow(lbl,box);
+        gl->addWidget(lbl,i,0);
+        gl->addWidget(box,i,1);
         d_boxes.insert(static_cast<RfConfig::ClockType>(ct.value(i)),box);
     }
-
-    setLayout(fl);
+    gl->setColumnStretch(0,0);
+    gl->setColumnStretch(1,1);
+    setLayout(gl);
+    setSizePolicy(QSizePolicy::Maximum,QSizePolicy::Maximum);
 }
 
-void ClockDisplayWidget::updateFrequency(RfConfig::ClockType t, double f)
+void ClockDisplayBox::updateFrequency(RfConfig::ClockType t, double f)
 {
     auto box = d_boxes.value(t);
     box->setValue(f);
     box->setSpecialValueText(QString("Error"));
+}
+
+
+QSize ClockDisplayBox::sizeHint() const
+{
+    return QGroupBox::sizeHint();
 }

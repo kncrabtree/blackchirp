@@ -40,5 +40,5 @@ bool WizardIOBoardConfigPage::validatePage()
 
 int WizardIOBoardConfigPage::nextId() const
 {
-    return ExperimentWizard::ValidationPage;
+    return static_cast<ExperimentWizard*>(wizard())->nextOptionalPage();
 }

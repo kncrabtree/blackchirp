@@ -75,7 +75,7 @@ bool WizardDigitizerConfigPage::validatePage()
 
 int WizardDigitizerConfigPage::nextId() const
 {
-    return ExperimentWizard::PulseConfigPage;
+    return static_cast<ExperimentWizard*>(wizard())->nextOptionalPage();
 }
 
 bool WizardDigitizerConfigPage::isComplete() const

@@ -67,15 +67,16 @@ public:
 
 #endif // TEMPERATURECONTROLLER_H
 
-
-#if BC_TEMPCONTROLLER == 1
-#include "lakeshore218.h"
-class Lakeshore218;
-typedef Lakeshore218 TemperatureControllerHardware;
-#else
+#ifdef BC_TEMPCONTROLLER
+#if BC_TEMPCONTROLLER == 0
 #include "virtualtempcontroller.h"
 class VirtualTemperatureController;
 typedef VirtualTemperatureController TemperatureControllerHardware;
+#elif BC_TEMPCONTROLLER == 1
+#include "lakeshore218.h"
+class Lakeshore218;
+typedef Lakeshore218 TemperatureControllerHardware;
+#endif
 #endif
 
 

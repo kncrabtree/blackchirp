@@ -85,14 +85,17 @@ protected:
 protected:
     virtual AuxDataStorage::AuxDataMap readAuxData() override;
 
-#if BC_FLOWCONTROLLER == 0
     friend class VirtualFlowController;
-#endif
+
 
 };
 
 #ifdef BC_FLOWCONTROLLER
-#if BC_FLOWCONTROLLER == 1
+#if BC_FLOWCONTROLLER == 0
+#include "virtualflowcontroller.h"
+class VirtualFlowController;
+typedef VirtualFlowController FlowControllerHardware;
+#elif BC_FLOWCONTROLLER == 1
 #include "mks647c.h"
 class Mks647c;
 typedef Mks647c FlowControllerHardware;
@@ -100,10 +103,6 @@ typedef Mks647c FlowControllerHardware;
 #include "mks946.h"
 class Mks946;
 typedef Mks946 FlowControllerHardware;
-#else
-#include "virtualflowcontroller.h"
-class VirtualFlowController;
-typedef VirtualFlowController FlowControllerHardware;
 #endif
 #endif
 

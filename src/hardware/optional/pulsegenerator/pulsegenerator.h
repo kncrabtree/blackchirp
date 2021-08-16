@@ -80,6 +80,7 @@ public slots:
 };
 
 
+#ifdef BC_PGEN
 #if BC_PGEN==1
 #include "qc9528.h"
 class Qc9528;
@@ -92,6 +93,7 @@ typedef Qc9518 PulseGeneratorHardware;
 #include "virtualpulsegenerator.h"
 class VirtualPulseGenerator;
 typedef VirtualPulseGenerator PulseGeneratorHardware;
+#endif
 #endif
 
 

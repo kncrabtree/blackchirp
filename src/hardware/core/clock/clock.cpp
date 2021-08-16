@@ -93,11 +93,18 @@ bool Clock::addRole(RfConfig::ClockType t, int outputIndex)
 
 void Clock::removeRole(RfConfig::ClockType t)
 {
-    d_outputRoles.remove(t);
+    if(d_outputRoles.contains(t))
+    {
+        emit frequencyUpdate(t,-1.0);
+        d_outputRoles.remove(t);
+    }
 }
 
 void Clock::clearRoles()
 {
+    for(auto it = d_outputRoles.constBegin(); it != d_outputRoles.constEnd(); ++it)
+        emit frequencyUpdate(it.key(),-1.0);
+
     d_outputRoles.clear();
 }
 

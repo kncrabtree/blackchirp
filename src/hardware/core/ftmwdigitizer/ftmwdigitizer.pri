@@ -8,6 +8,8 @@ HEADERS += \
     $$PWD/ftmwdigitizerconfig.h \
     $$PWD/ftmwscope.h
 
+DEFINES += BC_FTMWSCOPE=$$FTMWSCOPE
+
 equals(FTMWSCOPE,0) {
     HEADERS += $$PWD/virtualftmwscope.h
 	SOURCES += $$PWD/virtualftmwscope.cpp

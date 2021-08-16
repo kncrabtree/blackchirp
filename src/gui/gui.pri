@@ -15,7 +15,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/plot/zoompanplot.cpp \
     $$PWD/widget/auxdataviewwidget.cpp \
     $$PWD/widget/chirpconfigwidget.cpp \
-    $$PWD/widget/clockdisplaywidget.cpp \
+    $$PWD/widget/clockdisplaybox.cpp \
     $$PWD/widget/digitizerconfigwidget.cpp \
    $$PWD/widget/experimentsummarywidget.cpp \
     $$PWD/widget/experimentviewwidget.cpp \
@@ -64,7 +64,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/plot/zoompanplot.h \
     $$PWD/widget/auxdataviewwidget.h \
     $$PWD/widget/chirpconfigwidget.h \
-    $$PWD/widget/clockdisplaywidget.h \
+    $$PWD/widget/clockdisplaybox.h \
     $$PWD/widget/digitizerconfigwidget.h \
    $$PWD/widget/experimentsummarywidget.h \
     $$PWD/widget/experimentviewwidget.h \

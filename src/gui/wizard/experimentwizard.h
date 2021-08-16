@@ -13,11 +13,11 @@ class ExperimentWizard : public QWizard
 {
     Q_OBJECT
 public:
-    ExperimentWizard(int num = 0, QWidget *parent = 0);
+    ExperimentWizard(Experiment *exp, std::map<QString, QString> hw, QWidget *parent = 0);
     ~ExperimentWizard();
 
     enum Page {
-        StartPage,
+        StartPage=1,
         LoScanPage,
         DrScanPage,
         RfConfigPage,
@@ -26,23 +26,20 @@ public:
 #ifdef BC_LIF
         LifConfigPage,
 #endif
-#ifdef BC_MOTOR
-        MotorScanConfigPage,
-#endif
         PulseConfigPage,
         IOBoardConfigPage,
         ValidationPage,
         SummaryPage
     };
 
-    std::shared_ptr<Experiment> experiment;
+    Experiment* p_experiment;
     void setValidationKeys(const std::map<QString,QStringList> &m);
     QHash<RfConfig::ClockType, RfConfig::ClockFreq> d_clocks;
-
-private:    
-    QList<ExperimentWizardPage*> d_pages;
+    Page nextOptionalPage();
 
 
+private:
+    QVector<Page> d_optionalPages;
 
 #ifdef BC_LIF
 public slots:

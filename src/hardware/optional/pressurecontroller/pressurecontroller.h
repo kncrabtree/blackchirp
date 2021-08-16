@@ -67,10 +67,7 @@ protected:
 private:
     QTimer *p_readTimer;
     PressureControllerConfig d_config;
-
-#if BC_PCONTROLLER == 0
     friend class VirtualPressureController;
-#endif
 
 
     // HardwareObject interface
@@ -78,14 +75,16 @@ public:
     QStringList validationKeys() const override;
 };
 
-#if BC_PCONTROLLER == 1
-#include "intellisysiqplus.h"
-class IntellisysIQPlus;
-typedef IntellisysIQPlus PressureControllerHardware;
-#else
+#ifdef BC_PCONTROLLER
+#if BC_PCONTROLLER == 0
 #include "virtualpressurecontroller.h"
 class VirtualPressureController;
 typedef VirtualPressureController PressureControllerHardware;
+#elif BC_PCONTROLLER == 1
+#include "intellisysiqplus.h"
+class IntellisysIQPlus;
+typedef IntellisysIQPlus PressureControllerHardware;
+#endif
 #endif
 
 #endif // PRESSURECONTROLLER_H

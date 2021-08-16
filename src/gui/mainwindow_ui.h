@@ -29,7 +29,7 @@
 #include <gui/widget/ftmwviewwidget.h>
 #include <gui/widget/led.h>
 #include <gui/widget/auxdataviewwidget.h>
-#include <gui/widget/clockdisplaywidget.h>
+#include <gui/widget/clockdisplaybox.h>
 
 class Ui_MainWindow
 {
@@ -60,8 +60,7 @@ public:
     QGridLayout *statusLayout;
     QLabel *exptLabel;
     QSpinBox *exptSpinBox;
-    QGroupBox *clockBox;
-    ClockDisplayWidget *clockWidget;
+    ClockDisplayBox *clockBox;
     QSpacerItem *statusSpacer;
     QLabel *ftmwProgressLabel;
     QProgressBar *ftmwProgressBar;
@@ -260,10 +259,8 @@ public:
 
         instrumentStatusLayout->addLayout(statusLayout);
 
-        clockBox = new QGroupBox(QString("Clocks"),centralWidget);
-        clockWidget = new ClockDisplayWidget(centralWidget);
-        clockBox->setLayout(clockWidget->layout());
-        instrumentStatusLayout->addWidget(clockBox);
+        clockBox = new ClockDisplayBox(centralWidget);
+        instrumentStatusLayout->addWidget(clockBox,0);
 
         statusSpacer = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
 

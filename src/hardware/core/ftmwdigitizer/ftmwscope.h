@@ -33,8 +33,11 @@ public slots:
     QStringList forbiddenKeys() const override;
 };
 
-
-#if BC_FTMWSCOPE == 1
+#if BC_FTMWSCOPE == 0
+#include "virtualftmwscope.h"
+class VirtualFtmwScope;
+typedef VirtualFtmwScope FtmwScopeHardware;
+#elif BC_FTMWSCOPE == 1
 #include "dsa71604c.h"
 class Dsa71604c;
 typedef Dsa71604c FtmwScopeHardware;
@@ -50,10 +53,6 @@ typedef M4i2220x8 FtmwScopeHardware;
 #include "dsox92004a.h"
 class DSOx92004A;
 typedef DSOx92004A FtmwScopeHardware;
-#else
-#include "virtualftmwscope.h"
-class VirtualFtmwScope;
-typedef VirtualFtmwScope FtmwScopeHardware;
 #endif
 
 

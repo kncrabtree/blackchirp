@@ -48,7 +48,7 @@ void WizardPulseConfigPage::initializePage()
 
 int WizardPulseConfigPage::nextId() const
 {
-    return ExperimentWizard::IOBoardConfigPage;
+    return static_cast<ExperimentWizard*>(wizard())->nextOptionalPage();
 }
 
 

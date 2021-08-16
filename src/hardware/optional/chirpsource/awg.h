@@ -53,7 +53,11 @@ public:
 
 
 #ifdef BC_AWG
-#if BC_AWG==1
+#if BC_AWG==0
+#include "virtualawg.h"
+class VirtualAwg;
+typedef VirtualAwg AwgHardware;
+#elif BC_AWG==1
 #include "awg70002a.h"
 class AWG70002a;
 typedef AWG70002a AwgHardware;
@@ -69,10 +73,6 @@ typedef AD9914 AwgHardware;
 #include "m8195a.h"
 class M8195A;
 typedef M8195A AwgHardware;
-#else
-#include "virtualawg.h"
-class VirtualAwg;
-typedef VirtualAwg AwgHardware;
 #endif
 #endif
 

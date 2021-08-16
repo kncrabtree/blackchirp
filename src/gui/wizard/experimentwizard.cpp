@@ -13,6 +13,9 @@
 #include <gui/wizard/wizardvalidationpage.h>
 #include <acquisition/batch/batchsingle.h>
 
+#include <hardware/optional/pulsegenerator/pulsegenerator.h>
+#include <hardware/optional/ioboard/ioboard.h>
+
 
 #ifdef BC_LIF
 #include <modules/lif/gui/wizardlifconfigpage.h>
@@ -22,55 +25,49 @@
 #include <modules/motor/gui/wizardmotorscanconfigpage.h>
 #endif
 
-ExperimentWizard::ExperimentWizard(int num, QWidget *parent) :
-    QWizard(parent)
+ExperimentWizard::ExperimentWizard(Experiment *exp, std::map<QString,QString> hw, QWidget *parent) :
+    QWizard(parent), p_experiment(exp)
 {
-#pragma message("How to initialize from previous experiment?")
-    (void)num;
-    experiment = std::make_shared<Experiment>();
-
     setWindowTitle(QString("Experiment Setup"));
 
     auto startPage = new WizardStartPage(this);
-    d_pages << startPage;
+    setPage(StartPage,startPage);
 
     auto loScanConfigPage = new WizardLoScanConfigPage(this);
-    d_pages << loScanConfigPage;
+    setPage(LoScanPage,loScanConfigPage);
 
     auto drScanConfigPage = new WizardDrScanConfigPage(this);
-    d_pages << drScanConfigPage;
+    setPage(DrScanPage,drScanConfigPage);
 
     auto rfConfigPage = new WizardRfConfigPage(this);
-    d_pages << rfConfigPage;
+    setPage(RfConfigPage,rfConfigPage);
 
     auto chirpConfigPage = new WizardChirpConfigPage(this);
-    d_pages << chirpConfigPage;
+    setPage(ChirpConfigPage,chirpConfigPage);
 
     auto digitizerConfigPage = new WizardDigitizerConfigPage(this);
-    d_pages << digitizerConfigPage;
+    setPage(DigitizerConfigPage,digitizerConfigPage);
 
-    auto pulseConfigPage = new WizardPulseConfigPage(this);
-    d_pages << pulseConfigPage;
+    if(hw.find(BC::Key::PGen::key) != hw.end())
+    {
+        auto pulseConfigPage = new WizardPulseConfigPage(this);
+        setPage(PulseConfigPage,pulseConfigPage);
+        d_optionalPages.append(PulseConfigPage);
+    }
 
-    auto iobConfigPage = new WizardIOBoardConfigPage(this);
-    d_pages << iobConfigPage;
+    if(hw.find(BC::Key::IOB::ioboard) != hw.end())
+    {
+        auto iobConfigPage = new WizardIOBoardConfigPage(this);
+        setPage(IOBoardConfigPage,iobConfigPage);
+        d_optionalPages.append(IOBoardConfigPage);
+    }
 
     auto validationPage = new WizardValidationPage(this);
-    d_pages << validationPage;
+    setPage(ValidationPage,validationPage);
 
     auto summaryPage = new WizardSummaryPage(this);
-    d_pages << summaryPage;
-
-    setPage(StartPage,startPage);
-    setPage(LoScanPage,loScanConfigPage);
-    setPage(DrScanPage,drScanConfigPage);
-    setPage(RfConfigPage,rfConfigPage);
-    setPage(ChirpConfigPage,chirpConfigPage);
-    setPage(DigitizerConfigPage,digitizerConfigPage);
-    setPage(PulseConfigPage,pulseConfigPage);
-    setPage(IOBoardConfigPage,iobConfigPage);
-    setPage(ValidationPage,validationPage);
     setPage(SummaryPage,summaryPage);
+
 
 
 #ifdef BC_LIF
@@ -90,6 +87,8 @@ ExperimentWizard::ExperimentWizard(int num, QWidget *parent) :
     d_pages << motorScanConfigPage;
     setPage(MotorScanConfigPage,motorScanConfigPage);
 #endif
+
+    setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
 }
 
 ExperimentWizard::~ExperimentWizard()
@@ -99,6 +98,17 @@ ExperimentWizard::~ExperimentWizard()
 void ExperimentWizard::setValidationKeys(const std::map<QString, QStringList> &m)
 {
     static_cast<WizardValidationPage*>(page(ValidationPage))->setValidationKeys(m);
+}
+
+ExperimentWizard::Page ExperimentWizard::nextOptionalPage()
+{
+    for(auto id : d_optionalPages)
+    {
+        if(!hasVisitedPage(id))
+            return id;
+    }
+
+    return ValidationPage;
 }
 
 QSize ExperimentWizard::sizeHint() const
@@ -118,8 +128,12 @@ void ExperimentWizard::setCurrentLaserPos(double pos)
 
 void ExperimentWizard::reject()
 {
-    for(auto page : d_pages)
-        page->discardChanges();
+    for(auto id : pageIds())
+    {
+        auto p = dynamic_cast<ExperimentWizardPage*>(page(id));
+        if(p)
+            p->discardChanges();
+    }
 
     QDialog::reject();
 }

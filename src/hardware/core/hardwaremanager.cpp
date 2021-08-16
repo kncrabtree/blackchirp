@@ -46,9 +46,10 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     d_hardwareMap.emplace(awg->d_key,awg);
 #endif
 
+    QThread* gpibThread = nullptr;
 #ifdef BC_GPIBCONTROLLER
     auto gpib = new GpibControllerHardware;
-    QThread *gpibThread = new QThread(this);
+    gpibThread = new QThread(this);
     gpibThread->setObjectName(gpib->d_key+"Thread");
     connect(gpibThread,&QThread::started,gpib,&HardwareObject::bcInitInstrument);
     d_hardwareMap.emplace(gpib->d_key,gpib);
@@ -199,9 +200,9 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 
         obj->buildCommunication(gpib);
 
-        if(hwit->first == BC::Key::gpibController)
+        if(hwit->first == BC::Key::gpibController && gpibThread)
             obj->moveToThread(gpibThread);
-        else if(obj->d_commType == CommunicationProtocol::Gpib)
+        else if(obj->d_commType == CommunicationProtocol::Gpib && gpibThread)
             obj->moveToThread(gpibThread);
         else if(obj->d_threaded)
         {
