@@ -14,6 +14,7 @@
 #include <QMessageBox>
 
 #include <gui/widget/ftmwviewwidget.h>
+#include <gui/widget/experimentsummarywidget.h>
 #include <gui/widget/auxdataviewwidget.h>
 #include <data/storage/blackchirpcsv.h>
 #include <data/loghandler.h>
@@ -106,27 +107,9 @@ QWidget *ExperimentViewWidget::buildHeaderWidget()
     QWidget *hdr = new QWidget();
     QVBoxLayout *hdrvl = new QVBoxLayout();
 
-    //header page
-    QTableWidget *tw = new QTableWidget(this);
-    tw->setColumnCount(3);
-    tw->setEditTriggers(QTableWidget::NoEditTriggers);
-    tw->setSelectionBehavior(QAbstractItemView::SelectRows);
-
-    tw->setHorizontalHeaderItem(0,new QTableWidgetItem(QString("Key")));
-    tw->setHorizontalHeaderItem(1,new QTableWidgetItem(QString("Value")));
-    tw->setHorizontalHeaderItem(2,new QTableWidgetItem(QString("Unit")));
-    tw->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-
-//    auto header = pu_experiment->headerMap();
-//    auto hdrit = header.constBegin();
-//    tw->setRowCount(header.size());
-//    for(int i=0; hdrit != header.constEnd(); i++, hdrit++)
-//    {
-//        tw->setItem(i,0,new QTableWidgetItem(hdrit.key()));
-//        tw->setItem(i,1,new QTableWidgetItem(hdrit.value().first.toString()));
-//        tw->setItem(i,2,new QTableWidgetItem(hdrit.value().second));
-//    }
-    hdrvl->addWidget(tw);
+    auto esw = new ExperimentSummaryWidget;
+    esw->setExperiment(pu_experiment.get());
+    hdrvl->addWidget(esw);
     hdr->setLayout(hdrvl);
 
     return hdr;

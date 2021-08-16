@@ -3,12 +3,10 @@
 
 #include <data/experiment/digitizerconfig.h>
 
-namespace BC::Key::Digi {
-static const QString iob{"IOBoardDigitizer"};
-}
 
 namespace BC::Store::Digi {
 static const QString name{"Name"};
+static const QString iob{"IOBoardDigitizer"};
 }
 
 namespace BC::Aux::IOB {

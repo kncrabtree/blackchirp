@@ -2,7 +2,7 @@
 
 
 
-IOBoardConfig::IOBoardConfig() : DigitizerConfig(BC::Key::Digi::iob)
+IOBoardConfig::IOBoardConfig() : DigitizerConfig(BC::Store::Digi::iob)
 {
 }
 

@@ -61,6 +61,7 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
 
     //initialize CSV reader
     auto csv = std::make_shared<BlackchirpCSV>(d_number,exptPath);
+
     pu_validator = std::make_unique<ExperimentValidator>();
     addChild(pu_validator.get());
 
@@ -74,10 +75,28 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
            if(l.size() != 2)
                continue;
 
-           if(l.constFirst().toString() == QString("key"))
+           auto key = l.constFirst().toString();
+           if(key == QString("key"))
                continue;
 
-           d_hardware.insert_or_assign(l.constFirst().toString(),l.constLast().toString());
+           d_hardware.insert_or_assign(key,l.constLast().toString());
+
+           //create optional HW configs as needed
+           if(key == BC::Store::Digi::iob)
+               setIOBoardConfig({});
+
+           if(key == BC::Store::PGenConfig::key)
+               setPulseGenConfig({});
+
+           if(key == BC::Store::FlowConfig::key)
+               setFlowConfig({});
+
+           if(key == BC::Store::PressureController::key)
+               setPressureControllerConfig({});
+
+           if(key == BC::Store::TempControlConfig::key)
+               setTempControllerConfig({});
+
        }
     }
 
@@ -101,7 +120,6 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
                 auto type = l.constLast().value<FtmwConfig::FtmwType>();
                 enableFtmw(type);
                 pu_ftmwConfig->d_number = num;
-                addChild(pu_ftmwConfig.get());
             }
 
 #pragma message("Handle LIF")
@@ -638,11 +656,11 @@ void Experiment::retrieveValues()
     d_number = retrieve<int>(num);
     d_timeDataInterval = retrieve<int>(timeData);
     d_backupIntervalHours = retrieve<int>(backupInterval);
-    d_majorVersion = retrieve<int>(majver);
-    d_minorVersion = retrieve<int>(minver);
-    d_patchVersion = retrieve<int>(patchver);
-    d_releaseVersion = retrieve<int>(relver);
-    d_buildVersion = retrieve<int>(buildver);
+    d_majorVersion = retrieve<QString>(majver);
+    d_minorVersion = retrieve<QString>(minver);
+    d_patchVersion = retrieve<QString>(patchver);
+    d_releaseVersion = retrieve<QString>(relver);
+    d_buildVersion = retrieve<QString>(buildver);
 }
 
 

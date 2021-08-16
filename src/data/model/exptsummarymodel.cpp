@@ -77,8 +77,10 @@ ExptSummaryModel::ExptSummaryModel(Experiment *exp, QObject *parent) : QAbstract
                     auto &seg = c.at(j);
                     if(!seg.empty)
                     {
-                        segItem->appendChild(new ExptTreeItem({"Start",QVariant(seg.startFreqMHz).toString(),"MHz"},segItem));
-                        segItem->appendChild(new ExptTreeItem({"End",QVariant(seg.endFreqMHz).toString(),"MHz"},segItem));
+                        segItem->appendChild(new ExptTreeItem({"AWG Begin",QVariant(seg.startFreqMHz).toString(),"MHz"},segItem));
+                        segItem->appendChild(new ExptTreeItem({"AWG End",QVariant(seg.endFreqMHz).toString(),"MHz"},segItem));
+                        segItem->appendChild(new ExptTreeItem({"Chirp Begin",QVariant(exp->ftmwConfig()->d_rfConfig.calculateChirpFreq(seg.startFreqMHz)).toString(),"MHz"},segItem));
+                        segItem->appendChild(new ExptTreeItem({"Chirp End",QVariant(exp->ftmwConfig()->d_rfConfig.calculateChirpFreq(seg.endFreqMHz)).toString(),"MHz"},segItem));
                     }
                     else
                         segItem->appendChild(new ExptTreeItem({"Empty",QVariant(true).toString(),""},segItem));

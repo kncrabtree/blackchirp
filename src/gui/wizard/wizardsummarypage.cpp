@@ -1,12 +1,9 @@
 #include "wizardsummarypage.h"
 
 #include <QVBoxLayout>
-#include <QTreeView>
-#include <QHeaderView>
-#include <QCheckBox>
 
 #include <gui/wizard/experimentwizard.h>
-#include <data/model/exptsummarymodel.h>
+#include <gui/widget/experimentsummarywidget.h>
 
 
 WizardSummaryPage::WizardSummaryPage(QWidget *parent) :
@@ -16,10 +13,10 @@ WizardSummaryPage::WizardSummaryPage(QWidget *parent) :
     setSubTitle(QString("The settings shown below will be used for this experiment. If anything is incorrect, use the back button to make changes."));
 
     QVBoxLayout *vbl = new QVBoxLayout(this);
-    p_tv = new QTreeView(this);
+    p_sw = new ExperimentSummaryWidget(this);
 
 
-    vbl->addWidget(p_tv);
+    vbl->addWidget(p_sw);
     setLayout(vbl);
 
 }
@@ -33,12 +30,8 @@ WizardSummaryPage::~WizardSummaryPage()
 void WizardSummaryPage::initializePage()
 {
     auto e = getExperiment().get();
-    if(p_model)
-        p_model->deleteLater();
+    p_sw->setExperiment(e);
 
-    p_model = new ExptSummaryModel(e,this);
-    p_tv->setModel(p_model);
-    p_tv->header()->setSectionResizeMode(QHeaderView::Stretch);
 }
 
 int WizardSummaryPage::nextId() const

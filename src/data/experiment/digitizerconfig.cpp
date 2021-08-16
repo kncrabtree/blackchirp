@@ -67,8 +67,8 @@ void DigitizerConfig::retrieveValues()
         bool e = retrieveArrayValue(an,i,en,false);
         if(e)
         {
-            AnalogChannel c{retrieveArrayValue(an,i+1,fs,0.0),
-                        retrieveArrayValue(an,i+1,offset,0.0)};
+            AnalogChannel c{retrieveArrayValue(an,i,fs,0.0),
+                        retrieveArrayValue(an,i,offset,0.0)};
             d_analogChannels.insert_or_assign(i+1,c);
         }
     }
@@ -78,7 +78,7 @@ void DigitizerConfig::retrieveValues()
         bool e = retrieveArrayValue(dig,i,en,false);
         if(e)
         {
-            DigitalChannel c{retrieveArrayValue(dig,i,digInp,false),retrieveArrayValue(dig,i+1,digRole,-1)};
+            DigitalChannel c{retrieveArrayValue(dig,i,digInp,false),retrieveArrayValue(dig,i,digRole,-1)};
             d_digitalChannels.insert_or_assign(i+1,c);
         }
     }

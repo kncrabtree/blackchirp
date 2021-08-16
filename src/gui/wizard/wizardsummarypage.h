@@ -4,7 +4,7 @@
 #include <gui/wizard/experimentwizardpage.h>
 
 class QTreeView;
-class ExptSummaryModel;
+class ExperimentSummaryWidget;
 
 namespace BC::Key::WizSummary {
 static const QString key("WizardSummaryPage");
@@ -22,8 +22,7 @@ public:
     int nextId() const;
 
 private:
-    QTreeView *p_tv;
-    ExptSummaryModel *p_model{nullptr};
+    ExperimentSummaryWidget *p_sw;
 };
 
 #endif // WIZARDSUMMARYPAGE_H
