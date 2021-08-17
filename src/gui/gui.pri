@@ -21,7 +21,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/widget/experimentviewwidget.cpp \
     $$PWD/widget/ftmwdigitizerconfigwidget.cpp \
     $$PWD/widget/ftmwplotconfigwidget.cpp \
-    $$PWD/widget/ftmwprocessingwidget.cpp \
+    $$PWD/widget/ftmwprocessingtoolbar.cpp \
     $$PWD/widget/ftmwviewwidget.cpp \
     $$PWD/widget/gascontrolwidget.cpp \
     $$PWD/widget/gasflowdisplaywidget.cpp \
@@ -33,6 +33,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/widget/pulseconfigwidget.cpp \
    $$PWD/widget/pulsestatusbox.cpp \
     $$PWD/widget/rfconfigwidget.cpp \
+    $$PWD/widget/toolbarwidgetaction.cpp \
     $$PWD/wizard/experimentwizard.cpp \
     $$PWD/wizard/experimentwizardpage.cpp \
     $$PWD/wizard/wizardchirpconfigpage.cpp \
@@ -70,7 +71,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/widget/experimentviewwidget.h \
     $$PWD/widget/ftmwdigitizerconfigwidget.h \
     $$PWD/widget/ftmwplotconfigwidget.h \
-    $$PWD/widget/ftmwprocessingwidget.h \
+    $$PWD/widget/ftmwprocessingtoolbar.h \
     $$PWD/widget/ftmwviewwidget.h \
     $$PWD/widget/gascontrolwidget.h \
     $$PWD/widget/gasflowdisplaywidget.h \
@@ -82,6 +83,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/widget/pulseconfigwidget.h \
    $$PWD/widget/pulsestatusbox.h \
     $$PWD/widget/rfconfigwidget.h \
+    $$PWD/widget/toolbarwidgetaction.h \
     $$PWD/wizard/experimentwizard.h \
     $$PWD/wizard/experimentwizardpage.h \
     $$PWD/wizard/wizardchirpconfigpage.h \

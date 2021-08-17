@@ -64,8 +64,8 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
         ps.fidPlot->blockSignals(false);
     }
 
-    connect(ui->processingWidget,&FtmwProcessingWidget::settingsUpdated,this,&FtmwViewWidget::updateProcessingSettings);
-    connect(ui->processingMenu,&QMenu::aboutToHide,[this](){this->reprocess();});
+    connect(ui->processingWidget,&FtmwProcessingToolBar::settingsUpdated,this,&FtmwViewWidget::updateProcessingSettings);
+    connect(ui->processingAct,&QAction::triggered,ui->processingWidget,&FtmwProcessingToolBar::setVisible);
 
     connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::frameChanged,[this](int v){changeFrame(1,v);});
     connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::segmentChanged,[this](int v){changeSegment(1,v);});

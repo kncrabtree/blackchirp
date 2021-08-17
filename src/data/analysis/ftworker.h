@@ -43,13 +43,13 @@ public:
     Q_ENUM(FtUnits)
 
     enum FtWindowFunction {
+        None,
         Bartlett,
-        Boxcar,
         Blackman,
         BlackmanHarris,
         Hamming,
         Hanning,
-        KaiserBessel14
+        KaiserBessel
     };
     Q_ENUM(FtWindowFunction)
 

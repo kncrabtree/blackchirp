@@ -18,6 +18,8 @@
 #include <QtWidgets/QWidgetAction>
 #include <QtWidgets/QFormLayout>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QSpinBox>
+#include <QtWidgets/QDoubleSpinBox>
 #include <QFutureWatcher>
 #include <QList>
 
@@ -26,7 +28,7 @@
 #include <data/analysis/ftworker.h>
 #include <gui/plot/fidplot.h>
 #include <gui/plot/ftplot.h>
-#include <gui/widget/ftmwprocessingwidget.h>
+#include <gui/widget/ftmwprocessingtoolbar.h>
 #include <gui/widget/ftmwplotconfigwidget.h>
 
 class QThread;
@@ -51,6 +53,7 @@ public:
         LowerSB,
         BothSB
     };
+    Q_ENUM(MainPlotMode)
 
     explicit FtmwViewWidget(QWidget *parent = 0, QString path = QString(""));
     ~FtmwViewWidget();
@@ -155,8 +158,8 @@ public:
     FtPlot *ftPlot2;
     FtPlot *mainFtPlot;
     QToolBar *toolBar;
-    QMenu *processingMenu;
-    FtmwProcessingWidget *processingWidget;
+    QAction *processingAct;
+    FtmwProcessingToolBar *processingWidget;
     QAction *liveAction;
     QAction *ft1Action;
     QAction *ft2Action;
@@ -261,15 +264,13 @@ public:
 
         toolBar = new QToolBar(FtmwViewWidget);
         toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-        auto *processingAct =toolBar->addAction(QIcon(QString(":/icons/labplot-xy-fourier-transform-curve.svg")),QString("FID Processing Settings"));
-        auto *processingBtn = dynamic_cast<QToolButton*>(toolBar->widgetForAction(processingAct));
-        processingMenu = new QMenu(toolBar);
-        auto processingWa = new QWidgetAction(processingMenu);
-        processingWidget = new FtmwProcessingWidget(FtmwViewWidget);
-        processingWa->setDefaultWidget(processingWidget);
-        processingMenu->addAction(processingWa);
-        processingBtn->setMenu(processingMenu);
-        processingBtn->setPopupMode(QToolButton::InstantPopup);
+        processingAct =toolBar->addAction(QIcon(QString(":/icons/labplot-xy-fourier-transform-curve.svg")),QString("FID Processing Settings"));
+        processingAct->setCheckable(true);
+
+        processingWidget = new FtmwProcessingToolBar(FtmwViewWidget);
+        processingWidget->setVisible(false);
+        processingWidget->setMovable(true);
+        processingWidget->setFloatable(true);
 
 
         auto mainModeAct = toolBar->addAction(QIcon(QString(":/icons/view-media-visualization.svg")),QString("Main Plot Mode"));
@@ -403,6 +404,7 @@ public:
 
         auto vbl = new QVBoxLayout;
         vbl->addWidget(toolBar,0);
+        vbl->addWidget(processingWidget,0);
         vbl->addWidget(exptLabel,0);
         vbl->addWidget(splitter,1);
         FtmwViewWidget->setLayout(vbl);

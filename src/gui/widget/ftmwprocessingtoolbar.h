@@ -1,15 +1,20 @@
-#ifndef FTMWPROCESSINGWIDGET_H
-#define FTMWPROCESSINGWIDGET_H
+#ifndef FTMWPROCESSINGTOOLBAR_H
+#define FTMWPROCESSINGTOOLBAR_H
 
-#include <QWidget>
-#include <QSpinBox>
-#include <QDoubleSpinBox>
-#include <QCheckBox>
-#include <QComboBox>
+#include <QToolBar>
 
 #include <data/storage/settingsstorage.h>
 #include <data/experiment/experiment.h>
 #include <data/analysis/ftworker.h>
+
+class QSpinBox;
+class QDoubleSpinBox;
+class QToolButton;
+class QComboBox;
+class SpinBoxWidgetAction;
+class DoubleSpinBoxWidgetAction;
+template<typename T>
+class EnumComboBoxWidgetAction;
 
 namespace BC::Key {
 static const QString ftmwProcWidget("ftmwProcessingWidget");
@@ -22,12 +27,12 @@ static const QString autoscaleIgnore("autoscaleIgnoreMHz");
 static const QString ftWinf("windowFunction");
 }
 
-class FtmwProcessingWidget : public QWidget, public SettingsStorage
+class FtmwProcessingToolBar : public QToolBar, public SettingsStorage
 {
     Q_OBJECT
 public:
-    explicit FtmwProcessingWidget(QWidget *parent = 0);
-    ~FtmwProcessingWidget();
+    explicit FtmwProcessingToolBar(QWidget *parent = 0);
+    ~FtmwProcessingToolBar();
     FtWorker::FidProcessingSettings getSettings();
 
 signals:
@@ -38,12 +43,16 @@ public slots:
     void readSettings();
 
 private:
-    QDoubleSpinBox *p_startBox, *p_endBox, *p_autoScaleIgnoreBox;
-    QSpinBox *p_zeroPadBox;
-    QCheckBox *p_removeDCBox;
-    QComboBox *p_unitsBox, *p_winfBox;
+    DoubleSpinBoxWidgetAction *p_startBox, *p_endBox, *p_autoScaleIgnoreBox;
+    SpinBoxWidgetAction *p_zeroPadBox;
+    QAction *p_removeDCBox;
+    EnumComboBoxWidgetAction<FtWorker::FtUnits> *p_unitsBox;
+    EnumComboBoxWidgetAction<FtWorker::FtWindowFunction> *p_winfBox;
+
 
 
 };
 
-#endif // FTMWPROCESSINGWIDGET_H
+
+
+#endif // FTMWPROCESSINGTOOLBAR_H

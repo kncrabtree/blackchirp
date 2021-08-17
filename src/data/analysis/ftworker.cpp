@@ -9,7 +9,7 @@ FtWorker::FtWorker(int i, QObject *parent) :
     QObject(parent), d_id(i), real(NULL), work(NULL), d_numPnts(0), p_spline(nullptr),
     p_accel(nullptr), d_numSplinePoints(0)
 {
-    d_lastProcSettings = FidProcessingSettings { -1.0, -1.0, 0, false, FtuV, 50.0, Boxcar };
+    d_lastProcSettings = FidProcessingSettings { -1.0, -1.0, 0, false, FtuV, 50.0, None };
 }
 
 FtWorker::~FtWorker()
@@ -489,7 +489,7 @@ QVector<double> FtWorker::filterFid(const Fid fid, const FidProcessingSettings &
         if(i > ei)
             break;
 
-        if(settings.windowFunction == Boxcar)
+        if(settings.windowFunction == None)
             out[i] = data.at(i);
         else
             out[i] = data.at(i)*d_winf.at(i-si);
@@ -615,10 +615,10 @@ void FtWorker::makeWinf(int n, FtWindowFunction f)
     case Hanning:
         winHanning(n);
         break;
-    case KaiserBessel14:
+    case KaiserBessel:
         winKaiserBessel(n,14.0);
         break;
-    case Boxcar:
+    case None:
     default:
         d_winf.fill(1.0);
         break;
