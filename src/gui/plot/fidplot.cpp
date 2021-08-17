@@ -34,7 +34,7 @@ FidPlot::FidPlot(const QString id, QWidget *parent) :
     csLabel.setFont(QFont(QString("sans serif"),6));
     chirpStartMarker->setLabel(csLabel);
     chirpStartMarker->setLabelOrientation(Qt::Vertical);
-    chirpStartMarker->setLabelAlignment(Qt::AlignBottom|Qt::AlignRight);
+    chirpStartMarker->setLabelAlignment(Qt::AlignTop|Qt::AlignRight);
     d_chirpMarkers.first = chirpStartMarker;
     chirpStartMarker->attach(this);
     chirpStartMarker->setVisible(false);
@@ -46,7 +46,7 @@ FidPlot::FidPlot(const QString id, QWidget *parent) :
     ceLabel.setFont(QFont(QString("sans serif"),6));
     chirpEndMarker->setLabel(ceLabel);
     chirpEndMarker->setLabelOrientation(Qt::Vertical);
-    chirpEndMarker->setLabelAlignment(Qt::AlignTop|Qt::AlignRight);
+    chirpEndMarker->setLabelAlignment(Qt::AlignBottom|Qt::AlignLeft);
     d_chirpMarkers.second = chirpEndMarker;
     chirpEndMarker->attach(this);
     chirpEndMarker->setVisible(false);
@@ -61,7 +61,7 @@ FidPlot::FidPlot(const QString id, QWidget *parent) :
     ftsLabel.setColor(QPalette().text().color());
     ftStartMarker->setLabel(ftsLabel);
     ftStartMarker->setLabelOrientation(Qt::Vertical);
-    ftStartMarker->setLabelAlignment(Qt::AlignBottom|Qt::AlignRight);
+    ftStartMarker->setLabelAlignment(Qt::AlignTop|Qt::AlignRight);
     ftStartMarker->setXValue(0.0);
     ftStartMarker->attach(this);
     ftStartMarker->setVisible(false);
@@ -76,7 +76,7 @@ FidPlot::FidPlot(const QString id, QWidget *parent) :
     fteLabel.setColor(QPalette().text().color());
     ftEndMarker->setLabel(fteLabel);
     ftEndMarker->setLabelOrientation(Qt::Vertical);
-    ftEndMarker->setLabelAlignment(Qt::AlignTop|Qt::AlignLeft);
+    ftEndMarker->setLabelAlignment(Qt::AlignBottom|Qt::AlignLeft);
     ftEndMarker->setXValue(0.0);
     ftEndMarker->attach(this);
     ftEndMarker->setVisible(false);

@@ -123,7 +123,7 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
             auto r = ch.roleBox->itemData(index).value<PulseGenConfig::Role>();
             if(r == PulseGenConfig::None)
             {
-                ch.nameEdit->setText(QString("Ch%1").arg(i));
+                ch.nameEdit->setText(QString("Ch%1").arg(i+1));
                 ch.nameEdit->setEnabled(true);
             }
             else
@@ -314,7 +314,7 @@ void PulseConfigWidget::launchChannelConfig(int ch)
         return;
 
     QDialog d(this);
-    d.setWindowTitle(QString("Configure Pulse Channel %1").arg(ch));
+    d.setWindowTitle(QString("Configure Pulse Channel %1").arg(ch+1));
 
     QFormLayout *fl = new QFormLayout();
     QVBoxLayout *vbl = new QVBoxLayout();

@@ -58,6 +58,7 @@ public slots:
     void setTrackerDecimals(QwtPlot::Axis a, int dec);
     void setTrackerScientific(QwtPlot::Axis a, bool sci);
 
+    void exportCurve(BlackchirpPlotCurve *curve);
     void setCurveColor(BlackchirpPlotCurve* curve);
     void setCurveLineThickness(BlackchirpPlotCurve* curve, double t);
     void setCurveLineStyle(BlackchirpPlotCurve* curve, Qt::PenStyle s);

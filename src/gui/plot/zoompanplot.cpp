@@ -12,10 +12,14 @@
 #include <QLabel>
 #include <QMenu>
 #include <QColorDialog>
+#include <QFileDialog>
+#include <QSaveFile>
+#include <QMessageBox>
 
 #include <qwt6/qwt_scale_div.h>
 #include <qwt6/qwt_plot_marker.h>
 #include <gui/plot/blackchirpplotcurve.h>
+#include <data/storage/blackchirpcsv.h>
 
 #include <gui/plot/customtracker.h>
 
@@ -315,6 +319,25 @@ void ZoomPanPlot::setTrackerScientific(QwtPlot::Axis a, bool sci)
     setArrayValue(BC::Key::axes,i,BC::Key::trackerScientific,sci);
 
     p_tracker->setScientific(a,sci);
+}
+
+void ZoomPanPlot::exportCurve(BlackchirpPlotCurve *curve)
+{
+    QDir d = BlackchirpCSV::textExportDir();
+    auto name = curve->name().append(".csv");
+    auto saveFile = QFileDialog::getSaveFileName(nullptr,"Export XY Data",d.absoluteFilePath(name));
+    if(saveFile.isEmpty())
+        return;
+
+    QSaveFile f(saveFile);
+    if(!f.open(QIODevice::WriteOnly|QIODevice::Text))
+    {
+        QMessageBox::critical(nullptr,"Export Error",QString("Could not open file %1 for writing.").arg(saveFile));
+        return;
+    }
+
+    BlackchirpCSV::writeXY(f,curve->curveData(),name);
+    f.commit();
 }
 
 void ZoomPanPlot::setCurveColor(BlackchirpPlotCurve *curve)
@@ -778,6 +801,11 @@ QMenu *ZoomPanPlot::contextMenu()
         {
             ++count;
             auto m = curveMenu->addMenu(curve->title().text());
+
+            auto exportAct = m->addAction("Export XY");
+            if(curve->curveData().isEmpty())
+                exportAct->setEnabled(false);
+            connect(exportAct,&QAction::triggered,[this,curve](){ exportCurve(curve); });
 
 
             auto colorAct = m->addAction(QString("Color..."));
