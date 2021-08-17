@@ -223,6 +223,13 @@ public:
     HeaderStrings getStrings();
 
     /*!
+     * \brief Called to setup children before storing/retrieving data
+     *
+     *  This function needs to be called before the first call to storeLine()
+     */
+    void prepareToStore();
+
+    /*!
      * \brief Stores the contents of the strings provided if object key matches
      *
      * This function is intended for parsing one line of the csv header file. The line is assumed
@@ -251,7 +258,8 @@ public:
      *
      * Child storage objects are stored in a vector as pointers; ownership is not assumed here.
      * Children will be searched when adding a value through storeLine, and their getStrings function
-     * will be called from the parent's getStrings function.
+     * will be called from the parent's getStrings function. It is safe to pass nullptr to this
+     * function.
      *
      * \param other Pointer to the child header storage object. If the object is destroyed, calls to
      * getStrings or storeLine will crash the program.
@@ -268,6 +276,14 @@ public:
      * \return HeaderStorage* Pointer to the removed child, or nullptr if no child is found
      */
     HeaderStorage* removeChild(HeaderStorage *child);
+
+
+    /*!
+     * \brief Called before storing/retrieving values.
+     *
+     * This is where children should be added.
+     */
+    virtual void prepareChildren() {}
 
 private:
     HeaderMap d_values;

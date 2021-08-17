@@ -11,7 +11,6 @@
 
 RfConfig::RfConfig() : HeaderStorage(BC::Store::RFC::key), d_currentClockIndex{0}
 {
-    addChild(&d_chirpConfig);
 }
 
 RfConfig::~RfConfig()
@@ -367,4 +366,9 @@ void RfConfig::retrieveValues()
     d_upMixSideband = retrieve(upSB,UpperSideband);
     d_chirpMult = retrieve(chirpM,1.0);
     d_downMixSideband = retrieve(downSB,UpperSideband);
+}
+
+void RfConfig::prepareChildren()
+{
+    addChild(&d_chirpConfig);
 }

@@ -10,8 +10,6 @@
 
 FtmwConfig::FtmwConfig() : HeaderStorage(BC::Store::FTMW::key)
 {
-    addChild(&d_rfConfig);
-    addChild(&d_scopeConfig);
 }
 
 FtmwConfig::~FtmwConfig()
@@ -344,6 +342,11 @@ void FtmwConfig::retrieveValues()
 
     //don't need to use retrieved type
     retrieve<FtmwType>(type);
-
     _loadComplete();
+}
+
+void FtmwConfig::prepareChildren()
+{
+    addChild(&d_rfConfig);
+    addChild(&d_scopeConfig);
 }

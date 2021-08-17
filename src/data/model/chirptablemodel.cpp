@@ -93,7 +93,7 @@ QVariant ChirpTableModel::data(const QModelIndex &index, int role) const
                 return QString("Empty");
             else
             {
-                double chirpFreq = ps_rfConfig->calculateChirpFreq(segmentList.at(index.row()).startFreqMHz);
+                double chirpFreq = p_rfConfig->calculateChirpFreq(segmentList.at(index.row()).startFreqMHz);
                 return QString::number(chirpFreq,'f',3);
             }
             break;
@@ -102,7 +102,7 @@ QVariant ChirpTableModel::data(const QModelIndex &index, int role) const
                 return QString("Empty");
             else
             {
-                double chirpFreq = ps_rfConfig->calculateChirpFreq(segmentList.at(index.row()).endFreqMHz);
+                double chirpFreq = p_rfConfig->calculateChirpFreq(segmentList.at(index.row()).endFreqMHz);
                 return QString::number(chirpFreq,'f',3);
             }
             break;
@@ -134,10 +134,10 @@ QVariant ChirpTableModel::data(const QModelIndex &index, int role) const
     {
         switch(index.column()) {
         case 0:
-            return  ps_rfConfig->calculateChirpFreq(segmentList.at(index.row()).startFreqMHz);
+            return  p_rfConfig->calculateChirpFreq(segmentList.at(index.row()).startFreqMHz);
             break;
         case 1:
-            return  ps_rfConfig->calculateChirpFreq(segmentList.at(index.row()).endFreqMHz);
+            return  p_rfConfig->calculateChirpFreq(segmentList.at(index.row()).endFreqMHz);
             break;
         case 2:
             return segmentList.at(index.row()).durationUs*1e3;
@@ -247,10 +247,10 @@ bool ChirpTableModel::setData(const QModelIndex &index, const QVariant &value, i
     {
         switch (index.column()) {
         case 0:
-            d_chirpList[i][index.row()].startFreqMHz = ps_rfConfig->calculateAwgFreq(value.toDouble());
+            d_chirpList[i][index.row()].startFreqMHz = p_rfConfig->calculateAwgFreq(value.toDouble());
             break;
         case 1:
-            d_chirpList[i][index.row()].endFreqMHz = ps_rfConfig->calculateAwgFreq(value.toDouble());
+            d_chirpList[i][index.row()].endFreqMHz = p_rfConfig->calculateAwgFreq(value.toDouble());
             break;
         case 2:
             d_chirpList[i][index.row()].durationUs = value.toDouble()/1e3;
@@ -459,12 +459,12 @@ void ChirpTableModel::removeSegments(QList<int> rows)
 
 double ChirpTableModel::calculateAwgFrequency(double f) const
 {
-    return ps_rfConfig->calculateAwgFreq(f);
+    return p_rfConfig->calculateAwgFreq(f);
 }
 
 double ChirpTableModel::calculateChirpFrequency(double f) const
 {
-    return ps_rfConfig->calculateChirpFreq(f);
+    return p_rfConfig->calculateChirpFreq(f);
 }
 
 QVector<QVector<ChirpConfig::ChirpSegment> > ChirpTableModel::chirpList() const
@@ -472,21 +472,22 @@ QVector<QVector<ChirpConfig::ChirpSegment> > ChirpTableModel::chirpList() const
     return d_chirpList;
 }
 
-void ChirpTableModel::initialize(std::shared_ptr<RfConfig> p)
+void ChirpTableModel::initialize(RfConfig *p)
 {
-    ps_rfConfig = p;
+    p_rfConfig = p;
+    p_rfConfig->d_chirpConfig.setChirpList(d_chirpList);
 }
 
-void ChirpTableModel::setFromRfConfig(std::shared_ptr<RfConfig> p)
+void ChirpTableModel::setFromRfConfig(RfConfig *p)
 {
-    ps_rfConfig = p;
+    p_rfConfig = p;
     if(!d_chirpList.isEmpty())
     {
         removeRows(0,d_chirpList.at(d_currentChirp).size(),QModelIndex());
         d_chirpList.clear();
         d_currentChirp = 0;
     }
-    auto cl = ps_rfConfig->d_chirpConfig.chirpList();
+    auto cl = p_rfConfig->d_chirpConfig.chirpList();
     if(!cl.isEmpty())
     {
         auto s = cl.constFirst().size();

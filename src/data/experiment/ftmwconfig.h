@@ -100,6 +100,8 @@ private:
 protected:
     void storeValues() override;
     void retrieveValues() override;
+    void prepareChildren() override;
+
     virtual quint8 bitShift() const { return 0; }
     virtual bool _init() =0;
     virtual void _prepareToSave() =0;

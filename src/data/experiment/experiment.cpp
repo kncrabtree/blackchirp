@@ -4,6 +4,14 @@
 #include <data/storage/settingsstorage.h>
 #include <data/experiment/ftmwconfigtypes.h>
 
+#include <hardware/optional/ioboard/ioboard.h>
+#include <hardware/optional/chirpsource/awg.h>
+#include <hardware/optional/flowcontroller/flowcontroller.h>
+#include <hardware/optional/gpibcontroller/gpibcontroller.h>
+#include <hardware/optional/pressurecontroller/pressurecontroller.h>
+#include <hardware/optional/pulsegenerator/pulsegenerator.h>
+#include <hardware/optional/tempcontroller/temperaturecontroller.h>
+
 #include <QApplication>
 #include <QFile>
 #include <QDir>
@@ -13,7 +21,6 @@ Experiment::Experiment() : HeaderStorage(BC::Store::Exp::key)
 {
     pu_auxData = std::make_unique<AuxDataStorage>();
     pu_validator = std::make_unique<ExperimentValidator>();
-    addChild(pu_validator.get());
 }
 
 Experiment::Experiment(const Experiment &other) :
@@ -43,7 +50,6 @@ Experiment::Experiment(const Experiment &other) :
     pu_auxData = std::make_unique<AuxDataStorage>(*other.pu_auxData);
 
     pu_validator = std::make_unique<ExperimentValidator>(*other.pu_validator);
-    addChild(pu_validator.get());
 
     if(other.pu_iobCfg.get() != nullptr)
         setIOBoardConfig(*other.iobConfig());
@@ -63,7 +69,6 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
     auto csv = std::make_shared<BlackchirpCSV>(d_number,exptPath);
 
     pu_validator = std::make_unique<ExperimentValidator>();
-    addChild(pu_validator.get());
 
     //load hardware list
     QFile hw(d.absoluteFilePath(BC::CSV::hwFile));
@@ -82,19 +87,19 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
            d_hardware.insert_or_assign(key,l.constLast().toString());
 
            //create optional HW configs as needed
-           if(key == BC::Store::Digi::iob)
+           if(key == BC::Key::IOB::ioboard)
                setIOBoardConfig({});
 
-           if(key == BC::Store::PGenConfig::key)
+           if(key == BC::Key::PGen::key)
                setPulseGenConfig({});
 
-           if(key == BC::Store::FlowConfig::key)
+           if(key == BC::Key::Flow::flowController)
                setFlowConfig({});
 
-           if(key == BC::Store::PressureController::key)
+           if(key == BC::Key::PController::key)
                setPressureControllerConfig({});
 
-           if(key == BC::Store::TempControlConfig::key)
+           if(key == BC::Key::TC::key)
                setTempControllerConfig({});
 
        }
@@ -125,6 +130,8 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
 #pragma message("Handle LIF")
         }
     }
+
+    prepareToStore();
 
     QFile hdr(d.absoluteFilePath(BC::CSV::headerFile));
     if(hdr.open(QIODevice::ReadOnly))
@@ -249,7 +256,6 @@ FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
     }
 
     pu_ftmwConfig->d_type = type;
-    addChild(pu_ftmwConfig.get());
     return pu_ftmwConfig.get();
 }
 
@@ -414,57 +420,27 @@ bool Experiment::canBackup()
 
 void Experiment::setIOBoardConfig(const IOBoardConfig &cfg)
 {
-    if(pu_iobCfg.get())
-        *pu_iobCfg = cfg;
-    else
-    {
-        pu_iobCfg = std::make_unique<IOBoardConfig>(cfg);
-        addChild(iobConfig());
-    }
+    pu_iobCfg = std::make_unique<IOBoardConfig>(cfg);
 }
 
 void Experiment::setPulseGenConfig(const PulseGenConfig &c)
 {
-    if(pu_pGenCfg.get())
-        *pu_pGenCfg = c;
-    else
-    {
-        pu_pGenCfg = std::make_unique<PulseGenConfig>(c);
-        addChild(pGenConfig());
-    }
+    pu_pGenCfg = std::make_unique<PulseGenConfig>(c);
 }
 
 void Experiment::setFlowConfig(const FlowConfig &c)
 {
-    if(pu_flowCfg.get())
-        *pu_flowCfg = c;
-    else
-    {
-        pu_flowCfg = std::make_unique<FlowConfig>(c);
-        addChild(flowConfig());
-    }
+    pu_flowCfg = std::make_unique<FlowConfig>(c);
 }
 
 void Experiment::setPressureControllerConfig(const PressureControllerConfig &c)
 {
-    if(pu_pcConfig.get())
-        *pu_pcConfig = c;
-    else
-    {
-        pu_pcConfig = std::make_unique<PressureControllerConfig>(c);
-        addChild(pcConfig());
-    }
+    pu_pcConfig = std::make_unique<PressureControllerConfig>(c);
 }
 
 void Experiment::setTempControllerConfig(const TemperatureControllerConfig &c)
 {
-    if(pu_tcConfig.get())
-        *pu_tcConfig = c;
-    else
-    {
-        pu_tcConfig = std::make_unique<TemperatureControllerConfig>(c);
-        addChild(tcConfig());
-    }
+    pu_tcConfig = std::make_unique<TemperatureControllerConfig>(c);
 }
 
 bool Experiment::addAuxData(AuxDataStorage::AuxDataMap m)
@@ -661,6 +637,18 @@ void Experiment::retrieveValues()
     d_patchVersion = retrieve<QString>(patchver);
     d_releaseVersion = retrieve<QString>(relver);
     d_buildVersion = retrieve<QString>(buildver);
+}
+
+void Experiment::prepareChildren()
+{
+    addChild(pu_ftmwConfig.get());
+    addChild(pu_flowCfg.get());
+    addChild(pu_iobCfg.get());
+    addChild(pu_pGenCfg.get());
+    addChild(pu_pcConfig.get());
+    addChild(pu_tcConfig.get());
+    addChild(pu_validator.get());
+
 }
 
 

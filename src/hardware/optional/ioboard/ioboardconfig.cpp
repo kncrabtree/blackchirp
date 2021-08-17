@@ -42,9 +42,9 @@ void IOBoardConfig::storeValues()
     using namespace BC::Store::Digi;
 
     for(auto it = d_analogNames.cbegin(); it != d_analogNames.cend(); ++it)
-        storeArrayValue(an,it->first,name,it->second);
+        storeArrayValue(an,it->first-1,name,it->second);
     for(auto it = d_digitalNames.cbegin(); it != d_digitalNames.cend(); ++it)
-        storeArrayValue(dig,it->first,name,it->second);
+        storeArrayValue(dig,it->first-1,name,it->second);
 
     DigitizerConfig::storeValues();
 }
@@ -57,7 +57,7 @@ void IOBoardConfig::retrieveValues()
 
     for(auto it = d_analogChannels.cbegin(); it != d_analogChannels.cend(); ++it)
     {
-        auto s = retrieveArrayValue(an,it->first,name,QString(""));
+        auto s = retrieveArrayValue(an,it->first-1,name,QString(""));
         if(!s.isEmpty())
             d_analogNames.insert_or_assign(it->first,s);
     }

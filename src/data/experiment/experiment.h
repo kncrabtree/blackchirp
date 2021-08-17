@@ -167,6 +167,7 @@ private:
 protected:
     void storeValues() override;
     void retrieveValues() override;
+    void prepareChildren() override;
 };
 
 Q_DECLARE_METATYPE(Experiment)

@@ -387,9 +387,9 @@ void DigitizerConfigWidget::setFromConfig(const DigitizerConfig &c)
 {
     for(auto &ch : c.d_analogChannels)
     {
-        d_anChannelWidgets[ch.first].channelBox->setChecked(true);
-        d_anChannelWidgets[ch.first].vOffsetBox->setValue(ch.second.offset);
-        d_anChannelWidgets[ch.first].fullScaleBox->setValue(ch.second.fullScale);
+        d_anChannelWidgets[ch.first-1].channelBox->setChecked(true);
+        d_anChannelWidgets[ch.first-1].vOffsetBox->setValue(ch.second.offset);
+        d_anChannelWidgets[ch.first-1].fullScaleBox->setValue(ch.second.fullScale);
     }
 
     ///TODO: Digital channels

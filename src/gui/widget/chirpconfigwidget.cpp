@@ -108,25 +108,25 @@ ChirpConfigWidget::~ChirpConfigWidget()
     delete ui;
 }
 
-void ChirpConfigWidget::initialize(std::shared_ptr<RfConfig> p)
+void ChirpConfigWidget::initialize(RfConfig *p)
 {
-    ps_rfConfig = p;
+    p_rfConfig = p;
     p_ctm->initialize(p);
     updateChirpPlot();
 }
 
-void ChirpConfigWidget::setFromRfConfig(std::shared_ptr<RfConfig> p)
+void ChirpConfigWidget::setFromRfConfig(RfConfig *p)
 {
-    ps_rfConfig = p;
+    p_rfConfig = p;
     if(d_rampOnly)
     {
-        auto thiscc = ps_rfConfig->d_chirpConfig;
+        auto thiscc = p_rfConfig->d_chirpConfig;
         if(!thiscc.chirpList().isEmpty())
         {
             if(thiscc.chirpList().constFirst().size() > 1)
             {
                 thiscc.setChirpList(QVector<QVector<ChirpConfig::ChirpSegment>>());
-                ps_rfConfig->setChirpConfig(thiscc);
+                p_rfConfig->setChirpConfig(thiscc);
             }
         }
     }
@@ -134,7 +134,7 @@ void ChirpConfigWidget::setFromRfConfig(std::shared_ptr<RfConfig> p)
 
 
     clearList(false);
-    auto cc = ps_rfConfig->d_chirpConfig;
+    auto cc = p_rfConfig->d_chirpConfig;
 
     ui->preChirpProtectionDoubleSpinBox->blockSignals(true);
     ui->preChirpProtectionDoubleSpinBox->setValue(cc.preChirpProtectionDelay());
@@ -174,26 +174,6 @@ void ChirpConfigWidget::setFromRfConfig(std::shared_ptr<RfConfig> p)
 
     p_ctm->setFromRfConfig(p); //Note: this triggers an update of the chirp plot
     p_ctm->d_allIdentical = cc.allChirpsIdentical();
-}
-
-void ChirpConfigWidget::updateRfConfig()
-{
-    auto l = p_ctm->chirpList();
-    auto &cc = ps_rfConfig->d_chirpConfig;
-    cc.setPreChirpProtectionDelay(ui->preChirpProtectionDoubleSpinBox->value());
-    cc.setPreChirpGateDelay(ui->preChirpDelayDoubleSpinBox->value());
-    cc.setPostChirpGateDelay(ui->postChirpDelayDoubleSpinBox->value());
-    cc.setPostChirpProtectionDelay(ui->postChirpProtectionDoubleSpinBox->value());
-    cc.setNumChirps(ui->chirpsSpinBox->value());
-    cc.setChirpInterval(ui->chirpIntervalDoubleSpinBox->value());
-    cc.setChirpList(l);
-    cc.setAwgSampleRate(d_awgSampleRate);
-}
-
-const RfConfig &ChirpConfigWidget::getRfConfig()
-{
-    updateRfConfig();
-    return *ps_rfConfig;
 }
 
 void ChirpConfigWidget::enableEditing(bool enabled)
@@ -319,7 +299,21 @@ void ChirpConfigWidget::updateChirpPlot()
     updateRfConfig();
 
     emit chirpConfigChanged();
-    ui->chirpPlot->newChirp(ps_rfConfig->d_chirpConfig);
+    ui->chirpPlot->newChirp(p_rfConfig->d_chirpConfig);
+}
+
+void ChirpConfigWidget::updateRfConfig()
+{
+    auto l = p_ctm->chirpList();
+    auto &cc = p_rfConfig->d_chirpConfig;
+    cc.setPreChirpProtectionDelay(ui->preChirpProtectionDoubleSpinBox->value());
+    cc.setPreChirpGateDelay(ui->preChirpDelayDoubleSpinBox->value());
+    cc.setPostChirpGateDelay(ui->postChirpDelayDoubleSpinBox->value());
+    cc.setPostChirpProtectionDelay(ui->postChirpProtectionDoubleSpinBox->value());
+    cc.setNumChirps(ui->chirpsSpinBox->value());
+    cc.setChirpInterval(ui->chirpIntervalDoubleSpinBox->value());
+    cc.setChirpList(l);
+    cc.setAwgSampleRate(d_awgSampleRate);
 }
 
 bool ChirpConfigWidget::isSelectionContiguous(QModelIndexList l)

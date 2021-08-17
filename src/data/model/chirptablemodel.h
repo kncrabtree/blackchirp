@@ -45,8 +45,8 @@ public:
     double calculateChirpFrequency(double f) const;
 
     QVector<QVector<ChirpConfig::ChirpSegment>> chirpList() const;
-    void initialize(std::shared_ptr<RfConfig> p);
-    void setFromRfConfig(std::shared_ptr<RfConfig> p);
+    void initialize(RfConfig *p);
+    void setFromRfConfig(RfConfig *p);
 
 public slots:
     void setCurrentChirp(int i);
@@ -58,7 +58,7 @@ signals:
 private:
     QVector<QVector<ChirpConfig::ChirpSegment>> d_chirpList;
     QVector<ChirpConfig::ChirpSegment> d_currentData;
-    std::shared_ptr<RfConfig> ps_rfConfig;
+    RfConfig *p_rfConfig;
     int d_currentChirp;
 
 
