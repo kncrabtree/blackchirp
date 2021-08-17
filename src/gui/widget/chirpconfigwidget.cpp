@@ -117,6 +117,7 @@ void ChirpConfigWidget::initialize(RfConfig *p)
 
 void ChirpConfigWidget::setFromRfConfig(RfConfig *p)
 {
+    disconnect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::updateChirpPlot);
     p_rfConfig = p;
     if(d_rampOnly)
     {
@@ -133,7 +134,6 @@ void ChirpConfigWidget::setFromRfConfig(RfConfig *p)
 
 
 
-    clearList(false);
     auto &cc = p_rfConfig->d_chirpConfig;
 
     ui->preChirpProtectionDoubleSpinBox->blockSignals(true);
@@ -172,8 +172,10 @@ void ChirpConfigWidget::setFromRfConfig(RfConfig *p)
     ui->currentChirpBox->setValue(1);
     ui->currentChirpBox->blockSignals(false);
 
-    p_ctm->setFromRfConfig(p); //Note: this triggers an update of the chirp plot
+    p_ctm->setFromRfConfig(p);
     p_ctm->d_allIdentical = cc.allChirpsIdentical();
+    connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::updateChirpPlot);
+    updateChirpPlot();
 }
 
 void ChirpConfigWidget::enableEditing(bool enabled)

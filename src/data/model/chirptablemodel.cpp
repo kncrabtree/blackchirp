@@ -291,6 +291,9 @@ bool ChirpTableModel::setData(const QModelIndex &index, const QVariant &value, i
 
 bool ChirpTableModel::removeRows(int row, int count, const QModelIndex &parent)
 {
+    if(d_chirpList.isEmpty())
+        return false;
+
     if(row < 0 || row+count > d_chirpList.at(d_currentChirp).size() || d_chirpList.at(d_currentChirp).isEmpty())
         return false;
 
@@ -481,17 +484,14 @@ void ChirpTableModel::initialize(RfConfig *p)
 void ChirpTableModel::setFromRfConfig(RfConfig *p)
 {
     p_rfConfig = p;
-    if(!d_chirpList.isEmpty())
-    {
-        removeRows(0,d_chirpList.at(d_currentChirp).size(),QModelIndex());
-        d_chirpList.clear();
-        d_currentChirp = 0;
-    }
+    removeRows(0,rowCount(QModelIndex()),QModelIndex());
+    d_chirpList.clear();
+    d_currentChirp = 0;
     auto cl = p_rfConfig->d_chirpConfig.chirpList();
     if(!cl.isEmpty())
     {
         auto s = cl.constFirst().size();
-        beginInsertRows(QModelIndex(),0,s);
+        beginInsertRows(QModelIndex(),0,s-1);
         d_chirpList = cl;
         endInsertRows();
         emit modelChanged();
