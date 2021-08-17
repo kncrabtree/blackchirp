@@ -134,7 +134,7 @@ void ChirpConfigWidget::setFromRfConfig(RfConfig *p)
 
 
     clearList(false);
-    auto cc = p_rfConfig->d_chirpConfig;
+    auto &cc = p_rfConfig->d_chirpConfig;
 
     ui->preChirpProtectionDoubleSpinBox->blockSignals(true);
     ui->preChirpProtectionDoubleSpinBox->setValue(cc.preChirpProtectionDelay());
