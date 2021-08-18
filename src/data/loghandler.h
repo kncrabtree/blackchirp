@@ -23,7 +23,6 @@ public:
     ~LogHandler();
 
     static QString formatForDisplay(const QString text, MessageCode type, QDateTime t = QDateTime::currentDateTime());
-    static QString formatForFile(const QString text, MessageCode type, QDateTime t = QDateTime::currentDateTime());
 
 signals:
 	//sends the formatted messages to the UI

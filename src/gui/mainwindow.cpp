@@ -64,7 +64,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->setupUi(this);
 
-    p_lh = new LogHandler();
+    p_lh = new LogHandler(true,this);
     connect(this,&MainWindow::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_lh,&LogHandler::sendLogMessage,ui->logTextEdit,&QTextEdit::append);
     connect(p_lh,&LogHandler::iconUpdate,this,&MainWindow::setLogIcon);
@@ -86,13 +86,6 @@ MainWindow::MainWindow(QWidget *parent) :
             ui->mainTabWidget->setTabText(ui->mainTabWidget->indexOf(ui->logTab),QString("Log (%1)").arg(d_logCount));
         }
     });
-
-    QThread *lhThread = new QThread(this);
-    lhThread->setObjectName("LogHandlerThread");
-    connect(lhThread,&QThread::finished,p_lh,&LogHandler::deleteLater);
-    p_lh->moveToThread(lhThread);
-    d_threadObjectList.append(qMakePair(lhThread,p_lh));
-    lhThread->start();
 
     connect(p_hwm,&HardwareManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_hwm,&HardwareManager::statusMessage,ui->statusBar,&QStatusBar::showMessage);

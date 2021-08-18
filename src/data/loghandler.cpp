@@ -35,32 +35,6 @@ QString LogHandler::formatForDisplay(QString text, MessageCode type, QDateTime t
     return out;
 }
 
-QString LogHandler::formatForFile(QString text, MessageCode type, QDateTime t)
-{
-    QString timeStamp = t.toString();
-    QString out = QString("%1: ").arg(timeStamp);
-    switch (type)
-    {
-    case Warning:
-        out.append(QString("[WARNING] "));
-        break;
-    case Error:
-        out.append(QString("[ERROR] "));
-        break;
-    case Debug:
-        out.append(QString("[DEBUG] "));
-        break;
-    case Highlight:
-        out.append(QString("[HIGHLIGHT] "));
-        break;
-    default:
-        break;
-    }
-
-    out.append(text).replace(QChar('\r'),QChar(' ')).replace(QChar('\n'),QChar(' ')).append(QString("\n"));
-    return out;
-}
-
 void LogHandler::logMessage(const QString text, const MessageCode type)
 {
     logMessageWithTime(text,type,QDateTime::currentDateTime());
@@ -95,7 +69,8 @@ void LogHandler::endExperimentLog()
 void LogHandler::writeToFile(const QString text, const MessageCode type, QDateTime t)
 {
     QDate now = t.date();
-    QString msg = formatForFile(text,type,t);
+    QString msg{text};
+    msg.replace(BC::CSV::del,QString(","));
     QDir d = BlackchirpCSV::logDir();
     QString month = QString::number(now.month()).rightJustified(2,'0');
     QFile logFile(d.absoluteFilePath(QString::number(now.year()) + month + ".csv"));
@@ -105,7 +80,7 @@ void LogHandler::writeToFile(const QString text, const MessageCode type, QDateTi
         if(logFile.size() == 0)
             BlackchirpCSV::writeLine(ts,{"Timestamp","Epoch_msecs","Code","Message"});
         BlackchirpCSV::writeLine(ts,{t.toString(),t.toMSecsSinceEpoch(),
-                                     QVariant::fromValue<MessageCode>(type).toString(),text});
+                                     QVariant::fromValue<MessageCode>(type).toString(),msg});
     }
 
     if(d_currentExperimentNum > 0)
@@ -118,7 +93,7 @@ void LogHandler::writeToFile(const QString text, const MessageCode type, QDateTi
             if(expLog.size() == 0)
                 BlackchirpCSV::writeLine(ts,{"Timestamp","Epoch_msecs","Code","Message"});
             BlackchirpCSV::writeLine(ts,{t.toString(),t.toMSecsSinceEpoch(),
-                                         QVariant::fromValue<MessageCode>(type).toString(),text});
+                                         QVariant::fromValue<MessageCode>(type).toString(),msg});
         }
     }
 }
