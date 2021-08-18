@@ -386,7 +386,9 @@ void SettingsStorage::save()
     }
 
     d_settings.sync();
-    d_edited = false;
+
+    if(d_getters.empty())
+        d_edited = false;
 }
 
 void SettingsStorage::readAll()

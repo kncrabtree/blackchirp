@@ -106,6 +106,8 @@ FtWorker::FidProcessingSettings FtmwProcessingToolBar::getSettings()
     auto units = p_unitsBox->value();
     auto winf = p_winfBox->value();
 
+    save();
+
     return { start, stop, zeroPad, rdc, units, ignore, winf };
 }
 
