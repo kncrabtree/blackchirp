@@ -13,36 +13,38 @@ class ToolBarWidgetAction : public QWidgetAction
 {
     Q_OBJECT
 public:
-    ToolBarWidgetAction(QWidget *parent = nullptr) : QWidgetAction(parent) {}
+    ToolBarWidgetAction(const QString label, QWidget *parent = nullptr) : QWidgetAction(parent), d_label(label) {}
     QWidget *createWidget(QWidget *parent) override final;
 
 protected:
     virtual QWidget *_createWidget(QWidget *parent) =0;
-    virtual QString labelText() { return ""; }
+    QWidget *p_widget{nullptr};
+
+private:
+    QString d_label;
 };
 
 class SpinBoxWidgetAction : public ToolBarWidgetAction
 {
     Q_OBJECT
 public:
-    SpinBoxWidgetAction(QString label = QString(""), QWidget *parent = nullptr)
-        : ToolBarWidgetAction(parent), d_label(label) {}
+    SpinBoxWidgetAction(const QString label = QString(""), QWidget *parent = nullptr)
+        : ToolBarWidgetAction(label,parent) {}
 
-    void setSpecialValueText(QString text) { d_specialText = text; };
-    void setRange(int min, int max) { d_range = {min,max}; };
-    void setMinimum(int min) { d_range.first = min; };
-    void setMaximum(int max) { d_range.second = max; };
-    void setPrefix(const QString p) { d_prefix = p; }
-    void setSuffix(const QString s) { d_suffix = s; }
-    int value() const { return d_value; }
+    void setSpecialValueText(const QString text);
+    void setRange(int min, int max);
+    void setMinimum(int min);
+    void setMaximum(int max);
+    void setPrefix(const QString p);
+    void setSuffix(const QString s);
+    int value() const;
 
 protected:
-    QString labelText() override { return d_label; }
     QWidget *_createWidget(QWidget *parent) override;
 
 
 public slots:
-    void setValue(int v) { d_value = v; emit valueChanged(d_value); }
+    void setValue(int v);
 
 signals:
     void valueChanged(int);
@@ -58,21 +60,20 @@ class DoubleSpinBoxWidgetAction : public ToolBarWidgetAction
 {
     Q_OBJECT
 public:
-    DoubleSpinBoxWidgetAction(QString label = QString(""), QWidget *parent = nullptr)
-        : ToolBarWidgetAction(parent), d_label(label) {}
+    DoubleSpinBoxWidgetAction(const QString label = QString(""), QWidget *parent = nullptr)
+        : ToolBarWidgetAction(label,parent) {}
 
-    void setSpecialValueText(QString text) { d_specialText = text; };
-    void setRange(double min, double max) { d_range = {min,max}; };
-    void setMinimum(double min) { d_range.first = min; };
-    void setMaximum(double max) { d_range.second = max; };
-    void setPrefix(const QString p) { d_prefix = p; }
-    void setSuffix(const QString s) { d_suffix = s; }
-    void setDecimals(int d) { d_decimals = qBound(0,d,15); }
-    void setSingleStep(double s) { d_step = s; }
-    double value() const { return d_value; }
+    void setSpecialValueText(QString text);;
+    void setRange(double min, double max);;
+    void setMinimum(double min);;
+    void setMaximum(double max);;
+    void setPrefix(const QString p);
+    void setSuffix(const QString s);
+    void setDecimals(int d);
+    void setSingleStep(double s);
+    double value() const;
 
 protected:
-    QString labelText() override { return d_label; }
     QWidget *_createWidget(QWidget *parent) override;
 
 
@@ -94,17 +95,17 @@ class ComboWABase : public ToolBarWidgetAction
 {
     Q_OBJECT
 public:
-    ComboWABase(QString label, QWidget *parent) : ToolBarWidgetAction(parent), d_label(label) {
+    ComboWABase(const QString label, QWidget *parent) : ToolBarWidgetAction(label, parent) {
         p_model = new QStandardItemModel(this);
     }
 
     void setValue(const QVariant v) {
-        if(p_box)
-            p_box->setCurrentIndex(p_box->findData(v));
+        auto box = dynamic_cast<QComboBox*>(p_widget);
+        if(box)
+            box->setCurrentIndex(box->findData(v));
         d_currentValue = v;
         emit valueChanged(v);
     }
-    QString labelText() override { return d_label; }
 
 signals:
     void valueChanged(QVariant);
@@ -113,16 +114,13 @@ protected:
     QStandardItemModel *p_model{nullptr};
     QVariant d_currentValue;
     QString d_label;
-    QComboBox *p_box{nullptr};
 
 
 protected:
     QWidget *_createWidget(QWidget *parent) override {
         auto out = new QComboBox(parent);
-        p_box = out;
         out->setModel(p_model);
         out->setCurrentIndex(out->findData(d_currentValue));
-        connect(out,&QComboBox::destroyed,[this]{ p_box = nullptr;});
         connect(out,qOverload<int>(&QComboBox::currentIndexChanged),[this,out](int i){ setValue(out->itemData(i)); });
         return out;
     }
@@ -133,7 +131,7 @@ template<typename T>
 class EnumComboBoxWidgetAction : public ComboWABase
 {
 public:
-    EnumComboBoxWidgetAction(QString label = QString(""), QWidget *parent = nullptr) :
+    EnumComboBoxWidgetAction(const QString label = QString(""), QWidget *parent = nullptr) :
         ComboWABase(label,parent)
     {
         auto me = QMetaEnum::fromType<T>();
@@ -152,8 +150,9 @@ public:
             it->second->setEnabled(enabled);
     }
     void setCurrentValue(T v) {
-        if(p_box)
-            p_box->setCurrentIndex(p_box->findData(v));
+        auto box = dynamic_cast<QComboBox*>(p_widget);
+        if(box)
+            box->setCurrentIndex(box->findData(v));
         else
             setValue(v);
     }
@@ -162,6 +161,16 @@ public:
 private:
     std::map<T,QStandardItem*> d_items;
 
+};
+
+class CheckWidgetAction : public ToolBarWidgetAction
+{
+    Q_OBJECT
+public:
+    CheckWidgetAction(const QString label, QWidget *parent = nullptr) :
+        ToolBarWidgetAction(label,parent) { setCheckable(true); }
+
+    QWidget *_createWidget(QWidget *parent) override;
 
 };
 

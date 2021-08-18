@@ -13,6 +13,7 @@ class QToolButton;
 class QComboBox;
 class SpinBoxWidgetAction;
 class DoubleSpinBoxWidgetAction;
+class CheckWidgetAction;
 template<typename T>
 class EnumComboBoxWidgetAction;
 
@@ -45,7 +46,7 @@ public slots:
 private:
     DoubleSpinBoxWidgetAction *p_startBox, *p_endBox, *p_autoScaleIgnoreBox;
     SpinBoxWidgetAction *p_zeroPadBox;
-    QAction *p_removeDCBox;
+    CheckWidgetAction *p_removeDCBox;
     EnumComboBoxWidgetAction<FtWorker::FtUnits> *p_unitsBox;
     EnumComboBoxWidgetAction<FtWorker::FtWindowFunction> *p_winfBox;
 

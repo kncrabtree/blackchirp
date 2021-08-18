@@ -63,14 +63,13 @@ FtmwProcessingToolBar::FtmwProcessingToolBar(QWidget *parent) :
     registerGetter(BC::Key::zeroPad,p_zeroPadBox,&SpinBoxWidgetAction::value);
     addAction(p_zeroPadBox);
 
-    p_removeDCBox = new QAction(this);
+    p_removeDCBox = new CheckWidgetAction("Remove DC",this);
     p_removeDCBox->setText("Remove DC");
-    p_removeDCBox->setCheckable(true);
-    p_removeDCBox->setChecked(get<bool>(BC::Key::removeDC,false));
+    p_removeDCBox->setChecked(get(BC::Key::removeDC,false));
     p_removeDCBox->setToolTip(QString("Subtract any DC offset in the FID."));
-    connect(p_removeDCBox,&QAction::toggled,this,&FtmwProcessingToolBar::readSettings);
+    connect(p_removeDCBox,&CheckWidgetAction::toggled,this,&FtmwProcessingToolBar::readSettings);
 
-    registerGetter(BC::Key::removeDC,p_removeDCBox,&QAction::isChecked);
+    registerGetter(BC::Key::removeDC,static_cast<QAction*>(p_removeDCBox),&CheckWidgetAction::isChecked);
     addAction(p_removeDCBox);
 
 
