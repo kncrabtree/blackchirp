@@ -153,7 +153,7 @@ bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
     if(status != PICO_OK)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Pico2206B channal setting failed. Error code: %1").arg(status),BlackChirp::LogError);
+        emit logMessage(QString("Pico2206B channal setting failed. Error code: %1").arg(status),LogHandler::Error);
         return false;
     }
 
@@ -166,7 +166,7 @@ bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
     if(status != PICO_OK)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Pico2206B timebase setting failed. Error code: %1").arg(status),BlackChirp::LogError);
+        emit logMessage(QString("Pico2206B timebase setting failed. Error code: %1").arg(status),LogHandler::Error);
         return false;
     }
 
@@ -187,7 +187,7 @@ bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
     if(status != PICO_OK)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Pico2206B trigger setting failed. Error code: %1").arg(status),BlackChirp::LogError);
+        emit logMessage(QString("Pico2206B trigger setting failed. Error code: %1").arg(status),LogHandler::Error);
         return false;
     }
 
@@ -196,7 +196,7 @@ bool Pico2206B::configure(const BlackChirp::MotorScopeConfig &sc)
     if(status != PICO_OK)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Pico2206B data buffer setting failed. Error code: %1").arg(status),BlackChirp::LogError);
+        emit logMessage(QString("Pico2206B data buffer setting failed. Error code: %1").arg(status),LogHandler::Error);
         return false;
     }
 
@@ -244,7 +244,7 @@ void Pico2206B::beginScopeAcquisition()
     if(status != PICO_OK)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Pico2206B data acquisition failed. Error code: %1.").arg(status),BlackChirp::LogError);
+        emit logMessage(QString("Pico2206B data acquisition failed. Error code: %1.").arg(status),LogHandler::Error);
         return;
     }
     p_acquisitionTimer->start();
@@ -262,7 +262,7 @@ void Pico2206B::endScopeAcquisition()
         {
             ///TODO: Update other areas to be like this
             emit hardwareFailure();
-            emit logMessage(QString("Pico2206B stop failed. Error code: %1.").arg(status),BlackChirp::LogError);
+            emit logMessage(QString("Pico2206B stop failed. Error code: %1.").arg(status),LogHandler::Error);
             return;
         }
         return;
@@ -273,7 +273,7 @@ void Pico2206B::endScopeAcquisition()
     if(status != PICO_OK)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Pico2206B isReady function calling failed. Error code: %1.").arg(status),BlackChirp::LogError);
+        emit logMessage(QString("Pico2206B isReady function calling failed. Error code: %1.").arg(status),LogHandler::Error);
         return;
     }
     if (isReady == 0)
@@ -288,7 +288,7 @@ void Pico2206B::endScopeAcquisition()
     if(status != PICO_OK)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Pico2206B data passing failed. Error code: %1").arg(status),BlackChirp::LogError);
+        emit logMessage(QString("Pico2206B data passing failed. Error code: %1").arg(status),LogHandler::Error);
         return;
     }
     if(overflow != 0)
@@ -311,7 +311,7 @@ void Pico2206B::endScopeAcquisition()
     if(status != PICO_OK)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Pico2206B stop failed. Error code: %1").arg(status),BlackChirp::LogError);
+        emit logMessage(QString("Pico2206B stop failed. Error code: %1").arg(status),LogHandler::Error);
         return;
     }
      beginScopeAcquisition();

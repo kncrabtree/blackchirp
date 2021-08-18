@@ -1,26 +1,16 @@
 #include <data/loghandler.h>
-#include <QDateTime>
-#include <QDate>
-#include <QApplication>
 #include <data/storage/blackchirpcsv.h>
 
 LogHandler::LogHandler(bool logToFile, QObject *parent) :
     QObject(parent), d_logToFile(logToFile)
 {
-    qRegisterMetaType<BlackChirp::LogMessageCode>("BlackChirp::MessageCode");
-    d_currentMonth = QDate::currentDate().month();
 }
 
 LogHandler::~LogHandler()
 {
-    if(d_logFile.isOpen())
-        d_logFile.close();
-
-    if(d_exptLog.isOpen())
-        d_exptLog.close();
 }
 
-QString LogHandler::formatForDisplay(QString text, BlackChirp::LogMessageCode type, QDateTime t)
+QString LogHandler::formatForDisplay(QString text, MessageCode type, QDateTime t)
 {
     QString timeStamp = t.toString();
     QString out;
@@ -28,16 +18,16 @@ QString LogHandler::formatForDisplay(QString text, BlackChirp::LogMessageCode ty
 
     switch(type)
     {
-    case BlackChirp::LogWarning:
+    case Warning:
         out.append(QString("<span style=\"font-weight:bold\">Warning: %1</span>").arg(text));
         break;
-    case BlackChirp::LogError:
+    case Error:
         out.append(QString("<span style=\"font-weight:bold;color:red\">Error: %1</span>").arg(text));
         break;
-    case BlackChirp::LogHighlight:
+    case Highlight:
         out.append(QString("<span style=\"font-weight:bold;color:green\">%1</span>").arg(text));
         break;
-    case BlackChirp::LogNormal:
+    case Normal:
     default:
         out.append(text);
         break;
@@ -45,22 +35,22 @@ QString LogHandler::formatForDisplay(QString text, BlackChirp::LogMessageCode ty
     return out;
 }
 
-QString LogHandler::formatForFile(QString text, BlackChirp::LogMessageCode type, QDateTime t)
+QString LogHandler::formatForFile(QString text, MessageCode type, QDateTime t)
 {
     QString timeStamp = t.toString();
     QString out = QString("%1: ").arg(timeStamp);
     switch (type)
     {
-    case BlackChirp::LogWarning:
+    case Warning:
         out.append(QString("[WARNING] "));
         break;
-    case BlackChirp::LogError:
+    case Error:
         out.append(QString("[ERROR] "));
         break;
-    case BlackChirp::LogDebug:
+    case Debug:
         out.append(QString("[DEBUG] "));
         break;
-    case BlackChirp::LogHighlight:
+    case Highlight:
         out.append(QString("[HIGHLIGHT] "));
         break;
     default:
@@ -71,20 +61,20 @@ QString LogHandler::formatForFile(QString text, BlackChirp::LogMessageCode type,
     return out;
 }
 
-void LogHandler::logMessage(const QString text, const BlackChirp::LogMessageCode type)
+void LogHandler::logMessage(const QString text, const MessageCode type)
 {
     logMessageWithTime(text,type,QDateTime::currentDateTime());
 }
 
-void LogHandler::logMessageWithTime(const QString text, const BlackChirp::LogMessageCode type, QDateTime t)
+void LogHandler::logMessageWithTime(const QString text, const MessageCode type, QDateTime t)
 {
     if(d_logToFile)
         writeToFile(text, type, t);
 
-    if(type == BlackChirp::LogDebug)
+    if(type == Debug)
         return;
 
-    if(type == BlackChirp::LogError || type == BlackChirp::LogWarning)
+    if(type == Error || type == Warning)
         emit iconUpdate(type);
 
     QString out = formatForDisplay(text,type,t);
@@ -93,65 +83,42 @@ void LogHandler::logMessageWithTime(const QString text, const BlackChirp::LogMes
 
 void LogHandler::beginExperimentLog(int num, QString msg)
 {
-    d_exptLog.setFileName(BlackchirpCSV::exptDir(num).absoluteFilePath("%1.log").arg(num));
-    d_exptLog.open(QIODevice::WriteOnly);
-    logMessage(msg,BlackChirp::LogHighlight);
+    d_currentExperimentNum = num;
+    logMessage(msg,Highlight);
 }
 
 void LogHandler::endExperimentLog()
 {
-    if(d_exptLog.isOpen())
-    {
-        d_exptLog.close();
-        d_exptLog.setFileName(QString(""));
-    }
+    d_currentExperimentNum = -1;
 }
 
-void LogHandler::experimentLogMessage(int num, QString text, BlackChirp::LogMessageCode type, QString path)
+void LogHandler::writeToFile(const QString text, const MessageCode type, QDateTime t)
 {
-    logMessageWithTime(text,type,QDateTime::currentDateTime());
-
-    if(d_exptLog.isOpen() && d_exptLog.fileName().endsWith(QString("%1.log").arg(num)))
-        return;
-
-    QFile f(BlackchirpCSV::exptDir(num,path).absoluteFilePath("%1.log").arg(num));
-    if(f.open(QIODevice::Append))
-    {
-        QString msg = formatForFile(text,type);
-        f.write(msg.toLatin1());
-        f.close();
-    }
-}
-
-void LogHandler::writeToFile(const QString text, const BlackChirp::LogMessageCode type, QDateTime t)
-{
-    QDate now = QDate::currentDate();
-    if(!d_logFile.isOpen() || now.month() != d_currentMonth)
-    {
-        d_currentMonth = now.month();
-        QDir d = BlackchirpCSV::logDir();
-
-        QString month = QString::number(d_currentMonth).rightJustified(2,'0');
-
-        if(d_logFile.isOpen())
-            d_logFile.close();
-
-        d_logFile.setFileName(d.absoluteFilePath(QString::number(now.year()) + month + ".log"));
-
-        d_logFile.open(QIODevice::Append);
-    }
-
+    QDate now = t.date();
     QString msg = formatForFile(text,type,t);
-
-    if(d_logFile.isOpen())
+    QDir d = BlackchirpCSV::logDir();
+    QString month = QString::number(now.month()).rightJustified(2,'0');
+    QFile logFile(d.absoluteFilePath(QString::number(now.year()) + month + ".csv"));
+    if(logFile.open(QIODevice::Append|QIODevice::Text))
     {
-        d_logFile.write(msg.toLatin1());
-        d_logFile.flush();
+        QTextStream ts(&logFile);
+        if(logFile.size() == 0)
+            BlackchirpCSV::writeLine(ts,{"Timestamp","Epoch_msecs","Code","Message"});
+        BlackchirpCSV::writeLine(ts,{t.toString(),t.toMSecsSinceEpoch(),
+                                     QVariant::fromValue<MessageCode>(type).toString(),text});
     }
 
-    if(d_exptLog.isOpen())
+    if(d_currentExperimentNum > 0)
     {
-        d_exptLog.write(msg.toLatin1());
-        d_exptLog.flush();
+        QDir exp = BlackchirpCSV::exptDir(d_currentExperimentNum);
+        QFile expLog = exp.absoluteFilePath("log.csv");
+        if(expLog.open(QIODevice::Append|QIODevice::Text))
+        {
+            QTextStream ts(&expLog);
+            if(expLog.size() == 0)
+                BlackchirpCSV::writeLine(ts,{"Timestamp","Epoch_msecs","Code","Message"});
+            BlackchirpCSV::writeLine(ts,{t.toString(),t.toMSecsSinceEpoch(),
+                                         QVariant::fromValue<MessageCode>(type).toString(),text});
+        }
     }
 }

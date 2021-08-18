@@ -68,11 +68,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this,&MainWindow::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_lh,&LogHandler::sendLogMessage,ui->logTextEdit,&QTextEdit::append);
     connect(p_lh,&LogHandler::iconUpdate,this,&MainWindow::setLogIcon);
-    connect(ui->ftViewWidget,&FtmwViewWidget::experimentLogMessage,p_lh,&LogHandler::experimentLogMessage);
     connect(ui->mainTabWidget,&QTabWidget::currentChanged,[=](int i) {
         if(i == ui->mainTabWidget->indexOf(ui->logTab))
         {
-            setLogIcon(BlackChirp::LogNormal);
+            setLogIcon(LogHandler::Normal);
             if(d_logCount > 0)
             {
                 d_logCount = 0;
@@ -511,7 +510,7 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
 
     if(!exp->d_hardwareSuccess)
     {
-        emit logMessage(exp->d_errorString,BlackChirp::LogError);
+        emit logMessage(exp->d_errorString,LogHandler::Error);
         p_batchThread->quit();
         configureUi(Idle);
         return;
@@ -519,9 +518,9 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
 
     if(!exp->initialize())
     {
-        emit logMessage(QString("Could not initialize experiment."),BlackChirp::LogError);
+        emit logMessage(QString("Could not initialize experiment."),LogHandler::Error);
         if(!exp->d_errorString.isEmpty())
-            emit logMessage(exp->d_errorString,BlackChirp::LogError);
+            emit logMessage(exp->d_errorString,LogHandler::Error);
         p_batchThread->quit();
         configureUi(Idle);
         return;
@@ -583,9 +582,9 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
     else
     {
         if(p_lh->thread() == thread())
-            p_lh->logMessage(exp->d_startLogMessage,BlackChirp::LogHighlight);
+            p_lh->logMessage(exp->d_startLogMessage,LogHandler::Highlight);
         else
-            emit logMessage(exp->d_startLogMessage,BlackChirp::LogHighlight);
+            emit logMessage(exp->d_startLogMessage,LogHandler::Highlight);
     }
 
     QMetaObject::invokeMethod(p_am,[this,exp](){p_am->beginExperiment(exp);});
@@ -664,19 +663,19 @@ void MainWindow::launchRfConfigDialog()
 
 }
 
-void MainWindow::setLogIcon(BlackChirp::LogMessageCode c)
+void MainWindow::setLogIcon(LogHandler::MessageCode c)
 {
     if(ui->mainTabWidget->currentWidget() != ui->logTab)
     {
         switch(c) {
-        case BlackChirp::LogWarning:
-            if(d_logIcon != BlackChirp::LogError)
+        case LogHandler::Warning:
+            if(d_logIcon != LogHandler::Error)
             {
                 ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab),QIcon(QString(":/icons/warning.png")));
                 d_logIcon = c;
             }
             break;
-        case BlackChirp::LogError:
+        case LogHandler::Error:
             ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab),QIcon(QString(":/icons/error.png")));
             d_logIcon = c;
             break;
@@ -688,7 +687,7 @@ void MainWindow::setLogIcon(BlackChirp::LogMessageCode c)
     }
     else
     {
-        d_logIcon = BlackChirp::LogNormal;
+        d_logIcon = LogHandler::Normal;
         ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab),QIcon());
     }
 }

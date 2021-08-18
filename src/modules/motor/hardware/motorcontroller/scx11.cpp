@@ -128,7 +128,7 @@ Limits Scx11::hwCheckLimits(MotorScan::MotorAxis axis)
     if(resp.isEmpty())
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read limits for %1 axis").arg(name),BlackChirp::LogError);
+        emit logMessage(QString("Could not read limits for %1 axis").arg(name),LogHandler::Error);
         return {false,false};
     }
 
@@ -142,7 +142,7 @@ Limits Scx11::hwCheckLimits(MotorScan::MotorAxis axis)
     else
     {
         emit hardwareFailure();
-        emit logMessage(QString("Unable to check positive limit position for %1 axis. Response: %2").arg(name).arg(QString(resp)),BlackChirp::LogError);
+        emit logMessage(QString("Unable to check positive limit position for %1 axis. Response: %2").arg(name).arg(QString(resp)),LogHandler::Error);
         return {false,false};
     }
 
@@ -154,7 +154,7 @@ Limits Scx11::hwCheckLimits(MotorScan::MotorAxis axis)
     else
     {
         emit hardwareFailure();
-        emit logMessage(QString("Unable to check negative limit position for %1 axis. Response: %2").arg(name).arg(QString(resp)),BlackChirp::LogError);
+        emit logMessage(QString("Unable to check negative limit position for %1 axis. Response: %2").arg(name).arg(QString(resp)),LogHandler::Error);
         return {false,false};
     }
 
@@ -172,7 +172,7 @@ double Scx11::hwReadPosition(MotorScan::MotorAxis axis)
     if(resp.isEmpty())
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read position for %1 axis").arg(name),BlackChirp::LogError);
+        emit logMessage(QString("Could not read position for %1 axis").arg(name),LogHandler::Error);
         return false;
     }
 
@@ -180,7 +180,7 @@ double Scx11::hwReadPosition(MotorScan::MotorAxis axis)
     if(resp.isEmpty() || !resp.contains('=') || !resp.contains('m'))
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read position for %1 axis. Response: %2").arg(name).arg(QString(resp)),BlackChirp::LogError);
+        emit logMessage(QString("Could not read position for %1 axis. Response: %2").arg(name).arg(QString(resp)),LogHandler::Error);
         return false;
     }
     int f = resp.indexOf('=');
@@ -198,7 +198,7 @@ bool Scx11::hwCheckAxisMotion(MotorScan::MotorAxis axis)
     if(resp.isEmpty())
     {
         emit hardwareFailure();
-        emit logMessage(QString("Error occured during motion of %1 axis. Sequence aborted.").arg(name),BlackChirp::LogError);
+        emit logMessage(QString("Error occured during motion of %1 axis. Sequence aborted.").arg(name),LogHandler::Error);
         return false;
 
     }
@@ -218,7 +218,7 @@ bool Scx11::hwStopMotion(MotorScan::MotorAxis axis)
     if(resp.isEmpty())
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not abort current motion of %1 axis").arg(name),BlackChirp::LogError);
+        emit logMessage(QString("Could not abort current motion of %1 axis").arg(name),LogHandler::Error);
         return false;
     }
 

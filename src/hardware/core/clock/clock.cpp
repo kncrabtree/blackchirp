@@ -157,14 +157,14 @@ double Clock::setFrequency(RfConfig::ClockType t, double freqMHz)
     {
         emit logMessage(QString("Desired frequency (%1 MHz) is outside the clock's range (%2 - %3 MHz). Frequency has not been changed.")
                         .arg(hwFreqMHz,0,'f',3).arg(min,0,'f',3).arg(max,0,'f',3),
-                        BlackChirp::LogWarning);
+                        LogHandler::Warning);
         return -1.0;
     }
 
     if(!setHwFrequency(hwFreqMHz,d_outputRoles.value(t)))
     {
         emit logMessage(QString("Cannot set frequency to %1 because of a hardware error.")
-                        .arg(hwFreqMHz,0,'f',3),BlackChirp::LogError);
+                        .arg(hwFreqMHz,0,'f',3),LogHandler::Error);
         return -1.0;
     }
 

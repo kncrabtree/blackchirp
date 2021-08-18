@@ -39,7 +39,7 @@ void PulseGenerator::readChannel(const int index)
     success &= (w <= get<double>(BC::Key::PGen::maxWidth) && w >= get<double>(BC::Key::PGen::minWidth));
     if(!success)
     {
-        emit logMessage(QString("Could not read width for channel %1").arg(index),BlackChirp::LogError);
+        emit logMessage(QString("Could not read width for channel %1").arg(index),LogHandler::Error);
         return;
     }
 
@@ -47,7 +47,7 @@ void PulseGenerator::readChannel(const int index)
     success &= (d <= get<double>(BC::Key::PGen::maxDelay) && d >= get<double>(BC::Key::PGen::minDelay));
     if(!success)
     {
-        emit logMessage(QString("Could not read delay for channel %1").arg(index),BlackChirp::LogError);
+        emit logMessage(QString("Could not read delay for channel %1").arg(index),LogHandler::Error);
         return;
     }
 
@@ -78,7 +78,7 @@ double PulseGenerator::readRepRate()
 
     if(!isnan(out))
         emit logMessage(QString("Rep rate (%1 Hz) is outside valid range (%2 - %3 Hz)").
-                    arg(out,0,'e',2).arg(min,0,'e',2).arg(max,0,'e',2),BlackChirp::LogError);
+                    arg(out,0,'e',2).arg(min,0,'e',2).arg(max,0,'e',2),LogHandler::Error);
     return nan("");
 }
 
@@ -86,7 +86,7 @@ bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setti
 {
     if(index >= d_config.size())
     {
-        emit logMessage(QString("Received invalid channel (%1). Allowed values: 0-%2").arg(index).arg(d_config.size()-1),BlackChirp::LogError);
+        emit logMessage(QString("Received invalid channel (%1). Allowed values: 0-%2").arg(index).arg(d_config.size()-1),LogHandler::Error);
         return false;
     }
 
@@ -128,7 +128,7 @@ bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setti
         if((w < min) || (w > max))
         {
             success = false;
-            emit logMessage(QString("Requested width (%1) for channel %2 is outside the allowed range (%3 - %4)").arg(w,0,'e',2).arg(index).arg(min,0,'e',2).arg(max,0,'e',2),BlackChirp::LogError);
+            emit logMessage(QString("Requested width (%1) for channel %2 is outside the allowed range (%3 - %4)").arg(w,0,'e',2).arg(index).arg(min,0,'e',2).arg(max,0,'e',2),LogHandler::Error);
         }
         else
         {
@@ -153,7 +153,7 @@ bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setti
         if((d < min) || (d > max))
         {
             success = false;
-            emit logMessage(QString("Requested delay (%1) for channel %2 is outside the allowed range (%3 - %4)").arg(d,0,'e',2).arg(index).arg(min,0,'e',2).arg(max,0,'e',2),BlackChirp::LogError);
+            emit logMessage(QString("Requested delay (%1) for channel %2 is outside the allowed range (%3 - %4)").arg(d,0,'e',2).arg(index).arg(min,0,'e',2).arg(max,0,'e',2),LogHandler::Error);
         }
         else
         {
@@ -236,7 +236,7 @@ bool PulseGenerator::setRepRate(double d)
     if((d < min) || (d > max))
     {
         emit logMessage(QString("Requested rep rate (%1 Hz) is outside the allowed range (%2 - %3 Hz)").
-                        arg(d,0,'e',2).arg(min,0,'e',2).arg(max,0,'e',2),BlackChirp::LogError);
+                        arg(d,0,'e',2).arg(min,0,'e',2).arg(max,0,'e',2),LogHandler::Error);
         return false;
     }
     bool success = setHwRepRate(d);

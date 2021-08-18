@@ -48,7 +48,7 @@ bool LabjackU3::configure()
 {
     if(d_handle == nullptr)
     {
-        emit logMessage(QString("Handle is null."),BlackChirp::LogError);
+        emit logMessage(QString("Handle is null."),LogHandler::Error);
         return false;
     }
 
@@ -57,7 +57,7 @@ bool LabjackU3::configure()
     long error = eTCConfig(d_handle,enableTimers,enableCounters,4,LJ_tc48MHZ,0,timerModes,timerValues,0,0);
     if(error)
     {
-        emit logMessage(QString("eTCConfig function call returned error code %1.").arg(error),BlackChirp::LogError);
+        emit logMessage(QString("eTCConfig function call returned error code %1.").arg(error),LogHandler::Error);
         return false;
     }
 

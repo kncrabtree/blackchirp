@@ -62,7 +62,7 @@ bool PrologixGpibLan::setAddress(int a)
     if(d_currentAddress != a)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Address was not set to %1. Current address: %2").arg(a).arg(d_currentAddress),BlackChirp::LogError);
+        emit logMessage(QString("Address was not set to %1. Current address: %2").arg(a).arg(d_currentAddress),LogHandler::Error);
         return false;
     }
 

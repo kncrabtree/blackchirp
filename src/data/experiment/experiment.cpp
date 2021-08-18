@@ -383,19 +383,19 @@ void Experiment::abort()
 {
     d_isAborted = true;
     d_endLogMessage = QString("Experiment %1 aborted.").arg(d_number);
-    d_endLogMessageCode = BlackChirp::LogError;
+    d_endLogMessageCode = LogHandler::Error;
 
     if(ftmwEnabled())
     {
         if(pu_ftmwConfig->d_type == FtmwConfig::Peak_Up)
         {
-            d_endLogMessageCode = BlackChirp::LogHighlight;
+            d_endLogMessageCode = LogHandler::Highlight;
             d_endLogMessage = QString("Peak up mode ended.");
         }
         if(pu_ftmwConfig->d_type == FtmwConfig::Forever)
         {
             d_endLogMessage = QString("Experiment %1 complete.").arg(d_number);
-            d_endLogMessageCode = BlackChirp::LogHighlight;
+            d_endLogMessageCode = LogHandler::Highlight;
         }
     }
 

@@ -14,7 +14,7 @@
 #include <data/storage/auxdatastorage.h>
 #include <data/experiment/experimentvalidator.h>
 #include <data/experiment/ftmwconfig.h>
-#include <data/datastructs.h>
+#include <data/loghandler.h>
 #include <hardware/optional/pulsegenerator/pulsegenconfig.h>
 #include <hardware/optional/flowcontroller/flowconfig.h>
 #include <hardware/optional/ioboard/ioboardconfig.h>
@@ -70,7 +70,7 @@ public:
     QString d_errorString;
     QString d_startLogMessage;
     QString d_endLogMessage;
-    BlackChirp::LogMessageCode d_endLogMessageCode{BlackChirp::LogHighlight};
+    LogHandler::MessageCode d_endLogMessageCode{LogHandler::Highlight};
     QString d_majorVersion{STRINGIFY(BC_MAJOR_VERSION)};
     QString d_minorVersion{STRINGIFY(BC_MINOR_VERSION)};
     QString d_patchVersion{STRINGIFY(BC_PATCH_VERSION)};

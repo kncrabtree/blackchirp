@@ -11,14 +11,6 @@
 
 namespace BlackChirp {
 
-enum LogMessageCode {
-    LogNormal,
-    LogWarning,
-    LogError,
-    LogHighlight,
-    LogDebug
-};
-
 enum ScopeSampleOrder {
     ChannelsSequential,
     ChannelsInterleaved
@@ -122,8 +114,6 @@ struct MotorScopeConfig {
 
 
 }
-
-Q_DECLARE_METATYPE(BlackChirp::LogMessageCode)
 
 #ifdef BC_LIF
 Q_DECLARE_METATYPE(BlackChirp::LifScanOrder)

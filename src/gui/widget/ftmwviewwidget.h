@@ -59,9 +59,6 @@ public:
     ~FtmwViewWidget();
     void prepareForExperiment(const Experiment &e);
 
-signals:
-    void experimentLogMessage(int,QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal,QString=QString(""));
-
 public slots:
     void updateLiveFidList();
     void updateProcessingSettings(FtWorker::FidProcessingSettings s);

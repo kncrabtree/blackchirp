@@ -41,7 +41,7 @@ QList<double> Lakeshore218::readHWTemperatures()
     QList<double> out;
     if (l.size() != numChannels())
     {
-        emit logMessage(QString("Could not parse temperature response. The response was %1").arg(QString(temp)),BlackChirp::LogError);
+        emit logMessage(QString("Could not parse temperature response. The response was %1").arg(QString(temp)),LogHandler::Error);
         emit hardwareFailure();
         return out;
     }
@@ -58,7 +58,7 @@ double Lakeshore218::readHwTemperature(const int ch)
     double t = temp.toDouble(&ok);
     if(!ok)
     {
-        emit logMessage(QString("Could not parse temperature response (%1)").arg(QString(temp)),BlackChirp::LogError);
+        emit logMessage(QString("Could not parse temperature response (%1)").arg(QString(temp)),LogHandler::Error);
         emit hardwareFailure();
         return nan("");
     }

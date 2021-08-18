@@ -235,7 +235,7 @@ bool M8195A::m8195aWrite(const QString cmd)
     QByteArray resp = p_comm->queryCmd(QString("SYST:ERR?\n"));
     if(!resp.startsWith('0'))
     {
-       emit logMessage(QString("Could not write waveform data to AWG. Error %1. Command was: %2").arg(QString(resp)).arg(cmd),BlackChirp::LogError);
+       emit logMessage(QString("Could not write waveform data to AWG. Error %1. Command was: %2").arg(QString(resp)).arg(cmd),LogHandler::Error);
         return false;
     }
 

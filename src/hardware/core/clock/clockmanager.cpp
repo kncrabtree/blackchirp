@@ -102,7 +102,7 @@ double ClockManager::setClockFrequency(RfConfig::ClockType t, double freqMHz)
     {
         emit logMessage(QString("No clock configured for use as %1")
                         .arg(QMetaEnum::fromType<RfConfig::ClockType>().valueToKey(t)),
-                        BlackChirp::LogWarning);
+                        LogHandler::Warning);
         return -1.0;
     }
 
@@ -115,7 +115,7 @@ double ClockManager::readClockFrequency(RfConfig::ClockType t)
     {
         emit logMessage(QString("No clock configured for use as %1")
                         .arg(QMetaEnum::fromType<RfConfig::ClockType>().valueToKey(t)),
-                        BlackChirp::LogWarning);
+                        LogHandler::Warning);
         return -1.0;
     }
 
@@ -152,14 +152,14 @@ bool ClockManager::configureClocks(QHash<RfConfig::ClockType, RfConfig::ClockFre
            emit logMessage(QString("Could not find hardware clock for %1 (%2 output %3)")
                                .arg(QMetaEnum::fromType<RfConfig::ClockType>()
                                     .valueToKey(type))
-                                    .arg(d.hwKey).arg(d.output),BlackChirp::LogError);
+                                    .arg(d.hwKey).arg(d.output),LogHandler::Error);
             return false;
         }
 
         if(!c->addRole(type,d.output))
         {
             emit logMessage(QString("The output number requested for %1 (%2) is out of range (only %2 outputs are available).")
-                               .arg(c->d_name).arg(d.output).arg(c->numOutputs()),BlackChirp::LogError);
+                               .arg(c->d_name).arg(d.output).arg(c->numOutputs()),LogHandler::Error);
             return false;
         }
 
@@ -177,7 +177,7 @@ bool ClockManager::configureClocks(QHash<RfConfig::ClockType, RfConfig::ClockFre
             emit logMessage(QString("Could not set %1 to %2 MHz (raw frequency = %3 MHz).")
                                .arg(c->d_name)
                                .arg(d.desiredFreqMHz,0,'f',6)
-                               .arg(d.desiredFreqMHz/c->multFactor(d.output),0,'f',6),BlackChirp::LogError);
+                               .arg(d.desiredFreqMHz/c->multFactor(d.output),0,'f',6),LogHandler::Error);
             return false;
         }
         if(qAbs(actualFreq-d.desiredFreqMHz) > 0.1)
@@ -185,7 +185,7 @@ bool ClockManager::configureClocks(QHash<RfConfig::ClockType, RfConfig::ClockFre
             emit logMessage(QString("Actual frequency of %1 (%2 MHz) is more than 100 kHz from desired frequency (%3 MHz)")
                             .arg(QMetaEnum::fromType<RfConfig::ClockType>().valueToKey(type))
                             .arg(actualFreq,0,'f',6)
-                            .arg(d.desiredFreqMHz,0,'f',6),BlackChirp::LogWarning);
+                            .arg(d.desiredFreqMHz,0,'f',6),LogHandler::Warning);
         }
 
         d.desiredFreqMHz = actualFreq;

@@ -59,7 +59,7 @@ public:
     void initializeHardware();
 
 signals:
-    void logMessage(const QString, BlackChirp::LogMessageCode);
+    void logMessage(QString, LogHandler::MessageCode);
     void startInit();
     void closing();
     void checkSleep();
@@ -75,7 +75,7 @@ public slots:
     void resumeUi();
     void launchCommunicationDialog(bool parent = true);
     void launchRfConfigDialog();
-    void setLogIcon(BlackChirp::LogMessageCode c);
+    void setLogIcon(LogHandler::MessageCode c);
     void sleep(bool s);
     void viewExperiment();
 
@@ -98,7 +98,7 @@ private:
 
     ProgramState d_state{Idle};
     int d_logCount{0};
-    BlackChirp::LogMessageCode d_logIcon{BlackChirp::LogNormal};
+    LogHandler::MessageCode d_logIcon{LogHandler::Normal};
     int d_currentExptNum{0};
 
 #ifdef BC_LIF

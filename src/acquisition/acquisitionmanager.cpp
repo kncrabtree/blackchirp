@@ -28,7 +28,7 @@ void AcquisitionManager::beginExperiment(std::shared_ptr<Experiment> exp)
 //                                         sc.d_bytesPerPoint,sc.d_byteOrder);
 //        if(!success)
 //        {
-//            emit logMessage(gpuAvg.getErrorString(),BlackChirp::LogError);
+//            emit logMessage(gpuAvg.getErrorString(),LogHandler::Error);
 //            emit experimentComplete(exp);
 //            return;
 //        }
@@ -112,7 +112,7 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 
         if(!success)
         {
-            emit logMessage(d_currentExperiment->d_errorString,BlackChirp::LogError);
+            emit logMessage(d_currentExperiment->d_errorString,LogHandler::Error);
             abort();
             return;
         }
@@ -172,7 +172,7 @@ void AcquisitionManager::lifHardwareReady(bool success)
     {
         if(!success)
         {
-            emit logMessage(QString("LIF delay and/or frequency could not be set. Aborting."),BlackChirp::LogError);
+            emit logMessage(QString("LIF delay and/or frequency could not be set. Aborting."),LogHandler::Error);
             abort();
         }
         else
@@ -416,7 +416,7 @@ bool AcquisitionManager::calculateShift(const QByteArray b)
 
 //    if(!done)
 //    {
-//        emit logMessage(QString("Calculated shift for this FID exceeded maximum permissible shift of %1 points. Fid rejected.").arg(max),BlackChirp::LogWarning);
+//        emit logMessage(QString("Calculated shift for this FID exceeded maximum permissible shift of %1 points. Fid rejected.").arg(max),LogHandler::Warning);
 //        return false;
 //    }
 
@@ -435,7 +435,7 @@ bool AcquisitionManager::calculateShift(const QByteArray b)
 //    }
 //    if(qAbs(shift) > BC_FTMW_MAXSHIFT)
 //    {
-//        emit logMessage(QString("Total shift exceeds maximum range (%1). Aborting experiment.").arg(BC_FTMW_MAXSHIFT),BlackChirp::LogError);
+//        emit logMessage(QString("Total shift exceeds maximum range (%1). Aborting experiment.").arg(BC_FTMW_MAXSHIFT),LogHandler::Error);
 //        abort();
 //        return false;
 //    }

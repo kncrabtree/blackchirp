@@ -263,7 +263,7 @@ void M4i2211x8::setHorizontalConfig(double sampleRate, int recLen)
     rl = qMax(32,rl);
     rl = qMin(rl,65536);
     if(rl != recLen)
-        emit logMessage(QString("Record length set to %1 instead of %2 because it must be a multiple of 32 between 32 and 65536.").arg(rl).arg(recLen),BlackChirp::LogWarning);
+        emit logMessage(QString("Record length set to %1 instead of %2 because it must be a multiple of 32 between 32 and 65536.").arg(rl).arg(recLen),LogHandler::Warning);
     d_config.recordLength = rl;
     d_config.sampleRate = sampleRate;
 
@@ -329,7 +329,7 @@ void M4i2211x8::queryScope()
     {
         QByteArray errText(1000,'\0');
         if(spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
-            emit logMessage(QString::fromLatin1(errText),BlackChirp::LogError);
+            emit logMessage(QString::fromLatin1(errText),LogHandler::Error);
 
         emit hardwareFailure();
         stopCard();
@@ -357,7 +357,7 @@ bool M4i2211x8::errorCheck()
 
         d_errorString = QString::fromLatin1(errText);
         emit hardwareFailure();
-        emit logMessage(QString("An error occurred: %2").arg(d_errorString),BlackChirp::LogError);
+        emit logMessage(QString("An error occurred: %2").arg(d_errorString),LogHandler::Error);
         if(p_m4iBuffer != nullptr)
         {
             delete[] p_m4iBuffer;

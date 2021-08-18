@@ -87,7 +87,7 @@ double Valon5009::readHwFrequency(int outputIndex)
     if(resp.isEmpty())
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read %1 frequency. No response received.").arg(channelNames().at(outputIndex)),BlackChirp::LogError);
+        emit logMessage(QString("Could not read %1 frequency. No response received.").arg(channelNames().at(outputIndex)),LogHandler::Error);
         return -1.0;
     }
 

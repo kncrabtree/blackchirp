@@ -7,7 +7,7 @@
 #include <QTimer>
 #include <QThread>
 
-#include <data/datastructs.h>
+#include <data/loghandler.h>
 #include <data/experiment/experiment.h>
 
 #ifdef BC_CUDA
@@ -33,7 +33,7 @@ public:
     };
 
 signals:
-    void logMessage(QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal);
+    void logMessage(QString,LogHandler::MessageCode = LogHandler::Normal);
     void statusMessage(QString,int=0);
     void experimentComplete();
     void ftmwUpdateProgress(int);

@@ -19,7 +19,7 @@ bool CommunicationProtocol::writeCmd(QString cmd)
     if(!p_device->isOpen())
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not write command. Serial port is not open. (Command = %1)").arg(cmd),BlackChirp::LogError);
+        emit logMessage(QString("Could not write command. Serial port is not open. (Command = %1)").arg(cmd),LogHandler::Error);
         return false;
     }
 
@@ -28,7 +28,7 @@ bool CommunicationProtocol::writeCmd(QString cmd)
     if(ret == -1)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not write command. (Command = %1)").arg(cmd),BlackChirp::LogError);
+        emit logMessage(QString("Could not write command. (Command = %1)").arg(cmd),LogHandler::Error);
         return false;
     }
     return true;
@@ -42,7 +42,7 @@ bool CommunicationProtocol::writeBinary(QByteArray dat)
     if(!p_device->isOpen())
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not write binary data. Serial port is not open. (Data hex = %1)").arg(QString(dat.toHex())),BlackChirp::LogError);
+        emit logMessage(QString("Could not write binary data. Serial port is not open. (Data hex = %1)").arg(QString(dat.toHex())),LogHandler::Error);
         return false;
     }
 
@@ -51,7 +51,7 @@ bool CommunicationProtocol::writeBinary(QByteArray dat)
     if(ret == -1)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not write binary data. (Data hex = %1)").arg(QString(dat.toHex())),BlackChirp::LogError);
+        emit logMessage(QString("Could not write binary data. (Data hex = %1)").arg(QString(dat.toHex())),LogHandler::Error);
         return false;
     }
     return true;
@@ -72,7 +72,7 @@ QByteArray CommunicationProtocol::queryCmd(QString cmd, bool suppressError)
         if(!suppressError)
         {
             emit hardwareFailure();
-            emit logMessage(QString("Could not write query. (query = %1)").arg(cmd),BlackChirp::LogError);
+            emit logMessage(QString("Could not write query. (query = %1)").arg(cmd),LogHandler::Error);
         }
         return QByteArray();
     }
@@ -83,7 +83,7 @@ QByteArray CommunicationProtocol::queryCmd(QString cmd, bool suppressError)
             if(!suppressError)
             {
                 emit hardwareFailure();
-                emit logMessage(QString("Timed out while waiting for query write. Query = %1").arg(cmd),BlackChirp::LogError);
+                emit logMessage(QString("Timed out while waiting for query write. Query = %1").arg(cmd),LogHandler::Error);
             }
             return QByteArray();
         }
@@ -97,7 +97,7 @@ QByteArray CommunicationProtocol::queryCmd(QString cmd, bool suppressError)
             if(!suppressError)
             {
                 emit hardwareFailure();
-                emit logMessage(QString("Did not respond to query. (query = %1)").arg(cmd),BlackChirp::LogError);
+                emit logMessage(QString("Did not respond to query. (query = %1)").arg(cmd),LogHandler::Error);
             }
             return QByteArray();
         }
@@ -130,7 +130,7 @@ QByteArray CommunicationProtocol::queryCmd(QString cmd, bool suppressError)
         if(!suppressError)
         {
             emit hardwareFailure();
-            emit logMessage(QString("Timed out while waiting for termination character. (query = %1, partial response = %2)").arg(cmd).arg(QString(out)),BlackChirp::LogError);
+            emit logMessage(QString("Timed out while waiting for termination character. (query = %1, partial response = %2)").arg(cmd).arg(QString(out)),LogHandler::Error);
             emit logMessage(QString("Hex response: %1").arg(QString(out.toHex())));
         }
         return out;

@@ -52,7 +52,7 @@ bool TcpInstrument::writeBinary(QByteArray dat)
         if(!connectSocket())
         {
             emit hardwareFailure();
-            emit logMessage(QString("Could not write binary data. Socket is not connected. Data hex (first 25 bytes) = %1").arg(QString(dat.toHex()).mid(0,50)),BlackChirp::LogError);
+            emit logMessage(QString("Could not write binary data. Socket is not connected. Data hex (first 25 bytes) = %1").arg(QString(dat.toHex()).mid(0,50)),LogHandler::Error);
             return false;
         }
     }

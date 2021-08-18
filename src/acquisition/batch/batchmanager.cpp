@@ -15,7 +15,7 @@ void BatchManager::experimentComplete()
 {
     auto exp = currentExperiment();
     if(!exp->d_errorString.isEmpty())
-        emit logMessage(exp->d_errorString,BlackChirp::LogError);
+        emit logMessage(exp->d_errorString,LogHandler::Error);
 
     //as of v1.0 these conditions are not possible I think
 //    if(!exp->isInitialized() || !exp->hardwareSuccess())

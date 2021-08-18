@@ -43,7 +43,7 @@ bool AWG7122B::testConnection()
         {
             if(!resp.trimmed().startsWith('0'))
             {
-                emit logMessage(QString("AWG error: %1").arg(QString(resp.trimmed())),BlackChirp::LogDebug);
+                emit logMessage(QString("AWG error: %1").arg(QString(resp.trimmed())),LogHandler::Debug);
                 resp = p_comm->queryCmd(QString("System:Error:Next?\n"));
                 if(resp.isEmpty())
                     break;
@@ -269,7 +269,7 @@ QString AWG7122B::writeWaveform(const ChirpConfig cc)
             {
                 if(!resp.trimmed().startsWith('0'))
                 {
-                    emit logMessage(QString("AWG error: %1").arg(QString(resp.trimmed())),BlackChirp::LogDebug);
+                    emit logMessage(QString("AWG error: %1").arg(QString(resp.trimmed())),LogHandler::Debug);
                     resp = p_comm->queryCmd(QString("System:Error:Next?\n"));
                     if(resp.isEmpty())
                         break;
@@ -331,7 +331,7 @@ QString AWG7122B::writeWaveform(const ChirpConfig cc)
 //            {
 //                if(!resp.trimmed().startsWith('0'))
 //                {
-//                    emit logMessage(QString("AWG error: %1").arg(QString(resp.trimmed())),BlackChirp::LogDebug);
+//                    emit logMessage(QString("AWG error: %1").arg(QString(resp.trimmed())),LogHandler::Debug);
 //                    resp = p_comm->queryCmd(QString("System:Error:Next?\n"));
 //                    if(resp.isEmpty())
 //                        break;

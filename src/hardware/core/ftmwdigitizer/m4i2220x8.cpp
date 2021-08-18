@@ -106,7 +106,7 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
 
     //this card only has 1 channel, so enable it and disable all others regardless of user's entry
     if(sc.fidChannel != 1)
-        emit logMessage(QString("FID channel set to 1 (selected: %1) because the device only has a single channel.").arg(sc.fidChannel),BlackChirp::LogWarning);
+        emit logMessage(QString("FID channel set to 1 (selected: %1) because the device only has a single channel.").arg(sc.fidChannel),LogHandler::Warning);
     spcm_dwSetParam_i32(p_handle,SPC_CHENABLE,CHANNEL0);
     sc.fidChannel = 1;
 
@@ -185,7 +185,7 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
 
     //configure trigger
     if(sc.trigChannel != 0)
-        emit logMessage(QString("Trigger channel set to External Input (selected: %1). Must trigger on Ext In."),BlackChirp::LogWarning);
+        emit logMessage(QString("Trigger channel set to External Input (selected: %1). Must trigger on Ext In."),LogHandler::Warning);
     sc.trigChannel = 0;
 
 
@@ -234,7 +234,7 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
     if(sc.recordLength % 32)
     {
         sc.recordLength += (32 - (sc.recordLength % 32));
-        emit logMessage(QString("Setting record length to %1 because it must be a multiple of 32.").arg(sc.recordLength),BlackChirp::LogWarning);
+        emit logMessage(QString("Setting record length to %1 because it must be a multiple of 32.").arg(sc.recordLength),LogHandler::Warning);
     }
 
     //configure record length
@@ -282,7 +282,7 @@ void M4i2220x8::beginAcquisition()
         QByteArray errText(1000,'\0');
         if(spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
         {
-            emit logMessage(QString::fromLatin1(errText),BlackChirp::LogError);
+            emit logMessage(QString::fromLatin1(errText),LogHandler::Error);
             emit hardwareFailure();
             return;
         }
@@ -319,7 +319,7 @@ void M4i2220x8::readWaveform()
     {
         QByteArray errText(1000,'\0');
         if(spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
-            emit logMessage(QString::fromLatin1(errText),BlackChirp::LogError);
+            emit logMessage(QString::fromLatin1(errText),LogHandler::Error);
 
         emit hardwareFailure();
         p_timer->stop();
@@ -379,7 +379,7 @@ void M4i2220x8::readWaveform()
         QByteArray errText(1000,'\0');
         if(spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
         {
-            emit logMessage(QString::fromLatin1(errText),BlackChirp::LogError);
+            emit logMessage(QString::fromLatin1(errText),LogHandler::Error);
             emit hardwareFailure();
             return;
         }

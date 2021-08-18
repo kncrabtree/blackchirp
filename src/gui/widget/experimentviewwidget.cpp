@@ -87,11 +87,7 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
 
     QWidget *log = buildLogWidget(path);
     if(log != nullptr)
-    {
         p_tabWidget->addTab(log,QIcon(QString(":/icons/log.png")),QString("Log"));
-        if(p_ftmw != nullptr)
-            connect(p_ftmw,&FtmwViewWidget::experimentLogMessage,p_lh,&LogHandler::experimentLogMessage);
-    }
 
     vbl->addWidget(p_tabWidget);
     setLayout(vbl);
@@ -188,59 +184,23 @@ QWidget *ExperimentViewWidget::buildLogWidget(QString path)
     vbl->addWidget(te);
     log->setLayout(vbl);
 
-    QFile f(BlackchirpCSV::exptDir(pu_experiment->d_number,path).absoluteFilePath("%1.log").arg(pu_experiment->d_number));
+    auto csv = std::make_shared<BlackchirpCSV>(pu_experiment->d_number,path);
+
+    QFile f(BlackchirpCSV::exptDir(pu_experiment->d_number,path).absoluteFilePath("log.csv"));
     if(f.open(QIODevice::ReadOnly))
     {
         while(!f.atEnd())
         {
-            QString line = QString(f.readLine());
-            if(line.isEmpty())
+            auto line = csv->readLine(f);
+            if(line.isEmpty() || line.size() != 4 || line.constFirst().toString().contains("Timestamp"))
                 continue;
 
-            if(line.contains(QString("[DEBUG]")))
-                continue;
-            if(line.contains(QString(": [WARNING] ")))
-            {
-                QStringList l = line.split(QString(": [WARNING] "));
-                if(l.size() < 2)
-                    continue;
+            auto dt = QDateTime::fromMSecsSinceEpoch(line.at(1).toLongLong());
+            auto code = line.at(2).value<LogHandler::MessageCode>();
+            auto msg = line.at(3).toString();
 
-                p_lh->logMessageWithTime(l.constLast(),BlackChirp::LogWarning,QDateTime::fromString(l.constFirst()));
-                continue;
-            }
-            if(line.contains(QString(": [ERROR] ")))
-            {
-                QStringList l = line.split(QString(": [ERROR] "));
-                if(l.size() < 2)
-                    continue;
-
-                p_lh->logMessageWithTime(l.constLast(),BlackChirp::LogError,QDateTime::fromString(l.constFirst()));
-                continue;
-            }
-            if(line.contains(QString(": [HIGHLIGHT] ")))
-            {
-                QStringList l = line.split(QString(": [HIGHLIGHT] "));
-                if(l.size() < 2)
-                    continue;
-
-                p_lh->logMessageWithTime(l.constLast(),BlackChirp::LogHighlight,QDateTime::fromString(l.constFirst()));
-                continue;
-            }
-            else
-            {
-                QStringList l = line.split(QString(": "));
-                if(l.size() < 2)
-                    continue;
-
-                QString theLine;
-                theLine += l.at(1);
-                for(int i=2; i<l.size(); i++)
-                    theLine+=QString(": ")+l.at(i);
-
-                p_lh->logMessageWithTime(theLine,BlackChirp::LogNormal,QDateTime::fromString(l.constFirst()));
-            }
+            p_lh->logMessageWithTime(msg,code,dt);
         }
-        f.close();
     }
 
     return log;

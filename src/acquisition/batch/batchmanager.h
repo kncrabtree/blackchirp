@@ -22,7 +22,7 @@ public:
 
 signals:
     void statusMessage(QString,int=0);
-    void logMessage(QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal);
+    void logMessage(QString,LogHandler::MessageCode = LogHandler::Normal);
     void beginExperiment();
     void batchComplete(bool aborted);
 

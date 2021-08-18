@@ -66,7 +66,7 @@ double IntellisysIQPlus::hwReadPressure()
     QByteArray resp = p_comm->queryCmd(QString("R5\n"));
     if((resp.isEmpty()) || (!resp.startsWith("P+")))
     {
-        emit logMessage(QString("Could not read chamber pressure"),BlackChirp::LogError);
+        emit logMessage(QString("Could not read chamber pressure"),LogHandler::Error);
         emit hardwareFailure();
         return nan("");
     }
@@ -76,7 +76,7 @@ double IntellisysIQPlus::hwReadPressure()
     double num = resp.mid(f+1,l-f-1).trimmed().toDouble(&ok);
     if(!ok)
     {
-        emit logMessage(QString("Could not parse chamber pressure. Response: %1").arg(QString(resp)),BlackChirp::LogError);
+        emit logMessage(QString("Could not parse chamber pressure. Response: %1").arg(QString(resp)),LogHandler::Error);
         emit hardwareFailure();
         return nan("");
     }
@@ -98,7 +98,7 @@ double IntellisysIQPlus::hwReadPressureSetpoint()
     QByteArray resp = p_comm->queryCmd(QString("R1\n"));
     if((resp.isEmpty()) || (!resp.startsWith("S1+")))
     {
-        emit logMessage(QString("Could not read chamber pressure set point"),BlackChirp::LogError);
+        emit logMessage(QString("Could not read chamber pressure set point"),LogHandler::Error);
         emit hardwareFailure();
         return nan("");
     }
@@ -109,7 +109,7 @@ double IntellisysIQPlus::hwReadPressureSetpoint()
     double out = resp.mid(f+1,l-f-1).trimmed().toDouble(&ok);
     if(!ok)
     {
-        emit logMessage(QString("Could not parse pressure setpoint response. Received: %1").arg(QString(resp),BlackChirp::LogError));
+        emit logMessage(QString("Could not parse pressure setpoint response. Received: %1").arg(QString(resp),LogHandler::Error));
         emit hardwareFailure();
         return nan("");
     }

@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <memory>
-#include <data/datastructs.h>
+#include <data/loghandler.h>
 #include <data/storage/auxdatastorage.h>
 #include <data/storage/settingsstorage.h>
 #include <data/experiment/rfconfig.h>
@@ -29,7 +29,7 @@ public:
     ~HardwareManager();
 
 signals:
-    void logMessage(QString,BlackChirp::LogMessageCode = BlackChirp::LogNormal);
+    void logMessage(QString,LogHandler::MessageCode = LogHandler::Normal);
     void statusMessage(QString,int=0);
     void hwInitializationComplete();
 

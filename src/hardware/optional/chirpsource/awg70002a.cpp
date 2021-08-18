@@ -247,7 +247,7 @@ QString AWG70002a::writeWaveform(const ChirpConfig cc)
         if(resp.trimmed().toInt() > 0)
         {
             resp = p_comm->queryCmd(QString("System:Error:All?\n"));
-            emit logMessage(QString("AWG error: %1").arg(QString(resp.trimmed())),BlackChirp::LogDebug);
+            emit logMessage(QString("AWG error: %1").arg(QString(resp.trimmed())),LogHandler::Debug);
             return QString("!Could not write waveform data to AWG. See logfile for details. Header was: %1").arg(header);
         }
 
@@ -296,7 +296,7 @@ QString AWG70002a::writeWaveform(const ChirpConfig cc)
         if(resp.trimmed().toInt() > 0)
         {
             resp = p_comm->queryCmd(QString("System:Error:All?\n"));
-            emit logMessage(QString("AWG error: %1").arg(QString(resp.trimmed())),BlackChirp::LogDebug);
+            emit logMessage(QString("AWG error: %1").arg(QString(resp.trimmed())),LogHandler::Debug);
              return QString("!Could not write marker data to AWG. See logfile for details. Header was: %1").arg(header);
         }
 

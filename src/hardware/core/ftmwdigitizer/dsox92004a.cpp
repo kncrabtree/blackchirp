@@ -210,7 +210,7 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
     if(resp.isEmpty() || !resp.contains(QString("CHAN%1").arg(config.fidChannel).toLatin1()))
     {
         emit logMessage(QString("Failed to set FID channel. Response to waveform source query: %1 (Hex: %2)")
-                        .arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
+                        .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
         return false;
     }
 
@@ -223,14 +223,14 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
         if(!ok)
         {
             emit logMessage(QString("Could not parse offset response. Response: %1 (Hex: %2)")
-                            .arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
+                            .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
             return false;
         }
         config.vOffset = offset;
     }
     else
     {
-        emit logMessage(QString("Gave an empty response to offset query."),BlackChirp::LogError);
+        emit logMessage(QString("Gave an empty response to offset query."),LogHandler::Error);
         return false;
     }
     resp = p_comm->queryCmd(QString(":CHAN%1:SCALE?\n").arg(config.fidChannel));
@@ -241,18 +241,18 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
         if(!ok)
         {
             emit logMessage(QString("Could not parse scale response. Response: %2 (Hex: %3)")
-                            .arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
+                            .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
             return false;
         }
         if(!(fabs(config.vScale-scale) < 0.01))
             emit logMessage(QString("Vertical scale is different than specified. Target: %1 V/div, Scope setting: %2 V/div")
                             .arg(QString::number(config.vScale,'f',3))
-                            .arg(QString::number(scale,'f',3)),BlackChirp::LogWarning);
+                            .arg(QString::number(scale,'f',3)),LogHandler::Warning);
         config.vScale = scale;
     }
     else
     {
-        emit logMessage(QString("Gave an empty response to scale query."),BlackChirp::LogError);
+        emit logMessage(QString("Gave an empty response to scale query."),LogHandler::Error);
         return false;
     }
 
@@ -265,21 +265,21 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
         if(!ok)
         {
             emit logMessage(QString("Sample rate query returned an invalid response. Response: %1 (Hex: %2)")
-                            .arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
+                            .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
             return false;
         }
         if(!(fabs(sRate - config.sampleRate)<1e6))
         {
             emit logMessage(QString("Could not set sample rate successfully. Target: %1 GS/s, Scope setting: %2 GS/s")
                             .arg(QString::number(config.sampleRate/1e9,'f',3))
-                            .arg(QString::number(sRate/1e9,'f',3)),BlackChirp::LogError);
+                            .arg(QString::number(sRate/1e9,'f',3)),LogHandler::Error);
             return false;
         }
         config.sampleRate = sRate;
     }
     else
     {
-        emit logMessage(QString("Gave an empty response to sample rate query."),BlackChirp::LogError);
+        emit logMessage(QString("Gave an empty response to sample rate query."),LogHandler::Error);
         return false;
     }
 
@@ -291,19 +291,19 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
         if(!ok)
         {
             emit logMessage(QString("Record length query returned an invalid response. Response: %1 (Hex: %2)")
-                            .arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
+                            .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
             return false;
         }
         if(!(abs(recLength-config.recordLength) < 1000))
         {
             emit logMessage(QString("Record length limited by scope memory. Length will be different than requested. Target: %1, Scope setting: %2").arg(QString::number(config.recordLength))
-                            .arg(QString::number(recLength)),BlackChirp::LogWarning);
+                            .arg(QString::number(recLength)),LogHandler::Warning);
         }
         config.recordLength = recLength;
     }
     else
     {
-        emit logMessage(QString("Gave an empty response to record length query."),BlackChirp::LogError);
+        emit logMessage(QString("Gave an empty response to record length query."),LogHandler::Error);
         return false;
     }
 
@@ -311,7 +311,7 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
     if(resp.isEmpty() || !QString(resp).contains(trigCh),Qt::CaseInsensitive)
     {
         emit logMessage(QString("Could not verify trigger channel. Response: %1 (Hex: %2)")
-                        .arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
+                        .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
         return false;
     }
 
@@ -320,7 +320,7 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
     if(resp.isEmpty() || !QString(resp).contains(slope))
     {
         emit logMessage(QString("Could not verify trigger slope. Response: %1 (Hex: %2)")
-                        .arg(QString(resp)).arg(QString(resp.toHex())),BlackChirp::LogError);
+                        .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
         return false;
     }
 
@@ -417,14 +417,14 @@ bool DSOx92004A::scopeCommand(QString cmd)
     QByteArray resp = p_comm->queryCmd(cmd,true);
     if(resp.isEmpty())
     {
-        emit logMessage(QString("Timed out on query %1").arg(orig),BlackChirp::LogError);
+        emit logMessage(QString("Timed out on query %1").arg(orig),LogHandler::Error);
         return false;
     }
 
     int val = resp.trimmed().toInt();
     if(val != 0)
     {
-        emit logMessage(QString("Received error %1 on query %2").arg(val).arg(orig),BlackChirp::LogError);
+        emit logMessage(QString("Received error %1 on query %2").arg(val).arg(orig),LogHandler::Error);
         return false;
     }
     return true;

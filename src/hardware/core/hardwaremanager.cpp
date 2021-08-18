@@ -128,7 +128,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     for(auto hwit = d_hardwareMap.cbegin(); hwit != d_hardwareMap.cend(); ++hwit)
     {        
         auto obj = hwit->second;
-        connect(obj,&HardwareObject::logMessage,[this,obj](QString msg, BlackChirp::LogMessageCode mc){
+        connect(obj,&HardwareObject::logMessage,[this,obj](QString msg, LogHandler::MessageCode mc){
             emit logMessage(QString("%1: %2").arg(obj->d_name).arg(msg),mc);
         });
         connect(obj,&HardwareObject::connected,[obj,this](bool success, QString msg){
@@ -240,7 +240,7 @@ void HardwareManager::initialize()
         auto hw = it->second;
         if(hw->d_commType == CommunicationProtocol::Virtual)
             emit logMessage(QString("%1 is a virtual instrument. Be cautious about taking real measurements!")
-                            .arg(hw->d_name),BlackChirp::LogWarning);
+                            .arg(hw->d_name),LogHandler::Warning);
         if(hw->d_threaded)
         {
             if(!hw->thread()->isRunning())
@@ -271,9 +271,9 @@ void HardwareManager::connectionResult(HardwareObject *obj, bool success, QStrin
     else
     {
         disconnect(obj,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure);
-        BlackChirp::LogMessageCode code = BlackChirp::LogError;
+        LogHandler::MessageCode code = LogHandler::Error;
         if(!obj->d_critical)
-            code = BlackChirp::LogWarning;
+            code = LogHandler::Warning;
         emit logMessage(obj->d_name + QString(": Connection failed!"),code);
         if(!msg.isEmpty())
             emit logMessage(msg,code);

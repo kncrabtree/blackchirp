@@ -68,7 +68,7 @@ bool Qc9518::pGenWriteCmd(QString cmd)
     }
 
     emit hardwareFailure();
-    emit logMessage(QString("Error writing command %1").arg(cmd),BlackChirp::LogError);
+    emit logMessage(QString("Error writing command %1").arg(cmd),LogHandler::Error);
     return false;
 }
 

@@ -113,6 +113,7 @@ R"000(Next, you can configure the communication settings for the hardware connec
     }
 
     qRegisterMetaType<std::shared_ptr<Experiment>>();
+    qRegisterMetaType<LogHandler::MessageCode>();
     qRegisterMetaType<Fid>("Fid");
     qRegisterMetaType<FidList>("FidList");
     qRegisterMetaType<FtWorker::FidProcessingSettings>("FtWorker::FidProcessingSettings");

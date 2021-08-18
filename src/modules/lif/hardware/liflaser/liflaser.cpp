@@ -16,7 +16,7 @@ double LifLaser::readPosition()
     double out = readPos();
     if(out < 0.0)
     {
-        emit logMessage(QString("Could not read position.").arg(d_name),BlackChirp::LogError);
+        emit logMessage(QString("Could not read position.").arg(d_name),LogHandler::Error);
         emit hardwareFailure();
     }
     else {
@@ -30,7 +30,7 @@ double LifLaser::setPosition(const double pos)
 {
     if(pos < d_minPos || pos > d_maxPos)
     {
-        emit logMessage(QString("Requested position (%1 %2) is outside the allowed range of %3 %2 - %4 %2.").arg(pos,0,'f',d_decimals).arg(d_units).arg(d_minPos,0,'f',d_decimals).arg(d_maxPos,0,'f',d_decimals),BlackChirp::LogError);
+        emit logMessage(QString("Requested position (%1 %2) is outside the allowed range of %3 %2 - %4 %2.").arg(pos,0,'f',d_decimals).arg(d_units).arg(d_minPos,0,'f',d_decimals).arg(d_maxPos,0,'f',d_decimals),LogHandler::Error);
         emit hardwareFailure();
         return -1.0;
     }

@@ -43,7 +43,7 @@ void Mks946::hwSetFlowSetpoint(const int ch, const double val)
 {
     if(!isConnected())
     {
-        emit logMessage(QString("Cannot set flow setpoint due to a previous communication failure. Reconnect and try again."),BlackChirp::LogError);
+        emit logMessage(QString("Cannot set flow setpoint due to a previous communication failure. Reconnect and try again."),LogHandler::Error);
         return;
     }
 
@@ -57,14 +57,14 @@ void Mks946::hwSetFlowSetpoint(const int ch, const double val)
             pidActive = true;
             if(!mksWrite(QString("PID!OFF")))
             {
-                emit logMessage(QString("Could not disable PID mode to update channel %1 setpoint. Error: %2").arg(ch+1).arg(d_errorString),BlackChirp::LogError);
+                emit logMessage(QString("Could not disable PID mode to update channel %1 setpoint. Error: %2").arg(ch+1).arg(d_errorString),LogHandler::Error);
                 emit hardwareFailure();
                 return;
             }
         }
         else
         {
-            emit logMessage(d_errorString,BlackChirp::LogError);
+            emit logMessage(d_errorString,LogHandler::Error);
             emit hardwareFailure();
             return;
         }
@@ -75,7 +75,7 @@ void Mks946::hwSetFlowSetpoint(const int ch, const double val)
         //make sure ratio recipe 1 is active
         if(!mksWrite(QString("RRCP!1")))
         {
-            emit logMessage(d_errorString,BlackChirp::LogError);
+            emit logMessage(d_errorString,LogHandler::Error);
             emit hardwareFailure();
             return;
         }
@@ -83,7 +83,7 @@ void Mks946::hwSetFlowSetpoint(const int ch, const double val)
 
     if(!mksWrite(QString("RRQ%1!%2").arg(ch+get(offset,1)).arg(val,0,'E',2,QLatin1Char(' '))))
     {
-        emit logMessage(d_errorString,BlackChirp::LogError);
+        emit logMessage(d_errorString,LogHandler::Error);
         emit hardwareFailure();
         return;
     }
@@ -96,7 +96,7 @@ void Mks946::hwSetPressureSetpoint(const double val)
 {
     if(!isConnected())
     {
-        emit logMessage(QString("Cannot set pressure setpoint due to a previous communication failure. Reconnect and try again."),BlackChirp::LogError);
+        emit logMessage(QString("Cannot set pressure setpoint due to a previous communication failure. Reconnect and try again."),LogHandler::Error);
         return;
     }
 
@@ -117,7 +117,7 @@ void Mks946::hwSetPressureSetpoint(const double val)
         }
         else
         {
-            emit logMessage(d_errorString,BlackChirp::LogError);
+            emit logMessage(d_errorString,LogHandler::Error);
             emit hardwareFailure();
             return;
         }
@@ -125,7 +125,7 @@ void Mks946::hwSetPressureSetpoint(const double val)
 
     if(!mksWrite(QString("RPSP!%1").arg(val*1000.0,1,'E',2,QLatin1Char(' '))))
     {
-        emit logMessage(d_errorString,BlackChirp::LogError);
+        emit logMessage(d_errorString,LogHandler::Error);
         emit hardwareFailure();
         return;
     }
@@ -144,7 +144,7 @@ double Mks946::hwReadFlowSetpoint(const int ch)
     double out = resp.mid(2).toDouble(&ok);
     if(!ok)
     {
-        emit logMessage(QString("Received invalid response to channel %1 setpoint query. Response: %2").arg(ch+1).arg(QString(resp)),BlackChirp::LogError);
+        emit logMessage(QString("Received invalid response to channel %1 setpoint query. Response: %2").arg(ch+1).arg(QString(resp)),LogHandler::Error);
         emit hardwareFailure();
         return -1.0;
     }
@@ -162,7 +162,7 @@ double Mks946::hwReadPressureSetpoint()
     double out = resp.mid(2).toDouble(&ok);
     if(!ok)
     {
-        emit logMessage(QString("Received invalid response to pressure setpoint query. Response: %1").arg(QString(resp)),BlackChirp::LogError);
+        emit logMessage(QString("Received invalid response to pressure setpoint query. Response: %1").arg(QString(resp)),LogHandler::Error);
         emit hardwareFailure();
         return -1.0;
     }
@@ -183,7 +183,7 @@ double Mks946::hwReadFlow(const int ch)
     double out = resp.toDouble(&ok);
     if(!ok)
     {
-        emit logMessage(QString("Received invalid response to flow query for channel %1. Response: %2").arg(ch+1).arg(QString(resp)),BlackChirp::LogError);
+        emit logMessage(QString("Received invalid response to flow query for channel %1. Response: %2").arg(ch+1).arg(QString(resp)),LogHandler::Error);
         emit hardwareFailure();
         return -1.0;
     }
@@ -202,7 +202,7 @@ double Mks946::hwReadPressure()
 
     if(resp.contains(QByteArray("MISCONN")))
     {
-        emit logMessage(QString("No pressure gauge connected."),BlackChirp::LogWarning);
+        emit logMessage(QString("No pressure gauge connected."),LogHandler::Warning);
         setPressureControlMode(false);
         emit hardwareFailure();
         return -0.0;
@@ -216,7 +216,7 @@ double Mks946::hwReadPressure()
     if(ok)
         return out/1000.0; //convert to kTorr
 
-    emit logMessage(QString("Could not parse reply to pressure query. Response: %1").arg(QString(resp)),BlackChirp::LogError);
+    emit logMessage(QString("Could not parse reply to pressure query. Response: %1").arg(QString(resp)),LogHandler::Error);
     emit hardwareFailure();
     return -1.0;
 }
@@ -225,7 +225,7 @@ void Mks946::hwSetPressureControlMode(bool enabled)
 {
     if(!isConnected())
     {
-        emit logMessage(QString("Cannot set pressure control mode due to a previous communication failure. Reconnect and try again."),BlackChirp::LogError);
+        emit logMessage(QString("Cannot set pressure control mode due to a previous communication failure. Reconnect and try again."),LogHandler::Error);
         return;
     }
 
@@ -234,14 +234,14 @@ void Mks946::hwSetPressureControlMode(bool enabled)
         //first ensure recipe 1 is active
         if(!mksWrite(QString("RCP!1")))
         {
-            emit logMessage(d_errorString,BlackChirp::LogError);
+            emit logMessage(d_errorString,LogHandler::Error);
             emit hardwareFailure();
             return;
         }
 
         if(!mksWrite(QString("RRCP!1")))
         {
-            emit logMessage(d_errorString,BlackChirp::LogError);
+            emit logMessage(d_errorString,LogHandler::Error);
             emit hardwareFailure();
             return;
         }
@@ -252,21 +252,21 @@ void Mks946::hwSetPressureControlMode(bool enabled)
         //ensure pressure sensor is set to control channel
         if(!mksWrite(QString("RPCH!%1").arg(chNames.at(get(pressureChannel,5)-1))))
         {
-            emit logMessage(d_errorString,BlackChirp::LogError);
+            emit logMessage(d_errorString,LogHandler::Error);
             emit hardwareFailure();
             return;
         }
 
         if(!mksWrite(QString("RDCH!Rat")))
         {
-            emit logMessage(d_errorString,BlackChirp::LogError);
+            emit logMessage(d_errorString,LogHandler::Error);
             emit hardwareFailure();
             return;
         }
 
         if(!mksWrite(QString("PID!ON")))
         {
-            emit logMessage(d_errorString,BlackChirp::LogError);
+            emit logMessage(d_errorString,LogHandler::Error);
             emit hardwareFailure();
             return;
         }
@@ -275,7 +275,7 @@ void Mks946::hwSetPressureControlMode(bool enabled)
     {
         if(!mksWrite(QString("PID!OFF")))
         {
-            emit logMessage(d_errorString,BlackChirp::LogError);
+            emit logMessage(d_errorString,LogHandler::Error);
             emit hardwareFailure();
             return;
         }
@@ -294,7 +294,7 @@ int Mks946::hwReadPressureControlMode()
     else if(resp.contains(QByteArray("OFF")))
         return 0;
     else
-        emit logMessage(QString("Received invalid response to pressure control mode query. Response: %1").arg(QString(resp)),BlackChirp::LogError);
+        emit logMessage(QString("Received invalid response to pressure control mode query. Response: %1").arg(QString(resp)),LogHandler::Error);
 
     return -1;
 

@@ -4,40 +4,44 @@
 #include <QObject>
 #include <QString>
 #include <QFile>
-
-#include <data/datastructs.h>
-#include <data/experiment/experiment.h>
+#include <QDateTime>
 
 class LogHandler : public QObject
 {
     Q_OBJECT
 public:
+    enum MessageCode {
+        Normal,
+        Warning,
+        Error,
+        Highlight,
+        Debug
+    };
+    Q_ENUM(MessageCode)
+
     explicit LogHandler(bool logToFile = true, QObject *parent = 0);
     ~LogHandler();
 
-    static QString formatForDisplay(QString text, BlackChirp::LogMessageCode type, QDateTime t = QDateTime::currentDateTime());
-    static QString formatForFile(QString text, BlackChirp::LogMessageCode type, QDateTime t = QDateTime::currentDateTime());
+    static QString formatForDisplay(const QString text, MessageCode type, QDateTime t = QDateTime::currentDateTime());
+    static QString formatForFile(const QString text, MessageCode type, QDateTime t = QDateTime::currentDateTime());
 
 signals:
 	//sends the formatted messages to the UI
-	void sendLogMessage(const QString);
-    void iconUpdate(BlackChirp::LogMessageCode);
+    void sendLogMessage(QString);
+    void iconUpdate(LogHandler::MessageCode);
 
 public slots:
 	//access functions for transmitting messages to UI
-    void logMessage(const QString text, const BlackChirp::LogMessageCode type=BlackChirp::LogNormal);
-    void logMessageWithTime(const QString text, const BlackChirp::LogMessageCode type=BlackChirp::LogNormal, QDateTime t = QDateTime::currentDateTime());
+    void logMessage(const QString text, const MessageCode type=Normal);
+    void logMessageWithTime(const QString text, const MessageCode type=Normal, QDateTime t = QDateTime::currentDateTime());
     void beginExperimentLog(int num, QString msg);
     void endExperimentLog();
-    void experimentLogMessage(int num, QString text, BlackChirp::LogMessageCode type = BlackChirp::LogNormal, QString path = QString(""));
 
 private:
-    QFile d_logFile;
-    QFile d_exptLog;
-    int d_currentMonth;
-    bool d_logToFile;
+    int d_currentExperimentNum{-1};
+    bool d_logToFile{true};
 
-    void writeToFile(const QString text, const BlackChirp::LogMessageCode type, QDateTime t = QDateTime::currentDateTime());
+    void writeToFile(const QString text, const MessageCode type, QDateTime t = QDateTime::currentDateTime());
     QString makeLogFileName();
 
 

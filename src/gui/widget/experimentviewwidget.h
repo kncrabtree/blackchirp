@@ -19,7 +19,7 @@ public:
     QSize sizeHint() const;
 
 signals:
-    void logMessage(QString msg, BlackChirp::LogMessageCode t = BlackChirp::LogNormal);
+    void logMessage(QString msg, LogHandler::MessageCode t = LogHandler::Normal);
 
 private:
     std::unique_ptr<Experiment> pu_experiment;
