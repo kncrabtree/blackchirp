@@ -33,6 +33,7 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
     setWindowFlags(Qt::Window);
     setWindowTitle(QString("Experiment %1").arg(num));
     setAttribute(Qt::WA_DeleteOnClose);
+    setWindowIcon(QIcon(QString(":/icons/bc_logo_small.png")));
 
 
     QVBoxLayout *vbl = new QVBoxLayout;

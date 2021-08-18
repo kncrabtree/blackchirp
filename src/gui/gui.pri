@@ -20,7 +20,7 @@ SOURCES += $$PWD/mainwindow.cpp \
    $$PWD/widget/experimentsummarywidget.cpp \
     $$PWD/widget/experimentviewwidget.cpp \
     $$PWD/widget/ftmwdigitizerconfigwidget.cpp \
-    $$PWD/widget/ftmwplotconfigwidget.cpp \
+    $$PWD/widget/ftmwplottoolbar.cpp \
     $$PWD/widget/ftmwprocessingtoolbar.cpp \
     $$PWD/widget/ftmwviewwidget.cpp \
     $$PWD/widget/gascontrolwidget.cpp \
@@ -70,7 +70,7 @@ HEADERS += $$PWD/mainwindow.h \
    $$PWD/widget/experimentsummarywidget.h \
     $$PWD/widget/experimentviewwidget.h \
     $$PWD/widget/ftmwdigitizerconfigwidget.h \
-    $$PWD/widget/ftmwplotconfigwidget.h \
+    $$PWD/widget/ftmwplottoolbar.h \
     $$PWD/widget/ftmwprocessingtoolbar.h \
     $$PWD/widget/ftmwviewwidget.h \
     $$PWD/widget/gascontrolwidget.h \

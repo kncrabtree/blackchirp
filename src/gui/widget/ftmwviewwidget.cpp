@@ -17,13 +17,13 @@
 
 FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     QWidget(parent),
-    ui(new Ui::FtmwViewWidget), d_currentExptNum(-1), d_currentSegment(-1), d_mode(Live), d_path(path)
+    ui(new Ui::FtmwViewWidget), d_currentExptNum(-1), d_currentSegment(-1), d_path(path)
 {
     ui->setupUi(this);
 
     p_pfw = nullptr;
 
-    d_currentProcessingSettings = ui->processingWidget->getSettings();
+    d_currentProcessingSettings = ui->processingToolBar->getSettings();
 
     d_workerIds << d_liveId << d_mainId << d_plot1Id << d_plot2Id;
 
@@ -64,30 +64,18 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
         ps.fidPlot->blockSignals(false);
     }
 
-    connect(ui->processingWidget,&FtmwProcessingToolBar::settingsUpdated,this,&FtmwViewWidget::updateProcessingSettings);
-    connect(ui->processingAct,&QAction::triggered,ui->processingWidget,&FtmwProcessingToolBar::setVisible);
+    connect(ui->processingToolBar,&FtmwProcessingToolBar::settingsUpdated,this,&FtmwViewWidget::updateProcessingSettings);
+    connect(ui->processingAct,&QAction::triggered,ui->processingToolBar,&FtmwProcessingToolBar::setVisible);
 
-    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::frameChanged,[this](int v){changeFrame(1,v);});
-    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::segmentChanged,[this](int v){changeSegment(1,v);});
-    connect(ui->plot1ConfigWidget,&FtmwPlotConfigWidget::backupChanged,[this](int v){changeBackup(1,v);});
-    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::frameChanged,[this](int v){changeFrame(2,v);});
-    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::segmentChanged,[this](int v){changeSegment(2,v);});
-    connect(ui->plot2ConfigWidget,&FtmwPlotConfigWidget::backupChanged,[this](int v){changeBackup(2,v);});
+    connect(ui->plotAction,&QAction::triggered,ui->plotToolBar,&FtmwPlotToolBar::setVisible);
+    connect(ui->plotToolBar,&FtmwPlotToolBar::mainPlotSettingChanged,this,&FtmwViewWidget::updateMainPlot);
+    connect(ui->plotToolBar,&FtmwPlotToolBar::plotSettingChanged,this,&FtmwViewWidget::updatePlotSetting);
 
+    ui->processingToolBar->setEnabled(false);
+    ui->plotToolBar->setEnabled(false);
 
-    connect(ui->liveAction,&QAction::triggered,this,[=]() { modeChanged(Live); });
-    connect(ui->ft1Action,&QAction::triggered,this,[=]() { modeChanged(FT1); });
-    connect(ui->ft2Action,&QAction::triggered,this,[=]() { modeChanged(FT2); });
-    connect(ui->ft12DiffAction,&QAction::triggered,this,[=]() { modeChanged(FT1mFT2); });
-    connect(ui->ft21DiffAction,&QAction::triggered,this,[=]() { modeChanged(FT2mFT1); });
-    connect(ui->usAction,&QAction::triggered,this,[=]() { modeChanged(UpperSB); });
-    connect(ui->lsAction,&QAction::triggered,this,[=]() { modeChanged(LowerSB); });
-    connect(ui->bsAction,&QAction::triggered,this,[=]() { modeChanged(BothSB); });
 
     connect(ui->peakFindAction,&QAction::triggered,this,&FtmwViewWidget::launchPeakFinder);
-
-    connect(ui->minFtSegBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),this,&FtmwViewWidget::updateSidebandFreqs);
-    connect(ui->maxFtSegBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),this,&FtmwViewWidget::updateSidebandFreqs);
 
     connect(ui->averagesSpinbox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::changeRollingAverageShots,Qt::UniqueConnection);
     connect(ui->resetAveragesButton,&QPushButton::clicked,this,&FtmwViewWidget::resetRollingAverage,Qt::UniqueConnection);
@@ -110,9 +98,6 @@ FtmwViewWidget::~FtmwViewWidget()
 
 void FtmwViewWidget::prepareForExperiment(const Experiment &e)
 {
-
-
-
     if(p_pfw != nullptr)
     {
         p_pfw->close();
@@ -131,12 +116,11 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
 //    ui->peakFindWidget->prepareForExperiment(e);
 
     ui->liveFtPlot->prepareForExperiment(e);
-    ui->processingWidget->prepareForExperient(e);
+    ui->processingToolBar->prepareForExperient(e);
+    ui->plotToolBar->prepareForExperiment(e);
     ui->ftPlot1->prepareForExperiment(e);
     ui->ftPlot2->prepareForExperiment(e);
     ui->mainFtPlot->prepareForExperiment(e);
-    ui->plot1ConfigWidget->prepareForExperiment(e);
-    ui->plot2ConfigWidget->prepareForExperiment(e);
 
     d_currentSegment = 0;
     for(auto &[key,ps] : d_plotStatus)
@@ -178,50 +162,12 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         ui->liveFidPlot->show();
         ui->liveFtPlot->show();
 
-        ui->liveAction->setEnabled(true);
-
         ui->averagesSpinbox->blockSignals(true);
         ui->averagesSpinbox->setValue(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up ? e.ftmwConfig()->d_objective : 0);
         ui->averagesSpinbox->blockSignals(false);
 
         ui->resetAveragesButton->setEnabled(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up);
         ui->averagesSpinbox->setEnabled(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up);
-
-        auto chirpOffsetRange = e.ftmwConfig()->d_rfConfig.calculateChirpAbsOffsetRange();
-        if(chirpOffsetRange.first < 0.0)
-            chirpOffsetRange.first = 0.0;
-        if(chirpOffsetRange.second < 0.0)
-            chirpOffsetRange.second = e.ftmwConfig()->ftNyquistMHz();
-
-        ui->minFtSegBox->blockSignals(true);
-        ui->minFtSegBox->setRange(0.0,e.ftmwConfig()->ftNyquistMHz());
-        ui->minFtSegBox->setValue(chirpOffsetRange.first);
-        ui->minFtSegBox->blockSignals(false);
-
-        ui->maxFtSegBox->blockSignals(true);
-        ui->maxFtSegBox->setRange(0.0,e.ftmwConfig()->ftNyquistMHz());
-        ui->maxFtSegBox->setValue(chirpOffsetRange.second);
-        ui->maxFtSegBox->blockSignals(false);
-
-        if(e.ftmwConfig()->d_type == FtmwConfig::LO_Scan)
-        {
-//            d_mode = BothSB;
-            ui->bsAction->setEnabled(true);
-            ui->usAction->setEnabled(true);
-            ui->lsAction->setEnabled(true);
-            ui->minFtSegBox->setEnabled(true);
-            ui->maxFtSegBox->setEnabled(true);
-            ui->bsAction->trigger();
-        }
-        else
-        {
-            ui->liveAction->trigger();
-            ui->bsAction->setEnabled(false);
-            ui->usAction->setEnabled(false);
-            ui->lsAction->setEnabled(false);
-            ui->minFtSegBox->setEnabled(false);
-            ui->maxFtSegBox->setEnabled(false);
-        }
 
         d_liveTimerId = startTimer(500);
     }
@@ -253,19 +199,7 @@ void FtmwViewWidget::updateLiveFidList()
             {
                 if(d_currentSegment == ps.segment && ps.frame < fl.size())
                 {
-                    bool processFid = true;
-                    if(key == d_plot1Id)
-                    {
-                        if(ui->plot1ConfigWidget->viewingBackup())
-                            processFid = false;
-                    }
-                    else if(key == d_plot2Id)
-                    {
-                        if(ui->plot2ConfigWidget->viewingBackup())
-                            processFid = false;
-                    }
-
-                    if(processFid)
+                    if(!ui->plotToolBar->viewingBackup(key))
                     {
                         auto f = fl.at(ps.frame);
                         ps.fid = f;
@@ -289,11 +223,11 @@ void FtmwViewWidget::updateProcessingSettings(FtWorker::FidProcessingSettings s)
     //skip main plot because it will be updated when menu is closed
     d_currentProcessingSettings = s;
     QList<int> ignore;
-    switch(d_mode)
+    switch(ui->plotToolBar->mainPlotMode())
     {
-    case UpperSB:
-    case LowerSB:
-    case BothSB:
+    case FtmwPlotToolBar::Upper_SideBand:
+    case FtmwPlotToolBar::Lower_SideBand:
+    case FtmwPlotToolBar::Both_SideBands:
         ignore << d_mainId;
     default:
         break;
@@ -312,38 +246,21 @@ void FtmwViewWidget::updateProcessingSettings(FtWorker::FidProcessingSettings s)
     reprocess(ignore);
 }
 
-void FtmwViewWidget::changeFrame(int id, int frameNum)
+void FtmwViewWidget::updatePlotSetting(int id)
 {
     auto it = d_plotStatus.find(id);
     if(it != d_plotStatus.end())
     {
-        it->second.frame = frameNum;
-        updateFid(id);
-    }
-}
-
-void FtmwViewWidget::changeSegment(int id, int segmentNum)
-{
-    auto it = d_plotStatus.find(id);
-    if(it != d_plotStatus.end())
-    {
-        it->second.segment = segmentNum;
-        updateFid(id);
-    }
-}
-
-void FtmwViewWidget::changeBackup(int id, int backupNum)
-{
-    auto it = d_plotStatus.find(id);
-    if(it != d_plotStatus.end())
-    {
-        it->second.backup = backupNum;
+        it->second.segment = ui->plotToolBar->segment(id);
+        it->second.frame = ui->plotToolBar->frame(id);
+        it->second.backup = ui->plotToolBar->backup(id);
         updateFid(id);
     }
 }
 
 void FtmwViewWidget::fidLoadComplete(int id)
 {
+#pragma message("Sideband processing here")
     auto &ps = d_plotStatus[id];
     if(ps.loadWhenDone)
     {
@@ -385,18 +302,16 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
         ps.fidPlot->setCursor(Qt::CrossCursor);
         ps.ftPlot->setCursor(Qt::CrossCursor);
 
-        switch(d_mode) {
-        case Live:
-        case FT1:
-        case FT2:
-        case FT1mFT2:
-        case FT2mFT1:
+        switch(ui->plotToolBar->mainPlotMode()) {
+        case FtmwPlotToolBar::Live:
+        case FtmwPlotToolBar::FT1:
+        case FtmwPlotToolBar::FT2:
+        case FtmwPlotToolBar::FT1_minus_FT2:
+        case FtmwPlotToolBar::FT2_minus_FT1:
             updateMainPlot();
             break;
         default:
-            if(workerId == d_plot1Id && ui->plot1ConfigWidget->viewingBackup() && ui->mainPlotFollowSpinBox->value() == 1)
-                updateMainPlot();
-            else if(workerId == d_plot2Id && ui->plot2ConfigWidget->viewingBackup() && ui->mainPlotFollowSpinBox->value() == 2)
+            if(ui->plotToolBar->viewingBackup(workerId) && ui->plotToolBar->mainPlotFollow() == workerId)
                 updateMainPlot();
             break;
         }
@@ -440,35 +355,35 @@ void FtmwViewWidget::updateMainPlot()
     if(!ui->mainFtPlot->currentFt().isEmpty())
         ui->peakFindAction->setEnabled(true);
 
-    switch(d_mode) {
-    case Live:
+    switch(ui->plotToolBar->mainPlotMode()) {
+    case FtmwPlotToolBar::Live:
         ui->mainFtPlot->newFt(d_plotStatus[d_liveId].ft);
         if(p_pfw != nullptr)
             p_pfw->newFt(d_plotStatus[d_liveId].ft);
         break;
-    case FT1:
+    case FtmwPlotToolBar::FT1:
         ui->mainFtPlot->newFt(d_plotStatus[d_plot1Id].ft);
         if(p_pfw != nullptr)
             p_pfw->newFt(d_plotStatus[d_plot1Id].ft);
         break;
-    case FT2:
+    case FtmwPlotToolBar::FT2:
         ui->mainFtPlot->newFt(d_plotStatus[d_plot2Id].ft);
         if(p_pfw != nullptr)
             p_pfw->newFt(d_plotStatus[d_plot2Id].ft);
         break;
-    case FT1mFT2:
+    case FtmwPlotToolBar::FT1_minus_FT2:
         processDiff(d_plotStatus[d_plot1Id].fid,d_plotStatus[d_plot2Id].fid);
         break;
-    case FT2mFT1:
+    case FtmwPlotToolBar::FT2_minus_FT1:
         processDiff(d_plotStatus[d_plot2Id].fid,d_plotStatus[d_plot1Id].fid);
         break;
-    case UpperSB:
+    case FtmwPlotToolBar::Upper_SideBand:
         processSideband(RfConfig::UpperSideband);
         break;
-    case LowerSB:
+    case FtmwPlotToolBar::Lower_SideBand:
         processSideband(RfConfig::LowerSideband);
         break;
-    case BothSB:
+    case FtmwPlotToolBar::Both_SideBands:
         processBothSidebands();
         break;
     }
@@ -540,9 +455,10 @@ void FtmwViewWidget::processSideband(RfConfig::Sideband sb)
     {
         FidList fl;
 
-        int id = d_plot1Id;
-        if(ui->mainPlotFollowSpinBox->value() == 2)
-            id = d_plot2Id;
+#pragma message("Here")
+//        int id = d_plot1Id;
+//        if(ui->mainPlotFollowSpinBox->value() == 2)
+//            id = d_plot2Id;
 
 
 #pragma message("Rework sideband processing so that it's not monolithic")
@@ -574,9 +490,12 @@ void FtmwViewWidget::processBothSidebands()
     else
     {
         FidList fl;
-        int id = d_plot1Id;
-        if(ui->mainPlotFollowSpinBox->value() == 2)
-            id = d_plot2Id;
+
+#pragma message("Here")
+//        int id = d_plot1Id;
+//        if(ui->mainPlotFollowSpinBox->value() == 2)
+//            id = d_plot2Id;
+
 
 //        auto n = p_fidStorage->d_numRecords;
 //        for(int i=0; i<n; i++)
@@ -597,26 +516,15 @@ void FtmwViewWidget::processBothSidebands()
     }
 }
 
-void FtmwViewWidget::updateSidebandFreqs()
-{
-    if(d_mode == BothSB || d_mode == UpperSB || d_mode == LowerSB)
-        reprocess(QList<int>{d_liveId,d_plot1Id,d_plot2Id});
-}
-
-void FtmwViewWidget::modeChanged(MainPlotMode newMode)
-{
-    d_mode = newMode;
-    updateMainPlot();
-}
-
 void FtmwViewWidget::updateBackups()
 {
     if(d_currentExptNum < 1)
         return;
 
     int n = ps_fidStorage->numBackups();
-    ui->plot1ConfigWidget->newBackup(n);
-    ui->plot2ConfigWidget->newBackup(n);
+#pragma message("Here")
+//    ui->plot1ConfigWidget->newBackup(n);
+//    ui->plot2ConfigWidget->newBackup(n);
 }
 
 void FtmwViewWidget::experimentComplete()
@@ -639,11 +547,7 @@ void FtmwViewWidget::experimentComplete()
             d_workersStatus[d_liveId].worker = nullptr;
         }
 
-        if(d_mode == Live)
-            ui->ft1Action->trigger();
-
-        ui->liveAction->setEnabled(false);
-
+        ui->plotToolBar->experimentComplete();
 
         updateFid(d_plot1Id);
         updateFid(d_plot2Id);

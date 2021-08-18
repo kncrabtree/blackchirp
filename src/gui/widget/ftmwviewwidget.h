@@ -29,7 +29,7 @@
 #include <gui/plot/fidplot.h>
 #include <gui/plot/ftplot.h>
 #include <gui/widget/ftmwprocessingtoolbar.h>
-#include <gui/widget/ftmwplotconfigwidget.h>
+#include <gui/widget/ftmwplottoolbar.h>
 
 class QThread;
 class FtmwSnapshotWidget;
@@ -43,17 +43,7 @@ class FtmwViewWidget : public QWidget
 {
     Q_OBJECT
 public:
-    enum MainPlotMode {
-        Live,
-        FT1,
-        FT2,
-        FT1mFT2,
-        FT2mFT1,
-        UpperSB,
-        LowerSB,
-        BothSB
-    };
-    Q_ENUM(MainPlotMode)
+
 
     explicit FtmwViewWidget(QWidget *parent = 0, QString path = QString(""));
     ~FtmwViewWidget();
@@ -62,9 +52,7 @@ public:
 public slots:
     void updateLiveFidList();
     void updateProcessingSettings(FtWorker::FidProcessingSettings s);
-    void changeFrame(int id, int frameNum);
-    void changeSegment(int id, int segmentNum);
-    void changeBackup(int id, int backupNum);
+    void updatePlotSetting(int id);
 
     void fidLoadComplete(int id);
     void fidProcessed(const QVector<QPointF> fidData, int workerId);
@@ -76,9 +64,7 @@ public slots:
     void processDiff(const Fid f1, const Fid f2);
     void processSideband(RfConfig::Sideband sb);
     void processBothSidebands();
-    void updateSidebandFreqs();
 
-    void modeChanged(MainPlotMode newMode);
     void updateBackups();
     void experimentComplete();
 
@@ -97,7 +83,6 @@ private:
     int d_currentExptNum;
     int d_currentSegment;
     int d_liveTimerId;
-    MainPlotMode d_mode;
 
     struct WorkerStatus {
         FtWorker *worker;
@@ -121,7 +106,7 @@ private:
     QList<int> d_workerIds;
     QHash<int,WorkerStatus> d_workersStatus;
     std::map<int,PlotStatus> d_plotStatus;
-    PeakFindWidget *p_pfw;
+    PeakFindWidget *p_pfw{nullptr};
     QString d_path;
     const int d_liveId = 0, d_mainId = 3, d_plot1Id = 1, d_plot2Id = 2;
     const QString d_shotsString = QString("Shots: %1");
@@ -156,18 +141,9 @@ public:
     FtPlot *mainFtPlot;
     QToolBar *toolBar;
     QAction *processingAct;
-    FtmwProcessingToolBar *processingWidget;
-    QAction *liveAction;
-    QAction *ft1Action;
-    QAction *ft2Action;
-    QAction *ft12DiffAction;
-    QAction *ft21DiffAction;
-    QAction *usAction;
-    QAction *lsAction;
-    QAction *bsAction;
-    QSpinBox *mainPlotFollowSpinBox;
-    FtmwPlotConfigWidget *plot1ConfigWidget;
-    FtmwPlotConfigWidget *plot2ConfigWidget;
+    FtmwProcessingToolBar *processingToolBar;
+    QAction *plotAction;
+    FtmwPlotToolBar *plotToolBar;
     QSpinBox *averagesSpinbox;
     QPushButton *resetAveragesButton;
     QDoubleSpinBox *minFtSegBox;
@@ -264,108 +240,15 @@ public:
         processingAct =toolBar->addAction(QIcon(QString(":/icons/labplot-xy-fourier-transform-curve.svg")),QString("FID Processing Settings"));
         processingAct->setCheckable(true);
 
-        processingWidget = new FtmwProcessingToolBar(FtmwViewWidget);
-        processingWidget->setVisible(false);
-        processingWidget->setMovable(true);
-        processingWidget->setFloatable(true);
+        processingToolBar = new FtmwProcessingToolBar(FtmwViewWidget);
+        processingToolBar->setVisible(false);
 
 
-        auto mainModeAct = toolBar->addAction(QIcon(QString(":/icons/view-media-visualization.svg")),QString("Main Plot Mode"));
-        auto mmaButton = dynamic_cast<QToolButton*>(toolBar->widgetForAction(mainModeAct));
-        auto mmaMenu = new QMenu;
-        auto mmaag = new QActionGroup(mmaMenu);
-        mmaag->setExclusive(true);
+        plotAction = toolBar->addAction(QIcon(QString(":/icons/view-media-visualization.svg")),QString("Plot Settings"));
+        plotAction->setCheckable(true);
 
-        liveAction = mmaMenu->addAction(QString("Live"));
-        liveAction->setCheckable(true);
-        mmaag->addAction(liveAction);
-
-        ft1Action = mmaMenu->addAction(QString("FT 1"));
-        ft1Action->setCheckable(true);
-        mmaag->addAction(ft1Action);
-
-        ft2Action = mmaMenu->addAction(QString("FT 2"));
-        ft2Action->setCheckable(true);
-        mmaag->addAction(ft2Action);
-
-        ft12DiffAction = mmaMenu->addAction(QString("FT 1 - FT 2"));
-        ft12DiffAction->setCheckable(true);
-        mmaag->addAction(ft12DiffAction);
-
-        ft21DiffAction = mmaMenu->addAction(QString("FT 2 - FT 1"));
-        ft21DiffAction->setCheckable(true);
-        mmaag->addAction(ft21DiffAction);
-
-        usAction = mmaMenu->addAction(QString("Upper Sideband"));
-        usAction->setCheckable(true);
-        mmaag->addAction(usAction);
-
-        lsAction = mmaMenu->addAction(QString("Lower Sideband"));
-        lsAction->setCheckable(true);
-        mmaag->addAction(lsAction);
-
-        bsAction = mmaMenu->addAction(QString("Both Sidebands"));
-        bsAction->setCheckable(true);
-        mmaag->addAction(bsAction);
-
-        auto flwWa = new QWidgetAction(mmaMenu);
-        auto flwW = new QWidget;
-        auto flwFl = new QFormLayout;
-        mainPlotFollowSpinBox = new QSpinBox;
-        mainPlotFollowSpinBox->setRange(1,2);
-        mainPlotFollowSpinBox->setToolTip(QString("When not mirroring another plot or calculating a simple difference, the main plot needs to know what frame, segment, or backup to look at.\n\n(e.g., when plotting the sideband spectra in LO Scan mode). Settings will be taken from the selected plot"));
-
-        auto flwL = new QLabel("Frame/Seg/Backup Follow Plot");
-        flwL->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
-
-        flwFl->addRow(flwL,mainPlotFollowSpinBox);
-
-        minFtSegBox = new QDoubleSpinBox;
-        minFtSegBox->setRange(0.0,100.0);
-        minFtSegBox->setDecimals(3);
-        minFtSegBox->setSuffix(QString(" MHz"));
-        minFtSegBox->setKeyboardTracking(false);
-        minFtSegBox->setToolTip(QString("Minimum offset frequency included in sideband deconvilution algorithm."));
-
-        flwFl->addRow(QString("Sideband Start"),minFtSegBox);
-
-        maxFtSegBox = new QDoubleSpinBox;
-        maxFtSegBox->setRange(0.0,100.0);
-        maxFtSegBox->setDecimals(3);
-        maxFtSegBox->setValue(100.0);
-        maxFtSegBox->setSuffix(QString(" MHz"));
-        maxFtSegBox->setKeyboardTracking(false);
-        maxFtSegBox->setToolTip(QString("Maximum offset frequency included in sideband deconvilution algorithm."));
-
-        flwFl->addRow(QString("Sideband End"),maxFtSegBox);
-
-        flwW->setLayout(flwFl);
-        flwWa->setDefaultWidget(flwW);
-        mmaMenu->addAction(flwWa);
-
-        mmaButton->setMenu(mmaMenu);
-        mmaButton->setPopupMode(QToolButton::InstantPopup);
-
-        auto plot1Action = toolBar->addAction(QIcon(":/icons/plot1.svg"),QString("Plot 1 Options"));
-        auto plot1Button = dynamic_cast<QToolButton*>(toolBar->widgetForAction(plot1Action));
-        auto plot1Menu = new QMenu;
-        auto plot1wa = new QWidgetAction(plot1Menu);
-        plot1ConfigWidget = new FtmwPlotConfigWidget;
-        plot1wa->setDefaultWidget(plot1ConfigWidget);
-        plot1Menu->addAction(plot1wa);
-        plot1Button->setMenu(plot1Menu);
-        plot1Button->setPopupMode(QToolButton::InstantPopup);
-
-
-        auto plot2Action = toolBar->addAction(QIcon(":/icons/plot2.svg"),QString("Plot 2 Options"));
-        auto plot2Button = dynamic_cast<QToolButton*>(toolBar->widgetForAction(plot2Action));
-        auto plot2Menu = new QMenu;
-        auto plot2wa = new QWidgetAction(plot2Menu);
-        plot2ConfigWidget = new FtmwPlotConfigWidget;
-        plot2wa->setDefaultWidget(plot2ConfigWidget);
-        plot2Menu->addAction(plot2wa);
-        plot2Button->setMenu(plot2Menu);
-        plot2Button->setPopupMode(QToolButton::InstantPopup);
+        plotToolBar = new FtmwPlotToolBar(FtmwViewWidget);
+        plotToolBar->setVisible(false);
 
         auto peakupAction = toolBar->addAction(QIcon(":/icons/averaging.svg"),QString("Peak Up Options"));
         auto peakupButton = dynamic_cast<QToolButton*>(toolBar->widgetForAction(peakupAction));
@@ -401,7 +284,8 @@ public:
 
         auto vbl = new QVBoxLayout;
         vbl->addWidget(toolBar,0);
-        vbl->addWidget(processingWidget,0);
+        vbl->addWidget(processingToolBar,0);
+        vbl->addWidget(plotToolBar,0);
         vbl->addWidget(exptLabel,0);
         vbl->addWidget(splitter,1);
         FtmwViewWidget->setLayout(vbl);

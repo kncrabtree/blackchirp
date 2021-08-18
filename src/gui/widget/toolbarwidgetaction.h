@@ -144,7 +144,7 @@ public:
         }
     }
 
-    void setEnabled(T key, bool enabled = true) {
+    void setItemEnabled(T key, bool enabled = true) {
         auto it = d_items.find(key);
         if(it != d_items.end())
             it->second->setEnabled(enabled);
@@ -172,6 +172,16 @@ public:
 
     QWidget *_createWidget(QWidget *parent) override;
 
+};
+
+class LabelWidgetAction : public ToolBarWidgetAction
+{
+    Q_OBJECT
+public:
+    LabelWidgetAction(const QString label, QWidget *parent = nullptr) :
+        ToolBarWidgetAction(label,parent) {}
+
+    QWidget *_createWidget(QWidget *parent) override { return new QWidget(parent); }
 };
 
 #endif // TOOLBARWIDGETACTION_H

@@ -113,14 +113,13 @@ FtWorker::FidProcessingSettings FtmwProcessingToolBar::getSettings()
 
 void FtmwProcessingToolBar::prepareForExperient(const Experiment &e)
 {
-    setEnabled(e.ftmwEnabled());
-
     if(e.ftmwEnabled())
     {
         p_startBox->setRange(0.0,e.ftmwConfig()->fidDurationUs());
         p_endBox->setRange(0.0,e.ftmwConfig()->fidDurationUs());
     }
 
+    setEnabled(e.ftmwEnabled());
 }
 
 void FtmwProcessingToolBar::readSettings()
