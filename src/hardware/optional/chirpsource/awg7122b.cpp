@@ -73,7 +73,7 @@ bool AWG7122B::prepareForExperiment(Experiment &exp)
 
     if(wfmName.startsWith(QChar('!')))
     {
-        exp.setErrorString(wfmName.mid(1));
+        exp.d_errorString = wfmName.mid(1);
         emit hardwareFailure();
         return false;
     }

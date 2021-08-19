@@ -44,7 +44,7 @@ bool Valon5015::prepareClock(Experiment &exp)
         auto resp = valonQueryCmd(QString("LOCK?\r"));
         if(resp.contains("not locked"))
         {
-            exp.setErrorString(QString("Could not lock %1 to external reference.").arg(d_name));
+            exp.d_errorString = QString("Could not lock to external reference.");
             return false;
         }
     }
@@ -55,7 +55,7 @@ bool Valon5015::prepareClock(Experiment &exp)
         auto resp = valonQueryCmd(QString("LOCK?\r"));
         if(resp.contains("not locked"))
         {
-            exp.setErrorString(QString("Could not lock %1 to internal reference.").arg(d_name));
+            exp.d_errorString = QString("Could not lock to internal reference.");
             return false;
         }
     }

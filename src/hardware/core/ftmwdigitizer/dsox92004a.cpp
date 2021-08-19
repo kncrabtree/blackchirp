@@ -3,25 +3,44 @@
 #include <QTcpSocket>
 #include <QTimer>
 
+using namespace BC::Key::FtmwScope;
+using namespace BC::Key::Digi;
+
 DSOx92004A::DSOx92004A(QObject *parent) :
     FtmwScope(BC::Key::FtmwScope::dsox92004a,BC::Key::FtmwScope::dsox92004aName,CommunicationProtocol::Tcp,parent)
 {
-    setDefault(BC::Key::FtmwScope::blockAverage,true);
-    setDefault(BC::Key::FtmwScope::multiRecord,true);
-    setDefault(BC::Key::FtmwScope::summaryRecord,false);
-    setDefault(BC::Key::FtmwScope::multiBlock,false); setDefault(BC::Key::FtmwScope::bandwidth,20000.0);
+    setDefault(numAnalogChannels,4);
+    setDefault(numDigitalChannels,0);
+    setDefault(hasAuxTriggerChannel,true);
+    setDefault(minFullScale,5e-2);
+    setDefault(maxFullScale,2.0);
+    setDefault(minVOffset,-2.0);
+    setDefault(maxVOffset,2.0);
+    setDefault(isTriggered,true);
+    setDefault(minTrigDelay,-10.0);
+    setDefault(maxTrigDelay,10.0);
+    setDefault(minTrigLevel,-5.0);
+    setDefault(maxTrigLevel,5.0);
+    setDefault(maxRecordLength,100000000);
+    setDefault(canBlockAverage,true);
+    setDefault(maxAverages,100);
+    setDefault(canMultiRecord,true);
+    setDefault(maxRecords,100);
+    setDefault(multiBlock,false);
+    setDefault(maxBytes,2);
+    setDefault(bandwidth,20000.0);
 
-    if(!containsArray(BC::Key::FtmwScope::sampleRates))
-        setArray(BC::Key::FtmwScope::sampleRates,{
-                     {{BC::Key::FtmwScope::srText,"1 GSa/s"},{BC::Key::FtmwScope::srValue,1e9}},
-                     {{BC::Key::FtmwScope::srText,"1.25 GSa/s"},{BC::Key::FtmwScope::srValue,1.25e9}},
-                     {{BC::Key::FtmwScope::srText,"2 GSa/s"},{BC::Key::FtmwScope::srValue,2e9}},
-                     {{BC::Key::FtmwScope::srText,"2.5 GSa/s"},{BC::Key::FtmwScope::srValue,2.5e9}},
-                     {{BC::Key::FtmwScope::srText,"4 GSa/s"},{BC::Key::FtmwScope::srValue,4e9}},
-                     {{BC::Key::FtmwScope::srText,"10 GSa/s"},{BC::Key::FtmwScope::srValue,10e9}},
-                     {{BC::Key::FtmwScope::srText,"20 GSa/s"},{BC::Key::FtmwScope::srValue,20e9}},
-                     {{BC::Key::FtmwScope::srText,"40 GSa/s"},{BC::Key::FtmwScope::srValue,40e9}},
-                     {{BC::Key::FtmwScope::srText,"80 GSa/s"},{BC::Key::FtmwScope::srValue,80e9}}
+    if(!containsArray(sampleRates))
+        setArray(sampleRates,{
+                     {{srText,"1 GSa/s"},{srValue,1e9}},
+                     {{srText,"1.25 GSa/s"},{srValue,1.25e9}},
+                     {{srText,"2 GSa/s"},{srValue,2e9}},
+                     {{srText,"2.5 GSa/s"},{srValue,2.5e9}},
+                     {{srText,"4 GSa/s"},{srValue,4e9}},
+                     {{srText,"10 GSa/s"},{srValue,10e9}},
+                     {{srText,"20 GSa/s"},{srValue,20e9}},
+                     {{srText,"40 GSa/s"},{srValue,40e9}},
+                     {{srText,"80 GSa/s"},{srValue,80e9}}
                  });
 }
 
@@ -64,7 +83,7 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
     if(!d_enabledForExperiment)
         return true;
 
-    static_cast<FtmwDigitizerConfig>(*this) = exp.ftmwConfig()->d_scopeConfig;
+    auto &config = exp.ftmwConfig()->d_scopeConfig;
 
     //disable ugly headers
     if(!scopeCommand(QString("*RST;:SYSTEM:HEADER OFF")))
@@ -73,30 +92,31 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
     if(!scopeCommand(QString(":DISPLAY:MAIN OFF")))
         return false;
 
-    if(!scopeCommand(QString(":CHANNEL%1:DISPLAY ON").arg(config.fidChannel)))
+    if(!scopeCommand(QString(":CHANNEL%1:DISPLAY ON").arg(config.d_fidChannel)))
         return false;
 
-    if(!scopeCommand(QString(":CHANNEL%1:INPUT DC50").arg(config.fidChannel)))
+    if(!scopeCommand(QString(":CHANNEL%1:INPUT DC50").arg(config.d_fidChannel)))
         return false;
 
-    if(!scopeCommand(QString(":CHANNEL%1:OFFSET 0").arg(config.fidChannel)))
+    if(!scopeCommand(QString(":CHANNEL%1:OFFSET 0").arg(config.d_fidChannel)))
         return false;
 
-    if(!scopeCommand(QString(":CHANNEL%1:SCALE %2").arg(config.fidChannel).arg(QString::number(config.vScale,'e',3))))
+    if(!scopeCommand(QString(":CHANNEL%1:SCALE %2").arg(config.d_fidChannel)
+                     .arg(QString::number(config.d_analogChannels[config.d_fidChannel].fullScale/5.0,'e',3))))
         return false;
 
     //trigger settings
     QString slope = QString("POS");
-    if(config.slope == BlackChirp::FallingEdge)
+    if(config.d_triggerSlope == FallingEdge)
         slope = QString("NEG");
     QString trigCh = QString("AUX");
-    if(config.trigChannel > 0)
-        trigCh = QString("CHAN%1").arg(config.trigChannel);
+    if(config.d_triggerLevel > 0)
+        trigCh = QString("CHAN%1").arg(config.d_triggerChannel);
 
     if(!scopeCommand(QString(":TRIGGER:SWEEP TRIGGERED")))
         return false;
 
-    if(!scopeCommand(QString(":TRIGGER:LEVEL %1,%2").arg(trigCh).arg(config.trigLevel,0,'f',3)))
+    if(!scopeCommand(QString(":TRIGGER:LEVEL %1,%2").arg(trigCh).arg(config.d_triggerLevel,0,'f',3)))
         return false;
 
     if(!scopeCommand(QString(":TRIGGER:MODE EDGE")))
@@ -118,7 +138,7 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
     //Data transfer stuff. LSBFirst is faster, and we'll use 2 bytes because averaging
     //will probably be done
     //write data transfer commands
-    if(!scopeCommand(QString(":WAVEFORM:SOURCE CHAN%1").arg(config.fidChannel)))
+    if(!scopeCommand(QString(":WAVEFORM:SOURCE CHAN%1").arg(config.d_fidChannel)))
         return false;
 
     if(!scopeCommand(QString(":WAVEFORM:BYTEORDER LSBFIRST")))
@@ -130,23 +150,17 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
     if(!scopeCommand(QString(":WAVEFORM:STREAMING ON")))
         return false;
 
-    config.byteOrder = DigitizerConfig::BigEndian;
-    config.bytesPerPoint = 2;
+    config.d_byteOrder = BigEndian;
+    config.d_bytesPerPoint = 2;
 
-
-    //calculate y multipliers and x spacing, since this scope will not
-    //update those until after waveforms have been acquired
-    config.yMult = config.vScale*10.0/32768.0;
-    config.xIncr = 1.0/config.sampleRate;
-    config.yOff = 0;
 
     //now the fast frame/segmented stuff
-    if(config.fastFrameEnabled)
+    if(config.d_multiRecord)
     {
         if(!scopeCommand(QString(":ACQUIRE:MODE SEGMENTED")))
             return false;
 
-        if(!scopeCommand(QString(":ACQUIRE:SEGMENTED:COUNT %1").arg(config.numFrames)))    
+        if(!scopeCommand(QString(":ACQUIRE:SEGMENTED:COUNT %1").arg(config.d_numRecords)))
             return false;
 
         if(!scopeCommand(QString(":WAVEFORM:SEGMENTED:ALL ON")))    
@@ -155,38 +169,31 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
     }
     else
     {
-
-        config.numFrames = 1;
-
         if(!scopeCommand(QString(":ACQUIRE:MODE RTIME")))
             return false;
     }
 
     //block averaging...
-    if(config.blockAverageEnabled)
+    if(config.d_blockAverage)
     {
         if(!scopeCommand(QString(":ACQUIRE:AVERAGE ON")))
             return false;
 
-        if(!scopeCommand(QString(":ACQUIRE:COUNT %1").arg(config.numAverages)))    
+        if(!scopeCommand(QString(":ACQUIRE:COUNT %1").arg(config.d_blockAverage)))
             return false;
-
-        config.blockAverageMultiply = true;
     }
-    else
-        config.numAverages = 1;
 
     //sample rate and point settings
     if(!scopeCommand(QString(":ACQUIRE:SRATE:ANALOG:AUTO OFF")))
         return false;
 
-    if(!scopeCommand(QString(":ACQUIRE:SRATE:ANALOG %1").arg(QString::number(config.sampleRate,'g',2))))
+    if(!scopeCommand(QString(":ACQUIRE:SRATE:ANALOG %1").arg(QString::number(config.d_sampleRate,'g',2))))
         return false;
 
     if(!scopeCommand(QString(":ACQUIRE:POINTS:AUTO OFF")))
         return false;
 
-    if(!scopeCommand(QString(":ACQUIRE:POINTS:ANALOG %1").arg(config.recordLength)))
+    if(!scopeCommand(QString(":ACQUIRE:POINTS:ANALOG %1").arg(config.d_recordLength)))
         return false;
 
 
@@ -207,7 +214,7 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
 
     //verify that FID channel was set correctly
     QByteArray resp = p_comm->queryCmd(QString(":WAVEFORM:SOURCE?\n"));
-    if(resp.isEmpty() || !resp.contains(QString("CHAN%1").arg(config.fidChannel).toLatin1()))
+    if(resp.isEmpty() || !resp.contains(QString("CHAN%1").arg(config.d_fidChannel).toLatin1()))
     {
         emit logMessage(QString("Failed to set FID channel. Response to waveform source query: %1 (Hex: %2)")
                         .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
@@ -215,7 +222,7 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
     }
 
     //read actual offset and vertical scale
-    resp = p_comm->queryCmd(QString(":CHAN%1:OFFSET?\n").arg(config.fidChannel));
+    resp = p_comm->queryCmd(QString(":CHAN%1:OFFSET?\n").arg(config.d_fidChannel));
     if(!resp.isEmpty())
     {
         bool ok = false;
@@ -226,14 +233,14 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
                             .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
             return false;
         }
-        config.vOffset = offset;
+        config.d_analogChannels[d_fidChannel].offset = offset;
     }
     else
     {
         emit logMessage(QString("Gave an empty response to offset query."),LogHandler::Error);
         return false;
     }
-    resp = p_comm->queryCmd(QString(":CHAN%1:SCALE?\n").arg(config.fidChannel));
+    resp = p_comm->queryCmd(QString(":CHAN%1:SCALE?\n").arg(config.d_fidChannel));
     if(!resp.isEmpty())
     {
         bool ok = false;
@@ -244,11 +251,11 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
                             .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
             return false;
         }
-        if(!(fabs(config.vScale-scale) < 0.01))
-            emit logMessage(QString("Vertical scale is different than specified. Target: %1 V/div, Scope setting: %2 V/div")
-                            .arg(QString::number(config.vScale,'f',3))
-                            .arg(QString::number(scale,'f',3)),LogHandler::Warning);
-        config.vScale = scale;
+        if(!(fabs(config.d_analogChannels[d_fidChannel].fullScale-scale*5.0) < 0.01))
+            emit logMessage(QString("Vertical scale is different than specified. Target: %1 V, Scope setting: %2 V")
+                            .arg(QString::number(config.d_analogChannels[d_fidChannel].fullScale,'f',3))
+                            .arg(QString::number(scale*5.0,'f',3)),LogHandler::Warning);
+        config.d_analogChannels[d_fidChannel].fullScale = scale*5.0;
     }
     else
     {
@@ -268,14 +275,14 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
                             .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
             return false;
         }
-        if(!(fabs(sRate - config.sampleRate)<1e6))
+        if(!(fabs(sRate - config.d_sampleRate)<1e6))
         {
             emit logMessage(QString("Could not set sample rate successfully. Target: %1 GS/s, Scope setting: %2 GS/s")
-                            .arg(QString::number(config.sampleRate/1e9,'f',3))
+                            .arg(QString::number(config.d_sampleRate/1e9,'f',3))
                             .arg(QString::number(sRate/1e9,'f',3)),LogHandler::Error);
             return false;
         }
-        config.sampleRate = sRate;
+        config.d_sampleRate = sRate;
     }
     else
     {
@@ -294,12 +301,13 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
                             .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
             return false;
         }
-        if(!(abs(recLength-config.recordLength) < 1000))
+        if(!(abs(recLength-config.d_recordLength) < 1000))
         {
-            emit logMessage(QString("Record length limited by scope memory. Length will be different than requested. Target: %1, Scope setting: %2").arg(QString::number(config.recordLength))
+            emit logMessage(QString("Record length limited by scope memory. Length will be different than requested. Target: %1, Scope setting: %2")
+                            .arg(QString::number(config.d_recordLength))
                             .arg(QString::number(recLength)),LogHandler::Warning);
         }
-        config.recordLength = recLength;
+        config.d_recordLength = recLength;
     }
     else
     {
@@ -324,8 +332,7 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
         return false;
     }
 
-    d_configuration = config;
-    exp.setScopeConfig(config);
+    static_cast<FtmwDigitizerConfig>(*this) = config;
     d_acquiring = false;
 
     return true;
@@ -377,7 +384,7 @@ void DSOx92004A::readWaveform()
 
 void DSOx92004A::retrieveData()
 {
-    qint64 bytes = d_configuration.bytesPerPoint*d_configuration.recordLength*d_configuration.numFrames;
+    qint64 bytes = d_bytesPerPoint*d_recordLength*d_numRecords;
 
     if(p_socket->bytesAvailable() < bytes+2)
         return;

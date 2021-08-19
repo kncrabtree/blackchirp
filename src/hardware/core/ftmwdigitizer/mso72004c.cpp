@@ -1,6 +1,7 @@
 #include "mso72004c.h"
 
 #include <QTcpSocket>
+#include <QThread>
 #include <math.h>
 
 using namespace BC::Key::FtmwScope;
@@ -92,7 +93,8 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
     if(!d_enabledForExperiment)
         return true;
 
-    static_cast<FtmwDigitizerConfig>(*this) = exp.ftmwConfig()->d_scopeConfig;
+    auto &config = exp.ftmwConfig()->d_scopeConfig;
+
     disconnect(p_socket,&QTcpSocket::readyRead,this,&MSO72004C::readWaveform);
 
     //disable ugly headers
@@ -103,7 +105,7 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
     }
 
     //write data transfer commands
-    if(!p_comm->writeCmd(QString(":DATA:SOURCE CH%1;START 1;STOP 1E12\n").arg(config.fidChannel)))
+    if(!p_comm->writeCmd(QString(":DATA:SOURCE CH%1;START 1;STOP 1E12\n").arg(config.d_fidChannel)))
     {
         emit logMessage(QString("Could not write :DATA commands."),LogHandler::Error);
         return false;
@@ -115,22 +117,24 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
 
     //verify that FID channel was set correctly
     QByteArray resp = scopeQueryCmd(QString(":DATA:SOURCE?\n"));
-    if(resp.isEmpty() || !resp.contains(QString("CH%1").arg(config.fidChannel).toLatin1()))
+    if(resp.isEmpty() || !resp.contains(QString("CH%1").arg(config.d_fidChannel).toLatin1()))
     {
-        emit logMessage(QString("Failed to set FID channel. Response to data source query: %1 (Hex: %2)")
-                        .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
+        emit logMessage(QString("Failed to set FID channel. Response to data source query: %1 (Hex: %2)").
+                        arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
         return false;
     }
 
-    if(!p_comm->writeCmd(QString(":CH%1:BANDWIDTH:ENHANCED OFF; :CH%1:BANDWIDTH 1.6E+10; COUPLING AC;POSITION 0;OFFSET 0;SCALE %2\n")
-                         .arg(config.fidChannel).arg(QString::number(config.vScale,'e',3))))
+    if(!p_comm->writeCmd(QString("CH%1:BANDWIDTH:ENHANCED OFF; CH%1:BANDWIDTH 1.6+10; COUPLING AC;OFFSET %2;SCALE %3\n")
+                         .arg(config.d_fidChannel)
+                         .arg(QString::number(config.d_analogChannels[config.d_fidChannel].offset,'g',4))
+                         .arg(QString::number(config.d_analogChannels[config.d_fidChannel].fullScale/5.0,'g',4))))
     {
         emit logMessage(QString("Failed to write channel settings."),LogHandler::Error);
         return false;
     }
 
     //read actual offset and vertical scale
-    resp = scopeQueryCmd(QString(":CH%1:OFFSET?\n").arg(config.fidChannel));
+    resp = scopeQueryCmd(QString(":CH%1:OFFSET?\n").arg(config.d_fidChannel));
     if(!resp.isEmpty())
     {
         bool ok = false;
@@ -142,14 +146,15 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
 
             return false;
         }
-        config.vOffset = offset;
+        config.d_analogChannels[config.d_fidChannel].offset = offset;
     }
     else
     {
         emit logMessage(QString("Gave an empty response to offset query."),LogHandler::Error);
         return false;
     }
-    resp = scopeQueryCmd(QString(":CH%1:SCALE?\n").arg(config.fidChannel));
+
+    resp = scopeQueryCmd(QString(":CH%1:SCALE?\n").arg(config.d_fidChannel));
     if(!resp.isEmpty())
     {
         bool ok = false;
@@ -160,10 +165,11 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
                             .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
             return false;
         }
-        if(!(fabs(config.vScale-scale) < 0.01))
-            emit logMessage(QString("Vertical scale is different than specified. Target: %1 V/div, Scope setting: %2 V/div").arg(QString::number(config.vScale,'f',3))
-                            .arg(QString::number(scale,'f',3)),LogHandler::Warning);
-        config.vScale = scale;
+        if(!(fabs(config.d_analogChannels[config.d_fidChannel].fullScale/5.0-scale) < 0.01))
+            emit logMessage(QString("Vertical full scale is different than specified. Target: %1 V, Scope setting: %2 V")
+                            .arg(QString::number(config.d_analogChannels[config.d_fidChannel].fullScale/5.0,'f',3))
+                            .arg(QString::number(scale*5.0,'f',3)),LogHandler::Warning);
+        config.d_analogChannels[config.d_fidChannel].fullScale = scale*5.0;
     }
     else
     {
@@ -173,7 +179,7 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
 
     //horizontal settings
     if(!p_comm->writeCmd(QString(":HORIZONTAL:MODE MANUAL;:HORIZONTAL:DELAY:MODE ON;:HORIZONTAL:DELAY:POSITION 0;:HORIZONTAL:DELAY:TIME %1;:HORIZONTAL:MODE:SAMPLERATE %2;RECORDLENGTH %3\n")
-                         .arg(QString::number(config.trigDelay,'g',6)).arg(QString::number(config.sampleRate,'g',6)).arg(config.recordLength)))
+                         .arg(QString::number(config.d_triggerDelayUSec,'g',6)).arg(QString::number(config.d_sampleRate,'g',6)).arg(config.d_recordLength)))
     {
         emit logMessage(QString("Could not apply horizontal settings."),LogHandler::Error);
         return false;
@@ -191,14 +197,14 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
                             .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
             return false;
         }
-        if(!(fabs(sRate - config.sampleRate)<1e6))
+        if(!(fabs(sRate - config.d_sampleRate)<1e6))
         {
             emit logMessage(QString("Could not set sample rate successfully. Target: %1 GS/s, Scope setting: %2 GS/s")
-                            .arg(QString::number(config.sampleRate/1e9,'f',3))
+                            .arg(QString::number(config.d_sampleRate/1e9,'f',3))
                             .arg(QString::number(sRate/1e9,'f',3)),LogHandler::Error);
             return false;
         }
-        config.sampleRate = sRate;
+        config.d_sampleRate = sRate;
     }
     else
     {
@@ -216,20 +222,18 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
                             .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
             return false;
         }
-        if(!(abs(recLength-config.recordLength) < 1000))
+        if(!(abs(recLength-config.d_recordLength) < 1000))
         {
             emit logMessage(QString("Could not set record length successfully! Target: %1, Scope setting: %2")
-                            .arg(QString::number(config.recordLength))
+                            .arg(QString::number(config.d_recordLength))
                             .arg(QString::number(recLength)),LogHandler::Error);
-
             return false;
         }
-        config.recordLength = recLength;
+        config.d_recordLength = recLength;
     }
     else
     {
         emit logMessage(QString("Gave an empty response to record length query."),LogHandler::Error);
-
         return false;
     }
     resp = scopeQueryCmd(QString(":HORIZONTAL:DELAY:TIME?\n"));
@@ -243,14 +247,14 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
                             .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
             return false;
         }
-        if(!qFuzzyCompare(1.0+delay,1.0+config.trigDelay))
+        if(fabs(delay-config.d_triggerDelayUSec) > 1e-6)
         {
             emit logMessage(QString("Could not set trigger delay successfully! Target: %1, Scope setting: %2")
-                            .arg(QString::number(config.trigDelay))
+                            .arg(QString::number(config.d_triggerDelayUSec))
                             .arg(QString::number(delay)),LogHandler::Error);
             return false;
         }
-        config.trigDelay = delay;
+        config.d_triggerDelayUSec = delay;
     }
     else
     {
@@ -259,7 +263,7 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
     }
 
     //fast frame settings
-    if(!config.fastFrameEnabled)
+    if(!config.d_multiRecord && !config.d_blockAverage)
     {
         resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:STATE OFF;STATE?\n"));
         if(!resp.isEmpty())
@@ -280,8 +284,8 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
     }
     else
     {
-        //enable fastframe; verify
-        resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:STATE ON;STATE?\n"));
+        //enable fastframe and disable summary frame; verify
+        resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:STATE ON;SUM NONE;STATE?\n"));
         if(!resp.isEmpty())
         {
             bool ok = false;
@@ -310,16 +314,15 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
                 return false;
             }
 
-            //cap requested number of frames if it is greater than max
-            int numFrames = config.numFrames;
-            if(config.summaryFrame)
-                numFrames++;
+            int numFrames = qMax(config.d_numRecords,config.d_numAverages);
+            if(config.d_blockAverage)
+                maxFrames -= 2; //note: if summary frame enabled, need to reserve 2 frames worth of memory
 
             if(maxFrames < numFrames)
             {
-                emit logMessage(QString("Requested number of Fast frames (%1) is greater than maximum possible value with the requested acquisition settings (%2). Setting number of frames to %2.")
-                                .arg(config.numFrames).arg(maxFrames),LogHandler::Warning);
-                numFrames = maxFrames;
+                emit logMessage(QString("Requested number of Fast frames (%1) is greater than maximum possible value with the requested acquisition settings (%2).")
+                                .arg(numFrames).arg(maxFrames),LogHandler::Error);
+                return false;
             }
 
             resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:COUNT %1;COUNT?\n").arg(numFrames));
@@ -335,12 +338,9 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
                 }
                 if(n != numFrames)
                 {
-                    emit logMessage(QString("Requested number of FastFrames (%1) is different than actual number (%2). %2 frames will be acquired.").arg(numFrames).arg(n));
+                    emit logMessage(QString("Requested number of FastFrames (%1) is different than actual number (%2).").arg(numFrames).arg(n));
+                    return false;
                 }
-                if(config.summaryFrame)
-                    config.numFrames = n-1;
-                else
-                    config.numFrames = n;
             }
             else
             {
@@ -349,7 +349,7 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
             }
 
             QString sumfConfig = QString("AVE");
-            if(!config.summaryFrame)
+            if(!config.d_blockAverage)
                 sumfConfig = QString("NON");
             resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:SUMFRAME %1;SUMFRAME?\n").arg(sumfConfig));
             if(!resp.isEmpty())
@@ -366,12 +366,13 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
                 emit logMessage(QString("Gave an empty response to FastFrame summary frame query."),LogHandler::Error);
                 return false;
             }
-            if(config.summaryFrame)
+
+            if(config.d_blockAverage)
             {
                 //this forces the scope to only return the final frame, which is the summary frame
                 if(!p_comm->writeCmd(QString(":DATA:FRAMESTART 100000;FRAMESTOP 100000\n")))
                 {
-                    emit logMessage(QString("Could not configure summary frame."),LogHandler::Error);     
+                    emit logMessage(QString("Could not configure summary frame."),LogHandler::Error);
                     return false;
                 }
             }
@@ -387,23 +388,23 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
         }
         else
         {
-            emit logMessage(QString("Gave an empty response to FastFrame max frames query."),LogHandler::Error);   
+            emit logMessage(QString("Gave an empty response to FastFrame max frames query."),LogHandler::Error);
             return false;
         }
     }
 
     //trigger settings
     QString slope = QString("RIS");
-    if(config.slope == BlackChirp::FallingEdge)
+    if(config.d_triggerSlope == FallingEdge)
         slope = QString("FALL");
     QString trigCh = QString("AUX");
-    if(config.trigChannel > 0)
-        trigCh = QString("CH%1").arg(config.trigChannel);
-
-    resp = scopeQueryCmd(QString(":TRIGGER:A:EDGE:SOURCE %1;COUPLING DC;SLOPE %2;:TRIGGER:A:LEVEL %3;:TRIGGER:A:EDGE:SOURCE?;SLOPE?\n").arg(trigCh).arg(slope).arg(config.trigLevel,0,'f',3));
+    if(config.d_triggerChannel > 0)
+        trigCh = QString("CH%1").arg(config.d_triggerChannel);
+    resp = scopeQueryCmd(QString(":TRIGGER:A:EDGE:SOURCE %1;COUPLING DC;SLOPE %2;:TRIGGER:A:LEVEL %3;:TRIGGER:A:EDGE:SOURCE?;SLOPE?\n")
+                         .arg(trigCh).arg(slope).arg(config.d_triggerLevel,0,'f',3));
     if(!resp.isEmpty())
     {
-        if(!QString(resp).contains(trigCh),Qt::CaseInsensitive)
+        if(!QString(resp).contains(trigCh,Qt::CaseInsensitive))
         {
             emit logMessage(QString("Could not verify trigger channel. Response: %1 (Hex: %2)")
                             .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
@@ -424,7 +425,22 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
     }
 
     //set waveform output settings
-    if(!p_comm->writeCmd(QString(":WFMOUTPRE:ENCDG BIN;BN_FMT RI;BYT_OR LSB;BYT_NR %1\n").arg(config.bytesPerPoint)))
+    if(config.d_blockAverage)
+    {
+        if(config.d_bytesPerPoint != 2)
+            emit logMessage("Settting bytes per point to 2 for averaging",LogHandler::Warning);
+        config.d_bytesPerPoint = 2;
+        resp = p_comm->queryCmd(QString(":HORIZONTAL:FASTFRAME:SIXTEENBIT ON;SIXTEENBIT?\n"));
+        if(!resp.contains("1"))
+        {
+            emit logMessage("Could not configure scope for 16-bit summary frame",LogHandler::Error);
+            return false;
+        }
+    }
+    else
+        p_comm->writeCmd(QString(":HORIZONTAL:FASTFRAME:SIXTEENBIT OFF\n"));
+
+    if(!p_comm->writeCmd(QString(":WFMOUTPRE:ENCDG BIN;BN_FMT RI;BYT_OR LSB;BYT_NR %1\n").arg(config.d_bytesPerPoint)))
     {
         emit logMessage(QString("Could not send waveform output commands."),LogHandler::Error);
         return false;
@@ -438,24 +454,30 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
     }
 
     //force a trigger event to update these settings
-    if(config.fastFrameEnabled)
+    if(config.d_multiRecord || config.d_blockAverage)
     {
-        for(int i=0;i<config.numFrames;i++)
+        auto numFrames = qMax(config.d_numRecords,config.d_numAverages);
+        for(int i=0;i<numFrames;i++)
+        {
             p_comm->writeCmd(QString(":TRIGGER FORCE\n"));
+            QThread::msleep(2);
+        }
     }
     else
+    {
         p_comm->writeCmd(QString(":TRIGGER FORCE\n"));
+        QThread::msleep(2);
+    }
 
     //read certain output settings from scope
-    resp = scopeQueryCmd(QString(":WFMOUTPRE:ENCDG?;BN_FMT?;BYT_OR?;NR_FR?;NR_PT?;YMULT?;YOFF?;XINCR?;BYT_NR?\n"));
+    resp = scopeQueryCmd(QString(":WFMOUTPRE:ENCDG?;BN_FMT?;BYT_OR?;NR_FR?;NR_PT?;BYT_NR?\n"));
     if(!resp.isEmpty())
     {
         QStringList l = QString(resp.trimmed()).split(QChar(';'),QString::SkipEmptyParts);
-        if(l.size() != 9)
+        if(l.size() < 6)
         {
             emit logMessage(QString("Could not parse response to waveform output settings query. Response: %1 (Hex: %2)")
                             .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
-
             return false;
         }
 
@@ -480,18 +502,18 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
                             .arg(l.at(2)).arg(QString(l.at(2).toLatin1().toHex())),LogHandler::Error);
             return false;
         }
-        config.byteOrder = DigitizerConfig::LittleEndian;
+        config.d_byteOrder = DigitizerConfig::LittleEndian;
 
         //verify number of frames
-        if(config.fastFrameEnabled && !config.summaryFrame && l.at(3).toInt() != config.numFrames)
+        if(d_multiRecord && (l.at(3).toInt() != config.d_numRecords))
         {
             emit logMessage(QString("Waveform contains the wrong number of frames. Target: %1, Actual: %2. Response: %3 (Hex: %4)")
-                            .arg(config.numFrames).arg(l.at(3).toInt()).arg(l.at(3)).arg(QString(l.at(3).toLatin1().toHex())),LogHandler::Error);
+                            .arg(config.d_numRecords).arg(l.at(3).toInt()).arg(l.at(3)).arg(QString(l.at(3).toLatin1().toHex())),LogHandler::Error);
             return false;
         }
-        else if (config.summaryFrame && l.at(3).toInt() != 1)
+        else if (l.at(3).toInt() != 1)
         {
-            emit logMessage(QString("Waveform contains the wrong number of frames. Target: 1 summary frame, Actual: %1. Response: %2 (Hex: %3)")
+            emit logMessage(QString("Waveform contains the wrong number of frames. Target: 1. Actual: %1. Response: %2 (Hex: %3)")
                             .arg(l.at(3).toInt()).arg(l.at(3)).arg(QString(l.at(3).toLatin1().toHex())),LogHandler::Error);
             return false;
         }
@@ -504,57 +526,26 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
                             .arg(l.at(4)).arg(QString(l.at(4).toLatin1().toHex())),LogHandler::Error);
             return false;
         }
-        if(recLen != config.recordLength)
+        if(recLen != config.d_recordLength)
         {
             emit logMessage(QString("Record length is %1. Requested value was %2. Proceeding with %1 samples.")
-                            .arg(recLen).arg(config.recordLength),LogHandler::Warning);
-            config.recordLength = recLen;
+                            .arg(recLen).arg(config.d_recordLength),LogHandler::Warning);
+            config.d_recordLength = recLen;
         }
-        //get y multiplier
-        double ym = l.at(5).toDouble(&ok);
-        if(!ok)
-        {
-            emit logMessage(QString("Could not parse waveform Y multiplier response. Response: %1 (Hex: %2)")
-                            .arg(l.at(5)).arg(QString(l.at(5).toLatin1().toHex())),LogHandler::Error);
-            return false;
-        }
-        config.yMult = ym;
-        //get y offset
-        double yo = l.at(6).toDouble(&ok);
-        if(!ok)
-        {
-            emit logMessage(QString("Could not parse waveform Y offset response. Response: %1 (Hex: %2)")
-                            .arg(l.at(6)).arg(QString(l.at(6).toLatin1().toHex())),LogHandler::Error);
-            return false;
-        }
-        config.yOff = (int)round(yo);
-        //get x increment
-        double xi = l.at(7).toDouble(&ok);
-        if(!ok)
-        {
-            emit logMessage(QString("Could not parse waveform X increment response. Response: %1 (Hex: %2)")
-                            .arg(l.at(7)).arg(QString(l.at(7).toLatin1().toHex())),LogHandler::Error);
-            return false;
-        }
-        config.xIncr = xi;
         //verify byte number
-        int bpp = l.at(8).toInt(&ok);
-        if(!ok || bpp < 1 || bpp > 2)
+        int bpp = l.at(5).mid(0,1).toInt(&ok);
+        if(!ok || bpp != config.d_bytesPerPoint)
         {
             emit logMessage(QString("Invalid response to bytes per point query. Response: %1 (Hex: %2)")
                             .arg(l.at(8)).arg(QString(l.at(8).toLatin1().toHex())),LogHandler::Error);
             return false;
         }
-        config.bytesPerPoint = bpp;
     }
 
-    d_configuration = config;
-    exp.setScopeConfig(config);
+    static_cast<FtmwDigitizerConfig>(*this) = config;
 
     if(p_socket->bytesAvailable())
         p_socket->readAll();
-
-
 
     return true;
 }
@@ -679,10 +670,10 @@ void MSO72004C::readWaveform()
             QByteArray wfmBytes = p_socket->read(d_headerNumBytes);
             bool ok = false;
             int b = wfmBytes.toInt(&ok);
-            int nf = d_configuration.numFrames;
-            if(d_configuration.summaryFrame || !d_configuration.fastFrameEnabled)
-                nf = 1;
-            if(!ok || b != d_configuration.recordLength*d_configuration.bytesPerPoint*nf)
+            int nf = 1;
+            if(d_multiRecord)
+                nf = d_numRecords;
+            if(!ok || b != d_recordLength*d_bytesPerPoint*nf)
             {
                 //it's possible that we're in the middle of an old waveform by fluke.
                 //continue looking for '#'
