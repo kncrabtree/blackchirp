@@ -1,6 +1,8 @@
 #ifndef ZOOMPANPLOT_H
 #define ZOOMPANPLOT_H
 
+#include <QFutureWatcher>
+
 #include <qwt6/qwt_plot.h>
 #include <qwt6/qwt_symbol.h>
 #include <qwt6/qwt_plot_grid.h>
@@ -11,6 +13,7 @@
 class QMenu;
 class CustomTracker;
 class BlackchirpPlotCurve;
+class QMutex;
 
 
 namespace BC::Key {
@@ -116,6 +119,9 @@ protected:
 private:
     PlotConfig d_config;
     int getAxisIndex(QwtPlot::Axis a);
+    QFutureWatcher<void> *p_watcher;
+    bool d_busy{false};
+    QMutex *p_mutex;
 
     // QWidget interface
 public:

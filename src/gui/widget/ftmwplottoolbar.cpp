@@ -143,6 +143,16 @@ void FtmwPlotToolBar::experimentComplete()
     p_mainPlotBox->setItemEnabled(Live,false);
 }
 
+void FtmwPlotToolBar::newBackup(int n)
+{
+    for(auto &[key,box] : d_backup)
+    {
+        Q_UNUSED(key)
+        box->setMaximum(n);
+        box->setEnabled(true);
+    }
+}
+
 FtmwPlotToolBar::MainPlotMode FtmwPlotToolBar::mainPlotMode() const
 {
     return p_mainPlotBox->value();

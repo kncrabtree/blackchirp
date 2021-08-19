@@ -1,9 +1,11 @@
 #include "blackchirpplotcurve.h"
 
 #include <QPalette>
+#include <QMutex>
 
 BlackchirpPlotCurve::BlackchirpPlotCurve(const QString key, const QString title, Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker) :
-    SettingsStorage({BC::Key::bcCurve,key},General), d_key{key}
+    SettingsStorage({BC::Key::bcCurve,key},General), d_key{key},
+    p_samplesMutex{new QMutex}, p_dataMutex{new QMutex}
 {
     if(!title.isEmpty())
         setTitle(title);
@@ -25,6 +27,12 @@ BlackchirpPlotCurve::BlackchirpPlotCurve(const QString key, const QString title,
             get<QwtPlot::Axis>(BC::Key::bcCurveAxisY,QwtPlot::yLeft));
     setVisible(get<bool>(BC::Key::bcCurveVisible,true));
 
+}
+
+BlackchirpPlotCurve::~BlackchirpPlotCurve()
+{
+    delete p_samplesMutex;
+    delete p_dataMutex;
 }
 
 void BlackchirpPlotCurve::setColor(const QColor c)
@@ -60,20 +68,27 @@ void BlackchirpPlotCurve::setMarkerSize(int s)
 
 void BlackchirpPlotCurve::setCurveData(const QVector<QPointF> d)
 {
-    d_data = d;
+    p_dataMutex->lock();
+    d_curveData = d;
+
     d_boundingRect = QRectF(1.0,1.0,-2.0,-2.0);
 
     if(!d.isEmpty())
     {
         d_boundingRect.setLeft(qMin(d.first().x(),d.last().x()));
         d_boundingRect.setRight(qMax(d.first().x(),d.last().x()));
+
+        p_dataMutex->unlock();
         calcBoundingRectHeight();
     }
+    p_dataMutex->unlock();
 }
 
 void BlackchirpPlotCurve::setCurveData(const QVector<QPointF> d, double min, double max)
 {
-    d_data = d;
+    QMutexLocker l(p_dataMutex);
+    d_curveData = d;
+
     if(!d.isEmpty())
     {
         d_boundingRect.setLeft(qMin(d.first().x(),d.last().x()));
@@ -83,20 +98,22 @@ void BlackchirpPlotCurve::setCurveData(const QVector<QPointF> d, double min, dou
         d_boundingRect.setBottom(max);
         d_boundingRect.setTop(min);
     }
+
 }
 
 void BlackchirpPlotCurve::appendPoint(const QPointF p)
 {
-    d_data.append(p);
-    if(d_data.size() == 1)
+    QMutexLocker l(p_dataMutex);
+    d_curveData.append(p);
+    if(d_curveData.size() == 1)
     {
         d_boundingRect.setTopLeft(p);
         d_boundingRect.setBottomRight(p);
     }
     else
     {
-        d_boundingRect.setLeft(qMin(d_data.first().x(),d_data.last().x()));
-        d_boundingRect.setRight(qMax(d_data.first().x(),d_data.last().x()));
+        d_boundingRect.setLeft(qMin(d_curveData.first().x(),d_curveData.last().x()));
+        d_boundingRect.setRight(qMax(d_curveData.first().x(),d_curveData.last().x()));
 
         d_boundingRect.setBottom(qMax(d_boundingRect.bottom(),p.y()));
         d_boundingRect.setBottom(qMin(d_boundingRect.top(),p.y()));
@@ -159,16 +176,18 @@ void BlackchirpPlotCurve::configureSymbol()
 
 void BlackchirpPlotCurve::setSamples(const QVector<QPointF> d)
 {
+    QMutexLocker l(p_samplesMutex);
     QwtPlotCurve::setSamples(d);
+
 }
 
 void BlackchirpPlotCurve::calcBoundingRectHeight()
 {
+    QMutexLocker l(p_dataMutex);
+    auto top = d_curveData.first().y();
+    auto bottom = d_curveData.first().y();
 
-    auto top = d_data.first().y();
-    auto bottom = d_data.first().y();
-
-    for(auto p : d_data)
+    for(auto p : d_curveData)
     {
         top = qMin(p.y(),top);
         bottom = qMax(p.y(),bottom);
@@ -178,35 +197,44 @@ void BlackchirpPlotCurve::calcBoundingRectHeight()
     d_boundingRect.setBottom(bottom);
 }
 
-void BlackchirpPlotCurve::filter()
+void BlackchirpPlotCurve::filter(int w, const QwtScaleMap map)
 {
-    auto p = plot();
-    int w = p->canvas()->width();
+    p_dataMutex->lock();
+    auto size = d_curveData.size();
+    QVector<QPointF> d = d_curveData;
+    d.detach();
 
-    if(d_data.size() < 2.5*w)
+//    d.reserve(size);
+//    for(auto const &p : d_curveData)
+//        d.append({p.x(),p.y()});
+    p_dataMutex->unlock();
+
+    if(size < 2.5*w)
     {
+        p_dataMutex->unlock();
         d_boundingRect = boundingRect();
-        setSamples(d_data);
+        setSamples(d);
         return;
     }
 
-    auto map = p->canvasMap(xAxis());
     double firstPixel = 0.0;
     double lastPixel = w;
 
     QVector<QPointF> filtered;
     filtered.reserve(2*w+2);
 
-    auto start = d_data.cbegin();
-    auto end = d_data.cend();
+    auto start = d.cbegin();
+    auto end = d.cend();
 
     int inc = 1;
-    auto firstx = d_data.first().x();
-    auto lastx = d_data.last().x();
+    auto firstx = d.first().x();
+    auto lastx = d.last().x();
     if(firstx > lastx)
     {
         qSwap(start,end);
         inc = -1;
+        start--;
+        end--;
     }
     auto it = start;
 
@@ -214,7 +242,7 @@ void BlackchirpPlotCurve::filter()
 //    d_boundingRect.setRight(qMax(firstx,lastx));
 
     //find first data point that is in the range of the plot
-    while(map.transform(it->x()) < firstPixel && it != end)
+    while(it != end && map.transform(it->x()) < firstPixel)
         it += inc;
 
     //add the previous point to the filtered array
@@ -263,9 +291,6 @@ void BlackchirpPlotCurve::filter()
             filtered.append({map.invTransform(pixel),max});
         }
 
-//        d_boundingRect.setTop(qMin(d_boundingRect.top(),min));
-//        d_boundingRect.setBottom(qMax(d_boundingRect.bottom(),max));
-
     }
 
     if(it != end)
@@ -278,24 +303,33 @@ void BlackchirpPlotCurve::filter()
 
 QRectF BlackchirpPlotCurve::boundingRect() const
 {
-    if(d_data.isEmpty())
+
+    QMutexLocker l(p_dataMutex);
+    if(d_curveData.isEmpty())
         return QRectF(1.0,1.0,-2.0,-2.0);
 
     if((d_boundingRect.height() > 0.0) && (d_boundingRect.width() > 0.0))
         return d_boundingRect;
 
 
-    auto left = qMin(d_data.first().x(),d_data.last().x());
-    auto right = qMax(d_data.first().x(),d_data.last().x());
+    auto left = qMin(d_curveData.first().x(),d_curveData.last().x());
+    auto right = qMax(d_curveData.first().x(),d_curveData.last().x());
 
-    auto top = d_data.first().y();
-    auto bottom = d_data.first().y();
+    auto top = d_curveData.first().y();
+    auto bottom = d_curveData.first().y();
 
-    for(auto p : d_data)
+    for(auto &p : d_curveData)
     {
         top = qMin(p.y(),top);
         bottom = qMax(p.y(),bottom);
     }
 
     return QRectF( QPointF{left,top},QPointF{right,bottom} );
+}
+
+
+void BlackchirpPlotCurve::draw(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect) const
+{
+    QMutexLocker l(p_samplesMutex);
+    QwtPlotSeriesItem::draw(painter,xMap,yMap,canvasRect);
 }

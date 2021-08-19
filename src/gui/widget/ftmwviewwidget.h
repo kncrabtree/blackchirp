@@ -86,12 +86,13 @@ private:
 
     struct WorkerStatus {
         FtWorker *worker;
-        QThread *thread;
         bool busy;
         bool reprocessWhenDone;
+        QFutureWatcher<void> *p_watcher;
     };
 
     struct PlotStatus {
+        QFutureWatcher<FidList>* p_watcher;
         FidPlot *fidPlot;
         FtPlot *ftPlot;
         Fid fid;
@@ -99,12 +100,11 @@ private:
         int frame{0}; //only used for plot1 and plot2
         int segment{0}; //only used for plot1 and plot2
         int backup{0}; //only used for plot1 and plot2
-        std::unique_ptr<QFutureWatcher<FidList>> pu_watcher{std::make_unique<QFutureWatcher<FidList>>()};
         bool loadWhenDone{false};
     };
 
     QList<int> d_workerIds;
-    QHash<int,WorkerStatus> d_workersStatus;
+    std::map<int,WorkerStatus> d_workersStatus;
     std::map<int,PlotStatus> d_plotStatus;
     PeakFindWidget *p_pfw{nullptr};
     QString d_path;

@@ -28,6 +28,7 @@ public:
     FtmwPlotToolBar(QWidget *parent = nullptr);
     void prepareForExperiment(const Experiment &e);
     void experimentComplete();
+    void newBackup(int n);
 
     MainPlotMode mainPlotMode() const;
     int mainPlotFollow() const;

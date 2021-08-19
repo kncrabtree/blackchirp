@@ -5,6 +5,8 @@
 #include <qwt6/qwt_plot_curve.h>
 #include <qwt6/qwt_symbol.h>
 
+class QMutex;
+
 Q_DECLARE_METATYPE(QwtSymbol::Style)
 Q_DECLARE_METATYPE(QwtPlot::Axis)
 
@@ -29,6 +31,7 @@ public:
     BlackchirpPlotCurve(const QString key, const QString title=QString(""),
                         Qt::PenStyle defaultLineStyle = Qt::SolidLine,
                         QwtSymbol::Style defaultMarker = QwtSymbol::NoSymbol);
+    virtual ~BlackchirpPlotCurve();
 
     void setColor(const QColor c);
     void setLineThickness(double t);
@@ -38,7 +41,7 @@ public:
     void setCurveData(const QVector<QPointF> d);
     void setCurveData(const QVector<QPointF> d, double min, double max);
     void appendPoint(const QPointF p);
-    QVector<QPointF> curveData() const { return d_data; }
+    QVector<QPointF> curveData() const { return d_curveData; }
     QString name() const { return title().text(); }
     QString key() const { return d_key; }
 
@@ -59,12 +62,14 @@ public:
     int plotIndex() const { return get<int>(BC::Key::bcCurvePlotIndex,0); }
 
     void updateFromSettings();
-    void filter();
+    void filter(int w, const QwtScaleMap map);
 
 private:
     const QString d_key;
-    QVector<QPointF> d_data;
+    QVector<QPointF> d_curveData;
     QRectF d_boundingRect;
+    QMutex *p_samplesMutex;
+    QMutex *p_dataMutex;
 
     void configurePen();
     void configureSymbol();
@@ -76,6 +81,10 @@ private:
     // QwtPlotItem interface
 public:
     QRectF boundingRect() const override;
+
+    // QwtPlotItem interface
+public:
+    void draw(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect) const override;
 };
 
 #endif // BLACKCHIRPPLOTCURVE_H

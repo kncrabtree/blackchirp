@@ -15,6 +15,8 @@
 #include <QFileDialog>
 #include <QSaveFile>
 #include <QMessageBox>
+#include <QtConcurrent/QtConcurrent>
+#include <QMutexLocker>
 
 #include <qwt6/qwt_scale_div.h>
 #include <qwt6/qwt_plot_marker.h>
@@ -25,8 +27,10 @@
 
 
 ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),
-    SettingsStorage(name,SettingsStorage::General), d_name(name), d_maxIndex(0)
+    SettingsStorage(name,SettingsStorage::General), d_name(name), d_maxIndex(0), p_mutex{new QMutex}
 {
+    setAutoReplot(false);
+
     //it is important for the axes to be appended in the order of their enum values
     d_config.axisList.append(AxisConfig(QwtPlot::yLeft,BC::Key::left));
     d_config.axisList.append(AxisConfig(QwtPlot::yRight,BC::Key::right));
@@ -74,11 +78,22 @@ ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),
 
     canvas()->installEventFilter(this);
     connect(this,&ZoomPanPlot::plotRightClicked,this,&ZoomPanPlot::buildContextMenu);
+
+    p_watcher = new QFutureWatcher<void>(this);
+    connect(p_watcher,&QFutureWatcher<void>::finished,this,[this](){
+        d_busy = false;
+        QwtPlot::replot();
+        if(d_config.xDirty)
+        {
+            d_busy = true;
+            p_watcher->setFuture(QtConcurrent::run([this](){filterData();}));
+        }
+    },Qt::QueuedConnection);
 }
 
 ZoomPanPlot::~ZoomPanPlot()
 {
-
+    delete p_mutex;
 }
 
 bool ZoomPanPlot::isAutoScale()
@@ -174,6 +189,7 @@ void ZoomPanPlot::replot()
     QwtPlotItemList l = itemList();
     bool bottom = false, top = false, left = false, right = false;
 
+    p_mutex->lock();
     QRectF invalid{1.0,1.0,-2.0,-2.0};
     for(auto &a : d_config.axisList)
         a.boundingRect = invalid;
@@ -274,6 +290,7 @@ void ZoomPanPlot::replot()
             }
         }
     }
+    p_mutex->unlock();
 
     if(redrawXAxis)
     {
@@ -285,10 +302,15 @@ void ZoomPanPlot::replot()
     if(d_config.xDirty)
     {
         d_config.xDirty = false;
-        filterData();
+        if(!d_busy)
+        {
+            d_busy = true;
+            p_watcher->setFuture(QtConcurrent::run([this](){filterData();}));
+        }
     }
+    else
+        QwtPlot::replot();
 
-    QwtPlot::replot();
 }
 
 void ZoomPanPlot::setZoomFactor(QwtPlot::Axis a, double v)
@@ -412,6 +434,24 @@ void ZoomPanPlot::setAxisOverride(QwtPlot::Axis axis, bool override)
 void ZoomPanPlot::filterData()
 {
     auto l = itemList();
+    p_mutex->lock();
+    auto w = canvas()->width();
+    p_mutex->unlock();
+
+    for(auto item : l)
+    {
+        auto c = dynamic_cast<BlackchirpPlotCurve*>(item);
+        if(c)
+        {
+            p_mutex->lock();
+            auto map = canvasMap(c->xAxis());
+            p_mutex->unlock();
+
+            c->filter(w,map);
+        }
+    }
+
+    p_mutex->lock();
     for(int i=0; i<d_config.axisList.size(); ++i)
         d_config.axisList[i].boundingRect = QRectF{ QPointF{1.0,1.0}, QPointF{-2.0,-2.0} };
     for(auto item : l)
@@ -419,7 +459,6 @@ void ZoomPanPlot::filterData()
         auto c = dynamic_cast<BlackchirpPlotCurve*>(item);
         if(c)
         {
-            c->filter();
             auto r = c->boundingRect();
             if(r.width() <= 0.0 || r.height() <= 0.0)
                 continue;
@@ -435,6 +474,7 @@ void ZoomPanPlot::filterData()
                 d_config.axisList[c->xAxis()].boundingRect = r;
         }
     }
+    p_mutex->unlock();
 }
 
 void ZoomPanPlot::resizeEvent(QResizeEvent *ev)
@@ -521,6 +561,7 @@ void ZoomPanPlot::pan(QMouseEvent *me)
     QPoint delta = d_config.panClickPos - me->pos();
     d_config.xDirty = true;
 
+    p_mutex->lock();
     for(auto c : d_config.axisList)
     {
         if(c.override)
@@ -555,6 +596,7 @@ void ZoomPanPlot::pan(QMouseEvent *me)
     }
 
     d_config.panClickPos = me->pos();
+    p_mutex->unlock();
 
     replot();
 }
@@ -576,6 +618,7 @@ void ZoomPanPlot::zoom(QWheelEvent *we)
     //the delta function is in units of 1/8th a degree
     int numSteps = we->angleDelta().y()/8/15;
 
+    p_mutex->lock();
     for(int i=0; i<d_config.axisList.size(); i++)
     {
         const AxisConfig c = d_config.axisList.at(i);
@@ -615,6 +658,9 @@ void ZoomPanPlot::zoom(QWheelEvent *we)
         scaleMin += qAbs(mousePos-scaleMin)*factor*(double)numSteps;
         scaleMax -= qAbs(mousePos-scaleMax)*factor*(double)numSteps;
 
+        if(scaleMin > scaleMax)
+            qSwap(scaleMin,scaleMax);
+
 //        scaleMin = qMax(scaleMin,min);
 //        scaleMax = qMin(scaleMax,max);
 
@@ -626,6 +672,7 @@ void ZoomPanPlot::zoom(QWheelEvent *we)
             setAxisScale(c.type,qMax(min,scaleMin),qMin(max,scaleMax));
         }
     }
+    p_mutex->unlock();
 
     replot();
 }

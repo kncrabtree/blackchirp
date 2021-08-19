@@ -21,8 +21,6 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
 {
     ui->setupUi(this);
 
-    p_pfw = nullptr;
-
     d_currentProcessingSettings = ui->processingToolBar->getSettings();
 
     d_workerIds << d_liveId << d_mainId << d_plot1Id << d_plot2Id;
@@ -30,28 +28,38 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     for(int i=0; i<d_workerIds.size(); i++)
     {
         int id = d_workerIds.at(i);
-        if(id == d_liveId)
-            d_workersStatus.insert(d_liveId, WorkerStatus { nullptr, new QThread(this), false, false} );
-        else
-        {
-            WorkerStatus ws { new FtWorker(id), new QThread(this), false, false};
-            connect(ws.thread,&QThread::finished,ws.worker,&FtWorker::deleteLater);
-            connect(ws.worker,&FtWorker::ftDone,this,&FtmwViewWidget::ftDone);
-            connect(ws.worker,&FtWorker::fidDone,this,&FtmwViewWidget::fidProcessed);
-            if(id == d_mainId)
-                connect(ws.worker,&FtWorker::ftDiffDone,this,&FtmwViewWidget::ftDiffDone);
-            ws.worker->moveToThread(ws.thread);
-            ws.thread->start();
-            d_workersStatus.insert(id,ws);
-        }
+        auto worker = new FtWorker(id,this);
+        auto fw = new QFutureWatcher<void>(this);
+        connect(fw,&QFutureWatcher<void>::finished,[this,id]{
+            auto &ws = d_workersStatus[id];
+            ws.busy = false;
+#pragma message("Revisit when SB processing is non monolithic")
+            if(ws.reprocessWhenDone)
+            {
+                if(id == d_mainId)
+                    updateMainPlot();
+                else
+                    process(id,d_plotStatus[id].fid);
+            }
+        });
+        d_workersStatus.emplace(id,WorkerStatus{ worker, false, false, fw});
+        connect(worker,&FtWorker::ftDone,this,&FtmwViewWidget::ftDone,Qt::QueuedConnection);
+        connect(worker,&FtWorker::fidDone,this,&FtmwViewWidget::fidProcessed,Qt::QueuedConnection);
+        if(id == d_mainId)
+            connect(worker,&FtWorker::ftDiffDone,this,&FtmwViewWidget::ftDiffDone,Qt::QueuedConnection);
 
-        if(id == d_liveId)
-            d_plotStatus.emplace(id,PlotStatus { ui->liveFidPlot, ui->liveFtPlot, Fid(), Ft() });
-        else if(id == d_plot1Id)
-            d_plotStatus.emplace(id,PlotStatus { ui->fidPlot1, ui->ftPlot1, Fid(), Ft() });
-        else if(id == d_plot2Id)
-            d_plotStatus.emplace(id,PlotStatus { ui->fidPlot2, ui->ftPlot2, Fid(), Ft() });
-        //don't need to add one of these for the main plot; it's special
+        if(id != d_mainId)
+        {
+            auto fw2 = new QFutureWatcher<FidList>(this);
+            connect(fw2,&QFutureWatcher<FidList>::finished,[this,id](){ fidLoadComplete(id); });
+            if(id == d_liveId)
+                d_plotStatus.emplace(id,PlotStatus { fw2, ui->liveFidPlot, ui->liveFtPlot, Fid(), Ft() });
+            else if(id == d_plot1Id)
+                d_plotStatus.emplace(id,PlotStatus { fw2, ui->fidPlot1, ui->ftPlot1, Fid(), Ft() });
+            else if(id == d_plot2Id)
+                d_plotStatus.emplace(id,PlotStatus { fw2, ui->fidPlot2, ui->ftPlot2, Fid(), Ft() });
+            //don't need to add one of these for the main plot; it's special
+        }
 
     }
 
@@ -84,12 +92,6 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
 
 FtmwViewWidget::~FtmwViewWidget()
 {
-    for(auto it=d_workersStatus.begin(); it != d_workersStatus.end(); it++)
-    {
-        it.value().thread->quit();
-        it.value().thread->wait();
-    }
-
     if(p_pfw != nullptr)
         p_pfw->close();
 
@@ -131,10 +133,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         ps.segment = 0;
         ps.backup = 0;
         ps.loadWhenDone = false;
-        ps.pu_watcher.reset();
-        ps.pu_watcher = std::make_unique<QFutureWatcher<FidList>>();
         int id = key;
-        connect(ps.pu_watcher.get(),&QFutureWatcher<FidList>::finished,[this,id](){ fidLoadComplete(id); });
     }
 
     if(e.ftmwEnabled())
@@ -144,17 +143,6 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
             ui->exptLabel->setText(QString("Peak Up Mode"));
         else
             ui->exptLabel->setText(QString("Experiment %1").arg(e.d_number));
-
-        auto ws = d_workersStatus.value(d_liveId);
-        ws.worker = new FtWorker(d_liveId);
-        ws.worker->moveToThread(ws.thread);
-        connect(ws.thread,&QThread::finished,ws.worker,&FtWorker::deleteLater);
-        connect(ws.worker,&FtWorker::fidDone,this,&FtmwViewWidget::fidProcessed);
-        connect(ws.worker,&FtWorker::ftDone,this,&FtmwViewWidget::ftDone);
-        ws.busy = false;
-        ws.reprocessWhenDone = false;
-        ws.thread->start();
-        d_workersStatus.insert(d_liveId,ws);
 
         d_currentExptNum = e.d_number;
 
@@ -193,28 +181,25 @@ void FtmwViewWidget::updateLiveFidList()
 
     for(auto &[key,ps] : d_plotStatus)
     {
-        if(d_workersStatus.value(key).thread->isRunning())
+        if(key != d_liveId)
         {
-            if(key != d_liveId)
+            if(d_currentSegment == ps.segment && ps.frame < fl.size())
             {
-                if(d_currentSegment == ps.segment && ps.frame < fl.size())
+                if(!ui->plotToolBar->viewingBackup(key))
                 {
-                    if(!ui->plotToolBar->viewingBackup(key))
-                    {
-                        auto f = fl.at(ps.frame);
-                        ps.fid = f;
-                        process(key,f);
-                    }
+                    auto f = fl.at(ps.frame);
+                    ps.fid = f;
+                    process(key,f);
                 }
             }
-            else
-            {
-                auto f = fl.constFirst();
-                ps.fid = f;
-                process(key,f);
-            }
-
         }
+        else
+        {
+            auto f = fl.constFirst();
+            ps.fid = f;
+            process(key,f);
+        }
+
     }
 }
 
@@ -269,7 +254,7 @@ void FtmwViewWidget::fidLoadComplete(int id)
     }
     else
     {
-        auto list = ps.pu_watcher->result();
+        auto list = ps.p_watcher->result();
         ps.fid = list.at(ps.frame);
         process(id, ps.fid);
     }
@@ -324,29 +309,12 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
         if(p_pfw != nullptr)
             p_pfw->newFt(ft);
     }
-
-    d_workersStatus[workerId].busy = false;
-    if(d_workersStatus.value(workerId).reprocessWhenDone)
-    {
-        if(workerId == d_mainId)
-            updateMainPlot();
-        else
-            process(workerId,d_plotStatus[workerId].fid);
-    }
 }
 
 void FtmwViewWidget::ftDiffDone(const Ft ft)
 {
     ui->mainFtPlot->newFt(ft);
     ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
-
-    d_workersStatus[d_mainId].busy = false;
-    if(d_workersStatus.value(d_mainId).reprocessWhenDone)
-    {
-        //need to set the reprocess flag here in case mode has changed since job started
-        d_workersStatus[d_mainId].reprocessWhenDone = false;
-        updateMainPlot();
-    }
 }
 
 void FtmwViewWidget::updateMainPlot()
@@ -391,14 +359,14 @@ void FtmwViewWidget::updateMainPlot()
 
 void FtmwViewWidget::reprocess(const QList<int> ignore)
 {
-    for(auto it=d_workersStatus.constBegin(); it != d_workersStatus.constEnd(); it++)
+    for(auto &[key,ws] : d_workersStatus)
     {
-        if(!ignore.contains(it.key()))
+        if(!ignore.contains(key))
         {
-            if(it.key() == d_mainId)
+            if(key == d_mainId)
                 updateMainPlot();
             else
-                process(it.key(),d_plotStatus[it.key()].fid);
+                process(key,d_plotStatus[key].fid);
         }
     }
 }
@@ -407,22 +375,19 @@ void FtmwViewWidget::process(int id, const Fid f)
 {
 //    if(f.isEmpty())
 //        return;
-    auto ws = d_workersStatus.value(id);
-    if(ws.thread->isRunning() && ws.worker != nullptr)
+    auto &ws = d_workersStatus[id];
+    if(ws.busy)
+        ws.reprocessWhenDone = true;
+    else
     {
-        if(ws.busy)
-            d_workersStatus[id].reprocessWhenDone = true;
-        else
-        {
-            d_plotStatus[id].fidPlot->setNumShots(f.shots());
-            d_plotStatus[id].fidPlot->setCursor(Qt::BusyCursor);
-            d_plotStatus[id].ftPlot->setCursor(Qt::BusyCursor);
-            d_workersStatus[id].busy = true;
-            d_workersStatus[id].reprocessWhenDone = false;
-            QMetaObject::invokeMethod(ws.worker,[ws,f,this](){
-                ws.worker->doFT(f,d_currentProcessingSettings);
-            });
-        }
+        d_plotStatus[id].fidPlot->setNumShots(f.shots());
+        d_plotStatus[id].fidPlot->setCursor(Qt::BusyCursor);
+        d_plotStatus[id].ftPlot->setCursor(Qt::BusyCursor);
+        ws.busy = true;
+        ws.reprocessWhenDone = false;
+        ws.p_watcher->setFuture(QtConcurrent::run([ws,f,this](){
+            ws.worker->doFT(f,d_currentProcessingSettings);
+        }));
     }
 }
 
@@ -431,26 +396,26 @@ void FtmwViewWidget::processDiff(const Fid f1, const Fid f2)
     if(f1.isEmpty() || f2.isEmpty())
         return;
 
-    auto ws = d_workersStatus.value(d_mainId);
+    auto &ws = d_workersStatus[d_mainId];
     if(ws.busy)
-        d_workersStatus[d_mainId].reprocessWhenDone = true;
+        ws.reprocessWhenDone = true;
     else
     {
         ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
-        d_workersStatus[d_mainId].busy = true;
-        d_workersStatus[d_mainId].reprocessWhenDone = false;
-        QMetaObject::invokeMethod(ws.worker,[ws,f1,f2,this](){
+        ws.busy = true;
+        ws.reprocessWhenDone = false;
+        ws.p_watcher->setFuture(QtConcurrent::run([ws,f1,f2,this](){
             ws.worker->doFtDiff(f1,f2,d_currentProcessingSettings);
-        });
+        }));
 
     }
 }
 
 void FtmwViewWidget::processSideband(RfConfig::Sideband sb)
 {
-    auto ws = d_workersStatus.value(d_mainId);
+    auto &ws = d_workersStatus[d_mainId];
     if(ws.busy)
-        d_workersStatus[d_mainId].reprocessWhenDone = true;
+        ws.reprocessWhenDone = true;
     else
     {
         FidList fl;
@@ -469,8 +434,8 @@ void FtmwViewWidget::processSideband(RfConfig::Sideband sb)
         if(!fl.isEmpty())
         {
             ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
-            d_workersStatus[d_mainId].busy = true;
-            d_workersStatus[d_mainId].reprocessWhenDone = false;
+            ws.busy = true;
+            ws.reprocessWhenDone = false;
             double minF = ui->minFtSegBox->value();
             double maxF = ui->maxFtSegBox->value();
 
@@ -484,9 +449,9 @@ void FtmwViewWidget::processSideband(RfConfig::Sideband sb)
 void FtmwViewWidget::processBothSidebands()
 {
 #pragma message("Rework sideband processing so that it's not monolithic")
-    auto ws = d_workersStatus.value(d_mainId);
+    auto &ws = d_workersStatus[d_mainId];
     if(ws.busy)
-        d_workersStatus[d_mainId].reprocessWhenDone = true;
+        ws.reprocessWhenDone = true;
     else
     {
         FidList fl;
@@ -504,8 +469,8 @@ void FtmwViewWidget::processBothSidebands()
         if(!fl.isEmpty())
         {
             ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
-            d_workersStatus[d_mainId].busy = true;
-            d_workersStatus[d_mainId].reprocessWhenDone = false;
+            ws.busy = true;
+            ws.reprocessWhenDone = false;
             double minF = ui->minFtSegBox->value();
             double maxF = ui->maxFtSegBox->value();
 
@@ -521,10 +486,7 @@ void FtmwViewWidget::updateBackups()
     if(d_currentExptNum < 1)
         return;
 
-    int n = ps_fidStorage->numBackups();
-#pragma message("Here")
-//    ui->plot1ConfigWidget->newBackup(n);
-//    ui->plot2ConfigWidget->newBackup(n);
+    ui->plotToolBar->newBackup(ps_fidStorage->numBackups());
 }
 
 void FtmwViewWidget::experimentComplete()
@@ -537,15 +499,6 @@ void FtmwViewWidget::experimentComplete()
         ui->verticalLayout->setStretch(0,0);
         ui->liveFidPlot->hide();
         ui->liveFtPlot->hide();
-
-
-        if(d_workersStatus.value(d_liveId).thread->isRunning())
-        {
-            d_workersStatus[d_liveId].thread->quit();
-            d_workersStatus[d_liveId].thread->wait();
-
-            d_workersStatus[d_liveId].worker = nullptr;
-        }
 
         ui->plotToolBar->experimentComplete();
 
@@ -592,7 +545,7 @@ void FtmwViewWidget::launchPeakFinder()
 
     p_pfw->setAttribute(Qt::WA_DeleteOnClose);
 
-    connect(d_workersStatus.value(d_mainId).worker,&FtWorker::ftDone,p_pfw,&PeakFindWidget::newFt);
+    connect(d_workersStatus[d_mainId].worker,&FtWorker::ftDone,p_pfw,&PeakFindWidget::newFt);
     connect(p_pfw,&PeakFindWidget::peakList,ui->mainFtPlot,&FtPlot::newPeakList);
     connect(p_pfw,&PeakFindWidget::destroyed,[=](){
         p_pfw = nullptr;
@@ -628,10 +581,10 @@ void FtmwViewWidget::updateFid(int id)
         if(backup > 0)
             seg = backup;
 
-        if(ps.pu_watcher->isRunning())
+        if(ps.p_watcher->isRunning())
             ps.loadWhenDone = true;
         else
-            ps.pu_watcher->setFuture(QtConcurrent::run([this,seg](){ return ps_fidStorage->loadFidList(seg); }));
+            ps.p_watcher->setFuture(QtConcurrent::run([this,seg](){ return ps_fidStorage->loadFidList(seg); }));
     }
 }
 
