@@ -14,10 +14,10 @@ public:
     explicit PeakFinder(QObject *parent = 0);
 
 signals:
-    void peakList(const QList<QPointF>);
+    void peakList(QVector<QPointF>);
 
 public slots:
-    QList<QPointF> findPeaks(const Ft ft, double minF, double maxF, double minSNR);
+    QVector<QPointF> findPeaks(const Ft ft, double minF, double maxF, double minSNR);
     void calcCoefs(int winSize, int polyOrder);
 
 private:

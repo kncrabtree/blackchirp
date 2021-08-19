@@ -7,6 +7,7 @@
 #include <QPair>
 #include <QVector>
 #include <QPointF>
+#include <QFutureWatcher>
 
 #include <data/storage/settingsstorage.h>
 #include <data/experiment/experiment.h>
@@ -31,15 +32,15 @@ class PeakFindWidget : public QWidget, public SettingsStorage
     Q_OBJECT
 
 public:
-    explicit PeakFindWidget(Ft ft, QWidget *parent = 0);
+    explicit PeakFindWidget(Ft ft, int number, QWidget *parent = nullptr);
     ~PeakFindWidget();
 
 signals:
-    void peakList(const QList<QPointF>);
+    void peakList(QVector<QPointF>);
 
 public slots:
     void newFt(const Ft ft);
-    void newPeakList(const QList<QPointF> pl);
+    void newPeakList(const QVector<QPointF> pl);
     void findPeaks();
     void removeSelected();
     void updateRemoveButton();
@@ -53,6 +54,7 @@ private:
     PeakFinder *p_pf;
     PeakListModel *p_listModel;
     QSortFilterProxyModel *p_proxy;
+    std::unique_ptr<QFutureWatcher<void>> pu_watcher{std::make_unique<QFutureWatcher<void>>() };
 
     double d_minFreq;
     double d_maxFreq;
@@ -63,7 +65,6 @@ private:
     bool d_busy;
     bool d_waiting;
     Ft d_currentFt;
-    QThread *p_thread;
 };
 
 #endif // PEAKFINDWIDGET_H

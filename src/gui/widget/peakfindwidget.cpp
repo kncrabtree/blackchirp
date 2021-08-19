@@ -7,21 +7,18 @@
 #include <QDoubleSpinBox>
 #include <QSpinBox>
 #include <QDialogButtonBox>
+#include <QtConcurrent/QtConcurrent>
 
 #include <gui/dialog/peaklistexportdialog.h>
 
-PeakFindWidget::PeakFindWidget(Ft ft, QWidget *parent):
+PeakFindWidget::PeakFindWidget(Ft ft, int number, QWidget *parent):
     QWidget(parent), SettingsStorage(BC::Key::peakFind),
-    ui(new Ui::PeakFindWidget), d_number(0), d_busy(false), d_waiting(false)
+    ui(new Ui::PeakFindWidget), d_number(number), d_busy(false), d_waiting(false)
 {
     ui->setupUi(this);
 
-    p_thread = new QThread(this);
-    p_pf = new PeakFinder;
+    p_pf = new PeakFinder(this);
     connect(p_pf,&PeakFinder::peakList,this,&PeakFindWidget::newPeakList);
-    connect(p_thread,&QThread::finished,p_pf,&PeakFinder::deleteLater);
-    p_pf->moveToThread(p_thread);
-    p_thread->start();
 
     p_listModel = new PeakListModel(this);
     p_proxy = new QSortFilterProxyModel(this);
@@ -53,8 +50,6 @@ PeakFindWidget::PeakFindWidget(Ft ft, QWidget *parent):
 PeakFindWidget::~PeakFindWidget()
 {
     delete ui;
-    p_thread->quit();
-    p_thread->wait();
 
 }
 
@@ -68,7 +63,7 @@ void PeakFindWidget::newFt(const Ft ft)
         findPeaks();
 }
 
-void PeakFindWidget::newPeakList(const QList<QPointF> pl)
+void PeakFindWidget::newPeakList(const QVector<QPointF> pl)
 {
     d_busy = false;
 
@@ -91,7 +86,7 @@ void PeakFindWidget::findPeaks()
     if(!d_busy)
     {
         d_busy = true;
-        QMetaObject::invokeMethod(p_pf,[this](){ p_pf->findPeaks(d_currentFt,d_minFreq,d_maxFreq,d_snr); });
+        QtConcurrent::run([this](){p_pf->findPeaks(d_currentFt,d_minFreq,d_maxFreq,d_snr);});
         d_waiting = false;
     }
     else
@@ -103,7 +98,7 @@ void PeakFindWidget::removeSelected()
     QModelIndexList l = ui->peakListTableView->selectionModel()->selectedRows();
     if(!l.isEmpty())
     {
-        QList<int> rows;
+        QVector<int> rows;
         for(int i=0; i<l.size(); i++)
             rows.append(l.at(i).row());
 

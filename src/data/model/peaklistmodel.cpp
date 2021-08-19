@@ -74,7 +74,7 @@ Qt::ItemFlags PeakListModel::flags(const QModelIndex &index) const
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 
-void PeakListModel::setPeakList(const QList<QPointF> l)
+void PeakListModel::setPeakList(const QVector<QPointF> l)
 {
     if(!d_peakList.isEmpty())
     {
@@ -91,7 +91,7 @@ void PeakListModel::setPeakList(const QList<QPointF> l)
     }
 }
 
-void PeakListModel::removePeaks(QList<int> rows)
+void PeakListModel::removePeaks(QVector<int> rows)
 {
     if(rows.isEmpty())
         return;
@@ -118,10 +118,10 @@ void PeakListModel::scalingChanged(double scf)
 
 void PeakListModel::clearPeakList()
 {
-    setPeakList(QList<QPointF>());
+    setPeakList({});
 }
 
-QList<QPointF> PeakListModel::peakList()
+QVector<QPointF> PeakListModel::peakList()
 {
     return d_peakList;
 }

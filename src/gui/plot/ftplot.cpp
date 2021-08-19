@@ -13,7 +13,7 @@
 #include <QFormLayout>
 #include <QFileDialog>
 #include <QMessageBox>
-#include <QList>
+#include <QVector>
 #include <QPair>
 #include <QDialogButtonBox>
 #include <QPushButton>
@@ -115,11 +115,11 @@ void FtPlot::configureUnits(FtWorker::FtUnits u)
 //    emit scalingChange(scf/oldScf);
 }
 
-void FtPlot::newPeakList(const QList<QPointF> l)
+void FtPlot::newPeakList(const QVector<QPointF> l)
 {
 
     if(!l.isEmpty())
-        p_peakData->setCurveData(l.toVector());
+        p_peakData->setCurveData(l);
 
     p_peakData->setCurveVisible(!l.isEmpty());
     replot();

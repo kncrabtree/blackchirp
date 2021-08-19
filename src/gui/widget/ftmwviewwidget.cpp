@@ -560,7 +560,7 @@ void FtmwViewWidget::launchPeakFinder()
         return;
     }
 
-    p_pfw = new PeakFindWidget(ui->mainFtPlot->currentFt());
+    p_pfw = new PeakFindWidget(ui->mainFtPlot->currentFt(),d_currentExptNum);
     if(d_currentExptNum > 0)
         p_pfw->setWindowTitle(QString("Peak List: Experiment %1").arg(d_currentExptNum));
     else

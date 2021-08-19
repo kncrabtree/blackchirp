@@ -4,7 +4,7 @@
 #include <QDialog>
 #include <QAbstractTableModel>
 
-#include <QList>
+#include <QVector>
 #include <QPair>
 #include <QSortFilterProxyModel>
 
@@ -37,7 +37,7 @@ class PeakListExportDialog : public QDialog, public SettingsStorage
     Q_OBJECT
 
 public:
-    explicit PeakListExportDialog(const QList<QPointF> peakList, int number, QWidget *parent = 0);
+    explicit PeakListExportDialog(const QVector<QPointF> peakList, int number, QWidget *parent = 0);
     ~PeakListExportDialog();
 
 public slots:
@@ -50,7 +50,7 @@ private:
     Ui::PeakListExportDialog *ui;
 
     int d_number;
-    QList<QPointF> d_peakList;
+    QVector<QPointF> d_peakList;
     ShotsModel *p_sm;
     PeakListModel *p_pm;
     QSortFilterProxyModel *p_proxy;
@@ -65,14 +65,14 @@ class ShotsModel : public QAbstractTableModel
     Q_OBJECT
 public:
     explicit ShotsModel(QObject *parent = nullptr);
-    void setList(const QList<QPair<int,double>> l);
-    QList<QPair<int,double>> shotsList() const;
+    void setList(const QVector<QPair<int,double>> l);
+    QVector<QPair<int,double>> shotsList() const;
     void addEntry();
     void insertEntry(int pos);
-    void removeEntries(QList<int> rows);
+    void removeEntries(QVector<int> rows);
 
 private:
-    QList<QPair<int,double>> d_shotsList;
+    QVector<QPair<int,double>> d_shotsList;
 
     // QAbstractItemModel interface
 public:

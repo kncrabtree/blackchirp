@@ -19,14 +19,14 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     Qt::ItemFlags flags(const QModelIndex &index) const;
 
-    void setPeakList(const QList<QPointF> l);
-    void removePeaks(QList<int> rows);
+    void setPeakList(const QVector<QPointF> l);
+    void removePeaks(QVector<int> rows);
     void scalingChanged(double scf);
     void clearPeakList();
-    QList<QPointF> peakList();
+    QVector<QPointF> peakList();
 
 private:
-    QList<QPointF> d_peakList;
+    QVector<QPointF> d_peakList;
 };
 
 #endif // PEAKLISTMODEL_H

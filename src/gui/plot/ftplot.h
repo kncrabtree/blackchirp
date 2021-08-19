@@ -35,7 +35,7 @@ public slots:
     void newFt(const Ft ft);
 
     void configureUnits(FtWorker::FtUnits u);
-    void newPeakList(const QList<QPointF> l);
+    void newPeakList(const QVector<QPointF> l);
     void setNumShots(quint64 shots);
 
 

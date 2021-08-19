@@ -7,12 +7,12 @@ PeakFinder::PeakFinder(QObject *parent) : QObject(parent)
     calcCoefs(11,6);
 }
 
-QList<QPointF> PeakFinder::findPeaks(const Ft ft, double minF, double maxF, double minSNR)
+QVector<QPointF> PeakFinder::findPeaks(const Ft ft, double minF, double maxF, double minSNR)
 {
     if(ft.size() < d_window)
     {
-        emit peakList(QList<QPointF>());
-        return QList<QPointF>();
+        emit peakList({});
+        return {};
     }
 
     //calculate smoothed second derivative
@@ -42,7 +42,7 @@ QList<QPointF> PeakFinder::findPeaks(const Ft ft, double minF, double maxF, doub
     //build a noise model
     int chunks = 100;
     int chunkSize = (endIndex-startIndex + 1)/chunks + 1;
-    QList<QPair<double,double>> blParams;
+    QVector<QPair<double,double>> blParams;
     for(int i=0; i<chunks; i++)
     {
         QVector<double> dat;
@@ -53,7 +53,7 @@ QList<QPointF> PeakFinder::findPeaks(const Ft ft, double minF, double maxF, doub
         blParams.append(Analysis::medianFilterMeanStDev(dat.data(),dat.size()));
     }
 
-    QList<QPointF> out;
+    QVector<QPointF> out;
     for(int i = startIndex+2; i<endIndex-2; i++)
     {
         int thisChunk = qBound(0,(i-startIndex)/chunkSize,chunks-1);
