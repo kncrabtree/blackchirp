@@ -1,8 +1,9 @@
 #include "batchsequencedialog.h"
-#include "ui_batchsequencedialog.h"
+
+using namespace BC::Key::SeqDialog;
 
 BatchSequenceDialog::BatchSequenceDialog(QWidget *parent) :
-    QDialog(parent), SettingsStorage("lastBatchSequence"),
+    QDialog(parent), SettingsStorage(key),
     ui(new Ui::BatchSequenceDialog)
 {
     ui->setupUi(this);
@@ -11,11 +12,11 @@ BatchSequenceDialog::BatchSequenceDialog(QWidget *parent) :
     connect(ui->quickButton,&QPushButton::clicked,this,[=](){ done(quickCode); });
     connect(ui->configureButton,&QPushButton::clicked,this,[=](){ done(configureCode); });
 
-    ui->numberOfExperimentsSpinBox->setValue(get<int>(BC::Key::batchExperiments,1));
-    ui->timeBetweenExperimentsSpinBox->setValue(get<int>(BC::Key::batchInterval,300));
+    ui->numberOfExperimentsSpinBox->setValue(get<int>(batchExperiments,1));
+    ui->timeBetweenExperimentsSpinBox->setValue(get<int>(batchInterval,300));
 
-    registerGetter(BC::Key::batchExperiments,ui->numberOfExperimentsSpinBox,&QSpinBox::value);
-    registerGetter(BC::Key::batchInterval,ui->timeBetweenExperimentsSpinBox,&QSpinBox::value);
+    registerGetter(batchExperiments,ui->numberOfExperimentsSpinBox,&QSpinBox::value);
+    registerGetter(batchInterval,ui->timeBetweenExperimentsSpinBox,&QSpinBox::value);
 }
 
 BatchSequenceDialog::~BatchSequenceDialog()

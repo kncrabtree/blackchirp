@@ -12,7 +12,7 @@ BatchSingle::~BatchSingle()
 
 void BatchSingle::abort()
 {
-    //nothing to do (experiment will signal that it was aborted)
+    d_complete = true;
 }
 
 void BatchSingle::writeReport()

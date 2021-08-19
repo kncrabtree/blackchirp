@@ -29,6 +29,9 @@ void BatchManager::experimentComplete()
         beginNextExperiment();
     else
     {
+        if(exp->isAborted())
+            abort();
+
         ///TODO: Run in another thread.
         writeReport();
         emit batchComplete(exp->isAborted());

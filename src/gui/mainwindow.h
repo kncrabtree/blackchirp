@@ -32,7 +32,7 @@ class MotorDisplayWidget;
 class MotorStatusWidget;
 #endif
 
-
+class QuickExptDialog;
 
 namespace Ui {
 class MainWindow;
@@ -67,6 +67,8 @@ public slots:
     void startExperiment();
     void quickStart();
     void startSequence();
+    bool runExperimentWizard(Experiment *exp, QuickExptDialog *qed = nullptr);
+    void configureOptionalHardware(Experiment *exp, QuickExptDialog *qed = nullptr);
     void batchComplete(bool aborted);
     void experimentInitialized(std::shared_ptr<Experiment> exp);
     void hardwareInitialized(bool success);

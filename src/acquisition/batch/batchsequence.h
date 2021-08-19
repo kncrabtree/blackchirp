@@ -14,7 +14,7 @@ public:
 private:
     std::unique_ptr<Experiment> pu_expTemplate;
     std::shared_ptr<Experiment> ps_CurrentExp;
-    int d_experimentCount;
+    int d_experimentCount{0};
     int d_numExperiments;
     int d_intervalSeconds;
 

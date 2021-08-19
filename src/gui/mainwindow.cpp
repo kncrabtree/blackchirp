@@ -324,35 +324,13 @@ void MainWindow::startExperiment()
     if(p_batchManager && !p_batchManager->isComplete())
         return;
 
-    QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks;
-    QMetaObject::invokeMethod(p_hwm,&HardwareManager::getClocks,Qt::BlockingQueuedConnection,&clocks);
-
     auto exp = std::make_shared<Experiment>();
-    if(d_hardware.find(BC::Key::PGen::key) != d_hardware.end())
-        exp->setPulseGenConfig(p_hwm->getPGenConfig());
-    if(d_hardware.find(BC::Key::Flow::flowController) != d_hardware.end())
-        exp->setFlowConfig(p_hwm->getFlowConfig());
 
-    ExperimentWizard wiz(exp.get(),d_hardware,this);
-    wiz.setValidationKeys(p_hwm->validationKeys());
-    wiz.d_clocks = clocks;
-
-#ifdef BC_LIF
-    connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
-    connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
-    connect(p_hwm,&HardwareManager::lifLaserPosUpdate,&wiz,&ExperimentWizard::setCurrentLaserPos);
-    connect(&wiz,&ExperimentWizard::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
-    connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifControlWidget,&LifControlWidget::checkLifColors);
-    connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifDisplayWidget,&LifDisplayWidget::checkLifColors);
-    connect(&wiz,&ExperimentWizard::laserPosUpdate,p_hwm,&HardwareManager::setLifLaserPos);
-    wiz.setCurrentLaserPos(p_lifControlWidget->laserPos());
-#endif
-
-    if(wiz.exec() != QDialog::Accepted)
-        return;
-
-    BatchManager *bm = new BatchSingle(exp);
-    startBatch(bm);
+    if(runExperimentWizard(exp.get()))
+    {
+        BatchManager *bm = new BatchSingle(exp);
+        startBatch(bm);
+    }
 }
 
 void MainWindow::quickStart()
@@ -372,30 +350,21 @@ void MainWindow::quickStart()
     }
 
     auto exp = std::make_shared<Experiment>(d.exptNumber(),"",true);
-    if((d_hardware.find(BC::Key::PGen::key) != d_hardware.end()) && d.useCurrentSettings(BC::Key::PGen::key))
-        exp->setPulseGenConfig(p_hwm->getPGenConfig());
-    if((d_hardware.find(BC::Key::PGen::key) != d_hardware.end()) && d.useCurrentSettings(BC::Key::Flow::flowController))
-        exp->setFlowConfig(p_hwm->getFlowConfig());
-    if((d_hardware.find(BC::Key::PController::key) != d_hardware.end()) && d.useCurrentSettings(BC::Key::PController::key))
-        exp->setPressureControllerConfig(p_hwm->getPressureControllerConfig());
-
     if(ret == QuickExptDialog::Start)
     {
+        configureOptionalHardware(exp.get(),&d);
         BatchManager *bm = new BatchSingle(exp);
         startBatch(bm);
         return;
     }
-
-    ExperimentWizard wiz(exp.get(),d_hardware,this);
-    wiz.setValidationKeys(p_hwm->validationKeys());
-    if(exp->ftmwEnabled())
-        wiz.d_clocks = exp->ftmwConfig()->d_rfConfig.getClocks();
-
-    if(wiz.exec() != QDialog::Accepted)
-        return;
-
-    BatchManager *bm = new BatchSingle(exp);
-    startBatch(bm);
+    else
+    {
+        if(runExperimentWizard(exp.get(),&d))
+        {
+            BatchManager *bm = new BatchSingle(exp);
+            startBatch(bm);
+        }
+    }
 }
 
 void MainWindow::startSequence()
@@ -403,67 +372,105 @@ void MainWindow::startSequence()
     if(p_batchManager && !p_batchManager->isComplete())
         return;
 
-//    BatchSequenceDialog d(this);
-//    d.setQuickExptEnabled(d_oneExptDone);
-//    int ret = d.exec();
+    BatchSequenceDialog d(this);
+    d.setQuickExptEnabled(ui->exptSpinBox->value() > 0);
+    int ret = d.exec();
 
-//    if(ret == QDialog::Rejected)
-//        return;
+    if(ret == QDialog::Rejected)
+        return;
 
-//    std::shared_ptr<Experiment> exp;
-//    SettingsStorage s;
-//    int num = s.get(BC::Key::exptNum,0);
-//    QString path = s.get(BC::Key::savePath,QString(""));
+    std::shared_ptr<Experiment> exp = std::make_shared<Experiment>();
 
-//    if(ret == d.quickCode)
-//    {
-//        exp = std::make_shared<Experiment>(num,path,true);
-//#ifdef BC_LIF
-//        if(e.lifConfig().isEnabled())
-//        {
-//            LifConfig lc = e.lifConfig();
-//            lc = p_lifControlWidget->getSettings(lc);
-//            e.setLifConfig(lc);
-//        }
-//#endif
-//        exp->setFlowConfig(p_hwm->getFlowConfig());
-//        exp->setPulseGenConfig(p_hwm->getPGenConfig());
+    if(ret == d.quickCode)
+    {
+        QuickExptDialog qed(this);
+        qed.setHardware(d_hardware);
+        int ret2 = qed.exec();
+        if(ret2 == QDialog::Rejected)
+            return;
 
-//        //create a popup summary of experiment.
-//        QuickExptDialog qd(exp,this);
-//        int qeret = qd.exec();
+        if(ret2 == QuickExptDialog::Start)
+        {
+            exp = std::make_shared<Experiment>(qed.exptNumber(),"",true);
+            configureOptionalHardware(exp.get(),&qed);
 
-//        if(qeret == QDialog::Accepted)
-//            ret = QDialog::Accepted;
-//        else if(qeret == qd.configureResult())
-//            ret = d.configureCode; //set ret to indicate that the experiment needs to be configured
-//        else if(qeret == QDialog::Rejected)
-//            return;
-//    }
+            BatchSequence *bs = new BatchSequence(exp,d.numExperiments(),d.interval());
+            startBatch(bs);
+            return;
+        }
+        else if(ret2 == QuickExptDialog::Configure)
+        {
+            if(runExperimentWizard(exp.get(),&qed))
+            {
+                BatchSequence *bs = new BatchSequence(exp,d.numExperiments(),d.interval());
+                startBatch(bs);
+                return;
+            }
+        }
 
-//    if(ret == d.configureCode)
-//    {
-//        ExperimentWizard wiz(-1,this);
-//        wiz.p_experiment->setPulseGenConfig(p_hwm->getPGenConfig());
-//        wiz.p_experiment->setFlowConfig(p_hwm->getFlowConfig());
-//#ifdef BC_LIF
-//        connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
-//        connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
-//        connect(&wiz,&ExperimentWizard::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
-//        connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifControlWidget,&LifControlWidget::checkLifColors);
-//        connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifDisplayWidget,&LifDisplayWidget::checkLifColors);
-//#endif
+    }
 
-//        if(wiz.exec() != QDialog::Accepted)
-//            return;
+    //if we reach this point, the experiment wizard needs to run
+    if(runExperimentWizard(exp.get()))
+    {
+        BatchSequence *bs = new BatchSequence(exp,d.numExperiments(),d.interval());
+        startBatch(bs);
+    }
 
-//        exp = wiz.p_experiment;
-//    }
+}
 
+bool MainWindow::runExperimentWizard(Experiment *exp, QuickExptDialog *qed)
+{
+    configureOptionalHardware(exp,qed);
 
-//    BatchSequence *bs = new BatchSequence(exp,d.numExperiments(),d.interval());
-//    startBatch(bs);
+    ExperimentWizard wiz(exp,d_hardware,this);
+    wiz.setValidationKeys(p_hwm->validationKeys());
+    if(exp->ftmwEnabled())
+        wiz.d_clocks = exp->ftmwConfig()->d_rfConfig.getClocks();
+    else
+    {
+        QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks;
+        QMetaObject::invokeMethod(p_hwm,&HardwareManager::getClocks,Qt::BlockingQueuedConnection,&clocks);
+        wiz.d_clocks = clocks;
+    }
 
+#ifdef BC_LIF
+    connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
+    connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
+    connect(p_hwm,&HardwareManager::lifLaserPosUpdate,&wiz,&ExperimentWizard::setCurrentLaserPos);
+    connect(&wiz,&ExperimentWizard::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
+    connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifControlWidget,&LifControlWidget::checkLifColors);
+    connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifDisplayWidget,&LifDisplayWidget::checkLifColors);
+    connect(&wiz,&ExperimentWizard::laserPosUpdate,p_hwm,&HardwareManager::setLifLaserPos);
+    wiz.setCurrentLaserPos(p_lifControlWidget->laserPos());
+#endif
+
+    if(wiz.exec() != QDialog::Accepted)
+        return false;
+
+    return true;
+}
+
+void MainWindow::configureOptionalHardware(Experiment *exp, QuickExptDialog *qed)
+{
+    if(qed)
+    {
+        if((d_hardware.find(BC::Key::PGen::key) != d_hardware.end()) && qed->useCurrentSettings(BC::Key::PGen::key))
+            exp->setPulseGenConfig(p_hwm->getPGenConfig());
+        if((d_hardware.find(BC::Key::PGen::key) != d_hardware.end()) && qed->useCurrentSettings(BC::Key::Flow::flowController))
+            exp->setFlowConfig(p_hwm->getFlowConfig());
+        if((d_hardware.find(BC::Key::PController::key) != d_hardware.end()) && qed->useCurrentSettings(BC::Key::PController::key))
+            exp->setPressureControllerConfig(p_hwm->getPressureControllerConfig());
+    }
+    else
+    {
+        if(d_hardware.find(BC::Key::PGen::key) != d_hardware.end())
+            exp->setPulseGenConfig(p_hwm->getPGenConfig());
+        if(d_hardware.find(BC::Key::Flow::flowController) != d_hardware.end())
+            exp->setFlowConfig(p_hwm->getFlowConfig());
+        if((d_hardware.find(BC::Key::PController::key) != d_hardware.end()))
+            exp->setPressureControllerConfig(p_hwm->getPressureControllerConfig());
+    }
 }
 
 void MainWindow::batchComplete(bool aborted)

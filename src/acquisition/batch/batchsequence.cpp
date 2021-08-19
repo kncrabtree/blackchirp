@@ -3,7 +3,7 @@
 #include <QDir>
 
 BatchSequence::BatchSequence(std::shared_ptr<Experiment> e, int numExpts, int intervalSeconds) :
-    BatchManager(BatchManager::Sequence), d_experimentCount(0), d_numExperiments(numExpts),
+    BatchManager(BatchManager::Sequence), d_numExperiments(numExpts),
     d_intervalSeconds(intervalSeconds), d_waiting(false)
 {
     pu_expTemplate = std::make_unique<Experiment>(*e.get());
@@ -24,6 +24,7 @@ void BatchSequence::abort()
 {
     if(d_waiting)
     {
+        d_experimentCount = d_numExperiments;
         p_intervalTimer->stop();
         p_intervalTimer->blockSignals(true);
         emit batchComplete(true);
@@ -38,6 +39,7 @@ void BatchSequence::writeReport()
 
 void BatchSequence::processExperiment()
 {
+    d_experimentCount++;
 }
 
 std::shared_ptr<Experiment> BatchSequence::currentExperiment()
@@ -64,6 +66,4 @@ void BatchSequence::beginNextExperiment()
         p_intervalTimer->start(d_intervalSeconds*1000);
         emit statusMessage(QString("Next experiment will start at %1").arg(QDateTime::currentDateTime().addSecs(d_intervalSeconds).toString()));
     }
-
-    d_experimentCount++;
 }

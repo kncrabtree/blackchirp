@@ -30,9 +30,6 @@ signals:
 public slots:
     void experimentComplete();
     virtual void beginNextExperiment();
-
-    //NOTE: Abort is only used if user wants to stop _between_ experiments.
-    //If abort happens during an experiment, the experimentComplete() function will handle it
     virtual void abort() =0;
 
 protected:

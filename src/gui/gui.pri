@@ -98,7 +98,6 @@ HEADERS += $$PWD/mainwindow.h \
 	$$PWD/wizard/wizardvalidationpage.h
 
 FORMS += \
-    $$PWD/dialog/batchsequencedialog.ui \
     $$PWD/dialog/communicationdialog.ui \
     $$PWD/dialog/peaklistexportdialog.ui \
     $$PWD/widget/chirpconfigwidget.ui \
