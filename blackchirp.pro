@@ -63,7 +63,8 @@ motor {
   include($$PWD/src/modules/motor/motor.pri)
 }
 
-OTHER_FILES += README.md
+OTHER_FILES += README.md \
+               $$PWD/src/config/config.pri.template
 
 QMAKE_CXXFLAGS_RELEASE -= -O2
 QMAKE_CXXFLAGS_RELEASE += -O3

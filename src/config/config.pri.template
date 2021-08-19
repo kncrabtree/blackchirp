@@ -1,18 +1,8 @@
 #Enable CUDA GPU support
-CONFIG += gpu-cuda
-
-#Enable hardware
-CONFIG += hardware
+#CONFIG += gpu-cuda
 
 #Enable LIF controls/acquisition
 #CONFIG += lif
-
-#Enable motor controls/acquisition
-#CONFIG += motor
-
-# Enabling this line will include all hardware files in compilation, even unused ones
-# This is only for development purposes
-#CONFIG += allhardware
 
 #-----------------------------------------
 # Library configuration
@@ -21,10 +11,10 @@ CONFIG += hardware
 # for your OS. See qmake documentation for
 # examples
 #-----------------------------------------
+
 unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
 
 
-hardware {
 #------------------------------------------------
 # The following defines select hardware implementations.
 #
@@ -33,97 +23,66 @@ hardware {
 # -----------------------------------------------
 
 # FTMW Oscilloscope (0 = virtual, 1 = DSA71604C, 2 = MSO72004C, 3 = M4i2220x8)
-FTMWSCOPE=2
+FTMWSCOPE=0
 
 #AWG (0 = virtual, 1 = AWG70002A, 2 = AWG7122B, 3 = AD9914, 4=M8195A)
-AWG=2
+AWG=0
 
 #Clocks. Include in a space-delimited list, up to 5 numbers
-#Definitions: (0 = FixedClock, 1 = Valon5009, 2 = Valon2015)
 #For example:
 #CLOCKS=0 0 1 3 2
+#(0 = FixedClock, 1 = Valon 5009, 2 = Valon 2015)
 CLOCKS=0 0
 
-#Pulse generator (0 = virtual, 1 = Quantum Composers 9528+, 2 = Quantum Composers 9518)
-PGEN=2
+#Pulse generator (<0 = None, 0 = virtual, 1 = Quantum Composers 9528+, 2 = Quantum Composers 9518)
+PGEN=-1
 
-#Flow Controller (0 = virtual, 1 = MKS 647C)
-FC=1
+#Flow Controller (<0 = None, 0 = virtual, 1 = MKS 647C)
+FC=-1
 
-#IO Board (0 = virtual, 1 = Labjack U3)
-IOBOARD=1
+#IO Board (<0 = None, 0 = virtual, 1 = Labjack U3)
+IOBOARD=-1
 
-#GPIB controller (-1 = none, 0 = virtual, 1 = Prologix GPIB-LAN)
+#GPIB controller (<0 = none, 0 = virtual, 1 = Prologix GPIB-LAN)
 GPIB=-1
 
-#pressure controller (-1 = none, 0 = virtual, 1 = Intellisys IQ Plus)
+#pressure controller (<0 = none, 0 = virtual, 1 = Intellisys IQ Plus)
 PC=-1
 
-#temperature controller (-1 = none, 0 = virtual, 1 = Lakeshore 218)
+#temperature controller (<0 = none, 0 = virtual, 1 = Lakeshore 218)
 TC=-1
 
 ###### LIF ONLY #####
-#LIF Oscilloscope (0 = virtual, 1 = M4i2211x8)
-LIFSCOPE=1
+#LIF Oscilloscope (0 = virtual, 1 = DPO3012)
+LIFSCOPE=0
 
 #LIF Laser (0 = virtual, 1 = Opolette)
-LIFLASER=1
-##### END LIF ONLY #####
-
-##### MOTOR ONLY #####
-#Motor controller (0 = virtual, 1 = SCX11)
-MOTOR=1
-
-#Motor scope (0 = virtual, 1 = Pico2206B)
-MOTORSCOPE=1
-##### END MOTOR ONLY #####
-
-} else {
-#The values in this section should not be modified
-FTMWSCOPE=0
-AWG=0
-CLOCKS=0 0
-PGEN=0
-FC=0
-LIFSCOPE=0
 LIFLASER=0
-IOBOARD=0
-GPIB=0
-PC=0
-TC=0
-MOTOR=0
-MOTORSCOPE=0
-}
-
+##### END LIF ONLY #####
 
 #------------------------------------------------
 # Space for custom include/lib paths
 #------------------------------------------------
-motor {
-	equals(MOTORSCOPE,1)|allhardware {
-	LIBS += -L/opt/picoscope/lib/ -lps2000a
-	INCLUDEPATH += /opt/picoscope/include/libps2000a-1.1/
-	}
-}
 
 equals(IOBOARD,1)|allhardware {
-	LIBS += -llabjackusb
+    LIBS += -llabjackusb
 }
 
 equals(FTMWSCOPE,3)|equals(LIFSCOPE,1)|allhardware {
      LIBS += -lspcm_linux
 }
 
+
 #------------------------------
 # CUDA compiler configuration
 #------------------------------
 gpu-cuda {
-	DEFINES += BC_CUDA
+    DEFINES += BC_CUDA
 
-	# Cuda sources
-	CUDA_SOURCES += gpuaverager.cu
+    # Cuda sources
+	CUDA_SOURCES += $$PWD/../modules/cuda/gpuaverager.cu
 
-	# Path to cuda toolkit install
+    # Path to cuda toolkit install
 	CUDA_DIR      = /usr/local/cuda
 	INCLUDEPATH  += $$CUDA_DIR/include -isystem /usr/include/qt5 -isystem /usr/include/qt5/QtCore
 	QMAKE_LIBDIR += $$CUDA_DIR/lib64
@@ -132,29 +91,23 @@ gpu-cuda {
 	LIBS += -L$$CUDA_DIR/lib64 -lcuda -lcudart
 	# GPU architecture
 	CUDA_ARCH     = sm_50
-        NVCCFLAGS     = --compiler-options -use_fast_math --ptxas-options=-v -Xcompiler -fPIC -Xcompiler -Wno-attributes
+	NVCCFLAGS     = --compiler-options -use_fast_math --ptxas-options=-v -Xcompiler -fPIC -Xcompiler -Wno-attributes
 
-	CONFIG(debug, debug|release) {
-		cuda_d.commands = $$CUDA_DIR/bin/nvcc -D_DEBUG -std=c++11 -m64 -O3 -arch=$$CUDA_ARCH -c $$NVCCFLAGS \
-					   $$CUDA_INC ${QMAKE_FILE_NAME} -o ${QMAKE_FILE_OUT} \
+    CONFIG(debug, debug|release) {
+	    cuda_d.commands = $$CUDA_DIR/bin/nvcc -D_DEBUG -std=c++11 -m64 -O3 -arch=$$CUDA_ARCH -c $$NVCCFLAGS \
+		               $$CUDA_INC ${QMAKE_FILE_NAME} -o ${QMAKE_FILE_OUT} \
 					   2>&1 | sed -r \"s/\\(([0-9]+)\\)/:\\1/g\" 1>&2
 
-		cuda_d.dependency_type = TYPE_C
-		cuda_d.depend_command = $$CUDA_DIR/bin/nvcc -O3 -M $$CUDA_INC $$NVCCFLAGS   ${QMAKE_FILE_NAME}
-
-		cuda_d.input = CUDA_SOURCES
+        cuda_d.input = CUDA_SOURCES
 		cuda_d.output = ${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
 		QMAKE_EXTRA_COMPILERS += cuda_d
 	}
 	else {
-		cuda.commands = $$CUDA_DIR/bin/nvcc -std=c++11 -m64 -O3 -arch=$$CUDA_ARCH -c $$NVCCFLAGS \
-					 $$CUDA_INC $$LIBS ${QMAKE_FILE_NAME} -o ${QMAKE_FILE_OUT} \
+	    cuda.commands = $$CUDA_DIR/bin/nvcc -std=c++11 -m64 -O3 -arch=$$CUDA_ARCH -c $$NVCCFLAGS \
+		             $$CUDA_INC $$LIBS ${QMAKE_FILE_NAME} -o ${QMAKE_FILE_OUT} \
 					 2>&1 | sed -r \"s/\\(([0-9]+)\\)/:\\1/g\" 1>&2
 
-		cuda.dependency_type = TYPE_C
-		cuda.depend_command = $$CUDA_DIR/bin/nvcc -O3 -M $$CUDA_INC $$NVCCFLAGS   ${QMAKE_FILE_NAME}
-
-		cuda.input = CUDA_SOURCES
+        cuda.input = CUDA_SOURCES
 		cuda.output = ${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
 		QMAKE_EXTRA_COMPILERS += cuda
 	}
@@ -165,56 +118,7 @@ gpu-cuda {
 # -----------------------------------------------
 
 lif {
-	DEFINES += BC_LIF
+    DEFINES += BC_LIF
 	DEFINES += BC_LIFSCOPE=$$LIFSCOPE
 	DEFINES += BC_LIFLASER=$$LIFLASER
-}
-
-motor {
-	DEFINES += BC_MOTOR
-	DEFINES += BC_MOTORCONTROLLER=$$MOTOR
-		DEFINES += BC_MOTORSCOPE=$$MOTORSCOPE
-}
-
-DEFINES += BC_FTMWSCOPE=$$FTMWSCOPE
-DEFINES += BC_AWG=$$AWG
-DEFINES += BC_PGEN=$$PGEN
-DEFINES += BC_FLOWCONTROLLER=$$FC
-DEFINES += BC_IOBOARD=$$IOBOARD
-
-!equals(GPIB,-1) {
-	DEFINES += BC_GPIBCONTROLLER=$$GPIB
-}
-
-!equals(PC,-1) {
-        DEFINES += BC_PCONTROLLER=$$PC
-}
-
-!equals(TC,-1) {
-        DEFINES += BC_TEMPCONTROLLER=$$TC
-}
-
-equals(FTMWSCOPE,0) {
-RESOURCES += virtualdata.qrc
-}
-
-CLOCK_HW = FixedClock Valon5009 Valon5015
-
-for(num, 0..$$size(CLOCKS)) {
-N = $$member(CLOCKS,$$num)
-count(N,1) {
-DEFINES += BC_CLOCK_$$num=$$member(CLOCK_HW,$$N)
-}
-}
-
-contains(CLOCKS,0) {
-DEFINES += BC_CLOCK_FIXED
-}
-
-contains(CLOCKS,1) {
-DEFINES += BC_CLOCK_VALON5009
-}
-
-contains(CLOCKS,2) {
-DEFINES += BC_CLOCK_VALON5015
 }
