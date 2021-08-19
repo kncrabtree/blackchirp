@@ -58,7 +58,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     p_hwm = new HardwareManager();
-    auto hwl = p_hwm->currentHardware();
+    d_hardware = p_hwm->currentHardware();
 
     qRegisterMetaType<QwtPlot::Axis>("QwtPlot::Axis");
 
@@ -94,10 +94,11 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(p_hwm,&HardwareManager::clockFrequencyUpdate,ui->clockBox,&ClockDisplayBox::updateFrequency);
 
 
-    for(auto it = hwl.cbegin(); it != hwl.cend(); ++it)
+    for(auto it = d_hardware.cbegin(); it != d_hardware.cend(); ++it)
     {
         auto key = it->first;
         auto act = ui->menuHardware->addAction(key);
+        act->setObjectName(QString("Action")+key);
 
         if(key == BC::Key::Flow::flowController)
         {
@@ -327,13 +328,12 @@ void MainWindow::startExperiment()
     QMetaObject::invokeMethod(p_hwm,&HardwareManager::getClocks,Qt::BlockingQueuedConnection,&clocks);
 
     auto exp = std::make_shared<Experiment>();
-    auto hwl = p_hwm->currentHardware();
-    if(hwl.find(BC::Key::PGen::key) != hwl.end())
+    if(d_hardware.find(BC::Key::PGen::key) != d_hardware.end())
         exp->setPulseGenConfig(p_hwm->getPGenConfig());
-    if(hwl.find(BC::Key::Flow::flowController) != hwl.end())
+    if(d_hardware.find(BC::Key::Flow::flowController) != d_hardware.end())
         exp->setFlowConfig(p_hwm->getFlowConfig());
 
-    ExperimentWizard wiz(exp.get(),hwl,this);
+    ExperimentWizard wiz(exp.get(),d_hardware,this);
     wiz.setValidationKeys(p_hwm->validationKeys());
     wiz.d_clocks = clocks;
 
@@ -361,8 +361,7 @@ void MainWindow::quickStart()
         return;
 
     QuickExptDialog d(this);
-    auto hwl = p_hwm->currentHardware();
-    d.setHardware(hwl);
+    d.setHardware(d_hardware);
     int ret = d.exec();
     if(ret == QDialog::Rejected)
         return;
@@ -373,11 +372,11 @@ void MainWindow::quickStart()
     }
 
     auto exp = std::make_shared<Experiment>(d.exptNumber(),"",true);
-    if((hwl.find(BC::Key::PGen::key) != hwl.end()) && d.useCurrentSettings(BC::Key::PGen::key))
+    if((d_hardware.find(BC::Key::PGen::key) != d_hardware.end()) && d.useCurrentSettings(BC::Key::PGen::key))
         exp->setPulseGenConfig(p_hwm->getPGenConfig());
-    if((hwl.find(BC::Key::PGen::key) != hwl.end()) && d.useCurrentSettings(BC::Key::Flow::flowController))
+    if((d_hardware.find(BC::Key::PGen::key) != d_hardware.end()) && d.useCurrentSettings(BC::Key::Flow::flowController))
         exp->setFlowConfig(p_hwm->getFlowConfig());
-    if((hwl.find(BC::Key::PController::key) != hwl.end()) && d.useCurrentSettings(BC::Key::PController::key))
+    if((d_hardware.find(BC::Key::PController::key) != d_hardware.end()) && d.useCurrentSettings(BC::Key::PController::key))
         exp->setPressureControllerConfig(p_hwm->getPressureControllerConfig());
 
     if(ret == QuickExptDialog::Start)
@@ -387,7 +386,7 @@ void MainWindow::quickStart()
         return;
     }
 
-    ExperimentWizard wiz(exp.get(),hwl,this);
+    ExperimentWizard wiz(exp.get(),d_hardware,this);
     wiz.setValidationKeys(p_hwm->validationKeys());
     if(exp->ftmwEnabled())
         wiz.d_clocks = exp->ftmwConfig()->d_rfConfig.getClocks();
@@ -489,7 +488,7 @@ void MainWindow::batchComplete(bool aborted)
 
     ui->ftmwTab->setEnabled(true);
 
-    if(d_state == Acquiring)
+    if(d_state == Acquiring || d_state == Paused)
         configureUi(Idle);
 }
 
@@ -565,6 +564,8 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
     else
         p_lh->logMessage(exp->d_startLogMessage,LogHandler::Highlight);
 
+    //this is needed to reconfigure UI in case experiment is dummy
+    configureUi(Acquiring);
 
     QMetaObject::invokeMethod(p_am,[this,exp](){p_am->beginExperiment(exp);});
 }
@@ -861,46 +862,39 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
     if(!d_hardwareConnected)
         s = Disconnected;
 
+    //start by disabling all actions; then enable as needed
+    auto hwl = ui->menuHardware->actions();
+    auto acq = ui->menuAcquisition->actions();
+
+    for(auto act : hwl)
+        act->setEnabled(false);
+    for(auto act : acq)
+        act->setEnabled(false);
+
+    ui->abortButton->setEnabled(false);
+    ui->pauseButton->setEnabled(false);
+    ui->resumeButton->setEnabled(false);
+    ui->sleepButton->setEnabled(false);
+
+
     switch(s)
     {
     case Asleep:
-        ui->abortButton->setEnabled(false);
-        ui->pauseButton->setEnabled(false);
-        ui->resumeButton->setEnabled(false);
-        ui->actionStart_Experiment->setEnabled(false);
-        ui->actionQuick_Experiment->setEnabled(false);
-        ui->actionStart_Sequence->setEnabled(false);
-        ui->actionCommunication->setEnabled(false);
-        ui->actionTest_All_Connections->setEnabled(false);
         ui->sleepButton->setEnabled(true);
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(false);
 #endif
         break;
     case Disconnected:
-        ui->abortButton->setEnabled(false);
-        ui->pauseButton->setEnabled(false);
-        ui->resumeButton->setEnabled(false);
-        ui->actionStart_Experiment->setEnabled(false);
-        ui->actionQuick_Experiment->setEnabled(false);
-        ui->actionStart_Sequence->setEnabled(false);
         ui->actionCommunication->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
-        ui->sleepButton->setEnabled(false);
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(false);
 #endif
         break;
     case Paused:
         ui->abortButton->setEnabled(true);
-        ui->pauseButton->setEnabled(false);
         ui->resumeButton->setEnabled(true);
-        ui->actionStart_Experiment->setEnabled(false);
-        ui->actionQuick_Experiment->setEnabled(false);
-        ui->actionStart_Sequence->setEnabled(false);
-        ui->actionCommunication->setEnabled(false);
-        ui->actionTest_All_Connections->setEnabled(false);
-        ui->sleepButton->setEnabled(false);
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(false);
 #endif
@@ -908,41 +902,30 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
     case Acquiring:
         ui->abortButton->setEnabled(true);
         ui->pauseButton->setEnabled(true);
-        ui->resumeButton->setEnabled(false);
-        ui->actionStart_Experiment->setEnabled(false);
-        ui->actionQuick_Experiment->setEnabled(false);
-        ui->actionStart_Sequence->setEnabled(false);
-        ui->actionCommunication->setEnabled(false);
-        ui->actionTest_All_Connections->setEnabled(false);
         ui->sleepButton->setEnabled(true);
+        if(p_batchManager && p_batchManager->currentExperiment()->isDummy())
+        {
+            for(auto act : hwl)
+            {
+                if(act == ui->actionRfConfig)
+                    continue;
+                if(act == ui->actionCommunication)
+                    continue;
+                if(act == ui->actionTest_All_Connections)
+                    continue;
+                act->setEnabled(true);
+            }
+        }
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(false);
 #endif
         break;
-    case Peaking:
-        ui->abortButton->setEnabled(true);
-        ui->pauseButton->setEnabled(false);
-        ui->resumeButton->setEnabled(false);
-        ui->actionStart_Experiment->setEnabled(false);
-        ui->actionQuick_Experiment->setEnabled(false);
-        ui->actionStart_Sequence->setEnabled(false);
-        ui->actionCommunication->setEnabled(false);
-        ui->actionTest_All_Connections->setEnabled(false);
-        ui->sleepButton->setEnabled(false);
-#ifdef BC_LIF
-        p_lifControlWidget->setEnabled(true);
-#endif
-        break;
     case Idle:
     default:
-        ui->abortButton->setEnabled(false);
-        ui->pauseButton->setEnabled(false);
-        ui->resumeButton->setEnabled(false);
-        ui->actionStart_Experiment->setEnabled(true);
-        ui->actionQuick_Experiment->setEnabled(true);
-        ui->actionStart_Sequence->setEnabled(true);
-        ui->actionCommunication->setEnabled(true);
-        ui->actionTest_All_Connections->setEnabled(true);
+        for(auto act : hwl)
+            act->setEnabled(true);
+        for(auto act : acq)
+            act->setEnabled(true);
         ui->sleepButton->setEnabled(true);
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(true);
@@ -968,11 +951,8 @@ void MainWindow::startBatch(BatchManager *bm)
 
     connect(p_am,&AcquisitionManager::auxData,ui->auxDataViewWidget,&AuxDataViewWidget::pointUpdated,Qt::UniqueConnection);
     connect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort,Qt::UniqueConnection);
-
-//    ui->trackingViewWidget->initializeForExperiment();
-    configureUi(Acquiring);
-
     p_batchManager = bm;
+    configureUi(Acquiring);
 
     QMetaObject::invokeMethod(p_hwm,[this](){ p_hwm->initializeExperiment(p_batchManager->currentExperiment());});
 

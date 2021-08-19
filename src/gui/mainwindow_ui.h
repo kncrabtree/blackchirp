@@ -77,7 +77,6 @@ public:
     QWidget *logTab;
     QVBoxLayout *logTabLayout;
     QTextEdit *logTextEdit;
-    QMenuBar *menuBar;
     QMenu *menuHardware;
     QMenu *menuAcquisition;
     QMenu *menuRollingData;
@@ -155,6 +154,7 @@ public:
         QIcon rfIcon;
         rfIcon.addFile(QString::fromUtf8(":/icons/chirp.png"), QSize(), QIcon::Normal, QIcon::Off);
         actionRfConfig = new QAction("Rf Configuration",MainWindow);
+        actionRfConfig->setObjectName("ActionRfConfig");
         actionRfConfig->setIcon(rfIcon);
         QIcon icon12;
         icon12.addFile(QString::fromUtf8(":/icons/controltab.png"), QSize(), QIcon::Normal, QIcon::Off);
@@ -348,12 +348,12 @@ public:
 
         mainLayout->setStretch(1, 1);
         MainWindow->setCentralWidget(centralWidget);
-        menuBar = new QMenuBar(centralWidget);
-        menuBar->setObjectName(QString::fromUtf8("menuBar"));
-        menuBar->setGeometry(QRect(0, 0, 676, 23));
-        menuHardware = new QMenu(menuBar);
+//        menuBar = new QMenuBar(centralWidget);
+//        menuBar->setObjectName(QString::fromUtf8("menuBar"));
+//        menuBar->setGeometry(QRect(0, 0, 676, 23));
+        menuHardware = new QMenu(hardwareButton);
         menuHardware->setObjectName(QString::fromUtf8("menuHardware"));
-        menuAcquisition = new QMenu(menuBar);
+        menuAcquisition = new QMenu(acquireButton);
         menuAcquisition->setObjectName(QString::fromUtf8("menuAcquisition"));
 
         menuAuxData = new QMenu(auxPlotButton);
@@ -362,7 +362,7 @@ public:
         menuRollingData = new QMenu(rollingPlotButton);
         menuRollingData->setObjectName(QString::fromUtf8("menuRollingData"));
         menuRollingData->setIcon(rollIcon);
-        MainWindow->setMenuBar(menuBar);
+//        MainWindow->setMenuBar(menuBar);
         mainToolBar = new QToolBar(centralWidget);
         mainToolBar->setObjectName(QString::fromUtf8("mainToolBar"));
         mainToolBar->setIconSize(QSize(14, 14));
@@ -373,7 +373,6 @@ public:
         statusBar->setObjectName(QString::fromUtf8("statusBar"));
         MainWindow->setStatusBar(statusBar);
 
-        menuHardware->addSeparator();
         menuHardware->addAction(actionCommunication);
         menuHardware->addAction(actionTest_All_Connections);
         menuHardware->addSeparator();
@@ -390,8 +389,6 @@ public:
 
         mainToolBar->addWidget(acquireButton);
         acquireButton->setMenu(menuAcquisition);
-//        mainToolBar->addAction(actionStart_Experiment);
-//        mainToolBar->addAction(actionQuick_Experiment);
 
         mainToolBar->addWidget(hardwareButton);
         hardwareButton->setMenu(menuHardware);
