@@ -91,7 +91,6 @@ private:
     AcquisitionManager *p_am;
 
     bool d_hardwareConnected{false};
-    QThread *p_batchThread;
 
     void configureUi(ProgramState s);
     void startBatch(BatchManager *bm);
@@ -100,6 +99,7 @@ private:
     int d_logCount{0};
     LogHandler::MessageCode d_logIcon{LogHandler::Normal};
     int d_currentExptNum{0};
+    BatchManager *p_batchManager{nullptr};
 
 #ifdef BC_LIF
     QWidget *p_lifTab;

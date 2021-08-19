@@ -22,14 +22,12 @@ void BatchSingle::writeReport()
 
 void BatchSingle::processExperiment()
 {
+    d_complete = true;
 }
 
 std::shared_ptr<Experiment> BatchSingle::currentExperiment()
 {
-    //only one experiment, so set complete to true and return it
-    d_complete = true;
     return d_exp;
-
 }
 
 bool BatchSingle::isComplete()

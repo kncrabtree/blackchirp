@@ -239,9 +239,6 @@ MainWindow::MainWindow(QWidget *parent) :
         amThread->start();
     });
 
-    p_batchThread = new QThread(this);
-    p_batchThread->setObjectName("BatchManagerThread");
-
     connect(ui->actionStart_Experiment,&QAction::triggered,this,&MainWindow::startExperiment);
     connect(ui->actionQuick_Experiment,&QAction::triggered,this,&MainWindow::quickStart);
     connect(ui->actionStart_Sequence,&QAction::triggered,this,&MainWindow::startSequence);
@@ -323,7 +320,7 @@ void MainWindow::initializeHardware()
 
 void MainWindow::startExperiment()
 {
-    if(p_batchThread->isRunning())
+    if(p_batchManager && !p_batchManager->isComplete())
         return;
 
     QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks;
@@ -360,7 +357,7 @@ void MainWindow::startExperiment()
 
 void MainWindow::quickStart()
 {
-    if(p_batchThread->isRunning())
+    if(p_batchManager && !p_batchManager->isComplete())
         return;
 
     QuickExptDialog d(this);
@@ -404,7 +401,7 @@ void MainWindow::quickStart()
 
 void MainWindow::startSequence()
 {
-    if(p_batchThread->isRunning())
+    if(p_batchManager && !p_batchManager->isComplete())
         return;
 
 //    BatchSequenceDialog d(this);
@@ -498,13 +495,12 @@ void MainWindow::batchComplete(bool aborted)
 
 void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
 {   
-    if(!p_batchThread->isRunning())
+    if(!p_batchManager || p_batchManager->isComplete())
         return;
 
     if(!exp->d_hardwareSuccess)
     {
         emit logMessage(exp->d_errorString,LogHandler::Error);
-        p_batchThread->quit();
         configureUi(Idle);
         return;
     }
@@ -514,7 +510,6 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
         emit logMessage(QString("Could not initialize experiment."),LogHandler::Error);
         if(!exp->d_errorString.isEmpty())
             emit logMessage(exp->d_errorString,LogHandler::Error);
-        p_batchThread->quit();
         configureUi(Idle);
         return;
     }
@@ -566,23 +561,12 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
 #endif
 
     if(!exp->isDummy())
-    {
-        if(p_lh->thread() == thread())
-            p_lh->beginExperimentLog(exp->d_number,exp->d_startLogMessage);
-        else
-            QMetaObject::invokeMethod(p_lh,[this,exp](){p_lh->beginExperimentLog(exp->d_number,exp->d_startLogMessage);});
-    }
+        p_lh->beginExperimentLog(exp->d_number,exp->d_startLogMessage);
     else
-    {
-        if(p_lh->thread() == thread())
-            p_lh->logMessage(exp->d_startLogMessage,LogHandler::Highlight);
-        else
-            emit logMessage(exp->d_startLogMessage,LogHandler::Highlight);
-    }
+        p_lh->logMessage(exp->d_startLogMessage,LogHandler::Highlight);
+
 
     QMetaObject::invokeMethod(p_am,[this,exp](){p_am->beginExperiment(exp);});
-
-
 }
 
 void MainWindow::hardwareInitialized(bool success)
@@ -756,7 +740,8 @@ void MainWindow::viewExperiment()
     fl->addRow(hl);
 
     int lastCompletedExperiment = ui->exptSpinBox->value();
-    if(p_batchThread->isRunning() && d_currentExptNum == lastCompletedExperiment)
+    if(p_batchManager && !p_batchManager->isComplete()
+            && d_currentExptNum == lastCompletedExperiment)
         lastCompletedExperiment--;
 
     if(lastCompletedExperiment < 1)
@@ -968,7 +953,8 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
 
 void MainWindow::startBatch(BatchManager *bm)
 {
-    connect(p_batchThread,&QThread::started,bm,&BatchManager::beginNextExperiment);
+    delete p_batchManager;
+
     connect(bm,&BatchManager::statusMessage,ui->statusBar,&QStatusBar::showMessage);
     connect(bm,&BatchManager::logMessage,p_lh,&LogHandler::logMessage);
     connect(bm,&BatchManager::beginExperiment,p_lh,&LogHandler::endExperimentLog);
@@ -978,22 +964,23 @@ void MainWindow::startBatch(BatchManager *bm)
     connect(ui->abortButton,&QToolButton::clicked,bm,&BatchManager::abort);
     connect(bm,&BatchManager::batchComplete,this,&MainWindow::batchComplete);
     connect(bm,&BatchManager::batchComplete,this,&MainWindow::checkSleep);
-    connect(bm,&BatchManager::batchComplete,p_batchThread,&QThread::quit);
     connect(bm,&BatchManager::batchComplete,p_lh,&LogHandler::endExperimentLog);
-    connect(p_batchThread,&QThread::finished,bm,&BatchManager::deleteLater);
 
     connect(p_am,&AcquisitionManager::auxData,ui->auxDataViewWidget,&AuxDataViewWidget::pointUpdated,Qt::UniqueConnection);
     connect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort,Qt::UniqueConnection);
 
 //    ui->trackingViewWidget->initializeForExperiment();
     configureUi(Acquiring);
-    bm->moveToThread(p_batchThread);
-    p_batchThread->start();
+
+    p_batchManager = bm;
+
+    QMetaObject::invokeMethod(p_hwm,[this](){ p_hwm->initializeExperiment(p_batchManager->currentExperiment());});
+
 }
 
 void MainWindow::closeEvent(QCloseEvent *ev)
 {
-    if(p_batchThread->isRunning())
+    if(p_batchManager && !p_batchManager->isComplete())
         ev->ignore();
     else
     {

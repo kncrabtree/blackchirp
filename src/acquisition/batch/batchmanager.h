@@ -19,6 +19,7 @@ public:
     virtual std::shared_ptr<Experiment> currentExperiment() =0;
     explicit BatchManager(BatchType b);
     virtual ~BatchManager();
+    virtual bool isComplete() =0;
 
 signals:
     void statusMessage(QString,int=0);
@@ -39,7 +40,6 @@ protected:
 
     virtual void writeReport() =0;
     virtual void processExperiment() =0;
-    virtual bool isComplete() =0;
 };
 
 #endif //BATCHMANAGER_H

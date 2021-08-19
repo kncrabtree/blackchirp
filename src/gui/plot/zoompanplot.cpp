@@ -86,6 +86,7 @@ ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),
         if(d_config.xDirty)
         {
             d_busy = true;
+            d_config.xDirty = false;
             p_watcher->setFuture(QtConcurrent::run([this](){filterData();}));
         }
     },Qt::QueuedConnection);
