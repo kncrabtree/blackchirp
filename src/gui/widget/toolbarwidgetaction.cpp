@@ -73,6 +73,14 @@ void SpinBoxWidgetAction::setSuffix(const QString s)
         box->setSuffix(s);
 }
 
+void SpinBoxWidgetAction::setSingleStep(int step)
+{
+    d_step = step;
+    auto box = dynamic_cast<QSpinBox*>(p_widget);
+    if(box)
+        box->setSingleStep(d_step);
+}
+
 int SpinBoxWidgetAction::value() const
 {
     auto box = dynamic_cast<QSpinBox*>(p_widget);
@@ -90,6 +98,7 @@ QWidget *SpinBoxWidgetAction::_createWidget(QWidget *parent)
     out->setPrefix(d_prefix);
     out->setSuffix(d_suffix);
     out->setKeyboardTracking(false);
+    out->setSingleStep(d_step);
     out->setValue(d_value);
 
     connect(out,qOverload<int>(&QSpinBox::valueChanged),this,&SpinBoxWidgetAction::setValue);

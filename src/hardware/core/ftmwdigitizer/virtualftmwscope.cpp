@@ -121,6 +121,7 @@ void VirtualFtmwScope::readWaveform()
             out.resize(d_recordLength*d_bytesPerPoint);
 
 
+        double ym = yMult(d_fidChannel);
         for(int i=0; i<frames; i++)
         {
             for(int j=0; j<d_recordLength; j++)
@@ -132,13 +133,13 @@ void VirtualFtmwScope::readWaveform()
                 if(d_bytesPerPoint == 1)
                 {
                     int noise = (rand()%32)-16;
-                    qint8 n = qBound(-128,((int)(dat/yMult(d_fidChannel))+noise),127);
+                    qint8 n = qBound(-128,((int)(dat/ym)+noise),127);
                     out[d_recordLength*i + j] = n;
                 }
                 else
                 {
                     int noise = (rand()%4096)-2048;
-                    qint16 n = qBound(-32768,((int)(dat/yMult(d_fidChannel))+noise),32767);
+                    qint16 n = qBound(-32768,((int)(dat/ym)+noise),32767);
                     quint8 byte1;
                     quint8 byte2;
                     if(d_byteOrder == DigitizerConfig::LittleEndian)

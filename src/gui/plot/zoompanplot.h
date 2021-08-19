@@ -32,8 +32,6 @@ static const QString minorGridColor("minorGridColor");
 static const QString minorGridStyle("minorGridStyle");
 }
 
-/// \todo Handle plot grid in this class
-
 class ZoomPanPlot : public QwtPlot, public SettingsStorage
 {
     Q_OBJECT

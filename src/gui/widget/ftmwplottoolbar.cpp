@@ -163,6 +163,16 @@ int FtmwPlotToolBar::mainPlotFollow() const
     return p_followBox->value();
 }
 
+double FtmwPlotToolBar::sbMinFreq() const
+{
+    return p_sbMinBox->value();
+}
+
+double FtmwPlotToolBar::sbMaxFreq() const
+{
+    return p_sbMaxBox->value();
+}
+
 int FtmwPlotToolBar::frame(int id) const
 {
     auto it = d_frame.find(id);

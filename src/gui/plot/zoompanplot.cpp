@@ -301,9 +301,9 @@ void ZoomPanPlot::replot()
 
     if(d_config.xDirty)
     {
-        d_config.xDirty = false;
         if(!d_busy)
         {
+            d_config.xDirty = false;
             d_busy = true;
             p_watcher->setFuture(QtConcurrent::run([this](){filterData();}));
         }

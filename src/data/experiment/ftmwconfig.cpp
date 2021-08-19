@@ -328,6 +328,7 @@ void FtmwConfig::storeValues()
         store(chirpOffset,d_chirpOffsetUs,QString::fromUtf8("μs"));
 
     store(type,d_type);
+    store(objective,d_objective);
 
     _prepareToSave();
 }
@@ -339,6 +340,7 @@ void FtmwConfig::retrieveValues()
     d_chirpScoringEnabled = retrieve(chirp,false);
     d_chirpRMSThreshold = retrieve(chirpThresh,0.0);
     d_chirpOffsetUs = retrieve(chirpOffset,0.0);
+    d_objective = retrieve<quint64>(objective);
 
     //don't need to use retrieved type
     retrieve<FtmwType>(type);

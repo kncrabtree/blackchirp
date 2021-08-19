@@ -16,7 +16,7 @@
 #include <data/storage/fidpeakupstorage.h>
 
 FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
-    QWidget(parent),
+    QWidget(parent), SettingsStorage(BC::Key::FtmwView::key),
     ui(new Ui::FtmwViewWidget), d_currentExptNum(-1), d_currentSegment(-1), d_path(path)
 {
     ui->setupUi(this);
@@ -79,6 +79,11 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     connect(ui->plotToolBar,&FtmwPlotToolBar::mainPlotSettingChanged,this,&FtmwViewWidget::updateMainPlot);
     connect(ui->plotToolBar,&FtmwPlotToolBar::plotSettingChanged,this,&FtmwViewWidget::updatePlotSetting);
 
+
+    ui->refreshBox->setValue(get(BC::Key::FtmwView::refresh,500));
+    registerGetter(BC::Key::FtmwView::refresh,ui->refreshBox,&SpinBoxWidgetAction::value);
+    ui->refreshBox->setEnabled(false);
+
     ui->processingToolBar->setEnabled(false);
     ui->plotToolBar->setEnabled(false);
 
@@ -92,6 +97,8 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
 
 FtmwViewWidget::~FtmwViewWidget()
 {
+    clearGetters();
+
     if(p_pfw != nullptr)
         p_pfw->close();
 
@@ -108,6 +115,8 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
 
     if(!ui->exptLabel->isVisible())
         ui->exptLabel->setVisible(true);
+
+    ui->refreshBox->setEnabled(false);
 
     ui->liveFidPlot->prepareForExperiment(e);
     ui->liveFidPlot->setVisible(true);
@@ -133,11 +142,12 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         ps.segment = 0;
         ps.backup = 0;
         ps.loadWhenDone = false;
-        int id = key;
     }
 
     if(e.ftmwEnabled())
     {        
+        ui->refreshBox->setEnabled(true);
+        connect(ui->refreshBox,&SpinBoxWidgetAction::valueChanged,this,&FtmwViewWidget::setLiveUpdateInterval);
         ps_fidStorage = e.ftmwConfig()->storage();
         if(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up)
             ui->exptLabel->setText(QString("Peak Up Mode"));
@@ -157,7 +167,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         ui->resetAveragesButton->setEnabled(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up);
         ui->averagesSpinbox->setEnabled(e.ftmwConfig()->d_type == FtmwConfig::Peak_Up);
 
-        d_liveTimerId = startTimer(500);
+        d_liveTimerId = startTimer(ui->refreshBox->value());
     }
     else
     {
@@ -169,6 +179,12 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
 
     ui->peakFindAction->setEnabled(false);
 
+}
+
+void FtmwViewWidget::setLiveUpdateInterval(int intervalms)
+{
+    killTimer(d_liveTimerId);
+    d_liveTimerId = startTimer(intervalms);
 }
 
 void FtmwViewWidget::updateLiveFidList()
@@ -436,8 +452,8 @@ void FtmwViewWidget::processSideband(RfConfig::Sideband sb)
             ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
             ws.busy = true;
             ws.reprocessWhenDone = false;
-            double minF = ui->minFtSegBox->value();
-            double maxF = ui->maxFtSegBox->value();
+            double minF = ui->plotToolBar->sbMinFreq();
+            double maxF = ui->plotToolBar->sbMaxFreq();
 
             QMetaObject::invokeMethod(ws.worker,[ws,fl,this,sb,minF,maxF](){
                 ws.worker->processSideband(fl,d_currentProcessingSettings,sb,minF,maxF);
@@ -471,8 +487,8 @@ void FtmwViewWidget::processBothSidebands()
             ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
             ws.busy = true;
             ws.reprocessWhenDone = false;
-            double minF = ui->minFtSegBox->value();
-            double maxF = ui->maxFtSegBox->value();
+            double minF = ui->plotToolBar->sbMinFreq();
+            double maxF = ui->plotToolBar->sbMaxFreq();
 
             QMetaObject::invokeMethod(ws.worker,[ws,fl,this,minF,maxF](){
                 ws.worker->processBothSidebands(fl,d_currentProcessingSettings,minF,maxF);
@@ -491,7 +507,11 @@ void FtmwViewWidget::updateBackups()
 
 void FtmwViewWidget::experimentComplete()
 {
+    disconnect(ui->refreshBox,&SpinBoxWidgetAction::valueChanged,this,&FtmwViewWidget::setLiveUpdateInterval);
+    ui->refreshBox->setEnabled(false);
     killTimer(d_liveTimerId);
+    d_liveTimerId = -1;
+
     if(ps_fidStorage)
     {
         d_currentSegment = -1;

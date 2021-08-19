@@ -32,6 +32,8 @@ public:
 
     MainPlotMode mainPlotMode() const;
     int mainPlotFollow() const;
+    double sbMinFreq() const;
+    double sbMaxFreq() const;
 
     int frame(int id) const;
     int segment(int id) const;

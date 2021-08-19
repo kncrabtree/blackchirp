@@ -25,6 +25,7 @@ static const QString chirpThresh("ChirpRMSThreshold");
 static const QString chirpOffset("ChirpOffset");
 static const QString type("Type");
 static const QString tShots("TargetShots");
+static const QString objective("Objective");
 }
 
 class BlackchirpCSV;
@@ -49,7 +50,6 @@ public:
     FtmwConfig &operator=(const FtmwConfig &) =default;
     virtual ~FtmwConfig();
 
-    bool d_isEnabled{false};
     bool d_phaseCorrectionEnabled{false};
     bool d_chirpScoringEnabled{false};
     double d_chirpRMSThreshold{0.0};

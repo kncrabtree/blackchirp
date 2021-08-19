@@ -26,10 +26,12 @@
 
 #include <data/experiment/experiment.h>
 #include <data/analysis/ftworker.h>
+#include <data/storage/settingsstorage.h>
 #include <gui/plot/fidplot.h>
 #include <gui/plot/ftplot.h>
 #include <gui/widget/ftmwprocessingtoolbar.h>
 #include <gui/widget/ftmwplottoolbar.h>
+#include <gui/widget/toolbarwidgetaction.h>
 
 class QThread;
 class FtmwSnapshotWidget;
@@ -39,17 +41,21 @@ namespace Ui {
 class FtmwViewWidget;
 }
 
-class FtmwViewWidget : public QWidget
+namespace BC::Key::FtmwView {
+static const QString key("FtmwViewWidget");
+static const QString refresh("refreshMs");
+}
+
+class FtmwViewWidget : public QWidget, public SettingsStorage
 {
     Q_OBJECT
 public:
-
-
     explicit FtmwViewWidget(QWidget *parent = 0, QString path = QString(""));
     ~FtmwViewWidget();
     void prepareForExperiment(const Experiment &e);
 
 public slots:
+    void setLiveUpdateInterval(int intervalms);
     void updateLiveFidList();
     void updateProcessingSettings(FtWorker::FidProcessingSettings s);
     void updatePlotSetting(int id);
@@ -82,7 +88,7 @@ private:
     FtWorker::FidProcessingSettings d_currentProcessingSettings;
     int d_currentExptNum;
     int d_currentSegment;
-    int d_liveTimerId;
+    int d_liveTimerId{-1};
 
     struct WorkerStatus {
         FtWorker *worker;
@@ -146,9 +152,8 @@ public:
     FtmwPlotToolBar *plotToolBar;
     QSpinBox *averagesSpinbox;
     QPushButton *resetAveragesButton;
-    QDoubleSpinBox *minFtSegBox;
-    QDoubleSpinBox *maxFtSegBox;
     QAction *peakFindAction;
+    SpinBoxWidgetAction *refreshBox;
 
     void setupUi(QWidget *FtmwViewWidget)
     {
@@ -281,6 +286,12 @@ public:
         auto *spacer = new QWidget;
         spacer->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Minimum);
         toolBar->addWidget(spacer);
+
+        refreshBox = new SpinBoxWidgetAction("Refresh Interval",FtmwViewWidget);
+        refreshBox->setRange(500,60000);
+        refreshBox->setSingleStep(500);
+        refreshBox->setSuffix(" ms");
+        toolBar->addAction(refreshBox);
 
         auto vbl = new QVBoxLayout;
         vbl->addWidget(toolBar,0);

@@ -37,6 +37,7 @@ public:
     void setMaximum(int max);
     void setPrefix(const QString p);
     void setSuffix(const QString s);
+    void setSingleStep(int step);
     int value() const;
 
 protected:
@@ -51,7 +52,7 @@ signals:
 
 private:
     QString d_label, d_specialText, d_prefix, d_suffix;
-    int d_value{0};
+    int d_value{0}, d_step{1};
     QPair<int,int> d_range{0,99};
 
 };
