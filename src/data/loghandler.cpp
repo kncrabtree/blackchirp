@@ -86,7 +86,7 @@ void LogHandler::writeToFile(const QString text, const MessageCode type, QDateTi
     if(d_currentExperimentNum > 0)
     {
         QDir exp = BlackchirpCSV::exptDir(d_currentExperimentNum);
-        QFile expLog = exp.absoluteFilePath("log.csv");
+        QFile expLog(exp.absoluteFilePath("log.csv"));
         if(expLog.open(QIODevice::Append|QIODevice::Text))
         {
             QTextStream ts(&expLog);
