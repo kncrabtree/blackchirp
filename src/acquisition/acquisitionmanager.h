@@ -10,10 +10,6 @@
 #include <data/loghandler.h>
 #include <data/experiment/experiment.h>
 
-#ifdef BC_CUDA
-#include <modules/cuda/gpuaverager.h>
-#endif
-
 #ifdef BC_MOTOR
 #include <modules/motor/data/motorscan.h>
 #endif
@@ -81,7 +77,7 @@ public slots:
 #endif
 
 private:
-    std::shared_ptr<Experiment> d_currentExperiment;
+    std::shared_ptr<Experiment> ps_currentExperiment;
     AcquisitionState d_state;
     int d_currentShift;
     float d_lastFom;
@@ -95,9 +91,7 @@ private:
     float calculateFom(const QVector<qint64> vec, const Fid fid, QPair<int,int> range, int trialShift);
     double calculateChirpRMS(const QVector<qint64> chirp, double sf, qint64 shots = 1);
 
-#ifdef BC_CUDA
-    GpuAverager gpuAvg;
-#endif
+
 
 #ifdef BC_MOTOR
     bool d_waitingForMotor;

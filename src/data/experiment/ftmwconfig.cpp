@@ -235,6 +235,16 @@ bool FtmwConfig::initialize()
 
     p_fidStorage = createStorage(d_number);
     d_lastAutosaveTime = QDateTime::currentDateTime();
+
+#ifdef BC_CUDA
+    ps_gpu = std::make_shared<GpuAverager>();
+    if(!ps_gpu->initialize(&d_scopeConfig))
+    {
+        d_errorString = ps_gpu->getErrorString();
+        return false;
+    }
+#endif
+
     return _init();
 
 
@@ -250,6 +260,9 @@ bool FtmwConfig::advance()
         d_rfConfig.advanceClockStep();
         p_fidStorage->advance();
         d_lastAutosaveTime = now;
+#ifdef BC_CUDA
+        ps_gpu->setCurrentData(p_fidStorage->getCurrentFidList());
+#endif
         return !isComplete();
     }
     else
@@ -265,29 +278,49 @@ bool FtmwConfig::advance()
 
 }
 
-#ifdef BC_CUDA
 bool FtmwConfig::setFidsData(const QVector<QVector<qint64> > newList)
 {
     FidList l;
     l.reserve(newList.size());
-    auto fs = p_fidStorage.get();
-    auto s = fs->currentSegmentShots();
+    auto s = p_fidStorage->currentSegmentShots();
     for(int i=0; i<newList.size(); i++)
     {
         Fid f = d_fidTemplate;
         f.setData(newList.at(i));
-        f.setShots(s+shotIncrement());
+        auto shots = s+shotIncrement();
+        auto p = dynamic_cast<FidPeakUpStorage*>(p_fidStorage.get());
+        if(p)
+            shots = qMin(p->targetShots(),shots);
+        f.setShots(shots);
         l.append(f);
     }
 
-    return p_fidStorage.get()->setFidsData(l);
+    return p_fidStorage->setFidsData(l);
 }
-#endif
 
 bool FtmwConfig::addFids(const QByteArray rawData, int shift)
 {
+#ifdef BC_CUDA
+    if(!ps_gpu)
+        return false;
+    if(d_type == Peak_Up)
+    {
+        //detect if the number of averages has been reset
+        if(p_fidStorage->completedShots() == 0)
+            ps_gpu->resetAverage();
+        auto p = dynamic_cast<FidPeakUpStorage*>(p_fidStorage.get());
+        quint64 ts = 0;
+        if(p)
+            ts = p->targetShots();
+        return setFidsData(ps_gpu->parseAndRollAvg(rawData.constData(),completedShots()+shotIncrement(),ts,shift));
+    }
+    else
+        return setFidsData(ps_gpu->parseAndAdd(rawData.constData(),shift));
+#else
+
     FidList newList = parseWaveform(rawData);
     return p_fidStorage.get()->addFids(newList,shift);
+#endif
 }
 
 void FtmwConfig::setScopeConfig(const FtmwDigitizerConfig &other)
@@ -310,6 +343,13 @@ std::shared_ptr<FidStorageBase> FtmwConfig::storage() const
 bool FtmwConfig::abort()
 {
     return false;
+}
+
+void FtmwConfig::cleanup()
+{
+#ifdef BC_CUDA
+    ps_gpu.reset();
+#endif
 }
 
 void FtmwConfig::loadFids(int num, QString path)

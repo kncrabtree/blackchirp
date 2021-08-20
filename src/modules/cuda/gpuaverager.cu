@@ -123,75 +123,31 @@ __global__ void parseRollAvg_kernel4byte(int numPoints, char *devNewData, long l
     }
 }
 
-GpuAverager::GpuAverager() : d_pointsPerFrame(0), d_numFrames(0), d_totalPoints(0), d_bytesPerPoint(0), d_isLittleEndian(true), d_isInitialized(false),
-    p_devCharPtr(nullptr), p_hostPinnedCharPtr(nullptr), p_devSumPtr(nullptr), p_hostPinnedSumPtr(nullptr)
+GpuAverager::GpuAverager()
 {
-    d_cudaThreadsPerBlock = 1024;
 }
 
 
 GpuAverager::~GpuAverager()
 {
-   freeMemory();
-}
-
-void GpuAverager::freeMemory()
-{
-    if(p_devCharPtr != nullptr)
-    {
-        cudaFree(p_devCharPtr);
-        p_devCharPtr = nullptr;
-    }
-    if(p_hostPinnedCharPtr != nullptr)
-    {
-        cudaFreeHost(p_hostPinnedCharPtr);
-        p_hostPinnedCharPtr = nullptr;
-    }
-    if(p_devSumPtr != nullptr)
-    {
-        cudaFree(p_devSumPtr);
-        p_devSumPtr = nullptr;
-    }
-    if(p_hostPinnedSumPtr != nullptr)
-    {
-        cudaFreeHost(p_hostPinnedSumPtr);
-        p_hostPinnedSumPtr = nullptr;
-    }
+    cudaFree(p_devCharPtr);
+    cudaFreeHost(p_hostPinnedCharPtr);
+    cudaFree(p_devSumPtr);
+    cudaFreeHost(p_hostPinnedSumPtr);
 
     while(!d_streamList.isEmpty())
         cudaStreamDestroy(d_streamList.takeFirst());
 }
 
-bool GpuAverager::initialize(const int pointsPerFrame, const int numFrames, const int bytesPerPoint, DigitizerConfig::ByteOrder byteOrder)
+bool GpuAverager::initialize(DigitizerConfig *cfg)
 {
-    freeMemory();
-
-    d_pointsPerFrame = pointsPerFrame;
-    d_numFrames = numFrames;
-    d_bytesPerPoint = bytesPerPoint;
-    d_totalPoints = pointsPerFrame*numFrames;
-    byteOrder == DigitizerConfig::LittleEndian ? d_isLittleEndian = true : d_isLittleEndian = false;
-
-    Q_ASSERT(d_pointsPerFrame > 0);
-    if(d_pointsPerFrame <= 0)
-    {
-        d_errorMsg = QString("Could not initialize GPU. Invalid number of points per frame (%1).").arg(d_pointsPerFrame);
+    if(!cfg)
         return false;
-    }
 
-    Q_ASSERT(d_numFrames > 0);
-    if(d_numFrames <= 0)
-    {
-        d_errorMsg = QString("Could not initialize GPU. Invalid number of frames (%1).").arg(d_numFrames);
-        return false;
-    }
-
-    Q_ASSERT(d_bytesPerPoint > 0);
-    if(d_bytesPerPoint != 1 && d_bytesPerPoint != 2 && d_bytesPerPoint != 4)
-    {
-        d_errorMsg = QString("Could not initialize GPU. Invalid number of bytes per point (%1).").arg(d_bytesPerPoint);
-        return false;
-    }
+    p_config = cfg;
+    d_totalPoints = cfg->d_numRecords*cfg->d_recordLength;
+    d_numTotalBlocks = (d_totalPoints+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock;
+    d_numRecordBlocks = (cfg->d_recordLength+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock;
 
     cudaError_t err = cudaMalloc(&p_devSumPtr,d_totalPoints*sizeof(qint64));
     if(err != cudaSuccess)
@@ -200,7 +156,7 @@ bool GpuAverager::initialize(const int pointsPerFrame, const int numFrames, cons
         return false;
     }
 
-    initMem64_kernel<<<(d_totalPoints+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock>>>(d_totalPoints,p_devSumPtr);
+    initMem64_kernel<<<d_numTotalBlocks, d_cudaThreadsPerBlock>>>(d_totalPoints,p_devSumPtr);
     err = cudaGetLastError();
     if(err != cudaSuccess)
     {
@@ -215,21 +171,21 @@ bool GpuAverager::initialize(const int pointsPerFrame, const int numFrames, cons
         return false;
     }
 
-    err = cudaMalloc(&p_devCharPtr,d_totalPoints*d_bytesPerPoint*sizeof(char));
+    err = cudaMalloc(&p_devCharPtr,d_totalPoints*cfg->d_bytesPerPoint*sizeof(char));
     if(err != cudaSuccess)
     {
         setError(QString("Could not allocate GPU memory for character data."),err);
         return false;
     }
 
-    err = cudaMallocHost(&p_hostPinnedCharPtr,d_totalPoints*d_bytesPerPoint*sizeof(char));
+    err = cudaMallocHost(&p_hostPinnedCharPtr,d_totalPoints*cfg->d_bytesPerPoint*sizeof(char));
     if(err != cudaSuccess)
     {
         setError(QString("Could not allocate pinned 8 bit host memory."),err);
         return false;
     }
 
-    for(int i=0;i<d_numFrames;i++)
+    for(int i=0;i<cfg->d_numRecords;i++)
     {
         cudaStream_t str;
         err = cudaStreamCreate(&str);
@@ -250,36 +206,41 @@ bool GpuAverager::initialize(const int pointsPerFrame, const int numFrames, cons
 QVector<QVector<qint64> > GpuAverager::parseAndAdd(const char *newDataIn, const int shift)
 {
     QVector<QVector<qint64> > out;
-    if(!d_isInitialized)
+    if(!p_config)
     {
         d_errorMsg = QString("Cannot process scope data because GPU was not initialized successfully.");
         return out;
     }
 
+    auto rl = p_config->d_recordLength;
+    auto bpp = p_config->d_bytesPerPoint;
+    auto le = p_config->d_byteOrder == DigitizerConfig::LittleEndian;
+
     //move new data to pinned memory for efficiency and for stream usage
-    memcpy(p_hostPinnedCharPtr,newDataIn,d_totalPoints*d_bytesPerPoint*sizeof(char));
+    memcpy(p_hostPinnedCharPtr,newDataIn,d_totalPoints*bpp*sizeof(char));
 
     //launch asynchronous streams
     for(int i=0;i<d_streamList.size();i++)
     {
-        cudaMemcpyAsync(&p_devCharPtr[i*d_pointsPerFrame*d_bytesPerPoint], &p_hostPinnedCharPtr[i*d_pointsPerFrame*d_bytesPerPoint], d_pointsPerFrame*d_bytesPerPoint*sizeof(char), cudaMemcpyHostToDevice,d_streamList[i]);
-        if(d_bytesPerPoint == 1)
-            parseAdd_kernel1byte<<<(d_pointsPerFrame+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
-                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*d_pointsPerFrame,shift);
-        else if(d_bytesPerPoint == 2)
-            parseAdd_kernel2byte<<<(d_pointsPerFrame+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
-                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*d_pointsPerFrame,d_isLittleEndian,shift);
-        else if(d_bytesPerPoint == 4)
-            parseAdd_kernel4byte<<<(d_pointsPerFrame+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
-                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*d_pointsPerFrame,d_isLittleEndian,shift);
+        cudaMemcpyAsync(&p_devCharPtr[i*rl*bpp], &p_hostPinnedCharPtr[i*rl*bpp], rl*bpp*sizeof(char), cudaMemcpyHostToDevice,d_streamList[i]);
+        if(bpp == 1)
+            parseAdd_kernel1byte<<<d_numRecordBlocks, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
+                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*rl,shift);
+        else if(bpp == 2)
+            parseAdd_kernel2byte<<<d_numRecordBlocks, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
+                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*rl,le,shift);
+        else if(bpp == 4)
+            parseAdd_kernel4byte<<<d_numRecordBlocks, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
+                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*rl,le,shift);
 
-        cudaMemcpyAsync(&p_hostPinnedSumPtr[i*d_pointsPerFrame], &p_devSumPtr[i*d_pointsPerFrame], d_pointsPerFrame*sizeof(qint64), cudaMemcpyDeviceToHost,d_streamList[i]);
+        cudaMemcpyAsync(&p_hostPinnedSumPtr[i*rl], &p_devSumPtr[i*rl], rl*sizeof(qint64),
+                cudaMemcpyDeviceToHost,d_streamList[i]);
     }
 
     //while kernels and memory transfers are running, allocate memory for result data
-    for(int i=0;i<d_numFrames;i++)
+    for(int i=0;i<p_config->d_numRecords;i++)
     {
-        QVector<qint64> d(d_pointsPerFrame);
+        QVector<qint64> d(rl);
         out.append(d);
     }
 
@@ -288,7 +249,7 @@ QVector<QVector<qint64> > GpuAverager::parseAndAdd(const char *newDataIn, const 
     for(int i=0; i<d_streamList.size();i++)
     {
         cudaStreamSynchronize(d_streamList[i]);
-        memcpy(out[i].data(),&p_hostPinnedSumPtr[i*d_pointsPerFrame],d_pointsPerFrame*sizeof(qint64));
+        memcpy(out[i].data(),&p_hostPinnedSumPtr[i*rl],rl*sizeof(qint64));
     }
 
     cudaError_t err = cudaGetLastError();
@@ -299,38 +260,44 @@ QVector<QVector<qint64> > GpuAverager::parseAndAdd(const char *newDataIn, const 
 
 }
 
-QVector<QVector<qint64> > GpuAverager::parseAndRollAvg(const char *newDataIn, const qint64 currentShots, const qint64 targetShots, const int shift)
+QVector<QVector<qint64> > GpuAverager::parseAndRollAvg(const char *newDataIn, const quint64 currentShots, const quint64 targetShots, const int shift)
 {
     QVector<QVector<qint64> > out;
-    if(!d_isInitialized)
+    if(!p_config)
     {
         d_errorMsg = QString("Cannot process scope data because GPU was not initialized successfully.");
         return out;
     }
 
+    auto rl = p_config->d_recordLength;
+    auto bpp = p_config->d_bytesPerPoint;
+    auto le = p_config->d_byteOrder == DigitizerConfig::LittleEndian;
+    auto cs = static_cast<qint64>(currentShots);
+    auto ts = static_cast<qint64>(targetShots);
+
     //move new data to pinned memory for efficiency and for stream usage
-    memcpy(p_hostPinnedCharPtr,newDataIn,d_totalPoints*d_bytesPerPoint*sizeof(char));
+    memcpy(p_hostPinnedCharPtr,newDataIn,d_totalPoints*bpp*sizeof(char));
 
     //launch asynchronous streams
     for(int i=0;i<d_streamList.size();i++)
     {
-        cudaMemcpyAsync(&p_devCharPtr[i*d_pointsPerFrame*d_bytesPerPoint], &p_hostPinnedCharPtr[i*d_pointsPerFrame*d_bytesPerPoint], d_pointsPerFrame*d_bytesPerPoint*sizeof(char), cudaMemcpyHostToDevice,d_streamList[i]);
-        if(d_bytesPerPoint == 1)
-            parseRollAvg_kernel1byte<<<(d_pointsPerFrame+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
-                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*d_pointsPerFrame,currentShots,targetShots,shift);
-        else if(d_bytesPerPoint == 2)
-            parseRollAvg_kernel2byte<<<(d_pointsPerFrame+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
-                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*d_pointsPerFrame,currentShots,targetShots,d_isLittleEndian,shift);
+        cudaMemcpyAsync(&p_devCharPtr[i*rl*bpp], &p_hostPinnedCharPtr[i*rl*bpp], rl*bpp*sizeof(char), cudaMemcpyHostToDevice,d_streamList[i]);
+        if(bpp == 1)
+            parseRollAvg_kernel1byte<<<d_numRecordBlocks, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
+                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*rl,cs,ts,shift);
+        else if(bpp == 2)
+            parseRollAvg_kernel2byte<<<d_numRecordBlocks, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
+                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*rl,cs,ts,le,shift);
         else
-            parseRollAvg_kernel4byte<<<(d_pointsPerFrame+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
-                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*d_pointsPerFrame,currentShots,targetShots,d_isLittleEndian,shift);
-        cudaMemcpyAsync(&p_hostPinnedSumPtr[i*d_pointsPerFrame], &p_devSumPtr[i*d_pointsPerFrame], d_pointsPerFrame*sizeof(qint64), cudaMemcpyDeviceToHost,d_streamList[i]);
+            parseRollAvg_kernel4byte<<<d_numRecordBlocks, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
+                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*rl,cs,ts,le,shift);
+        cudaMemcpyAsync(&p_hostPinnedSumPtr[i*rl], &p_devSumPtr[i*rl], rl*sizeof(qint64), cudaMemcpyDeviceToHost,d_streamList[i]);
     }
 
     //while kernels and memory transfers are running, allocate memory for result data
-    for(int i=0;i<d_numFrames;i++)
+    for(int i=0;i<p_config->d_numRecords;i++)
     {
-        QVector<qint64> d(d_pointsPerFrame);
+        QVector<qint64> d(rl);
         out.append(d);
     }
 
@@ -339,7 +306,7 @@ QVector<QVector<qint64> > GpuAverager::parseAndRollAvg(const char *newDataIn, co
     for(int i=0; i<d_streamList.size();i++)
     {
         cudaStreamSynchronize(d_streamList[i]);
-        memcpy(out[i].data(),&p_hostPinnedSumPtr[i*d_pointsPerFrame],d_pointsPerFrame*sizeof(qint64));
+        memcpy(out[i].data(),&p_hostPinnedSumPtr[i*rl],rl*sizeof(qint64));
     }
 
     cudaError_t err = cudaGetLastError();
@@ -351,24 +318,20 @@ QVector<QVector<qint64> > GpuAverager::parseAndRollAvg(const char *newDataIn, co
 
 void GpuAverager::resetAverage()
 {
-    initMem64_kernel<<<(d_totalPoints+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock>>>(d_totalPoints,p_devSumPtr);
+    initMem64_kernel<<<d_numTotalBlocks, d_cudaThreadsPerBlock>>>(d_totalPoints,p_devSumPtr);
 }
 
-void GpuAverager::setCurrentData(const QVector<qint64> v)
+void GpuAverager::setCurrentData(const FidList l)
 {
-    if(v.isEmpty())
-    {
-        initMem64_kernel<<<(d_totalPoints+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock>>>(d_totalPoints,p_devSumPtr);
-    }
+    if(l.isEmpty())
+        initMem64_kernel<<<d_numTotalBlocks, d_cudaThreadsPerBlock>>>(d_totalPoints,p_devSumPtr);
     else
     {
-//        if(v.size() != d_totalPoints)
-//            return;
-
-        const qint64 *d = v.constData();
-        cudaMemcpy(p_devSumPtr,d,d_totalPoints*sizeof(qint64),cudaMemcpyHostToDevice);
-
-//        setMem64_kernel<<<(d_totalPoints+d_cudaThreadsPerBlock-1)/d_cudaThreadsPerBlock, d_cudaThreadsPerBlock>>>(d_totalPoints,p_devSumPtr,d);
+        for(int i=0; i<l.size(); ++i)
+        {
+            auto s = l.at(i).size();
+            cudaMemcpy(p_devSumPtr+i*s,l.at(i).rawData().constData(),s*sizeof(qint64),cudaMemcpyHostToDevice);
+        }
     }
 }
 

@@ -13,7 +13,9 @@
 #include <data/datastructs.h>
 #include <data/experiment/experimentobjective.h>
 
-#define BC_FTMW_MAXSHIFT 50
+#ifdef BC_CUDA
+#include <modules/cuda/gpuaverager.h>
+#endif
 
 namespace BC::Store::FTMW {
 static const QString key("FtmwConfig");
@@ -65,6 +67,7 @@ public:
     bool advance() override;
     void hwReady() override;
     bool abort() override;
+    virtual void cleanup() override;
 
     virtual bool indefinite() const override { return false; }
 
@@ -81,9 +84,8 @@ public:
     double fidDurationUs() const;
     QPair<int,int> chirpRange() const;
 
-#ifdef BC_CUDA
+
     bool setFidsData(const QVector<QVector<qint64> > newList);
-#endif
     bool addFids(const QByteArray rawData, int shift = 0);
     void setScopeConfig(const FtmwDigitizerConfig &other);
     std::shared_ptr<FidStorageBase> storage() const;
@@ -95,6 +97,10 @@ private:
     Fid d_fidTemplate;
     bool d_processingPaused{false};
     QDateTime d_lastAutosaveTime;
+
+#ifdef BC_CUDA
+    std::shared_ptr<GpuAverager> ps_gpu;
+#endif
 
     // HeaderStorage interface
 protected:

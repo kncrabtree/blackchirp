@@ -18,38 +18,20 @@ AcquisitionManager::~AcquisitionManager()
 void AcquisitionManager::beginExperiment(std::shared_ptr<Experiment> exp)
 {
 
-#ifdef BC_CUDA
-//    if(exp.ftmwEnabled())
-//    {
-//#pragma message("GPU averager needs to move to FTMW config")
-//        //prepare GPU Averager
-//        auto sc = exp.ftmwConfig()->scopeConfig();
-//        bool success = gpuAvg.initialize(sc.d_recordLength,exp.ftmwConfig()->numFrames(),
-//                                         sc.d_bytesPerPoint,sc.d_byteOrder);
-//        if(!success)
-//        {
-//            emit logMessage(gpuAvg.getErrorString(),LogHandler::Error);
-//            emit experimentComplete(exp);
-//            return;
-//        }
-//    }
-#endif
-
-
     d_currentShift = 0;
     d_lastFom = 0.0;
-    d_currentExperiment = exp;
+    ps_currentExperiment = exp;
 
     d_state = Acquiring;
     emit statusMessage(QString("Acquiring"));
 
-    if(d_currentExperiment->d_timeDataInterval > 0)
+    if(ps_currentExperiment->d_timeDataInterval > 0)
     {
-        if(d_currentExperiment->ftmwEnabled())
-            d_currentExperiment->auxData()->registerKey(QString("Ftmw"),QString("Shots"));
+        if(ps_currentExperiment->ftmwEnabled())
+            ps_currentExperiment->auxData()->registerKey(QString("Ftmw"),QString("Shots"));
 
         auxDataTick();
-        d_auxTimerId = startTimer(d_currentExperiment->d_timeDataInterval*1000);
+        d_auxTimerId = startTimer(ps_currentExperiment->d_timeDataInterval*1000);
     }
     emit beginAcquisition();
 
@@ -69,61 +51,37 @@ void AcquisitionManager::beginExperiment(std::shared_ptr<Experiment> exp)
 void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 {
     if(d_state == Acquiring
-            && d_currentExperiment->ftmwEnabled()
-            && !d_currentExperiment->ftmwConfig()->isComplete()
-            && !d_currentExperiment->ftmwConfig()->processingPaused())
+            && ps_currentExperiment->ftmwEnabled()
+            && !ps_currentExperiment->ftmwConfig()->isComplete()
+            && !ps_currentExperiment->ftmwConfig()->processingPaused())
     {
 
         bool success = true;
 
-        if(d_currentExperiment->ftmwConfig()->d_chirpScoringEnabled)
+        if(ps_currentExperiment->ftmwConfig()->d_chirpScoringEnabled)
         {
             success = scoreChirp(b);
             if(!success)
                 return;
         }
 
-        if(d_currentExperiment->ftmwConfig()->d_phaseCorrectionEnabled)
+        if(ps_currentExperiment->ftmwConfig()->d_phaseCorrectionEnabled)
         {
             success = calculateShift(b);
             if(!success)
                 return;
         }
 
-
-        success = d_currentExperiment->ftmwConfig()->addFids(b,d_currentShift);
-
-#pragma message("Move GPU code to FTMWconfig")
-//        QVector<QVector<qint64> >  l;
-//        if(d_currentExperiment->ftmwConfig()->type() == BlackChirp::FtmwPeakUp)
-//            l = gpuAvg.parseAndRollAvg(b.constData(),d_currentExperiment.ftmwConfig()->completedShots()+d_currentExperiment.ftmwConfig()->shotIncrement(),
-//                                       d_currentExperiment->ftmwConfig()->targetShots(),d_currentShift);
-//        else
-//            l = gpuAvg.parseAndAdd(b.constData(),d_currentShift);
-
-//        if(l.isEmpty())
-//        {
-//            d_currentExperiment.setErrorString(gpuAvg.getErrorString());
-//            success = false;
-//        }
-//        else
-//            success = d_currentExperiment.setFidsData(l);
-
+        success = ps_currentExperiment->ftmwConfig()->addFids(b,d_currentShift);
 
         if(!success)
         {
-            emit logMessage(d_currentExperiment->d_errorString,LogHandler::Error);
+            emit logMessage(ps_currentExperiment->d_errorString,LogHandler::Error);
             abort();
             return;
         }
 
-//        int t = testTime.elapsed();
-//        total += t;
-//        count++;
-//        emit logMessage(QString("Elapsed time: %1 ms, avg: %2").arg(t).arg(total/count));
-
-
-        bool advanceSegment = d_currentExperiment->incrementFtmw();
+        bool advanceSegment = ps_currentExperiment->ftmwConfig()->advance();
 
         if(advanceSegment)
         {
@@ -131,10 +89,10 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 #pragma message("Move to FTMWconfig")
 //            gpuAvg.setCurrentData(d_currentExperiment.ftmwConfig()->rawFidList());
 #endif
-            emit newClockSettings(d_currentExperiment->ftmwConfig()->d_rfConfig.getClocks());
+            emit newClockSettings(ps_currentExperiment->ftmwConfig()->d_rfConfig.getClocks());
         }
 
-        emit ftmwUpdateProgress(d_currentExperiment->ftmwConfig()->perMilComplete());
+        emit ftmwUpdateProgress(ps_currentExperiment->ftmwConfig()->perMilComplete());
     }
 
     checkComplete();
@@ -185,8 +143,8 @@ void AcquisitionManager::processAuxData(AuxDataStorage::AuxDataMap m)
 {
 	if(d_state == Acquiring)
 	{
-        emit auxData(m,d_currentExperiment->auxData()->currentPointTime());
-        if(!d_currentExperiment->addAuxData(m))
+        emit auxData(m,ps_currentExperiment->auxData()->currentPointTime());
+        if(!ps_currentExperiment->addAuxData(m))
             abort();
     }
 }
@@ -197,7 +155,7 @@ void AcquisitionManager::processValidationData(AuxDataStorage::AuxDataMap m)
     {
         for(auto &[key,val] : m)
         {
-            if(!d_currentExperiment->validateItem(key,val))
+            if(!ps_currentExperiment->validateItem(key,val))
             {
                 abort();
                 break;
@@ -208,10 +166,10 @@ void AcquisitionManager::processValidationData(AuxDataStorage::AuxDataMap m)
 
 void AcquisitionManager::clockSettingsComplete(const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks)
 {
-    if(d_state == Acquiring && d_currentExperiment->ftmwEnabled())
+    if(d_state == Acquiring && ps_currentExperiment->ftmwEnabled())
     {
-        d_currentExperiment->ftmwConfig()->d_rfConfig.setCurrentClocks(clocks);
-        d_currentExperiment->ftmwConfig()->hwReady();
+        ps_currentExperiment->ftmwConfig()->d_rfConfig.setCurrentClocks(clocks);
+        ps_currentExperiment->ftmwConfig()->hwReady();
     }
 }
 
@@ -237,7 +195,7 @@ void AcquisitionManager::abort()
 {
     if(d_state == Paused || d_state == Acquiring)
     {
-        d_currentExperiment->abort();
+        ps_currentExperiment->abort();
         //save!
 #ifdef BC_MOTOR
         if(d_currentExperiment.motorScan().isEnabled())
@@ -254,10 +212,10 @@ void AcquisitionManager::abort()
 
 void AcquisitionManager::auxDataTick()
 {
-    d_currentExperiment->auxData()->startNewPoint();
-    if(d_currentExperiment->ftmwEnabled())
+    ps_currentExperiment->auxData()->startNewPoint();
+    if(ps_currentExperiment->ftmwEnabled())
         processAuxData({{AuxDataStorage::makeKey("Ftmw","Shots"),
-                         d_currentExperiment->ftmwConfig()->completedShots()}});
+                         ps_currentExperiment->ftmwConfig()->completedShots()}});
     emit auxDataSignal();
 }
 
@@ -314,13 +272,13 @@ void AcquisitionManager::checkComplete()
 {
     if(d_state == Acquiring)
     {
-        if(d_currentExperiment->canBackup())
+        if(ps_currentExperiment->canBackup())
         {
             QFutureWatcher<void> fw;
             connect(&fw,&QFutureWatcher<void>::finished,this,&AcquisitionManager::backupComplete);
-            fw.setFuture(QtConcurrent::run([this]{ d_currentExperiment->backup(); }));
+            fw.setFuture(QtConcurrent::run([this]{ ps_currentExperiment->backup(); }));
         }
-        if(d_currentExperiment->isComplete())
+        if(ps_currentExperiment->isComplete())
         {
 #ifdef BC_MOTOR
             if(d_currentExperiment.motorScan().isEnabled())
@@ -347,14 +305,14 @@ void AcquisitionManager::finishAcquisition()
     d_currentShift = 0;
 
 
-    if(!d_currentExperiment->isDummy())
+    if(!ps_currentExperiment->isDummy())
     {
-        emit statusMessage(QString("Saving experiment %1").arg(d_currentExperiment->d_number));
-        d_currentExperiment->finalSave();
+        emit statusMessage(QString("Saving experiment %1").arg(ps_currentExperiment->d_number));
+        ps_currentExperiment->finalSave();
     }
 
     emit experimentComplete();
-    d_currentExperiment.reset();
+    ps_currentExperiment.reset();
 }
 
 bool AcquisitionManager::calculateShift(const QByteArray b)

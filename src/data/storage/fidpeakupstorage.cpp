@@ -68,6 +68,12 @@ void FidPeakUpStorage::setTargetShots(quint64 s)
     d_targetShots = s;
 }
 
+quint64 FidPeakUpStorage::targetShots() const
+{
+    QMutexLocker l(p_mutex);
+    return d_targetShots;
+}
+
 #ifdef BC_CUDA
 bool FidPeakUpStorage::setFidsData(const FidList other)
 {

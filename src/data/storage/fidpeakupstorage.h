@@ -23,6 +23,7 @@ public:
 
     void reset();
     void setTargetShots(quint64 s);
+    quint64 targetShots() const;
 
 protected:
     void _advance() override;

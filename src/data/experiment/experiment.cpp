@@ -397,6 +397,8 @@ void Experiment::abort()
             d_endLogMessage = QString("Experiment %1 complete.").arg(d_number);
             d_endLogMessageCode = LogHandler::Highlight;
         }
+
+        pu_ftmwConfig->cleanup();
     }
 
 }
@@ -495,49 +497,16 @@ bool Experiment::addMotorTrace(const QVector<double> d)
 }
 #endif
 
-bool Experiment::incrementFtmw()
-{
-    return pu_ftmwConfig->advance();
-}
-
-void Experiment::setFtmwClocksReady()
-{
-    pu_ftmwConfig->hwReady();
-}
-
 void Experiment::finalSave()
 {
     if(d_isDummy)
         return;
 
-//    //record validation keys
-//    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-//    QString keys = s.value(QString("knownValidationKeys"),QString("")).toString();
-//    QStringList knownKeyList = keys.split(QChar(';'),QString::SkipEmptyParts);
-
-//    auto it = d_timeDataMap.constBegin();
-//    while(it != d_timeDataMap.constEnd())
-//    {
-//        QString key = it.key();
-//        if(!knownKeyList.contains(key))
-//            knownKeyList.append(key);
-//        it++;
-//    }
-
-//    keys.clear();
-//    if(knownKeyList.size() > 0)
-//    {
-//        keys = knownKeyList.at(0);
-//        for(int i=1; i<knownKeyList.size();i++)
-//            keys.append(QString(";%1").arg(knownKeyList.at(i)));
-
-//        s.setValue(QString("knownValidationKeys"),keys);
-//    }
-
-//    saveHeader();
-
     if(ftmwEnabled())
+    {
+        pu_ftmwConfig->cleanup();
         pu_ftmwConfig->storage()->save();
+    }
 
 #ifdef BC_LIF
     if(lifConfig().isEnabled())

@@ -39,6 +39,7 @@ protected:
     void saveFidList(const FidList l, int i);
 
 private:
+    int d_currentSegment{0};
     QVector<Fid> d_templateList;
     std::unique_ptr<BlackchirpCSV> pu_csv;
 

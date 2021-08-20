@@ -92,6 +92,13 @@ void FidStorageBase::saveFidList(const FidList l, int i)
 
 FidList FidStorageBase::loadFidList(int i)
 {
+    if(i == d_currentSegment)
+    {
+        auto fl = getCurrentFidList();
+        if(!fl.isEmpty())
+            return fl;
+    }
+
     QDir d{BlackchirpCSV::exptDir(d_number,d_path)};
     d.cd(BC::CSV::fidDir);
     auto csv = pu_csv.get();

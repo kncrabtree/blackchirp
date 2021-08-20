@@ -87,8 +87,6 @@ public:
     inline bool ftmwEnabled() const { return pu_ftmwConfig.get() != nullptr; }
     FtmwConfig* enableFtmw(FtmwConfig::FtmwType type);
     inline FtmwConfig* ftmwConfig() const {return pu_ftmwConfig.get(); }
-    bool incrementFtmw();
-    void setFtmwClocksReady();
 
     inline AuxDataStorage *auxData() const { return pu_auxData.get(); }
 
