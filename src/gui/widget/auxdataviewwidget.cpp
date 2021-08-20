@@ -138,12 +138,9 @@ void AuxDataViewWidget::autoScaleAll()
         d_allPlots.at(i)->autoScale();
 }
 
-void AuxDataViewWidget::changeNumPlots()
+void AuxDataViewWidget::changeNumPlots(int newNum)
 {
-    bool ok = true;
-    int newNum = QInputDialog::getInt(this,QString("BC: Change Number of Tracking Plots"),QString("Number of plots:"),d_allPlots.size(),1,9,1,&ok);
-
-    if(!ok || newNum == d_allPlots.size())
+    if(newNum == d_allPlots.size())
         return;
 
     if(!d_viewMode)
@@ -314,7 +311,7 @@ void AuxDataViewWidget::configureGrid()
 
 RollingDataWidget::RollingDataWidget(const QString name, QWidget *parent) : AuxDataViewWidget(name,parent,false)
 {
-
+    d_historyDuration = get(BC::Key::history,12);
 }
 
 void RollingDataWidget::pointUpdated(const AuxDataStorage::AuxDataMap m, const QDateTime dt)
@@ -356,9 +353,9 @@ void RollingDataWidget::purgeOldPoints(BlackchirpPlotCurve *c)
 {
     auto d = c->curveData();
     int first = 0;
-    if(d.constFirst().x() < QwtDate::toDouble(QDateTime::currentDateTime().addSecs(-5400*d_hourRange)))
+    if(d.constFirst().x() < QwtDate::toDouble(QDateTime::currentDateTime().addSecs(-5400*d_historyDuration)))
     {
-        auto cutoff = QwtDate::toDouble(QDateTime::currentDateTime().addSecs(-3600*d_hourRange));
+        auto cutoff = QwtDate::toDouble(QDateTime::currentDateTime().addSecs(-3600*d_historyDuration));
         while(first < d.size() && d.at(first).x() < cutoff)
             first++;
 
@@ -368,5 +365,17 @@ void RollingDataWidget::purgeOldPoints(BlackchirpPlotCurve *c)
                     QwtPlot::xBottom,cutoff,QwtDate::toDouble(QDateTime::currentDateTime()));
         static_cast<ZoomPanPlot*>(c->plot())->overrideAxisAutoScaleRange(
                     QwtPlot::xTop,cutoff,QwtDate::toDouble(QDateTime::currentDateTime()));
+    }
+}
+
+void RollingDataWidget::setHistoryDuration(int d)
+{
+    d_historyDuration = d;
+    set(BC::Key::history,d);
+    for(auto c : d_plotCurves)
+    {
+        purgeOldPoints(c);
+        if(c->isVisible())
+            c->plot()->replot();
     }
 }

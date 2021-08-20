@@ -14,7 +14,7 @@ QWidget *ToolBarWidgetAction::createWidget(QWidget *parent)
     lbl->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::MinimumExpanding);
 
     auto fl = new QFormLayout;
-    fl->setFormAlignment(Qt::AlignRight|Qt::AlignVCenter);
+    fl->setFormAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
     fl->setContentsMargins(6,6,6,6);
     out->setToolTip(toolTip());
     p_widget = _createWidget(parent);

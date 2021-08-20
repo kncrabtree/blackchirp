@@ -30,6 +30,7 @@
 #include <gui/widget/led.h>
 #include <gui/widget/auxdataviewwidget.h>
 #include <gui/widget/clockdisplaybox.h>
+#include <gui/widget/toolbarwidgetaction.h>
 
 class Ui_MainWindow
 {
@@ -43,11 +44,12 @@ public:
     QToolButton *auxPlotButton;
     QToolButton *rollingPlotButton;
     QAction *actionCommunication;
-    QAction *action_AuxGraphs;
-    QAction *action_RollingGraphs;
+    SpinBoxWidgetAction *auxGraphsBox;
+    SpinBoxWidgetAction *rollingGraphsBox;
     QAction *actionTest_All_Connections;
     QAction *actionAutoscale_Rolling;
     QAction *actionAutoscale_Aux;
+    SpinBoxWidgetAction *rollingDurationBox;
     QAction *actionView_Experiment;
     QAction *actionQuick_Experiment;
     QAction *actionStart_Sequence;
@@ -121,20 +123,14 @@ public:
         actionCommunication->setIcon(icon5);
         QIcon auxIcon;
         auxIcon.addFile(QString::fromUtf8(":/icons/dataplots.png"), QSize(), QIcon::Normal, QIcon::Off);
-        action_AuxGraphs = new QAction(MainWindow);
-        action_AuxGraphs->setObjectName(QString::fromUtf8("action_AuxGraphs"));
         QIcon rollIcon;
         rollIcon.addFile(QString(":/icons/view-media-visualization.svg"), QSize(), QIcon::Normal, QIcon::Off);
         QIcon icon7;
         icon7.addFile(QString::fromUtf8(":/icons/num.png"), QSize(), QIcon::Normal, QIcon::Off);
-        action_AuxGraphs->setIcon(icon7);
-        action_RollingGraphs = new QAction(MainWindow);
-        action_RollingGraphs->setObjectName(QString::fromUtf8("action_RollingGraphs"));
-        action_RollingGraphs->setIcon(icon7);
-        actionTest_All_Connections = new QAction(MainWindow);
-        actionTest_All_Connections->setObjectName(QString::fromUtf8("actionTest_All_Connections"));
         QIcon icon8;
         icon8.addFile(QString::fromUtf8(":/icons/connect.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionTest_All_Connections = new QAction(MainWindow);
+        actionTest_All_Connections->setObjectName(QString::fromUtf8("actionTest_All_Connections"));
         actionTest_All_Connections->setIcon(icon8);
         sleepButton = new QToolButton(MainWindow);
         sleepButton->setObjectName(QString::fromUtf8("actionSleep"));
@@ -373,6 +369,20 @@ public:
         statusBar->setObjectName(QString::fromUtf8("statusBar"));
         MainWindow->setStatusBar(statusBar);
 
+        rollingDurationBox = new SpinBoxWidgetAction("History",menuRollingData);
+        rollingDurationBox->setRange(1,48);
+        rollingDurationBox->setSuffix(" hr");
+
+        auxGraphsBox = new SpinBoxWidgetAction("Graphs",menuAuxData);
+        auxGraphsBox->setObjectName(QString::fromUtf8("auxGraphsBox"));
+        auxGraphsBox->setIcon(icon7);
+        auxGraphsBox->setRange(1,9);
+
+        rollingGraphsBox = new SpinBoxWidgetAction("Graphs",menuRollingData);
+        rollingGraphsBox->setObjectName(QString::fromUtf8("rollingGraphsBox"));
+        rollingGraphsBox->setIcon(icon7);
+        rollingGraphsBox->setRange(1,9);
+
         menuHardware->addAction(actionCommunication);
         menuHardware->addAction(actionTest_All_Connections);
         menuHardware->addSeparator();
@@ -383,9 +393,10 @@ public:
         menuAcquisition->addAction(actionStart_Sequence);
         menuAcquisition->addSeparator();
         menuRollingData->addAction(actionAutoscale_Rolling);
-        menuRollingData->addAction(action_RollingGraphs);
+        menuRollingData->addAction(rollingGraphsBox);
+        menuRollingData->addAction(rollingDurationBox);
         menuAuxData->addAction(actionAutoscale_Aux);
-        menuAuxData->addAction(action_AuxGraphs);
+        menuAuxData->addAction(auxGraphsBox);
 
         mainToolBar->addWidget(acquireButton);
         acquireButton->setMenu(menuAcquisition);
@@ -447,8 +458,8 @@ public:
 #ifndef QT_NO_SHORTCUT
         actionCommunication->setShortcut(QApplication::translate("MainWindow", "Ctrl+H", nullptr));
 #endif // QT_NO_SHORTCUT
-        action_AuxGraphs->setText(QApplication::translate("MainWindow", "# &Graphs...", nullptr));
-        action_RollingGraphs->setText(QApplication::translate("MainWindow", "# &Graphs...", nullptr));
+        auxGraphsBox->setText(QApplication::translate("MainWindow", "# &Graphs...", nullptr));
+        rollingGraphsBox->setText(QApplication::translate("MainWindow", "# &Graphs...", nullptr));
         actionTest_All_Connections->setText(QApplication::translate("MainWindow", "&Test All Connections", nullptr));
 #ifndef QT_NO_SHORTCUT
         actionTest_All_Connections->setShortcut(QApplication::translate("MainWindow", "Ctrl+T", nullptr));

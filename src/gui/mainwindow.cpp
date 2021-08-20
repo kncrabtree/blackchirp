@@ -63,6 +63,17 @@ MainWindow::MainWindow(QWidget *parent) :
     qRegisterMetaType<QwtPlot::Axis>("QwtPlot::Axis");
 
     ui->setupUi(this);
+    ui->rollingDurationBox->setValue(ui->rollingDataViewWidget->historyDuration());
+    connect(ui->rollingDurationBox,&SpinBoxWidgetAction::valueChanged,
+            ui->rollingDataViewWidget,&RollingDataWidget::setHistoryDuration);
+
+    ui->auxGraphsBox->setValue(ui->auxDataViewWidget->numPlots());
+    connect(ui->auxGraphsBox,&SpinBoxWidgetAction::valueChanged,
+            ui->auxDataViewWidget,&AuxDataViewWidget::changeNumPlots);
+
+    ui->rollingGraphsBox->setValue(ui->rollingDataViewWidget->numPlots());
+    connect(ui->rollingGraphsBox,&SpinBoxWidgetAction::valueChanged,
+            ui->rollingDataViewWidget,&RollingDataWidget::changeNumPlots);
 
     p_lh = new LogHandler(true,this);
     connect(this,&MainWindow::logMessage,p_lh,&LogHandler::logMessage);
@@ -247,9 +258,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->resumeButton,&QToolButton::clicked,this,&MainWindow::resumeUi);
     connect(ui->actionCommunication,&QAction::triggered,this,&MainWindow::launchCommunicationDialog);
     connect(ui->actionRfConfig,&QAction::triggered,this,&MainWindow::launchRfConfigDialog);
-    connect(ui->action_AuxGraphs,&QAction::triggered,ui->auxDataViewWidget,&AuxDataViewWidget::changeNumPlots);
     connect(ui->actionAutoscale_Aux,&QAction::triggered,ui->auxDataViewWidget,&AuxDataViewWidget::autoScaleAll);
-    connect(ui->action_RollingGraphs,&QAction::triggered,ui->rollingDataViewWidget,&RollingDataWidget::changeNumPlots);
     connect(ui->actionAutoscale_Rolling,&QAction::triggered,ui->rollingDataViewWidget,&RollingDataWidget::autoScaleAll);
     connect(ui->sleepButton,&QToolButton::toggled,this,&MainWindow::sleep);
     connect(ui->actionTest_All_Connections,&QAction::triggered,p_hwm,&HardwareManager::testAll);

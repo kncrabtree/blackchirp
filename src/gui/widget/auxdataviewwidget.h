@@ -20,6 +20,7 @@ static const QString rollingDataWidget("RollingDataWidget");
 static const QString numPlots("numPlots");
 static const QString viewonly("View");
 static const QString plot("Plot");
+static const QString history("historyHours");
 }
 
 class AuxDataViewWidget : public QWidget, public SettingsStorage
@@ -31,6 +32,7 @@ public:
     virtual ~AuxDataViewWidget();
 
     const QString d_name;
+    int numPlots() const { return d_allPlots.size(); }
 
 public slots:
     void initializeForExperiment();
@@ -39,19 +41,18 @@ public slots:
     void pushXAxis(int sourcePlotIndex);
     void autoScaleAll();
 
-    void changeNumPlots();
+    void changeNumPlots(int newNum);
     virtual void purgeOldPoints(BlackchirpPlotCurve *c) { Q_UNUSED(c) }
 
 protected:
     TrackingPlot* getPlot(int i) { return d_allPlots.at(i); }
     BlackchirpPlotCurve* getCurve(int i) { return d_plotCurves.at(i); }
-    int numPlots() const { return d_allPlots.size(); }
     int numCurves() const { return d_plotCurves.size(); }
+    QVector<BlackchirpPlotCurve*> d_plotCurves;
 
 
 private:
     QGridLayout *p_gridLayout = nullptr;
-    QVector<BlackchirpPlotCurve*> d_plotCurves;
     QVector<TrackingPlot*> d_allPlots;
     bool d_viewMode;
 
@@ -68,9 +69,11 @@ public:
 
     void pointUpdated(const AuxDataStorage::AuxDataMap m, const QDateTime dt = QDateTime::currentDateTime()) override;
     void purgeOldPoints(BlackchirpPlotCurve *c) override;
+    void setHistoryDuration(int d);
+    int historyDuration() const { return d_historyDuration; }
 
 private:
-    int d_hourRange{12};
+    int d_historyDuration{12};
 };
 
 #endif // TRACKINGVIEWWIDGET_H
