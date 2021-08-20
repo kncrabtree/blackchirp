@@ -101,9 +101,12 @@ public:
     }
 
     void setValue(const QVariant v) {
-        auto box = dynamic_cast<QComboBox*>(p_widget);
-        if(box)
-            box->setCurrentIndex(box->findData(v));
+        for(auto w : createdWidgets())
+        {
+            auto box = w->findChild<QComboBox*>("ActionWidget");
+            if(box)
+                box->setCurrentIndex(box->findData(v));
+        }
         d_currentValue = v;
         emit valueChanged(v);
     }
@@ -131,7 +134,7 @@ protected:
 template<typename T>
 class EnumComboBoxWidgetAction : public ComboWABase
 {
-public:
+public:    
     EnumComboBoxWidgetAction(const QString label = QString(""), QWidget *parent = nullptr) :
         ComboWABase(label,parent)
     {
@@ -151,11 +154,7 @@ public:
             it->second->setEnabled(enabled);
     }
     void setCurrentValue(T v) {
-        auto box = dynamic_cast<QComboBox*>(p_widget);
-        if(box)
-            box->setCurrentIndex(box->findData(v));
-        else
-            setValue(v);
+        setValue(QVariant::fromValue(v));
     }
     T value() const { return d_currentValue.value<T>(); }
 

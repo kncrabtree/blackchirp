@@ -252,8 +252,9 @@ void FtmwViewWidget::updatePlotSetting(int id)
     auto it = d_plotStatus.find(id);
     if(it != d_plotStatus.end())
     {
-        it->second.segment = ui->plotToolBar->segment(id);
-        it->second.frame = ui->plotToolBar->frame(id);
+        //segment and fram are 1-indexed on the UI
+        it->second.segment = ui->plotToolBar->segment(id)-1;
+        it->second.frame = ui->plotToolBar->frame(id)-1;
         it->second.backup = ui->plotToolBar->backup(id);
         updateFid(id);
     }

@@ -56,12 +56,14 @@ FtmwPlotToolBar::FtmwPlotToolBar(QWidget *parent) : QToolBar(parent)
         auto fb = new SpinBoxWidgetAction("Frame",this);
         fb->setRange(1,1);
         connect(fb,&SpinBoxWidgetAction::valueChanged,[this,i](){ emit plotSettingChanged(i); });
+        d_frame.insert({i,fb});
         addAction(fb);
 
         auto bb = new SpinBoxWidgetAction("Backup",this);
         bb->setSpecialValueText("All");
         bb->setRange(0,0);
         connect(bb,&SpinBoxWidgetAction::valueChanged,[this,i](){ emit plotSettingChanged(i); });
+        d_seg.insert({i,sb});
         addAction(bb);
     }
 
@@ -122,7 +124,7 @@ void FtmwPlotToolBar::prepareForExperiment(const Experiment &e)
             it->second->setRange(1,e.ftmwConfig()->d_scopeConfig.d_numRecords);
             it->second->blockSignals(false);
         }
-        for(auto it = d_seg.begin(); it != d_seg.end(); ++it)
+        for(auto it = d_backup.begin(); it != d_backup.end(); ++it)
         {
             it->second->blockSignals(true);
             it->second->setRange(0,0);

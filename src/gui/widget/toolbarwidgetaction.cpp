@@ -10,16 +10,16 @@
 QWidget *ToolBarWidgetAction::createWidget(QWidget *parent)
 {
     auto out = new QWidget(parent);
-    auto lbl = new QLabel(d_label,parent);
+    auto lbl = new QLabel(d_label,out);
     lbl->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::MinimumExpanding);
 
     auto fl = new QFormLayout;
     fl->setFormAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
     fl->setContentsMargins(6,6,6,6);
     out->setToolTip(toolTip());
-    p_widget = _createWidget(parent);
+    p_widget = _createWidget(out);
+    p_widget->setObjectName("ActionWidget");
     fl->addRow(lbl,p_widget);
-    connect(p_widget,&QWidget::destroyed,[this](){ p_widget = nullptr; });
     out->setLayout(fl);
     return out;
 }
@@ -36,56 +36,77 @@ void SpinBoxWidgetAction::setSpecialValueText(const QString text)
 void SpinBoxWidgetAction::setRange(int min, int max)
 {
     d_range = {min,max};
-    auto box = dynamic_cast<QSpinBox*>(p_widget);
-    if(box)
-        box->setRange(min,max);
+    for(auto w : createdWidgets())
+    {
+        auto box = w->findChild<QSpinBox*>("ActionWidget");
+        if(box)
+            box->setRange(min,max);
+    }
 }
 
 void SpinBoxWidgetAction::setMinimum(int min)
 {
     d_range.first = min;
-    auto box = dynamic_cast<QSpinBox*>(p_widget);
-    if(box)
-        box->setMinimum(min);
+    for(auto w : createdWidgets())
+    {
+        auto box = w->findChild<QSpinBox*>("ActionWidget");
+        if(box)
+            box->setMinimum(min);
+    }
 }
 
 void SpinBoxWidgetAction::setMaximum(int max)
 {
     d_range.second = max;
-    auto box = dynamic_cast<QSpinBox*>(p_widget);
-    if(box)
-        box->setMaximum(max);
+    for(auto w : createdWidgets())
+    {
+        auto box = w->findChild<QSpinBox*>("ActionWidget");
+        if(box)
+            box->setMaximum(max);
+    }
 }
 
 void SpinBoxWidgetAction::setPrefix(const QString p)
 {
     d_prefix = p;
-    auto box = dynamic_cast<QSpinBox*>(p_widget);
-    if(box)
-        box->setPrefix(p);
+    for(auto w : createdWidgets())
+    {
+        auto box = w->findChild<QSpinBox*>("ActionWidget");
+        if(box)
+            box->setPrefix(p);
+    }
 }
 
 void SpinBoxWidgetAction::setSuffix(const QString s)
 {
     d_suffix = s;
-    auto box = dynamic_cast<QSpinBox*>(p_widget);
-    if(box)
-        box->setSuffix(s);
+    for(auto w : createdWidgets())
+    {
+        auto box = w->findChild<QSpinBox*>("ActionWidget");
+        if(box)
+            box->setSuffix(s);
+    }
 }
 
 void SpinBoxWidgetAction::setSingleStep(int step)
 {
     d_step = step;
-    auto box = dynamic_cast<QSpinBox*>(p_widget);
-    if(box)
-        box->setSingleStep(d_step);
+    for(auto w : createdWidgets())
+    {
+        auto box = w->findChild<QSpinBox*>("ActionWidget");
+        if(box)
+            box->setSingleStep(d_step);
+    }
 }
 
 int SpinBoxWidgetAction::value() const
 {
-    auto box = dynamic_cast<QSpinBox*>(p_widget);
-    if(box)
-        return box->value();
+    for(auto w : createdWidgets())
+    {
+        auto box = w->findChild<QSpinBox*>("ActionWidget");
+        if(box)
+            return box->value();
+    }
 
     return d_value;
 }
@@ -110,85 +131,116 @@ QWidget *SpinBoxWidgetAction::_createWidget(QWidget *parent)
 void SpinBoxWidgetAction::setValue(int v)
 {
     d_value = v;
-    auto box = dynamic_cast<QSpinBox*>(p_widget);
-    if(box)
+    for(auto w : createdWidgets())
     {
-        box->blockSignals(true);
-        box->setValue(v);
-        box->blockSignals(false);
+        auto box = w->findChild<QSpinBox*>("ActionWidget");
+        if(box)
+        {
+            box->blockSignals(true);
+            box->setValue(v);
+            box->blockSignals(false);
+        }
     }
+
     emit valueChanged(d_value);
 }
 
 void DoubleSpinBoxWidgetAction::setSpecialValueText(QString text)
 {
     d_specialText = text;
-    auto box = dynamic_cast<QDoubleSpinBox*>(p_widget);
-    if(box)
-        box->setSpecialValueText(text);
+    for(auto w : createdWidgets())
+    {
+        auto box = w->findChild<QDoubleSpinBox*>("ActionWidget");
+        if(box)
+            box->setSpecialValueText(text);
+    }
 }
 
 void DoubleSpinBoxWidgetAction::setRange(double min, double max)
 {
     d_range = {min,max};
-    auto box = dynamic_cast<QDoubleSpinBox*>(p_widget);
-    if(box)
-        box->setRange(min,max);
+    for(auto w : createdWidgets())
+    {
+        auto box = w->findChild<QDoubleSpinBox*>("ActionWidget");
+        if(box)
+            box->setRange(min,max);
+    }
 }
 
 void DoubleSpinBoxWidgetAction::setMinimum(double min)
 {
     d_range.first = min;
-    auto box = dynamic_cast<QDoubleSpinBox*>(p_widget);
-    if(box)
-        box->setMinimum(min);
+    for(auto w : createdWidgets())
+    {
+        auto box = w->findChild<QDoubleSpinBox*>("ActionWidget");
+        if(box)
+            box->setMinimum(min);
+    }
 }
 
 void DoubleSpinBoxWidgetAction::setMaximum(double max)
 {
     d_range.second = max;
-    auto box = dynamic_cast<QDoubleSpinBox*>(p_widget);
-    if(box)
-        box->setMaximum(max);
+    for(auto w : createdWidgets())
+    {
+        auto box = w->findChild<QDoubleSpinBox*>("ActionWidget");
+        if(box)
+            box->setMaximum(max);
+    }
 }
 
 void DoubleSpinBoxWidgetAction::setPrefix(const QString p)
 {
     d_prefix = p;
-    auto box = dynamic_cast<QDoubleSpinBox*>(p_widget);
-    if(box)
-        box->setPrefix(p);
+    for(auto w : createdWidgets())
+    {
+        auto box = w->findChild<QDoubleSpinBox*>("ActionWidget");
+        if(box)
+            box->setPrefix(p);
+    }
 }
 
 void DoubleSpinBoxWidgetAction::setSuffix(const QString s)
 {
     d_suffix = s;
-    auto box = dynamic_cast<QDoubleSpinBox*>(p_widget);
-    if(box)
-        box->setSuffix(s);
+    for(auto w : createdWidgets())
+    {
+        auto box = w->findChild<QDoubleSpinBox*>("ActionWidget");
+        if(box)
+            box->setSuffix(s);
+    }
 }
 
 void DoubleSpinBoxWidgetAction::setDecimals(int d)
 {
     d_decimals = qBound(0,d,15);
-    auto box = dynamic_cast<QDoubleSpinBox*>(p_widget);
-    if(box)
-        box->setDecimals(d_decimals);
+    for(auto w : createdWidgets())
+    {
+        auto box = w->findChild<QDoubleSpinBox*>("ActionWidget");
+        if(box)
+            box->setDecimals(d_decimals);
+    }
 }
 
 void DoubleSpinBoxWidgetAction::setSingleStep(double s)
 {
     d_step = s;
-    auto box = dynamic_cast<QDoubleSpinBox*>(p_widget);
-    if(box)
-        box->setSingleStep(s);
+    for(auto w : createdWidgets())
+    {
+        auto box = w->findChild<QDoubleSpinBox*>("ActionWidget");
+        if(box)
+            box->setSingleStep(s);
+    }
 }
 
 double DoubleSpinBoxWidgetAction::value() const
 {
-    auto box = dynamic_cast<QDoubleSpinBox*>(p_widget);
-    if(box)
-        return box->value();
+    for(auto w : createdWidgets())
+    {
+        auto box = w->findChild<QDoubleSpinBox*>("ActionWidget");
+        if(box)
+            return box->value();
+    }
 
     return d_value;
 }
