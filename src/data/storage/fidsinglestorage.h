@@ -19,10 +19,8 @@ public:
     int getCurrentIndex() override;
     void backup() override;
     int numBackups() override;
-
-#ifdef BC_CUDA
     bool setFidsData(const FidList other) override;
-#endif
+
     // FidStorageBase interface
 protected:
     void _advance() override;

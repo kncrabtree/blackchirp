@@ -55,7 +55,6 @@ bool FidSingleStorage::addFids(const FidList other, int shift)
     return true;
 }
 
-#ifdef BC_CUDA
 bool FidSingleStorage::setFidsData(const FidList other)
 {
     QMutexLocker l(p_mutex);
@@ -65,7 +64,6 @@ bool FidSingleStorage::setFidsData(const FidList other)
     d_currentFidList = other;
     return true;
 }
-#endif
 
 void FidSingleStorage::_advance()
 {

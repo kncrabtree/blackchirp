@@ -234,6 +234,7 @@ bool FtmwConfig::initialize()
     }
 
     p_fidStorage = createStorage(d_number);
+    p_fidStorage->start();
     d_lastAutosaveTime = QDateTime::currentDateTime();
 
 #ifdef BC_CUDA
@@ -347,6 +348,7 @@ bool FtmwConfig::abort()
 
 void FtmwConfig::cleanup()
 {
+    p_fidStorage->finish();
 #ifdef BC_CUDA
     ps_gpu.reset();
 #endif

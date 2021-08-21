@@ -8,6 +8,7 @@ FidStorageBase::FidStorageBase(int numRecords, int number, QString path) :
     d_number(number), d_numRecords(numRecords), d_path(path)
 {
     pu_csv = std::make_unique<BlackchirpCSV>(number,path);
+    pu_mutex = std::make_unique<QMutex>();
 }
 
 FidStorageBase::~FidStorageBase()
@@ -33,6 +34,16 @@ void FidStorageBase::save()
     saveFidList(l,i);
 }
 
+void FidStorageBase::start()
+{
+    d_acquiring = true;
+}
+
+void FidStorageBase::finish()
+{
+    d_acquiring = false;
+}
+
 void FidStorageBase::saveFidList(const FidList l, int i)
 {
     if(d_number < 1)
@@ -41,8 +52,6 @@ void FidStorageBase::saveFidList(const FidList l, int i)
     auto f = l.constFirst();
     f.setData({});
 
-    //Note: for FidSingleStorage, if an backup occurs, the first time this function is called, i will be 1
-    //and d_templateList will be empty. d_templateList[0] will be written when the experiment is complete.
     while(i > d_templateList.size())
         d_templateList.push_back(Fid());
     if(i == d_templateList.size())
@@ -75,7 +84,10 @@ void FidStorageBase::saveFidList(const FidList l, int i)
         BlackchirpCSV::writeLine(txt,{idx,f.spacing(),
                                       f.probeFreq(),f.vMult(),f.shots(),f.sideband(),l.constFirst().size()});
     }
-    if(!hdr.commit())
+    pu_mutex->lock();
+    bool success = hdr.commit();
+    pu_mutex->unlock();
+    if(!success)
         return;
 
 
@@ -92,6 +104,7 @@ void FidStorageBase::saveFidList(const FidList l, int i)
 
 FidList FidStorageBase::loadFidList(int i)
 {
+    QMutexLocker lock(pu_mutex.get());
     if(i == d_currentSegment)
     {
         auto fl = getCurrentFidList();
@@ -99,17 +112,29 @@ FidList FidStorageBase::loadFidList(int i)
             return fl;
     }
 
+    FidList out;
+    Fid fidTemplate;
+
+    auto it = d_cache.find(i);
+    if(it != d_cache.end())
+    {
+        out = it->second;
+        //if we are no longer acquiring, we don't need to check
+        //to make sure the cache is updated
+        if(!d_acquiring)
+            return out;
+    }
+
     QDir d{BlackchirpCSV::exptDir(d_number,d_path)};
     d.cd(BC::CSV::fidDir);
     auto csv = pu_csv.get();
 
-    FidList out;
-    Fid fidTemplate;
     bool found = false;
     int size = 0;
     QFile hdr(d.absoluteFilePath(BC::CSV::fidparams));
     if(!hdr.open(QIODevice::ReadOnly|QIODevice::Text))
         return out;
+
     while(!hdr.atEnd())
     {
         auto l = csv->readLine(hdr);
@@ -135,6 +160,13 @@ FidList FidStorageBase::loadFidList(int i)
     hdr.close();
 
     if(!found)
+        return out;
+
+    //at this point, if out is not empty, then the FidList was found in the cache
+    //If the number of shots in the fidTemplate matches the number of shots in
+    //the fidlist, then the cache is up to date and we can return it without
+    //re-reading the fid data from disk
+    if(!out.isEmpty() && out.constFirst().shots() == fidTemplate.shots())
         return out;
 
     QFile fid(d.absoluteFilePath(QString("%1.csv").arg(i)));
@@ -171,6 +203,26 @@ FidList FidStorageBase::loadFidList(int i)
 
     for(int j=0; j<data.size(); ++j)
         out[j].setData(data.at(j));
+
+    //at this point, we either need to update the cache or add this item to the cache
+    if(!out.isEmpty())
+    {
+        if(it != d_cache.end())
+            it->second = out;
+        else
+        {
+            std::size_t recSize = out.constFirst().size()*out.size();
+            if(!d_cache.empty() && (recSize * (d_cache.size() + 1) > d_maxCacheSize))
+            {
+                //remove an item from the cache
+                d_cache.erase(d_cacheKeys.front());
+                d_cacheKeys.pop();
+            }
+
+            d_cacheKeys.push(i);
+            d_cache.emplace(i,out);
+        }
+    }
 
     return out;
 

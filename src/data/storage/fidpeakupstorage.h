@@ -17,9 +17,7 @@ public:
     bool addFids(const FidList other, int shift) override;
     FidList getCurrentFidList() override;
     int getCurrentIndex() override;
-#ifdef BC_CUDA
     bool setFidsData(const FidList other) override;
-#endif
 
     void reset();
     void setTargetShots(quint64 s);

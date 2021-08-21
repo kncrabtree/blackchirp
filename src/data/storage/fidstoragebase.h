@@ -2,7 +2,9 @@
 #define FIDSTORAGEBASE_H
 
 #include <memory>
+#include <queue>
 #include <QDateTime>
+#include <QMutex>
 
 #include <data/experiment/fid.h>
 
@@ -28,9 +30,9 @@ public:
     virtual int numBackups() { return 0; }
     void advance();
     void save();
-#ifdef BC_CUDA
+    void start();
+    void finish();
     virtual bool setFidsData(const FidList other) =0;
-#endif
     virtual int getCurrentIndex() =0;
     FidList loadFidList(int i);
 
@@ -39,9 +41,14 @@ protected:
     void saveFidList(const FidList l, int i);
 
 private:
+    bool d_acquiring{false};
     int d_currentSegment{0};
+    std::size_t d_maxCacheSize{1 << 25}; //~200 MB
     QVector<Fid> d_templateList;
     std::unique_ptr<BlackchirpCSV> pu_csv;
+    std::unique_ptr<QMutex> pu_mutex;
+    std::queue<int> d_cacheKeys;
+    std::map<int,FidList> d_cache;
 
 };
 
