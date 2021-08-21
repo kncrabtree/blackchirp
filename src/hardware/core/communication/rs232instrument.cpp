@@ -29,14 +29,10 @@ bool Rs232Instrument::testConnection()
 
     auto baudRate = s.get<qint32>(baud,
                                   57600);
-    auto db = s.get<QSerialPort::DataBits>(dataBits,
-                                           QSerialPort::Data8);
-    auto p = s.get<QSerialPort::Parity>(parity,
-                                             QSerialPort::NoParity);
-    auto stop = s.get<QSerialPort::StopBits>(stopBits,
-                                             QSerialPort::OneStop);
-    auto fc = s.get<QSerialPort::FlowControl>(flowControl,
-                                              QSerialPort::NoFlowControl);
+    auto db = s.get<DataBits>(dataBits,Data8);
+    auto p = s.get<Parity>(parity,NoParity);
+    auto stop = s.get<StopBits>(stopBits,OneStop);
+    auto fc = s.get<FlowControl>(flowControl,NoFlowControl);
     auto name = s.get<QString>(id,"");
 
     auto p_sp = dynamic_cast<QSerialPort*>(p_device);
@@ -45,10 +41,10 @@ bool Rs232Instrument::testConnection()
     if(p_device->open(QIODevice::ReadWrite))
     {
         p_sp->setBaudRate((qint32)baudRate);
-        p_sp->setParity(p);
-        p_sp->setStopBits(stop);
-        p_sp->setDataBits(db);
-        p_sp->setFlowControl(fc);
+        p_sp->setParity(static_cast<QSerialPort::Parity>(p));
+        p_sp->setStopBits(static_cast<QSerialPort::StopBits>(stop));
+        p_sp->setDataBits(static_cast<QSerialPort::DataBits>(db));
+        p_sp->setFlowControl(static_cast<QSerialPort::FlowControl>(fc));
         return true;
     }
     else

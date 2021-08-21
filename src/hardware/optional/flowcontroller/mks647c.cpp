@@ -34,10 +34,6 @@ Mks647c::Mks647c(QObject *parent) :
         d_gcfList.append(0.0);
     }
 
-    setDefault(pUnits,QString("kTorr"));
-    setDefault(pMax,10.0);
-    setDefault(pDec,3);
-
     if(!containsArray(channels))
     {
         std::vector<SettingsMap> l;
@@ -48,6 +44,10 @@ Mks647c::Mks647c(QObject *parent) :
 
         setArray(channels,l);
     }
+
+    setDefault(pUnits,QString("kTorr"));
+    setDefault(pMax,10.0);
+    setDefault(pDec,3);
 }
 
 bool Mks647c::fcTestConnection()

@@ -515,6 +515,8 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
 
     if(!exp->d_hardwareSuccess)
     {
+        p_batchManager->experimentComplete();
+        emit logMessage(QString("Hardware initialization unsuccessful."),LogHandler::Error);
         emit logMessage(exp->d_errorString,LogHandler::Error);
         configureUi(Idle);
         return;
@@ -522,6 +524,7 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
 
     if(!exp->initialize())
     {
+        p_batchManager->experimentComplete();
         emit logMessage(QString("Could not initialize experiment."),LogHandler::Error);
         if(!exp->d_errorString.isEmpty())
             emit logMessage(exp->d_errorString,LogHandler::Error);

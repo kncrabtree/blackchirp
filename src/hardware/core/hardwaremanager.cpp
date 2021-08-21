@@ -13,10 +13,6 @@
 
 #include <QThread>
 
-
-
-
-
 #ifdef BC_LIF
 #include <modules/lif/hardware/lifdigitizer/lifscope.h>
 #include <modules/lif/hardware/liflaser/liflaser.h>
@@ -161,8 +157,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
                            {BC::Key::HW::key,obj->d_key},
                            {BC::Key::HW::subKey,obj->d_subKey},
                            {BC::Key::HW::name,obj->d_name},
-                           {BC::Key::HW::critical,obj->d_critical},
-                           {BC::Key::HW::threaded,obj->d_threaded}
+                           {BC::Key::HW::critical,obj->d_critical}
                        });
         switch(obj->d_commType)
         {
@@ -323,7 +318,10 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
                 success = obj->prepareForExperiment(*exp);
 
             if(!success)
+            {
+                emit logMessage(QString("Error initializing %1").arg(obj->d_name),LogHandler::Error);
                 break;
+            }
         }
     }
 

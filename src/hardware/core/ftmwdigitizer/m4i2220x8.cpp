@@ -43,6 +43,8 @@ M4i2220x8::M4i2220x8(QObject *parent) :
                      {BC::Key::Custom::type,BC::Key::Custom::stringKey},
                      {BC::Key::Custom::label,"Device Path"}}
                  });
+
+    save();
 }
 
 M4i2220x8::~M4i2220x8()

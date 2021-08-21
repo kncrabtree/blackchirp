@@ -23,13 +23,17 @@ void BatchManager::experimentComplete()
 
     ///TODO: Break this up and make processExperiment run in another thread
     /// For now, though, no batch does any processing, so save for later
-    processExperiment();
+    ///
+    bool initSuccess = exp->d_hardwareSuccess && exp->d_initSuccess;
 
-    if(!exp->isAborted() && !isComplete())
+    if(initSuccess)
+        processExperiment();
+
+    if(!exp->isAborted() && !isComplete() && initSuccess)
         beginNextExperiment();
     else
     {
-        if(exp->isAborted())
+        if(exp->isAborted() || !initSuccess)
             abort();
 
         ///TODO: Run in another thread.

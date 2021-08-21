@@ -15,8 +15,7 @@ HardwareObject::HardwareObject(const QString key, const QString subKey, const QS
     set(BC::Key::HW::key,d_key); set(BC::Key::HW::name,d_name);
     setDefault(BC::Key::HW::critical,critical);
     setDefault(BC::Key::HW::rInterval,0);
-    set(BC::Key::HW::threaded,threaded);
-    set(BC::Key::HW::commType,commType,true);
+    save();
 
     //it is necessary to write the subKey one level above the SettingsStorage group, which
     //is referenced to d_key/d_subKey, so that other parts of the application can determine

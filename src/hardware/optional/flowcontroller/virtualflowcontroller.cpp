@@ -6,10 +6,6 @@ VirtualFlowController::VirtualFlowController(QObject *parent) :
     FlowController(BC::Key::Comm::hwVirtual,virtFCName,CommunicationProtocol::Virtual,parent)
 {
 
-    setDefault(pUnits,QString("kTorr"));
-    setDefault(pMax,10.0);
-    setDefault(pDec,3);
-
     if(!containsArray(channels))
     {
         std::vector<SettingsMap> l;
@@ -20,6 +16,10 @@ VirtualFlowController::VirtualFlowController(QObject *parent) :
 
         setArray(channels,l);
     }
+
+    setDefault(pUnits,QString("kTorr"));
+    setDefault(pMax,10.0);
+    setDefault(pDec,3);
 }
 
 VirtualFlowController::~VirtualFlowController()

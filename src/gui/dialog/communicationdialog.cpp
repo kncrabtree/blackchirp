@@ -3,6 +3,7 @@
 
 #include <QApplication>
 #include <QMessageBox>
+#include <QMetaEnum>
 
 #include <hardware/core/communication/communicationprotocol.h>
 #include <hardware/core/hardwaremanager.h>
@@ -24,7 +25,7 @@ CommunicationDialog::CommunicationDialog(QWidget *parent) :
 
 	//populate TCP devices
     count = d_storage.getArraySize(BC::Key::Comm::tcp);
-    for(std::size_t i=9; i<count; ++i)
+    for(std::size_t i=0; i<count; ++i)
 	{
         ui->tcpDeviceComboBox->addItem(d_storage.getArrayValue<QString>(BC::Key::Comm::tcp,i,BC::Key::HW::name),QVariant::fromValue(i));
 	}
@@ -67,30 +68,27 @@ CommunicationDialog::CommunicationDialog(QWidget *parent) :
 	ui->baudRateComboBox->setEnabled(false);
 
     ui->dataBitsComboBox->setCurrentIndex(-1);
-    ui->dataBitsComboBox->setItemData(0,QVariant::fromValue(QSerialPort::Data5));
-    ui->dataBitsComboBox->setItemData(1,QVariant::fromValue(QSerialPort::Data6));
-    ui->dataBitsComboBox->setItemData(2,QVariant::fromValue(QSerialPort::Data7));
-    ui->dataBitsComboBox->setItemData(3,QVariant::fromValue(QSerialPort::Data8));
+    auto db = QMetaEnum::fromType<Rs232Instrument::DataBits>();
+    for(int i=0; i<db.keyCount(); ++i)
+        ui->dataBitsComboBox->addItem(db.key(i),static_cast<Rs232Instrument::DataBits>(db.value(i)));
     ui->dataBitsComboBox->setEnabled(false);
 
     ui->stopBitsComboBox->setCurrentIndex(-1);
-    ui->stopBitsComboBox->setItemData(0,QVariant::fromValue(QSerialPort::OneStop));
-    ui->stopBitsComboBox->setItemData(1,QVariant::fromValue(QSerialPort::OneAndHalfStop));
-    ui->stopBitsComboBox->setItemData(2,QVariant::fromValue(QSerialPort::TwoStop));
+    db = QMetaEnum::fromType<Rs232Instrument::StopBits>();
+    for(int i=0; i<db.keyCount(); ++i)
+        ui->stopBitsComboBox->addItem(db.key(i),static_cast<Rs232Instrument::StopBits>(db.value(i)));
     ui->stopBitsComboBox->setEnabled(false);
 
     ui->parityComboBox->setCurrentIndex(-1);
-    ui->parityComboBox->setItemData(0,QVariant::fromValue(QSerialPort::NoParity));
-    ui->parityComboBox->setItemData(1,QVariant::fromValue(QSerialPort::EvenParity));
-    ui->parityComboBox->setItemData(2,QVariant::fromValue(QSerialPort::OddParity));
-    ui->parityComboBox->setItemData(3,QVariant::fromValue(QSerialPort::SpaceParity));
-    ui->parityComboBox->setItemData(4,QVariant::fromValue(QSerialPort::MarkParity));
+    db = QMetaEnum::fromType<Rs232Instrument::Parity>();
+    for(int i=0; i<db.keyCount(); ++i)
+        ui->parityComboBox->addItem(db.key(i),static_cast<Rs232Instrument::Parity>(db.value(i)));
     ui->parityComboBox->setEnabled(false);
 
     ui->flowControlComboBox->setCurrentIndex(-1);
-    ui->flowControlComboBox->setItemData(0,QVariant::fromValue(QSerialPort::NoFlowControl));
-    ui->flowControlComboBox->setItemData(1,QVariant::fromValue(QSerialPort::HardwareControl));
-    ui->flowControlComboBox->setItemData(2,QVariant::fromValue(QSerialPort::SoftwareControl));
+    db = QMetaEnum::fromType<Rs232Instrument::FlowControl>();
+    for(int i=0; i<db.keyCount(); ++i)
+        ui->flowControlComboBox->addItem(db.key(i),static_cast<Rs232Instrument::FlowControl>(db.value(i)));
     ui->flowControlComboBox->setEnabled(false);
 
 	ui->rs232TestButton->setEnabled(false);
@@ -206,22 +204,22 @@ void CommunicationDialog::rs232DeviceChanged(int index)
 	}
 
     auto idx = ui->dataBitsComboBox->findData(s.get(BC::Key::RS232::dataBits,
-                                                    QVariant::fromValue(QSerialPort::Data8)));
+                                                    QVariant::fromValue(Rs232Instrument::Data8)));
     ui->dataBitsComboBox->setCurrentIndex(qBound(0,idx,ui->dataBitsComboBox->count()-1));
     ui->dataBitsComboBox->setEnabled(true);
 
     idx = ui->stopBitsComboBox->findData(s.get(BC::Key::RS232::stopBits,
-                                         QVariant::fromValue(QSerialPort::OneStop)));
+                                         QVariant::fromValue(Rs232Instrument::OneStop)));
     ui->stopBitsComboBox->setCurrentIndex(qBound(0,idx,ui->stopBitsComboBox->count()-1));
     ui->stopBitsComboBox->setEnabled(true);
 
     idx = ui->parityComboBox->findData(s.get(BC::Key::RS232::parity,
-                                             QVariant::fromValue(QSerialPort::NoParity)));
+                                             QVariant::fromValue(Rs232Instrument::NoParity)));
     ui->parityComboBox->setCurrentIndex(qBound(0,idx,ui->parityComboBox->count()-1));
     ui->parityComboBox->setEnabled(true);
 
     idx = ui->flowControlComboBox->findData(s.get(BC::Key::RS232::flowControl,
-                                                  QVariant::fromValue(QSerialPort::NoFlowControl)));
+                                                  QVariant::fromValue(Rs232Instrument::NoFlowControl)));
     ui->flowControlComboBox->setCurrentIndex(qBound(0,idx,ui->flowControlComboBox->count()-1));
     ui->flowControlComboBox->setEnabled(true);
 

@@ -26,7 +26,7 @@ VirtualIOBoard::VirtualIOBoard(QObject *parent) :
     if(!containsArray(sampleRates))
         setArray(sampleRates,{
                      {{srText,"N/A"},{srValue,0.0}},
-                 });
+                 },true);
 }
 
 

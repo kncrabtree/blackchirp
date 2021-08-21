@@ -40,7 +40,7 @@ LabjackU3::LabjackU3(QObject *parent) :
                     {{BC::Key::Custom::key,BC::Key::IOB::serialNo},
                      {BC::Key::Custom::type,BC::Key::Custom::intKey},
                      {BC::Key::Custom::label,"Serial Number"}}
-                 });
+                 },true);
 
 }
 

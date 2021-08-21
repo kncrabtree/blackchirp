@@ -5,14 +5,6 @@ Mks946::Mks946(QObject *parent) :
     FlowController(mks947,mks947Name,CommunicationProtocol::Rs232,parent),
     d_nextRead(0)
 {
-    setDefault(address,253);
-    setDefault(offset,1);
-    setDefault(pressureChannel,5);
-
-    setDefault(pUnits,QString("kTorr"));
-    setDefault(pMax,10.0);
-    setDefault(pDec,3);
-
     if(!containsArray(channels))
     {
         std::vector<SettingsMap> l;
@@ -23,6 +15,15 @@ Mks946::Mks946(QObject *parent) :
 
         setArray(channels,l);
     }
+
+    setDefault(address,253);
+    setDefault(offset,1);
+    setDefault(pressureChannel,5);
+
+    setDefault(pUnits,QString("kTorr"));
+    setDefault(pMax,10.0);
+    setDefault(pDec,3);
+
 }
 
 

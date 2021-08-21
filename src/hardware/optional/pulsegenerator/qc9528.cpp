@@ -115,7 +115,7 @@ bool Qc9528::setChWidth(const int index, const double width)
 
 bool Qc9528::setChDelay(const int index, const double delay)
 {
-     return pGenWriteCmd(QString(":PULSE%1:DELAY %2\r\n").arg(index+1).arg(delay,0,'f',9));
+     return pGenWriteCmd(QString(":PULSE%1:DELAY %2\r\n").arg(index+1).arg(delay/1e6,0,'f',9));
 }
 
 bool Qc9528::setChActiveLevel(const int index, const PulseGenConfig::ActiveLevel level)
@@ -141,7 +141,7 @@ bool Qc9528::setHwRepRate(double rr)
 
 double Qc9528::readChWidth(const int index)
 {
-    auto resp = p_comm->queryCmd(QString(":PULSE%1:DELAY?\r\n").arg(index+1));
+    auto resp = p_comm->queryCmd(QString(":PULSE%1:WIDTH?\r\n").arg(index+1));
     if(!resp.isEmpty())
     {
         bool ok = false;
@@ -157,7 +157,7 @@ double Qc9528::readChWidth(const int index)
 
 double Qc9528::readChDelay(const int index)
 {
-    auto resp = p_comm->queryCmd(QString(":PULSE%1:WIDTH?\r\n").arg(index+1));
+    auto resp = p_comm->queryCmd(QString(":PULSE%1:DELAY?\r\n").arg(index+1));
     if(!resp.isEmpty())
     {
         bool ok = false;

@@ -59,7 +59,6 @@ void Fid::detach()
 
 Fid &Fid::operator +=(const Fid other)
 {
-    Q_ASSERT(size() == other.size());
     for(int i=0;i<size();i++)
         data->fid[i] += other.atRaw(i);
 
@@ -70,7 +69,6 @@ Fid &Fid::operator +=(const Fid other)
 
 Fid &Fid::operator +=(const QVector<qint64> other)
 {
-    Q_ASSERT(size() == other.size());
     for(int i=0; i<size();i++)
         data->fid[i] += other.at(i);
 
@@ -89,27 +87,6 @@ Fid &Fid::operator +=(const qint64 *other)
     return *this;
 }
 
-Fid &Fid::operator -=(const Fid other)
-{
-    Q_ASSERT(data->shots > other.shots());
-    Q_ASSERT(size() == other.size());
-
-    for(int i=0; i<size(); i++)
-        data->fid[i] -= other.atRaw(i);
-
-    data->shots -= other.shots();
-
-    return *this;
-}
-
-void Fid::add(const qint64 *other, const unsigned int offset)
-{
-    for(int i=0; i<size(); i++)
-        data->fid[i] += other[i+offset];
-
-    data->shots++;
-}
-
 void Fid::add(const Fid other, int shift)
 {
     if(shift == 0)
@@ -117,10 +94,7 @@ void Fid::add(const Fid other, int shift)
     else
     {
         for(int i=0; i<size(); i++)
-        {
-            if(i+shift >=0 && i >= 0 && i+shift < size() && i < size())
-                data->fid[i+shift] += other.valueRaw(i);
-        }
+            data->fid[i] += other.valueRaw(i-shift);
 
         data->shots += other.shots();
     }
@@ -139,13 +113,9 @@ void Fid::rollingAverage(const Fid other, quint64 targetShots, int shift)
         add(other,shift);
     else
     {
-        for(int i=0; i<data->fid.size(); i++)
-        {
-            if(i+shift >=0 && i+shift < size())
-                data->fid[i+shift] = Analysis::intRoundClosest(targetShots*(atRaw(i+shift) + other.valueRaw(i)),totalShots);
-            else
-                data->fid[i] = Analysis::intRoundClosest(targetShots*valueRaw(i),totalShots);
-        }
+        auto s = size();
+        for(int i=0; i<s; i++)
+            data->fid[i] = Analysis::intRoundClosest(targetShots*(atRaw(i) + other.valueRaw(i-shift)),totalShots);
 
         data->shots = targetShots;
     }

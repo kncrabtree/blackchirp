@@ -42,6 +42,8 @@ DSOx92004A::DSOx92004A(QObject *parent) :
                      {{srText,"40 GSa/s"},{srValue,40e9}},
                      {{srText,"80 GSa/s"},{srValue,80e9}}
                  });
+
+    save();
 }
 
 bool DSOx92004A::testConnection()

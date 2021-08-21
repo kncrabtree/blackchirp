@@ -61,6 +61,7 @@ public:
     ~Experiment();
 
     bool d_hardwareSuccess{false};
+    bool d_initSuccess{false};
     std::map<QString,QString> d_hardware;
     int d_number{0};
     QDateTime d_startTime;

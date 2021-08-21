@@ -11,9 +11,11 @@ HWSettingsModel::HWSettingsModel(QString key, QStringList forbiddenKeys, QObject
     QVector<QVariant> l{"Key","Value"};
     pu_rootItem = std::make_unique<HWSettingsItem>(l,false,false,nullptr);
 
-    forbiddenKeys.append({
-        BC::Key::HW::commType, BC::Key::HW::connected,BC::Key::HW::key,
-        BC::Key::HW::name,BC::Key::HW::threaded,BC::Key::Custom::comm
+    forbiddenKeys.append({BC::Key::HW::connected,BC::Key::HW::key,
+                          BC::Key::HW::name,BC::Key::Custom::comm,BC::Key::RS232::id,
+                          BC::Key::RS232::baud,BC::Key::RS232::parity,BC::Key::RS232::dataBits,
+                          BC::Key::RS232::stopBits,BC::Key::RS232::flowControl, BC::Key::TCP::ip,
+                          BC::Key::TCP::port,BC::Key::GPIB::gpibAddress
     });
     
     for(auto const &key : k)

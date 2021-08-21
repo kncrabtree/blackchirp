@@ -42,6 +42,8 @@ Dsa71604c::Dsa71604c(QObject *parent) :
                        {{srText,"50 GSa/s"},{srValue,50e9}},
                        {{srText,"100 GSa/s"},{srValue,100e9}}
                      });
+
+    save();
 }
 
 Dsa71604c::~Dsa71604c()
@@ -548,7 +550,9 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
         }
     }
 
-    static_cast<FtmwDigitizerConfig>(*this) = config;
+    auto cfg = dynamic_cast<FtmwDigitizerConfig*>(this);
+    *cfg = config;
+//    static_cast<FtmwDigitizerConfig>(*this) = config;
 
     if(p_socket->bytesAvailable())
         p_socket->readAll();

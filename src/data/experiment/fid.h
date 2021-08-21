@@ -87,9 +87,7 @@ public:
     Fid &operator +=(const Fid other);
     Fid &operator +=(const QVector<qint64> other);
     Fid &operator +=(const qint64 *other);
-    Fid &operator -=(const Fid other);
 
-    void add(const qint64 *other, const unsigned int offset = 0);
     void add(const Fid other, int shift);
     void copyAdd(const qint64 *other, const unsigned int offset = 0);
     void rollingAverage(const Fid other, quint64 targetShots, int shift = 0);

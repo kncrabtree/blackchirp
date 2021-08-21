@@ -375,6 +375,7 @@ bool Experiment::initialize()
         }
     }
 
+    d_initSuccess = true;
     return true;
 
 }
