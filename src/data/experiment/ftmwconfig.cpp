@@ -17,11 +17,6 @@ FtmwConfig::~FtmwConfig()
 
 }
 
-quint64 FtmwConfig::completedShots() const
-{
-    return p_fidStorage->completedShots();
-}
-
 bool FtmwConfig::processingPaused() const
 {
     return d_processingPaused;

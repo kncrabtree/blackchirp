@@ -2,6 +2,7 @@
 
 #include <data/storage/fidsinglestorage.h>
 #include <data/storage/fidpeakupstorage.h>
+#include <data/storage/fidmultistorage.h>
 
 
 /******************************************
@@ -26,6 +27,11 @@ int FtmwConfigSingle::perMilComplete() const
 bool FtmwConfigSingle::isComplete() const
 {
     return completedShots() >= d_objective;
+}
+
+quint64 FtmwConfigSingle::completedShots() const
+{
+    return storage()->currentSegmentShots();
 }
 
 bool FtmwConfigSingle::_init()
@@ -71,6 +77,11 @@ int FtmwConfigPeakUp::perMilComplete() const
 bool FtmwConfigPeakUp::isComplete() const
 {
     return false;
+}
+
+quint64 FtmwConfigPeakUp::completedShots() const
+{
+    return storage()->currentSegmentShots();
 }
 
 quint8 FtmwConfigPeakUp::bitShift() const
@@ -136,6 +147,11 @@ bool FtmwConfigDuration::isComplete() const
     return QDateTime::currentDateTime() >= d_targetTime;
 }
 
+quint64 FtmwConfigDuration::completedShots() const
+{
+    return storage()->currentSegmentShots();
+}
+
 bool FtmwConfigDuration::_init()
 {
     d_startTime = QDateTime::currentDateTime();
@@ -183,6 +199,11 @@ bool FtmwConfigForever::isComplete() const
     return false;
 }
 
+quint64 FtmwConfigForever::completedShots() const
+{
+    return storage()->currentSegmentShots();
+}
+
 bool FtmwConfigForever::_init()
 {
     return true;
@@ -199,4 +220,70 @@ void FtmwConfigForever::_loadComplete()
 std::shared_ptr<FidStorageBase> FtmwConfigForever::createStorage(int num, QString path)
 {
     return std::make_shared<FidSingleStorage>(d_scopeConfig.d_numRecords,num,path);
+}
+
+FtmwConfigLOScan::FtmwConfigLOScan() : FtmwConfig()
+{
+}
+
+FtmwConfigLOScan::FtmwConfigLOScan(const FtmwConfig &other) : FtmwConfig(other)
+{
+}
+
+int FtmwConfigLOScan::perMilComplete() const
+{
+    return (1000*completedShots())/d_rfConfig.totalShots();
+}
+
+bool FtmwConfigLOScan::isComplete() const
+{
+    return d_rfConfig.d_completedSweeps >= d_rfConfig.d_targetSweeps;
+}
+
+quint64 FtmwConfigLOScan::completedShots() const
+{
+    auto css = storage()->currentSegmentShots();
+    quint64 overcount = qBound(0ull,
+                               static_cast<quint64>(d_rfConfig.d_completedSweeps*d_rfConfig.d_shotsPerClockConfig),
+                               css);
+
+    return storage()->currentSegmentShots() + d_rfConfig.completedSegmentShots() - overcount;
+}
+
+bool FtmwConfigLOScan::_init()
+{
+    return true;
+}
+
+void FtmwConfigLOScan::_prepareToSave()
+{
+    using namespace BC::Store::FtmwLO;
+    store(upStart,d_upStart,"MHz");
+    store(upEnd,d_upEnd,"MHz");
+    store(upMaj,d_upMaj);
+    store(upMin,d_upMin);
+    store(downStart,d_downStart,"MHz");
+    store(downEnd,d_downEnd,"MHz");
+    store(downMaj,d_downMaj);
+    store(downMin,d_downMin);
+}
+
+void FtmwConfigLOScan::_loadComplete()
+{
+    using namespace BC::Store::FtmwLO;
+    d_upStart = retrieve(upStart,0.0);
+    d_upEnd = retrieve(upEnd,0.0);
+    d_upMaj = retrieve(upMaj,0);
+    d_upMin = retrieve(upMin,0);
+    d_downStart = retrieve(downStart,0.0);
+    d_downEnd = retrieve(downEnd,0.0);
+    d_downMaj = retrieve(downMaj,0);
+    d_downMin = retrieve(downMin,0);
+}
+
+std::shared_ptr<FidStorageBase> FtmwConfigLOScan::createStorage(int num, QString path)
+{
+    auto out = std::make_shared<FidMultiStorage>(d_scopeConfig.d_numRecords,num,path);
+    out->setNumSegments(d_rfConfig.numSegments());
+    return out;
 }

@@ -71,7 +71,7 @@ public:
 
     virtual bool indefinite() const override { return false; }
 
-    quint64 completedShots() const;
+    virtual quint64 completedShots() const =0;
 
     bool processingPaused() const;
     quint64 shotIncrement() const;

@@ -8,7 +8,7 @@ FidStorageBase::FidStorageBase(int numRecords, int number, QString path) :
     d_number(number), d_numRecords(numRecords), d_path(path)
 {
     pu_csv = std::make_unique<BlackchirpCSV>(number,path);
-    pu_mutex = std::make_unique<QMutex>();
+    pu_baseMutex = std::make_unique<QMutex>();
 }
 
 FidStorageBase::~FidStorageBase()
@@ -59,9 +59,6 @@ void FidStorageBase::saveFidList(const FidList l, int i)
     else
         d_templateList[i] = f;
 
-    //Note: this copy is made so that it can be captuted in the lambda function below for saving.
-    auto tl = d_templateList;
-
     QDir d{BlackchirpCSV::exptDir(d_number,d_path)};
     if(!d.cd(BC::CSV::fidDir))
     {
@@ -78,15 +75,15 @@ void FidStorageBase::saveFidList(const FidList l, int i)
 
     QTextStream txt(&hdr);
     BlackchirpCSV::writeLine(txt,{"index","spacing","probefreq","vmult","shots","sideband","size"});
-    for(int idx=0; idx<tl.size(); ++idx)
+    for(int idx=0; idx<d_templateList.size(); ++idx)
     {
-        auto &f = tl.at(idx);
+        auto &f = d_templateList.at(idx);
         BlackchirpCSV::writeLine(txt,{idx,f.spacing(),
                                       f.probeFreq(),f.vMult(),f.shots(),f.sideband(),l.constFirst().size()});
     }
-    pu_mutex->lock();
+    QMutexLocker lock(pu_baseMutex.get());
     bool success = hdr.commit();
-    pu_mutex->unlock();
+    lock.unlock();
     if(!success)
         return;
 
@@ -100,20 +97,43 @@ void FidStorageBase::saveFidList(const FidList l, int i)
     if(!dat.commit())
         return;
 
+    lock.relock();
+    updateCache(l,i);
+
+}
+
+void FidStorageBase::updateCache(const FidList fl, int i)
+{
+    auto it = d_cache.find(i);
+    if(it != d_cache.end())
+        it->second = fl;
+    else
+    {
+        std::size_t recSize = fl.constFirst().size()*fl.size();
+        if(!d_cache.empty() && (recSize * (d_cache.size() + 1) > d_maxCacheSize))
+        {
+            //remove an item from the cache
+            d_cache.erase(d_cacheKeys.front());
+            d_cacheKeys.pop();
+        }
+
+        d_cacheKeys.push(i);
+        d_cache.emplace(i,fl);
+    }
 }
 
 FidList FidStorageBase::loadFidList(int i)
 {
-    QMutexLocker lock(pu_mutex.get());
-    if(i == d_currentSegment)
+    QMutexLocker lock(pu_baseMutex.get());
+    auto cs = getCurrentIndex();
+    if(cs == i)
     {
-        auto fl = getCurrentFidList();
-        if(!fl.isEmpty())
-            return fl;
+        auto l = getCurrentFidList();
+        if(!l.isEmpty())
+            return l;
     }
 
     FidList out;
-    Fid fidTemplate;
 
     auto it = d_cache.find(i);
     if(it != d_cache.end())
@@ -127,17 +147,18 @@ FidList FidStorageBase::loadFidList(int i)
 
     QDir d{BlackchirpCSV::exptDir(d_number,d_path)};
     d.cd(BC::CSV::fidDir);
-    auto csv = pu_csv.get();
 
     bool found = false;
     int size = 0;
+    Fid fidTemplate;
+
     QFile hdr(d.absoluteFilePath(BC::CSV::fidparams));
     if(!hdr.open(QIODevice::ReadOnly|QIODevice::Text))
         return out;
 
     while(!hdr.atEnd())
     {
-        auto l = csv->readLine(hdr);
+        auto l = pu_csv->readLine(hdr);
         if(l.size() != 7)
             continue;
 
@@ -178,22 +199,25 @@ FidList FidStorageBase::loadFidList(int i)
 
     //the first line contains titles, but can be parsed to figure out how many
     //FIDs are in the file
-    auto l = csv->readLine(fid);
+    auto l = pu_csv->readLine(fid);
     if(l.isEmpty())
         return out;
 
     QVector<QVector<qint64>> data;
-    for(int j=0; j<l.size(); ++j)
+    if(out.isEmpty())
     {
-        out << fidTemplate;
-        QVector<qint64> _d;
-        _d.reserve(size);
-        data << _d;
+        for(int j=0; j<l.size(); ++j)
+        {
+            out << fidTemplate;
+            QVector<qint64> _d;
+            _d.reserve(size);
+            data << _d;
+        }
     }
 
     while(!fid.atEnd())
     {
-        auto sl = csv->readFidLine(fid);
+        auto sl = pu_csv->readFidLine(fid);
         if(sl.size() != data.size())
             continue;
 
@@ -206,25 +230,50 @@ FidList FidStorageBase::loadFidList(int i)
 
     //at this point, we either need to update the cache or add this item to the cache
     if(!out.isEmpty())
-    {
-        if(it != d_cache.end())
-            it->second = out;
-        else
-        {
-            std::size_t recSize = out.constFirst().size()*out.size();
-            if(!d_cache.empty() && (recSize * (d_cache.size() + 1) > d_maxCacheSize))
-            {
-                //remove an item from the cache
-                d_cache.erase(d_cacheKeys.front());
-                d_cacheKeys.pop();
-            }
-
-            d_cacheKeys.push(i);
-            d_cache.emplace(i,out);
-        }
-    }
+        updateCache(out,i);
 
     return out;
 
+}
+
+quint64 FidStorageBase::currentSegmentShots()
+{
+    QMutexLocker l(pu_mutex.get());
+    if(d_currentFidList.isEmpty())
+        return 0;
+
+    return d_currentFidList.constFirst().shots();
+}
+
+bool FidStorageBase::addFids(const FidList other, int shift)
+{
+    QMutexLocker l(pu_mutex.get());
+    if(d_currentFidList.isEmpty())
+        d_currentFidList = other;
+    else
+    {
+        if(other.size() != d_currentFidList.size())
+            return false;
+        for(int i=0; i<d_currentFidList.size(); i++)
+            d_currentFidList[i].add(other.at(i),shift);
+    }
+
+    return true;
+}
+
+bool FidStorageBase::setFidsData(const FidList other)
+{
+    QMutexLocker l(pu_mutex.get());
+    if(!d_currentFidList.isEmpty() && (other.size() != d_currentFidList.size()))
+        return false;
+
+    d_currentFidList = other;
+    return true;
+}
+
+FidList FidStorageBase::getCurrentFidList()
+{
+    QMutexLocker l(pu_mutex.get());
+    return d_currentFidList;
 }
 

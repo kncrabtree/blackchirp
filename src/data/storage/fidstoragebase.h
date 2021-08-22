@@ -21,23 +21,24 @@ public:
     const int d_numRecords;
     const QString d_path;
 
-
-    virtual quint64 completedShots() =0;
-    virtual quint64 currentSegmentShots() =0;
-    virtual bool addFids(const FidList other, int shift =0) =0;
-    virtual FidList getCurrentFidList() =0;
-    virtual void backup() { return; };
-    virtual int numBackups() { return 0; }
     void advance();
     void save();
     void start();
     void finish();
-    virtual bool setFidsData(const FidList other) =0;
-    virtual int getCurrentIndex() =0;
     FidList loadFidList(int i);
 
+    virtual quint64 currentSegmentShots();
+    virtual bool addFids(const FidList other, int shift =0);
+    virtual bool setFidsData(const FidList other);
+    virtual FidList getCurrentFidList();
+    virtual void backup() { return; };
+    virtual int numBackups() { return 0; }
+    virtual int getCurrentIndex() =0;
+
 protected:
-    virtual void _advance() =0;
+    FidList d_currentFidList;
+    std::unique_ptr<QMutex> pu_mutex;
+    virtual void _advance() {};
     void saveFidList(const FidList l, int i);
 
 private:
@@ -46,9 +47,11 @@ private:
     std::size_t d_maxCacheSize{1 << 25}; //~200 MB
     QVector<Fid> d_templateList;
     std::unique_ptr<BlackchirpCSV> pu_csv;
-    std::unique_ptr<QMutex> pu_mutex;
+    std::unique_ptr<QMutex> pu_baseMutex;
     std::queue<int> d_cacheKeys;
     std::map<int,FidList> d_cache;
+
+    void updateCache(const FidList fl, int i);
 
 };
 

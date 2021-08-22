@@ -1,11 +1,11 @@
 #include "fidsinglestorage.h"
 
-#include <QDir>
+#include <QMutexLocker>
 #include <data/storage/blackchirpcsv.h>
 
-FidSingleStorage::FidSingleStorage(int numRecords, int num, QString path) : FidStorageBase(numRecords,num,path),
-    p_mutex(new QMutex)
+FidSingleStorage::FidSingleStorage(int numRecords, int num, QString path) : FidStorageBase(numRecords,num,path)
 {
+    pu_mutex = std::make_unique<QMutex>();
     QDir d{BlackchirpCSV::exptDir(d_number,d_path)};
     if(d.exists(BC::CSV::fidDir))
     {
@@ -18,61 +18,6 @@ FidSingleStorage::FidSingleStorage(int numRecords, int num, QString path) : FidS
                 d_lastBackup++;
         }
     }
-}
-
-FidSingleStorage::~FidSingleStorage()
-{
-    delete p_mutex;
-}
-
-quint64 FidSingleStorage::completedShots()
-{
-    QMutexLocker l(p_mutex);
-    if(d_currentFidList.isEmpty())
-        return 0;
-
-    return d_currentFidList.constFirst().shots();
-}
-
-quint64 FidSingleStorage::currentSegmentShots()
-{
-    return completedShots();
-}
-
-bool FidSingleStorage::addFids(const FidList other, int shift)
-{
-    QMutexLocker l(p_mutex);
-    if(d_currentFidList.isEmpty())
-        d_currentFidList = other;
-    else
-    {
-        if(other.size() != d_currentFidList.size())
-            return false;
-        for(int i=0; i<d_currentFidList.size(); i++)
-            d_currentFidList[i].add(other.at(i),shift);
-    }
-
-    return true;
-}
-
-bool FidSingleStorage::setFidsData(const FidList other)
-{
-    QMutexLocker l(p_mutex);
-    if(!d_currentFidList.isEmpty() && (other.size() != d_currentFidList.size()))
-        return false;
-
-    d_currentFidList = other;
-    return true;
-}
-
-void FidSingleStorage::_advance()
-{
-}
-
-FidList FidSingleStorage::getCurrentFidList()
-{
-    QMutexLocker l(p_mutex);
-    return d_currentFidList;
 }
 
 int FidSingleStorage::getCurrentIndex()

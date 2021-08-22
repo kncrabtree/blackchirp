@@ -272,11 +272,8 @@ void FtmwViewWidget::fidLoadComplete(int id)
     else
     {
         auto list = ps.p_watcher->result();
-        if(!list.isEmpty())
-        {
-            ps.fid = list.at(ps.frame);
-            process(id, ps.fid);
-        }
+        ps.fid = list.value(ps.frame,Fid());
+        process(id, ps.fid);
     }
 }
 

@@ -36,7 +36,7 @@ bool RfConfig::prepareForAcquisition()
 
 void RfConfig::setCurrentClocks(const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks)
 {
-    if(!d_clockConfigs.isEmpty())
+    if(!d_clockConfigs.isEmpty() && d_currentClockIndex >= 0)
         d_clockConfigs[d_currentClockIndex] = clocks;
     else
         d_clockTemplate = clocks;
@@ -112,11 +112,6 @@ int RfConfig::advanceClockStep()
     return d_currentClockIndex;
 }
 
-int RfConfig::completedSweeps() const
-{
-    return d_completedSweeps;
-}
-
 quint64 RfConfig::totalShots() const
 {
     return static_cast<quint64>(d_shotsPerClockConfig)
@@ -173,12 +168,12 @@ QHash<RfConfig::ClockType, RfConfig::ClockFreq> RfConfig::getClocks() const
 
 double RfConfig::clockFrequency(ClockType t) const
 {
-    return d_clockTemplate.value(t).desiredFreqMHz;
+    return getClocks().value(t).desiredFreqMHz;
 }
 
 double RfConfig::rawClockFrequency(ClockType t) const
 {
-    return getRawFrequency(d_clockTemplate.value(t));
+    return getRawFrequency(getClocks().value(t));
 }
 
 QString RfConfig::clockHardware(ClockType t) const

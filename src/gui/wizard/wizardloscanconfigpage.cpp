@@ -10,6 +10,7 @@
 #include <QCheckBox>
 
 #include <hardware/core/clock/clock.h>
+#include <data/experiment/ftmwconfigtypes.h>
 
 WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) :
     ExperimentWizardPage(BC::Key::WizLoScan::key,parent)
@@ -172,9 +173,10 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) :
     p_shotsPerStepBox = new QSpinBox;
     p_shotsPerStepBox->setRange(1,__INT_MAX__);
     p_shotsPerStepBox->setSingleStep(1000);
+    p_shotsPerStepBox->setValue(get(BC::Key::WizLoScan::shots,1000));
     p_shotsPerStepBox->setToolTip(QString("Number of shots to acquire at each step (major and minor)."));
 
-    auto lbl = new QLabel(QString("Shots.Point"));
+    auto lbl = new QLabel(QString("Shots/Point"));
     lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
     lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
     fl->addRow(lbl,p_shotsPerStepBox);
@@ -182,6 +184,7 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) :
 
     p_targetSweepsBox = new QSpinBox;
     p_targetSweepsBox->setRange(1,__INT_MAX__);
+    p_targetSweepsBox->setValue(get(BC::Key::WizLoScan::sweeps,1));
     p_targetSweepsBox->setToolTip(QString("Number of sweeps through the total LO range.\nExperiment will end when this number is reached."));
     lbl = new QLabel(QString("Target Sweeps"));
     lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
@@ -245,6 +248,9 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) :
     connect(p_constantDownOffsetBox,&QCheckBox::toggled,this,&WizardLoScanConfigPage::constantOffsetChanged);
     connect(p_fixedDownLoBox,&QCheckBox::toggled,this,&WizardLoScanConfigPage::fixedChanged);
 
+    registerGetter(BC::Key::WizLoScan::shots,p_shotsPerStepBox,&QSpinBox::value);
+    registerGetter(BC::Key::WizLoScan::sweeps,p_targetSweepsBox,&QSpinBox::value);
+
     registerGetter(BC::Key::WizLoScan::upStart,p_upStartBox,&QDoubleSpinBox::value);
     registerGetter(BC::Key::WizLoScan::upEnd,p_upEndBox,&QDoubleSpinBox::value);
     registerGetter(BC::Key::WizLoScan::upNumMinor,p_upNumMinorBox,&QSpinBox::value);
@@ -267,11 +273,11 @@ WizardLoScanConfigPage::WizardLoScanConfigPage(QWidget *parent) :
 void WizardLoScanConfigPage::initializePage()
 {
     auto e = getExperiment();
-    d_rfConfig = e->ftmwConfig()->d_rfConfig;
+    auto &rfc = e->ftmwConfig()->d_rfConfig;
 
     //get LO hardware
-    auto upLO = d_rfConfig.clockHardware(RfConfig::UpLO);
-    auto downLO = d_rfConfig.clockHardware(RfConfig::DownLO);
+    auto upLO = rfc.clockHardware(RfConfig::UpLO);
+    auto downLO = rfc.clockHardware(RfConfig::DownLO);
 
     if(upLO.isEmpty())
         return;
@@ -284,7 +290,7 @@ void WizardLoScanConfigPage::initializePage()
     double downMinFreq = upMinFreq;
     double downMaxFreq = upMaxFreq;
 
-    if(!d_rfConfig.d_commonUpDownLO && upLO != downLO)
+    if(!rfc.d_commonUpDownLO && upLO != downLO)
     {
         SettingsStorage s2(downLO,Hardware);
 
@@ -292,7 +298,7 @@ void WizardLoScanConfigPage::initializePage()
         downMaxFreq = s2.get<double>(BC::Key::Clock::maxFreq,1e7);
     }
 
-    auto clocks = d_rfConfig.getClocks();
+    auto clocks = rfc.getClocks();
     auto upLoClock = clocks.value(RfConfig::UpLO);
     if(upLoClock.op == RfConfig::Multiply)
     {
@@ -329,11 +335,27 @@ void WizardLoScanConfigPage::initializePage()
     p_downMajorStepBox->setRange(1.0,downMaxFreq-downMinFreq);
     p_downMinorStepBox->setRange(0.0,downMaxFreq-downMinFreq);
 
-    p_shotsPerStepBox->setValue(d_rfConfig.d_shotsPerClockConfig);
-    p_targetSweepsBox->setValue(d_rfConfig.d_targetSweeps);
+    p_shotsPerStepBox->setValue(e->ftmwConfig()->d_objective);
+    p_downBox->setDisabled(rfc.d_commonUpDownLO);
 
-    p_downBox->setDisabled(d_rfConfig.d_commonUpDownLO);
-    if(d_rfConfig.d_commonUpDownLO)
+    if(e->d_number > 0)
+    {
+        p_targetSweepsBox->setValue(rfc.d_targetSweeps);
+        auto ftc = dynamic_cast<FtmwConfigLOScan*>(e->ftmwConfig());
+        if(ftc)
+        {
+            p_upStartBox->setValue(ftc->d_upStart);
+            p_upEndBox->setValue(ftc->d_upEnd);
+            p_upNumMinorBox->setValue(ftc->d_upMin);
+            p_upNumMajorBox->setValue(ftc->d_upMaj);
+            p_downStartBox->setValue(ftc->d_downStart);
+            p_downEndBox->setValue(ftc->d_downEnd);
+            p_downNumMinorBox->setValue(ftc->d_downMin);
+            p_downNumMajorBox->setValue(ftc->d_downMaj);
+        }
+    }
+
+    if(rfc.d_commonUpDownLO)
     {
         p_downStartBox->blockSignals(true);
         p_downStartBox->setValue(p_upStartBox->value());
@@ -359,27 +381,34 @@ void WizardLoScanConfigPage::initializePage()
         p_downMajorStepBox->setValue(p_upMajorStepBox->value());
         p_downMajorStepBox->blockSignals(false);
     }
-
-    p_targetSweepsBox->setValue(d_rfConfig.d_targetSweeps);
-    p_shotsPerStepBox->setValue(d_rfConfig.d_shotsPerClockConfig);
 }
 
 bool WizardLoScanConfigPage::validatePage()
 {
     auto e = getExperiment();
+    auto &rfc = e->ftmwConfig()->d_rfConfig;
+    auto ftc = dynamic_cast<FtmwConfigLOScan*>(e->ftmwConfig());
 
-    QList<double> upLoValues, downLoValues;
+    QVector<double> upLoValues, downLoValues;
     double direction = 1.0;
     double start = p_upStartBox->value();
     double end = p_upEndBox->value();
     int numMinor = p_upNumMinorBox->value();
+    int numMajor = p_upNumMajorBox->value();
     double minorSize = p_upMinorStepBox->value();
     double majorStep = p_upMajorStepBox->value();
+    if(ftc)
+    {
+        ftc->d_upStart = start;
+        ftc->d_upEnd = end;
+        ftc->d_upMaj = numMajor;
+        ftc->d_upMin = numMinor;
+    }
 
     if(end < start)
         direction *= -1.0;
 
-    for(int i=0; i<p_upNumMajorBox->value(); i++)
+    for(int i=0; i<numMajor; i++)
     {
         double thisMajorFreq = start + direction*majorStep*static_cast<double>(i);
         upLoValues << thisMajorFreq;
@@ -388,16 +417,9 @@ bool WizardLoScanConfigPage::validatePage()
     }
 
     double offset = p_downStartBox->value() - start;
-    direction = 1.0;
-    start = p_downStartBox->value();
-    end = p_downEndBox->value();
-    numMinor = p_downNumMinorBox->value();
-    minorSize = p_downMinorStepBox->value();
-    majorStep = p_downMajorStepBox->value();
-    if(end < start)
-        direction *= -1.0;
 
-    if(d_rfConfig.d_commonUpDownLO)
+
+    if(rfc.d_commonUpDownLO)
         downLoValues = upLoValues;
     else if(p_fixedDownLoBox->isChecked())
     {
@@ -406,31 +428,49 @@ bool WizardLoScanConfigPage::validatePage()
     }
     else if(p_constantDownOffsetBox->isChecked())
     {
+        start = p_upStartBox->value() + offset;
+        end = p_upEndBox->value() + offset;
         for(int i=0; i<upLoValues.size(); i++)
             downLoValues << upLoValues.at(i) + offset;
     }
     else
     {
-        for(int i=0; i<p_downNumMajorBox->value(); i++)
+        direction = 1.0;
+        start = p_downStartBox->value();
+        end = p_downEndBox->value();
+        numMinor = p_downNumMinorBox->value();
+        numMajor = p_downNumMajorBox->value();
+        minorSize = p_downMinorStepBox->value();
+        majorStep = p_downMajorStepBox->value();
+        if(end < start)
+            direction *= -1.0;
+
+
+        for(int i=0; i<numMajor; i++)
         {
             double thisMajorFreq = start + direction*majorStep*static_cast<double>(i);
-            upLoValues << thisMajorFreq;
+            downLoValues << thisMajorFreq;
             for(int j=1; j<numMinor; j++)
-                upLoValues << thisMajorFreq + minorSize*direction*static_cast<double>(j);
+                downLoValues << thisMajorFreq + minorSize*direction*static_cast<double>(j);
         }
     }
 
-    d_rfConfig.clearClockSteps();
+    if(ftc)
+    {
+        ftc->d_downStart = start;
+        ftc->d_downEnd = end;
+        ftc->d_downMaj = numMajor;
+        ftc->d_downMin = numMinor;
+    }
+
+    rfc.clearClockSteps();
 
     for(int i=0; i<upLoValues.size() && i<downLoValues.size(); i++)
-        d_rfConfig.addLoScanClockStep(upLoValues.at(i),downLoValues.at(i));
+        rfc.addLoScanClockStep(upLoValues.at(i),downLoValues.at(i));
 
-    d_rfConfig.d_shotsPerClockConfig = p_shotsPerStepBox->value();
-    d_rfConfig.d_targetSweeps = p_targetSweepsBox->value();
-
-    e->ftmwConfig()->d_rfConfig = d_rfConfig;
+    rfc.d_shotsPerClockConfig = p_shotsPerStepBox->value();
+    rfc.d_targetSweeps = p_targetSweepsBox->value();
     
-
     return true;
 }
 
@@ -446,7 +486,10 @@ int WizardLoScanConfigPage::nextId() const
 
 void WizardLoScanConfigPage::startChanged(RfConfig::ClockType t, double val)
 {
-    if(d_rfConfig.d_commonUpDownLO && t == RfConfig::UpLO)
+    auto e = getExperiment();
+    auto const &rfc = e->ftmwConfig()->d_rfConfig;
+
+    if(rfc.d_commonUpDownLO && t == RfConfig::UpLO)
     {
         p_downStartBox->setValue(val);
     }
@@ -463,7 +506,9 @@ void WizardLoScanConfigPage::startChanged(RfConfig::ClockType t, double val)
 
 void WizardLoScanConfigPage::endChanged(RfConfig::ClockType t, double val)
 {
-    if(d_rfConfig.d_commonUpDownLO && t == RfConfig::UpLO)
+    auto e = getExperiment();
+    auto const &rfc = e->ftmwConfig()->d_rfConfig;
+    if(rfc.d_commonUpDownLO && t == RfConfig::UpLO)
     {
         p_downEndBox->setValue(val);
     }
@@ -533,7 +578,10 @@ void WizardLoScanConfigPage::minorStepChanged(RfConfig::ClockType t, int val)
 
 void WizardLoScanConfigPage::minorStepSizeChanged(RfConfig::ClockType t, double val)
 {
-    if(d_rfConfig.d_commonUpDownLO && t == RfConfig::UpLO)
+    auto e = getExperiment();
+    auto const &rfc = e->ftmwConfig()->d_rfConfig;
+
+    if(rfc.d_commonUpDownLO && t == RfConfig::UpLO)
     {
         p_downMinorStepBox->setValue(val);
     }

@@ -16,6 +16,7 @@ public:
     bool isComplete() const override;
 
     // FtmwConfig interface
+    quint64 completedShots() const override;
 protected:
     bool _init() override;
     void _prepareToSave() override;
@@ -36,6 +37,7 @@ public:
     bool isComplete() const override;
 
     // FtmwConfig interface
+    quint64 completedShots() const override;
 protected:
     quint8 bitShift() const override;
     bool _init() override;
@@ -57,6 +59,7 @@ public:
     bool isComplete() const override;
 
     // FtmwConfig interface
+    quint64 completedShots() const override;
 protected:
     bool _init() override;
     void _prepareToSave() override;
@@ -81,11 +84,48 @@ public:
     bool isComplete() const override;
 
     // FtmwConfig interface
+    quint64 completedShots() const override;
 protected:
     bool _init() override;
     void _prepareToSave() override;
     void _loadComplete() override;
     std::shared_ptr<FidStorageBase> createStorage(int num, QString path="") override;
+};
+
+namespace BC::Store::FtmwLO {
+static const QString upStart("UpLOStart");
+static const QString upEnd("UpLOEnd");
+static const QString upMin("UpMinorSteps");
+static const QString upMaj("UpMajorSteps");
+static const QString downStart("DownLOStart");
+static const QString downEnd("DownLOEnd");
+static const QString downMin("DownMinorSteps");
+static const QString downMaj("DownMajorSteps");
+}
+
+class FtmwConfigLOScan : public FtmwConfig
+{
+public:
+    FtmwConfigLOScan();
+    FtmwConfigLOScan(const FtmwConfig &other);
+    ~FtmwConfigLOScan() {}
+
+    double d_upStart{0.0}, d_upEnd{0.0}, d_downStart{0.0}, d_downEnd{0.0};
+    int d_upMaj{0}, d_upMin{0}, d_downMaj{0}, d_downMin{0};
+
+    // ExperimentObjective interface
+    int perMilComplete() const override;
+    bool isComplete() const override;
+
+    // FtmwConfig interface
+    quint64 completedShots() const override;
+protected:
+    bool _init() override;
+    void _prepareToSave() override;
+    void _loadComplete() override;
+    std::shared_ptr<FidStorageBase> createStorage(int num, QString path) override;
+
+private:
 };
 
 #endif // FTMWCONFIGTYPES_H

@@ -11,6 +11,9 @@ class QCheckBox;
 namespace BC::Key::WizLoScan {
 static const QString key("WizardLoScanPage");
 
+static const QString shots("shotsPerStep");
+static const QString sweeps("targetSweeps");
+
 static const QString upStart("upStart");
 static const QString upEnd("upEnd");
 static const QString upNumMinor("upNumMinor");
@@ -57,8 +60,6 @@ private:
     QDoubleSpinBox *p_upStartBox, *p_downStartBox, *p_upEndBox, *p_downEndBox, *p_upMinorStepBox, *p_downMinorStepBox, *p_upMajorStepBox, *p_downMajorStepBox;
     QGroupBox *p_upBox, *p_downBox;
     QCheckBox *p_fixedDownLoBox, *p_constantDownOffsetBox;
-
-    RfConfig d_rfConfig;
 
     double calculateMajorStepSize(RfConfig::ClockType t);
 };

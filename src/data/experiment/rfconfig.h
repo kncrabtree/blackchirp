@@ -63,6 +63,7 @@ public:
 
     //options
     bool d_commonUpDownLO{false};
+    int d_completedSweeps{0};
     int d_targetSweeps{1};
     int d_shotsPerClockConfig{0};
 
@@ -88,8 +89,6 @@ public:
     void setChirpConfig(const ChirpConfig &cc);
     int advanceClockStep();
 
-
-    int completedSweeps() const;
     quint64 totalShots() const;
     quint64 completedSegmentShots() const;
     bool canAdvance(qint64 shots) const;
@@ -114,8 +113,7 @@ private:
     //clocks
     QHash<ClockType,ClockFreq> d_clockTemplate;
     QVector<QHash<ClockType,RfConfig::ClockFreq>> d_clockConfigs;
-    int d_currentClockIndex{0};
-    int d_completedSweeps{0};
+    int d_currentClockIndex{-1};
 
     double getRawFrequency(ClockFreq f) const;
 
