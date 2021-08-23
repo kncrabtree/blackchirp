@@ -33,9 +33,6 @@ public slots:
 private:
     QDoubleSpinBox *p_startBox, *p_stepSizeBox, *p_endBox;
     QSpinBox *p_numStepsBox, *p_shotsBox;
-
-    RfConfig d_rfConfig;
-
 };
 
 #endif // WIZARDDRSCANCONFIGPAGE_H

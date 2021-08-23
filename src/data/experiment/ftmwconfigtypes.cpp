@@ -228,6 +228,18 @@ FtmwConfigLOScan::FtmwConfigLOScan() : FtmwConfig()
 
 FtmwConfigLOScan::FtmwConfigLOScan(const FtmwConfig &other) : FtmwConfig(other)
 {
+    auto o = dynamic_cast<const FtmwConfigLOScan*>(&other);
+    if(o)
+    {
+        d_upStart = o->d_upStart;
+        d_upEnd = o->d_upEnd;
+        d_upMaj = o->d_upMaj;
+        d_upMin = o->d_upMin;
+        d_downStart = o->d_downStart;
+        d_downEnd = o->d_downEnd;
+        d_downMaj = o->d_downMaj;
+        d_downMin = o->d_downMin;
+    }
 }
 
 int FtmwConfigLOScan::perMilComplete() const
@@ -282,6 +294,67 @@ void FtmwConfigLOScan::_loadComplete()
 }
 
 std::shared_ptr<FidStorageBase> FtmwConfigLOScan::createStorage(int num, QString path)
+{
+    auto out = std::make_shared<FidMultiStorage>(d_scopeConfig.d_numRecords,num,path);
+    out->setNumSegments(d_rfConfig.numSegments());
+    return out;
+}
+
+FtmwConfigDRScan::FtmwConfigDRScan() : FtmwConfig()
+{
+}
+
+FtmwConfigDRScan::FtmwConfigDRScan(const FtmwConfig &other)
+{
+    auto o = dynamic_cast<const FtmwConfigDRScan*>(&other);
+    if(o)
+    {
+        d_start = o->d_start;
+        d_step = o->d_step;
+        d_numSteps = o->d_numSteps;
+    }
+}
+
+
+int FtmwConfigDRScan::perMilComplete() const
+{
+    return (1000*completedShots())/d_rfConfig.totalShots();
+}
+
+bool FtmwConfigDRScan::isComplete() const
+{
+    return d_rfConfig.d_completedSweeps > 0;
+}
+
+quint64 FtmwConfigDRScan::completedShots() const
+{
+    return d_rfConfig.completedSegmentShots() + storage()->currentSegmentShots();
+}
+
+bool FtmwConfigDRScan::_init()
+{
+    return true;
+}
+
+void FtmwConfigDRScan::_prepareToSave()
+{
+    using namespace BC::Store::FtmwDR;
+    store(drStart,d_start,"MHz");
+    store(drStep,d_step,"MHz");
+    store(drNumSteps,d_numSteps);
+    store(drEnd,d_start + (d_numSteps-1)*d_step,"MHz");
+}
+
+void FtmwConfigDRScan::_loadComplete()
+{
+    using namespace BC::Store::FtmwDR;
+    d_start = retrieve(drStart,0.0);
+    d_step = retrieve(drStep,1.0);
+    d_numSteps = retrieve(drNumSteps,2);
+    //drEnd not needed; it's only there to display to the user
+}
+
+std::shared_ptr<FidStorageBase> FtmwConfigDRScan::createStorage(int num, QString path)
 {
     auto out = std::make_shared<FidMultiStorage>(d_scopeConfig.d_numRecords,num,path);
     out->setNumSegments(d_rfConfig.numSegments());

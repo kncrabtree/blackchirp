@@ -6,11 +6,12 @@
 #include <QFormLayout>
 
 #include <hardware/core/clock/clock.h>
+#include <data/experiment/ftmwconfigtypes.h>
 
 WizardDrScanConfigPage::WizardDrScanConfigPage(QWidget *parent) : ExperimentWizardPage(BC::Key::WizDR::key,parent)
 {
     setTitle(QString("Configure DR Scan"));
-    setSubTitle(QString("Hover over the various fields for more information."));
+    setSubTitle(QString("Hover over the various fields for more information. If acquiring a large record length, be cautious of disk space for large step numbers."));
 
     p_startBox = new QDoubleSpinBox;
     p_startBox->setDecimals(6);
@@ -88,10 +89,10 @@ WizardDrScanConfigPage::WizardDrScanConfigPage(QWidget *parent) : ExperimentWiza
 void WizardDrScanConfigPage::initializePage()
 {
     auto e = getExperiment();
-    d_rfConfig = e->ftmwConfig()->d_rfConfig;
+    auto const &rfc = e->ftmwConfig()->d_rfConfig;
 
     //Get DR hardware
-    auto drClock = d_rfConfig.clockHardware(RfConfig::DRClock);
+    auto drClock = rfc.clockHardware(RfConfig::DRClock);
     if(drClock.isEmpty())
         return;
 
@@ -99,7 +100,7 @@ void WizardDrScanConfigPage::initializePage()
      double minFreq = s.get<double>(BC::Key::Clock::minFreq,0.0);
      double maxFreq = s.get<double>(BC::Key::Clock::maxFreq,1e7);
 
-     auto clocks = d_rfConfig.getClocks();
+     auto clocks = rfc.getClocks();
      auto drc = clocks.value(RfConfig::DRClock);
      if(drc.op == RfConfig::Multiply)
      {
@@ -118,6 +119,18 @@ void WizardDrScanConfigPage::initializePage()
      p_startBox->setRange(minFreq,maxFreq);
      p_stepSizeBox->setRange(-maxFreq,maxFreq);
 
+     if(e->d_number > 0)
+     {
+         auto ftc = dynamic_cast<FtmwConfigDRScan*>(e->ftmwConfig());
+         if(ftc)
+         {
+             p_startBox->setValue(ftc->d_start);
+             p_stepSizeBox->setValue(ftc->d_step);
+             p_numStepsBox->setValue(ftc->d_numSteps);
+             p_shotsBox->setValue(rfc.d_shotsPerClockConfig);
+         }
+     }
+
      p_startBox->blockSignals(false);
      p_stepSizeBox->blockSignals(false);
 
@@ -128,19 +141,24 @@ void WizardDrScanConfigPage::initializePage()
 bool WizardDrScanConfigPage::validatePage()
 {
     auto e = getExperiment();
+    auto &rfc = e->ftmwConfig()->d_rfConfig;
+    auto ftc = dynamic_cast<FtmwConfigDRScan*>(e->ftmwConfig());
+    if(!ftc)
+        return false;
 
-//    auto c = d_rfConfig.getClocks();
-    d_rfConfig.clearClockSteps();
+    rfc.clearClockSteps();
     for(int i=0; i<p_numStepsBox->value(); i++)
     {
         double thisFreq = p_startBox->value() + static_cast<double>(i)*p_stepSizeBox->value();
-        d_rfConfig.addDrScanClockStep(thisFreq);
+        rfc.addDrScanClockStep(thisFreq);
     }
 
-    d_rfConfig.d_targetSweeps = 1;
-    d_rfConfig.d_shotsPerClockConfig = p_shotsBox->value();
+    rfc.d_targetSweeps = 1;
+    rfc.d_shotsPerClockConfig = p_shotsBox->value();
+    ftc->d_start = p_startBox->value();
+    ftc->d_step = p_stepSizeBox->value();
+    ftc->d_numSteps = p_numStepsBox->value();
 
-    e->ftmwConfig()->d_rfConfig = d_rfConfig;
 
     return true;
 

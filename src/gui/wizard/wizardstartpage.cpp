@@ -361,10 +361,12 @@ void WizardStartPage::configureUI()
         p_endTimeLabel->setEnabled(true);
         break;
     case FtmwConfig::Forever:
+    case FtmwConfig::LO_Scan:
+    case FtmwConfig::DR_Scan:
         p_ftmwShotsBox->setEnabled(false);
         p_ftmwTargetDurationBox->setEnabled(false);
         p_endTimeLabel->setEnabled(false);
-        break;
+        break;    
     default:
         p_ftmwShotsBox->setEnabled(true);
         p_ftmwTargetDurationBox->setEnabled(false);

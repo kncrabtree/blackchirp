@@ -45,6 +45,9 @@ Experiment::Experiment(const Experiment &other) :
         case FtmwConfig::LO_Scan:
             pu_ftmwConfig = std::make_unique<FtmwConfigLOScan>(*other.ftmwConfig());
             break;
+        case FtmwConfig::DR_Scan:
+            pu_ftmwConfig = std::make_unique<FtmwConfigDRScan>(*other.ftmwConfig());
+            break;
         default:
             break;
         }
@@ -256,6 +259,9 @@ FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
         break;
     case FtmwConfig::LO_Scan:
         pu_ftmwConfig = std::make_unique<FtmwConfigLOScan>();
+        break;
+    case FtmwConfig::DR_Scan:
+        pu_ftmwConfig = std::make_unique<FtmwConfigDRScan>();
         break;
     default:
         break;
