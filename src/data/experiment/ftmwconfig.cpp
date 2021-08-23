@@ -302,7 +302,7 @@ bool FtmwConfig::addFids(const QByteArray rawData, int shift)
     if(d_type == Peak_Up)
     {
         //detect if the number of averages has been reset
-        if(p_fidStorage->completedShots() == 0)
+        if(completedShots() == 0)
             ps_gpu->resetAverage();
         auto p = dynamic_cast<FidPeakUpStorage*>(p_fidStorage.get());
         quint64 ts = 0;
