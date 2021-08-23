@@ -272,7 +272,15 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
         return false;
     }
 
-    static_cast<FtmwDigitizerConfig>(*this) = sc;
+    auto cfg = dynamic_cast<FtmwDigitizerConfig*>(this);
+    if(cfg)
+        *cfg = sc;
+    else
+    {
+        emit logMessage("Could not record digitizer config settings",LogHandler::Error);
+        return false;
+    }
+
     return true;
 }
 

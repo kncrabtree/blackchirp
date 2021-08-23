@@ -334,7 +334,15 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
         return false;
     }
 
-    static_cast<FtmwDigitizerConfig>(*this) = config;
+    auto cfg = dynamic_cast<FtmwDigitizerConfig*>(this);
+    if(cfg)
+        *cfg = config;
+    else
+    {
+        emit logMessage("Could not record digitizer config settings",LogHandler::Error);
+        return false;
+    }
+
     d_acquiring = false;
 
     return true;

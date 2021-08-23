@@ -544,7 +544,14 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
         }
     }
 
-    static_cast<FtmwDigitizerConfig>(*this) = config;
+    auto cfg = dynamic_cast<FtmwDigitizerConfig*>(this);
+    if(cfg)
+        *cfg = config;
+    else
+    {
+        emit logMessage("Could not record digitizer config settings",LogHandler::Error);
+        return false;
+    }
 
     if(p_socket->bytesAvailable())
         p_socket->readAll();

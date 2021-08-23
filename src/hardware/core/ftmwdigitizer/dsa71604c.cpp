@@ -551,8 +551,13 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     }
 
     auto cfg = dynamic_cast<FtmwDigitizerConfig*>(this);
-    *cfg = config;
-//    static_cast<FtmwDigitizerConfig>(*this) = config;
+    if(cfg)
+        *cfg = config;
+    else
+    {
+        emit logMessage("Could not record digitizer config settings",LogHandler::Error);
+        return false;
+    }
 
     if(p_socket->bytesAvailable())
         p_socket->readAll();
