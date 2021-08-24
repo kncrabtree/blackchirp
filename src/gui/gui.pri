@@ -34,6 +34,7 @@ SOURCES += $$PWD/mainwindow.cpp \
    $$PWD/widget/pulsestatusbox.cpp \
     $$PWD/widget/rfconfigwidget.cpp \
     $$PWD/widget/temperaturecontrolwidget.cpp \
+    $$PWD/widget/temperaturestatusbox.cpp \
     $$PWD/widget/toolbarwidgetaction.cpp \
     $$PWD/wizard/experimentwizard.cpp \
     $$PWD/wizard/experimentwizardpage.cpp \
@@ -85,6 +86,7 @@ HEADERS += $$PWD/mainwindow.h \
    $$PWD/widget/pulsestatusbox.h \
     $$PWD/widget/rfconfigwidget.h \
     $$PWD/widget/temperaturecontrolwidget.h \
+    $$PWD/widget/temperaturestatusbox.h \
     $$PWD/widget/toolbarwidgetaction.h \
     $$PWD/wizard/experimentwizard.h \
     $$PWD/wizard/experimentwizardpage.h \

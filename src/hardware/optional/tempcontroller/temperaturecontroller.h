@@ -39,6 +39,7 @@ public slots:
     void setChannelEnabled(int ch, bool en);
     void setChannelName(int ch, const QString name);
     double readTemperature(const int ch);
+    bool readChannelEnabled(const int ch);
     TemperatureControllerConfig getConfig() const { return d_config; }
 
 
@@ -53,6 +54,8 @@ protected:
     virtual void tcInitialize() =0;
     virtual bool tcTestConnection() =0;
     virtual double readHwTemperature(const int ch) =0;
+    virtual bool readHwChannelEnabled(const int ch) { return d_config.channelEnabled(ch); }
+    virtual void setHwChannelEnabled(const int ch, bool en) { d_config.setEnabled(ch,en); }
     virtual void poll();
 
 private:
@@ -68,6 +71,10 @@ private:
     // HardwareObject interface
 public:
     QStringList validationKeys() const override;
+
+    // HardwareObject interface
+public slots:
+    QStringList forbiddenKeys() const override;
 };
 
 #endif // TEMPERATURECONTROLLER_H

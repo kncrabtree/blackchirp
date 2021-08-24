@@ -23,6 +23,7 @@
 #include <gui/widget/gascontrolwidget.h>
 #include <gui/widget/gasflowdisplaywidget.h>
 #include <gui/widget/pulsestatusbox.h>
+#include <gui/widget/temperaturestatusbox.h>
 #include <gui/widget/temperaturecontrolwidget.h>
 #include <data/loghandler.h>
 #include <hardware/core/hardwaremanager.h>
@@ -200,7 +201,12 @@ MainWindow::MainWindow(QWidget *parent) :
         }
         else if(key == BC::Key::TC::key)
         {
-            connect(act,&QAction::triggered,[this,key](){
+            auto tsb = new TemperatureStatusBox;
+            tsb->setObjectName(key);
+            ui->instrumentStatusLayout->insertWidget(3,tsb,0);
+            connect(p_hwm,&HardwareManager::temperatureEnableUpdate,tsb,&TemperatureStatusBox::setChannelEnabled);
+            connect(p_hwm,&HardwareManager::temperatureUpdate,tsb,&TemperatureStatusBox::setTemperature);
+            connect(act,&QAction::triggered,[this,key,tsb](){
                if(isDialogOpen(key))
                    return;
 
@@ -209,9 +215,15 @@ MainWindow::MainWindow(QWidget *parent) :
                tcw->setFromConfig(tc);
 
                connect(p_hwm,&HardwareManager::temperatureEnableUpdate,tcw,&TemperatureControlWidget::setChannelEnabled);
-               connect(tcw,&TemperatureControlWidget::channelEnableChanged,p_hwm,&HardwareManager::setTemperatureChannelEnabled);
+               connect(tcw,&TemperatureControlWidget::channelEnableChanged,
+                       p_hwm,&HardwareManager::setTemperatureChannelEnabled);
+               connect(tcw,&TemperatureControlWidget::channelNameChanged
+                       ,p_hwm,&HardwareManager::setTemperatureChannelName);
+               connect(tcw,&TemperatureControlWidget::channelNameChanged,tsb,&TemperatureStatusBox::setChannelName);
+
 
                auto d = createHWDialog(key,tcw);
+               connect(d,&QDialog::accepted,tsb,&TemperatureStatusBox::loadFromSettings);
             });
         }
         else
