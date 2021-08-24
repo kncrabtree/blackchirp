@@ -9,6 +9,8 @@ TemperatureController::TemperatureController(const QString subKey, const QString
 {
     d_config.setNumChannels(d_numChannels);
 
+    set(::numChannels,d_numChannels);
+
     if(!containsArray(channels))
     {
         std::vector<SettingsMap> l;
@@ -37,6 +39,17 @@ void TemperatureController::readAll()
                 break;
         }
     }
+}
+
+void TemperatureController::setChannelEnabled(int ch, bool en)
+{
+    d_config.setEnabled(ch,en);
+    emit channelEnableUpdate(ch,en,QPrivateSignal());
+}
+
+void TemperatureController::setChannelName(int ch, const QString name)
+{
+    d_config.setName(ch,name);
 }
 
 double TemperatureController::readTemperature(const int ch)

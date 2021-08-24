@@ -29,6 +29,7 @@ public:
     void setName(int ch, QString n);
     void setEnabled(int ch, bool en);
 
+    int numChannels() const { return d_channels.size(); }
     double temperature(int ch) const;
     QString channelName(int ch) const;
     bool channelEnabled(int ch) const;

@@ -81,6 +81,8 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 
 #ifdef BC_TEMPCONTROLLER
     auto tc = new TemperatureControllerHardware;
+    connect(tc,&TemperatureController::channelEnableUpdate,this,&HardwareManager::temperatureEnableUpdate);
+    connect(tc,&TemperatureController::temperatureUpdate,this,&HardwareManager::temperatureUpdate);
     d_hardwareMap.emplace(tc->d_key,tc);
 #endif
 
@@ -539,6 +541,36 @@ PressureControllerConfig HardwareManager::getPressureControllerConfig()
             QMetaObject::invokeMethod(pc,&PressureController::getConfig,Qt::BlockingQueuedConnection,&out);
         else
             out = pc->getConfig();
+    }
+
+    return out;
+}
+
+
+void HardwareManager::setTemperatureChannelEnabled(int ch, bool en)
+{
+    auto tc = findHardware<TemperatureController>(BC::Key::TC::key);
+    if(tc)
+        QMetaObject::invokeMethod(tc,[tc,ch,en](){ tc->setChannelEnabled(ch,en);});
+}
+
+void HardwareManager::setTemperatureChannelName(int ch, const QString name)
+{
+    auto tc = findHardware<TemperatureController>(BC::Key::TC::key);
+    if(tc)
+        QMetaObject::invokeMethod(tc,[tc,ch,name](){ tc->setChannelName(ch,name);});
+}
+
+TemperatureControllerConfig HardwareManager::getTemperatureControllerConfig()
+{
+    TemperatureControllerConfig out;
+    auto tc = findHardware<TemperatureController>(BC::Key::TC::key);
+    if(tc)
+    {
+        if(tc->thread() == QThread::currentThread())
+            QMetaObject::invokeMethod(tc,&TemperatureController::getConfig,Qt::BlockingQueuedConnection,&out);
+        else
+            out = tc->getConfig();
     }
 
     return out;

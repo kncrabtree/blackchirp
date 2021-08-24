@@ -8,7 +8,8 @@ class QTimer;
 
 namespace BC::Key::TC {
 static const QString key("TemperatureController");
-static const QString interval("intervalMs");
+static const QString interval("pollIntervalMs");
+static const QString numChannels("numChannels");
 static const QString channels("channels");
 static const QString units("units");
 static const QString chName("name");
@@ -30,11 +31,15 @@ public:
     int numChannels() const { return d_numChannels; }
 
 signals:
+    void channelEnableUpdate(int,bool,QPrivateSignal);
     void temperatureUpdate(int, double, QPrivateSignal);
 
 public slots:
     void readAll();
+    void setChannelEnabled(int ch, bool en);
+    void setChannelName(int ch, const QString name);
     double readTemperature(const int ch);
+    TemperatureControllerConfig getConfig() const { return d_config; }
 
 
     // HardwareObject interface

@@ -11,6 +11,7 @@
 #include <hardware/optional/flowcontroller/flowconfig.h>
 #include <hardware/optional/pulsegenerator/pulsegenconfig.h>
 #include <hardware/optional/pressurecontroller/pressurecontrollerconfig.h>
+#include <hardware/optional/tempcontroller/temperaturecontrollerconfig.h>
 
 class HardwareObject;
 class ClockManager;
@@ -68,6 +69,9 @@ signals:
     void pressureUpdate(double);
     void pressureSetpointUpdate(double);
     void pressureControlMode(bool);
+
+    void temperatureUpdate(int,double);
+    void temperatureEnableUpdate(int,bool);
 
 #ifdef BC_LIF
     void lifScopeShotAcquired(LifTrace);
@@ -135,6 +139,10 @@ public slots:
     void openGateValve();
     void closeGateValve();
     PressureControllerConfig getPressureControllerConfig();
+
+    void setTemperatureChannelEnabled(int ch, bool en);
+    void setTemperatureChannelName(int ch, const QString name);
+    TemperatureControllerConfig getTemperatureControllerConfig();
 
 #ifdef BC_LIF
     void setLifParameters(double delay, double pos);

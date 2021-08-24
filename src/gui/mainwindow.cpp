@@ -23,6 +23,7 @@
 #include <gui/widget/gascontrolwidget.h>
 #include <gui/widget/gasflowdisplaywidget.h>
 #include <gui/widget/pulsestatusbox.h>
+#include <gui/widget/temperaturecontrolwidget.h>
 #include <data/loghandler.h>
 #include <hardware/core/hardwaremanager.h>
 #include <acquisition/acquisitionmanager.h>
@@ -196,6 +197,22 @@ MainWindow::MainWindow(QWidget *parent) :
                connect(d,&QDialog::accepted,psb,&PulseStatusBox::updateFromSettings);
             });
 
+        }
+        else if(key == BC::Key::TC::key)
+        {
+            connect(act,&QAction::triggered,[this,key](){
+               if(isDialogOpen(key))
+                   return;
+
+               auto tcw = new TemperatureControlWidget;
+               auto tc = p_hwm->getTemperatureControllerConfig();
+               tcw->setFromConfig(tc);
+
+               connect(p_hwm,&HardwareManager::temperatureEnableUpdate,tcw,&TemperatureControlWidget::setChannelEnabled);
+               connect(tcw,&TemperatureControlWidget::channelEnableChanged,p_hwm,&HardwareManager::setTemperatureChannelEnabled);
+
+               auto d = createHWDialog(key,tcw);
+            });
         }
         else
         {
