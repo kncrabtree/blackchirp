@@ -63,6 +63,12 @@ public:
         FtWindowFunction windowFunction;
     };
 
+    struct FilterResult {
+        QVector<double> fid;
+        double min{0.0};
+        double max{0.0};
+    };
+
     /*!
      \brief Constructor. Does nothing
 
@@ -77,15 +83,15 @@ signals:
     /*!
      \brief Emitted when FFT is complete
     */
-    void ftDone(const Ft ft, int);
+    void ftDone(Ft, int);
     /*!
      \brief Emitted when Fid filtering is complete
 
      \param fid The filtered Fid
     */
-    void fidDone(const QVector<QPointF> fid, int);
+    void fidDone(QVector<double>,double spacing,double min,double max,int);
 
-    void ftDiffDone(const Ft ft);
+    void ftDiffDone(Ft);
 
 public slots:
     /*!
@@ -105,9 +111,7 @@ public slots:
      \param f Fid to filter
      \return QVector<double> Filtered Fid
     */
-    QVector<double> filterFid(const Fid fid, const FtWorker::FidProcessingSettings &settings);
-
-    void prepareForDisplay(const QVector<double> fid, double spacing);
+    FilterResult filterFid(const Fid fid, const FtWorker::FidProcessingSettings &settings);
 
 private:
     gsl_fft_real_wavetable *real; /*!< Wavetable for GNU Scientific Library FFT operations */

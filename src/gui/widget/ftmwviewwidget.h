@@ -61,7 +61,7 @@ public slots:
     void updatePlotSetting(int id);
 
     void fidLoadComplete(int id);
-    void fidProcessed(const QVector<QPointF> fidData, int workerId);
+    void fidProcessed(const QVector<double> fidData, double spacing, double min, double max, int workerId);
     void ftDone(const Ft ft, int workerId);
     void ftDiffDone(const Ft ft);
     void updateMainPlot();

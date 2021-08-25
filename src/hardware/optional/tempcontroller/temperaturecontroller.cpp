@@ -111,9 +111,9 @@ AuxDataStorage::AuxDataMap TemperatureController::readAuxData()
         {
             auto n = d_config.channelName(i);
             if(n.isEmpty())
-                out.insert({BC::Aux::TC::temperature.arg(i),d_config.temperature(i)});
+                out.insert({BC::Aux::TC::temperature.arg(i+1),d_config.temperature(i)});
             else
-                out.insert({n+"."+BC::Aux::TC::temperature.arg(i),d_config.temperature(i)});
+                out.insert({n+"."+BC::Aux::TC::temperature.arg(i+1),d_config.temperature(i)});
         }
     }
     return out;

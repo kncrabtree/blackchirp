@@ -16,6 +16,8 @@ static const QString fidPlot("FidPlot");
 static const QString fidCurve("FID");
 }
 
+class BlackchirpFIDCurve;
+
 /*!
  * \brief The FID Plot
  */
@@ -36,14 +38,14 @@ signals:
 
 
 public slots:
-    void receiveProcessedFid(const QVector<QPointF> d);
+    void receiveProcessedFid(const QVector<double> d, double spacing, double min, double max);
     void prepareForExperiment(const Experiment &e);
     void setFtStart(double start);
     void setFtEnd(double end);
     void setNumShots(quint64 shots);
 
 private:
-    BlackchirpPlotCurve *p_curve;
+    BlackchirpFIDCurve *p_curve;
     QwtPlotTextLabel *p_label;
 
     QPair<QwtPlotMarker*,QwtPlotMarker*> d_chirpMarkers;

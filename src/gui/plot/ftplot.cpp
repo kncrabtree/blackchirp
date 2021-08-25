@@ -34,7 +34,7 @@ FtPlot::FtPlot(const QString id, QWidget *parent) :
     setPlotAxisTitle(QwtPlot::yLeft,QString("FT "+id));
 
     //build and configure curve object
-    p_curve = new BlackchirpPlotCurve(BC::Key::ftCurve+id);
+    p_curve = new BlackchirpFTCurve(BC::Key::ftCurve+id);
     p_curve->attach(this);
 
     p_peakData = new BlackchirpPlotCurve(BC::Key::peakCurve+id,"",Qt::NoPen,QwtSymbol::Ellipse);
@@ -63,7 +63,7 @@ void FtPlot::prepareForExperiment(const Experiment &e)
     d_number = e.d_number;
 
     d_currentFt = Ft();
-    p_curve->setCurveData(QVector<QPointF>());
+    p_curve->setCurrentFt(Ft());
     p_peakData->setCurveData(QVector<QPointF>());
 
     p_curve->setVisible(e.ftmwEnabled());
@@ -79,7 +79,7 @@ Ft FtPlot::currentFt() const
 void FtPlot::newFt(const Ft ft)
 {
     d_currentFt = ft;
-    p_curve->setCurveData(ft.toVector(),ft.yMin(),ft.yMax());
+    p_curve->setCurrentFt(ft);
     setNumShots(ft.shots());
     replot();
 }

@@ -106,7 +106,7 @@ void AuxDataViewWidget::pointUpdated(const AuxDataStorage::AuxDataMap m, const Q
 }
 
 
-void AuxDataViewWidget::moveCurveToPlot(BlackchirpPlotCurve* c, int newPlotIndex)
+void AuxDataViewWidget::moveCurveToPlot(BlackchirpPlotCurve *c, int newPlotIndex)
 {
     auto oldPlot = c->plot();
     c->detach();

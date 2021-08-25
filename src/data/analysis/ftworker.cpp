@@ -29,7 +29,7 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings)
 {
     if(fid.size() < 2)
     {
-        emit fidDone(QVector<QPointF>(),d_id);
+        emit fidDone({},1.0,0.0,0.0,d_id);
         emit ftDone(Ft(), d_id);
         return Ft();
     }
@@ -37,8 +37,9 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings)
     double rawSize = static_cast<double>(fid.size());
 
     //first, apply any filtering that needs to be done
-    QVector<double> fftData = filterFid(fid,settings);
-    prepareForDisplay(fftData,fid.spacing());
+    auto fidResult = filterFid(fid,settings);
+    emit fidDone(fidResult.fid,fid.spacing()*1e6,fidResult.min,fidResult.max,d_id);
+    auto fftData = fidResult.fid;
 
     //might need to allocate or reallocate workspace and wavetable
     if(fftData.size() != d_numPnts)
@@ -428,7 +429,7 @@ QList<Ft> FtWorker::makeSidebandList(const FidList fl, const FidProcessingSettin
 
 }
 
-QVector<double> FtWorker::filterFid(const Fid fid, const FidProcessingSettings &settings)
+FtWorker::FilterResult FtWorker::filterFid(const Fid fid, const FidProcessingSettings &settings)
 {
 
     QVector<double> out(fid.size());
@@ -481,6 +482,8 @@ QVector<double> FtWorker::filterFid(const Fid fid, const FidProcessingSettings &
 
     }
 
+    double min = data.at(si);
+    double max = min;
     for(int i=0; i<data.size(); i++)
     {
         if(i < si)
@@ -489,10 +492,13 @@ QVector<double> FtWorker::filterFid(const Fid fid, const FidProcessingSettings &
         if(i > ei)
             break;
 
-        if(settings.windowFunction == None)
-            out[i] = data.at(i);
-        else
-            out[i] = data.at(i)*d_winf.at(i-si);
+        double d = data.at(i);
+        if(settings.windowFunction != None)
+            d*=d_winf.at(i-si);
+
+        out[i] = d;
+        min = qMin(d,min);
+        max = qMax(d,max);
     }
 
     if(settings.zeroPadFactor > 0 && settings.zeroPadFactor <= 4)
@@ -502,20 +508,8 @@ QVector<double> FtWorker::filterFid(const Fid fid, const FidProcessingSettings &
             out.resize(filledSize);
     }
 
-    return out;
+    return {out,min,max};
 
-}
-
-void FtWorker::prepareForDisplay(const QVector<double> fid, double spacing)
-{
-    QVector<QPointF> out(fid.size());
-    for(int i=0; i<out.size(); i++)
-    {
-        out[i].setX(spacing*static_cast<double>(i)*1e6); //convert to us
-        out[i].setY(fid.at(i));
-    }
-
-    emit fidDone(out,d_id);
 }
 
 Ft FtWorker::resample(double f0, double spacing, const Ft ft)

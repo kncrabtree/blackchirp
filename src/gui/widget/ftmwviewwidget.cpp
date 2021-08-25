@@ -277,14 +277,14 @@ void FtmwViewWidget::fidLoadComplete(int id)
     }
 }
 
-void FtmwViewWidget::fidProcessed(const QVector<QPointF> fidData, int workerId)
+void FtmwViewWidget::fidProcessed(const QVector<double> fidData, double spacing, double min, double max, int workerId)
 {
     auto it = d_plotStatus.find(workerId);
     if(it != d_plotStatus.end())
     {
         auto &ps = it->second;
         if(!ps.fidPlot->isHidden())
-            ps.fidPlot->receiveProcessedFid(fidData);
+            ps.fidPlot->receiveProcessedFid(fidData,spacing,min,max);
     }
 }
 

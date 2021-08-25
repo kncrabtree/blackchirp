@@ -17,6 +17,8 @@ static const QString ftCurve("FT");
 static const QString peakCurve("FTPeaks");
 }
 
+class BlackchirpFTCurve;
+
 class FtPlot : public ZoomPanPlot
 {
     Q_OBJECT
@@ -43,7 +45,8 @@ private:
     /*!
      * \brief The object representing the curve on the plot
      */
-    BlackchirpPlotCurve *p_curve, *p_peakData;
+    BlackchirpPlotCurve *p_peakData;
+    BlackchirpFTCurve *p_curve;
     QwtPlotTextLabel *p_label;
 
     Ft d_currentFt;

@@ -13,6 +13,7 @@
 class QMenu;
 class CustomTracker;
 class BlackchirpPlotCurve;
+class BlackchirpPlotCurveBase;
 class QMutex;
 
 
@@ -59,14 +60,14 @@ public slots:
     void setTrackerDecimals(QwtPlot::Axis a, int dec);
     void setTrackerScientific(QwtPlot::Axis a, bool sci);
 
-    void exportCurve(BlackchirpPlotCurve *curve);
-    void setCurveColor(BlackchirpPlotCurve* curve);
-    void setCurveLineThickness(BlackchirpPlotCurve* curve, double t);
-    void setCurveLineStyle(BlackchirpPlotCurve* curve, Qt::PenStyle s);
-    void setCurveMarker(BlackchirpPlotCurve* curve, QwtSymbol::Style s);
-    void setCurveMarkerSize(BlackchirpPlotCurve* curve, int s);
-    void setCurveVisible(BlackchirpPlotCurve* curve, bool v);
-    void setCurveAxisY(BlackchirpPlotCurve* curve, QwtPlot::Axis a);
+    void exportCurve(BlackchirpPlotCurveBase *curve);
+    void setCurveColor(BlackchirpPlotCurveBase* curve);
+    void setCurveLineThickness(BlackchirpPlotCurveBase* curve, double t);
+    void setCurveLineStyle(BlackchirpPlotCurveBase* curve, Qt::PenStyle s);
+    void setCurveMarker(BlackchirpPlotCurveBase* curve, QwtSymbol::Style s);
+    void setCurveMarkerSize(BlackchirpPlotCurveBase* curve, int s);
+    void setCurveVisible(BlackchirpPlotCurveBase* curve, bool v);
+    void setCurveAxisY(BlackchirpPlotCurveBase* curve, QwtPlot::Axis a);
     void configureGridMajorPen();
     void configureGridMinorPen();
 

@@ -24,7 +24,7 @@ FidPlot::FidPlot(const QString id, QWidget *parent) :
     setPlotAxisTitle(QwtPlot::xBottom,QString::fromUtf16(u"Time (μs)"));
     setPlotAxisTitle(QwtPlot::yLeft,QString("FID ")+id);
 
-    p_curve = new BlackchirpPlotCurve(QString("FID")+id);
+    p_curve = new BlackchirpFIDCurve(QString("FID")+id);
     p_curve->attach(this);
 
     QwtPlotMarker *chirpStartMarker = new QwtPlotMarker();
@@ -99,9 +99,9 @@ FidPlot::FidPlot(const QString id, QWidget *parent) :
 
 }
 
-void FidPlot::receiveProcessedFid(const QVector<QPointF> d)
+void FidPlot::receiveProcessedFid(const QVector<double> d, double spacing, double min, double max)
 {
-    p_curve->setCurveData(d);
+    p_curve->setCurrentFid(d,spacing,min,max);
 
     replot();
 }
@@ -122,7 +122,7 @@ void FidPlot::prepareForExperiment(const Experiment &e)
     }
 
     auto c = e.ftmwConfig();
-    p_curve->setCurveData(QVector<QPointF>());
+    p_curve->setCurrentFid({});
 
     p_curve->setVisible(true);
 

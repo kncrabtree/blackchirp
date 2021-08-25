@@ -13,6 +13,7 @@
 class QGridLayout;
 class TrackingPlot;
 class BlackchirpPlotCurve;
+class BlackchirpPlotCurveBase;
 
 namespace BC::Key {
 static const QString auxDataWidget("AuxDataWidget");

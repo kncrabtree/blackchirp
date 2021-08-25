@@ -85,6 +85,8 @@ ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),
         QwtPlot::replot();
         if(d_config.xDirty)
         {
+            updateAxes();
+            QApplication::sendPostedEvents(this,QEvent::LayoutRequest);
             d_busy = true;
             d_config.xDirty = false;
             p_watcher->setFuture(QtConcurrent::run([this](){filterData();}));
@@ -207,7 +209,7 @@ void ZoomPanPlot::replot()
             top = true;
 
         //update bounding rects
-        auto c = dynamic_cast<BlackchirpPlotCurve*>(l.at(i));
+        auto c = dynamic_cast<BlackchirpPlotCurveBase*>(l.at(i));
         if(c)
         {
             auto r = c->boundingRect();
@@ -344,7 +346,7 @@ void ZoomPanPlot::setTrackerScientific(QwtPlot::Axis a, bool sci)
     p_tracker->setScientific(a,sci);
 }
 
-void ZoomPanPlot::exportCurve(BlackchirpPlotCurve *curve)
+void ZoomPanPlot::exportCurve(BlackchirpPlotCurveBase *curve)
 {
     QDir d = BlackchirpCSV::textExportDir();
     auto name = curve->name().append(".csv");
@@ -363,7 +365,7 @@ void ZoomPanPlot::exportCurve(BlackchirpPlotCurve *curve)
     f.commit();
 }
 
-void ZoomPanPlot::setCurveColor(BlackchirpPlotCurve *curve)
+void ZoomPanPlot::setCurveColor(BlackchirpPlotCurveBase *curve)
 {
     auto c = QColorDialog::getColor(curve->pen().color(),this,
                            QString("Choose a color for the ")+curve->title().text()+QString(" curve"));
@@ -372,37 +374,37 @@ void ZoomPanPlot::setCurveColor(BlackchirpPlotCurve *curve)
     replot();
 }
 
-void ZoomPanPlot::setCurveLineThickness(BlackchirpPlotCurve *curve, double t)
+void ZoomPanPlot::setCurveLineThickness(BlackchirpPlotCurveBase *curve, double t)
 {
     curve->setLineThickness(t);
     replot();
 }
 
-void ZoomPanPlot::setCurveLineStyle(BlackchirpPlotCurve *curve, Qt::PenStyle s)
+void ZoomPanPlot::setCurveLineStyle(BlackchirpPlotCurveBase *curve, Qt::PenStyle s)
 {
     curve->setLineStyle(s);
     replot();
 }
 
-void ZoomPanPlot::setCurveMarker(BlackchirpPlotCurve *curve, QwtSymbol::Style s)
+void ZoomPanPlot::setCurveMarker(BlackchirpPlotCurveBase *curve, QwtSymbol::Style s)
 {
     curve->setMarkerStyle(s);
     replot();
 }
 
-void ZoomPanPlot::setCurveMarkerSize(BlackchirpPlotCurve *curve, int s)
+void ZoomPanPlot::setCurveMarkerSize(BlackchirpPlotCurveBase *curve, int s)
 {
     curve->setMarkerSize(s);
     replot();
 }
 
-void ZoomPanPlot::setCurveVisible(BlackchirpPlotCurve *curve, bool v)
+void ZoomPanPlot::setCurveVisible(BlackchirpPlotCurveBase *curve, bool v)
 {
     curve->setCurveVisible(v);
     replot();
 }
 
-void ZoomPanPlot::setCurveAxisY(BlackchirpPlotCurve *curve, QwtPlot::Axis a)
+void ZoomPanPlot::setCurveAxisY(BlackchirpPlotCurveBase *curve, QwtPlot::Axis a)
 {
     curve->setCurveAxisY(a);
     replot();
@@ -441,7 +443,7 @@ void ZoomPanPlot::filterData()
 
     for(auto item : l)
     {
-        auto c = dynamic_cast<BlackchirpPlotCurve*>(item);
+        auto c = dynamic_cast<BlackchirpPlotCurveBase*>(item);
         if(c)
         {
             p_mutex->lock();
@@ -457,7 +459,7 @@ void ZoomPanPlot::filterData()
         d_config.axisList[i].boundingRect = QRectF{ QPointF{1.0,1.0}, QPointF{-2.0,-2.0} };
     for(auto item : l)
     {
-        auto c = dynamic_cast<BlackchirpPlotCurve*>(item);
+        auto c = dynamic_cast<BlackchirpPlotCurveBase*>(item);
         if(c)
         {
             auto r = c->boundingRect();
@@ -568,6 +570,7 @@ void ZoomPanPlot::pan(QMouseEvent *me)
         if(c.override)
             continue;
 
+        auto map = canvasMap(c.type);
         double scaleMin = axisScaleDiv(c.type).lowerBound();
         double scaleMax = axisScaleDiv(c.type).upperBound();
 
@@ -844,7 +847,7 @@ QMenu *ZoomPanPlot::contextMenu()
     int count = 0;
     for(auto item : itemList(QwtPlotItem::Rtti_PlotCurve))
     {
-        auto curve = dynamic_cast<BlackchirpPlotCurve*>(item);
+        auto curve = dynamic_cast<BlackchirpPlotCurveBase*>(item);
         if(curve != nullptr)
         {
             ++count;
@@ -953,7 +956,8 @@ QMenu *ZoomPanPlot::contextMenu()
             }
             m->addActions(axisGroup->actions());
 
-            if(d_maxIndex > 0)
+            auto c = dynamic_cast<BlackchirpPlotCurve*>(curve);
+            if(c && d_maxIndex > 0)
             {
                 QMenu *moveMenu = m->addMenu(QString("Change plot"));
                 QActionGroup *moveGroup = new QActionGroup(moveMenu);
@@ -962,14 +966,14 @@ QMenu *ZoomPanPlot::contextMenu()
                 {
                     QAction *a = moveGroup->addAction(QString("Move to plot %1").arg(j+1));
                     a->setCheckable(true);
-                    if(j == (curve->plotIndex() % (d_maxIndex+1)))
+                    if(j == (c->plotIndex() % (d_maxIndex+1)))
                     {
                         a->setEnabled(false);
                         a->setChecked(true);
                     }
                     else
                     {
-                        connect(a,&QAction::triggered,this, [=](){ emit curveMoveRequested(curve,j); });
+                        connect(a,&QAction::triggered,this, [=](){ emit curveMoveRequested(c,j); });
                         a->setChecked(false);
                     }
                     moveMenu->addActions(moveGroup->actions());
