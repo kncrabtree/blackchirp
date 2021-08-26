@@ -3,12 +3,15 @@
 class FtData : public QSharedData
 {
 public:
-    FtData() : yMin(0.0), yMax(0.0), loFreq(0.0) {}
+    FtData() {}
 
-    double yMin;
-    double yMax;
-    double loFreq;
-    QVector<QPointF> ftData;
+    double yMin{0.0};
+    double yMax{0.0};
+    double x0MHz{0.0};
+    double spacingMHz{1.0};
+    double loFreqMHz{0.0};
+
+    QVector<double> ftData;
     quint64 shots{0};
 };
 
@@ -17,10 +20,12 @@ Ft::Ft() : data(new FtData)
 
 }
 
-Ft::Ft(int numPnts, double loFreq) : data(new FtData)
+Ft::Ft(int numPnts, double f0, double spacing, double loFreq) : data(new FtData)
 {
     data->ftData.resize(numPnts);
-    data->loFreq = loFreq;
+    data->x0MHz = f0;
+    data->spacingMHz = spacing;
+    data->loFreqMHz = loFreq;
 }
 
 Ft::Ft(const Ft &rhs) : data(rhs.data)
@@ -40,15 +45,15 @@ Ft::~Ft()
 
 }
 
-void Ft::setPoint(int i, QPointF pt, double ignoreRange)
+void Ft::setPoint(int i, double y, double ignoreRange)
 {
     if(i >= 0 && i < data->ftData.size())
     {
-        data->ftData[i] = pt;
-        if(qAbs(pt.x()-data->loFreq) > ignoreRange)
+        data->ftData[i] = y;
+        if(qAbs(xAt(i)-data->loFreqMHz) > ignoreRange)
         {
-            data->yMin = qMin(pt.y(),data->yMin);
-            data->yMax = qMax(pt.y(),data->yMax);
+            data->yMin = qMin(y,data->yMin);
+            data->yMax = qMax(y,data->yMax);
         }
     }
 }
@@ -60,15 +65,15 @@ void Ft::resize(int n, double ignoreRange)
     data->yMax = 0.0;
     for(int i=0; i<data->ftData.size(); i++)
     {
-        if(qAbs(data->ftData.at(i).x()-data->loFreq) > ignoreRange)
+        if(qAbs(xAt(i)-data->loFreqMHz) > ignoreRange)
         {
-            data->yMin = qMin(data->ftData.at(i).y(),data->yMin);
-            data->yMax = qMax(data->ftData.at(i).y(),data->yMax);
+            data->yMin = qMin(at(i),data->yMin);
+            data->yMax = qMax(at(i),data->yMax);
         }
     }
 }
 
-QPointF &Ft::operator[](int i)
+double &Ft::operator[](int i)
 {
     return data->ftData[i];
 }
@@ -78,45 +83,51 @@ void Ft::reserve(int n)
     data->ftData.reserve(n);
 }
 
-void Ft::append(QPointF pt, double ignoreRange)
+void Ft::append(double y, double ignoreRange)
 {
-    data->ftData.append(pt);
-    if(qAbs(pt.x()-data->loFreq) > ignoreRange)
+    data->ftData.append(y);
+    if(qAbs(xAt(size()-1)-data->loFreqMHz) > ignoreRange)
     {
-        data->yMax = qMax(data->yMax,pt.y());
-        data->yMin = qMin(data->yMin,pt.y());
+        data->yMax = qMax(data->yMax,y);
+        data->yMin = qMin(data->yMin,y);
     }
 }
 
 void Ft::trim(double minOffset, double maxOffset)
 {
-    QVector<QPointF> newData;
-    newData.reserve(data->ftData.size());
+    //assume the FT could contain the upper or lower sideband or both
+    double usbmin = data->loFreqMHz + minOffset;
+    double usbmax = data->loFreqMHz + maxOffset;
+    double lsbmin = data->loFreqMHz - minOffset;
+    double lsbmax = data->loFreqMHz - maxOffset;
+
+    //get indices of first and last points
+    int minlIndex = static_cast<int>((lsbmin-data->x0MHz)/data->spacingMHz);
+    int maxlIndex = static_cast<int>((lsbmax-data->x0MHz)/data->spacingMHz);
+    int minuIndex = static_cast<int>((usbmin-data->x0MHz)/data->spacingMHz);
+    int maxuIndex = static_cast<int>((usbmax-data->x0MHz)/data->spacingMHz);
+
+    if(minlIndex > maxlIndex)
+        qSwap(minlIndex,maxlIndex);
+    if(minuIndex > maxuIndex)
+        qSwap(minuIndex,maxuIndex);
+
+    int minIndex = 0, maxIndex = size()-1;
+
+    //these are the first and last points to retain
+    minIndex = qMax(minIndex,qMax(minlIndex,minuIndex));
+    maxIndex = qMin(maxIndex,qMin(maxlIndex,maxuIndex));
+
+    //update f0 to match new reference frequency and update y limits
+    data->x0MHz = xAt(minIndex);
+    data->ftData = data->ftData.mid(minIndex,maxIndex-minIndex+1);
     data->yMin = 0.0;
     data->yMax = 0.0;
-    bool reverse = false;
-    if(data->ftData.constLast().x() < data->ftData.constFirst().x())
-        reverse = true;
     for(int i=0; i<data->ftData.size(); i++)
     {
-        if(reverse)
-            i = data->ftData.size()-1-i;
-
-        double thisOffset = qAbs(data->ftData.at(i).x() - data->loFreq);
-        if(thisOffset < minOffset || thisOffset > maxOffset)
-            continue;
-
-        if(reverse)
-            newData.prepend(data->ftData.at(i));
-        else
-            newData.append(data->ftData.at(i));
-
-        data->yMax = qMax(data->yMax,data->ftData.at(i).y());
-        data->yMin = qMin(data->yMin,data->ftData.at(i).y());
+        data->yMax = qMax(data->yMax,at(i));
+        data->yMin = qMin(data->yMin,at(i));
     }
-
-    data->ftData = newData;
-
 }
 
 void Ft::setNumShots(quint64 shots)
@@ -134,60 +145,54 @@ bool Ft::isEmpty() const
     return data->ftData.isEmpty();
 }
 
-QPointF Ft::at(int i) const
+double Ft::at(int i) const
 {
-//    if(i >= 0 && i < data->ftData.size())
     return data->ftData.at(i);
-
-    //    return QPointF();
 }
 
-QPointF Ft::constFirst() const
+double Ft::constFirst() const
 {
     return data->ftData.constFirst();
 }
 
-QPointF Ft::constLast() const
+double Ft::constLast() const
 {
     return data->ftData.constLast();
 }
 
+double Ft::xAt(int i) const
+{
+    return data->x0MHz + (double)i*data->spacingMHz;
+}
+
+double Ft::xFirst() const
+{
+    return data->x0MHz;
+}
+
+double Ft::xLast() const
+{
+    return data->x0MHz + (double)(size()-1)*data->spacingMHz;
+}
+
 double Ft::xSpacing() const
 {
-    auto p0 = at(0);
-    auto p1 = at(1);
-
-    if(p1.isNull())
-        return -1.0;
-
-    return qAbs(p0.x() - p1.x());
+    return data->spacingMHz;
 }
 
-double Ft::minFreq() const
+double Ft::minFreqMHz() const
 {
-    if(isEmpty())
-        return -1;
-
-    auto p0 = data->ftData.constFirst();
-    auto p1 = data->ftData.constLast();
-
-    return qMin(p0.x(),p1.x());
+    return qMin(xFirst(),xLast());
 }
 
-double Ft::maxFreq() const
+double Ft::maxFreqMHz() const
 {
-    if(isEmpty())
-        return -1;
-
-    auto p0 = data->ftData.constFirst();
-    auto p1 = data->ftData.constLast();
-
-    return qMax(p0.x(),p1.x());
+    return qMax(xFirst(),xLast());
 }
 
-double Ft::loFreq() const
+double Ft::loFreqMHz() const
 {
-    return data->loFreq;
+    return data->loFreqMHz;
 }
 
 double Ft::yMin() const
@@ -203,26 +208,27 @@ double Ft::yMax() const
 QVector<double> Ft::xData() const
 {
     QVector<double> out;
-    out.resize(data->ftData.size());
-    for(int i=0; i<data->ftData.size(); i++)
-        out[i] = data->ftData.at(i).x();
+    auto s = data->ftData.size();
+    out.reserve(s);
+    for(int i=0; i<s; i++)
+        out.append(xAt(i));
 
     return out;
 }
 
 QVector<double> Ft::yData() const
 {
-    QVector<double> out;
-    out.resize(data->ftData.size());
-    for(int i=0; i<data->ftData.size(); i++)
-        out[i] = data->ftData.at(i).y();
-
-    return out;
+    return data->ftData;
 }
 
 QVector<QPointF> Ft::toVector() const
 {
-    return data->ftData;
+    QVector<QPointF> out;
+    auto s = data->ftData.size();
+    out.reserve(s);
+    for(int i=0; i<s; i++)
+        out.append({xAt(i),at(i)});
+    return out;
 }
 
 quint64 Ft::shots() const

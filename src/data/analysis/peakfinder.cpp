@@ -21,8 +21,8 @@ QVector<QPointF> PeakFinder::findPeaks(const Ft ft, double minF, double maxF, do
     Eigen::VectorXd c = d_coefs.col(2);
     int halfWin = c.rows()/2;
 
-    int startIndex = qAbs((minF - ft.constFirst().x())/(ft.constLast().x()-ft.constFirst().x())*((double)ft.size()-1.0));
-    int endIndex = qAbs((maxF - ft.constFirst().x())/(ft.constLast().x()-ft.constFirst().x())*((double)ft.size()-1.0));
+    int startIndex = qAbs((minF - ft.xFirst())/(ft.xLast()-ft.xFirst())*((double)ft.size()-1.0));
+    int endIndex = qAbs((maxF - ft.xFirst())/(ft.xLast()-ft.xFirst())*((double)ft.size()-1.0));
     if(endIndex < startIndex)
         qSwap(startIndex,endIndex);
 
@@ -34,9 +34,9 @@ QVector<QPointF> PeakFinder::findPeaks(const Ft ft, double minF, double maxF, do
         //apply savitsky-golay smoothing, ignoring prefactor of 2/h^2 because we're only interested in local minima
         double val = 0.0;
         for(int j=0; j<c.rows(); j++)
-            val += c(j)*ft.at(i+j-halfWin).y();
+            val += c(j)*ft.at(i+j-halfWin);
         smth[i] = val;
-        yDat[i] = ft.at(i).y();
+        yDat[i] = ft.at(i);
     }
 
     //build a noise model
@@ -65,7 +65,7 @@ QVector<QPointF> PeakFinder::findPeaks(const Ft ft, double minF, double maxF, do
             //intensity is high enough; ID a peak by a minimum in 2nd derivative
             if(((smth.at(i-2) > smth.at(i-1)) && (smth.at(i-1) > smth.at(i)) && (smth.at(i) < smth.at(i+1))) ||
                     ((smth.at(i-1) > smth.at(i)) && (smth.at(i) < smth.at(i+1)) && (smth.at(i+1) < smth.at(i+2))) )
-                out.append(ft.at(i));
+                out.append({ft.xAt(i),ft.at(i)});
         }
     }
 

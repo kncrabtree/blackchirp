@@ -100,7 +100,7 @@ public slots:
      \param fid Fid to analyze
      \return QPair<QVector<QPointF>, double> Resulting FT magnitude spectrum in XY format and maximum Y value
     */
-    Ft doFT(const Fid fid, const FtWorker::FidProcessingSettings &settings);
+    Ft doFT(const Fid fid, const FtWorker::FidProcessingSettings &settings, bool doubleSideband=false);
     void doFtDiff(const Fid ref, const Fid diff, const FtWorker::FidProcessingSettings &settings);
     Ft processSideband(const FidList fl, const FtWorker::FidProcessingSettings &settings, RfConfig::Sideband sb, double minFreq = 0.0, double maxFreq = -1.0);
     void processBothSidebands(const FidList fl, const FtWorker::FidProcessingSettings &settings, double minFreq = 0.0, double maxFreq = -1.0);

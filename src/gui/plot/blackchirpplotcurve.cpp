@@ -463,8 +463,8 @@ QRectF BlackchirpFTCurve::boundingRect() const
         return QRectF(1.0,1.0,-2.0,-2.0);
 
     QRectF out;
-    out.setLeft(d_currentFt.minFreq());
-    out.setRight(d_currentFt.maxFreq());
+    out.setLeft(d_currentFt.minFreqMHz());
+    out.setRight(d_currentFt.maxFreqMHz());
     out.setTop(d_currentFt.yMin());
     out.setBottom(d_currentFt.yMax());
 
@@ -480,7 +480,7 @@ QVector<QPointF> BlackchirpFTCurve::curveData() const
 double BlackchirpFTCurve::xFirst() const
 {
     QMutexLocker l(p_mutex);
-    return d_currentFt.minFreq();
+    return d_currentFt.minFreqMHz();
 }
 
 double BlackchirpFTCurve::spacing() const

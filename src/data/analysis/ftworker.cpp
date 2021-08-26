@@ -25,7 +25,7 @@ FtWorker::~FtWorker()
     }
 }
 
-Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings)
+Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings, bool doubleSideband)
 {
     if(fid.size() < 2)
     {
@@ -57,15 +57,23 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings)
         work = gsl_fft_real_workspace_alloc(d_numPnts);
     }
 
-    //prepare storage
-    int spectrumSize = d_numPnts/2 + 1;
-    Ft spectrum(spectrumSize,fid.probeFreq());
 
     double spacing = fid.spacing()*1.0e6;
     double probe = fid.probeFreq();
-    double sign = 1.0;
-    if(fid.sideband() == RfConfig::LowerSideband)
-        sign = -1.0;
+    double ftSpacing = 1.0/static_cast<double>(d_numPnts)/spacing;
+    int spectrumSize = d_numPnts/2 + 1;
+    if(doubleSideband)
+        spectrumSize = d_numPnts;
+
+    double bandwidth = (spectrumSize-1)*ftSpacing;
+    Ft spectrum;
+    if(doubleSideband)
+        spectrum = Ft(spectrumSize,probe-bandwidth/2.0,ftSpacing,probe);
+    else if(fid.sideband() == RfConfig::UpperSideband)
+        spectrum = Ft(spectrumSize,probe,ftSpacing,probe);
+    else
+        spectrum = Ft(spectrumSize,probe-bandwidth,ftSpacing,probe);
+
 
 
     //do the FT. See GNU Scientific Library documentation for details
@@ -76,18 +84,17 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings)
     //see http://www.gnu.org/software/gsl/manual/html_node/Mixed_002dradix-FFT-routines-for-real-data.html
     //first point is DC; block it!
     //always make sure that data go from low to high frequency
-    if(fid.sideband() == RfConfig::UpperSideband)
-        spectrum.setPoint(0,QPointF(probe,0.0),settings.autoScaleIgnoreMHz);
+    if(doubleSideband)
+        spectrum.setPoint(spectrumSize/2,0.0,settings.autoScaleIgnoreMHz);
+    else if(fid.sideband() == RfConfig::UpperSideband)
+        spectrum.setPoint(0,0.0,settings.autoScaleIgnoreMHz);
     else
-        spectrum.setPoint(spectrumSize-1,QPointF(probe,0.0),settings.autoScaleIgnoreMHz);
+        spectrum.setPoint(spectrumSize-1,0.0,settings.autoScaleIgnoreMHz);
 
     int i;
-    double np = static_cast<double>(d_numPnts);
-    double scf = pow(10.,static_cast<double>(settings.units));
+    double scf = pow(10.,static_cast<double>(settings.units))/rawSize;
     for(i=1; i<d_numPnts-i; i++)
     {
-        //calculate x value
-        double x1 = probe + sign*(double)i/np/spacing;
 
         //calculate real and imaginary coefficients
         double coef_real = fftData.at(2*i-1);
@@ -95,27 +102,31 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings)
 
         //calculate magnitude and update max
         //note: Normalize output, and convert to mV
-        double coef_mag = sqrt(coef_real*coef_real + coef_imag*coef_imag)/rawSize*scf;
+        double coef_mag = sqrt(coef_real*coef_real + coef_imag*coef_imag)*scf;
 
-        if(fid.sideband() == RfConfig::UpperSideband)
-            spectrum.setPoint(i, QPointF(x1,coef_mag),settings.autoScaleIgnoreMHz);
+        if(doubleSideband)
+        {
+            spectrum.setPoint(spectrumSize/2+i,coef_mag,settings.autoScaleIgnoreMHz);
+            spectrum.setPoint(spectrumSize/2-i,coef_mag,settings.autoScaleIgnoreMHz);
+        }
+        else if(fid.sideband() == RfConfig::UpperSideband)
+            spectrum.setPoint(i,coef_mag,settings.autoScaleIgnoreMHz);
         else
-            spectrum.setPoint(spectrumSize-1-i,QPointF(x1,coef_mag),settings.autoScaleIgnoreMHz);
+            spectrum.setPoint(spectrumSize-1-i,coef_mag,settings.autoScaleIgnoreMHz);
     }
     if(i==d_numPnts-i)
     {
-        QPointF p(probe + sign*(double)i/np/spacing,
-                   sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))/rawSize*scf);
+        double d = sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))*scf;
 
+        if(doubleSideband)
+        {
+            spectrum.setPoint(spectrumSize/2+i,d,settings.autoScaleIgnoreMHz);
+            spectrum.setPoint(spectrumSize/2-i,d,settings.autoScaleIgnoreMHz);
+        }
         if(fid.sideband() == RfConfig::UpperSideband)
-            spectrum.setPoint(i,p,settings.autoScaleIgnoreMHz);
+            spectrum.setPoint(i,d,settings.autoScaleIgnoreMHz);
         else
-            spectrum.setPoint(spectrumSize-1-i,p,settings.autoScaleIgnoreMHz);
-
-        //only update max if we're 50 MHz away from LO
-//        if(qAbs(probe-p.x()) > d_ignoreZone)
-//            max = qMax(max,p.y());
-
+            spectrum.setPoint(spectrumSize-1-i,d,settings.autoScaleIgnoreMHz);
     }
 
     spectrum.setNumShots(fid.shots());
@@ -136,99 +147,99 @@ void FtWorker::doFtDiff(const Fid ref, const Fid diff, const FidProcessingSettin
     if(!qFuzzyCompare(ref.spacing(),diff.spacing()))
         return;
 
-    blockSignals(true);
-    Ft r = doFT(ref,settings);
-    Ft d = doFT(diff,settings);
-    blockSignals(false);
+//    blockSignals(true);
+//    Ft r = doFT(ref,settings);
+//    Ft d = doFT(diff,settings);
+//    blockSignals(false);
 
-    Ft out(r.size(),r.loFreq());
+//    Ft out(r.size(),r.loFreqMHz());
 
-    if(qFuzzyCompare(r.loFreq(),d.loFreq()))
-    {
+//    if(qFuzzyCompare(r.loFreqMHz(),d.loFreqMHz()))
+//    {
 
-        for(int i=0; i<r.size() && i<d.size(); i++)
-        {
-            auto p = r.at(i);
-            p.setY(p.y() - d.at(i).y());
-            out.setPoint(i,p);
-        }
-    }
-    else
-    {
-        Ft drs = resample(r.loFreq(),r.xSpacing(),d);
-        out = Ft(r.size() + drs.size(),r.loFreq());
-        int rIndex = 0, dIndex = 0, totalPoints = 0;
-        bool done = false;
-        while(!done)
-        {
-            if(rIndex < r.size() && dIndex < drs.size())
-            {
-                double rx = r.at(rIndex).x();
-                double dx = drs.at(dIndex).x();
+//        for(int i=0; i<r.size() && i<d.size(); i++)
+//        {
+//            auto p = r.at(i);
+//            p.setY(p.y() - d.at(i).y());
+//            out.setPoint(i,p);
+//        }
+//    }
+//    else
+//    {
+//        Ft drs = resample(r.loFreqMHz(),r.xSpacing(),d);
+//        out = Ft(r.size() + drs.size(),r.loFreqMHz());
+//        int rIndex = 0, dIndex = 0, totalPoints = 0;
+//        bool done = false;
+//        while(!done)
+//        {
+//            if(rIndex < r.size() && dIndex < drs.size())
+//            {
+//                double rx = r.at(rIndex).x();
+//                double dx = drs.at(dIndex).x();
 
-                if(qAbs(rx-dx) < r.xSpacing()) //frequencies the same; difference and increment both
-                {
-                    out.setPoint(totalPoints,QPointF(rx,r.at(rIndex).y()-drs.at(dIndex).y()));
-                    dIndex++;
-                    rIndex++;
-                }
-                else
-                {
-                    if(rx < dx)
-                    {
-                        if(rIndex < r.size())
-                        {
-                            out.setPoint(totalPoints,QPointF(rx,r.at(rIndex).y()));
-                            rIndex++;
-                        }
-                        else
-                        {
-                            out.setPoint(totalPoints,QPointF(dx,-drs.at(dIndex).y()));
-                            dIndex++;
-                        }
-                    }
-                    else
-                    {
-                        if(dIndex < drs.size())
-                        {
-                            out.setPoint(totalPoints,QPointF(dx,-drs.at(dIndex).y()));
-                            dIndex++;
-                        }
-                        else
-                        {
-                            out.setPoint(totalPoints,QPointF(rx,r.at(rIndex).y()));
-                            rIndex++;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                if(rIndex < r.size())
-                {
-                    out.setPoint(totalPoints,QPointF(r.at(rIndex).x(),r.at(rIndex).y()));
-                    rIndex++;
-                }
-                else
-                {
-                    out.setPoint(totalPoints,QPointF(drs.at(dIndex).x(),-drs.at(dIndex).y()));
-                    dIndex++;
-                }
-            }
+//                if(qAbs(rx-dx) < r.xSpacing()) //frequencies the same; difference and increment both
+//                {
+//                    out.setPoint(totalPoints,QPointF(rx,r.at(rIndex).y()-drs.at(dIndex).y()));
+//                    dIndex++;
+//                    rIndex++;
+//                }
+//                else
+//                {
+//                    if(rx < dx)
+//                    {
+//                        if(rIndex < r.size())
+//                        {
+//                            out.setPoint(totalPoints,QPointF(rx,r.at(rIndex).y()));
+//                            rIndex++;
+//                        }
+//                        else
+//                        {
+//                            out.setPoint(totalPoints,QPointF(dx,-drs.at(dIndex).y()));
+//                            dIndex++;
+//                        }
+//                    }
+//                    else
+//                    {
+//                        if(dIndex < drs.size())
+//                        {
+//                            out.setPoint(totalPoints,QPointF(dx,-drs.at(dIndex).y()));
+//                            dIndex++;
+//                        }
+//                        else
+//                        {
+//                            out.setPoint(totalPoints,QPointF(rx,r.at(rIndex).y()));
+//                            rIndex++;
+//                        }
+//                    }
+//                }
+//            }
+//            else
+//            {
+//                if(rIndex < r.size())
+//                {
+//                    out.setPoint(totalPoints,QPointF(r.at(rIndex).x(),r.at(rIndex).y()));
+//                    rIndex++;
+//                }
+//                else
+//                {
+//                    out.setPoint(totalPoints,QPointF(drs.at(dIndex).x(),-drs.at(dIndex).y()));
+//                    dIndex++;
+//                }
+//            }
 
-            totalPoints++;
+//            totalPoints++;
 
-            if(rIndex == r.size() && dIndex == drs.size())
-                done = true;
-        }
+//            if(rIndex == r.size() && dIndex == drs.size())
+//                done = true;
+//        }
 
-        out.resize(totalPoints);
+//        out.resize(totalPoints);
 
-    }
+//    }
 
-    d_lastProcSettings = settings;
+//    d_lastProcSettings = settings;
 
-    emit ftDiffDone(out);
+//    emit ftDiffDone(out);
 
 }
 
@@ -249,136 +260,136 @@ Ft FtWorker::processSideband(const FidList fl, const FtWorker::FidProcessingSett
         return ftList.constFirst();
     }
 
-    QVector<int> indices;
-    indices.resize(ftList.size());
+//    QVector<int> indices;
+//    indices.resize(ftList.size());
 
-    Ft out(0,0.0);
-    out.reserve(ftList.size()*ftList.constFirst().size());
+//    Ft out(0,0.0);
+//    out.reserve(ftList.size()*ftList.constFirst().size());
 
-    //want to make sure frequency increases monotonically as we iterate through fidlist
-    //Fts ALWAYS go from low frequency to high
-    if(ftList.constFirst().loFreq() > ftList.constLast().loFreq())
-        std::reverse(ftList.begin(),ftList.end());
+//    //want to make sure frequency increases monotonically as we iterate through fidlist
+//    //Fts ALWAYS go from low frequency to high
+//    if(ftList.constFirst().loFreqMHz() > ftList.constLast().loFreqMHz())
+//        std::reverse(ftList.begin(),ftList.end());
 
-    while(true)
-    {
-        double thisPointY = 0.0;
-        double thisPointX = 0.0;
-        double numPoints = 0.0;
+//    while(true)
+//    {
+//        double thisPointY = 0.0;
+//        double thisPointX = 0.0;
+//        double numPoints = 0.0;
 
-        for(int i=0; i<indices.size(); i++)
-        {
-            if(indices.at(i) < ftList.at(i).size())
-            {
-                thisPointX = ftList.at(i).at(indices.at(i)).x();
-                break;
-            }
-        }
+//        for(int i=0; i<indices.size(); i++)
+//        {
+//            if(indices.at(i) < ftList.at(i).size())
+//            {
+//                thisPointX = ftList.at(i).at(indices.at(i)).x();
+//                break;
+//            }
+//        }
 
-        for(int i=0; i<indices.size(); i++)
-        {
-            if(indices.at(i) < ftList.at(i).size())
-            {
-                if(qAbs(thisPointX - ftList.at(i).at(indices.at(i)).x()) < ftList.at(i).xSpacing())
-                {
-                    double y = ftList.at(i).at(indices.at(i)).y();
-                    if(y>0)
-                    {
-                        thisPointY += log10(y);
-                        numPoints += 1.0;
-                    }
-                    indices[i]++;
-                }
-            }
-        }
+//        for(int i=0; i<indices.size(); i++)
+//        {
+//            if(indices.at(i) < ftList.at(i).size())
+//            {
+//                if(qAbs(thisPointX - ftList.at(i).at(indices.at(i)).x()) < ftList.at(i).xSpacing())
+//                {
+//                    double y = ftList.at(i).at(indices.at(i)).y();
+//                    if(y>0)
+//                    {
+//                        thisPointY += log10(y);
+//                        numPoints += 1.0;
+//                    }
+//                    indices[i]++;
+//                }
+//            }
+//        }
 
-        if(numPoints < 1.0)
-            out.append(QPointF(thisPointX,thisPointY));
-        else
-            out.append(QPointF(thisPointX,pow(10.0,thisPointY/numPoints)));
+//        if(numPoints < 1.0)
+//            out.append(QPointF(thisPointX,thisPointY));
+//        else
+//            out.append(QPointF(thisPointX,pow(10.0,thisPointY/numPoints)));
 
-        bool done = true;
-        for(int i=0; i<indices.size(); i++)
-        {
-            if(indices.at(i) < ftList.at(i).size())
-            {
-                done = false;
-                break;
-            }
-        }
+//        bool done = true;
+//        for(int i=0; i<indices.size(); i++)
+//        {
+//            if(indices.at(i) < ftList.at(i).size())
+//            {
+//                done = false;
+//                break;
+//            }
+//        }
 
-        if(done)
-            break;
-    }
+//        if(done)
+//            break;
+//    }
 
-    emit ftDone(out,d_id);
-    return out;
+//    emit ftDone(out,d_id);
+//    return out;
 }
 
 void FtWorker::processBothSidebands(const FidList fl, const FtWorker::FidProcessingSettings &settings, double minFreq, double maxFreq)
 {
-    blockSignals(true);
-    Ft upper = processSideband(fl,settings,RfConfig::UpperSideband,minFreq,maxFreq);
-    Ft lower = processSideband(fl,settings,RfConfig::LowerSideband,minFreq,maxFreq);
-    blockSignals(false);
+//    blockSignals(true);
+//    Ft upper = processSideband(fl,settings,RfConfig::UpperSideband,minFreq,maxFreq);
+//    Ft lower = processSideband(fl,settings,RfConfig::LowerSideband,minFreq,maxFreq);
+//    blockSignals(false);
 
-    Ft out(0,0.0);
-    if(upper.size() < 2)
-    {
-        if(lower.size() < 2)
-        {
-            emit ftDone(out,d_id);
-            return;
-        }
-        else
-        {
-            emit ftDone(lower,d_id);
-            return;
-        }
-    }
-    else
-    {
-        if(lower.size() < 2)
-        {
-            emit ftDone(upper,d_id);
-            return;
-        }
-    }
+//    Ft out(0,0.0);
+//    if(upper.size() < 2)
+//    {
+//        if(lower.size() < 2)
+//        {
+//            emit ftDone(out,d_id);
+//            return;
+//        }
+//        else
+//        {
+//            emit ftDone(lower,d_id);
+//            return;
+//        }
+//    }
+//    else
+//    {
+//        if(lower.size() < 2)
+//        {
+//            emit ftDone(upper,d_id);
+//            return;
+//        }
+//    }
 
-    out.reserve(upper.size() + lower.size());
+//    out.reserve(upper.size() + lower.size());
 
-    int li=0, ui=0;
+//    int li=0, ui=0;
 
-    while(true)
-    {
-        QPointF pt;
+//    while(true)
+//    {
+//        QPointF pt;
 
-        if(li < lower.size())
-        {
-            pt = lower.at(li);
-            if(qAbs(pt.x()-upper.at(ui).x()) < lower.xSpacing())
-            {
-                pt.setY((pt.y() + upper.at(ui).y())/2.0);
-                ui++;
-            }
+//        if(li < lower.size())
+//        {
+//            pt = lower.at(li);
+//            if(qAbs(pt.x()-upper.at(ui).x()) < lower.xSpacing())
+//            {
+//                pt.setY((pt.y() + upper.at(ui).y())/2.0);
+//                ui++;
+//            }
 
-            li++;
-        }
-        else
-        {
-            pt = upper.at(ui);
-            ui++;
-        }
-        out.append(pt);
+//            li++;
+//        }
+//        else
+//        {
+//            pt = upper.at(ui);
+//            ui++;
+//        }
+//        out.append(pt);
 
-        if(ui < upper.size() || li < lower.size())
-            continue;
+//        if(ui < upper.size() || li < lower.size())
+//            continue;
 
-        break;
+//        break;
 
-    }
+//    }
 
-    emit ftDone(out,d_id);
+//    emit ftDone(out,d_id);
 
 }
 
@@ -412,7 +423,7 @@ QList<Ft> FtWorker::makeSidebandList(const FidList fl, const FidProcessingSettin
             ft1.trim(minFreq,maxFreq);
             if(sp < 0.0)
             {
-                f0 = ft1.loFreq();
+                f0 = ft1.loFreqMHz();
                 sp = ft1.xSpacing();
             }
             out << ft1;
@@ -520,12 +531,12 @@ Ft FtWorker::resample(double f0, double spacing, const Ft ft)
     spacing = qAbs(spacing);
     double thisSpacing = ft.xSpacing();
 
-    if(qFuzzyCompare(f0,ft.loFreq()) && qFuzzyCompare(qAbs(spacing),qAbs(thisSpacing)))
+    if(qFuzzyCompare(f0,ft.loFreqMHz()) && qFuzzyCompare(qAbs(spacing),qAbs(thisSpacing)))
         return Ft();
 
 
-    double minF = ft.minFreq();
-    double maxF = ft.maxFreq();
+    double minF = ft.minFreqMHz();
+    double maxF = ft.maxFreqMHz();
     double direction = thisSpacing > 0 ? 1.0 : -1.0;
 
     //find sample point closest to, but greater than minf
@@ -567,20 +578,20 @@ Ft FtWorker::resample(double f0, double spacing, const Ft ft)
     gsl_spline_init(p_spline,xd.constData(),yd.constData(),d_numSplinePoints);
 
     int index = 0;
-    Ft out(numPoints,ft.loFreq());
+//    Ft out(numPoints,ft.loFreqMHz());
 
-    while(index < numPoints)
-    {
-        double x = firstPt + static_cast<double>(index)*spacing*direction;
-        double y = gsl_spline_eval(p_spline,x,p_accel);
-        int i = index;
-        if(reverse)
-            i = numPoints - index - 1;
-        out.setPoint(i,QPointF(x,y));
-        index++;
-    }
+//    while(index < numPoints)
+//    {
+//        double x = firstPt + static_cast<double>(index)*spacing*direction;
+//        double y = gsl_spline_eval(p_spline,x,p_accel);
+//        int i = index;
+//        if(reverse)
+//            i = numPoints - index - 1;
+//        out.setPoint(i,QPointF(x,y));
+//        index++;
+//    }
 
-    return out;
+//    return out;
 
 }
 

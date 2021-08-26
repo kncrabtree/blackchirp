@@ -32,16 +32,16 @@ PeakFindWidget::PeakFindWidget(Ft ft, int number, QWidget *parent):
     connect(ui->optionsButton,&QPushButton::clicked,this,&PeakFindWidget::launchOptionsDialog);
     connect(ui->exportButton,&QPushButton::clicked,this,&PeakFindWidget::launchExportDialog);
 
-    d_minFreq = get<double>(BC::Key::pfMinFreq,ft.minFreq());
-    d_maxFreq = get<double>(BC::Key::pfMaxFreq,ft.maxFreq());
+    d_minFreq = get<double>(BC::Key::pfMinFreq,ft.minFreqMHz());
+    d_maxFreq = get<double>(BC::Key::pfMaxFreq,ft.maxFreqMHz());
     d_snr = get<double>(BC::Key::pfSnr,5.0);
     d_winSize = get<int>(BC::Key::pfWinSize,11);
     d_polyOrder = get<int>(BC::Key::pfOrder,6);
 
-    if(d_minFreq > ft.maxFreq())
-        d_minFreq = ft.minFreq();
+    if(d_minFreq > ft.maxFreqMHz())
+        d_minFreq = ft.minFreqMHz();
     if(d_maxFreq < d_minFreq)
-        d_maxFreq = ft.maxFreq();
+        d_maxFreq = ft.maxFreqMHz();
 
     d_currentFt = ft;
 
@@ -131,14 +131,14 @@ void PeakFindWidget::launchOptionsDialog()
 
     QDoubleSpinBox *minBox = new QDoubleSpinBox(&d);
     minBox->setDecimals(3);
-    minBox->setRange(d_currentFt.minFreq(),d_currentFt.maxFreq());
+    minBox->setRange(d_currentFt.minFreqMHz(),d_currentFt.maxFreqMHz());
     minBox->setValue(d_minFreq);
     minBox->setSuffix(QString(" MHz"));
     fl->addRow(QString("Min Frequency"),minBox);
 
     QDoubleSpinBox *maxBox = new QDoubleSpinBox(&d);
     maxBox->setDecimals(3);
-    maxBox->setRange(d_currentFt.minFreq(),d_currentFt.maxFreq());
+    maxBox->setRange(d_currentFt.minFreqMHz(),d_currentFt.maxFreqMHz());
     maxBox->setValue(d_maxFreq);
     maxBox->setSuffix(QString(" MHz"));
     fl->addRow(QString("Max Frequency"),maxBox);
