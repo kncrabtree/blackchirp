@@ -1,19 +1,26 @@
 #include <data/analysis/ftworker.h>
 
 #include <QTime>
+#include <QReadWriteLock>
+#include <QReadLocker>
+#include <QWriteLocker>
 
 #include <gsl/gsl_const.h>
 #include <gsl/gsl_sf.h>
 
-FtWorker::FtWorker(int i, QObject *parent) :
-    QObject(parent), d_id(i), real(NULL), work(NULL), d_numPnts(0), p_spline(nullptr),
+FtWorker::FtWorker(QObject *parent) :
+    QObject(parent), real(NULL), work(NULL), d_numPnts(0), p_spline(nullptr),
     p_accel(nullptr), d_numSplinePoints(0)
-{
-    d_lastProcSettings = FidProcessingSettings { -1.0, -1.0, 0, false, FtuV, 50.0, None };
+{    
+    pu_fftLock = std::make_unique<QReadWriteLock>();
+    pu_splineLock = std::make_unique<QReadWriteLock>();
+    pu_winfLock = std::make_unique<QReadWriteLock>();
 }
 
 FtWorker::~FtWorker()
 {
+    QWriteLocker l(pu_splineLock.get());
+    QWriteLocker l2(pu_fftLock.get());
     if(p_spline != nullptr)
         gsl_spline_free(p_spline);
     if(p_accel != nullptr)
@@ -25,12 +32,12 @@ FtWorker::~FtWorker()
     }
 }
 
-Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings, bool doubleSideband)
+Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings, int id, bool doubleSideband)
 {
     if(fid.size() < 2)
     {
-        emit fidDone({},1.0,0.0,0.0,d_id);
-        emit ftDone(Ft(), d_id);
+        emit fidDone({},1.0,0.0,0.0,id);
+        emit ftDone(Ft(), id);
         return Ft();
     }
 
@@ -38,32 +45,17 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings, bool dou
 
     //first, apply any filtering that needs to be done
     auto fidResult = filterFid(fid,settings);
-    emit fidDone(fidResult.fid,fid.spacing()*1e6,fidResult.min,fidResult.max,d_id);
+    emit fidDone(fidResult.fid,fid.spacing()*1e6,fidResult.min,fidResult.max,id);
     auto fftData = fidResult.fid;
-
-    //might need to allocate or reallocate workspace and wavetable
-    if(fftData.size() != d_numPnts)
-    {
-        d_numPnts = fftData.size();
-
-        //free memory if this is a reallocation
-        if(real)
-        {
-            gsl_fft_real_wavetable_free(real);
-            gsl_fft_real_workspace_free(work);
-        }
-
-        real = gsl_fft_real_wavetable_alloc(d_numPnts);
-        work = gsl_fft_real_workspace_alloc(d_numPnts);
-    }
+    auto s = fftData.size();
 
 
-    double spacing = fid.spacing()*1.0e6;
-    double probe = fid.probeFreq();
-    double ftSpacing = 1.0/static_cast<double>(d_numPnts)/spacing;
-    int spectrumSize = d_numPnts/2 + 1;
+    auto spacing = fid.spacing()*1.0e6;
+    auto probe = fid.probeFreq();
+    double ftSpacing = 1.0/rawSize/spacing;
+    int spectrumSize = s/2 + 1;
     if(doubleSideband)
-        spectrumSize = d_numPnts;
+        spectrumSize = s;
 
     double bandwidth = (spectrumSize-1)*ftSpacing;
     Ft spectrum;
@@ -74,10 +66,28 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings, bool dou
     else
         spectrum = Ft(spectrumSize,probe-bandwidth,ftSpacing,probe);
 
+    //might need to allocate or reallocate workspace and wavetable
+    QWriteLocker l(pu_fftLock.get());
+    if(s != d_numPnts)
+    {
+        //free memory if this is a reallocation
+        //this should be very infrequent
+        d_numPnts = s;
+        if(real)
+        {
+            gsl_fft_real_wavetable_free(real);
+            gsl_fft_real_workspace_free(work);
+        }
 
+        real = gsl_fft_real_wavetable_alloc(d_numPnts);
+        work = gsl_fft_real_workspace_alloc(d_numPnts);
+    }
 
     //do the FT. See GNU Scientific Library documentation for details
     gsl_fft_real_transform (fftData.data(), 1, d_numPnts, real, work);
+    l.unlock();
+
+
 
 
     //convert fourier coefficients into magnitudes. the coefficients are stored in half-complex format
@@ -93,7 +103,7 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings, bool dou
 
     int i;
     double scf = pow(10.,static_cast<double>(settings.units))/rawSize;
-    for(i=1; i<d_numPnts-i; i++)
+    for(i=1; i<s-i; i++)
     {
 
         //calculate real and imaginary coefficients
@@ -114,9 +124,9 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings, bool dou
         else
             spectrum.setPoint(spectrumSize-1-i,coef_mag,settings.autoScaleIgnoreMHz);
     }
-    if(i==d_numPnts-i)
+    if(i==s-i)
     {
-        double d = sqrt(fftData.at(d_numPnts-1)*fftData.at(d_numPnts-1))*scf;
+        double d = sqrt(fftData.at(s-1)*fftData.at(s-1))*scf;
 
         if(doubleSideband)
         {
@@ -133,9 +143,7 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings, bool dou
 
     //the signal is used for asynchronous purposes (in UI classes), and the return value for synchronous (in non-UI classes)
     if(!signalsBlocked())
-        emit ftDone(spectrum,d_id);
-
-    d_lastProcSettings = settings;
+        emit ftDone(spectrum,id);
 
     return spectrum;
 }
@@ -185,7 +193,6 @@ void FtWorker::doFtDiff(const Fid ref, const Fid diff, const FidProcessingSettin
     }
 
     out.squeeze();
-    d_lastProcSettings = settings;
     emit ftDiffDone(out);
 
 }
@@ -197,13 +204,13 @@ Ft FtWorker::processSideband(const FidList fl, const FtWorker::FidProcessingSett
 
     if(ftList.isEmpty())
     {
-        emit ftDone(Ft(),d_id);
+//        emit ftDone(Ft(),d_id);
         return Ft();
     }
 
     if(ftList.size() == 1)
     {
-        emit ftDone(ftList.constFirst(),d_id);
+//        emit ftDone(ftList.constFirst(),d_id);
         return ftList.constFirst();
     }
 
@@ -404,7 +411,6 @@ FtWorker::FilterResult FtWorker::filterFid(const Fid fid, const FidProcessingSet
         ei = fid.size()-1;
 
     int n = ei - si + 1;
-    makeWinf(n,settings.windowFunction);
 
     if(settings.removeDC)
     {
@@ -442,6 +448,15 @@ FtWorker::FilterResult FtWorker::filterFid(const Fid fid, const FidProcessingSet
 
     double min = data.at(si);
     double max = min;
+    QReadLocker l(pu_winfLock.get());
+    if(settings.windowFunction != d_lastWinf || d_lastWinSize != n)
+    {
+        l.unlock();
+        QWriteLocker l2(pu_winfLock.get());
+        makeWinf(n,settings.windowFunction);
+        l2.unlock();
+        l.relock();
+    }
     for(int i=0; i<data.size(); i++)
     {
         if(i < si)
@@ -449,6 +464,7 @@ FtWorker::FilterResult FtWorker::filterFid(const Fid fid, const FidProcessingSet
 
         if(i > ei)
             break;
+
 
         double d = data.at(i);
         if(settings.windowFunction != None)
@@ -486,9 +502,16 @@ QPair<QVector<double>,double> FtWorker::resample(double f0, double spacing, cons
 
     int numPoints = ft.size();
 
+    //set up spline object with FT data
+    auto xd = ft.xData();
+    auto yd = ft.yData();
+
     //allocate or reallocate gsl_spline object
+    QReadLocker l(pu_splineLock.get());
     if(ft.size() != d_numSplinePoints)
     {
+        l.unlock();
+        QWriteLocker l2(pu_splineLock.get());
         d_numSplinePoints = ft.size();
 
         if(p_spline != nullptr)
@@ -501,14 +524,10 @@ QPair<QVector<double>,double> FtWorker::resample(double f0, double spacing, cons
             gsl_interp_accel_free(p_accel);
             p_accel = gsl_interp_accel_alloc();
         }
+        l2.unlock();
+        l.relock();
     }
 
-    if(p_accel == nullptr)
-        p_accel = gsl_interp_accel_alloc();
-
-    //set up spline object with FT data
-    auto xd = ft.xData();
-    auto yd = ft.yData();
 
     gsl_spline_init(p_spline,xd.constData(),yd.constData(),d_numSplinePoints);
 
@@ -530,9 +549,6 @@ QPair<QVector<double>,double> FtWorker::resample(double f0, double spacing, cons
 
 void FtWorker::makeWinf(int n, FtWindowFunction f)
 {
-    if(f == d_lastProcSettings.windowFunction && d_winf.size() == n)
-        return;
-
     if(d_winf.size() != n)
         d_winf.resize(n);
 
@@ -561,6 +577,9 @@ void FtWorker::makeWinf(int n, FtWindowFunction f)
         d_winf.fill(1.0);
         break;
     }
+
+    d_lastWinf = f;
+    d_lastWinSize = n;
 }
 
 void FtWorker::winBartlett(int n)
@@ -637,6 +656,7 @@ void FtWorker::winKaiserBessel(int n, double beta)
 
 void FtWorker::clearSplineMemory()
 {
+    QWriteLocker l(pu_splineLock.get());
     gsl_spline_free(p_spline);
     gsl_interp_accel_free(p_accel);
     p_spline = nullptr;

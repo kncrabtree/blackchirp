@@ -22,13 +22,17 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     ui->setupUi(this);
 
     d_currentProcessingSettings = ui->processingToolBar->getSettings();
+    p_worker = new FtWorker(this);
+    connect(p_worker,&FtWorker::ftDone,this,&FtmwViewWidget::ftDone,Qt::QueuedConnection);
+    connect(p_worker,&FtWorker::fidDone,this,&FtmwViewWidget::fidProcessed,Qt::QueuedConnection);
+    connect(p_worker,&FtWorker::ftDiffDone,this,&FtmwViewWidget::ftDiffDone,Qt::QueuedConnection);
 
     d_workerIds << d_liveId << d_mainId << d_plot1Id << d_plot2Id;
 
     for(int i=0; i<d_workerIds.size(); i++)
     {
         int id = d_workerIds.at(i);
-        auto worker = new FtWorker(id,this);
+
         auto fw = new QFutureWatcher<void>(this);
         connect(fw,&QFutureWatcher<void>::finished,[this,id]{
             auto &ws = d_workersStatus[id];
@@ -42,11 +46,7 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
                     process(id,d_plotStatus[id].fid);
             }
         });
-        d_workersStatus.emplace(id,WorkerStatus{ worker, false, false, fw});
-        connect(worker,&FtWorker::ftDone,this,&FtmwViewWidget::ftDone,Qt::QueuedConnection);
-        connect(worker,&FtWorker::fidDone,this,&FtmwViewWidget::fidProcessed,Qt::QueuedConnection);
-        if(id == d_mainId)
-            connect(worker,&FtWorker::ftDiffDone,this,&FtmwViewWidget::ftDiffDone,Qt::QueuedConnection);
+        d_workersStatus.emplace(id,WorkerStatus{ fw, false, false });
 
         if(id != d_mainId)
         {
@@ -239,6 +239,9 @@ void FtmwViewWidget::updateProcessingSettings(FtWorker::FidProcessingSettings s)
         ui->liveFidPlot->setFtStart(s.startUs);
         ui->liveFidPlot->setFtEnd(s.endUs);
     }
+    else
+        ignore << d_liveId;
+
     ui->fidPlot1->setFtStart(s.startUs);
     ui->fidPlot1->setFtEnd(s.endUs);
     ui->fidPlot2->setFtStart(s.startUs);
@@ -402,8 +405,8 @@ void FtmwViewWidget::process(int id, const Fid f)
         d_plotStatus[id].ftPlot->setCursor(Qt::BusyCursor);
         ws.busy = true;
         ws.reprocessWhenDone = false;
-        ws.p_watcher->setFuture(QtConcurrent::run([ws,f,this](){
-            ws.worker->doFT(f,d_currentProcessingSettings);
+        ws.p_watcher->setFuture(QtConcurrent::run([f,id,this](){
+            p_worker->doFT(f,d_currentProcessingSettings,id);
         }));
     }
 }
@@ -421,8 +424,8 @@ void FtmwViewWidget::processDiff(const Fid f1, const Fid f2)
         ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
         ws.busy = true;
         ws.reprocessWhenDone = false;
-        ws.p_watcher->setFuture(QtConcurrent::run([ws,f1,f2,this](){
-            ws.worker->doFtDiff(f1,f2,d_currentProcessingSettings);
+        ws.p_watcher->setFuture(QtConcurrent::run([f1,f2,this](){
+            p_worker->doFtDiff(f1,f2,d_currentProcessingSettings);
         }));
 
     }
@@ -456,9 +459,9 @@ void FtmwViewWidget::processSideband(RfConfig::Sideband sb)
             double minF = ui->plotToolBar->sbMinFreq();
             double maxF = ui->plotToolBar->sbMaxFreq();
 
-            QMetaObject::invokeMethod(ws.worker,[ws,fl,this,sb,minF,maxF](){
-                ws.worker->processSideband(fl,d_currentProcessingSettings,sb,minF,maxF);
-            });
+//            QMetaObject::invokeMethod(p_worker,[fl,this,sb,minF,maxF](){
+//                p_worker->processSideband(fl,d_currentProcessingSettings,sb,minF,maxF);
+//            });
         }
     }
 }
@@ -491,9 +494,9 @@ void FtmwViewWidget::processBothSidebands()
             double minF = ui->plotToolBar->sbMinFreq();
             double maxF = ui->plotToolBar->sbMaxFreq();
 
-            QMetaObject::invokeMethod(ws.worker,[ws,fl,this,minF,maxF](){
-                ws.worker->processBothSidebands(fl,d_currentProcessingSettings,minF,maxF);
-            });
+//            QMetaObject::invokeMethod(ws.worker,[ws,fl,this,minF,maxF](){
+//                ws.worker->processBothSidebands(fl,d_currentProcessingSettings,minF,maxF);
+//            });
         }
     }
 }
@@ -566,7 +569,10 @@ void FtmwViewWidget::launchPeakFinder()
 
     p_pfw->setAttribute(Qt::WA_DeleteOnClose);
 
-    connect(d_workersStatus[d_mainId].worker,&FtWorker::ftDone,p_pfw,&PeakFindWidget::newFt);
+    connect(p_worker,&FtWorker::ftDone,[this](const Ft ft, int id){
+        if(id == d_mainId)
+            p_pfw->newFt(ft);
+    });
     connect(p_pfw,&PeakFindWidget::peakList,ui->mainFtPlot,&FtPlot::newPeakList);
     connect(p_pfw,&PeakFindWidget::destroyed,[=](){
         p_pfw = nullptr;

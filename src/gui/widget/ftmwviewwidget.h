@@ -84,6 +84,7 @@ private:
     Ui::FtmwViewWidget *ui;
 
     std::shared_ptr<FidStorageBase> ps_fidStorage;
+    FtWorker* p_worker;
 
     FtWorker::FidProcessingSettings d_currentProcessingSettings;
     int d_currentExptNum;
@@ -91,10 +92,9 @@ private:
     int d_liveTimerId{-1};
 
     struct WorkerStatus {
-        FtWorker *worker;
+        QFutureWatcher<void> *p_watcher;
         bool busy;
         bool reprocessWhenDone;
-        QFutureWatcher<void> *p_watcher;
     };
 
     struct PlotStatus {

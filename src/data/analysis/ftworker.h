@@ -5,6 +5,7 @@
 #include <QVector>
 #include <QPointF>
 #include <QPair>
+#include <memory>
 
 #include <gsl/gsl_fft_real.h>
 #include <gsl/gsl_interp.h>
@@ -14,7 +15,7 @@
 #include <data/analysis/ft.h>
 #include <data/experiment/fid.h>
 
-
+class QReadWriteLock;
 
 /*!
  \brief Class that handles processing of FIDs
@@ -74,10 +75,8 @@ public:
 
      \param parent
     */
-    explicit FtWorker(int i, QObject *parent = nullptr);
+    explicit FtWorker(QObject *parent = nullptr);
     ~FtWorker();
-
-    const int d_id;
 
 signals:
     /*!
@@ -100,7 +99,7 @@ public slots:
      \param fid Fid to analyze
      \return QPair<QVector<QPointF>, double> Resulting FT magnitude spectrum in XY format and maximum Y value
     */
-    Ft doFT(const Fid fid, const FtWorker::FidProcessingSettings &settings, bool doubleSideband=false);
+    Ft doFT(const Fid fid, const FtWorker::FidProcessingSettings &settings, int id = -1, bool doubleSideband=false);
     void doFtDiff(const Fid ref, const Fid diff, const FtWorker::FidProcessingSettings &settings);
     Ft processSideband(const FidList fl, const FtWorker::FidProcessingSettings &settings, RfConfig::Sideband sb, double minFreq = 0.0, double maxFreq = -1.0);
     void processBothSidebands(const FidList fl, const FtWorker::FidProcessingSettings &settings, double minFreq = 0.0, double maxFreq = -1.0);
@@ -114,6 +113,7 @@ public slots:
     FilterResult filterFid(const Fid fid, const FtWorker::FidProcessingSettings &settings);
 
 private:
+    std::unique_ptr<QReadWriteLock> pu_fftLock, pu_splineLock, pu_winfLock;
     gsl_fft_real_wavetable *real; /*!< Wavetable for GNU Scientific Library FFT operations */
     gsl_fft_real_workspace *work; /*!< Memory for GNU Scientific Library FFT operations */
     int d_numPnts; /*!< Number of points used to allocate last wavetable and workspace */
@@ -122,7 +122,8 @@ private:
     gsl_interp_accel *p_accel;
     int d_numSplinePoints;
 
-    FidProcessingSettings d_lastProcSettings;
+    FtWindowFunction d_lastWinf{None};
+    int d_lastWinSize{0};
 
     QList<Ft> makeSidebandList(const FidList fl, const FtWorker::FidProcessingSettings &settings, RfConfig::Sideband sb, double minFreq = 0.0, double maxFreq = -1.0);
     QPair<QVector<double>, double> resample(double f0, double spacing, const Ft ft);
