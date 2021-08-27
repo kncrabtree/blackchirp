@@ -83,14 +83,31 @@ void Ft::reserve(int n)
     data->ftData.reserve(n);
 }
 
-void Ft::append(double y, double ignoreRange)
+void Ft::squeeze()
+{
+    data->ftData.squeeze();
+}
+
+void Ft::setLoFreq(double f)
+{
+    data->loFreqMHz = f;
+}
+
+void Ft::setX0(double d)
+{
+    data->x0MHz = d;
+}
+
+void Ft::setSpacing(double s)
+{
+    data->spacingMHz = s;
+}
+
+void Ft::append(double y)
 {
     data->ftData.append(y);
-    if(qAbs(xAt(size()-1)-data->loFreqMHz) > ignoreRange)
-    {
-        data->yMax = qMax(data->yMax,y);
-        data->yMin = qMin(data->yMin,y);
-    }
+    data->yMax = qMax(data->yMax,y);
+    data->yMin = qMin(data->yMin,y);
 }
 
 void Ft::trim(double minOffset, double maxOffset)
@@ -148,6 +165,11 @@ bool Ft::isEmpty() const
 double Ft::at(int i) const
 {
     return data->ftData.at(i);
+}
+
+double Ft::value(int i) const
+{
+    return data->ftData.value(i,0.0);
 }
 
 double Ft::constFirst() const

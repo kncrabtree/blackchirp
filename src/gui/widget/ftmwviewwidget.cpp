@@ -511,7 +511,7 @@ void FtmwViewWidget::experimentComplete()
     disconnect(ui->refreshBox,&SpinBoxWidgetAction::valueChanged,this,&FtmwViewWidget::setLiveUpdateInterval);
     ui->refreshBox->setEnabled(false);
     killTimer(d_liveTimerId);
-    d_liveTimerId = -1;
+    d_liveTimerId = -1;   
 
     if(ps_fidStorage)
     {

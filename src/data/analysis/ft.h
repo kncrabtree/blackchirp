@@ -21,13 +21,18 @@ public:
     void resize(int n, double ignoreRange = 0.0);
     double &operator[](int i);
     void reserve(int n);
-    void append(double y, double ignoreRange = 0.0);
+    void squeeze();
+    void setLoFreq(double f);
+    void setX0(double d);
+    void setSpacing(double s);
+    void append(double y);
     void trim(double minOffset, double maxOffset);
     void setNumShots(quint64 shots);
 
     int size() const;
     bool isEmpty() const;
     double at(int i) const;
+    double value(int i) const;
     double constFirst() const;
     double constLast() const;
     double xAt(int i) const;

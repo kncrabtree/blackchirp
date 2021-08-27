@@ -55,7 +55,7 @@ FtmwProcessingToolBar::FtmwProcessingToolBar(QWidget *parent) :
 
 
     p_zeroPadBox = new SpinBoxWidgetAction("Zero Pad",this);
-    p_zeroPadBox->setRange(0,4);
+    p_zeroPadBox->setRange(0,2);
     p_zeroPadBox->setValue(get(BC::Key::zeroPad,0));
     p_zeroPadBox->setSpecialValueText("None");
     p_zeroPadBox->setToolTip("Pad FID with zeroes until length extends to a power of 2.\n1 = next power of 2, 2 = second power of 2, etc.");

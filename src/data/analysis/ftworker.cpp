@@ -132,7 +132,8 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings, bool dou
     spectrum.setNumShots(fid.shots());
 
     //the signal is used for asynchronous purposes (in UI classes), and the return value for synchronous (in non-UI classes)
-    emit ftDone(spectrum,d_id);
+    if(!signalsBlocked())
+        emit ftDone(spectrum,d_id);
 
     d_lastProcSettings = settings;
 
@@ -147,99 +148,45 @@ void FtWorker::doFtDiff(const Fid ref, const Fid diff, const FidProcessingSettin
     if(!qFuzzyCompare(ref.spacing(),diff.spacing()))
         return;
 
-//    blockSignals(true);
-//    Ft r = doFT(ref,settings);
-//    Ft d = doFT(diff,settings);
-//    blockSignals(false);
+    blockSignals(true);
+    Ft r = doFT(ref,settings);
+    Ft d = doFT(diff,settings);
+    blockSignals(false);
 
-//    Ft out(r.size(),r.loFreqMHz());
+    Ft out;
+    out.reserve(r.size() + d.size());
+    out.setLoFreq(r.loFreqMHz());
+    out.setSpacing(r.xSpacing());
 
-//    if(qFuzzyCompare(r.loFreqMHz(),d.loFreqMHz()))
-//    {
+    if(qFuzzyCompare(r.loFreqMHz(),d.loFreqMHz()))
+    {
+        out.setX0(r.minFreqMHz());
+        for(int i=0; i<r.size() && i<d.size(); i++)
+            out.append(r.at(i) - d.at(i));
+    }
+    else
+    {
+        auto [drs,f0] = resample(r.minFreqMHz(),r.xSpacing(),d);
+        clearSplineMemory();
 
-//        for(int i=0; i<r.size() && i<d.size(); i++)
-//        {
-//            auto p = r.at(i);
-//            p.setY(p.y() - d.at(i).y());
-//            out.setPoint(i,p);
-//        }
-//    }
-//    else
-//    {
-//        Ft drs = resample(r.loFreqMHz(),r.xSpacing(),d);
-//        out = Ft(r.size() + drs.size(),r.loFreqMHz());
-//        int rIndex = 0, dIndex = 0, totalPoints = 0;
-//        bool done = false;
-//        while(!done)
-//        {
-//            if(rIndex < r.size() && dIndex < drs.size())
-//            {
-//                double rx = r.at(rIndex).x();
-//                double dx = drs.at(dIndex).x();
+        out.setX0(qMin(r.minFreqMHz(),f0));
 
-//                if(qAbs(rx-dx) < r.xSpacing()) //frequencies the same; difference and increment both
-//                {
-//                    out.setPoint(totalPoints,QPointF(rx,r.at(rIndex).y()-drs.at(dIndex).y()));
-//                    dIndex++;
-//                    rIndex++;
-//                }
-//                else
-//                {
-//                    if(rx < dx)
-//                    {
-//                        if(rIndex < r.size())
-//                        {
-//                            out.setPoint(totalPoints,QPointF(rx,r.at(rIndex).y()));
-//                            rIndex++;
-//                        }
-//                        else
-//                        {
-//                            out.setPoint(totalPoints,QPointF(dx,-drs.at(dIndex).y()));
-//                            dIndex++;
-//                        }
-//                    }
-//                    else
-//                    {
-//                        if(dIndex < drs.size())
-//                        {
-//                            out.setPoint(totalPoints,QPointF(dx,-drs.at(dIndex).y()));
-//                            dIndex++;
-//                        }
-//                        else
-//                        {
-//                            out.setPoint(totalPoints,QPointF(rx,r.at(rIndex).y()));
-//                            rIndex++;
-//                        }
-//                    }
-//                }
-//            }
-//            else
-//            {
-//                if(rIndex < r.size())
-//                {
-//                    out.setPoint(totalPoints,QPointF(r.at(rIndex).x(),r.at(rIndex).y()));
-//                    rIndex++;
-//                }
-//                else
-//                {
-//                    out.setPoint(totalPoints,QPointF(drs.at(dIndex).x(),-drs.at(dIndex).y()));
-//                    dIndex++;
-//                }
-//            }
+        int offset = static_cast<int>((f0-r.minFreqMHz())/r.xSpacing());
+        if(offset < 0) // the ref is at a higher frequency; start from the diff
+        {
+            for(int i=0; (i+offset)<r.size(); ++i)
+                out.append(r.value(i+offset) - drs.value(i,0.0));
+        }
+        else
+        {
+            for(int i=0; (i-offset)<d.size(); ++i)
+                out.append(r.value(i) - drs.value(i-offset,0.0));
+        }
+    }
 
-//            totalPoints++;
-
-//            if(rIndex == r.size() && dIndex == drs.size())
-//                done = true;
-//        }
-
-//        out.resize(totalPoints);
-
-//    }
-
-//    d_lastProcSettings = settings;
-
-//    emit ftDiffDone(out);
+    out.squeeze();
+    d_lastProcSettings = settings;
+    emit ftDiffDone(out);
 
 }
 
@@ -431,7 +378,7 @@ QList<Ft> FtWorker::makeSidebandList(const FidList fl, const FidProcessingSettin
         else
         {
             auto rsft = resample(f0,sp,ft1);
-            out << rsft;
+//            out << rsft;
         }
     }
     blockSignals(sigsBlocked);
@@ -512,9 +459,9 @@ FtWorker::FilterResult FtWorker::filterFid(const Fid fid, const FidProcessingSet
         max = qMax(d,max);
     }
 
-    if(settings.zeroPadFactor > 0 && settings.zeroPadFactor <= 4)
+    if(settings.zeroPadFactor > 0 && settings.zeroPadFactor <= 2)
     {
-        int filledSize = Analysis::nextPowerOf2(2*data.size()) << (settings.zeroPadFactor-1);
+        int filledSize = Analysis::nextPowerOf2(data.size() * (1 << settings.zeroPadFactor));
         if(out.size() != filledSize)
             out.resize(filledSize);
     }
@@ -523,26 +470,21 @@ FtWorker::FilterResult FtWorker::filterFid(const Fid fid, const FidProcessingSet
 
 }
 
-Ft FtWorker::resample(double f0, double spacing, const Ft ft)
+QPair<QVector<double>,double> FtWorker::resample(double f0, double spacing, const Ft ft)
 {
     if(ft.isEmpty() || ft.size() < 2 || spacing == 0.0)
-        return Ft();
+        return {};
 
-    spacing = qAbs(spacing);
-    double thisSpacing = ft.xSpacing();
-
-    if(qFuzzyCompare(f0,ft.loFreqMHz()) && qFuzzyCompare(qAbs(spacing),qAbs(thisSpacing)))
-        return Ft();
+    if(qFuzzyCompare(f0,ft.xFirst()) && qFuzzyCompare(spacing,ft.xSpacing()))
+        return {};
 
 
     double minF = ft.minFreqMHz();
-    double maxF = ft.maxFreqMHz();
-    double direction = thisSpacing > 0 ? 1.0 : -1.0;
 
-    //find sample point closest to, but greater than minf
-    double firstPt = f0 + ceil((minF-f0)/spacing)*spacing;
+    //find sample point closest to minf
+    double firstPt = f0 + round((minF-f0)/spacing)*spacing;
 
-    int numPoints = floor((maxF-firstPt)/spacing);
+    int numPoints = ft.size();
 
     //allocate or reallocate gsl_spline object
     if(ft.size() != d_numSplinePoints)
@@ -567,31 +509,22 @@ Ft FtWorker::resample(double f0, double spacing, const Ft ft)
     //set up spline object with FT data
     auto xd = ft.xData();
     auto yd = ft.yData();
-    bool reverse = false;
-    if(xd.constLast() < xd.constFirst())
-    {
-        reverse = true;
-        std::reverse(xd.begin(),xd.end());
-        std::reverse(yd.begin(),yd.end());
-    }
 
     gsl_spline_init(p_spline,xd.constData(),yd.constData(),d_numSplinePoints);
 
-    int index = 0;
-//    Ft out(numPoints,ft.loFreqMHz());
+    QVector<double> out;
+    out.reserve(numPoints);
 
-//    while(index < numPoints)
-//    {
-//        double x = firstPt + static_cast<double>(index)*spacing*direction;
-//        double y = gsl_spline_eval(p_spline,x,p_accel);
-//        int i = index;
-//        if(reverse)
-//            i = numPoints - index - 1;
-//        out.setPoint(i,QPointF(x,y));
-//        index++;
-//    }
+    for(int i=0; i<numPoints; ++i)
+    {
+        double x = firstPt + static_cast<double>(i)*spacing;
+        double y = gsl_spline_eval(p_spline,x,p_accel);
+        if(isnan(y))
+            y = 0.0;
+        out.append(y);
+    }
 
-//    return out;
+    return {out,firstPt};
 
 }
 
@@ -700,4 +633,14 @@ void FtWorker::winKaiserBessel(int n, double beta)
         else
             d_winf[i] = bsl/Ibeta;
     }
+}
+
+void FtWorker::clearSplineMemory()
+{
+    gsl_spline_free(p_spline);
+    gsl_interp_accel_free(p_accel);
+    p_spline = nullptr;
+    p_accel = nullptr;
+
+    d_numSplinePoints = -1;
 }

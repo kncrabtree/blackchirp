@@ -125,7 +125,7 @@ private:
     FidProcessingSettings d_lastProcSettings;
 
     QList<Ft> makeSidebandList(const FidList fl, const FtWorker::FidProcessingSettings &settings, RfConfig::Sideband sb, double minFreq = 0.0, double maxFreq = -1.0);
-    Ft resample(double f0, double spacing, const Ft ft);
+    QPair<QVector<double>, double> resample(double f0, double spacing, const Ft ft);
 
 
     //store a precalculated window function for speed
@@ -137,6 +137,8 @@ private:
     void winHamming(int n);
     void winHanning(int n);
     void winKaiserBessel(int n, double beta);
+
+    void clearSplineMemory();
 
 };
 
