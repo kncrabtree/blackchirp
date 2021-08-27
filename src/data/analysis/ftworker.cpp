@@ -36,8 +36,11 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings, int id, 
 {
     if(fid.size() < 2)
     {
-        emit fidDone({},1.0,0.0,0.0,id);
-        emit ftDone(Ft(), id);
+        if(id > -1)
+        {
+            emit fidDone({},1.0,0.0,0.0,id);
+            emit ftDone(Ft(), id);
+        }
         return Ft();
     }
 
@@ -45,14 +48,15 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings, int id, 
 
     //first, apply any filtering that needs to be done
     auto fidResult = filterFid(fid,settings);
-    emit fidDone(fidResult.fid,fid.spacing()*1e6,fidResult.min,fidResult.max,id);
+    if(id > -1)
+        emit fidDone(fidResult.fid,fid.spacing()*1e6,fidResult.min,fidResult.max,id);
     auto fftData = fidResult.fid;
     auto s = fftData.size();
 
 
     auto spacing = fid.spacing()*1.0e6;
     auto probe = fid.probeFreq();
-    double ftSpacing = 1.0/rawSize/spacing;
+    double ftSpacing = 1.0/static_cast<double>(s)/spacing;
     int spectrumSize = s/2 + 1;
     if(doubleSideband)
         spectrumSize = s;
@@ -142,7 +146,7 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings, int id, 
     spectrum.setNumShots(fid.shots());
 
     //the signal is used for asynchronous purposes (in UI classes), and the return value for synchronous (in non-UI classes)
-    if(!signalsBlocked())
+    if(id>-1)
         emit ftDone(spectrum,id);
 
     return spectrum;
@@ -156,15 +160,14 @@ void FtWorker::doFtDiff(const Fid ref, const Fid diff, const FidProcessingSettin
     if(!qFuzzyCompare(ref.spacing(),diff.spacing()))
         return;
 
-    blockSignals(true);
     Ft r = doFT(ref,settings);
     Ft d = doFT(diff,settings);
-    blockSignals(false);
 
     Ft out;
     out.reserve(r.size() + d.size());
     out.setLoFreq(r.loFreqMHz());
     out.setSpacing(r.xSpacing());
+    out.setNumShots(r.shots() + d.shots());
 
     if(qFuzzyCompare(r.loFreqMHz(),d.loFreqMHz()))
     {
