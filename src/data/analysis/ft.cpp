@@ -152,6 +152,13 @@ void Ft::setNumShots(quint64 shots)
     data->shots = shots;
 }
 
+void Ft::setData(const QVector<double> d, double yMin, double yMax)
+{
+    data->ftData = d;
+    data->yMin = yMin;
+    data->yMax = yMax;
+}
+
 int Ft::size() const
 {
     return data->ftData.size();

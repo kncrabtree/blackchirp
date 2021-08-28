@@ -70,6 +70,15 @@ public:
         double max{0.0};
     };
 
+    struct SidebandProcessingData {
+        Fid fid;
+        int totalFids{0};
+        int currentIndex{0};
+        double minOffset{-1.0};
+        double maxOffset{-1.0};
+        bool doubleSideband{false};
+    };
+
     /*!
      \brief Constructor. Does nothing
 
@@ -92,6 +101,8 @@ signals:
 
     void ftDiffDone(Ft);
 
+    void sidebandDone(Ft,int);
+
 public slots:
     /*!
      \brief Filters and performs FFT operation on an Fid
@@ -101,8 +112,10 @@ public slots:
     */
     Ft doFT(const Fid fid, const FtWorker::FidProcessingSettings &settings, int id = -1, bool doubleSideband=false);
     void doFtDiff(const Fid ref, const Fid diff, const FtWorker::FidProcessingSettings &settings);
-    Ft processSideband(const FidList fl, const FtWorker::FidProcessingSettings &settings, RfConfig::Sideband sb, double minFreq = 0.0, double maxFreq = -1.0);
-    void processBothSidebands(const FidList fl, const FtWorker::FidProcessingSettings &settings, double minFreq = 0.0, double maxFreq = -1.0);
+//    Ft processSideband(const FidList fl, const FtWorker::FidProcessingSettings &settings, RfConfig::Sideband sb, double minFreq = 0.0, double maxFreq = -1.0);
+//    void processBothSidebands(const FidList fl, const FtWorker::FidProcessingSettings &settings, double minFreq = 0.0, double maxFreq = -1.0);
+
+    void processSideband(const SidebandProcessingData &d, const FidProcessingSettings &settings);
 
     /*!
      \brief Perform truncation, high-pass, and exponential filtering on an Fid
@@ -124,6 +137,10 @@ private:
 
     FtWindowFunction d_lastWinf{None};
     int d_lastWinSize{0};
+
+    Ft d_workingSidebandFt;
+    QVector<int> d_workingSidebandLowIndices;
+    QVector<int> d_workingSidebandHighIndices;
 
     QList<Ft> makeSidebandList(const FidList fl, const FtWorker::FidProcessingSettings &settings, RfConfig::Sideband sb, double minFreq = 0.0, double maxFreq = -1.0);
     QPair<QVector<double>, double> resample(double f0, double spacing, const Ft ft);
