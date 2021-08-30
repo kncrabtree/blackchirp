@@ -14,7 +14,7 @@ VirtualFlowController::VirtualFlowController(QObject *parent) :
         for(int i=0; i<ch; ++i)
             l.push_back({{chUnits,QString("sccm")},{chMax,10000.0},{chDecimals,3}});
 
-        setArray(channels,l);
+        setArray(channels,l,true);
     }
 
     setDefault(pUnits,QString("kTorr"));

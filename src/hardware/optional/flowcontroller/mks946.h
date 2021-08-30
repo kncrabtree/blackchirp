@@ -6,7 +6,7 @@
 namespace BC::Key::Flow {
 static const QString mks947("mks947");
 static const QString mks947Name("MKS 946 Flow Controller");
-static const QString address("address");
+static const QString address("mksaddress");
 static const QString pressureChannel("pressureChannel");
 static const QString offset("channelOffset");
 }

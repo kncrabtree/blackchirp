@@ -13,7 +13,7 @@ Mks946::Mks946(QObject *parent) :
         for(int i=0; i<ch; ++i)
             l.push_back({{chUnits,QString("sccm")},{chMax,10000.0},{chDecimals,1}});
 
-        setArray(channels,l);
+        setArray(channels,l,true);
     }
 
     setDefault(address,253);

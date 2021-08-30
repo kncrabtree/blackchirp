@@ -8,7 +8,6 @@ VirtualTemperatureController::VirtualTemperatureController(QObject *parent) :
     TemperatureController(BC::Key::Comm::hwVirtual,BC::Key::vtcName,
                           CommunicationProtocol::Virtual,4,parent)
 {
-    set(BC::Key::HW::rInterval,10);
 }
 
 VirtualTemperatureController::~VirtualTemperatureController()

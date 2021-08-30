@@ -39,6 +39,7 @@ VirtualFtmwScope::VirtualFtmwScope(QObject *parent) :
                        {{srText,"50 GSa/s"},{srValue,50e9}},
                        {{srText,"100 GSa/s"},{srValue,100e9}}
                      });
+    save();
 }
 
 VirtualFtmwScope::~VirtualFtmwScope()

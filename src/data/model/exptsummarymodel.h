@@ -56,7 +56,9 @@ public:
         return p_parent ? p_parent->d_children.indexOf(const_cast<ExptTreeItem*>(this)) : 0;
     }
     void sortChildren() {
-        std::sort(d_children.begin(),d_children.end(),[](ExptTreeItem *a, ExptTreeItem *b){ return a->data(0) < b->data(0);});
+        std::sort(d_children.begin(),d_children.end(),[](ExptTreeItem *a, ExptTreeItem *b){
+            return a->data(0) < b->data(0);
+        });
     }
 
 private:

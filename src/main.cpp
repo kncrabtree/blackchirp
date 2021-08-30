@@ -106,7 +106,7 @@ R"000(Next, you can configure the communication settings for the hardware connec
 )000"));
 
         w.launchCommunicationDialog(false);
-
+        w.close();
         qApp->quit();
         QProcess::startDetached(qApp->arguments().constFirst(),qApp->arguments().mid(1));
 

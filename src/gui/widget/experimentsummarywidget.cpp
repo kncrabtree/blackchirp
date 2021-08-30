@@ -34,6 +34,7 @@ void ExperimentSummaryWidget::setExperiment(Experiment *exp)
         p_view->model()->deleteLater();
 
     auto proxy = new ExptProxyModel;
+    proxy->setSortRole(Qt::UserRole);
     auto model = new ExptSummaryModel(exp,proxy);
     proxy->setSourceModel(model);
     p_view->setModel(proxy);

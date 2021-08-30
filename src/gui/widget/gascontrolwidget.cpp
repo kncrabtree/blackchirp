@@ -38,7 +38,7 @@ GasControlWidget::GasControlWidget(QWidget *parent) : QWidget(parent), SettingsS
         nameEdit->setText(getArrayValue(channels,i,gasName,QString("")));
         nameEdit->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Minimum);
         connect(nameEdit,&QLineEdit::editingFinished,[this,nameEdit,i](){
-            setArrayValue(channels,i,gasName,nameEdit->text());
+            setArrayValue(channels,i,gasName,nameEdit->text(),true);
             emit nameUpdate(i,nameEdit->text());
         });
 
@@ -98,19 +98,6 @@ FlowConfig GasControlWidget::getFlowConfig() const
     return cfg;
 }
 
-QStringList GasControlWidget::getGasNames() const
-{
-    QStringList out;
-    for(auto w : d_widgets)
-        out << std::get<0>(w)->text();
-    return out;
-}
-
-void GasControlWidget::saveSettings()
-{
-    save();
-}
-
 void GasControlWidget::initialize(const FlowConfig &cfg)
 {
      for(int i=0; i<cfg.size(); ++i)
@@ -145,21 +132,30 @@ void GasControlWidget::updateGasSetpoint(int i, double sp)
         return;
 
     auto b = std::get<1>(d_widgets.at(i));
-    b->blockSignals(true);
-    b->setValue(sp);
-    b->blockSignals(false);
+    if(!b->hasFocus())
+    {
+        b->blockSignals(true);
+        b->setValue(sp);
+        b->blockSignals(false);
+    }
 }
 
 void GasControlWidget::updatePressureSetpoint(double sp)
 {
-    p_pressureSetpointBox->blockSignals(true);
-    p_pressureSetpointBox->setValue(sp);
-    p_pressureSetpointBox->blockSignals(false);
+    if(!p_pressureSetpointBox->hasFocus())
+    {
+        p_pressureSetpointBox->blockSignals(true);
+        p_pressureSetpointBox->setValue(sp);
+        p_pressureSetpointBox->blockSignals(false);
+    }
 }
 
 void GasControlWidget::updatePressureControl(bool en)
 {
-    blockSignals(true);
-    p_pressureControlButton->setChecked(en);
-    blockSignals(false);
+    if(!p_pressureControlButton->hasFocus())
+    {
+        blockSignals(true);
+        p_pressureControlButton->setChecked(en);
+        blockSignals(false);
+    }
 }

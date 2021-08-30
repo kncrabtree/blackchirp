@@ -27,8 +27,6 @@ public:
     explicit GasControlWidget(QWidget *parent = nullptr);
     ~GasControlWidget() {};
     FlowConfig getFlowConfig() const;
-    QStringList getGasNames() const;
-    void saveSettings();
 
 public slots:
     void initialize(const FlowConfig &cfg);

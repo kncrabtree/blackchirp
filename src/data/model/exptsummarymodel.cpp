@@ -182,6 +182,24 @@ QVariant ExptSummaryModel::data(const QModelIndex &index, int role) const
     if(role == Qt::DisplayRole || role == Qt::EditRole)
         return getItem(index)->data(index.column());
 
+    if(role == Qt::UserRole)
+    {
+        auto item = getItem(index)->data(index.column());
+        bool aok = false;
+        int aint = 0;
+        auto al = item.toString().split(" ");
+        for(auto s : al)
+        {
+            aint = s.toInt(&aok);
+            if(aok)
+                break;
+        }
+        if(aok)
+            return aint;
+        return item;
+
+    }
+
     return out;
 }
 

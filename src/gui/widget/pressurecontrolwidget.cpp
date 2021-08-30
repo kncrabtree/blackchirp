@@ -66,9 +66,12 @@ void PressureControlWidget::initialize(const PressureControllerConfig &cfg)
 
 void PressureControlWidget::pressureSetpointUpdate(double p)
 {
-    p_setpointBox->blockSignals(true);
-    p_setpointBox->setValue(p);
-    p_setpointBox->blockSignals(false);
+    if(!p_setpointBox->hasFocus())
+    {
+        p_setpointBox->blockSignals(true);
+        p_setpointBox->setValue(p);
+        p_setpointBox->blockSignals(false);
+    }
 }
 
 void PressureControlWidget::pressureControlModeUpdate(bool en)

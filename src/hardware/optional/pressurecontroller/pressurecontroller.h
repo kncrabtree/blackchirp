@@ -16,7 +16,7 @@ static const QString hasValve("hasValve");
 }
 
 namespace BC::Aux::PController {
-static const QString pressure{"chamberPressure"};
+static const QString pressure{"ChamberPressure"};
 }
 
 class PressureController : public HardwareObject

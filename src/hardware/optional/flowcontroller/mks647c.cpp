@@ -42,7 +42,7 @@ Mks647c::Mks647c(QObject *parent) :
         for(int i=0; i<ch; ++i)
             l.push_back({{chUnits,QString("sccm")},{chMax,500.0},{chDecimals,2}});
 
-        setArray(channels,l);
+        setArray(channels,l,true);
     }
 
     setDefault(pUnits,QString("kTorr"));

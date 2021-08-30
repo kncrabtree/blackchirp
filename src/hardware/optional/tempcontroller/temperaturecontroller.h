@@ -18,7 +18,7 @@ static const QString decimals("decimal");
 }
 
 namespace BC::Aux::TC {
-static const QString temperature("temperature%1");
+static const QString temperature("Temperature%1");
 }
 
 class TemperatureController : public HardwareObject

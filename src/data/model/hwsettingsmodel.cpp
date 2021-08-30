@@ -41,7 +41,7 @@ HWSettingsModel::HWSettingsModel(QString key, QStringList forbiddenKeys, QObject
         
         for(std::size_t i=0; i<v.size(); ++i)
         {
-            auto d = QVariant::fromValue(i);
+            auto d = QVariant::fromValue(i+1);
             QVector<QVariant> data{d,""};
             auto arrayEntry = new HWSettingsItem(data,false,true,arrayItem);
             

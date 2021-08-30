@@ -10,8 +10,8 @@ static const QString iob{"IOBoardDigitizer"};
 }
 
 namespace BC::Aux::IOB {
-static const QString ain{"ain%1"};
-static const QString din{"din%1"};
+static const QString ain{"AnalogInput%1"};
+static const QString din{"DigitalInput%1"};
 }
 
 class IOBoardConfig : public DigitizerConfig
