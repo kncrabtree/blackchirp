@@ -392,7 +392,9 @@ void DigitizerConfigWidget::setFromConfig(const DigitizerConfig &c)
         d_anChannelWidgets[ch.first-1].fullScaleBox->setValue(ch.second.fullScale);
     }
 
-    ///TODO: Digital channels
+
+    for(auto &ch : c.d_digitalChannels)
+        d_digChannelWidgets[ch.first-1].readBox->setChecked(ch.second.input);
 
      p_triggerSourceBox->setValue(c.d_triggerChannel);
      p_triggerDelayBox->setValue(c.d_triggerDelayUSec);

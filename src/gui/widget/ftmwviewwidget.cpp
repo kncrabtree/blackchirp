@@ -662,8 +662,6 @@ void FtmwViewWidget::resetRollingAverage()
     auto p = dynamic_cast<FidPeakUpStorage*>(ps_fidStorage.get());
     if(p != nullptr)
         p->reset();
-
-    ///TODO update UI?
 }
 
 void FtmwViewWidget::launchPeakFinder()

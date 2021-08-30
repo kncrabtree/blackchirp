@@ -139,7 +139,6 @@ void HWDialog::remove()
 
 void HWDialog::accept()
 {
-    //todo
     p_model->saveChanges();
 
     QDialog::accept();
@@ -147,7 +146,6 @@ void HWDialog::accept()
 
 void HWDialog::reject()
 {
-    //todo
     p_model->discardChanges(true);
 
     QDialog::reject();

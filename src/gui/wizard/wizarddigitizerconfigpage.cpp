@@ -31,7 +31,6 @@ WizardDigitizerConfigPage::~WizardDigitizerConfigPage()
 
 void WizardDigitizerConfigPage::initializePage()
 {
-    ///TODO: Be more flexible here
     auto e = getExperiment();
     if(e->d_number > 0)
         p_dc->setFromConfig(e->ftmwConfig()->d_scopeConfig);

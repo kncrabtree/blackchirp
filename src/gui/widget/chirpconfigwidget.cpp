@@ -211,7 +211,6 @@ void ChirpConfigWidget::setButtonStates()
     ui->clearButton->setEnabled(p_ctm->rowCount(QModelIndex()) > 0);
 
     //get number of chirps associated with current chirp config
-    ///TODO: Handle >1 CC
     auto cl = p_ctm->chirpList();
     ui->currentChirpBox->setRange(1,qMax(1,cl.size()));
     ui->applyToAllBox->setEnabled(p_ctm->d_allIdentical);

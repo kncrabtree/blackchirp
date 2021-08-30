@@ -274,7 +274,7 @@ void WizardStartPage::initializePage()
             p_phaseCorrectionBox->setChecked(e->ftmwConfig()->d_phaseCorrectionEnabled);
             p_chirpScoringBox->setChecked(e->ftmwConfig()->d_chirpScoringEnabled);
             p_thresholdBox->setValue(e->ftmwConfig()->d_chirpRMSThreshold);
-            ///TODO: use chirp offset!
+            p_chirpOffsetBox->setValue(e->ftmwConfig()->d_chirpOffsetUs);
 
             switch(type) {
             case FtmwConfig::Target_Shots:
