@@ -44,14 +44,23 @@ FtPlot::FtPlot(const QString id, QWidget *parent) :
     QColor bg( p.window().color() );
     bg.setAlpha( 232 );
 
-    p_label = new QwtPlotTextLabel;
+    p_shotsLabel = new QwtPlotTextLabel;
     QwtText text(d_shotsText.arg(0));
     text.setColor(p.text().color());
     text.setBackgroundBrush( QBrush( bg ) );
     text.setRenderFlags(Qt::AlignRight|Qt::AlignTop);
-    p_label->setText(text);
-    p_label->setZ(200.);
-    p_label->attach(this);
+    p_shotsLabel->setText(text);
+    p_shotsLabel->setZ(200.);
+    p_shotsLabel->attach(this);
+
+    p_messageLabel = new QwtPlotTextLabel;
+    QwtText msg;
+    msg.setColor(p.text().color());
+    msg.setBackgroundBrush( QBrush( bg ) );
+    msg.setRenderFlags(Qt::AlignLeft|Qt::AlignTop);
+    p_messageLabel->setText(msg);
+    p_messageLabel->setZ(200.);
+    p_messageLabel->attach(this);
 }
 
 FtPlot::~FtPlot()
@@ -65,6 +74,8 @@ void FtPlot::prepareForExperiment(const Experiment &e)
     d_currentFt = Ft();
     p_curve->setCurrentFt(Ft());
     p_peakData->setCurveData(QVector<QPointF>());
+    setNumShots(0);
+    setMessageText("");
 
     p_curve->setVisible(e.ftmwEnabled());
 
@@ -111,8 +122,6 @@ void FtPlot::configureUnits(FtWorker::FtUnits u)
 
 
     setAxisTitle(QwtPlot::yLeft,title);
-//    emit unitsChanged(scf);
-//    emit scalingChange(scf/oldScf);
 }
 
 void FtPlot::newPeakList(const QVector<QPointF> l)
@@ -127,7 +136,14 @@ void FtPlot::newPeakList(const QVector<QPointF> l)
 
 void FtPlot::setNumShots(quint64 shots)
 {
-    auto text = p_label->text();
+    auto text = p_shotsLabel->text();
     text.setText(d_shotsText.arg(shots));
-    p_label->setText(text);
+    p_shotsLabel->setText(text);
+}
+
+void FtPlot::setMessageText(QString msg)
+{
+    auto text = p_messageLabel->text();
+    text.setText(msg);
+    p_messageLabel->setText(text);
 }

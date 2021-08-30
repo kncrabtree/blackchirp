@@ -86,6 +86,7 @@ void FtmwPlotToolBar::prepareForExperiment(const Experiment &e)
             p_mainPlotBox->setItemEnabled(Lower_SideBand,true);
             p_sbMinBox->setEnabled(true);
             p_sbMaxBox->setEnabled(true);
+            p_followBox->setEnabled(true);
         }
         else
         {
@@ -94,6 +95,7 @@ void FtmwPlotToolBar::prepareForExperiment(const Experiment &e)
             p_mainPlotBox->setItemEnabled(Lower_SideBand,false);
             p_sbMinBox->setEnabled(false);
             p_sbMaxBox->setEnabled(false);
+            p_followBox->setEnabled(false);
         }
 
         auto chirpOffsetRange = e.ftmwConfig()->d_rfConfig.calculateChirpAbsOffsetRange();

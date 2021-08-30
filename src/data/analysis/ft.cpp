@@ -129,11 +129,22 @@ void Ft::trim(double minOffset, double maxOffset)
     if(minuIndex > maxuIndex)
         qSwap(minuIndex,maxuIndex);
 
+    //detect single sideband cases
+    if(minlIndex < 0 || minuIndex >= size())
+        minlIndex = minuIndex;
+    if(minuIndex < 0)
+        minuIndex = minlIndex;
+
+    if(maxuIndex == 0 || maxuIndex >= size())
+        maxuIndex = maxlIndex;
+    if(maxlIndex == 0 || maxlIndex >= size())
+        maxlIndex = maxuIndex;
+
     int minIndex = 0, maxIndex = size()-1;
 
     //these are the first and last points to retain
-    minIndex = qMax(minIndex,qMax(minlIndex,minuIndex));
-    maxIndex = qMin(maxIndex,qMin(maxlIndex,maxuIndex));
+    minIndex = qMax(minIndex,qMin(minlIndex,minuIndex));
+    maxIndex = qMin(maxIndex,qMax(maxlIndex,maxuIndex));
 
     //update f0 to match new reference frequency and update y limits
     data->x0MHz = xAt(minIndex);

@@ -14,6 +14,7 @@
 #include <gui/widget/peakfindwidget.h>
 #include <data/storage/fidsinglestorage.h>
 #include <data/storage/fidpeakupstorage.h>
+#include <data/storage/fidmultistorage.h>
 
 FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     QWidget(parent), SettingsStorage(BC::Key::FtmwView::key),
@@ -26,6 +27,7 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
     connect(p_worker,&FtWorker::ftDone,this,&FtmwViewWidget::ftDone,Qt::QueuedConnection);
     connect(p_worker,&FtWorker::fidDone,this,&FtmwViewWidget::fidProcessed,Qt::QueuedConnection);
     connect(p_worker,&FtWorker::ftDiffDone,this,&FtmwViewWidget::ftDiffDone,Qt::QueuedConnection);
+    connect(p_worker,&FtWorker::sidebandDone,this,&FtmwViewWidget::sidebandProcessingComplete);
 
     d_workerIds << d_liveId << d_mainId << d_plot1Id << d_plot2Id;
 
@@ -35,23 +37,16 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
 
         auto fw = new QFutureWatcher<void>(this);
         connect(fw,&QFutureWatcher<void>::finished,[this,id]{
-            auto &ws = d_workersStatus[id];
-            ws.busy = false;
-#pragma message("Revisit when SB processing is non monolithic")
-            if(ws.reprocessWhenDone)
-            {
-                if(id == d_mainId)
-                    updateMainPlot();
-                else
-                    process(id,d_plotStatus[id].fid);
-            }
+            ftProcessingComplete(id);
         });
         d_workersStatus.emplace(id,WorkerStatus{ fw, false, false });
 
         if(id != d_mainId)
         {
             auto fw2 = new QFutureWatcher<FidList>(this);
-            connect(fw2,&QFutureWatcher<FidList>::finished,[this,id](){ fidLoadComplete(id); });
+            connect(fw2,&QFutureWatcher<FidList>::finished,[this,id](){
+                fidLoadComplete(id);
+            });
             if(id == d_liveId)
                 d_plotStatus.emplace(id,PlotStatus { fw2, ui->liveFidPlot, ui->liveFtPlot, Fid(), Ft() });
             else if(id == d_plot1Id)
@@ -62,6 +57,9 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
         }
 
     }
+
+    d_sbStatus.sbLoadWatcher = new QFutureWatcher<FidList>(this);
+    connect(d_sbStatus.sbLoadWatcher,&QFutureWatcher<FidList>::finished,this,&FtmwViewWidget::sidebandLoadComplete);
 
     for(auto &[key,ps] : d_plotStatus)
     {
@@ -102,6 +100,21 @@ FtmwViewWidget::~FtmwViewWidget()
     if(p_pfw != nullptr)
         p_pfw->close();
 
+    d_sbStatus.sbLoadWatcher->waitForFinished();
+
+    for(auto &[key,ps] : d_plotStatus)
+    {
+        Q_UNUSED(key)
+        ps.p_watcher->waitForFinished();
+    }
+
+    for(auto &[key,ws] : d_workersStatus)
+    {
+        Q_UNUSED(key)
+        ws.p_watcher->waitForFinished();
+    }
+
+
     delete ui;
 }
 
@@ -136,6 +149,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
     d_currentSegment = 0;
     for(auto &[key,ps] : d_plotStatus)
     {
+        Q_UNUSED(key)
         ps.fid = Fid();
         ps.ft = Ft();
         ps.frame = 0;
@@ -224,15 +238,15 @@ void FtmwViewWidget::updateProcessingSettings(FtWorker::FidProcessingSettings s)
     //skip main plot because it will be updated when menu is closed
     d_currentProcessingSettings = s;
     QList<int> ignore;
-    switch(ui->plotToolBar->mainPlotMode())
-    {
-    case FtmwPlotToolBar::Upper_SideBand:
-    case FtmwPlotToolBar::Lower_SideBand:
-    case FtmwPlotToolBar::Both_SideBands:
-        ignore << d_mainId;
-    default:
-        break;
-    }
+//    switch(ui->plotToolBar->mainPlotMode())
+//    {
+//    case FtmwPlotToolBar::Upper_SideBand:
+//    case FtmwPlotToolBar::Lower_SideBand:
+//    case FtmwPlotToolBar::Both_SideBands:
+//        ignore << d_mainId;
+//    default:
+//        break;
+//    }
 
     if(!ui->liveFidPlot->isHidden())
     {
@@ -265,7 +279,6 @@ void FtmwViewWidget::updatePlotSetting(int id)
 
 void FtmwViewWidget::fidLoadComplete(int id)
 {
-#pragma message("Sideband processing here")
     auto &ps = d_plotStatus[id];
     if(ps.loadWhenDone)
     {
@@ -277,6 +290,38 @@ void FtmwViewWidget::fidLoadComplete(int id)
         auto list = ps.p_watcher->result();
         ps.fid = list.value(ps.frame,Fid());
         process(id, ps.fid);
+    }
+}
+
+void FtmwViewWidget::ftProcessingComplete(int id)
+{
+    auto &ws = d_workersStatus[id];
+    ws.busy = false;
+    if(ws.reprocessWhenDone) //this is set to true when there is another FID to process
+    {
+        if(id == d_mainId)
+        {
+            switch(ui->plotToolBar->mainPlotMode())
+            {
+            case FtmwPlotToolBar::Lower_SideBand:
+            case FtmwPlotToolBar::Upper_SideBand:
+            case FtmwPlotToolBar::Both_SideBands:
+                if(d_sbStatus.cancel)
+                    updateMainPlot();
+                else
+                {
+                    processNextSidebandFid();
+                    if(!d_sbStatus.sbLoadWatcher->isRunning())
+                        loadNextSidebandFid();
+                }
+                break;
+            default:
+                updateMainPlot();
+                break;
+            }
+        }
+        else
+            process(id,d_plotStatus[id].fid);
     }
 }
 
@@ -340,8 +385,12 @@ void FtmwViewWidget::ftDiffDone(const Ft ft)
 void FtmwViewWidget::updateMainPlot()
 {
     ui->mainFtPlot->configureUnits(d_currentProcessingSettings.units);
-    if(!ui->mainFtPlot->currentFt().isEmpty())
-        ui->peakFindAction->setEnabled(true);
+    ui->mainFtPlot->setMessageText("");
+    ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
+
+    cancelSidebandProcessing();
+
+    ui->peakFindAction->setEnabled(!ui->mainFtPlot->currentFt().isEmpty());
 
     switch(ui->plotToolBar->mainPlotMode()) {
     case FtmwPlotToolBar::Live:
@@ -366,13 +415,9 @@ void FtmwViewWidget::updateMainPlot()
         processDiff(d_plotStatus[d_plot2Id].fid,d_plotStatus[d_plot1Id].fid);
         break;
     case FtmwPlotToolBar::Upper_SideBand:
-        processSideband(RfConfig::UpperSideband);
-        break;
     case FtmwPlotToolBar::Lower_SideBand:
-        processSideband(RfConfig::LowerSideband);
-        break;
     case FtmwPlotToolBar::Both_SideBands:
-        processBothSidebands();
+        processSidebands();
         break;
     }
 }
@@ -381,10 +426,14 @@ void FtmwViewWidget::reprocess(const QList<int> ignore)
 {
     for(auto &[key,ws] : d_workersStatus)
     {
+        Q_UNUSED(ws)
         if(!ignore.contains(key))
         {
             if(key == d_mainId)
+            {
+                cancelSidebandProcessing();
                 updateMainPlot();
+            }
             else
                 process(key,d_plotStatus[key].fid);
         }
@@ -431,74 +480,139 @@ void FtmwViewWidget::processDiff(const Fid f1, const Fid f2)
     }
 }
 
-void FtmwViewWidget::processSideband(RfConfig::Sideband sb)
+void FtmwViewWidget::sidebandLoadComplete()
 {
+    d_sbStatus.nextFid = Fid();
+
+    if(d_sbStatus.cancel)
+    {
+        updateMainPlot();
+        return;
+    }
+
+    int frame = ui->plotToolBar->frame(ui->plotToolBar->mainPlotFollow())-1;
+
+    auto fl = d_sbStatus.sbLoadWatcher->result();
+    Fid f = fl.value(frame,Fid());
+
+    //queue FID
+    d_sbStatus.nextFid = f;
+    if(!d_workersStatus[d_mainId].busy)
+    {
+        processNextSidebandFid();
+        loadNextSidebandFid();
+    }
+
+}
+
+void FtmwViewWidget::processSidebands()
+{  
     auto &ws = d_workersStatus[d_mainId];
     if(ws.busy)
         ws.reprocessWhenDone = true;
     else
     {
-        FidList fl;
+        //need to reset sideband parameters
+        //then need to set up load/process chain
+        auto storage = dynamic_cast<FidMultiStorage*>(ps_fidStorage.get());
+        if(!storage)
+            return;
 
-#pragma message("Here")
-//        int id = d_plot1Id;
-//        if(ui->mainPlotFollowSpinBox->value() == 2)
-//            id = d_plot2Id;
-
-
-#pragma message("Rework sideband processing so that it's not monolithic")
-//        auto n = p_fidStorage->d_numRecords;
-//        for(int i=0; i<n; i++)
-//            fl << p_fidStorage->loadFidList(i).at(d_plotStatus.value(id).frame);
-
-        if(!fl.isEmpty())
+        if(d_sbStatus.sbLoadWatcher->isRunning())
         {
-            ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
-            ws.busy = true;
-            ws.reprocessWhenDone = false;
-            double minF = ui->plotToolBar->sbMinFreq();
-            double maxF = ui->plotToolBar->sbMaxFreq();
-
-//            QMetaObject::invokeMethod(p_worker,[fl,this,sb,minF,maxF](){
-//                p_worker->processSideband(fl,d_currentProcessingSettings,sb,minF,maxF);
-//            });
+            cancelSidebandProcessing();
+            return;
         }
+
+        d_sbStatus.cancel = false;
+        d_sbStatus.complete = false;
+        auto &sbd = d_sbStatus.sbData;
+        sbd = FtWorker::SidebandProcessingData();
+        sbd.minOffset = ui->plotToolBar->sbMinFreq();
+        sbd.maxOffset = ui->plotToolBar->sbMaxFreq();
+        sbd.totalFids = storage->numSegments();
+        switch (ui->plotToolBar->mainPlotMode()) {
+        case FtmwPlotToolBar::Lower_SideBand:
+            sbd.doubleSideband = false;
+            sbd.sideband = RfConfig::LowerSideband;
+            break;
+        case FtmwPlotToolBar::Upper_SideBand:
+            sbd.doubleSideband = false;
+            sbd.sideband = RfConfig::UpperSideband;
+            break;
+        case FtmwPlotToolBar::Both_SideBands:
+            sbd.doubleSideband  = true;
+            break;
+        default:
+            break;
+        };
+        d_sbStatus.sbData = sbd;
+
+        ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
+        ui->mainFtPlot->setMessageText(QString("Processing..."));
+        ui->mainFtPlot->newFt(Ft());
+        loadNextSidebandFid();
     }
 }
 
-void FtmwViewWidget::processBothSidebands()
+void FtmwViewWidget::loadNextSidebandFid()
 {
-#pragma message("Rework sideband processing so that it's not monolithic")
+    if(d_sbStatus.cancel && !d_sbStatus.complete)
+    {
+        updateMainPlot();
+        return;
+    }
+
+    if(d_sbStatus.sbData.currentIndex >= d_sbStatus.sbData.totalFids)
+        return;
+
+    d_sbStatus.sbLoadWatcher->setFuture(QtConcurrent::run([this](){ return ps_fidStorage->loadFidList(d_sbStatus.sbData.currentIndex); }));
+
+}
+
+void FtmwViewWidget::processNextSidebandFid()
+{
+    auto f = d_sbStatus.nextFid;
+    d_sbStatus.nextFid = Fid();
+
+    if(d_sbStatus.cancel || d_sbStatus.sbData.currentIndex >= d_sbStatus.sbData.totalFids)
+        return;
+
     auto &ws = d_workersStatus[d_mainId];
-    if(ws.busy)
-        ws.reprocessWhenDone = true;
+    ws.busy = true;
+    ws.reprocessWhenDone = true;
+    d_sbStatus.sbData.fid = f;
+    auto sbd = d_sbStatus.sbData;
+    ws.p_watcher->setFuture(QtConcurrent::run([this,sbd]{
+        p_worker->processSideband(sbd,d_currentProcessingSettings);
+    }));
+    d_sbStatus.sbData.currentIndex++;
+    ui->mainFtPlot->setMessageText(QString("Processing %1/%2")
+                                   .arg(d_sbStatus.sbData.currentIndex)
+                                   .arg(d_sbStatus.sbData.totalFids));
+    ui->mainFtPlot->replot();
+}
+
+void FtmwViewWidget::sidebandProcessingComplete(const Ft ft)
+{
+    d_sbStatus.complete = true;
+
+    if(d_sbStatus.cancel)
+        updateMainPlot();
     else
     {
-        FidList fl;
+        d_sbStatus.nextFid = Fid();
 
-#pragma message("Here")
-//        int id = d_plot1Id;
-//        if(ui->mainPlotFollowSpinBox->value() == 2)
-//            id = d_plot2Id;
-
-
-//        auto n = p_fidStorage->d_numRecords;
-//        for(int i=0; i<n; i++)
-//            fl << p_fidStorage->loadFidList(i).at(d_plotStatus.value(id).frame);
-
-        if(!fl.isEmpty())
-        {
-            ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
-            ws.busy = true;
-            ws.reprocessWhenDone = false;
-            double minF = ui->plotToolBar->sbMinFreq();
-            double maxF = ui->plotToolBar->sbMaxFreq();
-
-//            QMetaObject::invokeMethod(ws.worker,[ws,fl,this,minF,maxF](){
-//                ws.worker->processBothSidebands(fl,d_currentProcessingSettings,minF,maxF);
-//            });
-        }
+        ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
+        ui->mainFtPlot->setMessageText("");
+        ui->mainFtPlot->newFt(ft);
     }
+}
+
+void FtmwViewWidget::cancelSidebandProcessing()
+{
+    d_sbStatus.cancel = true;
+    d_sbStatus.nextFid = Fid();
 }
 
 void FtmwViewWidget::updateBackups()

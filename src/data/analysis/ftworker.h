@@ -76,6 +76,7 @@ public:
         int currentIndex{0};
         double minOffset{-1.0};
         double maxOffset{-1.0};
+        RfConfig::Sideband sideband{RfConfig::UpperSideband};
         bool doubleSideband{false};
     };
 
@@ -101,7 +102,7 @@ signals:
 
     void ftDiffDone(Ft);
 
-    void sidebandDone(Ft,int);
+    void sidebandDone(Ft);
 
 public slots:
     /*!
@@ -139,8 +140,7 @@ private:
     int d_lastWinSize{0};
 
     Ft d_workingSidebandFt;
-    QVector<int> d_workingSidebandLowIndices;
-    QVector<int> d_workingSidebandHighIndices;
+    std::map<int,int> d_sidebandIndices;
 
     QList<Ft> makeSidebandList(const FidList fl, const FtWorker::FidProcessingSettings &settings, RfConfig::Sideband sb, double minFreq = 0.0, double maxFreq = -1.0);
     QPair<QVector<double>, double> resample(double f0, double spacing, const Ft ft);

@@ -11,6 +11,7 @@ public:
     FidMultiStorage(int numRecords, int num, QString path);
 
     void setNumSegments(int s) { d_numSegments = s; }
+    int numSegments() const { return d_numSegments; }
 
     // FidStorageBase interface
     int getCurrentIndex() override;

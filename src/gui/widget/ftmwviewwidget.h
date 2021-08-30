@@ -61,6 +61,7 @@ public slots:
     void updatePlotSetting(int id);
 
     void fidLoadComplete(int id);
+    void ftProcessingComplete(int id);
     void fidProcessed(const QVector<double> fidData, double spacing, double min, double max, int workerId);
     void ftDone(const Ft ft, int workerId);
     void ftDiffDone(const Ft ft);
@@ -68,8 +69,13 @@ public slots:
     void reprocess(const QList<int> ignore = QList<int>());
     void process(int id, const Fid f);
     void processDiff(const Fid f1, const Fid f2);
-    void processSideband(RfConfig::Sideband sb);
-    void processBothSidebands();
+
+    void sidebandLoadComplete();
+    void processSidebands();
+    void loadNextSidebandFid();
+    void processNextSidebandFid();
+    void sidebandProcessingComplete(const Ft ft);
+    void cancelSidebandProcessing();
 
     void updateBackups();
     void experimentComplete();
@@ -116,6 +122,15 @@ private:
     QString d_path;
     const int d_liveId = 0, d_mainId = 3, d_plot1Id = 1, d_plot2Id = 2;
     const QString d_shotsString = QString("Shots: %1");
+
+    struct SidebandStatus {
+        QFutureWatcher<FidList> *sbLoadWatcher;
+        FtWorker::SidebandProcessingData sbData;
+        Fid nextFid;
+        bool cancel{true};
+        bool complete{false};
+    } d_sbStatus;
+
 
     void updateFid(int id);
 

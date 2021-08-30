@@ -39,6 +39,7 @@ public slots:
     void configureUnits(FtWorker::FtUnits u);
     void newPeakList(const QVector<QPointF> l);
     void setNumShots(quint64 shots);
+    void setMessageText(QString msg);
 
 
 private:
@@ -47,7 +48,8 @@ private:
      */
     BlackchirpPlotCurve *p_peakData;
     BlackchirpFTCurve *p_curve;
-    QwtPlotTextLabel *p_label;
+    QwtPlotTextLabel *p_shotsLabel;
+    QwtPlotTextLabel *p_messageLabel;
 
     Ft d_currentFt;
     int d_number;

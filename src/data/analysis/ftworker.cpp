@@ -202,144 +202,116 @@ void FtWorker::doFtDiff(const Fid ref, const Fid diff, const FidProcessingSettin
 
 void FtWorker::processSideband(const FtWorker::SidebandProcessingData &d, const FtWorker::FidProcessingSettings &settings)
 {
-    if(d.currentIndex >= d.totalFids || d.fid.isEmpty())
+    if(d.currentIndex >= d.totalFids)
         return;
 
     if(d.currentIndex == 0)
     {
         d_workingSidebandFt = Ft();
-        d_workingSidebandLowIndices.clear();
-        d_workingSidebandHighIndices.clear();
+        d_sidebandIndices.clear();
         clearSplineMemory();
     }
 
-    auto ft = doFT(d.fid,settings,-1,d.doubleSideband);
-    if(d.minOffset > 0.0 || qAbs(d.maxOffset - ft.loFreqMHz()) < (ft.maxFreqMHz()-ft.minFreqMHz()))
-        ft.trim(d.minOffset,d.maxOffset);
+    auto fid = d.fid;
+    if(!d.doubleSideband)
+        fid.setSideband(d.sideband);
 
-    if(d.currentIndex == 0)
+    if(!fid.isEmpty())
     {
-        d_workingSidebandFt = ft;
-        d_workingSidebandLowIndices << 0;
-        d_workingSidebandHighIndices << ft.size()-1;
-    }
-    else
-    {
-        auto [rhs,f0] = resample(d_workingSidebandFt.xFirst(),d_workingSidebandFt.xSpacing(),ft);
-        int offset = static_cast<int>((f0-d_workingSidebandFt.minFreqMHz())/d_workingSidebandFt.xSpacing());
+        auto ft = doFT(fid,settings,-1,d.doubleSideband);
+        if(d.minOffset > 0.0 || d.maxOffset + ft.loFreqMHz() < (ft.maxFreqMHz()-ft.minFreqMHz()))
+            ft.trim(d.minOffset,d.maxOffset);
 
-        //compute size of new working FT
-        int leftIndex = qMin(offset,0);
-        int rightIndex = qMax(offset+rhs.size()-1,d_workingSidebandFt.size()-1);
-        int newSize = rightIndex - leftIndex + 1;
-
-        QVector<double> lhs = d_workingSidebandFt.yData();
-        QVector<double> newData;
-        newData.reserve(newSize);
-        bool origlhs = true;
-
-        if(offset < 0)
+        if(d.currentIndex == 0)
         {
-            //need to rebuild working Ft with new minimum frequency
-            //adjust indices to new reference
-            for(int i=0; i<d_workingSidebandLowIndices.size() && i<d_workingSidebandHighIndices.size(); ++i)
-            {
-                d_workingSidebandLowIndices[i] -= offset;
-                d_workingSidebandHighIndices[i] -= offset;
-            }
-            d_workingSidebandFt.setX0(f0);
-            qSwap(lhs,rhs);
-            offset = -offset;
-            origlhs = false;
+            d_workingSidebandFt = ft;
+            d_sidebandIndices.emplace(0,1);
+            d_sidebandIndices.emplace(ft.size()-1,-1);
         }
-
-        //at this point, the first point in lhs is index 0, and the first point in rhs is index offset.
-        //using the working sideband indices, create a data structure with current counts (0 where data will be new)
-        QVector<QPair<int,int>> d_counts;
-        d_counts.append({0,0});
-        int currentCount = 0;
-        std::sort(d_workingSidebandLowIndices.begin(),d_workingSidebandLowIndices.end());
-        std::sort(d_workingSidebandHighIndices.begin(),d_workingSidebandHighIndices.end());
-
-        auto lit = d_workingSidebandLowIndices.cbegin();
-        auto hit = d_workingSidebandHighIndices.cbegin();
-        while(hit != d_workingSidebandHighIndices.cend())
+        else
         {
-            if(lit == d_workingSidebandLowIndices.cend())
+            auto [rhs,f0] = resample(d_workingSidebandFt.xFirst(),d_workingSidebandFt.xSpacing(),ft);
+                    int offset = static_cast<int>((f0-d_workingSidebandFt.minFreqMHz())/d_workingSidebandFt.xSpacing());
+
+                    //compute size of new working FT
+                    int leftIndex = qMin(offset,0);
+                    int rightIndex = qMax(offset+rhs.size()-1,d_workingSidebandFt.size()-1);
+                    int newSize = rightIndex - leftIndex + 1;
+
+                    QVector<double> lhs = d_workingSidebandFt.yData();
+                    QVector<double> newData;
+                    newData.reserve(newSize);
+                    bool origlhs = true;
+
+                    if(offset < 0)
             {
-                d_counts.append({*hit+1,currentCount--});
-                hit++;
+                //need to rebuild working Ft with new minimum frequency
+                //adjust indices to new reference
+                auto copy = d_sidebandIndices;
+                d_sidebandIndices.clear();
+                for(auto &[key,val] : copy)
+                    d_sidebandIndices.emplace(key-offset,val);
+
+                d_sidebandIndices.emplace(0,1);
+                d_sidebandIndices.emplace(ft.size()-1,-1);
+
+                d_workingSidebandFt.setX0(f0);
+                qSwap(lhs,rhs);
+                offset = -offset;
+                origlhs = false;
             }
             else
             {
-                if(*lit <= *hit)
-                {
-                    d_counts.append({*lit,currentCount++});
-                    lit++;
-                }
-                else
-                {
-                    d_counts.append({*hit+1,currentCount--});
-                    hit++;
-                }
-            }
-        }
-
-        //loop over new points. If count is 0, append lhs if count is < offet, rhs if count > offset
-        //If count is 1 or greater, do geometric mean if lhs and rhs are both > 0; arithmetic mean otherwise
-        //use the counts structure to determine the current count
-        double yMin = 0.0;
-        double yMax = 0.0;
-        int i = 0;
-
-        //this loop is structured to make effective use of branch prediction
-        //most of the if statements in the while statements will evaluate the same way
-        //in each iteration of the outer for loop. The exception is the code that
-        //detects if either point is a 0, but that condition should be rare.
-        for(auto it = d_counts.cbegin(); it != d_counts.cend(); ++it)
-        {
-            //possible that there are duplicate indices if ane segment starts when another stops
-            while(i > it->first && it != d_counts.cend())
-                ++it;
-
-            double thisCount = it->second;
-            double totalCount = thisCount+1.0;
-            double ratio = thisCount/totalCount;
-            if(it == d_counts.cend())
-            {
-                while(i < newSize-1)
-                {
-                    auto d = rhs.at(i+offset);
-                    yMin = qMin(yMin,d);
-                    yMax = qMax(yMax,d);
-                    newData.append(d);
-                    ++i;
-                }
-                break;
+                d_sidebandIndices.emplace(offset,1);
+                d_sidebandIndices.emplace(offset+ft.size()-1,-1);
             }
 
-            while(i < it->first)
+            //at this point, the first point in lhs is index 0, and the first point in rhs is index offset.
+            //using the working sideband indices, create a data structure with current counts (0 where data will be new)
+            int currentCount = 0;
+
+            //loop over new points. If count is 0, append lhs if count is < offet, rhs if count > offset
+            //If count is 1 or greater, do geometric mean if lhs and rhs are both > 0; arithmetic mean otherwise
+            //use the counts structure to determine the current count
+            double yMin = 0.0;
+            double yMax = 0.0;
+            int i = 0;
+
+            //this loop is structured to make effective use of branch prediction
+            //most of the if statements in the while statements will evaluate the same way
+            //in each iteration of the outer for loop. The exception is the code that
+            //detects if either point is a 0, but that condition should be rare.
+            for(auto it = d_sidebandIndices.cbegin(); it != d_sidebandIndices.cend(); ++it)
             {
-                auto d = lhs.at(i);
-                if(it->second == 0)
+                //possible that there are duplicate indices if ane segment starts when another stops
+                while(i > it->first && it != d_sidebandIndices.cend())
                 {
-                    //no points yet at this index; store the current value and move on
-                    yMin = qMin(yMin,d);
-                    yMax = qMax(yMax,d);
-                    newData.append(d);
-                    ++i;
+                    currentCount += it->second;
+                    ++it;
                 }
-                else
+
+
+                double thisCount = currentCount;
+                double totalCount = thisCount+1.0;
+                double ratio = thisCount/totalCount;
+                if(it == d_sidebandIndices.cend())
                 {
-                    auto d2 = rhs.value(i-offset);
-                    if(d <= 0.0 || d2 <=0.0)
+                    while(i < newSize-1)
                     {
-                        //compute arithmetic mean
-                        double val;
-                        if(origlhs)
-                            val = ratio*d + ratio/totalCount;
-                        else
-                            val = d/totalCount + ratio*d2;
+                        auto d = rhs.at(i+offset);
+                        yMin = qMin(yMin,d);
+                        yMax = qMax(yMax,d);
+                        newData.append(d);
+                        ++i;
+                    }
+                    break;
+                }
+
+                while(i < it->first)
+                {
+                    if(i >= lhs.size())
+                    {
+                        auto val = rhs.value(i-offset);
                         yMin = qMin(yMin,val);
                         yMax = qMax(yMax,val);
                         newData.append(val);
@@ -347,235 +319,75 @@ void FtWorker::processSideband(const FtWorker::SidebandProcessingData &d, const 
                     }
                     else
                     {
-                        //compute geometric mean
-                        double val;
-                        if(origlhs)
-                            val = pow(10.0,ratio*log10(d) + log10(d2)/totalCount);
+                        auto d = lhs.at(i);
+                        if(it->second == 0 || i < offset)
+                        {
+                            //no points yet at this index; store the current value and move on
+                            yMin = qMin(yMin,d);
+                            yMax = qMax(yMax,d);
+                            newData.append(d);
+                            ++i;
+                        }
                         else
-                            val = pow(10.0,log10(d)/totalCount + ratio*log10(d2));
-                        yMin = qMin(yMin,val);
-                        yMax = qMax(yMax,val);
-                        newData.append(val);
-                        ++i;
+                        {
+                            auto d2 = rhs.at(i-offset);
+                            if(d <= 0.0 || d2 <=0.0)
+                            {
+                                //compute arithmetic mean
+                                double val;
+                                if(origlhs)
+                                    val = ratio*d + ratio/totalCount;
+                                else
+                                    val = d/totalCount + ratio*d2;
+                                yMin = qMin(yMin,val);
+                                yMax = qMax(yMax,val);
+                                newData.append(val);
+                                ++i;
+                            }
+                            else
+                            {
+                                //compute geometric mean
+                                double val;
+                                if(origlhs)
+                                    val = pow(10.0,ratio*log10(d) + log10(d2)/totalCount);
+                                else
+                                    val = pow(10.0,log10(d)/totalCount + ratio*log10(d2));
+                                yMin = qMin(yMin,val);
+                                yMax = qMax(yMax,val);
+                                newData.append(val);
+                                ++i;
+                            }
+                        }
                     }
                 }
+
+                currentCount += it->second;
             }
+
+            //if points remain, fill them in
+            while(i < newSize-1)
+            {
+                auto d = rhs.at(i+offset);
+                yMin = qMin(yMin,d);
+                yMax = qMax(yMax,d);
+                newData.append(d);
+                ++i;
+            }
+
+            d_workingSidebandFt.setData(newData,yMin,yMax);
+            d_workingSidebandFt.setNumShots(d_workingSidebandFt.shots() + ft.shots());
         }
-
-        //if points remain, fill them in
-        while(i < newSize-1)
-        {
-            auto d = rhs.at(i+offset);
-            yMin = qMin(yMin,d);
-            yMax = qMax(yMax,d);
-            newData.append(d);
-            ++i;
-        }
-
-
     }
 
-    ///TODO: emit signal and clean up if this is the last FID
-
+    if(d.currentIndex + 1 >= d.totalFids)
+    {
+        emit sidebandDone(d_workingSidebandFt);
+        d_workingSidebandFt = Ft();
+        clearSplineMemory();
+        d_sidebandIndices.clear();
+    }
 
 }
-
-//Ft FtWorker::processSideband(const FidList fl, const FtWorker::FidProcessingSettings &settings, RfConfig::Sideband sb,double minFreq, double maxFreq)
-//{
-//    //this will FT all of the FIDs and resample them on a common grid
-//    QList<Ft> ftList = makeSidebandList(fl,settings,sb,minFreq,maxFreq);
-
-//    if(ftList.isEmpty())
-//    {
-////        emit ftDone(Ft(),d_id);
-//        return Ft();
-//    }
-
-//    if(ftList.size() == 1)
-//    {
-////        emit ftDone(ftList.constFirst(),d_id);
-//        return ftList.constFirst();
-//    }
-
-//    QVector<int> indices;
-//    indices.resize(ftList.size());
-
-//    Ft out(0,0.0);
-//    out.reserve(ftList.size()*ftList.constFirst().size());
-
-//    //want to make sure frequency increases monotonically as we iterate through fidlist
-//    //Fts ALWAYS go from low frequency to high
-//    if(ftList.constFirst().loFreqMHz() > ftList.constLast().loFreqMHz())
-//        std::reverse(ftList.begin(),ftList.end());
-
-//    while(true)
-//    {
-//        double thisPointY = 0.0;
-//        double thisPointX = 0.0;
-//        double numPoints = 0.0;
-
-//        for(int i=0; i<indices.size(); i++)
-//        {
-//            if(indices.at(i) < ftList.at(i).size())
-//            {
-//                thisPointX = ftList.at(i).at(indices.at(i)).x();
-//                break;
-//            }
-//        }
-
-//        for(int i=0; i<indices.size(); i++)
-//        {
-//            if(indices.at(i) < ftList.at(i).size())
-//            {
-//                if(qAbs(thisPointX - ftList.at(i).at(indices.at(i)).x()) < ftList.at(i).xSpacing())
-//                {
-//                    double y = ftList.at(i).at(indices.at(i)).y();
-//                    if(y>0)
-//                    {
-//                        thisPointY += log10(y);
-//                        numPoints += 1.0;
-//                    }
-//                    indices[i]++;
-//                }
-//            }
-//        }
-
-//        if(numPoints < 1.0)
-//            out.append(QPointF(thisPointX,thisPointY));
-//        else
-//            out.append(QPointF(thisPointX,pow(10.0,thisPointY/numPoints)));
-
-//        bool done = true;
-//        for(int i=0; i<indices.size(); i++)
-//        {
-//            if(indices.at(i) < ftList.at(i).size())
-//            {
-//                done = false;
-//                break;
-//            }
-//        }
-
-//        if(done)
-//            break;
-//    }
-
-//    emit ftDone(out,d_id);
-//    return out;
-//}
-
-//void FtWorker::processBothSidebands(const FidList fl, const FtWorker::FidProcessingSettings &settings, double minFreq, double maxFreq)
-//{
-//    blockSignals(true);
-//    Ft upper = processSideband(fl,settings,RfConfig::UpperSideband,minFreq,maxFreq);
-//    Ft lower = processSideband(fl,settings,RfConfig::LowerSideband,minFreq,maxFreq);
-//    blockSignals(false);
-
-//    Ft out(0,0.0);
-//    if(upper.size() < 2)
-//    {
-//        if(lower.size() < 2)
-//        {
-//            emit ftDone(out,d_id);
-//            return;
-//        }
-//        else
-//        {
-//            emit ftDone(lower,d_id);
-//            return;
-//        }
-//    }
-//    else
-//    {
-//        if(lower.size() < 2)
-//        {
-//            emit ftDone(upper,d_id);
-//            return;
-//        }
-//    }
-
-//    out.reserve(upper.size() + lower.size());
-
-//    int li=0, ui=0;
-
-//    while(true)
-//    {
-//        QPointF pt;
-
-//        if(li < lower.size())
-//        {
-//            pt = lower.at(li);
-//            if(qAbs(pt.x()-upper.at(ui).x()) < lower.xSpacing())
-//            {
-//                pt.setY((pt.y() + upper.at(ui).y())/2.0);
-//                ui++;
-//            }
-
-//            li++;
-//        }
-//        else
-//        {
-//            pt = upper.at(ui);
-//            ui++;
-//        }
-//        out.append(pt);
-
-//        if(ui < upper.size() || li < lower.size())
-//            continue;
-
-//        break;
-
-//    }
-
-//    emit ftDone(out,d_id);
-
-//}
-
-//QList<Ft> FtWorker::makeSidebandList(const FidList fl, const FidProcessingSettings &settings, RfConfig::Sideband sb, double minFreq, double maxFreq)
-//{
-//    if(fl.isEmpty())
-//        return QList<Ft>();
-
-//    Fid f = fl.constFirst();
-//    f.setSideband(sb);
-
-//    QList<Ft> out;
-
-//    bool sigsBlocked = signalsBlocked();
-//    blockSignals(true);
-//    Ft ft1 = doFT(f,settings);
-//    ft1.trim(minFreq,maxFreq);
-//    out << ft1;
-
-//    double f0 = 0.0;
-//    double sp = -1.0;
-
-
-//    for(int i=1; i<fl.size(); i++)
-//    {
-//        f = fl.at(i);
-//        f.setSideband(sb);
-//        ft1 = doFT(f,settings);
-//        if(!ft1.isEmpty())
-//        {
-//            ft1.trim(minFreq,maxFreq);
-//            if(sp < 0.0)
-//            {
-//                f0 = ft1.loFreqMHz();
-//                sp = ft1.xSpacing();
-//            }
-//            out << ft1;
-//        }
-//        else
-//        {
-//            auto rsft = resample(f0,sp,ft1);
-////            out << rsft;
-//        }
-//    }
-//    blockSignals(sigsBlocked);
-
-//    return out;
-
-//}
 
 FtWorker::FilterResult FtWorker::filterFid(const Fid fid, const FidProcessingSettings &settings)
 {
