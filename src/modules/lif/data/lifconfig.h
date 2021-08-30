@@ -10,7 +10,6 @@
 #include <QMap>
 #include <QVariant>
 
-#include <data/datastructs.h>
 #include <modules/lif/data/liftrace.h>
 
 

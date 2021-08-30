@@ -4,7 +4,6 @@
 #include <QWidget>
 
 #include <data/experiment/experiment.h>
-#include <data/datastructs.h>
 
 class QTabWidget;
 class LogHandler;
@@ -34,10 +33,6 @@ private:
 
 #ifdef BC_LIF
     QWidget *buildLifWidget();
-#endif
-
-#ifdef BC_MOTOR
-    QWidget *buildMotorWidget();
 #endif
 };
 

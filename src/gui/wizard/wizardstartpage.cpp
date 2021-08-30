@@ -151,38 +151,17 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
 
 #ifndef BC_LIF
     p_ftmw->setChecked(true);
-#ifndef BC_MOTOR
     p_ftmw->setCheckable(false);
-#endif
 #else
     p_lif = new QGroupBox(QString("LIF"),this);
     p_lif->setCheckable(true);
     connect(p_lif,&QGroupBox::toggled,this,&WizardStartPage::completeChanged);
 #endif
 
-#ifdef BC_MOTOR
-    p_motor = new QGroupBox(QString("Motor Scan"),this);
-    p_motor->setCheckable(true);
-    connect(p_motor,&QGroupBox::toggled,this,&WizardStartPage::completeChanged);
-    connect(p_motor,&QGroupBox::toggled,[=](bool ch){
-        p_ftmw->setDisabled(ch);
-        if(ch)
-            p_ftmw->setChecked(false);
-#ifdef BC_LIF
-        p_lif->setDisabled(ch);
-        if(ch)
-            p_lif->setChecked(false);
-#endif
-    });
-#endif
-
     auto *hbl = new QHBoxLayout();
     hbl->addWidget(p_ftmw);
 #ifdef BC_LIF
     hbl->addWidget(p_lif);
-#endif
-#ifdef BC_MOTOR
-    hbl->addWidget(p_motor);
 #endif
 
     auto *vbl = new QVBoxLayout();
@@ -206,10 +185,6 @@ WizardStartPage::~WizardStartPage()
 
 int WizardStartPage::nextId() const
 {
-#ifdef BC_MOTOR
-    if(p_motor->isChecked())
-        return ExperimentWizard::MotorScanConfigPage;
-#endif
 
 #ifdef BC_LIF
     if(p_lif->isChecked())
@@ -231,10 +206,6 @@ bool WizardStartPage::isComplete() const
     out = out || p_lif->isChecked();
 #endif
 
-#ifdef BC_MOTOR
-    out = out || p_motor->isChecked();
-#endif
-
     return out;
 }
 
@@ -249,24 +220,6 @@ void WizardStartPage::initializePage()
         p_ftmw->setChecked(e->ftmwEnabled());
         p_lif->setChecked(e->lifConfig().isEnabled());
 #endif
-
-#ifdef BC_MOTOR
-        if(e->motorScan().isEnabled())
-        {
-            p_motor->setChecked(true);
-            p_ftmw->setEnabled(false);
-            p_ftmw->setChecked(false);
-#ifdef BC_LIF
-            p_lif->setChecked(false);
-            p_lif->setEnabled(false);
-#endif
-        }
-        else
-        {
-            p_motor->setChecked(false);
-        }
-#endif
-
         if(e->ftmwEnabled())
         {
             auto type = e->ftmwConfig()->d_type;
@@ -336,10 +289,6 @@ bool WizardStartPage::validatePage()
 
 #ifdef BC_LIF
      e->setLifEnabled(p_lif->isChecked());
-#endif
-
-#ifdef BC_MOTOR
-     e->setMotorEnabled(p_motor->isChecked());
 #endif
 
      e->d_backupIntervalHours = p_backupBox->value();

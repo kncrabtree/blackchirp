@@ -59,10 +59,6 @@ lif {
   include($$PWD/src/modules/lif/lif.pri)
 }
 
-motor {
-  include($$PWD/src/modules/motor/motor.pri)
-}
-
 OTHER_FILES += README.md \
                $$PWD/src/config/config.pri.template
 

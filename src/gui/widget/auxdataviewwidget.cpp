@@ -12,7 +12,6 @@
 
 #include <gui/plot/trackingplot.h>
 #include <gui/plot/blackchirpplotcurve.h>
-#include <data/datastructs.h>
 #include <data/storage/blackchirpcsv.h>
 
 

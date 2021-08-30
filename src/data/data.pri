@@ -29,7 +29,6 @@ SOURCES += $$PWD/loghandler.cpp \
 
 
 HEADERS += $$PWD/loghandler.h \
-    $$PWD/datastructs.h \
     $$PWD/analysis/analysis.h \
     $$PWD/analysis/ft.h \
     $$PWD/analysis/ftworker.h \

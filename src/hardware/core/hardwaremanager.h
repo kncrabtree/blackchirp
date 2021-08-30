@@ -80,15 +80,6 @@ signals:
     void lifLaserPosUpdate(double);
 #endif
 
-#ifdef BC_MOTOR
-    void motorTraceAcquired(QVector<double> d);
-    void motorMoveComplete(bool);
-    void moveMotorToPosition(double x, double y, double z);
-    void motorLimitStatus(MotorScan::MotorAxis axis, bool negLimit, bool posLimit);
-    void motorPosUpdate(MotorScan::MotorAxis axis, double pos);
-    void motorRest();
-#endif
-
 public slots:
     void initialize();
 

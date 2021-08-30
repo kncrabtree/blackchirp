@@ -37,9 +37,6 @@ public:
 #ifdef BC_LIF
         ,LIF
 #endif
-#ifdef BC_MOTOR
-        ,Motor
-#endif
     };
     Q_ENUM(ActiveLevel)
     Q_ENUM(Setting)

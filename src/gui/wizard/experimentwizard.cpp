@@ -21,10 +21,6 @@
 #include <modules/lif/gui/wizardlifconfigpage.h>
 #endif
 
-#ifdef BC_MOTOR
-#include <modules/motor/gui/wizardmotorscanconfigpage.h>
-#endif
-
 ExperimentWizard::ExperimentWizard(Experiment *exp, const std::map<QString, QString> &hw, QWidget *parent) :
     QWizard(parent), p_experiment(exp)
 {
@@ -80,12 +76,6 @@ ExperimentWizard::ExperimentWizard(Experiment *exp, const std::map<QString, QStr
     connect(lifConfigPage,&WizardLifConfigPage::lifColorChanged,this,&ExperimentWizard::lifColorChanged);
     connect(lifConfigPage,&WizardLifConfigPage::laserPosUpdate,this,&ExperimentWizard::laserPosUpdate);
     setPage(LifConfigPage,lifConfigPage);
-#endif
-
-#ifdef BC_MOTOR
-    auto motorScanConfigPage = new WizardMotorScanConfigPage(this);
-    d_pages << motorScanConfigPage;
-    setPage(MotorScanConfigPage,motorScanConfigPage);
 #endif
 
     setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);

@@ -56,11 +56,6 @@ private:
     ExperimentWizardPage *p_lifConfigPage;
 #endif
 
-#ifdef BC_MOTOR
-private:
-    ExperimentWizardPage *p_motorScanConfigPage;
-#endif
-
 
     // QWidget interface
 public:

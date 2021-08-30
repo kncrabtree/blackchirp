@@ -5,7 +5,6 @@
 
 #include <QVector>
 
-#include <data/datastructs.h>
 #include <modules/lif/data/liftrace.h>
 #include <modules/lif/data/lifconfig.h>
 

@@ -12,7 +12,6 @@
 #include <gsl/gsl_complex_math.h>
 #include <gsl/gsl_const.h>
 
-#include <data/datastructs.h>
 #include <data/storage/blackchirpcsv.h>
 
 

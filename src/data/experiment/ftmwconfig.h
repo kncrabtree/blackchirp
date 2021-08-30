@@ -10,7 +10,6 @@
 #include <data/experiment/fid.h>
 #include <data/experiment/rfconfig.h>
 #include <hardware/core/ftmwdigitizer/ftmwdigitizerconfig.h>
-#include <data/datastructs.h>
 #include <data/experiment/experimentobjective.h>
 
 #ifdef BC_CUDA

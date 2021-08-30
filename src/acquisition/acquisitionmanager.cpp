@@ -6,9 +6,6 @@
 
 AcquisitionManager::AcquisitionManager(QObject *parent) : QObject(parent), d_state(Idle)
 {
-#ifdef BC_MOTOR
-    d_waitingForMotor = false;
-#endif
 }
 
 AcquisitionManager::~AcquisitionManager()
@@ -40,18 +37,6 @@ void AcquisitionManager::beginExperiment(std::shared_ptr<Experiment> exp)
         d_auxTimerId = startTimer(ps_currentExperiment->d_timeDataInterval*1000);
     }
     emit beginAcquisition();
-
-#ifdef BC_MOTOR
-    if(d_currentExperiment->motorScan().isEnabled())
-    {
-        d_waitingForMotor = true;
-        QVector3D pos = d_currentExperiment->motorScan().currentPos();
-        emit startMotorMove(pos.x(),pos.y(),pos.z());
-        emit statusMessage(QString("Moving motor to (X,Y,Z) = (%1, %2, %3)")
-                           .arg(pos.x(),0,'f',3).arg(pos.y(),0,'f',3).arg(pos.z(),0,'f',3));
-    }
-#endif
-
 }
 
 void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
@@ -183,16 +168,6 @@ void AcquisitionManager::abort()
     if(d_state == Paused || d_state == Acquiring)
     {
         ps_currentExperiment->abort();
-        //save!
-#ifdef BC_MOTOR
-        if(d_currentExperiment.motorScan().isEnabled())
-        {
-            d_waitingForMotor = true;
-            emit motorRest();
-            emit statusMessage(QString("Motor scan aborted. Returning motor to resting position..."));
-            return;
-        }
-#endif
         finishAcquisition();
     }
 }
@@ -222,55 +197,6 @@ void AcquisitionManager::auxDataTick()
     emit auxDataSignal();
 }
 
-#ifdef BC_MOTOR
-void AcquisitionManager::motorMoveComplete(bool success)
-{
-    if(d_currentExperiment.isComplete() || d_currentExperiment.isAborted())
-    {
-        finishAcquisition();
-        return;
-    }
-
-    //if motor move not successful, abort acquisition
-    if(!success)
-        abort();
-    else
-    {
-        d_waitingForMotor = false;
-    }
-}
-
-void AcquisitionManager::motorTraceReceived(const QVector<double> dat)
-{
-    if(d_state == Acquiring && !d_waitingForMotor && d_currentExperiment.motorScan().isEnabled())
-    {
-        bool adv = d_currentExperiment.addMotorTrace(dat);
-        emit statusMessage(QString("Acquiring (%1/%2)").arg(d_currentExperiment.motorScan().currentPointShots())
-                           .arg(d_currentExperiment.motorScan().shotsPerPoint()));
-        if(adv)
-        {
-            checkComplete();
-
-            if(d_state == Acquiring)
-            {
-                QVector3D pos = d_currentExperiment.motorScan().currentPos();
-                emit startMotorMove(pos.x(),pos.y(),pos.z());
-                emit statusMessage(QString("Moving motor to (X,Y,Z) = (%1, %2, %3)")
-                                   .arg(pos.x(),0,'f',3).arg(pos.y(),0,'f',3).arg(pos.z(),0,'f',3));
-                d_waitingForMotor = true;
-            }
-
-            emit motorDataUpdate(d_currentExperiment.motorScan());
-        }
-
-        //emit a progress signal
-        emit motorProgress(d_currentExperiment.motorScan().completedShots());
-    }
-
-    //TODO: construct a rolling average waveform and send to UI
-}
-#endif
-
 void AcquisitionManager::checkComplete()
 {
     if(d_state == Acquiring)
@@ -282,27 +208,12 @@ void AcquisitionManager::checkComplete()
             fw.setFuture(QtConcurrent::run([this]{ ps_currentExperiment->backup(); }));
         }
         if(ps_currentExperiment->isComplete())
-        {
-#ifdef BC_MOTOR
-            if(d_currentExperiment.motorScan().isEnabled())
-            {
-                d_state = Idle;
-                d_waitingForMotor = true;
-                emit motorRest();
-                emit statusMessage(QString("Motor scan complete. Returning motor to resting position..."));
-                return;
-            }
-#endif
             finishAcquisition();
-        }
     }
 }
 
 void AcquisitionManager::finishAcquisition()
 {
-#ifdef BC_MOTOR
-    d_waitingForMotor = false;
-#endif
     emit endAcquisition();
     d_state = Idle;
 

@@ -45,9 +45,6 @@ private:
 #ifdef BC_LIF
     QGroupBox *p_lif;
 #endif
-#ifdef BC_MOTOR
-    QGroupBox *p_motor;
-#endif
 
     QSpinBox *p_auxDataIntervalBox, *p_backupBox, *p_ftmwShotsBox, *p_ftmwTargetDurationBox;
     QComboBox *p_ftmwTypeBox;

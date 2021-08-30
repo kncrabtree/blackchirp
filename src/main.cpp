@@ -130,10 +130,6 @@ R"000(Next, you can configure the communication settings for the hardware connec
     qRegisterMetaType<LifConfig>("LifConfig");
     qRegisterMetaType<BlackChirp::LifScopeConfig>("BlackChirp::LifScopeConfig");
 #endif
-#ifdef BC_MOTOR
-    qRegisterMetaType<MotorScan::MotorAxis>("MotorScan::MotorAxis");
-    qRegisterMetaType<MotorScan>("MotorScan");
-#endif
 
 #ifndef QT_DEBUG
     gsl_set_error_handler_off();

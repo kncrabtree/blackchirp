@@ -23,10 +23,6 @@
 #include <modules/lif/gui/lifdisplaywidget.h>
 #endif
 
-#ifdef BC_MOTOR
-#include <modules/motor/gui/motordisplaywidget.h>
-#endif
-
 ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *parent) : QWidget(parent), p_ftmw(nullptr), p_lh(nullptr)
 {
     pu_experiment = std::make_unique<Experiment>(num,path);
@@ -70,15 +66,6 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
         QWidget *lif = buildLifWidget();
         if(lif != nullptr)
             p_tabWidget->addTab(lif,QIcon(QString(":/icons/laser.png")),QString("LIF"));
-    }
-#endif
-
-#ifdef BC_MOTOR
-    if(d_experiment.motorScan().isEnabled())
-    {
-        QWidget *motor = buildMotorWidget();
-        if(motor != nullptr)
-            p_tabWidget->addTab(motor,QIcon(QString(":/icons/motorscan.png")),QString("Motor"));
     }
 #endif
 
@@ -207,24 +194,4 @@ QWidget *ExperimentViewWidget::buildLogWidget(QString path)
     return log;
 
 }
-
-#ifdef BC_MOTOR
-QWidget *ExperimentViewWidget::buildMotorWidget()
-{
-    QWidget *out = nullptr;
-    if(d_experiment.motorScan().isEnabled())
-    {
-        out = new QWidget;
-        QVBoxLayout *vbl = new QVBoxLayout;
-        MotorDisplayWidget *motor = new MotorDisplayWidget(out);
-        vbl->addWidget(motor);
-        out->setLayout(vbl);
-
-        motor->prepareForScan(d_experiment.motorScan());
-        motor->newMotorData(d_experiment.motorScan());
-    }
-
-    return out;
-}
-#endif
 

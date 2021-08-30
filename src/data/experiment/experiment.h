@@ -29,10 +29,6 @@
 #include <modules/lif/data/lifconfig.h>
 #endif
 
-#ifdef BC_MOTOR
-#include <modules/motor/data/motorscan.h>
-#endif
-
 namespace BC::Store::Exp {
 static const QString key("Experiment");
 static const QString num("Number");
@@ -116,13 +112,6 @@ public:
     bool addLifWaveform(const LifTrace t);
 #endif
 
-#ifdef BC_MOTOR
-    MotorScan motorScan() const;
-    void setMotorEnabled(bool en = true);
-    void setMotorScan(const MotorScan s);
-    bool addMotorTrace(const QVector<double> d);
-#endif
-
     bool initialize();
     void abort();
     bool canBackup();
@@ -156,10 +145,6 @@ private:
 #ifdef BC_LIF
     LifConfig d_lifCfg;
     bool d_waitForLifSet{false};
-#endif
-
-#ifdef BC_MOTOR
-    MotorScan d_motorScan;
 #endif
 
     // HeaderStorage interface

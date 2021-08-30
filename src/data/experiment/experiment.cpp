@@ -177,11 +177,6 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
                 d_lifCfg.loadLifData(num,exptPath);
 #endif
 
-#ifdef BC_MOTOR
-            if(d_motorScan.isEnabled())
-                d_motorScan.loadMotorData(num,exptPath);
-#endif
-
     //load aux data
     if(!headerOnly)
         pu_auxData = std::make_unique<AuxDataStorage>(csv.get(),num,exptPath);
@@ -198,12 +193,6 @@ Experiment::~Experiment()
 
 bool Experiment::isComplete() const
 {
-#ifdef BC_MOTOR
-    //if motor scan is enabled, then not possible to do LIF or FTMW
-    if(d_motorScan.isEnabled())
-        return d_motorScan.isComplete();
-#endif
-
 #ifdef BC_LIF
     //check each sub expriment!
     return (d_ftmwCfg.isComplete() && d_lifCfg.isComplete());
@@ -340,14 +329,6 @@ bool Experiment::initialize()
 #ifdef BC_LIF
     //do any needed initialization for LIF here... nothing to do for now
 #endif
-
-#ifdef BC_MOTOR
-    if(motorScan().isEnabled())
-    {
-        d_motorScan.initialize();
-    }
-#endif
-
 
     //write config file, header file; chirps file, and clocks file as appropriate
     if(!d_isDummy)
@@ -488,28 +469,6 @@ bool Experiment::validateItem(const QString key, const QVariant val)
     return out;
 }
 
-#ifdef BC_MOTOR
-MotorScan Experiment::motorScan() const
-{
-    return d_motorScan;
-}
-
-void Experiment::setMotorEnabled(bool en)
-{
-    d_motorScan.setEnabled(en);
-}
-
-void Experiment::setMotorScan(const MotorScan s)
-{
-    d_motorScan = s;
-}
-
-bool Experiment::addMotorTrace(const QVector<double> d)
-{
-    return d_motorScan.addTrace(d);
-}
-#endif
-
 void Experiment::finalSave()
 {
     if(d_isDummy)
@@ -526,12 +485,6 @@ void Experiment::finalSave()
             lifConfig().writeLifFile(d_number);
 #endif
 
-#ifdef BC_MOTOR
-    if(motorScan().isEnabled())
-        motorScan().writeMotorFile(d_number);
-#endif
-
-//    saveTimeFile();
 }
 
 bool Experiment::saveObjectives()

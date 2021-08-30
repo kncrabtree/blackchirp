@@ -45,11 +45,6 @@
 #include <modules/lif/gui/lifcontrolwidget.h>
 #endif
 
-#ifdef BC_MOTOR
-#include <modules/motor/gui/motordisplaywidget.h>
-#include <modules/motor/gui/motorstatuswidget.h>
-#endif
-
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
 #include <hardware/optional/flowcontroller/flowcontroller.h>
@@ -319,28 +314,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
 #endif
 
-#ifdef BC_MOTOR
-    p_motorDisplayWidget = new MotorDisplayWidget(this);
-    int mti = ui->mainTabWidget->insertTab(ui->mainTabWidget->indexOf(ui->trackingTab),p_motorDisplayWidget,QIcon(QString(":/icons/motorscan.png")),QString("Motor"));
-    p_motorTab = ui->mainTabWidget->widget(mti);
-
-    p_motorViewAction = new QAction(QIcon(QString(":/icons/motorscan.png")),QString("Motor"),this);
-    ui->menuView->insertAction(ui->actionLog,p_motorViewAction);
-    connect(p_motorViewAction,&QAction::triggered,[=](){ ui->mainTabWidget->setCurrentWidget(p_motorTab);});
-
-    p_motorStatusWidget = new MotorStatusWidget(this);
-    ui->instrumentStatusLayout->addWidget(p_motorStatusWidget);
-
-    connect(p_hwm,&HardwareManager::motorMoveComplete,p_am,&AcquisitionManager::motorMoveComplete);
-    connect(p_hwm,&HardwareManager::motorTraceAcquired,p_am,&AcquisitionManager::motorTraceReceived);
-    connect(p_am,&AcquisitionManager::startMotorMove,p_hwm,&HardwareManager::moveMotorToPosition);
-    connect(p_am,&AcquisitionManager::motorRest,p_hwm,&HardwareManager::motorRest);
-    connect(p_hwm,&HardwareManager::motorPosUpdate,p_motorStatusWidget,&MotorStatusWidget::updatePosition);
-    connect(p_hwm,&HardwareManager::motorLimitStatus,p_motorStatusWidget,&MotorStatusWidget::updateLimit);
-    connect(p_am,&AcquisitionManager::motorProgress,p_motorStatusWidget,&MotorStatusWidget::updateProgress);
-    connect(p_am,&AcquisitionManager::motorDataUpdate,p_motorDisplayWidget,&MotorDisplayWidget::newMotorData);
-#endif
-
     SettingsStorage bc;
     ui->exptSpinBox->setValue(bc.get<int>(BC::Key::exptNum,0));
     configureUi(Idle);
@@ -599,12 +572,6 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
         p_lifProgressBar->setRange(0,1);
         p_lifProgressBar->setValue(1);
     }
-#endif
-
-#ifdef BC_MOTOR
-    p_motorStatusWidget->prepareForExperiment(exp);
-    p_motorDisplayWidget->prepareForScan(exp.motorScan());
-    p_motorTab->setEnabled(exp.motorScan().isEnabled());
 #endif
 
     if(!exp->isDummy())

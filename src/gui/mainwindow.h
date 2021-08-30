@@ -27,11 +27,6 @@ class LifControlWidget;
 class LifDisplayWidget;
 #endif
 
-#ifdef BC_MOTOR
-class MotorDisplayWidget;
-class MotorStatusWidget;
-#endif
-
 class QuickExptDialog;
 
 namespace Ui {
@@ -109,13 +104,6 @@ private:
     QProgressBar *p_lifProgressBar;
     QAction *p_lifAction;
     LifDisplayWidget *p_lifDisplayWidget;
-#endif
-
-#ifdef BC_MOTOR
-    QAction *p_motorViewAction;
-    QWidget *p_motorTab;
-    MotorDisplayWidget *p_motorDisplayWidget;
-    MotorStatusWidget *p_motorStatusWidget;
 #endif
 
 protected:

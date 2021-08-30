@@ -10,10 +10,6 @@
 #include <data/loghandler.h>
 #include <data/experiment/experiment.h>
 
-#ifdef BC_MOTOR
-#include <modules/motor/data/motorscan.h>
-#endif
-
 class AcquisitionManager : public QObject
 {
     Q_OBJECT
@@ -50,12 +46,6 @@ signals:
     void lifShotAcquired(int);
 #endif
 
-#ifdef BC_MOTOR
-    void startMotorMove(double x, double y, double z);
-    void motorProgress(int);
-    void motorDataUpdate(const MotorScan s);
-#endif
-
 public slots:
     void beginExperiment(std::shared_ptr<Experiment> exp);
     void processFtmwScopeShot(const QByteArray b);
@@ -71,11 +61,6 @@ public slots:
     void lifHardwareReady(bool success);
 #endif
 
-#ifdef BC_MOTOR
-    void motorMoveComplete(bool success);
-    void motorTraceReceived(const QVector<double> dat);
-#endif
-
 private:
     std::shared_ptr<Experiment> ps_currentExperiment;
     AcquisitionState d_state;
@@ -84,13 +69,6 @@ private:
     void auxDataTick();
     void checkComplete();
     void finishAcquisition();
-
-
-
-
-#ifdef BC_MOTOR
-    bool d_waitingForMotor;
-#endif
 
 
 

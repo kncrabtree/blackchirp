@@ -18,11 +18,6 @@
 #include <modules/lif/hardware/liflaser/liflaser.h>
 #endif
 
-#ifdef BC_MOTOR
-#include <modules/motor/hardware/motorcontroller/motorcontroller.h>
-#include <modules/motor/hardware/motordigitizer/motoroscilloscope.h>
-#endif
-
 HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsStorage(BC::Key::hw)
 {
     //Required hardware: FtmwScope and Clocks
@@ -100,20 +95,6 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     p_lifLaser = new LifLaserHardware();
     connect(p_lifLaser,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserPosUpdate);
     d_hardwareList.append(p_lifLaser);
-#endif
-
-#ifdef BC_MOTOR
-    p_mc = new MotorControllerHardware();
-    connect(p_mc,&MotorController::motionComplete,this,&HardwareManager::motorMoveComplete);
-    connect(this,&HardwareManager::moveMotorToPosition,p_mc,&MotorController::moveToPosition);
-    connect(this,&HardwareManager::motorRest,p_mc,&MotorController::moveToRestingPos);
-    connect(p_mc,&MotorController::posUpdate,this,&HardwareManager::motorPosUpdate);
-    connect(p_mc,&MotorController::limitStatus,this,&HardwareManager::motorLimitStatus);
-    d_hardwareList.append(p_mc);
-
-    p_motorScope = new MotorScopeHardware();
-    connect(p_motorScope,&MotorOscilloscope::traceAcquired,this,&HardwareManager::motorTraceAcquired);
-    d_hardwareList.append(p_motorScope);
 #endif
 
     //write arrays of the connected devices for use in the Hardware Settings menu

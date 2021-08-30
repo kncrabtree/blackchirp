@@ -3,7 +3,6 @@
 
 #include <QObject>
 
-#include <data/datastructs.h>
 #include <data/experiment/experiment.h>
 
 class BatchManager : public QObject

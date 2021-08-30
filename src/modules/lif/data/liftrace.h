@@ -9,8 +9,6 @@
 #include <QByteArray>
 #include <QDataStream>
 
-#include <data/datastructs.h>
-
 class LifTraceData;
 
 class LifTrace
