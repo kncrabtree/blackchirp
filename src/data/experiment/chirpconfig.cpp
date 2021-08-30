@@ -125,12 +125,12 @@ double ChirpConfig::postChirpProtectionDelay() const
 
 double ChirpConfig::totalProtectionWidth() const
 {
-    return d_markers.preProt + d_markers.preGate + chirpDuration(0) + d_markers.postProt;
+    return d_markers.preProt + d_markers.preGate + chirpDurationUs(0) + d_markers.postProt;
 }
 
 double ChirpConfig::totalGateWidth() const
 {
-    return d_markers.preGate + chirpDuration(0) + d_markers.postGate;
+    return d_markers.preGate + chirpDurationUs(0) + d_markers.postGate;
 }
 
 int ChirpConfig::numChirps() const
@@ -179,9 +179,11 @@ bool ChirpConfig::allChirpsIdentical() const
     return true;
 }
 
-double ChirpConfig::chirpDuration(int chirpNum) const
+double ChirpConfig::chirpDurationUs(int chirpNum) const
 {
     double out = 0.0;
+    if(chirpNum >= d_chirpList.size())
+        return out;
     auto segments = d_chirpList.at(chirpNum);
     for(int i=0; i<segments.size(); i++)
         out += segments.at(i).durationUs;
@@ -193,7 +195,7 @@ double ChirpConfig::totalDuration() const
     ///TODO: This should be an implementation detail of the AWG, not part of the chirpConfig
     double baseLength = 10.0;
     double length = preChirpProtectionDelay() + preChirpGateDelay() + postChirpProtectionDelay();
-    length += (static_cast<double>(numChirps())-1.0)*d_chirpInterval + chirpDuration(numChirps()-1);
+    length += (static_cast<double>(numChirps())-1.0)*d_chirpInterval + chirpDurationUs(numChirps()-1);
 
     return floor(length/baseLength + 1.0)*baseLength;
 }
@@ -315,7 +317,7 @@ QVector<QPointF> ChirpConfig::getChirpSegmentMicroSeconds(double t1, double t2) 
             done = true;
         }
         int currentIntervalChirpStart = getFirstSample(getSampleTime(currentIntervalStartSample) + preChirpProtectionDelay() + preChirpGateDelay());
-        int currentIntervalChirpEnd = getLastSample(getSampleTime(currentIntervalChirpStart) + chirpDuration(currentInterval));
+        int currentIntervalChirpEnd = getLastSample(getSampleTime(currentIntervalChirpStart) + chirpDurationUs(currentInterval));
 
         //start times for each segment
         QList<int> segmentStarts;
@@ -432,7 +434,7 @@ QVector<QPair<bool, bool> > ChirpConfig::getMarkerData() const
         }
         int currentIntervalChirpStart = getFirstSample(getSampleTime(currentIntervalStartSample) + preChirpProtectionDelay() + preChirpGateDelay());
         int currentIntervalGateStart = getFirstSample(getSampleTime(currentIntervalStartSample) + preChirpProtectionDelay());
-        int currentIntervalChirpEnd = getLastSample(getSampleTime(currentIntervalChirpStart) + chirpDuration(currentInterval));
+        int currentIntervalChirpEnd = getLastSample(getSampleTime(currentIntervalChirpStart) + chirpDurationUs(currentInterval));
         int currentIntervalGateEnd = getLastSample(getSampleTime(currentIntervalChirpEnd) + postChirpGateDelay())-1;
         int currentIntervalProtEnd = getLastSample(getSampleTime(currentIntervalChirpEnd) + postChirpProtectionDelay())-1;
 

@@ -76,17 +76,29 @@ public:
     bool processingPaused() const;
     quint64 shotIncrement() const;
     FidList parseWaveform(const QByteArray b) const;
-    QVector<qint64> extractChirp() const;
-    QVector<qint64> extractChirp(const QByteArray b) const;
     double ftMinMHz() const;
     double ftMaxMHz() const;
     double ftNyquistMHz() const;
     double fidDurationUs() const;
+    double chirpFOM() const { return d_lastFom; };
+    double chirpShift() const { return d_currentShift; }
+
+    /*!
+     * \brief Calculate first sample and num samples of chirp in FID record
+     *
+     * This function uses the duration of the first chirp and the scope sample
+     * rate to compute the number of samples in the chirp. The start of the chirp
+     * is either specified manually (d_chirpOffsetUs) or adding up the pre-chirp
+     * protection and gate delays and subtracting the scope trigger offset.
+     *
+     * \return QPair<int,int> : The first integer is the index of the chirp start,
+     * and the second is the number of samples
+     */
     QPair<int,int> chirpRange() const;
 
 
     bool setFidsData(const QVector<QVector<qint64> > newList);
-    bool addFids(const QByteArray rawData, int shift = 0);
+    bool addFids(const QByteArray rawData);
     void setScopeConfig(const FtmwDigitizerConfig &other);
     std::shared_ptr<FidStorageBase> storage() const;
 
@@ -97,6 +109,12 @@ private:
     Fid d_fidTemplate;
     bool d_processingPaused{false};
     QDateTime d_lastAutosaveTime;
+    int d_currentShift{0};
+    float d_lastFom{0.0};
+
+    bool preprocessChirp(const FidList l);
+    float calculateFom(const QVector<qint64> vec, const Fid fid, QPair<int,int> range, int trialShift);
+    double calculateChirpRMS(const QVector<qint64> chirp, quint64 shots = 1);
 
 #ifdef BC_CUDA
     std::shared_ptr<GpuAverager> ps_gpu;

@@ -79,17 +79,12 @@ public slots:
 private:
     std::shared_ptr<Experiment> ps_currentExperiment;
     AcquisitionState d_state;
-    int d_currentShift;
-    float d_lastFom;
     int d_auxTimerId;
 
     void auxDataTick();
     void checkComplete();
     void finishAcquisition();
-    bool calculateShift(const QByteArray b);
-    bool scoreChirp(const QByteArray b);
-    float calculateFom(const QVector<qint64> vec, const Fid fid, QPair<int,int> range, int trialShift);
-    double calculateChirpRMS(const QVector<qint64> chirp, double sf, qint64 shots = 1);
+
 
 
 

@@ -121,34 +121,6 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
     return out;
 }
 
-QVector<qint64> FtmwConfig::extractChirp() const
-{
-    QVector<qint64> out;
-//    FidList dat = fidList();
-//    if(!dat.isEmpty())
-//    {
-//        auto r = chirpRange();
-//        if(r.first >= 0 && r.second >= 0)
-//            out = dat.constFirst().rawData().mid(r.first, r.second - r.first);
-//    }
-
-    return out;
-}
-
-QVector<qint64> FtmwConfig::extractChirp(const QByteArray b) const
-{
-    QVector<qint64> out;
-    auto r = chirpRange();
-    if(r.first >= 0 && r.second >= 0)
-    {
-        FidList l = parseWaveform(b);
-        if(!l.isEmpty())
-            out = l.constFirst().rawData().mid(r.first, r.second - r.first);
-    }
-
-    return out;
-}
-
 double FtmwConfig::ftMinMHz() const
 {
     double sign = 1.0;
@@ -184,32 +156,35 @@ double FtmwConfig::fidDurationUs() const
 
 QPair<int, int> FtmwConfig::chirpRange() const
 {
-//    //want to return [first,last) samples for chirp.
-//    //TODO: handle multiple chirps
-//    auto cc = d_rfConfig.d_chirpConfig;
-//    if(cc.chirpList().isEmpty())
-//        return qMakePair(-1,-1);
+    //compute chirp duration in samples (only use first chirp if there are multiple)
+    auto dur = d_rfConfig.d_chirpConfig.chirpDurationUs(0);
+    if(d_scopeConfig.d_sampleRate <= 0.0)
+        return {0,0};
 
-//    if(d_fidList.isEmpty())
-//        return qMakePair(-1,-1);
+    int samples = dur*1e-6/d_scopeConfig.d_sampleRate;
 
-//    //we assume that the scope is triggered at the beginning of the protection pulse
+    //we assume that the scope is triggered at the beginning of the protection pulse
+    //unless the user has specified a custom start time
+    double startUs = 0.0;
+    if(d_chirpOffsetUs < 0.0)
+    {
+        auto cc = d_rfConfig.d_chirpConfig;
+        startUs = cc.preChirpGateDelay() + cc.preChirpProtectionDelay() - d_scopeConfig.d_triggerDelayUSec;
+    }
+    else
+        startUs = d_chirpOffsetUs;
 
-//    double chirpStart = (cc.preChirpGateDelay() + cc.preChirpProtectionDelay() - d_scopeConfig.d_triggerDelayUSec)*1e-6;
-//    int startSample = qBound(BC_FTMW_MAXSHIFT,qRound(chirpStart*d_scopeConfig.d_sampleRate) + BC_FTMW_MAXSHIFT,d_fidList.constFirst().size() - BC_FTMW_MAXSHIFT);
-//    double chirpEnd = chirpStart + cc.chirpDuration(0)*1e-6;
-//    int endSample = qBound(BC_FTMW_MAXSHIFT,qRound(chirpEnd*d_scopeConfig.d_sampleRate) - BC_FTMW_MAXSHIFT,d_fidList.constFirst().size() - BC_FTMW_MAXSHIFT);
-
-//    if(startSample > endSample)
-//        qSwap(startSample,endSample);
-
-//    return qMakePair(startSample,endSample);
-#pragma message("Implement chirpRange")
-    return {0,0};
+    int startSample = startUs*1e-6/d_scopeConfig.d_sampleRate;
+    if(startSample >=0 && startSample < d_scopeConfig.d_recordLength)
+        return {startSample,samples};
+    else
+        return {0,0};
 }
 
 bool FtmwConfig::initialize()
 {
+    d_currentShift = 0;
+    d_lastFom = 0.0;
     double df = d_rfConfig.clockFrequency(RfConfig::DownLO);
     auto sb = d_rfConfig.d_downMixSideband;
 
@@ -294,8 +269,16 @@ bool FtmwConfig::setFidsData(const QVector<QVector<qint64> > newList)
     return p_fidStorage->setFidsData(l);
 }
 
-bool FtmwConfig::addFids(const QByteArray rawData, int shift)
+bool FtmwConfig::addFids(const QByteArray rawData)
 {
+    d_errorString.clear();
+    FidList newList;
+    if(d_chirpScoringEnabled || d_phaseCorrectionEnabled)
+    {
+        newList = parseWaveform(rawData);
+        if(!preprocessChirp(newList))
+            return true;
+    }
 #ifdef BC_CUDA
     if(!ps_gpu)
         return false;
@@ -308,14 +291,14 @@ bool FtmwConfig::addFids(const QByteArray rawData, int shift)
         quint64 ts = 0;
         if(p)
             ts = p->targetShots();
-        return setFidsData(ps_gpu->parseAndRollAvg(rawData.constData(),completedShots()+shotIncrement(),ts,shift));
+        return setFidsData(ps_gpu->parseAndRollAvg(rawData.constData(),completedShots()+shotIncrement(),ts,d_currentShift));
     }
     else
-        return setFidsData(ps_gpu->parseAndAdd(rawData.constData(),shift));
+        return setFidsData(ps_gpu->parseAndAdd(rawData.constData(),d_currentShift));
 #else
-
-    FidList newList = parseWaveform(rawData);
-    return p_fidStorage.get()->addFids(newList,shift);
+    if(newList.isEmpty())
+        newList = parseWaveform(rawData);
+    return p_fidStorage->addFids(newList,d_currentShift);
 #endif
 }
 
@@ -352,6 +335,154 @@ void FtmwConfig::cleanup()
 void FtmwConfig::loadFids(int num, QString path)
 {
     p_fidStorage = createStorage(num,path);
+}
+
+bool FtmwConfig::preprocessChirp(const FidList l)
+{
+    if(l.isEmpty())
+    {
+        d_errorString = "Could not parse scope response for preprocessing chirp.";
+        return false;
+    }
+
+    auto fl = p_fidStorage->getCurrentFidList();
+    if(fl.isEmpty())
+        return true;
+
+    auto shots = fl.constFirst().shots();
+    if(shots < 20ul)
+        return true;
+
+    auto r = chirpRange();
+    if(r.first < 0 || r.second <= 0)
+        return true;
+
+    auto newChirp = l.constFirst().rawData().mid(r.first,r.second);
+    auto avgChirp = fl.constFirst().rawData().mid(r.first,r.second);
+
+    if(newChirp.isEmpty() || avgChirp.isEmpty())
+        return true;
+
+    bool success = true;
+    if(d_chirpScoringEnabled)
+    {
+        //Calculate chirp RMS
+        double newChirpRMS = calculateChirpRMS(newChirp,1ul);
+
+        //Get current RMS
+        double currentRMS = calculateChirpRMS(avgChirp,shots);
+
+        //The chirp is good if its RMS is greater than threshold*currentRMS.
+        success = newChirpRMS > currentRMS*d_chirpRMSThreshold;
+    }
+
+    if(d_phaseCorrectionEnabled)
+    {
+        int max = 5;
+        float thresh = 1.15; // fractional improvement needed to adjust shift
+        int shift = d_currentShift;
+        auto avgFid = fl.constFirst();
+        float fomCenter = calculateFom(newChirp,avgFid,r,shift);
+        float fomDown = calculateFom(newChirp,avgFid,r,shift-1);
+        float fomUp = calculateFom(newChirp,avgFid,r,shift+1);
+        bool done = false;
+        while(!done && qAbs(shift-d_currentShift) < max)
+        {
+            if(fomCenter > fomDown && fomCenter > fomUp)
+                done = true;
+            else if((fomDown-fomCenter) > (fomUp-fomCenter))
+            {
+                if(fomDown > thresh*fomCenter)
+                {
+                    shift--;
+                    fomUp = fomCenter;
+                    fomCenter = fomDown;
+                    fomDown = calculateFom(newChirp,avgFid,r,shift-1);
+                }
+                else
+                    done = true;
+            }
+            else
+            {
+                if(fomUp > thresh*fomCenter)
+                {
+                    shift++;
+                    fomDown = fomCenter;
+                    fomCenter = fomUp;
+                    fomUp = calculateFom(newChirp,avgFid,r,shift+1);
+                }
+                else
+                    done = true;
+            }
+        }
+
+        if(!done)
+        {
+            d_errorString = QString("Calculated shift for this FID exceeded maximum permissible shift of %1 points. Fid rejected.").arg(max);
+            return false;
+        }
+
+        if(qAbs(d_currentShift - shift) > 0)
+        {
+            if(fomCenter < 0.9*d_lastFom)
+            {
+                d_errorString = QString("Shot rejected. FOM (%1) is less than 90% of last FOM (%2)").arg(fomCenter,0,'e',2).arg(d_lastFom,0,'e',2);
+                return false;
+            }
+
+//            d_errorString = QString("Shift changed from %1 to %2. FOMs: (%3, %4, %5)").arg(d_currentShift).arg(shift)
+//                            .arg(fomDown,0,'e',2).arg(fomCenter,0,'e',2).arg(fomUp,0,'e',2);
+            d_currentShift = shift;
+            //        return false;
+        }
+        if(qAbs(shift) > 50)
+        {
+            d_errorString = QString("Total shift exceeds maximum range (%1).").arg(50);
+            return false;
+        }
+
+        d_lastFom = fomCenter;
+    }
+
+    return success;
+
+}
+
+float FtmwConfig::calculateFom(const QVector<qint64> vec, const Fid fid, QPair<int, int> range, int trialShift)
+{
+    //Kahan summation (32 bit precision is sufficient)
+    float sum = 0.0;
+    float c = 0.0;
+    for(int i=0; i<vec.size(); i++)
+    {
+        if(i+range.first+trialShift >= 0 && i+range.first+trialShift < fid.size())
+        {
+            float dat = static_cast<float>(fid.atRaw(i+range.first+trialShift))*(static_cast<float>(vec.at(i)));
+            float y = dat - c;
+            float t = sum + y;
+            c = (t-sum) - y;
+            sum = t;
+        }
+    }
+
+    return sum/static_cast<float>(fid.shots());
+}
+
+double FtmwConfig::calculateChirpRMS(const QVector<qint64> chirp, quint64 shots)
+{
+    //Kahan summation
+    double sum = 0.0;
+    double c = 0.0;
+    for(int i=0; i<chirp.size(); i++)
+    {
+        double dat = static_cast<double>(chirp.at(i)*chirp.at(i))/static_cast<double>(shots*shots);
+        double y = dat - c;
+        double t = sum + y;
+        c = (t-sum) - y;
+        sum = t;
+    }
+
+    return sqrt(sum);
 }
 
 void FtmwConfig::storeValues()

@@ -58,7 +58,7 @@ public:
     bool segmentEmpty(int chirp, int segment) const;
     QByteArray waveformHash() const;
 
-    double chirpDuration(int chirpNum) const;
+    double chirpDurationUs(int chirpNum) const;
     double totalDuration() const;
     QVector<QPointF> getChirpMicroseconds() const;
     QVector<QPointF> getChirpSegmentMicroSeconds(double t1, double t2) const;

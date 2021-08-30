@@ -133,7 +133,7 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
                 pu_ftmwConfig->d_number = num;
             }
 
-#pragma message("Handle LIF")
+//#pragma message("Handle LIF")
         }
     }
 
