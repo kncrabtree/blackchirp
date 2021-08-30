@@ -161,7 +161,7 @@ QPair<int, int> FtmwConfig::chirpRange() const
     if(d_scopeConfig.d_sampleRate <= 0.0)
         return {0,0};
 
-    int samples = dur*1e-6/d_scopeConfig.d_sampleRate;
+    int samples = dur*1e-6*d_scopeConfig.d_sampleRate;
 
     //we assume that the scope is triggered at the beginning of the protection pulse
     //unless the user has specified a custom start time
@@ -174,7 +174,7 @@ QPair<int, int> FtmwConfig::chirpRange() const
     else
         startUs = d_chirpOffsetUs;
 
-    int startSample = startUs*1e-6/d_scopeConfig.d_sampleRate;
+    int startSample = startUs*1e-6*d_scopeConfig.d_sampleRate;
     if(startSample >=0 && startSample < d_scopeConfig.d_recordLength)
         return {startSample,samples};
     else
@@ -185,6 +185,7 @@ bool FtmwConfig::initialize()
 {
     d_currentShift = 0;
     d_lastFom = 0.0;
+    d_lastRMS = 0.0;
     double df = d_rfConfig.clockFrequency(RfConfig::DownLO);
     auto sb = d_rfConfig.d_downMixSideband;
 
@@ -370,10 +371,10 @@ bool FtmwConfig::preprocessChirp(const FidList l)
         double newChirpRMS = calculateChirpRMS(newChirp,1ul);
 
         //Get current RMS
-        double currentRMS = calculateChirpRMS(avgChirp,shots);
+        d_lastRMS = calculateChirpRMS(avgChirp,shots);
 
         //The chirp is good if its RMS is greater than threshold*currentRMS.
-        success = newChirpRMS > currentRMS*d_chirpRMSThreshold;
+        success = newChirpRMS > d_lastRMS*d_chirpRMSThreshold;
     }
 
     if(d_phaseCorrectionEnabled)

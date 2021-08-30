@@ -82,6 +82,7 @@ public:
     double fidDurationUs() const;
     double chirpFOM() const { return d_lastFom; };
     double chirpShift() const { return d_currentShift; }
+    double chirpRMS() const { return d_lastRMS; }
 
     /*!
      * \brief Calculate first sample and num samples of chirp in FID record
@@ -111,6 +112,7 @@ private:
     QDateTime d_lastAutosaveTime;
     int d_currentShift{0};
     float d_lastFom{0.0};
+    double d_lastRMS{0.0};
 
     bool preprocessChirp(const FidList l);
     float calculateFom(const QVector<qint64> vec, const Fid fid, QPair<int,int> range, int trialShift);

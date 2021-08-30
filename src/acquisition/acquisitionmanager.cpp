@@ -25,7 +25,16 @@ void AcquisitionManager::beginExperiment(std::shared_ptr<Experiment> exp)
     if(ps_currentExperiment->d_timeDataInterval > 0)
     {
         if(ps_currentExperiment->ftmwEnabled())
+        {
             ps_currentExperiment->auxData()->registerKey(QString("Ftmw"),QString("Shots"));
+            if(ps_currentExperiment->ftmwConfig()->d_phaseCorrectionEnabled)
+            {
+                ps_currentExperiment->auxData()->registerKey(QString("Ftmw"),QString("ChirpPhaseScore"));
+                ps_currentExperiment->auxData()->registerKey(QString("Ftmw"),QString("ChirpShift"));
+            }
+            if(ps_currentExperiment->ftmwConfig()->d_chirpScoringEnabled)
+                ps_currentExperiment->auxData()->registerKey(QString("Ftmw"),QString("ChirpRMS"));
+        }
 
         auxDataTick();
         d_auxTimerId = startTimer(ps_currentExperiment->d_timeDataInterval*1000);
@@ -68,13 +77,7 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
         bool advanceSegment = ps_currentExperiment->ftmwConfig()->advance();
 
         if(advanceSegment)
-        {
-#ifdef BC_CUDA
-#pragma message("Move to FTMWconfig")
-//            gpuAvg.setCurrentData(d_currentExperiment.ftmwConfig()->rawFidList());
-#endif
             emit newClockSettings(ps_currentExperiment->ftmwConfig()->d_rfConfig.getClocks());
-        }
 
         emit ftmwUpdateProgress(ps_currentExperiment->ftmwConfig()->perMilComplete());
     }
@@ -202,6 +205,9 @@ void AcquisitionManager::auxDataTick()
         AuxDataStorage::AuxDataMap m;
         m.emplace(AuxDataStorage::makeKey("Ftmw","Shots"),
                   ps_currentExperiment->ftmwConfig()->completedShots());
+        if(ps_currentExperiment->ftmwConfig()->d_chirpScoringEnabled)
+            m.emplace(AuxDataStorage::makeKey("Ftmw","ChirpRMS"),
+                      ps_currentExperiment->ftmwConfig()->chirpRMS());
         if(ps_currentExperiment->ftmwConfig()->d_phaseCorrectionEnabled)
         {
             m.emplace(AuxDataStorage::makeKey("Ftmw","ChirpPhaseScore"),
@@ -210,7 +216,7 @@ void AcquisitionManager::auxDataTick()
                       ps_currentExperiment->ftmwConfig()->chirpShift());
         }
 
-        ps_currentExperiment->addAuxData(m);
+        processAuxData(m);
 
     }
     emit auxDataSignal();

@@ -140,11 +140,9 @@ void FidPlot::prepareForExperiment(const Experiment &e)
     bool displayMarkers = c->d_phaseCorrectionEnabled || c->d_chirpScoringEnabled;
     if(displayMarkers)
     {
-        ///TODO: Update this calculation!
-        double chirpStart = c->d_rfConfig.d_chirpConfig.preChirpGateDelay() +
-                c->d_rfConfig.d_chirpConfig.preChirpProtectionDelay() -
-                c->d_scopeConfig.d_triggerDelayUSec;
-        double chirpEnd = chirpStart + c->d_rfConfig.d_chirpConfig.chirpDurationUs(0);
+        auto r = c->chirpRange();
+        double chirpStart = (double)r.first*1e6/c->d_scopeConfig.d_sampleRate;
+        double chirpEnd = chirpStart + (double)r.second*1e6/c->d_scopeConfig.d_sampleRate;
 
         d_chirpMarkers.first->setValue(chirpStart,0.0);
         d_chirpMarkers.second->setValue(chirpEnd,0.0);

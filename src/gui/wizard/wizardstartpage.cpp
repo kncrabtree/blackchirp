@@ -328,7 +328,8 @@ bool WizardStartPage::validatePage()
              ftmw->d_rfConfig = cfg;
              ftmw->d_scopeConfig = ftc;
          }
-         ///TODO: use offset info!
+         if(p_chirpOffsetBox->value() >= 0.0)
+             ftmw->d_chirpOffsetUs = p_chirpOffsetBox->value();
      }
 
 
