@@ -64,7 +64,7 @@ void IOBoardConfig::retrieveValues()
 
     for(auto it = d_digitalChannels.cbegin(); it != d_digitalChannels.cend(); ++it)
     {
-        auto s = retrieveArrayValue(dig,it->first,name,QString(""));
+        auto s = retrieveArrayValue(dig,it->first-1,name,QString(""));
         if(!s.isEmpty())
             d_digitalNames.insert_or_assign(it->first,s);
     }
