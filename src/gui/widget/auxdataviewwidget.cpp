@@ -306,6 +306,9 @@ void AuxDataViewWidget::configureGrid()
         break;
     }
 
+    for(auto p : d_allPlots)
+        p->setMaxIndex(d_allPlots.size()-1);
+
 }
 
 RollingDataWidget::RollingDataWidget(const QString name, QWidget *parent) : AuxDataViewWidget(name,parent,false)

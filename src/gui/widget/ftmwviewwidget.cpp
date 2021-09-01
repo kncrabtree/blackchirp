@@ -310,7 +310,8 @@ void FtmwViewWidget::ftProcessingComplete(int id)
                     updateMainPlot();
                 else
                 {
-                    processNextSidebandFid();
+                    if(!d_sbStatus.nextFid.isEmpty())
+                        processNextSidebandFid();
                     if(!d_sbStatus.sbLoadWatcher->isRunning())
                         loadNextSidebandFid();
                 }

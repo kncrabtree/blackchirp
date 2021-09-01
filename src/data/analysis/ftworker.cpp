@@ -219,7 +219,7 @@ void FtWorker::processSideband(const FtWorker::SidebandProcessingData &d, const 
     if(!fid.isEmpty())
     {
         auto ft = doFT(fid,settings,-1,d.doubleSideband);
-        if(d.minOffset > 0.0 || d.maxOffset + ft.loFreqMHz() < (ft.maxFreqMHz()-ft.minFreqMHz()))
+        if(d.minOffset > 0.0 || d.maxOffset < (ft.maxFreqMHz()-ft.minFreqMHz()))
             ft.trim(d.minOffset,d.maxOffset);
 
         if(d.currentIndex == 0)

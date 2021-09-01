@@ -79,7 +79,7 @@ protected:
 
 
 public slots:
-    void setValue(double v) { d_value = v; emit valueChanged(d_value); }
+    void setValue(double v);
 
 signals:
     void valueChanged(double);

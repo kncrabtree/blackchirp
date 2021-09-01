@@ -5,7 +5,8 @@
 #include <QLabel>
 #include <QSpinBox>
 #include <QCheckBox>
-
+#include <QDoubleSpinBox>
+#include <QSignalBlocker>
 
 QWidget *ToolBarWidgetAction::createWidget(QWidget *parent)
 {
@@ -260,6 +261,20 @@ QWidget *DoubleSpinBoxWidgetAction::_createWidget(QWidget *parent)
     connect(out,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&DoubleSpinBoxWidgetAction::setValue);
 
     return out;
+}
+
+void DoubleSpinBoxWidgetAction::setValue(double v) {
+    for(auto w : createdWidgets())
+    {
+        auto box = w->findChild<QDoubleSpinBox*>("ActionWidget");
+        if(box)
+        {
+            QSignalBlocker b(box);
+            box->setValue(v);
+        }
+    }
+    d_value = v;
+    emit valueChanged(v);
 }
 
 QWidget *CheckWidgetAction::_createWidget(QWidget *parent)
