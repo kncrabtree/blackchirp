@@ -2,8 +2,11 @@
    :hidden:
 
 
-Installation Requirements
-=========================
+Installation
+============
+
+Requirements
+............
 
 Blackchirp is a cross-platform program, though at present it has only been tested on the Linux distribution openSUSE 15.2+.
 If the program does not behave as expected on other platforms, please `raise an issue`_.
@@ -23,21 +26,21 @@ The prerequisites for compiling Blackchirp are:
 .. _GNU Scientific Library: https://www.gnu.org/software/gsl/
 .. _CUDA: https://developer.nvidia.com/cuda-downloads
 
-The easist way to build Blackchirp is to open the `blackchirp.pro` file in the `Qt Creator`_ IDE, which allows you to easily configure a qmake/C++ kit and control whether the build includes debugging symbols.
+The easist way to build Blackchirp is to open the ``blackchirp.pro`` file in the `Qt Creator`_ IDE, which allows you to easily configure a qmake/C++ kit and control whether the build includes debugging symbols.
 It is recommended to build Blackchirp in the release configuration for best performance.
 
 .. _Qt Creator: https://www.qt.io/product/development-tools
 
-Program/Build Configuration
-===========================
+Configuration
+.............
 
 The user-controllable build parameters are specified in ``src/config/config.pri``.
 This file does not exist in the repository, as the contents will be different for every user, so a template file is provided as ``src/config/config.pri.template``.
 Simply copy that template to ``src/config/config.pri`` and it can then be edited and used to build the program.
 By editing this file, there are three main aspects of the program you can control: optional modules, hardware implementations, and custom library/include paths.
 
-Blackchirp Optional Modules
----------------------------
+Optional Modules
+----------------
 
 As of Blackchirp v1.0, there are two optional modules that may be enabled by adding the following lines to ``config.pri``:
 

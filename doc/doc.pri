@@ -7,6 +7,7 @@ DISTFILES += \
    $$PWD/source/classes/settingsstorage.rst \
    $$PWD/source/conf.py \
    $$PWD/source/index.rst \
+   $$PWD/source/user_guide/first_run.rst \
    $$PWD/source/user_guide/installation.rst \
    $$PWD/source/user_guide.rst \
    $$PWD/source/classes.rst \
