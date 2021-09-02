@@ -9,13 +9,13 @@
 
 
 namespace BC::Store::FlowConfig {
-static const QString key("FlowController");
-static const QString channel("Channel");
-static const QString name("Name");
-static const QString enabled("Enabled");
-static const QString setPoint("FlowSetPoint");
-static const QString pSetPoint("PressureSetPoint");
-static const QString pcEnabled("PressureControlEnabled");
+static const QString key{"FlowController"};
+static const QString channel{"Channel"};
+static const QString name{"Name"};
+static const QString enabled{"Enabled"};
+static const QString setPoint{"FlowSetPoint"};
+static const QString pSetPoint{"PressureSetPoint"};
+static const QString pcEnabled{"PressureControlEnabled"};
 }
 
 class FlowConfig : public HeaderStorage

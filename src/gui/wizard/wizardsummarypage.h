@@ -7,7 +7,7 @@ class QTreeView;
 class ExperimentSummaryWidget;
 
 namespace BC::Key::WizSummary {
-static const QString key("WizardSummaryPage");
+static const QString key{"WizardSummaryPage"};
 }
 
 class WizardSummaryPage : public ExperimentWizardPage

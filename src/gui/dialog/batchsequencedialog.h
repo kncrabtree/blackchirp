@@ -9,9 +9,9 @@ class BatchSequenceDialog;
 }
 
 namespace BC::Key::SeqDialog {
-static const QString key("BatchSequenceDialog");
-static const QString batchExperiments("numExpts");
-static const QString batchInterval("interval");
+static const QString key{"BatchSequenceDialog"};
+static const QString batchExperiments{"numExpts"};
+static const QString batchInterval{"interval"};
 }
 
 class BatchSequenceDialog : public QDialog, public SettingsStorage

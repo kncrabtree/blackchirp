@@ -18,14 +18,14 @@ template<typename T>
 class EnumComboBoxWidgetAction;
 
 namespace BC::Key {
-static const QString ftmwProcWidget("ftmwProcessingWidget");
-static const QString fidStart("startUs");
-static const QString fidEnd("endUs");
-static const QString zeroPad("zeroPad");
-static const QString removeDC("removeDC");
-static const QString ftUnits("ftUnits");
-static const QString autoscaleIgnore("autoscaleIgnoreMHz");
-static const QString ftWinf("windowFunction");
+static const QString ftmwProcWidget{"ftmwProcessingWidget"};
+static const QString fidStart{"startUs"};
+static const QString fidEnd{"endUs"};
+static const QString zeroPad{"zeroPad"};
+static const QString removeDC{"removeDC"};
+static const QString ftUnits{"ftUnits"};
+static const QString autoscaleIgnore{"autoscaleIgnoreMHz"};
+static const QString ftWinf{"windowFunction"};
 }
 
 class FtmwProcessingToolBar : public QToolBar, public SettingsStorage

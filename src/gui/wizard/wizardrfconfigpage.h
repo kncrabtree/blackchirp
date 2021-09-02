@@ -6,7 +6,7 @@
 #include <gui/widget/rfconfigwidget.h>
 
 namespace BC::Key::WizRf {
-static const QString key("WizardRfConfigPage");
+static const QString key{"WizardRfConfigPage"};
 }
 
 class WizardRfConfigPage : public ExperimentWizardPage

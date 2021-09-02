@@ -5,14 +5,14 @@
 #include <hardware/optional/pressurecontroller/pressurecontrollerconfig.h>
 
 namespace BC::Key::PController {
-static const QString key("PressureController");
-static const QString min("min");
-static const QString max("max");
-static const QString decimals("decimal");
-static const QString units("units");
-static const QString readOnly("readOnly");
-static const QString readInterval("intervalMs");
-static const QString hasValve("hasValve");
+static const QString key{"PressureController"};
+static const QString min{"min"};
+static const QString max{"max"};
+static const QString decimals{"decimal"};
+static const QString units{"units"};
+static const QString readOnly{"readOnly"};
+static const QString readInterval{"intervalMs"};
+static const QString hasValve{"hasValve"};
 }
 
 namespace BC::Aux::PController {

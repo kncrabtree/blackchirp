@@ -13,8 +13,8 @@ class LifTracePlot;
 class LifSpectrogramPlot;
 
 namespace BC::Key {
-static const QString lifSpectrumPlot("lifSpectrumPlot");
-static const QString lifTimePlot("lifTimePlot");
+static const QString lifSpectrumPlot{"lifSpectrumPlot"};
+static const QString lifTimePlot{"lifTimePlot"};
 }
 
 class LifDisplayWidget : public QWidget

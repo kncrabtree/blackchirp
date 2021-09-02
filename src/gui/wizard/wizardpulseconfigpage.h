@@ -6,7 +6,7 @@
 class PulseConfigWidget;
 
 namespace BC::Key::WizPulse {
-static const QString key("WizardPulsePage");
+static const QString key{"WizardPulsePage"};
 }
 
 class WizardPulseConfigPage : public ExperimentWizardPage

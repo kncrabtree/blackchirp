@@ -3,7 +3,7 @@
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
 namespace BC::Key::TC {
-static const QString lakeshore218("lakeshore218");
+static const QString lakeshore218{"lakeshore218"};
 static const QString lakeshore218Name("Lakeshore 218 Temperature Controller");
 }
 

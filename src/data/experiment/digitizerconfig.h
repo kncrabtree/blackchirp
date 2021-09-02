@@ -8,50 +8,50 @@
 #include <data/storage/headerstorage.h>
 
 namespace BC::Key::Digi {
-static const QString numAnalogChannels("numAnalogChannels");
-static const QString hasAuxTriggerChannel("hasAuxTriggerChannel");
-static const QString numDigitalChannels("numDigitalChannels");
-static const QString minFullScale("minFullScale");
-static const QString maxFullScale("maxFullScale");
-static const QString minVOffset("minVOffset");
-static const QString maxVOffset("maxVOffset");
-static const QString isTriggered("isTriggered");
-static const QString minTrigDelay("minTrigDelayUs");
-static const QString maxTrigDelay("maxTrigDelayUs");
-static const QString minTrigLevel("minTrigLevel");
-static const QString maxTrigLevel("maxTrigLevel");
-static const QString maxRecordLength("maxRecordLength");
-static const QString canMultiRecord("canMultiRecord");
-static const QString maxRecords("maxRecords");
-static const QString canBlockAverage("canBlockAverage");
-static const QString maxAverages("maxAverages");
-static const QString multiBlock("canBlockAndMultiRecord");
-static const QString maxBytes("maxBytesPerPoint");
-static const QString sampleRates("sampleRates");
-static const QString srText("text");
-static const QString srValue("val");
+static const QString numAnalogChannels{"numAnalogChannels"};
+static const QString hasAuxTriggerChannel{"hasAuxTriggerChannel"};
+static const QString numDigitalChannels{"numDigitalChannels"};
+static const QString minFullScale{"minFullScale"};
+static const QString maxFullScale{"maxFullScale"};
+static const QString minVOffset{"minVOffset"};
+static const QString maxVOffset{"maxVOffset"};
+static const QString isTriggered{"isTriggered"};
+static const QString minTrigDelay{"minTrigDelayUs"};
+static const QString maxTrigDelay{"maxTrigDelayUs"};
+static const QString minTrigLevel{"minTrigLevel"};
+static const QString maxTrigLevel{"maxTrigLevel"};
+static const QString maxRecordLength{"maxRecordLength"};
+static const QString canMultiRecord{"canMultiRecord"};
+static const QString maxRecords{"maxRecords"};
+static const QString canBlockAverage{"canBlockAverage"};
+static const QString maxAverages{"maxAverages"};
+static const QString multiBlock{"canBlockAndMultiRecord"};
+static const QString maxBytes{"maxBytesPerPoint"};
+static const QString sampleRates{"sampleRates"};
+static const QString srText{"text"};
+static const QString srValue{"val"};
 }
 
 namespace BC::Store::Digi {
-static const QString an("AnalogChannel");
-static const QString dig("DigitalChannel");
-static const QString digInp("Input");
-static const QString digRole("Role");
-static const QString en("Enabled");
-static const QString fs("FullScale");
-static const QString offset("VerticalOffset");
-static const QString trigSlope("TriggerEdge");
-static const QString trigCh("TriggerChannel");
-static const QString trigDelay("TriggerDelay");
-static const QString trigLevel("TriggerLevel");
-static const QString bpp("BytesPerPoint");
-static const QString bo("ByteOrder");
-static const QString sRate("SampleRate");
-static const QString recLen("RecordLength");
-static const QString blockAvg("BlockAverageEnabled");
-static const QString numAvg("BlockAverages");
-static const QString multiRec("MultiRecordEnabled");
-static const QString multiRecNum("MultiRecordNum");
+static const QString an{"AnalogChannel"};
+static const QString dig{"DigitalChannel"};
+static const QString digInp{"Input"};
+static const QString digRole{"Role"};
+static const QString en{"Enabled"};
+static const QString fs{"FullScale"};
+static const QString offset{"VerticalOffset"};
+static const QString trigSlope{"TriggerEdge"};
+static const QString trigCh{"TriggerChannel"};
+static const QString trigDelay{"TriggerDelay"};
+static const QString trigLevel{"TriggerLevel"};
+static const QString bpp{"BytesPerPoint"};
+static const QString bo{"ByteOrder"};
+static const QString sRate{"SampleRate"};
+static const QString recLen{"RecordLength"};
+static const QString blockAvg{"BlockAverageEnabled"};
+static const QString numAvg{"BlockAverages"};
+static const QString multiRec{"MultiRecordEnabled"};
+static const QString multiRecNum{"MultiRecordNum"};
 }
 
 class DigitizerConfig : public HeaderStorage

@@ -93,14 +93,14 @@ protected:
 };
 
 namespace BC::Store::FtmwLO {
-static const QString upStart("UpLOBegin");
-static const QString upEnd("UpLOEnd");
-static const QString upMin("UpMinorSteps");
-static const QString upMaj("UpMajorSteps");
-static const QString downStart("DownLOBegin");
-static const QString downEnd("DownLOEnd");
-static const QString downMin("DownMinorSteps");
-static const QString downMaj("DownMajorSteps");
+static const QString upStart{"UpLOBegin"};
+static const QString upEnd{"UpLOEnd"};
+static const QString upMin{"UpMinorSteps"};
+static const QString upMaj{"UpMajorSteps"};
+static const QString downStart{"DownLOBegin"};
+static const QString downEnd{"DownLOEnd"};
+static const QString downMin{"DownMinorSteps"};
+static const QString downMaj{"DownMajorSteps"};
 }
 
 class FtmwConfigLOScan : public FtmwConfig

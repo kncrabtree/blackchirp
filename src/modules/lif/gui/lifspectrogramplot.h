@@ -11,7 +11,7 @@ class QwtPlotMarker;
 class QMouseEvent;
 
 namespace BC::Key {
-static const QString lifSpectrogram("lifSpectrogram");
+static const QString lifSpectrogram{"lifSpectrogram"};
 }
 
 class LifSpectrogramPlot : public ZoomPanPlot

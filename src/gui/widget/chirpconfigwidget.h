@@ -16,18 +16,18 @@ class ChirpConfigWidget;
 }
 
 namespace BC::Key::ChirpConfigWidget {
-static const QString key("ChirpConfigWidget");
-static const QString minPreProt("minPreChirpProtectionUs");
-static const QString minPreGate("minPreChirpGateDelayUs");
-static const QString minPostProt("minPostChirpGateDelayUs");
-static const QString minPostGate("minPostChirpProtectionDelayUs");
-static const QString preProt("preChirpProtectionUs");
-static const QString postProt("postChirpProtectionUs");
-static const QString preGate("preChirpGateUs");
-static const QString postGate("postChirpGateUs");
-static const QString numChirps("numChirps");
-static const QString interval("chirpIntervalUs");
-static const QString applyAll("applyToAll");
+static const QString key{"ChirpConfigWidget"};
+static const QString minPreProt{"minPreChirpProtectionUs"};
+static const QString minPreGate{"minPreChirpGateDelayUs"};
+static const QString minPostProt{"minPostChirpGateDelayUs"};
+static const QString minPostGate{"minPostChirpProtectionDelayUs"};
+static const QString preProt{"preChirpProtectionUs"};
+static const QString postProt{"postChirpProtectionUs"};
+static const QString preGate{"preChirpGateUs"};
+static const QString postGate{"postChirpGateUs"};
+static const QString numChirps{"numChirps"};
+static const QString interval{"chirpIntervalUs"};
+static const QString applyAll{"applyToAll"};
 }
 
 /*!

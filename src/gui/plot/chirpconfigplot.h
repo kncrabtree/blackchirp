@@ -7,10 +7,10 @@ class ChirpConfig;
 class BlackchirpPlotCurve;
 
 namespace BC::Key {
-static const QString chirpPlot("ChirpConfigPlot");
-static const QString chirpCurve("Chirp");
-static const QString ampCurve("AmpEnable");
-static const QString protCurve("Protection");
+static const QString chirpPlot{"ChirpConfigPlot"};
+static const QString chirpCurve{"Chirp"};
+static const QString ampCurve{"AmpEnable"};
+static const QString protCurve{"Protection"};
 }
 
 class ChirpConfigPlot : public ZoomPanPlot

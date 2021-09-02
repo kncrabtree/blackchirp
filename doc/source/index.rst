@@ -3,6 +3,13 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+
+.. toctree::
+   :hidden:
+
+   user_guide
+   classes
+
 Blackchirp Documentation
 ========================
 
@@ -25,23 +32,11 @@ If your hardware is not supported, you can submit a request by filing an issue o
 .. _user guide: user_guide/user_guide.html
 
 
-.. toctree::
-   :maxdepth: 3
-   :hidden:
-
-   user_guide/user_guide.rst
-
-
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 
-
-Docs
-====
-.. highlight:: cpp
-.. doxygenclass:: SettingsStorage
+.. * :ref:`modindex`
+.. * :ref:`search`

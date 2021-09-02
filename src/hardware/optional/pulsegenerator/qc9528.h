@@ -4,7 +4,7 @@
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 
 namespace BC::Key {
-static const QString qc9528("qc9528");
+static const QString qc9528{"qc9528"};
 static const QString qc9528Name("Pulse Generator QC 9528");
 }
 

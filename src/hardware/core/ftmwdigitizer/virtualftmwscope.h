@@ -8,7 +8,7 @@
 
 namespace BC::Key::FtmwScope {
 static const QString vftmwName("Virtual FTMW Oscilloscope");
-static const QString interval("shotIntervalMs");
+static const QString interval{"shotIntervalMs"};
 }
 
 class VirtualFtmwScope : public FtmwScope

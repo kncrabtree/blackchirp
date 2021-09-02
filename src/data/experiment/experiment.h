@@ -30,12 +30,12 @@
 #endif
 
 namespace BC::Store::Exp {
-static const QString key("Experiment");
-static const QString num("Number");
-static const QString timeData("TimeDataInterval");
-static const QString backupInterval("BackupInterval");
-static const QString ftmwEn("FtmwEnabled");
-static const QString ftmwType("FtmwType");
+static const QString key{"Experiment"};
+static const QString num{"Number"};
+static const QString timeData{"TimeDataInterval"};
+static const QString backupInterval{"BackupInterval"};
+static const QString ftmwEn{"FtmwEnabled"};
+static const QString ftmwType{"FtmwType"};
 static const QString majver{"BCMajorVersion"};
 static const QString minver{"BCMinorVersion"};
 static const QString patchver{"BCPatchVersion"};

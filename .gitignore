@@ -4,3 +4,4 @@ config.pri
 *.autosave
 __pycache__
 *.pyc
+*.txt.user

@@ -6,15 +6,15 @@
 #include <hardware/optional/pulsegenerator/pulsegenconfig.h>
 
 namespace BC::Key::PGen {
-static const QString key("PulseGenerator");
-static const QString numChannels("numChannels");
-static const QString minWidth("minWidth");
-static const QString maxWidth("maxWidth");
-static const QString minDelay("minDelay");
-static const QString maxDelay("maxDelay");
-static const QString minRepRate("minRepRateHz");
-static const QString maxRepRate("maxRepRateHz");
-static const QString lockExternal("lockExternal");
+static const QString key{"PulseGenerator"};
+static const QString numChannels{"numChannels"};
+static const QString minWidth{"minWidth"};
+static const QString maxWidth{"maxWidth"};
+static const QString minDelay{"minDelay"};
+static const QString maxDelay{"maxDelay"};
+static const QString minRepRate{"minRepRateHz"};
+static const QString maxRepRate{"maxRepRateHz"};
+static const QString lockExternal{"lockExternal"};
 }
 
 class PulseGenerator : public HardwareObject

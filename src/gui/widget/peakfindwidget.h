@@ -19,12 +19,12 @@ class PeakFindWidget;
 }
 
 namespace BC::Key {
-static const QString peakFind("peakFind");
-static const QString pfMinFreq("minFreq");
-static const QString pfMaxFreq("maxFreq");
-static const QString pfSnr("snr");
-static const QString pfWinSize("winSize");
-static const QString pfOrder("polyOrder");
+static const QString peakFind{"peakFind"};
+static const QString pfMinFreq{"minFreq"};
+static const QString pfMaxFreq{"maxFreq"};
+static const QString pfSnr{"snr"};
+static const QString pfWinSize{"winSize"};
+static const QString pfOrder{"polyOrder"};
 }
 
 class PeakFindWidget : public QWidget, public SettingsStorage

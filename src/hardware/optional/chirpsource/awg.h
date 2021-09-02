@@ -4,18 +4,18 @@
 #include <hardware/core/hardwareobject.h>
 
 namespace BC::Key::AWG {
-static const QString key("AWG");
-static const QString prot("hasProtectionPulse");
-static const QString amp("hasAmpEnablePulse");
-static const QString min("minFreqMHz");
-static const QString max("maxFreqMHz");
-static const QString rampOnly("rampOnly");
-static const QString rate("sampleRateHz");
-static const QString samples("maxSamples");
-static const QString triggered("triggered");
-static const QString hashes("wfmHashes");
-static const QString wfmName("name");
-static const QString wfmHash("hash");
+static const QString key{"AWG"};
+static const QString prot{"hasProtectionPulse"};
+static const QString amp{"hasAmpEnablePulse"};
+static const QString min{"minFreqMHz"};
+static const QString max{"maxFreqMHz"};
+static const QString rampOnly{"rampOnly"};
+static const QString rate{"sampleRateHz"};
+static const QString samples{"maxSamples"};
+static const QString triggered{"triggered"};
+static const QString hashes{"wfmHashes"};
+static const QString wfmName{"name"};
+static const QString wfmHash{"hash"};
 }
 
 /**

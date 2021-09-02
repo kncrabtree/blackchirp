@@ -7,11 +7,11 @@ class QDoubleSpinBox;
 class QSpinBox;
 
 namespace BC::Key::WizDR {
-static const QString key("WizardDrPage");
-static const QString start("startFreqMHz");
-static const QString step("stepSizeMHz");
-static const QString numSteps("numSteps");
-static const QString shots("numShots");
+static const QString key{"WizardDrPage"};
+static const QString start{"startFreqMHz"};
+static const QString step{"stepSizeMHz"};
+static const QString numSteps{"numSteps"};
+static const QString shots{"numShots"};
 }
 
 class WizardDrScanConfigPage : public ExperimentWizardPage

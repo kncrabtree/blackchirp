@@ -11,14 +11,14 @@
 #include <data/storage/headerstorage.h>
 
 namespace BC::Store::CC {
-static const QString key("ChirpConfig");
-static const QString preProt("PreProtection");
-static const QString postProt("PostProtection");
-static const QString preGate("PreGate");
-static const QString postGate("PostGate");
-static const QString interval("ChirpInterval");
-static const QString sampleRate("SampleRate");
-static const QString sampleInterval("SampleInterval");
+static const QString key{"ChirpConfig"};
+static const QString preProt{"PreProtection"};
+static const QString postProt{"PostProtection"};
+static const QString preGate{"PreGate"};
+static const QString postGate{"PostGate"};
+static const QString interval{"ChirpInterval"};
+static const QString sampleRate{"SampleRate"};
+static const QString sampleInterval{"SampleInterval"};
 }
 
 class BlackchirpCSV;

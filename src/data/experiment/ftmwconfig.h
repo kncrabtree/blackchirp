@@ -17,16 +17,16 @@
 #endif
 
 namespace BC::Store::FTMW {
-static const QString key("FtmwConfig");
-static const QString duration("Duration");
-static const QString enabled("Enabled");
-static const QString phase("PhaseCorrectionEnabled");
-static const QString chirp("ChirpScoringEnabled");
-static const QString chirpThresh("ChirpRMSThreshold");
-static const QString chirpOffset("ChirpOffset");
-static const QString type("Type");
-static const QString tShots("TargetShots");
-static const QString objective("Objective");
+static const QString key{"FtmwConfig"};
+static const QString duration{"Duration"};
+static const QString enabled{"Enabled"};
+static const QString phase{"PhaseCorrectionEnabled"};
+static const QString chirp{"ChirpScoringEnabled"};
+static const QString chirpThresh{"ChirpRMSThreshold"};
+static const QString chirpOffset{"ChirpOffset"};
+static const QString type{"Type"};
+static const QString tShots{"TargetShots"};
+static const QString objective{"Objective"};
 }
 
 class BlackchirpCSV;

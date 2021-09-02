@@ -2,10 +2,9 @@ Blackchirp User Guide
 =====================
 
 .. toctree::
-   :maxdepth: 2
    :caption: Contents:
 
-   installation.rst
+   user_guide/installation
    
    
 Eventually write a user guide here.

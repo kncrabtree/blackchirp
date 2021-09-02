@@ -12,8 +12,8 @@
 class QwtPlotMarker;
 
 namespace BC::Key {
-static const QString fidPlot("FidPlot");
-static const QString fidCurve("FID");
+static const QString fidPlot{"FidPlot"};
+static const QString fidCurve{"FID"};
 }
 
 class BlackchirpFIDCurve;

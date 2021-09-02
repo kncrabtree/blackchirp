@@ -16,18 +16,18 @@ class PeakListExportDialog;
 }
 
 namespace BC::Key {
-static const QString plExport("peakListExport");
-static const QString plAscii("ascii");
-static const QString plDipoleEn("dipoleEnabled");
-static const QString plDipole("dipole");
-static const QString plDrOnlyEn("drOnlyEnabled");
-static const QString plDrOnlyThresh("drOnlyThresh");
-static const QString plDefaultShots("defaultShots");
-static const QString plDrPower("drPower");
-static const QString plDrPowerEn("drPowerEnabled");
-static const QString plShotsTab("shotsTable");
-static const QString plShots("shots");
-static const QString plIntensity("intensity");
+static const QString plExport{"peakListExport"};
+static const QString plAscii{"ascii"};
+static const QString plDipoleEn{"dipoleEnabled"};
+static const QString plDipole{"dipole"};
+static const QString plDrOnlyEn{"drOnlyEnabled"};
+static const QString plDrOnlyThresh{"drOnlyThresh"};
+static const QString plDefaultShots{"defaultShots"};
+static const QString plDrPower{"drPower"};
+static const QString plDrPowerEn{"drPowerEnabled"};
+static const QString plShotsTab{"shotsTable"};
+static const QString plShots{"shots"};
+static const QString plIntensity{"intensity"};
 }
 
 class ShotsModel;

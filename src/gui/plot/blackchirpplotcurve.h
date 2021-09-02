@@ -13,16 +13,16 @@ Q_DECLARE_METATYPE(QwtPlot::Axis)
 #include <data/storage/settingsstorage.h>
 
 namespace BC::Key {
-static const QString bcCurve("Curve");
-static const QString bcCurveColor("color");
-static const QString bcCurveStyle("style");
-static const QString bcCurveThickness("thickness");
-static const QString bcCurveMarker("marker");
-static const QString bcCurveMarkerSize("markerSize");
-static const QString bcCurveAxisX("xAxis");
-static const QString bcCurveAxisY("yAxis");
-static const QString bcCurveVisible("visible");
-static const QString bcCurvePlotIndex("plotIndex");
+static const QString bcCurve{"Curve"};
+static const QString bcCurveColor{"color"};
+static const QString bcCurveStyle{"style"};
+static const QString bcCurveThickness{"thickness"};
+static const QString bcCurveMarker{"marker"};
+static const QString bcCurveMarkerSize{"markerSize"};
+static const QString bcCurveAxisX{"xAxis"};
+static const QString bcCurveAxisY{"yAxis"};
+static const QString bcCurveVisible{"visible"};
+static const QString bcCurvePlotIndex{"plotIndex"};
 }
 
 class BlackchirpPlotCurveBase : public QwtPlotCurve, public SettingsStorage

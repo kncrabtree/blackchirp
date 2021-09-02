@@ -28,14 +28,14 @@ static const QString vk{"ValueKey"};
 static const QString vv{"Value"};
 static const QString vu{"Units"};
 
-static const QString versionFile("version.csv");
-static const QString validationFile("validation.csv");
-static const QString objectivesFile("objectives.csv");
-static const QString hwFile("hardware.csv");
-static const QString headerFile("header.csv");
-static const QString chirpFile("chirps.csv");
-static const QString clockFile("clocks.csv");
-static const QString auxFile("auxdata.csv");
+static const QString versionFile{"version.csv"};
+static const QString validationFile{"validation.csv"};
+static const QString objectivesFile{"objectives.csv"};
+static const QString hwFile{"hardware.csv"};
+static const QString headerFile{"header.csv"};
+static const QString chirpFile{"chirps.csv"};
+static const QString clockFile{"clocks.csv"};
+static const QString auxFile{"auxdata.csv"};
 
 static const QString majver{"BCMajorVersion"};
 static const QString minver{"BCMinorVersion"};
@@ -44,7 +44,7 @@ static const QString relver{"BCReleaseVersion"};
 static const QString buildver{"BCBuildVersion"};
 
 static const QString fidparams{"fidparams.csv"};
-static const QString fidDir("fid");
+static const QString fidDir{"fid"};
 
 }
 

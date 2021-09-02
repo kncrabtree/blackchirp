@@ -10,11 +10,11 @@
 #include <data/storage/settingsstorage.h>
 
 namespace BC::Key::Comm {
-static const QString rs232("rs232");
-static const QString tcp("tcp");
-static const QString gpib("gpib");
-static const QString custom("custom");
-static const QString hwVirtual("virtual");
+static const QString rs232{"rs232"};
+static const QString tcp{"tcp"};
+static const QString gpib{"gpib"};
+static const QString custom{"custom"};
+static const QString hwVirtual{"virtual"};
 }
 
 class CommunicationProtocol : public QObject

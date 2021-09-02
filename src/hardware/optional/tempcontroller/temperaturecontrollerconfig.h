@@ -6,10 +6,10 @@
 #include <QVector>
 
 namespace BC::Store::TempControlConfig {
-static const QString key("TemperatureController");
-static const QString channel("Channel");
-static const QString name("Name");
-static const QString enabled("Enabled");
+static const QString key{"TemperatureController"};
+static const QString channel{"Channel"};
+static const QString name{"Name"};
+static const QString enabled{"Enabled"};
 }
 
 class TemperatureControllerConfig : public HeaderStorage

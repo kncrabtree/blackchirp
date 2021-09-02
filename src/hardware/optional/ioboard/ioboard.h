@@ -6,7 +6,7 @@
 #include <hardware/optional/ioboard/ioboardconfig.h>
 
 namespace BC::Key::IOB {
-static const QString ioboard("IOBoard");
+static const QString ioboard{"IOBoard"};
 }
 
 class IOBoard : public HardwareObject, public IOBoardConfig

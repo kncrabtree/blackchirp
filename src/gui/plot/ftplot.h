@@ -12,9 +12,9 @@
 #include <data/analysis/ftworker.h>
 
 namespace BC::Key {
-static const QString ftPlot("FtPlot");
-static const QString ftCurve("FT");
-static const QString peakCurve("FTPeaks");
+static const QString ftPlot{"FtPlot"};
+static const QString ftCurve{"FT"};
+static const QString peakCurve{"FTPeaks"};
 }
 
 class BlackchirpFTCurve;

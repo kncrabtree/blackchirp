@@ -9,14 +9,14 @@
 
 namespace BC::Store::PGenConfig {
 static const QString key{"PulseGenerator"};
-static const QString rate("RepRate");
-static const QString channel("Channel");
-static const QString delay("Delay");
-static const QString width("Width");
-static const QString level("ActiveLevel");
-static const QString role("Role");
-static const QString name("Name");
-static const QString enabled("Enabled");
+static const QString rate{"RepRate"};
+static const QString channel{"Channel"};
+static const QString delay{"Delay"};
+static const QString width{"Width"};
+static const QString level{"ActiveLevel"};
+static const QString role{"Role"};
+static const QString name{"Name"};
+static const QString enabled{"Enabled"};
 }
 
 class PulseGenConfig : public HeaderStorage

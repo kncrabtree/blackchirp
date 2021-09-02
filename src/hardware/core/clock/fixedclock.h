@@ -4,10 +4,10 @@
 #include <hardware/core/clock/clock.h>
 
 namespace BC::Key::Clock {
-static const QString fixed("fixed");
+static const QString fixed{"fixed"};
 static const QString fixedName("Fixed Clock (#%1)");
 static const QString ch{"fixedOutputs"};
-static const QString freq("lastFreqMHz");
+static const QString freq{"lastFreqMHz"};
 }
 
 class FixedClock : public Clock

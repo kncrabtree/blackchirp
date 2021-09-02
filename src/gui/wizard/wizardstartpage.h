@@ -14,14 +14,14 @@ namespace BC::Key::WizStart {
 static const QString key{"WizardStartPage"};
 static const QString ftmw{"FtmwEnabled"};
 static const QString ftmwType{"FtmwType"};
-static const QString ftmwShots("FtmwShots");
-static const QString ftmwDuration("FtmwDuration");
-static const QString ftmwPhase("FtmwPhaseCorrection");
-static const QString ftmwScoring("FtmwChirpScoring");
-static const QString ftmwThresh("FtmwChirpScoringThreshold");
-static const QString ftmwOffset("FtmwChirpOffset");
-static const QString auxInterval("AuxDataInterval");
-static const QString backup("BackupInterval");
+static const QString ftmwShots{"FtmwShots"};
+static const QString ftmwDuration{"FtmwDuration"};
+static const QString ftmwPhase{"FtmwPhaseCorrection"};
+static const QString ftmwScoring{"FtmwChirpScoring"};
+static const QString ftmwThresh{"FtmwChirpScoringThreshold"};
+static const QString ftmwOffset{"FtmwChirpOffset"};
+static const QString auxInterval{"AuxDataInterval"};
+static const QString backup{"BackupInterval"};
 }
 
 class WizardStartPage : public ExperimentWizardPage

@@ -18,8 +18,8 @@ class ClockManager;
 class Experiment;
 
 namespace BC::Key {
-static const QString hw("hardware");
-static const QString allHw("instruments");
+static const QString hw{"hardware"};
+static const QString allHw{"instruments"};
 }
 
 class HardwareManager : public QObject, public SettingsStorage

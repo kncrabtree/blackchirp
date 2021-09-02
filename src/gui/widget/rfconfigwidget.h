@@ -13,12 +13,12 @@ class RfConfigWidget;
 }
 
 namespace BC::Key::RfConfigWidget {
-static const QString key("RfConfigWidget");
-static const QString awgM("awgMultFactor");
-static const QString chirpM("chirpMultFactor");
-static const QString upSB("upconversionSideband");
-static const QString downSB("downconversionSideband");
-static const QString comLO("commonUpDownLO");
+static const QString key{"RfConfigWidget"};
+static const QString awgM{"awgMultFactor"};
+static const QString chirpM{"chirpMultFactor"};
+static const QString upSB{"upconversionSideband"};
+static const QString downSB{"downconversionSideband"};
+static const QString comLO{"commonUpDownLO"};
 }
 
 class RfConfigWidget : public QWidget, public SettingsStorage

@@ -18,19 +18,19 @@ class QMutex;
 
 
 namespace BC::Key {
-static const QString axes("axes");
-static const QString bottom("Bottom");
-static const QString top("Top");
-static const QString left("Left");
-static const QString right("Right");
-static const QString zoomFactor("zoomFactor");
-static const QString trackerDecimals("trackerDecimals");
-static const QString trackerScientific("trackerScientific");
-static const QString trackerEn("trackerEnabled");
-static const QString majorGridColor("majorGridColor");
-static const QString majorGridStyle("majorGridStyle");
-static const QString minorGridColor("minorGridColor");
-static const QString minorGridStyle("minorGridStyle");
+static const QString axes{"axes"};
+static const QString bottom{"Bottom"};
+static const QString top{"Top"};
+static const QString left{"Left"};
+static const QString right{"Right"};
+static const QString zoomFactor{"zoomFactor"};
+static const QString trackerDecimals{"trackerDecimals"};
+static const QString trackerScientific{"trackerScientific"};
+static const QString trackerEn{"trackerEnabled"};
+static const QString majorGridColor{"majorGridColor"};
+static const QString majorGridStyle{"majorGridStyle"};
+static const QString minorGridColor{"minorGridColor"};
+static const QString minorGridStyle{"minorGridStyle"};
 }
 
 class ZoomPanPlot : public QwtPlot, public SettingsStorage

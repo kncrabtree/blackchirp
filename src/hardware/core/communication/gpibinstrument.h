@@ -6,7 +6,7 @@
 class GpibController;
 
 namespace BC::Key::GPIB {
-static const QString gpibAddress("address");
+static const QString gpibAddress{"address"};
 }
 
 class GpibInstrument : public CommunicationProtocol

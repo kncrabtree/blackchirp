@@ -4,7 +4,7 @@
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 
 namespace BC::Key::Flow {
-static const QString mks647c("mks647c");
+static const QString mks647c{"mks647c"};
 static const QString mks647cName("MKS 647C Flow Control Unit");
 }
 

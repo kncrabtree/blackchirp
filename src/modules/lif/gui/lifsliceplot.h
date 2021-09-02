@@ -7,7 +7,7 @@ class QwtPlotCurve;
 class QwtPlotTextLabel;
 
 namespace BC::Key {
-static const QString lifSliceCurve("LifSliceCurve");
+static const QString lifSliceCurve{"LifSliceCurve"};
 }
 
 /// \todo This needs to take an argument to differentiate time vs freq slice plots

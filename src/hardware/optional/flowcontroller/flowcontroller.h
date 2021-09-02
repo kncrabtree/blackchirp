@@ -8,16 +8,16 @@
 #include <hardware/optional/flowcontroller/flowconfig.h>
 
 namespace BC::Key::Flow {
-static const QString flowController("FlowController");
-static const QString flowChannels("numChannels");
-static const QString interval("intervalMs");
-static const QString pUnits("pressureUnits");
-static const QString pDec("pressureDecimals");
-static const QString pMax("pressureMax");
-static const QString channels("channels");
-static const QString chUnits("units");
-static const QString chDecimals("decimals");
-static const QString chMax("max");
+static const QString flowController{"FlowController"};
+static const QString flowChannels{"numChannels"};
+static const QString interval{"intervalMs"};
+static const QString pUnits{"pressureUnits"};
+static const QString pDec{"pressureDecimals"};
+static const QString pMax{"pressureMax"};
+static const QString channels{"channels"};
+static const QString chUnits{"units"};
+static const QString chDecimals{"decimals"};
+static const QString chMax{"max"};
 }
 
 namespace BC::Aux::Flow {

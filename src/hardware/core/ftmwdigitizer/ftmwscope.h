@@ -10,8 +10,8 @@
 
 
 namespace BC::Key::FtmwScope {
-static const QString ftmwScope("FtmwDigitizer");
-static const QString bandwidth("bandwidthMHz");
+static const QString ftmwScope{"FtmwDigitizer"};
+static const QString bandwidth{"bandwidthMHz"};
 }
 
 class FtmwScope : public HardwareObject, protected FtmwDigitizerConfig

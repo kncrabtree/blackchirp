@@ -7,12 +7,12 @@
 #include <QtSerialPort/qserialportinfo.h>
 
 namespace BC::Key::RS232 {
-static const QString baud("baudrate");
-static const QString id("id");
-static const QString dataBits("databits");
-static const QString parity("parity");
-static const QString stopBits("stopbits");
-static const QString flowControl("flowControl");
+static const QString baud{"baudrate"};
+static const QString id{"id"};
+static const QString dataBits{"databits"};
+static const QString parity{"parity"};
+static const QString stopBits{"stopbits"};
+static const QString flowControl{"flowControl"};
 }
 
 class Rs232Instrument : public CommunicationProtocol

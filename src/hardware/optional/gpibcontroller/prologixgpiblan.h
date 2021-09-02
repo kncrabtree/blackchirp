@@ -4,7 +4,7 @@
 #include <hardware/optional/gpibcontroller/gpibcontroller.h>
 
 namespace BC::Key {
-static const QString prologix("prologixGpibLan");
+static const QString prologix{"prologixGpibLan"};
 static const QString prologixName("Prologix GPIB-LAN Controller");
 }
 

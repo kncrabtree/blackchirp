@@ -5,7 +5,7 @@
 #include <hardware/optional/ioboard/ioboardconfig.h>
 
 namespace BC::Key::DigiWidget {
-static const QString channelName("name");
+static const QString channelName{"name"};
 }
 
 class QTableWidget;

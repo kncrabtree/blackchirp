@@ -4,8 +4,8 @@
 #include <hardware/core/hardwareobject.h>
 
 namespace BC::Key {
-static const QString lifLaser("LifLaser");
-static const QString lifLaserUnits("units");
+static const QString lifLaser{"LifLaser"};
+static const QString lifLaserUnits{"units"};
 }
 
 class LifLaser : public HardwareObject

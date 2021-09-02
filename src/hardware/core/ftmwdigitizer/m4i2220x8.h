@@ -12,7 +12,7 @@
 #include <QTimer>
 
 namespace BC::Key::FtmwScope {
-static const QString m4i2220x8("m4i2220x8");
+static const QString m4i2220x8{"m4i2220x8"};
 static const QString m4i2220x8Name("Spectrum Instrumentation M4i.2220-x8 Digitizer");
 }
 

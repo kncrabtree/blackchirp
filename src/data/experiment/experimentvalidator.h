@@ -10,12 +10,12 @@
 class BlackchirpCSV;
 
 namespace BC::Store::Validator {
-static const QString key("Validation");
-static const QString condition("Condition");
-static const QString objKey("ObjKey");
-static const QString valKey("ValKey");
-static const QString min("Min");
-static const QString max("Max");
+static const QString key{"Validation"};
+static const QString condition{"Condition"};
+static const QString objKey{"ObjKey"};
+static const QString valKey{"ValKey"};
+static const QString min{"Min"};
+static const QString max{"Max"};
 }
 
 class ExperimentValidator : public HeaderStorage

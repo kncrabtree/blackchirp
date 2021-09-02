@@ -9,11 +9,11 @@
 class Clock;
 
 namespace BC::Key::Clock {
-static const QString clockManager("ClockManager");
-static const QString hwClocks("hwClocks");
-static const QString clockKey("key");
-static const QString clockOutput("output");
-static const QString clockName("name");
+static const QString clockManager{"ClockManager"};
+static const QString hwClocks{"hwClocks"};
+static const QString clockKey{"key"};
+static const QString clockOutput{"output"};
+static const QString clockName{"name"};
 }
 
 /**

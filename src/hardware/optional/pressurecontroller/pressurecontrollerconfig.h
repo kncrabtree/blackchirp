@@ -4,9 +4,9 @@
 #include <data/storage/headerstorage.h>
 
 namespace BC::Store::PressureController {
-static const QString key("PressureController");
-static const QString pSetPoint("SetPoint");
-static const QString pcEnabled("ControlEnabled");
+static const QString key{"PressureController"};
+static const QString pSetPoint{"SetPoint"};
+static const QString pcEnabled{"ControlEnabled"};
 }
 
 class PressureControllerConfig : public HeaderStorage

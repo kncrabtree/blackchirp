@@ -9,27 +9,27 @@ class QGroupBox;
 class QCheckBox;
 
 namespace BC::Key::WizLoScan {
-static const QString key("WizardLoScanPage");
+static const QString key{"WizardLoScanPage"};
 
-static const QString shots("shotsPerStep");
-static const QString sweeps("targetSweeps");
+static const QString shots{"shotsPerStep"};
+static const QString sweeps{"targetSweeps"};
 
-static const QString upStart("upStart");
-static const QString upEnd("upEnd");
-static const QString upNumMinor("upNumMinor");
-static const QString upMinorStep("upMinorStep");
-static const QString upNumMajor("upNumMajor");
-static const QString upMajorStep("upMajorStep");
+static const QString upStart{"upStart"};
+static const QString upEnd{"upEnd"};
+static const QString upNumMinor{"upNumMinor"};
+static const QString upMinorStep{"upMinorStep"};
+static const QString upNumMajor{"upNumMajor"};
+static const QString upMajorStep{"upMajorStep"};
 
-static const QString downStart("downStart");
-static const QString downEnd("downEnd");
-static const QString downNumMinor("downNumMinor");
-static const QString downMinorStep("downMinorStep");
-static const QString downNumMajor("downNumMajor");
-static const QString downMajorStep("downMajorStep");
+static const QString downStart{"downStart"};
+static const QString downEnd{"downEnd"};
+static const QString downNumMinor{"downNumMinor"};
+static const QString downMinorStep{"downMinorStep"};
+static const QString downNumMajor{"downNumMajor"};
+static const QString downMajorStep{"downMajorStep"};
 
-static const QString downFixed("downFixed");
-static const QString constOffset("downConstatntOffset");
+static const QString downFixed{"downFixed"};
+static const QString constOffset{"downConstatntOffset"};
 }
 
 class WizardLoScanConfigPage : public ExperimentWizardPage

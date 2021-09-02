@@ -15,9 +15,9 @@ class QLabel;
 using GasWidgets = std::tuple<QLineEdit*,QDoubleSpinBox*>;
 
 namespace BC::Key::GasControl {
-static const QString key("GasControlWidget");
-static const QString channels("channels");
-static const QString gasName("name");
+static const QString key{"GasControlWidget"};
+static const QString channels{"channels"};
+static const QString gasName{"name"};
 }
 
 class GasControlWidget : public QWidget, public SettingsStorage

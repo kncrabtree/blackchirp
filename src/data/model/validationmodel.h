@@ -13,11 +13,11 @@
 
 namespace BC::Key::Validation {
 static const QString key{"ValidationTable"};
-static const QString items("items");
-static const QString objKey("objKey");
-static const QString valKey("valueKey");
-static const QString min("min");
-static const QString max("max");
+static const QString items{"items"};
+static const QString objKey{"objKey"};
+static const QString valKey{"valueKey"};
+static const QString min{"min"};
+static const QString max{"max"};
 }
 
 class ValidationModel : public QAbstractTableModel, public SettingsStorage

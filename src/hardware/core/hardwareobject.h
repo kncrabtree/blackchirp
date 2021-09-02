@@ -21,14 +21,14 @@
 #include <data/experiment/experiment.h>
 
 namespace BC::Key::HW {
-static const QString key("key");
-static const QString subKey("subKey");
-static const QString name("prettyName");
-static const QString connected("connected");
-static const QString critical("critical");
-static const QString threaded("threaded");
-static const QString commType("commType");
-static const QString rInterval("rollingDataIntervalSec");
+static const QString key{"key"};
+static const QString subKey{"subKey"};
+static const QString name{"prettyName"};
+static const QString connected{"connected"};
+static const QString critical{"critical"};
+static const QString threaded{"threaded"};
+static const QString commType{"commType"};
+static const QString rInterval{"rollingDataIntervalSec"};
 }
 
 /*!
