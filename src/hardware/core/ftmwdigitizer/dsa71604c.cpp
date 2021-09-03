@@ -293,7 +293,7 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     else
     {
         //enable fastframe and disable summary frame; verify
-        resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:STATE ON;SUM NONE;STATE?\n"));
+        resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:STATE ON;SUMFRAME NON;STATE?\n"));
         if(!resp.isEmpty())
         {
             bool ok = false;
@@ -513,11 +513,14 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
         config.d_byteOrder = DigitizerConfig::LittleEndian;
 
         //verify number of frames
-        if(d_multiRecord && (l.at(3).toInt() != config.d_numRecords))
+        if(config.d_multiRecord)
         {
-            emit logMessage(QString("Waveform contains the wrong number of frames. Target: %1, Actual: %2. Response: %3 (Hex: %4)")
-                            .arg(config.d_numRecords).arg(l.at(3).toInt()).arg(l.at(3)).arg(QString(l.at(3).toLatin1().toHex())),LogHandler::Error);
-            return false;
+            if(l.at(3).toInt() != config.d_numRecords)
+            {
+                emit logMessage(QString("Waveform contains the wrong number of frames. Target: %1, Actual: %2. Response: %3 (Hex: %4)")
+                                .arg(config.d_numRecords).arg(l.at(3).toInt()).arg(l.at(3)).arg(QString(l.at(3).toLatin1().toHex())),LogHandler::Error);
+                return false;
+            }
         }
         else if (l.at(3).toInt() != 1)
         {
@@ -525,6 +528,7 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
                             .arg(l.at(3).toInt()).arg(l.at(3)).arg(QString(l.at(3).toLatin1().toHex())),LogHandler::Error);
             return false;
         }
+
         //verify record length
         bool ok = false;
         int recLen = l.at(4).toInt(&ok);
