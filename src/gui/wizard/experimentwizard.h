@@ -47,8 +47,8 @@ public slots:
 
 signals:
     void newTrace(LifTrace);
-    void updateScope(BlackChirp::LifScopeConfig);
-    void scopeConfigChanged(BlackChirp::LifScopeConfig);
+    void updateScope(Blackchirp::LifScopeConfig);
+    void scopeConfigChanged(Blackchirp::LifScopeConfig);
     void lifColorChanged();
     void laserPosUpdate(double);
 

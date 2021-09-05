@@ -247,7 +247,7 @@ QVariant ClockTableModel::data(const QModelIndex &index, int role) const
         case 3:
             return QString("Multiplier/divider factor for this clock. Used to convert between desired frequency and raw clock frequency.\nIf no multiplier or divider, enter 1.");
         case 4:
-            return QString("Desired frequency for this clock in MHz. BlackChirp will convert to the required clock frequency using the multiplier/divider settings.");
+            return QString("Desired frequency for this clock in MHz. Blackchirp will convert to the required clock frequency using the multiplier/divider settings.");
         default:
             return QVariant();
         }

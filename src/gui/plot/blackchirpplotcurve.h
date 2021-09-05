@@ -57,7 +57,7 @@ public:
     void setCurveAxisY(QwtPlot::Axis a);
     void setCurvePlotIndex(int i);
 
-    int plotIndex() const { return get<int>(BC::Key::bcCurvePlotIndex,0); }
+    int plotIndex() const { return get(BC::Key::bcCurvePlotIndex,-1); }
 
     void updateFromSettings();
     void filter(int w, const QwtScaleMap map);

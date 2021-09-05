@@ -59,7 +59,7 @@ double LifControlWidget::laserPos() const
     return ui->laserPosDoubleSpinBox->value();
 }
 
-void LifControlWidget::scopeConfigChanged(const BlackChirp::LifScopeConfig c)
+void LifControlWidget::scopeConfigChanged(const Blackchirp::LifScopeConfig c)
 {
     QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
 
@@ -180,9 +180,9 @@ void LifControlWidget::setSampleRateBox(double rate)
     ui->sampleRateComboBox->setCurrentIndex(closest);
 }
 
-BlackChirp::LifScopeConfig LifControlWidget::toConfig() const
+Blackchirp::LifScopeConfig LifControlWidget::toConfig() const
 {
-    BlackChirp::LifScopeConfig out;
+    Blackchirp::LifScopeConfig out;
     out.vScale1 = ui->lIFVScaleDoubleSpinBox->value();
     out.sampleRate = static_cast<double>(ui->sampleRateComboBox->currentData().toDouble());
     out.recordLength = ui->samplesSpinBox->value();

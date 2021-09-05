@@ -55,6 +55,9 @@ public:
     QAction *actionStart_Sequence;
     QAction *actionRfConfig;
     QToolButton *hardwareButton;
+    QToolButton *settingsButton;
+    QAction *fontAction;
+    QAction *savePathAction;
     QWidget *centralWidget;
     QHBoxLayout *mainLayout;
     QVBoxLayout *instrumentStatusLayout;
@@ -83,6 +86,7 @@ public:
     QMenu *menuAcquisition;
     QMenu *menuRollingData;
     QMenu *menuAuxData;
+    QMenu *settingsMenu;
     QToolBar *mainToolBar;
     QStatusBar *statusBar;
 
@@ -198,9 +202,7 @@ public:
         hardwareButton->setIcon(hwIcon);
         hardwareButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
         hardwareButton->setPopupMode(QToolButton::InstantPopup);
-        QFont font;
-        font.setPointSize(8);
-        instStatusLabel->setFont(font);
+
         instStatusLabel->setAlignment(Qt::AlignCenter);
 
         auxPlotButton = new QToolButton(MainWindow);
@@ -217,6 +219,26 @@ public:
         rollingPlotButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
         rollingPlotButton->setPopupMode(QToolButton::InstantPopup);
 
+        QIcon settingsIcon;
+        settingsIcon.addFile(QString(":/icons/menu.svg"),QSize(), QIcon::Normal, QIcon::Off);
+        settingsButton = new QToolButton(MainWindow);
+        settingsButton->setIcon(settingsIcon);
+        settingsButton->setText("Settings");
+        settingsButton->setToolTip("Configure application and miscellaneous settings");
+        settingsButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        settingsButton->setPopupMode(QToolButton::InstantPopup);
+
+        QIcon fontIcon;
+        fontIcon.addFile(QString(":/icons/font.svg"),QSize(), QIcon::Normal, QIcon::Off);
+        fontAction = new QAction("Application Font");
+        fontAction->setIcon(fontIcon);
+
+        QIcon saveIcon;
+        saveIcon.addFile(QString(":/icons/save-as.svg"),QSize(), QIcon::Normal, QIcon::Off);
+        savePathAction = new QAction("Data Storage");
+        savePathAction->setIcon(saveIcon);
+
+
         instrumentStatusLayout->addWidget(instStatusLabel);
 
         statusLayout = new QGridLayout();
@@ -230,7 +252,6 @@ public:
         sizePolicy.setVerticalStretch(0);
         sizePolicy.setHeightForWidth(exptLabel->sizePolicy().hasHeightForWidth());
         exptLabel->setSizePolicy(sizePolicy);
-        exptLabel->setFont(font);
         exptLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
 
         statusLayout->addWidget(exptLabel,0,0);
@@ -242,7 +263,6 @@ public:
         sizePolicy1.setVerticalStretch(0);
         sizePolicy1.setHeightForWidth(exptSpinBox->sizePolicy().hasHeightForWidth());
         exptSpinBox->setSizePolicy(sizePolicy1);
-        exptSpinBox->setFont(font);
         exptSpinBox->setFocusPolicy(Qt::ClickFocus);
         exptSpinBox->setReadOnly(true);
         exptSpinBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
@@ -264,14 +284,12 @@ public:
 
         ftmwProgressLabel = new QLabel(centralWidget);
         ftmwProgressLabel->setObjectName(QString::fromUtf8("label_2"));
-        ftmwProgressLabel->setFont(font);
         ftmwProgressLabel->setAlignment(Qt::AlignCenter);
 
         instrumentStatusLayout->addWidget(ftmwProgressLabel);
 
         ftmwProgressBar = new QProgressBar(centralWidget);
         ftmwProgressBar->setObjectName(QString::fromUtf8("ftmwProgressBar"));
-        ftmwProgressBar->setFont(font);
         ftmwProgressBar->setValue(0);
 
         instrumentStatusLayout->addWidget(ftmwProgressBar);
@@ -359,6 +377,11 @@ public:
         menuRollingData->setObjectName(QString::fromUtf8("menuRollingData"));
         menuRollingData->setIcon(rollIcon);
 //        MainWindow->setMenuBar(menuBar);
+
+        settingsMenu = new QMenu(settingsButton);
+        settingsMenu->addAction(fontAction);
+        settingsMenu->addAction(savePathAction);
+
         mainToolBar = new QToolBar(centralWidget);
         mainToolBar->setObjectName(QString::fromUtf8("mainToolBar"));
         mainToolBar->setIconSize(QSize(14, 14));
@@ -412,6 +435,9 @@ public:
 
         mainToolBar->addAction(actionView_Experiment);
 
+        mainToolBar->addWidget(settingsButton);
+        settingsButton->setMenu(settingsMenu);
+
         auto w = new QWidget(MainWindow);
         w->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
         mainToolBar->addWidget(w);
@@ -437,7 +463,7 @@ public:
 
     void retranslateUi(QMainWindow *MainWindow)
     {
-        MainWindow->setWindowTitle(QApplication::translate("MainWindow", "BlackChirp", nullptr));
+        MainWindow->setWindowTitle(QApplication::translate("MainWindow", "Blackchirp", nullptr));
         actionStart_Experiment->setText(QApplication::translate("MainWindow", "&Start Experiment", nullptr));
 #ifndef QT_NO_SHORTCUT
         actionStart_Experiment->setShortcut(QApplication::translate("MainWindow", "F2", nullptr));

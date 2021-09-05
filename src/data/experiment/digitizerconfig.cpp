@@ -21,7 +21,7 @@ double DigitizerConfig::yMult(int ch) const
     if(it == d_analogChannels.end())
         return nan("");
 
-    return it->second.fullScale / static_cast<double>( 2 << (d_bytesPerPoint*8 - 1));
+    return it->second.fullScale / static_cast<double>( 1 << (d_bytesPerPoint*8 - 1));
 }
 
 

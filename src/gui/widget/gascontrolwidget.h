@@ -46,6 +46,10 @@ private:
     QDoubleSpinBox *p_pressureSetpointBox;
     QPushButton* p_pressureControlButton;
 
+
+    // QWidget interface
+public:
+    QSize sizeHint() const override;
 };
 
 #endif // GASCONTROLWIDGET_H

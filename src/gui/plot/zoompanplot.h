@@ -36,7 +36,6 @@ static const QString minorGridStyle{"minorGridStyle"};
 class ZoomPanPlot : public QwtPlot, public SettingsStorage
 {
     Q_OBJECT
-
 public:
     explicit ZoomPanPlot(const QString name, QWidget *parent = nullptr);
     virtual ~ZoomPanPlot();

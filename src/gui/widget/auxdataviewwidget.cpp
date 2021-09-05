@@ -70,10 +70,17 @@ void AuxDataViewWidget::pointUpdated(const AuxDataStorage::AuxDataMap m, const Q
         if(l.size() >= 2)
             realKey = QString("%1.%2").arg(l.constFirst(),l.constLast());
 
+        QString title = realKey;
+        if(l.size() > 3)
+            title = l.at(l.size()-2);
+
         for(auto c : d_plotCurves)
         {
             if(realKey == c->key())
             {
+                if(c->title().text() != title)
+                    c->setTitle(title);
+
                 c->appendPoint(newPoint);
 
                 if(c->isVisible())
@@ -89,13 +96,10 @@ void AuxDataViewWidget::pointUpdated(const AuxDataStorage::AuxDataMap m, const Q
         if(foundCurve)
             continue;
 
-        //if we reach this point, a new curve and metadata struct needs to be created
-        QString title = realKey;
-        if(l.size() > 3)
-            title = l.at(l.size()-2);
-
         BlackchirpPlotCurve *c = new BlackchirpPlotCurve(realKey,title);
         c->appendPoint({x,value});
+        if(c->plotIndex() < 0)
+            c->setCurvePlotIndex(d_plotCurves.size() % d_allPlots.size());
         c->attach(d_allPlots.at(c->plotIndex() % d_allPlots.size()));
         if(c->isVisible())
             c->plot()->replot();

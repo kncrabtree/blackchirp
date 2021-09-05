@@ -38,10 +38,7 @@ ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),
     d_config.axisList.append(AxisConfig(QwtPlot::xTop,BC::Key::top));
 
     for(auto d : d_config.axisList)
-    {
-        setAxisFont(d.type,QApplication::font());
         axisScaleEngine(d.type)->setAttribute(QwtScaleEngine::Floating);
-    }
 
     p_tracker = new CustomTracker(this->canvas());
 
@@ -72,9 +69,9 @@ ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),
     p_grid->enableXMin(true);
     p_grid->enableY(true);
     p_grid->enableYMin(true);
+    p_grid->attach(this);
     configureGridMajorPen();
     configureGridMinorPen();
-    p_grid->attach(this);
 
     canvas()->installEventFilter(this);
     connect(this,&ZoomPanPlot::plotRightClicked,this,&ZoomPanPlot::buildContextMenu);
@@ -172,14 +169,12 @@ void ZoomPanPlot::setXRanges(const QwtScaleDiv &bottom, const QwtScaleDiv &top)
 void ZoomPanPlot::setPlotTitle(const QString text)
 {
     QwtText t(text);
-    t.setFont(QApplication::font());
     setTitle(t);
 }
 
 void ZoomPanPlot::setPlotAxisTitle(QwtPlot::Axis a, const QString text)
 {
     QwtText t(text);
-    t.setFont(QApplication::font());
     setAxisTitle(a,t);
 }
 
@@ -482,6 +477,9 @@ void ZoomPanPlot::filterData()
 
 void ZoomPanPlot::resizeEvent(QResizeEvent *ev)
 {
+    for(auto a : d_config.axisList)
+        setAxisFont(a.type,font());
+
     QwtPlot::resizeEvent(ev);
 
     d_config.xDirty = true;
@@ -784,7 +782,7 @@ QMenu *ZoomPanPlot::contextMenu()
     majorPenBox->addItem(QString::fromUtf16(u"-··-··"),QVariant::fromValue(Qt::DashDotDotLine));
     majorPenBox->setCurrentIndex(majorPenBox->findData(QVariant::fromValue(get<Qt::PenStyle>(BC::Key::majorGridStyle,Qt::NoPen))));
     connect(majorPenBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[=](int i){
-        set(BC::Key::majorGridStyle,majorPenBox->itemData(i));
+        set(BC::Key::majorGridStyle,majorPenBox->itemData(i).toInt());
         configureGridMajorPen();
     });
     majorfl->addRow(QString("Major Line Style"),majorPenBox);
@@ -824,7 +822,7 @@ QMenu *ZoomPanPlot::contextMenu()
     minorPenBox->addItem(QString::fromUtf16(u"-··-··"),QVariant::fromValue(Qt::DashDotDotLine));
     minorPenBox->setCurrentIndex(minorPenBox->findData(QVariant::fromValue(get<Qt::PenStyle>(BC::Key::minorGridStyle,Qt::NoPen))));
     connect(minorPenBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[=](int i){
-        set(BC::Key::minorGridStyle,minorPenBox->itemData(i));
+        set(BC::Key::minorGridStyle,minorPenBox->itemData(i).toInt());
         configureGridMinorPen();
     });
     minorfl->addRow(QString("Minor Line Style"),minorPenBox);
@@ -966,7 +964,7 @@ QMenu *ZoomPanPlot::contextMenu()
                 {
                     QAction *a = moveGroup->addAction(QString("Move to plot %1").arg(j+1));
                     a->setCheckable(true);
-                    if(j == (c->plotIndex() % (d_maxIndex+1)))
+                    if(j == (qMax(c->plotIndex(),0) % (d_maxIndex+1)))
                     {
                         a->setEnabled(false);
                         a->setChecked(true);

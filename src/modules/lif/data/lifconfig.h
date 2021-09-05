@@ -36,9 +36,9 @@ public:
     int shotsPerPoint() const;
     int totalShots() const;
     int completedShots() const;
-    BlackChirp::LifScopeConfig scopeConfig() const;
-    BlackChirp::LifScanOrder order() const;
-    BlackChirp::LifCompleteMode completeMode() const;
+    Blackchirp::LifScopeConfig scopeConfig() const;
+    Blackchirp::LifScanOrder order() const;
+    Blackchirp::LifCompleteMode completeMode() const;
     QPair<int,int> lifGate() const;
     QPair<int,int> refGate() const;
     QList<QList<LifTrace> > lifData() const;
@@ -54,9 +54,9 @@ public:
     void setRefGate(const QPair<int,int> p);
     void setDelayParameters(double start, double step, int count);
     void setLaserParameters(double start,  double step, int count);
-    void setOrder(BlackChirp::LifScanOrder o);
-    void setCompleteMode(BlackChirp::LifCompleteMode mode);
-    void setScopeConfig(BlackChirp::LifScopeConfig c);
+    void setOrder(Blackchirp::LifScanOrder o);
+    void setCompleteMode(Blackchirp::LifCompleteMode mode);
+    void setScopeConfig(Blackchirp::LifScopeConfig c);
     void setShotsPerPoint(int pts);
     bool addWaveform(LifTrace t);
 
@@ -79,8 +79,8 @@ public:
 
     bool enabled {false};
     bool complete {false};
-    BlackChirp::LifScanOrder order {BlackChirp::LifOrderDelayFirst};
-    BlackChirp::LifCompleteMode completeMode{BlackChirp::LifContinueUntilExperimentComplete};
+    Blackchirp::LifScanOrder order {Blackchirp::LifOrderDelayFirst};
+    Blackchirp::LifCompleteMode completeMode{Blackchirp::LifContinueUntilExperimentComplete};
     double delayStartUs {-1.0};
     double delayStepUs {0.0};
     int delayPoints {0};
@@ -96,7 +96,7 @@ public:
     int shotsPerPoint {0};
     QPoint lastUpdatedPoint;
 
-    BlackChirp::LifScopeConfig scopeConfig;
+    Blackchirp::LifScopeConfig scopeConfig;
     QList<QList<LifTrace>> lifData;
 
 };

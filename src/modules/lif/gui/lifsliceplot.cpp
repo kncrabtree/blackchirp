@@ -43,7 +43,7 @@ void LifSlicePlot::setData(const QVector<QPointF> d)
 
 void LifSlicePlot::exportXY()
 {
-    QString path = BlackChirp::getExportDir();
+    QString path = Blackchirp::getExportDir();
     QString name = QFileDialog::getSaveFileName(this,QString("Export LIF Trace"),path + QString("/lifslice.txt"));
     if(name.isEmpty())
         return;
@@ -64,5 +64,5 @@ void LifSlicePlot::exportXY()
     }
     f.close();
     QApplication::restoreOverrideCursor();
-    BlackChirp::setExportDir(name);
+    Blackchirp::setExportDir(name);
 }

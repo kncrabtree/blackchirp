@@ -11,7 +11,7 @@
 #include <QDir>
 #include <QFileDialog>
 
-BCSavePathDialog::BCSavePathDialog() : QDialog(), SettingsStorage()
+BCSavePathDialog::BCSavePathDialog(QWidget *parent) : QDialog(parent), SettingsStorage()
 {
     auto vbl = new QVBoxLayout;
 

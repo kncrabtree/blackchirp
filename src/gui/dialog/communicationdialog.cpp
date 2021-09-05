@@ -349,10 +349,10 @@ void CommunicationDialog::testRs232()
     s.beginGroup(subKey);
     s.setValue(BC::Key::RS232::id,ui->rs232DeviceIDLineEdit->text());
     s.setValue(BC::Key::RS232::baud,ui->baudRateComboBox->currentText().toInt());
-    s.setValue(BC::Key::RS232::dataBits,ui->dataBitsComboBox->currentData());
-    s.setValue(BC::Key::RS232::stopBits,ui->stopBitsComboBox->currentData());
-    s.setValue(BC::Key::RS232::parity,ui->parityComboBox->currentData());
-    s.setValue(BC::Key::RS232::flowControl,ui->flowControlComboBox->currentData());
+    s.setValue(BC::Key::RS232::dataBits,ui->dataBitsComboBox->currentData().value<Rs232Instrument::DataBits>());
+    s.setValue(BC::Key::RS232::stopBits,ui->stopBitsComboBox->currentData().value<Rs232Instrument::StopBits>());
+    s.setValue(BC::Key::RS232::parity,ui->parityComboBox->currentData().value<Rs232Instrument::Parity>());
+    s.setValue(BC::Key::RS232::flowControl,ui->flowControlComboBox->currentData().value<Rs232Instrument::FlowControl>());
     s.endGroup();
     s.endGroup();
 	s.sync();

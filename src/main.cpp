@@ -25,11 +25,17 @@ int main(int argc, char *argv[])
 #endif
 
     QApplication a(argc, argv);
-    a.setFont(QFont(QString("sans-serif"),8));
-
-
 
     const QString appName = QString("Blackchirp");
+
+    //QSettings information
+    QApplication::setApplicationName(appName);
+    QApplication::setOrganizationDomain(QString("crabtreelab.ucdavis.edu"));
+    QApplication::setOrganizationName(QString("CrabtreeLab"));
+
+    SettingsStorage s;
+    auto f = s.get(BC::Key::appFont,QFont(QString("sans-serif"),8));
+    a.setFont(f);
 
     std::unique_ptr<QSharedMemory> m;
     std::unique_ptr<QLocalServer> ls;
@@ -71,12 +77,7 @@ int main(int argc, char *argv[])
         return -255;
     }
 
-    //QSettings information
-    QApplication::setApplicationName(appName);
-    QApplication::setOrganizationDomain(QString("crabtreelab.ucdavis.edu"));
-    QApplication::setOrganizationName(QString("CrabtreeLab"));
 
-    SettingsStorage s;
     auto savePath = s.get(BC::Key::savePath,QString(""));
 
     if(savePath.isEmpty())
@@ -128,7 +129,7 @@ R"000(Next, you can configure the communication settings for the hardware connec
 #ifdef BC_LIF
     qRegisterMetaType<LifTrace>("LifTrace");
     qRegisterMetaType<LifConfig>("LifConfig");
-    qRegisterMetaType<BlackChirp::LifScopeConfig>("BlackChirp::LifScopeConfig");
+    qRegisterMetaType<Blackchirp::LifScopeConfig>("Blackchirp::LifScopeConfig");
 #endif
 
 #ifndef QT_DEBUG

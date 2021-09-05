@@ -1,6 +1,3 @@
-.. toctree::
-   :hidden:
-
 SettingsStorage
 ===============
 

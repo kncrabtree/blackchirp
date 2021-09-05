@@ -102,17 +102,17 @@ int LifConfig::completedShots() const
     return out;
 }
 
-BlackChirp::LifScopeConfig LifConfig::scopeConfig() const
+Blackchirp::LifScopeConfig LifConfig::scopeConfig() const
 {
     return data->scopeConfig;
 }
 
-BlackChirp::LifScanOrder LifConfig::order() const
+Blackchirp::LifScanOrder LifConfig::order() const
 {
     return data->order;
 }
 
-BlackChirp::LifCompleteMode LifConfig::completeMode() const
+Blackchirp::LifCompleteMode LifConfig::completeMode() const
 {
     return data->completeMode;
 }
@@ -177,17 +177,17 @@ void LifConfig::setLaserParameters(double start, double step, int count)
     data->laserPosPoints = count;
 }
 
-void LifConfig::setOrder(BlackChirp::LifScanOrder o)
+void LifConfig::setOrder(Blackchirp::LifScanOrder o)
 {
     data->order = o;
 }
 
-void LifConfig::setCompleteMode(BlackChirp::LifCompleteMode mode)
+void LifConfig::setCompleteMode(Blackchirp::LifCompleteMode mode)
 {
     data->completeMode = mode;
 }
 
-void LifConfig::setScopeConfig(BlackChirp::LifScopeConfig c)
+void LifConfig::setScopeConfig(Blackchirp::LifScopeConfig c)
 {
     data->scopeConfig = c;
 }
@@ -202,9 +202,9 @@ QMap<QString, QPair<QVariant, QString> > LifConfig::headerMap() const
     QMap<QString,QPair<QVariant,QString> > out;
     QString empty = QString("");
     QString prefix = QString("LifConfig");
-    QString so = (data->order == BlackChirp::LifOrderDelayFirst ?
+    QString so = (data->order == Blackchirp::LifOrderDelayFirst ?
                       QString("DelayFirst") : QString("FrequencyFirst"));
-    QString comp = (data->completeMode == BlackChirp::LifStopWhenComplete ?
+    QString comp = (data->completeMode == Blackchirp::LifStopWhenComplete ?
                         QString("Stop") : QString("Continue"));
 
     out.insert(prefix+QString("Enabled"),qMakePair(isEnabled(),empty));
@@ -249,16 +249,16 @@ void LifConfig::parseLine(QString key, QVariant val)
         if(key.endsWith(QString("ScanOrder")))
         {
             if(val.toString().contains(QString("Delay")))
-                data->order = BlackChirp::LifOrderDelayFirst;
+                data->order = Blackchirp::LifOrderDelayFirst;
             else
-                data->order = BlackChirp::LifOrderFrequencyFirst;
+                data->order = Blackchirp::LifOrderFrequencyFirst;
         }
         if(key.endsWith(QString("CompleteBehavior")))
         {
             if(val.toString().contains(QString("Stop")))
-                data->completeMode = BlackChirp::LifStopWhenComplete;
+                data->completeMode = Blackchirp::LifStopWhenComplete;
             else
-                data->completeMode = BlackChirp::LifContinueUntilExperimentComplete;
+                data->completeMode = Blackchirp::LifContinueUntilExperimentComplete;
         }
         if(key.endsWith(QString("DelayStart")) || key.endsWith(QString("Delay")))
             data->delayStartUs = val.toDouble();
@@ -292,9 +292,9 @@ void LifConfig::parseLine(QString key, QVariant val)
         if(key.endsWith(QString("TriggerSlope")))
         {
             if(val.toString().contains(QString("Rising")))
-                data->scopeConfig.slope = BlackChirp::RisingEdge;
+                data->scopeConfig.slope = Blackchirp::RisingEdge;
             else
-                data->scopeConfig.slope = BlackChirp::FallingEdge;
+                data->scopeConfig.slope = Blackchirp::FallingEdge;
         }
         if(key.endsWith(QString("SampleRate")))
             data->scopeConfig.sampleRate = val.toDouble()*1e9;
@@ -316,7 +316,7 @@ void LifConfig::parseLine(QString key, QVariant val)
 
 bool LifConfig::loadLifData(int num, const QString path)
 {
-    QFile lif(BlackChirp::getExptFile(num,BlackChirp::LifFile,path));
+    QFile lif(Blackchirp::getExptFile(num,Blackchirp::LifFile,path));
     if(lif.open(QIODevice::ReadOnly))
     {
         QDataStream d(&lif);
@@ -346,7 +346,7 @@ bool LifConfig::loadLifData(int num, const QString path)
 
 bool LifConfig::writeLifFile(int num) const
 {
-    QFile lif(BlackChirp::getExptFile(num,BlackChirp::LifFile));
+    QFile lif(Blackchirp::getExptFile(num,Blackchirp::LifFile));
     if(lif.open(QIODevice::WriteOnly))
     {
         QDataStream d(&lif);
@@ -362,7 +362,7 @@ bool LifConfig::writeLifFile(int num) const
 bool LifConfig::addWaveform(const LifTrace t)
 {
     //the boolean returned by this function tells if the point was incremented
-    if(data->complete && data->completeMode == BlackChirp::LifStopWhenComplete)
+    if(data->complete && data->completeMode == Blackchirp::LifStopWhenComplete)
         return false;
 
     return(addTrace(t));
@@ -397,8 +397,8 @@ LifConfig LifConfig::loadFromSettings()
     s.beginGroup(QString("lastLifConfig"));
 
     LifConfig out;
-    out.setCompleteMode(static_cast<BlackChirp::LifCompleteMode>(s.value(QString("completeMode"),0).toInt()));
-    out.setOrder(static_cast<BlackChirp::LifScanOrder>(s.value(QString("scanOrder"),0).toInt()));
+    out.setCompleteMode(static_cast<Blackchirp::LifCompleteMode>(s.value(QString("completeMode"),0).toInt()));
+    out.setOrder(static_cast<Blackchirp::LifScanOrder>(s.value(QString("scanOrder"),0).toInt()));
     out.setDelayParameters(s.value(QString("delayStart"),1000.0).toDouble(),s.value(QString("delayStep"),10.0).toDouble(),s.value(QString("delayPoints"),1).toInt());
     out.setLaserParameters(s.value(QString("laserStart"),15000.0).toDouble(),s.value(QString("laserStep"),5.0).toDouble(),s.value(QString("laserPoints"),1).toInt());
 
@@ -434,7 +434,7 @@ void LifConfig::increment()
     if(data->currentDelayIndex+1 >= numDelayPoints() && data->currentFrequencyIndex+1 >= numLaserPoints())
         data->complete = true;
 
-    if(data->order == BlackChirp::LifOrderFrequencyFirst)
+    if(data->order == Blackchirp::LifOrderFrequencyFirst)
     {
         if(data->currentFrequencyIndex+1 >= numLaserPoints())
             data->currentDelayIndex = (data->currentDelayIndex+1)%numDelayPoints();

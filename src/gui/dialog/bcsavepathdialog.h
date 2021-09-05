@@ -11,7 +11,7 @@ class QLineEdit;
 class BCSavePathDialog : public QDialog, public SettingsStorage
 {
 public:
-    BCSavePathDialog();
+    BCSavePathDialog(QWidget *parent = nullptr);
     QSize sizeHint() const override;
 
 private:

@@ -20,15 +20,15 @@ public:
 
     LifConfig getSettings(LifConfig c);
     double laserPos() const;
-    BlackChirp::LifScopeConfig toConfig() const;
+    Blackchirp::LifScopeConfig toConfig() const;
 
 signals:
-    void updateScope(BlackChirp::LifScopeConfig);
+    void updateScope(Blackchirp::LifScopeConfig);
     void newTrace(LifTrace);
     void laserPosUpdate(double pos);
 
 public slots:
-    void scopeConfigChanged(BlackChirp::LifScopeConfig c);
+    void scopeConfigChanged(Blackchirp::LifScopeConfig c);
     void checkLifColors();
     void updateHardwareLimits();
     void setLaserPos(double pos);

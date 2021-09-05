@@ -12,7 +12,7 @@
 GasControlWidget::GasControlWidget(QWidget *parent) : QWidget(parent), SettingsStorage(BC::Key::GasControl::key)
 {
     using namespace BC::Key::GasControl;
-    auto gasControlBoxLayout = new QGridLayout(this);
+    auto gasControlBoxLayout = new QGridLayout;
 
     gasControlBoxLayout->addWidget(new QLabel("Ch"),0,0,1,1);
     gasControlBoxLayout->addWidget(new QLabel("Gas Name"),0,1,1,1,Qt::AlignCenter);
@@ -36,7 +36,7 @@ GasControlWidget::GasControlWidget(QWidget *parent) : QWidget(parent), SettingsS
 
         auto nameEdit = new QLineEdit;
         nameEdit->setText(getArrayValue(channels,i,gasName,QString("")));
-        nameEdit->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Minimum);
+        nameEdit->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Preferred);
         connect(nameEdit,&QLineEdit::editingFinished,[this,nameEdit,i](){
             setArrayValue(channels,i,gasName,nameEdit->text(),true);
             emit nameUpdate(i,nameEdit->text());
@@ -45,7 +45,6 @@ GasControlWidget::GasControlWidget(QWidget *parent) : QWidget(parent), SettingsS
         auto controlBox = new QDoubleSpinBox;
         controlBox->setSpecialValueText(QString("Off"));
         controlBox->setKeyboardTracking(false);
-        controlBox->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Minimum);
         connect(controlBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
                 [this,i](double v) { emit gasSetpointUpdate(i,v); } );
 
@@ -58,7 +57,6 @@ GasControlWidget::GasControlWidget(QWidget *parent) : QWidget(parent), SettingsS
 
 
     p_pressureSetpointBox = new QDoubleSpinBox;
-    p_pressureSetpointBox->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Minimum);
     connect(p_pressureSetpointBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),this,
             &GasControlWidget::pressureSetpointUpdate);
 
@@ -66,7 +64,6 @@ GasControlWidget::GasControlWidget(QWidget *parent) : QWidget(parent), SettingsS
     p_pressureControlButton->setCheckable(true);
     p_pressureControlButton->setChecked(false);
     p_pressureControlButton->setText("Off");
-    p_pressureControlButton->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Minimum);
     connect(p_pressureControlButton,&QPushButton::toggled,[this](bool en){
         emit pressureControlUpdate(en);
         if(en)
@@ -79,8 +76,8 @@ GasControlWidget::GasControlWidget(QWidget *parent) : QWidget(parent), SettingsS
     gasControlBoxLayout->addWidget(p_pressureSetpointBox,1+flowChannels,2,1,1);
     gasControlBoxLayout->addWidget(new QLabel(QString("Pressure Control Mode")),2+flowChannels,1,1,1,Qt::AlignRight);
     gasControlBoxLayout->addWidget(p_pressureControlButton,2+flowChannels,2,1,1);
-    gasControlBoxLayout->addItem(new QSpacerItem(10,10,QSizePolicy::Minimum,QSizePolicy::Expanding),3+flowChannels,0,1,3);
 
+    setLayout(gasControlBoxLayout);
     applySettings();
 }
 
@@ -158,4 +155,9 @@ void GasControlWidget::updatePressureControl(bool en)
         p_pressureControlButton->setChecked(en);
         blockSignals(false);
     }
+}
+
+QSize GasControlWidget::sizeHint() const
+{
+    return {300,400};
 }

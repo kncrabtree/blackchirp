@@ -11,6 +11,7 @@ namespace BC::Key {
 static const QString BC{"Blackchirp"};
 static const QString exptNum{"exptNum"};
 static const QString savePath{"savePath"};
+static const QString appFont{"appFont"};
 static const QString exptDir{"experiments"};
 static const QString logDir{"log"};
 static const QString exportDir{"textexports"};
@@ -51,7 +52,7 @@ static const QString trackingDir{"rollingdata"};
  *
  * QSettings::beginGroup will be called for each key in the keys list. If the list is empty, then
  * the group is set to "Blackchirp". This is done to prevent QSettings form reading in various system-wide
- * garbage on macOS. The `systemWide` argument is used to determine whether the main BlackChirp.conf file
+ * garbage on macOS. The `systemWide` argument is used to determine whether the main Blackchirp.conf file
  * is accessed (which by default is located in /home/data/CrabtreeLab on unix systems), or a user-specific one.
  * Settings that should apply to any user account (experiment number, hardware configuration, etc) should set
  * systemWide=true, and settings that are specific to a user (UI colors/preferences) should set systemWide=false.

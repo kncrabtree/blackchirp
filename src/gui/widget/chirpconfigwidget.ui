@@ -20,7 +20,7 @@
    <item>
     <widget class="QGroupBox" name="chirpConfigurationBox">
      <property name="toolTip">
-      <string>Minimum protection and delay settings can be changed by editing the BlackChirp.conf file. See the chirpConfig section.</string>
+      <string>Minimum protection and delay settings can be changed by editing the Blackchirp.conf file. See the chirpConfig section.</string>
      </property>
      <property name="title">
       <string>Chirp Configuration</string>

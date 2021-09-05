@@ -29,7 +29,7 @@ TemperatureController::TemperatureController(const QString subKey, const QString
     for(int i=0; i<d_numChannels; ++i)
     {
         d_config.setEnabled(i,getArrayValue(channels,i,enabled,false));
-        d_config.setName(i,getArrayValue(channels,i,chName,QString("")));
+        setChannelName(i,getArrayValue(channels,i,chName,QString("")));
     }
 }
 
@@ -62,7 +62,10 @@ void TemperatureController::setChannelEnabled(int ch, bool en)
 
 void TemperatureController::setChannelName(int ch, const QString name)
 {
-    d_config.setName(ch,name);
+    if(!name.isEmpty())
+        d_config.setName(ch,name);
+    else
+        d_config.setName(ch,QString("Temperature Ch%1").arg(ch+1));
 }
 
 double TemperatureController::readTemperature(const int ch)

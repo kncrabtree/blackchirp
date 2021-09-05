@@ -31,7 +31,7 @@ HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidge
         cLabel->setWordWrap(true);
         cLabel->setAlignment(Qt::AlignCenter);
         cvbl->addWidget(cLabel,0);
-        
+
         cvbl->addWidget(controlWidget);
         
         cBox->setLayout(cvbl);

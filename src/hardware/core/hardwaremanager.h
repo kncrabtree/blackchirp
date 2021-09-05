@@ -75,7 +75,7 @@ signals:
 
 #ifdef BC_LIF
     void lifScopeShotAcquired(LifTrace);
-    void lifScopeConfigUpdated(BlackChirp::LifScopeConfig);
+    void lifScopeConfigUpdated(Blackchirp::LifScopeConfig);
     void lifSettingsComplete(bool success = true);
     void lifLaserPosUpdate(double);
 #endif
@@ -138,7 +138,7 @@ public slots:
 #ifdef BC_LIF
     void setLifParameters(double delay, double pos);
     bool setPGenLifDelay(double d);
-    void setLifScopeConfig(const BlackChirp::LifScopeConfig c);
+    void setLifScopeConfig(const Blackchirp::LifScopeConfig c);
     bool setLifLaserPos(double pos);
 #endif
 

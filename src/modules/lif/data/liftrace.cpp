@@ -6,7 +6,7 @@
 LifTrace::LifTrace() : data(new LifTraceData)
 {
 }
-LifTrace::LifTrace(const BlackChirp::LifScopeConfig &c, const QByteArray b) : data(new LifTraceData)
+LifTrace::LifTrace(const Blackchirp::LifScopeConfig &c, const QByteArray b) : data(new LifTraceData)
 {
     //reference channel is used to normalize to pulse energy
     //if active, must be second channel
@@ -18,7 +18,7 @@ LifTrace::LifTrace(const BlackChirp::LifScopeConfig &c, const QByteArray b) : da
     data->lifData.resize(c.recordLength);
     int incr = 1;
     int refoffset = c.recordLength;
-    if(c.refEnabled && (c.channelOrder == BlackChirp::ChannelsInterleaved))
+    if(c.refEnabled && (c.channelOrder == Blackchirp::ChannelsInterleaved))
     {
         incr = 2;
         refoffset = 1;

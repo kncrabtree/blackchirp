@@ -10,7 +10,7 @@ LifScope::~LifScope()
 
 }
 
-void LifScope::setAll(const BlackChirp::LifScopeConfig c)
+void LifScope::setAll(const Blackchirp::LifScopeConfig c)
 {
     if(!qFuzzyCompare(d_config.vScale1,c.vScale1))
         setLifVScale(c.vScale1);

@@ -55,7 +55,6 @@ PulsePlot::PulsePlot(QWidget *parent) :
 
         QwtPlotMarker *m = new QwtPlotMarker;
         QwtText text;
-        text.setFont(QApplication::font());
         text.setColor(p.color());
         m->setLabel(text);
         m->setLabelAlignment(Qt::AlignLeft);
@@ -165,4 +164,9 @@ void PulsePlot::replot()
     }
 
     ZoomPanPlot::replot();
+}
+
+QSize PulsePlot::sizeHint() const
+{
+    return {500,500};
 }

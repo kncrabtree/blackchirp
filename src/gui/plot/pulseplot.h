@@ -31,12 +31,16 @@ public slots:
 
     // ZoomPanPlot interface
 protected:
-    void replot();
+    void replot() override;
 
 private:
     PulseGenConfig d_config;
     QList<QPair<BlackchirpPlotCurve*,QwtPlotMarker*>> d_plotItems;
 
+
+    // QWidget interface
+public:
+    QSize sizeHint() const override;
 };
 
 #endif // PULSEPLOT_H

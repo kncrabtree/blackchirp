@@ -601,12 +601,12 @@ bool HardwareManager::setPGenLifDelay(double d)
 
 }
 
-void HardwareManager::setLifScopeConfig(const BlackChirp::LifScopeConfig c)
+void HardwareManager::setLifScopeConfig(const Blackchirp::LifScopeConfig c)
 {
     if(p_lifScope->thread() == QThread::currentThread())
         p_lifScope->setAll(c);
     else
-        QMetaObject::invokeMethod(p_lifScope,"setAll",Q_ARG(BlackChirp::LifScopeConfig,c));
+        QMetaObject::invokeMethod(p_lifScope,"setAll",Q_ARG(Blackchirp::LifScopeConfig,c));
 }
 
 bool HardwareManager::setLifLaserPos(double pos)

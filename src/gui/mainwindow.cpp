@@ -13,6 +13,7 @@
 #include <QToolButton>
 #include <QFileDialog>
 #include <QDir>
+#include <QFontDialog>
 
 #include <gui/dialog/communicationdialog.h>
 #include <gui/dialog/hwdialog.h>
@@ -32,6 +33,7 @@
 #include <acquisition/batch/batchsingle.h>
 #include <acquisition/batch/batchsequence.h>
 #include <gui/widget/led.h>
+#include <gui/dialog/bcsavepathdialog.h>
 #include <gui/widget/experimentviewwidget.h>
 #include <gui/dialog/quickexptdialog.h>
 #include <gui/dialog/batchsequencedialog.h>
@@ -71,6 +73,28 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->rollingGraphsBox->setValue(ui->rollingDataViewWidget->numPlots());
     connect(ui->rollingGraphsBox,&SpinBoxWidgetAction::valueChanged,
             ui->rollingDataViewWidget,&RollingDataWidget::changeNumPlots);
+
+    connect(ui->fontAction,&QAction::triggered,[this](){
+        auto f = QFontDialog::getFont(0,font());
+        QApplication::setFont(f);
+        setFont(f);
+
+        QSettings s;
+        s.beginGroup(BC::Key::BC);
+        s.setValue(BC::Key::appFont,f);
+        s.endGroup();
+    });
+
+    connect(ui->savePathAction,&QAction::triggered,[this](){
+        if(p_batchManager && !p_batchManager->isComplete())
+            return;
+        BCSavePathDialog d(this);
+        if(d.exec() == QDialog::Accepted)
+        {
+            SettingsStorage s;
+            ui->exptSpinBox->setValue(s.get(BC::Key::exptNum,0));
+        }
+    });
 
     p_lh = new LogHandler(true,this);
     connect(this,&MainWindow::logMessage,p_lh,&LogHandler::logMessage);
@@ -335,6 +359,14 @@ void MainWindow::startExperiment()
     if(p_batchManager && !p_batchManager->isComplete())
         return;
 
+
+    while(!d_openDialogs.empty())
+    {
+        //close any open HW dialogs
+        auto d = d_openDialogs.extract(d_openDialogs.begin());
+        d.mapped()->reject();
+    }
+
     auto exp = std::make_shared<Experiment>();
 
     if(runExperimentWizard(exp.get()))
@@ -348,6 +380,13 @@ void MainWindow::quickStart()
 {
     if(p_batchManager && !p_batchManager->isComplete())
         return;
+
+    while(!d_openDialogs.empty())
+    {
+        //close any open HW dialogs
+        auto d = d_openDialogs.extract(d_openDialogs.begin());
+        d.mapped()->reject();
+    }
 
     QuickExptDialog d(this);
     d.setHardware(d_hardware);
@@ -382,6 +421,14 @@ void MainWindow::startSequence()
 {
     if(p_batchManager && !p_batchManager->isComplete())
         return;
+
+
+    while(!d_openDialogs.empty())
+    {
+        //close any open HW dialogs
+        auto d = d_openDialogs.extract(d_openDialogs.begin());
+        d.mapped()->reject();
+    }
 
     BatchSequenceDialog d(this);
     d.setQuickExptEnabled(ui->exptSpinBox->value() > 0);
@@ -691,7 +738,7 @@ void MainWindow::sleep(bool s)
     {
         QMessageBox mb(this);
         mb.setWindowTitle(QString("Sleep when complete"));
-        mb.setText(QString("BlackChirp will sleep when the current experiment (or batch) is complete."));
+        mb.setText(QString("Blackchirp will sleep when the current experiment (or batch) is complete."));
         mb.addButton(QString("Cancel Sleep"),QMessageBox::RejectRole);
         connect(this,&MainWindow::checkSleep,&mb,&QMessageBox::accept);
 
@@ -703,7 +750,7 @@ void MainWindow::sleep(bool s)
             ui->sleepButton->blockSignals(true);
             ui->sleepButton->setChecked(true);
             ui->sleepButton->blockSignals(false);
-            QMessageBox::information(this,QString("BlackChirp Asleep"),QString("The instrument is asleep. Press the sleep button to re-activate it."),QMessageBox::Ok);
+            QMessageBox::information(this,QString("Blackchirp Asleep"),QString("The instrument is asleep. Press the sleep button to re-activate it."),QMessageBox::Ok);
         }
         else
         {
@@ -718,7 +765,7 @@ void MainWindow::sleep(bool s)
         if(s)
         {
             configureUi(Asleep);
-            QMessageBox::information(this,QString("BlackChirp Asleep"),QString("The instrument is asleep. Press the sleep button to re-activate it."),QMessageBox::Ok);
+            QMessageBox::information(this,QString("Blackchirp Asleep"),QString("The instrument is asleep. Press the sleep button to re-activate it."),QMessageBox::Ok);
         }
         else
             configureUi(Idle);
@@ -890,12 +937,14 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
     ui->pauseButton->setEnabled(false);
     ui->resumeButton->setEnabled(false);
     ui->sleepButton->setEnabled(false);
+    ui->savePathAction->setEnabled(false);
 
 
     switch(s)
     {
     case Asleep:
         ui->sleepButton->setEnabled(true);
+        ui->savePathAction->setEnabled(true);
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(false);
 #endif
@@ -903,6 +952,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
     case Disconnected:
         ui->actionCommunication->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
+        ui->savePathAction->setEnabled(true);
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(false);
 #endif
@@ -942,6 +992,7 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
         for(auto act : acq)
             act->setEnabled(true);
         ui->sleepButton->setEnabled(true);
+        ui->savePathAction->setEnabled(true);
 #ifdef BC_LIF
         p_lifControlWidget->setEnabled(true);
 #endif
@@ -967,6 +1018,7 @@ void MainWindow::startBatch(BatchManager *bm)
     connect(p_am,&AcquisitionManager::auxData,ui->auxDataViewWidget,&AuxDataViewWidget::pointUpdated,Qt::UniqueConnection);
     connect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort,Qt::UniqueConnection);
     p_batchManager = bm;
+
     configureUi(Acquiring);
 
     QMetaObject::invokeMethod(p_hwm,[this](){ p_hwm->initializeExperiment(p_batchManager->currentExperiment());});
@@ -978,7 +1030,14 @@ void MainWindow::closeEvent(QCloseEvent *ev)
     if(p_batchManager && !p_batchManager->isComplete())
         ev->ignore();
     else
-    {
+    {      
+        while(!d_openDialogs.empty())
+        {
+            //close any open HW dialogs
+            auto d = d_openDialogs.extract(d_openDialogs.begin());
+            d.mapped()->reject();
+        }
+
         emit closing();
 
         while(!d_threadObjectList.isEmpty())

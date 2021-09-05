@@ -32,6 +32,7 @@ ClockDisplayBox::ClockDisplayBox(QWidget *parent) : QGroupBox(parent)
 
         auto *lbl = new QLabel(key);
         lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+        lbl->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Preferred);
 
         gl->addWidget(lbl,i,0);
         gl->addWidget(box,i,1);
@@ -40,7 +41,6 @@ ClockDisplayBox::ClockDisplayBox(QWidget *parent) : QGroupBox(parent)
     gl->setColumnStretch(0,0);
     gl->setColumnStretch(1,1);
     setLayout(gl);
-    setSizePolicy(QSizePolicy::Maximum,QSizePolicy::Maximum);
 }
 
 void ClockDisplayBox::updateFrequency(RfConfig::ClockType t, double f)

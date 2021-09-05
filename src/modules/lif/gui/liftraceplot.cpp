@@ -477,7 +477,7 @@ void LifTracePlot::replot()
 
 void LifTracePlot::exportXY()
 {
-    QString path = BlackChirp::getExportDir();
+    QString path = Blackchirp::getExportDir();
     QString name = QFileDialog::getSaveFileName(this,QString("Export LIF Trace"),path + QString("/lifxy.txt"));
     if(name.isEmpty())
         return;
@@ -497,5 +497,5 @@ void LifTracePlot::exportXY()
     }
     f.close();
     QApplication::restoreOverrideCursor();
-    BlackChirp::setExportDir(name);
+    Blackchirp::setExportDir(name);
 }

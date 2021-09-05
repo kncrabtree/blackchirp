@@ -106,7 +106,7 @@ signals:
     /*!
      * \brief Displays a message on the log.
      * \param QString The message to display
-     * \param BlackChirp::MessageCode The status incidator (Normal, Warning, Error, Highlight)
+     * \param Blackchirp::MessageCode The status incidator (Normal, Warning, Error, Highlight)
      */
 	void logMessage(const QString, const LogHandler::MessageCode = LogHandler::Normal);
 

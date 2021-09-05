@@ -15,7 +15,7 @@ static const QString role{"role"};
 /**
  * @brief The Clock class defines an interface for an oscillator
  *
- * Unlike most other HardwareObjects, BlackChirp expects to have multiple clocks.
+ * Unlike most other HardwareObjects, Blackchirp expects to have multiple clocks.
  * As a result, the constructor of the clock needs to receive information about
  * which clock this is for the purpose of identifying it in QSettings.
  *

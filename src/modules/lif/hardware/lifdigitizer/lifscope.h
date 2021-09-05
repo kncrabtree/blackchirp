@@ -17,10 +17,10 @@ public:
 
 signals:
     void waveformRead(const LifTrace);
-    void configUpdated(const BlackChirp::LifScopeConfig);
+    void configUpdated(const Blackchirp::LifScopeConfig);
 
 public slots:
-    void setAll(const BlackChirp::LifScopeConfig c);
+    void setAll(const Blackchirp::LifScopeConfig c);
     virtual void setLifVScale(double scale) =0;
     virtual void setRefVScale(double scale) =0;
     virtual void setHorizontalConfig(double sampleRate, int recLen) =0;
@@ -28,7 +28,7 @@ public slots:
     virtual void queryScope() =0;
 
 protected:
-    BlackChirp::LifScopeConfig d_config;
+    Blackchirp::LifScopeConfig d_config;
 };
 
 #ifdef BC_LIFSCOPE
