@@ -5,6 +5,14 @@
    single: GPIB
    single: RS232
    single: TCP
+   single: Clock
+   single: UpLO
+   single: DownLO
+   single: AwgRef
+   single: DRClock
+   single: DigRef
+   single: ComRef
+   single: Frequency
 
 Hardware Menu
 =============
@@ -23,7 +31,7 @@ Communication
    :width: 700
    :alt: Hardware communication dialog
 
-The communication option opens the hardware communication dialog that was initially displayed during the `first run <first_run.html>`_.
+The **Communication** option opens the hardware communication dialog that was initially displayed during the `first run <first_run.html>`_.
 Here you can make changes to any communication settings as needed.
 If an important piece of hardware throws an error, you may need to open this dialog and test its connection to re-establish communication.
 Some tips about connecting to instruments:
@@ -41,7 +49,7 @@ Some tips about connecting to instruments:
 - After completing these steps, new symlinks should be available, and you can use those symlinks for the RS232 Device ID.
 - For many devices, it may require two attempts to communicate, especially for serial devices that are first tested with the wrong RS232 settings. The device's internal buffer may be filled with incorrect characters that prevent it from correctly processing Blackchirp's device query. If the device responds with a readable but incorrect response, it is worth just re-testing the connection before making additional changes.
 
-Finally, the "Test All Connections" option attempts to reconnect to all attached hardware using the current settings.
+Finally, the **Test All Connections** option attempts to reconnect to all attached hardware using the current settings.
 
 
 Rf Configuration
@@ -54,7 +62,7 @@ Rf Configuration
 
 This dialog provides options for telling Blackchirp how your CP-FTMW spectrometer is configured.
 By properly making settings here, Blackchirp can convert between AWG/chirp frequency as well as between digitizer/molecular frequency.
-In addition, if any programmable clocks are present, Blackchirp can control them (critical for `LO Scan and DR Scan acquistitions <experiment_setup.html>`_).
+In addition, if any programmable clocks are present, Blackchirp can control them (critical for `LO Scan and DR Scan acquistitions <experiment/acquisition_types.html>`_).
 At the top of the dialog, set the appropriate values for your upconversion and downconversion chains according to the diagram below.
 
 .. image:: /_static/user_guide/hardware_menu/clocks.svg
@@ -83,8 +91,8 @@ When checked, the ``DownLO`` row is disabled, and the settings will mirror the `
 
 Each logical clock in Blackchirp has a specific meaning within the program:
 
-- ``UpLO`` is the upconversion local oscillator, and as described above, it is used to convert between AWG frequency and chirp frequency. In an `LO Scan <experiment_setup.html#lo-scan>`_, the UpLO frequency may be tuned from one step to the next.
-- ``DownLO`` likewise is the downconversion local oscillator used to convert frequencies in the FID to molecular frequencies for display. It also may be varied in an `LO Scan <experiment_setup.html#lo-scan>`_, and its frequency can be set to mirror the ``UpLO`` by checking the ``Use common LO for up/downconversion`` box.
+- ``UpLO`` is the upconversion local oscillator, and as described above, it is used to convert between AWG frequency and chirp frequency. In an `LO Scan <experiment/acquisition_types.html>`_, the UpLO frequency may be tuned from one step to the next.
+- ``DownLO`` likewise is the downconversion local oscillator used to convert frequencies in the FID to molecular frequencies for display. It also may be varied in an `LO Scan <experiment/acquisition_types.html>`_, and its frequency can be set to mirror the ``UpLO`` by checking the ``Use common LO for up/downconversion`` box.
 - ``AwgRef`` is used to set a reference frequency for a waveform generator. For example, the AD9914 DDS requires an external clock frequency to determine its sample rate, and Blackchirp reads the value from this clock setting. If the reference oscillator is programmable, then assigning a physical clock channel to this role will allow Blackchirp to control the frequency. At present, this clock is not used for most AWGs (Tektronix and Agilent models); they are set to the maximum allowed sample rate. **This behavior may change in the future, requiring that the sample rate be specified here.**
 - ``DRClock`` is used to control a frequency source used in double resonance experiments. During a `DR Scan <experiment_setup.html#dr-scan>`_, this clock is tuned during each step.
 - ``DigRef`` is similar to ``AwgRef``, but for the FTMW digitizer rather than the AWG. Currently, Blackchirp does not use this setting internally, so its only use is to assign a frequency to a physical clock that is a reference for the digitizer (e.g., if a programmable synthesizer sets the reference for a Spectrum Instrumentation M4i2211x8 card).
@@ -92,5 +100,25 @@ Each logical clock in Blackchirp has a specific meaning within the program:
 
 
 
-Hardware Settings
------------------
+Hardware Control/Settings
+-------------------------
+
+Below the Rf Configuration option you will find options for each of the pieces of hardware enabled in your ``config.pri`` file.
+Selecting the entry brings up a dialog where you can configure various program settings pertaining to that device, and for some devices, you can control the device.
+An example dialog is shown below for the PulseGenerator.
+
+.. image:: /_static/user_guide/hardware_menu/pgen.png
+   :width: 750
+   :align: center
+   :alt: Pulse generator control dialog
+
+
+The top half of the dialog contains controls for the Pulse Generator.
+Making changes to the settings there (channel delays, repetition rate, etc.) immediately sends the appropriate commands to the hardware.
+On the bottom half, you can adjust hardware settings.
+These may control behavior of input widgets (e.g., ``minWidth`` and ``maxWidth`` set the limits on the width boxes), or may control how the device interacts with other parts of the program.
+Changes made here are only applied if the **Ok** button is pressed.
+If the dialog is closed automatically by the program, or with the "X" on the window or the **Close** button, the settings are not applied.
+**It is strongly recommended that you do not make changes to the settings unless you understand exactly what the setting does!**
+Incorrect or inappropriate settings may cause unexpected program behavior.
+Explanations of the settings are provided for each piece of hardware on the `Hardware Details <hardware_details.html>`_ page.

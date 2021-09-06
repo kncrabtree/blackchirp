@@ -1,21 +1,8 @@
 Experiment Setup
 ================
 
-Target Shots
-------------
+.. toctree::
+   :caption: Contents:
+   :glob:
 
-Target Duration
----------------
-
-Forever
--------
-
-Peak Up
--------
-
-
-LO Scan
--------
-
-DR Scan
-_______
+   experiment/*
