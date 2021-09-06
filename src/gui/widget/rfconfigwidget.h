@@ -41,6 +41,10 @@ signals:
 private:
     Ui::RfConfigWidget *ui;
     ClockTableModel *p_ctm;
+
+    // QWidget interface
+public:
+    QSize sizeHint() const override;
 };
 
 #endif // RFCONFIGWIDGET_H

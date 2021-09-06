@@ -1,7 +1,7 @@
 #include "fixedclock.h"
 
 FixedClock::FixedClock(int clockNum, QObject *parent) :
-    Clock(clockNum,5,false,BC::Key::Clock::fixed,BC::Key::Clock::fixedName.arg(clockNum),CommunicationProtocol::None,parent)
+    Clock(clockNum,5,false,BC::Key::Clock::fixed,BC::Key::Clock::fixedName.arg(clockNum+1),CommunicationProtocol::None,parent)
 {
     using namespace BC::Key::Clock;
     if(containsArray(ch))

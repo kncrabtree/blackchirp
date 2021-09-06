@@ -45,8 +45,8 @@ After selecting a data storage location, Blackchirp will open the Hardware Commu
 
 From this window, you can enter connection information for any GPIB, RS232, TCP or custom instruments that are connected to the program.
 This process is optional; it can be done at any later time by opening the Hardware > Communication menu item.
-In the screenshot above, the controls are disabled because no hardware was compiled into the program.
 If hardware is compiled in, then each hardware item will appear in one of the dropdown boxes.
 Select a hardware item, enter the appropriate information (IP address, path to device file, etc), and hit the associated "Test Connection" button.
 The result of the communication test will be displayed in a popup box.
+For more information about this dialog, see the `Hardware Menu <hardware_menu.html#communication>`_ page.
 When finished, close the dialog, and the main user interface will be displayed.

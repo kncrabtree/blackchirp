@@ -667,7 +667,17 @@ void MainWindow::launchCommunicationDialog(bool parent)
 
 void MainWindow::launchRfConfigDialog()
 {
+    auto it = d_openDialogs.find("RfConfig");
+    if(it != d_openDialogs.end())
+    {
+        it->second->setWindowState(Qt::WindowActive);
+        it->second->raise();
+        it->second->show();
+        return;
+    }
+
     auto d = new QDialog;
+    d->setWindowTitle("Rf Configuration");
     auto w = new RfConfigWidget(d);
     QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks;
     QMetaObject::invokeMethod(p_hwm,&HardwareManager::getClocks,Qt::BlockingQueuedConnection,&clocks);

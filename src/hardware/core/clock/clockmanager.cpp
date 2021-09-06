@@ -44,7 +44,7 @@ ClockManager::ClockManager(QObject *parent) : QObject(parent),
             if(j < names.size())
                 pn.append(names.at(j));
             else
-                pn.append(QString("Output %1").arg(j));
+                pn.append(QString("Output %1").arg(j+1));
 
             appendArrayMap(hwClocks,{
                                {clockKey,c->d_key},
