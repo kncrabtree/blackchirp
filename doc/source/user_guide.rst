@@ -10,6 +10,7 @@ Blackchirp User Guide
    user_guide/hardware_menu
    user_guide/hardware_details
    user_guide/rolling-aux-data
+   user_guide/plot_controls
    user_guide/experiment_setup
    user_guide/cp-ftmw
    
