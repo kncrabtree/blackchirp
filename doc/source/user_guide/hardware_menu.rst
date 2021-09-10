@@ -119,6 +119,10 @@ On the bottom half, you can adjust hardware settings.
 These may control behavior of input widgets (e.g., ``minWidth`` and ``maxWidth`` set the limits on the width boxes), or may control how the device interacts with other parts of the program.
 Changes made here are only applied if the **Ok** button is pressed.
 If the dialog is closed automatically by the program, or with the "X" on the window or the **Close** button, the settings are not applied.
-**It is strongly recommended that you do not make changes to the settings unless you understand exactly what the setting does!**
-Incorrect or inappropriate settings may cause unexpected program behavior.
+
+.. warning::
+   It is strongly recommended that you do not make changes to the settings unless you understand exactly what the setting does!
+
+   Incorrect or inappropriate settings may cause unexpected program behavior.
+
 Explanations of the settings are provided for each piece of hardware on the `Hardware Details <hardware_details.html>`_ page.

@@ -612,13 +612,17 @@ void ZoomPanPlot::zoom(QWheelEvent *we)
     //shift-wheel: lock horizontal
     //meta-wheel: lock right axis
     //alt-wheel: lock left axis
-    bool lockHorizontal = (we->modifiers() & Qt::ShiftModifier) || (we->modifiers() & Qt::AltModifier) || (we->modifiers() & Qt::MetaModifier);
-    bool lockLeft = (we->modifiers() & Qt::ControlModifier) || (we->modifiers() & Qt::AltModifier);
-    bool lockRight = (we->modifiers() & Qt::ControlModifier) || (we->modifiers() & Qt::MetaModifier);
+    auto mod = QApplication::keyboardModifiers();
+    bool lockHorizontal = (mod & Qt::ShiftModifier) || (mod & Qt::AltModifier) || (mod & Qt::MetaModifier);
+    bool lockLeft = (mod & Qt::ControlModifier) || (mod & Qt::AltModifier);
+    bool lockRight = (mod & Qt::ControlModifier) || (mod & Qt::MetaModifier);
 
     //one step, which is 15 degrees, will zoom 10%
     //the delta function is in units of 1/8th a degree
+
     int numSteps = we->angleDelta().y()/8/15;
+    if(numSteps == 0) //Qt might switch orientation of wheel event when alt is pressed
+        numSteps = we->angleDelta().x()/8/15;
 
     p_mutex->lock();
     for(int i=0; i<d_config.axisList.size(); i++)
