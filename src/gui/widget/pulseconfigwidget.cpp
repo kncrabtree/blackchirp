@@ -47,8 +47,6 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
         ch.delayBox->setKeyboardTracking(false);
         ch.delayBox->setDecimals(3);
         ch.delayBox->setSuffix(QString::fromUtf16(u" µs"));
-        ch.delayBox->setSingleStep(s.getArrayValue<double>(BC::Key::PulseWidget::channels,i,
-                                                           BC::Key::PulseWidget::delayStep,1.0));
         ui->pulseConfigBoxLayout->addWidget(ch.delayBox,i+1,col,1,1);
         connect(ch.delayBox,vc,[=](double val){
             emit changeSetting(i,PulseGenConfig::DelaySetting,val);
@@ -59,7 +57,8 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
         ch.widthBox->setKeyboardTracking(false);
         ch.widthBox->setDecimals(3);
         ch.widthBox->setSuffix(QString::fromUtf16(u" µs"));
-        ch.widthBox->setSingleStep(get<double>(BC::Key::PulseWidget::widthStep,1.0));
+        ch.widthBox->setSingleStep(getArrayValue<double>(BC::Key::PulseWidget::channels,i,
+                                                         BC::Key::PulseWidget::widthStep,1.0));
         ui->pulseConfigBoxLayout->addWidget(ch.widthBox,i+1,col,1,1);
         connect(ch.widthBox,vc,this,[=](double val){ emit changeSetting(i,PulseGenConfig::WidthSetting,val); } );
         col++;
@@ -397,6 +396,7 @@ void PulseConfigWidget::launchChannelConfig(int ch)
 
 
         ui->pulsePlot->newConfig(d_config);
+        updateFromSettings();
     }
 
     chw.nameEdit->setParent(this);
@@ -518,13 +518,11 @@ void PulseConfigWidget::updateFromSettings()
 
         ui->pulsePlot->newSetting(i,PulseGenConfig::NameSetting,n);
 
-        if(chw.delayStepBox != nullptr)
-            chw.delayStepBox->setValue(getArrayValue<double>(BC::Key::PulseWidget::channels,i,
-                                                             BC::Key::PulseWidget::delayStep,1.0));
+        chw.delayBox->setSingleStep(getArrayValue<double>(BC::Key::PulseWidget::channels,i,
+                                                               BC::Key::PulseWidget::delayStep,1.0));
 
-        if(chw.widthStepBox != nullptr)
-            chw.widthStepBox->setValue(getArrayValue<double>(BC::Key::PulseWidget::channels,i,
-                                                             BC::Key::PulseWidget::widthStep,1.0));
+        chw.widthBox->setSingleStep(getArrayValue<double>(BC::Key::PulseWidget::channels,i,
+                                                               BC::Key::PulseWidget::widthStep,1.0));
 
     }
 
