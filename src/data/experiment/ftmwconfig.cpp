@@ -35,6 +35,7 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
 {
 
     int np = d_scopeConfig.d_recordLength;
+    auto shots = shotIncrement();
     FidList out;
     //read raw data into vector in 64 bit integer form
     for(int j=0;j<d_scopeConfig.d_numRecords;j++)
@@ -104,6 +105,10 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
                 dat = (static_cast<qint64>(y));
             }
 
+            //"Undo" averaging that was done by the device
+            //Ok to do this if statement in the loop; the compiler will optimize it
+            if(shots > 1)
+                dat *= shots;
 
             //some modes (eg peakup) may add additional padding bits for averaging
             dat = dat << bitShift();

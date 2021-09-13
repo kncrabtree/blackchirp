@@ -14,18 +14,18 @@ __global__ void setMem64_kernel(int n, long long *ptr, const long long *newData)
         ptr[i] = newData[i];
 }
 
-__global__ void parseAdd_kernel1byte(int numPoints, char *devNewData, long long int *devSum, int offset, int shift)
+__global__ void parseAdd_kernel1byte(int numPoints, char *devNewData, long long int *devSum, int offset, int shift, int shots = 1)
 {
     int i = offset + blockIdx.x*blockDim.x + threadIdx.x;
     if(i + shift < numPoints && i + shift >= 0)
-        devSum[i] += (long long int)devNewData[i+shift];
+        devSum[i] += (long long int)devNewData[i+shift]*shots;
 }
 
-__global__ void parseRollAvg_kernel1byte(int numPoints, char *devnewData, long long int *devSum, int offset, qint64 currentShots, qint64 targetShots, int shift)
+__global__ void parseRollAvg_kernel1byte(int numPoints, char *devnewData, long long int *devSum, int offset, qint64 currentShots, qint64 targetShots, int shift, int shots = 1)
 {
     int i = offset + blockIdx.x*blockDim.x + threadIdx.x;
     if(i < numPoints && i + shift < numPoints && i >= 0 && i + shift >= 0)
-        devSum[i] += ((long long int)devnewData[i+shift] << 8);
+        devSum[i] += (((long long int)devnewData[i+shift]*shots) << 8);
 
     if(i < numPoints && currentShots > targetShots)
     {
@@ -35,7 +35,7 @@ __global__ void parseRollAvg_kernel1byte(int numPoints, char *devnewData, long l
 
 }
 
-__global__ void parseAdd_kernel2byte(int numPoints, char *devNewData, long long int *devSum, int offset, bool le, int shift)
+__global__ void parseAdd_kernel2byte(int numPoints, char *devNewData, long long int *devSum, int offset, bool le, int shift, int shots = 1)
 {
     int i = offset + blockIdx.x*blockDim.x + threadIdx.x;
     if(i + shift < numPoints && i + shift >= 0)
@@ -43,17 +43,17 @@ __global__ void parseAdd_kernel2byte(int numPoints, char *devNewData, long long 
         if(le)
         {
             int16_t dat = (devNewData[2*(i+shift)+1] << 8 ) | (devNewData[2*(i+shift)]);
-            devSum[i] += (long long int)dat;
+            devSum[i] += (long long int)dat*shots;
         }
         else
         {
             int16_t dat = (devNewData[2*(i+shift)] << 8 ) | (devNewData[2*(i+shift)+1]);
-            devSum[i] += (long long int)dat;
+            devSum[i] += (long long int)dat*shots;
         }
     }
 }
 
-__global__ void parseRollAvg_kernel2byte(int numPoints, char *devNewData, long long int *devSum, int offset, qint64 currentShots, qint64 targetShots, bool le, int shift)
+__global__ void parseRollAvg_kernel2byte(int numPoints, char *devNewData, long long int *devSum, int offset, qint64 currentShots, qint64 targetShots, bool le, int shift, int shots = 1)
 {
     int i = offset + blockIdx.x*blockDim.x + threadIdx.x;
     if(i + shift < numPoints && i + shift >= 0)
@@ -61,12 +61,12 @@ __global__ void parseRollAvg_kernel2byte(int numPoints, char *devNewData, long l
         if(le)
         {
             int16_t dat = (devNewData[2*(i+shift)+1] << 8 ) | (devNewData[2*(i+shift)]);
-            devSum[i] += (long long int)dat << 8;
+            devSum[i] += ((long long int)dat*shots) << 8;
         }
         else
         {
             int16_t dat = (devNewData[2*(i+shift)] << 8 ) | (devNewData[2*(i+shift)+1]);
-            devSum[i] += (long long int)dat << 8;
+            devSum[i] += ((long long int)dat*shots) << 8;
         }
     }
 
@@ -79,7 +79,7 @@ __global__ void parseRollAvg_kernel2byte(int numPoints, char *devNewData, long l
     }
 }
 
-__global__ void parseAdd_kernel4byte(int numPoints, char *devNewData, long long int *devSum, int offset, bool le, int shift)
+__global__ void parseAdd_kernel4byte(int numPoints, char *devNewData, long long int *devSum, int offset, bool le, int shift, int shots = 1)
 {
     int i = offset + blockIdx.x*blockDim.x + threadIdx.x;
     if(i + shift < numPoints && i + shift >= 0)
@@ -87,17 +87,17 @@ __global__ void parseAdd_kernel4byte(int numPoints, char *devNewData, long long 
         if(le)
         {
             int32_t dat = (devNewData[4*(i+shift)+3] << 24 ) | (devNewData[4*(i+shift)+2] << 16 ) | (devNewData[4*(i+shift)+1] << 8 ) | (devNewData[4*(i+shift)]);
-            devSum[i] += (long long int)dat;
+            devSum[i] += (long long int)dat*shots;
         }
         else
         {
             int16_t dat = (devNewData[4*(i+shift)] << 24 ) | (devNewData[4*(i+shift)+1] << 16 ) | (devNewData[4*(i+shift)+2] << 8 ) | (devNewData[4*(i+shift)+3]);
-            devSum[i] += (long long int)dat;
+            devSum[i] += (long long int)dat*shots;
         }
     }
 }
 
-__global__ void parseRollAvg_kernel4byte(int numPoints, char *devNewData, long long int *devSum, int offset, qint64 currentShots, qint64 targetShots, bool le, int shift)
+__global__ void parseRollAvg_kernel4byte(int numPoints, char *devNewData, long long int *devSum, int offset, qint64 currentShots, qint64 targetShots, bool le, int shift, int shots = 1)
 {
     int i = offset + blockIdx.x*blockDim.x + threadIdx.x;
     if(i + shift < numPoints && i + shift >= 0)
@@ -105,12 +105,12 @@ __global__ void parseRollAvg_kernel4byte(int numPoints, char *devNewData, long l
         if(le)
         {
             int32_t dat = (devNewData[4*i+3] << 24 ) | (devNewData[4*i+2] << 16 ) | (devNewData[4*i+1] << 8 ) | (devNewData[4*i]);
-            devSum[i] += (long long int)dat << 8;
+            devSum[i] += ((long long int)dat*shots) << 8;
         }
         else
         {
             int16_t dat = (devNewData[4*i] << 24 ) | (devNewData[4*i+1] << 16 ) | (devNewData[4*i+2] << 8 ) | (devNewData[4*i+3]);
-            devSum[i] += (long long int)dat << 8;
+            devSum[i] += ((long long int)dat*shots) << 8;
         }
     }
 
@@ -215,6 +215,7 @@ QVector<QVector<qint64> > GpuAverager::parseAndAdd(const char *newDataIn, const 
     auto rl = p_config->d_recordLength;
     auto bpp = p_config->d_bytesPerPoint;
     auto le = p_config->d_byteOrder == DigitizerConfig::LittleEndian;
+    int shots = p_config->d_blockAverage ? p_config->d_numAverages : 1;
 
     //move new data to pinned memory for efficiency and for stream usage
     memcpy(p_hostPinnedCharPtr,newDataIn,d_totalPoints*bpp*sizeof(char));
@@ -225,13 +226,13 @@ QVector<QVector<qint64> > GpuAverager::parseAndAdd(const char *newDataIn, const 
         cudaMemcpyAsync(&p_devCharPtr[i*rl*bpp], &p_hostPinnedCharPtr[i*rl*bpp], rl*bpp*sizeof(char), cudaMemcpyHostToDevice,d_streamList[i]);
         if(bpp == 1)
             parseAdd_kernel1byte<<<d_numRecordBlocks, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
-                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*rl,shift);
+                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*rl,shift,shots);
         else if(bpp == 2)
             parseAdd_kernel2byte<<<d_numRecordBlocks, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
-                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*rl,le,shift);
+                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*rl,le,shift,shots);
         else if(bpp == 4)
             parseAdd_kernel4byte<<<d_numRecordBlocks, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
-                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*rl,le,shift);
+                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*rl,le,shift,shots);
 
         cudaMemcpyAsync(&p_hostPinnedSumPtr[i*rl], &p_devSumPtr[i*rl], rl*sizeof(qint64),
                 cudaMemcpyDeviceToHost,d_streamList[i]);
@@ -274,6 +275,7 @@ QVector<QVector<qint64> > GpuAverager::parseAndRollAvg(const char *newDataIn, co
     auto le = p_config->d_byteOrder == DigitizerConfig::LittleEndian;
     auto cs = static_cast<qint64>(currentShots);
     auto ts = static_cast<qint64>(targetShots);
+    int shots = p_config->d_blockAverage ? p_config->d_numAverages : 1;
 
     //move new data to pinned memory for efficiency and for stream usage
     memcpy(p_hostPinnedCharPtr,newDataIn,d_totalPoints*bpp*sizeof(char));
@@ -284,13 +286,13 @@ QVector<QVector<qint64> > GpuAverager::parseAndRollAvg(const char *newDataIn, co
         cudaMemcpyAsync(&p_devCharPtr[i*rl*bpp], &p_hostPinnedCharPtr[i*rl*bpp], rl*bpp*sizeof(char), cudaMemcpyHostToDevice,d_streamList[i]);
         if(bpp == 1)
             parseRollAvg_kernel1byte<<<d_numRecordBlocks, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
-                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*rl,cs,ts,shift);
+                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*rl,cs,ts,shift,shots);
         else if(bpp == 2)
             parseRollAvg_kernel2byte<<<d_numRecordBlocks, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
-                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*rl,cs,ts,le,shift);
+                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*rl,cs,ts,le,shift,shots);
         else
             parseRollAvg_kernel4byte<<<d_numRecordBlocks, d_cudaThreadsPerBlock, 0, d_streamList[i]>>>
-                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*rl,cs,ts,le,shift);
+                    (d_totalPoints,p_devCharPtr,p_devSumPtr,i*rl,cs,ts,le,shift,shots);
         cudaMemcpyAsync(&p_hostPinnedSumPtr[i*rl], &p_devSumPtr[i*rl], rl*sizeof(qint64), cudaMemcpyDeviceToHost,d_streamList[i]);
     }
 
