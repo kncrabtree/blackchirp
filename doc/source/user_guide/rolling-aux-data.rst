@@ -6,9 +6,6 @@ Rolling/Aux Data
    :align: center
    :alt: Rolling data screenshot
 
-Overview
---------
-
 **Rolling data** and **Aux data** both refer to signals that are periodically recorded as a function of time, and they are plotted against the date and time the measurement was taken.
 Rolling data is taken as long as Blackchirp is running, while aux data is associated with a particular experiment, and is only recorded during the time that the experiment is active.
 An example is shown in the screenshot above; a virtual `TemperatureController <hw/temperaturecontroller.html>`_ is configured to monitor 4 different temperature channels at an interval of 5 seconds.
@@ -31,8 +28,8 @@ Examples of identifiers are::
    PressureController.intellisys.chamberPressure
 
 
-Configuration
--------------
+Configuring Rolling Data
+------------------------
 
 By default, rolling data is disabled.
 Enabling rolling data is accomplished by selecting the appropriate hardware entry in the `Hardware Menu <hardware_menu.rst>`_, enabling channels if applicable, and setting the ``rollingDataIntervalSec`` setting to a positive integer.

@@ -130,6 +130,8 @@ void WizardDrScanConfigPage::initializePage()
              p_shotsBox->setValue(rfc.d_shotsPerClockConfig);
          }
      }
+     else
+         p_shotsBox->setValue(e->ftmwConfig()->d_objective);
 
      p_startBox->blockSignals(false);
      p_stepSizeBox->blockSignals(false);
