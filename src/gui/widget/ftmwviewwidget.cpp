@@ -371,6 +371,7 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
     {
         //this is the main plot
         ui->mainFtPlot->newFt(ft);
+        ui->peakFindAction->setEnabled(!ft.isEmpty());
         ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
         if(p_pfw != nullptr)
             p_pfw->newFt(ft);
@@ -390,8 +391,6 @@ void FtmwViewWidget::updateMainPlot()
     ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
 
     cancelSidebandProcessing();
-
-    ui->peakFindAction->setEnabled(!ui->mainFtPlot->currentFt().isEmpty());
 
     switch(ui->plotToolBar->mainPlotMode()) {
     case FtmwPlotToolBar::Live:
@@ -421,6 +420,8 @@ void FtmwViewWidget::updateMainPlot()
         processSidebands();
         break;
     }
+
+    ui->peakFindAction->setEnabled(!ui->mainFtPlot->currentFt().isEmpty());
 }
 
 void FtmwViewWidget::reprocess(const QList<int> ignore)
