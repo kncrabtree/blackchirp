@@ -8,10 +8,9 @@ DISTFILES += \
    $$PWD/source/conf.py \
    $$PWD/source/index.rst \
    $$PWD/source/user_guide/cp-ftmw.rst \
+   $$PWD/source/user_guide/data_storage.rst \
    $$PWD/source/user_guide/experiment/acquisition_types.rst \
-   $$PWD/source/user_guide/experiment/backup_autosave.rst \
    $$PWD/source/user_guide/experiment/chirp_setup.rst \
-   $$PWD/source/user_guide/experiment/data_format.rst \
    $$PWD/source/user_guide/experiment/digitizer_setup.rst \
    $$PWD/source/user_guide/experiment/quick_experiment.rst \
    $$PWD/source/user_guide/experiment/sequence_mode.rst \
