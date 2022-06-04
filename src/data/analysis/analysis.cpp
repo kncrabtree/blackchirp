@@ -26,13 +26,13 @@ QList<int> Analysis::parseIntRanges(const QString str, int max)
 {
     QList<int> out;
 
-    QList<QString> l = str.split(QChar(','),QString::SkipEmptyParts);
+    QList<QString> l = str.split(QChar(','),Qt::SkipEmptyParts);
     for(int i=0; i<l.size(); i++)
     {
         QString s = l.at(i).trimmed();
         if(s.contains(QChar('-')))
         {
-            QList<QString> l2 = s.split(QChar('-'),QString::SkipEmptyParts);
+            QList<QString> l2 = s.split(QChar('-'),Qt::SkipEmptyParts);
             if(l2.size() != 2)
                 continue;
 

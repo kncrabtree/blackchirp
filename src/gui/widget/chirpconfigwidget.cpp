@@ -260,7 +260,7 @@ void ChirpConfigWidget::moveSegments(int direction)
     for(int i=0; i<l.size(); i++)
         sortList.append(l.at(i).row());
 
-    qSort(sortList);
+    std::sort(sortList.begin(),sortList.end());
 
     //make sure selection is contiguous
     if(sortList.size()>1 && sortList.at(sortList.size()-1) - sortList.at(0) != sortList.size()-1)
@@ -330,7 +330,7 @@ bool ChirpConfigWidget::isSelectionContiguous(QModelIndexList l)
     for(int i=0; i<l.size(); i++)
         sortList.append(l.at(i).row());
 
-    qSort(sortList);
+    std::sort(sortList.begin(),sortList.end());
 
     if(sortList.at(sortList.size()-1) - sortList.at(0) != sortList.size()-1)
         return false;

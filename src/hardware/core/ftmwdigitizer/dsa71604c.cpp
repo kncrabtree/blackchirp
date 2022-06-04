@@ -82,7 +82,7 @@ void Dsa71604c::initialize()
 
     p_comm->setReadOptions(3000,true,QByteArray("\n"));
     p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
-    connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),this,&Dsa71604c::socketError);
+    connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::errorOccurred),this,&Dsa71604c::socketError);
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
     p_socket->setSocketOption(QAbstractSocket::KeepAliveOption,1);
 }
@@ -481,7 +481,7 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     resp = scopeQueryCmd(QString(":WFMOUTPRE:ENCDG?;BN_FMT?;BYT_OR?;NR_FR?;NR_PT?;BYT_NR?\n"));
     if(!resp.isEmpty())
     {
-        QStringList l = QString(resp.trimmed()).split(QChar(';'),QString::SkipEmptyParts);
+        QStringList l = QString(resp.trimmed()).split(QChar(';'),Qt::SkipEmptyParts);
         if(l.size() < 6)
         {
             emit logMessage(QString("Could not parse response to waveform output settings query. Response: %1 (Hex: %2)")

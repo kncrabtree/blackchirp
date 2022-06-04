@@ -382,5 +382,5 @@ Qt::ItemFlags ShotsModel::flags(const QModelIndex &index) const
     if(index.row() >= 0 && index.row() < d_shotsList.size() && index.column() < 2)
         return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
 
-    return 0;
+    return Qt::NoItemFlags;
 }

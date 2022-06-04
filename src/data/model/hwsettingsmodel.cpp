@@ -249,7 +249,7 @@ Qt::ItemFlags HWSettingsModel::flags(const QModelIndex &index) const
             return QAbstractItemModel::flags(index);
     }
     
-    return 0;
+    return Qt::NoItemFlags;
 }
 
 HWSettingsItem *HWSettingsModel::getItem(const QModelIndex &index) const

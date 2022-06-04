@@ -54,14 +54,14 @@ bool M8195A::prepareForExperiment(Experiment &exp)
     p_comm->writeCmd(QString("*CLS;*RST\n"));
     if(!m8195aWrite(QString(":INST:DACM Marker;:INST:MEM:EXT:RDIV DIV1;:TRAC1:MMOD EXT\n")))
     {
-        exp.setErrorString(QString("Could not initialize instrument settings."));
+        exp.d_errorString = QString("Could not initialize instrument settings.");
         return false;
     }
 
     //external reference (TODO: interface with more general clock system?)
     if(!m8195aWrite(QString(":ROSC:SOUR EXT;:ROSC:FREQ 10000000\n")))
     {
-        exp.setErrorString(QString("Could not set to external reference."));
+        exp.d_errorString = QString("Could not set to external reference.");
         return false;
     }
 
@@ -78,7 +78,7 @@ bool M8195A::prepareForExperiment(Experiment &exp)
 
         if(!m8195aWrite(QString(":INIT:CONT 0;:INIT:GATE 0;:ARM:TRIG:SOUR TRIG;:TRIG:SOUR:ENAB TRIG;:ARM:TRIG:LEV 1.5;:ARM:TRIG:SLOP POS;:ARM:TRIG:OPER %1\n").arg(trig)))
         {
-            exp.setErrorString(QString("Could not initialize trigger settings."));
+            exp.d_errorString = QString("Could not initialize trigger settings.");
             return false;
         }
     }
@@ -86,26 +86,26 @@ bool M8195A::prepareForExperiment(Experiment &exp)
     {
         if(!m8195aWrite(QString(":INIT:CONT 1;:INIT:GATE 0\n")))
         {
-            exp.setErrorString(QString("Could not initialize continuous signal generation."));
+            exp.d_errorString = QString("Could not initialize continuous signal generation.");
             return false;
         }
     }
 
     if(!m8195aWrite(QString(":VOLTAGE 1.0\n")))
     {
-        exp.setErrorString(QString("Could not set output voltage."));
+        exp.d_errorString = QString("Could not set output voltage.");
         return false;
     }
 
     if(!m8195aWrite(QString(":FREQ:RAST %1\n").arg(samplerate,0,'E',1)))
     {
-        exp.setErrorString(QString("Could not set sample rate."));
+        exp.d_errorString = QString("Could not set sample rate.");
         return false;
     }
 
     if(!m8195aWrite(QString(":TRAC:DEL:ALL\n")))
     {
-        exp.setErrorString(QString("Could not delete old traces."));
+        exp.d_errorString = QString("Could not delete old traces.");
         return false;
     }
 
@@ -114,7 +114,7 @@ bool M8195A::prepareForExperiment(Experiment &exp)
 
     if(data.size() != markerData.size())
     {
-        exp.setErrorString(QString("Waveform and marker data are not same length. This is a bug; please report it."));
+        exp.d_errorString = QString("Waveform and marker data are not same length. This is a bug; please report it.");
         return false;
     }
 
@@ -123,7 +123,7 @@ bool M8195A::prepareForExperiment(Experiment &exp)
     QByteArray id = p_comm->queryCmd(QString(":TRAC1:DEF:NEW? %1\n").arg(len)).trimmed();
     if(id.isEmpty())
     {
-        exp.setErrorString(QString("Could not create new AWG trace."));
+        exp.d_errorString = QString("Could not create new AWG trace.");
         return false;
     }
 
@@ -180,14 +180,14 @@ bool M8195A::prepareForExperiment(Experiment &exp)
         if(!p_comm->writeCmd(header))
         {
             success = false;
-            exp.setErrorString(QString("Could not write header data to AWG. Header: %1").arg(header));
+            exp.d_errorString = QString("Could not write header data to AWG. Header: %1").arg(header);
             break;
         }
 
         if(!p_comm->writeBinary(chunkData))
         {
             success = false;
-            exp.setErrorString(QString("!Could not write waveform data to AWG. Header was: %1").arg(header));
+            exp.d_errorString = QString("!Could not write waveform data to AWG. Header was: %1").arg(header);
             break;
         }
 
@@ -197,7 +197,7 @@ bool M8195A::prepareForExperiment(Experiment &exp)
         QByteArray resp = p_comm->queryCmd(QString("SYST:ERR?\n"));
         if(!resp.startsWith('0'))
         {
-            exp.setErrorString(QString("Could not write waveform data to AWG. Error %1. Header was: %2").arg(QString(resp)).arg(header));
+            exp.d_errorString = QString("Could not write waveform data to AWG. Error %1. Header was: %2").arg(QString(resp)).arg(header);
             success = false;
             break;
         }

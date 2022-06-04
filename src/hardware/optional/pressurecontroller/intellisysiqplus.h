@@ -16,10 +16,6 @@ class IntellisysIQPlus : public PressureController
 public:
     IntellisysIQPlus(QObject *parent =nullptr);
 
-    // HardwareObject interface
-public slots:
-    void readSettings() override;
-
     // PressureController interface
 public slots:
     double hwReadPressure() override;

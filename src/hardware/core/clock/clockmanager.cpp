@@ -57,7 +57,7 @@ ClockManager::ClockManager(QObject *parent) : QObject(parent),
         {
             auto type = static_cast<RfConfig::ClockType>(ct.value(i));
             if(c->hasRole(type))
-                d_clockRoles.insertMulti(type,c);
+                d_clockRoles.insert(type,c);
         }
         connect(c,&Clock::frequencyUpdate,this,&ClockManager::clockFrequencyUpdate);
     }
@@ -75,7 +75,7 @@ void ClockManager::readActiveClocks()
     }
 }
 
-QHash<RfConfig::ClockType, RfConfig::ClockFreq> ClockManager::getCurrentClocks()
+QMultiHash<RfConfig::ClockType, RfConfig::ClockFreq> ClockManager::getCurrentClocks()
 {
     QHash<RfConfig::ClockType, RfConfig::ClockFreq> out;
     for(auto it = d_clockRoles.constBegin(); it != d_clockRoles.constEnd(); ++it)
@@ -122,7 +122,7 @@ double ClockManager::readClockFrequency(RfConfig::ClockType t)
     return d_clockRoles.value(t)->readFrequency(t);
 }
 
-bool ClockManager::configureClocks(QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks)
+bool ClockManager::configureClocks(QMultiHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks)
 {
     d_clockRoles.clear();
     for(int i=0; i<d_clockList.size(); i++)
@@ -163,7 +163,7 @@ bool ClockManager::configureClocks(QHash<RfConfig::ClockType, RfConfig::ClockFre
             return false;
         }
 
-        d_clockRoles.insertMulti(type,c);
+        d_clockRoles.insert(type,c);
 
         double mf = d.factor;
         if(d.op == RfConfig::Divide)

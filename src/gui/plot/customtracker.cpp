@@ -1,5 +1,8 @@
 #include <gui/plot/customtracker.h>
 
+#include <QPen>
+#include <qwt6/qwt_text.h>
+
 #include <qwt6/qwt_scale_map.h>
 #include <qwt6/qwt_picker_machine.h>
 #include <qwt6/qwt_date.h>

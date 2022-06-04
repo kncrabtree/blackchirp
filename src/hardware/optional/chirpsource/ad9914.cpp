@@ -132,13 +132,13 @@ bool AD9914::prepareForExperiment(Experiment &exp)
     }
 
     //store actual chirp settings
-    exp.ftmwConfig()->d_rfConfig.setChirpList({{seg}});
+    exp.ftmwConfig()->d_rfConfig.d_chirpConfig.setChirpList({{seg}});
 
 
     QByteArray resp = p_comm->queryCmd(QString("IN\n"));
     if(!resp.startsWith(QByteArray("SUCCESS")))
     {
-        exp.setErrorString(QString("Could not initialize %1").arg(d_name));
+        exp.d_errorString = QString("Could not initialize %1").arg(d_name);
         emit hardwareFailure();
         return false;
     }

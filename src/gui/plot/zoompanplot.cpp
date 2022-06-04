@@ -647,14 +647,14 @@ void ZoomPanPlot::zoom(QWheelEvent *we)
         double min,max;
         if(xAxis)
         {
-            mousePosInt = we->pos().x();
+            mousePosInt = we->position().x();
             d_config.xDirty = true;
             min = c.boundingRect.left();
             max = c.boundingRect.right();
         }
         else
         {
-            mousePosInt = we->pos().y();
+            mousePosInt = we->position().y();
             min = c.boundingRect.top();
             max = c.boundingRect.bottom();
         }

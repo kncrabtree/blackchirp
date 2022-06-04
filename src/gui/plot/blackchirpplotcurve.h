@@ -4,6 +4,8 @@
 #include <qwt6/qwt_plot.h>
 #include <qwt6/qwt_plot_curve.h>
 #include <qwt6/qwt_symbol.h>
+#include <qwt6/qwt_text.h>
+#include <qwt6/qwt_scale_map.h>
 
 class QMutex;
 

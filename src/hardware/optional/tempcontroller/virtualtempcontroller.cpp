@@ -1,6 +1,7 @@
 #include "virtualtempcontroller.h"
 
 #include <QTimer>
+#include <QRandomGenerator>
 
 using namespace BC::Key::TC;
 
@@ -25,5 +26,6 @@ void VirtualTemperatureController::tcInitialize()
 double VirtualTemperatureController::readHwTemperature(const int ch)
 {
     Q_UNUSED(ch)
-    return static_cast<double>((qrand() % 65536) - 32768) / 32768.0 + 5.0;
+    auto qr = QRandomGenerator::global();
+    return qr->bounded(2.0) + 4.0;
 }

@@ -455,7 +455,7 @@ void ChirpTableModel::moveSegments(int first, int last, int delta)
 
 void ChirpTableModel::removeSegments(QList<int> rows)
 {
-    qSort(rows);
+    std::sort(rows.begin(),rows.end());
     for(int i=rows.size(); i>0; i--)
         removeRows(rows.at(i-1),1,QModelIndex());
 }

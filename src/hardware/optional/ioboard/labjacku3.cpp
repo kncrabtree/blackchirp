@@ -109,3 +109,30 @@ bool LabjackU3::testConnection()
 void LabjackU3::initialize()
 {
 }
+
+
+std::map<int, double> LabjackU3::readAnalogChannels()
+{
+    std::map<int,double> out;
+    for(auto it = d_analogChannels.cbegin(); it != d_analogChannels.cend(); ++it)
+    {
+        double d;
+        eAIN(d_handle,&d_calInfo,1,NULL,it->first,31,&d,0,0,0,0,0,0);
+        out.insert({it->first,d});
+    }
+
+    return out;
+}
+
+std::map<int, bool> LabjackU3::readDigitalChannels()
+{
+    std::map<int,bool> out;
+    for(auto it = d_digitalChannels.cbegin(); it != d_digitalChannels.cend(); ++it)
+    {
+        long d;
+        eDI(d_handle,1,it->first,&d);
+        out.insert({it->first,d});
+    }
+
+    return out;
+}

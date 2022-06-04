@@ -13,7 +13,7 @@ bool ExperimentValidator::validate(const QString key, const QVariant val)
 
     if(!d_valMap.empty())
     {
-        auto l = key.split(".",QString::SkipEmptyParts);
+        auto l = key.split(".",Qt::SkipEmptyParts);
         if(l.size() >= 2)
         {
             bool ok = false;

@@ -30,6 +30,11 @@ private:
 protected:
     bool testConnection() override;
     void initialize() override;
+
+    // IOBoard interface
+protected:
+    std::map<int, double> readAnalogChannels() override;
+    std::map<int, bool> readDigitalChannels() override;
 };
 
 #endif // LABJACKU3_H

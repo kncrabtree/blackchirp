@@ -34,23 +34,6 @@ void Lakeshore218::tcInitialize()
     p_comm->setReadOptions(500, true,QByteArray("\r\n"));
 }
 
-QList<double> Lakeshore218::readHWTemperatures()
-{
-    QByteArray temp = p_comm->queryCmd(QString("KRDG?0\r\n"));
-    auto l = temp.split(',');
-    QList<double> out;
-    if (l.size() != numChannels())
-    {
-        emit logMessage(QString("Could not parse temperature response. The response was %1").arg(QString(temp)),LogHandler::Error);
-        emit hardwareFailure();
-        return out;
-    }
-
-    for (int i=0;i<l.size();i++)
-        out.append(l.at(i).toDouble());
-    return out;
-}
-
 double Lakeshore218::readHwTemperature(const int ch)
 {
     QByteArray temp = p_comm->queryCmd(QString("KRDG?%1\r\n").arg(ch+1));

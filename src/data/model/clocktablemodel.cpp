@@ -336,7 +336,7 @@ Qt::ItemFlags ClockTableModel::flags(const QModelIndex &index) const
     if(index.row() < d_clockConfigs.size())
     {
         if(d_commonUpDownLO && index.row() == d_clockTypes.indexOf(RfConfig::DownLO) && index.column() > 0)
-            return 0;
+            return Qt::NoItemFlags;
 
         if(index.column() > 0)
             return Qt::ItemIsEnabled|Qt::ItemIsEditable;

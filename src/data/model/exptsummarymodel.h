@@ -57,7 +57,12 @@ public:
     }
     void sortChildren() {
         std::sort(d_children.begin(),d_children.end(),[](ExptTreeItem *a, ExptTreeItem *b){
-            return a->data(0) < b->data(0);
+            bool ok = false;
+            auto aa = a->data(0).toDouble(&ok);
+            if(ok)
+                return aa < b->data(0).toDouble();
+            else
+                return a->data(0).toString() < b->data(0).toString();
         });
     }
 

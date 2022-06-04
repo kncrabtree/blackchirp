@@ -21,7 +21,6 @@ protected:
     bool tcTestConnection() override;
     void tcInitialize() override;
 
-    QList<double> readHWTemperatures() override;
     double readHwTemperature(const int ch) override;
 
 private:

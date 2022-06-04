@@ -12,7 +12,7 @@ TemperatureControlWidget::TemperatureControlWidget(QWidget *parent) :
 {
     auto gl = new QGridLayout(this);
 
-    gl->addWidget(new QLabel("Ch",0,0));
+    gl->addWidget(new QLabel("Ch"),0,0);
     gl->addWidget(new QLabel("Name"),0,1);
     gl->addWidget(new QLabel("Enabled"),0,2);
     gl->setColumnStretch(0,0);

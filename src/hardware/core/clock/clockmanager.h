@@ -2,6 +2,7 @@
 #define CLOCKMANAGER_H
 
 #include <QObject>
+#include <QMultiHash>
 
 #include <data/storage/settingsstorage.h>
 #include <data/experiment/experiment.h>
@@ -42,15 +43,15 @@ signals:
 
 public slots:
     void readActiveClocks();
-    QHash<RfConfig::ClockType,RfConfig::ClockFreq> getCurrentClocks();
+    QMultiHash<RfConfig::ClockType,RfConfig::ClockFreq> getCurrentClocks();
     double setClockFrequency(RfConfig::ClockType t, double freqMHz);
     double readClockFrequency(RfConfig::ClockType t);
-    bool configureClocks(QHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
+    bool configureClocks(QMultiHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
     bool prepareForExperiment(Experiment &exp);
 
 private:
     QVector<Clock*> d_clockList;
-    QHash<RfConfig::ClockType,Clock*> d_clockRoles;
+    QMultiHash<RfConfig::ClockType,Clock*> d_clockRoles;
 
     friend class HardwareManager;
 

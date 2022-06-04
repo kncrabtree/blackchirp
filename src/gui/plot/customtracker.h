@@ -3,6 +3,8 @@
 
 #include <QPalette>
 #include <QHash>
+#include <QMap>
+
 #include <qwt6/qwt_plot_canvas.h>
 #include <qwt6/qwt_plot_picker.h>
 #include <qwt6/qwt_plot.h>

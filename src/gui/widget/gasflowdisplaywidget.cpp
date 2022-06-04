@@ -38,7 +38,7 @@ GasFlowDisplayBox::GasFlowDisplayBox(QWidget *parent) : QGroupBox(parent)
     for(int i=0; i<n; ++i)
     {
         auto nameLabel = new QLabel(QString("Ch%1").arg(i+1));
-        nameLabel->setMinimumWidth(QFontMetrics(QFont(QString("sans-serif"))).width(QString("MMMMMMMM")));
+        nameLabel->setMinimumWidth(QFontMetrics(QFont(QString("sans-serif"))).horizontalAdvance(QString("MMMMMMMM")));
         nameLabel->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
 
         auto led = new Led();

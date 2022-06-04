@@ -65,7 +65,7 @@ void AuxDataViewWidget::pointUpdated(const AuxDataStorage::AuxDataMap m, const Q
         //locate curve by name and append point
         bool foundCurve = false;
 
-        auto l = key.split(".",QString::SkipEmptyParts);
+        auto l = key.split(".",Qt::SkipEmptyParts);
         QString realKey = key;
         if(l.size() >= 2)
             realKey = QString("%1.%2").arg(l.constFirst(),l.constLast());

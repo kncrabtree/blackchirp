@@ -78,7 +78,7 @@ void MSO72004C::initialize()
 
     p_comm->setReadOptions(1000,true,QByteArray("\n"));
     p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
-    connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),this,&MSO72004C::socketError);
+    connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::errorOccurred),this,&MSO72004C::socketError);
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
 }
 
@@ -475,7 +475,7 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
     resp = scopeQueryCmd(QString(":WFMOUTPRE:ENCDG?;BN_FMT?;BYT_OR?;NR_FR?;NR_PT?;BYT_NR?\n"));
     if(!resp.isEmpty())
     {
-        QStringList l = QString(resp.trimmed()).split(QChar(';'),QString::SkipEmptyParts);
+        QStringList l = QString(resp.trimmed()).split(QChar(';'),Qt::SkipEmptyParts);
         if(l.size() < 6)
         {
             emit logMessage(QString("Could not parse response to waveform output settings query. Response: %1 (Hex: %2)")
