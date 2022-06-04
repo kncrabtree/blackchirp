@@ -77,15 +77,15 @@ ExptSummaryModel::ExptSummaryModel(Experiment *exp, QObject *parent) : QAbstract
                     auto &seg = c.at(j);
                     if(!seg.empty)
                     {
-                        segItem->appendChild(new ExptTreeItem({"AWG Begin",QVariant(seg.startFreqMHz).toString(),"MHz"},segItem));
-                        segItem->appendChild(new ExptTreeItem({"AWG End",QVariant(seg.endFreqMHz).toString(),"MHz"},segItem));
-                        segItem->appendChild(new ExptTreeItem({"Chirp Begin",QVariant(exp->ftmwConfig()->d_rfConfig.calculateChirpFreq(seg.startFreqMHz)).toString(),"MHz"},segItem));
-                        segItem->appendChild(new ExptTreeItem({"Chirp End",QVariant(exp->ftmwConfig()->d_rfConfig.calculateChirpFreq(seg.endFreqMHz)).toString(),"MHz"},segItem));
+                        segItem->appendChild(new ExptTreeItem({"AWG Begin",QVariant(seg.startFreqMHz).toString(),BC::Unit::MHz},segItem));
+                        segItem->appendChild(new ExptTreeItem({"AWG End",QVariant(seg.endFreqMHz).toString(),BC::Unit::MHz},segItem));
+                        segItem->appendChild(new ExptTreeItem({"Chirp Begin",QVariant(exp->ftmwConfig()->d_rfConfig.calculateChirpFreq(seg.startFreqMHz)).toString(),BC::Unit::MHz},segItem));
+                        segItem->appendChild(new ExptTreeItem({"Chirp End",QVariant(exp->ftmwConfig()->d_rfConfig.calculateChirpFreq(seg.endFreqMHz)).toString(),BC::Unit::MHz},segItem));
                     }
                     else
                         segItem->appendChild(new ExptTreeItem({"Empty",QVariant(true).toString(),""},segItem));
                     segItem->appendChild(new ExptTreeItem({"Duration",QVariant(seg.durationUs).toString(),
-                                                           QString::fromUtf8("μs")},segItem));
+                                                           BC::Unit::us},segItem));
 
                 }
             }
@@ -113,7 +113,7 @@ ExptSummaryModel::ExptSummaryModel(Experiment *exp, QObject *parent) : QAbstract
                     auto &cf = it.value();
                     clockItem->appendChild(new ExptTreeItem({"Clock",cf.hwKey,""},clockItem));
                     clockItem->appendChild(new ExptTreeItem({"Output",QString::number(cf.output),""},clockItem));
-                    clockItem->appendChild(new ExptTreeItem({"Frequency",QVariant(cf.desiredFreqMHz).toString(),"MHz"},clockItem));
+                    clockItem->appendChild(new ExptTreeItem({"Frequency",QVariant(cf.desiredFreqMHz).toString(),BC::Unit::MHz},clockItem));
                     clockItem->appendChild(new ExptTreeItem({"Operation",
                                                              QVariant::fromValue<RfConfig::MultOperation>(cf.op).toString(),
                                                              ""},clockItem));

@@ -270,12 +270,12 @@ bool FtmwConfigLOScan::_init()
 void FtmwConfigLOScan::_prepareToSave()
 {
     using namespace BC::Store::FtmwLO;
-    store(upStart,d_upStart,"MHz");
-    store(upEnd,d_upEnd,"MHz");
+    store(upStart,d_upStart,BC::Unit::MHz);
+    store(upEnd,d_upEnd,BC::Unit::MHz);
     store(upMaj,d_upMaj);
     store(upMin,d_upMin);
-    store(downStart,d_downStart,"MHz");
-    store(downEnd,d_downEnd,"MHz");
+    store(downStart,d_downStart,BC::Unit::MHz);
+    store(downEnd,d_downEnd,BC::Unit::MHz);
     store(downMaj,d_downMaj);
     store(downMin,d_downMin);
 }
@@ -339,10 +339,10 @@ bool FtmwConfigDRScan::_init()
 void FtmwConfigDRScan::_prepareToSave()
 {
     using namespace BC::Store::FtmwDR;
-    store(drStart,d_start,"MHz");
-    store(drStep,d_step,"MHz");
+    store(drStart,d_start,BC::Unit::MHz);
+    store(drStep,d_step,BC::Unit::MHz);
     store(drNumSteps,d_numSteps);
-    store(drEnd,d_start + (d_numSteps-1)*d_step,"MHz");
+    store(drEnd,d_start + (d_numSteps-1)*d_step,BC::Unit::MHz);
 }
 
 void FtmwConfigDRScan::_loadComplete()

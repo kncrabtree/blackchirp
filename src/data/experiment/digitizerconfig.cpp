@@ -32,8 +32,8 @@ void DigitizerConfig::storeValues()
     for(auto it = d_analogChannels.cbegin(); it != d_analogChannels.cend(); ++it)
     {
         storeArrayValue(an,it->first-1,en,true);
-        storeArrayValue(an,it->first-1,fs,it->second.fullScale,"V");
-        storeArrayValue(an,it->first-1,offset,it->second.offset,"V");
+        storeArrayValue(an,it->first-1,fs,it->second.fullScale,BC::Unit::V);
+        storeArrayValue(an,it->first-1,offset,it->second.offset,BC::Unit::V);
     }
     for(auto it = d_digitalChannels.cbegin(); it != d_digitalChannels.cend(); ++it)
     {
@@ -44,11 +44,11 @@ void DigitizerConfig::storeValues()
 
     store(trigCh,d_triggerChannel);
     store(trigSlope,d_triggerSlope);
-    store(trigLevel,d_triggerLevel,"V");
-    store(trigDelay,d_triggerDelayUSec,QString::fromUtf8("μs"));
+    store(trigLevel,d_triggerLevel,BC::Unit::V);
+    store(trigDelay,d_triggerDelayUSec,BC::Unit::us);
     store(bpp,d_bytesPerPoint);
     store(bo,d_byteOrder);
-    store(sRate,d_sampleRate,"Hz");
+    store(sRate,d_sampleRate,BC::Unit::Hz);
     store(recLen,d_recordLength);
     store(blockAvg,d_blockAverage);
     store(numAvg,d_numAverages);

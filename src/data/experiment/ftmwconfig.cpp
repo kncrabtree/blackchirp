@@ -499,7 +499,7 @@ void FtmwConfig::storeValues()
     if(d_chirpScoringEnabled)
         store(chirpThresh,d_chirpRMSThreshold);
     if(d_chirpScoringEnabled || d_phaseCorrectionEnabled)
-        store(chirpOffset,d_chirpOffsetUs,QString::fromUtf8("μs"));
+        store(chirpOffset,d_chirpOffsetUs,BC::Unit::us);
 
     store(type,d_type);
     store(objective,d_objective);

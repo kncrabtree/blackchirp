@@ -175,13 +175,13 @@ void PulseGenConfig::setRepRate(const double r)
 void PulseGenConfig::storeValues()
 {
     using namespace BC::Store::PGenConfig;
-    store(rate,d_repRate,QString("Hz"));
+    store(rate,d_repRate,BC::Unit::Hz);
     for(int i=0; i<d_config.size(); ++i)
     {
         auto &cc = d_config.at(i);
         storeArrayValue(channel,i,name,cc.channelName);
-        storeArrayValue(channel,i,delay,cc.delay,QString::fromUtf8("μs"));
-        storeArrayValue(channel,i,width,cc.width,QString::fromUtf8("μs"));
+        storeArrayValue(channel,i,delay,cc.delay,BC::Unit::us);
+        storeArrayValue(channel,i,width,cc.width,BC::Unit::us);
         storeArrayValue(channel,i,level,cc.level);
         storeArrayValue(channel,i,enabled,cc.enabled);
         storeArrayValue(channel,i,role,cc.role);
