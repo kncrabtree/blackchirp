@@ -1,9 +1,11 @@
  
 
 HEADERS += \
+    $$PWD/lifdigitizerconfig.h \
     $$PWD/lifscope.h
 
 SOURCES += \
+    $$PWD/lifdigitizerconfig.cpp \
     $$PWD/lifscope.cpp
 
 equals(LIFSCOPE,0) {

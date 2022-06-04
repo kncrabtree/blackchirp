@@ -120,7 +120,7 @@ R"000(Next, you can configure the communication settings for the hardware connec
     qRegisterMetaType<FtWorker::FidProcessingSettings>("FtWorker::FidProcessingSettings");
     qRegisterMetaType<Ft>("Ft");
     qRegisterMetaType<QVector<QPointF> >("QVector<QPointF>");
-    qRegisterMetaType<QVector<double>>("Vector<double>");
+    qRegisterMetaType<QVector<double>>("QVector<double>");
     qRegisterMetaType<QHash<RfConfig::ClockType, RfConfig::ClockFreq>>();
     qRegisterMetaType<PulseGenConfig>();
     qRegisterMetaType<PulseGenConfig::Setting>();
@@ -129,7 +129,7 @@ R"000(Next, you can configure the communication settings for the hardware connec
 #ifdef BC_LIF
     qRegisterMetaType<LifTrace>("LifTrace");
     qRegisterMetaType<LifConfig>("LifConfig");
-    qRegisterMetaType<Blackchirp::LifScopeConfig>("Blackchirp::LifScopeConfig");
+    qRegisterMetaType<LifDigitizerConfig>("LifDigitizerConfig");
 #endif
 
 #ifndef QT_DEBUG
