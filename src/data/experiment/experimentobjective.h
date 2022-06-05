@@ -1,6 +1,8 @@
 #ifndef EXPERIMENTOBJECTIVE_H
 #define EXPERIMENTOBJECTIVE_H
 
+#include <QVariant>
+
 /*!
  * \brief Abstract base class for components of an experiment
  */
@@ -17,6 +19,8 @@ public:
     virtual bool isComplete() const =0;
     virtual bool abort() =0;
     virtual void cleanup() {};
+    virtual QString objectiveKey() const =0;
+    virtual QVariant objectiveData() const { return QString(""); }
 
     int d_number{-1};
     bool d_processingPaused{false};

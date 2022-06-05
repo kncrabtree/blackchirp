@@ -24,9 +24,13 @@ static const QString phase{"PhaseCorrectionEnabled"};
 static const QString chirp{"ChirpScoringEnabled"};
 static const QString chirpThresh{"ChirpRMSThreshold"};
 static const QString chirpOffset{"ChirpOffset"};
-static const QString type{"Type"};
+static const QString ftType{"Type"};
 static const QString tShots{"TargetShots"};
 static const QString objective{"Objective"};
+}
+
+namespace BC::Config::Exp {
+static const QString ftmwType{"FtmwType"};
 }
 
 class BlackchirpCSV;
@@ -124,6 +128,8 @@ protected:
     void storeValues() override;
     void retrieveValues() override;
     void prepareChildren() override;
+    QString objectiveKey() const override;
+    QVariant objectiveData() const override;
 
     virtual quint8 bitShift() const { return 0; }
     virtual bool _init() =0;

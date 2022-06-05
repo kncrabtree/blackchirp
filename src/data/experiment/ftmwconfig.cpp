@@ -496,7 +496,7 @@ void FtmwConfig::storeValues()
     if(d_chirpScoringEnabled || d_phaseCorrectionEnabled)
         store(chirpOffset,d_chirpOffsetUs,BC::Unit::us);
 
-    store(type,d_type);
+    store(ftType,d_type);
     store(objective,d_objective);
 
     _prepareToSave();
@@ -512,7 +512,7 @@ void FtmwConfig::retrieveValues()
     d_objective = retrieve<quint64>(objective);
 
     //don't need to use retrieved type
-    retrieve<FtmwType>(type);
+    retrieve<FtmwType>(ftType);
     _loadComplete();
 }
 
@@ -520,4 +520,14 @@ void FtmwConfig::prepareChildren()
 {
     addChild(&d_rfConfig);
     addChild(&d_scopeConfig);
+}
+
+QString FtmwConfig::objectiveKey() const
+{
+    return BC::Config::Exp::ftmwType;
+}
+
+QVariant FtmwConfig::objectiveData() const
+{
+    return d_type;
 }

@@ -44,13 +44,6 @@ static const QString relver{"BCReleaseVersion"};
 static const QString buildver{"BCBuildVersion"};
 }
 
-namespace BC::Config::Exp {
-static const QString ftmwType{"FtmwType"};
-#ifdef BC_LIF
-static const QString lifType{"LifType"};
-#endif
-}
-
 class Experiment : private HeaderStorage
 {
     Q_GADGET
@@ -88,6 +81,7 @@ public:
 
     inline bool ftmwEnabled() const { return pu_ftmwConfig.get() != nullptr; }
     FtmwConfig* enableFtmw(FtmwConfig::FtmwType type);
+    void disableFtmw();
     inline FtmwConfig* ftmwConfig() const {return pu_ftmwConfig.get(); }
 
     inline AuxDataStorage *auxData() const { return pu_auxData.get(); }
@@ -112,6 +106,7 @@ public:
     inline bool lifEnabled() const { return pu_lifCfg.get() != nullptr; }
     inline LifConfig* lifConfig() const { return pu_lifCfg.get(); }
     LifConfig *enableLif();
+    void disableLif();
 #endif
 
     bool initialize();

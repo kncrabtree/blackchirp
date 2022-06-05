@@ -149,6 +149,7 @@ void LifConfig::prepareChildren()
 
 bool LifConfig::initialize()
 {
+    return true;
 }
 
 bool LifConfig::advance()
@@ -207,4 +208,9 @@ bool LifConfig::indefinite() const
 bool LifConfig::abort()
 {
     return false;
+}
+
+QString LifConfig::objectiveKey() const
+{
+    return BC::Config::Exp::lifType;
 }

@@ -284,11 +284,16 @@ bool WizardStartPage::validatePage()
          if(p_chirpOffsetBox->value() >= 0.0)
              ftmw->d_chirpOffsetUs = p_chirpOffsetBox->value();
      }
+     else
+         e->disableFtmw();
 
 
 
 #ifdef BC_LIF
-     e->setLifEnabled(p_lif->isChecked());
+     if(p_lif->isChecked())
+         e->enableLif();
+     else
+         e->disableLif();
 #endif
 
      e->d_backupIntervalHours = p_backupBox->value();

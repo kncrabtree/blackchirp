@@ -24,6 +24,9 @@ static const QString lPoints("LaserPoints");
 static const QString shotsPerPoint("ShotsPerPoint");
 }
 
+namespace BC::Config::Exp {
+static const QString lifType{"LifType"};
+}
 
 class LifConfig : public ExperimentObjective, public HeaderStorage
 {
@@ -107,6 +110,7 @@ public:
     int perMilComplete() const override;
     bool indefinite() const override;
     bool abort() override;
+    QString objectiveKey() const override;
 };
 
 

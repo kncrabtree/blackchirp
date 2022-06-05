@@ -235,12 +235,8 @@ void Experiment::backup()
 
 FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
 {
-    if(pu_ftmwConfig.get())
-    {
-        removeChild(pu_ftmwConfig.get());
-        d_objectives.remove(pu_ftmwConfig.get());
-        pu_ftmwConfig.reset();
-    }
+
+    disableFtmw();
 
     switch(type) {
     case FtmwConfig::Target_Shots:
@@ -268,6 +264,16 @@ FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
     pu_ftmwConfig->d_type = type;
     d_objectives.insert(pu_ftmwConfig.get());
     return pu_ftmwConfig.get();
+}
+
+void Experiment::disableFtmw()
+{
+    if(pu_ftmwConfig.get())
+    {
+        removeChild(pu_ftmwConfig.get());
+        d_objectives.remove(pu_ftmwConfig.get());
+        pu_ftmwConfig.reset();
+    }
 }
 
 bool Experiment::initialize()
@@ -482,16 +488,21 @@ bool Experiment::validateItem(const QString key, const QVariant val)
 #ifdef BC_LIF
 LifConfig *Experiment::enableLif()
 {
+    disableLif();
+
+    pu_lifCfg = std::make_unique<LifConfig>();
+    d_objectives.insert(pu_lifCfg.get());
+    return pu_lifCfg.get();
+}
+
+void Experiment::disableLif()
+{
     if(pu_lifCfg.get())
     {
         removeChild(pu_lifCfg.get());
         d_objectives.remove(pu_lifCfg.get());
         pu_lifCfg.reset();
     }
-
-    pu_lifCfg = std::make_unique<LifConfig>();
-    d_objectives.insert(pu_lifCfg.get());
-    return pu_lifCfg.get();
 }
 #endif
 
@@ -525,8 +536,8 @@ bool Experiment::saveObjectives()
 
     QTextStream t(&obj);
     BlackchirpCSV::writeLine(t,{"key","value"});
-    if(ftmwEnabled())
-        BlackchirpCSV::writeLine(t,{BC::Config::Exp::ftmwType,pu_ftmwConfig->d_type});
+    for(auto obj : d_objectives)
+        BlackchirpCSV::writeLine(t,{obj->objectiveKey(),obj->objectiveData()});
 
     return true;
 }
