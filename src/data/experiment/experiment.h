@@ -9,6 +9,7 @@
 #include <QPair>
 #include <QDateTime>
 #include <QMetaType>
+#include <QSet>
 
 #include <data/storage/headerstorage.h>
 #include <data/storage/auxdatastorage.h>
@@ -45,6 +46,9 @@ static const QString buildver{"BCBuildVersion"};
 
 namespace BC::Config::Exp {
 static const QString ftmwType{"FtmwType"};
+#ifdef BC_LIF
+static const QString lifType{"LifType"};
+#endif
 }
 
 class Experiment : private HeaderStorage
@@ -73,6 +77,7 @@ public:
     QString d_patchVersion{STRINGIFY(BC_PATCH_VERSION)};
     QString d_releaseVersion{STRINGIFY(BC_RELEASE_VERSION)};
     QString d_buildVersion{STRINGIFY(BC_BUILD_VERSION)};
+    QSet<ExperimentObjective*> d_objectives;
 
 
     inline bool isAborted()  const { return d_isAborted; }
@@ -104,12 +109,9 @@ public:
     bool validateItem(const QString key, const QVariant val);
 
 #ifdef BC_LIF
-    bool isLifWaiting() const;
-    LifConfig lifConfig() const;
-    void setLifEnabled(bool en = true);
-    void setLifWaiting(bool wait);
-    void setLifConfig(const LifConfig cfg);
-    bool addLifWaveform(const LifTrace t);
+    inline bool lifEnabled() const { return pu_lifCfg.get() != nullptr; }
+    inline LifConfig* lifConfig() const { return pu_lifCfg.get(); }
+    LifConfig *enableLif();
 #endif
 
     bool initialize();
@@ -143,8 +145,7 @@ private:
     QString d_path;
 
 #ifdef BC_LIF
-    LifConfig d_lifCfg;
-    bool d_waitForLifSet{false};
+    std::unique_ptr<LifConfig> pu_lifCfg;
 #endif
 
     // HeaderStorage interface

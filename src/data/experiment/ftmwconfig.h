@@ -72,7 +72,6 @@ public:
 
     virtual quint64 completedShots() const =0;
 
-    bool processingPaused() const;
     quint64 shotIncrement() const;
     FidList parseWaveform(const QByteArray b) const;
     double ftMinMHz() const;
@@ -107,7 +106,6 @@ public:
 private:
     std::shared_ptr<FidStorageBase> p_fidStorage;
     Fid d_fidTemplate;
-    bool d_processingPaused{false};
     QDateTime d_lastAutosaveTime;
     int d_currentShift{0};
     float d_lastFom{0.0};

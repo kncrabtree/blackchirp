@@ -44,7 +44,7 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
     if(d_state == Acquiring
             && ps_currentExperiment->ftmwEnabled()
             && !ps_currentExperiment->ftmwConfig()->isComplete()
-            && !ps_currentExperiment->ftmwConfig()->processingPaused())
+            && !ps_currentExperiment->ftmwConfig()->d_processingPaused)
     {
 
         bool success = ps_currentExperiment->ftmwConfig()->addFids(b);
@@ -71,25 +71,21 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 }
 
 #ifdef BC_LIF
-void AcquisitionManager::processLifScopeShot(const LifTrace t)
+void AcquisitionManager::processLifScopeShot(const QByteArray b)
 {
-    if(d_state == Acquiring && d_currentExperiment.lifConfig().isEnabled() && !d_currentExperiment.isLifWaiting())
+    if(d_state == Acquiring
+            && ps_currentExperiment->lifEnabled()
+            && !ps_currentExperiment->lifConfig()->d_processingPaused)
     {
         //process trace; only send data to UI if point is complete
-        if(d_currentExperiment.addLifWaveform(t))
+        ps_currentExperiment->lifConfig()->addWaveform(b);
+        if(ps_currentExperiment->lifConfig()->advance())
         {
-            emit lifPointUpdate(d_currentExperiment.lifConfig());
-
-            if(!d_currentExperiment.isComplete())
-            {
-                d_currentExperiment.setLifWaiting(true);
-                emit nextLifPoint(d_currentExperiment.lifConfig().currentDelay(),
-                                  d_currentExperiment.lifConfig().currentLaserPos());
-            }
+            ///TODO: need to send signal to HW here
+            emit lifPointUpdate();
         }
 
-        if(d_currentExperiment.lifConfig().completedShots() <= d_currentExperiment.lifConfig().totalShots())
-            emit lifShotAcquired(d_currentExperiment.lifConfig().completedShots());
+        emit lifShotAcquired(ps_currentExperiment->lifConfig()->perMilComplete());
 
     }
 
@@ -98,7 +94,7 @@ void AcquisitionManager::processLifScopeShot(const LifTrace t)
 
 void AcquisitionManager::lifHardwareReady(bool success)
 {
-    if(d_currentExperiment.lifConfig().isEnabled())
+    if(ps_currentExperiment->lifEnabled())
     {
         if(!success)
         {
@@ -106,7 +102,7 @@ void AcquisitionManager::lifHardwareReady(bool success)
             abort();
         }
         else
-            d_currentExperiment.setLifWaiting(false);
+            ps_currentExperiment->lifConfig()->hwReady();
     }
 }
 #endif

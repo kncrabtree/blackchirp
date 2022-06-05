@@ -41,7 +41,7 @@ signals:
     void backupComplete();
 
 #ifdef BC_LIF
-    void lifPointUpdate(const LifConfig);
+    void lifPointUpdate();
     void nextLifPoint(double delay, double frequency);
     void lifShotAcquired(int);
 #endif
@@ -57,7 +57,7 @@ public slots:
     void abort();
 
 #ifdef BC_LIF
-    void processLifScopeShot(const LifTrace t);
+    void processLifScopeShot(const QByteArray b);
     void lifHardwareReady(bool success);
 #endif
 

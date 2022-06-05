@@ -19,6 +19,7 @@ public:
     virtual void cleanup() {};
 
     int d_number{-1};
+    bool d_processingPaused{false};
 };
 
 #endif // EXPERIMENTOBJECTIVE_H

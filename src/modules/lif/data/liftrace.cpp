@@ -74,6 +74,7 @@ LifTrace::LifTrace(const LifDigitizerConfig &c, const QByteArray b)
             d_refData[(i-c.d_bytesPerPoint*refoffset)/incr] = dat;
         }
     }
+    d_count = c.d_numAverages;
 }
 
 LifTrace::LifTrace(double lm, double rm, double sp, int count, const QVector<qint64> l, const QVector<qint64> r)
@@ -88,6 +89,7 @@ LifTrace::LifTrace(double lm, double rm, double sp, int count, const QVector<qin
 
 double LifTrace::integrate(int gl1, int gl2, int gr1, int gr2) const
 {
+    pu_lock->lockForRead();
     if(gl1 < 0)
         gl1 = 0;
     if(gl2 < 0)
@@ -118,7 +120,10 @@ double LifTrace::integrate(int gl1, int gl2, int gr1, int gr2) const
 
     //if no reference; just return raw integral
     if(d_refData.size() == 0)
+    {
+        pu_lock->unlock();
         return out;
+    }
 
     if(gr1 < 0)
         gr1 = 0;
@@ -129,6 +134,7 @@ double LifTrace::integrate(int gl1, int gl2, int gr1, int gr2) const
     for(int i = gr1; i<gr2-1; i++)
         sum += static_cast<qint64>(d_refData.at(i)) + static_cast<qint64>(d_refData.at(i+1));
 
+    pu_lock->unlock();
     double ref = static_cast<double>(sum)/2.0*d_refYMult*d_xSpacing;
 
     if(d_count > 1)
@@ -143,6 +149,7 @@ double LifTrace::integrate(int gl1, int gl2, int gr1, int gr2) const
 
 QVector<QPointF> LifTrace::lifToXY() const
 {
+    pu_lock->lockForRead();
     QVector<QPointF> out;
     out.resize(d_lifData.size());
 
@@ -155,11 +162,13 @@ QVector<QPointF> LifTrace::lifToXY() const
             out[i].setY(static_cast<double>(d_lifData.at(i))*d_lifYMult/static_cast<double>(d_count));
     }
 
+    pu_lock->unlock();
     return out;
 }
 
 QVector<QPointF> LifTrace::refToXY() const
 {
+    pu_lock->lockForRead();
     QVector<QPointF> out;
     out.resize(d_refData.size());
 
@@ -172,6 +181,7 @@ QVector<QPointF> LifTrace::refToXY() const
             out[i].setY(static_cast<double>(d_refData.at(i))*d_refYMult/static_cast<double>(d_count));
     }
 
+    pu_lock->unlock();
     return out;
 }
 
@@ -185,27 +195,31 @@ double LifTrace::maxTime() const
 
 QVector<qint64> LifTrace::lifRaw() const
 {
-    return d_lifData;
+    pu_lock->lockForRead();
+    auto out = d_lifData;
+    out.detach();
+    pu_lock->unlock();
+
+    return out;
 }
 
 QVector<qint64> LifTrace::refRaw() const
 {
-    return d_refData;
-}
+    pu_lock->lockForRead();
+    auto out = d_refData;
+    out.detach();
+    pu_lock->unlock();
 
-qint64 LifTrace::lifAtRaw(int i) const
-{
-    return d_lifData.at(i);
-}
-
-qint64 LifTrace::refAtRaw(int i) const
-{
-    return d_refData.at(i);
+    return out;
 }
 
 int LifTrace::count() const
 {
-    return d_count;
+    pu_lock->lockForRead();
+    auto out = d_count;
+    pu_lock->unlock();
+
+    return out;
 }
 
 int LifTrace::size() const
@@ -220,27 +234,42 @@ bool LifTrace::hasRefData() const
 
 void LifTrace::add(const LifTrace &other)
 {
+    if(other.size() != size())
+        return;
+
+    auto l = other.lifRaw();
+    auto r = other.refRaw();
+
+    pu_lock->lockForWrite();
     for(int i=0; i<d_lifData.size(); i++)
-        d_lifData[i] += other.lifAtRaw(i);
+        d_lifData[i] += l.at(i);
 
     for(int i=0; i<d_refData.size(); i++)
-        d_refData[i] += other.refAtRaw(i);
+        d_refData[i] += r.at(i);
 
     d_count += other.count();
+    pu_lock->unlock();
 }
 
 void LifTrace::rollAvg(const LifTrace &other, int numShots)
 {
-    if(d_count + other.count() <= numShots)
+
+    auto c = count();
+    if(c + other.count() <= numShots)
         add(other);
     else
     {
+        auto l = other.lifRaw();
+        auto r = other.refRaw();
+
+        pu_lock->lockForWrite();
         for(int i=0; i<d_lifData.size(); i++)
-            d_lifData[i] = Analysis::intRoundClosest(numShots*(lifAtRaw(i)+other.lifAtRaw(i)),numShots+1);
+            d_lifData[i] = Analysis::intRoundClosest(numShots*(d_lifData.at(i)+l.at(i)),numShots+1);
 
         for(int i=0; i<d_refData.size(); i++)
-            d_refData[i] = Analysis::intRoundClosest(numShots*(refAtRaw(i)+other.refAtRaw(i)),numShots+1);
+            d_refData[i] = Analysis::intRoundClosest(numShots*(d_refData.at(i)+r.at(i)),numShots+1);
 
         d_count = numShots;
+        pu_lock->unlock();
     }
 }

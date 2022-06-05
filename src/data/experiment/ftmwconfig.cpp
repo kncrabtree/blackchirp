@@ -17,11 +17,6 @@ FtmwConfig::~FtmwConfig()
 
 }
 
-bool FtmwConfig::processingPaused() const
-{
-    return d_processingPaused;
-}
-
 quint64 FtmwConfig::shotIncrement() const
 {
     quint64 increment = 1;

@@ -53,6 +53,11 @@ Experiment::Experiment(const Experiment &other) :
         }
     }
 
+#ifdef BC_LIF
+    if(other.lifConfig() != nullptr)
+        pu_lifCfg = std::make_unique<LifConfig>(*other.lifConfig());
+#endif
+
     pu_auxData = std::make_unique<AuxDataStorage>(*other.pu_auxData);
 
     pu_validator = std::make_unique<ExperimentValidator>(*other.pu_validator);
@@ -133,7 +138,13 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
                 pu_ftmwConfig->d_number = num;
             }
 
-//#pragma message("Handle LIF")
+#ifdef BC_LIF
+            if(key == BC::Config::Exp::lifType)
+            {
+                enableLif();
+                pu_lifCfg->d_number = num;
+            }
+#endif
         }
     }
 
@@ -173,8 +184,8 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
     }
 
 #ifdef BC_LIF
-            if(d_lifCfg.isEnabled())
-                d_lifCfg.loadLifData(num,exptPath);
+    if(lifEnabled())
+        pu_lifCfg->loadLifData(num,exptPath);
 #endif
 
     //load aux data
@@ -193,14 +204,11 @@ Experiment::~Experiment()
 
 bool Experiment::isComplete() const
 {
-#ifdef BC_LIF
-    //check each sub expriment!
-    return (d_ftmwCfg.isComplete() && d_lifCfg.isComplete());
-#endif
-
-    ///TODO: Use experiment objective list
-    if(ftmwEnabled())
-        return pu_ftmwConfig->isComplete();
+    for(auto obj : d_objectives)
+    {
+        if(!obj->isComplete())
+            return false;
+    }
 
     return true;
 }
@@ -230,6 +238,7 @@ FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
     if(pu_ftmwConfig.get())
     {
         removeChild(pu_ftmwConfig.get());
+        d_objectives.remove(pu_ftmwConfig.get());
         pu_ftmwConfig.reset();
     }
 
@@ -257,6 +266,7 @@ FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
     }
 
     pu_ftmwConfig->d_type = type;
+    d_objectives.insert(pu_ftmwConfig.get());
     return pu_ftmwConfig.get();
 }
 
@@ -469,6 +479,20 @@ bool Experiment::validateItem(const QString key, const QVariant val)
     return out;
 }
 
+LifConfig *Experiment::enableLif()
+{
+    if(pu_lifCfg.get())
+    {
+        removeChild(pu_lifCfg.get());
+        d_objectives.remove(pu_lifCfg.get());
+        pu_lifCfg.reset();
+    }
+
+    pu_lifCfg = std::make_unique<LifConfig>();
+    d_objectives.insert(pu_lifCfg.get());
+    return pu_lifCfg.get();
+}
+
 void Experiment::finalSave()
 {
     if(d_isDummy)
@@ -481,8 +505,8 @@ void Experiment::finalSave()
     }
 
 #ifdef BC_LIF
-    if(lifConfig().isEnabled())
-            lifConfig().writeLifFile(d_number);
+    if(lifEnabled())
+        lifConfig()->writeLifFile(d_number);
 #endif
 
 }
@@ -583,39 +607,8 @@ void Experiment::prepareChildren()
     addChild(pu_pcConfig.get());
     addChild(pu_tcConfig.get());
     addChild(pu_validator.get());
-
-}
-
-
 #ifdef BC_LIF
-bool Experiment::isLifWaiting() const
-{
-    return d_waitForLifSet;
-}
-
-LifConfig Experiment::lifConfig() const
-{
-    return d_lifCfg;
-}
-
-void Experiment::setLifEnabled(bool en)
-{
-    d_lifCfg.setEnabled(en);
-}
-
-void Experiment::setLifConfig(const LifConfig cfg)
-{
-    d_lifCfg = cfg;
-}
-
-bool Experiment::addLifWaveform(const LifTrace t)
-{
-    return d_lifCfg.addWaveform(t);
-}
-
-void Experiment::setLifWaiting(bool wait)
-{
-    d_waitForLifSet = wait;
-}
-
+    addChild(pu_lifCfg.get());
 #endif
+
+}

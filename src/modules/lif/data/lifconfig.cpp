@@ -12,10 +12,7 @@ LifConfig::LifConfig() : HeaderStorage(BC::Store::LIF::key)
 
 bool LifConfig::isComplete() const
 {
-    if(d_enabled)
-        return d_complete;
-
-    return true;
+    return d_complete;
 }
 
 double LifConfig::currentDelay() const
@@ -82,59 +79,37 @@ bool LifConfig::loadLifData(int num, const QString path)
     return false;
 }
 
-bool LifConfig::addWaveform(const LifTrace t)
+void LifConfig::addWaveform(const QByteArray d)
 {
     //the boolean returned by this function tells if the point was incremented
     if(d_complete && d_completeMode == StopWhenComplete)
-        return false;
+        return;
 
-    return(addTrace(t));
+    return addTrace(d);
 
 }
 
-bool LifConfig::addTrace(const LifTrace t)
+void LifConfig::addTrace(const QByteArray d)
 {
+    LifTrace t(d_scopeConfig,d);
     if(d_currentDelayIndex >= d_lifData.size())
     {
         QVector<LifTrace> l;
-        l.append(t);
+        l.append(std::move(t));
         d_lifData.append(l);
     }
     else if(d_currentFrequencyIndex >= d_lifData.at(d_currentDelayIndex).size())
     {
-        d_lifData[d_currentDelayIndex].append(t);
+        d_lifData[d_currentDelayIndex].append(std::move(t));
     }
     else
         d_lifData[d_currentDelayIndex][d_currentFrequencyIndex].add(t);
-
-    //return true if we have enough shots for this point on this pass
-    int c = d_lifData.at(d_currentDelayIndex).at(d_currentFrequencyIndex).count();
-    bool inc = !(c % d_shotsPerPoint);
-    if(inc)
-        increment();
-    return inc;
 
 }
 
 void LifConfig::increment()
 {
-    if(d_currentDelayIndex+1 >= d_delayPoints && d_currentFrequencyIndex+1 >= d_laserPosPoints)
-        d_complete = true;
 
-    if(d_order == LaserFirst)
-    {
-        if(d_currentFrequencyIndex+1 >= d_laserPosPoints)
-            d_currentDelayIndex = (d_currentDelayIndex+1)%d_delayPoints;
-
-        d_currentFrequencyIndex = (d_currentFrequencyIndex+1)%d_laserPosPoints;
-    }
-    else
-    {
-        if(d_currentDelayIndex+1 >= d_delayPoints)
-            d_currentFrequencyIndex = (d_currentFrequencyIndex+1)%d_laserPosPoints;
-
-        d_currentDelayIndex = (d_currentDelayIndex+1)%d_delayPoints;
-    }
 }
 
 void LifConfig::storeValues()
@@ -169,4 +144,67 @@ void LifConfig::retrieveValues()
 void LifConfig::prepareChildren()
 {
     addChild(&d_scopeConfig);
+}
+
+
+bool LifConfig::initialize()
+{
+}
+
+bool LifConfig::advance()
+{
+    //return true if we have enough shots for this point on this pass
+    int c = d_lifData.at(d_currentDelayIndex).at(d_currentFrequencyIndex).count();
+    int target = d_shotsPerPoint*(d_completedSweeps+1);
+
+    bool inc = c>=target;
+    if(inc)
+    {
+        d_processingPaused = true;
+        if(d_currentDelayIndex+1 >= d_delayPoints && d_currentFrequencyIndex+1 >= d_laserPosPoints)
+        {
+            d_completedSweeps++;
+            d_complete = true;
+        }
+
+        if(d_order == LaserFirst)
+        {
+            if(d_currentFrequencyIndex+1 >= d_laserPosPoints)
+                d_currentDelayIndex = (d_currentDelayIndex+1)%d_delayPoints;
+
+            d_currentFrequencyIndex = (d_currentFrequencyIndex+1)%d_laserPosPoints;
+        }
+        else
+        {
+            if(d_currentDelayIndex+1 >= d_delayPoints)
+                d_currentFrequencyIndex = (d_currentFrequencyIndex+1)%d_laserPosPoints;
+
+            d_currentDelayIndex = (d_currentDelayIndex+1)%d_delayPoints;
+        }
+    }
+    return inc;
+}
+
+void LifConfig::hwReady()
+{
+    d_processingPaused = false;
+}
+
+int LifConfig::perMilComplete() const
+{
+    auto i = completedShots();
+    return qBound(0,(1000*i)/(d_shotsPerPoint*d_delayPoints*d_laserPosPoints),1000);
+}
+
+bool LifConfig::indefinite() const
+{
+    if(d_completeMode == ContinueAveraging)
+        return perMilComplete() >= 1000;
+
+    return false;
+}
+
+bool LifConfig::abort()
+{
+    return false;
 }
