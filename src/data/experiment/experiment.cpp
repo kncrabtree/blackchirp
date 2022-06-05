@@ -479,6 +479,7 @@ bool Experiment::validateItem(const QString key, const QVariant val)
     return out;
 }
 
+#ifdef BC_LIF
 LifConfig *Experiment::enableLif()
 {
     if(pu_lifCfg.get())
@@ -492,6 +493,7 @@ LifConfig *Experiment::enableLif()
     d_objectives.insert(pu_lifCfg.get());
     return pu_lifCfg.get();
 }
+#endif
 
 void Experiment::finalSave()
 {
