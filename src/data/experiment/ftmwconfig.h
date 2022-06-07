@@ -64,13 +64,12 @@ public:
 
     FtmwDigitizerConfig d_scopeConfig;
     RfConfig d_rfConfig;
-    QString d_errorString;
 
     bool initialize() override;
     bool advance() override;
     void hwReady() override;
     bool abort() override;
-    virtual void cleanup() override;
+    virtual void cleanupAndSave() override;
 
     virtual bool indefinite() const override { return false; }
 
@@ -105,7 +104,7 @@ public:
     void setScopeConfig(const FtmwDigitizerConfig &other);
     std::shared_ptr<FidStorageBase> storage() const;
 
-    void loadFids(int num, QString path = QString(""));
+    void loadFids();
 
 private:
     std::shared_ptr<FidStorageBase> p_fidStorage;

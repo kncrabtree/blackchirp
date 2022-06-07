@@ -131,20 +131,25 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
             if(key == QString("key"))
                 continue;
 
+            ExperimentObjective *obj = nullptr;
+
             if(key == BC::Config::Exp::ftmwType)
             {
                 auto type = l.constLast().value<FtmwConfig::FtmwType>();
-                enableFtmw(type);
-                pu_ftmwConfig->d_number = num;
+                obj = enableFtmw(type);
             }
 
 #ifdef BC_LIF
             if(key == BC::Config::Exp::lifType)
-            {
-                enableLif();
-                pu_lifCfg->d_number = num;
-            }
+                obj = enableLif();
 #endif
+
+            if(obj != nullptr)
+            {
+                obj->d_number = num;
+                obj->d_path = exptPath;
+            }
+
         }
     }
 
@@ -180,12 +185,12 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
         pu_ftmwConfig->d_rfConfig.loadClockSteps(csv.get(),num,exptPath);
 
         if(!headerOnly)
-            pu_ftmwConfig->loadFids(num,exptPath);
+            pu_ftmwConfig->loadFids();
     }
 
 #ifdef BC_LIF
     if(lifEnabled())
-        pu_lifCfg->loadLifData(num,exptPath);
+        pu_lifCfg->loadLifData();
 #endif
 
     //load aux data
@@ -331,20 +336,15 @@ bool Experiment::initialize()
 
     pu_auxData->d_number = d_number;
 
-    if(ftmwEnabled())
+    for(auto obj : d_objectives)
     {
-        pu_ftmwConfig->d_number = d_number;
-        if(!pu_ftmwConfig->initialize())
+        obj->d_number = d_number;
+        if(!obj->initialize())
         {
-            d_errorString = pu_ftmwConfig->d_errorString;
+            d_errorString = obj->d_errorString;
             return false;
         }
     }
-
-
-#ifdef BC_LIF
-    //do any needed initialization for LIF here... nothing to do for now
-#endif
 
     //write config file, header file; chirps file, and clocks file as appropriate
     if(!d_isDummy)
@@ -408,7 +408,7 @@ void Experiment::abort()
             d_endLogMessageCode = LogHandler::Highlight;
         }
 
-        pu_ftmwConfig->cleanup();
+        pu_ftmwConfig->cleanupAndSave();
     }
 
 }
@@ -511,17 +511,8 @@ void Experiment::finalSave()
     if(d_isDummy)
         return;
 
-    if(ftmwEnabled())
-    {
-        pu_ftmwConfig->cleanup();
-        pu_ftmwConfig->storage()->save();
-    }
-
-#ifdef BC_LIF
-    if(lifEnabled())
-        lifConfig()->writeLifFile(d_number);
-#endif
-
+    for(auto obj : d_objectives)
+        obj->cleanupAndSave();
 }
 
 bool Experiment::saveObjectives()

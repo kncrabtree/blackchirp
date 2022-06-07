@@ -218,7 +218,7 @@ void WizardStartPage::initializePage()
 
 #ifdef BC_LIF
         p_ftmw->setChecked(e->ftmwEnabled());
-        p_lif->setChecked(e->lifConfig().isEnabled());
+        p_lif->setChecked(e->lifEnabled());
 #endif
         if(e->ftmwEnabled())
         {

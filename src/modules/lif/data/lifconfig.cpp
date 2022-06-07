@@ -70,13 +70,14 @@ QVector<QVector<LifTrace> > LifConfig::lifData() const
     return d_lifData;
 }
 
-bool LifConfig::loadLifData(int num, const QString path)
+bool LifConfig::loadLifData()
 {
-    ///TODO
+    return true;
+}
 
-    Q_UNUSED(num)
-    Q_UNUSED(path)
-    return false;
+bool LifConfig::writeLifData()
+{
+    return true;
 }
 
 void LifConfig::addWaveform(const QByteArray d)

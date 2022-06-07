@@ -325,17 +325,18 @@ bool FtmwConfig::abort()
     return false;
 }
 
-void FtmwConfig::cleanup()
+void FtmwConfig::cleanupAndSave()
 {
     p_fidStorage->finish();
+    p_fidStorage->save();
 #ifdef BC_CUDA
     ps_gpu.reset();
 #endif
 }
 
-void FtmwConfig::loadFids(int num, QString path)
+void FtmwConfig::loadFids()
 {
-    p_fidStorage = createStorage(num,path);
+    p_fidStorage = createStorage(d_number,d_path);
 }
 
 bool FtmwConfig::preprocessChirp(const FidList l)

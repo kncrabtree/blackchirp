@@ -197,7 +197,9 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
 
 void FtmwViewWidget::setLiveUpdateInterval(int intervalms)
 {
-    killTimer(d_liveTimerId);
+    if(d_liveTimerId >= 0)
+        killTimer(d_liveTimerId);
+
     d_liveTimerId = startTimer(intervalms);
 }
 
@@ -629,7 +631,8 @@ void FtmwViewWidget::experimentComplete()
 {
     disconnect(ui->refreshBox,&SpinBoxWidgetAction::valueChanged,this,&FtmwViewWidget::setLiveUpdateInterval);
     ui->refreshBox->setEnabled(false);
-    killTimer(d_liveTimerId);
+    if(d_liveTimerId >= 0)
+        killTimer(d_liveTimerId);
     d_liveTimerId = -1;   
 
     if(ps_fidStorage)

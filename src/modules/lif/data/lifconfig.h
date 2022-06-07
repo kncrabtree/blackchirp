@@ -84,8 +84,8 @@ public:
     QPair<int,int> lifGate() const;
     QPair<int,int> refGate() const;
     QVector<QVector<LifTrace> > lifData() const;
-    bool loadLifData(int num, QString path = QString(""));
-    bool writeLifFile(int num) const;
+    bool loadLifData();
+    bool writeLifData();
     void addWaveform(const QByteArray d);
 
 

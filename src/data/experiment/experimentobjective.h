@@ -18,11 +18,13 @@ public:
     virtual bool indefinite() const =0;
     virtual bool isComplete() const =0;
     virtual bool abort() =0;
-    virtual void cleanup() {};
+    virtual void cleanupAndSave() =0;
     virtual QString objectiveKey() const =0;
     virtual QVariant objectiveData() const { return QString(""); }
 
     int d_number{-1};
+    QString d_path{""};
+    QString d_errorString{""};
     bool d_processingPaused{false};
 };
 
