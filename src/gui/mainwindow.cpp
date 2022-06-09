@@ -313,21 +313,12 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionView_Experiment,&QAction::triggered,this,&MainWindow::viewExperiment);
 #ifdef BC_LIF
     p_lifDisplayWidget = new LifDisplayWidget(this);
-    int lti = ui->mainTabWidget->insertTab(ui->mainTabWidget->indexOf(ui->trackingTab),p_lifDisplayWidget,QIcon(QString(":/icons/laser.png")),QString("LIF"));
+    int lti = ui->mainTabWidget->insertTab(ui->mainTabWidget->indexOf(ui->rollingDataTab),p_lifDisplayWidget,QIcon(QString(":/icons/laser.png")),QString("LIF"));
     p_lifTab = ui->mainTabWidget->widget(lti);
     p_lifProgressBar = new QProgressBar(this);
     ui->instrumentStatusLayout->addWidget(new QLabel(QString("LIF Progress")),0,Qt::AlignCenter);
     ui->instrumentStatusLayout->addWidget(p_lifProgressBar);
-    p_lifControlWidget = new LifControlWidget(this);
-    p_lifAction = new QAction(QIcon(QString(":/icons/laser.png")),QString("LIF"),this);
-    ui->menuView->insertAction(ui->actionLog,p_lifAction);
 
-    connect(p_hwm,&HardwareManager::hwInitializationComplete,p_lifControlWidget,&LifControlWidget::updateHardwareLimits);
-    connect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_lifControlWidget,&LifControlWidget::newTrace);
-    connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,p_lifControlWidget,&LifControlWidget::scopeConfigChanged);
-    connect(p_hwm,&HardwareManager::lifLaserPosUpdate,p_lifControlWidget,&LifControlWidget::setLaserPos);
-    connect(p_lifControlWidget,&LifControlWidget::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
-    connect(p_lifControlWidget,&LifControlWidget::laserPosUpdate,p_hwm,&HardwareManager::setLifLaserPos);
     connect(p_hwm,&HardwareManager::lifSettingsComplete,p_lifDisplayWidget,&LifDisplayWidget::resetLifPlot);
     connect(p_hwm,&HardwareManager::lifSettingsComplete,p_am,&AcquisitionManager::lifHardwareReady);
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_am,&AcquisitionManager::processLifScopeShot);
@@ -494,13 +485,12 @@ bool MainWindow::runExperimentWizard(Experiment *exp, QuickExptDialog *qed)
 
 #ifdef BC_LIF
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
-    connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
+//    connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
     connect(p_hwm,&HardwareManager::lifLaserPosUpdate,&wiz,&ExperimentWizard::setCurrentLaserPos);
-    connect(&wiz,&ExperimentWizard::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
-    connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifControlWidget,&LifControlWidget::checkLifColors);
+//    connect(&wiz,&ExperimentWizard::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
     connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifDisplayWidget,&LifDisplayWidget::checkLifColors);
     connect(&wiz,&ExperimentWizard::laserPosUpdate,p_hwm,&HardwareManager::setLifLaserPos);
-    wiz.setCurrentLaserPos(p_lifControlWidget->laserPos());
+//    wiz.setCurrentLaserPos(p_lifControlWidget->laserPos());
 #endif
 
     if(wiz.exec() != QDialog::Accepted)
@@ -607,7 +597,7 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
 #ifdef BC_LIF
 #pragma message("Update LIF progress bar")
     p_lifProgressBar->setValue(0);
-    p_lifDisplayWidget->prepareForExperiment(exp.lifConfig());
+    p_lifDisplayWidget->prepareForExperiment(exp->lifConfig());
     if(exp.lifConfig().isEnabled())
     {
         p_lifTab->setEnabled(true);

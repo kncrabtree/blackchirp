@@ -1,7 +1,7 @@
 #include <modules/lif/hardware/liflaser/liflaser.h>
 
 LifLaser::LifLaser(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent, bool threaded, bool critical) :
-    HardwareObject (BC::Key::lifLaser,subKey,name,commType,parent,threaded,critical)
+    HardwareObject (BC::Key::LifLaser::key,subKey,name,commType,parent,threaded,critical)
 {
 
 }

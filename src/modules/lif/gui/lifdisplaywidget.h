@@ -5,8 +5,7 @@
 
 #include <QVector>
 
-#include <modules/lif/data/liftrace.h>
-#include <modules/lif/data/lifconfig.h>
+#include <data/experiment/experiment.h>
 
 class LifSlicePlot;
 class LifTracePlot;
@@ -31,7 +30,7 @@ signals:
 public slots:
     void checkLifColors();
     void resetLifPlot();
-    void prepareForExperiment(const LifConfig c);
+    void prepareForExperiment(const Experiment &e);
     void updatePoint(const LifConfig c);
 
     void freqSlice(int delayIndex);

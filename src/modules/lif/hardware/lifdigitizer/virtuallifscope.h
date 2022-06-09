@@ -19,15 +19,8 @@ public:
 
 
 public slots:
-    // HardwareObject interface
-    void readSettings() override;
-
     // LifScope interface
-    void setLifVScale(double scale) override;
-    void setRefVScale(double scale) override;
-    void setHorizontalConfig(double sampleRate, int recLen) override;
-    void queryScope() override;
-    void setRefEnabled(bool en) override;
+    void readWaveform() override;
 
 protected:
     bool testConnection() override;
@@ -39,6 +32,12 @@ protected:
     // HardwareObject interface
 public slots:
     void sleep(bool b) override;
+
+    // HardwareObject interface
+public slots:
+    bool prepareForExperiment(Experiment &exp) override;
+    void beginAcquisition() override;
+    void endAcquisition() override;
 };
 
 #endif // VIRTUALLIFSCOPE_H

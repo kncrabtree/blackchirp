@@ -74,8 +74,7 @@ signals:
     void temperatureEnableUpdate(int,bool);
 
 #ifdef BC_LIF
-    void lifScopeShotAcquired(LifTrace);
-    void lifScopeConfigUpdated(Blackchirp::LifScopeConfig);
+    void lifScopeShotAcquired(QByteArray);
     void lifSettingsComplete(bool success = true);
     void lifLaserPosUpdate(double);
 #endif
@@ -138,7 +137,6 @@ public slots:
 #ifdef BC_LIF
     void setLifParameters(double delay, double pos);
     bool setPGenLifDelay(double d);
-    void setLifScopeConfig(const Blackchirp::LifScopeConfig c);
     bool setLifLaserPos(double pos);
 #endif
 

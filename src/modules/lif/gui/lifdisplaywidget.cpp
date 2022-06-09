@@ -66,7 +66,7 @@ void LifDisplayWidget::resetLifPlot()
     p_lifTracePlot->reset();
 }
 
-void LifDisplayWidget::prepareForExperiment(const LifConfig c)
+void LifDisplayWidget::prepareForExperiment(const Experiment &e)
 {
     p_lifTracePlot->clearPlot();
 
@@ -76,7 +76,8 @@ void LifDisplayWidget::prepareForExperiment(const LifConfig c)
 
     p_timeSlicePlot->prepareForExperiment();
     p_freqSlicePlot->prepareForExperiment();
-    if(!c.isEnabled())
+
+    if(e.lifEnabled())
     {
         d_currentTimeTraceFreqIndex = -1;
         d_currentSpectrumDelayIndex = -1;

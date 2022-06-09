@@ -22,7 +22,7 @@ double LifConfig::currentDelay() const
 
 double LifConfig::currentLaserPos() const
 {
-    return static_cast<double>(d_currentFrequencyIndex)*d_laserPosStep + d_laserPosStart;
+    return static_cast<double>(d_currentLaserIndex)*d_laserPosStep + d_laserPosStart;
 }
 
 QPair<double, double> LifConfig::delayRange() const
@@ -35,24 +35,14 @@ QPair<double, double> LifConfig::laserRange() const
     return qMakePair(d_laserPosStart,d_laserPosStart + d_laserPosStep*d_laserPosPoints);
 }
 
-int LifConfig::totalShots() const
+int LifConfig::targetShots() const
 {
     return d_delayPoints*d_laserPosPoints*d_shotsPerPoint;
 }
 
 int LifConfig::completedShots() const
 {
-    if(d_complete)
-        return totalShots();
-
-    int out = 0;
-    for(int i=0; i < d_lifData.size(); i++)
-    {
-        for(int j=0; j < d_lifData.at(i).size(); j++)
-            out += d_lifData.at(i).at(j).count();
-    }
-
-    return out;
+    return ps_storage->completedShots();
 }
 
 QPair<int, int> LifConfig::lifGate() const
@@ -65,52 +55,14 @@ QPair<int, int> LifConfig::refGate() const
     return qMakePair(d_refGateStartPoint,d_refGateEndPoint);
 }
 
-QVector<QVector<LifTrace> > LifConfig::lifData() const
-{
-    return d_lifData;
-}
-
-bool LifConfig::loadLifData()
-{
-    return true;
-}
-
-bool LifConfig::writeLifData()
-{
-    return true;
-}
-
 void LifConfig::addWaveform(const QByteArray d)
 {
     //the boolean returned by this function tells if the point was incremented
     if(d_complete && d_completeMode == StopWhenComplete)
         return;
 
-    return addTrace(d);
-
-}
-
-void LifConfig::addTrace(const QByteArray d)
-{
-    LifTrace t(d_scopeConfig,d);
-    if(d_currentDelayIndex >= d_lifData.size())
-    {
-        QVector<LifTrace> l;
-        l.append(std::move(t));
-        d_lifData.append(l);
-    }
-    else if(d_currentFrequencyIndex >= d_lifData.at(d_currentDelayIndex).size())
-    {
-        d_lifData[d_currentDelayIndex].append(std::move(t));
-    }
-    else
-        d_lifData[d_currentDelayIndex][d_currentFrequencyIndex].add(t);
-
-}
-
-void LifConfig::increment()
-{
-
+    LifTrace t(d_scopeConfig,d,d_currentDelayIndex,d_currentLaserIndex);
+    ps_storage->addTrace(t);
 }
 
 void LifConfig::storeValues()
@@ -125,6 +77,10 @@ void LifConfig::storeValues()
     store(lStep,d_laserPosStep);
     store(lPoints,d_delayPoints);
     store(shotsPerPoint,d_shotsPerPoint);
+    store(lifGateStart,d_lifGateStartPoint);
+    store(lifGateEnd,d_lifGateEndPoint);
+    store(refGateStart,d_refGateStartPoint);
+    store(refGateEnd,d_refGateEndPoint);
 
 }
 
@@ -140,6 +96,10 @@ void LifConfig::retrieveValues()
     d_laserPosStep = retrieve(lStep,0.0);
     d_laserPosPoints = retrieve(lPoints,0);
     d_shotsPerPoint = retrieve(shotsPerPoint,0);
+    d_lifGateStartPoint = retrieve(lifGateStart,-1);
+    d_lifGateEndPoint = retrieve(lifGateEnd,-1);
+    d_refGateStartPoint = retrieve(refGateStart,-1);
+    d_refGateEndPoint = retrieve(refGateEnd,-1);
 }
 
 void LifConfig::prepareChildren()
@@ -150,20 +110,22 @@ void LifConfig::prepareChildren()
 
 bool LifConfig::initialize()
 {
+    ps_storage = std::make_shared<LifStorage>(d_delayPoints,d_laserPosPoints,d_number,d_path);
+    ps_storage->start();
     return true;
 }
 
 bool LifConfig::advance()
 {
     //return true if we have enough shots for this point on this pass
-    int c = d_lifData.at(d_currentDelayIndex).at(d_currentFrequencyIndex).count();
+    int c = ps_storage->currentTraceShots();
     int target = d_shotsPerPoint*(d_completedSweeps+1);
 
-    bool inc = c>=target;
+    bool inc = (c>=target);
     if(inc)
     {
         d_processingPaused = true;
-        if(d_currentDelayIndex+1 >= d_delayPoints && d_currentFrequencyIndex+1 >= d_laserPosPoints)
+        if(d_currentDelayIndex+1 >= d_delayPoints && d_currentLaserIndex+1 >= d_laserPosPoints)
         {
             d_completedSweeps++;
             d_complete = true;
@@ -171,18 +133,19 @@ bool LifConfig::advance()
 
         if(d_order == LaserFirst)
         {
-            if(d_currentFrequencyIndex+1 >= d_laserPosPoints)
+            if(d_currentLaserIndex+1 >= d_laserPosPoints)
                 d_currentDelayIndex = (d_currentDelayIndex+1)%d_delayPoints;
 
-            d_currentFrequencyIndex = (d_currentFrequencyIndex+1)%d_laserPosPoints;
+            d_currentLaserIndex = (d_currentLaserIndex+1)%d_laserPosPoints;
         }
         else
         {
             if(d_currentDelayIndex+1 >= d_delayPoints)
-                d_currentFrequencyIndex = (d_currentFrequencyIndex+1)%d_laserPosPoints;
+                d_currentLaserIndex = (d_currentLaserIndex+1)%d_laserPosPoints;
 
             d_currentDelayIndex = (d_currentDelayIndex+1)%d_delayPoints;
         }
+        ps_storage->advance();
     }
     return inc;
 }
@@ -214,4 +177,11 @@ bool LifConfig::abort()
 QString LifConfig::objectiveKey() const
 {
     return BC::Config::Exp::lifType;
+}
+
+
+void LifConfig::cleanupAndSave()
+{
+    ps_storage->finish();
+    ps_storage->save();
 }

@@ -101,7 +101,7 @@ void M4i2211x8::readSettings()
 void M4i2211x8::initialize()
 {
     p_timer = new QTimer(this);
-    connect(p_timer,&QTimer::timeout,this,&M4i2211x8::queryScope);
+    connect(p_timer,&QTimer::timeout,this,&M4i2211x8::readWaveform);
 }
 
 bool M4i2211x8::testConnection()
@@ -320,7 +320,7 @@ void M4i2211x8::setRefEnabled(bool en)
 
 }
 
-void M4i2211x8::queryScope()
+void M4i2211x8::readWaveform()
 {
     //check to see if a data block is ready
     qint32 stat = 0;

@@ -2,43 +2,48 @@
 
 #include <QTimer>
 #include <math.h>
+#include <QRandomGenerator>
+
 
 VirtualLifScope::VirtualLifScope(QObject *parent) :
     LifScope(BC::Key::Comm::hwVirtual,BC::Key::vLifScopeName,CommunicationProtocol::Virtual,parent)
 {
-    setLifVScale(0.02);
-    setRefVScale(0.02);
-    setHorizontalConfig(1e9,1000);
+    using namespace BC::Key::Digi;
+
+    setDefault(numAnalogChannels,2);
+    setDefault(numDigitalChannels,0);
+    setDefault(hasAuxTriggerChannel,true);
+    setDefault(minFullScale,5e-2);
+    setDefault(maxFullScale,2.0);
+    setDefault(minVOffset,-2.0);
+    setDefault(maxVOffset,2.0);
+    setDefault(isTriggered,true);
+    setDefault(minTrigDelay,-10.0);
+    setDefault(maxTrigDelay,10.0);
+    setDefault(minTrigLevel,-5.0);
+    setDefault(maxTrigLevel,5.0);
+    setDefault(canBlockAverage,false);
+    setDefault(canMultiRecord,false);
+    setDefault(multiBlock,false);
+    setDefault(maxBytes,2);
+
+    if(!containsArray(sampleRates))
+        setArray(sampleRates,{
+                     {{srText,"78.125 MSa/s"},{srValue,2.5e9/32}},
+                     {{srText,"156.25 MSa/s"},{srValue,2.5e9/16}},
+                     {{srText,"312.5 MSa/s"},{srValue,2.5e9/8}},
+                     {{srText,"625 MSa/s"},{srValue,2.5e9/4}},
+                     {{srText,"1250 GSa/s"},{srValue,2.5e9/2}},
+                     {{srText,"2500 MSa/s"},{srValue,2.5e9}}
+                 });
+
+    save();
 }
 
 VirtualLifScope::~VirtualLifScope()
 {
 
 }
-
-void VirtualLifScope::readSettings()
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    d_config.refEnabled = s.value(QString("refEnabled"),false).toBool();
-    double minVS = s.value(QString("minVScale"),0.01).toDouble();
-    double maxVS = s.value(QString("maxVScale"),5.0).toDouble();
-    double minSamples = s.value(QString("minSamples"),1000).toInt();
-    double maxSamples = s.value(QString("maxSamples"),10000).toInt();
-    s.setValue(QString("minVScale"),minVS);
-    s.setValue(QString("maxVScale"),maxVS);
-    s.setValue(QString("minSamples"),minSamples);
-    s.setValue(QString("maxSamples"),maxSamples);
-    s.setValue(QString("refEnabled"),d_config.refEnabled);
-    s.endGroup();
-    s.endGroup();
-    s.sync();
-
-    setRefEnabled(d_config.refEnabled);
-}
-
-
 
 bool VirtualLifScope::testConnection()
 {
@@ -50,53 +55,32 @@ void VirtualLifScope::initialize()
 
     p_timer = new QTimer(this);
     p_timer->setInterval(200);
-    connect(p_timer,&QTimer::timeout,this,&VirtualLifScope::queryScope);
-    p_timer->start();
 }
 
-void VirtualLifScope::setLifVScale(double scale)
-{
-    d_config.vScale1 = scale;
-    d_config.yMult1 = d_config.vScale1*5.0/pow(2.0,8.0*d_config.bytesPerPoint-1.0);
-    emit configUpdated(d_config);
-}
 
-void VirtualLifScope::setRefVScale(double scale)
-{
-    d_config.vScale2 = scale;
-    d_config.yMult2 = d_config.vScale2*5.0/pow(2.0,8.0*d_config.bytesPerPoint-1.0);
-    emit configUpdated(d_config);
-}
-
-void VirtualLifScope::setHorizontalConfig(double sampleRate, int recLen)
-{
-    d_config.sampleRate = sampleRate;
-    d_config.recordLength = recLen;
-    d_config.xIncr = 1.0/sampleRate;
-    emit configUpdated(d_config);
-}
-
-void VirtualLifScope::queryScope()
+void VirtualLifScope::readWaveform()
 {
     QByteArray out;
-    if(d_config.refEnabled)
-        out.resize(2*d_config.recordLength*d_config.bytesPerPoint);
-    else
-        out.resize(d_config.recordLength*d_config.bytesPerPoint);
+    auto qr = QRandomGenerator::global();
 
-    for(int i=0; i<d_config.recordLength; i++)
+    if(d_refEnabled)
+        out.resize(2*d_recordLength*d_bytesPerPoint);
+    else
+        out.resize(d_recordLength*d_bytesPerPoint);
+
+    for(int i=0; i<d_recordLength; i++)
     {
-        if(d_config.bytesPerPoint == 1)
+        if(d_bytesPerPoint == 1)
         {
-            qint8 dat = (qrand() % 256) - 128;
+            qint8 dat = qr->bounded(-128,127);
             out[i] = dat;
         }
         else
         {
-            qint16 dat = (qrand() % 65536) - 32768;
+            qint16 dat = qr->bounded(-32768,32767);
             qint8 datmsb = dat / 256;
             qint8 datlsb = dat % 256;
-            if(d_config.byteOrder == DigitizerConfig::LittleEndian)
+            if(d_byteOrder == DigitizerConfig::LittleEndian)
             {
                 out[2*i] = datlsb;
                 out[2*i+1] = datmsb;
@@ -109,21 +93,21 @@ void VirtualLifScope::queryScope()
         }
     }
 
-    if(d_config.refEnabled)
+    if(d_refEnabled)
     {
-        for(int i = d_config.recordLength; i<2*d_config.recordLength; i++)
+        for(int i = d_recordLength; i<2*d_recordLength; i++)
         {
-            if(d_config.bytesPerPoint == 1)
+            if(d_bytesPerPoint == 1)
             {
-                qint8 dat = (qrand() % 256) - 128;
+                qint8 dat = qr->bounded(-128,127);;
                 out[i] = dat;
             }
             else
             {
-                qint16 dat = (qrand() % 65536) - 32768;
+                qint16 dat = qr->bounded(-32768,32767);
                 qint8 datmsb = dat / 256;
                 qint8 datlsb = dat % 256;
-                if(d_config.byteOrder == DigitizerConfig::LittleEndian)
+                if(d_byteOrder == DigitizerConfig::LittleEndian)
                 {
                    out[2*i] = datlsb;
                    out[2*i+1] = datmsb;
@@ -137,23 +121,8 @@ void VirtualLifScope::queryScope()
         }
     }
 
-    emit waveformRead(LifTrace(d_config,out));
+    emit waveformRead(out);
 
-}
-
-void VirtualLifScope::setRefEnabled(bool en)
-{
-    d_config.refEnabled = en;
-
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    s.setValue(QString("refEnabled"),en);
-    s.endGroup();
-    s.endGroup();
-    s.sync();
-
-    emit configUpdated(d_config);
 }
 
 
@@ -165,4 +134,33 @@ void VirtualLifScope::sleep(bool b)
     {
         p_timer->start();
     }
+}
+
+
+bool VirtualLifScope::prepareForExperiment(Experiment &exp)
+{
+    d_enabledForExperiment = exp.lifEnabled();
+    if(!d_enabledForExperiment)
+        return true;
+
+    auto &config = exp.lifConfig()->d_scopeConfig;
+    config.d_channelOrder = LifDigitizerConfig::Sequential;
+
+    auto cfg = dynamic_cast<LifDigitizerConfig*>(this);
+    if(cfg)
+        *cfg = config;
+
+    return true;
+}
+
+void VirtualLifScope::beginAcquisition()
+{
+    connect(p_timer,&QTimer::timeout,this,&VirtualLifScope::readWaveform);
+    p_timer->start();
+}
+
+void VirtualLifScope::endAcquisition()
+{
+    p_timer->stop();
+    disconnect(p_timer,&QTimer::timeout,this,&VirtualLifScope::readWaveform);
 }

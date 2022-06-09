@@ -5,10 +5,11 @@
 #include <QPointF>
 #include <QMap>
 #include <QVariant>
+#include <memory>
 
 #include <data/storage/headerstorage.h>
 #include <data/experiment/experimentobjective.h>
-#include <modules/lif/data/liftrace.h>
+#include <modules/lif/data/lifstorage.h>
 #include <modules/lif/hardware/lifdigitizer/lifdigitizerconfig.h>
 
 namespace BC::Store::LIF {
@@ -22,6 +23,10 @@ static const QString lStart("LaserStart");
 static const QString lStep("LaserStep");
 static const QString lPoints("LaserPoints");
 static const QString shotsPerPoint("ShotsPerPoint");
+static const QString lifGateStart("LifGateStartPoint");
+static const QString lifGateEnd("LifGateEndPoint");
+static const QString refGateStart("RefGateStartPoint");
+static const QString refGateEnd("RefGateEndPoint");
 }
 
 namespace BC::Config::Exp {
@@ -64,35 +69,29 @@ public:
     int d_refGateStartPoint {-1};
     int d_refGateEndPoint {-1};
 
-    int d_currentDelayIndex {0};
-    int d_currentFrequencyIndex {0};
     int d_shotsPerPoint {0};
-    int d_completedSweeps{0};
 
     LifDigitizerConfig d_scopeConfig;
-    QPoint d_lastUpdatedPoint;
-    QVector<QVector<LifTrace>> d_lifData;
 
     bool isComplete() const override;
     double currentDelay() const;
     double currentLaserPos() const;
     QPair<double,double> delayRange() const;
     QPair<double,double> laserRange() const;
-    int totalShots() const;
+    int targetShots() const;
     int completedShots() const;
-
     QPair<int,int> lifGate() const;
     QPair<int,int> refGate() const;
-    QVector<QVector<LifTrace> > lifData() const;
-    bool loadLifData();
-    bool writeLifData();
+
     void addWaveform(const QByteArray d);
 
 
 
 private:
-    void addTrace(const QByteArray d);
-    void increment();
+    std::shared_ptr<LifStorage> ps_storage;
+    int d_currentDelayIndex {0};
+    int d_currentLaserIndex {0};
+    int d_completedSweeps{0};
 
     // HeaderStorage interface
 protected:
@@ -111,6 +110,7 @@ public:
     bool indefinite() const override;
     bool abort() override;
     QString objectiveKey() const override;
+    void cleanupAndSave() override;
 };
 
 

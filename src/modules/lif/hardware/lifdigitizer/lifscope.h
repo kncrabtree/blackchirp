@@ -2,13 +2,14 @@
 #define LIFSCOPE_H
 
 #include <hardware/core/hardwareobject.h>
+#include <modules/lif/hardware/lifdigitizer/lifdigitizerconfig.h>
 #include <modules/lif/data/lifconfig.h>
 
 namespace BC::Key {
 static const QString lifScope{"LifDigitizer"};
 }
 
-class LifScope : public HardwareObject
+class LifScope : public HardwareObject, protected LifDigitizerConfig
 {
     Q_OBJECT
 public:
@@ -16,19 +17,11 @@ public:
     virtual ~LifScope();
 
 signals:
-    void waveformRead(const LifTrace);
-    void configUpdated(const Blackchirp::LifScopeConfig);
+    void waveformRead(QByteArray);
 
 public slots:
-    void setAll(const Blackchirp::LifScopeConfig c);
-    virtual void setLifVScale(double scale) =0;
-    virtual void setRefVScale(double scale) =0;
-    virtual void setHorizontalConfig(double sampleRate, int recLen) =0;
-    virtual void setRefEnabled(bool en) =0;
-    virtual void queryScope() =0;
+    virtual void readWaveform() =0;
 
-protected:
-    Blackchirp::LifScopeConfig d_config;
 };
 
 #ifdef BC_LIFSCOPE

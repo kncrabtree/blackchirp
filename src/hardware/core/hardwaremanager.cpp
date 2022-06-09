@@ -87,14 +87,13 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #endif
 
 #ifdef BC_LIF
-    p_lifScope = new LifScopeHardware();
-    connect(p_lifScope,&LifScope::waveformRead,this,&HardwareManager::lifScopeShotAcquired);
-    connect(p_lifScope,&LifScope::configUpdated,this,&HardwareManager::lifScopeConfigUpdated);
-    d_hardwareList.append(p_lifScope);
+    auto lsc = new LifScopeHardware();
+    connect(lsc,&LifScope::waveformRead,this,&HardwareManager::lifScopeShotAcquired);
+    d_hardwareMap.emplace(lsc->d_key,lsc);
 
-    p_lifLaser = new LifLaserHardware();
-    connect(p_lifLaser,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserPosUpdate);
-    d_hardwareList.append(p_lifLaser);
+    auto ll = new LifLaserHardware();
+    connect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserPosUpdate);
+    d_hardwareMap.emplace(ll->d_key,ll);
 #endif
 
     //write arrays of the connected devices for use in the Hardware Settings menu
@@ -590,36 +589,40 @@ void HardwareManager::setLifParameters(double delay, double pos)
 
 bool HardwareManager::setPGenLifDelay(double d)
 {
-    if(p_pGen->thread() == QThread::currentThread())
-        return p_pGen->setLifDelay(d);
+    auto pGen = findHardware<PulseGenerator>(BC::Key::PGen::key);
+    if(!pGen)
+    {
+        emit logMessage(QString("Could not set LIF delay because no pulse generator is avaialble."),LogHandler::Error);
+        return false;
+    }
+
+    if(pGen->thread() == QThread::currentThread())
+        return pGen->setLifDelay(d);
 
 
     bool out;
-    QMetaObject::invokeMethod(p_pGen,"setLifDelay",Qt::BlockingQueuedConnection,
-                              Q_RETURN_ARG(bool,out),Q_ARG(double,d));
+    QMetaObject::invokeMethod(pGen,[pGen,d](){ return pGen->setLifDelay(d); },Qt::BlockingQueuedConnection,&out);
     return out;
 
 }
 
-void HardwareManager::setLifScopeConfig(const Blackchirp::LifScopeConfig c)
-{
-    if(p_lifScope->thread() == QThread::currentThread())
-        p_lifScope->setAll(c);
-    else
-        QMetaObject::invokeMethod(p_lifScope,"setAll",Q_ARG(Blackchirp::LifScopeConfig,c));
-}
-
 bool HardwareManager::setLifLaserPos(double pos)
 {
-    if(p_lifLaser->thread() == QThread::currentThread())
+    auto ll = findHardware<LifLaser>(BC::Key::LifLaser::key);
+    if(!ll)
     {
-        auto p = p_lifLaser->setPosition(pos);
+        emit logMessage(QString("Could not set LIF Laser position because no laser is avaialble."),LogHandler::Error);
+        return false;
+    }
+
+    if(ll->thread() == QThread::currentThread())
+    {
+        auto p = ll->setPosition(pos);
         return p > 0.0;
     }
 
     double out;
-    QMetaObject::invokeMethod(p_lifLaser,"setPosition",Qt::BlockingQueuedConnection,
-                              Q_RETURN_ARG(double,out),Q_ARG(double,pos));
+    QMetaObject::invokeMethod(ll,[ll,pos](){ return ll->setPosition(pos); },Qt::BlockingQueuedConnection,&out);
     return out > 0.0;
 
 }

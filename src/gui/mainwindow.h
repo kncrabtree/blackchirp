@@ -23,7 +23,6 @@ class QAction;
 class HWDialog;
 
 #ifdef BC_LIF
-class LifControlWidget;
 class LifDisplayWidget;
 #endif
 
@@ -100,7 +99,6 @@ private:
 
 #ifdef BC_LIF
     QWidget *p_lifTab;
-    LifControlWidget *p_lifControlWidget;
     QProgressBar *p_lifProgressBar;
     QAction *p_lifAction;
     LifDisplayWidget *p_lifDisplayWidget;

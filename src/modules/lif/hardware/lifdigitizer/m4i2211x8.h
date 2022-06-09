@@ -35,7 +35,7 @@ public slots:
     void setRefVScale(double scale) override;
     void setHorizontalConfig(double sampleRate, int recLen) override;
     void setRefEnabled(bool en) override;
-    void queryScope() override;
+    void readWaveform() override;
 
 private:
     QTimer *p_timer;

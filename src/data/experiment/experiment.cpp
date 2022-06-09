@@ -408,8 +408,9 @@ void Experiment::abort()
             d_endLogMessageCode = LogHandler::Highlight;
         }
 
-        pu_ftmwConfig->cleanupAndSave();
     }
+    for(auto obj : d_objectives)
+        obj->abort();
 
 }
 
