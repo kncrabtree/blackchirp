@@ -311,22 +311,14 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->sleepButton,&QToolButton::toggled,this,&MainWindow::sleep);
     connect(ui->actionTest_All_Connections,&QAction::triggered,p_hwm,&HardwareManager::testAll);
     connect(ui->actionView_Experiment,&QAction::triggered,this,&MainWindow::viewExperiment);
-#ifdef BC_LIF
-    p_lifDisplayWidget = new LifDisplayWidget(this);
-    int lti = ui->mainTabWidget->insertTab(ui->mainTabWidget->indexOf(ui->rollingDataTab),p_lifDisplayWidget,QIcon(QString(":/icons/laser.png")),QString("LIF"));
-    p_lifTab = ui->mainTabWidget->widget(lti);
-    p_lifProgressBar = new QProgressBar(this);
-    ui->instrumentStatusLayout->addWidget(new QLabel(QString("LIF Progress")),0,Qt::AlignCenter);
-    ui->instrumentStatusLayout->addWidget(p_lifProgressBar);
 
-    connect(p_hwm,&HardwareManager::lifSettingsComplete,p_lifDisplayWidget,&LifDisplayWidget::resetLifPlot);
+#ifdef BC_LIF
+    connect(p_hwm,&HardwareManager::lifSettingsComplete,ui->lifDisplayWidget,&LifDisplayWidget::resetLifPlot);
     connect(p_hwm,&HardwareManager::lifSettingsComplete,p_am,&AcquisitionManager::lifHardwareReady);
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_am,&AcquisitionManager::processLifScopeShot);
     connect(p_am,&AcquisitionManager::nextLifPoint,p_hwm,&HardwareManager::setLifParameters);
-    connect(p_am,&AcquisitionManager::lifShotAcquired,p_lifProgressBar,&QProgressBar::setValue);
-    connect(p_am,&AcquisitionManager::lifPointUpdate,p_lifDisplayWidget,&LifDisplayWidget::updatePoint);
-    connect(p_lifAction,&QAction::triggered,this,[=](){ ui->mainTabWidget->setCurrentWidget(p_lifTab); });
-
+    connect(p_am,&AcquisitionManager::lifShotAcquired,ui->lifProgressBar,&QProgressBar::setValue);
+    connect(p_am,&AcquisitionManager::lifPointUpdate,ui->lifDisplayWidget,&LifDisplayWidget::updatePoint);
 #endif
 
     SettingsStorage bc;
@@ -527,7 +519,7 @@ void MainWindow::batchComplete(bool aborted)
     disconnect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort);
 
 #ifdef BC_LIF
-    p_lifTab->setEnabled(true);
+    ui->lifTab->setEnabled(true);
 #endif
 
     if(aborted)
@@ -595,19 +587,16 @@ void MainWindow::experimentInitialized(std::shared_ptr<Experiment> exp)
     }
 
 #ifdef BC_LIF
-#pragma message("Update LIF progress bar")
-    p_lifProgressBar->setValue(0);
-    p_lifDisplayWidget->prepareForExperiment(exp->lifConfig());
-    if(exp.lifConfig().isEnabled())
+    ui->lifDisplayWidget->prepareForExperiment(*exp);
+    if(exp->lifEnabled())
     {
-        p_lifTab->setEnabled(true);
-        p_lifProgressBar->setRange(0,exp.lifConfig().totalShots());
+        ui->lifTab->setEnabled(true);
+        ui->lifProgressBar->setValue(0);
     }
     else
     {
-        p_lifTab->setEnabled(false);
-        p_lifProgressBar->setRange(0,1);
-        p_lifProgressBar->setValue(1);
+        ui->lifTab->setEnabled(false);
+        ui->lifProgressBar->setValue(1000);
     }
 #endif
 
@@ -945,24 +934,15 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
     case Asleep:
         ui->sleepButton->setEnabled(true);
         ui->savePathAction->setEnabled(true);
-#ifdef BC_LIF
-        p_lifControlWidget->setEnabled(false);
-#endif
         break;
     case Disconnected:
         ui->actionCommunication->setEnabled(true);
         ui->actionTest_All_Connections->setEnabled(true);
         ui->savePathAction->setEnabled(true);
-#ifdef BC_LIF
-        p_lifControlWidget->setEnabled(false);
-#endif
         break;
     case Paused:
         ui->abortButton->setEnabled(true);
         ui->resumeButton->setEnabled(true);
-#ifdef BC_LIF
-        p_lifControlWidget->setEnabled(false);
-#endif
         break;
     case Acquiring:
         ui->abortButton->setEnabled(true);
@@ -981,9 +961,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
                 act->setEnabled(true);
             }
         }
-#ifdef BC_LIF
-        p_lifControlWidget->setEnabled(false);
-#endif
         break;
     case Idle:
     default:
@@ -993,9 +970,6 @@ void MainWindow::configureUi(MainWindow::ProgramState s)
             act->setEnabled(true);
         ui->sleepButton->setEnabled(true);
         ui->savePathAction->setEnabled(true);
-#ifdef BC_LIF
-        p_lifControlWidget->setEnabled(true);
-#endif
         break;
     }
 }

@@ -16,7 +16,7 @@ LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
     QWidget(parent), d_delayReverse(false), d_freqReverse(false), d_currentSpectrumDelayIndex(-1), d_currentTimeTraceFreqIndex(-1)
 {
 
-    SettingsStorage s(BC::Key::lifLaser,SettingsStorage::Hardware);
+    SettingsStorage s(BC::Key::LifLaser::key,SettingsStorage::Hardware);
 
     p_freqSlicePlot = new LifSlicePlot(BC::Key::lifSpectrumPlot,this);
     p_freqSlicePlot->setPlotAxisTitle(QwtPlot::xBottom,

@@ -21,11 +21,6 @@ class QDoubleSpinBox;
 class QProgressBar;
 class QAction;
 class HWDialog;
-
-#ifdef BC_LIF
-class LifDisplayWidget;
-#endif
-
 class QuickExptDialog;
 
 namespace Ui {
@@ -97,12 +92,6 @@ private:
     int d_currentExptNum{0};
     BatchManager *p_batchManager{nullptr};
 
-#ifdef BC_LIF
-    QWidget *p_lifTab;
-    QProgressBar *p_lifProgressBar;
-    QAction *p_lifAction;
-    LifDisplayWidget *p_lifDisplayWidget;
-#endif
 
 protected:
     void closeEvent(QCloseEvent *ev);

@@ -32,6 +32,10 @@
 #include <gui/widget/clockdisplaybox.h>
 #include <gui/widget/toolbarwidgetaction.h>
 
+#ifdef BC_LIF
+#include <modules/lif/gui/lifdisplaywidget.h>
+#endif
+
 class Ui_MainWindow
 {
 public:
@@ -89,6 +93,14 @@ public:
     QMenu *settingsMenu;
     QToolBar *mainToolBar;
     QStatusBar *statusBar;
+
+
+#ifdef BC_LIF
+    QWidget *lifTab;
+    QProgressBar *lifProgressBar;
+    QLayout *lifTabLayout;
+    LifDisplayWidget *lifDisplayWidget;
+#endif
 
     void setupUi(QMainWindow *MainWindow)
     {
@@ -175,6 +187,9 @@ public:
         QIcon icon16;
         icon16.addFile(QString::fromUtf8(":/icons/sequence.png"), QSize(), QIcon::Normal, QIcon::Off);
         actionStart_Sequence->setIcon(icon16);
+        QIcon lifIcon;
+        lifIcon.addFile(QString(":/icons/laser.png"),QSize(), QIcon::Normal, QIcon::Off);
+
         centralWidget = new QWidget(MainWindow);
         centralWidget->setObjectName(QString::fromUtf8("centralWidget"));
         mainLayout = new QHBoxLayout(centralWidget);
@@ -313,6 +328,19 @@ public:
 
         mainTabWidget->addTab(ftmwTab, rfIcon, QString());
 
+#ifdef BC_LIF
+        lifTab = new QWidget();
+        lifTab->setObjectName(QString("lifTab"));
+        lifTabLayout = new QVBoxLayout(lifTab);
+        lifDisplayWidget = new LifDisplayWidget();
+        lifDisplayWidget->setObjectName(QString("lifDisplayWidget"));
+        lifTabLayout->addWidget(lifDisplayWidget);
+        mainTabWidget->addTab(lifTab,lifIcon,QString());
+
+        lifProgressBar = new QProgressBar();
+        instrumentStatusLayout->addWidget(new QLabel(QString("LIF Progress")),0,Qt::AlignCenter);
+        instrumentStatusLayout->addWidget(lifProgressBar);
+#endif
 
         rollingDataTab = new QWidget();
         rollingDataTab->setObjectName(QString::fromUtf8("rollingDataTab"));
