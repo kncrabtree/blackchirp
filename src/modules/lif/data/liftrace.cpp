@@ -223,6 +223,16 @@ bool LifTrace::hasRefData() const
     return !p_data->refData.isEmpty();
 }
 
+double LifTrace::xSpacing() const
+{
+    return p_data->xSpacing;
+}
+
+double LifTrace::xSpacingns() const
+{
+    return p_data->xSpacing*1e9;
+}
+
 void LifTrace::add(const LifTrace &other)
 {
     if(other.size() != size())

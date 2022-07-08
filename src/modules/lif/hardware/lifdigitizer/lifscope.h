@@ -5,7 +5,7 @@
 #include <modules/lif/hardware/lifdigitizer/lifdigitizerconfig.h>
 #include <modules/lif/data/lifconfig.h>
 
-namespace BC::Key {
+namespace BC::Key::LifDigi {
 static const QString lifScope{"LifDigitizer"};
 }
 

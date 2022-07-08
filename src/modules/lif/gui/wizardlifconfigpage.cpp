@@ -26,7 +26,7 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     auto *vbl = new QVBoxLayout;
 
     p_lifControl = new LifControlWidget(this);
-    connect(this,&WizardLifConfigPage::newTrace,p_lifControl,&LifControlWidget::newTrace);
+//    connect(this,&WizardLifConfigPage::newTrace,p_lifControl,&LifControlWidget::newTrace);
     //connect signals/slots
 
     vbl->addWidget(p_lifControl,1);
@@ -35,9 +35,9 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
     auto *ofl = new QFormLayout;
 
     p_orderBox = new QComboBox(this);
-    p_orderBox->addItem(QString("Frequency First"),QVariant::fromValue(Blackchirp::LifOrderFrequencyFirst));
-    p_orderBox->addItem(QString("Delay First"),QVariant::fromValue(Blackchirp::LifOrderDelayFirst));
-    p_orderBox->setToolTip(QString("Controls the order in which the delay and laser frequency will be changed during the scan.\n\nFrequency first: Acquire spectrum at single delay point, then increment delay and repeat.\nDelay first: Acquire time trace at a single frequency, then increment frequency and repeat.\n\nNote that the order is irrelevant if either the delay or frequency is set to a single point."));
+    p_orderBox->addItem(QString("Frequency First"),QVariant::fromValue(LifConfig::LaserFirst));
+    p_orderBox->addItem(QString("Delay First"),QVariant::fromValue(LifConfig::DelayFirst));
+    p_orderBox->setToolTip(QString("Controls the order in which the delay and laser frequency will be changed during the scan.\n\nLaser first: Acquire spectrum at single delay point, then increment delay and repeat.\nDelay first: Acquire time trace at a single laser position, then increment laser position and repeat.\n\nNote that the order is irrelevant if either the delay or laser position is set to a single point."));
     auto *lbl = new QLabel(QString("Scan order"));
     lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
     lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
@@ -45,9 +45,9 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
 
     p_completeBox = new QComboBox(this);
     p_completeBox->addItem(QString("Stop integrating when all points acquired."),
-                           QVariant::fromValue(Blackchirp::LifStopWhenComplete));
+                           QVariant::fromValue(LifConfig::StopWhenComplete));
     p_completeBox->addItem(QString("Continue integrating until entire experiment is complete."),
-                           QVariant::fromValue(Blackchirp::LifContinueUntilExperimentComplete));
+                           QVariant::fromValue(LifConfig::ContinueAveraging));
     p_completeBox->setToolTip(QString("Configures behavior if LIF scan finishes before the rest of the experiment.\n\nStop integrating: Once all points are acquired, no more shots will be integrated.\nContinue: Scan will return to beginning and continue integrating data until remainder of experiment is completed or aborted.\n\n This setting is not applicable if LIF is the only measurement being made or if other parts of the experiment finish before LIF."));
     lbl = new QLabel(QString("Completion Behavior"));
     lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
@@ -186,9 +186,9 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
         }
     });
 
-    connect(this,&WizardLifConfigPage::scopeConfigChanged,p_lifControl,&LifControlWidget::scopeConfigChanged);
-    connect(p_lifControl,&LifControlWidget::updateScope,this,&WizardLifConfigPage::updateScope);
-    connect(p_lifControl,&LifControlWidget::laserPosUpdate,this,&WizardLifConfigPage::laserPosUpdate);
+//    connect(this,&WizardLifConfigPage::scopeConfigChanged,p_lifControl,&LifControlWidget::scopeConfigChanged);
+//    connect(p_lifControl,&LifControlWidget::updateScope,this,&WizardLifConfigPage::updateScope);
+//    connect(p_lifControl,&LifControlWidget::laserPosUpdate,this,&WizardLifConfigPage::laserPosUpdate);
 
     registerField(QString("delayStart"),p_delayStart,"value","valueChanged");
 }
@@ -198,44 +198,44 @@ WizardLifConfigPage::~WizardLifConfigPage()
 
 void WizardLifConfigPage::setFromConfig(const LifConfig c)
 {
-    p_orderBox->setCurrentIndex(p_orderBox->findData(QVariant::fromValue(c.order())));
-    p_completeBox->setCurrentIndex(p_completeBox->findData(QVariant::fromValue(c.completeMode())));
-    p_delaySingle->setChecked(c.numDelayPoints() == 1);
-    p_delayStart->setValue(c.delayRange().first);
-    p_delayNum->setValue(c.numDelayPoints());
-    p_delayStep->setValue(c.delayStep());
-    p_laserSingle->setChecked(c.numLaserPoints() == 1);
-    p_laserStart->setValue(c.laserRange().first);
-    p_laserNum->setValue(c.numLaserPoints());
-    p_laserStep->setValue(c.laserStep());
+//    p_orderBox->setCurrentIndex(p_orderBox->findData(QVariant::fromValue(c.order())));
+//    p_completeBox->setCurrentIndex(p_completeBox->findData(QVariant::fromValue(c.completeMode())));
+//    p_delaySingle->setChecked(c.numDelayPoints() == 1);
+//    p_delayStart->setValue(c.delayRange().first);
+//    p_delayNum->setValue(c.numDelayPoints());
+//    p_delayStep->setValue(c.delayStep());
+//    p_laserSingle->setChecked(c.numLaserPoints() == 1);
+//    p_laserStart->setValue(c.laserRange().first);
+//    p_laserNum->setValue(c.numLaserPoints());
+//    p_laserStep->setValue(c.laserStep());
 
     //Control widget is set on the fly
 }
 
 void WizardLifConfigPage::setLaserPos(const double pos)
 {
-    p_lifControl->setLaserPos(pos);
+//    p_lifControl->setLaserPos(pos);
 }
 
 void WizardLifConfigPage::initializePage()
 {
     auto e = getExperiment();
-    setFromConfig(e->lifConfig());
+    setFromConfig(*e->lifConfig());
 }
 
 bool WizardLifConfigPage::validatePage()
 {
     auto e = getExperiment();
     LifConfig out;
-    out = p_lifControl->getSettings(out);
-    out.setCompleteMode(p_completeBox->currentData().value<Blackchirp::LifCompleteMode>());
-    out.setOrder(p_orderBox->currentData().value<Blackchirp::LifScanOrder>());
-    out.setDelayParameters(p_delayStart->value(),p_delayStep->value(),p_delayNum->value());
-    out.setLaserParameters(p_laserStart->value(),p_laserStep->value(),p_laserNum->value());
+//    out = p_lifControl->getSettings(out);
+//    out.setCompleteMode(p_completeBox->currentData().value<LifConfig::LifCompleteMode>());
+//    out.setOrder(p_orderBox->currentData().value<LifConfig::LifScanOrder>());
+//    out.setDelayParameters(p_delayStart->value(),p_delayStep->value(),p_delayNum->value());
+//    out.setLaserParameters(p_laserStart->value(),p_laserStep->value(),p_laserNum->value());
 
 
-    out.setEnabled();
-    e->setLifConfig(out);
+//    out.setEnabled();
+//    e->setLifConfig(out);
     
     return true;
 

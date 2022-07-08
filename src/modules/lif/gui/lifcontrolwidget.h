@@ -6,8 +6,14 @@
 #include <modules/lif/data/liftrace.h>
 #include <modules/lif/data/lifconfig.h>
 
-namespace Ui {
-class LifControlWidget;
+class LifTracePlot;
+class DigitizerConfigWidget;
+class LifLaserWidget;
+class LifProcessingWidget;
+class QPushButton;
+
+namespace BC::Key::LifControl {
+const QString lifDigWidget("lifDigitizerConfig");
 }
 
 class LifControlWidget : public QWidget
@@ -18,25 +24,19 @@ public:
     explicit LifControlWidget(QWidget *parent = nullptr);
     ~LifControlWidget() override;
 
-    LifConfig getSettings(LifConfig c);
-    double laserPos() const;
-    Blackchirp::LifScopeConfig toConfig() const;
-
-signals:
-    void updateScope(Blackchirp::LifScopeConfig);
-    void newTrace(LifTrace);
-    void laserPosUpdate(double pos);
-
-public slots:
-    void scopeConfigChanged(Blackchirp::LifScopeConfig c);
-    void checkLifColors();
-    void updateHardwareLimits();
-    void setLaserPos(double pos);
-    void setSampleRateBox(double rate);
-
 private:
-    Ui::LifControlWidget *ui;
+    LifTracePlot *p_lifTracePlot;
+    DigitizerConfigWidget *p_digWidget;
+    LifLaserWidget *p_laserWidget;
+    LifProcessingWidget *p_procWidget;
 
+    QPushButton *p_startAcqButton;
+    QPushButton *p_stopAcqButton;
+
+
+    // QWidget interface
+public:
+    QSize sizeHint() const override;
 };
 
 #endif // LIFCONTROLWIDGET_H

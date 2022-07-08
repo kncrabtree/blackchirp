@@ -69,10 +69,9 @@ ExperimentWizard::ExperimentWizard(Experiment *exp, const std::map<QString, QStr
 #ifdef BC_LIF
     auto lifConfigPage = new WizardLifConfigPage(this);
     p_lifConfigPage = lifConfigPage;
-    d_pages << lifConfigPage;
     connect(this,&ExperimentWizard::newTrace,lifConfigPage,&WizardLifConfigPage::newTrace);
-    connect(this,&ExperimentWizard::scopeConfigChanged,lifConfigPage,&WizardLifConfigPage::scopeConfigChanged);
-    connect(lifConfigPage,&WizardLifConfigPage::updateScope,this,&ExperimentWizard::updateScope);
+//    connect(this,&ExperimentWizard::scopeConfigChanged,lifConfigPage,&WizardLifConfigPage::scopeConfigChanged);
+//    connect(lifConfigPage,&WizardLifConfigPage::updateScope,this,&ExperimentWizard::updateScope);
     connect(lifConfigPage,&WizardLifConfigPage::lifColorChanged,this,&ExperimentWizard::lifColorChanged);
     connect(lifConfigPage,&WizardLifConfigPage::laserPosUpdate,this,&ExperimentWizard::laserPosUpdate);
     setPage(LifConfigPage,lifConfigPage);

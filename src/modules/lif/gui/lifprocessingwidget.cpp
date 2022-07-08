@@ -1,0 +1,156 @@
+#include "lifprocessingwidget.h"
+
+#include <QSpinBox>
+#include <QDoubleSpinBox>
+#include <QPushButton>
+#include <QCheckBox>
+#include <QFormLayout>
+
+LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
+    : QWidget{parent}, SettingsStorage(BC::Key::LifProcessing::key)
+{
+    using namespace BC::Key::LifProcessing;
+    auto fl = new QFormLayout(this);
+
+    auto tt = QString("Gate position in units of points. Hold Ctrl to adjust in steps of 10");
+    p_lgStartBox = new QSpinBox(this);
+    p_lgStartBox->setToolTip(tt);
+    fl->addRow("LIF Gate Start",p_lgStartBox);
+
+    p_lgEndBox = new QSpinBox(this);
+    p_lgEndBox->setToolTip(tt);
+    fl->addRow("LIF Gate End",p_lgEndBox);
+
+    p_rgStartBox = new QSpinBox(this);
+    p_rgStartBox->setToolTip(tt);
+    fl->addRow("Reference Gate Start",p_rgStartBox);
+
+    p_rgEndBox = new QSpinBox(this);
+    p_rgEndBox->setToolTip(tt);
+    fl->addRow("Reference Gate End",p_rgEndBox);
+
+    p_lpAlphaBox = new QDoubleSpinBox(this);
+    p_lpAlphaBox->setDecimals(4);
+    p_lpAlphaBox->setRange(0.0,0.9999);
+    p_lpAlphaBox->setSingleStep(0.01);
+    p_lpAlphaBox->setSpecialValueText(QString("Disabled"));
+    p_lpAlphaBox->setToolTip("Low pass filter: x_n = alpha*x_{n-1} + (1-alpha)*x_n");
+    p_lpAlphaBox->setValue(get(lpAlpha,0.0));
+    fl->addRow("Low Pass Filter Alpha",p_lpAlphaBox);
+
+    p_sgEnBox = new QCheckBox(this);
+    p_sgEnBox->setToolTip("Enable/disable Savitsky-Golay smoothing");
+    fl->addRow("Savitzky-Golay Filter Enabled",p_sgEnBox);
+
+    p_sgWinBox = new QSpinBox(this);
+    p_sgWinBox->setToolTip("Savitzky-Golay window size. Must be odd");
+    p_sgWinBox->setMinimum(3);
+    p_sgWinBox->setSingleStep(2);
+    p_sgWinBox->setEnabled(false);
+    fl->addRow("Savitzky-Golay Window",p_sgWinBox);
+
+    p_sgPolyBox = new QSpinBox(this);
+    p_sgPolyBox->setToolTip("Savitzky-Golay polynomial order. Must be between 2 and window size - 1");
+    p_sgPolyBox->setMinimum(2);
+    p_sgPolyBox->setEnabled(false);
+    fl->addRow("Savitzky-Golay Polynomial Order",p_sgPolyBox);
+
+    connect(p_sgEnBox,&QCheckBox::toggled,p_sgWinBox,&QSpinBox::setEnabled);
+    connect(p_sgEnBox,&QCheckBox::toggled,p_sgPolyBox,&QSpinBox::setEnabled);
+    connect(p_lgStartBox,qOverload<int>(&QSpinBox::valueChanged),[=](int n){
+        auto v = p_lgEndBox->value();
+        if(n >= v)
+            p_lgEndBox->setValue(n+1);
+    });
+    connect(p_lgEndBox,qOverload<int>(&QSpinBox::valueChanged),[=](int n){
+        auto v = p_lgStartBox->value();
+        if(v >= n)
+            p_lgStartBox->setValue(n-1);
+    });
+    connect(p_rgStartBox,qOverload<int>(&QSpinBox::valueChanged),[=](int n){
+        auto v = p_rgEndBox->value();
+        if(n >= v)
+            p_rgEndBox->setValue(n+1);
+    });
+    connect(p_rgEndBox,qOverload<int>(&QSpinBox::valueChanged),[=](int n){
+        auto v = p_rgStartBox->value();
+        if(v >= n)
+            p_rgStartBox->setValue(n-1);
+    });
+    connect(p_sgWinBox,qOverload<int>(&QSpinBox::valueChanged),[=](int n){
+        if(!(n%2))
+        {
+            n--;
+            p_sgWinBox->blockSignals(true);
+            p_sgWinBox->setValue(n);
+            p_sgWinBox->blockSignals(false);
+        }
+
+        p_sgPolyBox->setMaximum(n-1);
+    });
+
+    p_sgEnBox->setChecked(get(sgEn,false));
+    p_sgWinBox->setValue(get(sgWin,11));
+    p_sgPolyBox->setValue(get(sgPoly,3));
+
+    p_reprocessButton = new QPushButton(QString("Reprocess All"),this);
+    p_reprocessButton->setEnabled(false);
+
+    fl->addRow("",p_reprocessButton);
+
+    setLayout(fl);
+
+    if(store)
+    {
+        registerGetter(lgStart,p_lgStartBox,&QSpinBox::value);
+        registerGetter(lgEnd,p_lgEndBox,&QSpinBox::value);
+        registerGetter(rgStart,p_rgStartBox,&QSpinBox::value);
+        registerGetter(rgEnd,p_rgEndBox,&QSpinBox::value);
+        registerGetter(lpAlpha,p_lpAlphaBox,&QDoubleSpinBox::value);
+        registerGetter(sgEn,static_cast<QAbstractButton*>(p_sgEnBox),&QAbstractButton::isChecked);
+        registerGetter(sgWin,p_sgWinBox,&QSpinBox::value);
+        registerGetter(sgPoly,p_sgPolyBox,&QSpinBox::value);
+    }
+}
+
+void LifProcessingWidget::initialize(int recLen, bool ref)
+{
+    using namespace BC::Key::LifProcessing;
+    p_lgStartBox->setRange(0,recLen-2);
+    p_lgEndBox->setRange(1,recLen-1);
+    p_rgStartBox->setRange(0,recLen-2);
+    p_rgEndBox->setRange(1,recLen-1);
+
+    p_lgStartBox->setValue(get(lgStart,0));
+    p_lgEndBox->setValue(get(lgEnd,recLen-1));
+    p_rgStartBox->setValue(get(rgStart,0));
+    p_rgEndBox->setValue(get(rgEnd,recLen-1));
+
+    p_rgStartBox->setEnabled(ref);
+    p_rgEndBox->setEnabled(ref);
+}
+
+void LifProcessingWidget::setAll(const LifProcSettings &lc)
+{
+    p_lgStartBox->setValue(lc.lifGateStart);
+    p_lgEndBox->setValue(lc.lifGateEnd);
+    p_rgStartBox->setValue(lc.refGateStart);
+    p_rgEndBox->setValue(lc.refGateEnd);
+    p_lpAlphaBox->setValue(lc.lowPassAlpha);
+    p_sgEnBox->setChecked(lc.savGolEnabled);
+    p_sgWinBox->setValue(lc.savGolWin);
+    p_sgPolyBox->setValue(lc.savGolPoly);
+}
+
+LifProcessingWidget::LifProcSettings LifProcessingWidget::getSettings() const
+{
+    return {p_lgStartBox->value(),
+                p_lgEndBox->value(),
+                p_rgStartBox->value(),
+                p_rgEndBox->value(),
+                p_lpAlphaBox->value(),
+                p_sgEnBox->isChecked(),
+                p_sgWinBox->value(),
+                p_sgPolyBox->value()
+    };
+}

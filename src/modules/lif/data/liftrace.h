@@ -30,6 +30,9 @@ public:
     int shots() const;
     int size() const;
     bool hasRefData() const;
+    double xSpacing() const;
+    double xSpacingns() const;
+
 
     void add(const LifTrace &other);
     void rollAvg(const LifTrace &other, int numShots);

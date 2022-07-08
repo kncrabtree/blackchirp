@@ -20,8 +20,7 @@
 
 
 LifTracePlot::LifTracePlot(QWidget *parent) :
-    ZoomPanPlot(BC::Key::lifTracePlot,parent), d_resetNext(true),
-    d_lifGateMode(false), d_refGateMode(false), d_displayOnly(false)
+    ZoomPanPlot(BC::Key::lifTracePlot,parent), d_resetNext(true)
 {
 
     setPlotAxisTitle(QwtPlot::xBottom,QString("Time (ns)"));
@@ -95,24 +94,12 @@ void LifTracePlot::setRefGateRange(int begin, int end)
     updateRefZone();
 }
 
-LifConfig LifTracePlot::getSettings(LifConfig c)
-{
-    c.setLifGate(d_lifZoneRange.first,d_lifZoneRange.second);
-    c.setRefGate(d_refZoneRange.first,d_refZoneRange.second);
-    c.setShotsPerPoint(d_numAverages);
-
-    return c;
-}
-
 void LifTracePlot::setNumAverages(int n)
 {
     d_numAverages = n;
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.setValue(QString("lifConfig/numAverages"),n);
-    s.sync();
 }
 
-void LifTracePlot::newTrace(const LifTrace t)
+void LifTracePlot::processTrace(const LifTrace t)
 {
     if(t.size() == 0)
         return;
@@ -120,17 +107,17 @@ void LifTracePlot::newTrace(const LifTrace t)
     if(d_resetNext || d_currentTrace.size() == 0)
     {
         d_resetNext = false;
-        traceProcessed(t);
+        setTrace(t);
     }
     else
     {
         d_currentTrace.rollAvg(t,d_numAverages);
-        traceProcessed(d_currentTrace);
+        setTrace(d_currentTrace);
     }
 
 }
 
-void LifTracePlot::traceProcessed(const LifTrace t)
+void LifTracePlot::setTrace(const LifTrace t)
 {
     bool updateLif = false, updateRef = false;
     if(d_currentTrace.size() == 0)
@@ -141,6 +128,8 @@ void LifTracePlot::traceProcessed(const LifTrace t)
     }
 
     d_currentTrace = t;
+
+    ///TODO: update when curves are changed to fixed spacing
     p_lif->setCurveData(t.lifToXY());
     p_ref->setCurveData(t.refToXY());
 
@@ -206,57 +195,6 @@ void LifTracePlot::traceProcessed(const LifTrace t)
     replot();
 }
 
-void LifTracePlot::buildContextMenu(QMouseEvent *me)
-{
-    QMenu *m = contextMenu();
-    QAction *exportAction=m->addAction(QString("Export XY..."));
-    connect(exportAction,&QAction::triggered,this,&LifTracePlot::exportXY);
-
-    QAction *lifZoneAction = m->addAction(QString("Change LIF Gate..."));
-    connect(lifZoneAction,&QAction::triggered,this,&LifTracePlot::changeLifGateRange);
-    if(d_currentTrace.size() == 0 || !p_lifZone->isVisible() || !isEnabled())
-        lifZoneAction->setEnabled(false);
-
-
-    QAction *refZoneAction = m->addAction(QString("Change Ref Gate..."));
-    connect(refZoneAction,&QAction::triggered,this,&LifTracePlot::changeRefGateRange);
-    if(!d_currentTrace.hasRefData() || !p_refZone->isVisible() || !isEnabled())
-        refZoneAction->setEnabled(false);
-
-    if(!d_displayOnly)
-    {
-
-        m->addSeparator();
-
-        QAction *resetAction = m->addAction(QString("Reset Averages"));
-        connect(resetAction,&QAction::triggered,this,&LifTracePlot::reset);
-        if(d_currentTrace.size() == 0 || !isEnabled())
-            resetAction->setEnabled(false);
-
-        QWidgetAction *wa = new QWidgetAction(m);
-        QWidget *w = new QWidget(m);
-        QSpinBox *shotsBox = new QSpinBox(w);
-        QFormLayout *fl = new QFormLayout();
-
-        fl->addRow(QString("Average"),shotsBox);
-
-        shotsBox->setRange(1,__INT32_MAX__);
-        shotsBox->setSingleStep(10);
-        shotsBox->setValue(d_numAverages);
-        shotsBox->setSuffix(QString(" shots"));
-        connect(shotsBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&LifTracePlot::setNumAverages);
-        if(!isEnabled())
-            shotsBox->setEnabled(false);
-
-        w->setLayout(fl);
-        wa->setDefaultWidget(w);
-        m->addAction(wa);
-    }
-
-
-    m->popup(me->globalPos());
-}
-
 void LifTracePlot::checkColors()
 {
 
@@ -273,8 +211,6 @@ void LifTracePlot::checkColors()
     p_refZone->setBrush(QBrush(rc));
 
     ZoomPanPlot::replot();
-
-
 
 }
 
@@ -303,18 +239,6 @@ void LifTracePlot::setIntegralText(double d)
     p_integralLabel->setText(t);
 }
 
-void LifTracePlot::changeLifGateRange()
-{
-    d_lifGateMode = true;
-    canvas()->setMouseTracking(true);
-}
-
-void LifTracePlot::changeRefGateRange()
-{
-    d_refGateMode = true;
-    canvas()->setMouseTracking(true);
-}
-
 void LifTracePlot::clearPlot()
 {
     p_lif->detach();
@@ -330,8 +254,8 @@ void LifTracePlot::clearPlot()
 
 void LifTracePlot::updateLifZone()
 {
-    double x1 = static_cast<double>(d_lifZoneRange.first)*d_currentTrace.spacing()*1e9;
-    double x2 = static_cast<double>(d_lifZoneRange.second)*d_currentTrace.spacing()*1e9;
+    double x1 = static_cast<double>(d_lifZoneRange.first)*d_currentTrace.xSpacingns();
+    double x2 = static_cast<double>(d_lifZoneRange.second)*d_currentTrace.xSpacingns();
     p_lifZone->setInterval(x1,x2);
 
     if(d_currentTrace.hasRefData())
@@ -342,160 +266,15 @@ void LifTracePlot::updateLifZone()
 
 void LifTracePlot::updateRefZone()
 {
-    double x1 = static_cast<double>(d_refZoneRange.first)*d_currentTrace.spacing()*1e9;
-    double x2 = static_cast<double>(d_refZoneRange.second)*d_currentTrace.spacing()*1e9;
+    double x1 = static_cast<double>(d_refZoneRange.first)*d_currentTrace.xSpacingns();
+    double x2 = static_cast<double>(d_refZoneRange.second)*d_currentTrace.xSpacingns();
     p_refZone->setInterval(x1,x2);
 
     emit integralUpdate(d_currentTrace.integrate(d_lifZoneRange.first,d_lifZoneRange.second,d_refZoneRange.first,d_refZoneRange.second));
-}
-
-bool LifTracePlot::eventFilter(QObject *obj, QEvent *ev)
-{
-    if(ev->type() == QEvent::MouseButtonPress)
-    {
-        if(d_lifGateMode)
-        {
-            d_lifGateMode = false;
-            canvas()->setMouseTracking(false);
-
-            QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-            s.setValue(QString("lifConfig/lifStart"),d_lifZoneRange.first);
-            s.setValue(QString("lifConfig/lifEnd"),d_lifZoneRange.second);
-            emit lifGateUpdated(d_lifZoneRange.first,d_lifZoneRange.second);
-            ev->accept();
-            return true;
-        }
-
-        if(d_refGateMode)
-        {
-            d_refGateMode = false;
-            canvas()->setMouseTracking(false);
-
-            QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-            s.setValue(QString("lifConfig/refStart"),d_refZoneRange.first);
-            s.setValue(QString("lifConfig/refEnd"),d_refZoneRange.second);
-            emit refGateUpdated(d_refZoneRange.first,d_refZoneRange.second);
-            ev->accept();
-            return true;
-        }
-    }
-    else if(ev->type() == QEvent::Wheel)
-    {
-        QWheelEvent *we = static_cast<QWheelEvent*>(ev);
-        int d = we->angleDelta().y()/120;
-
-        if(we->modifiers() & Qt::ControlModifier)
-            d*=5;
-
-        if(d_lifGateMode)
-        {
-            int newSpacing = d_lifZoneRange.second - d_lifZoneRange.first + 2*d;
-            if(newSpacing > 3)
-            {
-                d_lifZoneRange.first = qBound(0,d_lifZoneRange.first-d,qMin(d_lifZoneRange.second+d-1,d_currentTrace.size()-1));
-                d_lifZoneRange.second = qBound(d_lifZoneRange.first,d_lifZoneRange.second+d,d_currentTrace.size()-1);
-                updateLifZone();
-                replot();
-                ev->accept();
-                return true;
-            }
-            else
-            {
-                ev->ignore();
-                return true;
-            }
-        }
-
-        if(d_refGateMode)
-        {
-            int newSpacing = d_refZoneRange.second - d_refZoneRange.first + 2*d;
-            if(newSpacing > 3)
-            {
-                d_refZoneRange.first = qBound(0,d_refZoneRange.first-d,qMin(d_refZoneRange.second+d-1,d_currentTrace.size()-1));
-                d_refZoneRange.second = qBound(d_refZoneRange.first,d_refZoneRange.second+d,d_currentTrace.size()-1);
-                updateRefZone();
-                replot();
-                ev->accept();
-                return true;
-            }
-            else
-            {
-                ev->ignore();
-                return true;
-            }
-        }
-    }
-    else if(ev->type() == QEvent::MouseMove)
-    {
-        QMouseEvent *me = static_cast<QMouseEvent*>(ev);
-        double mousePos = canvasMap(QwtPlot::xBottom).invTransform(me->localPos().x());
-        int newCenter = static_cast<int>(round(mousePos/(d_currentTrace.spacing()*1e9)));
-
-        if(d_lifGateMode)
-        {
-            //preserve spacing, move center
-            int oldCenter = (d_lifZoneRange.second + d_lifZoneRange.first)/2;
-            int shift = newCenter - oldCenter;
-            if(d_lifZoneRange.first + shift >= 0 && d_lifZoneRange.second + shift < d_currentTrace.size())
-            {
-                d_lifZoneRange.first += shift;
-                d_lifZoneRange.second += shift;
-
-                updateLifZone();
-                replot();
-                ev->accept();
-                return true;
-            }
-        }
-
-        if(d_refGateMode)
-        {
-            //preserve spacing, move center
-            int oldCenter = (d_refZoneRange.second + d_refZoneRange.first)/2;
-            int shift = newCenter - oldCenter;
-            if(d_refZoneRange.first + shift >= 0 && d_refZoneRange.second + shift < d_currentTrace.size())
-            {
-                d_refZoneRange.first += shift;
-                d_refZoneRange.second += shift;
-
-                updateRefZone();
-                replot();
-                ev->accept();
-                return true;
-            }
-        }
-    }
-
-    return ZoomPanPlot::eventFilter(obj,ev);
 }
 
 void LifTracePlot::replot()
 {
     //this function calls ZoomPanPlot::replot()
     checkColors();
-}
-
-void LifTracePlot::exportXY()
-{
-    QString path = Blackchirp::getExportDir();
-    QString name = QFileDialog::getSaveFileName(this,QString("Export LIF Trace"),path + QString("/lifxy.txt"));
-    if(name.isEmpty())
-        return;
-    QFile f(name);
-    if(!f.open(QIODevice::WriteOnly))
-    {
-        QMessageBox::critical(this,QString("Export Failed"),QString("Could not open file %1 for writing. Please choose a different filename.").arg(name));
-        return;
-    }
-    QApplication::setOverrideCursor(Qt::BusyCursor);
-    f.write(QString("time\tlif").toLatin1());
-    auto d = d_currentTrace.lifToXY();
-    for(int i=0;i<d.size();i++)
-    {
-        f.write(QString("\n%1\t%2").arg(d.at(i).x(),0,'e',6)
-                    .arg(d.at(i).y(),0,'e',12).toLatin1());
-    }
-    f.close();
-    QApplication::restoreOverrideCursor();
-    Blackchirp::setExportDir(name);
 }

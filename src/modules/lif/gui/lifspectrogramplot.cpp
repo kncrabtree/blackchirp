@@ -17,10 +17,10 @@ LifSpectrogramPlot::LifSpectrogramPlot(QWidget *parent) :
     d_delayDragging(false), d_freqDragging(false), d_grabDelay(false), d_grabFreq(false)
 {
 
-    SettingsStorage s(BC::Key::lifLaser,SettingsStorage::Hardware);
+    SettingsStorage s(BC::Key::LifLaser::key,SettingsStorage::Hardware);
     setPlotAxisTitle(QwtPlot::yLeft,QString::fromUtf16(u"Delay (µs)"));
     setPlotAxisTitle(QwtPlot::xBottom,
-                 QString("Laser Postiion (")+s.get<QString>(BC::Key::lifLaserUnits,"nm")+QString(")"));
+                 QString("Laser Postiion (")+s.get<QString>(BC::Key::LifLaser::units,"nm")+QString(")"));
 
     p_spectrogram = new QwtPlotSpectrogram();
     p_spectrogram->setDisplayMode(QwtPlotSpectrogram::ImageMode);
@@ -82,60 +82,60 @@ LifSpectrogramPlot::~LifSpectrogramPlot()
 
 void LifSpectrogramPlot::prepareForExperiment(const LifConfig c)
 {
-    d_enabled = c.isEnabled();
-    if(p_spectrogramData != nullptr)
-    {
-        p_spectrogram->setData(nullptr);
-        p_spectrogramData = nullptr;
-    }
+//    d_enabled =
+//    if(p_spectrogramData != nullptr)
+//    {
+//        p_spectrogram->setData(nullptr);
+//        p_spectrogramData = nullptr;
+//    }
 
-    d_delayDragging = false;
-    d_freqDragging = false;
-    d_grabDelay = false;
-    d_grabFreq = false;
+//    d_delayDragging = false;
+//    d_freqDragging = false;
+//    d_grabDelay = false;
+//    d_grabFreq = false;
 
-    if(c.isEnabled())
-    {
-        QVector<double> specDat;
-        specDat.resize(c.numDelayPoints()*c.numLaserPoints());
-        p_spectrogramData = new QwtMatrixRasterData;
-        p_spectrogramData->setValueMatrix(specDat,c.numLaserPoints());
+//    if(c.isEnabled())
+//    {
+//        QVector<double> specDat;
+//        specDat.resize(c.numDelayPoints()*c.numLaserPoints());
+//        p_spectrogramData = new QwtMatrixRasterData;
+//        p_spectrogramData->setValueMatrix(specDat,c.numLaserPoints());
 
-        QPair<double,double> delayRange = c.delayRange();
-        QPair<double,double> freqRange = c.laserRange();
+//        QPair<double,double> delayRange = c.delayRange();
+//        QPair<double,double> freqRange = c.laserRange();
 
 
-        double dMin = qMin(delayRange.first,delayRange.second) - c.delayStep()/2.0;
-        double dMax = qMax(delayRange.first,delayRange.second) + c.delayStep()/2.0;
-        double fMin = qMin(freqRange.first,freqRange.second) - c.laserStep()/2.0;
-        double fMax = qMax(freqRange.first,freqRange.second) + c.laserStep()/2.0;
+//        double dMin = qMin(delayRange.first,delayRange.second) - c.delayStep()/2.0;
+//        double dMax = qMax(delayRange.first,delayRange.second) + c.delayStep()/2.0;
+//        double fMin = qMin(freqRange.first,freqRange.second) - c.laserStep()/2.0;
+//        double fMax = qMax(freqRange.first,freqRange.second) + c.laserStep()/2.0;
 
-        p_spectrogramData->setInterval(Qt::YAxis,QwtInterval(dMin,dMax));
-        p_spectrogramData->setInterval(Qt::XAxis,QwtInterval(fMin,fMax));
-        p_spectrogramData->setInterval(Qt::ZAxis,QwtInterval(0.0,1.0));
-        p_spectrogramData->setResampleMode(QwtMatrixRasterData::BilinearInterpolation);
+//        p_spectrogramData->setInterval(Qt::YAxis,QwtInterval(dMin,dMax));
+//        p_spectrogramData->setInterval(Qt::XAxis,QwtInterval(fMin,fMax));
+//        p_spectrogramData->setInterval(Qt::ZAxis,QwtInterval(0.0,1.0));
+//        p_spectrogramData->setResampleMode(QwtMatrixRasterData::BilinearInterpolation);
 
-        if(c.numDelayPoints() > 1)
-        {
-            p_delayMarker->setYValue(delayRange.first);
-            p_delayMarker->setVisible(true);
-        }
+//        if(c.numDelayPoints() > 1)
+//        {
+//            p_delayMarker->setYValue(delayRange.first);
+//            p_delayMarker->setVisible(true);
+//        }
 
-        if(c.numLaserPoints() > 1)
-        {
-            p_freqMarker->setVisible(true);
-            p_freqMarker->setXValue(freqRange.first);
-        }
+//        if(c.numLaserPoints() > 1)
+//        {
+//            p_freqMarker->setVisible(true);
+//            p_freqMarker->setXValue(freqRange.first);
+//        }
 
-        p_spectrogram->setData(p_spectrogramData);
-        p_spectrogram->attach(this);
+//        p_spectrogram->setData(p_spectrogramData);
+//        p_spectrogram->attach(this);
 
-    }
-    else
-    {
-        p_delayMarker->setVisible(false);
-        p_freqMarker->setVisible(false);
-    }
+//    }
+//    else
+//    {
+//        p_delayMarker->setVisible(false);
+//        p_freqMarker->setVisible(false);
+//    }
 
 
     autoScale();

@@ -61,7 +61,7 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
     }
 
 #ifdef BC_LIF
-    if(d_experiment.lifConfig().isEnabled())
+    if(pu_experiment->lifEnabled())
     {
         QWidget *lif = buildLifWidget();
         if(lif != nullptr)
@@ -123,7 +123,7 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
 QWidget *ExperimentViewWidget::buildLifWidget()
 {
     QWidget *out = nullptr;
-    if(d_experiment.lifConfig().isEnabled())
+    if(pu_experiment->lifEnabled())
     {
         out = new QWidget;
         QVBoxLayout *vbl = new QVBoxLayout;
@@ -131,8 +131,8 @@ QWidget *ExperimentViewWidget::buildLifWidget()
         vbl->addWidget(lif);
         out->setLayout(vbl);
 
-        lif->prepareForExperiment(d_experiment.lifConfig());
-        lif->updatePoint(d_experiment.lifConfig());
+        lif->prepareForExperiment(*pu_experiment);
+        lif->updatePoint();
     }
 
     return out;

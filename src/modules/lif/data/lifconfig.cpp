@@ -65,6 +65,11 @@ void LifConfig::addWaveform(const QByteArray d)
     ps_storage->addTrace(t);
 }
 
+void LifConfig::loadLifData()
+{
+
+}
+
 void LifConfig::storeValues()
 {
     using namespace BC::Store::LIF;

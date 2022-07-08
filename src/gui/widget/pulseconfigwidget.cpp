@@ -167,12 +167,12 @@ void PulseConfigWidget::configureForWizard()
 }
 
 #ifdef BC_LIF
-void PulseConfigWidget::configureLif(const LifConfig c)
+void PulseConfigWidget::configureLif(const LifConfig &c)
 {
-    if(d_widgetList.isEmpty() || !c.isEnabled())
+    if(d_widgetList.isEmpty())
         return;
 
-    auto channels = d_config.channelsForRole(PulseGenConfig::LifRole);
+    auto channels = d_config.channelsForRole(PulseGenConfig::LIF);
     if(channels.isEmpty())
     {
         QMessageBox::warning(this,QString("Cannot configure LIF pulse"),QString("No channel has been configured for the \"LIF\" role.\n\nPlease select a channel for the LIF role, then refresh this page (go back one page and then come back to this one) in order to proceed."),QMessageBox::Ok,QMessageBox::Ok);
@@ -181,8 +181,8 @@ void PulseConfigWidget::configureLif(const LifConfig c)
 
     auto delay = c.delayRange().first;
 
-    d_config.set(PulseGenConfig::LifRole,PulseGenConfig::DelaySetting,delay);
-    d_config.set(PulseGenConfig::LifRole,PulseGenConfig::EnabledSetting,true);
+    d_config.set(PulseGenConfig::LIF,PulseGenConfig::DelaySetting,delay);
+    d_config.set(PulseGenConfig::LIF,PulseGenConfig::EnabledSetting,true);
     setFromConfig(d_config);
 
     for(int i=0; i<channels.size(); i++)

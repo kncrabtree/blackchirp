@@ -252,7 +252,7 @@ bool PulseGenerator::setRepRate(double d)
 bool PulseGenerator::setLifDelay(double d)
 {
     bool success = false;
-    auto l = d_config.channelsForRole(PulseGenConfig::LifRole);
+    auto l = d_config.channelsForRole(PulseGenConfig::LIF);
     for(int i=0; i<l.size(); i++)
     {
         if(!setPGenSetting(l.at(i),PulseGenConfig::DelaySetting,d))

@@ -84,6 +84,7 @@ public:
     QPair<int,int> refGate() const;
 
     void addWaveform(const QByteArray d);
+    void loadLifData();
 
 
 

@@ -313,6 +313,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionView_Experiment,&QAction::triggered,this,&MainWindow::viewExperiment);
 
 #ifdef BC_LIF
+    connect(ui->actionLifConfig,&QAction::triggered,this,&MainWindow::launchLifConfigDialog);
     connect(p_hwm,&HardwareManager::lifSettingsComplete,ui->lifDisplayWidget,&LifDisplayWidget::resetLifPlot);
     connect(p_hwm,&HardwareManager::lifSettingsComplete,p_am,&AcquisitionManager::lifHardwareReady);
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_am,&AcquisitionManager::processLifScopeShot);
@@ -476,11 +477,11 @@ bool MainWindow::runExperimentWizard(Experiment *exp, QuickExptDialog *qed)
     }
 
 #ifdef BC_LIF
-    connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
+//    connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
 //    connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
     connect(p_hwm,&HardwareManager::lifLaserPosUpdate,&wiz,&ExperimentWizard::setCurrentLaserPos);
 //    connect(&wiz,&ExperimentWizard::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
-    connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifDisplayWidget,&LifDisplayWidget::checkLifColors);
+//    connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifDisplayWidget,&LifDisplayWidget::checkLifColors);
     connect(&wiz,&ExperimentWizard::laserPosUpdate,p_hwm,&HardwareManager::setLifLaserPos);
 //    wiz.setCurrentLaserPos(p_lifControlWidget->laserPos());
 #endif
@@ -691,6 +692,49 @@ void MainWindow::launchRfConfigDialog()
     d->show();
 
 }
+
+#ifdef BC_LIF
+void MainWindow::launchLifConfigDialog()
+{
+    auto it = d_openDialogs.find("LifConfig");
+    if(it != d_openDialogs.end())
+    {
+        it->second->setWindowState(Qt::WindowActive);
+        it->second->raise();
+        it->second->show();
+        return;
+    }
+
+    auto d = new QDialog;
+    d->setWindowTitle("LIF Configuration");
+    auto w = new LifControlWidget(d);
+    //setup w
+
+
+    auto lbl = new QLabel("TODO");
+    lbl->setWordWrap(true);
+
+    auto vbl = new QVBoxLayout;
+    vbl->addWidget(lbl);
+    vbl->addWidget(w);
+
+    auto bb = new QDialogButtonBox(QDialogButtonBox::Ok|QDialogButtonBox::Cancel,d);
+    connect(bb->button(QDialogButtonBox::Ok),&QPushButton::clicked,d,&QDialog::accept);
+    connect(bb->button(QDialogButtonBox::Cancel),&QPushButton::clicked,d,&QDialog::reject);
+    vbl->addWidget(bb);
+
+    d->setLayout(vbl);
+    connect(d,&QDialog::finished,d,&QDialog::deleteLater);
+    connect(d,&QDialog::destroyed,[this](){
+        auto it = d_openDialogs.find("LifConfig");
+        if(it != d_openDialogs.end())
+            d_openDialogs.erase(it);
+    });
+
+    d_openDialogs.insert({"LifConfig",d});
+    d->show();
+}
+#endif
 
 void MainWindow::setLogIcon(LogHandler::MessageCode c)
 {

@@ -38,8 +38,8 @@ void WizardPulseConfigPage::initializePage()
 
 
 #ifdef BC_LIF
-    if(e->lifConfig().isEnabled())
-        p_pcw->configureLif(e->lifConfig());
+    if(e->lifEnabled())
+        p_pcw->configureLif(*e->lifConfig());
 #endif
 
     if(e->ftmwEnabled())

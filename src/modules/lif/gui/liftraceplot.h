@@ -26,10 +26,6 @@ public:
     void setLifGateRange(int begin, int end);
     void setRefGateRange(int begin, int end);
 
-    LifConfig getSettings(LifConfig c);
-
-    void setDisplayOnly(bool b) { d_displayOnly = b; }
-
 signals:
     void integralUpdate(double);
     void lifGateUpdated(int,int);
@@ -37,29 +33,23 @@ signals:
 
 public slots:
     void setNumAverages(int n);
-    void newTrace(const LifTrace t);
-    void traceProcessed(const LifTrace t);
-    void buildContextMenu(QMouseEvent *me) override;
+    void processTrace(const LifTrace t);
+    void setTrace(const LifTrace t);
     void checkColors();
     void reset();
     void setIntegralText(double d);
 
-    void changeLifGateRange();
-    void changeRefGateRange();
-
     void clearPlot();
 
-    void exportXY();
 
 private:
-    BlackchirpPlotCurve *p_lif, *p_ref;
+    BlackchirpPlotCurve *p_lif, *p_ref; ///TODO: convert to even spaced curves
     QwtPlotZoneItem *p_lifZone, *p_refZone;
     QwtPlotTextLabel *p_integralLabel;
     LifTrace d_currentTrace;
     int d_numAverages;
-    bool d_resetNext, d_lifGateMode, d_refGateMode;
+    bool d_resetNext;
     QPair<int,int> d_lifZoneRange, d_refZoneRange;
-    bool d_displayOnly;
 
     void updateLifZone();
     void updateRefZone();
@@ -67,7 +57,6 @@ private:
 
     // ZoomPanPlot interface
 protected:
-    bool eventFilter(QObject *obj, QEvent *ev) override;
     virtual void replot() override;
 };
 

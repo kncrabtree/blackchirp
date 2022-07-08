@@ -321,6 +321,8 @@ The actual number of records able to be acquired may be limited by the record le
     aBox->setLayout(afl);
 
     vl->addWidget(aBox);
+    if(!s.get(canBlockAverage,false) && !s.get(canMultiRecord,false))
+        aBox->hide();
     vl->addSpacerItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::Expanding));
     hbl->addLayout(vl,1);
 

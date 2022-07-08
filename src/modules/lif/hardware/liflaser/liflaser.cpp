@@ -28,9 +28,13 @@ double LifLaser::readPosition()
 
 double LifLaser::setPosition(const double pos)
 {
-    if(pos < d_minPos || pos > d_maxPos)
+    using namespace BC::Key::LifLaser;
+    auto minp = get(minPos,200.0);
+    auto maxp = get(maxPos,2000.0);
+    if(pos < minp || pos > maxp)
     {
-        emit logMessage(QString("Requested position (%1 %2) is outside the allowed range of %3 %2 - %4 %2.").arg(pos,0,'f',d_decimals).arg(d_units).arg(d_minPos,0,'f',d_decimals).arg(d_maxPos,0,'f',d_decimals),LogHandler::Error);
+        auto d = get(decimals,2);
+        emit logMessage(QString("Requested position (%1 %2) is outside the allowed range of %3 %2 - %4 %2.").arg(pos,0,'f',d).arg(get(units, "nm").toString()).arg(minp,0,'f',d).arg(maxp,0,'f',d),LogHandler::Error);
         emit hardwareFailure();
         return -1.0;
     }

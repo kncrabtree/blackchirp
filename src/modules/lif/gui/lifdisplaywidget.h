@@ -31,7 +31,7 @@ public slots:
     void checkLifColors();
     void resetLifPlot();
     void prepareForExperiment(const Experiment &e);
-    void updatePoint(const LifConfig c);
+    void updatePoint();
 
     void freqSlice(int delayIndex);
     void delaySlice(int freqIndex);

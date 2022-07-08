@@ -31,8 +31,8 @@ public:
 
 signals:
     void newTrace(LifTrace c);
-    void updateScope(Blackchirp::LifScopeConfig);
-    void scopeConfigChanged(Blackchirp::LifScopeConfig);
+//    void updateScope(Blackchirp::LifScopeConfig);
+//    void scopeConfigChanged(Blackchirp::LifScopeConfig);
     void laserPosUpdate(double);
     void lifColorChanged();
 

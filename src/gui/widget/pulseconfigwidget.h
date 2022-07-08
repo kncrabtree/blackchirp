@@ -59,7 +59,7 @@ public:
 
     void configureFtmw(const FtmwConfig &c);
 #ifdef BC_LIF
-    void configureLif(const LifConfig c);
+    void configureLif(const LifConfig &c);
 #endif
 
 signals:

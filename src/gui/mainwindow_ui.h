@@ -97,6 +97,7 @@ public:
 
 #ifdef BC_LIF
     QWidget *lifTab;
+    QAction *actionLifConfig;
     QProgressBar *lifProgressBar;
     QLayout *lifTabLayout;
     LifDisplayWidget *lifDisplayWidget;
@@ -187,8 +188,13 @@ public:
         QIcon icon16;
         icon16.addFile(QString::fromUtf8(":/icons/sequence.png"), QSize(), QIcon::Normal, QIcon::Off);
         actionStart_Sequence->setIcon(icon16);
+#ifdef BC_LIF
         QIcon lifIcon;
         lifIcon.addFile(QString(":/icons/laser.png"),QSize(), QIcon::Normal, QIcon::Off);
+        actionLifConfig = new QAction("LIF Configuration",MainWindow);
+        actionLifConfig->setObjectName("ActionLifConfig");
+        actionLifConfig->setIcon(lifIcon);
+#endif
 
         centralWidget = new QWidget(MainWindow);
         centralWidget->setObjectName(QString::fromUtf8("centralWidget"));
@@ -336,6 +342,7 @@ public:
         lifDisplayWidget->setObjectName(QString("lifDisplayWidget"));
         lifTabLayout->addWidget(lifDisplayWidget);
         mainTabWidget->addTab(lifTab,lifIcon,QString());
+        mainTabWidget->setTabText(mainTabWidget->indexOf(lifTab),QString("LIF"));
 
         lifProgressBar = new QProgressBar();
         instrumentStatusLayout->addWidget(new QLabel(QString("LIF Progress")),0,Qt::AlignCenter);
@@ -438,6 +445,9 @@ public:
         menuHardware->addAction(actionTest_All_Connections);
         menuHardware->addSeparator();
         menuHardware->addAction(actionRfConfig);
+#ifdef BC_LIF
+        menuHardware->addAction(actionLifConfig);
+#endif
         menuHardware->addSeparator();
         menuAcquisition->addAction(actionStart_Experiment);
         menuAcquisition->addAction(actionQuick_Experiment);

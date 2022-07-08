@@ -65,6 +65,9 @@ public slots:
     void resumeUi();
     void launchCommunicationDialog(bool parent = true);
     void launchRfConfigDialog();
+#ifdef BC_LIF
+    void launchLifConfigDialog();
+#endif
     void setLogIcon(LogHandler::MessageCode c);
     void sleep(bool s);
     void viewExperiment();

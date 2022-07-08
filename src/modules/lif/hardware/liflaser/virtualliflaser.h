@@ -16,7 +16,6 @@ public:
 
     // HardwareObject interface
 public slots:
-    void readSettings() override;
     void sleep(bool b) override;
 
 protected:

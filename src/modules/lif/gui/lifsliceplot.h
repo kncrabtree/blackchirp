@@ -21,9 +21,6 @@ public:
     void prepareForExperiment();
     void setData(const QVector<QPointF> d);
 
-public slots:
-    void exportXY();
-
 protected:
     BlackchirpPlotCurve *p_curve;
 };

@@ -6,6 +6,9 @@
 namespace BC::Key::LifLaser {
 static const QString key{"LifLaser"};
 static const QString units{"units"};
+static const QString decimals{"decimals"};
+static const QString minPos{"minPos"};
+static const QString maxPos{"maxPos"};
 }
 
 class LifLaser : public HardwareObject
@@ -29,11 +32,6 @@ public slots:
 private:
     virtual double readPos() =0;
     virtual void setPos(double pos) =0;
-
-protected:
-    double d_minPos=0.0, d_maxPos=0.0;
-    int d_decimals = 2;
-    QString d_units;
 };
 
 
