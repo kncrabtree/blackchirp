@@ -43,3 +43,16 @@ double LifLaser::setPosition(const double pos)
 
     return readPosition();
 }
+
+bool LifLaser::readFlashLamp()
+{
+    auto out = readFl();
+    emit laserFlashlampUpdate(out);
+    return out;
+}
+
+bool LifLaser::setFlashLamp(bool en)
+{
+    if(setFl(en))
+        readFlashLamp();
+}

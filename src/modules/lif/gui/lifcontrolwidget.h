@@ -35,9 +35,14 @@ public:
     void acquisitionStarted(const LifDigitizerConfig &c);
     void newWaveform(const QByteArray b);
 
+    void setLaserPosition(const double d);
+    void setFlashlamp(bool en);
+
 signals:
     void startSignal(LifDigitizerConfig);
     void stopSignal();
+    void changeLaserPosSignal(double);
+    void changeLaserFlashlampSignal(bool);
 
 private:
     LifTracePlot *p_lifTracePlot;

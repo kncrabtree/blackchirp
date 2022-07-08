@@ -94,6 +94,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 
     auto ll = new LifLaserHardware();
     connect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserPosUpdate);
+    connect(ll,&LifLaser::laserFlashlampUpdate,this,&HardwareManager::lifLaserFlashlampUpdate);
     d_hardwareMap.emplace(ll->d_key,ll);
 #endif
 
@@ -656,5 +657,58 @@ void HardwareManager::stopLifConfigAcq()
         ld->endAcquisition();
     else
         QMetaObject::invokeMethod(ld,&LifScope::endAcquisition);
+}
+
+double HardwareManager::lifLaserPos()
+{
+    auto ll = findHardware<LifLaser>(BC::Key::LifLaser::key);
+    if(!ll)
+    {
+        emit logMessage(QString("Could not read LIF Laser position because no laser is avaialble."),LogHandler::Error);
+        return -1.0;
+    }
+
+    if(ll->thread() == QThread::currentThread())
+        return ll->readPosition();
+
+    double out;
+    QMetaObject::invokeMethod(ll,[ll](){ return ll->readPosition(); },Qt::BlockingQueuedConnection,&out);
+    return out;
+}
+
+bool HardwareManager::lifLaserFlashlampEnabled()
+{
+    auto ll = findHardware<LifLaser>(BC::Key::LifLaser::key);
+    if(!ll)
+    {
+        emit logMessage(QString("Could not read LIF Laser flashlamp status because no laser is avaialble."),LogHandler::Error);
+        return -1.0;
+    }
+
+    if(ll->thread() == QThread::currentThread())
+        return ll->readFlashLamp();
+
+    bool out;
+    QMetaObject::invokeMethod(ll,[ll](){ return ll->readFlashLamp(); },Qt::BlockingQueuedConnection,&out);
+    return out;
+}
+
+void HardwareManager::setLifLaserFlashlampEnabled(bool en)
+{
+    auto ll = findHardware<LifLaser>(BC::Key::LifLaser::key);
+    if(!ll)
+    {
+        emit logMessage(QString("Could not read LIF Laser flashlamp status because no laser is avaialble."),LogHandler::Error);
+        return;
+    }
+
+    if(ll->thread() == QThread::currentThread())
+    {
+        ll->setFlashLamp(en);
+        return;
+    }
+
+    QMetaObject::invokeMethod(ll,[ll,en](){ ll->setFlashLamp(en); },Qt::BlockingQueuedConnection);
+
 }
 #endif

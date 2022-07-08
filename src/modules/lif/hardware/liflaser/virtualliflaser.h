@@ -14,10 +14,6 @@ class VirtualLifLaser : public LifLaser
 public:
     VirtualLifLaser(QObject *parent = nullptr);
 
-    // HardwareObject interface
-public slots:
-    void sleep(bool b) override;
-
 protected:
     void initialize() override;
     bool testConnection() override;
@@ -26,8 +22,11 @@ protected:
 private:
     double readPos() override;
     void setPos(double pos) override;
+    bool readFl() override;
+    bool setFl(bool en) override;
 
     double d_pos;
+    bool d_fl;
 };
 
 #endif // VIRTUALLIFLASER_H

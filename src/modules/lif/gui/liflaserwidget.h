@@ -12,7 +12,12 @@ class LifLaserWidget : public QWidget
 public:
     explicit LifLaserWidget(QWidget *parent = nullptr);
 
+    void setPosition(const double d);
+    void setFlashlamp(bool b);
+
 signals:
+    void changePosition(double);
+    void changeFlashlamp(bool);
 
 private:
     QDoubleSpinBox *p_posBox;

@@ -24,6 +24,11 @@ LifLaserWidget::LifLaserWidget(QWidget *parent)
     p_posBox->setDecimals(s.get(decimals,2));
 
     p_posSetButton = new QPushButton(QString("Set"));
+    connect(p_posSetButton,&QPushButton::clicked,[=](){
+        p_posBox->setEnabled(false);
+        p_posSetButton->setEnabled(false);
+        emit changePosition(p_posBox->value());
+    });
 
     gl->addWidget(p_posBox,0,0);
     gl->addWidget(p_posSetButton,0,1);
@@ -35,8 +40,35 @@ LifLaserWidget::LifLaserWidget(QWidget *parent)
     p_flButton = new QPushButton(QString("Enable"));
     p_flButton->setCheckable(true);
     p_flButton->setChecked(false);
+    connect(p_flButton,&QPushButton::clicked,[=](bool en){
+        if(en)
+            p_flButton->setText("Disable");
+        else
+            p_flButton->setText("Enable");
+        p_flButton->setEnabled(false);
+        emit changeFlashlamp(en);
+    });
     gl->addWidget(p_flButton,1,1);
 
 
     setLayout(gl);
+}
+
+void LifLaserWidget::setPosition(const double d)
+{
+    if(d >= p_posBox->minimum() && d <= p_posBox->maximum())
+        p_posBox->setValue(d);
+
+    p_posSetButton->setEnabled(true);
+    p_posBox->setEnabled(true);
+}
+
+void LifLaserWidget::setFlashlamp(bool b)
+{
+    p_flButton->setChecked(b);
+    if(b)
+        p_flButton->setText("Disable");
+    else
+        p_flButton->setText("Enable");
+    p_flButton->setEnabled(true);
 }

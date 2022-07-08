@@ -16,22 +16,25 @@ class LifLaser : public HardwareObject
     Q_OBJECT
 public:
     LifLaser(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded=false,bool critical=true);
-    LifLaser(LifLaser &) =delete;
-    LifLaser(LifLaser &&) =delete;
-    LifLaser& operator= (const LifLaser &) =delete;
-    LifLaser& operator= (const LifLaser &&) =delete;
     ~LifLaser() override;
 
 signals:
     void laserPosUpdate(double);
+    void laserFlashlampUpdate(bool);
 
 public slots:
     double readPosition();
     double setPosition(double pos);
+    bool readFlashLamp();
+    bool setFlashLamp(bool en);
 
 private:
     virtual double readPos() =0;
     virtual void setPos(double pos) =0;
+    virtual bool readFl() =0;
+
+    //This function should return whether setting was successful, not whether it's enabled
+    virtual bool setFl(bool en) =0;
 };
 
 

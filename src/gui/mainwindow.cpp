@@ -45,6 +45,8 @@
 #ifdef BC_LIF
 #include <modules/lif/gui/lifdisplaywidget.h>
 #include <modules/lif/gui/lifcontrolwidget.h>
+#include <modules/lif/gui/liflaserstatusbox.h>
+#include <modules/lif/hardware/liflaser/liflaser.h>
 #endif
 
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
@@ -248,6 +250,23 @@ MainWindow::MainWindow(QWidget *parent) :
                connect(d,&QDialog::accepted,tsb,&TemperatureStatusBox::loadFromSettings);
             });
         }
+#ifdef BC_LIF
+        else if(key == BC::Key::LifLaser::key)
+        {
+            auto lsb = new LifLaserStatusBox;
+            lsb->setObjectName(key);
+            ui->instrumentStatusLayout->insertWidget(3,lsb,0);
+            connect(p_hwm,&HardwareManager::lifLaserPosUpdate,lsb,&LifLaserStatusBox::setPosition);
+            connect(p_hwm,&HardwareManager::lifLaserFlashlampUpdate,lsb,&LifLaserStatusBox::setFlashlampEnabled);
+            connect(act,&QAction::triggered,[this,key,lsb](){
+                if(isDialogOpen(key))
+                    return;
+
+               auto d = createHWDialog(key);
+               connect(d,&QDialog::accepted,lsb,&LifLaserStatusBox::applySettings);
+            });
+        }
+#endif
         else
         {
             connect(act,&QAction::triggered,[this,key](){
@@ -747,6 +766,14 @@ void MainWindow::configureLifWidget(LifControlWidget *w)
     connect(p_hwm,&HardwareManager::lifConfigAcqStarted,w,&LifControlWidget::acquisitionStarted);
     connect(w,&LifControlWidget::stopSignal,p_hwm,&HardwareManager::stopLifConfigAcq);
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,w,&LifControlWidget::newWaveform);
+    connect(w,&LifControlWidget::changeLaserPosSignal,p_hwm,&HardwareManager::setLifLaserPos);
+    connect(p_hwm,&HardwareManager::lifLaserPosUpdate,w,&LifControlWidget::setLaserPosition);
+    connect(w,&LifControlWidget::changeLaserFlashlampSignal,p_hwm,&HardwareManager::setLifLaserFlashlampEnabled);
+    connect(p_hwm,&HardwareManager::lifLaserFlashlampUpdate,w,&LifControlWidget::setFlashlamp);
+
+    QMetaObject::invokeMethod(p_hwm,&HardwareManager::lifLaserPos,Qt::BlockingQueuedConnection);
+    QMetaObject::invokeMethod(p_hwm,&HardwareManager::lifLaserFlashlampEnabled,Qt::BlockingQueuedConnection);
+
 
 }
 #endif

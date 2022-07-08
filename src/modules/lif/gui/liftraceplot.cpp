@@ -187,20 +187,19 @@ void LifTracePlot::reset()
 void LifTracePlot::setIntegralText(double d)
 {
     QwtText t;
-    QString text = QString::number(d,'e',3);
+    QString text = QString("%1\n%2 Avgs").arg(QString::number(d,'e',3)).arg(d_currentTrace.shots());
 
     t.setRenderFlags(Qt::AlignRight | Qt::AlignTop);
-    t.setText(text);
     t.setBackgroundBrush(QBrush(QPalette().color(QPalette::Window)));
     QColor border = QPalette().color(QPalette::Text);
     border.setAlpha(0);
     t.setBorderPen(QPen(border));
     t.setColor(QPalette().color(QPalette::Text));
 
-    QFont f(QString("monospace"),14);
-    f.setBold(true);
-    t.setFont(f);
+//    QFont f(QString("monospace"));
+//    t.setFont(f);
 
+    t.setText(text);
     p_integralLabel->setText(t);
 }
 
@@ -210,7 +209,7 @@ void LifTracePlot::clearPlot()
     p_lifZone->detach();
     p_ref->detach();
     p_refZone->detach();
-    p_integralLabel->setText(QString(""));
+//    p_integralLabel->setText(QString(""));
 
     d_currentTrace = LifTrace();
 

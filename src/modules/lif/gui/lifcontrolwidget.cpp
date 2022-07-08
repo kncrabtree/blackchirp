@@ -91,6 +91,9 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
 
     connect(p_procWidget,&LifProcessingWidget::settingChanged,[=](){ p_lifTracePlot->setAllProcSettings(p_procWidget->getSettings());});
 
+    connect(p_laserWidget,&LifLaserWidget::changePosition,this,&LifControlWidget::changeLaserPosSignal);
+    connect(p_laserWidget,&LifLaserWidget::changeFlashlamp,this,&LifControlWidget::changeLaserFlashlampSignal);
+
 }
 
 LifControlWidget::~LifControlWidget()
@@ -142,6 +145,16 @@ void LifControlWidget::newWaveform(const QByteArray b)
 {
     LifTrace l(d_cfg,b,0,0);
     p_lifTracePlot->processTrace(l);
+}
+
+void LifControlWidget::setLaserPosition(const double d)
+{
+    p_laserWidget->setPosition(d);
+}
+
+void LifControlWidget::setFlashlamp(bool en)
+{
+    p_laserWidget->setFlashlamp(en);
 }
 
 

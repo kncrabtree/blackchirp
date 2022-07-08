@@ -82,6 +82,7 @@ signals:
     void lifSettingsComplete(bool success = true);
     void lifLaserPosUpdate(double);
     void lifConfigAcqStarted(LifDigitizerConfig);
+    void lifLaserFlashlampUpdate(bool);
 #endif
 
 public slots:
@@ -145,6 +146,9 @@ public slots:
     bool setLifLaserPos(double pos);
     void startLifConfigAcq(const LifDigitizerConfig &c);
     void stopLifConfigAcq();
+    double lifLaserPos();
+    bool lifLaserFlashlampEnabled();
+    void setLifLaserFlashlampEnabled(bool en);
 #endif
 
 public:
