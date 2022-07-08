@@ -19,11 +19,22 @@ public:
     LifTrace &operator=(const LifTrace &other);
     ~LifTrace() = default;
 
-    double integrate(int gl1, int gl2, int gr1 = -1, int gr2 = -1) const;
+    struct LifProcSettings {
+        int lifGateStart{-1};
+        int lifGateEnd{-1};
+        int refGateStart{-1};
+        int refGateEnd{-1};
+        double lowPassAlpha{};
+        bool savGolEnabled{false};
+        int savGolWin{11};
+        int savGolPoly{3};
+    };
+
+    double integrate(const LifProcSettings &s) const;
     int delayIndex() const;
     int laserIndex() const;
-    QVector<QPointF> lifToXY() const;
-    QVector<QPointF> refToXY() const;
+    QVector<QPointF> lifToXY(const LifProcSettings &s) const;
+    QVector<QPointF> refToXY(const LifProcSettings &s) const;
     double maxTime() const;
     QVector<qint64> lifRaw() const;
     QVector<qint64> refRaw() const;
@@ -39,6 +50,7 @@ public:
 
 private:
     QSharedDataPointer<LifTraceData> p_data;
+    QVector<QPointF> processXY(const QVector<double> d, const LifProcSettings &s) const;
 
 
 };

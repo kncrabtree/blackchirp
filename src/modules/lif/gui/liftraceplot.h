@@ -23,16 +23,18 @@ public:
     LifTracePlot(QWidget *parent = nullptr);
     ~LifTracePlot();
 
-    void setLifGateRange(int begin, int end);
-    void setRefGateRange(int begin, int end);
-
 signals:
     void integralUpdate(double);
     void lifGateUpdated(int,int);
     void refGateUpdated(int,int);
 
 public slots:
+    void setLifGateStart(int n);
+    void setLifGateEnd(int n);
+    void setRefGateStart(int n);
+    void setRefGateEnd(int n);
     void setNumAverages(int n);
+    void setAllProcSettings(const LifTrace::LifProcSettings &s);
     void processTrace(const LifTrace t);
     void setTrace(const LifTrace t);
     void checkColors();
@@ -49,7 +51,7 @@ private:
     LifTrace d_currentTrace;
     int d_numAverages;
     bool d_resetNext;
-    QPair<int,int> d_lifZoneRange, d_refZoneRange;
+    LifTrace::LifProcSettings d_procSettings;
 
     void updateLifZone();
     void updateRefZone();

@@ -21,17 +21,13 @@ public:
 public slots:
     // LifScope interface
     void readWaveform() override;
+    virtual bool configure(const LifDigitizerConfig &c) override;
 
 protected:
     bool testConnection() override;
     void initialize() override;
 
     QTimer *p_timer;
-
-
-    // HardwareObject interface
-public slots:
-    void sleep(bool b) override;
 
     // HardwareObject interface
 public slots:

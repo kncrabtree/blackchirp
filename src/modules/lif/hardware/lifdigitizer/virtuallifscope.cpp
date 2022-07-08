@@ -99,7 +99,7 @@ void VirtualLifScope::readWaveform()
         {
             if(d_bytesPerPoint == 1)
             {
-                qint8 dat = qr->bounded(-128,127);;
+                qint8 dat = qr->bounded(-128,127);
                 out[i] = dat;
             }
             else
@@ -125,17 +125,12 @@ void VirtualLifScope::readWaveform()
 
 }
 
-
-void VirtualLifScope::sleep(bool b)
+bool VirtualLifScope::configure(const LifDigitizerConfig &c)
 {
-    if(b)
-        p_timer->stop();
-    else
-    {
-        p_timer->start();
-    }
+    static_cast<LifDigitizerConfig&>(*this) = c;
+    d_channelOrder = Sequential;
+    return true;
 }
-
 
 bool VirtualLifScope::prepareForExperiment(Experiment &exp)
 {

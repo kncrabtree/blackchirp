@@ -60,6 +60,9 @@ MainWindow::MainWindow(QWidget *parent) :
     d_hardware = p_hwm->currentHardware();
 
     qRegisterMetaType<QwtPlot::Axis>("QwtPlot::Axis");
+#ifdef BC_LIF
+    qRegisterMetaType<LifDigitizerConfig>("LifDigitizerConfig");
+#endif
 
     ui->setupUi(this);
     ui->rollingDurationBox->setValue(ui->rollingDataViewWidget->historyDuration());
@@ -707,23 +710,24 @@ void MainWindow::launchLifConfigDialog()
 
     auto d = new QDialog;
     d->setWindowTitle("LIF Configuration");
+
     auto w = new LifControlWidget(d);
-    //setup w
+    configureLifWidget(w);
 
 
-    auto lbl = new QLabel("TODO");
-    lbl->setWordWrap(true);
+//    auto lbl = new QLabel("TODO");
+//    lbl->setWordWrap(true);
 
     auto vbl = new QVBoxLayout;
-    vbl->addWidget(lbl);
+//    vbl->addWidget(lbl);
     vbl->addWidget(w);
 
-    auto bb = new QDialogButtonBox(QDialogButtonBox::Ok|QDialogButtonBox::Cancel,d);
-    connect(bb->button(QDialogButtonBox::Ok),&QPushButton::clicked,d,&QDialog::accept);
-    connect(bb->button(QDialogButtonBox::Cancel),&QPushButton::clicked,d,&QDialog::reject);
+    auto bb = new QDialogButtonBox(QDialogButtonBox::Close,d);
+    connect(bb->button(QDialogButtonBox::Close),&QPushButton::clicked,d,&QDialog::reject);
     vbl->addWidget(bb);
 
     d->setLayout(vbl);
+    connect(d,&QDialog::finished,p_hwm,&HardwareManager::stopLifConfigAcq);
     connect(d,&QDialog::finished,d,&QDialog::deleteLater);
     connect(d,&QDialog::destroyed,[this](){
         auto it = d_openDialogs.find("LifConfig");
@@ -733,6 +737,17 @@ void MainWindow::launchLifConfigDialog()
 
     d_openDialogs.insert({"LifConfig",d});
     d->show();
+}
+
+void MainWindow::configureLifWidget(LifControlWidget *w)
+{
+    //TODO: Get current laser position
+
+    connect(w,&LifControlWidget::startSignal,p_hwm,&HardwareManager::startLifConfigAcq);
+    connect(p_hwm,&HardwareManager::lifConfigAcqStarted,w,&LifControlWidget::acquisitionStarted);
+    connect(w,&LifControlWidget::stopSignal,p_hwm,&HardwareManager::stopLifConfigAcq);
+    connect(p_hwm,&HardwareManager::lifScopeShotAcquired,w,&LifControlWidget::newWaveform);
+
 }
 #endif
 

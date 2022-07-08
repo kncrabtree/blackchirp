@@ -26,8 +26,8 @@ public:
     };
     Q_ENUM(ChannelOrder)
 
-    int d_lifChannel{0};
-    int d_refChannel{1};
+    int d_lifChannel{1};
+    int d_refChannel{2};
     bool d_refEnabled{false};
     ChannelOrder d_channelOrder{Interleaved};
 

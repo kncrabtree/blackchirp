@@ -3,26 +3,41 @@
 
 #include <QWidget>
 
+#include <data/storage/settingsstorage.h>
+
 #include <modules/lif/data/liftrace.h>
 #include <modules/lif/data/lifconfig.h>
+#include <modules/lif/hardware/lifdigitizer/lifdigitizerconfig.h>
 
 class LifTracePlot;
 class DigitizerConfigWidget;
 class LifLaserWidget;
 class LifProcessingWidget;
 class QPushButton;
+class QSpinBox;
 
 namespace BC::Key::LifControl {
+const QString key("lifControlWidget");
+const QString avgs("numAverages");
 const QString lifDigWidget("lifDigitizerConfig");
 }
 
-class LifControlWidget : public QWidget
+class LifControlWidget : public QWidget, public SettingsStorage
 {
     Q_OBJECT
 
 public:
     explicit LifControlWidget(QWidget *parent = nullptr);
     ~LifControlWidget() override;
+
+    void startAcquisition();
+    void stopAcquisition();
+    void acquisitionStarted(const LifDigitizerConfig &c);
+    void newWaveform(const QByteArray b);
+
+signals:
+    void startSignal(LifDigitizerConfig);
+    void stopSignal();
 
 private:
     LifTracePlot *p_lifTracePlot;
@@ -32,6 +47,10 @@ private:
 
     QPushButton *p_startAcqButton;
     QPushButton *p_stopAcqButton;
+    QSpinBox *p_avgBox;
+    QPushButton *p_resetButton;
+
+    LifDigitizerConfig d_cfg;
 
 
     // QWidget interface

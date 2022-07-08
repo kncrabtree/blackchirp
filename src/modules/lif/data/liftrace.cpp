@@ -54,7 +54,7 @@ LifTrace::LifTrace(const LifDigitizerConfig &c, const QByteArray b, int dIndex, 
     {
         p_data->refData.resize(c.d_recordLength);
         qint64 dat = 0;
-        for(int i=c.d_bytesPerPoint*refoffset; i<incr*c.d_recordLength; i+=incr)
+        for(int i=c.d_bytesPerPoint*refoffset; i<refoffset+incr*c.d_recordLength; i+=incr)
         {
             if(c.d_bytesPerPoint == 1)
             {
@@ -91,59 +91,48 @@ LifTrace &LifTrace::operator=(const LifTrace &other)
     return *this;
 }
 
-double LifTrace::integrate(int gl1, int gl2, int gr1, int gr2) const
+double LifTrace::integrate(const LifProcSettings &s) const
 {
-    if(gl1 < 0)
-        gl1 = 0;
-    if(gl2 < 0)
-        gl2 = p_data->lifData.size()-1;
-
     //validate ranges (sort of; if ranges are bad this will return 0);
     //lif start must be in range of data
-    gl1 = qBound(0,gl1,p_data->lifData.size());
+    auto ls = qBound(0,s.lifGateStart,p_data->lifData.size()-2);
     //lif end must be greater than start and in range of data
-    gl2 = qBound(gl1,gl2,p_data->lifData.size());
-    //lif start must be less than end
-    gl1 = qBound(0,gl1,gl2);
+    auto le = qBound(ls+1,s.lifGateEnd,p_data->lifData.size()-1);
 
     //do trapezoidal integration in integer/point space.
     //each segment has a width of 1 unit, and the area is (y_i + y_{i+1})/2
     //(think of it as end points have weight of 1, middle points have weight 2)
     //add up all y_i + y_{i+1}, then divide by 2 at the end
 
-    qint64 sum = 0;
-    for(int i = gl1; i<gl2-1; i++)
-        sum += static_cast<qint64>(p_data->lifData.at(i)) + static_cast<qint64>(p_data->lifData.at(i+1));
+    auto l = lifToXY(s);
 
-    //multiply by y spacing and x spacing
-    double out = static_cast<double>(sum)/2.0*p_data->lifYMult*p_data->xSpacing;
 
-    if(p_data->shots > 1)
-        out /= static_cast<double>(p_data->shots);
+    double sum = 0.0;
+    for(int i = ls; i<le-1; i++)
+        sum += l.at(i).y() + l.at(i+1).y();
+
+    auto lifInt = sum/2.0;
 
     //if no reference; just return raw integral
-    if(p_data->refData.size() == 0)
-        return out;
+    if(!hasRefData())
+        return lifInt;
 
-    if(gr1 < 0)
-        gr1 = 0;
-    if(gr2 < 0)
-        gr2 = p_data->refData.size()-1;
+    auto r = refToXY(s);
 
-    sum = 0;
-    for(int i = gr1; i<gr2-1; i++)
-        sum += static_cast<qint64>(p_data->refData.at(i)) + static_cast<qint64>(p_data->refData.at(i+1));
+    auto rs = qBound(0,s.refGateStart,p_data->refData.size()-2);
+    auto re = qBound(rs+1,s.refGateEnd,p_data->refData.size()-1);
 
-    double ref = static_cast<double>(sum)/2.0*p_data->refYMult*p_data->xSpacing;
+    sum = 0.0;
+    for(int i = rs; i<re-1; i++)
+        sum += r.at(i).y() + r.at(i+1).y();
 
-    if(p_data->shots > 1)
-        ref /= static_cast<double>(p_data->shots);
+    double refInt = sum/2.0;
 
     //don't divide by 0!
-    if(qFuzzyCompare(1.0,1.0+ref))
-        return out;
+    if(qFuzzyCompare(1.0,1.0+refInt))
+        return lifInt;
     else
-        return out/ref;
+        return lifInt/refInt;
 }
 
 int LifTrace::delayIndex() const
@@ -156,38 +145,36 @@ int LifTrace::laserIndex() const
     return p_data->laserIndex;
 }
 
-QVector<QPointF> LifTrace::lifToXY() const
+QVector<QPointF> LifTrace::lifToXY(const LifProcSettings &s) const
 {
-    QVector<QPointF> out;
-    out.resize(p_data->lifData.size());
+    QVector<double> y;
+    y.resize(p_data->lifData.size());
 
     for(int i=0; i<p_data->lifData.size(); i++)
     {
-        out[i].setX(static_cast<double>(i)*p_data->xSpacing*1e9); //convert to ns
         if(p_data->shots == 1)
-            out[i].setY(static_cast<double>(p_data->lifData.at(i))*p_data->lifYMult);
+            y[i] = static_cast<double>(p_data->lifData.at(i))*p_data->lifYMult;
         else
-            out[i].setY(static_cast<double>(p_data->lifData.at(i))*p_data->lifYMult/static_cast<double>(p_data->shots));
+            y[i] = (static_cast<double>(p_data->lifData.at(i))*p_data->lifYMult/static_cast<double>(p_data->shots));
     }
 
-    return out;
+    return processXY(y,s);
 }
 
-QVector<QPointF> LifTrace::refToXY() const
+QVector<QPointF> LifTrace::refToXY(const LifProcSettings &s) const
 {
-    QVector<QPointF> out;
-    out.resize(p_data->refData.size());
+    QVector<double> y;
+    y.resize(p_data->refData.size());
 
     for(int i=0; i<p_data->refData.size(); i++)
     {
-        out[i].setX(static_cast<double>(i)*p_data->xSpacing*1e9); // convert to ns
         if(p_data->shots == 1)
-            out[i].setY(static_cast<double>(p_data->refData.at(i))*p_data->refYMult);
+            y[i] = static_cast<double>(p_data->refData.at(i))*p_data->refYMult;
         else
-            out[i].setY(static_cast<double>(p_data->refData.at(i))*p_data->refYMult/static_cast<double>(p_data->shots));
+            y[i] = (static_cast<double>(p_data->refData.at(i))*p_data->refYMult/static_cast<double>(p_data->shots));
     }
 
-    return out;
+    return processXY(y,s);
 }
 
 double LifTrace::maxTime() const
@@ -269,4 +256,28 @@ void LifTrace::rollAvg(const LifTrace &other, int numShots)
 
         p_data->shots = numShots;
     }
+}
+
+QVector<QPointF> LifTrace::processXY(const QVector<double> d, const LifProcSettings &s) const
+{
+    //low-pass first, then Sav-Gol
+    auto ynew = d;
+    if(s.lowPassAlpha > 1e-5)
+    {
+        for(int i=1; i<ynew.size(); i++)
+            ynew[i] = s.lowPassAlpha*ynew.at(i-1) + (1-s.lowPassAlpha)*ynew.at(i);
+    }
+
+    if(s.savGolEnabled)
+    {
+        auto coefs = Analysis::calcSavGolCoefs(s.savGolWin,s.savGolPoly);
+        ynew = Analysis::savGolSmooth(coefs,0,ynew,xSpacingns());
+    }
+
+    QVector<QPointF> out;
+    out.resize(ynew.size());
+    for(int i=0; i<ynew.size(); i++)
+        out[i] = {xSpacingns()*i,ynew[i]};
+
+    return out;
 }

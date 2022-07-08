@@ -89,6 +89,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #ifdef BC_LIF
     auto lsc = new LifScopeHardware();
     connect(lsc,&LifScope::waveformRead,this,&HardwareManager::lifScopeShotAcquired);
+    connect(lsc,&LifScope::configAcqComplete,this,&HardwareManager::lifConfigAcqStarted);
     d_hardwareMap.emplace(lsc->d_key,lsc);
 
     auto ll = new LifLaserHardware();
@@ -625,5 +626,35 @@ bool HardwareManager::setLifLaserPos(double pos)
     QMetaObject::invokeMethod(ll,[ll,pos](){ return ll->setPosition(pos); },Qt::BlockingQueuedConnection,&out);
     return out > 0.0;
 
+}
+
+void HardwareManager::startLifConfigAcq(const LifDigitizerConfig &c)
+{
+    auto ld = findHardware<LifScope>(BC::Key::LifDigi::lifScope);
+    if(!ld)
+    {
+        emit logMessage("Could not initialize LIF acquisition because no digitizer was found.",LogHandler::Error);
+        return;
+    }
+
+    if(ld->thread() == QThread::currentThread())
+        ld->startConfigurationAcquisition(c);
+    else
+        QMetaObject::invokeMethod(ld,[ld,c](){ ld->startConfigurationAcquisition(c); });
+}
+
+void HardwareManager::stopLifConfigAcq()
+{
+    auto ld = findHardware<LifScope>(BC::Key::LifDigi::lifScope);
+    if(!ld)
+    {
+        emit logMessage("Could not stop LIF acquisition because no digitizer was found.",LogHandler::Error);
+        return;
+    }
+
+    if(ld->thread() == QThread::currentThread())
+        ld->endAcquisition();
+    else
+        QMetaObject::invokeMethod(ld,&LifScope::endAcquisition);
 }
 #endif

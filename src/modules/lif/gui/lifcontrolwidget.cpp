@@ -12,9 +12,10 @@
 #include <QGroupBox>
 #include <QPushButton>
 #include <QLabel>
+#include <QSpinBox>
 
 LifControlWidget::LifControlWidget(QWidget *parent) :
-    QWidget(parent)
+    QWidget(parent), SettingsStorage(BC::Key::LifControl::key)
 {
     auto vbl = new QVBoxLayout;
 
@@ -35,6 +36,20 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
     vbl2->addWidget(p_digWidget);
 
     auto hbl2 = new QHBoxLayout;
+    hbl2->addWidget(new QLabel("Averages"));
+
+    p_avgBox = new QSpinBox;
+    p_avgBox->setRange(1,1000000000);
+    p_avgBox->setValue(get(BC::Key::LifControl::avgs,10));
+    p_avgBox->setSingleStep(10);
+    connect(p_avgBox,qOverload<int>(&QSpinBox::valueChanged),p_lifTracePlot,&LifTracePlot::setNumAverages);
+    registerGetter(BC::Key::LifControl::avgs,p_avgBox,&QSpinBox::value);
+    hbl2->addWidget(p_avgBox);
+
+    p_resetButton = new QPushButton("Reset");
+    connect(p_resetButton,&QPushButton::clicked,p_lifTracePlot,&LifTracePlot::reset);
+    hbl2->addWidget(p_resetButton);
+
     hbl2->addSpacerItem(new QSpacerItem(1,1));
 
     p_startAcqButton = new QPushButton("Start Acquisition",this);
@@ -58,24 +73,75 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
     rightvbl->addWidget(lgb,0);
 
     auto pgb = new QGroupBox("Processing",this);
+    auto pvbl = new QVBoxLayout;
     p_procWidget = new LifProcessingWidget(true,pgb);
-    pgb->setLayout(p_procWidget->layout());
+    pvbl->addWidget(p_procWidget);
+    pgb->setLayout(pvbl);
     rightvbl->addWidget(pgb,1);
-    pgb->setEnabled(false);
+    p_procWidget->setEnabled(false);
 
 
     hbl->addLayout(rightvbl,1);
 
-
     vbl->addLayout(hbl,1);
-
-
-
     setLayout(vbl);
+
+    connect(p_startAcqButton,&QPushButton::clicked,this,&LifControlWidget::startAcquisition);
+    connect(p_stopAcqButton,&QPushButton::clicked,this,&LifControlWidget::stopAcquisition);
+
+    connect(p_procWidget,&LifProcessingWidget::settingChanged,[=](){ p_lifTracePlot->setAllProcSettings(p_procWidget->getSettings());});
+
 }
 
 LifControlWidget::~LifControlWidget()
 {
+}
+
+void LifControlWidget::startAcquisition()
+{
+    LifDigitizerConfig cfg;
+    p_digWidget->toConfig(cfg);
+    auto it = cfg.d_analogChannels.find(cfg.d_refChannel);
+    if(it != cfg.d_analogChannels.end())
+        cfg.d_refEnabled = true;
+    else
+        cfg.d_refEnabled = false;
+
+    //send cfg parameters to processing widget; disable editing digitizer; configure buttons
+    p_procWidget->initialize(cfg.d_recordLength,cfg.d_refEnabled);
+    p_procWidget->setEnabled(true);
+
+    p_digWidget->setEnabled(false);
+    p_startAcqButton->setEnabled(false);
+    p_stopAcqButton->setEnabled(true);
+
+    emit startSignal(cfg);
+}
+
+void LifControlWidget::stopAcquisition()
+{
+    p_procWidget->setEnabled(false);
+    p_digWidget->setEnabled(true);
+    p_startAcqButton->setEnabled(true);
+    p_stopAcqButton->setEnabled(false);
+
+    emit stopSignal();
+}
+
+void LifControlWidget::acquisitionStarted(const LifDigitizerConfig &c)
+{
+    d_cfg = c;
+    p_digWidget->setFromConfig(c);
+    p_lifTracePlot->reset();
+    p_lifTracePlot->setNumAverages(p_avgBox->value());
+    p_lifTracePlot->setAllProcSettings(p_procWidget->getSettings());
+
+}
+
+void LifControlWidget::newWaveform(const QByteArray b)
+{
+    LifTrace l(d_cfg,b,0,0);
+    p_lifTracePlot->processTrace(l);
 }
 
 

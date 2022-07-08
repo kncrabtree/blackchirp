@@ -15,18 +15,26 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
     auto tt = QString("Gate position in units of points. Hold Ctrl to adjust in steps of 10");
     p_lgStartBox = new QSpinBox(this);
     p_lgStartBox->setToolTip(tt);
+    p_lgStartBox->setRange(0,1000000000);
+    p_lgStartBox->setValue(get(lgStart,0));
     fl->addRow("LIF Gate Start",p_lgStartBox);
 
     p_lgEndBox = new QSpinBox(this);
     p_lgEndBox->setToolTip(tt);
+    p_lgEndBox->setRange(1,1000000000);
+    p_lgEndBox->setValue(get(lgEnd,1));
     fl->addRow("LIF Gate End",p_lgEndBox);
 
     p_rgStartBox = new QSpinBox(this);
     p_rgStartBox->setToolTip(tt);
+    p_rgStartBox->setRange(0,1000000000);
+    p_rgStartBox->setValue(get(rgStart,0));
     fl->addRow("Reference Gate Start",p_rgStartBox);
 
     p_rgEndBox = new QSpinBox(this);
     p_rgEndBox->setToolTip(tt);
+    p_rgEndBox->setRange(1,1000000000);
+    p_rgEndBox->setValue(get(rgEnd,1));
     fl->addRow("Reference Gate End",p_rgEndBox);
 
     p_lpAlphaBox = new QDoubleSpinBox(this);
@@ -89,6 +97,16 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
         p_sgPolyBox->setMaximum(n-1);
     });
 
+    connect(p_lgStartBox,qOverload<int>(&QSpinBox::valueChanged),this,&LifProcessingWidget::settingChanged);
+    connect(p_lgEndBox,qOverload<int>(&QSpinBox::valueChanged),this,&LifProcessingWidget::settingChanged);
+    connect(p_rgStartBox,qOverload<int>(&QSpinBox::valueChanged),this,&LifProcessingWidget::settingChanged);
+    connect(p_rgEndBox,qOverload<int>(&QSpinBox::valueChanged),this,&LifProcessingWidget::settingChanged);
+    connect(p_lpAlphaBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&LifProcessingWidget::settingChanged);
+    connect(p_sgEnBox,&QAbstractButton::toggled,this,&LifProcessingWidget::settingChanged);
+    connect(p_sgWinBox,qOverload<int>(&QSpinBox::valueChanged),this,&LifProcessingWidget::settingChanged);
+    connect(p_sgPolyBox,qOverload<int>(&QSpinBox::valueChanged),this,&LifProcessingWidget::settingChanged);
+
+
     p_sgEnBox->setChecked(get(sgEn,false));
     p_sgWinBox->setValue(get(sgWin,11));
     p_sgPolyBox->setValue(get(sgPoly,3));
@@ -115,22 +133,16 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
 
 void LifProcessingWidget::initialize(int recLen, bool ref)
 {
-    using namespace BC::Key::LifProcessing;
     p_lgStartBox->setRange(0,recLen-2);
     p_lgEndBox->setRange(1,recLen-1);
     p_rgStartBox->setRange(0,recLen-2);
     p_rgEndBox->setRange(1,recLen-1);
 
-    p_lgStartBox->setValue(get(lgStart,0));
-    p_lgEndBox->setValue(get(lgEnd,recLen-1));
-    p_rgStartBox->setValue(get(rgStart,0));
-    p_rgEndBox->setValue(get(rgEnd,recLen-1));
-
     p_rgStartBox->setEnabled(ref);
     p_rgEndBox->setEnabled(ref);
 }
 
-void LifProcessingWidget::setAll(const LifProcSettings &lc)
+void LifProcessingWidget::setAll(const LifTrace::LifProcSettings &lc)
 {
     p_lgStartBox->setValue(lc.lifGateStart);
     p_lgEndBox->setValue(lc.lifGateEnd);
@@ -142,7 +154,7 @@ void LifProcessingWidget::setAll(const LifProcSettings &lc)
     p_sgPolyBox->setValue(lc.savGolPoly);
 }
 
-LifProcessingWidget::LifProcSettings LifProcessingWidget::getSettings() const
+LifTrace::LifProcSettings LifProcessingWidget::getSettings() const
 {
     return {p_lgStartBox->value(),
                 p_lgEndBox->value(),

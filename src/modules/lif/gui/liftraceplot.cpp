@@ -31,10 +31,10 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
     p_integralLabel->attach(this);
     p_integralLabel->setItemAttribute(QwtPlotItem::AutoScale,false);
 
-    p_lif = new BlackchirpPlotCurve(BC::Key::lifCurve);
+    p_lif = new BlackchirpPlotCurve(BC::Key::lifCurve,"LIF");
     p_lif->setZ(1.0);
 
-    p_ref = new BlackchirpPlotCurve(BC::Key::refCurve);
+    p_ref = new BlackchirpPlotCurve(BC::Key::refCurve,"Ref");
     p_ref->setZ(1.0);
 
     p_lifZone = new QwtPlotZoneItem();
@@ -51,13 +51,6 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
 
 
     insertLegend( new QwtLegend(this),QwtPlot::BottomLegend);
-
-    QSettings s2(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    d_lifZoneRange.first = s2.value(QString("lifConfig/lifStart"),-1).toInt();
-    d_lifZoneRange.second = s2.value(QString("lifConfig/lifEnd"),-1).toInt();
-    d_refZoneRange.first = s2.value(QString("lifConfig/refStart"),-1).toInt();
-    d_refZoneRange.second = s2.value(QString("lifConfig/refEnd"),-1).toInt();
-    d_numAverages = s2.value(QString("lifConfig/numAverages"),10).toInt();
 
     connect(this,&LifTracePlot::integralUpdate,this,&LifTracePlot::setIntegralText);
 }
@@ -80,23 +73,39 @@ LifTracePlot::~LifTracePlot()
     delete p_integralLabel;
 }
 
-void LifTracePlot::setLifGateRange(int begin, int end)
+void LifTracePlot::setLifGateStart(int n)
 {
-    d_lifZoneRange.first = begin;
-    d_lifZoneRange.second = end;
+    d_procSettings.lifGateStart = n;
     updateLifZone();
 }
 
-void LifTracePlot::setRefGateRange(int begin, int end)
+void LifTracePlot::setLifGateEnd(int n)
 {
-    d_refZoneRange.first = begin;
-    d_refZoneRange.second = end;
+    d_procSettings.lifGateEnd = n;
+    updateLifZone();
+}
+
+void LifTracePlot::setRefGateStart(int n)
+{
+    d_procSettings.refGateStart = n;
+    updateRefZone();
+}
+
+void LifTracePlot::setRefGateEnd(int n)
+{
+    d_procSettings.refGateEnd = n;
     updateRefZone();
 }
 
 void LifTracePlot::setNumAverages(int n)
 {
     d_numAverages = n;
+}
+
+void LifTracePlot::setAllProcSettings(const LifTrace::LifProcSettings &s)
+{
+    d_procSettings = s;
+    replot();
 }
 
 void LifTracePlot::processTrace(const LifTrace t)
@@ -119,65 +128,21 @@ void LifTracePlot::processTrace(const LifTrace t)
 
 void LifTracePlot::setTrace(const LifTrace t)
 {
-    bool updateLif = false, updateRef = false;
-    if(d_currentTrace.size() == 0)
-    {
-        updateLif = true;
-        if(t.hasRefData())
-            updateRef = true;
-    }
-
     d_currentTrace = t;
 
     ///TODO: update when curves are changed to fixed spacing
-    p_lif->setCurveData(t.lifToXY());
-    p_ref->setCurveData(t.refToXY());
+    p_lif->setCurveData(t.lifToXY(d_procSettings));
+    p_ref->setCurveData(t.refToXY(d_procSettings));
 
-    if(t.hasRefData())
-        emit integralUpdate(t.integrate(d_lifZoneRange.first,d_lifZoneRange.second,d_refZoneRange.first,d_refZoneRange.second));
-    else
-        emit integralUpdate(t.integrate(d_lifZoneRange.first,d_lifZoneRange.second));
-
-
-
-    if(d_lifZoneRange.first < 0 || d_lifZoneRange.first >= t.size())
-    {
-        d_lifZoneRange.first = 0;
-        updateLif = true;
-    }
-    if(d_lifZoneRange.second < d_lifZoneRange.first || d_lifZoneRange.second >= t.size()-1)
-    {
-        d_lifZoneRange.second = t.size()-1;
-        updateLif = true;
-    }
-    if(t.hasRefData())
-    {
-        if(d_refZoneRange.first < 0 || d_refZoneRange.first >= t.size())
-        {
-            d_refZoneRange.first = 0;
-            updateRef = true;
-        }
-        if(d_refZoneRange.second < d_refZoneRange.first || d_refZoneRange.second >= t.size()-1)
-        {
-            d_refZoneRange.second = t.size()-1;
-            updateRef = true;
-        }
-    }
 
     if(p_lif->plot() != this)
         p_lif->attach(this);
-
-    if(updateLif)
-        updateLifZone();
 
     if(p_lifZone->plot() != this)
         p_lifZone->attach(this);
 
     if(t.hasRefData())
     {
-        if(updateRef)
-            updateRefZone();
-
         if(p_ref->plot() != this)
             p_ref->attach(this);
 
@@ -254,27 +219,24 @@ void LifTracePlot::clearPlot()
 
 void LifTracePlot::updateLifZone()
 {
-    double x1 = static_cast<double>(d_lifZoneRange.first)*d_currentTrace.xSpacingns();
-    double x2 = static_cast<double>(d_lifZoneRange.second)*d_currentTrace.xSpacingns();
+    double x1 = static_cast<double>(d_procSettings.lifGateStart)*d_currentTrace.xSpacingns();
+    double x2 = static_cast<double>(d_procSettings.lifGateEnd)*d_currentTrace.xSpacingns();
     p_lifZone->setInterval(x1,x2);
-
-    if(d_currentTrace.hasRefData())
-        emit integralUpdate(d_currentTrace.integrate(d_lifZoneRange.first,d_lifZoneRange.second,d_refZoneRange.first,d_refZoneRange.second));
-    else
-        emit integralUpdate(d_currentTrace.integrate(d_lifZoneRange.first,d_lifZoneRange.second));
 }
 
 void LifTracePlot::updateRefZone()
 {
-    double x1 = static_cast<double>(d_refZoneRange.first)*d_currentTrace.xSpacingns();
-    double x2 = static_cast<double>(d_refZoneRange.second)*d_currentTrace.xSpacingns();
+    double x1 = static_cast<double>(d_procSettings.refGateStart)*d_currentTrace.xSpacingns();
+    double x2 = static_cast<double>(d_procSettings.refGateEnd)*d_currentTrace.xSpacingns();
     p_refZone->setInterval(x1,x2);
-
-    emit integralUpdate(d_currentTrace.integrate(d_lifZoneRange.first,d_lifZoneRange.second,d_refZoneRange.first,d_refZoneRange.second));
 }
 
 void LifTracePlot::replot()
 {
     //this function calls ZoomPanPlot::replot()
+    updateLifZone();
+    updateRefZone();
+    emit integralUpdate(d_currentTrace.integrate(d_procSettings));
+
     checkColors();
 }

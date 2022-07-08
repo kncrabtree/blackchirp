@@ -13,6 +13,10 @@
 #include <hardware/optional/pressurecontroller/pressurecontrollerconfig.h>
 #include <hardware/optional/tempcontroller/temperaturecontrollerconfig.h>
 
+#ifdef BC_LIF
+#include <modules/lif/hardware/lifdigitizer/lifdigitizerconfig.h>
+#endif
+
 class HardwareObject;
 class ClockManager;
 class Experiment;
@@ -77,6 +81,7 @@ signals:
     void lifScopeShotAcquired(QByteArray);
     void lifSettingsComplete(bool success = true);
     void lifLaserPosUpdate(double);
+    void lifConfigAcqStarted(LifDigitizerConfig);
 #endif
 
 public slots:
@@ -138,6 +143,8 @@ public slots:
     void setLifParameters(double delay, double pos);
     bool setPGenLifDelay(double d);
     bool setLifLaserPos(double pos);
+    void startLifConfigAcq(const LifDigitizerConfig &c);
+    void stopLifConfigAcq();
 #endif
 
 public:

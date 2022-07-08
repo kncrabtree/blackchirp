@@ -4,6 +4,7 @@
 #include <QWidget>
 
 #include <data/storage/settingsstorage.h>
+#include <modules/lif/data/liftrace.h>
 
 namespace BC::Key::LifProcessing {
 const QString key("lifProcessingWidget");
@@ -28,26 +29,12 @@ class LifProcessingWidget : public QWidget, public SettingsStorage
 public:
     explicit LifProcessingWidget(bool store = true, QWidget *parent = nullptr);
 
-    struct LifProcSettings {
-        int lifGateStart{-1};
-        int lifGateEnd{-1};
-        int refGateStart{-1};
-        int refGateEnd{-1};
-        double lowPassAlpha{};
-        bool savGolEnabled{false};
-        int savGolWin{11};
-        int savGolPoly{3};
-    };
-
     void initialize(int recLen, bool ref);
-    void setAll(const LifProcSettings &lc);
-    LifProcSettings getSettings() const;
+    void setAll(const LifTrace::LifProcSettings &lc);
+    LifTrace::LifProcSettings getSettings() const;
 
 signals:
-    void lgStartChanged(int);
-    void lgEndChanged(int);
-    void rgStartChanged(int);
-    void rgEndChanged(int);
+    void settingChanged();
 
 private:
     QSpinBox *p_lgStartBox, *p_lgEndBox, *p_rgStartBox, *p_rgEndBox, *p_sgWinBox, *p_sgPolyBox;

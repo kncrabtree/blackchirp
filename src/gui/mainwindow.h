@@ -22,6 +22,7 @@ class QProgressBar;
 class QAction;
 class HWDialog;
 class QuickExptDialog;
+class LifControlWidget;
 
 namespace Ui {
 class MainWindow;
@@ -67,6 +68,7 @@ public slots:
     void launchRfConfigDialog();
 #ifdef BC_LIF
     void launchLifConfigDialog();
+    void configureLifWidget(LifControlWidget *w);
 #endif
     void setLogIcon(LogHandler::MessageCode c);
     void sleep(bool s);

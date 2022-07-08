@@ -18,9 +18,13 @@ public:
 
 signals:
     void waveformRead(QByteArray);
+    void configAcqComplete(LifDigitizerConfig);
 
 public slots:
+    virtual void startConfigurationAcquisition(const LifDigitizerConfig &c);
+
     virtual void readWaveform() =0;
+    virtual bool configure(const LifDigitizerConfig &c) =0;
 
 };
 
