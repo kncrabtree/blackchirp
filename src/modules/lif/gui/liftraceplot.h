@@ -60,6 +60,10 @@ private:
     // ZoomPanPlot interface
 protected:
     virtual void replot() override;
+
+    // QWidget interface
+public:
+    QSize sizeHint() const override;
 };
 
 #endif // LIFTRACEPLOT_H

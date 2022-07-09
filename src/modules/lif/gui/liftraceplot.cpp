@@ -239,3 +239,9 @@ void LifTracePlot::replot()
 
     checkColors();
 }
+
+
+QSize LifTracePlot::sizeHint() const
+{
+    return {400,300};
+}
