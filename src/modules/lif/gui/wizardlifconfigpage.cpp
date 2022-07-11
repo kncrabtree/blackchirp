@@ -194,7 +194,8 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
 }
 
 WizardLifConfigPage::~WizardLifConfigPage()
-= default;
+{
+}
 
 void WizardLifConfigPage::setFromConfig(const LifConfig c)
 {

@@ -55,6 +55,7 @@ public:
     bool d_complete {false};
     LifScanOrder d_order {DelayFirst};
     LifCompleteMode d_completeMode{ContinueAveraging};
+    bool d_disableFlashlamp{true};
 
     double d_delayStartUs {-1.0};
     double d_delayStepUs {0.0};

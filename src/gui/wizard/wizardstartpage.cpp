@@ -3,6 +3,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QFormLayout>
+#include <QGridLayout>
 #include <QCheckBox>
 #include <QSpinBox>
 #include <QGroupBox>
@@ -12,6 +13,11 @@
 #include <QMetaEnum>
 
 #include <gui/wizard/experimentwizard.h>
+
+#ifdef BC_LIF
+#include <hardware/optional/pulsegenerator/pulsegenerator.h>
+#include <modules/lif/hardware/liflaser/liflaser.h>
+#endif
 
 using namespace BC::Key::WizStart;
 
@@ -156,6 +162,147 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     p_lif = new QGroupBox(QString("LIF"),this);
     p_lif->setCheckable(true);
     connect(p_lif,&QGroupBox::toggled,this,&WizardStartPage::completeChanged);
+
+    auto lvbl = new QVBoxLayout;
+    p_lif->setLayout(lvbl);
+
+    auto dlg = new QGroupBox("Delay",this);
+    auto dl = new QGridLayout;
+    dlg->setLayout(dl);
+
+    SettingsStorage pgs(BC::Key::PGen::key,SettingsStorage::Hardware);
+
+    p_dStartBox = new QDoubleSpinBox(this);
+    p_dStartBox->setDecimals(3);
+    p_dStartBox->setKeyboardTracking(false);
+    p_dStartBox->setRange(pgs.get(BC::Key::PGen::minDelay,0.0),pgs.get(BC::Key::PGen::maxDelay,100000.0));
+    p_dStartBox->setSuffix(QString(" ").append(BC::Unit::us));
+    p_dStartBox->setValue(get(lifDelayStart,p_dStartBox->minimum()));
+    registerGetter(lifDelayStart,p_dStartBox,&QDoubleSpinBox::value);
+    dl->addWidget(new QLabel("Start"),0,0,Qt::AlignRight);
+    dl->addWidget(p_dStartBox,0,1);
+
+    auto range = p_dStartBox->maximum() - p_dStartBox->minimum();
+
+    p_dStepBox = new QDoubleSpinBox(this);
+    p_dStepBox->setDecimals(3);
+    p_dStepBox->setKeyboardTracking(false);
+    p_dStepBox->setRange(-range,range);
+    p_dStepBox->setSuffix(QString(" ").append(BC::Unit::us));
+    p_dStepBox->setValue(get(lifDelayStep,0.0));
+    registerGetter(lifDelayStep,p_dStepBox,&QDoubleSpinBox::value);
+    dl->addWidget(new QLabel("Step"),0,2,Qt::AlignRight);
+    dl->addWidget(p_dStepBox,0,3);
+
+    p_dEndBox = new QDoubleSpinBox(this);
+    p_dEndBox->setDecimals(3);
+    p_dEndBox->setRange(pgs.get(BC::Key::PGen::minDelay,0.0),pgs.get(BC::Key::PGen::maxDelay,100000.0));
+    p_dEndBox->setSuffix(QString(" ").append(BC::Unit::us));
+    p_dEndBox->setReadOnly(true);
+    p_dEndBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+    dl->addWidget(new QLabel("End"),1,0,Qt::AlignRight);
+    dl->addWidget(p_dEndBox,1,1);
+
+    p_dNumStepsBox = new QSpinBox(this);
+    p_dNumStepsBox->setMinimum(1);
+    p_dNumStepsBox->setKeyboardTracking(false);
+    p_dNumStepsBox->setValue(get(lifDelayPoints,1));
+    registerGetter(lifDelayPoints,p_dNumStepsBox,&QSpinBox::value);
+    dl->addWidget(new QLabel("Points"),1,2,Qt::AlignRight);
+    dl->addWidget(p_dNumStepsBox,1,3);
+
+    lvbl->addWidget(dlg);
+
+    auto llg = new QGroupBox("Delay",this);
+    auto ll = new QGridLayout;
+    llg->setLayout(ll);
+
+    SettingsStorage lset(BC::Key::LifLaser::key,SettingsStorage::Hardware);
+
+    p_lStartBox = new QDoubleSpinBox(this);
+    p_lStartBox->setDecimals(lset.get(BC::Key::LifLaser::decimals,2));
+    p_lStartBox->setKeyboardTracking(false);
+    p_lStartBox->setRange(lset.get(BC::Key::LifLaser::minPos,250.0),lset.get(BC::Key::LifLaser::maxPos,2000.0));
+    p_lStartBox->setSuffix(QString(" ").append(lset.get(BC::Key::LifLaser::units,QString("nm"))));
+    p_lStartBox->setValue(get(lifLaserStart,p_lStartBox->minimum()));
+    registerGetter(lifLaserStart,p_lStartBox,&QDoubleSpinBox::value);
+    ll->addWidget(new QLabel("Start"),0,0,Qt::AlignRight);
+    ll->addWidget(p_lStartBox,0,1);
+
+    range = p_lStartBox->maximum() - p_lStartBox->minimum();
+
+    p_lStepBox = new QDoubleSpinBox(this);
+    p_lStepBox->setKeyboardTracking(false);
+    p_lStepBox->setDecimals(lset.get(BC::Key::LifLaser::decimals,2));
+    p_lStepBox->setRange(-range,range);
+    p_lStepBox->setSuffix(QString(" ").append(lset.get(BC::Key::LifLaser::units,QString("nm"))));
+    p_lStepBox->setValue(get(lifLaserStep,0.0));
+    registerGetter(lifLaserStep,p_lStepBox,&QDoubleSpinBox::value);
+    ll->addWidget(new QLabel("Step"),0,2,Qt::AlignRight);
+    ll->addWidget(p_lStepBox,0,3);
+
+    p_lEndBox = new QDoubleSpinBox(this);
+    p_lEndBox->setDecimals(3);
+    p_lEndBox->setRange(lset.get(BC::Key::LifLaser::minPos,250.0),lset.get(BC::Key::LifLaser::maxPos,2000.0));
+    p_lEndBox->setSuffix(QString(" ").append(lset.get(BC::Key::LifLaser::units,QString("nm"))));
+    p_lEndBox->setReadOnly(true);
+    p_lEndBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+    ll->addWidget(new QLabel("End"),1,0,Qt::AlignRight);
+    ll->addWidget(p_lEndBox,1,1);
+
+    p_lNumStepsBox = new QSpinBox(this);
+    p_lNumStepsBox->setKeyboardTracking(false);
+    p_lNumStepsBox->setMinimum(1);
+    p_lNumStepsBox->setValue(get(lifDelayPoints,1));
+    registerGetter(lifDelayPoints,p_lNumStepsBox,&QSpinBox::value);
+    ll->addWidget(new QLabel("Points"),1,2,Qt::AlignRight);
+    ll->addWidget(p_lNumStepsBox,1,3);
+
+    lvbl->addWidget(llg);
+
+    updateLifRanges();
+
+    connect(p_dStartBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&WizardStartPage::updateLifRanges);
+    connect(p_dStepBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&WizardStartPage::updateLifRanges);
+    connect(p_dNumStepsBox,qOverload<int>(&QSpinBox::valueChanged),this,&WizardStartPage::updateLifRanges);
+    connect(p_lStartBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&WizardStartPage::updateLifRanges);
+    connect(p_lStepBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&WizardStartPage::updateLifRanges);
+    connect(p_lNumStepsBox,qOverload<int>(&QSpinBox::valueChanged),this,&WizardStartPage::updateLifRanges);
+
+    auto optvbl = new QGroupBox("Options");
+    auto ofl = new QFormLayout;
+    optvbl->setLayout(ofl);
+
+    p_orderBox = new QComboBox(this);
+    auto t2 = QMetaEnum::fromType<LifConfig::LifScanOrder>();
+    num = t2.keyCount();
+    for(int i=0; i<num; ++i)
+        p_orderBox->addItem(QString(t2.key(i)),
+                            static_cast<LifConfig::LifScanOrder>(t2.value(i)));
+    p_orderBox->setCurrentIndex(p_orderBox->findData(get(lifOrder,LifConfig::DelayFirst)));
+    registerGetter(lifOrder,std::function<LifConfig::LifScanOrder()>([=](){
+        return p_orderBox->currentData().value<LifConfig::LifScanOrder>();}
+    ));
+    ofl->addRow(QString("Scan Order"),p_orderBox);
+
+    p_completeModeBox = new QComboBox(this);
+    auto t3 = QMetaEnum::fromType<LifConfig::LifCompleteMode>();
+    num = t3.keyCount();
+    for(int i=0; i<num; i++)
+        p_completeModeBox->addItem(QString(t3.key(i)),static_cast<LifConfig::LifCompleteMode>(t3.value(i)));
+    p_completeModeBox->setCurrentIndex(p_completeModeBox->findData(get(lifCompleteMode,LifConfig::StopWhenComplete)));
+    registerGetter(lifCompleteMode,std::function<LifConfig::LifCompleteMode()>([=](){
+       return p_completeModeBox->currentData().value<LifConfig::LifCompleteMode>();
+    }));
+    ofl->addRow("Complete Mode",p_completeModeBox);
+    p_completeModeBox->setEnabled(p_ftmw->isChecked());
+
+    p_flBox = new QCheckBox(this);
+    p_flBox->setChecked(get(lifFlashlampDisable,true));
+    ofl->addRow("Auto Disable Flashlamp",p_flBox);
+
+    lvbl->addWidget(optvbl);
+    lvbl->addSpacerItem(new QSpacerItem(1,1));
 #endif
 
     auto *hbl = new QHBoxLayout();
@@ -204,6 +351,8 @@ bool WizardStartPage::isComplete() const
     bool out = p_ftmw->isChecked();
 #ifdef BC_LIF
     out = out || p_lif->isChecked();
+
+    p_completeModeBox->setEnabled(p_ftmw->isChecked());
 #endif
 
     return out;
@@ -291,7 +440,21 @@ bool WizardStartPage::validatePage()
 
 #ifdef BC_LIF
      if(p_lif->isChecked())
+     {
          e->enableLif();
+
+         e->lifConfig()->d_delayStartUs = p_dStartBox->value();
+         e->lifConfig()->d_delayStepUs = p_dStepBox->value();
+         e->lifConfig()->d_delayPoints = p_dNumStepsBox->value();
+
+         e->lifConfig()->d_laserPosStart = p_lStartBox->value();
+         e->lifConfig()->d_laserPosStep = p_lStepBox->value();
+         e->lifConfig()->d_laserPosPoints = p_lNumStepsBox->value();
+
+         e->lifConfig()->d_completeMode = p_completeModeBox->currentData().value<LifConfig::LifCompleteMode>();
+         e->lifConfig()->d_order = p_orderBox->currentData().value<LifConfig::LifScanOrder>();
+         e->lifConfig()->d_disableFlashlamp = p_flBox->isChecked();
+     }
      else
          e->disableLif();
 #endif
@@ -332,6 +495,41 @@ void WizardStartPage::configureUI()
     p_chirpOffsetBox->setEnabled(p_phaseCorrectionBox->isChecked() || p_chirpScoringBox->isChecked());
     p_thresholdBox->setEnabled(p_chirpScoringBox->isChecked());
 }
+
+#ifdef BC_LIF
+void WizardStartPage::updateLifRanges()
+{
+    auto maxdSteps = 1;
+    if(p_dStepBox->value() < -1e-14)
+        maxdSteps = static_cast<int>(floor((p_dEndBox->minimum() - p_dStartBox->value())/p_dStepBox->value()))+1;
+    else if(p_dStepBox->value() > 1e-14)
+        maxdSteps = static_cast<int>(floor((p_dEndBox->maximum() - p_dStartBox->value())/p_dStepBox->value()))+1;
+    else
+        maxdSteps = 1;
+    p_dNumStepsBox->blockSignals(true);
+    p_dNumStepsBox->setMaximum(qMax(1,maxdSteps));
+    p_dNumStepsBox->blockSignals(false);
+
+    auto dEnd = p_dStartBox->value() + (p_dNumStepsBox->value()-1)*p_dStepBox->value();
+    p_dEndBox->setValue(dEnd);
+
+    auto maxlSteps = 1;
+    if(p_lStepBox->value() < -1e-14)
+        maxlSteps = static_cast<int>(floor((p_lEndBox->minimum() - p_lStartBox->value())/p_lStepBox->value()))+1;
+    else if(p_lStepBox->value() > 1e-14)
+        maxlSteps = static_cast<int>(floor((p_lEndBox->maximum() - p_lStartBox->value())/p_lStepBox->value()))+1;
+    else
+        maxlSteps = 1;
+    p_lNumStepsBox->blockSignals(true);
+    p_lNumStepsBox->setMaximum(qMax(1,maxlSteps));
+    p_lNumStepsBox->blockSignals(false);
+
+    auto lEnd = p_lStartBox->value() + (p_lNumStepsBox->value()-1)*p_lStepBox->value();
+    p_lEndBox->setValue(lEnd);
+
+}
+
+#endif
 
 void WizardStartPage::updateLabel()
 {

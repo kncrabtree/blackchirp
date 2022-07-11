@@ -22,6 +22,18 @@ static const QString ftmwThresh{"FtmwChirpScoringThreshold"};
 static const QString ftmwOffset{"FtmwChirpOffset"};
 static const QString auxInterval{"AuxDataInterval"};
 static const QString backup{"BackupInterval"};
+#ifdef BC_LIF
+static const QString lif{"LifEnabled"};
+static const QString lifDelayStart{"LifDelayStart"};
+static const QString lifDelayStep{"LifDelayStep"};
+static const QString lifDelayPoints{"LifDelayPoints"};
+static const QString lifLaserStart{"LifLaserStart"};
+static const QString lifLaserStep{"LifLaserStep"};
+static const QString lifLaserPoints{"LifLaserPoints"};
+static const QString lifOrder{"LifOrder"};
+static const QString lifCompleteMode{"LifCompleteMode"};
+static const QString lifFlashlampDisable{"LifFlashlampDisable"};
+#endif
 }
 
 class WizardStartPage : public ExperimentWizardPage
@@ -44,6 +56,12 @@ private:
     QGroupBox *p_ftmw;
 #ifdef BC_LIF
     QGroupBox *p_lif;
+    QDoubleSpinBox *p_dStartBox, *p_dStepBox, *p_dEndBox, *p_lStartBox, *p_lStepBox, *p_lEndBox;
+    QSpinBox *p_dNumStepsBox, *p_lNumStepsBox;
+    QComboBox *p_orderBox, *p_completeModeBox;
+    QCheckBox *p_flBox;
+
+    void updateLifRanges();
 #endif
 
     QSpinBox *p_auxDataIntervalBox, *p_backupBox, *p_ftmwShotsBox, *p_ftmwTargetDurationBox;
