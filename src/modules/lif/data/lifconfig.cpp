@@ -47,12 +47,12 @@ int LifConfig::completedShots() const
 
 QPair<int, int> LifConfig::lifGate() const
 {
-    return qMakePair(d_lifGateStartPoint,d_lifGateEndPoint);
+    return {d_procSettings.lifGateStart,d_procSettings.lifGateEnd};
 }
 
 QPair<int, int> LifConfig::refGate() const
 {
-    return qMakePair(d_refGateStartPoint,d_refGateEndPoint);
+    return {d_procSettings.refGateStart,d_procSettings.refGateEnd};
 }
 
 void LifConfig::addWaveform(const QByteArray d)
@@ -82,10 +82,6 @@ void LifConfig::storeValues()
     store(lStep,d_laserPosStep);
     store(lPoints,d_delayPoints);
     store(shotsPerPoint,d_shotsPerPoint);
-    store(lifGateStart,d_lifGateStartPoint);
-    store(lifGateEnd,d_lifGateEndPoint);
-    store(refGateStart,d_refGateStartPoint);
-    store(refGateEnd,d_refGateEndPoint);
 
 }
 
@@ -101,10 +97,7 @@ void LifConfig::retrieveValues()
     d_laserPosStep = retrieve(lStep,0.0);
     d_laserPosPoints = retrieve(lPoints,0);
     d_shotsPerPoint = retrieve(shotsPerPoint,0);
-    d_lifGateStartPoint = retrieve(lifGateStart,-1);
-    d_lifGateEndPoint = retrieve(lifGateEnd,-1);
-    d_refGateStartPoint = retrieve(refGateStart,-1);
-    d_refGateEndPoint = retrieve(refGateEnd,-1);
+
 }
 
 void LifConfig::prepareChildren()

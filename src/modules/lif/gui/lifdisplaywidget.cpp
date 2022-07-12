@@ -2,18 +2,20 @@
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QGroupBox>
 
 #include <data/storage/settingsstorage.h>
 #include <modules/lif/gui/lifsliceplot.h>
 #include <modules/lif/gui/liftraceplot.h>
 #include <modules/lif/gui/lifspectrogramplot.h>
+#include <modules/lif/gui/lifprocessingwidget.h>
 #include <modules/lif/hardware/liflaser/liflaser.h>
 #include <math.h>
 
 #include <qwt6/qwt_matrix_raster_data.h>
 
 LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
-    QWidget(parent), d_delayReverse(false), d_freqReverse(false), d_currentSpectrumDelayIndex(-1), d_currentTimeTraceFreqIndex(-1)
+    QWidget(parent)
 {
 
     SettingsStorage s(BC::Key::LifLaser::key,SettingsStorage::Hardware);
@@ -22,19 +24,20 @@ LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
     p_freqSlicePlot->setPlotAxisTitle(QwtPlot::xBottom,
                                       QString("Laser Position (%1)")
                                       .arg(s.get<QString>(BC::Key::LifLaser::units,"nm")));
-    p_freqSlicePlot->setPlotTitle(QString("Laser Slice"));
 
     p_timeSlicePlot = new LifSlicePlot(BC::Key::lifTimePlot,this);
     p_timeSlicePlot->setPlotAxisTitle(QwtPlot::xBottom,QString::fromUtf16(u"Delay (µs)"));
-    p_timeSlicePlot->setPlotTitle(QString("Time Slice"));
 
     p_lifTracePlot = new LifTracePlot(this);
-    p_lifTracePlot->setPlotTitle(QString("Time Trace"));
-
     p_spectrogramPlot = new LifSpectrogramPlot(this);
+    p_procWidget = new LifProcessingWidget(false,this);
+    p_procWidget->setEnabled(false);
 
-    connect(p_lifTracePlot,&LifTracePlot::lifGateUpdated,this,&LifDisplayWidget::lifZoneUpdate);
-    connect(p_lifTracePlot,&LifTracePlot::refGateUpdated,this,&LifDisplayWidget::refZoneUpdate);
+    auto pgb = new QGroupBox("Processing",this);
+    auto pvbl = new QVBoxLayout;
+    pgb->setLayout(pvbl);
+    pvbl->addWidget(p_procWidget);
+
     connect(p_spectrogramPlot,&LifSpectrogramPlot::freqSlice,this,&LifDisplayWidget::freqSlice);
     connect(p_spectrogramPlot,&LifSpectrogramPlot::delaySlice,this,&LifDisplayWidget::delaySlice);
 
@@ -43,9 +46,12 @@ LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
     hbl->addWidget(p_timeSlicePlot,1);
     hbl->addWidget(p_freqSlicePlot,1);
 
+    auto hbl2 = new QHBoxLayout;
+    hbl2->addWidget(pgb);
+    hbl2->addWidget(p_spectrogramPlot,1);
     auto vbl = new QVBoxLayout;
     vbl->addLayout(hbl,2);
-    vbl->addWidget(p_spectrogramPlot,3);
+    vbl->addLayout(hbl2,3);
 
     setLayout(vbl);
 
@@ -55,51 +61,43 @@ LifDisplayWidget::~LifDisplayWidget()
 {
 }
 
-void LifDisplayWidget::checkLifColors()
-{
-    p_lifTracePlot->checkColors();
-}
-
-void LifDisplayWidget::resetLifPlot()
-{
-    p_lifTracePlot->reset();
-}
-
 void LifDisplayWidget::prepareForExperiment(const Experiment &e)
 {
     p_lifTracePlot->clearPlot();
-
-    p_freqSlicePlot->setPlotTitle(QString("Laser Slice"));
-    p_timeSlicePlot->setPlotTitle(QString("Time Slice"));
-
-
     p_timeSlicePlot->prepareForExperiment();
     p_freqSlicePlot->prepareForExperiment();
+    p_spectrogramPlot->clear();
+    p_procWidget->setEnabled(false);
 
     if(e.lifEnabled())
     {
-        d_currentTimeTraceFreqIndex = -1;
-        d_currentSpectrumDelayIndex = -1;
+        ps_lifStorage = e.lifConfig()->storage();
+        p_spectrogramPlot->prepareForExperiment(*e.lifConfig());
+        p_procWidget->setAll(e.lifConfig()->d_procSettings);
+        p_lifTracePlot->setNumAverages(e.lifConfig()->d_shotsPerPoint);
+        d_delayReverse = e.lifConfig()->d_delayStepUs < 0.0;
+        d_laserReverse = e.lifConfig()->d_laserPosStep < 0.0;
     }
     else
     {
-        d_currentTimeTraceFreqIndex = 0;
-        d_currentSpectrumDelayIndex = 0;
+        ps_lifStorage.reset();
+        d_delayReverse = false;
+        d_laserReverse = false;
     }
+}
 
-//    p_spectrogramPlot->prepareForExperiment(c);
-//    d_currentLifConfig = c;
+void LifDisplayWidget::experimentComplete()
+{
+    p_procWidget->experimentComplete();
 }
 
 void LifDisplayWidget::updatePoint()
 {
-    //don't overwrite integration ranges if user has changed them
-//    auto lr = d_currentLifConfig.lifGate();
-//    auto rr = d_currentLifConfig.refGate();
-//    d_currentLifConfig = c;
-//    d_currentLifConfig.setLifGate(lr);
-//    if(d_currentLifConfig.scopeConfig().refEnabled)
-//        d_currentLifConfig.setRefGate(rr);
+    //1. Get current trace from storage
+    //2. Reverse indices if needed.
+    //3. Integrate and store integral in matrix
+    //4. Update spectrogram and spectrogram indices
+    //5. Update plots if spectrogram index matches appropriate current trace index
 
 //    auto zRange = integrate(d_currentLifConfig);
 //    p_spectrogramPlot->updateData(d_currentIntegratedData,d_currentLifConfig.numLaserPoints(),zRange.first,zRange.second);
@@ -130,19 +128,6 @@ void LifDisplayWidget::delaySlice(int freqIndex)
 
     updateTimeTrace();
     updateLifTrace();
-}
-
-void LifDisplayWidget::lifZoneUpdate(int min, int max)
-{
-//    d_currentLifConfig.setLifGate(min,max);
-//    updatePoint(d_currentLifConfig);
-
-}
-
-void LifDisplayWidget::refZoneUpdate(int min, int max)
-{
-//    d_currentLifConfig.setRefGate(min,max);
-//    updatePoint(d_currentLifConfig);
 }
 
 void LifDisplayWidget::updateSpectrum()

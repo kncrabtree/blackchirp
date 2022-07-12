@@ -157,6 +157,21 @@ void LifControlWidget::setFlashlamp(bool en)
     p_laserWidget->setFlashlamp(en);
 }
 
+void LifControlWidget::setFromConfig(const LifConfig &cfg)
+{
+    d_cfg = cfg.d_scopeConfig;
+    p_digWidget->setFromConfig(cfg.d_scopeConfig);
+    p_avgBox->setValue(cfg.d_shotsPerPoint);
+    p_procWidget->setAll(cfg.d_procSettings);
+}
+
+void LifControlWidget::toConfig(LifConfig &cfg)
+{
+    p_digWidget->toConfig(cfg.d_scopeConfig);
+    cfg.d_shotsPerPoint = p_avgBox->value();
+    cfg.d_procSettings = p_procWidget->getSettings();
+}
+
 
 QSize LifControlWidget::sizeHint() const
 {

@@ -54,5 +54,10 @@ bool LifLaser::readFlashLamp()
 bool LifLaser::setFlashLamp(bool en)
 {
     if(setFl(en))
+    {
         readFlashLamp();
+        return true;
+    }
+
+    return false;
 }

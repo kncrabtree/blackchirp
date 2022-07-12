@@ -336,7 +336,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
 #ifdef BC_LIF
     connect(ui->actionLifConfig,&QAction::triggered,this,&MainWindow::launchLifConfigDialog);
-    connect(p_hwm,&HardwareManager::lifSettingsComplete,ui->lifDisplayWidget,&LifDisplayWidget::resetLifPlot);
     connect(p_hwm,&HardwareManager::lifSettingsComplete,p_am,&AcquisitionManager::lifHardwareReady);
     connect(p_hwm,&HardwareManager::lifScopeShotAcquired,p_am,&AcquisitionManager::processLifScopeShot);
     connect(p_am,&AcquisitionManager::nextLifPoint,p_hwm,&HardwareManager::setLifParameters);
@@ -499,13 +498,7 @@ bool MainWindow::runExperimentWizard(Experiment *exp, QuickExptDialog *qed)
     }
 
 #ifdef BC_LIF
-//    connect(p_hwm,&HardwareManager::lifScopeShotAcquired,&wiz,&ExperimentWizard::newTrace);
-//    connect(p_hwm,&HardwareManager::lifScopeConfigUpdated,&wiz,&ExperimentWizard::scopeConfigChanged);
-    connect(p_hwm,&HardwareManager::lifLaserPosUpdate,&wiz,&ExperimentWizard::setCurrentLaserPos);
-//    connect(&wiz,&ExperimentWizard::updateScope,p_hwm,&HardwareManager::setLifScopeConfig);
-//    connect(&wiz,&ExperimentWizard::lifColorChanged,p_lifDisplayWidget,&LifDisplayWidget::checkLifColors);
-    connect(&wiz,&ExperimentWizard::laserPosUpdate,p_hwm,&HardwareManager::setLifLaserPos);
-//    wiz.setCurrentLaserPos(p_lifControlWidget->laserPos());
+    configureLifWidget(wiz.lifControlWidget());
 #endif
 
     if(wiz.exec() != QDialog::Accepted)
@@ -760,8 +753,6 @@ void MainWindow::launchLifConfigDialog()
 
 void MainWindow::configureLifWidget(LifControlWidget *w)
 {
-    //TODO: Get current laser position
-
     connect(w,&LifControlWidget::startSignal,p_hwm,&HardwareManager::startLifConfigAcq);
     connect(p_hwm,&HardwareManager::lifConfigAcqStarted,w,&LifControlWidget::acquisitionStarted);
     connect(w,&LifControlWidget::stopSignal,p_hwm,&HardwareManager::stopLifConfigAcq);
@@ -773,7 +764,6 @@ void MainWindow::configureLifWidget(LifControlWidget *w)
 
     QMetaObject::invokeMethod(p_hwm,&HardwareManager::lifLaserPos,Qt::BlockingQueuedConnection);
     QMetaObject::invokeMethod(p_hwm,&HardwareManager::lifLaserFlashlampEnabled,Qt::BlockingQueuedConnection);
-
 
 }
 #endif
@@ -1074,6 +1064,10 @@ void MainWindow::startBatch(BatchManager *bm)
     connect(bm,&BatchManager::batchComplete,this,&MainWindow::batchComplete);
     connect(bm,&BatchManager::batchComplete,this,&MainWindow::checkSleep);
     connect(bm,&BatchManager::batchComplete,p_lh,&LogHandler::endExperimentLog);
+
+#ifdef BC_LIF
+    connect(p_am,&AcquisitionManager::experimentComplete,ui->lifDisplayWidget,&LifDisplayWidget::experimentComplete);
+#endif
 
     connect(p_am,&AcquisitionManager::auxData,ui->auxDataViewWidget,&AuxDataViewWidget::pointUpdated,Qt::UniqueConnection);
     connect(p_hwm,&HardwareManager::abortAcquisition,p_am,&AcquisitionManager::abort,Qt::UniqueConnection);

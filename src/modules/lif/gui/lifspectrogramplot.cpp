@@ -80,66 +80,66 @@ LifSpectrogramPlot::~LifSpectrogramPlot()
 
 }
 
-void LifSpectrogramPlot::prepareForExperiment(const LifConfig c)
+void LifSpectrogramPlot::clear()
 {
-//    d_enabled =
-//    if(p_spectrogramData != nullptr)
-//    {
-//        p_spectrogram->setData(nullptr);
-//        p_spectrogramData = nullptr;
-//    }
+    if(p_spectrogramData != nullptr)
+    {
+        p_spectrogram->setData(nullptr);
+        p_spectrogramData = nullptr;
+    }
 
-//    d_delayDragging = false;
-//    d_freqDragging = false;
-//    d_grabDelay = false;
-//    d_grabFreq = false;
+    d_enabled = false;
+    d_live = true;
+    d_delayDragging = false;
+    d_freqDragging = false;
+    d_grabDelay = false;
+    d_grabFreq = false;
 
-//    if(c.isEnabled())
-//    {
-//        QVector<double> specDat;
-//        specDat.resize(c.numDelayPoints()*c.numLaserPoints());
-//        p_spectrogramData = new QwtMatrixRasterData;
-//        p_spectrogramData->setValueMatrix(specDat,c.numLaserPoints());
-
-//        QPair<double,double> delayRange = c.delayRange();
-//        QPair<double,double> freqRange = c.laserRange();
-
-
-//        double dMin = qMin(delayRange.first,delayRange.second) - c.delayStep()/2.0;
-//        double dMax = qMax(delayRange.first,delayRange.second) + c.delayStep()/2.0;
-//        double fMin = qMin(freqRange.first,freqRange.second) - c.laserStep()/2.0;
-//        double fMax = qMax(freqRange.first,freqRange.second) + c.laserStep()/2.0;
-
-//        p_spectrogramData->setInterval(Qt::YAxis,QwtInterval(dMin,dMax));
-//        p_spectrogramData->setInterval(Qt::XAxis,QwtInterval(fMin,fMax));
-//        p_spectrogramData->setInterval(Qt::ZAxis,QwtInterval(0.0,1.0));
-//        p_spectrogramData->setResampleMode(QwtMatrixRasterData::BilinearInterpolation);
-
-//        if(c.numDelayPoints() > 1)
-//        {
-//            p_delayMarker->setYValue(delayRange.first);
-//            p_delayMarker->setVisible(true);
-//        }
-
-//        if(c.numLaserPoints() > 1)
-//        {
-//            p_freqMarker->setVisible(true);
-//            p_freqMarker->setXValue(freqRange.first);
-//        }
-
-//        p_spectrogram->setData(p_spectrogramData);
-//        p_spectrogram->attach(this);
-
-//    }
-//    else
-//    {
-//        p_delayMarker->setVisible(false);
-//        p_freqMarker->setVisible(false);
-//    }
-
+    p_delayMarker->setVisible(false);
+    p_freqMarker->setVisible(false);
 
     autoScale();
+}
 
+void LifSpectrogramPlot::prepareForExperiment(const LifConfig &c)
+{
+
+    QVector<double> specDat;
+    specDat.resize(c.d_delayPoints*c.d_laserPosPoints);
+    p_spectrogramData = new QwtMatrixRasterData;
+    p_spectrogramData->setValueMatrix(specDat,c.d_laserPosPoints);
+
+    auto delayRange = c.delayRange();
+    auto freqRange = c.laserRange();
+
+
+    double dMin = qMin(delayRange.first,delayRange.second) - qAbs(c.d_delayStepUs)/2.0;
+    double dMax = qMax(delayRange.first,delayRange.second) + qAbs(c.d_delayStepUs)/2.0;
+    double fMin = qMin(freqRange.first,freqRange.second) - qAbs(c.d_laserPosStep)/2.0;
+    double fMax = qMax(freqRange.first,freqRange.second) + qAbs(c.d_laserPosStep)/2.0;
+
+    p_spectrogramData->setInterval(Qt::YAxis,QwtInterval(dMin,dMax));
+    p_spectrogramData->setInterval(Qt::XAxis,QwtInterval(fMin,fMax));
+    p_spectrogramData->setInterval(Qt::ZAxis,QwtInterval(0.0,1.0));
+    p_spectrogramData->setResampleMode(QwtMatrixRasterData::BilinearInterpolation);
+
+    if(c.d_delayPoints > 1)
+    {
+        p_delayMarker->setYValue(delayRange.first);
+        p_delayMarker->setVisible(true);
+    }
+
+    if(c.d_laserPosPoints > 1)
+    {
+        p_freqMarker->setVisible(true);
+        p_freqMarker->setXValue(freqRange.first);
+    }
+
+    p_spectrogram->setData(p_spectrogramData);
+    p_spectrogram->attach(this);
+    d_live = true;
+
+    autoScale();
 }
 
 void LifSpectrogramPlot::updateData(const QVector<double> d, int numCols, double zMin, double zMax)

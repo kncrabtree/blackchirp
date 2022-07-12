@@ -38,6 +38,9 @@ public:
     void setLaserPosition(const double d);
     void setFlashlamp(bool en);
 
+    void setFromConfig(const LifConfig &cfg);
+    void toConfig(LifConfig &cfg);
+
 signals:
     void startSignal(LifDigitizerConfig);
     void stopSignal();

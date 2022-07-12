@@ -67,14 +67,8 @@ ExperimentWizard::ExperimentWizard(Experiment *exp, const std::map<QString, QStr
 
 
 #ifdef BC_LIF
-    auto lifConfigPage = new WizardLifConfigPage(this);
-    p_lifConfigPage = lifConfigPage;
-    connect(this,&ExperimentWizard::newTrace,lifConfigPage,&WizardLifConfigPage::newTrace);
-//    connect(this,&ExperimentWizard::scopeConfigChanged,lifConfigPage,&WizardLifConfigPage::scopeConfigChanged);
-//    connect(lifConfigPage,&WizardLifConfigPage::updateScope,this,&ExperimentWizard::updateScope);
-    connect(lifConfigPage,&WizardLifConfigPage::lifColorChanged,this,&ExperimentWizard::lifColorChanged);
-    connect(lifConfigPage,&WizardLifConfigPage::laserPosUpdate,this,&ExperimentWizard::laserPosUpdate);
-    setPage(LifConfigPage,lifConfigPage);
+    p_lifConfigPage = new WizardLifConfigPage(this);
+    setPage(LifConfigPage,p_lifConfigPage);
 #endif
 
     setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
@@ -100,19 +94,17 @@ ExperimentWizard::Page ExperimentWizard::nextOptionalPage()
     return ValidationPage;
 }
 
+#ifdef BC_LIF
+LifControlWidget *ExperimentWizard::lifControlWidget()
+{
+    return p_lifConfigPage->controlWidget();
+}
+#endif
+
 QSize ExperimentWizard::sizeHint() const
 {
     return {1000,700};
 }
-
-#ifdef BC_LIF
-void ExperimentWizard::setCurrentLaserPos(double pos)
-{
-    dynamic_cast<WizardLifConfigPage*>(p_lifConfigPage)->setLaserPos(pos);
-}
-#endif
-
-
 
 
 void ExperimentWizard::reject()

@@ -154,6 +154,8 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     sgb->setLayout(fl2);
 
 
+    auto *hbl = new QHBoxLayout();
+    hbl->addWidget(p_ftmw);
 
 #ifndef BC_LIF
     p_ftmw->setChecked(true);
@@ -161,6 +163,7 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
 #else
     p_lif = new QGroupBox(QString("LIF"),this);
     p_lif->setCheckable(true);
+    registerGetter(lif,p_lif,&QGroupBox::isChecked);
     connect(p_lif,&QGroupBox::toggled,this,&WizardStartPage::completeChanged);
 
     auto lvbl = new QVBoxLayout;
@@ -260,15 +263,6 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
 
     lvbl->addWidget(llg);
 
-    updateLifRanges();
-
-    connect(p_dStartBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&WizardStartPage::updateLifRanges);
-    connect(p_dStepBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&WizardStartPage::updateLifRanges);
-    connect(p_dNumStepsBox,qOverload<int>(&QSpinBox::valueChanged),this,&WizardStartPage::updateLifRanges);
-    connect(p_lStartBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&WizardStartPage::updateLifRanges);
-    connect(p_lStepBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&WizardStartPage::updateLifRanges);
-    connect(p_lNumStepsBox,qOverload<int>(&QSpinBox::valueChanged),this,&WizardStartPage::updateLifRanges);
-
     auto optvbl = new QGroupBox("Options");
     auto ofl = new QFormLayout;
     optvbl->setLayout(ofl);
@@ -303,11 +297,17 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
 
     lvbl->addWidget(optvbl);
     lvbl->addSpacerItem(new QSpacerItem(1,1));
-#endif
 
-    auto *hbl = new QHBoxLayout();
-    hbl->addWidget(p_ftmw);
-#ifdef BC_LIF
+
+    updateLifRanges();
+
+    connect(p_dStartBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&WizardStartPage::updateLifRanges);
+    connect(p_dStepBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&WizardStartPage::updateLifRanges);
+    connect(p_dNumStepsBox,qOverload<int>(&QSpinBox::valueChanged),this,&WizardStartPage::updateLifRanges);
+    connect(p_lStartBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&WizardStartPage::updateLifRanges);
+    connect(p_lStepBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&WizardStartPage::updateLifRanges);
+    connect(p_lNumStepsBox,qOverload<int>(&QSpinBox::valueChanged),this,&WizardStartPage::updateLifRanges);
+
     hbl->addWidget(p_lif);
 #endif
 
@@ -526,6 +526,9 @@ void WizardStartPage::updateLifRanges()
 
     auto lEnd = p_lStartBox->value() + (p_lNumStepsBox->value()-1)*p_lStepBox->value();
     p_lEndBox->setValue(lEnd);
+
+    p_orderBox->setDisabled(p_lNumStepsBox->value() == 1 || p_dNumStepsBox->value() == 1);
+
 
 }
 

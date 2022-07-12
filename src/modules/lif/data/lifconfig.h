@@ -65,10 +65,7 @@ public:
     double d_laserPosStep {0.0};
     int d_laserPosPoints {0};
 
-    int d_lifGateStartPoint {-1};
-    int d_lifGateEndPoint {-1};
-    int d_refGateStartPoint {-1};
-    int d_refGateEndPoint {-1};
+    LifTrace::LifProcSettings d_procSettings;
 
     int d_shotsPerPoint {0};
 
@@ -83,6 +80,7 @@ public:
     int completedShots() const;
     QPair<int,int> lifGate() const;
     QPair<int,int> refGate() const;
+    std::shared_ptr<LifStorage> storage() { return ps_storage; }
 
     void addWaveform(const QByteArray d);
     void loadLifData();

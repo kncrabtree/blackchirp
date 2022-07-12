@@ -8,6 +8,8 @@
 
 class BatchManager;
 class ExperimentWizardPage;
+class WizardLifConfigPage;
+class LifControlWidget;
 
 class ExperimentWizard : public QWizard
 {
@@ -42,18 +44,11 @@ private:
     QVector<Page> d_optionalPages;
 
 #ifdef BC_LIF
-public slots:
-    void setCurrentLaserPos(double pos);
-
-signals:
-    void newTrace(LifTrace);
-//    void updateScope(Blackchirp::LifScopeConfig);
-//    void scopeConfigChanged(Blackchirp::LifScopeConfig);
-    void lifColorChanged();
-    void laserPosUpdate(double);
+public:
+    LifControlWidget *lifControlWidget();
 
 private:
-    ExperimentWizardPage *p_lifConfigPage;
+    WizardLifConfigPage *p_lifConfigPage;
 #endif
 
 

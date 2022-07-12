@@ -166,3 +166,9 @@ LifTrace::LifProcSettings LifProcessingWidget::getSettings() const
                 p_sgPolyBox->value()
     };
 }
+
+void LifProcessingWidget::experimentComplete()
+{
+    setEnabled(true);
+    p_reprocessButton->setEnabled(true);
+}

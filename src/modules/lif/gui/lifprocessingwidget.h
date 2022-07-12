@@ -33,6 +33,8 @@ public:
     void setAll(const LifTrace::LifProcSettings &lc);
     LifTrace::LifProcSettings getSettings() const;
 
+    void experimentComplete();
+
 signals:
     void settingChanged();
 

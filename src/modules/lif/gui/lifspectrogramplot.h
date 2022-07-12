@@ -21,7 +21,8 @@ public:
     LifSpectrogramPlot(QWidget *parent = nullptr);
     ~LifSpectrogramPlot();
 
-    void prepareForExperiment(const LifConfig c);
+    void clear();
+    void prepareForExperiment(const LifConfig &c);
     void updateData(const QVector<double> d, int numCols, double zMin, double zMax);
 
     void setZMax(double d);
@@ -40,7 +41,7 @@ private:
     QwtMatrixRasterData *p_spectrogramData;
     QwtPlotSpectrogram *p_spectrogram;
     QwtPlotMarker *p_delayMarker, *p_freqMarker;
-    bool d_enabled;
+    bool d_enabled, d_live{true};
     bool d_delayDragging, d_freqDragging, d_grabDelay, d_grabFreq;
 
 
