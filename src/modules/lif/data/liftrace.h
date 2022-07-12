@@ -15,6 +15,7 @@ class LifTrace
 public:
     LifTrace();
     explicit LifTrace(const LifDigitizerConfig &c, const QByteArray b, int dIndex, int lIndex);
+    explicit LifTrace(int di, int li, QVector<qint64> ld, QVector<qint64> rd, int shots, double xsp, double lym, double rym);
     LifTrace(const LifTrace &other);
     LifTrace &operator=(const LifTrace &other);
     ~LifTrace() = default;
@@ -43,6 +44,8 @@ public:
     bool hasRefData() const;
     double xSpacing() const;
     double xSpacingns() const;
+    double lifYMult() const;
+    double refYMult() const;
 
 
     void add(const LifTrace &other);

@@ -46,6 +46,11 @@ static const QString buildver{"BCBuildVersion"};
 static const QString fidparams{"fidparams.csv"};
 static const QString fidDir{"fid"};
 
+#ifdef BC_LIF
+static const QString lifparams{"lifparams.csv"};
+static const QString lifDir{"lif"};
+#endif
+
 }
 
 /*!

@@ -79,11 +79,10 @@ void AcquisitionManager::processLifScopeShot(const QByteArray b)
     {
         //process trace; only send data to UI if point is complete
         ps_currentExperiment->lifConfig()->addWaveform(b);
+        emit lifPointUpdate();
         if(ps_currentExperiment->lifConfig()->advance())
-        {
-            ///TODO: need to send signal to HW here
-            emit lifPointUpdate();
-        }
+            emit nextLifPoint(ps_currentExperiment->lifConfig()->currentDelay(),
+                              ps_currentExperiment->lifConfig()->currentLaserPos());
 
         emit lifShotAcquired(ps_currentExperiment->lifConfig()->perMilComplete());
 

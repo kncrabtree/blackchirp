@@ -1,26 +1,105 @@
 #include "lifstorage.h"
 
+#include <data/storage/blackchirpcsv.h>
+
 #include <QMutexLocker>
+#include <QSaveFile>
 
 LifStorage::LifStorage(int dp, int lp, int num, QString path)
     : d_delayPoints{dp}, d_laserPoints{lp}, d_number{num}, d_path{path}
 {
+    pu_csv = std::make_unique<BlackchirpCSV>(num,path);
+}
 
+LifStorage::~LifStorage()
+{
 }
 
 void LifStorage::advance()
 {
-    save();
 
     QMutexLocker l(pu_mutex.get());
-    d_lastIndex = index(d_currentTrace.delayIndex(),d_currentTrace.laserIndex());
-    d_data.emplace(d_lastIndex,d_currentTrace);
-    d_currentTrace = LifTrace();
+    auto i = index(d_currentTrace.delayIndex(),d_currentTrace.laserIndex());
+    d_data.emplace(i,d_currentTrace);
+    d_nextNew = true;
 
+    l.unlock();
+    save();
 }
 
 void LifStorage::save()
 {
+    //first, write current trace file
+    QMutexLocker l(pu_mutex.get());
+    auto i = index(d_currentTrace.delayIndex(),d_currentTrace.laserIndex());
+
+    QDir d{BlackchirpCSV::exptDir(d_number,d_path)};
+    if(!d.cd(BC::CSV::lifDir))
+    {
+        if(!d.mkdir(BC::CSV::lifDir))
+            return;
+        if(!d.cd(BC::CSV::lifDir))
+            return;
+    }
+
+    QSaveFile dat(d.absoluteFilePath("%1.csv").arg(i));
+    if(!dat.open(QIODevice::WriteOnly|QIODevice::Text))
+        return;
+
+    QTextStream t(&dat);
+
+    if(d_currentTrace.hasRefData())
+    {
+        t << "lif" << BC::CSV::sep << "ref" << BC::CSV::nl;
+
+        auto lr = d_currentTrace.lifRaw();
+        auto rr = d_currentTrace.refRaw();
+
+        for(int i=0; i<d_currentTrace.size(); i++)
+        {
+            t << BlackchirpCSV::formatInt64(lr.at(i))
+              << BC::CSV::sep
+              << BlackchirpCSV::formatInt64(rr.at(i))
+              << BC::CSV::nl;
+        }
+    }
+    else
+    {
+        t << "lif" << BC::CSV::nl;
+
+        auto lr = d_currentTrace.lifRaw();
+        for(int i=0; i<d_currentTrace.size(); i++)
+        {
+            t << BlackchirpCSV::formatInt64(lr.at(i))
+              << BC::CSV::nl;
+        }
+    }
+
+    l.unlock();
+
+    if(!dat.commit())
+        return;
+
+    QSaveFile hdr(d.absoluteFilePath(BC::CSV::lifparams));
+    if(!dat.open(QIODevice::WriteOnly|QIODevice::Text))
+        return;
+
+    QTextStream txt(&hdr);
+
+    BlackchirpCSV::writeLine(txt,{"lIndex","dIndex","shots","lifsize","refsize","spacing","lifymult","refymult"});
+
+    l.relock();
+    for(auto it = d_data.cbegin(); it != d_data.cend(); ++it)
+    {
+        auto &t = it->second;
+        if(t.hasRefData())
+            BlackchirpCSV::writeLine(txt,{t.laserIndex(),t.delayIndex(),t.shots(),t.size(),t.size(),t.xSpacing(),t.lifYMult(),t.refYMult()});
+        else
+            BlackchirpCSV::writeLine(txt,{t.laserIndex(),t.delayIndex(),t.shots(),t.size(),0,t.xSpacing(),t.lifYMult(),0});
+    }
+    l.unlock();
+
+    hdr.commit();
 
 }
 
@@ -28,6 +107,7 @@ void LifStorage::start()
 {
     QMutexLocker l(pu_mutex.get());
     d_acquiring = true;
+    d_nextNew = true;
 }
 
 void LifStorage::finish()
@@ -60,23 +140,97 @@ LifTrace LifStorage::getLifTrace(int di, int li)
     auto i = index(di,li);
 
     QMutexLocker l(pu_mutex.get());
-    auto it = d_data.find(i);
-    if(it != d_data.end())
-        return it->second;
 
     if(i == index(d_currentTrace.delayIndex(),d_currentTrace.laserIndex()))
         return d_currentTrace;
 
-    ///TODO: if not acquiring, try to load from disk here
+    auto it = d_data.find(i);
+    if(it != d_data.end())
+        return it->second;
+
+    if(!d_acquiring)
+    {
+        l.unlock();
+        return loadLifTrace(di,li);
+    }
 
     return LifTrace();
+}
+
+LifTrace LifStorage::loadLifTrace(int di, int li)
+{
+    LifTrace out;
+    QDir d{BlackchirpCSV::exptDir(d_number,d_path)};
+    d.cd(BC::CSV::lifDir);
+
+    QFile hdr(d.absoluteFilePath(BC::CSV::lifparams));
+    if(!hdr.open(QIODevice::ReadOnly|QIODevice::Text))
+        return out;
+
+    bool found = false;
+    int lsize{0}, rsize{0}, shots{0};
+    double xsp{1.0}, lym{0.0}, rym{0.0};
+
+    while(!hdr.atEnd())
+    {
+        auto l = pu_csv->readLine(hdr);
+        if(l.size() < 8)
+            continue;
+
+        bool ok = false;
+        int lli = l.constFirst().toInt(&ok);
+        if(ok)
+        {
+            int ddi = l.at(1).toInt(&ok);
+            if(ok)
+            {
+                if(lli == li && ddi == di)
+                {
+                    found = true;
+                    shots = l.at(2).toInt();
+                    lsize = l.at(3).toInt();
+                    rsize = l.at(4).toInt();
+                    xsp = l.at(5).toDouble();
+                    lym = l.at(6).toDouble();
+                    rym = l.at(7).toDouble();
+                    break;
+                }
+            }
+        }
+    }
+
+    if(!found)
+        return out;
+
+    auto idx = index(di,li);
+    QFile dat(d.absoluteFilePath("%1.csv").arg(idx));
+    if(!dat.open(QIODevice::ReadOnly|QIODevice::Text))
+        return out;
+
+    QVector<qint64> lifData(lsize), refData(rsize);
+    auto l = pu_csv->readLine(dat); //read first line which contains titles
+    for(int i=0; i<lsize; i++)
+    {
+        l = pu_csv->readLine(dat);
+        lifData[i] = l.constFirst().toString().toLongLong(nullptr,36);
+        if(i<rsize && l.size() == 2)
+            refData[i] = l.at(1).toString().toLongLong(nullptr,36);
+    }
+
+    out = LifTrace(di,li,lifData,refData,shots,xsp,lym,rym);
+    QMutexLocker lock(pu_mutex.get());
+    d_data.emplace(idx,out);
+    return out;
 }
 
 void LifStorage::addTrace(const LifTrace t)
 {
     QMutexLocker l(pu_mutex.get());
-    if(d_currentTrace.shots() == 0)
+    if(d_nextNew)
+    {
         d_currentTrace = t;
+        d_nextNew = false;
+    }
     else
         d_currentTrace.add(t);
 }

@@ -24,25 +24,39 @@ public:
     void clear();
     void prepareForExperiment(const LifConfig &c);
     void updateData(const QVector<double> d, int numCols, double zMin, double zMax);
+    void setLiveIndices(int di, int li);
 
     void setZMax(double d);
     void replot();
 
+    int currentDelayIndex() const;
+    int currentLaserIndex() const;
+
+    double getdMin() const;
+    double getddx() const;
+    double getlMin() const;
+    double getldx() const;
+
 public slots:
-    void moveFreqCursor(QPoint pos);
+    void moveLaserCursor(QPoint pos);
+    void moveLaserCursor(int index);
     void moveDelayCursor(QPoint pos);
+    void moveDelayCursor(int index);
     void buildContextMenu(QMouseEvent *me);
 
 signals:
-    void freqSlice(int delayIndex);
+    void laserSlice(int delayIndex);
     void delaySlice(int freqIndex);
 
 private:
     QwtMatrixRasterData *p_spectrogramData;
     QwtPlotSpectrogram *p_spectrogram;
-    QwtPlotMarker *p_delayMarker, *p_freqMarker;
+    QwtPlotMarker *p_delayMarker, *p_laserMarker;
     bool d_enabled, d_live{true};
     bool d_delayDragging, d_freqDragging, d_grabDelay, d_grabFreq;
+    int d_liveDelayIndex{0}, d_liveLaserIndex{0};
+
+    double d_dMin, d_ddx, d_lMin, d_ldx;
 
 
     // ZoomPanPlot interface

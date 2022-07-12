@@ -61,11 +61,11 @@ LifSpectrogramPlot::LifSpectrogramPlot(QWidget *parent) :
     p_delayMarker->setVisible(false);
     p_delayMarker->attach(this);
 
-    p_freqMarker = new QwtPlotMarker();
-    p_freqMarker->setLineStyle(QwtPlotMarker::VLine);
-    p_freqMarker->setLinePen(Qt::white,2.0);
-    p_freqMarker->setVisible(false);
-    p_freqMarker->attach(this);
+    p_laserMarker = new QwtPlotMarker();
+    p_laserMarker->setLineStyle(QwtPlotMarker::VLine);
+    p_laserMarker->setLinePen(Qt::white,2.0);
+    p_laserMarker->setVisible(false);
+    p_laserMarker->attach(this);
 
     enableAxis(QwtPlot::yRight);
     setAxisOverride(QwtPlot::yRight);
@@ -90,13 +90,19 @@ void LifSpectrogramPlot::clear()
 
     d_enabled = false;
     d_live = true;
+    d_liveDelayIndex = 0;
+    d_liveLaserIndex = 0;
     d_delayDragging = false;
     d_freqDragging = false;
     d_grabDelay = false;
     d_grabFreq = false;
+    d_dMin = 0.0;
+    d_ddx = 1.0;
+    d_lMin = 0.0;
+    d_ldx = 1.0;
 
     p_delayMarker->setVisible(false);
-    p_freqMarker->setVisible(false);
+    p_laserMarker->setVisible(false);
 
     autoScale();
 }
@@ -123,6 +129,11 @@ void LifSpectrogramPlot::prepareForExperiment(const LifConfig &c)
     p_spectrogramData->setInterval(Qt::ZAxis,QwtInterval(0.0,1.0));
     p_spectrogramData->setResampleMode(QwtMatrixRasterData::BilinearInterpolation);
 
+    d_dMin = dMin;
+    d_lMin = dMin;
+    d_ddx = (dMax-dMin)/c.d_delayPoints;
+    d_ldx = (fMax-fMin)/c.d_laserPosPoints;
+
     if(c.d_delayPoints > 1)
     {
         p_delayMarker->setYValue(delayRange.first);
@@ -131,13 +142,15 @@ void LifSpectrogramPlot::prepareForExperiment(const LifConfig &c)
 
     if(c.d_laserPosPoints > 1)
     {
-        p_freqMarker->setVisible(true);
-        p_freqMarker->setXValue(freqRange.first);
+        p_laserMarker->setVisible(true);
+        p_laserMarker->setXValue(freqRange.first);
     }
 
     p_spectrogram->setData(p_spectrogramData);
     p_spectrogram->attach(this);
     d_live = true;
+    d_liveDelayIndex = 0;
+    d_liveLaserIndex = 0;
 
     autoScale();
 }
@@ -178,6 +191,19 @@ void LifSpectrogramPlot::updateData(const QVector<double> d, int numCols, double
 
 }
 
+void LifSpectrogramPlot::setLiveIndices(int di, int li)
+{
+    d_liveDelayIndex = di;
+    d_liveLaserIndex = li;
+
+    if(d_live)
+    {
+        moveDelayCursor(di);
+        moveLaserCursor(li);
+        replot();
+    }
+}
+
 void LifSpectrogramPlot::replot()
 {
     if(!d_enabled)
@@ -197,28 +223,46 @@ void LifSpectrogramPlot::replot()
     ZoomPanPlot::replot();
 }
 
-void LifSpectrogramPlot::moveFreqCursor(QPoint pos)
+int LifSpectrogramPlot::currentDelayIndex() const
+{
+    return qBound(0,static_cast<int>(floor((p_delayMarker->yValue()-d_dMin)/d_ddx)),p_spectrogramData->numRows()-1);
+}
+
+int LifSpectrogramPlot::currentLaserIndex() const
+{
+    return qBound(0,static_cast<int>(floor((p_laserMarker->xValue()-d_lMin)/d_ldx)),p_spectrogramData->numColumns()-1);
+}
+
+void LifSpectrogramPlot::moveLaserCursor(QPoint pos)
 {
     //snap to nearest freq point
+    d_live = false;
     double mVal = canvasMap(QwtPlot::xBottom).invTransform(pos.x());
-    QwtInterval fInt = p_spectrogramData->interval(Qt::XAxis);
-    double dx = fInt.width()/static_cast<double>(p_spectrogramData->numColumns());
-    int col = qBound(0,static_cast<int>(floor((mVal-fInt.minValue())/dx)),p_spectrogramData->numColumns()-1);
-    double freqVal = static_cast<double>(col)*dx + fInt.minValue() + dx/2.0;
-    p_freqMarker->setXValue(freqVal);
+    int col = qBound(0,static_cast<int>(floor((mVal-d_lMin)/d_ldx)),p_spectrogramData->numColumns()-1);
+    moveLaserCursor(col);
     emit delaySlice(col);
+}
+
+void LifSpectrogramPlot::moveLaserCursor(int index)
+{
+    double laserVal = static_cast<double>(index)*d_ldx + d_lMin + d_ldx/2.0;
+    p_laserMarker->setXValue(laserVal);
 }
 
 void LifSpectrogramPlot::moveDelayCursor(QPoint pos)
 {
     //snap to nearest delay point
+    d_live = false;
     double mVal = canvasMap(QwtPlot::yLeft).invTransform(pos.y());
-    QwtInterval dInt = p_spectrogramData->interval(Qt::YAxis);
-    double dy = dInt.width()/static_cast<double>(p_spectrogramData->numRows());
-    int row = qBound(0,static_cast<int>(floor((mVal-dInt.minValue())/dy)),p_spectrogramData->numRows()-1);
-    double delayVal = static_cast<double>(row)*dy + dInt.minValue() + dy/2.0;
+    int row = qBound(0,static_cast<int>(floor((mVal-d_dMin)/d_ddx)),p_spectrogramData->numRows()-1);
+    moveDelayCursor(row);
+    emit laserSlice(row);
+}
+
+void LifSpectrogramPlot::moveDelayCursor(int index)
+{
+    double delayVal = static_cast<double>(index)*d_ddx + d_dMin + d_ddx/2.0;
     p_delayMarker->setYValue(delayVal);
-    emit freqSlice(row);
 }
 
 void LifSpectrogramPlot::buildContextMenu(QMouseEvent *me)
@@ -237,12 +281,40 @@ void LifSpectrogramPlot::buildContextMenu(QMouseEvent *me)
     connect(delayCursorAction,&QAction::triggered,[=](){ moveDelayCursor(pos); });
 
     QAction *freqCursorAction = menu->addAction(QString("Move frequency cursor here"));
-    connect(freqCursorAction,&QAction::triggered,[=](){ moveFreqCursor(pos); });
+    connect(freqCursorAction,&QAction::triggered,[=](){ moveLaserCursor(pos); });
 
     QAction *bothCursorAction = menu->addAction(QString("Move both cursors here"));
-    connect(bothCursorAction,&QAction::triggered,[=](){ moveDelayCursor(pos); moveFreqCursor(pos); });
+    connect(bothCursorAction,&QAction::triggered,[=](){ moveDelayCursor(pos); moveLaserCursor(pos); });
+
+    auto liveAction = menu->addAction(QString("Follow live data"));
+    connect(liveAction,&QAction::triggered,[=](){
+        d_live = true;
+        moveDelayCursor(d_liveDelayIndex);
+        moveLaserCursor(d_liveLaserIndex);
+        replot();
+    });
 
     menu->popup(me->globalPos());
+}
+
+double LifSpectrogramPlot::getldx() const
+{
+    return d_ldx;
+}
+
+double LifSpectrogramPlot::getlMin() const
+{
+    return d_lMin;
+}
+
+double LifSpectrogramPlot::getddx() const
+{
+    return d_ddx;
+}
+
+double LifSpectrogramPlot::getdMin() const
+{
+    return d_dMin;
 }
 
 bool LifSpectrogramPlot::eventFilter(QObject *obj, QEvent *ev)
@@ -292,7 +364,7 @@ bool LifSpectrogramPlot::eventFilter(QObject *obj, QEvent *ev)
                         d_grabDelay = false;
 
 
-                    int fPixel = canvasMap(QwtPlot::xBottom).transform(p_freqMarker->xValue());
+                    int fPixel = canvasMap(QwtPlot::xBottom).transform(p_laserMarker->xValue());
                     mPixel = me->pos().x();
                     if(qAbs(fPixel - mPixel) < grabMargin)
                         d_grabFreq = true;
@@ -313,7 +385,7 @@ bool LifSpectrogramPlot::eventFilter(QObject *obj, QEvent *ev)
                     if(d_delayDragging)
                         moveDelayCursor(me->pos());
                     if(d_freqDragging)
-                        moveFreqCursor(me->pos());
+                        moveLaserCursor(me->pos());
 
                     replot();
                 }

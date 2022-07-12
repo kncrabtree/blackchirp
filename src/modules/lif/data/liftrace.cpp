@@ -80,6 +80,18 @@ LifTrace::LifTrace(const LifDigitizerConfig &c, const QByteArray b, int dIndex, 
     p_data->shots = c.d_numAverages;
 }
 
+LifTrace::LifTrace(int di, int li, QVector<qint64> ld, QVector<qint64> rd, int shots, double xsp, double lym, double rym) : p_data(new LifTraceData)
+{
+    p_data->delayIndex = di;
+    p_data->laserIndex = li;
+    p_data->lifData = ld;
+    p_data->refData = rd;
+    p_data->shots = shots;
+    p_data->xSpacing = xsp;
+    p_data->lifYMult = lym;
+    p_data->refYMult = rym;
+}
+
 LifTrace::LifTrace(const LifTrace &other) : p_data(other.p_data)
 {
 }
@@ -218,6 +230,16 @@ double LifTrace::xSpacing() const
 double LifTrace::xSpacingns() const
 {
     return p_data->xSpacing*1e9;
+}
+
+double LifTrace::lifYMult() const
+{
+    return p_data->lifYMult;
+}
+
+double LifTrace::refYMult() const
+{
+    return p_data->refYMult;
 }
 
 void LifTrace::add(const LifTrace &other)
