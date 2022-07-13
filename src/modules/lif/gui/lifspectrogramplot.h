@@ -29,6 +29,9 @@ public:
     void setZMax(double d);
     void replot();
 
+    double delayVal(int index) const;
+    double laserVal(int index) const;
+
     int currentDelayIndex() const;
     int currentLaserIndex() const;
 

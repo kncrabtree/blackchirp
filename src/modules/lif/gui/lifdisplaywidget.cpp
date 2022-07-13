@@ -32,7 +32,9 @@ LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
     p_spectrogramPlot = new LifSpectrogramPlot(this);
     p_procWidget = new LifProcessingWidget(false,this);
     connect(p_procWidget,&LifProcessingWidget::settingChanged,[=](){ p_lifTracePlot->setAllProcSettings(p_procWidget->getSettings());});
-    connect(p_procWidget,&LifProcessingWidget::reprocess,this,&LifDisplayWidget::reprocess);
+    connect(p_procWidget,&LifProcessingWidget::reprocessSignal,this,&LifDisplayWidget::reprocess);
+    connect(p_procWidget,&LifProcessingWidget::resetSignal,this,&LifDisplayWidget::resetProc);
+    connect(p_procWidget,&LifProcessingWidget::saveSignal,this,&LifDisplayWidget::saveProc);
     p_procWidget->setEnabled(false);
 
     auto pgb = new QGroupBox("Processing",this);
@@ -72,6 +74,16 @@ void LifDisplayWidget::prepareForExperiment(const Experiment &e)
     p_procWidget->setEnabled(false);
     d_currentIntegratedData.clear();
 
+    d_dString = QString("Delay: %1 ")+BC::Unit::us;
+    d_lString = QString("Laser: %1 ");
+    auto it = e.d_hardware.find(BC::Key::LifLaser::key);
+    if(it != e.d_hardware.end())
+    {
+        SettingsStorage s(it->first,SettingsStorage::Hardware);
+        d_lString.append(s.get(BC::Key::LifLaser::units,QString("nm")));
+        d_lDec = s.get(BC::Key::LifLaser::decimals,2);
+    }
+
     if(e.lifEnabled())
     {
         ps_lifStorage = e.lifConfig()->storage();
@@ -102,7 +114,7 @@ void LifDisplayWidget::updatePoint()
     auto t = ps_lifStorage->currentLifTrace();
 
     auto lp = ps_lifStorage->d_laserPoints;
-    auto dp = ps_lifStorage->d_delayPoints;
+//    auto dp = ps_lifStorage->d_delayPoints;
 
     //2. Reverse indices if needed.
     auto di = t.delayIndex();
@@ -115,7 +127,7 @@ void LifDisplayWidget::updatePoint()
 
     //3. Integrate and store integral in matrix
     auto d = t.integrate(p_procWidget->getSettings());
-    d_currentIntegratedData[li + di*dp] = d;
+    d_currentIntegratedData[li + di*lp] = d;
 
     //4. Update spectrogram and spectrogram indices
     p_spectrogramPlot->updateData(d_currentIntegratedData,lp);
@@ -126,9 +138,9 @@ void LifDisplayWidget::updatePoint()
     auto cli = p_spectrogramPlot->currentLaserIndex();
 
     if(cdi == di)
-        p_laserSlicePlot->setData(laserSlice(di));
+        p_laserSlicePlot->setData(laserSlice(di),d_dString.arg(p_spectrogramPlot->delayVal(di),0,'f',3));
     if(cli == li)
-        p_delaySlicePlot->setData(delaySlice(li));
+        p_delaySlicePlot->setData(delaySlice(li),d_lString.arg(p_spectrogramPlot->laserVal(li),0,'f',d_lDec));
     if(cdi == di && cli == li)
         p_lifTracePlot->setTrace(t);
 
@@ -136,7 +148,7 @@ void LifDisplayWidget::updatePoint()
 
 void LifDisplayWidget::changeLaserSlice(int di)
 {
-    p_laserSlicePlot->setData(laserSlice(di));
+    p_laserSlicePlot->setData(laserSlice(di),d_dString.arg(p_spectrogramPlot->delayVal(di),0,'f',3));
     auto li = p_spectrogramPlot->currentLaserIndex();
 
     if(d_delayReverse)
@@ -150,7 +162,7 @@ void LifDisplayWidget::changeLaserSlice(int di)
 
 void LifDisplayWidget::changeDelaySlice(int li)
 {
-    p_delaySlicePlot->setData(delaySlice(li));
+    p_delaySlicePlot->setData(delaySlice(li),d_lString.arg(p_spectrogramPlot->laserVal(li),0,'f',d_lDec));
     auto di = p_spectrogramPlot->currentDelayIndex();
 
     if(d_delayReverse)
@@ -182,7 +194,7 @@ void LifDisplayWidget::reprocess()
 
             auto t = ps_lifStorage->getLifTrace(di,li);
             auto d = t.integrate(ps);
-            d_currentIntegratedData[mli+mdi*dp] = d;
+            d_currentIntegratedData[mli+mdi*lp] = d;
         }
     }
 
@@ -191,8 +203,8 @@ void LifDisplayWidget::reprocess()
     auto cdi = p_spectrogramPlot->currentDelayIndex();
     auto cli = p_spectrogramPlot->currentLaserIndex();
 
-    p_laserSlicePlot->setData(laserSlice(cdi));
-    p_delaySlicePlot->setData(delaySlice(cli));
+    p_laserSlicePlot->setData(laserSlice(cdi),d_dString.arg(p_spectrogramPlot->delayVal(cdi),0,'f',3));
+    p_delaySlicePlot->setData(delaySlice(cli),d_lString.arg(p_spectrogramPlot->laserVal(cli),0,'f',d_lDec));
 
     if(d_delayReverse)
         cdi = dp - cdi -1;
@@ -203,27 +215,39 @@ void LifDisplayWidget::reprocess()
 
 }
 
+void LifDisplayWidget::resetProc()
+{
+    auto l = p_procWidget->getSettings();
+    if(ps_lifStorage->readProcessingSettings(l))
+        p_procWidget->setAll(l);
+}
+
+void LifDisplayWidget::saveProc()
+{
+    ps_lifStorage->writeProcessingSettings(p_procWidget->getSettings());
+}
+
 QVector<QPointF> LifDisplayWidget::laserSlice(int delayIndex) const
 {
     auto lp = ps_lifStorage->d_laserPoints;
-    auto dp = ps_lifStorage->d_delayPoints;
     QVector<QPointF> out(lp);
     auto min = p_spectrogramPlot->getlMin();
     auto dx = p_spectrogramPlot->getldx();
     for(int i=0; i<out.size(); i++)
-        out[i] = {min+i*dx,d_currentIntegratedData.at(i + delayIndex*dp)};
+        out[i] = {min+i*dx,d_currentIntegratedData.at(i + delayIndex*lp)};
 
     return out;
 }
 
 QVector<QPointF> LifDisplayWidget::delaySlice(int laserIndex) const
 {
+    auto lp = ps_lifStorage->d_laserPoints;
     auto dp = ps_lifStorage->d_delayPoints;
     QVector<QPointF> out(dp);
     auto min = p_spectrogramPlot->getlMin();
     auto dx = p_spectrogramPlot->getldx();
     for(int i=0; i<out.size(); i++)
-        out[i] = {min+i*dx,d_currentIntegratedData.at(laserIndex + i*dp)};
+        out[i] = {min+i*dx,d_currentIntegratedData.at(laserIndex + i*lp)};
 
     return out;
 }

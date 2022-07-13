@@ -1,3 +1,4 @@
+#include "modules/lif/hardware/liflaser/liflaser.h"
 #include <modules/lif/data/lifconfig.h>
 
 #include <modules/lif/data/liftrace.h>
@@ -68,20 +69,26 @@ void LifConfig::addWaveform(const QByteArray d)
 void LifConfig::loadLifData()
 {
     ps_storage = std::make_shared<LifStorage>(d_delayPoints,d_laserPosPoints,d_number,d_path);
+    LifTrace::LifProcSettings s;
+    if(ps_storage->readProcessingSettings(s))
+        d_procSettings = s;
     ps_storage->finish();
 }
 
 void LifConfig::storeValues()
 {
+    SettingsStorage s(BC::Key::LifLaser::key,SettingsStorage::Hardware);
+    auto lUnits = s.get(BC::Key::LifLaser::units,QString("nm"));
+
     using namespace BC::Store::LIF;
     store(order,d_order);
     store(completeMode,d_completeMode);
     store(dStart,d_delayStartUs,BC::Unit::us);
     store(dStep,d_delayStepUs,BC::Unit::us);
     store(dPoints,d_delayPoints);
-    store(lStart,d_laserPosStart);
-    store(lStep,d_laserPosStep);
-    store(lPoints,d_delayPoints);
+    store(lStart,d_laserPosStart,lUnits);
+    store(lStep,d_laserPosStep,lUnits);
+    store(lPoints,d_laserPosPoints);
     store(shotsPerPoint,d_shotsPerPoint);
 
 }
@@ -110,7 +117,9 @@ void LifConfig::prepareChildren()
 bool LifConfig::initialize()
 {
     ps_storage = std::make_shared<LifStorage>(d_delayPoints,d_laserPosPoints,d_number,d_path);
+    ps_storage->writeProcessingSettings(d_procSettings);
     ps_storage->start();
+    d_processingPaused = true;
     return true;
 }
 

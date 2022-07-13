@@ -580,8 +580,12 @@ void HardwareManager::setLifParameters(double delay, double pos)
 {
     bool success = true;
 
-    if(!setPGenLifDelay(delay))
-        success = false;
+    auto pGen = findHardware<PulseGenerator>(BC::Key::PGen::key);
+    if(pGen)
+    {
+        if(!setPGenLifDelay(delay))
+            success = false;
+    }
 
     if(!setLifLaserPos(pos))
         success = false;

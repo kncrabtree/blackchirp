@@ -345,6 +345,8 @@ public:
         mainTabWidget->setTabText(mainTabWidget->indexOf(lifTab),QString("LIF"));
 
         lifProgressBar = new QProgressBar();
+        lifProgressBar->setRange(0,1000);
+        lifProgressBar->setValue(0);
         instrumentStatusLayout->addWidget(new QLabel(QString("LIF Progress")),0,Qt::AlignCenter);
         instrumentStatusLayout->addWidget(lifProgressBar);
 #endif

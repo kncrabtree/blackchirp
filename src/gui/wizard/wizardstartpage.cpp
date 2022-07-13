@@ -11,6 +11,7 @@
 #include <QComboBox>
 #include <QLabel>
 #include <QMetaEnum>
+#include <QMessageBox>
 
 #include <gui/wizard/experimentwizard.h>
 
@@ -216,7 +217,7 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
 
     lvbl->addWidget(dlg);
 
-    auto llg = new QGroupBox("Delay",this);
+    auto llg = new QGroupBox("Laser",this);
     auto ll = new QGridLayout;
     llg->setLayout(ll);
 
@@ -256,8 +257,8 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
     p_lNumStepsBox = new QSpinBox(this);
     p_lNumStepsBox->setKeyboardTracking(false);
     p_lNumStepsBox->setMinimum(1);
-    p_lNumStepsBox->setValue(get(lifDelayPoints,1));
-    registerGetter(lifDelayPoints,p_lNumStepsBox,&QSpinBox::value);
+    p_lNumStepsBox->setValue(get(lifLaserPoints,1));
+    registerGetter(lifLaserPoints,p_lNumStepsBox,&QSpinBox::value);
     ll->addWidget(new QLabel("Points"),1,2,Qt::AlignRight);
     ll->addWidget(p_lNumStepsBox,1,3);
 
@@ -406,6 +407,33 @@ bool WizardStartPage::validatePage()
 {
      auto e = getExperiment();
 
+#ifdef BC_LIF
+     if(p_lif->isChecked())
+     {
+         auto l = wizard()->pageIds();
+         if(!l.contains(ExperimentWizard::PulseConfigPage) && p_dNumStepsBox->value() > 1)
+         {
+             QMessageBox::warning(this,QString("No Pulse Generator Found"),QString("Blackchirp cannot control the LIF delay because there is no pulse generator available.\n\nIf you would like to proceed anyways, please set the number of delay points to 1."));
+             return false;
+         }
+         e->enableLif();
+
+         e->lifConfig()->d_delayStartUs = p_dStartBox->value();
+         e->lifConfig()->d_delayStepUs = p_dStepBox->value();
+         e->lifConfig()->d_delayPoints = p_dNumStepsBox->value();
+
+         e->lifConfig()->d_laserPosStart = p_lStartBox->value();
+         e->lifConfig()->d_laserPosStep = p_lStepBox->value();
+         e->lifConfig()->d_laserPosPoints = p_lNumStepsBox->value();
+
+         e->lifConfig()->d_completeMode = p_completeModeBox->currentData().value<LifConfig::LifCompleteMode>();
+         e->lifConfig()->d_order = p_orderBox->currentData().value<LifConfig::LifScanOrder>();
+         e->lifConfig()->d_disableFlashlamp = p_flBox->isChecked();
+     }
+     else
+         e->disableLif();
+#endif
+
      if(p_ftmw->isChecked() || !p_ftmw->isCheckable())
      {
          RfConfig cfg;
@@ -435,29 +463,6 @@ bool WizardStartPage::validatePage()
      }
      else
          e->disableFtmw();
-
-
-
-#ifdef BC_LIF
-     if(p_lif->isChecked())
-     {
-         e->enableLif();
-
-         e->lifConfig()->d_delayStartUs = p_dStartBox->value();
-         e->lifConfig()->d_delayStepUs = p_dStepBox->value();
-         e->lifConfig()->d_delayPoints = p_dNumStepsBox->value();
-
-         e->lifConfig()->d_laserPosStart = p_lStartBox->value();
-         e->lifConfig()->d_laserPosStep = p_lStepBox->value();
-         e->lifConfig()->d_laserPosPoints = p_lNumStepsBox->value();
-
-         e->lifConfig()->d_completeMode = p_completeModeBox->currentData().value<LifConfig::LifCompleteMode>();
-         e->lifConfig()->d_order = p_orderBox->currentData().value<LifConfig::LifScanOrder>();
-         e->lifConfig()->d_disableFlashlamp = p_flBox->isChecked();
-     }
-     else
-         e->disableLif();
-#endif
 
      e->d_backupIntervalHours = p_backupBox->value();
      e->d_timeDataInterval = p_auxDataIntervalBox->value();

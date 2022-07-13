@@ -57,5 +57,5 @@ int WizardLifConfigPage::nextId() const
     if(e->ftmwEnabled())
         return ExperimentWizard::RfConfigPage;
 
-    return ExperimentWizard::PulseConfigPage;
+    return static_cast<ExperimentWizard*>(wizard())->nextOptionalPage();
 }

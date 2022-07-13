@@ -20,6 +20,7 @@ SOURCES += $$PWD/loghandler.cpp \
 	$$PWD/model/validationmodel.cpp \
     $$PWD/storage/auxdatastorage.cpp \
     $$PWD/storage/blackchirpcsv.cpp \
+    $$PWD/storage/datastoragebase.cpp \
    $$PWD/storage/fidmultistorage.cpp \
     $$PWD/storage/fidpeakupstorage.cpp \
     $$PWD/storage/fidsinglestorage.cpp \
@@ -50,6 +51,7 @@ HEADERS += $$PWD/loghandler.h \
 	$$PWD/model/validationmodel.h \
     $$PWD/storage/auxdatastorage.h \
     $$PWD/storage/blackchirpcsv.h \
+    $$PWD/storage/datastoragebase.h \
    $$PWD/storage/fidmultistorage.h \
     $$PWD/storage/fidpeakupstorage.h \
     $$PWD/storage/fidsinglestorage.h \

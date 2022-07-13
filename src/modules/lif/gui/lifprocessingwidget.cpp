@@ -113,9 +113,21 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
 
     p_reprocessButton = new QPushButton(QString("Reprocess All"),this);
     p_reprocessButton->setEnabled(false);
-    connect(p_reprocessButton,&QPushButton::clicked,this,&LifProcessingWidget::reprocess);
+    connect(p_reprocessButton,&QPushButton::clicked,this,&LifProcessingWidget::reprocessSignal);
 
     fl->addRow("",p_reprocessButton);
+
+    p_resetButton = new QPushButton(QString("Reset"),this);
+    p_resetButton->setToolTip("Reset to most recently saved values");
+    p_resetButton->setEnabled(false);
+    connect(p_resetButton,&QPushButton::clicked,this,&LifProcessingWidget::resetSignal);
+    fl->addRow("",p_resetButton);
+
+    p_saveButton = new QPushButton(QString("Save"),this);
+    p_saveButton->setToolTip("Save the current values. They will be the new defaults if this experiment is viewed again.");
+    p_saveButton->setEnabled(false);
+    connect(p_saveButton,&QPushButton::clicked,this,&LifProcessingWidget::saveSignal);
+    fl->addRow("",p_saveButton);
 
     setLayout(fl);
 
@@ -175,4 +187,6 @@ void LifProcessingWidget::experimentComplete()
 {
     setEnabled(true);
     p_reprocessButton->setEnabled(true);
+    p_resetButton->setEnabled(true);
+    p_saveButton->setEnabled(true);
 }

@@ -19,10 +19,11 @@ public:
     ~LifSlicePlot();
 
     void prepareForExperiment();
-    void setData(const QVector<QPointF> d);
+    void setData(const QVector<QPointF> d, QString txt = "");
 
 protected:
     BlackchirpPlotCurve *p_curve;
+    QwtPlotTextLabel *p_label;
 };
 
 #endif // LIFSLICEPLOT_H

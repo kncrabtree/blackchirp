@@ -37,13 +37,15 @@ public:
 
 signals:
     void settingChanged();
-    void reprocess();
+    void reprocessSignal();
+    void resetSignal();
+    void saveSignal();
 
 private:
     QSpinBox *p_lgStartBox, *p_lgEndBox, *p_rgStartBox, *p_rgEndBox, *p_sgWinBox, *p_sgPolyBox;
     QDoubleSpinBox *p_lpAlphaBox;
     QCheckBox *p_sgEnBox;
-    QPushButton *p_reprocessButton;
+    QPushButton *p_reprocessButton, *p_saveButton, *p_resetButton;
 };
 
 #endif // LIFPROCESSINGWIDGET_H

@@ -37,6 +37,8 @@ public slots:
     void changeLaserSlice(int di);
     void changeDelaySlice(int li);
     void reprocess();
+    void resetProc();
+    void saveProc();
 
 private:
     std::shared_ptr<LifStorage> ps_lifStorage;
@@ -47,6 +49,10 @@ private:
     LifTracePlot *p_lifTracePlot;
     LifSpectrogramPlot *p_spectrogramPlot;
     LifProcessingWidget *p_procWidget;
+
+    QString d_dString;
+    QString d_lString;
+    int d_lDec{2};
 
 
 };

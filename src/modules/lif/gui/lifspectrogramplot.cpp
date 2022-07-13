@@ -110,10 +110,10 @@ void LifSpectrogramPlot::prepareForExperiment(const LifConfig &c)
 
 
     d_dMin = qMin(delayRange.first,delayRange.second);
-    d_ddx = qAbs(delayRange.first - delayRange.second)/(c.d_delayPoints-1);
+    d_ddx = qAbs(c.d_delayStepUs);
 
     d_lMin = qMin(laserRange.first,laserRange.second);
-    d_ldx = qAbs(laserRange.first - laserRange.second)/(c.d_laserPosPoints-1);
+    d_ldx = qAbs(c.d_laserPosStep);
 
 
     double dMin =  d_dMin - qAbs(c.d_delayStepUs)/2.0;
@@ -202,6 +202,16 @@ void LifSpectrogramPlot::replot()
     ZoomPanPlot::replot();
 }
 
+double LifSpectrogramPlot::delayVal(int index) const
+{
+    return static_cast<double>(index)*d_ddx + d_dMin;
+}
+
+double LifSpectrogramPlot::laserVal(int index) const
+{
+    return static_cast<double>(index)*d_ldx + d_lMin;
+}
+
 int LifSpectrogramPlot::currentDelayIndex() const
 {
     return qBound(0,static_cast<int>(floor((p_delayMarker->yValue()-d_dMin)/d_ddx)),p_spectrogramData->numRows()-1);
@@ -224,8 +234,7 @@ void LifSpectrogramPlot::moveLaserCursor(QPoint pos)
 
 void LifSpectrogramPlot::moveLaserCursor(int index)
 {
-    double laserVal = static_cast<double>(index)*d_ldx + d_lMin;
-    p_laserMarker->setXValue(laserVal);
+    p_laserMarker->setXValue(laserVal(index));
 }
 
 void LifSpectrogramPlot::moveDelayCursor(QPoint pos)
@@ -240,8 +249,7 @@ void LifSpectrogramPlot::moveDelayCursor(QPoint pos)
 
 void LifSpectrogramPlot::moveDelayCursor(int index)
 {
-    double delayVal = static_cast<double>(index)*d_ddx + d_dMin;
-    p_delayMarker->setYValue(delayVal);
+    p_delayMarker->setYValue(delayVal(index));
 }
 
 void LifSpectrogramPlot::buildContextMenu(QMouseEvent *me)

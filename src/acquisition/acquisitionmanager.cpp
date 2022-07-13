@@ -37,6 +37,11 @@ void AcquisitionManager::beginExperiment(std::shared_ptr<Experiment> exp)
         d_auxTimerId = startTimer(ps_currentExperiment->d_timeDataInterval*1000);
     }
     emit beginAcquisition();
+
+#ifdef BC_LIF
+    emit nextLifPoint(ps_currentExperiment->lifConfig()->currentDelay(),
+                      ps_currentExperiment->lifConfig()->currentLaserPos());
+#endif
 }
 
 void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
@@ -77,7 +82,6 @@ void AcquisitionManager::processLifScopeShot(const QByteArray b)
             && ps_currentExperiment->lifEnabled()
             && !ps_currentExperiment->lifConfig()->d_processingPaused)
     {
-        //process trace; only send data to UI if point is complete
         ps_currentExperiment->lifConfig()->addWaveform(b);
         emit lifPointUpdate();
         if(ps_currentExperiment->lifConfig()->advance() && !ps_currentExperiment->isComplete())

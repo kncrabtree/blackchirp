@@ -6,9 +6,8 @@
 #include <QSaveFile>
 
 LifStorage::LifStorage(int dp, int lp, int num, QString path)
-    : d_delayPoints{dp}, d_laserPoints{lp}, d_number{num}, d_path{path}
+    : DataStorageBase(num,path), d_delayPoints{dp}, d_laserPoints{lp}
 {
-    pu_csv = std::make_unique<BlackchirpCSV>(num,path);
 }
 
 LifStorage::~LifStorage()
@@ -19,11 +18,9 @@ void LifStorage::advance()
 {
 
     QMutexLocker l(pu_mutex.get());
-    auto i = index(d_currentTrace.delayIndex(),d_currentTrace.laserIndex());
-    d_data.emplace(i,d_currentTrace);
     d_nextNew = true;
-
     l.unlock();
+
     save();
 }
 
@@ -32,6 +29,9 @@ void LifStorage::save()
     //first, write current trace file
     QMutexLocker l(pu_mutex.get());
     auto i = index(d_currentTrace.delayIndex(),d_currentTrace.laserIndex());
+    auto it = d_data.emplace(i,d_currentTrace);
+    if(!it.second) //insertion not successful if key already exists
+        d_data[i] = d_currentTrace;
 
     QDir d{BlackchirpCSV::exptDir(d_number,d_path)};
     if(!d.cd(BC::CSV::lifDir))
@@ -132,6 +132,9 @@ int LifStorage::completedShots() const
     if(!d_acquiring)
         return out;
 
+    if(d_nextNew)
+        return out;
+
     return out + d_currentTrace.shots();
 }
 
@@ -228,14 +231,76 @@ void LifStorage::addTrace(const LifTrace t)
     QMutexLocker l(pu_mutex.get());
     if(d_nextNew)
     {
-        d_currentTrace = t;
+        auto idx = index(t.delayIndex(),t.laserIndex());
+        auto it = d_data.find(idx);
+        if(it != d_data.end())
+        {
+            d_currentTrace = it->second;
+            d_currentTrace.add(t);
+        }
+        else
+            d_currentTrace = t;
+
         d_nextNew = false;
     }
     else
         d_currentTrace.add(t);
 }
 
+void LifStorage::writeProcessingSettings(const LifTrace::LifProcSettings &c)
+{
+    using namespace BC::Key::LifStorage;
+    std::map<QString,QVariant> m;
+    m.emplace(lifGateStart,c.lifGateStart);
+    m.emplace(lifGateEnd,c.lifGateEnd);
+    m.emplace(refGateStart,c.refGateStart);
+    m.emplace(refGateEnd,c.refGateEnd);
+    m.emplace(lowPassAlpha,c.lowPassAlpha);
+    m.emplace(savGol,c.savGolEnabled);
+    m.emplace(sgWin,c.savGolWin);
+    m.emplace(sgPoly,c.savGolPoly);
+
+    writeMetadata(m,BC::CSV::lifDir);
+}
+
+bool LifStorage::readProcessingSettings(LifTrace::LifProcSettings &out)
+{
+    using namespace BC::Key::LifStorage;
+    std::map<QString,QVariant> m;
+    readMetadata(m,BC::CSV::lifDir);
+
+    if(m.empty())
+        return false;
+
+    auto it = m.find(lifGateStart);
+    if(it != m.end())
+        out.lifGateStart = it->second.toInt();
+    it = m.find(lifGateEnd);
+    if(it != m.end())
+        out.lifGateEnd = it->second.toInt();
+    it = m.find(refGateStart);
+    if(it != m.end())
+        out.refGateStart = it->second.toInt();
+    it = m.find(refGateEnd);
+    if(it != m.end())
+        out.refGateEnd = it->second.toInt();
+    it = m.find(lowPassAlpha);
+    if(it != m.end())
+        out.lowPassAlpha = it->second.toDouble();
+    it = m.find(savGol);
+    if(it != m.end())
+        out.savGolEnabled = it->second.toBool();
+    it = m.find(sgWin);
+    if(it != m.end())
+        out.savGolWin = it->second.toInt();
+    it = m.find(sgPoly);
+    if(it != m.end())
+        out.savGolPoly = it->second.toInt();
+
+    return true;
+}
+
 int LifStorage::index(int dp, int lp) const
 {
-    return dp*d_delayPoints + lp;
+    return dp*d_laserPoints + lp;
 }

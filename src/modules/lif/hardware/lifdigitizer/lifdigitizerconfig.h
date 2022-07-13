@@ -12,7 +12,6 @@ static const QString lifKey("LifDigitizer");
 static const QString lifChannel("LifChannel");
 static const QString lifRefChannel("LifRefChannel");
 static const QString lifRefEnabled("LifRefEnabled");
-static const QString lifChannelOrder("LifChannelOrder");
 }
 
 class LifDigitizerConfig : public DigitizerConfig

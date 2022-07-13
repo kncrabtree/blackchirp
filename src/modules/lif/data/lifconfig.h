@@ -23,10 +23,6 @@ static const QString lStart("LaserStart");
 static const QString lStep("LaserStep");
 static const QString lPoints("LaserPoints");
 static const QString shotsPerPoint("ShotsPerPoint");
-static const QString lifGateStart("LifGateStartPoint");
-static const QString lifGateEnd("LifGateEndPoint");
-static const QString refGateStart("RefGateStartPoint");
-static const QString refGateEnd("RefGateEndPoint");
 }
 
 namespace BC::Config::Exp {

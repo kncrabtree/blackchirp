@@ -5,9 +5,8 @@
 #include <data/storage/blackchirpcsv.h>
 
 FidStorageBase::FidStorageBase(int numRecords, int number, QString path) :
-    d_number(number), d_numRecords(numRecords), d_path(path)
+    DataStorageBase(number,path), d_numRecords(numRecords)
 {
-    pu_csv = std::make_unique<BlackchirpCSV>(number,path);
     pu_baseMutex = std::make_unique<QMutex>();
 }
 

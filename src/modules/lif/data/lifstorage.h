@@ -5,23 +5,34 @@
 #include <QDateTime>
 #include <QMutex>
 
+#include <data/storage/datastoragebase.h>
 #include <modules/lif/data/liftrace.h>
 
 class BlackchirpCSV;
 
-class LifStorage
+namespace BC::Key::LifStorage {
+static const QString lifGateStart("LifGateStartPoint");
+static const QString lifGateEnd("LifGateEndPoint");
+static const QString refGateStart("RefGateStartPoint");
+static const QString refGateEnd("RefGateEndPoint");
+static const QString lowPassAlpha("LowPassAlpha");
+static const QString savGol{"SavGolEnabled"};
+static const QString sgWin{"SavGolWindow"};
+static const QString sgPoly{"SavGolPoly"};
+}
+
+class LifStorage : public DataStorageBase
 {
 public:
     LifStorage(int dp, int lp, int num, QString path="");
     ~LifStorage();
 
-    const int d_delayPoints, d_laserPoints, d_number;
-    const QString d_path;
+    const int d_delayPoints, d_laserPoints;
 
-    void advance();
-    void save();
-    void start();
-    void finish();
+    void advance() override;
+    void save() override;
+    void start() override;
+    void finish() override;
 
     int currentTraceShots() const;
     int completedShots() const;
@@ -33,12 +44,13 @@ public:
 
     void addTrace(const LifTrace t);
 
+    void writeProcessingSettings(const LifTrace::LifProcSettings &c);
+    bool readProcessingSettings(LifTrace::LifProcSettings &out);
+
 
 private:
-    std::unique_ptr<QMutex> pu_mutex{std::make_unique<QMutex>()};
     bool d_acquiring{false}, d_nextNew{true};
     std::map<int,LifTrace> d_data;
-    std::unique_ptr<BlackchirpCSV> pu_csv;
     LifTrace d_currentTrace;
 
 

@@ -1,30 +1,27 @@
 #ifndef FIDSTORAGEBASE_H
 #define FIDSTORAGEBASE_H
 
-#include <memory>
 #include <queue>
 #include <QDateTime>
-#include <QMutex>
 
+#include <data/storage/datastoragebase.h>
 #include <data/experiment/fid.h>
 
 class BlackchirpCSV;
 
-class FidStorageBase
+class FidStorageBase : public DataStorageBase
 {
 
 public:
     FidStorageBase(int numRecords, int number = -1, QString path = "");
     virtual ~FidStorageBase();
 
-    const int d_number;
     const int d_numRecords;
-    const QString d_path;
 
-    void advance();
-    void save();
-    void start();
-    void finish();
+    void advance() override;
+    void save() override;
+    void start() override;
+    void finish() override;
     FidList loadFidList(int i);
 
     virtual quint64 currentSegmentShots();
@@ -37,7 +34,6 @@ public:
 
 protected:
     FidList d_currentFidList;
-    std::unique_ptr<QMutex> pu_mutex;
     virtual void _advance() {};
     void saveFidList(const FidList l, int i);
 
@@ -46,7 +42,6 @@ private:
     int d_currentSegment{0};
     std::size_t d_maxCacheSize{1 << 25}; //~200 MB
     QVector<Fid> d_templateList;
-    std::unique_ptr<BlackchirpCSV> pu_csv;
     std::unique_ptr<QMutex> pu_baseMutex;
     std::queue<int> d_cacheKeys;
     std::map<int,FidList> d_cache;

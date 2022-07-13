@@ -12,7 +12,6 @@ void LifDigitizerConfig::storeValues()
     store(lifChannel,d_lifChannel);
     store(lifRefChannel,d_refChannel);
     store(lifRefEnabled,d_refEnabled);
-    store(lifChannelOrder,d_channelOrder);
 
     DigitizerConfig::storeValues();
 }
@@ -23,7 +22,6 @@ void LifDigitizerConfig::retrieveValues()
     d_lifChannel = retrieve(lifChannel,0);
     d_refChannel = retrieve(lifRefChannel,1);
     d_refEnabled = retrieve(lifRefEnabled,false);
-    d_channelOrder = retrieve(lifChannelOrder,Interleaved);
 
     DigitizerConfig::retrieveValues();
 }
