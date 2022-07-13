@@ -37,6 +37,7 @@ public:
 
 signals:
     void settingChanged();
+    void reprocess();
 
 private:
     QSpinBox *p_lgStartBox, *p_lgEndBox, *p_rgStartBox, *p_rgEndBox, *p_sgWinBox, *p_sgPolyBox;

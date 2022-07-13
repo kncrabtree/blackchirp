@@ -664,7 +664,7 @@ double HardwareManager::lifLaserPos()
     auto ll = findHardware<LifLaser>(BC::Key::LifLaser::key);
     if(!ll)
     {
-        emit logMessage(QString("Could not read LIF Laser position because no laser is avaialble."),LogHandler::Error);
+        emit logMessage(QString("Could not read LIF Laser position because no laser is available."),LogHandler::Error);
         return -1.0;
     }
 
@@ -681,8 +681,8 @@ bool HardwareManager::lifLaserFlashlampEnabled()
     auto ll = findHardware<LifLaser>(BC::Key::LifLaser::key);
     if(!ll)
     {
-        emit logMessage(QString("Could not read LIF Laser flashlamp status because no laser is avaialble."),LogHandler::Error);
-        return -1.0;
+        emit logMessage(QString("Could not read LIF Laser flashlamp status because no laser is available."),LogHandler::Error);
+        return false;
     }
 
     if(ll->thread() == QThread::currentThread())
@@ -698,7 +698,7 @@ void HardwareManager::setLifLaserFlashlampEnabled(bool en)
     auto ll = findHardware<LifLaser>(BC::Key::LifLaser::key);
     if(!ll)
     {
-        emit logMessage(QString("Could not read LIF Laser flashlamp status because no laser is avaialble."),LogHandler::Error);
+        emit logMessage(QString("Could not read LIF Laser flashlamp status because no laser is available."),LogHandler::Error);
         return;
     }
 

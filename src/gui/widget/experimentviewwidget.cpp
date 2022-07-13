@@ -133,6 +133,7 @@ QWidget *ExperimentViewWidget::buildLifWidget()
 
         lif->prepareForExperiment(*pu_experiment);
         lif->reprocess();
+        lif->experimentComplete();
     }
 
     return out;

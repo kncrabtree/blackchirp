@@ -23,7 +23,7 @@ public:
 
     void clear();
     void prepareForExperiment(const LifConfig &c);
-    void updateData(const QVector<double> d, int numCols, double zMin, double zMax);
+    void updateData(const QVector<double> d, int numCols);
     void setLiveIndices(int di, int li);
 
     void setZMax(double d);

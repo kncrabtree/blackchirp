@@ -81,7 +81,7 @@ void LifStorage::save()
         return;
 
     QSaveFile hdr(d.absoluteFilePath(BC::CSV::lifparams));
-    if(!dat.open(QIODevice::WriteOnly|QIODevice::Text))
+    if(!hdr.open(QIODevice::WriteOnly|QIODevice::Text))
         return;
 
     QTextStream txt(&hdr);

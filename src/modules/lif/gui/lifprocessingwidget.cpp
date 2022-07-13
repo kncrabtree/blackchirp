@@ -113,6 +113,7 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
 
     p_reprocessButton = new QPushButton(QString("Reprocess All"),this);
     p_reprocessButton->setEnabled(false);
+    connect(p_reprocessButton,&QPushButton::clicked,this,&LifProcessingWidget::reprocess);
 
     fl->addRow("",p_reprocessButton);
 
@@ -144,6 +145,7 @@ void LifProcessingWidget::initialize(int recLen, bool ref)
 
 void LifProcessingWidget::setAll(const LifTrace::LifProcSettings &lc)
 {
+    blockSignals(true);
     p_lgStartBox->setValue(lc.lifGateStart);
     p_lgEndBox->setValue(lc.lifGateEnd);
     p_rgStartBox->setValue(lc.refGateStart);
@@ -152,6 +154,8 @@ void LifProcessingWidget::setAll(const LifTrace::LifProcSettings &lc)
     p_sgEnBox->setChecked(lc.savGolEnabled);
     p_sgWinBox->setValue(lc.savGolWin);
     p_sgPolyBox->setValue(lc.savGolPoly);
+    blockSignals(false);
+    emit settingChanged();
 }
 
 LifTrace::LifProcSettings LifProcessingWidget::getSettings() const

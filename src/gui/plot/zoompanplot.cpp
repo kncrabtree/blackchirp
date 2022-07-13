@@ -20,6 +20,7 @@
 
 #include <qwt6/qwt_scale_div.h>
 #include <qwt6/qwt_plot_marker.h>
+#include <qwt6/qwt_plot_spectrogram.h>
 #include <gui/plot/blackchirpplotcurve.h>
 #include <data/storage/blackchirpcsv.h>
 
@@ -111,6 +112,11 @@ void ZoomPanPlot::resetPlot()
 {
     detachItems();
     autoScale();
+}
+
+void ZoomPanPlot::setSpectrogramMode(bool b)
+{
+    d_config.spectrogramMode = b;
 }
 
 void ZoomPanPlot::autoScale()
@@ -243,6 +249,16 @@ void ZoomPanPlot::replot()
             }
 
         }
+
+        auto sp = dynamic_cast<QwtPlotSpectrogram*>(l.at(i));
+        if(sp)
+        {
+            d_config.axisList[QwtPlot::yLeft].boundingRect = sp->boundingRect();
+            d_config.axisList[QwtPlot::xBottom].boundingRect = sp->boundingRect();
+            auto in = sp->interval(Qt::ZAxis);
+            d_config.axisList[QwtPlot::yRight].overrideRect.setBottom(in.maxValue());
+            d_config.axisList[QwtPlot::yRight].overrideRect.setTop(in.minValue());
+        }
     }
 
     if(!d_config.axisList.at(getAxisIndex(QwtPlot::yLeft)).override)
@@ -276,7 +292,12 @@ void ZoomPanPlot::replot()
                 if(c.overrideAutoScaleRange)
                     setAxisScale(c.type,c.overrideRect.left(),c.overrideRect.right());
                 else
-                    setAxisScale(c.type,c.boundingRect.left(),c.boundingRect.right());
+                {
+                    if(c.boundingRect.width() < 0.0)
+                        setAxisScale(c.type,0.0,1.0);
+                    else
+                        setAxisScale(c.type,c.boundingRect.left(),c.boundingRect.right());
+                }
                 redrawXAxis = true;
             }
             else
@@ -284,7 +305,12 @@ void ZoomPanPlot::replot()
                 if(c.overrideAutoScaleRange)
                     setAxisScale(c.type,c.overrideRect.top(),c.overrideRect.bottom());
                 else
-                    setAxisScale(c.type,c.boundingRect.top(),c.boundingRect.bottom());
+                {
+                    if(c.boundingRect.height() < 0.0)
+                        setAxisScale(c.type,0.0,1.0);
+                    else
+                        setAxisScale(c.type,c.boundingRect.top(),c.boundingRect.bottom());
+                }
             }
         }
     }
@@ -411,8 +437,6 @@ void ZoomPanPlot::configureGridMajorPen()
     auto c = get<QColor>(BC::Key::majorGridColor,p.color(QPalette::Light));
     auto s = get<Qt::PenStyle>(BC::Key::majorGridStyle,Qt::NoPen);
     p_grid->setMajorPen(c,0.0,s);
-    replot();
-
 }
 
 void ZoomPanPlot::configureGridMinorPen()
@@ -421,7 +445,6 @@ void ZoomPanPlot::configureGridMinorPen()
     auto c = get<QColor>(BC::Key::minorGridColor,p.color(QPalette::Light));
     auto s = get<Qt::PenStyle>(BC::Key::minorGridStyle,Qt::NoPen);
     p_grid->setMinorPen(c,0.0,s);
-    replot();
 }
 
 void ZoomPanPlot::setAxisOverride(QwtPlot::Axis axis, bool override)
@@ -431,6 +454,9 @@ void ZoomPanPlot::setAxisOverride(QwtPlot::Axis axis, bool override)
 
 void ZoomPanPlot::filterData()
 {
+    if(d_config.spectrogramMode)
+        return;
+
     auto l = itemList();
     p_mutex->lock();
     auto w = canvas()->width();
@@ -568,6 +594,9 @@ void ZoomPanPlot::pan(QMouseEvent *me)
         if(c.override)
             continue;
 
+        if(d_config.spectrogramMode && (c.type == QwtPlot::yRight || c.type == QwtPlot::xTop))
+            continue;
+
         auto map = canvasMap(c.type);
         double scaleMin = axisScaleDiv(c.type).lowerBound();
         double scaleMax = axisScaleDiv(c.type).upperBound();
@@ -592,7 +621,6 @@ void ZoomPanPlot::pan(QMouseEvent *me)
             d = min - scaleMin;
         if(scaleMax + d > max)
             d = max - scaleMax;
-
 
         setAxisScale(c.type,scaleMin + d, scaleMax + d);
     }
@@ -629,6 +657,9 @@ void ZoomPanPlot::zoom(QWheelEvent *we)
     {
         const AxisConfig c = d_config.axisList.at(i);
         if(c.override)
+            continue;
+
+        if(d_config.spectrogramMode && (c.type == QwtPlot::yRight || c.type == QwtPlot::xTop))
             continue;
 
         if((c.type == QwtPlot::xBottom || c.type == QwtPlot::xTop) && lockHorizontal)
@@ -771,6 +802,7 @@ QMenu *ZoomPanPlot::contextMenu()
         if(c.isValid())
             set(BC::Key::majorGridColor,c,false);
         configureGridMajorPen();
+        replot();
     });
 
     QWidgetAction *majorwa = new QWidgetAction(gridMenu);
@@ -788,6 +820,7 @@ QMenu *ZoomPanPlot::contextMenu()
     connect(majorPenBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[=](int i){
         set(BC::Key::majorGridStyle,majorPenBox->itemData(i).toInt());
         configureGridMajorPen();
+        replot();
     });
     majorfl->addRow(QString("Major Line Style"),majorPenBox);
     for(int i=0; i<majorfl->rowCount(); ++i)
@@ -811,6 +844,7 @@ QMenu *ZoomPanPlot::contextMenu()
         if(c.isValid())
             set(BC::Key::minorGridColor,c,false);
         configureGridMinorPen();
+        replot();
     });
 
     QWidgetAction *minorwa = new QWidgetAction(gridMenu);
@@ -828,6 +862,7 @@ QMenu *ZoomPanPlot::contextMenu()
     connect(minorPenBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[=](int i){
         set(BC::Key::minorGridStyle,minorPenBox->itemData(i).toInt());
         configureGridMinorPen();
+        replot();
     });
     minorfl->addRow(QString("Minor Line Style"),minorPenBox);
     for(int i=0; i<minorfl->rowCount(); ++i)

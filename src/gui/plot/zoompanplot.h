@@ -42,6 +42,7 @@ public:
 
     bool isAutoScale();
     void resetPlot();
+    void setSpectrogramMode(bool b = true);
     void setXRanges(const QwtScaleDiv &bottom, const QwtScaleDiv &top);
     void setMaxIndex(int i){ d_maxIndex = i; }
     void setPlotTitle(const QString text);
@@ -96,11 +97,10 @@ protected:
     struct PlotConfig {
         QList<AxisConfig> axisList;
 
-        bool xDirty;
-        bool panning;
+        bool xDirty{false};
+        bool panning{false};
+        bool spectrogramMode{false};
         QPoint panClickPos;
-
-        PlotConfig() : xDirty(false), panning(false) {}
     };
 
     void setAxisOverride(QwtPlot::Axis axis, bool override = true);

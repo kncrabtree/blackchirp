@@ -16,6 +16,7 @@ LifSpectrogramPlot::LifSpectrogramPlot(QWidget *parent) :
     ZoomPanPlot(BC::Key::lifSpectrogram,parent), d_enabled(false),
     d_delayDragging(false), d_freqDragging(false), d_grabDelay(false), d_grabFreq(false)
 {
+    setSpectrogramMode(true);
 
     SettingsStorage s(BC::Key::LifLaser::key,SettingsStorage::Hardware);
     setPlotAxisTitle(QwtPlot::yLeft,QString::fromUtf16(u"Delay (µs)"));
@@ -26,30 +27,15 @@ LifSpectrogramPlot::LifSpectrogramPlot(QWidget *parent) :
     p_spectrogram->setDisplayMode(QwtPlotSpectrogram::ImageMode);
     p_spectrogram->setDisplayMode(QwtPlotSpectrogram::ContourMode,false);
     p_spectrogram->setRenderHint(QwtPlotItem::RenderAntialiased);
-    p_spectrogramData = nullptr;// new QwtMatrixRasterData;
-//    p_spectrogram->setData(p_spectrogramData);
-//    p_spectrogram->attach(this);
+    p_spectrogramData = nullptr;
 
 
-    QwtLinearColorMap *map = new QwtLinearColorMap(Qt::black,Qt::red);
-    map->addColorStop(0.05,Qt::darkBlue);
-    map->addColorStop(0.1,Qt::blue);
-    map->addColorStop(0.25,Qt::cyan);
-    map->addColorStop(0.5,Qt::green);
-    map->addColorStop(0.75,Qt::yellow);
-    map->addColorStop(0.9,QColor(0xff,0x66,0));
+    QwtLinearColorMap *map = new QwtLinearColorMap(QColor(0x02,0x28,0x51),QColor(0xff,0xdf,0x00));
     p_spectrogram->setColorMap(map);
 
     QwtScaleWidget *rightAxis = axisWidget( QwtPlot::yRight );
 
-    QwtLinearColorMap *map2 = new QwtLinearColorMap(Qt::black,Qt::red);
-    map2->addColorStop(0.05,Qt::darkBlue);
-    map2->addColorStop(0.1,Qt::blue);
-    map2->addColorStop(0.25,Qt::cyan);
-    map2->addColorStop(0.5,Qt::green);
-    map2->addColorStop(0.75,Qt::yellow);
-    map2->addColorStop(0.9,QColor(0xff,0x66,0));
-
+    QwtLinearColorMap *map2 = new QwtLinearColorMap(QColor(0x02,0x28,0x51),QColor(0xff,0xdf,0x00));
     rightAxis->setColorMap(QwtInterval(0.0,1.0),map2);
     rightAxis->setColorBarEnabled(true);
     rightAxis->setColorBarWidth(10);
@@ -68,7 +54,7 @@ LifSpectrogramPlot::LifSpectrogramPlot(QWidget *parent) :
     p_laserMarker->attach(this);
 
     enableAxis(QwtPlot::yRight);
-    setAxisOverride(QwtPlot::yRight);
+    setAxisOverride(QwtPlot::yRight,true);
 
     canvas()->installEventFilter(this);
     canvas()->setMouseTracking(true);
@@ -109,6 +95,10 @@ void LifSpectrogramPlot::clear()
 
 void LifSpectrogramPlot::prepareForExperiment(const LifConfig &c)
 {
+    d_enabled = true;
+    d_live = true;
+    d_liveDelayIndex = 0;
+    d_liveLaserIndex = 0;
 
     QVector<double> specDat;
     specDat.resize(c.d_delayPoints*c.d_laserPosPoints);
@@ -116,23 +106,25 @@ void LifSpectrogramPlot::prepareForExperiment(const LifConfig &c)
     p_spectrogramData->setValueMatrix(specDat,c.d_laserPosPoints);
 
     auto delayRange = c.delayRange();
-    auto freqRange = c.laserRange();
+    auto laserRange = c.laserRange();
 
 
-    double dMin = qMin(delayRange.first,delayRange.second) - qAbs(c.d_delayStepUs)/2.0;
+    d_dMin = qMin(delayRange.first,delayRange.second);
+    d_ddx = qAbs(delayRange.first - delayRange.second)/(c.d_delayPoints-1);
+
+    d_lMin = qMin(laserRange.first,laserRange.second);
+    d_ldx = qAbs(laserRange.first - laserRange.second)/(c.d_laserPosPoints-1);
+
+
+    double dMin =  d_dMin - qAbs(c.d_delayStepUs)/2.0;
     double dMax = qMax(delayRange.first,delayRange.second) + qAbs(c.d_delayStepUs)/2.0;
-    double fMin = qMin(freqRange.first,freqRange.second) - qAbs(c.d_laserPosStep)/2.0;
-    double fMax = qMax(freqRange.first,freqRange.second) + qAbs(c.d_laserPosStep)/2.0;
+    double fMin = d_lMin - qAbs(c.d_laserPosStep)/2.0;
+    double fMax = qMax(laserRange.first,laserRange.second) + qAbs(c.d_laserPosStep)/2.0;
 
     p_spectrogramData->setInterval(Qt::YAxis,QwtInterval(dMin,dMax));
     p_spectrogramData->setInterval(Qt::XAxis,QwtInterval(fMin,fMax));
     p_spectrogramData->setInterval(Qt::ZAxis,QwtInterval(0.0,1.0));
     p_spectrogramData->setResampleMode(QwtMatrixRasterData::BilinearInterpolation);
-
-    d_dMin = dMin;
-    d_lMin = dMin;
-    d_ddx = (dMax-dMin)/c.d_delayPoints;
-    d_ldx = (fMax-fMin)/c.d_laserPosPoints;
 
     if(c.d_delayPoints > 1)
     {
@@ -143,50 +135,37 @@ void LifSpectrogramPlot::prepareForExperiment(const LifConfig &c)
     if(c.d_laserPosPoints > 1)
     {
         p_laserMarker->setVisible(true);
-        p_laserMarker->setXValue(freqRange.first);
+        p_laserMarker->setXValue(laserRange.first);
     }
 
     p_spectrogram->setData(p_spectrogramData);
     p_spectrogram->attach(this);
-    d_live = true;
-    d_liveDelayIndex = 0;
-    d_liveLaserIndex = 0;
+
 
     autoScale();
 }
 
-void LifSpectrogramPlot::updateData(const QVector<double> d, int numCols, double zMin, double zMax)
+void LifSpectrogramPlot::updateData(const QVector<double> d, int numCols)
 {
     if(d.size() < 2)
         return;
 
+    double zMin = 0.0, zMax = 0.0;
+    for(int i=0; i<d.size(); i++)
+    {
+        zMin = qMin(zMin,d.at(i));
+        zMax = qMax(zMax,d.at(i));
+    }
     p_spectrogramData->setInterval(Qt::ZAxis,QwtInterval(zMin,zMax));
 
-    QwtLinearColorMap *map2 = new QwtLinearColorMap(Qt::black,Qt::red);
-    map2->addColorStop(0.05,Qt::darkBlue);
-    map2->addColorStop(0.1,Qt::blue);
-    map2->addColorStop(0.25,Qt::cyan);
-    map2->addColorStop(0.5,Qt::green);
-    map2->addColorStop(0.75,Qt::yellow);
-    map2->addColorStop(0.9,QColor(0xff,0x66,0));
+    QwtLinearColorMap *map = new QwtLinearColorMap(QColor(0x02,0x28,0x51),QColor(0xff,0xdf,0x00));
 
     QwtScaleWidget *rightAxis = axisWidget( QwtPlot::yRight );
-    rightAxis->setColorMap(QwtInterval(zMin,zMax),map2);
-
-//    if(d_firstPoint)
-//    {
-//        d_firstPoint = false;
-
-
-//        p_delayMarker->setVisible(true);
-//        p_freqMarker->setVisible(true);
-
-//        emit delaySlice(0);
-//        emit freqSlice(0);
-//    }
+    rightAxis->setColorMap(QwtInterval(zMin,zMax),map);
 
     p_spectrogramData->setValueMatrix(d,numCols);
     p_spectrogram->setData(p_spectrogramData);
+    overrideAxisAutoScaleRange(QwtPlot::yRight,zMin,zMax);
     replot();
 
 }
@@ -245,7 +224,7 @@ void LifSpectrogramPlot::moveLaserCursor(QPoint pos)
 
 void LifSpectrogramPlot::moveLaserCursor(int index)
 {
-    double laserVal = static_cast<double>(index)*d_ldx + d_lMin + d_ldx/2.0;
+    double laserVal = static_cast<double>(index)*d_ldx + d_lMin;
     p_laserMarker->setXValue(laserVal);
 }
 
@@ -261,7 +240,7 @@ void LifSpectrogramPlot::moveDelayCursor(QPoint pos)
 
 void LifSpectrogramPlot::moveDelayCursor(int index)
 {
-    double delayVal = static_cast<double>(index)*d_ddx + d_dMin + d_ddx/2.0;
+    double delayVal = static_cast<double>(index)*d_ddx + d_dMin;
     p_delayMarker->setYValue(delayVal);
 }
 

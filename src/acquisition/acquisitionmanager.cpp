@@ -80,7 +80,7 @@ void AcquisitionManager::processLifScopeShot(const QByteArray b)
         //process trace; only send data to UI if point is complete
         ps_currentExperiment->lifConfig()->addWaveform(b);
         emit lifPointUpdate();
-        if(ps_currentExperiment->lifConfig()->advance())
+        if(ps_currentExperiment->lifConfig()->advance() && !ps_currentExperiment->isComplete())
             emit nextLifPoint(ps_currentExperiment->lifConfig()->currentDelay(),
                               ps_currentExperiment->lifConfig()->currentLaserPos());
 
@@ -93,15 +93,18 @@ void AcquisitionManager::processLifScopeShot(const QByteArray b)
 
 void AcquisitionManager::lifHardwareReady(bool success)
 {
-    if(ps_currentExperiment->lifEnabled())
+    if(ps_currentExperiment.get())
     {
-        if(!success)
+        if(ps_currentExperiment->lifEnabled())
         {
-            emit logMessage(QString("LIF delay and/or frequency could not be set. Aborting."),LogHandler::Error);
-            abort();
+            if(!success)
+            {
+                emit logMessage(QString("LIF delay and/or frequency could not be set. Aborting."),LogHandler::Error);
+                abort();
+            }
+            else
+                ps_currentExperiment->lifConfig()->hwReady();
         }
-        else
-            ps_currentExperiment->lifConfig()->hwReady();
     }
 }
 #endif

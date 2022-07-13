@@ -170,6 +170,11 @@ void LifControlWidget::toConfig(LifConfig &cfg)
     p_digWidget->toConfig(cfg.d_scopeConfig);
     cfg.d_shotsPerPoint = p_avgBox->value();
     cfg.d_procSettings = p_procWidget->getSettings();
+    auto it = cfg.d_scopeConfig.d_analogChannels.find(cfg.d_scopeConfig.d_refChannel);
+    if(it != cfg.d_scopeConfig.d_analogChannels.end())
+        cfg.d_scopeConfig.d_refEnabled = true;
+    else
+        cfg.d_scopeConfig.d_refEnabled = false;
 }
 
 

@@ -42,7 +42,6 @@ private:
     std::shared_ptr<LifStorage> ps_lifStorage;
     bool d_delayReverse{false}, d_laserReverse{false};
     QVector<double> d_currentIntegratedData;
-    double d_intMin{0.0}, d_intMax{0.0};
 
     LifSlicePlot *p_delaySlicePlot, *p_laserSlicePlot;
     LifTracePlot *p_lifTracePlot;

@@ -27,12 +27,12 @@ double LifConfig::currentLaserPos() const
 
 QPair<double, double> LifConfig::delayRange() const
 {
-    return qMakePair(d_delayStartUs,d_delayStartUs + d_delayStepUs*d_delayPoints);
+    return qMakePair(d_delayStartUs,d_delayStartUs + d_delayStepUs*(d_delayPoints-1));
 }
 
 QPair<double, double> LifConfig::laserRange() const
 {
-    return qMakePair(d_laserPosStart,d_laserPosStart + d_laserPosStep*d_laserPosPoints);
+    return qMakePair(d_laserPosStart,d_laserPosStart + d_laserPosStep*(d_laserPosPoints-1));
 }
 
 int LifConfig::targetShots() const
@@ -67,7 +67,8 @@ void LifConfig::addWaveform(const QByteArray d)
 
 void LifConfig::loadLifData()
 {
-
+    ps_storage = std::make_shared<LifStorage>(d_delayPoints,d_laserPosPoints,d_number,d_path);
+    ps_storage->finish();
 }
 
 void LifConfig::storeValues()
