@@ -12,45 +12,55 @@ PulseGenConfig::~PulseGenConfig()
 
 PulseGenConfig::ChannelConfig PulseGenConfig::at(const int i) const
 {
-    return d_config.value(i);
+    return d_channels.value(i);
 }
 
 int PulseGenConfig::size() const
 {
-    return d_config.size();
+    return d_channels.size();
 }
 
 bool PulseGenConfig::isEmpty() const
 {
-    return d_config.isEmpty();
+    return d_channels.isEmpty();
 }
 
 QVariant PulseGenConfig::setting(const int index, const Setting s) const
 {
-    if(index < 0 || index >= d_config.size())
+    if(index < 0 || index >= d_channels.size())
         return QVariant();
 
     switch(s)
     {
     case DelaySetting:
-        return d_config.at(index).delay;
+        return d_channels.at(index).delay;
         break;
     case WidthSetting:
-        return d_config.at(index).width;
+        return d_channels.at(index).width;
         break;
     case EnabledSetting:
-        return d_config.at(index).enabled;
+        return d_channels.at(index).enabled;
         break;
     case LevelSetting:
-        return d_config.at(index).level;
+        return d_channels.at(index).level;
         break;
     case NameSetting:
-        return d_config.at(index).channelName;
+        return d_channels.at(index).channelName;
         break;
     case RoleSetting:
-        return d_config.at(index).role;
+        return d_channels.at(index).role;
         break;
-    default:
+    case ModeSetting:
+        return d_channels.at(index).mode;
+        break;
+    case SyncSetting:
+        return d_channels.at(index).syncCh;
+        break;
+    case DutyOnSetting:
+        return d_channels.at(index).dutyOn;
+        break;
+    case DutyOffSetting:
+        return d_channels.at(index).dutyOff;
         break;
     }
 
@@ -60,9 +70,9 @@ QVariant PulseGenConfig::setting(const int index, const Setting s) const
 QVector<QVariant> PulseGenConfig::setting(Role role, const Setting s) const
 {
     QVector<QVariant> out;
-    for(int i=0; i<d_config.size(); i++)
+    for(int i=0; i<d_channels.size(); i++)
     {
-        if(d_config.at(i).role == role)
+        if(d_channels.at(i).role == role)
             out << setting(i,s);
     }
 
@@ -71,103 +81,108 @@ QVector<QVariant> PulseGenConfig::setting(Role role, const Setting s) const
 
 PulseGenConfig::ChannelConfig PulseGenConfig::settings(const int index) const
 {
-    if(index < 0 || index >= d_config.size())
+    if(index < 0 || index >= d_channels.size())
         return ChannelConfig();
 
-    return d_config.at(index);
+    return d_channels.at(index);
 
 }
 
 QVector<int> PulseGenConfig::channelsForRole(Role role) const
 {
     QVector<int> out;
-    for(int i=0; i<d_config.size(); i++)
+    for(int i=0; i<d_channels.size(); i++)
     {
-        if(d_config.at(i).role == role)
+        if(d_channels.at(i).role == role)
             out << i;
     }
 
     return out;
 }
 
-double PulseGenConfig::repRate() const
+void PulseGenConfig::setCh(const int index, const Setting s, const QVariant val)
 {
-    return d_repRate;
-}
-
-void PulseGenConfig::set(const int index, const Setting s, const QVariant val)
-{
-    if(index < 0 || index >= d_config.size())
+    if(index < 0 || index >= d_channels.size())
         return;
 
     switch(s)
     {
     case DelaySetting:
-        d_config[index].delay = val.toDouble();
+        d_channels[index].delay = val.toDouble();
         break;
     case WidthSetting:
-        d_config[index].width = val.toDouble();
+        d_channels[index].width = val.toDouble();
         break;
     case EnabledSetting:
-        d_config[index].enabled = val.toBool();
+        d_channels[index].enabled = val.toBool();
         break;
     case LevelSetting:
-        d_config[index].level = val.value<ActiveLevel>();
+        d_channels[index].level = val.value<ActiveLevel>();
         break;
     case NameSetting:
-        if(d_config.at(index).role == None)
-            d_config[index].channelName = val.toString();
+        if(d_channels.at(index).role == None)
+            d_channels[index].channelName = val.toString();
         else
-            d_config[index].channelName = QString(QMetaEnum::fromType<Role>().key(d_config.at(index).role));
+            d_channels[index].channelName = QString(QMetaEnum::fromType<Role>().key(d_channels.at(index).role));
         break;
     case RoleSetting:
-        d_config[index].role = val.value<Role>();
-        if(d_config.at(index).role != None)
-            d_config[index].channelName = QString(QMetaEnum::fromType<Role>().key(d_config.at(index).role));
-    default:
+        d_channels[index].role = val.value<Role>();
+        if(d_channels.at(index).role != None)
+            d_channels[index].channelName = QString(QMetaEnum::fromType<Role>().key(d_channels.at(index).role));
+        break;
+    case ModeSetting:
+        d_channels[index].mode = val.value<ChannelMode>();
+        break;
+    case SyncSetting:
+        d_channels[index].syncCh = val.toInt();
+        break;
+    case DutyOnSetting:
+        d_channels[index].dutyOn = val.toInt();
+        break;
+    case DutyOffSetting:
+        d_channels[index].dutyOff = val.toInt();
         break;
     }
 }
 
-void PulseGenConfig::set(const int index, const ChannelConfig cc)
+void PulseGenConfig::setCh(const int index, const ChannelConfig cc)
 {
-    if(index < 0 || index >= d_config.size())
+    if(index < 0 || index >= d_channels.size())
         return;
 
-    set(index,DelaySetting,cc.delay);
-    set(index,WidthSetting,cc.width);
-    set(index,EnabledSetting,cc.enabled);
-    set(index,LevelSetting,cc.level);
-    set(index,NameSetting,cc.channelName);
-    set(index,RoleSetting,cc.role);
+    setCh(index,DelaySetting,cc.delay);
+    setCh(index,WidthSetting,cc.width);
+    setCh(index,EnabledSetting,cc.enabled);
+    setCh(index,LevelSetting,cc.level);
+    setCh(index,NameSetting,cc.channelName);
+    setCh(index,RoleSetting,cc.role);
+    setCh(index,ModeSetting,cc.mode);
+    setCh(index,SyncSetting,cc.syncCh);
+    setCh(index,DutyOnSetting,cc.dutyOn);
+    setCh(index,DutyOffSetting,cc.dutyOff);
 }
 
-void PulseGenConfig::set(Role role, const Setting s, const QVariant val)
+void PulseGenConfig::setCh(Role role, const Setting s, const QVariant val)
 {
-    for(int i=0; i<d_config.size(); i++)
+    for(int i=0; i<d_channels.size(); i++)
     {
-        if(d_config.at(i).role == role)
-            set(i,s,val);
+        if(d_channels.at(i).role == role)
+            setCh(i,s,val);
     }
 }
 
-void PulseGenConfig::set(Role role, const ChannelConfig cc)
+void PulseGenConfig::setCh(Role role, const ChannelConfig cc)
 {
-    for(int i=0; i<d_config.size(); i++)
+    for(int i=0; i<d_channels.size(); i++)
     {
-        if(d_config.at(i).role == role)
-            set(i,cc);
+        if(d_channels.at(i).role == role)
+            setCh(i,cc);
     }
 }
 
 void PulseGenConfig::addChannel()
 {
-    d_config.append(ChannelConfig());
-}
-
-void PulseGenConfig::setRepRate(const double r)
-{
-    d_repRate = r;
+    d_channels.append(ChannelConfig());
 }
 
 
@@ -176,15 +191,21 @@ void PulseGenConfig::storeValues()
 {
     using namespace BC::Store::PGenConfig;
     store(rate,d_repRate,BC::Unit::Hz);
-    for(int i=0; i<d_config.size(); ++i)
+    store(pGenMode,d_mode);
+    store(pGenEnabled,d_pulseEnabled);
+    for(int i=0; i<d_channels.size(); ++i)
     {
-        auto &cc = d_config.at(i);
+        auto &cc = d_channels.at(i);
         storeArrayValue(channel,i,name,cc.channelName);
         storeArrayValue(channel,i,delay,cc.delay,BC::Unit::us);
         storeArrayValue(channel,i,width,cc.width,BC::Unit::us);
         storeArrayValue(channel,i,level,cc.level);
         storeArrayValue(channel,i,enabled,cc.enabled);
         storeArrayValue(channel,i,role,cc.role);
+        storeArrayValue(channel,i,chMode,cc.mode);
+        storeArrayValue(channel,i,sync,cc.syncCh);
+        storeArrayValue(channel,i,dutyOn,cc.dutyOn);
+        storeArrayValue(channel,i,dutyOff,cc.dutyOff);
     }
 }
 
@@ -192,9 +213,11 @@ void PulseGenConfig::retrieveValues()
 {
     using namespace BC::Store::PGenConfig;
     d_repRate = retrieve(rate,0.0);
+    d_pulseEnabled = retrieve(pGenEnabled,true);
+    d_mode = retrieve(pGenMode,Continuous);
     auto n = arrayStoreSize(channel);
-    d_config.clear();
-    d_config.reserve(n);
+    d_channels.clear();
+    d_channels.reserve(n);
     for(std::size_t i =0; i<n; ++i)
     {
         ChannelConfig cc {
@@ -203,9 +226,13 @@ void PulseGenConfig::retrieveValues()
                     retrieveArrayValue(channel,i,delay,0.0),
                     retrieveArrayValue(channel,i,width,1.0),
                     retrieveArrayValue(channel,i,level,ActiveHigh),
-                    retrieveArrayValue(channel,i,role,None)
+                    retrieveArrayValue(channel,i,role,None),
+                    retrieveArrayValue(channel,i,chMode,Normal),
+                    retrieveArrayValue(channel,i,sync,0),
+                    retrieveArrayValue(channel,i,dutyOn,1),
+                    retrieveArrayValue(channel,i,dutyOff,1)
         };
 
-        d_config << cc;
+        d_channels << cc;
     }
 }

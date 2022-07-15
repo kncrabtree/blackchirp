@@ -181,8 +181,8 @@ void PulseConfigWidget::configureLif(const LifConfig &c)
 
     auto delay = c.delayRange().first;
 
-    d_config.set(PulseGenConfig::LIF,PulseGenConfig::DelaySetting,delay);
-    d_config.set(PulseGenConfig::LIF,PulseGenConfig::EnabledSetting,true);
+    d_config.setCh(PulseGenConfig::LIF,PulseGenConfig::DelaySetting,delay);
+    d_config.setCh(PulseGenConfig::LIF,PulseGenConfig::EnabledSetting,true);
     setFromConfig(d_config);
 
     for(int i=0; i<channels.size(); i++)
@@ -218,13 +218,13 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig &c)
         return;
 
     auto cc = c.d_rfConfig.d_chirpConfig;
-    d_config.set(PulseGenConfig::AWG,PulseGenConfig::EnabledSetting,true);
+    d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::EnabledSetting,true);
     auto l = d_config.setting(PulseGenConfig::AWG,PulseGenConfig::DelaySetting);
 
     if(l.size() > 1)
     {
-        d_config.set(PulseGenConfig::AWG,PulseGenConfig::DelaySetting,l.constFirst());
-        d_config.set(PulseGenConfig::AWG,PulseGenConfig::WidthSetting,d_config.setting(PulseGenConfig::Amp,PulseGenConfig::WidthSetting).constFirst().toDouble());
+        d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::DelaySetting,l.constFirst());
+        d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::WidthSetting,d_config.setting(PulseGenConfig::Amp,PulseGenConfig::WidthSetting).constFirst().toDouble());
     }
 
     if(!l.isEmpty())
@@ -236,15 +236,15 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig &c)
             if(protStart < 0.0)
             {
                 awgStart -= protStart;
-                d_config.set(PulseGenConfig::AWG,PulseGenConfig::DelaySetting,awgStart);
+                d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::DelaySetting,awgStart);
                 protStart = 0.0;
             }
 
             double protWidth = cc.totalProtectionWidth();
 
-            d_config.set(PulseGenConfig::Prot,PulseGenConfig::DelaySetting,protStart);
-            d_config.set(PulseGenConfig::Prot,PulseGenConfig::WidthSetting,protWidth);
-            d_config.set(PulseGenConfig::Prot,PulseGenConfig::EnabledSetting,true);
+            d_config.setCh(PulseGenConfig::Prot,PulseGenConfig::DelaySetting,protStart);
+            d_config.setCh(PulseGenConfig::Prot,PulseGenConfig::WidthSetting,protWidth);
+            d_config.setCh(PulseGenConfig::Prot,PulseGenConfig::EnabledSetting,true);
         }
 
         bool checkProt = false;
@@ -254,16 +254,16 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig &c)
             if(gateStart < 0.0)
             {
                 awgStart -= gateStart;
-                d_config.set(PulseGenConfig::AWG,PulseGenConfig::DelaySetting,awgStart);
+                d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::DelaySetting,awgStart);
                 gateStart = 0.0;
                 checkProt = true;
             }
 
             double gateWidth = cc.totalGateWidth();
 
-            d_config.set(PulseGenConfig::Amp,PulseGenConfig::DelaySetting,gateStart);
-            d_config.set(PulseGenConfig::Amp,PulseGenConfig::WidthSetting,gateWidth);
-            d_config.set(PulseGenConfig::Amp,PulseGenConfig::EnabledSetting,true);
+            d_config.setCh(PulseGenConfig::Amp,PulseGenConfig::DelaySetting,gateStart);
+            d_config.setCh(PulseGenConfig::Amp,PulseGenConfig::WidthSetting,gateWidth);
+            d_config.setCh(PulseGenConfig::Amp,PulseGenConfig::EnabledSetting,true);
         }
 
         if(!awgHasProt && checkProt)
@@ -271,8 +271,8 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig &c)
             double protStart = awgStart - cc.preChirpProtectionDelay() - cc.preChirpGateDelay();
             double protWidth = cc.totalProtectionWidth();
 
-            d_config.set(PulseGenConfig::Prot,PulseGenConfig::DelaySetting,protStart);
-            d_config.set(PulseGenConfig::Prot,PulseGenConfig::WidthSetting,protWidth);
+            d_config.setCh(PulseGenConfig::Prot,PulseGenConfig::DelaySetting,protStart);
+            d_config.setCh(PulseGenConfig::Prot,PulseGenConfig::WidthSetting,protWidth);
         }
     }
 
@@ -373,25 +373,25 @@ void PulseConfigWidget::launchChannelConfig(int ch)
 
         if(chw.levelButton->isChecked())
         {
-            d_config.set(ch,PulseGenConfig::LevelSetting,QVariant::fromValue(PulseGenConfig::ActiveHigh));
+            d_config.setCh(ch,PulseGenConfig::LevelSetting,QVariant::fromValue(PulseGenConfig::ActiveHigh));
             emit changeSetting(ch,PulseGenConfig::LevelSetting,QVariant::fromValue(PulseGenConfig::ActiveHigh));
         }
         else
         {
-            d_config.set(ch,PulseGenConfig::LevelSetting,QVariant::fromValue(PulseGenConfig::ActiveLow));
+            d_config.setCh(ch,PulseGenConfig::LevelSetting,QVariant::fromValue(PulseGenConfig::ActiveLow));
             emit changeSetting(ch,PulseGenConfig::LevelSetting,QVariant::fromValue(PulseGenConfig::ActiveLow));
         }
 
         setArrayValue(BC::Key::PulseWidget::channels,ch,
                       BC::Key::PulseWidget::role,chw.roleBox->currentData(),false);
-        d_config.set(ch,PulseGenConfig::RoleSetting,chw.roleBox->currentData());
+        d_config.setCh(ch,PulseGenConfig::RoleSetting,chw.roleBox->currentData());
         emit changeSetting(ch,PulseGenConfig::RoleSetting,d_config.at(ch).role);
 
         chw.label->setText(chw.nameEdit->text());
         //this is the last setting to save; write the array
         setArrayValue(BC::Key::PulseWidget::channels,ch,
                       BC::Key::PulseWidget::name,chw.nameEdit->text(),true);
-        d_config.set(ch,PulseGenConfig::NameSetting,chw.nameEdit->text());
+        d_config.setCh(ch,PulseGenConfig::NameSetting,chw.nameEdit->text());
         emit changeSetting(ch,PulseGenConfig::NameSetting,chw.nameEdit->text());
 
 
@@ -438,7 +438,7 @@ void PulseConfigWidget::newSetting(int index, PulseGenConfig::Setting s, QVarian
         break;
     }
 
-    d_config.set(index,s,val);
+    d_config.setCh(index,s,val);
     blockSignals(false);
 
     ui->pulsePlot->newSetting(index,s,val);
@@ -449,10 +449,11 @@ void PulseConfigWidget::setFromConfig(const PulseGenConfig &c)
     blockSignals(true);
     for(int i=0; i<c.size(); i++)
     {
-        d_config.set(i,PulseGenConfig::DelaySetting,c.at(i).delay);
-        d_config.set(i,PulseGenConfig::WidthSetting,c.at(i).width);
-        d_config.set(i,PulseGenConfig::LevelSetting,c.at(i).level);
-        d_config.set(i,PulseGenConfig::EnabledSetting,c.at(i).enabled);
+        ///TODO
+        d_config.setCh(i,PulseGenConfig::DelaySetting,c.at(i).delay);
+        d_config.setCh(i,PulseGenConfig::WidthSetting,c.at(i).width);
+        d_config.setCh(i,PulseGenConfig::LevelSetting,c.at(i).level);
+        d_config.setCh(i,PulseGenConfig::EnabledSetting,c.at(i).enabled);
 
 
         d_widgetList.at(i).delayBox->setValue(c.at(i).delay);
@@ -460,8 +461,8 @@ void PulseConfigWidget::setFromConfig(const PulseGenConfig &c)
         d_widgetList.at(i).levelButton->setChecked(c.at(i).level == PulseGenConfig::ActiveHigh);
         d_widgetList.at(i).onButton->setChecked(c.at(i).enabled);
     }
-    d_config.setRepRate(c.repRate());
-    ui->repRateBox->setValue(c.repRate());
+    d_config.d_repRate = c.d_repRate;
+    ui->repRateBox->setValue(c.d_repRate);
     blockSignals(false);
 
     ui->pulsePlot->newConfig(d_config);
@@ -473,7 +474,7 @@ void PulseConfigWidget::newRepRate(double r)
     ui->repRateBox->setValue(r);
     ui->repRateBox->blockSignals(false);
     ui->pulsePlot->newRepRate(r);
-    d_config.setRepRate(r);
+    d_config.d_repRate = r;
 }
 
 void PulseConfigWidget::updateFromSettings()
@@ -507,8 +508,8 @@ void PulseConfigWidget::updateFromSettings()
         auto n = getArrayValue<QString>(BC::Key::PulseWidget::channels,i,
                                         BC::Key::PulseWidget::name,QString("Ch")+QString::number(i+1));
 
-        d_config.set(i,PulseGenConfig::RoleSetting,r);
-        d_config.set(i,PulseGenConfig::NameSetting,n);
+        d_config.setCh(i,PulseGenConfig::RoleSetting,r);
+        d_config.setCh(i,PulseGenConfig::NameSetting,n);
 
         if(chw.label != nullptr)
             chw.label->setText(n);
@@ -533,6 +534,6 @@ void PulseConfigWidget::updateFromSettings()
 void PulseConfigWidget::setRepRate(const double r)
 {
     ui->pulsePlot->newRepRate(r);
-    d_config.setRepRate(r);
+    d_config.d_repRate = r;
     emit changeRepRate(r);
 }

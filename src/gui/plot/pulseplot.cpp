@@ -94,13 +94,13 @@ void PulsePlot::newSetting(int index, PulseGenConfig::Setting s, QVariant val)
     if(index < 0 || index > d_config.size())
         return;
 
-    d_config.set(index,s,val);
+    d_config.setCh(index,s,val);
     replot();
 }
 
 void PulsePlot::newRepRate(double d)
 {
-    d_config.setRepRate(d);
+    d_config.d_repRate = d;
 }
 
 

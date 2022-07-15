@@ -2,11 +2,13 @@
 
 HEADERS += \
     $$PWD/pulsegenconfig.h \
-    $$PWD/pulsegenerator.h
+    $$PWD/pulsegenerator.h \
+    $$PWD/qcpulsegenerator.h
 
 SOURCES += \
     $$PWD/pulsegenconfig.cpp \
-    $$PWD/pulsegenerator.cpp
+    $$PWD/pulsegenerator.cpp \
+    $$PWD/qcpulsegenerator.cpp
 
 !lessThan(PGEN,0) {
     DEFINES += BC_PGEN=$$PGEN

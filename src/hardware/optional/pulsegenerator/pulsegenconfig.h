@@ -17,6 +17,12 @@ static const QString level{"ActiveLevel"};
 static const QString role{"Role"};
 static const QString name{"Name"};
 static const QString enabled{"Enabled"};
+static const QString chMode{"Mode"};
+static const QString sync{"SyncChannel"};
+static const QString dutyOn{"DutyOn"};
+static const QString dutyOff{"DutyOff"};
+static const QString pGenMode{"PulseGenMode"};
+static const QString pGenEnabled{"PulseGenEnabled"};
 }
 
 class PulseGenConfig : public HeaderStorage
@@ -24,7 +30,7 @@ class PulseGenConfig : public HeaderStorage
     Q_GADGET
 public:
     enum ActiveLevel { ActiveInvalid = -1, ActiveLow, ActiveHigh };
-    enum Setting { DelaySetting, WidthSetting, EnabledSetting, LevelSetting, NameSetting, RoleSetting };
+    enum Setting { DelaySetting, WidthSetting, EnabledSetting, LevelSetting, NameSetting, RoleSetting, ModeSetting, SyncSetting, DutyOnSetting, DutyOffSetting };
     enum Role {
         None,
         Gas,
@@ -35,12 +41,16 @@ public:
         Laser,
         XMer
 #ifdef BC_LIF
-        ,LIF
+        ,LIF = 999
 #endif
     };
+    enum PGenMode { Continuous, Triggered };
+    enum ChannelMode { Normal, DutyCycle };
     Q_ENUM(ActiveLevel)
     Q_ENUM(Setting)
     Q_ENUM(Role)
+    Q_ENUM(PGenMode)
+    Q_ENUM(ChannelMode)
 
     struct ChannelConfig {
         QString channelName{""};
@@ -49,7 +59,17 @@ public:
         double width{1.0};
         ActiveLevel level{ActiveHigh};
         Role role{None};
+        ChannelMode mode{Normal};
+        int syncCh{0};
+        int dutyOn{1};
+        int dutyOff{1};
     };
+
+
+    QVector<PulseGenConfig::ChannelConfig> d_channels;
+    double d_repRate{1.0};
+    PGenMode d_mode{Continuous};
+    bool d_pulseEnabled{true};
 
     PulseGenConfig();
     ~PulseGenConfig();
@@ -61,18 +81,13 @@ public:
     QVector<QVariant> setting(Role role, const Setting s) const;
     ChannelConfig settings(const int index) const;
     QVector<int> channelsForRole(Role role) const;
-    double repRate() const;
 
-    void set(const int index, const Setting s, const QVariant val);
-    void set(const int index, const ChannelConfig cc);
-    void set(Role role, const Setting s, const QVariant val);
-    void set(Role role, const ChannelConfig cc);
+    void setCh(const int index, const Setting s, const QVariant val);
+    void setCh(const int index, const ChannelConfig cc);
+    void setCh(Role role, const Setting s, const QVariant val);
+    void setCh(Role role, const ChannelConfig cc);
     void addChannel();
-    void setRepRate(const double r);
 
-private:
-    QVector<PulseGenConfig::ChannelConfig> d_config;
-    double d_repRate{1.0};
 
     // HeaderStorage interface
 protected:
