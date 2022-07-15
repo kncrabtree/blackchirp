@@ -98,10 +98,17 @@ bool QCPulseGenerator::setChDutyOff(const int index, const int pulses)
 bool QCPulseGenerator::setHwPulseMode(PGenMode mode)
 {
     QString mstr("DIS");
+    QString smstr("NORM");
     if(mode == Triggered)
+    {
         mstr = QString("TRIG");
+        smstr = QString("SINGLE");
+    }
 
-    return pGenWriteCmd(QString("%1 %2").arg(trigBase()).arg(mstr));
+    bool success = pGenWriteCmd(QString("%1 %2").arg(trigBase()).arg(mstr));
+    if(success)
+        success = pGenWriteCmd(QString(":%1:MOD %2").arg(sysStr()).arg(smstr));
+    return success;
 }
 
 bool QCPulseGenerator::setHwRepRate(double rr)
