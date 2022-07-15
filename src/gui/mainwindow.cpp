@@ -211,6 +211,9 @@ MainWindow::MainWindow(QWidget *parent) :
                auto pcw = new PulseConfigWidget;
                auto pc = p_hwm->getPGenConfig();
                pcw->setFromConfig(pc);
+               connect(pcw,&PulseConfigWidget::changeSysMode,[=](PulseGenConfig::PGenMode m){
+                  p_lh->logMessage(QString("Test: PGen Mode %1").arg(m));
+               });
 
                connect(p_hwm,&HardwareManager::pGenConfigUpdate,pcw,&PulseConfigWidget::setFromConfig);
                connect(p_hwm,&HardwareManager::pGenSettingUpdate,pcw,&PulseConfigWidget::newSetting);

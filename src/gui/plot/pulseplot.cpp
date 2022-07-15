@@ -70,7 +70,6 @@ PulsePlot::PulsePlot(QWidget *parent) :
     enableAxis(QwtPlot::yLeft,false);
     setAxisOverride(QwtPlot::yRight);
     enableAxis(QwtPlot::yRight,false);
-    replot();
 }
 
 PulsePlot::~PulsePlot()

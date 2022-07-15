@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QList>
 
+#include <gui/widget/enumcombobox.h>
 #include <data/storage/settingsstorage.h>
 #include <hardware/optional/pulsegenerator/pulsegenconfig.h>
 #include <data/experiment/ftmwconfig.h>
@@ -18,10 +19,8 @@ class QPushButton;
 class QToolButton;
 class QLineEdit;
 class QComboBox;
-
-namespace Ui {
-class PulseConfigWidget;
-}
+class PulsePlot;
+class QSpinBox;
 
 namespace BC::Key::PulseWidget {
 static const QString key{"PulseWidget"};
@@ -42,15 +41,20 @@ public:
 
     struct ChWidgets {
         QLabel *label;
+        QComboBox *syncBox;
         QDoubleSpinBox *delayBox;
         QDoubleSpinBox *widthBox;
+        EnumComboBox<PulseGenConfig::ChannelMode> *modeBox;
         QPushButton *onButton;
         QToolButton *cfgButton;
         QLineEdit *nameEdit;
-        QPushButton *levelButton;
+        EnumComboBox<PulseGenConfig::Role> *roleBox;
+        EnumComboBox<PulseGenConfig::ActiveLevel> *levelBox;
+        QSpinBox *dutyOnBox;
+        QSpinBox *dutyOffBox;
         QDoubleSpinBox *delayStepBox;
         QDoubleSpinBox *widthStepBox;
-        QComboBox *roleBox;
+        bool locked{false};
     };
 
     PulseGenConfig getConfig() const;
@@ -65,6 +69,8 @@ public:
 signals:
     void changeSetting(int,PulseGenConfig::Setting,QVariant);
     void changeRepRate(double);
+    void changeSysPulsing(bool);
+    void changeSysMode(PulseGenConfig::PGenMode);
 
 public slots:
     void launchChannelConfig(int ch);
@@ -73,14 +79,23 @@ public slots:
     void newRepRate(double r);
     void updateFromSettings();
     void setRepRate(const double r);
+    void unlockAll();
 
 private:
-    Ui::PulseConfigWidget *ui;
-
+    void lockChannel(int i, bool locked = true);
     QList<ChWidgets> d_widgetList;
     PulseGenConfig d_config;
+    PulsePlot *p_pulsePlot;
+    QDoubleSpinBox *p_repRateBox;
+    QPushButton *p_sysOnOffButton;
+    EnumComboBox<PulseGenConfig::PGenMode> *p_sysModeBox;
 
 
+
+
+    // QWidget interface
+public:
+    QSize sizeHint() const override;
 };
 
 #endif // PULSECONFIGWIDGET_H

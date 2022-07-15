@@ -29,7 +29,7 @@ class PulseGenConfig : public HeaderStorage
 {
     Q_GADGET
 public:
-    enum ActiveLevel { ActiveInvalid = -1, ActiveLow, ActiveHigh };
+    enum ActiveLevel { ActiveLow, ActiveHigh };
     enum Setting { DelaySetting, WidthSetting, EnabledSetting, LevelSetting, NameSetting, RoleSetting, ModeSetting, SyncSetting, DutyOnSetting, DutyOffSetting };
     enum Role {
         None,

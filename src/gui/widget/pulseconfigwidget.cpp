@@ -1,5 +1,4 @@
 #include "pulseconfigwidget.h"
-#include "ui_pulseconfigwidget.h"
 
 #include <QMetaEnum>
 #include <QPushButton>
@@ -10,21 +9,95 @@
 #include <QFormLayout>
 #include <QDialogButtonBox>
 #include <QMessageBox>
+#include <QDoubleSpinBox>
+#include <QGridLayout>
+#include <QGroupBox>
+#include <QLabel>
+#include <QVBoxLayout>
 
+#include <gui/plot/pulseplot.h>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <hardware/optional/chirpsource/awg.h>
 
 PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
-    QWidget(parent), SettingsStorage(BC::Key::PulseWidget::key),
-    ui(new Ui::PulseConfigWidget)
+    QWidget(parent), SettingsStorage(BC::Key::PulseWidget::key)
 {
-    ui->setupUi(this);    
 
     auto vc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
     SettingsStorage s(BC::Key::PGen::key,Hardware);
     int numChannels = s.get<int>(BC::Key::PGen::numChannels);
     if(!containsArray(BC::Key::PulseWidget::channels))
         setArray(BC::Key::PulseWidget::channels,{});
+
+    auto hbl = new QHBoxLayout;
+    setLayout(hbl);
+
+    auto vbl = new QVBoxLayout;
+    hbl->addLayout(vbl,0);
+
+    p_pulsePlot = new PulsePlot(this);
+    hbl->addWidget(p_pulsePlot,1);
+
+    auto mainGb = new QGroupBox("System Settings",this);
+    auto gl = new QGridLayout;
+    gl->addWidget(new QLabel("Pulsing Enabled"),0,0);
+    gl->itemAtPosition(0,0)->setAlignment(Qt::AlignRight);
+    p_sysOnOffButton = new QPushButton("Off",this);
+    p_sysOnOffButton->setCheckable(true);
+    p_sysOnOffButton->setChecked(false);
+    connect(p_sysOnOffButton,&QPushButton::toggled,this,&PulseConfigWidget::changeSysPulsing);
+    connect(p_sysOnOffButton,&QPushButton::toggled,[=](bool en){
+        if(en)
+            p_sysOnOffButton->setText(QString("On"));
+        else
+            p_sysOnOffButton->setText(QString("Off"));
+
+        for(auto &ch : d_widgetList)
+        {
+            ch.modeBox->setDisabled(en || ch.locked);
+            ch.syncBox->setDisabled(en || ch.locked);
+        }
+    });
+    gl->addWidget(p_sysOnOffButton,0,1);
+
+    gl->addWidget(new QLabel("Pulse Mode"),0,2);
+    gl->itemAtPosition(0,2)->setAlignment(Qt::AlignRight);
+    p_sysModeBox = new EnumComboBox<PulseGenConfig::PGenMode>(this);
+    connect(p_sysModeBox,qOverload<int>(&QComboBox::currentIndexChanged),[=](int i){
+        emit changeSysMode(p_sysModeBox->value(i));
+        p_repRateBox->setEnabled(p_sysModeBox->value(i) == PulseGenConfig::Continuous);
+    });
+    gl->addWidget(p_sysModeBox,0,3);
+
+    gl->addWidget(new QLabel("Rep Rate"),1,2);
+    gl->itemAtPosition(1,2)->setAlignment(Qt::AlignRight);
+    p_repRateBox = new QDoubleSpinBox(this);
+    p_repRateBox->setSuffix(QString(" Hz"));
+    connect(p_repRateBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&PulseConfigWidget::changeRepRate);
+    gl->addWidget(p_repRateBox,1,3);
+
+    mainGb->setLayout(gl);
+
+
+    vbl->addWidget(mainGb);
+
+    auto chgb = new QGroupBox("Channel Configuration",this);
+    auto pulseConfigBoxLayout = new QGridLayout;
+    pulseConfigBoxLayout->addWidget(new QLabel("Ch"),0,0);
+    pulseConfigBoxLayout->addWidget(new QLabel("Sync"),0,1);
+    pulseConfigBoxLayout->addWidget(new QLabel("Delay"),0,2);
+    pulseConfigBoxLayout->addWidget(new QLabel("Width"),0,3);
+    pulseConfigBoxLayout->addWidget(new QLabel("Mode"),0,4);
+    pulseConfigBoxLayout->addWidget(new QLabel("Enabled"),0,5);
+    pulseConfigBoxLayout->addWidget(new QLabel("Cfg"),0,6);
+
+    for(int i=0; i<7; i++)
+        pulseConfigBoxLayout->itemAtPosition(0,i)->setAlignment(Qt::AlignCenter);
+
+    chgb->setLayout(pulseConfigBoxLayout);
+
+    vbl->addWidget(chgb);
+    vbl->addSpacerItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::MinimumExpanding));
 
     QWidget *lastFocusWidget = nullptr;
     for(int i=0; i<numChannels; i++)
@@ -40,14 +113,29 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
 
         ch.label = new QLabel(this);
         ch.label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-        ui->pulseConfigBoxLayout->addWidget(ch.label,i+1,col,1,1);
+        pulseConfigBoxLayout->addWidget(ch.label,i+1,col);
+        col++;
+
+        ch.syncBox = new QComboBox(this);
+        for(int j=0; j<= numChannels; j++)
+        {
+            if(j == 0)
+                ch.syncBox->addItem("T0",i);
+            else
+                ch.syncBox->addItem(QString("Ch")+QString::number(j),j);
+        }
+        connect(ch.syncBox,qOverload<int>(&QComboBox::currentIndexChanged),[=](int j){
+            emit changeSetting(i,PulseGenConfig::SyncSetting,j);
+        });
+        ch.syncBox->setEnabled(false);
+        pulseConfigBoxLayout->addWidget(ch.syncBox,i+1,col);
         col++;
 
         ch.delayBox = new QDoubleSpinBox(this);
         ch.delayBox->setKeyboardTracking(false);
         ch.delayBox->setDecimals(3);
         ch.delayBox->setSuffix(QString::fromUtf16(u" µs"));
-        ui->pulseConfigBoxLayout->addWidget(ch.delayBox,i+1,col,1,1);
+        pulseConfigBoxLayout->addWidget(ch.delayBox,i+1,col,1,1);
         connect(ch.delayBox,vc,[=](double val){
             emit changeSetting(i,PulseGenConfig::DelaySetting,val);
         } );
@@ -59,15 +147,25 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
         ch.widthBox->setSuffix(QString::fromUtf16(u" µs"));
         ch.widthBox->setSingleStep(getArrayValue<double>(BC::Key::PulseWidget::channels,i,
                                                          BC::Key::PulseWidget::widthStep,1.0));
-        ui->pulseConfigBoxLayout->addWidget(ch.widthBox,i+1,col,1,1);
-        connect(ch.widthBox,vc,this,[=](double val){ emit changeSetting(i,PulseGenConfig::WidthSetting,val); } );
+        pulseConfigBoxLayout->addWidget(ch.widthBox,i+1,col,1,1);
+        connect(ch.widthBox,vc,this,[=](double val){
+            emit changeSetting(i,PulseGenConfig::WidthSetting,val);
+        });
+        col++;
+
+        ch.modeBox = new EnumComboBox<PulseGenConfig::ChannelMode>(this);
+        connect(ch.modeBox,qOverload<int>(&QComboBox::currentIndexChanged),[=](int j){
+            emit changeSetting(i,PulseGenConfig::ModeSetting,ch.modeBox->value(j));
+        });
+        ch.modeBox->setEnabled(false);
+        pulseConfigBoxLayout->addWidget(ch.modeBox,i+1,col);
         col++;
 
         ch.onButton = new QPushButton(this);
         ch.onButton->setCheckable(true);
         ch.onButton->setChecked(false);
         ch.onButton->setText(QString("Off"));
-        ui->pulseConfigBoxLayout->addWidget(ch.onButton,i+1,col,1,1);
+        pulseConfigBoxLayout->addWidget(ch.onButton,i+1,col,1,1);
         connect(ch.onButton,&QPushButton::toggled,this,[=](bool en){ emit changeSetting(i,PulseGenConfig::EnabledSetting,en); } );
         connect(ch.onButton,&QPushButton::toggled,this,[=](bool en){
             if(en)
@@ -79,7 +177,7 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
         ch.cfgButton = new QToolButton(this);
         ch.cfgButton->setIcon(QIcon(":/icons/configure.png"));
         ch.cfgButton->setIconSize(QSize(12,12));
-        ui->pulseConfigBoxLayout->addWidget(ch.cfgButton,i+1,col,1,1);
+        pulseConfigBoxLayout->addWidget(ch.cfgButton,i+1,col,1,1);
         connect(ch.cfgButton,&QToolButton::clicked,[=](){ launchChannelConfig(i); } );
         col++;
         lastFocusWidget = ch.cfgButton;
@@ -88,18 +186,8 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
         ch.nameEdit->setMaxLength(8);
         ch.nameEdit->hide();
 
-        ch.levelButton = new QPushButton(this);
-        ch.levelButton->setCheckable(true);
-        ch.levelButton->setChecked(true);
-        ch.levelButton->setText(QString("Active High"));
-
-        connect(ch.levelButton,&QPushButton::toggled,[=](bool en){
-            if(en)
-                ch.levelButton->setText(QString("Active High"));
-            else
-                ch.levelButton->setText(QString("Active Low"));
-        });
-        ch.levelButton->hide();
+        ch.levelBox = new EnumComboBox<PulseGenConfig::ActiveLevel>(this);
+        ch.levelBox->hide();
 
         ch.delayStepBox = new QDoubleSpinBox(this);
         ch.delayStepBox->setDecimals(3);
@@ -113,13 +201,11 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
         ch.widthStepBox->setSuffix(QString::fromUtf16(u" µs"));
         ch.widthStepBox->hide();
 
-        ch.roleBox = new QComboBox(this);
+        ch.roleBox = new EnumComboBox<PulseGenConfig::Role>(this);
         QMetaEnum rt = QMetaEnum::fromType<PulseGenConfig::Role>();
-        for(int i=0; i<rt.keyCount(); ++i)
-            ch.roleBox->addItem(rt.key(i),rt.value(i));
         ch.roleBox->hide();
-        connect(ch.roleBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[ch,i,rt](int index) {
-            auto r = ch.roleBox->itemData(index).value<PulseGenConfig::Role>();
+        connect(ch.roleBox,qOverload<int>(&QComboBox::currentIndexChanged),[ch,i,rt](int index) {
+            auto r = ch.roleBox->value(index);
             if(r == PulseGenConfig::None)
             {
                 ch.nameEdit->setText(QString("Ch%1").arg(i+1));
@@ -127,33 +213,35 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
             }
             else
             {
-                ch.nameEdit->setText(QString(rt.key(r)));
+                ch.nameEdit->setText(rt.valueToKey(r));
                 ch.nameEdit->setEnabled(false);
             }
         });
 
+        ch.dutyOnBox = new QSpinBox(this);
+        ch.dutyOnBox->setMinimum(1);
+        ch.dutyOnBox->hide();
+
+        ch.dutyOffBox = new QSpinBox(this);
+        ch.dutyOffBox->setMinimum(1);
+        ch.dutyOffBox->hide();
+
         d_widgetList.append(ch);
     }
 
-    ui->pulseConfigBoxLayout->setColumnStretch(0,0);
-    ui->pulseConfigBoxLayout->setColumnStretch(1,1);
-    ui->pulseConfigBoxLayout->setColumnStretch(2,1);
-    ui->pulseConfigBoxLayout->setColumnStretch(3,0);
-    ui->pulseConfigBoxLayout->setColumnStretch(4,0);
-
     if(lastFocusWidget != nullptr)
-        setTabOrder(lastFocusWidget,ui->repRateBox);
+        setTabOrder(lastFocusWidget,p_repRateBox);
 
-    connect(ui->repRateBox,vc,this,&PulseConfigWidget::setRepRate);
+    connect(p_repRateBox,vc,this,&PulseConfigWidget::setRepRate);
 
     updateFromSettings();
 
     setFocusPolicy(Qt::TabFocus);
+    setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Minimum);
 }
 
 PulseConfigWidget::~PulseConfigWidget()
 {
-    delete ui;
 }
 
 PulseGenConfig PulseConfigWidget::getConfig() const
@@ -164,6 +252,8 @@ PulseGenConfig PulseConfigWidget::getConfig() const
 void PulseConfigWidget::configureForWizard()
 {
     connect(this,&PulseConfigWidget::changeSetting,this,&PulseConfigWidget::newSetting);
+    for(auto &ch : d_widgetList)
+        ch.locked = false;
 }
 
 #ifdef BC_LIF
@@ -186,12 +276,7 @@ void PulseConfigWidget::configureLif(const LifConfig &c)
     setFromConfig(d_config);
 
     for(int i=0; i<channels.size(); i++)
-    {
-        auto ch = channels.at(i);
-        d_widgetList.at(ch).delayBox->setEnabled(false);
-        d_widgetList.at(ch).onButton->setEnabled(false);
-        d_widgetList.at(ch).cfgButton->setEnabled(false);
-    }
+        lockChannel(i);
 }
 #endif
 
@@ -226,6 +311,8 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig &c)
         d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::DelaySetting,l.constFirst());
         d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::WidthSetting,d_config.setting(PulseGenConfig::Amp,PulseGenConfig::WidthSetting).constFirst().toDouble());
     }
+
+    ///TODO:: account for sync settings here
 
     if(!l.isEmpty())
     {
@@ -279,30 +366,13 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig &c)
     setFromConfig(d_config);
 
     for(int i=0; i<awgChannels.size(); i++)
-    {
-        auto ch = awgChannels.at(i);
-        d_widgetList.at(ch).onButton->setEnabled(false);
-        d_widgetList.at(ch).delayBox->setEnabled(false);
-        d_widgetList.at(ch).cfgButton->setEnabled(false);
-    }
+        lockChannel(i);
 
     for(int i=0; i<protChannels.size(); i++)
-    {
-        auto ch = protChannels.at(i);
-        d_widgetList.at(ch).onButton->setEnabled(false);
-        d_widgetList.at(ch).delayBox->setEnabled(false);
-        d_widgetList.at(ch).widthBox->setEnabled(false);
-        d_widgetList.at(ch).cfgButton->setEnabled(false);
-    }
+        lockChannel(i);
 
     for(int i=0; i<ampChannels.size(); i++)
-    {
-        auto ch = ampChannels.at(i);
-        d_widgetList.at(ch).onButton->setEnabled(false);
-        d_widgetList.at(ch).delayBox->setEnabled(false);
-        d_widgetList.at(ch).widthBox->setEnabled(false);
-        d_widgetList.at(ch).cfgButton->setEnabled(false);
-    }
+        lockChannel(i);
 
 
 }
@@ -328,10 +398,25 @@ void PulseConfigWidget::launchChannelConfig(int ch)
     lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
     fl->addRow(lbl,chw.nameEdit);
 
+    lbl = new QLabel(QString("Role"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    fl->addRow(lbl,chw.roleBox);
+
     lbl = new QLabel(QString("Active Level"));
     lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
     lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
-    fl->addRow(lbl,chw.levelButton);
+    fl->addRow(lbl,chw.levelBox);
+
+    lbl = new QLabel(QString("Duty Cycle On Pulses"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    fl->addRow(lbl,chw.dutyOnBox);
+
+    lbl = new QLabel(QString("Duty Cycle Off Pulses"));
+    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
+    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    fl->addRow(lbl,chw.dutyOffBox);
 
     lbl = new QLabel(QString("Delay Step Size"));
     lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
@@ -343,18 +428,15 @@ void PulseConfigWidget::launchChannelConfig(int ch)
     lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
     fl->addRow(lbl,chw.widthStepBox);
 
-    lbl = new QLabel(QString("Role"));
-    lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
-    lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
-    fl->addRow(lbl,chw.roleBox);
-
 
 
     chw.nameEdit->show();
-    chw.levelButton->show();
+    chw.roleBox->show();
+    chw.levelBox->show();
+    chw.dutyOnBox->show();
+    chw.dutyOffBox->show();
     chw.delayStepBox->show();
     chw.widthStepBox->show();
-    chw.roleBox->show();
 
     vbl->addLayout(fl,1);
     vbl->addWidget(bb);
@@ -371,16 +453,8 @@ void PulseConfigWidget::launchChannelConfig(int ch)
         setArrayValue(BC::Key::PulseWidget::channels,ch,BC::Key::PulseWidget::widthStep,
                       chw.widthStepBox->value(),false);
 
-        if(chw.levelButton->isChecked())
-        {
-            d_config.setCh(ch,PulseGenConfig::LevelSetting,QVariant::fromValue(PulseGenConfig::ActiveHigh));
-            emit changeSetting(ch,PulseGenConfig::LevelSetting,QVariant::fromValue(PulseGenConfig::ActiveHigh));
-        }
-        else
-        {
-            d_config.setCh(ch,PulseGenConfig::LevelSetting,QVariant::fromValue(PulseGenConfig::ActiveLow));
-            emit changeSetting(ch,PulseGenConfig::LevelSetting,QVariant::fromValue(PulseGenConfig::ActiveLow));
-        }
+        d_config.setCh(ch,PulseGenConfig::LevelSetting,chw.levelBox->currentValue());
+        emit changeSetting(ch,PulseGenConfig::LevelSetting,chw.levelBox->currentValue());
 
         setArrayValue(BC::Key::PulseWidget::channels,ch,
                       BC::Key::PulseWidget::role,chw.roleBox->currentData(),false);
@@ -395,20 +469,24 @@ void PulseConfigWidget::launchChannelConfig(int ch)
         emit changeSetting(ch,PulseGenConfig::NameSetting,chw.nameEdit->text());
 
 
-        ui->pulsePlot->newConfig(d_config);
+        p_pulsePlot->newConfig(d_config);
         updateFromSettings();
     }
 
     chw.nameEdit->setParent(this);
     chw.nameEdit->hide();
-    chw.levelButton->setParent(this);
-    chw.levelButton->hide();
+    chw.roleBox->setParent(this);
+    chw.roleBox->hide();
+    chw.levelBox->setParent(this);
+    chw.levelBox->hide();
+    chw.dutyOnBox->setParent(this);
+    chw.dutyOnBox->hide();
+    chw.dutyOffBox->setParent(this);
+    chw.dutyOffBox->hide();
     chw.delayStepBox->setParent(this);
     chw.delayStepBox->hide();
     chw.widthStepBox->setParent(this);
     chw.widthStepBox->hide();
-    chw.roleBox->setParent(this);
-    chw.roleBox->hide();
 
 }
 
@@ -427,53 +505,71 @@ void PulseConfigWidget::newSetting(int index, PulseGenConfig::Setting s, QVarian
         d_widgetList.at(index).widthBox->setValue(val.toDouble());
         break;
     case PulseGenConfig::LevelSetting:
-        d_widgetList.at(index).levelButton->setChecked(val == QVariant(PulseGenConfig::ActiveHigh));
+        d_widgetList.at(index).levelBox->setCurrentValue(val.value<PulseGenConfig::ActiveLevel>());
         break;
     case PulseGenConfig::EnabledSetting:
         d_widgetList.at(index).onButton->setChecked(val.toBool());
         break;
     case PulseGenConfig::NameSetting:
     case PulseGenConfig::RoleSetting:
-    default:
+        break;
+    case PulseGenConfig::ModeSetting:
+        d_widgetList.at(index).modeBox->setCurrentValue(val.value<PulseGenConfig::ChannelMode>());
+        break;
+    case PulseGenConfig::SyncSetting:
+        d_widgetList.at(index).syncBox->setCurrentIndex(val.toInt());
+        break;
+    case PulseGenConfig::DutyOnSetting:
+        d_widgetList.at(index).dutyOnBox->setValue(val.toInt());
+        break;
+    case PulseGenConfig::DutyOffSetting:
+        d_widgetList.at(index).dutyOffBox->setValue(val.toInt());
         break;
     }
 
     d_config.setCh(index,s,val);
     blockSignals(false);
 
-    ui->pulsePlot->newSetting(index,s,val);
+    p_pulsePlot->newSetting(index,s,val);
 }
 
 void PulseConfigWidget::setFromConfig(const PulseGenConfig &c)
 {
     blockSignals(true);
+    d_config = c;
     for(int i=0; i<c.size(); i++)
     {
-        ///TODO
-        d_config.setCh(i,PulseGenConfig::DelaySetting,c.at(i).delay);
-        d_config.setCh(i,PulseGenConfig::WidthSetting,c.at(i).width);
-        d_config.setCh(i,PulseGenConfig::LevelSetting,c.at(i).level);
-        d_config.setCh(i,PulseGenConfig::EnabledSetting,c.at(i).enabled);
+        auto ch = c.d_channels.at(i);
+        d_widgetList.at(i).delayBox->setValue(ch.delay);
+        d_widgetList.at(i).widthBox->setValue(ch.width);
+        d_widgetList.at(i).levelBox->setCurrentValue(ch.level);
+        d_widgetList.at(i).onButton->setChecked(ch.enabled);
+        d_widgetList.at(i).modeBox->setCurrentValue(ch.mode);
+        d_widgetList.at(i).syncBox->setCurrentIndex(ch.syncCh);
+        d_widgetList.at(i).dutyOnBox->setValue(ch.dutyOn);
+        d_widgetList.at(i).dutyOffBox->setValue(ch.dutyOff);
 
-
-        d_widgetList.at(i).delayBox->setValue(c.at(i).delay);
-        d_widgetList.at(i).widthBox->setValue(c.at(i).width);
-        d_widgetList.at(i).levelButton->setChecked(c.at(i).level == PulseGenConfig::ActiveHigh);
-        d_widgetList.at(i).onButton->setChecked(c.at(i).enabled);
+        d_widgetList.at(i).modeBox->setDisabled(c.d_pulseEnabled || d_widgetList.at(i).locked);
+        d_widgetList.at(i).syncBox->setDisabled(c.d_pulseEnabled || d_widgetList.at(i).locked);
     }
-    d_config.d_repRate = c.d_repRate;
-    ui->repRateBox->setValue(c.d_repRate);
+    p_repRateBox->setValue(c.d_repRate);
+    p_repRateBox->setEnabled(c.d_mode == PulseGenConfig::Continuous);
+    p_sysModeBox->setCurrentValue(c.d_mode);
+    p_sysModeBox->setDisabled(c.d_pulseEnabled);
+    p_sysOnOffButton->setChecked(c.d_pulseEnabled);
     blockSignals(false);
 
-    ui->pulsePlot->newConfig(d_config);
+
+
+    p_pulsePlot->newConfig(d_config);
 }
 
 void PulseConfigWidget::newRepRate(double r)
 {
-    ui->repRateBox->blockSignals(true);
-    ui->repRateBox->setValue(r);
-    ui->repRateBox->blockSignals(false);
-    ui->pulsePlot->newRepRate(r);
+    p_repRateBox->blockSignals(true);
+    p_repRateBox->setValue(r);
+    p_repRateBox->blockSignals(false);
+    p_pulsePlot->newRepRate(r);
     d_config.d_repRate = r;
 }
 
@@ -517,7 +613,7 @@ void PulseConfigWidget::updateFromSettings()
         if(chw.nameEdit != nullptr)
             chw.nameEdit->setText(n);
 
-        ui->pulsePlot->newSetting(i,PulseGenConfig::NameSetting,n);
+        p_pulsePlot->newSetting(i,PulseGenConfig::NameSetting,n);
 
         chw.delayBox->setSingleStep(getArrayValue<double>(BC::Key::PulseWidget::channels,i,
                                                                BC::Key::PulseWidget::delayStep,1.0));
@@ -527,13 +623,37 @@ void PulseConfigWidget::updateFromSettings()
 
     }
 
-    ui->repRateBox->setRange(s.get(BC::Key::PGen::minRepRate,0.01),s.get(BC::Key::PGen::maxRepRate,1e5));
+    p_repRateBox->setRange(s.get(BC::Key::PGen::minRepRate,0.01),s.get(BC::Key::PGen::maxRepRate,1e5));
 
 }
 
 void PulseConfigWidget::setRepRate(const double r)
 {
-    ui->pulsePlot->newRepRate(r);
+    p_pulsePlot->newRepRate(r);
     d_config.d_repRate = r;
     emit changeRepRate(r);
+}
+
+void PulseConfigWidget::unlockAll()
+{
+    for(int i=0; i<d_widgetList.size(); i++)
+        lockChannel(i,false);
+}
+
+void PulseConfigWidget::lockChannel(int i, bool locked)
+{
+    if(i < 0 || i >= d_widgetList.size())
+        return;
+
+    auto &ch = d_widgetList[i];
+    ch.widthBox->setDisabled(locked);
+    ch.delayBox->setDisabled(locked);
+    ch.onButton->setDisabled(locked);
+    ch.roleBox->setDisabled(locked);
+    ch.locked = locked;
+}
+
+QSize PulseConfigWidget::sizeHint() const
+{
+    return {800,600};
 }

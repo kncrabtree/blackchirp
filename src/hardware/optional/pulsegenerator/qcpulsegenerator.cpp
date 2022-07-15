@@ -169,7 +169,7 @@ PulseGenConfig::ActiveLevel QCPulseGenerator::readChActiveLevel(const int index)
 
     emit hardwareFailure();
     emit logMessage(QString("Could not read channel %1 active level. Response: %2").arg(index+1).arg(QString(resp)));
-    return PulseGenConfig::ActiveInvalid;
+    return PulseGenConfig::ActiveHigh;
 }
 
 bool QCPulseGenerator::readChEnabled(const int index)
