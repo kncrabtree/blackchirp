@@ -57,6 +57,7 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
             ch.modeBox->setDisabled(en || ch.locked);
             ch.syncBox->setDisabled(en || ch.locked);
         }
+        p_sysModeBox->setDisabled(en);
     });
     gl->addWidget(p_sysOnOffButton,0,1);
 

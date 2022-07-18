@@ -11,6 +11,8 @@
 #include <qwt6/qwt_color_map.h>
 #include <qwt6/qwt_scale_widget.h>
 #include <qwt6/qwt_plot_marker.h>
+#include <qwt6/qwt_interval.h>
+#include <qwt6/qwt_scale_map.h>
 
 LifSpectrogramPlot::LifSpectrogramPlot(QWidget *parent) :
     ZoomPanPlot(BC::Key::lifSpectrogram,parent), d_enabled(false),
