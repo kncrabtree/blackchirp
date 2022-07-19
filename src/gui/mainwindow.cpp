@@ -203,6 +203,9 @@ MainWindow::MainWindow(QWidget *parent) :
             ui->instrumentStatusLayout->insertWidget(3,psb,0);
             connect(p_hwm,&HardwareManager::pGenConfigUpdate,psb,&PulseStatusBox::updatePulseLeds);
             connect(p_hwm,&HardwareManager::pGenSettingUpdate,psb,&PulseStatusBox::updatePulseLed);
+            connect(p_hwm,&HardwareManager::pGenRepRateUpdate,psb,&PulseStatusBox::updateRepRate);
+            connect(p_hwm,&HardwareManager::pGenModeUpdate,psb,&PulseStatusBox::updatePGenMode);
+            connect(p_hwm,&HardwareManager::pGenPulsingUpdate,psb,&PulseStatusBox::updatePGenEnabled);
 
             connect(act,&QAction::triggered,[this,psb,key]{
                if(isDialogOpen(key))
@@ -211,18 +214,20 @@ MainWindow::MainWindow(QWidget *parent) :
                auto pcw = new PulseConfigWidget;
                auto pc = p_hwm->getPGenConfig();
                pcw->setFromConfig(pc);
-               connect(pcw,&PulseConfigWidget::changeSysMode,[=](PulseGenConfig::PGenMode m){
-                  p_lh->logMessage(QString("Test: PGen Mode %1").arg(m));
-               });
+
 
                connect(p_hwm,&HardwareManager::pGenConfigUpdate,pcw,&PulseConfigWidget::setFromConfig);
                connect(p_hwm,&HardwareManager::pGenSettingUpdate,pcw,&PulseConfigWidget::newSetting);
                connect(p_hwm,&HardwareManager::pGenRepRateUpdate,pcw,&PulseConfigWidget::newRepRate);
+               connect(p_hwm,&HardwareManager::pGenModeUpdate,pcw,&PulseConfigWidget::newSysMode);
+               connect(p_hwm,&HardwareManager::pGenPulsingUpdate,pcw,&PulseConfigWidget::newPGenPulsing);
                connect(pcw,&PulseConfigWidget::changeSetting,p_hwm,&HardwareManager::setPGenSetting);
                connect(pcw,&PulseConfigWidget::changeRepRate,p_hwm,&HardwareManager::setPGenRepRate);
+               connect(pcw,&PulseConfigWidget::changeSysMode,p_hwm,&HardwareManager::setPGenMode);
+               connect(pcw,&PulseConfigWidget::changeSysPulsing,p_hwm,&HardwareManager::setPGenPulsingEnabled);
 
                auto d = createHWDialog(key,pcw);
-               connect(d,&QDialog::accepted,psb,&PulseStatusBox::updateFromSettings);
+//               connect(d,&QDialog::accepted,psb,&PulseStatusBox::updateFromSettings);
             });
 
         }

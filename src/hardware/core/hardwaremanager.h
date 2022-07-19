@@ -62,6 +62,8 @@ signals:
     void pGenSettingUpdate(int,PulseGenConfig::Setting,QVariant);
     void pGenConfigUpdate(PulseGenConfig);
     void pGenRepRateUpdate(double);
+    void pGenPulsingUpdate(bool);
+    void pGenModeUpdate(PulseGenConfig::PGenMode);
 
     void flowUpdate(int,double);
     void flowSetpointUpdate(int,double);
@@ -122,6 +124,8 @@ public slots:
     void setPGenSetting(int index, PulseGenConfig::Setting s, QVariant val);
     void setPGenConfig(const PulseGenConfig &c);
     void setPGenRepRate(double r);
+    void setPGenPulsingEnabled(bool en);
+    void setPGenMode(PulseGenConfig::PGenMode mode);
     PulseGenConfig getPGenConfig();
 
     void setFlowSetpoint(int index, double val);

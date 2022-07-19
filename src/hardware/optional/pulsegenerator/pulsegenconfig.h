@@ -80,6 +80,7 @@ public:
     QVariant setting(const int index, const Setting s) const;
     QVector<QVariant> setting(Role role, const Setting s) const;
     ChannelConfig settings(const int index) const;
+    QVector<Role> activeRoles() const;
     QVector<int> channelsForRole(Role role) const;
 
     void setCh(const int index, const Setting s, const QVariant val);

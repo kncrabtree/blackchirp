@@ -17,7 +17,7 @@ PulseGenerator::PulseGenerator(const QString subKey, const QString name, Communi
     {
         for(int i=0; i<d_numChannels; i++)
         {
-            setCh(i,PulseGenConfig::NameSetting,s.getArrayValue(channels,i,BC::Key::PulseWidget::name,QString("")));
+            setCh(i,PulseGenConfig::NameSetting,s.getArrayValue(channels,i,BC::Key::PulseWidget::name,QString("Ch%1").arg(i+1)));
             setCh(i,PulseGenConfig::RoleSetting,s.getArrayValue(channels,i,role,PulseGenConfig::None));
         }
     }
@@ -132,7 +132,6 @@ bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setti
     switch(s) {
     case PulseGenConfig::NameSetting:
     case PulseGenConfig::RoleSetting:
-        setCh(index,s,val);
         break;
     case PulseGenConfig::LevelSetting:
     {
@@ -447,7 +446,7 @@ void PulseGenerator::readAll()
     readPulseEnabled();
     blockSignals(false);
 
-    emit configUpdate(static_cast<PulseGenConfig>(*this),QPrivateSignal());
+    emit configUpdate(static_cast<PulseGenConfig&>(*this),QPrivateSignal());
 }
 
 

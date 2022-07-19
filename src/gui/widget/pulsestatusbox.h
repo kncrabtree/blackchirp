@@ -7,7 +7,7 @@
 class QLabel;
 class Led;
 
-class PulseStatusBox : public QGroupBox
+class PulseStatusBox : public QGroupBox, public PulseGenConfig
 {
     Q_OBJECT
 public:
@@ -15,13 +15,19 @@ public:
 
 public slots:
     void updatePulseLeds(const PulseGenConfig &cc);
-    void updatePulseLed(int index,PulseGenConfig::Setting s, QVariant val);
-    void updateFromSettings();
+    void updatePulseLed(int index,Setting s, QVariant val);
+    void updateRepRate(double rr);
+    void updatePGenMode(PulseGenConfig::PGenMode m);
+    void updatePGenEnabled(bool en);
 
 signals:
 
 private:
     std::vector<std::pair<QLabel*,Led*>> d_ledList;
+    QLabel *p_repLabel;
+    Led *p_enLed;
+
+    void updateAll();
 
 };
 

@@ -74,11 +74,12 @@ signals:
 
 public slots:
     void launchChannelConfig(int ch);
-    void newSetting(int index,PulseGenConfig::Setting s,QVariant val);
     void setFromConfig(const PulseGenConfig &c);
+    void newSetting(int index,PulseGenConfig::Setting s,QVariant val);
     void newRepRate(double r);
+    void newSysMode(PulseGenConfig::PGenMode mode);
+    void newPGenPulsing(bool en);
     void updateFromSettings();
-    void setRepRate(const double r);
     void unlockAll();
 
 private:

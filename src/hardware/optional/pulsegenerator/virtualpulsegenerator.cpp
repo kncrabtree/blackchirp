@@ -56,7 +56,7 @@ bool VirtualPulseGenerator::setChEnabled(const int index, const bool en)
 
 bool VirtualPulseGenerator::setHwRepRate(double rr)
 {
-    setRepRate(rr);
+    d_repRate = rr;
     return true;
 }
 

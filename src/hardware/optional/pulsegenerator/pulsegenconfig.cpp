@@ -88,6 +88,17 @@ PulseGenConfig::ChannelConfig PulseGenConfig::settings(const int index) const
 
 }
 
+QVector<PulseGenConfig::Role> PulseGenConfig::activeRoles() const
+{
+    QVector<int> out;
+    for(int i=0; i<d_channels.size(); )
+    {
+        if(d_channels.at(i).role != None)
+            out.append(d_channels.at(i).role);
+    }
+    return out;
+}
+
 QVector<int> PulseGenConfig::channelsForRole(Role role) const
 {
     QVector<int> out;
@@ -123,12 +134,12 @@ void PulseGenConfig::setCh(const int index, const Setting s, const QVariant val)
         if(d_channels.at(index).role == None)
             d_channels[index].channelName = val.toString();
         else
-            d_channels[index].channelName = QString(QMetaEnum::fromType<Role>().key(d_channels.at(index).role));
+            d_channels[index].channelName = QString(QMetaEnum::fromType<Role>().valueToKey(d_channels.at(index).role));
         break;
     case RoleSetting:
         d_channels[index].role = val.value<Role>();
         if(d_channels.at(index).role != None)
-            d_channels[index].channelName = QString(QMetaEnum::fromType<Role>().key(d_channels.at(index).role));
+            d_channels[index].channelName = QString(QMetaEnum::fromType<Role>().valueToKey(d_channels.at(index).role));
         break;
     case ModeSetting:
         d_channels[index].mode = val.value<ChannelMode>();

@@ -53,6 +53,8 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     connect(pGen,&PulseGenerator::settingUpdate,this,&HardwareManager::pGenSettingUpdate);
     connect(pGen,&PulseGenerator::configUpdate,this,&HardwareManager::pGenConfigUpdate);
     connect(pGen,&PulseGenerator::repRateUpdate,this,&HardwareManager::pGenRepRateUpdate);
+    connect(pGen,&PulseGenerator::modeUpdate,this,&HardwareManager::pGenModeUpdate);
+    connect(pGen,&PulseGenerator::pulseEnabledUpdate,this,&HardwareManager::pGenPulsingUpdate);
     d_hardwareMap.emplace(pGen->d_key,pGen);
 #endif
 
@@ -406,6 +408,20 @@ void HardwareManager::setPGenRepRate(double r)
     auto pGen = findHardware<PulseGenerator>(BC::Key::PGen::key);
     if(pGen)
         QMetaObject::invokeMethod(pGen,[pGen,r](){ pGen->setRepRate(r); });
+}
+
+void HardwareManager::setPGenPulsingEnabled(bool en)
+{
+    auto pGen = findHardware<PulseGenerator>(BC::Key::PGen::key);
+    if(pGen)
+        QMetaObject::invokeMethod(pGen,[pGen,en](){ pGen->setPulseEnabled(en); });
+}
+
+void HardwareManager::setPGenMode(PulseGenConfig::PGenMode mode)
+{
+    auto pGen = findHardware<PulseGenerator>(BC::Key::PGen::key);
+    if(pGen)
+        QMetaObject::invokeMethod(pGen,[pGen,mode](){ pGen->setPulseMode(mode); });
 }
 
 PulseGenConfig HardwareManager::getPGenConfig()
