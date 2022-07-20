@@ -78,10 +78,12 @@ public:
     int size() const;
     bool isEmpty() const;
     QVariant setting(const int index, const Setting s) const;
-    QVector<QVariant> setting(Role role, const Setting s) const;
+    QVariant setting(Role role, const Setting s) const;
     ChannelConfig settings(const int index) const;
     QVector<Role> activeRoles() const;
-    QVector<int> channelsForRole(Role role) const;
+    int channelForRole(Role role) const;
+    double channelStart(const int index) const;
+    bool testCircularSync(const int index, int newSyncCh);
 
     void setCh(const int index, const Setting s, const QVariant val);
     void setCh(const int index, const ChannelConfig cc);

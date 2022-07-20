@@ -135,7 +135,15 @@ PulseConfigWidget::PulseConfigWidget(QWidget *parent) :
                 item->setEnabled(false);
         }
         connect(ch.syncBox,qOverload<int>(&QComboBox::currentIndexChanged),[=](int j){
-            emit changeSetting(i,PulseGenConfig::SyncSetting,j);
+            if(d_config.testCircularSync(i,j))
+            {
+                QMessageBox::warning(this,"Circular Sync","Cannot set sync channel because of a circular reference (i.e., A triggers B, but B triggers A).",QMessageBox::Ok,QMessageBox::Ok);
+                ch.syncBox->blockSignals(true);
+                ch.syncBox->setCurrentIndex(d_config.setting(i,PulseGenConfig::SyncSetting).toInt());
+                ch.syncBox->blockSignals(false);
+            }
+            else
+                emit changeSetting(i,PulseGenConfig::SyncSetting,j);
         });
         ch.syncBox->setEnabled(false);
         pulseConfigBoxLayout->addWidget(ch.syncBox,i+1,col);
@@ -277,7 +285,9 @@ PulseGenConfig PulseConfigWidget::getConfig() const
 }
 
 void PulseConfigWidget::configureForWizard()
-{
+{    
+    d_wizardMode = true;
+
     connect(this,&PulseConfigWidget::changeSetting,this,&PulseConfigWidget::newSetting);
     connect(this,&PulseConfigWidget::changeRepRate,this,&PulseConfigWidget::newRepRate);
     connect(this,&PulseConfigWidget::changeSysMode,this,&PulseConfigWidget::newSysMode);
@@ -293,10 +303,10 @@ void PulseConfigWidget::configureLif(const LifConfig &c)
     if(d_widgetList.isEmpty())
         return;
 
-    auto channels = d_config.channelsForRole(PulseGenConfig::LIF);
-    if(channels.isEmpty())
+    auto lifCh= d_config.channelForRole(PulseGenConfig::LIF);
+    if(lifCh < 0)
     {
-        QMessageBox::warning(this,QString("Cannot configure LIF pulse"),QString("No channel has been configured for the \"LIF\" role.\n\nPlease select a channel for the LIF role, then refresh this page (go back one page and then come back to this one) in order to proceed."),QMessageBox::Ok,QMessageBox::Ok);
+        QMessageBox::warning(this,QString("Cannot configure LIF pulse"),QString("No channel has been configured for the \"LIF\" role. Blackchirp will be unable to set the LIF Delay.\n\nPlease select a channel for the LIF role, then refresh this page (go back one page and then come back to this one) in order to proceed."),QMessageBox::Ok,QMessageBox::Ok);
         return;
     }
 
@@ -306,8 +316,7 @@ void PulseConfigWidget::configureLif(const LifConfig &c)
     d_config.setCh(PulseGenConfig::LIF,PulseGenConfig::EnabledSetting,true);
     setFromConfig(d_config);
 
-    for(int i=0; i<channels.size(); i++)
-        lockChannel(i);
+    lockChannel(lifCh);
 }
 #endif
 
@@ -315,109 +324,90 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig &c)
 {
     SettingsStorage s(BC::Key::AWG::key,Hardware);
     bool awgHasProt = s.get<bool>(BC::Key::AWG::prot,false);
-    bool awgHasAmpEnable = s.get<bool>(BC::Key::AWG::amp,false);
 
     SettingsStorage s2(BC::Key::PGen::key,Hardware);
     bool pGenCanSync = s2.get(BC::Key::PGen::canSyncToChannel,false);
 
-    auto protChannels = d_config.channelsForRole(PulseGenConfig::Prot);
-    auto awgChannels = d_config.channelsForRole(PulseGenConfig::AWG);
-    auto ampChannels = d_config.channelsForRole(PulseGenConfig::Amp);
+    auto protChannel = d_config.channelForRole(PulseGenConfig::Prot);
+    auto awgChannel = d_config.channelForRole(PulseGenConfig::AWG);
+    auto ampChannel = d_config.channelForRole(PulseGenConfig::Amp);
 
-    if(!awgHasProt && protChannels.isEmpty())
-        QMessageBox::warning(this,QString("Cannot configure protection pulse"),QString("No channel has been configured for the \"Prot\" role, and your AWG does not produce its own protection signal.\n\nBlackchirp cannot guarantee that your receiver amp will be protected!\n\nIf you wish for Blackchirp to generate a protection pulse, select a channel for the Prot role and refresh this page (go back one page and then come back to this one)."),QMessageBox::Ok,QMessageBox::Ok);
+    if(!awgHasProt && protChannel < 0)
+    {
+        QMessageBox::warning(this,QString("Cannot configure protection pulse"),QString("No channel has been configured for the \"Prot\" role, and your AWG does not produce its own protection signal.\n\nBlackchirp cannot guarantee that your receiver amp will be protected!\n\nIf you wish for Blackchirp to generate a protection pulse, close the wizard and configure the pulse generator under Hardware > Pulse Generator."),QMessageBox::Ok,QMessageBox::Ok);
+        d_wizardOk = false;
+    }
 
-    if(!awgHasProt && protChannels.size() > 1)
-        QMessageBox::warning(this,QString("Warning: Multiple protection pulses"),QString("You have assigned multiple channels to the \"Prot\" role.\n\nBlackchirp will assign all of these to the same delay and width. Proceed with caution."),QMessageBox::Ok,QMessageBox::Ok);
 
-    if(!awgHasProt && awgChannels.isEmpty())
-        QMessageBox::warning(this,QString("Cannot configure protection pulse"),QString("No channel has been configured for the \"AWG\" role, and your AWG does not produce its own protection signal.\n\nBlackchirp cannot guarantee that your receiver amp will be protected because it does not know when your AWG is triggered!\n\nIf you wish for Blackchirp to generate a protection pulse, select a channel for the AWG role and refresh this page (go back one page and then come back to this one)."),QMessageBox::Ok,QMessageBox::Ok);
+    if(!awgHasProt && awgChannel < 0)
+    {
+        QMessageBox::warning(this,QString("Cannot configure protection pulse"),QString("No channel has been configured for the \"AWG\" role, and your AWG does not produce its own protection signal.\n\nBlackchirp cannot guarantee that your receiver amp will be protected because it does not know when your AWG is triggered!\n\nIf you wish for Blackchirp to generate a protection pulse, close the wizard and configure the pulse generator under Hardware > Pulse Generator."),QMessageBox::Ok,QMessageBox::Ok);
+        d_wizardOk = false;
+    }
 
-    if(!awgHasProt && awgChannels.size() > 1)
-        QMessageBox::warning(this,QString("Warning: Multiple AWG pulses"),QString("You have assigned multiple channels to the \"AWG\" role.\n\nBlackchirp will assign all of these to the same delay and width. Proceed with caution."),QMessageBox::Ok,QMessageBox::Ok);
-
-    if(!awgHasProt && awgChannels.size() > 1)
-        QMessageBox::warning(this,QString("Warning: Multiple Amplifier pulses"),QString("You have assigned multiple channels to the \"Amp\" role.\n\nBlackchirp will assign all of these to the same delay and width. Proceed with caution."),QMessageBox::Ok,QMessageBox::Ok);
 
     if(!awgHasProt && c.d_rfConfig.d_chirpConfig.numChirps() > 1)
         QMessageBox::warning(this,QString("Warning: multiple chirps"),QString("You have requested multiple chirps, and your AWG cannot generate its own protection signal.\nBlackchirp does not know how to configure your delay generator to generate a protection signal with each chirp.\n\nProceed at your own risk."),QMessageBox::Ok,QMessageBox::Ok);
 
     if(pGenCanSync)
+    {
+        if(ampChannel >= 0 && awgChannel >=0)
+        {
+            if(d_config.d_channels.at(ampChannel).syncCh != protChannel + 1 ||
+                    d_config.d_channels.at(awgChannel).syncCh != ampChannel + 1)
+                QMessageBox::warning(this,"Configuration notice","Blackchirp will change the sync sources for the Amp and AWG channels according to the sequence Prot -> Amp -> AWG.",QMessageBox::Ok,QMessageBox::Ok);
+        }
+        else if(awgChannel >= 0)
+        {
+            if(d_config.d_channels.at(awgChannel).syncCh != protChannel + 1)
+                QMessageBox::warning(this,"Configuration notice","Blackchirp will change the sync source for the AWG channel to the Prot channel.",QMessageBox::Ok,QMessageBox::Ok);
+        }
+    }
 
     if(d_widgetList.isEmpty())
         return;
 
     auto cc = c.d_rfConfig.d_chirpConfig;
     d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::EnabledSetting,true);
-    auto l = d_config.setting(PulseGenConfig::AWG,PulseGenConfig::DelaySetting);
+    d_config.setCh(PulseGenConfig::Prot,PulseGenConfig::EnabledSetting,true);
+    d_config.setCh(PulseGenConfig::Amp,PulseGenConfig::EnabledSetting,true);
 
-    if(l.size() > 1)
+    double protStart = d_config.setting(PulseGenConfig::Prot,PulseGenConfig::DelaySetting).toDouble();
+    double ampStart = cc.preChirpProtectionDelay();
+    if(!pGenCanSync)
+        ampStart += protStart;
+    else
+        d_config.setCh(PulseGenConfig::Amp,PulseGenConfig::SyncSetting,protChannel+1);
+    double awgStart = cc.preChirpGateDelay();
+    if(!pGenCanSync)
+        awgStart += ampStart;
+    else
     {
-        d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::DelaySetting,l.constFirst());
-        d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::WidthSetting,d_config.setting(PulseGenConfig::Amp,PulseGenConfig::WidthSetting).constFirst().toDouble());
+        if(ampChannel < 0)
+            d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::SyncSetting,protChannel+1);
+        else
+            d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::SyncSetting,ampChannel+1);
     }
 
-    ///TODO:: account for sync settings here
+    double protWidth = cc.totalProtectionWidth();
+    double gateWidth = cc.totalGateWidth();
 
-    if(!l.isEmpty())
-    {
-        double awgStart = l.constFirst().toDouble();
-        if(!awgHasProt)
-        {
-            double protStart = awgStart - cc.preChirpProtectionDelay() - cc.preChirpGateDelay();
-            if(protStart < 0.0)
-            {
-                awgStart -= protStart;
-                d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::DelaySetting,awgStart);
-                protStart = 0.0;
-            }
+    d_config.setCh(PulseGenConfig::Prot,PulseGenConfig::WidthSetting,protWidth);
+    d_config.setCh(PulseGenConfig::Amp,PulseGenConfig::DelaySetting,ampStart);
+    d_config.setCh(PulseGenConfig::Amp,PulseGenConfig::WidthSetting,gateWidth);
+    d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::DelaySetting,awgStart);
 
-            double protWidth = cc.totalProtectionWidth();
-
-            d_config.setCh(PulseGenConfig::Prot,PulseGenConfig::DelaySetting,protStart);
-            d_config.setCh(PulseGenConfig::Prot,PulseGenConfig::WidthSetting,protWidth);
-            d_config.setCh(PulseGenConfig::Prot,PulseGenConfig::EnabledSetting,true);
-        }
-
-        bool checkProt = false;
-        if(!awgHasAmpEnable)
-        {
-            double gateStart = awgStart - cc.preChirpGateDelay();
-            if(gateStart < 0.0)
-            {
-                awgStart -= gateStart;
-                d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::DelaySetting,awgStart);
-                gateStart = 0.0;
-                checkProt = true;
-            }
-
-            double gateWidth = cc.totalGateWidth();
-
-            d_config.setCh(PulseGenConfig::Amp,PulseGenConfig::DelaySetting,gateStart);
-            d_config.setCh(PulseGenConfig::Amp,PulseGenConfig::WidthSetting,gateWidth);
-            d_config.setCh(PulseGenConfig::Amp,PulseGenConfig::EnabledSetting,true);
-        }
-
-        if(!awgHasProt && checkProt)
-        {
-            double protStart = awgStart - cc.preChirpProtectionDelay() - cc.preChirpGateDelay();
-            double protWidth = cc.totalProtectionWidth();
-
-            d_config.setCh(PulseGenConfig::Prot,PulseGenConfig::DelaySetting,protStart);
-            d_config.setCh(PulseGenConfig::Prot,PulseGenConfig::WidthSetting,protWidth);
-        }
-    }
 
     setFromConfig(d_config);
 
-    for(int i=0; i<awgChannels.size(); i++)
-        lockChannel(i);
 
-    for(int i=0; i<protChannels.size(); i++)
-        lockChannel(i);
+    lockChannel(ampChannel);
+    lockChannel(protChannel);
+    lockChannel(awgChannel);
 
-    for(int i=0; i<ampChannels.size(); i++)
-        lockChannel(i);
+    if(pGenCanSync && protChannel >= 0)
+        d_widgetList.at(protChannel).delayBox->setEnabled(true);
+
 
 
 }
@@ -426,6 +416,8 @@ void PulseConfigWidget::launchChannelConfig(int ch)
 {
     if(ch < 0 || ch >= d_widgetList.size())
         return;
+
+    updateRoles();
 
     QDialog d(this);
     d.setWindowTitle(QString("Configure Pulse Channel %1").arg(ch+1));
@@ -495,12 +487,14 @@ void PulseConfigWidget::launchChannelConfig(int ch)
     setArrayValue(BC::Key::PulseWidget::channels,ch,BC::Key::PulseWidget::widthStep,
                   chw.widthStepBox->value(),false);
 
-    setArrayValue(BC::Key::PulseWidget::channels,ch,
-                  BC::Key::PulseWidget::role,chw.roleBox->currentData(),false);
+    if(!d_wizardMode)
+    {
+        setArrayValue(BC::Key::PulseWidget::channels,ch,
+                      BC::Key::PulseWidget::role,chw.roleBox->currentData(),false);
 
-    //this is the last setting to save; write the array
-    setArrayValue(BC::Key::PulseWidget::channels,ch,
-                  BC::Key::PulseWidget::name,chw.nameEdit->text(),true);
+        setArrayValue(BC::Key::PulseWidget::channels,ch,
+                      BC::Key::PulseWidget::name,chw.nameEdit->text(),false);
+    }
 
 
 
@@ -527,6 +521,7 @@ void PulseConfigWidget::newSetting(int index, PulseGenConfig::Setting s, QVarian
         return;
 
     blockSignals(true);
+    d_config.setCh(index,s,val);
 
     switch(s) {
     case PulseGenConfig::DelaySetting:
@@ -542,10 +537,12 @@ void PulseConfigWidget::newSetting(int index, PulseGenConfig::Setting s, QVarian
         d_widgetList.at(index).onButton->setChecked(val.toBool());
         break;
     case PulseGenConfig::NameSetting:
+        d_widgetList.at(index).label->setText(val.toString());
         for(int i=0; i<d_widgetList.size(); i++)
             d_widgetList.at(i).syncBox->setItemText(index+1,val.toString());
         break;
     case PulseGenConfig::RoleSetting:
+        updateRoles();
         break;
     case PulseGenConfig::ModeSetting:
         d_widgetList.at(index).modeBox->setCurrentValue(val.value<PulseGenConfig::ChannelMode>());
@@ -561,7 +558,7 @@ void PulseConfigWidget::newSetting(int index, PulseGenConfig::Setting s, QVarian
         break;
     }
 
-    d_config.setCh(index,s,val);
+
     blockSignals(false);
 
     p_pulsePlot->newConfig(d_config);
@@ -581,7 +578,9 @@ void PulseConfigWidget::setFromConfig(const PulseGenConfig &c)
         d_widgetList.at(i).modeBox->setCurrentValue(ch.mode);
         for(int j=0; j<c.size(); j++)
             d_widgetList.at(j).syncBox->setItemText(i+1,ch.channelName);
+        d_widgetList.at(i).syncBox->blockSignals(true);
         d_widgetList.at(i).syncBox->setCurrentIndex(ch.syncCh);
+        d_widgetList.at(i).syncBox->blockSignals(false);
         d_widgetList.at(i).dutyOnBox->setValue(ch.dutyOn);
         d_widgetList.at(i).dutyOffBox->setValue(ch.dutyOff);
 
@@ -696,6 +695,25 @@ void PulseConfigWidget::lockChannel(int i, bool locked)
     ch.onButton->setDisabled(locked);
     ch.roleBox->setDisabled(locked);
     ch.locked = locked;
+}
+
+void PulseConfigWidget::updateRoles()
+{
+    auto active = d_config.activeRoles();
+
+    for(int i=0; i<d_widgetList.size(); i++)
+    {
+        auto rb = d_widgetList.at(i).roleBox;
+        for(int j=0; j<rb->count(); j++)
+        {
+            auto item = rb->itemAt(j);
+            if(item)
+            {
+                bool en = !active.contains(rb->value(j));
+                item->setEnabled(en);
+            }
+        }
+    }
 }
 
 QSize PulseConfigWidget::sizeHint() const

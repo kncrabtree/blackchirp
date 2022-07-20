@@ -164,6 +164,7 @@ WizardStartPage::WizardStartPage(QWidget *parent) :
 #else
     p_lif = new QGroupBox(QString("LIF"),this);
     p_lif->setCheckable(true);
+    p_lif->setChecked(get(lif,false));
     registerGetter(lif,p_lif,&QGroupBox::isChecked);
     connect(p_lif,&QGroupBox::toggled,this,&WizardStartPage::completeChanged);
 

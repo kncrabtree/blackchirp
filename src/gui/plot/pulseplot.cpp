@@ -123,12 +123,7 @@ void PulsePlot::replot()
     for(int i=0; i<d_config.size(); i++)
     {
         if(d_config.at(i).enabled)
-        {
-            double offset = 0.0;
-            if(d_config.at(i).syncCh > 0)
-                offset = d_config.at(d_config.at(i).syncCh-1).delay;
-            maxTime = qMax(maxTime,d_config.at(i).delay + d_config.at(i).width + offset);
-        }
+            maxTime = qMax(maxTime,d_config.channelStart(i) + d_config.at(i).width);
     }
     maxTime *= 1.25;
 
@@ -144,10 +139,9 @@ void PulsePlot::replot()
         if(cit->level == PulseGenConfig::ActiveLow)
             qSwap(channelOff,channelOn);
 
-        double offset = 0.0;
         if(cit->syncCh > 0 && cit->enabled)
         {
-            offset = d_config.at(cit->syncCh-1).delay;
+            auto offset = d_config.channelStart(cit->syncCh-1);
             pit->syncCurve->setSamples({{offset,pit->min},{offset,pit->max}});
             pit->syncCurve->setVisible(true);
         }
@@ -157,10 +151,10 @@ void PulsePlot::replot()
         data.append(QPointF(0.0,channelOff));
         if(cit->width > 0.0 && cit->enabled)
         {
-            data.append(QPointF(offset+cit->delay,channelOff));
-            data.append(QPointF(offset+cit->delay,channelOn));
-            data.append(QPointF(offset+cit->delay+cit->width,channelOn));
-            data.append(QPointF(offset+cit->delay+cit->width,channelOff));
+            data.append(QPointF(d_config.channelStart(i),channelOff));
+            data.append(QPointF(d_config.channelStart(i),channelOn));
+            data.append(QPointF(d_config.channelStart(i)+cit->width,channelOn));
+            data.append(QPointF(d_config.channelStart(i)+cit->width,channelOff));
         }
         data.append(QPointF(maxTime,channelOff));
 

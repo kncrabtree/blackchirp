@@ -67,16 +67,15 @@ QVariant PulseGenConfig::setting(const int index, const Setting s) const
     return QVariant();
 }
 
-QVector<QVariant> PulseGenConfig::setting(Role role, const Setting s) const
+QVariant PulseGenConfig::setting(Role role, const Setting s) const
 {
-    QVector<QVariant> out;
     for(int i=0; i<d_channels.size(); i++)
     {
         if(d_channels.at(i).role == role)
-            out << setting(i,s);
+            return setting(i,s);
     }
 
-    return out;
+    return QVariant();
 }
 
 PulseGenConfig::ChannelConfig PulseGenConfig::settings(const int index) const
@@ -90,8 +89,8 @@ PulseGenConfig::ChannelConfig PulseGenConfig::settings(const int index) const
 
 QVector<PulseGenConfig::Role> PulseGenConfig::activeRoles() const
 {
-    QVector<int> out;
-    for(int i=0; i<d_channels.size(); )
+    QVector<PulseGenConfig::Role> out;
+    for(int i=0; i<d_channels.size(); i++)
     {
         if(d_channels.at(i).role != None)
             out.append(d_channels.at(i).role);
@@ -99,16 +98,40 @@ QVector<PulseGenConfig::Role> PulseGenConfig::activeRoles() const
     return out;
 }
 
-QVector<int> PulseGenConfig::channelsForRole(Role role) const
+int PulseGenConfig::channelForRole(Role role) const
 {
-    QVector<int> out;
     for(int i=0; i<d_channels.size(); i++)
     {
         if(d_channels.at(i).role == role)
-            out << i;
+            return i;
     }
 
-    return out;
+    return -1;
+}
+
+double PulseGenConfig::channelStart(const int index) const
+{
+    if(index < 0 || index >= d_channels.size())
+        return 0.0;
+
+    auto ch = d_channels.at(index);
+    if(ch.syncCh == 0)
+        return ch.delay;
+    else
+        return ch.delay + channelStart(ch.syncCh - 1);
+}
+
+bool PulseGenConfig::testCircularSync(const int index, int newSyncCh)
+{
+    auto sc = newSyncCh;
+    while(sc != 0)
+    {
+        sc = d_channels.at(sc-1).syncCh;
+        if(sc == index+1)
+            return true;
+    }
+
+    return false;
 }
 
 void PulseGenConfig::setCh(const int index, const Setting s, const QVariant val)
@@ -178,7 +201,10 @@ void PulseGenConfig::setCh(Role role, const Setting s, const QVariant val)
     for(int i=0; i<d_channels.size(); i++)
     {
         if(d_channels.at(i).role == role)
+        {
             setCh(i,s,val);
+            return;
+        }
     }
 }
 
@@ -187,7 +213,10 @@ void PulseGenConfig::setCh(Role role, const ChannelConfig cc)
     for(int i=0; i<d_channels.size(); i++)
     {
         if(d_channels.at(i).role == role)
+        {
             setCh(i,cc);
+            return;
+        }
     }
 }
 

@@ -226,8 +226,7 @@ MainWindow::MainWindow(QWidget *parent) :
                connect(pcw,&PulseConfigWidget::changeSysMode,p_hwm,&HardwareManager::setPGenMode);
                connect(pcw,&PulseConfigWidget::changeSysPulsing,p_hwm,&HardwareManager::setPGenPulsingEnabled);
 
-               auto d = createHWDialog(key,pcw);
-//               connect(d,&QDialog::accepted,psb,&PulseStatusBox::updateFromSettings);
+               createHWDialog(key,pcw);
             });
 
         }

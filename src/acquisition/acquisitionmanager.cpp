@@ -39,7 +39,8 @@ void AcquisitionManager::beginExperiment(std::shared_ptr<Experiment> exp)
     emit beginAcquisition();
 
 #ifdef BC_LIF
-    emit nextLifPoint(ps_currentExperiment->lifConfig()->currentDelay(),
+    if(ps_currentExperiment->lifEnabled())
+        emit nextLifPoint(ps_currentExperiment->lifConfig()->currentDelay(),
                       ps_currentExperiment->lifConfig()->currentLaserPos());
 #endif
 }

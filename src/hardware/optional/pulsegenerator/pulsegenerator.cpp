@@ -421,17 +421,13 @@ bool PulseGenerator::setPulseEnabled(bool en)
 #ifdef BC_LIF
 bool PulseGenerator::setLifDelay(double d)
 {
-    bool success = false;
-    auto l = channelsForRole(PulseGenConfig::LIF);
-    for(int i=0; i<l.size(); i++)
-    {
-        if(!setPGenSetting(l.at(i),PulseGenConfig::DelaySetting,d))
-            return false;
-        else
-            success = true;
-    }
+    auto i = channelForRole(PulseGenConfig::LIF);
+    if(i>=0)
+        return setPGenSetting(i,PulseGenConfig::DelaySetting,d);
+    else
+        emit logMessage("Cannot set LIF delay; no channel configured for LIF role.", LogHandler::Error);
 
-    return success;
+    return false;
 }
 #endif
 

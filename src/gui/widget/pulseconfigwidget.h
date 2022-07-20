@@ -39,6 +39,8 @@ public:
     explicit PulseConfigWidget(QWidget *parent = 0);
     ~PulseConfigWidget();
 
+    bool d_wizardOk{true};
+
     struct ChWidgets {
         QLabel *label;
         QComboBox *syncBox;
@@ -83,7 +85,9 @@ public slots:
     void unlockAll();
 
 private:
+    bool d_wizardMode{false};
     void lockChannel(int i, bool locked = true);
+    void updateRoles();
     QList<ChWidgets> d_widgetList;
     PulseGenConfig d_config;
     PulsePlot *p_pulsePlot;
