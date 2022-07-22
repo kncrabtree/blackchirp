@@ -101,11 +101,9 @@ public slots:
 class VirtualPulseGenerator;
 typedef VirtualPulseGenerator PulseGeneratorHardware;
 #elif BC_PGEN==1
-#include "qc9528.h"
-class Qc9528;
-typedef Qc9528 PulseGeneratorHardware;
+#include "qcpulsegenerator.h"
 #elif BC_PGEN==2
-#include "qc9518.h"
+#include "qcpulsegenerator.h"
 class Qc9518;
 typedef Qc9518 PulseGeneratorHardware;
 #endif

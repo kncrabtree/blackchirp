@@ -1,7 +1,7 @@
-#include "qc9518.h"
+#include "qcpulsegenerator.h"
 
 Qc9518::Qc9518(QObject *parent) :
-    PulseGenerator(BC::Key::qc9518,BC::Key::qc9518Name,CommunicationProtocol::Rs232,8,parent)
+    PulseGenerator(BC::Key::PGen::qc9518,BC::Key::PGen::qc9518Name,CommunicationProtocol::Rs232,8,parent)
 {
     using namespace BC::Key::PGen;
     setDefault(minWidth,0.004);
