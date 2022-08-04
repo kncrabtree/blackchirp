@@ -7,7 +7,7 @@ LifTrace::LifTrace() : p_data(new LifTraceData)
 {
 }
 
-LifTrace::LifTrace(const LifDigitizerConfig &c, const QByteArray b, int dIndex, int lIndex)
+LifTrace::LifTrace(const LifDigitizerConfig &c, const QVector<qint8> b, int dIndex, int lIndex)
     : p_data(new LifTraceData)
 {
     //reference channel is used to normalize to pulse energy
@@ -32,7 +32,7 @@ LifTrace::LifTrace(const LifDigitizerConfig &c, const QByteArray b, int dIndex, 
         qint64 dat = 0;
         if(c.d_bytesPerPoint == 1)
         {
-            char y = b.at(i);
+            auto y = b.at(i);
             dat = static_cast<qint64>(y);
         }
         else

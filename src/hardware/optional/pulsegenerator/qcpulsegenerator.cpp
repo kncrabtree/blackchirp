@@ -1,5 +1,7 @@
 #include "qcpulsegenerator.h"
 
+#include <QThread>
+
 QCPulseGenerator::QCPulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent, bool threaded, bool critical) : PulseGenerator(subKey,name,commType,numChannels,parent,threaded,critical)
 {
 }
@@ -106,8 +108,8 @@ bool QCPulseGenerator::setHwPulseMode(PGenMode mode)
     }
 
     bool success = pGenWriteCmd(QString("%1 %2").arg(trigBase()).arg(mstr));
-    if(success)
-        success = pGenWriteCmd(QString(":%1:MOD %2").arg(sysStr()).arg(smstr));
+    success &= pGenWriteCmd(QString(":%1:MOD %2").arg(sysStr()).arg(smstr));
+    QThread::msleep(5);
     return success;
 }
 
@@ -273,7 +275,7 @@ PulseGenConfig::PGenMode QCPulseGenerator::readHwPulseMode()
 
 double QCPulseGenerator::readHwRepRate()
 {
-    QByteArray resp = p_comm->queryCmd(QString(":%1:PERIOD?").arg(sysStr()));
+    QByteArray resp = pGenQueryCmd(QString(":%1:PERIOD?").arg(sysStr()));
     if(!resp.isEmpty())
     {
         bool ok = false;
@@ -289,7 +291,7 @@ double QCPulseGenerator::readHwRepRate()
 
 bool QCPulseGenerator::readHwPulseEnabled()
 {
-    QByteArray resp = p_comm->queryCmd(QString(":%1:STATE?").arg(sysStr()));
+    QByteArray resp = pGenQueryCmd(QString(":%1:STATE?").arg(sysStr()));
     if(!resp.isEmpty())
     {
         bool ok = false;
@@ -306,7 +308,7 @@ bool QCPulseGenerator::readHwPulseEnabled()
 void QCPulseGenerator::lockKeys(bool lock)
 {
     if(lock)
-        pGenWriteCmd(QString(":%1:KLOCK 1").arg(sysStr()));
+        pGenWriteCmd(QString(":SYSTEM:KLOCK 1").arg(sysStr()));
     else
-        pGenWriteCmd(QString(":%1:KLOCK 0").arg(sysStr()));
+        pGenWriteCmd(QString(":SYSTEM:KLOCK 0").arg(sysStr()));
 }

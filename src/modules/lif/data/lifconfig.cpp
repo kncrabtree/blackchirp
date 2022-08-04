@@ -56,7 +56,7 @@ QPair<int, int> LifConfig::refGate() const
     return {d_procSettings.refGateStart,d_procSettings.refGateEnd};
 }
 
-void LifConfig::addWaveform(const QByteArray d)
+void LifConfig::addWaveform(const QVector<qint8> d)
 {
     //the boolean returned by this function tells if the point was incremented
     if(d_complete && d_completeMode == StopWhenComplete)

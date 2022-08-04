@@ -4,30 +4,43 @@
 
 M4i2211x8::M4i2211x8(QObject *parent) :
     LifScope (BC::Key::m4i2211x8,BC::Key::m4i2211x8Name,CommunicationProtocol::Custom,parent),
-    p_handle(nullptr), p_m4iBuffer(nullptr), d_timerInterval(50), d_running(false)
+    p_handle(nullptr)
 {
-    //load settings from last use, if possible
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    d_config.vScale1 = s.value(QString("vScale"),0.2).toDouble();
-    d_config.vScale2 = s.value(QString("vScaleRef"),0.2).toDouble();
-    d_config.sampleRate = s.value(QString("sampleRate"),1.25e9).toDouble();
-    d_config.recordLength = s.value(QString("numSamples"),8192).toInt();
-    d_config.refEnabled = s.value(QString("refEnabled"),false).toBool();
-    s.endGroup();
-    s.endGroup();
+    using namespace BC::Key::Digi;
+    setDefault(numAnalogChannels,2);
+    setDefault(numDigitalChannels,0);
+    setDefault(hasAuxTriggerChannel,true);
+    setDefault(minFullScale,5e-2);
+    setDefault(maxFullScale,2.5);
+    setDefault(minVOffset,-2.0);
+    setDefault(maxVOffset,2.0);
+    setDefault(isTriggered,true);
+    setDefault(minTrigDelay,-10.0);
+    setDefault(maxTrigDelay,10.0);
+    setDefault(minTrigLevel,-5.0);
+    setDefault(maxTrigLevel,5.0);
+    setDefault(canBlockAverage,false);
+    setDefault(canMultiRecord,false);
+    setDefault(multiBlock,false);
+    setDefault(maxBytes,1);
 
-    d_config.bytesPerPoint = 1;
-    d_config.byteOrder = DigitizerConfig::LittleEndian;
-    d_config.yMult1 = d_config.vScale1/128.0;
-    d_config.yMult2 = d_config.vScale2/128.0;
-    d_config.xIncr = 1.0/d_config.sampleRate;
+    if(!containsArray(sampleRates))
+        setArray(sampleRates,{
+                     {{srText,"78.125 MSa/s"},{srValue,2.5e9/32}},
+                     {{srText,"156.25 MSa/s"},{srValue,2.5e9/16}},
+                     {{srText,"312.5 MSa/s"},{srValue,2.5e9/8}},
+                     {{srText,"625 MSa/s"},{srValue,2.5e9/4}},
+                     {{srText,"1250 GSa/s"},{srValue,2.5e9/2}},
+                 });
 
-    d_bufferSize = d_config.recordLength;
-    if(d_config.refEnabled)
-        d_bufferSize *= 2;
-    p_m4iBuffer = new char[d_bufferSize];
+    if(!containsArray(BC::Key::Custom::comm))
+        setArray(BC::Key::Custom::comm, {
+                    {{BC::Key::Custom::key,"devPath"},
+                     {BC::Key::Custom::type,BC::Key::Custom::stringKey},
+                     {BC::Key::Custom::label,"Device Path"}}
+                 });
+
+    save();
 }
 
 M4i2211x8::~M4i2211x8()
@@ -41,61 +54,6 @@ M4i2211x8::~M4i2211x8()
         spcm_vClose(p_handle);
         p_handle = nullptr;
     }
-
-    if(p_m4iBuffer != nullptr)
-    {
-        delete[] p_m4iBuffer;
-        p_m4iBuffer = nullptr;
-    }
-}
-
-
-void M4i2211x8::readSettings()
-{
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-
-
-    double bandwidth = s.value(QString("bandwidth"),500.0).toDouble();
-    s.setValue(QString("bandwidth"),bandwidth);
-    d_timerInterval = s.value(QString("timerIntervalMs"),50).toInt();
-    s.setValue(QString("timerIntervalMs"),d_timerInterval);
-
-    s.setValue(QString("minVScale"),0.2);
-    s.setValue(QString("maxVScale"),2.5);
-
-    if(s.beginReadArray(QString("sampleRates")) < 1)
-    {
-        s.endArray();
-
-        QList<QPair<QString,double>> sampleRates;
-        for(int i=0; i<6; i++)
-        {
-            QString txt = QString("%1 MSa/S").arg(round(1.25e3/( 1 << i )),4);
-            double val = 1.25e9/(static_cast<double>( 1 << i));
-            sampleRates << qMakePair(txt,val);
-        }
-
-        s.beginWriteArray(QString("sampleRates"));
-        for(int i=0; i<sampleRates.size(); i++)
-        {
-            s.setArrayIndex(i);
-            s.setValue(QString("text"),sampleRates.at(i).first);
-            s.setValue(QString("val"),sampleRates.at(i).second);
-        }
-    }
-
-    s.endArray();
-    s.beginWriteArray(QString("comm"));
-    s.setArrayIndex(0);
-    s.setValue(QString("name"),QString("Device Path"));
-    s.setValue(QString("key"),QString("devPath"));
-    s.setValue(QString("type"),QString("string"));
-    s.endArray();
-
-    s.endGroup();
-    s.endGroup();
 }
 
 void M4i2211x8::initialize()
@@ -108,13 +66,6 @@ bool M4i2211x8::testConnection()
 {
     p_timer->stop();
 
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    QByteArray path = s.value(QString("devPath"),QString("/dev/spcm0")).toString().toLatin1();
-    s.endGroup();
-    s.endGroup();
-
     if(p_handle != nullptr)
     {
         stopCard();
@@ -122,7 +73,8 @@ bool M4i2211x8::testConnection()
         p_handle = nullptr;
     }
 
-    p_handle = spcm_hOpen(path.data());
+    auto path = getArrayValue(BC::Key::Custom::comm,0,"devPath",QString("/dev/spcm0"));
+    p_handle = spcm_hOpen(path.toLatin1().data());
     spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_RESET);
 
 
@@ -155,169 +107,11 @@ bool M4i2211x8::testConnection()
                     .arg(cType).arg(serialNo).arg(driVer >> 24).arg((driVer >> 16) & 0xff).arg(driVer & 0xffff)
                     .arg(kerVer >> 24).arg((kerVer >> 16) & 0xff).arg(kerVer & 0xffff));
 
-    //try to restore last used parameters
-    blockSignals(true);
-    setRefEnabled(d_config.refEnabled); //this will also set the ref V scale!
-    setLifVScale(d_config.vScale1);
-    setHorizontalConfig(d_config.sampleRate,d_config.recordLength);
-    blockSignals(false);
-
-    //configure type of acquisition etc here
-    spcm_dwSetParam_i32(p_handle,SPC_CLOCKMODE,SPC_CM_INTPLL);
-    spcm_dwSetParam_i32(p_handle,SPC_TRIG_ORMASK,SPC_TMASK_NONE);
-    spcm_dwSetParam_i32(p_handle,SPC_TRIG_ORMASK,SPC_TMASK_EXT0);
-    spcm_dwSetParam_i32(p_handle,SPC_TRIG_EXT0_MODE,SPC_TM_POS);
-    spcm_dwSetParam_i32(p_handle,SPC_TRIG_EXT0_LEVEL0,2200);
-    spcm_dwSetParam_i32(p_handle,SPC_CARDMODE,SPC_REC_STD_SINGLE);
-
 
     if(errorCheck())
         return false;
 
-    emit configUpdated(d_config);
-
-    startCard();
-    p_timer->start(d_timerInterval);
-
     return true;
-}
-
-void M4i2211x8::setLifVScale(double scale)
-{
-
-    bool wasRunning = stopCard();
-
-    if(scale < 0.35)
-        d_config.vScale1 = 0.2;
-    else if(scale < 0.75)
-        d_config.vScale1 = 0.5;
-    else if(scale < 1.75)
-        d_config.vScale1 = 1.0;
-    else
-        d_config.vScale1 = 2.5;
-
-    spcm_dwSetParam_i32(p_handle,SPC_AMP0,static_cast<qint32>(round(d_config.vScale1*1000.0)));
-    d_config.yMult1 = d_config.vScale1/128.0;
-
-    //set offset to 0
-    spcm_dwSetParam_i32(p_handle,SPC_OFFS0,0);
-
-    if(errorCheck())
-        return;
-
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    s.setValue(QString("vScale"),d_config.vScale1);
-    s.endGroup();
-    s.endGroup();
-
-    emit configUpdated(d_config);
-
-    if(wasRunning)
-        startCard();
-
-}
-
-void M4i2211x8::setRefVScale(double scale)
-{
-
-    bool wasRunning = stopCard();
-
-    if(scale < 0.35)
-        d_config.vScale2 = 0.2;
-    else if(scale < 0.75)
-        d_config.vScale2 = 0.5;
-    else if(scale < 1.75)
-        d_config.vScale2 = 1.0;
-    else
-        d_config.vScale2 = 2.5;
-
-    spcm_dwSetParam_i32(p_handle,SPC_AMP1,static_cast<qint32>(round(d_config.vScale2*1000.0)));
-    d_config.yMult2 = d_config.vScale2/128.0;
-
-    //set offset to 0
-    spcm_dwSetParam_i32(p_handle,SPC_OFFS1,0);
-
-    if(errorCheck())
-        return;
-
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    s.setValue(QString("vScaleRef"),d_config.vScale2);
-    s.endGroup();
-    s.endGroup();
-    emit configUpdated(d_config);
-
-    if(wasRunning)
-        startCard();
-}
-
-void M4i2211x8::setHorizontalConfig(double sampleRate, int recLen)
-{
-    bool wasRunning = stopCard();
-
-    //enforce constraint that record length must be a multiple of 32.
-    int rl = (recLen/32) * 32;
-    rl = qMax(32,rl);
-    rl = qMin(rl,65536);
-    if(rl != recLen)
-        emit logMessage(QString("Record length set to %1 instead of %2 because it must be a multiple of 32 between 32 and 65536.").arg(rl).arg(recLen),LogHandler::Warning);
-    d_config.recordLength = rl;
-    d_config.sampleRate = sampleRate;
-
-    spcm_dwSetParam_i64(p_handle,SPC_SAMPLERATE,static_cast<qint64>(sampleRate));
-
-    configureMemory();
-
-    if(errorCheck())
-        return;
-
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    s.setValue(QString("sampleRate"),d_config.sampleRate);
-    s.setValue(QString("numSamples"),d_config.recordLength);
-    s.endGroup();
-    s.endGroup();
-    emit configUpdated(d_config);
-
-    if(wasRunning)
-        startCard();
-}
-
-void M4i2211x8::setRefEnabled(bool en)
-{
-    bool wasRunning = stopCard();
-
-    d_config.refEnabled = en;
-
-    if(en)
-        spcm_dwSetParam_i32(p_handle,SPC_CHENABLE,CHANNEL0|CHANNEL1);
-    else
-        spcm_dwSetParam_i32(p_handle,SPC_CHENABLE,CHANNEL0);
-
-    configureMemory();
-
-    if(en)
-        setRefVScale(d_config.vScale2);
-
-    if(errorCheck())
-        return;
-
-    QSettings s(QSettings::SystemScope,QApplication::organizationName(),QApplication::applicationName());
-    s.beginGroup(d_key);
-    s.beginGroup(d_subKey);
-    s.setValue(QString("refEnabled"),d_config.refEnabled);
-    s.endGroup();
-    s.endGroup();
-
-    emit configUpdated(d_config);
-
-    if(wasRunning)
-        startCard();
-
 }
 
 void M4i2211x8::readWaveform()
@@ -339,11 +133,15 @@ void M4i2211x8::readWaveform()
 
     if(stat & M2STAT_CARD_READY)
     {
+        QVector<qint8> ba(d_bufferSize);
+        spcm_dwDefTransfer_i64(p_handle,SPCM_BUF_DATA,SPCM_DIR_CARDTOPC,
+                                   0,static_cast<void*>(ba.data()),
+                                   0,static_cast<quint64>(d_bufferSize));
         spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA);
-        emit waveformRead(LifTrace(d_config,QByteArray::fromRawData(p_m4iBuffer,d_bufferSize)));
+        errorCheck();
+        emit waveformRead(ba);
 
         startCard();
-
     }
 
 }
@@ -358,56 +156,139 @@ bool M4i2211x8::errorCheck()
         d_errorString = QString::fromLatin1(errText);
         emit hardwareFailure();
         emit logMessage(QString("An error occurred: %2").arg(d_errorString),LogHandler::Error);
-        if(p_m4iBuffer != nullptr)
-        {
-            delete[] p_m4iBuffer;
-            p_m4iBuffer = nullptr;
-        }
         return true;
     }
 
     return false;
 }
 
-void M4i2211x8::configureMemory()
-{
-    bool wasRunning = stopCard();
-
-    d_bufferSize = d_config.recordLength;
-    if(d_config.refEnabled)
-        d_bufferSize *= 2;
-
-    spcm_dwInvalidateBuf(p_handle,SPCM_BUF_DATA);
-    spcm_dwSetParam_i64(p_handle,SPC_MEMSIZE,static_cast<qint64>(d_bufferSize));
-    spcm_dwSetParam_i64(p_handle,SPC_POSTTRIGGER,static_cast<qint64>(d_config.recordLength-32));
-
-
-    if(p_m4iBuffer != nullptr)
-    {
-        delete [] p_m4iBuffer;
-        p_m4iBuffer = nullptr;
-    }
-
-    p_m4iBuffer = new char[d_bufferSize];
-
-    if(wasRunning)
-        startCard();
-}
-
 void M4i2211x8::startCard()
 {
     spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
-    spcm_dwDefTransfer_i64(p_handle,SPCM_BUF_DATA,SPCM_DIR_CARDTOPC,0,static_cast<void*>(p_m4iBuffer),0,static_cast<quint64>(d_bufferSize));
-    d_running = true;
 
 }
 
-bool M4i2211x8::stopCard()
+void M4i2211x8::stopCard()
 {
-    bool out = d_running;
     spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_STOP|M2CMD_DATA_STOPDMA);
     spcm_dwInvalidateBuf(p_handle,SPCM_BUF_DATA);
-    d_running = false;
 
-    return out;
+}
+
+bool M4i2211x8::configure(const LifDigitizerConfig &c)
+{
+
+    static_cast<LifDigitizerConfig&>(*this) = c;
+    d_channelOrder = LifDigitizerConfig::Interleaved;
+    d_triggerChannel = 0;
+
+    spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_RESET);
+
+    spcm_dwSetParam_i32(p_handle,SPC_CARDMODE,SPC_REC_STD_SINGLE);
+
+    if(d_refEnabled)
+        spcm_dwSetParam_i32(p_handle,SPC_CHENABLE,CHANNEL0|CHANNEL1);
+    else
+        spcm_dwSetParam_i32(p_handle,SPC_CHENABLE,CHANNEL0);
+
+    auto &ch = d_analogChannels[1];
+    auto scale = ch.fullScale;
+    if(scale < 0.35)
+        ch.fullScale = 0.2;
+    else if(scale < 0.75)
+        ch.fullScale = 0.5;
+    else if(scale < 1.75)
+        ch.fullScale = 1.0;
+    else
+        ch.fullScale = 2.5;
+
+    if(qAbs(ch.fullScale-scale)>0.01)
+        emit logMessage(QString("LIF channel scale set to nearest allowed value (%1 V)").arg(ch.fullScale));
+    spcm_dwSetParam_i32(p_handle,SPC_AMP0,static_cast<qint32>(round(ch.fullScale*1000.0)));
+
+    //set offset to 0
+    spcm_dwSetParam_i32(p_handle,SPC_OFFS0,0);
+    ch.offset = 0.0;
+
+    if(errorCheck())
+        return false;
+
+    if(d_refEnabled)
+    {
+        auto &ch2 = d_analogChannels[2];
+        scale = ch2.fullScale;
+        if(scale < 0.35)
+            ch2.fullScale = 0.2;
+        else if(scale < 0.75)
+            ch2.fullScale = 0.5;
+        else if(scale < 1.75)
+            ch2.fullScale = 1.0;
+        else
+            ch2.fullScale = 2.5;
+
+        if(qAbs(ch2.fullScale-scale)>0.01)
+            emit logMessage(QString("Reference channel scale set to nearest allowed value (%1 V)").arg(ch2.fullScale));
+        spcm_dwSetParam_i32(p_handle,SPC_AMP1,static_cast<qint32>(round(ch2.fullScale*1000.0)));
+
+        //set offset to 0
+        spcm_dwSetParam_i32(p_handle,SPC_OFFS1,0);
+        ch2.offset = 0.0;
+
+        if(errorCheck())
+            return false;
+    }
+
+    //enforce constraint that record length must be a multiple of 32.
+    int rl = (d_recordLength/32) * 32;
+    rl = qMax(32,rl);
+    rl = qMin(rl,65536);
+    if(rl != d_recordLength)
+        emit logMessage(QString("Record length set to %1 instead of %2 because it must be a multiple of 32 between 32 and 65536.").arg(rl).arg(d_recordLength),LogHandler::Warning);
+    d_recordLength = rl;
+
+    spcm_dwSetParam_i32(p_handle,SPC_CLOCKMODE,SPC_CM_INTPLL);
+    spcm_dwSetParam_i64(p_handle,SPC_SAMPLERATE,static_cast<qint64>(d_sampleRate));
+
+    d_bufferSize = d_recordLength;
+    if(d_refEnabled)
+        d_bufferSize *= 2;
+
+    spcm_dwSetParam_i64(p_handle,SPC_MEMSIZE,static_cast<qint64>(d_bufferSize));
+    spcm_dwSetParam_i64(p_handle,SPC_POSTTRIGGER,static_cast<qint64>(d_recordLength-32));
+
+    if(errorCheck())
+        return false;
+
+
+    spcm_dwSetParam_i32(p_handle,SPC_TRIG_ORMASK,SPC_TMASK_NONE);
+    spcm_dwSetParam_i32(p_handle,SPC_TRIG_ORMASK,SPC_TMASK_EXT0);
+    spcm_dwSetParam_i32(p_handle,SPC_TRIG_EXT0_MODE,SPC_TM_POS);
+    spcm_dwSetParam_i32(p_handle,SPC_TRIG_EXT0_LEVEL0,static_cast<int>(round(d_triggerLevel*1000.0)));
+    spcm_dwSetParam_i32(p_handle,SPC_TRIG_DELAY,0);
+
+    spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_WRITESETUP);
+
+    return !errorCheck();
+}
+
+bool M4i2211x8::prepareForExperiment(Experiment &exp)
+{
+    if(configure(exp.lifConfig()->d_scopeConfig))
+    {
+        exp.lifConfig()->d_scopeConfig = static_cast<LifDigitizerConfig&>(*this);
+        return true;
+    }
+    return false;
+}
+
+void M4i2211x8::beginAcquisition()
+{
+    startCard();
+    p_timer->start(10);
+}
+
+void M4i2211x8::endAcquisition()
+{
+    stopCard();
+    p_timer->stop();
 }

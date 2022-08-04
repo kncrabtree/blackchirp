@@ -14,7 +14,7 @@ void LifScope::startConfigurationAcquisition(const LifDigitizerConfig &c)
 {
     if(configure(c))
     {
-        emit configAcqComplete(static_cast<LifDigitizerConfig>(*this));
+        emit configAcqComplete(static_cast<LifDigitizerConfig>(*this),QPrivateSignal());
         beginAcquisition();
     }
 }

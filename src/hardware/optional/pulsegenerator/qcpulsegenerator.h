@@ -134,7 +134,7 @@ private:
     const QString id{"QC,9528"};
     const QString sys{"PULSE0"};
     const QString clock{"EXT10"};
-    const QString tb{":PULSE0:TRIG:MOD"};
+    const QString tb{":PULSE0:TRIGGER:MODE"};
 };
 
 typedef Qc9528 PulseGeneratorHardware;

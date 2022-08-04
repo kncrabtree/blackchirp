@@ -121,6 +121,7 @@ R"000(Next, you can configure the communication settings for the hardware connec
     qRegisterMetaType<Ft>("Ft");
     qRegisterMetaType<QVector<QPointF> >("QVector<QPointF>");
     qRegisterMetaType<QVector<double>>("QVector<double>");
+    qRegisterMetaType<QVector<qint8>>("QVector<qint8>");
     qRegisterMetaType<QHash<RfConfig::ClockType, RfConfig::ClockFreq>>();
     qRegisterMetaType<PulseGenConfig>();
     qRegisterMetaType<PulseGenConfig::Setting>();

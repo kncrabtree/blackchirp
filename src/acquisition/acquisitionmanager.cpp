@@ -77,7 +77,7 @@ void AcquisitionManager::processFtmwScopeShot(const QByteArray b)
 }
 
 #ifdef BC_LIF
-void AcquisitionManager::processLifScopeShot(const QByteArray b)
+void AcquisitionManager::processLifScopeShot(const QVector<qint8> b)
 {
     if(d_state == Acquiring
             && ps_currentExperiment->lifEnabled()

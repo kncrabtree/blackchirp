@@ -14,13 +14,11 @@ LifLaser::~LifLaser()
 double LifLaser::readPosition()
 {
     double out = readPos();
+    emit laserPosUpdate(out);
     if(out < 0.0)
     {
         emit logMessage(QString("Could not read position.").arg(d_name),LogHandler::Error);
         emit hardwareFailure();
-    }
-    else {
-        emit laserPosUpdate(out);
     }
 
     return out;

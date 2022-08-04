@@ -360,8 +360,8 @@ bool PulseGenerator::setAll(const PulseGenConfig &cc)
 
     if(success)
         success &= setRepRate(cc.d_repRate);
-    if(success)
-        success &= setPulseMode(cc.d_mode);
+//    if(success)
+//        success &= setPulseMode(cc.d_mode);
     if(success)
         success &= setPulseEnabled(cc.d_pulseEnabled);
     blockSignals(false);

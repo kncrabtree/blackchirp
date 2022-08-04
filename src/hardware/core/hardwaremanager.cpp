@@ -16,6 +16,9 @@
 #ifdef BC_LIF
 #include <modules/lif/hardware/lifdigitizer/lifscope.h>
 #include <modules/lif/hardware/liflaser/liflaser.h>
+#include <QtConcurrent/QtConcurrent>
+#include <QFuture>
+#include <QFutureWatcher>
 #endif
 
 HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsStorage(BC::Key::hw)
@@ -313,11 +316,34 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
 
     exp->d_hardwareSuccess = success;
     exp->d_hardware = currentHardware();
+
+#ifdef BC_LIF
+    if(exp->lifEnabled())
+    {
+        auto ll = findHardware<LifLaser>(BC::Key::LifLaser::key);
+        if(!ll)
+        {
+            emit logMessage(QString("Could not perform LIF experiment because no laser is avaialble."),LogHandler::Error);
+            emit lifSettingsComplete(false);
+            return;
+        }
+        connect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserSetComplete,Qt::UniqueConnection);
+    }
+#endif
     //any additional synchronous initialization can be performed here, before experimentInitialized() is emitted
 
 
     emit experimentInitialized(exp);
 
+}
+
+void HardwareManager::experimentComplete()
+{
+#ifdef BC_LIF
+    auto ll = findHardware<LifLaser>(BC::Key::LifLaser::key);
+    if(ll)
+        disconnect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserSetComplete);
+#endif
 }
 
 void HardwareManager::testAll()
@@ -596,6 +622,14 @@ void HardwareManager::setLifParameters(double delay, double pos)
 {
     bool success = true;
 
+    auto ll = findHardware<LifLaser>(BC::Key::LifLaser::key);
+    if(!ll)
+    {
+        emit logMessage(QString("Could not set LIF Laser position because no laser is avaialble."),LogHandler::Error);
+        emit lifSettingsComplete(false);
+        return;
+    }
+
     auto pGen = findHardware<PulseGenerator>(BC::Key::PGen::key);
     if(pGen)
     {
@@ -603,10 +637,10 @@ void HardwareManager::setLifParameters(double delay, double pos)
             success = false;
     }
 
-    if(!setLifLaserPos(pos))
-        success = false;
-
-    emit lifSettingsComplete(success);
+    if(success)
+        setLifLaserPos(pos);
+    else
+        emit lifSettingsComplete(success);
 }
 
 bool HardwareManager::setPGenLifDelay(double d)
@@ -628,25 +662,24 @@ bool HardwareManager::setPGenLifDelay(double d)
 
 }
 
-bool HardwareManager::setLifLaserPos(double pos)
+void HardwareManager::setLifLaserPos(double pos)
 {
     auto ll = findHardware<LifLaser>(BC::Key::LifLaser::key);
     if(!ll)
     {
         emit logMessage(QString("Could not set LIF Laser position because no laser is avaialble."),LogHandler::Error);
-        return false;
+        return;
     }
 
     if(ll->thread() == QThread::currentThread())
-    {
-        auto p = ll->setPosition(pos);
-        return p > 0.0;
-    }
+        ll->setPosition(pos);
+    else
+        QMetaObject::invokeMethod(ll,[ll,pos](){ ll->setPosition(pos); });
+}
 
-    double out;
-    QMetaObject::invokeMethod(ll,[ll,pos](){ return ll->setPosition(pos); },Qt::BlockingQueuedConnection,&out);
-    return out > 0.0;
-
+void HardwareManager::lifLaserSetComplete(double pos)
+{
+    emit lifSettingsComplete(pos > 0.0);
 }
 
 void HardwareManager::startLifConfigAcq(const LifDigitizerConfig &c)

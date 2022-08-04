@@ -80,7 +80,7 @@ signals:
     void temperatureEnableUpdate(int,bool);
 
 #ifdef BC_LIF
-    void lifScopeShotAcquired(QByteArray);
+    void lifScopeShotAcquired(QVector<qint8>);
     void lifSettingsComplete(bool success = true);
     void lifLaserPosUpdate(double);
     void lifConfigAcqStarted(LifDigitizerConfig);
@@ -109,6 +109,7 @@ public slots:
     void sleep(bool b);
 
     void initializeExperiment(std::shared_ptr<Experiment> exp);
+    void experimentComplete();
 
     void testAll();
     void testObjectConnection(const QString type, const QString key);
@@ -147,7 +148,8 @@ public slots:
 #ifdef BC_LIF
     void setLifParameters(double delay, double pos);
     bool setPGenLifDelay(double d);
-    bool setLifLaserPos(double pos);
+    void setLifLaserPos(double pos);
+    void lifLaserSetComplete(double pos);
     void startLifConfigAcq(const LifDigitizerConfig &c);
     void stopLifConfigAcq();
     double lifLaserPos();

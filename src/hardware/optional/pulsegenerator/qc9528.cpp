@@ -24,7 +24,7 @@ Qc9528::~Qc9528()
 
 void Qc9528::initializePGen()
 {
-    p_comm->setReadOptions(100,true,QByteArray("\r\n"));
+    p_comm->setReadOptions(200,true,QByteArray("\r\n"));
 }
 
 void Qc9528::beginAcquisition()
