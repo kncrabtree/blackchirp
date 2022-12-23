@@ -10,7 +10,7 @@ If the program does not behave as expected on other platforms, please `raise an 
 The prerequisites for compiling Blackchirp are:
 
 - Compiler with C++17 support (e.g., gcc 6+)
-- Qt 5.11+ and < 6 (Qt 6.2 may work, but is untested. Qt 6.0 and 6.1 are not compatible with Blackchirp)
+- Qt 5.15+ and < 6 (Qt 6.2 may work, but is untested. Qt 6.0 and 6.1 are not compatible with Blackchirp)
 - `qwt`_ 6.1+
 - `Eigen template library`_ v3+
 - `GNU Scientific Library`_ v2.1+
