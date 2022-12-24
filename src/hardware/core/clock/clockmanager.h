@@ -96,3 +96,7 @@ using Clock3Hardware = BC_CLOCK_3;
 #ifdef BC_CLOCK_4
 using Clock4Hardware = BC_CLOCK_4;
 #endif
+
+#ifdef BC_CLOCK_5
+using Clock4Hardware = BC_CLOCK_5;
+#endif

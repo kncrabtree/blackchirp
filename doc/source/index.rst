@@ -20,16 +20,17 @@ Data acquired by Blackchirp can be viewed and interacted with in real time durin
 Getting Started
 ===============
 
-* Download the source code from Github_
-* Read the `installation requirements`_
-* Check out the supported hardware.
-* See the `user guide`_ for details on running Blackchirp
+ #. Read the `installation requirements`_
+ #. Check out the `supported hardware`_.
+ #. Download the source code from Github_
+ #. See the `user guide`_ for details on running Blackchirp
 
 If your hardware is not supported, you can submit a request by filing an issue on Github_.
 
 .. _Github: https://github.com/kncrabtree/blackchirp
 .. _installation requirements: user_guide/installation.html#requirements
-.. _user guide: user_guide/user_guide.html
+.. _supported hardware: user_guide/hardware_details.html
+.. _user guide: user_guide.html
 
 
 

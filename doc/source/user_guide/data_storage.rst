@@ -9,10 +9,10 @@ Blackchirp stores its data in your selected `Data Storage Location <first_run.ht
 
 At this location, Blackchirp creates 4 subfolders:
 
-- ``experiments``: Storage for experiment data files. A more detailed description is below.
-- ``log``: Location of program log files. All messages that were displayed on the log tab are written in CSV format, and a new CSV file is generated each calendar month.
-- ``rollingdata``: CSV files containing monitoring data (see `Rolling and Aux Data <rolling-aux-data.html>`_)
-- ``textexports``: Default location for XY export files for graph data.
+  * ``experiments``: Storage for experiment data files. A more detailed description is below.
+  * ``log``: Location of program log files. All messages that were displayed on the log tab are written in CSV format, and a new CSV file is generated each calendar month.
+  * ``rollingdata``: CSV files containing monitoring data (see `Rolling and Aux Data <rolling-aux-data.html>`_)
+  * ``textexports``: Default location for XY export files for graph data.
 
 All of Blackchirp's data files are written in plain-text CSV format using a the separator character ``;``.
 

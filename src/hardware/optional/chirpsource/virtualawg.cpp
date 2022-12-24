@@ -10,6 +10,7 @@ VirtualAwg::VirtualAwg(QObject *parent) :
     setDefault(BC::Key::AWG::prot,true);
     setDefault(BC::Key::AWG::amp,true);
     setDefault(BC::Key::AWG::rampOnly,false);
+    setDefault(BC::Key::AWG::triggered,true);
 }
 
 VirtualAwg::~VirtualAwg()

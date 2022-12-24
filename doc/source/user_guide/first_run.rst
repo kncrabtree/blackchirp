@@ -18,10 +18,10 @@ After clicking "Ok", you will be taken to a dialog where you may select your des
 
 When you click the "Apply" button, Blackchirp will attempt to create the folder and, if successful, will then make 4 subdirectories:
 
-- ``experiments``: Storage for experiment data files
-- ``log``: Location of program log files
-- ``rollingdata``: CSV files containing monitoring data
-- ``textexports``: Default location for XY export files for graph data
+  * ``experiments``: Storage for experiment data files
+  * ``log``: Location of program log files
+  * ``rollingdata``: CSV files containing monitoring data
+  * ``textexports``: Default location for XY export files for graph data
 
 Blackchirp stores experiment data by number: the first experiment recorded is number 1, and the number is incremented automatically.
 If the folder you selected already contains Blackchirp data, the program will attempt to set the starting experiment number the next available value, but this can be done manually if desired.
