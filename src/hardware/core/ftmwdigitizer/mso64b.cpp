@@ -602,10 +602,10 @@ void MSO64B::endAcquisition()
             p_socket->readAll();
 
         //send *CLS command twice to kick scope out of curvestream mode and clear the error queue
+        p_comm->writeCmd(QString("DCL\n"));
+        p_comm->writeCmd(QString("*CLS\n"));
+        p_comm->writeCmd(QString("*CLS\n"));
         p_comm->writeCmd(QString(":UNLOCK ALL;:DISPLAY:WAVEFORM ON\n"));
-//        p_comm->writeCmd(QString("DCL\n"));
-        p_comm->writeCmd(QString("*CLS\n"));
-        p_comm->writeCmd(QString("*CLS\n"));
 
         if(p_socket->bytesAvailable())
             p_socket->readAll();
