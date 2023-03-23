@@ -22,7 +22,7 @@ unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
 # you can ignore their corresponding entries below
 # -----------------------------------------------
 
-# FTMW Oscilloscope (0 = virtual, 1 = DSA71604C, 2 = MSO72004C, 3 = M4i2220x8, 4 = DSOx92004A)
+# FTMW Oscilloscope (0 = virtual, 1 = DSA71604C, 2 = MSO72004C, 3 = M4i2220x8, 4 = DSOx92004A, 5 = MSO64B)
 FTMWSCOPE=0
 
 #Clocks. Include in a space-delimited list, up to 6 numbers
@@ -31,10 +31,10 @@ FTMWSCOPE=0
 #(0 = FixedClock, 1 = Valon 5009, 2 = Valon 5015)
 CLOCKS=0 0
 
-#AWG (<0 None, 0 = virtual, 1 = AWG70002A, 2 = AWG7122B, 3 = AD9914, 4 = M8195A)
+#AWG (<0 None, 0 = virtual, 1 = AWG70002A, 2 = AWG7122B, 3 = AD9914, 4 = M8195A, 5 = AWG5000)
 AWG=-1
 
-#Pulse generator (<0 = None, 0 = virtual, 1 = Quantum Composers 9528+, 2 = Quantum Composers 9518)
+#Pulse generator (<0 = None, 0 = virtual, 1 = Quantum Composers 9528+, 2 = Quantum Composers 9518, 3 = Quantum Composers 9214)
 PGEN=-1
 
 #Flow Controller (<0 = None, 0 = virtual, 1 = MKS 647C, 2 = MKS 946)

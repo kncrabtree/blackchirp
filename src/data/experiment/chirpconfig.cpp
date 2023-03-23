@@ -469,6 +469,57 @@ QVector<QPair<bool, bool> > ChirpConfig::getMarkerData() const
 
 }
 
+QVector<bool> ChirpConfig::getTriggerData() const
+{
+    ///TODO: merge this with previous function; make generic
+    if(d_chirpList.isEmpty())
+        return QVector<bool>();
+
+    int currentSample = 0;
+    int firstSample = 0;
+    int invalidSample = getFirstSample(totalDuration()) + 1; //invalid sample is the point AFTER the last point to be included
+    int numSamples = invalidSample - 1;
+
+    QVector<bool> out(numSamples);
+
+    bool done = false;
+
+    while(!done) // loop that allows interval crossing
+    {
+        //starting an interval
+        double currentTime = getSampleTime(firstSample+currentSample);
+        int currentInterval = static_cast<int>(floor(currentTime/d_chirpInterval));
+        int currentIntervalStartSample = getFirstSample(static_cast<double>(currentInterval)*d_chirpInterval);
+        int nextIntervalStartSample = getFirstSample((static_cast<double>(currentInterval) + 1.0) * d_chirpInterval);
+        if(nextIntervalStartSample > firstSample+numSamples)
+        {
+            //this is the last interval
+            done = true;
+            nextIntervalStartSample = firstSample+numSamples;
+        }
+        int currentIntervalChirpStart = getFirstSample(getSampleTime(currentIntervalStartSample) + preChirpProtectionDelay() + preChirpGateDelay());
+        int currentIntervalChirpEnd = getLastSample(getSampleTime(currentIntervalChirpStart) + chirpDurationUs(currentInterval));
+        int currentIntervalProtEnd = getLastSample(getSampleTime(currentIntervalChirpEnd) + postChirpProtectionDelay())-1;
+        int triggerStart = getFirstSample(getSampleTime(currentIntervalChirpStart)-.1); //TODO: Don't hardcode this!
+
+
+        while(currentSample < nextIntervalStartSample)
+        {
+            if(currentSample < triggerStart || currentSample >= currentIntervalProtEnd)
+                out[currentSample] = false;
+            else
+                out[currentSample] = true;
+
+            currentSample++;
+        }
+    }
+    //fill with zeroes until total length
+    while(currentSample < invalidSample-1)
+        out[currentSample] = false;
+
+    return out;
+}
+
 void ChirpConfig::setAwgSampleRate(const double samplesPerSecond)
 {
     d_sampleRateSperUS = samplesPerSecond/1e6;

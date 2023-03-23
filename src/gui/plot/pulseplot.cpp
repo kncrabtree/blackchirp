@@ -73,7 +73,7 @@ PulsePlot::PulsePlot(QWidget *parent) :
 
         QwtPlotCurve *sync = new QwtPlotCurve;
         QPalette pal;
-        p.setColor(pal.color(QPalette::BrightText));
+        p.setColor(pal.color(QPalette::Text));
         p.setWidthF(1.0);
         p.setStyle(Qt::DashLine);
         sync->setPen(p);

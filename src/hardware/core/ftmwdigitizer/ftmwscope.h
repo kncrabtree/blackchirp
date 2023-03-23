@@ -53,6 +53,10 @@ typedef M4i2220x8 FtmwScopeHardware;
 #include "dsox92004a.h"
 class DSOx92004A;
 typedef DSOx92004A FtmwScopeHardware;
+#elif BC_FTMWSCOPE == 5
+#include "mso64b.h"
+class MSO64B;
+typedef MSO64B FtmwScopeHardware;
 #endif
 
 

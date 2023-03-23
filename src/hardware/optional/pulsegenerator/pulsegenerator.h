@@ -104,8 +104,8 @@ typedef VirtualPulseGenerator PulseGeneratorHardware;
 #include "qcpulsegenerator.h"
 #elif BC_PGEN==2
 #include "qcpulsegenerator.h"
-class Qc9518;
-typedef Qc9518 PulseGeneratorHardware;
+#elif BC_PGEN==3
+#include "qcpulsegenerator.h"
 #endif
 #endif
 

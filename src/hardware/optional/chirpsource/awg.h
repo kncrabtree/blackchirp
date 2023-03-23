@@ -73,6 +73,10 @@ typedef AD9914 AwgHardware;
 #include "m8195a.h"
 class M8195A;
 typedef M8195A AwgHardware;
+#elif BC_AWG==5
+#include "awg5204.h"
+class AWG5204;
+typedef AWG5204 AwgHardware;
 #endif
 #endif
 

@@ -64,6 +64,10 @@ public:
     QVector<QPointF> getChirpSegmentMicroSeconds(double t1, double t2) const;
     QVector<QPair<bool,bool>> getMarkerData() const;
 
+    //HMC only: trigger 100 us before chirp start
+    //TODO: Generalize this and make it more general
+    QVector<bool> getTriggerData() const;
+
     void setAwgSampleRate(const double samplesPerSecond);
     void setPreChirpProtectionDelay(const double d);
     void setPreChirpGateDelay(const double d);

@@ -12,6 +12,10 @@ static const QString qc9528Name("Pulse Generator QC 9528");
 static const QString qc9518{"QC9518"};
 static const QString qc9518Name("Pulse Generator QC 9518");
 #endif
+#if BC_PGEN==3
+static const QString qc9214{"QC9214"};
+static const QString qc9214Name("Pulse Generator QC 9214");
+#endif
 }
 
 
@@ -138,6 +142,43 @@ private:
 };
 
 typedef Qc9528 PulseGeneratorHardware;
+#endif
+
+#if BC_PGEN==3
+class Qc9214 : public QCPulseGenerator
+{
+    Q_OBJECT
+public:
+    explicit Qc9214(QObject *parent = nullptr);
+    ~Qc9214();
+
+    // HardwareObject interface
+public slots:
+    void beginAcquisition() override;
+    void endAcquisition() override;
+
+
+protected:
+    void initializePGen() override;
+
+
+    // QCPulseGenerator interface
+protected:
+    bool pGenWriteCmd(QString cmd) override;
+    QByteArray pGenQueryCmd(QString cmd) override;
+    inline QString idResponse() override { return id; }
+    inline QString sysStr() override { return sys; }
+    inline QString clock10MHzStr() override { return clock; }
+    inline QString trigBase() override { return tb; }
+
+private:
+    const QString id{"QC,9214"};
+    const QString sys{"PULSE0"};
+    const QString clock{"EXT10"};
+    const QString tb{":PULSE0:EXT:MOD"};
+};
+
+typedef Qc9214 PulseGeneratorHardware;
 #endif
 
 #endif // QCPULSEGENERATOR_H
