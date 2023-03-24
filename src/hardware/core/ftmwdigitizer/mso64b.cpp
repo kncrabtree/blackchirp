@@ -53,7 +53,7 @@ MSO64B::~MSO64B()
 bool MSO64B::testConnection()
 {
 
-    p_comm->writeCmd(QString("*CLS\n"));
+    p_comm->writeCmd(QString("DCL\n"));
     p_comm->writeCmd(QString("*CLS\n"));
     QByteArray resp = scopeQueryCmd(QString("*IDN?\n"));
 
