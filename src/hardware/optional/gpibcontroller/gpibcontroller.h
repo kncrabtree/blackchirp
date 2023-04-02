@@ -35,6 +35,10 @@ typedef VirtualGpibController GpibControllerHardware;
 #include "prologixgpiblan.h"
 class PrologixGpibLan;
 typedef PrologixGpibLan GpibControllerHardware;
+#elif BC_GPIBCONTROLLER == 2
+#include "prologixgpibusb.h"
+class PrologixGpibUsb;
+typedef PrologixGpibUsb GpibControllerHardware;
 #endif
 #endif
 

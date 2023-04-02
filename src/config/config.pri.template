@@ -28,7 +28,7 @@ FTMWSCOPE=0
 #Clocks. Include in a space-delimited list, up to 6 numbers
 #For example:
 #CLOCKS=0 0 1 3 2
-#(0 = FixedClock, 1 = Valon 5009, 2 = Valon 5015)
+#(0 = FixedClock, 1 = Valon 5009, 2 = Valon 5015, 3 = HP 83712B)
 CLOCKS=0 0
 
 #AWG (<0 None, 0 = virtual, 1 = AWG70002A, 2 = AWG7122B, 3 = AD9914, 4 = M8195A, 5 = AWG5000)
@@ -43,7 +43,7 @@ FC=-1
 #IO Board (<0 = None, 0 = virtual, 1 = Labjack U3)
 IOBOARD=-1
 
-#GPIB controller (<0 = none, 0 = virtual, 1 = Prologix GPIB-LAN)
+#GPIB controller (<0 = none, 0 = virtual, 1 = Prologix GPIB-LAN, 2 = Proligix GPIB-USB)
 GPIB=-1
 
 #pressure controller (<0 = none, 0 = virtual, 1 = Intellisys IQ Plus)

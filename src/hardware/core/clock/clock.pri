@@ -7,7 +7,7 @@ SOURCES += \
     $$PWD/clockmanager.cpp
 
 
-CLOCK_HW = FixedClock Valon5009 Valon5015
+CLOCK_HW = FixedClock Valon5009 Valon5015 HP83712B
 
 for(num, 0..$$size(CLOCKS)) {
 N = $$member(CLOCKS,$$num)
@@ -30,4 +30,9 @@ contains(CLOCKS,2) {
     DEFINES += BC_CLOCK_VALON5015
 	HEADERS += $$PWD/valon5015.h
 	SOURCES += $$PWD/valon5015.cpp
+}
+contains(CLOCKS,3) {
+    DEFINES += BC_CLOCK_HP83712B
+        HEADERS += $$PWD/hp83712b.h
+        SOURCES += $$PWD/hp83712b.cpp
 }
