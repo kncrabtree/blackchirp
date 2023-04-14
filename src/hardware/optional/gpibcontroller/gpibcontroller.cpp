@@ -40,6 +40,6 @@ QByteArray GpibController::queryCmd(int address, QString cmd, bool suppressError
             return QByteArray();
     }
 
-    return p_comm->queryCmd(cmd, suppressError);
+    return p_comm->queryCmd(cmd.append(queryTerminator()), suppressError);
 }
 
