@@ -29,7 +29,7 @@ bool PrologixGpibUsb::testConnection()
     emit logMessage(QString("%1 ID response: %2").arg(d_name).arg(QString(resp)));
 
     p_comm->writeCmd(QString("++auto 0\n"));
-    p_comm->writeCmd(QString("++savecfg 0\n"));
+//    p_comm->writeCmd(QString("++savecfg 0\n"));
     p_comm->writeCmd(QString("++read_tmo_ms 50\n"));
 
     readAddress();
