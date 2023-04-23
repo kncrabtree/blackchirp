@@ -93,13 +93,13 @@ HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidge
     svbl->addLayout(hbl,0);
     
     sBox->setLayout(svbl);
-    vbl->addWidget(sBox);
+    vbl->addWidget(sBox,1);
     
     auto bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Close);
     connect(bb->button(QDialogButtonBox::Ok),&QPushButton::clicked,this,&HWDialog::accept);
     connect(bb->button(QDialogButtonBox::Close),&QPushButton::clicked,this,&HWDialog::reject);
     
-    vbl->addWidget(bb);
+    vbl->addWidget(bb,0);
     setLayout(vbl);
 }
 
@@ -154,5 +154,5 @@ void HWDialog::reject()
 
 QSize HWDialog::sizeHint() const
 {
-    return {500,800};
+    return {500,850};
 }

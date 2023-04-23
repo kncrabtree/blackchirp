@@ -1,17 +1,17 @@
 #include "fixedclock.h"
 
 FixedClock::FixedClock(int clockNum, QObject *parent) :
-    Clock(clockNum,5,false,BC::Key::Clock::fixed,BC::Key::Clock::fixedName.arg(clockNum+1),CommunicationProtocol::None,parent)
+    Clock(clockNum,6,false,BC::Key::Clock::fixed,BC::Key::Clock::fixedName.arg(clockNum+1),CommunicationProtocol::None,parent)
 {
     using namespace BC::Key::Clock;
     if(containsArray(ch))
     {
-        for(int i=0; i<5; ++i)
+        for(int i=0; i<6; ++i)
             d_currentFrequencyList << getArrayValue(ch,i,freq,0.0);
     }
     else
     {
-        for(int i=0; i<5; i++)
+        for(int i=0; i<6; i++)
             d_currentFrequencyList << 0.0;
     }
 
@@ -24,7 +24,7 @@ FixedClock::~FixedClock()
 {
     using namespace BC::Key::Clock;
     setArray(ch,{});
-    for(int i=0; i<5; ++i)
+    for(int i=0; i<6; ++i)
         appendArrayMap(ch,{{freq,d_currentFrequencyList.value(i)}});
 }
 

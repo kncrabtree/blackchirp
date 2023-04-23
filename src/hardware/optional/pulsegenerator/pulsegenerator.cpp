@@ -1,10 +1,26 @@
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 
+#include <gui/widget/pulseconfigwidget.h>
+
 PulseGenerator::PulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent, bool threaded, bool critical) :
     HardwareObject(BC::Key::PGen::key,subKey,name,commType,parent,threaded,critical),
     d_numChannels(numChannels)
 {
     SettingsStorage::set(BC::Key::PGen::numChannels,d_numChannels,true);
+
+    for(int i=0; i<d_numChannels; i++)
+        addChannel();
+
+    using namespace BC::Key::PulseWidget;
+    SettingsStorage s(key);
+    if(s.containsArray(channels))
+    {
+        for(int i=0; i<d_numChannels; i++)
+        {
+            setCh(i,PulseGenConfig::NameSetting,s.getArrayValue(channels,i,BC::Key::PulseWidget::name,QString("Ch%1").arg(i+1)));
+            setCh(i,PulseGenConfig::RoleSetting,s.getArrayValue(channels,i,role,PulseGenConfig::None));
+        }
+    }
 }
 
 PulseGenerator::~PulseGenerator()
@@ -14,9 +30,6 @@ PulseGenerator::~PulseGenerator()
 
 void PulseGenerator::initialize()
 {
-    for(int i=0; i<d_numChannels; i++)
-        d_config.addChannel();
-
     initializePGen();
 }
 
@@ -31,7 +44,7 @@ bool PulseGenerator::prepareForExperiment(Experiment &exp)
 
 void PulseGenerator::readChannel(const int index)
 {
-    auto c = d_config.settings(index);
+    auto c = settings(index);
 
     bool success = true;
 
@@ -53,13 +66,21 @@ void PulseGenerator::readChannel(const int index)
 
     auto en = readChEnabled(index);
     auto level = readChActiveLevel(index);
+    auto mode = readChMode(index);
+    auto sync = readChSynchCh(index);
+    auto dutyOn = readChDutyOn(index);
+    auto dutyOff = readChDutyOff(index);
 
     if(success)
     {
-        d_config.set(index,PulseGenConfig::WidthSetting,w);
-        d_config.set(index,PulseGenConfig::DelaySetting,d);
-        d_config.set(index,PulseGenConfig::EnabledSetting,en);
-        d_config.set(index,PulseGenConfig::LevelSetting,level);
+        setCh(index,PulseGenConfig::WidthSetting,w);
+        setCh(index,PulseGenConfig::DelaySetting,d);
+        setCh(index,PulseGenConfig::EnabledSetting,en);
+        setCh(index,PulseGenConfig::LevelSetting,level);
+        setCh(index,PulseGenConfig::ModeSetting,mode);
+        setCh(index,PulseGenConfig::SyncSetting,sync);
+        setCh(index,PulseGenConfig::DutyOnSetting,dutyOn);
+        setCh(index,PulseGenConfig::DutyOffSetting,dutyOff);
     }
 
 }
@@ -71,7 +92,7 @@ double PulseGenerator::readRepRate()
     auto max = get(BC::Key::PGen::maxRepRate,1e5);
     if((out >= min) && (out <= max))
     {
-        d_config.setRepRate(out);
+        d_repRate = out;
         emit repRateUpdate(out,QPrivateSignal());
         return out;
     }
@@ -82,11 +103,27 @@ double PulseGenerator::readRepRate()
     return nan("");
 }
 
+PulseGenConfig::PGenMode PulseGenerator::readPulseMode()
+{
+    auto out = readHwPulseMode();
+    d_mode = out;
+    emit modeUpdate(out,QPrivateSignal());
+    return out;
+}
+
+bool PulseGenerator::readPulseEnabled()
+{
+    auto out = readHwPulseEnabled();
+    d_pulseEnabled = out;
+    emit pulseEnabledUpdate(out,QPrivateSignal());
+    return out;
+}
+
 bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setting s, const QVariant val)
 {
-    if(index >= d_config.size())
+    if(index >= d_channels.size())
     {
-        emit logMessage(QString("Received invalid channel (%1). Allowed values: 0-%2").arg(index).arg(d_config.size()-1),LogHandler::Error);
+        emit logMessage(QString("Received invalid channel (%1). Allowed values: 0-%2").arg(index).arg(d_channels.size()-1),LogHandler::Error);
         return false;
     }
 
@@ -95,7 +132,6 @@ bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setti
     switch(s) {
     case PulseGenConfig::NameSetting:
     case PulseGenConfig::RoleSetting:
-        d_config.set(index,s,val);
         break;
     case PulseGenConfig::LevelSetting:
     {
@@ -170,13 +206,108 @@ bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setti
         }
         break;
     }
-    default:
+    case PulseGenConfig::ModeSetting:
+    {
+        auto d = val.value<PulseGenConfig::ChannelMode>();
+        auto ok = get(BC::Key::PGen::canDutyCycle,false);
+        if(!ok && d == PulseGenConfig::DutyCycle)
+        {
+            success = false;
+            emit logMessage("Duty cycle mode is not supported.",LogHandler::Error);
+        }
+        else
+        {
+            success = setChMode(index,d);
+            if(success)
+            {
+                auto m = readChMode(index);
+                if(m == d)
+                    result = m;
+                else
+                    success = false;
+            }
+        }
         break;
+    }
+    case PulseGenConfig::SyncSetting:
+    {
+        auto d = val.toInt();
+        auto ok = get(BC::Key::PGen::canSyncToChannel,false);
+        if(!ok && d != 0)
+        {
+            success = false;
+            emit logMessage(QString("Syncing one channel to another is not supported."),LogHandler::Error);
+        }
+        else if (d < 0 || d > d_numChannels)
+        {
+            success = false;
+            emit logMessage(QString("Requested sync channel (%1) is invalid").arg(d),LogHandler::Error);
+        }
+        else
+        {
+            success = setChSyncCh(index,d);
+            if(success)
+            {
+                auto ch = readChSynchCh(index);
+                if(d == ch)
+                    result = ch;
+                else
+                    success = false;
+            }
+        }
+        break;
+    }
+    case PulseGenConfig::DutyOnSetting:
+    {
+        auto d = val.toInt();
+        auto max = get(BC::Key::PGen::dutyMax,1000);
+        if(d<1 || d > max)
+        {
+            success = false;
+            emit logMessage(QString("Requested number of duty cycle on pulses (%1) exceeds the maximum limit of %2.").arg(d).arg(max),LogHandler::Error);
+        }
+        else
+        {
+            success = setChDutyOn(index,d);
+            if(success)
+            {
+                auto dd = readChDutyOn(index);
+                if(d == dd)
+                    result = dd;
+                else
+                    success = false;
+            }
+        }
+        break;
+    }
+    case PulseGenConfig::DutyOffSetting:
+    {
+        auto d = val.toInt();
+        auto max = get(BC::Key::PGen::dutyMax,1000);
+        if(d<1 || d > max)
+        {
+            success = false;
+            emit logMessage(QString("Requested number of duty cycle off pulses (%1) exceeds the maximum limit of %2.").arg(d).arg(max),LogHandler::Error);
+        }
+        else
+        {
+            success = setChDutyOff(index,d);
+            if(success)
+            {
+                auto dd = readChDutyOff(index);
+                if(d == dd)
+                    result = dd;
+                else
+                    success = false;
+            }
+        }
+        break;
+    }
     }
 
     if(success)
     {
-        d_config.set(index,s,result);
+        setCh(index,s,result);
         emit settingUpdate(index,s,result,QPrivateSignal());
     }
 
@@ -200,10 +331,18 @@ bool PulseGenerator::setChannel(const int index, const PulseGenConfig::ChannelCo
         success &= setPGenSetting(index,PulseGenConfig::LevelSetting,cc.level);
     if(success)
         setPGenSetting(index,PulseGenConfig::RoleSetting,cc.role);
+    if(success)
+        success &= setPGenSetting(index,PulseGenConfig::ModeSetting,cc.mode);
+    if(success)
+        success &= setPGenSetting(index,PulseGenConfig::SyncSetting,cc.syncCh);
+    if(success)
+        success &= setPGenSetting(index,PulseGenConfig::DutyOnSetting,cc.dutyOn);
+    if(success)
+        success &= setPGenSetting(index,PulseGenConfig::DutyOffSetting,cc.dutyOff);
 
     blockSignals(false);
     if(success)
-        emit configUpdate(d_config,QPrivateSignal());
+        emit configUpdate(static_cast<PulseGenConfig>(*this),QPrivateSignal());
 
     return success;
 }
@@ -212,7 +351,7 @@ bool PulseGenerator::setAll(const PulseGenConfig &cc)
 {
     blockSignals(true);
     bool success = true;
-    for(int i=0; i<d_config.size(); i++)
+    for(int i=0; i<d_channels.size(); i++)
     {
         success &= setChannel(i,cc.at(i));
         if(!success)
@@ -220,11 +359,15 @@ bool PulseGenerator::setAll(const PulseGenConfig &cc)
     }
 
     if(success)
-        success &= setRepRate(cc.repRate());
+        success &= setRepRate(cc.d_repRate);
+//    if(success)
+//        success &= setPulseMode(cc.d_mode);
+    if(success)
+        success &= setPulseEnabled(cc.d_pulseEnabled);
     blockSignals(false);
 
     if(success)
-        emit configUpdate(d_config,QPrivateSignal());
+        emit configUpdate(static_cast<PulseGenConfig>(*this),QPrivateSignal());
 
     return success;
 }
@@ -248,20 +391,43 @@ bool PulseGenerator::setRepRate(double d)
 
 }
 
+bool PulseGenerator::setPulseMode(PGenMode mode)
+{
+    auto ok = get(BC::Key::PGen::canTrigger,false);
+    if(!ok && mode == PulseGenConfig::Triggered)
+    {
+        emit logMessage("Triggered mode is not supported.",LogHandler::Error);
+        return false;
+    }
+
+    bool success = setHwPulseMode(mode);
+    auto m = mode;
+    if(success)
+        m = readPulseMode();
+
+    return (success && (m == mode));
+}
+
+bool PulseGenerator::setPulseEnabled(bool en)
+{
+    bool success = setHwPulseEnabled(en);
+    bool e = false;
+    if(success)
+        e = readPulseEnabled();
+
+    return (success && (e == en));
+}
+
 #ifdef BC_LIF
 bool PulseGenerator::setLifDelay(double d)
 {
-    bool success = false;
-    auto l = d_config.channelsForRole(PulseGenConfig::LIF);
-    for(int i=0; i<l.size(); i++)
-    {
-        if(!setPGenSetting(l.at(i),PulseGenConfig::DelaySetting,d))
-            return false;
-        else
-            success = true;
-    }
+    auto i = channelForRole(PulseGenConfig::LIF);
+    if(i>=0)
+        return setPGenSetting(i,PulseGenConfig::DelaySetting,d);
+    else
+        emit logMessage("Cannot set LIF delay; no channel configured for LIF role.", LogHandler::Error);
 
-    return success;
+    return false;
 }
 #endif
 
@@ -272,9 +438,11 @@ void PulseGenerator::readAll()
         readChannel(i);
 
     readRepRate();
+    readPulseMode();
+    readPulseEnabled();
     blockSignals(false);
 
-    emit configUpdate(d_config,QPrivateSignal());
+    emit configUpdate(static_cast<PulseGenConfig&>(*this),QPrivateSignal());
 }
 
 

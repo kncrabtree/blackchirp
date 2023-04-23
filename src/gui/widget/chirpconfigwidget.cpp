@@ -25,7 +25,7 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
         ui->chirpsSpinBox->setEnabled(false);
     }
 
-    SettingsStorage awg(BC::Key::AWG::key);
+    SettingsStorage awg(BC::Key::AWG::key,SettingsStorage::Hardware);
     d_awgSampleRate = awg.get(BC::Key::AWG::rate,16e9);
 
     using namespace BC::Key::ChirpConfigWidget;

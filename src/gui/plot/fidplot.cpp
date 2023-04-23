@@ -29,7 +29,7 @@ FidPlot::FidPlot(const QString id, QWidget *parent) :
 
     QwtPlotMarker *chirpStartMarker = new QwtPlotMarker();
     chirpStartMarker->setLineStyle(QwtPlotMarker::VLine);
-    chirpStartMarker->setLinePen(QPen(QPalette().color(QPalette::BrightText)));
+    chirpStartMarker->setLinePen(QPen(QPalette().color(QPalette::Text)));
     QwtText csLabel(QString("Chirp Start"));
     csLabel.setFont(QFont(QString("sans serif"),6));
     chirpStartMarker->setLabel(csLabel);

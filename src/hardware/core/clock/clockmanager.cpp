@@ -30,6 +30,10 @@ ClockManager::ClockManager(QObject *parent) : QObject(parent),
     d_clockList << new Clock4Hardware(4);
 #endif
 
+#ifdef BC_CLOCK_5
+    d_clockList << new Clock4Hardware(5);
+#endif
+
     auto ct = QMetaEnum::fromType<RfConfig::ClockType>();
 
     setArray(hwClocks,{});

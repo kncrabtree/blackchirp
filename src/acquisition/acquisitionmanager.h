@@ -57,7 +57,7 @@ public slots:
     void abort();
 
 #ifdef BC_LIF
-    void processLifScopeShot(const QByteArray b);
+    void processLifScopeShot(const QVector<qint8> b);
     void lifHardwareReady(bool success);
 #endif
 

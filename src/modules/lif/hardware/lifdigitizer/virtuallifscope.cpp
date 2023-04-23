@@ -60,7 +60,7 @@ void VirtualLifScope::initialize()
 
 void VirtualLifScope::readWaveform()
 {
-    QByteArray out;
+    QVector<qint8> out;
     auto qr = QRandomGenerator::global();
 
     if(d_refEnabled)

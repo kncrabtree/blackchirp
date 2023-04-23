@@ -20,6 +20,7 @@ public:
     void initializePage();
     int nextId() const;
     bool validatePage();
+    bool isComplete() const;
 
 private:
     PulseConfigWidget *p_pcw;

@@ -33,7 +33,7 @@ public:
     void startAcquisition();
     void stopAcquisition();
     void acquisitionStarted(const LifDigitizerConfig &c);
-    void newWaveform(const QByteArray b);
+    void newWaveform(const QVector<qint8> b);
 
     void setLaserPosition(const double d);
     void setFlashlamp(bool en);

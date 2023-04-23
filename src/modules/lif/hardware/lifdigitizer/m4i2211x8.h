@@ -24,17 +24,12 @@ public:
 
     // HardwareObject interface
 protected:
-    void readSettings() override;
     void initialize() override;
     bool testConnection() override;
 
 
     // LifScope interface
 public slots:
-    void setLifVScale(double scale) override;
-    void setRefVScale(double scale) override;
-    void setHorizontalConfig(double sampleRate, int recLen) override;
-    void setRefEnabled(bool en) override;
     void readWaveform() override;
 
 private:
@@ -42,15 +37,21 @@ private:
 
     drv_handle p_handle;
 
-    char *p_m4iBuffer;
     int d_bufferSize;
-    int d_timerInterval;
-    bool d_running;
     bool errorCheck();
-    void configureMemory();
 
     void startCard();
-    bool stopCard();
+    void stopCard();
+
+    // LifScope interface
+public slots:
+    bool configure(const LifDigitizerConfig &c);
+
+    // HardwareObject interface
+public slots:
+    bool prepareForExperiment(Experiment &exp);
+    void beginAcquisition();
+    void endAcquisition();
 };
 
 #endif // M4I2211X8_H

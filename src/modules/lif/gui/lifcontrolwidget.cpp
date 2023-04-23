@@ -141,7 +141,7 @@ void LifControlWidget::acquisitionStarted(const LifDigitizerConfig &c)
 
 }
 
-void LifControlWidget::newWaveform(const QByteArray b)
+void LifControlWidget::newWaveform(const QVector<qint8> b)
 {
     LifTrace l(d_cfg,b,0,0);
     p_lifTracePlot->processTrace(l);

@@ -17,8 +17,8 @@ public:
     virtual ~LifScope();
 
 signals:
-    void waveformRead(QByteArray);
-    void configAcqComplete(LifDigitizerConfig);
+    void waveformRead(QVector<qint8>);
+    void configAcqComplete(LifDigitizerConfig,QPrivateSignal);
 
 public slots:
     virtual void startConfigurationAcquisition(const LifDigitizerConfig &c);

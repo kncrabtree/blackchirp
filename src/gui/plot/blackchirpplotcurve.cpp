@@ -102,7 +102,7 @@ void BlackchirpPlotCurveBase::configurePen()
 {
     QPen p;
     QPalette pal;
-    p.setColor(get<QColor>(BC::Key::bcCurveColor,pal.color(QPalette::BrightText)));
+    p.setColor(get<QColor>(BC::Key::bcCurveColor,pal.color(QPalette::Text)));
     p.setWidthF(get<double>(BC::Key::bcCurveThickness,1.0));
     p.setStyle(get<Qt::PenStyle>(BC::Key::bcCurveStyle,Qt::SolidLine));
     setPen(p);
@@ -113,8 +113,8 @@ void BlackchirpPlotCurveBase::configureSymbol()
     auto sym = new QwtSymbol();
     QPalette pal;
     sym->setStyle(get<QwtSymbol::Style>(BC::Key::bcCurveMarker,QwtSymbol::NoSymbol));
-    sym->setColor(get<QColor>(BC::Key::bcCurveColor,pal.color(QPalette::BrightText)));
-    sym->setPen(get<QColor>(BC::Key::bcCurveColor,pal.color(QPalette::BrightText)));
+    sym->setColor(get<QColor>(BC::Key::bcCurveColor,pal.color(QPalette::Text)));
+    sym->setPen(get<QColor>(BC::Key::bcCurveColor,pal.color(QPalette::Text)));
     auto s = get<int>(BC::Key::bcCurveMarkerSize,5);
     sym->setSize(QSize(s,s));
     setSymbol(sym);
@@ -153,7 +153,7 @@ BlackchirpPlotCurve::~BlackchirpPlotCurve()
 
 void BlackchirpPlotCurve::setCurveData(const QVector<QPointF> d)
 {
-    p_dataMutex->lock();
+    QMutexLocker l(p_dataMutex);
     d_curveData = d;
 
     d_boundingRect = QRectF(1.0,1.0,-2.0,-2.0);
@@ -163,10 +163,9 @@ void BlackchirpPlotCurve::setCurveData(const QVector<QPointF> d)
         d_boundingRect.setLeft(qMin(d.first().x(),d.last().x()));
         d_boundingRect.setRight(qMax(d.first().x(),d.last().x()));
 
-        p_dataMutex->unlock();
+        l.unlock();
         calcBoundingRectHeight();
     }
-    p_dataMutex->unlock();
 }
 
 void BlackchirpPlotCurve::setCurveData(const QVector<QPointF> d, double min, double max)

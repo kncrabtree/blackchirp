@@ -1,8 +1,7 @@
- 
-HEADERS += $$PWD/awg.h
-SOURCES += $$PWD/awg.cpp
-
 !lessThan(AWG,0) {
+    HEADERS += $$PWD/awg.h
+    SOURCES += $$PWD/awg.cpp
+
     DEFINES += BC_AWG=$$AWG
 	equals(AWG,0) {
 	    HEADERS += $$PWD/virtualawg.h
@@ -24,4 +23,8 @@ SOURCES += $$PWD/awg.cpp
 	    HEADERS += $$PWD/m8195a.h
 		SOURCES += $$PWD/m8195a.cpp
 	}
+        equals(AWG,5) {
+            HEADERS += $$PWD/awg5204.h
+            SOURCES += $$PWD/awg5204.cpp
+        }
 }

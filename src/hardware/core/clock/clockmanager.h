@@ -77,6 +77,11 @@ class Valon5009;
 class Valon5015;
 #endif
 
+#ifdef BC_CLOCK_HP83712B
+#include "hp83712b.h"
+class HP83712B;
+#endif
+
 #ifdef BC_CLOCK_0
 using Clock0Hardware = BC_CLOCK_0;
 #endif
@@ -95,4 +100,8 @@ using Clock3Hardware = BC_CLOCK_3;
 
 #ifdef BC_CLOCK_4
 using Clock4Hardware = BC_CLOCK_4;
+#endif
+
+#ifdef BC_CLOCK_5
+using Clock4Hardware = BC_CLOCK_5;
 #endif

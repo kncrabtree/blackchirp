@@ -22,12 +22,17 @@ public:
     PulsePlot(QWidget *parent = 0);
     ~PulsePlot();
 
-    PulseGenConfig config();
+    struct PlotItem {
+        double min;
+        double max;
+        double mid;
+        BlackchirpPlotCurve *curve;
+        QwtPlotMarker *labelMarker;
+        QwtPlotCurve *syncCurve;
+    };
 
 public slots:
     void newConfig(const PulseGenConfig &c);
-    void newSetting(int index, PulseGenConfig::Setting s, QVariant val);
-    void newRepRate(double d);
 
     // ZoomPanPlot interface
 protected:
@@ -35,7 +40,7 @@ protected:
 
 private:
     PulseGenConfig d_config;
-    QList<QPair<BlackchirpPlotCurve*,QwtPlotMarker*>> d_plotItems;
+    QVector<PlotItem> d_plotItems;
 
 
     // QWidget interface

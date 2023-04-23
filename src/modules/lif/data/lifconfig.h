@@ -78,7 +78,7 @@ public:
     QPair<int,int> refGate() const;
     std::shared_ptr<LifStorage> storage() { return ps_storage; }
 
-    void addWaveform(const QByteArray d);
+    void addWaveform(const QVector<qint8> d);
     void loadLifData();
 
 

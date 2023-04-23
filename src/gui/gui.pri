@@ -69,6 +69,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/widget/chirpconfigwidget.h \
     $$PWD/widget/clockdisplaybox.h \
     $$PWD/widget/digitizerconfigwidget.h \
+    $$PWD/widget/enumcombobox.h \
    $$PWD/widget/experimentsummarywidget.h \
     $$PWD/widget/experimentviewwidget.h \
     $$PWD/widget/ftmwdigitizerconfigwidget.h \
@@ -107,5 +108,4 @@ FORMS += \
     $$PWD/widget/chirpconfigwidget.ui \
     $$PWD/widget/digitizerconfigwidget.ui \
     $$PWD/widget/peakfindwidget.ui \
-    $$PWD/widget/pulseconfigwidget.ui \
     $$PWD/widget/rfconfigwidget.ui
