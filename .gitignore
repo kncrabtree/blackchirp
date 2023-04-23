@@ -1,5 +1,7 @@
 *.pro.user
+*.pro.user*
 config.pri
 *.autosave
 __pycache__
 *.pyc
+*.txt.user

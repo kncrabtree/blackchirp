@@ -1,0 +1,51 @@
+#include "liflaserstatusbox.h"
+
+#include <QDoubleSpinBox>
+#include <QHBoxLayout>
+#include <QLabel>
+
+#include <modules/lif/hardware/liflaser/liflaser.h>
+#include <gui/widget/led.h>
+#include <data/storage/settingsstorage.h>
+
+LifLaserStatusBox::LifLaserStatusBox(QWidget *parent) : QGroupBox("LIF Laser",parent)
+{
+    auto hbl = new QHBoxLayout;
+
+    hbl->addWidget(new QLabel("Position"));
+
+    p_posBox = new QDoubleSpinBox(this);
+    p_posBox->setReadOnly(true);
+    p_posBox->setKeyboardTracking(false);
+    p_posBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+    p_posBox->setFocusPolicy(Qt::ClickFocus);
+
+    hbl->addWidget(p_posBox,1);
+
+    p_led = new Led(this);
+    hbl->addWidget(p_led,0);
+
+    setLayout(hbl);
+
+    applySettings();
+}
+
+void LifLaserStatusBox::applySettings()
+{
+    using namespace BC::Key::LifLaser;
+    SettingsStorage s(key,SettingsStorage::Hardware);
+    p_posBox->setMinimum(s.get(minPos,200.0));
+    p_posBox->setMaximum(s.get(maxPos,2000.0));
+    p_posBox->setSuffix(QString(" ").append(s.get(units,"nm").toString()));
+    p_posBox->setDecimals(s.get(decimals,2));
+}
+
+void LifLaserStatusBox::setPosition(double d)
+{
+    p_posBox->setValue(d);
+}
+
+void LifLaserStatusBox::setFlashlampEnabled(bool en)
+{
+    p_led->setState(en);
+}
