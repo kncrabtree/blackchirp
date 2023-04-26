@@ -185,7 +185,7 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
     }
 
     //horizontal settings
-    if(!p_comm->writeCmd(QString(":HORIZONTAL:DELAY:MODE OFF;:HORIZONTAL:POSITION 0;:HORIZONTAL:MODE:SAMPLERATE %2;RECORDLENGTH %3\n")
+    if(!p_comm->writeCmd(QString(":HORIZONTAL:MODE MANUAL;:HORizontal:MODe:MANual:CONFIGure RECORDLENGTH;:HORIZONTAL:DELAY:MODE OFF;:HORIZONTAL:POSITION 0;:HORIZONTAL:MODE:SAMPLERATE %2;:HORIZONTAL:MODE:RECORDLENGTH %3\n")
                               .arg(QString::number(config.d_sampleRate,'g',6)).arg(config.d_recordLength)))
     {
         emit logMessage(QString("Could not apply horizontal settings."),LogHandler::Error);
@@ -527,12 +527,12 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
                                 .arg(l.at(4)).arg(QString(l.at(4).toLatin1().toHex())),LogHandler::Error);
             return false;
         }
-        if(recLen != config.d_recordLength)
-        {
-            emit logMessage(QString("Record length is %1. Requested value was %2. Proceeding with %1 samples.")
-                                .arg(recLen).arg(config.d_recordLength),LogHandler::Warning);
-            config.d_recordLength = recLen;
-        }
+//        if(recLen != config.d_recordLength)
+//        {
+//            emit logMessage(QString("Record length is %1. Requested value was %2. Proceeding with %1 samples.")
+//                                .arg(recLen).arg(config.d_recordLength),LogHandler::Warning);
+//            config.d_recordLength = recLen;
+//        }
         //verify byte number
         int bpp = l.at(4).mid(0,1).toInt(&ok);
         if(!ok || bpp != config.d_bytesPerPoint)
