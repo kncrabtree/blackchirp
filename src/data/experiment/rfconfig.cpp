@@ -325,7 +325,7 @@ void RfConfig::loadClockSteps(BlackchirpCSV *csv, int num, QString path)
     }
 }
 
-double RfConfig::getRawFrequency(RfConfig::ClockFreq f) const
+double RfConfig::getRawFrequency(const ClockFreq f)
 {
     switch(f.op)
     {

@@ -9,6 +9,8 @@ Clock::Clock(int clockNum, int numOutputs, bool tunable, const QString subKey, c
 {
     using namespace BC::Key::Clock;
 
+    setDefault(BC::Key::Clock::tunable,d_isTunable);
+
     for(int i=0; i<d_numOutputs; i++)
         d_multFactors << 1.0;
 

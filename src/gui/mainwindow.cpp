@@ -53,6 +53,7 @@
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
+#include <hardware/core/clock/fixedclock.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -314,7 +315,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(p_hwm,&HardwareManager::experimentInitialized,this,&MainWindow::experimentInitialized);
     connect(p_hwm,&HardwareManager::ftmwScopeShotAcquired,p_am,&AcquisitionManager::processFtmwScopeShot);
-    connect(p_am,&AcquisitionManager::newClockSettings,p_hwm,&HardwareManager::setClocks);
+    connect(p_am,&AcquisitionManager::newClockSettings,this,&MainWindow::clockPrompt);
     connect(p_hwm,&HardwareManager::allClocksReady,p_am,&AcquisitionManager::clockSettingsComplete);
     connect(p_am,&AcquisitionManager::beginAcquisition,p_hwm,&HardwareManager::beginAcquisition);
     connect(p_am,&AcquisitionManager::endAcquisition,p_hwm,&HardwareManager::endAcquisition);
@@ -643,6 +644,52 @@ void MainWindow::hardwareInitialized(bool success)
     else
         ui->statusBar->showMessage(QString("Hardware error. See log for details."));
     configureUi(d_state);
+}
+
+void MainWindow::clockPrompt(QHash<RfConfig::ClockType, RfConfig::ClockFreq> c)
+{
+    auto up = c.value(RfConfig::UpLO);
+    auto down = c.value(RfConfig::DownLO);
+
+    bool upTunable = true;
+    if(!up.hwKey.isEmpty())
+    {
+        SettingsStorage s(up.hwKey,SettingsStorage::Hardware);
+        upTunable = s.get(BC::Key::Clock::tunable,true);
+    }
+    bool downTunable = true;
+    if(!down.hwKey.isEmpty())
+    {
+        SettingsStorage s(down.hwKey,SettingsStorage::Hardware);
+        downTunable = s.get(BC::Key::Clock::tunable,true);
+    }
+
+    if(!upTunable || !downTunable)
+    {
+        QMessageBox m;
+        m.setWindowTitle(QString("Update LO Frequency"));
+        m.setInformativeText(QString("Ensure your upconversion and/or downconversion LOs are set to the indicated frequencies. Press Ok (or hit enter) to proceed or Abort (escape) to terminate the acquisition."));
+
+        QString displayString = QString("<table style=\"font-size:50pt;font-weight:bold\", cellpadding=\"20\">");
+        if(!upTunable)
+            displayString.append(QString("<tr><td>UpLO</td><td>%1</td><td>MHz</td></tr>").arg(QString::number(RfConfig::getRawFrequency(up),'f',6)));
+        if(!downTunable)
+            displayString.append(QString("<tr><td>DownLO</td><td>%1</td><td>MHz</td></tr>").arg(QString::number(RfConfig::getRawFrequency(down),'f',6)));
+        displayString.append(QString("</table>"));
+        m.setText(displayString);
+        m.setTextFormat(Qt::RichText);
+        m.setStandardButtons(QMessageBox::Ok|QMessageBox::Abort);
+
+        auto ret = m.exec();
+        if(ret == QMessageBox::Abort)
+        {
+            QMetaObject::invokeMethod(p_am,&AcquisitionManager::abort);
+            return;
+        }
+    }
+
+    QMetaObject::invokeMethod(p_hwm,[this,c](){p_hwm->setClocks(c);});
+
 }
 
 void MainWindow::pauseUi()

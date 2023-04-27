@@ -197,6 +197,7 @@ bool FtmwConfig::initialize()
     f.setVMult(d_scopeConfig.yMult(d_scopeConfig.d_fidChannel)/pow(2,bitShift()));
 
     d_fidTemplate = f;
+    d_processingPaused = true;
 
     if(!d_rfConfig.prepareForAcquisition())
     {

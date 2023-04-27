@@ -30,7 +30,9 @@ void FidStorageBase::save()
     auto l = getCurrentFidList();
     auto i = getCurrentIndex();
 
-    saveFidList(l,i);
+    //only need to save if we actually have FIDs
+    if(!l.isEmpty())
+        saveFidList(l,i);
 }
 
 void FidStorageBase::start()

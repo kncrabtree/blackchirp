@@ -62,6 +62,7 @@ public slots:
     void batchComplete(bool aborted);
     void experimentInitialized(std::shared_ptr<Experiment> exp);
     void hardwareInitialized(bool success);
+    void clockPrompt(QHash<RfConfig::ClockType,RfConfig::ClockFreq> c);
     void pauseUi();
     void resumeUi();
     void launchCommunicationDialog(bool parent = true);

@@ -36,6 +36,9 @@ void AcquisitionManager::beginExperiment(std::shared_ptr<Experiment> exp)
         auxDataTick();
         d_auxTimerId = startTimer(ps_currentExperiment->d_timeDataInterval*1000);
     }
+    if(ps_currentExperiment->ftmwEnabled())
+        emit newClockSettings(ps_currentExperiment->ftmwConfig()->d_rfConfig.getClocks());
+
     emit beginAcquisition();
 
 #ifdef BC_LIF

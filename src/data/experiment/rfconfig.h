@@ -109,13 +109,14 @@ public:
     bool writeClockFile(int num) const;
     void loadClockSteps(BlackchirpCSV *csv, int num, QString path);
 
+    static double getRawFrequency(const ClockFreq f);
+
 private:
     //clocks
     QHash<ClockType,ClockFreq> d_clockTemplate;
     QVector<QHash<ClockType,RfConfig::ClockFreq>> d_clockConfigs;
     int d_currentClockIndex{-1};
 
-    double getRawFrequency(ClockFreq f) const;
 
     // HeaderStorage interface
 protected:
