@@ -169,8 +169,9 @@ private:
     std::unique_ptr<ClockManager> pu_clockManager;
 
     template<class T>
-    T* findHardware(const QString key) const {
-        auto it = d_hardwareMap.find(key);
+    T* findHardware(const QString key, int index=0) const {
+        QString search = BC::Key::keyTemplate.arg(key,QString::number(index));
+        auto it = d_hardwareMap.find(search);
         return it == d_hardwareMap.end() ? nullptr : static_cast<T*>(it->second);
     }
 

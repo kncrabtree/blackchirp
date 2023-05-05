@@ -4,6 +4,7 @@
 #include <hardware/core/hardwareobject.h>
 
 namespace BC::Key::Clock {
+static const QString clock{"Clock"};
 static const QString minFreq{"minFreqMHz"};
 static const QString maxFreq{"maxFreqMHz"};
 static const QString lock{"lockExternal"};

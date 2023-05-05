@@ -6,13 +6,15 @@
 
 HardwareObject::HardwareObject(const QString key, const QString subKey, const QString name,
                                CommunicationProtocol::CommType commType,
-                               QObject *parent, bool threaded, bool critical) :
-    QObject(parent), SettingsStorage({key,subKey},General), d_name(name), d_key(key),
-    d_subKey(subKey), d_threaded(threaded),
-    d_commType(commType), d_enabledForExperiment(true),
+                               QObject *parent, bool threaded, bool critical, int index) :
+    QObject(parent),
+    SettingsStorage({BC::Key::keyTemplate.arg(key,QString::number(index)),subKey},General),
+    d_name(name), d_key(BC::Key::keyTemplate.arg(key,QString::number(index))),
+    d_subKey(subKey), d_threaded(threaded), d_commType(commType), d_enabledForExperiment(true),
     d_isConnected(false)
 {
-    set(BC::Key::HW::key,d_key); set(BC::Key::HW::name,d_name);
+    set(BC::Key::HW::key,d_key);
+    set(BC::Key::HW::name,d_name);
     setDefault(BC::Key::HW::critical,critical);
     setDefault(BC::Key::HW::rInterval,0);
     save();

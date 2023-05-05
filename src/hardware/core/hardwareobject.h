@@ -88,7 +88,7 @@ public:
      */
     explicit HardwareObject(const QString key, const QString subKey, const QString name,
                             CommunicationProtocol::CommType commType, QObject *parent = nullptr,
-                            bool threaded = true, bool critical = true);
+                            bool threaded = true, bool critical = true, int index=0);
     virtual ~HardwareObject();
 
     const QString d_name; /*!< Name to be displayed on UI */

@@ -8,6 +8,7 @@
 #include <QCoreApplication>
 
 namespace BC::Key {
+static const QString keyTemplate{"%1-%2"};
 static const QString BC{"Blackchirp"};
 static const QString exptNum{"exptNum"};
 static const QString savePath{"savePath"};
@@ -251,7 +252,7 @@ public:
      * \param key The key for the group in QSettings. If "", will be set to "Blackchirp"
      * \param type If set to Hardware, a subKey will be added (default: "virtual")
      */
-    SettingsStorage(const QString key, Type type = General);
+    SettingsStorage(const QString key, Type type = General, int index=0);
 
     /*!
      * \brief Destructor. Saves all values to settings
