@@ -18,46 +18,59 @@ unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
 #------------------------------------------------
 # The following defines select hardware implementations.
 #
-# If you have not enabled the lif option above,
-# you can ignore its corresponding entries below
+# The FTMW Oscilloscope and Clocks are required.
+# All others are optional and may be commented out.
+# The keys are case insensitive, and may be found at
+# https://blackchirp.readthedocs.io/en/latest/user_guide/hardware_details.html
 # -----------------------------------------------
 
-# FTMW Oscilloscope (0 = virtual, 1 = DSA71604C, 2 = MSO72004C, 3 = M4i2220x8, 4 = DSOx92004A, 5 = MSO64B)
-FTMWSCOPE=0
+# FTMW Oscilloscope
+# options: virtual, DSA71604C, MSO72004C, M4i2220x8, DSOx92004A, MSO64B
+FTMWSCOPE=virtual
 
-#Clocks. Include in a space-delimited list; as many as needed
-#For example:
-#CLOCKS=FIXED FIXED VALON5009
-#Options: FIXED, VALON5009, VALON5015, HP83712B
-CLOCKS=FIXED FIXED
+# Clocks. Include in a space-delimited list; as many as needed
+# For example:
+# CLOCKS=fixed fixed valon5009
+# options: fixed, Valon5009, Valon5015, HP83712B
+CLOCKS=fixed fixed
 
-#AWG (<0 None, 0 = virtual, 1 = AWG70002A, 2 = AWG7122B, 3 = AD9914, 4 = M8195A, 5 = AWG5000)
-AWG=-1
+# AWG
+# options: virtual, 1 = AWG70002A, 2 = AWG7122B, 3 = AD9914, 4 = M8195A, 5 = AWG5000)
+#AWG=virtual
 
-#Pulse generator (<0 = None, 0 = virtual, 1 = Quantum Composers 9528+, 2 = Quantum Composers 9518, 3 = Quantum Composers 9214)
-PGEN=-1
+# Pulse generator (<0 = None, 0 = virtual, 1 = Quantum Composers 9528+, 2 = Quantum Composers 9518, 3 = Quantum Composers 9214)
+# options: virtual, qc9518, qc9528, qc9214
+#PGEN=virtual
 
-#Flow Controller (<0 = None, 0 = virtual, 1 = MKS 647C, 2 = MKS 946)
-FC=-1
+# Flow Controller
+# options: virtual, MKS647C, MKS946
+#FC=virtual
 
-#IO Board (<0 = None, 0 = virtual, 1 = Labjack U3)
-IOBOARD=-1
+# IO Board
+# options: virtual, LabjackU3
+#IOBOARD=virtual
 
-#GPIB controller (<0 = none, 0 = virtual, 1 = Prologix GPIB-LAN, 2 = Proligix GPIB-USB)
-GPIB=-1
+# GPIB controller
+# options: virtual, PrologixLAN, ProligixUSB
+#GPIB=virtual
 
-#pressure controller (<0 = none, 0 = virtual, 1 = Intellisys IQ Plus)
-PC=-1
+# Pressure controller
+# options virtual, Intellisys
+#PC=virtual
 
-#temperature controller (<0 = none, 0 = virtual, 1 = Lakeshore 218)
-TC=-1
+# Temperature controller
+# options: virtual, Lakeshore218
+#TC=virtual
 
 ###### LIF ONLY #####
-#LIF Oscilloscope (0 = virtual, 1 = M4i2211x8)
-LIFSCOPE=0
+# LIF Oscilloscope
+# options: virtual, M4i2211x8
+#LIFSCOPE=virtual
 
-#LIF Laser (0 = virtual, 1 = Opolette)
-LIFLASER=0
+# LIF Laser
+# options: virtual, Opolette
+#LIFLASER=virtual
+
 ##### END LIF ONLY #####
 
 #------------------------------------------------
@@ -111,14 +124,4 @@ gpu-cuda {
 		cuda.output = ${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
 		QMAKE_EXTRA_COMPILERS += cuda
 	}
-}
-
-#------------------------------------------------
-# Do not modify the following
-# -----------------------------------------------
-
-lif {
-    DEFINES += BC_LIF
-	DEFINES += BC_LIFSCOPE=$$LIFSCOPE
-	DEFINES += BC_LIFLASER=$$LIFLASER
 }
