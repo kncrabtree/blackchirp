@@ -29,15 +29,7 @@ public slots:
 };
 
 #ifdef BC_LIFSCOPE
-#if BC_LIFSCOPE == 1
-#include "m4i2211x8.h"
-class M4i2211x8;
-using LifScopeHardware = M4i2211x8;
-#else
-#include "virtuallifscope.h"
-class VirtualLifScope;
-using LifScopeHardware = VirtualLifScope;
-#endif
+#include BC_STR(BC_LIFSCOPE_H)
 #endif
 
 #endif // LIFSCOPE_H

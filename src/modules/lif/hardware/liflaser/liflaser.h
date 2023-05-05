@@ -38,14 +38,8 @@ private:
 };
 
 
-#if BC_LIFLASER == 1
-#include "opolette.h"
-class Opolette;
-typedef Opolette LifLaserHardware;
-#else
-#include "virtualliflaser.h"
-class VirtualLifLaser;
-using LifLaserHardware = VirtualLifLaser;
+#ifdef BC_LIFLASER
+#include BC_STR(BC_LIFLASER_H)
 #endif
 
 #endif // LIFLASER_H

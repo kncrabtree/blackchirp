@@ -4,15 +4,15 @@
 #include "pulsegenerator.h"
 
 namespace BC::Key::PGen {
-#if BC_PGEN==1
+#ifdef BC_PGEN_QC9528
 static const QString qc9528{"qc9528"};
 static const QString qc9528Name("Pulse Generator QC 9528");
 #endif
-#if BC_PGEN==2
+#ifdef BC_PGEN_QC9518
 static const QString qc9518{"QC9518"};
 static const QString qc9518Name("Pulse Generator QC 9518");
 #endif
-#if BC_PGEN==3
+#ifdef BC_PGEN_QC9214
 static const QString qc9214{"QC9214"};
 static const QString qc9214Name("Pulse Generator QC 9214");
 #endif
@@ -73,7 +73,7 @@ private:
     const QStringList d_channels{"T0","CHA","CHB","CHC","CHD","CHE","CHF","CHG","CHH"};
 };
 
-#if BC_PGEN==2
+#ifdef BC_PGEN_QC9518
 class Qc9518 : public QCPulseGenerator
 {
     Q_OBJECT
@@ -107,7 +107,7 @@ private:
 };
 #endif
 
-#if BC_PGEN==1
+#ifdef BC_PGEN_QC9528
 class Qc9528 : public QCPulseGenerator
 {
     Q_OBJECT
@@ -140,11 +140,9 @@ private:
     const QString clock{"EXT10"};
     const QString tb{":PULSE0:TRIGGER:MODE"};
 };
-
-typedef Qc9528 PulseGeneratorHardware;
 #endif
 
-#if BC_PGEN==3
+#ifdef BC_PGEN_QC9214
 class Qc9214 : public QCPulseGenerator
 {
     Q_OBJECT
@@ -177,8 +175,6 @@ private:
     const QString clock{"EXT10"};
     const QString tb{":PULSE0:EXT:MOD"};
 };
-
-typedef Qc9214 PulseGeneratorHardware;
 #endif
 
 #endif // QCPULSEGENERATOR_H

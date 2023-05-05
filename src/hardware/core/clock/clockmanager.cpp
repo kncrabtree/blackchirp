@@ -3,6 +3,7 @@
 #include <QMetaEnum>
 
 #include <hardware/core/clock/clock.h>
+#include <boost/preprocessor/iteration/local.hpp>
 
 using namespace BC::Key::Clock;
 
@@ -10,29 +11,10 @@ ClockManager::ClockManager(QObject *parent) : QObject(parent),
     SettingsStorage(clockManager)
 {
 
-#ifdef BC_CLOCK_0
-    d_clockList << new Clock0Hardware(0);
-#endif
-
-#ifdef BC_CLOCK_1
-    d_clockList << new Clock1Hardware(1);
-#endif
-
-#ifdef BC_CLOCK_2
-    d_clockList << new Clock2Hardware(2);
-#endif
-
-#ifdef BC_CLOCK_3
-    d_clockList << new Clock3Hardware(3);
-#endif
-
-#ifdef BC_CLOCK_4
-    d_clockList << new Clock4Hardware(4);
-#endif
-
-#ifdef BC_CLOCK_5
-    d_clockList << new Clock4Hardware(5);
-#endif
+//use some preprocessor tricks to automate creation of all clocks
+#define BOOST_PP_LOCAL_MACRO(n) d_clockList << new BC_CLOCK_##n(n);
+#define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_CLOCKS-1)
+#include BOOST_PP_LOCAL_ITERATE()
 
     auto ct = QMetaEnum::fromType<RfConfig::ClockType>();
 

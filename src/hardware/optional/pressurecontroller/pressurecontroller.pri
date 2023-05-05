@@ -5,14 +5,17 @@ SOURCES += $$PWD/pressurecontroller.cpp \
            $$PWD/pressurecontrollerconfig.cpp
 
 
-!lessThan(PC,0) {
-    DEFINES += BC_PCONTROLLER=$$PC
+count(PC,1) {
 
-    equals(PC,0) {
+    N = $$upper($$PC)
+
+    equals(N,VIRTUAL) {
+	    DEFINES += BC_PCONTROLLER=VirtualPressureController BC_PCONTROLLER_H=virtualpressurecontroller.h
         HEADERS += $$PWD/virtualpressurecontroller.h
 		SOURCES += $$PWD/virtualpressurecontroller.cpp
 		}
-	equals(PC,1) {
+	equals(N,INTELLISYS) {
+	    DEFINES += BC_PCONTROLLER=IntellisysIQPlus BC_PCONTROLLER_H=intellisysiqplus.h
         HEADERS += $$PWD/intellisysiqplus.h
 		SOURCES += $$PWD/intellisysiqplus.cpp
 		}

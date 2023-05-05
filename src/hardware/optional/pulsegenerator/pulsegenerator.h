@@ -96,17 +96,7 @@ public slots:
 
 
 #ifdef BC_PGEN
-#if BC_PGEN == 0
-#include "virtualpulsegenerator.h"
-class VirtualPulseGenerator;
-typedef VirtualPulseGenerator PulseGeneratorHardware;
-#elif BC_PGEN==1
-#include "qcpulsegenerator.h"
-#elif BC_PGEN==2
-#include "qcpulsegenerator.h"
-#elif BC_PGEN==3
-#include "qcpulsegenerator.h"
-#endif
+#include BC_STR(BC_PGEN_H)
 #endif
 
 

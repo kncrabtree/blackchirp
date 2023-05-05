@@ -5,18 +5,22 @@ SOURCES += $$PWD/flowcontroller.cpp \
            $$PWD/flowconfig.cpp
 
 
-!lessThan(FC,0) {
-    DEFINES += BC_FLOWCONTROLLER=$$FC
 
-    equals(FC,0) {
+count(FC,1) {
+    N = $$upper($$FC)
+
+    equals(N,VIRTUAL) {
+	    DEFINES += BC_FLOWCONTROLLER=VirtualFlowController BC_FLOWCONTROLLER_H=virtualflowcontroller.h
 	    HEADERS += $$PWD/virtualflowcontroller.h
 		SOURCES += $$PWD/virtualflowcontroller.cpp
 	}
-	equals(FC,1) {
+	equals(N,MKS647C) {
+	    DEFINES += BC_FLOWCONTROLLER=Mks647c BC_FLOWCONTROLLER_H=mks647c.h
 	    HEADERS += $$PWD/mks647c.h
 		SOURCES += $$PWD/mks647c.cpp
 		}
-	equals(FC,2) {
+	equals(N,MKS946) {
+	    DEFINES += BC_FLOWCONTROLLER=Mks946 BC_FLOWCONTROLLER_H=mks946.h
 	    HEADERS += $$PWD/mks946.h
 		SOURCES += $$PWD/mks946.cpp
 	}

@@ -80,15 +80,7 @@ public slots:
 #endif // TEMPERATURECONTROLLER_H
 
 #ifdef BC_TEMPCONTROLLER
-#if BC_TEMPCONTROLLER == 0
-#include "virtualtempcontroller.h"
-class VirtualTemperatureController;
-typedef VirtualTemperatureController TemperatureControllerHardware;
-#elif BC_TEMPCONTROLLER == 1
-#include "lakeshore218.h"
-class Lakeshore218;
-typedef Lakeshore218 TemperatureControllerHardware;
-#endif
+#include BC_STR(BC_TEMPCONTROLLER_H)
 #endif
 
 

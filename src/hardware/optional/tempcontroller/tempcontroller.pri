@@ -4,14 +4,17 @@ HEADERS += $$PWD/temperaturecontroller.h \
 SOURCES += $$PWD/temperaturecontroller.cpp \
            $$PWD/temperaturecontrollerconfig.cpp
 
-!lessThan(TC,0) {
-    DEFINES += BC_TEMPCONTROLLER=$$TC
+count(TC,1) {
 
-    equals(TC,0) {
+    N = $$upper($$TC)
+
+    equals(N,VIRTUAL) {
+	    DEFINES += BC_TEMPCONTROLLER=VirtualTemperatureController BC_TEMPCONTROLLER_H=virtualtempcontroller.h
 	    HEADERS += $$PWD/virtualtempcontroller.h
 		SOURCES += $$PWD/virtualtempcontroller.cpp
 		}
-	equals(TC,1) {
+	equals(N,LAKESHORE218) {
+	    DEFINES += BC_TEMPCONTROLLER=Lakeshore218 BC_TEMPCONTROLLER_H=lakeshore218.h
         HEADERS += $$PWD/lakeshore218.h
 		SOURCES += $$PWD/lakeshore218.cpp
 	}

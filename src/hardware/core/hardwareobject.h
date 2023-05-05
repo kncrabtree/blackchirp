@@ -20,6 +20,9 @@
 
 #include <data/experiment/experiment.h>
 
+#define BC_STR_HELPER(x) #x
+#define BC_STR(x) BC_STR_HELPER(x)
+
 namespace BC::Key::HW {
 static const QString key{"key"};
 static const QString subKey{"subKey"};

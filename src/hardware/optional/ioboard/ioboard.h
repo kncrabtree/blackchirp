@@ -36,15 +36,7 @@ public slots:
 };
 
 #ifdef BC_IOBOARD
-#if BC_IOBOARD == 0
-#include "virtualioboard.h"
-class VirtualIOBoard;
-typedef VirtualIOBoard IOBoardHardware;
-#elif BC_IOBOARD == 1
-#include "labjacku3.h"
-class LabjackU3;
-typedef LabjackU3 IOBoardHardware;
-#endif
+#include BC_STR(BC_IOBOARD_H)
 #endif
 
 #endif // IOBOARD_H

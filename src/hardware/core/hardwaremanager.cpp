@@ -24,7 +24,7 @@
 HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsStorage(BC::Key::hw)
 {
     //Required hardware: FtmwScope and Clocks
-    auto ftmwScope = new FtmwScopeHardware;
+    auto ftmwScope = new BC_FTMWSCOPE;
     connect(ftmwScope,&FtmwScope::shotAcquired,this,&HardwareManager::ftmwScopeShotAcquired);
     d_hardwareMap.emplace(ftmwScope->d_key,ftmwScope);
 
@@ -36,13 +36,13 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
         d_hardwareMap.emplace(cl.at(i)->d_key,cl.at(i));
 
 #ifdef BC_AWG
-    auto awg =new AwgHardware;
+    auto awg = new BC_AWG;
     d_hardwareMap.emplace(awg->d_key,awg);
 #endif
 
     QThread* gpibThread = nullptr;
 #ifdef BC_GPIBCONTROLLER
-    auto gpib = new GpibControllerHardware;
+    auto gpib = new BC_GPIBCONTROLLER;
     gpibThread = new QThread(this);
     gpibThread->setObjectName(gpib->d_key+"Thread");
     connect(gpibThread,&QThread::started,gpib,&HardwareObject::bcInitInstrument);
@@ -52,7 +52,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #endif
 
 #ifdef BC_PGEN
-    auto pGen = new PulseGeneratorHardware;
+    auto pGen = new BC_PGEN;
     connect(pGen,&PulseGenerator::settingUpdate,this,&HardwareManager::pGenSettingUpdate);
     connect(pGen,&PulseGenerator::configUpdate,this,&HardwareManager::pGenConfigUpdate);
     connect(pGen,&PulseGenerator::repRateUpdate,this,&HardwareManager::pGenRepRateUpdate);
@@ -62,7 +62,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #endif
 
 #ifdef BC_FLOWCONTROLLER
-    auto flow = new FlowControllerHardware;
+    auto flow = new BC_FLOWCONTROLLER;
     connect(flow,&FlowController::flowUpdate,this,&HardwareManager::flowUpdate);
     connect(flow,&FlowController::flowSetpointUpdate,this,&HardwareManager::flowSetpointUpdate);
     connect(flow,&FlowController::pressureUpdate,this,&HardwareManager::gasPressureUpdate);
@@ -72,7 +72,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #endif
 
 #ifdef BC_PCONTROLLER
-    auto pc = new PressureControllerHardware;
+    auto pc = new BC_PCONTROLLER;
     connect(pc,&PressureController::pressureUpdate,this,&HardwareManager::pressureUpdate);
     connect(pc,&PressureController::pressureSetpointUpdate,this,&HardwareManager::pressureSetpointUpdate);
     connect(pc,&PressureController::pressureControlMode,this,&HardwareManager::pressureControlMode);
@@ -80,24 +80,24 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #endif
 
 #ifdef BC_TEMPCONTROLLER
-    auto tc = new TemperatureControllerHardware;
+    auto tc = new BC_TEMPCONTROLLER;
     connect(tc,&TemperatureController::channelEnableUpdate,this,&HardwareManager::temperatureEnableUpdate);
     connect(tc,&TemperatureController::temperatureUpdate,this,&HardwareManager::temperatureUpdate);
     d_hardwareMap.emplace(tc->d_key,tc);
 #endif
 
 #ifdef BC_IOBOARD
-    auto iob = new IOBoardHardware;
+    auto iob = new BC_IOBOARD;
     d_hardwareMap.emplace(iob->d_key,iob);
 #endif
 
 #ifdef BC_LIF
-    auto lsc = new LifScopeHardware();
+    auto lsc = new BC_LIFSCOPE;
     connect(lsc,&LifScope::waveformRead,this,&HardwareManager::lifScopeShotAcquired);
     connect(lsc,&LifScope::configAcqComplete,this,&HardwareManager::lifConfigAcqStarted);
     d_hardwareMap.emplace(lsc->d_key,lsc);
 
-    auto ll = new LifLaserHardware();
+    auto ll = new BC_LIFLASER;
     connect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserPosUpdate);
     connect(ll,&LifLaser::laserFlashlampUpdate,this,&HardwareManager::lifLaserFlashlampUpdate);
     d_hardwareMap.emplace(ll->d_key,ll);

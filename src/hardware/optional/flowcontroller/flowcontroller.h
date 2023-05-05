@@ -91,19 +91,7 @@ protected:
 };
 
 #ifdef BC_FLOWCONTROLLER
-#if BC_FLOWCONTROLLER == 0
-#include "virtualflowcontroller.h"
-class VirtualFlowController;
-typedef VirtualFlowController FlowControllerHardware;
-#elif BC_FLOWCONTROLLER == 1
-#include "mks647c.h"
-class Mks647c;
-typedef Mks647c FlowControllerHardware;
-#elif BC_FLOWCONTROLLER == 2
-#include "mks946.h"
-class Mks946;
-typedef Mks946 FlowControllerHardware;
-#endif
+#include BC_STR(BC_FLOWCONTROLLER_H)
 #endif
 
 #endif // FLOWCONTROLLER_H

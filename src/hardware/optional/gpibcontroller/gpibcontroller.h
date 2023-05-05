@@ -27,19 +27,7 @@ protected:
 };
 
 #ifdef BC_GPIBCONTROLLER
-#if BC_GPIBCONTROLLER == 0
-#include "virtualgpibcontroller.h"
-class VirtualGpibController;
-typedef VirtualGpibController GpibControllerHardware;
-#elif BC_GPIBCONTROLLER == 1
-#include "prologixgpiblan.h"
-class PrologixGpibLan;
-typedef PrologixGpibLan GpibControllerHardware;
-#elif BC_GPIBCONTROLLER == 2
-#include "prologixgpibusb.h"
-class PrologixGpibUsb;
-typedef PrologixGpibUsb GpibControllerHardware;
-#endif
+#include BC_STR(BC_GPIBCONTROLLER_H)
 #endif
 
 #endif // GPIBCONTROLLER_H

@@ -57,51 +57,21 @@ private:
 
 };
 
-#endif // CLOCKMANAGER_H
-
 //Define clock types for each clock
-
-
 #ifdef BC_CLOCK_FIXED
 #include "fixedclock.h"
-class FixedClock;
 #endif
 
 #ifdef BC_CLOCK_VALON5009
 #include "valon5009.h"
-class Valon5009;
 #endif
 
 #ifdef BC_CLOCK_VALON5015
 #include "valon5015.h"
-class Valon5015;
 #endif
 
 #ifdef BC_CLOCK_HP83712B
 #include "hp83712b.h"
-class HP83712B;
 #endif
 
-#ifdef BC_CLOCK_0
-using Clock0Hardware = BC_CLOCK_0;
-#endif
-
-#ifdef BC_CLOCK_1
-using Clock1Hardware = BC_CLOCK_1;
-#endif
-
-#ifdef BC_CLOCK_2
-using Clock2Hardware = BC_CLOCK_2;
-#endif
-
-#ifdef BC_CLOCK_3
-using Clock3Hardware = BC_CLOCK_3;
-#endif
-
-#ifdef BC_CLOCK_4
-using Clock4Hardware = BC_CLOCK_4;
-#endif
-
-#ifdef BC_CLOCK_5
-using Clock4Hardware = BC_CLOCK_5;
-#endif
+#endif // CLOCKMANAGER_H

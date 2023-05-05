@@ -76,15 +76,7 @@ public:
 };
 
 #ifdef BC_PCONTROLLER
-#if BC_PCONTROLLER == 0
-#include "virtualpressurecontroller.h"
-class VirtualPressureController;
-typedef VirtualPressureController PressureControllerHardware;
-#elif BC_PCONTROLLER == 1
-#include "intellisysiqplus.h"
-class IntellisysIQPlus;
-typedef IntellisysIQPlus PressureControllerHardware;
-#endif
+#include BC_STR(BC_PCONTROLLER_H)
 #endif
 
 #endif // PRESSURECONTROLLER_H

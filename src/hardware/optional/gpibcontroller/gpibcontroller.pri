@@ -2,19 +2,22 @@
 HEADERS += $$PWD/gpibcontroller.h
 SOURCES += $$PWD/gpibcontroller.cpp
 
-!lessThan(GPIB,0) {
+count(GPIB,1) {
 
-    DEFINES += BC_GPIBCONTROLLER=$$GPIB
-	equals(GPIB,0) {
+    N = $$upper($$GPIB)
+	equals(N,VIRTUAL) {
+	    DEFINES += BC_GPIBCONTROLLER=VirtualGpibController BC_GPIBCONTROLLER_H=virtualgpibcontroller.h
 	    HEADERS += $$PWD/virtualgpibcontroller.h
 		SOURCES += $$PWD/virtualgpibcontroller.cpp
 		}
-	equals(GPIB,1) {
+	equals(N,PROLOGIXLAN) {
+	    DEFINES += BC_GPIBCONTROLLER=PrologixGpibLan BC_GPIBCONTROLLER_H=prologixgpiblan.h
 	    HEADERS += $$PWD/prologixgpiblan.h
 		SOURCES += $$PWD/prologixgpiblan.cpp
 	}
-        equals(GPIB,2) {
-            HEADERS += $$PWD/prologixgpibusb.h
-                SOURCES += $$PWD/prologixgpibusb.cpp
-        }
+	equals(N,PROLOGIXUSB) {
+	    DEFINES += BC_GPIBCONTROLLER=PrologixGpibUsb BC_GPIBCONTROLLER_H=prologixgpibusb.h
+		HEADERS += $$PWD/prologixgpibusb.h
+		SOURCES += $$PWD/prologixgpibusb.cpp
+		}
 }
