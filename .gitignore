@@ -5,3 +5,4 @@ config.pri
 __pycache__
 *.pyc
 *.txt.user
+clock_h.h

@@ -6,6 +6,7 @@
 
 #include <data/storage/settingsstorage.h>
 #include <data/experiment/experiment.h>
+#include <boost/preprocessor/iteration/local.hpp>
 
 class Clock;
 
@@ -57,21 +58,7 @@ private:
 
 };
 
-//Define clock types for each clock
-#ifdef BC_CLOCK_FIXED
-#include "fixedclock.h"
-#endif
-
-#ifdef BC_CLOCK_VALON5009
-#include "valon5009.h"
-#endif
-
-#ifdef BC_CLOCK_VALON5015
-#include "valon5015.h"
-#endif
-
-#ifdef BC_CLOCK_HP83712B
-#include "hp83712b.h"
-#endif
+//handle includes... haven't figure out how to do this in a macro
+#include "clock_h.h"
 
 #endif // CLOCKMANAGER_H
