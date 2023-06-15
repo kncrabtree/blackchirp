@@ -79,6 +79,17 @@ void FtPlot::prepareForExperiment(const Experiment &e)
 
     p_curve->setVisible(e.ftmwEnabled());
 
+    if(d_number>0)
+    {
+        p_curve->setTitle(BC::Key::ftCurve+d_id+QString::number(d_number));
+        p_peakData->setTitle(BC::Key::peakCurve+d_id+QString::number(d_number));
+    }
+    else
+    {
+        p_curve->setTitle(BC::Key::ftCurve+d_id);
+        p_peakData->setTitle(BC::Key::peakCurve+d_id);
+    }
+
     autoScale();
 }
 
