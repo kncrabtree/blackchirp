@@ -33,6 +33,8 @@ public:
     explicit HardwareManager(QObject *parent = 0);
     ~HardwareManager();
 
+    QString getHwName(const QString key);
+
 signals:
     void logMessage(QString,LogHandler::MessageCode = LogHandler::Normal);
     void statusMessage(QString,int=0);
@@ -59,11 +61,11 @@ signals:
     void clockFrequencyUpdate(RfConfig::ClockType, double);
     void allClocksReady(QHash<RfConfig::ClockType,RfConfig::ClockFreq>);
 
-    void pGenSettingUpdate(int,PulseGenConfig::Setting,QVariant);
-    void pGenConfigUpdate(PulseGenConfig);
-    void pGenRepRateUpdate(double);
-    void pGenPulsingUpdate(bool);
-    void pGenModeUpdate(PulseGenConfig::PGenMode);
+    void pGenSettingUpdate(int,PulseGenConfig::Setting,QVariant,int);
+    void pGenConfigUpdate(PulseGenConfig,int);
+    void pGenRepRateUpdate(double,int);
+    void pGenPulsingUpdate(bool,int);
+    void pGenModeUpdate(PulseGenConfig::PGenMode,int);
 
     void flowUpdate(int,double);
     void flowSetpointUpdate(int,double);
@@ -169,9 +171,8 @@ private:
     std::unique_ptr<ClockManager> pu_clockManager;
 
     template<class T>
-    T* findHardware(const QString key, int index=0) const {
-        QString search = BC::Key::keyTemplate.arg(key,QString::number(index));
-        auto it = d_hardwareMap.find(search);
+    T* findHardware(const QString key) const {
+        auto it = d_hardwareMap.find(key);
         return it == d_hardwareMap.end() ? nullptr : static_cast<T*>(it->second);
     }
 

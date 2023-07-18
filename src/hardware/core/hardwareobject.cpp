@@ -10,8 +10,8 @@ HardwareObject::HardwareObject(const QString key, const QString subKey, const QS
     QObject(parent),
     SettingsStorage({BC::Key::keyTemplate.arg(key,QString::number(index)),subKey},General),
     d_name(name), d_key(BC::Key::keyTemplate.arg(key,QString::number(index))),
-    d_subKey(subKey), d_threaded(threaded), d_commType(commType), d_enabledForExperiment(true),
-    d_isConnected(false)
+    d_subKey(subKey), d_index(index), d_threaded(threaded), d_commType(commType),
+    d_enabledForExperiment(true), d_isConnected(false)
 {
     set(BC::Key::HW::key,d_key);
     set(BC::Key::HW::name,d_name);

@@ -216,6 +216,15 @@ HardwareManager::~HardwareManager()
     }
 }
 
+QString HardwareManager::getHwName(const QString key)
+{
+    auto hw = findHardware<HardwareObject>(key);
+    if(hw)
+        return hw->d_name;
+
+    return QString();
+}
+
 void HardwareManager::initialize()
 {
     //start all threads and initialize hw

@@ -94,6 +94,7 @@ public:
     const QString d_name; /*!< Name to be displayed on UI */
     const QString d_key; /*!< Name to be used in settings for abstract hardware*/
     const QString d_subKey; /*< Name to be used in settings for real hardware*/
+    const int d_index; /*< Index used if multiple objects of same type are present. */
 
     bool d_critical;
     const bool d_threaded;

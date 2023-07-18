@@ -134,9 +134,18 @@ MainWindow::MainWindow(QWidget *parent) :
 
     for(auto it = d_hardware.cbegin(); it != d_hardware.cend(); ++it)
     {
-        auto key = it->first;
-        auto act = ui->menuHardware->addAction(key);
+        auto fullkey = it->first;
+        auto l = fullkey.split("-");
+        if(l.size() != 2)
+            continue;
+
+        auto key = l.at(0);
+        auto index = l.at(1).toInt();
+
+        auto act = ui->menuHardware->addAction(QString("%1: %2").arg(fullkey, p_hwm->getHwName(fullkey)));
         act->setObjectName(QString("Action")+key);
+
+
 
         if(key == BC::Key::Flow::flowController)
         {

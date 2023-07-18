@@ -52,11 +52,11 @@ public slots:
 #endif
 
 signals:
-    void settingUpdate(int,PulseGenConfig::Setting,QVariant,QPrivateSignal);
-    void configUpdate(PulseGenConfig,QPrivateSignal);
-    void modeUpdate(PulseGenConfig::PGenMode,QPrivateSignal);
-    void repRateUpdate(double,QPrivateSignal);
-    void pulseEnabledUpdate(bool,QPrivateSignal);
+    void settingUpdate(int,PulseGenConfig::Setting,QVariant,int,QPrivateSignal);
+    void configUpdate(PulseGenConfig,int,QPrivateSignal);
+    void modeUpdate(PulseGenConfig::PGenMode,int,QPrivateSignal);
+    void repRateUpdate(double,int,QPrivateSignal);
+    void pulseEnabledUpdate(bool,int,QPrivateSignal);
 
 protected:
     void readAll();
