@@ -292,7 +292,7 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
     else
     {
         //enable fastframe and disable summary frame; verify
-        resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:STATE ON;SUMFRAME NON;STATE?\n"));
+        resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:STATE ON;:HORIZONTAL:FASTFRAME:SUMFRAME NON;:HORIZONTAL:FASTFRAME:STATE?\n"));
         if(!resp.isEmpty())
         {
             bool ok = false;
@@ -332,7 +332,7 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
                 return false;
             }
 
-            resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:COUNT %1;COUNT?\n").arg(numFrames));
+            resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:COUNT %1;:HORIZONTAL:FASTFRAME:COUNT?\n").arg(numFrames));
             if(!resp.isEmpty())
             {
                 ok = false;
@@ -358,7 +358,7 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
             QString sumfConfig = QString("AVE");
             if(!config.d_blockAverage)
                 sumfConfig = QString("NON");
-            resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:SUMFRAME %1;SUMFRAME?\n").arg(sumfConfig));
+            resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:SUMFRAME %1;:HORIZONTAL:FASTFRAME:SUMFRAME?\n").arg(sumfConfig));
             if(!resp.isEmpty())
             {
                 if(!QString(resp).contains(sumfConfig,Qt::CaseInsensitive))
@@ -377,7 +377,7 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
             if(config.d_blockAverage)
             {
                 //this forces the scope to only return the final frame, which is the summary frame
-                if(!p_comm->writeCmd(QString(":DATA:FRAMESTART 100000;FRAMESTOP 100000\n")))
+                if(!p_comm->writeCmd(QString(":DATA:FRAMESTART 100000;:DATA:FRAMESTOP 100000\n")))
                 {
                     emit logMessage(QString("Could not configure summary frame."),LogHandler::Error);
                     return false;
@@ -386,7 +386,7 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
             else
             {
                 //this forces the scope to return all frames
-                if(!p_comm->writeCmd(QString(":DATA:FRAMESTART 1;FRAMESTOP 100000\n")))
+                if(!p_comm->writeCmd(QString(":DATA:FRAMESTART 1;:DATA:FRAMESTOP 100000\n")))
                 {
                     emit logMessage(QString("Could not configure frames."),LogHandler::Error);
                     return false;
