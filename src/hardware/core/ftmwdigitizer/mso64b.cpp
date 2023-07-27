@@ -292,22 +292,22 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
     else
     {
         //enable fastframe and disable summary frame; verify
-        resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:STATE ON;:HORIZONTAL:FASTFRAME:SUMFRAME NON;:HORIZONTAL:FASTFRAME:STATE?\n"));
-        if(!resp.isEmpty())
-        {
-            bool ok = false;
-            bool ffState = (bool)resp.trimmed().toInt(&ok);
-            if(!ok || !ffState)
-            {
-                emit logMessage(QString("Could not enable FastFrame mode."),LogHandler::Error);
-                return false;
-            }
-        }
-        else
-        {
-            emit logMessage(QString("Gave an empty response to FastFrame state query."),LogHandler::Error);
-            return false;
-        }
+        resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:STATE ON;:HORIZONTAL:FASTFRAME:SUMFRAME NON;\n"));//:HORIZONTAL:FASTFRAME:STATE?\n"));
+//        if(!resp.isEmpty())
+//        {
+//            bool ok = false;
+//            bool ffState = (bool)resp.trimmed().toInt(&ok);
+//            if(!ok || !ffState)
+//            {
+//                emit logMessage(QString("Could not enable FastFrame mode."),LogHandler::Error);
+//                return false;
+//            }
+//        }
+//        else
+//        {
+//            emit logMessage(QString("Gave an empty response to FastFrame state query."),LogHandler::Error);
+//            return false;
+//        }
 
         //now, check max number of frames
         resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:MAXFRAMES?\n"));
