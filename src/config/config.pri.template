@@ -22,7 +22,7 @@ unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
 # you can ignore their corresponding entries below
 # -----------------------------------------------
 
-# FTMW Oscilloscope (0 = virtual, 1 = DSA71604C, 2 = MSO72004C, 3 = M4i2220x8, 4 = DSOx92004A, 5 = MSO64B)
+# FTMW Oscilloscope (0 = virtual, 1 = DSA71604C, 2 = MSO72004C, 3 = M4i2220x8, 4 = DSOx92004A, 5 = MSO64B, 6=DSOV204A)
 FTMWSCOPE=0
 
 #Clocks. Include in a space-delimited list, up to 6 numbers

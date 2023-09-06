@@ -40,3 +40,8 @@ equals(FTMWSCOPE,5) {
      HEADERS += $$PWD/mso64b.h
          SOURCES += $$PWD/mso64b.cpp
 }
+
+equals(FTMWSCOPE,6) {
+     SOURCES += $$PWD/dsov204a.cpp
+	 HEADERS += $$PWD/dsov204a.h
+}
