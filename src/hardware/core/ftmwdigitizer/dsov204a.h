@@ -37,6 +37,7 @@ private:
     bool scopeCommand(QString cmd);
 
     bool d_acquiring{false};
+    bool d_processing{false};
 };
 
 #endif // DSOV204A_H

@@ -1,5 +1,8 @@
 #include "dsov204a.h"
 
+#include <QTcpSocket>
+#include <QTimer>
+
 using namespace BC::Key::FtmwScope;
 using namespace BC::Key::Digi;
 
@@ -10,7 +13,7 @@ DSOv204A::DSOv204A(QObject *parent)
     setDefault(numDigitalChannels,0);
     setDefault(hasAuxTriggerChannel,true);
     setDefault(minFullScale,5e-2);
-    setDefault(maxFullScale,2.0);
+    setDefault(maxFullScale,4.0);
     setDefault(minVOffset,-2.0);
     setDefault(maxVOffset,2.0);
     setDefault(isTriggered,true);
@@ -76,8 +79,9 @@ bool DSOv204A::prepareForExperiment(Experiment &exp)
     if(config.d_triggerSlope == FallingEdge)
         slope = QString("NEG");
     QString trigCh = QString("AUX");
-    if(config.d_triggerLevel > 0)
-        trigCh = QString("CHAN%1").arg(config.d_triggerChannel);
+    if(config.d_triggerLevel > 0.25)
+        // trigCh = QString("CHAN%1").arg(config.d_triggerChannel);
+        trigCh = QString("AUX").arg(config.d_triggerChannel);
 
     if(!scopeCommand(QString(":TRIGGER:SWEEP TRIGGERED")))
         return false;
@@ -142,11 +146,25 @@ bool DSOv204A::prepareForExperiment(Experiment &exp)
     //block averaging...
     if(config.d_blockAverage)
     {
-        if(!scopeCommand(QString(":ACQUIRE:AVERAGE ON")))
-            return false;
+        if(config.d_multiRecord)
+        {
+            if(!scopeCommand(QString(":FUNCTION1:AVERAGE CHANNEL%1,%2").arg(config.d_fidChannel).arg(config.d_numAverages)))
+                return false;
 
-        if(!scopeCommand(QString(":ACQUIRE:COUNT %1").arg(config.d_blockAverage)))
-            return false;
+            if(!scopeCommand(QString(":WAVEFORM:SOURCE FUNCTION1")))
+                return false;
+        }
+        else
+        {
+            if(!scopeCommand(QString(":ACQUIRE:AVERAGE ON")))
+                return false;
+
+            if(!scopeCommand(QString(":ACQUIRE:COMPLETE 100")))
+                return false;
+
+            if(!scopeCommand(QString(":ACQUIRE:AVERAGE:COUNT %1").arg(config.d_numAverages)))
+                return false;
+        }
     }
 
     //sample rate and point settings
@@ -308,6 +326,7 @@ bool DSOv204A::prepareForExperiment(Experiment &exp)
     }
 
     d_acquiring = false;
+    d_processing = false;
 
     return true;
 
@@ -319,8 +338,9 @@ void DSOv204A::beginAcquisition()
     if(d_enabledForExperiment)
     {
         connect(p_socket,&QTcpSocket::readyRead,this,&DSOv204A::readWaveform);
-        p_comm->writeCmd(QString(":SYSTEM:GUI OFF;:DIGITIZE;*OPC?\n"));
-//        p_queryTimer->start(100);
+        d_acquiring = true;
+        d_processing = false;
+        p_comm->writeCmd(QString(":SYSTEM:GUI OFF;:DIGITIZE;:ADER?\n"));
     }
 }
 
@@ -331,8 +351,11 @@ void DSOv204A::endAcquisition()
         disconnect(p_socket,&QTcpSocket::readyRead,this,&DSOv204A::readWaveform);
         disconnect(p_socket, &QTcpSocket::readyRead, this, &DSOv204A::retrieveData);
 //        p_queryTimer->stop();
+        p_comm->writeCmd(QString(":STOP\n"));
         p_comm->writeCmd(QString("*CLS\n"));
         p_comm->writeCmd(QString(":SYSTEM:GUI ON\n"));
+        d_acquiring = false;
+        d_processing = false;
     }
 }
 
@@ -341,6 +364,7 @@ void DSOv204A::initialize()
     p_comm->setReadOptions(1000,true,QByteArray("\n"));
     p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
+    p_queryTimer = new QTimer(this);
 }
 
 bool DSOv204A::testConnection()
@@ -368,19 +392,42 @@ bool DSOv204A::testConnection()
 
 void DSOv204A::readWaveform()
 {
-    disconnect(p_socket,&QTcpSocket::readyRead,this,&DSOv204A::readWaveform);
+
     QByteArray resp = p_socket->readAll();
 
-    if(resp.contains('1'))
+    if(d_acquiring)
     {
-        //begin next transfer -- TEST
-        p_comm->writeCmd(QString(":DIGITIZE\n"));
+        if(resp.contains('1'))
+        {
+            disconnect(p_socket,&QTcpSocket::readyRead,this,&DSOv204A::readWaveform);
+            d_acquiring = false;
+            d_processing = true;
+        }
+        else
+            p_queryTimer->singleShot(5,[this](){p_comm->writeCmd(QString(":ADER?"));});
+    }
+    else if(d_processing)
+    {
+        if(resp.contains('1'))
+        {
+            d_processing = false;
+            //begin next transfer -- TEST
+            p_comm->writeCmd(QString(":DIGITIZE\n"));
+            d_acquiring = true;
 
-        //grab waveform data directly from socket;
-//        p_queryTimer->stop();
-        p_comm->writeCmd(QString(":WAVEFORM:DATA?\n"));
+            //grab waveform data directly from socket;
+            //        p_queryTimer->stop();
+            p_comm->writeCmd(QString(":WAVEFORM:DATA?\n"));
 
-        connect(p_socket, &QTcpSocket::readyRead, this, &DSOv204A::retrieveData);
+            connect(p_socket, &QTcpSocket::readyRead, this, &DSOv204A::retrieveData);
+        }
+        else
+            p_queryTimer->singleShot(5,[this](){p_comm->writeCmd(QString(":PDER?"));});
+    }
+    else
+    {
+        //don't know what to do here
+        emit logMessage(QString("This branch of readWaveform should not be reached; this is a bug!"),LogHandler::Error);
     }
 
 
@@ -412,9 +459,7 @@ void DSOv204A::retrieveData()
     p_socket->readAll();
 
     connect(p_socket,&QTcpSocket::readyRead,this,&DSOv204A::readWaveform);
-//    p_comm->writeCmd(QString(":DIGITIZE;*OPC?\n"));
-    p_comm->writeCmd(QString("*OPC?\n"));
-    //    p_queryTimer->start(100);
+    p_comm->writeCmd(QString(":ADER?\n"));
 }
 
 bool DSOv204A::scopeCommand(QString cmd)
