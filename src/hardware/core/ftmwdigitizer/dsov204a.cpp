@@ -26,7 +26,7 @@ DSOv204A::DSOv204A(QObject *parent)
     setDefault(maxAverages,100);
     setDefault(canMultiRecord,true);
     setDefault(maxRecords,100);
-    setDefault(multiBlock,true);
+    setDefault(multiBlock,false);
     setDefault(maxBytes,2);
     setDefault(bandwidth,20000.0);
 
@@ -148,6 +148,9 @@ bool DSOv204A::prepareForExperiment(Experiment &exp)
     {
         if(config.d_multiRecord)
         {
+            emit logMessage(QString("Simultaneous block averaging and multi record mode is not implemented for this oscilloscope."),LogHandler::Error);
+            return false;
+
             if(!scopeCommand(QString(":FUNCTION1:AVERAGE CHANNEL%1,%2").arg(config.d_fidChannel).arg(config.d_numAverages)))
                 return false;
 
@@ -342,8 +345,8 @@ void DSOv204A::beginAcquisition()
     {
         connect(p_socket,&QTcpSocket::readyRead,this,&DSOv204A::readWaveform);
         d_acquiring = true;
-        d_processing = false;
-        emit logMessage(QString("Sending first digitize command."));
+//        d_processing = false;
+//        emit logMessage(QString("Sending first digitize command."));
         p_comm->writeCmd(QString(":SYSTEM:GUI OFF;:DIGITIZE;:ADER?\n"));
     }
 }
@@ -352,7 +355,7 @@ void DSOv204A::endAcquisition()
 {
     if(d_enabledForExperiment)
     {
-        emit logMessage(QString("Ending acquisition."));
+//        emit logMessage(QString("Ending acquisition."));
         disconnect(p_socket,&QTcpSocket::readyRead,this,&DSOv204A::readWaveform);
         disconnect(p_socket, &QTcpSocket::readyRead, this, &DSOv204A::retrieveData);
 //        p_queryTimer->stop();
@@ -399,17 +402,17 @@ void DSOv204A::readWaveform()
 {
 
     QByteArray resp = p_socket->readAll();
-    emit logMessage(QString("In readWaveform. Response: %1").arg(QString(resp)));
+//    emit logMessage(QString("In readWaveform. Response: %1").arg(QString(resp)));
 
     if(d_acquiring)
     {
         if(resp.contains('1'))
         {
-            emit logMessage(QString("Acquisition complete, requesting process complete."));
+//            emit logMessage(QString("Acquisition complete, requesting process complete."));
             disconnect(p_socket,&QTcpSocket::readyRead,this,&DSOv204A::readWaveform);
             //begin next transfer -- TEST
             p_comm->writeCmd(QString(":DIGITIZE\n"));
-            d_acquiring = true;
+//            d_acquiring = true;
 
             //grab waveform data directly from socket;
             connect(p_socket, &QTcpSocket::readyRead, this, &DSOv204A::retrieveData);
@@ -452,11 +455,11 @@ void DSOv204A::retrieveData()
 
     if(p_socket->bytesAvailable() < bytes+2)
     {
-        emit logMessage(QString("Waiting for waveform data (%1/%2).").arg(p_socket->bytesAvailable()).arg(bytes+2));
+//        emit logMessage(QString("Waiting for waveform data (%1/%2).").arg(p_socket->bytesAvailable()).arg(bytes+2));
         return;
     }
 
-    emit logMessage(QString("Waveform data received."));
+//    emit logMessage(QString("Waveform data received."));
     disconnect(p_socket, &QTcpSocket::readyRead, this, &DSOv204A::retrieveData);
 
     char c = 0;
