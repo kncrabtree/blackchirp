@@ -198,9 +198,12 @@ bool DSOv204A::prepareForExperiment(Experiment &exp)
 
     //verify that FID channel was set correctly
     QByteArray resp = p_comm->queryCmd(QString(":WAVEFORM:SOURCE?\n"));
-    if(resp.isEmpty() || !resp.contains(QString("CHAN%1").arg(config.d_fidChannel).toLatin1()))
+    QString source = QString("CHAN%1").arg(config.d_fidChannel);
+    if(config.d_multiRecord && config.d_blockAverage)
+        source = QString("FUNC1");
+    if(resp.isEmpty() || !resp.contains(source.toLatin1()))
     {
-        emit logMessage(QString("Failed to set FID channel. Response to waveform source query: %1 (Hex: %2)")
+        emit logMessage(QString("Failed to set waveform source. Response to waveform source query: %1 (Hex: %2)")
                         .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
         return false;
     }
@@ -340,6 +343,7 @@ void DSOv204A::beginAcquisition()
         connect(p_socket,&QTcpSocket::readyRead,this,&DSOv204A::readWaveform);
         d_acquiring = true;
         d_processing = false;
+        emit logMessage(QString("Sending first digitize command."));
         p_comm->writeCmd(QString(":SYSTEM:GUI OFF;:DIGITIZE;:ADER?\n"));
     }
 }
@@ -348,6 +352,7 @@ void DSOv204A::endAcquisition()
 {
     if(d_enabledForExperiment)
     {
+        emit logMessage(QString("Ending acquisition."));
         disconnect(p_socket,&QTcpSocket::readyRead,this,&DSOv204A::readWaveform);
         disconnect(p_socket, &QTcpSocket::readyRead, this, &DSOv204A::retrieveData);
 //        p_queryTimer->stop();
@@ -397,9 +402,12 @@ void DSOv204A::readWaveform()
 
     if(d_acquiring)
     {
+        emit logMessage(QString("In readWaveform. Response: %1").arg(QString(resp)));
         if(resp.contains('1'))
         {
+            emit logMessage(QString("Acquisition complete, requesting process complete."));
             disconnect(p_socket,&QTcpSocket::readyRead,this,&DSOv204A::readWaveform);
+            p_comm->writeCmd(QString(":PDER?"));
             d_acquiring = false;
             d_processing = true;
         }
@@ -410,6 +418,7 @@ void DSOv204A::readWaveform()
     {
         if(resp.contains('1'))
         {
+            emit logMessage(QString("Processing complete, requesting data and initializing new acquisition"));
             d_processing = false;
             //begin next transfer -- TEST
             p_comm->writeCmd(QString(":DIGITIZE\n"));
@@ -440,6 +449,7 @@ void DSOv204A::retrieveData()
     if(p_socket->bytesAvailable() < bytes+2)
         return;
 
+    emit logMessage(QString("Waveform data received."));
     disconnect(p_socket, &QTcpSocket::readyRead, this, &DSOv204A::retrieveData);
 
     char c = 0;
