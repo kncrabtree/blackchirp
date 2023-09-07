@@ -402,17 +402,17 @@ void DSOv204A::readWaveform()
 
     if(d_acquiring)
     {
-        emit logMessage(QString("In readWaveform. Response: %1").arg(QString(resp)));
         if(resp.contains('1'))
         {
+            emit logMessage(QString("In readWaveform. Response: %1").arg(QString(resp)));
             emit logMessage(QString("Acquisition complete, requesting process complete."));
             disconnect(p_socket,&QTcpSocket::readyRead,this,&DSOv204A::readWaveform);
-            p_comm->writeCmd(QString(":PDER?"));
+            p_comm->writeCmd(QString(":PDER?\n"));
             d_acquiring = false;
             d_processing = true;
         }
         else
-            p_queryTimer->singleShot(5,[this](){p_comm->writeCmd(QString(":ADER?"));});
+            p_queryTimer->singleShot(5,[this](){p_comm->writeCmd(QString(":ADER?\n"));});
     }
     else if(d_processing)
     {
@@ -431,7 +431,7 @@ void DSOv204A::readWaveform()
             connect(p_socket, &QTcpSocket::readyRead, this, &DSOv204A::retrieveData);
         }
         else
-            p_queryTimer->singleShot(5,[this](){p_comm->writeCmd(QString(":PDER?"));});
+            p_queryTimer->singleShot(5,[this](){p_comm->writeCmd(QString(":PDER?\n"));});
     }
     else
     {
