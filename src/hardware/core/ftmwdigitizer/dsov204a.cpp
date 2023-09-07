@@ -399,40 +399,44 @@ void DSOv204A::readWaveform()
 {
 
     QByteArray resp = p_socket->readAll();
+    emit logMessage(QString("In readWaveform. Response: %1").arg(QString(resp)));
 
     if(d_acquiring)
     {
         if(resp.contains('1'))
         {
-            emit logMessage(QString("In readWaveform. Response: %1").arg(QString(resp)));
             emit logMessage(QString("Acquisition complete, requesting process complete."));
             disconnect(p_socket,&QTcpSocket::readyRead,this,&DSOv204A::readWaveform);
-            p_comm->writeCmd(QString(":PDER?\n"));
-            d_acquiring = false;
-            d_processing = true;
-        }
-        else
-            p_queryTimer->singleShot(5,[this](){p_comm->writeCmd(QString(":ADER?\n"));});
-    }
-    else if(d_processing)
-    {
-        if(resp.contains('1'))
-        {
-            emit logMessage(QString("Processing complete, requesting data and initializing new acquisition"));
-            d_processing = false;
             //begin next transfer -- TEST
             p_comm->writeCmd(QString(":DIGITIZE\n"));
             d_acquiring = true;
 
             //grab waveform data directly from socket;
-            //        p_queryTimer->stop();
-            p_comm->writeCmd(QString(":WAVEFORM:DATA?\n"));
-
             connect(p_socket, &QTcpSocket::readyRead, this, &DSOv204A::retrieveData);
+            p_comm->writeCmd(QString(":WAVEFORM:DATA?\n"));
         }
         else
-            p_queryTimer->singleShot(5,[this](){p_comm->writeCmd(QString(":PDER?\n"));});
+            p_queryTimer->singleShot(5,[this](){p_comm->writeCmd(QString(":ADER?\n"));});
     }
+//    else if(d_processing)
+//    {
+//        if(resp.contains('1'))
+//        {
+//            emit logMessage(QString("Processing complete, requesting data and initializing new acquisition"));
+//            d_processing = false;
+//            //begin next transfer -- TEST
+//            p_comm->writeCmd(QString(":DIGITIZE\n"));
+//            d_acquiring = true;
+
+//            //grab waveform data directly from socket;
+//            //        p_queryTimer->stop();
+//            p_comm->writeCmd(QString(":WAVEFORM:DATA?\n"));
+
+//            connect(p_socket, &QTcpSocket::readyRead, this, &DSOv204A::retrieveData);
+//        }
+//        else
+//            p_queryTimer->singleShot(5,[this](){p_comm->writeCmd(QString(":PDER?\n"));});
+//    }
     else
     {
         //don't know what to do here
@@ -447,7 +451,10 @@ void DSOv204A::retrieveData()
     qint64 bytes = d_bytesPerPoint*d_recordLength*d_numRecords;
 
     if(p_socket->bytesAvailable() < bytes+2)
+    {
+        emit logMessage(QString("Waiting for waveform data (%1/%2).").arg(p_socket->bytesAvailable()).arg(bytes+2));
         return;
+    }
 
     emit logMessage(QString("Waveform data received."));
     disconnect(p_socket, &QTcpSocket::readyRead, this, &DSOv204A::retrieveData);
