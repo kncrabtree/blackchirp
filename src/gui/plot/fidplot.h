@@ -38,7 +38,7 @@ signals:
 
 
 public slots:
-    void receiveProcessedFid(const QVector<double> d, double spacing, double min, double max);
+    void receiveProcessedFid(const QVector<double> d, double spacing, double min, double max, quint64 shots);
     void prepareForExperiment(const Experiment &e);
     void setFtStart(double start);
     void setFtEnd(double end);

@@ -99,9 +99,10 @@ FidPlot::FidPlot(const QString id, QWidget *parent) :
 
 }
 
-void FidPlot::receiveProcessedFid(const QVector<double> d, double spacing, double min, double max)
+void FidPlot::receiveProcessedFid(const QVector<double> d, double spacing, double min, double max, quint64 shots)
 {
     p_curve->setCurrentFid(d,spacing,min,max);
+    setNumShots(shots);
 
     replot();
 }

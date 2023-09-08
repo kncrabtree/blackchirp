@@ -48,11 +48,11 @@ FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
                 fidLoadComplete(id);
             });
             if(id == d_liveId)
-                d_plotStatus.emplace(id,PlotStatus { fw2, ui->liveFidPlot, ui->liveFtPlot, Fid(), Ft() });
+                d_plotStatus.emplace(id,PlotStatus { fw2, ui->liveFidPlot, ui->liveFtPlot, FidList(), Ft() });
             else if(id == d_plot1Id)
-                d_plotStatus.emplace(id,PlotStatus { fw2, ui->fidPlot1, ui->ftPlot1, Fid(), Ft() });
+                d_plotStatus.emplace(id,PlotStatus { fw2, ui->fidPlot1, ui->ftPlot1, FidList(), Ft() });
             else if(id == d_plot2Id)
-                d_plotStatus.emplace(id,PlotStatus { fw2, ui->fidPlot2, ui->ftPlot2, Fid(), Ft() });
+                d_plotStatus.emplace(id,PlotStatus { fw2, ui->fidPlot2, ui->ftPlot2, FidList(), Ft() });
             //don't need to add one of these for the main plot; it's special
         }
 
@@ -150,7 +150,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
     for(auto &[key,ps] : d_plotStatus)
     {
         Q_UNUSED(key)
-        ps.fid = Fid();
+        ps.fidList.clear();
         ps.ft = Ft();
         ps.frame = 0;
         ps.segment = 0;
@@ -219,17 +219,15 @@ void FtmwViewWidget::updateLiveFidList()
             {
                 if(!ui->plotToolBar->viewingBackup(key))
                 {
-                    auto f = fl.at(ps.frame);
-                    ps.fid = f;
-                    process(key,f);
+                    ps.fidList = fl;
+                    process(key,fl,ps.frame);
                 }
             }
         }
         else
         {
-            auto f = fl.constFirst();
-            ps.fid = f;
-            process(key,f);
+            //always average all frames for live plot
+            process(key,fl,-1);
         }
 
     }
@@ -271,7 +269,7 @@ void FtmwViewWidget::updatePlotSetting(int id)
     auto it = d_plotStatus.find(id);
     if(it != d_plotStatus.end())
     {
-        //segment and fram are 1-indexed on the UI
+        //segment and frame are 1-indexed on the UI
         it->second.segment = ui->plotToolBar->segment(id)-1;
         it->second.frame = ui->plotToolBar->frame(id)-1;
         it->second.backup = ui->plotToolBar->backup(id);
@@ -289,9 +287,8 @@ void FtmwViewWidget::fidLoadComplete(int id)
     }
     else
     {
-        auto list = ps.p_watcher->result();
-        ps.fid = list.value(ps.frame,Fid());
-        process(id, ps.fid);
+        ps.fidList = ps.p_watcher->result();
+        process(id, ps.fidList, ps.frame);
     }
 }
 
@@ -312,7 +309,7 @@ void FtmwViewWidget::ftProcessingComplete(int id)
                     updateMainPlot();
                 else
                 {
-                    if(!d_sbStatus.nextFid.isEmpty())
+                    if(!d_sbStatus.nextFidList.isEmpty())
                         processNextSidebandFid();
                     if(!d_sbStatus.sbLoadWatcher->isRunning())
                         loadNextSidebandFid();
@@ -324,18 +321,18 @@ void FtmwViewWidget::ftProcessingComplete(int id)
             }
         }
         else
-            process(id,d_plotStatus[id].fid);
+            process(id,d_plotStatus[id].fidList,d_plotStatus[id].frame);
     }
 }
 
-void FtmwViewWidget::fidProcessed(const QVector<double> fidData, double spacing, double min, double max, int workerId)
+void FtmwViewWidget::fidProcessed(const QVector<double> fidData, double spacing, double min, double max, quint64 shots, int workerId)
 {
     auto it = d_plotStatus.find(workerId);
     if(it != d_plotStatus.end())
     {
         auto &ps = it->second;
         if(!ps.fidPlot->isHidden())
-            ps.fidPlot->receiveProcessedFid(fidData,spacing,min,max);
+            ps.fidPlot->receiveProcessedFid(fidData,spacing,min,max,shots);
     }
 }
 
@@ -411,10 +408,12 @@ void FtmwViewWidget::updateMainPlot()
             p_pfw->newFt(d_plotStatus[d_plot2Id].ft);
         break;
     case FtmwPlotToolBar::FT1_minus_FT2:
-        processDiff(d_plotStatus[d_plot1Id].fid,d_plotStatus[d_plot2Id].fid);
+        processDiff(d_plotStatus[d_plot1Id].fidList,d_plotStatus[d_plot2Id].fidList,
+                    d_plotStatus[d_plot1Id].frame,d_plotStatus[d_plot2Id].frame);
         break;
     case FtmwPlotToolBar::FT2_minus_FT1:
-        processDiff(d_plotStatus[d_plot2Id].fid,d_plotStatus[d_plot1Id].fid);
+        processDiff(d_plotStatus[d_plot2Id].fidList,d_plotStatus[d_plot1Id].fidList,
+                    d_plotStatus[d_plot2Id].frame,d_plotStatus[d_plot1Id].frame);
         break;
     case FtmwPlotToolBar::Upper_SideBand:
     case FtmwPlotToolBar::Lower_SideBand:
@@ -439,12 +438,17 @@ void FtmwViewWidget::reprocess(const QList<int> ignore)
                 updateMainPlot();
             }
             else
-                process(key,d_plotStatus[key].fid);
+            {
+                if(key == d_liveId)
+                    process(key,d_plotStatus[key].fidList,-1);
+                else
+                    process(key,d_plotStatus[key].fidList,d_plotStatus[key].frame);
+            }
         }
     }
 }
 
-void FtmwViewWidget::process(int id, const Fid f)
+void FtmwViewWidget::process(int id, const FidList fl, int frame)
 {
 //    if(f.isEmpty())
 //        return;
@@ -453,20 +457,19 @@ void FtmwViewWidget::process(int id, const Fid f)
         ws.reprocessWhenDone = true;
     else
     {
-        d_plotStatus[id].fidPlot->setNumShots(f.shots());
         d_plotStatus[id].fidPlot->setCursor(Qt::BusyCursor);
         d_plotStatus[id].ftPlot->setCursor(Qt::BusyCursor);
         ws.busy = true;
         ws.reprocessWhenDone = false;
-        ws.p_watcher->setFuture(QtConcurrent::run([f,id,this](){
-            p_worker->doFT(f,d_currentProcessingSettings,id);
+        ws.p_watcher->setFuture(QtConcurrent::run([fl,frame,id,this](){
+            p_worker->doFT(fl,d_currentProcessingSettings,frame,id);
         }));
     }
 }
 
-void FtmwViewWidget::processDiff(const Fid f1, const Fid f2)
+void FtmwViewWidget::processDiff(const FidList fl1, const FidList fl2, int frame1, int frame2)
 {
-    if(f1.isEmpty() || f2.isEmpty())
+    if(fl1.isEmpty() || fl2.isEmpty())
         return;
 
     auto &ws = d_workersStatus[d_mainId];
@@ -477,8 +480,8 @@ void FtmwViewWidget::processDiff(const Fid f1, const Fid f2)
         ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::BusyCursor));
         ws.busy = true;
         ws.reprocessWhenDone = false;
-        ws.p_watcher->setFuture(QtConcurrent::run([f1,f2,this](){
-            p_worker->doFtDiff(f1,f2,d_currentProcessingSettings);
+        ws.p_watcher->setFuture(QtConcurrent::run([fl1,fl2,frame1,frame2,this](){
+            p_worker->doFtDiff(fl1,fl2,frame1,frame2,d_currentProcessingSettings);
         }));
 
     }
@@ -486,21 +489,17 @@ void FtmwViewWidget::processDiff(const Fid f1, const Fid f2)
 
 void FtmwViewWidget::sidebandLoadComplete()
 {
-    d_sbStatus.nextFid = Fid();
+    d_sbStatus.nextFidList = FidList();
 
     if(d_sbStatus.cancel)
     {
         updateMainPlot();
         return;
     }
-
-    int frame = ui->plotToolBar->frame(ui->plotToolBar->mainPlotFollow())-1;
-
     auto fl = d_sbStatus.sbLoadWatcher->result();
-    Fid f = fl.value(frame,Fid());
 
     //queue FID
-    d_sbStatus.nextFid = f;
+    d_sbStatus.nextFidList = fl;
     if(!d_workersStatus[d_mainId].busy)
     {
         processNextSidebandFid();
@@ -576,8 +575,8 @@ void FtmwViewWidget::loadNextSidebandFid()
 
 void FtmwViewWidget::processNextSidebandFid()
 {
-    auto f = d_sbStatus.nextFid;
-    d_sbStatus.nextFid = Fid();
+    auto fl = d_sbStatus.nextFidList;
+    d_sbStatus.nextFidList = FidList();
 
     if(d_sbStatus.cancel || d_sbStatus.sbData.currentIndex >= d_sbStatus.sbData.totalFids)
         return;
@@ -585,7 +584,7 @@ void FtmwViewWidget::processNextSidebandFid()
     auto &ws = d_workersStatus[d_mainId];
     ws.busy = true;
     ws.reprocessWhenDone = true;
-    d_sbStatus.sbData.fid = f;
+    d_sbStatus.sbData.fl= fl;
     auto sbd = d_sbStatus.sbData;
     ws.p_watcher->setFuture(QtConcurrent::run([this,sbd]{
         p_worker->processSideband(sbd,d_currentProcessingSettings);
@@ -605,7 +604,7 @@ void FtmwViewWidget::sidebandProcessingComplete(const Ft ft)
         updateMainPlot();
     else
     {
-        d_sbStatus.nextFid = Fid();
+        d_sbStatus.nextFidList = FidList();
 
         ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
         ui->mainFtPlot->setMessageText("");
@@ -616,7 +615,7 @@ void FtmwViewWidget::sidebandProcessingComplete(const Ft ft)
 void FtmwViewWidget::cancelSidebandProcessing()
 {
     d_sbStatus.cancel = true;
-    d_sbStatus.nextFid = Fid();
+    d_sbStatus.nextFidList = FidList();
 }
 
 void FtmwViewWidget::updateBackups()
@@ -708,16 +707,14 @@ void FtmwViewWidget::updateFid(int id)
 
     auto &ps = d_plotStatus[id];
     int seg = ps.segment;
-    int frame = ps.frame;
     int backup = ps.backup;
 
     if(seg == d_currentSegment && id == d_liveId)
     {
+        //For live plots, always average all frames
         auto fl = ps_fidStorage->getCurrentFidList();
-        if(frame >= 0 && frame < fl.size())
-            ps.fid = fl.at(frame);
-
-        process(id, ps.fid);
+        ps.fidList = fl;
+        process(id, ps.fidList, -1);
     }
     else
     {
