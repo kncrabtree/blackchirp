@@ -361,8 +361,10 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
             resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:SUMFRAME:STATE %1;:HORIZONTAL:FASTFRAME:SUMFRAME:STATE?\n").arg(sumfConfig));
             if(!resp.isEmpty())
             {
-                if(!QString(resp).contains(sumfConfig,Qt::CaseInsensitive))
-                {
+                bool ok = false;
+                bool ffState = (bool)resp.trimmed().toInt(&ok);
+                if(!ok || !(ffState == config.d_blockAverage))
+                { 
                     emit logMessage(QString("Could not configure FastFrame summary frame to %1. Response: %2 (Hex: %3)")
                                         .arg(sumfConfig).arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
                     return false;
