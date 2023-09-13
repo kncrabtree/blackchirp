@@ -358,7 +358,7 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
             QString sumfConfig = QString("ON");
             if(!config.d_blockAverage)
                 sumfConfig = QString("OFF");
-            resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:SUMFRAME:STATE %1;:HORIZONTAL:FASTFRAME:SUMFRAME?\n").arg(sumfConfig));
+            resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:SUMFRAME:STATE %1;:HORIZONTAL:FASTFRAME:SUMFRAME:STATE?\n").arg(sumfConfig));
             if(!resp.isEmpty())
             {
                 if(!QString(resp).contains(sumfConfig,Qt::CaseInsensitive))
