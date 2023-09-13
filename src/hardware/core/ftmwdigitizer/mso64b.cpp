@@ -292,22 +292,22 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
     else
     {
         //enable fastframe and disable summary frame; verify
-        p_comm->writeCmd(QString(":HORIZONTAL:FASTFRAME:STATE ON;:HORIZONTAL:FASTFRAME:SUMFRAME NON;\n"));//:HORIZONTAL:FASTFRAME:STATE?\n"));
-//        if(!resp.isEmpty())
-//        {
-//            bool ok = false;
-//            bool ffState = (bool)resp.trimmed().toInt(&ok);
-//            if(!ok || !ffState)
-//            {
-//                emit logMessage(QString("Could not enable FastFrame mode."),LogHandler::Error);
-//                return false;
-//            }
-//        }
-//        else
-//        {
-//            emit logMessage(QString("Gave an empty response to FastFrame state query."),LogHandler::Error);
-//            return false;
-//        }
+        p_comm->writeCmd(QString(":HORIZONTAL:FASTFRAME:STATE ON;:HORIZONTAL:FASTFRAME:STATE?\n"));
+        if(!resp.isEmpty())
+        {
+            bool ok = false;
+            bool ffState = (bool)resp.trimmed().toInt(&ok);
+            if(!ok || !ffState)
+            {
+                emit logMessage(QString("Could not enable FastFrame mode."),LogHandler::Error);
+                return false;
+            }
+        }
+        else
+        {
+            emit logMessage(QString("Gave an empty response to FastFrame state query."),LogHandler::Error);
+            return false;
+        }
 
         //now, check max number of frames
         resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:MAXFRAMES?\n"));
@@ -355,10 +355,10 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
                 return false;
             }
 
-            QString sumfConfig = QString("AVE");
+            QString sumfConfig = QString("ON");
             if(!config.d_blockAverage)
-                sumfConfig = QString("NON");
-            resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:SUMFRAME %1;:HORIZONTAL:FASTFRAME:SUMFRAME?\n").arg(sumfConfig));
+                sumfConfig = QString("OFF");
+            resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:SUMFRAME:STATE %1;:HORIZONTAL:FASTFRAME:SUMFRAME?\n").arg(sumfConfig));
             if(!resp.isEmpty())
             {
                 if(!QString(resp).contains(sumfConfig,Qt::CaseInsensitive))
