@@ -292,7 +292,7 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
     else
     {
         //enable fastframe and disable summary frame; verify
-        p_comm->writeCmd(QString(":HORIZONTAL:FASTFRAME:STATE ON;:HORIZONTAL:FASTFRAME:STATE?\n"));
+        resp = p_comm->queryCmd(QString(":HORIZONTAL:FASTFRAME:STATE ON;:HORIZONTAL:FASTFRAME:STATE?\n"));
         if(!resp.isEmpty())
         {
             bool ok = false;
