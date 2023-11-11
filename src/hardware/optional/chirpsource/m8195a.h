@@ -32,7 +32,6 @@ protected:
     bool testConnection() override;
     void initialize() override;
 
-
 private:
     bool m8195aWrite(const QString cmd);
 };
