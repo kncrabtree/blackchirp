@@ -61,6 +61,14 @@ typedef MSO64B FtmwScopeHardware;
 #include "dsov204a.h"
 class DSOv204A;
 typedef DSOv204A FtmwScopeHardware;
+#elif BC_FTMWSCOPE == 7
+#include "dpo71254b.h"
+class Dpo71254b;
+typedef Dpo71254b FtmwScopeHardware;
+#elif BC_FTMWSCOPE == 8
+#include "dpo72004.h"
+class Dpo72004;
+typedef Dpo72004 FtmwScopeHardware;
 #endif
 
 

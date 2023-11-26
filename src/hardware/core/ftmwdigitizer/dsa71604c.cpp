@@ -1,6 +1,7 @@
 #include "dsa71604c.h"
 
 #include <QTcpSocket>
+#include <QTimer>
 #include <QThread>
 #include <math.h>
 
