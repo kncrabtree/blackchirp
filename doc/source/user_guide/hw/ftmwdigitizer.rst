@@ -37,3 +37,53 @@ Settings
 Implementations
 ---------------
 
+Virtual (0)
+...........
+
+The virtual implementation can be thought of as a "read-only" device useful during a first build of Blackchirp and/or for a machine that is not connected to any hardware at all (e.g. office or shared group computer) for data analysis purposes.
+
+Tektronix DSA71604C (1)
+.......................
+
+TO DO
+
+Tektronix MSO72004C (2)
+.......................
+
+TO DO
+
+Spectrum M4i2220x8 (3)
+.......................
+
+TO DO
+
+Keysight DSOX92004A (4)
+.......................
+
+The `DSOX92004A <https://www.keysight.com/us/en/product/DSOX92004A/infiniium-high-performance-oscilloscope-20-ghz.html>`_ is an 80 GSa/s oscilloscope with a bandwidth of 20 GHz, upgradable to 33 GHz, and this implementation communicates over a TCP socket. A static IP address has to be set in the Windows OS running on the scope and usual remote communication is on port 5025. Caution: This implementation has not been tested since Blackchirp's update to v1.0.
+
+Tektronix MSO64B (5)
+.......................
+
+TO DO
+
+Keysight DSOV204A (6)
+.......................
+
+The `DSOV204A <https://www.keysight.com/us/en/product/DSOV204A/infiniium-v-series-oscilloscope-20-ghz-4-analog-channels.html>`_ is an 80 GSa/s oscilloscope with a maximum bandwidth of 20 GHz, and this implementation communicates over a TCP socket. A static IP address has to be set in the Windows OS running on the scope and usual remote communication is on port 5025. This implementation is currently coded so that the scope can be triggered on any of its 4 analog channels but triggering on the AUX channel is recommended.
+
+Tektronix DPO71254B (7)
+.......................
+
+The `DPO71254B <https://www.tek.com/en/oscilloscope/dpo70000-mso70000-manual-18>`_ is a 50 GSa/s oscilloscope with a maximum bandwidth of 12.5 GHz, and this implementation communicates over a TCP socket. A static IP address has to be set in the Windows OS running on the scope and the default TekVisa software running on the scope communicates on port 4000. This implementation is currently coded so that the scope can be triggered on any of its 4 analog channels but triggering on the AUX channel is recommended. This implementation is currently being tested.
+
+Tektronix DPO72004 (8)
+.......................
+
+The `DPO72004 <https://www.tek.com/en/oscilloscope/dpo70000-mso70000-manual-18>`_ is a 50 GSa/s oscilloscope with a maximum bandwidth of 20 GHz, and this implementation communicates over a TCP socket. A static IP address has to be set in the Windows OS running on the scope and the default TekVisa software running on the scope communicates on port 4000. This implementation is currently coded so that the scope can be triggered on any of its 4 analog channels but triggering on the AUX channel is recommended. This implementation is currently being tested.
+
+
+**Known Issues**
+
+ * There have been reports that once a specific error occurs, the software on the Keysight scope crashes. Closing and reopening the scope software will resolve this issue.
+ * There have been reports that once a specific error occurs, the Tektronix scope will not allow TCP connection and the socket will time out. Restarting the scope resolves this issue.
