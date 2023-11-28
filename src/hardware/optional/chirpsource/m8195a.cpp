@@ -67,13 +67,13 @@ bool M8195A::prepareForExperiment(Experiment &exp)
 
     //external triggering
     bool triggered = get<bool>(BC::Key::AWG::triggered);
-    double samplerate = get<bool>(BC::Key::AWG::rate);
+    double samplerate = get<double>(BC::Key::AWG::rate);
 
 
     if(triggered)
     {
-        QString trig("ASYNC");
-//        if(async)
+        QString trig("ASYN");
+//        if(asyn)
 //            trig.prepend(QString("A"));
 
         if(!m8195aWrite(QString(":INIT:CONT 0;:INIT:GATE 0;:ARM:TRIG:SOUR TRIG;:TRIG:SOUR:ENAB TRIG;:ARM:TRIG:LEV 1.5;:ARM:TRIG:SLOP POS;:ARM:TRIG:OPER %1\n").arg(trig)))
@@ -118,7 +118,8 @@ bool M8195A::prepareForExperiment(Experiment &exp)
         return false;
     }
 
-    int len = data.size() + (data.size()%256);
+    int pad = (256 - (data.size()%256))%256;
+    int len = data.size() + pad;
 
     QByteArray id = p_comm->queryCmd(QString(":TRAC1:DEF:NEW? %1\n").arg(len)).trimmed();
     if(id.isEmpty())
@@ -142,7 +143,7 @@ bool M8195A::prepareForExperiment(Experiment &exp)
         int startIndex = currentChunk*chunkSize;
         //if this chunk runs past the data size, pad with zeros until we reach nearest
         //multiple of 256
-        int endIndex = qMin((currentChunk+1)*chunkSize,data.size()+(data.size()%256));
+	int endIndex = qMin((currentChunk+1)*chunkSize,data.size()+pad);
         int numPnts = endIndex - startIndex;
 
         //AWG has analog and marker values interleaved
@@ -170,8 +171,7 @@ bool M8195A::prepareForExperiment(Experiment &exp)
         }
 
         //create data header
-        QString header = QString(":TRAC1:DATA %1,%2,")
-                .arg(QString(id)).arg(startIndex);
+        QString header = QString(":TRAC1:DATA %1,%2,").arg(QString(id)).arg(startIndex);
 
         QString binSize = QString::number(numPnts*2);
         QString binHeader = QString("#%1%2").arg(binSize.size()).arg(binSize);

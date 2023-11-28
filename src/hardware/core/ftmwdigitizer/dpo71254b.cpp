@@ -1,4 +1,4 @@
-#include "dsa71604c.h"
+#include "dpo71254b.h"
 
 #include <QTcpSocket>
 #include <QTimer>
@@ -7,17 +7,17 @@
 
 using namespace BC::Key::FtmwScope;
 using namespace BC::Key::Digi;
-
-Dsa71604c::Dsa71604c(QObject *parent) :
-    FtmwScope(dsa71604c,dsa71064cName,CommunicationProtocol::Tcp,parent),
+    
+Dpo71254b::Dpo71254b(QObject *parent) : 
+    FtmwScope(BC::Key::FtmwScope::dpo71254b,BC::Key::FtmwScope::dpo71254bName,CommunicationProtocol::Tcp,parent),
     d_waitingForReply(false), d_foundHeader(false),
     d_headerNumBytes(0), d_waveformBytes(0)
 {
     setDefault(numAnalogChannels,4);
     setDefault(numDigitalChannels,0);
     setDefault(hasAuxTriggerChannel,true);
-    setDefault(minFullScale,5e-2);
-    setDefault(maxFullScale,2.0);
+    setDefault(minFullScale,10e-3);
+    setDefault(maxFullScale,4.0);
     setDefault(minVOffset,-2.0);
     setDefault(maxVOffset,2.0);
     setDefault(isTriggered,true);
@@ -25,37 +25,36 @@ Dsa71604c::Dsa71604c(QObject *parent) :
     setDefault(maxTrigDelay,10.0);
     setDefault(minTrigLevel,-5.0);
     setDefault(maxTrigLevel,5.0);
-    setDefault(maxRecordLength,100000000);
+    setDefault(maxRecordLength,10000000);
     setDefault(canBlockAverage,true);
     setDefault(maxAverages,100);
     setDefault(canMultiRecord,true);
     setDefault(maxRecords,100);
     setDefault(multiBlock,false);
     setDefault(maxBytes,2);
-    setDefault(bandwidth,16000.0);
+    setDefault(bandwidth,12500.0);
 
     if(!containsArray(sampleRates))
         setArray(sampleRates,{
-                     {{srText,"2 GSa/s"},{srValue,2e9}},
-                       {{srText,"5 GSa/s"},{srValue,5e9}},
-                       {{srText,"10 GSa/s"},{srValue,10e9}},
-                       {{srText,"20 GSa/s"},{srValue,20e9}},
-                       {{srText,"50 GSa/s"},{srValue,50e9}},
-                       {{srText,"100 GSa/s"},{srValue,100e9}}
+                       {{srText,"3.125 GSa/s"},{srValue,3.125e9}},
+                       {{srText,"6.25 GSa/s"},{srValue,6.25e9}},
+                       {{srText,"12.5 GSa/s"},{srValue,12.5e9}},
+                       {{srText,"25 GSa/s"},{srValue,25e9}},
+                       {{srText,"50 GSa/s"},{srValue,50e9}}
                      });
 
     save();
 }
 
-Dsa71604c::~Dsa71604c()
+Dpo71254b::~Dpo71254b()
 {
 
 }
 
-bool Dsa71604c::testConnection()
+bool Dpo71254b::testConnection()
 {
 
-    p_comm->writeCmd(QString("*CLS\n"));
+    p_comm->writeCmd(QString("DCL\n"));
     p_comm->writeCmd(QString("*CLS\n"));
     QByteArray resp = scopeQueryCmd(QString("*IDN?\n"));
 
@@ -64,11 +63,12 @@ bool Dsa71604c::testConnection()
         d_errorString = QString("Did not respond to ID query.");
         return false;
     }
+    
+    if(resp.length() > 100)
+    	resp = resp.mid(0,100);
 
-    if(!resp.startsWith(QByteArray("TEKTRONIX,DSA71604C")))
+    if(!resp.startsWith(QByteArray("TEKTRONIX,DPO")))//71254B"))) #taking this out since this code should be working fro both all DPO scopes
     {
-        if(resp.length() > 50)
-            resp = resp.mid(0,50);
         d_errorString = QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp)).arg(QString(resp.toHex()));
         return false;
     }
@@ -77,19 +77,22 @@ bool Dsa71604c::testConnection()
     return true;
 }
 
-void Dsa71604c::initialize()
+void Dpo71254b::initialize()
 {
     p_scopeTimeout = new QTimer(this);
 
     p_comm->setReadOptions(3000,true,QByteArray("\n"));
     p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
-    connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::errorOccurred),this,&Dsa71604c::socketError);
+    connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::errorOccurred),this,&Dpo71254b::socketError);
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
     p_socket->setSocketOption(QAbstractSocket::KeepAliveOption,1);
 }
 
-bool Dsa71604c::prepareForExperiment(Experiment &exp)
+bool Dpo71254b::prepareForExperiment(Experiment &exp)
 {
+    p_comm->writeCmd(QString("DCL\n"));
+    p_comm->writeCmd(QString("*CLS\n"));
+    
     //attempt to apply settings. return invalid configuration if anything fails.
     //this is a lot of really tedious code.
     //All settings need to be made, and most of them also need to be verified
@@ -103,7 +106,7 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
 
     auto &config = exp.ftmwConfig()->d_scopeConfig;
 
-    disconnect(p_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform);
+    disconnect(p_socket,&QTcpSocket::readyRead,this,&Dpo71254b::readWaveform);
 
     //disable ugly headers
     if(!p_comm->writeCmd(QString(":HEADER OFF\n")))
@@ -113,13 +116,13 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     }
 
     //write data transfer commands
-    if(!p_comm->writeCmd(QString(":DATA:SOURCE CH%1;START 1;STOP 1E12\n").arg(config.d_fidChannel)))
+    if(!p_comm->writeCmd(QString(":DATA:SOURCE CH%1;START 1;STOP 10000000000\n").arg(config.d_fidChannel)))
     {
         emit logMessage(QString("Could not write :DATA commands."),LogHandler::Error);
         return false;
     }
 
-    //clear out socket before senting our first query
+    //clear out socket before sending our first query
     if(p_socket->bytesAvailable())
         p_socket->readAll();
 
@@ -133,10 +136,11 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     }
 
 //    if(!d_comm->writeCmd(QString("CH%1:BANDWIDTH:ENHANCED OFF; CH%1:BANDWIDTH 1.6+10; COUPLING AC;OFFSET 0;SCALE %2\n").arg(config.fidChannel).arg(QString::number(config.vScale,'g',4))))
-    if(!p_comm->writeCmd(QString("CH%1:BANDWIDTH FULL; COUPLING AC;OFFSET %2;SCALE %3\n")
+//    if(!p_comm->writeCmd(QString("CH%1:BANDWIDTH FULL; COUPLING AC;OFFSET %2;SCALE %3\n")
+    if(!p_comm->writeCmd(QString(":CH%1:BANDWIDTH:ENHANCED OFF; :CH%1:BANDWIDTH 1.25E+10; :CH%1:COUPLING AC; :CH%1:OFFSET %2; :CH%1:SCALE %3\n")
                          .arg(config.d_fidChannel)
                          .arg(QString::number(config.d_analogChannels[config.d_fidChannel].offset,'g',4))
-                         .arg(QString::number(config.d_analogChannels[config.d_fidChannel].fullScale/5.0,'g',4))))
+                         .arg(QString::number(config.d_analogChannels[config.d_fidChannel].fullScale/5.0,'e',3))))
     {
         emit logMessage(QString("Failed to write channel settings."),LogHandler::Error);
         return false;
@@ -174,11 +178,11 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
                             .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
             return false;
         }
-        if(!(fabs(config.d_analogChannels[config.d_fidChannel].fullScale/5.0-scale) < 0.01))
+        if(!(fabs(config.d_analogChannels[config.d_fidChannel].fullScale-scale*5.) < 0.01))
             emit logMessage(QString("Vertical full scale is different than specified. Target: %1 V, Scope setting: %2 V")
                             .arg(QString::number(config.d_analogChannels[config.d_fidChannel].fullScale/5.0,'f',3))
-                            .arg(QString::number(scale*5.0,'f',3)),LogHandler::Warning);
-        config.d_analogChannels[config.d_fidChannel].fullScale = scale*5.0;
+                            .arg(QString::number(scale,'f',3)),LogHandler::Warning);
+        config.d_analogChannels[config.d_fidChannel].fullScale = scale;
     }
     else
     {
@@ -187,8 +191,12 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     }
 
     //horizontal settings
-    if(!p_comm->writeCmd(QString(":HORIZONTAL:MODE MANUAL;:HORIZONTAL:DELAY:MODE ON;:HORIZONTAL:DELAY:POSITION 0;:HORIZONTAL:DELAY:TIME %1;:HORIZONTAL:MODE:SAMPLERATE %2;RECORDLENGTH %3\n")
-                         .arg(QString::number(config.d_triggerDelayUSec,'g',6)).arg(QString::number(config.d_sampleRate,'g',6)).arg(config.d_recordLength)))
+//    if(!p_comm->writeCmd(QString(":HORIZONTAL:MODE MANUAL;:HORIZONTAL:DELAY:MODE ON;:HORIZONTAL:DELAY:POSITION 0;:HORIZONTAL:DELAY:TIME %1;:HORIZONTAL:MODE:SAMPLERATE %2;RECORDLENGTH %3\n")
+//                         .arg(QString::number(config.d_triggerDelayUSec,'g',6)).arg(QString::number(config.d_sampleRate,'g',6)).arg(config.d_recordLength)))
+//    if(!p_comm->writeCmd(QString(":HORIZONTAL:MODE MANUAL;:HORizontal:MODe:MANual:CONFIGure RECORDLENGTH;:HORIZONTAL:DELAY:MODE OFF;:HORIZONTAL:POSITION 0;:HORIZONTAL:MODE:SAMPLERATE %2;:HORIZONTAL:MODE:RECORDLENGTH %3\n")
+//                              .arg(QString::number(config.d_sampleRate,'g',6)).arg(config.d_recordLength)))
+    if(!p_comm->writeCmd(QString(":HORIZONTAL:MODE MANUAL;:HORIZONTAL:DELAY:MODE ON;:HORIZONTAL:DELAY:POSITION 0;:HORIZONTAL:DELAY:TIME %1;:HORIZONTAL:MODE:SAMPLERATE %2;:HORIZONTAL:MODE:RECORDLENGTH %3\n")
+                         .arg(QString::number(config.d_triggerDelayUSec/1000000,'g',6)).arg(QString::number(config.d_sampleRate,'g',6)).arg(config.d_recordLength)))
     {
         emit logMessage(QString("Could not apply horizontal settings."),LogHandler::Error);
         return false;
@@ -256,10 +264,10 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
                             .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
             return false;
         }
-        if(fabs(delay-config.d_triggerDelayUSec) > 1e-6)
+        if(fabs(delay-config.d_triggerDelayUSec/1000000) > 1e-6)
         {
             emit logMessage(QString("Could not set trigger delay successfully! Target: %1, Scope setting: %2")
-                            .arg(QString::number(config.d_triggerDelayUSec))
+                            .arg(QString::number(config.d_triggerDelayUSec/1000000))
                             .arg(QString::number(delay)),LogHandler::Error);    
             return false;
         }
@@ -294,7 +302,31 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     else
     {
         //enable fastframe and disable summary frame; verify
-        resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:STATE ON;SUMFRAME NON;STATE?\n"));
+//        p_comm->writeCmd(QString(":HORIZONTAL:FASTFRAME:STATE ON;:HORIZONTAL:FASTFRAME:SUMFRAME NON;\n"));//:HORIZONTAL:FASTFRAME:STATE?\n"));
+//        resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:STATE ON;SUMFRAME NON;STATE?\n"));
+//        if(!resp.isEmpty())
+//        {
+//            bool ok = false;
+//            bool ffState = (bool)resp.trimmed().toInt(&ok);
+//            if(!ok || !ffState)
+//            {
+//                emit logMessage(QString("Could not enable FastFrame mode."),LogHandler::Error);
+//                return false;
+//            }
+//        }
+//        else
+//        {
+//            emit logMessage(QString("Gave an empty response to FastFrame state query."),LogHandler::Error);
+//            return false;
+//        }
+        p_comm->writeCmd(QString(":HORIZONTAL:FASTFRAME:STATE ON;:HORIZONTAL:FASTFRAME:SUMFRAME NONE\n"));
+
+    	if(!p_comm->writeCmd(QString(":HORIZONTAL:FASTFRAME:STATE ON;:HORIZONTAL:FASTFRAME:SUMFRAME NONE\n")))
+    	{
+        	emit logMessage(QString("Could not set FastFram stuff (Gabi)."),LogHandler::Error);
+        	return false;
+	}
+        resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:STATE?\n"));
         if(!resp.isEmpty())
         {
             bool ok = false;
@@ -334,7 +366,9 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
                 return false;
             }
 
-            resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:COUNT %1;COUNT?\n").arg(numFrames));
+//            resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:COUNT %1;COUNT?\n").arg(numFrames));
+	    p_comm->writeCmd(QString(":HORIZONTAL:FASTFRAME:COUNT %1\n").arg(numFrames));
+            resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:COUNT %1;:HORIZONTAL:FASTFRAME:COUNT?\n").arg(numFrames));
             if(!resp.isEmpty())
             {
                 ok = false;
@@ -359,8 +393,9 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
 
             QString sumfConfig = QString("AVE");
             if(!config.d_blockAverage)
-                sumfConfig = QString("NON");
-            resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:SUMFRAME %1;SUMFRAME?\n").arg(sumfConfig));
+                sumfConfig = QString("NONE");
+//            resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:SUMFRAME %1;SUMFRAME?\n").arg(sumfConfig));
+            resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:SUMFRAME %1;:HORIZONTAL:FASTFRAME:SUMFRAME?\n").arg(sumfConfig));
             if(!resp.isEmpty())
             {
                 if(!QString(resp).contains(sumfConfig,Qt::CaseInsensitive))
@@ -379,7 +414,7 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
             if(config.d_blockAverage)
             {
                 //this forces the scope to only return the final frame, which is the summary frame
-                if(!p_comm->writeCmd(QString(":DATA:FRAMESTART 100000;FRAMESTOP 100000\n")))
+                if(!p_comm->writeCmd(QString(":DATA:FRAMESTART 100000;:DATA:FRAMESTOP 100000\n")))
                 {
                     emit logMessage(QString("Could not configure summary frame."),LogHandler::Error);
                     return false;
@@ -388,7 +423,7 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
             else
             {
                 //this forces the scope to return all frames
-                if(!p_comm->writeCmd(QString(":DATA:FRAMESTART 1;FRAMESTOP 100000\n")))
+                if(!p_comm->writeCmd(QString(":DATA:FRAMESTART 1;:DATA:FRAMESTOP 100000\n")))
                 {
                     emit logMessage(QString("Could not configure frames."),LogHandler::Error);
                     return false;
@@ -408,22 +443,29 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
         slope = QString("FALL");
     QString trigCh = QString("AUX");
     if(config.d_triggerChannel > 0)
+    {
         trigCh = QString("CH%1").arg(config.d_triggerChannel);
-    resp = scopeQueryCmd(QString(":TRIGGER:A:EDGE:SOURCE %1;COUPLING DC;SLOPE %2;:TRIGGER:A:LEVEL %3;:TRIGGER:A:EDGE:SOURCE?;SLOPE?\n")
-                         .arg(trigCh).arg(slope).arg(config.d_triggerLevel,0,'f',3));
+        resp = scopeQueryCmd(QString(":TRIGGER:A:MODE NORMAL;:TRIGGER:A:EDGE:SOURCE %1;COUPLING DC;SLOPE %2;:TRIGGER:A:LEVEL:%1 %3;:TRIGGER:A:EDGE:SOURCE?;SLOPE?\n")
+                                 .arg(trigCh).arg(slope).arg(config.d_triggerLevel,0,'f',3));
+    }
+    else
+    {
+        resp = scopeQueryCmd(QString(":TRIGGER:A:MODE NORMAL;:TRIGGER:A:EDGE:SOURCE %1;COUPLING DC;SLOPE %2;:TRIGGER:AUXLEVEL %3;:TRIGGER:A:EDGE:SOURCE?;SLOPE?\n")
+                                 .arg(trigCh).arg(slope).arg(config.d_triggerLevel,0,'f',3));
+    }
     if(!resp.isEmpty())
     {
         if(!QString(resp).contains(trigCh,Qt::CaseInsensitive))
         {
             emit logMessage(QString("Could not verify trigger channel. Response: %1 (Hex: %2)")
-                            .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
+                                .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
             return false;
         }
 
         if(!QString(resp).contains(slope,Qt::CaseInsensitive))
         {
             emit logMessage(QString("Could not verify trigger slope. Response: %1 (Hex: %2)")
-                            .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
+                                .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
             return false;
         }
     }
@@ -437,26 +479,28 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     if(config.d_blockAverage)
     {
         if(config.d_bytesPerPoint != 2)
-            emit logMessage("Settting bytes per point to 2 for averaging",LogHandler::Warning);
+            emit logMessage("Settting bytes per point to 2 for averaging.",LogHandler::Warning);
         config.d_bytesPerPoint = 2;
-        resp = p_comm->queryCmd(QString(":HORIZONTAL:FASTFRAME:SIXTEENBIT ON;SIXTEENBIT?\n"));
+	p_comm->writeCmd(QString(":HORIZONTAL:FASTFRAME:SIXTEENBIT ON\n"));
+	resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:SIXTEENBIT?\n"));
         if(!resp.contains("1"))
         {
-            emit logMessage("Could not configure scope for 16-bit summary frame",LogHandler::Error);
+//            emit logMessage("Could not configure scope for 16-bit summary frame.",LogHandler::Error);
+            emit logMessage(QString("Could not configure scope for 16-bit summary frame. Response: %1").arg(QString(resp)),LogHandler::Error);
             return false;
         }
     }
     else
         p_comm->writeCmd(QString(":HORIZONTAL:FASTFRAME:SIXTEENBIT OFF\n"));
 
-    if(!p_comm->writeCmd(QString(":WFMOUTPRE:ENCDG BIN;BN_FMT RI;BYT_OR LSB;BYT_NR %1\n").arg(config.d_bytesPerPoint)))
+    if(!p_comm->writeCmd(QString(":WFMOUTPRE:ENCDG BIN;BN_FMT RI;BYT_OR LSB;NR_FR %1;BYT_NR %2\n").arg(config.d_numRecords).arg(config.d_bytesPerPoint)))
     {
         emit logMessage(QString("Could not send waveform output commands."),LogHandler::Error);
         return false;
     }
 
     //acquisition settings
-    if(!p_comm->writeCmd(QString(":ACQUIRE:MODE SAMPLE;STOPAFTER RUNSTOP;STATE RUN\n")))
+    if(!p_comm->writeCmd(QString(":ACQUIRE:MODE SAMPLE;:ACQUIRE:STOPAFTER RUNSTOP;:ACQUIRE:STATE RUN\n")))
     {
         emit logMessage(QString("Could not send acquisition commands."),LogHandler::Error);
         return false;
@@ -512,31 +556,38 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
             return false;
         }
         config.d_byteOrder = DigitizerConfig::LittleEndian;
-
+        
         //verify number of frames
-        if(config.d_multiRecord)
+        if(config.d_multiRecord) // might have to be config.d_multiRecord
         {
+	    resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:COUNT?\n"));
+    	    if(resp.toInt() != config.d_numRecords)
+    	   	{
+    	   		emit logMessage(QString("Waveform contains the wrong number of frames (checked with COUNT?). Target: %1, Actual: %2. Response: %3 (Hex: %4)")
+                                .arg(config.d_numRecords).arg(resp.toInt()).arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
+    	  		return false;
+  		}
+
             if(l.at(3).toInt() != config.d_numRecords)
             {
-                emit logMessage(QString("Waveform contains the wrong number of frames. Target: %1, Actual: %2. Response: %3 (Hex: %4)")
-                                .arg(config.d_numRecords).arg(l.at(3).toInt()).arg(l.at(3)).arg(QString(l.at(3).toLatin1().toHex())),LogHandler::Error);
-                return false;
+                emit logMessage(QString("Waveform contains the wrong number of frames (checked with NR_FR?). Target: %1, Actual: %2. Response: %3 (Hex: %4)")
+                                .arg(config.d_numRecords).arg(l.at(3).toInt()).arg(l.at(3)).arg(QString(l.at(3).toLatin1().toHex())),LogHandler::Warning);
+           //     return false;
             }
         }
-        else if (l.at(3).toInt() != 1)
+        else if(l.at(3).toInt() != 1)
         {
-            emit logMessage(QString("Waveform contains the wrong number of frames. Target: 1. Actual: %1. Response: %2 (Hex: %3)")
+            emit logMessage(QString("Waveform contains the wrong number of frames (value != 1). Target: 1. Actual: %1. Response: %2 (Hex: %3)")
                             .arg(l.at(3).toInt()).arg(l.at(3)).arg(QString(l.at(3).toLatin1().toHex())),LogHandler::Error);
             return false;
-        }
-
+        } 
         //verify record length
         bool ok = false;
         int recLen = l.at(4).toInt(&ok);
         if(!ok)
         {
             emit logMessage(QString("Could not parse waveform record length response. Response: %1 (Hex: %2)")
-                            .arg(l.at(4)).arg(QString(l.at(4).toLatin1().toHex())),LogHandler::Error);
+                                .arg(l.at(4)).arg(QString(l.at(4).toLatin1().toHex())),LogHandler::Error);
             return false;
         }
         if(recLen != config.d_recordLength)
@@ -545,15 +596,19 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
                             .arg(recLen).arg(config.d_recordLength),LogHandler::Warning);
             config.d_recordLength = recLen;
         }
+
+
+
         //verify byte number
         int bpp = l.at(5).mid(0,1).toInt(&ok);
         if(!ok || bpp != config.d_bytesPerPoint)
         {
             emit logMessage(QString("Invalid response to bytes per point query. Response: %1 (Hex: %2)")
-                            .arg(l.at(8)).arg(QString(l.at(8).toLatin1().toHex())),LogHandler::Error);
+                                .arg(l.at(8)).arg(QString(l.at(8).toLatin1().toHex())),LogHandler::Error);
             return false;
         }
     }
+    
 
     auto cfg = dynamic_cast<FtmwDigitizerConfig*>(this);
     if(cfg)
@@ -570,46 +625,55 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     return true;
 }
 
-void Dsa71604c::beginAcquisition()
+void Dpo71254b::beginAcquisition()
 {
     if(d_enabledForExperiment)
     {
-        p_comm->writeCmd(QString(":LOCK ALL;:DISPLAY:WAVEFORM OFF\n"));
+//        p_comm->writeCmd(QString(":LOCK ALL;:DISPLAY:WAVEFORM OFF\n"));
+        p_comm->writeCmd(QString(":UNLOCK ALL;:DISPLAY:WAVEFORM ON\n"));
+       
         if(p_socket->bytesAvailable())
             p_socket->readAll();
-
-        connect(p_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform,Qt::UniqueConnection);
+	
+	p_comm->writeCmd(QString(":ACQUIRE:MODE SAMPLE;:ACQUIRE:STOPAFTER RUNSTOP;:ACQUIRE:STATE RUN\n"));
+        p_comm->writeCmd(QString(":CURVESTREAM\n"));       
         p_comm->writeCmd(QString(":CURVESTREAM?\n"));
-
         d_waitingForReply = true;
         d_foundHeader = false;
         d_headerNumBytes = 0;
         d_waveformBytes = 0;
-        connect(p_scopeTimeout,&QTimer::timeout,this,&Dsa71604c::wakeUp,Qt::UniqueConnection);
+
+        p_scopeTimeout->stop();
+        p_scopeTimeout->start(10000);
+
+        connect(p_scopeTimeout,&QTimer::timeout,this,&Dpo71254b::wakeUp,Qt::UniqueConnection);
+        connect(p_socket,&QTcpSocket::readyRead,this,&Dpo71254b::readWaveform,Qt::UniqueConnection);
     }
 }
 
-void Dsa71604c::endAcquisition()
+void Dpo71254b::endAcquisition()
 {
 
     if(d_enabledForExperiment)
     {
         //stop parsing waveforms
-        disconnect(p_socket,&QTcpSocket::readyRead,this,&Dsa71604c::readWaveform);
-        disconnect(p_scopeTimeout,&QTimer::timeout,this,&Dsa71604c::wakeUp);
+        p_scopeTimeout->stop();
+        disconnect(p_socket,&QTcpSocket::readyRead,this,&Dpo71254b::readWaveform);
+        disconnect(p_scopeTimeout,&QTimer::timeout,this,&Dpo71254b::wakeUp);
 
         if(p_socket->bytesAvailable())
             p_socket->readAll();
 
         //send *CLS command twice to kick scope out of curvestream mode and clear the error queue
+        p_comm->writeCmd(QString(":ACQUIRE:STATE STOP\n"));
         p_comm->writeCmd(QString("*CLS\n"));
         p_comm->writeCmd(QString("*CLS\n"));
-
+        
         if(p_socket->bytesAvailable())
             p_socket->readAll();
-
+            
         p_comm->writeCmd(QString(":UNLOCK ALL;:DISPLAY:WAVEFORM ON\n"));
-
+        
         d_waitingForReply = false;
         d_foundHeader = false;
         d_headerNumBytes = 0;
@@ -617,7 +681,7 @@ void Dsa71604c::endAcquisition()
     }
 }
 
-void Dsa71604c::readWaveform()
+void Dpo71254b::readWaveform()
 {
     if(!d_waitingForReply) // if for some reason the readyread signal weren't disconnected, don't eat all the bytes
         return;
@@ -723,10 +787,10 @@ void Dsa71604c::readWaveform()
     }
 }
 
-void Dsa71604c::wakeUp()
+void Dpo71254b::wakeUp()
 {
     p_scopeTimeout->stop();
-    emit logMessage(QString("Attempting to wake up scope"),LogHandler::Warning);
+    emit logMessage(QString("Attempting to wake up scope."),LogHandler::Warning);
 
     endAcquisition();
 
@@ -740,14 +804,14 @@ void Dsa71604c::wakeUp()
     beginAcquisition();
 }
 
-void Dsa71604c::socketError(QAbstractSocket::SocketError e)
+void Dpo71254b::socketError(QAbstractSocket::SocketError e)
 {
     emit logMessage(QString("Socket error: %1").arg((int)e),LogHandler::Error);
     emit logMessage(QString("Error message: %1").arg(p_socket->errorString()),LogHandler::Error);
     emit hardwareFailure();
 }
 
-QByteArray Dsa71604c::scopeQueryCmd(QString query)
+QByteArray Dpo71254b::scopeQueryCmd(QString query)
 {
     //the scope is flaky. Sometimes, for no apparent reason, it doesn't respond
     //This will retry the query if it fails, suppressing any errors on the first try

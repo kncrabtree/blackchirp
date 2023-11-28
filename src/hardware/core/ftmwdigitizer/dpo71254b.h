@@ -1,24 +1,24 @@
-#ifndef MSO64B_H
-#define MSO64B_H
+#ifndef DPO71254B_H
+#define DPO71254B_H
 
-#include "ftmwscope.h"
+#include <hardware/core/ftmwdigitizer/ftmwscope.h>
 
 #include <QTimer>
 #include <QAbstractSocket>
 
-namespace BC::Key::FtmwScope {
-static const QString mso64b{"mso64b"};
-static const QString mso64bName("Ftmw Oscilloscope MSO64B");
-}
-
 class QTcpSocket;
 
-class MSO64B : public FtmwScope
+namespace BC::Key::FtmwScope {
+static const QString dpo71254b{"DPO71254B"};
+static const QString dpo71254bName("Ftmw Oscilloscope DPO71254B");
+}
+
+class Dpo71254b : public FtmwScope
 {
     Q_OBJECT
 public:
-    explicit MSO64B(QObject *parent = nullptr);
-    ~MSO64B();
+    explicit Dpo71254b(QObject *parent = nullptr);
+    ~Dpo71254b();
 
     // HardwareObject interface
 public slots:
@@ -45,4 +45,4 @@ private:
     QTcpSocket *p_socket;
 };
 
-#endif // MSO64B_H
+#endif // DPO71254B_H
