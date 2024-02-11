@@ -8,19 +8,21 @@ You can configure the appearance of each curve, change which vertical axis a cur
 Zooming and Panning
 -------------------
 
-Zooming is accomplished by using the mouse wheel.
-Scrolling up zooms in, and scrolling down zooms out.
-The zoom limits are determined by the X and Y range spanned by the data.
-By default, zooming in or out will affect the X axis and both Y axes at the same time.
-This behavior can be changed by pressing keys while scrolling:
+Zooming is accomplished by using the mouse wheel or by left-clicking and dragging a rectangle on the plot.
+While dragging a rectangle, press the ``z`` key to cancel.
+With the mouse wheel, scrolling up zooms in, and scrolling down zooms out.
+It is currently not possible to zoom out using the rectangle dragging method.
+By default, zooming will affect the X axis and both Y axes at the same time.
+This behavior can be changed using modifier keys:
 
 - ``Ctrl``: Zoom X axis only; Y axes are fixed.
 - ``Shift``: Zoom both Y axes, keeping X axis fixed.
-- ``Meta`` (Windows key): Zoom left axis only.
-- ``Alt``: Zoom right axis only.
+- ``Meta`` (Windows key): Zoom left axis only (only for scroll zooming).
+- ``Alt``: Zoom right axis only (only for scroll zooming).
 
-To zoom out immediately to the full range of the data, press ``Ctrl`` and left-click the plot.
+To zoom out immediately to the full range of the data, double-click the plot or press the ``Home`` key.
 Alternatively, you can right-click the plot and choose the ``Autoscale`` option.
+The zoom limits are determined by the X and Y range spanned by the data.
 
 Panning the plot is accomplished by middle-clicking anywhere on the plot and dragging.
 Like with zooming, the panning range is limited to the range of the data displayed on the plot, so panning is not possible when the plot is at full scale.
