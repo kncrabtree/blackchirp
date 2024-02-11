@@ -85,7 +85,7 @@ protected:
     CustomZoomer *p_zoomerLB, *p_zoomerRT;
 
     struct AxisConfig {
-        QwtPlot::Axis type;
+        int index{-1};
         bool autoScale {true};
         bool override {false};
         bool overrideAutoScaleRange {false};
@@ -94,11 +94,12 @@ protected:
         double zoomFactor {0.1};
         QString name;
 
-        explicit AxisConfig(QwtPlot::Axis t, const QString n) : type(t), name(n) {}
+        explicit AxisConfig(int i, const QString n) : index(i), name(n) {}
+        AxisConfig() {}
     };
 
     struct PlotConfig {
-        QList<AxisConfig> axisList;
+        std::map<Axis,AxisConfig> axisMap;
 
         bool xDirty{false};
         bool panning{false};
@@ -122,7 +123,6 @@ protected:
 
 private:
     PlotConfig d_config;
-    int getAxisIndex(QwtPlot::Axis a);
     QFutureWatcher<void> *p_watcher;
     bool d_busy{false};
     QMutex *p_mutex;
