@@ -42,6 +42,14 @@ ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),
         axisScaleEngine(d.type)->setAttribute(QwtScaleEngine::Floating);
 
     p_tracker = new CustomTracker(this->canvas());
+    p_zoomerLB = new CustomZoomer(QwtPlot::xBottom,QwtPlot::yLeft,this->canvas());
+    connect(p_zoomerLB,&QwtPlotZoomer::zoomed,[=](QRectF r) {
+        zoom(r,xBottom,yLeft);
+    });
+    p_zoomerRT = new CustomZoomer(QwtPlot::xTop,QwtPlot::yRight,this->canvas());
+    connect(p_zoomerRT,&QwtPlotZoomer::zoomed,[=](QRectF r) {
+        zoom(r,xTop,yRight);
+    });
 
     if(!containsArray(BC::Key::axes))
     {
@@ -281,30 +289,48 @@ void ZoomPanPlot::replot()
 
 
     bool redrawXAxis = false;
+    QRectF zoomerLRect, zoomerRRect;
     for(int i=0; i<d_config.axisList.size(); i++)
     {
         const AxisConfig c = d_config.axisList.at(i);
-        if(c.autoScale)
-        {
+        auto &r = zoomerLRect;
+        if ((c.type == QwtPlot::xTop) || (c.type == QwtPlot::yRight))
+            r = zoomerRRect;
 
-            if((c.type == QwtPlot::xBottom) || (c.type == QwtPlot::xTop))
+        if((c.type == QwtPlot::xBottom) || (c.type == QwtPlot::xTop))
+        {
+            if(c.overrideAutoScaleRange)
             {
-                if(c.overrideAutoScaleRange)
+                if(c.autoScale)
                     setAxisScale(c.type,c.overrideRect.left(),c.overrideRect.right());
-                else
+                r |= c.overrideRect;
+            }
+            else
+            {
+                r |= c.boundingRect;
+                if(c.autoScale)
                 {
                     if(c.boundingRect.width() < 0.0)
                         setAxisScale(c.type,0.0,1.0);
                     else
                         setAxisScale(c.type,c.boundingRect.left(),c.boundingRect.right());
                 }
+            }
+            if(c.autoScale)
                 redrawXAxis = true;
+        }
+        else
+        {
+            if(c.overrideAutoScaleRange)
+            {
+                r |= c.overrideRect;
+                if(c.autoScale)
+                    setAxisScale(c.type,c.overrideRect.top(),c.overrideRect.bottom());
             }
             else
             {
-                if(c.overrideAutoScaleRange)
-                    setAxisScale(c.type,c.overrideRect.top(),c.overrideRect.bottom());
-                else
+                r |= c.boundingRect;
+                if(c.autoScale)
                 {
                     if(c.boundingRect.height() < 0.0)
                         setAxisScale(c.type,0.0,1.0);
@@ -314,6 +340,10 @@ void ZoomPanPlot::replot()
             }
         }
     }
+    if (zoomerLRect != p_zoomerLB->zoomBase())
+        p_zoomerLB->setZoomBase(zoomerLRect);
+    if (zoomerRRect != p_zoomerRT->zoomBase())
+        p_zoomerRT->setZoomBase(zoomerRRect);
     p_mutex->unlock();
 
     if(redrawXAxis)
@@ -543,12 +573,6 @@ bool ZoomPanPlot::eventFilter(QObject *obj, QEvent *ev)
                     ev->accept();
                     return true;
                 }
-                else if(me->button() == Qt::LeftButton && (me->modifiers() & Qt::ControlModifier))
-                {
-                    autoScale();
-                    ev->accept();
-                    return true;
-                }
                 else if(me->button() == Qt::RightButton)
                 {
                     emit plotRightClicked(me);
@@ -556,6 +580,12 @@ bool ZoomPanPlot::eventFilter(QObject *obj, QEvent *ev)
                     return true;
                 }
             }
+        }
+        else if(ev->type() == QEvent::MouseButtonDblClick)
+        {
+            autoScale();
+            ev->accept();
+            return true;
         }
         else if(ev->type() == QEvent::MouseMove)
         {
@@ -573,6 +603,44 @@ bool ZoomPanPlot::eventFilter(QObject *obj, QEvent *ev)
                 zoom(dynamic_cast<QWheelEvent*>(ev));
                 ev->accept();
                 return true;
+            }
+        }
+        else if(ev->type() == QEvent::KeyPress)
+        {
+            QKeyEvent *ke = dynamic_cast<QKeyEvent*>(ev);
+            if(ke->key() == Qt::Key_Control)
+            {
+                p_zoomerLB->lockY(true);
+                p_zoomerRT->lockY(true);
+                d_config.zoomYLock = true;
+            }
+            if(ke->key() == Qt::Key_Shift)
+            {
+                p_zoomerLB->lockX(true);
+                p_zoomerRT->lockX(true);
+                d_config.zoomXLock = true;
+            }
+            if(ke->key() == Qt::Key_Home)
+            {
+                autoScale();
+                ev->accept();
+                return true;
+            }
+        }
+        else if(ev->type() == QEvent::KeyRelease)
+        {
+            QKeyEvent *ke = dynamic_cast<QKeyEvent*>(ev);
+            if(ke->key() == Qt::Key_Control)
+            {
+                p_zoomerLB->lockY(false);
+                p_zoomerRT->lockY(false);
+                d_config.zoomYLock = false;
+            }
+            if(ke->key() == Qt::Key_Shift)
+            {
+                p_zoomerLB->lockX(false);
+                p_zoomerRT->lockX(false);
+                d_config.zoomXLock = false;
             }
         }
     }
@@ -710,6 +778,36 @@ void ZoomPanPlot::zoom(QWheelEvent *we)
         }
     }
     p_mutex->unlock();
+
+    replot();
+}
+
+void ZoomPanPlot::zoom(const QRectF &rect, Axis xAx, Axis yAx)
+{
+    QRectF clipRect;
+    p_mutex->lock();
+    auto xlock = d_config.zoomXLock;
+    auto ylock = d_config.zoomYLock;
+    for(int i=0; i<d_config.axisList.size(); i++)
+    {
+        auto c = d_config.axisList.at(i);
+        if(c.type == xAx || c.type == yAx)
+        {
+            d_config.axisList[i].autoScale = false;
+            if(c.overrideAutoScaleRange)
+                clipRect |= c.overrideRect;
+            else
+                clipRect |= c.boundingRect;
+        }
+    }
+    p_mutex->unlock();
+
+    auto r = clipRect & rect;
+
+    if(!xlock)
+        setAxisScale(xAx,qMin(r.left(), r.right()),qMax(r.left(), r.right()));
+    if(!ylock)
+        setAxisScale(yAx,qMin(r.bottom(), r.top()),qMax(r.bottom(), r.top()));
 
     replot();
 }

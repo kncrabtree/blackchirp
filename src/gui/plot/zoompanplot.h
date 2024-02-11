@@ -9,6 +9,7 @@
 #include <qwt6/qwt_scale_engine.h>
 
 #include <data/storage/settingsstorage.h>
+#include <gui/plot/customzoomer.h>
 
 class QMenu;
 class CustomTracker;
@@ -81,6 +82,8 @@ protected:
     int d_maxIndex;
     QwtPlotGrid *p_grid;
     CustomTracker *p_tracker;
+    CustomZoomer *p_zoomerLB, *p_zoomerRT;
+
     struct AxisConfig {
         QwtPlot::Axis type;
         bool autoScale {true};
@@ -101,6 +104,8 @@ protected:
         bool panning{false};
         bool spectrogramMode{false};
         QPoint panClickPos;
+        bool zoomXLock{false};
+        bool zoomYLock{false};
     };
 
     void setAxisOverride(QwtPlot::Axis axis, bool override = true);
@@ -110,6 +115,7 @@ protected:
     virtual bool eventFilter(QObject *obj, QEvent *ev);
     virtual void pan(QMouseEvent *me);
     virtual void zoom(QWheelEvent *we);
+    virtual void zoom(const QRectF &rect, QwtPlot::Axis xAx, QwtPlot::Axis yAx);
 
     virtual void buildContextMenu(QMouseEvent *me);
     virtual QMenu *contextMenu();

@@ -8,6 +8,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/plot/blackchirpplotcurve.cpp \
     $$PWD/plot/chirpconfigplot.cpp \
     $$PWD/plot/customtracker.cpp \
+    $$PWD/plot/customzoomer.cpp \
     $$PWD/plot/fidplot.cpp \
     $$PWD/plot/ftplot.cpp \
     $$PWD/plot/pulseplot.cpp \
@@ -60,6 +61,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/plot/blackchirpplotcurve.h \
     $$PWD/plot/chirpconfigplot.h \
     $$PWD/plot/customtracker.h \
+    $$PWD/plot/customzoomer.h \
     $$PWD/plot/fidplot.h \
     $$PWD/plot/ftplot.h \
     $$PWD/plot/pulseplot.h \
