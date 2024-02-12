@@ -37,7 +37,7 @@ ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),
     d_config.axisMap.insert({xBottom,AxisConfig(2,BC::Key::bottom)});
     d_config.axisMap.insert({xTop,AxisConfig(3,BC::Key::top)});
 
-
+    d_config.keyZoomYCenter = get(BC::Key::kzCenter,false);
 
     for(auto &[t,d] : d_config.axisMap)
         axisScaleEngine(t)->setAttribute(QwtScaleEngine::Floating);
@@ -379,6 +379,12 @@ void ZoomPanPlot::setZoomFactor(QwtPlot::Axis a, double v)
     setArrayValue(BC::Key::axes,d.index,BC::Key::zoomFactor,v);
 }
 
+void ZoomPanPlot::setKeyZoomYCenter(bool en)
+{
+    set(BC::Key::kzCenter,en);
+    d_config.keyZoomYCenter = en;
+}
+
 void ZoomPanPlot::setTrackerEnabled(bool en)
 {
     set(BC::Key::trackerEn,en);
@@ -633,6 +639,111 @@ bool ZoomPanPlot::eventFilter(QObject *obj, QEvent *ev)
                 ev->accept();
                 return true;
             }
+            if(ke->key() == Qt::Key_Up)
+            {
+                if(ke->modifiers() & Qt::ControlModifier)
+                {
+                    zoom(yLeft,1.0/1.5);
+                    zoom(yRight,1.0/1.5);
+                    ev->accept();
+                    return true;
+                }
+                if(ke->modifiers() & Qt::ShiftModifier)
+                {
+                    zoom(yLeft,1.0/1.1);
+                    zoom(yRight,1.0/1.1);
+                    ev->accept();
+                    return true;
+                }
+                if(ke->modifiers() & Qt::AltModifier)
+                {
+                    panV(0.1);
+                    ev->accept();
+                    return true;
+                }
+                panV(0.5);
+                ev->accept();
+                return true;
+            }
+            if(ke->key() == Qt::Key_Down)
+            {
+                if(ke->modifiers() & Qt::ControlModifier)
+                {
+                    zoom(yLeft,1.5);
+                    zoom(yRight,1.5);
+                    ev->accept();
+                    return true;
+                }
+                if(ke->modifiers() & Qt::ShiftModifier)
+                {
+                    zoom(yLeft,1.1);
+                    zoom(yRight,1.1);
+                    ev->accept();
+                    return true;
+                }
+                if(ke->modifiers() & Qt::AltModifier)
+                {
+                    panV(-0.1);
+                    ev->accept();
+                    return true;
+                }
+                panV(-0.5);
+                ev->accept();
+                return true;
+            }
+            if(ke->key() == Qt::Key_Left)
+            {
+                if(ke->modifiers() & Qt::ControlModifier)
+                {
+                    zoom(xBottom,1.5);
+                    zoom(xTop,1.5);
+                    ev->accept();
+                    return true;
+                }
+                if(ke->modifiers() & Qt::ShiftModifier)
+                {
+                    zoom(xBottom,1.1);
+                    zoom(xTop,1.1);
+                    ev->accept();
+                    return true;
+                }
+                if(ke->modifiers() & Qt::AltModifier)
+                {
+                    panH(-0.1);
+                    ev->accept();
+                    return true;
+                }
+                panH(-0.5);
+                ev->accept();
+                return true;
+            }
+            if(ke->key() == Qt::Key_Right)
+            {
+                if(ke->modifiers() & Qt::ControlModifier)
+                {
+                    zoom(xBottom,1.0/1.5);
+                    zoom(xTop,1.0/1.5);
+                    ev->accept();
+                    return true;
+                }
+                if(ke->modifiers() & Qt::ShiftModifier)
+                {
+                    zoom(xBottom,1.0/1.1);
+                    zoom(xTop,1.0/1.1);
+                    ev->accept();
+                    return true;
+                }
+                if(ke->modifiers() & Qt::AltModifier)
+                {
+                    panH(0.1);
+                    ev->accept();
+                    return true;
+                }
+                panH(0.5);
+                ev->accept();
+                return true;
+            }
+
         }
         else if(ev->type() == QEvent::KeyRelease)
         {
@@ -701,6 +812,72 @@ void ZoomPanPlot::pan(QMouseEvent *me)
 
     d_config.panClickPos = me->pos();
     p_mutex->unlock();
+
+    replot();
+}
+
+void ZoomPanPlot::panH(double factor)
+{
+    auto br = getLimitRect(xBottom,yLeft);
+    auto tr = getLimitRect(xTop,yRight);
+
+    auto ll1 = br.left();
+    auto ul1 = br.right();
+
+    auto ll2 = tr.left();
+    auto ul2 = tr.right();
+
+    auto s1 = axisScaleDiv(xBottom);
+    auto s2 = axisScaleDiv(xTop);
+
+    auto d1 = qAbs(s1.upperBound() - s1.lowerBound())*factor;
+    auto d2 = qAbs(s2.upperBound() - s2.lowerBound())*factor;
+
+    if(s1.lowerBound() + d1 < ll1)
+        d1 = ll1 - s1.lowerBound();
+    if(s1.upperBound() + d1 > ul1)
+        d1 = ul1 - s1.upperBound();
+
+    if(s2.lowerBound() + d2 < ll2)
+        d2 = ll2 - s2.lowerBound();
+    if(s2.upperBound() + d2 > ul2)
+        d2 = ul2 - s2.upperBound();
+
+    setAxisScale(xBottom,s1.lowerBound() + d1,s1.upperBound() + d1);
+    setAxisScale(xTop,s2.lowerBound() + d2,s2.upperBound() + d2);
+
+    replot();
+}
+
+void ZoomPanPlot::panV(double factor)
+{
+    auto br = getLimitRect(xBottom,yLeft);
+    auto tr = getLimitRect(xTop,yRight);
+
+    auto ll1 = br.top();
+    auto ul1 = br.bottom();
+
+    auto ll2 = tr.top();
+    auto ul2 = tr.bottom();
+
+    auto s1 = axisScaleDiv(yLeft);
+    auto s2 = axisScaleDiv(yRight);
+
+    auto d1 = qAbs(s1.upperBound() - s1.lowerBound())*factor;
+    auto d2 = qAbs(s2.upperBound() - s2.lowerBound())*factor;
+
+    if(s1.lowerBound() + d1 < ll1)
+        d1 = ll1 - s1.lowerBound();
+    if(s1.upperBound() + d1 > ul1)
+        d1 = ul1 - s1.upperBound();
+
+    if(s2.lowerBound() + d2 < ll2)
+        d2 = ll2 - s2.lowerBound();
+    if(s2.upperBound() + d2 > ul2)
+        d2 = ul2 - s2.upperBound();
+
+    setAxisScale(yLeft,s1.lowerBound() + d1,s1.upperBound() + d1);
+    setAxisScale(yRight,s2.lowerBound() + d2,s2.upperBound() + d2);
 
     replot();
 }
@@ -786,24 +963,15 @@ void ZoomPanPlot::zoom(QWheelEvent *we)
 
 void ZoomPanPlot::zoom(const QRectF &rect, Axis xAx, Axis yAx)
 {
-    QRectF clipRect;
+
     p_mutex->lock();
     auto xlock = d_config.zoomXLock;
     auto ylock = d_config.zoomYLock;
-    for(auto &[t,d] : d_config.axisMap)
-    {
-        if(t == xAx || t == yAx)
-        {
-            d.autoScale = false;
-            if(d.overrideAutoScaleRange)
-                clipRect |= d.overrideRect;
-            else
-                clipRect |= d.boundingRect;
-        }
-    }
+    d_config.axisMap[xAx].autoScale = false;
+    d_config.axisMap[yAx].autoScale = false;
     p_mutex->unlock();
 
-    auto r = clipRect & rect;
+    auto r = getLimitRect(xAx,yAx) & rect;
 
     if(!xlock)
         setAxisScale(xAx,qMin(r.left(), r.right()),qMax(r.left(), r.right()));
@@ -811,6 +979,70 @@ void ZoomPanPlot::zoom(const QRectF &rect, Axis xAx, Axis yAx)
         setAxisScale(yAx,qMin(r.bottom(), r.top()),qMax(r.bottom(), r.top()));
 
     replot();
+}
+
+void ZoomPanPlot::zoom(Axis ax, double factor)
+{
+    double scaleMin = axisScaleDiv(ax).lowerBound();
+    double scaleMax = axisScaleDiv(ax).upperBound();
+
+
+
+    p_mutex->lock();
+    d_config.axisMap[ax].autoScale = false;
+    auto r = d_config.axisMap[ax].boundingRect;
+    if(d_config.axisMap[ax].overrideAutoScaleRange)
+        r = d_config.axisMap[ax].overrideRect;
+    p_mutex->unlock();
+
+    auto w = scaleMax - scaleMin;
+    auto extend = w*(factor-1.0);
+    auto newMin = scaleMin - extend;
+    auto newMax = scaleMax + extend;
+
+    if((ax == xBottom) || (ax==xTop))
+    {
+        newMin = qMax(r.left(),newMin);
+        newMax = qMin(r.right(),newMax);
+    }
+    else
+    {
+        if(!d_config.keyZoomYCenter) //make zoom symmetric about 0
+        {
+            double corr = 2.0;
+            if((r.top() < 0.0 && r.bottom() <= 0.0) || (r.bottom() > 0.0 && r.top()>=0.0))
+                corr = 1.0;//correction if bounding rect is only positive or negative (eg ft plot)
+            newMax = w/corr*(factor);
+            newMin = -w/corr*(factor);
+        }
+        newMin = qMax(r.top(),newMin);
+        newMax = qMin(r.bottom(),newMax);
+    }
+
+    setAxisScale(ax,newMin,newMax);
+
+    replot();
+
+}
+
+QRectF ZoomPanPlot::getLimitRect(Axis xAx, Axis yAx) const
+{
+    QRectF LimitRect;
+    p_mutex->lock();
+    auto &xa = d_config.axisMap.at(xAx);
+    auto &ya = d_config.axisMap.at(yAx);
+    if(xa.overrideAutoScaleRange)
+        LimitRect |= xa.overrideRect;
+    else
+        LimitRect |= xa.boundingRect;
+
+    if(ya.overrideAutoScaleRange)
+        LimitRect |= ya.overrideRect;
+    else
+        LimitRect |= ya.boundingRect;
+    p_mutex->unlock();
+
+    return LimitRect;
 }
 
 void ZoomPanPlot::buildContextMenu(QMouseEvent *me)
@@ -827,11 +1059,20 @@ QMenu *ZoomPanPlot::contextMenu()
     QAction *asAction = menu->addAction(QString("Autoscale"));
     connect(asAction,&QAction::triggered,this,&ZoomPanPlot::autoScale);
 
-    QMenu *zoomMenu = menu->addMenu(QString("Wheel zoom factor"));
+    QMenu *zoomMenu = menu->addMenu(QString("Zoom Settings"));
     QWidgetAction *zwa = new QWidgetAction(zoomMenu);
     QWidget *zw = new QWidget(zoomMenu);
     QFormLayout *zfl = new QFormLayout(zw);
 
+    auto *kzBox = new QCheckBox();
+    kzBox->setChecked(d_config.keyZoomYCenter);
+    kzBox->setToolTip(QString("If checked, zooming with up/down arrows will be symmetric about the center of the plot.\nOtherwise, the zoom will be symmetric about 0."));
+    connect(kzBox,&QCheckBox::toggled,this,&ZoomPanPlot::setKeyZoomYCenter);
+    zfl->addRow(QString("Y Center?"),kzBox);
+
+    auto *zlbl = new QLabel("Wheel Zoom Factors");
+    zlbl->setAlignment(Qt::AlignCenter);
+    zfl->addWidget(zlbl);
 
     QMenu *trackMenu = menu->addMenu(QString("Tracker"));
     QWidgetAction *twa = new QWidgetAction(trackMenu);

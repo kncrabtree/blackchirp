@@ -24,6 +24,7 @@ static const QString bottom{"Bottom"};
 static const QString top{"Top"};
 static const QString left{"Left"};
 static const QString right{"Right"};
+static const QString kzCenter{"keyZoomYCenter"};
 static const QString zoomFactor{"zoomFactor"};
 static const QString trackerDecimals{"trackerDecimals"};
 static const QString trackerScientific{"trackerScientific"};
@@ -57,6 +58,7 @@ public slots:
     void clearAxisAutoScaleOverride(QwtPlot::Axis a);
     virtual void replot();
     void setZoomFactor(QwtPlot::Axis a, double v);
+    void setKeyZoomYCenter(bool en);
     void setTrackerEnabled(bool en);
     void setTrackerDecimals(QwtPlot::Axis a, int dec);
     void setTrackerScientific(QwtPlot::Axis a, bool sci);
@@ -107,6 +109,7 @@ protected:
         QPoint panClickPos;
         bool zoomXLock{false};
         bool zoomYLock{false};
+        bool keyZoomYCenter{false};
     };
 
     void setAxisOverride(QwtPlot::Axis axis, bool override = true);
@@ -115,8 +118,12 @@ protected:
     virtual void resizeEvent(QResizeEvent *ev);
     virtual bool eventFilter(QObject *obj, QEvent *ev);
     virtual void pan(QMouseEvent *me);
+    virtual void panH(double factor);
+    virtual void panV(double factor);
     virtual void zoom(QWheelEvent *we);
     virtual void zoom(const QRectF &rect, QwtPlot::Axis xAx, QwtPlot::Axis yAx);
+    virtual void zoom(Axis ax, double factor);
+    virtual QRectF getLimitRect(Axis xAx, Axis yAx) const;
 
     virtual void buildContextMenu(QMouseEvent *me);
     virtual QMenu *contextMenu();
