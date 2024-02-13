@@ -1,8 +1,10 @@
 #ifndef CUSTOMZOOMER_H
 #define CUSTOMZOOMER_H
 
+#include <qwt6/qwt_plot.h>
 #include <qwt6/qwt_plot_zoomer.h>
 
+using QwtAxisId = QwtPlot::Axis;
 
 class CustomZoomer : public QwtPlotZoomer
 {
