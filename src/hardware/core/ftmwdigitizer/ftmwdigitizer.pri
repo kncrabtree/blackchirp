@@ -52,6 +52,6 @@ equals(FTMWSCOPE,7) {
 }
 
 equals(FTMWSCOPE,8) {
-     SOURCES += $$PWD/dpo72004.cpp
-	 HEADERS += $$PWD/dpo72004.h
+     SOURCES +=
+	 HEADERS +=
 }

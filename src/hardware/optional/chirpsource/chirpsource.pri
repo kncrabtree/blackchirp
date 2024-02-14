@@ -25,6 +25,10 @@
 	}
         equals(AWG,5) {
             HEADERS += $$PWD/awg5204.h
-            SOURCES += $$PWD/awg5204.cpp
+                SOURCES += $$PWD/awg5204.cpp
+        }
+        equals(AWG,6) {
+            HEADERS += $$PWD/m8190.h
+                SOURCES += $$PWD/m8190.cpp
         }
 }
