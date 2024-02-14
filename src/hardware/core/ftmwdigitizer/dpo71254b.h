@@ -17,7 +17,7 @@ class Dpo71254b : public FtmwScope
 {
     Q_OBJECT
 public:
-    explicit Dpo71254b(QObject *parent = nullptr);
+    Dpo71254b(QObject *parent = nullptr);
     ~Dpo71254b();
 
     // HardwareObject interface
@@ -31,8 +31,8 @@ public slots:
     void socketError(QAbstractSocket::SocketError e);
 
 protected:
-    void initialize() override;
     bool testConnection() override;
+    void initialize() override;
 
 private:
     bool d_waitingForReply;

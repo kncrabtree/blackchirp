@@ -77,6 +77,10 @@ typedef M8195A AwgHardware;
 #include "awg5204.h"
 class AWG5204;
 typedef AWG5204 AwgHardware;
+#elif BC_AWG==6
+#include "m8190.h"
+class M8190;
+typedef M8190 AwgHardware;
 #endif
 #endif
 

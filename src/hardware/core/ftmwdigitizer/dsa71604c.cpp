@@ -113,7 +113,7 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     }
 
     //write data transfer commands
-    if(!p_comm->writeCmd(QString(":DATA:SOURCE CH%1;START 1;STOP 1E12\n").arg(config.d_fidChannel)))
+    if(!p_comm->writeCmd(QString(":DATA:SOURCE CH%1;START 1;STOP 200000\n").arg(config.d_fidChannel)))
     {
         emit logMessage(QString("Could not write :DATA commands."),LogHandler::Error);
         return false;
@@ -133,7 +133,7 @@ bool Dsa71604c::prepareForExperiment(Experiment &exp)
     }
 
 //    if(!d_comm->writeCmd(QString("CH%1:BANDWIDTH:ENHANCED OFF; CH%1:BANDWIDTH 1.6+10; COUPLING AC;OFFSET 0;SCALE %2\n").arg(config.fidChannel).arg(QString::number(config.vScale,'g',4))))
-    if(!p_comm->writeCmd(QString("CH%1:BANDWIDTH FULL; COUPLING AC;OFFSET %2;SCALE %3\n")
+    if(!p_comm->writeCmd(QString(":CH%1:BANDWIDTH FULL; COUPLING AC;OFFSET %2;SCALE %3\n")
                          .arg(config.d_fidChannel)
                          .arg(QString::number(config.d_analogChannels[config.d_fidChannel].offset,'g',4))
                          .arg(QString::number(config.d_analogChannels[config.d_fidChannel].fullScale/5.0,'g',4))))
