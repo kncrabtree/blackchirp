@@ -4,7 +4,7 @@
 #include <qwt6/qwt_plot.h>
 #include <qwt6/qwt_plot_zoomer.h>
 
-using QwtAxisId = QwtPlot::Axis;
+using QwtAxisId = int;
 
 class CustomZoomer : public QwtPlotZoomer
 {
