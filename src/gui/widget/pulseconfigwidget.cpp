@@ -349,64 +349,64 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig &c)
     if(!awgHasProt && c.d_rfConfig.d_chirpConfig.numChirps() > 1)
         QMessageBox::warning(this,QString("Warning: multiple chirps"),QString("You have requested multiple chirps, and your AWG cannot generate its own protection signal.\nBlackchirp does not know how to configure your delay generator to generate a protection signal with each chirp.\n\nProceed at your own risk."),QMessageBox::Ok,QMessageBox::Ok);
 
-    if(pGenCanSync)
-    {
-        if(ampChannel >= 0 && awgChannel >=0)
-        {
-            if(d_config.d_channels.at(ampChannel).syncCh != protChannel + 1 ||
-                    d_config.d_channels.at(awgChannel).syncCh != ampChannel + 1)
-                QMessageBox::warning(this,"Configuration notice","Blackchirp will change the sync sources for the Amp and AWG channels according to the sequence Prot -> Amp -> AWG.",QMessageBox::Ok,QMessageBox::Ok);
-        }
-        else if(awgChannel >= 0)
-        {
-            if(d_config.d_channels.at(awgChannel).syncCh != protChannel + 1)
-                QMessageBox::warning(this,"Configuration notice","Blackchirp will change the sync source for the AWG channel to the Prot channel.",QMessageBox::Ok,QMessageBox::Ok);
-        }
-    }
+//    if(pGenCanSync)
+//    {
+//        if(ampChannel >= 0 && awgChannel >=0)
+//        {
+//            if(d_config.d_channels.at(ampChannel).syncCh != protChannel + 1 ||
+//                    d_config.d_channels.at(awgChannel).syncCh != ampChannel + 1)
+//                QMessageBox::warning(this,"Configuration notice","Blackchirp will change the sync sources for the Amp and AWG channels according to the sequence Prot -> Amp -> AWG.",QMessageBox::Ok,QMessageBox::Ok);
+//        }
+//        else if(awgChannel >= 0)
+//        {
+//            if(d_config.d_channels.at(awgChannel).syncCh != protChannel + 1)
+//                QMessageBox::warning(this,"Configuration notice","Blackchirp will change the sync source for the AWG channel to the Prot channel.",QMessageBox::Ok,QMessageBox::Ok);
+//        }
+//    }
 
     if(d_widgetList.isEmpty())
         return;
 
-    auto cc = c.d_rfConfig.d_chirpConfig;
-    d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::EnabledSetting,true);
-    d_config.setCh(PulseGenConfig::Prot,PulseGenConfig::EnabledSetting,true);
-    d_config.setCh(PulseGenConfig::Amp,PulseGenConfig::EnabledSetting,true);
+//    auto cc = c.d_rfConfig.d_chirpConfig;
+//    d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::EnabledSetting,true);
+//    d_config.setCh(PulseGenConfig::Prot,PulseGenConfig::EnabledSetting,true);
+//    d_config.setCh(PulseGenConfig::Amp,PulseGenConfig::EnabledSetting,true);
 
-    double protStart = d_config.setting(PulseGenConfig::Prot,PulseGenConfig::DelaySetting).toDouble();
-    double ampStart = cc.preChirpProtectionDelay();
-    if(!pGenCanSync)
-        ampStart += protStart;
-    else
-        d_config.setCh(PulseGenConfig::Amp,PulseGenConfig::SyncSetting,protChannel+1);
-    double awgStart = cc.preChirpGateDelay();
-    if(!pGenCanSync)
-        awgStart += ampStart;
-    else
-    {
-        if(ampChannel < 0)
-            d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::SyncSetting,protChannel+1);
-        else
-            d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::SyncSetting,ampChannel+1);
-    }
+//    double protStart = d_config.setting(PulseGenConfig::Prot,PulseGenConfig::DelaySetting).toDouble();
+//    double ampStart = cc.preChirpProtectionDelay();
+//    if(!pGenCanSync)
+//        ampStart += protStart;
+//    else
+//        d_config.setCh(PulseGenConfig::Amp,PulseGenConfig::SyncSetting,protChannel+1);
+//    double awgStart = cc.preChirpGateDelay();
+//    if(!pGenCanSync)
+//        awgStart += ampStart;
+//    else
+//    {
+//        if(ampChannel < 0)
+//            d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::SyncSetting,protChannel+1);
+//        else
+//            d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::SyncSetting,ampChannel+1);
+//    }
 
-    double protWidth = cc.totalProtectionWidth();
-    double gateWidth = cc.totalGateWidth();
+//    double protWidth = cc.totalProtectionWidth();
+//    double gateWidth = cc.totalGateWidth();
 
-    d_config.setCh(PulseGenConfig::Prot,PulseGenConfig::WidthSetting,protWidth);
-    d_config.setCh(PulseGenConfig::Amp,PulseGenConfig::DelaySetting,ampStart);
-    d_config.setCh(PulseGenConfig::Amp,PulseGenConfig::WidthSetting,gateWidth);
-    d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::DelaySetting,awgStart);
+//    d_config.setCh(PulseGenConfig::Prot,PulseGenConfig::WidthSetting,protWidth);
+//    d_config.setCh(PulseGenConfig::Amp,PulseGenConfig::DelaySetting,ampStart);
+//    d_config.setCh(PulseGenConfig::Amp,PulseGenConfig::WidthSetting,gateWidth);
+//    d_config.setCh(PulseGenConfig::AWG,PulseGenConfig::DelaySetting,awgStart);
 
 
     setFromConfig(d_config);
 
 
-    lockChannel(ampChannel);
-    lockChannel(protChannel);
-    lockChannel(awgChannel);
+//    lockChannel(ampChannel);
+//    lockChannel(protChannel);
+//    lockChannel(awgChannel);
 
-    if(pGenCanSync && protChannel >= 0)
-        d_widgetList.at(protChannel).delayBox->setEnabled(true);
+//    if(pGenCanSync && protChannel >= 0)
+//        d_widgetList.at(protChannel).delayBox->setEnabled(true);
 
 
 

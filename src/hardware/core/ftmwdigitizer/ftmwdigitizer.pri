@@ -46,3 +46,9 @@ equals(N,MSO64B) {
 	HEADERS += $$PWD/mso64b.h
 	SOURCES += $$PWD/mso64b.cpp
 }
+
+equals(N,DSOV204A) {
+    DEFINES += BC_FTMWSCOPE=DSOv204A BC_FTMWSCOPE_H=dsov204a.h
+     SOURCES += $$PWD/dsov204a.cpp
+	 HEADERS += $$PWD/dsov204a.h
+}

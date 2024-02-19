@@ -12,13 +12,5 @@ FtmwDigitizerConfigWidget::FtmwDigitizerConfigWidget(QWidget *parent) :
 
 void FtmwDigitizerConfigWidget::configureForChirp(int numChirps)
 {
-    if(p_blockAverageBox->isChecked())
-        p_numAveragesBox->setValue(numChirps);
-    else if(p_multiRecordBox->isChecked())
-        p_numRecordsBox->setValue(numChirps);
-    else
-    {
-        p_numAveragesBox->setValue(numChirps);
-        p_numRecordsBox->setValue(numChirps);
-    }
+    p_numRecordsBox->setValue(numChirps);
 }

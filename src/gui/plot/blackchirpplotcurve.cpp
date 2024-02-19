@@ -66,6 +66,11 @@ void BlackchirpPlotCurveBase::setMarkerSize(int s)
     configureSymbol();
 }
 
+void BlackchirpPlotCurveBase::setName(const QString t)
+{
+    setTitle(t);
+}
+
 void BlackchirpPlotCurveBase::setCurveVisible(bool v)
 {
     set(BC::Key::bcCurveVisible,v);

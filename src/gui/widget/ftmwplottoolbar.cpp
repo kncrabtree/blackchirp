@@ -55,6 +55,7 @@ FtmwPlotToolBar::FtmwPlotToolBar(QWidget *parent) : QToolBar(parent)
 
         auto fb = new SpinBoxWidgetAction("Frame",this);
         fb->setRange(1,1);
+        fb->setSpecialValueText(QString("Average"));
         connect(fb,&SpinBoxWidgetAction::valueChanged,[this,i](){ emit plotSettingChanged(i); });
         d_frame.insert({i,fb});
         addAction(fb);
@@ -124,6 +125,8 @@ void FtmwPlotToolBar::prepareForExperiment(const Experiment &e)
         {
             it->second->blockSignals(true);
             it->second->setRange(1,e.ftmwConfig()->d_scopeConfig.d_numRecords);
+            if(e.ftmwConfig()->d_scopeConfig.d_numRecords > 1)
+                it->second->setMinimum(0);
             it->second->blockSignals(false);
         }
         for(auto it = d_backup.begin(); it != d_backup.end(); ++it)
@@ -133,6 +136,7 @@ void FtmwPlotToolBar::prepareForExperiment(const Experiment &e)
             it->second->setEnabled(false);
             it->second->blockSignals(false);
         }
+
     }
 
 

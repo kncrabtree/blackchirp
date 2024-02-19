@@ -297,6 +297,13 @@ The actual number of records able to be acquired may be limited by the record le
                 p_blockAverageBox->setChecked(false);
         });
     }
+    else
+    {
+        p_multiRecordBox->setEnabled(true);
+        p_numRecordsBox->setEnabled(true);
+        p_blockAverageBox->setEnabled(true);
+        p_numAveragesBox->setEnabled(true);
+    }
 
     if(get(lBlockAvg,false))
         p_blockAverageBox->setChecked(true);

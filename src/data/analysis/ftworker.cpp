@@ -32,13 +32,34 @@ FtWorker::~FtWorker()
     }
 }
 
-Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings, int id, bool doubleSideband)
+Ft FtWorker::doFT(const FidList fl, const FidProcessingSettings &settings, int frame, int id, bool doubleSideband)
 {
+    if(fl.isEmpty() || frame >= fl.size())
+    {
+        if(id > -1)
+        {
+            emit fidDone({},1.0,0.0,0.0,0,id);
+            emit ftDone(Ft(), id);
+        }
+        return Ft();
+    }
+
+    //frame -1 means average all frames
+    Fid fid;
+    if(frame < 0)
+    {
+        fid = fl.at(0);
+        for(int i=1; i<fl.size(); i++)
+            fid += fl.at(i);
+    }
+    else
+        fid = fl.value(frame,Fid());
+
     if(fid.size() < 2)
     {
         if(id > -1)
         {
-            emit fidDone({},1.0,0.0,0.0,id);
+            emit fidDone({},1.0,0.0,0.0,0,id);
             emit ftDone(Ft(), id);
         }
         return Ft();
@@ -49,7 +70,7 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings, int id, 
     //first, apply any filtering that needs to be done
     auto fidResult = filterFid(fid,settings);
     if(id > -1)
-        emit fidDone(fidResult.fid,fid.spacing()*1e6,fidResult.min,fidResult.max,id);
+        emit fidDone(fidResult.fid,fid.spacing()*1e6,fidResult.min,fidResult.max,fid.shots(),id);
     auto fftData = fidResult.fid;
     auto s = fftData.size();
 
@@ -152,16 +173,25 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings, int id, 
     return spectrum;
 }
 
-void FtWorker::doFtDiff(const Fid ref, const Fid diff, const FidProcessingSettings &settings)
+void FtWorker::doFtDiff(const FidList refList, const FidList diffList, int refFrame, int diffFrame, const FidProcessingSettings &settings)
 {
-    if(ref.size() != diff.size() || ref.sideband() != diff.sideband())
+    if(refList.size() != diffList.size())
         return;
 
-    if(!qFuzzyCompare(ref.spacing(),diff.spacing()))
-        return;
+    for(int i=0; i<refList.size(); i++)
+    {
+        auto &ref = refList.at(i);
+        auto &diff = diffList.at(i);
+        if(ref.size() != diff.size() || ref.sideband() != diff.sideband())
+            return;
 
-    Ft r = doFT(ref,settings);
-    Ft d = doFT(diff,settings);
+        if(!qFuzzyCompare(ref.spacing(),diff.spacing()))
+            return;
+    }
+
+
+    Ft r = doFT(refList,settings,refFrame);
+    Ft d = doFT(diffList,settings,diffFrame);
 
     Ft out;
     out.reserve(r.size() + d.size());
@@ -212,13 +242,17 @@ void FtWorker::processSideband(const FtWorker::SidebandProcessingData &d, const 
         clearSplineMemory();
     }
 
-    auto fid = d.fid;
-    if(!d.doubleSideband)
-        fid.setSideband(d.sideband);
+    auto fl = d.fl;
 
-    if(!fid.isEmpty())
+    if(!d.doubleSideband)
     {
-        auto ft = doFT(fid,settings,-1,d.doubleSideband);
+        for(auto &fid : fl)
+            fid.setSideband(d.sideband);
+    }
+
+    if(!d.fl.isEmpty())
+    {
+        auto ft = doFT(fl,settings,d.frame,-1,d.doubleSideband);
         if(d.minOffset > 0.0 || d.maxOffset < (ft.maxFreqMHz()-ft.minFreqMHz()))
             ft.trim(d.minOffset,d.maxOffset);
 
