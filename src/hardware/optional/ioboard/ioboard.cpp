@@ -1,7 +1,7 @@
 #include <hardware/optional/ioboard/ioboard.h>
 
-IOBoard::IOBoard(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent, bool threaded, bool critical)  :
-    HardwareObject(BC::Key::IOB::ioboard, subKey, name, commType, parent, threaded, critical), IOBoardConfig()
+IOBoard::IOBoard(const QString subKey, const QString name, int index, CommunicationProtocol::CommType commType, QObject *parent, bool threaded, bool critical)  :
+    HardwareObject(BC::Key::IOB::ioboard, subKey, name, commType, parent, threaded, critical,index), IOBoardConfig(index)
 {
     using namespace BC::Key::Digi;
     setDefault(isTriggered,false);
@@ -62,12 +62,12 @@ AuxDataStorage::AuxDataMap IOBoard::readValidationData()
 
 bool IOBoard::prepareForExperiment(Experiment &exp)
 {
-    if(exp.iobConfig())
-    {
-        auto cfg = dynamic_cast<IOBoardConfig*>(this);
-        if(cfg)
-            *cfg = *exp.iobConfig();
-    }
+    auto p = dynamic_cast<IOBoardConfig*>(exp.getOptHwConfig(headerStorageKey()));
+    auto cfg = static_cast<IOBoardConfig*>(this);
+    if(p)
+        *cfg = *p;
+    else
+        exp.addOptHwConfig(*cfg);
 
     for(auto it = d_analogChannels.cbegin();it!=d_analogChannels.cend();++it)
     {

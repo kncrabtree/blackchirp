@@ -11,7 +11,7 @@ class GpibController : public HardwareObject
 {
 	Q_OBJECT
 public:
-    GpibController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr);
+    GpibController(const QString subKey, const QString name, int index, CommunicationProtocol::CommType commType, QObject *parent = nullptr);
     virtual ~GpibController();
 
 	bool writeCmd(int address, QString cmd);

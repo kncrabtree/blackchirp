@@ -2,8 +2,9 @@
 
 #include <gui/widget/pulseconfigwidget.h>
 
-PulseGenerator::PulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent, bool threaded, bool critical) :
-    HardwareObject(BC::Key::PGen::key,subKey,name,commType,parent,threaded,critical),
+PulseGenerator::PulseGenerator(const QString subKey, const QString name, int index, CommunicationProtocol::CommType commType, int numChannels, QObject *parent, bool threaded, bool critical) :
+    HardwareObject(BC::Key::PGen::key,subKey,name,commType,parent,threaded,critical,index),
+    PulseGenConfig(index),
     d_numChannels(numChannels)
 {
     SettingsStorage::set(BC::Key::PGen::numChannels,d_numChannels,true);
@@ -35,8 +36,15 @@ void PulseGenerator::initialize()
 
 bool PulseGenerator::prepareForExperiment(Experiment &exp)
 {
-    if(exp.pGenConfig())
-        return setAll(*exp.pGenConfig());
+    auto p = dynamic_cast<PulseGenConfig*>(exp.getOptHwConfig(headerStorageKey()));
+    auto cfg = static_cast<PulseGenConfig*>(this);
+    if(p)
+    {
+        if(!setAll(*p))
+            return false;
+    }
+
+    exp.addOptHwConfig(*cfg);
 
     return true;
 }
@@ -93,7 +101,7 @@ double PulseGenerator::readRepRate()
     if((out >= min) && (out <= max))
     {
         d_repRate = out;
-        emit repRateUpdate(out,d_index,QPrivateSignal());
+        emit settingUpdate(-1,RepRateSetting,out,QPrivateSignal());
         return out;
     }
 
@@ -107,7 +115,7 @@ PulseGenConfig::PGenMode PulseGenerator::readPulseMode()
 {
     auto out = readHwPulseMode();
     d_mode = out;
-    emit modeUpdate(out,d_index,QPrivateSignal());
+    emit settingUpdate(-1,PGenModeSetting,out,QPrivateSignal());
     return out;
 }
 
@@ -115,7 +123,7 @@ bool PulseGenerator::readPulseEnabled()
 {
     auto out = readHwPulseEnabled();
     d_pulseEnabled = out;
-    emit pulseEnabledUpdate(out,d_index,QPrivateSignal());
+    emit settingUpdate(-1,PGenEnabledSetting,out,QPrivateSignal());
     return out;
 }
 
@@ -303,12 +311,15 @@ bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setti
         }
         break;
     }
+    default:
+        success = false;
+        break;
     }
 
     if(success)
     {
         setCh(index,s,result);
-        emit settingUpdate(index,s,result,d_index,QPrivateSignal());
+        emit settingUpdate(index,s,result,QPrivateSignal());
     }
 
     return success;
@@ -342,7 +353,7 @@ bool PulseGenerator::setChannel(const int index, const PulseGenConfig::ChannelCo
 
     blockSignals(false);
     if(success)
-        emit configUpdate(static_cast<PulseGenConfig>(*this),d_index,QPrivateSignal());
+        emit configUpdate(static_cast<PulseGenConfig>(*this),QPrivateSignal());
 
     return success;
 }
@@ -367,7 +378,7 @@ bool PulseGenerator::setAll(const PulseGenConfig &cc)
     blockSignals(false);
 
     if(success)
-        emit configUpdate(static_cast<PulseGenConfig>(*this),d_index,QPrivateSignal());
+        emit configUpdate(static_cast<PulseGenConfig>(*this),QPrivateSignal());
 
     return success;
 }
@@ -442,7 +453,7 @@ void PulseGenerator::readAll()
     readPulseEnabled();
     blockSignals(false);
 
-    emit configUpdate(static_cast<PulseGenConfig&>(*this),d_index,QPrivateSignal());
+    emit configUpdate(static_cast<PulseGenConfig&>(*this),QPrivateSignal());
 }
 
 

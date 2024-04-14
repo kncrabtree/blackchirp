@@ -13,7 +13,7 @@ class IOBoard : public HardwareObject, public IOBoardConfig
 {
     Q_OBJECT
 public:
-    explicit IOBoard(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded=true,bool critical=false);
+    explicit IOBoard(const QString subKey, const QString name, int index, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded=true,bool critical=false);
     virtual ~IOBoard();
 
     virtual QStringList validationKeys() const override;

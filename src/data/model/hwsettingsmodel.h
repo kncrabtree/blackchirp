@@ -13,7 +13,7 @@ class HWSettingsModel : public QAbstractItemModel, public SettingsStorage
 public:
     HWSettingsModel(QString key, QStringList forbiddenKeys, QObject *parent = nullptr);
 
-    void saveChanges();
+    void saveChanges(const QString name = QString(""));
     
 private:
     std::unique_ptr<HWSettingsItem> pu_rootItem;

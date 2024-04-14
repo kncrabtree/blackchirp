@@ -2,10 +2,10 @@
 
 using namespace BC::Key::Flow;
 
-FlowController::FlowController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
+FlowController::FlowController(const QString subKey, const QString name, int index, CommunicationProtocol::CommType commType,
                                QObject *parent, bool threaded, bool critical) :
-    HardwareObject(flowController,subKey,name,commType,parent,threaded,critical),
-    d_numChannels(getOrSetDefault(flowChannels,4))
+    HardwareObject(flowController,subKey,name,commType,parent,threaded,critical,index),
+    d_numChannels(getOrSetDefault(flowChannels,4)), d_config{index}
 {
     for(int i=0; i<d_numChannels; ++i)
         d_config.add({});
@@ -53,8 +53,9 @@ bool FlowController::testConnection()
 
 bool FlowController::prepareForExperiment(Experiment &e)
 {
-    if(e.flowConfig())
-        setAll(*e.flowConfig());
+    auto p = dynamic_cast<FlowConfig*>(e.getOptHwConfig(d_config.headerStorageKey()));
+    if(p)
+        setAll(*p);
 
     if(!isConnected())
         return false;
@@ -66,7 +67,7 @@ bool FlowController::prepareForExperiment(Experiment &e)
             e.auxData()->registerKey(d_key,d_subKey,BC::Aux::Flow::flow.arg(i));
     }
 
-    e.setFlowConfig(d_config);
+    e.addOptHwConfig(d_config);
 
     return true;
 }

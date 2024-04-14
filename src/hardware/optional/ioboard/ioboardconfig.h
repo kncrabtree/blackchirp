@@ -6,7 +6,6 @@
 
 namespace BC::Store::Digi {
 static const QString name{"Name"};
-static const QString iob{"IOBoardDigitizer"};
 }
 
 namespace BC::Aux::IOB {
@@ -17,7 +16,7 @@ static const QString din{"DigitalInput%1"};
 class IOBoardConfig : public DigitizerConfig
 {
 public:
-    IOBoardConfig();
+    IOBoardConfig(int index=-1);
 
     void setAnalogName(int ch, const QString name);
     void setDigitalName(int ch, const QString name);

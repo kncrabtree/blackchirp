@@ -9,7 +9,6 @@
 
 
 namespace BC::Store::FlowConfig {
-static const QString key{"FlowController"};
 static const QString channel{"Channel"};
 static const QString name{"Name"};
 static const QString enabled{"Enabled"};
@@ -38,7 +37,7 @@ public:
     };
     Q_ENUM(FlowChSetting)
 
-    FlowConfig();
+    FlowConfig(int index = -1);
     ~FlowConfig();
 
     QVariant setting(int index, FlowChSetting s) const;

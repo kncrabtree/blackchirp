@@ -59,11 +59,52 @@ Experiment::Experiment(const Experiment &other) :
 #endif
 
     pu_auxData = std::make_unique<AuxDataStorage>(*other.pu_auxData);
-
     pu_validator = std::make_unique<ExperimentValidator>(*other.pu_validator);
 
-    if(other.pu_iobCfg.get() != nullptr)
-        setIOBoardConfig(*other.iobConfig());
+
+
+    for(const auto &[k,p] : other.d_optHwData)
+    {
+        auto l = k.split(".");
+        if(l.size() < 2)
+            continue;
+        bool ok = false;
+        int index = l.at(1).toInt(&ok);
+        if(!ok || index < 0)
+            continue;
+        auto dataType = l.first();
+
+        if(dataType == BC::Key::Flow::flowController)
+        {
+            auto c = dynamic_cast<FlowConfig*>(p.get());
+            if(c)
+                d_optHwData[k] = std::make_unique<FlowConfig>(*c);
+        }
+        if(dataType == BC::Key::TC::key)
+        {
+            auto c = dynamic_cast<TemperatureControllerConfig*>(p.get());
+            if(c)
+                d_optHwData[k] = std::make_unique<TemperatureControllerConfig>(*c);
+        }
+        if(dataType == BC::Key::IOB::ioboard)
+        {
+            auto c = dynamic_cast<IOBoardConfig*>(p.get());
+            if(c)
+                d_optHwData[k] = std::make_unique<IOBoardConfig>(*c);
+        }
+        if(dataType == BC::Key::PGen::key)
+        {
+            auto c = dynamic_cast<PulseGenConfig*>(p.get());
+            if(c)
+                d_optHwData[k] = std::make_unique<PulseGenConfig>(*c);
+        }
+        if(dataType == BC::Key::PController::key)
+        {
+            auto c = dynamic_cast<PressureControllerConfig*>(p.get());
+            if(c)
+                d_optHwData[k] = std::make_unique<PressureControllerConfig>(*c);
+        }
+    }
 
 }
 
@@ -97,21 +138,46 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
 
            d_hardware.insert_or_assign(key,l.constLast().toString());
 
+           ///TODO: Change to work with lists
+           auto hwl = key.split(".");
+           if(hwl.size() < 2)
+               continue;
+           bool ok = false;
+           int index = hwl.at(1).toInt(&ok);
+           if (!ok || index < 0)
+               continue;
+           auto hwType = hwl.first();
+
            //create optional HW configs as needed
-           if(key == BC::Key::IOB::ioboard)
-               setIOBoardConfig({});
+           if(hwType == BC::Key::IOB::ioboard)
+           {
+               IOBoardConfig cfg(index);
+               addOptHwConfig(cfg);
+           }
 
-           if(key == BC::Key::PGen::key)
-               setPulseGenConfig({});
+           if(hwType == BC::Key::PGen::key)
+           {
+               PulseGenConfig cfg(index);
+               addOptHwConfig(cfg);
+           }
 
-           if(key == BC::Key::Flow::flowController)
-               setFlowConfig({});
+           if(hwType == BC::Key::Flow::flowController)
+           {
+               FlowConfig cfg(index);
+               addOptHwConfig(cfg);
+           }
 
-           if(key == BC::Key::PController::key)
-               setPressureControllerConfig({});
+           if(hwType == BC::Key::PController::key)
+           {
+               PressureControllerConfig cfg(index);
+               addOptHwConfig(cfg);
+           }
 
-           if(key == BC::Key::TC::key)
-               setTempControllerConfig({});
+           if(hwType == BC::Key::TC::key)
+           {
+               TemperatureControllerConfig cfg(index);
+               addOptHwConfig(cfg);
+           }
 
        }
     }
@@ -225,8 +291,8 @@ HeaderStorage::HeaderStrings Experiment::getSummary()
     QString _{""};
 
     //add hardware information
-    for(auto const &[key,val] : d_hardware)
-        out.insert({"Hardware",{_,_,key,val,_}});
+    for(auto const &[headerStorageKey,val] : d_hardware)
+        out.insert({"Hardware",{_,_,headerStorageKey,val,_}});
 
     return out;
 }
@@ -431,39 +497,14 @@ bool Experiment::canBackup()
     return false;
 }
 
-void Experiment::setIOBoardConfig(const IOBoardConfig &cfg)
-{
-    pu_iobCfg = std::make_unique<IOBoardConfig>(cfg);
-}
-
-void Experiment::setPulseGenConfig(const PulseGenConfig &c)
-{
-    pu_pGenCfg = std::make_unique<PulseGenConfig>(c);
-}
-
-void Experiment::setFlowConfig(const FlowConfig &c)
-{
-    pu_flowCfg = std::make_unique<FlowConfig>(c);
-}
-
-void Experiment::setPressureControllerConfig(const PressureControllerConfig &c)
-{
-    pu_pcConfig = std::make_unique<PressureControllerConfig>(c);
-}
-
-void Experiment::setTempControllerConfig(const TemperatureControllerConfig &c)
-{
-    pu_tcConfig = std::make_unique<TemperatureControllerConfig>(c);
-}
-
 bool Experiment::addAuxData(AuxDataStorage::AuxDataMap m)
 {
     //return false if scan should be aborted
     bool out = true;
 
-    for(auto &[key,val] : m)
+    for(auto &[headerStorageKey,val] : m)
     {
-        if(!validateItem(key,val))
+        if(!validateItem(headerStorageKey,val))
             break;
     }
 
@@ -547,8 +588,8 @@ bool Experiment::saveHardware()
 
     QTextStream t(&hw);
     BlackchirpCSV::writeLine(t,{"key","subKey"});
-    for(auto &[key,subKey] : d_hardware)
-        BlackchirpCSV::writeLine(t,{key,subKey});
+    for(auto &[headerStorageKey,subKey] : d_hardware)
+        BlackchirpCSV::writeLine(t,{headerStorageKey,subKey});
 
     return true;
 }
@@ -606,12 +647,11 @@ void Experiment::retrieveValues()
 void Experiment::prepareChildren()
 {
     addChild(pu_ftmwConfig.get());
-    addChild(pu_flowCfg.get());
-    addChild(pu_iobCfg.get());
-    addChild(pu_pGenCfg.get());
-    addChild(pu_pcConfig.get());
-    addChild(pu_tcConfig.get());
     addChild(pu_validator.get());
+
+    for(const auto &[k,p] : d_optHwData)
+        addChild(p.get());
+
 #ifdef BC_LIF
     addChild(pu_lifCfg.get());
 #endif

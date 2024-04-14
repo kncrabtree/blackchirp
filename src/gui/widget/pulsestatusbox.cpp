@@ -8,7 +8,8 @@
 #include <QLabel>
 #include <QMetaEnum>
 
-PulseStatusBox::PulseStatusBox(QWidget *parent) : QGroupBox(parent)
+PulseStatusBox::PulseStatusBox(QString key, QWidget *parent) :
+    QGroupBox(parent), d_key(key)
 {
     setTitle(QString("Pulse Status"));
 
@@ -46,14 +47,20 @@ PulseStatusBox::PulseStatusBox(QWidget *parent) : QGroupBox(parent)
 
 }
 
-void PulseStatusBox::updatePulseLeds(const PulseGenConfig &cc)
+void PulseStatusBox::updatePulseLeds(const QString k, const PulseGenConfig &cc)
 {
+    if(k != d_key)
+        return;
+
     static_cast<PulseGenConfig&>(*this) = cc;
     updateAll();
 }
 
-void PulseStatusBox::updatePulseLed(int index, Setting s, QVariant val)
+void PulseStatusBox::updatePulseSetting(const QString k, int index, Setting s, QVariant val)
 {
+    if(k != d_key)
+        return;
+
     if(index < 0 || (std::size_t)index >= d_ledList.size())
         return;
 
@@ -72,28 +79,22 @@ void PulseStatusBox::updatePulseLed(int index, Setting s, QVariant val)
         else
             d_ledList.at(index).second->setColor(Led::Yellow);
         break;
+    case RepRateSetting:
+        d_repRate = val.toDouble();
+        if(d_mode == Continuous)
+            p_repLabel->setText(QString("Rep Rate: %1 Hz").arg(d_repRate,0,'f',2));
+        break;
+    case PGenModeSetting:
+        d_mode = val.value<PGenMode>();
+        updateAll();
+        break;
+    case PGenEnabledSetting:
+        d_pulseEnabled = val.toBool();
+        p_enLed->setState(d_pulseEnabled);
+        break;
     default:
         break;
     }
-}
-
-void PulseStatusBox::updateRepRate(double rr)
-{
-    d_repRate = rr;
-    if(d_mode == Continuous)
-        p_repLabel->setText(QString("Rep Rate: %1 Hz").arg(d_repRate,0,'f',2));
-}
-
-void PulseStatusBox::updatePGenMode(PGenMode m)
-{
-    d_mode = m;
-    updateAll();
-}
-
-void PulseStatusBox::updatePGenEnabled(bool en)
-{
-    d_pulseEnabled = en;
-    p_enLed->setState(en);
 }
 
 void PulseStatusBox::updateAll()

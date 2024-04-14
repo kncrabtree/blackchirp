@@ -1,8 +1,9 @@
 #include <hardware/optional/pulsegenerator/pulsegenconfig.h>
 
 #include <QMetaEnum>
+#include <hardware/optional/pulsegenerator/pulsegenerator.h>
 
-PulseGenConfig::PulseGenConfig() : HeaderStorage(BC::Store::PGenConfig::key)
+PulseGenConfig::PulseGenConfig(int index) : HeaderStorage(BC::Key::hwKey(BC::Key::PGen::key,index))
 {
 }
 
@@ -27,7 +28,7 @@ bool PulseGenConfig::isEmpty() const
 
 QVariant PulseGenConfig::setting(const int index, const Setting s) const
 {
-    if(index < 0 || index >= d_channels.size())
+    if(index >= d_channels.size())
         return QVariant();
 
     switch(s)
@@ -61,6 +62,15 @@ QVariant PulseGenConfig::setting(const int index, const Setting s) const
         break;
     case DutyOffSetting:
         return d_channels.at(index).dutyOff;
+        break;
+    case RepRateSetting:
+        return d_repRate;
+        break;
+    case PGenModeSetting:
+        return d_mode;
+        break;
+    case PGenEnabledSetting:
+        return d_pulseEnabled;
         break;
     }
 
@@ -175,6 +185,15 @@ void PulseGenConfig::setCh(const int index, const Setting s, const QVariant val)
         break;
     case DutyOffSetting:
         d_channels[index].dutyOff = val.toInt();
+        break;
+    case RepRateSetting:
+        d_repRate = val.toDouble();
+        break;
+    case PGenModeSetting:
+        d_mode = val.value<PGenMode>();
+        break;
+    case PGenEnabledSetting:
+        d_pulseEnabled = val.toBool();
         break;
     }
 }

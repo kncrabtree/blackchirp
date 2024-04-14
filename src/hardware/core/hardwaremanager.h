@@ -61,11 +61,8 @@ signals:
     void clockFrequencyUpdate(RfConfig::ClockType, double);
     void allClocksReady(QHash<RfConfig::ClockType,RfConfig::ClockFreq>);
 
-    void pGenSettingUpdate(int,PulseGenConfig::Setting,QVariant,int);
-    void pGenConfigUpdate(PulseGenConfig,int);
-    void pGenRepRateUpdate(double,int);
-    void pGenPulsingUpdate(bool,int);
-    void pGenModeUpdate(PulseGenConfig::PGenMode,int);
+    void pGenSettingUpdate(QString,int,PulseGenConfig::Setting,QVariant);
+    void pGenConfigUpdate(QString,PulseGenConfig);
 
     void flowUpdate(int,double);
     void flowSetpointUpdate(int,double);
@@ -124,12 +121,9 @@ public slots:
     void configureClocks(QHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
     void setClocks(QHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
 
-    void setPGenSetting(int index, PulseGenConfig::Setting s, QVariant val);
-    void setPGenConfig(const PulseGenConfig &c);
-    void setPGenRepRate(double r);
-    void setPGenPulsingEnabled(bool en);
-    void setPGenMode(PulseGenConfig::PGenMode mode);
-    PulseGenConfig getPGenConfig();
+    void setPGenSetting(QString key, int index, PulseGenConfig::Setting s, QVariant val);
+    void setPGenConfig(QString key, const PulseGenConfig &c);
+    PulseGenConfig getPGenConfig(QString key);
 
     void setFlowSetpoint(int index, double val);
     void setFlowChannelName(int index, QString name);

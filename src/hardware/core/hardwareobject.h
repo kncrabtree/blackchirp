@@ -86,13 +86,13 @@ public:
      *
      * \param parent Pointer to parent QObject. Should be 0 if it will be in its own thread.
      */
-    explicit HardwareObject(const QString key, const QString subKey, const QString name,
+    explicit HardwareObject(const QString hwType, const QString subKey, const QString name,
                             CommunicationProtocol::CommType commType, QObject *parent = nullptr,
                             bool threaded = true, bool critical = true, int index=0);
     virtual ~HardwareObject();
 
-    const QString d_name; /*!< Name to be displayed on UI */
-    const QString d_key; /*!< Name to be used in settings for abstract hardware*/
+    QString d_name; /*!< Name to be displayed on UI */
+    const QString d_key; /*!< Name to be used in settings for abstract hardware. Form: hwtype-index*/
     const QString d_subKey; /*< Name to be used in settings for real hardware*/
     const int d_index; /*< Index used if multiple objects of same type are present. */
 

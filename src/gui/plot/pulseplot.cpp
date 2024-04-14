@@ -8,11 +8,16 @@
 #include <gui/plot/blackchirpplotcurve.h>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 
-PulsePlot::PulsePlot(QWidget *parent) :
-    ZoomPanPlot(BC::Key::pulsePlot,parent)
+PulsePlot::PulsePlot(QString key, QWidget *parent) :
+    ZoomPanPlot(BC::Key::pulsePlot,parent), d_key(key)
 {
 
-    SettingsStorage s(BC::Key::PGen::key,Hardware);
+    auto ki = BC::Key::parseKey(key);
+    d_index = ki.second;
+
+    pu_config = std::make_unique<PulseGenConfig>(d_index);
+
+    SettingsStorage s(key,Hardware);
     int numChannels = s.get<int>(BC::Key::PGen::numChannels,8);
 
 
@@ -98,14 +103,15 @@ PulsePlot::~PulsePlot()
 
 void PulsePlot::newConfig(const PulseGenConfig &c)
 {
-    d_config = c;
+    pu_config = std::make_unique<PulseGenConfig>(c);
     replot();
 }
 
 
 void PulsePlot::replot()
 {
-    if(d_config.isEmpty())
+    auto c = pu_config.get();
+    if(c->isEmpty())
     {
         for(auto it = d_plotItems.begin(); it != d_plotItems.end(); ++it)
         {
@@ -120,17 +126,17 @@ void PulsePlot::replot()
 
 
     double maxTime = 1.0;
-    for(int i=0; i<d_config.size(); i++)
+    for(int i=0; i<c->size(); i++)
     {
-        if(d_config.at(i).enabled)
-            maxTime = qMax(maxTime,d_config.channelStart(i) + d_config.at(i).width);
+        if(c->at(i).enabled)
+            maxTime = qMax(maxTime,c->channelStart(i) + c->at(i).width);
     }
     maxTime *= 1.25;
 
-    auto cit = d_config.d_channels.cbegin();
+    auto cit = c->d_channels.cbegin();
     auto pit = d_plotItems.begin();
 
-    for(int i=0 ;cit != d_config.d_channels.cend() && pit != d_plotItems.end(); ++cit, ++pit, ++i)
+    for(int i=0 ;cit != c->d_channels.cend() && pit != d_plotItems.end(); ++cit, ++pit, ++i)
     {
         double channelOff = pit->min + 0.25;
         double channelOn = pit->max - 0.25;
@@ -141,7 +147,7 @@ void PulsePlot::replot()
 
         if(cit->syncCh > 0 && cit->enabled)
         {
-            auto offset = d_config.channelStart(cit->syncCh-1);
+            auto offset = c->channelStart(cit->syncCh-1);
             pit->syncCurve->setSamples({{offset,pit->min},{offset,pit->max}});
             pit->syncCurve->setVisible(true);
         }
@@ -151,10 +157,10 @@ void PulsePlot::replot()
         data.append(QPointF(0.0,channelOff));
         if(cit->width > 0.0 && cit->enabled)
         {
-            data.append(QPointF(d_config.channelStart(i),channelOff));
-            data.append(QPointF(d_config.channelStart(i),channelOn));
-            data.append(QPointF(d_config.channelStart(i)+cit->width,channelOn));
-            data.append(QPointF(d_config.channelStart(i)+cit->width,channelOff));
+            data.append(QPointF(c->channelStart(i),channelOff));
+            data.append(QPointF(c->channelStart(i),channelOn));
+            data.append(QPointF(c->channelStart(i)+cit->width,channelOn));
+            data.append(QPointF(c->channelStart(i)+cit->width,channelOff));
         }
         data.append(QPointF(maxTime,channelOff));
 
@@ -166,13 +172,13 @@ void PulsePlot::replot()
             label = QString("Ch%1").arg(i+1);
         if(cit->mode == PulseGenConfig::Normal)
         {
-            if(d_config.d_mode == PulseGenConfig::Continuous)
-                label.append(QString("\n%1 Hz").arg(d_config.d_repRate,0,'f',2));
+            if(c->d_mode == PulseGenConfig::Continuous)
+                label.append(QString("\n%1 Hz").arg(c->d_repRate,0,'f',2));
         }
         else
         {
             if(cit->dutyOn == 1)
-                label.append(QString("\nDUTY: %1 Hz").arg(d_config.d_repRate/(cit->dutyOff+1),0,'f',2));
+                label.append(QString("\nDUTY: %1 Hz").arg(c->d_repRate/(cit->dutyOff+1),0,'f',2));
             else
                 label.append(QString("\nDUTY: %1 On/%2 Off").arg(cit->dutyOn).arg(cit->dutyOff));
         }

@@ -23,7 +23,7 @@ class PressureController : public HardwareObject
 {
     Q_OBJECT
 public:
-    PressureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
+    PressureController(const QString subKey, const QString name, int index, CommunicationProtocol::CommType commType,
                        bool ro, QObject *parent =nullptr, bool threaded = false, bool critical=false);
     virtual ~PressureController();
 

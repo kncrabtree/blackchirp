@@ -1,8 +1,8 @@
 #include <hardware/optional/ioboard/ioboardconfig.h>
 
+#include <hardware/optional/ioboard/ioboard.h>
 
-
-IOBoardConfig::IOBoardConfig() : DigitizerConfig(BC::Store::Digi::iob)
+IOBoardConfig::IOBoardConfig(int index) : DigitizerConfig(BC::Key::hwKey(BC::Key::IOB::ioboard,index))
 {
 }
 

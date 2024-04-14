@@ -1,6 +1,8 @@
 #include "temperaturecontrollerconfig.h"
 
-TemperatureControllerConfig::TemperatureControllerConfig() : HeaderStorage(BC::Store::TempControlConfig::key)
+#include <hardware/optional/tempcontroller/temperaturecontroller.h>
+
+TemperatureControllerConfig::TemperatureControllerConfig(int index) : HeaderStorage(BC::Key::hwKey(BC::Key::TC::key,index))
 {
 
 }

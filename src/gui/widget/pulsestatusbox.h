@@ -11,18 +11,16 @@ class PulseStatusBox : public QGroupBox, public PulseGenConfig
 {
     Q_OBJECT
 public:
-    explicit PulseStatusBox(QWidget *parent = nullptr);
+    explicit PulseStatusBox(QString key,QWidget *parent = nullptr);
 
 public slots:
-    void updatePulseLeds(const PulseGenConfig &cc);
-    void updatePulseLed(int index,Setting s, QVariant val);
-    void updateRepRate(double rr);
-    void updatePGenMode(PulseGenConfig::PGenMode m);
-    void updatePGenEnabled(bool en);
+    void updatePulseLeds(const QString k, const PulseGenConfig &cc);
+    void updatePulseSetting(const QString k,int index,Setting s, QVariant val);
 
 signals:
 
 private:
+    QString d_key;
     std::vector<std::pair<QLabel*,Led*>> d_ledList;
     QLabel *p_repLabel;
     Led *p_enLed;

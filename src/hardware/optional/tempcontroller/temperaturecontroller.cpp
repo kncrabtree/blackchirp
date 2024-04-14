@@ -4,8 +4,8 @@
 
 using namespace BC::Key::TC;
 
-TemperatureController::TemperatureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent, bool threaded, bool critical) :
-    HardwareObject(key,subKey,name,commType,parent,threaded,critical), d_numChannels(numChannels)
+TemperatureController::TemperatureController(const QString subKey, const QString name, int index, CommunicationProtocol::CommType commType, int numChannels, QObject *parent, bool threaded, bool critical) :
+    HardwareObject(key,subKey,name,commType,parent,threaded,critical,index), d_numChannels(numChannels), d_config{index}
 {
     d_config.setNumChannels(d_numChannels);
 
@@ -90,18 +90,21 @@ bool TemperatureController::readChannelEnabled(const int ch)
 bool TemperatureController::prepareForExperiment(Experiment &e)
 {
 
+    auto p = dynamic_cast<TemperatureControllerConfig*>(e.getOptHwConfig(d_config.headerStorageKey()));
+
     for (int i=0;i<d_numChannels;i++)
     {
-        if(e.tcConfig())
+        if(p)
         {
-            d_config.setName(i,e.tcConfig()->channelName(i));
-            d_config.setEnabled(i,e.tcConfig()->channelEnabled(i));
+            d_config.setName(i,p->channelName(i));
+            d_config.setEnabled(i,p->channelEnabled(i));
         }
 
         e.auxData()->registerKey(d_key,d_subKey,BC::Aux::TC::temperature.arg(i));
     }
 
-    e.setTempControllerConfig(d_config);
+    e.addOptHwConfig(d_config);
+
     return true;
 }
 

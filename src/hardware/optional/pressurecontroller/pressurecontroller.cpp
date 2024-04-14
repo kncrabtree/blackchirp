@@ -4,9 +4,9 @@
 
 using namespace BC::Key::PController;
 
-PressureController::PressureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
+PressureController::PressureController(const QString subKey, const QString name, int index, CommunicationProtocol::CommType commType,
                                        bool ro, QObject *parent, bool threaded, bool critical) :
-    HardwareObject(key,subKey,name,commType,parent,threaded,critical), d_readOnly(ro)
+    HardwareObject(key,subKey,name,commType,parent,threaded,critical,index), d_readOnly(ro), d_config{index}
 {
     set(readOnly,d_readOnly);
 }
@@ -81,15 +81,19 @@ PressureControllerConfig PressureController::getConfig() const
 
 bool PressureController::prepareForExperiment(Experiment &e)
 {
-    if(e.pcConfig())
+    auto p = dynamic_cast<PressureControllerConfig*>(e.getOptHwConfig(d_config.headerStorageKey()));
+    if(p)
     {
-        if(!qFuzzyCompare(d_config.d_setPoint,e.pcConfig()->d_setPoint))
-            setPressureSetpoint(e.pcConfig()->d_setPoint);
-        if(d_config.d_pressureControlMode != e.pcConfig()->d_pressureControlMode)
-            setPressureControlMode(e.pcConfig()->d_pressureControlMode);
+        if(!qFuzzyCompare(d_config.d_setPoint,p->d_setPoint))
+            setPressureSetpoint(p->d_setPoint);
+        if(d_config.d_pressureControlMode != p->d_pressureControlMode)
+            setPressureControlMode(p->d_pressureControlMode);
     }
+
     e.auxData()->registerKey(d_key,d_subKey,BC::Aux::PController::pressure);
-    e.setPressureControllerConfig(d_config);
+
+    e.addOptHwConfig(d_config);
+
     return true;
 }
 

@@ -134,20 +134,17 @@ MainWindow::MainWindow(QWidget *parent) :
 
     for(auto it = d_hardware.cbegin(); it != d_hardware.cend(); ++it)
     {
-        auto fullkey = it->first;
-        auto l = fullkey.split("-");
-        if(l.size() != 2)
-            continue;
+        auto key = it->first;
+        auto ki = BC::Key::parseKey(key);
 
-        auto key = l.at(0);
-        auto index = l.at(1).toInt();
+        auto hwType = ki.first;
 
-        auto act = ui->menuHardware->addAction(QString("%1: %2").arg(fullkey, p_hwm->getHwName(fullkey)));
+        auto act = ui->menuHardware->addAction(QString("%1: %2").arg(key, p_hwm->getHwName(key)));
         act->setObjectName(QString("Action")+key);
 
 
 
-        if(key == BC::Key::Flow::flowController)
+        if(hwType == BC::Key::Flow::flowController)
         {
             auto w = new GasFlowDisplayBox;
             w->setObjectName(key);
@@ -179,7 +176,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
             });
         }
-        else if(key == BC::Key::PController::key)
+        else if(hwType == BC::Key::PController::key)
         {
             auto psb = new PressureStatusBox;
             psb->setObjectName(key);
@@ -206,41 +203,31 @@ MainWindow::MainWindow(QWidget *parent) :
                 connect(d,&QDialog::accepted,psb,&PressureStatusBox::updateFromSettings);
             });
         }
-        else if(key == BC::Key::PGen::key)
+        else if(hwType == BC::Key::PGen::key)
         {
-            auto psb = new PulseStatusBox;
+            auto psb = new PulseStatusBox(key);
             psb->setObjectName(key);
             ui->instrumentStatusLayout->insertWidget(3,psb,0);
             connect(p_hwm,&HardwareManager::pGenConfigUpdate,psb,&PulseStatusBox::updatePulseLeds);
-            connect(p_hwm,&HardwareManager::pGenSettingUpdate,psb,&PulseStatusBox::updatePulseLed);
-            connect(p_hwm,&HardwareManager::pGenRepRateUpdate,psb,&PulseStatusBox::updateRepRate);
-            connect(p_hwm,&HardwareManager::pGenModeUpdate,psb,&PulseStatusBox::updatePGenMode);
-            connect(p_hwm,&HardwareManager::pGenPulsingUpdate,psb,&PulseStatusBox::updatePGenEnabled);
+            connect(p_hwm,&HardwareManager::pGenSettingUpdate,psb,&PulseStatusBox::updatePulseSetting);
 
             connect(act,&QAction::triggered,[this,psb,key]{
                if(isDialogOpen(key))
                    return;
 
-               auto pcw = new PulseConfigWidget;
-               auto pc = p_hwm->getPGenConfig();
-               pcw->setFromConfig(pc);
+               auto pcw = new PulseConfigWidget(key);
+               auto pc = p_hwm->getPGenConfig(key);
+               pcw->setFromConfig(key,pc);
 
 
                connect(p_hwm,&HardwareManager::pGenConfigUpdate,pcw,&PulseConfigWidget::setFromConfig);
                connect(p_hwm,&HardwareManager::pGenSettingUpdate,pcw,&PulseConfigWidget::newSetting);
-               connect(p_hwm,&HardwareManager::pGenRepRateUpdate,pcw,&PulseConfigWidget::newRepRate);
-               connect(p_hwm,&HardwareManager::pGenModeUpdate,pcw,&PulseConfigWidget::newSysMode);
-               connect(p_hwm,&HardwareManager::pGenPulsingUpdate,pcw,&PulseConfigWidget::newPGenPulsing);
                connect(pcw,&PulseConfigWidget::changeSetting,p_hwm,&HardwareManager::setPGenSetting);
-               connect(pcw,&PulseConfigWidget::changeRepRate,p_hwm,&HardwareManager::setPGenRepRate);
-               connect(pcw,&PulseConfigWidget::changeSysMode,p_hwm,&HardwareManager::setPGenMode);
-               connect(pcw,&PulseConfigWidget::changeSysPulsing,p_hwm,&HardwareManager::setPGenPulsingEnabled);
-
                createHWDialog(key,pcw);
             });
 
         }
-        else if(key == BC::Key::TC::key)
+        else if(hwType == BC::Key::TC::key)
         {
             auto tsb = new TemperatureStatusBox;
             tsb->setObjectName(key);
@@ -268,7 +255,7 @@ MainWindow::MainWindow(QWidget *parent) :
             });
         }
 #ifdef BC_LIF
-        else if(key == BC::Key::LifLaser::key)
+        else if(hwType == BC::Key::LifLaser::key)
         {
             auto lsb = new LifLaserStatusBox;
             lsb->setObjectName(key);
@@ -527,24 +514,20 @@ bool MainWindow::runExperimentWizard(Experiment *exp, QuickExptDialog *qed)
 
 void MainWindow::configureOptionalHardware(Experiment *exp, QuickExptDialog *qed)
 {
+    //if an optional piece of hardware should use current settings, then
+    //do not add it to the experiment; the current settings will be added
+    //when the hardware is initialized for the experiment.
+
     if(qed)
     {
-        if((d_hardware.find(BC::Key::PGen::key) != d_hardware.end()) && qed->useCurrentSettings(BC::Key::PGen::key))
-            exp->setPulseGenConfig(p_hwm->getPGenConfig());
-        if((d_hardware.find(BC::Key::PGen::key) != d_hardware.end()) && qed->useCurrentSettings(BC::Key::Flow::flowController))
-            exp->setFlowConfig(p_hwm->getFlowConfig());
-        if((d_hardware.find(BC::Key::PController::key) != d_hardware.end()) && qed->useCurrentSettings(BC::Key::PController::key))
-            exp->setPressureControllerConfig(p_hwm->getPressureControllerConfig());
+        auto l = qed->getOptHwSettings();
+        for(const auto &[k,en] : l)
+        {
+            if(en)
+                exp->removeOptHwConfig(k);
+        }
     }
-    else
-    {
-        if(d_hardware.find(BC::Key::PGen::key) != d_hardware.end())
-            exp->setPulseGenConfig(p_hwm->getPGenConfig());
-        if(d_hardware.find(BC::Key::Flow::flowController) != d_hardware.end())
-            exp->setFlowConfig(p_hwm->getFlowConfig());
-        if((d_hardware.find(BC::Key::PController::key) != d_hardware.end()))
-            exp->setPressureControllerConfig(p_hwm->getPressureControllerConfig());
-    }
+
 }
 
 void MainWindow::batchComplete(bool aborted)
@@ -1032,9 +1015,13 @@ HWDialog *MainWindow::createHWDialog(const QString key, QWidget *controlWidget)
 {
     auto out = new HWDialog(key,p_hwm->getForbiddenKeys(key),controlWidget);
     d_openDialogs.insert({key,out});
-    auto hwm = p_hwm;
-    connect(out,&HWDialog::accepted,[hwm,key](){
-        QMetaObject::invokeMethod(hwm,[=](){ hwm->updateObjectSettings(key); });
+    connect(out,&HWDialog::accepted,[this,key,out](){
+        QMetaObject::invokeMethod(p_hwm,[=](){ p_hwm->updateObjectSettings(key); });
+        auto n = out->getHwName();
+        auto act = ui->menuHardware->findChild<QAction*>(key,Qt::FindDirectChildrenOnly);
+        if(act)
+            act->setText(n);
+
     });
     connect(out,&QDialog::finished,out,&QDialog::deleteLater);
     connect(out,&HWDialog::destroyed,[this,key](){

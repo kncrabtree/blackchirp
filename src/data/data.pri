@@ -34,6 +34,7 @@ HEADERS += $$PWD/loghandler.h \
     $$PWD/analysis/ft.h \
     $$PWD/analysis/ftworker.h \
     $$PWD/analysis/peakfinder.h \
+    $$PWD/bcglobals.h \
     $$PWD/experiment/chirpconfig.h \
     $$PWD/experiment/digitizerconfig.h \
     $$PWD/experiment/experiment.h \

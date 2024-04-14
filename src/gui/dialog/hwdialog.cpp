@@ -3,6 +3,7 @@
 #include <QTreeView>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QLineEdit>
 #include <QLabel>
 #include <QGroupBox>
 #include <QDialogButtonBox>
@@ -20,11 +21,11 @@ HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidge
     
     SettingsStorage s(key,SettingsStorage::Hardware);
     auto name = s.get(BC::Key::HW::name,key);
-    setWindowTitle(QString("%1 Settings").arg(name));
+    setWindowTitle(QString("%1 Settings").arg(key));
 
     if(controlWidget)
     {
-        auto cBox = new QGroupBox(QString("%1 Control").arg(name));
+        auto cBox = new QGroupBox(QString("%1 Control").arg(key));
         auto cvbl = new QVBoxLayout;
         
         auto cLabel = new QLabel(QString("Changes made in this section will be applied immediately."));
@@ -39,13 +40,21 @@ HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidge
         vbl->addWidget(cBox,0);
     }
     
-    auto sBox = new QGroupBox(QString("%1 Settings").arg(name));
+    auto sBox = new QGroupBox(QString("%1 Settings").arg(key));
     auto svbl = new QVBoxLayout;
     
     auto sLabel = new QLabel("Changes made in this section will only be applied when this dialog is closed with the Ok button. Editing these settings incorrectly may result in unexpected behavior. Consider backing up your config file before making changes.");
     sLabel->setWordWrap(true);
     sLabel->setAlignment(Qt::AlignCenter);
     svbl->addWidget(sLabel,0);
+
+    //Box for editing hardware object name
+    auto nl = new QHBoxLayout;
+    auto nLbl = new QLabel("Name");
+    nl->addWidget(nLbl,0);
+    p_nameEdit = new QLineEdit(name,this);
+    nl->addWidget(p_nameEdit,1);
+    svbl->addLayout(nl);
     
     p_view = new QTreeView(this);
     p_view->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Preferred);
@@ -103,6 +112,11 @@ HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidge
     setLayout(vbl);
 }
 
+QString HWDialog::getHwName() const
+{
+    return p_nameEdit->text();
+}
+
 void HWDialog::insertBefore()
 {
     auto idx = p_view->currentIndex();
@@ -139,7 +153,7 @@ void HWDialog::remove()
 
 void HWDialog::accept()
 {
-    p_model->saveChanges();
+    p_model->saveChanges(p_nameEdit->text());
 
     QDialog::accept();
 }

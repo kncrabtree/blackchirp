@@ -19,7 +19,7 @@ class PulsePlot : public ZoomPanPlot
 {
     Q_OBJECT
 public:
-    PulsePlot(QWidget *parent = 0);
+    PulsePlot(QString key, QWidget *parent = 0);
     ~PulsePlot();
 
     struct PlotItem {
@@ -39,8 +39,11 @@ protected:
     void replot() override;
 
 private:
-    PulseGenConfig d_config;
+    std::unique_ptr<PulseGenConfig> pu_config;
     QVector<PlotItem> d_plotItems;
+
+    QString d_key;
+    int d_index;
 
 
     // QWidget interface

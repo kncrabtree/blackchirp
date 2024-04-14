@@ -8,7 +8,6 @@
 #include <QMap>
 
 namespace BC::Store::PGenConfig {
-static const QString key{"PulseGenerator"};
 static const QString rate{"RepRate"};
 static const QString channel{"Channel"};
 static const QString delay{"Delay"};
@@ -30,7 +29,7 @@ class PulseGenConfig : public HeaderStorage
     Q_GADGET
 public:
     enum ActiveLevel { ActiveLow, ActiveHigh };
-    enum Setting { DelaySetting, WidthSetting, EnabledSetting, LevelSetting, NameSetting, RoleSetting, ModeSetting, SyncSetting, DutyOnSetting, DutyOffSetting };
+    enum Setting { DelaySetting, WidthSetting, EnabledSetting, LevelSetting, NameSetting, RoleSetting, ModeSetting, SyncSetting, DutyOnSetting, DutyOffSetting, RepRateSetting, PGenModeSetting, PGenEnabledSetting };
     enum Role {
         None,
         Gas,
@@ -71,7 +70,7 @@ public:
     PGenMode d_mode{Continuous};
     bool d_pulseEnabled{true};
 
-    PulseGenConfig();
+    PulseGenConfig(int index=-1);
     ~PulseGenConfig();
 
     ChannelConfig at(const int i) const;

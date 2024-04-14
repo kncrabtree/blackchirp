@@ -3,7 +3,7 @@
 #include <data/storage/settingsstorage.h>
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 
-FlowConfig::FlowConfig() : HeaderStorage(BC::Store::FlowConfig::key)
+FlowConfig::FlowConfig(int index) : HeaderStorage(BC::Key::hwKey(BC::Key::Flow::flowController,index))
 {
 }
 

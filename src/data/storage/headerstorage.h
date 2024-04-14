@@ -4,13 +4,8 @@
 #include <QObject>
 #include <QVariant>
 
-namespace BC::Unit{
-static const QString us{QString::fromUtf8("μs")};
-static const QString MHz("MHz");
-static const QString V("V");
-static const QString s("s");
-static const QString Hz("Hz");
-};
+#include <data/bcglobals.h>
+
 
 /*!
  * \brief Base class for objects that read/write to an experiment header file
@@ -291,6 +286,13 @@ public:
      * This is where children should be added.
      */
     virtual void prepareChildren() {}
+
+    /*!
+     * \brief Returns the object headerStorageKey for the storage object
+     *
+     * \return QString
+     */
+    inline QString headerStorageKey() const { return d_objKey; }
 
 private:
     HeaderMap d_values;

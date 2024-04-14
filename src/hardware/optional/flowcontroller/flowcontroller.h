@@ -29,7 +29,7 @@ class FlowController : public HardwareObject
 {
     Q_OBJECT
 public:
-    FlowController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
+    FlowController(const QString subKey, const QString name, int index, CommunicationProtocol::CommType commType,
                    QObject *parent = nullptr, bool threaded = false, bool critical = false);
     virtual ~FlowController();
 
@@ -68,9 +68,9 @@ private:
     virtual double hwReadPressure() =0;
     virtual int hwReadPressureControlMode() =0;
 
+    const int d_numChannels;
     FlowConfig d_config;
     QTimer *p_readTimer;
-    const int d_numChannels;
 
 protected:
     void initialize() override final;

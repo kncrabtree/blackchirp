@@ -46,8 +46,8 @@ SettingsStorage::SettingsStorage(const QString orgName, const QString appName, c
     readAll();
 }
 
-SettingsStorage::SettingsStorage(const QString key, Type type, int index) :
-    SettingsStorage(type == Hardware ? QStringList(BC::Key::keyTemplate.arg(key,QString::number(index))) : QStringList(key),type)
+SettingsStorage::SettingsStorage(const QString key, Type type) :
+    SettingsStorage(QStringList(key),type)
 {
 
 }

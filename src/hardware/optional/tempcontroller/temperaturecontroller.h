@@ -25,7 +25,7 @@ class TemperatureController : public HardwareObject
 {
     Q_OBJECT
 public:
-    explicit TemperatureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int channels, QObject *parent =nullptr, bool threaded = false, bool critical = false);
+    explicit TemperatureController(const QString subKey, const QString name, int index, CommunicationProtocol::CommType commType, int channels, QObject *parent =nullptr, bool threaded = false, bool critical = false);
     virtual ~TemperatureController();
 
     int numChannels() const { return d_numChannels; }
