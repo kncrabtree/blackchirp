@@ -25,7 +25,7 @@ class PulseGenerator : public HardwareObject, public PulseGenConfig
 {
     Q_OBJECT
 public:
-    PulseGenerator(const QString subKey, const QString name, int index, CommunicationProtocol::CommType commType, int numChannels, QObject *parent = nullptr,bool threaded = false, bool critical = true);
+    PulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent = nullptr,bool threaded = false, bool critical = true, int index = 0);
     virtual ~PulseGenerator();
 
 public slots:

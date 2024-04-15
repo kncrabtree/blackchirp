@@ -23,8 +23,8 @@ void WizardIOBoardConfigPage::initializePage()
     auto e = getExperiment();
     if(e->d_number > 0)
     {
-        if(e->iobConfig())
-            p_iobWidget->setFromConfig(*e->iobConfig());
+        // if(e->iobConfig())
+            // p_iobWidget->setFromConfig(*e->iobConfig());
     }
 }
 
@@ -33,7 +33,7 @@ bool WizardIOBoardConfigPage::validatePage()
     auto e = getExperiment();
     IOBoardConfig cfg;
     p_iobWidget->toConfig(cfg);
-    e->setIOBoardConfig(cfg);
+    // e->setIOBoardConfig(cfg);
 
     return true;
 }

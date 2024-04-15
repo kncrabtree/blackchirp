@@ -2,7 +2,7 @@
 
 #include <gui/widget/pulseconfigwidget.h>
 
-PulseGenerator::PulseGenerator(const QString subKey, const QString name, int index, CommunicationProtocol::CommType commType, int numChannels, QObject *parent, bool threaded, bool critical) :
+PulseGenerator::PulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent, bool threaded, bool critical,int index) :
     HardwareObject(BC::Key::PGen::key,subKey,name,commType,parent,threaded,critical,index),
     PulseGenConfig(index),
     d_numChannels(numChannels)

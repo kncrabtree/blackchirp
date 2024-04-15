@@ -15,32 +15,35 @@
 #include <QDir>
 #include <QFontDialog>
 
-#include <gui/dialog/communicationdialog.h>
-#include <gui/dialog/hwdialog.h>
 #include <gui/widget/digitizerconfigwidget.h>
 #include <gui/widget/rfconfigwidget.h>
-#include <gui/wizard/experimentwizard.h>
 #include <gui/widget/pulseconfigwidget.h>
 #include <gui/widget/gascontrolwidget.h>
 #include <gui/widget/gasflowdisplaywidget.h>
 #include <gui/widget/pulsestatusbox.h>
 #include <gui/widget/temperaturestatusbox.h>
 #include <gui/widget/temperaturecontrolwidget.h>
-#include <data/loghandler.h>
-#include <hardware/core/hardwaremanager.h>
-#include <acquisition/acquisitionmanager.h>
-#include <acquisition/batch/batchmanager.h>
-#include <acquisition/batch/batchsingle.h>
-#include <acquisition/batch/batchsequence.h>
 #include <gui/widget/led.h>
-#include <gui/dialog/bcsavepathdialog.h>
 #include <gui/widget/experimentviewwidget.h>
-#include <gui/dialog/quickexptdialog.h>
-#include <gui/dialog/batchsequencedialog.h>
 #include <gui/widget/clockdisplaybox.h>
 #include <gui/widget/gascontrolwidget.h>
 #include <gui/widget/pressurestatusbox.h>
 #include <gui/widget/pressurecontrolwidget.h>
+
+#include <gui/dialog/communicationdialog.h>
+#include <gui/dialog/hwdialog.h>
+#include <gui/dialog/bcsavepathdialog.h>
+#include <gui/dialog/quickexptdialog.h>
+#include <gui/dialog/batchsequencedialog.h>
+
+// #include <gui/wizard/experimentwizard.h>
+#include <gui/expsetup/experimentsetupdialog.h>
+
+#include <data/loghandler.h>
+#include <acquisition/acquisitionmanager.h>
+#include <acquisition/batch/batchmanager.h>
+#include <acquisition/batch/batchsingle.h>
+#include <acquisition/batch/batchsequence.h>
 
 #ifdef BC_LIF
 #include <modules/lif/gui/lifdisplaywidget.h>
@@ -49,11 +52,12 @@
 #include <modules/lif/hardware/liflaser/liflaser.h>
 #endif
 
+#include <hardware/core/hardwaremanager.h>
+#include <hardware/core/clock/fixedclock.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
-#include <hardware/core/clock/fixedclock.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -491,22 +495,24 @@ bool MainWindow::runExperimentWizard(Experiment *exp, QuickExptDialog *qed)
 {
     configureOptionalHardware(exp,qed);
 
-    ExperimentWizard wiz(exp,d_hardware,this);
-    wiz.setValidationKeys(p_hwm->validationKeys());
+    // ExperimentWizard wiz(exp,d_hardware,this);
+    // wiz.setValidationKeys(p_hwm->validationKeys());
+
+    QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks;
     if(exp->ftmwEnabled())
-        wiz.d_clocks = exp->ftmwConfig()->d_rfConfig.getClocks();
+        clocks = exp->ftmwConfig()->d_rfConfig.getClocks();
     else
-    {
-        QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks;
         QMetaObject::invokeMethod(p_hwm,&HardwareManager::getClocks,Qt::BlockingQueuedConnection,&clocks);
-        wiz.d_clocks = clocks;
-    }
+
+
+
 
 #ifdef BC_LIF
     configureLifWidget(wiz.lifControlWidget());
 #endif
 
-    if(wiz.exec() != QDialog::Accepted)
+    ExperimentSetupDialog d(exp,d_hardware,clocks,p_hwm->validationKeys(),this);
+    if(d.exec() != QDialog::Accepted)
         return false;
 
     return true;

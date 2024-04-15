@@ -3,6 +3,7 @@ SOURCES += $$PWD/loghandler.cpp \
     $$PWD/analysis/ft.cpp \
     $$PWD/analysis/ftworker.cpp \
     $$PWD/analysis/peakfinder.cpp \
+    $$PWD/bcglobals.cpp \
     $$PWD/experiment/chirpconfig.cpp \
     $$PWD/experiment/digitizerconfig.cpp \
     $$PWD/experiment/experiment.cpp \

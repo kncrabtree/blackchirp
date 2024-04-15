@@ -61,7 +61,7 @@ void ClockManager::readActiveClocks()
     }
 }
 
-QMultiHash<RfConfig::ClockType, RfConfig::ClockFreq> ClockManager::getCurrentClocks()
+QHash<RfConfig::ClockType, RfConfig::ClockFreq> ClockManager::getCurrentClocks()
 {
     QHash<RfConfig::ClockType, RfConfig::ClockFreq> out;
     for(auto it = d_clockRoles.constBegin(); it != d_clockRoles.constEnd(); ++it)
@@ -108,7 +108,7 @@ double ClockManager::readClockFrequency(RfConfig::ClockType t)
     return d_clockRoles.value(t)->readFrequency(t);
 }
 
-bool ClockManager::configureClocks(QMultiHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks)
+bool ClockManager::configureClocks(QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks)
 {
     d_clockRoles.clear();
     for(int i=0; i<d_clockList.size(); i++)

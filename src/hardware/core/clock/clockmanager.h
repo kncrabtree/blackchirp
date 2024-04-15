@@ -44,15 +44,15 @@ signals:
 
 public slots:
     void readActiveClocks();
-    QMultiHash<RfConfig::ClockType,RfConfig::ClockFreq> getCurrentClocks();
+    QHash<RfConfig::ClockType,RfConfig::ClockFreq> getCurrentClocks();
     double setClockFrequency(RfConfig::ClockType t, double freqMHz);
     double readClockFrequency(RfConfig::ClockType t);
-    bool configureClocks(QMultiHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
+    bool configureClocks(QHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
     bool prepareForExperiment(Experiment &exp);
 
 private:
     QVector<Clock*> d_clockList;
-    QMultiHash<RfConfig::ClockType,Clock*> d_clockRoles;
+    QHash<RfConfig::ClockType,Clock*> d_clockRoles;
 
     friend class HardwareManager;
 

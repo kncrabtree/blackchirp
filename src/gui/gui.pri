@@ -5,6 +5,10 @@ SOURCES += $$PWD/mainwindow.cpp \
    $$PWD/dialog/hwdialog.cpp \
     $$PWD/dialog/peaklistexportdialog.cpp \
     $$PWD/dialog/quickexptdialog.cpp \
+    $$PWD/expsetup/experimentconfigpage.cpp \
+    $$PWD/expsetup/experimentrfconfigpage.cpp \
+    $$PWD/expsetup/experimentsetupdialog.cpp \
+    $$PWD/expsetup/experimenttypepage.cpp \
     $$PWD/plot/blackchirpplotcurve.cpp \
     $$PWD/plot/chirpconfigplot.cpp \
     $$PWD/plot/customtracker.cpp \
@@ -57,6 +61,10 @@ HEADERS += $$PWD/mainwindow.h \
    $$PWD/dialog/hwdialog.h \
     $$PWD/dialog/peaklistexportdialog.h \
     $$PWD/dialog/quickexptdialog.h \
+    $$PWD/expsetup/experimentconfigpage.h \
+    $$PWD/expsetup/experimentrfconfigpage.h \
+    $$PWD/expsetup/experimentsetupdialog.h \
+    $$PWD/expsetup/experimenttypepage.h \
     $$PWD/mainwindow_ui.h \
     $$PWD/plot/blackchirpplotcurve.h \
     $$PWD/plot/chirpconfigplot.h \

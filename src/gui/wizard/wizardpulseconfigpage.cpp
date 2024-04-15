@@ -13,7 +13,7 @@ WizardPulseConfigPage::WizardPulseConfigPage(QWidget *parent) :
 
     QVBoxLayout *vbl = new QVBoxLayout();
 
-    p_pcw = new PulseConfigWidget(this);
+    // p_pcw = new PulseConfigWidget(this);
     vbl->addWidget(p_pcw);
 
     setLayout(vbl);
@@ -29,8 +29,8 @@ void WizardPulseConfigPage::initializePage()
     auto e = getExperiment();
     if(d_firstInitialization)
     {
-        if(e->pGenConfig())
-            p_pcw->setFromConfig(*e->pGenConfig());
+        // if(e->pGenConfig())
+            // p_pcw->setFromConfig(*e->pGenConfig());
 
         p_pcw->configureForWizard();
         emit completeChanged();
@@ -66,8 +66,8 @@ bool WizardPulseConfigPage::validatePage()
             return false;
     }
 
-    auto e = getExperiment();
-    e->setPulseGenConfig(p_pcw->getConfig());
+    // auto e = getExperiment();
+    // e->setPulseGenConfig(p_pcw->getConfig());
     
 
     return true;
