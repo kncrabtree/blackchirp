@@ -312,33 +312,6 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
 
     setLayout(vbl);
 
-    connect(p_ftmwTypeBox,&QComboBox::currentTextChanged,this,&ExperimentTypePage::configureUI);
-    connect(p_chirpScoringBox,&QCheckBox::toggled,this,&ExperimentTypePage::configureUI);
-    connect(p_phaseCorrectionBox,&QCheckBox::toggled,this,&ExperimentTypePage::configureUI);
-
-    using namespace std::chrono;
-    d_timerId = startTimer(5s);
-}
-
-bool ExperimentTypePage::ftmwEnabled() const
-{
-    return !p_ftmw->isCheckable() || p_ftmw->isChecked();
-}
-
-FtmwConfig::FtmwType ExperimentTypePage::getFtmwType() const
-{
-    return p_ftmwTypeBox->currentData().value<FtmwConfig::FtmwType>();
-}
-
-#ifdef BC_LIF
-bool ExperimentTypePage::lifEnabled() const
-{
-    return p_lif->isChecked();
-}
-#endif
-
-void ExperimentTypePage::initialize()
-{
     if(p_exp->d_number > 0)
     {
 
@@ -376,6 +349,33 @@ void ExperimentTypePage::initialize()
         p_auxDataIntervalBox->setValue(p_exp->d_timeDataInterval);
     }
 
+    connect(p_ftmwTypeBox,&QComboBox::currentTextChanged,this,&ExperimentTypePage::configureUI);
+    connect(p_chirpScoringBox,&QCheckBox::toggled,this,&ExperimentTypePage::configureUI);
+    connect(p_phaseCorrectionBox,&QCheckBox::toggled,this,&ExperimentTypePage::configureUI);
+
+    using namespace std::chrono;
+    d_timerId = startTimer(5s);
+}
+
+bool ExperimentTypePage::ftmwEnabled() const
+{
+    return !p_ftmw->isCheckable() || p_ftmw->isChecked();
+}
+
+FtmwConfig::FtmwType ExperimentTypePage::getFtmwType() const
+{
+    return p_ftmwTypeBox->currentData().value<FtmwConfig::FtmwType>();
+}
+
+#ifdef BC_LIF
+bool ExperimentTypePage::lifEnabled() const
+{
+    return p_lif->isChecked();
+}
+#endif
+
+void ExperimentTypePage::initialize()
+{
     configureUI();
 }
 
@@ -479,6 +479,10 @@ void ExperimentTypePage::configureUI()
         break;
     case FtmwConfig::LO_Scan:
     case FtmwConfig::DR_Scan:
+        p_ftmwShotsBox->setEnabled(false);
+        p_ftmwTargetDurationBox->setEnabled(false);
+        p_endTimeLabel->setEnabled(false);
+        break;
     default:
         p_ftmwShotsBox->setEnabled(true);
         p_ftmwTargetDurationBox->setEnabled(false);

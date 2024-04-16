@@ -12,6 +12,7 @@
 
 #include "experimenttypepage.h"
 #include "experimentrfconfigpage.h"
+#include "experimentloscanconfigpage.h"
 
 ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QString, QString> &hw, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent)
     : QDialog{parent}
@@ -47,9 +48,9 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
 
     mainLayout->addLayout(hbl,1);
     auto bb = new QDialogButtonBox(QDialogButtonBox::Cancel,this);
-    auto startButton = new QPushButton("Start Experiment");
-    startButton->setAutoDefault(true);
-    bb->addButton(startButton,QDialogButtonBox::AcceptRole);
+    p_startButton = new QPushButton("Start Experiment");
+    p_startButton->setAutoDefault(true);
+    bb->addButton(p_startButton,QDialogButtonBox::AcceptRole);
     mainLayout->addWidget(bb);
 
     connect(bb,&QDialogButtonBox::rejected,this,&ExperimentSetupDialog::reject);
@@ -71,22 +72,34 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
     auto expTypeItem = new QTreeWidgetItem({sp->d_title});
     expTypeItem->setData(0,Qt::UserRole,k);
     p_navTree->addTopLevelItem(expTypeItem);
+    sp->initialize();
 
     auto rfp = new ExperimentRfConfigPage(p_exp,clocks);
     k = BC::Key::WizRf::key;
-    rfp->setEnabled(sp->ftmwEnabled());
     i = p_configWidget->addWidget(rfp);
     d_pages.insert({k,{i,k,rfp}});
     auto rfItem = new QTreeWidgetItem(expTypeItem,{rfp->d_title});
+    rfp->setEnabled(sp->ftmwEnabled());
     rfItem->setDisabled(!sp->ftmwEnabled());
     rfItem->setData(0,Qt::UserRole,k);
 
+    auto lop = new ExperimentLOScanConfigPage(p_exp);
+    k = BC::Key::WizLoScan::key;
+    i = p_configWidget->addWidget(lop);
+    d_pages.insert({k,{i,k,lop}});
+    auto loItem = new QTreeWidgetItem(rfItem,{lop->d_title});
+    lop->setEnabled(sp->ftmwEnabled() && (sp->getFtmwType() == FtmwConfig::LO_Scan));
+    loItem->setDisabled(!sp->ftmwEnabled() || (sp->getFtmwType() != FtmwConfig::LO_Scan));
+    loItem->setData(0,Qt::UserRole,k);
 
     connect(sp,&ExperimentTypePage::typeChanged,[=](){
        bool ften = sp->ftmwEnabled();
 
        rfp->setEnabled(ften);
        rfItem->setDisabled(!ften);
+
+       lop->setEnabled(ften && (sp->getFtmwType() == FtmwConfig::LO_Scan));
+       loItem->setDisabled(!ften || (sp->getFtmwType() != FtmwConfig::LO_Scan));
 
     });
 
@@ -121,16 +134,7 @@ void ExperimentSetupDialog::pageChanged(QTreeWidgetItem *newItem, QTreeWidgetIte
                 p_summaryWidget->setExperiment(p_exp);
             }
             else
-            {
-                p_navTree->blockSignals(true);
-                prevItem->setSelected(true);
                 prevItem->setBackground(0,QBrush(Qt::red));
-                if(newItem)
-                    newItem->setSelected(false);
-                p_navTree->setCurrentItem(prevItem);
-                p_navTree->blockSignals(false);
-                return;
-            }
         }
     }
 
@@ -139,7 +143,10 @@ void ExperimentSetupDialog::pageChanged(QTreeWidgetItem *newItem, QTreeWidgetIte
         auto newPageKey = newItem->data(0,Qt::UserRole).toString();
         auto newit = d_pages.find(newPageKey);
         if(newit != d_pages.end())
+        {
+            newit->second.page->initialize();
             p_configWidget->setCurrentIndex(newit->second.index);
+        }
     }
 
     validateAll();
@@ -153,7 +160,9 @@ bool ExperimentSetupDialog::validateAll(bool apply)
         page->apply();
 
     p_statusTextEdit->clear();
-    return validate(p_navTree->invisibleRootItem(),apply);
+    bool out = validate(p_navTree->invisibleRootItem(),apply);
+    p_startButton->setEnabled(out);
+    return out;
 }
 
 bool ExperimentSetupDialog::validate(QTreeWidgetItem *item, bool apply)
@@ -197,4 +206,10 @@ void ExperimentSetupDialog::reject()
         p.page->discardChanges();
 
     QDialog::reject();
+}
+
+void ExperimentSetupDialog::accept()
+{
+    if(validateAll(true))
+        QDialog::accept();
 }

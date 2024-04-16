@@ -40,7 +40,7 @@ private:
     QStackedWidget *p_configWidget;
     ExperimentSummaryWidget *p_summaryWidget;
     QTextEdit *p_statusTextEdit;
-    QPushButton *p_validateButton;
+    QPushButton *p_validateButton, *p_startButton;
 
     Experiment *p_exp;
 
@@ -50,6 +50,7 @@ private:
     // QDialog interface
 public slots:
     void reject() override;
+    void accept() override;
 };
 
 #endif // EXPERIMENTSETUPWIDGET_H

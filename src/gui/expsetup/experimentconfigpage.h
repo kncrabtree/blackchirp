@@ -22,6 +22,13 @@ signals:
     void error(QString);
 
 public slots:
+    ///
+    /// \brief Initialize settings that depend on values from another page
+    ///
+    /// Note that initialization a previous experiment or from settings should be done in the
+    /// constructor. This function should only make changes that are necessary based on values
+    /// selected on another page.
+    ///
     virtual void initialize()=0;
     virtual bool validate()=0;
     virtual void apply() =0;
