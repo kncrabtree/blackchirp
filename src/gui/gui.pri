@@ -6,6 +6,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/dialog/peaklistexportdialog.cpp \
     $$PWD/dialog/quickexptdialog.cpp \
     $$PWD/expsetup/experimentconfigpage.cpp \
+    $$PWD/expsetup/experimentdrscanconfigpage.cpp \
     $$PWD/expsetup/experimentloscanconfigpage.cpp \
     $$PWD/expsetup/experimentrfconfigpage.cpp \
     $$PWD/expsetup/experimentsetupdialog.cpp \
@@ -63,6 +64,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/dialog/peaklistexportdialog.h \
     $$PWD/dialog/quickexptdialog.h \
     $$PWD/expsetup/experimentconfigpage.h \
+    $$PWD/expsetup/experimentdrscanconfigpage.h \
     $$PWD/expsetup/experimentloscanconfigpage.h \
     $$PWD/expsetup/experimentrfconfigpage.h \
     $$PWD/expsetup/experimentsetupdialog.h \

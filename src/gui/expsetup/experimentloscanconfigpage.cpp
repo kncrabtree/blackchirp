@@ -11,7 +11,6 @@ using namespace BC::Key::WizLoScan;
 #include <QFormLayout>
 #include <QCheckBox>
 
-#include <hardware/core/clock/clock.h>
 #include <data/experiment/ftmwconfigtypes.h>
 
 ExperimentLOScanConfigPage::ExperimentLOScanConfigPage(Experiment *exp, QWidget *parent)
@@ -548,53 +547,7 @@ ExperimentLOScanConfigPage::LoRanges ExperimentLOScanConfigPage::calculateLoRang
     //update ranges on boxes, etc, in case hardware changed
     auto const &rfc = p_exp->ftmwConfig()->d_rfConfig;
 
-    //get LO hardware
-    auto upLO = rfc.clockHardware(RfConfig::UpLO);
-    auto downLO = rfc.clockHardware(RfConfig::DownLO);
-
-    SettingsStorage s(upLO,Hardware);
-
-    double upMinFreq = s.get<double>(BC::Key::Clock::minFreq,0.0);
-    double upMaxFreq = s.get<double>(BC::Key::Clock::maxFreq,1e7);
-
-    double downMinFreq = upMinFreq;
-    double downMaxFreq = upMaxFreq;
-
-    if(!rfc.d_commonUpDownLO && upLO != downLO)
-    {
-        SettingsStorage s2(downLO,Hardware);
-
-        downMinFreq = s2.get<double>(BC::Key::Clock::minFreq,0.0);
-        downMaxFreq = s2.get<double>(BC::Key::Clock::maxFreq,1e7);
-    }
-
-    auto clocks = rfc.getClocks();
-    auto upLoClock = clocks.value(RfConfig::UpLO);
-    if(upLoClock.op == RfConfig::Multiply)
-    {
-        upMinFreq*=upLoClock.factor;
-        upMaxFreq*=upLoClock.factor;
-    }
-    else
-    {
-        upMinFreq/=upLoClock.factor;
-        upMaxFreq/=upLoClock.factor;
-    }
-
-
-    auto downLoClock = clocks.value(RfConfig::DownLO);
-    if(downLoClock.op == RfConfig::Multiply)
-    {
-        downMinFreq*=downLoClock.factor;
-        downMaxFreq*=downLoClock.factor;
-    }
-    else
-    {
-        downMinFreq/=downLoClock.factor;
-        downMaxFreq/=downLoClock.factor;
-    }
-
-    return {{upMinFreq,upMaxFreq},{downMinFreq,downMaxFreq}};
+    return {{rfc.clockRange(RfConfig::UpLO)},{rfc.clockRange(RfConfig::DownLO)}};
 }
 
 void ExperimentLOScanConfigPage::initialize()

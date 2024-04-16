@@ -61,7 +61,7 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
 
     p_endTimeLabel = new QLabel;
     p_endTimeLabel->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
-    p_endTimeLabel->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+    // p_endTimeLabel->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
     auto dt = QDateTime::currentDateTime().addSecs(p_ftmwTargetDurationBox->value()*60);
     p_endTimeLabel->setText(d_endText.arg(dt.toString("yyyy-MM-dd h:mm AP")));
     fl->addRow(p_endTimeLabel);
@@ -108,7 +108,7 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
             if(lbl != nullptr)
             {
                 lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
-                lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
+                // lbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding);
             }
         }
     }

@@ -13,6 +13,7 @@
 #include "experimenttypepage.h"
 #include "experimentrfconfigpage.h"
 #include "experimentloscanconfigpage.h"
+#include "experimentdrscanconfigpage.h"
 
 ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QString, QString> &hw, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent)
     : QDialog{parent}
@@ -92,14 +93,29 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
     loItem->setDisabled(!sp->ftmwEnabled() || (sp->getFtmwType() != FtmwConfig::LO_Scan));
     loItem->setData(0,Qt::UserRole,k);
 
+    auto drop = new ExperimentDRScanConfigPage(p_exp);
+    k = BC::Key::WizDR::key;
+    i = p_configWidget->addWidget(drop);
+    d_pages.insert({k,{i,k,drop}});
+    auto dropItem = new QTreeWidgetItem(rfItem,{drop->d_title});
+    drop->setEnabled(sp->ftmwEnabled() && (sp->getFtmwType() == FtmwConfig::DR_Scan));
+    dropItem->setDisabled(!sp->ftmwEnabled() || (sp->getFtmwType() != FtmwConfig::DR_Scan));
+    dropItem->setData(0,Qt::UserRole,k);
+
     connect(sp,&ExperimentTypePage::typeChanged,[=](){
-       bool ften = sp->ftmwEnabled();
+        sp->apply();
+        bool ften = sp->ftmwEnabled();
 
-       rfp->setEnabled(ften);
-       rfItem->setDisabled(!ften);
+        rfp->setEnabled(ften);
+        rfItem->setDisabled(!ften);
 
-       lop->setEnabled(ften && (sp->getFtmwType() == FtmwConfig::LO_Scan));
-       loItem->setDisabled(!ften || (sp->getFtmwType() != FtmwConfig::LO_Scan));
+        lop->setEnabled(ften && (sp->getFtmwType() == FtmwConfig::LO_Scan));
+        loItem->setDisabled(!ften || (sp->getFtmwType() != FtmwConfig::LO_Scan));
+
+        drop->setEnabled(ften && (sp->getFtmwType() == FtmwConfig::DR_Scan));
+        dropItem->setDisabled(!ften || (sp->getFtmwType() != FtmwConfig::DR_Scan));
+
+        validateAll();
 
     });
 
