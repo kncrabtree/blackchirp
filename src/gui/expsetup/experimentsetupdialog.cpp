@@ -14,6 +14,7 @@
 #include "experimentrfconfigpage.h"
 #include "experimentloscanconfigpage.h"
 #include "experimentdrscanconfigpage.h"
+#include "experimentchirpconfigpage.h"
 
 ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QString, QString> &hw, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent)
     : QDialog{parent}
@@ -74,46 +75,62 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
     expTypeItem->setData(0,Qt::UserRole,k);
     p_navTree->addTopLevelItem(expTypeItem);
     sp->initialize();
+    auto ften = sp->ftmwEnabled();
+    auto type = sp->getFtmwType();
 
     auto rfp = new ExperimentRfConfigPage(p_exp,clocks);
+    auto en = ften;
     k = BC::Key::WizRf::key;
     i = p_configWidget->addWidget(rfp);
-    d_pages.insert({k,{i,k,rfp}});
+    d_pages.insert({k,{i,k,rfp,en}});
     auto rfItem = new QTreeWidgetItem(expTypeItem,{rfp->d_title});
-    rfp->setEnabled(sp->ftmwEnabled());
-    rfItem->setDisabled(!sp->ftmwEnabled());
+    rfp->setEnabled(en);
+    rfItem->setDisabled(!en);
     rfItem->setData(0,Qt::UserRole,k);
 
     auto lop = new ExperimentLOScanConfigPage(p_exp);
+    en = ften && (type == FtmwConfig::LO_Scan);
     k = BC::Key::WizLoScan::key;
     i = p_configWidget->addWidget(lop);
-    d_pages.insert({k,{i,k,lop}});
+    d_pages.insert({k,{i,k,lop,en}});
     auto loItem = new QTreeWidgetItem(rfItem,{lop->d_title});
-    lop->setEnabled(sp->ftmwEnabled() && (sp->getFtmwType() == FtmwConfig::LO_Scan));
-    loItem->setDisabled(!sp->ftmwEnabled() || (sp->getFtmwType() != FtmwConfig::LO_Scan));
+    lop->setEnabled(en);
+    loItem->setDisabled(!en);
     loItem->setData(0,Qt::UserRole,k);
 
     auto drop = new ExperimentDRScanConfigPage(p_exp);
+    en = ften && (type == FtmwConfig::DR_Scan);
     k = BC::Key::WizDR::key;
     i = p_configWidget->addWidget(drop);
-    d_pages.insert({k,{i,k,drop}});
+    d_pages.insert({k,{i,k,drop,en}});
     auto dropItem = new QTreeWidgetItem(rfItem,{drop->d_title});
-    drop->setEnabled(sp->ftmwEnabled() && (sp->getFtmwType() == FtmwConfig::DR_Scan));
-    dropItem->setDisabled(!sp->ftmwEnabled() || (sp->getFtmwType() != FtmwConfig::DR_Scan));
+    drop->setEnabled(en);
+    dropItem->setDisabled(en);
     dropItem->setData(0,Qt::UserRole,k);
+
+    auto chp = new ExperimentChirpConfigPage(p_exp);
+    en = ften;
+    k = BC::Key::WizChirp::key;
+    i = p_configWidget->addWidget(chp);
+    d_pages.insert({k,{i,k,chp,en}});
+    auto chpItem = new QTreeWidgetItem(rfItem,{chp->d_title});
+    chp->setEnabled(en);
+    chpItem->setDisabled(!en);
+    chpItem->setData(0,Qt::UserRole,k);
+
 
     connect(sp,&ExperimentTypePage::typeChanged,[=](){
         sp->apply();
         bool ften = sp->ftmwEnabled();
+        auto type = sp->getFtmwType();
 
-        rfp->setEnabled(ften);
-        rfItem->setDisabled(!ften);
+        d_pages[rfp->d_key].enabled = ften;
+        d_pages[lop->d_key].enabled = ften && (type == FtmwConfig::LO_Scan);
+        d_pages[drop->d_key].enabled = ften && (type == FtmwConfig::DR_Scan);
+        d_pages[chp->d_key].enabled = ften;
 
-        lop->setEnabled(ften && (sp->getFtmwType() == FtmwConfig::LO_Scan));
-        loItem->setDisabled(!ften || (sp->getFtmwType() != FtmwConfig::LO_Scan));
-
-        drop->setEnabled(ften && (sp->getFtmwType() == FtmwConfig::DR_Scan));
-        dropItem->setDisabled(!ften || (sp->getFtmwType() != FtmwConfig::DR_Scan));
+        for( auto &[k,pp] : d_pages)
+            pp.page->setEnabled(pp.enabled);
 
         validateAll();
 
@@ -188,6 +205,7 @@ bool ExperimentSetupDialog::validate(QTreeWidgetItem *item, bool apply)
     bool out = true;
     if(it != d_pages.end() && it->second.page->isEnabled())
     {
+        it->second.page->initialize();
         out = it->second.page->validate();
         if(out)
         {
@@ -198,10 +216,36 @@ bool ExperimentSetupDialog::validate(QTreeWidgetItem *item, bool apply)
         else
             item->setBackground(0,QBrush(Qt::red));
     }
-    for(int i=0; i<item->childCount(); i++)
-        out = out && validate(item->child(i),apply);
+    if(out)
+    {
+        enableChildren(item,true);
+        for(int i=0; i<item->childCount(); i++)
+            out = out && validate(item->child(i),apply);
+    }
+    else
+        enableChildren(item,false);
 
     return out;
+}
+
+void ExperimentSetupDialog::enableChildren(QTreeWidgetItem *item, bool enable)
+{
+    for(int i=0; i<item->childCount(); i++)
+    {
+        auto c = item->child(i);
+        enableChildren(c,enable);
+        auto pageKey = c->data(0,Qt::UserRole).toString();
+        auto it = d_pages.find(pageKey);
+        if(it == d_pages.end())
+        {
+            c->setDisabled(!enable);
+        }
+        else
+        {
+            c->setDisabled(!enable || !it->second.enabled);
+            it->second.page->setEnabled(enable && it->second.enabled);
+        }
+    }
 }
 
 void ExperimentSetupDialog::warning(const QString text)

@@ -18,7 +18,7 @@
 using namespace BC::Key::WizStart;
 
 ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
-    ExperimentConfigPage(key,title,exp)
+    ExperimentConfigPage(key,title,exp,parent)
 {
     QFormLayout *fl = new QFormLayout(this);
 

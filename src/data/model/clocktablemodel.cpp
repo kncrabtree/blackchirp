@@ -69,14 +69,17 @@ ClockTableModel::~ClockTableModel()
     int i=0;
     for(auto it = d_clockConfigs.cbegin(); it != d_clockConfigs.cend(); ++it)
     {
-        appendArrayMap(ctClocks,{
-            {ctClockType,it.key()},
-            {ctHwKey,it.value().hwKey},
-            {ctOutput,it.value().output},
-            {ctOp,it.value().op},
-            {ctFactor,it.value().factor},
-            {ctFreq,it.value().desiredFreqMHz}
-        },false);
+        if(!it.value().hwKey.isEmpty())
+        {
+            appendArrayMap(ctClocks,{
+                               {ctClockType,it.key()},
+                               {ctHwKey,it.value().hwKey},
+                               {ctOutput,it.value().output},
+                               {ctOp,it.value().op},
+                               {ctFactor,it.value().factor},
+                               {ctFreq,it.value().desiredFreqMHz}
+                           },false);
+        }
 
         ++i;
     }

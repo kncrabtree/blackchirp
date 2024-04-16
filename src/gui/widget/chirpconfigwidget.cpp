@@ -108,33 +108,33 @@ ChirpConfigWidget::~ChirpConfigWidget()
     delete ui;
 }
 
-void ChirpConfigWidget::initialize(RfConfig *p)
+void ChirpConfigWidget::initialize(const RfConfig &rfc)
 {
-    p_rfConfig = p;
-    p_ctm->initialize(p);
+    d_rfConfig = rfc;
+    p_ctm->initialize(&d_rfConfig);
     updateChirpPlot();
 }
 
-void ChirpConfigWidget::setFromRfConfig(RfConfig *p)
+void ChirpConfigWidget::setFromRfConfig(const RfConfig &rfc)
 {
     disconnect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::updateChirpPlot);
-    p_rfConfig = p;
+    d_rfConfig = rfc;
     if(d_rampOnly)
     {
-        auto thiscc = p_rfConfig->d_chirpConfig;
+        auto thiscc = d_rfConfig.d_chirpConfig;
         if(!thiscc.chirpList().isEmpty())
         {
             if(thiscc.chirpList().constFirst().size() > 1)
             {
                 thiscc.setChirpList(QVector<QVector<ChirpConfig::ChirpSegment>>());
-                p_rfConfig->setChirpConfig(thiscc);
+                d_rfConfig.setChirpConfig(thiscc);
             }
         }
     }
 
 
 
-    auto &cc = p_rfConfig->d_chirpConfig;
+    auto &cc = d_rfConfig.d_chirpConfig;
 
     ui->preChirpProtectionDoubleSpinBox->blockSignals(true);
     ui->preChirpProtectionDoubleSpinBox->setValue(cc.preChirpProtectionDelay());
@@ -172,10 +172,15 @@ void ChirpConfigWidget::setFromRfConfig(RfConfig *p)
     ui->currentChirpBox->setValue(1);
     ui->currentChirpBox->blockSignals(false);
 
-    p_ctm->setFromRfConfig(p);
+    p_ctm->setFromRfConfig(&d_rfConfig);
     p_ctm->d_allIdentical = cc.allChirpsIdentical();
     connect(p_ctm,&ChirpTableModel::modelChanged,this,&ChirpConfigWidget::updateChirpPlot);
     updateChirpPlot();
+}
+
+ChirpConfig &ChirpConfigWidget::getChirps()
+{
+    return d_rfConfig.d_chirpConfig;
 }
 
 void ChirpConfigWidget::enableEditing(bool enabled)
@@ -300,13 +305,13 @@ void ChirpConfigWidget::updateChirpPlot()
     updateRfConfig();
 
     emit chirpConfigChanged();
-    ui->chirpPlot->newChirp(p_rfConfig->d_chirpConfig);
+    ui->chirpPlot->newChirp(d_rfConfig.d_chirpConfig);
 }
 
 void ChirpConfigWidget::updateRfConfig()
 {
     auto l = p_ctm->chirpList();
-    auto &cc = p_rfConfig->d_chirpConfig;
+    auto &cc = d_rfConfig.d_chirpConfig;
     cc.setPreChirpProtectionDelay(ui->preChirpProtectionDoubleSpinBox->value());
     cc.setPreChirpGateDelay(ui->preChirpDelayDoubleSpinBox->value());
     cc.setPostChirpGateDelay(ui->postChirpDelayDoubleSpinBox->value());

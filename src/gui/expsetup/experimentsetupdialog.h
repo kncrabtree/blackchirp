@@ -23,8 +23,9 @@ signals:
 
 public slots:
     void pageChanged(QTreeWidgetItem *newItem, QTreeWidgetItem *prevItem);
-    bool validateAll(bool apply=false);
-    bool validate(QTreeWidgetItem *item, bool apply=false);
+    bool validateAll(bool apply=true);
+    bool validate(QTreeWidgetItem *item, bool apply=true);
+    void enableChildren(QTreeWidgetItem *item, bool enable = true);
     void warning(const QString text);
     void error(const QString text);
 
@@ -34,6 +35,7 @@ private:
         int index;
         QString key;
         ExperimentConfigPage *page;
+        bool enabled = true;
     };
 
     QTreeWidget *p_navTree;

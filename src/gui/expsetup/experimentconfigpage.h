@@ -12,6 +12,7 @@ class ExperimentConfigPage : public QWidget, public SettingsStorage
 public:
     explicit ExperimentConfigPage(QString key, QString title, Experiment *exp, QWidget *parent = nullptr);
 
+    const QString d_key;
     const QString d_title;
 
 protected:

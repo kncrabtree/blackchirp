@@ -33,9 +33,9 @@ void WizardChirpConfigPage::initializePage()
     //get rfConfig
     auto e = getExperiment();
     if(e->d_number > 0)
-        p_ccw->setFromRfConfig(&e->ftmwConfig()->d_rfConfig);
+        p_ccw->setFromRfConfig(e->ftmwConfig()->d_rfConfig);
     else
-        p_ccw->initialize(&e->ftmwConfig()->d_rfConfig);
+        p_ccw->initialize(e->ftmwConfig()->d_rfConfig);
 
     p_ccw->updateChirpPlot();
 
