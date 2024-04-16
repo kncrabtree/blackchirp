@@ -23,9 +23,8 @@ signals:
 
 public slots:
     void pageChanged(QTreeWidgetItem *newItem, QTreeWidgetItem *prevItem);
-    void validateAll();
-    bool validate(QTreeWidgetItem *item);
-    bool validateAndApply(QTreeWidgetItem *item);
+    bool validateAll(bool apply=false);
+    bool validate(QTreeWidgetItem *item, bool apply=false);
     void warning(const QString text);
     void error(const QString text);
 
@@ -47,6 +46,10 @@ private:
 
     std::map<QString,PageData> d_pages;
 
+
+    // QDialog interface
+public slots:
+    void reject() override;
 };
 
 #endif // EXPERIMENTSETUPWIDGET_H

@@ -515,6 +515,8 @@ bool MainWindow::runExperimentWizard(Experiment *exp, QuickExptDialog *qed)
     if(d.exec() != QDialog::Accepted)
         return false;
 
+    ///TEMPORARY-- remove when new wizard complete
+    return false;
     return true;
 }
 

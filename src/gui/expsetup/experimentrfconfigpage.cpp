@@ -55,6 +55,17 @@ bool ExperimentRfConfigPage::validate()
             return false;
         }
     }
+    else
+    {
+        if(p_rfc->getHwKey(RfConfig::UpLO).isEmpty())
+            emit warning("No upconversion LO set; assuming 0 MHz.");
+
+        if(!p_rfc->commonLO())
+        {
+            if(p_rfc->getHwKey(RfConfig::DownLO).isEmpty())
+                emit warning("No downconversion LO set; assuming 0 MHz");
+        }
+    }
 
     return true;
 }

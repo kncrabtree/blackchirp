@@ -6,6 +6,7 @@
 #include <QTextEdit>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QDialogButtonBox>
 
 #include <gui/widget/experimentsummarywidget.h>
 
@@ -16,6 +17,8 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
     : QDialog{parent}
 {
     setWindowTitle("Experiment Setup");
+
+    auto mainLayout = new QVBoxLayout;
 
     auto hbl = new QHBoxLayout;
 
@@ -37,11 +40,22 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
     vbl->addWidget(p_statusTextEdit,1);
 
     p_validateButton = new QPushButton(QString("Validate"),this);
+    connect(p_validateButton,&QPushButton::clicked,this,&ExperimentSetupDialog::validateAll);
     vbl->addWidget(p_validateButton,0);
 
     hbl->addLayout(vbl,0);
 
-    setLayout(hbl);
+    mainLayout->addLayout(hbl,1);
+    auto bb = new QDialogButtonBox(QDialogButtonBox::Cancel,this);
+    auto startButton = new QPushButton("Start Experiment");
+    startButton->setAutoDefault(true);
+    bb->addButton(startButton,QDialogButtonBox::AcceptRole);
+    mainLayout->addWidget(bb);
+
+    connect(bb,&QDialogButtonBox::rejected,this,&ExperimentSetupDialog::reject);
+    connect(bb,&QDialogButtonBox::accepted,this,&ExperimentSetupDialog::accept);
+
+    setLayout(mainLayout);
 
     p_exp = exp;
 
@@ -82,11 +96,11 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
         connect(id.page,&ExperimentConfigPage::error,this,&ExperimentSetupDialog::error);
     }
 
-    validateAndApply(p_navTree->invisibleRootItem());
+    p_navTree->expandAll();
+    validate(p_navTree->invisibleRootItem(),true);
     p_summaryWidget->setExperiment(exp);
 
     connect(p_navTree,&QTreeWidget::currentItemChanged,this,&ExperimentSetupDialog::pageChanged);
-    p_navTree->expandAll();
 }
 
 void ExperimentSetupDialog::pageChanged(QTreeWidgetItem *newItem, QTreeWidgetItem *prevItem)
@@ -131,13 +145,18 @@ void ExperimentSetupDialog::pageChanged(QTreeWidgetItem *newItem, QTreeWidgetIte
     validateAll();
 }
 
-void ExperimentSetupDialog::validateAll()
+bool ExperimentSetupDialog::validateAll(bool apply)
 {
+    //first, apply settings on current page if it validates
+    auto page = dynamic_cast<ExperimentConfigPage*>(p_configWidget->currentWidget());
+    if(page && page->validate())
+        page->apply();
+
     p_statusTextEdit->clear();
-    validate(p_navTree->invisibleRootItem());
+    return validate(p_navTree->invisibleRootItem(),apply);
 }
 
-bool ExperimentSetupDialog::validate(QTreeWidgetItem *item)
+bool ExperimentSetupDialog::validate(QTreeWidgetItem *item, bool apply)
 {
     auto pageKey = item->data(0,Qt::UserRole).toString();
     auto it = d_pages.find(pageKey);
@@ -146,29 +165,16 @@ bool ExperimentSetupDialog::validate(QTreeWidgetItem *item)
     {
         out = it->second.page->validate();
         if(out)
+        {
+            if(apply)
+                it->second.page->apply();
             item->setBackground(0,QBrush());
+        }
         else
             item->setBackground(0,QBrush(Qt::red));
     }
     for(int i=0; i<item->childCount(); i++)
-        out = out && validate(item->child(i));
-
-    return out;
-}
-
-bool ExperimentSetupDialog::validateAndApply(QTreeWidgetItem *item)
-{
-    auto pageKey = item->data(0,Qt::UserRole).toString();
-    auto it = d_pages.find(pageKey);
-    bool out = true;
-    if(it != d_pages.end() && it->second.page->isEnabled())
-    {
-        out = it->second.page->validate();
-        if(out)
-            it->second.page->apply();
-    }
-    for(int i=0; i<item->childCount(); i++)
-        out = out && validateAndApply(item->child(i));
+        out = out && validate(item->child(i),apply);
 
     return out;
 }
@@ -182,4 +188,13 @@ void ExperimentSetupDialog::error(const QString text)
 {
     p_statusTextEdit->append(QString("<span style=\"font-weight:bold;color:red\">%1</span>").arg(text));
 
+}
+
+
+void ExperimentSetupDialog::reject()
+{
+    for(auto &[k,p] : d_pages)
+        p.page->discardChanges();
+
+    QDialog::reject();
 }
