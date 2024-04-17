@@ -375,7 +375,7 @@ DigitizerConfigWidget::~DigitizerConfigWidget()
     }
 }
 
-int DigitizerConfigWidget::numAnalogChecked()
+int DigitizerConfigWidget::numAnalogChecked() const
 {
     int out = 0;
     for(auto &ch : d_anChannelWidgets)
@@ -387,9 +387,29 @@ int DigitizerConfigWidget::numAnalogChecked()
     return out;
 }
 
-int DigitizerConfigWidget::numDigitalChecked()
+int DigitizerConfigWidget::numDigitalChecked() const
 {
     return 0;
+}
+
+bool DigitizerConfigWidget::multiRecordChecked() const
+{
+    return p_multiRecordBox->isChecked();
+}
+
+bool DigitizerConfigWidget::blockAverageChecked() const
+{
+    return p_blockAverageBox->isChecked();
+}
+
+int DigitizerConfigWidget::numAverages() const
+{
+    return p_numAveragesBox->value();
+}
+
+int DigitizerConfigWidget::numRecords() const
+{
+    return p_numRecordsBox->value();
 }
 
 void DigitizerConfigWidget::setFromConfig(const DigitizerConfig &c)

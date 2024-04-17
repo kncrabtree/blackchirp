@@ -15,6 +15,7 @@
 #include "experimentloscanconfigpage.h"
 #include "experimentdrscanconfigpage.h"
 #include "experimentchirpconfigpage.h"
+#include "experimentftmwdigitizerconfigpage.h"
 
 ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QString, QString> &hw, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent)
     : QDialog{parent}
@@ -78,12 +79,17 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
     auto ften = sp->ftmwEnabled();
     auto type = sp->getFtmwType();
 
-    auto rfp = new ExperimentRfConfigPage(p_exp,clocks);
+    auto ftmwItem = new QTreeWidgetItem(expTypeItem,{"FTMW"});
     auto en = ften;
+    ftmwItem->setDisabled(!en);
+    ftmwItem->setData(0,Qt::UserRole,QString(""));
+
+    auto rfp = new ExperimentRfConfigPage(p_exp,clocks);
+    en = ften;
     k = BC::Key::WizRf::key;
     i = p_configWidget->addWidget(rfp);
     d_pages.insert({k,{i,k,rfp,en}});
-    auto rfItem = new QTreeWidgetItem(expTypeItem,{rfp->d_title});
+    auto rfItem = new QTreeWidgetItem(ftmwItem,{rfp->d_title});
     rfp->setEnabled(en);
     rfItem->setDisabled(!en);
     rfItem->setData(0,Qt::UserRole,k);
@@ -118,18 +124,29 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
     chpItem->setDisabled(!en);
     chpItem->setData(0,Qt::UserRole,k);
 
+    auto ftdp = new ExperimentFtmwDigitizerConfigPage(p_exp);
+    en = ften;
+    k = BC::Key::WizFtDig::key;
+    i = p_configWidget->addWidget(ftdp);
+    d_pages.insert({k,{i,k,ftdp,en}});
+    auto ftdItem = new QTreeWidgetItem(rfItem,{ftdp->d_title});
+    ftdp->setEnabled(en);
+    ftdItem->setDisabled(!en);
+    ftdItem->setData(0,Qt::UserRole,k);
+
 
     connect(sp,&ExperimentTypePage::typeChanged,[=](){
         sp->apply();
-        bool ften = sp->ftmwEnabled();
-        auto type = sp->getFtmwType();
+        bool f = sp->ftmwEnabled();
+        auto t = sp->getFtmwType();
 
-        d_pages[rfp->d_key].enabled = ften;
-        d_pages[lop->d_key].enabled = ften && (type == FtmwConfig::LO_Scan);
-        d_pages[drop->d_key].enabled = ften && (type == FtmwConfig::DR_Scan);
-        d_pages[chp->d_key].enabled = ften;
+        d_pages[rfp->d_key].enabled = f;
+        d_pages[lop->d_key].enabled = f && (t == FtmwConfig::LO_Scan);
+        d_pages[drop->d_key].enabled = f && (t == FtmwConfig::DR_Scan);
+        d_pages[chp->d_key].enabled = f;
+        d_pages[ftdp->d_key].enabled = f;
 
-        for( auto &[k,pp] : d_pages)
+        for( auto &[kk,pp] : d_pages)
             pp.page->setEnabled(pp.enabled);
 
         validateAll();

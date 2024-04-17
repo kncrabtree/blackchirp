@@ -55,8 +55,12 @@ public:
     int d_maxAnalogEnabled{-1};
     int d_maxDigitalEnabled{-1};
 
-    int numAnalogChecked();
-    int numDigitalChecked();
+    int numAnalogChecked() const;
+    int numDigitalChecked() const;
+    bool multiRecordChecked() const;
+    bool blockAverageChecked() const;
+    int numAverages() const;
+    int numRecords() const;
 
     void setFromConfig(const DigitizerConfig &c);
     void toConfig(DigitizerConfig &c);
