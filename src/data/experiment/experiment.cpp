@@ -19,93 +19,8 @@
 
 Experiment::Experiment() : HeaderStorage(BC::Store::Exp::key)
 {
-    pu_auxData = std::make_unique<AuxDataStorage>();
-    pu_validator = std::make_unique<ExperimentValidator>();
-}
-
-Experiment::Experiment(const Experiment &other) :
-    HeaderStorage(BC::Store::Exp::key)
-{
-    if(other.ftmwConfig() != nullptr)
-    {
-        switch(other.ftmwConfig()->d_type)
-        {
-        case FtmwConfig::Target_Shots:
-            pu_ftmwConfig = std::make_unique<FtmwConfigSingle>(*other.ftmwConfig());
-            break;
-        case FtmwConfig::Target_Duration:
-            pu_ftmwConfig = std::make_unique<FtmwConfigDuration>(*other.ftmwConfig());
-            break;
-        case FtmwConfig::Peak_Up:
-            pu_ftmwConfig = std::make_unique<FtmwConfigPeakUp>(*other.ftmwConfig());
-            break;
-        case FtmwConfig::Forever:
-            pu_ftmwConfig = std::make_unique<FtmwConfigForever>(*other.ftmwConfig());
-            break;
-        case FtmwConfig::LO_Scan:
-            pu_ftmwConfig = std::make_unique<FtmwConfigLOScan>(*other.ftmwConfig());
-            break;
-        case FtmwConfig::DR_Scan:
-            pu_ftmwConfig = std::make_unique<FtmwConfigDRScan>(*other.ftmwConfig());
-            break;
-        default:
-            break;
-        }
-    }
-
-#ifdef BC_LIF
-    if(other.lifConfig() != nullptr)
-        pu_lifCfg = std::make_unique<LifConfig>(*other.lifConfig());
-#endif
-
-    pu_auxData = std::make_unique<AuxDataStorage>(*other.pu_auxData);
-    pu_validator = std::make_unique<ExperimentValidator>(*other.pu_validator);
-
-
-
-    for(const auto &[k,p] : other.d_optHwData)
-    {
-        auto l = k.split(".");
-        if(l.size() < 2)
-            continue;
-        bool ok = false;
-        int index = l.at(1).toInt(&ok);
-        if(!ok || index < 0)
-            continue;
-        auto dataType = l.first();
-
-        if(dataType == BC::Key::Flow::flowController)
-        {
-            auto c = dynamic_cast<FlowConfig*>(p.get());
-            if(c)
-                d_optHwData[k] = std::make_unique<FlowConfig>(*c);
-        }
-        if(dataType == BC::Key::TC::key)
-        {
-            auto c = dynamic_cast<TemperatureControllerConfig*>(p.get());
-            if(c)
-                d_optHwData[k] = std::make_unique<TemperatureControllerConfig>(*c);
-        }
-        if(dataType == BC::Key::IOB::ioboard)
-        {
-            auto c = dynamic_cast<IOBoardConfig*>(p.get());
-            if(c)
-                d_optHwData[k] = std::make_unique<IOBoardConfig>(*c);
-        }
-        if(dataType == BC::Key::PGen::key)
-        {
-            auto c = dynamic_cast<PulseGenConfig*>(p.get());
-            if(c)
-                d_optHwData[k] = std::make_unique<PulseGenConfig>(*c);
-        }
-        if(dataType == BC::Key::PController::key)
-        {
-            auto c = dynamic_cast<PressureControllerConfig*>(p.get());
-            if(c)
-                d_optHwData[k] = std::make_unique<PressureControllerConfig>(*c);
-        }
-    }
-
+    ps_auxData = std::make_shared<AuxDataStorage>();
+    ps_validator = std::make_shared<ExperimentValidator>();
 }
 
 Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : HeaderStorage(BC::Store::Exp::key)
@@ -120,7 +35,7 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
     //initialize CSV reader
     auto csv = std::make_shared<BlackchirpCSV>(d_number,exptPath);
 
-    pu_validator = std::make_unique<ExperimentValidator>();
+    ps_validator = std::make_shared<ExperimentValidator>();
 
     //load hardware list
     QFile hw(d.absoluteFilePath(BC::CSV::hwFile));
@@ -247,23 +162,23 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
 
     if(ftmwEnabled())
     {
-        pu_ftmwConfig->d_rfConfig.d_chirpConfig.readChirpFile(csv.get(),num,exptPath);
-        pu_ftmwConfig->d_rfConfig.loadClockSteps(csv.get(),num,exptPath);
+        ps_ftmwConfig->d_rfConfig.d_chirpConfig.readChirpFile(csv.get(),num,exptPath);
+        ps_ftmwConfig->d_rfConfig.loadClockSteps(csv.get(),num,exptPath);
 
         if(!headerOnly)
-            pu_ftmwConfig->loadFids();
+            ps_ftmwConfig->loadFids();
     }
 
 #ifdef BC_LIF
     if(lifEnabled())
-        pu_lifCfg->loadLifData();
+        ps_lifCfg->loadLifData();
 #endif
 
     //load aux data
     if(!headerOnly)
-        pu_auxData = std::make_unique<AuxDataStorage>(csv.get(),num,exptPath);
+        ps_auxData = std::make_shared<AuxDataStorage>(csv.get(),num,exptPath);
     else
-        pu_auxData = std::make_unique<AuxDataStorage>();
+        ps_auxData = std::make_shared<AuxDataStorage>();
 
 
 }
@@ -301,7 +216,7 @@ void Experiment::backup()
 {
     //if we reach this point, it's time to backup
     d_lastBackupTime = QDateTime::currentDateTime();
-    pu_ftmwConfig->storage()->backup();
+    ps_ftmwConfig->storage()->backup();
 }
 
 FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
@@ -311,39 +226,39 @@ FtmwConfig *Experiment::enableFtmw(FtmwConfig::FtmwType type)
 
     switch(type) {
     case FtmwConfig::Target_Shots:
-        pu_ftmwConfig = std::make_unique<FtmwConfigSingle>();
+        ps_ftmwConfig = std::make_shared<FtmwConfigSingle>();
         break;
     case FtmwConfig::Target_Duration:
-        pu_ftmwConfig = std::make_unique<FtmwConfigDuration>();
+        ps_ftmwConfig = std::make_shared<FtmwConfigDuration>();
         break;
     case FtmwConfig::Peak_Up:
-        pu_ftmwConfig = std::make_unique<FtmwConfigPeakUp>();
+        ps_ftmwConfig = std::make_shared<FtmwConfigPeakUp>();
         break;
     case FtmwConfig::Forever:
-        pu_ftmwConfig = std::make_unique<FtmwConfigForever>();
+        ps_ftmwConfig = std::make_shared<FtmwConfigForever>();
         break;
     case FtmwConfig::LO_Scan:
-        pu_ftmwConfig = std::make_unique<FtmwConfigLOScan>();
+        ps_ftmwConfig = std::make_shared<FtmwConfigLOScan>();
         break;
     case FtmwConfig::DR_Scan:
-        pu_ftmwConfig = std::make_unique<FtmwConfigDRScan>();
+        ps_ftmwConfig = std::make_shared<FtmwConfigDRScan>();
         break;
     default:
         break;
     }
 
-    pu_ftmwConfig->d_type = type;
-    d_objectives.insert(pu_ftmwConfig.get());
-    return pu_ftmwConfig.get();
+    ps_ftmwConfig->d_type = type;
+    d_objectives.insert(ps_ftmwConfig.get());
+    return ps_ftmwConfig.get();
 }
 
 void Experiment::disableFtmw()
 {
-    if(pu_ftmwConfig.get())
+    if(ps_ftmwConfig.get())
     {
-        removeChild(pu_ftmwConfig.get());
-        d_objectives.remove(pu_ftmwConfig.get());
-        pu_ftmwConfig.reset();
+        removeChild(ps_ftmwConfig.get());
+        d_objectives.remove(ps_ftmwConfig.get());
+        ps_ftmwConfig.reset();
     }
 }
 
@@ -363,7 +278,7 @@ bool Experiment::initialize()
     num = s.get(BC::Key::exptNum,0)+1;
     d_number = num;
 
-    if(ftmwEnabled() && pu_ftmwConfig->d_type == FtmwConfig::Peak_Up)
+    if(ftmwEnabled() && ps_ftmwConfig->d_type == FtmwConfig::Peak_Up)
     {
         d_number = -1;
         d_startLogMessage = QString("Peak up mode started.");
@@ -400,7 +315,7 @@ bool Experiment::initialize()
         set.sync();
     }
 
-    pu_auxData->d_number = d_number;
+    ps_auxData->d_number = d_number;
 
     for(auto obj : d_objectives)
     {
@@ -463,12 +378,12 @@ void Experiment::abort()
 
     if(ftmwEnabled())
     {
-        if(pu_ftmwConfig->d_type == FtmwConfig::Peak_Up)
+        if(ps_ftmwConfig->d_type == FtmwConfig::Peak_Up)
         {
             d_endLogMessageCode = LogHandler::Highlight;
             d_endLogMessage = QString("Peak up mode ended.");
         }
-        if(pu_ftmwConfig->d_type == FtmwConfig::Forever)
+        if(ps_ftmwConfig->d_type == FtmwConfig::Forever)
         {
             d_endLogMessage = QString("Experiment %1 complete.").arg(d_number);
             d_endLogMessageCode = LogHandler::Highlight;
@@ -515,14 +430,14 @@ bool Experiment::addAuxData(AuxDataStorage::AuxDataMap m)
 
 void Experiment::setValidationMap(const ExperimentValidator::ValidationMap &m)
 {
-    pu_validator->setValidationMap(m);
+    ps_validator->setValidationMap(m);
 }
 
 bool Experiment::validateItem(const QString key, const QVariant val)
 {
-    bool out = pu_validator->validate(key,val);
+    bool out = ps_validator->validate(key,val);
     if(!out)
-        d_errorString = pu_validator->errorString();
+        d_errorString = ps_validator->errorString();
 
     return out;
 }
@@ -532,18 +447,18 @@ LifConfig *Experiment::enableLif()
 {
     disableLif();
 
-    pu_lifCfg = std::make_unique<LifConfig>();
-    d_objectives.insert(pu_lifCfg.get());
-    return pu_lifCfg.get();
+    ps_lifCfg = std::make_shared<LifConfig>();
+    d_objectives.insert(ps_lifCfg.get());
+    return ps_lifCfg.get();
 }
 
 void Experiment::disableLif()
 {
-    if(pu_lifCfg.get())
+    if(ps_lifCfg.get())
     {
-        removeChild(pu_lifCfg.get());
-        d_objectives.remove(pu_lifCfg.get());
-        pu_lifCfg.reset();
+        removeChild(ps_lifCfg.get());
+        d_objectives.remove(ps_lifCfg.get());
+        ps_lifCfg.reset();
     }
 }
 #endif
@@ -610,12 +525,12 @@ bool Experiment::saveHeader()
 
 bool Experiment::saveChirpFile() const
 {
-    return pu_ftmwConfig->d_rfConfig.d_chirpConfig.writeChirpFile(d_number);
+    return ps_ftmwConfig->d_rfConfig.d_chirpConfig.writeChirpFile(d_number);
 }
 
 bool Experiment::saveClockFile() const
 {
-    return pu_ftmwConfig->d_rfConfig.writeClockFile(d_number);
+    return ps_ftmwConfig->d_rfConfig.writeClockFile(d_number);
 }
 
 void Experiment::storeValues()
@@ -646,14 +561,14 @@ void Experiment::retrieveValues()
 
 void Experiment::prepareChildren()
 {
-    addChild(pu_ftmwConfig.get());
-    addChild(pu_validator.get());
+    addChild(ps_ftmwConfig.get());
+    addChild(ps_validator.get());
 
     for(const auto &[k,p] : d_optHwData)
         addChild(p.get());
 
 #ifdef BC_LIF
-    addChild(pu_lifCfg.get());
+    addChild(ps_lifCfg.get());
 #endif
 
 }

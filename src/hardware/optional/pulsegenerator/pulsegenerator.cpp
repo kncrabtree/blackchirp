@@ -36,9 +36,9 @@ void PulseGenerator::initialize()
 
 bool PulseGenerator::prepareForExperiment(Experiment &exp)
 {
-    auto p = dynamic_cast<PulseGenConfig*>(exp.getOptHwConfig(headerStorageKey()));
+    auto wp = exp.getOptHwConfig<PulseGenConfig>(d_headerKey);
     auto cfg = static_cast<PulseGenConfig*>(this);
-    if(p)
+    if(auto p = wp.lock())
     {
         if(!setAll(*p))
             return false;

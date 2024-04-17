@@ -57,7 +57,12 @@ public:
     HeaderStorage(const QString objKey);
     virtual ~HeaderStorage() {}
 
+    QString headerKey() const { return d_headerKey; }
+
 protected:
+
+    QString d_headerKey; /*!< Object key used for storage. Should not be modified! */
+
     /*!
      * \brief Function called before saving.
      *
@@ -76,7 +81,7 @@ protected:
      */
     virtual void retrieveValues() =0;
 
-    QString d_objKey; /*!< Object key used for storage. Should not be modified! */
+
 
     /*!
      * \brief Stores a value-unit pair for writing
@@ -286,13 +291,6 @@ public:
      * This is where children should be added.
      */
     virtual void prepareChildren() {}
-
-    /*!
-     * \brief Returns the object headerStorageKey for the storage object
-     *
-     * \return QString
-     */
-    inline QString headerStorageKey() const { return d_objKey; }
 
 private:
     HeaderMap d_values;

@@ -21,16 +21,14 @@
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <hardware/optional/chirpsource/awg.h>
 
-PulseConfigWidget::PulseConfigWidget(QString key, QWidget *parent) :
-    QWidget(parent), SettingsStorage(BC::Key::PulseWidget::key), d_key{key}
+PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent) :
+    QWidget(parent), SettingsStorage(BC::Key::PulseWidget::key), d_key{cfg.headerKey()}
 {
 
-    auto ki = BC::Key::parseKey(key);
-    pu_config = std::make_unique<PulseGenConfig>(ki.second);
-
+    ps_config = std::make_shared<PulseGenConfig>(cfg);
     auto vc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
-    SettingsStorage s(d_key,Hardware);
-    int numChannels = s.get<int>(BC::Key::PGen::numChannels);
+
+    int numChannels = cfg.d_channels.size();
     if(!containsArray(BC::Key::PulseWidget::channels))
         setArray(BC::Key::PulseWidget::channels,{});
 
@@ -39,9 +37,6 @@ PulseConfigWidget::PulseConfigWidget(QString key, QWidget *parent) :
 
     auto vbl = new QVBoxLayout;
     hbl->addLayout(vbl,0);
-
-    p_pulsePlot = new PulsePlot(key,this);
-    hbl->addWidget(p_pulsePlot,1);
 
     auto mainGb = new QGroupBox("System Settings",this);
     auto gl = new QGridLayout;
@@ -108,10 +103,8 @@ PulseConfigWidget::PulseConfigWidget(QString key, QWidget *parent) :
     vbl->addSpacerItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::MinimumExpanding));
 
     QWidget *lastFocusWidget = nullptr;
-    for(int i=0; i<numChannels; i++)
+    for(int i=0; i<cfg.d_channels.size(); i++)
     {
-        pu_config->addChannel();
-
         while(static_cast<std::size_t>(i) >= getArraySize(BC::Key::PulseWidget::channels))
             appendArrayMap(BC::Key::PulseWidget::channels,{});
 
@@ -140,11 +133,11 @@ PulseConfigWidget::PulseConfigWidget(QString key, QWidget *parent) :
                 item->setEnabled(false);
         }
         connect(ch.syncBox,qOverload<int>(&QComboBox::currentIndexChanged),[=](int j){
-            if(pu_config->testCircularSync(i,j))
+            if(ps_config->testCircularSync(i,j))
             {
                 QMessageBox::warning(this,"Circular Sync","Cannot set sync channel because of a circular reference (i.e., A triggers B, but B triggers A).",QMessageBox::Ok,QMessageBox::Ok);
                 ch.syncBox->blockSignals(true);
-                ch.syncBox->setCurrentIndex(pu_config->setting(i,PulseGenConfig::SyncSetting).toInt());
+                ch.syncBox->setCurrentIndex(ps_config->setting(i,PulseGenConfig::SyncSetting).toInt());
                 ch.syncBox->blockSignals(false);
             }
             else
@@ -280,15 +273,21 @@ PulseConfigWidget::PulseConfigWidget(QString key, QWidget *parent) :
 
     setFocusPolicy(Qt::TabFocus);
     setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Minimum);
+
+    //ps_config is initialized here
+    p_pulsePlot = nullptr;
+    setFromConfig(d_key,cfg);
+    p_pulsePlot = new PulsePlot(ps_config,this);
+    hbl->addWidget(p_pulsePlot,1);
 }
 
 PulseConfigWidget::~PulseConfigWidget()
 {
 }
 
-PulseGenConfig PulseConfigWidget::getConfig() const
+std::shared_ptr<PulseGenConfig> PulseConfigWidget::getConfig() const
 {
-    return *pu_config;
+    return ps_config;
 }
 
 void PulseConfigWidget::configureForWizard()
@@ -307,7 +306,7 @@ void PulseConfigWidget::configureLif(const LifConfig &c)
     if(d_widgetList.isEmpty())
         return;
 
-    auto lifCh= pu_config->channelForRole(PulseGenConfig::LIF);
+    auto lifCh= ps_config->channelForRole(PulseGenConfig::LIF);
     if(lifCh < 0)
     {
         QMessageBox::warning(this,QString("Cannot configure LIF pulse"),QString("No channel has been configured for the \"LIF\" role. Blackchirp will be unable to set the LIF Delay.\n\nPlease select a channel for the LIF role, then refresh this page (go back one page and then come back to this one) in order to proceed."),QMessageBox::Ok,QMessageBox::Ok);
@@ -316,8 +315,8 @@ void PulseConfigWidget::configureLif(const LifConfig &c)
 
     auto delay = c.delayRange().first;
 
-    pu_config->setCh(PulseGenConfig::LIF,PulseGenConfig::DelaySetting,delay);
-    pu_config->setCh(PulseGenConfig::LIF,PulseGenConfig::EnabledSetting,true);
+    ps_config->setCh(PulseGenConfig::LIF,PulseGenConfig::DelaySetting,delay);
+    ps_config->setCh(PulseGenConfig::LIF,PulseGenConfig::EnabledSetting,true);
     setFromConfig(d_config);
 
     lockChannel(lifCh);
@@ -332,9 +331,9 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig &c)
     SettingsStorage s2(BC::Key::PGen::key,Hardware);
     bool pGenCanSync = s2.get(BC::Key::PGen::canSyncToChannel,false);
 
-    auto protChannel = pu_config->channelForRole(PulseGenConfig::Prot);
-    auto awgChannel = pu_config->channelForRole(PulseGenConfig::AWG);
-    auto ampChannel = pu_config->channelForRole(PulseGenConfig::Amp);
+    auto protChannel = ps_config->channelForRole(PulseGenConfig::Prot);
+    auto awgChannel = ps_config->channelForRole(PulseGenConfig::AWG);
+    auto ampChannel = ps_config->channelForRole(PulseGenConfig::Amp);
 
     if(!awgHasProt && protChannel < 0)
     {
@@ -402,7 +401,7 @@ void PulseConfigWidget::configureFtmw(const FtmwConfig &c)
 //    pu_config->setCh(PulseGenConfig::AWG,PulseGenConfig::DelaySetting,awgStart);
 
 
-    setFromConfig(d_key, d_config);
+    // setFromConfig(d_key, d_config);
 
 
 //    lockChannel(ampChannel);
@@ -525,7 +524,7 @@ void PulseConfigWidget::newSetting(QString key, int index, PulseGenConfig::Setti
         return;
 
     blockSignals(true);
-    pu_config->setCh(index,s,val);
+    ps_config->setCh(index,s,val);
 
     switch(s) {
     case PulseGenConfig::DelaySetting:
@@ -562,24 +561,20 @@ void PulseConfigWidget::newSetting(QString key, int index, PulseGenConfig::Setti
         break;
     case PulseGenConfig::RepRateSetting:
         p_repRateBox->setValue(val.toDouble());
-        pu_config->d_repRate = val.toDouble();
-        p_pulsePlot->newConfig(d_config);
+        ps_config->d_repRate = val.toDouble();
         break;
     case PulseGenConfig::PGenModeSetting:
         p_sysModeBox->setCurrentValue(val.value<PulseGenConfig::PGenMode>());
-        pu_config->d_mode = val.value<PulseGenConfig::PGenMode>();
-        p_pulsePlot->newConfig(d_config);
+        ps_config->d_mode = val.value<PulseGenConfig::PGenMode>();
         break;
     case PulseGenConfig::PGenEnabledSetting:
         p_sysOnOffButton->setChecked(val.toBool());
-        pu_config->d_pulseEnabled = val.toBool();
+        ps_config->d_pulseEnabled = val.toBool();
         break;
     }
-
-
     blockSignals(false);
 
-    p_pulsePlot->newConfig(d_config);
+    p_pulsePlot->updatePulsePlot();
 }
 
 void PulseConfigWidget::setFromConfig(QString key, const PulseGenConfig &c)
@@ -588,7 +583,7 @@ void PulseConfigWidget::setFromConfig(QString key, const PulseGenConfig &c)
         return;
 
     blockSignals(true);
-    pu_config = std::make_unique<PulseGenConfig>(c);
+    ps_config = std::make_shared<PulseGenConfig>(c);
     for(int i=0; i<c.size(); i++)
     {
         auto ch = c.d_channels.at(i);
@@ -615,7 +610,8 @@ void PulseConfigWidget::setFromConfig(QString key, const PulseGenConfig &c)
     p_sysOnOffButton->setChecked(c.d_pulseEnabled);
     blockSignals(false);
 
-    p_pulsePlot->newConfig(*pu_config);
+    if(p_pulsePlot)
+        p_pulsePlot->newConfig(ps_config);
 }
 
 void PulseConfigWidget::updateFromSettings()
@@ -691,7 +687,7 @@ void PulseConfigWidget::lockChannel(int i, bool locked)
 
 void PulseConfigWidget::updateRoles()
 {
-    auto active = pu_config->activeRoles();
+    auto active = ps_config->activeRoles();
 
     for(int i=0; i<d_widgetList.size(); i++)
     {

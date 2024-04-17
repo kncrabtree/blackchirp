@@ -38,23 +38,24 @@ bool ExperimentFtmwDigitizerConfigPage::validate()
 
     int numChirps = p_exp->ftmwConfig()->d_rfConfig.d_chirpConfig.numChirps();
 
+    bool ba = p_dc->blockAverageChecked();
+    bool mr = p_dc->multiRecordChecked();
+    int numAvg = p_dc->numAverages();
+    int numRec = p_dc->numRecords();
+
     if(numChirps > 1)
     {
-        bool ba = p_dc->blockAverageChecked();
-        bool mr = p_dc->multiRecordChecked();
-        int numAvg = p_dc->numAverages();
-        int numRec = p_dc->numRecords();
 
         if(!ba && !mr)
             emit warning("Number of chirps is >1, but digitizer is not configured for multiple records or block averaging");
-
-        if(mr && (numRec != numChirps))
-            emit warning("Number of chirps does not match number of digitizer records.");
 
         if(ba && (numAvg != numChirps))
             emit warning("Number of chirps does not match number of block averages.");
 
     }
+
+    if(mr && (numRec != numChirps))
+        emit warning("Number of chirps does not match number of digitizer records.");
 
     if(p_dc->numAnalogChecked() != 1)
     {

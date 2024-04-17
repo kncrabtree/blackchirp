@@ -90,11 +90,11 @@ bool TemperatureController::readChannelEnabled(const int ch)
 bool TemperatureController::prepareForExperiment(Experiment &e)
 {
 
-    auto p = dynamic_cast<TemperatureControllerConfig*>(e.getOptHwConfig(d_config.headerStorageKey()));
+    auto wp = e.getOptHwConfig<TemperatureControllerConfig>(d_config.headerKey());
 
     for (int i=0;i<d_numChannels;i++)
     {
-        if(p)
+        if(auto p = wp.lock())
         {
             d_config.setName(i,p->channelName(i));
             d_config.setEnabled(i,p->channelEnabled(i));

@@ -62,9 +62,9 @@ AuxDataStorage::AuxDataMap IOBoard::readValidationData()
 
 bool IOBoard::prepareForExperiment(Experiment &exp)
 {
-    auto p = dynamic_cast<IOBoardConfig*>(exp.getOptHwConfig(headerStorageKey()));
+    auto wp = exp.getOptHwConfig<IOBoardConfig>(d_headerKey);
     auto cfg = static_cast<IOBoardConfig*>(this);
-    if(p)
+    if(auto p = wp.lock())
         *cfg = *p;
     else
         exp.addOptHwConfig(*cfg);

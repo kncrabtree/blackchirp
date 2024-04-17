@@ -36,7 +36,7 @@ class PulseConfigWidget : public QWidget, public SettingsStorage
     Q_OBJECT
 
 public:
-    explicit PulseConfigWidget(QString key,QWidget *parent = 0);
+    explicit PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent = 0);
     ~PulseConfigWidget();
 
     bool d_wizardOk{true};
@@ -59,7 +59,7 @@ public:
         bool locked{false};
     };
 
-    PulseGenConfig getConfig() const;
+    std::shared_ptr<PulseGenConfig> getConfig() const;
 
     void configureForWizard();
 
@@ -89,9 +89,7 @@ private:
     QPushButton *p_sysOnOffButton;
     EnumComboBox<PulseGenConfig::PGenMode> *p_sysModeBox;
 
-    std::unique_ptr<PulseGenConfig> pu_config;
-    PulseGenConfig d_config;
-
+    std::shared_ptr<PulseGenConfig> ps_config;
 
 
     // QWidget interface

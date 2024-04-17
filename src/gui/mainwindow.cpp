@@ -219,9 +219,8 @@ MainWindow::MainWindow(QWidget *parent) :
                if(isDialogOpen(key))
                    return;
 
-               auto pcw = new PulseConfigWidget(key);
                auto pc = p_hwm->getPGenConfig(key);
-               pcw->setFromConfig(key,pc);
+               auto pcw = new PulseConfigWidget(pc);
 
 
                connect(p_hwm,&HardwareManager::pGenConfigUpdate,pcw,&PulseConfigWidget::setFromConfig);

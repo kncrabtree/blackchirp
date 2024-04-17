@@ -49,7 +49,7 @@ class Experiment : private HeaderStorage
     Q_GADGET
 public:
     Experiment();
-    Experiment(const Experiment &other);
+    Experiment(const Experiment &other) = default;
     Experiment(const int num, QString exptPath = QString(""), bool headerOnly = false);
     ~Experiment();
 
@@ -79,21 +79,21 @@ public:
     HeaderStrings getSummary();
 
 
-    inline bool ftmwEnabled() const { return pu_ftmwConfig.get() != nullptr; }
+    inline bool ftmwEnabled() const { return ps_ftmwConfig.get() != nullptr; }
     FtmwConfig* enableFtmw(FtmwConfig::FtmwType type);
     void disableFtmw();
-    inline FtmwConfig* ftmwConfig() const {return pu_ftmwConfig.get(); }
+    inline FtmwConfig* ftmwConfig() const {return ps_ftmwConfig.get(); }
 
-    inline AuxDataStorage *auxData() const { return pu_auxData.get(); }
+    inline AuxDataStorage *auxData() const { return ps_auxData.get(); }
 
-    HeaderStorage* getOptHwConfig(const QString key) const {
+    template<typename T> std::weak_ptr<T> getOptHwConfig(const QString key) const {
         auto it = d_optHwData.find(key);
-        return it == d_optHwData.end() ? nullptr : it->second.get();
+        return it == d_optHwData.end() ? std::weak_ptr<T>() : std::dynamic_pointer_cast<T>(it->second);
     }
 
     template<typename T> void addOptHwConfig(const T &c) {
-        QString key = c.headerStorageKey();
-        d_optHwData[key] = std::make_unique<T>(c);
+        QString key = c.headerKey();
+        d_optHwData[key] = std::make_shared<T>(c);
     }
 
     void removeOptHwConfig(const QString key) {
@@ -105,8 +105,8 @@ public:
     bool validateItem(const QString key, const QVariant val);
 
 #ifdef BC_LIF
-    inline bool lifEnabled() const { return pu_lifCfg.get() != nullptr; }
-    inline LifConfig* lifConfig() const { return pu_lifCfg.get(); }
+    inline bool lifEnabled() const { return ps_lifCfg.get() != nullptr; }
+    inline LifConfig* lifConfig() const { return ps_lifCfg.get(); }
     LifConfig *enableLif();
     void disableLif();
 #endif
@@ -128,12 +128,12 @@ private:
     bool d_isDummy{false};
 
     //core ftmw data
-    std::unique_ptr<FtmwConfig> pu_ftmwConfig;
-    std::unique_ptr<AuxDataStorage> pu_auxData;
-    std::unique_ptr<ExperimentValidator> pu_validator;
+    std::shared_ptr<FtmwConfig> ps_ftmwConfig;
+    std::shared_ptr<AuxDataStorage> ps_auxData;
+    std::shared_ptr<ExperimentValidator> ps_validator;
 
     //optional hardware data
-    std::map<QString,std::unique_ptr<HeaderStorage>> d_optHwData;
+    std::map<QString,std::shared_ptr<HeaderStorage>> d_optHwData;
     // std::unique_ptr<IOBoardConfig> pu_iobCfg;
     // std::unique_ptr<PulseGenConfig> pu_pGenCfg;
     // std::unique_ptr<FlowConfig> pu_flowCfg;
@@ -143,7 +143,7 @@ private:
     QString d_path;
 
 #ifdef BC_LIF
-    std::unique_ptr<LifConfig> pu_lifCfg;
+    std::shared_ptr<LifConfig> ps_lifCfg;
 #endif
 
     // HeaderStorage interface

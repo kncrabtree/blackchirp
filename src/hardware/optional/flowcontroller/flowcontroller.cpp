@@ -53,8 +53,8 @@ bool FlowController::testConnection()
 
 bool FlowController::prepareForExperiment(Experiment &e)
 {
-    auto p = dynamic_cast<FlowConfig*>(e.getOptHwConfig(d_config.headerStorageKey()));
-    if(p)
+    auto wp = e.getOptHwConfig<FlowConfig>(d_config.headerKey());
+    if(auto p = wp.lock())
         setAll(*p);
 
     if(!isConnected())

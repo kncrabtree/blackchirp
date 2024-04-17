@@ -1,6 +1,6 @@
 #include "headerstorage.h"
 
-HeaderStorage::HeaderStorage(const QString objKey) : d_objKey{objKey}
+HeaderStorage::HeaderStorage(const QString objKey) : d_headerKey{objKey}
 {
 
 }
@@ -54,7 +54,7 @@ HeaderStorage::HeaderStrings HeaderStorage::getStrings()
     {
         auto key = it->first;
         auto [val,unit] = it->second;
-        out.insert({d_objKey,{QString(""),QString(""),key,val.toString(),unit}});
+        out.insert({d_headerKey,{QString(""),QString(""),key,val.toString(),unit}});
     }
 
     for(auto it = d_arrayValues.begin(); it != d_arrayValues.end(); ++it)
@@ -67,7 +67,7 @@ HeaderStorage::HeaderStrings HeaderStorage::getStrings()
             {
                 auto key = it2->first;
                 auto [val,unit] = it2->second;
-                out.insert({d_objKey,{arrKey,QString::number(i),key,val.toString(),unit}});
+                out.insert({d_headerKey,{arrKey,QString::number(i),key,val.toString(),unit}});
             }
         }
     }
@@ -104,7 +104,7 @@ bool HeaderStorage::storeLine(const QVariantList l)
     auto val{l.at(4).toString()};
     auto unit{l.at(5).toString()};
 
-    if(objKey != d_objKey)
+    if(objKey != d_headerKey)
     {
         for(auto child : d_children)
         {

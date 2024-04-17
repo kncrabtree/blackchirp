@@ -8,18 +8,13 @@
 #include <gui/plot/blackchirpplotcurve.h>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 
-PulsePlot::PulsePlot(QString key, QWidget *parent) :
-    ZoomPanPlot(BC::Key::pulsePlot,parent), d_key(key)
+PulsePlot::PulsePlot(std::shared_ptr<PulseGenConfig> cfg, QWidget *parent) :
+    ZoomPanPlot(BC::Key::pulsePlot,parent), ps_config{cfg}
 {
 
-    auto ki = BC::Key::parseKey(key);
-    d_index = ki.second;
-
-    pu_config = std::make_unique<PulseGenConfig>(d_index);
-
-    SettingsStorage s(key,Hardware);
-    int numChannels = s.get<int>(BC::Key::PGen::numChannels,8);
-
+    int numChannels = 0;
+    if(auto p = ps_config.lock())
+        numChannels = p->d_channels.size();
 
     setPlotAxisTitle(QwtPlot::xBottom, QString::fromUtf16(u"Time (μs)"));
 
@@ -94,6 +89,8 @@ PulsePlot::PulsePlot(QString key, QWidget *parent) :
     enableAxis(QwtPlot::yLeft,false);
     setAxisOverride(QwtPlot::yRight);
     enableAxis(QwtPlot::yRight,false);
+
+    replot();
 }
 
 PulsePlot::~PulsePlot()
@@ -101,17 +98,22 @@ PulsePlot::~PulsePlot()
 
 }
 
-void PulsePlot::newConfig(const PulseGenConfig &c)
+void PulsePlot::updatePulsePlot()
 {
-    pu_config = std::make_unique<PulseGenConfig>(c);
+    replot();
+}
+
+void PulsePlot::newConfig(std::shared_ptr<PulseGenConfig> c)
+{
+    ps_config = c;
     replot();
 }
 
 
 void PulsePlot::replot()
 {
-    auto c = pu_config.get();
-    if(c->isEmpty())
+    auto c = ps_config.lock();
+    if(!c)
     {
         for(auto it = d_plotItems.begin(); it != d_plotItems.end(); ++it)
         {

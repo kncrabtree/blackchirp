@@ -59,7 +59,7 @@ bool WizardPulseConfigPage::validatePage()
         return false;
 
     auto cfg = p_pcw->getConfig();
-    if(!cfg.d_pulseEnabled)
+    if(!cfg->d_pulseEnabled)
     {
         int ret = QMessageBox::warning(this,QString("Pulsing Disabled"),"You have disabled the pulse generator, and therefore no pulses will be generated. Do you wish to proceed with this setting?",QMessageBox::Yes|QMessageBox::No,QMessageBox::No);
         if(ret == QMessageBox::No)

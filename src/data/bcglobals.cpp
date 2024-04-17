@@ -10,7 +10,7 @@ std::pair<QString, int> BC::Key::parseKey(const QString key)
    else {
        bool ok = false;
        auto idx = l.at(1).toInt(&ok);
-       return {key,ok ? idx : -1};
+       return {l.at(0),ok ? idx : -1};
    }
 }
 

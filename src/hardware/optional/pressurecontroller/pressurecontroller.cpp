@@ -81,8 +81,8 @@ PressureControllerConfig PressureController::getConfig() const
 
 bool PressureController::prepareForExperiment(Experiment &e)
 {
-    auto p = dynamic_cast<PressureControllerConfig*>(e.getOptHwConfig(d_config.headerStorageKey()));
-    if(p)
+    auto wp = e.getOptHwConfig<PressureControllerConfig>(d_config.headerKey());
+    if(auto p = wp.lock())
     {
         if(!qFuzzyCompare(d_config.d_setPoint,p->d_setPoint))
             setPressureSetpoint(p->d_setPoint);
