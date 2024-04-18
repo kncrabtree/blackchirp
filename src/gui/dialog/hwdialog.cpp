@@ -21,11 +21,11 @@ HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidge
     
     SettingsStorage s(key,SettingsStorage::Hardware);
     auto name = s.get(BC::Key::HW::name,key);
-    setWindowTitle(QString("%1 Settings").arg(key));
+    setWindowTitle(QString("%1 Settings").arg(name));
 
     if(controlWidget)
     {
-        auto cBox = new QGroupBox(QString("%1 Control").arg(key));
+        auto cBox = new QGroupBox(QString("%1 Control").arg(name));
         auto cvbl = new QVBoxLayout;
         
         auto cLabel = new QLabel(QString("Changes made in this section will be applied immediately."));
@@ -40,7 +40,7 @@ HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidge
         vbl->addWidget(cBox,0);
     }
     
-    auto sBox = new QGroupBox(QString("%1 Settings").arg(key));
+    auto sBox = new QGroupBox(QString("%1 Settings").arg(name));
     auto svbl = new QVBoxLayout;
     
     auto sLabel = new QLabel("Changes made in this section will only be applied when this dialog is closed with the Ok button. Editing these settings incorrectly may result in unexpected behavior. Consider backing up your config file before making changes.");

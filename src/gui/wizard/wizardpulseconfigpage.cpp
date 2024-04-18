@@ -43,8 +43,8 @@ void WizardPulseConfigPage::initializePage()
         p_pcw->configureLif(*e->lifConfig());
 #endif
 
-    if(e->ftmwEnabled())
-        p_pcw->configureFtmw(*e->ftmwConfig());
+    // if(e->ftmwEnabled())
+        // p_pcw->configureFtmw(*e->ftmwConfig());
 }
 
 int WizardPulseConfigPage::nextId() const
@@ -55,11 +55,11 @@ int WizardPulseConfigPage::nextId() const
 
 bool WizardPulseConfigPage::validatePage()
 {
-    if(!p_pcw->d_wizardOk)
-        return false;
+    // if(!p_pcw->d_wizardOk)
+        // return false;
 
     auto cfg = p_pcw->getConfig();
-    if(!cfg->d_pulseEnabled)
+    if(!cfg.d_pulseEnabled)
     {
         int ret = QMessageBox::warning(this,QString("Pulsing Disabled"),"You have disabled the pulse generator, and therefore no pulses will be generated. Do you wish to proceed with this setting?",QMessageBox::Yes|QMessageBox::No,QMessageBox::No);
         if(ret == QMessageBox::No)
@@ -75,5 +75,5 @@ bool WizardPulseConfigPage::validatePage()
 
 bool WizardPulseConfigPage::isComplete() const
 {
-    return p_pcw->d_wizardOk;
+    return true;
 }
