@@ -13,7 +13,7 @@ static const QString valon5009Name("Valon Synthesizer 5009");
 class Valon5009 : public Clock
 {
 public:
-    explicit Valon5009(int clockNum, QObject *parent = nullptr);
+    explicit Valon5009(QObject *parent = nullptr);
 
     // Clock interface
 public:

@@ -1,7 +1,7 @@
 #include "hp83712b.h"
 
-HP83712B::HP83712B(int clockNum, QObject *parent)
-    : Clock{clockNum,1,true,BC::Key::hp83712b,BC::Key::hp83712bName,CommunicationProtocol::Gpib,parent}
+HP83712B::HP83712B(QObject *parent)
+    : Clock{1,true,BC::Key::hp83712b,BC::Key::hp83712bName,CommunicationProtocol::Gpib,parent}
 {
     setDefault(BC::Key::Clock::minFreq,1.0);
     setDefault(BC::Key::Clock::maxFreq,20000.0);

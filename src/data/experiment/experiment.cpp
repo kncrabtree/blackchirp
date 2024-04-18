@@ -48,10 +48,11 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
                continue;
 
            auto key = l.constFirst().toString();
+           auto subKey = l.constLast().toString();
            if(key == QString("key"))
                continue;
 
-           d_hardware.insert_or_assign(key,l.constLast().toString());
+           d_hardware.insert_or_assign(key,subKey);
 
            ///TODO: Change to work with lists
            auto hwl = key.split(".");
@@ -72,7 +73,7 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
 
            if(hwType == BC::Key::PGen::key)
            {
-               PulseGenConfig cfg(index);
+               PulseGenConfig cfg(subKey,index);
                addOptHwConfig(cfg);
            }
 

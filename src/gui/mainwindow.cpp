@@ -152,7 +152,7 @@ MainWindow::MainWindow(QWidget *parent) :
         {
             auto w = new GasFlowDisplayBox(key);
             w->setObjectName(key+Ui::sbStr);
-            ui->instrumentStatusLayout->insertWidget(3,w,0);
+            ui->instrumentStatusLayout->insertWidget(ui->instrumentStatusLayout->indexOf(ui->statusSpacer),w,0);
             connect(p_hwm,&HardwareManager::flowUpdate,w,&GasFlowDisplayBox::updateFlow);
             connect(p_hwm,&HardwareManager::flowSetpointUpdate,w,&GasFlowDisplayBox::updateFlowSetpoint);
             connect(p_hwm,&HardwareManager::gasPressureUpdate,w,&GasFlowDisplayBox::updatePressure);
@@ -184,7 +184,7 @@ MainWindow::MainWindow(QWidget *parent) :
         {
             auto psb = new PressureStatusBox(key);
             psb->setObjectName(key);
-            ui->instrumentStatusLayout->insertWidget(3,psb,0);
+            ui->instrumentStatusLayout->insertWidget(ui->instrumentStatusLayout->indexOf(ui->statusSpacer),psb,0);
             connect(p_hwm,&HardwareManager::pressureUpdate,psb,&PressureStatusBox::pressureUpdate);
             connect(p_hwm,&HardwareManager::pressureControlMode,psb,&PressureStatusBox::pressureControlUpdate);
 
@@ -211,7 +211,7 @@ MainWindow::MainWindow(QWidget *parent) :
         {
             auto psb = new PulseStatusBox(key);
             psb->setObjectName(key+Ui::sbStr);
-            ui->instrumentStatusLayout->insertWidget(3,psb,0);
+            ui->instrumentStatusLayout->insertWidget(ui->instrumentStatusLayout->indexOf(ui->statusSpacer),psb,0);
             connect(p_hwm,&HardwareManager::pGenConfigUpdate,psb,&PulseStatusBox::updatePulseLeds);
             connect(p_hwm,&HardwareManager::pGenSettingUpdate,psb,&PulseStatusBox::updatePulseSetting);
 
@@ -234,7 +234,7 @@ MainWindow::MainWindow(QWidget *parent) :
         {
             auto tsb = new TemperatureStatusBox(key);
             tsb->setObjectName(key+Ui::sbStr);
-            ui->instrumentStatusLayout->insertWidget(3,tsb,0);
+            ui->instrumentStatusLayout->insertWidget(ui->instrumentStatusLayout->indexOf(ui->statusSpacer),tsb,0);
             connect(p_hwm,&HardwareManager::temperatureEnableUpdate,tsb,&TemperatureStatusBox::setChannelEnabled);
             connect(p_hwm,&HardwareManager::temperatureUpdate,tsb,&TemperatureStatusBox::setTemperature);
             connect(act,&QAction::triggered,[this,key,tsb](){
@@ -262,7 +262,7 @@ MainWindow::MainWindow(QWidget *parent) :
         {
             auto lsb = new LifLaserStatusBox;
             lsb->setObjectName(key+Ui::sbStr);
-            ui->instrumentStatusLayout->insertWidget(3,lsb,0);
+            ui->instrumentStatusLayout->insertWidget(ui->instrumentStatusLayout->indexOf(ui->statusSpacer),lsb,0);
             connect(p_hwm,&HardwareManager::lifLaserPosUpdate,lsb,&LifLaserStatusBox::setPosition);
             connect(p_hwm,&HardwareManager::lifLaserFlashlampUpdate,lsb,&LifLaserStatusBox::setFlashlampEnabled);
             connect(act,&QAction::triggered,[this,key,lsb](){
@@ -1026,7 +1026,7 @@ HWDialog *MainWindow::createHWDialog(const QString key, QWidget *controlWidget)
         auto n = out->getHwName();
         auto act = ui->menuHardware->findChild<QAction*>(Ui::actionStr+key,Qt::FindDirectChildrenOnly);
         if(act)
-            act->setText(n);
+            act->setText(key+": "+n);
 
         auto sb = ui->centralWidget->findChild<HardwareStatusBox*>(key+Ui::sbStr,Qt::FindDirectChildrenOnly);
         if(sb)

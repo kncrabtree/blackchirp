@@ -1,6 +1,7 @@
 #include <data/model/clocktablemodel.h>
 
 #include <hardware/core/clock/clockmanager.h>
+#include <hardware/core/clock/clock.h>
 
 #include <QComboBox>
 #include <QSpinBox>

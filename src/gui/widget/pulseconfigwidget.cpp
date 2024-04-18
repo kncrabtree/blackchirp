@@ -22,7 +22,7 @@
 #include <hardware/optional/chirpsource/awg.h>
 
 PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent) :
-    QWidget(parent), SettingsStorage(BC::Key::PulseWidget::key), d_key{cfg.headerKey()}
+    QWidget(parent), SettingsStorage(BC::Key::PulseWidget::key.arg(cfg.headerKey()).arg(cfg.hwSubKey())), d_key{cfg.headerKey()}
 {
 
     ps_config = std::make_shared<PulseGenConfig>(cfg);

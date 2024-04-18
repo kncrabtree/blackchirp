@@ -25,7 +25,7 @@ class PulseGenerator : public HardwareObject, public PulseGenConfig
 {
     Q_OBJECT
 public:
-    PulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent = nullptr,bool threaded = false, bool critical = true, int index = 0);
+    PulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent = nullptr, bool threaded = false, bool critical = true);
     virtual ~PulseGenerator();
 
 public slots:
@@ -93,12 +93,10 @@ protected:
     // HardwareObject interface
 public slots:
     QStringList forbiddenKeys() const override;
+
+private:
+    inline static int d_count = 0;
 };
-
-
-#ifdef BC_PGEN
-#include BC_STR(BC_PGEN_H)
-#endif
 
 
 #endif // PULSEGENERATOR_H

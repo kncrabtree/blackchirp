@@ -2,6 +2,7 @@
 
 #include <QMetaEnum>
 
+#include "clock_h.h"
 #include <hardware/core/clock/clock.h>
 #include <boost/preprocessor/iteration/local.hpp>
 
@@ -12,7 +13,7 @@ ClockManager::ClockManager(QObject *parent) : QObject(parent),
 {
 
 //use some preprocessor tricks to automate creation of all clocks
-#define BOOST_PP_LOCAL_MACRO(n) d_clockList << new BC_CLOCK_##n(n);
+#define BOOST_PP_LOCAL_MACRO(n) d_clockList << new BC_CLOCK_##n;
 #define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_CLOCKS-1)
 #include BOOST_PP_LOCAL_ITERATE()
 

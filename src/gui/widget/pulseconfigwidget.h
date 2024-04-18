@@ -23,7 +23,7 @@ class PulsePlot;
 class QSpinBox;
 
 namespace BC::Key::PulseWidget {
-static const QString key{"PulseWidget"};
+static const QString key{"PulseWidget.%1.%2"};
 static const QString name{"name"};
 static const QString channels{"channels"};
 static const QString delayStep{"delayStepUs"};

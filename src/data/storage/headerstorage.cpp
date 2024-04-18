@@ -5,6 +5,12 @@ HeaderStorage::HeaderStorage(const QString objKey) : d_headerKey{objKey}
 
 }
 
+int HeaderStorage::headerIndex() const
+{
+    auto p = BC::Key::parseKey(d_headerKey);
+    return p.second;
+}
+
 void HeaderStorage::store(const QString key, const QVariant val, const QString unit)
 {
     ValueUnit v{val,unit};

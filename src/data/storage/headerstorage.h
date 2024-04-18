@@ -58,6 +58,7 @@ public:
     virtual ~HeaderStorage() {}
 
     QString headerKey() const { return d_headerKey; }
+    int headerIndex() const;
 
 protected:
 

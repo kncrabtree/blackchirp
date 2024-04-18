@@ -2,9 +2,9 @@
 
 #include <gui/widget/pulseconfigwidget.h>
 
-PulseGenerator::PulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent, bool threaded, bool critical,int index) :
-    HardwareObject(BC::Key::PGen::key,subKey,name,commType,parent,threaded,critical,index),
-    PulseGenConfig(index),
+PulseGenerator::PulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent, bool threaded, bool critical) :
+    HardwareObject(BC::Key::PGen::key,subKey,name,commType,parent,threaded,critical,d_count),
+    PulseGenConfig(subKey,d_count),
     d_numChannels(numChannels)
 {
     SettingsStorage::set(BC::Key::PGen::numChannels,d_numChannels,true);
@@ -12,8 +12,9 @@ PulseGenerator::PulseGenerator(const QString subKey, const QString name, Communi
     for(int i=0; i<d_numChannels; i++)
         addChannel();
 
+    //it's maybe not logical to store roles/names in the pulse widget; consider changing
     using namespace BC::Key::PulseWidget;
-    SettingsStorage s(key);
+    SettingsStorage s(key.arg(d_key).arg(d_subKey));
     if(s.containsArray(channels))
     {
         for(int i=0; i<d_numChannels; i++)
@@ -22,6 +23,8 @@ PulseGenerator::PulseGenerator(const QString subKey, const QString name, Communi
             setCh(i,PulseGenConfig::RoleSetting,s.getArrayValue(channels,i,role,PulseGenConfig::None));
         }
     }
+
+    d_count++;
 }
 
 PulseGenerator::~PulseGenerator()

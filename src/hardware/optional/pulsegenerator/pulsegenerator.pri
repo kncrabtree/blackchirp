@@ -10,32 +10,44 @@ SOURCES += \
     $$PWD/pulsegenerator.cpp \
     $$PWD/pulsegeneratormanager.cpp
 
-count(PGEN,1) {
+H = $$LITERAL_HASH
 
-    N = $$upper($$PGEN)
-	DEFINES += BC_PGEN_$${N}
+SS = $$size(PGEN)
+greaterThan(SS, 0) {
+DEFINES += BC_PGEN
+DEFINES += BC_NUM_PGEN=$$size(PGEN)
+for(num, 0..$$size(PGEN)) {
+    N = $$upper($$member(PGEN,$$num))
+	count(N,1) {
+	    DEFINES += BC_PGEN_$$num=BC_PGEN_$$N
 
-    equals(N,VIRTUAL) {
-	    DEFINES += BC_PGEN=VirtualPulseGenerator BC_PGEN_H=virtualpulsegenerator.h
-        HEADERS += $$PWD/virtualpulsegenerator.h
-        SOURCES += $$PWD/virtualpulsegenerator.cpp
-    }
-	equals(N,QC9528) {
-	    DEFINES += BC_PGEN=Qc9528 BC_PGEN_H=qcpulsegenerator.h
-        HEADERS += $$PWD/qcpulsegenerator.h
-        SOURCES += $$PWD/qc9528.cpp \
-        $$PWD/qcpulsegenerator.cpp
-    }
-	equals(N,QC9518) {
-	    DEFINES += BC_PGEN=Qc9518 BC_PGEN_H=qcpulsegenerator.h
-        HEADERS += $$PWD/qcpulsegenerator.h
-        SOURCES += $$PWD/qc9518.cpp \
-        $$PWD/qcpulsegenerator.cpp
-    }
-	equals(N,QC9214) {
-	    DEFINES += BC_PGEN=Qc9214 BC_PGEN_H=qcpulsegenerator.h
-        HEADERS += $$PWD/qcpulsegenerator.h
-        SOURCES += $$PWD/qc9214.cpp \
-        $$PWD/qcpulsegenerator.cpp
-    }
+        equals(N,VIRTUAL) {
+		    DEFINES *= BC_PGEN_VIRTUAL=VirtualPulseGenerator
+			HEADERS *= $$PWD/virtualpulsegenerator.h
+			SOURCES *= $$PWD/virtualpulsegenerator.cpp
+			OPTHW *= "$${H}include <hardware/optional/pulsegenerator/virtualpulsegenerator.h>"
+			}
+		equals(N,QC9528) {
+		    DEFINES *= BC_PGEN_QC9528=Qc9528
+			HEADERS *= $$PWD/qcpulsegenerator.h
+			SOURCES *= $$PWD/qc9528.cpp \
+			$$PWD/qcpulsegenerator.cpp
+			OPTHW *= "$${H}include <hardware/optional/pulsegenerator/qcpulsegenerator.h>"
+		}
+		equals(N,QC9518) {
+		    DEFINES *= BC_PGEN_QC9518=Qc9518
+			HEADERS *= $$PWD/qcpulsegenerator.h
+			SOURCES *= $$PWD/qc9518.cpp \
+			$$PWD/qcpulsegenerator.cpp
+			OPTHW *= "$${H}include <hardware/optional/pulsegenerator/qcpulsegenerator.h>"
+		}
+		equals(N,QC9214) {
+		    DEFINES *= BC_PGEN_QC9514=Qc9514
+			HEADERS *= $$PWD/qcpulsegenerator.h
+			SOURCES *= $$PWD/qc9514.cpp \
+			$$PWD/qcpulsegenerator.cpp
+			OPTHW *= "$${H}include <hardware/optional/pulsegenerator/qcpulsegenerator.h>"
+		}
+	}
+}
 }

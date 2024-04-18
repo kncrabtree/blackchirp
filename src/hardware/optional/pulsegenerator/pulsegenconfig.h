@@ -70,7 +70,8 @@ public:
     PGenMode d_mode{Continuous};
     bool d_pulseEnabled{true};
 
-    PulseGenConfig(int index=-1);
+
+    PulseGenConfig(QString subKey=QString(""), int index=-1);
     ~PulseGenConfig();
 
     ChannelConfig at(const int i) const;
@@ -83,6 +84,7 @@ public:
     int channelForRole(Role role) const;
     double channelStart(const int index) const;
     bool testCircularSync(const int index, int newSyncCh);
+    inline QString hwSubKey() const { return d_hwSubKey; }
 
     void setCh(const int index, const Setting s, const QVariant val);
     void setCh(const int index, const ChannelConfig cc);
@@ -95,6 +97,9 @@ public:
 protected:
     void storeValues() override;
     void retrieveValues() override;
+
+private:
+    QString d_hwSubKey;
 };
 
 Q_DECLARE_METATYPE(PulseGenConfig)

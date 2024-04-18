@@ -11,6 +11,9 @@
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
+#include <hardware/opthw_h.h>
+#include <hardware/core/clock/clock_h.h>
+
 #include <QThread>
 
 #ifdef BC_LIF
@@ -53,14 +56,24 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #endif
 
 #ifdef BC_PGEN
-    auto pGen = new BC_PGEN;
-    connect(pGen,&PulseGenerator::settingUpdate,[this,pGen](const int ch, const PulseGenConfig::Setting set, const QVariant val){
-        emit pGenSettingUpdate(pGen->d_key,ch,set,val);
-    });
-    connect(pGen,&PulseGenerator::configUpdate,[this,pGen](const PulseGenConfig cfg){
-        emit pGenConfigUpdate(pGen->d_key,cfg);
-    });
-    d_hardwareMap.emplace(pGen->d_key,pGen);
+    QList<PulseGenerator*> pGenList;
+
+#define BOOST_PP_LOCAL_MACRO(n) pGenList << new BC_PGEN_##n;
+#define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_PGEN-1)
+#include BOOST_PP_LOCAL_ITERATE()
+#undef BOOST_PP_LOCAL_MACRO
+#undef BOOST_PP_LOCAL_LIMITS
+
+    for( auto &pGen : pGenList)
+    {
+        connect(pGen,&PulseGenerator::settingUpdate,[this,pGen](const int ch, const PulseGenConfig::Setting set, const QVariant val){
+            emit pGenSettingUpdate(pGen->d_key,ch,set,val);
+        });
+        connect(pGen,&PulseGenerator::configUpdate,[this,pGen](const PulseGenConfig cfg){
+            emit pGenConfigUpdate(pGen->d_key,cfg);
+        });
+        d_hardwareMap.emplace(pGen->d_key,pGen);
+    }
 #endif
 
 #ifdef BC_FLOWCONTROLLER

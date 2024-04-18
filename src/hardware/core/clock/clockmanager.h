@@ -58,7 +58,4 @@ private:
 
 };
 
-//handle includes... haven't figure out how to do this in a macro
-#include "clock_h.h"
-
 #endif // CLOCKMANAGER_H
