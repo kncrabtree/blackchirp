@@ -8,13 +8,10 @@
 #include <gui/widget/temperaturecontrolwidget.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
-TemperatureStatusBox::TemperatureStatusBox(QWidget *parent) :
-    QGroupBox(parent)
+TemperatureStatusBox::TemperatureStatusBox(QString key, QWidget *parent) :
+    HardwareStatusBox(key,parent)
 {
     auto gl = new QGridLayout;
-
-    setTitle("Temperature Status");
-
 
     SettingsStorage tc(BC::Key::TC::key,SettingsStorage::Hardware);
     auto nc = tc.get(BC::Key::TC::numChannels,4);

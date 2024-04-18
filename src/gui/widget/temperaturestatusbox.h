@@ -1,12 +1,12 @@
 #ifndef TEMPERATURESTATUSBOX_H
 #define TEMPERATURESTATUSBOX_H
 
-#include <QGroupBox>
+#include "hardwarestatusbox.h"
 
 class QLabel;
 class QDoubleSpinBox;
 
-class TemperatureStatusBox : public QGroupBox
+class TemperatureStatusBox : public HardwareStatusBox
 {
     Q_OBJECT
 public:
@@ -16,7 +16,7 @@ public:
         bool active{false};
     };
 
-    TemperatureStatusBox(QWidget *parent = nullptr);
+    TemperatureStatusBox(QString key, QWidget *parent = nullptr);
 
 public slots:
     void loadFromSettings();

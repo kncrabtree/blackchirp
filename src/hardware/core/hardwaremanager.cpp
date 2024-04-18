@@ -21,7 +21,8 @@
 #include <QFutureWatcher>
 #endif
 
-HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsStorage(BC::Key::hw)
+HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsStorage(BC::Key::hw),
+    d_optHwTypes{BC::Key::Flow::flowController,BC::Key::IOB::ioboard,BC::Key::PController::key,BC::Key::PGen::key,BC::Key::TC::key}
 {
     //Required hardware: FtmwScope and Clocks
     auto ftmwScope = new BC_FTMWSCOPE;
@@ -603,6 +604,30 @@ TemperatureControllerConfig HardwareManager::getTemperatureControllerConfig()
     }
 
     return out;
+}
+
+void HardwareManager::storeAllOptHw(Experiment *exp, std::map<QString, bool> hw)
+{
+    for(auto const &[hwKey,_] : d_hardwareMap)
+    {
+        auto t = BC::Key::parseKey(hwKey);
+        auto type = t.first;
+        auto index = t.second;
+
+        if((d_optHwTypes.find(type) == d_optHwTypes.end()) || index < 0 )
+            continue;
+
+        bool read = true;
+        auto it = hw.find(hwKey);
+        if(it != hw.end())
+            read = it->second;
+
+        if(read)
+        {
+            if(type == BC::Key::PGen::key)
+                exp->addOptHwConfig(getPGenConfig(hwKey));
+        }
+    }
 }
 
 void HardwareManager::checkStatus()

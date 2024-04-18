@@ -26,6 +26,8 @@ class LifControlWidget;
 
 namespace Ui {
 class MainWindow;
+static const QString actionStr{"Action"};
+static const QString sbStr{"StatusBox"};
 }
 
 class MainWindow : public QMainWindow

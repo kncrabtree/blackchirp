@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <memory>
+#include <any>
 #include <data/loghandler.h>
 #include <data/storage/auxdatastorage.h>
 #include <data/storage/settingsstorage.h>
@@ -34,6 +35,7 @@ public:
     ~HardwareManager();
 
     QString getHwName(const QString key);
+    const std::set<QString> d_optHwTypes;
 
 signals:
     void logMessage(QString,LogHandler::MessageCode = LogHandler::Normal);
@@ -140,6 +142,8 @@ public slots:
     void setTemperatureChannelEnabled(int ch, bool en);
     void setTemperatureChannelName(int ch, const QString name);
     TemperatureControllerConfig getTemperatureControllerConfig();
+
+    void storeAllOptHw(Experiment *exp, std::map<QString,bool> hw = {});
 
 #ifdef BC_LIF
     void setLifParameters(double delay, double pos);

@@ -1,7 +1,7 @@
 #ifndef GASFLOWDISPLAYWIDGET_H
 #define GASFLOWDISPLAYWIDGET_H
 
-#include <QGroupBox>
+#include "hardwarestatusbox.h"
 
 class QLabel;
 class QDoubleSpinBox;
@@ -9,11 +9,11 @@ class Led;
 
 using FlowWidgets = std::tuple<QLabel*,QDoubleSpinBox*,Led*>;
 
-class GasFlowDisplayBox : public QGroupBox
+class GasFlowDisplayBox : public HardwareStatusBox
 {
     Q_OBJECT
 public:
-    explicit GasFlowDisplayBox(QWidget *parent = nullptr);
+    explicit GasFlowDisplayBox(QString key, QWidget *parent = nullptr);
 
 public slots:
     void applySettings();

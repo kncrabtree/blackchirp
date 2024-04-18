@@ -3,10 +3,12 @@
 
 #include <QGroupBox>
 
+#include <gui/widget/hardwarestatusbox.h>
+
 class QDoubleSpinBox;
 class Led;
 
-class LifLaserStatusBox : public QGroupBox
+class LifLaserStatusBox : public HardwareStatusBox
 {
     Q_OBJECT
 public:

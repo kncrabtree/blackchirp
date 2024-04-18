@@ -12,11 +12,8 @@
 
 using namespace BC::Key::Flow;
 
-GasFlowDisplayBox::GasFlowDisplayBox(QWidget *parent) : QGroupBox(parent)
+GasFlowDisplayBox::GasFlowDisplayBox(QString key, QWidget *parent) : HardwareStatusBox(key,parent)
 {
-
-    setTitle("Flow Status");
-
     QGridLayout *gl = new QGridLayout(this);
     gl->setMargin(3);
     gl->setSpacing(3);

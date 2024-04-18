@@ -13,6 +13,7 @@ ExperimentPulseGenConfigPage::ExperimentPulseGenConfigPage(QString hwKey, QStrin
 
     auto p = exp->getOptHwConfig<PulseGenConfig>(hwKey);
     p_pcw = new PulseConfigWidget(*p.lock(),this);
+    p_pcw->configureForWizard();
     vbl->addWidget(p_pcw);
 
     setLayout(vbl);

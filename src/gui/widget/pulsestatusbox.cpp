@@ -9,10 +9,8 @@
 #include <QMetaEnum>
 
 PulseStatusBox::PulseStatusBox(QString key, QWidget *parent) :
-    QGroupBox(parent), d_key(key)
+    HardwareStatusBox(key,parent)
 {
-    setTitle(QString("Pulse Status"));
-
     QGridLayout *gl = new QGridLayout;
 
     SettingsStorage pg(BC::Key::PGen::key,SettingsStorage::Hardware);

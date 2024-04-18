@@ -2,12 +2,14 @@
 #define PULSESTATUSBOX_H
 
 #include <QGroupBox>
+
+#include "hardwarestatusbox.h"
 #include <hardware/optional/pulsegenerator/pulsegenconfig.h>
 
 class QLabel;
 class Led;
 
-class PulseStatusBox : public QGroupBox, public PulseGenConfig
+class PulseStatusBox : public HardwareStatusBox, public PulseGenConfig
 {
     Q_OBJECT
 public:
@@ -20,7 +22,6 @@ public slots:
 signals:
 
 private:
-    QString d_key;
     std::vector<std::pair<QLabel*,Led*>> d_ledList;
     QLabel *p_repLabel;
     Led *p_enLed;

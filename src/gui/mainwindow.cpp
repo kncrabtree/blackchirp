@@ -144,14 +144,14 @@ MainWindow::MainWindow(QWidget *parent) :
         auto hwType = ki.first;
 
         auto act = ui->menuHardware->addAction(QString("%1: %2").arg(key, p_hwm->getHwName(key)));
-        act->setObjectName(QString("Action")+key);
+        act->setObjectName(Ui::actionStr+key);
 
 
 
         if(hwType == BC::Key::Flow::flowController)
         {
-            auto w = new GasFlowDisplayBox;
-            w->setObjectName(key);
+            auto w = new GasFlowDisplayBox(key);
+            w->setObjectName(key+Ui::sbStr);
             ui->instrumentStatusLayout->insertWidget(3,w,0);
             connect(p_hwm,&HardwareManager::flowUpdate,w,&GasFlowDisplayBox::updateFlow);
             connect(p_hwm,&HardwareManager::flowSetpointUpdate,w,&GasFlowDisplayBox::updateFlowSetpoint);
@@ -182,7 +182,7 @@ MainWindow::MainWindow(QWidget *parent) :
         }
         else if(hwType == BC::Key::PController::key)
         {
-            auto psb = new PressureStatusBox;
+            auto psb = new PressureStatusBox(key);
             psb->setObjectName(key);
             ui->instrumentStatusLayout->insertWidget(3,psb,0);
             connect(p_hwm,&HardwareManager::pressureUpdate,psb,&PressureStatusBox::pressureUpdate);
@@ -210,7 +210,7 @@ MainWindow::MainWindow(QWidget *parent) :
         else if(hwType == BC::Key::PGen::key)
         {
             auto psb = new PulseStatusBox(key);
-            psb->setObjectName(key);
+            psb->setObjectName(key+Ui::sbStr);
             ui->instrumentStatusLayout->insertWidget(3,psb,0);
             connect(p_hwm,&HardwareManager::pGenConfigUpdate,psb,&PulseStatusBox::updatePulseLeds);
             connect(p_hwm,&HardwareManager::pGenSettingUpdate,psb,&PulseStatusBox::updatePulseSetting);
@@ -232,8 +232,8 @@ MainWindow::MainWindow(QWidget *parent) :
         }
         else if(hwType == BC::Key::TC::key)
         {
-            auto tsb = new TemperatureStatusBox;
-            tsb->setObjectName(key);
+            auto tsb = new TemperatureStatusBox(key);
+            tsb->setObjectName(key+Ui::sbStr);
             ui->instrumentStatusLayout->insertWidget(3,tsb,0);
             connect(p_hwm,&HardwareManager::temperatureEnableUpdate,tsb,&TemperatureStatusBox::setChannelEnabled);
             connect(p_hwm,&HardwareManager::temperatureUpdate,tsb,&TemperatureStatusBox::setTemperature);
@@ -261,7 +261,7 @@ MainWindow::MainWindow(QWidget *parent) :
         else if(hwType == BC::Key::LifLaser::key)
         {
             auto lsb = new LifLaserStatusBox;
-            lsb->setObjectName(key);
+            lsb->setObjectName(key+Ui::sbStr);
             ui->instrumentStatusLayout->insertWidget(3,lsb,0);
             connect(p_hwm,&HardwareManager::lifLaserPosUpdate,lsb,&LifLaserStatusBox::setPosition);
             connect(p_hwm,&HardwareManager::lifLaserFlashlampUpdate,lsb,&LifLaserStatusBox::setFlashlampEnabled);
@@ -381,6 +381,9 @@ void MainWindow::startExperiment()
     }
 
     auto exp = std::make_shared<Experiment>();
+    QMetaObject::invokeMethod(p_hwm,[this,exp](){
+        p_hwm->storeAllOptHw(exp.get());
+    },Qt::BlockingQueuedConnection);
 
     if(runExperimentWizard(exp.get()))
     {
@@ -482,6 +485,9 @@ void MainWindow::startSequence()
     }
 
     //if we reach this point, the experiment wizard needs to run
+    QMetaObject::invokeMethod(p_hwm,[this,exp](){
+        p_hwm->storeAllOptHw(exp.get());
+    },Qt::BlockingQueuedConnection);
     if(runExperimentWizard(exp.get()))
     {
         BatchSequence *bs = new BatchSequence(exp,d.numExperiments(),d.interval());
@@ -521,20 +527,13 @@ bool MainWindow::runExperimentWizard(Experiment *exp, QuickExptDialog *qed)
 
 void MainWindow::configureOptionalHardware(Experiment *exp, QuickExptDialog *qed)
 {
-    //if an optional piece of hardware should use current settings, then
-    //do not add it to the experiment; the current settings will be added
-    //when the hardware is initialized for the experiment.
-
     if(qed)
     {
         auto l = qed->getOptHwSettings();
-        for(const auto &[k,en] : l)
-        {
-            if(en)
-                exp->removeOptHwConfig(k);
-        }
+        QMetaObject::invokeMethod(p_hwm,[this,exp,l]{
+           p_hwm->storeAllOptHw(exp,l);
+        });
     }
-
 }
 
 void MainWindow::batchComplete(bool aborted)
@@ -1025,9 +1024,14 @@ HWDialog *MainWindow::createHWDialog(const QString key, QWidget *controlWidget)
     connect(out,&HWDialog::accepted,[this,key,out](){
         QMetaObject::invokeMethod(p_hwm,[=](){ p_hwm->updateObjectSettings(key); });
         auto n = out->getHwName();
-        auto act = ui->menuHardware->findChild<QAction*>(key,Qt::FindDirectChildrenOnly);
+        auto act = ui->menuHardware->findChild<QAction*>(Ui::actionStr+key,Qt::FindDirectChildrenOnly);
         if(act)
             act->setText(n);
+
+        auto sb = ui->centralWidget->findChild<HardwareStatusBox*>(key+Ui::sbStr,Qt::FindDirectChildrenOnly);
+        if(sb)
+            // dynamic_cast<HardwareStatusBox*>(sb)->updateTitle(n);
+            sb->updateTitle(n);
 
     });
     connect(out,&QDialog::finished,out,&QDialog::deleteLater);

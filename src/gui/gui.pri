@@ -35,6 +35,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/widget/ftmwviewwidget.cpp \
     $$PWD/widget/gascontrolwidget.cpp \
     $$PWD/widget/gasflowdisplaywidget.cpp \
+    $$PWD/widget/hardwarestatusbox.cpp \
     $$PWD/widget/ioboardconfigwidget.cpp \
     $$PWD/widget/led.cpp \
     $$PWD/widget/peakfindwidget.cpp \
@@ -98,6 +99,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/widget/ftmwviewwidget.h \
     $$PWD/widget/gascontrolwidget.h \
     $$PWD/widget/gasflowdisplaywidget.h \
+    $$PWD/widget/hardwarestatusbox.h \
     $$PWD/widget/ioboardconfigwidget.h \
     $$PWD/widget/led.h \
     $$PWD/widget/peakfindwidget.h \

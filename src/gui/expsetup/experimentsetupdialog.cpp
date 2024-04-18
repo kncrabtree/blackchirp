@@ -1,7 +1,6 @@
 #include "experimentsetupdialog.h"
 
 #include <QTreeWidget>
-#include <QStackedWidget>
 #include <QPushButton>
 #include <QTextEdit>
 #include <QHBoxLayout>
@@ -9,6 +8,7 @@
 #include <QDialogButtonBox>
 
 #include <gui/widget/experimentsummarywidget.h>
+#include <hardware/optional/pulsegenerator/pulsegenerator.h>
 
 #include "experimenttypepage.h"
 #include "experimentrfconfigpage.h"
@@ -16,6 +16,7 @@
 #include "experimentdrscanconfigpage.h"
 #include "experimentchirpconfigpage.h"
 #include "experimentftmwdigitizerconfigpage.h"
+#include "experimentpulsegenconfigpage.h"
 
 ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QString, QString> &hw, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent)
     : QDialog{parent}
@@ -28,6 +29,7 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
 
     p_navTree = new QTreeWidget(this);
     p_navTree->setColumnCount(1);
+    p_navTree->setMinimumWidth(200);
 
     hbl->addWidget(p_navTree);
 
@@ -38,6 +40,7 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
 
     p_summaryWidget = new ExperimentSummaryWidget(this);
     vbl->addWidget(p_summaryWidget,3);
+    p_summaryWidget->setMinimumWidth(300);
 
     p_statusTextEdit = new QTextEdit(this);
     p_statusTextEdit->setReadOnly(true);
@@ -133,6 +136,8 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
     ftdp->setEnabled(en);
     ftdItem->setDisabled(!en);
     ftdItem->setData(0,Qt::UserRole,k);
+
+    addOptHwPages<ExperimentPulseGenConfigPage>(BC::Key::PGen::key,hw,expTypeItem);
 
 
     connect(sp,&ExperimentTypePage::typeChanged,[=](){

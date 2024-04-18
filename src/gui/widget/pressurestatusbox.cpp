@@ -7,12 +7,8 @@
 #include <gui/widget/led.h>
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
 
-PressureStatusBox::PressureStatusBox(QWidget *parent) : QGroupBox(parent)
+PressureStatusBox::PressureStatusBox(QString key, QWidget *parent) : HardwareStatusBox(key,parent)
 {
-    setTitle(QString("Pressure Status"));
-
-
-
     auto *gl = new QGridLayout;
 
     gl->addWidget(new QLabel("Chamber"),0,0);

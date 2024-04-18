@@ -2,6 +2,10 @@
 #define EXPERIMENTSETUPWIDGET_H
 
 #include <QDialog>
+#include <QTreeWidgetItem>
+#include <QStackedWidget>
+
+#include <hardware/core/hardwareobject.h>
 #include <data/experiment/rfconfig.h>
 
 class QTreeWidget;
@@ -47,6 +51,28 @@ private:
     Experiment *p_exp;
 
     std::map<QString,PageData> d_pages;
+
+    template<typename T> void addOptHwPages(QString hwKey, const std::map<QString, QString> &hw, QTreeWidgetItem *expTypeItem)
+    {
+        auto index = 0;
+        auto it = hw.end();
+        do
+        {
+            auto k = BC::Key::hwKey(hwKey,index);
+            it = hw.find(k);
+            if(it != hw.end())
+            {
+                SettingsStorage s(k,SettingsStorage::Hardware);
+                auto title = s.get(BC::Key::HW::name,k);
+                auto page = new T(k,title,p_exp);
+                auto i = p_configWidget->addWidget(page);
+                d_pages.insert({k,{i,k,page,true}});
+                auto item = new QTreeWidgetItem(expTypeItem,{page->d_title});
+                item->setData(0,Qt::UserRole,k);
+                index++;
+            }
+        } while (it != hw.end());
+    }
 
 
     // QDialog interface

@@ -65,19 +65,19 @@ ExperimentLOScanConfigPage::ExperimentLOScanConfigPage(Experiment *exp, QWidget 
     p_upMajorStepBox->setKeyboardTracking(false);
 
     auto *upgl = new QGridLayout;
-    upgl->addWidget(new QLabel("Start"),0,0);
+    upgl->addWidget(new QLabel("Start"),0,0,Qt::AlignRight);
     upgl->addWidget(p_upStartBox,0,1);
-    upgl->addWidget(new QLabel("End"),0,2);
+    upgl->addWidget(new QLabel("End"),0,2,Qt::AlignRight);
     upgl->addWidget(p_upEndBox,0,3);
 
-    upgl->addWidget(new QLabel("Minor Steps/pt"),1,0);
+    upgl->addWidget(new QLabel("Minor Steps/pt"),1,0,Qt::AlignRight);
     upgl->addWidget(p_upNumMinorBox,1,1);
-    upgl->addWidget(new QLabel("Size"),1,2);
+    upgl->addWidget(new QLabel("Size"),1,2,Qt::AlignRight);
     upgl->addWidget(p_upMinorStepBox,1,3);
 
-    upgl->addWidget(new QLabel("Major Steps"),2,0);
+    upgl->addWidget(new QLabel("Major Steps"),2,0,Qt::AlignRight);
     upgl->addWidget(p_upNumMajorBox,2,1);
-    upgl->addWidget(new QLabel("Size"),2,2);
+    upgl->addWidget(new QLabel("Size"),2,2,Qt::AlignRight);
     upgl->addWidget(p_upMajorStepBox,2,3);
 
     upgl->addItem(new QSpacerItem(0,0,QSizePolicy::Minimum,QSizePolicy::Expanding),3,0);
