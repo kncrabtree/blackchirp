@@ -21,7 +21,7 @@ static const QString dutyMax{"dutyMaxPulses"};
 static const QString canSyncToChannel{"canSyncToChannel"};
 }
 
-class PulseGenerator : public HardwareObject, public PulseGenConfig
+class PulseGenerator : public HardwareObject
 {
     Q_OBJECT
 public:
@@ -32,7 +32,7 @@ public slots:
     void initialize() override final;
     bool prepareForExperiment(Experiment &exp) override final;
 
-    PulseGenConfig config() { readAll(); return static_cast<PulseGenConfig>(*this); }
+    PulseGenConfig config() { readAll(); return d_config; }
     void readChannel(const int index);
     double readRepRate();
     PulseGenConfig::PGenMode readPulseMode();
@@ -95,7 +95,10 @@ public slots:
     QStringList forbiddenKeys() const override;
 
 private:
+    PulseGenConfig d_config;
     inline static int d_count = 0;
+
+    friend class VirtualPulseGenerator;
 };
 
 

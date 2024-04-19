@@ -296,7 +296,7 @@ public:
      * \return T The value, or a default constructed value if the key is not present
      */
     template<typename T>
-    inline T get(const QString key, const T &defaultValue = QVariant().value<T>()) const { return (containsValue(key) ? get(key).value<T>() : defaultValue); };
+    inline T get(const QString key, const T &defaultValue = QVariant().value<T>()) const { return (containsValue(key) ? get(key).value<T>() : defaultValue); }
 
     /*!
      * \brief Gets values associated with a list of keys. Overloaded function

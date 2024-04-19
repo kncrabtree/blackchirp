@@ -163,9 +163,8 @@ MainWindow::MainWindow(QWidget *parent) :
                 if(isDialogOpen(key))
                     return;
 
-                auto gcw = new GasControlWidget;
                 auto fc = p_hwm->getFlowConfig();
-                gcw->initialize(fc);
+                auto gcw = new GasControlWidget(fc);
                 connect(p_hwm,&HardwareManager::flowSetpointUpdate,gcw,&GasControlWidget::updateGasSetpoint);
                 connect(p_hwm,&HardwareManager::gasPressureSetpointUpdate,gcw,&GasControlWidget::updatePressureSetpoint);
                 connect(p_hwm,&HardwareManager::gasPressureControlMode,gcw,&GasControlWidget::updatePressureControl);

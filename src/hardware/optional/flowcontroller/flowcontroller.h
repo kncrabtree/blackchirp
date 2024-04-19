@@ -29,12 +29,12 @@ class FlowController : public HardwareObject
 {
     Q_OBJECT
 public:
-    FlowController(const QString subKey, const QString name, int index, CommunicationProtocol::CommType commType,
+    FlowController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
                    QObject *parent = nullptr, bool threaded = false, bool critical = false);
     virtual ~FlowController();
 
-    FlowConfig config() const { return d_config; }
     QStringList validationKeys() const override;
+    FlowConfig config() { readAll(); return d_config; }
 
 signals:
     void flowUpdate(int,double,QPrivateSignal);
@@ -68,8 +68,8 @@ private:
     virtual double hwReadPressure() =0;
     virtual int hwReadPressureControlMode() =0;
 
-    const int d_numChannels;
     FlowConfig d_config;
+    const int d_numChannels;
     QTimer *p_readTimer;
 
 protected:
@@ -85,7 +85,9 @@ protected:
 protected:
     virtual AuxDataStorage::AuxDataMap readAuxData() override;
 
+private:
     friend class VirtualFlowController;
+    inline static int d_count = 0;
 
 
 };

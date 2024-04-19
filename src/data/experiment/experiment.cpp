@@ -79,7 +79,7 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
 
            if(hwType == BC::Key::Flow::flowController)
            {
-               FlowConfig cfg(index);
+               FlowConfig cfg(subKey,index);
                addOptHwConfig(cfg);
            }
 

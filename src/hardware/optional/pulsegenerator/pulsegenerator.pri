@@ -42,9 +42,9 @@ for(num, 0..$$size(PGEN)) {
 			OPTHW *= "$${H}include <hardware/optional/pulsegenerator/qcpulsegenerator.h>"
 		}
 		equals(N,QC9214) {
-		    DEFINES *= BC_PGEN_QC9514=Qc9514
+                    DEFINES *= BC_PGEN_QC9214=Qc9214
 			HEADERS *= $$PWD/qcpulsegenerator.h
-			SOURCES *= $$PWD/qc9514.cpp \
+                        SOURCES *= $$PWD/qc9214.cpp \
 			$$PWD/qcpulsegenerator.cpp
 			OPTHW *= "$${H}include <hardware/optional/pulsegenerator/qcpulsegenerator.h>"
 		}

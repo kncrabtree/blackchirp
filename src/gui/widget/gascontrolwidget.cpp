@@ -9,7 +9,7 @@
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 
 
-GasControlWidget::GasControlWidget(QWidget *parent) : QWidget(parent), SettingsStorage(BC::Key::GasControl::key)
+GasControlWidget::GasControlWidget(const FlowConfig &cfg, QWidget *parent) : QWidget(parent), SettingsStorage(BC::Key::GasControl::key.arg(cfg.headerKey()).arg(cfg.hwSubKey())), d_config{cfg}
 {
     using namespace BC::Key::GasControl;
     auto gasControlBoxLayout = new QGridLayout;
@@ -24,9 +24,7 @@ GasControlWidget::GasControlWidget(QWidget *parent) : QWidget(parent), SettingsS
     gasControlBoxLayout->setSpacing(3);
 
 
-
-
-    SettingsStorage fc(BC::Key::Flow::flowController,Hardware);
+    SettingsStorage fc(cfg.headerKey(),Hardware);
     auto flowChannels = fc.get(BC::Key::Flow::flowChannels,4);
     for(int i=0; i<flowChannels; ++i)
     {
@@ -79,20 +77,22 @@ GasControlWidget::GasControlWidget(QWidget *parent) : QWidget(parent), SettingsS
 
     setLayout(gasControlBoxLayout);
     applySettings();
+    initialize(d_config);
 }
 
-FlowConfig GasControlWidget::getFlowConfig() const
+FlowConfig &GasControlWidget::getFlowConfig()
 {
-    FlowConfig cfg;
-    cfg.setPressureControlMode(p_pressureControlButton->isChecked());
-    cfg.setPressureSetpoint(p_pressureSetpointBox->value());
+
+    d_config.d_pressureControlMode = p_pressureControlButton->isChecked();
+    d_config.d_pressureSetpoint = p_pressureSetpointBox->value();
     for(int i=0; i<d_widgets.size(); i++)
     {
         auto [name,sp] = d_widgets.at(i);
-        cfg.add(sp->value(),name->text());
+        d_config.setCh(i,FlowConfig::Setpoint,sp->value());
+        d_config.setCh(i,FlowConfig::Name,name->text());
     }
 
-    return cfg;
+    return d_config;
 }
 
 void GasControlWidget::initialize(const FlowConfig &cfg)
@@ -100,8 +100,8 @@ void GasControlWidget::initialize(const FlowConfig &cfg)
      for(int i=0; i<cfg.size(); ++i)
          updateGasSetpoint(i,cfg.setting(i,FlowConfig::Setpoint).toDouble());
 
-     updatePressureSetpoint(cfg.pressureSetpoint());
-     updatePressureControl(cfg.pressureControlMode());
+     updatePressureSetpoint(cfg.d_pressureSetpoint);
+     updatePressureControl(cfg.d_pressureControlMode);
 }
 
 void GasControlWidget::applySettings()
@@ -115,7 +115,7 @@ void GasControlWidget::applySettings()
 
     for(int i=0; i<d_widgets.size(); ++i)
     {
-        auto b = std::get<1>(d_widgets.at(i));
+        auto b = std::get<QDoubleSpinBox*>(d_widgets.at(i));
         b->setDecimals(fc.getArrayValue(channels,i,chDecimals,2));
         b->setMaximum(fc.getArrayValue(channels,i,chMax,10000.0));
         b->setSuffix(QString(" ")+fc.getArrayValue(channels,i,chUnits,QString("")));
@@ -128,7 +128,7 @@ void GasControlWidget::updateGasSetpoint(int i, double sp)
     if(i < 0 || i >= d_widgets.size())
         return;
 
-    auto b = std::get<1>(d_widgets.at(i));
+    auto b = std::get<QDoubleSpinBox*>(d_widgets.at(i));
     if(!b->hasFocus())
     {
         b->blockSignals(true);

@@ -37,13 +37,13 @@ protected:
 protected:
     bool setChWidth(const int index, const double width) override final;
     bool setChDelay(const int index, const double delay) override final;
-    bool setChActiveLevel(const int index, const ActiveLevel level) override final;
+    bool setChActiveLevel(const int index, const PulseGenConfig::ActiveLevel level) override final;
     bool setChEnabled(const int index, const bool en) override final;
     bool setChSyncCh(const int index, const int syncCh) override final;
-    bool setChMode(const int index, const ChannelMode mode) override final;
+    bool setChMode(const int index, const PulseGenConfig::ChannelMode mode) override final;
     bool setChDutyOn(const int index, const int pulses) override final;
     bool setChDutyOff(const int index, const int pulses) override final;
-    bool setHwPulseMode(PGenMode mode) override final;
+    bool setHwPulseMode(PulseGenConfig::PGenMode mode) override final;
     bool setHwRepRate(double rr) override final;
     bool setHwPulseEnabled(bool en) override final;
     double readChWidth(const int index) override final;

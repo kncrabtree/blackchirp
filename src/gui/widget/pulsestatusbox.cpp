@@ -13,12 +13,12 @@ PulseStatusBox::PulseStatusBox(QString key, QWidget *parent) :
 {
     QGridLayout *gl = new QGridLayout;
 
-    SettingsStorage pg(BC::Key::PGen::key,SettingsStorage::Hardware);
+    SettingsStorage pg(key,SettingsStorage::Hardware);
     int channels = pg.get(BC::Key::PGen::numChannels,8);
     d_ledList.reserve(channels);
     for(int i=0; i<channels; i++)
     {       
-        QLabel *lbl = new QLabel(this);
+        QLabel *lbl = new QLabel(QString("Ch%1").arg(i+1),this);
         lbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
 
         Led *led = new Led(this);
@@ -31,7 +31,7 @@ PulseStatusBox::PulseStatusBox(QString key, QWidget *parent) :
         gl->setColumnStretch(i,(i%2)+1);
 
     auto r = gl->rowCount();
-    p_repLabel = new QLabel(this);
+    p_repLabel = new QLabel(QString("Disconnected"),this);
     gl->addWidget(p_repLabel,r,0,1,7,Qt::AlignRight);
 
     p_enLed = new Led(this);

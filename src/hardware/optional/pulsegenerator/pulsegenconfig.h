@@ -84,7 +84,6 @@ public:
     int channelForRole(Role role) const;
     double channelStart(const int index) const;
     bool testCircularSync(const int index, int newSyncCh);
-    inline QString hwSubKey() const { return d_hwSubKey; }
 
     void setCh(const int index, const Setting s, const QVariant val);
     void setCh(const int index, const ChannelConfig cc);

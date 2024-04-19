@@ -1,6 +1,7 @@
 #include "headerstorage.h"
 
-HeaderStorage::HeaderStorage(const QString objKey) : d_headerKey{objKey}
+HeaderStorage::HeaderStorage(const QString objKey, const QString hwSubKey) :
+    d_headerKey{objKey}, d_hwSubKey{hwSubKey}
 {
 
 }

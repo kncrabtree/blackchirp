@@ -15,7 +15,7 @@ class QLabel;
 using GasWidgets = std::tuple<QLineEdit*,QDoubleSpinBox*>;
 
 namespace BC::Key::GasControl {
-static const QString key{"GasControlWidget"};
+static const QString key{"GasControlWidget.%1.%2"};
 static const QString channels{"channels"};
 static const QString gasName{"name"};
 }
@@ -24,12 +24,11 @@ class GasControlWidget : public QWidget, public SettingsStorage
 {
     Q_OBJECT
 public:
-    explicit GasControlWidget(QWidget *parent = nullptr);
-    ~GasControlWidget() {};
-    FlowConfig getFlowConfig() const;
+    explicit GasControlWidget(const FlowConfig &cfg, QWidget *parent = nullptr);
+    ~GasControlWidget() {}
+    FlowConfig &getFlowConfig();
 
 public slots:
-    void initialize(const FlowConfig &cfg);
     void applySettings();
     void updateGasSetpoint(int i, double sp);
     void updatePressureSetpoint(double sp);
@@ -42,6 +41,9 @@ signals:
     void pressureControlUpdate(bool);
 
 private:
+    void initialize(const FlowConfig &cfg);
+
+    FlowConfig d_config;
     QVector<GasWidgets> d_widgets;
     QDoubleSpinBox *p_pressureSetpointBox;
     QPushButton* p_pressureControlButton;

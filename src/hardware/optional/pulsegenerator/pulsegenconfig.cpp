@@ -3,7 +3,7 @@
 #include <QMetaEnum>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 
-PulseGenConfig::PulseGenConfig(QString subKey, int index) : HeaderStorage(BC::Key::hwKey(BC::Key::PGen::key,index)), d_hwSubKey{subKey}
+PulseGenConfig::PulseGenConfig(QString subKey, int index) : HeaderStorage(BC::Key::hwKey(BC::Key::PGen::key,index),subKey)
 {
 }
 

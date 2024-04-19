@@ -54,15 +54,18 @@ public:
      * \brief Constructor. Sets the object key, which should be unique to the most derived class
      * \param objKey The object key. Values written to the header file will be associated with this string
      */
-    HeaderStorage(const QString objKey);
+    HeaderStorage(const QString objKey, const QString hwSubKey = QString(""));
     virtual ~HeaderStorage() {}
 
     QString headerKey() const { return d_headerKey; }
     int headerIndex() const;
 
+    QString hwSubKey() const { return d_hwSubKey; }
+
 protected:
 
     QString d_headerKey; /*!< Object key used for storage. Should not be modified! */
+    QString d_hwSubKey; /*< Key used for settings in some hardware config objects */
 
     /*!
      * \brief Function called before saving.

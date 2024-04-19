@@ -37,27 +37,21 @@ public:
     };
     Q_ENUM(FlowChSetting)
 
-    FlowConfig(int index = -1);
+    FlowConfig(QString hwSubKey=QString(""), int index = -1);
     ~FlowConfig();
 
-    QVariant setting(int index, FlowChSetting s) const;
-    double pressureSetpoint() const;
-    double pressure() const;
-    bool pressureControlMode() const;
-    int size() const;
-
-    void add(double set = 0.0, QString name = QString(""));
-    void set(int index, FlowChSetting s, QVariant val);
-    void setPressure(double p);
-    void setPressureSetpoint(double s);
-    void setPressureControlMode(bool en);
-
-private:
-    QVector<FlowConfig::FlowChannel> d_configList;
     double d_pressureSetpoint{0.0};
-
     double d_pressure{0.0};
     bool d_pressureControlMode{false};
+
+    QVariant setting(int index, FlowChSetting s) const;
+    int size() const;
+
+    void addCh(double set = 0.0, QString name = QString(""));
+    void setCh(int index, FlowChSetting s, QVariant val);
+
+private:
+    QList<FlowConfig::FlowChannel> d_configList;
 
     // HeaderStorage interface
 protected:
@@ -66,7 +60,7 @@ protected:
 };
 
 Q_DECLARE_METATYPE(FlowConfig)
-Q_DECLARE_METATYPE(FlowConfig::FlowChSetting);
+Q_DECLARE_METATYPE(FlowConfig::FlowChSetting)
 Q_DECLARE_TYPEINFO(FlowConfig::FlowChannel,Q_MOVABLE_TYPE);
 
 #endif // FLOWCONFIG_H
