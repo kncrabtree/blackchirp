@@ -12,7 +12,7 @@
 
 using namespace BC::Key::Flow;
 
-GasFlowDisplayBox::GasFlowDisplayBox(QString key, QWidget *parent) : HardwareStatusBox(key,parent)
+GasFlowDisplayBox::GasFlowDisplayBox(const QString key, QWidget *parent) : HardwareStatusBox(key,parent)
 {
     QGridLayout *gl = new QGridLayout(this);
     gl->setMargin(3);
@@ -60,8 +60,8 @@ GasFlowDisplayBox::GasFlowDisplayBox(QString key, QWidget *parent) : HardwareSta
 
 void GasFlowDisplayBox::applySettings()
 {
-    SettingsStorage fc(flowController,SettingsStorage::Hardware);
-    SettingsStorage gc(BC::Key::GasControl::key);
+    SettingsStorage fc(d_key,SettingsStorage::Hardware);
+    SettingsStorage gc(BC::Key::GasControl::key.arg(d_key).arg(fc.get(BC::Key::HW::subKey,"virtual").toString()));
 
     p_pressureBox->setDecimals(fc.get(pDec,3));
     p_pressureBox->setRange(-fc.get(pMax,10.0),fc.get(pMax,10.0));
@@ -84,16 +84,22 @@ void GasFlowDisplayBox::applySettings()
 
 }
 
-void GasFlowDisplayBox::updateFlow(int ch, double val)
+void GasFlowDisplayBox::updateFlow(const QString key, int ch, double val)
 {
+    if(key != d_key)
+        return;
+
     if(ch < 0 || ch >= d_flowWidgets.size())
         return;
 
     std::get<1>(d_flowWidgets.at(ch))->setValue(val);
 }
 
-void GasFlowDisplayBox::updateFlowName(int ch, const QString name)
+void GasFlowDisplayBox::updateFlowName(const QString key, int ch, const QString name)
 {
+    if(key != d_key)
+        return;
+
     if(ch < 0 || ch >= d_flowWidgets.size())
         return;
 
@@ -105,8 +111,11 @@ void GasFlowDisplayBox::updateFlowName(int ch, const QString name)
         lbl->setText(name.mid(0,9));
 }
 
-void GasFlowDisplayBox::updateFlowSetpoint(int ch, double val)
+void GasFlowDisplayBox::updateFlowSetpoint(const QString key, int ch, double val)
 {
+    if(key != d_key)
+        return;
+
     if(ch < 0 || ch >= d_flowWidgets.size())
         return;
 
@@ -117,12 +126,18 @@ void GasFlowDisplayBox::updateFlowSetpoint(int ch, double val)
         led->setState(true);
 }
 
-void GasFlowDisplayBox::updatePressureControl(bool en)
+void GasFlowDisplayBox::updatePressureControl(const QString key, bool en)
 {
+    if(key != d_key)
+        return;
+
     p_pressureLed->setState(en);
 }
 
-void GasFlowDisplayBox::updatePressure(double p)
+void GasFlowDisplayBox::updatePressure(const QString key, double p)
 {
+    if(key != d_key)
+        return;
+
     p_pressureBox->setValue(p);
 }

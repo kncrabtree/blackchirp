@@ -9,7 +9,7 @@
 class QLabel;
 class Led;
 
-class PulseStatusBox : public HardwareStatusBox, public PulseGenConfig
+class PulseStatusBox : public HardwareStatusBox
 {
     Q_OBJECT
 public:
@@ -17,7 +17,7 @@ public:
 
 public slots:
     void updatePulseLeds(const QString k, const PulseGenConfig &cc);
-    void updatePulseSetting(const QString k,int index,Setting s, QVariant val);
+    void updatePulseSetting(const QString k,int index,PulseGenConfig::Setting s, QVariant val);
 
 signals:
 
@@ -27,6 +27,7 @@ private:
     Led *p_enLed;
 
     void updateAll();
+    PulseGenConfig d_config;
 
 };
 

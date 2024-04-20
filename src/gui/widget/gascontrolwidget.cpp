@@ -37,14 +37,14 @@ GasControlWidget::GasControlWidget(const FlowConfig &cfg, QWidget *parent) : QWi
         nameEdit->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Preferred);
         connect(nameEdit,&QLineEdit::editingFinished,[this,nameEdit,i](){
             setArrayValue(channels,i,gasName,nameEdit->text(),true);
-            emit nameUpdate(i,nameEdit->text());
+            emit nameUpdate(d_config.headerKey(),i,nameEdit->text());
         });
 
         auto controlBox = new QDoubleSpinBox;
         controlBox->setSpecialValueText(QString("Off"));
         controlBox->setKeyboardTracking(false);
         connect(controlBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-                [this,i](double v) { emit gasSetpointUpdate(i,v); } );
+                [this,i](double v) { emit gasSetpointUpdate(d_config.headerKey(),i,v); } );
 
         d_widgets.append({nameEdit,controlBox});
 
@@ -55,15 +55,16 @@ GasControlWidget::GasControlWidget(const FlowConfig &cfg, QWidget *parent) : QWi
 
 
     p_pressureSetpointBox = new QDoubleSpinBox;
-    connect(p_pressureSetpointBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),this,
-            &GasControlWidget::pressureSetpointUpdate);
+    connect(p_pressureSetpointBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),[this](double sp){
+        emit pressureSetpointUpdate(d_config.headerKey(),sp);
+    });
 
     p_pressureControlButton = new QPushButton;
     p_pressureControlButton->setCheckable(true);
     p_pressureControlButton->setChecked(false);
     p_pressureControlButton->setText("Off");
     connect(p_pressureControlButton,&QPushButton::toggled,[this](bool en){
-        emit pressureControlUpdate(en);
+        emit pressureControlUpdate(d_config.headerKey(),en);
         if(en)
             p_pressureControlButton->setText(QString("On"));
         else
@@ -97,11 +98,14 @@ FlowConfig &GasControlWidget::getFlowConfig()
 
 void GasControlWidget::initialize(const FlowConfig &cfg)
 {
-     for(int i=0; i<cfg.size(); ++i)
-         updateGasSetpoint(i,cfg.setting(i,FlowConfig::Setpoint).toDouble());
+    if(cfg.headerKey() != d_config.headerKey())
+        return;
 
-     updatePressureSetpoint(cfg.d_pressureSetpoint);
-     updatePressureControl(cfg.d_pressureControlMode);
+     for(int i=0; i<cfg.size(); ++i)
+         updateGasSetpoint(cfg.headerKey(),i,cfg.setting(i,FlowConfig::Setpoint).toDouble());
+
+     updatePressureSetpoint(cfg.headerKey(),cfg.d_pressureSetpoint);
+     updatePressureControl(cfg.headerKey(),cfg.d_pressureControlMode);
 }
 
 void GasControlWidget::applySettings()
@@ -123,8 +127,11 @@ void GasControlWidget::applySettings()
     }
 }
 
-void GasControlWidget::updateGasSetpoint(int i, double sp)
+void GasControlWidget::updateGasSetpoint(const QString key, int i, double sp)
 {
+    if(key != d_config.headerKey())
+        return;
+
     if(i < 0 || i >= d_widgets.size())
         return;
 
@@ -137,8 +144,11 @@ void GasControlWidget::updateGasSetpoint(int i, double sp)
     }
 }
 
-void GasControlWidget::updatePressureSetpoint(double sp)
+void GasControlWidget::updatePressureSetpoint(const QString key, double sp)
 {
+    if(key != d_config.headerKey())
+        return;
+
     if(!p_pressureSetpointBox->hasFocus())
     {
         p_pressureSetpointBox->blockSignals(true);
@@ -147,8 +157,11 @@ void GasControlWidget::updatePressureSetpoint(double sp)
     }
 }
 
-void GasControlWidget::updatePressureControl(bool en)
+void GasControlWidget::updatePressureControl(const QString key, bool en)
 {
+    if(key != d_config.headerKey())
+        return;
+
     if(!p_pressureControlButton->hasFocus())
     {
         blockSignals(true);

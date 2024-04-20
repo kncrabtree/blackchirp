@@ -10,13 +10,11 @@ SOURCES += \
     $$PWD/pulsegenerator.cpp \
     $$PWD/pulsegeneratormanager.cpp
 
-H = $$LITERAL_HASH
-
-SS = $$size(PGEN)
-greaterThan(SS, 0) {
+NPGEN = $$size(PGEN)
+greaterThan(NPGEN, 0) {
 DEFINES += BC_PGEN
-DEFINES += BC_NUM_PGEN=$$size(PGEN)
-for(num, 0..$$size(PGEN)) {
+DEFINES += BC_NUM_PGEN=$$NPGEN
+for(num, 0..$$NPGEN) {
     N = $$upper($$member(PGEN,$$num))
 	count(N,1) {
 	    DEFINES += BC_PGEN_$$num=BC_PGEN_$$N

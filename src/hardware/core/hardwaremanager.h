@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <memory>
-#include <any>
+#include <functional>
 #include <data/loghandler.h>
 #include <data/storage/auxdatastorage.h>
 #include <data/storage/settingsstorage.h>
@@ -66,11 +66,11 @@ signals:
     void pGenSettingUpdate(QString,int,PulseGenConfig::Setting,QVariant);
     void pGenConfigUpdate(QString,PulseGenConfig);
 
-    void flowUpdate(int,double);
-    void flowSetpointUpdate(int,double);
-    void gasPressureUpdate(double);
-    void gasPressureSetpointUpdate(double);
-    void gasPressureControlMode(bool);
+    void flowUpdate(QString,int,double);
+    void flowSetpointUpdate(QString,int,double);
+    void gasPressureUpdate(QString,double);
+    void gasPressureSetpointUpdate(QString,double);
+    void gasPressureControlMode(QString,bool);
 
     void pressureControlReadOnly(bool);
     void pressureUpdate(double);
@@ -123,15 +123,15 @@ public slots:
     void configureClocks(QHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
     void setClocks(QHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
 
-    void setPGenSetting(QString key, int index, PulseGenConfig::Setting s, QVariant val);
-    void setPGenConfig(QString key, const PulseGenConfig &c);
-    PulseGenConfig getPGenConfig(QString key);
+    void setPGenSetting(const QString key, int index, PulseGenConfig::Setting s, QVariant val);
+    void setPGenConfig(const QString key, const PulseGenConfig &c);
+    PulseGenConfig getPGenConfig(const QString key);
 
-    void setFlowSetpoint(int index, double val);
-    void setFlowChannelName(int index, QString name);
-    void setGasPressureSetpoint(double val);
-    void setGasPressureControlMode(bool en);
-    FlowConfig getFlowConfig();
+    void setFlowSetpoint(const QString key, int index, double val);
+    void setFlowChannelName(const QString key, int index, QString name);
+    void setGasPressureSetpoint(const QString key, double val);
+    void setGasPressureControlMode(const QString key, bool en);
+    FlowConfig getFlowConfig(const QString key);
 
     void setPressureSetpoint(double val);
     void setPressureControlMode(bool en);

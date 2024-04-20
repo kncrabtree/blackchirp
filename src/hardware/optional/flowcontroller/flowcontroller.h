@@ -92,8 +92,4 @@ private:
 
 };
 
-#ifdef BC_FLOWCONTROLLER
-#include BC_STR(BC_FLOWCONTROLLER_H)
-#endif
-
 #endif // FLOWCONTROLLER_H

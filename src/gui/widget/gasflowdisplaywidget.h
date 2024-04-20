@@ -13,15 +13,15 @@ class GasFlowDisplayBox : public HardwareStatusBox
 {
     Q_OBJECT
 public:
-    explicit GasFlowDisplayBox(QString key, QWidget *parent = nullptr);
+    explicit GasFlowDisplayBox(const QString key, QWidget *parent = nullptr);
 
 public slots:
     void applySettings();
-    void updateFlow(int ch, double val);
-    void updateFlowName(int ch, const QString name);
-    void updateFlowSetpoint(int ch, double val);
-    void updatePressureControl(bool en);
-    void updatePressure(double p);
+    void updateFlow(const QString key, int ch, double val);
+    void updateFlowName(const QString key, int ch, const QString name);
+    void updateFlowSetpoint(const QString key, int ch, double val);
+    void updatePressureControl(const QString key, bool en);
+    void updatePressure(const QString key, double p);
 
 signals:
 

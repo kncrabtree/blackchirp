@@ -5,23 +5,32 @@ SOURCES += $$PWD/flowcontroller.cpp \
            $$PWD/flowconfig.cpp
 
 
-
-count(FC,1) {
-    N = $$upper($$FC)
-
-    equals(N,VIRTUAL) {
-	    DEFINES += BC_FLOWCONTROLLER=VirtualFlowController BC_FLOWCONTROLLER_H=virtualflowcontroller.h
-	    HEADERS += $$PWD/virtualflowcontroller.h
-		SOURCES += $$PWD/virtualflowcontroller.cpp
-	}
-	equals(N,MKS647C) {
-	    DEFINES += BC_FLOWCONTROLLER=Mks647c BC_FLOWCONTROLLER_H=mks647c.h
-	    HEADERS += $$PWD/mks647c.h
-		SOURCES += $$PWD/mks647c.cpp
+NFC = $$size(FC)
+greaterThan(NFC,0) {
+DEFINES += BC_FLOWCONTROLLER
+DEFINES += BC_NUM_FLOWCONTROLLER=$$NFC
+for(num, 0..$$NFC) {
+    N = $$upper($$member(FC,$$num))
+	count(N,1) {
+	    DEFINES += BC_FLOWCONTROLLER_$$num=BC_FLOWCONTROLLER_$$N
+		equals(N,VIRTUAL) {
+		    DEFINES *= BC_FLOWCONTROLLER_VIRTUAL=VirtualFlowController
+			HEADERS *= $$PWD/virtualflowcontroller.h
+			SOURCES *= $$PWD/virtualflowcontroller.cpp
+			OPTHW *= "$${H}include <hardware/optional/flowcontroller/virtualflowcontroller.h>"
 		}
-	equals(N,MKS946) {
-	    DEFINES += BC_FLOWCONTROLLER=Mks946 BC_FLOWCONTROLLER_H=mks946.h
-	    HEADERS += $$PWD/mks946.h
-		SOURCES += $$PWD/mks946.cpp
+		equals(N,MKS647C) {
+		    DEFINES *= BC_FLOWCONTROLLER_MKS647C=Mks647c
+			HEADERS *= $$PWD/mks647c.h
+			SOURCES *= $$PWD/mks647c.cpp
+			OPTHW *= "$${H}include <hardware/optional/flowcontroller/mks647c.h>"
+		}
+		equals(N,MKS946) {
+		    DEFINES *= BC_FLOWCONTROLLER_MKS946=Mks946
+			HEADERS *= $$PWD/mks946.h
+			SOURCES *= $$PWD/mks946.cpp
+			OPTHW *= "$${H}include <hardware/optional/flowcontroller/mks946.h>"
+		}
 	}
+}
 }

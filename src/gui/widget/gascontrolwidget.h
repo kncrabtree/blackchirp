@@ -30,15 +30,15 @@ public:
 
 public slots:
     void applySettings();
-    void updateGasSetpoint(int i, double sp);
-    void updatePressureSetpoint(double sp);
-    void updatePressureControl(bool en);
+    void updateGasSetpoint(const QString key, int i, double sp);
+    void updatePressureSetpoint(const QString key, double sp);
+    void updatePressureControl(const QString key, bool en);
 
 signals:
-    void nameUpdate(int,QString);
-    void gasSetpointUpdate(int,double);
-    void pressureSetpointUpdate(double);
-    void pressureControlUpdate(bool);
+    void nameUpdate(QString,int,QString);
+    void gasSetpointUpdate(QString,int,double);
+    void pressureSetpointUpdate(QString,double);
+    void pressureControlUpdate(QString,bool);
 
 private:
     void initialize(const FlowConfig &cfg);

@@ -8,6 +8,7 @@ HardwareStatusBox::HardwareStatusBox(QString key, QWidget *parent) :
 {
     SettingsStorage s(d_key,SettingsStorage::Hardware);
     updateTitle(s.get(BC::Key::HW::name,d_key));
+    setFlat(true);
 }
 
 void HardwareStatusBox::updateTitle(const QString &n)

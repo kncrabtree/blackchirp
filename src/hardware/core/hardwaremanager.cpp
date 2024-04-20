@@ -77,13 +77,33 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #endif
 
 #ifdef BC_FLOWCONTROLLER
-    auto flow = new BC_FLOWCONTROLLER;
-    connect(flow,&FlowController::flowUpdate,this,&HardwareManager::flowUpdate);
-    connect(flow,&FlowController::flowSetpointUpdate,this,&HardwareManager::flowSetpointUpdate);
-    connect(flow,&FlowController::pressureUpdate,this,&HardwareManager::gasPressureUpdate);
-    connect(flow,&FlowController::pressureSetpointUpdate,this,&HardwareManager::gasPressureSetpointUpdate);
-    connect(flow,&FlowController::pressureControlMode,this,&HardwareManager::gasPressureControlMode);
-    d_hardwareMap.emplace(flow->d_key,flow);
+    QList<FlowController*> fcList;
+
+#define BOOST_PP_LOCAL_MACRO(n) fcList << new BC_FLOWCONTROLLER_##n;
+#define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_FLOWCONTROLLER-1)
+#include BOOST_PP_LOCAL_ITERATE()
+#undef BOOST_PP_LOCAL_MACRO
+#undef BOOST_PP_LOCAL_LIMITS
+
+    for(auto &flow : fcList)
+    {
+        connect(flow,&FlowController::flowUpdate,[this,flow](int i, double d){
+            emit flowUpdate(flow->d_key,i,d);
+        });
+        connect(flow,&FlowController::flowSetpointUpdate,[this,flow](int i, double d){
+            emit flowSetpointUpdate(flow->d_key,i,d);
+        });
+        connect(flow,&FlowController::pressureUpdate,[this,flow](double d){
+            emit gasPressureUpdate(flow->d_key,d);
+        });
+        connect(flow,&FlowController::pressureSetpointUpdate,[this,flow](double d){
+           emit gasPressureSetpointUpdate(flow->d_key,d);
+        });
+        connect(flow,&FlowController::pressureControlMode,[this,flow](bool b){
+            emit gasPressureControlMode(flow->d_key,b);
+        });
+        d_hardwareMap.emplace(flow->d_key,flow);
+    }
 #endif
 
 #ifdef BC_PCONTROLLER
@@ -438,7 +458,7 @@ void HardwareManager::setClocks(QHash<RfConfig::ClockType, RfConfig::ClockFreq> 
     emit allClocksReady(clocks);
 }
 
-void HardwareManager::setPGenSetting(QString key, int index, PulseGenConfig::Setting s, QVariant val)
+void HardwareManager::setPGenSetting(const QString key, int index, PulseGenConfig::Setting s, QVariant val)
 {
     auto pGen = findHardware<PulseGenerator>(key);
     if(pGen)
@@ -462,14 +482,14 @@ void HardwareManager::setPGenSetting(QString key, int index, PulseGenConfig::Set
 
 }
 
-void HardwareManager::setPGenConfig(QString key, const PulseGenConfig &c)
+void HardwareManager::setPGenConfig(const QString key, const PulseGenConfig &c)
 {
     auto pGen = findHardware<PulseGenerator>(key);
     if(pGen)
         QMetaObject::invokeMethod(pGen,[pGen,c](){ pGen->setAll(c); });
 }
 
-PulseGenConfig HardwareManager::getPGenConfig(QString key)
+PulseGenConfig HardwareManager::getPGenConfig(const QString key)
 {
     PulseGenConfig out;
     auto pg = findHardware<PulseGenerator>(key);
@@ -484,38 +504,38 @@ PulseGenConfig HardwareManager::getPGenConfig(QString key)
     return out;
 }
 
-void HardwareManager::setFlowSetpoint(int index, double val)
+void HardwareManager::setFlowSetpoint(const QString key, int index, double val)
 {
-    auto flow = findHardware<FlowController>(BC::Key::Flow::flowController);
+    auto flow = findHardware<FlowController>(key);
     if(flow)
         QMetaObject::invokeMethod(flow,[flow,index,val](){flow->setFlowSetpoint(index,val);});
 }
 
-void HardwareManager::setFlowChannelName(int index, QString name)
+void HardwareManager::setFlowChannelName(const QString key, int index, QString name)
 {
-    auto flow = findHardware<FlowController>(BC::Key::Flow::flowController);
+    auto flow = findHardware<FlowController>(key);
     if(flow)
         QMetaObject::invokeMethod(flow,[flow,index,name](){flow->setChannelName(index,name);});
 }
 
-void HardwareManager::setGasPressureSetpoint(double val)
+void HardwareManager::setGasPressureSetpoint(const QString key, double val)
 {
-    auto flow = findHardware<FlowController>(BC::Key::Flow::flowController);
+    auto flow = findHardware<FlowController>(key);
     if(flow)
         QMetaObject::invokeMethod(flow,[flow,val](){flow->setPressureSetpoint(val);});
 }
 
-void HardwareManager::setGasPressureControlMode(bool en)
+void HardwareManager::setGasPressureControlMode(const QString key, bool en)
 {
-    auto flow = findHardware<FlowController>(BC::Key::Flow::flowController);
+    auto flow = findHardware<FlowController>(key);
     if(flow)
         QMetaObject::invokeMethod(flow,[flow,en](){flow->setPressureControlMode(en);});
 }
 
-FlowConfig HardwareManager::getFlowConfig()
+FlowConfig HardwareManager::getFlowConfig(const QString key)
 {
     FlowConfig out;
-    auto fc = findHardware<FlowController>(BC::Key::Flow::flowController);
+    auto fc = findHardware<FlowController>(key);
     if(fc)
     {
         if(fc->thread() != QThread::currentThread())

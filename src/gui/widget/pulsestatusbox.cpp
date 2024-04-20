@@ -50,11 +50,11 @@ void PulseStatusBox::updatePulseLeds(const QString k, const PulseGenConfig &cc)
     if(k != d_key)
         return;
 
-    static_cast<PulseGenConfig&>(*this) = cc;
+    d_config = cc;
     updateAll();
 }
 
-void PulseStatusBox::updatePulseSetting(const QString k, int index, Setting s, QVariant val)
+void PulseStatusBox::updatePulseSetting(const QString k, int index, PulseGenConfig::Setting s, QVariant val)
 {
     if(k != d_key)
         return;
@@ -62,33 +62,33 @@ void PulseStatusBox::updatePulseSetting(const QString k, int index, Setting s, Q
     if(index < 0 || (std::size_t)index >= d_ledList.size())
         return;
 
-    setCh(index,s,val);
+    d_config.setCh(index,s,val);
 
     switch(s) {
-    case NameSetting:
+    case PulseGenConfig::NameSetting:
         d_ledList.at(index).first->setText(val.toString());
         break;
-    case EnabledSetting:
+    case PulseGenConfig::EnabledSetting:
         d_ledList.at(index).second->setState(val.toBool());
         break;
-    case ModeSetting:
-        if(val.value<ChannelMode>() == Normal)
+    case PulseGenConfig::ModeSetting:
+        if(val.value<PulseGenConfig::ChannelMode>() == PulseGenConfig::Normal)
             d_ledList.at(index).second->setColor(Led::Green);
         else
             d_ledList.at(index).second->setColor(Led::Yellow);
         break;
-    case RepRateSetting:
-        d_repRate = val.toDouble();
-        if(d_mode == Continuous)
-            p_repLabel->setText(QString("Rep Rate: %1 Hz").arg(d_repRate,0,'f',2));
+    case PulseGenConfig::RepRateSetting:
+        d_config.d_repRate = val.toDouble();
+        if(d_config.d_mode == PulseGenConfig::Continuous)
+            p_repLabel->setText(QString("Rep Rate: %1 Hz").arg(d_config.d_repRate,0,'f',2));
         break;
-    case PGenModeSetting:
-        d_mode = val.value<PGenMode>();
+    case PulseGenConfig::PGenModeSetting:
+        d_config.d_mode = val.value<PulseGenConfig::PGenMode>();
         updateAll();
         break;
-    case PGenEnabledSetting:
-        d_pulseEnabled = val.toBool();
-        p_enLed->setState(d_pulseEnabled);
+    case PulseGenConfig::PGenEnabledSetting:
+        d_config.d_pulseEnabled = val.toBool();
+        p_enLed->setState(d_config.d_pulseEnabled);
         break;
     default:
         break;
@@ -98,38 +98,38 @@ void PulseStatusBox::updatePulseSetting(const QString k, int index, Setting s, Q
 void PulseStatusBox::updateAll()
 {
 
-    if(d_mode == Triggered)
+    if(d_config.d_mode == PulseGenConfig::Triggered)
     {
         p_repLabel->setText(QString("External Trigger"));
         p_enLed->setColor(Led::Yellow);
     }
     else
     {
-        p_repLabel->setText(QString("Rep Rate: %1 Hz").arg(d_repRate,0,'f',2));
+        p_repLabel->setText(QString("Rep Rate: %1 Hz").arg(d_config.d_repRate,0,'f',2));
         p_enLed->setColor(Led::Green);
     }
 
-    p_enLed->setState(d_pulseEnabled);
+    p_enLed->setState(d_config.d_pulseEnabled);
 
-    for(std::size_t i=0; i<d_ledList.size() && (int)i < d_channels.size(); ++i)
+    for(std::size_t i=0; i<d_ledList.size() && (int)i < d_config.size(); ++i)
     {
-        if(d_channels.at(i).channelName.isEmpty())
+        if(d_config.d_channels.at(i).channelName.isEmpty())
         {
-            if(d_channels.at(i).role != None)
+            if(d_config.d_channels.at(i).role != PulseGenConfig::None)
             {
-                auto me = QMetaEnum::fromType<Role>();
-                d_ledList.at(i).first->setText(QString(me.valueToKey(d_channels.at(i).role)));
+                auto me = QMetaEnum::fromType<PulseGenConfig::Role>();
+                d_ledList.at(i).first->setText(QString(me.valueToKey(d_config.d_channels.at(i).role)));
             }
             else
                 d_ledList.at(i).first->setText(QString("Ch%1").arg(i+1));
         }
         else
-            d_ledList.at(i).first->setText(d_channels.at(i).channelName);
-        if(d_channels.at(i).mode == Normal)
+            d_ledList.at(i).first->setText(d_config.d_channels.at(i).channelName);
+        if(d_config.d_channels.at(i).mode == PulseGenConfig::Normal)
             d_ledList.at(i).second->setColor(Led::Green);
         else
             d_ledList.at(i).second->setColor(Led::Yellow);
 
-        d_ledList.at(i).second->setState(d_channels.at(i).enabled);
+        d_ledList.at(i).second->setState(d_config.d_channels.at(i).enabled);
     }
 }
