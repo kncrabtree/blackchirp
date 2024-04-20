@@ -9,6 +9,7 @@
 
 #include <gui/widget/experimentsummarywidget.h>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
+#include <hardware/optional/flowcontroller/flowcontroller.h>
 
 #include "experimenttypepage.h"
 #include "experimentrfconfigpage.h"
@@ -17,6 +18,7 @@
 #include "experimentchirpconfigpage.h"
 #include "experimentftmwdigitizerconfigpage.h"
 #include "experimentpulsegenconfigpage.h"
+#include "experimentflowconfigpage.h"
 
 ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QString, QString> &hw, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent)
     : QDialog{parent}
@@ -138,6 +140,7 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
     ftdItem->setData(0,Qt::UserRole,k);
 
     addOptHwPages<ExperimentPulseGenConfigPage>(BC::Key::PGen::key,hw,expTypeItem);
+    addOptHwPages<ExperimentFlowConfigPage>(BC::Key::Flow::flowController,hw,expTypeItem);
 
 
     connect(sp,&ExperimentTypePage::typeChanged,[=](){

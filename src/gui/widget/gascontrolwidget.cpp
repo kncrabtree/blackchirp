@@ -14,12 +14,15 @@ GasControlWidget::GasControlWidget(const FlowConfig &cfg, QWidget *parent) : QWi
     using namespace BC::Key::GasControl;
     auto gasControlBoxLayout = new QGridLayout;
 
-    gasControlBoxLayout->addWidget(new QLabel("Ch"),0,0,1,1);
-    gasControlBoxLayout->addWidget(new QLabel("Gas Name"),0,1,1,1,Qt::AlignCenter);
-    gasControlBoxLayout->addWidget(new QLabel("Setpoint"),0,2,1,1);
+    gasControlBoxLayout->addWidget(new QLabel("Ch"),0,0,1,1,Qt::AlignHCenter);
+    gasControlBoxLayout->addWidget(new QLabel("Gas Name"),0,1,1,1,Qt::AlignHCenter);
+    gasControlBoxLayout->addWidget(new QLabel("Setpoint"),0,2,1,1,Qt::AlignHCenter);
     gasControlBoxLayout->setColumnStretch(0,0);
     gasControlBoxLayout->setColumnStretch(1,1);
     gasControlBoxLayout->setColumnStretch(2,0);
+    gasControlBoxLayout->itemAtPosition(0,0)->widget()->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Fixed);
+    gasControlBoxLayout->itemAtPosition(0,1)->widget()->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Fixed);
+    gasControlBoxLayout->itemAtPosition(0,2)->widget()->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Fixed);
     gasControlBoxLayout->setMargin(3);
     gasControlBoxLayout->setSpacing(3);
 
@@ -76,12 +79,14 @@ GasControlWidget::GasControlWidget(const FlowConfig &cfg, QWidget *parent) : QWi
     gasControlBoxLayout->addWidget(new QLabel(QString("Pressure Control Mode")),2+flowChannels,1,1,1,Qt::AlignRight);
     gasControlBoxLayout->addWidget(p_pressureControlButton,2+flowChannels,2,1,1);
 
+    gasControlBoxLayout->addItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::MinimumExpanding),3+flowChannels,2);
+
     setLayout(gasControlBoxLayout);
     applySettings();
     initialize(d_config);
 }
 
-FlowConfig &GasControlWidget::getFlowConfig()
+FlowConfig &GasControlWidget::toConfig()
 {
 
     d_config.d_pressureControlMode = p_pressureControlButton->isChecked();

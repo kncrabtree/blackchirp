@@ -26,7 +26,7 @@ class GasControlWidget : public QWidget, public SettingsStorage
 public:
     explicit GasControlWidget(const FlowConfig &cfg, QWidget *parent = nullptr);
     ~GasControlWidget() {}
-    FlowConfig &getFlowConfig();
+    FlowConfig &toConfig();
 
 public slots:
     void applySettings();

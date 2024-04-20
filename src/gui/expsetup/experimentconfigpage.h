@@ -10,7 +10,7 @@ class ExperimentConfigPage : public QWidget, public SettingsStorage
 {
     Q_OBJECT
 public:
-    explicit ExperimentConfigPage(QString key, QString title, Experiment *exp, QWidget *parent = nullptr);
+    explicit ExperimentConfigPage(const QString key, const QString title, Experiment *exp, QWidget *parent = nullptr);
 
     const QString d_key;
     const QString d_title;

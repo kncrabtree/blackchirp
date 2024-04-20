@@ -6,7 +6,7 @@ using namespace BC::Key::WizPulse;
 
 #include <gui/widget/pulseconfigwidget.h>
 
-ExperimentPulseGenConfigPage::ExperimentPulseGenConfigPage(QString hwKey, QString title, Experiment *exp, QWidget *parent)
+ExperimentPulseGenConfigPage::ExperimentPulseGenConfigPage(const QString hwKey, const QString title, Experiment *exp, QWidget *parent)
     : ExperimentConfigPage(key,title,exp,parent)
 {
     QVBoxLayout *vbl = new QVBoxLayout();

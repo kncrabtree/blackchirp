@@ -13,7 +13,7 @@ class ExperimentPulseGenConfigPage : public ExperimentConfigPage
 {
     Q_OBJECT
 public:
-    ExperimentPulseGenConfigPage(QString hwKey, QString title, Experiment *exp, QWidget *parent = nullptr);
+    ExperimentPulseGenConfigPage(const QString hwKey, const QString title, Experiment *exp, QWidget *parent = nullptr);
 
     // ExperimentConfigPage interface
 public slots:

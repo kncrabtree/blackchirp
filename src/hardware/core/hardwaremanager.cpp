@@ -659,6 +659,8 @@ void HardwareManager::storeAllOptHw(Experiment *exp, std::map<QString, bool> hw)
         {
             if(type == BC::Key::PGen::key)
                 exp->addOptHwConfig(getPGenConfig(hwKey));
+            else if(type == BC::Key::Flow::flowController)
+                exp->addOptHwConfig(getFlowConfig(hwKey));
         }
     }
 }

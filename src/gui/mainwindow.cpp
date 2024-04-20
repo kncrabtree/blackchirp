@@ -64,13 +64,6 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
-
-    auto scr = screen();
-    setMaximumHeight(scr->availableVirtualSize().height());
-    connect(scr,&QScreen::virtualGeometryChanged,[this](const QRect &r){
-        setMaximumHeight(r.height());
-    });
-
     p_hwm = new HardwareManager();
     d_hardware = p_hwm->currentHardware();
 
@@ -296,6 +289,8 @@ MainWindow::MainWindow(QWidget *parent) :
             });
         }
     }
+
+    ui->hwStatusLayout->addSpacerItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::MinimumExpanding));
 
     QThread *hwmThread = new QThread(this);
     hwmThread->setObjectName("HardwareManagerThread");

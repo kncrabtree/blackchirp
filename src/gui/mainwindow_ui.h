@@ -316,7 +316,7 @@ public:
         clockBox = new ClockDisplayBox;
         hwStatusLayout->addWidget(clockBox,0);
 
-        instrumentStatusLayout->addWidget(hwStatusScrollArea,1);
+        instrumentStatusLayout->addWidget(hwStatusScrollArea,0);
 
         ftmwProgressLabel = new QLabel(centralWidget);
         ftmwProgressLabel->setObjectName(QString::fromUtf8("label_2"));
