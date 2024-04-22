@@ -238,16 +238,14 @@ MainWindow::MainWindow(QWidget *parent) :
             auto tsb = new TemperatureStatusBox(key);
             tsb->setObjectName(key+Ui::sbStr);
             ui->hwStatusLayout->addWidget(tsb);
-            // ui->instrumentStatusLayout->insertWidget(ui->instrumentStatusLayout->indexOf(ui->statusSpacer),tsb,0);
             connect(p_hwm,&HardwareManager::temperatureEnableUpdate,tsb,&TemperatureStatusBox::setChannelEnabled);
             connect(p_hwm,&HardwareManager::temperatureUpdate,tsb,&TemperatureStatusBox::setTemperature);
             connect(act,&QAction::triggered,[this,key,tsb](){
                if(isDialogOpen(key))
                    return;
 
-               auto tcw = new TemperatureControlWidget;
-               auto tc = p_hwm->getTemperatureControllerConfig();
-               tcw->setFromConfig(tc);
+               auto tc = p_hwm->getTemperatureControllerConfig(key);
+               auto tcw = new TemperatureControlWidget(tc);
 
                connect(p_hwm,&HardwareManager::temperatureEnableUpdate,tcw,&TemperatureControlWidget::setChannelEnabled);
                connect(tcw,&TemperatureControlWidget::channelEnableChanged,
@@ -507,17 +505,11 @@ bool MainWindow::runExperimentWizard(Experiment *exp, QuickExptDialog *qed)
 {
     configureOptionalHardware(exp,qed);
 
-    // ExperimentWizard wiz(exp,d_hardware,this);
-    // wiz.setValidationKeys(p_hwm->validationKeys());
-
     QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks;
     if(exp->ftmwEnabled())
         clocks = exp->ftmwConfig()->d_rfConfig.getClocks();
     else
         QMetaObject::invokeMethod(p_hwm,&HardwareManager::getClocks,Qt::BlockingQueuedConnection,&clocks);
-
-
-
 
 #ifdef BC_LIF
     configureLifWidget(wiz.lifControlWidget());
@@ -528,7 +520,7 @@ bool MainWindow::runExperimentWizard(Experiment *exp, QuickExptDialog *qed)
         return false;
 
     ///TEMPORARY-- remove when new wizard complete
-    return false;
+    // return false;
     return true;
 }
 

@@ -8,8 +8,10 @@
 
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 
-
-GasControlWidget::GasControlWidget(const FlowConfig &cfg, QWidget *parent) : QWidget(parent), SettingsStorage(BC::Key::GasControl::key.arg(cfg.headerKey()).arg(cfg.hwSubKey())), d_config{cfg}
+GasControlWidget::GasControlWidget(const FlowConfig &cfg, QWidget *parent) :
+    QWidget(parent),
+    SettingsStorage(BC::Key::widgetKey(BC::Key::GasControl::key,cfg.headerKey(),cfg.hwSubKey())),
+    d_config{cfg}
 {
     using namespace BC::Key::GasControl;
     auto gasControlBoxLayout = new QGridLayout;

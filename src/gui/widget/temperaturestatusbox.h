@@ -16,13 +16,13 @@ public:
         bool active{false};
     };
 
-    TemperatureStatusBox(QString key, QWidget *parent = nullptr);
+    TemperatureStatusBox(const QString key, QWidget *parent = nullptr);
 
 public slots:
     void loadFromSettings();
-    void setTemperature(int ch, double t);
-    void setChannelName(int ch, const QString name);
-    void setChannelEnabled(int ch, bool en);
+    void setTemperature(const QString key, uint ch, double t);
+    void setChannelName(const QString key, uint ch, const QString name);
+    void setChannelEnabled(const QString key, uint ch, bool en);
 
 private:
     std::vector<ChWidgets> d_widgets;

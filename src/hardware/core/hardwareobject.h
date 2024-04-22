@@ -143,9 +143,8 @@ public slots:
      * \param b If true, go into standby mode. Else, active mode.
      */
 	virtual void sleep(bool b);
-
+    bool hwPrepareForExperiment(Experiment &exp);
     virtual QStringList forbiddenKeys() const { return {}; }
-    virtual bool prepareForExperiment(Experiment &exp) { Q_UNUSED(exp) return true; }
     virtual void beginAcquisition(){}
     virtual void endAcquisition(){}
 
@@ -156,6 +155,7 @@ protected:
     bool d_enabledForExperiment;
     CommunicationProtocol *p_comm;
 
+    virtual bool prepareForExperiment(Experiment &exp) { Q_UNUSED(exp) return true; }
     /*!
      * \brief Do any needed initialization prior to connecting to hardware. Pure virtual
      *

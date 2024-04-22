@@ -7,7 +7,8 @@ namespace BC::Key {
 
 static const QString hwIndexSep(".");
 
-QString hwKey(QString k, int index);
+QString hwKey(const QString k, const int index);
+QString widgetKey(const QString widgetKey, const QString hwKey, const QString hwSubKey);
 
 std::pair<QString,int> parseKey(const QString key);
 

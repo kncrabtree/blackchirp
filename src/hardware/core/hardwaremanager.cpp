@@ -66,13 +66,14 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 
     for( auto &pGen : pGenList)
     {
-        connect(pGen,&PulseGenerator::settingUpdate,[this,pGen](const int ch, const PulseGenConfig::Setting set, const QVariant val){
-            emit pGenSettingUpdate(pGen->d_key,ch,set,val);
+        auto k = pGen->d_key;
+        connect(pGen,&PulseGenerator::settingUpdate,[this,k](const int ch, const PulseGenConfig::Setting set, const QVariant val){
+            emit pGenSettingUpdate(k,ch,set,val);
         });
-        connect(pGen,&PulseGenerator::configUpdate,[this,pGen](const PulseGenConfig cfg){
-            emit pGenConfigUpdate(pGen->d_key,cfg);
+        connect(pGen,&PulseGenerator::configUpdate,[this,k](const PulseGenConfig cfg){
+            emit pGenConfigUpdate(k,cfg);
         });
-        d_hardwareMap.emplace(pGen->d_key,pGen);
+        d_hardwareMap.emplace(k,pGen);
     }
 #endif
 
@@ -85,24 +86,25 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #undef BOOST_PP_LOCAL_MACRO
 #undef BOOST_PP_LOCAL_LIMITS
 
-    for(auto &flow : fcList)
+    for(auto flow : fcList)
     {
-        connect(flow,&FlowController::flowUpdate,[this,flow](int i, double d){
-            emit flowUpdate(flow->d_key,i,d);
+        auto k = flow->d_key;
+        connect(flow,&FlowController::flowUpdate,[this,k](int i, double d){
+            emit flowUpdate(k,i,d);
         });
-        connect(flow,&FlowController::flowSetpointUpdate,[this,flow](int i, double d){
-            emit flowSetpointUpdate(flow->d_key,i,d);
+        connect(flow,&FlowController::flowSetpointUpdate,[this,k](int i, double d){
+            emit flowSetpointUpdate(k,i,d);
         });
-        connect(flow,&FlowController::pressureUpdate,[this,flow](double d){
-            emit gasPressureUpdate(flow->d_key,d);
+        connect(flow,&FlowController::pressureUpdate,[this,k](double d){
+            emit gasPressureUpdate(k,d);
         });
-        connect(flow,&FlowController::pressureSetpointUpdate,[this,flow](double d){
-           emit gasPressureSetpointUpdate(flow->d_key,d);
+        connect(flow,&FlowController::pressureSetpointUpdate,[this,k](double d){
+           emit gasPressureSetpointUpdate(k,d);
         });
-        connect(flow,&FlowController::pressureControlMode,[this,flow](bool b){
-            emit gasPressureControlMode(flow->d_key,b);
+        connect(flow,&FlowController::pressureControlMode,[this,k](bool b){
+            emit gasPressureControlMode(k,b);
         });
-        d_hardwareMap.emplace(flow->d_key,flow);
+        d_hardwareMap.emplace(k,flow);
     }
 #endif
 
@@ -115,10 +117,25 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #endif
 
 #ifdef BC_TEMPCONTROLLER
-    auto tc = new BC_TEMPCONTROLLER;
-    connect(tc,&TemperatureController::channelEnableUpdate,this,&HardwareManager::temperatureEnableUpdate);
-    connect(tc,&TemperatureController::temperatureUpdate,this,&HardwareManager::temperatureUpdate);
-    d_hardwareMap.emplace(tc->d_key,tc);
+    QList<TemperatureController*> tcList;
+
+#define BOOST_PP_LOCAL_MACRO(n) tcList << new BC_TEMPCONTROLLER_##n;
+#define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_TEMPCONTROLLER-1)
+#include BOOST_PP_LOCAL_ITERATE()
+#undef BOOST_PP_LOCAL_MACRO
+#undef BOOST_PP_LOCAL_LIMITS
+
+    for(auto tc : tcList)
+    {
+        auto k = tc->d_key;
+        connect(tc,&TemperatureController::channelEnableUpdate,this,[this,k](uint i,bool en){
+            emit temperatureEnableUpdate(k,i,en);
+        });
+        connect(tc,&TemperatureController::temperatureUpdate,this,[this,k](uint i, double t) {
+            emit temperatureUpdate(k,i,t);
+        });
+        d_hardwareMap.emplace(k,tc);
+    }
 #endif
 
 #ifdef BC_IOBOARD
@@ -319,7 +336,8 @@ void HardwareManager::hardwareFailure()
 
     disconnect(obj,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure);
 
-    emit abortAcquisition();
+    if(obj->d_critical)
+        emit abortAcquisition();
 
     checkStatus();
 }
@@ -345,10 +363,10 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
             auto obj = it->second;
             if(obj->thread() != QThread::currentThread())
                 QMetaObject::invokeMethod(obj,[obj,exp](){
-                    return obj->prepareForExperiment(*exp);
+                    return obj->hwPrepareForExperiment(*exp);
                 },Qt::BlockingQueuedConnection,&success);
             else
-                success = obj->prepareForExperiment(*exp);
+                success = obj->hwPrepareForExperiment(*exp);
 
             if(!success)
             {
@@ -610,24 +628,24 @@ PressureControllerConfig HardwareManager::getPressureControllerConfig()
 }
 
 
-void HardwareManager::setTemperatureChannelEnabled(int ch, bool en)
+void HardwareManager::setTemperatureChannelEnabled(const QString key, uint ch, bool en)
 {
-    auto tc = findHardware<TemperatureController>(BC::Key::TC::key);
+    auto tc = findHardware<TemperatureController>(key);
     if(tc)
         QMetaObject::invokeMethod(tc,[tc,ch,en](){ tc->setChannelEnabled(ch,en);});
 }
 
-void HardwareManager::setTemperatureChannelName(int ch, const QString name)
+void HardwareManager::setTemperatureChannelName(const QString key, uint ch, const QString name)
 {
-    auto tc = findHardware<TemperatureController>(BC::Key::TC::key);
+    auto tc = findHardware<TemperatureController>(key);
     if(tc)
         QMetaObject::invokeMethod(tc,[tc,ch,name](){ tc->setChannelName(ch,name);});
 }
 
-TemperatureControllerConfig HardwareManager::getTemperatureControllerConfig()
+TemperatureControllerConfig HardwareManager::getTemperatureControllerConfig(const QString key)
 {
     TemperatureControllerConfig out;
-    auto tc = findHardware<TemperatureController>(BC::Key::TC::key);
+    auto tc = findHardware<TemperatureController>(key);
     if(tc)
     {
         if(tc->thread() == QThread::currentThread())
@@ -661,6 +679,8 @@ void HardwareManager::storeAllOptHw(Experiment *exp, std::map<QString, bool> hw)
                 exp->addOptHwConfig(getPGenConfig(hwKey));
             else if(type == BC::Key::Flow::flowController)
                 exp->addOptHwConfig(getFlowConfig(hwKey));
+            else if(type == BC::Key::TC::key)
+                exp->addOptHwConfig(getTemperatureControllerConfig(hwKey));
         }
     }
 }

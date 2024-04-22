@@ -77,8 +77,8 @@ signals:
     void pressureSetpointUpdate(double);
     void pressureControlMode(bool);
 
-    void temperatureUpdate(int,double);
-    void temperatureEnableUpdate(int,bool);
+    void temperatureUpdate(QString,uint,double);
+    void temperatureEnableUpdate(QString,uint,bool);
 
 #ifdef BC_LIF
     void lifScopeShotAcquired(QVector<qint8>);
@@ -139,9 +139,9 @@ public slots:
     void closeGateValve();
     PressureControllerConfig getPressureControllerConfig();
 
-    void setTemperatureChannelEnabled(int ch, bool en);
-    void setTemperatureChannelName(int ch, const QString name);
-    TemperatureControllerConfig getTemperatureControllerConfig();
+    void setTemperatureChannelEnabled(const QString key, uint ch, bool en);
+    void setTemperatureChannelName(const QString key, uint ch, const QString name);
+    TemperatureControllerConfig getTemperatureControllerConfig(const QString key);
 
     void storeAllOptHw(Experiment *exp, std::map<QString,bool> hw = {});
 

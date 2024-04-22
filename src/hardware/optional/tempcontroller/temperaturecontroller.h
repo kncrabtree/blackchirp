@@ -25,21 +25,21 @@ class TemperatureController : public HardwareObject
 {
     Q_OBJECT
 public:
-    explicit TemperatureController(const QString subKey, const QString name, int index, CommunicationProtocol::CommType commType, int channels, QObject *parent =nullptr, bool threaded = false, bool critical = false);
+    explicit TemperatureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, uint channels, QObject *parent =nullptr, bool threaded = false, bool critical = false);
     virtual ~TemperatureController();
 
-    int numChannels() const { return d_numChannels; }
+    uint numChannels() const { return d_numChannels; }
 
 signals:
-    void channelEnableUpdate(int,bool,QPrivateSignal);
-    void temperatureUpdate(int, double, QPrivateSignal);
+    void channelEnableUpdate(uint,bool,QPrivateSignal);
+    void temperatureUpdate(uint, double, QPrivateSignal);
 
 public slots:
     void readAll();
-    void setChannelEnabled(int ch, bool en);
-    void setChannelName(int ch, const QString name);
-    double readTemperature(const int ch);
-    bool readChannelEnabled(const int ch);
+    void setChannelEnabled(uint ch, bool en);
+    void setChannelName(uint ch, const QString name);
+    double readTemperature(const uint ch);
+    bool readChannelEnabled(const uint ch);
     TemperatureControllerConfig getConfig() const { return d_config; }
 
 
@@ -53,19 +53,20 @@ protected:
 
     virtual void tcInitialize() =0;
     virtual bool tcTestConnection() =0;
-    virtual double readHwTemperature(const int ch) =0;
-    virtual bool readHwChannelEnabled(const int ch) { return d_config.channelEnabled(ch); }
-    virtual void setHwChannelEnabled(const int ch, bool en) { d_config.setEnabled(ch,en); }
+    virtual double readHwTemperature(const uint ch) =0;
+    virtual bool readHwChannelEnabled(const uint ch) { return d_config.channelEnabled(ch); }
+    virtual void setHwChannelEnabled(const uint ch, bool en) { d_config.setEnabled(ch,en); }
     virtual void poll();
 
 private:
-    const int d_numChannels;
+    const uint d_numChannels;
     TemperatureControllerConfig d_config;
     QTimer *p_readTimer;
 
-#if BC_TEMPCONTROLLER == 0
+    inline static int d_count = 0;
+
     friend class VirtualTemperatureController;
-#endif
+
 
 
     // HardwareObject interface
@@ -79,9 +80,6 @@ public slots:
 
 #endif // TEMPERATURECONTROLLER_H
 
-#ifdef BC_TEMPCONTROLLER
-#include BC_STR(BC_TEMPCONTROLLER_H)
-#endif
 
 
 

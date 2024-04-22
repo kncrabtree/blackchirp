@@ -8,7 +8,7 @@
 #include <gui/widget/temperaturecontrolwidget.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
-TemperatureStatusBox::TemperatureStatusBox(QString key, QWidget *parent) :
+TemperatureStatusBox::TemperatureStatusBox(const QString key, QWidget *parent) :
     HardwareStatusBox(key,parent)
 {
     auto gl = new QGridLayout;
@@ -63,17 +63,23 @@ void TemperatureStatusBox::loadFromSettings()
     }
 }
 
-void TemperatureStatusBox::setTemperature(int ch, double t)
+void TemperatureStatusBox::setTemperature(const QString key, uint ch, double t)
 {
-    if(ch<0 || (std::size_t)ch >= d_widgets.size())
+    if(key != d_key)
+        return;
+
+    if(ch >= d_widgets.size())
         return;
 
     d_widgets[ch].box->setValue(t);
 }
 
-void TemperatureStatusBox::setChannelName(int ch, const QString name)
+void TemperatureStatusBox::setChannelName(const QString key, uint ch, const QString name)
 {
-    if(ch<0 || (std::size_t)ch >= d_widgets.size())
+    if(key != d_key)
+        return;
+
+    if(ch >= d_widgets.size())
         return;
 
     auto lbl = d_widgets[ch].label;
@@ -83,9 +89,12 @@ void TemperatureStatusBox::setChannelName(int ch, const QString name)
         lbl->setText(name);
 }
 
-void TemperatureStatusBox::setChannelEnabled(int ch, bool en)
+void TemperatureStatusBox::setChannelEnabled(const QString key, uint ch, bool en)
 {
-    if(ch<0 || (std::size_t)ch >= d_widgets.size())
+    if(key != d_key)
+        return;
+
+    if(ch >= d_widgets.size())
         return;
 
     auto &w = d_widgets[ch];

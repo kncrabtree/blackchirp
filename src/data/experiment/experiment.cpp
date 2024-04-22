@@ -91,7 +91,7 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
 
            if(hwType == BC::Key::TC::key)
            {
-               TemperatureControllerConfig cfg(index);
+               TemperatureControllerConfig cfg(subKey,index);
                addOptHwConfig(cfg);
            }
 

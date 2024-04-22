@@ -7,8 +7,10 @@
 #include <QPushButton>
 #include <QGridLayout>
 
-TemperatureControlWidget::TemperatureControlWidget(QWidget *parent) :
-    QWidget(parent), SettingsStorage(BC::Key::TCW::key)
+TemperatureControlWidget::TemperatureControlWidget(const TemperatureControllerConfig &cfg, QWidget *parent) :
+    QWidget(parent),
+    SettingsStorage(BC::Key::widgetKey(BC::Key::TCW::key,cfg.headerKey(),cfg.hwSubKey())),
+    d_config{cfg}
 {
     auto gl = new QGridLayout(this);
 
@@ -21,19 +23,20 @@ TemperatureControlWidget::TemperatureControlWidget(QWidget *parent) :
     gl->setMargin(3);
     gl->setSpacing(3);
 
-    SettingsStorage tc(BC::Key::TC::key,Hardware);
-    auto numChannels = tc.get(BC::Key::TC::numChannels,4);
-    for(int i=0; i<numChannels; ++i)
+    auto numChannels = cfg.numChannels();
+    for(uint i=0; i<numChannels; ++i)
     {
         auto le = new QLineEdit(this);
         le->setText(getArrayValue(BC::Key::TCW::channels,i,BC::Key::TCW::chName,QString("")));
-        connect(le,&QLineEdit::editingFinished,[this,le,i]{ emit channelNameChanged(i,le->text()); });
+        connect(le,&QLineEdit::editingFinished,[this,le,i]{
+            emit channelNameChanged(d_config.headerKey(),i,le->text());
+        });
 
         auto b = new QPushButton("Off",this);
         b->setCheckable(true);
         b->setChecked(false);
         connect(b,&QPushButton::toggled,[this,i](bool en){
-            emit channelEnableChanged(i,en);
+            emit channelEnableChanged(d_config.headerKey(),i,en);
         });
 
         gl->addWidget(new QLabel(QString::number(i+1)),i+1,0);
@@ -42,6 +45,8 @@ TemperatureControlWidget::TemperatureControlWidget(QWidget *parent) :
 
         d_channelWidgets.push_back({le,b});
     }
+
+    setFromConfig(cfg);
 }
 
 TemperatureControlWidget::~TemperatureControlWidget()
@@ -54,17 +59,39 @@ TemperatureControlWidget::~TemperatureControlWidget()
     setArray(channels,v);
 }
 
-void TemperatureControlWidget::setFromConfig(const TemperatureControllerConfig &cfg)
+TemperatureControllerConfig &TemperatureControlWidget::toConfig()
 {
-    for(int i=0; i<cfg.numChannels(); ++i)
+    for(uint i=0; i<d_config.numChannels(); i++)
     {
         if( (std::size_t)i < d_channelWidgets.size())
-            setChannelEnabled(i,cfg.channelEnabled(i));
+        {
+            d_config.setName(i,d_channelWidgets.at(i).le->text());
+            d_config.setEnabled(i,d_channelWidgets.at(i).button->isChecked());
+        }
     }
+
+    return d_config;
 }
 
-void TemperatureControlWidget::setChannelEnabled(int ch, bool en)
+void TemperatureControlWidget::setFromConfig(const TemperatureControllerConfig &cfg)
 {
+    if(cfg.headerKey() != d_config.headerKey())
+        return;
+
+    for(uint i=0; i<cfg.numChannels(); ++i)
+    {
+        if( (std::size_t)i < d_channelWidgets.size())
+            setChannelEnabled(cfg.headerKey(),i,cfg.channelEnabled(i));
+    }
+
+    d_config = cfg;
+}
+
+void TemperatureControlWidget::setChannelEnabled(const QString key, int ch, bool en)
+{
+    if(key != d_config.headerKey())
+        return;
+
     if(ch < 0 || (std::size_t)ch >= d_channelWidgets.size())
         return;
 

@@ -1,6 +1,8 @@
 #include "ftmwdigitizerconfig.h"
 
-FtmwDigitizerConfig::FtmwDigitizerConfig() : DigitizerConfig(BC::Store::Digi::ftmwKey)
+#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+
+FtmwDigitizerConfig::FtmwDigitizerConfig() : DigitizerConfig(BC::Key::hwKey(BC::Key::FtmwScope::ftmwScope,0))
 {
 
 }

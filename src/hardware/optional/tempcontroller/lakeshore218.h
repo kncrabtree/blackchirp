@@ -21,7 +21,7 @@ protected:
     bool tcTestConnection() override;
     void tcInitialize() override;
 
-    double readHwTemperature(const int ch) override;
+    double readHwTemperature(const uint ch) override;
 
 private:
     QTimer *p_readTimer;

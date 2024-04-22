@@ -3,12 +3,7 @@
 
 #include <data/experiment/digitizerconfig.h>
 
-namespace  BC::Key::Digi {
-static const QString ftmwDigi{"FtmwDigitizer"};
-}
-
 namespace BC::Store::Digi {
-static const QString ftmwKey{"FtmwDigitizer"};
 static const QString fidCh{"FidChannel"};
 }
 

@@ -3,8 +3,6 @@
 
 #include <data/storage/headerstorage.h>
 
-#include <QVector>
-
 namespace BC::Store::TempControlConfig {
 static const QString channel{"Channel"};
 static const QString name{"Name"};
@@ -20,22 +18,22 @@ public:
         bool enabled{false};
     };
 
-    TemperatureControllerConfig(int index = -1);
+    TemperatureControllerConfig(QString subKey = QString(""), int index = -1);
 
     void setNumChannels(int n);
 
-    void setTemperature(int ch, double t);
-    void setName(int ch, QString n);
-    void setEnabled(int ch, bool en);
+    void setTemperature(uint ch, double t);
+    void setName(uint ch, QString n);
+    void setEnabled(uint ch, bool en);
 
-    int numChannels() const { return d_channels.size(); }
-    double temperature(int ch) const;
-    QString channelName(int ch) const;
-    bool channelEnabled(int ch) const;
+    uint numChannels() const { return d_channels.size(); }
+    double temperature(uint ch) const;
+    QString channelName(uint ch) const;
+    bool channelEnabled(uint ch) const;
 
 
 private:
-    QVector<TcChannel> d_channels;
+    std::vector<TcChannel> d_channels;
 
     // HeaderStorage interface
 protected:

@@ -4,8 +4,8 @@
 
 using namespace BC::Key::TC;
 
-TemperatureController::TemperatureController(const QString subKey, const QString name, int index, CommunicationProtocol::CommType commType, int numChannels, QObject *parent, bool threaded, bool critical) :
-    HardwareObject(key,subKey,name,commType,parent,threaded,critical,index), d_numChannels(numChannels), d_config{index}
+TemperatureController::TemperatureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, uint numChannels, QObject *parent, bool threaded, bool critical) :
+    HardwareObject(key,subKey,name,commType,parent,threaded,critical,d_count), d_numChannels(numChannels), d_config{subKey,d_count}
 {
     d_config.setNumChannels(d_numChannels);
 
@@ -16,7 +16,7 @@ TemperatureController::TemperatureController(const QString subKey, const QString
     {
         std::vector<SettingsMap> l;
         l.reserve(d_numChannels);
-        for(int i=0; i<d_numChannels; ++i)
+        for(uint i=0; i<d_numChannels; ++i)
             l.push_back({
                             {chName,QString("")},
                             {enabled,false},
@@ -26,16 +26,18 @@ TemperatureController::TemperatureController(const QString subKey, const QString
         setArray(channels,l,true);
     }
 
-    for(int i=0; i<d_numChannels; ++i)
+    for(uint i=0; i<d_numChannels; ++i)
     {
         d_config.setEnabled(i,getArrayValue(channels,i,enabled,false));
         setChannelName(i,getArrayValue(channels,i,chName,QString("")));
     }
+
+    d_count++;
 }
 
 TemperatureController::~TemperatureController()
 {
-    for(int i=0; i<d_numChannels; ++i)
+    for(uint i=0; i<d_numChannels; ++i)
     {
         setArrayValue(channels,i,chName,d_config.channelName(i));
         setArrayValue(channels,i,enabled,d_config.channelEnabled(i));
@@ -44,7 +46,7 @@ TemperatureController::~TemperatureController()
 
 void TemperatureController::readAll()
 {
-    for(int i=0; i<d_numChannels; ++i)
+    for(uint i=0; i<d_numChannels; ++i)
     {
         if(readChannelEnabled(i))
         {
@@ -54,13 +56,13 @@ void TemperatureController::readAll()
     }
 }
 
-void TemperatureController::setChannelEnabled(int ch, bool en)
+void TemperatureController::setChannelEnabled(uint ch, bool en)
 {
     setHwChannelEnabled(ch,en);
     readChannelEnabled(ch);
 }
 
-void TemperatureController::setChannelName(int ch, const QString name)
+void TemperatureController::setChannelName(uint ch, const QString name)
 {
     if(!name.isEmpty())
         d_config.setName(ch,name);
@@ -68,7 +70,7 @@ void TemperatureController::setChannelName(int ch, const QString name)
         d_config.setName(ch,QString("Temperature Ch%1").arg(ch+1));
 }
 
-double TemperatureController::readTemperature(const int ch)
+double TemperatureController::readTemperature(const uint ch)
 {
     auto t = readHwTemperature(ch);
     if(!isnan(t))
@@ -80,7 +82,7 @@ double TemperatureController::readTemperature(const int ch)
     return t;
 }
 
-bool TemperatureController::readChannelEnabled(const int ch)
+bool TemperatureController::readChannelEnabled(const uint ch)
 {
     auto out = readHwChannelEnabled(ch);
     emit channelEnableUpdate(ch,out,QPrivateSignal());
@@ -89,15 +91,14 @@ bool TemperatureController::readChannelEnabled(const int ch)
 
 bool TemperatureController::prepareForExperiment(Experiment &e)
 {
-
     auto wp = e.getOptHwConfig<TemperatureControllerConfig>(d_config.headerKey());
 
-    for (int i=0;i<d_numChannels;i++)
+    for (uint i=0;i<d_numChannels;i++)
     {
         if(auto p = wp.lock())
         {
             d_config.setName(i,p->channelName(i));
-            d_config.setEnabled(i,p->channelEnabled(i));
+            setChannelEnabled(i,p->channelEnabled(i));
         }
 
         e.auxData()->registerKey(d_key,d_subKey,BC::Aux::TC::temperature.arg(i));
@@ -111,7 +112,7 @@ bool TemperatureController::prepareForExperiment(Experiment &e)
 AuxDataStorage::AuxDataMap TemperatureController::readAuxData()
 {
     AuxDataStorage::AuxDataMap out;
-    for (int i=0;i<d_numChannels;i++)
+    for (uint i=0;i<d_numChannels;i++)
     {
         if(d_config.channelEnabled(i))
         {
@@ -158,7 +159,7 @@ void TemperatureController::poll()
 QStringList TemperatureController::validationKeys() const
 {
     QStringList out;
-    for(int i=0; i<d_numChannels; ++i)
+    for(uint i=0; i<d_numChannels; ++i)
         out.append(BC::Aux::TC::temperature.arg(i));
 
     return out;

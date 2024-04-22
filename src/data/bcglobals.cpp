@@ -14,7 +14,12 @@ std::pair<QString, int> BC::Key::parseKey(const QString key)
    }
 }
 
-QString BC::Key::hwKey(QString k, int index)
+QString BC::Key::hwKey(const QString k, const int index)
 {
     return QString("%1%2%3").arg(k,hwIndexSep,QString::number(index));
+}
+
+QString BC::Key::widgetKey(const QString widgetKey, const QString hwKey, const QString hwSubKey)
+{
+    return QString("%1%2%3%4%5").arg(widgetKey,hwIndexSep,hwKey,hwIndexSep,hwSubKey);
 }

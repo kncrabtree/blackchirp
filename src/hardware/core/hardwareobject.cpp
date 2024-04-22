@@ -29,6 +29,7 @@ HardwareObject::HardwareObject(const QString hwType, const QString subKey, const
 
     d_critical = get(BC::Key::HW::critical,critical);
     d_name = get(BC::Key::HW::name,name);
+
 }
 
 HardwareObject::~HardwareObject()
@@ -147,6 +148,7 @@ void HardwareObject::buildCommunication(QObject *gc)
     {
         connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
         connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
+
     }
 }
 
@@ -163,6 +165,20 @@ AuxDataStorage::AuxDataMap HardwareObject::readValidationData()
 void HardwareObject::sleep(bool b)
 {
     Q_UNUSED(b)
+}
+
+bool HardwareObject::hwPrepareForExperiment(Experiment &exp)
+{
+    if(!d_isConnected)
+    {
+        if(d_critical)
+        {
+            if(!testConnection())
+                exp.d_errorString = QString("%1 is not connected").arg(d_name);
+        }
+    }
+
+    return prepareForExperiment(exp);
 }
 
 

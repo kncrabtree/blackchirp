@@ -24,19 +24,21 @@ public:
         QPushButton *button;
     };
 
-    explicit TemperatureControlWidget(QWidget *parent = nullptr);
+    explicit TemperatureControlWidget(const TemperatureControllerConfig &cfg, QWidget *parent = nullptr);
     ~TemperatureControlWidget();
+    TemperatureControllerConfig &toConfig();
 
 signals:
-    int channelNameChanged(int,QString);
-    int channelEnableChanged(int,bool);
+    int channelNameChanged(QString,uint,QString);
+    int channelEnableChanged(QString,uint,bool);
 
 public slots:
     void setFromConfig(const TemperatureControllerConfig &cfg);
-    void setChannelEnabled(int ch, bool en);
+    void setChannelEnabled(const QString key, int ch, bool en);
 
 private:
     std::vector<TChannels> d_channelWidgets;
+    TemperatureControllerConfig d_config;
 
 };
 
