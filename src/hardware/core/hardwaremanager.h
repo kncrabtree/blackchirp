@@ -72,10 +72,10 @@ signals:
     void gasPressureSetpointUpdate(QString,double);
     void gasPressureControlMode(QString,bool);
 
-    void pressureControlReadOnly(bool);
-    void pressureUpdate(double);
-    void pressureSetpointUpdate(double);
-    void pressureControlMode(bool);
+    void pressureControlReadOnly(QString,bool);
+    void pressureUpdate(QString,double);
+    void pressureSetpointUpdate(QString,double);
+    void pressureControlMode(QString,bool);
 
     void temperatureUpdate(QString,uint,double);
     void temperatureEnableUpdate(QString,uint,bool);
@@ -133,11 +133,11 @@ public slots:
     void setGasPressureControlMode(const QString key, bool en);
     FlowConfig getFlowConfig(const QString key);
 
-    void setPressureSetpoint(double val);
-    void setPressureControlMode(bool en);
-    void openGateValve();
-    void closeGateValve();
-    PressureControllerConfig getPressureControllerConfig();
+    void setPressureSetpoint(const QString key, double val);
+    void setPressureControlMode(const QString key, bool en);
+    void openGateValve(const QString key);
+    void closeGateValve(const QString key);
+    PressureControllerConfig getPressureControllerConfig(const QString key);
 
     void setTemperatureChannelEnabled(const QString key, uint ch, bool en);
     void setTemperatureChannelName(const QString key, uint ch, const QString name);

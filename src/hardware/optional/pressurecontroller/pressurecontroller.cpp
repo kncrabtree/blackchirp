@@ -4,11 +4,13 @@
 
 using namespace BC::Key::PController;
 
-PressureController::PressureController(const QString subKey, const QString name, int index, CommunicationProtocol::CommType commType,
+PressureController::PressureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
                                        bool ro, QObject *parent, bool threaded, bool critical) :
-    HardwareObject(key,subKey,name,commType,parent,threaded,critical,index), d_readOnly(ro), d_config{index}
+    HardwareObject(key,subKey,name,commType,parent,threaded,critical,d_count), d_readOnly(ro), d_config{subKey,d_count}
 {
     set(readOnly,d_readOnly);
+
+    d_count++;
 }
 
 PressureController::~PressureController()

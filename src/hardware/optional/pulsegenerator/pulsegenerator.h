@@ -96,7 +96,7 @@ public slots:
 
 private:
     PulseGenConfig d_config;
-    inline static int d_count = 0;
+    inline static uint d_count = 0;
 
     friend class VirtualPulseGenerator;
 };

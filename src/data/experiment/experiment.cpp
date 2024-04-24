@@ -85,7 +85,7 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
 
            if(hwType == BC::Key::PController::key)
            {
-               PressureControllerConfig cfg(index);
+               PressureControllerConfig cfg(subKey,index);
                addOptHwConfig(cfg);
            }
 

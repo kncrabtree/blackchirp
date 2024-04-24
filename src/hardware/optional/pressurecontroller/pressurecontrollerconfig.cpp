@@ -3,7 +3,7 @@
 #include <data/storage/settingsstorage.h>
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
 
-PressureControllerConfig::PressureControllerConfig(int index) : HeaderStorage(BC::Key::hwKey(BC::Key::PController::key,index))
+PressureControllerConfig::PressureControllerConfig(QString subKey, int index) : HeaderStorage(BC::Key::hwKey(BC::Key::PController::key,index),subKey)
 {
 
 }

@@ -15,6 +15,7 @@
 #include <QDir>
 #include <QFontDialog>
 #include <QScreen>
+#include <functional>
 
 #include <gui/widget/digitizerconfigwidget.h>
 #include <gui/widget/rfconfigwidget.h>
@@ -195,9 +196,8 @@ MainWindow::MainWindow(QWidget *parent) :
                 if(isDialogOpen(key))
                     return;
 
-                auto pcw = new PressureControlWidget;
-                auto pc = p_hwm->getPressureControllerConfig();
-                pcw->initialize(pc);
+                auto pc = p_hwm->getPressureControllerConfig(key);
+                auto pcw = new PressureControlWidget(pc);
                 connect(p_hwm,&HardwareManager::pressureSetpointUpdate,pcw,&PressureControlWidget::pressureSetpointUpdate);
                 connect(p_hwm,&HardwareManager::pressureControlMode,pcw,&PressureControlWidget::pressureControlModeUpdate);
                 connect(pcw,&PressureControlWidget::setpointChanged,p_hwm,&HardwareManager::setPressureSetpoint);
@@ -386,9 +386,10 @@ void MainWindow::startExperiment()
     }
 
     auto exp = std::make_shared<Experiment>();
-    QMetaObject::invokeMethod(p_hwm,[this,exp](){
+    QMetaObject::invokeMethod(p_hwm,[this,exp]{
         p_hwm->storeAllOptHw(exp.get());
     },Qt::BlockingQueuedConnection);
+
 
     if(runExperimentWizard(exp.get()))
     {

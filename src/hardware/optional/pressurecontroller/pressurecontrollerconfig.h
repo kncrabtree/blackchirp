@@ -11,7 +11,7 @@ static const QString pcEnabled{"ControlEnabled"};
 class PressureControllerConfig : public HeaderStorage
 {
 public:
-    PressureControllerConfig(int index=-1);
+    PressureControllerConfig(QString subKey = QString(""), int index=-1);
 
     double d_pressure{0.0};
     double d_setPoint{0.0};

@@ -11,6 +11,7 @@
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
+#include <hardware/optional/pressurecontroller/pressurecontroller.h>
 
 #include "experimenttypepage.h"
 #include "experimentrfconfigpage.h"
@@ -21,6 +22,7 @@
 #include "experimentpulsegenconfigpage.h"
 #include "experimentflowconfigpage.h"
 #include "experimenttemperaturecontrollerconfigpage.h"
+#include "experimentpressurecontrollerconfigpage.h"
 
 ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QString, QString> &hw, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent)
     : QDialog{parent}
@@ -112,6 +114,7 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
     addOptHwPages<ExperimentPulseGenConfigPage>(BC::Key::PGen::key,hw,expTypeItem);
     addOptHwPages<ExperimentFlowConfigPage>(BC::Key::Flow::flowController,hw,expTypeItem);
     addOptHwPages<ExperimentTemperatureControllerConfigPage>(BC::Key::TC::key,hw,expTypeItem);
+    addOptHwPages<ExperimentPressureControllerConfigPage>(BC::Key::PController::key,hw,expTypeItem);
 
 
     connect(sp,&ExperimentTypePage::typeChanged,[=](){

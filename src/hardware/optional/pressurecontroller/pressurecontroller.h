@@ -23,7 +23,7 @@ class PressureController : public HardwareObject
 {
     Q_OBJECT
 public:
-    PressureController(const QString subKey, const QString name, int index, CommunicationProtocol::CommType commType,
+    PressureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
                        bool ro, QObject *parent =nullptr, bool threaded = false, bool critical=false);
     virtual ~PressureController();
 
@@ -69,14 +69,12 @@ private:
     PressureControllerConfig d_config;
     friend class VirtualPressureController;
 
+    inline static int d_count = 0;
+
 
     // HardwareObject interface
 public:
     QStringList validationKeys() const override;
 };
-
-#ifdef BC_PCONTROLLER
-#include BC_STR(BC_PCONTROLLER_H)
-#endif
 
 #endif // PRESSURECONTROLLER_H

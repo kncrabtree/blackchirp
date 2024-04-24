@@ -109,11 +109,28 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #endif
 
 #ifdef BC_PCONTROLLER
-    auto pc = new BC_PCONTROLLER;
-    connect(pc,&PressureController::pressureUpdate,this,&HardwareManager::pressureUpdate);
-    connect(pc,&PressureController::pressureSetpointUpdate,this,&HardwareManager::pressureSetpointUpdate);
-    connect(pc,&PressureController::pressureControlMode,this,&HardwareManager::pressureControlMode);
-    d_hardwareMap.emplace(pc->d_key,pc);
+    QList<PressureController*> pcList;
+
+#define BOOST_PP_LOCAL_MACRO(n) pcList << new BC_PCONTROLLER_##n;
+#define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_PCONTROLLER-1)
+#include BOOST_PP_LOCAL_ITERATE()
+#undef BOOST_PP_LOCAL_MACRO
+#undef BOOST_PP_LOCAL_LIMITS
+
+    for(auto pc : pcList)
+    {
+        auto k = pc->d_key;
+        connect(pc,&PressureController::pressureUpdate,this,[this,k](double d){
+            emit pressureUpdate(k,d);
+        });
+        connect(pc,&PressureController::pressureSetpointUpdate,this,[this,k](double d){
+            emit pressureSetpointUpdate(k,d);
+        });
+        connect(pc,&PressureController::pressureControlMode,this,[this,k](bool b){
+            emit pressureControlMode(k,b);
+        });
+        d_hardwareMap.emplace(pc->d_key,pc);
+    }
 #endif
 
 #ifdef BC_TEMPCONTROLLER
@@ -584,38 +601,38 @@ std::map<QString, QString> HardwareManager::currentHardware() const
 }
 
 
-void HardwareManager::setPressureSetpoint(double val)
+void HardwareManager::setPressureSetpoint(const QString key, double val)
 {
-    auto pc = findHardware<PressureController>(BC::Key::PController::key);
+    auto pc = findHardware<PressureController>(key);
     if(pc)
         QMetaObject::invokeMethod(pc,[pc,val](){pc->setPressureSetpoint(val);});
 }
 
-void HardwareManager::setPressureControlMode(bool en)
+void HardwareManager::setPressureControlMode(const QString key, bool en)
 {
-    auto pc = findHardware<PressureController>(BC::Key::PController::key);
+    auto pc = findHardware<PressureController>(key);
     if(pc)
         QMetaObject::invokeMethod(pc,[pc,en](){pc->setPressureControlMode(en);});
 }
 
-void HardwareManager::openGateValve()
+void HardwareManager::openGateValve(const QString key)
 {
-    auto pc = findHardware<PressureController>(BC::Key::PController::key);
+    auto pc = findHardware<PressureController>(key);
     if(pc)
         QMetaObject::invokeMethod(pc,&PressureController::openGateValve);
 }
 
-void HardwareManager::closeGateValve()
+void HardwareManager::closeGateValve(const QString key)
 {
-    auto pc = findHardware<PressureController>(BC::Key::PController::key);
+    auto pc = findHardware<PressureController>(key);
     if(pc)
         QMetaObject::invokeMethod(pc,&PressureController::closeGateValve);
 }
 
-PressureControllerConfig HardwareManager::getPressureControllerConfig()
+PressureControllerConfig HardwareManager::getPressureControllerConfig(const QString key)
 {
     PressureControllerConfig out;
-    auto pc = findHardware<PressureController>(BC::Key::PController::key);
+    auto pc = findHardware<PressureController>(key);
     if(pc)
     {
         if(pc->thread() != QThread::currentThread())
@@ -681,6 +698,8 @@ void HardwareManager::storeAllOptHw(Experiment *exp, std::map<QString, bool> hw)
                 exp->addOptHwConfig(getFlowConfig(hwKey));
             else if(type == BC::Key::TC::key)
                 exp->addOptHwConfig(getTemperatureControllerConfig(hwKey));
+            else if(type == BC::Key::PController::key)
+                exp->addOptHwConfig(getPressureControllerConfig(hwKey));
         }
     }
 }

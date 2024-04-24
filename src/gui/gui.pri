@@ -11,6 +11,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/expsetup/experimentflowconfigpage.cpp \
     $$PWD/expsetup/experimentftmwdigitizerconfigpage.cpp \
     $$PWD/expsetup/experimentloscanconfigpage.cpp \
+    $$PWD/expsetup/experimentpressurecontrollerconfigpage.cpp \
     $$PWD/expsetup/experimentpulsegenconfigpage.cpp \
     $$PWD/expsetup/experimentrfconfigpage.cpp \
     $$PWD/expsetup/experimentsetupdialog.cpp \
@@ -75,6 +76,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/expsetup/experimentflowconfigpage.h \
     $$PWD/expsetup/experimentftmwdigitizerconfigpage.h \
     $$PWD/expsetup/experimentloscanconfigpage.h \
+    $$PWD/expsetup/experimentpressurecontrollerconfigpage.h \
     $$PWD/expsetup/experimentpulsegenconfigpage.h \
     $$PWD/expsetup/experimentrfconfigpage.h \
     $$PWD/expsetup/experimentsetupdialog.h \
