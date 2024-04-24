@@ -87,12 +87,12 @@ void TemperatureControlWidget::setFromConfig(const TemperatureControllerConfig &
     d_config = cfg;
 }
 
-void TemperatureControlWidget::setChannelEnabled(const QString key, int ch, bool en)
+void TemperatureControlWidget::setChannelEnabled(const QString key, uint ch, bool en)
 {
     if(key != d_config.headerKey())
         return;
 
-    if(ch < 0 || (std::size_t)ch >= d_channelWidgets.size())
+    if(ch >= d_channelWidgets.size())
         return;
 
     auto b = d_channelWidgets[ch].button;

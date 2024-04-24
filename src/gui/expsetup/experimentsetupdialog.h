@@ -52,6 +52,21 @@ private:
 
     std::map<QString,PageData> d_pages;
 
+    template<typename T> std::tuple<T*,QTreeWidgetItem*> addConfigPage(QString k, QTreeWidgetItem *parentItem, bool en = true)
+    {
+            SettingsStorage s(k,SettingsStorage::Hardware);
+            auto title = s.get(BC::Key::HW::name,k);
+            auto page = new T(p_exp);
+            auto i = p_configWidget->addWidget(page);
+            d_pages.insert({k,{i,k,page,en}});
+            auto item = new QTreeWidgetItem(parentItem,{page->d_title});
+            page->setEnabled(en);
+            item->setDisabled(!en);
+            item->setData(0,Qt::UserRole,k);
+
+            return {page,item};
+    }
+
     template<typename T> void addOptHwPages(QString hwKey, const std::map<QString, QString> &hw, QTreeWidgetItem *expTypeItem)
     {
         auto index = 0;

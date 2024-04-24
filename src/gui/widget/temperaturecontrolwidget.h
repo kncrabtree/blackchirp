@@ -34,7 +34,7 @@ signals:
 
 public slots:
     void setFromConfig(const TemperatureControllerConfig &cfg);
-    void setChannelEnabled(const QString key, int ch, bool en);
+    void setChannelEnabled(const QString key, uint ch, bool en);
 
 private:
     std::vector<TChannels> d_channelWidgets;

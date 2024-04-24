@@ -46,7 +46,7 @@ bool ExperimentFlowConfigPage::validate()
     }
 
     if(!en)
-        emit warning(QString("No gas flow channels enabled on %1.").arg(d_title));
+        emit warning(QString("No channels enabled on %1.").arg(d_title));
 
     return true;
 }

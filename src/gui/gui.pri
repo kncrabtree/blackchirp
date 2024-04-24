@@ -14,6 +14,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/expsetup/experimentpulsegenconfigpage.cpp \
     $$PWD/expsetup/experimentrfconfigpage.cpp \
     $$PWD/expsetup/experimentsetupdialog.cpp \
+    $$PWD/expsetup/experimenttemperaturecontrollerconfigpage.cpp \
     $$PWD/expsetup/experimenttypepage.cpp \
     $$PWD/plot/blackchirpplotcurve.cpp \
     $$PWD/plot/chirpconfigplot.cpp \
@@ -77,6 +78,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/expsetup/experimentpulsegenconfigpage.h \
     $$PWD/expsetup/experimentrfconfigpage.h \
     $$PWD/expsetup/experimentsetupdialog.h \
+    $$PWD/expsetup/experimenttemperaturecontrollerconfigpage.h \
     $$PWD/expsetup/experimenttypepage.h \
     $$PWD/mainwindow_ui.h \
     $$PWD/plot/blackchirpplotcurve.h \

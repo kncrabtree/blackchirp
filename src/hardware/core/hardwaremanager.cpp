@@ -648,7 +648,7 @@ TemperatureControllerConfig HardwareManager::getTemperatureControllerConfig(cons
     auto tc = findHardware<TemperatureController>(key);
     if(tc)
     {
-        if(tc->thread() == QThread::currentThread())
+        if(tc->thread() != QThread::currentThread())
             QMetaObject::invokeMethod(tc,&TemperatureController::getConfig,Qt::BlockingQueuedConnection,&out);
         else
             out = tc->getConfig();

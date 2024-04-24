@@ -10,6 +10,7 @@
 #include <gui/widget/experimentsummarywidget.h>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <hardware/optional/flowcontroller/flowcontroller.h>
+#include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
 #include "experimenttypepage.h"
 #include "experimentrfconfigpage.h"
@@ -19,6 +20,7 @@
 #include "experimentftmwdigitizerconfigpage.h"
 #include "experimentpulsegenconfigpage.h"
 #include "experimentflowconfigpage.h"
+#include "experimenttemperaturecontrollerconfigpage.h"
 
 ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QString, QString> &hw, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent)
     : QDialog{parent}
@@ -99,48 +101,17 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
     rfItem->setDisabled(!en);
     rfItem->setData(0,Qt::UserRole,k);
 
-    auto lop = new ExperimentLOScanConfigPage(p_exp);
-    en = ften && (type == FtmwConfig::LO_Scan);
-    k = BC::Key::WizLoScan::key;
-    i = p_configWidget->addWidget(lop);
-    d_pages.insert({k,{i,k,lop,en}});
-    auto loItem = new QTreeWidgetItem(rfItem,{lop->d_title});
-    lop->setEnabled(en);
-    loItem->setDisabled(!en);
-    loItem->setData(0,Qt::UserRole,k);
+    auto [lop,loItem] = addConfigPage<ExperimentLOScanConfigPage>(BC::Key::WizLoScan::key,rfItem,ften && (type == FtmwConfig::LO_Scan));
 
-    auto drop = new ExperimentDRScanConfigPage(p_exp);
-    en = ften && (type == FtmwConfig::DR_Scan);
-    k = BC::Key::WizDR::key;
-    i = p_configWidget->addWidget(drop);
-    d_pages.insert({k,{i,k,drop,en}});
-    auto dropItem = new QTreeWidgetItem(rfItem,{drop->d_title});
-    drop->setEnabled(en);
-    dropItem->setDisabled(en);
-    dropItem->setData(0,Qt::UserRole,k);
+    auto [drop,dropItem] = addConfigPage<ExperimentDRScanConfigPage>(BC::Key::WizDR::key,rfItem,ften && (type == FtmwConfig::DR_Scan));
 
-    auto chp = new ExperimentChirpConfigPage(p_exp);
-    en = ften;
-    k = BC::Key::WizChirp::key;
-    i = p_configWidget->addWidget(chp);
-    d_pages.insert({k,{i,k,chp,en}});
-    auto chpItem = new QTreeWidgetItem(rfItem,{chp->d_title});
-    chp->setEnabled(en);
-    chpItem->setDisabled(!en);
-    chpItem->setData(0,Qt::UserRole,k);
+    auto [chp,chpItem] = addConfigPage<ExperimentChirpConfigPage>(BC::Key::WizChirp::key,rfItem,ften);
 
-    auto ftdp = new ExperimentFtmwDigitizerConfigPage(p_exp);
-    en = ften;
-    k = BC::Key::WizFtDig::key;
-    i = p_configWidget->addWidget(ftdp);
-    d_pages.insert({k,{i,k,ftdp,en}});
-    auto ftdItem = new QTreeWidgetItem(rfItem,{ftdp->d_title});
-    ftdp->setEnabled(en);
-    ftdItem->setDisabled(!en);
-    ftdItem->setData(0,Qt::UserRole,k);
+    auto [ftdp,ftdpItem] = addConfigPage<ExperimentFtmwDigitizerConfigPage>(BC::Key::WizFtDig::key,rfItem,ften);
 
     addOptHwPages<ExperimentPulseGenConfigPage>(BC::Key::PGen::key,hw,expTypeItem);
     addOptHwPages<ExperimentFlowConfigPage>(BC::Key::Flow::flowController,hw,expTypeItem);
+    addOptHwPages<ExperimentTemperatureControllerConfigPage>(BC::Key::TC::key,hw,expTypeItem);
 
 
     connect(sp,&ExperimentTypePage::typeChanged,[=](){
