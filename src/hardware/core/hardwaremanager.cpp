@@ -156,8 +156,16 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #endif
 
 #ifdef BC_IOBOARD
-    auto iob = new BC_IOBOARD;
-    d_hardwareMap.emplace(iob->d_key,iob);
+    QList<IOBoard*> iobList;
+
+#define BOOST_PP_LOCAL_MACRO(n) iobList << new BC_IOBOARD_##n;
+#define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_IOBOARD-1)
+#include BOOST_PP_LOCAL_ITERATE()
+#undef BOOST_PP_LOCAL_MACRO
+#undef BOOST_PP_LOCAL_LIMITS
+
+    for(auto iob : iobList)
+        d_hardwareMap.emplace(iob->d_key,iob);
 #endif
 
 #ifdef BC_LIF
@@ -674,6 +682,22 @@ TemperatureControllerConfig HardwareManager::getTemperatureControllerConfig(cons
     return out;
 }
 
+IOBoardConfig HardwareManager::getIOBoardConfig(const QString key)
+{
+    IOBoardConfig out;
+    auto iob = findHardware<IOBoard>(key);
+    if(iob)
+    {
+        if(iob->thread() != QThread::currentThread())
+            QMetaObject::invokeMethod(iob,&IOBoard::getConfig,Qt::BlockingQueuedConnection,&out);
+        else
+            out = iob->getConfig();
+    }
+
+    return out;
+
+}
+
 void HardwareManager::storeAllOptHw(Experiment *exp, std::map<QString, bool> hw)
 {
     for(auto const &[hwKey,_] : d_hardwareMap)
@@ -700,6 +724,8 @@ void HardwareManager::storeAllOptHw(Experiment *exp, std::map<QString, bool> hw)
                 exp->addOptHwConfig(getTemperatureControllerConfig(hwKey));
             else if(type == BC::Key::PController::key)
                 exp->addOptHwConfig(getPressureControllerConfig(hwKey));
+            else if(type == BC::Key::IOB::ioboard)
+                exp->addOptHwConfig(getIOBoardConfig(hwKey));
         }
     }
 }

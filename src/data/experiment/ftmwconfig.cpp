@@ -7,9 +7,14 @@
 
 #include <data/storage/blackchirpcsv.h>
 #include <data/storage/fidpeakupstorage.h>
+#include <data/storage/settingsstorage.h>
+#include <hardware/core/ftmwdigitizer/ftmwscope.h>
 
 FtmwConfig::FtmwConfig() : HeaderStorage(BC::Store::FTMW::key)
 {
+    SettingsStorage s(BC::Key::hwKey(BC::Key::FtmwScope::ftmwScope,0),SettingsStorage::Hardware);
+    QString sk = s.get(BC::Key::HW::subKey,BC::Key::Comm::hwVirtual);
+    ps_scopeConfig = std::make_shared<FtmwDigitizerConfig>(sk);
 }
 
 FtmwConfig::~FtmwConfig()
@@ -20,8 +25,8 @@ FtmwConfig::~FtmwConfig()
 quint64 FtmwConfig::shotIncrement() const
 {
     quint64 increment = 1;
-    if(d_scopeConfig.d_blockAverage)
-        increment *= d_scopeConfig.d_numAverages;
+    if(ps_scopeConfig->d_blockAverage)
+        increment *= ps_scopeConfig->d_numAverages;
 
     return increment;
 }
@@ -29,11 +34,11 @@ quint64 FtmwConfig::shotIncrement() const
 FidList FtmwConfig::parseWaveform(const QByteArray b) const
 {
 
-    int np = d_scopeConfig.d_recordLength;
+    int np = ps_scopeConfig->d_recordLength;
     auto shots = shotIncrement();
     FidList out;
     //read raw data into vector in 64 bit integer form
-    for(int j=0;j<d_scopeConfig.d_numRecords;j++)
+    for(int j=0;j<ps_scopeConfig->d_numRecords;j++)
     {
         QVector<qint64> d(np);
 
@@ -58,12 +63,12 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
             */
 
 
-            if(d_scopeConfig.d_bytesPerPoint == 1)
+            if(ps_scopeConfig->d_bytesPerPoint == 1)
             {
                 char y = b.at(j*np+i);
                 dat = static_cast<qint64>(y);
             }
-            else if(d_scopeConfig.d_bytesPerPoint == 2)
+            else if(ps_scopeConfig->d_bytesPerPoint == 2)
             {
                 auto y1 = static_cast<quint8>(b.at(2*(j*np+i)));
                 auto y2 = static_cast<quint8>(b.at(2*(j*np+i) + 1));
@@ -72,7 +77,7 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
                 y |= y1;
                 y |= (y2 << 8);
 
-                if(d_scopeConfig.d_byteOrder == DigitizerConfig::BigEndian)
+                if(ps_scopeConfig->d_byteOrder == DigitizerConfig::BigEndian)
                     y = qFromBigEndian(y);
                 else
                     y = qFromLittleEndian(y);
@@ -92,7 +97,7 @@ FidList FtmwConfig::parseWaveform(const QByteArray b) const
                 y |= (y3 << 16);
                 y |= (y4 << 24);
 
-                if(d_scopeConfig.d_byteOrder == DigitizerConfig::BigEndian)
+                if(ps_scopeConfig->d_byteOrder == DigitizerConfig::BigEndian)
                     y = qFromBigEndian(y);
                 else
                     y = qFromLittleEndian(y);
@@ -143,13 +148,13 @@ double FtmwConfig::ftMaxMHz() const
 
 double FtmwConfig::ftNyquistMHz() const
 {
-    return d_scopeConfig.d_sampleRate/(1e6*2.0);
+    return ps_scopeConfig->d_sampleRate/(1e6*2.0);
 }
 
 double FtmwConfig::fidDurationUs() const
 {
-    double sr = d_scopeConfig.d_sampleRate;
-    double rl = static_cast<double>(d_scopeConfig.d_recordLength);
+    double sr = ps_scopeConfig->d_sampleRate;
+    double rl = static_cast<double>(ps_scopeConfig->d_recordLength);
 
     return rl/sr*1e6;
 }
@@ -158,10 +163,10 @@ QPair<int, int> FtmwConfig::chirpRange() const
 {
     //compute chirp duration in samples (only use first chirp if there are multiple)
     auto dur = d_rfConfig.d_chirpConfig.chirpDurationUs(0);
-    if(d_scopeConfig.d_sampleRate <= 0.0)
+    if(ps_scopeConfig->d_sampleRate <= 0.0)
         return {0,0};
 
-    int samples = dur*1e-6*d_scopeConfig.d_sampleRate;
+    int samples = dur*1e-6*ps_scopeConfig->d_sampleRate;
 
     //we assume that the scope is triggered at the beginning of the protection pulse
     //unless the user has specified a custom start time
@@ -169,13 +174,13 @@ QPair<int, int> FtmwConfig::chirpRange() const
     if(d_chirpOffsetUs < 0.0)
     {
         auto cc = d_rfConfig.d_chirpConfig;
-        startUs = cc.preChirpGateDelay() + cc.preChirpProtectionDelay() - d_scopeConfig.d_triggerDelayUSec;
+        startUs = cc.preChirpGateDelay() + cc.preChirpProtectionDelay() - ps_scopeConfig->d_triggerDelayUSec;
     }
     else
         startUs = d_chirpOffsetUs;
 
-    int startSample = startUs*1e-6*d_scopeConfig.d_sampleRate;
-    if(startSample >=0 && startSample < d_scopeConfig.d_recordLength)
+    int startSample = startUs*1e-6*ps_scopeConfig->d_sampleRate;
+    if(startSample >=0 && startSample < ps_scopeConfig->d_recordLength)
         return {startSample,samples};
     else
         return {0,0};
@@ -190,11 +195,11 @@ bool FtmwConfig::initialize()
     auto sb = d_rfConfig.d_downMixSideband;
 
     Fid f;
-    f.setSpacing(d_scopeConfig.xIncr());
+    f.setSpacing(ps_scopeConfig->xIncr());
     f.setSideband(sb);
     f.setProbeFreq(df);
     //divide Vmult by 2^bitShift in case extra padding bits are added
-    f.setVMult(d_scopeConfig.yMult(d_scopeConfig.d_fidChannel)/pow(2,bitShift()));
+    f.setVMult(ps_scopeConfig->yMult(ps_scopeConfig->d_fidChannel)/pow(2,bitShift()));
 
     d_fidTemplate = f;
     d_processingPaused = true;
@@ -302,11 +307,6 @@ bool FtmwConfig::addFids(const QByteArray rawData)
         newList = parseWaveform(rawData);
     return p_fidStorage->addFids(newList,d_currentShift);
 #endif
-}
-
-void FtmwConfig::setScopeConfig(const FtmwDigitizerConfig &other)
-{
-    d_scopeConfig = other;
 }
 
 void FtmwConfig::hwReady()
@@ -521,7 +521,7 @@ void FtmwConfig::retrieveValues()
 void FtmwConfig::prepareChildren()
 {
     addChild(&d_rfConfig);
-    addChild(&d_scopeConfig);
+    addChild(ps_scopeConfig.get());
 }
 
 QString FtmwConfig::objectiveKey() const

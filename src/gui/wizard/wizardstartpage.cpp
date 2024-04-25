@@ -435,38 +435,38 @@ bool WizardStartPage::validatePage()
          e->disableLif();
 #endif
 
-     if(p_ftmw->isChecked() || !p_ftmw->isCheckable())
-     {
-         RfConfig cfg;
-         FtmwDigitizerConfig ftc;
-         if(e->d_number > 0 && e->ftmwEnabled())
-         {
-             cfg = e->ftmwConfig()->d_rfConfig;
-             ftc = e->ftmwConfig()->d_scopeConfig;
-         }
+     // if(p_ftmw->isChecked() || !p_ftmw->isCheckable())
+     // {
+     //     RfConfig cfg;
+     //     FtmwDigitizerConfig ftc;
+     //     if(e->d_number > 0 && e->ftmwEnabled())
+     //     {
+     //         cfg = e->ftmwConfig()->d_rfConfig;
+     //         ftc = e->ftmwConfig()->scopeConfig();
+     //     }
 
-         auto type = p_ftmwTypeBox->currentData().value<FtmwConfig::FtmwType>();
-         auto ftmw = e->enableFtmw(type);
+     //     auto type = p_ftmwTypeBox->currentData().value<FtmwConfig::FtmwType>();
+     //     auto ftmw = e->enableFtmw(type);
 
-         ftmw->d_objective = p_ftmwShotsBox->value();
-         if(type == FtmwConfig::Target_Duration)
-             ftmw->d_objective = p_ftmwTargetDurationBox->value();
-         ftmw->d_chirpScoringEnabled = p_chirpScoringBox->isChecked();
-         ftmw->d_chirpRMSThreshold = p_thresholdBox->value();
-         ftmw->d_phaseCorrectionEnabled = p_phaseCorrectionBox->isChecked();
-         if(e->d_number > 0 && e->ftmwEnabled())
-         {
-             ftmw->d_rfConfig = cfg;
-             ftmw->d_scopeConfig = ftc;
-         }
-         if(p_chirpOffsetBox->value() >= 0.0)
-             ftmw->d_chirpOffsetUs = p_chirpOffsetBox->value();
-     }
-     else
-         e->disableFtmw();
+     //     ftmw->d_objective = p_ftmwShotsBox->value();
+     //     if(type == FtmwConfig::Target_Duration)
+     //         ftmw->d_objective = p_ftmwTargetDurationBox->value();
+     //     ftmw->d_chirpScoringEnabled = p_chirpScoringBox->isChecked();
+     //     ftmw->d_chirpRMSThreshold = p_thresholdBox->value();
+     //     ftmw->d_phaseCorrectionEnabled = p_phaseCorrectionBox->isChecked();
+     //     if(e->d_number > 0 && e->ftmwEnabled())
+     //     {
+     //         ftmw->d_rfConfig = cfg;
+     //         ftmw->scopeConfig() = ftc;
+     //     }
+     //     if(p_chirpOffsetBox->value() >= 0.0)
+     //         ftmw->d_chirpOffsetUs = p_chirpOffsetBox->value();
+     // }
+     // else
+     //     e->disableFtmw();
 
-     e->d_backupIntervalHours = p_backupBox->value();
-     e->d_timeDataInterval = p_auxDataIntervalBox->value();
+     // e->d_backupIntervalHours = p_backupBox->value();
+     // e->d_timeDataInterval = p_auxDataIntervalBox->value();
 
      
      return true;

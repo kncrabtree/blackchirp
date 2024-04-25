@@ -16,7 +16,7 @@ static const QString din{"DigitalInput%1"};
 class IOBoardConfig : public DigitizerConfig
 {
 public:
-    IOBoardConfig(int index=-1);
+    IOBoardConfig(const QString subKey = "", int index=-1);
 
     void setAnalogName(int ch, const QString name);
     void setDigitalName(int ch, const QString name);

@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-DigitizerConfig::DigitizerConfig(const QString key) : HeaderStorage(key)
+DigitizerConfig::DigitizerConfig(const QString key, const QString subKey) : HeaderStorage(key,subKey)
 {
 
 }

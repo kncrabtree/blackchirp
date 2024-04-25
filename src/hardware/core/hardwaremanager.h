@@ -13,6 +13,7 @@
 #include <hardware/optional/pulsegenerator/pulsegenconfig.h>
 #include <hardware/optional/pressurecontroller/pressurecontrollerconfig.h>
 #include <hardware/optional/tempcontroller/temperaturecontrollerconfig.h>
+#include <hardware/optional/ioboard/ioboardconfig.h>
 
 #ifdef BC_LIF
 #include <modules/lif/hardware/lifdigitizer/lifdigitizerconfig.h>
@@ -142,6 +143,8 @@ public slots:
     void setTemperatureChannelEnabled(const QString key, uint ch, bool en);
     void setTemperatureChannelName(const QString key, uint ch, const QString name);
     TemperatureControllerConfig getTemperatureControllerConfig(const QString key);
+
+    IOBoardConfig getIOBoardConfig(const QString key);
 
     void storeAllOptHw(Experiment *exp, std::map<QString,bool> hw = {});
 

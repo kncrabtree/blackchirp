@@ -119,7 +119,7 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
     //first, reset the card so all registers are in default states
     spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_RESET);
 
-    auto &sc = exp.ftmwConfig()->d_scopeConfig;
+    auto &sc = exp.ftmwConfig()->scopeConfig();
 
     //this card only has 1 channel, so enable it and disable all others regardless of user's entry
     if(sc.d_fidChannel != 1)

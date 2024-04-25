@@ -92,7 +92,7 @@ bool VirtualFtmwScope::prepareForExperiment(Experiment &exp)
     if(!exp.ftmwEnabled())
         return true;
 
-    static_cast<FtmwDigitizerConfig&>(*this) = exp.ftmwConfig()->d_scopeConfig;
+    static_cast<FtmwDigitizerConfig&>(*this) = exp.ftmwConfig()->scopeConfig();
     return true;
 
 }

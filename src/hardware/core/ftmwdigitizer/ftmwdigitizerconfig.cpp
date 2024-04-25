@@ -2,7 +2,7 @@
 
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
 
-FtmwDigitizerConfig::FtmwDigitizerConfig() : DigitizerConfig(BC::Key::hwKey(BC::Key::FtmwScope::ftmwScope,0))
+FtmwDigitizerConfig::FtmwDigitizerConfig(const QString subKey) : DigitizerConfig(BC::Key::hwKey(BC::Key::FtmwScope::ftmwScope,0),subKey)
 {
 
 }

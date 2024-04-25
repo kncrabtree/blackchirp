@@ -18,7 +18,7 @@ public:
         bool enabled{false};
     };
 
-    TemperatureControllerConfig(QString subKey = QString(""), int index = -1);
+    TemperatureControllerConfig(const QString subKey = QString(""), int index = -1);
 
     void setNumChannels(int n);
 

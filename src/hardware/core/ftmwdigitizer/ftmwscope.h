@@ -13,6 +13,7 @@
 namespace BC::Key::FtmwScope {
 static const QString ftmwScope{"FtmwDigitizer"};
 static const QString bandwidth{"bandwidthMHz"};
+static const QString fidCh{"fidChannel"};
 }
 
 class FtmwScope : public HardwareObject, protected FtmwDigitizerConfig
@@ -27,7 +28,6 @@ signals:
 
 public slots:
     virtual void readWaveform() =0;
-
 
     // HardwareObject interface
 public slots:

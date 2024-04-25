@@ -9,9 +9,9 @@ WizardIOBoardConfigPage::WizardIOBoardConfigPage(QWidget *parent) : ExperimentWi
 
     auto vbl = new QVBoxLayout;
 
-    p_iobWidget = new IOBoardConfigWidget;
+    // p_iobWidget = new IOBoardConfigWidget;
 
-    vbl->addWidget(p_iobWidget);
+    // vbl->addWidget(p_iobWidget);
 
     setLayout(vbl);
 
@@ -30,9 +30,9 @@ void WizardIOBoardConfigPage::initializePage()
 
 bool WizardIOBoardConfigPage::validatePage()
 {
-    auto e = getExperiment();
-    IOBoardConfig cfg;
-    p_iobWidget->toConfig(cfg);
+    // auto e = getExperiment();
+    // IOBoardConfig cfg;
+    // p_iobWidget->toConfig(cfg);
     // e->setIOBoardConfig(cfg);
 
     return true;

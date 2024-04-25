@@ -67,7 +67,7 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
            //create optional HW configs as needed
            if(hwType == BC::Key::IOB::ioboard)
            {
-               IOBoardConfig cfg(index);
+               IOBoardConfig cfg(subKey,index);
                addOptHwConfig(cfg);
            }
 

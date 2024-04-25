@@ -14,7 +14,7 @@ class IOBoardConfigWidget : public DigitizerConfigWidget
 {
     Q_OBJECT
 public:
-    explicit IOBoardConfigWidget(QWidget *parent = nullptr);
+    explicit IOBoardConfigWidget(IOBoardConfig &cfg, QWidget *parent = nullptr);
     ~IOBoardConfigWidget();
 
     void setFromConfig(const IOBoardConfig &cfg);
@@ -27,6 +27,7 @@ signals:
 
 private:
     QTableWidget *p_analogNameWidget{nullptr}, *p_digitalNameWidget{nullptr};
+    QString d_key;
 
 };
 

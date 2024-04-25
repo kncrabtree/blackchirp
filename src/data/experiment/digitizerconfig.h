@@ -8,6 +8,8 @@
 #include <data/storage/headerstorage.h>
 
 namespace BC::Key::Digi {
+static const QString dwAnChannels{"channels"};
+static const QString dwDigChannels{"digitalChannels"};
 static const QString numAnalogChannels{"numAnalogChannels"};
 static const QString hasAuxTriggerChannel{"hasAuxTriggerChannel"};
 static const QString numDigitalChannels{"numDigitalChannels"};
@@ -80,7 +82,7 @@ public:
     };
     Q_ENUM(ByteOrder)
 
-    DigitizerConfig(const QString key);
+    DigitizerConfig(const QString key,const QString subKey);
 
     //vertical channels
     std::map<int,AnalogChannel> d_analogChannels;

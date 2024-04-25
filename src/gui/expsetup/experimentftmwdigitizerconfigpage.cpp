@@ -22,7 +22,7 @@ ExperimentFtmwDigitizerConfigPage::ExperimentFtmwDigitizerConfigPage(Experiment 
     if(exp->ftmwConfig())
     {
         if(exp->d_number > 0)
-            p_dc->setFromConfig(exp->ftmwConfig()->d_scopeConfig);
+            p_dc->setFromConfig(exp->ftmwConfig()->scopeConfig());
     }
 }
 
@@ -68,6 +68,6 @@ bool ExperimentFtmwDigitizerConfigPage::validate()
 
 void ExperimentFtmwDigitizerConfigPage::apply()
 {
-    p_dc->toConfig(p_exp->ftmwConfig()->d_scopeConfig);
-    p_exp->ftmwConfig()->d_scopeConfig.d_fidChannel = p_exp->ftmwConfig()->d_scopeConfig.d_analogChannels.cbegin()->first;
+    p_dc->toConfig(p_exp->ftmwConfig()->scopeConfig());
+    p_exp->ftmwConfig()->scopeConfig().d_fidChannel = p_exp->ftmwConfig()->scopeConfig().d_analogChannels.cbegin()->first;
 }

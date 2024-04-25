@@ -130,7 +130,7 @@ void FidPlot::prepareForExperiment(const Experiment &e)
     d_ftMarkers.first->setVisible(true);
     d_ftMarkers.second->setVisible(true);
 
-    double maxTime = (static_cast<double>(c->d_scopeConfig.d_recordLength)-1.0)/c->d_scopeConfig.d_sampleRate*1e6;
+    double maxTime = (static_cast<double>(c->scopeConfig().d_recordLength)-1.0)/c->scopeConfig().d_sampleRate*1e6;
     double ftEnd = d_ftMarkers.second->xValue();
     if(ftEnd <= 0.0 || ftEnd <= d_ftMarkers.first->xValue() || ftEnd > maxTime)
         d_ftMarkers.second->setXValue(maxTime);
@@ -142,8 +142,8 @@ void FidPlot::prepareForExperiment(const Experiment &e)
     if(displayMarkers)
     {
         auto r = c->chirpRange();
-        double chirpStart = (double)r.first*1e6/c->d_scopeConfig.d_sampleRate;
-        double chirpEnd = chirpStart + (double)r.second*1e6/c->d_scopeConfig.d_sampleRate;
+        double chirpStart = (double)r.first*1e6/c->scopeConfig().d_sampleRate;
+        double chirpEnd = chirpStart + (double)r.second*1e6/c->scopeConfig().d_sampleRate;
 
         d_chirpMarkers.first->setValue(chirpStart,0.0);
         d_chirpMarkers.second->setValue(chirpEnd,0.0);

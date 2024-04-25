@@ -10,7 +10,7 @@ static const QString fidCh{"FidChannel"};
 class FtmwDigitizerConfig : public DigitizerConfig
 {
 public:
-    FtmwDigitizerConfig();
+    FtmwDigitizerConfig(const QString subKey);
 
     int d_fidChannel{0};
 

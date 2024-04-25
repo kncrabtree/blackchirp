@@ -33,7 +33,7 @@ void WizardDigitizerConfigPage::initializePage()
 {
     auto e = getExperiment();
     if(e->d_number > 0)
-        p_dc->setFromConfig(e->ftmwConfig()->d_scopeConfig);
+        p_dc->setFromConfig(e->ftmwConfig()->scopeConfig());
 
     int numChirps = e->ftmwConfig()->d_rfConfig.d_chirpConfig.numChirps();
     if(numChirps > 1)
@@ -49,11 +49,11 @@ bool WizardDigitizerConfigPage::validatePage()
     if(p_dc->numAnalogChecked() != 1)
         return false;
 
-    p_dc->toConfig(e->ftmwConfig()->d_scopeConfig);
-    e->ftmwConfig()->d_scopeConfig.d_fidChannel = e->ftmwConfig()->d_scopeConfig.d_analogChannels.cbegin()->first;
+    p_dc->toConfig(e->ftmwConfig()->scopeConfig());
+    e->ftmwConfig()->scopeConfig().d_fidChannel = e->ftmwConfig()->scopeConfig().d_analogChannels.cbegin()->first;
     if(numChirps > 1)
     {
-        if(!e->ftmwConfig()->d_scopeConfig.d_blockAverage && !e->ftmwConfig()->d_scopeConfig.d_multiRecord)
+        if(!e->ftmwConfig()->scopeConfig().d_blockAverage && !e->ftmwConfig()->scopeConfig().d_multiRecord)
         {
             QMessageBox msg;
             msg.setIcon(QMessageBox::Warning);

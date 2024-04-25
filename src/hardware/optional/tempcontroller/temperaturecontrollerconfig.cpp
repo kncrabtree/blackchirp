@@ -2,7 +2,7 @@
 
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
-TemperatureControllerConfig::TemperatureControllerConfig(QString subKey, int index) : HeaderStorage(BC::Key::hwKey(BC::Key::TC::key,index),subKey)
+TemperatureControllerConfig::TemperatureControllerConfig(const QString subKey, int index) : HeaderStorage(BC::Key::hwKey(BC::Key::TC::key,index),subKey)
 {
 
 }

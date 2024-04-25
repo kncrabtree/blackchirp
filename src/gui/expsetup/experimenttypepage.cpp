@@ -15,6 +15,8 @@
 #include <QMetaEnum>
 #include <QMessageBox>
 
+#include <hardware/core/ftmwdigitizer/ftmwscope.h>
+
 using namespace BC::Key::WizStart;
 
 ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
@@ -430,11 +432,15 @@ void ExperimentTypePage::apply()
      if(p_ftmw->isChecked() || !p_ftmw->isCheckable())
      {
          RfConfig cfg;
-         FtmwDigitizerConfig ftc;
+
+         SettingsStorage s(BC::Key::hwKey(BC::Key::FtmwScope::ftmwScope,0),SettingsStorage::Hardware);
+         auto sk = s.get(BC::Key::HW::subKey,BC::Key::Comm::hwVirtual);
+         FtmwDigitizerConfig ftc{sk};
+
          if(e->d_number > 0 && e->ftmwEnabled())
          {
              cfg = e->ftmwConfig()->d_rfConfig;
-             ftc = e->ftmwConfig()->d_scopeConfig;
+             ftc = e->ftmwConfig()->scopeConfig();
          }
 
          auto type = p_ftmwTypeBox->currentData().value<FtmwConfig::FtmwType>();
@@ -449,7 +455,7 @@ void ExperimentTypePage::apply()
          if(e->d_number > 0 && e->ftmwEnabled())
          {
              ftmw->d_rfConfig = cfg;
-             ftmw->d_scopeConfig = ftc;
+             ftmw->scopeConfig() = ftc;
          }
          if(p_chirpOffsetBox->value() >= 0.0)
              ftmw->d_chirpOffsetUs = p_chirpOffsetBox->value();
