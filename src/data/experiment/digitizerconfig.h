@@ -37,6 +37,7 @@ static const QString srValue{"val"};
 namespace BC::Store::Digi {
 static const QString an{"AnalogChannel"};
 static const QString dig{"DigitalChannel"};
+static const QString chIndex{"Index"};
 static const QString digInp{"Input"};
 static const QString digRole{"Role"};
 static const QString en{"Enabled"};
@@ -61,11 +62,13 @@ class DigitizerConfig : public HeaderStorage
     Q_GADGET
 public:
     struct AnalogChannel {
+        bool enabled{false};
         double fullScale{0.0};
         double offset{0.0};
     };
 
     struct DigitalChannel {
+        bool enabled{false};
         bool input{true};
         int role{-1};
     };

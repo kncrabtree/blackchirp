@@ -50,8 +50,8 @@ public slots:
     void configureAnalogBoxes();
 
 protected:
-    QVector<AnalogChannelWidgets> d_anChannelWidgets;
-    QVector<DigitalChannelWidgets> d_digChannelWidgets;
+    std::map<int,AnalogChannelWidgets> d_anChannelWidgets;
+    std::map<int,DigitalChannelWidgets> d_digChannelWidgets;
 
     QSpinBox *p_triggerSourceBox;
     QComboBox *p_triggerSlopeBox;

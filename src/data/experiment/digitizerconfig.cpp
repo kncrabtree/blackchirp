@@ -27,19 +27,23 @@ double DigitizerConfig::yMult(int ch) const
 
 void DigitizerConfig::storeValues()
 {
-    //store chanenel numbers as 0-indexed
     using namespace BC::Store::Digi;
-    for(auto it = d_analogChannels.cbegin(); it != d_analogChannels.cend(); ++it)
+    int i=0;
+    for(auto const &[k,ch] : d_analogChannels)
     {
-        storeArrayValue(an,it->first-1,en,true);
-        storeArrayValue(an,it->first-1,fs,it->second.fullScale,BC::Unit::V);
-        storeArrayValue(an,it->first-1,offset,it->second.offset,BC::Unit::V);
+        storeArrayValue(an,i,chIndex,k);
+        storeArrayValue(an,i,en,ch.enabled);
+        storeArrayValue(an,i,fs,ch.fullScale,BC::Unit::V);
+        storeArrayValue(an,i,offset,ch.offset,BC::Unit::V);
+        i++;
     }
-    for(auto it = d_digitalChannels.cbegin(); it != d_digitalChannels.cend(); ++it)
+    i=0;
+    for(auto const &[k,ch] : d_digitalChannels)
     {
-        storeArrayValue(dig,it->first-1,en,true);
-        storeArrayValue(dig,it->first-1,digInp,it->second.input);
-        storeArrayValue(dig,it->first-1,digRole,it->second.role);
+        storeArrayValue(dig,i,chIndex,k);
+        storeArrayValue(dig,i,en,ch.enabled);
+        storeArrayValue(dig,i,digInp,ch.input);
+        storeArrayValue(dig,i,digRole,ch.role);
     }
 
     store(trigCh,d_triggerChannel);
@@ -65,22 +69,18 @@ void DigitizerConfig::retrieveValues()
     for(int i=0; i<n; ++i)
     {
         bool e = retrieveArrayValue(an,i,en,false);
-        if(e)
-        {
-            AnalogChannel c{retrieveArrayValue(an,i,fs,0.0),
-                        retrieveArrayValue(an,i,offset,0.0)};
-            d_analogChannels.insert_or_assign(i+1,c);
-        }
+        auto idx = retrieveArrayValue(an,i,chIndex,i+1);
+        AnalogChannel c{ e,retrieveArrayValue(an,i,fs,0.0),
+                    retrieveArrayValue(an,i,offset,0.0)};
+        d_analogChannels.insert_or_assign(idx,c);
     }
     n = arrayStoreSize(dig);
     for(int i=0; i<n; ++i)
     {
         bool e = retrieveArrayValue(dig,i,en,false);
-        if(e)
-        {
-            DigitalChannel c{retrieveArrayValue(dig,i,digInp,false),retrieveArrayValue(dig,i,digRole,-1)};
-            d_digitalChannels.insert_or_assign(i+1,c);
-        }
+        auto idx = retrieveArrayValue(dig,i,chIndex,i+1);
+        DigitalChannel c{e,retrieveArrayValue(dig,i,digInp,false),retrieveArrayValue(dig,i,digRole,-1)};
+            d_digitalChannels.insert_or_assign(idx,c);
     }
 
     d_triggerChannel = retrieve(trigCh,0);

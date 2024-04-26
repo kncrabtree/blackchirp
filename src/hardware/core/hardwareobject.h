@@ -143,7 +143,7 @@ public slots:
      * \param b If true, go into standby mode. Else, active mode.
      */
 	virtual void sleep(bool b);
-    bool hwPrepareForExperiment(Experiment &exp);
+    virtual bool hwPrepareForExperiment(Experiment &exp);
     virtual QStringList forbiddenKeys() const { return {}; }
     virtual void beginAcquisition(){}
     virtual void endAcquisition(){}

@@ -5,7 +5,7 @@
 
 
 namespace BC::Store::Digi {
-static const QString name{"Name"};
+static const QString chName{"Name"};
 }
 
 namespace BC::Aux::IOB {

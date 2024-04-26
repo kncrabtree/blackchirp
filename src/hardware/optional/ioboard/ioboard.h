@@ -25,12 +25,13 @@ protected:
 private:
     AuxDataStorage::AuxDataMap readAuxData() override;
     AuxDataStorage::AuxDataMap readValidationData() override;
+    void writeSettings();
 
     inline static int d_count = 0;
 
     // HardwareObject interface
 public slots:
-    bool prepareForExperiment(Experiment &exp) override;
+    bool hwPrepareForExperiment(Experiment &exp) override final;
     IOBoardConfig getConfig() { return static_cast<IOBoardConfig&>(*this); }
 
     // HardwareObject interface

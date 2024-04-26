@@ -57,9 +57,14 @@ bool ExperimentFtmwDigitizerConfigPage::validate()
     if(mr && (numRec != numChirps))
         emit warning("Number of chirps does not match number of digitizer records.");
 
-    if(p_dc->numAnalogChecked() != 1)
+    if(p_dc->numAnalogChecked() < 1)
     {
         emit error("No FID channel selected.");
+        return false;
+    }
+    else if(p_dc->numAnalogChecked() > 1)
+    {
+        emit error("Only 1 FID channel may be selected.");
         return false;
     }
 

@@ -68,7 +68,7 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
         }
 
         chBox->setLayout(fl);
-        d_anChannelWidgets.append({chBox,fsBox,voBox});
+        d_anChannelWidgets.insert({i+1,{chBox,fsBox,voBox}});
         chvbl->addWidget(chBox,1);
     }
 
@@ -107,7 +107,7 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
 
             connect(readBox,&QCheckBox::toggled,roleBox,&QComboBox::setDisabled);
 
-            d_digChannelWidgets.append({readBox,roleBox});
+            d_digChannelWidgets.insert({i+1,{readBox,roleBox}});
         }
 
         dgl->setColumnStretch(0,0);
@@ -168,7 +168,7 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
     p_byteOrderBox = new QComboBox;
     p_byteOrderBox->addItem("Little Endian",DigitizerConfig::LittleEndian);
     p_byteOrderBox->addItem("Big Endian",DigitizerConfig::BigEndian);
-    p_byteOrderBox->setCurrentIndex(p_byteOrderBox->findData(s.get(bo,DigitizerConfig::LittleEndian)));
+    p_byteOrderBox->setCurrentIndex(p_byteOrderBox->findData(s.get(bo)));
 
     hfl->addRow("Record Length",p_recLengthBox);
     hfl->addRow("Sample Rate",p_sampleRateBox);
@@ -201,7 +201,7 @@ DigitizerConfigWidget::DigitizerConfigWidget(const QString widgetKey, const QStr
     p_triggerSlopeBox = new QComboBox;
     p_triggerSlopeBox->addItem("Rising Edge",DigitizerConfig::RisingEdge);
     p_triggerSlopeBox->addItem("Falling Edge",DigitizerConfig::FallingEdge);
-    p_triggerSlopeBox->setCurrentIndex(p_triggerSlopeBox->findData(s.get(trigSlope,DigitizerConfig::RisingEdge)));
+    p_triggerSlopeBox->setCurrentIndex(p_triggerSlopeBox->findData(s.get(trigSlope)));
 
     p_triggerDelayBox = new QDoubleSpinBox;
     p_triggerDelayBox->setDecimals(6);
@@ -337,7 +337,7 @@ DigitizerConfigWidget::~DigitizerConfigWidget()
 int DigitizerConfigWidget::numAnalogChecked() const
 {
     int out = 0;
-    for(auto &ch : d_anChannelWidgets)
+    for(auto &[_,ch] : d_anChannelWidgets)
     {
         if(ch.channelBox->isChecked())
             ++out;
@@ -373,16 +373,26 @@ int DigitizerConfigWidget::numRecords() const
 
 void DigitizerConfigWidget::setFromConfig(const DigitizerConfig &c)
 {
-    for(auto &ch : c.d_analogChannels)
+    for(auto &[k,ch] : c.d_analogChannels)
     {
-        d_anChannelWidgets[ch.first-1].channelBox->setChecked(true);
-        d_anChannelWidgets[ch.first-1].vOffsetBox->setValue(ch.second.offset);
-        d_anChannelWidgets[ch.first-1].fullScaleBox->setValue(ch.second.fullScale);
+        auto it = d_anChannelWidgets.find(k);
+        if(it != d_anChannelWidgets.end())
+        {
+            it->second.channelBox->setChecked(ch.enabled);
+            it->second.vOffsetBox->setValue(ch.offset);
+            it->second.fullScaleBox->setValue(ch.fullScale);
+        }
     }
 
 
-    for(auto &ch : c.d_digitalChannels)
-        d_digChannelWidgets[ch.first-1].readBox->setChecked(ch.second.input);
+    for(auto &[k,ch] : c.d_digitalChannels)
+    {
+        auto it = d_digChannelWidgets.find(k);
+        if(it != d_digChannelWidgets.end())
+        {
+            it->second.readBox->setChecked(ch.input);
+        }
+    }
 
      p_triggerSourceBox->setValue(c.d_triggerChannel);
      p_triggerDelayBox->setValue(c.d_triggerDelayUSec);
@@ -419,24 +429,25 @@ void DigitizerConfigWidget::setFromConfig(const DigitizerConfig &c)
 void DigitizerConfigWidget::toConfig(DigitizerConfig &c)
 {
     c.d_analogChannels.clear();
-    for(int i=0; i<d_anChannelWidgets.size(); ++i)
+    for(auto &[k,ch] : d_anChannelWidgets)
     {
-        auto &ch = d_anChannelWidgets.at(i);
-        if(ch.channelBox->isChecked())
-            c.d_analogChannels.insert_or_assign(i+1,DigitizerConfig::AnalogChannel{ch.fullScaleBox->value(),
-                                                                                 ch.vOffsetBox->value()});
+        c.d_analogChannels.insert_or_assign(
+                    k,DigitizerConfig::AnalogChannel{ch.channelBox->isChecked(),
+                                                     ch.fullScaleBox->value(),
+                                                     ch.vOffsetBox->value()});
     }
 
     c.d_digitalChannels.clear();
-    for(int i=0; i<d_digChannelWidgets.size(); ++i)
+    for(auto &[k,ch] : d_digChannelWidgets)
     {
-        auto &ch = d_digChannelWidgets.at(i);
         if(ch.readBox->isChecked())
-            c.d_digitalChannels.insert_or_assign(i+1,DigitizerConfig::DigitalChannel{true,-1});
+            c.d_digitalChannels.insert_or_assign(k,DigitizerConfig::DigitalChannel{true,true,-1});
         else
         {
             if(ch.roleBox->currentIndex() >= 0 && ch.roleBox->currentData().toInt() >= 0)
-                c.d_digitalChannels.insert_or_assign(i+1,DigitizerConfig::DigitalChannel{false,ch.roleBox->currentData().toInt()});
+                c.d_digitalChannels.insert_or_assign(k,DigitizerConfig::DigitalChannel{false,false,ch.roleBox->currentData().toInt()});
+            else
+                c.d_digitalChannels.insert_or_assign(k,DigitizerConfig::DigitalChannel{false,false,-1});
         }
     }
 
@@ -481,18 +492,18 @@ void DigitizerConfigWidget::configureAnalogBoxes()
     int checked = numAnalogChecked();
     if(checked < d_maxAnalogEnabled)
     {
-        for(auto &ch : d_anChannelWidgets)
+        for(auto &[_,ch] : d_anChannelWidgets)
             ch.channelBox->setEnabled(true);
     }
     else if(checked == d_maxAnalogEnabled)
     {
-        for(auto &ch : d_anChannelWidgets)
+        for(auto &[_,ch] : d_anChannelWidgets)
             ch.channelBox->setEnabled(ch.channelBox->isChecked());
     }
     else
     {
         checked = 0;
-        for(auto &ch : d_anChannelWidgets)
+        for(auto &[_,ch] : d_anChannelWidgets)
         {
             if(checked == d_maxAnalogEnabled)
             {

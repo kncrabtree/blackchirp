@@ -28,10 +28,14 @@ signals:
 
 public slots:
     virtual void readWaveform() =0;
+    virtual bool hwPrepareForExperiment(Experiment &exp) override final;
 
     // HardwareObject interface
 public slots:
     QStringList forbiddenKeys() const override;
+
+private:
+    void writeSettings();
 };
 
 #include BC_STR(BC_FTMWSCOPE_H)

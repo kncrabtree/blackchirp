@@ -171,10 +171,15 @@ bool HardwareObject::hwPrepareForExperiment(Experiment &exp)
 {
     if(!d_isConnected)
     {
-        if(d_critical)
+        if(!testConnection())
         {
-            if(!testConnection())
+            if(d_critical)
+            {
                 exp.d_errorString = QString("%1 is not connected").arg(d_name);
+                return false;
+            }
+            else
+                return true;
         }
     }
 
