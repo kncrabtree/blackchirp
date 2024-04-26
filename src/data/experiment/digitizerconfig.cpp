@@ -44,6 +44,7 @@ void DigitizerConfig::storeValues()
         storeArrayValue(dig,i,en,ch.enabled);
         storeArrayValue(dig,i,digInp,ch.input);
         storeArrayValue(dig,i,digRole,ch.role);
+        i++;
     }
 
     store(trigCh,d_triggerChannel);

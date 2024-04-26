@@ -25,6 +25,7 @@
 #include "experimenttemperaturecontrollerconfigpage.h"
 #include "experimentpressurecontrollerconfigpage.h"
 #include "experimentioboardconfigpage.h"
+#include "experimentvalidatorconfigpage.h"
 
 ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QString, QString> &hw, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent)
     : QDialog{parent}
@@ -118,6 +119,13 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
     addOptHwPages<ExperimentTemperatureControllerConfigPage>(BC::Key::TC::key,hw,expTypeItem);
     addOptHwPages<ExperimentPressureControllerConfigPage>(BC::Key::PController::key,hw,expTypeItem);
     addOptHwPages<ExperimentIOBoardConfigPage>(BC::Key::IOB::ioboard,hw,expTypeItem);
+
+    auto valp = new ExperimentValidatorConfigPage(p_exp,valKeys);
+    k = BC::Key::WizardVal::key;
+    i = p_configWidget->addWidget(valp);
+    d_pages.insert({k,{i,k,valp,true}});
+    auto valItem = new QTreeWidgetItem(expTypeItem,{valp->d_title});
+    valItem->setData(0,Qt::UserRole,k);
 
 
     connect(sp,&ExperimentTypePage::typeChanged,[=](){

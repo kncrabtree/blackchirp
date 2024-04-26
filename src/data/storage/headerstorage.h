@@ -192,7 +192,7 @@ protected:
         auto it = d_arrayValues.find(arrayKey);
         if(it != d_arrayValues.end())
         {
-            if(index <= it->second.size())
+            if(index < it->second.size())
             {
                 HeaderMap &m = it->second[index];
                 auto it2 = m.find(key);

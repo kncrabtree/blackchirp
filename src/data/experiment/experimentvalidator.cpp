@@ -1,6 +1,7 @@
 #include "experimentvalidator.h"
 
 #include <data/storage/blackchirpcsv.h>
+#include <QStringList>
 
 ExperimentValidator::ExperimentValidator() : HeaderStorage(BC::Store::Validator::key)
 {
@@ -20,7 +21,12 @@ bool ExperimentValidator::validate(const QString key, const QVariant val)
             double v = val.toDouble(&ok);
             if(ok)
             {
-                auto objKey = l.constFirst();
+                auto objKey = l.takeFirst();
+                bool iok = false;
+                auto index = l.at(0).toInt(&iok);
+                Q_UNUSED(index)
+                if(iok)
+                    objKey = objKey + "." + l.at(0);
                 auto valKey = l.constLast();
 
                 auto it = d_valMap.find(objKey);

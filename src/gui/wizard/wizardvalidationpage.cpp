@@ -81,21 +81,21 @@ int WizardValidationPage::nextId() const
 
 void WizardValidationPage::initializePage()
 {
-    auto model = p_validationView->model();
-    for(int i=model->rowCount()-1; i>=0; --i)
+    auto valModel = p_validationView->model();
+    for(int i=valModel->rowCount()-1; i>=0; --i)
     {
-        auto ok = model->data(model->index(i,0)).toString();
-        auto vk = model->data(model->index(i,1)).toString();
+        auto ok = valModel->data(valModel->index(i,0)).toString();
+        auto vk = valModel->data(valModel->index(i,1)).toString();
 
         auto it = d_validationKeys.find(ok);
         if(it == d_validationKeys.end())
         {
-            model->removeRow(i);
+            valModel->removeRow(i);
             continue;
         }
 
         if(!it->second.contains(vk))
-            model->removeRow(i);
+            valModel->removeRow(i);
     }
 
 }
