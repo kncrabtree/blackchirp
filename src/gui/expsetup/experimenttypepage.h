@@ -70,6 +70,7 @@ private:
     QCheckBox *p_flBox;
 
     void updateLifRanges();
+    bool d_hasPGen{false};
 #endif
 
     QSpinBox *p_auxDataIntervalBox, *p_backupBox, *p_ftmwShotsBox, *p_ftmwTargetDurationBox;

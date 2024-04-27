@@ -794,7 +794,7 @@ bool HardwareManager::setPGenLifDelay(double d)
 
 void HardwareManager::setLifLaserPos(double pos)
 {
-    auto ll = findHardware<LifLaser>(BC::Key::LifLaser::key);
+    auto ll = findHardware<LifLaser>(BC::Key::hwKey(BC::Key::LifLaser::key,0));
     if(!ll)
     {
         emit logMessage(QString("Could not set LIF Laser position because no laser is avaialble."),LogHandler::Error);
@@ -812,9 +812,9 @@ void HardwareManager::lifLaserSetComplete(double pos)
     emit lifSettingsComplete(pos > 0.0);
 }
 
-void HardwareManager::startLifConfigAcq(const LifDigitizerConfig &c)
+void HardwareManager::startLifConfigAcq(const LifConfig &c)
 {
-    auto ld = findHardware<LifScope>(BC::Key::LifDigi::lifScope);
+    auto ld = findHardware<LifScope>(BC::Key::hwKey(BC::Key::LifDigi::lifScope,0));
     if(!ld)
     {
         emit logMessage("Could not initialize LIF acquisition because no digitizer was found.",LogHandler::Error);

@@ -271,16 +271,6 @@ bool M4i2211x8::configure(const LifDigitizerConfig &c)
     return !errorCheck();
 }
 
-bool M4i2211x8::prepareForExperiment(Experiment &exp)
-{
-    if(configure(exp.lifConfig()->d_scopeConfig))
-    {
-        exp.lifConfig()->d_scopeConfig = static_cast<LifDigitizerConfig&>(*this);
-        return true;
-    }
-    return false;
-}
-
 void M4i2211x8::beginAcquisition()
 {
     startCard();

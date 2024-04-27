@@ -3,21 +3,17 @@
 
 #include <data/experiment/digitizerconfig.h>
 
-namespace BC::Key::Digi {
-static const QString lifDigi("LifDigitizer");
-}
-
 namespace BC::Store::Digi{
-static const QString lifKey("LifDigitizer");
 static const QString lifChannel("LifChannel");
 static const QString lifRefChannel("LifRefChannel");
 static const QString lifRefEnabled("LifRefEnabled");
+static const QString lifChannelOrder("LifChannelOrder");
 }
 
 class LifDigitizerConfig : public DigitizerConfig
 {
 public:
-    LifDigitizerConfig();
+    LifDigitizerConfig(const QString subKey);
 
     enum ChannelOrder {
         Sequential,

@@ -69,9 +69,6 @@ MainWindow::MainWindow(QWidget *parent) :
     d_hardware = p_hwm->currentHardware();
 
     qRegisterMetaType<QwtPlot::Axis>("QwtPlot::Axis");
-#ifdef BC_LIF
-    qRegisterMetaType<LifDigitizerConfig>("LifDigitizerConfig");
-#endif
 
     ui->setupUi(this);
     ui->rollingDurationBox->setValue(ui->rollingDataViewWidget->historyDuration());
@@ -513,15 +510,14 @@ bool MainWindow::runExperimentWizard(Experiment *exp, QuickExptDialog *qed)
         QMetaObject::invokeMethod(p_hwm,&HardwareManager::getClocks,Qt::BlockingQueuedConnection,&clocks);
 
 #ifdef BC_LIF
-    configureLifWidget(wiz.lifControlWidget());
+    //TODO
+    // configureLifWidget(wiz.lifControlWidget());
 #endif
 
     ExperimentSetupDialog d(exp,d_hardware,clocks,p_hwm->validationKeys(),this);
     if(d.exec() != QDialog::Accepted)
         return false;
 
-    ///TEMPORARY-- remove when new wizard complete
-    // return false;
     return true;
 }
 

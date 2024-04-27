@@ -134,11 +134,7 @@ private:
 
     //optional hardware data
     std::map<QString,std::shared_ptr<HeaderStorage>> d_optHwData;
-    // std::unique_ptr<IOBoardConfig> pu_iobCfg;
-    // std::unique_ptr<PulseGenConfig> pu_pGenCfg;
-    // std::unique_ptr<FlowConfig> pu_flowCfg;
-    // std::unique_ptr<PressureControllerConfig> pu_pcConfig;
-    // std::unique_ptr<TemperatureControllerConfig> pu_tcConfig;
+
 
     QString d_path;
 

@@ -132,22 +132,6 @@ bool VirtualLifScope::configure(const LifDigitizerConfig &c)
     return true;
 }
 
-bool VirtualLifScope::prepareForExperiment(Experiment &exp)
-{
-    d_enabledForExperiment = exp.lifEnabled();
-    if(!d_enabledForExperiment)
-        return true;
-
-    auto &config = exp.lifConfig()->d_scopeConfig;
-    config.d_channelOrder = LifDigitizerConfig::Sequential;
-
-    auto cfg = dynamic_cast<LifDigitizerConfig*>(this);
-    if(cfg)
-        *cfg = config;
-
-    return true;
-}
-
 void VirtualLifScope::beginAcquisition()
 {
     connect(p_timer,&QTimer::timeout,this,&VirtualLifScope::readWaveform);

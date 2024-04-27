@@ -8,8 +8,6 @@
 FtmwDigitizerConfigWidget::FtmwDigitizerConfigWidget(QWidget *parent) :
     DigitizerConfigWidget("FtmwDigitizerConfigWidget",BC::Key::hwKey(BC::Key::FtmwScope::ftmwScope,0),parent)
 {
-    SettingsStorage s(d_hwKey,Hardware);
-
 }
 
 void FtmwDigitizerConfigWidget::configureForChirp(int numChirps)

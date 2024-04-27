@@ -88,7 +88,7 @@ void LifDisplayWidget::prepareForExperiment(const Experiment &e)
     {
         ps_lifStorage = e.lifConfig()->storage();
         p_spectrogramPlot->prepareForExperiment(*e.lifConfig());
-        p_procWidget->initialize(e.lifConfig()->d_scopeConfig.d_recordLength,e.lifConfig()->d_scopeConfig.d_refEnabled);
+        p_procWidget->initialize(e.lifConfig()->scopeConfig().d_recordLength,e.lifConfig()->scopeConfig().d_refEnabled);
         p_procWidget->setAll(e.lifConfig()->d_procSettings);
         p_lifTracePlot->setNumAverages(e.lifConfig()->d_shotsPerPoint);
         d_delayReverse = e.lifConfig()->d_delayStepUs < 0.0;

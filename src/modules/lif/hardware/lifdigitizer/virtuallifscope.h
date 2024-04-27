@@ -31,7 +31,6 @@ protected:
 
     // HardwareObject interface
 public slots:
-    bool prepareForExperiment(Experiment &exp) override;
     void beginAcquisition() override;
     void endAcquisition() override;
 };

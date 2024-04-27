@@ -18,13 +18,17 @@ public:
 
 signals:
     void waveformRead(QVector<qint8>);
-    void configAcqComplete(LifDigitizerConfig,QPrivateSignal);
+    void configAcqComplete(QPrivateSignal);
 
 public slots:
-    virtual void startConfigurationAcquisition(const LifDigitizerConfig &c);
+    bool prepareForExperiment(Experiment &exp) override final;
+    virtual void startConfigurationAcquisition(const LifConfig &c);
 
     virtual void readWaveform() =0;
     virtual bool configure(const LifDigitizerConfig &c) =0;
+
+private:
+    void writeSettings();
 
 };
 

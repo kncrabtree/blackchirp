@@ -16,7 +16,7 @@
 #include <hardware/optional/ioboard/ioboardconfig.h>
 
 #ifdef BC_LIF
-#include <modules/lif/hardware/lifdigitizer/lifdigitizerconfig.h>
+#include <modules/lif/data/lifconfig.h>
 #endif
 
 class HardwareObject;
@@ -85,7 +85,7 @@ signals:
     void lifScopeShotAcquired(QVector<qint8>);
     void lifSettingsComplete(bool success = true);
     void lifLaserPosUpdate(double);
-    void lifConfigAcqStarted(LifDigitizerConfig);
+    void lifConfigAcqStarted();
     void lifLaserFlashlampUpdate(bool);
 #endif
 
@@ -153,7 +153,7 @@ public slots:
     bool setPGenLifDelay(double d);
     void setLifLaserPos(double pos);
     void lifLaserSetComplete(double pos);
-    void startLifConfigAcq(const LifDigitizerConfig &c);
+    void startLifConfigAcq(const LifConfig &c);
     void stopLifConfigAcq();
     double lifLaserPos();
     bool lifLaserFlashlampEnabled();

@@ -25,8 +25,8 @@ WizardLifConfigPage::WizardLifConfigPage(QWidget *parent) :
 
     auto *vbl = new QVBoxLayout;
 
-    p_lifControl = new LifControlWidget(this);
-    vbl->addWidget(p_lifControl,1);
+    // p_lifControl = new LifControlWidget(this);
+    // vbl->addWidget(p_lifControl,1);
 
     setLayout(vbl);
 }
@@ -37,9 +37,9 @@ WizardLifConfigPage::~WizardLifConfigPage()
 
 void WizardLifConfigPage::initializePage()
 {
-    auto e = getExperiment();
-    if(e->lifEnabled() && e->d_number > 0)
-        p_lifControl->setFromConfig(*e->lifConfig());
+    // auto e = getExperiment();
+    // if(e->lifEnabled() && e->d_number > 0)
+        // p_lifControl->setFromConfig(*e->lifConfig());
 }
 
 bool WizardLifConfigPage::validatePage()

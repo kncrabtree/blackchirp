@@ -63,6 +63,7 @@ public:
     quint64 d_objective{0};
 
     FtmwDigitizerConfig &scopeConfig() { return *ps_scopeConfig; }
+    const FtmwDigitizerConfig &scopeConfig() const { return std::as_const(*ps_scopeConfig); }
     RfConfig d_rfConfig;
 
     bool initialize() override;

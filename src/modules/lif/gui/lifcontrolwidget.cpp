@@ -32,7 +32,8 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
     dl->setWordWrap(true);
     vbl2->addWidget(dl);
 
-    p_digWidget = new DigitizerConfigWidget(BC::Key::LifControl::lifDigWidget,BC::Key::LifDigi::lifScope,dgb);
+    p_digWidget = new DigitizerConfigWidget(BC::Key::LifControl::lifDigWidget,
+                                            BC::Key::hwKey(BC::Key::LifDigi::lifScope,0),dgb);
     vbl2->addWidget(p_digWidget);
 
     auto hbl2 = new QHBoxLayout;
@@ -102,7 +103,8 @@ LifControlWidget::~LifControlWidget()
 
 void LifControlWidget::startAcquisition()
 {
-    LifDigitizerConfig cfg;
+
+    auto &cfg = d_cfg.scopeConfig();
     p_digWidget->toConfig(cfg);
     auto it = cfg.d_analogChannels.find(cfg.d_refChannel);
     if(it != cfg.d_analogChannels.end())
@@ -118,7 +120,7 @@ void LifControlWidget::startAcquisition()
     p_startAcqButton->setEnabled(false);
     p_stopAcqButton->setEnabled(true);
 
-    emit startSignal(cfg);
+    emit startSignal(d_cfg);
 }
 
 void LifControlWidget::stopAcquisition()
@@ -131,10 +133,8 @@ void LifControlWidget::stopAcquisition()
     emit stopSignal();
 }
 
-void LifControlWidget::acquisitionStarted(const LifDigitizerConfig &c)
+void LifControlWidget::acquisitionStarted()
 {
-    d_cfg = c;
-    p_digWidget->setFromConfig(c);
     p_lifTracePlot->reset();
     p_lifTracePlot->setNumAverages(p_avgBox->value());
     p_lifTracePlot->setAllProcSettings(p_procWidget->getSettings());
@@ -143,7 +143,7 @@ void LifControlWidget::acquisitionStarted(const LifDigitizerConfig &c)
 
 void LifControlWidget::newWaveform(const QVector<qint8> b)
 {
-    LifTrace l(d_cfg,b,0,0);
+    LifTrace l(d_cfg.scopeConfig(),b,0,0);
     p_lifTracePlot->processTrace(l);
 }
 
@@ -159,22 +159,22 @@ void LifControlWidget::setFlashlamp(bool en)
 
 void LifControlWidget::setFromConfig(const LifConfig &cfg)
 {
-    d_cfg = cfg.d_scopeConfig;
-    p_digWidget->setFromConfig(cfg.d_scopeConfig);
+    p_digWidget->setFromConfig(cfg.scopeConfig());
     p_avgBox->setValue(cfg.d_shotsPerPoint);
     p_procWidget->setAll(cfg.d_procSettings);
+    d_cfg = cfg;
 }
 
 void LifControlWidget::toConfig(LifConfig &cfg)
 {
-    p_digWidget->toConfig(cfg.d_scopeConfig);
+    p_digWidget->toConfig(cfg.scopeConfig());
     cfg.d_shotsPerPoint = p_avgBox->value();
     cfg.d_procSettings = p_procWidget->getSettings();
-    auto it = cfg.d_scopeConfig.d_analogChannels.find(cfg.d_scopeConfig.d_refChannel);
-    if(it != cfg.d_scopeConfig.d_analogChannels.end())
-        cfg.d_scopeConfig.d_refEnabled = true;
+    auto it = cfg.scopeConfig().d_analogChannels.find(cfg.scopeConfig().d_refChannel);
+    if(it != cfg.scopeConfig().d_analogChannels.end())
+        cfg.scopeConfig().d_refEnabled = true;
     else
-        cfg.d_scopeConfig.d_refEnabled = false;
+        cfg.scopeConfig().d_refEnabled = false;
 }
 
 

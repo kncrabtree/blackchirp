@@ -17,6 +17,12 @@
 
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
 
+#ifdef BC_LIF
+#include <hardware/core/hardwaremanager.h>
+#include <hardware/optional/pulsegenerator/pulsegenerator.h>
+#include <modules/lif/hardware/liflaser/liflaser.h>
+#endif
+
 using namespace BC::Key::WizStart;
 
 ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
@@ -170,12 +176,10 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     auto dl = new QGridLayout;
     dlg->setLayout(dl);
 
-    SettingsStorage pgs(BC::Key::PGen::key,SettingsStorage::Hardware);
-
     p_dStartBox = new QDoubleSpinBox(this);
     p_dStartBox->setDecimals(3);
     p_dStartBox->setKeyboardTracking(false);
-    p_dStartBox->setRange(pgs.get(BC::Key::PGen::minDelay,0.0),pgs.get(BC::Key::PGen::maxDelay,100000.0));
+    p_dStartBox->setRange(0,100000.0);
     p_dStartBox->setSuffix(QString(" ").append(BC::Unit::us));
     p_dStartBox->setValue(get(lifDelayStart,p_dStartBox->minimum()));
     registerGetter(lifDelayStart,p_dStartBox,&QDoubleSpinBox::value);
@@ -196,7 +200,7 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
 
     p_dEndBox = new QDoubleSpinBox(this);
     p_dEndBox->setDecimals(3);
-    p_dEndBox->setRange(pgs.get(BC::Key::PGen::minDelay,0.0),pgs.get(BC::Key::PGen::maxDelay,100000.0));
+    p_dEndBox->setRange(0,100000.0);
     p_dEndBox->setSuffix(QString(" ").append(BC::Unit::us));
     p_dEndBox->setReadOnly(true);
     p_dEndBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
@@ -217,7 +221,7 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     auto ll = new QGridLayout;
     llg->setLayout(ll);
 
-    SettingsStorage lset(BC::Key::LifLaser::key,SettingsStorage::Hardware);
+    SettingsStorage lset(BC::Key::hwKey(BC::Key::LifLaser::key,0),SettingsStorage::Hardware);
 
     p_lStartBox = new QDoubleSpinBox(this);
     p_lStartBox->setDecimals(lset.get(BC::Key::LifLaser::decimals,2));
@@ -306,6 +310,21 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     connect(p_lNumStepsBox,qOverload<int>(&QSpinBox::valueChanged),this,&ExperimentTypePage::updateLifRanges);
 
     hbl->addWidget(p_lif);
+
+    SettingsStorage s(BC::Key::hw);
+    for(uint i=0; i<s.getArraySize(BC::Key::allHw); i++)
+    {
+        auto hwk = getArrayValue(BC::Key::allHw,i,BC::Key::HW::key,QString(""));
+        auto l = hwk.split(BC::Key::hwIndexSep);
+        if(!l.isEmpty())
+        {
+            if(l.constFirst() == BC::Key::PGen::key)
+            {
+                d_hasPGen = true;
+                break;
+            }
+        }
+    }
 #endif
 
     auto *vbl = new QVBoxLayout();
@@ -318,8 +337,8 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     {
 
 #ifdef BC_LIF
-        p_ftmw->setChecked(e->ftmwEnabled());
-        p_lif->setChecked(e->lifEnabled());
+        p_ftmw->setChecked(p_exp->ftmwEnabled());
+        p_lif->setChecked(p_exp->lifEnabled());
 #endif
         if(p_exp->ftmwEnabled())
         {
@@ -393,6 +412,12 @@ bool ExperimentTypePage::validate()
     p_completeModeBox->setEnabled(p_ftmw->isChecked());
     if(!out)
         emit error("Either FTMW or LIF must be enabled.");
+
+    if(!d_hasPGen && p_dNumStepsBox->value() > 1)
+    {
+        out = false;
+        emit error("A pulse generator is required to step the LIF delay.");
+    }
 #endif
 
     return out;
@@ -405,12 +430,6 @@ void ExperimentTypePage::apply()
 #ifdef BC_LIF
      if(p_lif->isChecked())
      {
-         auto l = wizard()->pageIds();
-         if(!l.contains(ExperimentWizard::PulseConfigPage) && p_dNumStepsBox->value() > 1)
-         {
-             QMessageBox::warning(this,QString("No Pulse Generator Found"),QString("Blackchirp cannot control the LIF delay because there is no pulse generator available.\n\nIf you would like to proceed anyways, please set the number of delay points to 1."));
-             return false;
-         }
          e->enableLif();
 
          e->lifConfig()->d_delayStartUs = p_dStartBox->value();
