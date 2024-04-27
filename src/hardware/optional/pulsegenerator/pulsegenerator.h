@@ -45,6 +45,7 @@ public slots:
     bool setRepRate(double d);
     bool setPulseMode(PulseGenConfig::PGenMode mode);
     bool setPulseEnabled(bool en);
+    bool hasRole(PulseGenConfig::Role r);
 
 
 #ifdef BC_LIF

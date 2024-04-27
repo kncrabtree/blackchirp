@@ -81,7 +81,7 @@ public:
     QVariant setting(Role role, const Setting s) const;
     ChannelConfig settings(const int index) const;
     QVector<Role> activeRoles() const;
-    int channelForRole(Role role) const;
+    QVector<int> channelsForRole(Role role) const;
     double channelStart(const int index) const;
     bool testCircularSync(const int index, int newSyncCh);
 

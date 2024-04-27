@@ -35,24 +35,33 @@ bool ExperimentPulseGenConfigPage::validate()
     if(!c.d_pulseEnabled)
         emit warning(QString("%1 is disabled.").arg(d_title));
 
-    auto gasCh = c.channelForRole(PulseGenConfig::Gas);
-    if(gasCh >= 0 && !c.d_channels.at(gasCh).enabled)
-        emit warning(QString("Gas channel on %1 is disabled.").arg(d_title));
+    auto gasCh = c.channelsForRole(PulseGenConfig::Gas);
+    for(auto ch : gasCh)
+    {
+        if(!c.d_channels.at(ch).enabled)
+            emit warning(QString("Gas channel on %1 is disabled.").arg(d_title));
+    }
 
     if(p_exp->ftmwEnabled())
     {
-        auto awgCh = c.channelForRole(PulseGenConfig::AWG);
-        if(awgCh >= 0 && !c.d_channels.at(awgCh).enabled)
-            emit warning(QString("AWG channel on %1 is disabled.").arg(d_title));
-
-        auto ampCh = c.channelForRole(PulseGenConfig::Amp);
-        if(ampCh >= 0 && !c.d_channels.at(ampCh).enabled)
-            emit warning(QString("Amp channel on %1 is disabled.").arg(d_title));
-
-        auto protCh = c.channelForRole(PulseGenConfig::Prot);
-        if(protCh >= 0)
+        auto awgCh = c.channelsForRole(PulseGenConfig::AWG);
+        for(auto ch : awgCh)
         {
-            if(!c.d_channels.at(protCh).enabled)
+            if(!c.d_channels.at(ch).enabled)
+            emit warning(QString("AWG channel on %1 is disabled.").arg(d_title));
+        }
+
+        auto ampCh = c.channelsForRole(PulseGenConfig::Amp);
+        for(auto ch : ampCh)
+        {
+            if(!c.d_channels.at(ch).enabled)
+            emit warning(QString("Amp channel on %1 is disabled.").arg(d_title));
+        }
+
+        auto protCh = c.channelsForRole(PulseGenConfig::Prot);
+        for(auto ch : protCh)
+        {
+            if(!c.d_channels.at(ch).enabled)
             {
                 emit error(QString("Protection channel on %1 is disabled.").arg(d_title));
                 out = false;
@@ -68,11 +77,14 @@ bool ExperimentPulseGenConfigPage::validate()
 #ifdef BC_LIF
     if(p_exp->lifEnabled())
     {
-        auto lifCh = c.channelForRole(PulseGenConfig::LIF);
-        if(lifCh >= 0 && !c.d_channels.at(lifCh).enabled)
+        auto lifCh = c.channelsForRole(PulseGenConfig::LIF);
+        for(auto ch : lifCh)
         {
-            emit error(QString("LIF channel on %1 is disabled.").arg(d_title));
-            out = false;
+            if(!c.d_channels.at(ch).enabled)
+            {
+                emit error(QString("LIF channel on %1 is disabled.").arg(d_title));
+                out = false;
+            }
         }
     }
 #endif

@@ -509,12 +509,12 @@ bool MainWindow::runExperimentWizard(Experiment *exp, QuickExptDialog *qed)
     else
         QMetaObject::invokeMethod(p_hwm,&HardwareManager::getClocks,Qt::BlockingQueuedConnection,&clocks);
 
+    ExperimentSetupDialog d(exp,d_hardware,clocks,p_hwm->validationKeys(),this);
+
 #ifdef BC_LIF
-    //TODO
-    // configureLifWidget(wiz.lifControlWidget());
+    configureLifWidget(d.lifControlWidget());
 #endif
 
-    ExperimentSetupDialog d(exp,d_hardware,clocks,p_hwm->validationKeys(),this);
     if(d.exec() != QDialog::Accepted)
         return false;
 
@@ -775,12 +775,7 @@ void MainWindow::launchLifConfigDialog()
     auto w = new LifControlWidget(d);
     configureLifWidget(w);
 
-
-//    auto lbl = new QLabel("TODO");
-//    lbl->setWordWrap(true);
-
     auto vbl = new QVBoxLayout;
-//    vbl->addWidget(lbl);
     vbl->addWidget(w);
 
     auto bb = new QDialogButtonBox(QDialogButtonBox::Close,d);
@@ -802,17 +797,20 @@ void MainWindow::launchLifConfigDialog()
 
 void MainWindow::configureLifWidget(LifControlWidget *w)
 {
-    connect(w,&LifControlWidget::startSignal,p_hwm,&HardwareManager::startLifConfigAcq);
-    connect(p_hwm,&HardwareManager::lifConfigAcqStarted,w,&LifControlWidget::acquisitionStarted);
-    connect(w,&LifControlWidget::stopSignal,p_hwm,&HardwareManager::stopLifConfigAcq);
-    connect(p_hwm,&HardwareManager::lifScopeShotAcquired,w,&LifControlWidget::newWaveform);
-    connect(w,&LifControlWidget::changeLaserPosSignal,p_hwm,&HardwareManager::setLifLaserPos);
-    connect(p_hwm,&HardwareManager::lifLaserPosUpdate,w,&LifControlWidget::setLaserPosition);
-    connect(w,&LifControlWidget::changeLaserFlashlampSignal,p_hwm,&HardwareManager::setLifLaserFlashlampEnabled);
-    connect(p_hwm,&HardwareManager::lifLaserFlashlampUpdate,w,&LifControlWidget::setFlashlamp);
+    if(w)
+    {
+        connect(w,&LifControlWidget::startSignal,p_hwm,&HardwareManager::startLifConfigAcq);
+        connect(p_hwm,&HardwareManager::lifConfigAcqStarted,w,&LifControlWidget::acquisitionStarted);
+        connect(w,&LifControlWidget::stopSignal,p_hwm,&HardwareManager::stopLifConfigAcq);
+        connect(p_hwm,&HardwareManager::lifScopeShotAcquired,w,&LifControlWidget::newWaveform);
+        connect(w,&LifControlWidget::changeLaserPosSignal,p_hwm,&HardwareManager::setLifLaserPos);
+        connect(p_hwm,&HardwareManager::lifLaserPosUpdate,w,&LifControlWidget::setLaserPosition);
+        connect(w,&LifControlWidget::changeLaserFlashlampSignal,p_hwm,&HardwareManager::setLifLaserFlashlampEnabled);
+        connect(p_hwm,&HardwareManager::lifLaserFlashlampUpdate,w,&LifControlWidget::setFlashlamp);
 
-    QMetaObject::invokeMethod(p_hwm,&HardwareManager::lifLaserPos,Qt::BlockingQueuedConnection);
-    QMetaObject::invokeMethod(p_hwm,&HardwareManager::lifLaserFlashlampEnabled,Qt::BlockingQueuedConnection);
+        QMetaObject::invokeMethod(p_hwm,&HardwareManager::lifLaserPos,Qt::BlockingQueuedConnection);
+        QMetaObject::invokeMethod(p_hwm,&HardwareManager::lifLaserFlashlampEnabled,Qt::BlockingQueuedConnection);
+    }
 
 }
 #endif

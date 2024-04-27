@@ -307,8 +307,6 @@ void PulseConfigWidget::launchChannelConfig(int ch)
     if(ch < 0 || ch >= d_widgetList.size())
         return;
 
-    updateRoles();
-
     QDialog d(this);
     d.setWindowTitle(QString("Configure Pulse Channel %1").arg(ch+1));
 
@@ -432,7 +430,7 @@ void PulseConfigWidget::newSetting(QString key, int index, PulseGenConfig::Setti
             d_widgetList.at(i).syncBox->setItemText(index+1,val.toString());
         break;
     case PulseGenConfig::RoleSetting:
-        updateRoles();
+        d_widgetList.at(index).roleBox->setCurrentValue(val.value<PulseGenConfig::Role>());
         break;
     case PulseGenConfig::ModeSetting:
         d_widgetList.at(index).modeBox->setCurrentValue(val.value<PulseGenConfig::ChannelMode>());
@@ -551,25 +549,6 @@ void PulseConfigWidget::updateFromSettings()
 
     p_repRateBox->setRange(s.get(BC::Key::PGen::minRepRate,0.01),s.get(BC::Key::PGen::maxRepRate,1e5));
 
-}
-
-void PulseConfigWidget::updateRoles()
-{
-    auto active = ps_config->activeRoles();
-
-    for(int i=0; i<d_widgetList.size(); i++)
-    {
-        auto rb = d_widgetList.at(i).roleBox;
-        for(int j=0; j<rb->count(); j++)
-        {
-            auto item = rb->itemAt(j);
-            if(item)
-            {
-                bool en = !active.contains(rb->value(j));
-                item->setEnabled(en);
-            }
-        }
-    }
 }
 
 QSize PulseConfigWidget::sizeHint() const

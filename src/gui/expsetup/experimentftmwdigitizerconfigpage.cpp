@@ -73,6 +73,9 @@ bool ExperimentFtmwDigitizerConfigPage::validate()
 
 void ExperimentFtmwDigitizerConfigPage::apply()
 {
-    p_dc->toConfig(p_exp->ftmwConfig()->scopeConfig());
-    p_exp->ftmwConfig()->scopeConfig().d_fidChannel = p_exp->ftmwConfig()->scopeConfig().d_analogChannels.cbegin()->first;
+    if(isEnabled() && p_exp->ftmwEnabled())
+    {
+        p_dc->toConfig(p_exp->ftmwConfig()->scopeConfig());
+        p_exp->ftmwConfig()->scopeConfig().d_fidChannel = p_exp->ftmwConfig()->scopeConfig().d_analogChannels.cbegin()->first;
+    }
 }

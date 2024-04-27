@@ -73,7 +73,6 @@ public slots:
 private:
     QString d_key;
     bool d_wizardMode{false};
-    void updateRoles();
     QList<ChWidgets> d_widgetList;
     PulsePlot *p_pulsePlot;
     QDoubleSpinBox *p_repRateBox;

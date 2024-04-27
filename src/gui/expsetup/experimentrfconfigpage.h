@@ -7,7 +7,7 @@ class RfConfigWidget;
 
 namespace BC::Key::WizRf {
 static const QString key{"WizardRfConfigPage"};
-static const QString title{"Rf Configuration"};
+static const QString title{"RF Configuration"};
 }
 
 class ExperimentRfConfigPage : public ExperimentConfigPage

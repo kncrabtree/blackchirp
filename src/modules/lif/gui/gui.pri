@@ -3,6 +3,7 @@
 FORMS +=
 
 HEADERS += \
+    $$PWD/experimentlifconfigpage.h \
     $$PWD/lifcontrolwidget.h \
     $$PWD/lifdisplaywidget.h \
     $$PWD/liflaserstatusbox.h \
@@ -14,6 +15,7 @@ HEADERS += \
     $$PWD/wizardlifconfigpage.h
 
 SOURCES += \
+    $$PWD/experimentlifconfigpage.cpp \
     $$PWD/lifcontrolwidget.cpp \
     $$PWD/lifdisplaywidget.cpp \
     $$PWD/liflaserstatusbox.cpp \

@@ -99,6 +99,7 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
 
 LifControlWidget::~LifControlWidget()
 {
+    emit stopSignal();
 }
 
 void LifControlWidget::startAcquisition()

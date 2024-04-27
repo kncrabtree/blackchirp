@@ -75,5 +75,6 @@ bool ExperimentRfConfigPage::validate()
 
 void ExperimentRfConfigPage::apply()
 {
-    p_rfc->toRfConfig(p_exp->ftmwConfig()->d_rfConfig);
+    if(isEnabled() && p_exp->ftmwEnabled())
+        p_rfc->toRfConfig(p_exp->ftmwConfig()->d_rfConfig);
 }

@@ -17,11 +17,19 @@ class Experiment;
 class ExperimentConfigPage;
 class QTreeWidgetItem;
 
+#ifdef BC_LIF
+class LifControlWidget;
+#endif
+
 class ExperimentSetupDialog : public QDialog
 {
     Q_OBJECT
 public:
     explicit ExperimentSetupDialog(Experiment *exp, const std::map<QString,QString> &hw, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent = nullptr);
+
+#ifdef BC_LIF
+    LifControlWidget *lifControlWidget();
+#endif
 
 signals:
 

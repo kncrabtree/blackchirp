@@ -108,15 +108,16 @@ QVector<PulseGenConfig::Role> PulseGenConfig::activeRoles() const
     return out;
 }
 
-int PulseGenConfig::channelForRole(Role role) const
+QVector<int> PulseGenConfig::channelsForRole(Role role) const
 {
+    QVector<int> out;
     for(int i=0; i<d_channels.size(); i++)
     {
         if(d_channels.at(i).role == role)
-            return i;
+            out << i;
     }
 
-    return -1;
+    return out;
 }
 
 double PulseGenConfig::channelStart(const int index) const

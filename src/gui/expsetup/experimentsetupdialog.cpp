@@ -27,6 +27,10 @@
 #include "experimentioboardconfigpage.h"
 #include "experimentvalidatorconfigpage.h"
 
+#ifdef BC_LIF
+#include <modules/lif/gui/experimentlifconfigpage.h>
+#endif
+
 ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QString, QString> &hw, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent)
     : QDialog{parent}
 {
@@ -114,6 +118,17 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
 
     auto [ftdp,ftdpItem] = addConfigPage<ExperimentFtmwDigitizerConfigPage>(BC::Key::WizFtDig::key,rfItem,ften);
 
+#ifdef BC_LIF
+    auto lifItem = new QTreeWidgetItem(expTypeItem,{"LIF"});
+    en = sp->lifEnabled();
+    lifItem->setDisabled(!en);
+    lifItem->setData(0,Qt::UserRole,QString(""));
+
+    auto [lifp,lifpItem] = addConfigPage<ExperimentLifConfigPage>(BC::Key::WizLif::key,lifItem,en);
+
+
+#endif
+
     addOptHwPages<ExperimentPulseGenConfigPage>(BC::Key::PGen::key,hw,expTypeItem);
     addOptHwPages<ExperimentFlowConfigPage>(BC::Key::Flow::flowController,hw,expTypeItem);
     addOptHwPages<ExperimentTemperatureControllerConfigPage>(BC::Key::TC::key,hw,expTypeItem);
@@ -139,6 +154,10 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
         d_pages[chp->d_key].enabled = f;
         d_pages[ftdp->d_key].enabled = f;
 
+#ifdef BC_LIF
+        d_pages[lifp->d_key].enabled = sp->lifEnabled();
+#endif
+
         for( auto &[kk,pp] : d_pages)
             pp.page->setEnabled(pp.enabled);
 
@@ -158,6 +177,14 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
 
     connect(p_navTree,&QTreeWidget::currentItemChanged,this,&ExperimentSetupDialog::pageChanged);
 }
+
+#ifdef BC_LIF
+LifControlWidget *ExperimentSetupDialog::lifControlWidget()
+{
+    auto p = dynamic_cast<ExperimentLifConfigPage*>(d_pages[BC::Key::WizLif::key].page);
+    return p == nullptr ? nullptr : p->lifControlWidget();
+}
+#endif
 
 void ExperimentSetupDialog::pageChanged(QTreeWidgetItem *newItem, QTreeWidgetItem *prevItem)
 {

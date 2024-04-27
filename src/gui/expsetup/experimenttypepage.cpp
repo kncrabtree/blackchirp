@@ -311,20 +311,6 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
 
     hbl->addWidget(p_lif);
 
-    SettingsStorage s(BC::Key::hw);
-    for(uint i=0; i<s.getArraySize(BC::Key::allHw); i++)
-    {
-        auto hwk = getArrayValue(BC::Key::allHw,i,BC::Key::HW::key,QString(""));
-        auto l = hwk.split(BC::Key::hwIndexSep);
-        if(!l.isEmpty())
-        {
-            if(l.constFirst() == BC::Key::PGen::key)
-            {
-                d_hasPGen = true;
-                break;
-            }
-        }
-    }
 #endif
 
     auto *vbl = new QVBoxLayout();
@@ -413,11 +399,14 @@ bool ExperimentTypePage::validate()
     if(!out)
         emit error("Either FTMW or LIF must be enabled.");
 
-    if(!d_hasPGen && p_dNumStepsBox->value() > 1)
+#ifndef BC_PGEN
+    if(p_dNumStepsBox->value() > 1)
     {
         out = false;
         emit error("A pulse generator is required to step the LIF delay.");
     }
+#endif
+
 #endif
 
     return out;

@@ -151,7 +151,7 @@ public slots:
 #ifdef BC_LIF
     void setLifParameters(double delay, double pos);
     bool setPGenLifDelay(double d);
-    void setLifLaserPos(double pos);
+    bool setLifLaserPos(double pos);
     void lifLaserSetComplete(double pos);
     void startLifConfigAcq(const LifConfig &c);
     void stopLifConfigAcq();
