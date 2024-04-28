@@ -30,11 +30,12 @@ GasFlowDisplayBox::GasFlowDisplayBox(const QString key, QWidget *parent) : Hardw
     gl->addWidget(p_pressureBox,0,1);
     gl->addWidget(p_pressureLed,0,2);
 
-    SettingsStorage fc(flowController,SettingsStorage::Hardware);
+    SettingsStorage fc(key,SettingsStorage::Hardware);
     int n = fc.get(flowChannels,4);
     for(int i=0; i<n; ++i)
     {
-        auto nameLabel = new QLabel(QString("Ch%1").arg(i+1));
+        auto n = fc.getArrayValue(channels,i,chName,QString("Ch%1").arg(i+1));
+        auto nameLabel = new QLabel(n);
         nameLabel->setMinimumWidth(QFontMetrics(QFont(QString("sans-serif"))).horizontalAdvance(QString("MMMMMMMM")));
         nameLabel->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
 
@@ -61,7 +62,6 @@ GasFlowDisplayBox::GasFlowDisplayBox(const QString key, QWidget *parent) : Hardw
 void GasFlowDisplayBox::applySettings()
 {
     SettingsStorage fc(d_key,SettingsStorage::Hardware);
-    SettingsStorage gc(BC::Key::GasControl::key.arg(d_key).arg(fc.get(BC::Key::HW::subKey,"virtual").toString()));
 
     p_pressureBox->setDecimals(fc.get(pDec,3));
     p_pressureBox->setRange(-fc.get(pMax,10.0),fc.get(pMax,10.0));
@@ -73,13 +73,6 @@ void GasFlowDisplayBox::applySettings()
         b->setDecimals(fc.getArrayValue(channels,i,chDecimals,2));
         b->setRange(-fc.getArrayValue(channels,i,chMax,10000.0),fc.getArrayValue(channels,i,chMax,10000.0));
         b->setSuffix(QString(" ")+fc.getArrayValue(channels,i,chUnits,QString("")));
-
-        auto lbl = std::get<0>(d_flowWidgets.at(i));
-        auto name = gc.getArrayValue(BC::Key::GasControl::channels,i,BC::Key::GasControl::gasName,QString(""));
-        if(name.isEmpty())
-            lbl->setText(QString("Ch%1").arg(i+1));
-        else
-            lbl->setText(name);
     }
 
 }

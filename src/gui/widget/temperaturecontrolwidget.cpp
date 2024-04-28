@@ -27,7 +27,7 @@ TemperatureControlWidget::TemperatureControlWidget(const TemperatureControllerCo
     for(uint i=0; i<numChannels; ++i)
     {
         auto le = new QLineEdit(this);
-        le->setText(getArrayValue(BC::Key::TCW::channels,i,BC::Key::TCW::chName,QString("")));
+        le->setText(cfg.channelName(i));
         connect(le,&QLineEdit::editingFinished,[this,le,i]{
             emit channelNameChanged(d_config.headerKey(),i,le->text());
         });
@@ -51,12 +51,6 @@ TemperatureControlWidget::TemperatureControlWidget(const TemperatureControllerCo
 
 TemperatureControlWidget::~TemperatureControlWidget()
 {
-    using namespace BC::Key::TCW;
-    setArray(channels,{});
-    std::vector<SettingsMap> v;
-    for(std::size_t i=0; i<d_channelWidgets.size(); ++i)
-        v.push_back({{chName,d_channelWidgets[i].le->text()}});
-    setArray(channels,v);
 }
 
 TemperatureControllerConfig &TemperatureControlWidget::toConfig()
@@ -81,7 +75,13 @@ void TemperatureControlWidget::setFromConfig(const TemperatureControllerConfig &
     for(uint i=0; i<cfg.numChannels(); ++i)
     {
         if( (std::size_t)i < d_channelWidgets.size())
+        {
+            d_channelWidgets.at(i).le->blockSignals(true);
+            d_channelWidgets.at(i).le->setText(cfg.channelName(i));
+            d_channelWidgets.at(i).le->blockSignals(false);
+
             setChannelEnabled(cfg.headerKey(),i,cfg.channelEnabled(i));
+        }
     }
 
     d_config = cfg;

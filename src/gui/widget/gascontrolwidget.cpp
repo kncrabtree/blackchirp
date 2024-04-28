@@ -33,15 +33,10 @@ GasControlWidget::GasControlWidget(const FlowConfig &cfg, QWidget *parent) :
     auto flowChannels = fc.get(BC::Key::Flow::flowChannels,4);
     for(int i=0; i<flowChannels; ++i)
     {
-        if((std::size_t) i >= getArraySize(channels))
-            appendArrayMap(channels,{});
-
-
         auto nameEdit = new QLineEdit;
-        nameEdit->setText(getArrayValue(channels,i,gasName,QString("")));
+        nameEdit->setText(fc.getArrayValue(BC::Key::Flow::channels,i,BC::Key::Flow::chName,QString("")));
         nameEdit->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Preferred);
         connect(nameEdit,&QLineEdit::editingFinished,[this,nameEdit,i](){
-            setArrayValue(channels,i,gasName,nameEdit->text(),true);
             emit nameUpdate(d_config.headerKey(),i,nameEdit->text());
         });
 

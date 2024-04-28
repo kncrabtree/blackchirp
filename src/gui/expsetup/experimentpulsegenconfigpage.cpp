@@ -81,10 +81,7 @@ bool ExperimentPulseGenConfigPage::validate()
         for(auto ch : lifCh)
         {
             if(!c.d_channels.at(ch).enabled)
-            {
-                emit error(QString("LIF channel on %1 is disabled.").arg(d_title));
-                out = false;
-            }
+                emit warning(QString("LIF channel on %1 will be enabled automatically.").arg(d_title));
         }
     }
 #endif

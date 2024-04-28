@@ -761,6 +761,18 @@ bool ZoomPanPlot::eventFilter(QObject *obj, QEvent *ev)
                 d_config.zoomXLock = false;
             }
         }
+        else if(ev->type() == QEvent::Leave)
+        {
+            auto me = dynamic_cast<QMouseEvent*>(ev);
+            if(me)
+            {
+                if(me->buttons() & Qt::LeftButton)
+                {
+                    p_zoomerLB->zoom(1);
+                    p_zoomerRT->zoom(1);
+                }
+            }
+        }
     }
 
     return QwtPlot::eventFilter(obj,ev);

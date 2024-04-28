@@ -244,8 +244,8 @@ QVector<QPointF> LifDisplayWidget::delaySlice(int laserIndex) const
     auto lp = ps_lifStorage->d_laserPoints;
     auto dp = ps_lifStorage->d_delayPoints;
     QVector<QPointF> out(dp);
-    auto min = p_spectrogramPlot->getlMin();
-    auto dx = p_spectrogramPlot->getldx();
+    auto min = p_spectrogramPlot->getdMin();
+    auto dx = p_spectrogramPlot->getddx();
     for(int i=0; i<out.size(); i++)
         out[i] = {min+i*dx,d_currentIntegratedData.at(laserIndex + i*lp)};
 

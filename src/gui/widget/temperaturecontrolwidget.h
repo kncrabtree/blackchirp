@@ -11,8 +11,6 @@ class QPushButton;
 
 namespace BC::Key::TCW {
 static const QString key{"TemperatureControlWidget"};
-static const QString channels{"channels"};
-static const QString chName{"name"};
 }
 
 class TemperatureControlWidget : public QWidget, public SettingsStorage

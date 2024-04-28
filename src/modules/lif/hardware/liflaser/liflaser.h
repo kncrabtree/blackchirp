@@ -35,6 +35,14 @@ private:
 
     //This function should return whether setting was successful, not whether it's enabled
     virtual bool setFl(bool en) =0;
+
+    bool d_autoDisable{false};
+
+    // HardwareObject interface
+public slots:
+    bool hwPrepareForExperiment(Experiment &exp) override final;
+    void beginAcquisition() override final;
+    void endAcquisition() override final;
 };
 
 

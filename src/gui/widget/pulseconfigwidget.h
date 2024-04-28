@@ -24,11 +24,9 @@ class QSpinBox;
 
 namespace BC::Key::PulseWidget {
 static const QString key{"PulseWidget"};
-static const QString name{"name"};
 static const QString channels{"channels"};
 static const QString delayStep{"delayStepUs"};
 static const QString widthStep{"widthStepUs"};
-static const QString role{"role"};
 }
 
 class PulseConfigWidget : public QWidget, public SettingsStorage

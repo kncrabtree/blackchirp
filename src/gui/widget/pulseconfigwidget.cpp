@@ -114,7 +114,7 @@ PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent)
         ChWidgets ch;
         int col = 0;
 
-        ch.label = new QLabel(this);
+        ch.label = new QLabel(cfg.setting(i,PulseGenConfig::NameSetting).toString(),this);
         ch.label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         pulseConfigBoxLayout->addWidget(ch.label,i+1,col);
         col++;
@@ -375,17 +375,6 @@ void PulseConfigWidget::launchChannelConfig(int ch)
     setArrayValue(BC::Key::PulseWidget::channels,ch,BC::Key::PulseWidget::widthStep,
                   chw.widthStepBox->value(),false);
 
-    if(!d_wizardMode)
-    {
-        setArrayValue(BC::Key::PulseWidget::channels,ch,
-                      BC::Key::PulseWidget::role,chw.roleBox->currentData(),false);
-
-        setArrayValue(BC::Key::PulseWidget::channels,ch,
-                      BC::Key::PulseWidget::name,chw.nameEdit->text(),false);
-    }
-
-
-
     chw.nameEdit->setParent(this);
     chw.nameEdit->hide();
     chw.roleBox->setParent(this);
@@ -524,14 +513,11 @@ void PulseConfigWidget::updateFromSettings()
         chw.widthBox->blockSignals(false);
 
 
-        auto r = getArrayValue<PulseGenConfig::Role>(BC::Key::PulseWidget::channels,i,
-                                                     BC::Key::PulseWidget::role,PulseGenConfig::None);
+        auto r = ps_config->setting(i,PulseGenConfig::RoleSetting).value<PulseGenConfig::Role>();
 
         chw.roleBox->setCurrentValue(r);
 
-        auto n = getArrayValue<QString>(BC::Key::PulseWidget::channels,i,
-                                        BC::Key::PulseWidget::name,QString("Ch")+QString::number(i+1));
-
+        auto n = ps_config->setting(i,PulseGenConfig::NameSetting).toString();
 
         if(chw.label != nullptr)
             chw.label->setText(n);

@@ -18,6 +18,7 @@ static const QString channels{"channels"};
 static const QString chUnits{"units"};
 static const QString chDecimals{"decimals"};
 static const QString chMax{"max"};
+static const QString chName{"name"};
 }
 
 namespace BC::Aux::Flow {

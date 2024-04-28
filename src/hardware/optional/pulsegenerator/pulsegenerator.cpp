@@ -1,7 +1,5 @@
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 
-#include <gui/widget/pulseconfigwidget.h>
-
 PulseGenerator::PulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent, bool threaded, bool critical) :
     HardwareObject(BC::Key::PGen::key,subKey,name,commType,parent,threaded,critical,d_count),
     d_numChannels{numChannels}, d_config(subKey,d_count)
@@ -11,15 +9,13 @@ PulseGenerator::PulseGenerator(const QString subKey, const QString name, Communi
     for(int i=0; i<d_numChannels; i++)
         d_config.addChannel();
 
-    //it's maybe not logical to store roles/names in the pulse widget; consider changing
-    using namespace BC::Key::PulseWidget;
-    SettingsStorage s(key.arg(d_key).arg(d_subKey));
-    if(s.containsArray(channels))
+    using namespace BC::Key::PGen;
+    if(containsArray(channels))
     {
         for(int i=0; i<d_numChannels; i++)
         {
-            d_config.setCh(i,PulseGenConfig::NameSetting,s.getArrayValue(channels,i,BC::Key::PulseWidget::name,QString("Ch%1").arg(i+1)));
-            d_config.setCh(i,PulseGenConfig::RoleSetting,s.getArrayValue(channels,i,role,PulseGenConfig::None));
+            d_config.setCh(i,PulseGenConfig::NameSetting,getArrayValue(channels,i,chName,QString("Ch%1").arg(i+1)));
+            d_config.setCh(i,PulseGenConfig::RoleSetting,getArrayValue(channels,i,chRole,PulseGenConfig::None));
         }
     }
 
@@ -28,7 +24,22 @@ PulseGenerator::PulseGenerator(const QString subKey, const QString name, Communi
 
 PulseGenerator::~PulseGenerator()
 {
+    using namespace BC::Key::PGen;
+    setArray(channels, {});
 
+    for(int i=0; i<d_numChannels; i++)
+    {
+        auto n = d_config.setting(i,PulseGenConfig::NameSetting).toString();
+        if(n.isEmpty())
+            n = QString("Ch%1").arg(i+1);
+        SettingsMap m {
+
+            {chName,n},
+            {chRole,d_config.setting(i,PulseGenConfig::RoleSetting).toInt()},
+        };
+        appendArrayMap(channels,m);
+    }
+    save();
 }
 
 void PulseGenerator::initialize()
@@ -141,6 +152,7 @@ bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setti
     switch(s) {
     case PulseGenConfig::NameSetting:
     case PulseGenConfig::RoleSetting:
+        d_config.setCh(index,s,val);
         break;
     case PulseGenConfig::LevelSetting:
     {

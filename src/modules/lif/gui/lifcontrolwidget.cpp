@@ -109,7 +109,7 @@ void LifControlWidget::startAcquisition()
     p_digWidget->toConfig(cfg);
     auto it = cfg.d_analogChannels.find(cfg.d_refChannel);
     if(it != cfg.d_analogChannels.end())
-        cfg.d_refEnabled = true;
+        cfg.d_refEnabled = it->second.enabled;
     else
         cfg.d_refEnabled = false;
 
@@ -173,7 +173,7 @@ void LifControlWidget::toConfig(LifConfig &cfg)
     cfg.d_procSettings = p_procWidget->getSettings();
     auto it = cfg.scopeConfig().d_analogChannels.find(cfg.scopeConfig().d_refChannel);
     if(it != cfg.scopeConfig().d_analogChannels.end())
-        cfg.scopeConfig().d_refEnabled = true;
+        cfg.scopeConfig().d_refEnabled = it->second.enabled;
     else
         cfg.scopeConfig().d_refEnabled = false;
 }

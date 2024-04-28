@@ -80,13 +80,3 @@ bool Opolette::setFl(bool en)
 
     return true;
 }
-
-void Opolette::beginAcquisition()
-{
-    setFlashLamp(true);
-}
-
-void Opolette::endAcquisition()
-{
-    setFlashLamp(false);
-}

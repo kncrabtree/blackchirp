@@ -5,7 +5,6 @@
 #include <QDoubleSpinBox>
 
 #include <data/storage/settingsstorage.h>
-#include <gui/widget/temperaturecontrolwidget.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
 TemperatureStatusBox::TemperatureStatusBox(const QString key, QWidget *parent) :
@@ -18,7 +17,8 @@ TemperatureStatusBox::TemperatureStatusBox(const QString key, QWidget *parent) :
 
     for(int i=0; i<nc; ++i)
     {
-        auto lbl = new QLabel(QString("Ch%1").arg(i+1));
+        auto n = tc.getArrayValue(BC::Key::TC::channels,i,BC::Key::TC::chName,QString("Ch%1").arg(i+1));
+        auto lbl = new QLabel(n);
         lbl->setMinimumWidth(70);
         lbl->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
         gl->addWidget(lbl,i,0);
@@ -45,17 +45,9 @@ TemperatureStatusBox::TemperatureStatusBox(const QString key, QWidget *parent) :
 
 void TemperatureStatusBox::loadFromSettings()
 {
-    SettingsStorage tcw(BC::Key::TCW::key);
     SettingsStorage tc(BC::Key::TC::key,SettingsStorage::Hardware);
     for(std::size_t i=0; i<d_widgets.size(); ++i)
     {
-        auto lbl = d_widgets[i].label;
-        auto name = tcw.getArrayValue(BC::Key::TCW::channels,i,BC::Key::TCW::chName,QString(""));
-        if(name.isEmpty())
-            lbl->setText(QString("Ch%1").arg(i+1));
-        else
-            lbl->setText(name);
-
         d_widgets[i].box->setDecimals(tc.getArrayValue(BC::Key::TC::channels,i,BC::Key::TC::decimals,4));
 
         d_widgets[i].box->setSuffix(QString(" ") + tc.getArrayValue(BC::Key::TC::channels,i,

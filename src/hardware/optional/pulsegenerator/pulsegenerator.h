@@ -19,6 +19,9 @@ static const QString canDutyCycle{"canDutyCycle"};
 static const QString canTrigger{"canTrigger"};
 static const QString dutyMax{"dutyMaxPulses"};
 static const QString canSyncToChannel{"canSyncToChannel"};
+static const QString channels{"channels"};
+static const QString chName{"name"};
+static const QString chRole{"role"};
 }
 
 class PulseGenerator : public HardwareObject

@@ -12,12 +12,30 @@ FlowController::FlowController(const QString subKey, const QString name, Communi
 
     setDefault(interval,333);
 
+    if(containsArray(channels))
+    {
+        for(int i=0; i<d_numChannels; i++)
+            d_config.setCh(i,FlowConfig::Name,getArrayValue(channels,i,chName,QString("Ch%1").arg(i+1)));
+    }
+
     d_count++;
 }
 
 FlowController::~FlowController()
 {
+    setArray(channels, {});
 
+    for(int i=0; i<d_numChannels; i++)
+    {
+        auto n = d_config.setting(i,FlowConfig::Name).toString();
+        if(n.isEmpty())
+            n = QString("Ch%1").arg(i+1);
+        SettingsMap m {
+            {chName,n},
+        };
+        appendArrayMap(channels,m);
+    }
+    save();
 }
 
 void FlowController::setAll(const FlowConfig &c)
