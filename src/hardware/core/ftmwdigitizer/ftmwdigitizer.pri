@@ -73,14 +73,14 @@ allhardware {
     HW *= "$${H}include <hardware/core/ftmwdigitizer/mso72004c.h>"
     HEADERS *= $$PWD/m4i2220x8.h
     SOURCES *= $$PWD/m4i2220x8.cpp
-    HW *= "$${H}include <hardware/core/ftmwdigitizer/m412220x8.h>"
+    HW *= "$${H}include <hardware/core/ftmwdigitizer/m4i2220x8.h>"
     HEADERS *= $$PWD/dsox92004a.h
     SOURCES *= $$PWD/dsox92004a.cpp
     HW *= "$${H}include <hardware/core/ftmwdigitizer/dsox92004a.h>"
     HEADERS *= $$PWD/mso64b.h
     SOURCES *= $$PWD/mso64b.cpp
-    HW *= "$${H}include <hardware/core/ftmwdigitizer/ms064b.h>"
+    HW *= "$${H}include <hardware/core/ftmwdigitizer/mso64b.h>"
     SOURCES *= $$PWD/dsov204a.cpp
     HEADERS *= $$PWD/dsov204a.h
-    HW *= "$${H}include <hardware/core/ftmwdigitizer/dso204a.h>"
+    HW *= "$${H}include <hardware/core/ftmwdigitizer/dsov204a.h>"
 }

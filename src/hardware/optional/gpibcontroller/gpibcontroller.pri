@@ -31,8 +31,8 @@ allhardware {
     HW *= "$${H}include <hardware/optional/gpibcontroller/virtualgpibcontroller.h>"
     HEADERS *= $$PWD/prologixgpiblan.h
     SOURCES *= $$PWD/prologixgpiblan.cpp
-    HW *= "$${H}include <hardware/optional/chirpsource/prologizgpiblan.h>"
+    HW *= "$${H}include <hardware/optional/gpibcontroller/prologixgpiblan.h>"
     HEADERS *= $$PWD/prologixgpibusb.h
     SOURCES *= $$PWD/prologixgpibusb.cpp
-    HW *= "$${H}include <hardware/optional/chirpsource/prologixgpibusb.h>"
+    HW *= "$${H}include <hardware/optional/gpibcontroller/prologixgpibusb.h>"
 }

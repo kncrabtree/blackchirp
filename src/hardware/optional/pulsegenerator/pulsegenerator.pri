@@ -53,6 +53,9 @@ allhardware {
     HEADERS *= $$PWD/virtualpulsegenerator.h
     SOURCES *= $$PWD/virtualpulsegenerator.cpp
     HW *= "$${H}include <hardware/optional/pulsegenerator/virtualpulsegenerator.h>"
+    DEFINES *= BC_PGEN_QC9528
+    DEFINES *= BC_PGEN_QC9518
+    DEFINES *= BC_PGEN_QC9214
     HEADERS *= $$PWD/qcpulsegenerator.h
     SOURCES *= $$PWD/qc9528.cpp \
                $$PWD/qcpulsegenerator.cpp \

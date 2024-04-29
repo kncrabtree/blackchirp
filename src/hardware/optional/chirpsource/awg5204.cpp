@@ -1,4 +1,4 @@
-#include "AWG5204.h"
+#include "awg5204.h"
 
 #include <QtEndian>
 #include <math.h>

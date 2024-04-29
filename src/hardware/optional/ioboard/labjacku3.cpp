@@ -119,8 +119,8 @@ std::map<int, double> LabjackU3::readAnalogChannels()
         if(ch.enabled)
         {
             double d;
-            eAIN(d_handle,&d_calInfo,1,NULL,it->first,31,&d,0,0,0,0,0,0);
-            out.insert({it->first,d});
+            eAIN(d_handle,&d_calInfo,1,NULL,k,31,&d,0,0,0,0,0,0);
+            out.insert({k,d});
         }
     }
 
@@ -135,8 +135,8 @@ std::map<int, bool> LabjackU3::readDigitalChannels()
         if(ch.enabled)
         {
             long d;
-            eDI(d_handle,1,it->first,&d);
-            out.insert({it->first,d});
+            eDI(d_handle,1,k,&d);
+            out.insert({k,d});
         }
     }
 
