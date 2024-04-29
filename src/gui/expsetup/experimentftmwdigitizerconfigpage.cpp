@@ -6,7 +6,6 @@ using namespace BC::Key::WizFtDig;
 #include <QMessageBox>
 
 #include <gui/widget/ftmwdigitizerconfigwidget.h>
-#include <gui/wizard/experimentwizard.h>
 
 ExperimentFtmwDigitizerConfigPage::ExperimentFtmwDigitizerConfigPage(Experiment *exp, QWidget *parent)
     : ExperimentConfigPage(key,title,exp,parent)

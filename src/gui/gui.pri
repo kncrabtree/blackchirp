@@ -51,19 +51,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/widget/rfconfigwidget.cpp \
     $$PWD/widget/temperaturecontrolwidget.cpp \
     $$PWD/widget/temperaturestatusbox.cpp \
-    $$PWD/widget/toolbarwidgetaction.cpp \
-    $$PWD/wizard/experimentwizard.cpp \
-    $$PWD/wizard/experimentwizardpage.cpp \
-    $$PWD/wizard/wizardchirpconfigpage.cpp \
-    $$PWD/wizard/wizarddigitizerconfigpage.cpp \
-    $$PWD/wizard/wizarddrscanconfigpage.cpp \
-	$$PWD/wizard/wizardioboardconfigpage.cpp \
-    $$PWD/wizard/wizardloscanconfigpage.cpp \
-    $$PWD/wizard/wizardpulseconfigpage.cpp \
-    $$PWD/wizard/wizardrfconfigpage.cpp \
-    $$PWD/wizard/wizardstartpage.cpp \
-    $$PWD/wizard/wizardsummarypage.cpp \
-	$$PWD/wizard/wizardvalidationpage.cpp
+    $$PWD/widget/toolbarwidgetaction.cpp
 
 HEADERS += $$PWD/mainwindow.h \
     $$PWD/dialog/batchsequencedialog.h \
@@ -120,19 +108,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/widget/rfconfigwidget.h \
     $$PWD/widget/temperaturecontrolwidget.h \
     $$PWD/widget/temperaturestatusbox.h \
-    $$PWD/widget/toolbarwidgetaction.h \
-    $$PWD/wizard/experimentwizard.h \
-    $$PWD/wizard/experimentwizardpage.h \
-    $$PWD/wizard/wizardchirpconfigpage.h \
-    $$PWD/wizard/wizarddigitizerconfigpage.h \
-    $$PWD/wizard/wizarddrscanconfigpage.h \
-	$$PWD/wizard/wizardioboardconfigpage.h \
-    $$PWD/wizard/wizardloscanconfigpage.h \
-    $$PWD/wizard/wizardpulseconfigpage.h \
-    $$PWD/wizard/wizardrfconfigpage.h \
-    $$PWD/wizard/wizardstartpage.h \
-    $$PWD/wizard/wizardsummarypage.h \
-	$$PWD/wizard/wizardvalidationpage.h
+    $$PWD/widget/toolbarwidgetaction.h
 
 FORMS += \
     $$PWD/dialog/communicationdialog.ui \

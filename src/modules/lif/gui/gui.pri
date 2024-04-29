@@ -11,8 +11,7 @@ HEADERS += \
     $$PWD/lifprocessingwidget.h \
     $$PWD/lifsliceplot.h \
     $$PWD/lifspectrogramplot.h \
-    $$PWD/liftraceplot.h \
-    $$PWD/wizardlifconfigpage.h
+    $$PWD/liftraceplot.h
 
 SOURCES += \
     $$PWD/experimentlifconfigpage.cpp \
@@ -23,5 +22,4 @@ SOURCES += \
     $$PWD/lifprocessingwidget.cpp \
     $$PWD/lifsliceplot.cpp \
     $$PWD/lifspectrogramplot.cpp \
-    $$PWD/liftraceplot.cpp \
-    $$PWD/wizardlifconfigpage.cpp
+    $$PWD/liftraceplot.cpp
