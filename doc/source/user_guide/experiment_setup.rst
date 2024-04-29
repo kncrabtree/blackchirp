@@ -7,7 +7,7 @@ Experiment Setup
 
    experiment/*
 
-An ``Experiment`` is the basic acquisition event in Blackchirp.
+An ``Experiment`` is the basic acquisition event in Blackchirp, and it may consist of CP-FTMW measurements and/or a laser scan experiment (discussed more in the LIF module section of the user guide).
 During an experiment, FID records are collected from the `FTMW Digitizer <hw/ftmwdigitizer.html>`_ and averaged in the time domain.
 The aveage FID and its Fourier transform can be viewed and processed in a number of ways on the `CP-FTMW tab <cp-ftmw.html>`_ on the main user interface.
 `Auxiliary Data <rolling-aux-data.html>`_ is also recorded during the experiment.
@@ -19,14 +19,11 @@ Depending on the `acquisition type <experiment/acquisition_types.html>`_, the ex
 4. A communication failure occurs with a critical piece of hardware.
 
 To start an experiment, select one of the options under the ``Acquire`` menu in the `main toolbar <ui_overview.html#main-toolbar>`_.
-Initially, you will most likely want to choose the ``Start Experiment`` option, which will bring up a wizard that walks you through configuring the important details of the acquisition.
+Initially, you will most likely want to choose the ``Start Experiment`` option, which will bring up a dialog that walks you through configuring the important details of the acquisition.
 This includes not only acquisition parameters but also many hardware settings (e.g., digitizer sample rate, FID record length, etc.).
 
-.. note::
-   Not all hardware can be configured through the experiment wizard.
-   In particular, for most hardware objects that can be controlled interactively from the `Hardware Menu <hardware_menu.html>`_, the current settings are used when the experiment begins.
 
-The workflow of the New Experiment Wizard is:
+The key points for an FTMW acquisition are:
 
 1. Select the desired `acquisition type <experiment/acquisition_types.html>`_ and verify the `Rf Configuration <hardware_menu.html#rf-configuration>`_.
 2. Set up the `FTMW chirp <experiment/chirp_setup.html>`_ and configure the `Pulse Generator <hw/pulsegenerator.html>`_ (if enabled).

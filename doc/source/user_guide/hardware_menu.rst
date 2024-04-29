@@ -98,6 +98,10 @@ Each logical clock in Blackchirp has a specific meaning within the program:
 - ``DigRef`` is similar to ``AwgRef``, but for the FTMW digitizer rather than the AWG. Currently, Blackchirp does not use this setting internally, so its only use is to assign a frequency to a physical clock that is a reference for the digitizer (e.g., if a programmable synthesizer sets the reference for a Spectrum Instrumentation M4i2211x8 card).
 - ``ComRef`` is a common reference oscillator, such as the 10 MHz signal from a rubidium clock. Currently, Blackchirp does not use this information, but if an implementation of an Rb clock is added in the future, Blackchirp will be able to detect if the clock comes unlocked.
 
+LIF Configuration
+_________________
+
+See the `LIF Module <user_guide/lif.html>`_ page for further details.
 
 
 Hardware Control/Settings

@@ -24,66 +24,52 @@ unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
 # https://blackchirp.readthedocs.io/en/latest/user_guide/hardware_details.html
 # -----------------------------------------------
 
-# FTMW Oscilloscope
+# FTMW Oscilloscope. Only 1 may be selected
 # options: virtual, DSA71604C, MSO72004C, M4i2220x8, DSOx92004A, MSO64B
 FTMWSCOPE=virtual
 
-# Clocks. Include in a space-delimited list; as many as needed
-# For example:
-# CLOCKS=fixed fixed valon5009
+# Clocks. Space delimited list
 # options: fixed, Valon5009, Valon5015, HP83712B
 CLOCKS=fixed fixed
 
-# AWG
-# options: virtual, 1 = AWG70002A, 2 = AWG7122B, 3 = AD9914, 4 = M8195A, 5 = AWG5000)
+# AWG. Only 1 may be selected
+# options: virtual, AWG70002A, AWG7122B, AD9914, M8195A, AWG5204)
 #AWG=virtual
 
-# Pulse generator (<0 = None, 0 = virtual, 1 = Quantum Composers 9528+, 2 = Quantum Composers 9518, 3 = Quantum Composers 9214)
+# Pulse Generator. Space delimited list
 # options: virtual, qc9518, qc9528, qc9214
 #PGEN=virtual
 
-# Flow Controller
+# Flow Controller. Space delimited list
 # options: virtual, MKS647C, MKS946
 #FC=virtual
 
-# IO Board
+# IO Board. Space delimited list
 # options: virtual, LabjackU3
 #IOBOARD=virtual
 
-# GPIB controller
+# GPIB controller. Only 1 may be selected
 # options: virtual, PrologixLAN, ProligixUSB
 #GPIB=virtual
 
-# Pressure controller
+# Pressure controller. Space delimited list
 # options virtual, Intellisys
 #PC=virtual
 
-# Temperature controller
+# Temperature controller. Space delimited list
 # options: virtual, Lakeshore218
 #TC=virtual
 
 ###### LIF ONLY #####
-# LIF Oscilloscope
+# LIF Oscilloscope. Only 1 may be selected
 # options: virtual, M4i2211x8
 #LIFSCOPE=virtual
 
-# LIF Laser
+# LIF Laser. Only 1 may be selected
 # options: virtual, Opolette
 #LIFLASER=virtual
 
 ##### END LIF ONLY #####
-
-#------------------------------------------------
-# Space for custom include/lib paths
-#------------------------------------------------
-
-equals(IOBOARD,1)|allhardware {
-    LIBS += -llabjackusb
-}
-
-equals(FTMWSCOPE,3)|equals(LIFSCOPE,1)|allhardware {
-     LIBS += -lspcm_linux
-}
 
 
 #------------------------------
@@ -125,3 +111,8 @@ gpu-cuda {
 		QMAKE_EXTRA_COMPILERS += cuda
 	}
 }
+
+
+
+#DEVELOPERS ONLY: Enable to compile all hardware files
+#CONFIG += allhardware

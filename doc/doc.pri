@@ -31,6 +31,7 @@ DISTFILES += \
    $$PWD/source/user_guide.rst \
    $$PWD/source/classes.rst \
    $$PWD/source/classes/settingsstorage.rst \
+   $$PWD/source/user_guide/lif.rst \
    $$PWD/source/user_guide/plot_controls.rst \
    $$PWD/source/user_guide/rolling-aux-data.rst \
    $$PWD/source/user_guide/ui_overview.rst \
