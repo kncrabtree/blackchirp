@@ -43,6 +43,7 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
     p_navTree = new QTreeWidget(this);
     p_navTree->setColumnCount(1);
     p_navTree->setMinimumWidth(200);
+    p_navTree->setHeaderHidden(true);
 
     hbl->addWidget(p_navTree);
 

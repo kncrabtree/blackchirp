@@ -61,6 +61,9 @@ void AuxDataStorage::addDataPoints(AuxDataStorage::AuxDataMap &m)
 
 void AuxDataStorage::startNewPoint()
 {
+    if(d_number < 0)
+        return;
+
     if(d_allowedKeys.empty())
         return;
 

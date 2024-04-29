@@ -215,6 +215,8 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     dl->addWidget(new QLabel("Points"),1,2,Qt::AlignRight);
     dl->addWidget(p_dNumStepsBox,1,3);
 
+    dl->addItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::Expanding),2,0);
+
     lvbl->addWidget(dlg);
 
     auto llg = new QGroupBox("Laser",this);
@@ -261,6 +263,8 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     registerGetter(lifLaserPoints,p_lNumStepsBox,&QSpinBox::value);
     ll->addWidget(new QLabel("Points"),1,2,Qt::AlignRight);
     ll->addWidget(p_lNumStepsBox,1,3);
+
+    ll->addItem(new QSpacerItem(1,1,QSizePolicy::Minimum,QSizePolicy::Expanding),2,0);
 
     lvbl->addWidget(llg);
 
@@ -398,6 +402,15 @@ bool ExperimentTypePage::validate()
     p_completeModeBox->setEnabled(p_ftmw->isChecked());
     if(!out)
         emit error("Either FTMW or LIF must be enabled.");
+
+    if(p_ftmw->isChecked() && p_lif->isChecked())
+    {
+        if(getFtmwType() == FtmwConfig::Peak_Up)
+        {
+            emit error("Cannot combine LIF acquisition with Peak Up mode.");
+            out = false;
+        }
+    }
 
 #ifndef BC_PGEN
     if(p_dNumStepsBox->value() > 1)

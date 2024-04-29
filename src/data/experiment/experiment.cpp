@@ -279,7 +279,11 @@ bool Experiment::initialize()
     num = s.get(BC::Key::exptNum,0)+1;
     d_number = num;
 
+#ifdef BC_LIF
+    if(ftmwEnabled() && ps_ftmwConfig->d_type == FtmwConfig::Peak_Up && !lifEnabled())
+#else
     if(ftmwEnabled() && ps_ftmwConfig->d_type == FtmwConfig::Peak_Up)
+#endif
     {
         d_number = -1;
         d_startLogMessage = QString("Peak up mode started.");
