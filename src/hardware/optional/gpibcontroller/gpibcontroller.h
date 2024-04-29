@@ -26,8 +26,4 @@ protected:
 	int d_currentAddress;
 };
 
-#ifdef BC_GPIBCONTROLLER
-#include BC_STR(BC_GPIBCONTROLLER_H)
-#endif
-
 #endif // GPIBCONTROLLER_H

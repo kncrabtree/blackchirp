@@ -21,7 +21,7 @@ for(num, 0..$$size(CLOCKS)) {
 		}
 	  equals(N,VALON5009) {
 	     DEFINES *= BC_CLOCK_VALON5009=Valon5009
-		 HEADERS *= valon5009.h
+                 HEADERS *= $$PWD/valon5009.h
 		 SOURCES *= $$PWD/valon5009.cpp
 		 UCLOCKS *= "$${H}include \"valon5009.h\""
 		}
@@ -39,6 +39,22 @@ for(num, 0..$$size(CLOCKS)) {
 		}
    }
 }
+
+allhardware {
+    HEADERS *= $$PWD/fixedclock.h
+    SOURCES *= $$PWD/fixedclock.cpp
+    UCLOCKS *= "$${H}include \"fixedclock.h\""
+    HEADERS *= $$PWD/valon5009.h
+    SOURCES *= $$PWD/valon5009.cpp
+    UCLOCKS *= "$${H}include \"valon5009.h\""
+    HEADERS *= $$PWD/valon5015.h
+    SOURCES *= $$PWD/valon5015.cpp
+    UCLOCKS *= "$${H}include \"valon5015.h\""
+    HEADERS *= $$PWD/hp83712b.h
+    SOURCES *= $$PWD/hp83712b.cpp
+    UCLOCKS *= "$${H}include \"hp83712b.h\""
+}
+
 
 write_file( $$PWD/clock_h.h, UCLOCKS )
 HEADERS += $$PWD/clock_h.h

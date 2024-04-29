@@ -32,8 +32,4 @@ private:
 
 };
 
-#ifdef BC_LIFSCOPE
-#include BC_STR(BC_LIFSCOPE_H)
-#endif
-
 #endif // LIFSCOPE_H

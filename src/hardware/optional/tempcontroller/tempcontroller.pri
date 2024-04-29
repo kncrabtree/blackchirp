@@ -17,14 +17,23 @@ for(num, 0..$$NTC) {
             DEFINES *= BC_TEMPCONTROLLER_$$N=VirtualTemperatureController
             HEADERS *= $$PWD/virtualtempcontroller.h
             SOURCES *= $$PWD/virtualtempcontroller.cpp
-            OPTHW *= "$${H}include <hardware/optional/tempcontroller/virtualtempcontroller.h>"
+            HW *= "$${H}include <hardware/optional/tempcontroller/virtualtempcontroller.h>"
         }
-	equals(N,LAKESHORE218) {
+        equals(N,LAKESHORE218) {
             DEFINES *= BC_TEMPCONTROLLER_$$N=Lakeshore218
             HEADERS *= $$PWD/lakeshore218.h
             SOURCES *= $$PWD/lakeshore218.cpp
-            OPTHW *= "$${H}include <hardware/optional/tempcontroller/lakeshore218.h>"
+            HW *= "$${H}include <hardware/optional/tempcontroller/lakeshore218.h>"
 	}
     }
 }
+}
+
+allhardware {
+    HEADERS *= $$PWD/virtualtempcontroller.h
+    SOURCES *= $$PWD/virtualtempcontroller.cpp
+    HW *= "$${H}include <hardware/optional/tempcontroller/virtualtempcontroller.h>"
+    HEADERS *= $$PWD/lakeshore218.h
+    SOURCES *= $$PWD/lakeshore218.cpp
+    HW *= "$${H}include <hardware/optional/tempcontroller/lakeshore218.h>"
 }

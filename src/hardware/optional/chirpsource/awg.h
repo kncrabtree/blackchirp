@@ -51,8 +51,4 @@ public:
     virtual ~AWG();
 };
 
-#ifdef BC_AWG
-#include BC_STR(BC_AWG_H)
-#endif
-
 #endif // AWG_H

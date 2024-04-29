@@ -644,31 +644,41 @@ void MainWindow::clockPrompt(QHash<RfConfig::ClockType, RfConfig::ClockFreq> c)
 {
     auto up = c.value(RfConfig::UpLO);
     auto down = c.value(RfConfig::DownLO);
+    auto dr = c.value(RfConfig::DRClock);
 
-    bool upTunable = true;
+
+    bool upManual = false;
     if(!up.hwKey.isEmpty())
     {
         SettingsStorage s(up.hwKey,SettingsStorage::Hardware);
-        upTunable = s.get(BC::Key::Clock::tunable,true);
+        upManual = s.get(BC::Key::Clock::manualTune,false);
     }
-    bool downTunable = true;
+    bool downManual = false;
     if(!down.hwKey.isEmpty())
     {
         SettingsStorage s(down.hwKey,SettingsStorage::Hardware);
-        downTunable = s.get(BC::Key::Clock::tunable,true);
+        downManual  = s.get(BC::Key::Clock::manualTune,false);
+    }
+    bool drManual = false;
+    if(!dr.hwKey.isEmpty())
+    {
+        SettingsStorage s(dr.hwKey,SettingsStorage::Hardware);
+        drManual  = s.get(BC::Key::Clock::manualTune,false);
     }
 
-    if(!upTunable || !downTunable)
+    if(upManual || downManual || drManual)
     {
         QMessageBox m;
         m.setWindowTitle(QString("Update LO Frequency"));
-        m.setInformativeText(QString("Ensure your upconversion and/or downconversion LOs are set to the indicated frequencies. Press Ok (or hit enter) to proceed or Abort (escape) to terminate the acquisition."));
+        m.setInformativeText(QString("Ensure LOs are set to the indicated frequencies. Press Ok (or hit enter) to proceed or Abort (escape) to terminate the acquisition."));
 
         QString displayString = QString("<table style=\"font-size:50pt;font-weight:bold\", cellpadding=\"20\">");
-        if(!upTunable)
+        if(upManual)
             displayString.append(QString("<tr><td>UpLO</td><td>%1</td><td>MHz</td></tr>").arg(QString::number(RfConfig::getRawFrequency(up),'f',6)));
-        if(!downTunable)
+        if(downManual)
             displayString.append(QString("<tr><td>DownLO</td><td>%1</td><td>MHz</td></tr>").arg(QString::number(RfConfig::getRawFrequency(down),'f',6)));
+        if(drManual)
+            displayString.append(QString("<tr><td>DR</td><td>%1</td><td>MHz</td></tr>").arg(QString::number(RfConfig::getRawFrequency(dr),'f',6)));
         displayString.append(QString("</table>"));
         m.setText(displayString);
         m.setTextFormat(Qt::RichText);

@@ -9,13 +9,24 @@ SOURCES += \
 N = $$upper($$LIFLASER)
 
 equals(N,VIRTUAL) {
-    DEFINES += BC_LIFLASER=VirtualLifLaser BC_LIFLASER_H=virtualliflaser.h
+    DEFINES += BC_LIFLASER=VirtualLifLaser
     HEADERS += $$PWD/virtualliflaser.h
-	SOURCES += $$PWD/virtualliflaser.cpp
+    SOURCES += $$PWD/virtualliflaser.cpp
+    LIFHW *= "$${H}include <modules/lif/hardware/liflaser/virtualliflaser.h>"
 }
 
 equals(N,OPOLETTE) {
-    DEFINES += BC_LIFLASER=Opolette BC_LIFLASER_H=opolette.h
+    DEFINES += BC_LIFLASER=Opolette
     HEADERS += $$PWD/opolette.h
-        SOURCES += $$PWD/opolette.cpp
+    SOURCES += $$PWD/opolette.cpp
+    LIFHW *= "$${H}include <modules/lif/hardware/liflaser/opolette.h>"
+}
+
+allhardware {
+    HEADERS *= $$PWD/virtualliflaser.h
+    SOURCES *= $$PWD/virtualliflaser.cpp
+    LIFHW *= "$${H}include <modules/lif/hardware/liflaser/virtualliflaser.h>"
+    HEADERS *= $$PWD/opolette.h
+    SOURCES *= $$PWD/opolette.cpp
+    LIFHW *= "$${H}include <modules/lif/hardware/liflaser/opolette.h>"
 }

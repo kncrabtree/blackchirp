@@ -38,6 +38,4 @@ private:
     void writeSettings();
 };
 
-#include BC_STR(BC_FTMWSCOPE_H)
-
 #endif // FTMWSCOPE_H

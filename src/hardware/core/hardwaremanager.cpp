@@ -11,12 +11,13 @@
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
-#include <hardware/opthw_h.h>
+#include <hardware/hw_h.h>
 #include <hardware/core/clock/clock_h.h>
 
 #include <QThread>
 
 #ifdef BC_LIF
+#include <modules/lif/hardware/lifhw_h.h>
 #include <modules/lif/hardware/lifdigitizer/lifscope.h>
 #include <modules/lif/hardware/liflaser/liflaser.h>
 #include <QtConcurrent/QtConcurrent>

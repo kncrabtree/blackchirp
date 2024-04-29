@@ -12,6 +12,7 @@ static const QString outputs{"outputs"};
 static const QString mf{"multFactor"};
 static const QString role{"role"};
 static const QString tunable{"tunable"};
+static const QString manualTune{"manualTune"};
 }
 
 /**

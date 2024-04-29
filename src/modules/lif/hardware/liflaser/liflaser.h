@@ -45,9 +45,4 @@ public slots:
     void endAcquisition() override final;
 };
 
-
-#ifdef BC_LIFLASER
-#include BC_STR(BC_LIFLASER_H)
-#endif
-
 #endif // LIFLASER_H
