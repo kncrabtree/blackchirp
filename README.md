@@ -11,7 +11,7 @@ Data acquisition software for CP-FTMW spectrometers. Blackchirp is written to co
 
 The "Start Experiment" wizard has been completely rewritten to minimize the amount of clicking required to initiate an experiment. All settings are organized into pages which are accessible in any order using the new navigation menu on the left. The dialog attempts to detect incorrect/invalid settings and issues an error or warning if any are identified, as shown in the screenshot below. 
 
-![New Experiment Setup Dialog](src/doc/source/_static/user_guide/experiment/expsetup.png)
+![New Experiment Setup Dialog](doc/source/_static/user_guide/experiment/expsetup.png)
 
 Blackchirp now supports having multiple pieces of hardware of the same "type" for most hardware types. For example, you can now have two pulse generators, etc. This has always been the case for Clocks, but now most other types support this as well. The exceptions are the FtmwScope, AWG, and GpibController types (and the LifScope and LifLaser for the lif module). Because of this change, the hardware keys in the settings file have been changed. If you have been using a previous version of Blackchirp, you can preserve your existing settings by manually editing the config file (~/.config/CrabtreeLab/Blackchirp.conf on Unix, in the Registry on Windows). Simply add ".0" to all hardware keys (e.g., \[AWG\] becomes \[AWG.0\]) with the exception of Clock entries, where you should instead add a dot between "Clock" and the integer attached to it (e.g., \[Clock1\] becomes \[Clock.1\]). For convenience, the hardware keys are: AWG, ClockN (N=0,1,2,...), FlowController, FtmwDigitizer, GpibController, IOBoard, PressureController, PulseGenerator, and TemperatureController. Some may not be present in your config file.
 
