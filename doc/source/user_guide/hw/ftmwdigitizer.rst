@@ -42,7 +42,6 @@ Settings
 Implementations
 ---------------
 
-<<<<<<< HEAD
 Virtual (virtual)
 .................
 
@@ -83,8 +82,8 @@ Tektronix DPO71254B (dpo71524b)
 
 The `DPO71254B <https://www.tek.com/en/oscilloscope/dpo70000-mso70000-manual-18>`_ is a 50 GSa/s oscilloscope with a maximum bandwidth of 12.5 GHz, and this implementation communicates over a TCP socket. A static IP address has to be set in the Windows OS running on the scope and the default TekVisa software running on the scope communicates on port 4000. This implementation is currently coded so that the scope can be triggered on any of its 4 analog channels but triggering on the AUX channel is recommended. This implementation is currently being tested.
 
-..Tektronix DPO72004 (dpo72004)
-...............................
+.. Tektronix DPO72004 (dpo72004)
+.. ...............................
 
-..The `DPO72004 <https://www.tek.com/en/oscilloscope/dpo70000-mso70000-manual-18>`_ is a 50 GSa/s oscilloscope with a maximum bandwidth of 20 GHz, and this implementation communicates over a TCP socket. A static IP address has to be set in the Windows OS running on the scope and the default TekVisa software running on the scope communicates on port 4000. This implementation is currently coded so that the scope can be triggered on any of its 4 analog channels but triggering on the AUX channel is recommended. This implementation is currently being tested.
+.. The `DPO72004 <https://www.tek.com/en/oscilloscope/dpo70000-mso70000-manual-18>`_ is a 50 GSa/s oscilloscope with a maximum bandwidth of 20 GHz, and this implementation communicates over a TCP socket. A static IP address has to be set in the Windows OS running on the scope and the default TekVisa software running on the scope communicates on port 4000. This implementation is currently coded so that the scope can be triggered on any of its 4 analog channels but triggering on the AUX channel is recommended. This implementation is currently being tested.
 

@@ -47,9 +47,8 @@ The `AWG70002A <https://www.tek.com/en/signal-generator/awg70000-arbitrary-wavef
 
 When an experiment begins, the chirp data and markers are written to the device over and Blackchirp maintains a list of waveforms that have been sent to the AWG. As long as the AWG hasn't been reset, if you reuse a chirp, it is likely that Blackchirp will find it in the list and reload it rather than re-transferring the data. If this behavior causes problems, you can always restart the AWG or delete the offending records to force Blackchirp to reload the chirp. If successful, the outputs are enabled and the device is set to run mode, which will then play waveforms upon receiving a trigger. This will generate an audible click due to the relays in the AWG. At the end of the experiment, the outputs are disabled (producing another audible click) and the device placed into standby.
 
-**Known Issues**
-
- * A bug in earlier versions of the TekVISA firmware would cause an error when transmitting chirp data to the AWG if the binary data sequence contained a 0x1d character. This has likely been fixed in newer versions. However, if you encounter this problem, Tektronix produced a "Socket Server Plus" program that communicates on port 4001. Contact Tektronix for further details.
+.. warning::
+   A bug in earlier versions of the TekVISA firmware would cause an error when transmitting chirp data to the AWG if the binary data sequence contained a 0x1d character. This has likely been fixed in newer versions. However, if you encounter this problem, Tektronix produced a "Socket Server Plus" program that communicates on port 4001. Contact Tektronix for further details.
 
 Tektronix AWG7122B (awg7122b)
 .............................
@@ -57,7 +56,7 @@ Tektronix AWG7122B (awg7122b)
 The `AWG7122B <https://www.tek.com/en/datasheet/arbitrary-waveform-generators-7>`_ is a 24 GSa/s AWG with a maximum output frequency of 12 GHz, and this implementation communicates over a TCP socket. The default TekVisa software running on the scope communicates on port 4000. This AWG may either be externally triggered or it may play waveforms continuously. In the case that it is externally triggered, the trigger is set to a rising edge on trigger A, and the device otherwise works identically to the AWG70002B described above. Otherwise, when the experiment begins, the AWG will be placed into Run mode (if it was not already).
 
 .. note::
-  At the end of the experiment, the AWG7122B will be left in Run mode if it is **not** externally triggered. Usually one of the marker signals is used to trigger gas pulses, etc, and so these are left running in order to not interfere with any PID loops, etc.
+   At the end of the experiment, the AWG7122B will be left in Run mode if it is **not** externally triggered. Usually one of the marker signals is used to trigger gas pulses, etc, and so these are left running in order to not interfere with any PID loops, etc.
 
 Analog Devices AD9914 (ad9914)
 ..............................
@@ -71,9 +70,17 @@ The `AD9914 <https://www.analog.com/en/products/ad9914.html>`_ is a direct digit
 Keysight M8195A (m8195a)
 ........................
 
-The `M8195A <https://www.keysight.com/us/en/product/M8195A/65-gsa-s-arbitrary-waveform-generator.html>`_ is a 4-channel 65 GSa/s AWG with a maximum frequency of 25 GHz. Currently, it is hardcoded to lock to an external 10 MHz reference, and its chirp is output on channel 1. The protection pulse and the amplifier gate pulse is output on channel 3 and channel 4, respecivetly. It may be optionally externally triggered by a rising edge on the trigger input. Unlike the AWG7122B, at the end of the experiment, the outputs are disabled whether or not the scope is triggered.
+The `M8195A <https://www.keysight.com/us/en/product/M8195A/65-gsa-s-arbitrary-waveform-generator.html>`_ is a 4-channel 65 GSa/s AWG with a maximum frequency of 25 GHz. Currently, it is hardcoded to lock to an external 10 MHz reference, and its chirp is output on channel 1. The protection pulse and the amplifier gate pulse are output on channel 3 and channel 4, respecivetly. It may be optionally externally triggered by a rising edge on the trigger input. Unlike the AWG7122B, at the end of the experiment, the outputs are disabled whether or not the scope is triggered.
 
-**Known Issues**
+.. warning::
+   There have been reports that errors may occur when Blackchirp writes waveform data to the device, but currently there has not been enough information to debug the issue, so the current status is unknown.
 
- * There have been reports that errors may occur when Blackchirp writes waveform data to the device, but currently there has not been enough information to debug the issue, so the current status is unknown.
+Keysight M8190 (m8190)
+........................
 
+The `M8190 <https://www.keysight.com/us/en/product/M8190A/12-gsa-s-arbitrary-waveform-generator.html>`_ is a 1 or 2-channel 12 GSa/s AWG with a maximum frequency of 55 GHz. Currently, it is hardcoded use only a 12-bit output on channel 1, a 9.375 GSa/s sampling rate, no markers. The hardcoding is set up for the MIT group, and can be made more flexible in the future.
+
+Tektronix AWG5204 (awg5204)
+...........................
+
+The Tektronix AWG5024 is a 10 GSa/s AWG with a bandwidth of 2.5 GHz. Its output is hardcoded to channel 1. It uses 3 of the 4 marker outputs: marker 1 is the amplifier enable pulse, marker 2 is the protection pulse, and marker 3 is an additional trigger pulse. This configuration is hardcoded for th Harvey Mudd group and can be made more flexible in the future.

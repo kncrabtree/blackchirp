@@ -8,9 +8,9 @@
 Chirp Setup
 ===========
 
-.. image:: /_static/user_guide/experiment/startpage.png
+.. image:: /_static/user_guide/experiment/chirp_setup.png
    :align: center
-   :width: 600
+   :width: 800
    :alt: Chirp setup
 
 The chirp setup page provides a versatile interface for defining chirps and/or chirp sequences. If the program is compiled with a supported AWG, these chirps will be written to the AWG at the beginning of the experiment. Alternatively, the chirp information is simply saved to disk along with the rest of the experimental data.
