@@ -72,5 +72,5 @@ A 4-channel scope with 2.5 GHz bandwidth, appropriate for segmented LO scanning 
 Spectrum Instrumentation M4i2220x8 (m4i2220x8)
 ..............................................
 
-A high-speed digitizer with an acquisition rate of 2.5 GSa/s and an analog bandwidth of 1.25 GHz, appropriate for segmented LO scanning setups. The implementation here requires that the device have the "block averaging" firmware module enabled, and as a result the acquisition rate can be extremely fast (50,000 FIDs/sec has been possible).
+A high-speed digitizer with an acquisition rate of 2.5 GSa/s and an analog bandwidth of 1.25 GHz, appropriate for segmented LO scanning setups. The implementation here requires that the device have the "block averaging" firmware module enabled, and as a result the acquisition rate can be extremely fast (50,000 FIDs/sec has been possible). This digitizer requires that the spcm drivers from Spectrum Instrumentation are installed and linked to the application at compile time.
 

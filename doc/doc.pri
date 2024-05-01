@@ -24,6 +24,8 @@ DISTFILES += \
    $$PWD/source/user_guide/hw/ftmwdigitizer.rst \
    $$PWD/source/user_guide/hw/gpibcontroller.rst \
    $$PWD/source/user_guide/hw/ioboard.rst \
+   $$PWD/source/user_guide/hw/lifdigitizer.rst \
+   $$PWD/source/user_guide/hw/liflaser.rst \
    $$PWD/source/user_guide/hw/pressurecontroller.rst \
    $$PWD/source/user_guide/hw/pulsegenerator.rst \
    $$PWD/source/user_guide/hw/temperaturecontroller.rst \
