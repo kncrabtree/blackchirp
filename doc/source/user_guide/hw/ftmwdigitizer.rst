@@ -12,6 +12,9 @@ The FTMW Digitizer is the fast digitizer used to record FIDs during a CP-FTMW ex
 
 No matter how many analog channels the digitizer possesses, Blackchirp only records data from a single input channel.
 
+.. note::
+   Some errors that may occur on Keysight and Tektronix scopes may cause the instrument to become unresponsive. For Keysight scopes, closing and reopening the scope software will resolve this issue. For Tektronix scopes, it is usually necessary to restart the scope entirely.
+
 Settings
 --------
 
@@ -39,6 +42,7 @@ Settings
 Implementations
 ---------------
 
+<<<<<<< HEAD
 Virtual (virtual)
 .................
 
@@ -57,12 +61,12 @@ Virtually identical to the DSA71604C, except that its bandwidth is 20 GHz.
 Keysight DSOV204A (dsov204a)
 ............................
 
-This Keysight scope is more or less equivalent to the MSO72004C.
+The `DSOV204A <https://www.keysight.com/us/en/product/DSOV204A/infiniium-v-series-oscilloscope-20-ghz-4-analog-channels.html>`_ is an 80 GSa/s oscilloscope with a maximum bandwidth of 20 GHz, and this implementation communicates over a TCP socket. A static IP address has to be set in the Windows OS running on the scope and usual remote communication is on port 5025. This implementation is currently coded so that the scope can be triggered on any of its 4 analog channels but triggering on the AUX channel is recommended.
 
 Keysight DSOx92004a (dsox92004a)
 ................................
 
-Also equivalent to the DSOV204A and MSO72004C.
+The `DSOX92004A <https://www.keysight.com/us/en/product/DSOX92004A/infiniium-high-performance-oscilloscope-20-ghz.html>`_ is an 80 GSa/s oscilloscope with a bandwidth of 20 GHz, upgradable to 33 GHz, and this implementation communicates over a TCP socket. A static IP address has to be set in the Windows OS running on the scope and usual remote communication is on port 5025. Caution: This implementation has not been tested since Blackchirp's update to v1.0.
 
 Tektronix MSO64B (mso64b)
 .........................
@@ -73,4 +77,14 @@ Spectrum Instrumentation M4i2220x8 (m4i2220x8)
 ..............................................
 
 A high-speed digitizer with an acquisition rate of 2.5 GSa/s and an analog bandwidth of 1.25 GHz, appropriate for segmented LO scanning setups. The implementation here requires that the device have the "block averaging" firmware module enabled, and as a result the acquisition rate can be extremely fast (50,000 FIDs/sec has been possible). This digitizer requires that the spcm drivers from Spectrum Instrumentation are installed and linked to the application at compile time.
+
+Tektronix DPO71254B (dpo71524b)
+...............................
+
+The `DPO71254B <https://www.tek.com/en/oscilloscope/dpo70000-mso70000-manual-18>`_ is a 50 GSa/s oscilloscope with a maximum bandwidth of 12.5 GHz, and this implementation communicates over a TCP socket. A static IP address has to be set in the Windows OS running on the scope and the default TekVisa software running on the scope communicates on port 4000. This implementation is currently coded so that the scope can be triggered on any of its 4 analog channels but triggering on the AUX channel is recommended. This implementation is currently being tested.
+
+..Tektronix DPO72004 (dpo72004)
+...............................
+
+..The `DPO72004 <https://www.tek.com/en/oscilloscope/dpo70000-mso70000-manual-18>`_ is a 50 GSa/s oscilloscope with a maximum bandwidth of 20 GHz, and this implementation communicates over a TCP socket. A static IP address has to be set in the Windows OS running on the scope and the default TekVisa software running on the scope communicates on port 4000. This implementation is currently coded so that the scope can be triggered on any of its 4 analog channels but triggering on the AUX channel is recommended. This implementation is currently being tested.
 

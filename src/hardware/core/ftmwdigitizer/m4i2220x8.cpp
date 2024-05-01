@@ -33,7 +33,7 @@ M4i2220x8::M4i2220x8(QObject *parent) :
                      {{srText,"156.25 MSa/s"},{srValue,2.5e9/16}},
                      {{srText,"312.5 MSa/s"},{srValue,2.5e9/8}},
                      {{srText,"625 MSa/s"},{srValue,2.5e9/4}},
-                     {{srText,"1250 GSa/s"},{srValue,2.5e9/2}},
+                     {{srText,"1250 MSa/s"},{srValue,2.5e9/2}},
                      {{srText,"2500 MSa/s"},{srValue,2.5e9}}
                  });
 

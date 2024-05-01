@@ -4,7 +4,7 @@ Installation
 Requirements
 ............
 
-Blackchirp is a cross-platform program, though at present it has only been tested on the Linux distribution openSUSE 15.2+.
+Blackchirp is a cross-platform program, though at present it has only been tested on the Linux distribution openSUSE 15.2+ and Ubuntu 22.04.3 LTS.
 If the program does not behave as expected on other platforms, please `raise an issue`_.
 
 The prerequisites for compiling Blackchirp are:
@@ -22,7 +22,7 @@ The prerequisites for compiling Blackchirp are:
 .. _GNU Scientific Library: https://www.gnu.org/software/gsl/
 .. _CUDA: https://developer.nvidia.com/cuda-downloads
 
-The easist way to build Blackchirp is to open the ``blackchirp.pro`` file in the `Qt Creator`_ IDE, which allows you to easily configure a qmake/C++ kit and control whether the build includes debugging symbols.
+The easiest way to build Blackchirp is to open the ``blackchirp.pro`` file in the `Qt Creator`_ IDE, which allows you to easily configure a qmake/C++ kit and control whether the build includes debugging symbols.
 It is recommended to build Blackchirp in the release configuration for best performance.
 
 .. _Qt Creator: https://www.qt.io/product/development-tools
@@ -72,13 +72,14 @@ The only items of hardware that are required for Blackchirp to run are a FTMW di
 For the clock, the "virtual" implementation (``fixed``) is called a ``FixedClock``, and it contains 6 virtual "outputs" that can be assigned different frequencies.
 More information about clocks and setting up your RF configuration can be found in the User Guide (`Hardware Menu - Rf Configuration <user_guide/hardware_menu.html#rf-configuration>`_).
 
+
 Custom Library/Include Paths
 ----------------------------
 
 To compile Blackchirp, you must provide the appropriate libraries: qwt, gsl, m, gslcblas, and any other libraries needed for your hardware implementations.
 In ``config.pri.template``, an example is provided for Linux assuming these libraries exist in your ``LD_LIBRARY_PATH`` (usually ``/usr/lib``, ``/usr/lib64``, and ``/usr/local/lib``).
 If your libraries are located elsewhere, you will need to add them.
-Using Qt Creator, you can right-click inside the `config.pri` file and use the "Add Library" option, or you can consult the `qmake documentation`_ for details.
+Using Qt Creator, you can right-click inside the ``config.pri`` file and use the "Add Library" option, or you can consult the `qmake documentation`_ for details.
 
 .. _qmake documentation: https://doc.qt.io/qt-5/qmake-variable-reference.html#libs
 

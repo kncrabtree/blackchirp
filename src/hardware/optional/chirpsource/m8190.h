@@ -1,26 +1,26 @@
-#ifndef M8195A_H
-#define M8195A_H
+#ifndef M8190_H
+#define M8190_H
 
 #include <hardware/optional/chirpsource/awg.h>
 
 namespace BC {
 namespace Key {
-static const QString m8195a{"m8195a"};
-static const QString m8195aName("Arbitrary Waveform Generator M8195A");
+static const QString m8190{"m8190"};
+static const QString m8190Name("Arbitrary Waveform Generator M8190");
 }
 }
 
 /*!
- * \brief The M8195A class
+ * \brief The M8190 class
  *
- * The chirp is sent to output 1; protection to output 3, amp gate to output 4
+ * The chirp is sent to output 1; protection to marker 1, amp gate to marker 2
  *
  */
-class M8195A : public AWG
+class M8190 : public AWG
 {
     Q_OBJECT
 public:
-    explicit M8195A(QObject *parent=nullptr);
+    explicit M8190(QObject *parent=nullptr);
 
     // HardwareObject interface
 public slots:
@@ -33,7 +33,7 @@ protected:
     void initialize() override;
 
 private:
-    bool m8195aWrite(const QString cmd);
+    bool m8190Write(const QString cmd);
 };
 
-#endif // M8195A_H
+#endif // M8190_H

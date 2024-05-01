@@ -182,6 +182,9 @@ bool DSOv204A::prepareForExperiment(Experiment &exp)
 
     if(!scopeCommand(QString(":ACQUIRE:POINTS:ANALOG %1").arg(config.d_recordLength)))
         return false;
+        
+    if(!scopeCommand(QString(":ACQUIRE:BANDWIDTH 20e9")))
+    	return false;
 
 
     p_comm->queryCmd(QString("*TRG;*OPC?\n"));
@@ -223,7 +226,7 @@ bool DSOv204A::prepareForExperiment(Experiment &exp)
                             .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
             return false;
         }
-        config.d_analogChannels[d_fidChannel].offset = offset;
+        config.d_analogChannels[config.d_fidChannel].offset = offset;
     }
     else
     {
@@ -241,11 +244,11 @@ bool DSOv204A::prepareForExperiment(Experiment &exp)
                             .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
             return false;
         }
-        if(!(fabs(config.d_analogChannels[d_fidChannel].fullScale-scale*5.0) < 0.01))
+        if(!(fabs(config.d_analogChannels[config.d_fidChannel].fullScale-scale*5.0) < 0.01))
             emit logMessage(QString("Vertical scale is different than specified. Target: %1 V, Scope setting: %2 V")
-                            .arg(QString::number(config.d_analogChannels[d_fidChannel].fullScale,'f',3))
+                            .arg(QString::number(config.d_analogChannels[config.d_fidChannel].fullScale,'f',3))
                             .arg(QString::number(scale*5.0,'f',3)),LogHandler::Warning);
-        config.d_analogChannels[d_fidChannel].fullScale = scale*5.0;
+        config.d_analogChannels[config.d_fidChannel].fullScale = scale*5.0;
     }
     else
     {

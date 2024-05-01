@@ -1,5 +1,5 @@
-#ifndef DSA71604C_H
-#define DSA71604C_H
+#ifndef DPO71254B_H
+#define DPO71254B_H
 
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
 
@@ -9,16 +9,16 @@
 class QTcpSocket;
 
 namespace BC::Key::FtmwScope {
-static const QString dsa71604c{"dsa71604c"};
-static const QString dsa71064cName("Ftmw Oscilloscope DSA71604C");
+static const QString dpo71254b{"DPO71254B"};
+static const QString dpo71254bName("Ftmw Oscilloscope DPO71254B");
 }
 
-class Dsa71604c : public FtmwScope
+class Dpo71254b : public FtmwScope
 {
     Q_OBJECT
 public:
-    Dsa71604c(QObject *parent = nullptr);
-    ~Dsa71604c();
+    Dpo71254b(QObject *parent = nullptr);
+    ~Dpo71254b();
 
     // HardwareObject interface
 public slots:
@@ -45,4 +45,4 @@ private:
     QTcpSocket *p_socket;
 };
 
-#endif // DSA71604C_H
+#endif // DPO71254B_H

@@ -25,7 +25,7 @@ unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
 # -----------------------------------------------
 
 # FTMW Oscilloscope. Only 1 may be selected
-# options: virtual, DSA71604C, MSO72004C, M4i2220x8, DSOx92004A, MSO64B
+# options: virtual, DSA71604C, MSO72004C, M4i2220x8, DSOx92004A, DSOV204A, MSO64B, DPO71254B
 FTMWSCOPE=virtual
 
 # Clocks. Space delimited list

@@ -41,6 +41,12 @@ count(AWG,1) {
             SOURCES += $$PWD/awg5204.cpp
             HW *= "$${H}include <hardware/optional/chirpsource/awg5204.h>"
         }
+		equals(N,M8190) {
+		    DEFINES += BC_AWG=M8190
+            HEADERS += $$PWD/m8190.h
+			SOURCES += $$PWD/m8190.cpp
+			HW *= "$${H}include <hardware/optional/chirpsource/m8190.h>"
+        }
 }
 
 allhardware {
@@ -62,4 +68,7 @@ allhardware {
     HEADERS *= $$PWD/awg5204.h
     SOURCES *= $$PWD/awg5204.cpp
     HW *= "$${H}include <hardware/optional/chirpsource/awg5204.h>"
+	HEADERS += $$PWD/m8190.h
+	SOURCES += $$PWD/m8190.cpp
+	HW *= "$${H}include <hardware/optional/chirpsource/m8190.h>"
 }

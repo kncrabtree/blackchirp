@@ -60,6 +60,13 @@ equals(N,DSOV204A) {
     HW *= "$${H}include <hardware/core/ftmwdigitizer/dso204a.h>"
 }
 
+equals(N,DPO71254B) {
+    DEFINES += BC_FTMWSCOPE=Dpo71254b
+	SOURCES += $$PWD/dpo71254b.cpp
+	HEADERS += $$PWD/dpo71254b.h
+	HW *= "$${H}include <hardware/core/ftmwdigitizer/dpo71254b.h>"
+}
+
 allhardware {
     HEADERS *= $$PWD/virtualftmwscope.h
     SOURCES *= $$PWD/virtualftmwscope.cpp
@@ -83,4 +90,7 @@ allhardware {
     SOURCES *= $$PWD/dsov204a.cpp
     HEADERS *= $$PWD/dsov204a.h
     HW *= "$${H}include <hardware/core/ftmwdigitizer/dsov204a.h>"
+	SOURCES += $$PWD/dpo71254b.cpp
+	HEADERS += $$PWD/dpo71254b.h
+	HW *= "$${H}include <hardware/core/ftmwdigitizer/dpo71254b.h>"
 }
