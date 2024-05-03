@@ -49,7 +49,6 @@ public slots:
 
     // HardwareObject interface
 public slots:
-    bool prepareForExperiment(Experiment &exp);
     void beginAcquisition();
     void endAcquisition();
 };

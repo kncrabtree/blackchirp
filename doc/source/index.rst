@@ -8,7 +8,6 @@
    :hidden:
 
    user_guide
-   classes
 
 Blackchirp Documentation
 ========================

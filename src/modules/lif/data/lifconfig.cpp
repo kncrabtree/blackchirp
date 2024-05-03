@@ -1,4 +1,5 @@
-#include "modules/lif/hardware/liflaser/liflaser.h"
+#include <modules/lif/hardware/liflaser/liflaser.h>
+#include <modules/lif/hardware/lifdigitizer/lifscope.h>
 #include <modules/lif/data/lifconfig.h>
 
 #include <modules/lif/data/liftrace.h>
@@ -8,7 +9,9 @@
 
 LifConfig::LifConfig() : HeaderStorage(BC::Store::LIF::key)
 {
-
+    SettingsStorage s(BC::Key::hwKey(BC::Key::LifDigi::lifScope,0),SettingsStorage::Hardware);
+    QString sk = s.get(BC::Key::HW::subKey,BC::Key::Comm::hwVirtual);
+    ps_scopeConfig = std::make_shared<LifDigitizerConfig>(sk);
 }
 
 bool LifConfig::isComplete() const
@@ -62,7 +65,7 @@ void LifConfig::addWaveform(const QVector<qint8> d)
     if(d_complete && d_completeMode == StopWhenComplete)
         return;
 
-    LifTrace t(d_scopeConfig,d,d_currentDelayIndex,d_currentLaserIndex);
+    LifTrace t(scopeConfig(),d,d_currentDelayIndex,d_currentLaserIndex);
     ps_storage->addTrace(t);
 }
 
@@ -110,7 +113,7 @@ void LifConfig::retrieveValues()
 
 void LifConfig::prepareChildren()
 {
-    addChild(&d_scopeConfig);
+    addChild(&scopeConfig());
 }
 
 

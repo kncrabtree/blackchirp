@@ -11,9 +11,13 @@
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
+#include <hardware/hw_h.h>
+#include <hardware/core/clock/clock_h.h>
+
 #include <QThread>
 
 #ifdef BC_LIF
+#include <modules/lif/hardware/lifhw_h.h>
 #include <modules/lif/hardware/lifdigitizer/lifscope.h>
 #include <modules/lif/hardware/liflaser/liflaser.h>
 #include <QtConcurrent/QtConcurrent>
@@ -21,10 +25,11 @@
 #include <QFutureWatcher>
 #endif
 
-HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsStorage(BC::Key::hw)
+HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsStorage(BC::Key::hw),
+    d_optHwTypes{BC::Key::Flow::flowController,BC::Key::IOB::ioboard,BC::Key::PController::key,BC::Key::PGen::key,BC::Key::TC::key}
 {
     //Required hardware: FtmwScope and Clocks
-    auto ftmwScope = new FtmwScopeHardware;
+    auto ftmwScope = new BC_FTMWSCOPE;
     connect(ftmwScope,&FtmwScope::shotAcquired,this,&HardwareManager::ftmwScopeShotAcquired);
     d_hardwareMap.emplace(ftmwScope->d_key,ftmwScope);
 
@@ -36,13 +41,13 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
         d_hardwareMap.emplace(cl.at(i)->d_key,cl.at(i));
 
 #ifdef BC_AWG
-    auto awg =new AwgHardware;
+    auto awg = new BC_AWG;
     d_hardwareMap.emplace(awg->d_key,awg);
 #endif
 
     QThread* gpibThread = nullptr;
 #ifdef BC_GPIBCONTROLLER
-    auto gpib = new GpibControllerHardware;
+    auto gpib = new BC_GPIBCONTROLLER;
     gpibThread = new QThread(this);
     gpibThread->setObjectName(gpib->d_key+"Thread");
     connect(gpibThread,&QThread::started,gpib,&HardwareObject::bcInitInstrument);
@@ -52,52 +57,125 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #endif
 
 #ifdef BC_PGEN
-    auto pGen = new PulseGeneratorHardware;
-    connect(pGen,&PulseGenerator::settingUpdate,this,&HardwareManager::pGenSettingUpdate);
-    connect(pGen,&PulseGenerator::configUpdate,this,&HardwareManager::pGenConfigUpdate);
-    connect(pGen,&PulseGenerator::repRateUpdate,this,&HardwareManager::pGenRepRateUpdate);
-    connect(pGen,&PulseGenerator::modeUpdate,this,&HardwareManager::pGenModeUpdate);
-    connect(pGen,&PulseGenerator::pulseEnabledUpdate,this,&HardwareManager::pGenPulsingUpdate);
-    d_hardwareMap.emplace(pGen->d_key,pGen);
+    QList<PulseGenerator*> pGenList;
+
+#define BOOST_PP_LOCAL_MACRO(n) pGenList << new BC_PGEN_##n;
+#define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_PGEN-1)
+#include BOOST_PP_LOCAL_ITERATE()
+#undef BOOST_PP_LOCAL_MACRO
+#undef BOOST_PP_LOCAL_LIMITS
+
+    for( auto &pGen : pGenList)
+    {
+        auto k = pGen->d_key;
+        connect(pGen,&PulseGenerator::settingUpdate,[this,k](const int ch, const PulseGenConfig::Setting set, const QVariant val){
+            emit pGenSettingUpdate(k,ch,set,val);
+        });
+        connect(pGen,&PulseGenerator::configUpdate,[this,k](const PulseGenConfig cfg){
+            emit pGenConfigUpdate(k,cfg);
+        });
+        d_hardwareMap.emplace(k,pGen);
+    }
 #endif
 
 #ifdef BC_FLOWCONTROLLER
-    auto flow = new FlowControllerHardware;
-    connect(flow,&FlowController::flowUpdate,this,&HardwareManager::flowUpdate);
-    connect(flow,&FlowController::flowSetpointUpdate,this,&HardwareManager::flowSetpointUpdate);
-    connect(flow,&FlowController::pressureUpdate,this,&HardwareManager::gasPressureUpdate);
-    connect(flow,&FlowController::pressureSetpointUpdate,this,&HardwareManager::gasPressureSetpointUpdate);
-    connect(flow,&FlowController::pressureControlMode,this,&HardwareManager::gasPressureControlMode);
-    d_hardwareMap.emplace(flow->d_key,flow);
+    QList<FlowController*> fcList;
+
+#define BOOST_PP_LOCAL_MACRO(n) fcList << new BC_FLOWCONTROLLER_##n;
+#define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_FLOWCONTROLLER-1)
+#include BOOST_PP_LOCAL_ITERATE()
+#undef BOOST_PP_LOCAL_MACRO
+#undef BOOST_PP_LOCAL_LIMITS
+
+    for(auto flow : fcList)
+    {
+        auto k = flow->d_key;
+        connect(flow,&FlowController::flowUpdate,[this,k](int i, double d){
+            emit flowUpdate(k,i,d);
+        });
+        connect(flow,&FlowController::flowSetpointUpdate,[this,k](int i, double d){
+            emit flowSetpointUpdate(k,i,d);
+        });
+        connect(flow,&FlowController::pressureUpdate,[this,k](double d){
+            emit gasPressureUpdate(k,d);
+        });
+        connect(flow,&FlowController::pressureSetpointUpdate,[this,k](double d){
+           emit gasPressureSetpointUpdate(k,d);
+        });
+        connect(flow,&FlowController::pressureControlMode,[this,k](bool b){
+            emit gasPressureControlMode(k,b);
+        });
+        d_hardwareMap.emplace(k,flow);
+    }
 #endif
 
 #ifdef BC_PCONTROLLER
-    auto pc = new PressureControllerHardware;
-    connect(pc,&PressureController::pressureUpdate,this,&HardwareManager::pressureUpdate);
-    connect(pc,&PressureController::pressureSetpointUpdate,this,&HardwareManager::pressureSetpointUpdate);
-    connect(pc,&PressureController::pressureControlMode,this,&HardwareManager::pressureControlMode);
-    d_hardwareMap.emplace(pc->d_key,pc);
+    QList<PressureController*> pcList;
+
+#define BOOST_PP_LOCAL_MACRO(n) pcList << new BC_PCONTROLLER_##n;
+#define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_PCONTROLLER-1)
+#include BOOST_PP_LOCAL_ITERATE()
+#undef BOOST_PP_LOCAL_MACRO
+#undef BOOST_PP_LOCAL_LIMITS
+
+    for(auto pc : pcList)
+    {
+        auto k = pc->d_key;
+        connect(pc,&PressureController::pressureUpdate,this,[this,k](double d){
+            emit pressureUpdate(k,d);
+        });
+        connect(pc,&PressureController::pressureSetpointUpdate,this,[this,k](double d){
+            emit pressureSetpointUpdate(k,d);
+        });
+        connect(pc,&PressureController::pressureControlMode,this,[this,k](bool b){
+            emit pressureControlMode(k,b);
+        });
+        d_hardwareMap.emplace(pc->d_key,pc);
+    }
 #endif
 
 #ifdef BC_TEMPCONTROLLER
-    auto tc = new TemperatureControllerHardware;
-    connect(tc,&TemperatureController::channelEnableUpdate,this,&HardwareManager::temperatureEnableUpdate);
-    connect(tc,&TemperatureController::temperatureUpdate,this,&HardwareManager::temperatureUpdate);
-    d_hardwareMap.emplace(tc->d_key,tc);
+    QList<TemperatureController*> tcList;
+
+#define BOOST_PP_LOCAL_MACRO(n) tcList << new BC_TEMPCONTROLLER_##n;
+#define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_TEMPCONTROLLER-1)
+#include BOOST_PP_LOCAL_ITERATE()
+#undef BOOST_PP_LOCAL_MACRO
+#undef BOOST_PP_LOCAL_LIMITS
+
+    for(auto tc : tcList)
+    {
+        auto k = tc->d_key;
+        connect(tc,&TemperatureController::channelEnableUpdate,this,[this,k](uint i,bool en){
+            emit temperatureEnableUpdate(k,i,en);
+        });
+        connect(tc,&TemperatureController::temperatureUpdate,this,[this,k](uint i, double t) {
+            emit temperatureUpdate(k,i,t);
+        });
+        d_hardwareMap.emplace(k,tc);
+    }
 #endif
 
 #ifdef BC_IOBOARD
-    auto iob = new IOBoardHardware;
-    d_hardwareMap.emplace(iob->d_key,iob);
+    QList<IOBoard*> iobList;
+
+#define BOOST_PP_LOCAL_MACRO(n) iobList << new BC_IOBOARD_##n;
+#define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_IOBOARD-1)
+#include BOOST_PP_LOCAL_ITERATE()
+#undef BOOST_PP_LOCAL_MACRO
+#undef BOOST_PP_LOCAL_LIMITS
+
+    for(auto iob : iobList)
+        d_hardwareMap.emplace(iob->d_key,iob);
 #endif
 
 #ifdef BC_LIF
-    auto lsc = new LifScopeHardware();
+    auto lsc = new BC_LIFSCOPE;
     connect(lsc,&LifScope::waveformRead,this,&HardwareManager::lifScopeShotAcquired);
     connect(lsc,&LifScope::configAcqComplete,this,&HardwareManager::lifConfigAcqStarted);
     d_hardwareMap.emplace(lsc->d_key,lsc);
 
-    auto ll = new LifLaserHardware();
+    auto ll = new BC_LIFLASER;
     connect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserPosUpdate);
     connect(ll,&LifLaser::laserFlashlampUpdate,this,&HardwareManager::lifLaserFlashlampUpdate);
     d_hardwareMap.emplace(ll->d_key,ll);
@@ -216,6 +294,15 @@ HardwareManager::~HardwareManager()
     }
 }
 
+QString HardwareManager::getHwName(const QString key)
+{
+    auto hw = findHardware<HardwareObject>(key);
+    if(hw)
+        return hw->d_name;
+
+    return QString();
+}
+
 void HardwareManager::initialize()
 {
     //start all threads and initialize hw
@@ -275,7 +362,8 @@ void HardwareManager::hardwareFailure()
 
     disconnect(obj,&HardwareObject::hardwareFailure,this,&HardwareManager::hardwareFailure);
 
-    emit abortAcquisition();
+    if(obj->d_critical)
+        emit abortAcquisition();
 
     checkStatus();
 }
@@ -301,10 +389,10 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
             auto obj = it->second;
             if(obj->thread() != QThread::currentThread())
                 QMetaObject::invokeMethod(obj,[obj,exp](){
-                    return obj->prepareForExperiment(*exp);
+                    return obj->hwPrepareForExperiment(*exp);
                 },Qt::BlockingQueuedConnection,&success);
             else
-                success = obj->prepareForExperiment(*exp);
+                success = obj->hwPrepareForExperiment(*exp);
 
             if(!success)
             {
@@ -320,14 +408,15 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
 #ifdef BC_LIF
     if(exp->lifEnabled())
     {
-        auto ll = findHardware<LifLaser>(BC::Key::LifLaser::key);
+        auto ll = findHardware<LifLaser>(BC::Key::hwKey(BC::Key::LifLaser::key,0));
         if(!ll)
         {
             emit logMessage(QString("Could not perform LIF experiment because no laser is avaialble."),LogHandler::Error);
             emit lifSettingsComplete(false);
-            return;
+            exp->d_hardwareSuccess = false;
         }
-        connect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserSetComplete,Qt::UniqueConnection);
+        else
+            connect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserSetComplete,Qt::UniqueConnection);
     }
 #endif
     //any additional synchronous initialization can be performed here, before experimentInitialized() is emitted
@@ -340,7 +429,7 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
 void HardwareManager::experimentComplete()
 {
 #ifdef BC_LIF
-    auto ll = findHardware<LifLaser>(BC::Key::LifLaser::key);
+    auto ll = findHardware<LifLaser>(BC::Key::hwKey(BC::Key::LifLaser::key,0));
     if(ll)
         disconnect(ll,&LifLaser::laserPosUpdate,this,&HardwareManager::lifLaserSetComplete);
 #endif
@@ -414,46 +503,41 @@ void HardwareManager::setClocks(QHash<RfConfig::ClockType, RfConfig::ClockFreq> 
     emit allClocksReady(clocks);
 }
 
-void HardwareManager::setPGenSetting(int index, PulseGenConfig::Setting s, QVariant val)
+void HardwareManager::setPGenSetting(const QString key, int index, PulseGenConfig::Setting s, QVariant val)
 {
-    auto pGen = findHardware<PulseGenerator>(BC::Key::PGen::key);
+    auto pGen = findHardware<PulseGenerator>(key);
     if(pGen)
-        QMetaObject::invokeMethod(pGen,[pGen,index,s,val](){ pGen->setPGenSetting(index,s,val); });
+    {
+        switch(s)
+        {
+        case PulseGenConfig::RepRateSetting:
+            QMetaObject::invokeMethod(pGen,[pGen,val](){ pGen->setRepRate(val.toDouble());});
+            break;
+        case PulseGenConfig::PGenEnabledSetting:
+            QMetaObject::invokeMethod(pGen,[pGen,val](){ pGen->setPulseEnabled(val.toBool());});
+            break;
+        case PulseGenConfig::PGenModeSetting:
+            QMetaObject::invokeMethod(pGen,[pGen,val](){ pGen->setPulseMode(val.value<PulseGenConfig::PGenMode>());});
+            break;
+        default:
+            QMetaObject::invokeMethod(pGen,[pGen,index,s,val](){ pGen->setPGenSetting(index,s,val);});
+            break;
+        }
+    }
 
 }
 
-void HardwareManager::setPGenConfig(const PulseGenConfig &c)
+void HardwareManager::setPGenConfig(const QString key, const PulseGenConfig &c)
 {
-    auto pGen = findHardware<PulseGenerator>(BC::Key::PGen::key);
+    auto pGen = findHardware<PulseGenerator>(key);
     if(pGen)
         QMetaObject::invokeMethod(pGen,[pGen,c](){ pGen->setAll(c); });
 }
 
-void HardwareManager::setPGenRepRate(double r)
-{
-    auto pGen = findHardware<PulseGenerator>(BC::Key::PGen::key);
-    if(pGen)
-        QMetaObject::invokeMethod(pGen,[pGen,r](){ pGen->setRepRate(r); });
-}
-
-void HardwareManager::setPGenPulsingEnabled(bool en)
-{
-    auto pGen = findHardware<PulseGenerator>(BC::Key::PGen::key);
-    if(pGen)
-        QMetaObject::invokeMethod(pGen,[pGen,en](){ pGen->setPulseEnabled(en); });
-}
-
-void HardwareManager::setPGenMode(PulseGenConfig::PGenMode mode)
-{
-    auto pGen = findHardware<PulseGenerator>(BC::Key::PGen::key);
-    if(pGen)
-        QMetaObject::invokeMethod(pGen,[pGen,mode](){ pGen->setPulseMode(mode); });
-}
-
-PulseGenConfig HardwareManager::getPGenConfig()
+PulseGenConfig HardwareManager::getPGenConfig(const QString key)
 {
     PulseGenConfig out;
-    auto pg = findHardware<PulseGenerator>(BC::Key::PGen::key);
+    auto pg = findHardware<PulseGenerator>(key);
     if(pg)
     {
         if(pg->thread() != QThread::currentThread())
@@ -465,38 +549,38 @@ PulseGenConfig HardwareManager::getPGenConfig()
     return out;
 }
 
-void HardwareManager::setFlowSetpoint(int index, double val)
+void HardwareManager::setFlowSetpoint(const QString key, int index, double val)
 {
-    auto flow = findHardware<FlowController>(BC::Key::Flow::flowController);
+    auto flow = findHardware<FlowController>(key);
     if(flow)
         QMetaObject::invokeMethod(flow,[flow,index,val](){flow->setFlowSetpoint(index,val);});
 }
 
-void HardwareManager::setFlowChannelName(int index, QString name)
+void HardwareManager::setFlowChannelName(const QString key, int index, QString name)
 {
-    auto flow = findHardware<FlowController>(BC::Key::Flow::flowController);
+    auto flow = findHardware<FlowController>(key);
     if(flow)
         QMetaObject::invokeMethod(flow,[flow,index,name](){flow->setChannelName(index,name);});
 }
 
-void HardwareManager::setGasPressureSetpoint(double val)
+void HardwareManager::setGasPressureSetpoint(const QString key, double val)
 {
-    auto flow = findHardware<FlowController>(BC::Key::Flow::flowController);
+    auto flow = findHardware<FlowController>(key);
     if(flow)
         QMetaObject::invokeMethod(flow,[flow,val](){flow->setPressureSetpoint(val);});
 }
 
-void HardwareManager::setGasPressureControlMode(bool en)
+void HardwareManager::setGasPressureControlMode(const QString key, bool en)
 {
-    auto flow = findHardware<FlowController>(BC::Key::Flow::flowController);
+    auto flow = findHardware<FlowController>(key);
     if(flow)
         QMetaObject::invokeMethod(flow,[flow,en](){flow->setPressureControlMode(en);});
 }
 
-FlowConfig HardwareManager::getFlowConfig()
+FlowConfig HardwareManager::getFlowConfig(const QString key)
 {
     FlowConfig out;
-    auto fc = findHardware<FlowController>(BC::Key::Flow::flowController);
+    auto fc = findHardware<FlowController>(key);
     if(fc)
     {
         if(fc->thread() != QThread::currentThread())
@@ -527,38 +611,38 @@ std::map<QString, QString> HardwareManager::currentHardware() const
 }
 
 
-void HardwareManager::setPressureSetpoint(double val)
+void HardwareManager::setPressureSetpoint(const QString key, double val)
 {
-    auto pc = findHardware<PressureController>(BC::Key::PController::key);
+    auto pc = findHardware<PressureController>(key);
     if(pc)
         QMetaObject::invokeMethod(pc,[pc,val](){pc->setPressureSetpoint(val);});
 }
 
-void HardwareManager::setPressureControlMode(bool en)
+void HardwareManager::setPressureControlMode(const QString key, bool en)
 {
-    auto pc = findHardware<PressureController>(BC::Key::PController::key);
+    auto pc = findHardware<PressureController>(key);
     if(pc)
         QMetaObject::invokeMethod(pc,[pc,en](){pc->setPressureControlMode(en);});
 }
 
-void HardwareManager::openGateValve()
+void HardwareManager::openGateValve(const QString key)
 {
-    auto pc = findHardware<PressureController>(BC::Key::PController::key);
+    auto pc = findHardware<PressureController>(key);
     if(pc)
         QMetaObject::invokeMethod(pc,&PressureController::openGateValve);
 }
 
-void HardwareManager::closeGateValve()
+void HardwareManager::closeGateValve(const QString key)
 {
-    auto pc = findHardware<PressureController>(BC::Key::PController::key);
+    auto pc = findHardware<PressureController>(key);
     if(pc)
         QMetaObject::invokeMethod(pc,&PressureController::closeGateValve);
 }
 
-PressureControllerConfig HardwareManager::getPressureControllerConfig()
+PressureControllerConfig HardwareManager::getPressureControllerConfig(const QString key)
 {
     PressureControllerConfig out;
-    auto pc = findHardware<PressureController>(BC::Key::PController::key);
+    auto pc = findHardware<PressureController>(key);
     if(pc)
     {
         if(pc->thread() != QThread::currentThread())
@@ -571,33 +655,81 @@ PressureControllerConfig HardwareManager::getPressureControllerConfig()
 }
 
 
-void HardwareManager::setTemperatureChannelEnabled(int ch, bool en)
+void HardwareManager::setTemperatureChannelEnabled(const QString key, uint ch, bool en)
 {
-    auto tc = findHardware<TemperatureController>(BC::Key::TC::key);
+    auto tc = findHardware<TemperatureController>(key);
     if(tc)
         QMetaObject::invokeMethod(tc,[tc,ch,en](){ tc->setChannelEnabled(ch,en);});
 }
 
-void HardwareManager::setTemperatureChannelName(int ch, const QString name)
+void HardwareManager::setTemperatureChannelName(const QString key, uint ch, const QString name)
 {
-    auto tc = findHardware<TemperatureController>(BC::Key::TC::key);
+    auto tc = findHardware<TemperatureController>(key);
     if(tc)
         QMetaObject::invokeMethod(tc,[tc,ch,name](){ tc->setChannelName(ch,name);});
 }
 
-TemperatureControllerConfig HardwareManager::getTemperatureControllerConfig()
+TemperatureControllerConfig HardwareManager::getTemperatureControllerConfig(const QString key)
 {
     TemperatureControllerConfig out;
-    auto tc = findHardware<TemperatureController>(BC::Key::TC::key);
+    auto tc = findHardware<TemperatureController>(key);
     if(tc)
     {
-        if(tc->thread() == QThread::currentThread())
+        if(tc->thread() != QThread::currentThread())
             QMetaObject::invokeMethod(tc,&TemperatureController::getConfig,Qt::BlockingQueuedConnection,&out);
         else
             out = tc->getConfig();
     }
 
     return out;
+}
+
+IOBoardConfig HardwareManager::getIOBoardConfig(const QString key)
+{
+    IOBoardConfig out;
+    auto iob = findHardware<IOBoard>(key);
+    if(iob)
+    {
+        if(iob->thread() != QThread::currentThread())
+            QMetaObject::invokeMethod(iob,&IOBoard::getConfig,Qt::BlockingQueuedConnection,&out);
+        else
+            out = iob->getConfig();
+    }
+
+    return out;
+
+}
+
+void HardwareManager::storeAllOptHw(Experiment *exp, std::map<QString, bool> hw)
+{
+    for(auto const &[hwKey,_] : d_hardwareMap)
+    {
+        auto t = BC::Key::parseKey(hwKey);
+        auto type = t.first;
+        auto index = t.second;
+
+        if((d_optHwTypes.find(type) == d_optHwTypes.end()) || index < 0 )
+            continue;
+
+        bool read = true;
+        auto it = hw.find(hwKey);
+        if(it != hw.end())
+            read = it->second;
+
+        if(read)
+        {
+            if(type == BC::Key::PGen::key)
+                exp->addOptHwConfig(getPGenConfig(hwKey));
+            else if(type == BC::Key::Flow::flowController)
+                exp->addOptHwConfig(getFlowConfig(hwKey));
+            else if(type == BC::Key::TC::key)
+                exp->addOptHwConfig(getTemperatureControllerConfig(hwKey));
+            else if(type == BC::Key::PController::key)
+                exp->addOptHwConfig(getPressureControllerConfig(hwKey));
+            else if(type == BC::Key::IOB::ioboard)
+                exp->addOptHwConfig(getIOBoardConfig(hwKey));
+        }
+    }
 }
 
 void HardwareManager::checkStatus()
@@ -621,60 +753,51 @@ void HardwareManager::checkStatus()
 void HardwareManager::setLifParameters(double delay, double pos)
 {
     bool success = true;
-
-    auto ll = findHardware<LifLaser>(BC::Key::LifLaser::key);
-    if(!ll)
-    {
-        emit logMessage(QString("Could not set LIF Laser position because no laser is avaialble."),LogHandler::Error);
-        emit lifSettingsComplete(false);
-        return;
-    }
-
-    auto pGen = findHardware<PulseGenerator>(BC::Key::PGen::key);
-    if(pGen)
-    {
-        if(!setPGenLifDelay(delay))
-            success = false;
-    }
-
+    success &= setLifLaserPos(pos);
     if(success)
-        setLifLaserPos(pos);
-    else
-        emit lifSettingsComplete(success);
+        success &= setPGenLifDelay(delay);
+
+    emit lifSettingsComplete(success);
 }
 
 bool HardwareManager::setPGenLifDelay(double d)
 {
-    auto pGen = findHardware<PulseGenerator>(BC::Key::PGen::key);
-    if(!pGen)
+#ifndef BC_PGEN
+    emit logMessage(QString("Could not set LIF delay because no pulse generator is avaialble."),LogHandler::Error);
+    return false;
+#endif
+
+    bool out = true;
+    for(uint i=0; i<BC_NUM_PGEN; i++)
     {
-        emit logMessage(QString("Could not set LIF delay because no pulse generator is avaialble."),LogHandler::Error);
-        return false;
+        auto pGen = findHardware<PulseGenerator>(BC::Key::hwKey(BC::Key::PGen::key,i));
+
+
+        if(pGen->thread() == QThread::currentThread())
+            out &= pGen->setLifDelay(d);
+        else
+            QMetaObject::invokeMethod(pGen,[pGen,d](){ return pGen->setLifDelay(d); },Qt::BlockingQueuedConnection,&out);
     }
 
-    if(pGen->thread() == QThread::currentThread())
-        return pGen->setLifDelay(d);
-
-
-    bool out;
-    QMetaObject::invokeMethod(pGen,[pGen,d](){ return pGen->setLifDelay(d); },Qt::BlockingQueuedConnection,&out);
     return out;
-
 }
 
-void HardwareManager::setLifLaserPos(double pos)
+bool HardwareManager::setLifLaserPos(double pos)
 {
-    auto ll = findHardware<LifLaser>(BC::Key::LifLaser::key);
+    auto ll = findHardware<LifLaser>(BC::Key::hwKey(BC::Key::LifLaser::key,0));
     if(!ll)
     {
         emit logMessage(QString("Could not set LIF Laser position because no laser is avaialble."),LogHandler::Error);
-        return;
+        return false;
     }
 
+    double newPos = -1.0;
     if(ll->thread() == QThread::currentThread())
-        ll->setPosition(pos);
+        newPos = ll->setPosition(pos);
     else
-        QMetaObject::invokeMethod(ll,[ll,pos](){ ll->setPosition(pos); });
+        QMetaObject::invokeMethod(ll,[ll,pos](){ return ll->setPosition(pos); },Qt::BlockingQueuedConnection,&newPos);
+
+    return newPos >= 0.0;
 }
 
 void HardwareManager::lifLaserSetComplete(double pos)
@@ -682,9 +805,9 @@ void HardwareManager::lifLaserSetComplete(double pos)
     emit lifSettingsComplete(pos > 0.0);
 }
 
-void HardwareManager::startLifConfigAcq(const LifDigitizerConfig &c)
+void HardwareManager::startLifConfigAcq(const LifConfig &c)
 {
-    auto ld = findHardware<LifScope>(BC::Key::LifDigi::lifScope);
+    auto ld = findHardware<LifScope>(BC::Key::hwKey(BC::Key::LifDigi::lifScope,0));
     if(!ld)
     {
         emit logMessage("Could not initialize LIF acquisition because no digitizer was found.",LogHandler::Error);
@@ -699,7 +822,7 @@ void HardwareManager::startLifConfigAcq(const LifDigitizerConfig &c)
 
 void HardwareManager::stopLifConfigAcq()
 {
-    auto ld = findHardware<LifScope>(BC::Key::LifDigi::lifScope);
+    auto ld = findHardware<LifScope>(BC::Key::hwKey(BC::Key::LifDigi::lifScope,0));
     if(!ld)
     {
         emit logMessage("Could not stop LIF acquisition because no digitizer was found.",LogHandler::Error);
@@ -714,7 +837,7 @@ void HardwareManager::stopLifConfigAcq()
 
 double HardwareManager::lifLaserPos()
 {
-    auto ll = findHardware<LifLaser>(BC::Key::LifLaser::key);
+    auto ll = findHardware<LifLaser>(BC::Key::hwKey(BC::Key::LifLaser::key,0));
     if(!ll)
     {
         emit logMessage(QString("Could not read LIF Laser position because no laser is available."),LogHandler::Error);
@@ -731,7 +854,7 @@ double HardwareManager::lifLaserPos()
 
 bool HardwareManager::lifLaserFlashlampEnabled()
 {
-    auto ll = findHardware<LifLaser>(BC::Key::LifLaser::key);
+    auto ll = findHardware<LifLaser>(BC::Key::hwKey(BC::Key::LifLaser::key,0));
     if(!ll)
     {
         emit logMessage(QString("Could not read LIF Laser flashlamp status because no laser is available."),LogHandler::Error);
@@ -748,7 +871,7 @@ bool HardwareManager::lifLaserFlashlampEnabled()
 
 void HardwareManager::setLifLaserFlashlampEnabled(bool en)
 {
-    auto ll = findHardware<LifLaser>(BC::Key::LifLaser::key);
+    auto ll = findHardware<LifLaser>(BC::Key::hwKey(BC::Key::LifLaser::key,0));
     if(!ll)
     {
         emit logMessage(QString("Could not read LIF Laser flashlamp status because no laser is available."),LogHandler::Error);

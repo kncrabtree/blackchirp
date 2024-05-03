@@ -18,12 +18,12 @@ HWSettingsModel::HWSettingsModel(QString key, QStringList forbiddenKeys, QObject
                           BC::Key::TCP::port,BC::Key::GPIB::gpibAddress
     });
     
-    for(auto const &key : k)
+    for(auto const &kk : k)
     {
-        if(forbiddenKeys.contains(key))
+        if(forbiddenKeys.contains(kk))
             continue;
 
-        QVector<QVariant> data{key,get(key)};
+        QVector<QVariant> data{kk,get(kk)};
         pu_rootItem->appendChild(new HWSettingsItem(data,true,false,pu_rootItem.get()));
     }
     
@@ -63,7 +63,7 @@ HWSettingsModel::HWSettingsModel(QString key, QStringList forbiddenKeys, QObject
     }
 }
 
-void HWSettingsModel::saveChanges()
+void HWSettingsModel::saveChanges(const QString name)
 {
     for(int i=0; i<pu_rootItem->childCount(); ++i)
     {
@@ -94,6 +94,9 @@ void HWSettingsModel::saveChanges()
             setArray(arrayKey,vec);
         }
     }
+
+    if(!name.isEmpty())
+        set(BC::Key::HW::name,name);
 
     save();
 }

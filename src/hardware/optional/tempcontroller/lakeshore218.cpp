@@ -34,7 +34,7 @@ void Lakeshore218::tcInitialize()
     p_comm->setReadOptions(500, true,QByteArray("\r\n"));
 }
 
-double Lakeshore218::readHwTemperature(const int ch)
+double Lakeshore218::readHwTemperature(const uint ch)
 {
     QByteArray temp = p_comm->queryCmd(QString("KRDG?%1\r\n").arg(ch+1));
     bool ok = false;

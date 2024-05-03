@@ -7,6 +7,8 @@
 #include <QSettings>
 #include <QCoreApplication>
 
+#include <data/bcglobals.h>
+
 namespace BC::Key {
 static const QString BC{"Blackchirp"};
 static const QString exptNum{"exptNum"};
@@ -48,45 +50,35 @@ static const QString trackingDir{"rollingdata"};
  *
  * When initializing SettingsStorage, the standard constructor is
  *
- *     SettingsStorage::SettingsStorage(const QStringList keys, Type type, bool systemWide)
+ *     SettingsStorage::SettingsStorage(const QStringList keys, Type type)
  *
  * QSettings::beginGroup will be called for each key in the keys list. If the list is empty, then
- * the group is set to "Blackchirp". This is done to prevent QSettings form reading in various system-wide
- * garbage on macOS. The `systemWide` argument is used to determine whether the main Blackchirp.conf file
- * is accessed (which by default is located in /home/data/CrabtreeLab on unix systems), or a user-specific one.
- * Settings that should apply to any user account (experiment number, hardware configuration, etc) should set
- * systemWide=true, and settings that are specific to a user (UI colors/preferences) should set systemWide=false.
- * If Type is set to Hardware and the length of the keys list is 1, then the program assumes the key in the list
- * corresponds to a HardwareObject, and the current subKey will be added to the keys list upon opening QSettings.
- * Alternative forms of the constructor exist that take a const char* or QString specifically for single-key operations.
+ * the group is set to "Blackchirp". If Type is set to Hardware and the length of the keys list is 1,
+ * then the program assumes the key in the list corresponds to a HardwareObject, and the current subKey
+ * will be added to the keys list upon opening QSettings. An alternative form of the constructor exists that
+ * take QString specifically for single-key operations, and will append an index if the type is Hardware:
  *
- *     SettingsStorage::SettingsStorage(const QString key, Type type = General, bool systemWide = true)
- *     SettingsStorage::SettingsStorage(const char* key, Type type = General, bool systemWide = true)
+ *     SettingsStorage::SettingsStorage(const QString key, Type type = General, int index=0)
  *
- * There is also a form of the constructor that places the systemwide argument first for easier access to General (non-hardware)
- * settings in User scope:
- *
- *     SettingsStorage::SettingsStorage(bool systemWide, const QStringList keys = QStringList())
  *
  * To create a read-only SettingsStorage object that reads the global Blackchirp settings:
  *
  *     SettingsStorage s;
  *
- *     //for user settings: SettingsStorage s(false);
+ * If instead you need read-only access to the "AWG-0/virtual" group:
  *
- * If instead you need read-only access to the "awg/virtual" group:
+ *     SettingsStorage s({"AWG-0","virtual"});
  *
- *     SettingsStorage s({"awg","virtual"});
+ * In general, it is recommended that you use keys that are statically defined in header files for accessing items.
+ * For read-only access to the settings associated with the current AWG implementation:
  *
+ *     SettingsStorage s(BC::Key::AWG::key,SettingsStorage::Hardware);
  *
- * For read-only access to the settings associated with the current "awg" implementation (determined from QSettings):
+ * For hardware types with multiple items (e.g., Clocks, PulseGenerators, etc), pass the index as the third argument.
+ * For instance, to access the second (index=1) pulse generator:
  *
- *     SettingsStorage s("awg",SettingsStorage::Hardware);
+ *     SettingsStorage s(BC::Key::PGen::key,SettingsStorage::Hardware,1);
  *
- * Finally, for read-only access to the "trackingPlot" group for user-based setting:
- *
- *     SettingsStorage s(false,"trackingPlot");
- *     //alternative: SettingsStorage s("trackingPlot",SettingsStorage::General,false);
  *
  * The value associated with a key can be obtained with one of the SettingsStorage::get functions. If there
  * is an integer associacted with the key "myInt", it can be accessed as:
@@ -134,6 +126,7 @@ static const QString trackingDir{"rollingdata"};
  *         //other initialization
  *     }
  *
+ * Again, it is preferred to define static keys in the header file of your class instead of manually writing them.
  * When working with a subclass of SettingsStorage, the object has access to the SettingsStorage::set,
  * SettingsStorage::setMultiple, and SettingsStorage::setArray functions. Each of these takes an optional
  * bool argument (default false) that controls whther the new value is immedately written to settings.
@@ -303,7 +296,7 @@ public:
      * \return T The value, or a default constructed value if the key is not present
      */
     template<typename T>
-    inline T get(const QString key, const T &defaultValue = QVariant().value<T>()) const { return (containsValue(key) ? get(key).value<T>() : defaultValue); };
+    inline T get(const QString key, const T &defaultValue = QVariant().value<T>()) const { return (containsValue(key) ? get(key).value<T>() : defaultValue); }
 
     /*!
      * \brief Gets values associated with a list of keys. Overloaded function

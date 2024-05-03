@@ -2,19 +2,37 @@
 HEADERS += $$PWD/gpibcontroller.h
 SOURCES += $$PWD/gpibcontroller.cpp
 
-!lessThan(GPIB,0) {
+count(GPIB,1) {
 
-    DEFINES += BC_GPIBCONTROLLER=$$GPIB
-	equals(GPIB,0) {
+    N = $$upper($$GPIB)
+	equals(N,VIRTUAL) {
+            DEFINES += BC_GPIBCONTROLLER=VirtualGpibController
 	    HEADERS += $$PWD/virtualgpibcontroller.h
-		SOURCES += $$PWD/virtualgpibcontroller.cpp
-		}
-	equals(GPIB,1) {
-	    HEADERS += $$PWD/prologixgpiblan.h
-		SOURCES += $$PWD/prologixgpiblan.cpp
-	}
-        equals(GPIB,2) {
-            HEADERS += $$PWD/prologixgpibusb.h
-                SOURCES += $$PWD/prologixgpibusb.cpp
+            SOURCES += $$PWD/virtualgpibcontroller.cpp
+            HW *= "$${H}include <hardware/optional/gpibcontroller/virtualgpibcontroller.h>"
         }
+	equals(N,PROLOGIXLAN) {
+            DEFINES += BC_GPIBCONTROLLER=PrologixGpibLan
+	    HEADERS += $$PWD/prologixgpiblan.h
+            SOURCES += $$PWD/prologixgpiblan.cpp
+            HW *= "$${H}include <hardware/optional/chirpsource/prologizgpiblan.h>"
+	}
+	equals(N,PROLOGIXUSB) {
+            DEFINES += BC_GPIBCONTROLLER=PrologixGpibUsb
+            HEADERS += $$PWD/prologixgpibusb.h
+            SOURCES += $$PWD/prologixgpibusb.cpp
+            HW *= "$${H}include <hardware/optional/chirpsource/prologixgpibusb.h>"
+        }
+}
+
+allhardware {
+    HEADERS *= $$PWD/virtualgpibcontroller.h
+    SOURCES *= $$PWD/virtualgpibcontroller.cpp
+    HW *= "$${H}include <hardware/optional/gpibcontroller/virtualgpibcontroller.h>"
+    HEADERS *= $$PWD/prologixgpiblan.h
+    SOURCES *= $$PWD/prologixgpiblan.cpp
+    HW *= "$${H}include <hardware/optional/gpibcontroller/prologixgpiblan.h>"
+    HEADERS *= $$PWD/prologixgpibusb.h
+    SOURCES *= $$PWD/prologixgpibusb.cpp
+    HW *= "$${H}include <hardware/optional/gpibcontroller/prologixgpibusb.h>"
 }

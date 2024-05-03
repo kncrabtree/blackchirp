@@ -7,12 +7,8 @@
 #include <gui/widget/led.h>
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
 
-PressureStatusBox::PressureStatusBox(QWidget *parent) : QGroupBox(parent)
+PressureStatusBox::PressureStatusBox(QString key, QWidget *parent) : HardwareStatusBox(key,parent)
 {
-    setTitle(QString("Pressure Status"));
-
-
-
     auto *gl = new QGridLayout;
 
     gl->addWidget(new QLabel("Chamber"),0,0);
@@ -38,20 +34,26 @@ PressureStatusBox::PressureStatusBox(QWidget *parent) : QGroupBox(parent)
     updateFromSettings();
 }
 
-void PressureStatusBox::pressureUpdate(double p)
+void PressureStatusBox::pressureUpdate(const QString key, double p)
 {
+    if(key != d_key)
+        return;
+
     p_cpBox->setValue(p);
 }
 
-void PressureStatusBox::pressureControlUpdate(bool en)
+void PressureStatusBox::pressureControlUpdate(const QString key, bool en)
 {
+    if(key != d_key)
+        return;
+
     p_led->setState(en);
 }
 
 void PressureStatusBox::updateFromSettings()
 {
     using namespace BC::Key::PController;
-    SettingsStorage s(key,SettingsStorage::Hardware);
+    SettingsStorage s(d_key,SettingsStorage::Hardware);
 
     p_cpBox->setMinimum(s.get(min,-1.0));
     p_cpBox->setMaximum(s.get(max,20.0));

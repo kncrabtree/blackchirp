@@ -2,20 +2,40 @@
 
 using namespace BC::Key::Flow;
 
-FlowController::FlowController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
-                               QObject *parent, bool threaded, bool critical) :
-    HardwareObject(flowController,subKey,name,commType,parent,threaded,critical),
+FlowController::FlowController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent, bool threaded, bool critical) :
+    HardwareObject(flowController,subKey,name,commType,parent,threaded,critical,d_count),
+    d_config(subKey,d_count),
     d_numChannels(getOrSetDefault(flowChannels,4))
 {
     for(int i=0; i<d_numChannels; ++i)
-        d_config.add({});
+        d_config.addCh({});
 
     setDefault(interval,333);
+
+    if(containsArray(channels))
+    {
+        for(int i=0; i<d_numChannels; i++)
+            d_config.setCh(i,FlowConfig::Name,getArrayValue(channels,i,chName,QString("Ch%1").arg(i+1)));
+    }
+
+    d_count++;
 }
 
 FlowController::~FlowController()
 {
+    setArray(channels, {});
 
+    for(int i=0; i<d_numChannels; i++)
+    {
+        auto n = d_config.setting(i,FlowConfig::Name).toString();
+        if(n.isEmpty())
+            n = QString("Ch%1").arg(i+1);
+        SettingsMap m {
+            {chName,n},
+        };
+        appendArrayMap(channels,m);
+    }
+    save();
 }
 
 void FlowController::setAll(const FlowConfig &c)
@@ -25,8 +45,8 @@ void FlowController::setAll(const FlowConfig &c)
         setChannelName(i,c.setting(i,FlowConfig::Name).toString());
         setFlowSetpoint(i,c.setting(i,FlowConfig::Setpoint).toDouble());
     }
-    setPressureSetpoint(c.pressureSetpoint());
-    setPressureControlMode(c.pressureControlMode());
+    setPressureSetpoint(c.d_pressureSetpoint);
+    setPressureControlMode(c.d_pressureControlMode);
 }
 
 void FlowController::initialize()
@@ -53,28 +73,29 @@ bool FlowController::testConnection()
 
 bool FlowController::prepareForExperiment(Experiment &e)
 {
-    if(e.flowConfig())
-        setAll(*e.flowConfig());
+    auto wp = e.getOptHwConfig<FlowConfig>(d_config.headerKey());
+    if(auto p = wp.lock())
+        setAll(*p);
 
     if(!isConnected())
         return false;
 
     e.auxData()->registerKey(d_key,d_subKey,BC::Aux::Flow::pressure);
-    for(int i=0; i<d_config.size(); i++)
+    for(int i=0; i<d_numChannels; i++)
     {
         if(d_config.setting(i,FlowConfig::Enabled).toBool())
             e.auxData()->registerKey(d_key,d_subKey,BC::Aux::Flow::flow.arg(i));
     }
 
-    e.setFlowConfig(d_config);
+    e.addOptHwConfig(d_config);
 
     return true;
 }
 
 void FlowController::setChannelName(const int ch, const QString name)
 {
-    if(ch < d_config.size())
-        d_config.set(ch,FlowConfig::Name,name);
+    if(ch < d_numChannels)
+        d_config.setCh(ch,FlowConfig::Name,name);
 }
 
 void FlowController::setPressureControlMode(bool enabled)
@@ -110,7 +131,7 @@ void FlowController::readFlowSetpoint(const int ch)
     double sp = hwReadFlowSetpoint(ch);
     if(sp > -1e-10)
     {
-        d_config.set(ch,FlowConfig::Setpoint,sp);
+        d_config.setCh(ch,FlowConfig::Setpoint,sp);
         emit flowSetpointUpdate(ch,sp,QPrivateSignal());
     }
 }
@@ -120,7 +141,7 @@ void FlowController::readPressureSetpoint()
     double sp = hwReadPressureSetpoint();
     if(sp > -1e-10)
     {
-        d_config.setPressureSetpoint(sp);
+        d_config.d_pressureSetpoint = sp;
         emit pressureSetpointUpdate(sp,QPrivateSignal());
     }
 
@@ -136,7 +157,7 @@ void FlowController::readFlow(const int ch)
     double flow = hwReadFlow(ch);
     if(flow>-1.0)
     {
-        d_config.set(ch,FlowConfig::Flow,flow);
+        d_config.setCh(ch,FlowConfig::Flow,flow);
         emit flowUpdate(ch,flow,QPrivateSignal());
     }
 }
@@ -146,7 +167,7 @@ void FlowController::readPressure()
     double pressure = hwReadPressure();
     if(pressure > -1.0)
     {
-        d_config.setPressure(pressure);
+        d_config.d_pressure = pressure;
         emit pressureUpdate(pressure,QPrivateSignal());
     }
 }
@@ -157,8 +178,8 @@ void FlowController::readPressureControlMode()
     if(ret < 0)
         return;
 
-    d_config.setPressureControlMode(ret==1);
-    emit pressureControlMode(ret==1,QPrivateSignal());
+    d_config.d_pressureControlMode = (ret==1);
+    emit pressureControlMode(d_config.d_pressureControlMode,QPrivateSignal());
 }
 
 void FlowController::poll()
@@ -168,7 +189,7 @@ void FlowController::poll()
 
 void FlowController::readAll()
 {
-    for(int i=0; i<d_config.size(); i++)
+    for(int i=0; i<d_numChannels; i++)
     {
         readFlow(i);
         readFlowSetpoint(i);
@@ -182,8 +203,8 @@ void FlowController::readAll()
 AuxDataStorage::AuxDataMap FlowController::readAuxData()
 {
     AuxDataStorage::AuxDataMap out;
-    out.insert({BC::Aux::Flow::pressure,d_config.pressure()});
-    for(int i=0; i<d_config.size(); ++i)
+    out.insert({BC::Aux::Flow::pressure,d_config.d_pressure});
+    for(int i=0; i<d_numChannels; ++i)
     {
         auto n = d_config.setting(i,FlowConfig::Name).toString();
         if(d_config.setting(i,FlowConfig::Enabled).toBool())
@@ -202,7 +223,7 @@ AuxDataStorage::AuxDataMap FlowController::readAuxData()
 QStringList FlowController::validationKeys() const
 {
     QStringList out;
-    for(int i=0; i<d_config.size(); ++i)
+    for(int i=0; i<d_numChannels; ++i)
         out.append(BC::Aux::Flow::flow.arg(i));
 
     return out;

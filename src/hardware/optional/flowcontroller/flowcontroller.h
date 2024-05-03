@@ -18,6 +18,7 @@ static const QString channels{"channels"};
 static const QString chUnits{"units"};
 static const QString chDecimals{"decimals"};
 static const QString chMax{"max"};
+static const QString chName{"name"};
 }
 
 namespace BC::Aux::Flow {
@@ -33,8 +34,8 @@ public:
                    QObject *parent = nullptr, bool threaded = false, bool critical = false);
     virtual ~FlowController();
 
-    FlowConfig config() const { return d_config; }
     QStringList validationKeys() const override;
+    FlowConfig config() { readAll(); return d_config; }
 
 signals:
     void flowUpdate(int,double,QPrivateSignal);
@@ -69,8 +70,8 @@ private:
     virtual int hwReadPressureControlMode() =0;
 
     FlowConfig d_config;
-    QTimer *p_readTimer;
     const int d_numChannels;
+    QTimer *p_readTimer;
 
 protected:
     void initialize() override final;
@@ -85,25 +86,11 @@ protected:
 protected:
     virtual AuxDataStorage::AuxDataMap readAuxData() override;
 
+private:
     friend class VirtualFlowController;
+    inline static int d_count = 0;
 
 
 };
-
-#ifdef BC_FLOWCONTROLLER
-#if BC_FLOWCONTROLLER == 0
-#include "virtualflowcontroller.h"
-class VirtualFlowController;
-typedef VirtualFlowController FlowControllerHardware;
-#elif BC_FLOWCONTROLLER == 1
-#include "mks647c.h"
-class Mks647c;
-typedef Mks647c FlowControllerHardware;
-#elif BC_FLOWCONTROLLER == 2
-#include "mks946.h"
-class Mks946;
-typedef Mks946 FlowControllerHardware;
-#endif
-#endif
 
 #endif // FLOWCONTROLLER_H

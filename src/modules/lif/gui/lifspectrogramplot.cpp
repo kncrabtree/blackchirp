@@ -321,6 +321,8 @@ bool LifSpectrogramPlot::eventFilter(QObject *obj, QEvent *ev)
                     {
                         d_delayDragging = d_grabDelay;
                         d_freqDragging = d_grabFreq;
+                        ev->accept();
+                        return true;
                     }
                 }
             }
@@ -376,7 +378,9 @@ bool LifSpectrogramPlot::eventFilter(QObject *obj, QEvent *ev)
                     if(d_freqDragging)
                         moveLaserCursor(me->pos());
 
+                    ev->accept();
                     replot();
+                    return true;
                 }
             }
         }

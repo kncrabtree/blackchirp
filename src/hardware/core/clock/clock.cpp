@@ -2,14 +2,15 @@
 
 #include <QMetaEnum>
 
-Clock::Clock(int clockNum, int numOutputs, bool tunable, const QString subKey, const QString name, CommunicationProtocol::CommType commType,
+Clock::Clock(int numOutputs, bool tunable, const QString subKey, const QString name, CommunicationProtocol::CommType commType,
              QObject *parent) :
-    HardwareObject(QString("Clock%1").arg(clockNum),subKey,name,commType,parent,false,true), d_numOutputs(numOutputs),
+    HardwareObject(BC::Key::Clock::clock,subKey,name,commType,parent,false,true,d_count), d_numOutputs(numOutputs),
     d_isTunable(tunable)
 {
     using namespace BC::Key::Clock;
 
     setDefault(BC::Key::Clock::tunable,d_isTunable);
+    setDefault(BC::Key::Clock::manualTune,false);
 
     for(int i=0; i<d_numOutputs; i++)
         d_multFactors << 1.0;
@@ -26,6 +27,8 @@ Clock::Clock(int clockNum, int numOutputs, bool tunable, const QString subKey, c
             setMultFactor(factor,i);
         }
     }
+
+    d_count++;
 }
 
 Clock::~Clock()

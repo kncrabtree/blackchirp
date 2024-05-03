@@ -50,7 +50,7 @@ void FtmwConfigSingle::_loadComplete()
 
 std::shared_ptr<FidStorageBase> FtmwConfigSingle::createStorage(int num, QString path)
 {
-    return std::make_shared<FidSingleStorage>(d_scopeConfig.d_numRecords,num,path);
+    return std::make_shared<FidSingleStorage>(scopeConfig().d_numRecords,num,path);
 }
 
 /******************************************
@@ -108,7 +108,7 @@ std::shared_ptr<FidStorageBase> FtmwConfigPeakUp::createStorage(int num, QString
 {
     Q_UNUSED(num)
     Q_UNUSED(path)
-    return std::make_shared<FidPeakUpStorage>(d_scopeConfig.d_numRecords);
+    return std::make_shared<FidPeakUpStorage>(scopeConfig().d_numRecords);
 }
 
 
@@ -171,7 +171,7 @@ void FtmwConfigDuration::_loadComplete()
 
 std::shared_ptr<FidStorageBase> FtmwConfigDuration::createStorage(int num, QString path)
 {
-    return std::make_shared<FidSingleStorage>(d_scopeConfig.d_numRecords,num,path);
+    return std::make_shared<FidSingleStorage>(scopeConfig().d_numRecords,num,path);
 }
 
 
@@ -219,7 +219,7 @@ void FtmwConfigForever::_loadComplete()
 
 std::shared_ptr<FidStorageBase> FtmwConfigForever::createStorage(int num, QString path)
 {
-    return std::make_shared<FidSingleStorage>(d_scopeConfig.d_numRecords,num,path);
+    return std::make_shared<FidSingleStorage>(scopeConfig().d_numRecords,num,path);
 }
 
 FtmwConfigLOScan::FtmwConfigLOScan() : FtmwConfig()
@@ -295,7 +295,7 @@ void FtmwConfigLOScan::_loadComplete()
 
 std::shared_ptr<FidStorageBase> FtmwConfigLOScan::createStorage(int num, QString path)
 {
-    auto out = std::make_shared<FidMultiStorage>(d_scopeConfig.d_numRecords,num,path);
+    auto out = std::make_shared<FidMultiStorage>(scopeConfig().d_numRecords,num,path);
     out->setNumSegments(d_rfConfig.numSegments());
     return out;
 }
@@ -356,7 +356,7 @@ void FtmwConfigDRScan::_loadComplete()
 
 std::shared_ptr<FidStorageBase> FtmwConfigDRScan::createStorage(int num, QString path)
 {
-    auto out = std::make_shared<FidMultiStorage>(d_scopeConfig.d_numRecords,num,path);
+    auto out = std::make_shared<FidMultiStorage>(scopeConfig().d_numRecords,num,path);
     out->setNumSegments(d_rfConfig.numSegments());
     return out;
 }

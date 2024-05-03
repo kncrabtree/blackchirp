@@ -85,7 +85,7 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
     if(!d_enabledForExperiment)
         return true;
 
-    auto &config = exp.ftmwConfig()->d_scopeConfig;
+    auto &config = exp.ftmwConfig()->scopeConfig();
 
     //disable ugly headers
     if(!scopeCommand(QString("*RST;:SYSTEM:HEADER OFF")))

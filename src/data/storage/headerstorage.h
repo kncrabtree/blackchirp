@@ -4,13 +4,8 @@
 #include <QObject>
 #include <QVariant>
 
-namespace BC::Unit{
-static const QString us{QString::fromUtf8("μs")};
-static const QString MHz("MHz");
-static const QString V("V");
-static const QString s("s");
-static const QString Hz("Hz");
-};
+#include <data/bcglobals.h>
+
 
 /*!
  * \brief Base class for objects that read/write to an experiment header file
@@ -59,10 +54,19 @@ public:
      * \brief Constructor. Sets the object key, which should be unique to the most derived class
      * \param objKey The object key. Values written to the header file will be associated with this string
      */
-    HeaderStorage(const QString objKey);
+    HeaderStorage(const QString objKey, const QString hwSubKey = QString(""));
     virtual ~HeaderStorage() {}
 
+    QString headerKey() const { return d_headerKey; }
+    int headerIndex() const;
+
+    QString hwSubKey() const { return d_hwSubKey; }
+
 protected:
+
+    QString d_headerKey; /*!< Object key used for storage. Should not be modified! */
+    QString d_hwSubKey; /*< Key used for settings in some hardware config objects */
+
     /*!
      * \brief Function called before saving.
      *
@@ -81,7 +85,7 @@ protected:
      */
     virtual void retrieveValues() =0;
 
-    QString d_objKey; /*!< Object key used for storage. Should not be modified! */
+
 
     /*!
      * \brief Stores a value-unit pair for writing
@@ -188,7 +192,7 @@ protected:
         auto it = d_arrayValues.find(arrayKey);
         if(it != d_arrayValues.end())
         {
-            if(index <= it->second.size())
+            if(index < it->second.size())
             {
                 HeaderMap &m = it->second[index];
                 auto it2 = m.find(key);

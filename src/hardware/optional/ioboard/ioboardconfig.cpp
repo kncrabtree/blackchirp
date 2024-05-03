@@ -1,8 +1,8 @@
 #include <hardware/optional/ioboard/ioboardconfig.h>
 
+#include <hardware/optional/ioboard/ioboard.h>
 
-
-IOBoardConfig::IOBoardConfig() : DigitizerConfig(BC::Store::Digi::iob)
+IOBoardConfig::IOBoardConfig(const QString subKey, int index) : DigitizerConfig(BC::Key::hwKey(BC::Key::IOB::ioboard,index),subKey)
 {
 }
 
@@ -41,10 +41,19 @@ void IOBoardConfig::storeValues()
 {
     using namespace BC::Store::Digi;
 
-    for(auto it = d_analogNames.cbegin(); it != d_analogNames.cend(); ++it)
-        storeArrayValue(an,it->first-1,name,it->second);
-    for(auto it = d_digitalNames.cbegin(); it != d_digitalNames.cend(); ++it)
-        storeArrayValue(dig,it->first-1,name,it->second);
+    int i=0;
+    for(auto const &[k,n] : d_analogNames)
+    {
+        storeArrayValue(an,i,chName,n);
+        i++;
+    }
+
+    i=0;
+    for(auto const &[k,n] : d_digitalNames)
+    {
+        storeArrayValue(dig,i,chName,n);
+        i++;
+    }
 
     DigitizerConfig::storeValues();
 }
@@ -55,17 +64,17 @@ void IOBoardConfig::retrieveValues()
 
     DigitizerConfig::retrieveValues();
 
-    for(auto it = d_analogChannels.cbegin(); it != d_analogChannels.cend(); ++it)
+    for(uint i=0; i<arrayStoreSize(an); i++)
     {
-        auto s = retrieveArrayValue(an,it->first-1,name,QString(""));
-        if(!s.isEmpty())
-            d_analogNames.insert_or_assign(it->first,s);
+        auto s = retrieveArrayValue(an,i,chName,QString(""));
+        auto k = retrieveArrayValue(an,i,chIndex,i+1);
+        d_analogNames.insert_or_assign(k,s);
     }
 
-    for(auto it = d_digitalChannels.cbegin(); it != d_digitalChannels.cend(); ++it)
+    for(uint i=0; i<arrayStoreSize(dig); i++)
     {
-        auto s = retrieveArrayValue(dig,it->first-1,name,QString(""));
-        if(!s.isEmpty())
-            d_digitalNames.insert_or_assign(it->first,s);
+        auto s = retrieveArrayValue(dig,i,chName,QString(""));
+        auto k = retrieveArrayValue(dig,i,chIndex,i+1);
+        d_digitalNames.insert_or_assign(k,s);
     }
 }

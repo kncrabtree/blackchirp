@@ -4,15 +4,17 @@
 #include <hardware/optional/gpibcontroller/gpibcontroller.h>
 #endif
 
-HardwareObject::HardwareObject(const QString key, const QString subKey, const QString name,
+HardwareObject::HardwareObject(const QString hwType, const QString subKey, const QString name,
                                CommunicationProtocol::CommType commType,
-                               QObject *parent, bool threaded, bool critical) :
-    QObject(parent), SettingsStorage({key,subKey},General), d_name(name), d_key(key),
-    d_subKey(subKey), d_threaded(threaded),
-    d_commType(commType), d_enabledForExperiment(true),
-    d_isConnected(false)
+                               QObject *parent, bool threaded, bool critical, int index) :
+    QObject(parent),
+    SettingsStorage({BC::Key::hwKey(hwType,index),subKey},General),
+    d_name(name), d_key(BC::Key::hwKey(hwType,index)),
+    d_subKey(subKey), d_index(index), d_threaded(threaded), d_commType(commType),
+    d_enabledForExperiment(true), d_isConnected(false)
 {
-    set(BC::Key::HW::key,d_key); set(BC::Key::HW::name,d_name);
+    set(BC::Key::HW::key,d_key);
+    setDefault(BC::Key::HW::name,d_name);
     setDefault(BC::Key::HW::critical,critical);
     setDefault(BC::Key::HW::rInterval,0);
     save();
@@ -25,7 +27,9 @@ HardwareObject::HardwareObject(const QString key, const QString subKey, const QS
     s.setValue(d_key + "/" + BC::Key::HW::subKey,d_subKey);
     s.sync();
 
-    d_critical = get(BC::Key::HW::critical,true);
+    d_critical = get(BC::Key::HW::critical,critical);
+    d_name = get(BC::Key::HW::name,name);
+
 }
 
 HardwareObject::~HardwareObject()
@@ -93,6 +97,7 @@ void HardwareObject::bcReadAuxData()
 void HardwareObject::bcReadSettings()
 {
     readAll();
+    d_name = get(BC::Key::HW::name,QString(""));
     d_critical = get(BC::Key::HW::critical,true);
     auto interval = get(BC::Key::HW::rInterval,0);
 
@@ -143,6 +148,7 @@ void HardwareObject::buildCommunication(QObject *gc)
     {
         connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
         connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
+
     }
 }
 
@@ -159,6 +165,25 @@ AuxDataStorage::AuxDataMap HardwareObject::readValidationData()
 void HardwareObject::sleep(bool b)
 {
     Q_UNUSED(b)
+}
+
+bool HardwareObject::hwPrepareForExperiment(Experiment &exp)
+{
+    if(!d_isConnected)
+    {
+        if(!testConnection())
+        {
+            if(d_critical)
+            {
+                exp.d_errorString = QString("%1 is not connected").arg(d_name);
+                return false;
+            }
+            else
+                return true;
+        }
+    }
+
+    return prepareForExperiment(exp);
 }
 
 

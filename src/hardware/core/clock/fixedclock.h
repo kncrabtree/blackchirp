@@ -5,7 +5,7 @@
 
 namespace BC::Key::Clock {
 static const QString fixed{"fixed"};
-static const QString fixedName("Fixed Clock (#%1)");
+static const QString fixedName("Fixed Clock");
 static const QString ch{"fixedOutputs"};
 static const QString freq{"lastFreqMHz"};
 }
@@ -14,7 +14,7 @@ class FixedClock : public Clock
 {
     Q_OBJECT
 public:
-    FixedClock(int clockNum, QObject *parent = nullptr);
+    FixedClock(QObject *parent = nullptr);
     ~FixedClock();
 
     // Clock interface

@@ -99,7 +99,7 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
     if(!d_enabledForExperiment)
         return true;
 
-    auto &config = exp.ftmwConfig()->d_scopeConfig;
+    auto &config = exp.ftmwConfig()->scopeConfig();
 
     disconnect(p_socket,&QTcpSocket::readyRead,this,&MSO64B::readWaveform);
 

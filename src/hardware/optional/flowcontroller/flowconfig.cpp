@@ -3,7 +3,7 @@
 #include <data/storage/settingsstorage.h>
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 
-FlowConfig::FlowConfig() : HeaderStorage(BC::Store::FlowConfig::key)
+FlowConfig::FlowConfig(QString hwSubKey, int index) : HeaderStorage(BC::Key::hwKey(BC::Key::Flow::flowController,index),hwSubKey)
 {
 }
 
@@ -36,28 +36,12 @@ QVariant FlowConfig::setting(int index, FlowChSetting s) const
     return out;
 }
 
-
-double FlowConfig::pressureSetpoint() const
-{
-    return d_pressureSetpoint;
-}
-
-double FlowConfig::pressure() const
-{
-    return d_pressure;
-}
-
-bool FlowConfig::pressureControlMode() const
-{
-    return d_pressureControlMode;
-}
-
 int FlowConfig::size() const
 {
     return d_configList.size();
 }
 
-void FlowConfig::add(double set, QString name)
+void FlowConfig::addCh(double set, QString name)
 {
     FlowChannel cc;
     cc.enabled = !qFuzzyCompare(1.0+set,1.0);
@@ -67,7 +51,7 @@ void FlowConfig::add(double set, QString name)
     d_configList.append(cc);
 }
 
-void FlowConfig::set(int index, FlowChSetting s, QVariant val)
+void FlowConfig::setCh(int index, FlowChSetting s, QVariant val)
 {
     if(index < 0 || index > d_configList.size())
         return;
@@ -91,24 +75,6 @@ void FlowConfig::set(int index, FlowChSetting s, QVariant val)
         break;
     }
 }
-
-void FlowConfig::setPressure(double p)
-{
-    d_pressure = p;
-}
-
-
-void FlowConfig::setPressureSetpoint(double s)
-{
-    d_pressureSetpoint = s;
-}
-
-void FlowConfig::setPressureControlMode(bool en)
-{
-    d_pressureControlMode = en;
-}
-
-
 
 void FlowConfig::storeValues()
 {

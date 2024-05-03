@@ -50,9 +50,14 @@ std::map<int, double> VirtualIOBoard::readAnalogChannels()
 {
     auto qr = QRandomGenerator::global();
     std::map<int,double> out;
-    for(auto it = d_analogChannels.cbegin(); it != d_analogChannels.cend(); ++it)
-        out.insert({it->first,static_cast<double>(qr->bounded(0,2 << d_bytesPerPoint*8))/
-                    (2 << d_bytesPerPoint*8)*it->second.fullScale});
+    for(auto const &[k,ch] : d_analogChannels)
+    {
+        if(ch.enabled)
+        {
+            out.insert({k,static_cast<double>(qr->bounded(0,2 << d_bytesPerPoint*8))/
+                        (2 << d_bytesPerPoint*8)*ch.fullScale});
+        }
+    }
 
     return out;
 }
@@ -61,8 +66,11 @@ std::map<int, bool> VirtualIOBoard::readDigitalChannels()
 {
     auto qr = QRandomGenerator::global();
     std::map<int,bool> out;
-    for(auto it = d_digitalChannels.cbegin(); it != d_digitalChannels.cend(); ++it)
-        out.insert({it->first,static_cast<bool>(qr->bounded(1))});
+    for(auto const &[k,ch] : d_digitalChannels)
+    {
+        if(ch.enabled)
+            out.insert({k,static_cast<bool>(qr->bounded(1))});
+    }
 
     return out;
 }

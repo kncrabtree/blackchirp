@@ -9,9 +9,9 @@
 #include <QVector>
 #include <QPointF>
 #include <QDir>
-#include <data/experiment/fid.h>
 
-//class BlackchirpPlotCurve;
+#include <data/experiment/fid.h>
+#include <data/bcglobals.h>
 
 namespace BC::CSV {
 

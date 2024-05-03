@@ -130,7 +130,6 @@ R"000(Next, you can configure the communication settings for the hardware connec
 #ifdef BC_LIF
     qRegisterMetaType<LifTrace>("LifTrace");
     qRegisterMetaType<LifConfig>("LifConfig");
-    qRegisterMetaType<LifDigitizerConfig>("LifDigitizerConfig");
 #endif
 
 #ifndef QT_DEBUG

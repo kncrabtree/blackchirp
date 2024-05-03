@@ -47,6 +47,7 @@ Depending on your hardware configuration, some of these boxes may not be present
 - ``Clocks`` shows the current frequencies of the oscillators that have been configured. Upon program startup, all physical clocks that are assigned to clock roles are read and the frequencies updated. For FixedClocks, the frequency will be recalled from the previous Blackchirp instance. See the `Hardware Menu`_ page for more details on the clock roles.
 - ``Hardware Status`` boxes show the most recent reading(s) for the respective hardware, and/or LEDs that indicate whether a particular channel is active. For instance, if a TemperatureController is enabled, the Temperature Status box will show the readings of all enabled channels, while if a PulseGenerator is enabled, then the Pulse Status box shows which channels are currently enabled. A FlowController, on the other hand, always shows the readings of all channels, and LEDs are used to indicate whether a channel is enabled.
 - ``FTMW Progress`` shows the completion percentage of an ongoing FTMW acquisition.
+- ``LIF Progress`` shows the completion percentage of an ongoing LIF acquisition (if the LIF module is enabled).
 
 .. _Hardware Menu: hardware_menu.html#rf-configuration
 
@@ -57,6 +58,7 @@ Display Tabs
 The majority of important information is displayed in a tabbed interface in the center of the UI.
 
 - ``CP-FTMW`` shows free-induction decay and Fourier transform data from an ongoing or just-completed experiment. More information about the plots and controls on this tab is available on the `CP-FTMW Tab`_ page.
+- ``LIF`` shows data from an ongoing or just-completed LIF experiment. More details can be found on the `LIF module <user_guide/lif.html>`_ page.
 - ``Rolling Data`` and ``Aux Data`` both show signals from hardware items recorded as a function of time. "Rolling" data is acquired continuously while Blackchirp is open, while "Aux" data is recorded only during an experiment. More details are provided on the `Rolling/Aux Data <rolling-aux-data.html>`_ page.
 - ``Log`` shows program-related messages, including warnings and errors. The number of new messages shown since the last time the tab was viewed is displayed in parentheses. Any warnings are indicated with a yellow triangle icon on the tab, and errors are indicated with a red and white "X" icon. When an error occurs, additional information about the cause can be found here. All log messages are recorded to disk in a semicolon-delimited file format under the "log" folder in the current save path. A single log file contains all messages during a given month of program execution. Additionally, any log messages received during an experiment are stored in the same format as ``log.csv`` in the experiment's data folder.
 

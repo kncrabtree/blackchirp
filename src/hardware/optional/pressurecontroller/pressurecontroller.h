@@ -69,22 +69,12 @@ private:
     PressureControllerConfig d_config;
     friend class VirtualPressureController;
 
+    inline static int d_count = 0;
+
 
     // HardwareObject interface
 public:
     QStringList validationKeys() const override;
 };
-
-#ifdef BC_PCONTROLLER
-#if BC_PCONTROLLER == 0
-#include "virtualpressurecontroller.h"
-class VirtualPressureController;
-typedef VirtualPressureController PressureControllerHardware;
-#elif BC_PCONTROLLER == 1
-#include "intellisysiqplus.h"
-class IntellisysIQPlus;
-typedef IntellisysIQPlus PressureControllerHardware;
-#endif
-#endif
 
 #endif // PRESSURECONTROLLER_H

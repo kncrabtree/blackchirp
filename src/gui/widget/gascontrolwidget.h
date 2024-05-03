@@ -16,32 +16,32 @@ using GasWidgets = std::tuple<QLineEdit*,QDoubleSpinBox*>;
 
 namespace BC::Key::GasControl {
 static const QString key{"GasControlWidget"};
-static const QString channels{"channels"};
-static const QString gasName{"name"};
 }
 
 class GasControlWidget : public QWidget, public SettingsStorage
 {
     Q_OBJECT
 public:
-    explicit GasControlWidget(QWidget *parent = nullptr);
-    ~GasControlWidget() {};
-    FlowConfig getFlowConfig() const;
+    explicit GasControlWidget(const FlowConfig &cfg, QWidget *parent = nullptr);
+    ~GasControlWidget() {}
+    FlowConfig &toConfig();
 
 public slots:
-    void initialize(const FlowConfig &cfg);
     void applySettings();
-    void updateGasSetpoint(int i, double sp);
-    void updatePressureSetpoint(double sp);
-    void updatePressureControl(bool en);
+    void updateGasSetpoint(const QString key, int i, double sp);
+    void updatePressureSetpoint(const QString key, double sp);
+    void updatePressureControl(const QString key, bool en);
 
 signals:
-    void nameUpdate(int,QString);
-    void gasSetpointUpdate(int,double);
-    void pressureSetpointUpdate(double);
-    void pressureControlUpdate(bool);
+    void nameUpdate(QString,int,QString);
+    void gasSetpointUpdate(QString,int,double);
+    void pressureSetpointUpdate(QString,double);
+    void pressureControlUpdate(QString,bool);
 
 private:
+    void initialize(const FlowConfig &cfg);
+
+    FlowConfig d_config;
     QVector<GasWidgets> d_widgets;
     QDoubleSpinBox *p_pressureSetpointBox;
     QPushButton* p_pressureControlButton;

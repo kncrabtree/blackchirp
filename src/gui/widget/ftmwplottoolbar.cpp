@@ -124,8 +124,8 @@ void FtmwPlotToolBar::prepareForExperiment(const Experiment &e)
         for(auto it = d_frame.begin(); it != d_frame.end(); ++it)
         {
             it->second->blockSignals(true);
-            it->second->setRange(1,e.ftmwConfig()->d_scopeConfig.d_numRecords);
-            if(e.ftmwConfig()->d_scopeConfig.d_numRecords > 1)
+            it->second->setRange(1,e.ftmwConfig()->scopeConfig().d_numRecords);
+            if(e.ftmwConfig()->scopeConfig().d_numRecords > 1)
                 it->second->setMinimum(0);
             it->second->blockSignals(false);
         }

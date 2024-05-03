@@ -18,9 +18,11 @@
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
+#include <hardware/optional/ioboard/ioboard.h>
+#include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
-QuickExptDialog::QuickExptDialog(QWidget *parent) :
-    QDialog(parent)
+QuickExptDialog::QuickExptDialog(const std::map<QString, QString> &hwl, QWidget *parent) :
+    QDialog(parent), d_hardware{hwl}
 {
     setWindowTitle("Quick Experiment");
     auto vbl = new QVBoxLayout;
@@ -91,38 +93,37 @@ QuickExptDialog::QuickExptDialog(QWidget *parent) :
     vbl->addLayout(bl);
 
     setLayout(vbl);
-}
 
-void QuickExptDialog::setHardware(const std::map<QString, QString> &hwl)
-{
-    d_hardware = hwl;
+    std::set<QString> optHw{ BC::Key::PController::key, BC::Key::Flow::flowController, BC::Key::PGen::key, BC::Key::IOB::ioboard, BC::Key::TC::key};
 
-    std::vector<QString> optHw{ BC::Key::PController::key, BC::Key::Flow::flowController, BC::Key::PGen::key};
-
-    for(auto hw : optHw)
+    for(auto &[key,subKey] : hwl)
     {
-        auto it = d_hardware.find(hw);
-        if(it != d_hardware.end())
+        auto ki = BC::Key::parseKey(key);
+        auto hwType = ki.first;
+
+        auto it = optHw.find(hwType);
+        if(it != optHw.end())
         {
+            SettingsStorage s(key,SettingsStorage::Hardware);
             auto cb = new QCheckBox;
             cb->setChecked(true);
-            auto lbl = new QLabel(it->first);
+            auto lbl = new QLabel(s.get(BC::Key::HW::name,*it));
 
             p_hwLayout->addRow(lbl,cb);
-            d_hwBoxes.insert({it->first,cb});
+            d_hwBoxes.insert({key,cb});
         }
     }
 
     p_expSpinBox->setValue(p_expSpinBox->maximum());
 }
 
-bool QuickExptDialog::useCurrentSettings(const QString key)
+std::map<QString, bool> QuickExptDialog::getOptHwSettings() const
 {
-    auto it = d_hwBoxes.find(key);
-    if(it != d_hwBoxes.end())
-        return it->second->isChecked();
+    std::map<QString,bool> out;
+    for(const auto &[key,cb] : d_hwBoxes)
+        out.emplace(key,cb->isChecked());
 
-    return true;
+    return out;
 }
 
 int QuickExptDialog::exptNumber() const

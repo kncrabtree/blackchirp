@@ -25,11 +25,6 @@ private:
     void setPos(double pos);
     bool readFl();
     bool setFl(bool en);
-
-    // HardwareObject interface
-public slots:
-    void beginAcquisition();
-    void endAcquisition();
 };
 
 using LifLaserHardware = Opolette;

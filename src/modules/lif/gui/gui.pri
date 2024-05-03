@@ -3,6 +3,7 @@
 FORMS +=
 
 HEADERS += \
+    $$PWD/experimentlifconfigpage.h \
     $$PWD/lifcontrolwidget.h \
     $$PWD/lifdisplaywidget.h \
     $$PWD/liflaserstatusbox.h \
@@ -10,10 +11,10 @@ HEADERS += \
     $$PWD/lifprocessingwidget.h \
     $$PWD/lifsliceplot.h \
     $$PWD/lifspectrogramplot.h \
-    $$PWD/liftraceplot.h \
-    $$PWD/wizardlifconfigpage.h
+    $$PWD/liftraceplot.h
 
 SOURCES += \
+    $$PWD/experimentlifconfigpage.cpp \
     $$PWD/lifcontrolwidget.cpp \
     $$PWD/lifdisplaywidget.cpp \
     $$PWD/liflaserstatusbox.cpp \
@@ -21,5 +22,4 @@ SOURCES += \
     $$PWD/lifprocessingwidget.cpp \
     $$PWD/lifsliceplot.cpp \
     $$PWD/lifspectrogramplot.cpp \
-    $$PWD/liftraceplot.cpp \
-    $$PWD/wizardlifconfigpage.cpp
+    $$PWD/liftraceplot.cpp

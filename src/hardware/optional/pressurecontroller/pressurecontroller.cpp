@@ -6,9 +6,11 @@ using namespace BC::Key::PController;
 
 PressureController::PressureController(const QString subKey, const QString name, CommunicationProtocol::CommType commType,
                                        bool ro, QObject *parent, bool threaded, bool critical) :
-    HardwareObject(key,subKey,name,commType,parent,threaded,critical), d_readOnly(ro)
+    HardwareObject(key,subKey,name,commType,parent,threaded,critical,d_count), d_readOnly(ro), d_config{subKey,d_count}
 {
     set(readOnly,d_readOnly);
+
+    d_count++;
 }
 
 PressureController::~PressureController()
@@ -81,15 +83,19 @@ PressureControllerConfig PressureController::getConfig() const
 
 bool PressureController::prepareForExperiment(Experiment &e)
 {
-    if(e.pcConfig())
+    auto wp = e.getOptHwConfig<PressureControllerConfig>(d_config.headerKey());
+    if(auto p = wp.lock())
     {
-        if(!qFuzzyCompare(d_config.d_setPoint,e.pcConfig()->d_setPoint))
-            setPressureSetpoint(e.pcConfig()->d_setPoint);
-        if(d_config.d_pressureControlMode != e.pcConfig()->d_pressureControlMode)
-            setPressureControlMode(e.pcConfig()->d_pressureControlMode);
+        if(!qFuzzyCompare(d_config.d_setPoint,p->d_setPoint))
+            setPressureSetpoint(p->d_setPoint);
+        if(d_config.d_pressureControlMode != p->d_pressureControlMode)
+            setPressureControlMode(p->d_pressureControlMode);
     }
+
     e.auxData()->registerKey(d_key,d_subKey,BC::Aux::PController::pressure);
-    e.setPressureControllerConfig(d_config);
+
+    e.addOptHwConfig(d_config);
+
     return true;
 }
 

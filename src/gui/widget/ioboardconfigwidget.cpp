@@ -9,8 +9,8 @@
 
 
 
-IOBoardConfigWidget::IOBoardConfigWidget(QWidget *parent) :
-    DigitizerConfigWidget("IOBoardConfigWidget",BC::Key::IOB::ioboard,parent)
+IOBoardConfigWidget::IOBoardConfigWidget(IOBoardConfig &cfg, QWidget *parent) :
+    DigitizerConfigWidget("IOBoardConfigWidget",cfg.headerKey(),parent)
 {
     using namespace BC::Key::Digi;
     using namespace BC::Key::DigiWidget;
@@ -46,7 +46,7 @@ IOBoardConfigWidget::IOBoardConfigWidget(QWidget *parent) :
         p_digitalNameWidget->setHorizontalHeaderLabels({"Digital Channel Name"});
 
         QStringList hdr;
-        for(int i=0;i<ac;++i)
+        for(int i=0;i<dc;++i)
         {
             hdr.append(QString::number(i+1));
             p_digitalNameWidget->setItem(i,0,new QTableWidgetItem(getArrayValue(dwDigChannels,i,channelName,QString(""))));
@@ -60,7 +60,7 @@ IOBoardConfigWidget::IOBoardConfigWidget(QWidget *parent) :
 
     l->addLayout(v,1);
 
-
+    setFromConfig(cfg);
 
 }
 
@@ -71,22 +71,28 @@ IOBoardConfigWidget::~IOBoardConfigWidget()
     SettingsStorage s(d_hwKey,Hardware);
 
 
-    for(int i=0; i<p_analogNameWidget->rowCount(); ++i)
+    if(p_analogNameWidget)
     {
-        auto text = p_analogNameWidget->item(i,0)->text();
-        if((std::size_t) i == getArraySize(dwAnChannels))
-            appendArrayMap(dwAnChannels,{{channelName,text}});
-        else
-            setArrayValue(dwAnChannels,i,channelName,text);
+        for(int i=0; i<p_analogNameWidget->rowCount(); ++i)
+        {
+            auto text = p_analogNameWidget->item(i,0)->text();
+            if((std::size_t) i == getArraySize(dwAnChannels))
+                appendArrayMap(dwAnChannels,{{channelName,text}});
+            else
+                setArrayValue(dwAnChannels,i,channelName,text);
+        }
     }
 
-    for(int i=0; i<p_digitalNameWidget->rowCount(); ++i)
+    if(p_digitalNameWidget)
     {
-        auto text = p_digitalNameWidget->item(i,0)->text();
-        if((std::size_t) i == getArraySize(dwDigChannels))
-            appendArrayMap(dwDigChannels,{{channelName,text}});
-        else
-            setArrayValue(dwDigChannels,i,channelName,text);
+        for(int i=0; i<p_digitalNameWidget->rowCount(); ++i)
+        {
+            auto text = p_digitalNameWidget->item(i,0)->text();
+            if((std::size_t) i == getArraySize(dwDigChannels))
+                appendArrayMap(dwDigChannels,{{channelName,text}});
+            else
+                setArrayValue(dwDigChannels,i,channelName,text);
+        }
     }
 
 }
@@ -102,7 +108,7 @@ void IOBoardConfigWidget::setFromConfig(const IOBoardConfig &cfg)
     for(int i=0; i<ac; ++i)
         p_analogNameWidget->item(i,0)->setText(cfg.analogName(i+1));
 
-    int dc = s.get(numDigitalChannels,4);
+    int dc = s.get(numDigitalChannels,0);
     for(int i=0; i<dc; ++i)
         p_digitalNameWidget->item(i,0)->setText(cfg.digitalName(i+1));
 
@@ -116,7 +122,7 @@ void IOBoardConfigWidget::toConfig(IOBoardConfig &cfg)
         for(int i=0; i<p_analogNameWidget->rowCount(); ++i)
         {
             auto s = p_analogNameWidget->item(i,0)->text();
-            setArrayValue(BC::Key::DigiWidget::dwAnChannels,i,BC::Key::DigiWidget::channelName,s,false);
+            setArrayValue(BC::Key::Digi::dwAnChannels,i,BC::Key::DigiWidget::channelName,s,false);
             if(!s.isEmpty())
                 cfg.setAnalogName(i+1,s);
         }
@@ -126,7 +132,7 @@ void IOBoardConfigWidget::toConfig(IOBoardConfig &cfg)
         for(int i=0; i<p_digitalNameWidget->rowCount(); ++i)
         {
             auto s = p_digitalNameWidget->item(i,0)->text();
-            setArrayValue(BC::Key::DigiWidget::dwDigChannels,i,BC::Key::DigiWidget::channelName,s,false);
+            setArrayValue(BC::Key::Digi::dwDigChannels,i,BC::Key::DigiWidget::channelName,s,false);
             if(!s.isEmpty())
                 cfg.setDigitalName(i+1,s);
         }

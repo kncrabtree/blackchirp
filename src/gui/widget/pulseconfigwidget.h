@@ -24,11 +24,9 @@ class QSpinBox;
 
 namespace BC::Key::PulseWidget {
 static const QString key{"PulseWidget"};
-static const QString name{"name"};
 static const QString channels{"channels"};
 static const QString delayStep{"delayStepUs"};
 static const QString widthStep{"widthStepUs"};
-static const QString role{"role"};
 }
 
 class PulseConfigWidget : public QWidget, public SettingsStorage
@@ -36,10 +34,8 @@ class PulseConfigWidget : public QWidget, public SettingsStorage
     Q_OBJECT
 
 public:
-    explicit PulseConfigWidget(QWidget *parent = 0);
+    explicit PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent = 0);
     ~PulseConfigWidget();
-
-    bool d_wizardOk{true};
 
     struct ChWidgets {
         QLabel *label;
@@ -59,43 +55,29 @@ public:
         bool locked{false};
     };
 
-    PulseGenConfig getConfig() const;
+    const PulseGenConfig &getConfig() const;
 
     void configureForWizard();
 
-    void configureFtmw(const FtmwConfig &c);
-#ifdef BC_LIF
-    void configureLif(const LifConfig &c);
-#endif
-
 signals:
-    void changeSetting(int,PulseGenConfig::Setting,QVariant);
-    void changeRepRate(double);
-    void changeSysPulsing(bool);
-    void changeSysMode(PulseGenConfig::PGenMode);
+    void changeSetting(QString,int,PulseGenConfig::Setting,QVariant);
 
 public slots:
     void launchChannelConfig(int ch);
-    void setFromConfig(const PulseGenConfig &c);
-    void newSetting(int index,PulseGenConfig::Setting s,QVariant val);
-    void newRepRate(double r);
-    void newSysMode(PulseGenConfig::PGenMode mode);
-    void newPGenPulsing(bool en);
+    void setFromConfig(QString key, const PulseGenConfig &c);
+    void newSetting(QString key, int index, PulseGenConfig::Setting s, QVariant val);
     void updateFromSettings();
-    void unlockAll();
 
 private:
+    QString d_key;
     bool d_wizardMode{false};
-    void lockChannel(int i, bool locked = true);
-    void updateRoles();
     QList<ChWidgets> d_widgetList;
-    PulseGenConfig d_config;
     PulsePlot *p_pulsePlot;
     QDoubleSpinBox *p_repRateBox;
     QPushButton *p_sysOnOffButton;
     EnumComboBox<PulseGenConfig::PGenMode> *p_sysModeBox;
 
-
+    std::shared_ptr<PulseGenConfig> ps_config;
 
 
     // QWidget interface

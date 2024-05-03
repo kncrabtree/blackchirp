@@ -88,7 +88,7 @@ void LifDisplayWidget::prepareForExperiment(const Experiment &e)
     {
         ps_lifStorage = e.lifConfig()->storage();
         p_spectrogramPlot->prepareForExperiment(*e.lifConfig());
-        p_procWidget->initialize(e.lifConfig()->d_scopeConfig.d_recordLength,e.lifConfig()->d_scopeConfig.d_refEnabled);
+        p_procWidget->initialize(e.lifConfig()->scopeConfig().d_recordLength,e.lifConfig()->scopeConfig().d_refEnabled);
         p_procWidget->setAll(e.lifConfig()->d_procSettings);
         p_lifTracePlot->setNumAverages(e.lifConfig()->d_shotsPerPoint);
         d_delayReverse = e.lifConfig()->d_delayStepUs < 0.0;
@@ -244,8 +244,8 @@ QVector<QPointF> LifDisplayWidget::delaySlice(int laserIndex) const
     auto lp = ps_lifStorage->d_laserPoints;
     auto dp = ps_lifStorage->d_delayPoints;
     QVector<QPointF> out(dp);
-    auto min = p_spectrogramPlot->getlMin();
-    auto dx = p_spectrogramPlot->getldx();
+    auto min = p_spectrogramPlot->getdMin();
+    auto dx = p_spectrogramPlot->getddx();
     for(int i=0; i<out.size(); i++)
         out[i] = {min+i*dx,d_currentIntegratedData.at(laserIndex + i*lp)};
 
