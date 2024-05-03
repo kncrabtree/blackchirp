@@ -407,8 +407,7 @@ void MainWindow::quickStart()
         d.mapped()->reject();
     }
 
-    QuickExptDialog d(this);
-    d.setHardware(d_hardware);
+    QuickExptDialog d(d_hardware,this);
     int ret = d.exec();
     if(ret == QDialog::Rejected)
         return;
@@ -460,8 +459,7 @@ void MainWindow::startSequence()
 
     if(ret == d.quickCode)
     {
-        QuickExptDialog qed(this);
-        qed.setHardware(d_hardware);
+        QuickExptDialog qed(d_hardware,this);
         int ret2 = qed.exec();
         if(ret2 == QDialog::Rejected)
             return;

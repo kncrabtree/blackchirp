@@ -4,7 +4,7 @@ Installation
 Requirements
 ............
 
-Blackchirp is a cross-platform program, though at present it has only been tested on the Linux distribution openSUSE 15.2+ and Ubuntu 22.04.3 LTS.
+Blackchirp is a cross-platform program. It has been tested on Windows 11, Max OSX, and Linux (openSUSE Leap 15.2+, openSUSE Tumbleweed, and Ubuntu 22.04.3 LTS).
 If the program does not behave as expected on other platforms, please `raise an issue`_.
 
 The prerequisites for compiling Blackchirp are:
@@ -42,10 +42,10 @@ As of Blackchirp v1.0, there are two optional modules that may be enabled by add
 
 - ``CONFIG += gpu-cuda`` enables use of a CUDA-capable GPU for performing FID averaging. This offers a slight performance improvement if the number of data points acquired in a single shot is large (over 1,000,000) or if only a small number of CPU cores are available. To successfully compile the CUDA code in Blackchirp, you need to add the CUDA compiler to the qmake build. An example is provided in config.pri.template which works with default packages in openSUSE 15+.
 
-.. warning:
+.. warning::
    The CUDA module has not been tested with recent versions of CUDA or recent graphics cards, and Blackchirp has changed significantly since the last time this module has been used. This module may not compile, and if it does, there may be serious bugs or crashes. Pull requests are welcome!
 
-- ``CONFIG += lif`` enables simultaneous acquitision of CP-FTMW data and Laser-induced fluorescence data (or an equivalent laser scanning experiment with time-gated integration detection).
+- ``CONFIG += lif`` enables simultaneous acquitision of CP-FTMW data and Laser-induced fluorescence data (or an equivalent laser scanning experiment with time-gated integration detection). See the `LIF Module <lif.html>`_ page for further details.
 
 Leaving these lines out (or commenting them out) will remove the associated code from the build.
 First-time users are advised to leave them out.

@@ -7,6 +7,7 @@
    single: DR Scan
    single: Phase Correction
    single: Chirp Scoring
+   single: Aux Data
 
 Acquisition Types
 =================

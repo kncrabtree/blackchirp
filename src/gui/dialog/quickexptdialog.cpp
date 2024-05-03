@@ -18,9 +18,11 @@
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
+#include <hardware/optional/ioboard/ioboard.h>
+#include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
-QuickExptDialog::QuickExptDialog(QWidget *parent) :
-    QDialog(parent)
+QuickExptDialog::QuickExptDialog(const std::map<QString, QString> &hwl, QWidget *parent) :
+    QDialog(parent), d_hardware{hwl}
 {
     setWindowTitle("Quick Experiment");
     auto vbl = new QVBoxLayout;
@@ -91,13 +93,8 @@ QuickExptDialog::QuickExptDialog(QWidget *parent) :
     vbl->addLayout(bl);
 
     setLayout(vbl);
-}
 
-void QuickExptDialog::setHardware(const std::map<QString, QString> &hwl)
-{
-    d_hardware = hwl;
-
-    std::set<QString> optHw{ BC::Key::PController::key, BC::Key::Flow::flowController, BC::Key::PGen::key};
+    std::set<QString> optHw{ BC::Key::PController::key, BC::Key::Flow::flowController, BC::Key::PGen::key, BC::Key::IOB::ioboard, BC::Key::TC::key};
 
     for(auto &[key,subKey] : hwl)
     {

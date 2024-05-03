@@ -23,3 +23,6 @@ In addition, for AWGs that support marker outputs, two output channels may be co
 
 .. note::
    Soon, Blackchirp will add support for an arbitrary number of markers, and all will be referenced to the start and end of the chirp.
+
+Finally, a single AWG record may consist of multiple individual chirps (each of which may be identical or different) separated by a user-defined interval. This is often used in conjunction with FastFrame/segmented memory acquisitions. The total duration of such a waveform is limited by the onboard memory of the AWG. This configuration is somewhat wasteful, as most of the data are simply blank. Blackchirp does not currently support configuring "Sequence Mode" on AWGs that would eliminate much of the dead space. If multiple chirps are enabled, then each individual chirp in the series can be configured by varting the "Current Chirp" box and un-selecting the "Apply to All" checkbox. In this manner one could, for example, generate a series of chirps of different durations to vary the alpha value, or construct a series of Strong-Field Coherence Breaking experiments at once.
+
