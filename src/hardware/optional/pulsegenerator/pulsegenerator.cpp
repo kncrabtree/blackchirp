@@ -476,6 +476,12 @@ void PulseGenerator::readAll()
     emit configUpdate(d_config,QPrivateSignal());
 }
 
+void PulseGenerator::sleep(bool b)
+{
+    if(b)
+        setPulseEnabled(false);
+}
+
 
 QStringList PulseGenerator::forbiddenKeys() const
 {

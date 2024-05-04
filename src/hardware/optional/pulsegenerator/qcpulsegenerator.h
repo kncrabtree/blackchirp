@@ -31,7 +31,6 @@ public:
     // HardwareObject interface
 protected:
     bool testConnection() override final;
-    void sleep(bool b) override final;
 
     // PulseGenerator interface
 protected:

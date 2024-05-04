@@ -66,7 +66,10 @@ signals:
 protected:
     void readAll();
 
+    const PulseGenConfig &getConfig() const { return d_config; }
+
     virtual void initializePGen() =0;
+    void sleep(bool b) override final;
 
     virtual bool setChWidth(const int index, const double width) =0;
     virtual bool setChDelay(const int index, const double delay) =0;

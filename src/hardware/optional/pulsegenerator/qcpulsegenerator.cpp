@@ -42,12 +42,6 @@ bool QCPulseGenerator::testConnection()
     return true;
 }
 
-void QCPulseGenerator::sleep(bool b)
-{
-    if(b)
-        setPulseEnabled(false);
-}
-
 bool QCPulseGenerator::setChWidth(const int index, const double width)
 {
     return pGenWriteCmd(QString(":PULSE%1:WIDTH %2").arg(index+1).arg(width/1e6,0,'f',9));
