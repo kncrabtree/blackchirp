@@ -1,18 +1,18 @@
-#ifndef SRSDG635_H
-#define SRSDG635_H
+#ifndef SRSDG645_H
+#define SRSDG645_H
 
 #include "pulsegenerator.h"
 
 namespace BC::Key::PGen {
-static const QString dg635{"dg635"};
-static const QString dg635Name{"Pulse Generator SRS DG635"};
+static const QString dg645{"dg645"};
+static const QString dg645Name{"Pulse Generator SRS DG645"};
 }
 
-class SRSDG635 : public PulseGenerator
+class SRSDG645 : public PulseGenerator
 {
     Q_OBJECT
 public:
-    explicit SRSDG635(QObject *parent = nullptr);
+    explicit SRSDG645(QObject *parent = nullptr);
 
     // HardwareObject interface
 protected:
@@ -45,4 +45,4 @@ protected:
     bool readHwPulseEnabled() override;
 };
 
-#endif // SRSDG635_H
+#endif // SRSDG645_H

@@ -43,7 +43,7 @@ public:
         ,LIF = 999
 #endif
     };
-    enum PGenMode { Continuous, Triggered };
+    enum PGenMode { Continuous, Triggered_Rising, Triggered_Falling };
     enum ChannelMode { Normal, DutyCycle };
     Q_ENUM(ActiveLevel)
     Q_ENUM(Setting)

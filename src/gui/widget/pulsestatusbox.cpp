@@ -98,7 +98,7 @@ void PulseStatusBox::updatePulseSetting(const QString k, int index, PulseGenConf
 void PulseStatusBox::updateAll()
 {
 
-    if(d_config.d_mode == PulseGenConfig::Triggered)
+    if(d_config.d_mode != PulseGenConfig::Continuous)
     {
         p_repLabel->setText(QString("External Trigger"));
         p_enLed->setColor(Led::Yellow);

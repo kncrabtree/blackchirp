@@ -181,15 +181,25 @@ PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent)
 
         ch.onButton = new QPushButton(this);
         ch.onButton->setCheckable(true);
-        ch.onButton->setChecked(false);
-        ch.onButton->setText(QString("Off"));
-        pulseConfigBoxLayout->addWidget(ch.onButton,i+1,col,1,1);
-        connect(ch.onButton,&QPushButton::toggled,this,[=](bool en){ emit changeSetting(d_key,i,PulseGenConfig::EnabledSetting,en); } );
-        connect(ch.onButton,&QPushButton::toggled,this,[=](bool en){
-            if(en)
-                ch.onButton->setText(QString("On"));
-            else
-                ch.onButton->setText(QString("Off")); } );
+        SettingsStorage s(cfg.headerKey(),SettingsStorage::Hardware);
+        if(s.get(BC::Key::PGen::canDisableChannels,true))
+        {
+            ch.onButton->setChecked(false);
+            ch.onButton->setText(QString("Off"));
+            pulseConfigBoxLayout->addWidget(ch.onButton,i+1,col,1,1);
+            connect(ch.onButton,&QPushButton::toggled,this,[=](bool en){ emit changeSetting(d_key,i,PulseGenConfig::EnabledSetting,en); } );
+            connect(ch.onButton,&QPushButton::toggled,this,[=](bool en){
+                if(en)
+                    ch.onButton->setText(QString("On"));
+                else
+                    ch.onButton->setText(QString("Off")); } );
+        }
+        else
+        {
+            ch.onButton->setChecked(true);
+            ch.onButton->setText("On");
+            ch.onButton->setEnabled(false);
+        }
         col++;
 
         ch.cfgButton = new QToolButton(this);

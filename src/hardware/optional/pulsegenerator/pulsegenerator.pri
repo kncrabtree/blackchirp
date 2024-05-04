@@ -43,12 +43,12 @@ for(num, 0..$$NPGEN) {
             $$PWD/qcpulsegenerator.cpp
             HW *= "$${H}include <hardware/optional/pulsegenerator/qcpulsegenerator.h>"
         }
-		equals(N,DG635) {
-		    DEFINES *= BC_PGEN_$$N=SRSDG635
-			HEADERS *= $$PWD/srsdg635.h
-			SOURCES *= $$PWD/srsdg635.cpp
-			HW *= "$${H}include <hardware/optional/pulsegenerator/srsdg635.h>"
-			}
+        equals(N,DG645) {
+            DEFINES *= BC_PGEN_$$N=SRSDG645
+            HEADERS *= $$PWD/srsdg645.h
+            SOURCES *= $$PWD/srsdg645.cpp
+            HW *= "$${H}include <hardware/optional/pulsegenerator/srsdg645.h>"
+        }
     }
 }
 }
@@ -66,8 +66,8 @@ allhardware {
                $$PWD/qc9518.cpp \
                $$PWD/qc9214.cpp
     HW *= "$${H}include <hardware/optional/pulsegenerator/qcpulsegenerator.h>"
-	DEFINES *= BC_PGEN_SRSDG635
-	HEADERS *= $$PWD/srsdg635.h
-	SOURCES *= $$PWD/srsdg635.cpp
-	HW *= "$${H}include <hardware/optional/pulsegenerator/srsdg635.h>"
+    DEFINES *= BC_PGEN_SRSDG635
+    HEADERS *= $$PWD/srsdg645.h
+    SOURCES *= $$PWD/srsdg645.cpp
+    HW *= "$${H}include <hardware/optional/pulsegenerator/srsdg645.h>"
 }

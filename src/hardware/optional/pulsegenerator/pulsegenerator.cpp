@@ -168,6 +168,9 @@ bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setti
     }
     case PulseGenConfig::EnabledSetting:
     {
+        //don't need to set if the PGen can't enable/disable outputs
+        if(!get(BC::Key::PGen::canDisableChannels,true))
+            break;
         auto en = val.toBool();
         success = setChEnabled(index,en);
         en = readChEnabled(index);
@@ -234,6 +237,7 @@ bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setti
         if(!ok && d == PulseGenConfig::DutyCycle)
         {
             success = false;
+            result = PulseGenConfig::Normal;
             emit logMessage("Duty cycle mode is not supported.",LogHandler::Error);
         }
         else
@@ -280,8 +284,14 @@ bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setti
     }
     case PulseGenConfig::DutyOnSetting:
     {
+        if(!get(BC::Key::PGen::canDutyCycle,true))
+        {
+            result = val.toInt();
+            break;
+        }
         auto d = val.toInt();
         auto max = get(BC::Key::PGen::dutyMax,1000);
+
         if(d<1 || d > max)
         {
             success = false;
@@ -303,6 +313,11 @@ bool PulseGenerator::setPGenSetting(const int index, const PulseGenConfig::Setti
     }
     case PulseGenConfig::DutyOffSetting:
     {
+        if(!get(BC::Key::PGen::canDutyCycle,true))
+        {
+            result = val.toInt();
+            break;
+        }
         auto d = val.toInt();
         auto max = get(BC::Key::PGen::dutyMax,1000);
         if(d<1 || d > max)
@@ -418,7 +433,7 @@ bool PulseGenerator::setRepRate(double d)
 bool PulseGenerator::setPulseMode(PulseGenConfig::PGenMode mode)
 {
     auto ok = get(BC::Key::PGen::canTrigger,false);
-    if(!ok && mode == PulseGenConfig::Triggered)
+    if(!ok && mode != PulseGenConfig::Continuous)
     {
         emit logMessage("Triggered mode is not supported.",LogHandler::Error);
         return false;

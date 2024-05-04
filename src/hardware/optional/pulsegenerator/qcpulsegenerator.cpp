@@ -95,14 +95,20 @@ bool QCPulseGenerator::setHwPulseMode(PulseGenConfig::PGenMode mode)
 {
     QString mstr("DIS");
     QString smstr("NORM");
-    if(mode == PulseGenConfig::Triggered)
+    QString edge("RIS");
+    if(mode != PulseGenConfig::Continuous)
     {
         mstr = QString("TRIG");
         smstr = QString("SINGLE");
+
+        if(mode == PulseGenConfig::Triggered_Falling)
+            edge = QString("FALL");
     }
 
-    bool success = pGenWriteCmd(QString("%1 %2").arg(trigBase()).arg(mstr));
+    bool success = pGenWriteCmd(QString("%1 %2").arg(trigModeBase()).arg(mstr));
     success &= pGenWriteCmd(QString(":%1:MOD %2").arg(sysStr()).arg(smstr));
+    if(mode != PulseGenConfig::Continuous)
+        success &= pGenWriteCmd(QString("%1 %2").arg(trigEdgeBase(),edge));
     QThread::msleep(5);
     return success;
 }
@@ -253,13 +259,25 @@ int QCPulseGenerator::readChDutyOff(const int index)
 
 PulseGenConfig::PGenMode QCPulseGenerator::readHwPulseMode()
 {
-    auto resp = pGenQueryCmd(QString("%1?").arg(trigBase()));
+    auto resp = pGenQueryCmd(QString("%1?").arg(trigModeBase()));
     if(!resp.isEmpty())
     {
         if(resp.contains("DIS"))
             return PulseGenConfig::Continuous;
         if(resp.contains("TRIG"))
-            return PulseGenConfig::Triggered;
+        {
+            resp = pGenQueryCmd(QString("%1?").arg(trigEdgeBase()));
+            if(resp.contains("RIS"))
+                return PulseGenConfig::Triggered_Rising;
+            else if(resp.contains("FALL"))
+                return PulseGenConfig::Triggered_Falling;
+            else
+            {
+                emit hardwareFailure();
+                emit logMessage(QString("Could not read trigger edge. Response: %1").arg(QString(resp)));
+                return PulseGenConfig::Continuous;
+            }
+        }
     }
 
     emit hardwareFailure();

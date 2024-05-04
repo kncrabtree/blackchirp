@@ -37,6 +37,7 @@ Settings
 
 * ``canDutyCycle`` (bool): If true, the delay generator supports duty cycle mode in which a channel generates a pulse for N trigger events followed by no pulse for M subsequent trigger events, where N and M are set by the user.
 * ``canSyncToChannel`` (bool): If true, one channel's delay may be referenced to the delay of another channel rather than the master clock.
+* ``canDisableChannels`` (bool): If true, individual channel outputs may be enabled/disabled independently of the overall system status.
 * ``canTrigger`` (bool): If true, the pulse sequence can be initiated from an external trigger instead of an internal rate generator.
 * ``dutyMaxPulses`` (int): Maximum number of pulses that can be set in duty cycle mode for on/off sequences.
 * ``lockExternal`` (bool): If true, timing clock will be set to lock to an external reference.
@@ -73,4 +74,9 @@ Quantum Composers 9214 (qc9214)
 ...............................
 
 The `Quantum Composers 9214 <https://www.quantumcomposers.com/pulse-delay-generator-sapphire>`_ is a low-cost, 4-channel pulse generator that supports most Blackchirp features and communicates via RS232.
+
+Stanford Research Systems DG645 (dg645)
+.......................................
+
+The `SRS DG645 <https://www.thinksrs.com/products/dg645.html>`_ is a 4-channel pulse generator which is configured to communicate over its RS232 output. This device supports external triggering and synchronizing channels to one another, but does not support disabling individual channels or duty cycle mode for individual channels.
 

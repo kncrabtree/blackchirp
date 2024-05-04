@@ -66,7 +66,8 @@ protected:
     virtual QString idResponse() =0;
     virtual QString sysStr() =0;
     virtual QString clock10MHzStr() =0;
-    virtual QString trigBase() =0;
+    virtual QString trigModeBase() =0;
+    virtual QString trigEdgeBase() =0;
 
 private:
     const QStringList d_channels{"T0","CHA","CHB","CHC","CHD","CHE","CHF","CHG","CHH"};
@@ -96,13 +97,15 @@ protected:
     inline QString idResponse() override { return id; }
     inline QString sysStr() override { return sys; }
     inline QString clock10MHzStr() override { return clock; }
-    inline QString trigBase() override { return tb; }
+    inline QString trigModeBase() override { return tb; }
+    inline QString trigEdgeBase() override { return te; }
 
 private:
     const QString id{"9518+"};
     const QString sys{"SPULSE"};
     const QString clock{"1"};
     const QString tb{":SPULSE:EXT:MOD"};
+    const QString te{":SPULSE:EXT:EDGE"};
 };
 #endif
 
@@ -131,13 +134,15 @@ protected:
     inline QString idResponse() override { return id; }
     inline QString sysStr() override { return sys; }
     inline QString clock10MHzStr() override { return clock; }
-    inline QString trigBase() override { return tb; }
+    inline QString trigModeBase() override { return tb; }
+    inline QString trigEdgeBase() override { return te; }
 
 private:
     const QString id{"QC,9528"};
     const QString sys{"PULSE0"};
     const QString clock{"EXT10"};
     const QString tb{":PULSE0:TRIGGER:MODE"};
+    const QString te{":PULSE0:TRIGGER:LOGIC"};
 };
 #endif
 
@@ -166,13 +171,15 @@ protected:
     inline QString idResponse() override { return id; }
     inline QString sysStr() override { return sys; }
     inline QString clock10MHzStr() override { return clock; }
-    inline QString trigBase() override { return tb; }
+    inline QString trigModeBase() override { return tb; }
+    inline QString trigEdgeBase() override { return te; }
 
 private:
     const QString id{"QC,9214"};
     const QString sys{"PULSE0"};
     const QString clock{"EXT10"};
     const QString tb{":PULSE0:EXT:MOD"};
+    const QString te{":PULSE0:EXT:EDGE"};
 };
 #endif
 

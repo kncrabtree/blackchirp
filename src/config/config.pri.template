@@ -37,7 +37,7 @@ CLOCKS=fixed fixed
 #AWG=virtual
 
 # Pulse Generator. Space delimited list
-# options: virtual, qc9518, qc9528, qc9214
+# options: virtual, qc9518, qc9528, qc9214, dg645
 #PGEN=virtual
 
 # Flow Controller. Space delimited list

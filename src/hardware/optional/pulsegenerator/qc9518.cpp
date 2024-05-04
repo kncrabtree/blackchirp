@@ -15,6 +15,7 @@ Qc9518::Qc9518(QObject *parent) :
     setDefault(canTrigger,true);
     setDefault(dutyMax,100000);
     setDefault(canSyncToChannel,true);
+    setDefault(canDisableChannels,true);
 }
 
 Qc9518::~Qc9518()
