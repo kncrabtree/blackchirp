@@ -59,10 +59,13 @@ void PulseStatusBox::updatePulseSetting(const QString k, int index, PulseGenConf
     if(k != d_key)
         return;
 
-    if(index < 0 || (std::size_t)index >= d_ledList.size())
-        return;
+    if(index>=0)
+    {
+        if((std::size_t)index >= d_ledList.size())
+            return;
+        d_config.setCh(index,s,val);
+    }
 
-    d_config.setCh(index,s,val);
 
     switch(s) {
     case PulseGenConfig::NameSetting:

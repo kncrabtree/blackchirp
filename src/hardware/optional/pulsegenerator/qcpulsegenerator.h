@@ -141,8 +141,8 @@ private:
     const QString id{"QC,9528"};
     const QString sys{"PULSE0"};
     const QString clock{"EXT10"};
-    const QString tb{":PULSE0:TRIGGER:MODE"};
-    const QString te{":PULSE0:TRIGGER:LOGIC"};
+    const QString tb{":PULSE:TRIG:MODE"};
+    const QString te{":PULS:TRIG:EDGE"};
 };
 #endif
 

@@ -5,7 +5,7 @@ using namespace BC::Key::PGen;
 SRSDG645::SRSDG645(QObject *parent)
     : PulseGenerator{dg645,dg645Name,CommunicationProtocol::Rs232,4,parent,false,true}
 {
-    setDefault(minWidth,0.0001);
+    setDefault(minWidth,0.0000);
     setDefault(maxWidth,1e5);
     setDefault(minDelay,0.0);
     setDefault(maxDelay,1e5);
@@ -44,6 +44,8 @@ bool SRSDG645::testConnection()
         if(!resp.contains('3'))
             emit logMessage("Timebase is not set to external.",LogHandler::Warning);
     }
+
+    p_comm->writeCmd("*CLS\n");
 
     readAll();
 
@@ -193,7 +195,7 @@ double SRSDG645::readChWidth(const int index)
         if(l.size() < 2)
         {
             emit hardwareFailure();
-            emit logMessage(QString("Could not read Ch %1 width. Response: %2").arg(index+1).arg(QString(resp)),LogHandler::Error);
+            emit logMessage(QString("Could not read Ch %1 width. Response: %2").arg(index).arg(QString(resp)),LogHandler::Error);
             return -1.0;
         }
         auto i = l.constFirst().toInt();
@@ -209,18 +211,18 @@ double SRSDG645::readChWidth(const int index)
             else
             {
                 emit hardwareFailure();
-                emit logMessage(QString("Could not read Ch %1 width. Response: %2").arg(index+1).arg(QString(resp)),LogHandler::Error);
+                emit logMessage(QString("Could not read Ch %1 width. Response: %2").arg(index).arg(QString(resp)),LogHandler::Error);
                 return -1.0;
             }
         }
         else
         {
             bool ok = false;
-            out = l.at(1).trimmed().toDouble(&ok)/1e6;
+            out = l.at(1).trimmed().toDouble(&ok)*1e6;
             if(!ok)
             {
                 emit hardwareFailure();
-                emit logMessage(QString("Could not read Ch %1 width. Response: %2").arg(index+1).arg(QString(resp)),LogHandler::Error);
+                emit logMessage(QString("Could not read Ch %1 width. Response: %2").arg(index).arg(QString(resp)),LogHandler::Error);
                 return -1.0;
             }
             else
@@ -245,16 +247,16 @@ double SRSDG645::readChDelay(const int index)
     if(l.size() < 2)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read Ch %1 delay. Response: %2").arg(index+1).arg(QString(resp)),LogHandler::Error);
+        emit logMessage(QString("Could not read Ch %1 delay. Response: %2").arg(index).arg(QString(resp)),LogHandler::Error);
         return -1.0;
     }
 
     bool ok = false;
-    out = l.at(1).trimmed().toDouble(&ok)/1e6;
+    out = l.at(1).trimmed().toDouble(&ok)*1e6;
     if(!ok)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read Ch %1 delay. Response: %2").arg(index+1).arg(QString(resp)),LogHandler::Error);
+        emit logMessage(QString("Could not read Ch %1 delay. Response: %2").arg(index).arg(QString(resp)),LogHandler::Error);
         return -1.0;
     }
 
@@ -271,10 +273,10 @@ PulseGenConfig::ActiveLevel SRSDG645::readChActiveLevel(const int index)
     if(resp.contains('0'))
         return PulseGenConfig::ActiveLow;
     else if(resp.contains('1'))
-        return PulseGenConfig::ActiveLow;
+        return PulseGenConfig::ActiveHigh;
 
     emit hardwareFailure();
-    emit logMessage(QString("Could not read Ch %1 active level. Response: %2").arg(index+1).arg(QString(resp)),LogHandler::Error);
+    emit logMessage(QString("Could not read Ch %1 active level. Response: %2").arg(index).arg(QString(resp)),LogHandler::Error);
     return PulseGenConfig::ActiveHigh;
 
 }
@@ -289,12 +291,12 @@ bool SRSDG645::readChEnabled(const int index)
 int SRSDG645::readChSynchCh(const int index)
 {
     auto targetCh = 2*index+2;
-    auto resp = p_comm->queryCmd(QString("DLAY?%1").arg(targetCh)).trimmed();
+    auto resp = p_comm->queryCmd(QString("DLAY?%1\n").arg(targetCh)).trimmed();
     auto l = resp.split(',');
     if(l.size() < 2)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read Ch %1 sync channel. Response: %2").arg(index+1).arg(QString(resp)),LogHandler::Error);
+        emit logMessage(QString("Could not read Ch %1 sync channel. Response: %2").arg(index).arg(QString(resp)),LogHandler::Error);
         return -1;
     }
 
@@ -303,7 +305,7 @@ int SRSDG645::readChSynchCh(const int index)
     if(!ok)
     {
         emit hardwareFailure();
-        emit logMessage(QString("Could not read Ch %1 sync channel. Response: %2").arg(index+1).arg(QString(resp)),LogHandler::Error);
+        emit logMessage(QString("Could not read Ch %1 sync channel. Response: %2").arg(index).arg(QString(resp)),LogHandler::Error);
         return -1;
     }
 
