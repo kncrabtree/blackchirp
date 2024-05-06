@@ -504,8 +504,16 @@ FtWorker::FilterResult FtWorker::filterFid(const Fid fid, const FidProcessingSet
             d*=d_winf.at(i-si);
 
         out[i] = d;
-        min = qMin(d,min);
-        max = qMax(d,max);
+        if(i==si)
+        {
+            min = d;
+            max = d;
+        }
+        else
+        {
+            min = qMin(d,min);
+            max = qMax(d,max);
+        }
     }
 
     if(settings.zeroPadFactor > 0 && settings.zeroPadFactor <= 2)

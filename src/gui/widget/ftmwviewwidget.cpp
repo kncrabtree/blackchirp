@@ -229,6 +229,7 @@ void FtmwViewWidget::updateLiveFidList()
         else
         {
             //always average all frames for live plot
+            ps.fidList = fl;
             process(key,fl,-1);
         }
 
@@ -450,17 +451,11 @@ void FtmwViewWidget::reprocess(const QList<int> ignore)
         if(!ignore.contains(key))
         {
             if(key == d_mainId)
-            {
-                cancelSidebandProcessing();
                 updateMainPlot();
-            }
+            else if(key == d_liveId)
+                process(key,d_plotStatus[key].fidList,-1);
             else
-            {
-                if(key == d_liveId)
-                    process(key,d_plotStatus[key].fidList,-1);
-                else
-                    process(key,d_plotStatus[key].fidList,d_plotStatus[key].frame);
-            }
+                process(key,d_plotStatus[key].fidList,d_plotStatus[key].frame);
         }
     }
 }

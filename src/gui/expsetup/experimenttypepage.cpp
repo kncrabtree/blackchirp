@@ -135,9 +135,10 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     fl2->addRow("Aux Data Interval",p_auxDataIntervalBox);
 
     p_backupBox = new QSpinBox(this);
-    p_backupBox->setRange(0,100);
+    p_backupBox->setRange(0,6000);
+    p_backupBox->setSingleStep(15);
     p_backupBox->setSpecialValueText("Disabled");
-    p_backupBox->setSuffix(QString(" hour"));
+    p_backupBox->setSuffix(QString(" min"));
     p_backupBox->setToolTip(QString("Interval for autosaving."));
     p_backupBox->setValue(get(backup,0));
     registerGetter(backup,p_backupBox,&QSpinBox::value);
@@ -356,7 +357,7 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
         }
 
 
-        p_backupBox->setValue(p_exp->d_backupIntervalHours);
+        p_backupBox->setValue(p_exp->d_backupIntervalMinutes);
         p_auxDataIntervalBox->setValue(p_exp->d_timeDataInterval);
     }
 
@@ -484,7 +485,7 @@ void ExperimentTypePage::apply()
      else
          e->disableFtmw();
 
-     e->d_backupIntervalHours = p_backupBox->value();
+     e->d_backupIntervalMinutes = p_backupBox->value();
      e->d_timeDataInterval = p_auxDataIntervalBox->value();
 }
 

@@ -402,16 +402,16 @@ void Experiment::abort()
 
 bool Experiment::canBackup()
 {
-    if(isComplete() || d_backupIntervalHours < 1 || !d_startTime.isValid())
+    if(isComplete() || d_backupIntervalMinutes < 1 || !d_startTime.isValid())
         return false;
 
     auto now = QDateTime::currentDateTime();
     if(d_lastBackupTime.isValid())
     {
-        if(d_lastBackupTime.addSecs(3600*d_backupIntervalHours) <= now)
+        if(d_lastBackupTime.addSecs(60*d_backupIntervalMinutes) <= now)
             return true;
     }
-    else if(d_startTime.addSecs(3600*d_backupIntervalHours) <= now)
+    else if(d_startTime.addSecs(60*d_backupIntervalMinutes) <= now)
         return true;
 
     return false;
@@ -543,7 +543,7 @@ void Experiment::storeValues()
     using namespace BC::Store::Exp;
     store(num,d_number);
     store(timeData,d_timeDataInterval,QString("s"));
-    store(backupInterval,d_backupIntervalHours,QString("hr"));
+    store(backupInterval,d_backupIntervalMinutes,QString("min"));
     store(majver,d_majorVersion);
     store(minver,d_minorVersion);
     store(patchver,d_patchVersion);
@@ -556,7 +556,7 @@ void Experiment::retrieveValues()
     using namespace BC::Store::Exp;
     d_number = retrieve<int>(num);
     d_timeDataInterval = retrieve<int>(timeData);
-    d_backupIntervalHours = retrieve<int>(backupInterval);
+    d_backupIntervalMinutes = retrieve<int>(backupInterval);
     d_majorVersion = retrieve<QString>(majver);
     d_minorVersion = retrieve<QString>(minver);
     d_patchVersion = retrieve<QString>(patchver);

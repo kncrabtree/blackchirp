@@ -60,7 +60,7 @@ public:
     QDateTime d_startTime;
     QDateTime d_lastBackupTime;
     int d_timeDataInterval{300};
-    int d_backupIntervalHours{0};
+    int d_backupIntervalMinutes{0};
     QString d_errorString;
     QString d_startLogMessage;
     QString d_endLogMessage;

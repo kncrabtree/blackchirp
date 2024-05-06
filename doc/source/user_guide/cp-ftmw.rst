@@ -28,16 +28,16 @@ FID Processing Settings
 
 By clicking on the "FID Processing Settings" button, a toolbar will appear with various settings that can alter processing and/or display of the CP-FTMW data. These settings are applied to the data displayed on all plots. These are:
 
-* **FT Start**: The starting time for the data to be Fourier transformed. Points before this time are zeroed out. This setting is useful when the digitizer is triggered prior to the excitation chirp. In this case, the FT Start can be set to 0 to view the chirp and monitor phase coherence. The FT start can also be adjusted to exclude signals from ringing of the excitation pulse of switch bounce.
-* **FT End**: The ending time for the FT. Points after this time are zeroed out. Can be useful in conjunction with FT start to assess the T2 relaxation time of the FID.
-* **Exp Filter**: Time constant for an exponential filter applied to the FID prior to the FT. Matching the filter time constant to the natural T2 relaxation time provides noise suppression.
-* **VScale Ignore**: A frequency range near the LO to ignore when computing the autoscale range. Often CP-FTMW data have large uninteresting signals near DC, and this setting prevents those from overwhelming the default vertical scale.
-* **Zero Pad**: Appends zeros to the FID to artificially increase the digital resolution of the FT. A setting of 1 appends zeros until the length of the array is double the next power of two. For example, for a record length of 750,000 points, the next power of two is 2^20, or 1,048,576 points. With zero pad = 1, zeros are appended until the data length is 2^21, or 2,097,152 points. Each subsequent increase of the zero pad setting increases the length by another factor of 2.
-* **Remove DC**: Subtracts the average value of the FID prior to the Fourier transform. Removes large-envelope DC artifacts.
-* **Window Function**: Applies a window function prior to Fourier transformation. Window functions are useful for suppressing spectral leakage from strong signals, which tend to obscure nearby weaker transitions. A window function cuts down on these sidelobes at the expense of reducing the signal-to-noise ratio slightly and decreasing the spectral resolution.
-* **FT units**: Changes the vertical scaling of the FT.
-* **Reset**: Restores processing settings to the most recently-saved values.
-* **Save**: Writes current processing settings to a processing.csv file. By default, processing settings are written when an experiment first starts, but may be overwritten at any time.
+* ``FT Start``: The starting time for the data to be Fourier transformed. Points before this time are zeroed out. This setting is useful when the digitizer is triggered prior to the excitation chirp. In this case, the FT Start can be set to 0 to view the chirp and monitor phase coherence. The FT start can also be adjusted to exclude signals from ringing of the excitation pulse of switch bounce.
+* ``FT End``: The ending time for the FT. Points after this time are zeroed out. Can be useful in conjunction with FT start to assess the T2 relaxation time of the FID.
+* ``Exp Filter``: Time constant for an exponential filter applied to the FID prior to the FT. Matching the filter time constant to the natural T2 relaxation time provides noise suppression.
+* ``VScale Ignore``: A frequency range near the LO to ignore when computing the autoscale range. Often CP-FTMW data have large uninteresting signals near DC, and this setting prevents those from overwhelming the default vertical scale.
+* ``Zero Pad``: Appends zeros to the FID to artificially increase the digital resolution of the FT. A setting of 1 appends zeros until the length of the array is double the next power of two. For example, for a record length of 750,000 points, the next power of two is 2^20, or 1,048,576 points. With zero pad = 1, zeros are appended until the data length is 2^21, or 2,097,152 points. Each subsequent increase of the zero pad setting increases the length by another factor of 2.
+* ``Remove DC``: Subtracts the average value of the FID prior to the Fourier transform. Removes large-envelope DC artifacts.
+* ``Window Function``: Applies a window function prior to Fourier transformation. Window functions are useful for suppressing spectral leakage from strong signals, which tend to obscure nearby weaker transitions. A window function cuts down on these sidelobes at the expense of reducing the signal-to-noise ratio slightly and decreasing the spectral resolution.
+* ``FT units``: Changes the vertical scaling of the FT.
+* ``Reset``: Restores processing settings to the most recently-saved values.
+* ``Save``: Writes current processing settings to a processing.csv file. By default, processing settings are written when an experiment first starts, but may be overwritten at any time.
 
 The FID plot shows the post-processed FID data.
 
@@ -48,22 +48,22 @@ Clicking on the "Plot Settings" button opens a menu which controls what data are
 
 For the main plot, the primary control is the Mode selection box, which controls the data displayed on the main plot. The available options are:
 
-* **Live**: Main plot shows the data on the "Live" set of plots. For acquisition modes that involve changing the clock settings (LO Scan, DR Scan), the main plot will follow the current acquisition settings as they change. At the end of an acquisition, this option is disabled and the setting is changed to FT1 if Live was selected.
-* **FT1**: Main plot shows the data selected for display on the FT1 plot, which includes its segment, frame, and backup options.
-* **FT2**: Main plot shows the data selected for display on the FT2 plot, which includes its segment, frame, and backup options.
-* **FT1_minus_FT2**: Main plot shows the result of subtracting FT2 from FT1.
-* **FT2_minus_FT1**: Main plot shows the result of subtracting FT1 from FT2.
-* **Upper Sideband**: Only available in LO Scan mode. Performs sideband deconvolution using only the higher-frequency sideband.
-* **Lower Sideband**: Only available in LO Scan mode. Performs sideband deconvolution using only the lwoer-frequency sideband.
-* **Both Sidebands**: Only available in LO Scan mode. Performs sideband deconvolution using both sidebands.
+* ``Live``: Main plot shows the data on the "Live" set of plots. For acquisition modes that involve changing the clock settings (LO Scan, DR Scan), the main plot will follow the current acquisition settings as they change. At the end of an acquisition, this option is disabled and the setting is changed to FT1 if Live was selected.
+* ``FT1``: Main plot shows the data selected for display on the FT1 plot, which includes its segment, frame, and backup options.
+* ``FT2``: Main plot shows the data selected for display on the FT2 plot, which includes its segment, frame, and backup options.
+* ``FT1_minus_FT2``: Main plot shows the result of subtracting FT2 from FT1.
+* ``FT2_minus_FT1``: Main plot shows the result of subtracting FT1 from FT2.
+* ``Upper Sideband``: Only available in LO Scan mode. Performs sideband deconvolution using only the higher-frequency sideband.
+* ``Lower Sideband``: Only available in LO Scan mode. Performs sideband deconvolution using only the lwoer-frequency sideband.
+* ``Both Sidebands``: Only available in LO Scan mode. Performs sideband deconvolution using both sidebands.
 
 In addition to the mode selection box, in LO scan mode, the other three boxes may become available. The "Follow" box is enabled when one of the sideband deconvolution modes is selected. The indicated plot is used to retrieve the frame and backup (is applicable) for the sideband deconvolution routine. The min and max offset boxes control the range of frequencies from the individual segments which are sent into the sideband deconvolution process. It is advisable to set the minimum offset high enough to ignore undesired signals near the LO frequency, and set the maximum offset less than or equal to the bandwidth of the digitizer.
 
 For Plot 1 and Plot 2, the segment, frame, and backup boxes allow for selection of different data to be shown in the FT1 and FT2 plots, respectively. The meanings are:
 
-* **Segment**: For acqusition modes which involve multiple different hardware settings in a single experiment (e.g., LO scan, DR scan), each individual hardware setting is associated with a "Segment." The nomenclature comes from segmented CP-FTMW spectroscopy, which is implemented as an LO Scan in Blackchirp. By changing the segment box, the indicated plot would show the data associated with each individual LO tuning in such a scan.
-* **Frame**: For "Multiple Record" acquisitions (see the `Digitizer Setup <experiment/digitizer_setup.html>`_ page for more detail), this box controls which individual record is displayed, indexed starting from 1. With a value of 0 (default), the box will display the word "Average" and Blackchirp will coaverage the individual records.
-* **Backup**: For long acquisitions in which backups are enabled, the backup box will display the FID and FT associated with each backup checkpoint.
+* ``Segment``: For acqusition modes which involve multiple different hardware settings in a single experiment (e.g., LO scan, DR scan), each individual hardware setting is associated with a "Segment." The nomenclature comes from segmented CP-FTMW spectroscopy, which is implemented as an LO Scan in Blackchirp. By changing the segment box, the indicated plot would show the data associated with each individual LO tuning in such a scan.
+* ``Frame``: For "Multiple Record" acquisitions (see the `Digitizer Setup <experiment/digitizer_setup.html>`_ page for more detail), this box controls which individual record is displayed, indexed starting from 1. With a value of 0 (default), the box will display the word "Average" and Blackchirp will coaverage the individual records.
+* ``Backup``: For long acquisitions in which backups are enabled, the backup box will display the FID and FT associated with each backup checkpoint.
 
 Peak Up Options
 ...............

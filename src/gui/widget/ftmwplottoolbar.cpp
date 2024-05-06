@@ -64,7 +64,7 @@ FtmwPlotToolBar::FtmwPlotToolBar(QWidget *parent) : QToolBar(parent)
         bb->setSpecialValueText("All");
         bb->setRange(0,0);
         connect(bb,&SpinBoxWidgetAction::valueChanged,[this,i](){ emit plotSettingChanged(i); });
-        d_seg.insert({i,sb});
+        d_backup.insert({i,bb});
         addAction(bb);
     }
 
