@@ -1,3 +1,12 @@
+.. index::
+   single: FTMW
+   single: FID
+   single: FID Processing
+   single: Segment
+   single: Frame
+   single: Backup
+   single: Window Function
+
 Data Storage
 ============
 
@@ -259,3 +268,40 @@ The first row is a column label, and each subsequent row contains a single FID p
   -az;-33;-99;-4r;-ee;-9p;-8e;-2l;-dk;56;-fq;-3t;38;3a;-7f;-4a;-2b;3m;-e;-4t
   -bg;-82;-6s;-7r;-8k;-3o;-id;-2j;-i9;3f;-gw;-7c;-6b;-r;-57;-4v;-2o;-h;-3r;-20
 
+
+processing.csv
+..............
+
+This file contains the default `processing settings <cp-ftmw.html#fid-processing-settings>`_ associated with the FID data. An example is shown below.::
+
+  ObjKey;Value
+  AutoscaleIgnoreMHz;250
+  FidEndUs;10
+  FidExpfUs;0
+  FidRemoveDC;true
+  FidStartUs;5
+  FidWindowFunction;0
+  FidZeroPadFactor;0
+  FtUnits;6
+
+The ``FtUnits`` value refers to a scaling factor of 10\ :sup:`N` (i.e., a setting of 6 would convert the FT from units of V to μV.). The window functions are shown below, where ``N`` is the number of samples and ``n`` ranges from 0 to ``N-1``:
+
+* ``0``: None/Boxcar
+* ``1``: Bartlett
+.. math::
+   f(n) = 1-\left|\frac{2n}{N-1}-1\right|
+* ``2``: Blackman
+.. math::
+   f(n) = 0.42 - 0.5\cos\frac{2\pi n}{N} + 0.08\cos\frac{4\pi n}{N}
+* ``3``: Blackman-Harris
+.. math::
+   f(n) = 0.35875 - 0.48829\cos\frac{2\pi n}{N} + 0.14128\cos\frac{4\pi n}{N} - 0.1168\cos\frac{6\pi n}{N}
+* ``4``: Hamming
+.. math::
+   f(n) = 0.54 - 0.46\cos\frac{2\pi n}{N}
+* ``5``: Hanning
+.. math::
+   f(n) = 0.5 - 0.5\cos\frac{2\pi n}{N}
+* ``6``: Kaiser-Bessel (I\ :sub:`0` = regular modified cylindrical Bessel function, β=14.0)
+.. math::
+   f(n;\beta) = \frac{I_0\left(\beta\sqrt{1-\left[\frac{2n}{N-1}\right]^2}\right)}{I_0(\beta)}

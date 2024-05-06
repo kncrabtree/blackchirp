@@ -36,6 +36,8 @@ By clicking on the "FID Processing Settings" button, a toolbar will appear with 
 * **Remove DC**: Subtracts the average value of the FID prior to the Fourier transform. Removes large-envelope DC artifacts.
 * **Window Function**: Applies a window function prior to Fourier transformation. Window functions are useful for suppressing spectral leakage from strong signals, which tend to obscure nearby weaker transitions. A window function cuts down on these sidelobes at the expense of reducing the signal-to-noise ratio slightly and decreasing the spectral resolution.
 * **FT units**: Changes the vertical scaling of the FT.
+* **Reset**: Restores processing settings to the most recently-saved values.
+* **Save**: Writes current processing settings to a processing.csv file. By default, processing settings are written when an experiment first starts, but may be overwritten at any time.
 
 The FID plot shows the post-processed FID data.
 
