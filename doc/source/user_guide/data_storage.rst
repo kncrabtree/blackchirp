@@ -91,21 +91,21 @@ clocks.csv
 This file contains the configuration of the clocks (upceonversion LO, downconversion LO, etc) as discussed on the `Rf Configuration <hardware_menu.html#rf-configuration>`_ page. In a typical CP-FTMW experiment, each clock is set to a single value, but in some cases (e.g., an `LO Scan <experiment/acquisition_types.html#lo-scan>`_ or a `DR Scan <experiment/acquisition_types.html#dr-scan>`_), one or more of the clocks may be tuned to different values throughout the experiment. For example, the following is an excerpt from an LO scan in which the upconversion and downconversion LOs were each stepped by 250 MHz::
 
   Index;ClockType;FreqMHz;Operation;Factor;HwKey;OutputNum
-  0;1;40960;0;8;Clock0;1
-  0;0;11520;0;2;Clock0;0
-  0;3;7000;0;1;Clock0;2
-  1;1;41210;0;8;Clock0;1
-  1;0;11770;0;2;Clock0;0
-  1;3;7000;0;1;Clock0;2
-  2;1;41460;0;8;Clock0;1
-  2;0;12020;0;2;Clock0;0
-  2;3;7000;0;1;Clock0;2
-  3;1;41710;0;8;Clock0;1
-  3;0;12270;0;2;Clock0;0
-  3;3;7000;0;1;Clock0;2
-  4;1;41960;0;8;Clock0;1
-  4;0;12520;0;2;Clock0;0
-  4;3;7000;0;1;Clock0;2
+  0;1;40960;0;8;Clock.0;1
+  0;0;11520;0;2;Clock.0;0
+  0;3;7000;0;1;Clock.0;2
+  1;1;41210;0;8;Clock.0;1
+  1;0;11770;0;2;Clock.0;0
+  1;3;7000;0;1;Clock.0;2
+  2;1;41460;0;8;Clock.0;1
+  2;0;12020;0;2;Clock.0;0
+  2;3;7000;0;1;Clock.0;2
+  3;1;41710;0;8;Clock.0;1
+  3;0;12270;0;2;Clock.0;0
+  3;3;7000;0;1;Clock.0;2
+  4;1;41960;0;8;Clock.0;1
+  4;0;12520;0;2;Clock.0;0
+  4;3;7000;0;1;Clock.0;2
 
 The ``Index`` column refers to each step of the experiment. ``ClockType`` identifies the particular clock role (0=UpLO, 1=DownLO, 2=AwgRef, 3=DRClock, 4=DigRef, 5=ComRef). ``FreqMHz`` is the logical clock frequency in MHz. ``Operation`` (0=multiply, 1=divide) and ``Factor`` account for any frequncy divider or multiplier on the clock output, and these values are used by Blackchirp to determine how to convert the logical frequencies into hardware frequency. ``HwKey`` and ``OutputNum`` tell which piece of hardware was used and which output (in the event that the clock has multiple outputs).
 
@@ -116,10 +116,10 @@ This file contains the list of hardware compiled into Blackchirp when the experi
 
   key;subKey
   AWG;awg70002a
-  Clock0;valon5009
-  Clock1;fixed
-  FtmwDigitizer;dsa71604c
-  PulseGenerator;qc9528
+  Clock.0;valon5009
+  Clock.1;fixed
+  FtmwDigitizer.0;dsa71604c
+  PulseGenerator.0;qc9528
 
 The ``key`` and ``subKey`` fields together record which specific hardware implementation was used for each piece of hardware. The number of items in this list may be variable depending on your configuration.
 
@@ -199,7 +199,7 @@ This file is used internally by Blackchirp to configure data structures when the
 version.csv
 ...........
 
-This file stores information about the Blackchirp version used with the experiment. The purpose is to enable the possibility of enabling future backward compatability. An example::
+This file stores information about the Blackchirp version used with the experiment. The purpose is to enable the possibility of future backward compatability. An example::
 
   ;
   key;value
