@@ -16,13 +16,15 @@
 #include <data/storage/fidpeakupstorage.h>
 #include <data/storage/fidmultistorage.h>
 
-FtmwViewWidget::FtmwViewWidget(QWidget *parent, QString path) :
+FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path) :
     QWidget(parent), SettingsStorage(BC::Key::FtmwView::key),
     ui(new Ui::FtmwViewWidget), d_currentExptNum(-1), d_currentSegment(-1), d_path(path)
 {
-    ui->setupUi(this);
+    ui->setupUi(main,this);
 
     d_currentProcessingSettings = ui->processingToolBar->getSettings();
+    connect(ui->processingToolBar,&FtmwProcessingToolBar::resetSignal,this,&FtmwViewWidget::resetProcessingSettings);
+    connect(ui->processingToolBar,&FtmwProcessingToolBar::saveSignal,this,&FtmwViewWidget::saveProcessingSettings);
     p_worker = new FtWorker(this);
     connect(p_worker,&FtWorker::ftDone,this,&FtmwViewWidget::ftDone,Qt::QueuedConnection);
     connect(p_worker,&FtWorker::fidDone,this,&FtmwViewWidget::fidProcessed,Qt::QueuedConnection);
@@ -262,6 +264,21 @@ void FtmwViewWidget::updateProcessingSettings(FtWorker::FidProcessingSettings s)
     ui->fidPlot2->setFtEnd(s.endUs);
 
     reprocess(ignore);
+}
+
+void FtmwViewWidget::resetProcessingSettings()
+{
+    if(ps_fidStorage)
+    {
+        if(ps_fidStorage->readProcessingSettings(d_currentProcessingSettings))
+            ui->processingToolBar->setAll(d_currentProcessingSettings);
+    }
+}
+
+void FtmwViewWidget::saveProcessingSettings()
+{
+    if(ps_fidStorage)
+        ps_fidStorage->writeProcessingSettings(ui->processingToolBar->getSettings());
 }
 
 void FtmwViewWidget::updatePlotSetting(int id)

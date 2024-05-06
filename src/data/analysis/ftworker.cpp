@@ -496,6 +496,10 @@ FtWorker::FilterResult FtWorker::filterFid(const Fid fid, const FidProcessingSet
 
 
         double d = data.at(i);
+
+        if(settings.expFilter > 0.0)
+            d*=exp(-static_cast<double>(i-si)*fid.spacing()/(settings.expFilter/1e6));
+
         if(settings.windowFunction != None)
             d*=d_winf.at(i-si);
 

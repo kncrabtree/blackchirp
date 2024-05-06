@@ -50,7 +50,7 @@ class FtmwViewWidget : public QWidget, public SettingsStorage
 {
     Q_OBJECT
 public:
-    explicit FtmwViewWidget(QWidget *parent = 0, QString path = QString(""));
+    explicit FtmwViewWidget(bool main, QWidget *parent = 0, QString path = QString(""));
     ~FtmwViewWidget();
     void prepareForExperiment(const Experiment &e);
 
@@ -58,6 +58,8 @@ public slots:
     void setLiveUpdateInterval(int intervalms);
     void updateLiveFidList();
     void updateProcessingSettings(FtWorker::FidProcessingSettings s);
+    void resetProcessingSettings();
+    void saveProcessingSettings();
     void updatePlotSetting(int id);
 
     void fidLoadComplete(int id);
@@ -170,7 +172,7 @@ public:
     QAction *peakFindAction;
     SpinBoxWidgetAction *refreshBox;
 
-    void setupUi(QWidget *FtmwViewWidget)
+    void setupUi(bool main, QWidget *FtmwViewWidget)
     {
         if (FtmwViewWidget->objectName().isEmpty())
             FtmwViewWidget->setObjectName(QStringLiteral("FtmwViewWidget"));
@@ -260,7 +262,7 @@ public:
         processingAct =toolBar->addAction(QIcon(QString(":/icons/labplot-xy-fourier-transform-curve.svg")),QString("FID Processing Settings"));
         processingAct->setCheckable(true);
 
-        processingToolBar = new FtmwProcessingToolBar(FtmwViewWidget);
+        processingToolBar = new FtmwProcessingToolBar(main,FtmwViewWidget);
         processingToolBar->setVisible(false);
 
 

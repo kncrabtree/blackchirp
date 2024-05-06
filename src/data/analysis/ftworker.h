@@ -57,6 +57,7 @@ public:
     struct FidProcessingSettings {
         double startUs;
         double endUs;
+        double expFilter;
         int zeroPadFactor;
         bool removeDC;
         FtUnits units;

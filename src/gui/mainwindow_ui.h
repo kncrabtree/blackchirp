@@ -342,7 +342,7 @@ public:
         ftmwTabLayout->setSpacing(6);
         ftmwTabLayout->setContentsMargins(11, 11, 11, 11);
         ftmwTabLayout->setObjectName(QString::fromUtf8("verticalLayout_3"));
-        ftViewWidget = new FtmwViewWidget(ftmwTab);
+        ftViewWidget = new FtmwViewWidget(true,ftmwTab);
         ftViewWidget->setObjectName(QString::fromUtf8("ftViewWidget"));
 
         ftmwTabLayout->addWidget(ftViewWidget);

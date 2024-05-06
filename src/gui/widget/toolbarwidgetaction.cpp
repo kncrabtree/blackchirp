@@ -281,7 +281,35 @@ QWidget *CheckWidgetAction::_createWidget(QWidget *parent)
 {
     auto out = new QCheckBox(parent);
     out->setChecked(isChecked());
-    connect(out,&QCheckBox::toggled,this,&CheckWidgetAction::toggle);
+    connect(out,&QCheckBox::toggled,this,&CheckWidgetAction::checkStateChanged);
 
     return out;
+}
+
+void CheckWidgetAction::setCheckedState(bool b)
+{
+    for(auto w : createdWidgets())
+    {
+        auto box = w->findChild<QCheckBox*>("ActionWidget");
+        if(box)
+        {
+            QSignalBlocker bl(box);
+            box->setChecked(b);
+        }
+    }
+
+    d_checked = b;
+    emit checkStateChanged(b);
+}
+
+bool CheckWidgetAction::readCheckedState() const
+{
+    for(auto w : createdWidgets())
+    {
+        auto box = w->findChild<QCheckBox*>("ActionWidget");
+        if(box)
+            return box->isChecked();
+    }
+
+    return d_checked;
 }

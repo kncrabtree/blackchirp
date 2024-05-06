@@ -278,3 +278,57 @@ FidList FidStorageBase::getCurrentFidList()
     return d_currentFidList;
 }
 
+void FidStorageBase::writeProcessingSettings(const FtWorker::FidProcessingSettings &c)
+{
+    using namespace BC::Key::FidStorage;
+    std::map<QString,QVariant> m;
+    m.emplace(fidStart,c.startUs);
+    m.emplace(fidEnd,c.endUs);
+    m.emplace(fidExp,c.expFilter);
+    m.emplace(zpf,c.zeroPadFactor);
+    m.emplace(rdc,c.removeDC);
+    m.emplace(units,c.units);
+    m.emplace(autoscaleIgnore,c.autoScaleIgnoreMHz);
+    m.emplace(winf,c.windowFunction);
+
+    writeMetadata(m,BC::CSV::fidDir);
+}
+
+bool FidStorageBase::readProcessingSettings(FtWorker::FidProcessingSettings &out)
+{
+    using namespace BC::Key::FidStorage;
+    std::map<QString,QVariant> m;
+    readMetadata(m,BC::CSV::fidDir);
+
+    if(m.empty())
+        return false;
+
+    auto it = m.find(fidStart);
+    if(it != m.end())
+        out.startUs = it->second.toDouble();
+    it = m.find(fidEnd);
+    if(it != m.end())
+        out.endUs = it->second.toDouble();
+    it = m.find(fidExp);
+    if(it != m.end())
+        out.expFilter = it->second.toDouble();
+    it = m.find(zpf);
+    if(it != m.end())
+        out.zeroPadFactor = it->second.toInt();
+    it = m.find(rdc);
+    if(it != m.end())
+        out.removeDC = it->second.toBool();
+    it = m.find(units);
+    if(it != m.end())
+        out.units = it->second.value<FtWorker::FtUnits>();
+    it = m.find(autoscaleIgnore);
+    if(it != m.end())
+        out.autoScaleIgnoreMHz = it->second.toDouble();
+    it = m.find(winf);
+    if(it != m.end())
+        out.windowFunction = it->second.value<FtWorker::FtWindowFunction>();
+
+    return true;
+
+}
+

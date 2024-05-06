@@ -107,7 +107,7 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
     {
         out = new QWidget;
         QVBoxLayout *vbl = new QVBoxLayout;
-        p_ftmw = new FtmwViewWidget(out,path);
+        p_ftmw = new FtmwViewWidget(false,out,path);
         vbl->addWidget(p_ftmw);
         out->setLayout(vbl);
 
