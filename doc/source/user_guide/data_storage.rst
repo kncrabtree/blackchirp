@@ -304,4 +304,4 @@ The ``FtUnits`` value refers to a scaling factor of 10\ :sup:`N` (i.e., a settin
    f(n) = 0.5 - 0.5\cos\frac{2\pi n}{N}
 * ``6``: Kaiser-Bessel (I\ :sub:`0` = regular modified cylindrical Bessel function, β=14.0)
 .. math::
-   f(n;\beta) = \frac{I_0\left(\beta\sqrt{1-\left[\frac{2n}{N-1}\right]^2}\right)}{I_0(\beta)}
+   f(n;\beta) = \frac{I_0\left(\beta\sqrt{1-\left[\frac{2x}{N-1}\right]^2}\right)}{I_0(\beta)},\quad x = n-\frac{N-1}{2}
