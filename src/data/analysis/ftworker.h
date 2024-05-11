@@ -118,6 +118,7 @@ public slots:
 //    Ft processSideband(const FidList fl, const FtWorker::FidProcessingSettings &settings, RfConfig::Sideband sb, double minFreq = 0.0, double maxFreq = -1.0);
 //    void processBothSidebands(const FidList fl, const FtWorker::FidProcessingSettings &settings, double minFreq = 0.0, double maxFreq = -1.0);
 
+    void processSideband2(const SidebandProcessingData &d, const FidProcessingSettings &settings);
     void processSideband(const SidebandProcessingData &d, const FidProcessingSettings &settings);
 
     /*!

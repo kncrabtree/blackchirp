@@ -230,6 +230,71 @@ void FtWorker::doFtDiff(const FidList refList, const FidList diffList, int refFr
 
 }
 
+void FtWorker::processSideband2(const FtWorker::SidebandProcessingData &d, const FtWorker::FidProcessingSettings &settings)
+{
+    if(d.currentIndex >= d.totalFids)
+        return;
+
+    if(d.fl.isEmpty())
+        return;
+
+    if(d.currentIndex == 0)
+    {
+        d_workingSidebandFt = Ft();
+        d_sidebandIndices.clear();
+        clearSplineMemory();
+    }
+
+    auto fl = d.fl;
+    double minProbeFreq = 0.0, maxProbeFreq = 0.0;
+    double bandwidth = 1/2/fl.constFirst().spacing()/1e6;
+    int s = fl.constFirst().size();
+    if(settings.zeroPadFactor > 0 && settings.zeroPadFactor <= 2)
+        s = Analysis::nextPowerOf2(fl.constFirst().size() * (1 << settings.zeroPadFactor));
+    double ftPoints = s/2+1;
+    double ftSpacing = bandwidth/(ftPoints-1);
+
+    //NOTE: this doesn't work like I thought... not all FIDs are in memory.
+    //Need to package this info into the processing object and do it when currentIndex==0
+    for(auto &fid : fl)
+    {
+        minProbeFreq = qMin(minProbeFreq,fid.probeFreq());
+        maxProbeFreq = qMax(maxProbeFreq,fid.probeFreq());
+
+        if(!d.doubleSideband)
+            fid.setSideband(d.sideband);
+    }
+
+    int numFtPoints;
+    double f0, f1, ftRange;
+    if(d.doubleSideband)
+    {
+        ftRange = maxProbeFreq - minProbeFreq + 2*bandwidth;
+        numFtPoints = static_cast<int>(ceil(ftRange/ftSpacing))+1;
+        f0 = minProbeFreq-bandwidth;
+        f1 = f0 + ftSpacing*numFtPoints;
+    }
+    else
+    {
+        ftRange = maxProbeFreq - minProbeFreq + bandwidth;
+        numFtPoints = static_cast<int>(ceil(ftRange/ftSpacing))+1;
+        f0 = minProbeFreq;
+        if(d.sideband == RfConfig::LowerSideband)
+            f0 -= bandwidth;
+        f1 = f0 + ftSpacing*numFtPoints;
+    }
+
+    QVector<double> out;
+    out.resize(numFtPoints);
+    double minOut = 0.0, maxOut = 0.0;
+
+    // for(auto const &fid : fl)
+    // {
+    //     // auto ft = doFT();
+    // }
+
+}
+
 void FtWorker::processSideband(const FtWorker::SidebandProcessingData &d, const FtWorker::FidProcessingSettings &settings)
 {
     if(d.currentIndex >= d.totalFids)
@@ -441,6 +506,8 @@ FtWorker::FilterResult FtWorker::filterFid(const Fid fid, const FidProcessingSet
 
     int n = ei - si + 1;
 
+    double avg = 0.0;
+
     if(settings.removeDC)
     {
         //calculate average of samples in the FT range, then subtract that from each point
@@ -461,18 +528,7 @@ FtWorker::FilterResult FtWorker::filterFid(const Fid fid, const FidProcessingSet
             sum = t;
         }
 
-        double avg = sum/static_cast<double>(n);
-        for(int i=0; i<data.size(); i++)
-        {
-            if(i < si)
-                continue;
-
-            if(i > ei)
-                break;
-
-            data[i] -= avg;
-        }
-
+        avg = sum/static_cast<double>(n);
     }
 
     double min = data.at(si);
@@ -495,7 +551,7 @@ FtWorker::FilterResult FtWorker::filterFid(const Fid fid, const FidProcessingSet
             break;
 
 
-        double d = data.at(i);
+        double d = settings.removeDC ? data.at(i)-avg : data.at(i);
 
         if(settings.expFilter > 0.0)
             d*=exp(-static_cast<double>(i-si)*fid.spacing()/(settings.expFilter/1e6));
