@@ -78,6 +78,7 @@ public:
         int currentIndex{0};
         double minOffset{-1.0};
         double maxOffset{-1.0};
+        std::pair<double,double> loRange{0.0,0.0};
         RfConfig::Sideband sideband{RfConfig::UpperSideband};
         bool doubleSideband{false};
     };
@@ -141,6 +142,29 @@ private:
 
     FtWindowFunction d_lastWinf{None};
     int d_lastWinSize{0};
+
+    struct LoScanData {
+        QVector<double> ftData;
+        uint ftPoints{0};
+        double ftSpacing{0.0};
+        quint64 totalShots{0};
+        std::pair<double,double> ftXRange{0.0,0.0};
+        QVector<quint64> counts;
+
+        uint indexOf(const double f) {
+            return f < ftXRange.first ? 0 : static_cast<int>(floor((f-ftXRange.first)/ftSpacing));
+        }
+
+        double frequency(int index) {
+            return ftXRange.first + index*ftSpacing;
+        }
+
+        double relDistance(double f) {
+            auto fNearest = frequency(indexOf(f));
+            return qAbs(f-fNearest)/ftSpacing;
+        }
+
+    } d_loScanData;
 
     Ft d_workingSidebandFt;
     std::map<int,int> d_sidebandIndices;

@@ -8,6 +8,36 @@ FidStorageBase::FidStorageBase(int numRecords, int number, QString path) :
     DataStorageBase(number,path), d_numRecords(numRecords)
 {
     pu_baseMutex = std::make_unique<QMutex>();
+
+    QDir d{BlackchirpCSV::exptDir(d_number,d_path)};
+    if(!d.cd(BC::CSV::fidDir))
+        return;
+
+    Fid fidTemplate;
+
+    QFile hdr(d.absoluteFilePath(BC::CSV::fidparams));
+    if(!hdr.open(QIODevice::ReadOnly|QIODevice::Text))
+        return;
+
+    while(!hdr.atEnd())
+    {
+        auto l = pu_csv->readLine(hdr);
+        if(l.size() != 7)
+            continue;
+
+        bool ok = false;
+        int idx = l.constFirst().toInt(&ok);
+        if(ok && idx >= 0)
+        {
+            fidTemplate.setSpacing(l.at(1).toDouble());
+            fidTemplate.setProbeFreq(l.at(2).toDouble());
+            fidTemplate.setVMult(l.at(3).toDouble());
+            fidTemplate.setShots(l.at(4).toULongLong());
+            fidTemplate.setSideband(l.at(5).value<RfConfig::Sideband>());
+            d_templateList.append(fidTemplate);
+        }
+    }
+    hdr.close();
 }
 
 FidStorageBase::~FidStorageBase()
@@ -135,60 +165,25 @@ FidList FidStorageBase::loadFidList(int i)
     }
 
     FidList out;
+    if(i >= d_templateList.size())
+        return out;
+
+    auto fidTemplate = d_templateList.at(i);
 
     auto it = d_cache.find(i);
     if(it != d_cache.end())
     {
         out = it->second;
-        //if we are no longer acquiring, we don't need to check
-        //to make sure the cache is updated
-        if(!d_acquiring)
+        //if we are no longer acquiring, or number of shots
+        //is unchanged, we're done
+        if(!d_acquiring || out.constFirst().shots() == fidTemplate.shots())
             return out;
     }
 
-    QDir d{BlackchirpCSV::exptDir(d_number,d_path)};
-    d.cd(BC::CSV::fidDir);
-
-    bool found = false;
-    int size = 0;
-    Fid fidTemplate;
-
-    QFile hdr(d.absoluteFilePath(BC::CSV::fidparams));
-    if(!hdr.open(QIODevice::ReadOnly|QIODevice::Text))
-        return out;
-
-    while(!hdr.atEnd())
-    {
-        auto l = pu_csv->readLine(hdr);
-        if(l.size() != 7)
-            continue;
-
-        bool ok = false;
-        int idx = l.constFirst().toInt(&ok);
-        if(ok)
-        {
-            if(idx != i)
-                continue;
-
-            found = true;
-            fidTemplate.setSpacing(l.at(1).toDouble());
-            fidTemplate.setProbeFreq(l.at(2).toDouble());
-            fidTemplate.setVMult(l.at(3).toDouble());
-            fidTemplate.setShots(l.at(4).toULongLong());
-            fidTemplate.setSideband(l.at(5).value<RfConfig::Sideband>());
-            size = l.at(6).toInt();
-        }
-    }
-    hdr.close();
-
-    if(!found)
-        return out;
-
     //at this point, if out is not empty, then the FidList was found in the cache
-    //If the number of shots in the fidTemplate matches the number of shots in
-    //the fidlist, then the cache is up to date and we can return it without
-    //re-reading the fid data from disk
-    if(!out.isEmpty() && out.constFirst().shots() == fidTemplate.shots())
+    //but FID needs to be reread from disk and cache updated
+    QDir d{BlackchirpCSV::exptDir(d_number,d_path)};
+    if(!d.cd(BC::CSV::fidDir))
         return out;
 
     QFile fid(d.absoluteFilePath(QString("%1.csv").arg(i)));
@@ -211,7 +206,7 @@ FidList FidStorageBase::loadFidList(int i)
         {
             out << fidTemplate;
             QVector<qint64> _d;
-            _d.reserve(size);
+            _d.reserve(1 << 20);
             data << _d;
         }
     }
@@ -329,6 +324,26 @@ bool FidStorageBase::readProcessingSettings(FtWorker::FidProcessingSettings &out
         out.windowFunction = it->second.value<FtWorker::FtWindowFunction>();
 
     return true;
+
+}
+
+std::pair<double, double> FidStorageBase::getLORange()
+{
+    QMutexLocker l(pu_mutex.get());
+
+    auto min=-1.0, max=-1.0;
+    for(const auto &f : d_templateList)
+    {
+        if(min < 0.0)
+            min = f.probeFreq();
+        if(max < 0.0)
+            max = f.probeFreq();
+
+        min = qMin(min,f.probeFreq());
+        max = qMax(max,f.probeFreq());
+    }
+
+    return {min,max};
 
 }
 

@@ -46,6 +46,7 @@ public:
 
     void writeProcessingSettings(const FtWorker::FidProcessingSettings &c);
     bool readProcessingSettings(FtWorker::FidProcessingSettings &out);
+    std::pair<double,double> getLORange();
 
 protected:
     FidList d_currentFidList;

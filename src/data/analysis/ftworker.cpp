@@ -238,60 +238,114 @@ void FtWorker::processSideband2(const FtWorker::SidebandProcessingData &d, const
     if(d.fl.isEmpty())
         return;
 
+    if(d.fl.constFirst().shots() == 0)
+        return;
+
     if(d.currentIndex == 0)
     {
-        d_workingSidebandFt = Ft();
-        d_sidebandIndices.clear();
-        clearSplineMemory();
+        d_loScanData = {};
+
+        double minProbeFreq = d.loRange.first, maxProbeFreq = d.loRange.second;
+        double bandwidth = 1.0/2.0/d.fl.constFirst().spacing()/1e6;
+        int s = d.fl.constFirst().size();
+        if(settings.zeroPadFactor > 0 && settings.zeroPadFactor <= 2)
+            s = Analysis::nextPowerOf2(s * (1 << settings.zeroPadFactor));
+        int ftPoints = s/2+1;
+        d_loScanData.ftSpacing = bandwidth/(ftPoints-1);
+
+        if(d.doubleSideband)
+        {
+            auto ftRange = maxProbeFreq - minProbeFreq + 2*d.maxOffset;
+            d_loScanData.ftPoints = static_cast<uint>(ceil(ftRange/d_loScanData.ftSpacing))+1;
+            d_loScanData.ftXRange.first = minProbeFreq-d.maxOffset;
+            d_loScanData.ftXRange.second = d_loScanData.ftXRange.first + d_loScanData.ftSpacing*d_loScanData.ftPoints;
+        }
+        else if(d.sideband == RfConfig::LowerSideband)
+        {
+            auto ftRange = maxProbeFreq - minProbeFreq + (d.maxOffset-d.minOffset);
+            d_loScanData.ftPoints = static_cast<uint>(ceil(ftRange/d_loScanData.ftSpacing))+1;
+            d_loScanData.ftXRange.first = minProbeFreq - d.maxOffset;
+
+            d_loScanData.ftXRange.second = d_loScanData.ftXRange.first + d_loScanData.ftSpacing*d_loScanData.ftPoints;
+        }
+        else
+        {
+            auto ftRange = maxProbeFreq - minProbeFreq + (d.maxOffset-d.minOffset);
+            d_loScanData.ftPoints = static_cast<uint>(ceil(ftRange/d_loScanData.ftSpacing))+1;
+            d_loScanData.ftXRange.first = minProbeFreq + d.minOffset;
+
+            d_loScanData.ftXRange.second = d_loScanData.ftXRange.first + d_loScanData.ftSpacing*d_loScanData.ftPoints;
+        }
+
+        d_loScanData.ftData.resize(d_loScanData.ftPoints);
+        d_loScanData.counts.clear();
+        d_loScanData.counts.resize(d_loScanData.ftPoints);
     }
 
     auto fl = d.fl;
-    double minProbeFreq = 0.0, maxProbeFreq = 0.0;
-    double bandwidth = 1/2/fl.constFirst().spacing()/1e6;
-    int s = fl.constFirst().size();
-    if(settings.zeroPadFactor > 0 && settings.zeroPadFactor <= 2)
-        s = Analysis::nextPowerOf2(fl.constFirst().size() * (1 << settings.zeroPadFactor));
-    double ftPoints = s/2+1;
-    double ftSpacing = bandwidth/(ftPoints-1);
-
-    //NOTE: this doesn't work like I thought... not all FIDs are in memory.
-    //Need to package this info into the processing object and do it when currentIndex==0
-    for(auto &fid : fl)
+    if(!d.doubleSideband)
     {
-        minProbeFreq = qMin(minProbeFreq,fid.probeFreq());
-        maxProbeFreq = qMax(maxProbeFreq,fid.probeFreq());
-
-        if(!d.doubleSideband)
+        for(auto &fid : fl)
             fid.setSideband(d.sideband);
     }
 
-    int numFtPoints;
-    double f0, f1, ftRange;
+    auto ft = doFT(fl,settings,d.frame,-1,d.doubleSideband);
+    auto pf = fl.constFirst().probeFreq();
     if(d.doubleSideband)
-    {
-        ftRange = maxProbeFreq - minProbeFreq + 2*bandwidth;
-        numFtPoints = static_cast<int>(ceil(ftRange/ftSpacing))+1;
-        f0 = minProbeFreq-bandwidth;
-        f1 = f0 + ftSpacing*numFtPoints;
-    }
+        ft.trim(pf-d.maxOffset,pf+d.maxOffset);
+    else if(d.sideband == RfConfig::UpperSideband)
+        ft.trim(pf+d.minOffset,pf+d.maxOffset);
     else
+        ft.trim(pf-d.maxOffset,pf-d.minOffset);
+
+
+    auto index = d_loScanData.indexOf(ft.minFreqMHz());
+    auto xx = d_loScanData.relDistance(ft.xAt(0));
+    for(uint i=0; i<(uint)ft.size() && i+index < d_loScanData.ftPoints; i++)
     {
-        ftRange = maxProbeFreq - minProbeFreq + bandwidth;
-        numFtPoints = static_cast<int>(ceil(ftRange/ftSpacing))+1;
-        f0 = minProbeFreq;
-        if(d.sideband == RfConfig::LowerSideband)
-            f0 -= bandwidth;
-        f1 = f0 + ftSpacing*numFtPoints;
+        //linear interpolation onto total grid, averaging in 0 for outermost points.
+        double yint = ft.at(i);
+        if(xx > 0.0)
+        {
+            if(i == 0)
+                yint = xx*ft.at(i);
+            else if(i+1 == (uint)ft.size())
+                yint = ft.at(i)*(1-xx);
+            else
+                yint = ft.at(i) + (ft.at(i+1)-ft.at(i))*xx;
+        }
+
+        //do average
+        if(d_loScanData.counts.at(i+index) == 0)
+        {
+            d_loScanData.ftData[i+index] = yint;
+            d_loScanData.counts[i+index] = ft.shots();
+        }
+        else
+        {
+            auto s1 = d_loScanData.counts.at(i+index);
+            auto y1 = d_loScanData.ftData.at(i+index);
+            auto s2 = ft.shots();
+            d_loScanData.ftData[i+index] = (s1+s2)/(s1/y1+s2/yint);
+            d_loScanData.counts[i+index] += s2;
+        }
     }
 
-    QVector<double> out;
-    out.resize(numFtPoints);
-    double minOut = 0.0, maxOut = 0.0;
+    d_loScanData.totalShots += ft.shots();
 
-    // for(auto const &fid : fl)
-    // {
-    //     // auto ft = doFT();
-    // }
+    if(d.currentIndex + 1 >= d.totalFids)
+    {
+        Ft out(d_loScanData.ftPoints,d_loScanData.ftXRange.first,d_loScanData.ftSpacing,d_loScanData.ftXRange.first);
+        double yMin = 0.0, yMax = 0.0;
+        for(int i=0; i<d_loScanData.ftData.size(); i++)
+        {
+            yMin = qMin(yMin,d_loScanData.ftData.at(i));
+            yMax = qMax(yMax,d_loScanData.ftData.at(i));
+        }
+        out.setData(d_loScanData.ftData,yMin,yMax);
+        out.setNumShots(d_loScanData.totalShots);
+        emit sidebandDone(out);
+    }
 
 }
 
