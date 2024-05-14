@@ -153,6 +153,12 @@ public:
     QVariantList readLine(QIODevice &device);
     QVector<qint64> readFidLine(QIODevice &device);
 
+    int majorVersion() const;
+    int minorVersion() const;
+    int patchVersion() const;
+    QString releaseVersion() const;
+    QString buildVersion() const;
+
 private:
     std::map<QString,QVariant> d_configMap;
     QString d_delimiter;

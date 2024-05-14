@@ -54,15 +54,21 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
 
            d_hardware.insert_or_assign(key,subKey);
 
-           ///TODO: Change to work with lists
            auto hwl = key.split(".");
-           if(hwl.size() < 2)
+           int index = 0;
+           QString hwType;
+           if(hwl.isEmpty())
                continue;
-           bool ok = false;
-           int index = hwl.at(1).toInt(&ok);
-           if (!ok || index < 0)
-               continue;
-           auto hwType = hwl.first();
+           else if(hwl.size() == 1) //backwards compatibility with beta version
+               hwType = hwl.constFirst();
+           else
+           {
+               bool ok = false;
+               index = hwl.at(1).toInt(&ok);
+               if (!ok || index < 0)
+                   continue;
+               hwType = hwl.first();
+           }
 
            //create optional HW configs as needed
            if(hwType == BC::Key::IOB::ioboard)
@@ -150,7 +156,29 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
                 continue;
 
             if(l.size() == 6)
-                storeLine(l);
+            {
+                if(storeLine(l))
+                    continue;
+                else
+                {
+                    //if line didn't store, maybe this was from a v1.0.0-beta build
+                    //that predated the multiple hardware feature, so HW keys did not
+                    //have an extension. Append a .0 to make them match a current item
+                    auto bVer = csv->buildVersion();
+                    if(bVer.startsWith("v0.1"))
+                    {
+                        auto bl = bVer.split("-");
+                        if(bl.size() < 2)
+                            continue;
+                        auto build = bl.at(1).toInt();
+                        if(build >0 && build < 427)
+                        {
+                            l[0] = l.at(0).toString()+".0";
+                            storeLine(l);
+                        }
+                    }
+                }
+            }
         }
         hdr.close();
         readComplete();

@@ -205,6 +205,46 @@ QVector<qint64> BlackchirpCSV::readFidLine(QIODevice &device)
 
 }
 
+int BlackchirpCSV::majorVersion() const
+{
+    auto it = d_configMap.find(BC::CSV::majver);
+    if(it != d_configMap.end())
+        return it->second.toInt();
+    return -1;
+}
+
+int BlackchirpCSV::minorVersion() const
+{
+    auto it = d_configMap.find(BC::CSV::minver);
+    if(it != d_configMap.end())
+        return it->second.toInt();
+    return -1;
+}
+
+int BlackchirpCSV::patchVersion() const
+{
+    auto it = d_configMap.find(BC::CSV::patchver);
+    if(it != d_configMap.end())
+        return it->second.toInt();
+    return -1;
+}
+
+QString BlackchirpCSV::releaseVersion() const
+{
+    auto it = d_configMap.find(BC::CSV::relver);
+    if(it != d_configMap.end())
+        return it->second.toString();
+    return "";
+}
+
+QString BlackchirpCSV::buildVersion() const
+{
+    auto it = d_configMap.find(BC::CSV::buildver);
+    if(it != d_configMap.end())
+        return it->second.toString();
+    return "";
+}
+
 bool BlackchirpCSV::exptDirExists(int num)
 {
     int mil = num/1000000;
