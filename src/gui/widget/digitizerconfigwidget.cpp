@@ -302,7 +302,7 @@ The actual number of records able to be acquired may be limited by the record le
 
     if(s.get(blockAvg,false))
         p_blockAverageBox->setChecked(true);
-    if(get(multiRec,false))
+    if(s.get(multiRec,false))
         p_multiRecordBox->setChecked(true);
 
     afl->addRow("Block Average",p_blockAverageBox);

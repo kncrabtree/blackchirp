@@ -1,5 +1,8 @@
 #include "ftmwplottoolbar.h"
 
+#include <QToolButton>
+#include <QMenu>
+
 #include <gui/widget/toolbarwidgetaction.h>
 
 FtmwPlotToolBar::FtmwPlotToolBar(QWidget *parent) : QToolBar(parent)
@@ -14,13 +17,21 @@ FtmwPlotToolBar::FtmwPlotToolBar(QWidget *parent) : QToolBar(parent)
     connect(p_mainPlotBox,&EnumComboBoxWidgetAction<MainPlotMode>::valueChanged,this,&FtmwPlotToolBar::mainPlotSettingChanged);
     addAction(p_mainPlotBox);
 
-    p_followBox = new SpinBoxWidgetAction("Follow",this);
-    p_followBox->setRange(1,2);
-    p_followBox->setPrefix("Plot ");
-    p_followBox->setToolTip("Use frame/segment/backup settings from indicated plot (only applicable in some main plot modes)");
-    p_followBox->setValue(1);
-    connect(p_followBox,&SpinBoxWidgetAction::valueChanged,this,&FtmwPlotToolBar::mainPlotSettingChanged);
-    addAction(p_followBox);
+    QMenu *procMenu = new QMenu;
+    auto ptb = new QToolButton(this);
+    ptb->setText("Sideband Processing");
+    ptb->setToolTip("Configure options for sideband deconvolution.");
+    ptb->setMenu(procMenu);
+    ptb->setPopupMode(QToolButton::InstantPopup);
+    p_sbProcAction = addWidget(ptb);
+
+    p_frameBox = new SpinBoxWidgetAction("Frame",this);
+    p_frameBox->setToolTip("Select which frame is used in sideband deconvolution.");
+    p_frameBox->setRange(1,1);
+    p_frameBox->setValue(1);
+    p_frameBox->setSpecialValueText("Average");
+    connect(p_frameBox,&SpinBoxWidgetAction::valueChanged,this,&FtmwPlotToolBar::mainPlotSettingChanged);
+    procMenu->addAction(p_frameBox);
 
     p_sbMinBox = new DoubleSpinBoxWidgetAction("Min Offset",this);
     p_sbMinBox->setRange(0,1000000.0);
@@ -29,7 +40,7 @@ FtmwPlotToolBar::FtmwPlotToolBar(QWidget *parent) : QToolBar(parent)
     p_sbMinBox->setSuffix(" MHz");
     p_sbMinBox->setToolTip("Minimum offset frequency included in sideband deconvolution algorithm.");
     connect(p_sbMinBox,&DoubleSpinBoxWidgetAction::valueChanged,this,&FtmwPlotToolBar::mainPlotSettingChanged);
-    addAction(p_sbMinBox);
+    procMenu->addAction(p_sbMinBox);
 
     p_sbMaxBox = new DoubleSpinBoxWidgetAction("Max Offset",this);
     p_sbMaxBox->setRange(0,1000000.0);
@@ -38,7 +49,18 @@ FtmwPlotToolBar::FtmwPlotToolBar(QWidget *parent) : QToolBar(parent)
     p_sbMaxBox->setSuffix(" MHz");
     p_sbMaxBox->setToolTip("Maximum offset frequency included in sideband deconvolution algorithm.");
     connect(p_sbMaxBox,&DoubleSpinBoxWidgetAction::valueChanged,this,&FtmwPlotToolBar::mainPlotSettingChanged);
-    addAction(p_sbMaxBox);
+    procMenu->addAction(p_sbMaxBox);
+
+    p_sbAlgoBox = new EnumComboBoxWidgetAction<FtWorker::DeconvolutionMethod>("Avg Algorithm",this);
+    p_sbAlgoBox->setCurrentValue(FtWorker::Harmonic_Mean);
+    p_sbAlgoBox->setToolTip("Averaging algorithm to suppress signals in undesired sideband.");
+    connect(p_sbAlgoBox,&EnumComboBoxWidgetAction<FtWorker::DeconvolutionMethod>::valueChanged,this,&FtmwPlotToolBar::mainPlotSettingChanged);
+    procMenu->addAction(p_sbAlgoBox);
+
+    p_sbProcAction->setVisible(false);
+
+    auto rpAct = procMenu->addAction("Reprocess");
+    connect(rpAct,&QAction::triggered,this,&FtmwPlotToolBar::mainPlotSettingChanged);
 
     for(int i=1; i<3; ++i)
     {
@@ -85,18 +107,16 @@ void FtmwPlotToolBar::prepareForExperiment(const Experiment &e)
             p_mainPlotBox->setItemEnabled(Both_SideBands,true);
             p_mainPlotBox->setItemEnabled(Upper_SideBand,true);
             p_mainPlotBox->setItemEnabled(Lower_SideBand,true);
-            p_sbMinBox->setEnabled(true);
-            p_sbMaxBox->setEnabled(true);
-            p_followBox->setEnabled(true);
+            p_sbProcAction->setEnabled(true);
+            p_sbProcAction->setVisible(true);
         }
         else
         {
             p_mainPlotBox->setItemEnabled(Both_SideBands,false);
             p_mainPlotBox->setItemEnabled(Upper_SideBand,false);
             p_mainPlotBox->setItemEnabled(Lower_SideBand,false);
-            p_sbMinBox->setEnabled(false);
-            p_sbMaxBox->setEnabled(false);
-            p_followBox->setEnabled(false);
+            p_sbProcAction->setEnabled(false);
+            p_sbProcAction->setVisible(false);
         }
 
         auto chirpOffsetRange = e.ftmwConfig()->d_rfConfig.calculateChirpAbsOffsetRange();
@@ -114,6 +134,12 @@ void FtmwPlotToolBar::prepareForExperiment(const Experiment &e)
         p_sbMaxBox->setRange(0.0,e.ftmwConfig()->ftNyquistMHz());
         p_sbMaxBox->setValue(chirpOffsetRange.second);
         p_sbMaxBox->blockSignals(false);
+
+        p_frameBox->blockSignals(true);
+        p_frameBox->setRange(1,e.ftmwConfig()->scopeConfig().d_numRecords);
+        if(e.ftmwConfig()->scopeConfig().d_numRecords > 1)
+            p_frameBox->setMinimum(0);
+        p_frameBox->blockSignals(false);
 
         for(auto it = d_seg.begin(); it != d_seg.end(); ++it)
         {
@@ -166,9 +192,9 @@ FtmwPlotToolBar::MainPlotMode FtmwPlotToolBar::mainPlotMode() const
     return p_mainPlotBox->value();
 }
 
-int FtmwPlotToolBar::mainPlotFollow() const
+int FtmwPlotToolBar::sbFrame() const
 {
-    return p_followBox->value();
+    return p_frameBox->value();
 }
 
 double FtmwPlotToolBar::sbMinFreq() const
@@ -179,6 +205,11 @@ double FtmwPlotToolBar::sbMinFreq() const
 double FtmwPlotToolBar::sbMaxFreq() const
 {
     return p_sbMaxBox->value();
+}
+
+FtWorker::DeconvolutionMethod FtmwPlotToolBar::dcMethod() const
+{
+    return p_sbAlgoBox->value();
 }
 
 int FtmwPlotToolBar::frame(int id) const

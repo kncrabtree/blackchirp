@@ -54,6 +54,12 @@ public:
     };
     Q_ENUM(FtWindowFunction)
 
+    enum DeconvolutionMethod {
+        Harmonic_Mean,
+        Geometric_Mean
+    };
+    Q_ENUM(DeconvolutionMethod)
+
     struct FidProcessingSettings {
         double startUs;
         double endUs;
@@ -81,6 +87,7 @@ public:
         std::pair<double,double> loRange{0.0,0.0};
         RfConfig::Sideband sideband{RfConfig::UpperSideband};
         bool doubleSideband{false};
+        DeconvolutionMethod dcMethod{Harmonic_Mean};
     };
 
     /*!
