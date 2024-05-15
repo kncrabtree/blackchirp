@@ -32,4 +32,4 @@ The `Prologix GPIB-Ethernet controller <https://prologix.biz/product/gpib-ethern
 Prologix GPIB-USB Controller (prologixgpibusb)
 ..............................................
 
-The `Prologix GPIB-Ethernet controller <https://prologix.biz/product/gpib-usb-controller/>`_ is the same as the GPIB-Ethernet controller, but connects via an internal USB-RS232 bridge. Blackchirp implements this device as an Rs232Instrument.
+The `Prologix GPIB-USB controller <https://prologix.biz/product/gpib-usb-controller/>`_ is the same as the GPIB-Ethernet controller, but connects via an internal USB-RS232 bridge. Blackchirp implements this device as an Rs232Instrument.
