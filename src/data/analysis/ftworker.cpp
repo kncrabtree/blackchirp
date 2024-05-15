@@ -285,58 +285,76 @@ void FtWorker::processSideband2(const FtWorker::SidebandProcessingData &d, const
                 fid.setSideband(d.sideband);
         }
 
-        auto ft = doFT(fl,settings,d.frame,-1,d.doubleSideband);
+        std::vector<Ft> ftList;
+        auto ft1 = doFT(fl,settings,d.frame,-1,d.doubleSideband);
         auto pf = fl.constFirst().probeFreq();
         if(d.doubleSideband)
-            ft.trim(pf-d.maxOffset,pf+d.maxOffset);
-        else if(d.sideband == RfConfig::UpperSideband)
-            ft.trim(pf+d.minOffset,pf+d.maxOffset);
-        else
-            ft.trim(pf-d.maxOffset,pf-d.minOffset);
-
-
-        auto index = d_loScanData.indexOf(ft.minFreqMHz());
-        auto xx = d_loScanData.relDistance(ft.xAt(0));
-        for(uint i=0; i<(uint)ft.size() && i+index < d_loScanData.ftPoints; i++)
         {
-            //linear interpolation onto total grid, averaging in 0 for outermost points.
-            double yint = ft.at(i);
-            if(xx > 0.0)
-            {
-                if(i == 0)
-                    yint = xx*ft.at(i);
-                else if(i+1 == (uint)ft.size())
-                    yint = ft.at(i)*(1-xx);
-                else
-                    yint = ft.at(i) + (ft.at(i+1)-ft.at(i))*xx;
-            }
-
-            //do average
-            if(d_loScanData.counts.at(i+index) == 0)
-            {
-                d_loScanData.ftData[i+index] = yint;
-                d_loScanData.counts[i+index] = ft.shots();
-            }
-            else
-            {
-                auto s1 = d_loScanData.counts.at(i+index);
-                auto y1 = d_loScanData.ftData.at(i+index);
-                auto s2 = ft.shots();
-                switch(d.dcMethod)
-                {
-                case Harmonic_Mean:
-                    d_loScanData.ftData[i+index] = (s1+s2)/(s1/y1+s2/yint);
-                    break;
-                case Geometric_Mean:
-                    d_loScanData.ftData[i+index] = exp((s1*log(y1) + s2*log(yint))/(s1+s2));
-                    break;
-                }
-
-                d_loScanData.counts[i+index] += s2;
-            }
+            auto ft2 = ft1;
+            ft1.trim(pf-d.maxOffset,pf-d.minOffset);
+            ft2.trim(pf+d.minOffset,pf+d.maxOffset);
+            ftList.push_back(ft1);
+            ftList.push_back(ft2);
+        }
+        else if(d.sideband == RfConfig::UpperSideband)
+        {
+            ft1.trim(pf+d.minOffset,pf+d.maxOffset);
+            ftList.push_back(ft1);
+        }
+        else
+        {
+            ft1.trim(pf-d.maxOffset,pf-d.minOffset);
+            ftList.push_back(ft1);
         }
 
-        d_loScanData.totalShots += ft.shots();
+
+        for(auto const &ft : ftList)
+        {
+            auto index = d_loScanData.indexOf(ft.minFreqMHz());
+            auto xx = d_loScanData.relDistance(ft.xAt(0));
+
+            for(uint i=0; i<(uint)ft.size() && i+index < d_loScanData.ftPoints; i++)
+            {
+                //linear interpolation onto total grid, averaging in 0 for outermost points.
+                double yint = ft.at(i);
+                if(xx > 0.0)
+                {
+                    if(i == 0)
+                        yint = xx*ft.at(i);
+                    else if(i+1 == (uint)ft.size())
+                        yint = ft.at(i)*(1-xx);
+                    else
+                        yint = ft.at(i) + (ft.at(i+1)-ft.at(i))*xx;
+                }
+
+                //do average
+                if(d_loScanData.counts.at(i+index) == 0)
+                {
+                    d_loScanData.ftData[i+index] = yint;
+                    d_loScanData.counts[i+index] = ft.shots();
+                }
+                else
+                {
+                    auto s1 = d_loScanData.counts.at(i+index);
+                    auto y1 = d_loScanData.ftData.at(i+index);
+                    auto s2 = ft.shots();
+                    switch(d.dcMethod)
+                    {
+                    case Harmonic_Mean:
+                        d_loScanData.ftData[i+index] = (s1+s2)/(s1/y1+s2/yint);
+                        break;
+                    case Geometric_Mean:
+                        d_loScanData.ftData[i+index] = exp((s1*log(y1) + s2*log(yint))/(s1+s2));
+                        break;
+                    }
+
+                    d_loScanData.counts[i+index] += s2;
+                }
+            }
+
+            d_loScanData.totalShots += ft.shots();
+
+        }
     }
 
     if(d.currentIndex + 1 >= d.totalFids)
