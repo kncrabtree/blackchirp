@@ -43,6 +43,8 @@ public:
     void removeSegments(QList<int> rows);
     double calculateAwgFrequency(double f) const;
     double calculateChirpFrequency(double f) const;
+    double awgMin() const { return d_awgMin; }
+    double awgMax() const { return d_awgMax; }
 
     QVector<QVector<ChirpConfig::ChirpSegment>> chirpList() const;
     void initialize(RfConfig *p);
@@ -60,6 +62,7 @@ private:
     QVector<ChirpConfig::ChirpSegment> d_currentData;
     RfConfig *p_rfConfig;
     int d_currentChirp;
+    double d_awgMin,d_awgMax;
 
 
 

@@ -19,9 +19,10 @@ CP-FTMW Tab
    :width: 800
    :alt: FTMW Digitizer setup
 
-The CP-FTMW tab allows for visualization and processing of FID and Fourier Transform data. An example of the tab is shown above. In this image, there are a total of 5 plots: one pair called "FID 1" and "FT 1", another called "FID 2" and "FT 2" and a larger "Main FT" plot. During an active acquisition, an additional pair of plots labeled "FID Live" and "FT Live" are displayed at the top of the tab.
 
-Most user interaction takes place with the "Main FT" plot. By default, the Main FT plot is configured to display the "Live FT" which shows the data currently being collected. When an experiment ends, the plot shows the contents of the "FT 1" plot. Interaction with the plot (zooming, panning, peak finding, etc) can be done during and after an acquisition. More details are available on the `Plot Controls <plot_controls.html>`_ page.
+The CP-FTMW tab allows for visualization and processing of FID and Fourier Transform data. An example of the tab is shown above. During an acquisition, 7 plots are visible. The uppermost pair labeled "FID Live" and "FT Live" always display the most current data, and these plots are removed when the acquisition completes. The pairs labeled "FID 1"/"FT 1" and "FID 2"/"FT 2" display user-controllable views of the spectrum (discussed firther below). Most user interaction takes place with the large "Main FT" plot. By default, the Main FT plot is configured to display the "Live FT" which shows the data currently being collected. When an experiment ends, the plot shows the contents of the "FT 1" plot. Interaction with the plot (zooming, panning, peak finding, etc) can be done during and after an acquisition. More details are available on the `Plot Controls <plot_controls.html>`_ page.
+
+The main toolbar at the top allows access to various data processing settings which are discussed in the sections of the page below. Finally, the "Refresh Interval" box controls how frequently Blackchirp updates the plots on the screen during an acquisition. The processing is queued and occurs in a separate thread from the real-time averaging. In addition, plots are updated anytime a setting affecting the data shown on the plot is adjusted by the user. If multiple update requests are made while Blackchirp is processing an FT, Blackchirp will discard all but the most recent request.
 
 FID Processing Settings
 .......................
@@ -34,7 +35,7 @@ By clicking on the "FID Processing Settings" button, a toolbar will appear with 
 * ``VScale Ignore``: A frequency range near the LO to ignore when computing the autoscale range. Often CP-FTMW data have large uninteresting signals near DC, and this setting prevents those from overwhelming the default vertical scale.
 * ``Zero Pad``: Appends zeros to the FID to artificially increase the digital resolution of the FT. A setting of 1 appends zeros until the length of the array is double the next power of two. For example, for a record length of 750,000 points, the next power of two is 2^20, or 1,048,576 points. With zero pad = 1, zeros are appended until the data length is 2^21, or 2,097,152 points. Each subsequent increase of the zero pad setting increases the length by another factor of 2.
 * ``Remove DC``: Subtracts the average value of the FID prior to the Fourier transform. Removes large-envelope DC artifacts.
-* ``Window Function``: Applies a window function prior to Fourier transformation. Window functions are useful for suppressing spectral leakage from strong signals, which tend to obscure nearby weaker transitions. A window function cuts down on these sidelobes at the expense of reducing the signal-to-noise ratio slightly and decreasing the spectral resolution.
+* ``Window Function``: Applies a window function prior to Fourier transformation. Window functions are useful for suppressing spectral leakage from strong signals, which tend to obscure nearby weaker transitions. A window function cuts down on these sidelobes at the expense of reducing the signal-to-noise ratio slightly and decreasing the spectral resolution. See the `Data Storage <data_storage.html#processing-csv>`_ page for the definitions of the window functions implemented in Blackchirp.
 * ``FT units``: Changes the vertical scaling of the FT.
 * ``Reset``: Restores processing settings to the most recently-saved values.
 * ``Save``: Writes current processing settings to a processing.csv file. By default, processing settings are written when an experiment first starts, but may be overwritten at any time.
@@ -57,7 +58,7 @@ For the main plot, the primary control is the Mode selection box, which controls
 * ``Lower Sideband``: Only available in LO Scan mode. Performs sideband deconvolution using only the lwoer-frequency sideband.
 * ``Both Sidebands``: Only available in LO Scan mode. Performs sideband deconvolution using both sidebands.
 
-In addition to the mode selection box, in LO scan mode, the other three boxes may become available. The "Follow" box is enabled when one of the sideband deconvolution modes is selected. The indicated plot is used to retrieve the frame and backup (is applicable) for the sideband deconvolution routine. The min and max offset boxes control the range of frequencies from the individual segments which are sent into the sideband deconvolution process. It is advisable to set the minimum offset high enough to ignore undesired signals near the LO frequency, and set the maximum offset less than or equal to the bandwidth of the digitizer.
+In addition to the mode selection box, in LO scan mode an additional "Sideband Processing" menu is available. These settings are discussed in the `Sideband Deconvolution`_ section below.
 
 For Plot 1 and Plot 2, the segment, frame, and backup boxes allow for selection of different data to be shown in the FT1 and FT2 plots, respectively. The meanings are:
 
@@ -93,18 +94,37 @@ The export menu allows for the peak find list to be exported to a CSV file or an
 Sideband Deconvolution
 ......................
 
+.. image:: /_static/user_guide/ui_overview/sideband_processing.png
+   :align: center
+   :width: 800
+   :alt: FTMW Digitizer setup
+
 The sideband deconvolution algorithm employed by Blackchirp is designed to suppress image frequencies in an LO scan. Most segmented LO scanning spectrometers employ a low-frequency chirp which is mixed up to the target frequency via a tunable LO. This leads to two simultaneous chirps: one at the LO frequency + chirp frequency and the other at the LO frequency - chirp frequency. If both of these are within the bandwidth of the amplifier, then the sample experiences both chirps simultaneously, yielding molecular FID signals in both windows. However, upon downconversion with a second mixer, both of these sidebands are downconverted to the same range of frequencies, so each downconverted frequency in the FT may correspond to either of the two sidebands. This uncertainty is eliminated by tuning the LO frequency slightly and observing which "direction" the signal moves relative to the LO.
 
-In Blackchirp, the sideband deconvolution algorithms are based on computing the geometric mean of frequency-shifted versions of the FT. Consider the simple case of an LO frequency of 10 GHz and a signal observed at 500 MHz in the FT (with a digitizer and chirp bandwidth of 1 GHz). This may correspond to a molecular frequency of either 9.5 or 10.5 GHz. Next, increase the LO frequency by 100 MHz to 10.1 GHz. If the molecular frequency is 10.5 GHz, the new frequency observed by the digitizer is 400 MHz, while if it is 9.5 GHz, then the new digitizer frequency is 600 MHz. In the "Upper Sideband" deconvolution algorithm, it is assumed that all molecular emission occurs in the higher-frequency sideband. In this case, Blackchirp would compute 2 FTs for the two LO tunings: one spanning 10-11 GHz, and the other spanning 10.1-11.1 GHz. Blackchirp aligns these two tunings and coaverages the spectra where they overlap. In both cases, the signal appears at an apparent frequency of 10.5 GHz, so the signal adds.
+In Blackchirp, the sideband deconvolution algorithms are based on overlapping frequency-shifted versions of the FT onto a common frequency grid. Becasue the spectra are acquired at different LO tunings, the frequency bins for each FT may not perfectly align. Blackchirp computes a global frequency grid spanning all sidebands and uses linear interpolation to resample all FTs onto that grid.
+
+Consider the simple case of an LO frequency of 10 GHz and a signal observed at 500 MHz in the FT (with a digitizer and chirp bandwidth of 1 GHz). This may correspond to a molecular frequency of either 9.5 or 10.5 GHz. Next, increase the LO frequency by 100 MHz to 10.1 GHz. If the molecular frequency is 10.5 GHz, the new frequency observed by the digitizer is 400 MHz, while if it is 9.5 GHz, then the new digitizer frequency is 600 MHz. In the "Upper Sideband" deconvolution algorithm, it is assumed that all molecular emission occurs in the higher-frequency sideband. In this case, Blackchirp would compute 2 FTs for the two LO tunings: one spanning 10-11 GHz, and the other spanning 10.1-11.1 GHz. Blackchirp aligns these two tunings and coaverages the spectra where they overlap. In both cases, the signal appears at an apparent frequency of 10.5 GHz, so the signal adds.
 
 However, in the "Lower Sideband" algorithm, Blackchirp would assign the frequency axes as 10.0-0.0 and 10.1-9.1 GHz, respectively. Because the true molecular frequency was 10.5 GHz, the signal which appeared at a 9.5 GHz apparent frequency appears with an apparent frequency of 9.7 GHz (10.1 GHz - 0.4 GHz) in the second LO tuning. Coaveraging these two spectra attenuates the signal.
 
-Importantly, Blackchirp employs a geometric mean algorithm rather than an arithmetic mean. The geometric mean is the Nth root of the product of N samples. In the simplified Lower Sideband case above, when coaveraging, at 9.5 GHz one spectrum would have a positive signal and the other would be 0, yielding a geometric mean of 0, thereby suppressing the signal in the undesired sideband. In reality, the signal is never truly 0 and there is always the chance of a coincidental overlap of molecular signals (especially for rich spectra), and it is therefore desirable to use more than 2 LO tunings to ensure good suppression of undesired signals.
-
-.. note::
-   While currently Blackchirp employs a geometric mean for image suppression, a case can be made that a harmonic mean may provide more effective suppression at the potential expense of true signal attenuation. In the future, Blackchirp may provide both as an option.
-
-Finally, in "Both Sidebands" mode, both sideband deconvolutions are computed and a composite spectrum is created by concatenating their respective frequency axes. This mode has the additional benefit of providing additional averages when the same frequency is covered in both sidebands as the LO is tuned over a broad range.
+In "Both Sidebands" mode, both sideband deconvolutions are computed and a composite spectrum is created by concatenating their respective frequency axes. This mode has the additional benefit of providing additional averages when the same frequency is covered in both sidebands as the LO is tuned over a broad range.
 
 .. warning::
    If the effective sensitivity of the two sidebands is very different (which could be caused by variable mixer efficiency or by choosing LO tunings too close to the limits of the amplifier bandwidth), then "Both Sidebands" mode could result in artificial signal suppression.
+
+Various processing options are available for controlling details of the deconvolution algorithm:
+
+* ``Frame``: If multiple FIDs are acquired per pulse, this box controls which frame is shown. Setting this to 0 will cause Blackchirp to average all frames.
+* ``Min Offset``: Minimum offset frequency (relative to the LO frequency) of the FT to include when processing each sideband. By default, this should be set to the minimum chirp frequency relative to the LO. Blackchirp calculates this value automatically from the Rf Configuration and Chirp Configuration.
+* ``Max Offset``: Maximum offset frequency (relative to the LO frequency) of the FT to include when processing each sideband.
+* ``Avg Algorithm``: The coaveraging algorithm to use when "overlapping" the frequency-shifted spectra. Blackchirp does not calculate the arithmetic mean of the spectra; this would provide very poor image suppression. The available options are:
+
+   - ``Harmonic Mean``: A shots-weighted harmonic mean, which is a measure of central tendency which  is strongly biased toward the lowest value in the set. This is desirable for sideband suppression, as we wish for the spectrum to average strongly toward 0 if a line is present in only one of the shifted spectra. For this reason, it is the default algorithm. Let s\ :sub:`1` and s\ :sub:`2` be the numbers of shots for the two data points y\ :sub:`1` and y\ :sub:`2`, respectively. Assuming all samples and shots are positive and nonzero, the weighted harmonic mean is:
+
+   .. math::
+      y_{\text{avg}} = \frac{s_1 + s_2}{\frac{s_1}{y_1} + \frac{s_2}{y_2}}
+
+   - ``Geometric Mean``: A shots-weighted geometric mean, which falls between the harmonic and arithmetic means. The weighted geometric mean is:
+
+   .. math::
+      y_{\text{avg}} = \exp\left(\frac{s_1\ln y_1 + s_2\ln y_2}{s_1 + s_2}\right)

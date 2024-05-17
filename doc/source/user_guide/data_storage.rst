@@ -287,21 +287,36 @@ This file contains the default `processing settings <cp-ftmw.html#fid-processing
 The ``FtUnits`` value refers to a scaling factor of 10\ :sup:`N` (i.e., a setting of 6 would convert the FT from units of V to μV.). The window functions are shown below, where ``N`` is the number of samples and ``n`` ranges from 0 to ``N-1``:
 
 * ``0``: None/Boxcar
+
+.. math::
+   f(n) = 1
+
 * ``1``: Bartlett
+
 .. math::
    f(n) = 1-\left|\frac{2n}{N-1}-1\right|
+
 * ``2``: Blackman
+
 .. math::
    f(n) = 0.42 - 0.5\cos\frac{2\pi n}{N} + 0.08\cos\frac{4\pi n}{N}
+
 * ``3``: Blackman-Harris
+
 .. math::
    f(n) = 0.35875 - 0.48829\cos\frac{2\pi n}{N} + 0.14128\cos\frac{4\pi n}{N} - 0.1168\cos\frac{6\pi n}{N}
+
 * ``4``: Hamming
+
 .. math::
    f(n) = 0.54 - 0.46\cos\frac{2\pi n}{N}
+
 * ``5``: Hanning
+
 .. math::
    f(n) = 0.5 - 0.5\cos\frac{2\pi n}{N}
+
 * ``6``: Kaiser-Bessel (I\ :sub:`0` = regular modified cylindrical Bessel function, β=14.0)
+
 .. math::
    f(n;\beta) = \frac{I_0\left(\beta\sqrt{1-\left[\frac{2x}{N-1}\right]^2}\right)}{I_0(\beta)},\quad x = n-\frac{N-1}{2}

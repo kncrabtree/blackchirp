@@ -54,6 +54,12 @@ public:
     };
     Q_ENUM(FtWindowFunction)
 
+    enum DeconvolutionMethod {
+        Harmonic_Mean,
+        Geometric_Mean
+    };
+    Q_ENUM(DeconvolutionMethod)
+
     struct FidProcessingSettings {
         double startUs;
         double endUs;
@@ -78,8 +84,10 @@ public:
         int currentIndex{0};
         double minOffset{-1.0};
         double maxOffset{-1.0};
+        std::pair<double,double> loRange{0.0,0.0};
         RfConfig::Sideband sideband{RfConfig::UpperSideband};
         bool doubleSideband{false};
+        DeconvolutionMethod dcMethod{Harmonic_Mean};
     };
 
     /*!
@@ -115,8 +123,6 @@ public slots:
     */
     Ft doFT(const FidList fl, const FtWorker::FidProcessingSettings &settings, int frame=0, int id = -1, bool doubleSideband=false);
     void doFtDiff(const FidList refList, const FidList diffList, int refFrame, int diffFrame, const FtWorker::FidProcessingSettings &settings);
-//    Ft processSideband(const FidList fl, const FtWorker::FidProcessingSettings &settings, RfConfig::Sideband sb, double minFreq = 0.0, double maxFreq = -1.0);
-//    void processBothSidebands(const FidList fl, const FtWorker::FidProcessingSettings &settings, double minFreq = 0.0, double maxFreq = -1.0);
 
     void processSideband(const SidebandProcessingData &d, const FidProcessingSettings &settings);
 
@@ -141,10 +147,29 @@ private:
     FtWindowFunction d_lastWinf{None};
     int d_lastWinSize{0};
 
-    Ft d_workingSidebandFt;
-    std::map<int,int> d_sidebandIndices;
+    struct LoScanData {
+        QVector<double> ftData;
+        uint ftPoints{0};
+        double ftSpacing{0.0};
+        quint64 totalShots{0};
+        std::pair<double,double> ftXRange{0.0,0.0};
+        QVector<quint64> counts;
 
-    QList<Ft> makeSidebandList(const FidList fl, const FtWorker::FidProcessingSettings &settings, RfConfig::Sideband sb, double minFreq = 0.0, double maxFreq = -1.0);
+        uint indexOf(const double f) {
+            return f < ftXRange.first ? 0 : static_cast<int>(floor((f-ftXRange.first)/ftSpacing));
+        }
+
+        double frequency(int index) {
+            return ftXRange.first + index*ftSpacing;
+        }
+
+        double relDistance(double f) {
+            auto fNearest = frequency(indexOf(f));
+            return qAbs(f-fNearest)/ftSpacing;
+        }
+
+    } d_loScanData;
+
     QPair<QVector<double>, double> resample(double f0, double spacing, const Ft ft);
 
 

@@ -1,0 +1,14 @@
+[project]
+name = "blackchirp"
+version = "0.0.3"
+description = "Python module for blackchirp: data acquisition software for CP-FTMW spectroscopy"
+readme = "README.md"
+authors = [ { name = "Kyle Crabtree", email = "kncrabtree@ucdavis.edu" } ]
+license = { text = "MIT License" }
+requires-python = ">=3.9"
+classifiers = [ "License :: OSI Approved :: MIT License", "Programming Language :: Python :: 3" ]
+dependencies = [
+    "numpy",
+    "pandas",
+    "scipy",
+]

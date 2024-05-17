@@ -1,5 +1,7 @@
 #include <data/analysis/ft.h>
 
+#include <math.h>
+
 class FtData : public QSharedData
 {
 public:
@@ -110,45 +112,13 @@ void Ft::append(double y)
     data->yMin = qMin(data->yMin,y);
 }
 
-void Ft::trim(double minOffset, double maxOffset)
+void Ft::trim(double fmin, double fmax)
 {
-    //assume the FT could contain the upper or lower sideband or both
-    double usbmin = data->loFreqMHz + minOffset;
-    double usbmax = data->loFreqMHz + maxOffset;
-    double lsbmin = data->loFreqMHz - minOffset;
-    double lsbmax = data->loFreqMHz - maxOffset;
+    int firstIndex = qMax((int)ceil((fmin-data->x0MHz)/data->spacingMHz),0);
+    int lastIndex = qMin((int)floor((fmax-data->x0MHz)/data->spacingMHz),data->ftData.size()-1);
 
-    //get indices of first and last points
-    int minlIndex = static_cast<int>((lsbmin-data->x0MHz)/data->spacingMHz);
-    int maxlIndex = static_cast<int>((lsbmax-data->x0MHz)/data->spacingMHz);
-    int minuIndex = static_cast<int>((usbmin-data->x0MHz)/data->spacingMHz);
-    int maxuIndex = static_cast<int>((usbmax-data->x0MHz)/data->spacingMHz);
-
-    if(minlIndex > maxlIndex)
-        qSwap(minlIndex,maxlIndex);
-    if(minuIndex > maxuIndex)
-        qSwap(minuIndex,maxuIndex);
-
-    //detect single sideband cases
-    if(minlIndex < 0 || minuIndex >= size())
-        minlIndex = minuIndex;
-    if(minuIndex < 0)
-        minuIndex = minlIndex;
-
-    if(maxuIndex == 0 || maxuIndex >= size())
-        maxuIndex = maxlIndex;
-    if(maxlIndex == 0 || maxlIndex >= size())
-        maxlIndex = maxuIndex;
-
-    int minIndex = 0, maxIndex = size()-1;
-
-    //these are the first and last points to retain
-    minIndex = qMax(minIndex,qMin(minlIndex,minuIndex));
-    maxIndex = qMin(maxIndex,qMax(maxlIndex,maxuIndex));
-
-    //update f0 to match new reference frequency and update y limits
-    data->x0MHz = xAt(minIndex);
-    data->ftData = data->ftData.mid(minIndex,maxIndex-minIndex+1);
+    data->x0MHz = xAt(firstIndex);
+    data->ftData = data->ftData.mid(firstIndex,lastIndex-firstIndex+1);
     data->yMin = 0.0;
     data->yMax = 0.0;
     for(int i=0; i<data->ftData.size(); i++)

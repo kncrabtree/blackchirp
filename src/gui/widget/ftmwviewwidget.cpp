@@ -379,8 +379,6 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
             updateMainPlot();
             break;
         default:
-            if(ui->plotToolBar->viewingBackup(workerId) && ui->plotToolBar->mainPlotFollow() == workerId)
-                updateMainPlot();
             break;
         }
     }
@@ -543,9 +541,12 @@ void FtmwViewWidget::processSidebands()
         d_sbStatus.complete = false;
         auto &sbd = d_sbStatus.sbData;
         sbd = FtWorker::SidebandProcessingData();
+        sbd.frame = ui->plotToolBar->sbFrame()-1;
         sbd.minOffset = ui->plotToolBar->sbMinFreq();
         sbd.maxOffset = ui->plotToolBar->sbMaxFreq();
+        sbd.dcMethod = ui->plotToolBar->dcMethod();
         sbd.totalFids = storage->numSegments();
+        sbd.loRange = storage->getLORange();
         switch (ui->plotToolBar->mainPlotMode()) {
         case FtmwPlotToolBar::Lower_SideBand:
             sbd.doubleSideband = false;

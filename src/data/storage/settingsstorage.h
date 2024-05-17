@@ -65,20 +65,14 @@ static const QString trackingDir{"rollingdata"};
  *
  *     SettingsStorage s;
  *
- * If instead you need read-only access to the "AWG-0/virtual" group:
+ * If instead you need read-only access to the "AWG.0/virtual" group:
  *
- *     SettingsStorage s({"AWG-0","virtual"});
+ *     SettingsStorage s({"AWG.0","virtual"});
  *
- * In general, it is recommended that you use keys that are statically defined in header files for accessing items.
+ * In general, it is recommended that you use keys that are statically defined in header files for accessing items. When accessing hardware items, use the BC::Key::hwKey() function to construct the key.
  * For read-only access to the settings associated with the current AWG implementation:
  *
- *     SettingsStorage s(BC::Key::AWG::key,SettingsStorage::Hardware);
- *
- * For hardware types with multiple items (e.g., Clocks, PulseGenerators, etc), pass the index as the third argument.
- * For instance, to access the second (index=1) pulse generator:
- *
- *     SettingsStorage s(BC::Key::PGen::key,SettingsStorage::Hardware,1);
- *
+ *     SettingsStorage s(BC::Key::hwKey(BC::Key::AWG::key,0),SettingsStorage::Hardware);
  *
  * The value associated with a key can be obtained with one of the SettingsStorage::get functions. If there
  * is an integer associacted with the key "myInt", it can be accessed as:

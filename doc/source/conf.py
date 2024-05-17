@@ -10,8 +10,9 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
+import os
+import sys
+sys.path.insert(0,os.path.abspath('../../python/blackchirp/src'))
 # sys.path.insert(0, os.path.abspath('.'))
 import subprocess
 
@@ -31,7 +32,10 @@ author = 'Kyle Crabtree'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 # extensions = [ 'breathe','sphinx.ext.autosectionlabel' ]
-extensions = [ 'sphinx.ext.autosectionlabel' ]
+extensions = [ 'sphinx.ext.autosectionlabel', 'sphinx.ext.autodoc', 'sphinx.ext.napoleon', 'nbsphinx', 'nbsphinx_link', 'breathe' ]
+autosectionlabel_prefix_document = True
+autodoc_mock_imports = ['pandas','scipy','numpy']
+nbsphinx_execute = 'never'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -57,6 +61,6 @@ html_static_path = ['_static']
 html_favicon = '_static/favicon.png'
 
 # -- Options for breathe ------------------------------------------------------
-# breathe_projects = { 'Blackchirp' : 'xml' }
-# breathe_default_project='Blackchirp'
-# breathe_default_members=('members','protected-members','private-members','undoc-members')
+breathe_projects = { 'Blackchirp' : 'xml' }
+breathe_default_project='Blackchirp'
+breathe_default_members=('members','protected-members','private-members','undoc-members')
