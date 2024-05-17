@@ -7,6 +7,9 @@ DISTFILES += \
    $$PWD/source/classes/settingsstorage.rst \
    $$PWD/source/conf.py \
    $$PWD/source/index.rst \
+   $$PWD/source/python.rst \
+   $$PWD/source/python/bcexperiment.rst \
+   $$PWD/source/python/bcftmw.rst \
    $$PWD/source/user_guide/cp-ftmw.rst \
    $$PWD/source/user_guide/data_storage.rst \
    $$PWD/source/user_guide/experiment/acquisition_types.rst \
