@@ -123,10 +123,7 @@ public slots:
     */
     Ft doFT(const FidList fl, const FtWorker::FidProcessingSettings &settings, int frame=0, int id = -1, bool doubleSideband=false);
     void doFtDiff(const FidList refList, const FidList diffList, int refFrame, int diffFrame, const FtWorker::FidProcessingSettings &settings);
-//    Ft processSideband(const FidList fl, const FtWorker::FidProcessingSettings &settings, RfConfig::Sideband sb, double minFreq = 0.0, double maxFreq = -1.0);
-//    void processBothSidebands(const FidList fl, const FtWorker::FidProcessingSettings &settings, double minFreq = 0.0, double maxFreq = -1.0);
 
-    void processSideband2(const SidebandProcessingData &d, const FidProcessingSettings &settings);
     void processSideband(const SidebandProcessingData &d, const FidProcessingSettings &settings);
 
     /*!
@@ -173,10 +170,6 @@ private:
 
     } d_loScanData;
 
-    Ft d_workingSidebandFt;
-    std::map<int,int> d_sidebandIndices;
-
-    QList<Ft> makeSidebandList(const FidList fl, const FtWorker::FidProcessingSettings &settings, RfConfig::Sideband sb, double minFreq = 0.0, double maxFreq = -1.0);
     QPair<QVector<double>, double> resample(double f0, double spacing, const Ft ft);
 
 

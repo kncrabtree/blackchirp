@@ -600,7 +600,7 @@ void FtmwViewWidget::processNextSidebandFid()
     d_sbStatus.sbData.fl= fl;
     auto sbd = d_sbStatus.sbData;
     ws.p_watcher->setFuture(QtConcurrent::run([this,sbd]{
-        p_worker->processSideband2(sbd,d_currentProcessingSettings);
+        p_worker->processSideband(sbd,d_currentProcessingSettings);
     }));
     d_sbStatus.sbData.currentIndex++;
     ui->mainFtPlot->setMessageText(QString("Processing %1/%2")
