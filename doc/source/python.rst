@@ -4,7 +4,13 @@ Blackchirp Python Module
 .. automodule:: blackchirp
 
 .. toctree::
-   :caption: Class Documentation
-   :glob:
+   :caption: Examples
 
-   python/*
+   python/example
+
+.. toctree::
+   :caption: Class Documentation
+
+   python/docs-index
+
+

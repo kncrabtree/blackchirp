@@ -22,12 +22,12 @@ When starting a new experiment, the first page of the wizard allows for selectin
 The type of the acquisition determines how many FIDs will be recorded, and in some cases, how the entire spectrum will be partitioned into multiple **segments**.
 Available acquisition types are:
 
-- :ref:`Target Shots`
-- :ref:`Target Duration`
-- :ref:`Forever`
-- :ref:`Peak Up`
-- :ref:`LO Scan`
-- :ref:`DR Scan`
+- :ref:`user_guide/experiment/acquisition_types:Target Shots`
+- :ref:`user_guide/experiment/acquisition_types:Target Duration`
+- :ref:`user_guide/experiment/acquisition_types:Forever`
+- :ref:`user_guide/experiment/acquisition_types:Peak Up`
+- :ref:`user_guide/experiment/acquisition_types:LO Scan`
+- :ref:`user_guide/experiment/acquisition_types:DR Scan`
 
 Real-time processing includes phase correction (adjusting for slow temporal phase drift during long averages) and/or chirp scoring, which attempts to reject "weak" chirps.
 
@@ -60,14 +60,14 @@ Accordingly, the ``Shots`` and ``Duration`` boxes are disabled when this mode is
 Like Target Shots and Target Duration, this is a **single segment** acquisition, and therefore the ``Backup Interval`` box is enabled.
 
 .. note::
-   Blackchirp supports averaging up to :math:`2^{64} - 1 = 18446744073709551615` shots. However, each FID data point is stored as the sum of raw digitizer counts and therefore overflow of an FID data point may occur before this limit is reached. See the Data Format page for more details.
+   Blackchirp supports averaging up to :math:`2^{64} - 1 = 18446744073709551615` shots. However, each FID data point is stored as the sum of raw digitizer counts and therefore overflow of an FID data point may occur before this limit is reached. See :ref:`user_guide/data_storage:FID CSV Files` for more details.
 
 Peak Up
 -------
 
 **Peak Up** mode acquires and averages FIDs until a target number of shots is reached, but does not stop at that point.
 Processing continues as a `modified moving average <https://en.wikipedia.org/wiki/Moving_average#Modified_moving_average>`__, which is a special case of an exponetially-weighted moving average.
-The average can be reset and the number of shots included in the average can be changed during the acquistition with the controls on the `CP-FTMW Tab <../cp-ftmw.html>`_.
+The average can be reset and the number of shots included in the average can be changed during the acquistition with the controls on the :ref:`user_guide/cp-ftmw:CP-FTMW Tab`.
 
 .. warning::
    Unlike the other acquisition modes, **Peak Up mode experiments are not saved to disk.** Once a new experiment has been started, the results from the Peak Up mode experiment are discarded. Be sure to export any data you wigh to save manually!
@@ -86,7 +86,7 @@ LO Scan
 
 The **LO Scan** mode implements a version of `segmented CP-FTMW spectroscopy <https://doi.org/10.1364/OE.21.019743>`__ in which a certain number of FIDs are acquired and averaged, then the upconversion and/or downconversion local oscillators are stepped.
 By sampling a variety of LO frequencies, the spectral range covered by the instrument can far exceed the instantaneous bandwidth of the FTMW digitizer, allowing CP-FTMW spectroscopy to be performed with (comparatively) inexpensive hardware.
-On the `CP-FTMW Tab`_, each frequency segment can be viewed individually, and algorithms are available for stitching together the entire spectrum and deconvolving dual sidebands (see the linked page for more details about these algorithms).
+On the :ref:`user_guide/cp-ftmw:CP-FTMW Tab`, each frequency segment can be viewed individually, and algorithms are available for stitching together the entire spectrum and deconvolving dual sidebands (see the linked page for more details about these algorithms).
 As a **multi-segment** acquisition type, Blackchirp writes a backup each time the segment changes, and therefore the ``Backup Interval`` box is disabled.
 The ``Duration`` box is also disabled.
 The ``Shots`` box is enabled, and the value entered in this box is used as the default value for the number of shots per LO step (though it can be changed on a later step).
@@ -140,13 +140,13 @@ The ``Duration`` and ``Backup Interval`` boxes are disabled, and the value enter
 
 To set up a DR scan, enter the desired starting frequency, step size, number of steps, and shots per point.
 The ``End`` box will be updated to show the final DR frequency automatically.
-When viewing the DR Scan on the `CP-FTMW Tab`_, there is currently no ability to view a peak intensity directly as a function of the DR frequency.
+When viewing the DR Scan on the :ref:`user_guide/cp-ftmw:CP-FTMW Tab`, there is currently no ability to view a peak intensity directly as a function of the DR frequency.
 Instead, it is recommended to make use of the ``FT1 - FT2`` plot mode, as discussed in more detail on the that page.
 
 Other Experiment Options
 ------------------------
 
-In addition to the acquisition type, other options accessible on the first wizard page involve real-time FID processing (phase correction and chirp scoring), auxiliary data, and backups (discussed on the `Data Storage <user_guide/data_storage.html>`_ page).
+In addition to the acquisition type, other options accessible on the first wizard page involve real-time FID processing (phase correction and chirp scoring), auxiliary data, and backups (discussed on the :ref:`user_guide/data_storage:Data Storage` page).
 
 Phase Correction
 ................
@@ -157,7 +157,7 @@ However, in some cases, over the course of a long acquisition, some phase drift 
 To mitigate this potential case, Blackchirp has a "phase correction" algorithm that attempts to correct for slow phase drift.
 This algorithm can be enabled by checking the ``Phase Correction`` box.
 
-In order to work, the FID record from the digitizer must contain the chirp, and the chirp must not be saturated on the scale of the diigitizer.
+In order to work, the FID record from the digitizer must contain the chirp, and the chirp should not be saturated on the scale of the digitizer.
 Often the leakage through a switch is sufficient, but we have also used directional couplers and/or SPDT switches with some success to allow an attenuated version of the chirp to bypass a diode limiter/protection switch combination.
 Blackchirp attempts to determine where the chirp is located within the wavefunction (more on this below), and then computes the cross correlation between the chirp in the new record with the current average chirp after at least 20 FIDs have been recorded.
 This calculation is performed with trial shifts of up to a few points in time to determine the maximum.
@@ -166,10 +166,10 @@ Blackchirp attempts to be conservative, only changing the current shift if there
 If the size of the shift becomes too large (current limit is 50 points), an error is thrown.
 
 If the ``Chirp Start`` box is set to ``Automatic``, Blackchirp assumes that the digitizer is triggered at the start of the protection pulse.
-The chirp start is then set to the sum of the pre-chirp protection and pre-chirp delay settings entered on the `Chirp Setup <chirp_setup.html>`_ page, and the chirp end is determined from the chirp duration entered on that page.
-These computed values will be displayed on the FID plots displayed on the `CP-FTMW Tab`_.
+The chirp start is then set to the sum of the pre-chirp protection and pre-chirp delay settings entered on the :ref:`user_guide/experiment/chirp_setup:Chirp Setup` page, and the chirp end is determined from the chirp duration entered on that page.
+These computed values will be displayed on the FID plots displayed on the :ref:`user_guide/cp-ftmw:CP-FTMW Tab`.
 If they are not correct, you can override the chirp starting time by entering the actual chirp start you observe into the ``Chirp Start`` box.
-The duration still comes from the `Chirp Setup`_ value.
+The duration still comes from the :ref:`user_guide/experiment/chirp_setup:Chirp Setup` value.
 
 Chirp Scoring
 .............

@@ -51,9 +51,10 @@ class BCExperiment:
 
             $ e347 = BCExperiment('./347')
 
-        Each csv file in the Experiment folder is loaded as a `pandas DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/frame.html>`_. These
-        DataFrames are each stored as a variable with the same name as the csv file.
-        For example, to see the contents of hardware.csv::
+        Each csv file in the Experiment folder is loaded as a
+        `pandas DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/frame.html>`_.
+        These DataFrames are each stored as a variable with the same name as the csv
+        file. For example, to see the contents of hardware.csv::
 
             $ e437.hardware
 
@@ -68,22 +69,22 @@ class BCExperiment:
     Attributes:
         num (int): Experiment number
         path (str): Experiment path
-        version (DataFrame): Contents of version.csv.
+        version (pd.DataFrame): Contents of version.csv.
             Information about the Blackchirp version used to acquire the data
-        header (DataFrame): Contents of header.csv.
+        header (pd.DataFrame): Contents of header.csv.
             General experimental parameters.
-        objectives (DataFrame): Contents of objectives.csv.
+        objectives (pd.DataFrame): Contents of objectives.csv.
             Information about the goals of the experiment (FTMW type, LIF, etc)
-        log (DataFrame): Contents of log.csv.
+        log (pd.DataFrame): Contents of log.csv.
             All messages printed to Blackchirp's log during the experiment.
-        hardware (DataFrame): Contents of hardware.csv.
+        hardware (pd.DataFrame): Contents of hardware.csv.
             All hardware items and their implementation keys.
-        clocks (DataFrame): Contents of clocks.csv
+        clocks (pd.DataFrame): Contents of clocks.csv
             Configurations of all clocks at each experimental step.
-        auxdata (DataFrame, optional): Contents of auxdata.csv (if present).
+        auxdata (pd.DataFrame, optional): Contents of auxdata.csv (if present).
             Data shown on `Aux Data <user_guide/rolling-aux-data.html>`_ plots
             during the experiment.
-        chirps (DataFrame, optional): Contents of chirps.csv (if present).
+        chirps (pd.DataFrame, optional): Contents of chirps.csv (if present).
             Details of all chirps associated with a CP-FTMW acquisition.
         ftmw (BCFTMW, optional): Contents of fid directory.
             This object provides an interface for accessing CP-FTMW data.
@@ -175,3 +176,95 @@ class BCExperiment:
 
         if os.path.exists(os.path.join(self.path, "lif")):
             self.lif = BCLIF(self.path, self._sep)
+
+    def header_unique_keys(self) -> set[str]:
+        """Fetch all unique ObjKeys in experiment header
+
+        Returns:
+            List of unique header keys
+
+        """
+
+        return set(self.header.ObjKey.tolist())
+
+    def header_rows(
+        self, objKey: str = None, valKey: str = None, arrKey: str = None
+    ) -> pd.DataFrame:
+        """Fetch rows from the header file matching conditions
+
+        Filters rows in the header according to ObjKey, ValueKey, and ArrayKey.
+        Any combination of these (or none) may be specified to filter.
+
+        Args:
+            objKey: Object key in header
+            valKey: Value key in header
+            arrKey: Array key in header
+
+        Returns:
+            DataFrame with matching wors
+
+        """
+
+        df = self.header
+        if objKey is not None:
+            df = df.query(f"ObjKey == '{objKey}'")
+        if valKey is not None:
+            df = df.query(f"ValueKey == '{valKey}'")
+        if arrKey is not None:
+            df = df.query(f"ArrayKey == '{arrKey}'")
+
+        return df
+
+    def header_value(
+        self, objKey: str, valKey: str, idx: int = 0, arrKey: str = None
+    ) -> str:
+        """Fetch one value from header
+
+        The objKey and valKey (and arrKey, if specified) are used to filter the header.
+        Then the idx value is used to determine which row to return. If a match is not
+        found, an empty string is returned
+
+        Args:
+            objKey: Object key in header
+            valKey: Value key in header
+            idx: Row number to return (optional)
+            arrKey: Array key in header (optional)
+
+        Returns:
+            Matching value or empty string
+        """
+
+        df = self.header_rows(objKey, valKey, arrKey)
+        if len(df) <= idx:
+            return ""
+
+        return df.Value.iloc[idx]
+
+    def header_unit(
+        self, objKey: str, valKey: str, idx: int = 0, arrKey: str = None
+    ) -> str:
+        """Fetch one unit value from header
+
+        The objKey and valKey (and arrKey, if specified) are used to filter the header.
+        Then the idx value is used to determine which row to return. If a match is not
+        found, an empty string is returned
+
+        Args:
+            objKey: Object key in header
+            valKey: Value key in header
+            idx: Row number to return (optional)
+            arrKey: Array key in header (optional)
+
+        Returns:
+            Matching value or empty string
+        """
+
+        df = self.header_rows(objKey, valKey, arrKey)
+        if len(df) <= idx:
+            return ""
+
+        out = df.Units.iloc[idx]
+        if out != out:
+            return ""
+
+        return out

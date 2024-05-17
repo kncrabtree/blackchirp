@@ -7,9 +7,11 @@ DISTFILES += \
    $$PWD/source/classes/settingsstorage.rst \
    $$PWD/source/conf.py \
    $$PWD/source/index.rst \
+   $$PWD/source/notebooks/single-fid.nblink \
    $$PWD/source/python.rst \
-   $$PWD/source/python/bcexperiment.rst \
-   $$PWD/source/python/bcftmw.rst \
+   $$PWD/source/python/docs-index.rst \
+   $$PWD/source/python/example.rst \
+   $$PWD/source/python/notebooks/single-fid.nblink \
    $$PWD/source/user_guide/cp-ftmw.rst \
    $$PWD/source/user_guide/data_storage.rst \
    $$PWD/source/user_guide/experiment/acquisition_types.rst \

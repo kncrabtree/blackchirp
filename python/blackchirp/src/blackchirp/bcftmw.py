@@ -36,7 +36,8 @@ class BCFTMW:
 
             fid = exp.ftmw.get_fid()
 
-        Performing upper sideband deconvolution, harmonic mean, FT range 0.1-1.0 GHz per segment::
+        Performing upper sideband deconvolution, harmonic mean, FT range 0.1-1.0 GHz
+        per segment::
 
             x, y = exp.ftmw.process_sideband(which='upper',
                                              avg='harmonic',
@@ -85,10 +86,12 @@ class BCFTMW:
         """Loads a (potentially multi-frame) FID from disk.
 
         For standard acquisition modes (Target Shots, Target Time, and Forever),
-        the complete FID is stored as ``0.csv`` and would correspond to ``num=0``, the default. Any other CSV files are backups and are accessed by providing the
+        the complete FID is stored as ``0.csv`` and would correspond to ``num=0``, the
+        default. Any other CSV files are backups and are accessed by providing the
         desired backup number for ``num``.
 
-        For other acquisition modes that consist of several segments (LO Scan, DR Scan), ``num`` corresponds to the desired segment.
+        For other acquisition modes that consist of several segments (LO Scan, DR Scan),
+        ``num`` corresponds to the desired segment.
 
         Args:
             num: Number of FID file to load.
@@ -105,7 +108,7 @@ class BCFTMW:
             raise ValueError(
                 f"Invalid FID number ({num}). Must be between 0 and {self.numfids-1}"
             )
-        return BCFid.create(num, self.path, self.fidparams, self._sep, self.proc)
+        return BCFid(num, self.path, self.fidparams, self._sep, self.proc)
 
     def process_sideband(
         self,
@@ -119,7 +122,10 @@ class BCFTMW:
     ) -> tuple[np.ndarray, np.ndarray]:
         """Performs sideband deconvolution on an LO Scan experiment
 
-        See `Sideband Deconvolution <../user_guide/cp-ftmw.html#sideband-deconvolution>`_ for an explanation of the purpose of the algorithm. The arguments correspond to the options available in the Sideband Processing and FID processing menus in Blackchirp.
+        See `Sideband Deconvolution <../user_guide/cp-ftmw.html#sideband-deconvolution>`_
+        for an explanation of the purpose of the algorithm. The arguments correspond
+        to the options available in the Sideband Processing and FID processing menus
+        in Blackchirp.
 
         Args:
             which: {'both', 'upper', 'lower'}
