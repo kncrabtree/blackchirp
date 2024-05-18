@@ -12,6 +12,7 @@ DISTFILES += \
    $$PWD/source/python/docs-index.rst \
    $$PWD/source/python/example.rst \
    $$PWD/source/python/notebooks/single-fid.nblink \
+   $$PWD/source/requirements.txt \
    $$PWD/source/user_guide/cp-ftmw.rst \
    $$PWD/source/user_guide/data_storage.rst \
    $$PWD/source/user_guide/experiment/acquisition_types.rst \

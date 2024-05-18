@@ -2,20 +2,86 @@
 
 ![Blackchirp Logo](src/resources/icons/bc_logo_med.png)
 
-Data acquisition software for CP-FTMW spectrometers. Blackchirp is written to control a variety of different CP-FTMW spectrometers with versatile and configurable hardware combinations. At minimum, Blackchirp can function simply by connecting to a high-speed digitizer, but it also supports tunable local oscillators, delay generators, mass flow controllers, analog/digital IO boards, pressure controllers, temperature sensors, and it features a versatile chirp editor which can write chirps or chirp sequences to arbitrary waveform generators. FIDs and FTs are displayed for the user in real time with customizable post-processing settings, allowing a user to monitor the progress during an acquisition. All of Blackchirp's data is written in plain-text semicolon-delimited CSV format so that it can be readily imported into external analysis software.
+Blackchirp is open-source data acquisition software for CP-FTMW spectroscopy. It is designed to control a variety of different CP-FTMW spectrometers with versatile and configurable hardware combinations. At minimum, Blackchirp can function simply by connecting to a high-speed digitizer, but it also supports tunable local oscillators, delay generators, mass flow controllers, analog/digital IO boards, pressure controllers, temperature sensors, and it features a versatile chirp editor which can write chirps or chirp sequences to arbitrary waveform generators. FIDs and FTs are displayed for the user in real time with customizable post-processing settings, allowing a user to monitor the progress during an acquisition. All of Blackchirp's data is written in plain-text semicolon-delimited CSV format, and a python module is available for importing the data and performing common processing tasks.
 
+Join the [Discord Server](https://discord.gg/88CkbAKUZY) for news, to request help from other users, or to discuss future improvements.
+
+## Documentation
+
+- [Documentation Home](https://blackchirp.readthedocs.io/en/dev-1.0/index.html)
+- [Installation](https://blackchirp.readthedocs.io/en/dev-1.0/user_guide/installation.html)
+- [User Guide](https://blackchirp.readthedocs.io/en/dev-1.0/user_guide.html)
+
+## Python Module
+
+The Blackchirp python module depends only on numpy, scipy, and pandas. It can be installed with
+
+```
+pip install blackchirp
+```
+
+- [PyPI Listing](https://pypi.org/project/blackchirp/)
+- [Documentation Home](https://blackchirp.readthedocs.io/en/dev-1.0/python.html)
+- [Example Notebooks](https://blackchirp.readthedocs.io/en/dev-1.0/python/example.html)
+
+## Contributing
+
+To contribute, create a fork of the development branch to your own github repository, and start a new branch for your work. When complete, ensure your branch is up-to-date with the development branch and submit a pull request. It is strongly recommended to discuss your contribution in the  [Discord Server](https://discord.gg/88CkbAKUZY) and to create a Github issue describing the scope of your contribution.
+
+Code guidelines:
+
+- C++ classes, structs, and enums have upper-case names, variables and functions have lower-case names.
+- C++ member variables are prefixed with ``d_`` for value types, ``p_`` for pointer types, ``pu_`` for ``std::unique_ptr`` types, and ``ps_`` for ``std::shared_ptr`` types.
+- C++ Indentation is with spaces only, 4 spaces per indent. Use of the Qt code style available in Qt Creator is strongly recommended.
+- Prefer the use of C++ data structures from the standard library over Qt structures. The exception is Qt implicitly shared containers, especially when interacting with signal/slot queued connections.
+- Keys used in C++ HeaderStorage and SettingsStorage contexts should be statically declared and appropriately namespaced, not entered as string literals in the code.
+- Python code is formatted with [``black``](https://github.com/psf/black) and must pass [``pylint -E``](https://pylint.org/).
+- Docstrings should be written in [Google style](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html).
+- Example Jupyer notebooks must be fully executed in order to render properly in the documentation.
 
 ## What's New
 
-### May 2024
+### May 17 2024
 
-The "Start Experiment" wizard has been completely rewritten to minimize the amount of clicking required to initiate an experiment. All settings are organized into pages which are accessible in any order using the new navigation menu on the left. The dialog attempts to detect incorrect/invalid settings and issues an error or warning if any are identified, as shown in the screenshot below. 
+General updates:
+
+- A new [Discord Server](https://discord.gg/88CkbAKUZY) has been launched for Blackchirp users and developers.
+- A brand-new python module is available and listed on the Python Package Index, along with an initial example notebook showing simple usage. Links to the documentation, examples, and the PyPI listing are above.
+
+New features:
+
+- The backup interval may be set in units of minutes instead of hours.
+- Implementation for SRS DG645 pulse generator.
+- New FID processing option added: Exponential filter. Multiplies the FID with an exponential decay with adjustable time constant.
+- FID processing settings are now saved in a ``fid/processing.csv`` file with each experiment. The settings stored in the file are loaded when viewing the experiment with Blackchirp and by the new Blackchirp python module for default FT processing settings. See [the documentation](https://blackchirp.readthedocs.io/en/dev-1.0/user_guide/cp-ftmw.html) for more details.
+- The sideband deconvolution algorithms for LO Scan mode have been completely rewritten, and the default averaging algorithm is now a weighted harmonic mean.
+- The [User Guide](https://blackchirp.readthedocs.io/en/dev-1.0/user_guide.html) has received major updates; most pages are now written.
+- The documentation now requires the following packages to build locally (see ``doc/source/requirements.txt``):
+  - sphinx
+  - sphinx_rtd_theme
+  - breathe
+  - nbsphinx
+  - nbsphinx-link
+  - ipython
+
+Bugfixes:
+
+- The FT Start/FT End processing settings for experiments acquired with older versions of Blackchirp could not be adjusted when viewing a previous experiment.
+- The autoscale range for FID plots was incorrect when a window function was used.
+- Updating processing settings during a live acquisition would cause the Live and Main plots to go blank until the next refresh timer tick.
+- Spinbox ranges for viewing backups were not set correctly.
+- The sideband deconvolution algorithm did not weight the average of overlapping segments by the number of shots if segments had different shot numbers.
+- The double sideband deconvolution algorithm did not correctly use the minimum offset parameter.
+
+### May 3 2024
+
+- The "Start Experiment" wizard has been completely rewritten to minimize the amount of clicking required to initiate an experiment. All settings are organized into pages which are accessible in any order using the new navigation menu on the left. The dialog attempts to detect incorrect/invalid settings and issues an error or warning if any are identified, as shown in the screenshot below. 
 
 ![New Experiment Setup Dialog](doc/source/_static/user_guide/experiment/expsetup.png)
 
-Blackchirp now supports having multiple pieces of hardware of the same "type" for most hardware types. For example, you can now have two pulse generators, etc. This has always been the case for Clocks, but now most other types support this as well. The exceptions are the FtmwScope, AWG, and GpibController types (and the LifScope and LifLaser for the lif module). Because of this change, the hardware keys in the settings file have been changed. If you have been using a previous version of Blackchirp, you can preserve your existing settings by manually editing the config file (~/.config/CrabtreeLab/Blackchirp.conf on Unix, in the Registry on Windows). Simply add ".0" to all hardware keys (e.g., \[AWG\] becomes \[AWG.0\]) with the exception of Clock entries, where you should instead add a dot between "Clock" and the integer attached to it (e.g., \[Clock1\] becomes \[Clock.1\]). For convenience, the hardware keys are: AWG, ClockN (N=0,1,2,...), FlowController, FtmwDigitizer, GpibController, IOBoard, PressureController, PulseGenerator, and TemperatureController. Some may not be present in your config file.
+- Blackchirp now supports having multiple pieces of hardware of the same "type" for most hardware types. For example, you can now have two pulse generators, etc. This has always been the case for Clocks, but now most other types support this as well. The exceptions are the FtmwScope, AWG, and GpibController types (and the LifScope and LifLaser for the lif module). Because of this change, the hardware keys in the settings file have been changed. If you have been using a previous version of Blackchirp, you can preserve your existing settings by manually editing the config file (~/.config/CrabtreeLab/Blackchirp.conf on Unix, in the Registry on Windows). Simply add ".0" to all hardware keys (e.g., \[AWG\] becomes \[AWG.0\]) with the exception of Clock entries, where you should instead add a dot between "Clock" and the integer attached to it (e.g., \[Clock1\] becomes \[Clock.1\]). For convenience, the hardware keys are: AWG, ClockN (N=0,1,2,...), FlowController, FtmwDigitizer, GpibController, IOBoard, PressureController, PulseGenerator, and TemperatureController. Some may not be present in your config file.
 
-In addition, **hardware selection at compile time has been changed.** Instead of using numbers, now each piece of hardware is identified by its model (case insensitive). See the config.pri.template file for examples.
+- **Hardware selection at compile time has been changed.** Instead of using numbers, now each piece of hardware is identified by its model (case insensitive). See the config.pri.template file for examples.
 
 
 
