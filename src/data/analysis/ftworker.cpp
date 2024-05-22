@@ -352,7 +352,11 @@ void FtWorker::processSideband(const FtWorker::SidebandProcessingData &d, const 
                 }
             }
 
-            d_loScanData.totalShots += ft.shots();
+            //in double sideband mode, each FID is processed twice
+            if(d.doubleSideband)
+                d_loScanData.totalShots += ft.shots()/2;
+            else
+                d_loScanData.totalShots += ft.shots();
 
         }
     }
