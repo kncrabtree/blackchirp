@@ -13,6 +13,10 @@ public:
 public slots:
     void initialize() override;
     bool testConnection() override;
+    
+    // CommunicationProtocol interface
+public:
+    QIODevice *_device() override;
 };
 
 #endif // VIRTUALINSTRUMENT_H

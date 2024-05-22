@@ -18,7 +18,7 @@ void TcpInstrument::initialize()
 bool TcpInstrument::testConnection()
 {
     using namespace BC::Key::TCP;
-    if(dynamic_cast<QTcpSocket*>(p_device)->state() == QTcpSocket::ConnectedState)
+    if(p_device->state() == QTcpSocket::ConnectedState)
         disconnectSocket();
 
     SettingsStorage s(d_key,SettingsStorage::Hardware);
@@ -32,7 +32,7 @@ bool TcpInstrument::testConnection()
 bool TcpInstrument::writeCmd(QString cmd)
 {
 
-    if(dynamic_cast<QTcpSocket*>(p_device)->state() != QTcpSocket::ConnectedState)
+    if(p_device->state() != QTcpSocket::ConnectedState)
     {
         if(!connectSocket())
         {
@@ -47,7 +47,7 @@ bool TcpInstrument::writeCmd(QString cmd)
 
 bool TcpInstrument::writeBinary(QByteArray dat)
 {
-    if(dynamic_cast<QTcpSocket*>(p_device)->state() != QTcpSocket::ConnectedState)
+    if(p_device->state() != QTcpSocket::ConnectedState)
     {
         if(!connectSocket())
         {
@@ -64,7 +64,7 @@ bool TcpInstrument::writeBinary(QByteArray dat)
 QByteArray TcpInstrument::queryCmd(QString cmd, bool suppressError)
 {
 
-    if(dynamic_cast<QTcpSocket*>(p_device)->state() != QTcpSocket::ConnectedState)
+    if(p_device->state() != QTcpSocket::ConnectedState)
     {
         if(!connectSocket())
         {
@@ -80,19 +80,25 @@ QByteArray TcpInstrument::queryCmd(QString cmd, bool suppressError)
 
 bool TcpInstrument::connectSocket()
 {
-    auto p_socket = dynamic_cast<QTcpSocket*>(p_device);
-    p_socket->connectToHost(d_ip,d_port);
-    if(!p_socket->waitForConnected(1000))
+    p_device->connectToHost(d_ip,d_port);
+    if(!p_device->waitForConnected(1000))
     {
-        d_errorString = QString("Could not connect to %1:%2. %3").arg(d_ip).arg(d_port).arg(p_device->errorString());
+        setErrorString(QString("Could not connect to %1:%2. %3")
+                       .arg(d_ip).arg(d_port).arg(p_device->errorString()));
         return false;
     }
-    p_socket->setSocketOption(QAbstractSocket::KeepAliveOption,1);
+    p_device->setSocketOption(QAbstractSocket::KeepAliveOption,1);
 
     return true;
 }
 
 void TcpInstrument::disconnectSocket()
 {
-    dynamic_cast<QTcpSocket*>(p_device)->disconnectFromHost();
+    p_device->disconnectFromHost();
+}
+
+
+QIODevice *TcpInstrument::_device()
+{
+    return p_device;
 }

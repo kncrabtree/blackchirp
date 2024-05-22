@@ -189,7 +189,7 @@ bool DSOv204A::prepareForExperiment(Experiment &exp)
 
     p_comm->queryCmd(QString("*TRG;*OPC?\n"));
 
-    p_comm->device()->readAll();
+    p_comm->_device()->readAll();
 
     bool done = false;
     while(!done)
@@ -373,7 +373,7 @@ void DSOv204A::endAcquisition()
 void DSOv204A::initialize()
 {
     p_comm->setReadOptions(1000,true,QByteArray("\n"));
-    p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
+    p_socket = p_comm->device<QTcpSocket>();
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
     p_queryTimer = new QTimer(this);
 }

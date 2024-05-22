@@ -51,3 +51,9 @@ bool Rs232Instrument::testConnection()
         return false;
 }
 
+
+
+QIODevice *Rs232Instrument::_device()
+{
+    return p_device;
+}

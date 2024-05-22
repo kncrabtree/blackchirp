@@ -26,12 +26,17 @@ public slots:
     virtual bool testConnection() override;
 
 private:
+    QTcpSocket *p_device;
     QString d_ip;
     int d_port;
 
     bool connectSocket();
     void disconnectSocket();
 	
+    
+    // CommunicationProtocol interface
+public:
+    QIODevice *_device() override;
 };
 
 #endif // TCPINSTRUMENT_H

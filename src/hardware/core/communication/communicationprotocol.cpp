@@ -1,7 +1,7 @@
 #include <hardware/core/communication/communicationprotocol.h>
 
 CommunicationProtocol::CommunicationProtocol(QString key, QObject *parent) :
-    QObject(parent),d_key(key), d_useTermChar(false), d_timeOut(1000)
+    QObject(parent),d_key(key)
 {
 
 }
@@ -13,17 +13,17 @@ CommunicationProtocol::~CommunicationProtocol()
 
 bool CommunicationProtocol::writeCmd(QString cmd)
 {
-    if(p_device == nullptr)
+    if(_device() == nullptr)
         return true;
 
-    if(!p_device->isOpen())
+    if(!_device()->isOpen())
     {
         emit hardwareFailure();
         emit logMessage(QString("Could not write command. Serial port is not open. (Command = %1)").arg(cmd),LogHandler::Error);
         return false;
     }
 
-    qint64 ret = p_device->write(cmd.toLatin1());
+    qint64 ret = _device()->write(cmd.toLatin1());
 
     if(ret == -1)
     {
@@ -36,17 +36,17 @@ bool CommunicationProtocol::writeCmd(QString cmd)
 
 bool CommunicationProtocol::writeBinary(QByteArray dat)
 {
-    if(p_device == nullptr)
+    if(_device() == nullptr)
         return true;
 
-    if(!p_device->isOpen())
+    if(!_device()->isOpen())
     {
         emit hardwareFailure();
         emit logMessage(QString("Could not write binary data. Serial port is not open. (Data hex = %1)").arg(QString(dat.toHex())),LogHandler::Error);
         return false;
     }
 
-    qint64 ret = p_device->write(dat);
+    qint64 ret = _device()->write(dat);
 
     if(ret == -1)
     {
@@ -59,13 +59,13 @@ bool CommunicationProtocol::writeBinary(QByteArray dat)
 
 QByteArray CommunicationProtocol::queryCmd(QString cmd, bool suppressError)
 {
-    if(p_device == nullptr)
+    if(_device() == nullptr)
         return QByteArray();
 
-    if(p_device->bytesAvailable())
-        p_device->readAll();
+    if(_device()->bytesAvailable())
+        _device()->readAll();
 
-    qint64 ret = p_device->write(cmd.toLatin1());
+    qint64 ret = _device()->write(cmd.toLatin1());
 
     if(ret == -1)
     {
@@ -77,8 +77,8 @@ QByteArray CommunicationProtocol::queryCmd(QString cmd, bool suppressError)
         return QByteArray();
     }
 
-    while (p_device->bytesToWrite() > 0) {
-        if(!p_device->waitForBytesWritten(30000))
+    while (_device()->bytesToWrite() > 0) {
+        if(!_device()->waitForBytesWritten(30000))
         {
             if(!suppressError)
             {
@@ -92,7 +92,7 @@ QByteArray CommunicationProtocol::queryCmd(QString cmd, bool suppressError)
     //write, return response
     if(!d_useTermChar || d_readTerminator.isEmpty())
     {
-        if(!p_device->waitForReadyRead(d_timeOut))
+        if(!_device()->waitForReadyRead(d_timeOut))
         {
             if(!suppressError)
             {
@@ -102,7 +102,7 @@ QByteArray CommunicationProtocol::queryCmd(QString cmd, bool suppressError)
             return QByteArray();
         }
 
-        return p_device->readAll();
+        return _device()->readAll();
     }
     else
     {
@@ -110,10 +110,10 @@ QByteArray CommunicationProtocol::queryCmd(QString cmd, bool suppressError)
         bool done = false;
         while(!done)
         {
-            if(!p_device->waitForReadyRead(d_timeOut))
+            if(!_device()->waitForReadyRead(d_timeOut))
                 break;
 
-            QByteArray t = p_device->readAll();
+            QByteArray t = _device()->readAll();
             if(t.contains(d_readTerminator))
             {
                 out.append(t.mid(0,t.indexOf(d_readTerminator)));
@@ -137,6 +137,11 @@ QByteArray CommunicationProtocol::queryCmd(QString cmd, bool suppressError)
     }
 }
 
+void CommunicationProtocol::setErrorString(const QString str)
+{
+    d_errorString = str;
+}
+
 QString CommunicationProtocol::errorString()
 {
     QString out = d_errorString;
@@ -149,8 +154,8 @@ bool CommunicationProtocol::bcTestConnection()
     bool success = testConnection();
     if(!success)
     {
-        if(d_errorString.isEmpty() && p_device)
-            d_errorString = p_device->errorString();
+        if(d_errorString.isEmpty() && _device())
+            d_errorString = _device()->errorString();
     }
 
     return success;

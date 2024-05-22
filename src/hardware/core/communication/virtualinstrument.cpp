@@ -19,3 +19,9 @@ bool VirtualInstrument::testConnection()
 {
     return true;
 }
+
+
+QIODevice *VirtualInstrument::_device()
+{
+    return nullptr;
+}

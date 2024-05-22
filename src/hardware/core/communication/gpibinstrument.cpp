@@ -51,3 +51,9 @@ bool GpibInstrument::testConnection()
 
 	return true;
 }
+
+
+QIODevice *GpibInstrument::_device()
+{
+    return nullptr;
+}
