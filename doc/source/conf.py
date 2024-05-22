@@ -64,3 +64,4 @@ html_favicon = '_static/favicon.png'
 breathe_projects = { 'Blackchirp' : 'xml' }
 breathe_default_project='Blackchirp'
 breathe_default_members=('members','protected-members','private-members','undoc-members')
+breathe_show_include=False

@@ -34,7 +34,7 @@ Each experiment that Blackchirp performs is associated with an experiment number
 
 and experiment 480 would be stored in::
 
-  experiments/0/0/400
+  experiments/0/0/480
 
 Each experiment is associated with several CSV files that contain information about aspects of the experiment.
 

@@ -1,5 +1,5 @@
-Blackchirp Python Module
-------------------------
+Python Module
+-------------
 
 .. automodule:: blackchirp
 

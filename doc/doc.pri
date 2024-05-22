@@ -4,6 +4,10 @@ DISTFILES += \
    $$PWD/Makefile \
    $$PWD/make.bat \
    $$PWD/source/Doxyfile \
+   $$PWD/source/classes/communicationprotocol.rst \
+   $$PWD/source/classes/custominstrument.rst \
+   $$PWD/source/classes/hardwareobject.rst \
+   $$PWD/source/classes/headerstorage.rst \
    $$PWD/source/classes/settingsstorage.rst \
    $$PWD/source/conf.py \
    $$PWD/source/index.rst \

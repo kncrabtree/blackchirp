@@ -9,6 +9,11 @@
 #include <data/loghandler.h>
 #include <data/storage/settingsstorage.h>
 
+/*!
+ * CommunicationProtocol keys for SettingsStorage
+ * 
+ * \ingroup ssKeys
+ */
 namespace BC::Key::Comm {
 static const QString rs232{"rs232"};
 static const QString tcp{"tcp"};

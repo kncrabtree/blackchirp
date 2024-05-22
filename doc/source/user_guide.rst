@@ -1,5 +1,5 @@
-Blackchirp User Guide
-=====================
+User Guide
+==========
 
 .. toctree::
    :caption: Contents:
