@@ -195,7 +195,10 @@ int QCPulseGenerator::readChSynchCh(const int index)
     auto resp = pGenQueryCmd(QString(":PULSE%1:SYNC?").arg(index+1));
     if(!resp.isEmpty())
     {
-        QString val = QString(resp.trimmed());
+        //for some reason, the QC9214 returns an extra character when the sync channel is not T0
+        if(resp.startsWith('T'))
+            return 0;
+        QString val = QString(resp.mid(0,3));
         int idx = d_channels.indexOf(val);
         if(idx >= 0)
             return idx;
