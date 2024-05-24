@@ -89,6 +89,7 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
 
     connect(p_startAcqButton,&QPushButton::clicked,this,&LifControlWidget::startAcquisition);
     connect(p_stopAcqButton,&QPushButton::clicked,this,&LifControlWidget::stopAcquisition);
+    connect(p_lifTracePlot,&LifTracePlot::acqComplete,this,&LifControlWidget::stopAcquisition);
 
     connect(p_procWidget,&LifProcessingWidget::settingChanged,[=](){ p_lifTracePlot->setAllProcSettings(p_procWidget->getSettings());});
 
@@ -121,6 +122,7 @@ void LifControlWidget::startAcquisition()
     p_startAcqButton->setEnabled(false);
     p_stopAcqButton->setEnabled(true);
 
+    d_acquiring = true;
     emit startSignal(d_cfg);
 }
 
@@ -130,6 +132,7 @@ void LifControlWidget::stopAcquisition()
     p_digWidget->setEnabled(true);
     p_startAcqButton->setEnabled(true);
     p_stopAcqButton->setEnabled(false);
+    d_acquiring = false;
 
     emit stopSignal();
 }
@@ -144,8 +147,11 @@ void LifControlWidget::acquisitionStarted()
 
 void LifControlWidget::newWaveform(const QVector<qint8> b)
 {
-    LifTrace l(d_cfg.scopeConfig(),b,0,0);
-    p_lifTracePlot->processTrace(l);
+    if(d_acquiring)
+    {
+        LifTrace l(d_cfg.scopeConfig(),b,0,0);
+        p_lifTracePlot->processTrace(l);
+    }
 }
 
 void LifControlWidget::setLaserPosition(const double d)

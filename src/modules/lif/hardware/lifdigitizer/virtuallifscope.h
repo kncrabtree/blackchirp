@@ -6,7 +6,7 @@
 
 class QTimer;
 
-namespace BC::Key {
+namespace BC::Key::LifDigi {
 static const QString vLifScopeName("Virtual LIF Oscilloscope");
 }
 

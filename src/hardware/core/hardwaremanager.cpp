@@ -14,6 +14,8 @@
 #include <hardware/hw_h.h>
 #include <hardware/core/clock/clock_h.h>
 
+#include <boost/preprocessor/iteration/local.hpp>
+
 #include <QThread>
 
 #ifdef BC_LIF

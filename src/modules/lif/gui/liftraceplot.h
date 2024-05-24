@@ -27,6 +27,7 @@ signals:
     void integralUpdate(double);
     void lifGateUpdated(int,int);
     void refGateUpdated(int,int);
+    void acqComplete();
 
 public slots:
     void setLifGateStart(int n);

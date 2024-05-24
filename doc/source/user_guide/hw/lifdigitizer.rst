@@ -30,5 +30,27 @@ A dummy implementation.
 Spectrum Instrumentation M4i2211x8 (m4i2211x8)
 ..............................................
 
-The Spectrum Instrumentation M4i.2211x8 is a 2-channel high-speed digitizer with a bandwidth of 500 MHz. Using this digitizer requires that the spcm library be installed and linked to Blackchirp at compile time.
+The Spectrum Instrumentation M4i.2211x8 is a 2-channel high-speed digitizer
+with a bandwidth of 500 MHz. Using this digitizer requires that the spcm
+library be installed and linked to Blackchirp at compile time.
 
+Rigol DS2302A (ds2302a)
+.......................
+
+The `Rigol DS2302A <https://www.testequity.com/product/31591-1-DS2302A>`_ is a
+2-channel, 300 MHz oscilloscope with a maximum sampling rate of 2 GSa/s. Unlike
+many other oscilloscopes, the sample rate cannot be set manually for this
+scope; the scope chooses a sampling rate automatically based on the total
+record duration. This implementation takes the user's sampling rate and record
+length, calculates the time requested, and sets the horizontal scale of the
+scope to the nearest "nice" value obtainable by coarse tunings, which are 1, 2,
+and 5eN seconds, where N is an integer. Then the implementation queries the
+sampling rate at that value, and updates the record length accordingly.
+
+Another feature of this scope is that there seems to be no way to detect
+individual trigger events. The current implementation uses a timer to transfer
+the data shown on the screen to the computer. The timer interval is set by the
+`queryInterval_ms` setting, which as units of ms. It is recommended to set this
+interval to a value just slightly greater than the interval between trigger
+events (e.g., a value of 101 ms for a trigger rate of 10 Hz). This setting
+should be changed anytime the repetition rate is changed.

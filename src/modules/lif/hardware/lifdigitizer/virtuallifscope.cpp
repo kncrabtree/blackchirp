@@ -6,7 +6,7 @@
 
 
 VirtualLifScope::VirtualLifScope(QObject *parent) :
-    LifScope(BC::Key::Comm::hwVirtual,BC::Key::vLifScopeName,CommunicationProtocol::Virtual,parent)
+    LifScope(BC::Key::Comm::hwVirtual,BC::Key::LifDigi::vLifScopeName,CommunicationProtocol::Virtual,parent)
 {
     using namespace BC::Key::Digi;
 

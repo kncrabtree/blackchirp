@@ -75,6 +75,14 @@ Quantum Composers 9214 (qc9214)
 
 The `Quantum Composers 9214 <https://www.quantumcomposers.com/pulse-delay-generator-sapphire>`_ is a low-cost, 4-channel pulse generator that supports most Blackchirp features and communicates via RS232.
 
+Berkeley Nucleonics 577 (bnc577_4 and bnc577_8)
+...............................................
+
+The `Berkeley Nucleonics 577 <https://www.berkeleynucleonics.com/model-577>`_
+is a 4- or 8-channel pulse generator that supports most Blackchirp features and
+communicates by RS232. The 4-channel model uses the key `bnc577_4` and the
+8-channel model uses `bnc577_8`.
+
 Stanford Research Systems DG645 (dg645)
 .......................................
 

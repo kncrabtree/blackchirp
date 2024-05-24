@@ -44,11 +44,11 @@ ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),
 
     p_tracker = new CustomTracker(this->canvas());
     p_zoomerLB = new CustomZoomer(QwtPlot::xBottom,QwtPlot::yLeft,this->canvas());
-    connect(p_zoomerLB,&QwtPlotZoomer::zoomed,[=](QRectF r) {
+    connect(p_zoomerLB,&QwtPlotZoomer::zoomed,this,[=](const QRectF &r) {
         zoom(r,xBottom,yLeft);
     });
     p_zoomerRT = new CustomZoomer(QwtPlot::xTop,QwtPlot::yRight,this->canvas());
-    connect(p_zoomerRT,&QwtPlotZoomer::zoomed,[=](QRectF r) {
+    connect(p_zoomerRT,&QwtPlotZoomer::zoomed,this,[=](const QRectF &r) {
         zoom(r,xTop,yRight);
     });
 
@@ -1096,10 +1096,12 @@ QMenu *ZoomPanPlot::contextMenu()
     connect(enBox,&QCheckBox::toggled,this,&ZoomPanPlot::setTrackerEnabled);
     tfl->addRow(QString("Enabled?"),enBox);
 
-    for(const auto &[t,d] : d_config.axisMap)
+    for(const auto &[tt,d] : d_config.axisMap)
     {
+        auto t = tt;
         if(!axisEnabled(t))
             continue;
+
 
         QDoubleSpinBox *box = new QDoubleSpinBox();
         box->setMinimum(0.001);

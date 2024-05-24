@@ -59,6 +59,7 @@ private:
     QPushButton *p_resetButton;
 
     LifConfig d_cfg;
+    bool d_acquiring{ false };
 
 
     // QWidget interface

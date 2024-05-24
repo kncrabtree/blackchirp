@@ -50,7 +50,7 @@ equals(N,MSO64B) {
     DEFINES += BC_FTMWSCOPE=MSO64B
 	HEADERS += $$PWD/mso64b.h
 	SOURCES += $$PWD/mso64b.cpp
-    HW *= "$${H}include <hardware/core/ftmwdigitizer/ms064b.h>"
+    HW *= "$${H}include <hardware/core/ftmwdigitizer/mso64b.h>"
 }
 
 equals(N,DSOV204A) {

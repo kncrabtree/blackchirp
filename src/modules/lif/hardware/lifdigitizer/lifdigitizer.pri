@@ -22,6 +22,12 @@ equals(N,M4I2211X8) {
     SOURCES +=  $$PWD/m4i2211x8.cpp
     LIFHW *= "$${H}include <modules/lif/hardware/lifdigitizer/m4i2211x8.h>"
 }
+equals(N,DS2302A) {
+    DEFINES += BC_LIFSCOPE=RigolDS2302A
+    HEADERS += $$PWD/rigolds2302a.h
+    SOURCES += $$PWD/rigolds2302a.cpp
+    LIFHW *= "$${H}include <modules/lif/hardware/lifdigitizer/rigolds2302a.h>"
+}
 
 allhardware {
     HEADERS *= $$PWD/virtuallifscope.h
@@ -30,4 +36,7 @@ allhardware {
     HEADERS *=  $$PWD/m4i2211x8.h
     SOURCES *=  $$PWD/m4i2211x8.cpp
     LIFHW *= "$${H}include <modules/lif/hardware/lifdigitizer/m4i2211x8.h>"
+    HEADERS *= $$PWD/rigolds2302a.h
+    SOURCES *= $$PWD/rigolds2302a.cpp
+    LIFHW *= "$${H}include <modules/lif/hardware/lifdigitizer/rigolds2302a.h>"
 }

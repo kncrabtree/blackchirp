@@ -6,7 +6,6 @@
 
 #include <data/storage/settingsstorage.h>
 #include <data/experiment/experiment.h>
-#include <boost/preprocessor/iteration/local.hpp>
 
 class Clock;
 

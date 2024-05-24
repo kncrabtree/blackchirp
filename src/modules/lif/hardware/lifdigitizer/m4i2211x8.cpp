@@ -3,7 +3,7 @@
 #include <QTimer>
 
 M4i2211x8::M4i2211x8(QObject *parent) :
-    LifScope (BC::Key::m4i2211x8,BC::Key::m4i2211x8Name,CommunicationProtocol::Custom,parent),
+    LifScope (BC::Key::LifDigi::m4i2211x8,BC::Key::LifDigi::m4i2211x8Name,CommunicationProtocol::Custom,parent),
     p_handle(nullptr)
 {
     using namespace BC::Key::Digi;

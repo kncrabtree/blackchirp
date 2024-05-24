@@ -7,7 +7,6 @@
 
 #include <data/experiment/ftmwconfig.h>
 #include <hardware/core/ftmwdigitizer/ftmwdigitizerconfig.h>
-#include <boost/preprocessor/iteration/iterate.hpp>
 
 
 namespace BC::Key::FtmwScope {

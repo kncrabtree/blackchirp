@@ -2,11 +2,11 @@
 
 HEADERS += \
     $$PWD/pulsegenconfig.h \
-	$$PWD/pulsegenerator.h
+    $$PWD/pulsegenerator.h
 
 SOURCES += \
     $$PWD/pulsegenconfig.cpp \
-	$$PWD/pulsegenerator.cpp
+    $$PWD/pulsegenerator.cpp
 
 NPGEN = $$size(PGEN)
 greaterThan(NPGEN, 0) {
@@ -49,6 +49,22 @@ for(num, 0..$$NPGEN) {
             SOURCES *= $$PWD/srsdg645.cpp
             HW *= "$${H}include <hardware/optional/pulsegenerator/srsdg645.h>"
         }
+        equals(N,BNC577_4) {
+            DEFINES *= BC_PGEN_$$N=Bnc577_4
+            HEADERS *= $$PWD/bnc577.h \
+                       $$PWD/qcpulsegenerator.h
+            SOURCES *= $$PWD/bnc577.cpp \
+                       $$PWD/qcpulsegenerator.cpp
+            HW *= "$${H}include <hardware/optional/pulsegenerator/bnc577.h>"
+        }
+        equals(N,BNC577_8) {
+            DEFINES *= BC_PGEN_$$N=Bnc577_8
+            HEADERS *= $$PWD/bnc577.h \
+                       $$PWD/qcpulsegenerator.h
+            SOURCES *= $$PWD/bnc577.cpp \
+                       $$PWD/qcpulsegenerator.cpp
+            HW *= "$${H}include <hardware/optional/pulsegenerator/bnc577.h>"
+        }
     }
 }
 }
@@ -60,8 +76,12 @@ allhardware {
     DEFINES *= BC_PGEN_QC9528
     DEFINES *= BC_PGEN_QC9518
     DEFINES *= BC_PGEN_QC9214
-    HEADERS *= $$PWD/qcpulsegenerator.h
+    DEFINES *= BC_PGEN_BNC577_4
+    DEFINES *= BC_PGEN_BNC577_8
+    HEADERS *= $$PWD/qcpulsegenerator.h \
+    $$PWD/bnc577.h
     SOURCES *= $$PWD/qc9528.cpp \
+    $$PWD/bnc577.cpp \
                $$PWD/qcpulsegenerator.cpp \
                $$PWD/qc9518.cpp \
                $$PWD/qc9214.cpp
