@@ -303,10 +303,13 @@ QDir BlackchirpCSV::exptDir(int num, QString path)
     int th = num/1000;
     SettingsStorage s;
     QDir out(path.isEmpty() ? s.get(BC::Key::savePath,QString("")) : path);
-    out.cd(BC::Key::exptDir);
-    out.cd(QString::number(mil));
-    out.cd(QString::number(th));
-    out.cd(QString::number(num));
+    if(!path.isEmpty())
+    {
+        out.cd(BC::Key::exptDir);
+        out.cd(QString::number(mil));
+        out.cd(QString::number(th));
+        out.cd(QString::number(num));
+    }
 
     return out;
 }

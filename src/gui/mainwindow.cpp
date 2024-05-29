@@ -931,7 +931,7 @@ void MainWindow::viewExperiment()
     {
         numBox->setRange(0,__INT_MAX__);
         numBox->setSpecialValueText(QString("Select..."));
-        numBox->setEnabled(true);
+        numBox->setEnabled(false);
         pathBox->setChecked(true);
         pathBox->setEnabled(true);
     }
@@ -949,11 +949,11 @@ void MainWindow::viewExperiment()
        {
            pathEdit->setEnabled(true);
            browseButton->setEnabled(true);
-           numBox->setRange(1,__INT_MAX__);
+           numBox->setEnabled(false);
        }
        else
        {
-           numBox->setRange(1,lastCompletedExperiment);
+           numBox->setEnabled(true);
            pathEdit->clear();
            pathEdit->setEnabled(false);
            browseButton->setEnabled(false);
