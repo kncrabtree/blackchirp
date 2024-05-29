@@ -22,7 +22,7 @@ DEFINES += BC_PATCH_VERSION=$$BC_PATCH_VERSION
 DEFINES += BC_RELEASE_VERSION=$$BC_RELEASE_VERSION
 DEFINES += BC_BUILD_VERSION='$(shell cd $$PWD/src && git describe --always)'
 
-CONFIG += c++17
+CONFIG += c++latest strict_c++
 
 SOURCES += $$PWD/src/main.cpp
 RESOURCES += $$PWD/src/resources/resources.qrc

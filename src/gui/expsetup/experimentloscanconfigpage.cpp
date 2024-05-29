@@ -201,45 +201,45 @@ ExperimentLOScanConfigPage::ExperimentLOScanConfigPage(Experiment *exp, QWidget 
     auto vc = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
     auto dvc = static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged);
 
-    connect(p_upStartBox,dvc,[=](double v){
+    connect(p_upStartBox,dvc,[this](double v){
         startChanged(RfConfig::UpLO,v);
     });
-    connect(p_downStartBox,dvc,[=](double v){
+    connect(p_downStartBox,dvc,[this](double v){
         startChanged(RfConfig::DownLO,v);
     });
 
-    connect(p_upEndBox,dvc,[=](double v){
+    connect(p_upEndBox,dvc,[this](double v){
         endChanged(RfConfig::UpLO,v);
     });
-    connect(p_downEndBox,dvc,[=](double v){
+    connect(p_downEndBox,dvc,[this](double v){
         endChanged(RfConfig::DownLO,v);
     });
 
-    connect(p_upMajorStepBox,dvc,[=](double v){
+    connect(p_upMajorStepBox,dvc,[this](double v){
        majorStepSizeChanged(RfConfig::UpLO,v);
     });
-    connect(p_downMajorStepBox,dvc,[=](double v){
+    connect(p_downMajorStepBox,dvc,[this](double v){
        majorStepSizeChanged(RfConfig::DownLO,v);
     });
 
-    connect(p_upMinorStepBox,dvc,[=](double v){
+    connect(p_upMinorStepBox,dvc,[this](double v){
        minorStepSizeChanged(RfConfig::UpLO,v);
     });
-    connect(p_downMinorStepBox,dvc,[=](double v){
+    connect(p_downMinorStepBox,dvc,[this](double v){
        minorStepSizeChanged(RfConfig::DownLO,v);
     });
 
-    connect(p_upNumMinorBox,vc,[=](int v){
+    connect(p_upNumMinorBox,vc,[this](int v){
        minorStepChanged(RfConfig::UpLO,v);
     });
-    connect(p_downNumMinorBox,vc,[=](int v){
+    connect(p_downNumMinorBox,vc,[this](int v){
        minorStepChanged(RfConfig::DownLO,v);
     });
 
-    connect(p_upNumMajorBox,vc,[=](int v){
+    connect(p_upNumMajorBox,vc,[this](int v){
        majorStepChanged(RfConfig::UpLO,v);
     });
-    connect(p_downNumMajorBox,vc,[=](int v){
+    connect(p_downNumMajorBox,vc,[this](int v){
        majorStepChanged(RfConfig::DownLO,v);
     });
 

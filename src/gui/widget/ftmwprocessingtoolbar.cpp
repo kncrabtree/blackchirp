@@ -112,9 +112,9 @@ FtmwProcessingToolBar::FtmwProcessingToolBar(bool mainWin, QWidget *parent) :
         registerGetter(BC::Key::ftUnits,p_unitsBox,&EnumComboBoxWidgetAction<FtWorker::FtUnits>::value);
     addAction(p_unitsBox);
 
-    p_resetButton = addAction(QIcon(":/icons/reset.svg"),"Reset",this,[=](){emit resetSignal();});
+    p_resetButton = addAction(QIcon(":/icons/reset.svg"),"Reset",this,[this](){emit resetSignal();});
     p_resetButton->setToolTip("Reset processing settings to last saved values.");
-    p_saveButton = addAction(QIcon(":/icons/save-as.svg"),"Save",this,[=](){emit saveSignal();});
+    p_saveButton = addAction(QIcon(":/icons/save-as.svg"),"Save",this,[this](){emit saveSignal();});
     p_saveButton->setToolTip("Save current processing settings.");
 
     if(!mainWin)

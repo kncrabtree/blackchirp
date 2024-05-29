@@ -56,7 +56,7 @@ void HardwareObject::bcInitInstrument()
     initialize();
     bcTestConnection();
 
-    connect(this,&HardwareObject::hardwareFailure,[=](){
+    connect(this,&HardwareObject::hardwareFailure,this,[this](){
         d_isConnected = false;
         set(BC::Key::HW::connected,false);
     });

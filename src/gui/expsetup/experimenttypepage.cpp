@@ -280,7 +280,7 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
         p_orderBox->addItem(QString(t2.key(i)),
                             static_cast<LifConfig::LifScanOrder>(t2.value(i)));
     p_orderBox->setCurrentIndex(p_orderBox->findData(get(lifOrder,LifConfig::DelayFirst)));
-    registerGetter(lifOrder,std::function<LifConfig::LifScanOrder()>([=](){
+    registerGetter(lifOrder,std::function<LifConfig::LifScanOrder()>([this](){
         return p_orderBox->currentData().value<LifConfig::LifScanOrder>();}
     ));
     ofl->addRow(QString("Scan Order"),p_orderBox);
@@ -291,7 +291,7 @@ ExperimentTypePage::ExperimentTypePage(Experiment *exp, QWidget *parent) :
     for(int i=0; i<num; i++)
         p_completeModeBox->addItem(QString(t3.key(i)),static_cast<LifConfig::LifCompleteMode>(t3.value(i)));
     p_completeModeBox->setCurrentIndex(p_completeModeBox->findData(get(lifCompleteMode,LifConfig::StopWhenComplete)));
-    registerGetter(lifCompleteMode,std::function<LifConfig::LifCompleteMode()>([=](){
+    registerGetter(lifCompleteMode,std::function<LifConfig::LifCompleteMode()>([this](){
        return p_completeModeBox->currentData().value<LifConfig::LifCompleteMode>();
     }));
     ofl->addRow("Complete Mode",p_completeModeBox);

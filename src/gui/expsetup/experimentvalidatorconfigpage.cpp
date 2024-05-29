@@ -44,8 +44,8 @@ and the other to the specific value (e.g., flow1).)000"));
 
     setLayout(vl);
 
-    connect(p_addButton,&QToolButton::clicked,[=](){ valModel->addNewItem(); });
-    connect(p_removeButton,&QToolButton::clicked,[=](){
+    connect(p_addButton,&QToolButton::clicked,[valModel](){ valModel->addNewItem(); });
+    connect(p_removeButton,&QToolButton::clicked,this,[this,valModel](){
         QModelIndexList l = p_validationView->selectionModel()->selectedIndexes();
         if(l.isEmpty())
             return;

@@ -263,7 +263,7 @@ void PulseGenConfig::storeValues()
         storeArrayValue(channel,i,enabled,cc.enabled);
         storeArrayValue(channel,i,role,cc.role);
         storeArrayValue(channel,i,chMode,cc.mode);
-        storeArrayValue(channel,i,sync,cc.syncCh);
+        storeArrayValue(channel,i,syncCh,cc.syncCh);
         storeArrayValue(channel,i,dutyOn,cc.dutyOn);
         storeArrayValue(channel,i,dutyOff,cc.dutyOff);
     }
@@ -288,7 +288,7 @@ void PulseGenConfig::retrieveValues()
                     retrieveArrayValue(channel,i,level,ActiveHigh),
                     retrieveArrayValue(channel,i,role,None),
                     retrieveArrayValue(channel,i,chMode,Normal),
-                    retrieveArrayValue(channel,i,sync,0),
+                    retrieveArrayValue(channel,i,syncCh,0),
                     retrieveArrayValue(channel,i,dutyOn,1),
                     retrieveArrayValue(channel,i,dutyOff,1)
         };

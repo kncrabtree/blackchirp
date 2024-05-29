@@ -80,7 +80,7 @@ HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidge
     rButton->setToolTip("Only possible for array values.");
     connect(rButton,&QPushButton::clicked,this,&HWDialog::remove);
 
-    connect(p_view,&QTreeView::clicked,[=](const QModelIndex &idx){
+    connect(p_view,&QTreeView::clicked,this,[=,this](const QModelIndex &idx){
         auto item = p_model->getItem(idx);
         if(item && item->canAddChildren())
         {

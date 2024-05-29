@@ -47,7 +47,7 @@ PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent)
     p_sysOnOffButton = new QPushButton("Off",this);
     p_sysOnOffButton->setCheckable(true);
     p_sysOnOffButton->setChecked(false);
-    connect(p_sysOnOffButton,&QPushButton::toggled,[=](bool en){
+    connect(p_sysOnOffButton,&QPushButton::toggled,this,[this](bool en){
         emit changeSetting(d_key,-1,PulseGenConfig::PGenEnabledSetting,en);
         if(en)
             p_sysOnOffButton->setText(QString("On"));
@@ -66,7 +66,7 @@ PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent)
     gl->addWidget(new QLabel("Pulse Mode"),0,2);
     gl->itemAtPosition(0,2)->setAlignment(Qt::AlignRight);
     p_sysModeBox = new EnumComboBox<PulseGenConfig::PGenMode>(this);
-    connect(p_sysModeBox,qOverload<int>(&QComboBox::currentIndexChanged),[=](int i){
+    connect(p_sysModeBox,qOverload<int>(&QComboBox::currentIndexChanged),this,[this](int i){
         emit changeSetting(d_key,-1,PulseGenConfig::PGenModeSetting,p_sysModeBox->value(i));
         p_repRateBox->setEnabled(p_sysModeBox->value(i) == PulseGenConfig::Continuous);
     });
@@ -134,7 +134,7 @@ PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent)
             if(item != nullptr)
                 item->setEnabled(false);
         }
-        connect(ch.syncBox,qOverload<int>(&QComboBox::currentIndexChanged),[=](int j){
+        connect(ch.syncBox,qOverload<int>(&QComboBox::currentIndexChanged),this,[this,i,ch](int j){
             if(ps_config->testCircularSync(i,j))
             {
                 QMessageBox::warning(this,"Circular Sync","Cannot set sync channel because of a circular reference (i.e., A triggers B, but B triggers A).",QMessageBox::Ok,QMessageBox::Ok);
@@ -154,7 +154,7 @@ PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent)
         ch.delayBox->setDecimals(3);
         ch.delayBox->setSuffix(QString::fromUtf16(u" µs"));
         pulseConfigBoxLayout->addWidget(ch.delayBox,i+1,col,1,1);
-        connect(ch.delayBox,vc,[=](double val){
+        connect(ch.delayBox,vc,this,[this,i](double val){
             emit changeSetting(d_key,i,PulseGenConfig::DelaySetting,val);
         } );
         col++;
@@ -166,13 +166,13 @@ PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent)
         ch.widthBox->setSingleStep(getArrayValue<double>(BC::Key::PulseWidget::channels,i,
                                                          BC::Key::PulseWidget::widthStep,1.0));
         pulseConfigBoxLayout->addWidget(ch.widthBox,i+1,col,1,1);
-        connect(ch.widthBox,vc,this,[=](double val){
+        connect(ch.widthBox,vc,this,[this,i](double val){
             emit changeSetting(d_key,i,PulseGenConfig::WidthSetting,val);
         });
         col++;
 
         ch.modeBox = new EnumComboBox<PulseGenConfig::ChannelMode>(this);
-        connect(ch.modeBox,qOverload<int>(&QComboBox::currentIndexChanged),[=](int j){
+        connect(ch.modeBox,qOverload<int>(&QComboBox::currentIndexChanged),this,[this,i,ch](int j){
             emit changeSetting(d_key,i,PulseGenConfig::ModeSetting,ch.modeBox->value(j));
         });
         ch.modeBox->setEnabled(false);
@@ -194,7 +194,7 @@ PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent)
             ch.onButton->setEnabled(false);
         }
         pulseConfigBoxLayout->addWidget(ch.onButton,i+1,col,1,1);
-        connect(ch.onButton,&QPushButton::toggled,this,[=](bool en){ emit changeSetting(d_key,i,PulseGenConfig::EnabledSetting,en); } );
+        connect(ch.onButton,&QPushButton::toggled,this,[this,i](bool en){ emit changeSetting(d_key,i,PulseGenConfig::EnabledSetting,en); } );
         connect(ch.onButton,&QPushButton::toggled,this,[=](bool en){
             if(en)
                 ch.onButton->setText(QString("On"));
@@ -206,19 +206,19 @@ PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent)
         ch.cfgButton->setIcon(QIcon(":/icons/configure.png"));
         ch.cfgButton->setIconSize(QSize(12,12));
         pulseConfigBoxLayout->addWidget(ch.cfgButton,i+1,col,1,1);
-        connect(ch.cfgButton,&QToolButton::clicked,[=](){ launchChannelConfig(i); } );
+        connect(ch.cfgButton,&QToolButton::clicked,this,[this,i](){ launchChannelConfig(i); } );
         col++;
         lastFocusWidget = ch.cfgButton;
 
         ch.nameEdit = new QLineEdit(ch.label->text(),this);
         ch.nameEdit->setMaxLength(8);
-        connect(ch.nameEdit,&QLineEdit::editingFinished,[=](){
+        connect(ch.nameEdit,&QLineEdit::editingFinished,this,[this,i,ch](){
             emit changeSetting(d_key,i,PulseGenConfig::NameSetting,ch.nameEdit->text());
         });
         ch.nameEdit->hide();
 
         ch.levelBox = new EnumComboBox<PulseGenConfig::ActiveLevel>(this);
-        connect(ch.levelBox,qOverload<int>(&QComboBox::currentIndexChanged),[=](){
+        connect(ch.levelBox,qOverload<int>(&QComboBox::currentIndexChanged),this,[this,i,ch](){
             emit changeSetting(d_key,i,PulseGenConfig::LevelSetting,ch.levelBox->currentValue());
         });
         ch.levelBox->hide();
@@ -240,7 +240,7 @@ PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent)
         ch.roleBox = new EnumComboBox<PulseGenConfig::Role>(this);
         QMetaEnum rt = QMetaEnum::fromType<PulseGenConfig::Role>();
         ch.roleBox->hide();
-        connect(ch.roleBox,qOverload<int>(&QComboBox::currentIndexChanged),[=](int index) {
+        connect(ch.roleBox,qOverload<int>(&QComboBox::currentIndexChanged),this,[this,i,ch,rt](int index) {
             auto r = ch.roleBox->value(index);
             auto name = QString("Ch%1").arg(i+1);
             if(r == PulseGenConfig::None)
@@ -257,14 +257,14 @@ PulseConfigWidget::PulseConfigWidget(const PulseGenConfig &cfg, QWidget *parent)
 
         ch.dutyOnBox = new QSpinBox(this);
         ch.dutyOnBox->setMinimum(1);
-        connect(ch.dutyOnBox,qOverload<int>(&QSpinBox::valueChanged),[=](int d){
+        connect(ch.dutyOnBox,qOverload<int>(&QSpinBox::valueChanged),this,[this,i](int d){
            emit changeSetting(d_key,i,PulseGenConfig::DutyOnSetting,d);
         });
         ch.dutyOnBox->hide();
 
         ch.dutyOffBox = new QSpinBox(this);
         ch.dutyOffBox->setMinimum(1);
-        connect(ch.dutyOffBox,qOverload<int>(&QSpinBox::valueChanged),[=](int d){
+        connect(ch.dutyOffBox,qOverload<int>(&QSpinBox::valueChanged),this,[this,i](int d){
            emit changeSetting(d_key,i,PulseGenConfig::DutyOffSetting,d);
         });
         ch.dutyOffBox->hide();

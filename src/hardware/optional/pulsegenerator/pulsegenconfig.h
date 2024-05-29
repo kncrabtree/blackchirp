@@ -17,7 +17,7 @@ static const QString role{"Role"};
 static const QString name{"Name"};
 static const QString enabled{"Enabled"};
 static const QString chMode{"Mode"};
-static const QString sync{"SyncChannel"};
+static const QString syncCh{"SyncChannel"};
 static const QString dutyOn{"DutyOn"};
 static const QString dutyOff{"DutyOff"};
 static const QString pGenMode{"PulseGenMode"};

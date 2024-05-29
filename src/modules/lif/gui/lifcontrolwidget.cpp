@@ -90,7 +90,9 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
     connect(p_startAcqButton,&QPushButton::clicked,this,&LifControlWidget::startAcquisition);
     connect(p_stopAcqButton,&QPushButton::clicked,this,&LifControlWidget::stopAcquisition);
 
-    connect(p_procWidget,&LifProcessingWidget::settingChanged,[=](){ p_lifTracePlot->setAllProcSettings(p_procWidget->getSettings());});
+    connect(p_procWidget,&LifProcessingWidget::settingChanged,this,[this](){
+        p_lifTracePlot->setAllProcSettings(p_procWidget->getSettings());
+    });
 
     connect(p_laserWidget,&LifLaserWidget::changePosition,this,&LifControlWidget::changeLaserPosSignal);
     connect(p_laserWidget,&LifLaserWidget::changeFlashlamp,this,&LifControlWidget::changeLaserFlashlampSignal);

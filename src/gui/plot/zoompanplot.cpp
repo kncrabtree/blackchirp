@@ -44,11 +44,11 @@ ZoomPanPlot::ZoomPanPlot(const QString name, QWidget *parent) : QwtPlot(parent),
 
     p_tracker = new CustomTracker(this->canvas());
     p_zoomerLB = new CustomZoomer(QwtPlot::xBottom,QwtPlot::yLeft,this->canvas());
-    connect(p_zoomerLB,&QwtPlotZoomer::zoomed,this,[=](const QRectF &r) {
+    connect(p_zoomerLB,&QwtPlotZoomer::zoomed,this,[this](const QRectF &r) {
         zoom(r,xBottom,yLeft);
     });
     p_zoomerRT = new CustomZoomer(QwtPlot::xTop,QwtPlot::yRight,this->canvas());
-    connect(p_zoomerRT,&QwtPlotZoomer::zoomed,this,[=](const QRectF &r) {
+    connect(p_zoomerRT,&QwtPlotZoomer::zoomed,this,[this](const QRectF &r) {
         zoom(r,xTop,yRight);
     });
 
@@ -1111,7 +1111,7 @@ QMenu *ZoomPanPlot::contextMenu()
         box->setSingleStep(0.005);
         box->setKeyboardTracking(false);
         connect(box,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-                this,[=](double val){ setZoomFactor(t,val); });
+                this,[this,t](double val){ setZoomFactor(t,val); });
 
         auto zlbl = new QLabel(d.name);
         zlbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
@@ -1122,7 +1122,7 @@ QMenu *ZoomPanPlot::contextMenu()
         decBox->setRange(0,9);
         decBox->setValue(p_tracker->axisDecimals(t));
         decBox->setKeyboardTracking(false);
-        connect(decBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,[=](int dec){ setTrackerDecimals(t,dec); });
+        connect(decBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,[this,t](int dec){ setTrackerDecimals(t,dec); });
 
         auto lbl = new QLabel(QString("%1 Decimals").arg(d.name));
         lbl->setAlignment(Qt::AlignRight|Qt::AlignCenter);
@@ -1131,7 +1131,7 @@ QMenu *ZoomPanPlot::contextMenu()
 
         QCheckBox *sciBox = new QCheckBox;
         sciBox->setChecked(p_tracker->axisScientific(t));
-        connect(sciBox,&QCheckBox::toggled,this,[=](bool sci){ setTrackerScientific(t,sci); });
+        connect(sciBox,&QCheckBox::toggled,this,[this,t](bool sci){ setTrackerScientific(t,sci); });
 
         auto lbl2 = new QLabel(QString("%1 Scientific").arg(d.name));
         lbl2->setAlignment(Qt::AlignRight|Qt::AlignCenter);
@@ -1150,7 +1150,7 @@ QMenu *ZoomPanPlot::contextMenu()
 
     auto gridMenu = menu->addMenu(QString("Grid"));
     auto majorColorAct = gridMenu->addAction(QString("Major Color..."));
-    connect(majorColorAct,&QAction::triggered,[=](){
+    connect(majorColorAct,&QAction::triggered,this,[this](){
         auto c = QColorDialog::getColor(get<QColor>(BC::Key::majorGridColor,Qt::white),this,QString("Select major grid color"),QColorDialog::ShowAlphaChannel);
         if(c.isValid())
             set(BC::Key::majorGridColor,c,false);
@@ -1170,7 +1170,7 @@ QMenu *ZoomPanPlot::contextMenu()
     majorPenBox->addItem(QString::fromUtf16(u"-·-·-"),QVariant::fromValue(Qt::DashDotLine));
     majorPenBox->addItem(QString::fromUtf16(u"-··-··"),QVariant::fromValue(Qt::DashDotDotLine));
     majorPenBox->setCurrentIndex(majorPenBox->findData(QVariant::fromValue(get<Qt::PenStyle>(BC::Key::majorGridStyle,Qt::NoPen))));
-    connect(majorPenBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[=](int i){
+    connect(majorPenBox,qOverload<int>(&QComboBox::currentIndexChanged),this,[this,majorPenBox](int i){
         set(BC::Key::majorGridStyle,majorPenBox->itemData(i).toInt());
         configureGridMajorPen();
         replot();
@@ -1192,7 +1192,7 @@ QMenu *ZoomPanPlot::contextMenu()
 
 
     auto minorColorAct = gridMenu->addAction(QString("Minor Color..."));
-    connect(minorColorAct,&QAction::triggered,[=](){
+    connect(minorColorAct,&QAction::triggered,[this](){
         auto c = QColorDialog::getColor(get<QColor>(BC::Key::minorGridColor,Qt::white),this,QString("Select Minor grid color"),QColorDialog::ShowAlphaChannel);
         if(c.isValid())
             set(BC::Key::minorGridColor,c,false);
@@ -1212,7 +1212,7 @@ QMenu *ZoomPanPlot::contextMenu()
     minorPenBox->addItem(QString::fromUtf16(u"-·-·-"),QVariant::fromValue(Qt::DashDotLine));
     minorPenBox->addItem(QString::fromUtf16(u"-··-··"),QVariant::fromValue(Qt::DashDotDotLine));
     minorPenBox->setCurrentIndex(minorPenBox->findData(QVariant::fromValue(get<Qt::PenStyle>(BC::Key::minorGridStyle,Qt::NoPen))));
-    connect(minorPenBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[=](int i){
+    connect(minorPenBox,qOverload<int>(&QComboBox::currentIndexChanged),this,[this,minorPenBox](int i){
         set(BC::Key::minorGridStyle,minorPenBox->itemData(i).toInt());
         configureGridMinorPen();
         replot();
@@ -1250,7 +1250,7 @@ QMenu *ZoomPanPlot::contextMenu()
 
 
             auto colorAct = m->addAction(QString("Color..."));
-            connect(colorAct,&QAction::triggered,this,[=](){ setCurveColor(curve); });
+            connect(colorAct,&QAction::triggered,this,[this,curve](){ setCurveColor(curve); });
 
             auto curveWa = new QWidgetAction(m);
             auto curveWidget = new QWidget(m);
@@ -1261,8 +1261,8 @@ QMenu *ZoomPanPlot::contextMenu()
             thicknessBox->setDecimals(1);
             thicknessBox->setSingleStep(0.5);
             thicknessBox->setValue(curve->pen().widthF());
-            connect(thicknessBox,static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
-                    [=](double v){ setCurveLineThickness(curve, v); });
+            connect(thicknessBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,
+                    [this,curve](double v){ setCurveLineThickness(curve, v); });
             cfl->addRow(QString("Line Width"),thicknessBox);
 
             auto lineStyleBox = new QComboBox;
@@ -1273,8 +1273,10 @@ QMenu *ZoomPanPlot::contextMenu()
             lineStyleBox->addItem(QString::fromUtf16(u"-·-·-"),QVariant::fromValue(Qt::DashDotLine));
             lineStyleBox->addItem(QString::fromUtf16(u"-··-··"),QVariant::fromValue(Qt::DashDotDotLine));
             lineStyleBox->setCurrentIndex(lineStyleBox->findData(QVariant::fromValue(curve->pen().style())));
-            connect(lineStyleBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-                    [=](int i){ setCurveLineStyle(curve,lineStyleBox->itemData(i).value<Qt::PenStyle>()); });
+            connect(lineStyleBox,qOverload<int>(&QComboBox::currentIndexChanged),this,
+                    [this,curve,lineStyleBox](int i){
+                setCurveLineStyle(curve,lineStyleBox->itemData(i).value<Qt::PenStyle>());
+            });
             cfl->addRow(QString("Line Style"),lineStyleBox);
 
             auto markerBox = new QComboBox;
@@ -1294,20 +1296,24 @@ QMenu *ZoomPanPlot::contextMenu()
             markerBox->addItem(QString::fromUtf16(u"✶"),QVariant::fromValue(QwtSymbol::Star2));
             markerBox->addItem(QString::fromUtf16(u"⬢"),QVariant::fromValue(QwtSymbol::Hexagon));
             markerBox->setCurrentIndex(markerBox->findData(QVariant::fromValue(curve->symbol()->style())));
-            connect(markerBox,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-                    [=](int i){ setCurveMarker(curve,markerBox->itemData(i).value<QwtSymbol::Style>()); });
+            connect(markerBox,qOverload<int>(&QComboBox::currentIndexChanged),this,
+                    [this,curve,markerBox](int i){
+                setCurveMarker(curve,markerBox->itemData(i).value<QwtSymbol::Style>());
+            });
             cfl->addRow(QString("Marker"),markerBox);
 
             auto markerSizeBox = new QSpinBox;
             markerSizeBox->setRange(1,20);
             markerSizeBox->setValue(curve->symbol()->size().width());
-            connect(markerSizeBox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-                    [=](int s){ setCurveMarkerSize(curve,s); });
+            connect(markerSizeBox,qOverload<int>(&QSpinBox::valueChanged),this,
+                    [this,curve,markerSizeBox](int s){ setCurveMarkerSize(curve,s); });
             cfl->addRow(QString("Marker Size"),markerSizeBox);
 
             auto visBox = new QCheckBox;
             visBox->setChecked(curve->isVisible());
-            connect(visBox,&QCheckBox::toggled,[=](bool v){ setCurveVisible(curve,v); });
+            connect(visBox,&QCheckBox::toggled,this,[this,curve](bool v){
+                setCurveVisible(curve,v);
+            });
             cfl->addRow(QString("Visible"),visBox);
 
             for(int i=0; i<cfl->rowCount(); ++i)
@@ -1336,13 +1342,17 @@ QMenu *ZoomPanPlot::contextMenu()
             {
                 lAction->setEnabled(false);
                 lAction->setChecked(true);
-                connect(rAction,&QAction::triggered,this,[=](){ setCurveAxisY(curve,QwtPlot::yRight); });
+                connect(rAction,&QAction::triggered,this,[this,curve](){
+                    setCurveAxisY(curve,QwtPlot::yRight);
+                });
             }
             else
             {
                 rAction->setEnabled(false);
                 rAction->setChecked(true);
-                connect(lAction,&QAction::triggered,this,[=](){ setCurveAxisY(curve,QwtPlot::yLeft); });
+                connect(lAction,&QAction::triggered,this,[this,curve](){
+                    setCurveAxisY(curve,QwtPlot::yLeft);
+                });
             }
             m->addActions(axisGroup->actions());
 
@@ -1363,7 +1373,9 @@ QMenu *ZoomPanPlot::contextMenu()
                     }
                     else
                     {
-                        connect(a,&QAction::triggered,this, [=](){ emit curveMoveRequested(c,j); });
+                        connect(a,&QAction::triggered,this,[this,c,j](){
+                            emit curveMoveRequested(c,j);
+                        });
                         a->setChecked(false);
                     }
                     moveMenu->addActions(moveGroup->actions());

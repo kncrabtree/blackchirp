@@ -267,16 +267,16 @@ void LifSpectrogramPlot::buildContextMenu(QMouseEvent *me)
     QPoint pos = me->pos();
 
     QAction *delayCursorAction = menu->addAction(QString("Move delay cursor here"));
-    connect(delayCursorAction,&QAction::triggered,[=](){ moveDelayCursor(pos); });
+    connect(delayCursorAction,&QAction::triggered,this,[this,pos](){ moveDelayCursor(pos); });
 
     QAction *freqCursorAction = menu->addAction(QString("Move frequency cursor here"));
-    connect(freqCursorAction,&QAction::triggered,[=](){ moveLaserCursor(pos); });
+    connect(freqCursorAction,&QAction::triggered,this,[this,pos](){ moveLaserCursor(pos); });
 
     QAction *bothCursorAction = menu->addAction(QString("Move both cursors here"));
-    connect(bothCursorAction,&QAction::triggered,[=](){ moveDelayCursor(pos); moveLaserCursor(pos); });
+    connect(bothCursorAction,&QAction::triggered,this,[this,pos](){ moveDelayCursor(pos); moveLaserCursor(pos); });
 
     auto liveAction = menu->addAction(QString("Follow live data"));
-    connect(liveAction,&QAction::triggered,[=](){
+    connect(liveAction,&QAction::triggered,[this](){
         d_live = true;
         moveDelayCursor(d_liveDelayIndex);
         moveLaserCursor(d_liveLaserIndex);

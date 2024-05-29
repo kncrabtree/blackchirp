@@ -703,7 +703,7 @@ void FtmwViewWidget::launchPeakFinder()
             p_pfw->newFt(ft);
     });
     connect(p_pfw,&PeakFindWidget::peakList,ui->mainFtPlot,&FtPlot::newPeakList);
-    connect(p_pfw,&PeakFindWidget::destroyed,[=](){
+    connect(p_pfw,&PeakFindWidget::destroyed,this,[this](){
         p_pfw = nullptr;
     });
 

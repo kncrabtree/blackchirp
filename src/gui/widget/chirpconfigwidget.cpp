@@ -77,8 +77,8 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     connect(ui->addEmptyButton,&QPushButton::clicked,this,&ChirpConfigWidget::addEmptySegment);
     connect(ui->insertButton,&QPushButton::clicked,this,&ChirpConfigWidget::insertSegment);
     connect(ui->insertEmptyButton,&QPushButton::clicked,this,&ChirpConfigWidget::insertEmptySegment);
-    connect(ui->moveUpButton,&QPushButton::clicked,[=](){ moveSegments(-1); });
-    connect(ui->moveDownButton,&QPushButton::clicked,[=](){ moveSegments(1); });
+    connect(ui->moveUpButton,&QPushButton::clicked,this,[this](){ moveSegments(-1); });
+    connect(ui->moveDownButton,&QPushButton::clicked,this,[this](){ moveSegments(1); });
     connect(ui->removeButton,&QPushButton::clicked,this,&ChirpConfigWidget::removeSegments);
     connect(ui->clearButton,&QPushButton::clicked,this,&ChirpConfigWidget::clear);
 
@@ -91,10 +91,10 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     connect(ui->chirpsSpinBox,vc,p_ctm,&ChirpTableModel::setNumChirps);
     connect(ui->chirpsSpinBox,vc,ui->currentChirpBox,&QSpinBox::setMaximum);
     connect(ui->chirpsSpinBox,vc,this,&ChirpConfigWidget::updateChirpPlot);
-    connect(ui->chirpsSpinBox,vc,[=](int n){ui->chirpIntervalDoubleSpinBox->setEnabled(n>1);});
+    connect(ui->chirpsSpinBox,vc,[this](int n){ui->chirpIntervalDoubleSpinBox->setEnabled(n>1);});
     connect(ui->chirpsSpinBox,vc,this,&ChirpConfigWidget::setButtonStates);
     connect(ui->chirpIntervalDoubleSpinBox,dvc,this,&ChirpConfigWidget::updateChirpPlot);
-    connect(ui->currentChirpBox,vc,[=](int val){ p_ctm->setCurrentChirp(val-1); });
+    connect(ui->currentChirpBox,vc,[this](int val){ p_ctm->setCurrentChirp(val-1); });
     connect(ui->applyToAllBox,&QCheckBox::toggled,[this](bool en){p_ctm->d_allIdentical = en;});
 
     ui->chirpTable->setItemDelegate(new ChirpDoubleSpinBoxDelegate);

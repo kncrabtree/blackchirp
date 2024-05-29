@@ -11,7 +11,7 @@ BatchSequence::BatchSequence(std::shared_ptr<Experiment> e, int numExpts, int in
 
     p_intervalTimer = new QTimer(this);
     p_intervalTimer->setSingleShot(true);
-    connect(p_intervalTimer,&QTimer::timeout,this,[=](){
+    connect(p_intervalTimer,&QTimer::timeout,this,[this](){
         d_waiting = false;
         ps_CurrentExp = std::make_shared<Experiment>(*pu_expTemplate.get());
         emit beginExperiment();

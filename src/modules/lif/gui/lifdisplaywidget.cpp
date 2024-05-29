@@ -34,7 +34,9 @@ LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
     p_lifTracePlot = new LifTracePlot(this);
     p_spectrogramPlot = new LifSpectrogramPlot(this);
     p_procWidget = new LifProcessingWidget(false,this);
-    connect(p_procWidget,&LifProcessingWidget::settingChanged,[=](){ p_lifTracePlot->setAllProcSettings(p_procWidget->getSettings());});
+    connect(p_procWidget,&LifProcessingWidget::settingChanged,this,[this](){
+        p_lifTracePlot->setAllProcSettings(p_procWidget->getSettings());
+    });
     connect(p_procWidget,&LifProcessingWidget::reprocessSignal,this,&LifDisplayWidget::reprocess);
     connect(p_procWidget,&LifProcessingWidget::resetSignal,this,&LifDisplayWidget::resetProc);
     connect(p_procWidget,&LifProcessingWidget::saveSignal,this,&LifDisplayWidget::saveProc);
@@ -52,7 +54,7 @@ LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
     p_refreshBox->setValue(get(BC::Key::LifDW::refresh,500));
     registerGetter(BC::Key::LifDW::refresh,p_refreshBox,&QSpinBox::value);
     p_refreshBox->setSuffix(" ms");
-    connect(p_refreshBox,qOverload<int>(&QSpinBox::valueChanged),this,[=](int v){
+    connect(p_refreshBox,qOverload<int>(&QSpinBox::valueChanged),this,[this](int v){
         if(d_refreshTimerId >= 0)
         {
             killTimer(d_refreshTimerId);

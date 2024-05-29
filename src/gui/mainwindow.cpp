@@ -109,7 +109,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this,&MainWindow::logMessage,p_lh,&LogHandler::logMessage);
     connect(p_lh,&LogHandler::sendLogMessage,ui->logTextEdit,&QTextEdit::append);
     connect(p_lh,&LogHandler::iconUpdate,this,&MainWindow::setLogIcon);
-    connect(ui->mainTabWidget,&QTabWidget::currentChanged,[=](int i) {
+    connect(ui->mainTabWidget,&QTabWidget::currentChanged,[this](int i) {
         if(i == ui->mainTabWidget->indexOf(ui->logTab))
         {
             setLogIcon(LogHandler::Normal);
@@ -120,7 +120,7 @@ MainWindow::MainWindow(QWidget *parent) :
             }
         }
     });
-    connect(p_lh,&LogHandler::sendLogMessage,this,[=](){
+    connect(p_lh,&LogHandler::sendLogMessage,this,[this](){
         if(ui->mainTabWidget->currentWidget() != ui->logTab)
         {
             d_logCount++;
@@ -912,7 +912,7 @@ void MainWindow::viewExperiment()
     QToolButton *browseButton = new QToolButton(&d);
     browseButton->setIcon(QIcon(QString(":/icons/view.png")));
 
-    connect(browseButton,&QToolButton::clicked,[=](){
+    connect(browseButton,&QToolButton::clicked,this,[this,pathEdit](){
         QString path = QFileDialog::getExistingDirectory(this,QString("Select experiment directory"),QString("~"));
         if(!path.isEmpty())
             pathEdit->setText(path);
@@ -1024,7 +1024,7 @@ HWDialog *MainWindow::createHWDialog(const QString key, QWidget *controlWidget)
     auto out = new HWDialog(key,p_hwm->getForbiddenKeys(key),controlWidget);
     d_openDialogs.insert({key,out});
     connect(out,&HWDialog::accepted,[this,key,out](){
-        QMetaObject::invokeMethod(p_hwm,[=](){ p_hwm->updateObjectSettings(key); });
+        QMetaObject::invokeMethod(p_hwm,[this,key](){ p_hwm->updateObjectSettings(key); });
         auto n = out->getHwName();
         auto act = ui->menuHardware->findChild<QAction*>(Ui::actionStr+key,Qt::FindDirectChildrenOnly);
         if(act)

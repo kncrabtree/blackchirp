@@ -9,8 +9,8 @@ BatchSequenceDialog::BatchSequenceDialog(QWidget *parent) :
     ui->setupUi(this);
 
     connect(ui->cancelButton,&QPushButton::clicked,this,&BatchSequenceDialog::reject);
-    connect(ui->quickButton,&QPushButton::clicked,this,[=](){ done(quickCode); });
-    connect(ui->configureButton,&QPushButton::clicked,this,[=](){ done(configureCode); });
+    connect(ui->quickButton,&QPushButton::clicked,this,[this](){ done(quickCode); });
+    connect(ui->configureButton,&QPushButton::clicked,this,[this](){ done(configureCode); });
 
     ui->numberOfExperimentsSpinBox->setValue(get<int>(batchExperiments,1));
     ui->timeBetweenExperimentsSpinBox->setValue(get<int>(batchInterval,300));
