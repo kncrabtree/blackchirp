@@ -429,7 +429,7 @@ void ZoomPanPlot::exportCurve(BlackchirpPlotCurveBase *curve)
 void ZoomPanPlot::setCurveColor(BlackchirpPlotCurveBase *curve)
 {
     auto c = QColorDialog::getColor(curve->pen().color(),this,
-                           QString("Choose a color for the ")+curve->title().text()+QString(" curve"));
+                           QString("Choose a color for the ")+curve->title().text()+QString(" curve"),QColorDialog::ShowAlphaChannel);
     if(c.isValid())
         curve->setColor(c);
     replot();
@@ -1151,7 +1151,7 @@ QMenu *ZoomPanPlot::contextMenu()
     auto gridMenu = menu->addMenu(QString("Grid"));
     auto majorColorAct = gridMenu->addAction(QString("Major Color..."));
     connect(majorColorAct,&QAction::triggered,[=](){
-        auto c = QColorDialog::getColor(get<QColor>(BC::Key::majorGridColor,Qt::white),this,QString("Select major grid color"));
+        auto c = QColorDialog::getColor(get<QColor>(BC::Key::majorGridColor,Qt::white),this,QString("Select major grid color"),QColorDialog::ShowAlphaChannel);
         if(c.isValid())
             set(BC::Key::majorGridColor,c,false);
         configureGridMajorPen();
@@ -1193,7 +1193,7 @@ QMenu *ZoomPanPlot::contextMenu()
 
     auto minorColorAct = gridMenu->addAction(QString("Minor Color..."));
     connect(minorColorAct,&QAction::triggered,[=](){
-        auto c = QColorDialog::getColor(get<QColor>(BC::Key::minorGridColor,Qt::white),this,QString("Select Minor grid color"));
+        auto c = QColorDialog::getColor(get<QColor>(BC::Key::minorGridColor,Qt::white),this,QString("Select Minor grid color"),QColorDialog::ShowAlphaChannel);
         if(c.isValid())
             set(BC::Key::minorGridColor,c,false);
         configureGridMinorPen();
