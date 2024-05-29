@@ -122,10 +122,6 @@ void LifTracePlot::processTrace(const LifTrace t)
     {
         d_currentTrace.rollAvg(t,d_numAverages);
         setTrace(d_currentTrace);
-
-        ///TODO: Remove this after fixing rollAvg.
-        if(d_currentTrace.shots() >= d_numAverages)
-            emit acqComplete();
     }
 
 }

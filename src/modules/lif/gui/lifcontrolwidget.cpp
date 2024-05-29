@@ -89,7 +89,6 @@ LifControlWidget::LifControlWidget(QWidget *parent) :
 
     connect(p_startAcqButton,&QPushButton::clicked,this,&LifControlWidget::startAcquisition);
     connect(p_stopAcqButton,&QPushButton::clicked,this,&LifControlWidget::stopAcquisition);
-    connect(p_lifTracePlot,&LifTracePlot::acqComplete,this,&LifControlWidget::stopAcquisition);
 
     connect(p_procWidget,&LifProcessingWidget::settingChanged,[=](){ p_lifTracePlot->setAllProcSettings(p_procWidget->getSettings());});
 
@@ -149,7 +148,8 @@ void LifControlWidget::newWaveform(const QVector<qint8> b)
 {
     if(d_acquiring)
     {
-        LifTrace l(d_cfg.scopeConfig(),b,0,0);
+        //set bitShift to 8 to provide extra bits for rolling average
+        LifTrace l(d_cfg.scopeConfig(),b,0,0,8);
         p_lifTracePlot->processTrace(l);
     }
 }
