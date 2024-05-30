@@ -17,6 +17,7 @@
 #include <QMessageBox>
 #include <QtConcurrent/QtConcurrent>
 #include <QMutexLocker>
+#include <QActionGroup>
 
 #include <qwt6/qwt_scale_div.h>
 #include <qwt6/qwt_plot_marker.h>

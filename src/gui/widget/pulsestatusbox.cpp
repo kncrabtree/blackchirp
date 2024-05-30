@@ -37,7 +37,6 @@ PulseStatusBox::PulseStatusBox(QString key, QWidget *parent) :
     p_enLed = new Led(this);
     gl->addWidget(p_enLed,r,7);
 
-    gl->setMargin(3);
     gl->setContentsMargins(3,3,3,3);
     gl->setSpacing(3);
 

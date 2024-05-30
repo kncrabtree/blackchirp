@@ -86,7 +86,8 @@ void PeakFindWidget::findPeaks()
     if(!d_busy)
     {
         d_busy = true;
-        QtConcurrent::run([this](){p_pf->findPeaks(d_currentFt,d_minFreq,d_maxFreq,d_snr);});
+        auto ret = QtConcurrent::run([this](){p_pf->findPeaks(d_currentFt,d_minFreq,d_maxFreq,d_snr);});
+        Q_UNUSED(ret)
         d_waiting = false;
     }
     else

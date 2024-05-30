@@ -3,7 +3,7 @@
 
 #include <QWidget>
 #include <QtCore/QVariant>
-#include <QtWidgets/QAction>
+#include <QAction>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QHBoxLayout>
@@ -182,7 +182,7 @@ public:
         exptLabel->setGeometry(QRect(9, 9, 53, 16));
         QFont font;
         font.setBold(true);
-        font.setWeight(75);
+        // font.setWeight(QFont::Bold);
         exptLabel->setFont(font);
         exptLabel->setAlignment(Qt::AlignCenter);
         splitter = new QSplitter(FtmwViewWidget);

@@ -25,7 +25,6 @@ GasControlWidget::GasControlWidget(const FlowConfig &cfg, QWidget *parent) :
     gasControlBoxLayout->itemAtPosition(0,0)->widget()->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Fixed);
     gasControlBoxLayout->itemAtPosition(0,1)->widget()->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Fixed);
     gasControlBoxLayout->itemAtPosition(0,2)->widget()->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Fixed);
-    gasControlBoxLayout->setMargin(3);
     gasControlBoxLayout->setSpacing(3);
 
 

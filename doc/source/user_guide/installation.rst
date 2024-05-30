@@ -9,10 +9,10 @@ If the program does not behave as expected on other platforms, please `raise an 
 
 The prerequisites for compiling Blackchirp are:
 
-- Compiler with C++20 support (e.g., gcc 11+)
-- Qt 5.15+ and < 6 (Qt 6.2 may work, but is untested. Qt 6.0 and 6.1 are not compatible with Blackchirp)
-- `qwt`_ 6.1+
-- `Boost C++ Libraries <https://www.boost.org/>` (preprocessor library only)
+- Compiler with C++2b support (e.g., gcc 11+, MSVC 19.28+, clang 10+)
+- `Qt 5.15+ or 6.7+ <https://www.qt.io/download-qt-installer-oss>`_. **Blackchirp will drop support for Qt5 in a future release; it is strongly recommended that you build against Qt 6.7+!**
+- `qwt`_ 6.2+
+- `Boost C++ Libraries <https://www.boost.org/>`_ (preprocessor library only)
 - `Eigen template library`_ v3+
 - `GNU Scientific Library`_ v2.1+
 - (optional) `CUDA`_ v9+ with capable GPU

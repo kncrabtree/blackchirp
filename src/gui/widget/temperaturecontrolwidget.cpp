@@ -20,7 +20,6 @@ TemperatureControlWidget::TemperatureControlWidget(const TemperatureControllerCo
     gl->setColumnStretch(0,0);
     gl->setColumnStretch(1,1);
     gl->setColumnStretch(2,0);
-    gl->setMargin(3);
     gl->setSpacing(3);
 
     auto numChannels = cfg.numChannels();

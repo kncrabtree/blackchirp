@@ -4,7 +4,7 @@
 
 #include <QtCore/QVariant>
 #include <QtGui/QIcon>
-#include <QtWidgets/QAction>
+#include <QAction>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QFormLayout>
@@ -507,10 +507,7 @@ public:
         mainTabWidget->setCurrentIndex(0);
 
         for(int i=0; i<mainTabWidget->count(); i++)
-        {
             mainTabWidget->widget(i)->layout()->setContentsMargins(0,0,0,0);
-            mainTabWidget->widget(i)->layout()->setMargin(0);
-        }
 
 
         QMetaObject::connectSlotsByName(MainWindow);

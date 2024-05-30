@@ -15,7 +15,6 @@ using namespace BC::Key::Flow;
 GasFlowDisplayBox::GasFlowDisplayBox(const QString key, QWidget *parent) : HardwareStatusBox(key,parent)
 {
     QGridLayout *gl = new QGridLayout(this);
-    gl->setMargin(3);
     gl->setSpacing(3);
     gl->setContentsMargins(3,3,3,3);
 
