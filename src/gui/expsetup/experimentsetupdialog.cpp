@@ -144,7 +144,7 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
     valItem->setData(0,Qt::UserRole,k);
 
 
-    connect(sp,&ExperimentTypePage::typeChanged,[&](){
+    connect(sp,&ExperimentTypePage::typeChanged,[=,this](){
         sp->apply();
         bool f = sp->ftmwEnabled();
         auto t = sp->getFtmwType();

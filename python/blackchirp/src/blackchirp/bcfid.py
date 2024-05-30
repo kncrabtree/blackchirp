@@ -129,7 +129,7 @@ class BCFid:
             1D numpy array of molecular frequencies, in MHz
 
         """
-        if self.fidparams["sideband"] == 1:
+        if (self.fidparams["sideband"] == 1) or ("Lower" in self.fidparams["sideband"]):
             return self.fidparams.probefreq - freqMHz
         else:
             return self.fidparams.probefreq + freqMHz
@@ -238,23 +238,23 @@ class BCFid:
 
         if winf is None:
             try:
-                wf = int(self.proc["FidWindowFunction"])
+                wf = self.proc["FidWindowFunction"]
             except KeyError:
                 wf = 0
 
-            if wf == 0:
+            if (wf == "0") or ("None" in wf):
                 winf = "boxcar"
-            if wf == 1:
+            if (wf == 1) or ("Bartlett" in wf):
                 winf = "bartlett"
-            elif wf == 2:
+            elif (wf == 2) or ("Blackman" in wf):
                 winf = "blackman"
-            elif wf == 3:
+            elif (wf == 3) or ("BlackmanHarris" in wf):
                 winf = "blackmanharris"
-            elif wf == 4:
+            elif (wf == 4) or ("Hamming" in wf):
                 winf = "hamming"
-            elif wf == 5:
+            elif (wf == 5) or ("Hanning" in wf):
                 winf = "hann"
-            elif wf == 6:
+            elif (wf == 6) or ("KaiserBessel" in wf):
                 winf = ("kaiser", 14.0)
 
         fid_data = self.data[start:end, :] * (

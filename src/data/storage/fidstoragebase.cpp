@@ -110,7 +110,7 @@ void FidStorageBase::saveFidList(const FidList l, int i)
     {
         auto &f = d_templateList.at(idx);
         BlackchirpCSV::writeLine(txt,{idx,f.spacing(),
-                                      f.probeFreq(),f.vMult(),f.shots(),f.sideband(),l.constFirst().size()});
+                                      f.probeFreq(),f.vMult(),f.shots(),QVariant::fromValue(f.sideband()),l.constFirst().size()});
     }
     QMutexLocker lock(pu_baseMutex.get());
     bool success = hdr.commit();
@@ -284,7 +284,7 @@ void FidStorageBase::writeProcessingSettings(const FtWorker::FidProcessingSettin
     m.emplace(rdc,c.removeDC);
     m.emplace(units,c.units);
     m.emplace(autoscaleIgnore,c.autoScaleIgnoreMHz);
-    m.emplace(winf,c.windowFunction);
+    m.emplace(winf,QVariant::fromValue(c.windowFunction));
 
     writeMetadata(m,BC::CSV::fidDir);
 }

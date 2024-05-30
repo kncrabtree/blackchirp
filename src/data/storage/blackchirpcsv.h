@@ -131,7 +131,7 @@ public:
 
     static bool writeHeader(QIODevice &device, const std::multimap<QString,std::tuple<QString,QString,QString,QString,QString>> header);
 
-    static void writeLine(QTextStream &t, const QVariantList l);
+    static void writeLine(QTextStream &t, const std::vector<QVariant> l);
 
     static QString formatInt64(qint64 n);
     static void writeFidList(QIODevice &device, const FidList l);

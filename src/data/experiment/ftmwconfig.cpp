@@ -531,5 +531,5 @@ QString FtmwConfig::objectiveKey() const
 
 QVariant FtmwConfig::objectiveData() const
 {
-    return d_type;
+    return QVariant::fromValue(d_type);
 }

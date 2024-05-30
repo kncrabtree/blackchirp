@@ -280,9 +280,9 @@ bool RfConfig::writeClockFile(int num) const
             {
                 BlackchirpCSV::writeLine(t,{
                                   i,
-                                  it.key(),
+                                  QVariant::fromValue(it.key()),
                                   it.value().desiredFreqMHz,
-                                  it.value().op,
+                                  QVariant::fromValue(it.value().op),
                                   QVariant(it.value().factor),
                                   it.value().hwKey,
                                   it.value().output

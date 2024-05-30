@@ -14,6 +14,7 @@
 
 #include <QApplication>
 #include <QFile>
+#include <QSaveFile>
 #include <QDir>
 #include <QTextStream>
 
@@ -545,7 +546,7 @@ bool Experiment::saveHardware()
 bool Experiment::saveHeader()
 {
     QDir d(BlackchirpCSV::exptDir(d_number));
-    QFile hdr(d.absoluteFilePath(BC::CSV::headerFile));
+    QSaveFile hdr(d.absoluteFilePath(BC::CSV::headerFile));
     if(!hdr.open(QIODevice::WriteOnly|QIODevice::Text))
     {
         d_errorString = QString("Could not open the file %1 for writing.")
@@ -553,7 +554,8 @@ bool Experiment::saveHeader()
         return false;
     }
 
-    return BlackchirpCSV::writeHeader(hdr,getStrings());
+    BlackchirpCSV::writeHeader(hdr,getStrings());
+    return hdr.commit();
 }
 
 bool Experiment::saveChirpFile() const

@@ -18,7 +18,7 @@
 #include <qwt6/qwt_matrix_raster_data.h>
 
 LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
-    QWidget(parent)
+    QWidget(parent), SettingsStorage(BC::Key::LifDW::lifDwKey)
 {
 
     SettingsStorage s(BC::Key::LifLaser::key,SettingsStorage::Hardware);

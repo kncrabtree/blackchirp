@@ -11,6 +11,7 @@
 #include <QLocalServer>
 #include <QLocalSocket>
 #include <QProcess>
+#include <QTextCodec>
 
 #include <gsl/gsl_errno.h>
 
@@ -25,6 +26,7 @@ int main(int argc, char *argv[])
 #endif
 
     QApplication a(argc, argv);
+    QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
 
     const QString appName = QString("Blackchirp");
 
