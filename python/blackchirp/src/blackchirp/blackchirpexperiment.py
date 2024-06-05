@@ -122,7 +122,10 @@ class BCExperiment:
             l = v.readline()
             self._sep = l.strip()
         self.version = pd.read_csv(
-            os.path.join(self.path, "version.csv"), sep=self._sep, header=1, keep_default_na=False
+            os.path.join(self.path, "version.csv"),
+            sep=self._sep,
+            header=1,
+            keep_default_na=False,
         )
 
         self.header = pd.read_csv(
@@ -137,7 +140,7 @@ class BCExperiment:
                 "Value": str,
                 "Units": str,
             },
-            keep_default_na=False
+            keep_default_na=False,
         )
         self.num = int(
             self.header.query(
@@ -146,28 +149,46 @@ class BCExperiment:
         )
 
         self.objectives = pd.read_csv(
-            os.path.join(self.path, "objectives.csv"), sep=self._sep, header=0, keep_default_na=False
+            os.path.join(self.path, "objectives.csv"),
+            sep=self._sep,
+            header=0,
+            keep_default_na=False,
         )
         self.log = pd.read_csv(
-            os.path.join(self.path, "log.csv"), sep=self._sep, header=0, keep_default_na=False
+            os.path.join(self.path, "log.csv"),
+            sep=self._sep,
+            header=0,
+            keep_default_na=False,
         )
         self.hardware = pd.read_csv(
-            os.path.join(self.path, "hardware.csv"), sep=self._sep, header=0, keep_default_na=False
+            os.path.join(self.path, "hardware.csv"),
+            sep=self._sep,
+            header=0,
+            keep_default_na=False,
         )
         self.clocks = pd.read_csv(
-            os.path.join(self.path, "clocks.csv"), sep=self._sep, header=0, keep_default_na=False
+            os.path.join(self.path, "clocks.csv"),
+            sep=self._sep,
+            header=0,
+            keep_default_na=False,
         )
 
         try:
             self.auxdata = pd.read_csv(
-                os.path.join(self.path, "auxdata.csv"), sep=self._sep, header=0, keep_default_na=False
+                os.path.join(self.path, "auxdata.csv"),
+                sep=self._sep,
+                header=0,
+                keep_default_na=False,
             )
         except FileNotFoundError:
             pass
 
         try:
             self.chirps = pd.read_csv(
-                os.path.join(self.path, "chirps.csv"), sep=self._sep, header=0, keep_default_na=False
+                os.path.join(self.path, "chirps.csv"),
+                sep=self._sep,
+                header=0,
+                keep_default_na=False,
             )
         except FileNotFoundError:
             pass

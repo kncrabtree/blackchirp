@@ -9,12 +9,15 @@ class BCLIF:
         self.path = path
         self._sep = sep
         self.lifparams = pd.read_csv(
-            os.path.join(self.path, "lif/lifparams.csv"), sep=self._sep, header=0, keep_default_na=False
+            os.path.join(self.path, "lif/lifparams.csv"),
+            sep=self._sep,
+            header=0,
+            keep_default_na=False,
         )
         self.proc = pd.read_csv(
             os.path.join(self.path, "lif/processing.csv"),
             sep=self._sep,
             header=0,
             index_col=0,
-            keep_default_na=False
+            keep_default_na=False,
         )
