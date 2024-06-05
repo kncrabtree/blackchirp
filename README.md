@@ -24,22 +24,33 @@ pip install blackchirp
 - [Documentation Home](https://blackchirp.readthedocs.io/en/dev-1.0/python.html)
 - [Example Notebooks](https://blackchirp.readthedocs.io/en/dev-1.0/python/example.html)
 
-## Contributing
-
-To contribute, create a fork of the development branch to your own github repository, and start a new branch for your work. When complete, ensure your branch is up-to-date with the development branch and submit a pull request. It is strongly recommended to discuss your contribution in the  [Discord Server](https://discord.gg/88CkbAKUZY) and to create a Github issue describing the scope of your contribution.
-
-Code guidelines:
-
-- C++ classes, structs, and enums have upper-case names, variables and functions have lower-case names.
-- C++ member variables are prefixed with ``d_`` for value types, ``p_`` for pointer types, ``pu_`` for ``std::unique_ptr`` types, and ``ps_`` for ``std::shared_ptr`` types.
-- C++ Indentation is with spaces only, 4 spaces per indent. Use of the Qt code style available in Qt Creator is strongly recommended.
-- Prefer the use of C++ data structures from the standard library over Qt structures. The exception is Qt implicitly shared containers, especially when interacting with signal/slot queued connections.
-- Keys used in C++ HeaderStorage and SettingsStorage contexts should be statically declared and appropriately namespaced, not entered as string literals in the code.
-- Python code is formatted with [``black``](https://github.com/psf/black) and must pass [``pylint -E``](https://pylint.org/).
-- Docstrings should be written in [Google style](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html).
-- Example Jupyer notebooks must be fully executed in order to render properly in the documentation.
 
 ## What's New
+
+### June 5 2024
+
+General updates:
+
+- Blackchirp has now been tested with Qt 6.7, and currently compiles against either Qt 5.12+ or Qt 6.7. **Users are strongly recommended to switch to Qt6 as soom as possible; Qt5 support will be dropped in a future release.**
+- Blackchirp now compiles with the ``c++_latest`` QMAKE flag by default, meaning that it is built with more modern C++ language support. At present, only C++20 is required, so users can add ``CONFIG -= c++latest`` and ``CONFIG += c++20`` to their ``config.pri`` file if their compiler does not support the most recent C++ standard (currently c++2b).
+- Currently no new features are planned before the v1.0.0 release, which is scheduled for next week. Only bugfixes and documentation updates will be implemented between now and then.
+
+New features:
+
+- Added Berkeley Nucleonics BNC 577 series pulse generators.
+- Plot items may now have transparency.
+- Enum names are now written to csv files as strings instead of integers.
+- All output files are set to UTF-8 encoding.
+- LIF display widget now uses timed updates similar to the CP-FTMW display.
+- When loading experiments from disk, the experiment number is no longer required when providing the full path.
+- Updates to developer documentation for some core classes.
+
+Bugfixes:
+
+- Fixed a bug parsing the response to the sync channel query for the Quantum Composers 9214 pulse generator, which included an extra character.
+- Fixed the display of the number of shots in a double sideband deconvolution.
+- Fixed a bug in the LIF control widget where the rolling average algorithm lost precision once the target number of shots was reached.
+- Prevented pandas from interpreting the string "None" as NaN for enum types.
 
 ### May 17 2024
 
