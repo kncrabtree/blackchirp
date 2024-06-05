@@ -66,6 +66,7 @@ class BCFTMW:
             sep=self._sep,
             header=0,
             index_col=0,
+            keep_default_na=False
         )
         self.proc = {}
         try:
@@ -74,6 +75,7 @@ class BCFTMW:
                 sep=self._sep,
                 header=0,
                 index_col=0,
+                keep_default_na=False
             )
             for r in pdf.itertuples():
                 self.proc[r[0]] = r[1]

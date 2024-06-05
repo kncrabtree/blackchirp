@@ -47,7 +47,7 @@ class BCFid:
         self.shots = self.fidparams.shots
 
         d = pd.read_csv(
-            os.path.join(path, f"fid/{num}.csv"), sep=sep, header=0, dtype="str"
+            os.path.join(path, f"fid/{num}.csv"), sep=sep, header=0, dtype="str", keep_default_na=False
         )
         ic = np.frompyfunc(int, 2, 1)
         self.frames = len(d.columns)
