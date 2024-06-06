@@ -31,7 +31,7 @@ pip install blackchirp
 
 General updates:
 
-- Blackchirp has now been tested with Qt 6.7, and currently compiles against either Qt 5.12+ or Qt 6.7. **Users are strongly recommended to switch to Qt6 as soom as possible; Qt5 support will be dropped in a future release.**
+- Blackchirp has now been tested with Qt 6.7, and currently compiles against either Qt 5.12+ or Qt 6.7. **Users are strongly recommended to switch to Qt6 as soon as possible; Qt5 support will be dropped in a future release.**
 - Blackchirp now compiles with the ``c++_latest`` QMAKE flag by default, meaning that it is built with more modern C++ language support. At present, only C++20 is required, so users can add ``CONFIG -= c++latest`` and ``CONFIG += c++20`` to their ``config.pri`` file if their compiler does not support the most recent C++ standard (currently c++2b).
 - Currently no new features are planned before the v1.0.0 release, which is scheduled for next week. Only bugfixes and documentation updates will be implemented between now and then.
 
