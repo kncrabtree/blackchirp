@@ -210,6 +210,8 @@ bool M4i2211x8::configure(const LifDigitizerConfig &c)
     spcm_dwSetParam_i32(p_handle,SPC_OFFS0,0);
     ch.offset = 0.0;
 
+    spcm_dwSetParam_i32(p_handle,SPC_ACDC0,0);
+
     if(errorCheck())
         return false;
 
@@ -234,6 +236,8 @@ bool M4i2211x8::configure(const LifDigitizerConfig &c)
         spcm_dwSetParam_i32(p_handle,SPC_OFFS1,0);
         ch2.offset = 0.0;
 
+        spcm_dwSetParam_i32(p_handle,SPC_ACDC1,0);
+
         if(errorCheck())
             return false;
     }
@@ -253,7 +257,7 @@ bool M4i2211x8::configure(const LifDigitizerConfig &c)
     if(d_refEnabled)
         d_bufferSize *= 2;
 
-    spcm_dwSetParam_i64(p_handle,SPC_MEMSIZE,static_cast<qint64>(d_bufferSize));
+    spcm_dwSetParam_i64(p_handle,SPC_MEMSIZE,static_cast<qint64>(d_recordLength));
     spcm_dwSetParam_i64(p_handle,SPC_POSTTRIGGER,static_cast<qint64>(d_recordLength-32));
 
     if(errorCheck())

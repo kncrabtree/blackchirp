@@ -107,6 +107,9 @@ double LifTrace::integrate(const LifProcSettings &s) const
 {
     //validate ranges (sort of; if ranges are bad this will return 0);
     //lif start must be in range of data
+    if(p_data->lifData.size() < 2)
+        return 0.0;
+
     auto ls = qBound(0,s.lifGateStart,p_data->lifData.size()-2);
     //lif end must be greater than start and in range of data
     auto le = qBound(ls+1,s.lifGateEnd,p_data->lifData.size()-1);

@@ -120,8 +120,12 @@ void LifSpectrogramPlot::prepareForExperiment(const LifConfig &c)
 
     double dMin =  d_dMin - qAbs(c.d_delayStepUs)/2.0;
     double dMax = qMax(delayRange.first,delayRange.second) + qAbs(c.d_delayStepUs)/2.0;
+    if(c.d_delayPoints == 1)
+        dMax = dMin+1.0;
     double fMin = d_lMin - qAbs(c.d_laserPosStep)/2.0;
     double fMax = qMax(laserRange.first,laserRange.second) + qAbs(c.d_laserPosStep)/2.0;
+    if(c.d_laserPosPoints == 1)
+        fMax = fMin + 1.0;
 
     p_spectrogramData->setInterval(Qt::YAxis,QwtInterval(dMin,dMax));
     p_spectrogramData->setInterval(Qt::XAxis,QwtInterval(fMin,fMax));
