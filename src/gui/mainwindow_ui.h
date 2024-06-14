@@ -305,7 +305,6 @@ public:
         hwStatusScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         hwStatusScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
         hwStatusScrollArea->setWidgetResizable(true);
-        hwStatusScrollArea->setGeometry(0,0,200,200);
 
         hwStatusWidget = new QWidget;
 

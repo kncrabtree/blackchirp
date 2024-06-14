@@ -18,3 +18,9 @@ void HardwareStatusBox::updateTitle(const QString &n)
     else
         setTitle(d_titleTemplate.arg(n));
 }
+
+
+QSize HardwareStatusBox::sizeHint() const
+{
+    return {250,1};
+}

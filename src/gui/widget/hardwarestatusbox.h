@@ -15,6 +15,10 @@ public slots:
 
 protected:
     QString d_key;
+    
+    // QWidget interface
+public:
+    QSize sizeHint() const override;
 };
 
 #endif // HARDWARESTATUSBOX_H

@@ -35,6 +35,9 @@ The OPOTek Opolette is a tunable pulsed OPO laser. Operation of the laser requir
 Sirah Cobra (sirahcobra)
 ........................
 
+.. warning::
+   The Sirah Cobra implementation is currently under active development and is not ready for general use!
+
 The Sirah Cobra is one of a series of tunable pulsed dye lasers. For maximum
 cross-platform compatability, Blackchirp communicates directly with the
 internal motor though a serial port connection. The Sirah drivers are not
@@ -54,13 +57,13 @@ LIF Laser hardware menu. A dropdown menu named "stages" contains entries for
 the resonator (stage 0) and any attached frequency conversion units (stages
 1+). For each stage, the following entries should be defined:
 
-- `stageStartFreqHz`: Starting motor frequency (Hz). Defaults to 3000.
-- `stageHighFreqHz`: Final motor frequency (Hz). Defaults to 12000.
-- `stageRampLength`: Steps for motor acceleration. Defaults to 2400.
-- `stageMax`: Maximum motor position. Defaults to 3300000.
-- `stageBacklashSteps`: Number of steps for backlash correction.
-- `stageWavelengthDataCsv`: Path to csv file containing motor calibration data.
-- `stagePolyOrder`: Order of polynomial fit to motor/wavelength position data.
+- ``stageStartFreqHz``: Starting motor frequency (Hz). Defaults to 3000.
+- ``stageHighFreqHz``: Final motor frequency (Hz). Defaults to 12000.
+- ``stageRampLength``: Steps for motor acceleration. Defaults to 2400.
+- ``stageMax``: Maximum motor position. Defaults to 3300000.
+- ``stageBacklashSteps``: Number of steps for backlash correction.
+- ``stageWavelengthDataCsv``: Path to csv file containing motor calibration data.
+- ``stagePolyOrder``: Order of polynomial fit to motor/wavelength position data.
 
 Wavelength calibration is implemented via an interpolated lookup table. To this
 end, a csv file containing motor positions and corresponding wavelengths across
@@ -68,8 +71,8 @@ the laser operation range must be provided. All wavelength readings must be
 with respect to the resonator wavelength, not any multiples thereof. Blackchirp
 will fit the provided data to a polynomial of the indicated order (both motor
 vs wavelength and wavelength vs motor) and use the derived polynomials for
-conversion between motor position and wavelength. Finally, a `multFactor` key
+conversion between motor position and wavelength. Finally, a ``multFactor`` key
 is provided to indicate the multiplication afforded by any FCU stages. This
 will be used to convert the laser position entered in the user interface to a
-resonater laser wavelength. For instance, if `multFactor` is 2, then a user
+resonater laser wavelength. For instance, if ``multFactor`` is 2, then a user
 entry of 300 nm would be converted to a resonator wavelength of 600 nm.

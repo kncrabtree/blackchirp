@@ -15,13 +15,11 @@ The prerequisites for compiling Blackchirp are:
 - `Boost C++ Libraries <https://www.boost.org/>`_ (preprocessor library only)
 - `Eigen template library`_ v3+
 - `GNU Scientific Library`_ v2.1+
-- (optional) `CUDA`_ v9+ with capable GPU
 
 .. _raise an issue: https://github.com/kncrabtree/blackchirp/issues
 .. _qwt: https://qwt.sourceforge.io/
 .. _Eigen template library: https://eigen.tuxfamily.org/index.php?title=Main_Page
 .. _GNU Scientific Library: https://www.gnu.org/software/gsl/
-.. _CUDA: https://developer.nvidia.com/cuda-downloads
 
 The easiest way to build Blackchirp is to open the ``blackchirp.pro`` file in the `Qt Creator`_ IDE, which allows you to easily configure a qmake/C++ kit and control whether the build includes debugging symbols.
 It is recommended to build Blackchirp in the release configuration for best performance.
