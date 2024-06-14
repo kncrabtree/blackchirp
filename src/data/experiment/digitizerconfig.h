@@ -8,6 +8,8 @@
 #include <data/storage/headerstorage.h>
 
 namespace BC::Key::Digi {
+static const QString dwAnChannels{"channels"};
+static const QString dwDigChannels{"digitalChannels"};
 static const QString numAnalogChannels{"numAnalogChannels"};
 static const QString hasAuxTriggerChannel{"hasAuxTriggerChannel"};
 static const QString numDigitalChannels{"numDigitalChannels"};
@@ -35,6 +37,7 @@ static const QString srValue{"val"};
 namespace BC::Store::Digi {
 static const QString an{"AnalogChannel"};
 static const QString dig{"DigitalChannel"};
+static const QString chIndex{"Index"};
 static const QString digInp{"Input"};
 static const QString digRole{"Role"};
 static const QString en{"Enabled"};
@@ -59,11 +62,13 @@ class DigitizerConfig : public HeaderStorage
     Q_GADGET
 public:
     struct AnalogChannel {
+        bool enabled{false};
         double fullScale{0.0};
         double offset{0.0};
     };
 
     struct DigitalChannel {
+        bool enabled{false};
         bool input{true};
         int role{-1};
     };
@@ -80,7 +85,7 @@ public:
     };
     Q_ENUM(ByteOrder)
 
-    DigitizerConfig(const QString key);
+    DigitizerConfig(const QString key,const QString subKey);
 
     //vertical channels
     std::map<int,AnalogChannel> d_analogChannels;

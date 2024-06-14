@@ -12,6 +12,7 @@
 namespace BC::Key::FtmwScope {
 static const QString ftmwScope{"FtmwDigitizer"};
 static const QString bandwidth{"bandwidthMHz"};
+static const QString fidCh{"fidChannel"};
 }
 
 class FtmwScope : public HardwareObject, protected FtmwDigitizerConfig
@@ -26,38 +27,14 @@ signals:
 
 public slots:
     virtual void readWaveform() =0;
-
+    virtual bool hwPrepareForExperiment(Experiment &exp) override final;
 
     // HardwareObject interface
 public slots:
     QStringList forbiddenKeys() const override;
+
+private:
+    void writeSettings();
 };
-
-#if BC_FTMWSCOPE == 0
-#include "virtualftmwscope.h"
-class VirtualFtmwScope;
-typedef VirtualFtmwScope FtmwScopeHardware;
-#elif BC_FTMWSCOPE == 1
-#include "dsa71604c.h"
-class Dsa71604c;
-typedef Dsa71604c FtmwScopeHardware;
-#elif BC_FTMWSCOPE == 2
-#include "mso72004c.h"
-class MSO72004C;
-typedef MSO72004C FtmwScopeHardware;
-#elif BC_FTMWSCOPE == 3
-#include "m4i2220x8.h"
-class M4i2220x8;
-typedef M4i2220x8 FtmwScopeHardware;
-#elif BC_FTMWSCOPE == 4
-#include "dsox92004a.h"
-class DSOx92004A;
-typedef DSOx92004A FtmwScopeHardware;
-#elif BC_FTMWSCOPE == 5
-#include "mso64b.h"
-class MSO64B;
-typedef MSO64B FtmwScopeHardware;
-#endif
-
 
 #endif // FTMWSCOPE_H

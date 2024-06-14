@@ -6,7 +6,7 @@
 
 class QTimer;
 
-namespace BC::Key {
+namespace BC::Key::LifDigi {
 static const QString vLifScopeName("Virtual LIF Oscilloscope");
 }
 
@@ -31,7 +31,6 @@ protected:
 
     // HardwareObject interface
 public slots:
-    bool prepareForExperiment(Experiment &exp) override;
     void beginAcquisition() override;
     void endAcquisition() override;
 };

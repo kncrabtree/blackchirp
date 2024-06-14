@@ -1,8 +1,9 @@
 #include <hardware/optional/pulsegenerator/pulsegenconfig.h>
 
 #include <QMetaEnum>
+#include <hardware/optional/pulsegenerator/pulsegenerator.h>
 
-PulseGenConfig::PulseGenConfig() : HeaderStorage(BC::Store::PGenConfig::key)
+PulseGenConfig::PulseGenConfig(QString subKey, int index) : HeaderStorage(BC::Key::hwKey(BC::Key::PGen::key,index),subKey)
 {
 }
 
@@ -27,7 +28,7 @@ bool PulseGenConfig::isEmpty() const
 
 QVariant PulseGenConfig::setting(const int index, const Setting s) const
 {
-    if(index < 0 || index >= d_channels.size())
+    if(index >= d_channels.size())
         return QVariant();
 
     switch(s)
@@ -61,6 +62,15 @@ QVariant PulseGenConfig::setting(const int index, const Setting s) const
         break;
     case DutyOffSetting:
         return d_channels.at(index).dutyOff;
+        break;
+    case RepRateSetting:
+        return d_repRate;
+        break;
+    case PGenModeSetting:
+        return d_mode;
+        break;
+    case PGenEnabledSetting:
+        return d_pulseEnabled;
         break;
     }
 
@@ -98,15 +108,16 @@ QVector<PulseGenConfig::Role> PulseGenConfig::activeRoles() const
     return out;
 }
 
-int PulseGenConfig::channelForRole(Role role) const
+QVector<int> PulseGenConfig::channelsForRole(Role role) const
 {
+    QVector<int> out;
     for(int i=0; i<d_channels.size(); i++)
     {
         if(d_channels.at(i).role == role)
-            return i;
+            out << i;
     }
 
-    return -1;
+    return out;
 }
 
 double PulseGenConfig::channelStart(const int index) const
@@ -176,6 +187,15 @@ void PulseGenConfig::setCh(const int index, const Setting s, const QVariant val)
     case DutyOffSetting:
         d_channels[index].dutyOff = val.toInt();
         break;
+    case RepRateSetting:
+        d_repRate = val.toDouble();
+        break;
+    case PGenModeSetting:
+        d_mode = val.value<PGenMode>();
+        break;
+    case PGenEnabledSetting:
+        d_pulseEnabled = val.toBool();
+        break;
     }
 }
 
@@ -243,7 +263,7 @@ void PulseGenConfig::storeValues()
         storeArrayValue(channel,i,enabled,cc.enabled);
         storeArrayValue(channel,i,role,cc.role);
         storeArrayValue(channel,i,chMode,cc.mode);
-        storeArrayValue(channel,i,sync,cc.syncCh);
+        storeArrayValue(channel,i,syncCh,cc.syncCh);
         storeArrayValue(channel,i,dutyOn,cc.dutyOn);
         storeArrayValue(channel,i,dutyOff,cc.dutyOff);
     }
@@ -268,7 +288,7 @@ void PulseGenConfig::retrieveValues()
                     retrieveArrayValue(channel,i,level,ActiveHigh),
                     retrieveArrayValue(channel,i,role,None),
                     retrieveArrayValue(channel,i,chMode,Normal),
-                    retrieveArrayValue(channel,i,sync,0),
+                    retrieveArrayValue(channel,i,syncCh,0),
                     retrieveArrayValue(channel,i,dutyOn,1),
                     retrieveArrayValue(channel,i,dutyOff,1)
         };

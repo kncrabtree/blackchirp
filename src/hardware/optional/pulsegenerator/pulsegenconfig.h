@@ -8,7 +8,6 @@
 #include <QMap>
 
 namespace BC::Store::PGenConfig {
-static const QString key{"PulseGenerator"};
 static const QString rate{"RepRate"};
 static const QString channel{"Channel"};
 static const QString delay{"Delay"};
@@ -18,7 +17,7 @@ static const QString role{"Role"};
 static const QString name{"Name"};
 static const QString enabled{"Enabled"};
 static const QString chMode{"Mode"};
-static const QString sync{"SyncChannel"};
+static const QString syncCh{"SyncChannel"};
 static const QString dutyOn{"DutyOn"};
 static const QString dutyOff{"DutyOff"};
 static const QString pGenMode{"PulseGenMode"};
@@ -30,7 +29,7 @@ class PulseGenConfig : public HeaderStorage
     Q_GADGET
 public:
     enum ActiveLevel { ActiveLow, ActiveHigh };
-    enum Setting { DelaySetting, WidthSetting, EnabledSetting, LevelSetting, NameSetting, RoleSetting, ModeSetting, SyncSetting, DutyOnSetting, DutyOffSetting };
+    enum Setting { DelaySetting, WidthSetting, EnabledSetting, LevelSetting, NameSetting, RoleSetting, ModeSetting, SyncSetting, DutyOnSetting, DutyOffSetting, RepRateSetting, PGenModeSetting, PGenEnabledSetting };
     enum Role {
         None,
         Gas,
@@ -44,7 +43,7 @@ public:
         ,LIF = 999
 #endif
     };
-    enum PGenMode { Continuous, Triggered };
+    enum PGenMode { Continuous, Triggered_Rising, Triggered_Falling };
     enum ChannelMode { Normal, DutyCycle };
     Q_ENUM(ActiveLevel)
     Q_ENUM(Setting)
@@ -71,7 +70,8 @@ public:
     PGenMode d_mode{Continuous};
     bool d_pulseEnabled{true};
 
-    PulseGenConfig();
+
+    PulseGenConfig(QString subKey=QString(""), int index=-1);
     ~PulseGenConfig();
 
     ChannelConfig at(const int i) const;
@@ -81,7 +81,7 @@ public:
     QVariant setting(Role role, const Setting s) const;
     ChannelConfig settings(const int index) const;
     QVector<Role> activeRoles() const;
-    int channelForRole(Role role) const;
+    QVector<int> channelsForRole(Role role) const;
     double channelStart(const int index) const;
     bool testCircularSync(const int index, int newSyncCh);
 
@@ -96,6 +96,9 @@ public:
 protected:
     void storeValues() override;
     void retrieveValues() override;
+
+private:
+    QString d_hwSubKey;
 };
 
 Q_DECLARE_METATYPE(PulseGenConfig)

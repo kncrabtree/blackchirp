@@ -12,23 +12,25 @@ class PressureControlWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit PressureControlWidget(QWidget *parent = nullptr);
+    explicit PressureControlWidget(const PressureControllerConfig &cfg, QWidget *parent = nullptr);
 
-    void initialize(const PressureControllerConfig &cfg);
+    PressureControllerConfig &toConfig();
 
 signals:
-    void setpointChanged(double);
-    void pressureControlModeChanged(bool);
-    void valveOpen();
-    void valveClose();
+    void setpointChanged(QString,double);
+    void pressureControlModeChanged(QString,bool);
+    void valveOpen(QString);
+    void valveClose(QString);
 
 public slots:
-    void pressureSetpointUpdate(double p);
-    void pressureControlModeUpdate(bool en);
+    void pressureSetpointUpdate(const QString key, double p);
+    void pressureControlModeUpdate(const QString key, bool en);
 
 private:
     QDoubleSpinBox *p_setpointBox;
     QPushButton *p_controlButton;
+
+    PressureControllerConfig d_config;
 
 };
 

@@ -62,7 +62,8 @@ public:
     FtmwType d_type{Forever};
     quint64 d_objective{0};
 
-    FtmwDigitizerConfig d_scopeConfig;
+    FtmwDigitizerConfig &scopeConfig() { return *ps_scopeConfig; }
+    const FtmwDigitizerConfig &scopeConfig() const { return std::as_const(*ps_scopeConfig); }
     RfConfig d_rfConfig;
 
     bool initialize() override;
@@ -81,7 +82,7 @@ public:
     double ftMaxMHz() const;
     double ftNyquistMHz() const;
     double fidDurationUs() const;
-    double chirpFOM() const { return d_lastFom; };
+    double chirpFOM() const { return d_lastFom; }
     double chirpShift() const { return d_currentShift; }
     double chirpRMS() const { return d_lastRMS; }
 
@@ -101,12 +102,12 @@ public:
 
     bool setFidsData(const QVector<QVector<qint64> > newList);
     bool addFids(const QByteArray rawData);
-    void setScopeConfig(const FtmwDigitizerConfig &other);
     std::shared_ptr<FidStorageBase> storage() const;
 
     void loadFids();
 
 private:
+    std::shared_ptr<FtmwDigitizerConfig> ps_scopeConfig;
     std::shared_ptr<FidStorageBase> p_fidStorage;
     Fid d_fidTemplate;
     QDateTime d_lastAutosaveTime;

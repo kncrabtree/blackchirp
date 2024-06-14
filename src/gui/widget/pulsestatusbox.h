@@ -2,23 +2,22 @@
 #define PULSESTATUSBOX_H
 
 #include <QGroupBox>
+
+#include "hardwarestatusbox.h"
 #include <hardware/optional/pulsegenerator/pulsegenconfig.h>
 
 class QLabel;
 class Led;
 
-class PulseStatusBox : public QGroupBox, public PulseGenConfig
+class PulseStatusBox : public HardwareStatusBox
 {
     Q_OBJECT
 public:
-    explicit PulseStatusBox(QWidget *parent = nullptr);
+    explicit PulseStatusBox(QString key,QWidget *parent = nullptr);
 
 public slots:
-    void updatePulseLeds(const PulseGenConfig &cc);
-    void updatePulseLed(int index,Setting s, QVariant val);
-    void updateRepRate(double rr);
-    void updatePGenMode(PulseGenConfig::PGenMode m);
-    void updatePGenEnabled(bool en);
+    void updatePulseLeds(const QString k, const PulseGenConfig &cc);
+    void updatePulseSetting(const QString k,int index,PulseGenConfig::Setting s, QVariant val);
 
 signals:
 
@@ -28,6 +27,7 @@ private:
     Led *p_enLed;
 
     void updateAll();
+    PulseGenConfig d_config;
 
 };
 

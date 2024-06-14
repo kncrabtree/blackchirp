@@ -1,6 +1,8 @@
 #include "temperaturecontrollerconfig.h"
 
-TemperatureControllerConfig::TemperatureControllerConfig() : HeaderStorage(BC::Store::TempControlConfig::key)
+#include <hardware/optional/tempcontroller/temperaturecontroller.h>
+
+TemperatureControllerConfig::TemperatureControllerConfig(const QString subKey, int index) : HeaderStorage(BC::Key::hwKey(BC::Key::TC::key,index),subKey)
 {
 
 }
@@ -10,37 +12,37 @@ void TemperatureControllerConfig::setNumChannels(int n)
     d_channels.resize(n);
 }
 
-void TemperatureControllerConfig::setTemperature(int ch, double t)
+void TemperatureControllerConfig::setTemperature(uint ch, double t)
 {
-    if(ch >=0 && ch < d_channels.size())
+    if(ch < d_channels.size())
         d_channels[ch].t = t;
 }
 
-void TemperatureControllerConfig::setName(int ch, QString n)
+void TemperatureControllerConfig::setName(uint ch, QString n)
 {
-    if(ch >=0 && ch < d_channels.size())
+    if(ch < d_channels.size())
         d_channels[ch].name = n;
 }
 
-void TemperatureControllerConfig::setEnabled(int ch, bool en)
+void TemperatureControllerConfig::setEnabled(uint ch, bool en)
 {
-    if(ch >=0 && ch < d_channels.size())
+    if(ch < d_channels.size())
         d_channels[ch].enabled = en;
 }
 
-double TemperatureControllerConfig::temperature(int ch) const
+double TemperatureControllerConfig::temperature(uint ch) const
 {
-    return d_channels.value(ch,{}).t;
+    return ch < d_channels.size() ? d_channels[ch].t : 0.0;
 }
 
-QString TemperatureControllerConfig::channelName(int ch) const
+QString TemperatureControllerConfig::channelName(uint ch) const
 {
-    return d_channels.value(ch,{}).name;
+    return ch < d_channels.size() ? d_channels[ch].name : "";
 }
 
-bool TemperatureControllerConfig::channelEnabled(int ch) const
+bool TemperatureControllerConfig::channelEnabled(uint ch) const
 {
-    return d_channels.value(ch,{}).enabled;
+    return ch < d_channels.size() ? d_channels[ch].enabled : false;
 }
 
 
@@ -48,7 +50,7 @@ void TemperatureControllerConfig::storeValues()
 {
     using namespace BC::Store::TempControlConfig;
 
-    for(int i=0; i<d_channels.size(); ++i)
+    for(uint i=0; i<d_channels.size(); ++i)
     {
         storeArrayValue(channel,i,name,channelName(i));
         storeArrayValue(channel,i,enabled,channelEnabled(i));
@@ -68,6 +70,6 @@ void TemperatureControllerConfig::retrieveValues()
             retrieveArrayValue(channel,i,name,QString("")),
             retrieveArrayValue(channel,i,enabled,false)
         };
-        d_channels << c;
+        d_channels.push_back(c);
     }
 }

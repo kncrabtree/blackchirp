@@ -1,7 +1,7 @@
 #include "qcpulsegenerator.h"
 
 Qc9518::Qc9518(QObject *parent) :
-    PulseGenerator(BC::Key::PGen::qc9518,BC::Key::PGen::qc9518Name,CommunicationProtocol::Rs232,8,parent)
+    QCPulseGenerator(BC::Key::PGen::qc9518,BC::Key::PGen::qc9518Name,CommunicationProtocol::Rs232,8,parent)
 {
     using namespace BC::Key::PGen;
     setDefault(minWidth,0.004);
@@ -15,6 +15,7 @@ Qc9518::Qc9518(QObject *parent) :
     setDefault(canTrigger,true);
     setDefault(dutyMax,100000);
     setDefault(canSyncToChannel,true);
+    setDefault(canDisableChannels,true);
 }
 
 Qc9518::~Qc9518()
@@ -22,37 +23,8 @@ Qc9518::~Qc9518()
 
 }
 
-bool Qc9518::testConnection()
-{
-    QByteArray resp = p_comm->queryCmd(QString("*IDN?\n"));
-
-    if(resp.isEmpty())
-    {
-        d_errorString = QString("No response to ID query.");
-        return false;
-    }
-
-    if(!resp.startsWith(QByteArray("9518+")))
-    {
-        d_errorString = QString("ID response invalid. Response: %1 (Hex: %2)").arg(QString(resp.trimmed())).arg(QString(resp.toHex()));
-        return false;
-    }
-
-    emit logMessage(QString("ID response: %1").arg(QString(resp.trimmed())));
-
-    pGenWriteCmd(QString(":SPULSE:STATE 1\n"));
-    pGenWriteCmd(QString(":SYSTEM:KLOCK 0\n"));
-    readAll();
-
-    return true;
-
-}
-
 void Qc9518::initializePGen()
 {
-    //set up config
-    PulseGenerator::initialize();
-
     p_comm->setReadOptions(100,true,QByteArray("\r\n"));
 }
 

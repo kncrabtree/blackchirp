@@ -3,6 +3,7 @@
 
 #include <QToolBar>
 #include <data/experiment/experiment.h>
+#include <data/analysis/ftworker.h>
 
 class SpinBoxWidgetAction;
 class DoubleSpinBoxWidgetAction;
@@ -31,9 +32,10 @@ public:
     void newBackup(int n);
 
     MainPlotMode mainPlotMode() const;
-    int mainPlotFollow() const;
+    int sbFrame() const;
     double sbMinFreq() const;
     double sbMaxFreq() const;
+    FtWorker::DeconvolutionMethod dcMethod() const;
 
     int frame(int id) const;
     int segment(int id) const;
@@ -45,9 +47,11 @@ signals:
     void plotSettingChanged(int id);
 
 private:
+    QAction *p_sbProcAction;
     EnumComboBoxWidgetAction<MainPlotMode> *p_mainPlotBox;
-    SpinBoxWidgetAction *p_followBox;
+    SpinBoxWidgetAction *p_frameBox;
     DoubleSpinBoxWidgetAction *p_sbMinBox, *p_sbMaxBox;
+    EnumComboBoxWidgetAction<FtWorker::DeconvolutionMethod> *p_sbAlgoBox;
 
     std::map<int,SpinBoxWidgetAction*> d_seg;
     std::map<int,SpinBoxWidgetAction*> d_frame;

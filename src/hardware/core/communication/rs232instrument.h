@@ -57,7 +57,14 @@ public:
 public slots:
     void initialize() override;
     bool testConnection() override;
+    
+private:
+    QSerialPort *p_device;
 
+    
+    // CommunicationProtocol interface
+public:
+    QIODevice *_device() override;
 };
 
 #endif // RS232INSTRUMENT_H

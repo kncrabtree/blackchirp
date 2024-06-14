@@ -8,6 +8,7 @@
    :hidden:
 
    user_guide
+   python
    classes
 
 Blackchirp Documentation

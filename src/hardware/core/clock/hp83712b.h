@@ -12,7 +12,7 @@ class HP83712B : public Clock
 {
     Q_OBJECT
 public:
-    explicit HP83712B(int clockNum, QObject *parent = nullptr);
+    explicit HP83712B(QObject *parent = nullptr);
 
     // Clock interface
 protected:

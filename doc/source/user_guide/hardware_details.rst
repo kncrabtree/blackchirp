@@ -1,7 +1,7 @@
 Hardware Details
 ================
 
-Blackchirp is capable of interfacing with a variety of different pieces of hardware; see the `installation page <installation.html#hardware-implementations>`_ for details on how to select which hardware are in use for your instrument. The only pieces of hardware that are strictly required to run Blackchirp are a `clock <hw/clock/html>`_ and an `FTMW digitizer <hw/ftmwdigitizer.rst>`_; all other pieces of hardware are optional and may be omitted from the program entirely by setting their associated key in ``config.pri`` to -1.
+Blackchirp is capable of interfacing with a variety of different pieces of hardware; see the `installation page <installation.html#hardware-implementations>`_ for details on how to select which hardware are in use for your instrument. The only pieces of hardware that are strictly required to run Blackchirp are a `clock <hw/clock/html>`_ and an `FTMW digitizer <hw/ftmwdigitizer.rst>`_; all other pieces of hardware are optional and may be omitted from the program entirely by commenting them out in ``config.pri``.
 
 All pieces of hardware have some settings in common, and these may be edited in the `hardware settings menu <hardware_menu.html#hardware-control-settings>`_ associated with each item. These are:
 

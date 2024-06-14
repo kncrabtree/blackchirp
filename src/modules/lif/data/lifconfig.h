@@ -65,7 +65,8 @@ public:
 
     int d_shotsPerPoint {0};
 
-    LifDigitizerConfig d_scopeConfig;
+    LifDigitizerConfig &scopeConfig() { return *ps_scopeConfig; }
+    const LifDigitizerConfig &scopeConfig() const { return std::as_const(*ps_scopeConfig); }
 
     bool isComplete() const override;
     double currentDelay() const;
@@ -85,6 +86,7 @@ public:
 
 private:
     std::shared_ptr<LifStorage> ps_storage;
+    std::shared_ptr<LifDigitizerConfig> ps_scopeConfig;
     int d_currentDelayIndex {0};
     int d_currentLaserIndex {0};
     int d_completedSweeps{0};

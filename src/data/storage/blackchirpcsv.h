@@ -9,9 +9,9 @@
 #include <QVector>
 #include <QPointF>
 #include <QDir>
-#include <data/experiment/fid.h>
 
-//class BlackchirpPlotCurve;
+#include <data/experiment/fid.h>
+#include <data/bcglobals.h>
 
 namespace BC::CSV {
 
@@ -131,7 +131,7 @@ public:
 
     static bool writeHeader(QIODevice &device, const std::multimap<QString,std::tuple<QString,QString,QString,QString,QString>> header);
 
-    static void writeLine(QTextStream &t, const QVariantList l);
+    static void writeLine(QTextStream &t, const std::vector<QVariant> l);
 
     static QString formatInt64(qint64 n);
     static void writeFidList(QIODevice &device, const FidList l);
@@ -152,6 +152,12 @@ public:
 
     QVariantList readLine(QIODevice &device);
     QVector<qint64> readFidLine(QIODevice &device);
+
+    int majorVersion() const;
+    int minorVersion() const;
+    int patchVersion() const;
+    QString releaseVersion() const;
+    QString buildVersion() const;
 
 private:
     std::map<QString,QVariant> d_configMap;

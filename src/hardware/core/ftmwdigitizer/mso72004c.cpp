@@ -77,7 +77,7 @@ void MSO72004C::initialize()
     p_scopeTimeout = new QTimer(this);
 
     p_comm->setReadOptions(1000,true,QByteArray("\n"));
-    p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
+    p_socket = p_comm->device<QTcpSocket>();
     connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::errorOccurred),this,&MSO72004C::socketError);
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
 }
@@ -95,7 +95,7 @@ bool MSO72004C::prepareForExperiment(Experiment &exp)
     if(!d_enabledForExperiment)
         return true;
 
-    auto &config = exp.ftmwConfig()->d_scopeConfig;
+    auto &config = exp.ftmwConfig()->scopeConfig();
 
     disconnect(p_socket,&QTcpSocket::readyRead,this,&MSO72004C::readWaveform);
 

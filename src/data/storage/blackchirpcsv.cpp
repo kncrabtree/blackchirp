@@ -110,17 +110,17 @@ bool BlackchirpCSV::writeHeader(QIODevice &device, const std::multimap<QString, 
     return true;
 }
 
-void BlackchirpCSV::writeLine(QTextStream &t, const QVariantList l)
+void BlackchirpCSV::writeLine(QTextStream &t, const std::vector<QVariant> l)
 {
     using namespace BC::CSV;
 
-    if(l.isEmpty())
+    auto s = l.size();
+    if(s == 0)
         return;
 
-    t << l.constFirst().toString();
-    int num = l.size();
-    for(int i=1; i<num; i++)
-        t << del << l.at(i).toString();
+    t << l[0].toString();
+    for(uint i=1; i<s; i++)
+        t << del << l[i].toString();
     t << nl;
 }
 
@@ -205,6 +205,46 @@ QVector<qint64> BlackchirpCSV::readFidLine(QIODevice &device)
 
 }
 
+int BlackchirpCSV::majorVersion() const
+{
+    auto it = d_configMap.find(BC::CSV::majver);
+    if(it != d_configMap.end())
+        return it->second.toInt();
+    return -1;
+}
+
+int BlackchirpCSV::minorVersion() const
+{
+    auto it = d_configMap.find(BC::CSV::minver);
+    if(it != d_configMap.end())
+        return it->second.toInt();
+    return -1;
+}
+
+int BlackchirpCSV::patchVersion() const
+{
+    auto it = d_configMap.find(BC::CSV::patchver);
+    if(it != d_configMap.end())
+        return it->second.toInt();
+    return -1;
+}
+
+QString BlackchirpCSV::releaseVersion() const
+{
+    auto it = d_configMap.find(BC::CSV::relver);
+    if(it != d_configMap.end())
+        return it->second.toString();
+    return "";
+}
+
+QString BlackchirpCSV::buildVersion() const
+{
+    auto it = d_configMap.find(BC::CSV::buildver);
+    if(it != d_configMap.end())
+        return it->second.toString();
+    return "";
+}
+
 bool BlackchirpCSV::exptDirExists(int num)
 {
     int mil = num/1000000;
@@ -263,10 +303,13 @@ QDir BlackchirpCSV::exptDir(int num, QString path)
     int th = num/1000;
     SettingsStorage s;
     QDir out(path.isEmpty() ? s.get(BC::Key::savePath,QString("")) : path);
-    out.cd(BC::Key::exptDir);
-    out.cd(QString::number(mil));
-    out.cd(QString::number(th));
-    out.cd(QString::number(num));
+    if(path.isEmpty())
+    {
+        out.cd(BC::Key::exptDir);
+        out.cd(QString::number(mil));
+        out.cd(QString::number(th));
+        out.cd(QString::number(num));
+    }
 
     return out;
 }

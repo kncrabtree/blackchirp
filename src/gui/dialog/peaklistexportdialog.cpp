@@ -84,7 +84,7 @@ PeakListExportDialog::PeakListExportDialog(const QVector<QPointF> peakList, int 
     ui->peakListTableView->sortByColumn(1,Qt::DescendingOrder);
     ui->peakListTableView->setSortingEnabled(true);
     connect(ui->removePeakButton,&QToolButton::clicked,this,&PeakListExportDialog::removePeaks);
-    connect(ui->resetPeakListButton,&QPushButton::clicked,[=](){ p_pm->setPeakList(d_peakList);});
+    connect(ui->resetPeakListButton,&QPushButton::clicked,this,[this](){ p_pm->setPeakList(d_peakList);});
 
 
 

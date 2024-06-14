@@ -26,7 +26,7 @@ public:
     void setX0(double d);
     void setSpacing(double s);
     void append(double y);
-    void trim(double minOffset, double maxOffset);
+    void trim(double fmin, double fmax);
     void setNumShots(quint64 shots);
     void setData(const QVector<double> d, double yMin, double yMax);
 

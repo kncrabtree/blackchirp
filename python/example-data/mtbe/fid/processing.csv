@@ -1,0 +1,9 @@
+ObjKey;Value
+AutoscaleIgnoreMHz;250
+FidEndUs;15
+FidExpfUs;0
+FidRemoveDC;false
+FidStartUs;3.35
+FidWindowFunction;None
+FidZeroPadFactor;0
+FtUnits;6

@@ -42,12 +42,12 @@ void VirtualFlowController::hwSetFlowSetpoint(const int ch, const double val)
     if(ch<0 || ch >= d_config.size())
         return;
 
-    d_config.set(ch,FlowConfig::Setpoint,val);
+    d_config.setCh(ch,FlowConfig::Setpoint,val);
 }
 
 void VirtualFlowController::hwSetPressureSetpoint(const double val)
 {
-    d_config.setPressureSetpoint(val);
+    d_config.d_pressureSetpoint = val;
 }
 
 double VirtualFlowController::hwReadFlowSetpoint(const int ch)
@@ -60,7 +60,7 @@ double VirtualFlowController::hwReadFlowSetpoint(const int ch)
 
 double VirtualFlowController::hwReadPressureSetpoint()
 {
-    return d_config.pressureSetpoint();
+    return d_config.d_pressureSetpoint;
 }
 
 double VirtualFlowController::hwReadFlow(const int ch)
@@ -71,24 +71,24 @@ double VirtualFlowController::hwReadFlow(const int ch)
     double sp = d_config.setting(ch,FlowConfig::Setpoint).toDouble();
 //    double noise = sp*((double)(qrand()%100)-50.0)/1000.0;
 //    double flow = sp + noise;
-    d_config.set(ch,FlowConfig::Flow,sp);
+    d_config.setCh(ch,FlowConfig::Flow,sp);
 
     return d_config.setting(ch,FlowConfig::Flow).toDouble();
 }
 
 double VirtualFlowController::hwReadPressure()
 {
-    return d_config.pressureSetpoint();
+    return d_config.d_pressureSetpoint;
 }
 
 void VirtualFlowController::hwSetPressureControlMode(bool enabled)
 {
-    d_config.setPressureControlMode(enabled);
+    d_config.d_pressureControlMode = enabled;
 }
 
 int VirtualFlowController::hwReadPressureControlMode()
 {
-    return d_config.pressureControlMode() ? 1 : 0;
+    return d_config.d_pressureControlMode ? 1 : 0;
 }
 
 void VirtualFlowController::poll()

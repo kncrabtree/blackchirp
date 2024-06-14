@@ -18,26 +18,18 @@ public:
 
 signals:
     void waveformRead(QVector<qint8>);
-    void configAcqComplete(LifDigitizerConfig,QPrivateSignal);
+    void configAcqComplete(QPrivateSignal);
 
 public slots:
-    virtual void startConfigurationAcquisition(const LifDigitizerConfig &c);
+    bool prepareForExperiment(Experiment &exp) override final;
+    virtual void startConfigurationAcquisition(const LifConfig &c);
 
     virtual void readWaveform() =0;
     virtual bool configure(const LifDigitizerConfig &c) =0;
 
-};
+private:
+    void writeSettings();
 
-#ifdef BC_LIFSCOPE
-#if BC_LIFSCOPE == 1
-#include "m4i2211x8.h"
-class M4i2211x8;
-using LifScopeHardware = M4i2211x8;
-#else
-#include "virtuallifscope.h"
-class VirtualLifScope;
-using LifScopeHardware = VirtualLifScope;
-#endif
-#endif
+};
 
 #endif // LIFSCOPE_H

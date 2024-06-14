@@ -2,7 +2,10 @@
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QFormLayout>
 #include <QGroupBox>
+#include <QSpinBox>
+#include <QTimerEvent>
 
 #include <data/storage/settingsstorage.h>
 #include <modules/lif/gui/lifsliceplot.h>
@@ -15,32 +18,58 @@
 #include <qwt6/qwt_matrix_raster_data.h>
 
 LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
-    QWidget(parent)
+    QWidget(parent), SettingsStorage(BC::Key::LifDW::lifDwKey)
 {
 
     SettingsStorage s(BC::Key::LifLaser::key,SettingsStorage::Hardware);
 
-    p_laserSlicePlot = new LifSlicePlot(BC::Key::lifSpectrumPlot,this);
+    p_laserSlicePlot = new LifSlicePlot(BC::Key::LifDW::lifSpectrumPlot,this);
     p_laserSlicePlot->setPlotAxisTitle(QwtPlot::xBottom,
                                       QString("Laser Position (%1)")
                                       .arg(s.get<QString>(BC::Key::LifLaser::units,"nm")));
 
-    p_delaySlicePlot = new LifSlicePlot(BC::Key::lifTimePlot,this);
+    p_delaySlicePlot = new LifSlicePlot(BC::Key::LifDW::lifTimePlot,this);
     p_delaySlicePlot->setPlotAxisTitle(QwtPlot::xBottom,QString::fromUtf16(u"Delay (µs)"));
 
     p_lifTracePlot = new LifTracePlot(this);
     p_spectrogramPlot = new LifSpectrogramPlot(this);
     p_procWidget = new LifProcessingWidget(false,this);
-    connect(p_procWidget,&LifProcessingWidget::settingChanged,[=](){ p_lifTracePlot->setAllProcSettings(p_procWidget->getSettings());});
+    connect(p_procWidget,&LifProcessingWidget::settingChanged,this,[this](){
+        p_lifTracePlot->setAllProcSettings(p_procWidget->getSettings());
+    });
     connect(p_procWidget,&LifProcessingWidget::reprocessSignal,this,&LifDisplayWidget::reprocess);
     connect(p_procWidget,&LifProcessingWidget::resetSignal,this,&LifDisplayWidget::resetProc);
     connect(p_procWidget,&LifProcessingWidget::saveSignal,this,&LifDisplayWidget::saveProc);
     p_procWidget->setEnabled(false);
 
+    auto lvbl = new QVBoxLayout;
     auto pgb = new QGroupBox("Processing",this);
     auto pvbl = new QVBoxLayout;
     pgb->setLayout(pvbl);
     pvbl->addWidget(p_procWidget);
+    
+    p_refreshBox = new QSpinBox(this);
+    p_refreshBox->setRange(500,10000);
+    p_refreshBox->setSingleStep(500);
+    p_refreshBox->setValue(get(BC::Key::LifDW::refresh,500));
+    registerGetter(BC::Key::LifDW::refresh,p_refreshBox,&QSpinBox::value);
+    p_refreshBox->setSuffix(" ms");
+    connect(p_refreshBox,qOverload<int>(&QSpinBox::valueChanged),this,[this](int v){
+        if(d_refreshTimerId >= 0)
+        {
+            killTimer(d_refreshTimerId);
+            d_refreshTimerId = startTimer(v);
+        }
+    });
+    p_refreshBox->setEnabled(false);
+    
+    auto db = new QGroupBox("Display",this);
+    auto dbfl = new QFormLayout;
+    dbfl->addRow("Refresh Inteval",p_refreshBox);
+    db->setLayout(dbfl);
+    
+    lvbl->addWidget(pgb,1);
+    lvbl->addWidget(db,0);
 
     connect(p_spectrogramPlot,&LifSpectrogramPlot::laserSlice,this,&LifDisplayWidget::changeLaserSlice);
     connect(p_spectrogramPlot,&LifSpectrogramPlot::delaySlice,this,&LifDisplayWidget::changeDelaySlice);
@@ -51,7 +80,7 @@ LifDisplayWidget::LifDisplayWidget(QWidget *parent) :
     hbl->addWidget(p_laserSlicePlot,1);
 
     auto hbl2 = new QHBoxLayout;
-    hbl2->addWidget(pgb);
+    hbl2->addLayout(lvbl);
     hbl2->addWidget(p_spectrogramPlot,1);
     auto vbl = new QVBoxLayout;
     vbl->addLayout(hbl,2);
@@ -88,12 +117,14 @@ void LifDisplayWidget::prepareForExperiment(const Experiment &e)
     {
         ps_lifStorage = e.lifConfig()->storage();
         p_spectrogramPlot->prepareForExperiment(*e.lifConfig());
-        p_procWidget->initialize(e.lifConfig()->d_scopeConfig.d_recordLength,e.lifConfig()->d_scopeConfig.d_refEnabled);
+        p_procWidget->initialize(e.lifConfig()->scopeConfig().d_recordLength,e.lifConfig()->scopeConfig().d_refEnabled);
         p_procWidget->setAll(e.lifConfig()->d_procSettings);
         p_lifTracePlot->setNumAverages(e.lifConfig()->d_shotsPerPoint);
         d_delayReverse = e.lifConfig()->d_delayStepUs < 0.0;
         d_laserReverse = e.lifConfig()->d_laserPosStep < 0.0;
         d_currentIntegratedData.resize(e.lifConfig()->d_delayPoints*e.lifConfig()->d_laserPosPoints);
+        p_refreshBox->setEnabled(true);
+        d_refreshTimerId = startTimer(p_refreshBox->value());
     }
     else
     {
@@ -105,6 +136,10 @@ void LifDisplayWidget::prepareForExperiment(const Experiment &e)
 
 void LifDisplayWidget::experimentComplete()
 {
+    p_refreshBox->setEnabled(false);
+    if(d_refreshTimerId >= 0)
+        killTimer(d_refreshTimerId);
+    d_refreshTimerId = -1;
     p_procWidget->experimentComplete();
 }
 
@@ -114,7 +149,6 @@ void LifDisplayWidget::updatePoint()
     auto t = ps_lifStorage->currentLifTrace();
 
     auto lp = ps_lifStorage->d_laserPoints;
-//    auto dp = ps_lifStorage->d_delayPoints;
 
     //2. Reverse indices if needed.
     auto di = t.delayIndex();
@@ -130,8 +164,38 @@ void LifDisplayWidget::updatePoint()
     d_currentIntegratedData[li + di*lp] = d;
 
     //4. Update spectrogram and spectrogram indices
-    p_spectrogramPlot->updateData(d_currentIntegratedData,lp);
+    // p_spectrogramPlot->updateData(d_currentIntegratedData,lp);
     p_spectrogramPlot->setLiveIndices(di,li);
+
+    // //5. Update plots if spectrogram index matches appropriate current trace index
+    // auto cdi = p_spectrogramPlot->currentDelayIndex();
+    // auto cli = p_spectrogramPlot->currentLaserIndex();
+
+    // if(cdi == di)
+    //     p_laserSlicePlot->setData(laserSlice(di),d_dString.arg(p_spectrogramPlot->delayVal(di),0,'f',3));
+    // if(cli == li)
+    //     p_delaySlicePlot->setData(delaySlice(li),d_lString.arg(p_spectrogramPlot->laserVal(li),0,'f',d_lDec));
+    // if(cdi == di && cli == li)
+    //     p_lifTracePlot->setTrace(t);
+
+}
+
+void LifDisplayWidget::updatePlots()
+{
+    auto t = ps_lifStorage->currentLifTrace();
+    auto lp = ps_lifStorage->d_laserPoints;
+    
+    auto di = t.delayIndex();
+    if(d_delayReverse)
+        di = ps_lifStorage->d_delayPoints-di-1;
+
+    auto li = t.laserIndex();
+    if(d_laserReverse)
+        li = lp-li-1;
+    
+    //Update spectrogram and spectrogram indices
+    p_spectrogramPlot->updateData(d_currentIntegratedData,lp);
+    // p_spectrogramPlot->setLiveIndices(di,li);
 
     //5. Update plots if spectrogram index matches appropriate current trace index
     auto cdi = p_spectrogramPlot->currentDelayIndex();
@@ -143,7 +207,6 @@ void LifDisplayWidget::updatePoint()
         p_delaySlicePlot->setData(delaySlice(li),d_lString.arg(p_spectrogramPlot->laserVal(li),0,'f',d_lDec));
     if(cdi == di && cli == li)
         p_lifTracePlot->setTrace(t);
-
 }
 
 void LifDisplayWidget::changeLaserSlice(int di)
@@ -244,10 +307,19 @@ QVector<QPointF> LifDisplayWidget::delaySlice(int laserIndex) const
     auto lp = ps_lifStorage->d_laserPoints;
     auto dp = ps_lifStorage->d_delayPoints;
     QVector<QPointF> out(dp);
-    auto min = p_spectrogramPlot->getlMin();
-    auto dx = p_spectrogramPlot->getldx();
+    auto min = p_spectrogramPlot->getdMin();
+    auto dx = p_spectrogramPlot->getddx();
     for(int i=0; i<out.size(); i++)
         out[i] = {min+i*dx,d_currentIntegratedData.at(laserIndex + i*lp)};
 
     return out;
+}
+
+void LifDisplayWidget::timerEvent(QTimerEvent *event)
+{
+    if(event->timerId() == d_refreshTimerId)
+    {
+        event->accept();
+        updatePlots();
+    }
 }

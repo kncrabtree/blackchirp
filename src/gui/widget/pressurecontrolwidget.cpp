@@ -7,8 +7,9 @@
 #include <QDoubleSpinBox>
 #include <QPushButton>
 #include <QLabel>
+#include <functional>
 
-PressureControlWidget::PressureControlWidget(QWidget *parent) : QWidget(parent)
+PressureControlWidget::PressureControlWidget(const PressureControllerConfig &cfg, QWidget *parent) : QWidget(parent), d_config{cfg}
 {
     auto vbl = new QVBoxLayout;
 
@@ -26,12 +27,16 @@ PressureControlWidget::PressureControlWidget(QWidget *parent) : QWidget(parent)
 
     p_setpointBox->setSingleStep(qAbs(p_setpointBox->maximum() - p_setpointBox->minimum())/100.0);
     p_setpointBox->setKeyboardTracking(false);
-    connect(p_setpointBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,&PressureControlWidget::setpointChanged);
+    connect(p_setpointBox,qOverload<double>(&QDoubleSpinBox::valueChanged),this,[this](double d){
+        emit setpointChanged(d_config.headerKey(),d);
+    });
 
     p_controlButton = new QPushButton("Off");
     p_controlButton->setCheckable(true);
     p_controlButton->setChecked(false);
-    connect(p_controlButton,&QPushButton::toggled,this,&PressureControlWidget::pressureControlModeChanged);
+    connect(p_controlButton,&QPushButton::toggled,this,[this](bool b){
+        emit pressureControlModeChanged(d_config.headerKey(),b);
+    });
 
     auto hbl = new QHBoxLayout;
     hbl->addWidget(psLabel);
@@ -43,10 +48,14 @@ PressureControlWidget::PressureControlWidget(QWidget *parent) : QWidget(parent)
     if(s.get(hasValve,false))
     {
         auto openButton = new QPushButton("Open Valve");
-        connect(openButton,&QPushButton::clicked,this,&PressureControlWidget::valveOpen);
+        connect(openButton,&QPushButton::clicked,this,[this](){
+            emit valveOpen(d_config.headerKey());
+        });
 
         auto closeButton = new QPushButton("Close Valve");
-        connect(closeButton,&QPushButton::clicked,this,&PressureControlWidget::valveClose);
+        connect(closeButton,&QPushButton::clicked,this,[this](){
+            emit valveClose(d_config.headerKey());
+        });
 
         auto hbl2 = new QHBoxLayout;
         hbl2->addWidget(openButton,1);
@@ -56,16 +65,25 @@ PressureControlWidget::PressureControlWidget(QWidget *parent) : QWidget(parent)
     }
 
     setLayout(vbl);
+
+    pressureSetpointUpdate(cfg.headerKey(),cfg.d_setPoint);
+    pressureControlModeUpdate(cfg.headerKey(),cfg.d_pressureControlMode);
 }
 
-void PressureControlWidget::initialize(const PressureControllerConfig &cfg)
+PressureControllerConfig &PressureControlWidget::toConfig()
 {
-    pressureSetpointUpdate(cfg.d_setPoint);
-    pressureControlModeUpdate(cfg.d_pressureControlMode);
+    d_config.d_pressureControlMode = p_controlButton->isChecked();
+    d_config.d_setPoint = p_setpointBox->value();
+
+    return d_config;
 }
 
-void PressureControlWidget::pressureSetpointUpdate(double p)
+void PressureControlWidget::pressureSetpointUpdate(const QString key, double p)
 {
+    if(key != d_config.headerKey())
+        return;
+
+
     if(!p_setpointBox->hasFocus())
     {
         p_setpointBox->blockSignals(true);
@@ -74,8 +92,11 @@ void PressureControlWidget::pressureSetpointUpdate(double p)
     }
 }
 
-void PressureControlWidget::pressureControlModeUpdate(bool en)
+void PressureControlWidget::pressureControlModeUpdate(const QString key, bool en)
 {
+    if(key != d_config.headerKey())
+        return;
+
     p_controlButton->blockSignals(true);
     if(en)
         p_controlButton->setText("On");

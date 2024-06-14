@@ -38,7 +38,7 @@ public:
     int completedShots() const;
 
     LifTrace getLifTrace(int di, int li);
-    LifTrace currentLifTrace() const { return d_currentTrace; };
+    LifTrace currentLifTrace() const { return d_currentTrace; }
     LifTrace loadLifTrace(int di, int li);
     void writeLifTrace(const LifTrace t);
 

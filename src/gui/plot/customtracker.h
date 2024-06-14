@@ -17,8 +17,8 @@ public:
 
     virtual QwtText trackerText( const QPoint &pos ) const;
 
-    int axisDecimals(QwtPlot::Axis a) const { return d_details.value(a).decimals; };
-    bool axisScientific(QwtPlot::Axis a) const { return d_details.value(a).scientific; };
+    int axisDecimals(QwtPlot::Axis a) const { return d_details.value(a).decimals; }
+    bool axisScientific(QwtPlot::Axis a) const { return d_details.value(a).scientific; }
     void setHorizontalTimeAxis(bool b) { d_hTime = b; }
 
 public slots:

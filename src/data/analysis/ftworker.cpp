@@ -32,13 +32,34 @@ FtWorker::~FtWorker()
     }
 }
 
-Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings, int id, bool doubleSideband)
+Ft FtWorker::doFT(const FidList fl, const FidProcessingSettings &settings, int frame, int id, bool doubleSideband)
 {
+    if(fl.isEmpty() || frame >= fl.size())
+    {
+        if(id > -1)
+        {
+            emit fidDone({},1.0,0.0,0.0,0,id);
+            emit ftDone(Ft(), id);
+        }
+        return Ft();
+    }
+
+    //frame -1 means average all frames
+    Fid fid;
+    if(frame < 0)
+    {
+        fid = fl.at(0);
+        for(int i=1; i<fl.size(); i++)
+            fid += fl.at(i);
+    }
+    else
+        fid = fl.value(frame,Fid());
+
     if(fid.size() < 2)
     {
         if(id > -1)
         {
-            emit fidDone({},1.0,0.0,0.0,id);
+            emit fidDone({},1.0,0.0,0.0,0,id);
             emit ftDone(Ft(), id);
         }
         return Ft();
@@ -49,7 +70,7 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings, int id, 
     //first, apply any filtering that needs to be done
     auto fidResult = filterFid(fid,settings);
     if(id > -1)
-        emit fidDone(fidResult.fid,fid.spacing()*1e6,fidResult.min,fidResult.max,id);
+        emit fidDone(fidResult.fid,fid.spacing()*1e6,fidResult.min,fidResult.max,fid.shots(),id);
     auto fftData = fidResult.fid;
     auto s = fftData.size();
 
@@ -152,16 +173,25 @@ Ft FtWorker::doFT(const Fid fid, const FidProcessingSettings &settings, int id, 
     return spectrum;
 }
 
-void FtWorker::doFtDiff(const Fid ref, const Fid diff, const FidProcessingSettings &settings)
+void FtWorker::doFtDiff(const FidList refList, const FidList diffList, int refFrame, int diffFrame, const FidProcessingSettings &settings)
 {
-    if(ref.size() != diff.size() || ref.sideband() != diff.sideband())
+    if(refList.size() != diffList.size())
         return;
 
-    if(!qFuzzyCompare(ref.spacing(),diff.spacing()))
-        return;
+    for(int i=0; i<refList.size(); i++)
+    {
+        auto &ref = refList.at(i);
+        auto &diff = diffList.at(i);
+        if(ref.size() != diff.size() || ref.sideband() != diff.sideband())
+            return;
 
-    Ft r = doFT(ref,settings);
-    Ft d = doFT(diff,settings);
+        if(!qFuzzyCompare(ref.spacing(),diff.spacing()))
+            return;
+    }
+
+
+    Ft r = doFT(refList,settings,refFrame);
+    Ft d = doFT(diffList,settings,diffFrame);
 
     Ft out;
     out.reserve(r.size() + d.size());
@@ -207,184 +237,142 @@ void FtWorker::processSideband(const FtWorker::SidebandProcessingData &d, const 
 
     if(d.currentIndex == 0)
     {
-        d_workingSidebandFt = Ft();
-        d_sidebandIndices.clear();
-        clearSplineMemory();
-    }
+        d_loScanData = {};
 
-    auto fid = d.fid;
-    if(!d.doubleSideband)
-        fid.setSideband(d.sideband);
+        double minProbeFreq = d.loRange.first, maxProbeFreq = d.loRange.second;
+        double bandwidth = 1.0/2.0/d.fl.constFirst().spacing()/1e6;
+        int s = d.fl.constFirst().size();
+        if(settings.zeroPadFactor > 0 && settings.zeroPadFactor <= 2)
+            s = Analysis::nextPowerOf2(s * (1 << settings.zeroPadFactor));
+        int ftPoints = s/2+1;
+        d_loScanData.ftSpacing = bandwidth/(ftPoints-1);
 
-    if(!fid.isEmpty())
-    {
-        auto ft = doFT(fid,settings,-1,d.doubleSideband);
-        if(d.minOffset > 0.0 || d.maxOffset < (ft.maxFreqMHz()-ft.minFreqMHz()))
-            ft.trim(d.minOffset,d.maxOffset);
-
-        if(d.currentIndex == 0)
+        if(d.doubleSideband)
         {
-            d_workingSidebandFt = ft;
-            d_sidebandIndices.emplace(0,1);
-            d_sidebandIndices.emplace(ft.size()-1,-1);
+            auto ftRange = maxProbeFreq - minProbeFreq + 2*d.maxOffset;
+            d_loScanData.ftPoints = static_cast<uint>(ceil(ftRange/d_loScanData.ftSpacing))+1;
+            d_loScanData.ftXRange.first = minProbeFreq-d.maxOffset;
+            d_loScanData.ftXRange.second = d_loScanData.ftXRange.first + d_loScanData.ftSpacing*d_loScanData.ftPoints;
+        }
+        else if(d.sideband == RfConfig::LowerSideband)
+        {
+            auto ftRange = maxProbeFreq - minProbeFreq + (d.maxOffset-d.minOffset);
+            d_loScanData.ftPoints = static_cast<uint>(ceil(ftRange/d_loScanData.ftSpacing))+1;
+            d_loScanData.ftXRange.first = minProbeFreq - d.maxOffset;
+
+            d_loScanData.ftXRange.second = d_loScanData.ftXRange.first + d_loScanData.ftSpacing*d_loScanData.ftPoints;
         }
         else
         {
-            auto [rhs,f0] = resample(d_workingSidebandFt.xFirst(),d_workingSidebandFt.xSpacing(),ft);
-                    int offset = static_cast<int>((f0-d_workingSidebandFt.minFreqMHz())/d_workingSidebandFt.xSpacing());
+            auto ftRange = maxProbeFreq - minProbeFreq + (d.maxOffset-d.minOffset);
+            d_loScanData.ftPoints = static_cast<uint>(ceil(ftRange/d_loScanData.ftSpacing))+1;
+            d_loScanData.ftXRange.first = minProbeFreq + d.minOffset;
 
-                    //compute size of new working FT
-                    int leftIndex = qMin(offset,0);
-                    int rightIndex = qMax(offset+rhs.size()-1,d_workingSidebandFt.size()-1);
-                    int newSize = rightIndex - leftIndex + 1;
+            d_loScanData.ftXRange.second = d_loScanData.ftXRange.first + d_loScanData.ftSpacing*d_loScanData.ftPoints;
+        }
 
-                    QVector<double> lhs = d_workingSidebandFt.yData();
-                    QVector<double> newData;
-                    newData.reserve(newSize);
-                    bool origlhs = true;
+        d_loScanData.ftData.resize(d_loScanData.ftPoints);
+        d_loScanData.counts.clear();
+        d_loScanData.counts.resize(d_loScanData.ftPoints);
+    }
 
-                    if(offset < 0)
+    if(!d.fl.isEmpty() && d.fl.constFirst().shots() > 0)
+    {
+        auto fl = d.fl;
+        if(!d.doubleSideband)
+        {
+            for(auto &fid : fl)
+                fid.setSideband(d.sideband);
+        }
+
+        std::vector<Ft> ftList;
+        auto ft1 = doFT(fl,settings,d.frame,-1,d.doubleSideband);
+        auto pf = fl.constFirst().probeFreq();
+        if(d.doubleSideband)
+        {
+            auto ft2 = ft1;
+            ft1.trim(pf-d.maxOffset,pf-d.minOffset);
+            ft2.trim(pf+d.minOffset,pf+d.maxOffset);
+            ftList.push_back(ft1);
+            ftList.push_back(ft2);
+        }
+        else if(d.sideband == RfConfig::UpperSideband)
+        {
+            ft1.trim(pf+d.minOffset,pf+d.maxOffset);
+            ftList.push_back(ft1);
+        }
+        else
+        {
+            ft1.trim(pf-d.maxOffset,pf-d.minOffset);
+            ftList.push_back(ft1);
+        }
+
+
+        for(auto const &ft : ftList)
+        {
+            auto index = d_loScanData.indexOf(ft.minFreqMHz());
+            auto xx = d_loScanData.relDistance(ft.xAt(0));
+
+            for(uint i=0; i<(uint)ft.size() && i+index < d_loScanData.ftPoints; i++)
             {
-                //need to rebuild working Ft with new minimum frequency
-                //adjust indices to new reference
-                auto copy = d_sidebandIndices;
-                d_sidebandIndices.clear();
-                for(auto &[key,val] : copy)
-                    d_sidebandIndices.emplace(key-offset,val);
-
-                d_sidebandIndices.emplace(0,1);
-                d_sidebandIndices.emplace(ft.size()-1,-1);
-
-                d_workingSidebandFt.setX0(f0);
-                qSwap(lhs,rhs);
-                offset = -offset;
-                origlhs = false;
-            }
-            else
-            {
-                d_sidebandIndices.emplace(offset,1);
-                d_sidebandIndices.emplace(offset+ft.size()-1,-1);
-            }
-
-            //at this point, the first point in lhs is index 0, and the first point in rhs is index offset.
-            //using the working sideband indices, create a data structure with current counts (0 where data will be new)
-            int currentCount = 0;
-
-            //loop over new points. If count is 0, append lhs if count is < offet, rhs if count > offset
-            //If count is 1 or greater, do geometric mean if lhs and rhs are both > 0; arithmetic mean otherwise
-            //use the counts structure to determine the current count
-            double yMin = 0.0;
-            double yMax = 0.0;
-            int i = 0;
-
-            //this loop is structured to make effective use of branch prediction
-            //most of the if statements in the while statements will evaluate the same way
-            //in each iteration of the outer for loop. The exception is the code that
-            //detects if either point is a 0, but that condition should be rare.
-            for(auto it = d_sidebandIndices.cbegin(); it != d_sidebandIndices.cend(); ++it)
-            {
-                //possible that there are duplicate indices if ane segment starts when another stops
-                while(i > it->first && it != d_sidebandIndices.cend())
+                //linear interpolation onto total grid, averaging in 0 for outermost points.
+                double yint = ft.at(i);
+                if(xx > 0.0)
                 {
-                    currentCount += it->second;
-                    ++it;
-                }
-
-
-                double thisCount = currentCount;
-                double totalCount = thisCount+1.0;
-                double ratio = thisCount/totalCount;
-                if(it == d_sidebandIndices.cend())
-                {
-                    while(i < newSize-1)
-                    {
-                        auto d = rhs.at(i+offset);
-                        yMin = qMin(yMin,d);
-                        yMax = qMax(yMax,d);
-                        newData.append(d);
-                        ++i;
-                    }
-                    break;
-                }
-
-                while(i < it->first)
-                {
-                    if(i >= lhs.size())
-                    {
-                        auto val = rhs.value(i-offset);
-                        yMin = qMin(yMin,val);
-                        yMax = qMax(yMax,val);
-                        newData.append(val);
-                        ++i;
-                    }
+                    if(i == 0)
+                        yint = xx*ft.at(i);
+                    else if(i+1 == (uint)ft.size())
+                        yint = ft.at(i)*(1-xx);
                     else
-                    {
-                        auto d = lhs.at(i);
-                        if(it->second == 0 || i < offset)
-                        {
-                            //no points yet at this index; store the current value and move on
-                            yMin = qMin(yMin,d);
-                            yMax = qMax(yMax,d);
-                            newData.append(d);
-                            ++i;
-                        }
-                        else
-                        {
-                            auto d2 = rhs.at(i-offset);
-                            if(d <= 0.0 || d2 <=0.0)
-                            {
-                                //compute arithmetic mean
-                                double val;
-                                if(origlhs)
-                                    val = ratio*d + ratio/totalCount;
-                                else
-                                    val = d/totalCount + ratio*d2;
-                                yMin = qMin(yMin,val);
-                                yMax = qMax(yMax,val);
-                                newData.append(val);
-                                ++i;
-                            }
-                            else
-                            {
-                                //compute geometric mean
-                                double val;
-                                if(origlhs)
-                                    val = pow(10.0,ratio*log10(d) + log10(d2)/totalCount);
-                                else
-                                    val = pow(10.0,log10(d)/totalCount + ratio*log10(d2));
-                                yMin = qMin(yMin,val);
-                                yMax = qMax(yMax,val);
-                                newData.append(val);
-                                ++i;
-                            }
-                        }
-                    }
+                        yint = ft.at(i) + (ft.at(i+1)-ft.at(i))*xx;
                 }
 
-                currentCount += it->second;
+                //do average
+                if(d_loScanData.counts.at(i+index) == 0)
+                {
+                    d_loScanData.ftData[i+index] = yint;
+                    d_loScanData.counts[i+index] = ft.shots();
+                }
+                else
+                {
+                    auto s1 = d_loScanData.counts.at(i+index);
+                    auto y1 = d_loScanData.ftData.at(i+index);
+                    auto s2 = ft.shots();
+                    switch(d.dcMethod)
+                    {
+                    case Harmonic_Mean:
+                        d_loScanData.ftData[i+index] = (s1+s2)/(s1/y1+s2/yint);
+                        break;
+                    case Geometric_Mean:
+                        d_loScanData.ftData[i+index] = exp((s1*log(y1) + s2*log(yint))/(s1+s2));
+                        break;
+                    }
+
+                    d_loScanData.counts[i+index] += s2;
+                }
             }
 
-            //if points remain, fill them in
-            while(i < newSize-1)
-            {
-                auto d = rhs.at(i+offset);
-                yMin = qMin(yMin,d);
-                yMax = qMax(yMax,d);
-                newData.append(d);
-                ++i;
-            }
+            //in double sideband mode, each FID is processed twice
+            if(d.doubleSideband)
+                d_loScanData.totalShots += ft.shots()/2;
+            else
+                d_loScanData.totalShots += ft.shots();
 
-            d_workingSidebandFt.setData(newData,yMin,yMax);
-            d_workingSidebandFt.setNumShots(d_workingSidebandFt.shots() + ft.shots());
         }
     }
 
     if(d.currentIndex + 1 >= d.totalFids)
     {
-        emit sidebandDone(d_workingSidebandFt);
-        d_workingSidebandFt = Ft();
-        clearSplineMemory();
-        d_sidebandIndices.clear();
+        Ft out(d_loScanData.ftPoints,d_loScanData.ftXRange.first,d_loScanData.ftSpacing,d_loScanData.ftXRange.first);
+        double yMin = 0.0, yMax = 0.0;
+        for(int i=0; i<d_loScanData.ftData.size(); i++)
+        {
+            yMin = qMin(yMin,d_loScanData.ftData.at(i));
+            yMax = qMax(yMax,d_loScanData.ftData.at(i));
+        }
+        out.setData(d_loScanData.ftData,yMin,yMax);
+        out.setNumShots(d_loScanData.totalShots);
+        emit sidebandDone(out);
     }
 
 }
@@ -407,6 +395,8 @@ FtWorker::FilterResult FtWorker::filterFid(const Fid fid, const FidProcessingSet
 
     int n = ei - si + 1;
 
+    double avg = 0.0;
+
     if(settings.removeDC)
     {
         //calculate average of samples in the FT range, then subtract that from each point
@@ -427,18 +417,7 @@ FtWorker::FilterResult FtWorker::filterFid(const Fid fid, const FidProcessingSet
             sum = t;
         }
 
-        double avg = sum/static_cast<double>(n);
-        for(int i=0; i<data.size(); i++)
-        {
-            if(i < si)
-                continue;
-
-            if(i > ei)
-                break;
-
-            data[i] -= avg;
-        }
-
+        avg = sum/static_cast<double>(n);
     }
 
     double min = data.at(si);
@@ -461,13 +440,25 @@ FtWorker::FilterResult FtWorker::filterFid(const Fid fid, const FidProcessingSet
             break;
 
 
-        double d = data.at(i);
+        double d = settings.removeDC ? data.at(i)-avg : data.at(i);
+
+        if(settings.expFilter > 0.0)
+            d*=exp(-static_cast<double>(i-si)*fid.spacing()/(settings.expFilter/1e6));
+
         if(settings.windowFunction != None)
             d*=d_winf.at(i-si);
 
         out[i] = d;
-        min = qMin(d,min);
-        max = qMax(d,max);
+        if(i==si)
+        {
+            min = d;
+            max = d;
+        }
+        else
+        {
+            min = qMin(d,min);
+            max = qMax(d,max);
+        }
     }
 
     if(settings.zeroPadFactor > 0 && settings.zeroPadFactor <= 2)

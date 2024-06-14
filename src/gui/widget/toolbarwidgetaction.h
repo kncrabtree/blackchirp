@@ -64,10 +64,10 @@ public:
     DoubleSpinBoxWidgetAction(const QString label = QString(""), QWidget *parent = nullptr)
         : ToolBarWidgetAction(label,parent) {}
 
-    void setSpecialValueText(QString text);;
-    void setRange(double min, double max);;
-    void setMinimum(double min);;
-    void setMaximum(double max);;
+    void setSpecialValueText(QString text);
+    void setRange(double min, double max);
+    void setMinimum(double min);
+    void setMaximum(double max);
     void setPrefix(const QString p);
     void setSuffix(const QString s);
     void setDecimals(int d);
@@ -171,6 +171,15 @@ public:
         ToolBarWidgetAction(label,parent) { setCheckable(true); }
 
     QWidget *_createWidget(QWidget *parent) override;
+
+    void setCheckedState(bool b);
+    bool readCheckedState() const;
+
+signals:
+    void checkStateChanged(bool);
+
+private:
+    bool d_checked{false};
 
 };
 

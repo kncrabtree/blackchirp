@@ -65,27 +65,27 @@ LifProcessingWidget::LifProcessingWidget(bool store, QWidget *parent)
 
     connect(p_sgEnBox,&QCheckBox::toggled,p_sgWinBox,&QSpinBox::setEnabled);
     connect(p_sgEnBox,&QCheckBox::toggled,p_sgPolyBox,&QSpinBox::setEnabled);
-    connect(p_lgStartBox,qOverload<int>(&QSpinBox::valueChanged),[=](int n){
+    connect(p_lgStartBox,qOverload<int>(&QSpinBox::valueChanged),this,[this](int n){
         auto v = p_lgEndBox->value();
         if(n >= v)
             p_lgEndBox->setValue(n+1);
     });
-    connect(p_lgEndBox,qOverload<int>(&QSpinBox::valueChanged),[=](int n){
+    connect(p_lgEndBox,qOverload<int>(&QSpinBox::valueChanged),this,[this](int n){
         auto v = p_lgStartBox->value();
         if(v >= n)
             p_lgStartBox->setValue(n-1);
     });
-    connect(p_rgStartBox,qOverload<int>(&QSpinBox::valueChanged),[=](int n){
+    connect(p_rgStartBox,qOverload<int>(&QSpinBox::valueChanged),this,[this](int n){
         auto v = p_rgEndBox->value();
         if(n >= v)
             p_rgEndBox->setValue(n+1);
     });
-    connect(p_rgEndBox,qOverload<int>(&QSpinBox::valueChanged),[=](int n){
+    connect(p_rgEndBox,qOverload<int>(&QSpinBox::valueChanged),this,[this](int n){
         auto v = p_rgStartBox->value();
         if(v >= n)
             p_rgStartBox->setValue(n-1);
     });
-    connect(p_sgWinBox,qOverload<int>(&QSpinBox::valueChanged),[=](int n){
+    connect(p_sgWinBox,qOverload<int>(&QSpinBox::valueChanged),this,[this](int n){
         if(!(n%2))
         {
             n--;

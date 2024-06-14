@@ -14,3 +14,9 @@ bool CustomInstrument::testConnection()
 {
     return true;
 }
+
+
+QIODevice *CustomInstrument::_device()
+{
+    return nullptr;
+}

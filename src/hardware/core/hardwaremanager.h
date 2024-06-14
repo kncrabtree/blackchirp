@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <memory>
+#include <functional>
 #include <data/loghandler.h>
 #include <data/storage/auxdatastorage.h>
 #include <data/storage/settingsstorage.h>
@@ -12,9 +13,10 @@
 #include <hardware/optional/pulsegenerator/pulsegenconfig.h>
 #include <hardware/optional/pressurecontroller/pressurecontrollerconfig.h>
 #include <hardware/optional/tempcontroller/temperaturecontrollerconfig.h>
+#include <hardware/optional/ioboard/ioboardconfig.h>
 
 #ifdef BC_LIF
-#include <modules/lif/hardware/lifdigitizer/lifdigitizerconfig.h>
+#include <modules/lif/data/lifconfig.h>
 #endif
 
 class HardwareObject;
@@ -32,6 +34,9 @@ class HardwareManager : public QObject, public SettingsStorage
 public:
     explicit HardwareManager(QObject *parent = 0);
     ~HardwareManager();
+
+    QString getHwName(const QString key);
+    const std::set<QString> d_optHwTypes;
 
 signals:
     void logMessage(QString,LogHandler::MessageCode = LogHandler::Normal);
@@ -59,31 +64,28 @@ signals:
     void clockFrequencyUpdate(RfConfig::ClockType, double);
     void allClocksReady(QHash<RfConfig::ClockType,RfConfig::ClockFreq>);
 
-    void pGenSettingUpdate(int,PulseGenConfig::Setting,QVariant);
-    void pGenConfigUpdate(PulseGenConfig);
-    void pGenRepRateUpdate(double);
-    void pGenPulsingUpdate(bool);
-    void pGenModeUpdate(PulseGenConfig::PGenMode);
+    void pGenSettingUpdate(QString,int,PulseGenConfig::Setting,QVariant);
+    void pGenConfigUpdate(QString,PulseGenConfig);
 
-    void flowUpdate(int,double);
-    void flowSetpointUpdate(int,double);
-    void gasPressureUpdate(double);
-    void gasPressureSetpointUpdate(double);
-    void gasPressureControlMode(bool);
+    void flowUpdate(QString,int,double);
+    void flowSetpointUpdate(QString,int,double);
+    void gasPressureUpdate(QString,double);
+    void gasPressureSetpointUpdate(QString,double);
+    void gasPressureControlMode(QString,bool);
 
-    void pressureControlReadOnly(bool);
-    void pressureUpdate(double);
-    void pressureSetpointUpdate(double);
-    void pressureControlMode(bool);
+    void pressureControlReadOnly(QString,bool);
+    void pressureUpdate(QString,double);
+    void pressureSetpointUpdate(QString,double);
+    void pressureControlMode(QString,bool);
 
-    void temperatureUpdate(int,double);
-    void temperatureEnableUpdate(int,bool);
+    void temperatureUpdate(QString,uint,double);
+    void temperatureEnableUpdate(QString,uint,bool);
 
 #ifdef BC_LIF
     void lifScopeShotAcquired(QVector<qint8>);
     void lifSettingsComplete(bool success = true);
     void lifLaserPosUpdate(double);
-    void lifConfigAcqStarted(LifDigitizerConfig);
+    void lifConfigAcqStarted();
     void lifLaserFlashlampUpdate(bool);
 #endif
 
@@ -122,35 +124,36 @@ public slots:
     void configureClocks(QHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
     void setClocks(QHash<RfConfig::ClockType,RfConfig::ClockFreq> clocks);
 
-    void setPGenSetting(int index, PulseGenConfig::Setting s, QVariant val);
-    void setPGenConfig(const PulseGenConfig &c);
-    void setPGenRepRate(double r);
-    void setPGenPulsingEnabled(bool en);
-    void setPGenMode(PulseGenConfig::PGenMode mode);
-    PulseGenConfig getPGenConfig();
+    void setPGenSetting(const QString key, int index, PulseGenConfig::Setting s, QVariant val);
+    void setPGenConfig(const QString key, const PulseGenConfig &c);
+    PulseGenConfig getPGenConfig(const QString key);
 
-    void setFlowSetpoint(int index, double val);
-    void setFlowChannelName(int index, QString name);
-    void setGasPressureSetpoint(double val);
-    void setGasPressureControlMode(bool en);
-    FlowConfig getFlowConfig();
+    void setFlowSetpoint(const QString key, int index, double val);
+    void setFlowChannelName(const QString key, int index, QString name);
+    void setGasPressureSetpoint(const QString key, double val);
+    void setGasPressureControlMode(const QString key, bool en);
+    FlowConfig getFlowConfig(const QString key);
 
-    void setPressureSetpoint(double val);
-    void setPressureControlMode(bool en);
-    void openGateValve();
-    void closeGateValve();
-    PressureControllerConfig getPressureControllerConfig();
+    void setPressureSetpoint(const QString key, double val);
+    void setPressureControlMode(const QString key, bool en);
+    void openGateValve(const QString key);
+    void closeGateValve(const QString key);
+    PressureControllerConfig getPressureControllerConfig(const QString key);
 
-    void setTemperatureChannelEnabled(int ch, bool en);
-    void setTemperatureChannelName(int ch, const QString name);
-    TemperatureControllerConfig getTemperatureControllerConfig();
+    void setTemperatureChannelEnabled(const QString key, uint ch, bool en);
+    void setTemperatureChannelName(const QString key, uint ch, const QString name);
+    TemperatureControllerConfig getTemperatureControllerConfig(const QString key);
+
+    IOBoardConfig getIOBoardConfig(const QString key);
+
+    void storeAllOptHw(Experiment *exp, std::map<QString,bool> hw = {});
 
 #ifdef BC_LIF
     void setLifParameters(double delay, double pos);
     bool setPGenLifDelay(double d);
-    void setLifLaserPos(double pos);
+    bool setLifLaserPos(double pos);
     void lifLaserSetComplete(double pos);
-    void startLifConfigAcq(const LifDigitizerConfig &c);
+    void startLifConfigAcq(const LifConfig &c);
     void stopLifConfigAcq();
     double lifLaserPos();
     bool lifLaserFlashlampEnabled();

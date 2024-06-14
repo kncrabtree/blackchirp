@@ -13,7 +13,7 @@ class IOBoard : public HardwareObject, public IOBoardConfig
 {
     Q_OBJECT
 public:
-    explicit IOBoard(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded=true,bool critical=false);
+    explicit IOBoard(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent = nullptr, bool threaded=true, bool critical=false);
     virtual ~IOBoard();
 
     virtual QStringList validationKeys() const override;
@@ -25,26 +25,18 @@ protected:
 private:
     AuxDataStorage::AuxDataMap readAuxData() override;
     AuxDataStorage::AuxDataMap readValidationData() override;
+    void writeSettings();
+
+    inline static int d_count = 0;
 
     // HardwareObject interface
 public slots:
-    bool prepareForExperiment(Experiment &exp) override;
+    bool hwPrepareForExperiment(Experiment &exp) override final;
+    IOBoardConfig getConfig() { return static_cast<IOBoardConfig&>(*this); }
 
     // HardwareObject interface
 public slots:
     QStringList forbiddenKeys() const override;
 };
-
-#ifdef BC_IOBOARD
-#if BC_IOBOARD == 0
-#include "virtualioboard.h"
-class VirtualIOBoard;
-typedef VirtualIOBoard IOBoardHardware;
-#elif BC_IOBOARD == 1
-#include "labjacku3.h"
-class LabjackU3;
-typedef LabjackU3 IOBoardHardware;
-#endif
-#endif
 
 #endif // IOBOARD_H

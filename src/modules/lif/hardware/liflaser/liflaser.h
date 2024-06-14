@@ -35,17 +35,14 @@ private:
 
     //This function should return whether setting was successful, not whether it's enabled
     virtual bool setFl(bool en) =0;
+
+    bool d_autoDisable{false};
+
+    // HardwareObject interface
+public slots:
+    bool hwPrepareForExperiment(Experiment &exp) override final;
+    void beginAcquisition() override final;
+    void endAcquisition() override final;
 };
-
-
-#if BC_LIFLASER == 1
-#include "opolette.h"
-class Opolette;
-typedef Opolette LifLaserHardware;
-#else
-#include "virtualliflaser.h"
-class VirtualLifLaser;
-using LifLaserHardware = VirtualLifLaser;
-#endif
 
 #endif // LIFLASER_H

@@ -1,7 +1,7 @@
 #include "valon5015.h"
 
-Valon5015::Valon5015(int clockNum, QObject *parent) :
-    Clock(clockNum,1,true,BC::Key::valon5015,BC::Key::valon5015Name,CommunicationProtocol::Rs232,parent)
+Valon5015::Valon5015(QObject *parent) :
+    Clock(1,true,BC::Key::valon5015,BC::Key::valon5015Name,CommunicationProtocol::Rs232,parent)
 {
     setDefault(BC::Key::Clock::minFreq,500.0);
     setDefault(BC::Key::Clock::maxFreq,15000.0);

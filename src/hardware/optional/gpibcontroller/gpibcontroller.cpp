@@ -1,7 +1,7 @@
 #include <hardware/optional/gpibcontroller/gpibcontroller.h>
 
 GpibController::GpibController(const QString subKey, const QString name, CommunicationProtocol::CommType commType, QObject *parent) :
-    HardwareObject(BC::Key::gpibController,subKey,name,commType,parent,true,true)
+    HardwareObject(BC::Key::gpibController,subKey,name,commType,parent,true,true,d_count)
 {
 }
 

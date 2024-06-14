@@ -28,7 +28,7 @@ PeakFindWidget::PeakFindWidget(Ft ft, int number, QWidget *parent):
 
     connect(ui->findButton,&QPushButton::clicked,this,&PeakFindWidget::findPeaks);
     connect(ui->peakListTableView->selectionModel(),&QItemSelectionModel::selectionChanged,this,&PeakFindWidget::updateRemoveButton);
-    connect(ui->liveUpdateBox,&QCheckBox::toggled,[=](bool b){ if(b) findPeaks(); });
+    connect(ui->liveUpdateBox,&QCheckBox::toggled,this,[this](bool b){ if(b) findPeaks(); });
     connect(ui->optionsButton,&QPushButton::clicked,this,&PeakFindWidget::launchOptionsDialog);
     connect(ui->exportButton,&QPushButton::clicked,this,&PeakFindWidget::launchExportDialog);
 
@@ -86,7 +86,8 @@ void PeakFindWidget::findPeaks()
     if(!d_busy)
     {
         d_busy = true;
-        QtConcurrent::run([this](){p_pf->findPeaks(d_currentFt,d_minFreq,d_maxFreq,d_snr);});
+        auto ret = QtConcurrent::run([this](){p_pf->findPeaks(d_currentFt,d_minFreq,d_maxFreq,d_snr);});
+        Q_UNUSED(ret)
         d_waiting = false;
     }
     else

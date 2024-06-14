@@ -32,121 +32,121 @@ bool VirtualPulseGenerator::testConnection()
 
 bool VirtualPulseGenerator::setChWidth(const int index, const double width)
 {
-    setCh(index,PulseGenConfig::WidthSetting,width);
+    d_config.setCh(index,PulseGenConfig::WidthSetting,width);
     return true;
 }
 
 bool VirtualPulseGenerator::setChDelay(const int index, const double delay)
 {
-    setCh(index,PulseGenConfig::DelaySetting,delay);
+    d_config.setCh(index,PulseGenConfig::DelaySetting,delay);
     return true;
 }
 
 bool VirtualPulseGenerator::setChActiveLevel(const int index, const PulseGenConfig::ActiveLevel level)
 {
-    setCh(index,PulseGenConfig::LevelSetting,level);
+    d_config.setCh(index,PulseGenConfig::LevelSetting,level);
     return true;
 }
 
 bool VirtualPulseGenerator::setChEnabled(const int index, const bool en)
 {
-    setCh(index,PulseGenConfig::EnabledSetting,en);
+    d_config.setCh(index,PulseGenConfig::EnabledSetting,en);
     return true;
 }
 
 bool VirtualPulseGenerator::setHwRepRate(double rr)
 {
-    d_repRate = rr;
+    d_config.d_repRate = rr;
     return true;
 }
 
 bool VirtualPulseGenerator::setChSyncCh(const int index, const int syncCh)
 {
-    setCh(index,PulseGenConfig::SyncSetting,syncCh);
+    d_config.setCh(index,PulseGenConfig::SyncSetting,syncCh);
     return true;
 }
 
-bool VirtualPulseGenerator::setChMode(const int index, const ChannelMode mode)
+bool VirtualPulseGenerator::setChMode(const int index, const PulseGenConfig::ChannelMode mode)
 {
-    setCh(index,PulseGenConfig::ModeSetting,mode);
+    d_config.setCh(index,PulseGenConfig::ModeSetting,mode);
     return true;
 }
 
 bool VirtualPulseGenerator::setChDutyOn(const int index, const int pulses)
 {
-    setCh(index,PulseGenConfig::DutyOnSetting,pulses);
+    d_config.setCh(index,PulseGenConfig::DutyOnSetting,pulses);
     return true;
 }
 
 bool VirtualPulseGenerator::setChDutyOff(const int index, const int pulses)
 {
-    setCh(index,PulseGenConfig::DutyOffSetting,pulses);
+    d_config.setCh(index,PulseGenConfig::DutyOffSetting,pulses);
     return true;
 }
 
-bool VirtualPulseGenerator::setHwPulseMode(PGenMode mode)
+bool VirtualPulseGenerator::setHwPulseMode(PulseGenConfig::PGenMode mode)
 {
-    d_mode = mode;
+    d_config.d_mode = mode;
     return true;
 }
 
 bool VirtualPulseGenerator::setHwPulseEnabled(bool en)
 {
-    d_pulseEnabled = en;
+    d_config.d_pulseEnabled = en;
     return true;
 }
 
 double VirtualPulseGenerator::readChWidth(const int index)
 {
-    return at(index).width;
+    return d_config.at(index).width;
 }
 
 double VirtualPulseGenerator::readChDelay(const int index)
 {
-    return at(index).delay;
+    return d_config.at(index).delay;
 }
 
 PulseGenConfig::ActiveLevel VirtualPulseGenerator::readChActiveLevel(const int index)
 {
-    return at(index).level;
+    return d_config.at(index).level;
 }
 
 bool VirtualPulseGenerator::readChEnabled(const int index)
 {
-    return at(index).enabled;
+    return d_config.at(index).enabled;
 }
 
 double VirtualPulseGenerator::readHwRepRate()
 {
-    return d_repRate;
+    return d_config.d_repRate;
 }
 
 int VirtualPulseGenerator::readChSynchCh(const int index)
 {
-    return at(index).syncCh;
+    return d_config.at(index).syncCh;
 }
 
 PulseGenConfig::ChannelMode VirtualPulseGenerator::readChMode(const int index)
 {
-    return at(index).mode;
+    return d_config.at(index).mode;
 }
 
 int VirtualPulseGenerator::readChDutyOn(const int index)
 {
-    return at(index).dutyOn;
+    return d_config.at(index).dutyOn;
 }
 
 int VirtualPulseGenerator::readChDutyOff(const int index)
 {
-    return at(index).dutyOff;
+    return d_config.at(index).dutyOff;
 }
 
 PulseGenConfig::PGenMode VirtualPulseGenerator::readHwPulseMode()
 {
-    return d_mode;
+    return d_config.d_mode;
 }
 
 bool VirtualPulseGenerator::readHwPulseEnabled()
 {
-    return d_pulseEnabled;
+    return d_config.d_pulseEnabled;
 }

@@ -27,7 +27,7 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
 {
     pu_experiment = std::make_unique<Experiment>(num,path);
     setWindowFlags(Qt::Window);
-    setWindowTitle(QString("Experiment %1").arg(num));
+    setWindowTitle(QString("Experiment %1").arg(pu_experiment->d_number));
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowIcon(QIcon(QString(":/icons/bc_logo_small.png")));
 
@@ -107,7 +107,7 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
     {
         out = new QWidget;
         QVBoxLayout *vbl = new QVBoxLayout;
-        p_ftmw = new FtmwViewWidget(out,path);
+        p_ftmw = new FtmwViewWidget(false,out,path);
         vbl->addWidget(p_ftmw);
         out->setLayout(vbl);
 

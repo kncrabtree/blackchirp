@@ -44,8 +44,9 @@ public:
     explicit ChirpConfigWidget(QWidget *parent = 0);
     ~ChirpConfigWidget();
 
-    void initialize(RfConfig *p);
-    void setFromRfConfig(RfConfig *p);
+    void initialize(const RfConfig &rfc);
+    void setFromRfConfig(const RfConfig &rfc);
+    ChirpConfig &getChirps();
 
 public slots:
     void enableEditing(bool enabled);
@@ -71,7 +72,7 @@ private:
     ChirpTableModel *p_ctm;
     bool d_rampOnly;
     double d_awgSampleRate;
-    RfConfig *p_rfConfig;
+    RfConfig d_rfConfig;
 
     bool isSelectionContiguous(QModelIndexList l);
     void clearList(bool replot=true);

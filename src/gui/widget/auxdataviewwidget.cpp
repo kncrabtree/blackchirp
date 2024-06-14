@@ -188,7 +188,9 @@ void AuxDataViewWidget::addNewPlot()
 
     int newPlotIndex = d_allPlots.size();
     connect(tp,&ZoomPanPlot::curveMoveRequested,this,&AuxDataViewWidget::moveCurveToPlot);
-    connect(tp,&TrackingPlot::axisPushRequested,this,[=](){ pushXAxis(newPlotIndex); });
+    connect(tp,&TrackingPlot::axisPushRequested,this,[this,newPlotIndex](){
+        pushXAxis(newPlotIndex);
+    });
     connect(tp,&TrackingPlot::autoScaleAllRequested,this,&AuxDataViewWidget::autoScaleAll);
 
     d_allPlots.append(tp);

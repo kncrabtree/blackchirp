@@ -59,25 +59,12 @@ SettingsStorage::~SettingsStorage()
 
 bool SettingsStorage::containsValue(const QString key) const
 {
-    ///TODO: c++20 will have std::map.contains; can just return d_values.contains(key) || d_getters.contains(key)
-
-    //search for key in values map
-    auto it = d_values.find(key);
-    if(it != d_values.end())
-        return true;
-
-    //search for key in getters map
-    auto it2 = d_getters.find(key);
-    if(it2 != d_getters.end())
-        return true;
-
-    //if we've made it here, the key wasn't found
-    return false;
+    return d_values.contains(key) || d_getters.contains(key);
 }
 
 bool SettingsStorage::containsArray(const QString key) const
 {
-    return (d_arrayValues.find(key) != d_arrayValues.end());
+    return d_arrayValues.contains(key);
 }
 
 QVariant SettingsStorage::get(const QString key, const QVariant &defaultValue) const

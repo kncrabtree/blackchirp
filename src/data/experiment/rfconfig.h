@@ -98,6 +98,7 @@ public:
     QHash<ClockType,ClockFreq> getClocks() const;
     double clockFrequency(ClockType t) const;
     double rawClockFrequency(ClockType t) const;
+    std::pair<double,double> clockRange(ClockType t) const;
     QString clockHardware(ClockType t) const;
     bool isComplete() const;
 
@@ -109,13 +110,15 @@ public:
     bool writeClockFile(int num) const;
     void loadClockSteps(BlackchirpCSV *csv, int num, QString path);
 
+    static double getRawFrequency(const ClockFreq f);
+    static double rawToOutputFrequency(const ClockFreq &f, double rawFreq);
+
 private:
     //clocks
     QHash<ClockType,ClockFreq> d_clockTemplate;
     QVector<QHash<ClockType,RfConfig::ClockFreq>> d_clockConfigs;
     int d_currentClockIndex{-1};
 
-    double getRawFrequency(ClockFreq f) const;
 
     // HeaderStorage interface
 protected:

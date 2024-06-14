@@ -51,33 +51,4 @@ public:
     virtual ~AWG();
 };
 
-
-#ifdef BC_AWG
-#if BC_AWG==0
-#include "virtualawg.h"
-class VirtualAwg;
-typedef VirtualAwg AwgHardware;
-#elif BC_AWG==1
-#include "awg70002a.h"
-class AWG70002a;
-typedef AWG70002a AwgHardware;
-#elif BC_AWG==2
-#include "awg7122b.h"
-class AWG7122B;
-typedef AWG7122B AwgHardware;
-#elif BC_AWG==3
-#include "ad9914.h"
-class AD9914;
-typedef AD9914 AwgHardware;
-#elif BC_AWG==4
-#include "m8195a.h"
-class M8195A;
-typedef M8195A AwgHardware;
-#elif BC_AWG==5
-#include "awg5204.h"
-class AWG5204;
-typedef AWG5204 AwgHardware;
-#endif
-#endif
-
 #endif // AWG_H

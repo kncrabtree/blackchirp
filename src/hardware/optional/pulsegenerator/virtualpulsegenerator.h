@@ -24,10 +24,10 @@ protected:
     bool setChEnabled(const int index, const bool en) override;
     bool setHwRepRate(double rr) override;
     bool setChSyncCh(const int index, const int syncCh) override;
-    bool setChMode(const int index, const ChannelMode mode) override;
+    bool setChMode(const int index, const PulseGenConfig::ChannelMode mode) override;
     bool setChDutyOn(const int index, const int pulses) override;
     bool setChDutyOff(const int index, const int pulses) override;
-    bool setHwPulseMode(PGenMode mode) override;
+    bool setHwPulseMode(PulseGenConfig::PGenMode mode) override;
     bool setHwPulseEnabled(bool en) override;
 
 

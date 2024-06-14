@@ -4,12 +4,15 @@
 #include <hardware/core/hardwareobject.h>
 
 namespace BC::Key::Clock {
+static const QString clock{"Clock"};
 static const QString minFreq{"minFreqMHz"};
 static const QString maxFreq{"maxFreqMHz"};
 static const QString lock{"lockExternal"};
 static const QString outputs{"outputs"};
 static const QString mf{"multFactor"};
 static const QString role{"role"};
+static const QString tunable{"tunable"};
+static const QString manualTune{"manualTune"};
 }
 
 /**
@@ -35,7 +38,7 @@ class Clock : public HardwareObject
 {
     Q_OBJECT
 public:
-    explicit Clock(int clockNum, int numOutputs, bool tunable, const QString subKey, const QString name,
+    explicit Clock(int numOutputs, bool tunable, const QString subKey, const QString name,
                    CommunicationProtocol::CommType commType, QObject *parent = nullptr);
     virtual ~Clock();
 
@@ -69,6 +72,8 @@ private:
     bool d_isTunable;
     QHash<RfConfig::ClockType,int> d_outputRoles;
     QVector<double> d_multFactors;
+
+    inline static int d_count = 0;
 
 
 protected:

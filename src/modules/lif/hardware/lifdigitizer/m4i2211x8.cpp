@@ -3,7 +3,7 @@
 #include <QTimer>
 
 M4i2211x8::M4i2211x8(QObject *parent) :
-    LifScope (BC::Key::m4i2211x8,BC::Key::m4i2211x8Name,CommunicationProtocol::Custom,parent),
+    LifScope (BC::Key::LifDigi::m4i2211x8,BC::Key::LifDigi::m4i2211x8Name,CommunicationProtocol::Custom,parent),
     p_handle(nullptr)
 {
     using namespace BC::Key::Digi;
@@ -210,6 +210,8 @@ bool M4i2211x8::configure(const LifDigitizerConfig &c)
     spcm_dwSetParam_i32(p_handle,SPC_OFFS0,0);
     ch.offset = 0.0;
 
+    spcm_dwSetParam_i32(p_handle,SPC_ACDC0,0);
+
     if(errorCheck())
         return false;
 
@@ -234,6 +236,8 @@ bool M4i2211x8::configure(const LifDigitizerConfig &c)
         spcm_dwSetParam_i32(p_handle,SPC_OFFS1,0);
         ch2.offset = 0.0;
 
+        spcm_dwSetParam_i32(p_handle,SPC_ACDC1,0);
+
         if(errorCheck())
             return false;
     }
@@ -253,7 +257,7 @@ bool M4i2211x8::configure(const LifDigitizerConfig &c)
     if(d_refEnabled)
         d_bufferSize *= 2;
 
-    spcm_dwSetParam_i64(p_handle,SPC_MEMSIZE,static_cast<qint64>(d_bufferSize));
+    spcm_dwSetParam_i64(p_handle,SPC_MEMSIZE,static_cast<qint64>(d_recordLength));
     spcm_dwSetParam_i64(p_handle,SPC_POSTTRIGGER,static_cast<qint64>(d_recordLength-32));
 
     if(errorCheck())
@@ -269,16 +273,6 @@ bool M4i2211x8::configure(const LifDigitizerConfig &c)
     spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_WRITESETUP);
 
     return !errorCheck();
-}
-
-bool M4i2211x8::prepareForExperiment(Experiment &exp)
-{
-    if(configure(exp.lifConfig()->d_scopeConfig))
-    {
-        exp.lifConfig()->d_scopeConfig = static_cast<LifDigitizerConfig&>(*this);
-        return true;
-    }
-    return false;
 }
 
 void M4i2211x8::beginAcquisition()

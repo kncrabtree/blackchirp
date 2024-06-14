@@ -8,7 +8,7 @@
 #include <gui/widget/led.h>
 #include <data/storage/settingsstorage.h>
 
-LifLaserStatusBox::LifLaserStatusBox(QWidget *parent) : QGroupBox("LIF Laser",parent)
+LifLaserStatusBox::LifLaserStatusBox(QWidget *parent) : HardwareStatusBox(BC::Key::LifLaser::key,parent)
 {
     auto hbl = new QHBoxLayout;
 

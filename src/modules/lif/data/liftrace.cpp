@@ -7,14 +7,14 @@ LifTrace::LifTrace() : p_data(new LifTraceData)
 {
 }
 
-LifTrace::LifTrace(const LifDigitizerConfig &c, const QVector<qint8> b, int dIndex, int lIndex)
+LifTrace::LifTrace(const LifDigitizerConfig &c, const QVector<qint8> b, int dIndex, int lIndex, int bitShift)
     : p_data(new LifTraceData)
 {
     //reference channel is used to normalize to pulse energy
     //if active, must be second channel
     p_data->xSpacing = c.xIncr();
-    p_data->lifYMult = c.yMult(c.d_lifChannel);
-    p_data->refYMult = c.yMult(c.d_refChannel);
+    p_data->lifYMult = c.yMult(c.d_lifChannel)/(1 << bitShift);
+    p_data->refYMult = c.yMult(c.d_refChannel)/(1 << bitShift);
     p_data->delayIndex = dIndex;
     p_data->laserIndex = lIndex;
 
@@ -33,7 +33,7 @@ LifTrace::LifTrace(const LifDigitizerConfig &c, const QVector<qint8> b, int dInd
         if(c.d_bytesPerPoint == 1)
         {
             auto y = b.at(i);
-            dat = static_cast<qint64>(y);
+            dat = static_cast<qint64>(y) << bitShift;
         }
         else
         {
@@ -46,7 +46,7 @@ LifTrace::LifTrace(const LifDigitizerConfig &c, const QVector<qint8> b, int dInd
                 y = qFromBigEndian(y);
             else
                 y = qFromLittleEndian(y);
-            dat = static_cast<qint64>(y);
+            dat = static_cast<qint64>(y) << bitShift;
         }
         p_data->lifData[i/incr] = dat;
     }
@@ -59,7 +59,7 @@ LifTrace::LifTrace(const LifDigitizerConfig &c, const QVector<qint8> b, int dInd
             if(c.d_bytesPerPoint == 1)
             {
                 char y = b.at(i);
-                dat = static_cast<qint64>(y);
+                dat = static_cast<qint64>(y) << bitShift;
             }
             else
             {
@@ -72,7 +72,7 @@ LifTrace::LifTrace(const LifDigitizerConfig &c, const QVector<qint8> b, int dInd
                     y = qFromBigEndian(y);
                 else
                     y = qFromLittleEndian(y);
-                dat = static_cast<qint64>(y);
+                dat = static_cast<qint64>(y) << bitShift;
             }
             p_data->refData[(i-c.d_bytesPerPoint*refoffset)/incr] = dat;
         }
@@ -107,6 +107,9 @@ double LifTrace::integrate(const LifProcSettings &s) const
 {
     //validate ranges (sort of; if ranges are bad this will return 0);
     //lif start must be in range of data
+    if(p_data->lifData.size() < 2)
+        return 0.0;
+
     auto ls = qBound(0,s.lifGateStart,p_data->lifData.size()-2);
     //lif end must be greater than start and in range of data
     auto le = qBound(ls+1,s.lifGateEnd,p_data->lifData.size()-1);

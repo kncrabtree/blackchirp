@@ -4,7 +4,7 @@
 
 #include <QtCore/QVariant>
 #include <QtGui/QIcon>
-#include <QtWidgets/QAction>
+#include <QAction>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QFormLayout>
@@ -26,6 +26,7 @@
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QSpacerItem>
+#include <QtWidgets/QScrollArea>
 #include <gui/widget/ftmwviewwidget.h>
 #include <gui/widget/led.h>
 #include <gui/widget/auxdataviewwidget.h>
@@ -70,7 +71,6 @@ public:
     QLabel *exptLabel;
     QSpinBox *exptSpinBox;
     ClockDisplayBox *clockBox;
-    QSpacerItem *statusSpacer;
     QLabel *ftmwProgressLabel;
     QProgressBar *ftmwProgressBar;
     QTabWidget *mainTabWidget;
@@ -93,6 +93,9 @@ public:
     QMenu *settingsMenu;
     QToolBar *mainToolBar;
     QStatusBar *statusBar;
+    QScrollArea *hwStatusScrollArea;
+    QWidget *hwStatusWidget;
+    QVBoxLayout *hwStatusLayout;
 
 
 #ifdef BC_LIF
@@ -296,12 +299,23 @@ public:
 
         instrumentStatusLayout->addLayout(statusLayout);
 
-        clockBox = new ClockDisplayBox(centralWidget);
-        instrumentStatusLayout->addWidget(clockBox,0);
+        hwStatusScrollArea = new QScrollArea(centralWidget);
+        hwStatusScrollArea->setObjectName("HwStatusScrollArea");
+        hwStatusScrollArea->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
+        hwStatusScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        hwStatusScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+        hwStatusScrollArea->setWidgetResizable(true);
 
-        statusSpacer = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+        hwStatusWidget = new QWidget;
 
-        instrumentStatusLayout->addItem(statusSpacer);
+        hwStatusLayout = new QVBoxLayout;
+        hwStatusWidget->setLayout(hwStatusLayout);
+        hwStatusScrollArea->setWidget(hwStatusWidget);
+
+        clockBox = new ClockDisplayBox;
+        hwStatusLayout->addWidget(clockBox,0);
+
+        instrumentStatusLayout->addWidget(hwStatusScrollArea,0);
 
         ftmwProgressLabel = new QLabel(centralWidget);
         ftmwProgressLabel->setObjectName(QString::fromUtf8("label_2"));
@@ -327,7 +341,7 @@ public:
         ftmwTabLayout->setSpacing(6);
         ftmwTabLayout->setContentsMargins(11, 11, 11, 11);
         ftmwTabLayout->setObjectName(QString::fromUtf8("verticalLayout_3"));
-        ftViewWidget = new FtmwViewWidget(ftmwTab);
+        ftViewWidget = new FtmwViewWidget(true,ftmwTab);
         ftViewWidget->setObjectName(QString::fromUtf8("ftViewWidget"));
 
         ftmwTabLayout->addWidget(ftViewWidget);
@@ -492,10 +506,7 @@ public:
         mainTabWidget->setCurrentIndex(0);
 
         for(int i=0; i<mainTabWidget->count(); i++)
-        {
             mainTabWidget->widget(i)->layout()->setContentsMargins(0,0,0,0);
-            mainTabWidget->widget(i)->layout()->setMargin(0);
-        }
 
 
         QMetaObject::connectSlotsByName(MainWindow);

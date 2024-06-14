@@ -3,7 +3,7 @@
 
 #include <QWidget>
 #include <QtCore/QVariant>
-#include <QtWidgets/QAction>
+#include <QAction>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QHBoxLayout>
@@ -50,7 +50,7 @@ class FtmwViewWidget : public QWidget, public SettingsStorage
 {
     Q_OBJECT
 public:
-    explicit FtmwViewWidget(QWidget *parent = 0, QString path = QString(""));
+    explicit FtmwViewWidget(bool main, QWidget *parent = 0, QString path = QString(""));
     ~FtmwViewWidget();
     void prepareForExperiment(const Experiment &e);
 
@@ -58,17 +58,19 @@ public slots:
     void setLiveUpdateInterval(int intervalms);
     void updateLiveFidList();
     void updateProcessingSettings(FtWorker::FidProcessingSettings s);
+    void resetProcessingSettings();
+    void saveProcessingSettings();
     void updatePlotSetting(int id);
 
     void fidLoadComplete(int id);
     void ftProcessingComplete(int id);
-    void fidProcessed(const QVector<double> fidData, double spacing, double min, double max, int workerId);
+    void fidProcessed(const QVector<double> fidData, double spacing, double min, double max, quint64 shots, int workerId);
     void ftDone(const Ft ft, int workerId);
     void ftDiffDone(const Ft ft);
     void updateMainPlot();
     void reprocess(const QList<int> ignore = QList<int>());
-    void process(int id, const Fid f);
-    void processDiff(const Fid f1, const Fid f2);
+    void process(int id, const FidList fl, int frame=0);
+    void processDiff(const FidList fl1, const FidList fl2, int frame1, int frame2);
 
     void sidebandLoadComplete();
     void processSidebands();
@@ -107,7 +109,7 @@ private:
         QFutureWatcher<FidList>* p_watcher;
         FidPlot *fidPlot;
         FtPlot *ftPlot;
-        Fid fid;
+        FidList fidList;
         Ft ft;
         int frame{0}; //only used for plot1 and plot2
         int segment{0}; //only used for plot1 and plot2
@@ -126,7 +128,7 @@ private:
     struct SidebandStatus {
         QFutureWatcher<FidList> *sbLoadWatcher;
         FtWorker::SidebandProcessingData sbData;
-        Fid nextFid;
+        FidList nextFidList;
         bool cancel{true};
         bool complete{false};
     } d_sbStatus;
@@ -170,7 +172,7 @@ public:
     QAction *peakFindAction;
     SpinBoxWidgetAction *refreshBox;
 
-    void setupUi(QWidget *FtmwViewWidget)
+    void setupUi(bool main, QWidget *FtmwViewWidget)
     {
         if (FtmwViewWidget->objectName().isEmpty())
             FtmwViewWidget->setObjectName(QStringLiteral("FtmwViewWidget"));
@@ -180,7 +182,7 @@ public:
         exptLabel->setGeometry(QRect(9, 9, 53, 16));
         QFont font;
         font.setBold(true);
-        font.setWeight(75);
+        // font.setWeight(QFont::Bold);
         exptLabel->setFont(font);
         exptLabel->setAlignment(Qt::AlignCenter);
         splitter = new QSplitter(FtmwViewWidget);
@@ -260,7 +262,7 @@ public:
         processingAct =toolBar->addAction(QIcon(QString(":/icons/labplot-xy-fourier-transform-curve.svg")),QString("FID Processing Settings"));
         processingAct->setCheckable(true);
 
-        processingToolBar = new FtmwProcessingToolBar(FtmwViewWidget);
+        processingToolBar = new FtmwProcessingToolBar(main,FtmwViewWidget);
         processingToolBar->setVisible(false);
 
 

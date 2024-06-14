@@ -3,6 +3,7 @@
 #include <QTreeView>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QLineEdit>
 #include <QLabel>
 #include <QGroupBox>
 #include <QDialogButtonBox>
@@ -46,6 +47,14 @@ HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidge
     sLabel->setWordWrap(true);
     sLabel->setAlignment(Qt::AlignCenter);
     svbl->addWidget(sLabel,0);
+
+    //Box for editing hardware object name
+    auto nl = new QHBoxLayout;
+    auto nLbl = new QLabel("Name");
+    nl->addWidget(nLbl,0);
+    p_nameEdit = new QLineEdit(name,this);
+    nl->addWidget(p_nameEdit,1);
+    svbl->addLayout(nl);
     
     p_view = new QTreeView(this);
     p_view->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Preferred);
@@ -71,7 +80,7 @@ HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidge
     rButton->setToolTip("Only possible for array values.");
     connect(rButton,&QPushButton::clicked,this,&HWDialog::remove);
 
-    connect(p_view,&QTreeView::clicked,[=](const QModelIndex &idx){
+    connect(p_view,&QTreeView::clicked,this,[=,this](const QModelIndex &idx){
         auto item = p_model->getItem(idx);
         if(item && item->canAddChildren())
         {
@@ -101,6 +110,11 @@ HWDialog::HWDialog(QString key, QStringList forbiddenKeys, QWidget *controlWidge
     
     vbl->addWidget(bb,0);
     setLayout(vbl);
+}
+
+QString HWDialog::getHwName() const
+{
+    return p_nameEdit->text();
 }
 
 void HWDialog::insertBefore()
@@ -139,7 +153,7 @@ void HWDialog::remove()
 
 void HWDialog::accept()
 {
-    p_model->saveChanges();
+    p_model->saveChanges(p_nameEdit->text());
 
     QDialog::accept();
 }

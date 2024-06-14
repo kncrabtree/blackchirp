@@ -1,20 +1,20 @@
 #ifndef PRESSURESTATUSBOX_H
 #define PRESSURESTATUSBOX_H
 
-#include <QGroupBox>
+#include "hardwarestatusbox.h"
 
 class QDoubleSpinBox;
 class Led;
 
-class PressureStatusBox : public QGroupBox
+class PressureStatusBox : public HardwareStatusBox
 {
     Q_OBJECT
 public:
-    PressureStatusBox(QWidget *parent = nullptr);
+    PressureStatusBox(QString key, QWidget *parent = nullptr);
 
 public slots:
-    void pressureUpdate(double p);
-    void pressureControlUpdate(bool en);
+    void pressureUpdate(const QString key,double p);
+    void pressureControlUpdate(const QString key, bool en);
     void updateFromSettings();
 
 private:

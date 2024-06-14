@@ -32,7 +32,7 @@ public:
 
     void startAcquisition();
     void stopAcquisition();
-    void acquisitionStarted(const LifDigitizerConfig &c);
+    void acquisitionStarted();
     void newWaveform(const QVector<qint8> b);
 
     void setLaserPosition(const double d);
@@ -42,7 +42,7 @@ public:
     void toConfig(LifConfig &cfg);
 
 signals:
-    void startSignal(LifDigitizerConfig);
+    void startSignal(LifConfig);
     void stopSignal();
     void changeLaserPosSignal(double);
     void changeLaserFlashlampSignal(bool);
@@ -58,7 +58,8 @@ private:
     QSpinBox *p_avgBox;
     QPushButton *p_resetButton;
 
-    LifDigitizerConfig d_cfg;
+    LifConfig d_cfg;
+    bool d_acquiring{ false };
 
 
     // QWidget interface

@@ -50,7 +50,7 @@ void LifStorage::save()
 
     if(d_currentTrace.hasRefData())
     {
-        t << "lif" << BC::CSV::sep << "ref" << BC::CSV::nl;
+        t << "lif" << BC::CSV::del << "ref" << BC::CSV::nl;
 
         auto lr = d_currentTrace.lifRaw();
         auto rr = d_currentTrace.refRaw();
@@ -58,7 +58,7 @@ void LifStorage::save()
         for(int i=0; i<d_currentTrace.size(); i++)
         {
             t << BlackchirpCSV::formatInt64(lr.at(i))
-              << BC::CSV::sep
+              << BC::CSV::del
               << BlackchirpCSV::formatInt64(rr.at(i))
               << BC::CSV::nl;
         }

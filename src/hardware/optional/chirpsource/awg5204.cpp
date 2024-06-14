@@ -1,7 +1,8 @@
-#include "AWG5204.h"
+#include "awg5204.h"
 
 #include <QtEndian>
 #include <math.h>
+#include <QTimer>
 
 AWG5204::AWG5204(QObject *parent) :
     AWG(BC::Key::AWG::awg5204,BC::Key::AWG::awg5204Name,CommunicationProtocol::Tcp,parent)
@@ -89,9 +90,11 @@ void AWG5204::endAcquisition()
 {
     if(d_enabledForExperiment)
     {
-        p_comm->writeCmd(QString(":Output:OFF ON\n"));
-        p_comm->writeCmd(QString(":AWGControl:STOP:Immediate\n"));
-        p_comm->queryCmd(QString("*OPC?\n"));
+        QTimer::singleShot(500,[this](){
+            p_comm->writeCmd(QString(":Output:OFF ON\n"));
+            p_comm->writeCmd(QString(":AWGControl:STOP:Immediate\n"));
+            p_comm->queryCmd(QString("*OPC?\n"));
+        });
     }
 }
 

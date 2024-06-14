@@ -9,6 +9,7 @@
 #include <qwt6/qwt_scale_engine.h>
 
 #include <data/storage/settingsstorage.h>
+#include <gui/plot/customzoomer.h>
 
 class QMenu;
 class CustomTracker;
@@ -23,6 +24,7 @@ static const QString bottom{"Bottom"};
 static const QString top{"Top"};
 static const QString left{"Left"};
 static const QString right{"Right"};
+static const QString kzCenter{"keyZoomYCenter"};
 static const QString zoomFactor{"zoomFactor"};
 static const QString trackerDecimals{"trackerDecimals"};
 static const QString trackerScientific{"trackerScientific"};
@@ -56,6 +58,7 @@ public slots:
     void clearAxisAutoScaleOverride(QwtPlot::Axis a);
     virtual void replot();
     void setZoomFactor(QwtPlot::Axis a, double v);
+    void setKeyZoomYCenter(bool en);
     void setTrackerEnabled(bool en);
     void setTrackerDecimals(QwtPlot::Axis a, int dec);
     void setTrackerScientific(QwtPlot::Axis a, bool sci);
@@ -81,8 +84,10 @@ protected:
     int d_maxIndex;
     QwtPlotGrid *p_grid;
     CustomTracker *p_tracker;
+    CustomZoomer *p_zoomerLB, *p_zoomerRT;
+
     struct AxisConfig {
-        QwtPlot::Axis type;
+        int index{-1};
         bool autoScale {true};
         bool override {false};
         bool overrideAutoScaleRange {false};
@@ -91,16 +96,20 @@ protected:
         double zoomFactor {0.1};
         QString name;
 
-        explicit AxisConfig(QwtPlot::Axis t, const QString n) : type(t), name(n) {}
+        explicit AxisConfig(int i, const QString n) : index(i), name(n) {}
+        AxisConfig() {}
     };
 
     struct PlotConfig {
-        QList<AxisConfig> axisList;
+        std::map<Axis,AxisConfig> axisMap;
 
         bool xDirty{false};
         bool panning{false};
         bool spectrogramMode{false};
         QPoint panClickPos;
+        bool zoomXLock{false};
+        bool zoomYLock{false};
+        bool keyZoomYCenter{false};
     };
 
     void setAxisOverride(QwtPlot::Axis axis, bool override = true);
@@ -109,14 +118,18 @@ protected:
     virtual void resizeEvent(QResizeEvent *ev);
     virtual bool eventFilter(QObject *obj, QEvent *ev);
     virtual void pan(QMouseEvent *me);
+    virtual void panH(double factor);
+    virtual void panV(double factor);
     virtual void zoom(QWheelEvent *we);
+    virtual void zoom(const QRectF &rect, QwtPlot::Axis xAx, QwtPlot::Axis yAx);
+    virtual void zoom(Axis ax, double factor);
+    virtual QRectF getLimitRect(Axis xAx, Axis yAx) const;
 
     virtual void buildContextMenu(QMouseEvent *me);
     virtual QMenu *contextMenu();
 
 private:
     PlotConfig d_config;
-    int getAxisIndex(QwtPlot::Axis a);
     QFutureWatcher<void> *p_watcher;
     bool d_busy{false};
     QMutex *p_mutex;

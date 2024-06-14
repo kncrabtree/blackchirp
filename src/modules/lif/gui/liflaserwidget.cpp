@@ -24,7 +24,7 @@ LifLaserWidget::LifLaserWidget(QWidget *parent)
     p_posBox->setDecimals(s.get(decimals,2));
 
     p_posSetButton = new QPushButton(QString("Set"));
-    connect(p_posSetButton,&QPushButton::clicked,[=](){
+    connect(p_posSetButton,&QPushButton::clicked,this,[this](){
         p_posBox->setEnabled(false);
         p_posSetButton->setEnabled(false);
         emit changePosition(p_posBox->value());
@@ -40,7 +40,7 @@ LifLaserWidget::LifLaserWidget(QWidget *parent)
     p_flButton = new QPushButton(QString("Enable"));
     p_flButton->setCheckable(true);
     p_flButton->setChecked(false);
-    connect(p_flButton,&QPushButton::clicked,[=](bool en){
+    connect(p_flButton,&QPushButton::clicked,this,[this](bool en){
         if(en)
             p_flButton->setText("Disable");
         else

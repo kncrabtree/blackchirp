@@ -1,5 +1,7 @@
 SettingsStorage
 ===============
 
+.. Test :cpp:func:`SettingsStorage::get()`.
+
 .. highlight:: cpp
-.. doxygenclass:: SettingsStorage
+.. doxygenfile:: settingsstorage.h

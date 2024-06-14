@@ -1,0 +1,3 @@
+Index;ClockType;FreqMHz;Operation;Factor;HwKey;OutputNum
+0;UpLO;11520;Multiply;2;Clock.0;0
+0;DownLO;40960;Multiply;8;Clock.0;1

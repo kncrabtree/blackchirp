@@ -7,18 +7,22 @@
 #include <memory.h>
 
 #include <data/experiment/experiment.h>
+#include <data/storage/settingsstorage.h>
 
 class LifSlicePlot;
 class LifTracePlot;
 class LifSpectrogramPlot;
 class LifProcessingWidget;
+class QSpinBox;
 
-namespace BC::Key {
+namespace BC::Key::LifDW {
+static const QString lifDwKey{"LifDisplayWidget"};
+static const QString refresh{"refreshIntervalMs"};
 static const QString lifSpectrumPlot{"lifSpectrumPlot"};
 static const QString lifTimePlot{"lifTimePlot"};
 }
 
-class LifDisplayWidget : public QWidget
+class LifDisplayWidget : public QWidget, public SettingsStorage
 {
     Q_OBJECT
 
@@ -33,6 +37,7 @@ public slots:
     void prepareForExperiment(const Experiment &e);
     void experimentComplete();
     void updatePoint();
+    void updatePlots();
 
     void changeLaserSlice(int di);
     void changeDelaySlice(int li);
@@ -49,12 +54,19 @@ private:
     LifTracePlot *p_lifTracePlot;
     LifSpectrogramPlot *p_spectrogramPlot;
     LifProcessingWidget *p_procWidget;
+    
+    QSpinBox *p_refreshBox;
 
     QString d_dString;
     QString d_lString;
     int d_lDec{2};
+    int d_refreshTimerId{-1};
 
 
+    
+    // QObject interface
+protected:
+    void timerEvent(QTimerEvent *event) override;
 };
 
 #endif // LIFDISPLAYWIDGET_H

@@ -23,7 +23,7 @@ protected:
 
     // TemperatureController interface
 protected:
-    double readHwTemperature(const int ch) override;
+    double readHwTemperature(const uint ch) override;
 };
 
 #endif // VIRTUALTEMPCONTROLLER_H

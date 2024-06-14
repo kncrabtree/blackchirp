@@ -10,6 +10,7 @@
 ClockDisplayBox::ClockDisplayBox(QWidget *parent) : QGroupBox(parent)
 {
     setTitle("Clocks");
+    setFlat(true);
     auto gl = new QGridLayout;
     gl->setSpacing(3);
     gl->setContentsMargins(3,3,3,3);
@@ -26,6 +27,7 @@ ClockDisplayBox::ClockDisplayBox(QWidget *parent) : QGroupBox(parent)
         box->setSuffix(QString(" MHz"));
         box->setButtonSymbols(QAbstractSpinBox::NoButtons);
         box->setReadOnly(true);
+        box->setFocusPolicy(Qt::NoFocus);
         box->setSpecialValueText(QString("Not Configured"));
         box->setValue(-1.0);
         box->blockSignals(true);

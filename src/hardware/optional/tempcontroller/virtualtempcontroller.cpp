@@ -23,7 +23,7 @@ void VirtualTemperatureController::tcInitialize()
 {
 }
 
-double VirtualTemperatureController::readHwTemperature(const int ch)
+double VirtualTemperatureController::readHwTemperature(const uint ch)
 {
     Q_UNUSED(ch)
     auto qr = QRandomGenerator::global();

@@ -59,3 +59,23 @@ bool LifLaser::setFlashLamp(bool en)
 
     return false;
 }
+
+
+bool LifLaser::hwPrepareForExperiment(Experiment &exp)
+{
+    if(exp.lifEnabled())
+        d_autoDisable = exp.lifConfig()->d_disableFlashlamp;
+
+    return true;
+}
+
+void LifLaser::beginAcquisition()
+{
+    setFlashLamp(true);
+}
+
+void LifLaser::endAcquisition()
+{
+    if(d_autoDisable)
+        setFlashLamp(false);
+}

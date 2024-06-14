@@ -14,7 +14,7 @@ class Valon5015 : public Clock
 {
     Q_OBJECT
 public:
-    explicit Valon5015(int clockNum, QObject* parent = nullptr);
+    explicit Valon5015(QObject* parent = nullptr);
 
     // HardwareObject interface
 public slots:

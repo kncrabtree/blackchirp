@@ -34,7 +34,6 @@ protected:
     void initialize() override;
     bool testConnection() override;
 
-
 private:
     bool d_waitingForReply;
     bool d_foundHeader;

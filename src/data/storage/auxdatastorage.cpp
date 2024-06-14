@@ -61,6 +61,9 @@ void AuxDataStorage::addDataPoints(AuxDataStorage::AuxDataMap &m)
 
 void AuxDataStorage::startNewPoint()
 {
+    if(d_number < 0)
+        return;
+
     if(d_allowedKeys.empty())
         return;
 
@@ -79,16 +82,16 @@ void AuxDataStorage::startNewPoint()
         d_startTime = QDateTime::currentDateTime();
 
         //write column headers
-        QVariantList l {"timestamp","epochtime","elapsedsecs"};
+        std::vector<QVariant> l {"timestamp","epochtime","elapsedsecs"};
         l.reserve(3+d_allowedKeys.size());
         for(auto it = d_allowedKeys.cbegin(); it != d_allowedKeys.cend(); ++it)
-            l.append(*it);
+            l.push_back(*it);
         BlackchirpCSV::writeLine(t,l);
 
     }
     else
     {
-        QVariantList l {d_currentPoint.dateTime.toString(),
+        std::vector<QVariant> l {d_currentPoint.dateTime.toString(),
                     d_currentPoint.dateTime.toSecsSinceEpoch(),
                     d_startTime.secsTo(d_currentPoint.dateTime)};
         l.reserve(3+d_allowedKeys.size());
@@ -96,9 +99,9 @@ void AuxDataStorage::startNewPoint()
         {
             auto it2 = d_currentPoint.map.find(*it);
             if(it2 == d_currentPoint.map.end())
-                l.append("");
+                l.push_back("");
             else
-                l.append(it2->second);
+                l.push_back(it2->second);
         }
         BlackchirpCSV::writeLine(t,l);
     }

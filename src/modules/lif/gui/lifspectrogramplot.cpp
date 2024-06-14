@@ -120,8 +120,12 @@ void LifSpectrogramPlot::prepareForExperiment(const LifConfig &c)
 
     double dMin =  d_dMin - qAbs(c.d_delayStepUs)/2.0;
     double dMax = qMax(delayRange.first,delayRange.second) + qAbs(c.d_delayStepUs)/2.0;
+    if(c.d_delayPoints == 1)
+        dMax = dMin+1.0;
     double fMin = d_lMin - qAbs(c.d_laserPosStep)/2.0;
     double fMax = qMax(laserRange.first,laserRange.second) + qAbs(c.d_laserPosStep)/2.0;
+    if(c.d_laserPosPoints == 1)
+        fMax = fMin + 1.0;
 
     p_spectrogramData->setInterval(Qt::YAxis,QwtInterval(dMin,dMax));
     p_spectrogramData->setInterval(Qt::XAxis,QwtInterval(fMin,fMax));
@@ -267,16 +271,16 @@ void LifSpectrogramPlot::buildContextMenu(QMouseEvent *me)
     QPoint pos = me->pos();
 
     QAction *delayCursorAction = menu->addAction(QString("Move delay cursor here"));
-    connect(delayCursorAction,&QAction::triggered,[=](){ moveDelayCursor(pos); });
+    connect(delayCursorAction,&QAction::triggered,this,[this,pos](){ moveDelayCursor(pos); });
 
     QAction *freqCursorAction = menu->addAction(QString("Move frequency cursor here"));
-    connect(freqCursorAction,&QAction::triggered,[=](){ moveLaserCursor(pos); });
+    connect(freqCursorAction,&QAction::triggered,this,[this,pos](){ moveLaserCursor(pos); });
 
     QAction *bothCursorAction = menu->addAction(QString("Move both cursors here"));
-    connect(bothCursorAction,&QAction::triggered,[=](){ moveDelayCursor(pos); moveLaserCursor(pos); });
+    connect(bothCursorAction,&QAction::triggered,this,[this,pos](){ moveDelayCursor(pos); moveLaserCursor(pos); });
 
     auto liveAction = menu->addAction(QString("Follow live data"));
-    connect(liveAction,&QAction::triggered,[=](){
+    connect(liveAction,&QAction::triggered,[this](){
         d_live = true;
         moveDelayCursor(d_liveDelayIndex);
         moveLaserCursor(d_liveLaserIndex);
@@ -321,6 +325,8 @@ bool LifSpectrogramPlot::eventFilter(QObject *obj, QEvent *ev)
                     {
                         d_delayDragging = d_grabDelay;
                         d_freqDragging = d_grabFreq;
+                        ev->accept();
+                        return true;
                     }
                 }
             }
@@ -376,7 +382,9 @@ bool LifSpectrogramPlot::eventFilter(QObject *obj, QEvent *ev)
                     if(d_freqDragging)
                         moveLaserCursor(me->pos());
 
+                    ev->accept();
                     replot();
+                    return true;
                 }
             }
         }

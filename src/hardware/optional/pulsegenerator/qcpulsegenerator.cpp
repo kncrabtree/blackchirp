@@ -42,12 +42,6 @@ bool QCPulseGenerator::testConnection()
     return true;
 }
 
-void QCPulseGenerator::sleep(bool b)
-{
-    if(b)
-        setPulseEnabled(false);
-}
-
 bool QCPulseGenerator::setChWidth(const int index, const double width)
 {
     return pGenWriteCmd(QString(":PULSE%1:WIDTH %2").arg(index+1).arg(width/1e6,0,'f',9));
@@ -58,7 +52,7 @@ bool QCPulseGenerator::setChDelay(const int index, const double delay)
     return pGenWriteCmd(QString(":PULSE%1:DELAY %2").arg(index+1).arg(delay/1e6,0,'f',9));
 }
 
-bool QCPulseGenerator::setChActiveLevel(const int index, const ActiveLevel level)
+bool QCPulseGenerator::setChActiveLevel(const int index, const PulseGenConfig::ActiveLevel level)
 {
     if(level == PulseGenConfig::ActiveHigh)
         return pGenWriteCmd(QString(":PULSE%1:POLARITY NORM").arg(index+1));
@@ -79,7 +73,7 @@ bool QCPulseGenerator::setChSyncCh(const int index, const int syncCh)
     return pGenWriteCmd(QString(":PULSE%1:SYNC %2").arg(index+1).arg(d_channels.at(syncCh)));
 }
 
-bool QCPulseGenerator::setChMode(const int index, const ChannelMode mode)
+bool QCPulseGenerator::setChMode(const int index, const PulseGenConfig::ChannelMode mode)
 {
     QString mstr("NORM");
     if(mode == PulseGenConfig::DutyCycle)
@@ -97,18 +91,24 @@ bool QCPulseGenerator::setChDutyOff(const int index, const int pulses)
     return pGenWriteCmd(QString(":PULSE%1:OCO %2").arg(index+1).arg(pulses));
 }
 
-bool QCPulseGenerator::setHwPulseMode(PGenMode mode)
+bool QCPulseGenerator::setHwPulseMode(PulseGenConfig::PGenMode mode)
 {
     QString mstr("DIS");
     QString smstr("NORM");
-    if(mode == Triggered)
+    QString edge("RIS");
+    if(mode != PulseGenConfig::Continuous)
     {
         mstr = QString("TRIG");
         smstr = QString("SINGLE");
+
+        if(mode == PulseGenConfig::Triggered_Falling)
+            edge = QString("FALL");
     }
 
-    bool success = pGenWriteCmd(QString("%1 %2").arg(trigBase()).arg(mstr));
+    bool success = pGenWriteCmd(QString("%1 %2").arg(trigModeBase()).arg(mstr));
     success &= pGenWriteCmd(QString(":%1:MOD %2").arg(sysStr()).arg(smstr));
+    if(mode != PulseGenConfig::Continuous)
+        success &= pGenWriteCmd(QString("%1 %2").arg(trigEdgeBase(),edge));
     QThread::msleep(5);
     return success;
 }
@@ -195,7 +195,10 @@ int QCPulseGenerator::readChSynchCh(const int index)
     auto resp = pGenQueryCmd(QString(":PULSE%1:SYNC?").arg(index+1));
     if(!resp.isEmpty())
     {
-        QString val = QString(resp.trimmed());
+        //for some reason, the QC9214 returns an extra character when the sync channel is not T0
+        if(resp.startsWith('T'))
+            return 0;
+        QString val = QString(resp.mid(0,3));
         int idx = d_channels.indexOf(val);
         if(idx >= 0)
             return idx;
@@ -213,14 +216,14 @@ PulseGenConfig::ChannelMode QCPulseGenerator::readChMode(const int index)
     {
         QString val = QString(resp.trimmed());
         if(resp.contains("DCYC"))
-            return DutyCycle;
+            return PulseGenConfig::DutyCycle;
         else if(resp.contains("NORM"))
-            return Normal;
+            return PulseGenConfig::Normal;
     }
 
     emit hardwareFailure();
     emit logMessage(QString("Could not read channel %1 mode. Response: %2").arg(index+1).arg(QString(resp)));
-    return Normal;
+    return PulseGenConfig::Normal;
 }
 
 int QCPulseGenerator::readChDutyOn(const int index)
@@ -259,18 +262,30 @@ int QCPulseGenerator::readChDutyOff(const int index)
 
 PulseGenConfig::PGenMode QCPulseGenerator::readHwPulseMode()
 {
-    auto resp = pGenQueryCmd(QString("%1?").arg(trigBase()));
+    auto resp = pGenQueryCmd(QString("%1?").arg(trigModeBase()));
     if(!resp.isEmpty())
     {
         if(resp.contains("DIS"))
-            return Continuous;
+            return PulseGenConfig::Continuous;
         if(resp.contains("TRIG"))
-            return Triggered;
+        {
+            resp = pGenQueryCmd(QString("%1?").arg(trigEdgeBase()));
+            if(resp.contains("RIS"))
+                return PulseGenConfig::Triggered_Rising;
+            else if(resp.contains("FALL"))
+                return PulseGenConfig::Triggered_Falling;
+            else
+            {
+                emit hardwareFailure();
+                emit logMessage(QString("Could not read trigger edge. Response: %1").arg(QString(resp)));
+                return PulseGenConfig::Continuous;
+            }
+        }
     }
 
     emit hardwareFailure();
     emit logMessage(QString("Could not read system pulse mode. Response: %1").arg(QString(resp)));
-    return Continuous;
+    return PulseGenConfig::Continuous;
 }
 
 double QCPulseGenerator::readHwRepRate()

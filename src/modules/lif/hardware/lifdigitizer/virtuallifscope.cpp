@@ -6,7 +6,7 @@
 
 
 VirtualLifScope::VirtualLifScope(QObject *parent) :
-    LifScope(BC::Key::Comm::hwVirtual,BC::Key::vLifScopeName,CommunicationProtocol::Virtual,parent)
+    LifScope(BC::Key::Comm::hwVirtual,BC::Key::LifDigi::vLifScopeName,CommunicationProtocol::Virtual,parent)
 {
     using namespace BC::Key::Digi;
 
@@ -129,22 +129,6 @@ bool VirtualLifScope::configure(const LifDigitizerConfig &c)
 {
     static_cast<LifDigitizerConfig&>(*this) = c;
     d_channelOrder = Sequential;
-    return true;
-}
-
-bool VirtualLifScope::prepareForExperiment(Experiment &exp)
-{
-    d_enabledForExperiment = exp.lifEnabled();
-    if(!d_enabledForExperiment)
-        return true;
-
-    auto &config = exp.lifConfig()->d_scopeConfig;
-    config.d_channelOrder = LifDigitizerConfig::Sequential;
-
-    auto cfg = dynamic_cast<LifDigitizerConfig*>(this);
-    if(cfg)
-        *cfg = config;
-
     return true;
 }
 

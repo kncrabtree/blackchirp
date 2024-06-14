@@ -8,6 +8,7 @@
 #include <data/storage/settingsstorage.h>
 #include <data/storage/blackchirpcsv.h>
 #include <hardware/optional/chirpsource/awg.h>
+#include <hardware/core/clock/clock.h>
 
 RfConfig::RfConfig() : HeaderStorage(BC::Store::RFC::key), d_currentClockIndex{0}
 {
@@ -176,6 +177,20 @@ double RfConfig::rawClockFrequency(ClockType t) const
     return getRawFrequency(getClocks().value(t));
 }
 
+std::pair<double, double> RfConfig::clockRange(ClockType t) const
+{
+    auto clock = getClocks().value(t);
+    if(clock.hwKey.isEmpty())
+        return {0.0,1e7};
+
+    SettingsStorage s(clock.hwKey,SettingsStorage::Hardware);
+
+    double minFreq = s.get<double>(BC::Key::Clock::minFreq,0.0);
+    double maxFreq = s.get<double>(BC::Key::Clock::maxFreq,1e7);
+
+    return {rawToOutputFrequency(clock,minFreq),rawToOutputFrequency(clock,maxFreq)};
+}
+
 QString RfConfig::clockHardware(ClockType t) const
 {
     return d_clockTemplate.value(t).hwKey;
@@ -265,9 +280,9 @@ bool RfConfig::writeClockFile(int num) const
             {
                 BlackchirpCSV::writeLine(t,{
                                   i,
-                                  it.key(),
+                                  QVariant::fromValue(it.key()),
                                   it.value().desiredFreqMHz,
-                                  it.value().op,
+                                  QVariant::fromValue(it.value().op),
                                   QVariant(it.value().factor),
                                   it.value().hwKey,
                                   it.value().output
@@ -325,7 +340,7 @@ void RfConfig::loadClockSteps(BlackchirpCSV *csv, int num, QString path)
     }
 }
 
-double RfConfig::getRawFrequency(RfConfig::ClockFreq f) const
+double RfConfig::getRawFrequency(const ClockFreq f)
 {
     switch(f.op)
     {
@@ -334,6 +349,18 @@ double RfConfig::getRawFrequency(RfConfig::ClockFreq f) const
     case Multiply:
     default:
         return f.desiredFreqMHz/f.factor;
+    }
+}
+
+double RfConfig::rawToOutputFrequency(const ClockFreq &f, double rawFreq)
+{
+    switch(f.op)
+    {
+    case Divide:
+        return rawFreq/f.factor;
+    case Multiply:
+    default:
+        return rawFreq*f.factor;
     }
 }
 

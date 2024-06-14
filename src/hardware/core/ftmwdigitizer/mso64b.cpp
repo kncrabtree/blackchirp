@@ -80,7 +80,7 @@ void MSO64B::initialize()
     p_scopeTimeout = new QTimer(this);
 
     p_comm->setReadOptions(3000,true,QByteArray("\n"));
-    p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
+    p_socket = p_comm->device<QTcpSocket>();
     connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::errorOccurred),this,&MSO64B::socketError);
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
     p_socket->setSocketOption(QAbstractSocket::KeepAliveOption,1);
@@ -99,7 +99,7 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
     if(!d_enabledForExperiment)
         return true;
 
-    auto &config = exp.ftmwConfig()->d_scopeConfig;
+    auto &config = exp.ftmwConfig()->scopeConfig();
 
     disconnect(p_socket,&QTcpSocket::readyRead,this,&MSO64B::readWaveform);
 
@@ -185,7 +185,7 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
     }
 
     //horizontal settings
-    if(!p_comm->writeCmd(QString(":HORIZONTAL:DELAY:MODE OFF;:HORIZONTAL:POSITION 0;:HORIZONTAL:MODE:SAMPLERATE %2;RECORDLENGTH %3\n")
+    if(!p_comm->writeCmd(QString(":HORIZONTAL:MODE MANUAL;:HORizontal:MODe:MANual:CONFIGure RECORDLENGTH;:HORIZONTAL:DELAY:MODE OFF;:HORIZONTAL:POSITION 0;:HORIZONTAL:MODE:SAMPLERATE %2;:HORIZONTAL:MODE:RECORDLENGTH %3\n")
                               .arg(QString::number(config.d_sampleRate,'g',6)).arg(config.d_recordLength)))
     {
         emit logMessage(QString("Could not apply horizontal settings."),LogHandler::Error);
@@ -292,7 +292,7 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
     else
     {
         //enable fastframe and disable summary frame; verify
-        resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:STATE ON;SUMFRAME NON;STATE?\n"));
+        resp = p_comm->queryCmd(QString(":HORIZONTAL:FASTFRAME:STATE ON;:HORIZONTAL:FASTFRAME:STATE?\n"));
         if(!resp.isEmpty())
         {
             bool ok = false;
@@ -332,7 +332,7 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
                 return false;
             }
 
-            resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:COUNT %1;COUNT?\n").arg(numFrames));
+            resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:COUNT %1;:HORIZONTAL:FASTFRAME:COUNT?\n").arg(numFrames));
             if(!resp.isEmpty())
             {
                 ok = false;
@@ -355,14 +355,16 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
                 return false;
             }
 
-            QString sumfConfig = QString("AVE");
+            QString sumfConfig = QString("ON");
             if(!config.d_blockAverage)
-                sumfConfig = QString("NON");
-            resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:SUMFRAME %1;SUMFRAME?\n").arg(sumfConfig));
+                sumfConfig = QString("OFF");
+            resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:SUMFRAME:STATE %1;:HORIZONTAL:FASTFRAME:SUMFRAME:STATE?\n").arg(sumfConfig));
             if(!resp.isEmpty())
             {
-                if(!QString(resp).contains(sumfConfig,Qt::CaseInsensitive))
-                {
+                bool ok = false;
+                bool ffState = (bool)resp.trimmed().toInt(&ok);
+                if(!ok || !(ffState == config.d_blockAverage))
+                { 
                     emit logMessage(QString("Could not configure FastFrame summary frame to %1. Response: %2 (Hex: %3)")
                                         .arg(sumfConfig).arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
                     return false;
@@ -377,7 +379,7 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
             if(config.d_blockAverage)
             {
                 //this forces the scope to only return the final frame, which is the summary frame
-                if(!p_comm->writeCmd(QString(":DATA:FRAMESTART 100000;FRAMESTOP 100000\n")))
+                if(!p_comm->writeCmd(QString(":DATA:FRAMESTART 100000;:DATA:FRAMESTOP 100000\n")))
                 {
                     emit logMessage(QString("Could not configure summary frame."),LogHandler::Error);
                     return false;
@@ -386,7 +388,7 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
             else
             {
                 //this forces the scope to return all frames
-                if(!p_comm->writeCmd(QString(":DATA:FRAMESTART 1;FRAMESTOP 100000\n")))
+                if(!p_comm->writeCmd(QString(":DATA:FRAMESTART 1;:DATA:FRAMESTOP 100000\n")))
                 {
                     emit logMessage(QString("Could not configure frames."),LogHandler::Error);
                     return false;
@@ -484,76 +486,76 @@ bool MSO64B::prepareForExperiment(Experiment &exp)
     }
 
     //read certain output settings from scope
-    resp = scopeQueryCmd(QString(":WFMOUTPRE:ENCDG?;BN_FMT?;BYT_OR?;NR_PT?;BYT_NR?\n"));
-    if(!resp.isEmpty())
-    {
-        QStringList l = QString(resp.trimmed()).split(QChar(';'),Qt::SkipEmptyParts);
-        if(l.size() < 5)
-        {
-            emit logMessage(QString("Could not parse response to waveform output settings query. Response: %1 (Hex: %2)")
-                                .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
-            return false;
-        }
+//    resp = scopeQueryCmd(QString(":WFMOUTPRE:ENCDG?;BN_FMT?;BYT_OR?;NR_PT?;BYT_NR?\n"));
+//    if(!resp.isEmpty())
+//    {
+//        QStringList l = QString(resp.trimmed()).split(QChar(';'),Qt::SkipEmptyParts);
+//        if(l.size() < 5)
+//        {
+//            emit logMessage(QString("Could not parse response to waveform output settings query. Response: %1 (Hex: %2)")
+//                                .arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
+//            return false;
+//        }
 
-        //check encoding
-        if(!l.at(0).contains(QString("BIN"),Qt::CaseInsensitive))
-        {
-            emit logMessage(QString("Waveform encoding could not be set to binary. Response: %1 (Hex: %2)")
-                                .arg(l.at(0)).arg(QString(l.at(0).toLatin1().toHex())),LogHandler::Error);
-            return false;
-        }
-        //check binary format
-        if(!l.at(1).contains(QString("RI"),Qt::CaseInsensitive))
-        {
-            emit logMessage(QString("Waveform format could not be set to signed integer. Response: %1 (Hex: %2)")
-                                .arg(l.at(1)).arg(QString(l.at(1).toLatin1().toHex())),LogHandler::Error);
-            return false;
-        }
-        //check byte order
-        if(!l.at(2).contains(QString("LSB"),Qt::CaseInsensitive))
-        {
-            emit logMessage(QString("Waveform format could not be set to least significant byte first. Response: %1 (Hex: %2)")
-                                .arg(l.at(2)).arg(QString(l.at(2).toLatin1().toHex())),LogHandler::Error);
-            return false;
-        }
-        config.d_byteOrder = DigitizerConfig::LittleEndian;
+//        //check encoding
+//        if(!l.at(0).contains(QString("BIN"),Qt::CaseInsensitive))
+//        {
+//            emit logMessage(QString("Waveform encoding could not be set to binary. Response: %1 (Hex: %2)")
+//                                .arg(l.at(0)).arg(QString(l.at(0).toLatin1().toHex())),LogHandler::Error);
+//            return false;
+//        }
+//        //check binary format
+//        if(!l.at(1).contains(QString("RI"),Qt::CaseInsensitive))
+//        {
+//            emit logMessage(QString("Waveform format could not be set to signed integer. Response: %1 (Hex: %2)")
+//                                .arg(l.at(1)).arg(QString(l.at(1).toLatin1().toHex())),LogHandler::Error);
+//            return false;
+//        }
+//        //check byte order
+//        if(!l.at(2).contains(QString("LSB"),Qt::CaseInsensitive))
+//        {
+//            emit logMessage(QString("Waveform format could not be set to least significant byte first. Response: %1 (Hex: %2)")
+//                                .arg(l.at(2)).arg(QString(l.at(2).toLatin1().toHex())),LogHandler::Error);
+//            return false;
+//        }
+//        config.d_byteOrder = DigitizerConfig::LittleEndian;
 
-        //verify record length
-        bool ok = false;
-        int recLen = l.at(3).toInt(&ok);
-        if(!ok)
-        {
-            emit logMessage(QString("Could not parse waveform record length response. Response: %1 (Hex: %2)")
-                                .arg(l.at(4)).arg(QString(l.at(4).toLatin1().toHex())),LogHandler::Error);
-            return false;
-        }
-        if(recLen != config.d_recordLength)
-        {
-            emit logMessage(QString("Record length is %1. Requested value was %2. Proceeding with %1 samples.")
-                                .arg(recLen).arg(config.d_recordLength),LogHandler::Warning);
-            config.d_recordLength = recLen;
-        }
-        //verify byte number
-        int bpp = l.at(4).mid(0,1).toInt(&ok);
-        if(!ok || bpp != config.d_bytesPerPoint)
-        {
-            emit logMessage(QString("Invalid response to bytes per point query. Response: %1 (Hex: %2)")
-                                .arg(l.at(8)).arg(QString(l.at(8).toLatin1().toHex())),LogHandler::Error);
-            return false;
-        }
-    }
+//        //verify record length
+//        bool ok = false;
+//        int recLen = l.at(3).toInt(&ok);
+//        if(!ok)
+//        {
+//            emit logMessage(QString("Could not parse waveform record length response. Response: %1 (Hex: %2)")
+//                                .arg(l.at(4)).arg(QString(l.at(4).toLatin1().toHex())),LogHandler::Error);
+//            return false;
+//        }
+////        if(recLen != config.d_recordLength)
+////        {
+////            emit logMessage(QString("Record length is %1. Requested value was %2. Proceeding with %1 samples.")
+////                                .arg(recLen).arg(config.d_recordLength),LogHandler::Warning);
+////            config.d_recordLength = recLen;
+////        }
+//        //verify byte number
+//        int bpp = l.at(4).mid(0,1).toInt(&ok);
+//        if(!ok || bpp != config.d_bytesPerPoint)
+//        {
+//            emit logMessage(QString("Invalid response to bytes per point query. Response: %1 (Hex: %2)")
+//                                .arg(l.at(8)).arg(QString(l.at(8).toLatin1().toHex())),LogHandler::Error);
+//            return false;
+//        }
+//    }
 
-    //verify number of frames
-    if(config.d_multiRecord)
-    {
-        resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:COUNT?\n"));
-        if(resp.toInt() != config.d_numRecords)
-        {
-            emit logMessage(QString("Waveform contains the wrong number of frames. Target: %1, Actual: %2. Response: %3 (Hex: %4)")
-                                .arg(config.d_numRecords).arg(resp.toInt()).arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
-            return false;
-        }
-    }
+//    //verify number of frames
+//    if(config.d_multiRecord)
+//    {
+//        resp = scopeQueryCmd(QString(":HORIZONTAL:FASTFRAME:COUNT?\n"));
+//        if(resp.toInt() != config.d_numRecords)
+//        {
+//            emit logMessage(QString("Waveform contains the wrong number of frames. Target: %1, Actual: %2. Response: %3 (Hex: %4)")
+//                                .arg(config.d_numRecords).arg(resp.toInt()).arg(QString(resp)).arg(QString(resp.toHex())),LogHandler::Error);
+//            return false;
+//        }
+//    }
 
     auto cfg = dynamic_cast<FtmwDigitizerConfig*>(this);
     if(cfg)

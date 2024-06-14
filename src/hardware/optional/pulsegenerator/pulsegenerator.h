@@ -19,20 +19,24 @@ static const QString canDutyCycle{"canDutyCycle"};
 static const QString canTrigger{"canTrigger"};
 static const QString dutyMax{"dutyMaxPulses"};
 static const QString canSyncToChannel{"canSyncToChannel"};
+static const QString canDisableChannels{"canDisableChannels"};
+static const QString channels{"channels"};
+static const QString chName{"name"};
+static const QString chRole{"role"};
 }
 
-class PulseGenerator : public HardwareObject, public PulseGenConfig
+class PulseGenerator : public HardwareObject
 {
     Q_OBJECT
 public:
-    PulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent = nullptr,bool threaded = false, bool critical = true);
+    PulseGenerator(const QString subKey, const QString name, CommunicationProtocol::CommType commType, int numChannels, QObject *parent = nullptr, bool threaded = false, bool critical = true);
     virtual ~PulseGenerator();
 
 public slots:
     void initialize() override final;
     bool prepareForExperiment(Experiment &exp) override final;
 
-    PulseGenConfig config() { readAll(); return static_cast<PulseGenConfig>(*this); }
+    PulseGenConfig config() { readAll(); return d_config; }
     void readChannel(const int index);
     double readRepRate();
     PulseGenConfig::PGenMode readPulseMode();
@@ -45,6 +49,7 @@ public slots:
     bool setRepRate(double d);
     bool setPulseMode(PulseGenConfig::PGenMode mode);
     bool setPulseEnabled(bool en);
+    bool hasRole(PulseGenConfig::Role r);
 
 
 #ifdef BC_LIF
@@ -54,14 +59,18 @@ public slots:
 signals:
     void settingUpdate(int,PulseGenConfig::Setting,QVariant,QPrivateSignal);
     void configUpdate(PulseGenConfig,QPrivateSignal);
-    void modeUpdate(PulseGenConfig::PGenMode,QPrivateSignal);
-    void repRateUpdate(double,QPrivateSignal);
-    void pulseEnabledUpdate(bool,QPrivateSignal);
+
+    // void modeUpdate(PulseGenConfig::PGenMode,QPrivateSignal);
+    // void repRateUpdate(double,QPrivateSignal);
+    // void pulseEnabledUpdate(bool,QPrivateSignal);
 
 protected:
     void readAll();
 
+    const PulseGenConfig &getConfig() const { return d_config; }
+
     virtual void initializePGen() =0;
+    void sleep(bool b) override final;
 
     virtual bool setChWidth(const int index, const double width) =0;
     virtual bool setChDelay(const int index, const double delay) =0;
@@ -92,22 +101,13 @@ protected:
     // HardwareObject interface
 public slots:
     QStringList forbiddenKeys() const override;
+
+private:
+    PulseGenConfig d_config;
+    inline static uint d_count = 0;
+
+    friend class VirtualPulseGenerator;
 };
-
-
-#ifdef BC_PGEN
-#if BC_PGEN == 0
-#include "virtualpulsegenerator.h"
-class VirtualPulseGenerator;
-typedef VirtualPulseGenerator PulseGeneratorHardware;
-#elif BC_PGEN==1
-#include "qcpulsegenerator.h"
-#elif BC_PGEN==2
-#include "qcpulsegenerator.h"
-#elif BC_PGEN==3
-#include "qcpulsegenerator.h"
-#endif
-#endif
 
 
 #endif // PULSEGENERATOR_H

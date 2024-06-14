@@ -10,9 +10,10 @@ ChirpTableModel::ChirpTableModel(QObject *parent)
     : QAbstractTableModel(parent), SettingsStorage(BC::Key::ChirpTableModel::key),
       d_allIdentical(true), d_currentChirp(0)
 {
-    SettingsStorage s(BC::Key::AWG::key,SettingsStorage::Hardware);
-    double awgMin = s.get(BC::Key::AWG::min,0.0);
-    double awgMax = s.get(BC::Key::AWG::max,1000.0);
+    SettingsStorage s(BC::Key::hwKey(BC::Key::AWG::key,0)
+                      ,SettingsStorage::Hardware);
+    d_awgMin = s.get(BC::Key::AWG::min,0.0);
+    d_awgMax = s.get(BC::Key::AWG::max,1000.0);
 
     using namespace BC::Key::ChirpTableModel;
     auto num = getArraySize(ctChirps);
@@ -20,8 +21,8 @@ ChirpTableModel::ChirpTableModel(QObject *parent)
     {
         auto ci = getArrayValue(ctChirps,i,chirpIndex,0);
         auto si = getArrayValue(ctChirps,i,segIndex,0);
-        auto st = getArrayValue(ctChirps,i,start,awgMin);
-        auto en = getArrayValue(ctChirps,i,end,awgMax);
+        auto st = getArrayValue(ctChirps,i,start,d_awgMin);
+        auto en = getArrayValue(ctChirps,i,end,d_awgMax);
         auto dur = getArrayValue(ctChirps,i,duration,0.5);
         auto e = getArrayValue(ctChirps,i,empty,true);
 
@@ -264,10 +265,8 @@ bool ChirpTableModel::setData(const QModelIndex &index, const QVariant &value, i
             }
             else
             {
-                using namespace BC::Key::AWG;
-                SettingsStorage s(key,SettingsStorage::Hardware);
-                d_chirpList[i][index.row()].startFreqMHz = s.get(min,0.0);
-                d_chirpList[i][index.row()].endFreqMHz = s.get(max,1000.0);
+                d_chirpList[i][index.row()].startFreqMHz = d_awgMin;
+                d_chirpList[i][index.row()].endFreqMHz = d_awgMax;
             }
             break;
         case 4:
@@ -338,18 +337,13 @@ Qt::ItemFlags ChirpTableModel::flags(const QModelIndex &index) const
 void ChirpTableModel::addSegment(double start, double end, double dur, int pos, bool empty)
 {
 
-    using namespace BC::Key::AWG;
-    SettingsStorage s(key,SettingsStorage::Hardware);
-    double awgMin = s.get(min,0.0);
-    double awgMax = s.get(max,1000.0);
-
     if(start < 0.0)
-        start = awgMin;
+        start = d_awgMin;
     if(end < 0.0)
-        end = awgMax;
+        end = d_awgMax;
 
-    double startFreq = qBound(awgMin,start,awgMax);
-    double endFreq = qBound(awgMin,end,awgMax);
+    double startFreq = qBound(d_awgMin,start,d_awgMax);
+    double endFreq = qBound(d_awgMin,end,d_awgMax);
 
     ChirpConfig::ChirpSegment cs{startFreq,endFreq,dur,(end-start)/dur,empty};
 
@@ -542,13 +536,11 @@ QWidget *ChirpDoubleSpinBoxDelegate::createEditor(QWidget *parent, const QStyleO
     QDoubleSpinBox *editor = new QDoubleSpinBox(parent);
     QWidget *out = editor;
 
-    using namespace BC::Key::AWG;
-    SettingsStorage s(key,SettingsStorage::Hardware);
-    double awgMin = s.get(min,0.0);
-    double awgMax = s.get(max,1000.0);
+    auto m = static_cast<const ChirpTableModel*>(index.model());
 
-    double chirpMin = dynamic_cast<const ChirpTableModel*>(index.model())->calculateChirpFrequency(awgMin);
-    double chirpMax = dynamic_cast<const ChirpTableModel*>(index.model())->calculateChirpFrequency(awgMax);
+
+    double chirpMin = m->calculateChirpFrequency(m->awgMin());
+    double chirpMax = m->calculateChirpFrequency(m->awgMax());
     if(chirpMin > chirpMax)
         qSwap(chirpMin,chirpMax);
 
@@ -586,7 +578,7 @@ QWidget *ChirpDoubleSpinBoxDelegate::createEditor(QWidget *parent, const QStyleO
     case 5:
         if(!empty)
         {
-            editor->setRange(awgMin,awgMax);
+            editor->setRange(m->awgMin(),m->awgMax());
             editor->setDecimals(3);
             editor->setEnabled(true);
         }

@@ -1,3 +1,12 @@
+.. index::
+   single: FTMW
+   single: FID
+   single: FID Processing
+   single: Segment
+   single: Frame
+   single: Backup
+   single: Window Function
+
 Data Storage
 ============
 
@@ -25,7 +34,7 @@ Each experiment that Blackchirp performs is associated with an experiment number
 
 and experiment 480 would be stored in::
 
-  experiments/0/0/400
+  experiments/0/0/480
 
 Each experiment is associated with several CSV files that contain information about aspects of the experiment.
 
@@ -82,23 +91,23 @@ clocks.csv
 This file contains the configuration of the clocks (upceonversion LO, downconversion LO, etc) as discussed on the `Rf Configuration <hardware_menu.html#rf-configuration>`_ page. In a typical CP-FTMW experiment, each clock is set to a single value, but in some cases (e.g., an `LO Scan <experiment/acquisition_types.html#lo-scan>`_ or a `DR Scan <experiment/acquisition_types.html#dr-scan>`_), one or more of the clocks may be tuned to different values throughout the experiment. For example, the following is an excerpt from an LO scan in which the upconversion and downconversion LOs were each stepped by 250 MHz::
 
   Index;ClockType;FreqMHz;Operation;Factor;HwKey;OutputNum
-  0;1;40960;0;8;Clock0;1
-  0;0;11520;0;2;Clock0;0
-  0;3;7000;0;1;Clock0;2
-  1;1;41210;0;8;Clock0;1
-  1;0;11770;0;2;Clock0;0
-  1;3;7000;0;1;Clock0;2
-  2;1;41460;0;8;Clock0;1
-  2;0;12020;0;2;Clock0;0
-  2;3;7000;0;1;Clock0;2
-  3;1;41710;0;8;Clock0;1
-  3;0;12270;0;2;Clock0;0
-  3;3;7000;0;1;Clock0;2
-  4;1;41960;0;8;Clock0;1
-  4;0;12520;0;2;Clock0;0
-  4;3;7000;0;1;Clock0;2
+  0;DownLO;40960;Multiply;8;Clock.0;1
+  0;UpLO;11520;Multiply;2;Clock.0;0
+  0;DRClock;7000;Multiply;1;Clock.0;2
+  1;DownLO;41210;Multiply;8;Clock.0;1
+  1;UpLO;11770;Multiply;2;Clock.0;0
+  1;DRClock;7000;Multiply;1;Clock.0;2
+  2;DownLO;41460;Multiply;8;Clock.0;1
+  2;UpLO;12020;Multiply;2;Clock.0;0
+  2;DRClock;7000;Multiply;1;Clock.0;2
+  3;DownLO;41710;Multiply;8;Clock.0;1
+  3;UpLO;12270;Multiply;2;Clock.0;0
+  3;DRClock;7000;Multiply;1;Clock.0;2
+  4;DownLO;41960;Multiply;8;Clock.0;1
+  4;UpLO;12520;Multiply;2;Clock.0;0
+  4;DRClock;7000;Multiply;1;Clock.0;2
 
-The ``Index`` column refers to each step of the experiment. ``ClockType`` identifies the particular clock role (0=UpLO, 1=DownLO, 2=AwgRef, 3=DRClock, 4=DigRef, 5=ComRef). ``FreqMHz`` is the logical clock frequency in MHz. ``Operation`` (0=multiply, 1=divide) and ``Factor`` account for any frequncy divider or multiplier on the clock output, and these values are used by Blackchirp to determine how to convert the logical frequencies into hardware frequency. ``HwKey`` and ``OutputNum`` tell which piece of hardware was used and which output (in the event that the clock has multiple outputs).
+The ``Index`` column refers to each step of the experiment. ``ClockType`` identifies the particular clock role (UpLO, DownLO, AwgRef, DRClock, DigRef, or ComRef). ``FreqMHz`` is the logical clock frequency in MHz. ``Operation`` (Multiply or Divide) and ``Factor`` account for any frequncy divider or multiplier on the clock output, and these values are used by Blackchirp to determine how to convert the logical frequencies into hardware frequency. ``HwKey`` and ``OutputNum`` tell which piece of hardware was used and which output (in the event that the clock has multiple outputs).
 
 hardware.csv
 ............
@@ -106,11 +115,11 @@ hardware.csv
 This file contains the list of hardware compiled into Blackchirp when the experiment was performed. It is used in the program to determine whether it is possible to perform a Quick Experiment, which can be done only if the same hardware configuration is available. Example::
 
   key;subKey
-  AWG;awg70002a
-  Clock0;valon5009
-  Clock1;fixed
-  FtmwDigitizer;dsa71604c
-  PulseGenerator;qc9528
+  AWG.0;awg70002a
+  Clock.0;valon5009
+  Clock.1;fixed
+  FtmwDigitizer.0;dsa71604c
+  PulseGenerator.0;qc9528
 
 The ``key`` and ``subKey`` fields together record which specific hardware implementation was used for each piece of hardware. The number of items in this list may be variable depending on your configuration.
 
@@ -146,25 +155,25 @@ There are 6 columns in total. ``ObjKey`` identifies the "object" associated with
 
 ``ArrayKey`` and ``ArrayIndex`` are used when there are multiple instances of data that would otherwise have the same ``ValueKey``. For example, a PulseGenerator object may have several channels, each one of which has an associated delay, width, etc. An example of such a situation is::
 
-  PulseGenerator;;;RepRate;2;Hz
-  PulseGenerator;Channel;0;ActiveLevel;ActiveHigh;
-  PulseGenerator;Channel;0;Delay;50;μs
-  PulseGenerator;Channel;0;Enabled;true;
-  PulseGenerator;Channel;0;Name;Gas;
-  PulseGenerator;Channel;0;Role;Gas;
-  PulseGenerator;Channel;0;Width;170;μs
-  PulseGenerator;Channel;1;ActiveLevel;ActiveHigh;
-  PulseGenerator;Channel;1;Delay;0;μs
-  PulseGenerator;Channel;1;Enabled;false;
-  PulseGenerator;Channel;1;Name;DC;
-  PulseGenerator;Channel;1;Role;DC;
-  PulseGenerator;Channel;1;Width;160;μs
-  PulseGenerator;Channel;2;ActiveLevel;ActiveHigh;
-  PulseGenerator;Channel;2;Delay;660;μs
-  PulseGenerator;Channel;2;Enabled;true;
-  PulseGenerator;Channel;2;Name;AWG;
-  PulseGenerator;Channel;2;Role;AWG;
-  PulseGenerator;Channel;2;Width;20;μs
+  PulseGenerator.0;;;RepRate;2;Hz
+  PulseGenerator.0;Channel;0;ActiveLevel;ActiveHigh;
+  PulseGenerator.0;Channel;0;Delay;50;μs
+  PulseGenerator.0;Channel;0;Enabled;true;
+  PulseGenerator.0;Channel;0;Name;Gas;
+  PulseGenerator.0;Channel;0;Role;Gas;
+  PulseGenerator.0;Channel;0;Width;170;μs
+  PulseGenerator.0;Channel;1;ActiveLevel;ActiveHigh;
+  PulseGenerator.0;Channel;1;Delay;0;μs
+  PulseGenerator.0;Channel;1;Enabled;false;
+  PulseGenerator.0;Channel;1;Name;DC;
+  PulseGenerator.0;Channel;1;Role;DC;
+  PulseGenerator.0;Channel;1;Width;160;μs
+  PulseGenerator.0;Channel;2;ActiveLevel;ActiveHigh;
+  PulseGenerator.0;Channel;2;Delay;660;μs
+  PulseGenerator.0;Channel;2;Enabled;true;
+  PulseGenerator.0;Channel;2;Name;AWG;
+  PulseGenerator.0;Channel;2;Role;AWG;
+  PulseGenerator.0;Channel;2;Width;20;μs
 
 Here there is an ``ArrayKey`` named "Channel" and the ``ArrayIndex`` identifies which particular channel is referred to. That channel is associated with multiple different ``ValueKey`` entries, so the ``ArrayKey``, ``ArrayIndex``, and ``ValueKey`` would be used together to identify any desired value.
 
@@ -190,7 +199,7 @@ This file is used internally by Blackchirp to configure data structures when the
 version.csv
 ...........
 
-This file stores information about the Blackchirp version used with the experiment. The purpose is to enable the possibility of enabling future backward compatability. An example::
+This file stores information about the Blackchirp version used with the experiment. The purpose is to enable the possibility of future backward compatability. An example::
 
   ;
   key;value
@@ -213,11 +222,11 @@ fidparams.csv
 This file contains information needed to convert raw FID data into numerical values, as well as the information needed to determine the appropriate frequency values following a Fourier transform. Here is an example ``fidparams.csv`` file that corresponds to the ``clocks.csv`` file shown above for an LO scan::
 
   index;spacing;probefreq;vmult;shots;sideband;size
-  0;2e-11;40960;0.0009765625;200;1;500000
-  1;2e-11;41210;0.0009765625;174;1;500000
-  2;2e-11;41460;0.0009765625;100;1;500000
-  3;2e-11;41710;0.0009765625;100;1;500000
-  4;2e-11;41960;0.0009765625;100;1;500000
+  0;2e-11;40960;0.0009765625;200;LowerSideband;500000
+  1;2e-11;41210;0.0009765625;174;LowerSideband;500000
+  2;2e-11;41460;0.0009765625;100;LowerSideband;500000
+  3;2e-11;41710;0.0009765625;100;LowerSideband;500000
+  4;2e-11;41960;0.0009765625;100;LowerSideband;500000
 
 In this example, there were 5 unique clock configurations, and 100 shots were recorded at each position. Following one complete sweep, the program returned to the first configuration and acquired 100 additional shots. The acquisition was aborted after 74 shots on the second step of the second sweep.
 
@@ -225,7 +234,7 @@ The ``index`` column identifies a particular FID and the number of its correspon
 
 In its FID files, Blackchirp does not store the averaged digitizer voltage. Instead, Blackchirp stores *the sum of the raw digitizer readings*. To convert the FID values to average voltage, the numbers in the FID file need to be multiplied by ``vmult`` and divided by ``shots``. The ``vmult`` column contains the conversion between digitization levels and voltage, while ``shots`` contains the number of digitizer readings that have been summed.
 
-Finally, for calculating the frequency axis of the FT, the ``spacing`` tells the time between samples in seconds; the ``probefreq`` tells the downconversion LO frequency in MHz, and ``sideband`` tells whether the FT frequency should be added (0 = upper sideband) or subtracted (1 = lower sideband) from the ``probefreq``.
+Finally, for calculating the frequency axis of the FT, the ``spacing`` tells the time between samples in seconds; the ``probefreq`` tells the downconversion LO frequency in MHz, and ``sideband`` tells whether the FT frequency should be added (UpperSideband or 0) or subtracted (LowerSideband or 1) from the ``probefreq``.
 
 FID CSV Files
 .............
@@ -259,3 +268,55 @@ The first row is a column label, and each subsequent row contains a single FID p
   -az;-33;-99;-4r;-ee;-9p;-8e;-2l;-dk;56;-fq;-3t;38;3a;-7f;-4a;-2b;3m;-e;-4t
   -bg;-82;-6s;-7r;-8k;-3o;-id;-2j;-i9;3f;-gw;-7c;-6b;-r;-57;-4v;-2o;-h;-3r;-20
 
+
+processing.csv
+..............
+
+This file contains the default `processing settings <cp-ftmw.html#fid-processing-settings>`_ associated with the FID data. An example is shown below.::
+
+  ObjKey;Value
+  AutoscaleIgnoreMHz;250
+  FidEndUs;10
+  FidExpfUs;0
+  FidRemoveDC;true
+  FidStartUs;5
+  FidWindowFunction;None
+  FidZeroPadFactor;0
+  FtUnits;6
+
+The ``FtUnits`` value refers to a scaling factor of 10\ :sup:`N` (i.e., a setting of 6 would convert the FT from units of V to μV.). The window functions are shown below, where ``N`` is the number of samples and ``n`` ranges from 0 to ``N-1``:
+
+* None/Boxcar (0)
+
+.. math::
+   f(n) = 1
+
+* Bartlett (1)
+
+.. math::
+   f(n) = 1-\left|\frac{2n}{N-1}-1\right|
+
+* Blackman (2)
+
+.. math::
+   f(n) = 0.42 - 0.5\cos\frac{2\pi n}{N} + 0.08\cos\frac{4\pi n}{N}
+
+* BlackmanHarris (3)
+
+.. math::
+   f(n) = 0.35875 - 0.48829\cos\frac{2\pi n}{N} + 0.14128\cos\frac{4\pi n}{N} - 0.1168\cos\frac{6\pi n}{N}
+
+* Hamming (4)
+
+.. math::
+   f(n) = 0.54 - 0.46\cos\frac{2\pi n}{N}
+
+* Hanning (5)
+
+.. math::
+   f(n) = 0.5 - 0.5\cos\frac{2\pi n}{N}
+
+* KaiserBessel (6). I\ :sub:`0` = regular modified cylindrical Bessel function, β=14.0
+
+.. math::
+   f(n;\beta) = \frac{I_0\left(\beta\sqrt{1-\left[\frac{2x}{N-1}\right]^2}\right)}{I_0(\beta)},\quad x = n-\frac{N-1}{2}

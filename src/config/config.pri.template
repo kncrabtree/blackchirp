@@ -1,6 +1,3 @@
-#Enable CUDA GPU support
-#CONFIG += gpu-cuda
-
 #Enable LIF controls/acquisition
 #CONFIG += lif
 
@@ -12,65 +9,74 @@
 # examples
 #-----------------------------------------
 
+#Example for linux
 unix:!macx: LIBS += -lqwt -lgsl -lm -lgslcblas
+
+#Example for Windows
+win32 {
+    LIBS += -L"C:/Qwt-6.3.0/lib" -lqwt
+    INCLUDEPATH += "C:/Qwt-6.3.0/include"
+    LIBS += -L"C:/gsl-2.7.1" -lgsl -lgslcblas
+    INCLUDEPATH += "C:/gsl-2.7.1/include"
+}
+
 
 
 #------------------------------------------------
 # The following defines select hardware implementations.
 #
-# If you have not enabled the lif or motor options above,
-# you can ignore their corresponding entries below
+# The FTMW Oscilloscope and Clocks are required.
+# All others are optional and may be commented out.
+# The keys are case insensitive, and may be found at
+# https://blackchirp.readthedocs.io/en/latest/user_guide/hardware_details.html
 # -----------------------------------------------
 
-# FTMW Oscilloscope (0 = virtual, 1 = DSA71604C, 2 = MSO72004C, 3 = M4i2220x8, 4 = DSOx92004A, 5 = MSO64B)
-FTMWSCOPE=0
+# FTMW Oscilloscope. Only 1 may be selected
+# options: virtual, DSA71604C, MSO72004C, M4i2220x8, DSOx92004A, DSOV204A, MSO64B, DPO71254B
+FTMWSCOPE=virtual
 
-#Clocks. Include in a space-delimited list, up to 6 numbers
-#For example:
-#CLOCKS=0 0 1 3 2
-#(0 = FixedClock, 1 = Valon 5009, 2 = Valon 5015, 3 = HP 83712B)
-CLOCKS=0 0
+# Clocks. Space delimited list
+# options: fixed, Valon5009, Valon5015, HP83712B
+CLOCKS=fixed fixed
 
-#AWG (<0 None, 0 = virtual, 1 = AWG70002A, 2 = AWG7122B, 3 = AD9914, 4 = M8195A, 5 = AWG5000)
-AWG=-1
+# AWG. Only 1 may be selected
+# options: virtual, AWG70002A, AWG7122B, AD9914, M8195A, AWG5204)
+#AWG=virtual
 
-#Pulse generator (<0 = None, 0 = virtual, 1 = Quantum Composers 9528+, 2 = Quantum Composers 9518, 3 = Quantum Composers 9214)
-PGEN=-1
+# Pulse Generator. Space delimited list
+# options: virtual, qc9518, qc9528, qc9214, dg645
+#PGEN=virtual
 
-#Flow Controller (<0 = None, 0 = virtual, 1 = MKS 647C, 2 = MKS 946)
-FC=-1
+# Flow Controller. Space delimited list
+# options: virtual, MKS647C, MKS946
+#FC=virtual
 
-#IO Board (<0 = None, 0 = virtual, 1 = Labjack U3)
-IOBOARD=-1
+# IO Board. Space delimited list
+# options: virtual, LabjackU3
+#IOBOARD=virtual
 
-#GPIB controller (<0 = none, 0 = virtual, 1 = Prologix GPIB-LAN, 2 = Proligix GPIB-USB)
-GPIB=-1
+# GPIB controller. Only 1 may be selected
+# options: virtual, PrologixLAN, ProligixUSB
+#GPIB=virtual
 
-#pressure controller (<0 = none, 0 = virtual, 1 = Intellisys IQ Plus)
-PC=-1
+# Pressure controller. Space delimited list
+# options virtual, Intellisys
+#PC=virtual
 
-#temperature controller (<0 = none, 0 = virtual, 1 = Lakeshore 218)
-TC=-1
+# Temperature controller. Space delimited list
+# options: virtual, Lakeshore218
+#TC=virtual
 
 ###### LIF ONLY #####
-#LIF Oscilloscope (0 = virtual, 1 = M4i2211x8)
-LIFSCOPE=0
+# LIF Oscilloscope. Only 1 may be selected
+# options: virtual, M4i2211x8
+#LIFSCOPE=virtual
 
-#LIF Laser (0 = virtual, 1 = Opolette)
-LIFLASER=0
+# LIF Laser. Only 1 may be selected
+# options: virtual, Opolette
+#LIFLASER=virtual
+
 ##### END LIF ONLY #####
-
-#------------------------------------------------
-# Space for custom include/lib paths
-#------------------------------------------------
-
-equals(IOBOARD,1)|allhardware {
-    LIBS += -llabjackusb
-}
-
-equals(FTMWSCOPE,3)|equals(LIFSCOPE,1)|allhardware {
-     LIBS += -lspcm_linux
-}
 
 
 #------------------------------
@@ -113,12 +119,7 @@ gpu-cuda {
 	}
 }
 
-#------------------------------------------------
-# Do not modify the following
-# -----------------------------------------------
 
-lif {
-    DEFINES += BC_LIF
-	DEFINES += BC_LIFSCOPE=$$LIFSCOPE
-	DEFINES += BC_LIFLASER=$$LIFLASER
-}
+
+#DEVELOPERS ONLY: Enable to compile all hardware files
+#CONFIG += allhardware

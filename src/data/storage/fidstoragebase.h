@@ -6,8 +6,20 @@
 
 #include <data/storage/datastoragebase.h>
 #include <data/experiment/fid.h>
+#include <data/analysis/ftworker.h>
 
 class BlackchirpCSV;
+
+namespace BC::Key::FidStorage {
+static const QString fidStart{"FidStartUs"};
+static const QString fidEnd{"FidEndUs"};
+static const QString fidExp{"FidExpfUs"};
+static const QString zpf{"FidZeroPadFactor"};
+static const QString rdc{"FidRemoveDC"};
+static const QString units{"FtUnits"};
+static const QString autoscaleIgnore{"AutoscaleIgnoreMHz"};
+static const QString winf{"FidWindowFunction"};
+}
 
 class FidStorageBase : public DataStorageBase
 {
@@ -28,13 +40,17 @@ public:
     virtual bool addFids(const FidList other, int shift =0);
     virtual bool setFidsData(const FidList other);
     virtual FidList getCurrentFidList();
-    virtual void backup() { return; };
+    virtual void backup() { return; }
     virtual int numBackups() { return 0; }
     virtual int getCurrentIndex() =0;
 
+    void writeProcessingSettings(const FtWorker::FidProcessingSettings &c);
+    bool readProcessingSettings(FtWorker::FidProcessingSettings &out);
+    std::pair<double,double> getLORange();
+
 protected:
     FidList d_currentFidList;
-    virtual void _advance() {};
+    virtual void _advance() {}
     void saveFidList(const FidList l, int i);
 
 private:
@@ -51,3 +67,4 @@ private:
 };
 
 #endif // FIDSTORAGEBASE_H
+

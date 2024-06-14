@@ -38,7 +38,8 @@ void ExperimentSummaryWidget::setExperiment(Experiment *exp)
     auto model = new ExptSummaryModel(exp,proxy);
     proxy->setSourceModel(model);
     p_view->setModel(proxy);
-    p_view->header()->setSectionResizeMode(QHeaderView::Stretch);
+    p_view->setColumnWidth(2,50);
+    p_view->header()->setSectionResizeMode(QHeaderView::Interactive);
     connect(p_le,&QLineEdit::textEdited,
             [proxy](QString s){
         QRegularExpression exp(s,QRegularExpression::CaseInsensitiveOption);
@@ -51,5 +52,5 @@ void ExperimentSummaryWidget::setExperiment(Experiment *exp)
 
 QSize ExperimentSummaryWidget::sizeHint() const
 {
-    return {500,600};
+    return {300,600};
 }

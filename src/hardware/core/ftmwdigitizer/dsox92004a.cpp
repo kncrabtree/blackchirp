@@ -74,7 +74,7 @@ bool DSOx92004A::testConnection()
 void DSOx92004A::initialize()
 {
     p_comm->setReadOptions(1000,true,QByteArray("\n"));
-    p_socket = dynamic_cast<QTcpSocket*>(p_comm->device());
+    p_socket = p_comm->device<QTcpSocket>();
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
 
 }
@@ -85,7 +85,7 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
     if(!d_enabledForExperiment)
         return true;
 
-    auto &config = exp.ftmwConfig()->d_scopeConfig;
+    auto &config = exp.ftmwConfig()->scopeConfig();
 
     //disable ugly headers
     if(!scopeCommand(QString("*RST;:SYSTEM:HEADER OFF")))
@@ -201,7 +201,7 @@ bool DSOx92004A::prepareForExperiment(Experiment &exp)
 
     p_comm->queryCmd(QString("*TRG;*OPC?\n"));
 
-    p_comm->device()->readAll();
+    p_comm->_device()->readAll();
 
     bool done = false;
     while(!done)
