@@ -5,6 +5,7 @@
 #include <QGridLayout>
 #include <QLabel>
 
+#include <data/bcglobals.h>
 #include <data/storage/settingsstorage.h>
 #include <modules/lif/hardware/liflaser/liflaser.h>
 
@@ -15,7 +16,7 @@ LifLaserWidget::LifLaserWidget(QWidget *parent)
     using namespace BC::Key::LifLaser;
     auto gl = new QGridLayout;
 
-    SettingsStorage s(key,SettingsStorage::Hardware);
+    SettingsStorage s(BC::Key::hwKey(key,0),SettingsStorage::Hardware);
 
     p_posBox = new QDoubleSpinBox;
     p_posBox->setMinimum(s.get(minPos,200.0));
@@ -33,22 +34,27 @@ LifLaserWidget::LifLaserWidget(QWidget *parent)
     gl->addWidget(p_posBox,0,0);
     gl->addWidget(p_posSetButton,0,1);
 
-    auto fl = new QLabel("Flashlamp");
-    fl->setAlignment(Qt::AlignRight);
-    gl->addWidget(fl,1,0);
+    if(s.get(hasFl,true))
+    {
+        auto fl = new QLabel("Flashlamp");
+        fl->setAlignment(Qt::AlignRight);
+        gl->addWidget(fl,1,0);
 
-    p_flButton = new QPushButton(QString("Enable"));
-    p_flButton->setCheckable(true);
-    p_flButton->setChecked(false);
-    connect(p_flButton,&QPushButton::clicked,this,[this](bool en){
-        if(en)
-            p_flButton->setText("Disable");
-        else
-            p_flButton->setText("Enable");
-        p_flButton->setEnabled(false);
-        emit changeFlashlamp(en);
-    });
-    gl->addWidget(p_flButton,1,1);
+        p_flButton = new QPushButton(QString("Enable"));
+        p_flButton->setChecked(false);
+        p_flButton->setCheckable(true);
+        connect(p_flButton,&QPushButton::clicked,this,[this](bool en){
+            if(en)
+                p_flButton->setText("Disable");
+            else
+                p_flButton->setText("Enable");
+            p_flButton->setEnabled(false);
+            emit changeFlashlamp(en);
+        });
+        gl->addWidget(p_flButton,1,1);
+    }
+    else
+        p_flButton = nullptr;
 
 
     setLayout(gl);
@@ -65,6 +71,8 @@ void LifLaserWidget::setPosition(const double d)
 
 void LifLaserWidget::setFlashlamp(bool b)
 {
+    if(!p_flButton)
+        return;
     p_flButton->setChecked(b);
     if(b)
         p_flButton->setText("Disable");

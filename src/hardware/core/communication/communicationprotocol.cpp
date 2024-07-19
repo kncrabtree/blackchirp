@@ -137,6 +137,35 @@ QByteArray CommunicationProtocol::queryCmd(QString cmd, bool suppressError)
     }
 }
 
+QByteArray CommunicationProtocol::readBytes(qint64 n, bool suppressError)
+{
+    if(_device() == nullptr)
+        return QByteArray();
+
+    if(n<1)
+        return QByteArray();
+
+    auto ba = _device()->bytesAvailable();
+
+
+    while(ba < n)
+    {
+        if(!_device()->waitForReadyRead(d_timeOut))
+        {
+            if(!suppressError)
+            {
+                emit hardwareFailure();
+                emit logMessage(QString("Could not read %1 bytes; timeout error").arg(n),LogHandler::Error);
+            }
+            return {};
+        }
+        else
+            ba = _device()->bytesAvailable();
+    }
+
+    return _device()->read(n);
+}
+
 void CommunicationProtocol::setErrorString(const QString str)
 {
     d_errorString = str;

@@ -8,6 +8,7 @@ VirtualLifLaser::VirtualLifLaser(QObject *parent) :
     setDefault(maxPos,2000.);
     setDefault(units,QString("nm"));
     setDefault(decimals,2);
+    setDefault(hasFl,true);
 }
 
 void VirtualLifLaser::initialize()

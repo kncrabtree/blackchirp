@@ -9,6 +9,7 @@ static const QString units{"units"};
 static const QString decimals{"decimals"};
 static const QString minPos{"minPos"};
 static const QString maxPos{"maxPos"};
+static const QString hasFl{"hasFlashlampControl"};
 }
 
 class LifLaser : public HardwareObject

@@ -132,6 +132,14 @@ public:
      */
     virtual QByteArray queryCmd(QString cmd, bool suppressError = false);
 
+    /*!
+     * \brief Reads n bytes from device, respecting timeout
+     * \param n Number of bytes to read
+     * \param suppressError If true, no failure signal will be emitted if all bytes are not read
+     * \return Bytes read
+     */
+    virtual QByteArray readBytes(qint64 n, bool suppressError = false);
+
     const QString d_key; /*!< Key used to identify communication protocol. Not currently used. */
 
     /*!
