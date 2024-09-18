@@ -31,6 +31,9 @@ static const QString extStageCrystalTheta0{"externalStageCrystalAngle0deg"};
 static const QString extStageCrystalSlope{"externalStageCrystalSlopeDegPerNm"};
 static const QString extStageCompTheta0{"externalStageCompensatorAngle0deg"};
 static const QString extStageCompSlope{"externalStageCompensatorSlopeDegPerNm"};
+static const QString extStageCrystalPoly{"externalStageCrystalPolynomial"};
+static const QString polyOrder{"order"};
+static const QString polyValue{"value"};
 }
 
 class SirahCobra : public LifLaser
@@ -63,6 +66,12 @@ public:
         double theta0{0.0};
         double slope{1.0};
     };
+    
+    struct PolyStageStatus {
+        double pos{0.0};
+        double stepsPerDeg{100};
+        std::map<double,double> coefs;
+    };
 
     explicit SirahCobra(QObject *parent = nullptr);
 
@@ -93,7 +102,8 @@ private:
     void readSettings() override;
 
     Rs232Instrument *p_extStagePort{ nullptr };
-    StageStatus d_crystalStatus, d_compStatus;
+    StageStatus d_compStatus;
+    PolyStageStatus d_crystalStatus;
 
 
 };
