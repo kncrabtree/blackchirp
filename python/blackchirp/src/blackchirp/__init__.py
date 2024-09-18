@@ -30,7 +30,7 @@ Example:
         from matplotlib import pyplot as plt
         
         exp = BCExperiment('path/to/experiment')
-        x,y = exp.get_fid().ft()
+        x,y = exp.ftmw.get_fid().ft()
         
         fig,ax = plt.subplots()
         ax.plot(x,y.flatten())
