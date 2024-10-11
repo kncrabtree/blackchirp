@@ -59,6 +59,15 @@ SirahCobra::SirahCobra(QObject *parent)
                      {{polyOrder,6},{polyValue,-1.19684033e-6}}
                  });
     }
+    
+    if(!containsArray(extStageCompPoly))
+    {
+        setArray(extStageCompPoly,{
+                     {{polyOrder,0},{polyValue,735434.26345}},
+                     {{polyOrder,1},{polyValue,-2083.62338}},
+                     {{polyOrder,2},{polyValue,1.80616}},
+                 });
+    }
 
     save();
 
@@ -172,38 +181,33 @@ void SirahCobra::setPos(double pos)
 
     if(p_extStagePort)
     {
-        //determine necesary angle;
-        // double crystalAngle = pos*d_crystalStatus.slope + d_crystalStatus.theta0;
-        double compAngle = pos*d_compStatus.slope + d_compStatus.theta0;
-
-        // if(crystalAngle<0.0)
-            // crystalAngle += 360.0;
-        if(compAngle < 0.0)
-            compAngle += 360.0;
-
         double cp = 0.0;
         for(const auto &[o,v] : d_crystalStatus.coefs)
             cp += pow(pos,o)*v;
         qint32 crystalPos = static_cast<qint32>(round(cp));
-        qint32 compPos = static_cast<qint32>(round(compAngle*d_compStatus.stepsPerDeg));
+        
+        cp = 0.0;
+        for(const auto &[o,v] : d_compStatus.coefs)
+            cp += pow(pos,o)*v;
+        qint32 compPos = static_cast<qint32>(round(cp));
 
-        emit logMessage("Crystal: "+QString::number(crystalPos));
-        // emit logMessage("Compensator: "+QString::number(compAngle,'f',3));
+        // emit logMessage("Crystal: "+QString::number(crystalPos));
+        // emit logMessage("Compensator: "+QString::number(compPos));
+        
         //calculate crystal commands
         auto dev = QString::number(get(extStageCrystalAddress,0));
         QString absmove = QString::number(crystalPos,16).rightJustified(8,'0').toUpper();
         QString crysCmd1 = QString("%1ma%2").arg(dev,absmove);
-        emit logMessage(QString("Crystal command: "+crysCmd1));
+        // emit logMessage(QString("Crystal command: "+crysCmd1));
 
         dev = QString::number(get(extStageCompAddress,0));
         absmove = QString::number(compPos,16).rightJustified(8,'0').toUpper();
         QString compCmd1 = QString("%1ma%2").arg(dev,absmove);
-
+        // emit logMessage(QString("Compensator command: "+compCmd1));
+        
         std::vector<QString> cmds {crysCmd1,compCmd1};
         for(const auto &c : cmds)
         {
-           // emit logMessage(c);
-           // auto device = c.at(0);
            p_extStagePort->writeCmd(c);
            int count = 0;
            int ba = p_extStagePort->_device()->bytesAvailable();
@@ -219,15 +223,8 @@ void SirahCobra::setPos(double pos)
                p_extStagePort->_device()->waitForReadyRead(250);
                ba = p_extStagePort->_device()->bytesAvailable();
            }
-
+        
            auto resp = p_extStagePort->_device()->readAll();
-           // emit logMessage(QString(resp));
-           // if(!QString(resp).startsWith(QString(device)+"po",Qt::CaseInsensitive))
-           // {
-           //     emit hardwareFailure();
-           //     emit logMessage(QString("Error in command %1. Invalid response received: %2.").arg(c,QString(resp)),LogHandler::Error);
-           //     return;
-           // }
         }
     }
 }
@@ -261,12 +258,7 @@ void SirahCobra::readSettings()
     }
 
     if(p_extStagePort)
-    {
-        // d_crystalStatus.theta0 = get(extStageCrystalTheta0,153.7593111);
-        // d_crystalStatus.slope = get(extStageCrystalSlope,0.3219747226);
-        d_compStatus.theta0 = get(extStageCompTheta0,518.1670078);
-        d_compStatus.slope = get(extStageCompSlope,-0.3822040691);
-        
+    {        
         d_crystalStatus.coefs.clear();
         auto l = getArray(extStageCrystalPoly);
         if(l.empty())
@@ -287,6 +279,29 @@ void SirahCobra::readSettings()
                     val = m.at(polyValue).toDouble();
                 
                 d_crystalStatus.coefs.insert({order,val});
+            }
+        }
+        
+        d_compStatus.coefs.clear();
+        l = getArray(extStageCompPoly);
+        if(l.empty())
+        {
+            d_compStatus.coefs.insert({0.0,0.0});
+            d_compStatus.coefs.insert({1.0,1.0});
+        }
+        else
+        {
+            for(const auto &m : l)
+            {
+                double order = 0.0;
+                if(m.contains(polyOrder))
+                    order = m.at(polyOrder).toDouble();
+                
+                double val = 0.0;
+                if(m.contains(polyValue))
+                    val = m.at(polyValue).toDouble();
+                
+                d_compStatus.coefs.insert({order,val});
             }
         }
     }

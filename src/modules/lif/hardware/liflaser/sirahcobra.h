@@ -32,6 +32,7 @@ static const QString extStageCrystalSlope{"externalStageCrystalSlopeDegPerNm"};
 static const QString extStageCompTheta0{"externalStageCompensatorAngle0deg"};
 static const QString extStageCompSlope{"externalStageCompensatorSlopeDegPerNm"};
 static const QString extStageCrystalPoly{"externalStageCrystalPolynomial"};
+static const QString extStageCompPoly{"externalStageCompPolynomial"};
 static const QString polyOrder{"order"};
 static const QString polyValue{"value"};
 }
@@ -102,8 +103,7 @@ private:
     void readSettings() override;
 
     Rs232Instrument *p_extStagePort{ nullptr };
-    StageStatus d_compStatus;
-    PolyStageStatus d_crystalStatus;
+    PolyStageStatus d_crystalStatus, d_compStatus;
 
 
 };
