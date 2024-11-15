@@ -191,37 +191,38 @@ void SirahCobra::setPos(double pos)
             cp += pow(pos,o)*v;
         qint32 compPos = static_cast<qint32>(round(cp));
 
-        // emit logMessage("Crystal: "+QString::number(crystalPos));
+        emit logMessage("Crystal: "+QString::number(crystalPos));
         // emit logMessage("Compensator: "+QString::number(compPos));
         
         //calculate crystal commands
         auto dev = QString::number(get(extStageCrystalAddress,0));
         QString absmove = QString::number(crystalPos,16).rightJustified(8,'0').toUpper();
         QString crysCmd1 = QString("%1ma%2").arg(dev,absmove);
-        // emit logMessage(QString("Crystal command: "+crysCmd1));
+        emit logMessage(QString("Crystal command: "+crysCmd1));
 
         dev = QString::number(get(extStageCompAddress,0));
         absmove = QString::number(compPos,16).rightJustified(8,'0').toUpper();
         QString compCmd1 = QString("%1ma%2").arg(dev,absmove);
         // emit logMessage(QString("Compensator command: "+compCmd1));
         
-        std::vector<QString> cmds {crysCmd1,compCmd1};
+        // std::vector<QString> cmds {crysCmd1,compCmd1};
+        std::vector<QString> cmds {crysCmd1};
         for(const auto &c : cmds)
         {
            p_extStagePort->writeCmd(c);
-           int count = 0;
-           int ba = p_extStagePort->_device()->bytesAvailable();
-           while(ba < 13)
-           {
-               count++;
-               if(count > 25)
-               {
-                   emit hardwareFailure();
-                   emit logMessage(QString("Error in command %1. No response received.").arg(c),LogHandler::Error);
-                   return;
-               }
-               p_extStagePort->_device()->waitForReadyRead(250);
-               ba = p_extStagePort->_device()->bytesAvailable();
+           // int count = 0;
+           // int ba = p_extStagePort->_device()->bytesAvailable();
+           // while(ba < 13)
+           // {
+           //     count++;
+           //     if(count > 25)
+           //     {
+           //         emit hardwareFailure();
+           //         emit logMessage(QString("Error in command %1. No response received.").arg(c),LogHandler::Error);
+           //         return;
+           //     }
+           //     p_extStagePort->_device()->waitForReadyRead(250);
+           //     ba = p_extStagePort->_device()->bytesAvailable();
            }
         
            auto resp = p_extStagePort->_device()->readAll();
