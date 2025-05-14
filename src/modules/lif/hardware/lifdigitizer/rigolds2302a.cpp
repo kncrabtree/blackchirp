@@ -110,7 +110,7 @@ void RigolDS2302A::readWaveform()
 //    p_comm->writeCmd(":STOP\n");
     for(int ch = 0; ch < lim; ch++)
     {
-        p_comm->writeCmd(QString(":WAV:SOUR CHAN%1\n").arg(ch));
+        p_comm->writeCmd(QString(":WAV:SOUR CHAN%1\n").arg(ch+1));
         p_comm->writeCmd(":WAV:MODE NORM\n");
         p_comm->writeCmd(":WAV:FORM BYTE\n");
         auto resp = p_comm->queryCmd(":WAV:YOR?\n");
