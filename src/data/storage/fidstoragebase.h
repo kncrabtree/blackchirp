@@ -35,6 +35,8 @@ public:
     void start() override;
     void finish() override;
     FidList loadFidList(int i);
+    
+    virtual FidList loadDifferentialFidList(int i) =0;
 
     virtual quint64 currentSegmentShots();
     virtual bool addFids(const FidList other, int shift =0);

@@ -21,6 +21,12 @@ FidMultiStorage::FidMultiStorage(int numRecords, int num, QString path) :
     }
 }
 
+FidList FidMultiStorage::loadDifferentialFidList(int i)
+{
+    Q_UNUSED(i)
+    return getCurrentFidList();
+}
+
 int FidMultiStorage::getCurrentIndex()
 {
     QMutexLocker l(pu_mutex.get());

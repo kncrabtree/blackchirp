@@ -114,6 +114,7 @@ private:
         int frame{0}; //only used for plot1 and plot2
         int segment{0}; //only used for plot1 and plot2
         int backup{0}; //only used for plot1 and plot2
+        bool differential{false}; //only used for plot1 and plot2
         bool loadWhenDone{false};
     };
 

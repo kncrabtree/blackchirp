@@ -291,6 +291,7 @@ void FtmwViewWidget::updatePlotSetting(int id)
         it->second.segment = ui->plotToolBar->segment(id)-1;
         it->second.frame = ui->plotToolBar->frame(id)-1;
         it->second.backup = ui->plotToolBar->backup(id);
+        it->second.differential = ui->plotToolBar->differential(id);
         updateFid(id);
     }
 }
@@ -721,6 +722,7 @@ void FtmwViewWidget::updateFid(int id)
     auto &ps = d_plotStatus[id];
     int seg = ps.segment;
     int backup = ps.backup;
+    bool diff = ps.differential;
 
     if(seg == d_currentSegment && id == d_liveId)
     {
@@ -738,7 +740,12 @@ void FtmwViewWidget::updateFid(int id)
         if(ps.p_watcher->isRunning())
             ps.loadWhenDone = true;
         else
-            ps.p_watcher->setFuture(QtConcurrent::run([this,seg](){ return ps_fidStorage->loadFidList(seg); }));
+        {
+            if(diff && backup > 0)
+                ps.p_watcher->setFuture(QtConcurrent::run([this,seg](){ return ps_fidStorage->loadDifferentialFidList(seg); }));
+            else
+                ps.p_watcher->setFuture(QtConcurrent::run([this,seg](){ return ps_fidStorage->loadFidList(seg); }));
+        }
     }
 }
 

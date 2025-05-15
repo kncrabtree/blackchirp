@@ -11,6 +11,7 @@ public:
     FidSingleStorage(int numRecords, int num, QString path="");
 
     // FidStorageBase interface
+    virtual FidList loadDifferentialFidList(int i);
     int getCurrentIndex() override;
     void backup() override;
     int numBackups() override;

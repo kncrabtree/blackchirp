@@ -12,6 +12,7 @@ public:
 
     void setNumSegments(int s) { d_numSegments = s; }
     int numSegments() const { return d_numSegments; }
+    virtual FidList loadDifferentialFidList(int i);
 
     // FidStorageBase interface
     int getCurrentIndex() override;

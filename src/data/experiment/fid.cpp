@@ -67,6 +67,26 @@ Fid &Fid::operator +=(const Fid other)
     return *this;
 }
 
+Fid &Fid::operator -=(const Fid other)
+{
+    if(other.shots() <= data->shots)
+    {
+        for(int i=0;i<size();i++)
+            data->fid[i] -= other.atRaw(i);
+    
+        data->shots -= other.shots();
+    }
+    else
+    {
+        for(int i=0;i<size();i++)
+            data->fid[i] = other.atRaw(i) - data->fid[i];
+    
+        data->shots = other.shots() - data->shots;
+    }
+    
+    return *this;
+}
+
 Fid &Fid::operator +=(const QVector<qint64> other)
 {
     for(int i=0; i<size();i++)

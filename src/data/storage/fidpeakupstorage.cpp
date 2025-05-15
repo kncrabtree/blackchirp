@@ -10,6 +10,12 @@ FidPeakUpStorage::~FidPeakUpStorage()
 {
 }
 
+FidList FidPeakUpStorage::loadDifferentialFidList(int i)
+{
+    Q_UNUSED(i)
+    return getCurrentFidList();
+}
+
 bool FidPeakUpStorage::addFids(const FidList other, int shift)
 {
     QMutexLocker l(pu_mutex.get());

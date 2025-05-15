@@ -40,6 +40,7 @@ public:
     int frame(int id) const;
     int segment(int id) const;
     int backup(int id) const;
+    bool differential(int id) const;
     bool viewingBackup(int plotId) const;
 
 signals:
@@ -56,6 +57,7 @@ private:
     std::map<int,SpinBoxWidgetAction*> d_seg;
     std::map<int,SpinBoxWidgetAction*> d_frame;
     std::map<int,SpinBoxWidgetAction*> d_backup;
+    std::map<int,QAction*> d_differential;
 };
 
 #endif // FTMWPLOTTOOLBAR_H
