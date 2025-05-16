@@ -10,11 +10,10 @@
 
 #include <data/storage/settingsstorage.h>
 #include <gui/plot/customzoomer.h>
+#include <gui/plot/blackchirpplotcurve.h>
 
 class QMenu;
 class CustomTracker;
-class BlackchirpPlotCurve;
-class BlackchirpPlotCurveBase;
 class QMutex;
 
 
@@ -65,6 +64,7 @@ public slots:
 
     void exportCurve(BlackchirpPlotCurveBase *curve);
     void setCurveColor(BlackchirpPlotCurveBase* curve);
+    void setCurveStyle(BlackchirpPlotCurveBase* curve, QwtPlotCurve::CurveStyle s);
     void setCurveLineThickness(BlackchirpPlotCurveBase* curve, double t);
     void setCurveLineStyle(BlackchirpPlotCurveBase* curve, Qt::PenStyle s);
     void setCurveMarker(BlackchirpPlotCurveBase* curve, QwtSymbol::Style s);

@@ -22,7 +22,6 @@
 #include <qwt6/qwt_scale_div.h>
 #include <qwt6/qwt_plot_marker.h>
 #include <qwt6/qwt_plot_spectrogram.h>
-#include <gui/plot/blackchirpplotcurve.h>
 #include <data/storage/blackchirpcsv.h>
 
 #include <gui/plot/customtracker.h>
@@ -433,6 +432,12 @@ void ZoomPanPlot::setCurveColor(BlackchirpPlotCurveBase *curve)
                            QString("Choose a color for the ")+curve->title().text()+QString(" curve"),QColorDialog::ShowAlphaChannel);
     if(c.isValid())
         curve->setColor(c);
+    replot();
+}
+
+void ZoomPanPlot::setCurveStyle(BlackchirpPlotCurveBase *curve, QwtPlotCurve::CurveStyle s)
+{
+    curve->setCurveStyle(s);
     replot();
 }
 
@@ -1256,6 +1261,18 @@ QMenu *ZoomPanPlot::contextMenu()
             auto curveWa = new QWidgetAction(m);
             auto curveWidget = new QWidget(m);
             auto cfl = new QFormLayout(curveWidget);
+            
+            auto curveStyleBox = new QComboBox;
+            curveStyleBox->addItem("No Curve",QVariant::fromValue(QwtPlotCurve::NoCurve));
+            curveStyleBox->addItem("Line Plot",QVariant::fromValue(QwtPlotCurve::Lines));
+            curveStyleBox->addItem("Stick Plot",QVariant::fromValue(QwtPlotCurve::Sticks));
+            curveStyleBox->addItem("Step Plot",QVariant::fromValue(QwtPlotCurve::Steps));
+            curveStyleBox->addItem("Scatter Dots",QVariant::fromValue(QwtPlotCurve::Dots));
+            curveStyleBox->setCurrentIndex(curveStyleBox->findData(QVariant::fromValue(curve->style())));
+            connect(curveStyleBox,qOverload<int>(&QComboBox::currentIndexChanged),this,[this,curve,curveStyleBox](int i) {
+                setCurveStyle(curve,curveStyleBox->itemData(i).value<QwtPlotCurve::CurveStyle>());
+            });
+            cfl->addRow("Curve Type",curveStyleBox);
 
             auto thicknessBox = new QDoubleSpinBox;
             thicknessBox->setRange(0.0,10.0);

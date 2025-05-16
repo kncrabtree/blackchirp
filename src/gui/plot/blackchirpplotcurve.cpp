@@ -3,7 +3,7 @@
 #include <QPalette>
 #include <QMutex>
 
-BlackchirpPlotCurveBase::BlackchirpPlotCurveBase(const QString key, const QString title, Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker) :
+BlackchirpPlotCurveBase::BlackchirpPlotCurveBase(const QString key, const QString title, Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker, CurveStyle defaultStyle) :
     SettingsStorage({BC::Key::bcCurve,key},General), d_key{key},
     p_samplesMutex{new QMutex}
 {
@@ -16,11 +16,13 @@ BlackchirpPlotCurveBase::BlackchirpPlotCurveBase(const QString key, const QStrin
     setItemAttribute(QwtPlotItem::AutoScale);
     setItemInterest(QwtPlotItem::ScaleInterest);
 
-    getOrSetDefault(BC::Key::bcCurveStyle,static_cast<int>(defaultLineStyle));
+    getOrSetDefault(BC::Key::bcCurveLineStyle,static_cast<int>(defaultLineStyle));
+    getOrSetDefault(BC::Key::bcCurveCurveStyle,static_cast<int>(defaultStyle));
     getOrSetDefault(BC::Key::bcCurveMarker,static_cast<int>(defaultMarker));
 
     configurePen();
     configureSymbol();
+    configureCurveStyle();
     setRenderHint(QwtPlotItem::RenderAntialiased);
 
     setAxes(get<QwtPlot::Axis>(BC::Key::bcCurveAxisX,QwtPlot::xBottom),
@@ -42,6 +44,12 @@ void BlackchirpPlotCurveBase::setColor(const QColor c)
     configureSymbol();
 }
 
+void BlackchirpPlotCurveBase::setCurveStyle(CurveStyle s)
+{
+    set(BC::Key::bcCurveCurveStyle,static_cast<int>(s));
+    configureCurveStyle();
+}
+
 void BlackchirpPlotCurveBase::setLineThickness(double t)
 {
     set(BC::Key::bcCurveThickness,t);
@@ -50,7 +58,7 @@ void BlackchirpPlotCurveBase::setLineThickness(double t)
 
 void BlackchirpPlotCurveBase::setLineStyle(Qt::PenStyle s)
 {
-    set(BC::Key::bcCurveStyle,static_cast<int>(s));
+    set(BC::Key::bcCurveLineStyle,static_cast<int>(s));
     configurePen();
 }
 
@@ -98,6 +106,7 @@ void BlackchirpPlotCurveBase::updateFromSettings()
 {
     configurePen();
     configureSymbol();
+    configureCurveStyle();
     setAxes(get<QwtPlot::Axis>(BC::Key::bcCurveAxisX,QwtPlot::xBottom),
             get<QwtPlot::Axis>(BC::Key::bcCurveAxisY,QwtPlot::yLeft));
     setVisible(get<bool>(BC::Key::bcCurveVisible,true));
@@ -109,7 +118,7 @@ void BlackchirpPlotCurveBase::configurePen()
     QPalette pal;
     p.setColor(get<QColor>(BC::Key::bcCurveColor,pal.color(QPalette::Text)));
     p.setWidthF(get<double>(BC::Key::bcCurveThickness,1.0));
-    p.setStyle(get<Qt::PenStyle>(BC::Key::bcCurveStyle,Qt::SolidLine));
+    p.setStyle(get<Qt::PenStyle>(BC::Key::bcCurveLineStyle,Qt::SolidLine));
     setPen(p);
 }
 
@@ -123,6 +132,11 @@ void BlackchirpPlotCurveBase::configureSymbol()
     auto s = get<int>(BC::Key::bcCurveMarkerSize,5);
     sym->setSize(QSize(s,s));
     setSymbol(sym);
+}
+
+void BlackchirpPlotCurveBase::configureCurveStyle()
+{
+    setStyle(get<CurveStyle>(BC::Key::bcCurveCurveStyle,Lines));
 }
 
 void BlackchirpPlotCurveBase::setSamples(const QVector<QPointF> d)

@@ -17,7 +17,8 @@ Q_DECLARE_METATYPE(QwtPlot::Axis)
 namespace BC::Key {
 static const QString bcCurve{"Curve"};
 static const QString bcCurveColor{"color"};
-static const QString bcCurveStyle{"style"};
+static const QString bcCurveCurveStyle{"curveStyle"};
+static const QString bcCurveLineStyle{"lineStyle"};
 static const QString bcCurveThickness{"thickness"};
 static const QString bcCurveMarker{"marker"};
 static const QString bcCurveMarkerSize{"markerSize"};
@@ -32,10 +33,12 @@ class BlackchirpPlotCurveBase : public QwtPlotCurve, public SettingsStorage
 public:
     BlackchirpPlotCurveBase(const QString key, const QString title=QString(""),
                         Qt::PenStyle defaultLineStyle = Qt::SolidLine,
-                        QwtSymbol::Style defaultMarker = QwtSymbol::NoSymbol);
+                        QwtSymbol::Style defaultMarker = QwtSymbol::NoSymbol,
+                        QwtPlotCurve::CurveStyle defaultStyle = QwtPlotCurve::Lines);
     virtual ~BlackchirpPlotCurveBase();
 
     void setColor(const QColor c);
+    void setCurveStyle(CurveStyle s);
     void setLineThickness(double t);
     void setLineStyle(Qt::PenStyle s);
     void setMarkerStyle(QwtSymbol::Style s);
@@ -72,6 +75,7 @@ private:
 
     void configurePen();
     void configureSymbol();
+    void configureCurveStyle();
     void setSamples(const QVector<QPointF> d);
 
 protected:
