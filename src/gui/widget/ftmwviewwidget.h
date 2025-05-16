@@ -29,6 +29,7 @@
 #include <data/storage/settingsstorage.h>
 #include <gui/plot/fidplot.h>
 #include <gui/plot/ftplot.h>
+#include <gui/plot/mainftplot.h>
 #include <gui/widget/ftmwprocessingtoolbar.h>
 #include <gui/widget/ftmwplottoolbar.h>
 #include <gui/widget/toolbarwidgetaction.h>
@@ -162,7 +163,7 @@ public:
     QHBoxLayout *plot2Layout;
     FidPlot *fidPlot2;
     FtPlot *ftPlot2;
-    FtPlot *mainFtPlot;
+    MainFtPlot *mainFtPlot;
     QToolBar *toolBar;
     QAction *processingAct;
     FtmwProcessingToolBar *processingToolBar;
@@ -251,7 +252,7 @@ public:
 //        verticalLayout->setStretch(0, 1);
 //        verticalLayout->setStretch(1, 1);
         splitter->addWidget(widget);
-        mainFtPlot = new FtPlot(QString("Main"),splitter);
+        mainFtPlot = new MainFtPlot(splitter);
         mainFtPlot->setObjectName(QStringLiteral("mainFtPlot"));
         mainFtPlot->setMinimumSize(QSize(0, 100));
         splitter->addWidget(mainFtPlot);

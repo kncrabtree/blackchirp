@@ -30,23 +30,26 @@ public:
     explicit FtPlot(const QString id, QWidget *parent = 0);
     ~FtPlot();
 
-    void prepareForExperiment(const Experiment &e);
+    virtual void prepareForExperiment(const Experiment &e);
     Ft currentFt() const;
 
 public slots:
     void newFt(const Ft ft);
 
     void configureUnits(FtWorker::FtUnits u);
-    void newPeakList(const QVector<QPointF> l);
+    
     void setNumShots(quint64 shots);
     void setMessageText(QString msg);
+    
+protected:
+    QString id() const { return d_id; }
+    int number() const { return d_number; }
 
 
 private:
     /*!
      * \brief The object representing the curve on the plot
      */
-    BlackchirpPlotCurve *p_peakData;
     BlackchirpFTCurve *p_curve;
     QwtPlotTextLabel *p_shotsLabel;
     QwtPlotTextLabel *p_messageLabel;

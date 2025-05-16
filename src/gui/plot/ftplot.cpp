@@ -37,8 +37,7 @@ FtPlot::FtPlot(const QString id, QWidget *parent) :
     p_curve = new BlackchirpFTCurve(BC::Key::ftCurve+id);
     p_curve->attach(this);
 
-    p_peakData = new BlackchirpPlotCurve(BC::Key::peakCurve+id,"",Qt::NoPen,QwtSymbol::Ellipse);
-    p_peakData->attach(this);
+
 
     QPalette p;
     QColor bg( p.window().color() );
@@ -73,22 +72,15 @@ void FtPlot::prepareForExperiment(const Experiment &e)
 
     d_currentFt = Ft();
     p_curve->setCurrentFt(Ft());
-    p_peakData->setCurveData(QVector<QPointF>());
     setNumShots(0);
     setMessageText("");
 
     p_curve->setVisible(e.ftmwEnabled());
 
     if(d_number>0)
-    {
         p_curve->setTitle(BC::Key::ftCurve+d_id+QString::number(d_number));
-        p_peakData->setTitle(BC::Key::peakCurve+d_id+QString::number(d_number));
-    }
     else
-    {
         p_curve->setTitle(BC::Key::ftCurve+d_id);
-        p_peakData->setTitle(BC::Key::peakCurve+d_id);
-    }
 
     autoScale();
 }
@@ -133,16 +125,6 @@ void FtPlot::configureUnits(FtWorker::FtUnits u)
 
 
     setAxisTitle(QwtPlot::yLeft,title);
-}
-
-void FtPlot::newPeakList(const QVector<QPointF> l)
-{
-
-    if(!l.isEmpty())
-        p_peakData->setCurveData(l);
-
-    p_peakData->setCurveVisible(!l.isEmpty());
-    replot();
 }
 
 void FtPlot::setNumShots(quint64 shots)

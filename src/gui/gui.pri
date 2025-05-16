@@ -25,6 +25,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/plot/customzoomer.cpp \
     $$PWD/plot/fidplot.cpp \
     $$PWD/plot/ftplot.cpp \
+    $$PWD/plot/mainftplot.cpp \
     $$PWD/plot/pulseplot.cpp \
     $$PWD/plot/trackingplot.cpp \
     $$PWD/plot/zoompanplot.cpp \
@@ -81,6 +82,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/plot/customzoomer.h \
     $$PWD/plot/fidplot.h \
     $$PWD/plot/ftplot.h \
+    $$PWD/plot/mainftplot.h \
     $$PWD/plot/pulseplot.h \
     $$PWD/plot/trackingplot.h \
     $$PWD/plot/zoompanplot.h \
