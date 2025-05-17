@@ -286,14 +286,14 @@ void FidStorageBase::writeProcessingSettings(const FtWorker::FidProcessingSettin
     m.emplace(autoscaleIgnore,c.autoScaleIgnoreMHz);
     m.emplace(winf,QVariant::fromValue(c.windowFunction));
 
-    writeMetadata(m,BC::CSV::fidDir);
+    writeMetadata(BC::Key::DS::proc,m,BC::CSV::fidDir);
 }
 
 bool FidStorageBase::readProcessingSettings(FtWorker::FidProcessingSettings &out)
 {
     using namespace BC::Key::FidStorage;
     std::map<QString,QVariant> m;
-    readMetadata(m,BC::CSV::fidDir);
+    readMetadata(BC::Key::DS::proc,m,BC::CSV::fidDir);
 
     if(m.empty())
         return false;

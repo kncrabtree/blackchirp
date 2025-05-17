@@ -12,6 +12,7 @@ SOURCES += $$PWD/loghandler.cpp \
     $$PWD/experiment/fid.cpp \
     $$PWD/experiment/ftmwconfig.cpp \
     $$PWD/experiment/ftmwconfigtypes.cpp \
+    $$PWD/experiment/overlay.cpp \
     $$PWD/experiment/rfconfig.cpp \
     $$PWD/model/chirptablemodel.cpp \
     $$PWD/model/clocktablemodel.cpp \
@@ -27,6 +28,7 @@ SOURCES += $$PWD/loghandler.cpp \
     $$PWD/storage/fidsinglestorage.cpp \
     $$PWD/storage/fidstoragebase.cpp \
     $$PWD/storage/headerstorage.cpp \
+    $$PWD/storage/overlaystorage.cpp \
    $$PWD/storage/settingsstorage.cpp
 
 
@@ -44,6 +46,7 @@ HEADERS += $$PWD/loghandler.h \
     $$PWD/experiment/fid.h \
     $$PWD/experiment/ftmwconfig.h \
     $$PWD/experiment/ftmwconfigtypes.h \
+    $$PWD/experiment/overlay.h \
     $$PWD/experiment/rfconfig.h \
     $$PWD/model/chirptablemodel.h \
     $$PWD/model/clocktablemodel.h \
@@ -59,6 +62,7 @@ HEADERS += $$PWD/loghandler.h \
     $$PWD/storage/fidsinglestorage.h \
     $$PWD/storage/fidstoragebase.h \
     $$PWD/storage/headerstorage.h \
+    $$PWD/storage/overlaystorage.h \
    $$PWD/storage/settingsstorage.h
 
 DISTFILES += \

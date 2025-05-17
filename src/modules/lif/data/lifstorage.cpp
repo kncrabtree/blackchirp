@@ -260,14 +260,14 @@ void LifStorage::writeProcessingSettings(const LifTrace::LifProcSettings &c)
     m.emplace(sgWin,c.savGolWin);
     m.emplace(sgPoly,c.savGolPoly);
 
-    writeMetadata(m,BC::CSV::lifDir);
+    writeMetadata(BC::Key::DS::proc,m,BC::CSV::lifDir);
 }
 
 bool LifStorage::readProcessingSettings(LifTrace::LifProcSettings &out)
 {
     using namespace BC::Key::LifStorage;
     std::map<QString,QVariant> m;
-    readMetadata(m,BC::CSV::lifDir);
+    readMetadata(BC::Key::DS::proc,m,BC::CSV::lifDir);
 
     if(m.empty())
         return false;
