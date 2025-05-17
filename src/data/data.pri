@@ -12,7 +12,7 @@ SOURCES += $$PWD/loghandler.cpp \
     $$PWD/experiment/fid.cpp \
     $$PWD/experiment/ftmwconfig.cpp \
     $$PWD/experiment/ftmwconfigtypes.cpp \
-    $$PWD/experiment/overlay.cpp \
+    $$PWD/experiment/overlaybase.cpp \
     $$PWD/experiment/rfconfig.cpp \
     $$PWD/model/chirptablemodel.cpp \
     $$PWD/model/clocktablemodel.cpp \
@@ -46,7 +46,7 @@ HEADERS += $$PWD/loghandler.h \
     $$PWD/experiment/fid.h \
     $$PWD/experiment/ftmwconfig.h \
     $$PWD/experiment/ftmwconfigtypes.h \
-    $$PWD/experiment/overlay.h \
+    $$PWD/experiment/overlaybase.h \
     $$PWD/experiment/rfconfig.h \
     $$PWD/model/chirptablemodel.h \
     $$PWD/model/clocktablemodel.h \
