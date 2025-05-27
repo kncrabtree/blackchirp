@@ -6,6 +6,8 @@
 #include <QTime>
 #include <QTimer>
 #include <QThread>
+#include <QtConcurrent/QtConcurrent>
+#include <QFutureWatcher>
 
 #include <data/loghandler.h>
 #include <data/experiment/experiment.h>
@@ -62,6 +64,7 @@ public slots:
 #endif
 
 private:
+    std::unique_ptr<QFutureWatcher<void> > pu_fw;
     std::shared_ptr<Experiment> ps_currentExperiment;
     AcquisitionState d_state;
     int d_auxTimerId;

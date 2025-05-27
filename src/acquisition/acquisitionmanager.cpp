@@ -1,11 +1,11 @@
 #include <acquisition/acquisitionmanager.h>
 
 #include <math.h>
-#include <QtConcurrent/QtConcurrent>
-#include <QFutureWatcher>
 
 AcquisitionManager::AcquisitionManager(QObject *parent) : QObject(parent), d_state(Idle)
 {
+    pu_fw = std::make_unique<QFutureWatcher<void>>();
+    connect(pu_fw.get(),&QFutureWatcher<void>::finished,this,&AcquisitionManager::backupComplete);
 }
 
 AcquisitionManager::~AcquisitionManager()
@@ -208,11 +208,7 @@ void AcquisitionManager::checkComplete()
     if(d_state == Acquiring)
     {
         if(ps_currentExperiment->canBackup())
-        {
-            QFutureWatcher<void> fw;
-            connect(&fw,&QFutureWatcher<void>::finished,this,&AcquisitionManager::backupComplete);
-            fw.setFuture(QtConcurrent::run([this]{ ps_currentExperiment->backup(); }));
-        }
+            pu_fw->setFuture(QtConcurrent::run([this]{ ps_currentExperiment->backup(); }));
         if(ps_currentExperiment->isComplete())
             finishAcquisition();
     }
