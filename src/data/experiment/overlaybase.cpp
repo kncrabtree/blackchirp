@@ -1,7 +1,7 @@
 #include "overlaybase.h"
 
 
-OverlayBase::OverlayBase()
+OverlayBase::OverlayBase(OverlayType type) : d_type{type}
 {
     
 }

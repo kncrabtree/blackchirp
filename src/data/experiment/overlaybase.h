@@ -24,14 +24,15 @@ class OverlayBase
     friend class OverlayStorage;
     
 public:
-    OverlayBase();
-    
     enum OverlayType {
         BCExperiment,
         SPCAT,
         GenericXY
     };
     Q_ENUM(OverlayType)
+
+    OverlayBase(OverlayType type);
+    
     
     virtual QVector<QPointF> xyData() const =0;
     
@@ -43,6 +44,7 @@ public:
     double getYOffset() const;
     double getXOffset() const;
     OverlayType type() const { return d_type; }
+    QString errorString() const { return d_errorString; }
     
     void setLabel(const QString &newlabel);
     void setSourceFile(const QString &newsourceFile);
@@ -64,6 +66,8 @@ protected:
     
     virtual void _storeMetadata(std::map<QString,QVariant> &m) =0;
     virtual void _retrieveMetadata(const std::map<QString,QVariant> &m) =0;
+
+    QString d_errorString;
     
 private:
     OverlayType d_type;
