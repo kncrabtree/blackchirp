@@ -1,8 +1,7 @@
 #include "overlaybase.h"
 
 
-OverlayBase::OverlayBase(int num, QString path) :
-    d_number{num}, d_path{path}
+OverlayBase::OverlayBase()
 {
     
 }
@@ -84,18 +83,60 @@ void OverlayBase::setXOffset(double newxOffset)
     d_xOffset = newxOffset;
 }
 
+void OverlayBase::save()
+{
+    // Should these be here? Or implement a save function?
+    writeToDest(); 
+    d_modified = false;
+}
+
 void OverlayBase::loadFromSource()
 {
     d_modified = true;   
     readFromSource();
 }
 
-void OverlayBase::writeMetadata(std::map<QString, QVariant> &m)
+void OverlayBase::storeMetadata(std::map<QString,QVariant> &m)
 {
+    using namespace BC::Key::Overlay;
+    m.emplace(oLabel,d_label);
+    m.emplace(oSourceFile,d_sourceFile);
+    m.emplace(oDestFile,d_destFile);
+    m.emplace(oPlotId,d_plotId);
+    m.emplace(oYScale,d_yScale);
+    m.emplace(oYOffset,d_yOffset);
+    m.emplace(oXOffset,d_xOffset);
+    
+    _storeMetadata(m);
     
 }
 
-void OverlayBase::readMetadata(const std::map<QString, QVariant> &m)
+void OverlayBase::retrieveMetadata(const std::map<QString,QVariant> &m)
 {
+    using namespace BC::Key::Overlay;
+    
+    auto it = m.find(oLabel);
+    if(it != m.end())
+        d_label = it->second.toString();
+    it = m.find(oSourceFile);
+    if(it != m.end())
+        d_sourceFile = it->second.toString();
+    it = m.find(oDestFile);
+    if(it != m.end())
+        d_destFile = it->second.toString();
+    it = m.find(oPlotId);
+    if(it != m.end())
+        d_plotId = it->second.toString();
+    it = m.find(oYScale);
+    if(it != m.end())
+        d_yScale = it->second.toDouble();
+    it = m.find(oYOffset);
+    if(it != m.end())
+        d_yOffset = it->second.toDouble();
+    it = m.find(oXOffset);
+    if(it != m.end())
+        d_xOffset = it->second.toDouble();
+    
+    _retrieveMetadata(m);
     
 }

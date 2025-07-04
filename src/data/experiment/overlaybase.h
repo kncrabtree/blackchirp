@@ -4,11 +4,34 @@
 #include <map>
 #include <QString>
 #include <QPointF>
+#include <QVariant>
+
+namespace BC::Key::Overlay {
+static const QString oLabel{"label"};
+static const QString oSourceFile{"sourceFile"};
+static const QString oDestFile{"destFile"};
+static const QString oPlotId{"plotId"};
+static const QString oYScale{"yScale"};
+static const QString oYOffset{"yOffset"};
+static const QString oXOffset{"xOffset"};
+static const QString overlaySettingsFile{"%1.settings.csv"};
+static const QString overlayDataFile{"%1.data.csv"};
+}
 
 class OverlayBase
 {
+    Q_GADGET
+    friend class OverlayStorage;
+    
 public:
-    OverlayBase(int num, QString path = "");
+    OverlayBase();
+    
+    enum OverlayType {
+        BCExperiment,
+        SPCAT,
+        GenericXY
+    };
+    Q_ENUM(OverlayType)
     
     virtual QVector<QPointF> xyData() const =0;
     
@@ -19,6 +42,7 @@ public:
     double getYScale() const;
     double getYOffset() const;
     double getXOffset() const;
+    OverlayType type() const { return d_type; }
     
     void setLabel(const QString &newlabel);
     void setSourceFile(const QString &newsourceFile);
@@ -28,10 +52,9 @@ public:
     void setYOffset(double newyOffset);
     void setXOffset(double newxOffset);
     
+    void save();
     void loadFromSource();
-    
-    void writeMetadata(std::map<QString,QVariant> &m);
-    void readMetadata(const std::map<QString,QVariant> &m);
+
     
     
 protected:
@@ -39,17 +62,19 @@ protected:
     virtual void readFromDest() =0;
     virtual void writeToDest() =0;
     
-    virtual void _writeMetadata(std::map<QString,QVariant> &m) =0;
-    virtual void _readMetadata(const std::map<QString,QVariant> &m) =0;
+    virtual void _storeMetadata(std::map<QString,QVariant> &m) =0;
+    virtual void _retrieveMetadata(const std::map<QString,QVariant> &m) =0;
     
 private:
-    int d_number;
-    QString d_path;
-    
+    OverlayType d_type;
     QString d_label, d_sourceFile, d_destFile, d_plotId;
     double d_yScale{1.0}, d_yOffset{0.0}, d_xOffset{0.0};
     
     bool d_modified{false};
+    
+    
+    void storeMetadata(std::map<QString,QVariant> &m);
+    void retrieveMetadata(const std::map<QString,QVariant> &m);
 };
 
 #endif // OVERLAYBASE_H
