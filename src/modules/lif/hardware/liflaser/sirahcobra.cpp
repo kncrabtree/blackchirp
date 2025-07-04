@@ -223,7 +223,7 @@ void SirahCobra::setPos(double pos)
            //     }
            //     p_extStagePort->_device()->waitForReadyRead(250);
            //     ba = p_extStagePort->_device()->bytesAvailable();
-           }
+           //}
         
            auto resp = p_extStagePort->_device()->readAll();
         }
@@ -315,12 +315,12 @@ QByteArray SirahCobra::buildCommand(char cmd, QByteArray args)
     out.fill(0x00,13);
     out[0] = 0x3c;
     out[1] = cmd;
-    out[11] += out[0];
-    out[11] += out[1];
+    out[11] = out.at(11) + out.at(0);
+    out[11] = out.at(11) + out.at(1);
     for(int i=0; i<args.size() && i<9; i++)
     {
         out[i+2] = args.at(i);
-        out[11] += args.at(i);
+        out[11] = out.at(11) + args.at(i);
     }
     out[12] = 0x3e;
 
