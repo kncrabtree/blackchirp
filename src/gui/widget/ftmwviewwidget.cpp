@@ -89,6 +89,7 @@ FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path) :
 
 
     connect(ui->peakFindAction,&QAction::triggered,this,&FtmwViewWidget::launchPeakFinder);
+    connect(ui->overlayAction,&QAction::triggered,this,&FtmwViewWidget::launchOverlayManager);
 
     connect(ui->averagesSpinbox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::changeRollingAverageShots,Qt::UniqueConnection);
     connect(ui->resetAveragesButton,&QPushButton::clicked,this,&FtmwViewWidget::resetRollingAverage,Qt::UniqueConnection);
@@ -194,6 +195,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
     }
 
     ui->peakFindAction->setEnabled(false);
+    ui->overlayAction->setEnabled(false);
 
 }
 
@@ -388,6 +390,7 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
         //this is the main plot
         ui->mainFtPlot->newFt(ft);
         ui->peakFindAction->setEnabled(!ft.isEmpty());
+        ui->overlayAction->setEnabled(!ft.isEmpty());
         ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
         if(p_pfw != nullptr)
             p_pfw->newFt(ft);
@@ -440,6 +443,7 @@ void FtmwViewWidget::updateMainPlot()
     }
 
     ui->peakFindAction->setEnabled(!ui->mainFtPlot->currentFt().isEmpty());
+    ui->overlayAction->setEnabled(!ui->mainFtPlot->currentFt().isEmpty());
 }
 
 void FtmwViewWidget::reprocess(const QList<int> ignore)
@@ -712,6 +716,13 @@ void FtmwViewWidget::launchPeakFinder()
     p_pfw->activateWindow();
     p_pfw->raise();
 
+}
+
+void FtmwViewWidget::launchOverlayManager()
+{
+    // TODO: Create and show overlay management dialog
+    // TODO: Load experiment data and create overlays
+    // TODO: Display overlays on the plots
 }
 
 void FtmwViewWidget::updateFid(int id)

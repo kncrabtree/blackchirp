@@ -87,6 +87,7 @@ public slots:
     void resetRollingAverage();
 
     void launchPeakFinder();
+    void launchOverlayManager();
 
 
 private:
@@ -172,6 +173,7 @@ public:
     QSpinBox *averagesSpinbox;
     QPushButton *resetAveragesButton;
     QAction *peakFindAction;
+    QAction *overlayAction;
     SpinBoxWidgetAction *refreshBox;
 
     void setupUi(bool main, QWidget *FtmwViewWidget)
@@ -301,6 +303,9 @@ public:
 
         peakFindAction = toolBar->addAction(QIcon(":/icons/peak-find.svg"),QString("Peak Find"));
         peakFindAction->setEnabled(false);
+
+        overlayAction = toolBar->addAction(QIcon(":/icons/peak-find.svg"),QString("Overlays"));
+        overlayAction->setEnabled(false);
 
         auto *spacer = new QWidget;
         spacer->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Minimum);
