@@ -56,6 +56,8 @@ public:
     ~FtmwViewWidget();
     void prepareForExperiment(const Experiment &e);
 
+    FtWorker::FidProcessingSettings getProcessingSettings() const { return d_currentProcessingSettings; }
+
 public slots:
     void setLiveUpdateInterval(int intervalms);
     void updateLiveFidList();

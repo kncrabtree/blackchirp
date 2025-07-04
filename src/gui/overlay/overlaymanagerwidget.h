@@ -7,8 +7,10 @@
 #include <QAction>
 #include <QVBoxLayout>
 #include <QMetaEnum>
+#include <QTableView>
 
 #include <data/experiment/overlaybase.h>
+#include <data/model/overlaytablemodel.h>
 
 namespace BC::Property::Overlay {
 static const QString overlayType{"overlayType"};
@@ -36,8 +38,14 @@ private:
     QAction *p_removeAction;
     QAction *p_raiseParentAction;
 
+    BCExperimentOverlayModel *p_bcExperimentModel;
+    QTableView *p_bcExperimentTableView;
+
+
     void setupUI();
     void createTabs();
+    QWidget* createBCExperimentTab();
+    QWidget* createPlaceholderTab(const QString& tabName);
     void onTabChanged(int index);
     void updateButtonStates();
 };

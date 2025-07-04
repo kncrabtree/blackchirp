@@ -1,7 +1,11 @@
 #include "overlaymanagerwidget.h"
+#include "bcexpoverlaydialog.h"
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QDebug>
+#include <QTableView>
+#include <QHeaderView>
+#include <gui/widget/ftmwviewwidget.h>
 
 OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number)
     : QWidget{parent, Qt::Window}
@@ -76,41 +80,82 @@ void OverlayManagerWidget::createTabs()
 
         // Create friendly names for tabs
         QString tabName;
+        QWidget* tabWidget = nullptr;
+
         switch(typeValue)
         {
         case OverlayBase::BCExperiment:
             tabName = "BC Experiments";
+            tabWidget = createBCExperimentTab();
             break;
         case OverlayBase::SPCAT:
             tabName = "SPCAT Catalogs";
+            tabWidget = createPlaceholderTab(tabName);
             break;
         case OverlayBase::GenericXY:
             tabName = "Generic Data";
+            tabWidget = createPlaceholderTab(tabName);
             break;
         default:
             tabName = typeName; // Fallback to enum name
+            tabWidget = createPlaceholderTab(tabName);
             break;
         }
-
-        // Create placeholder widget for each tab
-        auto tabWidget = new QWidget;
-        auto tabLayout = new QVBoxLayout(tabWidget);
-
-        // Add placeholder content
-        auto placeholderLabel = new QLabel(QString("Overlays of type '%1' will be managed here.\n\nImplementation coming soon...").arg(tabName));
-        placeholderLabel->setAlignment(Qt::AlignCenter);
-        placeholderLabel->setStyleSheet("color: gray; font-style: italic;");
-        placeholderLabel->setWordWrap(true);
-
-        tabLayout->addWidget(placeholderLabel);
-
-        // Add tab to tab widget
-        p_tabWidget->addTab(tabWidget, tabName);
 
         // Store the overlay type as tab data for future use
         using namespace BC::Property::Overlay;
         tabWidget->setProperty(overlayType.toLocal8Bit().constData(), static_cast<int>(typeValue));
+
+        // Add tab to tab widget
+        p_tabWidget->addTab(tabWidget, tabName);
+
     }
+}
+
+QWidget *OverlayManagerWidget::createBCExperimentTab()
+{
+    auto tabWidget = new QWidget;
+    auto tabLayout = new QVBoxLayout(tabWidget);
+
+    // Create model and table view
+    p_bcExperimentModel = new BCExperimentOverlayModel(this);
+    p_bcExperimentTableView = new QTableView(tabWidget);
+    p_bcExperimentTableView->setModel(p_bcExperimentModel);
+
+    // Configure table view
+    p_bcExperimentTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    p_bcExperimentTableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    p_bcExperimentTableView->setAlternatingRowColors(true);
+    p_bcExperimentTableView->setSortingEnabled(false); // Disable for now
+
+    // Configure headers
+    auto horizontalHeader = p_bcExperimentTableView->horizontalHeader();
+    horizontalHeader->setStretchLastSection(true);
+    horizontalHeader->setSectionResizeMode(QHeaderView::Interactive);
+
+    auto verticalHeader = p_bcExperimentTableView->verticalHeader();
+    verticalHeader->setDefaultSectionSize(25);
+    verticalHeader->setVisible(false);
+
+    tabLayout->addWidget(p_bcExperimentTableView);
+
+    return tabWidget;
+}
+
+QWidget *OverlayManagerWidget::createPlaceholderTab(const QString &tabName)
+{
+    auto tabWidget = new QWidget;
+    auto tabLayout = new QVBoxLayout(tabWidget);
+
+    // Add placeholder content
+    auto placeholderLabel = new QLabel(QString("Overlays of type '%1' will be managed here.\n\nImplementation coming soon...").arg(tabName));
+    placeholderLabel->setAlignment(Qt::AlignCenter);
+    placeholderLabel->setStyleSheet("color: gray; font-style: italic;");
+    placeholderLabel->setWordWrap(true);
+
+    tabLayout->addWidget(placeholderLabel);
+
+    return tabWidget;
 }
 
 void OverlayManagerWidget::onTabChanged(int index)
@@ -137,16 +182,36 @@ void OverlayManagerWidget::addOverlay()
     using namespace BC::Property::Overlay;
     auto type = static_cast<OverlayBase::OverlayType>(currentTabWidget->property(overlayType.toLocal8Bit().constData()).toInt());
 
-
-    // For now, just debug output
-    QMetaEnum metaEnum = QMetaEnum::fromType<OverlayBase::OverlayType>();
-    QString typeName = metaEnum.valueToKey(static_cast<int>(type));
-
-    qDebug() << "Add overlay of type:" << typeName;
-
-    // TODO: Implement overlay creation dialog
-    // TODO: Create actual overlay objects
-    // TODO: Add to current tab's list/view
+    // Handle different overlay types
+    switch(type) {
+    case OverlayBase::BCExperiment:
+        {
+            // Get the FtmwViewWidget parent
+            FtmwViewWidget* ftmwParent = qobject_cast<FtmwViewWidget*>(parentWidget());
+            if(!ftmwParent) {
+                qDebug() << "Warning: OverlayManagerWidget parent is not FtmwViewWidget";
+            }
+            
+            // Create and show the BCExpOverlay dialog
+            BCExpOverlayDialog dialog(ftmwParent);
+            if(dialog.exec() == QDialog::Accepted) {
+                // TODO: Handle accepted dialog
+                // BCExpOverlay* overlay = dialog.createOverlay();
+                // Add overlay to model and emit signals
+                qDebug() << "BCExpOverlay dialog accepted - overlay creation placeholder";
+            }
+            break;
+        }
+    case OverlayBase::SPCAT:
+        qDebug() << "SPCAT overlay creation not yet implemented";
+        break;
+    case OverlayBase::GenericXY:
+        qDebug() << "GenericXY overlay creation not yet implemented";
+        break;
+    default:
+        qDebug() << "Unknown overlay type";
+        break;
+    }
 }
 
 void OverlayManagerWidget::removeOverlay()

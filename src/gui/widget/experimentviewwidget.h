@@ -4,6 +4,7 @@
 #include <QWidget>
 
 #include <data/experiment/experiment.h>
+#include <data/analysis/ftworker.h>
 
 class QTabWidget;
 class LogHandler;
@@ -16,6 +17,7 @@ public:
     explicit ExperimentViewWidget(int num, QString path = QString(""), QWidget *parent = 0);
 
     QSize sizeHint() const;
+    FtWorker::FidProcessingSettings getFtmwProcessingSettings() const;
 
 signals:
     void logMessage(QString msg, LogHandler::MessageCode t = LogHandler::Normal);

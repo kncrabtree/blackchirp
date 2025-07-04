@@ -4,8 +4,8 @@
 #include <data/experiment/experiment.h>
 
 
-BCExpOverlay::BCExpOverlay(const Ft &ft, int frame) :
-    OverlayBase(BCExperiment), d_ft{ft}, d_frame{frame}
+BCExpOverlay::BCExpOverlay(int experimentNumber, const QString &experimentPath, int frame) :
+    OverlayBase(BCExperiment), d_frame{frame}, d_experimentNumber{experimentNumber}, d_experimentPath{experimentPath}
 {
 
 }
@@ -20,31 +20,8 @@ void BCExpOverlay::readFromSource()
 {
     d_errorString.clear();
 
-    QString sourceFile = getSourceFile();
-    if(sourceFile.isEmpty())
-    {
-        d_errorString = "Source file path is empty";
-        return;
-    }
-
-    // Validate that the source directory contains Blackchirp experiment data
-    QDir sourceDir(sourceFile);
-    if(!sourceDir.exists())
-    {
-        d_errorString = QString("Source directory does not exist: %1").arg(sourceFile);
-        return;
-    }
-
-    // Check for header.csv file to confirm this is a Blackchirp experiment directory
-    QFile headerFile(sourceDir.absoluteFilePath("header.csv"));
-    if(!headerFile.exists())
-    {
-        d_errorString = QString("Directory does not contain Blackchirp experiment data (no header.csv found): %1").arg(sourceFile);
-        return;
-    }
-
-    // Load the experiment (constructor will read experiment number from header.csv)
-    auto experiment = std::make_shared<Experiment>(0, sourceDir.absolutePath());
+    // Load the experiment using the stored number and path
+    auto experiment = std::make_shared<Experiment>(d_experimentNumber, d_experimentPath);
 
     // Check if FTMW is enabled
     if(!experiment->ftmwEnabled())
@@ -63,28 +40,27 @@ void BCExpOverlay::readFromSource()
 
     // Determine processing settings
     FtWorker::FidProcessingSettings settings;
-    bool hasUserSettings = false;
 
-    // Check if user has specified processing settings (stored in metadata)
-    // For now, we'll use default settings as fallback
-    if(d_processingSettings.startUs > 0.0 || d_processingSettings.endUs > 0.0)
+    if(d_useAutomaticProcessing)
     {
-        settings = d_processingSettings;
-        hasUserSettings = true;
+        // Use automatic processing - try to read from processing.csv file first
+        if(!fidStorage->readProcessingSettings(settings))
+        {
+            // Use default settings if no file exists
+            settings.startUs = 5.0;
+            settings.endUs = 10.0;
+            settings.expFilter = 0.0;
+            settings.zeroPadFactor = 0;
+            settings.removeDC = true;
+            settings.units = FtWorker::FtuV;
+            settings.autoScaleIgnoreMHz = 250.0;
+            settings.windowFunction = FtWorker::None;
+        }
     }
-
-    // Try to read from processing.csv file if no user settings
-    if(!hasUserSettings && !fidStorage->readProcessingSettings(settings))
+    else
     {
-        // Use default settings if no file exists
-        settings.startUs = 5.0;
-        settings.endUs = 10.0;
-        settings.expFilter = 0.0;
-        settings.zeroPadFactor = 0;
-        settings.removeDC = true;
-        settings.units = FtWorker::FtuV;
-        settings.autoScaleIgnoreMHz = 250.0;
-        settings.windowFunction = FtWorker::None;
+        // Use user-specified processing settings
+        settings = d_processingSettings;
     }
 
     // Get the FID list

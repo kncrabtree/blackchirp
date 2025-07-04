@@ -196,3 +196,23 @@ QWidget *ExperimentViewWidget::buildLogWidget(QString path)
 
 }
 
+FtWorker::FidProcessingSettings ExperimentViewWidget::getFtmwProcessingSettings() const
+{
+    if(p_ftmw != nullptr) {
+        return p_ftmw->getProcessingSettings();
+    }
+    
+    // Return default settings if p_ftmw is null (FTMW not enabled)
+    FtWorker::FidProcessingSettings defaultSettings;
+    defaultSettings.startUs = 0.0;
+    defaultSettings.endUs = 1.0;
+    defaultSettings.expFilter = 0.0;
+    defaultSettings.zeroPadFactor = 0;
+    defaultSettings.removeDC = false;
+    defaultSettings.units = FtWorker::FtuV;
+    defaultSettings.autoScaleIgnoreMHz = 250.0;
+    defaultSettings.windowFunction = FtWorker::None;
+    
+    return defaultSettings;
+}
+

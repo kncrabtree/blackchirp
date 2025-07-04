@@ -29,14 +29,18 @@ static const QString procWindowFunction{"procWindowFunction"};
 class BCExpOverlay : public OverlayBase
 {
 public:
-    BCExpOverlay(const Ft &ft, int frame = -1);
+    BCExpOverlay(int experimentNumber, const QString &experimentPath = QString(), int frame = -1);
 
     // OverlayBase interface
     QVector<QPointF> xyData() const override;
 
     // Setters/getters for processing settings (for user override)
-    void setProcessingSettings(const FtWorker::FidProcessingSettings &settings) { d_processingSettings = settings; }
+    void setProcessingSettings(const FtWorker::FidProcessingSettings &settings) { d_processingSettings = settings; d_useAutomaticProcessing = false; }
     FtWorker::FidProcessingSettings getProcessingSettings() const { return d_processingSettings; }
+    
+    // Automatic processing control
+    void setAutomaticProcessing(bool automatic = true) { d_useAutomaticProcessing = automatic; }
+    bool usesAutomaticProcessing() const { return d_useAutomaticProcessing; }
 
 protected:
     void readFromSource() override;
@@ -50,6 +54,9 @@ private:
     Ft d_ft;
     int d_frame{-1};  // Frame to process (-1 = averaged data)
     FtWorker::FidProcessingSettings d_processingSettings;
+    bool d_useAutomaticProcessing{true};  // Default to automatic processing
+    int d_experimentNumber{0};
+    QString d_experimentPath;
 
 };
 

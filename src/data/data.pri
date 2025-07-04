@@ -19,6 +19,7 @@ SOURCES += $$PWD/loghandler.cpp \
     $$PWD/model/clocktablemodel.cpp \
    $$PWD/model/exptsummarymodel.cpp \
    $$PWD/model/hwsettingsmodel.cpp \
+    $$PWD/model/overlaytablemodel.cpp \
     $$PWD/model/peaklistmodel.cpp \
 	$$PWD/model/validationmodel.cpp \
     $$PWD/storage/auxdatastorage.cpp \
@@ -54,6 +55,7 @@ HEADERS += $$PWD/loghandler.h \
     $$PWD/model/clocktablemodel.h \
    $$PWD/model/exptsummarymodel.h \
    $$PWD/model/hwsettingsmodel.h \
+    $$PWD/model/overlaytablemodel.h \
     $$PWD/model/peaklistmodel.h \
 	$$PWD/model/validationmodel.h \
     $$PWD/storage/auxdatastorage.h \
