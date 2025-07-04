@@ -12,9 +12,11 @@
 
 #include <data/analysis/ftworker.h>
 #include <gui/widget/peakfindwidget.h>
+#include <gui/overlay/overlaymanagerwidget.h>
 #include <data/storage/fidsinglestorage.h>
 #include <data/storage/fidpeakupstorage.h>
 #include <data/storage/fidmultistorage.h>
+
 
 FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path) :
     QWidget(parent), SettingsStorage(BC::Key::FtmwView::key),
@@ -102,6 +104,9 @@ FtmwViewWidget::~FtmwViewWidget()
 
     if(p_pfw != nullptr)
         p_pfw->close();
+
+    if(p_omw != nullptr)
+        p_omw->close();
 
     d_sbStatus.sbLoadWatcher->waitForFinished();
 
@@ -720,8 +725,27 @@ void FtmwViewWidget::launchPeakFinder()
 
 void FtmwViewWidget::launchOverlayManager()
 {
-    // TODO: Create and show overlay management dialog
-    // TODO: Load experiment data and create overlays
+    // Check if overlay manager already exists and bring it to front
+    if(p_omw != nullptr)
+    {
+        p_omw->activateWindow();
+        p_omw->raise();
+        p_omw->show();
+        return;
+    }
+
+    // Create new overlay manager widget
+    p_omw = new OverlayManagerWidget(this, d_currentExptNum);
+
+    // Connect cleanup when widget is destroyed
+    connect(p_omw, &OverlayManagerWidget::destroyed, this, [this](){
+        p_omw = nullptr;
+    });
+
+    // Show widget
+    p_omw->show();
+    p_omw->activateWindow();
+    p_omw->raise();
     // TODO: Display overlays on the plots
 }
 

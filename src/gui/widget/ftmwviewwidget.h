@@ -37,6 +37,7 @@
 class QThread;
 class FtmwSnapshotWidget;
 class PeakFindWidget;
+class OverlayManagerWidget;
 
 namespace Ui {
 class FtmwViewWidget;
@@ -124,6 +125,7 @@ private:
     std::map<int,WorkerStatus> d_workersStatus;
     std::map<int,PlotStatus> d_plotStatus;
     PeakFindWidget *p_pfw{nullptr};
+    OverlayManagerWidget *p_omw{nullptr};
     QString d_path;
     const int d_liveId = 0, d_mainId = 3, d_plot1Id = 1, d_plot2Id = 2;
     const QString d_shotsString = QString("Shots: %1");
