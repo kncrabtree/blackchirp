@@ -84,6 +84,7 @@ private:
     void initializeDefaults();
     void updateValidationStatus(bool valid, const QString &message = QString());
     void updateOkButtonState();
+    void resetFtConfiguration();
     QString getExperimentPath() const;
     bool validateExperimentPath(const QString &path, QString &errorMessage);
 };

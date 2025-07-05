@@ -210,6 +210,7 @@ void BCExpOverlayDialog::initializeDefaults()
 void BCExpOverlayDialog::onExperimentNumberChanged(int number)
 {
     if (!p_usePathCheckBox->isChecked()) {
+        resetFtConfiguration(); // Reset FT config when experiment changes
         validateExperiment();
         // Update label to experiment number
         if (p_overlayOptionsWidget) {
@@ -224,6 +225,7 @@ void BCExpOverlayDialog::onUsePathToggled(bool enabled)
     p_browseButton->setEnabled(enabled);
     p_experimentNumberSpinBox->setEnabled(!enabled);
     
+    resetFtConfiguration(); // Reset FT config when switching modes
     validateExperiment();
     
     // Update label based on current selection
@@ -261,6 +263,7 @@ void BCExpOverlayDialog::onBrowseButtonClicked()
 
 void BCExpOverlayDialog::onPathChanged()
 {
+    resetFtConfiguration(); // Reset FT config when path changes
     validateExperiment();
     // Update label to folder name if using custom path
     if (p_usePathCheckBox->isChecked() && p_overlayOptionsWidget) {
@@ -367,6 +370,19 @@ void BCExpOverlayDialog::updateOkButtonState()
 {
     bool canAccept = d_experimentValid && d_hasFtData;
     p_buttonBox->button(QDialogButtonBox::Ok)->setEnabled(canAccept);
+}
+
+void BCExpOverlayDialog::resetFtConfiguration()
+{
+    d_configuredFt = Ft(); // Reset to empty FT
+    d_hasFtData = false;
+    
+    // Reset button appearance
+    p_configureFtButton->setText("Configure FT...");
+    p_configureFtButton->setStyleSheet("");
+    
+    // Update OK button state
+    updateOkButtonState();
 }
 
 QString BCExpOverlayDialog::getExperimentPath() const
