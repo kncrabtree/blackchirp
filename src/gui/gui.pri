@@ -25,6 +25,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/overlay/plotidcomboboxdelegate.cpp \
     $$PWD/plot/blackchirpplotcurve.cpp \
     $$PWD/plot/chirpconfigplot.cpp \
+    $$PWD/plot/curvefactory.cpp \
     $$PWD/plot/customtracker.cpp \
     $$PWD/plot/customzoomer.cpp \
     $$PWD/plot/fidplot.cpp \
@@ -86,6 +87,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/overlay/plotidcomboboxdelegate.h \
     $$PWD/plot/blackchirpplotcurve.h \
     $$PWD/plot/chirpconfigplot.h \
+    $$PWD/plot/curvefactory.h \
     $$PWD/plot/customtracker.h \
     $$PWD/plot/customzoomer.h \
     $$PWD/plot/fidplot.h \

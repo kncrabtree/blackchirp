@@ -6,6 +6,8 @@
 #include <QPointF>
 #include <QVariant>
 
+class OverlayMetadataStorage;
+
 namespace BC::Key::Overlay {
 static const QString oLabel{"label"};
 static const QString oSourceFile{"sourceFile"};
@@ -22,6 +24,7 @@ class OverlayBase
 {
     Q_GADGET
     friend class OverlayStorage;
+    friend class OverlayMetadataStorage;
     
 public:
     enum OverlayType {
