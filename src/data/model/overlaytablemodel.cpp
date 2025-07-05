@@ -50,6 +50,8 @@ QVariant OverlayTableModel::data(const QModelIndex &index, int role) const
                 return overlay->getYOffset();
             case XOffsetColumn:
                 return overlay->getXOffset();
+            case SourceFileColumn:
+                return overlay->getSourceFile();
             }
         }
     }
@@ -95,6 +97,9 @@ bool OverlayTableModel::setData(const QModelIndex &index, const QVariant &value,
         case XOffsetColumn:
             overlay->setXOffset(value.toDouble());
             break;
+        case SourceFileColumn:
+            // Source file is not editable
+            return false;
         default:
             return false;
         }
@@ -138,6 +143,8 @@ QVariant OverlayTableModel::headerData(int section, Qt::Orientation orientation,
                 return QString("Y Offset");
             case XOffsetColumn:
                 return QString("X Offset");
+            case SourceFileColumn:
+                return QString("Source File");
             }
         }
         else
@@ -161,8 +168,8 @@ Qt::ItemFlags OverlayTableModel::flags(const QModelIndex &index) const
     {
         Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 
-        // Label column is not editable, others are
-        if (index.column() != LabelColumn)
+        // Label and Source File columns are not editable, others are
+        if (index.column() != LabelColumn && index.column() != SourceFileColumn)
             flags |= Qt::ItemIsEditable;
 
         return flags;
@@ -247,87 +254,35 @@ int BCExperimentOverlayModel::getAdditionalColumnCount() const
 
 QVariant BCExperimentOverlayModel::getAdditionalColumnData(int row, int column, int role) const
 {
-    auto overlay = getOverlay(row);
-    if (!overlay)
-        return QVariant();
-
-    // Try to cast to BCExperimentOverlay to access additional data
-    auto bcOverlay = std::dynamic_pointer_cast<BCExpOverlay>(overlay);
-    if (!bcOverlay)
-        return QVariant();
-
-    if (role == Qt::DisplayRole || role == Qt::EditRole)
-    {
-        switch (column)
-        {
-        case FrameColumn:
-            // TODO: Add getter for frame in BCExperimentOverlay
-            return QString("N/A"); // Placeholder until getter is implemented
-        case SourceFileColumn:
-            return bcOverlay->getSourceFile();
-        }
-    }
-
+    Q_UNUSED(row)
+    Q_UNUSED(column)
+    Q_UNUSED(role)
+    // No additional columns for BCExperiment overlays anymore
     return QVariant();
 }
 
 QVariant BCExperimentOverlayModel::getAdditionalHeaderData(int column, int role) const
 {
-    if (role == Qt::DisplayRole)
-    {
-        switch (column)
-        {
-        case FrameColumn:
-            return QString("Frame");
-        case SourceFileColumn:
-            return QString("Source File");
-        }
-    }
-
+    Q_UNUSED(column)
+    Q_UNUSED(role)
+    // No additional columns for BCExperiment overlays anymore
     return QVariant();
 }
 
 bool BCExperimentOverlayModel::setAdditionalColumnData(int row, int column, const QVariant &value, int role)
 {
-    if (role != Qt::EditRole)
-        return false;
-
-    auto overlay = getOverlay(row);
-    if (!overlay)
-        return false;
-
-    auto bcOverlay = std::dynamic_pointer_cast<BCExpOverlay>(overlay);
-    if (!bcOverlay)
-        return false;
-
-    switch (column)
-    {
-    case FrameColumn:
-        // TODO: Add setter for frame in BCExperimentOverlay
-        return false; // Not editable for now
-    case SourceFileColumn:
-        bcOverlay->setSourceFile(value.toString());
-        return true;
-    }
-
+    Q_UNUSED(row)
+    Q_UNUSED(column)
+    Q_UNUSED(value)
+    Q_UNUSED(role)
+    // No additional columns for BCExperiment overlays anymore
     return false;
 }
 
 Qt::ItemFlags BCExperimentOverlayModel::getAdditionalColumnFlags(int row, int column) const
 {
     Q_UNUSED(row)
-
-    Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-
-    switch (column)
-    {
-    case FrameColumn:
-        // TODO: Make editable when getter/setter are implemented
-        break;
-    case SourceFileColumn:
-        flags |= Qt::ItemIsEditable;
-        break;
-    }
-
-    return flags;
+    Q_UNUSED(column)
+    // No additional columns for BCExperiment overlays anymore
+    return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }

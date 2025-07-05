@@ -216,3 +216,26 @@ FtWorker::FidProcessingSettings ExperimentViewWidget::getFtmwProcessingSettings(
     return defaultSettings;
 }
 
+Ft ExperimentViewWidget::getMainPlotFt() const
+{
+    if (p_ftmw != nullptr) {
+        return p_ftmw->getMainPlotFt();
+    }
+    
+    return Ft(); // Return empty Ft if p_ftmw is null
+}
+
+void ExperimentViewWidget::setCurrentTab(const QString &tabName)
+{
+    if (!p_tabWidget) {
+        return;
+    }
+    
+    for (int i = 0; i < p_tabWidget->count(); ++i) {
+        if (p_tabWidget->tabText(i) == tabName) {
+            p_tabWidget->setCurrentIndex(i);
+            break;
+        }
+    }
+}
+

@@ -45,6 +45,7 @@ public:
     double getXOffset() const;
     OverlayType type() const { return d_type; }
     QString errorString() const { return d_errorString; }
+    bool isModified() const { return d_modified; }
     
     void setLabel(const QString &newlabel);
     void setSourceFile(const QString &newsourceFile);
@@ -55,12 +56,12 @@ public:
     void setXOffset(double newxOffset);
     
     void save();
-    void loadFromSource();
 
     
     
 protected:
-    virtual void readFromSource() =0;
+    void setModified(bool modified = true) { d_modified = modified; }
+    
     virtual void readFromDest() =0;
     virtual void writeToDest() =0;
     

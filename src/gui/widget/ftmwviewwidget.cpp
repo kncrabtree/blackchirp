@@ -836,3 +836,11 @@ void FtmwViewWidget::createPlotNamesList()
     // Sort the names for consistent ordering
     d_plotNames.sort();
 }
+
+Ft FtmwViewWidget::getMainPlotFt() const
+{
+    if (ui && ui->mainFtPlot) {
+        return ui->mainFtPlot->currentFt();
+    }
+    return Ft(); // Return empty Ft if mainFtPlot is null
+}

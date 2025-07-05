@@ -66,6 +66,7 @@ public:
     
     // Plot management
     QStringList getPlotNames() const { return d_plotNames; }
+    Ft getMainPlotFt() const;
 
 public slots:
     void setLiveUpdateInterval(int intervalms);

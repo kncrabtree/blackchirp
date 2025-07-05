@@ -5,6 +5,7 @@
 
 #include <data/experiment/experiment.h>
 #include <data/analysis/ftworker.h>
+#include <data/analysis/ft.h>
 
 class QTabWidget;
 class LogHandler;
@@ -18,6 +19,8 @@ public:
 
     QSize sizeHint() const;
     FtWorker::FidProcessingSettings getFtmwProcessingSettings() const;
+    Ft getMainPlotFt() const;
+    void setCurrentTab(const QString &tabName);
 
 signals:
     void logMessage(QString msg, LogHandler::MessageCode t = LogHandler::Normal);

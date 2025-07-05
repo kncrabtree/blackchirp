@@ -47,7 +47,8 @@ private:
         YScaleColumn = 2,
         YOffsetColumn = 3,
         XOffsetColumn = 4,
-        BaseColumnCount = 5
+        SourceFileColumn = 5,
+        BaseColumnCount = 6
     };
 };
 
@@ -68,9 +69,7 @@ protected:
 
 private:
     enum AdditionalColumns {
-        FrameColumn = 0,
-        SourceFileColumn = 1,
-        AdditionalColumnCount = 2
+        AdditionalColumnCount = 0
     };
 };
 

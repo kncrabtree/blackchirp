@@ -90,11 +90,6 @@ void OverlayBase::save()
     d_modified = false;
 }
 
-void OverlayBase::loadFromSource()
-{
-    d_modified = true;   
-    readFromSource();
-}
 
 void OverlayBase::storeMetadata(std::map<QString,QVariant> &m)
 {

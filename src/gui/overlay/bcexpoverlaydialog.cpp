@@ -23,15 +23,13 @@ BCExpOverlayDialog::BCExpOverlayDialog(const QStringList &plotNames, FtmwViewWid
     QDialog(parent),
     p_ftmwViewWidget(parent),
     d_experimentValid(false),
-    d_hasExperimentSettings(false),
-    d_hasManualSettings(false),
     d_plotNames(plotNames),
+    d_hasFtData(false),
     p_msw(nullptr)
 {
     setupUI();
     setupConnections();
     initializeDefaults();
-    getCurrentSettingsFromParent();
 }
 
 BCExpOverlayDialog::~BCExpOverlayDialog()
@@ -43,36 +41,24 @@ BCExpOverlayDialog::~BCExpOverlayDialog()
 
 std::shared_ptr<OverlayBase> BCExpOverlayDialog::createOverlay() const
 {
-    if (!d_experimentValid) {
+    if (!d_experimentValid || !d_hasFtData) {
         return nullptr;
     }
 
-    // Create the overlay with the experiment number/path and frame
-    int experimentNumber = p_usePathCheckBox->isChecked() ? 0 : p_experimentNumberSpinBox->value();
-    QString experimentPath = p_usePathCheckBox->isChecked() ? p_pathLineEdit->text() : QString("");
-    int frame = p_frameSpinBox->value();
+    // Create the overlay
+    auto overlay = std::make_shared<BCExpOverlay>();
     
-    auto overlay = std::make_shared<BCExpOverlay>(experimentNumber, experimentPath, frame);
+    // Set the source file path from the experiment
+    QString experimentPath = getExperimentPath();
+    overlay->setSourceFile(experimentPath);
     
     // Apply overlay base options (label, plot ID, scaling, offsets)
     if (p_overlayOptionsWidget) {
         p_overlayOptionsWidget->applyToOverlay(overlay);
     }
     
-    // Set processing settings based on user selection
-    if (p_useExperimentSettingsRadio->isChecked()) {
-        // Use automatic processing (default)
-        overlay->setAutomaticProcessing(true);
-    } else if (p_useCurrentSettingsRadio->isChecked()) {
-        // Use current settings from parent
-        overlay->setProcessingSettings(d_currentSettings);
-    } else if (p_useManualSettingsRadio->isChecked() && d_hasManualSettings) {
-        // Use manually configured settings
-        overlay->setProcessingSettings(d_manualSettings);
-    } else {
-        // Fallback to current settings
-        overlay->setProcessingSettings(d_currentSettings);
-    }
+    // Set the configured FT data
+    overlay->setFtData(d_configuredFt);
     
     return overlay;
 }
@@ -88,7 +74,7 @@ void BCExpOverlayDialog::setupUI()
     setupOverlayBaseOptions();
     setupExperimentSelection();
     setupFrameSelection();
-    setupProcessingSettings();
+    setupFtConfiguration();
     
     // Add validation label
     p_validationLabel = new QLabel(this);
@@ -162,47 +148,23 @@ void BCExpOverlayDialog::setupOverlayBaseOptions()
     layout()->addWidget(optionsGroup);
 }
 
-void BCExpOverlayDialog::setupProcessingSettings()
+void BCExpOverlayDialog::setupFtConfiguration()
 {
-    QGroupBox *settingsGroup = new QGroupBox("Processing Settings", this);
-    QVBoxLayout *settingsLayout = new QVBoxLayout(settingsGroup);
+    QGroupBox *ftGroup = new QGroupBox("FT Configuration", this);
+    QVBoxLayout *ftLayout = new QVBoxLayout(ftGroup);
     
-    // Create radio buttons for the three options
-    p_useExperimentSettingsRadio = new QRadioButton("Use experiment settings (if available)", this);
-    p_useCurrentSettingsRadio = new QRadioButton("Use current view settings", this);
-    p_useManualSettingsRadio = new QRadioButton("Configure manually", this);
+    // Configure FT button
+    p_configureFtButton = new QPushButton("Configure FT...", this);
+    p_configureFtButton->setMinimumHeight(30);
     
-    // Group the radio buttons
-    QButtonGroup *settingsButtonGroup = new QButtonGroup(this);
-    settingsButtonGroup->addButton(p_useExperimentSettingsRadio);
-    settingsButtonGroup->addButton(p_useCurrentSettingsRadio);
-    settingsButtonGroup->addButton(p_useManualSettingsRadio);
+    QLabel *infoLabel = new QLabel("Click to configure FT processing settings for this overlay.", this);
+    infoLabel->setWordWrap(true);
+    infoLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
     
-    // Manual settings button
-    p_manualSettingsButton = new QPushButton("Configure...", this);
-    p_manualSettingsButton->setEnabled(false);
+    ftLayout->addWidget(p_configureFtButton);
+    ftLayout->addWidget(infoLabel);
     
-    // Settings status label
-    p_settingsStatusLabel = new QLabel(this);
-    p_settingsStatusLabel->setWordWrap(true);
-    p_settingsStatusLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
-    
-    // Layout
-    settingsLayout->addWidget(p_useExperimentSettingsRadio);
-    settingsLayout->addWidget(p_useCurrentSettingsRadio);
-    
-    QHBoxLayout *manualLayout = new QHBoxLayout();
-    manualLayout->addWidget(p_useManualSettingsRadio);
-    manualLayout->addWidget(p_manualSettingsButton);
-    manualLayout->addStretch();
-    settingsLayout->addLayout(manualLayout);
-    
-    settingsLayout->addWidget(p_settingsStatusLabel);
-    
-    // Set default selection
-    p_useExperimentSettingsRadio->setChecked(true);
-    
-    layout()->addWidget(settingsGroup);
+    layout()->addWidget(ftGroup);
 }
 
 void BCExpOverlayDialog::setupConnections()
@@ -217,15 +179,9 @@ void BCExpOverlayDialog::setupConnections()
     connect(p_pathLineEdit, &QLineEdit::textChanged,
             this, &BCExpOverlayDialog::onPathChanged);
     
-    // Processing settings
-    connect(p_useExperimentSettingsRadio, &QRadioButton::toggled,
-            this, &BCExpOverlayDialog::onProcessingSettingsChanged);
-    connect(p_useCurrentSettingsRadio, &QRadioButton::toggled,
-            this, &BCExpOverlayDialog::onProcessingSettingsChanged);
-    connect(p_useManualSettingsRadio, &QRadioButton::toggled,
-            this, &BCExpOverlayDialog::onProcessingSettingsChanged);
-    connect(p_manualSettingsButton, &QPushButton::clicked,
-            this, &BCExpOverlayDialog::onManualSettingsClicked);
+    // FT Configuration
+    connect(p_configureFtButton, &QPushButton::clicked,
+            this, &BCExpOverlayDialog::onConfigureFtClicked);
     
     // Dialog buttons
     connect(p_buttonBox, &QDialogButtonBox::accepted,
@@ -326,68 +282,69 @@ void BCExpOverlayDialog::validateExperiment()
     
     bool valid = validateExperimentPath(experimentPath, errorMessage);
     
-    if (valid) {
-        // Check if processing.csv exists for the experiment settings option
-        QDir fidDir(experimentPath + "/fid");
-        d_hasExperimentSettings = fidDir.exists("processing.csv");
-        updateProcessingSettingsOptions();
-    } else {
-        d_hasExperimentSettings = false;
-    }
+    // No additional processing needed for FT configuration mode
     
     updateValidationStatus(valid, errorMessage);
-    updateSettingsStatus();
     
     d_experimentValid = valid;
-    p_buttonBox->button(QDialogButtonBox::Ok)->setEnabled(valid);
+    updateOkButtonState();
 }
 
-void BCExpOverlayDialog::onProcessingSettingsChanged()
-{
-    p_manualSettingsButton->setEnabled(p_useManualSettingsRadio->isChecked());
-    updateSettingsStatus();
-}
 
-void BCExpOverlayDialog::onManualSettingsClicked()
+void BCExpOverlayDialog::onConfigureFtClicked()
 {
-    if (p_msw) {
-        p_msw->raise();
-        p_msw->activateWindow();
-        return;
-    }
-    
     QString experimentPath = getExperimentPath();
     if (experimentPath.isEmpty()) {
         QMessageBox::warning(this, "No Experiment Selected", 
-                           "Please select a valid experiment before configuring manual settings.");
+                           "Please select a valid experiment before configuring FT.");
         return;
     }
     
-    // Create a new ExperimentViewWidget
-
-    // Load the experiment
+    // Create ExperimentViewWidget
+    ExperimentViewWidget *experimentWidget;
     if (p_usePathCheckBox->isChecked()) {
-        p_msw = new ExperimentViewWidget(0,p_pathLineEdit->text());
+        experimentWidget = new ExperimentViewWidget(0, p_pathLineEdit->text());
     } else {
-        p_msw = new ExperimentViewWidget(p_experimentNumberSpinBox->value());
+        experimentWidget = new ExperimentViewWidget(p_experimentNumberSpinBox->value());
     }
-
-    p_msw->setAttribute(Qt::WA_DeleteOnClose);
-    p_msw->setWindowTitle("Configure Processing Settings");
-    p_msw->setWindowModality(Qt::ApplicationModal);
     
-    // Connect to handle when the widget is closed
-    connect(p_msw, &QWidget::destroyed, this, [this]() {
-        if (p_msw) {
-            // Extract the processing settings before the widget is destroyed
-            d_manualSettings = p_msw->getFtmwProcessingSettings();
-            d_hasManualSettings = true;
-            p_msw = nullptr;
-            updateSettingsStatus();
+    // Set the CP-FTMW tab as active
+    experimentWidget->setCurrentTab("CP-FTMW");
+    
+    // Create dialog with ExperimentViewWidget and Ok/Cancel buttons
+    QDialog *ftDialog = new QDialog(this);
+    ftDialog->setWindowTitle("Configure FT Processing");
+    ftDialog->setModal(true);
+    ftDialog->resize(800, 600);
+    
+    QVBoxLayout *dialogLayout = new QVBoxLayout(ftDialog);
+    dialogLayout->addWidget(experimentWidget);
+    
+    QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, ftDialog);
+    dialogLayout->addWidget(buttonBox);
+    
+    connect(buttonBox, &QDialogButtonBox::accepted, ftDialog, &QDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, ftDialog, &QDialog::reject);
+    
+    // Show dialog and handle result
+    if (ftDialog->exec() == QDialog::Accepted) {
+        // Extract Ft object from the main plot
+        d_configuredFt = experimentWidget->getMainPlotFt();
+        d_hasFtData = !d_configuredFt.isEmpty();
+        
+        if (d_hasFtData) {
+            p_configureFtButton->setText("FT Configured ✓");
+            p_configureFtButton->setStyleSheet("QPushButton { color: green; }");
+        } else {
+            QMessageBox::warning(this, "No FT Data", 
+                               "No valid FT data was found in the main plot. Please ensure the experiment data has been processed and is displayed in the main FT plot before configuring the overlay.");
+            p_configureFtButton->setText("Configure FT...");
+            p_configureFtButton->setStyleSheet("");
         }
-    });
-       
-    p_msw->show();
+        updateOkButtonState();
+    }
+    
+    ftDialog->deleteLater();
 }
 
 void BCExpOverlayDialog::onDialogAccepted()
@@ -404,6 +361,12 @@ void BCExpOverlayDialog::updateValidationStatus(bool valid, const QString &messa
         p_validationLabel->setText(message);
         p_validationLabel->show();
     }
+}
+
+void BCExpOverlayDialog::updateOkButtonState()
+{
+    bool canAccept = d_experimentValid && d_hasFtData;
+    p_buttonBox->button(QDialogButtonBox::Ok)->setEnabled(canAccept);
 }
 
 QString BCExpOverlayDialog::getExperimentPath() const
@@ -451,68 +414,8 @@ bool BCExpOverlayDialog::validateExperimentPath(const QString &path, QString &er
 }
 
 
-void BCExpOverlayDialog::updateProcessingSettingsOptions()
-{
-    p_useExperimentSettingsRadio->setEnabled(d_hasExperimentSettings);
-    
-    if (!d_hasExperimentSettings && p_useExperimentSettingsRadio->isChecked()) {
-        p_useCurrentSettingsRadio->setChecked(true);
-    }
-}
 
-void BCExpOverlayDialog::updateSettingsStatus()
-{
-    QString statusText;
-    
-    if (p_useExperimentSettingsRadio->isChecked()) {
-        if (d_hasExperimentSettings) {
-            statusText = "Will use processing settings from experiment's processing.csv file, or defaults if none found.";
-        } else {
-            statusText = "No processing.csv file found. Will use default processing settings.";
-        }
-    } else if (p_useCurrentSettingsRadio->isChecked()) {
-        statusText = "Will use current processing settings from the active view.";
-    } else if (p_useManualSettingsRadio->isChecked()) {
-        if (d_hasManualSettings) {
-            statusText = "Will use manually configured processing settings.";
-        } else {
-            statusText = "Click 'Configure...' to set up processing parameters.";
-        }
-    }
-    
-    p_settingsStatusLabel->setText(statusText);
-}
 
-FtWorker::FidProcessingSettings BCExpOverlayDialog::getSelectedProcessingSettings() const
-{
-    if (p_useExperimentSettingsRadio->isChecked() && d_hasExperimentSettings) {
-        return d_experimentSettings;
-    } else if (p_useCurrentSettingsRadio->isChecked()) {
-        return d_currentSettings;
-    } else if (p_useManualSettingsRadio->isChecked() && d_hasManualSettings) {
-        return d_manualSettings;
-    }
-    
-    // Fallback to current settings
-    return d_currentSettings;
-}
-
-void BCExpOverlayDialog::getCurrentSettingsFromParent()
-{
-    if (p_ftmwViewWidget) {
-         d_currentSettings = p_ftmwViewWidget->getProcessingSettings();
-    } else {
-        // Initialize with defaults if no parent
-        d_currentSettings.startUs = 5.0;
-        d_currentSettings.endUs = 10.0;
-        d_currentSettings.expFilter = 0.0;
-        d_currentSettings.zeroPadFactor = 0;
-        d_currentSettings.removeDC = true;
-        d_currentSettings.units = FtWorker::FtuV;
-        d_currentSettings.autoScaleIgnoreMHz = 250.0;
-        d_currentSettings.windowFunction = FtWorker::None;
-    }
-}
 
 void BCExpOverlayDialog::accept()
 {
@@ -538,9 +441,9 @@ void BCExpOverlayDialog::accept()
         }
     }
     
-    // Validate manual settings if selected
-    if (p_useManualSettingsRadio->isChecked() && !d_hasManualSettings) {
-        validationErrors << "Please configure manual settings or select a different processing option";
+    // Validate FT configuration
+    if (!d_hasFtData) {
+        validationErrors << "Please configure FT processing by clicking 'Configure FT...'";
     }
     
     // Show validation errors if any

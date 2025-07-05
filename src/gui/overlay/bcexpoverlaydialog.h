@@ -14,7 +14,7 @@
 #include <QPushButton>
 #include <memory>
 
-#include <data/analysis/ftworker.h>
+#include <data/analysis/ft.h>
 #include <data/experiment/overlaytypes.h>
 #include "overlaybaseoptionswidget.h"
 
@@ -37,8 +37,7 @@ private slots:
     void onBrowseButtonClicked();
     void onPathChanged();
     void validateExperiment();
-    void onProcessingSettingsChanged();
-    void onManualSettingsClicked();
+    void onConfigureFtClicked();
     void onDialogAccepted();
 
 public slots:
@@ -61,24 +60,17 @@ private:
     // Overlay base options
     OverlayBaseOptionsWidget *p_overlayOptionsWidget;
     
-    // Processing settings options
-    QRadioButton *p_useExperimentSettingsRadio;
-    QRadioButton *p_useCurrentSettingsRadio;
-    QRadioButton *p_useManualSettingsRadio;
-    QPushButton *p_manualSettingsButton;
-    QLabel *p_settingsStatusLabel;
+    // FT Configuration
+    QPushButton *p_configureFtButton;
     
     QDialogButtonBox *p_buttonBox;
     
     // State
     QString d_currentExperimentPath;
     bool d_experimentValid;
-    bool d_hasExperimentSettings;
-    FtWorker::FidProcessingSettings d_experimentSettings;
-    FtWorker::FidProcessingSettings d_currentSettings;
-    FtWorker::FidProcessingSettings d_manualSettings;
-    bool d_hasManualSettings;
     QStringList d_plotNames;
+    Ft d_configuredFt;
+    bool d_hasFtData;
 
     ExperimentViewWidget *p_msw;
     
@@ -87,16 +79,13 @@ private:
     void setupExperimentSelection();
     void setupFrameSelection();
     void setupOverlayBaseOptions();
-    void setupProcessingSettings();
+    void setupFtConfiguration();
     void setupConnections();
     void initializeDefaults();
     void updateValidationStatus(bool valid, const QString &message = QString());
+    void updateOkButtonState();
     QString getExperimentPath() const;
     bool validateExperimentPath(const QString &path, QString &errorMessage);
-    void updateProcessingSettingsOptions();
-    void updateSettingsStatus();
-    FtWorker::FidProcessingSettings getSelectedProcessingSettings() const;
-    void getCurrentSettingsFromParent();
 };
 
 #endif // BCEXPOVERLAYDIALOG_H
