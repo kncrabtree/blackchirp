@@ -1,4 +1,5 @@
 #include "pulseplot.h"
+#include <gui/plot/curvefactory.h>
 
 #include <QApplication>
 
@@ -21,6 +22,8 @@ PulsePlot::PulsePlot(std::shared_ptr<PulseGenConfig> cfg, QWidget *parent) :
     //disable floating for this axis
     axisScaleEngine(QwtPlot::yLeft)->setAttribute(QwtScaleEngine::Floating,false);
 
+    // Disable QwtPlot's automatic memory management
+    setAutoDelete(false);
 
     for(int i=0; i<numChannels; i++)
     {
@@ -28,7 +31,7 @@ PulsePlot::PulsePlot(std::shared_ptr<PulseGenConfig> cfg, QWidget *parent) :
         double midpoint = (double)(numChannels - 1 - i)*1.5 + 0.75;
         double top = (double)(numChannels-i)*1.5;
 
-        BlackchirpPlotCurve *c = new BlackchirpPlotCurve(BC::Key::pulseChannel+QString::number(i));
+        auto c = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::pulseChannel+QString::number(i));
         c->attach(this);
         c->setVisible(false);
 
@@ -36,7 +39,7 @@ PulsePlot::PulsePlot(std::shared_ptr<PulseGenConfig> cfg, QWidget *parent) :
         p.setWidth(0);
         p.setStyle(Qt::DotLine);
 
-        QwtPlotMarker *sep = new QwtPlotMarker;
+        auto sep = std::make_unique<QwtPlotMarker>();
         sep->setLineStyle(QwtPlotMarker::HLine);
         sep->setLinePen(p);
         sep->setYValue(top);
@@ -44,7 +47,7 @@ PulsePlot::PulsePlot(std::shared_ptr<PulseGenConfig> cfg, QWidget *parent) :
         sep->setItemAttribute(QwtPlotItem::AutoScale);
 
         p.setStyle(Qt::NoPen);
-        QwtPlotMarker *sep2 = new QwtPlotMarker;
+        auto sep2 = std::make_unique<QwtPlotMarker>();
         sep2->setLineStyle(QwtPlotMarker::HLine);
         sep2->setLinePen(p);
         sep2->setYValue(top);
@@ -52,9 +55,7 @@ PulsePlot::PulsePlot(std::shared_ptr<PulseGenConfig> cfg, QWidget *parent) :
         sep2->attach(this);
         sep2->setItemAttribute(QwtPlotItem::AutoScale);
 
-
-
-        QwtPlotMarker *m = new QwtPlotMarker;
+        auto m = std::make_unique<QwtPlotMarker>();
         QwtText text;
         text.setColor(p.color());
         text.setRenderFlags(Qt::AlignRight | Qt::AlignVCenter);
@@ -71,7 +72,7 @@ PulsePlot::PulsePlot(std::shared_ptr<PulseGenConfig> cfg, QWidget *parent) :
         m->attach(this);
         m->setVisible(false);
 
-        QwtPlotCurve *sync = new QwtPlotCurve;
+        auto sync = std::make_unique<QwtPlotCurve>();
         QPalette pal;
         p.setColor(pal.color(QPalette::Text));
         p.setWidthF(1.0);
@@ -80,8 +81,16 @@ PulsePlot::PulsePlot(std::shared_ptr<PulseGenConfig> cfg, QWidget *parent) :
         sync->setVisible(false);
         sync->attach(this);
 
-
-        d_plotItems.append({bottom,top,midpoint,c,m,sync});
+        PlotItem item;
+        item.min = bottom;
+        item.max = top;
+        item.mid = midpoint;
+        item.curve = std::move(c);
+        item.labelMarker = std::move(m);
+        item.syncCurve = std::move(sync);
+        item.separator = std::move(sep);
+        item.separator2 = std::move(sep2);
+        d_plotItems.push_back(std::move(item));
 
     }
 
@@ -95,7 +104,7 @@ PulsePlot::PulsePlot(std::shared_ptr<PulseGenConfig> cfg, QWidget *parent) :
 
 PulsePlot::~PulsePlot()
 {
-
+    // All items are managed by unique_ptr and will be automatically cleaned up
 }
 
 void PulsePlot::updatePulsePlot()
@@ -115,11 +124,11 @@ void PulsePlot::replot()
     auto c = ps_config.lock();
     if(!c)
     {
-        for(auto it = d_plotItems.begin(); it != d_plotItems.end(); ++it)
+        for(auto &item : d_plotItems)
         {
-            it->curve->setVisible(false);
-            it->labelMarker->setVisible(false);
-            it->syncCurve->setVisible(false);
+            item.curve->setVisible(false);
+            item.labelMarker->setVisible(false);
+            item.syncCurve->setVisible(false);
         }
 
         ZoomPanPlot::replot();
@@ -136,12 +145,13 @@ void PulsePlot::replot()
     maxTime *= 1.25;
 
     auto cit = c->d_channels.cbegin();
-    auto pit = d_plotItems.begin();
+    int plotIndex = 0;
 
-    for(int i=0 ;cit != c->d_channels.cend() && pit != d_plotItems.end(); ++cit, ++pit, ++i)
+    for(int i=0 ;cit != c->d_channels.cend() && plotIndex < d_plotItems.size(); ++cit, ++plotIndex, ++i)
     {
-        double channelOff = pit->min + 0.25;
-        double channelOn = pit->max - 0.25;
+        auto &plotItem = d_plotItems[plotIndex];
+        double channelOff = plotItem.min + 0.25;
+        double channelOn = plotItem.max - 0.25;
         QVector<QPointF> data;
 
         if(cit->level == PulseGenConfig::ActiveLow)
@@ -150,11 +160,11 @@ void PulsePlot::replot()
         if(cit->syncCh > 0 && cit->enabled)
         {
             auto offset = c->channelStart(cit->syncCh-1);
-            pit->syncCurve->setSamples({{offset,pit->min},{offset,pit->max}});
-            pit->syncCurve->setVisible(true);
+            plotItem.syncCurve->setSamples({{offset,plotItem.min},{offset,plotItem.max}});
+            plotItem.syncCurve->setVisible(true);
         }
         else
-            pit->syncCurve->setVisible(false);
+            plotItem.syncCurve->setVisible(false);
 
         data.append(QPointF(0.0,channelOff));
         if(cit->width > 0.0 && cit->enabled)
@@ -166,8 +176,8 @@ void PulsePlot::replot()
         }
         data.append(QPointF(maxTime,channelOff));
 
-        pit->curve->setCurveData(data);
-        pit->curve->setVisible(true);
+        plotItem.curve->setCurveData(data);
+        plotItem.curve->setVisible(true);
 
         QString label = cit->channelName;
         if(label.isEmpty())
@@ -184,11 +194,11 @@ void PulsePlot::replot()
             else
                 label.append(QString("\nDUTY: %1 On/%2 Off").arg(cit->dutyOn).arg(cit->dutyOff));
         }
-        QwtText t = pit->labelMarker->label();
+        QwtText t = plotItem.labelMarker->label();
         t.setText(label);
-        pit->labelMarker->setLabel(t);
-        pit->labelMarker->setXValue(maxTime);
-        pit->labelMarker->setVisible(true);
+        plotItem.labelMarker->setLabel(t);
+        plotItem.labelMarker->setXValue(maxTime);
+        plotItem.labelMarker->setVisible(true);
 
 
     }

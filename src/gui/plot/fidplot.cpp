@@ -1,4 +1,5 @@
 #include <gui/plot/fidplot.h>
+#include <gui/plot/curvefactory.h>
 #include <math.h>
 
 #include <QPalette>
@@ -24,69 +25,68 @@ FidPlot::FidPlot(const QString id, QWidget *parent) :
     setPlotAxisTitle(QwtPlot::xBottom,QString::fromUtf16(u"Time (μs)"));
     setPlotAxisTitle(QwtPlot::yLeft,QString("FID ")+id);
 
-    p_curve = new BlackchirpFIDCurve(QString("FID")+id);
+    // Disable QwtPlot's automatic memory management
+    setAutoDelete(false);
+
+    p_curve = CurveFactory::createStandardCurve<BlackchirpFIDCurve>(BC::Key::fidCurve+id);
     p_curve->attach(this);
 
-    QwtPlotMarker *chirpStartMarker = new QwtPlotMarker();
-    chirpStartMarker->setLineStyle(QwtPlotMarker::VLine);
-    chirpStartMarker->setLinePen(QPen(QPalette().color(QPalette::Text)));
+    d_chirpMarkers.first = std::make_unique<QwtPlotMarker>();
+    d_chirpMarkers.first->setLineStyle(QwtPlotMarker::VLine);
+    d_chirpMarkers.first->setLinePen(QPen(QPalette().color(QPalette::Text)));
     QwtText csLabel(QString("Chirp Start"));
     csLabel.setFont(QFont(QString("sans serif"),6));
-    chirpStartMarker->setLabel(csLabel);
-    chirpStartMarker->setLabelOrientation(Qt::Vertical);
-    chirpStartMarker->setLabelAlignment(Qt::AlignTop|Qt::AlignRight);
-    d_chirpMarkers.first = chirpStartMarker;
-    chirpStartMarker->attach(this);
-    chirpStartMarker->setVisible(false);
+    d_chirpMarkers.first->setLabel(csLabel);
+    d_chirpMarkers.first->setLabelOrientation(Qt::Vertical);
+    d_chirpMarkers.first->setLabelAlignment(Qt::AlignTop|Qt::AlignRight);
+    d_chirpMarkers.first->attach(this);
+    d_chirpMarkers.first->setVisible(false);
 
-    QwtPlotMarker *chirpEndMarker = new QwtPlotMarker();
-    chirpEndMarker->setLineStyle(QwtPlotMarker::VLine);
-    chirpEndMarker->setLinePen(QPen(QPalette().color(QPalette::Text)));
+    d_chirpMarkers.second = std::make_unique<QwtPlotMarker>();
+    d_chirpMarkers.second->setLineStyle(QwtPlotMarker::VLine);
+    d_chirpMarkers.second->setLinePen(QPen(QPalette().color(QPalette::Text)));
     QwtText ceLabel(QString("Chirp End"));
     ceLabel.setFont(QFont(QString("sans serif"),6));
-    chirpEndMarker->setLabel(ceLabel);
-    chirpEndMarker->setLabelOrientation(Qt::Vertical);
-    chirpEndMarker->setLabelAlignment(Qt::AlignBottom|Qt::AlignLeft);
-    d_chirpMarkers.second = chirpEndMarker;
-    chirpEndMarker->attach(this);
-    chirpEndMarker->setVisible(false);
+    d_chirpMarkers.second->setLabel(ceLabel);
+    d_chirpMarkers.second->setLabelOrientation(Qt::Vertical);
+    d_chirpMarkers.second->setLabelAlignment(Qt::AlignBottom|Qt::AlignLeft);
+    d_chirpMarkers.second->attach(this);
+    d_chirpMarkers.second->setVisible(false);
 
 
-    QwtPlotMarker *ftStartMarker = new QwtPlotMarker();
-    ftStartMarker->setLineStyle(QwtPlotMarker::VLine);
-    ftStartMarker->setLinePen(QPen(QPalette().color(QPalette::Text)));
+    d_ftMarkers.first = std::make_unique<QwtPlotMarker>();
+    d_ftMarkers.first->setLineStyle(QwtPlotMarker::VLine);
+    d_ftMarkers.first->setLinePen(QPen(QPalette().color(QPalette::Text)));
     QwtText ftsLabel(QString(" FT Start "));
     ftsLabel.setFont(QFont(QString("sans serif"),6));
     ftsLabel.setBackgroundBrush(QPalette().window());
     ftsLabel.setColor(QPalette().text().color());
-    ftStartMarker->setLabel(ftsLabel);
-    ftStartMarker->setLabelOrientation(Qt::Vertical);
-    ftStartMarker->setLabelAlignment(Qt::AlignTop|Qt::AlignRight);
-    ftStartMarker->setXValue(0.0);
-    ftStartMarker->attach(this);
-    ftStartMarker->setVisible(false);
-    d_ftMarkers.first = ftStartMarker;
+    d_ftMarkers.first->setLabel(ftsLabel);
+    d_ftMarkers.first->setLabelOrientation(Qt::Vertical);
+    d_ftMarkers.first->setLabelAlignment(Qt::AlignTop|Qt::AlignRight);
+    d_ftMarkers.first->setXValue(0.0);
+    d_ftMarkers.first->attach(this);
+    d_ftMarkers.first->setVisible(false);
 
-    QwtPlotMarker *ftEndMarker = new QwtPlotMarker();
-    ftEndMarker->setLineStyle(QwtPlotMarker::VLine);
-    ftEndMarker->setLinePen(QPen(QPalette().color(QPalette::Text)));
+    d_ftMarkers.second = std::make_unique<QwtPlotMarker>();
+    d_ftMarkers.second->setLineStyle(QwtPlotMarker::VLine);
+    d_ftMarkers.second->setLinePen(QPen(QPalette().color(QPalette::Text)));
     QwtText fteLabel(QString(" FT End "));
     fteLabel.setFont(QFont(QString("sans serif"),6));
     fteLabel.setBackgroundBrush(QPalette().window());
     fteLabel.setColor(QPalette().text().color());
-    ftEndMarker->setLabel(fteLabel);
-    ftEndMarker->setLabelOrientation(Qt::Vertical);
-    ftEndMarker->setLabelAlignment(Qt::AlignBottom|Qt::AlignLeft);
-    ftEndMarker->setXValue(0.0);
-    ftEndMarker->attach(this);
-    ftEndMarker->setVisible(false);
-    d_ftMarkers.second = ftEndMarker;
+    d_ftMarkers.second->setLabel(fteLabel);
+    d_ftMarkers.second->setLabelOrientation(Qt::Vertical);
+    d_ftMarkers.second->setLabelAlignment(Qt::AlignBottom|Qt::AlignLeft);
+    d_ftMarkers.second->setXValue(0.0);
+    d_ftMarkers.second->attach(this);
+    d_ftMarkers.second->setVisible(false);
 
     QPalette p;
     QColor bg( p.window().color() );
     bg.setAlpha( 232 );
 
-    p_label = new QwtPlotTextLabel;
+    p_label = std::make_unique<QwtPlotTextLabel>();
     QwtText text(d_shotsText.arg(0));
     text.setColor(p.text().color());
     text.setBackgroundBrush( QBrush( bg ) );
@@ -97,6 +97,11 @@ FidPlot::FidPlot(const QString id, QWidget *parent) :
 
 
 
+}
+
+FidPlot::~FidPlot()
+{
+    // All items are managed by unique_ptr and will be automatically cleaned up
 }
 
 void FidPlot::receiveProcessedFid(const QVector<double> d, double spacing, double min, double max, quint64 shots)

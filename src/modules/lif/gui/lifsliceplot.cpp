@@ -1,4 +1,5 @@
 #include "lifsliceplot.h"
+#include <gui/plot/curvefactory.h>
 
 #include <QSettings>
 #include <QPalette>
@@ -18,11 +19,14 @@ LifSlicePlot::LifSlicePlot(const QString name, QWidget *parent) :
 {
     this->setPlotAxisTitle(QwtPlot::yLeft,QString("LIF (AU)"));
 
-    p_curve = new BlackchirpPlotCurve(BC::Key::lifSliceCurve,"",Qt::SolidLine,QwtSymbol::Ellipse);
+    // Disable QwtPlot's automatic memory management
+    setAutoDelete(false);
+
+    p_curve = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::lifSliceCurve,"",Qt::SolidLine,QwtSymbol::Ellipse);
     p_curve->setZ(1.0);
     p_curve->attach(this);
 
-    p_label = new QwtPlotTextLabel();
+    p_label = std::make_unique<QwtPlotTextLabel>();
     p_label->setZ(10.0);
     p_label->setItemAttribute(QwtPlotItem::AutoScale,false);
     p_label->attach(this);
@@ -31,7 +35,7 @@ LifSlicePlot::LifSlicePlot(const QString name, QWidget *parent) :
 
 LifSlicePlot::~LifSlicePlot()
 {
-
+    // All items are managed by unique_ptr and will be automatically cleaned up
 }
 
 void LifSlicePlot::prepareForExperiment()

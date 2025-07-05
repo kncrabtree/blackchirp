@@ -1,12 +1,18 @@
 #include "mainftplot.h"
+#include <gui/plot/curvefactory.h>
 
 #include <gui/plot/blackchirpplotcurve.h>
 
 MainFtPlot::MainFtPlot(QWidget *parent) :
     FtPlot(BC::Key::FtMainPlot::id,parent)
 {
-    p_peakData = new BlackchirpPlotCurve(BC::Key::peakCurve+id(),"",Qt::NoPen,QwtSymbol::Ellipse);
+    p_peakData = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::peakCurve+id(),SettingsStorage::General,"",Qt::NoPen,QwtSymbol::Ellipse);
     p_peakData->attach(this);
+}
+
+MainFtPlot::~MainFtPlot()
+{
+    // Base class FtPlot::~FtPlot() will handle detachItems()
 }
 
 void MainFtPlot::prepareForExperiment(const Experiment &e)

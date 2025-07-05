@@ -3,6 +3,7 @@
 
 #include <gui/plot/zoompanplot.h>
 #include <qwt6/qwt_plot_textlabel.h>
+#include <memory>
 
 #include <QVector>
 #include <QPointF>
@@ -50,9 +51,9 @@ private:
     /*!
      * \brief The object representing the curve on the plot
      */
-    BlackchirpFTCurve *p_curve;
-    QwtPlotTextLabel *p_shotsLabel;
-    QwtPlotTextLabel *p_messageLabel;
+    std::unique_ptr<BlackchirpFTCurve> p_curve;
+    std::unique_ptr<QwtPlotTextLabel> p_shotsLabel;
+    std::unique_ptr<QwtPlotTextLabel> p_messageLabel;
 
     Ft d_currentFt;
     int d_number;

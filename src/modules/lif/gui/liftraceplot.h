@@ -2,6 +2,7 @@
 #define LIFTRACEPLOT_H
 
 #include <gui/plot/zoompanplot.h>
+#include <memory>
 
 #include <modules/lif/data/lifconfig.h>
 #include <modules/lif/data/liftrace.h>
@@ -45,9 +46,9 @@ public slots:
 
 
 private:
-    BlackchirpPlotCurve *p_lif, *p_ref; ///TODO: convert to even spaced curves
-    QwtPlotZoneItem *p_lifZone, *p_refZone;
-    QwtPlotTextLabel *p_integralLabel;
+    std::unique_ptr<BlackchirpPlotCurve> p_lif, p_ref; ///TODO: convert to even spaced curves
+    std::unique_ptr<QwtPlotZoneItem> p_lifZone, p_refZone;
+    std::unique_ptr<QwtPlotTextLabel> p_integralLabel;
     LifTrace d_currentTrace;
     int d_numAverages;
     bool d_resetNext;

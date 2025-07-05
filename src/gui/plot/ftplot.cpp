@@ -1,4 +1,5 @@
 #include <gui/plot/ftplot.h>
+#include <gui/plot/curvefactory.h>
 
 #include <QFont>
 #include <QMouseEvent>
@@ -33,8 +34,11 @@ FtPlot::FtPlot(const QString id, QWidget *parent) :
     setPlotAxisTitle(QwtPlot::xBottom,QString("Frequency (MHz)"));
     setPlotAxisTitle(QwtPlot::yLeft,QString("FT "+id));
 
+    // Disable QwtPlot's automatic memory management
+    setAutoDelete(false);
+
     //build and configure curve object
-    p_curve = new BlackchirpFTCurve(BC::Key::ftCurve+id);
+    p_curve = CurveFactory::createStandardCurve<BlackchirpFTCurve>(BC::Key::ftCurve+id);
     p_curve->attach(this);
 
 
@@ -43,7 +47,7 @@ FtPlot::FtPlot(const QString id, QWidget *parent) :
     QColor bg( p.window().color() );
     bg.setAlpha( 232 );
 
-    p_shotsLabel = new QwtPlotTextLabel;
+    p_shotsLabel = std::make_unique<QwtPlotTextLabel>();
     QwtText text(d_shotsText.arg(0));
     text.setColor(p.text().color());
     text.setBackgroundBrush( QBrush( bg ) );
@@ -52,7 +56,7 @@ FtPlot::FtPlot(const QString id, QWidget *parent) :
     p_shotsLabel->setZ(200.);
     p_shotsLabel->attach(this);
 
-    p_messageLabel = new QwtPlotTextLabel;
+    p_messageLabel = std::make_unique<QwtPlotTextLabel>();
     QwtText msg;
     msg.setColor(p.text().color());
     msg.setBackgroundBrush( QBrush( bg ) );
@@ -64,6 +68,7 @@ FtPlot::FtPlot(const QString id, QWidget *parent) :
 
 FtPlot::~FtPlot()
 {
+    // All items are managed by unique_ptr and will be automatically cleaned up
 }
 
 void FtPlot::prepareForExperiment(const Experiment &e)

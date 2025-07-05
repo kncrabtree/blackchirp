@@ -4,6 +4,7 @@
 #include <gui/plot/zoompanplot.h>
 
 #include <QList>
+#include <memory>
 
 #include <hardware/optional/pulsegenerator/pulsegenconfig.h>
 
@@ -26,9 +27,18 @@ public:
         double min;
         double max;
         double mid;
-        BlackchirpPlotCurve *curve;
-        QwtPlotMarker *labelMarker;
-        QwtPlotCurve *syncCurve;
+        std::unique_ptr<BlackchirpPlotCurve> curve;
+        std::unique_ptr<QwtPlotMarker> labelMarker;
+        std::unique_ptr<QwtPlotCurve> syncCurve;
+        std::unique_ptr<QwtPlotMarker> separator;
+        std::unique_ptr<QwtPlotMarker> separator2;
+        
+        // Make movable but not copyable
+        PlotItem() = default;
+        PlotItem(const PlotItem&) = delete;
+        PlotItem& operator=(const PlotItem&) = delete;
+        PlotItem(PlotItem&&) = default;
+        PlotItem& operator=(PlotItem&&) = default;
     };
 
 public slots:
@@ -41,7 +51,7 @@ protected:
 
 private:
     std::weak_ptr<PulseGenConfig> ps_config;
-    QVector<PlotItem> d_plotItems;
+    std::vector<PlotItem> d_plotItems;
 
 
     // QWidget interface
