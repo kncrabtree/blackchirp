@@ -22,7 +22,7 @@
 #include <QtWidgets/QDoubleSpinBox>
 #include <QFutureWatcher>
 #include <QList>
-
+#include <memory>
 
 #include <data/experiment/experiment.h>
 #include <data/analysis/ftworker.h>
@@ -33,6 +33,7 @@
 #include <gui/widget/ftmwprocessingtoolbar.h>
 #include <gui/widget/ftmwplottoolbar.h>
 #include <gui/widget/toolbarwidgetaction.h>
+#include <data/experiment/overlaybase.h>
 
 class QThread;
 class FtmwSnapshotWidget;
@@ -57,6 +58,14 @@ public:
     void prepareForExperiment(const Experiment &e);
 
     FtWorker::FidProcessingSettings getProcessingSettings() const { return d_currentProcessingSettings; }
+    
+    // Overlay management
+    QVector<std::shared_ptr<OverlayBase>> getOverlays() const { return d_overlays; }
+    void addOverlay(std::shared_ptr<OverlayBase> overlay);
+    void removeOverlay(std::shared_ptr<OverlayBase> overlay);
+    
+    // Plot management
+    QStringList getPlotNames() const { return d_plotNames; }
 
 public slots:
     void setLiveUpdateInterval(int intervalms);
@@ -129,6 +138,8 @@ private:
     PeakFindWidget *p_pfw{nullptr};
     OverlayManagerWidget *p_omw{nullptr};
     QString d_path;
+    QVector<std::shared_ptr<OverlayBase>> d_overlays;
+    QStringList d_plotNames;
     const int d_liveId = 0, d_mainId = 3, d_plot1Id = 1, d_plot2Id = 2;
     const QString d_shotsString = QString("Shots: %1");
 
@@ -142,6 +153,7 @@ private:
 
 
     void updateFid(int id);
+    void createPlotNamesList();
 
 
     // QObject interface

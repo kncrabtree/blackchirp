@@ -3,6 +3,7 @@
 
 #include <QAbstractTableModel>
 #include <QVector>
+#include <memory>
 #include <data/experiment/overlaybase.h>
 
 class OverlayTableModel : public QAbstractTableModel
@@ -21,12 +22,12 @@ public:
     Qt::ItemFlags flags(const QModelIndex &index) const override;
 
     // Overlay management
-    void addOverlay(OverlayBase* overlay);
+    void addOverlay(std::shared_ptr<OverlayBase> overlay);
     void removeOverlay(int row);
     void removeOverlays(const QVector<int>& rows);
     void clearOverlays();
-    OverlayBase* getOverlay(int row) const;
-    QVector<OverlayBase*> getAllOverlays() const;
+    std::shared_ptr<OverlayBase> getOverlay(int row) const;
+    QVector<std::shared_ptr<OverlayBase>> getAllOverlays() const;
 
 protected:
     // Virtual functions for derived classes to extend columns
@@ -37,7 +38,7 @@ protected:
     virtual Qt::ItemFlags getAdditionalColumnFlags(int row, int column) const { Q_UNUSED(row) Q_UNUSED(column) return Qt::ItemIsEnabled | Qt::ItemIsSelectable; }
 
 private:
-    QVector<OverlayBase*> d_overlays;
+    QVector<std::shared_ptr<OverlayBase>> d_overlays;
 
     // Base column indices
     enum BaseColumns {

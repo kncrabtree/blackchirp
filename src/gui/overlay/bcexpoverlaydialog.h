@@ -12,9 +12,11 @@
 #include <QGroupBox>
 #include <QLabel>
 #include <QPushButton>
+#include <memory>
 
 #include <data/analysis/ftworker.h>
 #include <data/experiment/overlaytypes.h>
+#include "overlaybaseoptionswidget.h"
 
 class ExperimentViewWidget;
 class FtmwViewWidget;
@@ -24,10 +26,10 @@ class BCExpOverlayDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit BCExpOverlayDialog(FtmwViewWidget *parent = nullptr);
+    explicit BCExpOverlayDialog(const QStringList &plotNames, FtmwViewWidget *parent = nullptr);
     ~BCExpOverlayDialog();
 
-    BCExpOverlay* createOverlay() const;
+    std::shared_ptr<OverlayBase> createOverlay() const;
 
 private slots:
     void onExperimentNumberChanged(int number);
@@ -38,6 +40,9 @@ private slots:
     void onProcessingSettingsChanged();
     void onManualSettingsClicked();
     void onDialogAccepted();
+
+public slots:
+    void accept() override;
 
 private:
     // Parent widget for accessing current settings
@@ -52,6 +57,9 @@ private:
     
     // Frame selection
     QSpinBox *p_frameSpinBox;
+    
+    // Overlay base options
+    OverlayBaseOptionsWidget *p_overlayOptionsWidget;
     
     // Processing settings options
     QRadioButton *p_useExperimentSettingsRadio;
@@ -70,6 +78,7 @@ private:
     FtWorker::FidProcessingSettings d_currentSettings;
     FtWorker::FidProcessingSettings d_manualSettings;
     bool d_hasManualSettings;
+    QStringList d_plotNames;
 
     ExperimentViewWidget *p_msw;
     
@@ -77,6 +86,7 @@ private:
     void setupUI();
     void setupExperimentSelection();
     void setupFrameSelection();
+    void setupOverlayBaseOptions();
     void setupProcessingSettings();
     void setupConnections();
     void initializeDefaults();

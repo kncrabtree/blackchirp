@@ -19,12 +19,13 @@
 
 using namespace BC::Store;
 
-BCExpOverlayDialog::BCExpOverlayDialog(FtmwViewWidget *parent) :
+BCExpOverlayDialog::BCExpOverlayDialog(const QStringList &plotNames, FtmwViewWidget *parent) :
     QDialog(parent),
     p_ftmwViewWidget(parent),
     d_experimentValid(false),
     d_hasExperimentSettings(false),
     d_hasManualSettings(false),
+    d_plotNames(plotNames),
     p_msw(nullptr)
 {
     setupUI();
@@ -40,7 +41,7 @@ BCExpOverlayDialog::~BCExpOverlayDialog()
     }
 }
 
-BCExpOverlay* BCExpOverlayDialog::createOverlay() const
+std::shared_ptr<OverlayBase> BCExpOverlayDialog::createOverlay() const
 {
     if (!d_experimentValid) {
         return nullptr;
@@ -51,7 +52,12 @@ BCExpOverlay* BCExpOverlayDialog::createOverlay() const
     QString experimentPath = p_usePathCheckBox->isChecked() ? p_pathLineEdit->text() : QString("");
     int frame = p_frameSpinBox->value();
     
-    BCExpOverlay *overlay = new BCExpOverlay(experimentNumber, experimentPath, frame);
+    auto overlay = std::make_shared<BCExpOverlay>(experimentNumber, experimentPath, frame);
+    
+    // Apply overlay base options (label, plot ID, scaling, offsets)
+    if (p_overlayOptionsWidget) {
+        p_overlayOptionsWidget->applyToOverlay(overlay);
+    }
     
     // Set processing settings based on user selection
     if (p_useExperimentSettingsRadio->isChecked()) {
@@ -79,6 +85,7 @@ void BCExpOverlayDialog::setupUI()
     
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     
+    setupOverlayBaseOptions();
     setupExperimentSelection();
     setupFrameSelection();
     setupProcessingSettings();
@@ -141,6 +148,18 @@ void BCExpOverlayDialog::setupFrameSelection()
     formLayout->addRow("Frame:", p_frameSpinBox);
     
     layout()->addWidget(frameGroup);
+}
+
+void BCExpOverlayDialog::setupOverlayBaseOptions()
+{
+    QGroupBox *optionsGroup = new QGroupBox("Overlay Options", this);
+    QVBoxLayout *optionsLayout = new QVBoxLayout(optionsGroup);
+    
+    // Create the options widget with the plot names
+    p_overlayOptionsWidget = new OverlayBaseOptionsWidget(d_plotNames, this);
+    optionsLayout->addWidget(p_overlayOptionsWidget);
+    
+    layout()->addWidget(optionsGroup);
 }
 
 void BCExpOverlayDialog::setupProcessingSettings()
@@ -223,15 +242,23 @@ void BCExpOverlayDialog::initializeDefaults()
     p_experimentNumberSpinBox->setRange(1,lastExperiment);
     p_experimentNumberSpinBox->setValue(lastExperiment);
     
+    // Set initial label based on experiment number
+    if (p_overlayOptionsWidget) {
+        p_overlayOptionsWidget->setLabel(QString("Exp%1").arg(lastExperiment));
+    }
+    
     // Validate the initial experiment
     validateExperiment();
 }
 
 void BCExpOverlayDialog::onExperimentNumberChanged(int number)
 {
-    Q_UNUSED(number)
     if (!p_usePathCheckBox->isChecked()) {
         validateExperiment();
+        // Update label to experiment number
+        if (p_overlayOptionsWidget) {
+            p_overlayOptionsWidget->setLabel(QString("Exp%1").arg(number));
+        }
     }
 }
 
@@ -242,6 +269,25 @@ void BCExpOverlayDialog::onUsePathToggled(bool enabled)
     p_experimentNumberSpinBox->setEnabled(!enabled);
     
     validateExperiment();
+    
+    // Update label based on current selection
+    if (p_overlayOptionsWidget) {
+        if (enabled) {
+            // Using custom path - update label from path if available
+            QString path = p_pathLineEdit->text();
+            if (!path.isEmpty()) {
+                QDir dir(path);
+                QString folderName = dir.dirName();
+                if (!folderName.isEmpty()) {
+                    p_overlayOptionsWidget->setLabel(folderName);
+                }
+            }
+        } else {
+            // Using experiment number - update label from number
+            int number = p_experimentNumberSpinBox->value();
+            p_overlayOptionsWidget->setLabel(QString("Exp%1").arg(number));
+        }
+    }
 }
 
 void BCExpOverlayDialog::onBrowseButtonClicked()
@@ -260,6 +306,17 @@ void BCExpOverlayDialog::onBrowseButtonClicked()
 void BCExpOverlayDialog::onPathChanged()
 {
     validateExperiment();
+    // Update label to folder name if using custom path
+    if (p_usePathCheckBox->isChecked() && p_overlayOptionsWidget) {
+        QString path = p_pathLineEdit->text();
+        if (!path.isEmpty()) {
+            QDir dir(path);
+            QString folderName = dir.dirName();
+            if (!folderName.isEmpty()) {
+                p_overlayOptionsWidget->setLabel(folderName);
+            }
+        }
+    }
 }
 
 void BCExpOverlayDialog::validateExperiment()
@@ -455,4 +512,46 @@ void BCExpOverlayDialog::getCurrentSettingsFromParent()
         d_currentSettings.autoScaleIgnoreMHz = 250.0;
         d_currentSettings.windowFunction = FtWorker::None;
     }
+}
+
+void BCExpOverlayDialog::accept()
+{
+    QStringList validationErrors;
+    
+    // Validate experiment
+    if (!d_experimentValid) {
+        validationErrors << "Please select a valid experiment";
+    }
+    
+    // Validate overlay base options
+    if (p_overlayOptionsWidget) {
+        QString overlayError;
+        QVector<std::shared_ptr<OverlayBase>> existingOverlays;
+        
+        // Get existing overlays from parent if available
+        if (p_ftmwViewWidget) {
+            existingOverlays = p_ftmwViewWidget->getOverlays();
+        }
+        
+        if (!p_overlayOptionsWidget->validateSettings(overlayError, existingOverlays)) {
+            validationErrors << overlayError;
+        }
+    }
+    
+    // Validate manual settings if selected
+    if (p_useManualSettingsRadio->isChecked() && !d_hasManualSettings) {
+        validationErrors << "Please configure manual settings or select a different processing option";
+    }
+    
+    // Show validation errors if any
+    if (!validationErrors.isEmpty()) {
+        QString errorMessage = "Please fix the following issues:\n\n";
+        errorMessage += validationErrors.join("\n");
+        
+        QMessageBox::warning(this, "Validation Error", errorMessage);
+        return; // Don't close dialog
+    }
+    
+    // All validation passed, call base class accept
+    QDialog::accept();
 }

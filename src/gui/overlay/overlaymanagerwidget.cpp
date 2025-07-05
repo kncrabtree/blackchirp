@@ -7,8 +7,8 @@
 #include <QHeaderView>
 #include <gui/widget/ftmwviewwidget.h>
 
-OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number)
-    : QWidget{parent, Qt::Window}
+OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number, const QVector<std::shared_ptr<OverlayBase>> &overlays)
+    : QWidget{parent, Qt::Window}, p_plotIdDelegate(nullptr)
 {
     // Set window attributes
     if(number > 0)
@@ -21,6 +21,7 @@ OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number)
 
     setupUI();
     createTabs();
+    populateWithExistingOverlays(overlays);
     updateButtonStates();
 }
 
@@ -137,6 +138,9 @@ QWidget *OverlayManagerWidget::createBCExperimentTab()
     verticalHeader->setDefaultSectionSize(25);
     verticalHeader->setVisible(false);
 
+    // Set up plot ID combo box delegate
+    setupPlotIdDelegate();
+
     tabLayout->addWidget(p_bcExperimentTableView);
 
     return tabWidget;
@@ -190,15 +194,29 @@ void OverlayManagerWidget::addOverlay()
             FtmwViewWidget* ftmwParent = qobject_cast<FtmwViewWidget*>(parentWidget());
             if(!ftmwParent) {
                 qDebug() << "Warning: OverlayManagerWidget parent is not FtmwViewWidget";
+                return;
             }
             
-            // Create and show the BCExpOverlay dialog
-            BCExpOverlayDialog dialog(ftmwParent);
+            // Get plot names from parent and create the dialog
+            QStringList plotNames = ftmwParent->getPlotNames();
+            BCExpOverlayDialog dialog(plotNames, ftmwParent);
             if(dialog.exec() == QDialog::Accepted) {
-                // TODO: Handle accepted dialog
-                // BCExpOverlay* overlay = dialog.createOverlay();
-                // Add overlay to model and emit signals
-                qDebug() << "BCExpOverlay dialog accepted - overlay creation placeholder";
+                // Create the overlay
+                auto overlay = dialog.createOverlay();
+                if(overlay != nullptr) {
+                    // Add to parent FtmwViewWidget storage
+                    ftmwParent->addOverlay(overlay);
+                    
+                    // Add to local model for display
+                    if(p_bcExperimentModel != nullptr) {
+                        p_bcExperimentModel->addOverlay(overlay);
+                    }
+                    
+                    // Emit signal for any listeners
+                    emit overlayAdded(overlay);
+                    
+                    qDebug() << "BCExpOverlay created and added successfully";
+                }
             }
             break;
         }
@@ -238,4 +256,44 @@ void OverlayManagerWidget::raiseParent()
         w->raise();
         w->show();
     }
+}
+
+void OverlayManagerWidget::populateWithExistingOverlays(const QVector<std::shared_ptr<OverlayBase>> &overlays)
+{
+    // Add existing overlays to the appropriate models
+    for(const auto& overlay : overlays)
+    {
+        if(overlay == nullptr)
+            continue;
+            
+        switch(overlay->type())
+        {
+        case OverlayBase::BCExperiment:
+            if(p_bcExperimentModel != nullptr)
+                p_bcExperimentModel->addOverlay(overlay);
+            break;
+        case OverlayBase::SPCAT:
+            // TODO: Add to SPCAT model when implemented
+            break;
+        case OverlayBase::GenericXY:
+            // TODO: Add to GenericXY model when implemented
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+void OverlayManagerWidget::setupPlotIdDelegate()
+{
+    // Get plot names from parent FtmwViewWidget
+    QStringList plotNames;
+    FtmwViewWidget* ftmwParent = qobject_cast<FtmwViewWidget*>(parentWidget());
+    if (ftmwParent) {
+        plotNames = ftmwParent->getPlotNames();
+    }
+    
+    // Create and set the delegate for the PlotId column
+    p_plotIdDelegate = new PlotIdComboBoxDelegate(plotNames, this);
+    p_bcExperimentTableView->setItemDelegateForColumn(1, p_plotIdDelegate); // PlotIdColumn = 1
 }

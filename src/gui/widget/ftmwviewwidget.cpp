@@ -23,6 +23,9 @@ FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path) :
     ui(new Ui::FtmwViewWidget), d_currentExptNum(-1), d_currentSegment(-1), d_path(path)
 {
     ui->setupUi(main,this);
+    
+    // Create plot names list after UI is set up
+    createPlotNamesList();
 
     d_currentProcessingSettings = ui->processingToolBar->getSettings();
     connect(ui->processingToolBar,&FtmwProcessingToolBar::resetSignal,this,&FtmwViewWidget::resetProcessingSettings);
@@ -735,7 +738,7 @@ void FtmwViewWidget::launchOverlayManager()
     }
 
     // Create new overlay manager widget
-    p_omw = new OverlayManagerWidget(this, d_currentExptNum);
+    p_omw = new OverlayManagerWidget(this, d_currentExptNum, d_overlays);
 
     // Connect cleanup when widget is destroyed
     connect(p_omw, &OverlayManagerWidget::destroyed, this, [this](){
@@ -793,4 +796,43 @@ void FtmwViewWidget::timerEvent(QTimerEvent *event)
         updateLiveFidList();
         event->accept();
     }
+}
+
+void FtmwViewWidget::addOverlay(std::shared_ptr<OverlayBase> overlay)
+{
+    if(overlay != nullptr) {
+        d_overlays.append(overlay);
+    }
+}
+
+void FtmwViewWidget::removeOverlay(std::shared_ptr<OverlayBase> overlay)
+{
+    if(overlay != nullptr) {
+        d_overlays.removeAll(overlay);
+    }
+}
+
+void FtmwViewWidget::createPlotNamesList()
+{
+    d_plotNames.clear();
+    
+    // Find all FtPlot children recursively
+    QList<FtPlot*> ftPlots = findChildren<FtPlot*>();
+    
+    for(FtPlot* plot : ftPlots) {
+        if(plot != nullptr) {
+            QString plotName = plot->objectName();
+            if(!plotName.isEmpty()) {
+                // Exclude live plots (case insensitive search for "ft" and "live")
+                QString nameLower = plotName.toLower();
+                if(nameLower.contains("ft") && nameLower.contains("live")) {
+                    continue; // Skip live plots
+                }
+                d_plotNames.append(plotName);
+            }
+        }
+    }
+    
+    // Sort the names for consistent ordering
+    d_plotNames.sort();
 }

@@ -29,7 +29,7 @@ QVariant OverlayTableModel::data(const QModelIndex &index, int role) const
     if (index.row() < 0 || index.row() >= d_overlays.size())
         return QVariant();
 
-    OverlayBase* overlay = d_overlays.at(index.row());
+    auto overlay = d_overlays.at(index.row());
     if (!overlay)
         return QVariant();
 
@@ -71,7 +71,7 @@ bool OverlayTableModel::setData(const QModelIndex &index, const QVariant &value,
     if (index.row() < 0 || index.row() >= d_overlays.size())
         return false;
 
-    OverlayBase* overlay = d_overlays.at(index.row());
+    auto overlay = d_overlays.at(index.row());
     if (!overlay)
         return false;
 
@@ -175,7 +175,7 @@ Qt::ItemFlags OverlayTableModel::flags(const QModelIndex &index) const
     }
 }
 
-void OverlayTableModel::addOverlay(OverlayBase* overlay)
+void OverlayTableModel::addOverlay(std::shared_ptr<OverlayBase> overlay)
 {
     if (!overlay)
         return;
@@ -220,7 +220,7 @@ void OverlayTableModel::clearOverlays()
     endRemoveRows();
 }
 
-OverlayBase* OverlayTableModel::getOverlay(int row) const
+std::shared_ptr<OverlayBase> OverlayTableModel::getOverlay(int row) const
 {
     if (row < 0 || row >= d_overlays.size())
         return nullptr;
@@ -228,7 +228,7 @@ OverlayBase* OverlayTableModel::getOverlay(int row) const
     return d_overlays.at(row);
 }
 
-QVector<OverlayBase*> OverlayTableModel::getAllOverlays() const
+QVector<std::shared_ptr<OverlayBase>> OverlayTableModel::getAllOverlays() const
 {
     return d_overlays;
 }
@@ -247,12 +247,12 @@ int BCExperimentOverlayModel::getAdditionalColumnCount() const
 
 QVariant BCExperimentOverlayModel::getAdditionalColumnData(int row, int column, int role) const
 {
-    OverlayBase* overlay = getOverlay(row);
+    auto overlay = getOverlay(row);
     if (!overlay)
         return QVariant();
 
     // Try to cast to BCExperimentOverlay to access additional data
-    auto bcOverlay = dynamic_cast<BCExpOverlay*>(overlay);
+    auto bcOverlay = std::dynamic_pointer_cast<BCExpOverlay>(overlay);
     if (!bcOverlay)
         return QVariant();
 
@@ -292,11 +292,11 @@ bool BCExperimentOverlayModel::setAdditionalColumnData(int row, int column, cons
     if (role != Qt::EditRole)
         return false;
 
-    OverlayBase* overlay = getOverlay(row);
+    auto overlay = getOverlay(row);
     if (!overlay)
         return false;
 
-    auto bcOverlay = dynamic_cast<BCExpOverlay*>(overlay);
+    auto bcOverlay = std::dynamic_pointer_cast<BCExpOverlay>(overlay);
     if (!bcOverlay)
         return false;
 

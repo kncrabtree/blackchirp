@@ -8,9 +8,11 @@
 #include <QVBoxLayout>
 #include <QMetaEnum>
 #include <QTableView>
+#include <memory>
 
 #include <data/experiment/overlaybase.h>
 #include <data/model/overlaytablemodel.h>
+#include "plotidcomboboxdelegate.h"
 
 namespace BC::Property::Overlay {
 static const QString overlayType{"overlayType"};
@@ -20,11 +22,11 @@ class OverlayManagerWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit OverlayManagerWidget(QWidget *parent = nullptr, int number = -1);
+    explicit OverlayManagerWidget(QWidget *parent = nullptr, int number = -1, const QVector<std::shared_ptr<OverlayBase>> &overlays = QVector<std::shared_ptr<OverlayBase>>());
 
 signals:
-    void overlayAdded(OverlayBase* overlay);
-    void overlayRemoved(OverlayBase* overlay);
+    void overlayAdded(std::shared_ptr<OverlayBase> overlay);
+    void overlayRemoved(std::shared_ptr<OverlayBase> overlay);
 
 public slots:
     void addOverlay();
@@ -40,6 +42,7 @@ private:
 
     BCExperimentOverlayModel *p_bcExperimentModel;
     QTableView *p_bcExperimentTableView;
+    PlotIdComboBoxDelegate *p_plotIdDelegate;
 
 
     void setupUI();
@@ -48,6 +51,8 @@ private:
     QWidget* createPlaceholderTab(const QString& tabName);
     void onTabChanged(int index);
     void updateButtonStates();
+    void populateWithExistingOverlays(const QVector<std::shared_ptr<OverlayBase>> &overlays);
+    void setupPlotIdDelegate();
 };
 
 #endif // OVERLAYMANAGERWIDGET_H
