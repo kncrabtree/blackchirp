@@ -54,6 +54,11 @@ QVariant OverlayTableModel::data(const QModelIndex &index, int role) const
                 return overlay->getSourceFile();
             }
         }
+        else if (role == Qt::TextAlignmentRole)
+        {
+            // Center-align all columns
+            return Qt::AlignCenter;
+        }
     }
     else
     {

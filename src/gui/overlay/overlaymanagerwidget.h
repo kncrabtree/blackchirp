@@ -9,10 +9,12 @@
 #include <QMetaEnum>
 #include <QTableView>
 #include <memory>
+#include <map>
 
 #include <data/experiment/overlaybase.h>
 #include <data/model/overlaytablemodel.h>
 #include "plotidcomboboxdelegate.h"
+#include "overlaynumericdelegate.h"
 
 namespace BC::Property::Overlay {
 static const QString overlayType{"overlayType"};
@@ -48,6 +50,10 @@ private:
     BCExperimentOverlayModel *p_bcExperimentModel;
     QTableView *p_bcExperimentTableView;
     PlotIdComboBoxDelegate *p_plotIdDelegate;
+    OverlayNumericDelegate *p_numericDelegate;
+    
+    // Data structure to track model-view pairs for automatic column resizing
+    std::map<const OverlayTableModel*, QTableView*> d_modelViewMap;
 
 
     void setupUI();
@@ -58,6 +64,8 @@ private:
     void updateButtonStates();
     void populateWithExistingOverlays(const QVector<std::shared_ptr<OverlayBase>> &overlays);
     void setupPlotIdDelegate();
+    void setupTableView();
+    void resizeColumnsToContents(const OverlayTableModel* model, QTableView* tableView);
 };
 
 #endif // OVERLAYMANAGERWIDGET_H

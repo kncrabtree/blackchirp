@@ -8,7 +8,7 @@
 #include <gui/widget/ftmwviewwidget.h>
 
 OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number, const QVector<std::shared_ptr<OverlayBase>> &overlays)
-    : QWidget{parent, Qt::Window}, p_plotIdDelegate(nullptr)
+    : QWidget{parent, Qt::Window}, p_plotIdDelegate(nullptr), p_numericDelegate(nullptr)
 {
     // Set window attributes
     if(number > 0)
@@ -17,7 +17,7 @@ OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number, const QV
         setWindowTitle("Overlay Manager: Main Window");
     setWindowIcon(QIcon(":/icons/peak-find.svg")); // Temporary icon
     setAttribute(Qt::WA_DeleteOnClose);
-    resize(600, 400);
+    resize(800, 400); // Increased width to accommodate all columns
 
     setupUI();
     createTabs();
@@ -126,6 +126,13 @@ QWidget *OverlayManagerWidget::createBCExperimentTab()
     // Connect model signals to track overlay changes
     connect(p_bcExperimentModel, &BCExperimentOverlayModel::dataChanged, 
             this, &OverlayManagerWidget::onModelDataChanged);
+    connect(p_bcExperimentModel, &BCExperimentOverlayModel::rowsInserted, 
+            this, [this]() { resizeColumnsToContents(p_bcExperimentModel, p_bcExperimentTableView); });
+    connect(p_bcExperimentModel, &BCExperimentOverlayModel::rowsRemoved, 
+            this, [this]() { resizeColumnsToContents(p_bcExperimentModel, p_bcExperimentTableView); });
+    
+    // Register this model-view pair for automatic column resizing
+    d_modelViewMap[p_bcExperimentModel] = p_bcExperimentTableView;
 
     // Configure table view
     p_bcExperimentTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -135,15 +142,15 @@ QWidget *OverlayManagerWidget::createBCExperimentTab()
 
     // Configure headers
     auto horizontalHeader = p_bcExperimentTableView->horizontalHeader();
-    horizontalHeader->setStretchLastSection(true);
+    horizontalHeader->setStretchLastSection(false);
     horizontalHeader->setSectionResizeMode(QHeaderView::Interactive);
 
     auto verticalHeader = p_bcExperimentTableView->verticalHeader();
     verticalHeader->setDefaultSectionSize(25);
     verticalHeader->setVisible(false);
 
-    // Set up plot ID combo box delegate
-    setupPlotIdDelegate();
+    // Set up table view with delegates and column widths
+    setupTableView();
 
     tabLayout->addWidget(p_bcExperimentTableView);
 
@@ -302,6 +309,59 @@ void OverlayManagerWidget::setupPlotIdDelegate()
     p_bcExperimentTableView->setItemDelegateForColumn(1, p_plotIdDelegate); // PlotIdColumn = 1
 }
 
+void OverlayManagerWidget::setupTableView()
+{
+    // Set up delegates
+    setupPlotIdDelegate();
+    
+    // Create numeric delegate for numeric columns
+    p_numericDelegate = new OverlayNumericDelegate(this);
+    p_bcExperimentTableView->setItemDelegateForColumn(2, p_numericDelegate); // YScaleColumn = 2
+    p_bcExperimentTableView->setItemDelegateForColumn(3, p_numericDelegate); // YOffsetColumn = 3
+    p_bcExperimentTableView->setItemDelegateForColumn(4, p_numericDelegate); // XOffsetColumn = 4
+    
+    // Set up column resize behavior
+    resizeColumnsToContents(p_bcExperimentModel, p_bcExperimentTableView);
+}
+
+void OverlayManagerWidget::resizeColumnsToContents(const OverlayTableModel* model, QTableView* tableView)
+{
+    if (!model || !tableView) {
+        return;
+    }
+    
+    auto horizontalHeader = tableView->horizontalHeader();
+    int columnCount = model->columnCount();
+    int sourceFileColumn = 5; // SourceFileColumn from OverlayTableModel
+    
+    // Resize all columns except the source file column to contents
+    for (int i = 0; i < columnCount; ++i) {
+        if (i != sourceFileColumn) {
+            tableView->resizeColumnToContents(i);
+            horizontalHeader->setSectionResizeMode(i, QHeaderView::Interactive);
+        }
+    }
+    
+    // Set the source file column to stretch to fill remaining space
+    if (sourceFileColumn < columnCount) {
+        horizontalHeader->setSectionResizeMode(sourceFileColumn, QHeaderView::Stretch);
+    }
+    
+    // Ensure minimum widths for readability
+    QFontMetrics fm(tableView->font());
+    
+    // Set minimum widths for numeric columns to accommodate 12-character numbers
+    int minNumericWidth = fm.horizontalAdvance("123456.1234") + 5;
+    for (int i = 2; i <= 4; ++i) { // YScale, YOffset, XOffset columns
+        if (i < columnCount) {
+            int currentWidth = tableView->columnWidth(i);
+            if (currentWidth < minNumericWidth) {
+                tableView->setColumnWidth(i, minNumericWidth);
+            }
+        }
+    }
+}
+
 void OverlayManagerWidget::onModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {
     // Get the model that emitted the signal
@@ -332,5 +392,11 @@ void OverlayManagerWidget::onModelDataChanged(const QModelIndex &topLeft, const 
                 break;
             }
         }
+    }
+    
+    // Resize columns to contents for this model's view
+    auto it = d_modelViewMap.find(model);
+    if (it != d_modelViewMap.end()) {
+        resizeColumnsToContents(model, it->second);
     }
 }
