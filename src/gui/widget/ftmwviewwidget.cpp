@@ -95,7 +95,6 @@ FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path) :
 
     connect(ui->peakFindAction,&QAction::triggered,this,&FtmwViewWidget::launchPeakFinder);
     connect(ui->overlayAction,&QAction::triggered,this,&FtmwViewWidget::launchOverlayManager);
-    connect(ui->saveOverlaysAction,&QAction::triggered,this,&FtmwViewWidget::saveOverlays);
 
     connect(ui->averagesSpinbox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::changeRollingAverageShots,Qt::UniqueConnection);
     connect(ui->resetAveragesButton,&QPushButton::clicked,this,&FtmwViewWidget::resetRollingAverage,Qt::UniqueConnection);
@@ -204,10 +203,6 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         connect(ps_overlayStorage.get(), &OverlayStorage::overlayRemoved, this, &FtmwViewWidget::onOverlayRemoved);
     }
     
-    // Reset overlay modification tracking for the new experiment
-    d_overlaysModified = false;
-    updateSaveOverlaysButtonState();
-    
     // Load overlays from experiment storage and display them
     if (ps_overlayStorage)
     {
@@ -217,9 +212,6 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
             // Add overlay to plots (display only, storage is handled by ps_overlayStorage)
             addOverlayToPlots(overlay);
         }
-        
-        // Update save button state after loading overlays
-        updateSaveOverlaysButtonState();
     }
 
     if(e.ftmwEnabled())
@@ -878,9 +870,6 @@ void FtmwViewWidget::addOverlay(std::shared_ptr<OverlayBase> overlay)
             if (!added) {
                 return;
             }
-            // Mark overlays as modified when a new overlay is added
-            d_overlaysModified = true;
-            updateSaveOverlaysButtonState();
         }
         
         // Add overlay to plots for display
@@ -950,10 +939,6 @@ void FtmwViewWidget::onOverlayPlotChanged(std::shared_ptr<OverlayBase> overlay, 
         return;
     }
     
-    // Mark overlays as modified when plot assignment changes
-    d_overlaysModified = true;
-    updateSaveOverlaysButtonState();
-    
     // Remove overlay from all plots first (since we don't know which one it was on)
     for (auto& [plotName, plot] : d_plotMap) {
         plot->removeOverlay(overlay);
@@ -971,11 +956,7 @@ void FtmwViewWidget::onOverlayDataChanged(std::shared_ptr<OverlayBase> overlay)
     if (!overlay) {
         return;
     }
-    
-    // Mark overlays as modified when overlay data changes
-    d_overlaysModified = true;
-    updateSaveOverlaysButtonState();
-    
+
     // Get the target plot name from the overlay
     QString plotName = overlay->getPlotId();
     
@@ -1039,20 +1020,9 @@ Ft FtmwViewWidget::getMainPlotFt() const
 
 void FtmwViewWidget::saveOverlays()
 {
-    if (ps_overlayStorage && d_overlaysModified) {
+    if (ps_overlayStorage) {
         // Wait for any pending background writes to complete before saving metadata
         ps_overlayStorage->waitForPendingWrites();
         ps_overlayStorage->save();
-        d_overlaysModified = false;
-        updateSaveOverlaysButtonState();
-    }
-}
-
-void FtmwViewWidget::updateSaveOverlaysButtonState()
-{
-    if (ui && ui->saveOverlaysAction) {
-        // Enable the save button if we have overlays and they are modified
-        bool hasOverlays = ps_overlayStorage && !ps_overlayStorage->getAllOverlays().isEmpty();
-        ui->saveOverlaysAction->setEnabled(hasOverlays && d_overlaysModified);
     }
 }
