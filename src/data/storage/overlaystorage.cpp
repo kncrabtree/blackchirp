@@ -333,6 +333,43 @@ QString OverlayStorage::getOverlaySettingsPath(const QString& sanitizedLabel) co
         overlayDir + "/" + overlaySettingsFile.arg(sanitizedLabel));
 }
 
+void OverlayStorage::saveOverlayMetadata(std::shared_ptr<OverlayBase> overlay)
+{
+    if (!overlay || d_number < 1) {
+        return;
+    }
+    
+    QString label = overlay->getLabel();
+    QString sanitizedLabel = sanitizeLabel(label);
+    
+    // Check if this overlay exists in our storage
+    auto it = d_overlays.find(sanitizedLabel);
+    if (it == d_overlays.end()) {
+        qDebug() << "Warning: Attempting to save metadata for overlay not in storage:" << label;
+        return;
+    }
+    
+    // Create overlays directory if it doesn't exist
+    QDir expDir = BlackchirpCSV::exptDir(d_number, d_path);
+    if (!expDir.exists(BC::Key::Overlay::overlayDir)) {
+        if (!expDir.mkpath(BC::Key::Overlay::overlayDir)) {
+            qDebug() << "Failed to create overlays directory for experiment" << d_number;
+            return;
+        }
+    }
+    
+    // Save overlay-specific settings (metadata only)
+    using namespace BC::Key::Overlay;
+    std::map<QString,QVariant> overlaySettings;
+    overlay->storeMetadata(overlaySettings);
+    addVersionMetadata(overlaySettings);
+    QString settingsFile = overlaySettingsFile.arg(sanitizedLabel);
+    writeMetadata(settingsFile, overlaySettings, overlayDir);
+    
+    // Mark overlay as not modified since metadata is now saved
+    overlay->setModified(false);
+}
+
 void OverlayStorage::onWriteCompleted(const QString& label, bool success, const QString& error)
 {
     // Remove from pending writes

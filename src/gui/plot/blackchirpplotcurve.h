@@ -9,6 +9,7 @@
 #include <memory>
 
 class QMutex;
+class OverlayBase;
 
 Q_DECLARE_METATYPE(QwtSymbol::Style)
 Q_DECLARE_METATYPE(QwtPlot::Axis)
@@ -17,6 +18,7 @@ Q_DECLARE_METATYPE(QwtPlot::Axis)
 
 // Forward declarations for new storage system
 class CurveStorageInterface;
+class OverlayMetadataStorage;
 
 namespace BC::Key {
 static const QString bcCurve{"Curve"};
@@ -35,6 +37,10 @@ static const QString bcCurvePlotIndex{"plotIndex"};
 class BlackchirpPlotCurveBase : public QwtPlotCurve
 {
 public:
+    enum class StorageType {
+        Settings,      // Uses SettingsStorage backend
+        OverlayMetadata // Uses OverlayMetadataStorage backend
+    };
     // New constructor with storage backend injection
     BlackchirpPlotCurveBase(std::unique_ptr<CurveStorageInterface> storage,
                            const QString key, 
@@ -53,6 +59,10 @@ public:
     void setName(const QString t);
     QString name() const { return title().text(); }
     QString key() const { return d_key; }
+    
+    // Storage type and overlay access methods
+    StorageType getStorageType() const { return d_storageType; }
+    std::shared_ptr<OverlayBase> getOverlay() const;
 
     virtual QVector<QPointF> curveData() const =0;
 
@@ -79,6 +89,8 @@ private:
     std::unique_ptr<CurveStorageInterface> d_storage;
     const QString d_key;
     QMutex *p_samplesMutex;
+    StorageType d_storageType;
+    OverlayMetadataStorage* p_overlayMetadataStorage; // Raw pointer for type checking
 
 
     void configurePen();

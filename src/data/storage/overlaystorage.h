@@ -43,6 +43,9 @@ public:
     void waitForPendingWrites();
     int pendingWriteCount() const;
     
+    // Save only the metadata for a specific overlay (used when curve settings change)
+    void saveOverlayMetadata(std::shared_ptr<OverlayBase> overlay);
+    
     // DataStorageBase interface
     void advance() override {}
     void save() override;

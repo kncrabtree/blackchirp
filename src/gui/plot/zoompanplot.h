@@ -79,6 +79,7 @@ signals:
     void panningFinished();
     void plotRightClicked(QMouseEvent *ev);
     void curveMoveRequested(BlackchirpPlotCurve*, int);
+    void curveMetadataChanged(BlackchirpPlotCurveBase* curve);
 
 protected:
     int d_maxIndex;

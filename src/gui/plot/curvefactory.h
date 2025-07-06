@@ -92,14 +92,17 @@ public:
      * \brief Constructor
      * \param overlay The overlay object to store metadata in
      */
-    OverlayMetadataStorage(OverlayBase* overlay);
+    OverlayMetadataStorage(std::shared_ptr<OverlayBase> overlay);
     
     // CurveStorageInterface implementation
     void set(const QString& key, const QVariant& value) override;
     QVariant get(const QString& key, const QVariant& defaultValue) const override;
     
+    // Accessor for overlay (used by BlackchirpPlotCurveBase)
+    std::shared_ptr<OverlayBase> getOverlay() const { return d_overlay; }
+    
 private:
-    OverlayBase* d_overlay;
+    std::shared_ptr<OverlayBase> d_overlay;
 };
 
 /*!
@@ -148,7 +151,7 @@ public:
     template<typename CurveType>
     static std::unique_ptr<CurveType> 
     createOverlayCurve(const QString& key, 
-                      OverlayBase* overlay,
+                      std::shared_ptr<OverlayBase> overlay,
                       const QString& title = QString(""),
                       Qt::PenStyle defaultLineStyle = Qt::SolidLine,
                       QwtSymbol::Style defaultMarker = QwtSymbol::NoSymbol,

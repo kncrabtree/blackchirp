@@ -430,50 +430,59 @@ void ZoomPanPlot::setCurveColor(BlackchirpPlotCurveBase *curve)
 {
     auto c = QColorDialog::getColor(curve->pen().color(),this,
                            QString("Choose a color for the ")+curve->title().text()+QString(" curve"),QColorDialog::ShowAlphaChannel);
-    if(c.isValid())
+    if(c.isValid()) {
         curve->setColor(c);
+        emit curveMetadataChanged(curve);
+    }
     replot();
 }
 
 void ZoomPanPlot::setCurveStyle(BlackchirpPlotCurveBase *curve, QwtPlotCurve::CurveStyle s)
 {
     curve->setCurveStyle(s);
+    emit curveMetadataChanged(curve);
     replot();
 }
 
 void ZoomPanPlot::setCurveLineThickness(BlackchirpPlotCurveBase *curve, double t)
 {
     curve->setLineThickness(t);
+    emit curveMetadataChanged(curve);
     replot();
 }
 
 void ZoomPanPlot::setCurveLineStyle(BlackchirpPlotCurveBase *curve, Qt::PenStyle s)
 {
     curve->setLineStyle(s);
+    emit curveMetadataChanged(curve);
     replot();
 }
 
 void ZoomPanPlot::setCurveMarker(BlackchirpPlotCurveBase *curve, QwtSymbol::Style s)
 {
     curve->setMarkerStyle(s);
+    emit curveMetadataChanged(curve);
     replot();
 }
 
 void ZoomPanPlot::setCurveMarkerSize(BlackchirpPlotCurveBase *curve, int s)
 {
     curve->setMarkerSize(s);
+    emit curveMetadataChanged(curve);
     replot();
 }
 
 void ZoomPanPlot::setCurveVisible(BlackchirpPlotCurveBase *curve, bool v)
 {
     curve->setCurveVisible(v);
+    emit curveMetadataChanged(curve);
     replot();
 }
 
 void ZoomPanPlot::setCurveAxisY(BlackchirpPlotCurveBase *curve, QwtPlot::Axis a)
 {
     curve->setCurveAxisY(a);
+    emit curveMetadataChanged(curve);
     replot();
 }
 

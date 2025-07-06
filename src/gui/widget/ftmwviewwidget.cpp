@@ -100,6 +100,13 @@ FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path) :
     connect(ui->averagesSpinbox,static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),this,&FtmwViewWidget::changeRollingAverageShots,Qt::UniqueConnection);
     connect(ui->resetAveragesButton,&QPushButton::clicked,this,&FtmwViewWidget::resetRollingAverage,Qt::UniqueConnection);
 
+    // Connect curveMetadataChanged signal from all FT plots
+    QList<FtPlot*> ftPlots = findChildren<FtPlot*>();
+    for (FtPlot* plot : ftPlots) {
+        if (plot) {
+            connect(plot, &ZoomPanPlot::curveMetadataChanged, this, &FtmwViewWidget::onCurveMetadataChanged);
+        }
+    }
 }
 
 FtmwViewWidget::~FtmwViewWidget()
@@ -974,6 +981,22 @@ void FtmwViewWidget::onOverlayDataChanged(std::shared_ptr<OverlayBase> overlay)
     auto it = d_plotMap.find(plotName);
     if (it != d_plotMap.end()) {
         it->second->updateOverlay(overlay);
+    }
+}
+
+void FtmwViewWidget::onCurveMetadataChanged(BlackchirpPlotCurveBase* curve)
+{
+    if (!curve || !ps_overlayStorage) {
+        return;
+    }
+    
+    // Check if this curve uses OverlayMetadataStorage backend
+    if (curve->getStorageType() == BlackchirpPlotCurveBase::StorageType::OverlayMetadata) {
+        auto overlay = curve->getOverlay();
+        if (overlay) {
+            // This curve belongs to an overlay - save its metadata immediately
+            ps_overlayStorage->saveOverlayMetadata(overlay);
+        }
     }
 }
 

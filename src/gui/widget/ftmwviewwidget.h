@@ -40,6 +40,7 @@ class QThread;
 class FtmwSnapshotWidget;
 class PeakFindWidget;
 class OverlayManagerWidget;
+class BlackchirpPlotCurveBase;
 
 namespace Ui {
 class FtmwViewWidget;
@@ -103,6 +104,7 @@ public slots:
     void onOverlayRemoved(std::shared_ptr<OverlayBase> overlay);
     void onOverlayPlotChanged(std::shared_ptr<OverlayBase> overlay, QString newPlotId);
     void onOverlayDataChanged(std::shared_ptr<OverlayBase> overlay);
+    void onCurveMetadataChanged(BlackchirpPlotCurveBase* curve);
     
     // Internal overlay display methods
     void addOverlayToPlots(std::shared_ptr<OverlayBase> overlay);

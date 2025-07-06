@@ -162,7 +162,7 @@ void FtPlot::addOverlay(std::shared_ptr<OverlayBase> overlay)
     
     // Create overlay curve using CurveFactory
     QString curveKey = QString("overlay_%1").arg(overlay->getLabel());
-    auto curve = CurveFactory::createOverlayCurve<BlackchirpPlotCurve>(curveKey, overlay.get());
+    auto curve = CurveFactory::createOverlayCurve<BlackchirpPlotCurve>(curveKey, overlay);
     
     // Set curve data from overlay
     curve->setCurveData(overlay->xyData());

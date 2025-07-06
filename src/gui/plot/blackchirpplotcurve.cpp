@@ -7,6 +7,9 @@
 BlackchirpPlotCurveBase::BlackchirpPlotCurveBase(std::unique_ptr<CurveStorageInterface> storage, const QString key, const QString title, Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker, CurveStyle defaultStyle) :
     d_storage{std::move(storage)}, d_key{key}, p_samplesMutex{new QMutex}
 {
+    // Determine storage type by checking the concrete type of the storage interface
+    p_overlayMetadataStorage = dynamic_cast<OverlayMetadataStorage*>(d_storage.get());
+    d_storageType = p_overlayMetadataStorage ? StorageType::OverlayMetadata : StorageType::Settings;
     if(!title.isEmpty())
         setTitle(title);
     else
@@ -84,6 +87,14 @@ void BlackchirpPlotCurveBase::setMarkerSize(int s)
 void BlackchirpPlotCurveBase::setName(const QString t)
 {
     setTitle(t);
+}
+
+std::shared_ptr<OverlayBase> BlackchirpPlotCurveBase::getOverlay() const
+{
+    if (d_storageType == StorageType::OverlayMetadata && p_overlayMetadataStorage) {
+        return p_overlayMetadataStorage->getOverlay();
+    }
+    return nullptr;
 }
 
 void BlackchirpPlotCurveBase::setCurveVisible(bool v)
