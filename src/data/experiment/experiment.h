@@ -13,6 +13,7 @@
 
 #include <data/storage/headerstorage.h>
 #include <data/storage/auxdatastorage.h>
+#include <data/storage/overlaystorage.h>
 #include <data/experiment/experimentvalidator.h>
 #include <data/experiment/ftmwconfig.h>
 #include <data/loghandler.h>
@@ -85,6 +86,7 @@ public:
     inline FtmwConfig* ftmwConfig() const {return ps_ftmwConfig.get(); }
 
     inline AuxDataStorage *auxData() const { return ps_auxData.get(); }
+    inline std::shared_ptr<OverlayStorage> overlayStorage() const { return ps_overlayStorage; }
 
     template<typename T> std::weak_ptr<T> getOptHwConfig(const QString key) const {
         auto it = d_optHwData.find(key);
@@ -131,6 +133,7 @@ private:
     std::shared_ptr<FtmwConfig> ps_ftmwConfig;
     std::shared_ptr<AuxDataStorage> ps_auxData;
     std::shared_ptr<ExperimentValidator> ps_validator;
+    std::shared_ptr<OverlayStorage> ps_overlayStorage;
 
     //optional hardware data
     std::map<QString,std::shared_ptr<HeaderStorage>> d_optHwData;

@@ -449,7 +449,7 @@ void BCExpOverlayDialog::accept()
         
         // Get existing overlays from parent if available
         if (p_ftmwViewWidget) {
-            existingOverlays = p_ftmwViewWidget->getOverlays();
+            existingOverlays = p_ftmwViewWidget->getAllOverlays();
         }
         
         if (!p_overlayOptionsWidget->validateSettings(overlayError, existingOverlays)) {

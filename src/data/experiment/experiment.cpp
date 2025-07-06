@@ -22,6 +22,7 @@ Experiment::Experiment() : HeaderStorage(BC::Store::Exp::key)
 {
     ps_auxData = std::make_shared<AuxDataStorage>();
     ps_validator = std::make_shared<ExperimentValidator>();
+    ps_overlayStorage = std::make_shared<OverlayStorage>(-1, ""); // Default constructor for new experiments
 }
 
 Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : HeaderStorage(BC::Store::Exp::key)
@@ -209,6 +210,12 @@ Experiment::Experiment(const int num, QString exptPath, bool headerOnly) : Heade
         ps_auxData = std::make_shared<AuxDataStorage>(csv.get(),num,exptPath);
     else
         ps_auxData = std::make_shared<AuxDataStorage>();
+
+    //load overlays
+    if(!headerOnly)
+        ps_overlayStorage = std::make_shared<OverlayStorage>(num, exptPath);
+    else
+        ps_overlayStorage = std::make_shared<OverlayStorage>(-1, ""); // No overlays in header-only mode
 
 
 }
@@ -504,6 +511,10 @@ void Experiment::finalSave()
 
     for(auto obj : d_objectives)
         obj->cleanupAndSave();
+        
+    // Save overlays at experiment completion
+    if (ps_overlayStorage)
+        ps_overlayStorage->save();
 }
 
 bool Experiment::saveObjectives()

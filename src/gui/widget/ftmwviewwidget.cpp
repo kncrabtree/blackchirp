@@ -168,6 +168,20 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         ps.backup = 0;
         ps.loadWhenDone = false;
     }
+    
+    // Set overlay storage reference from experiment
+    ps_overlayStorage = e.overlayStorage();
+    
+    // Load overlays from experiment storage and display them
+    if (ps_overlayStorage)
+    {
+        auto overlays = ps_overlayStorage->getAllOverlays();
+        for (const auto& overlay : overlays)
+        {
+            // Add overlay to plots (display only, storage is handled by ps_overlayStorage)
+            addOverlayToPlots(overlay);
+        }
+    }
 
     if(e.ftmwEnabled())
     {        
@@ -197,6 +211,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
     else
     {
         ps_fidStorage.reset();
+        ps_overlayStorage.reset();
         ui->exptLabel->setText(QString("Experiment %1").arg(e.d_number));
         ui->resetAveragesButton->setEnabled(false);
         ui->averagesSpinbox->setEnabled(false);
@@ -737,8 +752,8 @@ void FtmwViewWidget::launchOverlayManager()
         return;
     }
 
-    // Create new overlay manager widget
-    p_omw = new OverlayManagerWidget(this, d_currentExptNum, d_overlays);
+    // Create new overlay manager widget with overlay storage
+    p_omw = new OverlayManagerWidget(this, d_currentExptNum, getAllOverlays());
 
     // Connect cleanup when widget is destroyed
     connect(p_omw, &OverlayManagerWidget::destroyed, this, [this](){
@@ -803,21 +818,41 @@ void FtmwViewWidget::timerEvent(QTimerEvent *event)
     }
 }
 
+QVector<std::shared_ptr<OverlayBase>> FtmwViewWidget::getAllOverlays() const
+{
+    if (ps_overlayStorage) {
+        return ps_overlayStorage->getAllOverlays();
+    }
+    return QVector<std::shared_ptr<OverlayBase>>();
+}
+
 void FtmwViewWidget::addOverlay(std::shared_ptr<OverlayBase> overlay)
 {
     if(overlay != nullptr) {
-        d_overlays.append(overlay);
+        // Add overlay to storage first (if storage is available)
+        if (ps_overlayStorage) {
+            bool added = ps_overlayStorage->addOverlay(overlay);
+            if (!added) {
+                return;
+            }
+        }
+        
+        // Add overlay to plots for display
+        addOverlayToPlots(overlay);
     }
 }
 
 void FtmwViewWidget::removeOverlay(std::shared_ptr<OverlayBase> overlay)
 {
-    if(overlay != nullptr) {
-        d_overlays.removeAll(overlay);
+    if(overlay != nullptr && ps_overlayStorage) {
+        // Remove from overlay storage
+        ps_overlayStorage->removeOverlay(overlay->getLabel());
+        // Remove from plots
+        removeOverlayFromPlots(overlay);
     }
 }
 
-void FtmwViewWidget::onOverlayAdded(std::shared_ptr<OverlayBase> overlay)
+void FtmwViewWidget::addOverlayToPlots(std::shared_ptr<OverlayBase> overlay)
 {
     if (!overlay) {
         return;
@@ -833,7 +868,12 @@ void FtmwViewWidget::onOverlayAdded(std::shared_ptr<OverlayBase> overlay)
     }
 }
 
-void FtmwViewWidget::onOverlayRemoved(std::shared_ptr<OverlayBase> overlay)
+void FtmwViewWidget::onOverlayAdded(std::shared_ptr<OverlayBase> overlay)
+{
+    addOverlayToPlots(overlay);
+}
+
+void FtmwViewWidget::removeOverlayFromPlots(std::shared_ptr<OverlayBase> overlay)
 {
     if (!overlay) {
         return;
@@ -849,6 +889,14 @@ void FtmwViewWidget::onOverlayRemoved(std::shared_ptr<OverlayBase> overlay)
     }
 }
 
+void FtmwViewWidget::onOverlayRemoved(std::shared_ptr<OverlayBase> overlay)
+{
+    if (ps_overlayStorage) {
+        ps_overlayStorage->removeOverlay(overlay->getLabel());
+    }
+    removeOverlayFromPlots(overlay);
+}
+
 void FtmwViewWidget::onOverlayPlotChanged(std::shared_ptr<OverlayBase> overlay, QString newPlotId)
 {
     if (!overlay) {
@@ -856,12 +904,11 @@ void FtmwViewWidget::onOverlayPlotChanged(std::shared_ptr<OverlayBase> overlay, 
     }
     
     // Remove overlay from all plots first (since we don't know which one it was on)
-    // Note: removeOverlay now uses label-based comparison, so this will work correctly
     for (auto& [plotName, plot] : d_plotMap) {
         plot->removeOverlay(overlay);
     }
     
-    // Add overlay to the new plot
+    // Add overlay to the new plot (newPlotId should match overlay->getPlotId() already)
     auto it = d_plotMap.find(newPlotId);
     if (it != d_plotMap.end()) {
         it->second->addOverlay(overlay);

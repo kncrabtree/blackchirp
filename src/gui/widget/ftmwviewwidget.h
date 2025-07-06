@@ -34,6 +34,7 @@
 #include <gui/widget/ftmwplottoolbar.h>
 #include <gui/widget/toolbarwidgetaction.h>
 #include <data/experiment/overlaybase.h>
+#include <data/storage/overlaystorage.h>
 
 class QThread;
 class FtmwSnapshotWidget;
@@ -60,7 +61,8 @@ public:
     FtWorker::FidProcessingSettings getProcessingSettings() const { return d_currentProcessingSettings; }
     
     // Overlay management
-    QVector<std::shared_ptr<OverlayBase>> getOverlays() const { return d_overlays; }
+    std::shared_ptr<OverlayStorage> getOverlayStorage() const { return ps_overlayStorage; }
+    QVector<std::shared_ptr<OverlayBase>> getAllOverlays() const;
     void addOverlay(std::shared_ptr<OverlayBase> overlay);
     void removeOverlay(std::shared_ptr<OverlayBase> overlay);
     
@@ -101,6 +103,10 @@ public slots:
     void onOverlayRemoved(std::shared_ptr<OverlayBase> overlay);
     void onOverlayPlotChanged(std::shared_ptr<OverlayBase> overlay, QString newPlotId);
     void onOverlayDataChanged(std::shared_ptr<OverlayBase> overlay);
+    
+    // Internal overlay display methods
+    void addOverlayToPlots(std::shared_ptr<OverlayBase> overlay);
+    void removeOverlayFromPlots(std::shared_ptr<OverlayBase> overlay);
 
     void changeRollingAverageShots(int shots);
     void resetRollingAverage();
@@ -113,6 +119,7 @@ private:
     Ui::FtmwViewWidget *ui;
 
     std::shared_ptr<FidStorageBase> ps_fidStorage;
+    std::shared_ptr<OverlayStorage> ps_overlayStorage;
     FtWorker* p_worker;
 
     FtWorker::FidProcessingSettings d_currentProcessingSettings;
@@ -145,7 +152,7 @@ private:
     PeakFindWidget *p_pfw{nullptr};
     OverlayManagerWidget *p_omw{nullptr};
     QString d_path;
-    QVector<std::shared_ptr<OverlayBase>> d_overlays;
+    // Overlay storage is now handled via ps_overlayStorage shared pointer
     QStringList d_plotNames;
     std::map<QString, FtPlot*> d_plotMap;  // Maps plot names to FtPlot instances
     const int d_liveId = 0, d_mainId = 3, d_plot1Id = 1, d_plot2Id = 2;
