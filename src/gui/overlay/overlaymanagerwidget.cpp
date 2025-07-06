@@ -1,11 +1,13 @@
 #include "overlaymanagerwidget.h"
 #include "bcexpoverlaydialog.h"
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QDebug>
 #include <QTableView>
 #include <QHeaderView>
 #include <QMessageBox>
+#include <QProgressBar>
 #include <gui/widget/ftmwviewwidget.h>
 
 OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number, const QVector<std::shared_ptr<OverlayBase>> &overlays)
@@ -24,6 +26,9 @@ OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number, const QV
     createTabs();
     populateWithExistingOverlays(overlays);
     updateButtonStates();
+    
+    // Progress indicator starts hidden
+    p_progressWidget->setVisible(false);
 }
 
 void OverlayManagerWidget::setupUI()
@@ -59,9 +64,13 @@ void OverlayManagerWidget::setupUI()
     // Create tab widget
     p_tabWidget = new QTabWidget(this);
 
+    // Create progress indicator widget
+    createProgressWidget();
+    
     // Add widgets to layout
     mainLayout->addWidget(p_toolBar);
     mainLayout->addWidget(p_tabWidget);
+    mainLayout->addWidget(p_progressWidget);
 
     // Connect signals
     connect(p_addAction, &QAction::triggered, this, &OverlayManagerWidget::addOverlay);
@@ -186,10 +195,13 @@ void OverlayManagerWidget::onTabChanged(int index)
 
 void OverlayManagerWidget::updateButtonStates()
 {
-    // Add button is always enabled
-    p_addAction->setEnabled(true);
+    // Check if we have pending writes
+    bool hasPendingWrites = p_overlayStorage && p_overlayStorage->hasPendingWrites();
     
-    // Remove button is enabled only when rows are selected
+    // Add button is disabled when there are pending writes
+    p_addAction->setEnabled(!hasPendingWrites);
+    
+    // Remove button is enabled only when rows are selected and no pending writes
     bool hasSelection = false;
     
     // Get current tab's table view and check for selection
@@ -208,7 +220,7 @@ void OverlayManagerWidget::updateButtonStates()
         }
     }
     
-    p_removeAction->setEnabled(hasSelection);
+    p_removeAction->setEnabled(hasSelection && !hasPendingWrites);
 }
 
 void OverlayManagerWidget::addOverlay()
@@ -511,5 +523,136 @@ void OverlayManagerWidget::onModelDataChanged(const QModelIndex &topLeft, const 
 void OverlayManagerWidget::onSelectionChanged()
 {
     // Update button states when selection changes
+    updateButtonStates();
+}
+
+void OverlayManagerWidget::createProgressWidget()
+{
+    // Create progress widget container
+    p_progressWidget = new QWidget(this);
+    auto progressLayout = new QHBoxLayout(p_progressWidget);
+    progressLayout->setContentsMargins(5, 5, 5, 5);
+    progressLayout->setSpacing(10);
+    
+    // Create progress label
+    p_progressLabel = new QLabel("Writing overlay data...", p_progressWidget);
+    p_progressLabel->setStyleSheet("font-weight: bold; color: #0066CC;");
+    
+    // Create progress bar
+    p_progressBar = new QProgressBar(p_progressWidget);
+    p_progressBar->setRange(0, 0); // Indeterminate progress
+    p_progressBar->setMaximumHeight(16);
+    
+    // Add widgets to layout
+    progressLayout->addWidget(p_progressLabel);
+    progressLayout->addWidget(p_progressBar);
+    progressLayout->addStretch();
+    
+    // Set widget background
+    p_progressWidget->setStyleSheet("background-color: #F0F8FF; border: 1px solid #CCCCCC; border-radius: 4px;");
+}
+
+void OverlayManagerWidget::updateProgressDisplay(int pendingCount)
+{
+    if (pendingCount > 0) {
+        // Show progress indicator
+        if (pendingCount == 1) {
+            p_progressLabel->setText("Writing 1 overlay...");
+        } else {
+            p_progressLabel->setText(QString("Writing %1 overlays...").arg(pendingCount));
+        }
+        p_progressWidget->setVisible(true);
+    } else {
+        // Hide progress indicator
+        p_progressWidget->setVisible(false);
+    }
+}
+
+void OverlayManagerWidget::showErrorNotification(const QString& overlayLabel, const QString& error)
+{
+    QString title = "Overlay Write Failed";
+    QString message = QString("Failed to write overlay data for '%1'\n\nError: %2\n\nThe overlay has been removed.")
+                     .arg(overlayLabel, error);
+    
+    QMessageBox::warning(this, title, message);
+}
+
+void OverlayManagerWidget::connectToOverlayStorage(std::shared_ptr<OverlayStorage> storage)
+{
+    // Disconnect from previous storage if any
+    if (p_overlayStorage) {
+        disconnect(p_overlayStorage.get(), nullptr, this, nullptr);
+    }
+    
+    // Store new storage reference
+    p_overlayStorage = storage;
+    
+    // Connect to storage signals
+    if (p_overlayStorage) {
+        connect(p_overlayStorage.get(), &OverlayStorage::overlayWriteCompleted,
+                this, &OverlayManagerWidget::onOverlayWriteCompleted);
+        connect(p_overlayStorage.get(), &OverlayStorage::overlayWriteFailed,
+                this, &OverlayManagerWidget::onOverlayWriteFailed);
+        connect(p_overlayStorage.get(), &OverlayStorage::pendingWritesChanged,
+                this, &OverlayManagerWidget::onPendingWritesChanged);
+        
+        // Initialize progress display with current pending count
+        updateProgressDisplay(p_overlayStorage->pendingWriteCount());
+    }
+}
+
+void OverlayManagerWidget::onOverlayWriteCompleted(std::shared_ptr<OverlayBase> overlay)
+{
+    Q_UNUSED(overlay)
+    // Write completed successfully - no action needed
+    // Progress display will be updated via onPendingWritesChanged
+}
+
+void OverlayManagerWidget::onOverlayWriteFailed(std::shared_ptr<OverlayBase> overlay, QString error)
+{
+    if (!overlay) {
+        return;
+    }
+    
+    // Show error notification
+    showErrorNotification(overlay->getLabel(), error);
+    
+    // Remove failed overlay from our models
+    OverlayTableModel* model = nullptr;
+    switch (overlay->type()) {
+    case OverlayBase::BCExperiment:
+        model = p_bcExperimentModel;
+        break;
+    case OverlayBase::SPCAT:
+        // TODO: Set model when SPCAT model is implemented
+        break;
+    case OverlayBase::GenericXY:
+        // TODO: Set model when GenericXY model is implemented
+        break;
+    default:
+        break;
+    }
+    
+    // Find and remove the overlay from the model
+    if (model) {
+        auto overlays = model->getAllOverlays();
+        for (int i = 0; i < overlays.size(); ++i) {
+            if (overlays[i] == overlay) {
+                model->removeOverlay(i);
+                break;
+            }
+        }
+    }
+    
+    // Emit signal for any listeners
+    emit overlayRemoved(overlay);
+}
+
+void OverlayManagerWidget::onPendingWritesChanged(int count)
+{
+    // Update progress display
+    updateProgressDisplay(count);
+    
+    // Update button states to potentially disable/enable overlay creation
     updateButtonStates();
 }

@@ -113,6 +113,7 @@ public slots:
 
     void launchPeakFinder();
     void launchOverlayManager();
+    void saveOverlays();
 
 
 private:
@@ -123,6 +124,7 @@ private:
     FtWorker* p_worker;
 
     FtWorker::FidProcessingSettings d_currentProcessingSettings;
+    bool d_overlaysModified{false};
     int d_currentExptNum;
     int d_currentSegment;
     int d_liveTimerId{-1};
@@ -169,6 +171,7 @@ private:
 
     void updateFid(int id);
     void createPlotNamesList();
+    void updateSaveOverlaysButtonState();
 
 
     // QObject interface
@@ -205,6 +208,7 @@ public:
     QPushButton *resetAveragesButton;
     QAction *peakFindAction;
     QAction *overlayAction;
+    QAction *saveOverlaysAction;
     SpinBoxWidgetAction *refreshBox;
 
     void setupUi(bool main, QWidget *FtmwViewWidget)
@@ -337,6 +341,9 @@ public:
 
         overlayAction = toolBar->addAction(QIcon(":/icons/peak-find.svg"),QString("Overlays"));
         overlayAction->setEnabled(false);
+
+        saveOverlaysAction = toolBar->addAction(QIcon(":/icons/save.png"),QString("Save Overlays"));
+        saveOverlaysAction->setEnabled(false);
 
         auto *spacer = new QWidget;
         spacer->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Minimum);

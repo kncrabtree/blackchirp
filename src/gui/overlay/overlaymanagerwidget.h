@@ -8,11 +8,14 @@
 #include <QVBoxLayout>
 #include <QMetaEnum>
 #include <QTableView>
+#include <QLabel>
+#include <QProgressBar>
 #include <memory>
 #include <map>
 
 #include <data/experiment/overlaybase.h>
 #include <data/model/overlaytablemodel.h>
+#include <data/storage/overlaystorage.h>
 #include "plotidcomboboxdelegate.h"
 #include "overlaynumericdelegate.h"
 
@@ -36,6 +39,14 @@ public slots:
     void addOverlay();
     void removeOverlay();
     void raiseParent();
+    
+    // Overlay storage event handlers
+    void onOverlayWriteCompleted(std::shared_ptr<OverlayBase> overlay);
+    void onOverlayWriteFailed(std::shared_ptr<OverlayBase> overlay, QString error);
+    void onPendingWritesChanged(int count);
+    
+    // Connect to overlay storage signals
+    void connectToOverlayStorage(std::shared_ptr<OverlayStorage> storage);
 
 private slots:
     void onModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight);
@@ -53,8 +64,16 @@ private:
     PlotIdComboBoxDelegate *p_plotIdDelegate;
     OverlayNumericDelegate *p_numericDelegate;
     
+    // Progress indicator widgets
+    QLabel *p_progressLabel;
+    QProgressBar *p_progressBar;
+    QWidget *p_progressWidget;
+    
     // Data structure to track model-view pairs for automatic column resizing
     std::map<const OverlayTableModel*, QTableView*> d_modelViewMap;
+    
+    // Track overlay storage connection
+    std::shared_ptr<OverlayStorage> p_overlayStorage;
 
 
     void setupUI();
@@ -67,6 +86,11 @@ private:
     void setupPlotIdDelegate();
     void setupTableView();
     void resizeColumnsToContents(const OverlayTableModel* model, QTableView* tableView);
+    
+    // Progress indicator management
+    void createProgressWidget();
+    void updateProgressDisplay(int pendingCount);
+    void showErrorNotification(const QString& overlayLabel, const QString& error);
 };
 
 #endif // OVERLAYMANAGERWIDGET_H

@@ -6,6 +6,8 @@
 #include <data/experiment/overlaybase.h>
 #include <memory>
 #include <QVector>
+#include <QFuture>
+#include <QObject>
 
 namespace BC::Key::Overlay {
 static const QString overlayDir{"overlays"};
@@ -17,8 +19,10 @@ static const QString bcReleaseVersion{"BCReleaseVersion"};
 static const QString bcBuildVersion{"BCBuildVersion"};
 }
 
-class OverlayStorage : public DataStorageBase
+class OverlayStorage : public QObject, public DataStorageBase
 {
+    Q_OBJECT
+    
 public:
     OverlayStorage(int number, QString path);
     ~OverlayStorage();
@@ -35,14 +39,25 @@ public:
     // Remove overlay by label
     bool removeOverlay(const QString& label);
     
+    // Async write management
+    bool hasPendingWrites() const;
+    void waitForPendingWrites();
+    int pendingWriteCount() const;
+    
     // DataStorageBase interface
     void advance() override {}
     void save() override;
     void start() override {}
     void finish() override {}
     
+signals:
+    void overlayWriteCompleted(std::shared_ptr<OverlayBase> overlay);
+    void overlayWriteFailed(std::shared_ptr<OverlayBase> overlay, QString error);
+    void pendingWritesChanged(int count);
+    
 private:
     std::map<QString, std::shared_ptr<OverlayBase>> d_overlays;
+    std::map<QString, QFuture<void>> d_pendingWrites; // Maps overlay label to write future
     
     // Factory method for creating overlay objects
     std::shared_ptr<OverlayBase> createOverlayObject(OverlayBase::OverlayType type);
@@ -51,6 +66,7 @@ private:
     QString sanitizeLabel(const QString& label) const;
     void addVersionMetadata(std::map<QString, QVariant>& metadata) const;
     bool validateOverlayLabel(const QString& label) const;
+    void onWriteCompleted(const QString& label, bool success, const QString& error = QString());
 };
 
 #endif // OVERLAYSTORAGE_H

@@ -4,10 +4,12 @@
 #include <QDir>
 #include <QDebug>
 #include <QRegularExpression>
+#include <QtConcurrent/QtConcurrent>
+#include <QFutureWatcher>
 
 
 OverlayStorage::OverlayStorage(int number, QString path) :
-    DataStorageBase(number, path)
+    QObject(), DataStorageBase(number, path)
 {
     if (number < 1)
         return;
@@ -151,14 +153,13 @@ void OverlayStorage::save()
         // Add overlay type to main index
         m.emplace(label, static_cast<int>(overlay->type()));
         
-        // Save overlay-specific settings
+        // Save overlay-specific settings (metadata only)
         std::map<QString,QVariant> overlaySettings;
         overlay->storeMetadata(overlaySettings);
         addVersionMetadata(overlaySettings);
         writeMetadata(overlaySettingsFile.arg(label), overlaySettings, overlayDir);
         
-        // Save overlay data
-        overlay->save();
+        // Note: xyData is written asynchronously when overlay is added
     }
     
     // Save main overlays index
@@ -268,6 +269,31 @@ bool OverlayStorage::addOverlay(std::shared_ptr<OverlayBase> overlay)
     // Add to storage
     d_overlays[sanitizedLabel] = overlay;
     
+    // Start background write of xyData
+    auto future = QtConcurrent::run([this, overlay, sanitizedLabel]() {
+        try {
+            overlay->writeToDest();
+            // Signal success on main thread
+            QMetaObject::invokeMethod(this, [this, sanitizedLabel]() {
+                onWriteCompleted(sanitizedLabel, true);
+            }, Qt::QueuedConnection);
+        } catch (const std::exception& e) {
+            // Signal failure on main thread
+            QMetaObject::invokeMethod(this, [this, sanitizedLabel, error = QString::fromStdString(e.what())]() {
+                onWriteCompleted(sanitizedLabel, false, error);
+            }, Qt::QueuedConnection);
+        } catch (...) {
+            // Signal failure on main thread
+            QMetaObject::invokeMethod(this, [this, sanitizedLabel]() {
+                onWriteCompleted(sanitizedLabel, false, "Unknown error during data write");
+            }, Qt::QueuedConnection);
+        }
+    });
+    
+    // Track the pending write
+    d_pendingWrites[sanitizedLabel] = future;
+    emit pendingWritesChanged(d_pendingWrites.size());
+    
     return true;
 }
 
@@ -276,9 +302,65 @@ bool OverlayStorage::removeOverlay(const QString& label)
     auto it = d_overlays.find(label);
     if (it != d_overlays.end())
     {
+        // Wait for any pending write to complete before removing
+        auto writeIt = d_pendingWrites.find(label);
+        if (writeIt != d_pendingWrites.end()) {
+            writeIt->second.waitForFinished();
+            d_pendingWrites.erase(writeIt);
+            emit pendingWritesChanged(d_pendingWrites.size());
+        }
+        
         // TODO: Delete associated files from disk (data file and metadata file)
         d_overlays.erase(it);
         return true;
     }
     return false;
+}
+
+bool OverlayStorage::hasPendingWrites() const
+{
+    return !d_pendingWrites.empty();
+}
+
+void OverlayStorage::waitForPendingWrites()
+{
+    for (auto& [label, future] : d_pendingWrites) {
+        future.waitForFinished();
+    }
+    // Clear all completed writes
+    const_cast<OverlayStorage*>(this)->d_pendingWrites.clear();
+    const_cast<OverlayStorage*>(this)->emit pendingWritesChanged(0);
+}
+
+int OverlayStorage::pendingWriteCount() const
+{
+    return d_pendingWrites.size();
+}
+
+void OverlayStorage::onWriteCompleted(const QString& label, bool success, const QString& error)
+{
+    // Remove from pending writes
+    auto it = d_pendingWrites.find(label);
+    if (it != d_pendingWrites.end()) {
+        d_pendingWrites.erase(it);
+        emit pendingWritesChanged(d_pendingWrites.size());
+    }
+    
+    // Get the overlay
+    auto overlayIt = d_overlays.find(label);
+    if (overlayIt == d_overlays.end()) {
+        return; // Overlay was removed before write completed
+    }
+    
+    auto overlay = overlayIt->second;
+    
+    if (success) {
+        // Mark overlay as not modified since data write is complete
+        overlay->setModified(false);
+        emit overlayWriteCompleted(overlay);
+    } else {
+        // Remove failed overlay from storage
+        d_overlays.erase(overlayIt);
+        emit overlayWriteFailed(overlay, error);
+    }
 }
