@@ -31,6 +31,16 @@ OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number, const QV
     p_progressWidget->setVisible(false);
 }
 
+OverlayManagerWidget::~OverlayManagerWidget()
+{
+    // Wait for any pending writes to complete before destruction
+    if (p_overlayStorage) {
+        p_overlayStorage->waitForPendingWrites();
+        // Explicitly disconnect from overlay storage to prevent segfaults
+        disconnect(p_overlayStorage.get(), nullptr, this, nullptr);
+    }
+}
+
 void OverlayManagerWidget::setupUI()
 {
     // Create main layout
@@ -225,6 +235,12 @@ void OverlayManagerWidget::updateButtonStates()
 
 void OverlayManagerWidget::addOverlay()
 {
+    // Ensure we have overlay storage connection
+    if (!p_overlayStorage) {
+        qDebug() << "Warning: No overlay storage connected to OverlayManagerWidget";
+        return;
+    }
+
     // Get current tab's overlay type
     auto currentTabWidget = p_tabWidget->currentWidget();
     if(currentTabWidget == nullptr)
@@ -233,11 +249,14 @@ void OverlayManagerWidget::addOverlay()
     using namespace BC::Property::Overlay;
     auto type = static_cast<OverlayBase::OverlayType>(currentTabWidget->property(overlayType.toLocal8Bit().constData()).toInt());
 
-    // Handle different overlay types
+    // Create overlay and get associated model based on type
+    std::shared_ptr<OverlayBase> overlay = nullptr;
+    OverlayTableModel* model = nullptr;
+    
     switch(type) {
     case OverlayBase::BCExperiment:
         {
-            // Get the FtmwViewWidget parent
+            // Get the FtmwViewWidget parent for plot names
             FtmwViewWidget* ftmwParent = qobject_cast<FtmwViewWidget*>(parentWidget());
             if(!ftmwParent) {
                 qDebug() << "Warning: OverlayManagerWidget parent is not FtmwViewWidget";
@@ -249,33 +268,42 @@ void OverlayManagerWidget::addOverlay()
             BCExpOverlayDialog dialog(plotNames, ftmwParent);
             if(dialog.exec() == QDialog::Accepted) {
                 // Create the overlay
-                auto overlay = dialog.createOverlay();
-                if(overlay != nullptr) {
-                    // Add to parent FtmwViewWidget storage
-                    ftmwParent->addOverlay(overlay);
-                    
-                    // Add to local model for display
-                    if(p_bcExperimentModel != nullptr) {
-                        p_bcExperimentModel->addOverlay(overlay);
-                    }
-                    
-                    // Emit signal for any listeners
-                    emit overlayAdded(overlay);
-                    
-                    qDebug() << "BCExpOverlay created and added successfully";
-                }
+                overlay = dialog.createOverlay();
+                model = p_bcExperimentModel;
             }
             break;
         }
     case OverlayBase::SPCAT:
+        // TODO: Implement SPCAT overlay creation
+        // overlay = createSPCATOverlay();
+        // model = p_spcatModel;
         qDebug() << "SPCAT overlay creation not yet implemented";
         break;
     case OverlayBase::GenericXY:
+        // TODO: Implement GenericXY overlay creation
+        // overlay = createGenericXYOverlay();
+        // model = p_genericXYModel;
         qDebug() << "GenericXY overlay creation not yet implemented";
         break;
     default:
         qDebug() << "Unknown overlay type";
         break;
+    }
+    
+    // Add overlay to storage if created successfully
+    if (overlay != nullptr && model != nullptr) {
+        // Add directly to overlay storage - this initiates async write
+        if (p_overlayStorage->addOverlay(overlay)) {
+            // Add to local model for display
+            model->addOverlay(overlay);
+            
+            // Update UI state to show any pending writes
+            updateButtonStates();
+            
+            qDebug() << "Overlay created and added to storage successfully";
+        } else {
+            qDebug() << "Failed to add overlay to storage";
+        }
     }
 }
 

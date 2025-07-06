@@ -181,11 +181,18 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
     // First wait for any pending writes from the current experiment
     if (ps_overlayStorage) {
         ps_overlayStorage->waitForPendingWrites();
+        // Disconnect from old overlay storage signals
+        disconnect(ps_overlayStorage.get(), nullptr, this, nullptr);
     }
     saveOverlays();
     
     // Set overlay storage reference from experiment
     ps_overlayStorage = e.overlayStorage();
+    
+    // Connect to new overlay storage signals
+    if (ps_overlayStorage) {
+        connect(ps_overlayStorage.get(), &OverlayStorage::overlayAdded, this, &FtmwViewWidget::onOverlayAdded);
+    }
     
     // Reset overlay modification tracking for the new experiment
     d_overlaysModified = false;
@@ -788,8 +795,7 @@ void FtmwViewWidget::launchOverlayManager()
         p_omw = nullptr;
     });
 
-    // Connect overlay signals to display them on plots
-    connect(p_omw, &OverlayManagerWidget::overlayAdded, this, &FtmwViewWidget::onOverlayAdded);
+    // Connect overlay manager signals for UI updates (overlayAdded now comes from OverlayStorage)
     connect(p_omw, &OverlayManagerWidget::overlayRemoved, this, &FtmwViewWidget::onOverlayRemoved);
     connect(p_omw, &OverlayManagerWidget::overlayPlotChanged, this, &FtmwViewWidget::onOverlayPlotChanged);
     connect(p_omw, &OverlayManagerWidget::overlayDataChanged, this, &FtmwViewWidget::onOverlayDataChanged);

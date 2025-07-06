@@ -28,6 +28,7 @@ class OverlayManagerWidget : public QWidget
     Q_OBJECT
 public:
     explicit OverlayManagerWidget(QWidget *parent = nullptr, int number = -1, const QVector<std::shared_ptr<OverlayBase>> &overlays = QVector<std::shared_ptr<OverlayBase>>());
+    ~OverlayManagerWidget();
 
 signals:
     void overlayAdded(std::shared_ptr<OverlayBase> overlay);

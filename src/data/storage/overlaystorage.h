@@ -50,6 +50,7 @@ public:
     void finish() override {}
     
 signals:
+    void overlayAdded(std::shared_ptr<OverlayBase> overlay);
     void overlayWriteCompleted(std::shared_ptr<OverlayBase> overlay);
     void overlayWriteFailed(std::shared_ptr<OverlayBase> overlay, QString error);
     void pendingWritesChanged(int count);

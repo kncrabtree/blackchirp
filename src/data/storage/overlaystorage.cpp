@@ -231,6 +231,9 @@ bool OverlayStorage::addOverlay(std::shared_ptr<OverlayBase> overlay)
     // Add to storage
     d_overlays[sanitizedLabel] = overlay;
     
+    // Save metadata and create directory structure
+    save();
+    
     // Start background write of xyData
     auto future = QtConcurrent::run([this, overlay, sanitizedLabel]() {
         try {
@@ -255,6 +258,9 @@ bool OverlayStorage::addOverlay(std::shared_ptr<OverlayBase> overlay)
     // Track the pending write
     d_pendingWrites[sanitizedLabel] = future;
     emit pendingWritesChanged(d_pendingWrites.size());
+    
+    // Emit signal that overlay was added to storage
+    emit overlayAdded(overlay);
     
     return true;
 }
