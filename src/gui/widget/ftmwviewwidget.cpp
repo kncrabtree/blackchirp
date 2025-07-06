@@ -199,6 +199,7 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
     // Connect to new overlay storage signals
     if (ps_overlayStorage) {
         connect(ps_overlayStorage.get(), &OverlayStorage::overlayAdded, this, &FtmwViewWidget::onOverlayAdded);
+        connect(ps_overlayStorage.get(), &OverlayStorage::overlayRemoved, this, &FtmwViewWidget::onOverlayRemoved);
     }
     
     // Reset overlay modification tracking for the new experiment
@@ -802,8 +803,7 @@ void FtmwViewWidget::launchOverlayManager()
         p_omw = nullptr;
     });
 
-    // Connect overlay manager signals for UI updates (overlayAdded now comes from OverlayStorage)
-    connect(p_omw, &OverlayManagerWidget::overlayRemoved, this, &FtmwViewWidget::onOverlayRemoved);
+    // Connect overlay manager signals for UI updates
     connect(p_omw, &OverlayManagerWidget::overlayPlotChanged, this, &FtmwViewWidget::onOverlayPlotChanged);
     connect(p_omw, &OverlayManagerWidget::overlayDataChanged, this, &FtmwViewWidget::onOverlayDataChanged);
 

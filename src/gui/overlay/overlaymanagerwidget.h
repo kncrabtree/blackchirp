@@ -31,8 +31,6 @@ public:
     ~OverlayManagerWidget();
 
 signals:
-    void overlayAdded(std::shared_ptr<OverlayBase> overlay);
-    void overlayRemoved(std::shared_ptr<OverlayBase> overlay);
     void overlayPlotChanged(std::shared_ptr<OverlayBase> overlay, QString newPlotId);
     void overlayDataChanged(std::shared_ptr<OverlayBase> overlay);
 

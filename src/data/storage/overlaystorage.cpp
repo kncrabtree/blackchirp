@@ -293,7 +293,17 @@ bool OverlayStorage::removeOverlay(const QString& label)
             }
         }
         
+        // Store reference to overlay before removing from storage
+        auto overlay = it->second;
+        
         d_overlays.erase(it);
+        
+        // Update the overlays.csv file to remove the overlay reference
+        save();
+        
+        // Emit signal that overlay was removed
+        emit overlayRemoved(overlay);
+        
         return true;
     }
     return false;

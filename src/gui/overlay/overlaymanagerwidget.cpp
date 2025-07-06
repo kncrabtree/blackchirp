@@ -377,8 +377,11 @@ void OverlayManagerWidget::removeOverlay()
     if (result != QMessageBox::Yes)
         return;
         
-    // Get FtmwViewWidget parent for overlay removal
-    FtmwViewWidget* ftmwParent = qobject_cast<FtmwViewWidget*>(parentWidget());
+    // Ensure we have overlay storage connection
+    if (!p_overlayStorage) {
+        qDebug() << "Warning: No overlay storage connected to OverlayManagerWidget";
+        return;
+    }
     
     // Remove overlays in reverse order to maintain valid indices
     QVector<int> rows;
@@ -390,16 +393,15 @@ void OverlayManagerWidget::removeOverlay()
     for (int row : rows) {
         auto overlay = model->getOverlay(row);
         if (overlay) {
-            // Remove from parent FtmwViewWidget
-            if (ftmwParent) {
-                ftmwParent->removeOverlay(overlay);
+            // Remove from overlay storage - this will emit signals that FtmwViewWidget listens to
+            if (p_overlayStorage->removeOverlay(overlay->getLabel())) {
+                // Remove from local model for display
+                model->removeOverlay(row);
+                
+                qDebug() << "Overlay removed from storage successfully";
+            } else {
+                qDebug() << "Failed to remove overlay from storage";
             }
-            
-            // Emit signal for any listeners
-            emit overlayRemoved(overlay);
-            
-            // Remove from model
-            model->removeOverlay(row);
         }
     }
 }
@@ -671,9 +673,6 @@ void OverlayManagerWidget::onOverlayWriteFailed(std::shared_ptr<OverlayBase> ove
             }
         }
     }
-    
-    // Emit signal for any listeners
-    emit overlayRemoved(overlay);
 }
 
 void OverlayManagerWidget::onPendingWritesChanged(int count)
