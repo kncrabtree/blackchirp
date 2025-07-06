@@ -88,6 +88,8 @@ void FtPlot::prepareForExperiment(const Experiment &e)
     else
         p_curve->setTitle(BC::Key::ftCurve+d_id);
 
+    d_overlayCurves.clear();
+
     autoScale();
 }
 

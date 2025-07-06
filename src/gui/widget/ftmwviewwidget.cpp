@@ -192,6 +192,8 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         disconnect(ps_overlayStorage.get(), nullptr, this, nullptr);
     }
     saveOverlays();
+
+
     
     // Set overlay storage reference from experiment
     ps_overlayStorage = e.overlayStorage();

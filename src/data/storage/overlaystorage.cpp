@@ -208,7 +208,7 @@ bool OverlayStorage::validateOverlayLabel(const QString& label) const
 
 bool OverlayStorage::addOverlay(std::shared_ptr<OverlayBase> overlay)
 {
-    if (!overlay || d_number < 1)
+    if (!overlay)
         return false;
         
     QString label = overlay->getLabel();
@@ -225,39 +225,46 @@ bool OverlayStorage::addOverlay(std::shared_ptr<OverlayBase> overlay)
     if (sanitizedLabel != label)
         overlay->setLabel(sanitizedLabel);
     
-    // Set destination file path for the overlay data
-    overlay->setDestFile(getOverlayDataPath(sanitizedLabel));
-    
+
     // Add to storage
     d_overlays[sanitizedLabel] = overlay;
-    
-    // Save metadata and create directory structure
-    save();
-    
-    // Start background write of xyData
-    auto future = QtConcurrent::run([this, overlay, sanitizedLabel]() {
-        try {
-            overlay->writeToDest();
-            // Signal success on main thread
-            QMetaObject::invokeMethod(this, [this, sanitizedLabel]() {
-                onWriteCompleted(sanitizedLabel, true);
-            }, Qt::QueuedConnection);
-        } catch (const std::exception& e) {
-            // Signal failure on main thread
-            QMetaObject::invokeMethod(this, [this, sanitizedLabel, e]() {
-                onWriteCompleted(sanitizedLabel, false, e.what());
-            }, Qt::QueuedConnection);
-        } catch (...) {
-            // Signal failure on main thread
-            QMetaObject::invokeMethod(this, [this, sanitizedLabel]() {
-                onWriteCompleted(sanitizedLabel, false, "Unknown error during data write");
-            }, Qt::QueuedConnection);
-        }
-    });
-    
-    // Track the pending write
-    d_pendingWrites[sanitizedLabel] = future;
-    emit pendingWritesChanged(d_pendingWrites.size());
+
+
+    //from here on, only do the disk writing if the number is >0
+
+    if(d_number > 0)
+    {
+        // Set destination file path for the overlay data
+        overlay->setDestFile(getOverlayDataPath(sanitizedLabel));
+
+        // Save metadata and create directory structure
+        save();
+
+        // Start background write of xyData
+        auto future = QtConcurrent::run([this, overlay, sanitizedLabel]() {
+            try {
+                overlay->writeToDest();
+                // Signal success on main thread
+                QMetaObject::invokeMethod(this, [this, sanitizedLabel]() {
+                    onWriteCompleted(sanitizedLabel, true);
+                }, Qt::QueuedConnection);
+            } catch (const std::exception& e) {
+                // Signal failure on main thread
+                QMetaObject::invokeMethod(this, [this, sanitizedLabel, e]() {
+                    onWriteCompleted(sanitizedLabel, false, e.what());
+                }, Qt::QueuedConnection);
+            } catch (...) {
+                // Signal failure on main thread
+                QMetaObject::invokeMethod(this, [this, sanitizedLabel]() {
+                    onWriteCompleted(sanitizedLabel, false, "Unknown error during data write");
+                }, Qt::QueuedConnection);
+            }
+        });
+
+        // Track the pending write
+        d_pendingWrites[sanitizedLabel] = future;
+        emit pendingWritesChanged(d_pendingWrites.size());
+    }
     
     // Emit signal that overlay was added to storage
     emit overlayAdded(overlay);

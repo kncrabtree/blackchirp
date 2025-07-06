@@ -403,6 +403,10 @@ bool Experiment::initialize()
                         .arg(BlackchirpCSV::exptDir(d_number).absoluteFilePath(BC::CSV::clockFile));
                 return false;
             }
+
+            //overlays
+            ps_overlayStorage = std::make_shared<OverlayStorage>(num,"");
+            ps_overlayStorage->save();
         }
     }
 
