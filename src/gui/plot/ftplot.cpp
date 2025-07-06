@@ -26,6 +26,7 @@
 
 
 #include <gui/plot/blackchirpplotcurve.h>
+#include <data/experiment/overlaybase.h>
 
 FtPlot::FtPlot(const QString id, QWidget *parent) :
     ZoomPanPlot(BC::Key::ftPlot+id,parent), d_number(0), d_id(id)
@@ -144,4 +145,49 @@ void FtPlot::setMessageText(QString msg)
     auto text = p_messageLabel->text();
     text.setText(msg);
     p_messageLabel->setText(text);
+}
+
+void FtPlot::addOverlay(std::shared_ptr<OverlayBase> overlay)
+{
+    if (!overlay) {
+        return;
+    }
+    
+    // Check if overlay already exists
+    for (const auto& pair : d_overlayCurves) {
+        if (pair.first == overlay) {
+            return;
+        }
+    }
+    
+    // Create overlay curve using CurveFactory
+    QString curveKey = QString("overlay_%1").arg(overlay->getLabel());
+    auto curve = CurveFactory::createOverlayCurve<BlackchirpPlotCurve>(curveKey, overlay.get());
+    
+    // Set curve data from overlay
+    curve->setCurveData(overlay->xyData());
+    curve->setTitle(overlay->getLabel());
+    curve->attach(this);
+    
+    // Store the overlay-curve pair
+    d_overlayCurves.emplace_back(overlay, std::move(curve));
+    
+    replot();
+}
+
+void FtPlot::removeOverlay(std::shared_ptr<OverlayBase> overlay)
+{
+    if (!overlay) {
+        return;
+    }
+    
+    // Find and remove the overlay curve
+    for (auto it = d_overlayCurves.begin(); it != d_overlayCurves.end(); ++it) {
+        if (it->first == overlay) {
+            // Curve will be automatically detached when unique_ptr is destroyed
+            d_overlayCurves.erase(it);
+            replot();
+            return;
+        }
+    }
 }

@@ -745,11 +745,14 @@ void FtmwViewWidget::launchOverlayManager()
         p_omw = nullptr;
     });
 
+    // Connect overlay signals to display them on plots
+    connect(p_omw, &OverlayManagerWidget::overlayAdded, this, &FtmwViewWidget::onOverlayAdded);
+    connect(p_omw, &OverlayManagerWidget::overlayRemoved, this, &FtmwViewWidget::onOverlayRemoved);
+
     // Show widget
     p_omw->show();
     p_omw->activateWindow();
     p_omw->raise();
-    // TODO: Display overlays on the plots
 }
 
 void FtmwViewWidget::updateFid(int id)
@@ -812,9 +815,42 @@ void FtmwViewWidget::removeOverlay(std::shared_ptr<OverlayBase> overlay)
     }
 }
 
+void FtmwViewWidget::onOverlayAdded(std::shared_ptr<OverlayBase> overlay)
+{
+    if (!overlay) {
+        return;
+    }
+    
+    // Get the target plot name from the overlay
+    QString plotName = overlay->getPlotId();
+    
+    // Find the corresponding FtPlot instance in the map
+    auto it = d_plotMap.find(plotName);
+    if (it != d_plotMap.end()) {
+        it->second->addOverlay(overlay);
+    }
+}
+
+void FtmwViewWidget::onOverlayRemoved(std::shared_ptr<OverlayBase> overlay)
+{
+    if (!overlay) {
+        return;
+    }
+    
+    // Get the target plot name from the overlay
+    QString plotName = overlay->getPlotId();
+    
+    // Find the corresponding FtPlot instance in the map
+    auto it = d_plotMap.find(plotName);
+    if (it != d_plotMap.end()) {
+        it->second->removeOverlay(overlay);
+    }
+}
+
 void FtmwViewWidget::createPlotNamesList()
 {
     d_plotNames.clear();
+    d_plotMap.clear();
     
     // Find all FtPlot children recursively
     QList<FtPlot*> ftPlots = findChildren<FtPlot*>();
@@ -829,6 +865,7 @@ void FtmwViewWidget::createPlotNamesList()
                     continue; // Skip live plots
                 }
                 d_plotNames.append(plotName);
+                d_plotMap[plotName] = plot;  // Map plot name to FtPlot instance
             }
         }
     }

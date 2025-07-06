@@ -95,6 +95,10 @@ public slots:
 
     void updateBackups();
     void experimentComplete();
+    
+    // Overlay display slots
+    void onOverlayAdded(std::shared_ptr<OverlayBase> overlay);
+    void onOverlayRemoved(std::shared_ptr<OverlayBase> overlay);
 
     void changeRollingAverageShots(int shots);
     void resetRollingAverage();
@@ -141,6 +145,7 @@ private:
     QString d_path;
     QVector<std::shared_ptr<OverlayBase>> d_overlays;
     QStringList d_plotNames;
+    std::map<QString, FtPlot*> d_plotMap;  // Maps plot names to FtPlot instances
     const int d_liveId = 0, d_mainId = 3, d_plot1Id = 1, d_plot2Id = 2;
     const QString d_shotsString = QString("Shots: %1");
 

@@ -12,6 +12,8 @@
 #include <data/analysis/ft.h>
 #include <data/analysis/ftworker.h>
 
+class OverlayBase;
+
 namespace BC::Key {
 static const QString ftPlot{"FtPlot"};
 static const QString ftCurve{"FT"};
@@ -42,6 +44,9 @@ public slots:
     void setNumShots(quint64 shots);
     void setMessageText(QString msg);
     
+    void addOverlay(std::shared_ptr<OverlayBase> overlay);
+    void removeOverlay(std::shared_ptr<OverlayBase> overlay);
+    
 protected:
     QString id() const { return d_id; }
     int number() const { return d_number; }
@@ -54,6 +59,9 @@ private:
     std::unique_ptr<BlackchirpFTCurve> p_curve;
     std::unique_ptr<QwtPlotTextLabel> p_shotsLabel;
     std::unique_ptr<QwtPlotTextLabel> p_messageLabel;
+    
+    // Overlay curves
+    std::vector<std::pair<std::shared_ptr<OverlayBase>, std::unique_ptr<BlackchirpPlotCurve>>> d_overlayCurves;
 
     Ft d_currentFt;
     int d_number;
