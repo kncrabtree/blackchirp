@@ -304,8 +304,8 @@ void OverlayStorage::waitForPendingWrites()
         future.waitForFinished();
     }
     // Clear all completed writes
-    const_cast<OverlayStorage*>(this)->d_pendingWrites.clear();
-    const_cast<OverlayStorage*>(this)->emit pendingWritesChanged(0);
+    d_pendingWrites.clear();
+    emit pendingWritesChanged(0);
 }
 
 int OverlayStorage::pendingWriteCount() const
