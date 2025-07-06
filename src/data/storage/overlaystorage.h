@@ -27,7 +27,6 @@ public:
     OverlayStorage(int number, QString path);
     ~OverlayStorage();
     
-    bool createOverlay(OverlayBase::OverlayType t, QString sourceFile, QString label = "");
     bool loadOverlay(QString fileBase, OverlayBase::OverlayType t);
     
     // Add externally created overlay to storage
@@ -64,6 +63,7 @@ private:
     
     // Helper methods
     QString sanitizeLabel(const QString& label) const;
+    QString getOverlayDataPath(const QString& sanitizedLabel) const;
     void addVersionMetadata(std::map<QString, QVariant>& metadata) const;
     bool validateOverlayLabel(const QString& label) const;
     void onWriteCompleted(const QString& label, bool success, const QString& error = QString());

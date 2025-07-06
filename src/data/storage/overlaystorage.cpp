@@ -39,42 +39,6 @@ OverlayStorage::~OverlayStorage()
     // Cleanup is automatic with shared_ptr
 }
 
-bool OverlayStorage::createOverlay(OverlayBase::OverlayType t, QString sourceFile, QString label)
-{
-    if (d_number < 1)
-        return false;
-        
-    // Validate and sanitize label
-    if (!validateOverlayLabel(label))
-        return false;
-        
-    QString sanitizedLabel = sanitizeLabel(label);
-    
-    // Check if overlay with this label already exists
-    auto it = d_overlays.find(sanitizedLabel);
-    if (it != d_overlays.end())
-        return false;
-    
-    // Create overlay object
-    auto overlay = createOverlayObject(t);
-    if (!overlay)
-        return false;
-    
-    // Set up overlay properties
-    overlay->setLabel(sanitizedLabel);
-    overlay->setSourceFile(sourceFile);
-    
-    // Set destination file path
-    using namespace BC::Key::Overlay;
-    QString overlayDataPath = BlackchirpCSV::exptDir(d_number, d_path).absoluteFilePath(
-        overlayDir + "/" + overlayDataFile.arg(sanitizedLabel));
-    overlay->setDestFile(overlayDataPath);
-    
-    // Add to internal storage
-    d_overlays[sanitizedLabel] = overlay;
-    
-    return true;
-}
 
 bool OverlayStorage::loadOverlay(QString fileBase, OverlayBase::OverlayType t)
 {
@@ -103,9 +67,7 @@ bool OverlayStorage::loadOverlay(QString fileBase, OverlayBase::OverlayType t)
     }
     
     // Set destination file path
-    QString overlayDataPath = BlackchirpCSV::exptDir(d_number, d_path).absoluteFilePath(
-        overlayDir + "/" + overlayDataFile.arg(fileBase));
-    overlay->setDestFile(overlayDataPath);
+    overlay->setDestFile(getOverlayDataPath(fileBase));
     
     // Load metadata into overlay
     overlay->retrieveMetadata(overlaySettings);
@@ -262,9 +224,7 @@ bool OverlayStorage::addOverlay(std::shared_ptr<OverlayBase> overlay)
         overlay->setLabel(sanitizedLabel);
     
     // Set destination file path for the overlay data
-    QString overlayDataPath = BlackchirpCSV::exptDir(d_number, d_path).absoluteFilePath(
-        BC::Key::Overlay::overlayDir + "/" + QString("overlay-data-%1.csv").arg(sanitizedLabel));
-    overlay->setDestFile(overlayDataPath);
+    overlay->setDestFile(getOverlayDataPath(sanitizedLabel));
     
     // Add to storage
     d_overlays[sanitizedLabel] = overlay;
@@ -335,6 +295,13 @@ void OverlayStorage::waitForPendingWrites()
 int OverlayStorage::pendingWriteCount() const
 {
     return d_pendingWrites.size();
+}
+
+QString OverlayStorage::getOverlayDataPath(const QString& sanitizedLabel) const
+{
+    using namespace BC::Key::Overlay;
+    return BlackchirpCSV::exptDir(d_number, d_path).absoluteFilePath(
+        overlayDir + "/" + overlayDataFile.arg(sanitizedLabel));
 }
 
 void OverlayStorage::onWriteCompleted(const QString& label, bool success, const QString& error)
