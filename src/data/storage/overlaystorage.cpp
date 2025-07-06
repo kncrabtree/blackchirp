@@ -58,7 +58,8 @@ bool OverlayStorage::loadOverlay(QString fileBase, OverlayBase::OverlayType t)
     // Load overlay settings
     using namespace BC::Key::Overlay;
     std::map<QString,QVariant> overlaySettings;
-    readMetadata(overlaySettingsFile.arg(fileBase), overlaySettings, overlayDir);
+    QString settingsFile = overlaySettingsFile.arg(fileBase);
+    readMetadata(settingsFile, overlaySettings, overlayDir);
     
     if (overlaySettings.empty())
     {
@@ -119,7 +120,8 @@ void OverlayStorage::save()
         std::map<QString,QVariant> overlaySettings;
         overlay->storeMetadata(overlaySettings);
         addVersionMetadata(overlaySettings);
-        writeMetadata(overlaySettingsFile.arg(label), overlaySettings, overlayDir);
+        QString settingsFile = overlaySettingsFile.arg(label);
+        writeMetadata(settingsFile, overlaySettings, overlayDir);
         
         // Note: xyData is written asynchronously when overlay is added
     }
@@ -270,7 +272,21 @@ bool OverlayStorage::removeOverlay(const QString& label)
             emit pendingWritesChanged(d_pendingWrites.size());
         }
         
-        // TODO: Delete associated files from disk (data file and metadata file)
+        // Delete associated files from disk (data file and metadata file)
+        QString dataFilePath = getOverlayDataPath(label);
+        if (QFile::exists(dataFilePath)) {
+            if (!QFile::remove(dataFilePath)) {
+                qDebug() << "Warning: Failed to delete overlay data file:" << dataFilePath;
+            }
+        }
+        
+        QString settingsFilePath = getOverlaySettingsPath(label);
+        if (QFile::exists(settingsFilePath)) {
+            if (!QFile::remove(settingsFilePath)) {
+                qDebug() << "Warning: Failed to delete overlay settings file:" << settingsFilePath;
+            }
+        }
+        
         d_overlays.erase(it);
         return true;
     }
@@ -302,6 +318,13 @@ QString OverlayStorage::getOverlayDataPath(const QString& sanitizedLabel) const
     using namespace BC::Key::Overlay;
     return BlackchirpCSV::exptDir(d_number, d_path).absoluteFilePath(
         overlayDir + "/" + overlayDataFile.arg(sanitizedLabel));
+}
+
+QString OverlayStorage::getOverlaySettingsPath(const QString& sanitizedLabel) const
+{
+    using namespace BC::Key::Overlay;
+    return BlackchirpCSV::exptDir(d_number, d_path).absoluteFilePath(
+        overlayDir + "/" + overlaySettingsFile.arg(sanitizedLabel));
 }
 
 void OverlayStorage::onWriteCompleted(const QString& label, bool success, const QString& error)

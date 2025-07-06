@@ -64,6 +64,7 @@ private:
     // Helper methods
     QString sanitizeLabel(const QString& label) const;
     QString getOverlayDataPath(const QString& sanitizedLabel) const;
+    QString getOverlaySettingsPath(const QString& sanitizedLabel) const;
     void addVersionMetadata(std::map<QString, QVariant>& metadata) const;
     bool validateOverlayLabel(const QString& label) const;
     void onWriteCompleted(const QString& label, bool success, const QString& error = QString());
