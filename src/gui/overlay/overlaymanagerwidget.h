@@ -39,6 +39,7 @@ public slots:
 
 private slots:
     void onModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight);
+    void onSelectionChanged();
 
 private:
     QTabWidget *p_tabWidget;

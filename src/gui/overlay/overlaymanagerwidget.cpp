@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QTableView>
 #include <QHeaderView>
+#include <QMessageBox>
 #include <gui/widget/ftmwviewwidget.h>
 
 OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number, const QVector<std::shared_ptr<OverlayBase>> &overlays)
@@ -131,6 +132,10 @@ QWidget *OverlayManagerWidget::createBCExperimentTab()
     connect(p_bcExperimentModel, &BCExperimentOverlayModel::rowsRemoved, 
             this, [this]() { resizeColumnsToContents(p_bcExperimentModel, p_bcExperimentTableView); });
     
+    // Connect selection signals to update button states
+    connect(p_bcExperimentTableView->selectionModel(), &QItemSelectionModel::selectionChanged,
+            this, &OverlayManagerWidget::onSelectionChanged);
+    
     // Register this model-view pair for automatic column resizing
     d_modelViewMap[p_bcExperimentModel] = p_bcExperimentTableView;
 
@@ -181,10 +186,29 @@ void OverlayManagerWidget::onTabChanged(int index)
 
 void OverlayManagerWidget::updateButtonStates()
 {
-    // For now, keep buttons enabled
-    // Later this will be based on current tab content and selections
+    // Add button is always enabled
     p_addAction->setEnabled(true);
-    p_removeAction->setEnabled(false); // Will enable when overlays are selected
+    
+    // Remove button is enabled only when rows are selected
+    bool hasSelection = false;
+    
+    // Get current tab's table view and check for selection
+    int currentIndex = p_tabWidget->currentIndex();
+    if (currentIndex >= 0) {
+        auto currentTabWidget = p_tabWidget->currentWidget();
+        if (currentTabWidget) {
+            // Check if this is the BCExperiment tab
+            using namespace BC::Property::Overlay;
+            auto type = static_cast<OverlayBase::OverlayType>(currentTabWidget->property(overlayType.toLocal8Bit().constData()).toInt());
+            
+            if (type == OverlayBase::BCExperiment && p_bcExperimentTableView) {
+                hasSelection = p_bcExperimentTableView->selectionModel()->hasSelection();
+            }
+            // Future overlay types can be added here
+        }
+    }
+    
+    p_removeAction->setEnabled(hasSelection);
 }
 
 void OverlayManagerWidget::addOverlay()
@@ -245,16 +269,99 @@ void OverlayManagerWidget::addOverlay()
 
 void OverlayManagerWidget::removeOverlay()
 {
-    // Get current tab
+    // Get current tab and its overlay type
     int currentIndex = p_tabWidget->currentIndex();
-    if(currentIndex < 0)
+    if (currentIndex < 0)
         return;
-
-    qDebug() << "Remove overlay from current tab";
-
-    // TODO: Implement overlay removal
-    // TODO: Get selected overlay from current tab
-    // TODO: Remove from plot and delete
+        
+    auto currentTabWidget = p_tabWidget->currentWidget();
+    if (!currentTabWidget)
+        return;
+        
+    using namespace BC::Property::Overlay;
+    auto type = static_cast<OverlayBase::OverlayType>(currentTabWidget->property(overlayType.toLocal8Bit().constData()).toInt());
+    
+    // Get the appropriate model and table view for this overlay type
+    OverlayTableModel* model = nullptr;
+    QTableView* tableView = nullptr;
+    
+    switch (type) {
+    case OverlayBase::BCExperiment:
+        model = p_bcExperimentModel;
+        tableView = p_bcExperimentTableView;
+        break;
+    case OverlayBase::SPCAT:
+        // model = p_spcatModel;
+        // tableView = p_spcatTableView;
+        qDebug() << "SPCAT overlay removal not yet implemented";
+        return;
+    case OverlayBase::GenericXY:
+        // model = p_genericXYModel;
+        // tableView = p_genericXYTableView;
+        qDebug() << "GenericXY overlay removal not yet implemented";
+        return;
+    default:
+        qDebug() << "Unknown overlay type";
+        return;
+    }
+    
+    if (!model || !tableView)
+        return;
+        
+    auto selectionModel = tableView->selectionModel();
+    if (!selectionModel->hasSelection())
+        return;
+        
+    // Get selected rows
+    QModelIndexList selectedRows = selectionModel->selectedRows();
+    if (selectedRows.isEmpty())
+        return;
+        
+    // Create confirmation message
+    QString message;
+    if (selectedRows.size() == 1) {
+        auto overlay = model->getOverlay(selectedRows.first().row());
+        if (overlay) {
+            message = QString("Are you sure you want to remove the overlay \"%1\"?").arg(overlay->getLabel());
+        } else {
+            message = "Are you sure you want to remove the selected overlay?";
+        }
+    } else {
+        message = QString("Are you sure you want to remove %1 selected overlays?").arg(selectedRows.size());
+    }
+    
+    // Show confirmation dialog
+    int result = QMessageBox::question(this, "Remove Overlay", message,
+                                     QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    
+    if (result != QMessageBox::Yes)
+        return;
+        
+    // Get FtmwViewWidget parent for overlay removal
+    FtmwViewWidget* ftmwParent = qobject_cast<FtmwViewWidget*>(parentWidget());
+    
+    // Remove overlays in reverse order to maintain valid indices
+    QVector<int> rows;
+    for (const auto& index : selectedRows) {
+        rows.append(index.row());
+    }
+    std::sort(rows.begin(), rows.end(), std::greater<int>());
+    
+    for (int row : rows) {
+        auto overlay = model->getOverlay(row);
+        if (overlay) {
+            // Remove from parent FtmwViewWidget
+            if (ftmwParent) {
+                ftmwParent->removeOverlay(overlay);
+            }
+            
+            // Emit signal for any listeners
+            emit overlayRemoved(overlay);
+            
+            // Remove from model
+            model->removeOverlay(row);
+        }
+    }
 }
 
 void OverlayManagerWidget::raiseParent()
@@ -399,4 +506,10 @@ void OverlayManagerWidget::onModelDataChanged(const QModelIndex &topLeft, const 
     if (it != d_modelViewMap.end()) {
         resizeColumnsToContents(model, it->second);
     }
+}
+
+void OverlayManagerWidget::onSelectionChanged()
+{
+    // Update button states when selection changes
+    updateButtonStates();
 }
