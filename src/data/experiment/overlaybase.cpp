@@ -6,6 +6,22 @@ OverlayBase::OverlayBase(OverlayType type) : d_type{type}
     
 }
 
+QVector<QPointF> OverlayBase::xyData() const
+{
+    QVector<QPointF> rawData = _xyData();
+    QVector<QPointF> transformedData;
+    transformedData.reserve(rawData.size());
+    
+    // Apply scaling and offset transformations
+    for (const QPointF& point : rawData) {
+        double newX = point.x() + d_xOffset;
+        double newY = (point.y() * d_yScale) + d_yOffset;
+        transformedData.append(QPointF(newX, newY));
+    }
+    
+    return transformedData;
+}
+
 QString OverlayBase::getLabel() const
 {
     return d_label;

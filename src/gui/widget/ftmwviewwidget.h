@@ -99,6 +99,8 @@ public slots:
     // Overlay display slots
     void onOverlayAdded(std::shared_ptr<OverlayBase> overlay);
     void onOverlayRemoved(std::shared_ptr<OverlayBase> overlay);
+    void onOverlayPlotChanged(std::shared_ptr<OverlayBase> overlay, QString newPlotId);
+    void onOverlayDataChanged(std::shared_ptr<OverlayBase> overlay);
 
     void changeRollingAverageShots(int shots);
     void resetRollingAverage();

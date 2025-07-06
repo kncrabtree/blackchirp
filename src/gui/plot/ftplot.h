@@ -46,6 +46,7 @@ public slots:
     
     void addOverlay(std::shared_ptr<OverlayBase> overlay);
     void removeOverlay(std::shared_ptr<OverlayBase> overlay);
+    void updateOverlay(std::shared_ptr<OverlayBase> overlay);
     
 protected:
     QString id() const { return d_id; }

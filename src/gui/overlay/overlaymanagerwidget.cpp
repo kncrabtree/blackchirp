@@ -122,6 +122,10 @@ QWidget *OverlayManagerWidget::createBCExperimentTab()
     p_bcExperimentModel = new BCExperimentOverlayModel(this);
     p_bcExperimentTableView = new QTableView(tabWidget);
     p_bcExperimentTableView->setModel(p_bcExperimentModel);
+    
+    // Connect model signals to track overlay changes
+    connect(p_bcExperimentModel, &BCExperimentOverlayModel::dataChanged, 
+            this, &OverlayManagerWidget::onModelDataChanged);
 
     // Configure table view
     p_bcExperimentTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -296,4 +300,37 @@ void OverlayManagerWidget::setupPlotIdDelegate()
     // Create and set the delegate for the PlotId column
     p_plotIdDelegate = new PlotIdComboBoxDelegate(plotNames, this);
     p_bcExperimentTableView->setItemDelegateForColumn(1, p_plotIdDelegate); // PlotIdColumn = 1
+}
+
+void OverlayManagerWidget::onModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
+{
+    // Get the model that emitted the signal
+    const OverlayTableModel* model = qobject_cast<const OverlayTableModel*>(topLeft.model());
+    if (!model) {
+        return;
+    }
+    
+    // Process each changed cell
+    for (int row = topLeft.row(); row <= bottomRight.row(); ++row) {
+        for (int col = topLeft.column(); col <= bottomRight.column(); ++col) {
+            auto overlay = model->getOverlay(row);
+            if (!overlay) {
+                continue;
+            }
+            
+            // Check which column was changed and emit appropriate signal
+            switch (col) {
+            case 0: // LabelColumn - doesn't affect plot display
+            case 5: // SourceFileColumn - doesn't affect plot display
+                // No signal needed
+                break;
+            case 1: // PlotIdColumn - requires plot migration
+                emit overlayPlotChanged(overlay, overlay->getPlotId());
+                break;
+            default: // All other columns affect plot data (YScale, YOffset, XOffset, and future columns)
+                emit overlayDataChanged(overlay);
+                break;
+            }
+        }
+    }
 }

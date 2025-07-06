@@ -11,7 +11,7 @@ BCExpOverlay::BCExpOverlay() :
 }
 
 
-QVector<QPointF> BCExpOverlay::xyData() const
+QVector<QPointF> BCExpOverlay::_xyData() const
 {
     return d_ft.toVector();
 }

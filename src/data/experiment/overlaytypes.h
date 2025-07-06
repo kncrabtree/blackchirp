@@ -20,7 +20,10 @@ public:
     BCExpOverlay();
 
     // OverlayBase interface
-    QVector<QPointF> xyData() const override;
+private:
+    QVector<QPointF> _xyData() const override;
+
+public:
 
     // Set FT data directly (called after creation)
     void setFtData(const Ft &ftData);

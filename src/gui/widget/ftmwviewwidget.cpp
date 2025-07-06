@@ -748,6 +748,8 @@ void FtmwViewWidget::launchOverlayManager()
     // Connect overlay signals to display them on plots
     connect(p_omw, &OverlayManagerWidget::overlayAdded, this, &FtmwViewWidget::onOverlayAdded);
     connect(p_omw, &OverlayManagerWidget::overlayRemoved, this, &FtmwViewWidget::onOverlayRemoved);
+    connect(p_omw, &OverlayManagerWidget::overlayPlotChanged, this, &FtmwViewWidget::onOverlayPlotChanged);
+    connect(p_omw, &OverlayManagerWidget::overlayDataChanged, this, &FtmwViewWidget::onOverlayDataChanged);
 
     // Show widget
     p_omw->show();
@@ -844,6 +846,41 @@ void FtmwViewWidget::onOverlayRemoved(std::shared_ptr<OverlayBase> overlay)
     auto it = d_plotMap.find(plotName);
     if (it != d_plotMap.end()) {
         it->second->removeOverlay(overlay);
+    }
+}
+
+void FtmwViewWidget::onOverlayPlotChanged(std::shared_ptr<OverlayBase> overlay, QString newPlotId)
+{
+    if (!overlay) {
+        return;
+    }
+    
+    // Remove overlay from all plots first (since we don't know which one it was on)
+    // Note: removeOverlay now uses label-based comparison, so this will work correctly
+    for (auto& [plotName, plot] : d_plotMap) {
+        plot->removeOverlay(overlay);
+    }
+    
+    // Add overlay to the new plot
+    auto it = d_plotMap.find(newPlotId);
+    if (it != d_plotMap.end()) {
+        it->second->addOverlay(overlay);
+    }
+}
+
+void FtmwViewWidget::onOverlayDataChanged(std::shared_ptr<OverlayBase> overlay)
+{
+    if (!overlay) {
+        return;
+    }
+    
+    // Get the target plot name from the overlay
+    QString plotName = overlay->getPlotId();
+    
+    // Find the corresponding FtPlot instance and update the overlay
+    auto it = d_plotMap.find(plotName);
+    if (it != d_plotMap.end()) {
+        it->second->updateOverlay(overlay);
     }
 }
 

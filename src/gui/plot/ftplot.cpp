@@ -153,9 +153,9 @@ void FtPlot::addOverlay(std::shared_ptr<OverlayBase> overlay)
         return;
     }
     
-    // Check if overlay already exists
+    // Check if overlay already exists (compare by label since it's unique)
     for (const auto& pair : d_overlayCurves) {
-        if (pair.first == overlay) {
+        if (pair.first->getLabel() == overlay->getLabel()) {
             return;
         }
     }
@@ -181,11 +181,29 @@ void FtPlot::removeOverlay(std::shared_ptr<OverlayBase> overlay)
         return;
     }
     
-    // Find and remove the overlay curve
+    // Find and remove the overlay curve (compare by label since it's unique)
     for (auto it = d_overlayCurves.begin(); it != d_overlayCurves.end(); ++it) {
-        if (it->first == overlay) {
+        if (it->first->getLabel() == overlay->getLabel()) {
             // Curve will be automatically detached when unique_ptr is destroyed
             d_overlayCurves.erase(it);
+            replot();
+            return;
+        }
+    }
+}
+
+void FtPlot::updateOverlay(std::shared_ptr<OverlayBase> overlay)
+{
+    if (!overlay) {
+        return;
+    }
+    
+    // Find the existing overlay curve and update its data (compare by label since it's unique)
+    for (auto& pair : d_overlayCurves) {
+        if (pair.first->getLabel() == overlay->getLabel()) {
+            // Update curve data (applies scaling and offsets)
+            pair.second->setCurveData(overlay->xyData());
+            pair.second->setTitle(overlay->getLabel());
             replot();
             return;
         }
