@@ -98,19 +98,8 @@ public:
     void set(const QString& key, const QVariant& value) override;
     QVariant get(const QString& key, const QVariant& defaultValue) const override;
     
-    /*!
-     * \brief Synchronize settings from overlay metadata to cache
-     */
-    void syncFromOverlay();
-    
-    /*!
-     * \brief Synchronize settings from cache to overlay metadata
-     */
-    void syncToOverlay();
-    
 private:
     OverlayBase* d_overlay;
-    mutable std::map<QString, QVariant> d_cache;
 };
 
 /*!

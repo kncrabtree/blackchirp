@@ -118,6 +118,11 @@ void OverlayBase::storeMetadata(std::map<QString,QVariant> &m)
     m.emplace(oYOffset,d_yOffset);
     m.emplace(oXOffset,d_xOffset);
     
+    // Add curve metadata with "curve_" prefix
+    for(const auto& [key, value] : d_curveMetadata) {
+        m.emplace("curve_" + key, value);
+    }
+    
     _storeMetadata(m);
     
 }
@@ -147,6 +152,14 @@ void OverlayBase::retrieveMetadata(const std::map<QString,QVariant> &m)
     it = m.find(oXOffset);
     if(it != m.end())
         d_xOffset = it->second.toDouble();
+    
+    // Extract curve metadata (keys starting with "curve_")
+    d_curveMetadata.clear();
+    for(const auto& [key, value] : m) {
+        if(key.startsWith("curve_")) {
+            d_curveMetadata[key.mid(6)] = value;  // Remove "curve_" prefix
+        }
+    }
     
     _retrieveMetadata(m);
     

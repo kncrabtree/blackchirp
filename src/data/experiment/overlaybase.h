@@ -82,6 +82,9 @@ private:
     
     bool d_modified{false};
     
+    // Curve metadata storage for direct access by OverlayMetadataStorage
+    std::map<QString, QVariant> d_curveMetadata;
+    
     
     void storeMetadata(std::map<QString,QVariant> &m);
     void retrieveMetadata(const std::map<QString,QVariant> &m);

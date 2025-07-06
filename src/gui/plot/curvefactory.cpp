@@ -25,58 +25,19 @@ QVariant SettingsStorageWrapper::get(const QString& key, const QVariant& default
 OverlayMetadataStorage::OverlayMetadataStorage(OverlayBase* overlay)
     : d_overlay(overlay)
 {
-    syncFromOverlay();
+    // No need to sync from overlay - we'll access d_curveMetadata directly
 }
 
 void OverlayMetadataStorage::set(const QString& key, const QVariant& value)
 {
-    d_cache[key] = value;
-    syncToOverlay();
+    // Direct access to overlay's curve metadata via friend class access
+    d_overlay->d_curveMetadata[key] = value;
     d_overlay->setModified(true);
 }
 
 QVariant OverlayMetadataStorage::get(const QString& key, const QVariant& defaultValue) const
 {
-    auto it = d_cache.find(key);
-    return (it != d_cache.end()) ? it->second : defaultValue;
-}
-
-void OverlayMetadataStorage::syncFromOverlay()
-{
-    // Load curve settings from overlay metadata
-    std::map<QString, QVariant> meta;
-    d_overlay->_storeMetadata(meta);
-    
-    // Extract curve-specific keys (those with "curve_" prefix)
-    d_cache.clear();
-    for (const auto& [key, value] : meta) {
-        if (key.startsWith("curve_")) {
-            d_cache[key.mid(6)] = value; // Remove "curve_" prefix
-        }
-    }
-}
-
-void OverlayMetadataStorage::syncToOverlay()
-{
-    // Get current metadata from overlay
-    std::map<QString, QVariant> meta;
-    d_overlay->_storeMetadata(meta);
-    
-    // Remove old curve settings
-    auto it = meta.begin();
-    while (it != meta.end()) {
-        if (it->first.startsWith("curve_")) {
-            it = meta.erase(it);
-        } else {
-            ++it;
-        }
-    }
-    
-    // Add current curve settings with "curve_" prefix
-    for (const auto& [key, value] : d_cache) {
-        meta["curve_" + key] = value;
-    }
-    
-    // Store updated metadata back to overlay
-    d_overlay->_retrieveMetadata(meta);
+    // Direct access to overlay's curve metadata via friend class access
+    auto it = d_overlay->d_curveMetadata.find(key);
+    return (it != d_overlay->d_curveMetadata.end()) ? it->second : defaultValue;
 }
