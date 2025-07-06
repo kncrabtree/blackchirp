@@ -279,8 +279,8 @@ bool OverlayStorage::addOverlay(std::shared_ptr<OverlayBase> overlay)
             }, Qt::QueuedConnection);
         } catch (const std::exception& e) {
             // Signal failure on main thread
-            QMetaObject::invokeMethod(this, [this, sanitizedLabel, error = QString::fromStdString(e.what())]() {
-                onWriteCompleted(sanitizedLabel, false, error);
+            QMetaObject::invokeMethod(this, [this, sanitizedLabel, e]() {
+                onWriteCompleted(sanitizedLabel, false, e.what());
             }, Qt::QueuedConnection);
         } catch (...) {
             // Signal failure on main thread
