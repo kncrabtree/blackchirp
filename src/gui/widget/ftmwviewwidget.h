@@ -55,7 +55,7 @@ class FtmwViewWidget : public QWidget, public SettingsStorage
 {
     Q_OBJECT
 public:
-    explicit FtmwViewWidget(bool main, QWidget *parent = 0, QString path = QString(""));
+    explicit FtmwViewWidget(bool main, QWidget *parent = 0, QString path = QString(""), bool overlaysEnabled = true);
     ~FtmwViewWidget();
     void prepareForExperiment(const Experiment &e);
 
@@ -157,6 +157,7 @@ private:
     QString d_path;
     // Overlay storage is now handled via ps_overlayStorage shared pointer
     QStringList d_plotNames;
+    bool d_overlaysEnabled{true};
     std::map<QString, FtPlot*> d_plotMap;  // Maps plot names to FtPlot instances
     const int d_liveId = 0, d_mainId = 3, d_plot1Id = 1, d_plot2Id = 2;
     const QString d_shotsString = QString("Shots: %1");

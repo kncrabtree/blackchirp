@@ -1013,7 +1013,7 @@ void MainWindow::viewExperiment()
         }
         
         // Create new experiment view widget
-        auto evw = std::make_unique<ExperimentViewWidget>(num, path);
+        auto evw = std::make_unique<ExperimentViewWidget>(num, path, true);
         ExperimentViewWidget* evwPtr = evw.get();
         
         // Connect signals for cleanup and window management

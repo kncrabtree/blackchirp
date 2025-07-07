@@ -303,12 +303,12 @@ void BCExpOverlayDialog::onConfigureFtClicked()
         return;
     }
     
-    // Create ExperimentViewWidget
+    // Create ExperimentViewWidget with overlays disabled
     ExperimentViewWidget *experimentWidget;
     if (p_usePathCheckBox->isChecked()) {
-        experimentWidget = new ExperimentViewWidget(0, p_pathLineEdit->text());
+        experimentWidget = new ExperimentViewWidget(0, p_pathLineEdit->text(), false);
     } else {
-        experimentWidget = new ExperimentViewWidget(p_experimentNumberSpinBox->value());
+        experimentWidget = new ExperimentViewWidget(p_experimentNumberSpinBox->value(), QString(""), false);
     }
     
     // Set the CP-FTMW tab as active

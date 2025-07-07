@@ -15,7 +15,7 @@ class ExperimentViewWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit ExperimentViewWidget(int num, QString path = QString(""), QWidget *parent = 0);
+    explicit ExperimentViewWidget(int num, QString path = QString(""), bool overlaysEnabled = true, QWidget *parent = 0);
 
     QSize sizeHint() const;
     FtWorker::FidProcessingSettings getFtmwProcessingSettings() const;
@@ -33,6 +33,7 @@ private:
     QTabWidget *p_tabWidget;
     FtmwViewWidget *p_ftmw;
     LogHandler *p_lh;
+    bool d_overlaysEnabled{true};
 
     QWidget *buildHeaderWidget();
     QWidget *buildFtmwWidget(QString path = QString(""));

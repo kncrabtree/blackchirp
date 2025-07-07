@@ -18,9 +18,9 @@
 #include <data/storage/fidmultistorage.h>
 
 
-FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path) :
+FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path, bool overlaysEnabled) :
     QWidget(parent), SettingsStorage(BC::Key::FtmwView::key),
-    ui(new Ui::FtmwViewWidget), d_currentExptNum(-1), d_currentSegment(-1), d_path(path)
+    ui(new Ui::FtmwViewWidget), d_currentExptNum(-1), d_currentSegment(-1), d_path(path), d_overlaysEnabled(overlaysEnabled)
 {
     ui->setupUi(main,this);
     
@@ -203,8 +203,8 @@ void FtmwViewWidget::prepareForExperiment(const Experiment &e)
         connect(ps_overlayStorage.get(), &OverlayStorage::overlayRemoved, this, &FtmwViewWidget::onOverlayRemoved);
     }
     
-    // Load overlays from experiment storage and display them
-    if (ps_overlayStorage)
+    // Load overlays from experiment storage and display them (only if overlays are enabled)
+    if (ps_overlayStorage && d_overlaysEnabled)
     {
         auto overlays = ps_overlayStorage->getAllOverlays();
         for (const auto& overlay : overlays)
@@ -444,7 +444,7 @@ void FtmwViewWidget::ftDone(const Ft ft, int workerId)
         //this is the main plot
         ui->mainFtPlot->newFt(ft);
         ui->peakFindAction->setEnabled(!ft.isEmpty());
-        ui->overlayAction->setEnabled(!ft.isEmpty());
+        ui->overlayAction->setEnabled(!ft.isEmpty() && d_overlaysEnabled);
         ui->mainFtPlot->canvas()->setCursor(QCursor(Qt::CrossCursor));
         if(p_pfw != nullptr)
             p_pfw->newFt(ft);
@@ -497,7 +497,7 @@ void FtmwViewWidget::updateMainPlot()
     }
 
     ui->peakFindAction->setEnabled(!ui->mainFtPlot->currentFt().isEmpty());
-    ui->overlayAction->setEnabled(!ui->mainFtPlot->currentFt().isEmpty());
+    ui->overlayAction->setEnabled(!ui->mainFtPlot->currentFt().isEmpty() && d_overlaysEnabled);
 }
 
 void FtmwViewWidget::reprocess(const QList<int> ignore)

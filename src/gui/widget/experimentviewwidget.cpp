@@ -24,7 +24,7 @@
 #include <modules/lif/gui/lifdisplaywidget.h>
 #endif
 
-ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *parent) : QWidget(parent), p_ftmw(nullptr), p_lh(nullptr)
+ExperimentViewWidget::ExperimentViewWidget(int num, QString path, bool overlaysEnabled, QWidget *parent) : QWidget(parent), p_ftmw(nullptr), p_lh(nullptr), d_overlaysEnabled(overlaysEnabled)
 {
     pu_experiment = std::make_unique<Experiment>(num,path);
     setWindowFlags(Qt::Window);
@@ -107,7 +107,7 @@ QWidget *ExperimentViewWidget::buildFtmwWidget(QString path)
     {
         out = new QWidget;
         QVBoxLayout *vbl = new QVBoxLayout;
-        p_ftmw = new FtmwViewWidget(false,out,path);
+        p_ftmw = new FtmwViewWidget(false,out,path,d_overlaysEnabled);
         vbl->addWidget(p_ftmw);
         out->setLayout(vbl);
 
