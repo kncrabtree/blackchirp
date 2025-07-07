@@ -55,11 +55,12 @@ public:
     QAction *actionAutoscale_Rolling;
     QAction *actionAutoscale_Aux;
     SpinBoxWidgetAction *rollingDurationBox;
-    QAction *actionView_Experiment;
+    QAction *viewExperimentAction;
     QAction *actionQuick_Experiment;
     QAction *actionStart_Sequence;
     QAction *actionRfConfig;
     QToolButton *hardwareButton;
+    QToolButton *viewExperimentButton;
     QToolButton *settingsButton;
     QAction *fontAction;
     QAction *savePathAction;
@@ -91,6 +92,7 @@ public:
     QMenu *menuRollingData;
     QMenu *menuAuxData;
     QMenu *settingsMenu;
+    QMenu *viewExperimentMenu;
     QToolBar *mainToolBar;
     QStatusBar *statusBar;
     QScrollArea *hwStatusScrollArea;
@@ -176,11 +178,8 @@ public:
         icon12.addFile(QString::fromUtf8(":/icons/controltab.png"), QSize(), QIcon::Normal, QIcon::Off);
         QIcon icon13;
         icon13.addFile(QString::fromUtf8(":/icons/log.png"), QSize(), QIcon::Normal, QIcon::Off);
-        actionView_Experiment = new QAction(MainWindow);
-        actionView_Experiment->setObjectName(QString::fromUtf8("actionView_Experiment"));
         QIcon icon14;
         icon14.addFile(QString::fromUtf8(":/icons/viewold.png"), QSize(), QIcon::Normal, QIcon::Off);
-        actionView_Experiment->setIcon(icon14);
         actionQuick_Experiment = new QAction(MainWindow);
         actionQuick_Experiment->setObjectName(QString::fromUtf8("actionQuick_Experiment"));
         QIcon icon15;
@@ -225,6 +224,13 @@ public:
         hardwareButton->setToolTip("Configure hardware settings");
         hardwareButton->setIcon(hwIcon);
         hardwareButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        
+        viewExperimentButton = new QToolButton(MainWindow);
+        viewExperimentButton->setText("View Experiment");
+        viewExperimentButton->setToolTip("View existing experiments");
+        viewExperimentButton->setIcon(icon14);
+        viewExperimentButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        viewExperimentButton->setPopupMode(QToolButton::InstantPopup);
         hardwareButton->setPopupMode(QToolButton::InstantPopup);
 
         instStatusLabel->setAlignment(Qt::AlignCenter);
@@ -432,6 +438,15 @@ public:
         settingsMenu = new QMenu(settingsButton);
         settingsMenu->addAction(fontAction);
         settingsMenu->addAction(savePathAction);
+        
+        viewExperimentMenu = new QMenu(MainWindow);
+        viewExperimentMenu->setObjectName(QString::fromUtf8("viewExperimentMenu"));
+        
+        // Add the permanent "View Experiment..." action
+        viewExperimentAction = new QAction("View Experiment...", MainWindow);
+        viewExperimentAction->setIcon(icon14);
+        viewExperimentMenu->addAction(viewExperimentAction);
+        viewExperimentMenu->addSeparator();
 
         mainToolBar = new QToolBar(centralWidget);
         mainToolBar->setObjectName(QString::fromUtf8("mainToolBar"));
@@ -487,7 +502,8 @@ public:
         mainToolBar->addWidget(auxPlotButton);
         auxPlotButton->setMenu(menuAuxData);
 
-        mainToolBar->addAction(actionView_Experiment);
+        mainToolBar->addWidget(viewExperimentButton);
+        viewExperimentButton->setMenu(viewExperimentMenu);
 
         mainToolBar->addWidget(settingsButton);
         settingsButton->setMenu(settingsMenu);
@@ -547,7 +563,6 @@ public:
 #endif // QT_NO_SHORTCUT
         actionAutoscale_Rolling->setText(QApplication::translate("MainWindow", "&Autoscale All", nullptr));
         actionAutoscale_Aux->setText(QApplication::translate("MainWindow", "&Autoscale All", nullptr));
-        actionView_Experiment->setText(QApplication::translate("MainWindow", "&View Experiment...", nullptr));
         actionQuick_Experiment->setText(QApplication::translate("MainWindow", "&Quick Experiment", nullptr));
 #ifndef QT_NO_SHORTCUT
         actionQuick_Experiment->setShortcut(QApplication::translate("MainWindow", "F3", nullptr));

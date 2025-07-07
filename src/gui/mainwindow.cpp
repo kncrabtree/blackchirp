@@ -42,6 +42,7 @@
 #include <gui/expsetup/experimentsetupdialog.h>
 
 #include <data/loghandler.h>
+#include <data/storage/blackchirpcsv.h>
 #include <acquisition/acquisitionmanager.h>
 #include <acquisition/batch/batchmanager.h>
 #include <acquisition/batch/batchsingle.h>
@@ -342,7 +343,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionAutoscale_Rolling,&QAction::triggered,ui->rollingDataViewWidget,&RollingDataWidget::autoScaleAll);
     connect(ui->sleepButton,&QToolButton::toggled,this,&MainWindow::sleep);
     connect(ui->actionTest_All_Connections,&QAction::triggered,p_hwm,&HardwareManager::testAll);
-    connect(ui->actionView_Experiment,&QAction::triggered,this,&MainWindow::viewExperiment);
+    connect(ui->viewExperimentAction,&QAction::triggered,this,&MainWindow::viewExperiment);
 
 #ifdef BC_LIF
     connect(ui->actionLifConfig,&QAction::triggered,this,&MainWindow::launchLifConfigDialog);
@@ -997,10 +998,35 @@ void MainWindow::viewExperiment()
             return;
         }
 
-        ExperimentViewWidget *evw = new ExperimentViewWidget(num,path);
-        connect(this,&MainWindow::closing,evw,&ExperimentViewWidget::close);
-        evw->show();
-        evw->raise();
+        // Get the full path for tracking
+        QString fullPath = BlackchirpCSV::exptDir(num, path).absolutePath();
+        
+        // Check if experiment is already open
+        auto it = d_openExperiments.find(fullPath);
+        if (it != d_openExperiments.end()) {
+            // Experiment already open, raise existing window
+            ExperimentViewWidget* existingWidget = it->second.get();
+            existingWidget->show();
+            existingWidget->raise();
+            existingWidget->notifyAlreadyOpen();
+            return;
+        }
+        
+        // Create new experiment view widget
+        auto evw = std::make_unique<ExperimentViewWidget>(num, path);
+        ExperimentViewWidget* evwPtr = evw.get();
+        
+        // Connect signals for cleanup and window management
+        connect(this, &MainWindow::closing, evwPtr, &ExperimentViewWidget::close);
+        connect(evwPtr, &ExperimentViewWidget::widgetClosing, this, [this, fullPath]() {
+            removeExperimentWidget(fullPath);
+        });
+        
+        // Store in tracking map and show
+        d_openExperiments[fullPath] = std::move(evw);
+        updateViewExperimentMenu();
+        evwPtr->show();
+        evwPtr->raise();
     }
 }
 
@@ -1167,5 +1193,64 @@ void MainWindow::closeEvent(QCloseEvent *ev)
         }
 
         ev->accept();
+    }
+}
+
+void MainWindow::removeExperimentWidget(const QString& path)
+{
+    auto it = d_openExperiments.find(path);
+    if (it != d_openExperiments.end()) {
+        d_openExperiments.erase(it);
+        updateViewExperimentMenu();
+    }
+}
+
+void MainWindow::updateViewExperimentMenu()
+{
+    // Get current actions (skip first action and separator)
+    QList<QAction*> actions = ui->viewExperimentMenu->actions();
+    
+    // Remove actions for experiments that are no longer open
+    // Start from index 2 to skip "View Experiment..." action and separator
+    for (int i = actions.size() - 1; i >= 2; --i) {
+        QAction* action = actions[i];
+        QString actionPath = action->data().toString();
+        
+        if (d_openExperiments.find(actionPath) == d_openExperiments.end()) {
+            ui->viewExperimentMenu->removeAction(action);
+            action->deleteLater();
+        }
+    }
+    
+    // Add actions for new experiments that aren't in the menu yet
+    for (const auto& [path, widget] : d_openExperiments) {
+        bool actionExists = false;
+        for (int i = 2; i < actions.size(); ++i) {
+            if (actions[i]->data().toString() == path) {
+                actionExists = true;
+                break;
+            }
+        }
+        
+        if (!actionExists) {
+            QString experimentTitle = widget->windowTitle();
+            QAction* experimentAction = new QAction(experimentTitle, this);
+            experimentAction->setData(path); // Store path in data for identification
+            connect(experimentAction, &QAction::triggered, this, [this, path]() {
+                showExistingExperiment(path);
+            });
+            ui->viewExperimentMenu->addAction(experimentAction);
+        }
+    }
+}
+
+void MainWindow::showExistingExperiment(const QString& path)
+{
+    auto it = d_openExperiments.find(path);
+    if (it != d_openExperiments.end()) {
+        ExperimentViewWidget* widget = it->second.get();
+        widget->show();
+        widget->raise();
+        widget->notifyAlreadyOpen();
     }
 }

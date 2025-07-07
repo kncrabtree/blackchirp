@@ -22,8 +22,11 @@ public:
     Ft getMainPlotFt() const;
     void setCurrentTab(const QString &tabName);
 
+    void notifyAlreadyOpen();
+
 signals:
     void logMessage(QString msg, LogHandler::MessageCode t = LogHandler::Normal);
+    void widgetClosing();
 
 private:
     std::unique_ptr<Experiment> pu_experiment;
@@ -39,6 +42,9 @@ private:
 #ifdef BC_LIF
     QWidget *buildLifWidget();
 #endif
+
+protected:
+    void closeEvent(QCloseEvent *event) override;
 };
 
 #endif // EXPERIMENTVIEWWIDGET_H

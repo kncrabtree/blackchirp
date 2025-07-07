@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include <QList>
 #include <QPair>
+#include <memory>
+#include <map>
 
 #include <gui/plot/zoompanplot.h>
 #include <data/experiment/experiment.h>
@@ -23,6 +25,7 @@ class QAction;
 class HWDialog;
 class QuickExptDialog;
 class LifControlWidget;
+class ExperimentViewWidget;
 
 namespace Ui {
 class MainWindow;
@@ -93,12 +96,18 @@ private:
 
     void configureUi(ProgramState s);
     void startBatch(BatchManager *bm);
+    void removeExperimentWidget(const QString& path);
+    void updateViewExperimentMenu();
+    void showExistingExperiment(const QString& path);
 
     ProgramState d_state{Idle};
     int d_logCount{0};
     LogHandler::MessageCode d_logIcon{LogHandler::Normal};
     int d_currentExptNum{0};
     BatchManager *p_batchManager{nullptr};
+    
+    // Track open experiment view widgets by experiment path
+    std::map<QString, std::unique_ptr<ExperimentViewWidget>> d_openExperiments;
 
 
 protected:

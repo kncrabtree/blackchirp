@@ -12,6 +12,7 @@
 #include <QToolBar>
 #include <QAction>
 #include <QMessageBox>
+#include <QCloseEvent>
 
 #include <gui/widget/ftmwviewwidget.h>
 #include <gui/widget/experimentsummarywidget.h>
@@ -28,7 +29,6 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, QWidget *paren
     pu_experiment = std::make_unique<Experiment>(num,path);
     setWindowFlags(Qt::Window);
     setWindowTitle(QString("Experiment %1").arg(pu_experiment->d_number));
-    setAttribute(Qt::WA_DeleteOnClose);
     setWindowIcon(QIcon(QString(":/icons/bc_logo_small.png")));
 
 
@@ -237,5 +237,18 @@ void ExperimentViewWidget::setCurrentTab(const QString &tabName)
             break;
         }
     }
+}
+
+void ExperimentViewWidget::notifyAlreadyOpen()
+{
+    QString title = QString("Experiment %1").arg(pu_experiment->d_number);
+    QString message = "This experiment is already open in this window.";
+    QMessageBox::information(this, title, message, QMessageBox::Ok);
+}
+
+void ExperimentViewWidget::closeEvent(QCloseEvent *event)
+{
+    emit widgetClosing();
+    QWidget::closeEvent(event);
 }
 
