@@ -1,35 +1,40 @@
 #ifndef BCEXPOVERLAYDIALOG_H
 #define BCEXPOVERLAYDIALOG_H
 
-#include <QDialog>
 #include <QSpinBox>
 #include <QCheckBox>
 #include <QLineEdit>
 #include <QToolButton>
-#include <QRadioButton>
-#include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QGroupBox>
-#include <QLabel>
 #include <QPushButton>
+#include <QLabel>
 #include <memory>
 
 #include <data/analysis/ft.h>
 #include <data/experiment/overlaytypes.h>
-#include "overlaybaseoptionswidget.h"
+#include "overlayconfigdialog.h"
 
 class ExperimentViewWidget;
 class FtmwViewWidget;
 
-class BCExpOverlayDialog : public QDialog
+class BCExpOverlayDialog : public OverlayConfigDialog
 {
     Q_OBJECT
 
 public:
-    explicit BCExpOverlayDialog(const QStringList &plotNames, double xRangeMin, double xRangeMax, FtmwViewWidget *parent = nullptr);
+    explicit BCExpOverlayDialog(FtmwViewWidget *parent);
     ~BCExpOverlayDialog();
 
-    std::shared_ptr<OverlayBase> createOverlay() const;
+    std::shared_ptr<OverlayBase> createOverlay() const override;
+
+protected:
+    // OverlayConfigDialog interface
+    void setupTypeSpecificUI() override;
+    void setupTypeSpecificConnections() override;
+    void initializeTypeSpecificDefaults() override;
+    bool validateTypeSpecificSettings(QString &errorMessage) override;
+    bool isTypeSpecificDataValid() const override;
 
 private slots:
     void onExperimentNumberChanged(int number);
@@ -38,49 +43,25 @@ private slots:
     void onPathChanged();
     void validateExperiment();
     void onConfigureFtClicked();
-    void onDialogAccepted();
-
-public slots:
-    void accept() override;
 
 private:
-    // Parent widget for accessing current settings
-    FtmwViewWidget *p_ftmwViewWidget;
-    
     // UI elements - Experiment selection
     QSpinBox *p_experimentNumberSpinBox;
     QCheckBox *p_usePathCheckBox;
     QLineEdit *p_pathLineEdit;
     QToolButton *p_browseButton;
-    QLabel *p_validationLabel;
-    
-    // Overlay base options
-    OverlayBaseOptionsWidget *p_overlayOptionsWidget;
     
     // FT Configuration
     QPushButton *p_configureFtButton;
     
-    QDialogButtonBox *p_buttonBox;
-    
     // State
-    QString d_currentExperimentPath;
     bool d_experimentValid;
-    QStringList d_plotNames;
     Ft d_configuredFt;
     bool d_hasFtData;
-    double d_xRangeMin, d_xRangeMax;
-
-    ExperimentViewWidget *p_msw;
     
     // Helper methods
-    void setupUI();
     void setupExperimentSelection();
-    void setupOverlayBaseOptions();
     void setupFtConfiguration();
-    void setupConnections();
-    void initializeDefaults();
-    void updateValidationStatus(bool valid, const QString &message = QString());
-    void updateOkButtonState();
     void resetFtConfiguration();
     QString getExperimentPath() const;
     bool validateExperimentPath(const QString &path, QString &errorMessage);

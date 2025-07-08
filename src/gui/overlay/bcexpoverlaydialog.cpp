@@ -19,26 +19,18 @@
 
 using namespace BC::Store;
 
-BCExpOverlayDialog::BCExpOverlayDialog(const QStringList &plotNames, double xRangeMin, double xRangeMax, FtmwViewWidget *parent) :
-    QDialog(parent),
-    p_ftmwViewWidget(parent),
+BCExpOverlayDialog::BCExpOverlayDialog(FtmwViewWidget *parent) :
+    OverlayConfigDialog(parent),
     d_experimentValid(false),
-    d_plotNames(plotNames),
-    d_hasFtData(false),
-    d_xRangeMin(xRangeMin),
-    d_xRangeMax(xRangeMax),
-    p_msw(nullptr)
+    d_hasFtData(false)
 {
-    setupUI();
-    setupConnections();
-    initializeDefaults();
+    setWindowTitle("Add BCExperiment Overlay");
+    
+    // Note: setupUI() will be called after construction by the creator
 }
 
 BCExpOverlayDialog::~BCExpOverlayDialog()
 {
-    if (p_msw) {
-        p_msw->deleteLater();
-    }
 }
 
 std::shared_ptr<OverlayBase> BCExpOverlayDialog::createOverlay() const
@@ -65,31 +57,10 @@ std::shared_ptr<OverlayBase> BCExpOverlayDialog::createOverlay() const
     return overlay;
 }
 
-void BCExpOverlayDialog::setupUI()
+void BCExpOverlayDialog::setupTypeSpecificUI()
 {
-    setWindowTitle("Add BCExperiment Overlay");
-    setModal(true);
-    resize(450, 400);
-    
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    
-    setupOverlayBaseOptions();
     setupExperimentSelection();
     setupFtConfiguration();
-    
-    // Add validation label
-    p_validationLabel = new QLabel(this);
-    p_validationLabel->setStyleSheet("QLabel { color: red; }");
-    p_validationLabel->setWordWrap(true);
-    p_validationLabel->hide();
-    mainLayout->addWidget(p_validationLabel);
-    
-    // Add button box
-    p_buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
-    p_buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
-    mainLayout->addWidget(p_buttonBox);
-    
-    setLayout(mainLayout);
 }
 
 void BCExpOverlayDialog::setupExperimentSelection()
@@ -122,17 +93,6 @@ void BCExpOverlayDialog::setupExperimentSelection()
     layout()->addWidget(experimentGroup);
 }
 
-void BCExpOverlayDialog::setupOverlayBaseOptions()
-{
-    QGroupBox *optionsGroup = new QGroupBox("Overlay Options", this);
-    QVBoxLayout *optionsLayout = new QVBoxLayout(optionsGroup);
-    
-    // Create the options widget with the plot names and xRange
-    p_overlayOptionsWidget = new OverlayBaseOptionsWidget(d_plotNames, d_xRangeMin, d_xRangeMax, this);
-    optionsLayout->addWidget(p_overlayOptionsWidget);
-    
-    layout()->addWidget(optionsGroup);
-}
 
 void BCExpOverlayDialog::setupFtConfiguration()
 {
@@ -153,7 +113,7 @@ void BCExpOverlayDialog::setupFtConfiguration()
     layout()->addWidget(ftGroup);
 }
 
-void BCExpOverlayDialog::setupConnections()
+void BCExpOverlayDialog::setupTypeSpecificConnections()
 {
     // Experiment selection
     connect(p_experimentNumberSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
@@ -168,15 +128,9 @@ void BCExpOverlayDialog::setupConnections()
     // FT Configuration
     connect(p_configureFtButton, &QPushButton::clicked,
             this, &BCExpOverlayDialog::onConfigureFtClicked);
-    
-    // Dialog buttons
-    connect(p_buttonBox, &QDialogButtonBox::accepted,
-            this, &BCExpOverlayDialog::onDialogAccepted);
-    connect(p_buttonBox, &QDialogButtonBox::rejected,
-            this, &QDialog::reject);
 }
 
-void BCExpOverlayDialog::initializeDefaults()
+void BCExpOverlayDialog::initializeTypeSpecificDefaults()
 {
     // Load the last used experiment number
     SettingsStorage s;
@@ -336,28 +290,6 @@ void BCExpOverlayDialog::onConfigureFtClicked()
     ftDialog->deleteLater();
 }
 
-void BCExpOverlayDialog::onDialogAccepted()
-{
-    // Additional validation could go here
-    accept();
-}
-
-void BCExpOverlayDialog::updateValidationStatus(bool valid, const QString &message)
-{
-    if (valid) {
-        p_validationLabel->hide();
-    } else {
-        p_validationLabel->setText(message);
-        p_validationLabel->show();
-    }
-}
-
-void BCExpOverlayDialog::updateOkButtonState()
-{
-    bool canAccept = d_experimentValid && d_hasFtData;
-    p_buttonBox->button(QDialogButtonBox::Ok)->setEnabled(canAccept);
-}
-
 void BCExpOverlayDialog::resetFtConfiguration()
 {
     d_configuredFt = Ft(); // Reset to empty FT
@@ -419,44 +351,30 @@ bool BCExpOverlayDialog::validateExperimentPath(const QString &path, QString &er
 
 
 
-void BCExpOverlayDialog::accept()
+bool BCExpOverlayDialog::validateTypeSpecificSettings(QString &errorMessage)
 {
-    QStringList validationErrors;
+    QStringList errors;
     
     // Validate experiment
     if (!d_experimentValid) {
-        validationErrors << "Please select a valid experiment";
-    }
-    
-    // Validate overlay base options
-    if (p_overlayOptionsWidget) {
-        QString overlayError;
-        QVector<std::shared_ptr<OverlayBase>> existingOverlays;
-        
-        // Get existing overlays from parent if available
-        if (p_ftmwViewWidget) {
-            existingOverlays = p_ftmwViewWidget->getAllOverlays();
-        }
-        
-        if (!p_overlayOptionsWidget->validateSettings(overlayError, existingOverlays)) {
-            validationErrors << overlayError;
-        }
+        errors << "Please select a valid experiment";
     }
     
     // Validate FT configuration
     if (!d_hasFtData) {
-        validationErrors << "Please configure FT processing by clicking 'Configure FT...'";
+        errors << "Please configure FT processing by clicking 'Configure FT...'";
     }
     
-    // Show validation errors if any
-    if (!validationErrors.isEmpty()) {
-        QString errorMessage = "Please fix the following issues:\n\n";
-        errorMessage += validationErrors.join("\n");
-        
-        QMessageBox::warning(this, "Validation Error", errorMessage);
-        return; // Don't close dialog
+    if (!errors.isEmpty()) {
+        errorMessage = errors.join("\n");
+        return false;
     }
     
-    // All validation passed, call base class accept
-    QDialog::accept();
+    return true;
 }
+
+bool BCExpOverlayDialog::isTypeSpecificDataValid() const
+{
+    return d_experimentValid && d_hasFtData;
+}
+
