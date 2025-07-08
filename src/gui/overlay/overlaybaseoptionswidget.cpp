@@ -1,11 +1,12 @@
 #include "overlaybaseoptionswidget.h"
 
 #include <QFormLayout>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <limits>
 
-OverlayBaseOptionsWidget::OverlayBaseOptionsWidget(const QStringList &plotNames, QWidget *parent)
-    : QWidget(parent)
+OverlayBaseOptionsWidget::OverlayBaseOptionsWidget(const QStringList &plotNames, double xRangeMin, double xRangeMax, QWidget *parent)
+    : QWidget(parent), d_xRangeMin(xRangeMin), d_xRangeMax(xRangeMax)
 {
     setupUI();
     
@@ -51,6 +52,38 @@ void OverlayBaseOptionsWidget::setupUI()
     p_xOffsetSpinBox->setSingleStep(1.0);
     layout->addRow("X Offset:", p_xOffsetSpinBox);
     
+    // Min Frequency Limit
+    QWidget *minFreqWidget = new QWidget(this);
+    QHBoxLayout *minFreqLayout = new QHBoxLayout(minFreqWidget);
+    minFreqLayout->setContentsMargins(0, 0, 0, 0);
+    p_minFreqCheckBox = new QCheckBox("Enable", this);
+    p_minFreqSpinBox = new QDoubleSpinBox(this);
+    p_minFreqSpinBox->setRange(-1e10, 1e10);
+    p_minFreqSpinBox->setDecimals(4);
+    p_minFreqSpinBox->setSingleStep(1.0);
+    p_minFreqSpinBox->setSuffix(" MHz");
+    minFreqLayout->addWidget(p_minFreqCheckBox);
+    minFreqLayout->addWidget(p_minFreqSpinBox);
+    minFreqLayout->addStretch();
+    connect(p_minFreqCheckBox, &QCheckBox::toggled, p_minFreqSpinBox, &QDoubleSpinBox::setEnabled);
+    layout->addRow("Min Frequency:", minFreqWidget);
+    
+    // Max Frequency Limit
+    QWidget *maxFreqWidget = new QWidget(this);
+    QHBoxLayout *maxFreqLayout = new QHBoxLayout(maxFreqWidget);
+    maxFreqLayout->setContentsMargins(0, 0, 0, 0);
+    p_maxFreqCheckBox = new QCheckBox("Enable", this);
+    p_maxFreqSpinBox = new QDoubleSpinBox(this);
+    p_maxFreqSpinBox->setRange(-1e10, 1e10);
+    p_maxFreqSpinBox->setDecimals(4);
+    p_maxFreqSpinBox->setSingleStep(1.0);
+    p_maxFreqSpinBox->setSuffix(" MHz");
+    maxFreqLayout->addWidget(p_maxFreqCheckBox);
+    maxFreqLayout->addWidget(p_maxFreqSpinBox);
+    maxFreqLayout->addStretch();
+    connect(p_maxFreqCheckBox, &QCheckBox::toggled, p_maxFreqSpinBox, &QDoubleSpinBox::setEnabled);
+    layout->addRow("Max Frequency:", maxFreqWidget);
+    
     setLayout(layout);
 }
 
@@ -61,6 +94,15 @@ void OverlayBaseOptionsWidget::initializeDefaults()
     p_yScaleSpinBox->setValue(1.0);
     p_yOffsetSpinBox->setValue(0.0);
     p_xOffsetSpinBox->setValue(0.0);
+    
+    // Set frequency limits from xRange (disabled by default)
+    p_minFreqCheckBox->setChecked(false);
+    p_minFreqSpinBox->setValue(d_xRangeMin);
+    p_minFreqSpinBox->setEnabled(false);
+    
+    p_maxFreqCheckBox->setChecked(false);
+    p_maxFreqSpinBox->setValue(d_xRangeMax);
+    p_maxFreqSpinBox->setEnabled(false);
     
     // Set default plot to main plot (case insensitive search for "ft" and "main")
     int mainPlotIndex = -1;
@@ -174,6 +216,23 @@ bool OverlayBaseOptionsWidget::validateSettings(QString &errorMessage, const QVe
         errors << "X Offset must be a finite number";
     }
     
+    // Check frequency limit consistency
+    if (getMinFreqEnabled() && getMaxFreqEnabled()) {
+        double minFreq = getMinFreqValue();
+        double maxFreq = getMaxFreqValue();
+        if (minFreq >= maxFreq) {
+            errors << "Minimum frequency must be less than maximum frequency";
+        }
+    }
+    
+    // Check for finite frequency values
+    if (getMinFreqEnabled() && !qIsFinite(getMinFreqValue())) {
+        errors << "Minimum frequency must be a finite number";
+    }
+    if (getMaxFreqEnabled() && !qIsFinite(getMaxFreqValue())) {
+        errors << "Maximum frequency must be a finite number";
+    }
+    
     if (!errors.isEmpty()) {
         errorMessage = errors.join("\n");
         return false;
@@ -193,4 +252,38 @@ void OverlayBaseOptionsWidget::applyToOverlay(std::shared_ptr<OverlayBase> overl
     overlay->setYScale(getYScale());
     overlay->setYOffset(getYOffset());
     overlay->setXOffset(getXOffset());
+    overlay->setMinFreqLimit(getMinFreqEnabled(), getMinFreqValue());
+    overlay->setMaxFreqLimit(getMaxFreqEnabled(), getMaxFreqValue());
+}
+
+bool OverlayBaseOptionsWidget::getMinFreqEnabled() const
+{
+    return p_minFreqCheckBox->isChecked();
+}
+
+double OverlayBaseOptionsWidget::getMinFreqValue() const
+{
+    return p_minFreqSpinBox->value();
+}
+
+bool OverlayBaseOptionsWidget::getMaxFreqEnabled() const
+{
+    return p_maxFreqCheckBox->isChecked();
+}
+
+double OverlayBaseOptionsWidget::getMaxFreqValue() const
+{
+    return p_maxFreqSpinBox->value();
+}
+
+void OverlayBaseOptionsWidget::setMinFreqLimit(bool enabled, double value)
+{
+    p_minFreqCheckBox->setChecked(enabled);
+    p_minFreqSpinBox->setValue(value);
+}
+
+void OverlayBaseOptionsWidget::setMaxFreqLimit(bool enabled, double value)
+{
+    p_maxFreqCheckBox->setChecked(enabled);
+    p_maxFreqSpinBox->setValue(value);
 }

@@ -19,12 +19,14 @@
 
 using namespace BC::Store;
 
-BCExpOverlayDialog::BCExpOverlayDialog(const QStringList &plotNames, FtmwViewWidget *parent) :
+BCExpOverlayDialog::BCExpOverlayDialog(const QStringList &plotNames, double xRangeMin, double xRangeMax, FtmwViewWidget *parent) :
     QDialog(parent),
     p_ftmwViewWidget(parent),
     d_experimentValid(false),
     d_plotNames(plotNames),
     d_hasFtData(false),
+    d_xRangeMin(xRangeMin),
+    d_xRangeMax(xRangeMax),
     p_msw(nullptr)
 {
     setupUI();
@@ -125,8 +127,8 @@ void BCExpOverlayDialog::setupOverlayBaseOptions()
     QGroupBox *optionsGroup = new QGroupBox("Overlay Options", this);
     QVBoxLayout *optionsLayout = new QVBoxLayout(optionsGroup);
     
-    // Create the options widget with the plot names
-    p_overlayOptionsWidget = new OverlayBaseOptionsWidget(d_plotNames, this);
+    // Create the options widget with the plot names and xRange
+    p_overlayOptionsWidget = new OverlayBaseOptionsWidget(d_plotNames, d_xRangeMin, d_xRangeMax, this);
     optionsLayout->addWidget(p_overlayOptionsWidget);
     
     layout()->addWidget(optionsGroup);

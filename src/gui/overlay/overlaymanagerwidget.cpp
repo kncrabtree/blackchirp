@@ -263,9 +263,10 @@ void OverlayManagerWidget::addOverlay()
                 return;
             }
             
-            // Get plot names from parent and create the dialog
+            // Get plot names and xRange from parent and create the dialog
             QStringList plotNames = ftmwParent->getPlotNames();
-            BCExpOverlayDialog dialog(plotNames, ftmwParent);
+            auto xRange = ftmwParent->getMainPlotFt().xRange();
+            BCExpOverlayDialog dialog(plotNames, xRange.first, xRange.second, ftmwParent);
             if(dialog.exec() == QDialog::Accepted) {
                 // Create the overlay
                 overlay = dialog.createOverlay();

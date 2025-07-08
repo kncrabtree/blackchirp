@@ -26,7 +26,7 @@ class BCExpOverlayDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit BCExpOverlayDialog(const QStringList &plotNames, FtmwViewWidget *parent = nullptr);
+    explicit BCExpOverlayDialog(const QStringList &plotNames, double xRangeMin, double xRangeMax, FtmwViewWidget *parent = nullptr);
     ~BCExpOverlayDialog();
 
     std::shared_ptr<OverlayBase> createOverlay() const;
@@ -68,6 +68,7 @@ private:
     QStringList d_plotNames;
     Ft d_configuredFt;
     bool d_hasFtData;
+    double d_xRangeMin, d_xRangeMax;
 
     ExperimentViewWidget *p_msw;
     
