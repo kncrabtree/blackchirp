@@ -539,14 +539,14 @@ void OverlayManagerWidget::onModelDataChanged(const QModelIndex &topLeft, const 
             
             // Check which column was changed and emit appropriate signal
             switch (col) {
-            case 0: // LabelColumn - doesn't affect plot display
-            case 5: // SourceFileColumn - doesn't affect plot display
+            case OverlayTableModel::LabelColumn: // Label - doesn't affect plot display
+            case OverlayTableModel::SourceFileColumn: // SourceFile - doesn't affect plot display
                 // No signal needed
                 break;
-            case 1: // PlotIdColumn - requires plot migration
+            case OverlayTableModel::PlotIdColumn: // PlotId - requires plot migration
                 emit overlayPlotChanged(overlay, overlay->getPlotId());
                 break;
-            default: // All other columns affect plot data (YScale, YOffset, XOffset, and future columns)
+            default: // All other columns affect plot data (YScale, YOffset, XOffset, frequency limits)
                 emit overlayDataChanged(overlay);
                 break;
             }
