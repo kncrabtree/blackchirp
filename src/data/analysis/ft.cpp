@@ -185,6 +185,13 @@ double Ft::xLast() const
     return data->x0MHz + (double)(size()-1)*data->spacingMHz;
 }
 
+std::pair<double, double> Ft::xRange() const
+{
+    auto x1 = xFirst();
+    auto x2 = xLast();
+    return {std::min(x1,x2),std::max(x1,x2)};
+}
+
 double Ft::xSpacing() const
 {
     return data->spacingMHz;

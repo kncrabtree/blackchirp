@@ -220,7 +220,7 @@ void ZoomPanPlot::replot()
 
         //update bounding rects
         auto c = dynamic_cast<BlackchirpPlotCurveBase*>(l.at(i));
-        if(c)
+        if(c && c->testItemAttribute(QwtPlotItem::AutoScale))
         {
             auto r = c->boundingRect();
             if(r.width() < 0.0 || r.height() < 0.0 || !c->isVisible())
