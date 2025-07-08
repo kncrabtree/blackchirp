@@ -250,45 +250,48 @@ void OverlayManagerWidget::addOverlay()
     using namespace BC::Property::Overlay;
     auto type = static_cast<OverlayBase::OverlayType>(currentTabWidget->property(overlayType.toLocal8Bit().constData()).toInt());
 
-    // Create overlay and get associated model based on type
+    // pointers used for the overlay dialog, model, and overlay object
     std::shared_ptr<OverlayBase> overlay = nullptr;
     OverlayTableModel* model = nullptr;
+    OverlayConfigDialog *dialog = nullptr;
+
+    // Get the FtmwViewWidget parent for dialog constructors
+    FtmwViewWidget* ftmwParent = qobject_cast<FtmwViewWidget*>(parentWidget());
+    if(!ftmwParent) {
+        return;
+    }
     
+    // Create appropriate dialog and store the correct model
     switch(type) {
     case OverlayBase::BCExperiment:
         {
-            // Get the FtmwViewWidget parent for plot names
-            FtmwViewWidget* ftmwParent = qobject_cast<FtmwViewWidget*>(parentWidget());
-            if(!ftmwParent) {
-                qDebug() << "Warning: OverlayManagerWidget parent is not FtmwViewWidget";
-                return;
-            }
-            
-            // Create the dialog (parameters accessed automatically from parent)
-            BCExpOverlayDialog dialog(ftmwParent);
-            dialog.setupUI(); // Set up UI after construction is complete
-            if(dialog.exec() == QDialog::Accepted) {
-                // Create the overlay
-                overlay = dialog.createOverlay();
-                model = p_bcExperimentModel;
-            }
+            dialog = new BCExpOverlayDialog(ftmwParent);
+            model = p_bcExperimentModel;
             break;
         }
     case OverlayBase::SPCAT:
         // TODO: Implement SPCAT overlay creation
-        // overlay = createSPCATOverlay();
+        // dialog = new SPCATOverlayDialog(ftmwParent);
         // model = p_spcatModel;
         qDebug() << "SPCAT overlay creation not yet implemented";
         break;
     case OverlayBase::GenericXY:
         // TODO: Implement GenericXY overlay creation
-        // overlay = createGenericXYOverlay();
+        // dialog = new GenericXYOverlayDialog(ftmwParent);
         // model = p_genericXYModel;
         qDebug() << "GenericXY overlay creation not yet implemented";
         break;
     default:
         qDebug() << "Unknown overlay type";
         break;
+    }
+
+    // Run the dialog and get the overlay if accepted
+    dialog->setModal(true);
+    dialog->setupUI(); // Set up UI after construction is complete
+    if(dialog->exec() == QDialog::Accepted) {
+        // Create the overlay
+        overlay = dialog->createOverlay();
     }
     
     // Add overlay to storage if created successfully
@@ -300,12 +303,10 @@ void OverlayManagerWidget::addOverlay()
             
             // Update UI state to show any pending writes
             updateButtonStates();
-            
-            qDebug() << "Overlay created and added to storage successfully";
-        } else {
-            qDebug() << "Failed to add overlay to storage";
         }
     }
+
+    dialog->deleteLater();
 }
 
 void OverlayManagerWidget::removeOverlay()
