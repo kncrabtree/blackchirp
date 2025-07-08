@@ -8,16 +8,32 @@ OverlayBase::OverlayBase(OverlayType type) : d_type{type}
 
 QVector<QPointF> OverlayBase::xyData() const
 {
+    // Return cached data if valid
+    if (d_cacheValid) {
+        return d_cachedFilteredData;
+    }
+    
     QVector<QPointF> rawData = _xyData();
     QVector<QPointF> transformedData;
     transformedData.reserve(rawData.size());
     
-    // Apply scaling and offset transformations
+    // Apply scaling, offset transformations, and frequency filtering
     for (const QPointF& point : rawData) {
         double newX = point.x() + d_xOffset;
         double newY = (point.y() * d_yScale) + d_yOffset;
+        
+        // Apply frequency range filtering
+        if (d_minFreqEnabled && newX < d_minFreqValue)
+            continue;
+        if (d_maxFreqEnabled && newX > d_maxFreqValue)
+            continue;
+            
         transformedData.append(QPointF(newX, newY));
     }
+    
+    // Cache the result
+    d_cachedFilteredData = transformedData;
+    d_cacheValid = true;
     
     return transformedData;
 }
@@ -55,6 +71,26 @@ double OverlayBase::getYOffset() const
 double OverlayBase::getXOffset() const
 {
     return d_xOffset;
+}
+
+bool OverlayBase::getMinFreqEnabled() const
+{
+    return d_minFreqEnabled;
+}
+
+double OverlayBase::getMinFreqValue() const
+{
+    return d_minFreqValue;
+}
+
+bool OverlayBase::getMaxFreqEnabled() const
+{
+    return d_maxFreqEnabled;
+}
+
+double OverlayBase::getMaxFreqValue() const
+{
+    return d_maxFreqValue;
 }
 
 void OverlayBase::setLabel(const QString &newlabel)
@@ -97,6 +133,23 @@ void OverlayBase::setXOffset(double newxOffset)
 {
     d_modified = true;
     d_xOffset = newxOffset;
+    invalidateCache();
+}
+
+void OverlayBase::setMinFreqLimit(bool enabled, double value)
+{
+    d_modified = true;
+    d_minFreqEnabled = enabled;
+    d_minFreqValue = value;
+    invalidateCache();
+}
+
+void OverlayBase::setMaxFreqLimit(bool enabled, double value)
+{
+    d_modified = true;
+    d_maxFreqEnabled = enabled;
+    d_maxFreqValue = value;
+    invalidateCache();
 }
 
 void OverlayBase::save()
@@ -117,6 +170,10 @@ void OverlayBase::storeMetadata(std::map<QString,QVariant> &m)
     m.emplace(oYScale,d_yScale);
     m.emplace(oYOffset,d_yOffset);
     m.emplace(oXOffset,d_xOffset);
+    m.emplace(oMinFreqEnabled,d_minFreqEnabled);
+    m.emplace(oMinFreqValue,d_minFreqValue);
+    m.emplace(oMaxFreqEnabled,d_maxFreqEnabled);
+    m.emplace(oMaxFreqValue,d_maxFreqValue);
     
     // Add curve metadata with "curve_" prefix
     for(const auto& [key, value] : d_curveMetadata) {
@@ -152,6 +209,21 @@ void OverlayBase::retrieveMetadata(const std::map<QString,QVariant> &m)
     it = m.find(oXOffset);
     if(it != m.end())
         d_xOffset = it->second.toDouble();
+    it = m.find(oMinFreqEnabled);
+    if(it != m.end())
+        d_minFreqEnabled = it->second.toBool();
+    it = m.find(oMinFreqValue);
+    if(it != m.end())
+        d_minFreqValue = it->second.toDouble();
+    it = m.find(oMaxFreqEnabled);
+    if(it != m.end())
+        d_maxFreqEnabled = it->second.toBool();
+    it = m.find(oMaxFreqValue);
+    if(it != m.end())
+        d_maxFreqValue = it->second.toDouble();
+    
+    // Invalidate cache after loading metadata
+    invalidateCache();
     
     // Extract curve metadata (keys starting with "curve_")
     d_curveMetadata.clear();
@@ -163,4 +235,9 @@ void OverlayBase::retrieveMetadata(const std::map<QString,QVariant> &m)
     
     _retrieveMetadata(m);
     
+}
+
+void OverlayBase::invalidateCache()
+{
+    d_cacheValid = false;
 }
