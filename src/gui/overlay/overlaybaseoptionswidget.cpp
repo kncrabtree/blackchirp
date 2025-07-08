@@ -33,22 +33,22 @@ void OverlayBaseOptionsWidget::setupUI()
     // Y Scale
     p_yScaleSpinBox = new QDoubleSpinBox(this);
     p_yScaleSpinBox->setRange(-1e10, 1e10);
-    p_yScaleSpinBox->setDecimals(6);
-    p_yScaleSpinBox->setSingleStep(0.1);
+    p_yScaleSpinBox->setDecimals(4);
+    p_yScaleSpinBox->setSingleStep(1.0);
     layout->addRow("Y Scale:", p_yScaleSpinBox);
     
     // Y Offset
     p_yOffsetSpinBox = new QDoubleSpinBox(this);
     p_yOffsetSpinBox->setRange(-1e10, 1e10);
-    p_yOffsetSpinBox->setDecimals(6);
-    p_yOffsetSpinBox->setSingleStep(0.1);
+    p_yOffsetSpinBox->setDecimals(4);
+    p_yOffsetSpinBox->setSingleStep(1.0);
     layout->addRow("Y Offset:", p_yOffsetSpinBox);
     
     // X Offset
     p_xOffsetSpinBox = new QDoubleSpinBox(this);
     p_xOffsetSpinBox->setRange(-1e10, 1e10);
-    p_xOffsetSpinBox->setDecimals(6);
-    p_xOffsetSpinBox->setSingleStep(0.1);
+    p_xOffsetSpinBox->setDecimals(4);
+    p_xOffsetSpinBox->setSingleStep(1.0);
     layout->addRow("X Offset:", p_xOffsetSpinBox);
     
     setLayout(layout);

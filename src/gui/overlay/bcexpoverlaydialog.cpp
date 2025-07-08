@@ -73,7 +73,6 @@ void BCExpOverlayDialog::setupUI()
     
     setupOverlayBaseOptions();
     setupExperimentSelection();
-    setupFrameSelection();
     setupFtConfiguration();
     
     // Add validation label
@@ -119,21 +118,6 @@ void BCExpOverlayDialog::setupExperimentSelection()
     formLayout->addRow("Path:", pathLayout);
     
     layout()->addWidget(experimentGroup);
-}
-
-void BCExpOverlayDialog::setupFrameSelection()
-{
-    QGroupBox *frameGroup = new QGroupBox("Frame Selection", this);
-    QFormLayout *formLayout = new QFormLayout(frameGroup);
-    
-    p_frameSpinBox = new QSpinBox(this);
-    p_frameSpinBox->setMinimum(-1);
-    p_frameSpinBox->setMaximum(999999);
-    p_frameSpinBox->setValue(-1);
-    p_frameSpinBox->setSpecialValueText("Averaged Data");
-    formLayout->addRow("Frame:", p_frameSpinBox);
-    
-    layout()->addWidget(frameGroup);
 }
 
 void BCExpOverlayDialog::setupOverlayBaseOptions()

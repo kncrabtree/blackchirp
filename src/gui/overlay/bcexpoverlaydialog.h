@@ -54,9 +54,6 @@ private:
     QToolButton *p_browseButton;
     QLabel *p_validationLabel;
     
-    // Frame selection
-    QSpinBox *p_frameSpinBox;
-    
     // Overlay base options
     OverlayBaseOptionsWidget *p_overlayOptionsWidget;
     
@@ -77,7 +74,6 @@ private:
     // Helper methods
     void setupUI();
     void setupExperimentSelection();
-    void setupFrameSelection();
     void setupOverlayBaseOptions();
     void setupFtConfiguration();
     void setupConnections();
