@@ -1,6 +1,7 @@
 
 #include "overlaytablemodel.h"
 #include <data/experiment/overlaytypes.h>
+#include <QColor>
 
 OverlayTableModel::OverlayTableModel(QObject *parent)
     : QAbstractTableModel(parent)
@@ -50,6 +51,14 @@ QVariant OverlayTableModel::data(const QModelIndex &index, int role) const
                 return overlay->getYOffset();
             case XOffsetColumn:
                 return overlay->getXOffset();
+            case MinFreqEnabledColumn:
+                return overlay->getMinFreqEnabled();
+            case MinFreqValueColumn:
+                return overlay->getMinFreqValue();
+            case MaxFreqEnabledColumn:
+                return overlay->getMaxFreqEnabled();
+            case MaxFreqValueColumn:
+                return overlay->getMaxFreqValue();
             case SourceFileColumn:
                 return overlay->getSourceFile();
             }
@@ -58,6 +67,16 @@ QVariant OverlayTableModel::data(const QModelIndex &index, int role) const
         {
             // Center-align all columns
             return Qt::AlignCenter;
+        }
+        else if (role == Qt::ForegroundRole)
+        {
+            // Gray out frequency value columns when their corresponding checkbox is disabled
+            if (index.column() == MinFreqValueColumn && !overlay->getMinFreqEnabled()) {
+                return QColor(Qt::gray);
+            }
+            if (index.column() == MaxFreqValueColumn && !overlay->getMaxFreqEnabled()) {
+                return QColor(Qt::gray);
+            }
         }
     }
     else
@@ -101,6 +120,22 @@ bool OverlayTableModel::setData(const QModelIndex &index, const QVariant &value,
             break;
         case XOffsetColumn:
             overlay->setXOffset(value.toDouble());
+            break;
+        case MinFreqEnabledColumn:
+            overlay->setMinFreqLimit(value.toBool(), overlay->getMinFreqValue());
+            // Also update the corresponding value column to reflect the new enabled state
+            emit dataChanged(this->index(index.row(), MinFreqValueColumn), this->index(index.row(), MinFreqValueColumn));
+            break;
+        case MinFreqValueColumn:
+            overlay->setMinFreqLimit(overlay->getMinFreqEnabled(), value.toDouble());
+            break;
+        case MaxFreqEnabledColumn:
+            overlay->setMaxFreqLimit(value.toBool(), overlay->getMaxFreqValue());
+            // Also update the corresponding value column to reflect the new enabled state
+            emit dataChanged(this->index(index.row(), MaxFreqValueColumn), this->index(index.row(), MaxFreqValueColumn));
+            break;
+        case MaxFreqValueColumn:
+            overlay->setMaxFreqLimit(overlay->getMaxFreqEnabled(), value.toDouble());
             break;
         case SourceFileColumn:
             // Source file is not editable
@@ -148,6 +183,14 @@ QVariant OverlayTableModel::headerData(int section, Qt::Orientation orientation,
                 return QString("Y Offset");
             case XOffsetColumn:
                 return QString("X Offset");
+            case MinFreqEnabledColumn:
+                return QString::fromUtf8("Min ⏻");
+            case MinFreqValueColumn:
+                return QString("Min Freq (MHz)");
+            case MaxFreqEnabledColumn:
+                return QString::fromUtf8("Max ⏻");
+            case MaxFreqValueColumn:
+                return QString("Max Freq (MHz)");
             case SourceFileColumn:
                 return QString("Source File");
             }
@@ -173,9 +216,30 @@ Qt::ItemFlags OverlayTableModel::flags(const QModelIndex &index) const
     {
         Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 
-        // Label and Source File columns are not editable, others are
-        if (index.column() != LabelColumn && index.column() != SourceFileColumn)
-            flags |= Qt::ItemIsEditable;
+        // Label and Source File columns are not editable
+        // Frequency value columns are only editable if their corresponding checkbox is enabled
+        if (index.column() != LabelColumn && index.column() != SourceFileColumn) {
+            if (index.column() == MinFreqValueColumn) {
+                // MinFreqValue column is only editable if MinFreqEnabled is checked
+                if (index.row() < d_overlays.size()) {
+                    auto overlay = d_overlays.at(index.row());
+                    if (overlay && overlay->getMinFreqEnabled()) {
+                        flags |= Qt::ItemIsEditable;
+                    }
+                }
+            } else if (index.column() == MaxFreqValueColumn) {
+                // MaxFreqValue column is only editable if MaxFreqEnabled is checked
+                if (index.row() < d_overlays.size()) {
+                    auto overlay = d_overlays.at(index.row());
+                    if (overlay && overlay->getMaxFreqEnabled()) {
+                        flags |= Qt::ItemIsEditable;
+                    }
+                }
+            } else {
+                // All other columns are editable
+                flags |= Qt::ItemIsEditable;
+            }
+        }
 
         return flags;
     }

@@ -1,5 +1,6 @@
 #include "overlaymanagerwidget.h"
 #include "bcexpoverlaydialog.h"
+#include "overlaycheckboxdelegate.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -469,6 +470,13 @@ void OverlayManagerWidget::setupTableView()
     p_bcExperimentTableView->setItemDelegateForColumn(2, p_numericDelegate); // YScaleColumn = 2
     p_bcExperimentTableView->setItemDelegateForColumn(3, p_numericDelegate); // YOffsetColumn = 3
     p_bcExperimentTableView->setItemDelegateForColumn(4, p_numericDelegate); // XOffsetColumn = 4
+    p_bcExperimentTableView->setItemDelegateForColumn(6, p_numericDelegate); // MinFreqValueColumn = 6
+    p_bcExperimentTableView->setItemDelegateForColumn(8, p_numericDelegate); // MaxFreqValueColumn = 8
+    
+    // Create checkbox delegate for frequency enabled columns
+    p_checkBoxDelegate = new OverlayCheckBoxDelegate(this);
+    p_bcExperimentTableView->setItemDelegateForColumn(5, p_checkBoxDelegate); // MinFreqEnabledColumn = 5
+    p_bcExperimentTableView->setItemDelegateForColumn(7, p_checkBoxDelegate); // MaxFreqEnabledColumn = 7
     
     // Set up column resize behavior
     resizeColumnsToContents(p_bcExperimentModel, p_bcExperimentTableView);
@@ -482,7 +490,7 @@ void OverlayManagerWidget::resizeColumnsToContents(const OverlayTableModel* mode
     
     auto horizontalHeader = tableView->horizontalHeader();
     int columnCount = model->columnCount();
-    int sourceFileColumn = 5; // SourceFileColumn from OverlayTableModel
+    int sourceFileColumn = 9; // SourceFileColumn from OverlayTableModel
     
     // Resize all columns except the source file column to contents
     for (int i = 0; i < columnCount; ++i) {
@@ -502,7 +510,8 @@ void OverlayManagerWidget::resizeColumnsToContents(const OverlayTableModel* mode
     
     // Set minimum widths for numeric columns to accommodate 12-character numbers
     int minNumericWidth = fm.horizontalAdvance("123456.1234") + 5;
-    for (int i = 2; i <= 4; ++i) { // YScale, YOffset, XOffset columns
+    QVector<int> numericColumns = {2, 3, 4, 6, 8}; // YScale, YOffset, XOffset, MinFreqValue, MaxFreqValue columns
+    for (int i : numericColumns) {
         if (i < columnCount) {
             int currentWidth = tableView->columnWidth(i);
             if (currentWidth < minNumericWidth) {

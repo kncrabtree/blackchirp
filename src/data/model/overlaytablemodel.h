@@ -47,8 +47,12 @@ private:
         YScaleColumn = 2,
         YOffsetColumn = 3,
         XOffsetColumn = 4,
-        SourceFileColumn = 5,
-        BaseColumnCount = 6
+        MinFreqEnabledColumn = 5,
+        MinFreqValueColumn = 6,
+        MaxFreqEnabledColumn = 7,
+        MaxFreqValueColumn = 8,
+        SourceFileColumn = 9,
+        BaseColumnCount = 10
     };
 };
 

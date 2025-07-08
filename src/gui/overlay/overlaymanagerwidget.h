@@ -18,6 +18,7 @@
 #include <data/storage/overlaystorage.h>
 #include "plotidcomboboxdelegate.h"
 #include "overlaynumericdelegate.h"
+#include "overlaycheckboxdelegate.h"
 
 namespace BC::Property::Overlay {
 static const QString overlayType{"overlayType"};
@@ -62,6 +63,7 @@ private:
     QTableView *p_bcExperimentTableView;
     PlotIdComboBoxDelegate *p_plotIdDelegate;
     OverlayNumericDelegate *p_numericDelegate;
+    OverlayCheckBoxDelegate *p_checkBoxDelegate;
     
     // Progress indicator widgets
     QLabel *p_progressLabel;

@@ -24,6 +24,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/overlay/overlaymanagerwidget.cpp \
     $$PWD/overlay/plotidcomboboxdelegate.cpp \
     $$PWD/overlay/overlaynumericdelegate.cpp \
+    $$PWD/overlay/overlaycheckboxdelegate.cpp \
     $$PWD/plot/blackchirpplotcurve.cpp \
     $$PWD/plot/chirpconfigplot.cpp \
     $$PWD/plot/curvefactory.cpp \
@@ -87,6 +88,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/overlay/overlaymanagerwidget.h \
     $$PWD/overlay/plotidcomboboxdelegate.h \
     $$PWD/overlay/overlaynumericdelegate.h \
+    $$PWD/overlay/overlaycheckboxdelegate.h \
     $$PWD/plot/blackchirpplotcurve.h \
     $$PWD/plot/chirpconfigplot.h \
     $$PWD/plot/curvefactory.h \
