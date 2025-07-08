@@ -31,6 +31,7 @@ static const QString bcCurveMarkerSize{"markerSize"};
 static const QString bcCurveAxisX{"xAxis"};
 static const QString bcCurveAxisY{"yAxis"};
 static const QString bcCurveVisible{"visible"};
+static const QString bcCurveAutoscale{"autoscale"};
 static const QString bcCurvePlotIndex{"plotIndex"};
 }
 
@@ -75,6 +76,8 @@ public:
      * \param v Curve visibility
      */
     void setCurveVisible(bool v);
+
+    void setCurveAutoscale(bool enabled);
 
     void setCurveAxisX(QwtPlot::Axis a);
     void setCurveAxisY(QwtPlot::Axis a);

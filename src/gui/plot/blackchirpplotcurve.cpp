@@ -38,6 +38,7 @@ BlackchirpPlotCurveBase::BlackchirpPlotCurveBase(std::unique_ptr<CurveStorageInt
     setAxes(d_storage->get<QwtPlot::Axis>(BC::Key::bcCurveAxisX, QwtPlot::xBottom),
             d_storage->get<QwtPlot::Axis>(BC::Key::bcCurveAxisY, QwtPlot::yLeft));
     setVisible(d_storage->get<bool>(BC::Key::bcCurveVisible, true));
+    setItemAttribute(QwtPlotItem::AutoScale, d_storage->get<bool>(BC::Key::bcCurveAutoscale, true));
 
 }
 
@@ -101,6 +102,12 @@ void BlackchirpPlotCurveBase::setCurveVisible(bool v)
 {
     d_storage->set(BC::Key::bcCurveVisible, v);
     setVisible(v);
+}
+
+void BlackchirpPlotCurveBase::setCurveAutoscale(bool enabled)
+{
+    d_storage->set(BC::Key::bcCurveAutoscale, enabled);
+    setItemAttribute(QwtPlotItem::AutoScale, enabled);
 }
 
 void BlackchirpPlotCurveBase::setCurveAxisX(QwtPlot::Axis a)

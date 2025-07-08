@@ -70,6 +70,7 @@ public slots:
     void setCurveMarker(BlackchirpPlotCurveBase* curve, QwtSymbol::Style s);
     void setCurveMarkerSize(BlackchirpPlotCurveBase* curve, int s);
     void setCurveVisible(BlackchirpPlotCurveBase* curve, bool v);
+    void setCurveAutoscale(BlackchirpPlotCurveBase* curve, bool enabled);
     void setCurveAxisY(BlackchirpPlotCurveBase* curve, QwtPlot::Axis a);
     void configureGridMajorPen();
     void configureGridMinorPen();

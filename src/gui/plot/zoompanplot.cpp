@@ -479,6 +479,13 @@ void ZoomPanPlot::setCurveVisible(BlackchirpPlotCurveBase *curve, bool v)
     replot();
 }
 
+void ZoomPanPlot::setCurveAutoscale(BlackchirpPlotCurveBase *curve, bool enabled)
+{
+    curve->setCurveAutoscale(enabled);
+    emit curveMetadataChanged(curve);
+    replot();
+}
+
 void ZoomPanPlot::setCurveAxisY(BlackchirpPlotCurveBase *curve, QwtPlot::Axis a)
 {
     curve->setCurveAxisY(a);
@@ -1342,6 +1349,14 @@ QMenu *ZoomPanPlot::contextMenu()
                 setCurveVisible(curve,v);
             });
             cfl->addRow(QString("Visible"),visBox);
+
+            auto autoscaleBox = new QCheckBox;
+            autoscaleBox->setChecked(curve->testItemAttribute(QwtPlotItem::AutoScale));
+            autoscaleBox->setToolTip("Controls whether the curve is included when calculating the axis limits for the autoscale operation");
+            connect(autoscaleBox,&QCheckBox::toggled,this,[this,curve](bool enabled){
+                setCurveAutoscale(curve,enabled);
+            });
+            cfl->addRow(QString("Autoscale?"),autoscaleBox);
 
             for(int i=0; i<cfl->rowCount(); ++i)
             {
