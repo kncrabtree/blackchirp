@@ -20,6 +20,7 @@ static const QString oMinFreqEnabled{"minFreqEnabled"};
 static const QString oMinFreqValue{"minFreqValue"};
 static const QString oMaxFreqEnabled{"maxFreqEnabled"};
 static const QString oMaxFreqValue{"maxFreqValue"};
+static const QString oEnabled{"enabled"};
 static const QString overlaySettingsFile{"%1.settings.csv"};
 static const QString overlayDataFile{"%1.data.csv"};
 }
@@ -54,6 +55,7 @@ public:
     double getMinFreqValue() const;
     bool getMaxFreqEnabled() const;
     double getMaxFreqValue() const;
+    bool getEnabled() const;
     OverlayType type() const { return d_type; }
     QString errorString() const { return d_errorString; }
     bool isModified() const { return d_modified; }
@@ -67,6 +69,7 @@ public:
     void setXOffset(double newxOffset);
     void setMinFreqLimit(bool enabled, double value);
     void setMaxFreqLimit(bool enabled, double value);
+    void setEnabled(bool enabled);
     
     void save();
 
@@ -93,6 +96,9 @@ private:
     // Frequency range filtering
     bool d_minFreqEnabled{false}, d_maxFreqEnabled{false};
     double d_minFreqValue{0.0}, d_maxFreqValue{1000.0};
+    
+    // Overlay visibility control
+    bool d_enabled{true};
     
     bool d_modified{false};
     

@@ -32,11 +32,12 @@ public:
     // Column indices (public for access by other classes)
     enum Columns {
         ConfigureColumn = 0,
-        LabelColumn = 1,
-        PlotIdColumn = 2,
-        OverlayTypeColumn = 3,
-        SourceFileColumn = 4,
-        ColumnCount = 5
+        EnabledColumn = 1,
+        LabelColumn = 2,
+        PlotIdColumn = 3,
+        OverlayTypeColumn = 4,
+        SourceFileColumn = 5,
+        ColumnCount = 6
     };
 
 private:

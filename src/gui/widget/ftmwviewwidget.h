@@ -71,6 +71,9 @@ public:
     QStringList getPlotNames() const { return d_plotNames; }
     Ft getMainPlotFt() const;
 
+signals:
+    void externalOverlayDataChanged(std::shared_ptr<OverlayBase> overlay);
+
 public slots:
     void setLiveUpdateInterval(int intervalms);
     void updateLiveFidList();

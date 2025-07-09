@@ -48,6 +48,12 @@ public slots:
     void removeOverlay(std::shared_ptr<OverlayBase> overlay);
     void updateOverlay(std::shared_ptr<OverlayBase> overlay);
     bool hasOverlay(std::shared_ptr<OverlayBase> overlay) const;
+
+signals:
+    void overlayDataChanged(std::shared_ptr<OverlayBase> overlay);
+
+private slots:
+    void onCurveMetadataChanged(BlackchirpPlotCurveBase* curve);
     
 protected:
     QString id() const { return d_id; }

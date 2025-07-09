@@ -14,7 +14,7 @@
 #include <gui/widget/ftmwviewwidget.h>
 
 OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number, const QVector<std::shared_ptr<OverlayBase>> &overlays)
-    : QWidget{parent, Qt::Window}, SettingsStorage(BC::Key::OverlayManager::key), p_configureDelegate(nullptr)
+    : QWidget{parent, Qt::Window}, SettingsStorage(BC::Key::OverlayManager::key), p_configureDelegate(nullptr), p_enabledDelegate(nullptr)
 {
     // Set window attributes
     if(number > 0)
@@ -360,17 +360,25 @@ void OverlayManagerWidget::setupConfigureDelegate()
 {
     // Create and set the delegate for the Configure column
     p_configureDelegate = new OverlayConfigureDelegate(this);
-    p_overlayTableView->setItemDelegateForColumn(0, p_configureDelegate); // ConfigureColumn = 0
+    p_overlayTableView->setItemDelegateForColumn(static_cast<int>(OverlayTableModel::ConfigureColumn), p_configureDelegate);
     
     // Connect the delegate signal to handle configuration button clicks
     connect(p_configureDelegate, &OverlayConfigureDelegate::configureClicked,
             this, &OverlayManagerWidget::onConfigureClicked);
 }
 
+void OverlayManagerWidget::setupEnabledDelegate()
+{
+    // Create and set the delegate for the Enabled column
+    p_enabledDelegate = new OverlayCheckBoxDelegate(this);
+    p_overlayTableView->setItemDelegateForColumn(static_cast<int>(OverlayTableModel::EnabledColumn), p_enabledDelegate);
+}
+
 void OverlayManagerWidget::setupTableView()
 {
     // Set up delegates
     setupConfigureDelegate();
+    setupEnabledDelegate();
     
     // Set up column resize behavior
     resizeColumnsToContents();
@@ -390,8 +398,9 @@ void OverlayManagerWidget::resizeColumnsToContents()
     for (int i = 0; i < columnCount; ++i) {
         if (i != sourceFileColumn) {
             p_overlayTableView->resizeColumnToContents(i);
-            // Configure column should be fixed width, others interactive
-            if (i == static_cast<int>(OverlayTableModel::ConfigureColumn)) {
+            // Configure and Enabled columns should be fixed width, others interactive
+            if (i == static_cast<int>(OverlayTableModel::ConfigureColumn) || 
+                i == static_cast<int>(OverlayTableModel::EnabledColumn)) {
                 horizontalHeader->setSectionResizeMode(i, QHeaderView::Fixed);
             } else {
                 horizontalHeader->setSectionResizeMode(i, QHeaderView::Interactive);
@@ -404,11 +413,16 @@ void OverlayManagerWidget::resizeColumnsToContents()
         horizontalHeader->setSectionResizeMode(sourceFileColumn, QHeaderView::Stretch);
     }
     
-    // Set fixed width for configure button column
+    // Set fixed width for configure and enabled columns with minimal padding
     QFontMetrics fm(p_overlayTableView->font());
-    int configureWidth = fm.horizontalAdvance("⚙") + 1; // Gear symbol plus minimal padding
+    int configureWidth = fm.horizontalAdvance("⚙") + 8; // Gear symbol plus minimal padding
+    int enabledWidth = fm.horizontalAdvance("👁") + 8; // Eye symbol plus minimal padding
+    
     if (static_cast<int>(OverlayTableModel::ConfigureColumn) < columnCount) {
         p_overlayTableView->setColumnWidth(static_cast<int>(OverlayTableModel::ConfigureColumn), configureWidth);
+    }
+    if (static_cast<int>(OverlayTableModel::EnabledColumn) < columnCount) {
+        p_overlayTableView->setColumnWidth(static_cast<int>(OverlayTableModel::EnabledColumn), enabledWidth);
     }
 }
 
@@ -434,11 +448,15 @@ void OverlayManagerWidget::onModelDataChanged(const QModelIndex &topLeft, const 
             case OverlayTableModel::LabelColumn: // Label - doesn't affect plot display
             case OverlayTableModel::PlotIdColumn: // PlotId - not directly editable anymore
             case OverlayTableModel::SourceFileColumn: // SourceFile - doesn't affect plot display
+            case OverlayTableModel::OverlayTypeColumn: // Type - not editable
                 // No signal needed for these columns
                 break;
+            case OverlayTableModel::EnabledColumn: // Enabled - affects plot visibility
+                // Emit signal to update plot visibility
+                emit overlayDataChanged(overlay);
+                break;
             default:
-                // This should not happen since all columns are non-editable
-                // Changes will come through configuration dialog signals
+                // This should not happen for other columns
                 break;
             }
         }
@@ -612,6 +630,25 @@ void OverlayManagerWidget::onPendingWritesChanged(int count)
     
     // Update button states to potentially disable/enable overlay creation
     updateButtonStates();
+}
+
+void OverlayManagerWidget::onExternalOverlayDataChanged(std::shared_ptr<OverlayBase> overlay)
+{
+    if (!overlay || !p_overlayModel) {
+        return;
+    }
+    
+    // Find the overlay in the model and refresh its data
+    auto overlays = p_overlayModel->getAllOverlays();
+    for (int i = 0; i < overlays.size(); ++i) {
+        if (overlays[i] == overlay) {
+            // Emit dataChanged for the entire row to refresh all columns
+            auto topLeft = p_overlayModel->index(i, 0);
+            auto bottomRight = p_overlayModel->index(i, p_overlayModel->columnCount() - 1);
+            emit p_overlayModel->dataChanged(topLeft, bottomRight);
+            break;
+        }
+    }
 }
 
 void OverlayManagerWidget::closeEvent(QCloseEvent *event)

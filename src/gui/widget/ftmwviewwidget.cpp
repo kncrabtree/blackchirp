@@ -799,6 +799,9 @@ void FtmwViewWidget::launchOverlayManager()
 
     // Connect overlay manager signals for UI updates
     connect(p_omw, &OverlayManagerWidget::overlayDataChanged, this, &FtmwViewWidget::onOverlayDataChanged);
+    
+    // Connect external overlay data changes to update the overlay manager table
+    connect(this, &FtmwViewWidget::externalOverlayDataChanged, p_omw, &OverlayManagerWidget::onExternalOverlayDataChanged);
 
     // Show widget
     p_omw->show();
@@ -1015,6 +1018,14 @@ void FtmwViewWidget::createPlotNamesList()
                 }
                 d_plotNames.append(plotName);
                 d_plotMap[plotName] = plot;  // Map plot name to FtPlot instance
+                
+                // Connect overlay data changed signal for bidirectional sync
+                connect(plot, &FtPlot::overlayDataChanged, 
+                        this, &FtmwViewWidget::onOverlayDataChanged);
+                
+                // Connect plot overlay changes directly to external signal for table updates
+                connect(plot, &FtPlot::overlayDataChanged, 
+                        this, &FtmwViewWidget::externalOverlayDataChanged);
             }
         }
     }

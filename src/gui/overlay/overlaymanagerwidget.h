@@ -17,6 +17,7 @@
 #include <data/storage/overlaystorage.h>
 #include <data/storage/settingsstorage.h>
 #include "overlayconfiguredelegate.h"
+#include "overlaycheckboxdelegate.h"
 
 
 namespace BC::Key::OverlayManager {
@@ -47,6 +48,9 @@ public slots:
     
     // Connect to overlay storage signals
     void connectToOverlayStorage(std::shared_ptr<OverlayStorage> storage);
+    
+    // Handle external overlay data changes (e.g., from plot context menu)
+    void onExternalOverlayDataChanged(std::shared_ptr<OverlayBase> overlay);
 
 private slots:
     void onModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight);
@@ -65,6 +69,7 @@ private:
     OverlayTableModel *p_overlayModel;
     QTableView *p_overlayTableView;
     OverlayConfigureDelegate *p_configureDelegate;
+    OverlayCheckBoxDelegate *p_enabledDelegate;
     
     // Progress indicator widgets
     QLabel *p_progressLabel;
@@ -80,6 +85,7 @@ private:
     void updateButtonStates();
     void populateWithExistingOverlays(const QVector<std::shared_ptr<OverlayBase>> &overlays);
     void setupConfigureDelegate();
+    void setupEnabledDelegate();
     void setupTableView();
     void resizeColumnsToContents();
     

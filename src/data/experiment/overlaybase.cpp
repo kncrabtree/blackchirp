@@ -1,4 +1,5 @@
 #include "overlaybase.h"
+#include <gui/plot/blackchirpplotcurve.h>
 
 
 OverlayBase::OverlayBase(OverlayType type) : d_type{type}
@@ -93,6 +94,11 @@ double OverlayBase::getMaxFreqValue() const
     return d_maxFreqValue;
 }
 
+bool OverlayBase::getEnabled() const
+{
+    return d_enabled;
+}
+
 void OverlayBase::setLabel(const QString &newlabel)
 {
     d_modified = true;
@@ -152,6 +158,15 @@ void OverlayBase::setMaxFreqLimit(bool enabled, double value)
     invalidateCache();
 }
 
+void OverlayBase::setEnabled(bool enabled)
+{
+    d_modified = true;
+    d_enabled = enabled;
+    
+    // Synchronize with curve visibility metadata for ZoomPanPlot integration
+    d_curveMetadata[BC::Key::bcCurveVisible] = enabled;
+}
+
 void OverlayBase::save()
 {
     // Should these be here? Or implement a save function?
@@ -174,6 +189,7 @@ void OverlayBase::storeMetadata(std::map<QString,QVariant> &m)
     m.emplace(oMinFreqValue,d_minFreqValue);
     m.emplace(oMaxFreqEnabled,d_maxFreqEnabled);
     m.emplace(oMaxFreqValue,d_maxFreqValue);
+    m.emplace(oEnabled,d_enabled);
     
     // Add curve metadata with "curve_" prefix
     for(const auto& [key, value] : d_curveMetadata) {
@@ -221,6 +237,9 @@ void OverlayBase::retrieveMetadata(const std::map<QString,QVariant> &m)
     it = m.find(oMaxFreqValue);
     if(it != m.end())
         d_maxFreqValue = it->second.toDouble();
+    it = m.find(oEnabled);
+    if(it != m.end())
+        d_enabled = it->second.toBool();
     
     // Invalidate cache after loading metadata
     invalidateCache();
@@ -231,6 +250,15 @@ void OverlayBase::retrieveMetadata(const std::map<QString,QVariant> &m)
         if(key.startsWith("curve_")) {
             d_curveMetadata[key.mid(6)] = value;  // Remove "curve_" prefix
         }
+    }
+    
+    // Synchronize enabled state with curve visibility if curve metadata exists
+    auto curveVisIt = d_curveMetadata.find(BC::Key::bcCurveVisible);
+    if(curveVisIt != d_curveMetadata.end()) {
+        d_enabled = curveVisIt->second.toBool();
+    } else {
+        // If no curve visibility metadata exists, ensure curve visibility matches overlay enabled state
+        d_curveMetadata[BC::Key::bcCurveVisible] = d_enabled;
     }
     
     _retrieveMetadata(m);

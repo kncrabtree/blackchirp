@@ -40,6 +40,8 @@ QVariant OverlayTableModel::data(const QModelIndex &index, int role) const
         {
         case ConfigureColumn:
             return QString::fromUtf8("⚙");
+        case EnabledColumn:
+            return overlay->getEnabled();
         case LabelColumn:
             return overlay->getLabel();
         case PlotIdColumn:
@@ -61,8 +63,6 @@ QVariant OverlayTableModel::data(const QModelIndex &index, int role) const
 
 bool OverlayTableModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    Q_UNUSED(value) // All columns are non-editable
-    
     if (role != Qt::EditRole)
         return false;
 
@@ -73,12 +73,17 @@ bool OverlayTableModel::setData(const QModelIndex &index, const QVariant &value,
     if (!overlay)
         return false;
 
-    // All columns are not directly editable - changes handled through configuration dialog
+    // Handle editable columns
     switch (index.column())
     {
     case ConfigureColumn:
         // Configure column is not editable - handled by delegate
         return false;
+    case EnabledColumn:
+        // Enabled column is editable via checkbox delegate
+        overlay->setEnabled(value.toBool());
+        emit dataChanged(index, index);
+        return true;
     case LabelColumn:
         // Label is not editable - handled in configuration dialog
         return false;
@@ -109,6 +114,8 @@ QVariant OverlayTableModel::headerData(int section, Qt::Orientation orientation,
         {
         case ConfigureColumn:
             return QString::fromUtf8("⚙");
+        case EnabledColumn:
+            return QString::fromUtf8("👁"); // Eye symbol for visibility
         case LabelColumn:
             return QString("Label");
         case PlotIdColumn:
@@ -130,8 +137,10 @@ Qt::ItemFlags OverlayTableModel::flags(const QModelIndex &index) const
 
     Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 
-    // Only Configure column will be handled by the delegate - no columns are directly editable
-    // All editing will be done through the configuration dialog
+    // EnabledColumn is editable via checkbox delegate
+    if (index.column() == EnabledColumn) {
+        flags |= Qt::ItemIsEditable;
+    }
     
     return flags;
 }

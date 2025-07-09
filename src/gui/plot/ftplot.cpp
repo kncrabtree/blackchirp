@@ -65,6 +65,10 @@ FtPlot::FtPlot(const QString id, QWidget *parent) :
     p_messageLabel->setText(msg);
     p_messageLabel->setZ(200.);
     p_messageLabel->attach(this);
+    
+    // Connect to curve metadata changes for overlay synchronization
+    connect(this, &ZoomPanPlot::curveMetadataChanged, 
+            this, &FtPlot::onCurveMetadataChanged);
 }
 
 FtPlot::~FtPlot()
@@ -169,6 +173,10 @@ void FtPlot::addOverlay(std::shared_ptr<OverlayBase> overlay)
     // Set curve data from overlay
     curve->setCurveData(overlay->xyData());
     curve->setTitle(overlay->getLabel());
+    
+    // Synchronize initial visibility with overlay enabled state
+    curve->setCurveVisible(overlay->getEnabled());
+    
     curve->attach(this);
     
     // Store the overlay-curve pair
@@ -206,6 +214,10 @@ void FtPlot::updateOverlay(std::shared_ptr<OverlayBase> overlay)
             // Update curve data (applies scaling and offsets)
             pair.second->setCurveData(overlay->xyData());
             pair.second->setTitle(overlay->getLabel());
+            
+            // Synchronize visibility with overlay enabled state
+            pair.second->setCurveVisible(overlay->getEnabled());
+            
             replot();
             return;
         }
@@ -225,4 +237,28 @@ bool FtPlot::hasOverlay(std::shared_ptr<OverlayBase> overlay) const
         }
     }
     return false;
+}
+
+void FtPlot::onCurveMetadataChanged(BlackchirpPlotCurveBase* curve)
+{
+    if (!curve) {
+        return;
+    }
+    
+    // Find if this curve belongs to an overlay
+    for (auto& pair : d_overlayCurves) {
+        if (pair.second.get() == curve) {
+            // This curve belongs to an overlay - synchronize visibility
+            bool curveVisible = curve->isVisible();
+            bool overlayEnabled = pair.first->getEnabled();
+            
+            // Only update if there's a mismatch to avoid infinite loops
+            if (curveVisible != overlayEnabled) {
+                pair.first->setEnabled(curveVisible);
+                // Emit signal to notify parent that overlay data changed
+                emit overlayDataChanged(pair.first);
+            }
+            break;
+        }
+    }
 }
