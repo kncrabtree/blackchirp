@@ -34,7 +34,7 @@ void OverlayBaseOptionsWidget::setupUI()
     p_sanitizedLabelDisplay->setWordWrap(true);
     layout->addRow("Storage Name:", p_sanitizedLabelDisplay);
     
-    // Connect label changes to update sanitized preview
+    // Connect label changes to update sanitized preview (label doesn't emit settingsChanged)
     connect(p_labelLineEdit, &QLineEdit::textChanged, this, &OverlayBaseOptionsWidget::onLabelChanged);
     
     // Plot ID
@@ -46,6 +46,7 @@ void OverlayBaseOptionsWidget::setupUI()
     p_yScaleSpinBox->setRange(-1e10, 1e10);
     p_yScaleSpinBox->setDecimals(4);
     p_yScaleSpinBox->setSingleStep(1.0);
+    p_yScaleSpinBox->setKeyboardTracking(false); // Prevent updates while typing
     layout->addRow("Y Scale:", p_yScaleSpinBox);
     
     // Y Offset
@@ -53,6 +54,7 @@ void OverlayBaseOptionsWidget::setupUI()
     p_yOffsetSpinBox->setRange(-1e10, 1e10);
     p_yOffsetSpinBox->setDecimals(4);
     p_yOffsetSpinBox->setSingleStep(1.0);
+    p_yOffsetSpinBox->setKeyboardTracking(false); // Prevent updates while typing
     layout->addRow("Y Offset:", p_yOffsetSpinBox);
     
     // X Offset
@@ -60,6 +62,7 @@ void OverlayBaseOptionsWidget::setupUI()
     p_xOffsetSpinBox->setRange(-1e10, 1e10);
     p_xOffsetSpinBox->setDecimals(4);
     p_xOffsetSpinBox->setSingleStep(1.0);
+    p_xOffsetSpinBox->setKeyboardTracking(false); // Prevent updates while typing
     layout->addRow("X Offset:", p_xOffsetSpinBox);
     
     // Min Frequency Limit
@@ -72,6 +75,7 @@ void OverlayBaseOptionsWidget::setupUI()
     p_minFreqSpinBox->setDecimals(4);
     p_minFreqSpinBox->setSingleStep(1.0);
     p_minFreqSpinBox->setSuffix(" MHz");
+    p_minFreqSpinBox->setKeyboardTracking(false); // Prevent updates while typing
     minFreqLayout->addWidget(p_minFreqCheckBox);
     minFreqLayout->addWidget(p_minFreqSpinBox);
     minFreqLayout->addStretch();
@@ -88,6 +92,7 @@ void OverlayBaseOptionsWidget::setupUI()
     p_maxFreqSpinBox->setDecimals(4);
     p_maxFreqSpinBox->setSingleStep(1.0);
     p_maxFreqSpinBox->setSuffix(" MHz");
+    p_maxFreqSpinBox->setKeyboardTracking(false); // Prevent updates while typing
     maxFreqLayout->addWidget(p_maxFreqCheckBox);
     maxFreqLayout->addWidget(p_maxFreqSpinBox);
     maxFreqLayout->addStretch();
@@ -95,6 +100,27 @@ void OverlayBaseOptionsWidget::setupUI()
     layout->addRow("Max Frequency:", maxFreqWidget);
     
     setLayout(layout);
+    
+    // Connect all non-label widgets to emit settingsChanged signal for real-time updates
+    connect(p_plotIdComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &OverlayBaseOptionsWidget::settingsChanged);
+    
+    connect(p_yScaleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this, &OverlayBaseOptionsWidget::settingsChanged);
+    connect(p_yOffsetSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this, &OverlayBaseOptionsWidget::settingsChanged);
+    connect(p_xOffsetSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this, &OverlayBaseOptionsWidget::settingsChanged);
+    
+    connect(p_minFreqCheckBox, &QCheckBox::toggled,
+            this, &OverlayBaseOptionsWidget::settingsChanged);
+    connect(p_minFreqSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this, &OverlayBaseOptionsWidget::settingsChanged);
+    
+    connect(p_maxFreqCheckBox, &QCheckBox::toggled,
+            this, &OverlayBaseOptionsWidget::settingsChanged);
+    connect(p_maxFreqSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this, &OverlayBaseOptionsWidget::settingsChanged);
     
     // Initialize sanitized label display
     onLabelChanged();

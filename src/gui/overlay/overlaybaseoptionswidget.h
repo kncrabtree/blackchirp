@@ -48,6 +48,9 @@ public:
     // Apply settings to overlay
     void applyToOverlay(std::shared_ptr<OverlayBase> overlay) const;
 
+signals:
+    void settingsChanged(); // Emitted when any setting changes (except label)
+
 private slots:
     void onLabelChanged();
 

@@ -64,6 +64,7 @@ protected:
 private slots:
     void onSettingsChanged();
     void onResetToDefaults();
+    void onRealTimeSettingsChanged();
 
 private:
     void setupConnections();

@@ -92,9 +92,9 @@ void OverlaySettingsDialog::setupConnections()
     connect(p_buttonBox, &QDialogButtonBox::rejected, this, &OverlaySettingsDialog::reject);
     connect(p_resetButton, &QPushButton::clicked, this, &OverlaySettingsDialog::onResetToDefaults);
 
-    // For now, we'll apply settings when the dialog is accepted
-    // Future enhancement: add real-time updates by connecting to individual widget signals
-    // The existing architecture already supports real-time updates through onSettingsChanged()
+    // Connect to options widget's settingsChanged signal for real-time updates
+    connect(p_optionsWidget, &OverlayBaseOptionsWidget::settingsChanged,
+            this, &OverlaySettingsDialog::onRealTimeSettingsChanged);
 
     // Call virtual function for type-specific connections
     setupTypeSpecificConnections();
@@ -133,6 +133,25 @@ void OverlaySettingsDialog::saveCurrentSettings()
 
     // Call virtual function for type-specific saving
     saveTypeSpecificSettings();
+}
+
+void OverlaySettingsDialog::onRealTimeSettingsChanged()
+{
+    // Apply settings from options widget to overlay, but preserve original label for real-time updates
+    // The label will only be changed when the dialog is accepted to trigger file renaming
+    QString currentLabel = d_overlay->getLabel();
+    
+    // Apply all settings including temporary label
+    p_optionsWidget->applyToOverlay(d_overlay);
+    
+    // Restore original label to prevent file renaming during real-time updates
+    d_overlay->setLabel(currentLabel);
+
+    // Call virtual function for type-specific saving (for real-time updates)
+    saveTypeSpecificSettings();
+    
+    // Emit signal for real-time plot updates
+    emit overlaySettingsChanged(d_overlay);
 }
 
 void OverlaySettingsDialog::onSettingsChanged()
