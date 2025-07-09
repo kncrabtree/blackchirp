@@ -10,10 +10,11 @@
 #include <QHeaderView>
 #include <QMessageBox>
 #include <QProgressBar>
+#include <QCloseEvent>
 #include <gui/widget/ftmwviewwidget.h>
 
 OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number, const QVector<std::shared_ptr<OverlayBase>> &overlays)
-    : QWidget{parent, Qt::Window}, p_configureDelegate(nullptr)
+    : QWidget{parent, Qt::Window}, SettingsStorage(BC::Key::OverlayManager::key), p_configureDelegate(nullptr)
 {
     // Set window attributes
     if(number > 0)
@@ -31,6 +32,12 @@ OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number, const QV
     
     // Progress indicator starts hidden
     p_progressWidget->setVisible(false);
+    
+    // Restore window geometry if available
+    QByteArray geom = get(BC::Key::OverlayManager::geometry).toByteArray();
+    if (!geom.isEmpty()) {
+        restoreGeometry(geom);
+    }
 }
 
 OverlayManagerWidget::~OverlayManagerWidget()
@@ -722,4 +729,13 @@ void OverlayManagerWidget::onPendingWritesChanged(int count)
     
     // Update button states to potentially disable/enable overlay creation
     updateButtonStates();
+}
+
+void OverlayManagerWidget::closeEvent(QCloseEvent *event)
+{
+    // Save window geometry
+    set(BC::Key::OverlayManager::geometry, saveGeometry(), true);
+    
+    // Accept the close event
+    QWidget::closeEvent(event);
 }

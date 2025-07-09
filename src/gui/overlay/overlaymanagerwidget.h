@@ -16,13 +16,20 @@
 #include <data/experiment/overlaybase.h>
 #include <data/model/overlaytablemodel.h>
 #include <data/storage/overlaystorage.h>
+#include <data/storage/settingsstorage.h>
 #include "overlayconfiguredelegate.h"
 
 namespace BC::Property::Overlay {
 static const QString overlayType{"overlayType"};
 }
 
-class OverlayManagerWidget : public QWidget
+namespace BC::Key::OverlayManager {
+static const QString key{"OverlayManagerWidget"};
+static const QString geometry{"geometry"};
+static const QString windowState{"windowState"};
+}
+
+class OverlayManagerWidget : public QWidget, public SettingsStorage
 {
     Q_OBJECT
 public:
@@ -89,6 +96,9 @@ private:
     void createProgressWidget();
     void updateProgressDisplay(int pendingCount);
     void showErrorNotification(const QString& overlayLabel, const QString& error);
+    
+protected:
+    void closeEvent(QCloseEvent *event) override;
 };
 
 #endif // OVERLAYMANAGERWIDGET_H

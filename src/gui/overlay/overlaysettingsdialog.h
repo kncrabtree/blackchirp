@@ -9,9 +9,15 @@
 #include <memory>
 
 #include <data/experiment/overlaybase.h>
+#include <data/storage/settingsstorage.h>
 #include "overlaybaseoptionswidget.h"
 
-class OverlaySettingsDialog : public QDialog
+namespace BC::Key::OverlaySettings {
+static const QString key{"OverlaySettingsDialog"};
+static const QString geometry{"geometry"};
+}
+
+class OverlaySettingsDialog : public QDialog, public SettingsStorage
 {
     Q_OBJECT
 
@@ -27,6 +33,7 @@ public:
 
 public slots:
     void accept() override;
+    void reject() override;
 
 signals:
     void overlaySettingsChanged(std::shared_ptr<OverlayBase> overlay);
@@ -39,6 +46,9 @@ protected:
     virtual void saveTypeSpecificSettings() {}
     virtual void resetTypeSpecificDefaults() {}
     virtual bool validateTypeSpecificSettings(QString &errorMessage) { Q_UNUSED(errorMessage) return true; }
+    
+    // Qt overrides
+    void closeEvent(QCloseEvent *event) override;
 
     // Access to common components for derived classes
     std::shared_ptr<OverlayBase> d_overlay;

@@ -2,12 +2,14 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QGroupBox>
+#include <QCloseEvent>
 
 OverlaySettingsDialog::OverlaySettingsDialog(std::shared_ptr<OverlayBase> overlay, 
                                            const QStringList &plotNames,
                                            double xRangeMin, double xRangeMax, 
                                            QWidget *parent)
     : QDialog(parent),
+      SettingsStorage(BC::Key::OverlaySettings::key),
       d_overlay(overlay),
       d_plotNames(plotNames),
       d_xRangeMin(xRangeMin),
@@ -73,13 +75,19 @@ void OverlaySettingsDialog::setupUI()
     
     // Load current settings
     loadCurrentSettings();
+    
+    // Restore dialog geometry if available
+    QByteArray geom = get(BC::Key::OverlaySettings::geometry).toByteArray();
+    if (!geom.isEmpty()) {
+        restoreGeometry(geom);
+    }
 }
 
 void OverlaySettingsDialog::setupConnections()
 {
     // Connect dialog buttons
-    connect(p_buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-    connect(p_buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+    connect(p_buttonBox, &QDialogButtonBox::accepted, this, &OverlaySettingsDialog::accept);
+    connect(p_buttonBox, &QDialogButtonBox::rejected, this, &OverlaySettingsDialog::reject);
     connect(p_resetButton, &QPushButton::clicked, this, &OverlaySettingsDialog::onResetToDefaults);
 
     // For now, we'll apply settings when the dialog is accepted
@@ -160,6 +168,27 @@ void OverlaySettingsDialog::accept()
     // Emit final signal for any updates
     emit overlaySettingsChanged(d_overlay);
     
+    // Save dialog geometry
+    set(BC::Key::OverlaySettings::geometry, saveGeometry(), true);
+    
     // Call base class accept
     QDialog::accept();
+}
+
+void OverlaySettingsDialog::reject()
+{
+    // Save dialog geometry
+    set(BC::Key::OverlaySettings::geometry, saveGeometry(), true);
+    
+    // Call base class reject
+    QDialog::reject();
+}
+
+void OverlaySettingsDialog::closeEvent(QCloseEvent *event)
+{
+    // Save dialog geometry
+    set(BC::Key::OverlaySettings::geometry, saveGeometry(), true);
+    
+    // Accept the close event
+    QDialog::closeEvent(event);
 }
