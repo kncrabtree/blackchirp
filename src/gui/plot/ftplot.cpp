@@ -211,3 +211,18 @@ void FtPlot::updateOverlay(std::shared_ptr<OverlayBase> overlay)
         }
     }
 }
+
+bool FtPlot::hasOverlay(std::shared_ptr<OverlayBase> overlay) const
+{
+    if (!overlay) {
+        return false;
+    }
+    
+    // Check if overlay exists by comparing labels
+    for (const auto& pair : d_overlayCurves) {
+        if (pair.first->getLabel() == overlay->getLabel()) {
+            return true;
+        }
+    }
+    return false;
+}

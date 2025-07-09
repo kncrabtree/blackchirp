@@ -1,6 +1,7 @@
 #include "overlaymanagerwidget.h"
 #include "bcexpoverlaydialog.h"
 #include "overlayconfiguredelegate.h"
+#include "overlaysettingsdialog.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -555,11 +556,44 @@ void OverlayManagerWidget::onConfigureClicked(const QModelIndex &index)
         return;
     }
     
-    // TODO: Phase 2 - Open configuration dialog
-    // For now, just show a message box to verify the button works
-    QMessageBox::information(this, "Configure Overlay", 
-                           QString("Configure button clicked for overlay: %1\n\nConfiguration dialog will be implemented in Phase 2.")
-                           .arg(overlay->getLabel()));
+    // Get the FtmwViewWidget parent to access plot names and xRange
+    FtmwViewWidget* ftmwParent = qobject_cast<FtmwViewWidget*>(parentWidget());
+    if (!ftmwParent) {
+        QMessageBox::warning(this, "Error", "Cannot access parent widget for configuration.");
+        return;
+    }
+    
+    // Get xRange from the main plot and plot names
+    auto xRange = ftmwParent->getMainPlotFt().xRange();
+    QStringList plotNames = ftmwParent->getPlotNames();
+    
+    // Create and show the configuration dialog
+    OverlaySettingsDialog dialog(overlay, plotNames, xRange.first, xRange.second, this);
+    dialog.setupUI(); // Set up UI after construction is complete
+    
+    // Connect the dialog signal to our slot for real-time updates
+    connect(&dialog, &OverlaySettingsDialog::overlaySettingsChanged,
+            this, &OverlayManagerWidget::onOverlaySettingsChanged);
+    
+    dialog.exec();
+}
+
+void OverlayManagerWidget::onOverlaySettingsChanged(std::shared_ptr<OverlayBase> overlay)
+{
+    // Emit signal for real-time plot updates
+    emit overlayDataChanged(overlay);
+    
+    // Update the table model to reflect any changes
+    // Find the row for this overlay and emit dataChanged for the entire row
+    auto overlays = p_bcExperimentModel->getAllOverlays();
+    for (int i = 0; i < overlays.size(); ++i) {
+        if (overlays[i] == overlay) {
+            auto topLeft = p_bcExperimentModel->index(i, 0);
+            auto bottomRight = p_bcExperimentModel->index(i, p_bcExperimentModel->columnCount() - 1);
+            emit p_bcExperimentModel->dataChanged(topLeft, bottomRight);
+            break;
+        }
+    }
 }
 
 void OverlayManagerWidget::createProgressWidget()

@@ -30,7 +30,6 @@ public:
     ~OverlayManagerWidget();
 
 signals:
-    void overlayPlotChanged(std::shared_ptr<OverlayBase> overlay, QString newPlotId);
     void overlayDataChanged(std::shared_ptr<OverlayBase> overlay);
 
 public slots:
@@ -50,6 +49,7 @@ private slots:
     void onModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight);
     void onSelectionChanged();
     void onConfigureClicked(const QModelIndex &index);
+    void onOverlaySettingsChanged(std::shared_ptr<OverlayBase> overlay);
 
 private:
     QTabWidget *p_tabWidget;

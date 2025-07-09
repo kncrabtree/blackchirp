@@ -798,7 +798,6 @@ void FtmwViewWidget::launchOverlayManager()
     });
 
     // Connect overlay manager signals for UI updates
-    connect(p_omw, &OverlayManagerWidget::overlayPlotChanged, this, &FtmwViewWidget::onOverlayPlotChanged);
     connect(p_omw, &OverlayManagerWidget::overlayDataChanged, this, &FtmwViewWidget::onOverlayDataChanged);
 
     // Show widget
@@ -933,24 +932,6 @@ void FtmwViewWidget::onOverlayRemoved(std::shared_ptr<OverlayBase> overlay)
     removeOverlayFromPlots(overlay);
 }
 
-void FtmwViewWidget::onOverlayPlotChanged(std::shared_ptr<OverlayBase> overlay, QString newPlotId)
-{
-    if (!overlay) {
-        return;
-    }
-    
-    // Remove overlay from all plots first (since we don't know which one it was on)
-    for (auto& [plotName, plot] : d_plotMap) {
-        plot->removeOverlay(overlay);
-    }
-    
-    // Add overlay to the new plot (newPlotId should match overlay->getPlotId() already)
-    auto it = d_plotMap.find(newPlotId);
-    if (it != d_plotMap.end()) {
-        it->second->addOverlay(overlay);
-    }
-}
-
 void FtmwViewWidget::onOverlayDataChanged(std::shared_ptr<OverlayBase> overlay)
 {
     if (!overlay) {
@@ -958,12 +939,44 @@ void FtmwViewWidget::onOverlayDataChanged(std::shared_ptr<OverlayBase> overlay)
     }
 
     // Get the target plot name from the overlay
-    QString plotName = overlay->getPlotId();
+    QString targetPlotName = overlay->getPlotId();
     
-    // Find the corresponding FtPlot instance and update the overlay
-    auto it = d_plotMap.find(plotName);
-    if (it != d_plotMap.end()) {
-        it->second->updateOverlay(overlay);
+    // Find which plot currently contains this overlay (if any)
+    QString currentPlotName;
+    for (auto& [plotName, plot] : d_plotMap) {
+        if (plot->hasOverlay(overlay)) {
+            currentPlotName = plotName;
+            break;
+        }
+    }
+    
+    // If overlay needs to move to a different plot
+    if (!currentPlotName.isEmpty() && currentPlotName != targetPlotName) {
+        // Remove from current plot
+        auto currentIt = d_plotMap.find(currentPlotName);
+        if (currentIt != d_plotMap.end()) {
+            currentIt->second->removeOverlay(overlay);
+        }
+        
+        // Add to target plot
+        auto targetIt = d_plotMap.find(targetPlotName);
+        if (targetIt != d_plotMap.end()) {
+            targetIt->second->addOverlay(overlay);
+        }
+    }
+    // If overlay is not yet on any plot, add it to the target plot
+    else if (currentPlotName.isEmpty()) {
+        auto targetIt = d_plotMap.find(targetPlotName);
+        if (targetIt != d_plotMap.end()) {
+            targetIt->second->addOverlay(overlay);
+        }
+    }
+    // If overlay is already on the correct plot, just update it
+    else {
+        auto targetIt = d_plotMap.find(targetPlotName);
+        if (targetIt != d_plotMap.end()) {
+            targetIt->second->updateOverlay(overlay);
+        }
     }
 }
 
