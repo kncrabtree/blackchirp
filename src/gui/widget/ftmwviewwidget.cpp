@@ -112,6 +112,11 @@ FtmwViewWidget::~FtmwViewWidget()
 {
     clearGetters();
 
+    // Disconnect overlay manager signals to prevent double saveOverlays() call
+    if(p_omw != nullptr) {
+        disconnect(p_omw, &OverlayManagerWidget::destroyed, this, nullptr);
+    }
+
     // Save overlays before destruction
     saveOverlays();
 
