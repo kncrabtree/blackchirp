@@ -29,46 +29,21 @@ public:
     std::shared_ptr<OverlayBase> getOverlay(int row) const;
     QVector<std::shared_ptr<OverlayBase>> getAllOverlays() const;
 
-    // Base column indices (public for access by other classes)
-    enum BaseColumns {
+    // Column indices (public for access by other classes)
+    enum Columns {
         ConfigureColumn = 0,
         LabelColumn = 1,
         PlotIdColumn = 2,
-        SourceFileColumn = 3,
-        BaseColumnCount = 4
+        OverlayTypeColumn = 3,
+        SourceFileColumn = 4,
+        ColumnCount = 5
     };
-
-protected:
-    // Virtual functions for derived classes to extend columns
-    virtual int getAdditionalColumnCount() const { return 0; }
-    virtual QVariant getAdditionalColumnData(int row, int column, int role) const { Q_UNUSED(row) Q_UNUSED(column) Q_UNUSED(role) return QVariant(); }
-    virtual QVariant getAdditionalHeaderData(int column, int role) const { Q_UNUSED(column) Q_UNUSED(role) return QVariant(); }
-    virtual bool setAdditionalColumnData(int row, int column, const QVariant &value, int role) { Q_UNUSED(row) Q_UNUSED(column) Q_UNUSED(value) Q_UNUSED(role) return false; }
-    virtual Qt::ItemFlags getAdditionalColumnFlags(int row, int column) const { Q_UNUSED(row) Q_UNUSED(column) return Qt::ItemIsEnabled | Qt::ItemIsSelectable; }
 
 private:
     QVector<std::shared_ptr<OverlayBase>> d_overlays;
-};
-
-// Derived class for BCExperiment overlays
-class BCExperimentOverlayModel : public OverlayTableModel
-{
-    Q_OBJECT
-public:
-    explicit BCExperimentOverlayModel(QObject *parent = nullptr);
-
-protected:
-    // Additional columns for BCExperiment
-    int getAdditionalColumnCount() const override;
-    QVariant getAdditionalColumnData(int row, int column, int role) const override;
-    QVariant getAdditionalHeaderData(int column, int role) const override;
-    bool setAdditionalColumnData(int row, int column, const QVariant &value, int role) override;
-    Qt::ItemFlags getAdditionalColumnFlags(int row, int column) const override;
-
-private:
-    enum AdditionalColumns {
-        AdditionalColumnCount = 0
-    };
+    
+    // Helper method to get friendly overlay type name
+    QString getOverlayTypeName(OverlayBase::OverlayType type) const;
 };
 
 #endif // OVERLAYTABLEMODEL_H

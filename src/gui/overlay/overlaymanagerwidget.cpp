@@ -23,10 +23,9 @@ OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number, const QV
         setWindowTitle("Overlay Manager: Main Window");
     setWindowIcon(QIcon(":/icons/peak-find.svg")); // Temporary icon
     setAttribute(Qt::WA_DeleteOnClose);
-    resize(800, 400); // Increased width to accommodate all columns
+    resize(900, 400); // Increased width to accommodate all columns including type
 
     setupUI();
-    createTabs();
     populateWithExistingOverlays(overlays);
     updateButtonStates();
     
@@ -61,9 +60,8 @@ void OverlayManagerWidget::setupUI()
     p_toolBar = new QToolBar(this);
     p_toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
-    // Create actions
-    p_addAction = p_toolBar->addAction(QIcon(":/icons/add.png"), "Add Overlay");
-    p_addAction->setToolTip("Add a new overlay to the current plot");
+    // Set up add button with dropdown
+    setupAddButton();
 
     p_removeAction = p_toolBar->addAction(QIcon(":/icons/remove.png"), "Remove Overlay");
     p_removeAction->setToolTip("Remove the selected overlay");
@@ -80,27 +78,68 @@ void OverlayManagerWidget::setupUI()
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
     p_toolBar->addWidget(spacer);
 
-    // Create tab widget
-    p_tabWidget = new QTabWidget(this);
+    // Create unified table view
+    p_overlayModel = new OverlayTableModel(this);
+    p_overlayTableView = new QTableView(this);
+    p_overlayTableView->setModel(p_overlayModel);
+    
+    // Connect model signals to track overlay changes
+    connect(p_overlayModel, &OverlayTableModel::dataChanged, 
+            this, &OverlayManagerWidget::onModelDataChanged);
+    connect(p_overlayModel, &OverlayTableModel::rowsInserted, 
+            this, [this]() { resizeColumnsToContents(); });
+    connect(p_overlayModel, &OverlayTableModel::rowsRemoved, 
+            this, [this]() { resizeColumnsToContents(); });
+    
+    // Connect selection signals to update button states
+    connect(p_overlayTableView->selectionModel(), &QItemSelectionModel::selectionChanged,
+            this, &OverlayManagerWidget::onSelectionChanged);
+
+    // Configure table view
+    p_overlayTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    p_overlayTableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    p_overlayTableView->setAlternatingRowColors(true);
+    p_overlayTableView->setSortingEnabled(false); // Disable for now
+
+    // Configure headers
+    auto horizontalHeader = p_overlayTableView->horizontalHeader();
+    horizontalHeader->setStretchLastSection(false);
+    horizontalHeader->setSectionResizeMode(QHeaderView::Interactive);
+
+    auto verticalHeader = p_overlayTableView->verticalHeader();
+    verticalHeader->setDefaultSectionSize(25);
+    verticalHeader->setVisible(false);
+
+    // Set up table view with delegates and column widths
+    setupTableView();
 
     // Create progress indicator widget
     createProgressWidget();
     
     // Add widgets to layout
     mainLayout->addWidget(p_toolBar);
-    mainLayout->addWidget(p_tabWidget);
+    mainLayout->addWidget(p_overlayTableView);
     mainLayout->addWidget(p_progressWidget);
 
     // Connect signals
-    connect(p_addAction, &QAction::triggered, this, &OverlayManagerWidget::addOverlay);
     connect(p_removeAction, &QAction::triggered, this, &OverlayManagerWidget::removeOverlay);
     connect(p_raiseParentAction, &QAction::triggered, this, &OverlayManagerWidget::raiseParent);
-    connect(p_tabWidget, &QTabWidget::currentChanged, this, &OverlayManagerWidget::onTabChanged);
 }
 
-void OverlayManagerWidget::createTabs()
+void OverlayManagerWidget::setupAddButton()
 {
-    // Use Q_ENUM to get all overlay types
+    // Create add button with dropdown menu
+    p_addButton = new QToolButton(this);
+    p_addButton->setIcon(QIcon(":/icons/add.png"));
+    p_addButton->setText("Add Overlay");
+    p_addButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    p_addButton->setPopupMode(QToolButton::InstantPopup);
+    p_addButton->setToolTip("Add a new overlay to the current plot");
+
+    // Create dropdown menu
+    p_addMenu = new QMenu(this);
+    
+    // Use Q_ENUM to get all overlay types dynamically
     auto metaEnum = QMetaEnum::fromType<OverlayBase::OverlayType>();
 
     for(int i = 0; i < metaEnum.keyCount(); ++i)
@@ -108,109 +147,44 @@ void OverlayManagerWidget::createTabs()
         QString typeName = metaEnum.key(i);
         auto typeValue = static_cast<OverlayBase::OverlayType>(metaEnum.value(i));
 
-        // Create friendly names for tabs
-        QString tabName;
-        QWidget* tabWidget = nullptr;
+        // Create friendly names for menu items
+        QString menuItemName;
+        bool enabled = true;
 
         switch(typeValue)
         {
         case OverlayBase::BCExperiment:
-            tabName = "BC Experiments";
-            tabWidget = createBCExperimentTab();
+            menuItemName = "BC Experiment";
             break;
         case OverlayBase::SPCAT:
-            tabName = "SPCAT Catalogs";
-            tabWidget = createPlaceholderTab(tabName);
+            menuItemName = "SPCAT Catalog";
+            enabled = false; // Not yet implemented
             break;
         case OverlayBase::GenericXY:
-            tabName = "Generic Data";
-            tabWidget = createPlaceholderTab(tabName);
+            menuItemName = "Generic XY Data";
+            enabled = false; // Not yet implemented
             break;
         default:
-            tabName = typeName; // Fallback to enum name
-            tabWidget = createPlaceholderTab(tabName);
+            menuItemName = typeName; // Fallback to enum name
+            enabled = false;
             break;
         }
 
-        // Store the overlay type as tab data for future use
-        using namespace BC::Property::Overlay;
-        tabWidget->setProperty(overlayType.toLocal8Bit().constData(), static_cast<int>(typeValue));
+        // Create action for this overlay type
+        QAction *action = p_addMenu->addAction(QIcon(":/icons/add.png"), menuItemName);
+        action->setEnabled(enabled);
+        d_addActions[typeValue] = action;
 
-        // Add tab to tab widget
-        p_tabWidget->addTab(tabWidget, tabName);
-
+        // Connect action to addOverlay slot with the specific type
+        connect(action, &QAction::triggered, this, [this, typeValue]() {
+            addOverlay(typeValue);
+        });
     }
+
+    p_addButton->setMenu(p_addMenu);
+    p_toolBar->addWidget(p_addButton);
 }
 
-QWidget *OverlayManagerWidget::createBCExperimentTab()
-{
-    auto tabWidget = new QWidget;
-    auto tabLayout = new QVBoxLayout(tabWidget);
-
-    // Create model and table view
-    p_bcExperimentModel = new BCExperimentOverlayModel(this);
-    p_bcExperimentTableView = new QTableView(tabWidget);
-    p_bcExperimentTableView->setModel(p_bcExperimentModel);
-    
-    // Connect model signals to track overlay changes
-    connect(p_bcExperimentModel, &BCExperimentOverlayModel::dataChanged, 
-            this, &OverlayManagerWidget::onModelDataChanged);
-    connect(p_bcExperimentModel, &BCExperimentOverlayModel::rowsInserted, 
-            this, [this]() { resizeColumnsToContents(p_bcExperimentModel, p_bcExperimentTableView); });
-    connect(p_bcExperimentModel, &BCExperimentOverlayModel::rowsRemoved, 
-            this, [this]() { resizeColumnsToContents(p_bcExperimentModel, p_bcExperimentTableView); });
-    
-    // Connect selection signals to update button states
-    connect(p_bcExperimentTableView->selectionModel(), &QItemSelectionModel::selectionChanged,
-            this, &OverlayManagerWidget::onSelectionChanged);
-    
-    // Register this model-view pair for automatic column resizing
-    d_modelViewMap[p_bcExperimentModel] = p_bcExperimentTableView;
-
-    // Configure table view
-    p_bcExperimentTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-    p_bcExperimentTableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    p_bcExperimentTableView->setAlternatingRowColors(true);
-    p_bcExperimentTableView->setSortingEnabled(false); // Disable for now
-
-    // Configure headers
-    auto horizontalHeader = p_bcExperimentTableView->horizontalHeader();
-    horizontalHeader->setStretchLastSection(false);
-    horizontalHeader->setSectionResizeMode(QHeaderView::Interactive);
-
-    auto verticalHeader = p_bcExperimentTableView->verticalHeader();
-    verticalHeader->setDefaultSectionSize(25);
-    verticalHeader->setVisible(false);
-
-    // Set up table view with delegates and column widths
-    setupTableView();
-
-    tabLayout->addWidget(p_bcExperimentTableView);
-
-    return tabWidget;
-}
-
-QWidget *OverlayManagerWidget::createPlaceholderTab(const QString &tabName)
-{
-    auto tabWidget = new QWidget;
-    auto tabLayout = new QVBoxLayout(tabWidget);
-
-    // Add placeholder content
-    auto placeholderLabel = new QLabel(QString("Overlays of type '%1' will be managed here.\n\nImplementation coming soon...").arg(tabName));
-    placeholderLabel->setAlignment(Qt::AlignCenter);
-    placeholderLabel->setStyleSheet("color: gray; font-style: italic;");
-    placeholderLabel->setWordWrap(true);
-
-    tabLayout->addWidget(placeholderLabel);
-
-    return tabWidget;
-}
-
-void OverlayManagerWidget::onTabChanged(int index)
-{
-    Q_UNUSED(index)
-    updateButtonStates();
-}
 
 void OverlayManagerWidget::updateButtonStates()
 {
@@ -218,31 +192,19 @@ void OverlayManagerWidget::updateButtonStates()
     bool hasPendingWrites = p_overlayStorage && p_overlayStorage->hasPendingWrites();
     
     // Add button is disabled when there are pending writes
-    p_addAction->setEnabled(!hasPendingWrites);
+    p_addButton->setEnabled(!hasPendingWrites);
     
     // Remove button is enabled only when rows are selected and no pending writes
     bool hasSelection = false;
     
-    // Get current tab's table view and check for selection
-    int currentIndex = p_tabWidget->currentIndex();
-    if (currentIndex >= 0) {
-        auto currentTabWidget = p_tabWidget->currentWidget();
-        if (currentTabWidget) {
-            // Check if this is the BCExperiment tab
-            using namespace BC::Property::Overlay;
-            auto type = static_cast<OverlayBase::OverlayType>(currentTabWidget->property(overlayType.toLocal8Bit().constData()).toInt());
-            
-            if (type == OverlayBase::BCExperiment && p_bcExperimentTableView) {
-                hasSelection = p_bcExperimentTableView->selectionModel()->hasSelection();
-            }
-            // Future overlay types can be added here
-        }
+    if (p_overlayTableView && p_overlayTableView->selectionModel()) {
+        hasSelection = p_overlayTableView->selectionModel()->hasSelection();
     }
     
     p_removeAction->setEnabled(hasSelection && !hasPendingWrites);
 }
 
-void OverlayManagerWidget::addOverlay()
+void OverlayManagerWidget::addOverlay(OverlayBase::OverlayType type)
 {
     // Ensure we have overlay storage connection
     if (!p_overlayStorage) {
@@ -250,17 +212,8 @@ void OverlayManagerWidget::addOverlay()
         return;
     }
 
-    // Get current tab's overlay type
-    auto currentTabWidget = p_tabWidget->currentWidget();
-    if(currentTabWidget == nullptr)
-        return;
-
-    using namespace BC::Property::Overlay;
-    auto type = static_cast<OverlayBase::OverlayType>(currentTabWidget->property(overlayType.toLocal8Bit().constData()).toInt());
-
-    // pointers used for the overlay dialog, model, and overlay object
+    // pointers used for the overlay dialog and overlay object
     std::shared_ptr<OverlayBase> overlay = nullptr;
-    OverlayTableModel* model = nullptr;
     OverlayConfigDialog *dialog = nullptr;
 
     // Get the FtmwViewWidget parent for dialog constructors
@@ -269,29 +222,26 @@ void OverlayManagerWidget::addOverlay()
         return;
     }
     
-    // Create appropriate dialog and store the correct model
+    // Create appropriate dialog based on overlay type
     switch(type) {
     case OverlayBase::BCExperiment:
         {
             dialog = new BCExpOverlayDialog(ftmwParent);
-            model = p_bcExperimentModel;
             break;
         }
     case OverlayBase::SPCAT:
         // TODO: Implement SPCAT overlay creation
         // dialog = new SPCATOverlayDialog(ftmwParent);
-        // model = p_spcatModel;
         qDebug() << "SPCAT overlay creation not yet implemented";
-        break;
+        return;
     case OverlayBase::GenericXY:
         // TODO: Implement GenericXY overlay creation
         // dialog = new GenericXYOverlayDialog(ftmwParent);
-        // model = p_genericXYModel;
         qDebug() << "GenericXY overlay creation not yet implemented";
-        break;
+        return;
     default:
         qDebug() << "Unknown overlay type";
-        break;
+        return;
     }
 
     // Run the dialog and get the overlay if accepted
@@ -303,11 +253,11 @@ void OverlayManagerWidget::addOverlay()
     }
     
     // Add overlay to storage if created successfully
-    if (overlay != nullptr && model != nullptr) {
+    if (overlay != nullptr) {
         // Add directly to overlay storage - this initiates async write
         if (p_overlayStorage->addOverlay(overlay)) {
-            // Add to local model for display
-            model->addOverlay(overlay);
+            // Add to unified model for display
+            p_overlayModel->addOverlay(overlay);
             
             // Update UI state to show any pending writes
             updateButtonStates();
@@ -319,46 +269,10 @@ void OverlayManagerWidget::addOverlay()
 
 void OverlayManagerWidget::removeOverlay()
 {
-    // Get current tab and its overlay type
-    int currentIndex = p_tabWidget->currentIndex();
-    if (currentIndex < 0)
+    if (!p_overlayTableView || !p_overlayModel)
         return;
         
-    auto currentTabWidget = p_tabWidget->currentWidget();
-    if (!currentTabWidget)
-        return;
-        
-    using namespace BC::Property::Overlay;
-    auto type = static_cast<OverlayBase::OverlayType>(currentTabWidget->property(overlayType.toLocal8Bit().constData()).toInt());
-    
-    // Get the appropriate model and table view for this overlay type
-    OverlayTableModel* model = nullptr;
-    QTableView* tableView = nullptr;
-    
-    switch (type) {
-    case OverlayBase::BCExperiment:
-        model = p_bcExperimentModel;
-        tableView = p_bcExperimentTableView;
-        break;
-    case OverlayBase::SPCAT:
-        // model = p_spcatModel;
-        // tableView = p_spcatTableView;
-        qDebug() << "SPCAT overlay removal not yet implemented";
-        return;
-    case OverlayBase::GenericXY:
-        // model = p_genericXYModel;
-        // tableView = p_genericXYTableView;
-        qDebug() << "GenericXY overlay removal not yet implemented";
-        return;
-    default:
-        qDebug() << "Unknown overlay type";
-        return;
-    }
-    
-    if (!model || !tableView)
-        return;
-        
-    auto selectionModel = tableView->selectionModel();
+    auto selectionModel = p_overlayTableView->selectionModel();
     if (!selectionModel->hasSelection())
         return;
         
@@ -370,7 +284,7 @@ void OverlayManagerWidget::removeOverlay()
     // Create confirmation message
     QString message;
     if (selectedRows.size() == 1) {
-        auto overlay = model->getOverlay(selectedRows.first().row());
+        auto overlay = p_overlayModel->getOverlay(selectedRows.first().row());
         if (overlay) {
             message = QString("Are you sure you want to remove the overlay \"%1\"?").arg(overlay->getLabel());
         } else {
@@ -401,12 +315,12 @@ void OverlayManagerWidget::removeOverlay()
     std::sort(rows.begin(), rows.end(), std::greater<int>());
     
     for (int row : rows) {
-        auto overlay = model->getOverlay(row);
+        auto overlay = p_overlayModel->getOverlay(row);
         if (overlay) {
             // Remove from overlay storage - this will emit signals that FtmwViewWidget listens to
             if (p_overlayStorage->removeOverlay(overlay->getLabel())) {
-                // Remove from local model for display
-                model->removeOverlay(row);
+                // Remove from unified model for display
+                p_overlayModel->removeOverlay(row);
                 
                 qDebug() << "Overlay removed from storage successfully";
             } else {
@@ -430,27 +344,15 @@ void OverlayManagerWidget::raiseParent()
 
 void OverlayManagerWidget::populateWithExistingOverlays(const QVector<std::shared_ptr<OverlayBase>> &overlays)
 {
-    // Add existing overlays to the appropriate models
+    // Add existing overlays to the unified model
     for(const auto& overlay : overlays)
     {
         if(overlay == nullptr)
             continue;
             
-        switch(overlay->type())
-        {
-        case OverlayBase::BCExperiment:
-            if(p_bcExperimentModel != nullptr)
-                p_bcExperimentModel->addOverlay(overlay);
-            break;
-        case OverlayBase::SPCAT:
-            // TODO: Add to SPCAT model when implemented
-            break;
-        case OverlayBase::GenericXY:
-            // TODO: Add to GenericXY model when implemented
-            break;
-        default:
-            break;
-        }
+        // All overlay types are now handled by the unified model
+        if(p_overlayModel != nullptr)
+            p_overlayModel->addOverlay(overlay);
     }
 }
 
@@ -458,7 +360,7 @@ void OverlayManagerWidget::setupConfigureDelegate()
 {
     // Create and set the delegate for the Configure column
     p_configureDelegate = new OverlayConfigureDelegate(this);
-    p_bcExperimentTableView->setItemDelegateForColumn(0, p_configureDelegate); // ConfigureColumn = 0
+    p_overlayTableView->setItemDelegateForColumn(0, p_configureDelegate); // ConfigureColumn = 0
     
     // Connect the delegate signal to handle configuration button clicks
     connect(p_configureDelegate, &OverlayConfigureDelegate::configureClicked,
@@ -471,25 +373,25 @@ void OverlayManagerWidget::setupTableView()
     setupConfigureDelegate();
     
     // Set up column resize behavior
-    resizeColumnsToContents(p_bcExperimentModel, p_bcExperimentTableView);
+    resizeColumnsToContents();
 }
 
-void OverlayManagerWidget::resizeColumnsToContents(const OverlayTableModel* model, QTableView* tableView)
+void OverlayManagerWidget::resizeColumnsToContents()
 {
-    if (!model || !tableView) {
+    if (!p_overlayModel || !p_overlayTableView) {
         return;
     }
     
-    auto horizontalHeader = tableView->horizontalHeader();
-    int columnCount = model->columnCount();
-    int sourceFileColumn = 3; // SourceFileColumn from OverlayTableModel (updated position)
+    auto horizontalHeader = p_overlayTableView->horizontalHeader();
+    int columnCount = p_overlayModel->columnCount();
+    int sourceFileColumn = static_cast<int>(OverlayTableModel::SourceFileColumn);
     
     // Resize all columns except the source file column to contents
     for (int i = 0; i < columnCount; ++i) {
         if (i != sourceFileColumn) {
-            tableView->resizeColumnToContents(i);
+            p_overlayTableView->resizeColumnToContents(i);
             // Configure column should be fixed width, others interactive
-            if (i == 0) { // ConfigureColumn = 0
+            if (i == static_cast<int>(OverlayTableModel::ConfigureColumn)) {
                 horizontalHeader->setSectionResizeMode(i, QHeaderView::Fixed);
             } else {
                 horizontalHeader->setSectionResizeMode(i, QHeaderView::Interactive);
@@ -503,10 +405,10 @@ void OverlayManagerWidget::resizeColumnsToContents(const OverlayTableModel* mode
     }
     
     // Set fixed width for configure button column
-    QFontMetrics fm(tableView->font());
+    QFontMetrics fm(p_overlayTableView->font());
     int configureWidth = fm.horizontalAdvance("⚙") + 1; // Gear symbol plus minimal padding
-    if (0 < columnCount) { // ConfigureColumn = 0
-        tableView->setColumnWidth(0, configureWidth);
+    if (static_cast<int>(OverlayTableModel::ConfigureColumn) < columnCount) {
+        p_overlayTableView->setColumnWidth(static_cast<int>(OverlayTableModel::ConfigureColumn), configureWidth);
     }
 }
 
@@ -542,11 +444,8 @@ void OverlayManagerWidget::onModelDataChanged(const QModelIndex &topLeft, const 
         }
     }
     
-    // Resize columns to contents for this model's view
-    auto it = d_modelViewMap.find(model);
-    if (it != d_modelViewMap.end()) {
-        resizeColumnsToContents(model, it->second);
-    }
+    // Resize columns to contents for the unified view
+    resizeColumnsToContents();
 }
 
 void OverlayManagerWidget::onSelectionChanged()
@@ -558,7 +457,7 @@ void OverlayManagerWidget::onSelectionChanged()
 void OverlayManagerWidget::onConfigureClicked(const QModelIndex &index)
 {
     // Get the overlay for this row
-    auto overlay = p_bcExperimentModel->getOverlay(index.row());
+    auto overlay = p_overlayModel->getOverlay(index.row());
     if (!overlay) {
         return;
     }
@@ -592,12 +491,12 @@ void OverlayManagerWidget::onOverlaySettingsChanged(std::shared_ptr<OverlayBase>
     
     // Update the table model to reflect any changes
     // Find the row for this overlay and emit dataChanged for the entire row
-    auto overlays = p_bcExperimentModel->getAllOverlays();
+    auto overlays = p_overlayModel->getAllOverlays();
     for (int i = 0; i < overlays.size(); ++i) {
         if (overlays[i] == overlay) {
-            auto topLeft = p_bcExperimentModel->index(i, 0);
-            auto bottomRight = p_bcExperimentModel->index(i, p_bcExperimentModel->columnCount() - 1);
-            emit p_bcExperimentModel->dataChanged(topLeft, bottomRight);
+            auto topLeft = p_overlayModel->index(i, 0);
+            auto bottomRight = p_overlayModel->index(i, p_overlayModel->columnCount() - 1);
+            emit p_overlayModel->dataChanged(topLeft, bottomRight);
             break;
         }
     }
@@ -694,28 +593,12 @@ void OverlayManagerWidget::onOverlayWriteFailed(std::shared_ptr<OverlayBase> ove
     // Show error notification
     showErrorNotification(overlay->getLabel(), error);
     
-    // Remove failed overlay from our models
-    OverlayTableModel* model = nullptr;
-    switch (overlay->type()) {
-    case OverlayBase::BCExperiment:
-        model = p_bcExperimentModel;
-        break;
-    case OverlayBase::SPCAT:
-        // TODO: Set model when SPCAT model is implemented
-        break;
-    case OverlayBase::GenericXY:
-        // TODO: Set model when GenericXY model is implemented
-        break;
-    default:
-        break;
-    }
-    
-    // Find and remove the overlay from the model
-    if (model) {
-        auto overlays = model->getAllOverlays();
+    // Find and remove the overlay from the unified model
+    if (p_overlayModel) {
+        auto overlays = p_overlayModel->getAllOverlays();
         for (int i = 0; i < overlays.size(); ++i) {
             if (overlays[i] == overlay) {
-                model->removeOverlay(i);
+                p_overlayModel->removeOverlay(i);
                 break;
             }
         }

@@ -2,16 +2,15 @@
 #define OVERLAYMANAGERWIDGET_H
 
 #include <QWidget>
-#include <QTabWidget>
 #include <QToolBar>
 #include <QAction>
+#include <QToolButton>
+#include <QMenu>
 #include <QVBoxLayout>
-#include <QMetaEnum>
 #include <QTableView>
 #include <QLabel>
 #include <QProgressBar>
 #include <memory>
-#include <map>
 
 #include <data/experiment/overlaybase.h>
 #include <data/model/overlaytablemodel.h>
@@ -19,9 +18,6 @@
 #include <data/storage/settingsstorage.h>
 #include "overlayconfiguredelegate.h"
 
-namespace BC::Property::Overlay {
-static const QString overlayType{"overlayType"};
-}
 
 namespace BC::Key::OverlayManager {
 static const QString key{"OverlayManagerWidget"};
@@ -40,7 +36,7 @@ signals:
     void overlayDataChanged(std::shared_ptr<OverlayBase> overlay);
 
 public slots:
-    void addOverlay();
+    void addOverlay(OverlayBase::OverlayType type);
     void removeOverlay();
     void raiseParent();
     
@@ -59,14 +55,15 @@ private slots:
     void onOverlaySettingsChanged(std::shared_ptr<OverlayBase> overlay);
 
 private:
-    QTabWidget *p_tabWidget;
     QToolBar *p_toolBar;
-    QAction *p_addAction;
+    QToolButton *p_addButton;
+    QMenu *p_addMenu;
+    std::map<OverlayBase::OverlayType, QAction*> d_addActions;
     QAction *p_removeAction;
     QAction *p_raiseParentAction;
 
-    BCExperimentOverlayModel *p_bcExperimentModel;
-    QTableView *p_bcExperimentTableView;
+    OverlayTableModel *p_overlayModel;
+    QTableView *p_overlayTableView;
     OverlayConfigureDelegate *p_configureDelegate;
     
     // Progress indicator widgets
@@ -74,23 +71,17 @@ private:
     QProgressBar *p_progressBar;
     QWidget *p_progressWidget;
     
-    // Data structure to track model-view pairs for automatic column resizing
-    std::map<const OverlayTableModel*, QTableView*> d_modelViewMap;
-    
     // Track overlay storage connection
     std::shared_ptr<OverlayStorage> p_overlayStorage;
 
 
     void setupUI();
-    void createTabs();
-    QWidget* createBCExperimentTab();
-    QWidget* createPlaceholderTab(const QString& tabName);
-    void onTabChanged(int index);
+    void setupAddButton();
     void updateButtonStates();
     void populateWithExistingOverlays(const QVector<std::shared_ptr<OverlayBase>> &overlays);
     void setupConfigureDelegate();
     void setupTableView();
-    void resizeColumnsToContents(const OverlayTableModel* model, QTableView* tableView);
+    void resizeColumnsToContents();
     
     // Progress indicator management
     void createProgressWidget();

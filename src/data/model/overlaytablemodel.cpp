@@ -22,7 +22,7 @@ int OverlayTableModel::rowCount(const QModelIndex &parent) const
 int OverlayTableModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent)
-    return BaseColumnCount + getAdditionalColumnCount();
+    return ColumnCount;
 }
 
 QVariant OverlayTableModel::data(const QModelIndex &index, int role) const
@@ -34,34 +34,26 @@ QVariant OverlayTableModel::data(const QModelIndex &index, int role) const
     if (!overlay)
         return QVariant();
 
-    // Handle base columns
-    if (index.column() < BaseColumnCount)
+    if (role == Qt::DisplayRole || role == Qt::EditRole)
     {
-        if (role == Qt::DisplayRole || role == Qt::EditRole)
+        switch (index.column())
         {
-            switch (index.column())
-            {
-            case ConfigureColumn:
-                return QString::fromUtf8("⚙");
-            case LabelColumn:
-                return overlay->getLabel();
-            case PlotIdColumn:
-                return overlay->getPlotId();
-            case SourceFileColumn:
-                return overlay->getSourceFile();
-            }
-        }
-        else if (role == Qt::TextAlignmentRole)
-        {
-            // Center-align all columns
-            return Qt::AlignCenter;
+        case ConfigureColumn:
+            return QString::fromUtf8("⚙");
+        case LabelColumn:
+            return overlay->getLabel();
+        case PlotIdColumn:
+            return overlay->getPlotId();
+        case OverlayTypeColumn:
+            return getOverlayTypeName(overlay->type());
+        case SourceFileColumn:
+            return overlay->getSourceFile();
         }
     }
-    else
+    else if (role == Qt::TextAlignmentRole)
     {
-        // Handle additional columns from derived classes
-        int additionalColumn = index.column() - BaseColumnCount;
-        return getAdditionalColumnData(index.row(), additionalColumn, role);
+        // Center-align all columns
+        return Qt::AlignCenter;
     }
 
     return QVariant();
@@ -69,6 +61,8 @@ QVariant OverlayTableModel::data(const QModelIndex &index, int role) const
 
 bool OverlayTableModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
+    Q_UNUSED(value) // All columns are non-editable
+    
     if (role != Qt::EditRole)
         return false;
 
@@ -79,39 +73,26 @@ bool OverlayTableModel::setData(const QModelIndex &index, const QVariant &value,
     if (!overlay)
         return false;
 
-    // Handle base columns (only editable ones)
-    if (index.column() < BaseColumnCount)
+    // All columns are not directly editable - changes handled through configuration dialog
+    switch (index.column())
     {
-        switch (index.column())
-        {
-        case ConfigureColumn:
-            // Configure column is not editable - handled by delegate
-            return false;
-        case LabelColumn:
-            // Label is not editable
-            return false;
-        case PlotIdColumn:
-            // PlotId is not editable - will be handled in configuration dialog
-            return false;
-        case SourceFileColumn:
-            // Source file is not editable
-            return false;
-        default:
-            return false;
-        }
-
-        emit dataChanged(index, index);
-        return true;
-    }
-    else
-    {
-        // Handle additional columns from derived classes
-        int additionalColumn = index.column() - BaseColumnCount;
-        if (setAdditionalColumnData(index.row(), additionalColumn, value, role))
-        {
-            emit dataChanged(index, index);
-            return true;
-        }
+    case ConfigureColumn:
+        // Configure column is not editable - handled by delegate
+        return false;
+    case LabelColumn:
+        // Label is not editable - handled in configuration dialog
+        return false;
+    case PlotIdColumn:
+        // PlotId is not editable - handled in configuration dialog
+        return false;
+    case OverlayTypeColumn:
+        // Overlay type is not editable - determined at creation time
+        return false;
+    case SourceFileColumn:
+        // Source file is not editable
+        return false;
+    default:
+        return false;
     }
 
     return false;
@@ -124,26 +105,18 @@ QVariant OverlayTableModel::headerData(int section, Qt::Orientation orientation,
 
     if (role == Qt::DisplayRole)
     {
-        // Handle base column headers
-        if (section < BaseColumnCount)
+        switch (section)
         {
-            switch (section)
-            {
-            case ConfigureColumn:
-                return QString::fromUtf8("⚙");
-            case LabelColumn:
-                return QString("Label");
-            case PlotIdColumn:
-                return QString("Plot ID");
-            case SourceFileColumn:
-                return QString("Source File");
-            }
-        }
-        else
-        {
-            // Handle additional column headers from derived classes
-            int additionalColumn = section - BaseColumnCount;
-            return getAdditionalHeaderData(additionalColumn, role);
+        case ConfigureColumn:
+            return QString::fromUtf8("⚙");
+        case LabelColumn:
+            return QString("Label");
+        case PlotIdColumn:
+            return QString("Plot ID");
+        case OverlayTypeColumn:
+            return QString("Type");
+        case SourceFileColumn:
+            return QString("Source File");
         }
     }
 
@@ -155,22 +128,12 @@ Qt::ItemFlags OverlayTableModel::flags(const QModelIndex &index) const
     if (!index.isValid())
         return Qt::NoItemFlags;
 
-    // Handle base columns
-    if (index.column() < BaseColumnCount)
-    {
-        Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+    Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 
-        // Only Configure column will be handled by the delegate - no columns are directly editable
-        // All editing will be done through the configuration dialog
-        
-        return flags;
-    }
-    else
-    {
-        // Handle additional columns from derived classes
-        int additionalColumn = index.column() - BaseColumnCount;
-        return getAdditionalColumnFlags(index.row(), additionalColumn);
-    }
+    // Only Configure column will be handled by the delegate - no columns are directly editable
+    // All editing will be done through the configuration dialog
+    
+    return flags;
 }
 
 void OverlayTableModel::addOverlay(std::shared_ptr<OverlayBase> overlay)
@@ -231,49 +194,17 @@ QVector<std::shared_ptr<OverlayBase>> OverlayTableModel::getAllOverlays() const
     return d_overlays;
 }
 
-// BCExperimentOverlayModel implementation
-
-BCExperimentOverlayModel::BCExperimentOverlayModel(QObject *parent)
-    : OverlayTableModel(parent)
+QString OverlayTableModel::getOverlayTypeName(OverlayBase::OverlayType type) const
 {
-}
-
-int BCExperimentOverlayModel::getAdditionalColumnCount() const
-{
-    return AdditionalColumnCount;
-}
-
-QVariant BCExperimentOverlayModel::getAdditionalColumnData(int row, int column, int role) const
-{
-    Q_UNUSED(row)
-    Q_UNUSED(column)
-    Q_UNUSED(role)
-    // No additional columns for BCExperiment overlays anymore
-    return QVariant();
-}
-
-QVariant BCExperimentOverlayModel::getAdditionalHeaderData(int column, int role) const
-{
-    Q_UNUSED(column)
-    Q_UNUSED(role)
-    // No additional columns for BCExperiment overlays anymore
-    return QVariant();
-}
-
-bool BCExperimentOverlayModel::setAdditionalColumnData(int row, int column, const QVariant &value, int role)
-{
-    Q_UNUSED(row)
-    Q_UNUSED(column)
-    Q_UNUSED(value)
-    Q_UNUSED(role)
-    // No additional columns for BCExperiment overlays anymore
-    return false;
-}
-
-Qt::ItemFlags BCExperimentOverlayModel::getAdditionalColumnFlags(int row, int column) const
-{
-    Q_UNUSED(row)
-    Q_UNUSED(column)
-    // No additional columns for BCExperiment overlays anymore
-    return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+    switch (type)
+    {
+    case OverlayBase::BCExperiment:
+        return QString("BC Experiment");
+    case OverlayBase::SPCAT:
+        return QString("SPCAT");
+    case OverlayBase::GenericXY:
+        return QString("Generic XY");
+    default:
+        return QString("Unknown");
+    }
 }
