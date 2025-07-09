@@ -7,6 +7,7 @@
 #include <QDoubleSpinBox>
 #include <QCheckBox>
 #include <QFormLayout>
+#include <QLabel>
 #include <QStringList>
 #include <memory>
 
@@ -47,9 +48,13 @@ public:
     // Apply settings to overlay
     void applyToOverlay(std::shared_ptr<OverlayBase> overlay) const;
 
+private slots:
+    void onLabelChanged();
+
 private:
     // UI elements
     QLineEdit *p_labelLineEdit;
+    QLabel *p_sanitizedLabelDisplay;
     QComboBox *p_plotIdComboBox;
     QDoubleSpinBox *p_yScaleSpinBox;
     QDoubleSpinBox *p_yOffsetSpinBox;
@@ -64,6 +69,7 @@ private:
 
     void setupUI();
     void initializeDefaults();
+    QString sanitizeLabel(const QString& label) const;
 };
 
 #endif // OVERLAYBASEOPTIONSWIDGET_H

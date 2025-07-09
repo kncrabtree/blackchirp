@@ -6,7 +6,8 @@
 
 OverlaySettingsDialog::OverlaySettingsDialog(std::shared_ptr<OverlayBase> overlay, 
                                            const QStringList &plotNames,
-                                           double xRangeMin, double xRangeMax, 
+                                           double xRangeMin, double xRangeMax,
+                                           std::shared_ptr<OverlayStorage> overlayStorage,
                                            QWidget *parent)
     : QDialog(parent),
       SettingsStorage(BC::Key::OverlaySettings::key),
@@ -14,6 +15,7 @@ OverlaySettingsDialog::OverlaySettingsDialog(std::shared_ptr<OverlayBase> overla
       d_plotNames(plotNames),
       d_xRangeMin(xRangeMin),
       d_xRangeMax(xRangeMax),
+      p_overlayStorage(overlayStorage),
       p_mainLayout(nullptr),
       p_optionsWidget(nullptr),
       p_buttonBox(nullptr),
@@ -162,6 +164,18 @@ void OverlaySettingsDialog::onResetToDefaults()
 
 void OverlaySettingsDialog::accept()
 {
+    // Check if label has changed and handle renaming if needed
+    QString newLabel = p_optionsWidget->getLabel();
+    if (p_overlayStorage && newLabel != d_originalLabel) {
+        if (!p_overlayStorage->renameOverlay(d_originalLabel, newLabel)) {
+            QMessageBox::warning(this, "Rename Failed", 
+                                QString("Failed to rename overlay from '%1' to '%2'. "
+                                       "Please check that the new name is valid and not already in use.")
+                                       .arg(d_originalLabel, newLabel));
+            return; // Don't close dialog on rename failure
+        }
+    }
+    
     // Save current settings when dialog is accepted
     saveCurrentSettings();
     

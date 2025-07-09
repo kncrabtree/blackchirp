@@ -38,6 +38,9 @@ public:
     // Remove overlay by label
     bool removeOverlay(const QString& label);
     
+    // Rename overlay and associated files
+    bool renameOverlay(const QString& currentLabel, const QString& newLabel);
+    
     // Async write management
     bool hasPendingWrites() const;
     void waitForPendingWrites();

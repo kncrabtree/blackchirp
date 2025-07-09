@@ -575,7 +575,7 @@ void OverlayManagerWidget::onConfigureClicked(const QModelIndex &index)
     QStringList plotNames = ftmwParent->getPlotNames();
     
     // Create and show the configuration dialog
-    OverlaySettingsDialog dialog(overlay, plotNames, xRange.first, xRange.second, this);
+    OverlaySettingsDialog dialog(overlay, plotNames, xRange.first, xRange.second, p_overlayStorage, this);
     dialog.setupUI(); // Set up UI after construction is complete
     
     // Connect the dialog signal to our slot for real-time updates

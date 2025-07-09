@@ -10,6 +10,7 @@
 
 #include <data/experiment/overlaybase.h>
 #include <data/storage/settingsstorage.h>
+#include <data/storage/overlaystorage.h>
 #include "overlaybaseoptionswidget.h"
 
 namespace BC::Key::OverlaySettings {
@@ -24,7 +25,8 @@ class OverlaySettingsDialog : public QDialog, public SettingsStorage
 public:
     explicit OverlaySettingsDialog(std::shared_ptr<OverlayBase> overlay, 
                                   const QStringList &plotNames,
-                                  double xRangeMin, double xRangeMax, 
+                                  double xRangeMin, double xRangeMax,
+                                  std::shared_ptr<OverlayStorage> overlayStorage,
                                   QWidget *parent = nullptr);
     virtual ~OverlaySettingsDialog();
 
@@ -55,6 +57,7 @@ protected:
     QStringList d_plotNames;
     double d_xRangeMin;
     double d_xRangeMax;
+    std::shared_ptr<OverlayStorage> p_overlayStorage;
     QVBoxLayout *p_mainLayout;
     OverlayBaseOptionsWidget *p_optionsWidget;
 

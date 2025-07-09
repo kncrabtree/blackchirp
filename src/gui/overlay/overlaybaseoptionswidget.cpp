@@ -3,6 +3,7 @@
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QRegularExpression>
 #include <limits>
 
 OverlayBaseOptionsWidget::OverlayBaseOptionsWidget(const QStringList &plotNames, double xRangeMin, double xRangeMax, QWidget *parent)
@@ -26,6 +27,15 @@ void OverlayBaseOptionsWidget::setupUI()
     p_labelLineEdit = new QLineEdit(this);
     p_labelLineEdit->setPlaceholderText("Enter overlay label");
     layout->addRow("Label:", p_labelLineEdit);
+    
+    // Sanitized filename preview
+    p_sanitizedLabelDisplay = new QLabel(this);
+    p_sanitizedLabelDisplay->setStyleSheet("color: #666666; font-style: italic; font-size: 11px;");
+    p_sanitizedLabelDisplay->setWordWrap(true);
+    layout->addRow("Storage Name:", p_sanitizedLabelDisplay);
+    
+    // Connect label changes to update sanitized preview
+    connect(p_labelLineEdit, &QLineEdit::textChanged, this, &OverlayBaseOptionsWidget::onLabelChanged);
     
     // Plot ID
     p_plotIdComboBox = new QComboBox(this);
@@ -85,6 +95,9 @@ void OverlayBaseOptionsWidget::setupUI()
     layout->addRow("Max Frequency:", maxFreqWidget);
     
     setLayout(layout);
+    
+    // Initialize sanitized label display
+    onLabelChanged();
 }
 
 void OverlayBaseOptionsWidget::initializeDefaults()
@@ -124,7 +137,7 @@ void OverlayBaseOptionsWidget::initializeDefaults()
 // Getters
 QString OverlayBaseOptionsWidget::getLabel() const
 {
-    return p_labelLineEdit->text();
+    return sanitizeLabel(p_labelLineEdit->text());
 }
 
 QString OverlayBaseOptionsWidget::getPlotId() const
@@ -151,6 +164,8 @@ double OverlayBaseOptionsWidget::getXOffset() const
 void OverlayBaseOptionsWidget::setLabel(const QString &label)
 {
     p_labelLineEdit->setText(label);
+    // Trigger sanitization preview update
+    onLabelChanged();
 }
 
 void OverlayBaseOptionsWidget::setPlotId(const QString &plotId)
@@ -286,4 +301,38 @@ void OverlayBaseOptionsWidget::setMaxFreqLimit(bool enabled, double value)
 {
     p_maxFreqCheckBox->setChecked(enabled);
     p_maxFreqSpinBox->setValue(value);
+}
+
+void OverlayBaseOptionsWidget::onLabelChanged()
+{
+    QString label = p_labelLineEdit->text();
+    QString sanitized = sanitizeLabel(label);
+    
+    if (sanitized.isEmpty()) {
+        p_sanitizedLabelDisplay->setText("(filename will be generated)");
+    } else if (sanitized == label) {
+        p_sanitizedLabelDisplay->setText(sanitized);
+    } else {
+        p_sanitizedLabelDisplay->setText(QString("<b>%1</b><br/>"
+                                                "<span style='color: #CC6600;'>Changed from: %2</span>")
+                                                .arg(sanitized, label));
+    }
+}
+
+QString OverlayBaseOptionsWidget::sanitizeLabel(const QString& label) const
+{
+    QString sanitized = label;
+    
+    // Remove or replace characters that are problematic for filenames
+    sanitized.replace(QRegularExpression("[/\\\\:*?\"<>|]"), "_");
+    
+    // Trim whitespace
+    sanitized = sanitized.trimmed();
+    
+    // Ensure it's not empty
+    if (sanitized.isEmpty() && !label.isEmpty()) {
+        sanitized = "overlay";
+    }
+    
+    return sanitized;
 }

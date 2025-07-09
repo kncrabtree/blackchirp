@@ -316,6 +316,95 @@ bool OverlayStorage::removeOverlay(const QString& label)
     return false;
 }
 
+bool OverlayStorage::renameOverlay(const QString& currentLabel, const QString& newLabel)
+{
+    // Validate new label
+    if (!validateOverlayLabel(newLabel)) {
+        qDebug() << "Invalid new label for rename operation:" << newLabel;
+        return false;
+    }
+    
+    // Sanitize both labels
+    QString currentSanitized = sanitizeLabel(currentLabel);
+    QString newSanitized = sanitizeLabel(newLabel);
+    
+    // Check if the overlay exists
+    auto it = d_overlays.find(currentSanitized);
+    if (it == d_overlays.end()) {
+        qDebug() << "Overlay not found for rename:" << currentLabel;
+        return false;
+    }
+    
+    // Check if new label already exists (different from current)
+    if (currentSanitized != newSanitized && d_overlays.find(newSanitized) != d_overlays.end()) {
+        qDebug() << "Overlay with new label already exists:" << newLabel;
+        return false;
+    }
+    
+    // If sanitized labels are the same, just update the overlay label and we're done
+    if (currentSanitized == newSanitized) {
+        it->second->setLabel(newLabel);
+        saveOverlayMetadata(it->second);
+        return true;
+    }
+    
+    // Wait for any pending writes to complete before renaming
+    auto writeIt = d_pendingWrites.find(currentSanitized);
+    if (writeIt != d_pendingWrites.end()) {
+        writeIt->second.waitForFinished();
+        d_pendingWrites.erase(writeIt);
+        emit pendingWritesChanged(d_pendingWrites.size());
+    }
+    
+    // Get file paths
+    QString oldDataPath = getOverlayDataPath(currentSanitized);
+    QString oldSettingsPath = getOverlaySettingsPath(currentSanitized);
+    QString newDataPath = getOverlayDataPath(newSanitized);
+    QString newSettingsPath = getOverlaySettingsPath(newSanitized);
+    
+    // Attempt to rename files atomically
+    bool dataRenamed = false;
+    
+    // Rename data file if it exists
+    if (QFile::exists(oldDataPath)) {
+        if (QFile::rename(oldDataPath, newDataPath)) {
+            dataRenamed = true;
+        } else {
+            qDebug() << "Failed to rename overlay data file from" << oldDataPath << "to" << newDataPath;
+            return false;
+        }
+    }
+    
+    // Rename settings file if it exists
+    if (QFile::exists(oldSettingsPath)) {
+        if (!QFile::rename(oldSettingsPath, newSettingsPath)) {
+            qDebug() << "Failed to rename overlay settings file from" << oldSettingsPath << "to" << newSettingsPath;
+            
+            // Rollback data file rename if settings file rename failed
+            if (dataRenamed && QFile::exists(newDataPath)) {
+                QFile::rename(newDataPath, oldDataPath);
+            }
+            return false;
+        }
+    }
+    
+    // Update overlay label and move in storage map
+    auto overlay = it->second;
+    overlay->setLabel(newLabel);
+    
+    // Update the overlay's destFile to point to the new data file path
+    overlay->setDestFile(newDataPath);
+    
+    // Remove from old key and add to new key
+    d_overlays.erase(it);
+    d_overlays.emplace(newSanitized, overlay);
+    
+    // Update the overlays.csv index file
+    save();
+    
+    return true;
+}
+
 bool OverlayStorage::hasPendingWrites() const
 {
     return !d_pendingWrites.empty();
