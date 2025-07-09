@@ -41,24 +41,12 @@ QVariant OverlayTableModel::data(const QModelIndex &index, int role) const
         {
             switch (index.column())
             {
+            case ConfigureColumn:
+                return QString::fromUtf8("⚙");
             case LabelColumn:
                 return overlay->getLabel();
             case PlotIdColumn:
                 return overlay->getPlotId();
-            case YScaleColumn:
-                return overlay->getYScale();
-            case YOffsetColumn:
-                return overlay->getYOffset();
-            case XOffsetColumn:
-                return overlay->getXOffset();
-            case MinFreqEnabledColumn:
-                return overlay->getMinFreqEnabled();
-            case MinFreqValueColumn:
-                return overlay->getMinFreqValue();
-            case MaxFreqEnabledColumn:
-                return overlay->getMaxFreqEnabled();
-            case MaxFreqValueColumn:
-                return overlay->getMaxFreqValue();
             case SourceFileColumn:
                 return overlay->getSourceFile();
             }
@@ -67,16 +55,6 @@ QVariant OverlayTableModel::data(const QModelIndex &index, int role) const
         {
             // Center-align all columns
             return Qt::AlignCenter;
-        }
-        else if (role == Qt::ForegroundRole)
-        {
-            // Gray out frequency value columns when their corresponding checkbox is disabled
-            if (index.column() == MinFreqValueColumn && !overlay->getMinFreqEnabled()) {
-                return QColor(Qt::gray);
-            }
-            if (index.column() == MaxFreqValueColumn && !overlay->getMaxFreqEnabled()) {
-                return QColor(Qt::gray);
-            }
         }
     }
     else
@@ -106,37 +84,15 @@ bool OverlayTableModel::setData(const QModelIndex &index, const QVariant &value,
     {
         switch (index.column())
         {
+        case ConfigureColumn:
+            // Configure column is not editable - handled by delegate
+            return false;
         case LabelColumn:
             // Label is not editable
             return false;
         case PlotIdColumn:
-            overlay->setPlotId(value.toString());
-            break;
-        case YScaleColumn:
-            overlay->setYScale(value.toDouble());
-            break;
-        case YOffsetColumn:
-            overlay->setYOffset(value.toDouble());
-            break;
-        case XOffsetColumn:
-            overlay->setXOffset(value.toDouble());
-            break;
-        case MinFreqEnabledColumn:
-            overlay->setMinFreqLimit(value.toBool(), overlay->getMinFreqValue());
-            // Also update the corresponding value column to reflect the new enabled state
-            emit dataChanged(this->index(index.row(), MinFreqValueColumn), this->index(index.row(), MinFreqValueColumn));
-            break;
-        case MinFreqValueColumn:
-            overlay->setMinFreqLimit(overlay->getMinFreqEnabled(), value.toDouble());
-            break;
-        case MaxFreqEnabledColumn:
-            overlay->setMaxFreqLimit(value.toBool(), overlay->getMaxFreqValue());
-            // Also update the corresponding value column to reflect the new enabled state
-            emit dataChanged(this->index(index.row(), MaxFreqValueColumn), this->index(index.row(), MaxFreqValueColumn));
-            break;
-        case MaxFreqValueColumn:
-            overlay->setMaxFreqLimit(overlay->getMaxFreqEnabled(), value.toDouble());
-            break;
+            // PlotId is not editable - will be handled in configuration dialog
+            return false;
         case SourceFileColumn:
             // Source file is not editable
             return false;
@@ -173,24 +129,12 @@ QVariant OverlayTableModel::headerData(int section, Qt::Orientation orientation,
         {
             switch (section)
             {
+            case ConfigureColumn:
+                return QString::fromUtf8("⚙");
             case LabelColumn:
                 return QString("Label");
             case PlotIdColumn:
                 return QString("Plot ID");
-            case YScaleColumn:
-                return QString("Y Scale");
-            case YOffsetColumn:
-                return QString("Y Offset");
-            case XOffsetColumn:
-                return QString("X Offset");
-            case MinFreqEnabledColumn:
-                return QString::fromUtf8("Min ⏻");
-            case MinFreqValueColumn:
-                return QString("Min Freq (MHz)");
-            case MaxFreqEnabledColumn:
-                return QString::fromUtf8("Max ⏻");
-            case MaxFreqValueColumn:
-                return QString("Max Freq (MHz)");
             case SourceFileColumn:
                 return QString("Source File");
             }
@@ -216,31 +160,9 @@ Qt::ItemFlags OverlayTableModel::flags(const QModelIndex &index) const
     {
         Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 
-        // Label and Source File columns are not editable
-        // Frequency value columns are only editable if their corresponding checkbox is enabled
-        if (index.column() != LabelColumn && index.column() != SourceFileColumn) {
-            if (index.column() == MinFreqValueColumn) {
-                // MinFreqValue column is only editable if MinFreqEnabled is checked
-                if (index.row() < d_overlays.size()) {
-                    auto overlay = d_overlays.at(index.row());
-                    if (overlay && overlay->getMinFreqEnabled()) {
-                        flags |= Qt::ItemIsEditable;
-                    }
-                }
-            } else if (index.column() == MaxFreqValueColumn) {
-                // MaxFreqValue column is only editable if MaxFreqEnabled is checked
-                if (index.row() < d_overlays.size()) {
-                    auto overlay = d_overlays.at(index.row());
-                    if (overlay && overlay->getMaxFreqEnabled()) {
-                        flags |= Qt::ItemIsEditable;
-                    }
-                }
-            } else {
-                // All other columns are editable
-                flags |= Qt::ItemIsEditable;
-            }
-        }
-
+        // Only Configure column will be handled by the delegate - no columns are directly editable
+        // All editing will be done through the configuration dialog
+        
         return flags;
     }
     else

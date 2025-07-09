@@ -1,6 +1,6 @@
 #include "overlaymanagerwidget.h"
 #include "bcexpoverlaydialog.h"
-#include "overlaycheckboxdelegate.h"
+#include "overlayconfiguredelegate.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -12,7 +12,7 @@
 #include <gui/widget/ftmwviewwidget.h>
 
 OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number, const QVector<std::shared_ptr<OverlayBase>> &overlays)
-    : QWidget{parent, Qt::Window}, p_plotIdDelegate(nullptr), p_numericDelegate(nullptr)
+    : QWidget{parent, Qt::Window}, p_configureDelegate(nullptr)
 {
     // Set window attributes
     if(number > 0)
@@ -446,37 +446,21 @@ void OverlayManagerWidget::populateWithExistingOverlays(const QVector<std::share
     }
 }
 
-void OverlayManagerWidget::setupPlotIdDelegate()
+void OverlayManagerWidget::setupConfigureDelegate()
 {
-    // Get plot names from parent FtmwViewWidget
-    QStringList plotNames;
-    FtmwViewWidget* ftmwParent = qobject_cast<FtmwViewWidget*>(parentWidget());
-    if (ftmwParent) {
-        plotNames = ftmwParent->getPlotNames();
-    }
+    // Create and set the delegate for the Configure column
+    p_configureDelegate = new OverlayConfigureDelegate(this);
+    p_bcExperimentTableView->setItemDelegateForColumn(0, p_configureDelegate); // ConfigureColumn = 0
     
-    // Create and set the delegate for the PlotId column
-    p_plotIdDelegate = new PlotIdComboBoxDelegate(plotNames, this);
-    p_bcExperimentTableView->setItemDelegateForColumn(1, p_plotIdDelegate); // PlotIdColumn = 1
+    // Connect the delegate signal to handle configuration button clicks
+    connect(p_configureDelegate, &OverlayConfigureDelegate::configureClicked,
+            this, &OverlayManagerWidget::onConfigureClicked);
 }
 
 void OverlayManagerWidget::setupTableView()
 {
     // Set up delegates
-    setupPlotIdDelegate();
-    
-    // Create numeric delegate for numeric columns
-    p_numericDelegate = new OverlayNumericDelegate(this);
-    p_bcExperimentTableView->setItemDelegateForColumn(2, p_numericDelegate); // YScaleColumn = 2
-    p_bcExperimentTableView->setItemDelegateForColumn(3, p_numericDelegate); // YOffsetColumn = 3
-    p_bcExperimentTableView->setItemDelegateForColumn(4, p_numericDelegate); // XOffsetColumn = 4
-    p_bcExperimentTableView->setItemDelegateForColumn(6, p_numericDelegate); // MinFreqValueColumn = 6
-    p_bcExperimentTableView->setItemDelegateForColumn(8, p_numericDelegate); // MaxFreqValueColumn = 8
-    
-    // Create checkbox delegate for frequency enabled columns
-    p_checkBoxDelegate = new OverlayCheckBoxDelegate(this);
-    p_bcExperimentTableView->setItemDelegateForColumn(5, p_checkBoxDelegate); // MinFreqEnabledColumn = 5
-    p_bcExperimentTableView->setItemDelegateForColumn(7, p_checkBoxDelegate); // MaxFreqEnabledColumn = 7
+    setupConfigureDelegate();
     
     // Set up column resize behavior
     resizeColumnsToContents(p_bcExperimentModel, p_bcExperimentTableView);
@@ -490,13 +474,18 @@ void OverlayManagerWidget::resizeColumnsToContents(const OverlayTableModel* mode
     
     auto horizontalHeader = tableView->horizontalHeader();
     int columnCount = model->columnCount();
-    int sourceFileColumn = 9; // SourceFileColumn from OverlayTableModel
+    int sourceFileColumn = 3; // SourceFileColumn from OverlayTableModel (updated position)
     
     // Resize all columns except the source file column to contents
     for (int i = 0; i < columnCount; ++i) {
         if (i != sourceFileColumn) {
             tableView->resizeColumnToContents(i);
-            horizontalHeader->setSectionResizeMode(i, QHeaderView::Interactive);
+            // Configure column should be fixed width, others interactive
+            if (i == 0) { // ConfigureColumn = 0
+                horizontalHeader->setSectionResizeMode(i, QHeaderView::Fixed);
+            } else {
+                horizontalHeader->setSectionResizeMode(i, QHeaderView::Interactive);
+            }
         }
     }
     
@@ -505,19 +494,11 @@ void OverlayManagerWidget::resizeColumnsToContents(const OverlayTableModel* mode
         horizontalHeader->setSectionResizeMode(sourceFileColumn, QHeaderView::Stretch);
     }
     
-    // Ensure minimum widths for readability
+    // Set fixed width for configure button column
     QFontMetrics fm(tableView->font());
-    
-    // Set minimum widths for numeric columns to accommodate 12-character numbers
-    int minNumericWidth = fm.horizontalAdvance("123456.1234") + 5;
-    QVector<int> numericColumns = {2, 3, 4, 6, 8}; // YScale, YOffset, XOffset, MinFreqValue, MaxFreqValue columns
-    for (int i : numericColumns) {
-        if (i < columnCount) {
-            int currentWidth = tableView->columnWidth(i);
-            if (currentWidth < minNumericWidth) {
-                tableView->setColumnWidth(i, minNumericWidth);
-            }
-        }
+    int configureWidth = fm.horizontalAdvance("⚙") + 1; // Gear symbol plus minimal padding
+    if (0 < columnCount) { // ConfigureColumn = 0
+        tableView->setColumnWidth(0, configureWidth);
     }
 }
 
@@ -539,15 +520,15 @@ void OverlayManagerWidget::onModelDataChanged(const QModelIndex &topLeft, const 
             
             // Check which column was changed and emit appropriate signal
             switch (col) {
+            case OverlayTableModel::ConfigureColumn: // Configure - handled by delegate
             case OverlayTableModel::LabelColumn: // Label - doesn't affect plot display
+            case OverlayTableModel::PlotIdColumn: // PlotId - not directly editable anymore
             case OverlayTableModel::SourceFileColumn: // SourceFile - doesn't affect plot display
-                // No signal needed
+                // No signal needed for these columns
                 break;
-            case OverlayTableModel::PlotIdColumn: // PlotId - requires plot migration
-                emit overlayPlotChanged(overlay, overlay->getPlotId());
-                break;
-            default: // All other columns affect plot data (YScale, YOffset, XOffset, frequency limits)
-                emit overlayDataChanged(overlay);
+            default:
+                // This should not happen since all columns are non-editable
+                // Changes will come through configuration dialog signals
                 break;
             }
         }
@@ -564,6 +545,21 @@ void OverlayManagerWidget::onSelectionChanged()
 {
     // Update button states when selection changes
     updateButtonStates();
+}
+
+void OverlayManagerWidget::onConfigureClicked(const QModelIndex &index)
+{
+    // Get the overlay for this row
+    auto overlay = p_bcExperimentModel->getOverlay(index.row());
+    if (!overlay) {
+        return;
+    }
+    
+    // TODO: Phase 2 - Open configuration dialog
+    // For now, just show a message box to verify the button works
+    QMessageBox::information(this, "Configure Overlay", 
+                           QString("Configure button clicked for overlay: %1\n\nConfiguration dialog will be implemented in Phase 2.")
+                           .arg(overlay->getLabel()));
 }
 
 void OverlayManagerWidget::createProgressWidget()

@@ -31,17 +31,11 @@ public:
 
     // Base column indices (public for access by other classes)
     enum BaseColumns {
-        LabelColumn = 0,
-        PlotIdColumn = 1,
-        YScaleColumn = 2,
-        YOffsetColumn = 3,
-        XOffsetColumn = 4,
-        MinFreqEnabledColumn = 5,
-        MinFreqValueColumn = 6,
-        MaxFreqEnabledColumn = 7,
-        MaxFreqValueColumn = 8,
-        SourceFileColumn = 9,
-        BaseColumnCount = 10
+        ConfigureColumn = 0,
+        LabelColumn = 1,
+        PlotIdColumn = 2,
+        SourceFileColumn = 3,
+        BaseColumnCount = 4
     };
 
 protected:

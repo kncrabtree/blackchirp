@@ -16,9 +16,7 @@
 #include <data/experiment/overlaybase.h>
 #include <data/model/overlaytablemodel.h>
 #include <data/storage/overlaystorage.h>
-#include "plotidcomboboxdelegate.h"
-#include "overlaynumericdelegate.h"
-#include "overlaycheckboxdelegate.h"
+#include "overlayconfiguredelegate.h"
 
 namespace BC::Property::Overlay {
 static const QString overlayType{"overlayType"};
@@ -51,6 +49,7 @@ public slots:
 private slots:
     void onModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight);
     void onSelectionChanged();
+    void onConfigureClicked(const QModelIndex &index);
 
 private:
     QTabWidget *p_tabWidget;
@@ -61,9 +60,7 @@ private:
 
     BCExperimentOverlayModel *p_bcExperimentModel;
     QTableView *p_bcExperimentTableView;
-    PlotIdComboBoxDelegate *p_plotIdDelegate;
-    OverlayNumericDelegate *p_numericDelegate;
-    OverlayCheckBoxDelegate *p_checkBoxDelegate;
+    OverlayConfigureDelegate *p_configureDelegate;
     
     // Progress indicator widgets
     QLabel *p_progressLabel;
@@ -84,7 +81,7 @@ private:
     void onTabChanged(int index);
     void updateButtonStates();
     void populateWithExistingOverlays(const QVector<std::shared_ptr<OverlayBase>> &overlays);
-    void setupPlotIdDelegate();
+    void setupConfigureDelegate();
     void setupTableView();
     void resizeColumnsToContents(const OverlayTableModel* model, QTableView* tableView);
     
