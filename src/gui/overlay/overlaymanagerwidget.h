@@ -62,7 +62,10 @@ private slots:
     void showContextMenu(const QPoint &position);
     void copyOverlaySettings(std::shared_ptr<OverlayBase> overlay);
     void pasteOverlaySettings(std::shared_ptr<OverlayBase> overlay);
+    void copyAppearanceSettings(std::shared_ptr<OverlayBase> overlay);
+    void pasteAppearanceSettings(std::shared_ptr<OverlayBase> overlay);
     bool hasClipboardSettings() const;
+    bool hasClipboardAppearance() const;
 
 private:
     QToolBar *p_toolBar;
@@ -87,6 +90,9 @@ private:
     
     // Clipboard for copy/paste overlay settings
     QVariantMap d_clipboardSettings;
+    
+    // Clipboard for copy/paste curve appearance settings
+    QVariantMap d_clipboardAppearance;
 
 
     void setupUI();

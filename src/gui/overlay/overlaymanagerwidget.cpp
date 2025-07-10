@@ -733,14 +733,33 @@ void OverlayManagerWidget::showContextMenu(const QPoint &position)
     
     contextMenu.addSeparator();
     
-    // Add Copy Settings action
-    QAction *copyAction = contextMenu.addAction("Copy Settings");
+    // Add Copy Appearance action
+    QAction *copyAppearanceAction = contextMenu.addAction("Copy Appearance");
+    copyAppearanceAction->setToolTip("Copy curve display settings (color, style, thickness, markers, etc.)");
+    connect(copyAppearanceAction, &QAction::triggered, [this, overlay]() {
+        copyAppearanceSettings(overlay);
+    });
+    
+    // Add Paste Appearance action (only enable if we have copied appearance)
+    QAction *pasteAppearanceAction = contextMenu.addAction("Paste Appearance");
+    pasteAppearanceAction->setToolTip("Paste curve display settings to this overlay");
+    pasteAppearanceAction->setEnabled(hasClipboardAppearance());
+    connect(pasteAppearanceAction, &QAction::triggered, [this, overlay]() {
+        pasteAppearanceSettings(overlay);
+    });
+    
+    contextMenu.addSeparator();
+    
+    // Add Copy Overlay Settings action
+    QAction *copyAction = contextMenu.addAction("Copy Overlay Settings");
+    copyAction->setToolTip("Copy overlay properties (plot assignment, scaling, offsets, frequency limits, etc.)");
     connect(copyAction, &QAction::triggered, [this, overlay]() {
         copyOverlaySettings(overlay);
     });
     
-    // Add Paste Settings action (only enable if we have copied settings)
-    QAction *pasteAction = contextMenu.addAction("Paste Settings");
+    // Add Paste Overlay Settings action (only enable if we have copied settings)
+    QAction *pasteAction = contextMenu.addAction("Paste Overlay Settings");
+    pasteAction->setToolTip("Paste overlay properties to this overlay");
     pasteAction->setEnabled(hasClipboardSettings());
     connect(pasteAction, &QAction::triggered, [this, overlay]() {
         pasteOverlaySettings(overlay);
@@ -780,6 +799,17 @@ void OverlayManagerWidget::copyOverlaySettings(std::shared_ptr<OverlayBase> over
     d_clipboardSettings["maxFreqValue"] = overlay->getMaxFreqValue();
     d_clipboardSettings["enabled"] = overlay->getEnabled();
     
+    // Copy curve appearance settings
+    d_clipboardSettings["curveColor"] = overlay->getCurveMetadata(BC::Key::bcCurveColor);
+    d_clipboardSettings["curveCurveStyle"] = overlay->getCurveMetadata(BC::Key::bcCurveCurveStyle);
+    d_clipboardSettings["curveThickness"] = overlay->getCurveMetadata(BC::Key::bcCurveThickness);
+    d_clipboardSettings["curveLineStyle"] = overlay->getCurveMetadata(BC::Key::bcCurveLineStyle);
+    d_clipboardSettings["curveMarker"] = overlay->getCurveMetadata(BC::Key::bcCurveMarker);
+    d_clipboardSettings["curveMarkerSize"] = overlay->getCurveMetadata(BC::Key::bcCurveMarkerSize);
+    d_clipboardSettings["curveVisible"] = overlay->getCurveMetadata(BC::Key::bcCurveVisible);
+    d_clipboardSettings["curveAutoscale"] = overlay->getCurveMetadata(BC::Key::bcCurveAutoscale);
+    d_clipboardSettings["curveAxisY"] = overlay->getCurveMetadata(BC::Key::bcCurveAxisY);
+    
     qDebug() << "Copied overlay settings from:" << overlay->getLabel();
 }
 
@@ -814,6 +844,35 @@ void OverlayManagerWidget::pasteOverlaySettings(std::shared_ptr<OverlayBase> ove
         overlay->setEnabled(d_clipboardSettings["enabled"].toBool());
     }
     
+    // Apply copied curve appearance settings
+    if (d_clipboardSettings.contains("curveColor")) {
+        overlay->setCurveMetadata(BC::Key::bcCurveColor, d_clipboardSettings["curveColor"]);
+    }
+    if (d_clipboardSettings.contains("curveCurveStyle")) {
+        overlay->setCurveMetadata(BC::Key::bcCurveCurveStyle, d_clipboardSettings["curveCurveStyle"]);
+    }
+    if (d_clipboardSettings.contains("curveThickness")) {
+        overlay->setCurveMetadata(BC::Key::bcCurveThickness, d_clipboardSettings["curveThickness"]);
+    }
+    if (d_clipboardSettings.contains("curveLineStyle")) {
+        overlay->setCurveMetadata(BC::Key::bcCurveLineStyle, d_clipboardSettings["curveLineStyle"]);
+    }
+    if (d_clipboardSettings.contains("curveMarker")) {
+        overlay->setCurveMetadata(BC::Key::bcCurveMarker, d_clipboardSettings["curveMarker"]);
+    }
+    if (d_clipboardSettings.contains("curveMarkerSize")) {
+        overlay->setCurveMetadata(BC::Key::bcCurveMarkerSize, d_clipboardSettings["curveMarkerSize"]);
+    }
+    if (d_clipboardSettings.contains("curveVisible")) {
+        overlay->setCurveMetadata(BC::Key::bcCurveVisible, d_clipboardSettings["curveVisible"]);
+    }
+    if (d_clipboardSettings.contains("curveAutoscale")) {
+        overlay->setCurveMetadata(BC::Key::bcCurveAutoscale, d_clipboardSettings["curveAutoscale"]);
+    }
+    if (d_clipboardSettings.contains("curveAxisY")) {
+        overlay->setCurveMetadata(BC::Key::bcCurveAxisY, d_clipboardSettings["curveAxisY"]);
+    }
+    
     // Emit signal to update the overlay display
     emit overlayDataChanged(overlay);
     
@@ -823,6 +882,75 @@ void OverlayManagerWidget::pasteOverlaySettings(std::shared_ptr<OverlayBase> ove
 bool OverlayManagerWidget::hasClipboardSettings() const
 {
     return !d_clipboardSettings.isEmpty();
+}
+
+void OverlayManagerWidget::copyAppearanceSettings(std::shared_ptr<OverlayBase> overlay)
+{
+    if (!overlay) {
+        return;
+    }
+    
+    // Clear previous appearance clipboard contents
+    d_clipboardAppearance.clear();
+    
+    // Copy curve appearance settings only
+    d_clipboardAppearance["curveColor"] = overlay->getCurveMetadata(BC::Key::bcCurveColor);
+    d_clipboardAppearance["curveCurveStyle"] = overlay->getCurveMetadata(BC::Key::bcCurveCurveStyle);
+    d_clipboardAppearance["curveThickness"] = overlay->getCurveMetadata(BC::Key::bcCurveThickness);
+    d_clipboardAppearance["curveLineStyle"] = overlay->getCurveMetadata(BC::Key::bcCurveLineStyle);
+    d_clipboardAppearance["curveMarker"] = overlay->getCurveMetadata(BC::Key::bcCurveMarker);
+    d_clipboardAppearance["curveMarkerSize"] = overlay->getCurveMetadata(BC::Key::bcCurveMarkerSize);
+    d_clipboardAppearance["curveVisible"] = overlay->getCurveMetadata(BC::Key::bcCurveVisible);
+    d_clipboardAppearance["curveAutoscale"] = overlay->getCurveMetadata(BC::Key::bcCurveAutoscale);
+    d_clipboardAppearance["curveAxisY"] = overlay->getCurveMetadata(BC::Key::bcCurveAxisY);
+    
+    qDebug() << "Copied curve appearance from:" << overlay->getLabel();
+}
+
+void OverlayManagerWidget::pasteAppearanceSettings(std::shared_ptr<OverlayBase> overlay)
+{
+    if (!overlay || d_clipboardAppearance.isEmpty()) {
+        return;
+    }
+    
+    // Apply copied curve appearance settings
+    if (d_clipboardAppearance.contains("curveColor")) {
+        overlay->setCurveMetadata(BC::Key::bcCurveColor, d_clipboardAppearance["curveColor"]);
+    }
+    if (d_clipboardAppearance.contains("curveCurveStyle")) {
+        overlay->setCurveMetadata(BC::Key::bcCurveCurveStyle, d_clipboardAppearance["curveCurveStyle"]);
+    }
+    if (d_clipboardAppearance.contains("curveThickness")) {
+        overlay->setCurveMetadata(BC::Key::bcCurveThickness, d_clipboardAppearance["curveThickness"]);
+    }
+    if (d_clipboardAppearance.contains("curveLineStyle")) {
+        overlay->setCurveMetadata(BC::Key::bcCurveLineStyle, d_clipboardAppearance["curveLineStyle"]);
+    }
+    if (d_clipboardAppearance.contains("curveMarker")) {
+        overlay->setCurveMetadata(BC::Key::bcCurveMarker, d_clipboardAppearance["curveMarker"]);
+    }
+    if (d_clipboardAppearance.contains("curveMarkerSize")) {
+        overlay->setCurveMetadata(BC::Key::bcCurveMarkerSize, d_clipboardAppearance["curveMarkerSize"]);
+    }
+    if (d_clipboardAppearance.contains("curveVisible")) {
+        overlay->setCurveMetadata(BC::Key::bcCurveVisible, d_clipboardAppearance["curveVisible"]);
+    }
+    if (d_clipboardAppearance.contains("curveAutoscale")) {
+        overlay->setCurveMetadata(BC::Key::bcCurveAutoscale, d_clipboardAppearance["curveAutoscale"]);
+    }
+    if (d_clipboardAppearance.contains("curveAxisY")) {
+        overlay->setCurveMetadata(BC::Key::bcCurveAxisY, d_clipboardAppearance["curveAxisY"]);
+    }
+    
+    // Emit signal to update the overlay display
+    emit overlayDataChanged(overlay);
+    
+    qDebug() << "Pasted curve appearance to:" << overlay->getLabel();
+}
+
+bool OverlayManagerWidget::hasClipboardAppearance() const
+{
+    return !d_clipboardAppearance.isEmpty();
 }
 
 void OverlayManagerWidget::closeEvent(QCloseEvent *event)
