@@ -19,6 +19,8 @@
 #include "overlayconfiguredelegate.h"
 #include "overlaycheckboxdelegate.h"
 
+#include <gui/plot/curveappearancewidget.h>
+
 
 namespace BC::Key::OverlayManager {
 static const QString key{"OverlayManagerWidget"};
@@ -100,6 +102,7 @@ private:
     void createProgressWidget();
     void updateProgressDisplay(int pendingCount);
     void showErrorNotification(const QString& overlayLabel, const QString& error);
+    
     
 protected:
     void closeEvent(QCloseEvent *event) override;

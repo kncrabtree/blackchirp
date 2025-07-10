@@ -73,8 +73,6 @@ private:
     void setupConnections();
     void loadCurrentSettings();
     void saveCurrentSettings();
-    void loadCurveAppearanceFromOverlay();
-    void saveCurveAppearanceToOverlay();
 
     QDialogButtonBox *p_buttonBox;
     QPushButton *p_resetButton;
@@ -90,6 +88,9 @@ private:
     double d_originalMinFreqValue;
     bool d_originalMaxFreqEnabled;
     double d_originalMaxFreqValue;
+    
+    // Store original curve appearance for proper cancellation
+    CurveAppearanceWidget::CurveAppearance d_originalCurveAppearance;
 };
 
 #endif // OVERLAYSETTINGSDIALOG_H

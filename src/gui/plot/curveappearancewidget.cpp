@@ -1,5 +1,6 @@
 #include "curveappearancewidget.h"
 #include "blackchirpplotcurve.h"
+#include <data/experiment/overlaybase.h>
 
 #include <QColorDialog>
 #include <QLabel>
@@ -341,4 +342,133 @@ void CurveAppearanceWidget::emitAppearanceChanged()
     if (!d_blockSignals) {
         emit curveAppearanceChanged(d_currentAppearance);
     }
+}
+
+void CurveAppearanceWidget::initializeFromOverlay(std::shared_ptr<OverlayBase> overlay)
+{
+    if (!overlay) {
+        return;
+    }
+    
+    // Create appearance structure from overlay metadata
+    CurveAppearance appearance;
+    
+    // Load color (default to palette text color if not set)
+    QVariant colorVar = overlay->getCurveMetadata(BC::Key::bcCurveColor);
+    if (colorVar.isValid()) {
+        appearance.color = colorVar.value<QColor>();
+    } else {
+        appearance.color = palette().color(QPalette::Text);
+    }
+    
+    // Load curve style (default to Lines)
+    QVariant curveStyleVar = overlay->getCurveMetadata(BC::Key::bcCurveCurveStyle);
+    if (curveStyleVar.isValid()) {
+        appearance.curveStyle = static_cast<QwtPlotCurve::CurveStyle>(curveStyleVar.toInt());
+    } else {
+        appearance.curveStyle = QwtPlotCurve::Lines;
+    }
+    
+    // Load line thickness (default to 1.0)
+    QVariant thicknessVar = overlay->getCurveMetadata(BC::Key::bcCurveThickness);
+    if (thicknessVar.isValid()) {
+        appearance.lineThickness = thicknessVar.toDouble();
+    } else {
+        appearance.lineThickness = 1.0;
+    }
+    
+    // Load line style (default to SolidLine)
+    QVariant lineStyleVar = overlay->getCurveMetadata(BC::Key::bcCurveLineStyle);
+    if (lineStyleVar.isValid()) {
+        appearance.lineStyle = static_cast<Qt::PenStyle>(lineStyleVar.toInt());
+    } else {
+        appearance.lineStyle = Qt::SolidLine;
+    }
+    
+    // Load marker style (default to NoSymbol)
+    QVariant markerVar = overlay->getCurveMetadata(BC::Key::bcCurveMarker);
+    if (markerVar.isValid()) {
+        appearance.markerStyle = static_cast<QwtSymbol::Style>(markerVar.toInt());
+    } else {
+        appearance.markerStyle = QwtSymbol::NoSymbol;
+    }
+    
+    // Load marker size (default to 7)
+    QVariant markerSizeVar = overlay->getCurveMetadata(BC::Key::bcCurveMarkerSize);
+    if (markerSizeVar.isValid()) {
+        appearance.markerSize = markerSizeVar.toInt();
+    } else {
+        appearance.markerSize = 7;
+    }
+    
+    // Load visibility (default to true)
+    QVariant visibleVar = overlay->getCurveMetadata(BC::Key::bcCurveVisible);
+    if (visibleVar.isValid()) {
+        appearance.visible = visibleVar.toBool();
+    } else {
+        appearance.visible = true;
+    }
+    
+    // Load autoscale (default to true)
+    QVariant autoscaleVar = overlay->getCurveMetadata(BC::Key::bcCurveAutoscale);
+    if (autoscaleVar.isValid()) {
+        appearance.autoscale = autoscaleVar.toBool();
+    } else {
+        appearance.autoscale = true;
+    }
+    
+    // Load Y axis (default to YLeft)
+    QVariant yAxisVar = overlay->getCurveMetadata(BC::Key::bcCurveAxisY);
+    if (yAxisVar.isValid()) {
+        // Convert from old QwtPlot::Axis to new QwtAxisId
+        QwtPlot::Axis oldAxis = static_cast<QwtPlot::Axis>(yAxisVar.toInt());
+        switch (oldAxis) {
+            case QwtPlot::yLeft:
+                appearance.yAxis = QwtAxis::YLeft;
+                break;
+            case QwtPlot::yRight:
+                appearance.yAxis = QwtAxis::YRight;
+                break;
+            default:
+                appearance.yAxis = QwtAxis::YLeft;
+                break;
+        }
+    } else {
+        appearance.yAxis = QwtAxis::YLeft;
+    }
+    
+    // Apply appearance to widget (this will handle signal blocking internally)
+    setCurrentAppearance(appearance);
+}
+
+void CurveAppearanceWidget::applyToOverlay(std::shared_ptr<OverlayBase> overlay)
+{
+    if (!overlay) {
+        return;
+    }
+    
+    // Save all appearance properties to overlay metadata
+    overlay->setCurveMetadata(BC::Key::bcCurveColor, d_currentAppearance.color);
+    overlay->setCurveMetadata(BC::Key::bcCurveCurveStyle, static_cast<int>(d_currentAppearance.curveStyle));
+    overlay->setCurveMetadata(BC::Key::bcCurveThickness, d_currentAppearance.lineThickness);
+    overlay->setCurveMetadata(BC::Key::bcCurveLineStyle, static_cast<int>(d_currentAppearance.lineStyle));
+    overlay->setCurveMetadata(BC::Key::bcCurveMarker, static_cast<int>(d_currentAppearance.markerStyle));
+    overlay->setCurveMetadata(BC::Key::bcCurveMarkerSize, d_currentAppearance.markerSize);
+    overlay->setCurveMetadata(BC::Key::bcCurveVisible, d_currentAppearance.visible);
+    overlay->setCurveMetadata(BC::Key::bcCurveAutoscale, d_currentAppearance.autoscale);
+    
+    // Convert QwtAxisId back to QwtPlot::Axis for storage
+    QwtPlot::Axis oldAxis;
+    switch (d_currentAppearance.yAxis) {
+        case QwtAxis::YLeft:
+            oldAxis = QwtPlot::yLeft;
+            break;
+        case QwtAxis::YRight:
+            oldAxis = QwtPlot::yRight;
+            break;
+        default:
+            oldAxis = QwtPlot::yLeft;
+            break;
+    }
+    overlay->setCurveMetadata(BC::Key::bcCurveAxisY, static_cast<int>(oldAxis));
 }

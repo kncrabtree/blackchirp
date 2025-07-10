@@ -2,6 +2,7 @@
 #include "bcexpoverlaydialog.h"
 #include "overlayconfiguredelegate.h"
 #include "overlaysettingsdialog.h"
+#include <gui/plot/curveappearancewidget.h>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -11,7 +12,11 @@
 #include <QMessageBox>
 #include <QProgressBar>
 #include <QCloseEvent>
+#include <QMenu>
+#include <QWidgetAction>
+#include <QColorDialog>
 #include <gui/widget/ftmwviewwidget.h>
+#include <gui/plot/blackchirpplotcurve.h>
 
 OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number, const QVector<std::shared_ptr<OverlayBase>> &overlays)
     : QWidget{parent, Qt::Window}, SettingsStorage(BC::Key::OverlayManager::key), p_configureDelegate(nullptr), p_enabledDelegate(nullptr)
@@ -685,6 +690,46 @@ void OverlayManagerWidget::showContextMenu(const QPoint &position)
     connect(configureAction, &QAction::triggered, [this, index]() {
         onConfigureClicked(index);
     });
+    
+    contextMenu.addSeparator();
+    
+    // Add Curve Appearance section
+    auto curveWa = new QWidgetAction(&contextMenu);
+    auto appearanceWidget = new CurveAppearanceWidget(&contextMenu);
+    
+    // Initialize widget from overlay metadata
+    appearanceWidget->initializeFromOverlay(overlay);
+    
+    // Connect widget to real-time overlay metadata updates
+    connect(appearanceWidget, &CurveAppearanceWidget::curveAppearanceChanged,
+            this, [this, overlay, appearanceWidget](const CurveAppearanceWidget::CurveAppearance &) {
+        // Save appearance to overlay metadata
+        appearanceWidget->applyToOverlay(overlay);
+        
+        // Emit signal for real-time plot updates
+        emit overlayDataChanged(overlay);
+    });
+    
+    // Handle color change requests with color dialog
+    connect(appearanceWidget, &CurveAppearanceWidget::colorChangeRequested,
+            this, [this, overlay, appearanceWidget]() {
+        // Get current color from overlay metadata
+        QColor currentColor = overlay->getCurveMetadata(BC::Key::bcCurveColor).value<QColor>();
+        if (!currentColor.isValid()) {
+            currentColor = palette().color(QPalette::Text);
+        }
+        
+        // Open color dialog
+        QColor newColor = QColorDialog::getColor(currentColor, this, "Choose Curve Color");
+        
+        // Update widget and overlay if valid color chosen
+        if (newColor.isValid()) {
+            appearanceWidget->updateColorDisplay(newColor);
+        }
+    });
+    
+    curveWa->setDefaultWidget(appearanceWidget);
+    contextMenu.addAction(curveWa);
     
     contextMenu.addSeparator();
     

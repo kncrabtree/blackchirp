@@ -9,13 +9,15 @@
 #include <QCheckBox>
 #include <QPushButton>
 #include <QLabel>
+#include <memory>
 
 #include <qwt6/qwt_plot_curve.h>
 #include <qwt6/qwt_symbol.h>
 #include <qwt6/qwt_plot.h>
 
-// Forward declaration
+// Forward declarations
 class BlackchirpPlotCurveBase;
+class OverlayBase;
 
 class CurveAppearanceWidget : public QWidget
 {
@@ -30,6 +32,12 @@ public:
     
     // Apply current settings to a curve
     void applyToCurve(BlackchirpPlotCurveBase *curve);
+    
+    // Initialize the widget from overlay metadata
+    void initializeFromOverlay(std::shared_ptr<OverlayBase> overlay);
+    
+    // Apply current settings to overlay metadata
+    void applyToOverlay(std::shared_ptr<OverlayBase> overlay);
     
     // Get current appearance settings as a structure
     struct CurveAppearance {

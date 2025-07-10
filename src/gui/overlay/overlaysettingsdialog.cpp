@@ -84,11 +84,11 @@ void OverlaySettingsDialog::setupUI()
 
     setLayout(p_mainLayout);
 
-    // Set up connections after all UI elements exist
-    setupConnections();
-    
-    // Load current settings
+    // Load current settings before establishing connections
     loadCurrentSettings();
+    
+    // Set up connections after all UI elements exist and are initialized
+    setupConnections();
     
     // Restore dialog geometry if available
     QByteArray geom = get(BC::Key::OverlaySettings::geometry).toByteArray();
@@ -143,7 +143,10 @@ void OverlaySettingsDialog::loadCurrentSettings()
     p_optionsWidget->setMaxFreqLimit(d_originalMaxFreqEnabled, d_originalMaxFreqValue);
 
     // Initialize curve appearance widget from overlay metadata
-    loadCurveAppearanceFromOverlay();
+    p_curveAppearanceWidget->initializeFromOverlay(d_overlay);
+    
+    // Store original curve appearance for reset/cancel functionality
+    d_originalCurveAppearance = p_curveAppearanceWidget->getCurrentAppearance();
 
     // Call virtual function for type-specific loading
     loadTypeSpecificSettings();
@@ -155,7 +158,7 @@ void OverlaySettingsDialog::saveCurrentSettings()
     p_optionsWidget->applyToOverlay(d_overlay);
     
     // Save curve appearance settings to overlay metadata
-    saveCurveAppearanceToOverlay();
+    p_curveAppearanceWidget->applyToOverlay(d_overlay);
 
     // Call virtual function for type-specific saving
     saveTypeSpecificSettings();
@@ -174,7 +177,7 @@ void OverlaySettingsDialog::onRealTimeSettingsChanged()
     d_overlay->setLabel(currentLabel);
 
     // Save curve appearance settings to overlay metadata for real-time updates
-    saveCurveAppearanceToOverlay();
+    p_curveAppearanceWidget->applyToOverlay(d_overlay);
 
     // Call virtual function for type-specific saving (for real-time updates)
     saveTypeSpecificSettings();
@@ -202,6 +205,9 @@ void OverlaySettingsDialog::onResetToDefaults()
     p_optionsWidget->setXOffset(d_originalXOffset);
     p_optionsWidget->setMinFreqLimit(d_originalMinFreqEnabled, d_originalMinFreqValue);
     p_optionsWidget->setMaxFreqLimit(d_originalMaxFreqEnabled, d_originalMaxFreqValue);
+
+    // Reset curve appearance to original values
+    p_curveAppearanceWidget->setCurrentAppearance(d_originalCurveAppearance);
 
     // Call virtual function for type-specific reset
     resetTypeSpecificDefaults();
@@ -239,6 +245,13 @@ void OverlaySettingsDialog::accept()
 
 void OverlaySettingsDialog::reject()
 {
+    // Restore original curve appearance to undo any real-time changes
+    p_curveAppearanceWidget->setCurrentAppearance(d_originalCurveAppearance);
+    p_curveAppearanceWidget->applyToOverlay(d_overlay);
+    
+    // Emit signal to update plots with restored appearance
+    emit overlaySettingsChanged(d_overlay);
+    
     // Save dialog geometry
     set(BC::Key::OverlaySettings::geometry, saveGeometry(), true);
     
@@ -255,137 +268,6 @@ void OverlaySettingsDialog::closeEvent(QCloseEvent *event)
     QDialog::closeEvent(event);
 }
 
-void OverlaySettingsDialog::loadCurveAppearanceFromOverlay()
-{
-    if (!d_overlay || !p_curveAppearanceWidget) {
-        return;
-    }
-    
-    // Create appearance structure from overlay metadata
-    CurveAppearanceWidget::CurveAppearance appearance;
-    
-    // Load color (default to palette text color if not set)
-    QVariant colorVar = d_overlay->getCurveMetadata(BC::Key::bcCurveColor);
-    if (colorVar.isValid()) {
-        appearance.color = colorVar.value<QColor>();
-    } else {
-        appearance.color = p_curveAppearanceWidget->palette().color(QPalette::Text);
-    }
-    
-    // Load curve style (default to Lines)
-    QVariant curveStyleVar = d_overlay->getCurveMetadata(BC::Key::bcCurveCurveStyle);
-    if (curveStyleVar.isValid()) {
-        appearance.curveStyle = static_cast<QwtPlotCurve::CurveStyle>(curveStyleVar.toInt());
-    } else {
-        appearance.curveStyle = QwtPlotCurve::Lines;
-    }
-    
-    // Load line thickness (default to 1.0)
-    QVariant thicknessVar = d_overlay->getCurveMetadata(BC::Key::bcCurveThickness);
-    if (thicknessVar.isValid()) {
-        appearance.lineThickness = thicknessVar.toDouble();
-    } else {
-        appearance.lineThickness = 1.0;
-    }
-    
-    // Load line style (default to SolidLine)
-    QVariant lineStyleVar = d_overlay->getCurveMetadata(BC::Key::bcCurveLineStyle);
-    if (lineStyleVar.isValid()) {
-        appearance.lineStyle = static_cast<Qt::PenStyle>(lineStyleVar.toInt());
-    } else {
-        appearance.lineStyle = Qt::SolidLine;
-    }
-    
-    // Load marker style (default to NoSymbol)
-    QVariant markerVar = d_overlay->getCurveMetadata(BC::Key::bcCurveMarker);
-    if (markerVar.isValid()) {
-        appearance.markerStyle = static_cast<QwtSymbol::Style>(markerVar.toInt());
-    } else {
-        appearance.markerStyle = QwtSymbol::NoSymbol;
-    }
-    
-    // Load marker size (default to 7)
-    QVariant markerSizeVar = d_overlay->getCurveMetadata(BC::Key::bcCurveMarkerSize);
-    if (markerSizeVar.isValid()) {
-        appearance.markerSize = markerSizeVar.toInt();
-    } else {
-        appearance.markerSize = 7;
-    }
-    
-    // Load visibility (default to true)
-    QVariant visibleVar = d_overlay->getCurveMetadata(BC::Key::bcCurveVisible);
-    if (visibleVar.isValid()) {
-        appearance.visible = visibleVar.toBool();
-    } else {
-        appearance.visible = true;
-    }
-    
-    // Load autoscale (default to true)
-    QVariant autoscaleVar = d_overlay->getCurveMetadata(BC::Key::bcCurveAutoscale);
-    if (autoscaleVar.isValid()) {
-        appearance.autoscale = autoscaleVar.toBool();
-    } else {
-        appearance.autoscale = true;
-    }
-    
-    // Load Y axis (default to YLeft)
-    QVariant yAxisVar = d_overlay->getCurveMetadata(BC::Key::bcCurveAxisY);
-    if (yAxisVar.isValid()) {
-        // Convert from old QwtPlot::Axis to new QwtAxisId
-        QwtPlot::Axis oldAxis = static_cast<QwtPlot::Axis>(yAxisVar.toInt());
-        switch (oldAxis) {
-            case QwtPlot::yLeft:
-                appearance.yAxis = QwtAxis::YLeft;
-                break;
-            case QwtPlot::yRight:
-                appearance.yAxis = QwtAxis::YRight;
-                break;
-            default:
-                appearance.yAxis = QwtAxis::YLeft;
-                break;
-        }
-    } else {
-        appearance.yAxis = QwtAxis::YLeft;
-    }
-    
-    // Apply appearance to widget
-    p_curveAppearanceWidget->setCurrentAppearance(appearance);
-}
-
-void OverlaySettingsDialog::saveCurveAppearanceToOverlay()
-{
-    if (!d_overlay || !p_curveAppearanceWidget) {
-        return;
-    }
-    
-    // Get current appearance from widget
-    CurveAppearanceWidget::CurveAppearance appearance = p_curveAppearanceWidget->getCurrentAppearance();
-    
-    // Save all appearance properties to overlay metadata
-    d_overlay->setCurveMetadata(BC::Key::bcCurveColor, appearance.color);
-    d_overlay->setCurveMetadata(BC::Key::bcCurveCurveStyle, static_cast<int>(appearance.curveStyle));
-    d_overlay->setCurveMetadata(BC::Key::bcCurveThickness, appearance.lineThickness);
-    d_overlay->setCurveMetadata(BC::Key::bcCurveLineStyle, static_cast<int>(appearance.lineStyle));
-    d_overlay->setCurveMetadata(BC::Key::bcCurveMarker, static_cast<int>(appearance.markerStyle));
-    d_overlay->setCurveMetadata(BC::Key::bcCurveMarkerSize, appearance.markerSize);
-    d_overlay->setCurveMetadata(BC::Key::bcCurveVisible, appearance.visible);
-    d_overlay->setCurveMetadata(BC::Key::bcCurveAutoscale, appearance.autoscale);
-    
-    // Convert QwtAxisId back to QwtPlot::Axis for storage
-    QwtPlot::Axis oldAxis;
-    switch (appearance.yAxis) {
-        case QwtAxis::YLeft:
-            oldAxis = QwtPlot::yLeft;
-            break;
-        case QwtAxis::YRight:
-            oldAxis = QwtPlot::yRight;
-            break;
-        default:
-            oldAxis = QwtPlot::yLeft;
-            break;
-    }
-    d_overlay->setCurveMetadata(BC::Key::bcCurveAxisY, static_cast<int>(oldAxis));
-}
 
 void OverlaySettingsDialog::onColorChangeRequested()
 {
