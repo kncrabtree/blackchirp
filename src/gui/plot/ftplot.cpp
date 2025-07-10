@@ -215,8 +215,13 @@ void FtPlot::updateOverlay(std::shared_ptr<OverlayBase> overlay)
             pair.second->setCurveData(overlay->xyData());
             pair.second->setTitle(overlay->getLabel());
             
-            // Synchronize visibility with overlay enabled state
-            pair.second->setCurveVisible(overlay->getEnabled());
+            // Update curve appearance from overlay metadata first
+            pair.second->updateFromSettings();
+            
+            // Final visibility = overlay enabled state AND curve visibility from metadata
+            bool curveVisibleFromMetadata = overlay->getCurveMetadata(BC::Key::bcCurveVisible).toBool();
+            bool finalVisibility = overlay->getEnabled() && curveVisibleFromMetadata;
+            pair.second->setCurveVisible(finalVisibility);
             
             replot();
             return;

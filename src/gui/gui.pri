@@ -28,6 +28,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/overlay/overlaysettingsdialog.cpp \
     $$PWD/plot/blackchirpplotcurve.cpp \
     $$PWD/plot/chirpconfigplot.cpp \
+    $$PWD/plot/curveappearancewidget.cpp \
     $$PWD/plot/curvefactory.cpp \
     $$PWD/plot/customtracker.cpp \
     $$PWD/plot/customzoomer.cpp \
@@ -93,6 +94,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/overlay/overlaysettingsdialog.h \
     $$PWD/plot/blackchirpplotcurve.h \
     $$PWD/plot/chirpconfigplot.h \
+    $$PWD/plot/curveappearancewidget.h \
     $$PWD/plot/curvefactory.h \
     $$PWD/plot/customtracker.h \
     $$PWD/plot/customzoomer.h \

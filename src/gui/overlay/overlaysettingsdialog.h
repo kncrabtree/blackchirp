@@ -12,6 +12,7 @@
 #include <data/storage/settingsstorage.h>
 #include <data/storage/overlaystorage.h>
 #include "overlaybaseoptionswidget.h"
+#include <gui/plot/curveappearancewidget.h>
 
 namespace BC::Key::OverlaySettings {
 static const QString key{"OverlaySettingsDialog"};
@@ -60,16 +61,20 @@ protected:
     std::shared_ptr<OverlayStorage> p_overlayStorage;
     QVBoxLayout *p_mainLayout;
     OverlayBaseOptionsWidget *p_optionsWidget;
+    CurveAppearanceWidget *p_curveAppearanceWidget;
 
 private slots:
     void onSettingsChanged();
     void onResetToDefaults();
     void onRealTimeSettingsChanged();
+    void onColorChangeRequested();
 
 private:
     void setupConnections();
     void loadCurrentSettings();
     void saveCurrentSettings();
+    void loadCurveAppearanceFromOverlay();
+    void saveCurveAppearanceToOverlay();
 
     QDialogButtonBox *p_buttonBox;
     QPushButton *p_resetButton;

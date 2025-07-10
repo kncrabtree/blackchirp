@@ -99,6 +99,21 @@ bool OverlayBase::getEnabled() const
     return d_enabled;
 }
 
+QVariant OverlayBase::getCurveMetadata(const QString &key) const
+{
+    auto it = d_curveMetadata.find(key);
+    if (it != d_curveMetadata.end()) {
+        return it->second;
+    }
+    return QVariant();
+}
+
+void OverlayBase::setCurveMetadata(const QString &key, const QVariant &value)
+{
+    d_modified = true;
+    d_curveMetadata[key] = value;
+}
+
 void OverlayBase::setLabel(const QString &newlabel)
 {
     d_modified = true;

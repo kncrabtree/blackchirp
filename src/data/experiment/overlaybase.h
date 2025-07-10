@@ -60,6 +60,10 @@ public:
     QString errorString() const { return d_errorString; }
     bool isModified() const { return d_modified; }
     
+    // Curve metadata access methods
+    QVariant getCurveMetadata(const QString &key) const;
+    void setCurveMetadata(const QString &key, const QVariant &value);
+    
     void setLabel(const QString &newlabel);
     void setSourceFile(const QString &newsourceFile);
     void setDestFile(const QString &newdestFile);
