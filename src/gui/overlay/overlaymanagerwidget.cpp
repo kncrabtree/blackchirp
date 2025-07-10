@@ -117,6 +117,10 @@ void OverlayManagerWidget::setupUI()
     p_overlayTableView->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(p_overlayTableView, &QTableView::customContextMenuRequested,
             this, &OverlayManagerWidget::showContextMenu);
+    
+    // Enable double-click to configure overlay
+    connect(p_overlayTableView, &QTableView::doubleClicked,
+            this, &OverlayManagerWidget::onConfigureClicked);
 
     // Configure headers
     auto horizontalHeader = p_overlayTableView->horizontalHeader();
@@ -141,6 +145,9 @@ void OverlayManagerWidget::setupUI()
     // Connect signals
     connect(p_removeAction, &QAction::triggered, this, &OverlayManagerWidget::removeOverlay);
     connect(p_raiseParentAction, &QAction::triggered, this, &OverlayManagerWidget::raiseParent);
+    
+    // Set up keyboard shortcuts
+    setupKeyboardShortcuts();
 }
 
 void OverlayManagerWidget::setupAddButton()
@@ -401,6 +408,226 @@ void OverlayManagerWidget::setupTableView()
     resizeColumnsToContents();
 }
 
+void OverlayManagerWidget::setupKeyboardShortcuts()
+{
+    // Ctrl+C: Copy appearance 
+    p_copyAppearanceShortcut = new QShortcut(QKeySequence::Copy, this);
+    connect(p_copyAppearanceShortcut, &QShortcut::activated, this, [this]() {
+        auto selectionInfo = getSelectionInfo();
+        if (selectionInfo.singleRowSelected) {
+            copyAppearanceSettings(selectionInfo.overlay);
+        } else {
+            // Clear clipboard and provide feedback for invalid selection
+            d_clipboardAppearance.clear();
+            if (selectionInfo.multipleRowsSelected) {
+                qDebug() << "Cannot copy appearance: multiple rows selected. Clipboard cleared.";
+            } else {
+                qDebug() << "Cannot copy appearance: no row selected. Clipboard cleared.";
+            }
+        }
+    });
+    
+    // Ctrl+V: Paste appearance
+    p_pasteAppearanceShortcut = new QShortcut(QKeySequence::Paste, this);
+    connect(p_pasteAppearanceShortcut, &QShortcut::activated, this, [this]() {
+        if (hasClipboardAppearance()) {
+            pasteAppearanceToSelected();
+        }
+    });
+    
+    // Ctrl+Shift+C: Copy overlay settings
+    p_copySettingsShortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_C), this);
+    connect(p_copySettingsShortcut, &QShortcut::activated, this, [this]() {
+        auto selectionInfo = getSelectionInfo();
+        if (selectionInfo.singleRowSelected) {
+            copyOverlaySettings(selectionInfo.overlay);
+        } else {
+            // Clear clipboard and provide feedback for invalid selection
+            d_clipboardSettings.clear();
+            if (selectionInfo.multipleRowsSelected) {
+                qDebug() << "Cannot copy overlay settings: multiple rows selected. Clipboard cleared.";
+            } else {
+                qDebug() << "Cannot copy overlay settings: no row selected. Clipboard cleared.";
+            }
+        }
+    });
+    
+    // Ctrl+Shift+V: Paste overlay settings  
+    p_pasteSettingsShortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_V), this);
+    connect(p_pasteSettingsShortcut, &QShortcut::activated, this, [this]() {
+        if (hasClipboardSettings()) {
+            pasteSettingsToSelected();
+        }
+    });
+    
+    // Ctrl+Z: Undo last paste operation
+    p_undoShortcut = new QShortcut(QKeySequence::Undo, this);
+    connect(p_undoShortcut, &QShortcut::activated, this, [this]() {
+        if (d_undoData.hasUndoData) {
+            performUndo();
+        }
+    });
+}
+
+OverlayManagerWidget::SelectionInfo OverlayManagerWidget::getSelectionInfo()
+{
+    SelectionInfo info;
+    
+    if (!p_overlayTableView || !p_overlayModel) {
+        return info;
+    }
+    
+    auto selectionModel = p_overlayTableView->selectionModel();
+    if (!selectionModel->hasSelection()) {
+        return info;
+    }
+    
+    // Get selected rows and analyze selection
+    QModelIndexList selectedRows = selectionModel->selectedRows();
+    info.selectedCount = selectedRows.size();
+    
+    if (info.selectedCount == 1) {
+        info.singleRowSelected = true;
+        info.overlay = p_overlayModel->getOverlay(selectedRows.first().row());
+    } else if (info.selectedCount > 1) {
+        info.multipleRowsSelected = true;
+    }
+    
+    return info;
+}
+
+std::shared_ptr<OverlayBase> OverlayManagerWidget::getSelectedOverlay()
+{
+    // Backward compatibility method - only return overlay if exactly one row is selected
+    auto info = getSelectionInfo();
+    return info.singleRowSelected ? info.overlay : nullptr;
+}
+
+void OverlayManagerWidget::captureUndoState(std::shared_ptr<OverlayBase> overlay, const QString &operationType)
+{
+    if (!overlay) {
+        return;
+    }
+    
+    // Clear any existing undo data
+    d_undoData = UndoData();
+    
+    // Store basic undo information
+    d_undoData.hasUndoData = true;
+    d_undoData.overlay = overlay;
+    d_undoData.operationType = operationType;
+    
+    // Capture current state based on operation type
+    if (operationType == "appearance" || operationType == "both") {
+        // Store current appearance metadata
+        d_undoData.previousAppearanceData["curveColor"] = overlay->getCurveMetadata(BC::Key::bcCurveColor);
+        d_undoData.previousAppearanceData["curveCurveStyle"] = overlay->getCurveMetadata(BC::Key::bcCurveCurveStyle);
+        d_undoData.previousAppearanceData["curveThickness"] = overlay->getCurveMetadata(BC::Key::bcCurveThickness);
+        d_undoData.previousAppearanceData["curveLineStyle"] = overlay->getCurveMetadata(BC::Key::bcCurveLineStyle);
+        d_undoData.previousAppearanceData["curveMarker"] = overlay->getCurveMetadata(BC::Key::bcCurveMarker);
+        d_undoData.previousAppearanceData["curveMarkerSize"] = overlay->getCurveMetadata(BC::Key::bcCurveMarkerSize);
+        d_undoData.previousAppearanceData["curveVisible"] = overlay->getCurveMetadata(BC::Key::bcCurveVisible);
+        d_undoData.previousAppearanceData["curveAutoscale"] = overlay->getCurveMetadata(BC::Key::bcCurveAutoscale);
+        d_undoData.previousAppearanceData["curveAxisY"] = overlay->getCurveMetadata(BC::Key::bcCurveAxisY);
+    }
+    
+    if (operationType == "settings" || operationType == "both") {
+        // Store current overlay settings
+        d_undoData.previousSettingsData["plotId"] = overlay->getPlotId();
+        d_undoData.previousSettingsData["yScale"] = overlay->getYScale();
+        d_undoData.previousSettingsData["yOffset"] = overlay->getYOffset();
+        d_undoData.previousSettingsData["xOffset"] = overlay->getXOffset();
+        d_undoData.previousSettingsData["minFreqEnabled"] = overlay->getMinFreqEnabled();
+        d_undoData.previousSettingsData["minFreqValue"] = overlay->getMinFreqValue();
+        d_undoData.previousSettingsData["maxFreqEnabled"] = overlay->getMaxFreqEnabled();
+        d_undoData.previousSettingsData["maxFreqValue"] = overlay->getMaxFreqValue();
+        d_undoData.previousSettingsData["enabled"] = overlay->getEnabled();
+    }
+    
+    qDebug() << "Captured undo state for" << operationType << "operation on overlay:" << overlay->getLabel();
+}
+
+void OverlayManagerWidget::performUndo()
+{
+    if (!d_undoData.hasUndoData || !d_undoData.overlay) {
+        qDebug() << "No undo data available";
+        return;
+    }
+    
+    // Restore previous state based on operation type
+    if (d_undoData.operationType == "appearance" || d_undoData.operationType == "both") {
+        // Restore appearance metadata
+        for (auto it = d_undoData.previousAppearanceData.constBegin(); 
+             it != d_undoData.previousAppearanceData.constEnd(); ++it) {
+            
+            if (it.key() == "curveColor") {
+                d_undoData.overlay->setCurveMetadata(BC::Key::bcCurveColor, it.value());
+            } else if (it.key() == "curveCurveStyle") {
+                d_undoData.overlay->setCurveMetadata(BC::Key::bcCurveCurveStyle, it.value());
+            } else if (it.key() == "curveThickness") {
+                d_undoData.overlay->setCurveMetadata(BC::Key::bcCurveThickness, it.value());
+            } else if (it.key() == "curveLineStyle") {
+                d_undoData.overlay->setCurveMetadata(BC::Key::bcCurveLineStyle, it.value());
+            } else if (it.key() == "curveMarker") {
+                d_undoData.overlay->setCurveMetadata(BC::Key::bcCurveMarker, it.value());
+            } else if (it.key() == "curveMarkerSize") {
+                d_undoData.overlay->setCurveMetadata(BC::Key::bcCurveMarkerSize, it.value());
+            } else if (it.key() == "curveVisible") {
+                d_undoData.overlay->setCurveMetadata(BC::Key::bcCurveVisible, it.value());
+            } else if (it.key() == "curveAutoscale") {
+                d_undoData.overlay->setCurveMetadata(BC::Key::bcCurveAutoscale, it.value());
+            } else if (it.key() == "curveAxisY") {
+                d_undoData.overlay->setCurveMetadata(BC::Key::bcCurveAxisY, it.value());
+            }
+        }
+    }
+    
+    if (d_undoData.operationType == "settings" || d_undoData.operationType == "both") {
+        // Restore overlay settings
+        if (d_undoData.previousSettingsData.contains("plotId")) {
+            d_undoData.overlay->setPlotId(d_undoData.previousSettingsData["plotId"].toString());
+        }
+        if (d_undoData.previousSettingsData.contains("yScale")) {
+            d_undoData.overlay->setYScale(d_undoData.previousSettingsData["yScale"].toDouble());
+        }
+        if (d_undoData.previousSettingsData.contains("yOffset")) {
+            d_undoData.overlay->setYOffset(d_undoData.previousSettingsData["yOffset"].toDouble());
+        }
+        if (d_undoData.previousSettingsData.contains("xOffset")) {
+            d_undoData.overlay->setXOffset(d_undoData.previousSettingsData["xOffset"].toDouble());
+        }
+        if (d_undoData.previousSettingsData.contains("minFreqEnabled") && 
+            d_undoData.previousSettingsData.contains("minFreqValue")) {
+            d_undoData.overlay->setMinFreqLimit(d_undoData.previousSettingsData["minFreqEnabled"].toBool(),
+                                               d_undoData.previousSettingsData["minFreqValue"].toDouble());
+        }
+        if (d_undoData.previousSettingsData.contains("maxFreqEnabled") && 
+            d_undoData.previousSettingsData.contains("maxFreqValue")) {
+            d_undoData.overlay->setMaxFreqLimit(d_undoData.previousSettingsData["maxFreqEnabled"].toBool(),
+                                               d_undoData.previousSettingsData["maxFreqValue"].toDouble());
+        }
+        if (d_undoData.previousSettingsData.contains("enabled")) {
+            d_undoData.overlay->setEnabled(d_undoData.previousSettingsData["enabled"].toBool());
+        }
+    }
+    
+    // Emit signal to update the overlay display
+    emit overlayDataChanged(d_undoData.overlay);
+    
+    qDebug() << "Undid" << d_undoData.operationType << "operation on overlay:" << d_undoData.overlay->getLabel();
+    
+    // Clear undo data after use (only one level of undo)
+    invalidateUndo();
+}
+
+void OverlayManagerWidget::invalidateUndo()
+{
+    if (d_undoData.hasUndoData) {
+        qDebug() << "Invalidated undo data";
+    }
+    d_undoData = UndoData();
+}
+
 void OverlayManagerWidget::resizeColumnsToContents()
 {
     if (!p_overlayModel || !p_overlayTableView) {
@@ -445,6 +672,9 @@ void OverlayManagerWidget::resizeColumnsToContents()
 
 void OverlayManagerWidget::onModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {
+    // Invalidate undo when table data is changed through direct editing
+    invalidateUndo();
+    
     // Get the model that emitted the signal
     const OverlayTableModel* model = qobject_cast<const OverlayTableModel*>(topLeft.model());
     if (!model) {
@@ -507,6 +737,9 @@ void OverlayManagerWidget::onConfigureClicked(const QModelIndex &index)
     // Get xRange from the main plot and plot names
     auto xRange = ftmwParent->getMainPlotFt().xRange();
     QStringList plotNames = ftmwParent->getPlotNames();
+    
+    // Invalidate undo when opening configure dialog
+    invalidateUndo();
     
     // Create and show the configuration dialog
     OverlaySettingsDialog dialog(overlay, plotNames, xRange.first, xRange.second, p_overlayStorage, this);
@@ -744,8 +977,8 @@ void OverlayManagerWidget::showContextMenu(const QPoint &position)
     QAction *pasteAppearanceAction = contextMenu.addAction("Paste Appearance");
     pasteAppearanceAction->setToolTip("Paste curve display settings to this overlay");
     pasteAppearanceAction->setEnabled(hasClipboardAppearance());
-    connect(pasteAppearanceAction, &QAction::triggered, [this, overlay]() {
-        pasteAppearanceSettings(overlay);
+    connect(pasteAppearanceAction, &QAction::triggered, [this]() {
+        pasteAppearanceToSelected();
     });
     
     contextMenu.addSeparator();
@@ -761,8 +994,8 @@ void OverlayManagerWidget::showContextMenu(const QPoint &position)
     QAction *pasteAction = contextMenu.addAction("Paste Overlay Settings");
     pasteAction->setToolTip("Paste overlay properties to this overlay");
     pasteAction->setEnabled(hasClipboardSettings());
-    connect(pasteAction, &QAction::triggered, [this, overlay]() {
-        pasteOverlaySettings(overlay);
+    connect(pasteAction, &QAction::triggered, [this]() {
+        pasteSettingsToSelected();
     });
     
     contextMenu.addSeparator();
@@ -785,8 +1018,9 @@ void OverlayManagerWidget::copyOverlaySettings(std::shared_ptr<OverlayBase> over
         return;
     }
     
-    // Clear previous clipboard contents
+    // Clear both clipboards to prevent cross-contamination
     d_clipboardSettings.clear();
+    d_clipboardAppearance.clear();
     
     // Copy all overlay settings (excluding label which should remain unique)
     d_clipboardSettings["plotId"] = overlay->getPlotId();
@@ -798,17 +1032,6 @@ void OverlayManagerWidget::copyOverlaySettings(std::shared_ptr<OverlayBase> over
     d_clipboardSettings["maxFreqEnabled"] = overlay->getMaxFreqEnabled();
     d_clipboardSettings["maxFreqValue"] = overlay->getMaxFreqValue();
     d_clipboardSettings["enabled"] = overlay->getEnabled();
-    
-    // Copy curve appearance settings
-    d_clipboardSettings["curveColor"] = overlay->getCurveMetadata(BC::Key::bcCurveColor);
-    d_clipboardSettings["curveCurveStyle"] = overlay->getCurveMetadata(BC::Key::bcCurveCurveStyle);
-    d_clipboardSettings["curveThickness"] = overlay->getCurveMetadata(BC::Key::bcCurveThickness);
-    d_clipboardSettings["curveLineStyle"] = overlay->getCurveMetadata(BC::Key::bcCurveLineStyle);
-    d_clipboardSettings["curveMarker"] = overlay->getCurveMetadata(BC::Key::bcCurveMarker);
-    d_clipboardSettings["curveMarkerSize"] = overlay->getCurveMetadata(BC::Key::bcCurveMarkerSize);
-    d_clipboardSettings["curveVisible"] = overlay->getCurveMetadata(BC::Key::bcCurveVisible);
-    d_clipboardSettings["curveAutoscale"] = overlay->getCurveMetadata(BC::Key::bcCurveAutoscale);
-    d_clipboardSettings["curveAxisY"] = overlay->getCurveMetadata(BC::Key::bcCurveAxisY);
     
     qDebug() << "Copied overlay settings from:" << overlay->getLabel();
 }
@@ -844,35 +1067,6 @@ void OverlayManagerWidget::pasteOverlaySettings(std::shared_ptr<OverlayBase> ove
         overlay->setEnabled(d_clipboardSettings["enabled"].toBool());
     }
     
-    // Apply copied curve appearance settings
-    if (d_clipboardSettings.contains("curveColor")) {
-        overlay->setCurveMetadata(BC::Key::bcCurveColor, d_clipboardSettings["curveColor"]);
-    }
-    if (d_clipboardSettings.contains("curveCurveStyle")) {
-        overlay->setCurveMetadata(BC::Key::bcCurveCurveStyle, d_clipboardSettings["curveCurveStyle"]);
-    }
-    if (d_clipboardSettings.contains("curveThickness")) {
-        overlay->setCurveMetadata(BC::Key::bcCurveThickness, d_clipboardSettings["curveThickness"]);
-    }
-    if (d_clipboardSettings.contains("curveLineStyle")) {
-        overlay->setCurveMetadata(BC::Key::bcCurveLineStyle, d_clipboardSettings["curveLineStyle"]);
-    }
-    if (d_clipboardSettings.contains("curveMarker")) {
-        overlay->setCurveMetadata(BC::Key::bcCurveMarker, d_clipboardSettings["curveMarker"]);
-    }
-    if (d_clipboardSettings.contains("curveMarkerSize")) {
-        overlay->setCurveMetadata(BC::Key::bcCurveMarkerSize, d_clipboardSettings["curveMarkerSize"]);
-    }
-    if (d_clipboardSettings.contains("curveVisible")) {
-        overlay->setCurveMetadata(BC::Key::bcCurveVisible, d_clipboardSettings["curveVisible"]);
-    }
-    if (d_clipboardSettings.contains("curveAutoscale")) {
-        overlay->setCurveMetadata(BC::Key::bcCurveAutoscale, d_clipboardSettings["curveAutoscale"]);
-    }
-    if (d_clipboardSettings.contains("curveAxisY")) {
-        overlay->setCurveMetadata(BC::Key::bcCurveAxisY, d_clipboardSettings["curveAxisY"]);
-    }
-    
     // Emit signal to update the overlay display
     emit overlayDataChanged(overlay);
     
@@ -890,8 +1084,9 @@ void OverlayManagerWidget::copyAppearanceSettings(std::shared_ptr<OverlayBase> o
         return;
     }
     
-    // Clear previous appearance clipboard contents
+    // Clear both clipboards to prevent cross-contamination
     d_clipboardAppearance.clear();
+    d_clipboardSettings.clear();
     
     // Copy curve appearance settings only
     d_clipboardAppearance["curveColor"] = overlay->getCurveMetadata(BC::Key::bcCurveColor);
@@ -951,6 +1146,80 @@ void OverlayManagerWidget::pasteAppearanceSettings(std::shared_ptr<OverlayBase> 
 bool OverlayManagerWidget::hasClipboardAppearance() const
 {
     return !d_clipboardAppearance.isEmpty();
+}
+
+void OverlayManagerWidget::pasteAppearanceToSelected()
+{
+    if (!hasClipboardAppearance() || !p_overlayTableView || !p_overlayModel) {
+        return;
+    }
+    
+    auto selectionModel = p_overlayTableView->selectionModel();
+    if (!selectionModel->hasSelection()) {
+        return;
+    }
+    
+    // Get all selected overlays
+    QModelIndexList selectedRows = selectionModel->selectedRows();
+    QVector<std::shared_ptr<OverlayBase>> selectedOverlays;
+    
+    for (const auto& index : selectedRows) {
+        auto overlay = p_overlayModel->getOverlay(index.row());
+        if (overlay) {
+            selectedOverlays.append(overlay);
+        }
+    }
+    
+    if (selectedOverlays.isEmpty()) {
+        return;
+    }
+    
+    // Capture undo state for the first overlay (simple 1-level undo)
+    captureUndoState(selectedOverlays.first(), "appearance");
+    
+    // Apply appearance to all selected overlays
+    for (auto overlay : selectedOverlays) {
+        pasteAppearanceSettings(overlay);
+    }
+    
+    qDebug() << "Pasted appearance to" << selectedOverlays.size() << "overlays";
+}
+
+void OverlayManagerWidget::pasteSettingsToSelected()
+{
+    if (!hasClipboardSettings() || !p_overlayTableView || !p_overlayModel) {
+        return;
+    }
+    
+    auto selectionModel = p_overlayTableView->selectionModel();
+    if (!selectionModel->hasSelection()) {
+        return;
+    }
+    
+    // Get all selected overlays
+    QModelIndexList selectedRows = selectionModel->selectedRows();
+    QVector<std::shared_ptr<OverlayBase>> selectedOverlays;
+    
+    for (const auto& index : selectedRows) {
+        auto overlay = p_overlayModel->getOverlay(index.row());
+        if (overlay) {
+            selectedOverlays.append(overlay);
+        }
+    }
+    
+    if (selectedOverlays.isEmpty()) {
+        return;
+    }
+    
+    // Capture undo state for the first overlay (simple 1-level undo)
+    captureUndoState(selectedOverlays.first(), "settings");
+    
+    // Apply settings to all selected overlays
+    for (auto overlay : selectedOverlays) {
+        pasteOverlaySettings(overlay);
+    }
+    
+    qDebug() << "Pasted settings to" << selectedOverlays.size() << "overlays";
 }
 
 void OverlayManagerWidget::closeEvent(QCloseEvent *event)

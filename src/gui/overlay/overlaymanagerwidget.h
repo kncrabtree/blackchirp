@@ -10,6 +10,7 @@
 #include <QTableView>
 #include <QLabel>
 #include <QProgressBar>
+#include <QShortcut>
 #include <memory>
 
 #include <data/experiment/overlaybase.h>
@@ -64,6 +65,8 @@ private slots:
     void pasteOverlaySettings(std::shared_ptr<OverlayBase> overlay);
     void copyAppearanceSettings(std::shared_ptr<OverlayBase> overlay);
     void pasteAppearanceSettings(std::shared_ptr<OverlayBase> overlay);
+    void pasteAppearanceToSelected();
+    void pasteSettingsToSelected();
     bool hasClipboardSettings() const;
     bool hasClipboardAppearance() const;
 
@@ -80,6 +83,13 @@ private:
     OverlayConfigureDelegate *p_configureDelegate;
     OverlayCheckBoxDelegate *p_enabledDelegate;
     
+    // Keyboard shortcuts
+    QShortcut *p_copyAppearanceShortcut;
+    QShortcut *p_pasteAppearanceShortcut;
+    QShortcut *p_copySettingsShortcut;
+    QShortcut *p_pasteSettingsShortcut;
+    QShortcut *p_undoShortcut;
+    
     // Progress indicator widgets
     QLabel *p_progressLabel;
     QProgressBar *p_progressBar;
@@ -93,6 +103,16 @@ private:
     
     // Clipboard for copy/paste curve appearance settings
     QVariantMap d_clipboardAppearance;
+    
+    // Undo system for paste operations (1 level deep)
+    struct UndoData {
+        bool hasUndoData = false;
+        std::shared_ptr<OverlayBase> overlay = nullptr;
+        QString operationType; // "appearance" or "settings" 
+        QVariantMap previousAppearanceData;
+        QVariantMap previousSettingsData;
+    };
+    UndoData d_undoData;
 
 
     void setupUI();
@@ -102,7 +122,24 @@ private:
     void setupConfigureDelegate();
     void setupEnabledDelegate();
     void setupTableView();
+    void setupKeyboardShortcuts();
     void resizeColumnsToContents();
+    
+    // Selection information structure
+    struct SelectionInfo {
+        bool singleRowSelected = false;
+        bool multipleRowsSelected = false;
+        int selectedCount = 0;
+        std::shared_ptr<OverlayBase> overlay = nullptr; // Only valid when singleRowSelected is true
+    };
+    
+    SelectionInfo getSelectionInfo();
+    std::shared_ptr<OverlayBase> getSelectedOverlay(); // Keep for backward compatibility
+    
+    // Undo system methods
+    void captureUndoState(std::shared_ptr<OverlayBase> overlay, const QString &operationType);
+    void performUndo();
+    void invalidateUndo();
     
     // Progress indicator management
     void createProgressWidget();
