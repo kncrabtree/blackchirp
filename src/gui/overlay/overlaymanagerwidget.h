@@ -57,6 +57,10 @@ private slots:
     void onSelectionChanged();
     void onConfigureClicked(const QModelIndex &index);
     void onOverlaySettingsChanged(std::shared_ptr<OverlayBase> overlay);
+    void showContextMenu(const QPoint &position);
+    void copyOverlaySettings(std::shared_ptr<OverlayBase> overlay);
+    void pasteOverlaySettings(std::shared_ptr<OverlayBase> overlay);
+    bool hasClipboardSettings() const;
 
 private:
     QToolBar *p_toolBar;
@@ -78,6 +82,9 @@ private:
     
     // Track overlay storage connection
     std::shared_ptr<OverlayStorage> p_overlayStorage;
+    
+    // Clipboard for copy/paste overlay settings
+    QVariantMap d_clipboardSettings;
 
 
     void setupUI();

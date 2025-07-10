@@ -107,6 +107,11 @@ void OverlayManagerWidget::setupUI()
     p_overlayTableView->setDragEnabled(true);
     p_overlayTableView->setAcceptDrops(true);
     p_overlayTableView->setDropIndicatorShown(true);
+    
+    // Enable context menu
+    p_overlayTableView->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(p_overlayTableView, &QTableView::customContextMenuRequested,
+            this, &OverlayManagerWidget::showContextMenu);
 
     // Configure headers
     auto horizontalHeader = p_overlayTableView->horizontalHeader();
@@ -656,6 +661,123 @@ void OverlayManagerWidget::onExternalOverlayDataChanged(std::shared_ptr<OverlayB
             break;
         }
     }
+}
+
+void OverlayManagerWidget::showContextMenu(const QPoint &position)
+{
+    // Get the item at the clicked position
+    QModelIndex index = p_overlayTableView->indexAt(position);
+    if (!index.isValid()) {
+        return; // No item clicked
+    }
+    
+    // Get the overlay for this row
+    auto overlay = p_overlayModel->getOverlay(index.row());
+    if (!overlay) {
+        return;
+    }
+    
+    // Create context menu
+    QMenu contextMenu(this);
+    
+    // Add Configure action
+    QAction *configureAction = contextMenu.addAction("Configure...");
+    connect(configureAction, &QAction::triggered, [this, index]() {
+        onConfigureClicked(index);
+    });
+    
+    contextMenu.addSeparator();
+    
+    // Add Copy Settings action
+    QAction *copyAction = contextMenu.addAction("Copy Settings");
+    connect(copyAction, &QAction::triggered, [this, overlay]() {
+        copyOverlaySettings(overlay);
+    });
+    
+    // Add Paste Settings action (only enable if we have copied settings)
+    QAction *pasteAction = contextMenu.addAction("Paste Settings");
+    pasteAction->setEnabled(hasClipboardSettings());
+    connect(pasteAction, &QAction::triggered, [this, overlay]() {
+        pasteOverlaySettings(overlay);
+    });
+    
+    contextMenu.addSeparator();
+    
+    // Add Remove action
+    QAction *removeAction = contextMenu.addAction("Remove");
+    connect(removeAction, &QAction::triggered, [this, index]() {
+        // Select the row and call remove
+        p_overlayTableView->selectRow(index.row());
+        removeOverlay();
+    });
+    
+    // Show the context menu at the cursor position
+    contextMenu.exec(p_overlayTableView->mapToGlobal(position));
+}
+
+void OverlayManagerWidget::copyOverlaySettings(std::shared_ptr<OverlayBase> overlay)
+{
+    if (!overlay) {
+        return;
+    }
+    
+    // Clear previous clipboard contents
+    d_clipboardSettings.clear();
+    
+    // Copy all overlay settings (excluding label which should remain unique)
+    d_clipboardSettings["plotId"] = overlay->getPlotId();
+    d_clipboardSettings["yScale"] = overlay->getYScale();
+    d_clipboardSettings["yOffset"] = overlay->getYOffset();
+    d_clipboardSettings["xOffset"] = overlay->getXOffset();
+    d_clipboardSettings["minFreqEnabled"] = overlay->getMinFreqEnabled();
+    d_clipboardSettings["minFreqValue"] = overlay->getMinFreqValue();
+    d_clipboardSettings["maxFreqEnabled"] = overlay->getMaxFreqEnabled();
+    d_clipboardSettings["maxFreqValue"] = overlay->getMaxFreqValue();
+    d_clipboardSettings["enabled"] = overlay->getEnabled();
+    
+    qDebug() << "Copied overlay settings from:" << overlay->getLabel();
+}
+
+void OverlayManagerWidget::pasteOverlaySettings(std::shared_ptr<OverlayBase> overlay)
+{
+    if (!overlay || d_clipboardSettings.isEmpty()) {
+        return;
+    }
+    
+    // Apply copied settings to the target overlay (excluding label)
+    if (d_clipboardSettings.contains("plotId")) {
+        overlay->setPlotId(d_clipboardSettings["plotId"].toString());
+    }
+    if (d_clipboardSettings.contains("yScale")) {
+        overlay->setYScale(d_clipboardSettings["yScale"].toDouble());
+    }
+    if (d_clipboardSettings.contains("yOffset")) {
+        overlay->setYOffset(d_clipboardSettings["yOffset"].toDouble());
+    }
+    if (d_clipboardSettings.contains("xOffset")) {
+        overlay->setXOffset(d_clipboardSettings["xOffset"].toDouble());
+    }
+    if (d_clipboardSettings.contains("minFreqEnabled") && d_clipboardSettings.contains("minFreqValue")) {
+        overlay->setMinFreqLimit(d_clipboardSettings["minFreqEnabled"].toBool(), 
+                                d_clipboardSettings["minFreqValue"].toDouble());
+    }
+    if (d_clipboardSettings.contains("maxFreqEnabled") && d_clipboardSettings.contains("maxFreqValue")) {
+        overlay->setMaxFreqLimit(d_clipboardSettings["maxFreqEnabled"].toBool(), 
+                                d_clipboardSettings["maxFreqValue"].toDouble());
+    }
+    if (d_clipboardSettings.contains("enabled")) {
+        overlay->setEnabled(d_clipboardSettings["enabled"].toBool());
+    }
+    
+    // Emit signal to update the overlay display
+    emit overlayDataChanged(overlay);
+    
+    qDebug() << "Pasted overlay settings to:" << overlay->getLabel();
+}
+
+bool OverlayManagerWidget::hasClipboardSettings() const
+{
+    return !d_clipboardSettings.isEmpty();
 }
 
 void OverlayManagerWidget::closeEvent(QCloseEvent *event)
