@@ -99,7 +99,14 @@ void OverlayManagerWidget::setupUI()
     p_overlayTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     p_overlayTableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     p_overlayTableView->setAlternatingRowColors(true);
-    p_overlayTableView->setSortingEnabled(false); // Disable for now
+    p_overlayTableView->setSortingEnabled(true); // Enable column header sorting
+    
+    // Enable drag and drop for reordering
+    p_overlayTableView->setDragDropMode(QAbstractItemView::InternalMove);
+    p_overlayTableView->setDefaultDropAction(Qt::MoveAction);
+    p_overlayTableView->setDragEnabled(true);
+    p_overlayTableView->setAcceptDrops(true);
+    p_overlayTableView->setDropIndicatorShown(true);
 
     // Configure headers
     auto horizontalHeader = p_overlayTableView->horizontalHeader();

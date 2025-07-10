@@ -20,12 +20,20 @@ public:
     bool setData(const QModelIndex &index, const QVariant &value, int role) override;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;
+    void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
+    
+    // Drag and drop support
+    Qt::DropActions supportedDropActions() const override;
+    QStringList mimeTypes() const override;
+    QMimeData *mimeData(const QModelIndexList &indexes) const override;
+    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) override;
 
     // Overlay management
     void addOverlay(std::shared_ptr<OverlayBase> overlay);
     void removeOverlay(int row);
     void removeOverlays(const QVector<int>& rows);
     void clearOverlays();
+    void moveOverlay(int fromRow, int toRow);
     std::shared_ptr<OverlayBase> getOverlay(int row) const;
     QVector<std::shared_ptr<OverlayBase>> getAllOverlays() const;
 
