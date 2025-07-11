@@ -8,6 +8,8 @@
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QHBoxLayout>
+#include <algorithm>
+#include <cmath>
 
 CurveAppearanceWidget::CurveAppearanceWidget(QWidget *parent)
     : QWidget(parent), d_blockSignals(false), p_presetManager(nullptr)
@@ -676,29 +678,222 @@ void CurveAppearanceWidget::updateDeleteButtonState()
 
 QString CurveAppearanceWidget::generatePresetSuggestion() const
 {
-    // Generate a suggested name based on current appearance
-    QString suggestion = "Custom";
+    QString suggestion;
     
-    // Add curve type to suggestion
+    // Start with curve style
     if (d_currentAppearance.curveStyle == QwtPlotCurve::Lines) {
         suggestion = "Curve";
     } else if (d_currentAppearance.curveStyle == QwtPlotCurve::Sticks) {
         suggestion = "Stem";
     } else if (d_currentAppearance.curveStyle == QwtPlotCurve::NoCurve) {
         suggestion = "Scatter";
+    } else {
+        suggestion = "Custom";
     }
     
-    // Add color info if it's a common color
-    QColor color = d_currentAppearance.color;
-    if (color == Qt::red) {
-        suggestion += " - Red";
-    } else if (color == Qt::blue) {
-        suggestion += " - Blue";
-    } else if (color == Qt::green || color == Qt::darkGreen) {
-        suggestion += " - Green";
-    } else if (color == Qt::black) {
-        suggestion += " - Black";
+    // Add line thickness and style for non-NoCurve styles
+    if (d_currentAppearance.curveStyle != QwtPlotCurve::NoCurve) {
+        double width = d_currentAppearance.lineThickness;
+        if (width < 1.5) {
+            suggestion += " Thin";
+        } else if (width <= 3.0) {
+            suggestion += " Medium";
+        } else if (width <= 5.0) {
+            suggestion += " Thick";
+        } else {
+            suggestion += " VeryThick";
+        }
+        
+        // Add line style
+        QString lineStyle = getLineStyleName(d_currentAppearance.lineStyle);
+        if (lineStyle != "Solid") { // Only add if not solid (default)
+            suggestion += " " + lineStyle;
+        }
     }
+    
+    // Add marker information if markers are present
+    if (d_currentAppearance.markerStyle != QwtSymbol::NoSymbol) {
+        // Add marker shape name
+        QString markerName = getMarkerShapeName(d_currentAppearance.markerStyle);
+        suggestion += " " + markerName;
+        
+        // Add marker size category
+        double size = d_currentAppearance.markerSize;
+        if (size < 3) {
+            suggestion += " Small";
+        } else if (size <= 6) {
+            suggestion += " Medium";
+        } else if (size <= 9) {
+            suggestion += " Large";
+        } else {
+            suggestion += " VeryLarge";
+        }
+    }
+    
+    // Add color description
+    QString colorDesc = getColorDescription(d_currentAppearance.color);
+    suggestion += " " + colorDesc;
     
     return suggestion;
+}
+
+QString CurveAppearanceWidget::getMarkerShapeName(QwtSymbol::Style style) const
+{
+    switch (style) {
+        case QwtSymbol::Ellipse:
+            return "Circle";
+        case QwtSymbol::Rect:
+            return "Square";
+        case QwtSymbol::Diamond:
+            return "Diamond";
+        case QwtSymbol::Triangle:
+            return "Triangle";
+        case QwtSymbol::DTriangle:
+            return "DownTriangle";
+        case QwtSymbol::UTriangle:
+            return "UpTriangle";
+        case QwtSymbol::LTriangle:
+            return "LeftTriangle";
+        case QwtSymbol::RTriangle:
+            return "RightTriangle";
+        case QwtSymbol::Cross:
+            return "Cross";
+        case QwtSymbol::XCross:
+            return "XCross";
+        case QwtSymbol::HLine:
+            return "HLine";
+        case QwtSymbol::VLine:
+            return "VLine";
+        case QwtSymbol::Star1:
+            return "Star";
+        case QwtSymbol::Star2:
+            return "Star6";
+        case QwtSymbol::Hexagon:
+            return "Hexagon";
+        default:
+            return "Marker";
+    }
+}
+
+QString CurveAppearanceWidget::getLineStyleName(Qt::PenStyle style) const
+{
+    switch (style) {
+        case Qt::SolidLine:
+            return "Solid";
+        case Qt::DashLine:
+            return "Dashed";
+        case Qt::DotLine:
+            return "Dotted";
+        case Qt::DashDotLine:
+            return "DashDot";
+        case Qt::DashDotDotLine:
+            return "DashDotDot";
+        default:
+            return "Solid";
+    }
+}
+
+QString CurveAppearanceWidget::getColorDescription(const QColor &color) const
+{
+    int r = color.red();
+    int g = color.green();
+    int b = color.blue();
+    double lightness = color.lightnessF(); // 0.0 to 1.0
+    
+    // Check if it's grayscale (RGB values within 10 units)
+    if (std::abs(r - g) <= 10 && std::abs(g - b) <= 10 && std::abs(r - b) <= 10) {
+        if (lightness < 0.1) {
+            return "Black";
+        } else if (lightness > 0.9) {
+            return "White";
+        } else {
+            // Add light/dark modifier for gray
+            QString grayName = "Gray";
+            if (lightness >= 0.75) {
+                grayName = "Light " + grayName;
+            } else if (lightness <= 0.25) {
+                grayName = "Dark " + grayName;
+            }
+            return grayName;
+        }
+    }
+    
+    // Determine base color from RGB values
+    QString baseColor;
+    
+    // Find the dominant color component
+    int maxComponent = std::max({r, g, b});
+    int minComponent = std::min({r, g, b});
+    
+    // Calculate color ratios for better classification
+    double rRatio = static_cast<double>(r) / 255.0;
+    double gRatio = static_cast<double>(g) / 255.0;
+    double bRatio = static_cast<double>(b) / 255.0;
+    
+    if (r >= g && r >= b) {
+        // Red is dominant
+        if (g > b * 1.5) {
+            // Significant green component
+            if (g >= r * 0.8) {
+                baseColor = "Yellow";
+            } else if (g >= r * 0.5) {
+                baseColor = "Orange";
+            } else {
+                baseColor = "Red";
+            }
+        } else if (b > g * 1.2) {
+            // Some blue component
+            if (b >= r * 0.6) {
+                baseColor = "Purple";
+            } else {
+                baseColor = "Pink";
+            }
+        } else {
+            // Check for brown (low saturation red with some green)
+            if (lightness < 0.6 && g >= r * 0.3 && g < r * 0.8) {
+                baseColor = "Brown";
+            } else {
+                baseColor = "Red";
+            }
+        }
+    } else if (g >= r && g >= b) {
+        // Green is dominant
+        if (r > b * 1.2) {
+            // Some red component
+            if (r >= g * 0.8) {
+                baseColor = "Yellow";
+            } else {
+                baseColor = "Green";
+            }
+        } else if (b > r * 1.2) {
+            // Some blue component
+            baseColor = "Green";
+        } else {
+            baseColor = "Green";
+        }
+    } else {
+        // Blue is dominant
+        if (r > g * 1.2) {
+            // Some red component
+            if (r >= b * 0.6) {
+                baseColor = "Purple";
+            } else {
+                baseColor = "Blue";
+            }
+        } else if (g > r * 1.2) {
+            // Some green component
+            baseColor = "Blue";
+        } else {
+            baseColor = "Blue";
+        }
+    }
+    
+    // Add lightness modifiers
+    if (lightness >= 0.75 && lightness < 0.9) {
+        baseColor = "Light " + baseColor;
+    } else if (lightness <= 0.25 && lightness > 0.1) {
+        baseColor = "Dark " + baseColor;
+    }
+    
+    return baseColor;
 }

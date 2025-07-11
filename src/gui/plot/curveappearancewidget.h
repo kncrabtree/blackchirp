@@ -98,6 +98,9 @@ private:
     void emitAppearanceChanged();
     void updateDeleteButtonState();
     QString generatePresetSuggestion() const;
+    QString getMarkerShapeName(QwtSymbol::Style style) const;
+    QString getLineStyleName(Qt::PenStyle style) const;
+    QString getColorDescription(const QColor &color) const;
     
     // UI components
     QFormLayout *p_formLayout;
