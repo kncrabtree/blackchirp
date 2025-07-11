@@ -18,6 +18,7 @@
 // Forward declarations
 class BlackchirpPlotCurveBase;
 class OverlayBase;
+class CurveAppearancePresetManager;
 
 class CurveAppearanceWidget : public QWidget
 {
@@ -62,9 +63,18 @@ public:
     // Update color display when changed externally
     void updateColorDisplay(const QColor &color);
     
+    // Preset management
+    void setPresetManager(CurveAppearancePresetManager *manager);
+    void applyPreset(const QString &presetName);
+    void saveCurrentAsPreset(const QString &presetName);
+    void deletePreset(const QString &presetName);
+    void refreshPresetList();
+    
 signals:
     void curveAppearanceChanged(const CurveAppearanceWidget::CurveAppearance &appearance);
     void colorChangeRequested(); // For opening color dialog externally if needed
+    void presetSaveRequested(const QString &suggestedName); // Request user input for preset name
+    void presetDeleteRequested(const QString &presetName); // Request confirmation for preset deletion
     
 private slots:
     void onColorButtonClicked();
@@ -77,13 +87,27 @@ private slots:
     void onAutoscaleChanged(bool enabled);
     void onYAxisChanged(int index);
     
+    // Preset-related slots
+    void onPresetSelected(int index);
+    void onSavePresetClicked();
+    void onDeletePresetClicked();
+    
 private:
     void setupUI();
     void setupConnections();
     void emitAppearanceChanged();
+    void updateDeleteButtonState();
+    QString generatePresetSuggestion() const;
     
     // UI components
     QFormLayout *p_formLayout;
+    
+    // Preset controls (at top)
+    QComboBox *p_presetBox;
+    QPushButton *p_savePresetButton;
+    QPushButton *p_deletePresetButton;
+    
+    // Appearance controls
     QPushButton *p_colorButton;
     QComboBox *p_curveStyleBox;
     QDoubleSpinBox *p_thicknessBox;
@@ -94,9 +118,10 @@ private:
     QCheckBox *p_autoscaleBox;
     QComboBox *p_yAxisBox;
     
-    // Current state
+    // Current state and preset management
     CurveAppearance d_currentAppearance;
     bool d_blockSignals;
+    CurveAppearancePresetManager *p_presetManager;
 };
 
 Q_DECLARE_METATYPE(CurveAppearanceWidget::CurveAppearance)

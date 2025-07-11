@@ -1,6 +1,7 @@
 #include <data/storage/settingsstorage.h>
 #include <gui/mainwindow.h>
 #include <gui/dialog/bcsavepathdialog.h>
+#include <gui/plot/curveappearancepresetmanager.h>
 
 #include <memory>
 
@@ -157,6 +158,9 @@ R"000(Next, you can configure the communication settings for the hardware connec
     w.showMaximized();
     w.initializeHardware();
     int ret = a.exec();
+    
+    // Cleanup global instances before application shutdown
+    CurveAppearancePresetManager::cleanup();
 
     return ret;
 }

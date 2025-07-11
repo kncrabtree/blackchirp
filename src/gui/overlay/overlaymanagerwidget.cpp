@@ -3,6 +3,8 @@
 #include "overlayconfiguredelegate.h"
 #include "overlaysettingsdialog.h"
 #include <gui/plot/curveappearancewidget.h>
+#include <gui/plot/curveappearancepresetmanager.h>
+#include <gui/plot/presetsavedialog.h>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -976,6 +978,9 @@ void OverlayManagerWidget::showContextMenu(const QPoint &position)
     auto curveWa = new QWidgetAction(appearanceMenu);
     auto appearanceWidget = new CurveAppearanceWidget(appearanceMenu);
     
+    // Connect to global preset manager for preset functionality
+    appearanceWidget->setPresetManager(CurveAppearancePresetManager::instance());
+    
     // Initialize widget from overlay metadata
     appearanceWidget->initializeFromOverlay(overlay);
     
@@ -1004,6 +1009,45 @@ void OverlayManagerWidget::showContextMenu(const QPoint &position)
         // Update widget and overlay if valid color chosen
         if (newColor.isValid()) {
             appearanceWidget->updateColorDisplay(newColor);
+        }
+    });
+    
+    // Handle preset save requests with custom dialog
+    connect(appearanceWidget, &CurveAppearanceWidget::presetSaveRequested,
+            this, [this, appearanceWidget](const QString &suggestedName) {
+        PresetSaveDialog dialog(suggestedName, CurveAppearancePresetManager::instance(), this);
+        
+        if (dialog.exec() == QDialog::Accepted) {
+            QString presetName = dialog.getPresetName();
+            if (!presetName.isEmpty()) {
+                // If overwriting existing preset, no additional confirmation needed
+                // since the dialog already handled the selection
+                if (!dialog.isOverwriteMode()) {
+                    // For new presets, check if name already exists
+                    if (CurveAppearancePresetManager::instance()->hasPreset(presetName)) {
+                        int result = QMessageBox::question(this, "Preset Exists", 
+                                                         QString("Preset '%1' already exists. Overwrite?").arg(presetName),
+                                                         QMessageBox::Yes | QMessageBox::No);
+                        if (result != QMessageBox::Yes) {
+                            return;
+                        }
+                    }
+                }
+                
+                appearanceWidget->saveCurrentAsPreset(presetName);
+            }
+        }
+    });
+    
+    // Handle preset delete requests with confirmation dialog
+    connect(appearanceWidget, &CurveAppearanceWidget::presetDeleteRequested,
+            this, [this, appearanceWidget](const QString &presetName) {
+        int result = QMessageBox::question(this, "Delete Preset", 
+                                         QString("Delete preset '%1'?").arg(presetName),
+                                         QMessageBox::Yes | QMessageBox::No);
+        
+        if (result == QMessageBox::Yes) {
+            appearanceWidget->deletePreset(presetName);
         }
     });
     

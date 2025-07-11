@@ -1,5 +1,7 @@
 #include <gui/plot/zoompanplot.h>
 #include "curveappearancewidget.h"
+#include "curveappearancepresetmanager.h"
+#include "presetsavedialog.h"
 
 #include <QApplication>
 #include <QMouseEvent>
@@ -1276,6 +1278,9 @@ QMenu *ZoomPanPlot::contextMenu()
             auto curveWa = new QWidgetAction(m);
             auto appearanceWidget = new CurveAppearanceWidget(m);
             
+            // Connect to global preset manager for preset functionality
+            appearanceWidget->setPresetManager(CurveAppearancePresetManager::instance());
+            
             // Initialize widget with current curve properties
             appearanceWidget->initializeFromCurve(curve);
             
@@ -1300,6 +1305,45 @@ QMenu *ZoomPanPlot::contextMenu()
                 setCurveColor(curve);
                 // Update widget's color display after color change
                 appearanceWidget->updateColorDisplay(curve->pen().color());
+            });
+            
+            // Handle preset save requests with custom dialog
+            connect(appearanceWidget, &CurveAppearanceWidget::presetSaveRequested,
+                    this, [this, appearanceWidget](const QString &suggestedName) {
+                PresetSaveDialog dialog(suggestedName, CurveAppearancePresetManager::instance(), this);
+                
+                if (dialog.exec() == QDialog::Accepted) {
+                    QString presetName = dialog.getPresetName();
+                    if (!presetName.isEmpty()) {
+                        // If overwriting existing preset, no additional confirmation needed
+                        // since the dialog already handled the selection
+                        if (!dialog.isOverwriteMode()) {
+                            // For new presets, check if name already exists
+                            if (CurveAppearancePresetManager::instance()->hasPreset(presetName)) {
+                                int result = QMessageBox::question(this, "Preset Exists", 
+                                                                 QString("Preset '%1' already exists. Overwrite?").arg(presetName),
+                                                                 QMessageBox::Yes | QMessageBox::No);
+                                if (result != QMessageBox::Yes) {
+                                    return;
+                                }
+                            }
+                        }
+                        
+                        appearanceWidget->saveCurrentAsPreset(presetName);
+                    }
+                }
+            });
+            
+            // Handle preset delete requests with confirmation dialog
+            connect(appearanceWidget, &CurveAppearanceWidget::presetDeleteRequested,
+                    this, [this, appearanceWidget](const QString &presetName) {
+                int result = QMessageBox::question(this, "Delete Preset", 
+                                                 QString("Delete preset '%1'?").arg(presetName),
+                                                 QMessageBox::Yes | QMessageBox::No);
+                
+                if (result == QMessageBox::Yes) {
+                    appearanceWidget->deletePreset(presetName);
+                }
             });
             
             curveWa->setDefaultWidget(appearanceWidget);

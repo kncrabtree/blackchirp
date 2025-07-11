@@ -3,6 +3,9 @@
 #include <QPalette>
 #include <QDebug>
 
+// Static instance definition
+CurveAppearancePresetManager* CurveAppearancePresetManager::s_instance = nullptr;
+
 CurveAppearancePresetManager::CurveAppearancePresetManager(QObject *parent)
     : QObject(parent), SettingsStorage(BC::Key::CurveAppearancePresets::key)
 {
@@ -18,6 +21,26 @@ CurveAppearancePresetManager::CurveAppearancePresetManager(QObject *parent)
 CurveAppearancePresetManager::~CurveAppearancePresetManager()
 {
     savePresetsToStorage();
+}
+
+// === SINGLETON IMPLEMENTATION ===
+
+CurveAppearancePresetManager* CurveAppearancePresetManager::instance()
+{
+    if (!s_instance) {
+        s_instance = new CurveAppearancePresetManager();
+        qDebug() << "Created global CurveAppearancePresetManager instance";
+    }
+    return s_instance;
+}
+
+void CurveAppearancePresetManager::cleanup()
+{
+    if (s_instance) {
+        qDebug() << "Cleaning up global CurveAppearancePresetManager instance";
+        delete s_instance;
+        s_instance = nullptr;
+    }
 }
 
 QVariantMap CurveAppearancePresetManager::CurveAppearancePreset::toVariantMap() const

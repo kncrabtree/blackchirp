@@ -1,15 +1,22 @@
 #include "curveappearancewidget.h"
+#include "curveappearancepresetmanager.h"
 #include "blackchirpplotcurve.h"
 #include <data/experiment/overlaybase.h>
 
 #include <QColorDialog>
 #include <QLabel>
+#include <QInputDialog>
+#include <QMessageBox>
+#include <QHBoxLayout>
 
 CurveAppearanceWidget::CurveAppearanceWidget(QWidget *parent)
-    : QWidget(parent), d_blockSignals(false)
+    : QWidget(parent), d_blockSignals(false), p_presetManager(nullptr)
 {
     setupUI();
     setupConnections();
+    
+    // Connect to global preset manager
+    setPresetManager(CurveAppearancePresetManager::instance());
     
     // Initialize with default appearance
     d_currentAppearance.color = palette().color(QPalette::Text);
@@ -40,6 +47,38 @@ void CurveAppearanceWidget::setupUI()
 {
     p_formLayout = new QFormLayout(this);
     
+    // === PRESET CONTROLS (at top) ===
+    // Preset selection combo box
+    p_presetBox = new QComboBox(this);
+    p_presetBox->setToolTip("Select a preset to apply or create a new preset");
+    p_formLayout->addRow("Preset:", p_presetBox);
+    
+    // Preset action buttons in horizontal layout
+    QWidget *presetButtonWidget = new QWidget(this);
+    QHBoxLayout *presetButtonLayout = new QHBoxLayout(presetButtonWidget);
+    presetButtonLayout->setContentsMargins(0, 0, 0, 0);
+    
+    p_savePresetButton = new QPushButton("Save...", this);
+    p_savePresetButton->setToolTip("Save current appearance as a new preset");
+    p_savePresetButton->setMaximumWidth(80);
+    
+    p_deletePresetButton = new QPushButton("Delete", this);
+    p_deletePresetButton->setToolTip("Delete the selected preset");
+    p_deletePresetButton->setMaximumWidth(80);
+    p_deletePresetButton->setEnabled(false);
+    
+    presetButtonLayout->addWidget(p_savePresetButton);
+    presetButtonLayout->addWidget(p_deletePresetButton);
+    presetButtonLayout->addStretch();
+    
+    p_formLayout->addRow("", presetButtonWidget);
+    
+    // Add a separator line
+    QLabel *separator = new QLabel(this);
+    separator->setFrameStyle(QFrame::HLine | QFrame::Sunken);
+    p_formLayout->addRow(separator);
+    
+    // === APPEARANCE CONTROLS ===
     // Color button
     p_colorButton = new QPushButton(this);
     p_colorButton->setText("Choose Color...");
@@ -113,16 +152,25 @@ void CurveAppearanceWidget::setupUI()
     
     // Configure label alignment as in the original implementation
     for (int i = 0; i < p_formLayout->rowCount(); ++i) {
-        auto lbl = qobject_cast<QLabel*>(p_formLayout->itemAt(i, QFormLayout::LabelRole)->widget());
-        if (lbl) {
-            lbl->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            lbl->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding);
+        QLayoutItem *item = p_formLayout->itemAt(i, QFormLayout::LabelRole);
+        if (item && item->widget()) {
+            auto lbl = qobject_cast<QLabel*>(item->widget());
+            if (lbl) {
+                lbl->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                lbl->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding);
+            }
         }
     }
 }
 
 void CurveAppearanceWidget::setupConnections()
 {
+    // Preset connections
+    connect(p_presetBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &CurveAppearanceWidget::onPresetSelected);
+    connect(p_savePresetButton, &QPushButton::clicked, this, &CurveAppearanceWidget::onSavePresetClicked);
+    connect(p_deletePresetButton, &QPushButton::clicked, this, &CurveAppearanceWidget::onDeletePresetClicked);
+    
+    // Appearance control connections
     connect(p_colorButton, &QPushButton::clicked, this, &CurveAppearanceWidget::onColorButtonClicked);
     connect(p_curveStyleBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &CurveAppearanceWidget::onCurveStyleChanged);
     connect(p_thicknessBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &CurveAppearanceWidget::onLineThicknessChanged);
@@ -471,4 +519,186 @@ void CurveAppearanceWidget::applyToOverlay(std::shared_ptr<OverlayBase> overlay)
             break;
     }
     overlay->setCurveMetadata(BC::Key::bcCurveAxisY, static_cast<int>(oldAxis));
+}
+
+// === PRESET MANAGEMENT METHODS ===
+
+void CurveAppearanceWidget::setPresetManager(CurveAppearancePresetManager *manager)
+{
+    p_presetManager = manager;
+    refreshPresetList();
+}
+
+void CurveAppearanceWidget::refreshPresetList()
+{
+    if (!p_presetManager) {
+        return;
+    }
+    
+    d_blockSignals = true;
+    
+    p_presetBox->clear();
+    p_presetBox->addItem("Select preset...", QString()); // Empty string for no selection
+    
+    QStringList presetNames = p_presetManager->getPresetNames();
+    for (const QString &name : presetNames) {
+        p_presetBox->addItem(name, name);
+    }
+    
+    d_blockSignals = false;
+    
+    // Update delete button state
+    updateDeleteButtonState();
+}
+
+void CurveAppearanceWidget::applyPreset(const QString &presetName)
+{
+    if (!p_presetManager || presetName.isEmpty()) {
+        return;
+    }
+    
+    if (!p_presetManager->hasPreset(presetName)) {
+        qWarning() << "Preset not found:" << presetName;
+        return;
+    }
+    
+    auto preset = p_presetManager->getPreset(presetName);
+    setCurrentAppearance(preset.appearance);
+    
+    // Manually emit signal to trigger visual updates since setCurrentAppearance blocks signals
+    emit curveAppearanceChanged(d_currentAppearance);
+    
+    // Mark preset as used
+    p_presetManager->markPresetUsed(presetName);
+    
+    qDebug() << "Applied preset:" << presetName;
+}
+
+void CurveAppearanceWidget::saveCurrentAsPreset(const QString &presetName)
+{
+    if (!p_presetManager || presetName.isEmpty()) {
+        return;
+    }
+    
+    bool success = p_presetManager->savePreset(presetName, d_currentAppearance);
+    if (success) {
+        refreshPresetList();
+        
+        // Select the newly saved preset
+        int index = p_presetBox->findData(presetName);
+        if (index >= 0) {
+            d_blockSignals = true;
+            p_presetBox->setCurrentIndex(index);
+            d_blockSignals = false;
+        }
+        
+        qDebug() << "Saved preset:" << presetName;
+    } else {
+        QMessageBox::warning(this, "Save Failed", 
+                           QString("Failed to save preset '%1'. Please check the name is valid.").arg(presetName));
+    }
+}
+
+void CurveAppearanceWidget::deletePreset(const QString &presetName)
+{
+    if (!p_presetManager || presetName.isEmpty()) {
+        return;
+    }
+    
+    bool success = p_presetManager->deletePreset(presetName);
+    if (success) {
+        refreshPresetList();
+        // Reset to "Select preset..."
+        p_presetBox->setCurrentIndex(0);
+        qDebug() << "Deleted preset:" << presetName;
+    } else {
+        QMessageBox::warning(this, "Delete Failed", 
+                           QString("Failed to delete preset '%1'. Default presets cannot be deleted.").arg(presetName));
+    }
+}
+
+void CurveAppearanceWidget::onPresetSelected(int index)
+{
+    if (d_blockSignals || !p_presetManager) {
+        return;
+    }
+    
+    QString presetName = p_presetBox->itemData(index).toString();
+    if (!presetName.isEmpty()) {
+        applyPreset(presetName);
+    }
+    
+    updateDeleteButtonState();
+}
+
+void CurveAppearanceWidget::onSavePresetClicked()
+{
+    if (!p_presetManager) {
+        return;
+    }
+    
+    // Suggest a name based on current settings and emit signal for external handling
+    QString suggestedName = generatePresetSuggestion();
+    emit presetSaveRequested(suggestedName);
+}
+
+void CurveAppearanceWidget::onDeletePresetClicked()
+{
+    if (!p_presetManager) {
+        return;
+    }
+    
+    QString currentPreset = p_presetBox->currentData().toString();
+    if (currentPreset.isEmpty()) {
+        return;
+    }
+    
+    // Emit signal for external handling of delete confirmation dialog
+    emit presetDeleteRequested(currentPreset);
+}
+
+void CurveAppearanceWidget::updateDeleteButtonState()
+{
+    if (!p_presetManager) {
+        p_deletePresetButton->setEnabled(false);
+        return;
+    }
+    
+    QString currentPreset = p_presetBox->currentData().toString();
+    if (currentPreset.isEmpty()) {
+        p_deletePresetButton->setEnabled(false);
+        return;
+    }
+    
+    auto preset = p_presetManager->getPreset(currentPreset);
+    p_deletePresetButton->setEnabled(!preset.isDefault);
+}
+
+QString CurveAppearanceWidget::generatePresetSuggestion() const
+{
+    // Generate a suggested name based on current appearance
+    QString suggestion = "Custom";
+    
+    // Add curve type to suggestion
+    if (d_currentAppearance.curveStyle == QwtPlotCurve::Lines) {
+        suggestion = "Curve";
+    } else if (d_currentAppearance.curveStyle == QwtPlotCurve::Sticks) {
+        suggestion = "Stem";
+    } else if (d_currentAppearance.curveStyle == QwtPlotCurve::NoCurve) {
+        suggestion = "Scatter";
+    }
+    
+    // Add color info if it's a common color
+    QColor color = d_currentAppearance.color;
+    if (color == Qt::red) {
+        suggestion += " - Red";
+    } else if (color == Qt::blue) {
+        suggestion += " - Blue";
+    } else if (color == Qt::green || color == Qt::darkGreen) {
+        suggestion += " - Green";
+    } else if (color == Qt::black) {
+        suggestion += " - Black";
+    }
+    
+    return suggestion;
 }

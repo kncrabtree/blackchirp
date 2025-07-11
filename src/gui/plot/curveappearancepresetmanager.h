@@ -17,6 +17,10 @@ class CurveAppearancePresetManager : public QObject, public SettingsStorage
     Q_OBJECT
 
 public:
+    // Singleton access
+    static CurveAppearancePresetManager* instance();
+    static void cleanup(); // Call during application shutdown
+    
     struct CurveAppearancePreset {
         QString name;
         CurveAppearanceWidget::CurveAppearance appearance;
@@ -31,7 +35,7 @@ public:
         static CurveAppearancePreset fromVariantMap(const QVariantMap &map);
     };
 
-    explicit CurveAppearancePresetManager(QObject *parent = nullptr);
+    // Destructor
     ~CurveAppearancePresetManager();
 
     // Preset management
@@ -58,6 +62,11 @@ signals:
     void presetRenamed(const QString &oldName, const QString &newName);
 
 private:
+    // Private constructor for singleton
+    explicit CurveAppearancePresetManager(QObject *parent = nullptr);
+    
+    // Static instance
+    static CurveAppearancePresetManager* s_instance;
     void loadPresetsFromStorage();
     void savePresetsToStorage();
     CurveAppearanceWidget::CurveAppearance createCurvePreset(const QColor &color) const;
