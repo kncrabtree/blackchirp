@@ -29,6 +29,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/plot/blackchirpplotcurve.cpp \
     $$PWD/plot/chirpconfigplot.cpp \
     $$PWD/plot/curveappearancewidget.cpp \
+    $$PWD/plot/curveappearancepresetmanager.cpp \
     $$PWD/plot/curvefactory.cpp \
     $$PWD/plot/customtracker.cpp \
     $$PWD/plot/customzoomer.cpp \
@@ -95,6 +96,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/plot/blackchirpplotcurve.h \
     $$PWD/plot/chirpconfigplot.h \
     $$PWD/plot/curveappearancewidget.h \
+    $$PWD/plot/curveappearancepresetmanager.h \
     $$PWD/plot/curvefactory.h \
     $$PWD/plot/customtracker.h \
     $$PWD/plot/customzoomer.h \
