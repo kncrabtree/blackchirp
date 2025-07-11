@@ -31,7 +31,11 @@ add_test(NAME tst_blackchirpcsvtest COMMAND tst_blackchirpcsvtest)
 add_executable(tst_spcatparser tests/tst_spcatparser.cpp src/data/experiment/spcatparser.cpp src/data/experiment/catalogdata.cpp src/data/experiment/catalogparser.cpp src/data/experiment/catalogparserregistry.cpp src/data/storage/settingsstorage.cpp)
 add_test(NAME tst_spcatparser COMMAND tst_spcatparser)
 
+add_executable(tst_xiamparser tests/tst_xiamparser.cpp src/data/experiment/xiamparser.cpp src/data/experiment/catalogdata.cpp src/data/experiment/catalogparser.cpp src/data/experiment/catalogparserregistry.cpp src/data/storage/settingsstorage.cpp)
+add_test(NAME tst_xiamparser COMMAND tst_xiamparser)
+
 target_link_libraries(tst_settingsstoragetest PRIVATE Qt6::Gui Qt6::Test)
 target_link_libraries(tst_headerstoragetest PRIVATE Qt6::Gui Qt6::Test)
 target_link_libraries(tst_blackchirpcsvtest PRIVATE Qt6::Gui Qt6::Test)
 target_link_libraries(tst_spcatparser PRIVATE Qt6::Gui Qt6::Test)
+target_link_libraries(tst_xiamparser PRIVATE Qt6::Gui Qt6::Test)

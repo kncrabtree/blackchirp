@@ -1,0 +1,293 @@
+#include <QtTest>
+#include <QTemporaryFile>
+#include <QDir>
+
+#include <src/data/experiment/xiamparser.h>
+#include <src/data/experiment/catalogparserregistry.h>
+
+class XIAMParserTest : public QObject
+{
+    Q_OBJECT
+public:
+    XIAMParserTest() {}
+    ~XIAMParserTest() {}
+
+private slots:
+    void initTestCase();
+    void cleanupTestCase();
+    void testCanParse();
+    void testParseInts2Format();
+    void testParseInts3Format();
+    void testRigidLinesExcluded();
+    void testIntensityCalculation();
+    void testIncompleteGroups();
+    void testParserRegistration();
+    void testInvalidFile();
+
+private:
+    QString getTestDataPath(const QString &filename) const;
+    void createTestFiles();
+    
+    XIAMParser *m_parser;
+    QString m_testDataDir;
+};
+
+void XIAMParserTest::initTestCase()
+{
+    m_parser = new XIAMParser();
+    
+    // Get test data directory path
+    QDir currentDir = QDir::current();
+    if (currentDir.dirName().startsWith("build-")) {
+        currentDir.cdUp();
+    }
+    
+    if (currentDir.exists("src")) {
+        m_testDataDir = currentDir.absoluteFilePath("src/tests/testdata");
+    } else {
+        QDir searchDir = currentDir;
+        while (!searchDir.exists("tests") && searchDir.cdUp()) {}
+        m_testDataDir = searchDir.absoluteFilePath("tests/testdata");
+    }
+    
+    // Create test data directory if it doesn't exist
+    QDir().mkpath(m_testDataDir);
+    
+    // Create test files
+    createTestFiles();
+    
+    qDebug() << "Test data directory:" << m_testDataDir;
+}
+
+void XIAMParserTest::cleanupTestCase()
+{
+    delete m_parser;
+}
+
+void XIAMParserTest::createTestFiles()
+{
+    // Create ints=2 test file
+    QString ints2Content = R"(Fri Jul 11 06:54:28 2025
+
+ Rotational, Centrifugal Distortion, Internal Rotation Calculation (V2.5e)
+                       Holger Hartwig 08-Nov-96 (hartwig@phc.uni-kiel.de)
+
+cis-MMA
+
+   nzyk      5000   print        4   eval         0   dfreq        0
+   orger        0   ints         2   maxm         8   woods       33
+
+-- B 1                                 Freq Linestr.    total  stat.w.   popul. hv-ener.
+  2  2  0   1  1  1   S 1  V 1     9.670897   3.7831   0.0099   3.0000   0.0136   0.0642  B 1  K  2 -1  t  5  2
+  2  2  1   1  1  0   S 1  V 1     9.190608   4.3294   0.0107   3.0000   0.0135   0.0611  B 1  K -2  1  t  4  3
+  3  0  3   2  0  2   S 1  V 1     6.285087   0.1938   0.0005   5.0000   0.0133   0.0422  B 1  K  0  0  t  1  1
+  3  1  3   2  0  2   S 1  V 1     7.047286   6.1154   0.0192   5.0000   0.0133   0.0472  B 1  K -1  0  t  2  1
+
+total is the product of Linestr., population-factor,
+energy factor (hv), and the statistical weight
+)";
+
+    QFile ints2File(getTestDataPath("test_ints2.xo"));
+    ints2File.open(QIODevice::WriteOnly | QIODevice::Text);
+    ints2File.write(ints2Content.toUtf8());
+    ints2File.close();
+
+    // Create ints=3 test file
+    QString ints3Content = R"(Fri Jul 11 06:56:22 2025
+
+ Rotational, Centrifugal Distortion, Internal Rotation Calculation (V2.5e)
+                       Holger Hartwig 08-Nov-96 (hartwig@phc.uni-kiel.de)
+
+cis-MMA
+
+   nzyk      5000   print        4   eval         0   dfreq        0
+   orger        0   ints         3   maxm         8   woods       33
+
+-- B 1                                    Freq       Split Linestr.    total  stat.w.   popul. hv-ener.
+  2  2  0   1  1  1         rigid       9.633953             3.7902   0.7088   3.0000   0.9753   0.0639  K  2 -1  t  5  2
+  2  2  0   1  1  1   S 1  V 1  B 1     9.670897             3.7831   0.0099   3.0000   0.0136   0.0642  K  2 -1  t  5  2
+  2  2  1   1  1  0         rigid       9.158358             4.3350   0.7698   3.0000   0.9726   0.0609  K -2  1  t  4  3
+  2  2  1   1  1  0   S 1  V 1  B 1     9.190608             4.3294   0.0107   3.0000   0.0135   0.0611  K -2  1  t  4  3
+                      S 2               6.095339-3095.2694   0.2533   0.0003   3.0000   0.0082   0.0409  K  2 -1  t  4  3
+  3  1  3   2  0  2         rigid       7.037981             6.1221   1.3793   5.0000   0.9565   0.0471  K -1  0  t  2  1
+  3  1  3   2  0  2   S 1  V 1  B 1     7.047286             6.1154   0.0192   5.0000   0.0133   0.0472  K -1  0  t  2  1
+                      S 2               7.151815  104.5291   5.2448   0.0102   5.0000   0.0081   0.0479  K  1  0  t  2  1
+
+total is the product of Linestr., population-factor,
+energy factor (hv), and the statistical weight
+)";
+
+    QFile ints3File(getTestDataPath("test_ints3.xo"));
+    ints3File.open(QIODevice::WriteOnly | QIODevice::Text);
+    ints3File.write(ints3Content.toUtf8());
+    ints3File.close();
+
+    // Create file with incomplete groups (intensity cutoff simulation)
+    QString incompleteContent = R"(Fri Jul 11 06:56:22 2025
+
+ Rotational, Centrifugal Distortion, Internal Rotation Calculation (V2.5e)
+                       Holger Hartwig 08-Nov-96 (hartwig@phc.uni-kiel.de)
+
+test-molecule
+
+   ints         3
+
+-- B 1                                    Freq       Split Linestr.    total  stat.w.   popul. hv-ener.
+  2  2  0   1  1  1   S 1  V 1  B 1     9.670897             3.7831   0.0099   3.0000   0.0136   0.0642  K  2 -1  t  5  2
+  3  1  3   2  0  2         rigid       7.037981             6.1221   1.3793   5.0000   0.9565   0.0471  K -1  0  t  2  1
+  3  1  3   2  0  2   S 1  V 1  B 1     7.047286             6.1154   0.0192   5.0000   0.0133   0.0472  K -1  0  t  2  1
+                      S 2               7.151815  104.5291   5.2448   0.0102   5.0000   0.0081   0.0479  K  1  0  t  2  1
+  4  1  4   3  0  3   S 1  V 1  B 1     8.575836             8.3828   0.0427   7.0000   0.0127   0.0571  K -1  0  t  2  1
+)";
+
+    QFile incompleteFile(getTestDataPath("test_incomplete.xo"));
+    incompleteFile.open(QIODevice::WriteOnly | QIODevice::Text);
+    incompleteFile.write(incompleteContent.toUtf8());
+    incompleteFile.close();
+}
+
+QString XIAMParserTest::getTestDataPath(const QString &filename) const
+{
+    return QDir(m_testDataDir).absoluteFilePath(filename);
+}
+
+void XIAMParserTest::testCanParse()
+{
+    // Test valid XIAM files
+    QVERIFY(m_parser->canParse(getTestDataPath("test_ints2.xo")));
+    QVERIFY(m_parser->canParse(getTestDataPath("test_ints3.xo")));
+    
+    // Test invalid extensions
+    QTemporaryFile invalidFile("test_XXXXXX.txt");
+    QVERIFY(invalidFile.open());
+    invalidFile.write("some content");
+    invalidFile.close();
+    QVERIFY(!m_parser->canParse(invalidFile.fileName()));
+}
+
+void XIAMParserTest::testParseInts2Format()
+{
+    CatalogData catalogData = m_parser->parse(getTestDataPath("test_ints2.xo"));
+    
+    QVERIFY(!catalogData.isEmpty());
+    QCOMPARE(catalogData.size(), 4);
+    QCOMPARE(catalogData.sourceProgram(), QString("XIAM"));
+    QCOMPARE(catalogData.moleculeName(), QString("cis-MMA"));
+    
+    // Check first transition
+    TransitionData trans1 = catalogData.at(0);
+    QCOMPARE(trans1.frequency, 9.670897);
+    QCOMPARE(trans1.quantumNumbers, QString("2 2 0 - 1 1 1, S1 V1"));
+    QVERIFY(trans1.additionalData.contains("quantumAssignment"));
+    QCOMPARE(trans1.additionalData.value("quantumAssignment").toString(), QString("B 1 K 2 -1 t 5 2"));
+}
+
+void XIAMParserTest::testParseInts3Format()
+{
+    CatalogData catalogData = m_parser->parse(getTestDataPath("test_ints3.xo"));
+    
+    QVERIFY(!catalogData.isEmpty());
+    QCOMPARE(catalogData.sourceProgram(), QString("XIAM"));
+    QCOMPARE(catalogData.moleculeName(), QString("cis-MMA"));
+    
+    // Should have transitions but NOT the rigid rotor lines
+    QVERIFY(catalogData.size() > 0);
+    
+    // Check that no transitions contain "rigid" in their mode
+    for (int i = 0; i < catalogData.size(); ++i) {
+        TransitionData trans = catalogData.at(i);
+        QString mode = trans.additionalData.value("mode").toString();
+        QVERIFY(!mode.contains("rigid"));
+    }
+}
+
+void XIAMParserTest::testRigidLinesExcluded()
+{
+    CatalogData catalogData = m_parser->parse(getTestDataPath("test_ints3.xo"));
+    
+    // Count expected transitions (should exclude rigid lines)
+    // From test data: 5 non-rigid transitions expected
+    // 3 S1 V1 B1 lines + 2 S2 split lines = 5 total
+    int expectedCount = 5;
+    QCOMPARE(catalogData.size(), expectedCount);
+    
+    // Verify none of the transitions are rigid rotor references
+    for (int i = 0; i < catalogData.size(); ++i) {
+        TransitionData trans = catalogData.at(i);
+        QString mode = trans.additionalData.value("mode").toString();
+        QVERIFY2(!mode.contains("rigid"), 
+                 QString("Found rigid line at index %1: %2").arg(i).arg(mode).toLocal8Bit());
+    }
+}
+
+void XIAMParserTest::testIntensityCalculation()
+{
+    CatalogData catalogData = m_parser->parse(getTestDataPath("test_ints2.xo"));
+    QVERIFY(!catalogData.isEmpty());
+    
+    // Test that intensity calculation works
+    TransitionData trans = catalogData.at(0);
+    double linestr = trans.additionalData.value("linestrength").toDouble();
+    double total = trans.additionalData.value("total").toDouble();
+    double population = trans.additionalData.value("population").toDouble();
+    double hvEnergy = trans.additionalData.value("hvEnergy").toDouble();
+    double statWeight = trans.additionalData.value("statisticalWeight").toDouble();
+    
+    // For this test case, the calculated intensity should be more precise
+    double expectedIntensity = total / (population * hvEnergy * statWeight);
+    
+    // The parser should either use linestr or calculated intensity
+    QVERIFY(trans.intensity == linestr || qAbs(trans.intensity - expectedIntensity) < 1e-6);
+}
+
+void XIAMParserTest::testIncompleteGroups()
+{
+    CatalogData catalogData = m_parser->parse(getTestDataPath("test_incomplete.xo"));
+    
+    QVERIFY(!catalogData.isEmpty());
+    
+    // Should handle incomplete groups gracefully
+    QVERIFY(catalogData.size() > 0);
+    
+    // Verify no rigid lines are included
+    for (int i = 0; i < catalogData.size(); ++i) {
+        TransitionData trans = catalogData.at(i);
+        QString mode = trans.additionalData.value("mode").toString();
+        QVERIFY(!mode.contains("rigid"));
+    }
+}
+
+void XIAMParserTest::testParserRegistration()
+{
+    CatalogParserRegistry *registry = CatalogParserRegistry::instance();
+    
+    auto parser = std::make_unique<XIAMParser>();
+    registry->registerParser(std::move(parser));
+    
+    CatalogParser *foundParser = registry->findParser(getTestDataPath("test_ints2.xo"));
+    QVERIFY(foundParser != nullptr);
+    QCOMPARE(foundParser->formatName(), QString("XIAM"));
+    
+    QStringList formats = registry->supportedFormats();
+    QVERIFY(formats.contains("XIAM"));
+    
+    QStringList extensions = registry->supportedExtensions();
+    QVERIFY(extensions.contains("*.xo"));
+}
+
+void XIAMParserTest::testInvalidFile()
+{
+    CatalogData emptyData = m_parser->parse("/non/existent/file.xo");
+    QVERIFY(emptyData.isEmpty());
+    
+    QTemporaryFile invalidFile("invalid_XXXXXX.xo");
+    QVERIFY(invalidFile.open());
+    invalidFile.write("This is not XIAM format\nInvalid data here\n");
+    invalidFile.close();
+    
+    CatalogData invalidData = m_parser->parse(invalidFile.fileName());
+    QVERIFY(invalidData.isEmpty());
+}
+
+QTEST_MAIN(XIAMParserTest)
+#include "tst_xiamparser.moc"
