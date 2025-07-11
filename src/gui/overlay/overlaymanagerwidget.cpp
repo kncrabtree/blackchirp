@@ -503,9 +503,9 @@ std::shared_ptr<OverlayBase> OverlayManagerWidget::getSelectedOverlay()
     return info.singleRowSelected ? info.overlay : nullptr;
 }
 
-void OverlayManagerWidget::captureUndoState(std::shared_ptr<OverlayBase> overlay, const QString &operationType)
+void OverlayManagerWidget::captureUndoState(const QVector<std::shared_ptr<OverlayBase>> &overlays, const QString &operationType)
 {
-    if (!overlay) {
+    if (overlays.isEmpty()) {
         return;
     }
     
@@ -514,107 +514,125 @@ void OverlayManagerWidget::captureUndoState(std::shared_ptr<OverlayBase> overlay
     
     // Store basic undo information
     d_undoData.hasUndoData = true;
-    d_undoData.overlay = overlay;
     d_undoData.operationType = operationType;
+    d_undoData.overlayCount = overlays.size();
     
-    // Capture current state based on operation type
-    if (operationType == "appearance" || operationType == "both") {
-        // Store current appearance metadata
-        d_undoData.previousAppearanceData["curveColor"] = overlay->getCurveMetadata(BC::Key::bcCurveColor);
-        d_undoData.previousAppearanceData["curveCurveStyle"] = overlay->getCurveMetadata(BC::Key::bcCurveCurveStyle);
-        d_undoData.previousAppearanceData["curveThickness"] = overlay->getCurveMetadata(BC::Key::bcCurveThickness);
-        d_undoData.previousAppearanceData["curveLineStyle"] = overlay->getCurveMetadata(BC::Key::bcCurveLineStyle);
-        d_undoData.previousAppearanceData["curveMarker"] = overlay->getCurveMetadata(BC::Key::bcCurveMarker);
-        d_undoData.previousAppearanceData["curveMarkerSize"] = overlay->getCurveMetadata(BC::Key::bcCurveMarkerSize);
-        d_undoData.previousAppearanceData["curveVisible"] = overlay->getCurveMetadata(BC::Key::bcCurveVisible);
-        d_undoData.previousAppearanceData["curveAutoscale"] = overlay->getCurveMetadata(BC::Key::bcCurveAutoscale);
-        d_undoData.previousAppearanceData["curveAxisY"] = overlay->getCurveMetadata(BC::Key::bcCurveAxisY);
+    // Capture current state for all overlays
+    for (auto overlay : overlays) {
+        if (!overlay) {
+            continue;
+        }
+        
+        OverlayUndoState undoState;
+        undoState.overlay = overlay;
+        
+        // Capture current state based on operation type
+        if (operationType == "appearance" || operationType == "both") {
+            // Store current appearance metadata
+            undoState.previousAppearanceData["curveColor"] = overlay->getCurveMetadata(BC::Key::bcCurveColor);
+            undoState.previousAppearanceData["curveCurveStyle"] = overlay->getCurveMetadata(BC::Key::bcCurveCurveStyle);
+            undoState.previousAppearanceData["curveThickness"] = overlay->getCurveMetadata(BC::Key::bcCurveThickness);
+            undoState.previousAppearanceData["curveLineStyle"] = overlay->getCurveMetadata(BC::Key::bcCurveLineStyle);
+            undoState.previousAppearanceData["curveMarker"] = overlay->getCurveMetadata(BC::Key::bcCurveMarker);
+            undoState.previousAppearanceData["curveMarkerSize"] = overlay->getCurveMetadata(BC::Key::bcCurveMarkerSize);
+            undoState.previousAppearanceData["curveVisible"] = overlay->getCurveMetadata(BC::Key::bcCurveVisible);
+            undoState.previousAppearanceData["curveAutoscale"] = overlay->getCurveMetadata(BC::Key::bcCurveAutoscale);
+            undoState.previousAppearanceData["curveAxisY"] = overlay->getCurveMetadata(BC::Key::bcCurveAxisY);
+        }
+        
+        if (operationType == "settings" || operationType == "both") {
+            // Store current overlay settings
+            undoState.previousSettingsData["plotId"] = overlay->getPlotId();
+            undoState.previousSettingsData["yScale"] = overlay->getYScale();
+            undoState.previousSettingsData["yOffset"] = overlay->getYOffset();
+            undoState.previousSettingsData["xOffset"] = overlay->getXOffset();
+            undoState.previousSettingsData["minFreqEnabled"] = overlay->getMinFreqEnabled();
+            undoState.previousSettingsData["minFreqValue"] = overlay->getMinFreqValue();
+            undoState.previousSettingsData["maxFreqEnabled"] = overlay->getMaxFreqEnabled();
+            undoState.previousSettingsData["maxFreqValue"] = overlay->getMaxFreqValue();
+            undoState.previousSettingsData["enabled"] = overlay->getEnabled();
+        }
+        
+        d_undoData.overlayStates.append(undoState);
     }
     
-    if (operationType == "settings" || operationType == "both") {
-        // Store current overlay settings
-        d_undoData.previousSettingsData["plotId"] = overlay->getPlotId();
-        d_undoData.previousSettingsData["yScale"] = overlay->getYScale();
-        d_undoData.previousSettingsData["yOffset"] = overlay->getYOffset();
-        d_undoData.previousSettingsData["xOffset"] = overlay->getXOffset();
-        d_undoData.previousSettingsData["minFreqEnabled"] = overlay->getMinFreqEnabled();
-        d_undoData.previousSettingsData["minFreqValue"] = overlay->getMinFreqValue();
-        d_undoData.previousSettingsData["maxFreqEnabled"] = overlay->getMaxFreqEnabled();
-        d_undoData.previousSettingsData["maxFreqValue"] = overlay->getMaxFreqValue();
-        d_undoData.previousSettingsData["enabled"] = overlay->getEnabled();
-    }
-    
-    qDebug() << "Captured undo state for" << operationType << "operation on overlay:" << overlay->getLabel();
+    qDebug() << "Captured undo state for" << operationType << "operation on" << overlays.size() << "overlays";
 }
 
 void OverlayManagerWidget::performUndo()
 {
-    if (!d_undoData.hasUndoData || !d_undoData.overlay) {
+    if (!d_undoData.hasUndoData || d_undoData.overlayStates.isEmpty()) {
         qDebug() << "No undo data available";
         return;
     }
     
-    // Restore previous state based on operation type
-    if (d_undoData.operationType == "appearance" || d_undoData.operationType == "both") {
-        // Restore appearance metadata
-        for (auto it = d_undoData.previousAppearanceData.constBegin(); 
-             it != d_undoData.previousAppearanceData.constEnd(); ++it) {
-            
-            if (it.key() == "curveColor") {
-                d_undoData.overlay->setCurveMetadata(BC::Key::bcCurveColor, it.value());
-            } else if (it.key() == "curveCurveStyle") {
-                d_undoData.overlay->setCurveMetadata(BC::Key::bcCurveCurveStyle, it.value());
-            } else if (it.key() == "curveThickness") {
-                d_undoData.overlay->setCurveMetadata(BC::Key::bcCurveThickness, it.value());
-            } else if (it.key() == "curveLineStyle") {
-                d_undoData.overlay->setCurveMetadata(BC::Key::bcCurveLineStyle, it.value());
-            } else if (it.key() == "curveMarker") {
-                d_undoData.overlay->setCurveMetadata(BC::Key::bcCurveMarker, it.value());
-            } else if (it.key() == "curveMarkerSize") {
-                d_undoData.overlay->setCurveMetadata(BC::Key::bcCurveMarkerSize, it.value());
-            } else if (it.key() == "curveVisible") {
-                d_undoData.overlay->setCurveMetadata(BC::Key::bcCurveVisible, it.value());
-            } else if (it.key() == "curveAutoscale") {
-                d_undoData.overlay->setCurveMetadata(BC::Key::bcCurveAutoscale, it.value());
-            } else if (it.key() == "curveAxisY") {
-                d_undoData.overlay->setCurveMetadata(BC::Key::bcCurveAxisY, it.value());
+    // Restore previous state for all overlays
+    for (const auto& undoState : d_undoData.overlayStates) {
+        if (!undoState.overlay) {
+            continue;
+        }
+        
+        // Restore appearance data if needed
+        if (d_undoData.operationType == "appearance" || d_undoData.operationType == "both") {
+            for (auto it = undoState.previousAppearanceData.constBegin(); 
+                 it != undoState.previousAppearanceData.constEnd(); ++it) {
+                
+                if (it.key() == "curveColor") {
+                    undoState.overlay->setCurveMetadata(BC::Key::bcCurveColor, it.value());
+                } else if (it.key() == "curveCurveStyle") {
+                    undoState.overlay->setCurveMetadata(BC::Key::bcCurveCurveStyle, it.value());
+                } else if (it.key() == "curveThickness") {
+                    undoState.overlay->setCurveMetadata(BC::Key::bcCurveThickness, it.value());
+                } else if (it.key() == "curveLineStyle") {
+                    undoState.overlay->setCurveMetadata(BC::Key::bcCurveLineStyle, it.value());
+                } else if (it.key() == "curveMarker") {
+                    undoState.overlay->setCurveMetadata(BC::Key::bcCurveMarker, it.value());
+                } else if (it.key() == "curveMarkerSize") {
+                    undoState.overlay->setCurveMetadata(BC::Key::bcCurveMarkerSize, it.value());
+                } else if (it.key() == "curveVisible") {
+                    undoState.overlay->setCurveMetadata(BC::Key::bcCurveVisible, it.value());
+                } else if (it.key() == "curveAutoscale") {
+                    undoState.overlay->setCurveMetadata(BC::Key::bcCurveAutoscale, it.value());
+                } else if (it.key() == "curveAxisY") {
+                    undoState.overlay->setCurveMetadata(BC::Key::bcCurveAxisY, it.value());
+                }
             }
         }
+        
+        // Restore settings data if needed
+        if (d_undoData.operationType == "settings" || d_undoData.operationType == "both") {
+            if (undoState.previousSettingsData.contains("plotId")) {
+                undoState.overlay->setPlotId(undoState.previousSettingsData["plotId"].toString());
+            }
+            if (undoState.previousSettingsData.contains("yScale")) {
+                undoState.overlay->setYScale(undoState.previousSettingsData["yScale"].toDouble());
+            }
+            if (undoState.previousSettingsData.contains("yOffset")) {
+                undoState.overlay->setYOffset(undoState.previousSettingsData["yOffset"].toDouble());
+            }
+            if (undoState.previousSettingsData.contains("xOffset")) {
+                undoState.overlay->setXOffset(undoState.previousSettingsData["xOffset"].toDouble());
+            }
+            if (undoState.previousSettingsData.contains("minFreqEnabled") && 
+                undoState.previousSettingsData.contains("minFreqValue")) {
+                undoState.overlay->setMinFreqLimit(undoState.previousSettingsData["minFreqEnabled"].toBool(),
+                                                   undoState.previousSettingsData["minFreqValue"].toDouble());
+            }
+            if (undoState.previousSettingsData.contains("maxFreqEnabled") && 
+                undoState.previousSettingsData.contains("maxFreqValue")) {
+                undoState.overlay->setMaxFreqLimit(undoState.previousSettingsData["maxFreqEnabled"].toBool(),
+                                                   undoState.previousSettingsData["maxFreqValue"].toDouble());
+            }
+            if (undoState.previousSettingsData.contains("enabled")) {
+                undoState.overlay->setEnabled(undoState.previousSettingsData["enabled"].toBool());
+            }
+        }
+        
+        // Emit signal to update this overlay's display
+        emit overlayDataChanged(undoState.overlay);
     }
     
-    if (d_undoData.operationType == "settings" || d_undoData.operationType == "both") {
-        // Restore overlay settings
-        if (d_undoData.previousSettingsData.contains("plotId")) {
-            d_undoData.overlay->setPlotId(d_undoData.previousSettingsData["plotId"].toString());
-        }
-        if (d_undoData.previousSettingsData.contains("yScale")) {
-            d_undoData.overlay->setYScale(d_undoData.previousSettingsData["yScale"].toDouble());
-        }
-        if (d_undoData.previousSettingsData.contains("yOffset")) {
-            d_undoData.overlay->setYOffset(d_undoData.previousSettingsData["yOffset"].toDouble());
-        }
-        if (d_undoData.previousSettingsData.contains("xOffset")) {
-            d_undoData.overlay->setXOffset(d_undoData.previousSettingsData["xOffset"].toDouble());
-        }
-        if (d_undoData.previousSettingsData.contains("minFreqEnabled") && 
-            d_undoData.previousSettingsData.contains("minFreqValue")) {
-            d_undoData.overlay->setMinFreqLimit(d_undoData.previousSettingsData["minFreqEnabled"].toBool(),
-                                               d_undoData.previousSettingsData["minFreqValue"].toDouble());
-        }
-        if (d_undoData.previousSettingsData.contains("maxFreqEnabled") && 
-            d_undoData.previousSettingsData.contains("maxFreqValue")) {
-            d_undoData.overlay->setMaxFreqLimit(d_undoData.previousSettingsData["maxFreqEnabled"].toBool(),
-                                               d_undoData.previousSettingsData["maxFreqValue"].toDouble());
-        }
-        if (d_undoData.previousSettingsData.contains("enabled")) {
-            d_undoData.overlay->setEnabled(d_undoData.previousSettingsData["enabled"].toBool());
-        }
-    }
-    
-    // Emit signal to update the overlay display
-    emit overlayDataChanged(d_undoData.overlay);
-    
-    qDebug() << "Undid" << d_undoData.operationType << "operation on overlay:" << d_undoData.overlay->getLabel();
+    qDebug() << "Undid" << d_undoData.operationType << "operation on" << d_undoData.overlayCount << "overlays";
     
     // Clear undo data after use (only one level of undo)
     invalidateUndo();
@@ -626,6 +644,28 @@ void OverlayManagerWidget::invalidateUndo()
         qDebug() << "Invalidated undo data";
     }
     d_undoData = UndoData();
+}
+
+QString OverlayManagerWidget::getUndoDescription() const
+{
+    if (!d_undoData.hasUndoData || d_undoData.overlayCount == 0) {
+        return QString();
+    }
+    
+    QString operationName;
+    if (d_undoData.operationType == "appearance") {
+        operationName = "Appearance Paste";
+    } else if (d_undoData.operationType == "settings") {
+        operationName = "Settings Paste";
+    } else {
+        operationName = "Paste";
+    }
+    
+    if (d_undoData.overlayCount == 1) {
+        return QString("Undo %1").arg(operationName);
+    } else {
+        return QString("Undo %1 to %2 overlays").arg(operationName).arg(d_undoData.overlayCount);
+    }
 }
 
 void OverlayManagerWidget::resizeColumnsToContents()
@@ -918,17 +958,23 @@ void OverlayManagerWidget::showContextMenu(const QPoint &position)
     // Create context menu
     QMenu contextMenu(this);
     
-    // Add Configure action
-    QAction *configureAction = contextMenu.addAction("Configure...");
+    // === OVERLAY CONFIGURATION GROUP ===
+    // Add Configure action with settings icon
+    QAction *configureAction = contextMenu.addAction(QIcon(":/icons/configure.svg"), "Configure...");
+    configureAction->setToolTip("Open overlay configuration dialog");
     connect(configureAction, &QAction::triggered, [this, index]() {
         onConfigureClicked(index);
     });
     
+    // === CURVE APPEARANCE GROUP ===
     contextMenu.addSeparator();
     
-    // Add Curve Appearance section
-    auto curveWa = new QWidgetAction(&contextMenu);
-    auto appearanceWidget = new CurveAppearanceWidget(&contextMenu);
+    // Create Curve Appearance submenu
+    QMenu *appearanceMenu = contextMenu.addMenu(QIcon(":/icons/palette.svg"), "Curve Appearance");
+    
+    // Add Curve Appearance widget to submenu
+    auto curveWa = new QWidgetAction(appearanceMenu);
+    auto appearanceWidget = new CurveAppearanceWidget(appearanceMenu);
     
     // Initialize widget from overlay metadata
     appearanceWidget->initializeFromOverlay(overlay);
@@ -962,46 +1008,65 @@ void OverlayManagerWidget::showContextMenu(const QPoint &position)
     });
     
     curveWa->setDefaultWidget(appearanceWidget);
-    contextMenu.addAction(curveWa);
+    appearanceMenu->addAction(curveWa);
     
+    // === COPY/PASTE APPEARANCE GROUP ===
     contextMenu.addSeparator();
     
-    // Add Copy Appearance action
-    QAction *copyAppearanceAction = contextMenu.addAction("Copy Appearance");
+    // Add Copy Appearance action with copy icon
+    QAction *copyAppearanceAction = contextMenu.addAction(QIcon(":/icons/edit-copy.svg"), "Copy Appearance");
     copyAppearanceAction->setToolTip("Copy curve display settings (color, style, thickness, markers, etc.)");
+    copyAppearanceAction->setShortcut(QKeySequence("Ctrl+C"));
     connect(copyAppearanceAction, &QAction::triggered, [this, overlay]() {
         copyAppearanceSettings(overlay);
     });
     
-    // Add Paste Appearance action (only enable if we have copied appearance)
-    QAction *pasteAppearanceAction = contextMenu.addAction("Paste Appearance");
-    pasteAppearanceAction->setToolTip("Paste curve display settings to this overlay");
+    // Add Paste Appearance action with paste icon
+    QAction *pasteAppearanceAction = contextMenu.addAction(QIcon(":/icons/edit-paste.svg"), "Paste Appearance");
+    pasteAppearanceAction->setToolTip("Paste curve display settings to selected overlays");
+    pasteAppearanceAction->setShortcut(QKeySequence("Ctrl+V"));
     pasteAppearanceAction->setEnabled(hasClipboardAppearance());
     connect(pasteAppearanceAction, &QAction::triggered, [this]() {
         pasteAppearanceToSelected();
     });
     
+    // === COPY/PASTE SETTINGS GROUP ===
     contextMenu.addSeparator();
     
-    // Add Copy Overlay Settings action
-    QAction *copyAction = contextMenu.addAction("Copy Overlay Settings");
+    // Add Copy Overlay Settings action with properties icon
+    QAction *copyAction = contextMenu.addAction(QIcon(":/icons/document-properties.svg"), "Copy Overlay Settings");
     copyAction->setToolTip("Copy overlay properties (plot assignment, scaling, offsets, frequency limits, etc.)");
+    copyAction->setShortcut(QKeySequence("Ctrl+Shift+C"));
     connect(copyAction, &QAction::triggered, [this, overlay]() {
         copyOverlaySettings(overlay);
     });
     
-    // Add Paste Overlay Settings action (only enable if we have copied settings)
-    QAction *pasteAction = contextMenu.addAction("Paste Overlay Settings");
-    pasteAction->setToolTip("Paste overlay properties to this overlay");
+    // Add Paste Overlay Settings action with properties paste icon
+    QAction *pasteAction = contextMenu.addAction(QIcon(":/icons/document-paste.svg"), "Paste Overlay Settings");
+    pasteAction->setToolTip("Paste overlay properties to selected overlays");
+    pasteAction->setShortcut(QKeySequence("Ctrl+Shift+V"));
     pasteAction->setEnabled(hasClipboardSettings());
     connect(pasteAction, &QAction::triggered, [this]() {
         pasteSettingsToSelected();
     });
     
+    // === UNDO GROUP ===
     contextMenu.addSeparator();
     
-    // Add Remove action
-    QAction *removeAction = contextMenu.addAction("Remove");
+    // Add Undo action with undo icon
+    QString undoText = getUndoDescription();
+    QAction *undoAction = contextMenu.addAction(QIcon(":/icons/edit-undo.svg"), undoText.isEmpty() ? "Undo" : undoText);
+    undoAction->setToolTip("Undo the last paste operation");
+    undoAction->setShortcut(QKeySequence::Undo);
+    undoAction->setEnabled(!undoText.isEmpty());
+    connect(undoAction, &QAction::triggered, this, &OverlayManagerWidget::performUndo);
+    
+    // === OVERLAY MANAGEMENT GROUP ===
+    contextMenu.addSeparator();
+    
+    // Add Remove action with delete icon
+    QAction *removeAction = contextMenu.addAction(QIcon(":/icons/remove.png"), "Remove Overlay");
+    removeAction->setToolTip("Remove this overlay from the plot");
     connect(removeAction, &QAction::triggered, [this, index]() {
         // Select the row and call remove
         p_overlayTableView->selectRow(index.row());
@@ -1174,8 +1239,8 @@ void OverlayManagerWidget::pasteAppearanceToSelected()
         return;
     }
     
-    // Capture undo state for the first overlay (simple 1-level undo)
-    captureUndoState(selectedOverlays.first(), "appearance");
+    // Capture undo state for all selected overlays
+    captureUndoState(selectedOverlays, "appearance");
     
     // Apply appearance to all selected overlays
     for (auto overlay : selectedOverlays) {
@@ -1211,8 +1276,8 @@ void OverlayManagerWidget::pasteSettingsToSelected()
         return;
     }
     
-    // Capture undo state for the first overlay (simple 1-level undo)
-    captureUndoState(selectedOverlays.first(), "settings");
+    // Capture undo state for all selected overlays
+    captureUndoState(selectedOverlays, "settings");
     
     // Apply settings to all selected overlays
     for (auto overlay : selectedOverlays) {

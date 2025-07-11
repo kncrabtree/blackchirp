@@ -105,12 +105,17 @@ private:
     QVariantMap d_clipboardAppearance;
     
     // Undo system for paste operations (1 level deep)
-    struct UndoData {
-        bool hasUndoData = false;
-        std::shared_ptr<OverlayBase> overlay = nullptr;
-        QString operationType; // "appearance" or "settings" 
+    struct OverlayUndoState {
+        std::shared_ptr<OverlayBase> overlay;
         QVariantMap previousAppearanceData;
         QVariantMap previousSettingsData;
+    };
+    
+    struct UndoData {
+        bool hasUndoData = false;
+        QString operationType; // "appearance" or "settings" 
+        QVector<OverlayUndoState> overlayStates;
+        int overlayCount = 0;
     };
     UndoData d_undoData;
 
@@ -137,9 +142,10 @@ private:
     std::shared_ptr<OverlayBase> getSelectedOverlay(); // Keep for backward compatibility
     
     // Undo system methods
-    void captureUndoState(std::shared_ptr<OverlayBase> overlay, const QString &operationType);
+    void captureUndoState(const QVector<std::shared_ptr<OverlayBase>> &overlays, const QString &operationType);
     void performUndo();
     void invalidateUndo();
+    QString getUndoDescription() const;
     
     // Progress indicator management
     void createProgressWidget();
