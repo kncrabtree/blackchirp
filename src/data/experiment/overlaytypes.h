@@ -12,6 +12,20 @@ static const QString ftX0MHz{"ftX0MHz"};
 static const QString ftSpacingMHz{"ftSpacingMHz"};
 static const QString ftLoFreqMHz{"ftLoFreqMHz"};
 static const QString ftShots{"ftShots"};
+
+// Catalog overlay specific keys
+namespace Catalog {
+    static const QString sourceProgram{"catalogSourceProgram"};
+    static const QString moleculeName{"catalogMoleculeName"};
+    static const QString convolutionEnabled{"catalogConvolutionEnabled"};
+    static const QString lineshapeType{"catalogLineshapeType"};
+    static const QString linewidth{"catalogLinewidth"};
+    static const QString convolutionMinFreq{"catalogConvolutionMinFreq"};
+    static const QString convolutionMaxFreq{"catalogConvolutionMaxFreq"};
+    static const QString pointSpacing{"catalogPointSpacing"};
+    static const QString transitionCount{"catalogTransitionCount"};
+    static const QString frequencyRange{"catalogFrequencyRange"};
+}
 }
 
 class BCExpOverlay : public OverlayBase
