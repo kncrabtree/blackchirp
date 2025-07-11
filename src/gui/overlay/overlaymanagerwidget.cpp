@@ -182,8 +182,8 @@ void OverlayManagerWidget::setupAddButton()
         case OverlayBase::BCExperiment:
             menuItemName = "BC Experiment";
             break;
-        case OverlayBase::SPCAT:
-            menuItemName = "SPCAT Catalog";
+        case OverlayBase::Catalog:
+            menuItemName = "Catalog";
             enabled = false; // Not yet implemented
             break;
         case OverlayBase::GenericXY:
@@ -255,10 +255,10 @@ void OverlayManagerWidget::addOverlay(OverlayBase::OverlayType type)
             dialog = new BCExpOverlayDialog(ftmwParent);
             break;
         }
-    case OverlayBase::SPCAT:
-        // TODO: Implement SPCAT overlay creation
-        // dialog = new SPCATOverlayDialog(ftmwParent);
-        qDebug() << "SPCAT overlay creation not yet implemented";
+    case OverlayBase::Catalog:
+        // TODO: Implement Catalog overlay creation
+        // dialog = new CatalogOverlayDialog(ftmwParent);
+        qDebug() << "Catalog overlay creation not yet implemented";
         return;
     case OverlayBase::GenericXY:
         // TODO: Implement GenericXY overlay creation

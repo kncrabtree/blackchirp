@@ -34,7 +34,7 @@ class OverlayBase
 public:
     enum OverlayType {
         BCExperiment,
-        SPCAT,
+        Catalog,
         GenericXY
     };
     Q_ENUM(OverlayType)

@@ -149,9 +149,9 @@ std::shared_ptr<OverlayBase> OverlayStorage::createOverlayObject(OverlayBase::Ov
     {
     case OverlayBase::BCExperiment:
         return std::make_shared<BCExpOverlay>();
-    case OverlayBase::SPCAT:
-        // TODO: Implement when SPCAT overlay type is available
-        qDebug() << "SPCAT overlay type not yet implemented";
+    case OverlayBase::Catalog:
+        // TODO: Implement when Catalog overlay type is available
+        qDebug() << "Catalog overlay type not yet implemented";
         return nullptr;
     case OverlayBase::GenericXY:
         // TODO: Implement when GenericXY overlay type is available

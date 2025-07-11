@@ -216,8 +216,8 @@ QString OverlayTableModel::getOverlayTypeName(OverlayBase::OverlayType type) con
     {
     case OverlayBase::BCExperiment:
         return QString("BC Experiment");
-    case OverlayBase::SPCAT:
-        return QString("SPCAT");
+    case OverlayBase::Catalog:
+        return QString("Catalog");
     case OverlayBase::GenericXY:
         return QString("Generic XY");
     default:
