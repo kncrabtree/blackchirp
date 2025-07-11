@@ -23,6 +23,7 @@ private slots:
     void testIncompleteGroups();
     void testParserRegistration();
     void testInvalidFile();
+    void testAprintFormatVariations();
 
 private:
     QString getTestDataPath(const QString &filename) const;
@@ -287,6 +288,57 @@ void XIAMParserTest::testInvalidFile()
     
     CatalogData invalidData = m_parser->parse(invalidFile.fileName());
     QVERIFY(invalidData.isEmpty());
+}
+
+void XIAMParserTest::testAprintFormatVariations()
+{
+    // Test aprint=10 (standard format)
+    QString aprint10File = getTestDataPath("test_aprint10.xo");
+    if (QFile::exists(aprint10File)) {
+        QVERIFY(m_parser->canParse(aprint10File));
+        CatalogData data10 = m_parser->parse(aprint10File);
+        QVERIFY(!data10.isEmpty());
+        QCOMPARE(data10.sourceProgram(), QString("XIAM"));
+        QCOMPARE(data10.moleculeName(), QString("mtbe parent"));
+        
+        // Should have many transitions from this large catalog
+        QVERIFY(data10.size() > 100);
+    }
+    
+    // Test aprint=32778 (extended format with eigenvectors)
+    QString aprint32778File = getTestDataPath("test_aprint32778.xo");
+    if (QFile::exists(aprint32778File)) {
+        QVERIFY(m_parser->canParse(aprint32778File));
+        CatalogData data32778 = m_parser->parse(aprint32778File);
+        QVERIFY(!data32778.isEmpty());
+        QCOMPARE(data32778.sourceProgram(), QString("XIAM"));
+        QCOMPARE(data32778.moleculeName(), QString("mtbe parent"));
+        
+        // Should have many transitions from this large catalog
+        QVERIFY(data32778.size() > 100);
+        
+        // The key test: both formats should produce identical transition data
+        // despite different aprint settings
+        if (QFile::exists(aprint10File)) {
+            CatalogData data10 = m_parser->parse(aprint10File);
+            
+            // Should have same number of transitions
+            QCOMPARE(data32778.size(), data10.size());
+            
+            // Spot check: first few transitions should be identical
+            if (data10.size() > 5 && data32778.size() > 5) {
+                for (int i = 0; i < qMin(5, qMin(data10.size(), data32778.size())); ++i) {
+                    TransitionData trans10 = data10.at(i);
+                    TransitionData trans32778 = data32778.at(i);
+                    
+                    QCOMPARE(trans32778.frequency, trans10.frequency);
+                    QCOMPARE(trans32778.quantumNumbers, trans10.quantumNumbers);
+                    // Allow small intensity differences due to precision
+                    QVERIFY(qAbs(trans32778.intensity - trans10.intensity) < 1e-6);
+                }
+            }
+        }
+    }
 }
 
 QTEST_MAIN(XIAMParserTest)

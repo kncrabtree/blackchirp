@@ -157,8 +157,10 @@ CatalogData XIAMParser::parseInts2Format(const QStringList &lines, int startLine
     for (int i = startLine; i < lines.size(); ++i) {
         const QString &line = lines[i].trimmed();
         
-        // Skip empty lines and comments
-        if (line.isEmpty() || line.startsWith("#") || line.startsWith("total is")) {
+        // Skip empty lines, comments, and diagnostic output
+        if (line.isEmpty() || line.startsWith("#") || line.startsWith("total is") ||
+            line.startsWith("Eigenvectors") || line.startsWith("Eigenvalues") ||
+            line.contains("Matrix elements") || line.startsWith("\\\\")) {
             continue;
         }
         
@@ -185,8 +187,10 @@ CatalogData XIAMParser::parseInts3Format(const QStringList &lines, int startLine
     while (i < lines.size()) {
         const QString &line = lines[i].trimmed();
         
-        // Skip empty lines and comments
-        if (line.isEmpty() || line.startsWith("#") || line.startsWith("total is")) {
+        // Skip empty lines, comments, and diagnostic output
+        if (line.isEmpty() || line.startsWith("#") || line.startsWith("total is") ||
+            line.startsWith("Eigenvectors") || line.startsWith("Eigenvalues") ||
+            line.contains("Matrix elements") || line.startsWith("\\\\")) {
             ++i;
             continue;
         }
