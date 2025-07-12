@@ -20,6 +20,8 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/expsetup/experimenttypepage.cpp \
     $$PWD/expsetup/experimentvalidatorconfigpage.cpp \
     $$PWD/overlay/catalogoverlaydialog.cpp \
+    $$PWD/overlay/unifiedoverlaywidget.cpp \
+    $$PWD/overlay/overlaytypespecificwidget.cpp \
     $$PWD/overlay/overlayconfigdialog.cpp \
     $$PWD/overlay/bcexpoverlaydialog.cpp \
     $$PWD/overlay/overlaybaseoptionswidget.cpp \
@@ -89,6 +91,8 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/expsetup/experimentvalidatorconfigpage.h \
     $$PWD/mainwindow_ui.h \
     $$PWD/overlay/catalogoverlaydialog.h \
+    $$PWD/overlay/unifiedoverlaywidget.h \
+    $$PWD/overlay/overlaytypespecificwidget.h \
     $$PWD/overlay/overlayconfigdialog.h \
     $$PWD/overlay/bcexpoverlaydialog.h \
     $$PWD/overlay/overlaybaseoptionswidget.h \
