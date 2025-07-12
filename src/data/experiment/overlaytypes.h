@@ -42,6 +42,9 @@ public:
 
     // Set FT data directly (called after creation)
     void setFtData(const Ft &ftData);
+    
+    // Get FT data (for settings context)
+    Ft getFtData() const;
 
 protected:
     void readFromDest() override;

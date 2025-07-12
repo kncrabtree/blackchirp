@@ -27,6 +27,11 @@ void BCExpOverlay::setFtData(const Ft &ftData)
     setModified(true);
 }
 
+Ft BCExpOverlay::getFtData() const
+{
+    return d_ft;
+}
+
 void BCExpOverlay::readFromDest()
 {
     QString destFile = getDestFile();
