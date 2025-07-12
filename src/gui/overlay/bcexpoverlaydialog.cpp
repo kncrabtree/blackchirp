@@ -33,7 +33,7 @@ BCExpOverlayDialog::~BCExpOverlayDialog()
 {
 }
 
-std::shared_ptr<OverlayBase> BCExpOverlayDialog::createOverlay() const
+std::shared_ptr<OverlayBase> BCExpOverlayDialog::createTypeSpecificOverlay() const
 {
     if (!d_experimentValid || !d_hasFtData) {
         return nullptr;
@@ -42,19 +42,21 @@ std::shared_ptr<OverlayBase> BCExpOverlayDialog::createOverlay() const
     // Create the overlay
     auto overlay = std::make_shared<BCExpOverlay>();
     
-    // Set the source file path from the experiment
+    // Set the source file path from the experiment (type-specific behavior)
     QString experimentPath = getExperimentPath();
     overlay->setSourceFile(experimentPath);
     
-    // Apply overlay base options (label, plot ID, scaling, offsets)
-    if (p_overlayOptionsWidget) {
-        p_overlayOptionsWidget->applyToOverlay(overlay);
-    }
-    
-    // Set the configured FT data
+    // Set the configured FT data (type-specific behavior)
     overlay->setFtData(d_configuredFt);
     
     return overlay;
+}
+
+void BCExpOverlayDialog::configureTypeSpecificOverlay(std::shared_ptr<OverlayBase> overlay) const
+{
+    // No additional type-specific configuration needed for BCExpOverlay
+    // Base overlay options are handled automatically by the Template Method
+    Q_UNUSED(overlay);
 }
 
 void BCExpOverlayDialog::setupTypeSpecificUI()

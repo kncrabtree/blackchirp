@@ -1,5 +1,7 @@
 #include "overlaybase.h"
 #include <gui/plot/blackchirpplotcurve.h>
+#include <gui/plot/curveappearancepresetmanager.h>
+#include <gui/plot/curveappearancewidget.h>
 
 
 OverlayBase::OverlayBase(OverlayType type) : d_type{type}
@@ -283,4 +285,17 @@ void OverlayBase::retrieveMetadata(const std::map<QString,QVariant> &m)
 void OverlayBase::invalidateCache()
 {
     d_cacheValid = false;
+}
+
+void OverlayBase::setCurveAppearanceMetadata(const CurveAppearanceWidget::CurveAppearance &appearance)
+{
+    // Apply all curve appearance properties to overlay metadata
+    setCurveMetadata(BC::Key::bcCurveColor, appearance.color);
+    setCurveMetadata(BC::Key::bcCurveCurveStyle, static_cast<int>(appearance.curveStyle));
+    setCurveMetadata(BC::Key::bcCurveThickness, appearance.lineThickness);
+    setCurveMetadata(BC::Key::bcCurveLineStyle, static_cast<int>(appearance.lineStyle));
+    setCurveMetadata(BC::Key::bcCurveMarker, static_cast<int>(appearance.markerStyle));
+    setCurveMetadata(BC::Key::bcCurveMarkerSize, appearance.markerSize);
+    setCurveMetadata(BC::Key::bcCurveVisible, appearance.visible);
+    setCurveMetadata(BC::Key::bcCurveAutoscale, appearance.autoscale);
 }

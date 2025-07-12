@@ -1,5 +1,6 @@
 #include "overlaymanagerwidget.h"
 #include "bcexpoverlaydialog.h"
+#include "catalogoverlaydialog.h"
 #include "overlayconfiguredelegate.h"
 #include "overlaysettingsdialog.h"
 #include <gui/plot/curveappearancewidget.h>
@@ -184,7 +185,7 @@ void OverlayManagerWidget::setupAddButton()
             break;
         case OverlayBase::Catalog:
             menuItemName = "Catalog";
-            enabled = false; // Not yet implemented
+            enabled = true; // Now implemented
             break;
         case OverlayBase::GenericXY:
             menuItemName = "Generic XY Data";
@@ -256,10 +257,10 @@ void OverlayManagerWidget::addOverlay(OverlayBase::OverlayType type)
             break;
         }
     case OverlayBase::Catalog:
-        // TODO: Implement Catalog overlay creation
-        // dialog = new CatalogOverlayDialog(ftmwParent);
-        qDebug() << "Catalog overlay creation not yet implemented";
-        return;
+        {
+            dialog = new CatalogOverlayDialog(ftmwParent);
+            break;
+        }
     case OverlayBase::GenericXY:
         // TODO: Implement GenericXY overlay creation
         // dialog = new GenericXYOverlayDialog(ftmwParent);

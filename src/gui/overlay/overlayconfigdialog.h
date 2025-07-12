@@ -26,8 +26,8 @@ public:
     void setupUI();
     
 
-    // Pure virtual method for overlay creation - must be implemented by derived classes
-    virtual std::shared_ptr<OverlayBase> createOverlay() const = 0;
+    // Final method that handles complete overlay creation workflow (Template Method pattern)
+    virtual std::shared_ptr<OverlayBase> createOverlay() const final;
 
 public slots:
     void accept() override;
@@ -53,6 +53,10 @@ protected:
     virtual void initializeTypeSpecificDefaults() = 0;
     virtual bool validateTypeSpecificSettings(QString &errorMessage) = 0;
     virtual bool isTypeSpecificDataValid() const = 0;
+    
+    // Template Method pattern - derived classes implement these for overlay creation
+    virtual std::shared_ptr<OverlayBase> createTypeSpecificOverlay() const = 0;
+    virtual void configureTypeSpecificOverlay(std::shared_ptr<OverlayBase> overlay) const { Q_UNUSED(overlay); };
 
 private:
     void setupOverlayBaseOptions();

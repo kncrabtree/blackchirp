@@ -5,6 +5,7 @@
 #include <QString>
 #include <QPointF>
 #include <QVariant>
+#include <gui/plot/curveappearancewidget.h>
 
 class OverlayMetadataStorage;
 
@@ -63,6 +64,7 @@ public:
     // Curve metadata access methods
     QVariant getCurveMetadata(const QString &key) const;
     void setCurveMetadata(const QString &key, const QVariant &value);
+    void setCurveAppearanceMetadata(const CurveAppearanceWidget::CurveAppearance &appearance);
     
     void setLabel(const QString &newlabel);
     void setSourceFile(const QString &newsourceFile);

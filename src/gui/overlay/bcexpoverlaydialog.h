@@ -26,7 +26,9 @@ public:
     explicit BCExpOverlayDialog(FtmwViewWidget *parent);
     ~BCExpOverlayDialog();
 
-    std::shared_ptr<OverlayBase> createOverlay() const override;
+    // Template Method pattern interface
+    std::shared_ptr<OverlayBase> createTypeSpecificOverlay() const override;
+    void configureTypeSpecificOverlay(std::shared_ptr<OverlayBase> overlay) const override;
 
 protected:
     // OverlayConfigDialog interface

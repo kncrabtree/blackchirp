@@ -31,7 +31,8 @@ void OverlayBaseOptionsWidget::setupUI()
     // Sanitized filename preview
     p_sanitizedLabelDisplay = new QLabel(this);
     p_sanitizedLabelDisplay->setStyleSheet("color: #666666; font-style: italic; font-size: 11px;");
-    p_sanitizedLabelDisplay->setWordWrap(true);
+    p_sanitizedLabelDisplay->setWordWrap(false);
+    p_sanitizedLabelDisplay->setMinimumWidth(200); // Prevent text wrapping
     layout->addRow("Storage Name:", p_sanitizedLabelDisplay);
     
     // Connect label changes to update sanitized preview (label doesn't emit settingsChanged)

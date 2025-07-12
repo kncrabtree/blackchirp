@@ -136,3 +136,29 @@ void OverlayConfigDialog::accept()
     // All validation passed, call base class accept
     QDialog::accept();
 }
+
+std::shared_ptr<OverlayBase> OverlayConfigDialog::createOverlay() const
+{
+    // Template Method pattern implementation
+    
+    // 1. Validate that we can create an overlay
+    if (!isTypeSpecificDataValid()) {
+        return nullptr;
+    }
+    
+    // 2. Create the type-specific overlay (delegated to derived class)
+    auto overlay = createTypeSpecificOverlay();
+    if (!overlay) {
+        return nullptr;
+    }
+    
+    // 3. Apply common base options (handled by base class)
+    if (p_overlayOptionsWidget) {
+        p_overlayOptionsWidget->applyToOverlay(overlay);
+    }
+    
+    // 4. Allow derived class to perform additional configuration
+    configureTypeSpecificOverlay(overlay);
+    
+    return overlay;
+}
