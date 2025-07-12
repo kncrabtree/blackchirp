@@ -290,6 +290,39 @@ QHash<QString, QVariant> CatalogOverlayWidget::getSettingsHash() const
     return settings;
 }
 
+
+std::shared_ptr<OverlayOperation> CatalogOverlayWidget::createOperation(OperationCapability::Type type,
+                                                                       std::shared_ptr<OverlayBase> overlay) const
+{
+    switch (type) {
+    case OperationCapability::Convolution:
+    case OperationCapability::PreviewUpdate:
+        {
+            if (!overlay) {
+                return nullptr;
+            }
+            
+            // Create convolution operation
+            return std::make_shared<ConvolutionOperation>(
+                overlay,
+                p_convolutionEnabledCheckBox->isChecked(),
+                static_cast<CatalogOverlay::LineshapeType>(p_lineshapeComboBox->currentIndex()),
+                p_linewidthSpinBox->value(),
+                p_minFreqSpinBox->value(),
+                p_maxFreqSpinBox->value(),
+                p_pointSpacingSpinBox->value(),
+                const_cast<CatalogOverlayWidget*>(this)  // Parent for Qt ownership
+            );
+        }
+    case OperationCapability::Creation:
+    case OperationCapability::Validation:
+        // These use synchronous processing
+        return nullptr;
+    }
+    
+    return nullptr;
+}
+
 QWidget* CatalogOverlayWidget::getSourceFileConfigWidget()
 {
     return p_sourceFileConfigWidget;

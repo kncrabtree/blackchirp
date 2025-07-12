@@ -223,6 +223,25 @@ QHash<QString, QVariant> BCExpOverlayWidget::getSettingsHash() const
     return settings;
 }
 
+
+std::shared_ptr<OverlayOperation> BCExpOverlayWidget::createOperation(OperationCapability::Type type,
+                                                                     std::shared_ptr<OverlayBase> overlay) const
+{
+    Q_UNUSED(overlay);
+    
+    // BCExperiment overlays don't currently use background operations
+    // Return nullptr to indicate synchronous processing should be used
+    switch (type) {
+    case OperationCapability::Creation:
+    case OperationCapability::Validation:
+    case OperationCapability::PreviewUpdate:
+    case OperationCapability::Convolution:
+        break;
+    }
+    
+    return nullptr;
+}
+
 QWidget* BCExpOverlayWidget::getSourceFileConfigWidget()
 {
     return p_sourceFileConfigWidget;

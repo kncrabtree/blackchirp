@@ -86,6 +86,57 @@ public:
     // Settings state capture for preview sync tracking
     QHash<QString, QVariant> getSettingsHash() const override;
     
+    // Operation declaration interface
+    constexpr QVector<OperationCapability> getSupportedOperations() const override
+    {
+        return {
+            OperationCapability(
+                OperationCapability::Creation, 
+                false,  // File loading is generally fast
+                200,    // ~200ms estimate
+                "Create catalog overlay from file",
+                OverlayProcessManager::Priority::Normal
+            ),
+            OperationCapability(
+                OperationCapability::Convolution,
+                true,   // Convolution can be expensive for large datasets
+                5000,   // ~5s estimate for large catalogs
+                "Apply convolution to catalog data", 
+                OverlayProcessManager::Priority::High
+            ),
+            OperationCapability(
+                OperationCapability::Validation,
+                false,  // File validation is quick  
+                100,    // ~100ms estimate
+                "Validate catalog file format",
+                OverlayProcessManager::Priority::High
+            ),
+            OperationCapability(
+                OperationCapability::PreviewUpdate,
+                true,   // Preview updates can be expensive with convolution
+                3000,   // ~3s estimate
+                "Update catalog preview with new settings",
+                OverlayProcessManager::Priority::High
+            )
+        };
+    }
+    
+    constexpr bool supportsBackgroundOperation(OperationCapability::Type type) const override
+    {
+        switch (type) {
+        case OperationCapability::Convolution:
+        case OperationCapability::PreviewUpdate:
+            return true;  // These operations can be expensive
+        case OperationCapability::Creation:
+        case OperationCapability::Validation:
+            return false; // These are typically fast
+        }
+        return false;
+    }
+    
+    std::shared_ptr<OverlayOperation> createOperation(OperationCapability::Type type,
+                                                     std::shared_ptr<OverlayBase> overlay = nullptr) const override;
+    
     // Three-tier UI component access
     QWidget* getSourceFileConfigWidget() override;
     QWidget* getSourceFileSettingsWidget() override;

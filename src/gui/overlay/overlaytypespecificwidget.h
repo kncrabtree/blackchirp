@@ -6,6 +6,34 @@
 #include <memory>
 
 #include <data/experiment/overlaybase.h>
+#include <data/processing/overlayprocessmanager.h>
+
+// Forward declarations
+class OverlayOperation;
+
+/**
+ * @brief Operation capability metadata for overlay widgets
+ */
+struct OperationCapability {
+    enum Type {
+        Creation,        // Creating overlay from scratch
+        Convolution,     // Applying convolution to existing overlay
+        Validation,      // Validating settings/source files
+        PreviewUpdate    // Updating preview with new settings
+    };
+    
+    Type type;
+    bool isExpensive;              // Whether operation should be background-processed
+    int estimatedDurationMs;       // Rough estimate for progress indication
+    QString description;           // Human-readable operation description
+    OverlayProcessManager::Priority priority; // Default priority for operation
+    
+    OperationCapability(Type t, bool expensive = false, int durationMs = 0, 
+                       const QString &desc = QString(),
+                       OverlayProcessManager::Priority prio = OverlayProcessManager::Priority::Normal)
+        : type(t), isExpensive(expensive), estimatedDurationMs(durationMs), 
+          description(desc), priority(prio) {}
+};
 
 /**
  * @brief Abstract base class for type-specific overlay widgets
@@ -46,6 +74,12 @@ public:
     
     // Settings state capture for preview sync tracking
     virtual QHash<QString, QVariant> getSettingsHash() const = 0;
+    
+    // Operation declaration interface
+    virtual constexpr QVector<OperationCapability> getSupportedOperations() const = 0;
+    virtual constexpr bool supportsBackgroundOperation(OperationCapability::Type type) const = 0;
+    virtual std::shared_ptr<OverlayOperation> createOperation(OperationCapability::Type type,
+                                                             std::shared_ptr<OverlayBase> overlay = nullptr) const = 0;
     
     // UI component access for three-tier architecture
     virtual QWidget* getSourceFileConfigWidget() = 0;      // File selection, metadata display

@@ -843,6 +843,9 @@ OverlayTypeSpecificWidget* UnifiedOverlayWidget::createPlaceholderWidget(const Q
         }
         void resetToDefaults() override {}
         QHash<QString, QVariant> getSettingsHash() const override { return QHash<QString, QVariant>(); }
+        constexpr QVector<OperationCapability> getSupportedOperations() const override { return {}; }
+        constexpr bool supportsBackgroundOperation(OperationCapability::Type) const override { return false; }
+        std::shared_ptr<OverlayOperation> createOperation(OperationCapability::Type, std::shared_ptr<OverlayBase>) const override { return nullptr; }
         QWidget* getSourceFileConfigWidget() override { return p_configWidget; }
         QWidget* getSourceFileSettingsWidget() override { return p_settingsWidget; }
         QWidget* getOverlaySettingsWidget() override { return p_overlayWidget; }

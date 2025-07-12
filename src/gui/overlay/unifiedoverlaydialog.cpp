@@ -1,5 +1,6 @@
 #include "unifiedoverlaydialog.h"
 #include "unifiedoverlaywidget.h"
+#include "overlaytypespecificwidget.h"
 #include <data/processing/overlayoperation.h>
 
 #include <QVBoxLayout>
@@ -404,6 +405,11 @@ QString UnifiedOverlayDialog::getTypeName() const
     return "Unknown";
 }
 
+OverlayTypeSpecificWidget* UnifiedOverlayDialog::getTypeSpecificWidget() const
+{
+    return p_widget ? p_widget->getTypeSpecificWidget() : nullptr;
+}
+
 bool UnifiedOverlayDialog::isCreationMode() const
 {
     return d_mode == Mode::Creation;
@@ -447,33 +453,24 @@ void UnifiedOverlayDialog::createOverlayAsync()
     
     setDialogState(DialogState::Processing);
     
-    // Check if this is a catalog overlay with convolution enabled - use background processing
-    if (d_overlayType == OverlayBase::Catalog) {
-        // First create overlay synchronously to get basic structure
+    // Use the operation declaration interface to determine processing strategy
+    auto typeSpecificWidget = getTypeSpecificWidget();
+    if (typeSpecificWidget && typeSpecificWidget->supportsBackgroundOperation(OperationCapability::Creation)) {
+        // Check if background creation is beneficial for this widget type
         d_createdOverlay = p_widget->createOverlay();
         if (!d_createdOverlay) {
             setDialogState(DialogState::Error);
-            d_operationError = "Failed to create catalog overlay from current settings";
+            d_operationError = "Failed to create overlay from current settings";
             updateButtonState();
             return;
         }
         
-        auto catalogOverlay = std::dynamic_pointer_cast<CatalogOverlay>(d_createdOverlay);
-        if (catalogOverlay && catalogOverlay->convolutionEnabled()) {
-            // Use background processing for expensive convolution
-            auto convolutionOp = std::make_shared<ConvolutionOperation>(
-                catalogOverlay,
-                catalogOverlay->convolutionEnabled(),
-                catalogOverlay->lineshapeType(),
-                catalogOverlay->linewidth(),
-                catalogOverlay->convolutionMinFreq(),
-                catalogOverlay->convolutionMaxFreq(),
-                catalogOverlay->pointSpacing(),
-                this
-            );
-            
+        // Create background operation using the widget's factory method
+        auto operation = typeSpecificWidget->createOperation(OperationCapability::Creation, d_createdOverlay);
+        if (operation) {
+            // Use background processing
             auto& manager = OverlayProcessManager::instance();
-            d_currentOperationId = manager.queueOperation(convolutionOp, OverlayProcessManager::Priority::High);
+            d_currentOperationId = manager.queueOperation(operation, OverlayProcessManager::Priority::High);
             
             // Connect to manager signals for this specific operation
             connect(&manager, &OverlayProcessManager::operationStarted,
@@ -487,12 +484,12 @@ void UnifiedOverlayDialog::createOverlayAsync()
             connect(&manager, &OverlayProcessManager::operationCancelled,
                     this, &UnifiedOverlayDialog::onOperationCancelled);
         } else {
-            // No convolution needed - complete immediately
+            // Widget returned nullptr - use synchronous completion
             setDialogState(DialogState::Complete);
             QDialog::accept();
         }
     } else {
-        // For other overlay types, use synchronous creation
+        // Use synchronous creation for widgets that don't support background processing
         d_createdOverlay = p_widget->createOverlay();
         if (d_createdOverlay) {
             setDialogState(DialogState::Complete);

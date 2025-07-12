@@ -57,6 +57,38 @@ public:
     // Settings state capture for preview sync tracking
     QHash<QString, QVariant> getSettingsHash() const override;
     
+    // Operation declaration interface
+    constexpr QVector<OperationCapability> getSupportedOperations() const override
+    {
+        // BCExperiment overlays support creation and validation
+        return {
+            OperationCapability(
+                OperationCapability::Creation, 
+                false,  // Not expensive - BCExp creation is typically fast
+                100,    // ~100ms estimate 
+                "Create BCExperiment overlay",
+                OverlayProcessManager::Priority::Normal
+            ),
+            OperationCapability(
+                OperationCapability::Validation,
+                false,  // File validation is quick
+                50,     // ~50ms estimate
+                "Validate experiment files",
+                OverlayProcessManager::Priority::High
+            )
+        };
+    }
+    
+    constexpr bool supportsBackgroundOperation(OperationCapability::Type type) const override
+    {
+        // BCExperiment operations are generally fast, no background processing needed
+        Q_UNUSED(type);
+        return false;
+    }
+    
+    std::shared_ptr<OverlayOperation> createOperation(OperationCapability::Type type,
+                                                     std::shared_ptr<OverlayBase> overlay = nullptr) const override;
+    
     // Three-tier UI component access
     QWidget* getSourceFileConfigWidget() override;
     QWidget* getSourceFileSettingsWidget() override;

@@ -16,6 +16,7 @@
 
 // Forward declarations
 class UnifiedOverlayWidget;
+class OverlayTypeSpecificWidget;
 
 /**
  * @brief Single unified dialog for both overlay creation and configuration
@@ -103,6 +104,9 @@ private:
     QString getOkButtonText() const;
     bool isCreationMode() const;
     bool isSettingsMode() const;
+    
+    // Type-specific widget access for operation declaration interface
+    OverlayTypeSpecificWidget* getTypeSpecificWidget() const;
     
     // Preview state analysis for smart creation workflow
     enum class PreviewState {

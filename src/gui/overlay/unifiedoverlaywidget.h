@@ -77,6 +77,9 @@ public:
     void showProgress(const QString &message);
     void hideProgress();
     void updateProgress(int value, const QString &message = QString());
+    
+    // Type-specific widget access
+    OverlayTypeSpecificWidget* getTypeSpecificWidget() const { return p_typeSpecificWidget; }
 
 signals:
     void settingsChanged(); // Emitted when any setting changes
