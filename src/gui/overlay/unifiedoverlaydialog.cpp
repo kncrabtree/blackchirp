@@ -447,16 +447,61 @@ void UnifiedOverlayDialog::createOverlayAsync()
     
     setDialogState(DialogState::Processing);
     
-    // Create operation to build overlay in background
-    // For now, use synchronous creation and transition to async later
-    d_createdOverlay = p_widget->createOverlay();
-    if (d_createdOverlay) {
-        setDialogState(DialogState::Complete);
-        QDialog::accept();
+    // Check if this is a catalog overlay with convolution enabled - use background processing
+    if (d_overlayType == OverlayBase::Catalog) {
+        // First create overlay synchronously to get basic structure
+        d_createdOverlay = p_widget->createOverlay();
+        if (!d_createdOverlay) {
+            setDialogState(DialogState::Error);
+            d_operationError = "Failed to create catalog overlay from current settings";
+            updateButtonState();
+            return;
+        }
+        
+        auto catalogOverlay = std::dynamic_pointer_cast<CatalogOverlay>(d_createdOverlay);
+        if (catalogOverlay && catalogOverlay->convolutionEnabled()) {
+            // Use background processing for expensive convolution
+            auto convolutionOp = std::make_shared<ConvolutionOperation>(
+                catalogOverlay,
+                catalogOverlay->convolutionEnabled(),
+                catalogOverlay->lineshapeType(),
+                catalogOverlay->linewidth(),
+                catalogOverlay->convolutionMinFreq(),
+                catalogOverlay->convolutionMaxFreq(),
+                catalogOverlay->pointSpacing(),
+                this
+            );
+            
+            auto& manager = OverlayProcessManager::instance();
+            d_currentOperationId = manager.queueOperation(convolutionOp, OverlayProcessManager::Priority::High);
+            
+            // Connect to manager signals for this specific operation
+            connect(&manager, &OverlayProcessManager::operationStarted,
+                    this, &UnifiedOverlayDialog::onOperationStarted);
+            connect(&manager, &OverlayProcessManager::operationProgress,
+                    this, &UnifiedOverlayDialog::onOperationProgress);
+            connect(&manager, &OverlayProcessManager::operationCompleted,
+                    this, &UnifiedOverlayDialog::onOperationCompleted);
+            connect(&manager, &OverlayProcessManager::operationFailed,
+                    this, &UnifiedOverlayDialog::onOperationFailed);
+            connect(&manager, &OverlayProcessManager::operationCancelled,
+                    this, &UnifiedOverlayDialog::onOperationCancelled);
+        } else {
+            // No convolution needed - complete immediately
+            setDialogState(DialogState::Complete);
+            QDialog::accept();
+        }
     } else {
-        setDialogState(DialogState::Error);
-        d_operationError = "Failed to create overlay from current settings";
-        updateButtonState();
+        // For other overlay types, use synchronous creation
+        d_createdOverlay = p_widget->createOverlay();
+        if (d_createdOverlay) {
+            setDialogState(DialogState::Complete);
+            QDialog::accept();
+        } else {
+            setDialogState(DialogState::Error);
+            d_operationError = "Failed to create overlay from current settings";
+            updateButtonState();
+        }
     }
 }
 

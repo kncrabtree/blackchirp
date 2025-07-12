@@ -11,6 +11,7 @@
 
 #include <gui/widget/ftmwviewwidget.h>
 #include <gui/plot/curveappearancepresetmanager.h>
+#include <data/processing/overlayoperation.h>
 
 CatalogOverlayWidget::CatalogOverlayWidget(QWidget *parent)
     : OverlayTypeSpecificWidget(parent), SettingsStorage(BC::Key::CatalogWidget::key),
@@ -19,7 +20,8 @@ CatalogOverlayWidget::CatalogOverlayWidget(QWidget *parent)
       p_overlaySettingsWidget(nullptr),
       d_fileValid(false),
       d_hasFtData(false),
-      d_ftYMax(1.0)
+      d_ftYMax(1.0),
+      d_convolutionInProgress(false)
 {
     setupUI();
     setupConnections();
@@ -374,6 +376,12 @@ void CatalogOverlayWidget::onConvolutionSettingsChanged()
     if (d_context == Context::Creation) {
         calculateDefaultYScale();
     }
+    
+    // In settings context (including preview mode), trigger background convolution for real-time updates
+    if (d_context == Context::Settings && p_convolutionEnabledCheckBox->isChecked()) {
+        triggerBackgroundConvolution();
+    }
+    
     emit settingsChanged();
 }
 
@@ -422,6 +430,19 @@ void CatalogOverlayWidget::setupConnections()
     connect(p_pointSpacingSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CatalogOverlayWidget::onConvolutionSettingsChanged);
     connect(p_autoRangeButton, &QPushButton::clicked, this, &CatalogOverlayWidget::onAutoRangeClicked);
     connect(p_saveRangeOnlyCheckBox, &QCheckBox::toggled, this, &CatalogOverlayWidget::onSaveRangeOnlyToggled);
+    
+    // Connect to OverlayProcessManager signals for background convolution
+    auto& manager = OverlayProcessManager::instance();
+    connect(&manager, &OverlayProcessManager::operationStarted,
+            this, &CatalogOverlayWidget::onConvolutionOperationStarted);
+    connect(&manager, &OverlayProcessManager::operationProgress,
+            this, &CatalogOverlayWidget::onConvolutionOperationProgress);
+    connect(&manager, &OverlayProcessManager::operationCompleted,
+            this, &CatalogOverlayWidget::onConvolutionOperationCompleted);
+    connect(&manager, &OverlayProcessManager::operationFailed,
+            this, &CatalogOverlayWidget::onConvolutionOperationFailed);
+    connect(&manager, &OverlayProcessManager::operationCancelled,
+            this, &CatalogOverlayWidget::onConvolutionOperationCancelled);
 }
 
 void CatalogOverlayWidget::loadSettings()
@@ -719,4 +740,108 @@ void CatalogOverlayWidget::configureSpinBox(QDoubleSpinBox *spinBox, const QStri
     spinBox->setMaximum(get(maxKey, defaultMax));
     spinBox->setDecimals(get(decimalsKey, defaultDecimals));
     spinBox->setSingleStep(get(stepKey, defaultStep));
+}
+
+void CatalogOverlayWidget::triggerBackgroundConvolution()
+{
+    if (!d_overlay || d_convolutionInProgress) {
+        return;
+    }
+    
+    // Cancel any pending convolution
+    cancelPendingConvolution();
+    
+    // Create convolution operation
+    auto convolutionOp = std::make_shared<ConvolutionOperation>(
+        d_overlay,
+        p_convolutionEnabledCheckBox->isChecked(),
+        static_cast<CatalogOverlay::LineshapeType>(p_lineshapeComboBox->currentIndex()),
+        p_linewidthSpinBox->value(),
+        p_minFreqSpinBox->value(),
+        p_maxFreqSpinBox->value(),
+        p_pointSpacingSpinBox->value(),
+        this
+    );
+    
+    // Queue the operation with high priority for real-time updates
+    auto& manager = OverlayProcessManager::instance();
+    d_currentConvolutionId = manager.queueOperation(convolutionOp, OverlayProcessManager::Priority::High);
+    d_convolutionInProgress = true;
+    
+    // Emit progress operation started signal
+    emit progressOperationStarted("Updating convolution...");
+}
+
+void CatalogOverlayWidget::cancelPendingConvolution()
+{
+    if (!d_currentConvolutionId.isEmpty()) {
+        auto& manager = OverlayProcessManager::instance();
+        manager.cancelOperation(d_currentConvolutionId);
+        d_currentConvolutionId.clear();
+        d_convolutionInProgress = false;
+    }
+}
+
+// Background operation signal handlers
+void CatalogOverlayWidget::onConvolutionOperationStarted(const QString &operationId)
+{
+    if (operationId != d_currentConvolutionId) {
+        return;
+    }
+    
+    emit progressOperationStarted("Performing convolution...");
+}
+
+void CatalogOverlayWidget::onConvolutionOperationProgress(const QString &operationId, int percentage, const QString &message)
+{
+    Q_UNUSED(message);
+    
+    if (operationId != d_currentConvolutionId) {
+        return;
+    }
+    
+    emit progressValueChanged(percentage);
+}
+
+void CatalogOverlayWidget::onConvolutionOperationCompleted(const QString &operationId, std::shared_ptr<OverlayBase> result)
+{
+    if (operationId != d_currentConvolutionId) {
+        return;
+    }
+    
+    d_currentConvolutionId.clear();
+    d_convolutionInProgress = false;
+    
+    // Update the overlay with the result
+    if (result && d_overlay) {
+        d_overlay = result;
+    }
+    
+    emit progressOperationFinished();
+    emit settingsChanged(); // Trigger UI updates
+}
+
+void CatalogOverlayWidget::onConvolutionOperationFailed(const QString &operationId, const QString &error)
+{
+    if (operationId != d_currentConvolutionId) {
+        return;
+    }
+    
+    d_currentConvolutionId.clear();
+    d_convolutionInProgress = false;
+    
+    qWarning() << "Convolution operation failed:" << error;
+    emit progressOperationFinished();
+}
+
+void CatalogOverlayWidget::onConvolutionOperationCancelled(const QString &operationId)
+{
+    if (operationId != d_currentConvolutionId) {
+        return;
+    }
+    
+    d_currentConvolutionId.clear();
+    d_convolutionInProgress = false;
+    
+    emit progressOperationFinished();
 }

@@ -18,6 +18,7 @@
 #include <data/experiment/catalogdata.h>
 #include <data/experiment/catalogparserregistry.h>
 #include <data/storage/settingsstorage.h>
+#include <data/processing/overlayprocessmanager.h>
 #include "overlaytypespecificwidget.h"
 
 class FtmwViewWidget;
@@ -98,6 +99,13 @@ private slots:
     void onConvolutionSettingsChanged();
     void onAutoRangeClicked();
     void onSaveRangeOnlyToggled(bool enabled);
+    
+    // Background operation handlers
+    void onConvolutionOperationStarted(const QString &operationId);
+    void onConvolutionOperationProgress(const QString &operationId, int percentage, const QString &message);
+    void onConvolutionOperationCompleted(const QString &operationId, std::shared_ptr<OverlayBase> result);
+    void onConvolutionOperationFailed(const QString &operationId, const QString &error);
+    void onConvolutionOperationCancelled(const QString &operationId);
 
 protected:
     // OverlayTypeSpecificWidget interface
@@ -156,6 +164,14 @@ private:
     void configureSpinBox(QDoubleSpinBox *spinBox, const QString &minKey, const QString &maxKey, 
                          const QString &decimalsKey, const QString &stepKey, 
                          double defaultMin, double defaultMax, int defaultDecimals, double defaultStep);
+    
+    // Background processing support
+    void triggerBackgroundConvolution();
+    void cancelPendingConvolution();
+    
+    // Background operation tracking
+    QString d_currentConvolutionId;
+    bool d_convolutionInProgress;
     
     // Default values
     static constexpr bool DEFAULT_CONVOLUTION_ENABLED = false;
