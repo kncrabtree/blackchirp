@@ -31,11 +31,13 @@ UnifiedOverlayWidget::UnifiedOverlayWidget(const QString &settingsKey, QWidget *
       p_overlayBaseOptionsWidget(nullptr),
       p_curveAppearanceBox(nullptr),
       p_curveAppearanceWidget(nullptr),
+      p_previewButton(nullptr),
       p_progressWidget(nullptr),
       p_progressBar(nullptr),
       p_progressLabel(nullptr),
       d_sourceFileValid(false),
-      d_sourceFileEnabled(false)
+      d_sourceFileEnabled(false),
+      d_inPreviewMode(false)
 {
     setupUI();
 }
@@ -257,6 +259,11 @@ void UnifiedOverlayWidget::onSettingsChanged()
     d_lastValidationError = errorMessage;
     emit validationStatusChanged(isValid, errorMessage);
     emit settingsChanged();
+    
+    // Update preview button state based on data validity (only in creation context)
+    if (isCreationContext() && p_previewButton) {
+        p_previewButton->setEnabled(isDataValid());
+    }
 }
 
 void UnifiedOverlayWidget::onRealTimeUpdate()
@@ -304,6 +311,7 @@ void UnifiedOverlayWidget::setupUI()
     createSourceFileSettingsBox();
     createTypeSpecificSettingsBox();
     createOverlayBaseOptionsBox();
+    createPreviewButton();
     createProgressIndicator();
     
     // Add overlay widgets to left layout
@@ -311,6 +319,7 @@ void UnifiedOverlayWidget::setupUI()
     leftVLayout->addWidget(p_sourceFileSettingsBox);
     leftVLayout->addWidget(p_typeSpecificSettingsBox);
     leftVLayout->addWidget(p_overlayBaseOptionsBox);
+    leftVLayout->addWidget(p_previewButton);
     leftVLayout->addWidget(p_progressWidget);
     
     // Add bottom spacer
@@ -485,6 +494,34 @@ void UnifiedOverlayWidget::createCurveAppearanceBox()
     
     // Connect curve appearance signals (will be connected in configureForContext)
     // when we know the context
+}
+
+void UnifiedOverlayWidget::createPreviewButton()
+{
+    p_previewButton = new QPushButton("Preview", this);
+    p_previewButton->setEnabled(false); // Will be enabled when data is valid
+    p_previewButton->setToolTip("Preview overlay with current settings");
+    
+    // Style the button to make it prominent
+    p_previewButton->setStyleSheet(
+        "QPushButton {"
+        "    background-color: #4CAF50;"
+        "    color: white;"
+        "    border: none;"
+        "    padding: 8px 16px;"
+        "    font-weight: bold;"
+        "    border-radius: 4px;"
+        "}"
+        "QPushButton:hover {"
+        "    background-color: #45a049;"
+        "}"
+        "QPushButton:disabled {"
+        "    background-color: #cccccc;"
+        "    color: #666666;"
+        "}"
+    );
+    
+    connect(p_previewButton, &QPushButton::clicked, this, &UnifiedOverlayWidget::onPreviewToggled);
 }
 
 void UnifiedOverlayWidget::createProgressIndicator()
@@ -826,4 +863,118 @@ OverlayTypeSpecificWidget* UnifiedOverlayWidget::createPlaceholderWidget(const Q
     };
     
     return new PlaceholderWidget(typeName, this);
+}
+
+void UnifiedOverlayWidget::enablePreviewMode()
+{
+    if (d_inPreviewMode || !isDataValid()) {
+        return;
+    }
+    
+    // Switch to settings context temporarily
+    Context originalContext = d_context;
+    d_context = Context::Settings;
+    
+    // Create preview overlay
+    d_previewOverlay = createOverlay();
+    if (!d_previewOverlay) {
+        d_context = originalContext;
+        return;
+    }
+    
+    // Mark as preview mode
+    d_previewOverlay->setPreview(true);
+    d_inPreviewMode = true;
+    
+    // Update UI for preview mode
+    updatePreviewModeUI();
+    
+    // Setup type-specific widget for settings context with preview overlay
+    if (p_typeSpecificWidget) {
+        p_typeSpecificWidget->setupForSettings(d_previewOverlay);
+    }
+    
+    // Connect real-time updates if not already connected
+    configureForContext();
+    
+    emit previewRequested();
+}
+
+void UnifiedOverlayWidget::disablePreviewMode()
+{
+    if (!d_inPreviewMode) {
+        return;
+    }
+    
+    d_inPreviewMode = false;
+    d_previewOverlay.reset();
+    
+    // Switch back to creation context
+    d_context = Context::Creation;
+    
+    // Update UI for creation mode
+    updatePreviewModeUI();
+    
+    // Setup type-specific widget for creation context
+    if (p_typeSpecificWidget) {
+        p_typeSpecificWidget->setupForCreation();
+    }
+    
+    // Reconfigure connections for creation context
+    configureForContext();
+    
+    emit previewCancelled();
+}
+
+void UnifiedOverlayWidget::onPreviewToggled()
+{
+    if (d_inPreviewMode) {
+        disablePreviewMode();
+    } else {
+        enablePreviewMode();
+    }
+}
+
+void UnifiedOverlayWidget::updatePreviewModeUI()
+{
+    if (d_inPreviewMode) {
+        p_previewButton->setText("Stop Preview");
+        p_previewButton->setStyleSheet(
+            "QPushButton {"
+            "    background-color: #f44336;"  // Red for stop
+            "    color: white;"
+            "    border: none;"
+            "    padding: 8px 16px;"
+            "    font-weight: bold;"
+            "    border-radius: 4px;"
+            "}"
+            "QPushButton:hover {"
+            "    background-color: #da190b;"
+            "}"
+        );
+        p_previewButton->setToolTip("Stop preview and return to configuration mode");
+    } else {
+        p_previewButton->setText("Preview");
+        p_previewButton->setStyleSheet(
+            "QPushButton {"
+            "    background-color: #4CAF50;"  // Green for preview
+            "    color: white;"
+            "    border: none;"
+            "    padding: 8px 16px;"
+            "    font-weight: bold;"
+            "    border-radius: 4px;"
+            "}"
+            "QPushButton:hover {"
+            "    background-color: #45a049;"
+            "}"
+            "QPushButton:disabled {"
+            "    background-color: #cccccc;"
+            "    color: #666666;"
+            "}"
+        );
+        p_previewButton->setToolTip("Preview overlay with current settings");
+        
+        // Re-enable based on data validity
+        p_previewButton->setEnabled(isDataValid());
+    }
 }

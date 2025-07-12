@@ -184,8 +184,20 @@ void OverlayBase::setEnabled(bool enabled)
     d_curveMetadata[BC::Key::bcCurveVisible] = enabled;
 }
 
+void OverlayBase::setPreview(bool preview)
+{
+    d_preview = preview;
+    // Note: Don't set d_modified for preview state changes
+    // Preview is a transient state that shouldn't affect persistence
+}
+
 void OverlayBase::save()
 {
+    // Skip all disk operations in preview mode
+    if (d_preview) {
+        return;
+    }
+    
     // Should these be here? Or implement a save function?
     writeToDest(); 
     d_modified = false;

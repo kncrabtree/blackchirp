@@ -66,6 +66,11 @@ public:
     // Reset functionality
     void resetToDefaults();
     
+    // Preview mode functionality
+    void enablePreviewMode();
+    void disablePreviewMode();
+    bool isInPreviewMode() const { return d_inPreviewMode; }
+    
     // Progress indication (settings context only)
     void showProgress(const QString &message);
     void hideProgress();
@@ -75,11 +80,16 @@ signals:
     void settingsChanged(); // Emitted when any setting changes
     void overlayDataChanged(std::shared_ptr<OverlayBase> overlay); // Real-time overlay updates (settings context)
     void validationStatusChanged(bool isValid, const QString &message);
+    
+    // Preview mode signals
+    void previewRequested();
+    void previewCancelled();
 
 public slots:
     void onSourceFileConfigToggled(bool enabled); // For checkable source file config box
     void onSettingsChanged();
     void onRealTimeUpdate(); // Settings context only
+    void onPreviewToggled(); // Handle preview button clicks
 
 private slots:
     void onProgressOperationStarted(const QString &message);
@@ -96,6 +106,7 @@ private:
     void createOverlayBaseOptionsBox();
     void createOverlayBaseOptionsWidget();
     void createCurveAppearanceBox();
+    void createPreviewButton();
     void createProgressIndicator();
     
     // Settings loading
@@ -105,6 +116,7 @@ private:
     void configureForContext();
     void updateSourceFileControls();
     void validateSourceFile();
+    void updatePreviewModeUI();
     
     // Type-specific widget management
     void setupTypeSpecificWidget();
@@ -154,6 +166,9 @@ private:
     QGroupBox *p_curveAppearanceBox;
     CurveAppearanceWidget *p_curveAppearanceWidget;
     
+    // Preview mode controls
+    QPushButton *p_previewButton;
+    
     // Progress indication
     QWidget *p_progressWidget;
     QProgressBar *p_progressBar;
@@ -163,6 +178,10 @@ private:
     bool d_sourceFileValid;
     bool d_sourceFileEnabled; // Settings context only
     QString d_lastValidationError;
+    
+    // Preview mode state
+    bool d_inPreviewMode;
+    std::shared_ptr<OverlayBase> d_previewOverlay;
 };
 
 #endif // UNIFIEDOVERLAYWIDGET_H

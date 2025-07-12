@@ -228,9 +228,9 @@ bool OverlayStorage::addOverlay(std::shared_ptr<OverlayBase> overlay)
     d_overlays[sanitizedLabel] = overlay;
 
 
-    //from here on, only do the disk writing if the number is >0
+    //from here on, only do the disk writing if the number is >0 and not in preview mode
 
-    if(d_number > 0)
+    if(d_number > 0 && !overlay->isPreview())
     {
         // Set destination file path for the overlay data
         overlay->setDestFile(getOverlayDataPath(sanitizedLabel));
@@ -439,7 +439,7 @@ QString OverlayStorage::getOverlaySettingsPath(const QString& sanitizedLabel) co
 
 void OverlayStorage::saveOverlayMetadata(std::shared_ptr<OverlayBase> overlay)
 {
-    if (!overlay || d_number < 1) {
+    if (!overlay || d_number < 1 || overlay->isPreview()) {
         return;
     }
     

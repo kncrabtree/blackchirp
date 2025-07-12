@@ -27,6 +27,8 @@ SOURCES += $$PWD/loghandler.cpp \
     $$PWD/model/overlaytablemodel.cpp \
     $$PWD/model/peaklistmodel.cpp \
 	$$PWD/model/validationmodel.cpp \
+    $$PWD/processing/overlayoperation.cpp \
+    $$PWD/processing/overlayprocessmanager.cpp \
     $$PWD/storage/auxdatastorage.cpp \
     $$PWD/storage/blackchirpcsv.cpp \
     $$PWD/storage/datastoragebase.cpp \
@@ -68,6 +70,8 @@ HEADERS += $$PWD/loghandler.h \
     $$PWD/model/overlaytablemodel.h \
     $$PWD/model/peaklistmodel.h \
 	$$PWD/model/validationmodel.h \
+    $$PWD/processing/overlayoperation.h \
+    $$PWD/processing/overlayprocessmanager.h \
     $$PWD/storage/auxdatastorage.h \
     $$PWD/storage/blackchirpcsv.h \
     $$PWD/storage/datastoragebase.h \

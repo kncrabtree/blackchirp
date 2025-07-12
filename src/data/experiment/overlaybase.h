@@ -60,6 +60,7 @@ public:
     OverlayType type() const { return d_type; }
     QString errorString() const { return d_errorString; }
     bool isModified() const { return d_modified; }
+    bool isPreview() const { return d_preview; }
     
     // Curve metadata access methods
     QVariant getCurveMetadata(const QString &key) const;
@@ -76,6 +77,7 @@ public:
     void setMinFreqLimit(bool enabled, double value);
     void setMaxFreqLimit(bool enabled, double value);
     void setEnabled(bool enabled);
+    void setPreview(bool preview);
     
     void save();
 
@@ -105,6 +107,9 @@ private:
     
     // Overlay visibility control
     bool d_enabled{true};
+    
+    // Preview mode control (prevents disk writing)
+    bool d_preview{false};
     
     bool d_modified{false};
     
