@@ -424,8 +424,18 @@ UnifiedOverlayDialog::PreviewState UnifiedOverlayDialog::analyzePreviewState() c
         return PreviewState::NoPreview;
     }
     
-    // TODO: Add logic to detect if preview is current vs stale
-    // For now, assume preview is current if in preview mode
+    // Check if preview is in sync with current settings
+    if (!p_widget->isPreviewSyncValid()) {
+        return PreviewState::StalePreview;
+    }
+    
+    // Check if a background operation is currently updating the preview
+    // (For now, we'll use a simplified check - in full implementation this would 
+    // check the OverlayProcessManager for pending preview operations)
+    if (d_dialogState == DialogState::Processing) {
+        return PreviewState::ProcessingPreview;
+    }
+    
     return PreviewState::CurrentPreview;
 }
 
@@ -455,6 +465,12 @@ void UnifiedOverlayDialog::finalizeFromPreview()
     if (!p_widget || !p_widget->isInPreviewMode()) {
         createOverlayAsync();
         return;
+    }
+    
+    // Check if preview is stale and needs refresh
+    if (!p_widget->isPreviewSyncValid()) {
+        // Preview is stale - refresh it first, then finalize
+        p_widget->enablePreviewMode(); // This will refresh with current settings
     }
     
     // Fast path: get preview overlay and clear preview flag

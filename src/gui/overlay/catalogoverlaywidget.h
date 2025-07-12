@@ -82,6 +82,9 @@ public:
     
     void resetToDefaults() override;
     
+    // Settings state capture for preview sync tracking
+    QHash<QString, QVariant> getSettingsHash() const override;
+    
     // Three-tier UI component access
     QWidget* getSourceFileConfigWidget() override;
     QWidget* getSourceFileSettingsWidget() override;

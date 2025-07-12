@@ -201,6 +201,28 @@ void BCExpOverlayWidget::resetToDefaults()
     validateExperiment();
 }
 
+QHash<QString, QVariant> BCExpOverlayWidget::getSettingsHash() const
+{
+    QHash<QString, QVariant> settings;
+    
+    // Experiment selection settings
+    settings["experimentNumber"] = p_experimentNumberSpinBox->value();
+    settings["useCustomPath"] = p_usePathCheckBox->isChecked();
+    settings["customPath"] = p_pathLineEdit->text();
+    
+    // FT configuration settings
+    settings["hasFtData"] = d_hasFtData;
+    if (d_hasFtData) {
+        // Add FT parameters to settings
+        settings["ftEmpty"] = d_configuredFt.isEmpty();
+        settings["ftMinFreq"] = d_configuredFt.minFreqMHz();
+        settings["ftMaxFreq"] = d_configuredFt.maxFreqMHz();
+        settings["ftSize"] = d_configuredFt.size();
+    }
+    
+    return settings;
+}
+
 QWidget* BCExpOverlayWidget::getSourceFileConfigWidget()
 {
     return p_sourceFileConfigWidget;

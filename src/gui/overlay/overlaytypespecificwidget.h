@@ -44,6 +44,9 @@ public:
     // Reset functionality
     virtual void resetToDefaults() = 0;
     
+    // Settings state capture for preview sync tracking
+    virtual QHash<QString, QVariant> getSettingsHash() const = 0;
+    
     // UI component access for three-tier architecture
     virtual QWidget* getSourceFileConfigWidget() = 0;      // File selection, metadata display
     virtual QWidget* getSourceFileSettingsWidget() = 0;    // Source-dependent controls

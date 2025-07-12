@@ -37,7 +37,8 @@ UnifiedOverlayWidget::UnifiedOverlayWidget(const QString &settingsKey, QWidget *
       p_progressLabel(nullptr),
       d_sourceFileValid(false),
       d_sourceFileEnabled(false),
-      d_inPreviewMode(false)
+      d_inPreviewMode(false),
+      d_previewSyncValid(false)
 {
     setupUI();
 }
@@ -259,6 +260,11 @@ void UnifiedOverlayWidget::onSettingsChanged()
     d_lastValidationError = errorMessage;
     emit validationStatusChanged(isValid, errorMessage);
     emit settingsChanged();
+    
+    // Invalidate preview sync when settings change
+    if (d_inPreviewMode) {
+        invalidatePreviewSync();
+    }
     
     // Update preview button state based on data validity (only in creation context)
     if (isCreationContext() && p_previewButton) {
@@ -836,6 +842,7 @@ OverlayTypeSpecificWidget* UnifiedOverlayWidget::createPlaceholderWidget(const Q
             return false; 
         }
         void resetToDefaults() override {}
+        QHash<QString, QVariant> getSettingsHash() const override { return QHash<QString, QVariant>(); }
         QWidget* getSourceFileConfigWidget() override { return p_configWidget; }
         QWidget* getSourceFileSettingsWidget() override { return p_settingsWidget; }
         QWidget* getOverlaySettingsWidget() override { return p_overlayWidget; }
@@ -886,6 +893,10 @@ void UnifiedOverlayWidget::enablePreviewMode()
     d_previewOverlay->setPreview(true);
     d_inPreviewMode = true;
     
+    // Capture sync state
+    d_previewSyncState = captureCurrentSettings();
+    d_previewSyncValid = true;
+    
     // Update UI for preview mode
     updatePreviewModeUI();
     
@@ -908,6 +919,10 @@ void UnifiedOverlayWidget::disablePreviewMode()
     
     d_inPreviewMode = false;
     d_previewOverlay.reset();
+    
+    // Clear sync state
+    d_previewSyncState.clear();
+    d_previewSyncValid = false;
     
     // Switch back to creation context
     d_context = Context::Creation;
@@ -976,5 +991,105 @@ void UnifiedOverlayWidget::updatePreviewModeUI()
         
         // Re-enable based on data validity
         p_previewButton->setEnabled(isDataValid());
+    }
+}
+
+void UnifiedOverlayWidget::updatePreviewSyncState()
+{
+    if (!d_inPreviewMode) {
+        d_previewSyncValid = false;
+        return;
+    }
+    
+    // Compare current settings with captured sync state
+    QHash<QString, QVariant> currentSettings = captureCurrentSettings();
+    d_previewSyncValid = compareSettings(d_previewSyncState, currentSettings);
+}
+
+QHash<QString, QVariant> UnifiedOverlayWidget::captureCurrentSettings() const
+{
+    QHash<QString, QVariant> settings;
+    
+    // Capture base overlay options
+    if (p_overlayBaseOptionsWidget) {
+        // Add overlay options to settings hash
+        // Note: This would need specific implementation based on what options exist
+        settings["label"] = QString(); // Placeholder - would get actual label
+        settings["plotIndex"] = 0; // Placeholder - would get actual plot index
+        settings["xOffset"] = 0.0; // Placeholder - would get actual offset
+        settings["yOffset"] = 0.0; // Placeholder - would get actual offset
+        settings["yScale"] = 1.0; // Placeholder - would get actual scale
+        settings["xMin"] = d_xRangeMin; // Use current range
+        settings["xMax"] = d_xRangeMax; // Use current range
+    }
+    
+    // Capture curve appearance settings
+    if (p_curveAppearanceWidget) {
+        // Add curve appearance to settings hash
+        // Note: This would need specific implementation based on curve appearance options
+        settings["curveStyle"] = static_cast<int>(Qt::SolidLine); // Placeholder
+        settings["curveWidth"] = 1; // Placeholder
+        settings["curveColor"] = QColor(Qt::blue).name(); // Placeholder
+    }
+    
+    // Capture type-specific settings
+    if (p_typeSpecificWidget) {
+        // Get type-specific settings
+        QHash<QString, QVariant> typeSettings = p_typeSpecificWidget->getSettingsHash();
+        for (auto it = typeSettings.begin(); it != typeSettings.end(); ++it) {
+            settings[QString("type_%1").arg(it.key())] = it.value();
+        }
+    }
+    
+    return settings;
+}
+
+bool UnifiedOverlayWidget::compareSettings(const QHash<QString, QVariant> &state1, const QHash<QString, QVariant> &state2) const
+{
+    if (state1.size() != state2.size()) {
+        return false;
+    }
+    
+    for (auto it = state1.begin(); it != state1.end(); ++it) {
+        if (!state2.contains(it.key()) || state2[it.key()] != it.value()) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+void UnifiedOverlayWidget::invalidatePreviewSync()
+{
+    if (d_previewSyncValid) {
+        d_previewSyncValid = false;
+        
+        // Update preview button appearance to indicate stale state
+        if (p_previewButton && d_inPreviewMode) {
+            p_previewButton->setStyleSheet(
+                "QPushButton {"
+                "    background-color: #ff9800;"  // Orange for stale
+                "    color: white;"
+                "    border: none;"
+                "    padding: 8px 16px;"
+                "    font-weight: bold;"
+                "    border-radius: 4px;"
+                "}"
+                "QPushButton:hover {"
+                "    background-color: #f57c00;"
+                "}"
+            );
+            p_previewButton->setToolTip("Preview is out of sync with current settings - click to refresh");
+        }
+    }
+}
+
+void UnifiedOverlayWidget::validatePreviewSync()
+{
+    updatePreviewSyncState();
+    
+    // Update UI based on sync state
+    if (d_inPreviewMode) {
+        updatePreviewModeUI();
     }
 }

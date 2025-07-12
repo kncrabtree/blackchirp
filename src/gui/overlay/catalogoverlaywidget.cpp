@@ -259,6 +259,35 @@ void CatalogOverlayWidget::resetToDefaults()
     updateConvolutionControls();
 }
 
+QHash<QString, QVariant> CatalogOverlayWidget::getSettingsHash() const
+{
+    QHash<QString, QVariant> settings;
+    
+    // File selection settings
+    settings["filePath"] = d_filePath;
+    settings["fileValid"] = d_fileValid;
+    
+    // Convolution settings (including frequency range for convolution)
+    settings["convolutionEnabled"] = p_convolutionEnabledCheckBox->isChecked();
+    settings["lineshapeType"] = p_lineshapeComboBox->currentIndex();
+    settings["linewidthKHz"] = p_linewidthSpinBox->value();
+    settings["pointSpacingMHz"] = p_pointSpacingSpinBox->value();
+    settings["minFreqMHz"] = p_minFreqSpinBox->value();
+    settings["maxFreqMHz"] = p_maxFreqSpinBox->value();
+    
+    // Other settings
+    settings["saveRangeOnly"] = p_saveRangeOnlyCheckBox->isChecked();
+    
+    // Catalog data fingerprint (for detecting data changes)
+    if (d_catalogData.size() > 0) {
+        settings["catalogSize"] = d_catalogData.size();
+        settings["catalogSourceProgram"] = d_catalogData.sourceProgram();
+        settings["catalogMoleculeName"] = d_catalogData.moleculeName();
+    }
+    
+    return settings;
+}
+
 QWidget* CatalogOverlayWidget::getSourceFileConfigWidget()
 {
     return p_sourceFileConfigWidget;

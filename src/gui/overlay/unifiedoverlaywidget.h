@@ -70,6 +70,8 @@ public:
     void enablePreviewMode();
     void disablePreviewMode();
     bool isInPreviewMode() const { return d_inPreviewMode; }
+    bool isPreviewSyncValid() const { return d_previewSyncValid; }
+    void updatePreviewSyncState();
     
     // Progress indication (settings context only)
     void showProgress(const QString &message);
@@ -131,6 +133,12 @@ private:
     bool isCreationContext() const { return d_context == Context::Creation; }
     bool isSettingsContext() const { return d_context == Context::Settings; }
     
+    // Preview sync state management
+    QHash<QString, QVariant> captureCurrentSettings() const;
+    bool compareSettings(const QHash<QString, QVariant> &state1, const QHash<QString, QVariant> &state2) const;
+    void invalidatePreviewSync();
+    void validatePreviewSync();
+    
     // Context and state
     Context d_context;
     OverlayBase::OverlayType d_overlayType;
@@ -182,6 +190,8 @@ private:
     // Preview mode state
     bool d_inPreviewMode;
     std::shared_ptr<OverlayBase> d_previewOverlay;
+    QHash<QString, QVariant> d_previewSyncState; // Track settings when preview was created
+    bool d_previewSyncValid; // Whether preview matches current settings
 };
 
 #endif // UNIFIEDOVERLAYWIDGET_H
