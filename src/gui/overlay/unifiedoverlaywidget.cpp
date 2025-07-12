@@ -8,6 +8,8 @@
 #include "overlaybaseoptionswidget.h"
 #include <gui/plot/curveappearancewidget.h>
 #include "overlaytypespecificwidget.h"
+#include "bcexpoverlaywidget.h"
+#include "catalogoverlaywidget.h"
 #include <data/storage/settingsstorage.h>
 
 UnifiedOverlayWidget::UnifiedOverlayWidget(const QString &settingsKey, QWidget *parent)
@@ -285,16 +287,52 @@ void UnifiedOverlayWidget::onProgressValueChanged(int value)
 
 void UnifiedOverlayWidget::setupUI()
 {
-    p_mainLayout = new QVBoxLayout(this);
-    p_mainLayout->setContentsMargins(0, 0, 0, 0);
-    p_mainLayout->setSpacing(6);
+    // Create main horizontal layout
+    p_mainLayout = new QHBoxLayout(this);
+    p_mainLayout->setContentsMargins(6, 6, 6, 6);
+    p_mainLayout->setSpacing(12);
     
+    // Create left side vertical layout for overlay widgets
+    auto leftVLayout = new QVBoxLayout();
+    leftVLayout->setSpacing(6);
+    
+    // Add top spacer
+    leftVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
+    
+    // Create overlay widgets
     createSourceFileConfigBox();
     createSourceFileSettingsBox();
     createTypeSpecificSettingsBox();
     createOverlayBaseOptionsBox();
-    createCurveAppearanceBox();
     createProgressIndicator();
+    
+    // Add overlay widgets to left layout
+    leftVLayout->addWidget(p_sourceFileConfigBox);
+    leftVLayout->addWidget(p_sourceFileSettingsBox);
+    leftVLayout->addWidget(p_typeSpecificSettingsBox);
+    leftVLayout->addWidget(p_overlayBaseOptionsBox);
+    leftVLayout->addWidget(p_progressWidget);
+    
+    // Add bottom spacer
+    leftVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
+    
+    // Create right side vertical layout for curve appearance
+    auto rightVLayout = new QVBoxLayout();
+    rightVLayout->setSpacing(6);
+    
+    // Add top spacer
+    rightVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
+    
+    // Create curve appearance widget
+    createCurveAppearanceBox();
+    rightVLayout->addWidget(p_curveAppearanceBox);
+    
+    // Add bottom spacer
+    rightVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
+    
+    // Add both layouts to main horizontal layout with equal stretch
+    p_mainLayout->addLayout(leftVLayout, 1);
+    p_mainLayout->addLayout(rightVLayout, 1);
     
     setLayout(p_mainLayout);
     
@@ -331,8 +369,6 @@ void UnifiedOverlayWidget::createSourceFileConfigBox()
     
     auto boxLayout = new QVBoxLayout(p_sourceFileConfigBox);
     boxLayout->addWidget(p_sourceFileConfigContent);
-    
-    p_mainLayout->addWidget(p_sourceFileConfigBox);
 }
 
 void UnifiedOverlayWidget::createSourceFileSettingsBox()
@@ -352,8 +388,6 @@ void UnifiedOverlayWidget::createSourceFileSettingsBox()
     
     auto boxLayout = new QVBoxLayout(p_sourceFileSettingsBox);
     boxLayout->addWidget(p_sourceFileSettingsContent);
-    
-    p_mainLayout->addWidget(p_sourceFileSettingsBox);
 }
 
 void UnifiedOverlayWidget::createTypeSpecificSettingsBox()
@@ -365,8 +399,6 @@ void UnifiedOverlayWidget::createTypeSpecificSettingsBox()
     
     auto boxLayout = new QVBoxLayout(p_typeSpecificSettingsBox);
     boxLayout->addWidget(p_typeSpecificStack);
-    
-    p_mainLayout->addWidget(p_typeSpecificSettingsBox);
 }
 
 void UnifiedOverlayWidget::createOverlayBaseOptionsBox()
@@ -379,8 +411,6 @@ void UnifiedOverlayWidget::createOverlayBaseOptionsBox()
     auto placeholderLabel = new QLabel("Base overlay options will be initialized when context is set");
     placeholderLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
     boxLayout->addWidget(placeholderLabel);
-    
-    p_mainLayout->addWidget(p_overlayBaseOptionsBox);
 }
 
 void UnifiedOverlayWidget::createOverlayBaseOptionsWidget()
@@ -453,16 +483,8 @@ void UnifiedOverlayWidget::createCurveAppearanceBox()
     auto boxLayout = new QVBoxLayout(p_curveAppearanceBox);
     boxLayout->addWidget(p_curveAppearanceWidget);
     
-    p_mainLayout->addWidget(p_curveAppearanceBox);
-    
-    // Connect curve appearance signals
-    connect(p_curveAppearanceWidget, &CurveAppearanceWidget::curveAppearanceChanged,
-            this, &UnifiedOverlayWidget::onSettingsChanged);
-    
-    if (isSettingsContext()) {
-        connect(p_curveAppearanceWidget, &CurveAppearanceWidget::curveAppearanceChanged,
-                this, &UnifiedOverlayWidget::onRealTimeUpdate);
-    }
+    // Connect curve appearance signals (will be connected in configureForContext)
+    // when we know the context
 }
 
 void UnifiedOverlayWidget::createProgressIndicator()
@@ -480,8 +502,6 @@ void UnifiedOverlayWidget::createProgressIndicator()
     
     progressLayout->addWidget(p_progressLabel);
     progressLayout->addWidget(p_progressBar);
-    
-    p_mainLayout->addWidget(p_progressWidget);
 }
 
 void UnifiedOverlayWidget::configureForContext()
@@ -532,6 +552,25 @@ void UnifiedOverlayWidget::configureForContext()
         }
         p_typeSpecificSettingsBox->setTitle(QString("%1 Settings").arg(typeName));
     }
+    
+    // Setup context-aware connections for curve appearance widget
+    if (p_curveAppearanceWidget) {
+        // Disconnect any existing connections first
+        disconnect(p_curveAppearanceWidget, &CurveAppearanceWidget::curveAppearanceChanged,
+                   this, &UnifiedOverlayWidget::onSettingsChanged);
+        disconnect(p_curveAppearanceWidget, &CurveAppearanceWidget::curveAppearanceChanged,
+                   this, &UnifiedOverlayWidget::onRealTimeUpdate);
+        
+        // Connect base signal for both contexts
+        connect(p_curveAppearanceWidget, &CurveAppearanceWidget::curveAppearanceChanged,
+                this, &UnifiedOverlayWidget::onSettingsChanged);
+        
+        // Connect real-time update for settings context only
+        if (isSettingsContext()) {
+            connect(p_curveAppearanceWidget, &CurveAppearanceWidget::curveAppearanceChanged,
+                    this, &UnifiedOverlayWidget::onRealTimeUpdate);
+        }
+    }
 }
 
 void UnifiedOverlayWidget::updateSourceFileControls()
@@ -551,40 +590,52 @@ void UnifiedOverlayWidget::updateSourceFileControls()
 
 void UnifiedOverlayWidget::validateSourceFile()
 {
-    // This will be implemented when type-specific widgets provide source file validation
-    d_sourceFileValid = true; // Placeholder
+    if (p_typeSpecificWidget) {
+        QString errorMessage;
+        d_sourceFileValid = p_typeSpecificWidget->validateSourceFile(errorMessage);
+        if (!d_sourceFileValid && !errorMessage.isEmpty()) {
+            d_lastValidationError = errorMessage;
+        }
+    } else {
+        d_sourceFileValid = false;
+    }
+    
     updateSourceFileControls();
+    
+    // Emit validation status change
+    emit validationStatusChanged(d_sourceFileValid, d_lastValidationError);
 }
 
 void UnifiedOverlayWidget::setupTypeSpecificWidget()
 {
     clearTypeSpecificWidget();
     
-    // Create type-specific widget based on overlay type
-    // For now, this is a placeholder - will be implemented when OverlayTypeSpecificWidget base class is ready
-    auto placeholderWidget = new QWidget();
-    auto layout = new QVBoxLayout(placeholderWidget);
-    
-    QString typeName;
+    // Factory pattern: Create type-specific widget based on overlay type
     switch (d_overlayType) {
     case OverlayBase::BCExperiment:
-        typeName = "BC Experiment";
+        p_typeSpecificWidget = new BCExpOverlayWidget(this);
         break;
     case OverlayBase::Catalog:
-        typeName = "Catalog";
+        p_typeSpecificWidget = new CatalogOverlayWidget(this);
         break;
     case OverlayBase::GenericXY:
-        typeName = "Generic XY";
+        // GenericXY not yet implemented - create placeholder
+        p_typeSpecificWidget = createPlaceholderWidget("Generic XY");
         break;
     }
     
-    auto label = new QLabel(QString("Type-specific widget for %1 overlays will be implemented").arg(typeName));
-    label->setStyleSheet("QLabel { color: gray; font-style: italic; }");
-    layout->addWidget(label);
-    
-    if (p_typeSpecificStack) {
-        p_typeSpecificStack->addWidget(placeholderWidget);
-        p_typeSpecificStack->setCurrentWidget(placeholderWidget);
+    if (p_typeSpecificWidget && p_typeSpecificStack) {
+        p_typeSpecificStack->addWidget(p_typeSpecificWidget);
+        p_typeSpecificStack->setCurrentWidget(p_typeSpecificWidget);
+        
+        // Setup context for the type-specific widget
+        setupTypeSpecificWidgetContext();
+        
+        // Setup connections for the type-specific widget
+        setupTypeSpecificWidgetConnections();
+        
+        // Reparent UI components into three-tier architecture
+        reparentTypeSpecificWidgets();
     }
 }
 
@@ -613,4 +664,166 @@ QString UnifiedOverlayWidget::getContextName() const
         return "Settings";
     }
     return "Unknown";
+}
+
+void UnifiedOverlayWidget::setupTypeSpecificWidgetContext()
+{
+    if (!p_typeSpecificWidget) {
+        return;
+    }
+    
+    // Set context information via friend access
+    p_typeSpecificWidget->setContext(d_context);
+    p_typeSpecificWidget->setOverlay(d_overlay);
+    
+    // Call appropriate setup method based on context
+    if (isCreationContext()) {
+        p_typeSpecificWidget->setupForCreation();
+    } else if (isSettingsContext() && d_overlay) {
+        p_typeSpecificWidget->setupForSettings(d_overlay);
+    }
+}
+
+void UnifiedOverlayWidget::setupTypeSpecificWidgetConnections()
+{
+    if (!p_typeSpecificWidget) {
+        return;
+    }
+    
+    // Base connections for both contexts
+    connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::settingsChanged,
+            this, &UnifiedOverlayWidget::onSettingsChanged);
+    connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::sourceFileChanged,
+            this, &UnifiedOverlayWidget::validateSourceFile);
+    connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::dataValidityChanged,
+            this, [this](bool isValid) {
+                QString errorMessage;
+                emit validationStatusChanged(isValid, errorMessage);
+            });
+    
+    // Settings-only connections for real-time updates and progress indication
+    if (isSettingsContext()) {
+        connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::settingsChanged,
+                this, &UnifiedOverlayWidget::onRealTimeUpdate);
+        
+        // Progress indication connections
+        connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::progressOperationStarted,
+                this, &UnifiedOverlayWidget::onProgressOperationStarted);
+        connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::progressOperationFinished,
+                this, &UnifiedOverlayWidget::onProgressOperationFinished);
+        connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::progressValueChanged,
+                this, &UnifiedOverlayWidget::onProgressValueChanged);
+    }
+}
+
+void UnifiedOverlayWidget::reparentTypeSpecificWidgets()
+{
+    if (!p_typeSpecificWidget) {
+        return;
+    }
+    
+    // Reparent source file config widget
+    QWidget *sourceFileConfigWidget = p_typeSpecificWidget->getSourceFileConfigWidget();
+    if (sourceFileConfigWidget && p_sourceFileConfigContent) {
+        // Clear existing content
+        QLayout *oldLayout = p_sourceFileConfigContent->layout();
+        if (oldLayout) {
+            while (oldLayout->count() > 0) {
+                QLayoutItem *item = oldLayout->takeAt(0);
+                if (item->widget()) {
+                    item->widget()->deleteLater();
+                }
+                delete item;
+            }
+            delete oldLayout;
+        }
+        
+        // Add new content
+        auto newLayout = new QVBoxLayout(p_sourceFileConfigContent);
+        newLayout->setContentsMargins(0, 0, 0, 0);
+        sourceFileConfigWidget->setParent(p_sourceFileConfigContent);
+        newLayout->addWidget(sourceFileConfigWidget);
+    }
+    
+    // Reparent source file settings widget
+    QWidget *sourceFileSettingsWidget = p_typeSpecificWidget->getSourceFileSettingsWidget();
+    if (sourceFileSettingsWidget && p_sourceFileSettingsContent) {
+        // Clear existing content
+        QLayout *oldLayout = p_sourceFileSettingsContent->layout();
+        if (oldLayout) {
+            while (oldLayout->count() > 0) {
+                QLayoutItem *item = oldLayout->takeAt(0);
+                if (item->widget()) {
+                    item->widget()->deleteLater();
+                }
+                delete item;
+            }
+            delete oldLayout;
+        }
+        
+        // Add new content
+        auto newLayout = new QVBoxLayout(p_sourceFileSettingsContent);
+        newLayout->setContentsMargins(0, 0, 0, 0);
+        sourceFileSettingsWidget->setParent(p_sourceFileSettingsContent);
+        newLayout->addWidget(sourceFileSettingsWidget);
+    }
+    
+    // The overlay settings widget stays in the type-specific stack
+    // (it's already properly positioned)
+}
+
+OverlayTypeSpecificWidget* UnifiedOverlayWidget::createPlaceholderWidget(const QString &typeName)
+{
+    // Create a simple placeholder widget for unimplemented overlay types
+    class PlaceholderWidget : public OverlayTypeSpecificWidget {
+    public:
+        PlaceholderWidget(const QString &name, QWidget *parent = nullptr) 
+            : OverlayTypeSpecificWidget(parent), d_typeName(name) {
+            setupUI();
+        }
+        
+        void setupForCreation() override {}
+        void setupForSettings(std::shared_ptr<OverlayBase>) override {}
+        std::shared_ptr<OverlayBase> createOverlay() const override { return nullptr; }
+        void applyToOverlay(std::shared_ptr<OverlayBase>) const override {}
+        bool validateSettings(QString &error) const override { 
+            error = QString("%1 overlay type not yet implemented").arg(d_typeName);
+            return false; 
+        }
+        bool isDataValid() const override { return false; }
+        bool hasValidSourceFile() const override { return false; }
+        QString getSourceFilePath() const override { return QString(); }
+        void setSourceFilePath(const QString &) override {}
+        bool validateSourceFile(QString &error) override { 
+            error = QString("%1 overlay type not yet implemented").arg(d_typeName);
+            return false; 
+        }
+        void resetToDefaults() override {}
+        QWidget* getSourceFileConfigWidget() override { return p_configWidget; }
+        QWidget* getSourceFileSettingsWidget() override { return p_settingsWidget; }
+        QWidget* getOverlaySettingsWidget() override { return p_overlayWidget; }
+        
+    protected:
+        void setupUI() override {
+            auto layout = new QVBoxLayout(this);
+            auto label = new QLabel(QString("%1 overlay type not yet implemented").arg(d_typeName));
+            label->setStyleSheet("QLabel { color: gray; font-style: italic; }");
+            layout->addWidget(label);
+            
+            p_configWidget = new QLabel("Source file configuration not available");
+            p_settingsWidget = new QLabel("Source file settings not available");
+            p_overlayWidget = new QLabel("Overlay settings not available");
+        }
+        void setupConnections() override {}
+        void loadSettings() override {}
+        void saveSettings() override {}
+        
+    private:
+        QString d_typeName;
+        QWidget *p_configWidget;
+        QWidget *p_settingsWidget;
+        QWidget *p_overlayWidget;
+    };
+    
+    return new PlaceholderWidget(typeName, this);
 }

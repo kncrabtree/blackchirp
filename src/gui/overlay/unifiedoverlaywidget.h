@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QSpacerItem>
 #include <QGroupBox>
 #include <QProgressBar>
 #include <QLabel>
@@ -15,11 +16,11 @@
 #include <data/experiment/overlaybase.h>
 #include <data/storage/overlaystorage.h>
 #include <data/storage/settingsstorage.h>
+#include "overlaytypespecificwidget.h"
 
 // Forward declarations
 class OverlayBaseOptionsWidget;
 class CurveAppearanceWidget;
-class OverlayTypeSpecificWidget;
 
 // Settings keys will be defined by subclasses
 
@@ -37,10 +38,8 @@ class UnifiedOverlayWidget : public QWidget, public SettingsStorage
     Q_OBJECT
 
 public:
-    enum class Context {
-        Creation,    // No real-time updates, validation before acceptance
-        Settings     // Real-time updates, progress indicators, live overlay modification
-    };
+    // Use the Context enum from OverlayTypeSpecificWidget
+    using Context = OverlayTypeSpecificWidget::Context;
 
     explicit UnifiedOverlayWidget(const QString &settingsKey, QWidget *parent = nullptr);
     ~UnifiedOverlayWidget();
@@ -110,6 +109,10 @@ private:
     // Type-specific widget management
     void setupTypeSpecificWidget();
     void clearTypeSpecificWidget();
+    void setupTypeSpecificWidgetContext();
+    void setupTypeSpecificWidgetConnections();
+    void reparentTypeSpecificWidgets();
+    OverlayTypeSpecificWidget* createPlaceholderWidget(const QString &typeName);
     
     // Helper methods
     QString getContextName() const;
@@ -129,7 +132,7 @@ private:
     QVector<std::shared_ptr<OverlayBase>> d_existingOverlays; // Creation context only
     
     // UI Components - Three-tier architecture
-    QVBoxLayout *p_mainLayout;
+    QHBoxLayout *p_mainLayout;
     
     // Source file tier
     QGroupBox *p_sourceFileConfigBox;
