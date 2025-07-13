@@ -32,7 +32,6 @@ void CatalogParserRegistry::registerParser(std::unique_ptr<CatalogParser> parser
     }
     
     QString formatName = parser->formatName();
-    qDebug() << "Registering catalog parser for format:" << formatName;
     
     d_parsers.push_back(std::move(parser));
     emit parserRegistered(formatName);

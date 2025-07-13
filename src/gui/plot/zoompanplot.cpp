@@ -529,6 +529,9 @@ void ZoomPanPlot::filterData()
 
     for(auto item : l)
     {
+        if(!item)
+            continue;
+
         auto c = dynamic_cast<BlackchirpPlotCurveBase*>(item);
         if(c)
         {

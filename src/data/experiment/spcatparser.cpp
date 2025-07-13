@@ -61,15 +61,12 @@ CatalogData SPCATParser::parse(const QString &filePath) const
         if (transition.frequency > 0) {  // Valid transition
             transitions.append(transition);
             validLines++;
-        } else {
-            qDebug() << "SPCATParser: Skipping invalid line" << lineNumber << ":" << line.left(50) + "...";
         }
     }
     
     file.close();
     
     if (transitions.isEmpty()) {
-        qWarning() << "SPCATParser: No valid transitions found in" << filePath;
         return catalogData;
     }
     
@@ -80,9 +77,7 @@ CatalogData SPCATParser::parse(const QString &filePath) const
     catalogData.setMetadataValue("totalLines", lineNumber);
     catalogData.setMetadataValue("validTransitions", validLines);
     catalogData.setMetadataValue("sourceFile", filePath);
-    
-    qDebug() << "SPCATParser: Successfully parsed" << validLines << "transitions from" << filePath;
-    
+        
     return catalogData;
 }
 
