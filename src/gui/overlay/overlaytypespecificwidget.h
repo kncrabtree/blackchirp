@@ -55,6 +55,9 @@ public:
     virtual void setupForCreation() = 0;
     virtual void setupForSettings(std::shared_ptr<OverlayBase> overlay) = 0;
     
+    // Set context information from parent
+    virtual void setFrequencyRange(double xRangeMin, double xRangeMax) { Q_UNUSED(xRangeMin) Q_UNUSED(xRangeMax) }
+    
     // Overlay creation and modification interface
     virtual std::shared_ptr<OverlayBase> createOverlay() const = 0;
     virtual void applyToOverlay(std::shared_ptr<OverlayBase> overlay) const = 0;
@@ -93,6 +96,8 @@ signals:
     void progressOperationStarted(const QString &message);
     void progressOperationFinished();
     void progressValueChanged(int value);
+    void labelUpdateRequested(const QString &newLabel);
+    void yScaleUpdateRequested(double newYScale);
 
 protected:
     // Helper methods for derived classes

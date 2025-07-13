@@ -69,6 +69,12 @@ private slots:
     void pasteSettingsToSelected();
     bool hasClipboardSettings() const;
     bool hasClipboardAppearance() const;
+    
+    // Preview overlay management
+    void onPreviewRequested();
+    void onPreviewCancelled();
+    void onPreviewOverlayRequested(std::shared_ptr<OverlayBase> overlay);
+    void onPreviewOverlayCancelled(std::shared_ptr<OverlayBase> overlay);
 
 private:
     QToolBar *p_toolBar;
@@ -118,7 +124,6 @@ private:
         int overlayCount = 0;
     };
     UndoData d_undoData;
-
 
     void setupUI();
     void setupAddButton();

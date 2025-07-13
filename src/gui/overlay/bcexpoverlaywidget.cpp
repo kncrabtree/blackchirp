@@ -10,6 +10,7 @@
 #include <QStandardPaths>
 #include <QDialogButtonBox>
 #include <QDialog>
+#include <QTimer>
 
 #include <gui/widget/ftmwviewwidget.h>
 #include <gui/widget/experimentviewwidget.h>
@@ -44,7 +45,12 @@ void BCExpOverlayWidget::setupForCreation()
     
     // Initialize defaults
     resetToDefaults();
-    validateExperiment();
+    
+    // Validate and update label after everything is set up (deferred to ensure UI is ready)
+    QTimer::singleShot(0, this, [this]() {
+        updateAutomaticLabel();
+        validateExperiment();
+    });
 }
 
 void BCExpOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overlay)
@@ -262,6 +268,7 @@ void BCExpOverlayWidget::onExperimentNumberChanged(int number)
     Q_UNUSED(number);
     if (!p_usePathCheckBox->isChecked()) {
         resetFtConfiguration(); // Reset FT config when experiment changes
+        updateAutomaticLabel(); // Update label to new experiment number
         validateExperiment();
         emit settingsChanged();
     }
@@ -274,6 +281,7 @@ void BCExpOverlayWidget::onUsePathToggled(bool enabled)
     p_experimentNumberSpinBox->setEnabled(!enabled);
     
     resetFtConfiguration(); // Reset FT config when switching modes
+    updateAutomaticLabel(); // Update label based on current selection
     validateExperiment();
     emit settingsChanged();
 }
@@ -294,6 +302,7 @@ void BCExpOverlayWidget::onBrowseButtonClicked()
 void BCExpOverlayWidget::onPathChanged()
 {
     resetFtConfiguration(); // Reset FT config when path changes
+    updateAutomaticLabel(); // Update label to directory name if using custom path
     validateExperiment();
     emit settingsChanged();
 }
@@ -428,10 +437,17 @@ void BCExpOverlayWidget::setupExperimentSelectionUI()
     p_experimentSelectionGroup = new QGroupBox("Experiment Selection", p_sourceFileConfigWidget);
     QFormLayout *formLayout = new QFormLayout(p_experimentSelectionGroup);
     
+    // Configure form layout for proper field expansion
+    formLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+    formLayout->setRowWrapPolicy(QFormLayout::DontWrapRows);
+    
     // Experiment number
+    SettingsStorage s;
+    int lastExperiment = s.get(BC::Key::exptNum, 1);
+
     p_experimentNumberSpinBox = new QSpinBox(p_experimentSelectionGroup);
     p_experimentNumberSpinBox->setMinimum(1);
-    p_experimentNumberSpinBox->setMaximum(999999);
+    p_experimentNumberSpinBox->setMaximum(lastExperiment);
     p_experimentNumberSpinBox->setValue(1);
     formLayout->addRow("Experiment Number:", p_experimentNumberSpinBox);
     
@@ -453,6 +469,11 @@ void BCExpOverlayWidget::setupExperimentSelectionUI()
     // Status label
     p_experimentStatusLabel = new QLabel(p_experimentSelectionGroup);
     p_experimentStatusLabel->setWordWrap(true);
+    p_experimentStatusLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    p_experimentStatusLabel->setMinimumHeight(20); // Ensure minimum visibility
+    p_experimentStatusLabel->setMaximumHeight(80); // Prevent excessive expansion
+    p_experimentStatusLabel->setMinimumWidth(200); // Ensure sufficient width before wrapping
+    p_experimentStatusLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft); // Align to top for multi-line text
     formLayout->addRow("Status:", p_experimentStatusLabel);
     
     configLayout->addWidget(p_experimentSelectionGroup);
@@ -474,6 +495,11 @@ void BCExpOverlayWidget::setupFtConfigurationUI()
     // Status label
     p_ftStatusLabel = new QLabel("Click to configure FT processing settings for this overlay.", p_ftConfigurationGroup);
     p_ftStatusLabel->setWordWrap(true);
+    p_ftStatusLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    p_ftStatusLabel->setMinimumHeight(20); // Ensure minimum visibility
+    p_ftStatusLabel->setMaximumHeight(60); // Prevent excessive expansion
+    p_ftStatusLabel->setMinimumWidth(200); // Ensure sufficient width before wrapping
+    p_ftStatusLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft); // Align to top for multi-line text
     p_ftStatusLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
     
     ftLayout->addWidget(p_configureFtButton);
@@ -491,11 +517,13 @@ void BCExpOverlayWidget::setupBCExpSettingsUI()
     p_bcexpSettingsGroup = new QGroupBox("BCExperiment Settings", p_overlaySettingsWidget);
     QVBoxLayout *bcexpLayout = new QVBoxLayout(p_bcexpSettingsGroup);
     
-    // Placeholder for future BCExp-specific settings
-    QLabel *placeholderLabel = new QLabel("Future BCExperiment-specific settings will be added here.");
-    placeholderLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
-    bcexpLayout->addWidget(placeholderLabel);
-    
+    // Placeholder for future BCExp-specific settings; for now just hide
+    p_overlaySettingsWidget->hide();
+    // QLabel *placeholderLabel = new QLabel("Future BCExperiment-specific settings will be added here.");
+    // placeholderLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
+    // bcexpLayout->addWidget(placeholderLabel);
+
+
     overlayLayout->addWidget(p_bcexpSettingsGroup);
 }
 
@@ -575,5 +603,24 @@ void BCExpOverlayWidget::updateFtStatus()
         p_configureFtButton->setStyleSheet("");
         p_ftStatusLabel->setText("Click to configure FT processing settings for this overlay.");
         p_ftStatusLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
+    }
+}
+
+void BCExpOverlayWidget::updateAutomaticLabel()
+{
+    if (p_usePathCheckBox->isChecked()) {
+        // Using custom path - update label from directory name if available
+        QString path = p_pathLineEdit->text();
+        if (!path.isEmpty()) {
+            QDir dir(path);
+            QString dirName = dir.dirName();
+            if (!dirName.isEmpty()) {
+                emit labelUpdateRequested(dirName);
+            }
+        }
+    } else {
+        // Using experiment number - update label from number
+        int number = p_experimentNumberSpinBox->value();
+        emit labelUpdateRequested(QString("Exp%1").arg(number));
     }
 }

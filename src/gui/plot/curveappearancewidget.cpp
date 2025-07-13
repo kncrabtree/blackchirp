@@ -573,7 +573,6 @@ void CurveAppearanceWidget::applyPreset(const QString &presetName)
     // Mark preset as used
     p_presetManager->markPresetUsed(presetName);
     
-    qDebug() << "Applied preset:" << presetName;
 }
 
 void CurveAppearanceWidget::saveCurrentAsPreset(const QString &presetName)
@@ -594,7 +593,6 @@ void CurveAppearanceWidget::saveCurrentAsPreset(const QString &presetName)
             d_blockSignals = false;
         }
         
-        qDebug() << "Saved preset:" << presetName;
     } else {
         QMessageBox::warning(this, "Save Failed", 
                            QString("Failed to save preset '%1'. Please check the name is valid.").arg(presetName));
@@ -612,7 +610,6 @@ void CurveAppearanceWidget::deletePreset(const QString &presetName)
         refreshPresetList();
         // Reset to "Select preset..."
         p_presetBox->setCurrentIndex(0);
-        qDebug() << "Deleted preset:" << presetName;
     } else {
         QMessageBox::warning(this, "Delete Failed", 
                            QString("Failed to delete preset '%1'. Default presets cannot be deleted.").arg(presetName));
@@ -821,14 +818,15 @@ QString CurveAppearanceWidget::getColorDescription(const QColor &color) const
     // Determine base color from RGB values
     QString baseColor;
     
+    // Can use these later if more granular labels are desired.
     // Find the dominant color component
-    int maxComponent = std::max({r, g, b});
-    int minComponent = std::min({r, g, b});
+    // int maxComponent = std::max({r, g, b});
+    // int minComponent = std::min({r, g, b});
     
     // Calculate color ratios for better classification
-    double rRatio = static_cast<double>(r) / 255.0;
-    double gRatio = static_cast<double>(g) / 255.0;
-    double bRatio = static_cast<double>(b) / 255.0;
+    // double rRatio = static_cast<double>(r) / 255.0;
+    // double gRatio = static_cast<double>(g) / 255.0;
+    // double bRatio = static_cast<double>(b) / 255.0;
     
     if (r >= g && r >= b) {
         // Red is dominant

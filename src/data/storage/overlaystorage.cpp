@@ -63,7 +63,6 @@ bool OverlayStorage::loadOverlay(QString fileBase, OverlayBase::OverlayType t)
     
     if (overlaySettings.empty())
     {
-        qDebug() << "No settings found for overlay:" << fileBase;
         return false;
     }
     
@@ -96,7 +95,6 @@ void OverlayStorage::save()
     {
         if (!expDir.mkpath(BC::Key::Overlay::overlayDir))
         {
-            qDebug() << "Failed to create overlays directory for experiment" << d_number;
             return;
         }
     }
@@ -318,7 +316,6 @@ bool OverlayStorage::renameOverlay(const QString& currentLabel, const QString& n
 {
     // Validate new label
     if (!validateOverlayLabel(newLabel)) {
-        qDebug() << "Invalid new label for rename operation:" << newLabel;
         return false;
     }
     
@@ -329,13 +326,11 @@ bool OverlayStorage::renameOverlay(const QString& currentLabel, const QString& n
     // Check if the overlay exists
     auto it = d_overlays.find(currentSanitized);
     if (it == d_overlays.end()) {
-        qDebug() << "Overlay not found for rename:" << currentLabel;
         return false;
     }
     
     // Check if new label already exists (different from current)
     if (currentSanitized != newSanitized && d_overlays.find(newSanitized) != d_overlays.end()) {
-        qDebug() << "Overlay with new label already exists:" << newLabel;
         return false;
     }
     
@@ -368,7 +363,6 @@ bool OverlayStorage::renameOverlay(const QString& currentLabel, const QString& n
         if (QFile::rename(oldDataPath, newDataPath)) {
             dataRenamed = true;
         } else {
-            qDebug() << "Failed to rename overlay data file from" << oldDataPath << "to" << newDataPath;
             return false;
         }
     }
@@ -376,7 +370,6 @@ bool OverlayStorage::renameOverlay(const QString& currentLabel, const QString& n
     // Rename settings file if it exists
     if (QFile::exists(oldSettingsPath)) {
         if (!QFile::rename(oldSettingsPath, newSettingsPath)) {
-            qDebug() << "Failed to rename overlay settings file from" << oldSettingsPath << "to" << newSettingsPath;
             
             // Rollback data file rename if settings file rename failed
             if (dataRenamed && QFile::exists(newDataPath)) {
@@ -449,7 +442,6 @@ void OverlayStorage::saveOverlayMetadata(std::shared_ptr<OverlayBase> overlay)
     // Check if this overlay exists in our storage
     auto it = d_overlays.find(sanitizedLabel);
     if (it == d_overlays.end()) {
-        qDebug() << "Warning: Attempting to save metadata for overlay not in storage:" << label;
         return;
     }
     
@@ -457,7 +449,6 @@ void OverlayStorage::saveOverlayMetadata(std::shared_ptr<OverlayBase> overlay)
     QDir expDir = BlackchirpCSV::exptDir(d_number, d_path);
     if (!expDir.exists(BC::Key::Overlay::overlayDir)) {
         if (!expDir.mkpath(BC::Key::Overlay::overlayDir)) {
-            qDebug() << "Failed to create overlays directory for experiment" << d_number;
             return;
         }
     }
@@ -500,4 +491,57 @@ void OverlayStorage::onWriteCompleted(const QString& label, bool success, const 
         d_overlays.erase(overlayIt);
         emit overlayWriteFailed(overlay, error);
     }
+}
+
+bool OverlayStorage::addPreviewOverlay(std::shared_ptr<OverlayBase> overlay)
+{
+    if (!overlay) {
+        return false;
+    }
+    
+    QString label = overlay->getLabel();
+    
+    // Add to preview storage (no validation/sanitization needed for temporary overlays)
+    d_previewOverlays[label] = overlay;
+    
+    // Emit signal so plots will display the preview overlay
+    emit overlayAdded(overlay);
+    
+    return true;
+}
+
+bool OverlayStorage::removePreviewOverlay(const QString& label)
+{
+    auto it = d_previewOverlays.find(label);
+    if (it == d_previewOverlays.end()) {
+        return false;
+    }
+    
+    auto overlay = it->second;
+    d_previewOverlays.erase(it);
+    
+    // Emit signal so plots will remove the preview overlay
+    emit overlayRemoved(overlay);
+    
+    return true;
+}
+
+void OverlayStorage::clearAllPreviews()
+{
+    // Emit removal signals for all preview overlays
+    for (const auto& [label, overlay] : d_previewOverlays) {
+        emit overlayRemoved(overlay);
+    }
+    
+    // Clear the preview storage
+    d_previewOverlays.clear();
+}
+
+QVector<std::shared_ptr<OverlayBase>> OverlayStorage::getAllPreviewOverlays() const
+{
+    QVector<std::shared_ptr<OverlayBase>> previews;
+    for (const auto& [label, overlay] : d_previewOverlays) {
+        previews.append(overlay);
+    }
+    return previews;
 }

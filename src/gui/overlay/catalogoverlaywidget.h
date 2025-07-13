@@ -68,6 +68,7 @@ public:
     // OverlayTypeSpecificWidget interface
     void setupForCreation() override;
     void setupForSettings(std::shared_ptr<OverlayBase> overlay) override;
+    void setFrequencyRange(double xRangeMin, double xRangeMax) override;
     
     std::shared_ptr<OverlayBase> createOverlay() const override;
     void applyToOverlay(std::shared_ptr<OverlayBase> overlay) const override;
@@ -200,6 +201,10 @@ private:
     bool d_fileValid;
     bool d_hasFtData;
     double d_ftYMax;
+    
+    // Frequency range from parent context
+    double d_xRangeMin;
+    double d_xRangeMax;
     
     // Helper methods
     void setupFileSelectionUI();

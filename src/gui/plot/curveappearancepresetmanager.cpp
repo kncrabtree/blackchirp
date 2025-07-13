@@ -29,7 +29,6 @@ CurveAppearancePresetManager* CurveAppearancePresetManager::instance()
 {
     if (!s_instance) {
         s_instance = new CurveAppearancePresetManager();
-        qDebug() << "Created global CurveAppearancePresetManager instance";
     }
     return s_instance;
 }
@@ -37,7 +36,6 @@ CurveAppearancePresetManager* CurveAppearancePresetManager::instance()
 void CurveAppearancePresetManager::cleanup()
 {
     if (s_instance) {
-        qDebug() << "Cleaning up global CurveAppearancePresetManager instance";
         delete s_instance;
         s_instance = nullptr;
     }
@@ -148,7 +146,6 @@ bool CurveAppearancePresetManager::savePreset(const QString &name, const CurveAp
     savePresetsToStorage();
     emit presetSaved(name);
     
-    qDebug() << "Saved curve appearance preset:" << name;
     return true;
 }
 
@@ -171,7 +168,6 @@ bool CurveAppearancePresetManager::deletePreset(const QString &name)
         savePresetsToStorage();
         emit presetDeleted(name);
         
-        qDebug() << "Deleted curve appearance preset:" << name;
         return true;
     }
     
@@ -201,7 +197,6 @@ bool CurveAppearancePresetManager::renamePreset(const QString &oldName, const QS
         savePresetsToStorage();
         emit presetRenamed(oldName, newName);
         
-        qDebug() << "Renamed preset from" << oldName << "to" << newName;
         return true;
     }
     
@@ -220,9 +215,7 @@ void CurveAppearancePresetManager::markPresetUsed(const QString &name)
 }
 
 void CurveAppearancePresetManager::createDefaultPresets()
-{
-    qDebug() << "Creating default curve appearance presets";
-    
+{    
     // Get colors from QPalette for consistency with application theming
     QPalette palette = QApplication::palette();
     QColor primaryColor = palette.color(QPalette::Highlight);
@@ -316,7 +309,6 @@ void CurveAppearancePresetManager::createDefaultPresets()
     rebuildIndex();
     savePresetsToStorage();
     
-    qDebug() << "Created" << d_presets.size() << "default curve appearance presets";
 }
 
 bool CurveAppearancePresetManager::areDefaultPresetsCreated() const
@@ -341,7 +333,6 @@ void CurveAppearancePresetManager::loadPresetsFromStorage()
     }
     
     rebuildIndex();
-    qDebug() << "Loaded" << d_presets.size() << "curve appearance presets from storage";
 }
 
 void CurveAppearancePresetManager::savePresetsToStorage()
@@ -354,7 +345,6 @@ void CurveAppearancePresetManager::savePresetsToStorage()
     }
     
     set(BC::Key::CurveAppearancePresets::presetList, presetNames, true);
-    qDebug() << "Saved" << d_presets.size() << "curve appearance presets to storage";
 }
 
 CurveAppearanceWidget::CurveAppearance CurveAppearancePresetManager::createCurvePreset(const QColor &color) const

@@ -21,6 +21,8 @@ CatalogOverlayWidget::CatalogOverlayWidget(QWidget *parent)
       d_fileValid(false),
       d_hasFtData(false),
       d_ftYMax(1.0),
+      d_xRangeMin(DEFAULT_MIN_FREQ),
+      d_xRangeMax(DEFAULT_MAX_FREQ),
       d_convolutionInProgress(false)
 {
     setupUI();
@@ -100,7 +102,28 @@ std::shared_ptr<OverlayBase> CatalogOverlayWidget::createOverlay() const
     }
     
     auto overlay = std::make_shared<CatalogOverlay>();
-    overlay->setCatalogData(d_catalogData);
+    
+    // Apply frequency range filtering if enabled
+    CatalogData filteredData = d_catalogData;
+    if (p_saveRangeOnlyCheckBox->isChecked()) {
+        // Filter transitions to only include those within the frequency range
+        double minFreq = p_minFreqSpinBox->value();
+        double maxFreq = p_maxFreqSpinBox->value();
+        
+        QVector<TransitionData> filteredTransitions;
+        for (int i = 0; i < d_catalogData.size(); ++i) {
+            const auto &transition = d_catalogData.at(i);
+            if (transition.frequency >= minFreq && transition.frequency <= maxFreq) {
+                filteredTransitions.append(transition);
+            }
+        }
+        
+        // triggers deep copy; original transitions are still in d_catalogData
+        // in case user later disables fultering or changes ranges
+        filteredData.setTransitions(filteredTransitions);
+    }
+    
+    overlay->setCatalogData(filteredData);
     overlay->setSourceFile(d_filePath);
     
     // Apply convolution settings
@@ -508,6 +531,10 @@ void CatalogOverlayWidget::setupFileSelectionUI()
     p_fileSelectionGroup = new QGroupBox("Catalog File Selection", p_sourceFileConfigWidget);
     QFormLayout *fileLayout = new QFormLayout(p_fileSelectionGroup);
     
+    // Configure form layout for proper field expansion
+    fileLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+    fileLayout->setRowWrapPolicy(QFormLayout::DontWrapRows);
+    
     // File path selection
     QHBoxLayout *pathLayout = new QHBoxLayout();
     p_filePathLineEdit = new QLineEdit(p_fileSelectionGroup);
@@ -525,6 +552,35 @@ void CatalogOverlayWidget::setupFileSelectionUI()
     p_moleculeLabel = new QLabel("-", p_fileSelectionGroup);
     p_transitionCountLabel = new QLabel("-", p_fileSelectionGroup);
     p_frequencyRangeLabel = new QLabel("-", p_fileSelectionGroup);
+    
+    // Configure labels for proper wrapping and expansion
+    p_formatLabel->setWordWrap(true);
+    p_formatLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    p_formatLabel->setMinimumHeight(20);
+    p_formatLabel->setMaximumHeight(40);
+    p_formatLabel->setMinimumWidth(150);
+    p_formatLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    
+    p_moleculeLabel->setWordWrap(true);
+    p_moleculeLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    p_moleculeLabel->setMinimumHeight(20);
+    p_moleculeLabel->setMaximumHeight(40);
+    p_moleculeLabel->setMinimumWidth(150);
+    p_moleculeLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    
+    p_transitionCountLabel->setWordWrap(true);
+    p_transitionCountLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    p_transitionCountLabel->setMinimumHeight(20);
+    p_transitionCountLabel->setMaximumHeight(40);
+    p_transitionCountLabel->setMinimumWidth(150);
+    p_transitionCountLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    
+    p_frequencyRangeLabel->setWordWrap(true);
+    p_frequencyRangeLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    p_frequencyRangeLabel->setMinimumHeight(20);
+    p_frequencyRangeLabel->setMaximumHeight(60); // Allow more space for frequency ranges
+    p_frequencyRangeLabel->setMinimumWidth(200); // More space for frequency data
+    p_frequencyRangeLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     
     fileLayout->addRow("Format:", p_formatLabel);
     fileLayout->addRow("Molecule:", p_moleculeLabel);
@@ -668,6 +724,14 @@ void CatalogOverlayWidget::updateFileInfo()
     p_transitionCountLabel->setText(QString::number(d_catalogData.size()));
     p_autoRangeButton->setEnabled(true);
     
+    // Auto-set overlay label from molecule name (only in creation context)
+    if (d_context == Context::Creation) {
+        QString moleculeName = d_catalogData.moleculeName();
+        if (!moleculeName.isEmpty() && moleculeName != "-") {
+            emit labelUpdateRequested(moleculeName);
+        }
+    }
+    
     // Calculate and set reasonable default yscale (only in creation context)
     if (d_context == Context::Creation) {
         calculateDefaultYScale();
@@ -703,21 +767,12 @@ void CatalogOverlayWidget::autoSetFrequencyRange()
 {
     double rangeMin, rangeMax;
     
-    // Prefer Ft data range if available, otherwise use settings defaults
-    if (d_hasFtData) {
-        auto ftmwParent = qobject_cast<FtmwViewWidget*>(parent());
-        if (ftmwParent) {
-            Ft mainFt = ftmwParent->getMainPlotFt();
-            auto xRange = mainFt.xRange();
-            rangeMin = xRange.first;
-            rangeMax = xRange.second;
-        } else {
-            // Fallback to settings values
-            rangeMin = get(BC::Key::CatalogWidget::minFreqMHz, DEFAULT_MIN_FREQ);
-            rangeMax = get(BC::Key::CatalogWidget::maxFreqMHz, DEFAULT_MAX_FREQ);
-        }
+    // Use the frequency range from parent context if available and valid
+    if (d_xRangeMin < d_xRangeMax && d_xRangeMin != DEFAULT_MIN_FREQ && d_xRangeMax != DEFAULT_MAX_FREQ) {
+        rangeMin = d_xRangeMin;
+        rangeMax = d_xRangeMax;
     } else {
-        // Use settings values when no Ft data is available
+        // Fallback to settings values
         rangeMin = get(BC::Key::CatalogWidget::minFreqMHz, DEFAULT_MIN_FREQ);
         rangeMax = get(BC::Key::CatalogWidget::maxFreqMHz, DEFAULT_MAX_FREQ);
     }
@@ -728,9 +783,47 @@ void CatalogOverlayWidget::autoSetFrequencyRange()
 
 void CatalogOverlayWidget::calculateDefaultYScale()
 {
-    // This would need access to OverlayBaseOptionsWidget, which will be handled
-    // by the UnifiedOverlayWidget when it integrates this type-specific widget
-    // For now, this is a placeholder that maintains the interface
+    if (!d_fileValid || d_catalogData.isEmpty() || !d_hasFtData) {
+        return; // Can't calculate without valid data
+    }
+    
+    // Get the current frequency range (either from spinboxes or Ft data)
+    double rangeMin = p_minFreqSpinBox->value();
+    double rangeMax = p_maxFreqSpinBox->value();
+    
+    // Find the maximum intensity within the frequency range
+    double maxIntensityInRange = 0.0;
+    bool foundTransitions = false;
+    
+    for (int i = 0; i < d_catalogData.size(); ++i) {
+        const auto &transition = d_catalogData.at(i);
+        if (transition.frequency >= rangeMin && transition.frequency <= rangeMax) {
+            maxIntensityInRange = qMax(maxIntensityInRange, transition.intensity);
+            foundTransitions = true;
+        }
+    }
+    
+    if (!foundTransitions || maxIntensityInRange <= 0.0) {
+        return; // No transitions in range or invalid intensities
+    }
+    
+    // Calculate yscale: we want the strongest catalog line to be about 20% of the Ft yMax
+    // This provides good visibility without overwhelming the spectrum
+    double targetHeight = d_ftYMax * 0.2;
+    double calculatedYScale = targetHeight / maxIntensityInRange;
+    
+    // Make the scale negative so catalog peaks point downward (enhancement from devel-ideas.txt)
+    calculatedYScale = -calculatedYScale;
+    
+    // Emit signal to update the y scale in the overlay base options widget
+    emit yScaleUpdateRequested(calculatedYScale);
+}
+
+void CatalogOverlayWidget::setFrequencyRange(double xRangeMin, double xRangeMax)
+{
+    // Store the frequency range from parent context for use by autoSetFrequencyRange()
+    d_xRangeMin = xRangeMin;
+    d_xRangeMax = xRangeMax;
 }
 
 bool CatalogOverlayWidget::validateConvolutionSettings(QString &errorMessage) const

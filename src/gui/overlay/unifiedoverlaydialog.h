@@ -73,6 +73,10 @@ signals:
     void previewRequested();
     void previewCancelled();
     void overlayDataChanged(std::shared_ptr<OverlayBase> overlay);
+    
+    // Preview overlay management signals
+    void previewOverlayRequested(std::shared_ptr<OverlayBase> overlay);
+    void previewOverlayCancelled(std::shared_ptr<OverlayBase> overlay);
 
 private slots:
     void onValidationStatusChanged(bool isValid, const QString &message);

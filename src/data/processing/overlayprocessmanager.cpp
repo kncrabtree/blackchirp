@@ -17,7 +17,6 @@ OverlayProcessManager::OverlayProcessManager(QObject* parent)
     p_progressTimer->setSingleShot(false);
     connect(p_progressTimer, &QTimer::timeout, this, &OverlayProcessManager::onProgressTimeout);
     
-    qDebug() << "OverlayProcessManager initialized";
 }
 
 OverlayProcessManager::~OverlayProcessManager()
@@ -30,7 +29,6 @@ OverlayProcessManager::~OverlayProcessManager()
         d_currentOperation->watcher->waitForFinished();
     }
     
-    qDebug() << "OverlayProcessManager destroyed";
 }
 
 OverlayProcessManager& OverlayProcessManager::instance()
@@ -65,9 +63,7 @@ QString OverlayProcessManager::queueOperation(std::shared_ptr<OverlayOperation> 
     d_totalOperations++;
     
     emit queueSizeChanged(d_queuedOperations.size());
-    
-    qDebug() << "Queued operation" << operationId << "with priority" << static_cast<int>(priority);
-    
+        
     // Start processing if not already running
     QMetaObject::invokeMethod(this, &OverlayProcessManager::processQueue, Qt::QueuedConnection);
     
@@ -108,7 +104,6 @@ bool OverlayProcessManager::cancelOperation(const QString& operationId)
         emit queueSizeChanged(d_queuedOperations.size());
         emit operationCancelled(operationId);
         
-        qDebug() << "Cancelled queued operation" << operationId;
         return true;
     }
     
@@ -125,7 +120,6 @@ bool OverlayProcessManager::cancelOperation(const QString& operationId)
             }
             
             emit operationCancelled(operationId);
-            qDebug() << "Cancelled running operation" << operationId;
             return true;
         } else {
             qDebug() << "Operation" << operationId << "cannot be cancelled";
@@ -166,7 +160,6 @@ void OverlayProcessManager::cancelAllOperations()
     emit queueSizeChanged(0);
     emit processingStateChanged(false);
     
-    qDebug() << "Cancelled all operations";
 }
 
 bool OverlayProcessManager::isProcessing() const
@@ -272,9 +265,7 @@ void OverlayProcessManager::processQueue()
     
     emit processingStateChanged(true);
     emit operationStarted(d_currentOperation->id);
-    
-    qDebug() << "Starting operation" << d_currentOperation->id;
-    
+        
     // Start the operation in background thread
     auto operation = d_currentOperation->operation;
     auto operationId = d_currentOperation->id;
@@ -308,7 +299,6 @@ void OverlayProcessManager::onOperationFinished()
         d_currentOperation->state = OperationState::Cancelled;
         d_cancelledOperations++;
         emit operationCancelled(operationId);
-        qDebug() << "Operation" << operationId << "was cancelled";
     } else {
         try {
             auto result = watcher->result();
@@ -316,7 +306,6 @@ void OverlayProcessManager::onOperationFinished()
                 d_currentOperation->state = OperationState::Completed;
                 d_completedOperations++;
                 emit operationCompleted(operationId, result);
-                qDebug() << "Operation" << operationId << "completed successfully";
             } else {
                 d_currentOperation->state = OperationState::Failed;
                 // Check if the operation provided an error message in its progress
@@ -409,10 +398,6 @@ void OverlayProcessManager::cleanupCompletedOperations()
     
     for (const QString& id : toRemove) {
         d_allOperations.erase(id);
-    }
-    
-    if (!toRemove.isEmpty()) {
-        qDebug() << "Cleaned up" << toRemove.size() << "old operations";
     }
 }
 

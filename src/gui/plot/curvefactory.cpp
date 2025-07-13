@@ -32,7 +32,6 @@ OverlayMetadataStorage::OverlayMetadataStorage(std::shared_ptr<OverlayBase> over
 void OverlayMetadataStorage::set(const QString& key, const QVariant& value)
 {
     if (!d_overlay) {
-        qDebug() << "Warning: OverlayMetadataStorage attempting to set key" << key << "on null overlay";
         return;
     }
     
@@ -44,7 +43,6 @@ void OverlayMetadataStorage::set(const QString& key, const QVariant& value)
 QVariant OverlayMetadataStorage::get(const QString& key, const QVariant& defaultValue) const
 {
     if (!d_overlay) {
-        qDebug() << "Warning: OverlayMetadataStorage attempting to get key" << key << "from null overlay";
         return defaultValue;
     }
     

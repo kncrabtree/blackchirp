@@ -41,7 +41,7 @@ public:
     // Use the Context enum from OverlayTypeSpecificWidget
     using Context = OverlayTypeSpecificWidget::Context;
 
-    explicit UnifiedOverlayWidget(const QString &settingsKey, QWidget *parent = nullptr);
+    explicit UnifiedOverlayWidget(const QString &settingsKey, Context context, QWidget *parent = nullptr);
     ~UnifiedOverlayWidget();
 
     // Setup methods - must be called after construction
@@ -66,17 +66,18 @@ public:
     // Reset functionality
     void resetToDefaults();
     
-    // Preview mode functionality
-    void enablePreviewMode();
-    void disablePreviewMode();
-    bool isInPreviewMode() const { return d_inPreviewMode; }
-    bool isPreviewSyncValid() const { return d_previewSyncValid; }
-    void updatePreviewSyncState();
+    // Auto-preview functionality (creation context only)
+    std::shared_ptr<OverlayBase> getPreviewOverlay() const { return d_previewOverlay; }
     
     // Progress indication (settings context only)
     void showProgress(const QString &message);
     void hideProgress();
     void updateProgress(int value, const QString &message = QString());
+    
+    // State backup/restore for cancel functionality (settings context only)
+    void backupOverlayState();
+    void restoreOverlayState();
+    void clearBackupState();
     
     // Type-specific widget access
     OverlayTypeSpecificWidget* getTypeSpecificWidget() const { return p_typeSpecificWidget; }
@@ -86,7 +87,7 @@ signals:
     void overlayDataChanged(std::shared_ptr<OverlayBase> overlay); // Real-time overlay updates (settings context)
     void validationStatusChanged(bool isValid, const QString &message);
     
-    // Preview mode signals
+    // Auto-preview signals (creation context only)
     void previewRequested();
     void previewCancelled();
 
@@ -94,12 +95,15 @@ public slots:
     void onSourceFileConfigToggled(bool enabled); // For checkable source file config box
     void onSettingsChanged();
     void onRealTimeUpdate(); // Settings context only
-    void onPreviewToggled(); // Handle preview button clicks
+    void onDataValidityChanged(bool isValid); // Auto-preview handler for creation context
 
 private slots:
     void onProgressOperationStarted(const QString &message);
     void onProgressOperationFinished();
     void onProgressValueChanged(int value);
+    void onLabelUpdateRequested(const QString &newLabel);
+    void onYScaleUpdateRequested(double newYScale);
+    void onColorChangeRequested();
 
 private:
     // UI Setup
@@ -111,7 +115,6 @@ private:
     void createOverlayBaseOptionsBox();
     void createOverlayBaseOptionsWidget();
     void createCurveAppearanceBox();
-    void createPreviewButton();
     void createProgressIndicator();
     
     // Settings loading
@@ -121,7 +124,6 @@ private:
     void configureForContext();
     void updateSourceFileControls();
     void validateSourceFile();
-    void updatePreviewModeUI();
     
     // Type-specific widget management
     void setupTypeSpecificWidget();
@@ -136,14 +138,14 @@ private:
     bool isCreationContext() const { return d_context == Context::Creation; }
     bool isSettingsContext() const { return d_context == Context::Settings; }
     
-    // Preview sync state management
-    QHash<QString, QVariant> captureCurrentSettings() const;
-    bool compareSettings(const QHash<QString, QVariant> &state1, const QHash<QString, QVariant> &state2) const;
-    void invalidatePreviewSync();
-    void validatePreviewSync();
+    // Auto-preview management (creation context only)
+    void createAutoPreview();
+    void updateAutoPreview();
+    void removeAutoPreview();
+    std::shared_ptr<OverlayBase> getCurrentTargetOverlay() const;
     
-    // Context and state
-    Context d_context;
+    // Context and state (immutable after construction)
+    const Context d_context;
     OverlayBase::OverlayType d_overlayType;
     std::shared_ptr<OverlayBase> d_overlay; // Settings context only
     std::shared_ptr<OverlayStorage> p_overlayStorage; // Settings context only
@@ -177,8 +179,6 @@ private:
     QGroupBox *p_curveAppearanceBox;
     CurveAppearanceWidget *p_curveAppearanceWidget;
     
-    // Preview mode controls
-    QPushButton *p_previewButton;
     
     // Progress indication
     QWidget *p_progressWidget;
@@ -190,11 +190,12 @@ private:
     bool d_sourceFileEnabled; // Settings context only
     QString d_lastValidationError;
     
-    // Preview mode state
-    bool d_inPreviewMode;
+    // Auto-preview state (creation context only)
     std::shared_ptr<OverlayBase> d_previewOverlay;
-    QHash<QString, QVariant> d_previewSyncState; // Track settings when preview was created
-    bool d_previewSyncValid; // Whether preview matches current settings
+    
+    // Backup state for cancel functionality (settings context only)
+    bool d_hasBackupState;
+    std::map<QString, QVariant> d_backupMetadata; // Complete overlay metadata backup
 };
 
 #endif // UNIFIEDOVERLAYWIDGET_H

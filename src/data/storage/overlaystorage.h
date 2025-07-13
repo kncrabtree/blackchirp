@@ -49,6 +49,12 @@ public:
     // Save only the metadata for a specific overlay (used when curve settings change)
     void saveOverlayMetadata(std::shared_ptr<OverlayBase> overlay);
     
+    // Preview overlay management (temporary overlays not persisted to disk)
+    bool addPreviewOverlay(std::shared_ptr<OverlayBase> overlay);
+    bool removePreviewOverlay(const QString& label);
+    void clearAllPreviews();
+    QVector<std::shared_ptr<OverlayBase>> getAllPreviewOverlays() const;
+    
     // DataStorageBase interface
     void advance() override {}
     void save() override;
@@ -65,6 +71,9 @@ signals:
 private:
     std::map<QString, std::shared_ptr<OverlayBase>> d_overlays;
     std::map<QString, QFuture<void>> d_pendingWrites; // Maps overlay label to write future
+    
+    // Preview overlays (temporary, not persisted)
+    std::map<QString, std::shared_ptr<OverlayBase>> d_previewOverlays;
     
     // Factory method for creating overlay objects
     std::shared_ptr<OverlayBase> createOverlayObject(OverlayBase::OverlayType type);

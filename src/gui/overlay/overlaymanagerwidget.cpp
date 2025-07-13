@@ -1,8 +1,6 @@
 #include "overlaymanagerwidget.h"
-#include "bcexpoverlaydialog.h"
-#include "catalogoverlaydialog.h"
+#include "unifiedoverlaydialog.h"
 #include "overlayconfiguredelegate.h"
-#include "overlaysettingsdialog.h"
 #include <gui/plot/curveappearancewidget.h>
 #include <gui/plot/curveappearancepresetmanager.h>
 #include <gui/plot/presetsavedialog.h>
@@ -239,59 +237,60 @@ void OverlayManagerWidget::addOverlay(OverlayBase::OverlayType type)
         return;
     }
 
-    // pointers used for the overlay dialog and overlay object
-    std::shared_ptr<OverlayBase> overlay = nullptr;
-    OverlayConfigDialog *dialog = nullptr;
-
     // Get the FtmwViewWidget parent for dialog constructors
     FtmwViewWidget* ftmwParent = qobject_cast<FtmwViewWidget*>(parentWidget());
     if(!ftmwParent) {
         return;
     }
     
-    // Create appropriate dialog based on overlay type
-    switch(type) {
-    case OverlayBase::BCExperiment:
-        {
-            dialog = new BCExpOverlayDialog(ftmwParent);
-            break;
-        }
-    case OverlayBase::Catalog:
-        {
-            dialog = new CatalogOverlayDialog(ftmwParent);
-            break;
-        }
-    case OverlayBase::GenericXY:
-        // TODO: Implement GenericXY overlay creation
-        // dialog = new GenericXYOverlayDialog(ftmwParent);
+    // Check if overlay type is implemented
+    if (type == OverlayBase::GenericXY) {
         qDebug() << "GenericXY overlay creation not yet implemented";
         return;
-    default:
-        qDebug() << "Unknown overlay type";
-        return;
-    }
-
-    // Run the dialog and get the overlay if accepted
-    dialog->setModal(true);
-    dialog->setupUI(); // Set up UI after construction is complete
-    if(dialog->exec() == QDialog::Accepted) {
-        // Create the overlay
-        overlay = dialog->createOverlay();
     }
     
-    // Add overlay to storage if created successfully
-    if (overlay != nullptr) {
-        // Add directly to overlay storage - this initiates async write
-        if (p_overlayStorage->addOverlay(overlay)) {
-            // Add to unified model for display
-            p_overlayModel->addOverlay(overlay);
-            
-            // Update UI state to show any pending writes
-            updateButtonStates();
+    // Get plot information from parent
+    auto xRange = ftmwParent->getMainPlotFt().xRange();
+    QStringList plotNames = ftmwParent->getPlotNames();
+    
+    // Get existing overlays for context
+    QVector<std::shared_ptr<OverlayBase>> existingOverlays = p_overlayModel->getAllOverlays();
+    
+    // Create unified dialog in creation mode
+    UnifiedOverlayDialog dialog(type, plotNames, xRange.first, xRange.second, existingOverlays, this);
+    dialog.setModal(true);
+    
+    // Connect preview signals for real-time preview display
+    connect(&dialog, &UnifiedOverlayDialog::previewRequested,
+            this, &OverlayManagerWidget::onPreviewRequested);
+    connect(&dialog, &UnifiedOverlayDialog::previewCancelled,
+            this, &OverlayManagerWidget::onPreviewCancelled);
+    connect(&dialog, &UnifiedOverlayDialog::previewOverlayRequested,
+            this, &OverlayManagerWidget::onPreviewOverlayRequested);
+    connect(&dialog, &UnifiedOverlayDialog::previewOverlayCancelled,
+            this, &OverlayManagerWidget::onPreviewOverlayCancelled);
+    
+    // Run the dialog and get the overlay if accepted
+    if(dialog.exec() == QDialog::Accepted) {
+        auto overlay = dialog.getOverlay();
+        
+        // Add overlay to storage if created successfully
+        if (overlay != nullptr) {
+            // Add directly to overlay storage - this initiates async write
+            if (p_overlayStorage->addOverlay(overlay)) {
+                // Add to unified model for display
+                p_overlayModel->addOverlay(overlay);
+                
+                // Update UI state to show any pending writes
+                updateButtonStates();
+            }
         }
     }
-
-    dialog->deleteLater();
+    
+    // Clear any remaining preview overlays after dialog closes
+    if (p_overlayStorage) {
+        p_overlayStorage->clearAllPreviews();
+    }
 }
 
 void OverlayManagerWidget::removeOverlay()
@@ -349,7 +348,6 @@ void OverlayManagerWidget::removeOverlay()
                 // Remove from unified model for display
                 p_overlayModel->removeOverlay(row);
                 
-                qDebug() << "Overlay removed from storage successfully";
             } else {
                 qDebug() << "Failed to remove overlay from storage";
             }
@@ -421,6 +419,7 @@ void OverlayManagerWidget::setupKeyboardShortcuts()
             copyAppearanceSettings(selectionInfo.overlay);
         } else {
             // Clear clipboard and provide feedback for invalid selection
+            /// TODO: Display message on UI
             d_clipboardAppearance.clear();
             if (selectionInfo.multipleRowsSelected) {
                 qDebug() << "Cannot copy appearance: multiple rows selected. Clipboard cleared.";
@@ -446,6 +445,7 @@ void OverlayManagerWidget::setupKeyboardShortcuts()
             copyOverlaySettings(selectionInfo.overlay);
         } else {
             // Clear clipboard and provide feedback for invalid selection
+            /// TODO: Display message on UI
             d_clipboardSettings.clear();
             if (selectionInfo.multipleRowsSelected) {
                 qDebug() << "Cannot copy overlay settings: multiple rows selected. Clipboard cleared.";
@@ -559,12 +559,12 @@ void OverlayManagerWidget::captureUndoState(const QVector<std::shared_ptr<Overla
         d_undoData.overlayStates.append(undoState);
     }
     
-    qDebug() << "Captured undo state for" << operationType << "operation on" << overlays.size() << "overlays";
 }
 
 void OverlayManagerWidget::performUndo()
 {
     if (!d_undoData.hasUndoData || d_undoData.overlayStates.isEmpty()) {
+        /// TODO: Display message on UI
         qDebug() << "No undo data available";
         return;
     }
@@ -634,7 +634,8 @@ void OverlayManagerWidget::performUndo()
         // Emit signal to update this overlay's display
         emit overlayDataChanged(undoState.overlay);
     }
-    
+
+    /// TODO: Display message on UI
     qDebug() << "Undid" << d_undoData.operationType << "operation on" << d_undoData.overlayCount << "overlays";
     
     // Clear undo data after use (only one level of undo)
@@ -643,9 +644,6 @@ void OverlayManagerWidget::performUndo()
 
 void OverlayManagerWidget::invalidateUndo()
 {
-    if (d_undoData.hasUndoData) {
-        qDebug() << "Invalidated undo data";
-    }
     d_undoData = UndoData();
 }
 
@@ -784,12 +782,12 @@ void OverlayManagerWidget::onConfigureClicked(const QModelIndex &index)
     // Invalidate undo when opening configure dialog
     invalidateUndo();
     
-    // Create and show the configuration dialog
-    OverlaySettingsDialog dialog(overlay, plotNames, xRange.first, xRange.second, p_overlayStorage, this);
-    dialog.setupUI(); // Set up UI after construction is complete
+    // Create unified dialog in settings mode
+    UnifiedOverlayDialog dialog(overlay, plotNames, xRange.first, xRange.second, p_overlayStorage, this);
+    dialog.setModal(true);
     
     // Connect the dialog signal to our slot for real-time updates
-    connect(&dialog, &OverlaySettingsDialog::overlaySettingsChanged,
+    connect(&dialog, &UnifiedOverlayDialog::overlayDataChanged,
             this, &OverlayManagerWidget::onOverlaySettingsChanged);
     
     dialog.exec();
@@ -1143,6 +1141,7 @@ void OverlayManagerWidget::copyOverlaySettings(std::shared_ptr<OverlayBase> over
     d_clipboardSettings["maxFreqValue"] = overlay->getMaxFreqValue();
     d_clipboardSettings["enabled"] = overlay->getEnabled();
     
+    /// TODO: Display message on UI
     qDebug() << "Copied overlay settings from:" << overlay->getLabel();
 }
 
@@ -1180,6 +1179,7 @@ void OverlayManagerWidget::pasteOverlaySettings(std::shared_ptr<OverlayBase> ove
     // Emit signal to update the overlay display
     emit overlayDataChanged(overlay);
     
+    /// TODO: Display message on UI
     qDebug() << "Pasted overlay settings to:" << overlay->getLabel();
 }
 
@@ -1209,6 +1209,7 @@ void OverlayManagerWidget::copyAppearanceSettings(std::shared_ptr<OverlayBase> o
     d_clipboardAppearance["curveAutoscale"] = overlay->getCurveMetadata(BC::Key::bcCurveAutoscale);
     d_clipboardAppearance["curveAxisY"] = overlay->getCurveMetadata(BC::Key::bcCurveAxisY);
     
+    /// TODO: Display message on UI
     qDebug() << "Copied curve appearance from:" << overlay->getLabel();
 }
 
@@ -1250,12 +1251,42 @@ void OverlayManagerWidget::pasteAppearanceSettings(std::shared_ptr<OverlayBase> 
     // Emit signal to update the overlay display
     emit overlayDataChanged(overlay);
     
+    /// TODO: Display message on UI
     qDebug() << "Pasted curve appearance to:" << overlay->getLabel();
 }
 
 bool OverlayManagerWidget::hasClipboardAppearance() const
 {
     return !d_clipboardAppearance.isEmpty();
+}
+
+void OverlayManagerWidget::onPreviewRequested()
+{
+    // This slot is called when the creation dialog requests a preview
+    // The dialog should have already passed the preview overlay via overlayDataChanged signal
+    // Nothing to do here as the preview overlay flows through the normal rendering pipeline
+}
+
+void OverlayManagerWidget::onPreviewCancelled()
+{
+    // This slot is called when the dialog's preview mode is cancelled
+    // The actual preview removal is handled by onPreviewOverlayCancelled
+}
+
+void OverlayManagerWidget::onPreviewOverlayRequested(std::shared_ptr<OverlayBase> overlay)
+{
+    if (overlay && p_overlayStorage) {
+        // Add preview overlay to storage - this will automatically trigger display
+        p_overlayStorage->addPreviewOverlay(overlay);
+    }
+}
+
+void OverlayManagerWidget::onPreviewOverlayCancelled(std::shared_ptr<OverlayBase> overlay)
+{
+    if (overlay && p_overlayStorage) {
+        // Remove preview overlay from storage - this will automatically trigger removal from plots
+        p_overlayStorage->removePreviewOverlay(overlay->getLabel());
+    }
 }
 
 void OverlayManagerWidget::pasteAppearanceToSelected()
@@ -1292,6 +1323,7 @@ void OverlayManagerWidget::pasteAppearanceToSelected()
         pasteAppearanceSettings(overlay);
     }
     
+    /// TODO: Display message on UI
     qDebug() << "Pasted appearance to" << selectedOverlays.size() << "overlays";
 }
 
@@ -1329,6 +1361,7 @@ void OverlayManagerWidget::pasteSettingsToSelected()
         pasteOverlaySettings(overlay);
     }
     
+    /// TODO: Display message on UI
     qDebug() << "Pasted settings to" << selectedOverlays.size() << "overlays";
 }
 

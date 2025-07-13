@@ -31,6 +31,7 @@ class OverlayBase
     Q_GADGET
     friend class OverlayStorage;
     friend class OverlayMetadataStorage;
+    friend class UnifiedOverlayWidget;
     
 public:
     enum OverlayType {

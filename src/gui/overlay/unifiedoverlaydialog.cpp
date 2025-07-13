@@ -13,6 +13,7 @@
 #include <QTimer>
 #include <QApplication>
 #include <QDebug>
+#include <gui/plot/blackchirpplotcurve.h>
 
 // Creation mode constructor
 UnifiedOverlayDialog::UnifiedOverlayDialog(OverlayBase::OverlayType type,
@@ -88,7 +89,8 @@ std::shared_ptr<OverlayBase> UnifiedOverlayDialog::getOverlay() const
 
 bool UnifiedOverlayDialog::isInPreviewMode() const
 {
-    return p_widget ? p_widget->isInPreviewMode() : false;
+    // Auto-preview in creation context - check if preview overlay exists
+    return p_widget && p_widget->getPreviewOverlay() != nullptr;
 }
 
 void UnifiedOverlayDialog::accept()
@@ -159,9 +161,14 @@ void UnifiedOverlayDialog::reject()
         break;
     }
     
-    // If in preview mode, disable it before rejecting
-    if (p_widget && p_widget->isInPreviewMode()) {
-        p_widget->disablePreviewMode();
+    // Preview cleanup will be handled automatically by widget destruction
+    
+    // In settings mode, restore the original overlay state before cancelling
+    if (isSettingsMode() && p_widget && d_overlay) {
+        p_widget->restoreOverlayState();
+        
+        // Emit signal to update plot display with restored values
+        emit overlayDataChanged(d_overlay);
     }
     
     // Clean up any pending operations
@@ -169,7 +176,7 @@ void UnifiedOverlayDialog::reject()
         auto& manager = OverlayProcessManager::instance();
         manager.cancelOperation(d_currentOperationId);
     }
-    
+
     QDialog::reject();
 }
 
@@ -194,6 +201,13 @@ void UnifiedOverlayDialog::onValidationStatusChanged(bool isValid, const QString
 
 void UnifiedOverlayDialog::onPreviewRequested()
 {
+    // Get the preview overlay from the widget
+    auto previewOverlay = p_widget->getPreviewOverlay();
+    if (previewOverlay) {
+        // Emit signal for overlay manager to handle preview addition
+        emit previewOverlayRequested(previewOverlay);
+    }
+    
     // Forward signal and update button states
     emit previewRequested();
     updateButtonState();
@@ -202,6 +216,12 @@ void UnifiedOverlayDialog::onPreviewRequested()
 
 void UnifiedOverlayDialog::onPreviewCancelled()
 {
+    // Get the preview overlay from the widget and signal for removal
+    auto previewOverlay = p_widget->getPreviewOverlay();
+    if (previewOverlay) {
+        emit previewOverlayCancelled(previewOverlay);
+    }
+    
     // Forward signal and update button states
     emit previewCancelled();
     updateButtonState();
@@ -224,9 +244,10 @@ void UnifiedOverlayDialog::setupUI()
     p_mainLayout->setContentsMargins(12, 12, 12, 12);
     p_mainLayout->setSpacing(12);
     
-    // Create the unified overlay widget
+    // Create the unified overlay widget with appropriate context
     QString settingsKey = QString("UnifiedOverlayDialog_%1").arg(static_cast<int>(d_overlayType));
-    p_widget = new UnifiedOverlayWidget(settingsKey, this);
+    auto context = isCreationMode() ? UnifiedOverlayWidget::Context::Creation : UnifiedOverlayWidget::Context::Settings;
+    p_widget = new UnifiedOverlayWidget(settingsKey, context, this);
     p_mainLayout->addWidget(p_widget, 1); // Give it all available space
     
     // Create status label
@@ -426,14 +447,12 @@ UnifiedOverlayDialog::PreviewState UnifiedOverlayDialog::analyzePreviewState() c
         return PreviewState::NoPreview;
     }
     
-    if (!p_widget->isInPreviewMode()) {
+    if (!isInPreviewMode()) {
         return PreviewState::NoPreview;
     }
     
-    // Check if preview is in sync with current settings
-    if (!p_widget->isPreviewSyncValid()) {
-        return PreviewState::StalePreview;
-    }
+    // In auto-preview architecture, previews are always current
+    // (Phase 2 will implement intelligent sync checking)
     
     // Check if a background operation is currently updating the preview
     // (For now, we'll use a simplified check - in full implementation this would 
@@ -504,22 +523,16 @@ void UnifiedOverlayDialog::createOverlayAsync()
 
 void UnifiedOverlayDialog::finalizeFromPreview()
 {
-    if (!p_widget || !p_widget->isInPreviewMode()) {
+    if (!p_widget || !isInPreviewMode()) {
         createOverlayAsync();
         return;
     }
     
-    // Check if preview is stale and needs refresh
-    if (!p_widget->isPreviewSyncValid()) {
-        // Preview is stale - refresh it first, then finalize
-        p_widget->enablePreviewMode(); // This will refresh with current settings
-    }
-    
-    // Fast path: get preview overlay and clear preview flag
-    d_createdOverlay = p_widget->createOverlay();
-    if (d_createdOverlay) {
+    // Fast path: get preview overlay and clear preview flag  
+    auto previewOverlay = p_widget->getPreviewOverlay();
+    if (previewOverlay) {
+        d_createdOverlay = previewOverlay;
         d_createdOverlay->setPreview(false);
-        p_widget->disablePreviewMode();
         QDialog::accept();
     } else {
         createOverlayAsync();
@@ -537,10 +550,7 @@ void UnifiedOverlayDialog::applySettingsAsync()
     // Apply current settings to overlay
     p_widget->applyToOverlay();
     
-    // If in preview mode, disable it
-    if (p_widget->isInPreviewMode()) {
-        p_widget->disablePreviewMode();
-    }
+    // Auto-preview cleanup will be handled automatically
     
     setDialogState(DialogState::Complete);
     QDialog::accept();

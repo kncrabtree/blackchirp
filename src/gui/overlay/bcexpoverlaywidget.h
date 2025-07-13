@@ -101,6 +101,7 @@ private slots:
     void onPathChanged();
     void onConfigureFtClicked();
     void validateExperiment();
+    void updateAutomaticLabel();
 
 protected:
     // OverlayTypeSpecificWidget interface
