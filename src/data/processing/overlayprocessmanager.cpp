@@ -286,15 +286,7 @@ void OverlayProcessManager::processQueue()
             });
     
     auto future = QtConcurrent::run([operation]() -> std::shared_ptr<OverlayBase> {
-        try {
-            return operation->execute();
-        } catch (const std::exception& e) {
-            qWarning() << "Operation execution failed:" << e.what();
-            return nullptr;
-        } catch (...) {
-            qWarning() << "Operation execution failed with unknown error";
-            return nullptr;
-        }
+        return operation->execute(); // Let exceptions propagate to onOperationFinished
     });
     
     d_currentOperation->watcher->setFuture(future);
@@ -327,10 +319,16 @@ void OverlayProcessManager::onOperationFinished()
                 qDebug() << "Operation" << operationId << "completed successfully";
             } else {
                 d_currentOperation->state = OperationState::Failed;
-                d_currentOperation->errorMessage = "Operation returned null result";
+                // Check if the operation provided an error message in its progress
+                QString progressMsg = d_currentOperation->progressMessage;
+                if (progressMsg.startsWith("Error:")) {
+                    d_currentOperation->errorMessage = progressMsg.mid(7).trimmed(); // Remove "Error: " prefix
+                } else {
+                    d_currentOperation->errorMessage = "Operation returned null result";
+                }
                 d_failedOperations++;
                 emit operationFailed(operationId, d_currentOperation->errorMessage);
-                qDebug() << "Operation" << operationId << "failed: null result";
+                qDebug() << "Operation" << operationId << "failed:" << d_currentOperation->errorMessage;
             }
         } catch (const std::exception& e) {
             d_currentOperation->state = OperationState::Failed;

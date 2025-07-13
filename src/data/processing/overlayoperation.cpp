@@ -186,6 +186,22 @@ std::shared_ptr<OverlayBase> ConvolutionOperation::execute()
             throw std::runtime_error("Convolution only supported for catalog overlays");
         }
         
+        // Validate convolution parameters
+        if (d_convolutionEnabled) {
+            if (d_linewidthKHz < 0.0) {
+                updateProgress(0, "Error: Linewidth must be positive");
+                return nullptr; // Signal failure by returning null
+            }
+            if (d_freqMinMHz >= d_freqMaxMHz) {
+                updateProgress(0, "Error: Frequency minimum must be less than maximum");
+                return nullptr;
+            }
+            if (d_pointSpacingMHz <= 0.0) {
+                updateProgress(0, "Error: Point spacing must be positive");
+                return nullptr;
+            }
+        }
+        
         updateProgress(25, "Configuring convolution settings...");
         
         // Apply convolution settings
