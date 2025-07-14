@@ -943,11 +943,13 @@ void FtmwViewWidget::onOverlayRemoved(std::shared_ptr<OverlayBase> overlay)
 void FtmwViewWidget::onOverlayDataChanged(std::shared_ptr<OverlayBase> overlay)
 {
     if (!overlay) {
+        qDebug() << "onOverlayDataChanged: received null overlay";
         return;
     }
 
     // Get the target plot name from the overlay
     QString targetPlotName = overlay->getPlotId();
+    qDebug() << "onOverlayDataChanged: overlay" << overlay->getLabel() << "target plot:" << targetPlotName;
     
     // Find which plot currently contains this overlay (if any)
     QString currentPlotName;
@@ -957,9 +959,11 @@ void FtmwViewWidget::onOverlayDataChanged(std::shared_ptr<OverlayBase> overlay)
             break;
         }
     }
+    qDebug() << "onOverlayDataChanged: current plot:" << (currentPlotName.isEmpty() ? "none" : currentPlotName);
     
     // If overlay needs to move to a different plot
     if (!currentPlotName.isEmpty() && currentPlotName != targetPlotName) {
+        qDebug() << "onOverlayDataChanged: moving overlay from" << currentPlotName << "to" << targetPlotName;
         // Remove from current plot
         auto currentIt = d_plotMap.find(currentPlotName);
         if (currentIt != d_plotMap.end()) {
@@ -970,20 +974,28 @@ void FtmwViewWidget::onOverlayDataChanged(std::shared_ptr<OverlayBase> overlay)
         auto targetIt = d_plotMap.find(targetPlotName);
         if (targetIt != d_plotMap.end()) {
             targetIt->second->addOverlay(overlay);
+        } else {
+            qDebug() << "onOverlayDataChanged: target plot" << targetPlotName << "not found!";
         }
     }
     // If overlay is not yet on any plot, add it to the target plot
     else if (currentPlotName.isEmpty()) {
+        qDebug() << "onOverlayDataChanged: adding overlay to target plot" << targetPlotName;
         auto targetIt = d_plotMap.find(targetPlotName);
         if (targetIt != d_plotMap.end()) {
             targetIt->second->addOverlay(overlay);
+        } else {
+            qDebug() << "onOverlayDataChanged: target plot" << targetPlotName << "not found!";
         }
     }
     // If overlay is already on the correct plot, just update it
     else {
+        qDebug() << "onOverlayDataChanged: updating overlay on current plot" << targetPlotName;
         auto targetIt = d_plotMap.find(targetPlotName);
         if (targetIt != d_plotMap.end()) {
             targetIt->second->updateOverlay(overlay);
+        } else {
+            qDebug() << "onOverlayDataChanged: target plot" << targetPlotName << "not found!";
         }
     }
 }

@@ -187,8 +187,9 @@ void OverlayBase::setEnabled(bool enabled)
 void OverlayBase::setPreview(bool preview)
 {
     d_preview = preview;
-    // Note: Don't set d_modified for preview state changes
-    // Preview is a transient state that shouldn't affect persistence
+    //only set modified if we are converting a preview to a permanent overlay
+    if(!preview)
+        d_modified = true;
 }
 
 void OverlayBase::save()

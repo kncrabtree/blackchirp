@@ -344,6 +344,9 @@ void OverlayBaseOptionsWidget::onLabelChanged()
                                                 "<span style='color: #CC6600;'>Changed from: %2</span>")
                                                 .arg(sanitized, label));
     }
+    
+    // Emit signal for label changes to trigger validation
+    emit labelChanged();
 }
 
 QString OverlayBaseOptionsWidget::sanitizeLabel(const QString& label) const

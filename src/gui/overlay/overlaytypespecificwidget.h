@@ -98,6 +98,7 @@ signals:
     void progressValueChanged(int value);
     void labelUpdateRequested(const QString &newLabel);
     void yScaleUpdateRequested(double newYScale);
+    void frequencyRangeUpdateRequested(double minFreq, double maxFreq, bool enableLimiting);
 
 protected:
     // Helper methods for derived classes

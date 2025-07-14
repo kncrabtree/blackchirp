@@ -47,10 +47,7 @@ UnifiedOverlayWidget::UnifiedOverlayWidget(const QString &settingsKey, Context c
 UnifiedOverlayWidget::~UnifiedOverlayWidget()
 {
     // Ensure preview overlay is properly cleaned up to avoid dangling references
-    if (d_previewOverlay) {
-        d_previewOverlay->setEnabled(false);
-        emit previewCancelled();
-    }
+    cleanupPreviewOverlay();
 }
 
 void UnifiedOverlayWidget::setupForCreation(OverlayBase::OverlayType type,
@@ -203,8 +200,17 @@ bool UnifiedOverlayWidget::validateSettings(QString &errorMessage) const
 
 bool UnifiedOverlayWidget::isDataValid() const
 {
+    // Check type-specific widget data validity
     if (p_typeSpecificWidget && !p_typeSpecificWidget->isDataValid()) {
         return false;
+    }
+    
+    // Check overlay base options validation (includes label validation)
+    if (p_overlayBaseOptionsWidget) {
+        QString errorMessage;
+        if (!p_overlayBaseOptionsWidget->validateSettings(errorMessage, d_existingOverlays)) {
+            return false;
+        }
     }
     
     return true;
@@ -274,44 +280,51 @@ void UnifiedOverlayWidget::onSourceFileConfigToggled(bool enabled)
 
 void UnifiedOverlayWidget::onSettingsChanged()
 {
-    // Validate current state
-    QString errorMessage;
-    bool isValid = validateSettings(errorMessage);
+    qDebug() << "onSettingsChanged: called in" << (isCreationContext() ? "creation" : "settings") << "context";
     
-    d_lastValidationError = errorMessage;
-    emit validationStatusChanged(isValid, errorMessage);
+    // Use centralized validation logic
+    performCompleteValidation();
     emit settingsChanged();
-    
-    // Auto-preview: Update preview when settings change in creation context
-    if (isCreationContext() && isDataValid()) {
-        updateAutoPreview();
-    }
 }
 
 void UnifiedOverlayWidget::onRealTimeUpdate()
 {
-    if (!isSettingsContext()) {
+    // Only apply settings and emit updates if current settings are valid
+    QString errorMessage;
+    bool isValid = validateSettings(errorMessage);
+    
+    if (!isValid) {
+        qDebug() << "onRealTimeUpdate: skipping overlay update due to invalid settings:" << errorMessage;
         return;
     }
     
-    // Apply current settings to overlay and emit update signal
+    // Apply current settings to the appropriate overlay
     applyToOverlay();
-    emit overlayDataChanged(d_overlay);
+    
+    // Emit update signal with the appropriate overlay based on context
+    if (isSettingsContext()) {
+        // Settings context: emit for the actual overlay
+        if (d_overlay) {
+            qDebug() << "onRealTimeUpdate: emitting overlayDataChanged for settings overlay" << d_overlay->getLabel();
+            emit overlayDataChanged(d_overlay);
+        }
+    } else {
+        // Creation context: emit for the preview overlay
+        if (d_previewOverlay) {
+            qDebug() << "onRealTimeUpdate: emitting overlayDataChanged for preview overlay" << d_previewOverlay->getLabel();
+            emit overlayDataChanged(d_previewOverlay);
+        } else {
+            qDebug() << "onRealTimeUpdate: no preview overlay to update";
+        }
+    }
 }
 
 void UnifiedOverlayWidget::onDataValidityChanged(bool isValid)
 {
-    if (isCreationContext()) {
-        // Auto-preview logic for creation context
-        if (isValid) {
-            // Create or update auto-preview
-            updateAutoPreview();
-        } else {
-            // Remove auto-preview when data becomes invalid
-            removeAutoPreview();
-        }
-    }
-    // In settings context, no auto-preview needed - operations target d_overlay directly
+    Q_UNUSED(isValid); // Don't use this parameter - always do full validation
+    
+    // Use centralized validation logic - this will handle both UI updates and auto-preview
+    performCompleteValidation();
 }
 
 void UnifiedOverlayWidget::onProgressOperationStarted(const QString &message)
@@ -478,14 +491,15 @@ void UnifiedOverlayWidget::createOverlayBaseOptionsWidget()
         // Show the groupbox now that it has real content
         p_overlayBaseOptionsBox->setVisible(true);
         
-        // Connect signals
+        // Connect signals for both contexts
         connect(p_overlayBaseOptionsWidget, &OverlayBaseOptionsWidget::settingsChanged,
                 this, &UnifiedOverlayWidget::onSettingsChanged);
+        connect(p_overlayBaseOptionsWidget, &OverlayBaseOptionsWidget::settingsChanged,
+                this, &UnifiedOverlayWidget::onRealTimeUpdate);
         
-        if (isSettingsContext()) {
-            connect(p_overlayBaseOptionsWidget, &OverlayBaseOptionsWidget::settingsChanged,
-                    this, &UnifiedOverlayWidget::onRealTimeUpdate);
-        }
+        // Connect label changes to trigger validation (label validation is critical for overlay creation)
+        connect(p_overlayBaseOptionsWidget, &OverlayBaseOptionsWidget::labelChanged,
+                this, &UnifiedOverlayWidget::onSettingsChanged);
     }
 }
 
@@ -521,8 +535,13 @@ void UnifiedOverlayWidget::createCurveAppearanceBox()
     auto boxLayout = new QVBoxLayout(p_curveAppearanceBox);
     boxLayout->addWidget(p_curveAppearanceWidget);
     
-    // Connect curve appearance signals (will be connected in configureForContext)
-    // when we know the context
+    // Connect signals once during creation - no context-dependent connections needed
+    connect(p_curveAppearanceWidget, &CurveAppearanceWidget::curveAppearanceChanged,
+            this, &UnifiedOverlayWidget::onSettingsChanged);
+    connect(p_curveAppearanceWidget, &CurveAppearanceWidget::curveAppearanceChanged,
+            this, &UnifiedOverlayWidget::onRealTimeUpdate);
+    connect(p_curveAppearanceWidget, &CurveAppearanceWidget::colorChangeRequested,
+            this, &UnifiedOverlayWidget::onColorChangeRequested);
 }
 
 
@@ -592,38 +611,13 @@ void UnifiedOverlayWidget::configureForContext()
         p_typeSpecificSettingsBox->setTitle(QString("%1 Settings").arg(typeName));
     }
     
-    // Setup context-aware connections for curve appearance widget
-    if (p_curveAppearanceWidget) {
-        // Disconnect any existing connections first
-        disconnect(p_curveAppearanceWidget, &CurveAppearanceWidget::curveAppearanceChanged,
-                   this, &UnifiedOverlayWidget::onSettingsChanged);
-        disconnect(p_curveAppearanceWidget, &CurveAppearanceWidget::curveAppearanceChanged,
-                   this, &UnifiedOverlayWidget::onRealTimeUpdate);
-        disconnect(p_curveAppearanceWidget, &CurveAppearanceWidget::colorChangeRequested,
-                   this, &UnifiedOverlayWidget::onColorChangeRequested);
-        
-        // Connect base signal for both contexts
-        connect(p_curveAppearanceWidget, &CurveAppearanceWidget::curveAppearanceChanged,
-                this, &UnifiedOverlayWidget::onSettingsChanged);
-        
-        // Connect color change signal for both contexts
-        connect(p_curveAppearanceWidget, &CurveAppearanceWidget::colorChangeRequested,
-                this, &UnifiedOverlayWidget::onColorChangeRequested);
-        
-        // Connect real-time update for settings context only
-        if (isSettingsContext()) {
-            connect(p_curveAppearanceWidget, &CurveAppearanceWidget::curveAppearanceChanged,
-                    this, &UnifiedOverlayWidget::onRealTimeUpdate);
-        }
-        
-        // Set intelligent defaults for catalog overlays in creation mode
-        if (isCreationContext() && d_overlayType == OverlayBase::Catalog) {
-            // Default to Stem - Secondary for discrete catalog data
-            auto presetManager = CurveAppearancePresetManager::instance();
-            if (presetManager && presetManager->hasPreset("Stem - Secondary")) {
-                auto preset = presetManager->getPreset("Stem - Secondary");
-                p_curveAppearanceWidget->setCurrentAppearance(preset.appearance);
-            }
+    // Set intelligent defaults for catalog overlays in creation mode
+    if (p_curveAppearanceWidget && isCreationContext() && d_overlayType == OverlayBase::Catalog) {
+        // Default to Stem - Secondary for discrete catalog data
+        auto presetManager = CurveAppearancePresetManager::instance();
+        if (presetManager && presetManager->hasPreset("Stem - Secondary")) {
+            auto preset = presetManager->getPreset("Stem - Secondary");
+            p_curveAppearanceWidget->setCurrentAppearance(preset.appearance);
         }
     }
 }
@@ -663,8 +657,8 @@ void UnifiedOverlayWidget::validateSourceFile()
     
     updateSourceFileControls();
     
-    // Emit validation status change
-    emit validationStatusChanged(d_sourceFileValid, d_lastValidationError);
+    // Use centralized validation logic to update UI consistently
+    performCompleteValidation();
 }
 
 void UnifiedOverlayWidget::setupTypeSpecificWidget()
@@ -727,6 +721,30 @@ QString UnifiedOverlayWidget::getContextName() const
     return "Unknown";
 }
 
+void UnifiedOverlayWidget::performCompleteValidation()
+{
+    // Perform complete validation including both type-specific and overlay base options
+    QString errorMessage;
+    bool isValid = validateSettings(errorMessage);
+    
+    // Update internal state
+    d_lastValidationError = errorMessage;
+    
+    // Emit validation status change for UI updates
+    emit validationStatusChanged(isValid, errorMessage);
+    
+    // Handle auto-preview logic for creation context
+    if (isCreationContext()) {
+        if (isValid && isDataValid()) {
+            qDebug() << "performCompleteValidation: calling updateAutoPreview";
+            updateAutoPreview();
+        } else {
+            qDebug() << "performCompleteValidation: removing auto-preview due to invalid data";
+            removeAutoPreview();
+        }
+    }
+}
+
 void UnifiedOverlayWidget::setupTypeSpecificWidgetContext()
 {
     if (!p_typeSpecificWidget) {
@@ -758,28 +776,28 @@ void UnifiedOverlayWidget::setupTypeSpecificWidgetConnections()
             this, &UnifiedOverlayWidget::validateSourceFile);
     connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::dataValidityChanged,
             this, [this](bool isValid) {
-                QString errorMessage;
-                emit validationStatusChanged(isValid, errorMessage);
-                onDataValidityChanged(isValid); // Trigger auto-preview logic
+                Q_UNUSED(isValid); // Don't use this parameter - always do full validation
+                performCompleteValidation(); // Centralized validation that updates UI
+                // Auto-preview logic now handled by performCompleteValidation()
             });
     connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::labelUpdateRequested,
             this, &UnifiedOverlayWidget::onLabelUpdateRequested);
     connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::yScaleUpdateRequested,
             this, &UnifiedOverlayWidget::onYScaleUpdateRequested);
+    connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::frequencyRangeUpdateRequested,
+            this, &UnifiedOverlayWidget::onFrequencyRangeUpdateRequested);
     
-    // Settings-only connections for real-time updates and progress indication
-    if (isSettingsContext()) {
-        connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::settingsChanged,
-                this, &UnifiedOverlayWidget::onRealTimeUpdate);
-        
-        // Progress indication connections
-        connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::progressOperationStarted,
-                this, &UnifiedOverlayWidget::onProgressOperationStarted);
-        connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::progressOperationFinished,
-                this, &UnifiedOverlayWidget::onProgressOperationFinished);
-        connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::progressValueChanged,
-                this, &UnifiedOverlayWidget::onProgressValueChanged);
-    }
+    // Real-time update and progress indication connections for both contexts
+    connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::settingsChanged,
+            this, &UnifiedOverlayWidget::onRealTimeUpdate);
+    
+    // Progress indication connections for both contexts
+    connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::progressOperationStarted,
+            this, &UnifiedOverlayWidget::onProgressOperationStarted);
+    connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::progressOperationFinished,
+            this, &UnifiedOverlayWidget::onProgressOperationFinished);
+    connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::progressValueChanged,
+            this, &UnifiedOverlayWidget::onProgressValueChanged);
 }
 
 void UnifiedOverlayWidget::reparentTypeSpecificWidgets()
@@ -929,14 +947,9 @@ void UnifiedOverlayWidget::updateAutoPreview()
     if (!d_previewOverlay) {
         // No existing preview - create one
         createAutoPreview();
-    } else {
-        // SAFETY: Don't destroy existing preview - update it in place
-        // Apply current settings to existing preview overlay
-        applyToOverlay(); // This will apply to the preview since getCurrentTargetOverlay() returns it
-        
-        // The preview overlay is automatically updated, no need to recreate
-        // This maintains valid object references and avoids async operation crashes
     }
+    // Note: If preview overlay exists, onRealTimeUpdate() will handle the updates
+    // This avoids duplicate applyToOverlay() calls that can cause race conditions
 }
 
 void UnifiedOverlayWidget::removeAutoPreview()
@@ -947,6 +960,33 @@ void UnifiedOverlayWidget::removeAutoPreview()
         emit previewCancelled();
         // Keep the overlay object alive but disabled
     }
+}
+
+void UnifiedOverlayWidget::cleanupPreviewOverlay()
+{
+    if (d_previewOverlay) {
+        // Block signals during cleanup to prevent race conditions during destruction
+        QSignalBlocker blocker(this);
+        
+        // Disable the overlay safely
+        d_previewOverlay->setEnabled(false);
+        
+        // Clear the reference
+        d_previewOverlay.reset();
+        
+        // Re-enable signals and emit cleanup signal if not being destroyed
+        blocker.unblock();
+        if (!isBeingDestroyed()) {
+            emit previewCancelled();
+        }
+    }
+}
+
+bool UnifiedOverlayWidget::isBeingDestroyed() const
+{
+    // Check if this widget is in the process of being destroyed
+    // This prevents signal emission during destruction
+    return signalsBlocked() || !parent() || parent()->signalsBlocked();
 }
 
 std::shared_ptr<OverlayBase> UnifiedOverlayWidget::getCurrentTargetOverlay() const
@@ -1009,6 +1049,15 @@ void UnifiedOverlayWidget::onYScaleUpdateRequested(double newYScale)
     // Update the overlay base options widget with the new y scale (only in creation context)
     if (isCreationContext() && p_overlayBaseOptionsWidget) {
         p_overlayBaseOptionsWidget->setYScale(newYScale);
+    }
+}
+
+void UnifiedOverlayWidget::onFrequencyRangeUpdateRequested(double minFreq, double maxFreq, bool enableLimiting)
+{
+    // Update frequency range settings in base overlay options (only in creation context)
+    if (isCreationContext() && p_overlayBaseOptionsWidget) {
+        p_overlayBaseOptionsWidget->setMinFreqLimit(enableLimiting, minFreq);
+        p_overlayBaseOptionsWidget->setMaxFreqLimit(enableLimiting, maxFreq);
     }
 }
 

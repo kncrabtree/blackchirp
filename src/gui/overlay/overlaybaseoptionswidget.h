@@ -50,6 +50,7 @@ public:
 
 signals:
     void settingsChanged(); // Emitted when any setting changes (except label)
+    void labelChanged(); // Emitted when label changes
 
 private slots:
     void onLabelChanged();

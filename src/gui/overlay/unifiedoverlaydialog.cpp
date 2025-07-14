@@ -161,7 +161,10 @@ void UnifiedOverlayDialog::reject()
         break;
     }
     
-    // Preview cleanup will be handled automatically by widget destruction
+    // Clean up preview overlay explicitly before widget destruction to avoid race conditions
+    if (isCreationMode() && p_widget) {
+        p_widget->cleanupPreviewOverlay();
+    }
     
     // In settings mode, restore the original overlay state before cancelling
     if (isSettingsMode() && p_widget && d_overlay) {
@@ -308,11 +311,9 @@ void UnifiedOverlayDialog::setupConnections()
     connect(p_widget, &UnifiedOverlayWidget::previewCancelled,
             this, &UnifiedOverlayDialog::onPreviewCancelled);
     
-    // Real-time overlay updates (settings mode only)
-    if (isSettingsMode()) {
-        connect(p_widget, &UnifiedOverlayWidget::overlayDataChanged,
+    // Real-time overlay updates
+    connect(p_widget, &UnifiedOverlayWidget::overlayDataChanged,
                 this, &UnifiedOverlayDialog::onOverlayDataChanged);
-    }
 }
 
 void UnifiedOverlayDialog::updateButtonState()
@@ -533,6 +534,10 @@ void UnifiedOverlayDialog::finalizeFromPreview()
     if (previewOverlay) {
         d_createdOverlay = previewOverlay;
         d_createdOverlay->setPreview(false);
+        
+        // Clear the preview reference so the widget destructor doesn't disable the overlay
+        p_widget->clearPreviewOverlay();
+        
         QDialog::accept();
     } else {
         createOverlayAsync();

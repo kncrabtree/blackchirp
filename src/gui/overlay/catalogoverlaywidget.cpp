@@ -25,6 +25,9 @@ CatalogOverlayWidget::CatalogOverlayWidget(QWidget *parent)
       d_xRangeMax(DEFAULT_MAX_FREQ),
       d_convolutionInProgress(false)
 {
+
+    /// TODO: modify constructor to take const Ft, set d_xRangeMin, d_xRangeMax,
+    /// and d_ftYmax using the respective methods.
     setupUI();
     setupConnections();
 }
@@ -36,19 +39,14 @@ void CatalogOverlayWidget::setupForCreation()
     d_context = Context::Creation;
     d_overlay.reset();
     
-    // Get current Ft data for intelligent defaults
-    auto ftmwParent = qobject_cast<FtmwViewWidget*>(parent());
-    if (ftmwParent) {
-        Ft mainFt = ftmwParent->getMainPlotFt();
-        d_hasFtData = !mainFt.isEmpty();
-        if (d_hasFtData) {
-            d_ftYMax = mainFt.yMax();
-            
-            // Initialize frequency range with Ft data
-            auto xRange = mainFt.xRange();
-            p_minFreqSpinBox->setValue(xRange.first);
-            p_maxFreqSpinBox->setValue(xRange.second);
-        }
+    // Use frequency range data provided by UnifiedOverlayWidget (set via setFrequencyRange)
+    if (d_xRangeMin < d_xRangeMax) {
+        // Initialize convolution frequency range with Ft data
+        p_minFreqSpinBox->setValue(d_xRangeMin);
+        p_maxFreqSpinBox->setValue(d_xRangeMax);
+        
+        // Emit signal to configure base overlay frequency limits automatically
+        emit frequencyRangeUpdateRequested(d_xRangeMin, d_xRangeMax, true);
     }
     
     // Load default settings for creation context

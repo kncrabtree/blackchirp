@@ -257,6 +257,9 @@ void OverlayManagerWidget::addOverlay(OverlayBase::OverlayType type)
     QVector<std::shared_ptr<OverlayBase>> existingOverlays = p_overlayModel->getAllOverlays();
     
     // Create unified dialog in creation mode
+    /// TODO: Pass main plot Ft so that it can be used for intelligent settings
+    /// This will replace xRange.first and xRange.second, since they
+    /// just came from ft.xRange()
     UnifiedOverlayDialog dialog(type, plotNames, xRange.first, xRange.second, existingOverlays, this);
     dialog.setModal(true);
     
@@ -269,6 +272,8 @@ void OverlayManagerWidget::addOverlay(OverlayBase::OverlayType type)
             this, &OverlayManagerWidget::onPreviewOverlayRequested);
     connect(&dialog, &UnifiedOverlayDialog::previewOverlayCancelled,
             this, &OverlayManagerWidget::onPreviewOverlayCancelled);
+    connect(&dialog, &UnifiedOverlayDialog::overlayDataChanged,
+            this, &OverlayManagerWidget::onOverlaySettingsChanged);
     
     // Run the dialog and get the overlay if accepted
     if(dialog.exec() == QDialog::Accepted) {
@@ -276,6 +281,23 @@ void OverlayManagerWidget::addOverlay(OverlayBase::OverlayType type)
         
         // Add overlay to storage if created successfully
         if (overlay != nullptr) {
+            // Check if this overlay was previously a preview overlay and remove it from preview storage
+            // This ensures proper transfer from preview to regular storage
+            if (p_overlayStorage) {
+                auto previewOverlays = p_overlayStorage->getAllPreviewOverlays();
+                for (const auto &previewOverlay : previewOverlays) {
+                    if (previewOverlay.get() == overlay.get()) {
+                        // This overlay came from preview storage - remove it from there first
+                        p_overlayStorage->removePreviewOverlay(overlay->getLabel());
+                        break;
+                    }
+                }
+            }
+            
+            // Ensure overlay is not in preview mode for persistent storage
+            overlay->setPreview(false);
+            overlay->setEnabled(true);
+            
             // Add directly to overlay storage - this initiates async write
             if (p_overlayStorage->addOverlay(overlay)) {
                 // Add to unified model for display
@@ -796,6 +818,7 @@ void OverlayManagerWidget::onConfigureClicked(const QModelIndex &index)
 void OverlayManagerWidget::onOverlaySettingsChanged(std::shared_ptr<OverlayBase> overlay)
 {
     // Emit signal for real-time plot updates
+    qDebug() << "Emitting overlaymanagerwidget signal for: " << overlay->getLabel();
     emit overlayDataChanged(overlay);
     
     // Update the table model to reflect any changes

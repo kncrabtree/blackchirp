@@ -68,6 +68,9 @@ public:
     
     // Auto-preview functionality (creation context only)
     std::shared_ptr<OverlayBase> getPreviewOverlay() const { return d_previewOverlay; }
+    void clearPreviewOverlay() { d_previewOverlay.reset(); }
+    void cleanupPreviewOverlay(); // Safe cleanup with signal blocking
+    bool isBeingDestroyed() const; // Check if widget is being destroyed
     
     // Progress indication (settings context only)
     void showProgress(const QString &message);
@@ -103,6 +106,7 @@ private slots:
     void onProgressValueChanged(int value);
     void onLabelUpdateRequested(const QString &newLabel);
     void onYScaleUpdateRequested(double newYScale);
+    void onFrequencyRangeUpdateRequested(double minFreq, double maxFreq, bool enableLimiting);
     void onColorChangeRequested();
 
 private:
@@ -137,6 +141,9 @@ private:
     QString getContextName() const;
     bool isCreationContext() const { return d_context == Context::Creation; }
     bool isSettingsContext() const { return d_context == Context::Settings; }
+    
+    // Centralized validation
+    void performCompleteValidation();
     
     // Auto-preview management (creation context only)
     void createAutoPreview();
