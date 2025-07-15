@@ -21,8 +21,8 @@
 
 using namespace BC::Store;
 
-BCExpOverlayWidget::BCExpOverlayWidget(QWidget *parent)
-    : OverlayTypeSpecificWidget(parent),
+BCExpOverlayWidget::BCExpOverlayWidget(const Ft &currentFt, QWidget *parent)
+    : OverlayTypeSpecificWidget(currentFt, parent),
       p_sourceFileConfigWidget(nullptr),
       p_sourceFileSettingsWidget(nullptr),
       p_overlaySettingsWidget(nullptr),

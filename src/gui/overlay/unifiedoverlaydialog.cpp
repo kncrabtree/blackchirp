@@ -18,7 +18,7 @@
 // Creation mode constructor
 UnifiedOverlayDialog::UnifiedOverlayDialog(OverlayBase::OverlayType type,
                                          const QStringList &plotNames,
-                                         double xRangeMin, double xRangeMax,
+                                         const Ft &currentFt,
                                          const QVector<std::shared_ptr<OverlayBase>> &existingOverlays,
                                          QWidget *parent)
     : QDialog(parent),
@@ -40,7 +40,7 @@ UnifiedOverlayDialog::UnifiedOverlayDialog(OverlayBase::OverlayType type,
     setupUI();
     
     // Setup widget for creation mode
-    p_widget->setupForCreation(type, plotNames, xRangeMin, xRangeMax, existingOverlays);
+    p_widget->setupForCreation(type, plotNames, currentFt, existingOverlays);
     
     setupConnections();
     updateWindowTitle();
@@ -50,7 +50,7 @@ UnifiedOverlayDialog::UnifiedOverlayDialog(OverlayBase::OverlayType type,
 // Settings mode constructor
 UnifiedOverlayDialog::UnifiedOverlayDialog(std::shared_ptr<OverlayBase> overlay,
                                          const QStringList &plotNames,
-                                         double xRangeMin, double xRangeMax,
+                                         const Ft &currentFt,
                                          std::shared_ptr<OverlayStorage> overlayStorage,
                                          QWidget *parent)
     : QDialog(parent),
@@ -73,7 +73,7 @@ UnifiedOverlayDialog::UnifiedOverlayDialog(std::shared_ptr<OverlayBase> overlay,
     setupUI();
     
     // Setup widget for settings mode
-    p_widget->setupForSettings(overlay, plotNames, xRangeMin, xRangeMax, overlayStorage);
+    p_widget->setupForSettings(overlay, plotNames, currentFt, overlayStorage);
     
     setupConnections();
     updateWindowTitle();

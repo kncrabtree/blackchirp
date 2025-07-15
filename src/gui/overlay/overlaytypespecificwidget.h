@@ -7,6 +7,7 @@
 
 #include <data/experiment/overlaybase.h>
 #include <data/processing/overlayprocessmanager.h>
+#include <data/analysis/ft.h>
 
 // Forward declarations
 class OverlayOperation;
@@ -48,16 +49,13 @@ class OverlayTypeSpecificWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit OverlayTypeSpecificWidget(QWidget *parent = nullptr);
+    explicit OverlayTypeSpecificWidget(const Ft &currentFt, QWidget *parent = nullptr);
     virtual ~OverlayTypeSpecificWidget() = default;
 
     // Setup methods for different contexts
     virtual void setupForCreation() = 0;
     virtual void setupForSettings(std::shared_ptr<OverlayBase> overlay) = 0;
-    
-    // Set context information from parent
-    virtual void setFrequencyRange(double xRangeMin, double xRangeMax) { Q_UNUSED(xRangeMin) Q_UNUSED(xRangeMax) }
-    
+        
     // Overlay creation and modification interface
     virtual std::shared_ptr<OverlayBase> createOverlay() const = 0;
     virtual void applyToOverlay(std::shared_ptr<OverlayBase> overlay) const = 0;
@@ -115,6 +113,7 @@ protected:
     
     Context d_context;
     std::shared_ptr<OverlayBase> d_overlay; // Only valid in settings context
+    const Ft d_currentFt; // Current spectroscopic data for intelligent defaults and analysis
     
     friend class UnifiedOverlayWidget;
     

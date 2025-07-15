@@ -16,6 +16,7 @@
 #include <data/experiment/overlaybase.h>
 #include <data/storage/overlaystorage.h>
 #include <data/storage/settingsstorage.h>
+#include <data/analysis/ft.h>
 #include "overlaytypespecificwidget.h"
 
 // Forward declarations
@@ -47,12 +48,12 @@ public:
     // Setup methods - must be called after construction
     void setupForCreation(OverlayBase::OverlayType type, 
                          const QStringList &plotNames,
-                         double xRangeMin, double xRangeMax,
+                         const Ft &currentFt,
                          const QVector<std::shared_ptr<OverlayBase>> &existingOverlays = {});
     
     void setupForSettings(std::shared_ptr<OverlayBase> overlay,
                          const QStringList &plotNames,
-                         double xRangeMin, double xRangeMax,
+                         const Ft &currentFt,
                          std::shared_ptr<OverlayStorage> overlayStorage);
 
     // Overlay creation/modification interface
@@ -135,7 +136,7 @@ private:
     void setupTypeSpecificWidgetContext();
     void setupTypeSpecificWidgetConnections();
     void reparentTypeSpecificWidgets();
-    OverlayTypeSpecificWidget* createPlaceholderWidget(const QString &typeName);
+    OverlayTypeSpecificWidget* createPlaceholderWidget(const QString &typeName, const Ft &currentFt);
     
     // Helper methods
     QString getContextName() const;
@@ -157,10 +158,9 @@ private:
     std::shared_ptr<OverlayBase> d_overlay; // Settings context only
     std::shared_ptr<OverlayStorage> p_overlayStorage; // Settings context only
     
-    // Plot and range information
+    // Plot and spectroscopic data information
     QStringList d_plotNames;
-    double d_xRangeMin;
-    double d_xRangeMax;
+    Ft d_currentFt; // Current spectroscopic data for intelligent defaults
     QVector<std::shared_ptr<OverlayBase>> d_existingOverlays; // Creation context only
     
     // UI Components - Three-tier architecture

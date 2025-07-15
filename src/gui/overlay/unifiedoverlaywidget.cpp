@@ -20,8 +20,6 @@ UnifiedOverlayWidget::UnifiedOverlayWidget(const QString &settingsKey, Context c
       SettingsStorage(settingsKey, SettingsStorage::General),
       d_context(context),
       d_overlayType(OverlayBase::BCExperiment),
-      d_xRangeMin(0.0),
-      d_xRangeMax(1000.0),
       p_mainLayout(nullptr),
       p_sourceFileConfigBox(nullptr),
       p_sourceFileConfigContent(nullptr),
@@ -52,23 +50,17 @@ UnifiedOverlayWidget::~UnifiedOverlayWidget()
 
 void UnifiedOverlayWidget::setupForCreation(OverlayBase::OverlayType type,
                                            const QStringList &plotNames,
-                                           double xRangeMin, double xRangeMax,
+                                           const Ft &currentFt,
                                            const QVector<std::shared_ptr<OverlayBase>> &existingOverlays)
 {
     d_overlayType = type;
     d_plotNames = plotNames;
-    d_xRangeMin = xRangeMin;
-    d_xRangeMax = xRangeMax;
+    d_currentFt = currentFt;
     d_existingOverlays = existingOverlays;
     d_overlay.reset();
     p_overlayStorage.reset();
     
     setupTypeSpecificWidget();
-    
-    // Pass frequency range to type-specific widget
-    if (p_typeSpecificWidget) {
-        p_typeSpecificWidget->setFrequencyRange(d_xRangeMin, d_xRangeMax);
-    }
     
     // Create and initialize overlay base options widget
     createOverlayBaseOptionsWidget();
@@ -78,7 +70,7 @@ void UnifiedOverlayWidget::setupForCreation(OverlayBase::OverlayType type,
 
 void UnifiedOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overlay,
                                            const QStringList &plotNames,
-                                           double xRangeMin, double xRangeMax,
+                                           const Ft &currentFt,
                                            std::shared_ptr<OverlayStorage> overlayStorage)
 {
     
@@ -86,17 +78,11 @@ void UnifiedOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overlay
     
     d_overlayType = overlay ? overlay->type() : OverlayBase::BCExperiment;
     d_plotNames = plotNames;
-    d_xRangeMin = xRangeMin;
-    d_xRangeMax = xRangeMax;
+    d_currentFt = currentFt;
     p_overlayStorage = overlayStorage;
     d_existingOverlays.clear();
     
     setupTypeSpecificWidget();
-    
-    // Pass frequency range to type-specific widget
-    if (p_typeSpecificWidget) {
-        p_typeSpecificWidget->setFrequencyRange(d_xRangeMin, d_xRangeMax);
-    }
     
     // Create and initialize overlay base options widget
     createOverlayBaseOptionsWidget();
@@ -475,7 +461,8 @@ void UnifiedOverlayWidget::createOverlayBaseOptionsWidget()
     }
     
     // Create the base options widget with current parameters
-    p_overlayBaseOptionsWidget = new OverlayBaseOptionsWidget(d_plotNames, d_xRangeMin, d_xRangeMax, this);
+    auto xRange = !d_currentFt.isEmpty() ? d_currentFt.xRange() : qMakePair(0.0, 1000.0);
+    p_overlayBaseOptionsWidget = new OverlayBaseOptionsWidget(d_plotNames, xRange.first, xRange.second, this);
     
     // Set up the layout (should be the first and only layout for this groupbox)
     if (p_overlayBaseOptionsBox) {
@@ -668,14 +655,14 @@ void UnifiedOverlayWidget::setupTypeSpecificWidget()
     // Factory pattern: Create type-specific widget based on overlay type
     switch (d_overlayType) {
     case OverlayBase::BCExperiment:
-        p_typeSpecificWidget = new BCExpOverlayWidget(this);
+        p_typeSpecificWidget = new BCExpOverlayWidget(d_currentFt, this);
         break;
     case OverlayBase::Catalog:
-        p_typeSpecificWidget = new CatalogOverlayWidget(this);
+        p_typeSpecificWidget = new CatalogOverlayWidget(d_currentFt, this);
         break;
     case OverlayBase::GenericXY:
         // GenericXY not yet implemented - create placeholder
-        p_typeSpecificWidget = createPlaceholderWidget("Generic XY");
+        p_typeSpecificWidget = createPlaceholderWidget("Generic XY", d_currentFt);
         break;
     }
     
@@ -856,13 +843,13 @@ void UnifiedOverlayWidget::reparentTypeSpecificWidgets()
     // (it's already properly positioned)
 }
 
-OverlayTypeSpecificWidget* UnifiedOverlayWidget::createPlaceholderWidget(const QString &typeName)
+OverlayTypeSpecificWidget* UnifiedOverlayWidget::createPlaceholderWidget(const QString &typeName, const Ft &currentFt)
 {
     // Create a simple placeholder widget for unimplemented overlay types
     class PlaceholderWidget : public OverlayTypeSpecificWidget {
     public:
-        PlaceholderWidget(const QString &name, QWidget *parent = nullptr) 
-            : OverlayTypeSpecificWidget(parent), d_typeName(name) {
+        PlaceholderWidget(const QString &name, const Ft &currentFt, QWidget *parent = nullptr) 
+            : OverlayTypeSpecificWidget(currentFt, parent), d_typeName(name) {
             setupUI();
         }
         
@@ -913,7 +900,7 @@ OverlayTypeSpecificWidget* UnifiedOverlayWidget::createPlaceholderWidget(const Q
         QWidget *p_overlayWidget;
     };
     
-    return new PlaceholderWidget(typeName, this);
+    return new PlaceholderWidget(typeName, currentFt, this);
 }
 
 

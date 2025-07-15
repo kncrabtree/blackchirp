@@ -13,6 +13,7 @@
 #include <data/experiment/overlaybase.h>
 #include <data/storage/overlaystorage.h>
 #include <data/processing/overlayprocessmanager.h>
+#include <data/analysis/ft.h>
 
 // Forward declarations
 class UnifiedOverlayWidget;
@@ -34,14 +35,14 @@ public:
     // Creation mode constructor
     explicit UnifiedOverlayDialog(OverlayBase::OverlayType type,
                                  const QStringList &plotNames,
-                                 double xRangeMin, double xRangeMax,
+                                 const Ft &currentFt,
                                  const QVector<std::shared_ptr<OverlayBase>> &existingOverlays = {},
                                  QWidget *parent = nullptr);
     
     // Settings mode constructor
     explicit UnifiedOverlayDialog(std::shared_ptr<OverlayBase> overlay,
                                  const QStringList &plotNames,
-                                 double xRangeMin, double xRangeMax,
+                                 const Ft &currentFt,
                                  std::shared_ptr<OverlayStorage> overlayStorage,
                                  QWidget *parent = nullptr);
     

@@ -33,6 +33,8 @@ static const QString minFreqMHz{"minFreqMHz"};
 static const QString maxFreqMHz{"maxFreqMHz"};
 static const QString pointSpacingMHz{"pointSpacingMHz"};
 static const QString saveRangeOnly{"saveRangeOnly"};
+static const QString filterMinFreqMHz{"filterMinFreqMHz"};
+static const QString filterMaxFreqMHz{"filterMaxFreqMHz"};
 
 // Metasettings for spinbox configuration
 static const QString linewidthMin{"linewidthMin"};
@@ -62,13 +64,12 @@ class CatalogOverlayWidget : public OverlayTypeSpecificWidget, public SettingsSt
     Q_OBJECT
 
 public:
-    explicit CatalogOverlayWidget(QWidget *parent = nullptr);
+    explicit CatalogOverlayWidget(const Ft &currentFt, QWidget *parent = nullptr);
     ~CatalogOverlayWidget();
 
     // OverlayTypeSpecificWidget interface
     void setupForCreation() override;
     void setupForSettings(std::shared_ptr<OverlayBase> overlay) override;
-    void setFrequencyRange(double xRangeMin, double xRangeMax) override;
     
     std::shared_ptr<OverlayBase> createOverlay() const override;
     void applyToOverlay(std::shared_ptr<OverlayBase> overlay) const override;
@@ -149,8 +150,8 @@ private slots:
     void onConvolutionEnabledToggled(bool enabled);
     void onLineshapeTypeChanged(int index);
     void onConvolutionSettingsChanged();
-    void onAutoRangeClicked();
     void onSaveRangeOnlyToggled(bool enabled);
+    void onFilteringParametersChanged(); // Centralized filtering when any parameter changes
     
     // Background operation handlers
     void onConvolutionOperationStarted(const QString &operationId);
@@ -184,7 +185,8 @@ private:
     // Source File Settings tier (Source-dependent controls)
     QGroupBox *p_sourceFileGroup;
     QCheckBox *p_saveRangeOnlyCheckBox;
-    QPushButton *p_autoRangeButton;
+    QDoubleSpinBox *p_filterMinFreqSpinBox;
+    QDoubleSpinBox *p_filterMaxFreqSpinBox;
     
     // Overlay Settings tier (Convolution - source-independent)
     QGroupBox *p_convolutionGroup;
@@ -196,7 +198,8 @@ private:
     QDoubleSpinBox *p_pointSpacingSpinBox;
     
     // State management
-    CatalogData d_catalogData;
+    CatalogData d_catalogData;       // Raw catalog data from file
+    CatalogData d_filteredData;      // Filtered data for display/export
     QString d_filePath;
     bool d_fileValid;
     bool d_hasFtData;
@@ -213,7 +216,6 @@ private:
     void loadCatalogFile(const QString &filePath);
     void updateFileInfo();
     void updateConvolutionControls();
-    void autoSetFrequencyRange();
     void calculateDefaultYScale();
     bool validateConvolutionSettings(QString &errorMessage) const;
     QString formatFrequencyRange(double min, double max) const;
@@ -237,6 +239,8 @@ private:
     static constexpr double DEFAULT_MAX_FREQ = 1000.0;    // MHz
     static constexpr double DEFAULT_POINT_SPACING = 0.01; // MHz
     static constexpr bool DEFAULT_SAVE_RANGE_ONLY = true;
+    static constexpr double DEFAULT_FILTER_MIN_FREQ = 0.0;    // MHz  
+    static constexpr double DEFAULT_FILTER_MAX_FREQ = 1000.0; // MHz
 };
 
 #endif // CATALOGOVERLAYWIDGET_H

@@ -33,7 +33,7 @@ class BCExpOverlayWidget : public OverlayTypeSpecificWidget
     Q_OBJECT
 
 public:
-    explicit BCExpOverlayWidget(QWidget *parent = nullptr);
+    explicit BCExpOverlayWidget(const Ft &currentFt, QWidget *parent = nullptr);
     ~BCExpOverlayWidget();
 
     // OverlayTypeSpecificWidget interface

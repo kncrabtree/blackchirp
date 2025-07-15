@@ -250,17 +250,14 @@ void OverlayManagerWidget::addOverlay(OverlayBase::OverlayType type)
     }
     
     // Get plot information from parent
-    auto xRange = ftmwParent->getMainPlotFt().xRange();
+    Ft mainFt = ftmwParent->getMainPlotFt();
     QStringList plotNames = ftmwParent->getPlotNames();
     
     // Get existing overlays for context
     QVector<std::shared_ptr<OverlayBase>> existingOverlays = p_overlayModel->getAllOverlays();
     
-    // Create unified dialog in creation mode
-    /// TODO: Pass main plot Ft so that it can be used for intelligent settings
-    /// This will replace xRange.first and xRange.second, since they
-    /// just came from ft.xRange()
-    UnifiedOverlayDialog dialog(type, plotNames, xRange.first, xRange.second, existingOverlays, this);
+    // Create unified dialog in creation mode with full Ft data for intelligent settings
+    UnifiedOverlayDialog dialog(type, plotNames, mainFt, existingOverlays, this);
     dialog.setModal(true);
     
     // Connect preview signals for real-time preview display
@@ -797,15 +794,15 @@ void OverlayManagerWidget::onConfigureClicked(const QModelIndex &index)
         return;
     }
     
-    // Get xRange from the main plot and plot names
-    auto xRange = ftmwParent->getMainPlotFt().xRange();
+    // Get the main plot Ft and plot names
+    Ft mainFt = ftmwParent->getMainPlotFt();
     QStringList plotNames = ftmwParent->getPlotNames();
     
     // Invalidate undo when opening configure dialog
     invalidateUndo();
     
-    // Create unified dialog in settings mode
-    UnifiedOverlayDialog dialog(overlay, plotNames, xRange.first, xRange.second, p_overlayStorage, this);
+    // Create unified dialog in settings mode with full Ft data for intelligent settings
+    UnifiedOverlayDialog dialog(overlay, plotNames, mainFt, p_overlayStorage, this);
     dialog.setModal(true);
     
     // Connect the dialog signal to our slot for real-time updates
