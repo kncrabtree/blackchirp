@@ -98,7 +98,7 @@ void UnifiedOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overlay
     backupOverlayState();
 }
 
-std::shared_ptr<OverlayBase> UnifiedOverlayWidget::createOverlay() const
+std::shared_ptr<OverlayBase> UnifiedOverlayWidget::createOverlay()
 {
     if (d_context != Context::Creation) {
         qWarning() << "createOverlay() called in settings context";
@@ -265,9 +265,7 @@ void UnifiedOverlayWidget::onSourceFileConfigToggled(bool enabled)
 }
 
 void UnifiedOverlayWidget::onSettingsChanged()
-{
-    qDebug() << "onSettingsChanged: called in" << (isCreationContext() ? "creation" : "settings") << "context";
-    
+{    
     // Use centralized validation logic
     performCompleteValidation();
     emit settingsChanged();
@@ -280,7 +278,6 @@ void UnifiedOverlayWidget::onRealTimeUpdate()
     bool isValid = validateSettings(errorMessage);
     
     if (!isValid) {
-        qDebug() << "onRealTimeUpdate: skipping overlay update due to invalid settings:" << errorMessage;
         return;
     }
     
@@ -291,16 +288,12 @@ void UnifiedOverlayWidget::onRealTimeUpdate()
     if (isSettingsContext()) {
         // Settings context: emit for the actual overlay
         if (d_overlay) {
-            qDebug() << "onRealTimeUpdate: emitting overlayDataChanged for settings overlay" << d_overlay->getLabel();
             emit overlayDataChanged(d_overlay);
         }
     } else {
         // Creation context: emit for the preview overlay
         if (d_previewOverlay) {
-            qDebug() << "onRealTimeUpdate: emitting overlayDataChanged for preview overlay" << d_previewOverlay->getLabel();
             emit overlayDataChanged(d_previewOverlay);
-        } else {
-            qDebug() << "onRealTimeUpdate: no preview overlay to update";
         }
     }
 }
@@ -311,6 +304,11 @@ void UnifiedOverlayWidget::onDataValidityChanged(bool isValid)
     
     // Use centralized validation logic - this will handle both UI updates and auto-preview
     performCompleteValidation();
+}
+
+void UnifiedOverlayWidget::onAccept()
+{
+    saveSettings();
 }
 
 void UnifiedOverlayWidget::onProgressOperationStarted(const QString &message)
@@ -512,6 +510,17 @@ void UnifiedOverlayWidget::loadOverlaySettings()
         p_curveAppearanceWidget->initializeFromOverlay(d_overlay);
 }
 
+void UnifiedOverlayWidget::saveSettings()
+{
+    // Save settings for type-specific widget using the OverlayTypeSpecificWidget interface
+    if (p_typeSpecificWidget) {
+        p_typeSpecificWidget->onAccept();
+    }
+    
+    // Note: OverlayBaseOptionsWidget and CurveAppearanceWidget don't use persistent settings
+    // They work with live overlay metadata instead
+}
+
 void UnifiedOverlayWidget::createCurveAppearanceBox()
 {
     p_curveAppearanceBox = new QGroupBox("Curve Appearance", this);
@@ -598,13 +607,24 @@ void UnifiedOverlayWidget::configureForContext()
         p_typeSpecificSettingsBox->setTitle(QString("%1 Settings").arg(typeName));
     }
     
-    // Set intelligent defaults for catalog overlays in creation mode
-    if (p_curveAppearanceWidget && isCreationContext() && d_overlayType == OverlayBase::Catalog) {
-        // Default to Stem - Secondary for discrete catalog data
+    // Set intelligent defaults for overlays in creation mode
+    if (p_curveAppearanceWidget && isCreationContext() && d_overlayType == OverlayBase::Catalog)
+    {
         auto presetManager = CurveAppearancePresetManager::instance();
-        if (presetManager && presetManager->hasPreset("Stem - Secondary")) {
-            auto preset = presetManager->getPreset("Stem - Secondary");
-            p_curveAppearanceWidget->setCurrentAppearance(preset.appearance);
+        if (d_overlayType == OverlayBase::Catalog)
+        {
+            // Default to Stem - Secondary for discrete catalog data
+            if (presetManager && presetManager->hasPreset("Stem - Secondary")) {
+                auto preset = presetManager->getPreset("Stem - Secondary");
+                p_curveAppearanceWidget->setCurrentAppearance(preset.appearance);
+            }
+        }
+        else
+        {
+            if (presetManager && presetManager->hasPreset("Curve - Secondary")) {
+                auto preset = presetManager->getPreset("Curve - Secondary");
+                p_curveAppearanceWidget->setCurrentAppearance(preset.appearance);
+            }
         }
     }
 }
@@ -688,11 +708,11 @@ void UnifiedOverlayWidget::clearTypeSpecificWidget()
         p_typeSpecificWidget = nullptr;
     }
     
+    // Clear stack without explicitly deleting widgets - they'll be cleaned up 
+    // when their parent (p_typeSpecificWidget) is destroyed
     if (p_typeSpecificStack) {
         while (p_typeSpecificStack->count() > 0) {
-            QWidget *widget = p_typeSpecificStack->widget(0);
-            p_typeSpecificStack->removeWidget(widget);
-            widget->deleteLater();
+            p_typeSpecificStack->removeWidget(p_typeSpecificStack->widget(0));
         }
     }
 }
@@ -723,10 +743,8 @@ void UnifiedOverlayWidget::performCompleteValidation()
     // Handle auto-preview logic for creation context
     if (isCreationContext()) {
         if (isValid && isDataValid()) {
-            qDebug() << "performCompleteValidation: calling updateAutoPreview";
             updateAutoPreview();
         } else {
-            qDebug() << "performCompleteValidation: removing auto-preview due to invalid data";
             removeAutoPreview();
         }
     }
@@ -771,8 +789,6 @@ void UnifiedOverlayWidget::setupTypeSpecificWidgetConnections()
             this, &UnifiedOverlayWidget::onLabelUpdateRequested);
     connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::yScaleUpdateRequested,
             this, &UnifiedOverlayWidget::onYScaleUpdateRequested);
-    connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::frequencyRangeUpdateRequested,
-            this, &UnifiedOverlayWidget::onFrequencyRangeUpdateRequested);
     
     // Real-time update and progress indication connections for both contexts
     connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::settingsChanged,
@@ -801,9 +817,7 @@ void UnifiedOverlayWidget::reparentTypeSpecificWidgets()
         if (oldLayout) {
             while (oldLayout->count() > 0) {
                 QLayoutItem *item = oldLayout->takeAt(0);
-                if (item->widget()) {
-                    item->widget()->deleteLater();
-                }
+                // Don't delete widgets - they'll be cleaned up by their original parent
                 delete item;
             }
             delete oldLayout;
@@ -824,9 +838,7 @@ void UnifiedOverlayWidget::reparentTypeSpecificWidgets()
         if (oldLayout) {
             while (oldLayout->count() > 0) {
                 QLayoutItem *item = oldLayout->takeAt(0);
-                if (item->widget()) {
-                    item->widget()->deleteLater();
-                }
+                // Don't delete widgets - they'll be cleaned up by their original parent
                 delete item;
             }
             delete oldLayout;
@@ -855,7 +867,7 @@ OverlayTypeSpecificWidget* UnifiedOverlayWidget::createPlaceholderWidget(const Q
         
         void setupForCreation() override {}
         void setupForSettings(std::shared_ptr<OverlayBase>) override {}
-        std::shared_ptr<OverlayBase> createOverlay() const override { return nullptr; }
+        std::shared_ptr<OverlayBase> createOverlay() override { return nullptr; }
         void applyToOverlay(std::shared_ptr<OverlayBase>) const override {}
         bool validateSettings(QString &error) const override { 
             error = QString("%1 overlay type not yet implemented").arg(d_typeName);
@@ -1036,15 +1048,6 @@ void UnifiedOverlayWidget::onYScaleUpdateRequested(double newYScale)
     // Update the overlay base options widget with the new y scale (only in creation context)
     if (isCreationContext() && p_overlayBaseOptionsWidget) {
         p_overlayBaseOptionsWidget->setYScale(newYScale);
-    }
-}
-
-void UnifiedOverlayWidget::onFrequencyRangeUpdateRequested(double minFreq, double maxFreq, bool enableLimiting)
-{
-    // Update frequency range settings in base overlay options (only in creation context)
-    if (isCreationContext() && p_overlayBaseOptionsWidget) {
-        p_overlayBaseOptionsWidget->setMinFreqLimit(enableLimiting, minFreq);
-        p_overlayBaseOptionsWidget->setMaxFreqLimit(enableLimiting, maxFreq);
     }
 }
 

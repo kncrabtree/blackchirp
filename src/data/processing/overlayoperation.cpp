@@ -158,7 +158,7 @@ ConvolutionOperation::ConvolutionOperation(std::shared_ptr<OverlayBase> overlay,
                                            double linewidthKHz,
                                            double freqMinMHz,
                                            double freqMaxMHz,
-                                           double pointSpacingMHz,
+                                           int numConvolutionPoints,
                                            QObject* parent)
     : OverlayOperation(Type::Deferred, Priority::High, parent),
       d_overlay(overlay),
@@ -167,7 +167,7 @@ ConvolutionOperation::ConvolutionOperation(std::shared_ptr<OverlayBase> overlay,
       d_linewidthKHz(linewidthKHz),
       d_freqMinMHz(freqMinMHz),
       d_freqMaxMHz(freqMaxMHz),
-      d_pointSpacingMHz(pointSpacingMHz)
+      d_numConvolutionPoints(numConvolutionPoints)
 {
 }
 
@@ -196,8 +196,8 @@ std::shared_ptr<OverlayBase> ConvolutionOperation::execute()
                 updateProgress(0, "Error: Frequency minimum must be less than maximum");
                 return nullptr;
             }
-            if (d_pointSpacingMHz <= 0.0) {
-                updateProgress(0, "Error: Point spacing must be positive");
+            if (d_numConvolutionPoints <= 0) {
+                updateProgress(0, "Error: Number of convolution points must be positive");
                 return nullptr;
             }
         }
@@ -207,21 +207,24 @@ std::shared_ptr<OverlayBase> ConvolutionOperation::execute()
         // Apply convolution settings
         catalogOverlay->setConvolutionSettings(d_convolutionEnabled, d_lineshape,
                                                d_linewidthKHz, d_freqMinMHz, d_freqMaxMHz,
-                                               d_pointSpacingMHz);
+                                               d_numConvolutionPoints);
         
         checkCancellation();
         
         if (d_convolutionEnabled) {
             updateProgress(50, "Performing convolution...");
             
-            // Trigger convolution by accessing xyData
-            // This will internally perform the convolution calculation
-            auto xyData = catalogOverlay->xyData();
+            // Set cache to pending state before triggering convolution
+            catalogOverlay->setCachePending();
+            
+            // Generate convolved spectrum and update cache
+            auto convolvedData = catalogOverlay->generateConvolvedSpectrum();
             
             updateProgress(90, "Finalizing convolution...");
             checkCancellation();
             
-            // Note: Overlay will be automatically marked as modified when settings change
+            // Mark cache as valid with the convolved data
+            catalogOverlay->setCacheValid(convolvedData);
         }
         
         updateProgress(100, "Convolution completed");

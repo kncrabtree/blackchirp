@@ -105,6 +105,11 @@ void UnifiedOverlayDialog::accept()
         return;
     }
     
+    // Save settings for all SettingsStorage-enabled widgets before proceeding
+    if (p_widget) {
+        p_widget->onAccept();
+    }
+    
     if (isCreationMode()) {
         // Analyze preview state and choose optimal creation path
         PreviewState state = analyzePreviewState();

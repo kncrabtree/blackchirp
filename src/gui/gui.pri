@@ -19,7 +19,6 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/expsetup/experimenttemperaturecontrollerconfigpage.cpp \
     $$PWD/expsetup/experimenttypepage.cpp \
     $$PWD/expsetup/experimentvalidatorconfigpage.cpp \
-    $$PWD/overlay/catalogoverlaydialog.cpp \
     $$PWD/overlay/unifiedoverlaydialog.cpp \
     $$PWD/overlay/unifiedoverlaywidget.cpp \
     $$PWD/overlay/overlaytypespecificwidget.cpp \
@@ -93,7 +92,6 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/expsetup/experimenttypepage.h \
     $$PWD/expsetup/experimentvalidatorconfigpage.h \
     $$PWD/mainwindow_ui.h \
-    $$PWD/overlay/catalogoverlaydialog.h \
     $$PWD/overlay/unifiedoverlaydialog.h \
     $$PWD/overlay/unifiedoverlaywidget.h \
     $$PWD/overlay/overlaytypespecificwidget.h \

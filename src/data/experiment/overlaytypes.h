@@ -23,9 +23,11 @@ namespace Catalog {
     static const QString linewidthKHz{"catalogLinewidthKHz"};            // FWHM in kHz
     static const QString convolutionMinFreq{"catalogConvolutionMinFreq"}; // MHz
     static const QString convolutionMaxFreq{"catalogConvolutionMaxFreq"}; // MHz
-    static const QString pointSpacing{"catalogPointSpacing"};            // MHz
+    static const QString numConvolutionPoints{"catalogNumConvolutionPoints"};  // Number of points in convolution grid
     static const QString transitionCount{"catalogTransitionCount"};
     static const QString frequencyRange{"catalogFrequencyRange"};
+    static const QString filterMinFreq{"catalogFilterMinFreq"};          // MHz - filtering range minimum
+    static const QString filterMaxFreq{"catalogFilterMaxFreq"};          // MHz - filtering range maximum
 }
 }
 
@@ -92,13 +94,29 @@ public:
     double convolutionMaxFreq() const;     // MHz
     void setConvolutionFreqRange(double minFreq, double maxFreq);
     
-    double pointSpacing() const;           // MHz
-    void setPointSpacing(double spacing);
+    int numConvolutionPoints() const;      // Number of points in convolution grid
+    void setNumConvolutionPoints(int numPoints);
+    
+    double calculatePointSpacing() const;   // Calculate spacing from range and number of points
+    
+    // Filtering range settings
+    double filterMinFreq() const;          // MHz
+    double filterMaxFreq() const;          // MHz  
+    void setFilterRange(double minFreq, double maxFreq);
     
     // Convenience method to set all convolution parameters
     void setConvolutionSettings(bool enabled, LineshapeType lineshape, 
                                double linewidth, double minFreq, double maxFreq, 
-                               double spacing);
+                               int numPoints);
+                               
+    // Generate convolved spectrum from catalog data
+    QVector<QPointF> generateConvolvedSpectrum() const;
+
+    // Cache state management for background operations
+    void invalidateConvolutionCache();
+    void setCachePending();
+    void setCacheValid(const QVector<QPointF> &convolvedData);
+    bool isCacheValid() const;
 
 protected:
     void readFromDest() override;
@@ -109,8 +127,6 @@ protected:
 private:
     QVector<QPointF> _xyData() const override;
     
-    // Generate convolved spectrum from catalog data
-    QVector<QPointF> generateConvolvedSpectrum() const;
     
     // Lineshape functions (x and x0 in MHz, width in kHz)
     double lorentzianProfile(double x, double x0, double fwhmKHz) const;
@@ -125,13 +141,22 @@ private:
     double d_linewidth{100.0};            // FWHM in kHz
     double d_convolutionMinFreq{0.0};     // MHz
     double d_convolutionMaxFreq{1000.0};  // MHz
-    double d_pointSpacing{0.01};          // MHz
+    int d_numConvolutionPoints{1000};     // Number of points in convolution grid
+    
+    // Filtering range settings  
+    double d_filterMinFreq{0.0};          // MHz
+    double d_filterMaxFreq{1000.0};       // MHz
+    
+    // Cache state management
+    enum class CacheState {
+        Invalid,     // Cache is invalid/empty
+        Pending,     // Background operation is in progress  
+        Valid        // Cache contains valid data
+    };
     
     // Cached convolved data
     mutable QVector<QPointF> d_convolvedCache;
-    mutable bool d_convolutionCacheValid{false};
-    
-    void invalidateConvolutionCache();
+    mutable CacheState d_cacheState{CacheState::Invalid};
 };
 
 #endif // OVERLAYTYPES_H

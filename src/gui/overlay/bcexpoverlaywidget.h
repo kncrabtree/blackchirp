@@ -40,7 +40,7 @@ public:
     void setupForCreation() override;
     void setupForSettings(std::shared_ptr<OverlayBase> overlay) override;
     
-    std::shared_ptr<OverlayBase> createOverlay() const override;
+    std::shared_ptr<OverlayBase> createOverlay() override;
     void applyToOverlay(std::shared_ptr<OverlayBase> overlay) const override;
     
     bool validateSettings(QString &errorMessage) const override;

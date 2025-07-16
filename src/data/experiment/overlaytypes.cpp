@@ -218,30 +218,59 @@ void CatalogOverlay::setConvolutionFreqRange(double minFreq, double maxFreq)
     }
 }
 
-double CatalogOverlay::pointSpacing() const
+int CatalogOverlay::numConvolutionPoints() const
 {
-    return d_pointSpacing;
+    return d_numConvolutionPoints;
 }
 
-void CatalogOverlay::setPointSpacing(double spacing)
+void CatalogOverlay::setNumConvolutionPoints(int numPoints)
 {
-    if (qAbs(d_pointSpacing - spacing) > 1e-9) {
-        d_pointSpacing = spacing;
+    if (d_numConvolutionPoints != numPoints) {
+        d_numConvolutionPoints = numPoints;
         invalidateConvolutionCache();
+        setModified(true);
+    }
+}
+
+double CatalogOverlay::calculatePointSpacing() const
+{
+    if (d_numConvolutionPoints <= 1) {
+        return d_convolutionMaxFreq - d_convolutionMinFreq;
+    }
+    return (d_convolutionMaxFreq - d_convolutionMinFreq) / (d_numConvolutionPoints - 1);
+}
+
+
+double CatalogOverlay::filterMinFreq() const
+{
+    return d_filterMinFreq;
+}
+
+double CatalogOverlay::filterMaxFreq() const
+{
+    return d_filterMaxFreq;
+}
+
+void CatalogOverlay::setFilterRange(double minFreq, double maxFreq)
+{
+    if (qAbs(d_filterMinFreq - minFreq) > 1e-6 || 
+        qAbs(d_filterMaxFreq - maxFreq) > 1e-6) {
+        d_filterMinFreq = minFreq;
+        d_filterMaxFreq = maxFreq;
         setModified(true);
     }
 }
 
 void CatalogOverlay::setConvolutionSettings(bool enabled, LineshapeType lineshape, 
                                            double linewidth, double minFreq, double maxFreq, 
-                                           double spacing)
+                                           int numPoints)
 {
     d_convolutionEnabled = enabled;
     d_lineshapeType = lineshape;
     d_linewidth = linewidth;
     d_convolutionMinFreq = minFreq;
     d_convolutionMaxFreq = maxFreq;
-    d_pointSpacing = spacing;
+    d_numConvolutionPoints = numPoints;
     invalidateConvolutionCache();
     setModified(true);
 }
@@ -249,23 +278,33 @@ void CatalogOverlay::setConvolutionSettings(bool enabled, LineshapeType lineshap
 QVector<QPointF> CatalogOverlay::_xyData() const
 {
     if (d_convolutionEnabled) {
-        if (!d_convolutionCacheValid) {
-            d_convolvedCache = generateConvolvedSpectrum();
-            d_convolutionCacheValid = true;
+        switch (d_cacheState) {
+        case CacheState::Valid:
+            return d_convolvedCache;
+            
+        case CacheState::Pending:
+            // Background operation in progress - return previous cache or fall through to raw data
+            if (!d_convolvedCache.isEmpty()) {
+                return d_convolvedCache; // Return stale data while updating
+            }
+            // Fall through to return raw data as placeholder
+            
+        case CacheState::Invalid:
+            // Cache invalid - fall through to return raw data as placeholder
+            break;
         }
-        return d_convolvedCache;
-    } else {
-        // Return raw transition data as stick spectrum
-        QVector<QPointF> transitions;
-        transitions.reserve(d_catalogData.size());
-        
-        for (int i = 0; i < d_catalogData.size(); ++i) {
-            const TransitionData &trans = d_catalogData.at(i);
-            transitions.append(QPointF(trans.frequency, trans.intensity));
-        }
-        
-        return transitions;
     }
+    
+    // Return raw transition data as stick spectrum (used for non-convolved mode and as placeholder)
+    QVector<QPointF> transitions;
+    transitions.reserve(d_catalogData.size());
+    
+    for (int i = 0; i < d_catalogData.size(); ++i) {
+        const TransitionData &trans = d_catalogData.at(i);
+        transitions.append(QPointF(trans.frequency, trans.intensity));
+    }
+    
+    return transitions;
 }
 
 QVector<QPointF> CatalogOverlay::generateConvolvedSpectrum() const
@@ -273,40 +312,39 @@ QVector<QPointF> CatalogOverlay::generateConvolvedSpectrum() const
     if (d_catalogData.isEmpty()) {
         return QVector<QPointF>();
     }
-    
-    // Generate frequency grid
-    int numPoints = static_cast<int>((d_convolutionMaxFreq - d_convolutionMinFreq) / d_pointSpacing) + 1;
-    QVector<QPointF> spectrum;
-    spectrum.reserve(numPoints);
-    
-    // Initialize spectrum
-    for (int i = 0; i < numPoints; ++i) {
-        double freq = d_convolutionMinFreq + i * d_pointSpacing;
-        spectrum.append(QPointF(freq, 0.0));
+
+    //pre-filter transitions outside range; place into lightweight structures
+    QVector<double> x0, y0;
+    x0.reserve(d_catalogData.size());
+    y0.reserve(d_catalogData.size());
+    for(const auto &trans : d_catalogData.transitions())
+    {
+        if (trans.frequency >= d_convolutionMinFreq && trans.frequency <= d_convolutionMaxFreq)
+        {
+            x0.append(trans.frequency);
+            y0.append(trans.intensity);
+        }
     }
     
-    // Convolve each transition
-    for (int i = 0; i < d_catalogData.size(); ++i) {
-        const TransitionData &trans = d_catalogData.at(i);
-        
-        // Skip transitions outside frequency range
-        if (trans.frequency < d_convolutionMinFreq || trans.frequency > d_convolutionMaxFreq) {
-            continue;
+    // Generate frequency grid using number of points
+    double pointSpacing = calculatePointSpacing();
+    QVector<QPointF> spectrum;
+    spectrum.reserve(d_numConvolutionPoints);
+
+    //Store lineshape function pointer
+    auto f = &CatalogOverlay::lorentzianProfile;
+    if(d_lineshapeType == Gaussian)
+        f = &CatalogOverlay::gaussianProfile;
+    
+    
+    // Add contribution to each grid point
+    for (int i = 0; i < d_numConvolutionPoints; ++i) {
+        double yy = 0.0;
+        double gridFreq = d_convolutionMinFreq + i * pointSpacing;
+        for (int j = 0; (j < x0.size()) && (j < y0.size()); ++j) {
+            yy += y0.at(j) * (this->*f)(gridFreq, x0.at(j), d_linewidth);
         }
-        
-        // Add contribution to each grid point
-        for (int j = 0; j < spectrum.size(); ++j) {
-            double gridFreq = spectrum[j].x();
-            double contribution = 0.0;
-            
-            if (d_lineshapeType == Lorentzian) {
-                contribution = lorentzianProfile(gridFreq, trans.frequency, d_linewidth);
-            } else {
-                contribution = gaussianProfile(gridFreq, trans.frequency, d_linewidth);
-            }
-            
-            spectrum[j].setY(spectrum[j].y() + trans.intensity * contribution);
-        }
+        spectrum.append({gridFreq,yy});
     }
     
     return spectrum;
@@ -334,7 +372,23 @@ double CatalogOverlay::gaussianProfile(double x, double x0, double fwhmKHz) cons
 
 void CatalogOverlay::invalidateConvolutionCache()
 {
-    d_convolutionCacheValid = false;
+    d_cacheState = CacheState::Invalid;
+}
+
+void CatalogOverlay::setCachePending()
+{
+    d_cacheState = CacheState::Pending;
+}
+
+void CatalogOverlay::setCacheValid(const QVector<QPointF> &convolvedData)
+{
+    d_convolvedCache = convolvedData;
+    d_cacheState = CacheState::Valid;
+}
+
+bool CatalogOverlay::isCacheValid() const
+{
+    return d_cacheState == CacheState::Valid;
 }
 
 void CatalogOverlay::readFromDest()
@@ -453,8 +507,12 @@ void CatalogOverlay::_storeMetadata(std::map<QString, QVariant> &m)
     m.emplace(linewidthKHz, d_linewidth);
     m.emplace(BC::Key::Overlay::Catalog::convolutionMinFreq, d_convolutionMinFreq);
     m.emplace(BC::Key::Overlay::Catalog::convolutionMaxFreq, d_convolutionMaxFreq);
-    m.emplace(BC::Key::Overlay::Catalog::pointSpacing, d_pointSpacing);
+    m.emplace(BC::Key::Overlay::Catalog::numConvolutionPoints, d_numConvolutionPoints);
     m.emplace(transitionCount, d_catalogData.size());
+    
+    // Store filtering range settings
+    m.emplace(BC::Key::Overlay::Catalog::filterMinFreq, d_filterMinFreq);
+    m.emplace(BC::Key::Overlay::Catalog::filterMaxFreq, d_filterMaxFreq);
     
     // Store frequency range
     if (!d_catalogData.isEmpty()) {
@@ -503,9 +561,20 @@ void CatalogOverlay::_retrieveMetadata(const std::map<QString, QVariant> &m)
         d_convolutionMaxFreq = it->second.toDouble();
     }
     
-    it = m.find(BC::Key::Overlay::Catalog::pointSpacing);
+    it = m.find(BC::Key::Overlay::Catalog::numConvolutionPoints);
     if (it != m.end()) {
-        d_pointSpacing = it->second.toDouble();
+        d_numConvolutionPoints = it->second.toInt();
+    }
+    
+    // Retrieve filtering range settings
+    it = m.find(BC::Key::Overlay::Catalog::filterMinFreq);
+    if (it != m.end()) {
+        d_filterMinFreq = it->second.toDouble();
+    }
+    
+    it = m.find(BC::Key::Overlay::Catalog::filterMaxFreq);
+    if (it != m.end()) {
+        d_filterMaxFreq = it->second.toDouble();
     }
     
     // Invalidate cache after loading metadata

@@ -57,7 +57,7 @@ public:
     virtual void setupForSettings(std::shared_ptr<OverlayBase> overlay) = 0;
         
     // Overlay creation and modification interface
-    virtual std::shared_ptr<OverlayBase> createOverlay() const = 0;
+    virtual std::shared_ptr<OverlayBase> createOverlay() = 0;
     virtual void applyToOverlay(std::shared_ptr<OverlayBase> overlay) const = 0;
     
     // Validation
@@ -70,8 +70,9 @@ public:
     virtual void setSourceFilePath(const QString &path) = 0;
     virtual bool validateSourceFile(QString &errorMessage) = 0;
     
-    // Reset functionality
+    // Reset/accept functionality
     virtual void resetToDefaults() = 0;
+    virtual void onAccept() { saveSettings(); }
     
     // Settings state capture for preview sync tracking
     virtual QHash<QString, QVariant> getSettingsHash() const = 0;
@@ -96,7 +97,6 @@ signals:
     void progressValueChanged(int value);
     void labelUpdateRequested(const QString &newLabel);
     void yScaleUpdateRequested(double newYScale);
-    void frequencyRangeUpdateRequested(double minFreq, double maxFreq, bool enableLimiting);
 
 protected:
     // Helper methods for derived classes

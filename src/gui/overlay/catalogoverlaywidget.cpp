@@ -19,32 +19,26 @@ CatalogOverlayWidget::CatalogOverlayWidget(const Ft &currentFt, QWidget *parent)
       p_sourceFileSettingsWidget(nullptr),
       p_overlaySettingsWidget(nullptr),
       d_fileValid(false),
-      d_hasFtData(false),
-      d_ftYMax(!d_currentFt.isEmpty() ? d_currentFt.yMax() : 1.0),
-      d_xRangeMin(!d_currentFt.isEmpty() ? d_currentFt.xRange().first : DEFAULT_MIN_FREQ),
-      d_xRangeMax(!d_currentFt.isEmpty() ? d_currentFt.xRange().second : DEFAULT_MAX_FREQ),
       d_convolutionInProgress(false)
 {
     setupUI();
     setupConnections();
 }
 
-CatalogOverlayWidget::~CatalogOverlayWidget() = default;
+CatalogOverlayWidget::~CatalogOverlayWidget()
+{
+    // Cancel any pending convolution operations
+    cancelPendingConvolution();
+    
+    // Explicitly disconnect from OverlayProcessManager to avoid signals to destroyed objects
+    auto& manager = OverlayProcessManager::instance();
+    disconnect(&manager, nullptr, this, nullptr);
+}
 
 void CatalogOverlayWidget::setupForCreation()
 {
     d_context = Context::Creation;
-    d_overlay.reset();
-    
-    // Use frequency range data provided by UnifiedOverlayWidget (set via setFrequencyRange)
-    if (d_xRangeMin < d_xRangeMax) {
-        // Initialize convolution frequency range with Ft data
-        p_minFreqSpinBox->setValue(d_xRangeMin);
-        p_maxFreqSpinBox->setValue(d_xRangeMax);
-        
-        // Emit signal to configure base overlay frequency limits automatically
-        emit frequencyRangeUpdateRequested(d_xRangeMin, d_xRangeMax, true);
-    }
+    d_overlay.reset();  
     
     // Load default settings for creation context
     loadSettings();
@@ -76,14 +70,14 @@ void CatalogOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overlay
             p_convolutionEnabledCheckBox->setChecked(catalogOverlay->convolutionEnabled());
             p_lineshapeComboBox->setCurrentIndex(static_cast<int>(catalogOverlay->lineshapeType()));
             p_linewidthSpinBox->setValue(catalogOverlay->linewidth());
-            p_minFreqSpinBox->setValue(catalogOverlay->convolutionMinFreq());
-            p_maxFreqSpinBox->setValue(catalogOverlay->convolutionMaxFreq());
-            p_pointSpacingSpinBox->setValue(catalogOverlay->pointSpacing());
+            p_convMinFreqSpinBox->setValue(catalogOverlay->convolutionMinFreq());
+            p_convMaxFreqSpinBox->setValue(catalogOverlay->convolutionMaxFreq());
+            p_numPointsSpinBox->setValue(catalogOverlay->numConvolutionPoints());
+            updateSpacingDisplay();
             
-            // Load filtering range settings (from metadata or defaults)
-            // TODO: These should be stored as overlay metadata, but for now load from settings storage
-            p_filterMinFreqSpinBox->setValue(get(BC::Key::CatalogWidget::filterMinFreqMHz, DEFAULT_FILTER_MIN_FREQ));
-            p_filterMaxFreqSpinBox->setValue(get(BC::Key::CatalogWidget::filterMaxFreqMHz, DEFAULT_FILTER_MAX_FREQ));
+            // Load filtering range settings from overlay metadata
+            p_filterMinFreqSpinBox->setValue(catalogOverlay->filterMinFreq());
+            p_filterMaxFreqSpinBox->setValue(catalogOverlay->filterMaxFreq());
         }
     }
     
@@ -91,7 +85,7 @@ void CatalogOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overlay
     updateConvolutionControls();
 }
 
-std::shared_ptr<OverlayBase> CatalogOverlayWidget::createOverlay() const
+std::shared_ptr<OverlayBase> CatalogOverlayWidget::createOverlay()
 {
     if (d_context != Context::Creation) {
         return nullptr;
@@ -101,10 +95,24 @@ std::shared_ptr<OverlayBase> CatalogOverlayWidget::createOverlay() const
         return nullptr;
     }
     
+    // If we already have a processed overlay (with convolution results), return it
+    if (d_overlay) {
+        auto catalogOverlay = std::dynamic_pointer_cast<CatalogOverlay>(d_overlay);
+        if (catalogOverlay) {
+            // Ensure current settings are applied to the processed overlay
+            applyToOverlay(d_overlay);
+            return d_overlay;
+        }
+    }
+    
+    // Create new overlay if we don't have one
     auto overlay = std::make_shared<CatalogOverlay>();
     
     // Delegate to applyToOverlay to avoid code duplication
     applyToOverlay(overlay);
+    
+    // Store the created overlay for convolution operations in creation context
+    d_overlay = overlay;
     
     return overlay;
 }
@@ -128,22 +136,27 @@ void CatalogOverlayWidget::applyToOverlay(std::shared_ptr<OverlayBase> overlay) 
     catalogOverlay->setConvolutionEnabled(p_convolutionEnabledCheckBox->isChecked());
     catalogOverlay->setLineshapeType(static_cast<CatalogOverlay::LineshapeType>(p_lineshapeComboBox->currentIndex()));
     catalogOverlay->setLinewidth(p_linewidthSpinBox->value());
-    catalogOverlay->setConvolutionFreqRange(p_minFreqSpinBox->value(), p_maxFreqSpinBox->value());
-    catalogOverlay->setPointSpacing(p_pointSpacingSpinBox->value());
+    catalogOverlay->setConvolutionFreqRange(p_convMinFreqSpinBox->value(), p_convMaxFreqSpinBox->value());
+    catalogOverlay->setNumConvolutionPoints(p_numPointsSpinBox->value());
     
+    // Apply filtering range settings
+    catalogOverlay->setFilterRange(p_filterMinFreqSpinBox->value(), p_filterMaxFreqSpinBox->value());
+    
+    // COMMENTED OUT: This was overwriting user appearance settings every time applyToOverlay() was called
+    // The initial appearance should be set only once during overlay creation, not continuously overwritten
     // Apply curve appearance preset based on convolution mode
-    QString presetName;
-    if (p_convolutionEnabledCheckBox->isChecked()) {
-        presetName = "Curve - Secondary";  // Smooth curve for convolved data
-    } else {
-        presetName = "Stem - Secondary";   // Stem plot for discrete transitions
-    }
-    
-    auto presetManager = CurveAppearancePresetManager::instance();
-    if (presetManager && presetManager->hasPreset(presetName)) {
-        auto preset = presetManager->getPreset(presetName);
-        catalogOverlay->setCurveAppearanceMetadata(preset.appearance);
-    }
+    // QString presetName;
+    // if (p_convolutionEnabledCheckBox->isChecked()) {
+    //     presetName = "Curve - Secondary";  // Smooth curve for convolved data
+    // } else {
+    //     presetName = "Stem - Secondary";   // Stem plot for discrete transitions
+    // }
+    // 
+    // auto presetManager = CurveAppearancePresetManager::instance();
+    // if (presetManager && presetManager->hasPreset(presetName)) {
+    //     auto preset = presetManager->getPreset(presetName);
+    //     catalogOverlay->setCurveAppearanceMetadata(preset.appearance);
+    // }
 }
 
 bool CatalogOverlayWidget::validateSettings(QString &errorMessage) const
@@ -244,13 +257,14 @@ void CatalogOverlayWidget::resetToDefaults()
     p_convolutionEnabledCheckBox->setChecked(get(BC::Key::CatalogWidget::convolutionEnabled, DEFAULT_CONVOLUTION_ENABLED));
     p_lineshapeComboBox->setCurrentIndex(get(BC::Key::CatalogWidget::lineshapeType, DEFAULT_LINESHAPE_TYPE));
     p_linewidthSpinBox->setValue(get(BC::Key::CatalogWidget::linewidthKHz, DEFAULT_LINEWIDTH));
-    p_pointSpacingSpinBox->setValue(get(BC::Key::CatalogWidget::pointSpacingMHz, DEFAULT_POINT_SPACING));
+    updateSpacingDisplay();
     p_saveRangeOnlyCheckBox->setChecked(get(BC::Key::CatalogWidget::saveRangeOnly, DEFAULT_SAVE_RANGE_ONLY));
     
     // Reset frequency range (will be set from Ft data if available)
-    if (!d_hasFtData) {
-        p_minFreqSpinBox->setValue(get(BC::Key::CatalogWidget::minFreqMHz, DEFAULT_MIN_FREQ));
-        p_maxFreqSpinBox->setValue(get(BC::Key::CatalogWidget::maxFreqMHz, DEFAULT_MAX_FREQ));
+    if (d_currentFt.isEmpty()) {
+        p_convMinFreqSpinBox->setValue(get(BC::Key::CatalogWidget::convMinFreqMHz, DEFAULT_MIN_FREQ));
+        p_convMaxFreqSpinBox->setValue(get(BC::Key::CatalogWidget::convMaxFreqMHz, DEFAULT_MAX_FREQ));
+        p_numPointsSpinBox->setValue(get(BC::Key::CatalogWidget::numConvolutionPoints, DEFAULT_NUM_POINTS));
     }
     
     updateFileInfo();
@@ -262,25 +276,27 @@ QHash<QString, QVariant> CatalogOverlayWidget::getSettingsHash() const
     QHash<QString, QVariant> settings;
     
     // File selection settings
-    settings["filePath"] = d_filePath;
-    settings["fileValid"] = d_fileValid;
+    settings[BC::Key::CatalogWidget::filePath] = d_filePath;
+    settings[BC::Key::CatalogWidget::fileValid] = d_fileValid;
     
     // Convolution settings (including frequency range for convolution)
-    settings["convolutionEnabled"] = p_convolutionEnabledCheckBox->isChecked();
-    settings["lineshapeType"] = p_lineshapeComboBox->currentIndex();
-    settings["linewidthKHz"] = p_linewidthSpinBox->value();
-    settings["pointSpacingMHz"] = p_pointSpacingSpinBox->value();
-    settings["minFreqMHz"] = p_minFreqSpinBox->value();
-    settings["maxFreqMHz"] = p_maxFreqSpinBox->value();
+    settings[BC::Key::CatalogWidget::convolutionEnabled] = p_convolutionEnabledCheckBox->isChecked();
+    settings[BC::Key::CatalogWidget::lineshapeType] = p_lineshapeComboBox->currentIndex();
+    settings[BC::Key::CatalogWidget::linewidthKHz] = p_linewidthSpinBox->value();
+    settings[BC::Key::CatalogWidget::numConvolutionPoints] = p_numPointsSpinBox->value();
+    settings[BC::Key::CatalogWidget::convMinFreqMHz] = p_convMinFreqSpinBox->value();
+    settings[BC::Key::CatalogWidget::convMaxFreqMHz] = p_convMaxFreqSpinBox->value();
     
-    // Other settings
-    settings["saveRangeOnly"] = p_saveRangeOnlyCheckBox->isChecked();
+    // Filtering settings
+    settings[BC::Key::CatalogWidget::saveRangeOnly] = p_saveRangeOnlyCheckBox->isChecked();
+    settings[BC::Key::CatalogWidget::filterMinFreqMHz] = p_filterMinFreqSpinBox->value();
+    settings[BC::Key::CatalogWidget::filterMaxFreqMHz] = p_filterMaxFreqSpinBox->value();
     
     // Catalog data fingerprint (for detecting data changes)
     if (d_catalogData.size() > 0) {
-        settings["catalogSize"] = d_catalogData.size();
-        settings["catalogSourceProgram"] = d_catalogData.sourceProgram();
-        settings["catalogMoleculeName"] = d_catalogData.moleculeName();
+        settings[BC::Key::CatalogWidget::catalogSize] = d_catalogData.size();
+        settings[BC::Key::CatalogWidget::catalogSourceProgram] = d_catalogData.sourceProgram();
+        settings[BC::Key::CatalogWidget::catalogMoleculeName] = d_catalogData.moleculeName();
     }
     
     return settings;
@@ -304,10 +320,10 @@ std::shared_ptr<OverlayOperation> CatalogOverlayWidget::createOperation(Operatio
                 p_convolutionEnabledCheckBox->isChecked(),
                 static_cast<CatalogOverlay::LineshapeType>(p_lineshapeComboBox->currentIndex()),
                 p_linewidthSpinBox->value(),
-                p_minFreqSpinBox->value(),
-                p_maxFreqSpinBox->value(),
-                p_pointSpacingSpinBox->value(),
-                const_cast<CatalogOverlayWidget*>(this)  // Parent for Qt ownership
+                p_convMinFreqSpinBox->value(),
+                p_convMaxFreqSpinBox->value(),
+                p_numPointsSpinBox->value(),
+                nullptr  // No Qt parent - let OverlayProcessManager manage lifecycle
             );
         }
     case OperationCapability::Creation:
@@ -401,7 +417,7 @@ void CatalogOverlayWidget::onConvolutionSettingsChanged()
     }
     
     // In settings context (including preview mode), trigger background convolution for real-time updates
-    if (d_context == Context::Settings && p_convolutionEnabledCheckBox->isChecked()) {
+    if (p_convolutionEnabledCheckBox->isChecked()) {
         triggerBackgroundConvolution();
     }
     
@@ -444,9 +460,12 @@ void CatalogOverlayWidget::setupConnections()
     connect(p_convolutionEnabledCheckBox, &QCheckBox::toggled, this, &CatalogOverlayWidget::onConvolutionEnabledToggled);
     connect(p_lineshapeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &CatalogOverlayWidget::onLineshapeTypeChanged);
     connect(p_linewidthSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CatalogOverlayWidget::onConvolutionSettingsChanged);
-    connect(p_minFreqSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CatalogOverlayWidget::onConvolutionSettingsChanged);
-    connect(p_maxFreqSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CatalogOverlayWidget::onConvolutionSettingsChanged);
-    connect(p_pointSpacingSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CatalogOverlayWidget::onConvolutionSettingsChanged);
+    connect(p_convMinFreqSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CatalogOverlayWidget::onConvolutionSettingsChanged);
+    connect(p_convMaxFreqSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CatalogOverlayWidget::onConvolutionSettingsChanged);
+    connect(p_convMinFreqSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CatalogOverlayWidget::updateSpacingDisplay);
+    connect(p_convMaxFreqSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CatalogOverlayWidget::updateSpacingDisplay);
+    connect(p_numPointsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &CatalogOverlayWidget::onConvolutionSettingsChanged);
+    connect(p_numPointsSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &CatalogOverlayWidget::updateSpacingDisplay);
     connect(p_saveRangeOnlyCheckBox, &QCheckBox::toggled, this, &CatalogOverlayWidget::onSaveRangeOnlyToggled);
     connect(p_filterMinFreqSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CatalogOverlayWidget::onFilteringParametersChanged);
     connect(p_filterMaxFreqSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CatalogOverlayWidget::onFilteringParametersChanged);
@@ -480,9 +499,9 @@ void CatalogOverlayWidget::saveSettings()
     set(BC::Key::CatalogWidget::convolutionEnabled, p_convolutionEnabledCheckBox->isChecked());
     set(BC::Key::CatalogWidget::lineshapeType, p_lineshapeComboBox->currentIndex());
     set(BC::Key::CatalogWidget::linewidthKHz, p_linewidthSpinBox->value());
-    set(BC::Key::CatalogWidget::minFreqMHz, p_minFreqSpinBox->value());
-    set(BC::Key::CatalogWidget::maxFreqMHz, p_maxFreqSpinBox->value());
-    set(BC::Key::CatalogWidget::pointSpacingMHz, p_pointSpacingSpinBox->value());
+    set(BC::Key::CatalogWidget::convMinFreqMHz, p_convMinFreqSpinBox->value());
+    set(BC::Key::CatalogWidget::convMaxFreqMHz, p_convMaxFreqSpinBox->value());
+    set(BC::Key::CatalogWidget::numConvolutionPoints, p_numPointsSpinBox->value());
     set(BC::Key::CatalogWidget::saveRangeOnly, p_saveRangeOnlyCheckBox->isChecked());
     
     // Save filtering range settings
@@ -637,39 +656,60 @@ void CatalogOverlayWidget::setupConvolutionSettingsUI()
     p_linewidthSpinBox->setSuffix(" kHz");
     p_linewidthSpinBox->setValue(get(BC::Key::CatalogWidget::linewidthKHz, DEFAULT_LINEWIDTH));
     convLayout->addRow("Linewidth (FWHM):", p_linewidthSpinBox);
+    p_linewidthSpinBox->setKeyboardTracking(false);
     
     // Frequency range
     QHBoxLayout *freqRangeLayout = new QHBoxLayout();
-    p_minFreqSpinBox = new QDoubleSpinBox(p_convolutionGroup);
-    configureSpinBox(p_minFreqSpinBox,
+    p_convMinFreqSpinBox = new QDoubleSpinBox(p_convolutionGroup);
+    configureSpinBox(p_convMinFreqSpinBox,
                      BC::Key::CatalogWidget::freqMin, BC::Key::CatalogWidget::freqMax,
                      BC::Key::CatalogWidget::freqDecimals, BC::Key::CatalogWidget::freqStep,
-                     0.0, 100000.0, 3, 1.0);
-    p_minFreqSpinBox->setSuffix(" MHz");
-    p_minFreqSpinBox->setValue(get(BC::Key::CatalogWidget::minFreqMHz, DEFAULT_MIN_FREQ));
+                     0.0, 10000000.0, 3, 1.0);
+    p_convMinFreqSpinBox->setSuffix(" MHz");
+    p_convMinFreqSpinBox->setKeyboardTracking(false);
     
-    p_maxFreqSpinBox = new QDoubleSpinBox(p_convolutionGroup);
-    configureSpinBox(p_maxFreqSpinBox,
+    p_convMaxFreqSpinBox = new QDoubleSpinBox(p_convolutionGroup);
+    configureSpinBox(p_convMaxFreqSpinBox,
                      BC::Key::CatalogWidget::freqMin, BC::Key::CatalogWidget::freqMax,
                      BC::Key::CatalogWidget::freqDecimals, BC::Key::CatalogWidget::freqStep,
-                     0.0, 100000.0, 3, 1.0);
-    p_maxFreqSpinBox->setSuffix(" MHz");
-    p_maxFreqSpinBox->setValue(get(BC::Key::CatalogWidget::maxFreqMHz, DEFAULT_MAX_FREQ));
+                     0.0, 10000000.0, 3, 1.0);
+    p_convMaxFreqSpinBox->setSuffix(" MHz");
+    p_convMinFreqSpinBox->setKeyboardTracking(false);
     
-    freqRangeLayout->addWidget(p_minFreqSpinBox);
+    freqRangeLayout->addWidget(p_convMinFreqSpinBox);
     freqRangeLayout->addWidget(new QLabel("to"));
-    freqRangeLayout->addWidget(p_maxFreqSpinBox);
+    freqRangeLayout->addWidget(p_convMaxFreqSpinBox);
     convLayout->addRow("Frequency Range:", freqRangeLayout);
     
-    // Point spacing
-    p_pointSpacingSpinBox = new QDoubleSpinBox(p_convolutionGroup);
-    configureSpinBox(p_pointSpacingSpinBox,
-                     BC::Key::CatalogWidget::pointSpacingMin, BC::Key::CatalogWidget::pointSpacingMax,
-                     BC::Key::CatalogWidget::pointSpacingDecimals, BC::Key::CatalogWidget::pointSpacingStep,
-                     0.001, 1.0, 3, 0.001);
-    p_pointSpacingSpinBox->setSuffix(" MHz");
-    p_pointSpacingSpinBox->setValue(get(BC::Key::CatalogWidget::pointSpacingMHz, DEFAULT_POINT_SPACING));
-    convLayout->addRow("Point Spacing:", p_pointSpacingSpinBox);
+    // Number of points and spacing display
+    p_numPointsSpinBox = new QSpinBox(p_convolutionGroup);
+    p_numPointsSpinBox->setMinimum(get(BC::Key::CatalogWidget::numPointsMin, 100));
+    p_numPointsSpinBox->setMaximum(get(BC::Key::CatalogWidget::numPointsMax, 10000000));
+    p_numPointsSpinBox->setSingleStep(get(BC::Key::CatalogWidget::numPointsStep, 100));
+    p_numPointsSpinBox->setKeyboardTracking(false);
+    convLayout->addRow("Number of Points:", p_numPointsSpinBox);
+    
+    // Spacing display (read-only)
+    p_spacingDisplayLabel = new QLabel("0.000 MHz", p_convolutionGroup);
+    p_spacingDisplayLabel->setStyleSheet("QLabel { color: gray; }");
+    convLayout->addRow("Point Spacing:", p_spacingDisplayLabel);
+
+    // Initialize with intelligent defaults from Ft data
+    if (!d_currentFt.isEmpty()) {
+        auto ftRange = d_currentFt.xRange();
+        p_convMinFreqSpinBox->setValue(ftRange.first);
+        p_convMaxFreqSpinBox->setValue(ftRange.second);
+        // Calculate intelligent default number of points based on range and FT spacing
+        double range = ftRange.second - ftRange.first;
+        double ftSpacing = d_currentFt.xSpacing();
+        int intelligentPoints = qMin(10000000, qMax(100, static_cast<int>(range / ftSpacing)));
+        p_numPointsSpinBox->setValue(intelligentPoints);
+    } else {
+        p_convMinFreqSpinBox->setValue(get(BC::Key::CatalogWidget::convMinFreqMHz, DEFAULT_MIN_FREQ));
+        p_convMaxFreqSpinBox->setValue(get(BC::Key::CatalogWidget::convMaxFreqMHz, DEFAULT_MAX_FREQ));
+        p_numPointsSpinBox->setValue(get(BC::Key::CatalogWidget::numConvolutionPoints, DEFAULT_NUM_POINTS));
+    updateSpacingDisplay();
+    }
     
     overlayLayout->addWidget(p_convolutionGroup);
 }
@@ -754,21 +794,50 @@ void CatalogOverlayWidget::updateConvolutionControls()
     
     p_lineshapeComboBox->setEnabled(enabled);
     p_linewidthSpinBox->setEnabled(enabled);
-    p_minFreqSpinBox->setEnabled(enabled);
-    p_maxFreqSpinBox->setEnabled(enabled);
-    p_pointSpacingSpinBox->setEnabled(enabled);
+    p_convMinFreqSpinBox->setEnabled(enabled);
+    p_convMaxFreqSpinBox->setEnabled(enabled);
+    p_numPointsSpinBox->setEnabled(enabled);
+    p_spacingDisplayLabel->setEnabled(enabled);
+}
+
+void CatalogOverlayWidget::updateSpacingDisplay()
+{
+    double minFreq = p_convMinFreqSpinBox->value();
+    double maxFreq = p_convMaxFreqSpinBox->value();
+    int numPoints = p_numPointsSpinBox->value();
+    
+    if (numPoints > 1 && maxFreq > minFreq) {
+        double spacing = (maxFreq - minFreq) / (numPoints - 1);
+        p_spacingDisplayLabel->setText(QString("%1 MHz").arg(spacing, 0, 'f', 6));
+        
+        // Add performance warning for very large point counts
+        if (numPoints > 500000) {
+            p_spacingDisplayLabel->setStyleSheet("QLabel { color: orange; font-weight: bold; }");
+            p_spacingDisplayLabel->setToolTip("Warning: Large number of points may cause slow performance");
+        } else if (numPoints > 2000000) {
+            p_spacingDisplayLabel->setStyleSheet("QLabel { color: red; font-weight: bold; }");
+            p_spacingDisplayLabel->setToolTip("Warning: Very large number of points will cause slow performance");
+        } else {
+            p_spacingDisplayLabel->setStyleSheet("QLabel { color: gray; }");
+            p_spacingDisplayLabel->setToolTip("");
+        }
+    } else {
+        p_spacingDisplayLabel->setText("0.000 MHz");
+        p_spacingDisplayLabel->setStyleSheet("QLabel { color: gray; }");
+        p_spacingDisplayLabel->setToolTip("");
+    }
 }
 
 
 void CatalogOverlayWidget::calculateDefaultYScale()
 {
-    if (!d_fileValid || d_catalogData.isEmpty() || !d_hasFtData) {
+    if (!d_fileValid || d_catalogData.isEmpty() || !d_currentFt.isEmpty()) {
         return; // Can't calculate without valid data
     }
     
     // Get the current frequency range (either from spinboxes or Ft data)
-    double rangeMin = p_minFreqSpinBox->value();
-    double rangeMax = p_maxFreqSpinBox->value();
+    double rangeMin = p_convMinFreqSpinBox->value();
+    double rangeMax = p_convMaxFreqSpinBox->value();
     
     // Find the maximum intensity within the frequency range
     double maxIntensityInRange = 0.0;
@@ -788,7 +857,7 @@ void CatalogOverlayWidget::calculateDefaultYScale()
     
     // Calculate yscale: we want the strongest catalog line to be about 20% of the Ft yMax
     // This provides good visibility without overwhelming the spectrum
-    double targetHeight = d_ftYMax * 0.2;
+    double targetHeight = d_currentFt.yMax() * 0.2;
     double calculatedYScale = targetHeight / maxIntensityInRange;
     
     // Make the scale negative so catalog peaks point downward (enhancement from devel-ideas.txt)
@@ -805,8 +874,8 @@ bool CatalogOverlayWidget::validateConvolutionSettings(QString &errorMessage) co
         return true; // No validation needed if convolution disabled
     }
     
-    double minFreq = p_minFreqSpinBox->value();
-    double maxFreq = p_maxFreqSpinBox->value();
+    double minFreq = p_convMinFreqSpinBox->value();
+    double maxFreq = p_convMaxFreqSpinBox->value();
     
     if (minFreq >= maxFreq) {
         errorMessage = "Minimum frequency must be less than maximum frequency.";
@@ -818,7 +887,7 @@ bool CatalogOverlayWidget::validateConvolutionSettings(QString &errorMessage) co
         return false;
     }
     
-    if (p_pointSpacingSpinBox->value() <= 0) {
+    if (p_numPointsSpinBox->value() <= 0) {
         errorMessage = "Point spacing must be positive.";
         return false;
     }
@@ -856,11 +925,17 @@ void CatalogOverlayWidget::triggerBackgroundConvolution()
         p_convolutionEnabledCheckBox->isChecked(),
         static_cast<CatalogOverlay::LineshapeType>(p_lineshapeComboBox->currentIndex()),
         p_linewidthSpinBox->value(),
-        p_minFreqSpinBox->value(),
-        p_maxFreqSpinBox->value(),
-        p_pointSpacingSpinBox->value(),
-        this
+        p_convMinFreqSpinBox->value(),
+        p_convMaxFreqSpinBox->value(),
+        p_numPointsSpinBox->value(),
+        nullptr  // No Qt parent - let OverlayProcessManager manage lifecycle
     );
+    
+    // Set cache state to pending before starting operation
+    auto catalogOverlay = std::dynamic_pointer_cast<CatalogOverlay>(d_overlay);
+    if (catalogOverlay) {
+        catalogOverlay->setCachePending();
+    }
     
     // Queue the operation with high priority for real-time updates
     auto& manager = OverlayProcessManager::instance();
@@ -912,7 +987,7 @@ void CatalogOverlayWidget::onConvolutionOperationCompleted(const QString &operat
     d_convolutionInProgress = false;
     
     // Update the overlay with the result
-    if (result && d_overlay) {
+    if (result) {
         d_overlay = result;
     }
     
@@ -929,6 +1004,12 @@ void CatalogOverlayWidget::onConvolutionOperationFailed(const QString &operation
     d_currentConvolutionId.clear();
     d_convolutionInProgress = false;
     
+    // Reset cache state on failure
+    auto catalogOverlay = std::dynamic_pointer_cast<CatalogOverlay>(d_overlay);
+    if (catalogOverlay) {
+        catalogOverlay->invalidateConvolutionCache();
+    }
+    
     qWarning() << "Convolution operation failed:" << error;
     emit progressOperationFinished();
 }
@@ -941,6 +1022,12 @@ void CatalogOverlayWidget::onConvolutionOperationCancelled(const QString &operat
     
     d_currentConvolutionId.clear();
     d_convolutionInProgress = false;
+    
+    // Reset cache state on cancellation
+    auto catalogOverlay = std::dynamic_pointer_cast<CatalogOverlay>(d_overlay);
+    if (catalogOverlay) {
+        catalogOverlay->invalidateConvolutionCache();
+    }
     
     emit progressOperationFinished();
 }

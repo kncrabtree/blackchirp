@@ -133,7 +133,7 @@ public:
                         double linewidthKHz,
                         double freqMinMHz,
                         double freqMaxMHz,
-                        double pointSpacingMHz,
+                        int numConvolutionPoints,
                         QObject* parent = nullptr);
 
     std::shared_ptr<OverlayBase> execute() override;
@@ -149,7 +149,7 @@ private:
     double d_linewidthKHz;
     double d_freqMinMHz;
     double d_freqMaxMHz;
-    double d_pointSpacingMHz;
+    int d_numConvolutionPoints;
 };
 
 /**

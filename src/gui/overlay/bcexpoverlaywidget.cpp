@@ -75,7 +75,7 @@ void BCExpOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overlay)
     validateExperiment();
 }
 
-std::shared_ptr<OverlayBase> BCExpOverlayWidget::createOverlay() const
+std::shared_ptr<OverlayBase> BCExpOverlayWidget::createOverlay()
 {
     if (d_context != Context::Creation) {
         return nullptr;
@@ -93,6 +93,9 @@ std::shared_ptr<OverlayBase> BCExpOverlayWidget::createOverlay() const
     
     // Set the configured FT data
     overlay->setFtData(d_configuredFt);
+    
+    // Store the created overlay for operations in creation context
+    d_overlay = overlay;
     
     return overlay;
 }

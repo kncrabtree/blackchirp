@@ -57,7 +57,7 @@ public:
                          std::shared_ptr<OverlayStorage> overlayStorage);
 
     // Overlay creation/modification interface
-    std::shared_ptr<OverlayBase> createOverlay() const;
+    std::shared_ptr<OverlayBase> createOverlay();
     void applyToOverlay() const; // Apply current settings to existing overlay (settings context only)
     
     // Validation
@@ -100,6 +100,7 @@ public slots:
     void onSettingsChanged();
     void onRealTimeUpdate(); // Settings context only
     void onDataValidityChanged(bool isValid); // Auto-preview handler for creation context
+    void onAccept();
 
 private slots:
     void onProgressOperationStarted(const QString &message);
@@ -107,7 +108,6 @@ private slots:
     void onProgressValueChanged(int value);
     void onLabelUpdateRequested(const QString &newLabel);
     void onYScaleUpdateRequested(double newYScale);
-    void onFrequencyRangeUpdateRequested(double minFreq, double maxFreq, bool enableLimiting);
     void onColorChangeRequested();
 
 private:
@@ -124,6 +124,9 @@ private:
     
     // Settings loading
     void loadOverlaySettings();
+    
+    // Settings management
+    void saveSettings();
     
     // Context management
     void configureForContext();
