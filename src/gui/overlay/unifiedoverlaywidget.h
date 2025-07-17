@@ -10,7 +10,6 @@
 #include <QLabel>
 #include <QCheckBox>
 #include <QPushButton>
-#include <QStackedWidget>
 #include <memory>
 
 #include <data/experiment/overlaybase.h>
@@ -63,6 +62,7 @@ public:
     // Validation
     bool validateSettings(QString &errorMessage) const;
     bool isDataValid() const;
+    bool validateAcceptance(); // Returns true if dialog should proceed with acceptance
     
     // Reset functionality
     void resetToDefaults();
@@ -135,7 +135,6 @@ private:
     
     // Type-specific widget management
     void setupTypeSpecificWidget();
-    void clearTypeSpecificWidget();
     void setupTypeSpecificWidgetContext();
     void setupTypeSpecificWidgetConnections();
     void reparentTypeSpecificWidgets();
@@ -178,7 +177,6 @@ private:
     
     // Type-specific tier  
     QGroupBox *p_typeSpecificSettingsBox;
-    QStackedWidget *p_typeSpecificStack;
     OverlayTypeSpecificWidget *p_typeSpecificWidget;
     
     // Base overlay options tier

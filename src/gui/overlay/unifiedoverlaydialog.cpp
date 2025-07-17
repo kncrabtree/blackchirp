@@ -35,6 +35,8 @@ UnifiedOverlayDialog::UnifiedOverlayDialog(OverlayBase::OverlayType type,
       d_overlayType(type),
       d_dialogState(DialogState::Ready),
       d_operationProgress(0),
+      d_queueSize(0),
+      d_isProcessing(false),
       d_isValid(false)
 {
     setupUI();
@@ -68,6 +70,8 @@ UnifiedOverlayDialog::UnifiedOverlayDialog(std::shared_ptr<OverlayBase> overlay,
       d_overlay(overlay),
       d_dialogState(DialogState::Ready),
       d_operationProgress(0),
+      d_queueSize(0),
+      d_isProcessing(false),
       d_isValid(true) // Settings mode starts valid
 {
     setupUI();
@@ -105,29 +109,43 @@ void UnifiedOverlayDialog::accept()
         return;
     }
     
+    // Check for unsaved changes and allow type-specific widgets to handle validation
+    if (p_widget && !p_widget->validateAcceptance()) {
+        return; // Type-specific widget indicated not to proceed
+    }
+    
+    // Block signals to prevent race conditions with background plot operations
+    if (p_widget) {
+        p_widget->blockSignals(true);
+    }
+    
     // Save settings for all SettingsStorage-enabled widgets before proceeding
     if (p_widget) {
         p_widget->onAccept();
     }
     
     if (isCreationMode()) {
-        // Analyze preview state and choose optimal creation path
-        PreviewState state = analyzePreviewState();
-        switch (state) {
-        case PreviewState::CurrentPreview:
-            // Fast path: use existing preview overlay
-            finalizeFromPreview();
-            break;
-        case PreviewState::NoPreview:
-        case PreviewState::StalePreview:
-            // Standard path: create overlay in background
-            createOverlayAsync();
-            break;
-        case PreviewState::ProcessingPreview:
-            // Wait for preview to complete, then finalize
-            QMessageBox::information(this, "Preview Processing", 
-                "Please wait for preview processing to complete before creating the overlay.");
-            return;
+        // Check if we have a valid preview overlay ready to use
+        auto previewOverlay = p_widget->getPreviewOverlay();
+        if (previewOverlay) {
+            // Fast path: preview overlay exists and should be fully processed
+            // Convert to final overlay by clearing preview flag
+            d_createdOverlay = previewOverlay;
+            d_createdOverlay->setPreview(false);
+            
+            // Clear the preview reference so widget destructor doesn't disable the overlay
+            p_widget->clearPreviewOverlay();
+            
+            QDialog::accept();
+        } else {
+            // Fallback: create overlay directly (should be rare in auto-preview mode)
+            d_createdOverlay = p_widget->createOverlay();
+            if (d_createdOverlay) {
+                QDialog::accept();
+            } else {
+                QMessageBox::warning(this, "Creation Error", 
+                    "Failed to create overlay from current settings");
+            }
         }
     } else if (isSettingsMode()) {
         // Apply settings, potentially with background operations
@@ -160,7 +178,6 @@ void UnifiedOverlayDialog::reject()
         
     case DialogState::Ready:
     case DialogState::Error:
-    case DialogState::Complete:
     default:
         // Normal cancellation
         break;
@@ -267,11 +284,10 @@ void UnifiedOverlayDialog::setupUI()
     // Create progress components (initially hidden)
     p_progressBar = new QProgressBar(this);
     p_progressBar->setRange(0, 100);
-    p_progressBar->setVisible(false);
+    p_progressBar->setValue(100);
     p_mainLayout->addWidget(p_progressBar);
     
     p_progressLabel = new QLabel(this);
-    p_progressLabel->setVisible(false);
     p_mainLayout->addWidget(p_progressLabel);
     
     // Create timers
@@ -319,6 +335,23 @@ void UnifiedOverlayDialog::setupConnections()
     // Real-time overlay updates
     connect(p_widget, &UnifiedOverlayWidget::overlayDataChanged,
                 this, &UnifiedOverlayDialog::onOverlayDataChanged);
+    
+    // Connect to OverlayProcessManager for background operation progress
+    auto& manager = OverlayProcessManager::instance();
+    connect(&manager, &OverlayProcessManager::operationStarted,
+            this, &UnifiedOverlayDialog::onOperationStarted);
+    connect(&manager, &OverlayProcessManager::operationProgress,
+            this, &UnifiedOverlayDialog::onOperationProgress);
+    connect(&manager, &OverlayProcessManager::operationCompleted,
+            this, &UnifiedOverlayDialog::onOperationCompleted);
+    connect(&manager, &OverlayProcessManager::operationFailed,
+            this, &UnifiedOverlayDialog::onOperationFailed);
+    connect(&manager, &OverlayProcessManager::operationCancelled,
+            this, &UnifiedOverlayDialog::onOperationCancelled);
+    connect(&manager, &OverlayProcessManager::queueSizeChanged,
+            this, &UnifiedOverlayDialog::onQueueSizeChanged);
+    connect(&manager, &OverlayProcessManager::processingStateChanged,
+            this, &UnifiedOverlayDialog::onProcessingStateChanged);
 }
 
 void UnifiedOverlayDialog::updateButtonState()
@@ -333,8 +366,9 @@ void UnifiedOverlayDialog::updateButtonState()
     if (okButton) {
         switch (d_dialogState) {
         case DialogState::Ready:
-            // Normal state - enable based on validation
-            okButton->setEnabled(isSettingsMode() || d_isValid);
+            // Normal state - enable based on validation and no pending operations
+            // Note: We track processing state through signals to avoid mutex deadlock
+            okButton->setEnabled(d_isValid && d_queueSize == 0 && !d_isProcessing);
             okButton->setText(getOkButtonText());
             break;
             
@@ -355,12 +389,6 @@ void UnifiedOverlayDialog::updateButtonState()
             okButton->setEnabled(true);
             okButton->setText("Retry");
             break;
-            
-        case DialogState::Complete:
-            // Enable OK to finalize
-            okButton->setEnabled(true);
-            okButton->setText("OK");
-            break;
         }
     }
     
@@ -368,7 +396,6 @@ void UnifiedOverlayDialog::updateButtonState()
         switch (d_dialogState) {
         case DialogState::Ready:
         case DialogState::Error:
-        case DialogState::Complete:
             cancelButton->setEnabled(true);
             cancelButton->setText("Cancel");
             break;
@@ -447,107 +474,6 @@ bool UnifiedOverlayDialog::isSettingsMode() const
     return d_mode == Mode::Settings;
 }
 
-UnifiedOverlayDialog::PreviewState UnifiedOverlayDialog::analyzePreviewState() const
-{
-    if (!p_widget) {
-        return PreviewState::NoPreview;
-    }
-    
-    if (!isInPreviewMode()) {
-        return PreviewState::NoPreview;
-    }
-    
-    // In auto-preview architecture, previews are always current
-    // (Phase 2 will implement intelligent sync checking)
-    
-    // Check if a background operation is currently updating the preview
-    // (For now, we'll use a simplified check - in full implementation this would 
-    // check the OverlayProcessManager for pending preview operations)
-    if (d_dialogState == DialogState::Processing) {
-        return PreviewState::ProcessingPreview;
-    }
-    
-    return PreviewState::CurrentPreview;
-}
-
-void UnifiedOverlayDialog::createOverlayAsync()
-{
-    if (!p_widget) {
-        return;
-    }
-    
-    setDialogState(DialogState::Processing);
-    
-    // Use the operation declaration interface to determine processing strategy
-    auto typeSpecificWidget = getTypeSpecificWidget();
-    if (typeSpecificWidget && typeSpecificWidget->supportsBackgroundOperation(OperationCapability::Creation)) {
-        // Check if background creation is beneficial for this widget type
-        d_createdOverlay = p_widget->createOverlay();
-        if (!d_createdOverlay) {
-            setDialogState(DialogState::Error);
-            d_operationError = "Failed to create overlay from current settings";
-            updateButtonState();
-            return;
-        }
-        
-        // Create background operation using the widget's factory method
-        auto operation = typeSpecificWidget->createOperation(OperationCapability::Creation, d_createdOverlay);
-        if (operation) {
-            // Use background processing
-            auto& manager = OverlayProcessManager::instance();
-            d_currentOperationId = manager.queueOperation(operation, OverlayProcessManager::Priority::High);
-            
-            // Connect to manager signals for this specific operation
-            connect(&manager, &OverlayProcessManager::operationStarted,
-                    this, &UnifiedOverlayDialog::onOperationStarted);
-            connect(&manager, &OverlayProcessManager::operationProgress,
-                    this, &UnifiedOverlayDialog::onOperationProgress);
-            connect(&manager, &OverlayProcessManager::operationCompleted,
-                    this, &UnifiedOverlayDialog::onOperationCompleted);
-            connect(&manager, &OverlayProcessManager::operationFailed,
-                    this, &UnifiedOverlayDialog::onOperationFailed);
-            connect(&manager, &OverlayProcessManager::operationCancelled,
-                    this, &UnifiedOverlayDialog::onOperationCancelled);
-        } else {
-            // Widget returned nullptr - use synchronous completion
-            setDialogState(DialogState::Complete);
-            QDialog::accept();
-        }
-    } else {
-        // Use synchronous creation for widgets that don't support background processing
-        d_createdOverlay = p_widget->createOverlay();
-        if (d_createdOverlay) {
-            setDialogState(DialogState::Complete);
-            QDialog::accept();
-        } else {
-            setDialogState(DialogState::Error);
-            d_operationError = "Failed to create overlay from current settings";
-            updateButtonState();
-        }
-    }
-}
-
-void UnifiedOverlayDialog::finalizeFromPreview()
-{
-    if (!p_widget || !isInPreviewMode()) {
-        createOverlayAsync();
-        return;
-    }
-    
-    // Fast path: get preview overlay and clear preview flag  
-    auto previewOverlay = p_widget->getPreviewOverlay();
-    if (previewOverlay) {
-        d_createdOverlay = previewOverlay;
-        d_createdOverlay->setPreview(false);
-        
-        // Clear the preview reference so the widget destructor doesn't disable the overlay
-        p_widget->clearPreviewOverlay();
-        
-        QDialog::accept();
-    } else {
-        createOverlayAsync();
-    }
-}
 
 void UnifiedOverlayDialog::applySettingsAsync()
 {
@@ -562,7 +488,6 @@ void UnifiedOverlayDialog::applySettingsAsync()
     
     // Auto-preview cleanup will be handled automatically
     
-    setDialogState(DialogState::Complete);
     QDialog::accept();
 }
 
@@ -579,8 +504,6 @@ void UnifiedOverlayDialog::setDialogState(DialogState state)
     // Handle state-specific logic
     switch (state) {
     case DialogState::Ready:
-        if (p_progressBar) p_progressBar->setVisible(false);
-        if (p_progressLabel) p_progressLabel->setVisible(false);
         if (p_cancelButton) p_cancelButton->setVisible(false);
         if (p_progressTimer) p_progressTimer->stop();
         if (p_timeoutTimer) p_timeoutTimer->stop();
@@ -588,11 +511,9 @@ void UnifiedOverlayDialog::setDialogState(DialogState state)
         
     case DialogState::Processing:
         if (p_progressBar) {
-            p_progressBar->setVisible(true);
             p_progressBar->setValue(0);
         }
         if (p_progressLabel) {
-            p_progressLabel->setVisible(true);
             p_progressLabel->setText("Processing...");
         }
         if (p_cancelButton) p_cancelButton->setVisible(true);
@@ -606,26 +527,9 @@ void UnifiedOverlayDialog::setDialogState(DialogState state)
         break;
         
     case DialogState::Error:
-        if (p_progressBar) p_progressBar->setVisible(false);
         if (p_progressLabel) {
-            p_progressLabel->setVisible(true);
             p_progressLabel->setText(QString("Error: %1").arg(d_operationError));
             p_progressLabel->setStyleSheet("QLabel { color: red; }");
-        }
-        if (p_cancelButton) p_cancelButton->setVisible(false);
-        if (p_progressTimer) p_progressTimer->stop();
-        if (p_timeoutTimer) p_timeoutTimer->stop();
-        break;
-        
-    case DialogState::Complete:
-        if (p_progressBar) {
-            p_progressBar->setVisible(true);
-            p_progressBar->setValue(100);
-        }
-        if (p_progressLabel) {
-            p_progressLabel->setVisible(true);
-            p_progressLabel->setText("Operation completed successfully");
-            p_progressLabel->setStyleSheet("QLabel { color: green; }");
         }
         if (p_cancelButton) p_cancelButton->setVisible(false);
         if (p_progressTimer) p_progressTimer->stop();
@@ -663,18 +567,26 @@ void UnifiedOverlayDialog::onOperationProgress(const QString &operationId, int p
 
 void UnifiedOverlayDialog::onOperationCompleted(const QString &operationId, std::shared_ptr<OverlayBase> result)
 {
+    Q_UNUSED(result); // Background operations update widgets directly, not via dialog
+    
     if (operationId != d_currentOperationId) {
         return;
     }
     
-    if (isCreationMode()) {
-        d_createdOverlay = result;
+    // Clear the current operation
+    d_currentOperationId.clear();
+    
+    // Update progress display to show completion
+    if (p_progressBar) {
+        p_progressBar->setValue(100);
+    }
+    if (p_progressLabel) {
+        p_progressLabel->setText("Operation completed successfully");
+        p_progressLabel->setStyleSheet("QLabel { color: green; }");
     }
     
-    setDialogState(DialogState::Complete);
-    
-    // Auto-close after brief delay
-    QTimer::singleShot(1000, this, &UnifiedOverlayDialog::accept);
+    // Return to ready state - user can now interact with dialog normally
+    setDialogState(DialogState::Ready);
 }
 
 void UnifiedOverlayDialog::onOperationFailed(const QString &operationId, const QString &error)
@@ -694,6 +606,50 @@ void UnifiedOverlayDialog::onOperationCancelled(const QString &operationId)
     }
     
     resetDialogState();
+}
+
+void UnifiedOverlayDialog::onQueueSizeChanged(int size)
+{
+    // Update cached queue size to avoid mutex deadlock
+    d_queueSize = size;
+    
+    // Update status label to show queue information
+    if (p_statusLabel) {
+        if (size > 0) {
+            p_statusLabel->setText(QString("Background operations: %1 pending").arg(size));
+            p_statusLabel->setStyleSheet("QLabel { color: blue; }");
+        } else if (d_isValid) {
+            p_statusLabel->setText("Settings are valid");
+            p_statusLabel->setStyleSheet("QLabel { color: green; }");
+        }
+    }
+    
+    // Update button state - disable OK button if operations are pending
+    updateButtonState();
+}
+
+void UnifiedOverlayDialog::onProcessingStateChanged(bool isProcessing)
+{
+    // Update cached processing state to avoid mutex deadlock
+    d_isProcessing = isProcessing;
+    
+    // Update dialog state based on overall processing status
+    if (isProcessing && d_dialogState == DialogState::Ready) {
+        // Show that background processing is active
+        if (p_statusLabel) {
+            p_statusLabel->setText("Background processing active...");
+            p_statusLabel->setStyleSheet("QLabel { color: blue; }");
+        }
+    } else if (!isProcessing && d_dialogState == DialogState::Ready) {
+        // Processing finished - restore normal validation status
+        if (p_statusLabel && d_isValid) {
+            p_statusLabel->setText("Settings are valid");
+            p_statusLabel->setStyleSheet("QLabel { color: green; }");
+        }
+    }
+    
+    // Update button state
+    updateButtonState();
 }
 
 void UnifiedOverlayDialog::updateProgressDisplay()

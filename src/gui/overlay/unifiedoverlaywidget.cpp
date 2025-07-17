@@ -26,7 +26,6 @@ UnifiedOverlayWidget::UnifiedOverlayWidget(const QString &settingsKey, Context c
       p_sourceFileSettingsBox(nullptr),
       p_sourceFileSettingsContent(nullptr),
       p_typeSpecificSettingsBox(nullptr),
-      p_typeSpecificStack(nullptr),
       p_typeSpecificWidget(nullptr),
       p_overlayBaseOptionsBox(nullptr),
       p_overlayBaseOptionsWidget(nullptr),
@@ -44,6 +43,31 @@ UnifiedOverlayWidget::UnifiedOverlayWidget(const QString &settingsKey, Context c
 
 UnifiedOverlayWidget::~UnifiedOverlayWidget()
 {
+    // Prevent double-delete from reparented widgets by clearing layouts without deleting widgets
+    if (p_sourceFileConfigContent && p_sourceFileConfigContent->layout()) {
+        QLayout *layout = p_sourceFileConfigContent->layout();
+        while (layout->count() > 0) {
+            QLayoutItem *item = layout->takeAt(0);
+            if (item->widget()) {
+                // Remove widget from layout but don't delete it - original parent will handle cleanup
+                item->widget()->setParent(nullptr);
+            }
+            delete item;
+        }
+    }
+    
+    if (p_sourceFileSettingsContent && p_sourceFileSettingsContent->layout()) {
+        QLayout *layout = p_sourceFileSettingsContent->layout();
+        while (layout->count() > 0) {
+            QLayoutItem *item = layout->takeAt(0);
+            if (item->widget()) {
+                // Remove widget from layout but don't delete it - original parent will handle cleanup
+                item->widget()->setParent(nullptr);
+            }
+            delete item;
+        }
+    }
+    
     // Ensure preview overlay is properly cleaned up to avoid dangling references
     cleanupPreviewOverlay();
 }
@@ -182,6 +206,16 @@ bool UnifiedOverlayWidget::validateSettings(QString &errorMessage) const
     }
     
     return true;
+}
+
+bool UnifiedOverlayWidget::validateAcceptance()
+{
+    // Delegate to type-specific widget
+    if (p_typeSpecificWidget) {
+        return p_typeSpecificWidget->validateAcceptance();
+    }
+    
+    return true; // Default to proceed if no type-specific widget
 }
 
 bool UnifiedOverlayWidget::isDataValid() const
@@ -351,8 +385,6 @@ void UnifiedOverlayWidget::setupUI()
     leftVLayout->addWidget(p_sourceFileConfigBox);
     leftVLayout->addWidget(p_sourceFileSettingsBox);
     leftVLayout->addWidget(p_typeSpecificSettingsBox);
-    leftVLayout->addWidget(p_overlayBaseOptionsBox);
-    leftVLayout->addWidget(p_progressWidget);
     
     // Add bottom spacer
     leftVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
@@ -367,6 +399,8 @@ void UnifiedOverlayWidget::setupUI()
     // Create curve appearance widget
     createCurveAppearanceBox();
     rightVLayout->addWidget(p_curveAppearanceBox);
+    rightVLayout->addWidget(p_overlayBaseOptionsBox);
+    rightVLayout->addWidget(p_progressWidget);
     
     // Add bottom spacer
     rightVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
@@ -434,12 +468,6 @@ void UnifiedOverlayWidget::createSourceFileSettingsBox()
 void UnifiedOverlayWidget::createTypeSpecificSettingsBox()
 {
     p_typeSpecificSettingsBox = new QGroupBox("Overlay Settings", this);
-    
-    // Use a stacked widget to handle different overlay types
-    p_typeSpecificStack = new QStackedWidget();
-    
-    auto boxLayout = new QVBoxLayout(p_typeSpecificSettingsBox);
-    boxLayout->addWidget(p_typeSpecificStack);
 }
 
 void UnifiedOverlayWidget::createOverlayBaseOptionsBox()
@@ -669,9 +697,7 @@ void UnifiedOverlayWidget::validateSourceFile()
 }
 
 void UnifiedOverlayWidget::setupTypeSpecificWidget()
-{
-    clearTypeSpecificWidget();
-    
+{    
     // Factory pattern: Create type-specific widget based on overlay type
     switch (d_overlayType) {
     case OverlayBase::BCExperiment:
@@ -686,33 +712,23 @@ void UnifiedOverlayWidget::setupTypeSpecificWidget()
         break;
     }
     
-    if (p_typeSpecificWidget && p_typeSpecificStack) {
-        p_typeSpecificStack->addWidget(p_typeSpecificWidget);
-        p_typeSpecificStack->setCurrentWidget(p_typeSpecificWidget);
-        
-        // Setup context for the type-specific widget
-        setupTypeSpecificWidgetContext();
-        
-        // Setup connections for the type-specific widget
-        setupTypeSpecificWidgetConnections();
-        
-        // Reparent UI components into three-tier architecture
-        reparentTypeSpecificWidgets();
-    }
-}
+    if(p_typeSpecificSettingsBox)
+    {
+        auto boxLayout = new QVBoxLayout(p_typeSpecificSettingsBox);
 
-void UnifiedOverlayWidget::clearTypeSpecificWidget()
-{
-    if (p_typeSpecificWidget) {
-        p_typeSpecificWidget->deleteLater();
-        p_typeSpecificWidget = nullptr;
-    }
-    
-    // Clear stack without explicitly deleting widgets - they'll be cleaned up 
-    // when their parent (p_typeSpecificWidget) is destroyed
-    if (p_typeSpecificStack) {
-        while (p_typeSpecificStack->count() > 0) {
-            p_typeSpecificStack->removeWidget(p_typeSpecificStack->widget(0));
+
+        if (p_typeSpecificWidget) {
+
+            // Setup context for the type-specific widget
+            setupTypeSpecificWidgetContext();
+
+            // Setup connections for the type-specific widget
+            setupTypeSpecificWidgetConnections();
+
+            // Reparent UI components into three-tier architecture
+            reparentTypeSpecificWidgets();
+
+            boxLayout->addWidget(p_typeSpecificWidget);
         }
     }
 }
@@ -817,7 +833,6 @@ void UnifiedOverlayWidget::reparentTypeSpecificWidgets()
         if (oldLayout) {
             while (oldLayout->count() > 0) {
                 QLayoutItem *item = oldLayout->takeAt(0);
-                // Don't delete widgets - they'll be cleaned up by their original parent
                 delete item;
             }
             delete oldLayout;
@@ -838,7 +853,6 @@ void UnifiedOverlayWidget::reparentTypeSpecificWidgets()
         if (oldLayout) {
             while (oldLayout->count() > 0) {
                 QLayoutItem *item = oldLayout->takeAt(0);
-                // Don't delete widgets - they'll be cleaned up by their original parent
                 delete item;
             }
             delete oldLayout;

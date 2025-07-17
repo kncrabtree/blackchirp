@@ -64,6 +64,10 @@ public:
     CatalogData filterByFrequencyRange(double minFreq, double maxFreq) const;
     std::pair<double, double> frequencyRange() const;
     
+    // Equality comparison
+    bool operator==(const CatalogData &other) const;
+    bool operator!=(const CatalogData &other) const;
+    
 private:
     QSharedDataPointer<CatalogDataPrivate> d;
 };

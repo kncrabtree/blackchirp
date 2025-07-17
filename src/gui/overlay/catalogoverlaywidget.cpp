@@ -45,8 +45,21 @@ void CatalogOverlayWidget::setupForCreation()
     
     // Initialize defaults
     resetToDefaults();
+
+    //Convolution should be disabled for new overlay
+    p_convolutionEnabledCheckBox->setChecked(false);
+    
+    // Initialize convolution state - no convolution performed yet
+    d_lastConvolutionState.convolutionPerformed = false;
+    d_lastConvolutionState.enabled = false;
+    d_lastConvolutionState.lineshapeType = p_lineshapeComboBox->currentIndex();
+    d_lastConvolutionState.linewidthKHz = p_linewidthSpinBox->value();
+    d_lastConvolutionState.minFreqMHz = p_convMinFreqSpinBox->value();
+    d_lastConvolutionState.maxFreqMHz = p_convMaxFreqSpinBox->value();
+    d_lastConvolutionState.numPoints = p_numPointsSpinBox->value();
     
     updateConvolutionControls();
+    updateConvolutionButtonState();
     updateFileInfo();
 }
 
@@ -78,11 +91,21 @@ void CatalogOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overlay
             // Load filtering range settings from overlay metadata
             p_filterMinFreqSpinBox->setValue(catalogOverlay->filterMinFreq());
             p_filterMaxFreqSpinBox->setValue(catalogOverlay->filterMaxFreq());
+            
+            // Initialize convolution state based on existing overlay settings
+            d_lastConvolutionState.convolutionPerformed = catalogOverlay->convolutionEnabled();
+            d_lastConvolutionState.enabled = catalogOverlay->convolutionEnabled();
+            d_lastConvolutionState.lineshapeType = static_cast<int>(catalogOverlay->lineshapeType());
+            d_lastConvolutionState.linewidthKHz = catalogOverlay->linewidth();
+            d_lastConvolutionState.minFreqMHz = catalogOverlay->convolutionMinFreq();
+            d_lastConvolutionState.maxFreqMHz = catalogOverlay->convolutionMaxFreq();
+            d_lastConvolutionState.numPoints = catalogOverlay->numConvolutionPoints();
         }
     }
     
     updateFileInfo();
     updateConvolutionControls();
+    updateConvolutionButtonState();
 }
 
 std::shared_ptr<OverlayBase> CatalogOverlayWidget::createOverlay()
@@ -350,6 +373,36 @@ QWidget* CatalogOverlayWidget::getOverlaySettingsWidget()
     return p_overlaySettingsWidget;
 }
 
+bool CatalogOverlayWidget::hasUnsavedChanges() const
+{
+    return hasUnsavedConvolutionChanges();
+}
+
+bool CatalogOverlayWidget::validateAcceptance()
+{
+    // Check for unsaved convolution changes
+    if (hasUnsavedConvolutionChanges()) {
+        QMessageBox::StandardButton reply = QMessageBox::question(this, 
+            "Unsaved Convolution Settings",
+            "You have unsaved convolution settings. Would you like to apply them?",
+            QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+            
+        if (reply == QMessageBox::Cancel) {
+            return false; // User cancelled dialog acceptance
+        } else if (reply == QMessageBox::Yes) {
+            // Apply changes by triggering convolution
+            onConvolveButtonClicked();
+            // Show message about pending operation
+            QMessageBox::information(this, "Convolution Started", 
+                "Convolution has been started. Please wait for it to complete before closing the dialog.");
+            return false; // Don't proceed with acceptance yet, wait for convolution
+        }
+        // If No was selected, continue with acceptance without applying changes
+    }
+    
+    return true; // Proceed with dialog acceptance
+}
+
 void CatalogOverlayWidget::onBrowseButtonClicked()
 {
     QString lastPath = get(BC::Key::CatalogWidget::lastFilePath, 
@@ -398,8 +451,29 @@ void CatalogOverlayWidget::onFilePathChanged()
 
 void CatalogOverlayWidget::onConvolutionEnabledToggled(bool enabled)
 {
-    Q_UNUSED(enabled);
+    // Apply the convolution enabled setting to the overlay if it exists
+    if (d_overlay) {
+        auto catalogOverlay = std::dynamic_pointer_cast<CatalogOverlay>(d_overlay);
+        if (catalogOverlay) {
+            catalogOverlay->setConvolutionEnabled(enabled);
+        }
+    }
+    
+    if (enabled) {
+        // When enabling convolution, check if overlay already has matching convolved data
+        if (overlayHasMatchingConvolutionData()) {
+            // Update the stored state to reflect that convolution is already done
+            d_lastConvolutionState = getCurrentConvolutionState();
+            d_lastConvolutionState.convolutionPerformed = true;
+        }
+        // If no matching data, the button state update will enable the convolve button
+    } else {
+        // When disabling convolution, we're switching back to catalog data
+        // No need to update d_lastConvolutionState here
+    }
+    
     updateConvolutionControls();
+    updateConvolutionButtonState();
     emit settingsChanged();
 }
 
@@ -411,14 +485,12 @@ void CatalogOverlayWidget::onLineshapeTypeChanged(int index)
 
 void CatalogOverlayWidget::onConvolutionSettingsChanged()
 {
+    // Update convolution button state based on current vs last settings
+    updateConvolutionButtonState();
+
     // Recalculate default Y scale when convolution settings change
     if (d_context == Context::Creation) {
         calculateDefaultYScale();
-    }
-    
-    // In settings context (including preview mode), trigger background convolution for real-time updates
-    if (p_convolutionEnabledCheckBox->isChecked()) {
-        triggerBackgroundConvolution();
     }
     
     emit settingsChanged();
@@ -469,6 +541,7 @@ void CatalogOverlayWidget::setupConnections()
     connect(p_saveRangeOnlyCheckBox, &QCheckBox::toggled, this, &CatalogOverlayWidget::onSaveRangeOnlyToggled);
     connect(p_filterMinFreqSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CatalogOverlayWidget::onFilteringParametersChanged);
     connect(p_filterMaxFreqSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &CatalogOverlayWidget::onFilteringParametersChanged);
+    connect(p_convolveButton, &QPushButton::clicked, this, &CatalogOverlayWidget::onConvolveButtonClicked);
     
     // Connect to OverlayProcessManager signals for background convolution
     auto& manager = OverlayProcessManager::instance();
@@ -694,6 +767,10 @@ void CatalogOverlayWidget::setupConvolutionSettingsUI()
     p_spacingDisplayLabel->setStyleSheet("QLabel { color: gray; }");
     convLayout->addRow("Point Spacing:", p_spacingDisplayLabel);
 
+    p_convolveButton = new QPushButton("Convolve",p_convolutionGroup);
+    p_convolveButton->setEnabled(false);
+    convLayout->addRow("",p_convolveButton);
+
     // Initialize with intelligent defaults from Ft data
     if (!d_currentFt.isEmpty()) {
         auto ftRange = d_currentFt.xRange();
@@ -790,14 +867,19 @@ void CatalogOverlayWidget::updateFileInfo()
 
 void CatalogOverlayWidget::updateConvolutionControls()
 {
-    bool enabled = p_convolutionEnabledCheckBox->isChecked();
+    bool convolutionEnabled = p_convolutionEnabledCheckBox->isChecked();
+    bool hasOverlay = (d_overlay != nullptr);
     
-    p_lineshapeComboBox->setEnabled(enabled);
-    p_linewidthSpinBox->setEnabled(enabled);
-    p_convMinFreqSpinBox->setEnabled(enabled);
-    p_convMaxFreqSpinBox->setEnabled(enabled);
-    p_numPointsSpinBox->setEnabled(enabled);
-    p_spacingDisplayLabel->setEnabled(enabled);
+    // Enable/disable the entire group box based on whether we have an overlay
+    p_convolutionGroup->setEnabled(hasOverlay);
+    
+    // Individual control states based on checkbox (preserved when group is re-enabled)
+    p_lineshapeComboBox->setEnabled(convolutionEnabled);
+    p_linewidthSpinBox->setEnabled(convolutionEnabled);
+    p_convMinFreqSpinBox->setEnabled(convolutionEnabled);
+    p_convMaxFreqSpinBox->setEnabled(convolutionEnabled);
+    p_numPointsSpinBox->setEnabled(convolutionEnabled);
+    p_spacingDisplayLabel->setEnabled(convolutionEnabled);
 }
 
 void CatalogOverlayWidget::updateSpacingDisplay()
@@ -1072,4 +1154,94 @@ void CatalogOverlayWidget::onFilteringParametersChanged()
     bool hasValidData = !d_filteredData.isEmpty();
     emit dataValidityChanged(hasValidData);
     emit settingsChanged(); // Trigger real-time preview updates in settings context
+}
+
+CatalogOverlayWidget::ConvolutionState CatalogOverlayWidget::getCurrentConvolutionState() const
+{
+    ConvolutionState current;
+    current.enabled = p_convolutionEnabledCheckBox->isChecked();
+    current.lineshapeType = p_lineshapeComboBox->currentIndex();
+    current.linewidthKHz = p_linewidthSpinBox->value();
+    current.minFreqMHz = p_convMinFreqSpinBox->value();
+    current.maxFreqMHz = p_convMaxFreqSpinBox->value();
+    current.numPoints = p_numPointsSpinBox->value();
+    return current;
+}
+
+void CatalogOverlayWidget::updateConvolutionButtonState()
+{
+    if (!p_convolveButton) {
+        return;
+    }
+    
+    ConvolutionState current = getCurrentConvolutionState();
+    
+    // Enable button if:
+    // 1. No convolution has been performed yet, OR
+    // 2. Current settings differ from last performed convolution
+    bool shouldEnable = !d_lastConvolutionState.convolutionPerformed || 
+                        (current != d_lastConvolutionState);
+    
+    // Only enable if convolution is enabled and we have valid data
+    shouldEnable = shouldEnable && current.enabled && isDataValid();
+    
+    // Don't enable during convolution processing
+    shouldEnable = shouldEnable && !d_convolutionInProgress;
+    
+    p_convolveButton->setEnabled(shouldEnable);
+}
+
+bool CatalogOverlayWidget::hasUnsavedConvolutionChanges() const
+{
+    if (!p_convolveButton) {
+        return false;
+    }
+    
+    // If the button is enabled, it means there are unsaved changes
+    return p_convolveButton->isEnabled();
+}
+
+bool CatalogOverlayWidget::overlayHasMatchingConvolutionData() const
+{
+    if (d_context != Context::Settings || !d_overlay) {
+        return false; // Only relevant in settings context with an existing overlay
+    }
+    
+    auto catalogOverlay = std::dynamic_pointer_cast<CatalogOverlay>(d_overlay);
+    if (!catalogOverlay) {
+        return false;
+    }
+    
+    // Check if overlay has convolved data and if the settings match current settings
+    if (!catalogOverlay->hasConvolvedData()) {
+        return false;
+    }
+    
+    ConvolutionState currentSettings = getCurrentConvolutionState();
+    ConvolutionState overlaySettings;
+    overlaySettings.enabled = catalogOverlay->convolutionEnabled();
+    overlaySettings.lineshapeType = static_cast<int>(catalogOverlay->lineshapeType());
+    overlaySettings.linewidthKHz = catalogOverlay->linewidth();
+    overlaySettings.minFreqMHz = catalogOverlay->convolutionMinFreq();
+    overlaySettings.maxFreqMHz = catalogOverlay->convolutionMaxFreq();
+    overlaySettings.numPoints = catalogOverlay->numConvolutionPoints();
+    
+    return currentSettings == overlaySettings;
+}
+
+void CatalogOverlayWidget::onConvolveButtonClicked()
+{
+    if (!isDataValid() || d_convolutionInProgress) {
+        return;
+    }
+    
+    // Store current settings as the last performed convolution
+    d_lastConvolutionState = getCurrentConvolutionState();
+    d_lastConvolutionState.convolutionPerformed = true;
+    
+    // Update button state (should disable it)
+    updateConvolutionButtonState();
+    
+    // Trigger the background convolution
+    triggerBackgroundConvolution();
 }

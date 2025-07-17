@@ -150,9 +150,11 @@ CatalogData CatalogOverlay::catalogData() const
 
 void CatalogOverlay::setCatalogData(const CatalogData &data)
 {
-    d_catalogData = data;
-    invalidateConvolutionCache();
-    setModified(true);
+    if (d_catalogData != data) {
+        d_catalogData = data;
+        invalidateConvolutionCache();
+        setModified(true);
+    }
 }
 
 bool CatalogOverlay::convolutionEnabled() const
@@ -164,7 +166,12 @@ void CatalogOverlay::setConvolutionEnabled(bool enabled)
 {
     if (d_convolutionEnabled != enabled) {
         d_convolutionEnabled = enabled;
-        invalidateConvolutionCache();
+        
+        // Only invalidate cache if enabling convolution and no cached data exists
+        if (enabled && !hasConvolvedData()) {
+            invalidateConvolutionCache();
+        }
+        
         setModified(true);
     }
 }
@@ -373,22 +380,33 @@ double CatalogOverlay::gaussianProfile(double x, double x0, double fwhmKHz) cons
 void CatalogOverlay::invalidateConvolutionCache()
 {
     d_cacheState = CacheState::Invalid;
+    // Invalidate base class cache to force refresh from _xyData()
+    invalidateCache();
 }
 
 void CatalogOverlay::setCachePending()
 {
     d_cacheState = CacheState::Pending;
+    // Invalidate base class cache to force refresh from _xyData()
+    invalidateCache();
 }
 
 void CatalogOverlay::setCacheValid(const QVector<QPointF> &convolvedData)
 {
     d_convolvedCache = convolvedData;
     d_cacheState = CacheState::Valid;
+    // Invalidate base class cache to force refresh from _xyData()
+    invalidateCache();
 }
 
 bool CatalogOverlay::isCacheValid() const
 {
     return d_cacheState == CacheState::Valid;
+}
+
+bool CatalogOverlay::hasConvolvedData() const
+{
+    return d_cacheState == CacheState::Valid && !d_convolvedCache.isEmpty();
 }
 
 void CatalogOverlay::readFromDest()

@@ -150,6 +150,10 @@ public:
     QWidget* getSourceFileConfigWidget() override;
     QWidget* getSourceFileSettingsWidget() override;
     QWidget* getOverlaySettingsWidget() override;
+    
+    // Validation for unsaved changes
+    bool hasUnsavedChanges() const override;
+    bool validateAcceptance() override;
 
 private slots:
     void onBrowseButtonClicked();
@@ -159,6 +163,7 @@ private slots:
     void onConvolutionSettingsChanged();
     void onSaveRangeOnlyToggled(bool enabled);
     void onFilteringParametersChanged(); // Centralized filtering when any parameter changes
+    void onConvolveButtonClicked();
     
     // Background operation handlers
     void onConvolutionOperationStarted(const QString &operationId);
@@ -175,6 +180,30 @@ protected:
     void saveSettings() override;
 
 private:
+    // Convolution state tracking
+    struct ConvolutionState {
+        bool convolutionPerformed = false;
+        bool enabled = false;
+        int lineshapeType = 0;
+        double linewidthKHz = 100.0;
+        double minFreqMHz = 0.0;
+        double maxFreqMHz = 1000.0;
+        int numPoints = 1000;
+
+        bool operator==(const ConvolutionState& other) const {
+            return enabled == other.enabled &&
+                   lineshapeType == other.lineshapeType &&
+                   qFuzzyCompare(linewidthKHz, other.linewidthKHz) &&
+                   qFuzzyCompare(minFreqMHz, other.minFreqMHz) &&
+                   qFuzzyCompare(maxFreqMHz, other.maxFreqMHz) &&
+                   numPoints == other.numPoints;
+        }
+
+        bool operator!=(const ConvolutionState& other) const {
+            return !(*this == other);
+        }
+    };
+
     // Three-tier UI organization
     QWidget *p_sourceFileConfigWidget;
     QWidget *p_sourceFileSettingsWidget; 
@@ -204,6 +233,7 @@ private:
     QDoubleSpinBox *p_convMaxFreqSpinBox;
     QSpinBox *p_numPointsSpinBox;
     QLabel *p_spacingDisplayLabel;
+    QPushButton *p_convolveButton;
     
     // State management
     CatalogData d_catalogData;       // Raw catalog data from file
@@ -230,6 +260,12 @@ private:
     void triggerBackgroundConvolution();
     void cancelPendingConvolution();
     
+    // Convolution state management
+    ConvolutionState getCurrentConvolutionState() const;
+    void updateConvolutionButtonState();
+    bool hasUnsavedConvolutionChanges() const;
+    bool overlayHasMatchingConvolutionData() const;
+    
     // Background operation tracking
     QString d_currentConvolutionId;
     bool d_convolutionInProgress;
@@ -244,6 +280,9 @@ private:
     static constexpr bool DEFAULT_SAVE_RANGE_ONLY = true;
     static constexpr double DEFAULT_FILTER_MIN_FREQ = 0.0;    // MHz  
     static constexpr double DEFAULT_FILTER_MAX_FREQ = 1000.0; // MHz
+    
+    
+    ConvolutionState d_lastConvolutionState;
 };
 
 #endif // CATALOGOVERLAYWIDGET_H

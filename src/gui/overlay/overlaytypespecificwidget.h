@@ -87,6 +87,10 @@ public:
     virtual QWidget* getSourceFileConfigWidget() = 0;      // File selection, metadata display
     virtual QWidget* getSourceFileSettingsWidget() = 0;    // Source-dependent controls
     virtual QWidget* getOverlaySettingsWidget() = 0;       // Source-independent controls
+    
+    // Validation for unsaved changes
+    virtual bool hasUnsavedChanges() const { return false; } // Default implementation
+    virtual bool validateAcceptance() { return true; } // Default implementation - returns true if dialog should proceed
 
 signals:
     void settingsChanged();

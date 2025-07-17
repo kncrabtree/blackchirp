@@ -59,8 +59,7 @@ public:
         Ready,        // Normal state, can accept user input
         Processing,   // Background operation in progress  
         Cancelling,   // Gracefully aborting operations
-        Error,        // Operation failed, showing error state
-        Complete      // Operation completed successfully
+        Error         // Operation failed, showing error state
     };
     
     DialogState getDialogState() const { return d_dialogState; }
@@ -91,6 +90,8 @@ private slots:
     void onOperationCompleted(const QString &operationId, std::shared_ptr<OverlayBase> result);
     void onOperationFailed(const QString &operationId, const QString &error);
     void onOperationCancelled(const QString &operationId);
+    void onQueueSizeChanged(int size);
+    void onProcessingStateChanged(bool isProcessing);
     
     // UI update timers
     void updateProgressDisplay();
@@ -113,18 +114,7 @@ private:
     // Type-specific widget access for operation declaration interface
     OverlayTypeSpecificWidget* getTypeSpecificWidget() const;
     
-    // Preview state analysis for smart creation workflow
-    enum class PreviewState {
-        NoPreview,        // Never created preview
-        CurrentPreview,   // Preview exists and matches settings
-        StalePreview,     // Preview exists but out of sync
-        ProcessingPreview // Preview being updated in background
-    };
-    PreviewState analyzePreviewState() const;
-    
-    // Async workflow methods
-    void createOverlayAsync();
-    void finalizeFromPreview();
+    // Async workflow methods  
     void applySettingsAsync();
     
     // State management
@@ -160,6 +150,10 @@ private:
     QString d_operationError;
     int d_operationProgress;
     QString d_operationMessage;
+    
+    // OverlayProcessManager state tracking (to avoid mutex deadlock)
+    int d_queueSize;
+    bool d_isProcessing;
     
     // Validation state
     bool d_isValid;

@@ -117,6 +117,7 @@ public:
     void setCachePending();
     void setCacheValid(const QVector<QPointF> &convolvedData);
     bool isCacheValid() const;
+    bool hasConvolvedData() const;
 
 protected:
     void readFromDest() override;

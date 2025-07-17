@@ -92,6 +92,8 @@ protected:
     
     virtual void _storeMetadata(std::map<QString,QVariant> &m) =0;
     virtual void _retrieveMetadata(const std::map<QString,QVariant> &m) =0;
+    
+    void invalidateCache();
 
     QString d_errorString;
     
@@ -124,7 +126,6 @@ private:
     
     void storeMetadata(std::map<QString,QVariant> &m);
     void retrieveMetadata(const std::map<QString,QVariant> &m);
-    void invalidateCache();
 };
 
 #endif // OVERLAYBASE_H

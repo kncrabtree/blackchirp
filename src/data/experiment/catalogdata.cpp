@@ -143,3 +143,35 @@ std::pair<double, double> CatalogData::frequencyRange() const
     
     return std::make_pair(minMax.first->frequency, minMax.second->frequency);
 }
+
+bool CatalogData::operator==(const CatalogData &other) const
+{
+    // Fast check: same shared data pointer
+    if (d == other.d) {
+        return true;
+    }
+    
+    // Compare number of transitions
+    if (d->transitions.size() != other.d->transitions.size()) {
+        return false;
+    }
+    
+    // Compare source program
+    if (d->sourceProgram != other.d->sourceProgram) {
+        return false;
+    }
+    
+    // Compare molecule name
+    if (d->moleculeName != other.d->moleculeName) {
+        return false;
+    }
+    
+    // For efficiency, we don't compare all transition data
+    // Size + source program + molecule name should be sufficient for cache invalidation purposes
+    return true;
+}
+
+bool CatalogData::operator!=(const CatalogData &other) const
+{
+    return !(*this == other);
+}
