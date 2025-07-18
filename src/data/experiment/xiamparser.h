@@ -74,9 +74,10 @@ private:
     /**
      * @brief Parse a transition line in ints=2 format
      * @param line Input line containing transition data
+     * @param blockNumber Block number string to append to quantum numbers
      * @return TransitionData structure, or invalid transition if parsing fails
      */
-    TransitionData parseInts2Line(const QString &line) const;
+    TransitionData parseInts2Line(const QString &line, const QString &blockNumber = QString()) const;
     
     /**
      * @brief Parse an individual transition line in ints=3 format

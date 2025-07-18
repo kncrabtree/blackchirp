@@ -154,8 +154,21 @@ CatalogData XIAMParser::parseInts2Format(const QStringList &lines, int startLine
 {
     CatalogData catalogData;
     
+    // Extract block number from header line using fixed-column parsing
+    QString blockNumber;
+    for (int i = startLine - 5; i < startLine && i >= 0; ++i) {
+        const QString &line = lines[i];
+        if (line.startsWith("-- B")) {
+            // Block number starts after "-- " (3 chars) and is 4 chars wide
+            if (line.length() >= 7) {
+                blockNumber = " " + line.mid(3, 4).trimmed(); // Extract "B 1" or "B10" etc
+                break;
+            }
+        }
+    }
+    
     for (int i = startLine; i < lines.size(); ++i) {
-        const QString &line = lines[i].trimmed();
+        const QString &line = lines[i]; // Don't trim - fixed columns!
         
         // Skip empty lines, comments, and diagnostic output
         if (line.isEmpty() || line.startsWith("#") || line.startsWith("total is") ||
@@ -170,7 +183,7 @@ CatalogData XIAMParser::parseInts2Format(const QStringList &lines, int startLine
             break;
         }
         
-        TransitionData transition = parseInts2Line(line);
+        TransitionData transition = parseInts2Line(line, blockNumber);
         if (transition.frequency > 0) { // Valid transition
             catalogData.addTransition(transition);
         }
@@ -258,34 +271,85 @@ double XIAMParser::calculateOptimalIntensity(double linestr, double total, doubl
     return total;
 }
 
-TransitionData XIAMParser::parseInts2Line(const QString &line) const
+TransitionData XIAMParser::parseInts2Line(const QString &line, const QString &blockNumber) const
 {
     TransitionData transition;
     
-    // XIAM ints=2 format: J K- K+ J K- K+ S V Freq Linestr. total stat.w. popul. hv-ener. [quantum assignment]
-    QStringList parts = line.split(QRegularExpression(R"(\s+)"), Qt::SkipEmptyParts);
-    
-    if (parts.size() < 16) {
-        return transition; // Invalid line
+    if (line.length() < 80) {
+        return transition; // Line too short to contain full transition data
     }
     
     try {
-        // Extract quantum numbers (first 6 parts)
-        QString upperQN = QString("%1 %2 %3").arg(parts[0], parts[1], parts[2]);
-        QString lowerQN = QString("%1 %2 %3").arg(parts[3], parts[4], parts[5]);
-        QString symmetry = parts[6] + " " + parts[7]; // "S" + " " + "1" = "S 1"
-        QString vibState = parts[8] + " " + parts[9]; // "V" + " " + "1" = "V 1" 
+        // Extract quantum numbers using fixed columns: upperQN - lowerQN
+        QString upperQN = (line.length() >= 9) ? line.mid(0, 9) : "";
+        QString lowerQN = (line.length() >= 18) ? line.mid(10, 9) : "";
         
-        // Parse frequency and intensity data (now at index 10+) - convert GHz to MHz
-        transition.frequency = parts[10].toDouble() * 1000.0;
-        double linestr = parts[11].toDouble();
-        double total = parts[12].toDouble();
-        double statWeight = parts[13].toDouble();
-        double population = (parts.size() > 14) ? parts[14].toDouble() : 0.0;
-        double hvEnergy = (parts.size() > 15) ? parts[15].toDouble() : 0.0;
+        // S and V labels: extract literal string from fixed positions (21-30)
+        QString svSection = (line.length() >= 30) ? line.mid(21, 9) : "";
+        
+        // Frequency: positions 30-42 (5 chars earlier than ints=3)
+        QString freqStr = (line.length() >= 43) ? line.mid(30, 13) : "";
+        if (!freqStr.isEmpty()) {
+            double freqGHz = freqStr.toDouble();
+            transition.frequency = freqGHz * 1000.0; // Convert GHz to MHz
+        }
+        
+        // Intensity fields (17 chars earlier than ints=3 due to no split column)
+        // Linestr: positions 40-49
+        double linestr = 0.0;
+        if (line.length() >= 50) {
+            QString linestrStr = line.mid(40, 9).trimmed();
+            if (!linestrStr.isEmpty()) {
+                linestr = linestrStr.toDouble();
+            }
+        }
+        
+        // Total: positions 50-59
+        double total = 0.0;
+        if (line.length() >= 60) {
+            QString totalStr = line.mid(50, 9).trimmed();
+            if (!totalStr.isEmpty()) {
+                total = totalStr.toDouble();
+            }
+        }
+        
+        // Statistical weight: positions 59-68
+        double statWeight = 0.0;
+        if (line.length() >= 69) {
+            QString statStr = line.mid(59, 9).trimmed();
+            if (!statStr.isEmpty()) {
+                statWeight = statStr.toDouble();
+            }
+        }
+        
+        // Population: positions 68-77
+        double population = 0.0;
+        if (line.length() >= 78) {
+            QString popStr = line.mid(68, 9).trimmed();
+            if (!popStr.isEmpty()) {
+                population = popStr.toDouble();
+            }
+        }
+        
+        // HV-energy: positions 77-86
+        double hvEnergy = 0.0;
+        if (line.length() >= 87) {
+            QString hvStr = line.mid(77, 9).trimmed();
+            if (!hvStr.isEmpty()) {
+                hvEnergy = hvStr.toDouble();
+            }
+        }
         
         // Calculate optimal intensity
         transition.intensity = calculateOptimalIntensity(linestr, total, statWeight, population, hvEnergy);
+        
+        // Set quantum numbers: "upperQN - lowerQN, svSection blockNumber"
+        if (!upperQN.isEmpty() && !lowerQN.isEmpty()) {
+            QString qnString = upperQN + " - " + lowerQN;
+            if (!svSection.isEmpty()) qnString += ", " + svSection;
+            if (!blockNumber.isEmpty()) qnString += " " + blockNumber;
+            transition.quantumNumbers = qnString;
+        }
         
         // Store additional data
         transition.additionalData["linestrength"] = linestr;
@@ -294,14 +358,12 @@ TransitionData XIAMParser::parseInts2Line(const QString &line) const
         transition.additionalData["population"] = population;
         transition.additionalData["hvEnergy"] = hvEnergy;
         
-        // Format quantum numbers: upperQN - lowerQN, symmetry vibstate
-        QString qnString = QString("%1 - %2, %3 %4").arg(upperQN, lowerQN, symmetry, vibState);
-        transition.quantumNumbers = qnString;
-        
-        // Parse quantum number assignment (remaining parts)
-        if (parts.size() > 16) {
-            QStringList qnAssignment = parts.mid(16);
-            transition.additionalData["quantumAssignment"] = parseQuantumNumbers(qnAssignment.join(" "));
+        // Parse quantum assignment from the end of the line (remaining part after position 89)
+        if (line.length() > 89) {
+            QString quantumAssignment = line.mid(89).trimmed();
+            if (!quantumAssignment.isEmpty()) {
+                transition.additionalData["quantumAssignment"] = quantumAssignment;
+            }
         }
         
     } catch (const std::exception &e) {
@@ -326,62 +388,32 @@ TransitionData XIAMParser::parseInts3Line(const QString &line, const QString &gr
         QString workingLine = line;
         
         // If this is a split line (no quantum numbers in first 19 chars) and we have group context,
-        // construct line with quantum numbers from group
+        // construct line with quantum numbers from group but replace only the S part
         QString firstPart = (line.length() >= 19) ? line.left(19).trimmed() : "";
-        if (firstPart.isEmpty() && !groupQuantumNumbers.isEmpty() && line.length() >= 25) {
-            // Split line - inherit quantum numbers but use mode from current line
+        if (firstPart.isEmpty() && !groupQuantumNumbers.isEmpty() && line.length() >= 30) {
+            // Split line - start with group context
             workingLine = groupQuantumNumbers;
-            if (line.length() >= 25) {
-                // Replace characters 23-25 with current line's characters 23-25 (S number)
-                QString modeSection = line.mid(20, 16);
-                workingLine = workingLine.left(20) + modeSection + 
-                             ((line.length() > 36) ? line.mid(36) : "");
+            
+            // Replace only the S part (around positions 20-25) with current line's S part
+            QString currentSSection = line.mid(20, 6); // Extract just "  S 2" part
+            if (workingLine.length() >= 26) {
+                workingLine = workingLine.left(20) + currentSSection + workingLine.mid(26);
+            }
+            
+            // Append frequency and intensity data from current line
+            if (line.length() > 35) {
+                workingLine = workingLine.left(35) + line.mid(35);
             }
         }
         
         QString upperQN, lowerQN, symmetry, vibState, blockNum;
         
-        // Parse quantum numbers from working line (positions 0-19)
-        QString quantumSection = (workingLine.length() >= 19) ? workingLine.left(19).trimmed() : "";
-        QStringList quantumParts = quantumSection.split(QRegularExpression(R"(\s+)"), Qt::SkipEmptyParts);
+        // Extract quantum numbers using fixed columns: upperQN - lowerQN
+        upperQN = (workingLine.length() >= 9) ? workingLine.mid(0, 9) : "";
+        lowerQN = (workingLine.length() >= 18) ? workingLine.mid(10, 9) : "";
         
-        if (quantumParts.size() >= 6) {
-            upperQN = QString("%1 %2 %3").arg(quantumParts[0], quantumParts[1], quantumParts[2]);
-            lowerQN = QString("%1 %2 %3").arg(quantumParts[3], quantumParts[4], quantumParts[5]);
-        }
-        
-        // Mode indicators: positions 20-35 (rigid, S #, V #, B #)
-        QString modeSection = (workingLine.length() >= 36) ? workingLine.mid(20, 16).trimmed() : "";
-        QString mode = "";
-        
-        if (modeSection.contains("rigid")) {
-            mode += "rigid ";
-        }
-        if (modeSection.contains("S ")) {
-            QRegularExpression sRegex(R"(S\s+(\d+))");
-            QRegularExpressionMatch sMatch = sRegex.match(modeSection);
-            if (sMatch.hasMatch()) {
-                symmetry = QString("S %1").arg(sMatch.captured(1));
-                mode += symmetry + " ";
-            }
-        }
-        if (modeSection.contains("V ")) {
-            QRegularExpression vRegex(R"(V\s+(\d+))");
-            QRegularExpressionMatch vMatch = vRegex.match(modeSection);
-            if (vMatch.hasMatch()) {
-                vibState = QString("V %1").arg(vMatch.captured(1));
-                mode += vibState + " ";
-            }
-        }
-        if (modeSection.contains("B ")) {
-            QRegularExpression bRegex(R"(B\s+(\d+))");
-            QRegularExpressionMatch bMatch = bRegex.match(modeSection);
-            if (bMatch.hasMatch()) {
-                blockNum = QString("B %1").arg(bMatch.captured(1));
-                mode += blockNum + " ";
-            }
-        }
-        transition.additionalData["mode"] = mode.trimmed();
+        // Extract S/V/B section: extract literal string from fixed positions (20-35)
+        QString svbSection = (workingLine.length() >= 35) ? workingLine.mid(20, 15) : "";
         
         // Frequency: positions 35-47
         QString freqStr = line.mid(35, 13).trimmed();
@@ -438,12 +470,10 @@ TransitionData XIAMParser::parseInts3Line(const QString &line, const QString &gr
         // Calculate optimal intensity using the algorithm from the original parser
         transition.intensity = calculateOptimalIntensity(linestr, total, statWeight, population, hvEnergy);
         
-        // Set quantum numbers
+        // Set quantum numbers: "upperQN - lowerQN, svbSection" (same format as ints=2)
         if (!upperQN.isEmpty() && !lowerQN.isEmpty()) {
             QString qnString = upperQN + " - " + lowerQN;
-            if (!symmetry.isEmpty()) qnString += ", " + symmetry;
-            if (!vibState.isEmpty()) qnString += " " + vibState;
-            if (!blockNum.isEmpty()) qnString += " " + blockNum;
+            if (!svbSection.trimmed().isEmpty()) qnString += "," + svbSection;
             transition.quantumNumbers = qnString;
         }
         
