@@ -42,6 +42,25 @@ void OverlayBaseOptionsWidget::setupUI()
     // Plot ID
     p_plotIdComboBox = new QComboBox(this);
     layout->addRow("Plot ID:", p_plotIdComboBox);
+
+    // Autoscale controls
+    QWidget *autoscaleWidget = new QWidget(this);
+    QHBoxLayout *autoscaleLayout = new QHBoxLayout(autoscaleWidget);
+    autoscaleLayout->setContentsMargins(0, 0, 0, 0);
+    p_autoscalePercentageSpinBox = new QDoubleSpinBox(this);
+    p_autoscalePercentageSpinBox->setRange(0.1, 1000.0);
+    p_autoscalePercentageSpinBox->setDecimals(1);
+    p_autoscalePercentageSpinBox->setSingleStep(1.0);
+    p_autoscalePercentageSpinBox->setSuffix("%");
+    p_autoscalePercentageSpinBox->setValue(20.0); // Default 20%
+    p_autoscalePercentageSpinBox->setKeyboardTracking(false);
+    p_autoscaleButton = new QPushButton("Autoscale", this);
+    p_autoscaleButton->setMaximumWidth(80);
+    autoscaleLayout->addWidget(p_autoscalePercentageSpinBox);
+    autoscaleLayout->addWidget(p_autoscaleButton);
+    autoscaleLayout->addStretch();
+    connect(p_autoscaleButton, &QPushButton::clicked, this, &OverlayBaseOptionsWidget::onAutoscaleClicked);
+    layout->addRow("Autoscale:", autoscaleWidget);
     
     // Y Scale with Invert button
     QWidget *yScaleWidget = new QWidget(this);
@@ -74,25 +93,7 @@ void OverlayBaseOptionsWidget::setupUI()
     p_xOffsetSpinBox->setSingleStep(1.0);
     p_xOffsetSpinBox->setKeyboardTracking(false); // Prevent updates while typing
     layout->addRow("X Offset:", p_xOffsetSpinBox);
-    
-    // Autoscale controls
-    QWidget *autoscaleWidget = new QWidget(this);
-    QHBoxLayout *autoscaleLayout = new QHBoxLayout(autoscaleWidget);
-    autoscaleLayout->setContentsMargins(0, 0, 0, 0);
-    p_autoscalePercentageSpinBox = new QDoubleSpinBox(this);
-    p_autoscalePercentageSpinBox->setRange(0.1, 1000.0);
-    p_autoscalePercentageSpinBox->setDecimals(1);
-    p_autoscalePercentageSpinBox->setSingleStep(1.0);
-    p_autoscalePercentageSpinBox->setSuffix("%");
-    p_autoscalePercentageSpinBox->setValue(20.0); // Default 20%
-    p_autoscalePercentageSpinBox->setKeyboardTracking(false);
-    p_autoscaleButton = new QPushButton("Autoscale", this);
-    p_autoscaleButton->setMaximumWidth(80);
-    autoscaleLayout->addWidget(p_autoscalePercentageSpinBox);
-    autoscaleLayout->addWidget(p_autoscaleButton);
-    autoscaleLayout->addStretch();
-    connect(p_autoscaleButton, &QPushButton::clicked, this, &OverlayBaseOptionsWidget::onAutoscaleClicked);
-    layout->addRow("Autoscale:", autoscaleWidget);
+
     
     // Min Frequency Limit
     QWidget *minFreqWidget = new QWidget(this);

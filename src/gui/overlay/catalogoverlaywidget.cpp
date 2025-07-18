@@ -825,6 +825,7 @@ void CatalogOverlayWidget::updateFileInfo()
         p_moleculeLabel->setText("-");
         p_transitionCountLabel->setText("-");
         p_frequencyRangeLabel->setText("-");
+        p_convolutionGroup->setEnabled(false);
         return;
     }
     
@@ -854,7 +855,10 @@ void CatalogOverlayWidget::updateFileInfo()
         }
         
         p_frequencyRangeLabel->setText(formatFrequencyRange(minFreq, maxFreq));
+        p_convolutionGroup->setEnabled(true);
     }
+    else
+        p_convolutionGroup->setEnabled(false);
 }
 
 void CatalogOverlayWidget::updateConvolutionControls()
