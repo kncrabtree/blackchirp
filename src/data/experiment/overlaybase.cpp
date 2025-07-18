@@ -20,8 +20,13 @@ QVector<QPointF> OverlayBase::xyData() const
     QVector<QPointF> transformedData;
     transformedData.reserve(rawData.size());
     
+    double maxY = 0.0;
+    
     // Apply scaling, offset transformations, and frequency filtering
     for (const QPointF& point : rawData) {
+        // Track maximum absolute Y value for yMax()
+        maxY = qMax(maxY, qAbs(point.y()));
+
         double newX = point.x() + d_xOffset;
         double newY = (point.y() * d_yScale) + d_yOffset;
         
@@ -32,10 +37,12 @@ QVector<QPointF> OverlayBase::xyData() const
             continue;
             
         transformedData.append(QPointF(newX, newY));
+        
     }
     
-    // Cache the result
+    // Cache the result and yMax
     d_cachedFilteredData = transformedData;
+    d_cachedYMax = maxY;
     d_cacheValid = true;
     
     return transformedData;
@@ -99,6 +106,15 @@ double OverlayBase::getMaxFreqValue() const
 bool OverlayBase::getEnabled() const
 {
     return d_enabled;
+}
+
+double OverlayBase::yMax() const
+{
+    // Ensure cache is up to date
+    if (!d_cacheValid) {
+        xyData(); // This will populate the cache and calculate yMax
+    }
+    return d_cachedYMax;
 }
 
 QVariant OverlayBase::getCurveMetadata(const QString &key) const
@@ -298,6 +314,7 @@ void OverlayBase::retrieveMetadata(const std::map<QString,QVariant> &m)
 void OverlayBase::invalidateCache()
 {
     d_cacheValid = false;
+    d_cachedYMax = 0.0;
 }
 
 void OverlayBase::setCurveAppearanceMetadata(const CurveAppearanceWidget::CurveAppearance &appearance)

@@ -488,10 +488,6 @@ void CatalogOverlayWidget::onConvolutionSettingsChanged()
     // Update convolution button state based on current vs last settings
     updateConvolutionButtonState();
 
-    // Recalculate default Y scale when convolution settings change
-    if (d_context == Context::Creation) {
-        calculateDefaultYScale();
-    }
     
     emit settingsChanged();
 }
@@ -845,10 +841,6 @@ void CatalogOverlayWidget::updateFileInfo()
         }
     }
     
-    // Calculate and set reasonable default yscale (only in creation context)
-    if (d_context == Context::Creation) {
-        calculateDefaultYScale();
-    }
     
     // Calculate and display frequency range
     if (d_catalogData.size() > 0) {
@@ -910,44 +902,6 @@ void CatalogOverlayWidget::updateSpacingDisplay()
     }
 }
 
-
-void CatalogOverlayWidget::calculateDefaultYScale()
-{
-    if (!d_fileValid || d_catalogData.isEmpty() || !d_currentFt.isEmpty()) {
-        return; // Can't calculate without valid data
-    }
-    
-    // Get the current frequency range (either from spinboxes or Ft data)
-    double rangeMin = p_convMinFreqSpinBox->value();
-    double rangeMax = p_convMaxFreqSpinBox->value();
-    
-    // Find the maximum intensity within the frequency range
-    double maxIntensityInRange = 0.0;
-    bool foundTransitions = false;
-    
-    for (int i = 0; i < d_catalogData.size(); ++i) {
-        const auto &transition = d_catalogData.at(i);
-        if (transition.frequency >= rangeMin && transition.frequency <= rangeMax) {
-            maxIntensityInRange = qMax(maxIntensityInRange, transition.intensity);
-            foundTransitions = true;
-        }
-    }
-    
-    if (!foundTransitions || maxIntensityInRange <= 0.0) {
-        return; // No transitions in range or invalid intensities
-    }
-    
-    // Calculate yscale: we want the strongest catalog line to be about 20% of the Ft yMax
-    // This provides good visibility without overwhelming the spectrum
-    double targetHeight = d_currentFt.yMax() * 0.2;
-    double calculatedYScale = targetHeight / maxIntensityInRange;
-    
-    // Make the scale negative so catalog peaks point downward (enhancement from devel-ideas.txt)
-    calculatedYScale = -calculatedYScale;
-    
-    // Emit signal to update the y scale in the overlay base options widget
-    emit yScaleUpdateRequested(calculatedYScale);
-}
 
 
 bool CatalogOverlayWidget::validateConvolutionSettings(QString &errorMessage) const

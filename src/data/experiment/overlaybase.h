@@ -58,6 +58,7 @@ public:
     bool getMaxFreqEnabled() const;
     double getMaxFreqValue() const;
     bool getEnabled() const;
+    double yMax() const;
     OverlayType type() const { return d_type; }
     QString errorString() const { return d_errorString; }
     bool isModified() const { return d_modified; }
@@ -122,6 +123,7 @@ private:
     // Caching for filtered xyData
     mutable QVector<QPointF> d_cachedFilteredData;
     mutable bool d_cacheValid{false};
+    mutable double d_cachedYMax{0.0};
     
     
     void storeMetadata(std::map<QString,QVariant> &m);

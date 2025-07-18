@@ -24,13 +24,10 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/overlay/overlaytypespecificwidget.cpp \
     $$PWD/overlay/bcexpoverlaywidget.cpp \
     $$PWD/overlay/catalogoverlaywidget.cpp \
-    $$PWD/overlay/overlayconfigdialog.cpp \
-    $$PWD/overlay/bcexpoverlaydialog.cpp \
     $$PWD/overlay/overlaybaseoptionswidget.cpp \
     $$PWD/overlay/overlaymanagerwidget.cpp \
     $$PWD/overlay/overlayconfiguredelegate.cpp \
     $$PWD/overlay/overlaycheckboxdelegate.cpp \
-    $$PWD/overlay/overlaysettingsdialog.cpp \
     $$PWD/plot/blackchirpplotcurve.cpp \
     $$PWD/plot/chirpconfigplot.cpp \
     $$PWD/plot/curveappearancewidget.cpp \
@@ -97,13 +94,10 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/overlay/overlaytypespecificwidget.h \
     $$PWD/overlay/bcexpoverlaywidget.h \
     $$PWD/overlay/catalogoverlaywidget.h \
-    $$PWD/overlay/overlayconfigdialog.h \
-    $$PWD/overlay/bcexpoverlaydialog.h \
     $$PWD/overlay/overlaybaseoptionswidget.h \
     $$PWD/overlay/overlaymanagerwidget.h \
     $$PWD/overlay/overlayconfiguredelegate.h \
     $$PWD/overlay/overlaycheckboxdelegate.h \
-    $$PWD/overlay/overlaysettingsdialog.h \
     $$PWD/plot/blackchirpplotcurve.h \
     $$PWD/plot/chirpconfigplot.h \
     $$PWD/plot/curveappearancewidget.h \

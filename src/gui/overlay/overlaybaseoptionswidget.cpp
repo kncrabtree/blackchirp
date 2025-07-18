@@ -4,10 +4,11 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QRegularExpression>
+#include <QPushButton>
 #include <limits>
 
-OverlayBaseOptionsWidget::OverlayBaseOptionsWidget(const QStringList &plotNames, double xRangeMin, double xRangeMax, QWidget *parent)
-    : QWidget(parent), d_xRangeMin(xRangeMin), d_xRangeMax(xRangeMax)
+OverlayBaseOptionsWidget::OverlayBaseOptionsWidget(const QStringList &plotNames, const Ft &currentFt, QWidget *parent)
+    : QWidget(parent), SettingsStorage(BC::Key::OverlayBaseOptions::key), d_currentFt(currentFt), d_hasFtData(!currentFt.isEmpty())
 {
     setupUI();
     
@@ -42,13 +43,21 @@ void OverlayBaseOptionsWidget::setupUI()
     p_plotIdComboBox = new QComboBox(this);
     layout->addRow("Plot ID:", p_plotIdComboBox);
     
-    // Y Scale
+    // Y Scale with Invert button
+    QWidget *yScaleWidget = new QWidget(this);
+    QHBoxLayout *yScaleLayout = new QHBoxLayout(yScaleWidget);
+    yScaleLayout->setContentsMargins(0, 0, 0, 0);
     p_yScaleSpinBox = new QDoubleSpinBox(this);
     p_yScaleSpinBox->setRange(-1e10, 1e10);
     p_yScaleSpinBox->setDecimals(4);
     p_yScaleSpinBox->setSingleStep(1.0);
     p_yScaleSpinBox->setKeyboardTracking(false); // Prevent updates while typing
-    layout->addRow("Y Scale:", p_yScaleSpinBox);
+    p_invertButton = new QPushButton("Invert", this);
+    p_invertButton->setMaximumWidth(60);
+    yScaleLayout->addWidget(p_yScaleSpinBox);
+    yScaleLayout->addWidget(p_invertButton);
+    connect(p_invertButton, &QPushButton::clicked, this, &OverlayBaseOptionsWidget::onInvertClicked);
+    layout->addRow("Y Scale:", yScaleWidget);
     
     // Y Offset
     p_yOffsetSpinBox = new QDoubleSpinBox(this);
@@ -65,6 +74,25 @@ void OverlayBaseOptionsWidget::setupUI()
     p_xOffsetSpinBox->setSingleStep(1.0);
     p_xOffsetSpinBox->setKeyboardTracking(false); // Prevent updates while typing
     layout->addRow("X Offset:", p_xOffsetSpinBox);
+    
+    // Autoscale controls
+    QWidget *autoscaleWidget = new QWidget(this);
+    QHBoxLayout *autoscaleLayout = new QHBoxLayout(autoscaleWidget);
+    autoscaleLayout->setContentsMargins(0, 0, 0, 0);
+    p_autoscalePercentageSpinBox = new QDoubleSpinBox(this);
+    p_autoscalePercentageSpinBox->setRange(0.1, 1000.0);
+    p_autoscalePercentageSpinBox->setDecimals(1);
+    p_autoscalePercentageSpinBox->setSingleStep(1.0);
+    p_autoscalePercentageSpinBox->setSuffix("%");
+    p_autoscalePercentageSpinBox->setValue(20.0); // Default 20%
+    p_autoscalePercentageSpinBox->setKeyboardTracking(false);
+    p_autoscaleButton = new QPushButton("Autoscale", this);
+    p_autoscaleButton->setMaximumWidth(80);
+    autoscaleLayout->addWidget(p_autoscalePercentageSpinBox);
+    autoscaleLayout->addWidget(p_autoscaleButton);
+    autoscaleLayout->addStretch();
+    connect(p_autoscaleButton, &QPushButton::clicked, this, &OverlayBaseOptionsWidget::onAutoscaleClicked);
+    layout->addRow("Autoscale:", autoscaleWidget);
     
     // Min Frequency Limit
     QWidget *minFreqWidget = new QWidget(this);
@@ -135,7 +163,17 @@ void OverlayBaseOptionsWidget::initializeDefaults()
     p_yOffsetSpinBox->setValue(0.0);
     p_xOffsetSpinBox->setValue(0.0);
     
-    // Set frequency limits from xRange (disabled by default)
+    // Load autoscale percentage from settings
+    p_autoscalePercentageSpinBox->setValue(get(BC::Key::OverlayBaseOptions::autoscalePercentage, DEFAULT_AUTOSCALE_PERCENTAGE));
+    
+    // Register getter for autoscale percentage
+    registerGetter(BC::Key::OverlayBaseOptions::autoscalePercentage, p_autoscalePercentageSpinBox, &QDoubleSpinBox::value);
+    
+    // Set frequency limits from Ft data (disabled by default)
+    auto xRange = d_hasFtData ? d_currentFt.xRange() : qMakePair(0.0, 1000.0);
+    d_xRangeMin = xRange.first;
+    d_xRangeMax = xRange.second;
+    
     p_minFreqCheckBox->setChecked(false);
     p_minFreqSpinBox->setValue(d_xRangeMin);
     p_minFreqSpinBox->setEnabled(false);
@@ -187,6 +225,11 @@ double OverlayBaseOptionsWidget::getXOffset() const
     return p_xOffsetSpinBox->value();
 }
 
+double OverlayBaseOptionsWidget::getAutoscalePercentage() const
+{
+    return p_autoscalePercentageSpinBox->value();
+}
+
 // Setters
 void OverlayBaseOptionsWidget::setLabel(const QString &label)
 {
@@ -216,6 +259,11 @@ void OverlayBaseOptionsWidget::setYOffset(double yOffset)
 void OverlayBaseOptionsWidget::setXOffset(double xOffset)
 {
     p_xOffsetSpinBox->setValue(xOffset);
+}
+
+void OverlayBaseOptionsWidget::setAutoscalePercentage(double percentage)
+{
+    p_autoscalePercentageSpinBox->setValue(percentage);
 }
 
 bool OverlayBaseOptionsWidget::validateSettings(QString &errorMessage, const QVector<std::shared_ptr<OverlayBase>> &existingOverlays) const
@@ -365,4 +413,41 @@ QString OverlayBaseOptionsWidget::sanitizeLabel(const QString& label) const
     }
     
     return sanitized;
+}
+
+void OverlayBaseOptionsWidget::setOverlayReference(std::shared_ptr<OverlayBase> overlay)
+{
+    d_overlayRef = overlay;
+}
+
+void OverlayBaseOptionsWidget::onAutoscaleClicked()
+{
+    // Check if we have the necessary data
+    if (!d_overlayRef || !d_hasFtData) {
+        return; // Can't autoscale without overlay and Ft data
+    }
+    
+    // Get the maximum Y values
+    double overlayYMax = d_overlayRef->yMax();
+    double ftYMax = d_currentFt.yMax();
+    
+    // Check for valid values
+    if (overlayYMax <= 0.0 || ftYMax <= 0.0) {
+        return; // Can't calculate with zero or negative max values
+    }
+    
+    // Calculate the new Y scale using the percentage
+    double percentage = getAutoscalePercentage();
+    double targetHeight = ftYMax * (percentage / 100.0);
+    double newYScale = targetHeight / overlayYMax;
+    
+    // Set the new value (this will trigger settingsChanged signal)
+    setYScale(newYScale);
+}
+
+void OverlayBaseOptionsWidget::onInvertClicked()
+{
+    // Simply multiply current Y scale by -1
+    double currentYScale = getYScale();
+    setYScale(-currentYScale);
 }

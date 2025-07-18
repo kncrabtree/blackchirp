@@ -107,7 +107,6 @@ private slots:
     void onProgressOperationFinished();
     void onProgressValueChanged(int value);
     void onLabelUpdateRequested(const QString &newLabel);
-    void onYScaleUpdateRequested(double newYScale);
     void onColorChangeRequested();
 
 private:

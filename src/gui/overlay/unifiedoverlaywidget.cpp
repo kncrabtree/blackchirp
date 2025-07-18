@@ -146,6 +146,8 @@ std::shared_ptr<OverlayBase> UnifiedOverlayWidget::createOverlay()
     // Apply base overlay options
     if (p_overlayBaseOptionsWidget) {
         p_overlayBaseOptionsWidget->applyToOverlay(overlay);
+        // Set overlay reference for autoscale functionality
+        p_overlayBaseOptionsWidget->setOverlayReference(overlay);
     }
     
     // Apply curve appearance settings
@@ -487,8 +489,7 @@ void UnifiedOverlayWidget::createOverlayBaseOptionsWidget()
     }
     
     // Create the base options widget with current parameters
-    auto xRange = !d_currentFt.isEmpty() ? d_currentFt.xRange() : qMakePair(0.0, 1000.0);
-    p_overlayBaseOptionsWidget = new OverlayBaseOptionsWidget(d_plotNames, xRange.first, xRange.second, this);
+    p_overlayBaseOptionsWidget = new OverlayBaseOptionsWidget(d_plotNames, d_currentFt, this);
     
     // Set up the layout (should be the first and only layout for this groupbox)
     if (p_overlayBaseOptionsBox) {
@@ -536,6 +537,11 @@ void UnifiedOverlayWidget::loadOverlaySettings()
     // Load curve appearance settings
     if (p_curveAppearanceWidget)
         p_curveAppearanceWidget->initializeFromOverlay(d_overlay);
+    
+    // Set overlay reference for autoscale functionality
+    if (p_overlayBaseOptionsWidget) {
+        p_overlayBaseOptionsWidget->setOverlayReference(d_overlay);
+    }
 }
 
 void UnifiedOverlayWidget::saveSettings()
@@ -803,8 +809,6 @@ void UnifiedOverlayWidget::setupTypeSpecificWidgetConnections()
             });
     connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::labelUpdateRequested,
             this, &UnifiedOverlayWidget::onLabelUpdateRequested);
-    connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::yScaleUpdateRequested,
-            this, &UnifiedOverlayWidget::onYScaleUpdateRequested);
     
     // Real-time update and progress indication connections for both contexts
     connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::settingsChanged,
@@ -1057,13 +1061,6 @@ void UnifiedOverlayWidget::onLabelUpdateRequested(const QString &newLabel)
     }
 }
 
-void UnifiedOverlayWidget::onYScaleUpdateRequested(double newYScale)
-{
-    // Update the overlay base options widget with the new y scale (only in creation context)
-    if (isCreationContext() && p_overlayBaseOptionsWidget) {
-        p_overlayBaseOptionsWidget->setYScale(newYScale);
-    }
-}
 
 void UnifiedOverlayWidget::onColorChangeRequested()
 {

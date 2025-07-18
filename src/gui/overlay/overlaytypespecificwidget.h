@@ -100,7 +100,6 @@ signals:
     void progressOperationFinished();
     void progressValueChanged(int value);
     void labelUpdateRequested(const QString &newLabel);
-    void yScaleUpdateRequested(double newYScale);
 
 protected:
     // Helper methods for derived classes

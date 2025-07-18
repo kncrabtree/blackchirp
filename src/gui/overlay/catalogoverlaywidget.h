@@ -249,7 +249,6 @@ private:
     void updateFileInfo();
     void updateConvolutionControls();
     void updateSpacingDisplay();
-    void calculateDefaultYScale();
     bool validateConvolutionSettings(QString &errorMessage) const;
     QString formatFrequencyRange(double min, double max) const;
     void configureSpinBox(QDoubleSpinBox *spinBox, const QString &minKey, const QString &maxKey, 
