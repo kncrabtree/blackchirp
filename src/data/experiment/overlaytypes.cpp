@@ -2,6 +2,7 @@
 
 #include <data/storage/blackchirpcsv.h>
 #include <data/experiment/experiment.h>
+#include <gui/plot/blackchirpplotcurve.h>
 #include <QtMath>
 #include <cmath>
 #include <QJsonDocument>
@@ -556,7 +557,8 @@ void CatalogOverlay::_retrieveMetadata(const std::map<QString, QVariant> &m)
     
     it = m.find(BC::Key::Overlay::Catalog::convolutionEnabled);
     if (it != m.end()) {
-        d_convolutionEnabled = it->second.toBool();
+        // Force convolution to disabled when loading from disk
+        d_convolutionEnabled = false;
     }
     
     it = m.find(BC::Key::Overlay::Catalog::lineshapeType);
@@ -594,6 +596,9 @@ void CatalogOverlay::_retrieveMetadata(const std::map<QString, QVariant> &m)
     if (it != m.end()) {
         d_filterMaxFreq = it->second.toDouble();
     }
+    
+    // Force curve style to stick plot when loaded from disk
+    setCurveMetadata(BC::Key::bcCurveCurveStyle, static_cast<int>(QwtPlotCurve::Sticks));
     
     // Invalidate cache after loading metadata
     invalidateConvolutionCache();
