@@ -93,6 +93,9 @@ public:
     QWidget* getSourceFileConfigWidget() override;
     QWidget* getSourceFileSettingsWidget() override;
     QWidget* getOverlaySettingsWidget() override;
+    
+    // Type-specific settings visibility
+    bool hasTypeSpecificSettings() const override { return false; } // BC experiments have no overlay-specific settings currently
 
 private slots:
     void onExperimentNumberChanged(int number);

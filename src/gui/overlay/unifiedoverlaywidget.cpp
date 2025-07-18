@@ -653,10 +653,19 @@ void UnifiedOverlayWidget::configureForContext()
     }
     
     // Set intelligent defaults for overlays in creation mode
-    if (p_curveAppearanceWidget && isCreationContext() && d_overlayType == OverlayBase::Catalog)
+    if (p_curveAppearanceWidget && isCreationContext())
     {
         auto presetManager = CurveAppearancePresetManager::instance();
-        if (d_overlayType == OverlayBase::Catalog)
+        
+        if (d_overlayType == OverlayBase::BCExperiment)
+        {
+            // Default to Curve - Primary for BC experiment data
+            if (presetManager && presetManager->hasPreset(BC::Key::CurveAppearancePresets::curvePrimary)) {
+                auto preset = presetManager->getPreset(BC::Key::CurveAppearancePresets::curvePrimary);
+                p_curveAppearanceWidget->setCurrentAppearance(preset.appearance);
+            }
+        }
+        else if (d_overlayType == OverlayBase::Catalog)
         {
             // Default to Stem - Secondary for discrete catalog data
             if (presetManager && presetManager->hasPreset(BC::Key::CurveAppearancePresets::stemSecondary)) {
@@ -666,6 +675,7 @@ void UnifiedOverlayWidget::configureForContext()
         }
         else
         {
+            // Default fallback for other overlay types
             if (presetManager && presetManager->hasPreset(BC::Key::CurveAppearancePresets::curveSecondary)) {
                 auto preset = presetManager->getPreset(BC::Key::CurveAppearancePresets::curveSecondary);
                 p_curveAppearanceWidget->setCurrentAppearance(preset.appearance);
@@ -882,6 +892,12 @@ void UnifiedOverlayWidget::reparentTypeSpecificWidgets()
     
     // The overlay settings widget stays in the type-specific stack
     // (it's already properly positioned)
+    
+    // Hide type-specific settings box if the widget doesn't have type-specific settings
+    if (p_typeSpecificSettingsBox) {
+        bool hasSettings = p_typeSpecificWidget->hasTypeSpecificSettings();
+        p_typeSpecificSettingsBox->setVisible(hasSettings);
+    }
 }
 
 OverlayTypeSpecificWidget* UnifiedOverlayWidget::createPlaceholderWidget(const QString &typeName, const Ft &currentFt)

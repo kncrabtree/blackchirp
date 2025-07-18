@@ -91,6 +91,9 @@ public:
     // Validation for unsaved changes
     virtual bool hasUnsavedChanges() const { return false; } // Default implementation
     virtual bool validateAcceptance() { return true; } // Default implementation - returns true if dialog should proceed
+    
+    // Type-specific settings visibility
+    virtual bool hasTypeSpecificSettings() const { return true; } // Default implementation - show settings by default
 
 signals:
     void settingsChanged();
