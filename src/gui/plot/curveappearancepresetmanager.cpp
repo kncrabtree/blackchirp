@@ -44,21 +44,21 @@ void CurveAppearancePresetManager::cleanup()
 QVariantMap CurveAppearancePresetManager::CurveAppearancePreset::toVariantMap() const
 {
     QVariantMap map;
-    map["name"] = name;
-    map["created"] = created;
-    map["lastUsed"] = lastUsed;
-    map["isDefault"] = isDefault;
+    map[BC::Key::CurveAppearancePresets::name] = name;
+    map[BC::Key::CurveAppearancePresets::created] = created;
+    map[BC::Key::CurveAppearancePresets::lastUsed] = lastUsed;
+    map[BC::Key::CurveAppearancePresets::isDefault] = isDefault;
     
     // Store appearance properties
-    map["color"] = appearance.color;
-    map["curveStyle"] = static_cast<int>(appearance.curveStyle);
-    map["lineThickness"] = appearance.lineThickness;
-    map["lineStyle"] = static_cast<int>(appearance.lineStyle);
-    map["markerStyle"] = static_cast<int>(appearance.markerStyle);
-    map["markerSize"] = appearance.markerSize;
-    map["visible"] = appearance.visible;
-    map["autoscale"] = appearance.autoscale;
-    map["yAxis"] = static_cast<int>(appearance.yAxis);
+    map[BC::Key::CurveAppearancePresets::color] = appearance.color;
+    map[BC::Key::CurveAppearancePresets::curveStyle] = static_cast<int>(appearance.curveStyle);
+    map[BC::Key::CurveAppearancePresets::lineThickness] = appearance.lineThickness;
+    map[BC::Key::CurveAppearancePresets::lineStyle] = static_cast<int>(appearance.lineStyle);
+    map[BC::Key::CurveAppearancePresets::markerStyle] = static_cast<int>(appearance.markerStyle);
+    map[BC::Key::CurveAppearancePresets::markerSize] = appearance.markerSize;
+    map[BC::Key::CurveAppearancePresets::visible] = appearance.visible;
+    map[BC::Key::CurveAppearancePresets::autoscale] = appearance.autoscale;
+    map[BC::Key::CurveAppearancePresets::yAxis] = static_cast<int>(appearance.yAxis);
     
     return map;
 }
@@ -66,21 +66,21 @@ QVariantMap CurveAppearancePresetManager::CurveAppearancePreset::toVariantMap() 
 CurveAppearancePresetManager::CurveAppearancePreset CurveAppearancePresetManager::CurveAppearancePreset::fromVariantMap(const QVariantMap &map)
 {
     CurveAppearancePreset preset;
-    preset.name = map.value("name").toString();
-    preset.created = map.value("created").toDateTime();
-    preset.lastUsed = map.value("lastUsed").toDateTime();
-    preset.isDefault = map.value("isDefault", false).toBool();
+    preset.name = map.value(BC::Key::CurveAppearancePresets::name).toString();
+    preset.created = map.value(BC::Key::CurveAppearancePresets::created).toDateTime();
+    preset.lastUsed = map.value(BC::Key::CurveAppearancePresets::lastUsed).toDateTime();
+    preset.isDefault = map.value(BC::Key::CurveAppearancePresets::isDefault, false).toBool();
     
     // Load appearance properties
-    preset.appearance.color = map.value("color", QColor(Qt::black)).value<QColor>();
-    preset.appearance.curveStyle = static_cast<QwtPlotCurve::CurveStyle>(map.value("curveStyle", QwtPlotCurve::Lines).toInt());
-    preset.appearance.lineThickness = map.value("lineThickness", 1.0).toDouble();
-    preset.appearance.lineStyle = static_cast<Qt::PenStyle>(map.value("lineStyle", static_cast<int>(Qt::SolidLine)).toInt());
-    preset.appearance.markerStyle = static_cast<QwtSymbol::Style>(map.value("markerStyle", QwtSymbol::NoSymbol).toInt());
-    preset.appearance.markerSize = map.value("markerSize", 7).toInt();
-    preset.appearance.visible = map.value("visible", true).toBool();
-    preset.appearance.autoscale = map.value("autoscale", true).toBool();
-    preset.appearance.yAxis = static_cast<QwtAxisId>(map.value("yAxis", QwtAxis::YLeft).toInt());
+    preset.appearance.color = map.value(BC::Key::CurveAppearancePresets::color, QColor(Qt::black)).value<QColor>();
+    preset.appearance.curveStyle = static_cast<QwtPlotCurve::CurveStyle>(map.value(BC::Key::CurveAppearancePresets::curveStyle, QwtPlotCurve::Lines).toInt());
+    preset.appearance.lineThickness = map.value(BC::Key::CurveAppearancePresets::lineThickness, 1.0).toDouble();
+    preset.appearance.lineStyle = static_cast<Qt::PenStyle>(map.value(BC::Key::CurveAppearancePresets::lineStyle, static_cast<int>(Qt::SolidLine)).toInt());
+    preset.appearance.markerStyle = static_cast<QwtSymbol::Style>(map.value(BC::Key::CurveAppearancePresets::markerStyle, QwtSymbol::NoSymbol).toInt());
+    preset.appearance.markerSize = map.value(BC::Key::CurveAppearancePresets::markerSize, 7).toInt();
+    preset.appearance.visible = map.value(BC::Key::CurveAppearancePresets::visible, true).toBool();
+    preset.appearance.autoscale = map.value(BC::Key::CurveAppearancePresets::autoscale, true).toBool();
+    preset.appearance.yAxis = static_cast<QwtAxisId>(map.value(BC::Key::CurveAppearancePresets::yAxis, QwtAxis::YLeft).toInt());
     
     return preset;
 }
@@ -233,7 +233,7 @@ void CurveAppearancePresetManager::createDefaultPresets()
     
     // === CURVE PRESETS (3) ===
     CurveAppearancePreset curvePreset1;
-    curvePreset1.name = "Curve - Primary";
+    curvePreset1.name = BC::Key::CurveAppearancePresets::curvePrimary;
     curvePreset1.appearance = createCurvePreset(primaryColor);
     curvePreset1.created = now;
     curvePreset1.lastUsed = now;
@@ -241,7 +241,7 @@ void CurveAppearancePresetManager::createDefaultPresets()
     d_presets.append(curvePreset1);
     
     CurveAppearancePreset curvePreset2;
-    curvePreset2.name = "Curve - Secondary";
+    curvePreset2.name = BC::Key::CurveAppearancePresets::curveSecondary;
     curvePreset2.appearance = createCurvePreset(secondaryColor);
     curvePreset2.created = now;
     curvePreset2.lastUsed = now;
@@ -249,7 +249,7 @@ void CurveAppearancePresetManager::createDefaultPresets()
     d_presets.append(curvePreset2);
     
     CurveAppearancePreset curvePreset3;
-    curvePreset3.name = "Curve - Tertiary";
+    curvePreset3.name = BC::Key::CurveAppearancePresets::curveTertiary;
     curvePreset3.appearance = createCurvePreset(tertiaryColor);
     curvePreset3.created = now;
     curvePreset3.lastUsed = now;
@@ -258,7 +258,7 @@ void CurveAppearancePresetManager::createDefaultPresets()
     
     // === STEM PRESETS (3) ===
     CurveAppearancePreset stemPreset1;
-    stemPreset1.name = "Stem - Primary";
+    stemPreset1.name = BC::Key::CurveAppearancePresets::stemPrimary;
     stemPreset1.appearance = createStemPreset(primaryColor);
     stemPreset1.created = now;
     stemPreset1.lastUsed = now;
@@ -266,7 +266,7 @@ void CurveAppearancePresetManager::createDefaultPresets()
     d_presets.append(stemPreset1);
     
     CurveAppearancePreset stemPreset2;
-    stemPreset2.name = "Stem - Secondary";
+    stemPreset2.name = BC::Key::CurveAppearancePresets::stemSecondary;
     stemPreset2.appearance = createStemPreset(secondaryColor);
     stemPreset2.created = now;
     stemPreset2.lastUsed = now;
@@ -274,7 +274,7 @@ void CurveAppearancePresetManager::createDefaultPresets()
     d_presets.append(stemPreset2);
     
     CurveAppearancePreset stemPreset3;
-    stemPreset3.name = "Stem - Tertiary";
+    stemPreset3.name = BC::Key::CurveAppearancePresets::stemTertiary;
     stemPreset3.appearance = createStemPreset(tertiaryColor);
     stemPreset3.created = now;
     stemPreset3.lastUsed = now;
@@ -283,7 +283,7 @@ void CurveAppearancePresetManager::createDefaultPresets()
     
     // === SCATTER PRESETS (3) ===
     CurveAppearancePreset scatterPreset1;
-    scatterPreset1.name = "Scatter - Circles";
+    scatterPreset1.name = BC::Key::CurveAppearancePresets::scatterCircles;
     scatterPreset1.appearance = createScatterPreset(primaryColor, QwtSymbol::Ellipse);
     scatterPreset1.created = now;
     scatterPreset1.lastUsed = now;
@@ -291,7 +291,7 @@ void CurveAppearancePresetManager::createDefaultPresets()
     d_presets.append(scatterPreset1);
     
     CurveAppearancePreset scatterPreset2;
-    scatterPreset2.name = "Scatter - Squares";
+    scatterPreset2.name = BC::Key::CurveAppearancePresets::scatterSquares;
     scatterPreset2.appearance = createScatterPreset(secondaryColor, QwtSymbol::Rect);
     scatterPreset2.created = now;
     scatterPreset2.lastUsed = now;
@@ -299,7 +299,7 @@ void CurveAppearancePresetManager::createDefaultPresets()
     d_presets.append(scatterPreset2);
     
     CurveAppearancePreset scatterPreset3;
-    scatterPreset3.name = "Scatter - Diamonds";
+    scatterPreset3.name = BC::Key::CurveAppearancePresets::scatterDiamonds;
     scatterPreset3.appearance = createScatterPreset(tertiaryColor, QwtSymbol::Diamond);
     scatterPreset3.created = now;
     scatterPreset3.lastUsed = now;

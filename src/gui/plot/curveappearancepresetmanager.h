@@ -10,6 +10,32 @@ namespace BC::Key::CurveAppearancePresets {
 static const QString key{"CurveAppearancePresets"};
 static const QString presetList{"presetList"};
 static const QString defaultsCreated{"defaultsCreated"};
+
+// Default preset names
+static const QString curvePrimary{"Curve - Primary"};
+static const QString curveSecondary{"Curve - Secondary"};
+static const QString curveTertiary{"Curve - Tertiary"};
+static const QString stemPrimary{"Stem - Primary"};
+static const QString stemSecondary{"Stem - Secondary"};
+static const QString stemTertiary{"Stem - Tertiary"};
+static const QString scatterCircles{"Scatter - Circles"};
+static const QString scatterSquares{"Scatter - Squares"};
+static const QString scatterDiamonds{"Scatter - Diamonds"};
+
+// QVariantMap serialization keys
+static const QString name{"name"};
+static const QString created{"created"};
+static const QString lastUsed{"lastUsed"};
+static const QString isDefault{"isDefault"};
+static const QString color{"color"};
+static const QString curveStyle{"curveStyle"};
+static const QString lineThickness{"lineThickness"};
+static const QString lineStyle{"lineStyle"};
+static const QString markerStyle{"markerStyle"};
+static const QString markerSize{"markerSize"};
+static const QString visible{"visible"};
+static const QString autoscale{"autoscale"};
+static const QString yAxis{"yAxis"};
 }
 
 class CurveAppearancePresetManager : public QObject, public SettingsStorage

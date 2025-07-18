@@ -648,15 +648,15 @@ void UnifiedOverlayWidget::configureForContext()
         if (d_overlayType == OverlayBase::Catalog)
         {
             // Default to Stem - Secondary for discrete catalog data
-            if (presetManager && presetManager->hasPreset("Stem - Secondary")) {
-                auto preset = presetManager->getPreset("Stem - Secondary");
+            if (presetManager && presetManager->hasPreset(BC::Key::CurveAppearancePresets::stemSecondary)) {
+                auto preset = presetManager->getPreset(BC::Key::CurveAppearancePresets::stemSecondary);
                 p_curveAppearanceWidget->setCurrentAppearance(preset.appearance);
             }
         }
         else
         {
-            if (presetManager && presetManager->hasPreset("Curve - Secondary")) {
-                auto preset = presetManager->getPreset("Curve - Secondary");
+            if (presetManager && presetManager->hasPreset(BC::Key::CurveAppearancePresets::curveSecondary)) {
+                auto preset = presetManager->getPreset(BC::Key::CurveAppearancePresets::curveSecondary);
                 p_curveAppearanceWidget->setCurrentAppearance(preset.appearance);
             }
         }
