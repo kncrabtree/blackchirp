@@ -24,6 +24,7 @@ private slots:
     void testParserRegistration();
     void testInvalidFile();
     void testAprintFormatVariations();
+    void testProblematicFixedColumnFormat();
 
 private:
     QString getTestDataPath(const QString &filename) const;
@@ -175,10 +176,10 @@ void XIAMParserTest::testParseInts2Format()
     QCOMPARE(catalogData.sourceProgram(), QString("XIAM"));
     QCOMPARE(catalogData.moleculeName(), QString("cis-MMA"));
     
-    // Check first transition
+    // Check first transition (frequency converted from GHz to MHz)
     TransitionData trans1 = catalogData.at(0);
-    QCOMPARE(trans1.frequency, 9.670897);
-    QCOMPARE(trans1.quantumNumbers, QString("2 2 0 - 1 1 1, S1 V1"));
+    QCOMPARE(trans1.frequency, 9670.897);
+    QCOMPARE(trans1.quantumNumbers, QString("2 2 0 - 1 1 1, S 1 V 1"));
     QVERIFY(trans1.additionalData.contains("quantumAssignment"));
     QCOMPARE(trans1.additionalData.value("quantumAssignment").toString(), QString("B 1 K 2 -1 t 5 2"));
 }
@@ -234,11 +235,12 @@ void XIAMParserTest::testIntensityCalculation()
     double hvEnergy = trans.additionalData.value("hvEnergy").toDouble();
     double statWeight = trans.additionalData.value("statisticalWeight").toDouble();
     
-    // For this test case, the calculated intensity should be more precise
-    double expectedIntensity = total / (population * hvEnergy * statWeight);
+    // With the new logic: intensity should be total (default) unless linestr, population, 
+    // and hvEnergy all have 2+ significant digits, then it should be linestr * statWeight * population * hvEnergy
     
-    // The parser should either use linestr or calculated intensity
-    QVERIFY(trans.intensity == linestr || qAbs(trans.intensity - expectedIntensity) < 1e-6);
+    // Test that intensity is either total or the calculated product
+    double calculatedProduct = linestr * statWeight * population * hvEnergy;
+    QVERIFY(qAbs(trans.intensity - total) < 1e-6 || qAbs(trans.intensity - calculatedProduct) < 1e-6);
 }
 
 void XIAMParserTest::testIncompleteGroups()
@@ -338,6 +340,71 @@ void XIAMParserTest::testAprintFormatVariations()
                 }
             }
         }
+    }
+}
+
+void XIAMParserTest::testProblematicFixedColumnFormat()
+{
+    // Test the problematic pred.xo file that uses fixed-column formatting
+    QString problematicFile = getTestDataPath("pred_ints3_problematic.xo");
+    
+    // First, verify the file exists (copied from bcfitting test data)
+    if (!QFile::exists(problematicFile)) {
+        QSKIP("Problematic test file not found - skipping fixed-column format test");
+        return;
+    }
+    
+    // Test that we can identify it as XIAM format
+    QVERIFY2(m_parser->canParse(problematicFile), 
+             "Parser should be able to identify this as XIAM format");
+    
+    // Test parsing
+    CatalogData catalogData = m_parser->parse(problematicFile);
+    
+    // The file should parse successfully and contain transitions
+    QVERIFY2(!catalogData.isEmpty(), 
+             "Parser should successfully extract transitions from fixed-column format");
+    
+    QCOMPARE(catalogData.sourceProgram(), QString("XIAM"));
+    QCOMPARE(catalogData.moleculeName(), QString("cyclotene"));
+    
+    
+    // Verify we get a reasonable number of transitions
+    // The file is large so it should have many transitions
+    QVERIFY2(catalogData.size() > 10, 
+             QString("Expected > 10 transitions, got %1").arg(catalogData.size()).toLocal8Bit());
+    
+    // Test a specific transition to verify correct parsing
+    // Look for a transition we know should be in the file
+    bool foundExpectedTransition = false;
+    for (int i = 0; i < catalogData.size(); ++i) {
+        TransitionData trans = catalogData.at(i);
+        
+        // Check for transition around 28028.253 MHz (28.028253 GHz converted to MHz)
+        if (qAbs(trans.frequency - 28028.253) < 0.001) {
+            foundExpectedTransition = true;
+            
+            // Verify it has the expected quantum numbers structure
+            QVERIFY(!trans.quantumNumbers.isEmpty());
+            QVERIFY(trans.intensity > 0);
+            
+            // Verify mode information is parsed correctly
+            QString mode = trans.additionalData.value("mode").toString();
+            QVERIFY(mode.contains("S 1"));
+            QVERIFY(mode.contains("V 1"));
+            QVERIFY(mode.contains("B 1"));
+            break;
+        }
+    }
+    
+    QVERIFY2(foundExpectedTransition, "Should find the expected transition at 28028.253 MHz");
+    
+    // Verify no rigid lines are included (they should be filtered out)
+    for (int i = 0; i < catalogData.size(); ++i) {
+        TransitionData trans = catalogData.at(i);
+        QString mode = trans.additionalData.value("mode").toString();
+        QVERIFY2(!mode.contains("rigid"), 
+                 QString("Found rigid line at index %1").arg(i).toLocal8Bit());
     }
 }
 

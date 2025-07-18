@@ -79,28 +79,12 @@ private:
     TransitionData parseInts2Line(const QString &line) const;
     
     /**
-     * @brief Parse transition lines in ints=3 format (grouped with splits)
-     * @param lines File content lines
-     * @param startIndex Starting line index for this group
-     * @param endIndex Reference to store end index of this group
-     * @return List of TransitionData for the group
-     */
-    QList<TransitionData> parseInts3Group(const QStringList &lines, int startIndex, int &endIndex) const;
-    
-    /**
-     * @brief Check if line represents start of a new transition group in ints=3
-     * @param line Line to check
-     * @return true if line starts new group (has full quantum numbers)
-     */
-    bool isInts3GroupStart(const QString &line) const;
-    
-    /**
      * @brief Parse an individual transition line in ints=3 format
      * @param line Input line
-     * @param referenceFreq Reference frequency for split calculation (0 if none)
+     * @param groupQuantumNumbers Quantum numbers from group start (for split lines)
      * @return TransitionData structure
      */
-    TransitionData parseInts3Line(const QString &line, double referenceFreq = 0.0) const;
+    TransitionData parseInts3Line(const QString &line, const QString &groupQuantumNumbers = QString()) const;
     
     /**
      * @brief Calculate optimal intensity considering XIAM's fixed decimal precision issues
