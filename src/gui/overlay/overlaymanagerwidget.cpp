@@ -815,7 +815,6 @@ void OverlayManagerWidget::onConfigureClicked(const QModelIndex &index)
 void OverlayManagerWidget::onOverlaySettingsChanged(std::shared_ptr<OverlayBase> overlay)
 {
     // Emit signal for real-time plot updates
-    qDebug() << "Emitting overlaymanagerwidget signal for: " << overlay->getLabel();
     emit overlayDataChanged(overlay);
     
     // Update the table model to reflect any changes
