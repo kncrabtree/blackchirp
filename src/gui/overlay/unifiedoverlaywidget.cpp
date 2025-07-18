@@ -14,6 +14,7 @@
 #include <data/storage/settingsstorage.h>
 #include <gui/plot/curveappearancepresetmanager.h>
 #include <gui/plot/blackchirpplotcurve.h>
+#include <data/experiment/overlaybase.h>
 
 UnifiedOverlayWidget::UnifiedOverlayWidget(const QString &settingsKey, Context context, QWidget *parent)
     : QWidget(parent),
@@ -104,7 +105,17 @@ void UnifiedOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overlay
     d_plotNames = plotNames;
     d_currentFt = currentFt;
     p_overlayStorage = overlayStorage;
+    
+    // Get all overlays from storage for validation, filtering out the current overlay
     d_existingOverlays.clear();
+    if (overlayStorage) {
+        auto allOverlays = overlayStorage->getAllOverlays();
+        for (const auto &existing : allOverlays) {
+            if (existing && existing != overlay) {
+                d_existingOverlays.append(existing);
+            }
+        }
+    }
     
     setupTypeSpecificWidget();
     
@@ -1051,6 +1062,20 @@ void UnifiedOverlayWidget::clearBackupState()
 {
     d_backupMetadata.clear();
     d_hasBackupState = false;
+}
+
+QString UnifiedOverlayWidget::getOriginalLabel() const
+{
+    if (!d_hasBackupState) {
+        return QString();
+    }
+    
+    auto it = d_backupMetadata.find(BC::Key::Overlay::oLabel);
+    if (it != d_backupMetadata.end()) {
+        return it->second.toString();
+    }
+    
+    return QString();
 }
 
 void UnifiedOverlayWidget::onLabelUpdateRequested(const QString &newLabel)

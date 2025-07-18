@@ -82,6 +82,7 @@ public:
     void backupOverlayState();
     void restoreOverlayState();
     void clearBackupState();
+    QString getOriginalLabel() const; // Get original label from backup metadata
     
     // Type-specific widget access
     OverlayTypeSpecificWidget* getTypeSpecificWidget() const { return p_typeSpecificWidget; }

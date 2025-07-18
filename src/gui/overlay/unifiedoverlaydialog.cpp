@@ -68,6 +68,7 @@ UnifiedOverlayDialog::UnifiedOverlayDialog(std::shared_ptr<OverlayBase> overlay,
       d_mode(Mode::Settings),
       d_overlayType(overlay ? overlay->type() : OverlayBase::BCExperiment),
       d_overlay(overlay),
+      d_overlayStorage(overlayStorage),
       d_dialogState(DialogState::Ready),
       d_operationProgress(0),
       d_queueSize(0),
@@ -143,11 +144,35 @@ void UnifiedOverlayDialog::accept()
             if (d_createdOverlay) {
                 QDialog::accept();
             } else {
+                // Unblock signals before showing error (dialog stays open)
+                if (p_widget) {
+                    p_widget->blockSignals(false);
+                }
                 QMessageBox::warning(this, "Creation Error", 
                     "Failed to create overlay from current settings");
             }
         }
     } else if (isSettingsMode()) {
+        // Check if overlay label has changed and handle renaming if needed
+        if (d_overlayStorage && p_widget) {
+            QString originalLabel = p_widget->getOriginalLabel();
+            QString currentLabel = d_overlay ? d_overlay->getLabel() : QString();
+            
+            if (!originalLabel.isEmpty() && !currentLabel.isEmpty() && originalLabel != currentLabel) {
+                if (!d_overlayStorage->renameOverlay(originalLabel, currentLabel)) {
+                    // Unblock signals before showing error and returning
+                    if (p_widget) {
+                        p_widget->blockSignals(false);
+                    }
+                    QMessageBox::warning(this, "Rename Failed", 
+                                        QString("Failed to rename overlay from '%1' to '%2'. "
+                                               "Please check that the new name is valid and not already in use.")
+                                               .arg(originalLabel, currentLabel));
+                    return; // Don't close dialog on rename failure
+                }
+            }
+        }
+        
         // Apply settings, potentially with background operations
         applySettingsAsync();
     }
@@ -200,6 +225,11 @@ void UnifiedOverlayDialog::reject()
     if (!d_currentOperationId.isEmpty()) {
         auto& manager = OverlayProcessManager::instance();
         manager.cancelOperation(d_currentOperationId);
+    }
+
+    // Ensure signals are unblocked before closing
+    if (p_widget) {
+        p_widget->blockSignals(false);
     }
 
     QDialog::reject();

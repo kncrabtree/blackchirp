@@ -143,6 +143,7 @@ private:
     OverlayBase::OverlayType d_overlayType;
     std::shared_ptr<OverlayBase> d_overlay; // Settings mode only
     std::shared_ptr<OverlayBase> d_createdOverlay; // Creation mode result
+    std::shared_ptr<OverlayStorage> d_overlayStorage; // Settings mode only
     
     // Dialog state management
     DialogState d_dialogState;
