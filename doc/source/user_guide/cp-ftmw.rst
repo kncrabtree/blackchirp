@@ -65,6 +65,7 @@ For Plot 1 and Plot 2, the segment, frame, and backup boxes allow for selection 
 * ``Segment``: For acqusition modes which involve multiple different hardware settings in a single experiment (e.g., LO scan, DR scan), each individual hardware setting is associated with a "Segment." The nomenclature comes from segmented CP-FTMW spectroscopy, which is implemented as an LO Scan in Blackchirp. By changing the segment box, the indicated plot would show the data associated with each individual LO tuning in such a scan.
 * ``Frame``: For "Multiple Record" acquisitions (see the `Digitizer Setup <experiment/digitizer_setup.html>`_ page for more detail), this box controls which individual record is displayed, indexed starting from 1. With a value of 0 (default), the box will display the word "Average" and Blackchirp will coaverage the individual records.
 * ``Backup``: For long acquisitions in which backups are enabled, the backup box will display the FID and FT associated with each backup checkpoint.
+* ``Differential``: If checked, the selected backup is subtracted from the current FID, allowing for viewing recent signal levels during long integrations.
 
 Peak Up Options
 ...............

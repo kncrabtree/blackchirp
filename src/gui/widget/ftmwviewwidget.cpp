@@ -285,6 +285,10 @@ void FtmwViewWidget::updateLiveFidList()
                     ps.fidList = fl;
                     process(key,fl,ps.frame);
                 }
+                else if(ui->plotToolBar->differential(key))
+                {
+                    updateFid(key);
+                }
             }
         }
         else

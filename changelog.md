@@ -1,3 +1,8 @@
+# July 18 2025
+
+- Added differential backup viewing. In this mode, the selected backup is subtracted from the current live FID to enable viewing more recent signal levels during a long average.
+
+
 # June 5 2024
 
 General updates:
