@@ -12,6 +12,7 @@
 #include <gui/widget/ftmwviewwidget.h>
 #include <gui/plot/curveappearancepresetmanager.h>
 #include <data/processing/overlayoperation.h>
+#include <data/processing/parsers/catalogparser.h>
 
 CatalogOverlayWidget::CatalogOverlayWidget(const Ft &currentFt, QWidget *parent)
     : OverlayTypeSpecificWidget(currentFt, parent), SettingsStorage(BC::Key::CatalogWidget::key),
@@ -239,11 +240,11 @@ bool CatalogOverlayWidget::validateSourceFile(QString &errorMessage)
     }
     
     // Try to parse the file
-    auto registry = CatalogParserRegistry::instance();
-    auto parser = registry->findParser(path);
+    auto registry = FileParserRegistry::instance();
+    auto parser = registry->findParserOfType<CatalogParser>(path);
     
     if (!parser) {
-        errorMessage = QString("No suitable parser found for file: %1").arg(path);
+        errorMessage = QString("No suitable catalog parser found for file: %1").arg(path);
         d_fileValid = false;
         return false;
     }
@@ -796,8 +797,8 @@ void CatalogOverlayWidget::loadCatalogFile(const QString &filePath)
         return;
     }
     
-    auto registry = CatalogParserRegistry::instance();
-    auto parser = registry->findParser(filePath);
+    auto registry = FileParserRegistry::instance();
+    auto parser = registry->findParserOfType<CatalogParser>(filePath);
     
     if (!parser) {
         return;

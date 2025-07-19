@@ -2,8 +2,8 @@
 #include <QTemporaryFile>
 #include <QDir>
 
-#include <src/data/experiment/xiamparser.h>
-#include <src/data/experiment/catalogparserregistry.h>
+#include <src/data/processing/parsers/xiamparser.h>
+#include <src/data/processing/parsers/fileparserregistry.h>
 
 class XIAMParserTest : public QObject
 {
@@ -263,12 +263,12 @@ void XIAMParserTest::testIncompleteGroups()
 
 void XIAMParserTest::testParserRegistration()
 {
-    CatalogParserRegistry *registry = CatalogParserRegistry::instance();
+    FileParserRegistry *registry = FileParserRegistry::instance();
     
     auto parser = std::make_unique<XIAMParser>();
     registry->registerParser(std::move(parser));
     
-    CatalogParser *foundParser = registry->findParser(getTestDataPath("test_ints2.xo"));
+    CatalogParser *foundParser = registry->findParserOfType<CatalogParser>(getTestDataPath("test_ints2.xo"));
     QVERIFY(foundParser != nullptr);
     QCOMPARE(foundParser->formatName(), QString("XIAM"));
     

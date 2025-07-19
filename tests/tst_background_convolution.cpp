@@ -8,9 +8,9 @@
 #include <src/data/processing/overlayprocessmanager.h>
 #include <src/data/processing/overlayoperation.h>
 #include <src/data/experiment/overlaytypes.h>
-#include <src/data/experiment/catalogparserregistry.h>
-#include <src/data/experiment/spcatparser.h>
-#include <src/data/experiment/xiamparser.h>
+#include <src/data/processing/parsers/fileparserregistry.h>
+#include <src/data/processing/parsers/spcatparser.h>
+#include <src/data/processing/parsers/xiamparser.h>
 
 /**
  * @brief Test suite for end-to-end background convolution execution

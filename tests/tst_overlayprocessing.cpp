@@ -19,9 +19,9 @@
 #include <src/data/analysis/ftworker.h>
 #include <src/data/analysis/ft.h>
 #include <src/data/experiment/catalogdata.h>
-#include <src/data/experiment/catalogparserregistry.h>
-#include <src/data/experiment/spcatparser.h>
-#include <src/data/experiment/xiamparser.h>
+#include <src/data/processing/parsers/fileparserregistry.h>
+#include <src/data/processing/parsers/spcatparser.h>
+#include <src/data/processing/parsers/xiamparser.h>
 
 // Storage and experiment data
 #include <src/data/storage/blackchirpcsv.h>

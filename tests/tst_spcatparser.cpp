@@ -2,8 +2,8 @@
 #include <QTemporaryFile>
 #include <QDir>
 
-#include <src/data/experiment/spcatparser.h>
-#include <src/data/experiment/catalogparserregistry.h>
+#include <src/data/processing/parsers/spcatparser.h>
+#include <src/data/processing/parsers/fileparserregistry.h>
 
 class SPCATParserTest : public QObject
 {
@@ -193,14 +193,14 @@ void SPCATParserTest::testParseC056519Sample()
 void SPCATParserTest::testParserRegistration()
 {
     // Test that SPCAT parser can be registered and found
-    CatalogParserRegistry *registry = CatalogParserRegistry::instance();
+    FileParserRegistry *registry = FileParserRegistry::instance();
     
     // Register our parser
     auto parser = std::make_unique<SPCATParser>();
     registry->registerParser(std::move(parser));
     
     // Verify it can be found
-    CatalogParser *foundParser = registry->findParser(getTestDataPath("c047527_sample.cat"));
+    CatalogParser *foundParser = registry->findParserOfType<CatalogParser>(getTestDataPath("c047527_sample.cat"));
     QVERIFY(foundParser != nullptr);
     QCOMPARE(foundParser->formatName(), QString("SPCAT"));
     

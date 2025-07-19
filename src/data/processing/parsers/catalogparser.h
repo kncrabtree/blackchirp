@@ -6,7 +6,7 @@
 #include <QVariantMap>
 #include <memory>
 #include "fileparser.h"
-#include "catalogdata.h"
+#include <data/experiment/catalogdata.h>
 
 /**
  * @brief Abstract base class for spectroscopic catalog parsers

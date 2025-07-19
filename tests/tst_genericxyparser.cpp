@@ -3,7 +3,7 @@
 #include <QStandardPaths>
 #include <QDir>
 
-#include "data/experiment/genericxyparser.h"
+#include "data/processing/parsers/genericxyparser.h"
 
 class GenericXYParserTest : public QObject
 {

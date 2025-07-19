@@ -1,30 +1,30 @@
-#include "catalogparserregistry.h"
+#include "fileparserregistry.h"
 #include <QDebug>
 
-CatalogParserRegistry* CatalogParserRegistry::s_instance = nullptr;
+FileParserRegistry* FileParserRegistry::s_instance = nullptr;
 
-CatalogParserRegistry::CatalogParserRegistry(QObject *parent)
+FileParserRegistry::FileParserRegistry(QObject *parent)
     : QObject(parent)
 {
 }
 
-CatalogParserRegistry::~CatalogParserRegistry() = default;
+FileParserRegistry::~FileParserRegistry() = default;
 
-CatalogParserRegistry* CatalogParserRegistry::instance()
+FileParserRegistry* FileParserRegistry::instance()
 {
     if (!s_instance) {
-        s_instance = new CatalogParserRegistry();
+        s_instance = new FileParserRegistry();
     }
     return s_instance;
 }
 
-void CatalogParserRegistry::cleanup()
+void FileParserRegistry::cleanup()
 {
     delete s_instance;
     s_instance = nullptr;
 }
 
-void CatalogParserRegistry::registerParser(std::unique_ptr<CatalogParser> parser)
+void FileParserRegistry::registerParser(std::unique_ptr<FileParser> parser)
 {
     if (!parser) {
         qWarning() << "Attempted to register null parser";
@@ -37,7 +37,7 @@ void CatalogParserRegistry::registerParser(std::unique_ptr<CatalogParser> parser
     emit parserRegistered(formatName);
 }
 
-CatalogParser* CatalogParserRegistry::findParser(const QString &filePath) const
+FileParser* FileParserRegistry::findParser(const QString &filePath) const
 {
     for (const auto &parser : d_parsers) {
         if (parser->canParse(filePath)) {
@@ -47,9 +47,9 @@ CatalogParser* CatalogParserRegistry::findParser(const QString &filePath) const
     return nullptr;
 }
 
-std::vector<CatalogParser*> CatalogParserRegistry::getAllParsers() const
+std::vector<FileParser*> FileParserRegistry::getAllParsers() const
 {
-    std::vector<CatalogParser*> parsers;
+    std::vector<FileParser*> parsers;
     parsers.reserve(d_parsers.size());
     
     for (const auto &parser : d_parsers) {
@@ -59,7 +59,7 @@ std::vector<CatalogParser*> CatalogParserRegistry::getAllParsers() const
     return parsers;
 }
 
-QStringList CatalogParserRegistry::supportedFormats() const
+QStringList FileParserRegistry::supportedFormats() const
 {
     QStringList formats;
     
@@ -70,7 +70,7 @@ QStringList CatalogParserRegistry::supportedFormats() const
     return formats;
 }
 
-QStringList CatalogParserRegistry::supportedExtensions() const
+QStringList FileParserRegistry::supportedExtensions() const
 {
     QStringList extensions;
     
@@ -83,7 +83,7 @@ QStringList CatalogParserRegistry::supportedExtensions() const
     return extensions;
 }
 
-QString CatalogParserRegistry::fileDialogFilter() const
+QString FileParserRegistry::fileDialogFilter() const
 {
     if (d_parsers.empty()) {
         return "All Files (*)";
@@ -112,7 +112,7 @@ QString CatalogParserRegistry::fileDialogFilter() const
     return filters.join(";;");
 }
 
-bool CatalogParserRegistry::canParseFile(const QString &filePath) const
+bool FileParserRegistry::canParseFile(const QString &filePath) const
 {
     return findParser(filePath) != nullptr;
 }

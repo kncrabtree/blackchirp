@@ -2,10 +2,10 @@
 #include <gui/mainwindow.h>
 #include <gui/dialog/bcsavepathdialog.h>
 #include <gui/plot/curveappearancepresetmanager.h>
-#include <data/experiment/catalogparserregistry.h>
-#include <data/experiment/spcatparser.h>
-#include <data/experiment/xiamparser.h>
-#include <data/experiment/genericxyparser.h>
+#include <data/processing/parsers/fileparserregistry.h>
+#include <data/processing/parsers/spcatparser.h>
+#include <data/processing/parsers/xiamparser.h>
+#include <data/processing/parsers/genericxyparser.h>
 
 #include <memory>
 
@@ -153,7 +153,7 @@ R"000(Next, you can configure the communication settings for the hardware connec
 #endif
 
     // Register catalog parsers
-    auto registry = CatalogParserRegistry::instance();
+    auto registry = FileParserRegistry::instance();
     registry->registerParser(std::make_unique<SPCATParser>());
     registry->registerParser(std::make_unique<XIAMParser>());
     registry->registerParser(std::make_unique<GenericXYParser>());
@@ -170,7 +170,7 @@ R"000(Next, you can configure the communication settings for the hardware connec
     int ret = a.exec();
     
     // Cleanup global instances before application shutdown
-    CatalogParserRegistry::cleanup();
+    FileParserRegistry::cleanup();
     CurveAppearancePresetManager::cleanup();
 
     return ret;

@@ -17,7 +17,7 @@
 
 #include <data/experiment/overlaytypes.h>
 #include <data/experiment/catalogdata.h>
-#include <data/experiment/catalogparserregistry.h>
+#include <data/processing/parsers/fileparserregistry.h>
 #include <data/storage/settingsstorage.h>
 #include <data/processing/overlayprocessmanager.h>
 #include "overlaytypespecificwidget.h"

@@ -1,7 +1,8 @@
 #include "overlayoperation.h"
 #include <data/experiment/overlaytypes.h>
 #include <data/storage/overlaystorage.h>
-#include <data/experiment/catalogparserregistry.h>
+#include <data/processing/parsers/fileparserregistry.h>
+#include <data/processing/parsers/catalogparser.h>
 
 #include <QDebug>
 #include <QFileInfo>
@@ -337,12 +338,12 @@ std::shared_ptr<OverlayBase> ParseCatalogOperation::execute()
         checkCancellation();
         updateProgress(50, "Finding appropriate parser...");
         
-        // Use the same logic as CatalogOverlayWidget::loadCatalogFile
-        auto registry = CatalogParserRegistry::instance();
-        auto parser = registry->findParser(d_filePath);
+        // Use type-safe parser lookup to ensure we get a CatalogParser
+        auto registry = FileParserRegistry::instance();
+        auto parser = registry->findParserOfType<CatalogParser>(d_filePath);
         
         if (!parser) {
-            throw std::runtime_error(QString("No parser found for catalog file: %1").arg(d_filePath).toStdString());
+            throw std::runtime_error(QString("No catalog parser found for file: %1").arg(d_filePath).toStdString());
         }
         
         checkCancellation();
