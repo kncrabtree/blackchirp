@@ -17,41 +17,68 @@ bool GenericXYParser::canParse(const QString &filePath) const
     if (!isFileReadable(filePath))
         return false;
     
-    // Check file extension first
-    if (!hasMatchingExtension(filePath, fileExtensions()))
+    // Read entire file to handle different line endings
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
         return false;
     
-    // Try to read sample lines and detect format
-    QStringList sampleLines = readSampleLines(filePath, 10);
-    if (sampleLines.isEmpty())
+    QByteArray data = file.readAll();
+    QString content = QString::fromUtf8(data);
+    
+    // Handle different line ending types
+    QStringList allLines;
+    if (content.contains("\r\n")) {
+        allLines = content.split("\r\n", Qt::KeepEmptyParts);
+    } else if (content.contains("\r")) {
+        allLines = content.split("\r", Qt::KeepEmptyParts);
+    } else {
+        allLines = content.split("\n", Qt::KeepEmptyParts);
+    }
+    
+    if (allLines.isEmpty())
         return false;
     
-    // Skip comment lines
+    // Get data lines from the tail (more reliable for detection)
     QStringList dataLines;
-    for (const QString &line : sampleLines) {
-        if (!isCommentLine(line) && !line.trimmed().isEmpty()) {
-            dataLines.append(line);
+    for (int i = allLines.size() - 1; i >= 0 && dataLines.size() < 50; --i) {
+        QString line = allLines[i].trimmed();
+        if (!line.isEmpty() && !isCommentLine(line)) {
+            dataLines.prepend(line); // Keep order for consistency
         }
     }
     
     if (dataLines.isEmpty())
         return false;
     
-    // Try to detect delimiter and parse at least one valid data point
-    QString delimiter = detectDelimiter(dataLines);
-    if (delimiter.isEmpty())
+    // Auto-detect delimiter from tail data
+    QString testDelimiter = detectDelimiter(dataLines);
+    if (testDelimiter.isEmpty())
         return false;
     
-    // Try to parse first data line
+    // Count valid numerical data points (need at least 2 for basic validation)
+    int validDataPoints = 0;
+    int minRequired = 2;
+    
     for (const QString &line : dataLines) {
-        QStringList parts = line.split(delimiter, Qt::KeepEmptyParts);
+        QStringList parts;
+        
+        // Handle greedy whitespace delimiter specially
+        if (testDelimiter == "\\s+") {
+            parts = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+        } else {
+            parts = line.split(testDelimiter, Qt::KeepEmptyParts);
+        }
+        
         if (parts.size() >= 2) {
-            // Try to parse as numbers
+            // Try to parse at least first two columns as numbers
             bool xOk, yOk;
-            parts[0].toDouble(&xOk);
-            parts[1].toDouble(&yOk);
+            parts[0].trimmed().toDouble(&xOk);
+            parts[1].trimmed().toDouble(&yOk);
             if (xOk && yOk) {
-                return true; // Found at least one valid data point
+                validDataPoints++;
+                if (validDataPoints >= minRequired) {
+                    return true; // Found enough valid data points
+                }
             }
         }
     }
@@ -84,18 +111,37 @@ GenericXYParser::ParseSettings GenericXYParser::autoDetectSettings(const QString
 {
     ParseSettings settings;
     
-    QStringList sampleLines = readSampleLines(filePath, 30);
-    if (sampleLines.isEmpty())
+    // Use same robust file reading as canParse method
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
         return settings;
     
-    // Detect header lines
-    settings.headerLines = detectHeaderLines(sampleLines);
+    QByteArray data = file.readAll();
+    QString content = QString::fromUtf8(data);
     
-    // Get data lines (skip headers)
+    // Handle different line ending types
+    QStringList allLines;
+    if (content.contains("\r\n")) {
+        allLines = content.split("\r\n", Qt::KeepEmptyParts);
+    } else if (content.contains("\r")) {
+        allLines = content.split("\r", Qt::KeepEmptyParts);
+    } else {
+        allLines = content.split("\n", Qt::KeepEmptyParts);
+    }
+    
+    if (allLines.isEmpty())
+        return settings;
+    
+    // Use first portion for header detection
+    QStringList headerSampleLines = allLines.mid(0, qMin(50, allLines.size()));
+    settings.headerLines = detectHeaderLines(headerSampleLines);
+    
+    // Get data lines from the tail (more reliable, same as canParse)
     QStringList dataLines;
-    for (int i = settings.headerLines; i < sampleLines.size(); ++i) {
-        if (!sampleLines[i].trimmed().isEmpty()) {
-            dataLines.append(sampleLines[i]);
+    for (int i = allLines.size() - 1; i >= 0 && dataLines.size() < 50; --i) {
+        QString line = allLines[i].trimmed();
+        if (!line.isEmpty() && !isCommentLine(line)) {
+            dataLines.prepend(line); // Keep order for consistency
         }
     }
     
@@ -105,15 +151,21 @@ GenericXYParser::ParseSettings GenericXYParser::autoDetectSettings(const QString
     // Detect delimiter
     settings.delimiter = detectDelimiter(dataLines);
     
-    // Check for column headers
+    // Check for column headers in first non-header line
     if (!dataLines.isEmpty()) {
-        settings.hasColumnHeaders = detectColumnHeaders(dataLines.first(), settings.delimiter);
+        QString firstDataLine = dataLines.first();
+        settings.hasColumnHeaders = detectColumnHeaders(firstDataLine, settings.delimiter);
         
         if (settings.hasColumnHeaders) {
-            settings.columnNames = parseColumnHeaders(dataLines.first(), settings.delimiter);
+            settings.columnNames = parseColumnHeaders(firstDataLine, settings.delimiter);
         } else {
             // Count columns from first data line
-            QStringList parts = dataLines.first().split(settings.delimiter, Qt::KeepEmptyParts);
+            QStringList parts;
+            if (settings.delimiter == "\\s+") {
+                parts = firstDataLine.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+            } else {
+                parts = firstDataLine.split(settings.delimiter, Qt::KeepEmptyParts);
+            }
             settings.columnNames = generateColumnNames(parts.size());
         }
     }
@@ -147,37 +199,41 @@ GenericXYParser::ParsePreview GenericXYParser::generatePreview(const QString &fi
         return preview;
     }
     
-    QTextStream stream(&file);
-    QStringList allLines;
-    int lineCount = 0;
-    const int maxPreviewLines = 50;
+    // Read entire file to handle different line endings (like canParse method)
+    QByteArray data = file.readAll();
+    QString content = QString::fromUtf8(data);
     
-    // Read file and collect sample lines
-    while (!stream.atEnd() && lineCount < 200) {
-        QString line = stream.readLine();
-        if (lineCount < maxPreviewLines) {
-            allLines.append(line);
-        }
-        lineCount++;
+    // Handle different line ending types
+    QStringList allFileLines;
+    if (content.contains("\r\n")) {
+        allFileLines = content.split("\r\n", Qt::KeepEmptyParts);
+    } else if (content.contains("\r")) {
+        allFileLines = content.split("\r", Qt::KeepEmptyParts);
+    } else {
+        allFileLines = content.split("\n", Qt::KeepEmptyParts);
     }
+    
+    // Take first 50 lines for preview
+    const int maxPreviewLines = 50;
+    QStringList allLines = allFileLines.mid(0, qMin(maxPreviewLines, allFileLines.size()));
+    int lineCount = allFileLines.size();
     
     preview.sampleLines = allLines;
     
     // Parse preview data
     QVector<QPointF> previewData;
-    int dataLineCount = 0;
     const int maxPreviewPoints = 100;
     
-    for (int i = preview.detectedSettings.headerLines; i < allLines.size() && dataLineCount < maxPreviewPoints; ++i) {
+    // Calculate start line: skip headers and column headers
+    int startLine = preview.detectedSettings.headerLines;
+    if (preview.detectedSettings.hasColumnHeaders) {
+        startLine++; // Skip the column header line too
+    }
+    
+    for (int i = startLine; i < allLines.size() && previewData.size() < maxPreviewPoints; ++i) {
         QString line = allLines[i].trimmed();
         if (line.isEmpty())
             continue;
-            
-        // Skip column header line if present
-        if (dataLineCount == 0 && preview.detectedSettings.hasColumnHeaders) {
-            dataLineCount++;
-            continue;
-        }
         
         QPointF point = parseDataLine(line, preview.detectedSettings.delimiter,
                                      preview.detectedSettings.xColumn,
@@ -185,7 +241,6 @@ GenericXYParser::ParsePreview GenericXYParser::generatePreview(const QString &fi
         if (!point.isNull()) {
             previewData.append(point);
         }
-        dataLineCount++;
     }
     
     preview.previewData = previewData;
@@ -205,6 +260,7 @@ GenericXYParser::ParsePreview GenericXYParser::generatePreview(const QString &fi
 GenericXYParser::ParsePreview GenericXYParser::generatePreview(const QString &filePath) const
 {
     ParseSettings defaultSettings;
+    defaultSettings.delimiter = ""; // Force auto-detection
     return generatePreview(filePath, defaultSettings);
 }
 
@@ -271,28 +327,61 @@ CatalogData GenericXYParser::parseWithSettings(const QString &filePath, const Pa
 
 QString GenericXYParser::detectDelimiter(const QStringList &lines) const
 {
-    QStringList candidates = {",", "\t", " ", ";"};
+    QStringList candidates = {",", "\t", " ", ";", "\\s+"};  // Added greedy whitespace
     QMap<QString, int> scores;
+    
+    // Get last 20 lines for tail-first analysis (more reliable)
+    QStringList analysisLines;
+    int startIdx = qMax(0, lines.size() - 20);
+    for (int i = startIdx; i < lines.size(); ++i) {
+        QString line = lines[i].trimmed();
+        if (!line.isEmpty() && !isCommentLine(line)) {
+            analysisLines.append(line);
+        }
+    }
+    
+    // Fall back to all lines if tail doesn't have enough data
+    if (analysisLines.size() < 3) {
+        for (const QString &line : lines) {
+            if (!line.trimmed().isEmpty() && !isCommentLine(line)) {
+                analysisLines.append(line);
+            }
+        }
+    }
     
     for (const QString &delimiter : candidates) {
         int totalColumns = 0;
         int validLines = 0;
+        int numericColumns = 0;
         
-        for (const QString &line : lines) {
-            if (line.trimmed().isEmpty() || isCommentLine(line))
-                continue;
-                
-            QStringList parts = line.split(delimiter, Qt::KeepEmptyParts);
+        for (const QString &line : analysisLines) {
+            QStringList parts;
+            
+            // Handle greedy whitespace delimiter specially
+            if (delimiter == "\\s+") {
+                parts = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+            } else {
+                parts = line.split(delimiter, Qt::KeepEmptyParts);
+            }
+            
             if (parts.size() >= 2) {
                 totalColumns += parts.size();
                 validLines++;
+                
+                // Count how many columns can be parsed as numbers
+                for (const QString &part : parts) {
+                    bool ok;
+                    part.trimmed().toDouble(&ok);
+                    if (ok) numericColumns++;
+                }
             }
         }
         
         if (validLines > 0) {
-            // Prefer delimiters that give consistent column counts
+            // Prefer delimiters that give consistent column counts AND more numeric data
             double avgColumns = double(totalColumns) / validLines;
-            scores[delimiter] = validLines * 100 + int(avgColumns * 10);
+            double numericRatio = double(numericColumns) / totalColumns;
+            scores[delimiter] = validLines * 100 + int(avgColumns * 10) + int(numericRatio * 50);
         }
     }
     
@@ -309,13 +398,16 @@ int GenericXYParser::detectHeaderLines(const QStringList &lines) const
     int headerCount = 0;
     
     for (const QString &line : lines) {
-        if (line.trimmed().isEmpty())
+        // Count blank lines as potential headers
+        if (line.trimmed().isEmpty()) {
+            headerCount++;
             continue;
+        }
             
         if (isCommentLine(line)) {
             headerCount++;
         } else {
-            break; // First non-comment line found
+            break; // First non-comment, non-blank line found
         }
     }
     
@@ -327,7 +419,13 @@ bool GenericXYParser::detectColumnHeaders(const QString &line, const QString &de
     if (line.trimmed().isEmpty())
         return false;
     
-    QStringList parts = line.split(delimiter, Qt::KeepEmptyParts);
+    QStringList parts;
+    if (delimiter == "\\s+") {
+        parts = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+    } else {
+        parts = line.split(delimiter, Qt::KeepEmptyParts);
+    }
+    
     if (parts.size() < 2)
         return false;
     
@@ -346,15 +444,15 @@ bool GenericXYParser::detectColumnHeaders(const QString &line, const QString &de
         if (isNumber) {
             numericColumns++;
         } else {
-            // Check if it looks like a text header
-            if (part.length() > 1 && part.contains(QRegularExpression("[a-zA-Z]"))) {
+            // Check if it looks like a text header (any alphabetic characters)
+            if (part.contains(QRegularExpression("[a-zA-Z]"))) {
                 textColumns++;
             }
         }
     }
     
-    // Consider it headers if more text than numbers
-    return textColumns > numericColumns;
+    // Consider it headers if ANY text columns found (more lenient)
+    return textColumns > 0;
 }
 
 QStringList GenericXYParser::generateColumnNames(int numColumns) const
@@ -368,7 +466,13 @@ QStringList GenericXYParser::generateColumnNames(int numColumns) const
 
 QStringList GenericXYParser::parseColumnHeaders(const QString &line, const QString &delimiter) const
 {
-    QStringList parts = line.split(delimiter, Qt::KeepEmptyParts);
+    QStringList parts;
+    if (delimiter == "\\s+") {
+        parts = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+    } else {
+        parts = line.split(delimiter, Qt::KeepEmptyParts);
+    }
+    
     QStringList cleanNames;
     
     for (int i = 0; i < parts.size(); ++i) {
@@ -387,7 +491,12 @@ QPointF GenericXYParser::parseDataLine(const QString &line, const QString &delim
     if (line.trimmed().isEmpty() || isCommentLine(line))
         return QPointF();
     
-    QStringList parts = line.split(delimiter, Qt::KeepEmptyParts);
+    QStringList parts;
+    if (delimiter == "\\s+") {
+        parts = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+    } else {
+        parts = line.split(delimiter, Qt::KeepEmptyParts);
+    }
     
     if (xCol >= parts.size() || yCol >= parts.size())
         return QPointF();
@@ -427,12 +536,25 @@ QStringList GenericXYParser::readSampleLines(const QString &filePath, int maxLin
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
         return lines;
     
-    QTextStream stream(&file);
-    int lineCount = 0;
+    // Read entire file to handle both CR and LF line endings
+    QByteArray data = file.readAll();
+    QString content = QString::fromUtf8(data);
     
-    while (!stream.atEnd() && lineCount < maxLines) {
-        lines.append(stream.readLine());
-        lineCount++;
+    // Handle different line ending types
+    if (content.contains("\r\n")) {
+        // Windows CRLF
+        lines = content.split("\r\n", Qt::KeepEmptyParts);
+    } else if (content.contains("\r")) {
+        // Mac CR (like Od_230602 file)
+        lines = content.split("\r", Qt::KeepEmptyParts);
+    } else {
+        // Unix LF
+        lines = content.split("\n", Qt::KeepEmptyParts);
+    }
+    
+    // Limit to requested number of lines
+    if (lines.size() > maxLines) {
+        lines = lines.mid(0, maxLines);
     }
     
     return lines;

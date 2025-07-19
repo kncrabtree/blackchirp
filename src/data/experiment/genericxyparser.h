@@ -50,6 +50,12 @@ public:
     ParsePreview generatePreview(const QString &filePath, const ParseSettings &settings) const;
     ParsePreview generatePreview(const QString &filePath) const; // Uses auto-detected settings
     CatalogData parseWithSettings(const QString &filePath, const ParseSettings &settings) const;
+    
+    // Public test access methods
+    QString detectDelimiterPublic(const QStringList &lines) const { return detectDelimiter(lines); }
+    int detectHeaderLinesPublic(const QStringList &lines) const { return detectHeaderLines(lines); }
+    bool detectColumnHeadersPublic(const QString &line, const QString &delimiter) const { return detectColumnHeaders(line, delimiter); }
+    QStringList readSampleLinesPublic(const QString &filePath, int maxLines = 20) const { return readSampleLines(filePath, maxLines); }
 
 private:
     /**

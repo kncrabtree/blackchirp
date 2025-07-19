@@ -59,6 +59,9 @@ add_test(NAME tst_spcatparser COMMAND tst_spcatparser)
 add_executable(tst_xiamparser tests/tst_xiamparser.cpp src/data/experiment/xiamparser.cpp src/data/experiment/catalogdata.cpp src/data/experiment/catalogparser.cpp src/data/experiment/catalogparserregistry.cpp src/data/storage/settingsstorage.cpp)
 add_test(NAME tst_xiamparser COMMAND tst_xiamparser)
 
+add_executable(tst_genericxyparser tests/tst_genericxyparser.cpp src/data/experiment/genericxyparser.cpp src/data/experiment/catalogdata.cpp src/data/experiment/catalogparser.cpp src/data/experiment/catalogparserregistry.cpp src/data/storage/settingsstorage.cpp)
+add_test(NAME tst_genericxyparser COMMAND tst_genericxyparser)
+
 # Overlay processing architecture tests
 add_executable(tst_overlayprocessing tests/tst_overlayprocessing.cpp 
     src/gui/overlay/overlaytypespecificwidget.cpp
@@ -133,6 +136,7 @@ target_link_libraries(tst_headerstoragetest PRIVATE Qt6::Gui Qt6::Test)
 target_link_libraries(tst_blackchirpcsvtest PRIVATE Qt6::Gui Qt6::Test)
 target_link_libraries(tst_spcatparser PRIVATE Qt6::Gui Qt6::Test)
 target_link_libraries(tst_xiamparser PRIVATE Qt6::Gui Qt6::Test)
+target_link_libraries(tst_genericxyparser PRIVATE Qt6::Gui Qt6::Test)
 target_link_libraries(tst_overlayprocessing PRIVATE Qt6::Gui Qt6::Test Qt6::Widgets)
 target_link_libraries(tst_unifiedoverlaydialog PRIVATE Qt6::Gui Qt6::Test Qt6::Widgets)
 target_link_libraries(tst_overlayoperations PRIVATE Qt6::Gui Qt6::Test Qt6::Widgets)
@@ -143,6 +147,7 @@ add_version_definitions(tst_headerstoragetest)
 add_version_definitions(tst_blackchirpcsvtest)
 add_version_definitions(tst_spcatparser)
 add_version_definitions(tst_xiamparser)
+add_version_definitions(tst_genericxyparser)
 add_version_definitions(tst_overlayprocessing)
 add_version_definitions(tst_unifiedoverlaydialog)
 add_version_definitions(tst_overlayoperations)
