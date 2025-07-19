@@ -555,8 +555,10 @@ int GenericXYParser::detectHeaderLinesUsingDelimiter() const
     int headerCount = 0;
     bool prevLineMaybeColHeaders = false;
     
+    
     for (const QString &line : d_cachedAnalysis.allLines) {
         QString trimmed = line.trimmed();
+        
         
         // Count blank lines as headers
         if (trimmed.isEmpty()) {
@@ -688,8 +690,12 @@ bool GenericXYParser::detectColumnHeaders(const QString &line, const QString &de
         }
     }
     
-    // Consider it headers if ANY text columns found (more lenient)
-    return textColumns > 0;
+    // Use cached expected numeric columns to determine if this is data or headers
+    // If the line has the expected number of numeric columns, it's data, not headers
+    int expectedNumeric = d_cachedAnalysis.expectedNumericColumns;
+    if (expectedNumeric < 2) expectedNumeric = 2; // Fallback minimum
+    
+    return numericColumns < expectedNumeric;
 }
 
 QStringList GenericXYParser::generateColumnNames(int numColumns) const
