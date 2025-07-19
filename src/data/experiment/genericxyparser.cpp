@@ -12,71 +12,204 @@ GenericXYParser::GenericXYParser()
 {
 }
 
-bool GenericXYParser::canParse(const QString &filePath) const
+bool GenericXYParser::analyzeFile(const QString &filePath, const QVariantMap &hints) const
 {
     if (!isFileReadable(filePath))
         return false;
     
+    // Check file modification time for cache validation
+    QFileInfo fileInfo(filePath);
+    QDateTime currentModified = fileInfo.lastModified();
+    
+    // Check if we have valid cached analysis for this file
+    if (d_cachedAnalysis.isValid && 
+        d_cachedAnalysis.filePath == filePath && 
+        d_cachedAnalysis.lastModified == currentModified) {
+        return true; // Analysis already done and cached
+    }
+    
+    // Reset cache
+    d_cachedAnalysis = FileAnalysis();
+    d_cachedAnalysis.filePath = filePath;
+    d_cachedAnalysis.lastModified = currentModified;
+    
     // Read entire file to handle different line endings
     QFile file(filePath);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    if (!file.open(QIODevice::ReadOnly))
         return false;
     
     QByteArray data = file.readAll();
     QString content = QString::fromUtf8(data);
     
     // Handle different line ending types
-    QStringList allLines;
     if (content.contains("\r\n")) {
-        allLines = content.split("\r\n", Qt::KeepEmptyParts);
+        d_cachedAnalysis.allLines = content.split("\r\n", Qt::KeepEmptyParts);
     } else if (content.contains("\r")) {
-        allLines = content.split("\r", Qt::KeepEmptyParts);
+        d_cachedAnalysis.allLines = content.split("\r", Qt::KeepEmptyParts);
     } else {
-        allLines = content.split("\n", Qt::KeepEmptyParts);
+        d_cachedAnalysis.allLines = content.split("\n", Qt::KeepEmptyParts);
     }
     
-    if (allLines.isEmpty())
+    if (d_cachedAnalysis.allLines.isEmpty())
         return false;
     
     // Get data lines from the tail (more reliable for detection)
-    QStringList dataLines;
-    for (int i = allLines.size() - 1; i >= 0 && dataLines.size() < 50; --i) {
-        QString line = allLines[i].trimmed();
-        if (!line.isEmpty() && !isCommentLine(line)) {
-            dataLines.prepend(line); // Keep order for consistency
+    for (int i = d_cachedAnalysis.allLines.size() - 1; i >= 0 && d_cachedAnalysis.dataLines.size() < 50; --i) {
+        QString line = d_cachedAnalysis.allLines[i].trimmed();
+        
+        // Stop if we hit a blank line and already have some data lines (separator between header and data)
+        if (line.isEmpty()) {
+            if (!d_cachedAnalysis.dataLines.isEmpty()) {
+                break;
+            }
+            continue; // Skip blank lines if we haven't found data yet
         }
+        
+        // Stop if we hit a comment line and already have data lines (end of data section)
+        if (isCommentLine(line)) {
+            if (!d_cachedAnalysis.dataLines.isEmpty()) {
+                break;
+            }
+            continue; // Skip comment lines if we haven't found data yet
+        }
+        
+        // Check if line might be a single-number header by testing if entire line is just one number
+        bool isSingleNumber = false;
+        line.toDouble(&isSingleNumber);
+        
+        if (isSingleNumber) {
+            continue; // Skip single-number headers (like atom counts)
+        }
+        
+        // Collect any line that has multiple parts (could be data or column headers)
+        // We'll sort out column headers later in delimiter detection
+        
+        d_cachedAnalysis.dataLines.prepend(line); // Keep order for consistency
+    }
+    if (d_cachedAnalysis.dataLines.isEmpty())
+        return false;
+    
+    // Apply hints if provided
+    if (hints.contains("delimiter")) {
+        d_cachedAnalysis.settings.delimiter = hints["delimiter"].toString();
+    } else {
+        // Auto-detect delimiter from tail data
+        d_cachedAnalysis.settings.delimiter = detectDelimiter(d_cachedAnalysis.dataLines);
     }
     
-    if (dataLines.isEmpty())
+    // Calculate expected numeric columns using the determined delimiter
+    calculateExpectedNumericColumns();
+    
+    if (d_cachedAnalysis.settings.delimiter.isEmpty())
         return false;
     
-    // Auto-detect delimiter from tail data
-    QString testDelimiter = detectDelimiter(dataLines);
-    if (testDelimiter.isEmpty())
-        return false;
+    // Improved header detection using cached expected column count
+    d_cachedAnalysis.settings.headerLines = detectHeaderLinesUsingDelimiter();
     
-    // Count valid numerical data points (need at least 2 for basic validation)
+    // Check for column headers and generate column names
+    // Find the line immediately after header lines for column header detection
+    QString candidateHeaderLine;
+    if (d_cachedAnalysis.settings.headerLines < d_cachedAnalysis.allLines.size()) {
+        candidateHeaderLine = d_cachedAnalysis.allLines[d_cachedAnalysis.settings.headerLines].trimmed();
+    }
+    
+    if (!candidateHeaderLine.isEmpty()) {
+        d_cachedAnalysis.settings.hasColumnHeaders = detectColumnHeaders(candidateHeaderLine, d_cachedAnalysis.settings.delimiter);
+        
+        if (d_cachedAnalysis.settings.hasColumnHeaders) {
+            d_cachedAnalysis.settings.columnNames = parseColumnHeaders(candidateHeaderLine, d_cachedAnalysis.settings.delimiter);
+        } else {
+            // Count columns from candidate line (which is first data line)
+            QStringList parts;
+            if (d_cachedAnalysis.settings.delimiter == "\\s+") {
+                parts = candidateHeaderLine.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+            } else {
+                parts = candidateHeaderLine.split(d_cachedAnalysis.settings.delimiter, Qt::KeepEmptyParts);
+            }
+            d_cachedAnalysis.settings.columnNames = generateColumnNames(parts.size());
+        }
+    } else if (!d_cachedAnalysis.dataLines.isEmpty()) {
+        // Fallback to using tail sample if we can't find the post-header line
+        QString fallbackLine = d_cachedAnalysis.dataLines.first();
+        QStringList parts;
+        if (d_cachedAnalysis.settings.delimiter == "\\s+") {
+            parts = fallbackLine.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+        } else {
+            parts = fallbackLine.split(d_cachedAnalysis.settings.delimiter, Qt::KeepEmptyParts);
+        }
+        d_cachedAnalysis.settings.columnNames = generateColumnNames(parts.size());
+        d_cachedAnalysis.settings.hasColumnHeaders = false;
+    }
+    
+    // Smart column assignments - find first two numeric columns
+    d_cachedAnalysis.settings.xColumn = 0;
+    d_cachedAnalysis.settings.yColumn = 1;
+    
+    // If we have sample data, find the first two numeric columns
+    if (!d_cachedAnalysis.dataLines.isEmpty()) {
+        QString sampleLine = d_cachedAnalysis.dataLines.first();
+        QStringList parts;
+        if (d_cachedAnalysis.settings.delimiter == "\\s+") {
+            parts = sampleLine.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+        } else {
+            parts = sampleLine.split(d_cachedAnalysis.settings.delimiter, Qt::KeepEmptyParts);
+        }
+        
+        QList<int> numericColumns;
+        for (int i = 0; i < parts.size(); ++i) {
+            QString trimmed = parts[i].trimmed();
+            if (!trimmed.isEmpty()) {
+                bool ok;
+                trimmed.toDouble(&ok);
+                if (ok) {
+                    numericColumns.append(i);
+                    if (numericColumns.size() >= 2) break; // Found first two numeric columns
+                }
+            }
+        }
+        
+        // Use first two numeric columns if found
+        if (numericColumns.size() >= 2) {
+            d_cachedAnalysis.settings.xColumn = numericColumns[0];
+            d_cachedAnalysis.settings.yColumn = numericColumns[1];
+        } else if (numericColumns.size() == 1) {
+            // Only one numeric column found, use it as Y and hope X is convertible
+            d_cachedAnalysis.settings.yColumn = numericColumns[0];
+        }
+        // else: fallback to default 0,1
+    }
+    
+    // Validate by counting valid numerical data points
     int validDataPoints = 0;
     int minRequired = 2;
     
-    for (const QString &line : dataLines) {
+    for (const QString &line : d_cachedAnalysis.dataLines) {
         QStringList parts;
         
         // Handle greedy whitespace delimiter specially
-        if (testDelimiter == "\\s+") {
+        if (d_cachedAnalysis.settings.delimiter == "\\s+") {
             parts = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
         } else {
-            parts = line.split(testDelimiter, Qt::KeepEmptyParts);
+            parts = line.split(d_cachedAnalysis.settings.delimiter, Qt::KeepEmptyParts);
         }
         
         if (parts.size() >= 2) {
-            // Try to parse at least first two columns as numbers
-            bool xOk, yOk;
-            parts[0].trimmed().toDouble(&xOk);
-            parts[1].trimmed().toDouble(&yOk);
-            if (xOk && yOk) {
+            // Count how many columns can be parsed as numbers
+            int numericCols = 0;
+            for (const QString &part : parts) {
+                QString trimmed = part.trimmed();
+                if (!trimmed.isEmpty()) {  // Don't treat empty strings as numbers
+                    bool ok;
+                    trimmed.toDouble(&ok);
+                    if (ok) numericCols++;
+                }
+            }
+            
+            // Require at least 2 numeric columns (for X,Y data)
+            if (numericCols >= 2) {
                 validDataPoints++;
                 if (validDataPoints >= minRequired) {
+                    d_cachedAnalysis.isValid = true;
                     return true; // Found enough valid data points
                 }
             }
@@ -86,10 +219,20 @@ bool GenericXYParser::canParse(const QString &filePath) const
     return false;
 }
 
-CatalogData GenericXYParser::parse(const QString &filePath) const
+bool GenericXYParser::canParse(const QString &filePath, const QVariantMap &hints) const
 {
-    ParseSettings settings = autoDetectSettings(filePath);
-    return parseWithSettings(filePath, settings);
+    return analyzeFile(filePath, hints);
+}
+
+GenericXYData GenericXYParser::parse(const QString &filePath, const QVariantMap &hints) const
+{
+    if (!analyzeFile(filePath, hints)) {
+        GenericXYData errorData;
+        errorData.setErrorMessage(QString("Cannot parse file: %1").arg(filePath));
+        return errorData;
+    }
+    
+    return parseWithSettings(filePath, d_cachedAnalysis.settings);
 }
 
 QString GenericXYParser::formatName() const
@@ -109,72 +252,10 @@ QStringList GenericXYParser::fileExtensions() const
 
 GenericXYParser::ParseSettings GenericXYParser::autoDetectSettings(const QString &filePath) const
 {
-    ParseSettings settings;
-    
-    // Use same robust file reading as canParse method
-    QFile file(filePath);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return settings;
-    
-    QByteArray data = file.readAll();
-    QString content = QString::fromUtf8(data);
-    
-    // Handle different line ending types
-    QStringList allLines;
-    if (content.contains("\r\n")) {
-        allLines = content.split("\r\n", Qt::KeepEmptyParts);
-    } else if (content.contains("\r")) {
-        allLines = content.split("\r", Qt::KeepEmptyParts);
-    } else {
-        allLines = content.split("\n", Qt::KeepEmptyParts);
+    if (analyzeFile(filePath)) {
+        return d_cachedAnalysis.settings;
     }
-    
-    if (allLines.isEmpty())
-        return settings;
-    
-    // Use first portion for header detection
-    QStringList headerSampleLines = allLines.mid(0, qMin(50, allLines.size()));
-    settings.headerLines = detectHeaderLines(headerSampleLines);
-    
-    // Get data lines from the tail (more reliable, same as canParse)
-    QStringList dataLines;
-    for (int i = allLines.size() - 1; i >= 0 && dataLines.size() < 50; --i) {
-        QString line = allLines[i].trimmed();
-        if (!line.isEmpty() && !isCommentLine(line)) {
-            dataLines.prepend(line); // Keep order for consistency
-        }
-    }
-    
-    if (dataLines.isEmpty())
-        return settings;
-    
-    // Detect delimiter
-    settings.delimiter = detectDelimiter(dataLines);
-    
-    // Check for column headers in first non-header line
-    if (!dataLines.isEmpty()) {
-        QString firstDataLine = dataLines.first();
-        settings.hasColumnHeaders = detectColumnHeaders(firstDataLine, settings.delimiter);
-        
-        if (settings.hasColumnHeaders) {
-            settings.columnNames = parseColumnHeaders(firstDataLine, settings.delimiter);
-        } else {
-            // Count columns from first data line
-            QStringList parts;
-            if (settings.delimiter == "\\s+") {
-                parts = firstDataLine.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
-            } else {
-                parts = firstDataLine.split(settings.delimiter, Qt::KeepEmptyParts);
-            }
-            settings.columnNames = generateColumnNames(parts.size());
-        }
-    }
-    
-    // Default to first two columns
-    settings.xColumn = 0;
-    settings.yColumn = qMin(1, settings.columnNames.size() - 1);
-    
-    return settings;
+    return ParseSettings(); // Return default settings if analysis fails
 }
 
 GenericXYParser::ParsePreview GenericXYParser::generatePreview(const QString &filePath, const ParseSettings &settings) const
@@ -183,7 +264,11 @@ GenericXYParser::ParsePreview GenericXYParser::generatePreview(const QString &fi
     
     // Use provided settings if delimiter is specified, otherwise auto-detect
     if (settings.delimiter.isEmpty()) {
-        preview.detectedSettings = autoDetectSettings(filePath);
+        if (!analyzeFile(filePath)) {
+            preview.errorMessage = "Cannot analyze file: " + filePath;
+            return preview;
+        }
+        preview.detectedSettings = d_cachedAnalysis.settings;
     } else {
         preview.detectedSettings = settings;
     }
@@ -193,24 +278,29 @@ GenericXYParser::ParsePreview GenericXYParser::generatePreview(const QString &fi
         return preview;
     }
     
-    QFile file(filePath);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        preview.errorMessage = "Cannot open file: " + filePath;
-        return preview;
-    }
-    
-    // Read entire file to handle different line endings (like canParse method)
-    QByteArray data = file.readAll();
-    QString content = QString::fromUtf8(data);
-    
-    // Handle different line ending types
+    // Use cached file data if available
     QStringList allFileLines;
-    if (content.contains("\r\n")) {
-        allFileLines = content.split("\r\n", Qt::KeepEmptyParts);
-    } else if (content.contains("\r")) {
-        allFileLines = content.split("\r", Qt::KeepEmptyParts);
+    if (d_cachedAnalysis.isValid && d_cachedAnalysis.filePath == filePath) {
+        allFileLines = d_cachedAnalysis.allLines;
     } else {
-        allFileLines = content.split("\n", Qt::KeepEmptyParts);
+        // Read file for preview
+        QFile file(filePath);
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            preview.errorMessage = "Cannot open file: " + filePath;
+            return preview;
+        }
+        
+        QByteArray data = file.readAll();
+        QString content = QString::fromUtf8(data);
+        
+        // Handle different line ending types
+        if (content.contains("\r\n")) {
+            allFileLines = content.split("\r\n", Qt::KeepEmptyParts);
+        } else if (content.contains("\r")) {
+            allFileLines = content.split("\r", Qt::KeepEmptyParts);
+        } else {
+            allFileLines = content.split("\n", Qt::KeepEmptyParts);
+        }
     }
     
     // Take first 50 lines for preview
@@ -264,63 +354,78 @@ GenericXYParser::ParsePreview GenericXYParser::generatePreview(const QString &fi
     return generatePreview(filePath, defaultSettings);
 }
 
-CatalogData GenericXYParser::parseWithSettings(const QString &filePath, const ParseSettings &settings) const
+GenericXYData GenericXYParser::parseWithSettings(const QString &filePath, const ParseSettings &settings) const
 {
-    CatalogData data;
+    GenericXYData data;
     
     if (!isFileReadable(filePath)) {
-        throw std::runtime_error("Cannot read file: " + filePath.toStdString());
+        data.setErrorMessage(QString("Cannot read file: %1").arg(filePath));
+        return data;
     }
     
-    QFile file(filePath);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        throw std::runtime_error("Cannot open file: " + filePath.toStdString());
+    // Use cached lines if available and up-to-date
+    QStringList allLines;
+    QFileInfo fileInfo(filePath);
+    QDateTime currentModified = fileInfo.lastModified();
+    
+    if (d_cachedAnalysis.isValid && 
+        d_cachedAnalysis.filePath == filePath && 
+        d_cachedAnalysis.lastModified == currentModified) {
+        // Use cached file contents
+        allLines = d_cachedAnalysis.allLines;
+    } else {
+        // Read file contents
+        QFile file(filePath);
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            data.setErrorMessage(QString("Cannot open file: %1").arg(filePath));
+            return data;
+        }
+        
+        QByteArray fileData = file.readAll();
+        QString content = QString::fromUtf8(fileData);
+        
+        // Handle different line ending types
+        if (content.contains("\r\n")) {
+            allLines = content.split("\r\n", Qt::KeepEmptyParts);
+        } else if (content.contains("\r")) {
+            allLines = content.split("\r", Qt::KeepEmptyParts);
+        } else {
+            allLines = content.split("\n", Qt::KeepEmptyParts);
+        }
     }
     
-    QTextStream stream(&file);
-    QVector<TransitionData> transitions;
-    
-    // Skip header lines
-    for (int i = 0; i < settings.headerLines && !stream.atEnd(); ++i) {
-        stream.readLine();
-    }
-    
-    // Skip column header line if present
-    if (settings.hasColumnHeaders && !stream.atEnd()) {
-        stream.readLine();
+    // Calculate start line: skip headers and column headers
+    int startLine = settings.headerLines;
+    if (settings.hasColumnHeaders) {
+        startLine++; // Skip the column header line too
     }
     
     // Parse data lines
-    while (!stream.atEnd()) {
-        QString line = stream.readLine().trimmed();
+    for (int i = startLine; i < allLines.size(); ++i) {
+        QString line = allLines[i].trimmed();
         if (line.isEmpty())
             continue;
             
         QPointF point = parseDataLine(line, settings.delimiter, settings.xColumn, settings.yColumn);
         if (!point.isNull()) {
-            TransitionData trans;
-            trans.frequency = point.x();
-            trans.intensity = point.y();
-            trans.quantumNumbers = QString("X=%1 Y=%2").arg(point.x()).arg(point.y());
-            transitions.append(trans);
+            data.addDataPoint(point);
         }
     }
     
-    if (transitions.isEmpty()) {
-        throw std::runtime_error("No valid data points found in file");
+    if (data.isEmpty()) {
+        data.setErrorMessage("No valid data points found in file");
+        return data;
     }
     
-    data.setTransitions(transitions);
-    data.setSourceProgram("GenericXY");
-    
-    // Try to extract meaningful name from filename
-    QFileInfo fileInfo(filePath);
-    QString baseName = fileInfo.baseName();
-    if (!baseName.isEmpty()) {
-        data.setMoleculeName(baseName);
-    } else {
-        data.setMoleculeName("GenericXY Data");
-    }
+    // Set metadata
+    data.setFileName(fileInfo.fileName());
+    data.setFilePath(filePath);
+    data.setDelimiter(settings.delimiter);
+    data.setHeaderLines(settings.headerLines);
+    data.setHasColumnHeaders(settings.hasColumnHeaders);
+    data.setColumnNames(settings.columnNames);
+    data.setXColumn(settings.xColumn);
+    data.setYColumn(settings.yColumn);
     
     return data;
 }
@@ -330,9 +435,10 @@ QString GenericXYParser::detectDelimiter(const QStringList &lines) const
     QStringList candidates = {",", "\t", " ", ";", "\\s+"};  // Added greedy whitespace
     QMap<QString, int> scores;
     
-    // Get last 20 lines for tail-first analysis (more reliable)
+    // Get lines for analysis, skipping first line which might be column headers
     QStringList analysisLines;
-    int startIdx = qMax(0, lines.size() - 20);
+    int startIdx = (lines.size() > 1) ? 1 : 0; // Skip first line if we have more than one
+    
     for (int i = startIdx; i < lines.size(); ++i) {
         QString line = lines[i].trimmed();
         if (!line.isEmpty() && !isCommentLine(line)) {
@@ -340,8 +446,9 @@ QString GenericXYParser::detectDelimiter(const QStringList &lines) const
         }
     }
     
-    // Fall back to all lines if tail doesn't have enough data
-    if (analysisLines.size() < 3) {
+    // If we don't have enough lines after skipping first, include all lines
+    if (analysisLines.size() < 2) {
+        analysisLines.clear();
         for (const QString &line : lines) {
             if (!line.trimmed().isEmpty() && !isCommentLine(line)) {
                 analysisLines.append(line);
@@ -370,18 +477,24 @@ QString GenericXYParser::detectDelimiter(const QStringList &lines) const
                 
                 // Count how many columns can be parsed as numbers
                 for (const QString &part : parts) {
-                    bool ok;
-                    part.trimmed().toDouble(&ok);
-                    if (ok) numericColumns++;
+                    QString trimmed = part.trimmed();
+                    if (!trimmed.isEmpty()) {  // Don't treat empty strings as numbers
+                        bool ok;
+                        trimmed.toDouble(&ok);
+                        if (ok) numericColumns++;
+                    }
                 }
             }
         }
         
         if (validLines > 0) {
-            // Prefer delimiters that give consistent column counts AND more numeric data
+            // Prefer delimiters that give highest percentage of numeric columns (quality over quantity)
             double avgColumns = double(totalColumns) / validLines;
             double numericRatio = double(numericColumns) / totalColumns;
-            scores[delimiter] = validLines * 100 + int(avgColumns * 10) + int(numericRatio * 50);
+            
+            // Weight numeric percentage heavily to prefer quality parsing
+            int score = int(numericRatio * 1000) + validLines * 10 + int(avgColumns);
+            scores[delimiter] = score;
         }
     }
     
@@ -393,13 +506,126 @@ QString GenericXYParser::detectDelimiter(const QStringList &lines) const
     return maxIt.key();
 }
 
+void GenericXYParser::calculateExpectedNumericColumns() const
+{
+    d_cachedAnalysis.expectedNumericColumns = 0;
+    d_cachedAnalysis.expectedTotalColumns = 0;
+    
+    if (d_cachedAnalysis.dataLines.isEmpty())
+        return;
+    
+    QString testLine = d_cachedAnalysis.dataLines.first();
+    QStringList parts;
+    if (d_cachedAnalysis.settings.delimiter == "\\s+") {
+        parts = testLine.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+    } else {
+        parts = testLine.split(d_cachedAnalysis.settings.delimiter, Qt::KeepEmptyParts);
+    }
+    d_cachedAnalysis.expectedTotalColumns = parts.size();
+    
+    for (const QString &part : parts) {
+        QString trimmed = part.trimmed();
+        if (!trimmed.isEmpty()) {  // Don't treat empty strings as numbers
+            bool ok;
+            trimmed.toDouble(&ok);
+            if (ok) d_cachedAnalysis.expectedNumericColumns++;
+        }
+    }
+    
+    if (d_cachedAnalysis.expectedNumericColumns < 2)
+        d_cachedAnalysis.expectedNumericColumns = 2; // Minimum for XY data
+}
+
+int GenericXYParser::detectHeaderLinesUsingDelimiter() const
+{
+    if (d_cachedAnalysis.allLines.isEmpty())
+        return 0;
+    
+    // Use cached expected columns (already calculated)
+    int expectedNumericColumns = d_cachedAnalysis.expectedNumericColumns;
+    int expectedTotalColumns = d_cachedAnalysis.expectedTotalColumns;
+    
+    if (expectedNumericColumns < 2)
+        expectedNumericColumns = 2; // Fallback minimum
+    if (expectedTotalColumns < 2)
+        expectedTotalColumns = expectedNumericColumns; // Fallback to numeric count
+    
+    
+    // Iterate from beginning, counting headers until we find lines with expected numeric columns
+    int headerCount = 0;
+    bool prevLineMaybeColHeaders = false;
+    
+    for (const QString &line : d_cachedAnalysis.allLines) {
+        QString trimmed = line.trimmed();
+        
+        // Count blank lines as headers
+        if (trimmed.isEmpty()) {
+            headerCount++;
+            continue;
+        }
+        
+        // Count comment lines as headers
+        if (isCommentLine(line)) {
+            headerCount++;
+            continue;
+        }
+        
+        // Split line to check column structure
+        QStringList parts;
+        if (d_cachedAnalysis.settings.delimiter == "\\s+") {
+            parts = trimmed.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+        } else {
+            parts = trimmed.split(d_cachedAnalysis.settings.delimiter, Qt::KeepEmptyParts);
+        }
+        
+        // If line has only 1 part, it can't be XY data, so treat as header
+        if (parts.size() < 2) {
+            headerCount++;
+            continue;
+        }
+        
+        // Check if this line has the expected number of numeric columns
+        int numericCols = 0;
+        for (const QString &part : parts) {
+            QString trimmedPart = part.trimmed();
+            if (!trimmedPart.isEmpty()) {  // Don't treat empty strings as numbers
+                bool ok;
+                trimmedPart.toDouble(&ok);
+                if (ok) numericCols++;
+            }
+        }
+        
+        // If we found a line with expected numeric columns, it's data
+        if (numericCols >= expectedNumericColumns) {
+            // If previous line was maybe column headers, don't count it as header
+            if (prevLineMaybeColHeaders) {
+                headerCount--;
+            }
+            break;
+        }
+        
+        // Check if this might be column headers (right total number of columns, but non-numeric)
+        if (parts.size() == expectedTotalColumns && numericCols == 0) {
+            headerCount++; // Tentatively count as header
+            prevLineMaybeColHeaders = true;
+        } else {
+            // Line has multiple parts but wrong count or some numeric - treat as header
+            headerCount++;
+            prevLineMaybeColHeaders = false;
+        }
+    }
+    return headerCount;
+}
+
 int GenericXYParser::detectHeaderLines(const QStringList &lines) const
 {
     int headerCount = 0;
     
     for (const QString &line : lines) {
+        QString trimmed = line.trimmed();
+        
         // Count blank lines as potential headers
-        if (line.trimmed().isEmpty()) {
+        if (trimmed.isEmpty()) {
             headerCount++;
             continue;
         }
@@ -407,7 +633,18 @@ int GenericXYParser::detectHeaderLines(const QStringList &lines) const
         if (isCommentLine(line)) {
             headerCount++;
         } else {
-            break; // First non-comment, non-blank line found
+            // Check if line looks like a single-value header (e.g., atom count, line count)
+            QStringList parts = trimmed.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+            if (parts.size() == 1) {
+                bool isNumber;
+                parts[0].toDouble(&isNumber);
+                if (isNumber) {
+                    headerCount++; // Single number likely a header/count
+                    continue;
+                }
+            }
+            
+            break; // First multi-column data line found
         }
     }
     

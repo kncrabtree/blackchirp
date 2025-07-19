@@ -1,9 +1,11 @@
 #ifndef GENERICXYPARSER_H
 #define GENERICXYPARSER_H
 
-#include "catalogparser.h"
+#include "fileparser.h"
+#include "genericxydata.h"
 #include <QStringList>
 #include <QPointF>
+#include <QDateTime>
 
 /**
  * @brief Parser for generic XY data files (CSV, TSV, space-delimited)
@@ -15,7 +17,7 @@
  * - Robust parsing with invalid data skipping
  * - Preview capabilities for UI integration
  */
-class GenericXYParser : public CatalogParser
+class GenericXYParser : public FileParser
 {
 public:
     struct ParseSettings {
@@ -38,18 +40,18 @@ public:
     
     GenericXYParser();
     
-    // CatalogParser interface
-    bool canParse(const QString &filePath) const override;
-    CatalogData parse(const QString &filePath) const override;
+    // FileParser interface
+    bool canParse(const QString &filePath, const QVariantMap &hints = QVariantMap()) const override;
     QString formatName() const override;
     QString formatDescription() const override;
     QStringList fileExtensions() const override;
     
     // GenericXY-specific methods
+    GenericXYData parse(const QString &filePath, const QVariantMap &hints = QVariantMap()) const;
     ParseSettings autoDetectSettings(const QString &filePath) const;
     ParsePreview generatePreview(const QString &filePath, const ParseSettings &settings) const;
     ParsePreview generatePreview(const QString &filePath) const; // Uses auto-detected settings
-    CatalogData parseWithSettings(const QString &filePath, const ParseSettings &settings) const;
+    GenericXYData parseWithSettings(const QString &filePath, const ParseSettings &settings) const;
     
     // Public test access methods
     QString detectDelimiterPublic(const QStringList &lines) const { return detectDelimiter(lines); }
@@ -127,6 +129,41 @@ private:
      * @return Sample lines for format detection
      */
     QStringList readSampleLines(const QString &filePath, int maxLines = 20) const;
+    
+    /**
+     * @brief Calculate expected numeric columns using current delimiter and data lines
+     * Updates d_cachedAnalysis.expectedNumericColumns
+     */
+    void calculateExpectedNumericColumns() const;
+    
+    /**
+     * @brief Detect header lines using cached analysis data
+     * @return Number of header lines
+     */
+    int detectHeaderLinesUsingDelimiter() const;
+    
+    // Analysis caching for performance and consistency
+    struct FileAnalysis {
+        QString filePath;
+        QDateTime lastModified;
+        QStringList allLines;
+        QStringList dataLines;
+        ParseSettings settings;
+        int expectedNumericColumns = 0;
+        int expectedTotalColumns = 0;
+        bool isValid = false;
+    };
+    
+    /**
+     * @brief Perform comprehensive file analysis with caching
+     * @param filePath Path to file to analyze
+     * @param hints Optional parsing hints from interface
+     * @return true if file can be parsed, false otherwise
+     */
+    bool analyzeFile(const QString &filePath, const QVariantMap &hints = QVariantMap()) const;
+    
+    // Mutable cache for analysis results
+    mutable FileAnalysis d_cachedAnalysis;
 };
 
 #endif // GENERICXYPARSER_H

@@ -18,8 +18,8 @@ public:
     SPCATParser();
     
     // CatalogParser interface
-    bool canParse(const QString &filePath) const override;
-    CatalogData parse(const QString &filePath) const override;
+    bool canParse(const QString &filePath, const QVariantMap &hints = QVariantMap()) const override;
+    CatalogData parse(const QString &filePath, const QVariantMap &hints = QVariantMap()) const override;
     QString formatName() const override;
     QString formatDescription() const override;
     QStringList fileExtensions() const override;

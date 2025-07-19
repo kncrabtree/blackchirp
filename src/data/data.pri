@@ -15,11 +15,13 @@ SOURCES += $$PWD/loghandler.cpp \
     $$PWD/experiment/overlaybase.cpp \
     $$PWD/experiment/overlaytypes.cpp \
     $$PWD/experiment/catalogdata.cpp \
+    $$PWD/experiment/fileparser.cpp \
     $$PWD/experiment/catalogparser.cpp \
     $$PWD/experiment/catalogparserregistry.cpp \
     $$PWD/experiment/spcatparser.cpp \
     $$PWD/experiment/xiamparser.cpp \
     $$PWD/experiment/genericxyparser.cpp \
+    $$PWD/experiment/genericxydata.cpp \
     $$PWD/experiment/rfconfig.cpp \
     $$PWD/model/chirptablemodel.cpp \
     $$PWD/model/clocktablemodel.cpp \
@@ -59,11 +61,13 @@ HEADERS += $$PWD/loghandler.h \
     $$PWD/experiment/overlaybase.h \
     $$PWD/experiment/overlaytypes.h \
     $$PWD/experiment/catalogdata.h \
+    $$PWD/experiment/fileparser.h \
     $$PWD/experiment/catalogparser.h \
     $$PWD/experiment/catalogparserregistry.h \
     $$PWD/experiment/spcatparser.h \
     $$PWD/experiment/xiamparser.h \
     $$PWD/experiment/genericxyparser.h \
+    $$PWD/experiment/genericxydata.h \
     $$PWD/experiment/rfconfig.h \
     $$PWD/model/chirptablemodel.h \
     $$PWD/model/clocktablemodel.h \

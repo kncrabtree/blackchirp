@@ -53,13 +53,13 @@ add_test(NAME tst_headerstoragetest COMMAND tst_headerstoragetest)
 add_executable(tst_blackchirpcsvtest tests/tst_blackchirpcsv.cpp src/data/storage/blackchirpcsv.cpp src/data/storage/settingsstorage.cpp src/data/experiment/fid.cpp src/data/analysis/analysis.cpp)
 add_test(NAME tst_blackchirpcsvtest COMMAND tst_blackchirpcsvtest)
 
-add_executable(tst_spcatparser tests/tst_spcatparser.cpp src/data/experiment/spcatparser.cpp src/data/experiment/catalogdata.cpp src/data/experiment/catalogparser.cpp src/data/experiment/catalogparserregistry.cpp src/data/storage/settingsstorage.cpp)
+add_executable(tst_spcatparser tests/tst_spcatparser.cpp src/data/experiment/spcatparser.cpp src/data/experiment/catalogdata.cpp src/data/experiment/catalogparser.cpp src/data/experiment/fileparser.cpp src/data/experiment/catalogparserregistry.cpp src/data/storage/settingsstorage.cpp)
 add_test(NAME tst_spcatparser COMMAND tst_spcatparser)
 
-add_executable(tst_xiamparser tests/tst_xiamparser.cpp src/data/experiment/xiamparser.cpp src/data/experiment/catalogdata.cpp src/data/experiment/catalogparser.cpp src/data/experiment/catalogparserregistry.cpp src/data/storage/settingsstorage.cpp)
+add_executable(tst_xiamparser tests/tst_xiamparser.cpp src/data/experiment/xiamparser.cpp src/data/experiment/catalogdata.cpp src/data/experiment/catalogparser.cpp src/data/experiment/fileparser.cpp src/data/experiment/catalogparserregistry.cpp src/data/storage/settingsstorage.cpp)
 add_test(NAME tst_xiamparser COMMAND tst_xiamparser)
 
-add_executable(tst_genericxyparser tests/tst_genericxyparser.cpp src/data/experiment/genericxyparser.cpp src/data/experiment/catalogdata.cpp src/data/experiment/catalogparser.cpp src/data/experiment/catalogparserregistry.cpp src/data/storage/settingsstorage.cpp)
+add_executable(tst_genericxyparser tests/tst_genericxyparser.cpp src/data/experiment/genericxyparser.cpp src/data/experiment/genericxydata.cpp src/data/experiment/fileparser.cpp src/data/storage/settingsstorage.cpp)
 add_test(NAME tst_genericxyparser COMMAND tst_genericxyparser)
 
 # Overlay processing architecture tests
@@ -78,6 +78,7 @@ add_executable(tst_overlayprocessing tests/tst_overlayprocessing.cpp
     src/data/analysis/analysis.cpp
     src/data/experiment/catalogdata.cpp
     src/data/experiment/catalogparser.cpp
+    src/data/experiment/fileparser.cpp
     src/data/experiment/catalogparserregistry.cpp
     src/data/experiment/spcatparser.cpp
     src/data/experiment/xiamparser.cpp
@@ -102,6 +103,7 @@ add_executable(tst_unifiedoverlaydialog tests/tst_unifiedoverlaydialog.cpp
     src/data/analysis/analysis.cpp
     src/data/experiment/catalogdata.cpp
     src/data/experiment/catalogparser.cpp
+    src/data/experiment/fileparser.cpp
     src/data/experiment/catalogparserregistry.cpp
     src/data/experiment/spcatparser.cpp
     src/data/experiment/xiamparser.cpp
@@ -123,6 +125,7 @@ add_executable(tst_overlayoperations tests/tst_overlayoperations.cpp
     src/data/analysis/analysis.cpp
     src/data/experiment/catalogdata.cpp
     src/data/experiment/catalogparser.cpp
+    src/data/experiment/fileparser.cpp
     src/data/experiment/catalogparserregistry.cpp
     src/data/experiment/spcatparser.cpp
     src/data/experiment/xiamparser.cpp
@@ -161,6 +164,7 @@ add_executable(tst_overlayoperations_simple tests/tst_overlayoperations_simple.c
     src/data/experiment/overlaytypes.cpp
     src/data/experiment/catalogdata.cpp
     src/data/experiment/catalogparser.cpp
+    src/data/experiment/fileparser.cpp
     src/data/experiment/catalogparserregistry.cpp
     src/data/analysis/ft.cpp
     src/data/analysis/analysis.cpp
@@ -185,6 +189,7 @@ add_executable(tst_background_convolution tests/tst_background_convolution.cpp
     src/data/experiment/overlaytypes.cpp
     src/data/experiment/catalogdata.cpp
     src/data/experiment/catalogparser.cpp
+    src/data/experiment/fileparser.cpp
     src/data/experiment/catalogparserregistry.cpp
     src/data/experiment/spcatparser.cpp
     src/data/experiment/xiamparser.cpp

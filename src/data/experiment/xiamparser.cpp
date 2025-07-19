@@ -6,8 +6,9 @@
 #include <QDebug>
 #include <cmath>
 
-bool XIAMParser::canParse(const QString &filePath) const
+bool XIAMParser::canParse(const QString &filePath, const QVariantMap &hints) const
 {
+    Q_UNUSED(hints)
     // Check file extension
     QFileInfo fileInfo(filePath);
     if (!fileExtensions().contains("*." + fileInfo.suffix().toLower())) {
@@ -46,8 +47,9 @@ bool XIAMParser::canParse(const QString &filePath) const
     return false;
 }
 
-CatalogData XIAMParser::parse(const QString &filePath) const
+CatalogData XIAMParser::parse(const QString &filePath, const QVariantMap &hints) const
 {
+    Q_UNUSED(hints)
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qWarning() << "XIAMParser: Cannot open file:" << filePath;

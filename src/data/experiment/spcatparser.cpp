@@ -10,8 +10,10 @@ SPCATParser::SPCATParser()
 {
 }
 
-bool SPCATParser::canParse(const QString &filePath) const
+bool SPCATParser::canParse(const QString &filePath, const QVariantMap &hints) const
 {
+    Q_UNUSED(hints)
+    
     // Check file extension
     QFileInfo fileInfo(filePath);
     if (!fileExtensions().contains("*." + fileInfo.suffix().toLower())) {
@@ -22,8 +24,10 @@ bool SPCATParser::canParse(const QString &filePath) const
     return validateFormat(filePath);
 }
 
-CatalogData SPCATParser::parse(const QString &filePath) const
+CatalogData SPCATParser::parse(const QString &filePath, const QVariantMap &hints) const
 {
+    Q_UNUSED(hints)
+    
     CatalogData catalogData;
     QFile file(filePath);
     
