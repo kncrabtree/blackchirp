@@ -29,6 +29,20 @@ namespace Catalog {
     static const QString filterMinFreq{"catalogFilterMinFreq"};          // MHz - filtering range minimum
     static const QString filterMaxFreq{"catalogFilterMaxFreq"};          // MHz - filtering range maximum
 }
+
+// GenericXY overlay specific keys
+namespace GenericXY {
+    static const QString delimiter{"genericXYDelimiter"};
+    static const QString headerLines{"genericXYHeaderLines"};
+    static const QString xColumn{"genericXYXColumn"};
+    static const QString yColumn{"genericXYYColumn"};
+    static const QString columnNames{"genericXYColumnNames"};
+    static const QString dataPoints{"genericXYDataPoints"};
+    static const QString xMin{"genericXYXMin"};
+    static const QString xMax{"genericXYXMax"};
+    static const QString yMin{"genericXYYMin"};
+    static const QString yMax{"genericXYYMax"};
+}
 }
 
 class BCExpOverlay : public OverlayBase
@@ -158,6 +172,75 @@ private:
     // Cached convolved data
     mutable QVector<QPointF> d_convolvedCache;
     mutable CacheState d_cacheState{CacheState::Invalid};
+};
+
+/**
+ * @brief Generic XY data overlay for importing arbitrary data files
+ * 
+ * This class handles generic XY data from various text formats (CSV, TSV, 
+ * space-delimited) with auto-detection capabilities and user-configurable
+ * parsing options.
+ */
+class GenericXYOverlay : public OverlayBase
+{
+public:
+    GenericXYOverlay();
+    
+    // Data access
+    QVector<QPointF> rawData() const;
+    void setRawData(const QVector<QPointF> &data);
+    
+    // File parsing settings
+    QString delimiter() const;
+    void setDelimiter(const QString &delim);
+    
+    int headerLines() const;
+    void setHeaderLines(int lines);
+    
+    int xColumn() const;
+    int yColumn() const;
+    void setDataColumns(int xCol, int yCol);
+    
+    QStringList columnNames() const;
+    void setColumnNames(const QStringList &names);
+    
+    // Data statistics
+    int dataPointCount() const;
+    double xMin() const;
+    double xMax() const;
+    double yMin() const;
+    double yMax() const;
+    
+    // Range information (calculated from data)
+    QPair<double, double> xRange() const;
+    QPair<double, double> yRange() const;
+
+protected:
+    void readFromDest() override;
+    void writeToDest() override;
+    void _storeMetadata(std::map<QString, QVariant> &m) override;
+    void _retrieveMetadata(const std::map<QString, QVariant> &m) override;
+
+private:
+    QVector<QPointF> _xyData() const override;
+    void updateStatistics();
+    
+    // Data storage
+    QVector<QPointF> d_rawData;
+    
+    // Parsing settings
+    QString d_delimiter{","};
+    int d_headerLines{0};
+    int d_xColumn{0};
+    int d_yColumn{1};
+    QStringList d_columnNames;
+    
+    // Cached statistics
+    int d_dataPoints{0};
+    double d_xMin{0.0};
+    double d_xMax{0.0};
+    double d_yMin{0.0};
+    double d_yMax{0.0};
 };
 
 #endif // OVERLAYTYPES_H

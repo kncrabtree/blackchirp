@@ -603,3 +603,283 @@ void CatalogOverlay::_retrieveMetadata(const std::map<QString, QVariant> &m)
     // Invalidate cache after loading metadata
     invalidateConvolutionCache();
 }
+
+// GenericXYOverlay implementation
+
+GenericXYOverlay::GenericXYOverlay() : OverlayBase(GenericXY)
+{
+}
+
+QVector<QPointF> GenericXYOverlay::rawData() const
+{
+    return d_rawData;
+}
+
+void GenericXYOverlay::setRawData(const QVector<QPointF> &data)
+{
+    if (d_rawData != data) {
+        d_rawData = data;
+        updateStatistics();
+        setModified(true);
+    }
+}
+
+QString GenericXYOverlay::delimiter() const
+{
+    return d_delimiter;
+}
+
+void GenericXYOverlay::setDelimiter(const QString &delim)
+{
+    if (d_delimiter != delim) {
+        d_delimiter = delim;
+        setModified(true);
+    }
+}
+
+int GenericXYOverlay::headerLines() const
+{
+    return d_headerLines;
+}
+
+void GenericXYOverlay::setHeaderLines(int lines)
+{
+    if (d_headerLines != lines) {
+        d_headerLines = qMax(0, lines);
+        setModified(true);
+    }
+}
+
+int GenericXYOverlay::xColumn() const
+{
+    return d_xColumn;
+}
+
+int GenericXYOverlay::yColumn() const
+{
+    return d_yColumn;
+}
+
+void GenericXYOverlay::setDataColumns(int xCol, int yCol)
+{
+    if (d_xColumn != xCol || d_yColumn != yCol) {
+        d_xColumn = qMax(0, xCol);
+        d_yColumn = qMax(0, yCol);
+        setModified(true);
+    }
+}
+
+QStringList GenericXYOverlay::columnNames() const
+{
+    return d_columnNames;
+}
+
+void GenericXYOverlay::setColumnNames(const QStringList &names)
+{
+    if (d_columnNames != names) {
+        d_columnNames = names;
+        setModified(true);
+    }
+}
+
+int GenericXYOverlay::dataPointCount() const
+{
+    return d_dataPoints;
+}
+
+double GenericXYOverlay::xMin() const
+{
+    return d_xMin;
+}
+
+double GenericXYOverlay::xMax() const
+{
+    return d_xMax;
+}
+
+double GenericXYOverlay::yMin() const
+{
+    return d_yMin;
+}
+
+double GenericXYOverlay::yMax() const
+{
+    return d_yMax;
+}
+
+QPair<double, double> GenericXYOverlay::xRange() const
+{
+    return qMakePair(d_xMin, d_xMax);
+}
+
+QPair<double, double> GenericXYOverlay::yRange() const
+{
+    return qMakePair(d_yMin, d_yMax);
+}
+
+QVector<QPointF> GenericXYOverlay::_xyData() const
+{
+    return d_rawData;
+}
+
+void GenericXYOverlay::updateStatistics()
+{
+    d_dataPoints = d_rawData.size();
+    
+    if (d_rawData.isEmpty()) {
+        d_xMin = d_xMax = d_yMin = d_yMax = 0.0;
+        return;
+    }
+    
+    // Initialize with first point
+    const QPointF &first = d_rawData.constFirst();
+    d_xMin = d_xMax = first.x();
+    d_yMin = d_yMax = first.y();
+    
+    // Find min/max values
+    for (const QPointF &point : d_rawData) {
+        d_xMin = qMin(d_xMin, point.x());
+        d_xMax = qMax(d_xMax, point.x());
+        d_yMin = qMin(d_yMin, point.y());
+        d_yMax = qMax(d_yMax, point.y());
+    }
+}
+
+void GenericXYOverlay::readFromDest()
+{
+    QString destFile = getDestFile();
+    if (destFile.isEmpty())
+        return;
+
+    QFile f(destFile);
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text))
+        return;
+
+    QTextStream stream(&f);
+    
+    // Skip header line
+    if (!stream.atEnd())
+        stream.readLine();
+    
+    // Read XY data
+    QVector<QPointF> data;
+    
+    while (!stream.atEnd()) {
+        QString line = stream.readLine().trimmed();
+        if (line.isEmpty())
+            continue;
+            
+        QStringList parts = line.split(BC::CSV::del);
+        if (parts.size() < 2)
+            continue;
+            
+        bool xOk, yOk;
+        double x = parts[0].toDouble(&xOk);
+        double y = parts[1].toDouble(&yOk);
+        
+        if (xOk && yOk) {
+            data.append(QPointF(x, y));
+        }
+    }
+    
+    f.close();
+    setRawData(data);
+}
+
+void GenericXYOverlay::writeToDest()
+{
+    QString destFile = getDestFile();
+    if (destFile.isEmpty() || d_rawData.isEmpty())
+        return;
+
+    QFile f(destFile);
+    
+    // Prepare data vectors for BlackchirpCSV
+    QVector<QVariant> xData, yData;
+    xData.reserve(d_rawData.size());
+    yData.reserve(d_rawData.size());
+    
+    for (const QPointF &point : d_rawData) {
+        xData.append(point.x());
+        yData.append(point.y());
+    }
+    
+    // Use BlackchirpCSV to write the XY data
+    if (!BlackchirpCSV::writeYMultiple(f, 
+                                      {"X", "Y"},
+                                      {xData, yData})) {
+        // Handle error if needed
+        return;
+    }
+}
+
+void GenericXYOverlay::_storeMetadata(std::map<QString, QVariant> &m)
+{
+    using namespace BC::Key::Overlay::GenericXY;
+    
+    m.emplace(BC::Key::Overlay::GenericXY::delimiter, d_delimiter);
+    m.emplace(BC::Key::Overlay::GenericXY::headerLines, d_headerLines);
+    m.emplace(BC::Key::Overlay::GenericXY::xColumn, d_xColumn);
+    m.emplace(BC::Key::Overlay::GenericXY::yColumn, d_yColumn);
+    m.emplace(BC::Key::Overlay::GenericXY::columnNames, d_columnNames);
+    m.emplace(BC::Key::Overlay::GenericXY::dataPoints, d_dataPoints);
+    m.emplace(BC::Key::Overlay::GenericXY::xMin, d_xMin);
+    m.emplace(BC::Key::Overlay::GenericXY::xMax, d_xMax);
+    m.emplace(BC::Key::Overlay::GenericXY::yMin, d_yMin);
+    m.emplace(BC::Key::Overlay::GenericXY::yMax, d_yMax);
+}
+
+void GenericXYOverlay::_retrieveMetadata(const std::map<QString, QVariant> &m)
+{
+    using namespace BC::Key::Overlay::GenericXY;
+    
+    auto it = m.find(BC::Key::Overlay::GenericXY::delimiter);
+    if (it != m.end()) {
+        d_delimiter = it->second.toString();
+    }
+    
+    it = m.find(BC::Key::Overlay::GenericXY::headerLines);
+    if (it != m.end()) {
+        d_headerLines = it->second.toInt();
+    }
+    
+    it = m.find(BC::Key::Overlay::GenericXY::xColumn);
+    if (it != m.end()) {
+        d_xColumn = it->second.toInt();
+    }
+    
+    it = m.find(BC::Key::Overlay::GenericXY::yColumn);
+    if (it != m.end()) {
+        d_yColumn = it->second.toInt();
+    }
+    
+    it = m.find(BC::Key::Overlay::GenericXY::columnNames);
+    if (it != m.end()) {
+        d_columnNames = it->second.toStringList();
+    }
+    
+    it = m.find(BC::Key::Overlay::GenericXY::dataPoints);
+    if (it != m.end()) {
+        d_dataPoints = it->second.toInt();
+    }
+    
+    it = m.find(BC::Key::Overlay::GenericXY::xMin);
+    if (it != m.end()) {
+        d_xMin = it->second.toDouble();
+    }
+    
+    it = m.find(BC::Key::Overlay::GenericXY::xMax);
+    if (it != m.end()) {
+        d_xMax = it->second.toDouble();
+    }
+    
+    it = m.find(BC::Key::Overlay::GenericXY::yMin);
+    if (it != m.end()) {
+        d_yMin = it->second.toDouble();
+    }
+    
+    it = m.find(BC::Key::Overlay::GenericXY::yMax);
+    if (it != m.end()) {
+        d_yMax = it->second.toDouble();
+    }
+}

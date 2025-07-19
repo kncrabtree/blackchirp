@@ -5,6 +5,7 @@
 #include <data/experiment/catalogparserregistry.h>
 #include <data/experiment/spcatparser.h>
 #include <data/experiment/xiamparser.h>
+#include <data/experiment/genericxyparser.h>
 
 #include <memory>
 
@@ -155,6 +156,7 @@ R"000(Next, you can configure the communication settings for the hardware connec
     auto registry = CatalogParserRegistry::instance();
     registry->registerParser(std::make_unique<SPCATParser>());
     registry->registerParser(std::make_unique<XIAMParser>());
+    registry->registerParser(std::make_unique<GenericXYParser>());
 
     MainWindow w;
     QApplication::connect(ls.get(),&QLocalServer::newConnection,[&w](){

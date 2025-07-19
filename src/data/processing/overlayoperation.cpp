@@ -73,8 +73,9 @@ std::shared_ptr<OverlayBase> CreateOverlayOperation::execute()
             break;
             
         case OverlayBase::GenericXY:
-            // TODO: Implement when GenericXY overlay is available
-            throw std::runtime_error("GenericXY overlay type not yet implemented");
+            overlay = std::make_shared<GenericXYOverlay>();
+            updateProgress(50, "Creating GenericXY overlay...");
+            break;
             
         default:
             throw std::runtime_error("Unknown overlay type");
