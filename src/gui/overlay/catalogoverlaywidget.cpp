@@ -946,13 +946,21 @@ void CatalogOverlayWidget::createSourceFileConfigUI(QGroupBox *parent)
     configureCompactLabel(p_frequencyRangeLabel);
     
     // Arrange file info in 2x2 grid for compact display
-    detailsLayout->addWidget(new QLabel("Format:", detailsFrame), 0, 0);
+    auto formatLabel = new QLabel("Format:", detailsFrame);
+    formatLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    detailsLayout->addWidget(formatLabel, 0, 0);
     detailsLayout->addWidget(p_formatLabel, 0, 1);
-    detailsLayout->addWidget(new QLabel("Molecule:", detailsFrame), 0, 2);
+    auto moleculeLabel = new QLabel("Molecule:", detailsFrame);
+    moleculeLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    detailsLayout->addWidget(moleculeLabel, 0, 2);
     detailsLayout->addWidget(p_moleculeLabel, 0, 3);
-    detailsLayout->addWidget(new QLabel("Transitions:", detailsFrame), 1, 0);
+    auto transitionsLabel = new QLabel("Transitions:", detailsFrame);
+    transitionsLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    detailsLayout->addWidget(transitionsLabel, 1, 0);
     detailsLayout->addWidget(p_transitionCountLabel, 1, 1);
-    detailsLayout->addWidget(new QLabel("Range:", detailsFrame), 1, 2);
+    auto rangeLabel = new QLabel("Range:", detailsFrame);
+    rangeLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    detailsLayout->addWidget(rangeLabel, 1, 2);
     detailsLayout->addWidget(p_frequencyRangeLabel, 1, 3);
     
     // Configure grid column stretches for even distribution
@@ -1051,9 +1059,13 @@ void CatalogOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)
     p_linewidthSpinBox->setValue(get(BC::Key::CatalogWidget::linewidthKHz, DEFAULT_LINEWIDTH));
     p_linewidthSpinBox->setKeyboardTracking(false);
     
-    shapeLayout->addWidget(new QLabel("Type:", shapeGroup), 0, 0);
+    auto typeLabel = new QLabel("Type:", shapeGroup);
+    typeLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    shapeLayout->addWidget(typeLabel, 0, 0);
     shapeLayout->addWidget(p_lineshapeComboBox, 0, 1);
-    shapeLayout->addWidget(new QLabel("Width (FWHM):", shapeGroup), 1, 0);
+    auto widthLabel = new QLabel("Width (FWHM):", shapeGroup);
+    widthLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    shapeLayout->addWidget(widthLabel, 1, 0);
     shapeLayout->addWidget(p_linewidthSpinBox, 1, 1);
     
     // Group 2: Frequency Range & Resolution
@@ -1089,13 +1101,21 @@ void CatalogOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)
     p_spacingDisplayLabel = new QLabel("0.000 MHz", rangeGroup);
     p_spacingDisplayLabel->setStyleSheet("QLabel { color: gray; font-size: 11px; }");
     
-    rangeLayout->addWidget(new QLabel("Range:", rangeGroup), 0, 0);
+    auto rangeRangeLabel = new QLabel("Range:", rangeGroup);
+    rangeRangeLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    rangeLayout->addWidget(rangeRangeLabel, 0, 0);
     rangeLayout->addWidget(p_convMinFreqSpinBox, 0, 1);
-    rangeLayout->addWidget(new QLabel("to", rangeGroup), 0, 2);
+    auto toLabel = new QLabel("to", rangeGroup);
+    toLabel->setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
+    rangeLayout->addWidget(toLabel, 0, 2);
     rangeLayout->addWidget(p_convMaxFreqSpinBox, 0, 3);
-    rangeLayout->addWidget(new QLabel("Points:", rangeGroup), 1, 0);
+    auto pointsLabel = new QLabel("Points:", rangeGroup);
+    pointsLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    rangeLayout->addWidget(pointsLabel, 1, 0);
     rangeLayout->addWidget(p_numPointsSpinBox, 1, 1);
-    rangeLayout->addWidget(new QLabel("Spacing:", rangeGroup), 1, 2);
+    auto spacingLabel = new QLabel("Spacing:", rangeGroup);
+    spacingLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    rangeLayout->addWidget(spacingLabel, 1, 2);
     rangeLayout->addWidget(p_spacingDisplayLabel, 1, 3);
     
     // Group 3: Action Controls

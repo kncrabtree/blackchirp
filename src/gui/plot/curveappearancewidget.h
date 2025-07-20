@@ -2,7 +2,9 @@
 #define CURVEAPPEARANCEWIDGET_H
 
 #include <QWidget>
-#include <QFormLayout>
+#include <QVBoxLayout>
+#include <QGridLayout>
+#include <QGroupBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QSpinBox>
@@ -102,8 +104,7 @@ private:
     QString getLineStyleName(Qt::PenStyle style) const;
     QString getColorDescription(const QColor &color) const;
     
-    // UI components
-    QFormLayout *p_formLayout;
+    // UI components - using VBoxLayout with GroupBoxes instead of FormLayout
     
     // Preset controls (at top)
     QComboBox *p_presetBox;

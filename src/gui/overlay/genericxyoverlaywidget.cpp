@@ -572,9 +572,13 @@ void GenericXYOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
     p_autoDetectButton->setToolTip("Automatically detect delimiter, headers, and column structure");
     
     // Compact 2x2 grid layout
-    formatLayout->addWidget(new QLabel("Delimiter:", formatGroup), 0, 0);
+    auto delimiterLabel = new QLabel("Delimiter:", formatGroup);
+    delimiterLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    formatLayout->addWidget(delimiterLabel, 0, 0);
     formatLayout->addWidget(p_delimiterCombo, 0, 1);
-    formatLayout->addWidget(new QLabel("Header Lines:", formatGroup), 1, 0);  
+    auto headerLabel = new QLabel("Header Lines:", formatGroup);
+    headerLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    formatLayout->addWidget(headerLabel, 1, 0);  
     formatLayout->addWidget(p_headerLinesSpinBox, 1, 1);
     formatLayout->addWidget(p_autoDetectButton, 0, 2, 2, 1); // Spans 2 rows
     
@@ -591,9 +595,13 @@ void GenericXYOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
     p_parseButton = new QPushButton("Parse File", columnGroup);
     p_parseButton->setEnabled(false);
     
-    columnLayout->addWidget(new QLabel("X Column:", columnGroup), 0, 0);
+    auto xColumnLabel = new QLabel("X Column:", columnGroup);
+    xColumnLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    columnLayout->addWidget(xColumnLabel, 0, 0);
     columnLayout->addWidget(p_xColumnCombo, 0, 1);
-    columnLayout->addWidget(new QLabel("Y Column:", columnGroup), 1, 0);
+    auto yColumnLabel = new QLabel("Y Column:", columnGroup);
+    yColumnLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    columnLayout->addWidget(yColumnLabel, 1, 0);
     columnLayout->addWidget(p_yColumnCombo, 1, 1);
     columnLayout->addWidget(p_parseButton, 0, 2, 2, 1); // Spans 2 rows
     
@@ -618,10 +626,14 @@ void GenericXYOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
     p_xMaxEdit = new QLineEdit(filterContentWidget);
     p_xMaxEdit->setPlaceholderText("Max X");
     
-    filterLayout->addWidget(p_enableFilteringCheckBox, 0, 0, 1, 3);
-    filterLayout->addWidget(new QLabel("Range:", filterContentWidget), 1, 0);
+    filterLayout->addWidget(p_enableFilteringCheckBox, 0, 0, 1, 4);
+    auto rangeFilterLabel = new QLabel("Range:", filterContentWidget);
+    rangeFilterLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    filterLayout->addWidget(rangeFilterLabel, 1, 0);
     filterLayout->addWidget(p_xMinEdit, 1, 1);
-    filterLayout->addWidget(new QLabel("to", filterContentWidget), 1, 2);
+    auto toFilterLabel = new QLabel("to", filterContentWidget);
+    toFilterLabel->setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
+    filterLayout->addWidget(toFilterLabel, 1, 2);
     filterLayout->addWidget(p_xMaxEdit, 1, 3);
     
     filterGroupLayout->addWidget(filterContentWidget);

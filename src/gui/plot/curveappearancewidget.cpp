@@ -47,74 +47,105 @@ CurveAppearanceWidget::~CurveAppearanceWidget()
 
 void CurveAppearanceWidget::setupUI()
 {
-    p_formLayout = new QFormLayout(this);
+    // Create main vertical layout with compact spacing
+    auto mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(6, 6, 6, 6);
+    mainLayout->setSpacing(4);
     
-    // === PRESET CONTROLS (at top) ===
-    // Preset selection combo box
-    p_presetBox = new QComboBox(this);
+    // === PRESET CONTROLS GROUP ===
+    auto presetGroup = new QGroupBox("Presets", this);
+    presetGroup->setFlat(true);
+    auto presetLayout = new QGridLayout(presetGroup);
+    presetLayout->setContentsMargins(3, 2, 3, 3);
+    presetLayout->setSpacing(3);
+    
+    // Preset selection (full width)
+    p_presetBox = new QComboBox(presetGroup);
     p_presetBox->setToolTip("Select a preset to apply or create a new preset");
-    p_formLayout->addRow("Preset:", p_presetBox);
+    auto presetLabel = new QLabel("Preset:", presetGroup);
+    presetLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    presetLayout->addWidget(presetLabel, 0, 0);
+    presetLayout->addWidget(p_presetBox, 0, 1, 1, 2);
     
-    // Preset action buttons in horizontal layout
-    QWidget *presetButtonWidget = new QWidget(this);
-    QHBoxLayout *presetButtonLayout = new QHBoxLayout(presetButtonWidget);
-    presetButtonLayout->setContentsMargins(0, 0, 0, 0);
-    
-    p_savePresetButton = new QPushButton("Save...", this);
+    // Preset action buttons (compact, side by side)
+    p_savePresetButton = new QPushButton("Save", presetGroup);
     p_savePresetButton->setToolTip("Save current appearance as a new preset");
-    p_savePresetButton->setMaximumWidth(80);
+    p_savePresetButton->setMaximumWidth(60);
     
-    p_deletePresetButton = new QPushButton("Delete", this);
+    p_deletePresetButton = new QPushButton("Delete", presetGroup);
     p_deletePresetButton->setToolTip("Delete the selected preset");
-    p_deletePresetButton->setMaximumWidth(80);
+    p_deletePresetButton->setMaximumWidth(60);
     p_deletePresetButton->setEnabled(false);
     
-    presetButtonLayout->addWidget(p_savePresetButton);
-    presetButtonLayout->addWidget(p_deletePresetButton);
-    presetButtonLayout->addStretch();
+    presetLayout->addWidget(p_savePresetButton, 1, 1);
+    presetLayout->addWidget(p_deletePresetButton, 1, 2);
     
-    p_formLayout->addRow("", presetButtonWidget);
+    mainLayout->addWidget(presetGroup);
     
-    // Add a separator line
-    QLabel *separator = new QLabel(this);
-    separator->setFrameStyle(QFrame::HLine | QFrame::Sunken);
-    p_formLayout->addRow(separator);
+    // === APPEARANCE CONTROLS GROUP ===
+    auto appearanceGroup = new QGroupBox("Appearance", this);
+    appearanceGroup->setFlat(true);
+    auto appearanceLayout = new QVBoxLayout(appearanceGroup);
+    appearanceLayout->setContentsMargins(3, 2, 3, 3);
+    appearanceLayout->setSpacing(3);
     
-    // === APPEARANCE CONTROLS ===
-    // Color button
-    p_colorButton = new QPushButton(this);
-    p_colorButton->setText("Choose Color...");
+    // Color and curve type row
+    auto colorCurveLayout = new QGridLayout();
+    colorCurveLayout->setSpacing(3);
+    
+    p_colorButton = new QPushButton("Choose Color...", appearanceGroup);
     p_colorButton->setMinimumHeight(25);
-    p_formLayout->addRow("Color:", p_colorButton);
+    auto colorLabel = new QLabel("Color:", appearanceGroup);
+    colorLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    colorCurveLayout->addWidget(colorLabel, 0, 0);
+    colorCurveLayout->addWidget(p_colorButton, 0, 1);
     
-    // Curve style combo box
-    p_curveStyleBox = new QComboBox(this);
+    p_curveStyleBox = new QComboBox(appearanceGroup);
     p_curveStyleBox->addItem("No Curve", QVariant::fromValue(QwtPlotCurve::NoCurve));
     p_curveStyleBox->addItem("Line Plot", QVariant::fromValue(QwtPlotCurve::Lines));
     p_curveStyleBox->addItem("Stick Plot", QVariant::fromValue(QwtPlotCurve::Sticks));
     p_curveStyleBox->addItem("Step Plot", QVariant::fromValue(QwtPlotCurve::Steps));
     p_curveStyleBox->addItem("Scatter Dots", QVariant::fromValue(QwtPlotCurve::Dots));
-    p_formLayout->addRow("Curve Type:", p_curveStyleBox);
+    auto typeLabel = new QLabel("Type:", appearanceGroup);
+    typeLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    colorCurveLayout->addWidget(typeLabel, 0, 2);
+    colorCurveLayout->addWidget(p_curveStyleBox, 0, 3);
     
-    // Line thickness spin box
-    p_thicknessBox = new QDoubleSpinBox(this);
+    appearanceLayout->addLayout(colorCurveLayout);
+    
+    // Line style and thickness row  
+    auto lineLayout = new QGridLayout();
+    lineLayout->setSpacing(3);
+    
+    p_thicknessBox = new QDoubleSpinBox(appearanceGroup);
     p_thicknessBox->setRange(0.0, 10.0);
     p_thicknessBox->setDecimals(1);
     p_thicknessBox->setSingleStep(0.5);
-    p_formLayout->addRow("Line Width:", p_thicknessBox);
+    p_thicknessBox->setMaximumWidth(60);
+    auto widthLabel = new QLabel("Width:", appearanceGroup);
+    widthLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    lineLayout->addWidget(widthLabel, 0, 0);
+    lineLayout->addWidget(p_thicknessBox, 0, 1);
     
-    // Line style combo box
-    p_lineStyleBox = new QComboBox(this);
+    p_lineStyleBox = new QComboBox(appearanceGroup);
     p_lineStyleBox->addItem("None", QVariant::fromValue(Qt::NoPen));
     p_lineStyleBox->addItem(QString::fromUtf16(u"⸻ "), QVariant::fromValue(Qt::SolidLine));
     p_lineStyleBox->addItem("- - - ", QVariant::fromValue(Qt::DashLine));
     p_lineStyleBox->addItem(QString::fromUtf16(u"· · · "), QVariant::fromValue(Qt::DotLine));
     p_lineStyleBox->addItem(QString::fromUtf16(u"-·-·-"), QVariant::fromValue(Qt::DashDotLine));
     p_lineStyleBox->addItem(QString::fromUtf16(u"-··-··"), QVariant::fromValue(Qt::DashDotDotLine));
-    p_formLayout->addRow("Line Style:", p_lineStyleBox);
+    auto styleLabel = new QLabel("Style:", appearanceGroup);
+    styleLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    lineLayout->addWidget(styleLabel, 0, 2);
+    lineLayout->addWidget(p_lineStyleBox, 0, 3);
     
-    // Marker style combo box
-    p_markerBox = new QComboBox(this);
+    appearanceLayout->addLayout(lineLayout);
+    
+    // Marker style and size row
+    auto markerLayout = new QGridLayout();
+    markerLayout->setSpacing(3);
+    
+    p_markerBox = new QComboBox(appearanceGroup);
     p_markerBox->addItem("None", QVariant::fromValue(QwtSymbol::NoSymbol));
     p_markerBox->addItem(QString::fromUtf16(u"●"), QVariant::fromValue(QwtSymbol::Ellipse));
     p_markerBox->addItem(QString::fromUtf16(u"■"), QVariant::fromValue(QwtSymbol::Rect));
@@ -130,39 +161,43 @@ void CurveAppearanceWidget::setupUI()
     p_markerBox->addItem(QString::fromUtf16(u"✳"), QVariant::fromValue(QwtSymbol::Star1));
     p_markerBox->addItem(QString::fromUtf16(u"✶"), QVariant::fromValue(QwtSymbol::Star2));
     p_markerBox->addItem(QString::fromUtf16(u"⬢"), QVariant::fromValue(QwtSymbol::Hexagon));
-    p_formLayout->addRow("Marker:", p_markerBox);
+    auto markerLabel = new QLabel("Marker:", appearanceGroup);
+    markerLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    markerLayout->addWidget(markerLabel, 0, 0);
+    markerLayout->addWidget(p_markerBox, 0, 1);
     
-    // Marker size spin box
-    p_markerSizeBox = new QSpinBox(this);
+    p_markerSizeBox = new QSpinBox(appearanceGroup);
     p_markerSizeBox->setRange(1, 20);
-    p_formLayout->addRow("Marker Size:", p_markerSizeBox);
+    p_markerSizeBox->setMaximumWidth(50);
+    auto sizeLabel = new QLabel("Size:", appearanceGroup);
+    sizeLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    markerLayout->addWidget(sizeLabel, 0, 2);
+    markerLayout->addWidget(p_markerSizeBox, 0, 3);
     
-    // Visibility checkbox
-    p_visibleBox = new QCheckBox(this);
-    p_formLayout->addRow("Visible:", p_visibleBox);
+    appearanceLayout->addLayout(markerLayout);
     
-    // Autoscale checkbox
-    p_autoscaleBox = new QCheckBox(this);
+    // Options row (checkboxes and Y-axis)
+    auto optionsLayout = new QGridLayout();
+    optionsLayout->setSpacing(3);
+    
+    p_visibleBox = new QCheckBox("Visible", appearanceGroup);
+    optionsLayout->addWidget(p_visibleBox, 0, 0);
+    
+    p_autoscaleBox = new QCheckBox("Autoscale", appearanceGroup);
     p_autoscaleBox->setToolTip("Controls whether the curve is included when calculating the axis limits for the autoscale operation");
-    p_formLayout->addRow("Autoscale?", p_autoscaleBox);
+    optionsLayout->addWidget(p_autoscaleBox, 0, 1);
     
-    // Y-axis combo box
-    p_yAxisBox = new QComboBox(this);
+    p_yAxisBox = new QComboBox(appearanceGroup);
     p_yAxisBox->addItem("Left", QVariant::fromValue(QwtAxis::YLeft));
     p_yAxisBox->addItem("Right", QVariant::fromValue(QwtAxis::YRight));
-    p_formLayout->addRow("Y Axis:", p_yAxisBox);
+    auto yAxisLabel = new QLabel("Y Axis:", appearanceGroup);
+    yAxisLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    optionsLayout->addWidget(yAxisLabel, 0, 2);
+    optionsLayout->addWidget(p_yAxisBox, 0, 3);
     
-    // Configure label alignment as in the original implementation
-    for (int i = 0; i < p_formLayout->rowCount(); ++i) {
-        QLayoutItem *item = p_formLayout->itemAt(i, QFormLayout::LabelRole);
-        if (item && item->widget()) {
-            auto lbl = qobject_cast<QLabel*>(item->widget());
-            if (lbl) {
-                lbl->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                lbl->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding);
-            }
-        }
-    }
+    appearanceLayout->addLayout(optionsLayout);
+    
+    mainLayout->addWidget(appearanceGroup);
 }
 
 void CurveAppearanceWidget::setupConnections()
@@ -271,14 +306,15 @@ void CurveAppearanceWidget::setColorButtonEnabled(bool enabled)
 void CurveAppearanceWidget::setYAxisControlEnabled(bool enabled)
 {
     p_yAxisBox->setEnabled(enabled);
-    // Update label too
-    for (int i = 0; i < p_formLayout->rowCount(); ++i) {
-        if (p_formLayout->itemAt(i, QFormLayout::FieldRole)->widget() == p_yAxisBox) {
-            auto lbl = qobject_cast<QLabel*>(p_formLayout->itemAt(i, QFormLayout::LabelRole)->widget());
-            if (lbl) {
-                lbl->setEnabled(enabled);
+    // Find and update the Y Axis label - it's the sibling widget in the same layout
+    QWidget *parent = p_yAxisBox->parentWidget();
+    if (parent) {
+        auto labels = parent->findChildren<QLabel*>();
+        for (QLabel *label : labels) {
+            if (label->text() == "Y Axis:") {
+                label->setEnabled(enabled);
+                break;
             }
-            break;
         }
     }
 }

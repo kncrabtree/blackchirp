@@ -139,7 +139,9 @@ void OverlayBaseOptionsWidget::setupUI()
     p_minFreqSpinBox->setKeyboardTracking(false); // Prevent updates while typing
     connect(p_minFreqCheckBox, &QCheckBox::toggled, p_minFreqSpinBox, &QDoubleSpinBox::setEnabled);
     
-    frequencyLayout->addWidget(new QLabel("Min Frequency:", this), 0, 0);
+    auto minFreqLabel = new QLabel("Min Frequency:", this);
+    minFreqLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    frequencyLayout->addWidget(minFreqLabel, 0, 0);
     frequencyLayout->addWidget(p_minFreqCheckBox, 0, 1);
     frequencyLayout->addWidget(p_minFreqSpinBox, 0, 2);
     
@@ -153,7 +155,9 @@ void OverlayBaseOptionsWidget::setupUI()
     p_maxFreqSpinBox->setKeyboardTracking(false); // Prevent updates while typing
     connect(p_maxFreqCheckBox, &QCheckBox::toggled, p_maxFreqSpinBox, &QDoubleSpinBox::setEnabled);
     
-    frequencyLayout->addWidget(new QLabel("Max Frequency:", this), 1, 0);
+    auto maxFreqLabel = new QLabel("Max Frequency:", this);
+    maxFreqLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    frequencyLayout->addWidget(maxFreqLabel, 1, 0);
     frequencyLayout->addWidget(p_maxFreqCheckBox, 1, 1);
     frequencyLayout->addWidget(p_maxFreqSpinBox, 1, 2);
     
