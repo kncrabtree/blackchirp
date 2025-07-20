@@ -7,6 +7,10 @@
 #include <QDoubleSpinBox>
 #include <QCheckBox>
 #include <QFormLayout>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QGridLayout>
+#include <QGroupBox>
 #include <QLabel>
 #include <QStringList>
 #include <QPushButton>

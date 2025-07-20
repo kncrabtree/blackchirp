@@ -17,13 +17,22 @@
 #include <gui/plot/blackchirpplotcurve.h>
 #include <data/experiment/overlaybase.h>
 
-UnifiedOverlayWidget::UnifiedOverlayWidget(const QString &settingsKey, Context context, QWidget *parent)
+UnifiedOverlayWidget::UnifiedOverlayWidget(const QString &settingsKey, 
+                                           OverlayBase::OverlayType type,
+                                           const QStringList &plotNames,
+                                           const Ft &currentFt,
+                                           std::shared_ptr<OverlayBase> overlay,
+                                           std::shared_ptr<OverlayStorage> overlayStorage,
+                                           QWidget *parent)
     : QWidget(parent),
       SettingsStorage(settingsKey, SettingsStorage::General),
-      d_context(context),
-      d_overlayType(OverlayBase::BCExperiment),
+      d_context(overlay ? Context::Settings : Context::Creation),  // Auto-detect context
+      d_overlayType(type),
+      d_plotNames(plotNames),
+      d_currentFt(currentFt),
+      d_overlay(overlay),
+      p_overlayStorage(overlayStorage),
       p_mainLayout(nullptr),
-      p_typeSpecificSettingsBox(nullptr),
       p_typeSpecificWidget(nullptr),
       p_overlayBaseOptionsBox(nullptr),
       p_overlayBaseOptionsWidget(nullptr),
@@ -34,51 +43,7 @@ UnifiedOverlayWidget::UnifiedOverlayWidget(const QString &settingsKey, Context c
       p_progressLabel(nullptr),
       d_hasBackupState(false)
 {
-    setupUI();
-}
-
-UnifiedOverlayWidget::~UnifiedOverlayWidget()
-{
-    // Cleanup moved to type-specific widgets
-    
-    // Ensure preview overlay is properly cleaned up to avoid dangling references
-    cleanupPreviewOverlay();
-}
-
-void UnifiedOverlayWidget::setupForCreation(OverlayBase::OverlayType type,
-                                           const QStringList &plotNames,
-                                           const Ft &currentFt,
-                                           const QVector<std::shared_ptr<OverlayBase>> &existingOverlays)
-{
-    d_overlayType = type;
-    d_plotNames = plotNames;
-    d_currentFt = currentFt;
-    d_existingOverlays = existingOverlays;
-    d_overlay.reset();
-    p_overlayStorage.reset();
-    
-    setupTypeSpecificWidget();
-    
-    // Create and initialize overlay base options widget
-    createOverlayBaseOptionsWidget();
-    
-    configureForContext();
-}
-
-void UnifiedOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overlay,
-                                           const QStringList &plotNames,
-                                           const Ft &currentFt,
-                                           std::shared_ptr<OverlayStorage> overlayStorage)
-{
-    
-    d_overlay = overlay;
-    
-    d_overlayType = overlay ? overlay->type() : OverlayBase::BCExperiment;
-    d_plotNames = plotNames;
-    d_currentFt = currentFt;
-    p_overlayStorage = overlayStorage;
-    
-    // Get all overlays from storage for validation, filtering out the current overlay
+    // Get existing overlays from storage, filtering out the current overlay if in settings context
     d_existingOverlays.clear();
     if (overlayStorage) {
         auto allOverlays = overlayStorage->getAllOverlays();
@@ -89,21 +54,28 @@ void UnifiedOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overlay
         }
     }
     
-    setupTypeSpecificWidget();
-    
-    // Create and initialize overlay base options widget
-    createOverlayBaseOptionsWidget();
-    
+    setupUI();
     configureForContext();
     
-    // Load current overlay settings (must be after configureForContext to avoid conflicts)
-    if (overlay && p_overlayBaseOptionsWidget) {
+    // Load current overlay settings if in settings context
+    if (isSettingsContext() && overlay && p_overlayBaseOptionsWidget) {
         loadOverlaySettings();
     }
     
     // Create backup of original overlay state for cancel functionality (after loading settings)
-    backupOverlayState();
+    if (isSettingsContext()) {
+        backupOverlayState();
+    }
 }
+
+UnifiedOverlayWidget::~UnifiedOverlayWidget()
+{
+    // Cleanup moved to type-specific widgets
+    
+    // Ensure preview overlay is properly cleaned up to avoid dangling references
+    cleanupPreviewOverlay();
+}
+
 
 std::shared_ptr<OverlayBase> UnifiedOverlayWidget::createOverlay()
 {
@@ -350,15 +322,15 @@ void UnifiedOverlayWidget::setupUI()
     leftVLayout->setSpacing(6);
     
     // Add top spacer
-    leftVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
+    // leftVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
     
     // Create overlay widgets
-    createTypeSpecificSettingsBox();
+    setupTypeSpecificWidget();
     createOverlayBaseOptionsBox();
     createProgressIndicator();
     
     // Add overlay widgets to left layout
-    leftVLayout->addWidget(p_typeSpecificSettingsBox);
+    leftVLayout->addWidget(p_typeSpecificWidget);
     
     // Add bottom spacer
     leftVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
@@ -403,54 +375,26 @@ void UnifiedOverlayWidget::setupConnections()
 }
 
 
-void UnifiedOverlayWidget::createTypeSpecificSettingsBox()
-{
-    p_typeSpecificSettingsBox = new QGroupBox("Overlay Settings", this);
-}
 
 void UnifiedOverlayWidget::createOverlayBaseOptionsBox()
 {
     p_overlayBaseOptionsBox = new QGroupBox("Base Options", this);
     
-    // Start hidden - will be shown when widget is properly initialized
-    p_overlayBaseOptionsBox->setVisible(false);
-    
-    // No layout or content initially - will be set in createOverlayBaseOptionsWidget()
-}
-
-void UnifiedOverlayWidget::createOverlayBaseOptionsWidget()
-{
-    if (p_overlayBaseOptionsWidget) {
-        p_overlayBaseOptionsWidget->deleteLater();
-    }
-    
-    // Create the base options widget with current parameters
+    // Create the overlay base options widget
     p_overlayBaseOptionsWidget = new OverlayBaseOptionsWidget(d_plotNames, d_currentFt, this);
     
-    // Set up the layout (should be the first and only layout for this groupbox)
-    if (p_overlayBaseOptionsBox) {
-        // Create layout only if none exists
-        if (!p_overlayBaseOptionsBox->layout()) {
-            auto boxLayout = new QVBoxLayout(p_overlayBaseOptionsBox);
-            boxLayout->addWidget(p_overlayBaseOptionsWidget);
-        } else {
-            // If layout exists, just add the widget
-            p_overlayBaseOptionsBox->layout()->addWidget(p_overlayBaseOptionsWidget);
-        }
-        
-        // Show the groupbox now that it has real content
-        p_overlayBaseOptionsBox->setVisible(true);
-        
-        // Connect signals for both contexts
-        connect(p_overlayBaseOptionsWidget, &OverlayBaseOptionsWidget::settingsChanged,
-                this, &UnifiedOverlayWidget::onSettingsChanged);
-        connect(p_overlayBaseOptionsWidget, &OverlayBaseOptionsWidget::settingsChanged,
-                this, &UnifiedOverlayWidget::onRealTimeUpdate);
-        
-        // Connect label changes to trigger validation (label validation is critical for overlay creation)
-        connect(p_overlayBaseOptionsWidget, &OverlayBaseOptionsWidget::labelChanged,
-                this, &UnifiedOverlayWidget::onSettingsChanged);
-    }
+    auto boxLayout = new QVBoxLayout(p_overlayBaseOptionsBox);
+    boxLayout->addWidget(p_overlayBaseOptionsWidget);
+    
+    // Connect signals once during creation
+    connect(p_overlayBaseOptionsWidget, &OverlayBaseOptionsWidget::settingsChanged,
+            this, &UnifiedOverlayWidget::onSettingsChanged);
+    connect(p_overlayBaseOptionsWidget, &OverlayBaseOptionsWidget::settingsChanged,
+            this, &UnifiedOverlayWidget::onRealTimeUpdate);
+    
+    // Connect label changes to trigger validation (label validation is critical for overlay creation)
+    connect(p_overlayBaseOptionsWidget, &OverlayBaseOptionsWidget::labelChanged,
+            this, &UnifiedOverlayWidget::onSettingsChanged);
 }
 
 void UnifiedOverlayWidget::loadOverlaySettings()
@@ -539,22 +483,7 @@ void UnifiedOverlayWidget::configureForContext()
         }
     }
     
-    // Update type-specific settings box title
-    if (p_typeSpecificSettingsBox) {
-        QString typeName = "Overlay";
-        switch (d_overlayType) {
-        case OverlayBase::BCExperiment:
-            typeName = "BC Experiment";
-            break;
-        case OverlayBase::Catalog:
-            typeName = "Catalog";
-            break;
-        case OverlayBase::GenericXY:
-            typeName = "Generic XY";
-            break;
-        }
-        p_typeSpecificSettingsBox->setTitle(QString("%1 Settings").arg(typeName));
-    }
+    // Type-specific widget title is now handled by the widget itself
     
     // Set intelligent defaults for overlays in creation mode
     if (p_curveAppearanceWidget && isCreationContext())
@@ -604,24 +533,17 @@ void UnifiedOverlayWidget::setupTypeSpecificWidget()
         break;
     }
     
-    if(p_typeSpecificSettingsBox)
-    {
-        auto boxLayout = new QVBoxLayout(p_typeSpecificSettingsBox);
+    if (p_typeSpecificWidget) {
+        // Setup UI after construction since it calls virtual methods
+        p_typeSpecificWidget->setupUI();
 
-        if (p_typeSpecificWidget) {
-            // Setup UI after construction since it calls virtual methods
-            p_typeSpecificWidget->setupUI();
+        // Setup context for the type-specific widget
+        setupTypeSpecificWidgetContext();
 
-            // Setup context for the type-specific widget
-            setupTypeSpecificWidgetContext();
+        // Setup connections for the type-specific widget
+        setupTypeSpecificWidgetConnections();
 
-            // Setup connections for the type-specific widget
-            setupTypeSpecificWidgetConnections();
-
-            // Type-specific widget handles its own layout
-
-            boxLayout->addWidget(p_typeSpecificWidget);
-        }
+        // Type-specific widget handles its own layout
     }
 }
 

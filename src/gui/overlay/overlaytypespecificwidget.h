@@ -5,6 +5,7 @@
 #include <QString>
 #include <QGroupBox>
 #include <QVBoxLayout>
+#include <QLineEdit>
 #include <memory>
 
 #include <data/experiment/overlaybase.h>
@@ -99,6 +100,15 @@ public:
     void updateSourceFileControls(); // Update source file UI state - controls base class QGroupBoxes
     void onSourceFileConfigToggled(bool enabled); // Handle source config changes
     
+    // Helper method for compact file path display with tooltips
+    void updatePathDisplayAndTooltip(QLineEdit* lineEdit, const QString &fullPath);
+    
+    // Access to full source file path (separate from potentially abbreviated display)
+    QString getStoredFullSourceFilePath() const { return d_fullSourceFilePath; }
+    
+    // Visual appearance configuration
+    void configureGroupBoxAppearance(QGroupBox* groupBox);
+    
     // Validation state getters
     bool getSourceFileValid() const { return d_sourceFileValid; }
     bool getSourceFileEnabled() const { return d_sourceFileEnabled; }
@@ -168,6 +178,9 @@ protected:
     bool d_settingsValid = false;
     QString d_sourceFileErrorMessage;
     QString d_settingsErrorMessage;
+    
+    // Full path storage (separate from potentially abbreviated display text)
+    QString d_fullSourceFilePath;
     
     friend class UnifiedOverlayWidget;
     

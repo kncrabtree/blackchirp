@@ -224,7 +224,7 @@ private:
     QDoubleSpinBox *p_filterMaxFreqSpinBox;
     
     // Overlay Settings tier (Convolution - source-independent)
-    QCheckBox *p_convolutionEnabledCheckBox;
+    QGroupBox *p_convolutionGroupBox;
     QComboBox *p_lineshapeComboBox;
     QDoubleSpinBox *p_linewidthSpinBox;
     QDoubleSpinBox *p_convMinFreqSpinBox;

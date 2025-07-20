@@ -41,19 +41,15 @@ public:
     // Use the Context enum from OverlayTypeSpecificWidget
     using Context = OverlayTypeSpecificWidget::Context;
 
-    explicit UnifiedOverlayWidget(const QString &settingsKey, Context context, QWidget *parent = nullptr);
+    explicit UnifiedOverlayWidget(const QString &settingsKey, 
+                                 OverlayBase::OverlayType type,
+                                 const QStringList &plotNames,
+                                 const Ft &currentFt,
+                                 std::shared_ptr<OverlayBase> overlay = nullptr,
+                                 std::shared_ptr<OverlayStorage> overlayStorage = nullptr,
+                                 QWidget *parent = nullptr);
     ~UnifiedOverlayWidget();
 
-    // Setup methods - must be called after construction
-    void setupForCreation(OverlayBase::OverlayType type, 
-                         const QStringList &plotNames,
-                         const Ft &currentFt,
-                         const QVector<std::shared_ptr<OverlayBase>> &existingOverlays = {});
-    
-    void setupForSettings(std::shared_ptr<OverlayBase> overlay,
-                         const QStringList &plotNames,
-                         const Ft &currentFt,
-                         std::shared_ptr<OverlayStorage> overlayStorage);
 
     // Overlay creation/modification interface
     std::shared_ptr<OverlayBase> createOverlay();
@@ -114,9 +110,7 @@ private:
     // UI Setup
     void setupUI();
     void setupConnections();
-    void createTypeSpecificSettingsBox();
     void createOverlayBaseOptionsBox();
-    void createOverlayBaseOptionsWidget();
     void createCurveAppearanceBox();
     void createProgressIndicator();
     
@@ -152,19 +146,18 @@ private:
     // Context and state (immutable after construction)
     const Context d_context;
     OverlayBase::OverlayType d_overlayType;
-    std::shared_ptr<OverlayBase> d_overlay; // Settings context only
-    std::shared_ptr<OverlayStorage> p_overlayStorage; // Settings context only
     
     // Plot and spectroscopic data information
     QStringList d_plotNames;
     Ft d_currentFt; // Current spectroscopic data for intelligent defaults
+    std::shared_ptr<OverlayBase> d_overlay; // Settings context only
+    std::shared_ptr<OverlayStorage> p_overlayStorage; // Settings context only
     QVector<std::shared_ptr<OverlayBase>> d_existingOverlays; // Creation context only
     
     // UI Components - Three-tier architecture
     QHBoxLayout *p_mainLayout;
     
     // Type-specific tier  
-    QGroupBox *p_typeSpecificSettingsBox;
     OverlayTypeSpecificWidget *p_typeSpecificWidget;
     
     // Base overlay options tier

@@ -86,19 +86,27 @@ void OverlayTypeSpecificWidget::updateSourceFileControls()
         p_sourceFileConfigBox->blockSignals(b);
     }
     
-    // Enable/disable source file settings based on validation and context
+    // Smart visibility and state management for Source File Settings section
     bool sourceEnabled = isCreationContext() || d_sourceFileEnabled;
+    bool settingsVisible;
     bool settingsEnabled;
     
     if (isCreationContext()) {
-        // In creation mode: settings only enabled if source file is valid
+        // Creation context: settings always visible, enabled when source file is valid
+        settingsVisible = true;
         settingsEnabled = sourceEnabled && d_sourceFileValid;
     } else {
-        // In settings mode: settings enabled when source file config is checked
+        // Settings context: settings only visible when source file config is enabled
+        settingsVisible = d_sourceFileEnabled;
         settingsEnabled = d_sourceFileEnabled;
     }
     
+    // Apply smart visibility
+    p_sourceFileSettingsBox->setVisible(settingsVisible);
     p_sourceFileSettingsBox->setEnabled(settingsEnabled);
+    
+    // Smart visibility for Type-Specific settings section
+    p_overlaySettingsBox->setVisible(hasTypeSpecificSettings());
     
     // Validate source file if source is enabled
     if (sourceEnabled) {
@@ -115,27 +123,50 @@ void OverlayTypeSpecificWidget::onSourceFileConfigToggled(bool enabled)
     emit settingsChanged();
 }
 
+void OverlayTypeSpecificWidget::configureGroupBoxAppearance(QGroupBox* groupBox)
+{
+    if (!groupBox) {
+        return;
+    }
+    
+    // Set size policy for optimal space usage
+    groupBox->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+    
+    // Apply reduced spacing but keep standard Qt GroupBox appearance
+    if (auto layout = groupBox->layout()) {
+        layout->setContentsMargins(6, 6, 6, 6); // Reduced margins
+        layout->setSpacing(4); // Consistent reduced spacing
+    }
+    
+    // No custom styling - use standard Qt GroupBox appearance for consistency
+}
+
 void OverlayTypeSpecificWidget::setupUI()
 {
-    // Create main layout
+    // Create main layout with reduced spacing for compactness
     auto mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setSpacing(6);
+    mainLayout->setSpacing(4); // Reduced from 6 to 4 for tighter layout
     
-    // Create the three QGroupBoxes
+    // Create the three QGroupBoxes with optimized size policies
     p_sourceFileConfigBox = new QGroupBox("Source File Configuration", this);
     p_sourceFileSettingsBox = new QGroupBox("Source File Settings", this);
     p_overlaySettingsBox = new QGroupBox("Type-Specific Settings", this);
+    
+    // Configure group boxes for visual balance
+    configureGroupBoxAppearance(p_sourceFileConfigBox);
+    configureGroupBoxAppearance(p_sourceFileSettingsBox);
+    configureGroupBoxAppearance(p_overlaySettingsBox);
     
     // Let derived classes populate the group boxes
     createSourceFileConfigUI(p_sourceFileConfigBox);
     createSourceFileSettingsUI(p_sourceFileSettingsBox);
     createTypeSpecificSettingsUI(p_overlaySettingsBox);
     
-    // Add group boxes to main layout
-    mainLayout->addWidget(p_sourceFileConfigBox);
-    mainLayout->addWidget(p_sourceFileSettingsBox);
-    mainLayout->addWidget(p_overlaySettingsBox);
+    // Add group boxes to main layout with intelligent stretch
+    mainLayout->addWidget(p_sourceFileConfigBox, 0); // Fixed size for file selection
+    mainLayout->addWidget(p_sourceFileSettingsBox, 0); // Fixed size for settings
+    mainLayout->addWidget(p_overlaySettingsBox, 1); // Takes remaining space for previews/large content
     
     // Connect source file config box toggle
     connect(p_sourceFileConfigBox, &QGroupBox::toggled,
@@ -143,4 +174,27 @@ void OverlayTypeSpecificWidget::setupUI()
     
     // Setup connections after UI is created
     setupConnections();
+}
+
+void OverlayTypeSpecificWidget::updatePathDisplayAndTooltip(QLineEdit* lineEdit, const QString &fullPath)
+{
+    if (!lineEdit) {
+        return;
+    }
+    
+    // Store the full path for validation purposes (separate from display)
+    d_fullSourceFilePath = fullPath;
+    
+    // Set tooltip to show full path
+    lineEdit->setToolTip(fullPath);
+    
+    // Display abbreviated path if too long (show end of path)
+    const int maxDisplayChars = 50;
+    if (fullPath.length() <= maxDisplayChars) {
+        lineEdit->setText(fullPath);
+    } else {
+        // Show "...end_of_path" format
+        QString abbreviated = "..." + fullPath.right(maxDisplayChars - 3);
+        lineEdit->setText(abbreviated);
+    }
 }

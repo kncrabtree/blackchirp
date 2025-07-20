@@ -2,6 +2,9 @@
 
 #include <QFormLayout>
 #include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QGridLayout>
+#include <QGroupBox>
 #include <QLabel>
 #include <QRegularExpression>
 #include <QPushButton>
@@ -22,31 +25,61 @@ OverlayBaseOptionsWidget::OverlayBaseOptionsWidget(const QStringList &plotNames,
 
 void OverlayBaseOptionsWidget::setupUI()
 {
-    QFormLayout *layout = new QFormLayout(this);
+    auto mainLayout = new QVBoxLayout(this);
+    mainLayout->setSpacing(4); // Reduced spacing between flat GroupBoxes
+    
+    // Group 1: Overlay Identity
+    auto identityGroup = new QGroupBox("Overlay Identity", this);
+    identityGroup->setFlat(true); // Flat appearance for nested GroupBox
+    auto identityLayout = new QFormLayout(identityGroup);
+    identityLayout->setContentsMargins(3, 2, 3, 3); // Reduced margins for flat GroupBox
+    identityLayout->setVerticalSpacing(3); // Reduced spacing for compact appearance
     
     // Label
     p_labelLineEdit = new QLineEdit(this);
     p_labelLineEdit->setPlaceholderText("Enter overlay label");
-    layout->addRow("Label:", p_labelLineEdit);
+    identityLayout->addRow("Label:", p_labelLineEdit);
     
     // Sanitized filename preview
     p_sanitizedLabelDisplay = new QLabel(this);
     p_sanitizedLabelDisplay->setStyleSheet("color: #666666; font-style: italic; font-size: 11px;");
     p_sanitizedLabelDisplay->setWordWrap(false);
     p_sanitizedLabelDisplay->setMinimumWidth(200); // Prevent text wrapping
-    layout->addRow("Storage Name:", p_sanitizedLabelDisplay);
+    identityLayout->addRow("Storage Name:", p_sanitizedLabelDisplay);
     
     // Connect label changes to update sanitized preview (label doesn't emit settingsChanged)
     connect(p_labelLineEdit, &QLineEdit::textChanged, this, &OverlayBaseOptionsWidget::onLabelChanged);
     
     // Plot ID
     p_plotIdComboBox = new QComboBox(this);
-    layout->addRow("Plot ID:", p_plotIdComboBox);
-
-    // Autoscale controls
-    QWidget *autoscaleWidget = new QWidget(this);
-    QHBoxLayout *autoscaleLayout = new QHBoxLayout(autoscaleWidget);
-    autoscaleLayout->setContentsMargins(0, 0, 0, 0);
+    identityLayout->addRow("Plot ID:", p_plotIdComboBox);
+    
+    // Group 2: Scale & Position
+    auto scaleGroup = new QGroupBox("Scale & Position", this);
+    scaleGroup->setFlat(true); // Flat appearance for nested GroupBox
+    auto scaleLayout = new QVBoxLayout(scaleGroup);
+    scaleLayout->setContentsMargins(3, 2, 3, 3); // Reduced margins for flat GroupBox
+    scaleLayout->setSpacing(3); // Reduced spacing for compact appearance
+    
+    // Y Scale with Invert button
+    auto yScaleRow = new QHBoxLayout();
+    yScaleRow->addWidget(new QLabel("Y Scale:", this));
+    p_yScaleSpinBox = new QDoubleSpinBox(this);
+    p_yScaleSpinBox->setRange(-1e10, 1e10);
+    p_yScaleSpinBox->setDecimals(4);
+    p_yScaleSpinBox->setSingleStep(1.0);
+    p_yScaleSpinBox->setKeyboardTracking(false); // Prevent updates while typing
+    yScaleRow->addWidget(p_yScaleSpinBox);
+    p_invertButton = new QPushButton("Invert", this);
+    p_invertButton->setMaximumWidth(60);
+    yScaleRow->addWidget(p_invertButton);
+    yScaleRow->addStretch();
+    connect(p_invertButton, &QPushButton::clicked, this, &OverlayBaseOptionsWidget::onInvertClicked);
+    scaleLayout->addLayout(yScaleRow);
+    
+    // Autoscale controls (positioned right below Y Scale)
+    auto autoscaleRow = new QHBoxLayout();
+    autoscaleRow->addWidget(new QLabel("Autoscale:", this));
     p_autoscalePercentageSpinBox = new QDoubleSpinBox(this);
     p_autoscalePercentageSpinBox->setRange(0.1, 1000.0);
     p_autoscalePercentageSpinBox->setDecimals(1);
@@ -54,51 +87,49 @@ void OverlayBaseOptionsWidget::setupUI()
     p_autoscalePercentageSpinBox->setSuffix("%");
     p_autoscalePercentageSpinBox->setValue(20.0); // Default 20%
     p_autoscalePercentageSpinBox->setKeyboardTracking(false);
+    autoscaleRow->addWidget(p_autoscalePercentageSpinBox);
     p_autoscaleButton = new QPushButton("Autoscale", this);
     p_autoscaleButton->setMaximumWidth(80);
-    autoscaleLayout->addWidget(p_autoscalePercentageSpinBox);
-    autoscaleLayout->addWidget(p_autoscaleButton);
-    autoscaleLayout->addStretch();
+    autoscaleRow->addWidget(p_autoscaleButton);
+    autoscaleRow->addStretch();
     connect(p_autoscaleButton, &QPushButton::clicked, this, &OverlayBaseOptionsWidget::onAutoscaleClicked);
-    layout->addRow("Autoscale:", autoscaleWidget);
+    scaleLayout->addLayout(autoscaleRow);
     
-    // Y Scale with Invert button
-    QWidget *yScaleWidget = new QWidget(this);
-    QHBoxLayout *yScaleLayout = new QHBoxLayout(yScaleWidget);
-    yScaleLayout->setContentsMargins(0, 0, 0, 0);
-    p_yScaleSpinBox = new QDoubleSpinBox(this);
-    p_yScaleSpinBox->setRange(-1e10, 1e10);
-    p_yScaleSpinBox->setDecimals(4);
-    p_yScaleSpinBox->setSingleStep(1.0);
-    p_yScaleSpinBox->setKeyboardTracking(false); // Prevent updates while typing
-    p_invertButton = new QPushButton("Invert", this);
-    p_invertButton->setMaximumWidth(60);
-    yScaleLayout->addWidget(p_yScaleSpinBox);
-    yScaleLayout->addWidget(p_invertButton);
-    connect(p_invertButton, &QPushButton::clicked, this, &OverlayBaseOptionsWidget::onInvertClicked);
-    layout->addRow("Y Scale:", yScaleWidget);
-    
-    // Y Offset
+    // Y and X Offsets (side-by-side for compact layout)
+    auto offsetRow = new QHBoxLayout();
+    offsetRow->addWidget(new QLabel("Y Offset:", this));
     p_yOffsetSpinBox = new QDoubleSpinBox(this);
     p_yOffsetSpinBox->setRange(-1e10, 1e10);
     p_yOffsetSpinBox->setDecimals(4);
     p_yOffsetSpinBox->setSingleStep(1.0);
     p_yOffsetSpinBox->setKeyboardTracking(false); // Prevent updates while typing
-    layout->addRow("Y Offset:", p_yOffsetSpinBox);
+    offsetRow->addWidget(p_yOffsetSpinBox);
     
-    // X Offset
+    offsetRow->addWidget(new QLabel("X Offset:", this));
     p_xOffsetSpinBox = new QDoubleSpinBox(this);
     p_xOffsetSpinBox->setRange(-1e10, 1e10);
     p_xOffsetSpinBox->setDecimals(4);
     p_xOffsetSpinBox->setSingleStep(1.0);
     p_xOffsetSpinBox->setKeyboardTracking(false); // Prevent updates while typing
-    layout->addRow("X Offset:", p_xOffsetSpinBox);
-
+    offsetRow->addWidget(p_xOffsetSpinBox);
+    offsetRow->addStretch();
+    scaleLayout->addLayout(offsetRow);
+    
+    // Group 3: Frequency Limits (Collapsible)
+    auto frequencyGroup = new QGroupBox("Frequency Limits", this);
+    frequencyGroup->setFlat(true); // Flat appearance for nested GroupBox
+    frequencyGroup->setCheckable(true);
+    frequencyGroup->setChecked(false);
+    auto frequencyGroupLayout = new QVBoxLayout(frequencyGroup);
+    frequencyGroupLayout->setContentsMargins(3, 2, 3, 3); // Reduced margins for flat GroupBox
+    
+    // Collapsible content widget
+    auto frequencyContentWidget = new QWidget(this);
+    auto frequencyLayout = new QGridLayout(frequencyContentWidget);
+    frequencyLayout->setContentsMargins(3, 2, 3, 3); // Reduced margins for flat GroupBox
+    frequencyLayout->setSpacing(3); // Reduced spacing for compact appearance
     
     // Min Frequency Limit
-    QWidget *minFreqWidget = new QWidget(this);
-    QHBoxLayout *minFreqLayout = new QHBoxLayout(minFreqWidget);
-    minFreqLayout->setContentsMargins(0, 0, 0, 0);
     p_minFreqCheckBox = new QCheckBox("Enable", this);
     p_minFreqSpinBox = new QDoubleSpinBox(this);
     p_minFreqSpinBox->setRange(-1e10, 1e10);
@@ -106,16 +137,13 @@ void OverlayBaseOptionsWidget::setupUI()
     p_minFreqSpinBox->setSingleStep(1.0);
     p_minFreqSpinBox->setSuffix(" MHz");
     p_minFreqSpinBox->setKeyboardTracking(false); // Prevent updates while typing
-    minFreqLayout->addWidget(p_minFreqCheckBox);
-    minFreqLayout->addWidget(p_minFreqSpinBox);
-    minFreqLayout->addStretch();
     connect(p_minFreqCheckBox, &QCheckBox::toggled, p_minFreqSpinBox, &QDoubleSpinBox::setEnabled);
-    layout->addRow("Min Frequency:", minFreqWidget);
+    
+    frequencyLayout->addWidget(new QLabel("Min Frequency:", this), 0, 0);
+    frequencyLayout->addWidget(p_minFreqCheckBox, 0, 1);
+    frequencyLayout->addWidget(p_minFreqSpinBox, 0, 2);
     
     // Max Frequency Limit
-    QWidget *maxFreqWidget = new QWidget(this);
-    QHBoxLayout *maxFreqLayout = new QHBoxLayout(maxFreqWidget);
-    maxFreqLayout->setContentsMargins(0, 0, 0, 0);
     p_maxFreqCheckBox = new QCheckBox("Enable", this);
     p_maxFreqSpinBox = new QDoubleSpinBox(this);
     p_maxFreqSpinBox->setRange(-1e10, 1e10);
@@ -123,13 +151,27 @@ void OverlayBaseOptionsWidget::setupUI()
     p_maxFreqSpinBox->setSingleStep(1.0);
     p_maxFreqSpinBox->setSuffix(" MHz");
     p_maxFreqSpinBox->setKeyboardTracking(false); // Prevent updates while typing
-    maxFreqLayout->addWidget(p_maxFreqCheckBox);
-    maxFreqLayout->addWidget(p_maxFreqSpinBox);
-    maxFreqLayout->addStretch();
     connect(p_maxFreqCheckBox, &QCheckBox::toggled, p_maxFreqSpinBox, &QDoubleSpinBox::setEnabled);
-    layout->addRow("Max Frequency:", maxFreqWidget);
     
-    setLayout(layout);
+    frequencyLayout->addWidget(new QLabel("Max Frequency:", this), 1, 0);
+    frequencyLayout->addWidget(p_maxFreqCheckBox, 1, 1);
+    frequencyLayout->addWidget(p_maxFreqSpinBox, 1, 2);
+    
+    frequencyGroupLayout->addWidget(frequencyContentWidget);
+    
+    // Connect GroupBox toggled signal to hide/show content widget for true collapsible behavior
+    connect(frequencyGroup, &QGroupBox::toggled, frequencyContentWidget, &QWidget::setVisible);
+    
+    // Initially hide content since group starts unchecked
+    frequencyContentWidget->setVisible(false);
+    
+    // Add groups to main layout
+    mainLayout->addWidget(identityGroup);
+    mainLayout->addWidget(scaleGroup);
+    mainLayout->addWidget(frequencyGroup);
+    mainLayout->addStretch();
+    
+    setLayout(mainLayout);
     
     // Connect all non-label widgets to emit settingsChanged signal for real-time updates
     connect(p_plotIdComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),

@@ -136,6 +136,7 @@ private:
     bool d_experimentValid;
     bool d_hasFtData;
     Ft d_configuredFt;
+    QString d_fullCustomPath; // Store full path separately from abbreviated display
     
     // Helper methods
     void setupExperimentSelectionUI();

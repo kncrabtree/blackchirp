@@ -39,11 +39,12 @@ UnifiedOverlayDialog::UnifiedOverlayDialog(OverlayBase::OverlayType type,
       d_isProcessing(false),
       d_isValid(false)
 {
+    // Create widget with all necessary data (context auto-detected as Creation since overlay is nullptr)
+    QString settingsKey = QString("UnifiedOverlayDialog_%1").arg(static_cast<int>(d_overlayType));
+    p_widget = new UnifiedOverlayWidget(settingsKey, d_overlayType, plotNames, currentFt, 
+                                        nullptr, nullptr, this);
+    
     setupUI();
-    
-    // Setup widget for creation mode
-    p_widget->setupForCreation(type, plotNames, currentFt, existingOverlays);
-    
     setupConnections();
     updateWindowTitle();
     updateButtonState();
@@ -75,10 +76,12 @@ UnifiedOverlayDialog::UnifiedOverlayDialog(std::shared_ptr<OverlayBase> overlay,
       d_isProcessing(false),
       d_isValid(true) // Settings mode starts valid
 {
-    setupUI();
+    // Create widget with all necessary data (context auto-detected as Settings since overlay is not nullptr)
+    QString settingsKey = QString("UnifiedOverlayDialog_%1").arg(static_cast<int>(d_overlayType));
+    p_widget = new UnifiedOverlayWidget(settingsKey, d_overlayType, plotNames, currentFt, 
+                                        overlay, overlayStorage, this);
     
-    // Setup widget for settings mode
-    p_widget->setupForSettings(overlay, plotNames, currentFt, overlayStorage);
+    setupUI();
     
     setupConnections();
     updateWindowTitle();
@@ -299,10 +302,7 @@ void UnifiedOverlayDialog::setupUI()
     p_mainLayout->setContentsMargins(12, 12, 12, 12);
     p_mainLayout->setSpacing(12);
     
-    // Create the unified overlay widget with appropriate context
-    QString settingsKey = QString("UnifiedOverlayDialog_%1").arg(static_cast<int>(d_overlayType));
-    auto context = isCreationMode() ? UnifiedOverlayWidget::Context::Creation : UnifiedOverlayWidget::Context::Settings;
-    p_widget = new UnifiedOverlayWidget(settingsKey, context, this);
+    // Widget is already created in constructor with all necessary data
     p_mainLayout->addWidget(p_widget, 1); // Give it all available space
     
     // Create status label
