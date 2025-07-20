@@ -69,10 +69,6 @@ public:
     void cleanupPreviewOverlay(); // Safe cleanup with signal blocking
     bool isBeingDestroyed() const; // Check if widget is being destroyed
     
-    // Progress indication (settings context only)
-    void showProgress(const QString &message);
-    void hideProgress();
-    void updateProgress(int value, const QString &message = QString());
     
     // State backup/restore for cancel functionality (settings context only)
     void backupOverlayState();
@@ -100,9 +96,6 @@ public slots:
     void onAccept();
 
 private slots:
-    void onProgressOperationStarted(const QString &message);
-    void onProgressOperationFinished();
-    void onProgressValueChanged(int value);
     void onLabelUpdateRequested(const QString &newLabel);
     void onColorChangeRequested();
 
@@ -133,6 +126,7 @@ private:
     QString getContextName() const;
     bool isCreationContext() const { return d_context == Context::Creation; }
     bool isSettingsContext() const { return d_context == Context::Settings; }
+    QVector<std::shared_ptr<OverlayBase>> getExistingOverlays() const;
     
     // Centralized validation
     void performCompleteValidation();
@@ -151,8 +145,7 @@ private:
     QStringList d_plotNames;
     Ft d_currentFt; // Current spectroscopic data for intelligent defaults
     std::shared_ptr<OverlayBase> d_overlay; // Settings context only
-    std::shared_ptr<OverlayStorage> p_overlayStorage; // Settings context only
-    QVector<std::shared_ptr<OverlayBase>> d_existingOverlays; // Creation context only
+    std::shared_ptr<OverlayStorage> p_overlayStorage; // Both contexts
     
     // UI Components - Three-tier architecture
     QHBoxLayout *p_mainLayout;
@@ -169,10 +162,6 @@ private:
     CurveAppearanceWidget *p_curveAppearanceWidget;
     
     
-    // Progress indication
-    QWidget *p_progressWidget;
-    QProgressBar *p_progressBar;
-    QLabel *p_progressLabel;
     
     // State tracking - three-tier logic moved to OverlayTypeSpecificWidget
     QString d_lastValidationError;

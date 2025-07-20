@@ -19,7 +19,7 @@
 UnifiedOverlayDialog::UnifiedOverlayDialog(OverlayBase::OverlayType type,
                                          const QStringList &plotNames,
                                          const Ft &currentFt,
-                                         const QVector<std::shared_ptr<OverlayBase>> &existingOverlays,
+                                         std::shared_ptr<OverlayStorage> overlayStorage,
                                          QWidget *parent)
     : QDialog(parent),
       p_widget(nullptr),
@@ -33,6 +33,7 @@ UnifiedOverlayDialog::UnifiedOverlayDialog(OverlayBase::OverlayType type,
       p_timeoutTimer(nullptr),
       d_mode(Mode::Creation),
       d_overlayType(type),
+      d_overlayStorage(overlayStorage),
       d_dialogState(DialogState::Ready),
       d_operationProgress(0),
       d_queueSize(0),
@@ -42,7 +43,7 @@ UnifiedOverlayDialog::UnifiedOverlayDialog(OverlayBase::OverlayType type,
     // Create widget with all necessary data (context auto-detected as Creation since overlay is nullptr)
     QString settingsKey = QString("UnifiedOverlayDialog_%1").arg(static_cast<int>(d_overlayType));
     p_widget = new UnifiedOverlayWidget(settingsKey, d_overlayType, plotNames, currentFt, 
-                                        nullptr, nullptr, this);
+                                        nullptr, overlayStorage, this);
     
     setupUI();
     setupConnections();
@@ -295,7 +296,7 @@ void UnifiedOverlayDialog::onOverlayDataChanged(std::shared_ptr<OverlayBase> ove
 void UnifiedOverlayDialog::setupUI()
 {
     setModal(true);
-    resize(800, 600);
+    resize(800, 400);
     
     // Create main layout
     p_mainLayout = new QVBoxLayout(this);

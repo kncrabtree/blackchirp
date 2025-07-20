@@ -36,7 +36,7 @@ public:
     explicit UnifiedOverlayDialog(OverlayBase::OverlayType type,
                                  const QStringList &plotNames,
                                  const Ft &currentFt,
-                                 const QVector<std::shared_ptr<OverlayBase>> &existingOverlays = {},
+                                 std::shared_ptr<OverlayStorage> overlayStorage,
                                  QWidget *parent = nullptr);
     
     // Settings mode constructor

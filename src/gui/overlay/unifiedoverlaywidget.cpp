@@ -38,21 +38,8 @@ UnifiedOverlayWidget::UnifiedOverlayWidget(const QString &settingsKey,
       p_overlayBaseOptionsWidget(nullptr),
       p_curveAppearanceBox(nullptr),
       p_curveAppearanceWidget(nullptr),
-      p_progressWidget(nullptr),
-      p_progressBar(nullptr),
-      p_progressLabel(nullptr),
       d_hasBackupState(false)
 {
-    // Get existing overlays from storage, filtering out the current overlay if in settings context
-    d_existingOverlays.clear();
-    if (overlayStorage) {
-        auto allOverlays = overlayStorage->getAllOverlays();
-        for (const auto &existing : allOverlays) {
-            if (existing && existing != overlay) {
-                d_existingOverlays.append(existing);
-            }
-        }
-    }
     
     setupUI();
     configureForContext();
@@ -144,7 +131,7 @@ bool UnifiedOverlayWidget::validateSettings(QString &errorMessage) const
     // Validate base overlay options
     if (p_overlayBaseOptionsWidget) {
         QString baseError;
-        if (!p_overlayBaseOptionsWidget->validateSettings(baseError, d_existingOverlays)) {
+        if (!p_overlayBaseOptionsWidget->validateSettings(baseError, getExistingOverlays())) {
             errors << baseError;
         }
     }
@@ -187,7 +174,7 @@ bool UnifiedOverlayWidget::isDataValid() const
     // Check overlay base options validation (includes label validation)
     if (p_overlayBaseOptionsWidget) {
         QString errorMessage;
-        if (!p_overlayBaseOptionsWidget->validateSettings(errorMessage, d_existingOverlays)) {
+        if (!p_overlayBaseOptionsWidget->validateSettings(errorMessage, getExistingOverlays())) {
             return false;
         }
     }
@@ -210,42 +197,6 @@ void UnifiedOverlayWidget::resetToDefaults()
     }
 }
 
-void UnifiedOverlayWidget::showProgress(const QString &message)
-{
-    if (!isSettingsContext()) {
-        return;
-    }
-    
-    if (p_progressLabel) {
-        p_progressLabel->setText(message);
-    }
-    
-    if (p_progressWidget) {
-        p_progressWidget->show();
-    }
-}
-
-void UnifiedOverlayWidget::hideProgress()
-{
-    if (p_progressWidget) {
-        p_progressWidget->hide();
-    }
-}
-
-void UnifiedOverlayWidget::updateProgress(int value, const QString &message)
-{
-    if (!isSettingsContext()) {
-        return;
-    }
-    
-    if (p_progressBar) {
-        p_progressBar->setValue(value);
-    }
-    
-    if (!message.isEmpty() && p_progressLabel) {
-        p_progressLabel->setText(message);
-    }
-}
 
 
 void UnifiedOverlayWidget::onSettingsChanged()
@@ -295,20 +246,6 @@ void UnifiedOverlayWidget::onAccept()
     saveSettings();
 }
 
-void UnifiedOverlayWidget::onProgressOperationStarted(const QString &message)
-{
-    showProgress(message);
-}
-
-void UnifiedOverlayWidget::onProgressOperationFinished()
-{
-    hideProgress();
-}
-
-void UnifiedOverlayWidget::onProgressValueChanged(int value)
-{
-    updateProgress(value);
-}
 
 void UnifiedOverlayWidget::setupUI()
 {
@@ -327,7 +264,6 @@ void UnifiedOverlayWidget::setupUI()
     // Create overlay widgets
     setupTypeSpecificWidget();
     createOverlayBaseOptionsBox();
-    createProgressIndicator();
     
     // Add overlay widgets to left layout
     leftVLayout->addWidget(p_typeSpecificWidget);
@@ -350,7 +286,6 @@ void UnifiedOverlayWidget::setupUI()
     // Create curve appearance widget
     createCurveAppearanceBox();
     rightVLayout->addWidget(p_curveAppearanceBox);
-    rightVLayout->addWidget(p_progressWidget);
     
     // Add bottom spacer
     rightVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
@@ -455,33 +390,9 @@ void UnifiedOverlayWidget::createCurveAppearanceBox()
 }
 
 
-void UnifiedOverlayWidget::createProgressIndicator()
-{
-    p_progressWidget = new QWidget();
-    p_progressWidget->setVisible(false); // Hidden by default
-    
-    auto progressLayout = new QHBoxLayout(p_progressWidget);
-    progressLayout->setContentsMargins(0, 0, 0, 0);
-    
-    p_progressLabel = new QLabel("Processing...");
-    p_progressBar = new QProgressBar();
-    p_progressBar->setRange(0, 100);
-    p_progressBar->setValue(0);
-    
-    progressLayout->addWidget(p_progressLabel);
-    progressLayout->addWidget(p_progressBar);
-}
 
 void UnifiedOverlayWidget::configureForContext()
 {
-    // Configure progress indicator visibility based on context
-    if (p_progressWidget) {
-        if (isCreationContext()) {
-            p_progressWidget->setVisible(false);
-        } else if (isSettingsContext()) {
-            p_progressWidget->setVisible(false); // Hidden until needed
-        }
-    }
     
     // Type-specific widget title is now handled by the widget itself
     
@@ -558,6 +469,20 @@ QString UnifiedOverlayWidget::getContextName() const
     return "Unknown";
 }
 
+QVector<std::shared_ptr<OverlayBase>> UnifiedOverlayWidget::getExistingOverlays() const
+{
+    QVector<std::shared_ptr<OverlayBase>> existingOverlays;
+    if (p_overlayStorage) {
+        auto allOverlays = p_overlayStorage->getAllOverlays();
+        for (const auto &existing : allOverlays) {
+            if (existing && existing != d_overlay) {
+                existingOverlays.append(existing);
+            }
+        }
+    }
+    return existingOverlays;
+}
+
 void UnifiedOverlayWidget::performCompleteValidation()
 {
     // Perform complete validation including both type-specific and overlay base options
@@ -624,13 +549,6 @@ void UnifiedOverlayWidget::setupTypeSpecificWidgetConnections()
     connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::settingsChanged,
             this, &UnifiedOverlayWidget::onRealTimeUpdate);
     
-    // Progress indication connections for both contexts
-    connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::progressOperationStarted,
-            this, &UnifiedOverlayWidget::onProgressOperationStarted);
-    connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::progressOperationFinished,
-            this, &UnifiedOverlayWidget::onProgressOperationFinished);
-    connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::progressValueChanged,
-            this, &UnifiedOverlayWidget::onProgressValueChanged);
 }
 
 

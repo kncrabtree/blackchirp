@@ -249,11 +249,8 @@ void OverlayManagerWidget::addOverlay(OverlayBase::OverlayType type)
     Ft mainFt = ftmwParent->getMainPlotFt();
     QStringList plotNames = ftmwParent->getPlotNames();
     
-    // Get existing overlays for context
-    QVector<std::shared_ptr<OverlayBase>> existingOverlays = p_overlayModel->getAllOverlays();
-    
     // Create unified dialog in creation mode with full Ft data for intelligent settings
-    UnifiedOverlayDialog dialog(type, plotNames, mainFt, existingOverlays, this);
+    UnifiedOverlayDialog dialog(type, plotNames, mainFt, p_overlayStorage, this);
     dialog.setModal(true);
     
     // Connect preview signals for real-time preview display
