@@ -43,14 +43,14 @@ public:
     std::shared_ptr<OverlayBase> createOverlay() override;
     void applyToOverlay(std::shared_ptr<OverlayBase> overlay) const override;
     
-    bool validateSettings(QString &errorMessage) const override;
+    bool validateSettingsImpl() override;
     bool isDataValid() const override;
     
     // Source file management
     bool hasValidSourceFile() const override;
     QString getSourceFilePath() const override;
     void setSourceFilePath(const QString &path) override;
-    bool validateSourceFile(QString &errorMessage) override;
+    bool validateSourceFileImpl() override;
     
     void resetToDefaults() override;
     
@@ -90,9 +90,7 @@ public:
                                                      std::shared_ptr<OverlayBase> overlay = nullptr) const override;
     
     // Three-tier UI component access
-    QWidget* getSourceFileConfigWidget() override;
-    QWidget* getSourceFileSettingsWidget() override;
-    QWidget* getOverlaySettingsWidget() override;
+    // Three-tier layout is now handled internally
     
     // Type-specific settings visibility
     bool hasTypeSpecificSettings() const override { return false; } // BC experiments have no overlay-specific settings currently
@@ -107,20 +105,22 @@ private slots:
     void updateAutomaticLabel();
 
 protected:
+    // Three-tier UI creation interface
+    void createSourceFileConfigUI(QGroupBox *parent) override;
+    void createSourceFileSettingsUI(QGroupBox *parent) override;
+    void createTypeSpecificSettingsUI(QGroupBox *parent) override;
+    
     // OverlayTypeSpecificWidget interface
-    void setupUI() override;
     void setupConnections() override;
     void loadSettings() override;
     void saveSettings() override;
+    
+    // Context-aware UI behavior
+    void configureForCreationContext() override;
+    void configureForSettingsContext() override;
 
 private:
-    // Three-tier UI organization
-    QWidget *p_sourceFileConfigWidget;
-    QWidget *p_sourceFileSettingsWidget; 
-    QWidget *p_overlaySettingsWidget;
-    
     // Source File Configuration tier (File selection)
-    QGroupBox *p_experimentSelectionGroup;
     QSpinBox *p_experimentNumberSpinBox;
     QCheckBox *p_usePathCheckBox;
     QLineEdit *p_pathLineEdit;
@@ -128,12 +128,8 @@ private:
     QLabel *p_experimentStatusLabel;
     
     // Source File Settings tier (FT Configuration - source-dependent)
-    QGroupBox *p_ftConfigurationGroup;
     QPushButton *p_configureFtButton;
     QLabel *p_ftStatusLabel;
-    
-    // Overlay Settings tier (Source-independent controls)
-    QGroupBox *p_bcexpSettingsGroup;
     // Future: Add BCExp-specific settings like processing options
     
     // State management

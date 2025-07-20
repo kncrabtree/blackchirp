@@ -187,7 +187,7 @@ void OverlayManagerWidget::setupAddButton()
             break;
         case OverlayBase::GenericXY:
             menuItemName = "Generic XY Data";
-            enabled = false; // Not yet implemented
+            enabled = true; // Now implemented
             break;
         default:
             menuItemName = typeName; // Fallback to enum name
@@ -243,11 +243,7 @@ void OverlayManagerWidget::addOverlay(OverlayBase::OverlayType type)
         return;
     }
     
-    // Check if overlay type is implemented
-    if (type == OverlayBase::GenericXY) {
-        qDebug() << "GenericXY overlay creation not yet implemented";
-        return;
-    }
+    // All overlay types are now implemented
     
     // Get plot information from parent
     Ft mainFt = ftmwParent->getMainPlotFt();

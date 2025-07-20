@@ -50,14 +50,14 @@ public:
     std::shared_ptr<OverlayBase> createOverlay() override;
     void applyToOverlay(std::shared_ptr<OverlayBase> overlay) const override;
     
-    bool validateSettings(QString &errorMessage) const override;
+    bool validateSettingsImpl() override;
     bool isDataValid() const override;
     
     // Source file management
     bool hasValidSourceFile() const override;
     QString getSourceFilePath() const override;
     void setSourceFilePath(const QString &path) override;
-    bool validateSourceFile(QString &errorMessage) override;
+    bool validateSourceFileImpl() override;
     
     void resetToDefaults() override;
     
@@ -71,12 +71,7 @@ public:
                                                      std::shared_ptr<OverlayBase> overlay = nullptr) const override;
 
     // Three-tier architecture interface
-    QWidget* getSourceFileConfigWidget() override;
-    QWidget* getSourceFileSettingsWidget() override;
-    QWidget* getOverlaySettingsWidget() override;
-
-signals:
-    void fileChanged(); // Emitted when source file changes
+    // Three-tier layout is now handled internally
 
 public slots:
     void onFileSelected();
@@ -90,14 +85,24 @@ private slots:
     void onHeaderLinesChanged();
     void onColumnSelectionChanged();
     void onAutoDetectClicked();
+    void onFilteringChanged();
+
+protected:
+    // Three-tier UI creation interface
+    void createSourceFileConfigUI(QGroupBox *parent) override;
+    void createSourceFileSettingsUI(QGroupBox *parent) override;
+    void createTypeSpecificSettingsUI(QGroupBox *parent) override;
+    
+    // OverlayTypeSpecificWidget interface
+    void setupConnections() override;
+    void loadSettings() override;
+    void saveSettings() override;
+    
+    // Context-aware UI behavior
+    void configureForCreationContext() override;
+    void configureForSettingsContext() override;
 
 private:
-    // UI Setup
-    void setupUI();
-    void setupConnections();
-    void createSourceFileConfigUI();
-    void createSourceFileSettingsUI();
-    void createTypeSpecificSettingsUI();
     
     // File handling
     void loadAndAnalyzeFile();
@@ -105,9 +110,7 @@ private:
     void updateColumnSelectors();
     void parseAndPreview();
     
-    // Settings management
-    void loadSettings();
-    void saveSettings() override;
+    // Settings management - loadSettings already declared in protected section
     
     // Data validation
     bool validateFileExists() const;
@@ -125,26 +128,24 @@ private:
     QString d_sourceFilePath;
     bool d_dataValid;
     
-    // Tier 1: Source File Config widgets
-    QWidget *p_sourceFileConfigWidget;
+    // Tier 1: Source File Config widgets (created in QGroupBox provided by base class)
     QLineEdit *p_filePathEdit;
     QPushButton *p_browseButton;
     QPushButton *p_autoDetectButton;
     QLabel *p_fileStatusLabel;
     
-    // Tier 2: Source File Settings widgets  
-    QWidget *p_sourceFileSettingsWidget;
+    // Tier 2: Source File Settings widgets (created in QGroupBox provided by base class)
     QComboBox *p_delimiterCombo;
     QSpinBox *p_headerLinesSpinBox;
     QComboBox *p_xColumnCombo;
     QComboBox *p_yColumnCombo;
+    QPushButton *p_parseButton;
     QCheckBox *p_enableFilteringCheckBox;
     QLineEdit *p_xMinEdit;
     QLineEdit *p_xMaxEdit;
     QLabel *p_dataStatsLabel;
     
-    // Tier 3: Type-specific settings - Preview display
-    QWidget *p_typeSpecificWidget;
+    // Tier 3: Type-specific settings - Preview display (created in QGroupBox provided by base class)
     QTableWidget *p_previewTable;
     
     // State tracking

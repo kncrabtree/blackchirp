@@ -3,6 +3,8 @@
 
 #include <QWidget>
 #include <QString>
+#include <QGroupBox>
+#include <QVBoxLayout>
 #include <memory>
 
 #include <data/experiment/overlaybase.h>
@@ -61,14 +63,16 @@ public:
     virtual void applyToOverlay(std::shared_ptr<OverlayBase> overlay) const = 0;
     
     // Validation
-    virtual bool validateSettings(QString &errorMessage) const = 0;
+    bool validateSettings(); // Non-virtual - manages base class state
+    QString getSettingsErrorMessage() const { return d_settingsErrorMessage; }
     virtual bool isDataValid() const = 0;
     
     // Source file management
     virtual bool hasValidSourceFile() const = 0;
     virtual QString getSourceFilePath() const = 0;
     virtual void setSourceFilePath(const QString &path) = 0;
-    virtual bool validateSourceFile(QString &errorMessage) = 0;
+    bool validateSourceFile(); // Non-virtual - manages base class state
+    QString getSourceFileErrorMessage() const { return d_sourceFileErrorMessage; }
     
     // Reset/accept functionality
     virtual void resetToDefaults() = 0;
@@ -83,10 +87,33 @@ public:
     virtual std::shared_ptr<OverlayOperation> createOperation(OperationCapability::Type type,
                                                              std::shared_ptr<OverlayBase> overlay = nullptr) const = 0;
     
-    // UI component access for three-tier architecture
-    virtual QWidget* getSourceFileConfigWidget() = 0;      // File selection, metadata display
-    virtual QWidget* getSourceFileSettingsWidget() = 0;    // Source-dependent controls
-    virtual QWidget* getOverlaySettingsWidget() = 0;       // Source-independent controls
+    // UI setup - must be called after construction since it calls virtual methods
+    void setupUI();
+    
+    // Context-aware UI behavior
+    void configureForContext(); // Non-virtual - orchestrates context setup
+    virtual void configureForCreationContext() {} // Override to customize creation UI
+    virtual void configureForSettingsContext() {} // Override to customize settings UI
+    
+    // Three-tier state management (moved from UnifiedOverlayWidget)
+    void updateSourceFileControls(); // Update source file UI state - controls base class QGroupBoxes
+    void onSourceFileConfigToggled(bool enabled); // Handle source config changes
+    
+    // Validation state getters
+    bool getSourceFileValid() const { return d_sourceFileValid; }
+    bool getSourceFileEnabled() const { return d_sourceFileEnabled; }
+    bool getSettingsValid() const { return d_settingsValid; }
+    
+protected:
+    // Derived class validation interface
+    virtual bool validateSourceFileImpl() = 0;
+    virtual bool validateSettingsImpl() = 0;
+    
+    // Error message management for derived classes
+    void setSourceFileErrorMessage(const QString &message) { d_sourceFileErrorMessage = message; }
+    void setSettingsErrorMessage(const QString &message) { d_settingsErrorMessage = message; }
+    
+    // Type-specific widgets now handle their own layout internally
     
     // Validation for unsaved changes
     virtual bool hasUnsavedChanges() const { return false; } // Default implementation
@@ -105,8 +132,12 @@ signals:
     void labelUpdateRequested(const QString &newLabel);
 
 protected:
+    // Three-tier UI creation interface - pure virtual methods for derived classes
+    virtual void createSourceFileConfigUI(QGroupBox *parent) = 0;
+    virtual void createSourceFileSettingsUI(QGroupBox *parent) = 0; 
+    virtual void createTypeSpecificSettingsUI(QGroupBox *parent) = 0;
+    
     // Helper methods for derived classes
-    virtual void setupUI() = 0;
     virtual void setupConnections() = 0;
     virtual void loadSettings() = 0;
     virtual void saveSettings() = 0;
@@ -117,15 +148,39 @@ protected:
         Settings
     };
     
+    // Context query methods
+    bool isCreationContext() const { return d_context == Context::Creation; }
+    bool isSettingsContext() const { return d_context == Context::Settings; }
+    Context getContext() const { return d_context; }
+    
     Context d_context;
     std::shared_ptr<OverlayBase> d_overlay; // Only valid in settings context
     const Ft d_currentFt; // Current spectroscopic data for intelligent defaults and analysis
+    
+    // Three-tier QGroupBox widgets (owned by base class)
+    QGroupBox *p_sourceFileConfigBox;
+    QGroupBox *p_sourceFileSettingsBox;
+    QGroupBox *p_overlaySettingsBox;
+    
+    // Three-tier state management (moved from UnifiedOverlayWidget)
+    bool d_sourceFileValid = false;
+    bool d_sourceFileEnabled = true;
+    bool d_settingsValid = false;
+    QString d_sourceFileErrorMessage;
+    QString d_settingsErrorMessage;
     
     friend class UnifiedOverlayWidget;
     
 private:
     void setContext(Context context) { d_context = context; }
-    void setOverlay(std::shared_ptr<OverlayBase> overlay) { d_overlay = overlay; }
+    void setOverlay(std::shared_ptr<OverlayBase> overlay) { 
+        d_overlay = overlay; 
+        // In settings context, start with source file configuration disabled
+        // User must explicitly enable it to change the source file
+        if (isSettingsContext()) {
+            d_sourceFileEnabled = false;
+        }
+    }
 };
 
 #endif // OVERLAYTYPESPECIFICWIDGET_H

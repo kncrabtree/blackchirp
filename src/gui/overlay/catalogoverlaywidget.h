@@ -81,14 +81,14 @@ public:
     std::shared_ptr<OverlayBase> createOverlay() override;
     void applyToOverlay(std::shared_ptr<OverlayBase> overlay) const override;
     
-    bool validateSettings(QString &errorMessage) const override;
+    bool validateSettingsImpl() override;
     bool isDataValid() const override;
     
     // Source file management
     bool hasValidSourceFile() const override;
     QString getSourceFilePath() const override;
     void setSourceFilePath(const QString &path) override;
-    bool validateSourceFile(QString &errorMessage) override;
+    bool validateSourceFileImpl() override;
     
     void resetToDefaults() override;
     
@@ -147,9 +147,7 @@ public:
                                                      std::shared_ptr<OverlayBase> overlay = nullptr) const override;
     
     // Three-tier UI component access
-    QWidget* getSourceFileConfigWidget() override;
-    QWidget* getSourceFileSettingsWidget() override;
-    QWidget* getOverlaySettingsWidget() override;
+    // Three-tier layout is now handled internally
     
     // Validation for unsaved changes
     bool hasUnsavedChanges() const override;
@@ -173,11 +171,19 @@ private slots:
     void onConvolutionOperationCancelled(const QString &operationId);
 
 protected:
+    // Three-tier UI creation interface
+    void createSourceFileConfigUI(QGroupBox *parent) override;
+    void createSourceFileSettingsUI(QGroupBox *parent) override;
+    void createTypeSpecificSettingsUI(QGroupBox *parent) override;
+    
     // OverlayTypeSpecificWidget interface
-    void setupUI() override;
     void setupConnections() override;
     void loadSettings() override;
     void saveSettings() override;
+    
+    // Context-aware UI behavior
+    void configureForCreationContext() override;
+    void configureForSettingsContext() override;
 
 private:
     // Convolution state tracking
@@ -204,13 +210,7 @@ private:
         }
     };
 
-    // Three-tier UI organization
-    QWidget *p_sourceFileConfigWidget;
-    QWidget *p_sourceFileSettingsWidget; 
-    QWidget *p_overlaySettingsWidget;
-    
     // Source File Configuration tier (File selection)
-    QGroupBox *p_fileSelectionGroup;
     QLineEdit *p_filePathLineEdit;
     QToolButton *p_browseButton;
     QLabel *p_formatLabel;
@@ -219,13 +219,11 @@ private:
     QLabel *p_frequencyRangeLabel;
     
     // Source File Settings tier (Source-dependent controls)
-    QGroupBox *p_sourceFileGroup;
     QCheckBox *p_saveRangeOnlyCheckBox;
     QDoubleSpinBox *p_filterMinFreqSpinBox;
     QDoubleSpinBox *p_filterMaxFreqSpinBox;
     
     // Overlay Settings tier (Convolution - source-independent)
-    QGroupBox *p_convolutionGroup;
     QCheckBox *p_convolutionEnabledCheckBox;
     QComboBox *p_lineshapeComboBox;
     QDoubleSpinBox *p_linewidthSpinBox;
@@ -242,9 +240,6 @@ private:
     bool d_fileValid;
     
     // Helper methods
-    void setupFileSelectionUI();
-    void setupSourceFileSettingsUI();
-    void setupConvolutionSettingsUI();
     void loadCatalogFile(const QString &filePath);
     void updateFileInfo();
     void updateConvolutionControls();

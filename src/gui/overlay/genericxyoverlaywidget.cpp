@@ -5,6 +5,7 @@
 #include <QHeaderView>
 #include <QFormLayout>
 #include <QGridLayout>
+#include <QGroupBox>
 #include <QSplitter>
 #include <QApplication>
 #include <QStandardPaths>
@@ -37,13 +38,9 @@ GenericXYOverlayWidget::GenericXYOverlayWidget(const Ft &currentFt, QWidget *par
     , SettingsStorage(BC::Key::GenericXYWidget::key)
     , d_dataValid(false)
     , d_settingsLoaded(false)
-    , p_sourceFileConfigWidget(nullptr)
-    , p_sourceFileSettingsWidget(nullptr)
-    , p_typeSpecificWidget(nullptr)
     , d_fileAnalyzed(false)
 {
-    setupUI();
-    setupConnections();
+    // Base class handles setupUI() and setupConnections()
 }
 
 GenericXYOverlayWidget::~GenericXYOverlayWidget() = default;
@@ -168,26 +165,26 @@ void GenericXYOverlayWidget::applyToOverlay(std::shared_ptr<OverlayBase> overlay
     }
 }
 
-bool GenericXYOverlayWidget::validateSettings(QString &errorMessage) const
+bool GenericXYOverlayWidget::validateSettingsImpl()
 {
     if (!validateFileExists()) {
-        errorMessage = "Source file does not exist or is not readable";
+        setSettingsErrorMessage("Source file does not exist or is not readable");
         return false;
     }
     
     if (!validateColumns()) {
-        errorMessage = "Invalid column selection";
+        setSettingsErrorMessage("Invalid column selection");
         return false;
     }
     
     if (!d_dataValid) {
-        errorMessage = "Data could not be parsed or is invalid";
+        setSettingsErrorMessage("Data could not be parsed or is invalid");
         return false;
     }
     
     if (p_enableFilteringCheckBox->isChecked()) {
         if (!validateDataRange()) {
-            errorMessage = "Invalid filtering range";
+            setSettingsErrorMessage("Invalid filtering range");
             return false;
         }
     }
@@ -216,21 +213,22 @@ void GenericXYOverlayWidget::setSourceFilePath(const QString &path)
         d_sourceFilePath = path;
         p_filePathEdit->setText(path);
         
-        if (!path.isEmpty()) {
-            loadAndAnalyzeFile();
+        if (!path.isEmpty() && validateFileExists()) {
+            p_parseButton->setEnabled(true);
+            // Don't automatically parse - let user click Parse button
         } else {
             d_dataValid = false;
             d_fileAnalyzed = false;
-            emit fileChanged();
+            p_parseButton->setEnabled(false);
             emit sourceFileChanged();
         }
     }
 }
 
-bool GenericXYOverlayWidget::validateSourceFile(QString &errorMessage)
+bool GenericXYOverlayWidget::validateSourceFileImpl()
 {
     if (!validateFileExists()) {
-        errorMessage = "File does not exist or is not readable";
+        setSourceFileErrorMessage("File does not exist or is not readable");
         return false;
     }
     
@@ -239,7 +237,7 @@ bool GenericXYOverlayWidget::validateSourceFile(QString &errorMessage)
     }
     
     if (!d_dataValid) {
-        errorMessage = "File format could not be detected or data is invalid";
+        setSourceFileErrorMessage("File format could not be detected or data is invalid");
         return false;
     }
     
@@ -317,20 +315,6 @@ std::shared_ptr<OverlayOperation> GenericXYOverlayWidget::createOperation(Operat
     return nullptr; // Simplified for now
 }
 
-QWidget* GenericXYOverlayWidget::getSourceFileConfigWidget()
-{
-    return p_sourceFileConfigWidget;
-}
-
-QWidget* GenericXYOverlayWidget::getSourceFileSettingsWidget()
-{
-    return p_sourceFileSettingsWidget;
-}
-
-QWidget* GenericXYOverlayWidget::getOverlaySettingsWidget()
-{
-    return p_typeSpecificWidget;
-}
 
 void GenericXYOverlayWidget::onFileSelected()
 {
@@ -353,6 +337,9 @@ void GenericXYOverlayWidget::onParseSettingsChanged()
     parseAndPreview();
     saveSettings();
     emit settingsChanged();
+    
+    // Reset parse button text after parsing
+    p_parseButton->setText("Parse File");
 }
 
 void GenericXYOverlayWidget::updatePreview()
@@ -449,15 +436,13 @@ void GenericXYOverlayWidget::onAutoDetectClicked()
     onFormatDetectionRequested();
 }
 
-void GenericXYOverlayWidget::setupUI()
+void GenericXYOverlayWidget::onFilteringChanged()
 {
-    // Main layout will be handled by UnifiedOverlayWidget
-    // We just create the individual widget components
-    
-    createSourceFileConfigUI();
-    createSourceFileSettingsUI();
-    createTypeSpecificSettingsUI();
+    // Save filtering settings and emit signals without re-parsing
+    saveSettings();
+    emit settingsChanged();
 }
+
 
 void GenericXYOverlayWidget::setupConnections()
 {
@@ -466,71 +451,113 @@ void GenericXYOverlayWidget::setupConnections()
     connect(p_browseButton, &QPushButton::clicked, this, &GenericXYOverlayWidget::onFileDialogRequested);
     connect(p_autoDetectButton, &QPushButton::clicked, this, &GenericXYOverlayWidget::onAutoDetectClicked);
     
-    // Source file settings connections
-    connect(p_delimiterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &GenericXYOverlayWidget::onDelimiterChanged);
-    connect(p_headerLinesSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
-            this, &GenericXYOverlayWidget::onHeaderLinesChanged);
-    connect(p_xColumnCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &GenericXYOverlayWidget::onColumnSelectionChanged);
-    connect(p_yColumnCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &GenericXYOverlayWidget::onColumnSelectionChanged);
+    // Parse button triggers re-parsing with current settings
+    connect(p_parseButton, &QPushButton::clicked, this, &GenericXYOverlayWidget::onParseSettingsChanged);
     
-    // Filtering connections
-    connect(p_enableFilteringCheckBox, &QCheckBox::toggled, this, &GenericXYOverlayWidget::onParseSettingsChanged);
-    connect(p_xMinEdit, &QLineEdit::editingFinished, this, &GenericXYOverlayWidget::onParseSettingsChanged);
-    connect(p_xMaxEdit, &QLineEdit::editingFinished, this, &GenericXYOverlayWidget::onParseSettingsChanged);
+    // Filtering connections - apply in real time since they don't require re-parsing
+    connect(p_enableFilteringCheckBox, &QCheckBox::toggled, this, &GenericXYOverlayWidget::onFilteringChanged);
+    connect(p_xMinEdit, &QLineEdit::editingFinished, this, &GenericXYOverlayWidget::onFilteringChanged);
+    connect(p_xMaxEdit, &QLineEdit::editingFinished, this, &GenericXYOverlayWidget::onFilteringChanged);
 }
 
-void GenericXYOverlayWidget::createSourceFileConfigUI()
+void GenericXYOverlayWidget::configureForCreationContext()
 {
-    p_sourceFileConfigWidget = new QWidget(this);
-    auto layout = new QFormLayout(p_sourceFileConfigWidget);
+    // Creation context: Enable auto-detection and emphasize preview
+    if (p_autoDetectButton) {
+        p_autoDetectButton->setVisible(true);
+        p_autoDetectButton->setText("Auto-Detect Format");
+    }
+    
+    // Enable all source file controls
+    if (p_filePathEdit) p_filePathEdit->setEnabled(true);
+    if (p_browseButton) p_browseButton->setEnabled(true);
+    
+    // Make preview more prominent in creation context
+    if (p_previewTable) {
+        p_previewTable->setMinimumHeight(150);
+    }
+    
+    // Show helpful status messages
+    if (p_fileStatusLabel) {
+        p_fileStatusLabel->setText("Select a file and configure parsing to create overlay");
+        p_fileStatusLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
+    }
+}
+
+void GenericXYOverlayWidget::configureForSettingsContext()
+{
+    // Settings context: Focus on existing data, less emphasis on discovery
+    if (p_autoDetectButton) {
+        p_autoDetectButton->setText("Re-detect Format");
+    }
+    
+    // Show current overlay information
+    if (d_overlay && p_fileStatusLabel) {
+        auto genericOverlay = std::dynamic_pointer_cast<GenericXYOverlay>(d_overlay);
+        if (genericOverlay) {
+            QString info = QString("Editing overlay: %1 data points").arg(genericOverlay->rawData().size());
+            p_fileStatusLabel->setText(info);
+            p_fileStatusLabel->setStyleSheet("QLabel { color: blue; }");
+        }
+    }
+    
+    // Compact preview in settings context
+    if (p_previewTable) {
+        p_previewTable->setMaximumHeight(100);
+    }
+}
+
+void GenericXYOverlayWidget::createSourceFileConfigUI(QGroupBox *parent)
+{
+    auto layout = new QFormLayout(parent);
     
     // File path selection
     auto fileLayout = new QHBoxLayout();
-    p_filePathEdit = new QLineEdit(p_sourceFileConfigWidget);
+    p_filePathEdit = new QLineEdit(parent);
     p_filePathEdit->setPlaceholderText("Select a data file...");
-    p_browseButton = new QPushButton("Browse...", p_sourceFileConfigWidget);
-    p_autoDetectButton = new QPushButton("Auto-Detect", p_sourceFileConfigWidget);
+    p_browseButton = new QPushButton("Browse...", parent);
+    p_autoDetectButton = new QPushButton("Auto-Detect", parent);
     
     fileLayout->addWidget(p_filePathEdit, 1);
     fileLayout->addWidget(p_browseButton);
     fileLayout->addWidget(p_autoDetectButton);
     
     // File status label
-    p_fileStatusLabel = new QLabel(p_sourceFileConfigWidget);
+    p_fileStatusLabel = new QLabel(parent);
     p_fileStatusLabel->setWordWrap(true);
     
     layout->addRow("Data File:", fileLayout);
     layout->addRow("Status:", p_fileStatusLabel);
 }
 
-void GenericXYOverlayWidget::createSourceFileSettingsUI()
+void GenericXYOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
 {
-    p_sourceFileSettingsWidget = new QWidget(this);
-    auto layout = new QFormLayout(p_sourceFileSettingsWidget);
+    auto layout = new QFormLayout(parent);
     
     // Delimiter selection
-    p_delimiterCombo = new QComboBox(p_sourceFileSettingsWidget);
+    p_delimiterCombo = new QComboBox(parent);
     populateDelimiterComboBox();
     
     // Header lines
-    p_headerLinesSpinBox = new QSpinBox(p_sourceFileSettingsWidget);
+    p_headerLinesSpinBox = new QSpinBox(parent);
     p_headerLinesSpinBox->setRange(0, 100);
     p_headerLinesSpinBox->setValue(0);
     
     // Column selection
-    p_xColumnCombo = new QComboBox(p_sourceFileSettingsWidget);
-    p_yColumnCombo = new QComboBox(p_sourceFileSettingsWidget);
+    p_xColumnCombo = new QComboBox(parent);
+    p_yColumnCombo = new QComboBox(parent);
+    
+    // Parse button
+    p_parseButton = new QPushButton("Parse File", parent);
+    p_parseButton->setEnabled(false);
     
     // Filtering controls
-    p_enableFilteringCheckBox = new QCheckBox("Enable X-range filtering", p_sourceFileSettingsWidget);
+    p_enableFilteringCheckBox = new QCheckBox("Enable X-range filtering", parent);
     
     auto filterLayout = new QHBoxLayout();
-    p_xMinEdit = new QLineEdit(p_sourceFileSettingsWidget);
+    p_xMinEdit = new QLineEdit(parent);
     p_xMinEdit->setPlaceholderText("Min X");
-    p_xMaxEdit = new QLineEdit(p_sourceFileSettingsWidget);
+    p_xMaxEdit = new QLineEdit(parent);
     p_xMaxEdit->setPlaceholderText("Max X");
     
     filterLayout->addWidget(p_xMinEdit);
@@ -539,13 +566,14 @@ void GenericXYOverlayWidget::createSourceFileSettingsUI()
     filterLayout->addStretch();
     
     // Data statistics
-    p_dataStatsLabel = new QLabel(p_sourceFileSettingsWidget);
+    p_dataStatsLabel = new QLabel(parent);
     p_dataStatsLabel->setWordWrap(true);
     
     layout->addRow("Delimiter:", p_delimiterCombo);
     layout->addRow("Header Lines:", p_headerLinesSpinBox);
     layout->addRow("X Column:", p_xColumnCombo);
     layout->addRow("Y Column:", p_yColumnCombo);
+    layout->addRow("Parse:", p_parseButton);
     layout->addRow(p_enableFilteringCheckBox);
     layout->addRow("Filter Range:", filterLayout);
     layout->addRow("Data Info:", p_dataStatsLabel);
@@ -561,13 +589,12 @@ void GenericXYOverlayWidget::createSourceFileSettingsUI()
     });
 }
 
-void GenericXYOverlayWidget::createTypeSpecificSettingsUI()
+void GenericXYOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)
 {
-    p_typeSpecificWidget = new QWidget(this);
-    auto layout = new QVBoxLayout(p_typeSpecificWidget);
+    auto layout = new QVBoxLayout(parent);
     
     // Preview table
-    p_previewTable = new QTableWidget(p_typeSpecificWidget);
+    p_previewTable = new QTableWidget(parent);
     p_previewTable->setAlternatingRowColors(true);
     p_previewTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     p_previewTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -622,7 +649,6 @@ void GenericXYOverlayWidget::loadAndAnalyzeFile()
         p_fileStatusLabel->setText("Failed to parse file");
     }
     
-    emit fileChanged();
     emit sourceFileChanged();
     emit dataValidityChanged(d_dataValid);
 }
@@ -641,6 +667,10 @@ void GenericXYOverlayWidget::detectFileFormat()
     
     GenericXYParser::ParseSettings settings = parser->autoDetectSettings(d_sourceFilePath);
     
+    // Block signals to prevent infinite loops during UI updates
+    const bool delimiterBlocked = p_delimiterCombo->blockSignals(true);
+    const bool headerLinesBlocked = p_headerLinesSpinBox->blockSignals(true);
+    
     // Update UI with detected settings
     for (int i = 0; i < p_delimiterCombo->count(); ++i) {
         if (p_delimiterCombo->itemData(i).toString() == settings.delimiter) {
@@ -653,10 +683,21 @@ void GenericXYOverlayWidget::detectFileFormat()
     d_detectedColumnNames = settings.columnNames;
     
     updateColumnSelectors();
+    
+    // Restore signal state
+    p_delimiterCombo->blockSignals(delimiterBlocked);
+    p_headerLinesSpinBox->blockSignals(headerLinesBlocked);
+    
+    // Update parse button text to indicate user should parse
+    p_parseButton->setText("Parse File (Auto-detected)");
 }
 
 void GenericXYOverlayWidget::updateColumnSelectors()
 {
+    // Block signals to prevent infinite loops during UI updates
+    const bool xColumnBlocked = p_xColumnCombo->blockSignals(true);
+    const bool yColumnBlocked = p_yColumnCombo->blockSignals(true);
+    
     // Update column combo boxes
     p_xColumnCombo->clear();
     p_yColumnCombo->clear();
@@ -684,6 +725,10 @@ void GenericXYOverlayWidget::updateColumnSelectors()
     if (p_yColumnCombo->count() > 1) {
         p_yColumnCombo->setCurrentIndex(1);
     }
+    
+    // Restore signal state
+    p_xColumnCombo->blockSignals(xColumnBlocked);
+    p_yColumnCombo->blockSignals(yColumnBlocked);
 }
 
 void GenericXYOverlayWidget::parseAndPreview()

@@ -23,10 +23,6 @@ UnifiedOverlayWidget::UnifiedOverlayWidget(const QString &settingsKey, Context c
       d_context(context),
       d_overlayType(OverlayBase::BCExperiment),
       p_mainLayout(nullptr),
-      p_sourceFileConfigBox(nullptr),
-      p_sourceFileConfigContent(nullptr),
-      p_sourceFileSettingsBox(nullptr),
-      p_sourceFileSettingsContent(nullptr),
       p_typeSpecificSettingsBox(nullptr),
       p_typeSpecificWidget(nullptr),
       p_overlayBaseOptionsBox(nullptr),
@@ -36,8 +32,6 @@ UnifiedOverlayWidget::UnifiedOverlayWidget(const QString &settingsKey, Context c
       p_progressWidget(nullptr),
       p_progressBar(nullptr),
       p_progressLabel(nullptr),
-      d_sourceFileValid(false),
-      d_sourceFileEnabled(false),
       d_hasBackupState(false)
 {
     setupUI();
@@ -45,30 +39,7 @@ UnifiedOverlayWidget::UnifiedOverlayWidget(const QString &settingsKey, Context c
 
 UnifiedOverlayWidget::~UnifiedOverlayWidget()
 {
-    // Prevent double-delete from reparented widgets by clearing layouts without deleting widgets
-    if (p_sourceFileConfigContent && p_sourceFileConfigContent->layout()) {
-        QLayout *layout = p_sourceFileConfigContent->layout();
-        while (layout->count() > 0) {
-            QLayoutItem *item = layout->takeAt(0);
-            if (item->widget()) {
-                // Remove widget from layout but don't delete it - original parent will handle cleanup
-                item->widget()->setParent(nullptr);
-            }
-            delete item;
-        }
-    }
-    
-    if (p_sourceFileSettingsContent && p_sourceFileSettingsContent->layout()) {
-        QLayout *layout = p_sourceFileSettingsContent->layout();
-        while (layout->count() > 0) {
-            QLayoutItem *item = layout->takeAt(0);
-            if (item->widget()) {
-                // Remove widget from layout but don't delete it - original parent will handle cleanup
-                item->widget()->setParent(nullptr);
-            }
-            delete item;
-        }
-    }
+    // Cleanup moved to type-specific widgets
     
     // Ensure preview overlay is properly cleaned up to avoid dangling references
     cleanupPreviewOverlay();
@@ -208,9 +179,11 @@ bool UnifiedOverlayWidget::validateSettings(QString &errorMessage) const
     
     // Validate type-specific settings
     if (p_typeSpecificWidget) {
-        QString typeError;
-        if (!p_typeSpecificWidget->validateSettings(typeError)) {
-            errors << typeError;
+        if (!p_typeSpecificWidget->validateSettings()) {
+            QString typeError = p_typeSpecificWidget->getSettingsErrorMessage();
+            if (!typeError.isEmpty()) {
+                errors << typeError;
+            }
         }
     }
     
@@ -302,15 +275,6 @@ void UnifiedOverlayWidget::updateProgress(int value, const QString &message)
     }
 }
 
-void UnifiedOverlayWidget::onSourceFileConfigToggled(bool enabled)
-{
-    d_sourceFileEnabled = enabled;
-    updateSourceFileControls();
-    
-    // Note: sourceFileEnabled is contextual and should not be persisted
-    
-    emit settingsChanged();
-}
 
 void UnifiedOverlayWidget::onSettingsChanged()
 {    
@@ -389,38 +353,39 @@ void UnifiedOverlayWidget::setupUI()
     leftVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
     
     // Create overlay widgets
-    createSourceFileConfigBox();
-    createSourceFileSettingsBox();
     createTypeSpecificSettingsBox();
     createOverlayBaseOptionsBox();
     createProgressIndicator();
     
     // Add overlay widgets to left layout
-    leftVLayout->addWidget(p_sourceFileConfigBox);
-    leftVLayout->addWidget(p_sourceFileSettingsBox);
     leftVLayout->addWidget(p_typeSpecificSettingsBox);
     
     // Add bottom spacer
     leftVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
+
+    auto centerVLayout = new QVBoxLayout;
+    // centerVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
+    centerVLayout->addWidget(p_overlayBaseOptionsBox);
+    centerVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
     
     // Create right side vertical layout for curve appearance
     auto rightVLayout = new QVBoxLayout();
     rightVLayout->setSpacing(6);
     
     // Add top spacer
-    rightVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
+    // rightVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
     
     // Create curve appearance widget
     createCurveAppearanceBox();
     rightVLayout->addWidget(p_curveAppearanceBox);
-    rightVLayout->addWidget(p_overlayBaseOptionsBox);
     rightVLayout->addWidget(p_progressWidget);
     
     // Add bottom spacer
     rightVLayout->addItem(new QSpacerItem(20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
     
-    // Add both layouts to main horizontal layout with equal stretch
+    // Add all layouts to main horizontal layout with equal stretch
     p_mainLayout->addLayout(leftVLayout, 1);
+    p_mainLayout->addLayout(centerVLayout, 1);
     p_mainLayout->addLayout(rightVLayout, 1);
     
     setLayout(p_mainLayout);
@@ -430,54 +395,13 @@ void UnifiedOverlayWidget::setupUI()
 
 void UnifiedOverlayWidget::setupConnections()
 {
-    // Source file config box connections
-    if (p_sourceFileConfigBox) {
-        connect(p_sourceFileConfigBox, &QGroupBox::toggled,
-                this, &UnifiedOverlayWidget::onSourceFileConfigToggled);
-    }
+    // Three-tier connections now handled by type-specific widgets
     
     // Base options widget connections will be added when widget is created
     // Curve appearance widget connections will be added when widget is created
     // Type-specific widget connections will be added when widget is created
 }
 
-void UnifiedOverlayWidget::createSourceFileConfigBox()
-{
-    p_sourceFileConfigBox = new QGroupBox("Source File Configuration", this);
-    p_sourceFileConfigBox->setCheckable(false); // Will be set in configureForContext()
-    
-    // Content widget for source file configuration
-    p_sourceFileConfigContent = new QWidget();
-    auto contentLayout = new QVBoxLayout(p_sourceFileConfigContent);
-    contentLayout->setContentsMargins(0, 0, 0, 0);
-    
-    // Placeholder for type-specific source file controls
-    auto placeholderLabel = new QLabel("Source file configuration will be populated by type-specific widget");
-    placeholderLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
-    contentLayout->addWidget(placeholderLabel);
-    
-    auto boxLayout = new QVBoxLayout(p_sourceFileConfigBox);
-    boxLayout->addWidget(p_sourceFileConfigContent);
-}
-
-void UnifiedOverlayWidget::createSourceFileSettingsBox()
-{
-    p_sourceFileSettingsBox = new QGroupBox("Source File Settings", this);
-    p_sourceFileSettingsBox->setCheckable(false);
-    
-    // Content widget for source file settings
-    p_sourceFileSettingsContent = new QWidget();
-    auto contentLayout = new QVBoxLayout(p_sourceFileSettingsContent);
-    contentLayout->setContentsMargins(0, 0, 0, 0);
-    
-    // Placeholder for type-specific source-dependent controls
-    auto placeholderLabel = new QLabel("Source-dependent settings will be populated by type-specific widget");
-    placeholderLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
-    contentLayout->addWidget(placeholderLabel);
-    
-    auto boxLayout = new QVBoxLayout(p_sourceFileSettingsBox);
-    boxLayout->addWidget(p_sourceFileSettingsContent);
-}
 
 void UnifiedOverlayWidget::createTypeSpecificSettingsBox()
 {
@@ -606,35 +530,14 @@ void UnifiedOverlayWidget::createProgressIndicator()
 
 void UnifiedOverlayWidget::configureForContext()
 {
-    QString contextName = getContextName();
-    
-    if (isCreationContext()) {
-        // Creation context configuration
-        p_sourceFileConfigBox->setCheckable(false);
-        p_sourceFileConfigBox->setEnabled(true);
-        p_sourceFileConfigBox->setTitle("Source File Selection");
-        
-        // Hide progress indicator in creation context
-        if (p_progressWidget) {
+    // Configure progress indicator visibility based on context
+    if (p_progressWidget) {
+        if (isCreationContext()) {
             p_progressWidget->setVisible(false);
-        }
-        
-    } else if (isSettingsContext()) {
-        // Settings context configuration
-        p_sourceFileConfigBox->setCheckable(true);
-        p_sourceFileConfigBox->setTitle("Source File Configuration (Optional)");
-        
-        // In settings context, source file config starts disabled by default
-        d_sourceFileEnabled = false;
-        p_sourceFileConfigBox->setChecked(d_sourceFileEnabled);
-        
-        // Show progress indicator in settings context
-        if (p_progressWidget) {
+        } else if (isSettingsContext()) {
             p_progressWidget->setVisible(false); // Hidden until needed
         }
     }
-    
-    updateSourceFileControls();
     
     // Update type-specific settings box title
     if (p_typeSpecificSettingsBox) {
@@ -685,44 +588,6 @@ void UnifiedOverlayWidget::configureForContext()
     }
 }
 
-void UnifiedOverlayWidget::updateSourceFileControls()
-{
-    bool sourceEnabled = isCreationContext() || d_sourceFileEnabled;
-    
-    if (p_sourceFileConfigContent) {
-        p_sourceFileConfigContent->setEnabled(sourceEnabled);
-    }
-    
-    if (p_sourceFileSettingsBox) {
-        // In creation mode: settings only enabled if source file is valid
-        // In settings mode: settings enabled when source file config is checked (allow access even if file moved)
-        bool settingsEnabled;
-        if (isCreationContext()) {
-            settingsEnabled = sourceEnabled && d_sourceFileValid;
-        } else {
-            settingsEnabled = d_sourceFileEnabled; // Allow access in settings mode when checkbox checked
-        }
-        p_sourceFileSettingsBox->setEnabled(settingsEnabled);
-    }
-}
-
-void UnifiedOverlayWidget::validateSourceFile()
-{
-    if (p_typeSpecificWidget) {
-        QString errorMessage;
-        d_sourceFileValid = p_typeSpecificWidget->validateSourceFile(errorMessage);
-        if (!d_sourceFileValid && !errorMessage.isEmpty()) {
-            d_lastValidationError = errorMessage;
-        }
-    } else {
-        d_sourceFileValid = false;
-    }
-    
-    updateSourceFileControls();
-    
-    // Use centralized validation logic to update UI consistently
-    performCompleteValidation();
-}
 
 void UnifiedOverlayWidget::setupTypeSpecificWidget()
 {    
@@ -743,8 +608,9 @@ void UnifiedOverlayWidget::setupTypeSpecificWidget()
     {
         auto boxLayout = new QVBoxLayout(p_typeSpecificSettingsBox);
 
-
         if (p_typeSpecificWidget) {
+            // Setup UI after construction since it calls virtual methods
+            p_typeSpecificWidget->setupUI();
 
             // Setup context for the type-specific widget
             setupTypeSpecificWidgetContext();
@@ -752,8 +618,7 @@ void UnifiedOverlayWidget::setupTypeSpecificWidget()
             // Setup connections for the type-specific widget
             setupTypeSpecificWidgetConnections();
 
-            // Reparent UI components into three-tier architecture
-            reparentTypeSpecificWidgets();
+            // Type-specific widget handles its own layout
 
             boxLayout->addWidget(p_typeSpecificWidget);
         }
@@ -809,6 +674,9 @@ void UnifiedOverlayWidget::setupTypeSpecificWidgetContext()
     } else if (isSettingsContext() && d_overlay) {
         p_typeSpecificWidget->setupForSettings(d_overlay);
     }
+    
+    // Configure context-aware UI behavior
+    p_typeSpecificWidget->configureForContext();
 }
 
 void UnifiedOverlayWidget::setupTypeSpecificWidgetConnections()
@@ -820,8 +688,7 @@ void UnifiedOverlayWidget::setupTypeSpecificWidgetConnections()
     // Base connections for both contexts
     connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::settingsChanged,
             this, &UnifiedOverlayWidget::onSettingsChanged);
-    connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::sourceFileChanged,
-            this, &UnifiedOverlayWidget::validateSourceFile);
+    // Source file validation now handled by type-specific widgets
     connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::dataValidityChanged,
             this, [this](bool isValid) {
                 Q_UNUSED(isValid); // Don't use this parameter - always do full validation
@@ -844,121 +711,7 @@ void UnifiedOverlayWidget::setupTypeSpecificWidgetConnections()
             this, &UnifiedOverlayWidget::onProgressValueChanged);
 }
 
-void UnifiedOverlayWidget::reparentTypeSpecificWidgets()
-{
-    if (!p_typeSpecificWidget) {
-        return;
-    }
-    
-    // Reparent source file config widget
-    QWidget *sourceFileConfigWidget = p_typeSpecificWidget->getSourceFileConfigWidget();
-    if (sourceFileConfigWidget && p_sourceFileConfigContent) {
-        // Clear existing content
-        QLayout *oldLayout = p_sourceFileConfigContent->layout();
-        if (oldLayout) {
-            while (oldLayout->count() > 0) {
-                QLayoutItem *item = oldLayout->takeAt(0);
-                delete item;
-            }
-            delete oldLayout;
-        }
-        
-        // Add new content
-        auto newLayout = new QVBoxLayout(p_sourceFileConfigContent);
-        newLayout->setContentsMargins(0, 0, 0, 0);
-        sourceFileConfigWidget->setParent(p_sourceFileConfigContent);
-        newLayout->addWidget(sourceFileConfigWidget);
-    }
-    
-    // Reparent source file settings widget
-    QWidget *sourceFileSettingsWidget = p_typeSpecificWidget->getSourceFileSettingsWidget();
-    if (sourceFileSettingsWidget && p_sourceFileSettingsContent) {
-        // Clear existing content
-        QLayout *oldLayout = p_sourceFileSettingsContent->layout();
-        if (oldLayout) {
-            while (oldLayout->count() > 0) {
-                QLayoutItem *item = oldLayout->takeAt(0);
-                delete item;
-            }
-            delete oldLayout;
-        }
-        
-        // Add new content
-        auto newLayout = new QVBoxLayout(p_sourceFileSettingsContent);
-        newLayout->setContentsMargins(0, 0, 0, 0);
-        sourceFileSettingsWidget->setParent(p_sourceFileSettingsContent);
-        newLayout->addWidget(sourceFileSettingsWidget);
-    }
-    
-    // The overlay settings widget stays in the type-specific stack
-    // (it's already properly positioned)
-    
-    // Hide type-specific settings box if the widget doesn't have type-specific settings
-    if (p_typeSpecificSettingsBox) {
-        bool hasSettings = p_typeSpecificWidget->hasTypeSpecificSettings();
-        p_typeSpecificSettingsBox->setVisible(hasSettings);
-    }
-}
 
-OverlayTypeSpecificWidget* UnifiedOverlayWidget::createPlaceholderWidget(const QString &typeName, const Ft &currentFt)
-{
-    // Create a simple placeholder widget for unimplemented overlay types
-    class PlaceholderWidget : public OverlayTypeSpecificWidget {
-    public:
-        PlaceholderWidget(const QString &name, const Ft &currentFt, QWidget *parent = nullptr) 
-            : OverlayTypeSpecificWidget(currentFt, parent), d_typeName(name) {
-            setupUI();
-        }
-        
-        void setupForCreation() override {}
-        void setupForSettings(std::shared_ptr<OverlayBase>) override {}
-        std::shared_ptr<OverlayBase> createOverlay() override { return nullptr; }
-        void applyToOverlay(std::shared_ptr<OverlayBase>) const override {}
-        bool validateSettings(QString &error) const override { 
-            error = QString("%1 overlay type not yet implemented").arg(d_typeName);
-            return false; 
-        }
-        bool isDataValid() const override { return false; }
-        bool hasValidSourceFile() const override { return false; }
-        QString getSourceFilePath() const override { return QString(); }
-        void setSourceFilePath(const QString &) override {}
-        bool validateSourceFile(QString &error) override { 
-            error = QString("%1 overlay type not yet implemented").arg(d_typeName);
-            return false; 
-        }
-        void resetToDefaults() override {}
-        QHash<QString, QVariant> getSettingsHash() const override { return QHash<QString, QVariant>(); }
-        constexpr QVector<OperationCapability> getSupportedOperations() const override { return {}; }
-        constexpr bool supportsBackgroundOperation(OperationCapability::Type) const override { return false; }
-        std::shared_ptr<OverlayOperation> createOperation(OperationCapability::Type, std::shared_ptr<OverlayBase>) const override { return nullptr; }
-        QWidget* getSourceFileConfigWidget() override { return p_configWidget; }
-        QWidget* getSourceFileSettingsWidget() override { return p_settingsWidget; }
-        QWidget* getOverlaySettingsWidget() override { return p_overlayWidget; }
-        
-    protected:
-        void setupUI() override {
-            auto layout = new QVBoxLayout(this);
-            auto label = new QLabel(QString("%1 overlay type not yet implemented").arg(d_typeName));
-            label->setStyleSheet("QLabel { color: gray; font-style: italic; }");
-            layout->addWidget(label);
-            
-            p_configWidget = new QLabel("Source file configuration not available");
-            p_settingsWidget = new QLabel("Source file settings not available");
-            p_overlayWidget = new QLabel("Overlay settings not available");
-        }
-        void setupConnections() override {}
-        void loadSettings() override {}
-        void saveSettings() override {}
-        
-    private:
-        QString d_typeName;
-        QWidget *p_configWidget;
-        QWidget *p_settingsWidget;
-        QWidget *p_overlayWidget;
-    };
-    
-    return new PlaceholderWidget(typeName, currentFt, this);
-}
 
 
 void UnifiedOverlayWidget::createAutoPreview()

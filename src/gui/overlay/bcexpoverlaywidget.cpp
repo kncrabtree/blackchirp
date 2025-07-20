@@ -23,14 +23,10 @@ using namespace BC::Store;
 
 BCExpOverlayWidget::BCExpOverlayWidget(const Ft &currentFt, QWidget *parent)
     : OverlayTypeSpecificWidget(currentFt, parent),
-      p_sourceFileConfigWidget(nullptr),
-      p_sourceFileSettingsWidget(nullptr),
-      p_overlaySettingsWidget(nullptr),
       d_experimentValid(false),
       d_hasFtData(false)
 {
-    setupUI();
-    setupConnections();
+    // Base class handles setupUI() and setupConnections()
 }
 
 BCExpOverlayWidget::~BCExpOverlayWidget() = default;
@@ -116,7 +112,7 @@ void BCExpOverlayWidget::applyToOverlay(std::shared_ptr<OverlayBase> overlay) co
     bcexpOverlay->setFtData(d_configuredFt);
 }
 
-bool BCExpOverlayWidget::validateSettings(QString &errorMessage) const
+bool BCExpOverlayWidget::validateSettingsImpl()
 {
     QStringList errors;
     
@@ -131,7 +127,7 @@ bool BCExpOverlayWidget::validateSettings(QString &errorMessage) const
     }
     
     if (!errors.isEmpty()) {
-        errorMessage = errors.join("\n");
+        setSettingsErrorMessage(errors.join("\n"));
         return false;
     }
     
@@ -182,10 +178,16 @@ void BCExpOverlayWidget::setSourceFilePath(const QString &path)
     validateExperiment();
 }
 
-bool BCExpOverlayWidget::validateSourceFile(QString &errorMessage)
+bool BCExpOverlayWidget::validateSourceFileImpl()
 {
     QString path = getExperimentPath();
+    QString errorMessage;
     bool valid = validateExperimentPath(path, errorMessage);
+    
+    if (!valid) {
+        setSourceFileErrorMessage(errorMessage);
+    }
+    
     d_experimentValid = valid;
     updateExperimentStatus();
     return valid;
@@ -251,20 +253,6 @@ std::shared_ptr<OverlayOperation> BCExpOverlayWidget::createOperation(OperationC
     return nullptr;
 }
 
-QWidget* BCExpOverlayWidget::getSourceFileConfigWidget()
-{
-    return p_sourceFileConfigWidget;
-}
-
-QWidget* BCExpOverlayWidget::getSourceFileSettingsWidget()
-{
-    return p_sourceFileSettingsWidget;
-}
-
-QWidget* BCExpOverlayWidget::getOverlaySettingsWidget()
-{
-    return p_overlaySettingsWidget;
-}
 
 void BCExpOverlayWidget::onExperimentNumberChanged(int number)
 {
@@ -374,8 +362,7 @@ void BCExpOverlayWidget::onConfigureFtClicked()
 
 void BCExpOverlayWidget::validateExperiment()
 {
-    QString errorMessage;
-    bool valid = validateSourceFile(errorMessage);
+    bool valid = validateSourceFile();
     
     d_experimentValid = valid;
     updateExperimentStatus();
@@ -384,23 +371,6 @@ void BCExpOverlayWidget::validateExperiment()
     emit dataValidityChanged(isDataValid());
 }
 
-void BCExpOverlayWidget::setupUI()
-{
-    // Create main layout
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setSpacing(0);
-    
-    // Create the three-tier widgets
-    setupExperimentSelectionUI();
-    setupFtConfigurationUI();
-    setupBCExpSettingsUI();
-    
-    // Add all widgets to main layout (they will be reparented by UnifiedOverlayWidget)
-    mainLayout->addWidget(p_sourceFileConfigWidget);
-    mainLayout->addWidget(p_sourceFileSettingsWidget);
-    mainLayout->addWidget(p_overlaySettingsWidget);
-}
 
 void BCExpOverlayWidget::setupConnections()
 {
@@ -431,104 +401,8 @@ void BCExpOverlayWidget::saveSettings()
     // Future: Could save last used paths, FT settings, etc.
 }
 
-void BCExpOverlayWidget::setupExperimentSelectionUI()
-{
-    p_sourceFileConfigWidget = new QWidget(this);
-    QVBoxLayout *configLayout = new QVBoxLayout(p_sourceFileConfigWidget);
-    configLayout->setContentsMargins(0, 0, 0, 0);
-    
-    p_experimentSelectionGroup = new QGroupBox("Experiment Selection", p_sourceFileConfigWidget);
-    QFormLayout *formLayout = new QFormLayout(p_experimentSelectionGroup);
-    
-    // Configure form layout for proper field expansion
-    formLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
-    formLayout->setRowWrapPolicy(QFormLayout::DontWrapRows);
-    
-    // Experiment number
-    SettingsStorage s;
-    int lastExperiment = s.get(BC::Key::exptNum, 1);
-
-    p_experimentNumberSpinBox = new QSpinBox(p_experimentSelectionGroup);
-    p_experimentNumberSpinBox->setMinimum(1);
-    p_experimentNumberSpinBox->setMaximum(lastExperiment);
-    p_experimentNumberSpinBox->setValue(1);
-    formLayout->addRow("Experiment Number:", p_experimentNumberSpinBox);
-    
-    // Custom path option
-    p_usePathCheckBox = new QCheckBox("Use custom path", p_experimentSelectionGroup);
-    formLayout->addRow(p_usePathCheckBox);
-    
-    // Path selection
-    QHBoxLayout *pathLayout = new QHBoxLayout();
-    p_pathLineEdit = new QLineEdit(p_experimentSelectionGroup);
-    p_pathLineEdit->setEnabled(false);
-    p_browseButton = new QToolButton(p_experimentSelectionGroup);
-    p_browseButton->setText("...");
-    p_browseButton->setEnabled(false);
-    pathLayout->addWidget(p_pathLineEdit);
-    pathLayout->addWidget(p_browseButton);
-    formLayout->addRow("Path:", pathLayout);
-    
-    // Status label
-    p_experimentStatusLabel = new QLabel(p_experimentSelectionGroup);
-    p_experimentStatusLabel->setWordWrap(true);
-    p_experimentStatusLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    p_experimentStatusLabel->setMinimumHeight(20); // Ensure minimum visibility
-    p_experimentStatusLabel->setMaximumHeight(80); // Prevent excessive expansion
-    p_experimentStatusLabel->setMinimumWidth(200); // Ensure sufficient width before wrapping
-    p_experimentStatusLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft); // Align to top for multi-line text
-    formLayout->addRow("Status:", p_experimentStatusLabel);
-    
-    configLayout->addWidget(p_experimentSelectionGroup);
-}
-
-void BCExpOverlayWidget::setupFtConfigurationUI()
-{
-    p_sourceFileSettingsWidget = new QWidget(this);
-    QVBoxLayout *settingsLayout = new QVBoxLayout(p_sourceFileSettingsWidget);
-    settingsLayout->setContentsMargins(0, 0, 0, 0);
-    
-    p_ftConfigurationGroup = new QGroupBox("FT Configuration", p_sourceFileSettingsWidget);
-    QVBoxLayout *ftLayout = new QVBoxLayout(p_ftConfigurationGroup);
-    
-    // Configure FT button
-    p_configureFtButton = new QPushButton("Configure FT...", p_ftConfigurationGroup);
-    p_configureFtButton->setMinimumHeight(30);
-    
-    // Status label
-    p_ftStatusLabel = new QLabel("Click to configure FT processing settings for this overlay.", p_ftConfigurationGroup);
-    p_ftStatusLabel->setWordWrap(true);
-    p_ftStatusLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    p_ftStatusLabel->setMinimumHeight(20); // Ensure minimum visibility
-    p_ftStatusLabel->setMaximumHeight(60); // Prevent excessive expansion
-    p_ftStatusLabel->setMinimumWidth(200); // Ensure sufficient width before wrapping
-    p_ftStatusLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft); // Align to top for multi-line text
-    p_ftStatusLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
-    
-    ftLayout->addWidget(p_configureFtButton);
-    ftLayout->addWidget(p_ftStatusLabel);
-    
-    settingsLayout->addWidget(p_ftConfigurationGroup);
-}
-
-void BCExpOverlayWidget::setupBCExpSettingsUI()
-{
-    p_overlaySettingsWidget = new QWidget(this);
-    QVBoxLayout *overlayLayout = new QVBoxLayout(p_overlaySettingsWidget);
-    overlayLayout->setContentsMargins(0, 0, 0, 0);
-    
-    p_bcexpSettingsGroup = new QGroupBox("BCExperiment Settings", p_overlaySettingsWidget);
-    QVBoxLayout *bcexpLayout = new QVBoxLayout(p_bcexpSettingsGroup);
-    
-    // Placeholder for future BCExp-specific settings; for now just hide
-    p_overlaySettingsWidget->hide();
-    // QLabel *placeholderLabel = new QLabel("Future BCExperiment-specific settings will be added here.");
-    // placeholderLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
-    // bcexpLayout->addWidget(placeholderLabel);
 
 
-    overlayLayout->addWidget(p_bcexpSettingsGroup);
-}
 
 void BCExpOverlayWidget::resetFtConfiguration()
 {
@@ -626,4 +500,144 @@ void BCExpOverlayWidget::updateAutomaticLabel()
         int number = p_experimentNumberSpinBox->value();
         emit labelUpdateRequested(QString("Exp%1").arg(number));
     }
+}
+
+void BCExpOverlayWidget::configureForCreationContext()
+{
+    // Creation context: Emphasize experiment selection and FT configuration
+    if (p_experimentNumberSpinBox) {
+        // Set focus on latest experiment for quick access
+        SettingsStorage s;
+        int lastExperiment = s.get(BC::Key::exptNum, 1);
+        p_experimentNumberSpinBox->setValue(lastExperiment);
+    }
+    
+    // Show helpful status message
+    if (p_experimentStatusLabel) {
+        p_experimentStatusLabel->setText("Select an experiment to create overlay");
+        p_experimentStatusLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
+    }
+    
+    // Emphasize FT configuration requirement
+    if (p_configureFtButton) {
+        p_configureFtButton->setStyleSheet("QPushButton { font-weight: bold; }");
+    }
+    
+    if (p_ftStatusLabel) {
+        p_ftStatusLabel->setText("FT configuration required - click 'Configure FT...' to begin");
+        p_ftStatusLabel->setStyleSheet("QLabel { color: orange; font-style: italic; }");
+    }
+}
+
+void BCExpOverlayWidget::configureForSettingsContext()
+{
+    // Settings context: Show existing overlay information and focus on modifications
+    if (d_overlay) {
+        auto bcexpOverlay = std::dynamic_pointer_cast<BCExpOverlay>(d_overlay);
+        if (bcexpOverlay) {
+            // Show current overlay information
+            QString sourceFile = bcexpOverlay->getSourceFile();
+            QDir sourceDir(sourceFile);
+            QString info = QString("Editing: %1").arg(sourceDir.dirName());
+            
+            if (p_experimentStatusLabel) {
+                p_experimentStatusLabel->setText(info);
+                p_experimentStatusLabel->setStyleSheet("QLabel { color: blue; }");
+            }
+            
+            // Show FT configuration status
+            if (!bcexpOverlay->getFtData().isEmpty() && p_ftStatusLabel) {
+                const auto& ft = bcexpOverlay->getFtData();
+                QString ftInfo = QString("FT configured: %1 MHz to %2 MHz (%3 points)")
+                    .arg(ft.minFreqMHz(), 0, 'f', 1)
+                    .arg(ft.maxFreqMHz(), 0, 'f', 1)
+                    .arg(ft.size());
+                p_ftStatusLabel->setText(ftInfo);
+                p_ftStatusLabel->setStyleSheet("QLabel { color: green; }");
+            }
+        }
+    }
+    
+    // Reduce emphasis on configuration button in settings mode
+    if (p_configureFtButton) {
+        p_configureFtButton->setStyleSheet("");
+    }
+}
+
+void BCExpOverlayWidget::createSourceFileConfigUI(QGroupBox *parent)
+{
+    QFormLayout *formLayout = new QFormLayout(parent);
+    
+    // Configure form layout for proper field expansion
+    formLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+    formLayout->setRowWrapPolicy(QFormLayout::DontWrapRows);
+    
+    // Experiment number
+    SettingsStorage s;
+    int lastExperiment = s.get(BC::Key::exptNum, 1);
+
+    p_experimentNumberSpinBox = new QSpinBox(parent);
+    p_experimentNumberSpinBox->setMinimum(1);
+    p_experimentNumberSpinBox->setMaximum(lastExperiment);
+    p_experimentNumberSpinBox->setValue(1);
+    formLayout->addRow("Experiment Number:", p_experimentNumberSpinBox);
+    
+    // Custom path option
+    p_usePathCheckBox = new QCheckBox("Use custom path", parent);
+    formLayout->addRow(p_usePathCheckBox);
+    
+    // Path selection
+    QHBoxLayout *pathLayout = new QHBoxLayout();
+    p_pathLineEdit = new QLineEdit(parent);
+    p_pathLineEdit->setEnabled(false);
+    p_browseButton = new QToolButton(parent);
+    p_browseButton->setText("...");
+    p_browseButton->setEnabled(false);
+    pathLayout->addWidget(p_pathLineEdit);
+    pathLayout->addWidget(p_browseButton);
+    formLayout->addRow("Path:", pathLayout);
+    
+    // Status label
+    p_experimentStatusLabel = new QLabel(parent);
+    p_experimentStatusLabel->setWordWrap(true);
+    p_experimentStatusLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    p_experimentStatusLabel->setMinimumHeight(20); // Ensure minimum visibility
+    p_experimentStatusLabel->setMaximumHeight(80); // Prevent excessive expansion
+    p_experimentStatusLabel->setMinimumWidth(200); // Ensure sufficient width before wrapping
+    p_experimentStatusLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft); // Align to top for multi-line text
+    formLayout->addRow("Status:", p_experimentStatusLabel);
+}
+
+void BCExpOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
+{
+    QVBoxLayout *ftLayout = new QVBoxLayout(parent);
+    
+    // Configure FT button
+    p_configureFtButton = new QPushButton("Configure FT...", parent);
+    p_configureFtButton->setMinimumHeight(30);
+    
+    // Status label
+    p_ftStatusLabel = new QLabel("Click to configure FT processing settings for this overlay.", parent);
+    p_ftStatusLabel->setWordWrap(true);
+    p_ftStatusLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    p_ftStatusLabel->setMinimumHeight(20); // Ensure minimum visibility
+    p_ftStatusLabel->setMaximumHeight(60); // Prevent excessive expansion
+    p_ftStatusLabel->setMinimumWidth(200); // Ensure sufficient width before wrapping
+    p_ftStatusLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft); // Align to top for multi-line text
+    p_ftStatusLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
+    
+    ftLayout->addWidget(p_configureFtButton);
+    ftLayout->addWidget(p_ftStatusLabel);
+}
+
+void BCExpOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)
+{
+    // Placeholder for future BCExp-specific settings; for now just hide the group box
+    parent->hide();
+    
+    // Future BCExp-specific settings will be added here
+    // QVBoxLayout *bcexpLayout = new QVBoxLayout(parent);
+    // QLabel *placeholderLabel = new QLabel("Future BCExperiment-specific settings will be added here.");
+    // placeholderLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
+    // bcexpLayout->addWidget(placeholderLabel);
 }

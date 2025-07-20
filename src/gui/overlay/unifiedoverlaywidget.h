@@ -97,7 +97,7 @@ signals:
     void previewCancelled();
 
 public slots:
-    void onSourceFileConfigToggled(bool enabled); // For checkable source file config box
+    // Three-tier control moved to OverlayTypeSpecificWidget base class
     void onSettingsChanged();
     void onRealTimeUpdate(); // Settings context only
     void onDataValidityChanged(bool isValid); // Auto-preview handler for creation context
@@ -114,8 +114,6 @@ private:
     // UI Setup
     void setupUI();
     void setupConnections();
-    void createSourceFileConfigBox();
-    void createSourceFileSettingsBox();
     void createTypeSpecificSettingsBox();
     void createOverlayBaseOptionsBox();
     void createOverlayBaseOptionsWidget();
@@ -130,15 +128,12 @@ private:
     
     // Context management
     void configureForContext();
-    void updateSourceFileControls();
-    void validateSourceFile();
+    // Three-tier validation moved to OverlayTypeSpecificWidget base class
     
     // Type-specific widget management
     void setupTypeSpecificWidget();
     void setupTypeSpecificWidgetContext();
     void setupTypeSpecificWidgetConnections();
-    void reparentTypeSpecificWidgets();
-    OverlayTypeSpecificWidget* createPlaceholderWidget(const QString &typeName, const Ft &currentFt);
     
     // Helper methods
     QString getContextName() const;
@@ -168,13 +163,6 @@ private:
     // UI Components - Three-tier architecture
     QHBoxLayout *p_mainLayout;
     
-    // Source file tier
-    QGroupBox *p_sourceFileConfigBox;
-    QWidget *p_sourceFileConfigContent;
-    
-    QGroupBox *p_sourceFileSettingsBox;
-    QWidget *p_sourceFileSettingsContent;
-    
     // Type-specific tier  
     QGroupBox *p_typeSpecificSettingsBox;
     OverlayTypeSpecificWidget *p_typeSpecificWidget;
@@ -193,9 +181,7 @@ private:
     QProgressBar *p_progressBar;
     QLabel *p_progressLabel;
     
-    // State tracking
-    bool d_sourceFileValid;
-    bool d_sourceFileEnabled; // Settings context only
+    // State tracking - three-tier logic moved to OverlayTypeSpecificWidget
     QString d_lastValidationError;
     
     // Auto-preview state (creation context only)

@@ -16,14 +16,10 @@
 
 CatalogOverlayWidget::CatalogOverlayWidget(const Ft &currentFt, QWidget *parent)
     : OverlayTypeSpecificWidget(currentFt, parent), SettingsStorage(BC::Key::CatalogWidget::key),
-      p_sourceFileConfigWidget(nullptr),
-      p_sourceFileSettingsWidget(nullptr),
-      p_overlaySettingsWidget(nullptr),
       d_fileValid(false),
       d_convolutionInProgress(false)
 {
-    setupUI();
-    setupConnections();
+    // Base class handles setupUI() and setupConnections()
 }
 
 CatalogOverlayWidget::~CatalogOverlayWidget()
@@ -183,19 +179,25 @@ void CatalogOverlayWidget::applyToOverlay(std::shared_ptr<OverlayBase> overlay) 
     // }
 }
 
-bool CatalogOverlayWidget::validateSettings(QString &errorMessage) const
+bool CatalogOverlayWidget::validateSettingsImpl()
 {
     if (!d_fileValid) {
-        errorMessage = "Please select a valid catalog file.";
+        setSettingsErrorMessage("Please select a valid catalog file.");
         return false;
     }
     
     if (d_catalogData.isEmpty()) {
-        errorMessage = "Selected catalog file contains no transitions.";
+        setSettingsErrorMessage("Selected catalog file contains no transitions.");
         return false;
     }
     
-    return validateConvolutionSettings(errorMessage);
+    QString errorMessage;
+    if (!validateConvolutionSettings(errorMessage)) {
+        setSettingsErrorMessage(errorMessage);
+        return false;
+    }
+    
+    return true;
 }
 
 bool CatalogOverlayWidget::isDataValid() const
@@ -223,18 +225,18 @@ void CatalogOverlayWidget::setSourceFilePath(const QString &path)
     onFilePathChanged();
 }
 
-bool CatalogOverlayWidget::validateSourceFile(QString &errorMessage)
+bool CatalogOverlayWidget::validateSourceFileImpl()
 {
     QString path = p_filePathLineEdit->text().trimmed();
     
     if (path.isEmpty()) {
-        errorMessage = "Please select a catalog file.";
+        setSourceFileErrorMessage("Please select a catalog file.");
         d_fileValid = false;
         return false;
     }
     
     if (!QFile::exists(path)) {
-        errorMessage = QString("Catalog file does not exist: %1").arg(path);
+        setSourceFileErrorMessage(QString("Catalog file does not exist: %1").arg(path));
         d_fileValid = false;
         return false;
     }
@@ -244,7 +246,7 @@ bool CatalogOverlayWidget::validateSourceFile(QString &errorMessage)
     auto parser = registry->findParserOfType<CatalogParser>(path);
     
     if (!parser) {
-        errorMessage = QString("No suitable catalog parser found for file: %1").arg(path);
+        setSourceFileErrorMessage(QString("No suitable catalog parser found for file: %1").arg(path));
         d_fileValid = false;
         return false;
     }
@@ -252,18 +254,18 @@ bool CatalogOverlayWidget::validateSourceFile(QString &errorMessage)
     try {
         CatalogData testData = parser->parse(path);
         if (testData.isEmpty()) {
-            errorMessage = QString("Catalog file contains no valid transitions: %1").arg(path);
+            setSourceFileErrorMessage(QString("Catalog file contains no valid transitions: %1").arg(path));
             d_fileValid = false;
             return false;
         }
         d_fileValid = true;
         return true;
     } catch (const std::exception &e) {
-        errorMessage = QString("Error parsing catalog file: %1").arg(e.what());
+        setSourceFileErrorMessage(QString("Error parsing catalog file: %1").arg(e.what()));
         d_fileValid = false;
         return false;
     } catch (...) {
-        errorMessage = QString("Unknown error parsing catalog file: %1").arg(path);
+        setSourceFileErrorMessage(QString("Unknown error parsing catalog file: %1").arg(path));
         d_fileValid = false;
         return false;
     }
@@ -359,20 +361,6 @@ std::shared_ptr<OverlayOperation> CatalogOverlayWidget::createOperation(Operatio
     return nullptr;
 }
 
-QWidget* CatalogOverlayWidget::getSourceFileConfigWidget()
-{
-    return p_sourceFileConfigWidget;
-}
-
-QWidget* CatalogOverlayWidget::getSourceFileSettingsWidget()
-{
-    return p_sourceFileSettingsWidget;
-}
-
-QWidget* CatalogOverlayWidget::getOverlaySettingsWidget()
-{
-    return p_overlaySettingsWidget;
-}
 
 bool CatalogOverlayWidget::hasUnsavedChanges() const
 {
@@ -501,26 +489,6 @@ void CatalogOverlayWidget::onSaveRangeOnlyToggled(bool enabled)
     onFilteringParametersChanged();
 }
 
-void CatalogOverlayWidget::setupUI()
-{
-    // Load settings first to configure spinboxes
-    loadSettings();
-    
-    // Create main layout
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setSpacing(0);
-    
-    // Create the three-tier widgets
-    setupFileSelectionUI();
-    setupSourceFileSettingsUI();
-    setupConvolutionSettingsUI();
-    
-    // Add all widgets to main layout (they will be reparented by UnifiedOverlayWidget)
-    mainLayout->addWidget(p_sourceFileConfigWidget);
-    mainLayout->addWidget(p_sourceFileSettingsWidget);
-    mainLayout->addWidget(p_overlaySettingsWidget);
-}
 
 void CatalogOverlayWidget::setupConnections()
 {
@@ -579,215 +547,6 @@ void CatalogOverlayWidget::saveSettings()
     set(BC::Key::CatalogWidget::filterMaxFreqMHz, p_filterMaxFreqSpinBox->value());
 }
 
-void CatalogOverlayWidget::setupFileSelectionUI()
-{
-    p_sourceFileConfigWidget = new QWidget(this);
-    QVBoxLayout *configLayout = new QVBoxLayout(p_sourceFileConfigWidget);
-    configLayout->setContentsMargins(0, 0, 0, 0);
-    
-    p_fileSelectionGroup = new QGroupBox("Catalog File Selection", p_sourceFileConfigWidget);
-    QFormLayout *fileLayout = new QFormLayout(p_fileSelectionGroup);
-    
-    // Configure form layout for proper field expansion
-    fileLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
-    fileLayout->setRowWrapPolicy(QFormLayout::DontWrapRows);
-    
-    // File path selection
-    QHBoxLayout *pathLayout = new QHBoxLayout();
-    p_filePathLineEdit = new QLineEdit(p_fileSelectionGroup);
-    p_filePathLineEdit->setPlaceholderText("Select catalog file (.cat, .xo, .out)...");
-    p_browseButton = new QToolButton(p_fileSelectionGroup);
-    p_browseButton->setText("Browse...");
-    p_browseButton->setMinimumSize(80, 0);
-    
-    pathLayout->addWidget(p_filePathLineEdit);
-    pathLayout->addWidget(p_browseButton);
-    fileLayout->addRow("File:", pathLayout);
-    
-    // File information display
-    p_formatLabel = new QLabel("-", p_fileSelectionGroup);
-    p_moleculeLabel = new QLabel("-", p_fileSelectionGroup);
-    p_transitionCountLabel = new QLabel("-", p_fileSelectionGroup);
-    p_frequencyRangeLabel = new QLabel("-", p_fileSelectionGroup);
-    
-    // Configure labels for proper wrapping and expansion
-    p_formatLabel->setWordWrap(true);
-    p_formatLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    p_formatLabel->setMinimumHeight(20);
-    p_formatLabel->setMaximumHeight(40);
-    p_formatLabel->setMinimumWidth(150);
-    p_formatLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-    
-    p_moleculeLabel->setWordWrap(true);
-    p_moleculeLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    p_moleculeLabel->setMinimumHeight(20);
-    p_moleculeLabel->setMaximumHeight(40);
-    p_moleculeLabel->setMinimumWidth(150);
-    p_moleculeLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-    
-    p_transitionCountLabel->setWordWrap(true);
-    p_transitionCountLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    p_transitionCountLabel->setMinimumHeight(20);
-    p_transitionCountLabel->setMaximumHeight(40);
-    p_transitionCountLabel->setMinimumWidth(150);
-    p_transitionCountLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-    
-    p_frequencyRangeLabel->setWordWrap(true);
-    p_frequencyRangeLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    p_frequencyRangeLabel->setMinimumHeight(20);
-    p_frequencyRangeLabel->setMaximumHeight(60); // Allow more space for frequency ranges
-    p_frequencyRangeLabel->setMinimumWidth(200); // More space for frequency data
-    p_frequencyRangeLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-    
-    fileLayout->addRow("Format:", p_formatLabel);
-    fileLayout->addRow("Molecule:", p_moleculeLabel);
-    fileLayout->addRow("Transitions:", p_transitionCountLabel);
-    fileLayout->addRow("Frequency Range:", p_frequencyRangeLabel);
-    
-    configLayout->addWidget(p_fileSelectionGroup);
-}
-
-void CatalogOverlayWidget::setupSourceFileSettingsUI()
-{
-    p_sourceFileSettingsWidget = new QWidget(this);
-    QVBoxLayout *settingsLayout = new QVBoxLayout(p_sourceFileSettingsWidget);
-    settingsLayout->setContentsMargins(0, 0, 0, 0);
-    
-    p_sourceFileGroup = new QGroupBox("Source File Settings", p_sourceFileSettingsWidget);
-    QFormLayout *sourceLayout = new QFormLayout(p_sourceFileGroup);
-    
-    // Save range only option (source-dependent)
-    p_saveRangeOnlyCheckBox = new QCheckBox("Save only transitions within frequency range (recommended)");
-    p_saveRangeOnlyCheckBox->setChecked(get(BC::Key::CatalogWidget::saveRangeOnly, DEFAULT_SAVE_RANGE_ONLY));
-    p_saveRangeOnlyCheckBox->setToolTip("When enabled, only saves catalog transitions within the frequency range, reducing file size and improving performance.");
-    sourceLayout->addRow(p_saveRangeOnlyCheckBox);
-    
-    // Filtering frequency range spinboxes
-    QHBoxLayout *filterRangeLayout = new QHBoxLayout();
-    p_filterMinFreqSpinBox = new QDoubleSpinBox(p_sourceFileGroup);
-    configureSpinBox(p_filterMinFreqSpinBox,
-                     BC::Key::CatalogWidget::freqMin, BC::Key::CatalogWidget::freqMax,
-                     BC::Key::CatalogWidget::freqDecimals, BC::Key::CatalogWidget::freqStep,
-                     0.0, 10000000.0, 3, 1.0);
-    p_filterMinFreqSpinBox->setSuffix(" MHz");
-    
-    p_filterMaxFreqSpinBox = new QDoubleSpinBox(p_sourceFileGroup);
-    configureSpinBox(p_filterMaxFreqSpinBox,
-                     BC::Key::CatalogWidget::freqMin, BC::Key::CatalogWidget::freqMax,
-                     BC::Key::CatalogWidget::freqDecimals, BC::Key::CatalogWidget::freqStep,
-                     0.0, 10000000.0, 3, 1.0);
-    p_filterMaxFreqSpinBox->setSuffix(" MHz");
-    
-    // Initialize with intelligent defaults from Ft data
-    if (!d_currentFt.isEmpty()) {
-        auto ftRange = d_currentFt.xRange();
-        p_filterMinFreqSpinBox->setValue(ftRange.first);
-        p_filterMaxFreqSpinBox->setValue(ftRange.second);
-    } else {
-        p_filterMinFreqSpinBox->setValue(get(BC::Key::CatalogWidget::filterMinFreqMHz, DEFAULT_FILTER_MIN_FREQ));
-        p_filterMaxFreqSpinBox->setValue(get(BC::Key::CatalogWidget::filterMaxFreqMHz, DEFAULT_FILTER_MAX_FREQ));
-    }
-    
-    filterRangeLayout->addWidget(p_filterMinFreqSpinBox);
-    filterRangeLayout->addWidget(new QLabel("to"));
-    filterRangeLayout->addWidget(p_filterMaxFreqSpinBox);
-    filterRangeLayout->addStretch();
-    sourceLayout->addRow("Filter Range:", filterRangeLayout);
-    
-    settingsLayout->addWidget(p_sourceFileGroup);
-}
-
-void CatalogOverlayWidget::setupConvolutionSettingsUI()
-{
-    p_overlaySettingsWidget = new QWidget(this);
-    QVBoxLayout *overlayLayout = new QVBoxLayout(p_overlaySettingsWidget);
-    overlayLayout->setContentsMargins(0, 0, 0, 0);
-    
-    p_convolutionGroup = new QGroupBox("Convolution Settings", p_overlaySettingsWidget);
-    QFormLayout *convLayout = new QFormLayout(p_convolutionGroup);
-    
-    // Enable convolution
-    p_convolutionEnabledCheckBox = new QCheckBox("Enable convolution");
-    p_convolutionEnabledCheckBox->setChecked(get(BC::Key::CatalogWidget::convolutionEnabled, DEFAULT_CONVOLUTION_ENABLED));
-    convLayout->addRow(p_convolutionEnabledCheckBox);
-    
-    // Lineshape type
-    p_lineshapeComboBox = new QComboBox(p_convolutionGroup);
-    p_lineshapeComboBox->addItems({"Lorentzian", "Gaussian"});
-    p_lineshapeComboBox->setCurrentIndex(get(BC::Key::CatalogWidget::lineshapeType, DEFAULT_LINESHAPE_TYPE));
-    convLayout->addRow("Lineshape:", p_lineshapeComboBox);
-    
-    // Linewidth
-    p_linewidthSpinBox = new QDoubleSpinBox(p_convolutionGroup);
-    configureSpinBox(p_linewidthSpinBox, 
-                     BC::Key::CatalogWidget::linewidthMin, BC::Key::CatalogWidget::linewidthMax,
-                     BC::Key::CatalogWidget::linewidthDecimals, BC::Key::CatalogWidget::linewidthStep,
-                     0.1, 10000.0, 1, 10.0);
-    p_linewidthSpinBox->setSuffix(" kHz");
-    p_linewidthSpinBox->setValue(get(BC::Key::CatalogWidget::linewidthKHz, DEFAULT_LINEWIDTH));
-    convLayout->addRow("Linewidth (FWHM):", p_linewidthSpinBox);
-    p_linewidthSpinBox->setKeyboardTracking(false);
-    
-    // Frequency range
-    QHBoxLayout *freqRangeLayout = new QHBoxLayout();
-    p_convMinFreqSpinBox = new QDoubleSpinBox(p_convolutionGroup);
-    configureSpinBox(p_convMinFreqSpinBox,
-                     BC::Key::CatalogWidget::freqMin, BC::Key::CatalogWidget::freqMax,
-                     BC::Key::CatalogWidget::freqDecimals, BC::Key::CatalogWidget::freqStep,
-                     0.0, 10000000.0, 3, 1.0);
-    p_convMinFreqSpinBox->setSuffix(" MHz");
-    p_convMinFreqSpinBox->setKeyboardTracking(false);
-    
-    p_convMaxFreqSpinBox = new QDoubleSpinBox(p_convolutionGroup);
-    configureSpinBox(p_convMaxFreqSpinBox,
-                     BC::Key::CatalogWidget::freqMin, BC::Key::CatalogWidget::freqMax,
-                     BC::Key::CatalogWidget::freqDecimals, BC::Key::CatalogWidget::freqStep,
-                     0.0, 10000000.0, 3, 1.0);
-    p_convMaxFreqSpinBox->setSuffix(" MHz");
-    p_convMinFreqSpinBox->setKeyboardTracking(false);
-    
-    freqRangeLayout->addWidget(p_convMinFreqSpinBox);
-    freqRangeLayout->addWidget(new QLabel("to"));
-    freqRangeLayout->addWidget(p_convMaxFreqSpinBox);
-    convLayout->addRow("Frequency Range:", freqRangeLayout);
-    
-    // Number of points and spacing display
-    p_numPointsSpinBox = new QSpinBox(p_convolutionGroup);
-    p_numPointsSpinBox->setMinimum(get(BC::Key::CatalogWidget::numPointsMin, 100));
-    p_numPointsSpinBox->setMaximum(get(BC::Key::CatalogWidget::numPointsMax, 10000000));
-    p_numPointsSpinBox->setSingleStep(get(BC::Key::CatalogWidget::numPointsStep, 100));
-    p_numPointsSpinBox->setKeyboardTracking(false);
-    convLayout->addRow("Number of Points:", p_numPointsSpinBox);
-    
-    // Spacing display (read-only)
-    p_spacingDisplayLabel = new QLabel("0.000 MHz", p_convolutionGroup);
-    p_spacingDisplayLabel->setStyleSheet("QLabel { color: gray; }");
-    convLayout->addRow("Point Spacing:", p_spacingDisplayLabel);
-
-    p_convolveButton = new QPushButton("Convolve",p_convolutionGroup);
-    p_convolveButton->setEnabled(false);
-    convLayout->addRow("",p_convolveButton);
-
-    // Initialize with intelligent defaults from Ft data
-    if (!d_currentFt.isEmpty()) {
-        auto ftRange = d_currentFt.xRange();
-        p_convMinFreqSpinBox->setValue(ftRange.first);
-        p_convMaxFreqSpinBox->setValue(ftRange.second);
-        // Calculate intelligent default number of points based on range and FT spacing
-        double range = ftRange.second - ftRange.first;
-        double ftSpacing = d_currentFt.xSpacing();
-        int intelligentPoints = qMin(10000000, qMax(100, static_cast<int>(range / ftSpacing)));
-        p_numPointsSpinBox->setValue(intelligentPoints);
-    } else {
-        p_convMinFreqSpinBox->setValue(get(BC::Key::CatalogWidget::convMinFreqMHz, DEFAULT_MIN_FREQ));
-        p_convMaxFreqSpinBox->setValue(get(BC::Key::CatalogWidget::convMaxFreqMHz, DEFAULT_MAX_FREQ));
-        p_numPointsSpinBox->setValue(get(BC::Key::CatalogWidget::numConvolutionPoints, DEFAULT_NUM_POINTS));
-    updateSpacingDisplay();
-    }
-    
-    overlayLayout->addWidget(p_convolutionGroup);
-}
-
 void CatalogOverlayWidget::loadCatalogFile(const QString &filePath)
 {
     d_fileValid = false;
@@ -826,7 +585,7 @@ void CatalogOverlayWidget::updateFileInfo()
         p_moleculeLabel->setText("-");
         p_transitionCountLabel->setText("-");
         p_frequencyRangeLabel->setText("-");
-        p_convolutionGroup->setEnabled(false);
+        p_overlaySettingsBox->setEnabled(false);
         return;
     }
     
@@ -856,10 +615,10 @@ void CatalogOverlayWidget::updateFileInfo()
         }
         
         p_frequencyRangeLabel->setText(formatFrequencyRange(minFreq, maxFreq));
-        p_convolutionGroup->setEnabled(true);
+        p_overlaySettingsBox->setEnabled(true);
     }
     else
-        p_convolutionGroup->setEnabled(false);
+        p_overlaySettingsBox->setEnabled(false);
 }
 
 void CatalogOverlayWidget::updateConvolutionControls()
@@ -868,7 +627,7 @@ void CatalogOverlayWidget::updateConvolutionControls()
     bool hasOverlay = (d_overlay != nullptr);
     
     // Enable/disable the entire group box based on whether we have an overlay
-    p_convolutionGroup->setEnabled(hasOverlay);
+    p_overlaySettingsBox->setEnabled(hasOverlay);
     
     // Individual control states based on checkbox (preserved when group is re-enabled)
     p_lineshapeComboBox->setEnabled(convolutionEnabled);
@@ -1115,6 +874,194 @@ void CatalogOverlayWidget::onFilteringParametersChanged()
     emit settingsChanged(); // Trigger real-time preview updates in settings context
 }
 
+void CatalogOverlayWidget::createSourceFileConfigUI(QGroupBox *parent)
+{
+    QFormLayout *fileLayout = new QFormLayout(parent);
+    
+    // Configure form layout for proper field expansion
+    fileLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+    fileLayout->setRowWrapPolicy(QFormLayout::DontWrapRows);
+    
+    // File path selection
+    QHBoxLayout *pathLayout = new QHBoxLayout();
+    p_filePathLineEdit = new QLineEdit(parent);
+    p_filePathLineEdit->setPlaceholderText("Select catalog file (.cat, .xo, .out)...");
+    p_browseButton = new QToolButton(parent);
+    p_browseButton->setText("Browse...");
+    p_browseButton->setMinimumSize(80, 0);
+    
+    pathLayout->addWidget(p_filePathLineEdit);
+    pathLayout->addWidget(p_browseButton);
+    fileLayout->addRow("File:", pathLayout);
+    
+    // File information display
+    p_formatLabel = new QLabel("-", parent);
+    p_moleculeLabel = new QLabel("-", parent);
+    p_transitionCountLabel = new QLabel("-", parent);
+    p_frequencyRangeLabel = new QLabel("-", parent);
+    
+    // Configure labels for proper wrapping and expansion
+    p_formatLabel->setWordWrap(true);
+    p_formatLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    p_formatLabel->setMinimumHeight(20);
+    p_formatLabel->setMaximumHeight(40);
+    p_formatLabel->setMinimumWidth(150);
+    p_formatLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    
+    p_moleculeLabel->setWordWrap(true);
+    p_moleculeLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    p_moleculeLabel->setMinimumHeight(20);
+    p_moleculeLabel->setMaximumHeight(40);
+    p_moleculeLabel->setMinimumWidth(150);
+    p_moleculeLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    
+    p_transitionCountLabel->setWordWrap(true);
+    p_transitionCountLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    p_transitionCountLabel->setMinimumHeight(20);
+    p_transitionCountLabel->setMaximumHeight(40);
+    p_transitionCountLabel->setMinimumWidth(150);
+    p_transitionCountLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    
+    p_frequencyRangeLabel->setWordWrap(true);
+    p_frequencyRangeLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    p_frequencyRangeLabel->setMinimumHeight(20);
+    p_frequencyRangeLabel->setMaximumHeight(60); // Allow more space for frequency ranges
+    p_frequencyRangeLabel->setMinimumWidth(200); // More space for frequency data
+    p_frequencyRangeLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    
+    fileLayout->addRow("Format:", p_formatLabel);
+    fileLayout->addRow("Molecule:", p_moleculeLabel);
+    fileLayout->addRow("Transitions:", p_transitionCountLabel);
+    fileLayout->addRow("Frequency Range:", p_frequencyRangeLabel);
+}
+
+void CatalogOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
+{
+    QFormLayout *sourceLayout = new QFormLayout(parent);
+    
+    // Save range only option (source-dependent)
+    p_saveRangeOnlyCheckBox = new QCheckBox("Save only transitions within frequency range (recommended)");
+    p_saveRangeOnlyCheckBox->setChecked(get(BC::Key::CatalogWidget::saveRangeOnly, DEFAULT_SAVE_RANGE_ONLY));
+    p_saveRangeOnlyCheckBox->setToolTip("When enabled, only saves catalog transitions within the frequency range, reducing file size and improving performance.");
+    sourceLayout->addRow(p_saveRangeOnlyCheckBox);
+    
+    // Filtering frequency range spinboxes
+    QHBoxLayout *filterRangeLayout = new QHBoxLayout();
+    p_filterMinFreqSpinBox = new QDoubleSpinBox(parent);
+    configureSpinBox(p_filterMinFreqSpinBox,
+                     BC::Key::CatalogWidget::freqMin, BC::Key::CatalogWidget::freqMax,
+                     BC::Key::CatalogWidget::freqDecimals, BC::Key::CatalogWidget::freqStep,
+                     0.0, 10000000.0, 3, 1.0);
+    p_filterMinFreqSpinBox->setSuffix(" MHz");
+    
+    p_filterMaxFreqSpinBox = new QDoubleSpinBox(parent);
+    configureSpinBox(p_filterMaxFreqSpinBox,
+                     BC::Key::CatalogWidget::freqMin, BC::Key::CatalogWidget::freqMax,
+                     BC::Key::CatalogWidget::freqDecimals, BC::Key::CatalogWidget::freqStep,
+                     0.0, 10000000.0, 3, 1.0);
+    p_filterMaxFreqSpinBox->setSuffix(" MHz");
+    
+    // Initialize with intelligent defaults from Ft data
+    if (!d_currentFt.isEmpty()) {
+        auto ftRange = d_currentFt.xRange();
+        p_filterMinFreqSpinBox->setValue(ftRange.first);
+        p_filterMaxFreqSpinBox->setValue(ftRange.second);
+    } else {
+        p_filterMinFreqSpinBox->setValue(get(BC::Key::CatalogWidget::filterMinFreqMHz, DEFAULT_FILTER_MIN_FREQ));
+        p_filterMaxFreqSpinBox->setValue(get(BC::Key::CatalogWidget::filterMaxFreqMHz, DEFAULT_FILTER_MAX_FREQ));
+    }
+    
+    filterRangeLayout->addWidget(p_filterMinFreqSpinBox);
+    filterRangeLayout->addWidget(new QLabel("to"));
+    filterRangeLayout->addWidget(p_filterMaxFreqSpinBox);
+    filterRangeLayout->addStretch();
+    sourceLayout->addRow("Filter Range:", filterRangeLayout);
+}
+
+void CatalogOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)
+{
+    QFormLayout *convLayout = new QFormLayout(parent);
+    
+    // Enable convolution
+    p_convolutionEnabledCheckBox = new QCheckBox("Enable convolution");
+    p_convolutionEnabledCheckBox->setChecked(get(BC::Key::CatalogWidget::convolutionEnabled, DEFAULT_CONVOLUTION_ENABLED));
+    convLayout->addRow(p_convolutionEnabledCheckBox);
+    
+    // Lineshape type
+    p_lineshapeComboBox = new QComboBox(parent);
+    p_lineshapeComboBox->addItems({"Lorentzian", "Gaussian"});
+    p_lineshapeComboBox->setCurrentIndex(get(BC::Key::CatalogWidget::lineshapeType, DEFAULT_LINESHAPE_TYPE));
+    convLayout->addRow("Lineshape:", p_lineshapeComboBox);
+    
+    // Linewidth
+    p_linewidthSpinBox = new QDoubleSpinBox(parent);
+    configureSpinBox(p_linewidthSpinBox, 
+                     BC::Key::CatalogWidget::linewidthMin, BC::Key::CatalogWidget::linewidthMax,
+                     BC::Key::CatalogWidget::linewidthDecimals, BC::Key::CatalogWidget::linewidthStep,
+                     0.1, 10000.0, 1, 10.0);
+    p_linewidthSpinBox->setSuffix(" kHz");
+    p_linewidthSpinBox->setValue(get(BC::Key::CatalogWidget::linewidthKHz, DEFAULT_LINEWIDTH));
+    convLayout->addRow("Linewidth (FWHM):", p_linewidthSpinBox);
+    p_linewidthSpinBox->setKeyboardTracking(false);
+    
+    // Frequency range
+    QHBoxLayout *freqRangeLayout = new QHBoxLayout();
+    p_convMinFreqSpinBox = new QDoubleSpinBox(parent);
+    configureSpinBox(p_convMinFreqSpinBox,
+                     BC::Key::CatalogWidget::freqMin, BC::Key::CatalogWidget::freqMax,
+                     BC::Key::CatalogWidget::freqDecimals, BC::Key::CatalogWidget::freqStep,
+                     0.0, 10000000.0, 3, 1.0);
+    p_convMinFreqSpinBox->setSuffix(" MHz");
+    p_convMinFreqSpinBox->setKeyboardTracking(false);
+    
+    p_convMaxFreqSpinBox = new QDoubleSpinBox(parent);
+    configureSpinBox(p_convMaxFreqSpinBox,
+                     BC::Key::CatalogWidget::freqMin, BC::Key::CatalogWidget::freqMax,
+                     BC::Key::CatalogWidget::freqDecimals, BC::Key::CatalogWidget::freqStep,
+                     0.0, 10000000.0, 3, 1.0);
+    p_convMaxFreqSpinBox->setSuffix(" MHz");
+    p_convMinFreqSpinBox->setKeyboardTracking(false);
+    
+    freqRangeLayout->addWidget(p_convMinFreqSpinBox);
+    freqRangeLayout->addWidget(new QLabel("to"));
+    freqRangeLayout->addWidget(p_convMaxFreqSpinBox);
+    convLayout->addRow("Frequency Range:", freqRangeLayout);
+    
+    // Number of points and spacing display
+    p_numPointsSpinBox = new QSpinBox(parent);
+    p_numPointsSpinBox->setMinimum(get(BC::Key::CatalogWidget::numPointsMin, 100));
+    p_numPointsSpinBox->setMaximum(get(BC::Key::CatalogWidget::numPointsMax, 10000000));
+    p_numPointsSpinBox->setSingleStep(get(BC::Key::CatalogWidget::numPointsStep, 100));
+    p_numPointsSpinBox->setKeyboardTracking(false);
+    convLayout->addRow("Number of Points:", p_numPointsSpinBox);
+    
+    // Spacing display (read-only)
+    p_spacingDisplayLabel = new QLabel("0.000 MHz", parent);
+    p_spacingDisplayLabel->setStyleSheet("QLabel { color: gray; }");
+    convLayout->addRow("Point Spacing:", p_spacingDisplayLabel);
+
+    p_convolveButton = new QPushButton("Convolve", parent);
+    p_convolveButton->setEnabled(false);
+    convLayout->addRow("", p_convolveButton);
+
+    // Initialize with intelligent defaults from Ft data
+    if (!d_currentFt.isEmpty()) {
+        auto ftRange = d_currentFt.xRange();
+        p_convMinFreqSpinBox->setValue(ftRange.first);
+        p_convMaxFreqSpinBox->setValue(ftRange.second);
+        // Calculate intelligent default number of points based on range and FT spacing
+        double range = ftRange.second - ftRange.first;
+        double ftSpacing = d_currentFt.xSpacing();
+        int intelligentPoints = qMin(10000000, qMax(100, static_cast<int>(range / ftSpacing)));
+        p_numPointsSpinBox->setValue(intelligentPoints);
+    } else {
+        p_convMinFreqSpinBox->setValue(get(BC::Key::CatalogWidget::convMinFreqMHz, DEFAULT_MIN_FREQ));
+        p_convMaxFreqSpinBox->setValue(get(BC::Key::CatalogWidget::convMaxFreqMHz, DEFAULT_MAX_FREQ));
+        p_numPointsSpinBox->setValue(get(BC::Key::CatalogWidget::numConvolutionPoints, DEFAULT_NUM_POINTS));
+    }
+    updateSpacingDisplay();
+}
+
 CatalogOverlayWidget::ConvolutionState CatalogOverlayWidget::getCurrentConvolutionState() const
 {
     ConvolutionState current;
@@ -1203,4 +1150,63 @@ void CatalogOverlayWidget::onConvolveButtonClicked()
     
     // Trigger the background convolution
     triggerBackgroundConvolution();
+}
+
+void CatalogOverlayWidget::configureForCreationContext()
+{
+    // Creation context: Emphasize catalog file selection and discovery
+    if (p_filePathLineEdit) {
+        p_filePathLineEdit->setPlaceholderText("Select a catalog file to create overlay...");
+    }
+    
+    // Show helpful status message for file selection in molecule label
+    if (p_moleculeLabel) {
+        p_moleculeLabel->setText("Select a catalog file to begin");
+        p_moleculeLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
+    }
+    
+    // Set defaults from settings for creation context
+    if (p_linewidthSpinBox) {
+        double defaultLinewidth = get(BC::Key::CatalogWidget::linewidthKHz, 100.0); // Default 100 kHz
+        p_linewidthSpinBox->setValue(defaultLinewidth);
+    }
+    
+    // Make convolution button more prominent
+    if (p_convolveButton) {
+        p_convolveButton->setStyleSheet("QPushButton { font-weight: bold; }");
+    }
+}
+
+void CatalogOverlayWidget::configureForSettingsContext()
+{
+    // Settings context: Show existing catalog information and convolution status
+    if (d_overlay) {
+        auto catalogOverlay = std::dynamic_pointer_cast<CatalogOverlay>(d_overlay);
+        if (catalogOverlay) {
+            // Show current catalog information
+            QString info = QString("Editing catalog overlay (%1 transitions)")
+                .arg(d_catalogData.size());
+            
+            if (p_moleculeLabel) {
+                p_moleculeLabel->setText(info);
+                p_moleculeLabel->setStyleSheet("QLabel { color: blue; }");
+            }
+            
+            // Show convolution information if available
+            if (catalogOverlay->convolutionEnabled()) {
+                QString convInfo = QString("Convolution enabled with linewidth: %1 kHz")
+                    .arg(catalogOverlay->linewidth(), 0, 'f', 1);
+                    
+                if (p_transitionCountLabel) {
+                    p_transitionCountLabel->setText(convInfo);
+                    p_transitionCountLabel->setStyleSheet("QLabel { color: green; }");
+                }
+            }
+        }
+    }
+    
+    // Reduce emphasis on convolution button in settings mode
+    if (p_convolveButton) {
+        p_convolveButton->setStyleSheet("");
+    }
 }
