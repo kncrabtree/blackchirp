@@ -11,6 +11,7 @@
 #include "overlaytypespecificwidget.h"
 #include "bcexpoverlaywidget.h"
 #include "catalogoverlaywidget.h"
+#include "genericxyoverlaywidget.h"
 #include <data/storage/settingsstorage.h>
 #include <gui/plot/curveappearancepresetmanager.h>
 #include <gui/plot/blackchirpplotcurve.h>
@@ -734,8 +735,7 @@ void UnifiedOverlayWidget::setupTypeSpecificWidget()
         p_typeSpecificWidget = new CatalogOverlayWidget(d_currentFt, this);
         break;
     case OverlayBase::GenericXY:
-        // GenericXY not yet implemented - create placeholder
-        p_typeSpecificWidget = createPlaceholderWidget("Generic XY", d_currentFt);
+        p_typeSpecificWidget = new GenericXYOverlayWidget(d_currentFt, this);
         break;
     }
     

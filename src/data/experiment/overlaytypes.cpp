@@ -717,6 +717,25 @@ QPair<double, double> GenericXYOverlay::yRange() const
     return qMakePair(d_yMin, d_yMax);
 }
 
+double GenericXYOverlay::filterMinX() const
+{
+    return d_filterMinX;
+}
+
+double GenericXYOverlay::filterMaxX() const
+{
+    return d_filterMaxX;
+}
+
+void GenericXYOverlay::setFilterRange(double minX, double maxX)
+{
+    if (d_filterMinX != minX || d_filterMaxX != maxX) {
+        d_filterMinX = minX;
+        d_filterMaxX = maxX;
+        setModified();
+    }
+}
+
 QVector<QPointF> GenericXYOverlay::_xyData() const
 {
     return d_rawData;
@@ -827,6 +846,8 @@ void GenericXYOverlay::_storeMetadata(std::map<QString, QVariant> &m)
     m.emplace(BC::Key::Overlay::GenericXY::xMax, d_xMax);
     m.emplace(BC::Key::Overlay::GenericXY::yMin, d_yMin);
     m.emplace(BC::Key::Overlay::GenericXY::yMax, d_yMax);
+    m.emplace(BC::Key::Overlay::GenericXY::filterMinX, d_filterMinX);
+    m.emplace(BC::Key::Overlay::GenericXY::filterMaxX, d_filterMaxX);
 }
 
 void GenericXYOverlay::_retrieveMetadata(const std::map<QString, QVariant> &m)
@@ -881,5 +902,15 @@ void GenericXYOverlay::_retrieveMetadata(const std::map<QString, QVariant> &m)
     it = m.find(BC::Key::Overlay::GenericXY::yMax);
     if (it != m.end()) {
         d_yMax = it->second.toDouble();
+    }
+    
+    it = m.find(BC::Key::Overlay::GenericXY::filterMinX);
+    if (it != m.end()) {
+        d_filterMinX = it->second.toDouble();
+    }
+    
+    it = m.find(BC::Key::Overlay::GenericXY::filterMaxX);
+    if (it != m.end()) {
+        d_filterMaxX = it->second.toDouble();
     }
 }

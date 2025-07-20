@@ -42,6 +42,8 @@ namespace GenericXY {
     static const QString xMax{"genericXYXMax"};
     static const QString yMin{"genericXYYMin"};
     static const QString yMax{"genericXYYMax"};
+    static const QString filterMinX{"genericXYFilterMinX"};
+    static const QString filterMaxX{"genericXYFilterMaxX"};
 }
 }
 
@@ -214,6 +216,11 @@ public:
     // Range information (calculated from data)
     QPair<double, double> xRange() const;
     QPair<double, double> yRange() const;
+    
+    // Filtering range settings
+    double filterMinX() const;
+    double filterMaxX() const;
+    void setFilterRange(double minX, double maxX);
 
 protected:
     void readFromDest() override;
@@ -241,6 +248,10 @@ private:
     double d_xMax{0.0};
     double d_yMin{0.0};
     double d_yMax{0.0};
+    
+    // Filtering range settings
+    double d_filterMinX{0.0};
+    double d_filterMaxX{1000.0};
 };
 
 #endif // OVERLAYTYPES_H

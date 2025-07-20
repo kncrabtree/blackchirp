@@ -24,6 +24,7 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/overlay/overlaytypespecificwidget.cpp \
     $$PWD/overlay/bcexpoverlaywidget.cpp \
     $$PWD/overlay/catalogoverlaywidget.cpp \
+    $$PWD/overlay/genericxyoverlaywidget.cpp \
     $$PWD/overlay/overlaybaseoptionswidget.cpp \
     $$PWD/overlay/overlaymanagerwidget.cpp \
     $$PWD/overlay/overlayconfiguredelegate.cpp \
@@ -94,6 +95,7 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/overlay/overlaytypespecificwidget.h \
     $$PWD/overlay/bcexpoverlaywidget.h \
     $$PWD/overlay/catalogoverlaywidget.h \
+    $$PWD/overlay/genericxyoverlaywidget.h \
     $$PWD/overlay/overlaybaseoptionswidget.h \
     $$PWD/overlay/overlaymanagerwidget.h \
     $$PWD/overlay/overlayconfiguredelegate.h \
