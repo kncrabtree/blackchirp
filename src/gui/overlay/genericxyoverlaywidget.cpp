@@ -66,7 +66,7 @@ void GenericXYOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overl
     
     // Load settings from overlay using the actual GenericXYOverlay interface
     d_sourceFilePath = genericXYOverlay->getSourceFile();
-    p_filePathEdit->setText(d_sourceFilePath);
+    updatePathDisplayAndTooltip(p_filePathEdit, d_sourceFilePath);
     
     // Update UI controls with overlay settings
     QString delimiter = genericXYOverlay->delimiter();
@@ -204,14 +204,14 @@ bool GenericXYOverlayWidget::hasValidSourceFile() const
 
 QString GenericXYOverlayWidget::getSourceFilePath() const
 {
-    return d_sourceFilePath;
+    return getStoredFullSourceFilePath(); // Use stored full path instead of potentially abbreviated display text
 }
 
 void GenericXYOverlayWidget::setSourceFilePath(const QString &path)
 {
     if (d_sourceFilePath != path) {
         d_sourceFilePath = path;
-        p_filePathEdit->setText(path);
+        updatePathDisplayAndTooltip(p_filePathEdit, path); // Use helper method for consistent display and full path storage
         
         if (!path.isEmpty() && validateFileExists()) {
             p_parseButton->setEnabled(true);
@@ -318,7 +318,7 @@ std::shared_ptr<OverlayOperation> GenericXYOverlayWidget::createOperation(Operat
 
 void GenericXYOverlayWidget::onFileSelected()
 {
-    QString selectedPath = p_filePathEdit->text().trimmed();
+    QString selectedPath = getStoredFullSourceFilePath(); // Use stored full path instead of potentially abbreviated display text
     if (selectedPath != d_sourceFilePath) {
         setSourceFilePath(selectedPath);
     }
@@ -384,8 +384,9 @@ void GenericXYOverlayWidget::updatePreview()
     p_previewTable->setHorizontalHeaderLabels(headers);
     
     // Fill with data
+    auto d = d_parsedData.data();
     for (int i = 0; i < numRows; ++i) {
-        const QPointF &point = d_parsedData.data()[i];
+        const QPointF &point = d[i];
         p_previewTable->setItem(i, 0, new QTableWidgetItem(QString::number(point.x(), 'g', 6)));
         p_previewTable->setItem(i, 1, new QTableWidgetItem(QString::number(point.y(), 'g', 6)));
     }
@@ -509,84 +510,152 @@ void GenericXYOverlayWidget::configureForSettingsContext()
 
 void GenericXYOverlayWidget::createSourceFileConfigUI(QGroupBox *parent)
 {
-    auto layout = new QFormLayout(parent);
+    // Use compact horizontal layout similar to other overlay types
+    auto mainLayout = new QVBoxLayout(parent);
+    mainLayout->setSpacing(6);
+    mainLayout->setContentsMargins(6, 6, 6, 6);
     
-    // File path selection
-    auto fileLayout = new QHBoxLayout();
+    // Primary file selection row
+    auto fileRow = new QHBoxLayout();
+    fileRow->setSpacing(6);
+    
+    // File path input (give adequate space for visibility)
     p_filePathEdit = new QLineEdit(parent);
     p_filePathEdit->setPlaceholderText("Select a data file...");
-    p_browseButton = new QPushButton("Browse...", parent);
-    p_autoDetectButton = new QPushButton("Auto-Detect", parent);
+    p_filePathEdit->setMinimumWidth(250); // Ensure adequate width
+    fileRow->addWidget(p_filePathEdit, 1); // Give it stretch priority
     
-    fileLayout->addWidget(p_filePathEdit, 1);
-    fileLayout->addWidget(p_browseButton);
-    fileLayout->addWidget(p_autoDetectButton);
+    // Browse button (compact with icon)
+    p_browseButton = new QPushButton("📁", parent);
+    p_browseButton->setToolTip("Browse for data file");
+    p_browseButton->setMaximumSize(30, 30);
+    fileRow->addWidget(p_browseButton);
     
-    // File status label
+    mainLayout->addLayout(fileRow);
+    
+    // Status display (compact, single line)
+    auto statusRow = new QHBoxLayout();
+    statusRow->setSpacing(6);
+    
     p_fileStatusLabel = new QLabel(parent);
-    p_fileStatusLabel->setWordWrap(true);
+    p_fileStatusLabel->setWordWrap(false);
+    p_fileStatusLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    p_fileStatusLabel->setMinimumHeight(20);
+    p_fileStatusLabel->setMaximumHeight(22);
+    p_fileStatusLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    p_fileStatusLabel->setStyleSheet("QLabel { font-size: 11px; padding: 2px; }");
     
-    layout->addRow("Data File:", fileLayout);
-    layout->addRow("Status:", p_fileStatusLabel);
+    statusRow->addWidget(p_fileStatusLabel, 1);
+    mainLayout->addLayout(statusRow);
 }
 
 void GenericXYOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
 {
-    auto layout = new QFormLayout(parent);
+    auto mainLayout = new QVBoxLayout(parent);
+    mainLayout->setSpacing(4); // Reduced spacing between flat GroupBoxes
     
-    // Delimiter selection
-    p_delimiterCombo = new QComboBox(parent);
+    // Group 1: Format Detection
+    auto formatGroup = new QGroupBox("Format Detection", parent);
+    formatGroup->setFlat(true); // Flat appearance for nested GroupBox
+    auto formatLayout = new QGridLayout(formatGroup);
+    formatLayout->setContentsMargins(3, 2, 3, 3); // Reduced margins for flat GroupBox
+    formatLayout->setSpacing(3); // Reduced spacing for compact appearance
+    
+    p_delimiterCombo = new QComboBox(formatGroup);
     populateDelimiterComboBox();
     
-    // Header lines
-    p_headerLinesSpinBox = new QSpinBox(parent);
+    p_headerLinesSpinBox = new QSpinBox(formatGroup);
     p_headerLinesSpinBox->setRange(0, 100);
     p_headerLinesSpinBox->setValue(0);
     
-    // Column selection
-    p_xColumnCombo = new QComboBox(parent);
-    p_yColumnCombo = new QComboBox(parent);
+    p_autoDetectButton = new QPushButton("Auto-Detect", formatGroup);
+    p_autoDetectButton->setToolTip("Automatically detect delimiter, headers, and column structure");
     
-    // Parse button
-    p_parseButton = new QPushButton("Parse File", parent);
+    // Compact 2x2 grid layout
+    formatLayout->addWidget(new QLabel("Delimiter:", formatGroup), 0, 0);
+    formatLayout->addWidget(p_delimiterCombo, 0, 1);
+    formatLayout->addWidget(new QLabel("Header Lines:", formatGroup), 1, 0);  
+    formatLayout->addWidget(p_headerLinesSpinBox, 1, 1);
+    formatLayout->addWidget(p_autoDetectButton, 0, 2, 2, 1); // Spans 2 rows
+    
+    // Group 2: Column Mapping  
+    auto columnGroup = new QGroupBox("Column Mapping", parent);
+    columnGroup->setFlat(true); // Flat appearance for nested GroupBox
+    auto columnLayout = new QGridLayout(columnGroup);
+    columnLayout->setContentsMargins(3, 2, 3, 3); // Reduced margins for flat GroupBox
+    columnLayout->setSpacing(3); // Reduced spacing for compact appearance
+    
+    p_xColumnCombo = new QComboBox(columnGroup);
+    p_yColumnCombo = new QComboBox(columnGroup);
+    
+    p_parseButton = new QPushButton("Parse File", columnGroup);
     p_parseButton->setEnabled(false);
     
-    // Filtering controls
-    p_enableFilteringCheckBox = new QCheckBox("Enable X-range filtering", parent);
+    columnLayout->addWidget(new QLabel("X Column:", columnGroup), 0, 0);
+    columnLayout->addWidget(p_xColumnCombo, 0, 1);
+    columnLayout->addWidget(new QLabel("Y Column:", columnGroup), 1, 0);
+    columnLayout->addWidget(p_yColumnCombo, 1, 1);
+    columnLayout->addWidget(p_parseButton, 0, 2, 2, 1); // Spans 2 rows
     
-    auto filterLayout = new QHBoxLayout();
-    p_xMinEdit = new QLineEdit(parent);
+    // Group 3: Data Filtering (Collapsible)
+    auto filterGroup = new QGroupBox("Data Filtering", parent);
+    filterGroup->setFlat(true); // Flat appearance for nested GroupBox
+    filterGroup->setCheckable(true);
+    filterGroup->setChecked(false);
+    auto filterGroupLayout = new QVBoxLayout(filterGroup);
+    filterGroupLayout->setContentsMargins(3, 2, 3, 3); // Reduced margins for flat GroupBox
+    
+    // Collapsible content widget
+    auto filterContentWidget = new QWidget(parent);
+    auto filterLayout = new QGridLayout(filterContentWidget);
+    filterLayout->setContentsMargins(3, 2, 3, 3); // Reduced margins for flat GroupBox
+    filterLayout->setSpacing(3); // Reduced spacing for compact appearance
+    
+    p_enableFilteringCheckBox = new QCheckBox("Enable X-range filtering", filterContentWidget);
+    
+    p_xMinEdit = new QLineEdit(filterContentWidget);
     p_xMinEdit->setPlaceholderText("Min X");
-    p_xMaxEdit = new QLineEdit(parent);
+    p_xMaxEdit = new QLineEdit(filterContentWidget);
     p_xMaxEdit->setPlaceholderText("Max X");
     
-    filterLayout->addWidget(p_xMinEdit);
-    filterLayout->addWidget(new QLabel("to"));
-    filterLayout->addWidget(p_xMaxEdit);
-    filterLayout->addStretch();
+    filterLayout->addWidget(p_enableFilteringCheckBox, 0, 0, 1, 3);
+    filterLayout->addWidget(new QLabel("Range:", filterContentWidget), 1, 0);
+    filterLayout->addWidget(p_xMinEdit, 1, 1);
+    filterLayout->addWidget(new QLabel("to", filterContentWidget), 1, 2);
+    filterLayout->addWidget(p_xMaxEdit, 1, 3);
     
-    // Data statistics
+    filterGroupLayout->addWidget(filterContentWidget);
+    
+    // Data statistics (compact info display)
     p_dataStatsLabel = new QLabel(parent);
     p_dataStatsLabel->setWordWrap(true);
+    p_dataStatsLabel->setStyleSheet("QLabel { color: gray; font-size: 11px; padding: 4px; }");
     
-    layout->addRow("Delimiter:", p_delimiterCombo);
-    layout->addRow("Header Lines:", p_headerLinesSpinBox);
-    layout->addRow("X Column:", p_xColumnCombo);
-    layout->addRow("Y Column:", p_yColumnCombo);
-    layout->addRow("Parse:", p_parseButton);
-    layout->addRow(p_enableFilteringCheckBox);
-    layout->addRow("Filter Range:", filterLayout);
-    layout->addRow("Data Info:", p_dataStatsLabel);
+    // Add groups to main layout
+    mainLayout->addWidget(formatGroup);
+    mainLayout->addWidget(columnGroup);
+    mainLayout->addWidget(filterGroup);
+    mainLayout->addWidget(p_dataStatsLabel);
+    mainLayout->addStretch();
     
     // Initially disable filtering controls
     p_xMinEdit->setEnabled(false);
     p_xMaxEdit->setEnabled(false);
     
-    // Connect filtering checkbox to enable/disable controls
+    // Connect filtering controls
     connect(p_enableFilteringCheckBox, &QCheckBox::toggled, [this](bool enabled) {
         p_xMinEdit->setEnabled(enabled);
         p_xMaxEdit->setEnabled(enabled);
     });
+    
+    // Connect filter group checkable to enable filtering AND implement collapsible behavior
+    connect(filterGroup, &QGroupBox::toggled, [this, filterContentWidget](bool enabled) {
+        p_enableFilteringCheckBox->setChecked(enabled);
+        filterContentWidget->setVisible(enabled);
+    });
+    
+    // Initially hide filter content since group starts unchecked
+    filterContentWidget->setVisible(false);
 }
 
 void GenericXYOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)
