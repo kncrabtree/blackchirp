@@ -23,13 +23,7 @@ bool OverlayTypeSpecificWidget::validateSourceFile()
     bool isValid = validateSourceFileImpl();
     
     // Update base class state
-    bool stateChanged = (d_sourceFileValid != isValid);
     d_sourceFileValid = isValid;
-    
-    // Emit signal if state changed
-    if (stateChanged) {
-        emit sourceFileChanged();
-    }
     
     return isValid;
 }

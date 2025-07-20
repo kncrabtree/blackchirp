@@ -52,7 +52,6 @@ public:
     void setSourceFilePath(const QString &path) override;
     bool validateSourceFileImpl() override;
     
-    void resetToDefaults() override;
     
     // Settings state capture for preview sync tracking
     QHash<QString, QVariant> getSettingsHash() const override;

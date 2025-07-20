@@ -75,8 +75,7 @@ public:
     bool validateSourceFile(); // Non-virtual - manages base class state
     QString getSourceFileErrorMessage() const { return d_sourceFileErrorMessage; }
     
-    // Reset/accept functionality
-    virtual void resetToDefaults() = 0;
+    // Accept functionality
     virtual void onAccept() { saveSettings(); }
     
     // Settings state capture for preview sync tracking
@@ -134,7 +133,6 @@ protected:
 
 signals:
     void settingsChanged();
-    void sourceFileChanged();
     void dataValidityChanged(bool isValid);
     void progressOperationStarted(const QString &message);
     void progressOperationFinished();

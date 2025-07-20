@@ -182,20 +182,6 @@ bool UnifiedOverlayWidget::isDataValid() const
     return true;
 }
 
-void UnifiedOverlayWidget::resetToDefaults()
-{
-    if (p_overlayBaseOptionsWidget) {
-        // Reset base options - method to be implemented
-    }
-    
-    if (p_curveAppearanceWidget) {
-        // Reset curve appearance - method to be implemented  
-    }
-    
-    if (p_typeSpecificWidget) {
-        p_typeSpecificWidget->resetToDefaults();
-    }
-}
 
 
 

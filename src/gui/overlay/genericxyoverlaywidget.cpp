@@ -50,7 +50,6 @@ void GenericXYOverlayWidget::setupForCreation()
     d_context = Context::Creation;
     d_overlay.reset();
     loadSettings();
-    resetToDefaults();
 }
 
 void GenericXYOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overlay)
@@ -65,8 +64,7 @@ void GenericXYOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overl
     }
     
     // Load settings from overlay using the actual GenericXYOverlay interface
-    d_sourceFilePath = genericXYOverlay->getSourceFile();
-    updatePathDisplayAndTooltip(p_filePathEdit, d_sourceFilePath);
+    updatePathDisplayAndTooltip(p_filePathEdit, genericXYOverlay->getSourceFile());
     
     // Update UI controls with overlay settings
     QString delimiter = genericXYOverlay->delimiter();
@@ -98,8 +96,8 @@ void GenericXYOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overl
     }
     
     // Reload and analyze file if valid
-    if (!d_sourceFilePath.isEmpty() && validateFileExists()) {
-        loadAndAnalyzeFile();
+    if (hasValidSourceFile()) {
+        analyzeAndParseFile(false); // Use current UI settings, don't autodetect
     }
 }
 
@@ -112,7 +110,7 @@ std::shared_ptr<OverlayBase> GenericXYOverlayWidget::createOverlay()
     auto overlay = std::make_shared<GenericXYOverlay>();
     
     // Set source file and parser settings
-    overlay->setSourceFile(d_sourceFilePath);
+    overlay->setSourceFile(getStoredFullSourceFilePath());
     overlay->setDelimiter(p_delimiterCombo->currentData().toString());
     overlay->setHeaderLines(p_headerLinesSpinBox->value());
     overlay->setDataColumns(p_xColumnCombo->currentData().toInt(), p_yColumnCombo->currentData().toInt());
@@ -138,7 +136,7 @@ void GenericXYOverlayWidget::applyToOverlay(std::shared_ptr<OverlayBase> overlay
     }
     
     // Apply all current settings to the overlay
-    genericXYOverlay->setSourceFile(d_sourceFilePath);
+    genericXYOverlay->setSourceFile(getStoredFullSourceFilePath());
     genericXYOverlay->setDelimiter(p_delimiterCombo->currentData().toString());
     genericXYOverlay->setHeaderLines(p_headerLinesSpinBox->value());
     genericXYOverlay->setDataColumns(p_xColumnCombo->currentData().toInt(), p_yColumnCombo->currentData().toInt());
@@ -199,29 +197,28 @@ bool GenericXYOverlayWidget::isDataValid() const
 
 bool GenericXYOverlayWidget::hasValidSourceFile() const
 {
-    return !d_sourceFilePath.isEmpty() && validateFileExists();
+    QString path = getStoredFullSourceFilePath();
+    return !path.isEmpty() && QFileInfo::exists(path);
 }
 
 QString GenericXYOverlayWidget::getSourceFilePath() const
 {
-    return getStoredFullSourceFilePath(); // Use stored full path instead of potentially abbreviated display text
+    return getStoredFullSourceFilePath();
 }
 
 void GenericXYOverlayWidget::setSourceFilePath(const QString &path)
 {
-    if (d_sourceFilePath != path) {
-        d_sourceFilePath = path;
-        updatePathDisplayAndTooltip(p_filePathEdit, path); // Use helper method for consistent display and full path storage
-        
-        if (!path.isEmpty() && validateFileExists()) {
-            p_parseButton->setEnabled(true);
-            // Don't automatically parse - let user click Parse button
-        } else {
-            d_dataValid = false;
-            d_fileAnalyzed = false;
-            p_parseButton->setEnabled(false);
-            emit sourceFileChanged();
-        }
+    updatePathDisplayAndTooltip(p_filePathEdit, path);
+    
+    // Update UI state based on file validity
+    if (hasValidSourceFile()) {
+        p_parseButton->setEnabled(true);
+        // Trigger auto-detection when file changes (first call occasion)
+        analyzeAndParseFile(true);
+    } else {
+        p_parseButton->setEnabled(false);
+        d_dataValid = false;
+        d_fileAnalyzed = false;
     }
 }
 
@@ -233,7 +230,7 @@ bool GenericXYOverlayWidget::validateSourceFileImpl()
     }
     
     if (!d_fileAnalyzed) {
-        loadAndAnalyzeFile();
+        analyzeAndParseFile(false); // Use current UI settings
     }
     
     if (!d_dataValid) {
@@ -244,43 +241,12 @@ bool GenericXYOverlayWidget::validateSourceFileImpl()
     return true;
 }
 
-void GenericXYOverlayWidget::resetToDefaults()
-{
-    // Reset UI to default settings
-    p_delimiterCombo->setCurrentIndex(0); // Comma
-    p_headerLinesSpinBox->setValue(0);
-    
-    // Reset column selectors to defaults
-    if (p_xColumnCombo->count() > 0) {
-        p_xColumnCombo->setCurrentIndex(0);
-    }
-    if (p_yColumnCombo->count() > 1) {
-        p_yColumnCombo->setCurrentIndex(1);
-    }
-    
-    // Reset filtering
-    p_enableFilteringCheckBox->setChecked(false);
-    p_xMinEdit->clear();
-    p_xMaxEdit->clear();
-    
-    // Clear file selection in creation context
-    if (d_context == Context::Creation) {
-        d_sourceFilePath.clear();
-        p_filePathEdit->clear();
-        d_dataValid = false;
-        d_fileAnalyzed = false;
-    }
-    
-    // Update preview
-    updatePreview();
-}
 
 QHash<QString, QVariant> GenericXYOverlayWidget::getSettingsHash() const
 {
     QHash<QString, QVariant> hash;
     
     // File and parsing settings
-    hash[BC::Key::GenericXYWidget::filePath] = d_sourceFilePath;
     hash[BC::Key::GenericXYWidget::fileValid] = d_dataValid;
     hash[BC::Key::GenericXYWidget::delimiter] = p_delimiterCombo->currentData().toString();
     hash[BC::Key::GenericXYWidget::headerLines] = p_headerLinesSpinBox->value();
@@ -292,7 +258,8 @@ QHash<QString, QVariant> GenericXYOverlayWidget::getSettingsHash() const
     hash[BC::Key::GenericXYWidget::xMin] = p_xMinEdit->text();
     hash[BC::Key::GenericXYWidget::xMax] = p_xMaxEdit->text();
     
-    // Data information
+    // File and data information
+    hash[BC::Key::GenericXYWidget::filePath] = getStoredFullSourceFilePath();
     hash[BC::Key::GenericXYWidget::dataPoints] = d_parsedData.data().size();
     hash[BC::Key::GenericXYWidget::columnNames] = d_detectedColumnNames;
     
@@ -316,31 +283,7 @@ std::shared_ptr<OverlayOperation> GenericXYOverlayWidget::createOperation(Operat
 }
 
 
-void GenericXYOverlayWidget::onFileSelected()
-{
-    QString selectedPath = getStoredFullSourceFilePath(); // Use stored full path instead of potentially abbreviated display text
-    if (selectedPath != d_sourceFilePath) {
-        setSourceFilePath(selectedPath);
-    }
-}
 
-void GenericXYOverlayWidget::onFormatDetectionRequested()
-{
-    if (!d_sourceFilePath.isEmpty()) {
-        detectFileFormat();
-        parseAndPreview();
-    }
-}
-
-void GenericXYOverlayWidget::onParseSettingsChanged()
-{
-    parseAndPreview();
-    saveSettings();
-    emit settingsChanged();
-    
-    // Reset parse button text after parsing
-    p_parseButton->setText("Parse File");
-}
 
 void GenericXYOverlayWidget::updatePreview()
 {
@@ -401,9 +344,12 @@ void GenericXYOverlayWidget::updatePreview()
 void GenericXYOverlayWidget::onFileDialogRequested()
 {
     QString startDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    if (!d_sourceFilePath.isEmpty()) {
-        startDir = QFileInfo(d_sourceFilePath).absolutePath();
+    auto p = getStoredFullSourceFilePath();
+    if (!p.isEmpty()) {
+        startDir = QFileInfo(p).absolutePath();
     }
+    else
+        startDir = get(BC::Key::GenericXYWidget::filePath,startDir);
     
     QString selectedFile = QFileDialog::getOpenFileName(
         this,
@@ -417,24 +363,11 @@ void GenericXYOverlayWidget::onFileDialogRequested()
     }
 }
 
-void GenericXYOverlayWidget::onDelimiterChanged()
-{
-    onParseSettingsChanged();
-}
-
-void GenericXYOverlayWidget::onHeaderLinesChanged()
-{
-    onParseSettingsChanged();
-}
-
-void GenericXYOverlayWidget::onColumnSelectionChanged()
-{
-    onParseSettingsChanged();
-}
-
 void GenericXYOverlayWidget::onAutoDetectClicked()
 {
-    onFormatDetectionRequested();
+    if (hasValidSourceFile()) {
+        analyzeAndParseFile(true); // Autodetect and parse
+    }
 }
 
 void GenericXYOverlayWidget::onFilteringChanged()
@@ -448,12 +381,17 @@ void GenericXYOverlayWidget::onFilteringChanged()
 void GenericXYOverlayWidget::setupConnections()
 {
     // Source file config connections
-    connect(p_filePathEdit, &QLineEdit::editingFinished, this, &GenericXYOverlayWidget::onFileSelected);
+    connect(p_filePathEdit, &QLineEdit::editingFinished, [this]() {
+        // File path changed, use the setter which handles validation and auto-detection
+        setSourceFilePath(p_filePathEdit->text());
+    });
     connect(p_browseButton, &QPushButton::clicked, this, &GenericXYOverlayWidget::onFileDialogRequested);
     connect(p_autoDetectButton, &QPushButton::clicked, this, &GenericXYOverlayWidget::onAutoDetectClicked);
     
-    // Parse button triggers re-parsing with current settings
-    connect(p_parseButton, &QPushButton::clicked, this, &GenericXYOverlayWidget::onParseSettingsChanged);
+    // Parse button triggers parsing with current UI settings
+    connect(p_parseButton, &QPushButton::clicked, [this]() {
+        analyzeAndParseFile(false); // Use current UI settings, don't autodetect
+    });
     
     // Filtering connections - apply in real time since they don't require re-parsing
     connect(p_enableFilteringCheckBox, &QCheckBox::toggled, this, &GenericXYOverlayWidget::onFilteringChanged);
@@ -687,12 +625,15 @@ void GenericXYOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)
     layout->addStretch();
 }
 
-void GenericXYOverlayWidget::loadAndAnalyzeFile()
+void GenericXYOverlayWidget::analyzeAndParseFile(bool autodetect)
 {
-    if (d_sourceFilePath.isEmpty() || !validateFileExists()) {
+    QString filePath = getStoredFullSourceFilePath();
+    if (filePath.isEmpty() || !QFileInfo::exists(filePath)) {
         d_dataValid = false;
         d_fileAnalyzed = false;
         p_fileStatusLabel->setText("No file selected or file not found");
+        p_parseButton->setEnabled(false);
+        emit dataValidityChanged(false);
         return;
     }
     
@@ -702,18 +643,42 @@ void GenericXYOverlayWidget::loadAndAnalyzeFile()
         d_dataValid = false;
         d_fileAnalyzed = true;
         p_fileStatusLabel->setText("No GenericXY parser available");
+        p_parseButton->setEnabled(false);
+        emit dataValidityChanged(false);
         return;
     }
     
-    // Create parse settings from UI
-    GenericXYParser::ParseSettings settings;
-    settings.delimiter = p_delimiterCombo->currentData().toString();
-    settings.headerLines = p_headerLinesSpinBox->value();
-    settings.xColumn = p_xColumnCombo->currentData().toInt();
-    settings.yColumn = p_yColumnCombo->currentData().toInt();
+    // Enable parse button since we have a valid file and parser
+    p_parseButton->setEnabled(true);
     
-    // Parse the file
-    GenericXYData result = parser->parseWithSettings(d_sourceFilePath, settings);
+    GenericXYParser::ParseSettings settings;
+    
+    // Handle autodetection if requested
+    if (autodetect) {
+        settings = parser->autoDetectSettings(filePath);
+        
+        // Update UI with detected settings
+        for (int i = 0; i < p_delimiterCombo->count(); ++i) {
+            if (p_delimiterCombo->itemData(i).toString() == settings.delimiter) {
+                p_delimiterCombo->setCurrentIndex(i);
+                break;
+            }
+        }
+        
+        p_headerLinesSpinBox->setValue(settings.headerLines);
+        d_detectedColumnNames = settings.columnNames;
+        
+        updateColumnSelectors();
+    } else {
+        // Create parse settings from current UI state
+        settings.delimiter = p_delimiterCombo->currentData().toString();
+        settings.headerLines = p_headerLinesSpinBox->value();
+        settings.xColumn = p_xColumnCombo->currentData().toInt();
+        settings.yColumn = p_yColumnCombo->currentData().toInt();
+    }
+    
+    // Parse the file with either detected or UI settings
+    GenericXYData result = parser->parseWithSettings(filePath, settings);
     
     if (result.isValid()) {
         d_parsedData = result;
@@ -730,48 +695,10 @@ void GenericXYOverlayWidget::loadAndAnalyzeFile()
         p_fileStatusLabel->setText("Failed to parse file");
     }
     
-    emit sourceFileChanged();
     emit dataValidityChanged(d_dataValid);
+    emit settingsChanged();
 }
 
-void GenericXYOverlayWidget::detectFileFormat()
-{
-    if (d_sourceFilePath.isEmpty()) {
-        return;
-    }
-    
-    // Auto-detect format using parser
-    auto parser = getParser();
-    if (!parser) {
-        return;
-    }
-    
-    GenericXYParser::ParseSettings settings = parser->autoDetectSettings(d_sourceFilePath);
-    
-    // Block signals to prevent infinite loops during UI updates
-    const bool delimiterBlocked = p_delimiterCombo->blockSignals(true);
-    const bool headerLinesBlocked = p_headerLinesSpinBox->blockSignals(true);
-    
-    // Update UI with detected settings
-    for (int i = 0; i < p_delimiterCombo->count(); ++i) {
-        if (p_delimiterCombo->itemData(i).toString() == settings.delimiter) {
-            p_delimiterCombo->setCurrentIndex(i);
-            break;
-        }
-    }
-    
-    p_headerLinesSpinBox->setValue(settings.headerLines);
-    d_detectedColumnNames = settings.columnNames;
-    
-    updateColumnSelectors();
-    
-    // Restore signal state
-    p_delimiterCombo->blockSignals(delimiterBlocked);
-    p_headerLinesSpinBox->blockSignals(headerLinesBlocked);
-    
-    // Update parse button text to indicate user should parse
-    p_parseButton->setText("Parse File (Auto-detected)");
-}
 
 void GenericXYOverlayWidget::updateColumnSelectors()
 {
@@ -812,23 +739,42 @@ void GenericXYOverlayWidget::updateColumnSelectors()
     p_yColumnCombo->blockSignals(yColumnBlocked);
 }
 
-void GenericXYOverlayWidget::parseAndPreview()
-{
-    if (!d_sourceFilePath.isEmpty() && validateFileExists()) {
-        loadAndAnalyzeFile();
-    }
-}
 
 void GenericXYOverlayWidget::loadSettings()
 {
-    // Settings are loaded in the UI setup methods and resetToDefaults()
-    // This is mainly a placeholder for consistency with the interface
+    // Reset UI to default settings
+    p_delimiterCombo->setCurrentIndex(0); // Comma
+    p_headerLinesSpinBox->setValue(0);
+    
+    // Reset column selectors to defaults
+    if (p_xColumnCombo->count() > 0) {
+        p_xColumnCombo->setCurrentIndex(0);
+    }
+    if (p_yColumnCombo->count() > 1) {
+        p_yColumnCombo->setCurrentIndex(1);
+    }
+    
+    // Reset filtering
+    p_enableFilteringCheckBox->setChecked(false);
+    p_xMinEdit->clear();
+    p_xMaxEdit->clear();
+    
+    // Clear file selection in creation context
+    if (d_context == Context::Creation) {
+        p_filePathEdit->clear();
+        updatePathDisplayAndTooltip(p_filePathEdit, QString()); // Clear stored path
+        d_dataValid = false;
+        d_fileAnalyzed = false;
+    }
+    
+    // Update preview
+    updatePreview();
 }
 
 void GenericXYOverlayWidget::saveSettings()
 {
     // Save current file path for next dialog use
-    set(BC::Key::GenericXYWidget::lastFilePath, d_sourceFilePath);
+    set(BC::Key::GenericXYWidget::lastFilePath, getStoredFullSourceFilePath());
     
     // Save UI preferences (following CatalogOverlayWidget pattern)
     set(BC::Key::GenericXYWidget::delimiter, p_delimiterCombo->currentData().toString());
@@ -840,11 +786,10 @@ void GenericXYOverlayWidget::saveSettings()
     set(BC::Key::GenericXYWidget::xMax, p_xMaxEdit->text());
 }
 
-// These methods are no longer needed since we don't maintain parser state
-
 bool GenericXYOverlayWidget::validateFileExists() const
 {
-    return !d_sourceFilePath.isEmpty() && QFileInfo::exists(d_sourceFilePath);
+    QString path = getStoredFullSourceFilePath();
+    return !path.isEmpty() && QFileInfo::exists(path);
 }
 
 bool GenericXYOverlayWidget::validateColumns() const
@@ -904,5 +849,5 @@ void GenericXYOverlayWidget::updateDataStatistics()
 GenericXYParser* GenericXYOverlayWidget::getParser() const
 {
     auto registry = FileParserRegistry::instance();
-    return registry->findParserOfType<GenericXYParser>(d_sourceFilePath);
+    return registry->findParserOfType<GenericXYParser>(getStoredFullSourceFilePath());
 }

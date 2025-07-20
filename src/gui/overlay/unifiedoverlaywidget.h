@@ -60,8 +60,6 @@ public:
     bool isDataValid() const;
     bool validateAcceptance(); // Returns true if dialog should proceed with acceptance
     
-    // Reset functionality
-    void resetToDefaults();
     
     // Auto-preview functionality (creation context only)
     std::shared_ptr<OverlayBase> getPreviewOverlay() const { return d_previewOverlay; }

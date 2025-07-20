@@ -39,9 +39,6 @@ void CatalogOverlayWidget::setupForCreation()
     
     // Load default settings for creation context
     loadSettings();
-    
-    // Initialize defaults
-    resetToDefaults();
 
     //Convolution should be disabled for new overlay
     p_convolutionGroupBox->setChecked(false);
@@ -271,31 +268,6 @@ bool CatalogOverlayWidget::validateSourceFileImpl()
     }
 }
 
-void CatalogOverlayWidget::resetToDefaults()
-{
-    // Clear file selection
-    p_filePathLineEdit->clear();
-    d_filePath.clear();
-    d_fileValid = false;
-    d_catalogData = CatalogData();
-    
-    // Reset convolution settings to defaults/settings
-    p_convolutionGroupBox->setChecked(get(BC::Key::CatalogWidget::convolutionEnabled, DEFAULT_CONVOLUTION_ENABLED));
-    p_lineshapeComboBox->setCurrentIndex(get(BC::Key::CatalogWidget::lineshapeType, DEFAULT_LINESHAPE_TYPE));
-    p_linewidthSpinBox->setValue(get(BC::Key::CatalogWidget::linewidthKHz, DEFAULT_LINEWIDTH));
-    updateSpacingDisplay();
-    p_saveRangeOnlyCheckBox->setChecked(get(BC::Key::CatalogWidget::saveRangeOnly, DEFAULT_SAVE_RANGE_ONLY));
-    
-    // Reset frequency range (will be set from Ft data if available)
-    if (d_currentFt.isEmpty()) {
-        p_convMinFreqSpinBox->setValue(get(BC::Key::CatalogWidget::convMinFreqMHz, DEFAULT_MIN_FREQ));
-        p_convMaxFreqSpinBox->setValue(get(BC::Key::CatalogWidget::convMaxFreqMHz, DEFAULT_MAX_FREQ));
-        p_numPointsSpinBox->setValue(get(BC::Key::CatalogWidget::numConvolutionPoints, DEFAULT_NUM_POINTS));
-    }
-    
-    updateFileInfo();
-    updateConvolutionControls();
-}
 
 QHash<QString, QVariant> CatalogOverlayWidget::getSettingsHash() const
 {
@@ -422,7 +394,6 @@ void CatalogOverlayWidget::onFilePathChanged()
         d_fileValid = false;
         d_catalogData = CatalogData();
         updateFileInfo();
-        emit sourceFileChanged();
         emit dataValidityChanged(isDataValid());
         return;
     }
@@ -433,7 +404,6 @@ void CatalogOverlayWidget::onFilePathChanged()
     updateFileInfo();
     
     emit progressOperationFinished();
-    emit sourceFileChanged();
     emit dataValidityChanged(isDataValid());
     emit settingsChanged();
 }
@@ -524,8 +494,30 @@ void CatalogOverlayWidget::setupConnections()
 
 void CatalogOverlayWidget::loadSettings()
 {
-    // Settings are loaded in the UI setup methods and resetToDefaults()
-    // This is mainly a placeholder for consistency with the interface
+    // Clear file selection for creation context
+    if (isCreationContext()) {
+        p_filePathLineEdit->clear();
+        d_filePath.clear();
+        d_fileValid = false;
+        d_catalogData = CatalogData();
+    }
+    
+    // Load convolution settings from stored preferences
+    p_convolutionGroupBox->setChecked(get(BC::Key::CatalogWidget::convolutionEnabled, DEFAULT_CONVOLUTION_ENABLED));
+    p_lineshapeComboBox->setCurrentIndex(get(BC::Key::CatalogWidget::lineshapeType, DEFAULT_LINESHAPE_TYPE));
+    p_linewidthSpinBox->setValue(get(BC::Key::CatalogWidget::linewidthKHz, DEFAULT_LINEWIDTH));
+    updateSpacingDisplay();
+    p_saveRangeOnlyCheckBox->setChecked(get(BC::Key::CatalogWidget::saveRangeOnly, DEFAULT_SAVE_RANGE_ONLY));
+    
+    // Load frequency range settings (will be set from Ft data if available)
+    if (d_currentFt.isEmpty()) {
+        p_convMinFreqSpinBox->setValue(get(BC::Key::CatalogWidget::convMinFreqMHz, DEFAULT_MIN_FREQ));
+        p_convMaxFreqSpinBox->setValue(get(BC::Key::CatalogWidget::convMaxFreqMHz, DEFAULT_MAX_FREQ));
+        p_numPointsSpinBox->setValue(get(BC::Key::CatalogWidget::numConvolutionPoints, DEFAULT_NUM_POINTS));
+    }
+    
+    updateFileInfo();
+    updateConvolutionControls();
 }
 
 void CatalogOverlayWidget::saveSettings()

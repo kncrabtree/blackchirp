@@ -39,9 +39,6 @@ void BCExpOverlayWidget::setupForCreation()
     // Load default settings for creation context
     loadSettings();
     
-    // Initialize defaults
-    resetToDefaults();
-    
     // Validate and update label after everything is set up (deferred to ensure UI is ready)
     QTimer::singleShot(0, this, [this]() {
         updateAutomaticLabel();
@@ -193,24 +190,6 @@ bool BCExpOverlayWidget::validateSourceFileImpl()
     return valid;
 }
 
-void BCExpOverlayWidget::resetToDefaults()
-{
-    // Reset to default experiment number
-    SettingsStorage s;
-    int lastExperiment = s.get(BC::Key::exptNum, 1);
-    p_experimentNumberSpinBox->setRange(1, lastExperiment);
-    p_experimentNumberSpinBox->setValue(lastExperiment);
-    
-    // Use experiment number mode by default
-    p_usePathCheckBox->setChecked(false);
-    p_pathLineEdit->clear();
-    
-    // Reset FT configuration
-    resetFtConfiguration();
-    
-    // Validate initial state
-    validateExperiment();
-}
 
 QHash<QString, QVariant> BCExpOverlayWidget::getSettingsHash() const
 {
@@ -367,7 +346,6 @@ void BCExpOverlayWidget::validateExperiment()
     d_experimentValid = valid;
     updateExperimentStatus();
     
-    emit sourceFileChanged();
     emit dataValidityChanged(isDataValid());
 }
 
@@ -391,7 +369,19 @@ void BCExpOverlayWidget::setupConnections()
 
 void BCExpOverlayWidget::loadSettings()
 {
-    // Settings loading is minimal for now - mainly defaults
+    // Load default experiment number from settings
+    SettingsStorage s;
+    int lastExperiment = s.get(BC::Key::exptNum, 1);
+    p_experimentNumberSpinBox->setRange(1, lastExperiment);
+    p_experimentNumberSpinBox->setValue(lastExperiment);
+    
+    // Use experiment number mode by default
+    p_usePathCheckBox->setChecked(false);
+    p_pathLineEdit->clear();
+    
+    // Reset FT configuration
+    resetFtConfiguration();
+    
     // Future: Could load last used paths, FT settings, etc.
 }
 

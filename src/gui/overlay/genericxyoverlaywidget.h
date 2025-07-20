@@ -59,7 +59,6 @@ public:
     void setSourceFilePath(const QString &path) override;
     bool validateSourceFileImpl() override;
     
-    void resetToDefaults() override;
     
     // Settings state capture for preview sync tracking
     QHash<QString, QVariant> getSettingsHash() const override;
@@ -74,16 +73,10 @@ public:
     // Three-tier layout is now handled internally
 
 public slots:
-    void onFileSelected();
-    void onFormatDetectionRequested();
-    void onParseSettingsChanged();
     void updatePreview();
 
 private slots:
     void onFileDialogRequested();
-    void onDelimiterChanged();
-    void onHeaderLinesChanged();
-    void onColumnSelectionChanged();
     void onAutoDetectClicked();
     void onFilteringChanged();
 
@@ -105,10 +98,8 @@ protected:
 private:
     
     // File handling
-    void loadAndAnalyzeFile();
-    void detectFileFormat();
+    void analyzeAndParseFile(bool autodetect = true);
     void updateColumnSelectors();
-    void parseAndPreview();
     
     // Settings management - loadSettings already declared in protected section
     
@@ -125,7 +116,6 @@ private:
     
     // Core data
     GenericXYData d_parsedData;
-    QString d_sourceFilePath;
     bool d_dataValid;
     
     // Tier 1: Source File Config widgets (created in QGroupBox provided by base class)
