@@ -27,6 +27,14 @@ pip install blackchirp
 
 ## What's New
 
+### July 21 2025 - Devel Branch Reaches v1.1.0 Preview
+
+The development branch versioning has incremented to v1.1.0 with initial incorporation of the overlays system. There are likely bugs with overlay implementations but all changes are backward-compatible, so rolling back to an earlier version will work without issues. Current goals and milestones for the v1.1.0 release are:
+
+- Testing overlay system functionality in real deployment scenario, fixing bugs
+- Improvement to input widgets for floating-point numbers (support scientific notation/variable precision/dynamic range)
+- Theme-aware color management system and replacement of all program icons with SVG icons that adapt to color scheme.
+
 ### June 14 2024 - v1.0.0 Release
 
 Version 1.0.0 of Blackchirp is now available and recommended for general use! New users can install immediately; if you are upgrading from an earlier version, please see the changelog.md file for a summary of what has changed and what you may need to do to migrate to the new version.
