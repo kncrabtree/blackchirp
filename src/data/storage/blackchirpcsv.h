@@ -16,6 +16,7 @@
 namespace BC::CSV {
 
 static const QString del{";"};
+static const QString altDel{"|"}; // Alternative delimiter for QStringList serialization
 static const QString nl{"\n"};
 static const QString x{"x"};
 static const QString y{"y"};

@@ -764,6 +764,31 @@ void GenericXYOverlay::updateStatistics()
     }
 }
 
+GenericXYOverlay::DelimiterType GenericXYOverlay::stringToDelimiterType(const QString &delimiter) const
+{
+    if (delimiter == ",") return DelimiterType::Comma;
+    if (delimiter == "\t") return DelimiterType::Tab;
+    if (delimiter == " ") return DelimiterType::Space;
+    if (delimiter == ";") return DelimiterType::Semicolon;
+    if (delimiter.trimmed().isEmpty() && delimiter.contains(QRegularExpression("\\s+"))) return DelimiterType::Whitespace;
+    
+    // Default to comma for unknown delimiters
+    return DelimiterType::Comma;
+}
+
+QString GenericXYOverlay::delimiterTypeToString(GenericXYOverlay::DelimiterType type) const
+{
+    switch (type) {
+    case DelimiterType::Comma:     return ",";
+    case DelimiterType::Tab:       return "\t";
+    case DelimiterType::Space:     return " ";
+    case DelimiterType::Semicolon: return ";";
+    case DelimiterType::Whitespace: return " "; // Default to single space for whitespace
+    }
+    
+    return ","; // Default fallback
+}
+
 void GenericXYOverlay::readFromDest()
 {
     QString destFile = getDestFile();
@@ -836,11 +861,14 @@ void GenericXYOverlay::_storeMetadata(std::map<QString, QVariant> &m)
 {
     using namespace BC::Key::Overlay::GenericXY;
     
-    m.emplace(BC::Key::Overlay::GenericXY::delimiter, d_delimiter);
+    // Store delimiter as enum to avoid BlackchirpCSV conflicts
+    m.emplace(BC::Key::Overlay::GenericXY::delimiter, static_cast<int>(stringToDelimiterType(d_delimiter)));
     m.emplace(BC::Key::Overlay::GenericXY::headerLines, d_headerLines);
     m.emplace(BC::Key::Overlay::GenericXY::xColumn, d_xColumn);
     m.emplace(BC::Key::Overlay::GenericXY::yColumn, d_yColumn);
-    m.emplace(BC::Key::Overlay::GenericXY::columnNames, d_columnNames);
+    // Serialize QStringList manually for BlackchirpCSV compatibility
+    QString serializedColumnNames = d_columnNames.join(BC::CSV::altDel);
+    m.emplace(BC::Key::Overlay::GenericXY::columnNames, serializedColumnNames);
     m.emplace(BC::Key::Overlay::GenericXY::dataPoints, d_dataPoints);
     m.emplace(BC::Key::Overlay::GenericXY::xMin, d_xMin);
     m.emplace(BC::Key::Overlay::GenericXY::xMax, d_xMax);
@@ -856,7 +884,8 @@ void GenericXYOverlay::_retrieveMetadata(const std::map<QString, QVariant> &m)
     
     auto it = m.find(BC::Key::Overlay::GenericXY::delimiter);
     if (it != m.end()) {
-        d_delimiter = it->second.toString();
+        DelimiterType delimiterType = static_cast<DelimiterType>(it->second.toInt());
+        d_delimiter = delimiterTypeToString(delimiterType);
     }
     
     it = m.find(BC::Key::Overlay::GenericXY::headerLines);
@@ -876,7 +905,13 @@ void GenericXYOverlay::_retrieveMetadata(const std::map<QString, QVariant> &m)
     
     it = m.find(BC::Key::Overlay::GenericXY::columnNames);
     if (it != m.end()) {
-        d_columnNames = it->second.toStringList();
+        // Deserialize manually serialized QStringList
+        QString serializedColumnNames = it->second.toString();
+        if (!serializedColumnNames.isEmpty()) {
+            d_columnNames = serializedColumnNames.split(BC::CSV::altDel);
+        } else {
+            d_columnNames.clear();
+        }
     }
     
     it = m.find(BC::Key::Overlay::GenericXY::dataPoints);

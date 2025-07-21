@@ -7,6 +7,7 @@
 #include <QDebug>
 #include <QPointF>
 #include <QFileInfo>
+#include <data/storage/blackchirpcsv.h>
 
 GenericXYParser::GenericXYParser()
 {
@@ -418,7 +419,6 @@ GenericXYData GenericXYParser::parseWithSettings(const QString &filePath, const 
     }
     
     // Set metadata
-    data.setFileName(fileInfo.fileName());
     data.setFilePath(filePath);
     data.setDelimiter(settings.delimiter);
     data.setHeaderLines(settings.headerLines);
@@ -764,7 +764,8 @@ bool GenericXYParser::isCommentLine(const QString &line) const
 QString GenericXYParser::cleanSemicolons(const QString &input) const
 {
     QString cleaned = input;
-    cleaned.replace(';', '_'); // Replace semicolons with underscores for BC CSV compatibility
+    cleaned.replace(BC::CSV::del, BC::CSV::sep); // Replace CSV delimiters for compatibility
+    cleaned.replace(BC::CSV::altDel, BC::CSV::sep); // Replace alternative delimiters (pipes) for QStringList serialization
     return cleaned;
 }
 

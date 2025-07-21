@@ -186,6 +186,17 @@ private:
 class GenericXYOverlay : public OverlayBase
 {
 public:
+    // Delimiter enum for safe BlackchirpCSV storage
+    enum DelimiterType {
+        Comma,
+        Tab,
+        Space,
+        Semicolon,
+        Whitespace  // For greedy whitespace
+    };
+    Q_ENUM(DelimiterType)
+
+    
     GenericXYOverlay();
     
     // Data access
@@ -231,6 +242,10 @@ protected:
 private:
     QVector<QPointF> _xyData() const override;
     void updateStatistics();
+    
+    // Delimiter conversion helpers for BlackchirpCSV compatibility
+    DelimiterType stringToDelimiterType(const QString &delimiter) const;
+    QString delimiterTypeToString(DelimiterType type) const;
     
     // Data storage
     QVector<QPointF> d_rawData;

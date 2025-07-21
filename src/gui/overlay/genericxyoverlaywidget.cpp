@@ -36,7 +36,6 @@ static const QString columnNames{"columnNames"};
 GenericXYOverlayWidget::GenericXYOverlayWidget(const Ft &currentFt, QWidget *parent)
     : OverlayTypeSpecificWidget(currentFt, parent)
     , SettingsStorage(BC::Key::GenericXYWidget::key)
-    , d_dataValid(false)
     , d_settingsLoaded(false)
     , d_fileAnalyzed(false)
 {
@@ -66,11 +65,38 @@ void GenericXYOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overl
     // Load settings from overlay using the actual GenericXYOverlay interface
     updatePathDisplayAndTooltip(p_filePathEdit, genericXYOverlay->getSourceFile());
     
-    // Update UI controls with overlay settings
+    // Get overlay settings first
     QString delimiter = genericXYOverlay->delimiter();
     int headerLines = genericXYOverlay->headerLines();
     int xColumn = genericXYOverlay->xColumn();
     int yColumn = genericXYOverlay->yColumn();
+    
+    // Load data directly from overlay (don't re-parse source file in settings context)
+    d_parsedData.setData(genericXYOverlay->rawData());
+    d_parsedData.setXColumn(xColumn);
+    d_parsedData.setYColumn(yColumn);
+    d_parsedData.setDelimiter(delimiter);
+    d_parsedData.setHeaderLines(headerLines);
+    
+    // Set source file path for isValid() check - overlay is self-contained for viewing
+    // Source file is only needed if user wants to reparse/reload data
+    QString sourceFile = genericXYOverlay->getSourceFile();
+    d_parsedData.setFilePath(sourceFile); // Set even if empty or non-existent
+    // Data validity is automatically tracked by d_parsedData
+    d_fileAnalyzed = true;
+    
+    // Set column names from overlay, with fallback if empty
+    QStringList columnNames = genericXYOverlay->columnNames();
+    if (columnNames.isEmpty()) {
+        // Create fallback column names - we know we have at least X and Y columns
+        int maxColumn = qMax(xColumn, yColumn);
+        for (int i = 0; i <= maxColumn; ++i) {
+            columnNames << QString("Column %1").arg(i + 1);
+        }
+    }
+    
+    // Set the column names in parsed data
+    d_parsedData.setColumnNames(columnNames);
     
     // Update delimiter combo
     for (int i = 0; i < p_delimiterCombo->count(); ++i) {
@@ -81,8 +107,25 @@ void GenericXYOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overl
     }
     
     p_headerLinesSpinBox->setValue(headerLines);
-    p_xColumnCombo->setCurrentIndex(xColumn);
-    p_yColumnCombo->setCurrentIndex(yColumn);
+    
+    // Update column selectors with current data (don't reset to defaults in settings context)
+    updateColumnSelectors(false);
+    
+    // Now set the correct column selections from overlay
+    // Find the correct index for each column value
+    for (int i = 0; i < p_xColumnCombo->count(); ++i) {
+        if (p_xColumnCombo->itemData(i).toInt() == xColumn) {
+            p_xColumnCombo->setCurrentIndex(i);
+            break;
+        }
+    }
+    
+    for (int i = 0; i < p_yColumnCombo->count(); ++i) {
+        if (p_yColumnCombo->itemData(i).toInt() == yColumn) {
+            p_yColumnCombo->setCurrentIndex(i);
+            break;
+        }
+    }
     
     // Load filtering settings from overlay
     double filterMinX = genericXYOverlay->filterMinX();
@@ -95,9 +138,14 @@ void GenericXYOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overl
         p_xMaxEdit->setText(QString::number(filterMaxX, 'g', 6));
     }
     
-    // Reload and analyze file if valid
-    if (hasValidSourceFile()) {
-        analyzeAndParseFile(false); // Use current UI settings, don't autodetect
+    // Update UI status and preview with loaded data
+    if (d_parsedData.isValid()) {
+        p_fileStatusLabel->setText(QString("Loaded %1 data points from overlay").arg(d_parsedData.data().size()));
+        p_fileStatusLabel->setStyleSheet("QLabel { color: blue; }");
+        updatePreview();
+    } else {
+        p_fileStatusLabel->setText("No data available in overlay");
+        p_fileStatusLabel->setStyleSheet("QLabel { color: red; }");
     }
 }
 
@@ -109,19 +157,17 @@ std::shared_ptr<OverlayBase> GenericXYOverlayWidget::createOverlay()
     
     auto overlay = std::make_shared<GenericXYOverlay>();
     
-    // Set source file and parser settings
+    // Set source file and parser settings - read from d_parsedData (authoritative source)
     overlay->setSourceFile(getStoredFullSourceFilePath());
-    overlay->setDelimiter(p_delimiterCombo->currentData().toString());
-    overlay->setHeaderLines(p_headerLinesSpinBox->value());
-    overlay->setDataColumns(p_xColumnCombo->currentData().toInt(), p_yColumnCombo->currentData().toInt());
+    overlay->setDelimiter(d_parsedData.delimiter());
+    overlay->setHeaderLines(d_parsedData.headerLines());
+    overlay->setDataColumns(d_parsedData.xColumn(), d_parsedData.yColumn());
     
     // Set data
     overlay->setRawData(d_parsedData.data());
     
-    // Set column names if detected
-    if (!d_detectedColumnNames.isEmpty()) {
-        overlay->setColumnNames(d_detectedColumnNames);
-    }
+    // Set column names from parsed data (authoritative source)
+    overlay->setColumnNames(d_parsedData.columnNames());
     
     // Data range is calculated automatically by the overlay
     
@@ -135,20 +181,18 @@ void GenericXYOverlayWidget::applyToOverlay(std::shared_ptr<OverlayBase> overlay
         return;
     }
     
-    // Apply all current settings to the overlay
+    // Apply all current settings to the overlay - read from d_parsedData (authoritative source)
     genericXYOverlay->setSourceFile(getStoredFullSourceFilePath());
-    genericXYOverlay->setDelimiter(p_delimiterCombo->currentData().toString());
-    genericXYOverlay->setHeaderLines(p_headerLinesSpinBox->value());
-    genericXYOverlay->setDataColumns(p_xColumnCombo->currentData().toInt(), p_yColumnCombo->currentData().toInt());
+    genericXYOverlay->setDelimiter(d_parsedData.delimiter());
+    genericXYOverlay->setHeaderLines(d_parsedData.headerLines());
+    genericXYOverlay->setDataColumns(d_parsedData.xColumn(), d_parsedData.yColumn());
     
     // Apply data if valid
-    if (d_dataValid) {
+    if (d_parsedData.isValid()) {
         genericXYOverlay->setRawData(d_parsedData.data());
         
-        // Set column names
-        if (!d_detectedColumnNames.isEmpty()) {
-            genericXYOverlay->setColumnNames(d_detectedColumnNames);
-        }
+        // Set column names from parsed data (authoritative source)
+        genericXYOverlay->setColumnNames(d_parsedData.columnNames());
     }
     
     // Apply filtering settings
@@ -175,7 +219,7 @@ bool GenericXYOverlayWidget::validateSettingsImpl()
         return false;
     }
     
-    if (!d_dataValid) {
+    if (!d_parsedData.isValid()) {
         setSettingsErrorMessage("Data could not be parsed or is invalid");
         return false;
     }
@@ -192,7 +236,7 @@ bool GenericXYOverlayWidget::validateSettingsImpl()
 
 bool GenericXYOverlayWidget::isDataValid() const
 {
-    return d_dataValid && !d_parsedData.data().isEmpty();
+    return d_parsedData.isValid() && !d_parsedData.data().isEmpty();
 }
 
 bool GenericXYOverlayWidget::hasValidSourceFile() const
@@ -213,11 +257,19 @@ void GenericXYOverlayWidget::setSourceFilePath(const QString &path)
     // Update UI state based on file validity
     if (hasValidSourceFile()) {
         p_parseButton->setEnabled(true);
+        
+        // Generate a label from the filename for overlaybaseoptionswidget
+        QFileInfo fileInfo(path);
+        QString baseName = fileInfo.completeBaseName(); // Gets filename without extension
+        if (!baseName.isEmpty()) {
+            emit labelUpdateRequested(baseName);
+        }
+        
         // Trigger auto-detection when file changes (first call occasion)
         analyzeAndParseFile(true);
     } else {
         p_parseButton->setEnabled(false);
-        d_dataValid = false;
+        d_parsedData.clear(); // Clears data, making isValid() return false
         d_fileAnalyzed = false;
     }
 }
@@ -233,7 +285,7 @@ bool GenericXYOverlayWidget::validateSourceFileImpl()
         analyzeAndParseFile(false); // Use current UI settings
     }
     
-    if (!d_dataValid) {
+    if (!d_parsedData.isValid()) {
         setSourceFileErrorMessage("File format could not be detected or data is invalid");
         return false;
     }
@@ -247,11 +299,11 @@ QHash<QString, QVariant> GenericXYOverlayWidget::getSettingsHash() const
     QHash<QString, QVariant> hash;
     
     // File and parsing settings
-    hash[BC::Key::GenericXYWidget::fileValid] = d_dataValid;
+    hash[BC::Key::GenericXYWidget::fileValid] = d_parsedData.isValid();
     hash[BC::Key::GenericXYWidget::delimiter] = p_delimiterCombo->currentData().toString();
     hash[BC::Key::GenericXYWidget::headerLines] = p_headerLinesSpinBox->value();
-    hash[BC::Key::GenericXYWidget::xColumn] = p_xColumnCombo->currentData().toInt();
-    hash[BC::Key::GenericXYWidget::yColumn] = p_yColumnCombo->currentData().toInt();
+    hash[BC::Key::GenericXYWidget::xColumn] = p_xColumnCombo->currentIndex();
+    hash[BC::Key::GenericXYWidget::yColumn] = p_yColumnCombo->currentIndex();
     
     // Filtering settings
     hash[BC::Key::GenericXYWidget::enableFiltering] = p_enableFilteringCheckBox->isChecked();
@@ -261,7 +313,7 @@ QHash<QString, QVariant> GenericXYOverlayWidget::getSettingsHash() const
     // File and data information
     hash[BC::Key::GenericXYWidget::filePath] = getStoredFullSourceFilePath();
     hash[BC::Key::GenericXYWidget::dataPoints] = d_parsedData.data().size();
-    hash[BC::Key::GenericXYWidget::columnNames] = d_detectedColumnNames;
+    hash[BC::Key::GenericXYWidget::columnNames] = d_parsedData.columnNames();
     
     return hash;
 }
@@ -287,7 +339,7 @@ std::shared_ptr<OverlayOperation> GenericXYOverlayWidget::createOperation(Operat
 
 void GenericXYOverlayWidget::updatePreview()
 {
-    if (!p_previewTable || !d_dataValid) {
+    if (!p_previewTable || !d_parsedData.isValid()) {
         return;
     }
     
@@ -309,17 +361,19 @@ void GenericXYOverlayWidget::updatePreview()
     
     // Set column headers
     QStringList headers;
-    int xColumn = p_xColumnCombo->currentData().toInt();
-    int yColumn = p_yColumnCombo->currentData().toInt();
+    int xColumn = p_xColumnCombo->currentIndex();
+    int yColumn = p_yColumnCombo->currentIndex();
     
-    if (xColumn < d_detectedColumnNames.size()) {
-        headers << d_detectedColumnNames[xColumn];
+    // Use column names from parsed data (with fallbacks if needed)
+    QStringList columnNames = d_parsedData.columnNames();
+    if (xColumn < columnNames.size()) {
+        headers << columnNames[xColumn];
     } else {
         headers << QString("X (Col %1)").arg(xColumn + 1);
     }
     
-    if (yColumn < d_detectedColumnNames.size()) {
-        headers << d_detectedColumnNames[yColumn];
+    if (yColumn < columnNames.size()) {
+        headers << columnNames[yColumn];
     } else {
         headers << QString("Y (Col %1)").arg(yColumn + 1);
     }
@@ -334,8 +388,8 @@ void GenericXYOverlayWidget::updatePreview()
         p_previewTable->setItem(i, 1, new QTableWidgetItem(QString::number(point.y(), 'g', 6)));
     }
     
-    // Auto-resize columns
-    p_previewTable->resizeColumnsToContents();
+    // Columns will automatically stretch to fill available space
+    // due to QHeaderView::Stretch resize mode set during initialization
     
     // Update statistics
     updateDataStatistics();
@@ -349,7 +403,7 @@ void GenericXYOverlayWidget::onFileDialogRequested()
         startDir = QFileInfo(p).absolutePath();
     }
     else
-        startDir = get(BC::Key::GenericXYWidget::filePath,startDir);
+        startDir = get(BC::Key::GenericXYWidget::lastFilePath,startDir);
     
     QString selectedFile = QFileDialog::getOpenFileName(
         this,
@@ -620,6 +674,9 @@ void GenericXYOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)
     p_previewTable->verticalHeader()->setVisible(false);
     p_previewTable->setMaximumHeight(200);
     
+    // Configure columns to stretch and fill evenly
+    p_previewTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    
     layout->addWidget(new QLabel("Data Preview:"));
     layout->addWidget(p_previewTable);
     layout->addStretch();
@@ -629,7 +686,7 @@ void GenericXYOverlayWidget::analyzeAndParseFile(bool autodetect)
 {
     QString filePath = getStoredFullSourceFilePath();
     if (filePath.isEmpty() || !QFileInfo::exists(filePath)) {
-        d_dataValid = false;
+        d_parsedData.clear(); // Clears data, making isValid() return false
         d_fileAnalyzed = false;
         p_fileStatusLabel->setText("No file selected or file not found");
         p_parseButton->setEnabled(false);
@@ -640,7 +697,7 @@ void GenericXYOverlayWidget::analyzeAndParseFile(bool autodetect)
     // Get parser from registry
     auto parser = getParser();
     if (!parser) {
-        d_dataValid = false;
+        d_parsedData.clear(); // Clears data, making isValid() return false
         d_fileAnalyzed = true;
         p_fileStatusLabel->setText("No GenericXY parser available");
         p_parseButton->setEnabled(false);
@@ -666,15 +723,28 @@ void GenericXYOverlayWidget::analyzeAndParseFile(bool autodetect)
         }
         
         p_headerLinesSpinBox->setValue(settings.headerLines);
-        d_detectedColumnNames = settings.columnNames;
+        // Column names are now stored directly in d_parsedData
         
         updateColumnSelectors();
+        
+        // Apply user's saved column preferences if available and valid
+        int savedXColumn = get(BC::Key::GenericXYWidget::xColumn, settings.xColumn);
+        int savedYColumn = get(BC::Key::GenericXYWidget::yColumn, settings.yColumn);
+        
+        // Validate and set saved column selections (combo index = column index)
+        if (savedXColumn >= 0 && savedXColumn < p_xColumnCombo->count()) {
+            p_xColumnCombo->setCurrentIndex(savedXColumn);
+        }
+        
+        if (savedYColumn >= 0 && savedYColumn < p_yColumnCombo->count()) {
+            p_yColumnCombo->setCurrentIndex(savedYColumn);
+        }
     } else {
         // Create parse settings from current UI state
         settings.delimiter = p_delimiterCombo->currentData().toString();
         settings.headerLines = p_headerLinesSpinBox->value();
-        settings.xColumn = p_xColumnCombo->currentData().toInt();
-        settings.yColumn = p_yColumnCombo->currentData().toInt();
+        settings.xColumn = p_xColumnCombo->currentIndex();
+        settings.yColumn = p_yColumnCombo->currentIndex();
     }
     
     // Parse the file with either detected or UI settings
@@ -682,25 +752,27 @@ void GenericXYOverlayWidget::analyzeAndParseFile(bool autodetect)
     
     if (result.isValid()) {
         d_parsedData = result;
-        d_dataValid = true;
+        // Data validity is now automatically tracked by d_parsedData
         d_fileAnalyzed = true;
         
         updateColumnSelectors();
         updatePreview();
         
         p_fileStatusLabel->setText(QString("Loaded %1 data points").arg(d_parsedData.data().size()));
+        p_fileStatusLabel->setStyleSheet("QLabel { color: green; }");
     } else {
-        d_dataValid = false;
+        d_parsedData.clear(); // Clears data, making isValid() return false
         d_fileAnalyzed = true;
         p_fileStatusLabel->setText("Failed to parse file");
+        p_fileStatusLabel->setStyleSheet("QLabel { color: red; }");
     }
     
-    emit dataValidityChanged(d_dataValid);
+    emit dataValidityChanged(d_parsedData.isValid());
     emit settingsChanged();
 }
 
 
-void GenericXYOverlayWidget::updateColumnSelectors()
+void GenericXYOverlayWidget::updateColumnSelectors(bool setDefaults)
 {
     // Block signals to prevent infinite loops during UI updates
     const bool xColumnBlocked = p_xColumnCombo->blockSignals(true);
@@ -710,28 +782,31 @@ void GenericXYOverlayWidget::updateColumnSelectors()
     p_xColumnCombo->clear();
     p_yColumnCombo->clear();
     
-    if (!d_detectedColumnNames.isEmpty()) {
-        // Use detected column names
-        for (int i = 0; i < d_detectedColumnNames.size(); ++i) {
-            QString columnLabel = QString("%1 (%2)").arg(d_detectedColumnNames[i]).arg(i + 1);
-            p_xColumnCombo->addItem(columnLabel, i);
-            p_yColumnCombo->addItem(columnLabel, i);
+    QStringList columnNames = d_parsedData.columnNames();
+    if (!columnNames.isEmpty()) {
+        // Use column names from parsed data
+        for (int i = 0; i < columnNames.size(); ++i) {
+            QString columnLabel = QString("%1 (%2)").arg(columnNames[i]).arg(i + 1);
+            p_xColumnCombo->addItem(columnLabel);
+            p_yColumnCombo->addItem(columnLabel);
         }
     } else {
         // Use generic column numbers
         for (int i = 0; i < 10; ++i) { // Assume max 10 columns for now
             QString columnLabel = QString("Column %1").arg(i + 1);
-            p_xColumnCombo->addItem(columnLabel, i);
-            p_yColumnCombo->addItem(columnLabel, i);
+            p_xColumnCombo->addItem(columnLabel);
+            p_yColumnCombo->addItem(columnLabel);
         }
     }
     
-    // Set current selections to defaults
-    if (p_xColumnCombo->count() > 0) {
-        p_xColumnCombo->setCurrentIndex(0);
-    }
-    if (p_yColumnCombo->count() > 1) {
-        p_yColumnCombo->setCurrentIndex(1);
+    // Set current selections to defaults only if requested
+    if (setDefaults) {
+        if (p_xColumnCombo->count() > 0) {
+            p_xColumnCombo->setCurrentIndex(0);
+        }
+        if (p_yColumnCombo->count() > 1) {
+            p_yColumnCombo->setCurrentIndex(1);
+        }
     }
     
     // Restore signal state
@@ -763,7 +838,7 @@ void GenericXYOverlayWidget::loadSettings()
     if (d_context == Context::Creation) {
         p_filePathEdit->clear();
         updatePathDisplayAndTooltip(p_filePathEdit, QString()); // Clear stored path
-        d_dataValid = false;
+        d_parsedData.clear(); // Clears data, making isValid() return false
         d_fileAnalyzed = false;
     }
     
@@ -779,8 +854,8 @@ void GenericXYOverlayWidget::saveSettings()
     // Save UI preferences (following CatalogOverlayWidget pattern)
     set(BC::Key::GenericXYWidget::delimiter, p_delimiterCombo->currentData().toString());
     set(BC::Key::GenericXYWidget::headerLines, p_headerLinesSpinBox->value());
-    set(BC::Key::GenericXYWidget::xColumn, p_xColumnCombo->currentData().toInt());
-    set(BC::Key::GenericXYWidget::yColumn, p_yColumnCombo->currentData().toInt());
+    set(BC::Key::GenericXYWidget::xColumn, p_xColumnCombo->currentIndex());
+    set(BC::Key::GenericXYWidget::yColumn, p_yColumnCombo->currentIndex());
     set(BC::Key::GenericXYWidget::enableFiltering, p_enableFilteringCheckBox->isChecked());
     set(BC::Key::GenericXYWidget::xMin, p_xMinEdit->text());
     set(BC::Key::GenericXYWidget::xMax, p_xMaxEdit->text());
@@ -794,8 +869,8 @@ bool GenericXYOverlayWidget::validateFileExists() const
 
 bool GenericXYOverlayWidget::validateColumns() const
 {
-    int xCol = p_xColumnCombo->currentData().toInt();
-    int yCol = p_yColumnCombo->currentData().toInt();
+    int xCol = p_xColumnCombo->currentIndex();
+    int yCol = p_yColumnCombo->currentIndex();
     return xCol >= 0 && yCol >= 0 && xCol != yCol;
 }
 
@@ -831,7 +906,7 @@ void GenericXYOverlayWidget::populateDelimiterComboBox()
 
 void GenericXYOverlayWidget::updateDataStatistics()
 {
-    if (!d_dataValid || d_parsedData.data().isEmpty()) {
+    if (!d_parsedData.isValid() || d_parsedData.data().isEmpty()) {
         p_dataStatsLabel->setText("No valid data");
         return;
     }

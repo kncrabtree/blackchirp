@@ -99,7 +99,7 @@ private:
     
     // File handling
     void analyzeAndParseFile(bool autodetect = true);
-    void updateColumnSelectors();
+    void updateColumnSelectors(bool setDefaults = true);
     
     // Settings management - loadSettings already declared in protected section
     
@@ -116,7 +116,6 @@ private:
     
     // Core data
     GenericXYData d_parsedData;
-    bool d_dataValid;
     
     // Tier 1: Source File Config widgets (created in QGroupBox provided by base class)
     QLineEdit *p_filePathEdit;
@@ -141,7 +140,6 @@ private:
     // State tracking
     bool d_settingsLoaded;
     bool d_fileAnalyzed;
-    QStringList d_detectedColumnNames;
 };
 
 #endif // GENERICXYOVERLAYWIDGET_H

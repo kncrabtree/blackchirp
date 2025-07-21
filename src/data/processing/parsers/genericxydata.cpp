@@ -28,7 +28,6 @@ void GenericXYData::addDataPoint(const QPointF &point)
 void GenericXYData::clear()
 {
     d_data.clear();
-    d_fileName.clear();
     d_filePath.clear();
     d_columnNames.clear();
     d_xColumn = 0;

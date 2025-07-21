@@ -5,6 +5,7 @@
 #include <QStringList>
 #include <QVector>
 #include <QPointF>
+#include <QFileInfo>
 #include <QtMath>
 
 /**
@@ -31,8 +32,10 @@ public:
     double yMax() const { return d_yMax; }
     
     // Metadata
-    QString fileName() const { return d_fileName; }
-    void setFileName(const QString &fileName) { d_fileName = fileName; }
+    QString fileName() const { 
+        if (d_filePath.isEmpty()) return QString();
+        return QFileInfo(d_filePath).fileName(); 
+    }
     
     QString filePath() const { return d_filePath; }
     void setFilePath(const QString &filePath) { d_filePath = filePath; }
@@ -73,7 +76,7 @@ public:
     
     // Validation
     bool isEmpty() const { return d_data.isEmpty(); }
-    bool isValid() const { return !d_data.isEmpty() && !d_fileName.isEmpty(); }
+    bool isValid() const { return !d_data.isEmpty() && !d_filePath.isEmpty(); }
     
     // Error handling
     QString errorMessage() const { return d_errorMessage; }
@@ -88,7 +91,6 @@ private:
     void resetBounds();
     
     QVector<QPointF> d_data;
-    QString d_fileName;
     QString d_filePath;
     QStringList d_columnNames;
     int d_xColumn = 0;
