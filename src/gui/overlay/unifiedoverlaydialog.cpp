@@ -21,34 +21,11 @@ UnifiedOverlayDialog::UnifiedOverlayDialog(OverlayBase::OverlayType type,
                                          const Ft &currentFt,
                                          std::shared_ptr<OverlayStorage> overlayStorage,
                                          QWidget *parent)
-    : QDialog(parent),
-      p_widget(nullptr),
-      p_buttonBox(nullptr),
-      p_statusLabel(nullptr),
-      p_mainLayout(nullptr),
-      p_progressBar(nullptr),
-      p_progressLabel(nullptr),
-      p_cancelButton(nullptr),
-      p_progressTimer(nullptr),
-      p_timeoutTimer(nullptr),
-      d_mode(Mode::Creation),
-      d_overlayType(type),
-      d_overlayStorage(overlayStorage),
-      d_dialogState(DialogState::Ready),
-      d_operationProgress(0),
-      d_queueSize(0),
-      d_isProcessing(false),
-      d_isValid(false)
+    : QDialog(parent)
 {
-    // Create widget with all necessary data (context auto-detected as Creation since overlay is nullptr)
-    QString settingsKey = QString("UnifiedOverlayDialog_%1").arg(static_cast<int>(d_overlayType));
-    p_widget = new UnifiedOverlayWidget(settingsKey, d_overlayType, plotNames, currentFt, 
-                                        nullptr, overlayStorage, this);
-    
-    setupUI();
-    setupConnections();
-    updateWindowTitle();
-    updateButtonState();
+    initializeCommon(type, plotNames, currentFt, nullptr, overlayStorage);
+    d_mode = Mode::Creation;
+    d_isValid = false; // Creation mode starts invalid
 }
 
 // Settings mode constructor
@@ -57,39 +34,52 @@ UnifiedOverlayDialog::UnifiedOverlayDialog(std::shared_ptr<OverlayBase> overlay,
                                          const Ft &currentFt,
                                          std::shared_ptr<OverlayStorage> overlayStorage,
                                          QWidget *parent)
-    : QDialog(parent),
-      p_widget(nullptr),
-      p_buttonBox(nullptr),
-      p_statusLabel(nullptr),
-      p_mainLayout(nullptr),
-      p_progressBar(nullptr),
-      p_progressLabel(nullptr),
-      p_cancelButton(nullptr),
-      p_progressTimer(nullptr),
-      p_timeoutTimer(nullptr),
-      d_mode(Mode::Settings),
-      d_overlayType(overlay ? overlay->type() : OverlayBase::BCExperiment),
-      d_overlay(overlay),
-      d_overlayStorage(overlayStorage),
-      d_dialogState(DialogState::Ready),
-      d_operationProgress(0),
-      d_queueSize(0),
-      d_isProcessing(false),
-      d_isValid(true) // Settings mode starts valid
+    : QDialog(parent)
 {
-    // Create widget with all necessary data (context auto-detected as Settings since overlay is not nullptr)
+    OverlayBase::OverlayType type = overlay ? overlay->type() : OverlayBase::BCExperiment;
+    initializeCommon(type, plotNames, currentFt, overlay, overlayStorage);
+    d_mode = Mode::Settings;
+    d_overlay = overlay;
+    d_isValid = true; // Settings mode starts valid
+}
+
+UnifiedOverlayDialog::~UnifiedOverlayDialog() = default;
+
+void UnifiedOverlayDialog::initializeCommon(OverlayBase::OverlayType type, 
+                                           const QStringList &plotNames,
+                                           const Ft &currentFt,
+                                           std::shared_ptr<OverlayBase> overlay,
+                                           std::shared_ptr<OverlayStorage> overlayStorage)
+{
+    // Initialize UI component pointers
+    p_widget = nullptr;
+    p_buttonBox = nullptr;
+    p_statusLabel = nullptr;
+    p_mainLayout = nullptr;
+    p_progressBar = nullptr;
+    p_progressLabel = nullptr;
+    p_cancelButton = nullptr;
+    p_progressTimer = nullptr;
+    p_timeoutTimer = nullptr;
+    
+    // Initialize state variables
+    d_overlayType = type;
+    d_overlayStorage = overlayStorage;
+    d_dialogState = DialogState::Ready;
+    d_operationProgress = 0;
+    d_queueSize = 0;
+    d_isProcessing = false;
+    
+    // Create widget with all necessary data (context auto-detected from overlay parameter)
     QString settingsKey = QString("UnifiedOverlayDialog_%1").arg(static_cast<int>(d_overlayType));
     p_widget = new UnifiedOverlayWidget(settingsKey, d_overlayType, plotNames, currentFt, 
                                         overlay, overlayStorage, this);
     
     setupUI();
-    
     setupConnections();
     updateWindowTitle();
     updateButtonState();
 }
-
-UnifiedOverlayDialog::~UnifiedOverlayDialog() = default;
 
 std::shared_ptr<OverlayBase> UnifiedOverlayDialog::getOverlay() const
 {
@@ -156,7 +146,7 @@ void UnifiedOverlayDialog::accept()
                     "Failed to create overlay from current settings");
             }
         }
-    } else if (isSettingsMode()) {
+    } else if (!isCreationMode()) {
         // Check if overlay label has changed and handle renaming if needed
         if (d_overlayStorage && p_widget) {
             QString originalLabel = p_widget->getOriginalLabel();
@@ -177,8 +167,13 @@ void UnifiedOverlayDialog::accept()
             }
         }
         
-        // Apply settings, potentially with background operations
-        applySettingsAsync();
+        // Apply settings directly
+        setDialogState(DialogState::Processing);
+        
+        // Apply current settings to overlay
+        p_widget->applyToOverlay();
+        
+        QDialog::accept();
     }
 }
 
@@ -218,7 +213,7 @@ void UnifiedOverlayDialog::reject()
     }
     
     // In settings mode, restore the original overlay state before cancelling
-    if (isSettingsMode() && p_widget && d_overlay) {
+    if (!isCreationMode() && p_widget && d_overlay) {
         p_widget->restoreOverlayState();
         
         // Emit signal to update plot display with restored values
@@ -260,29 +255,34 @@ void UnifiedOverlayDialog::onValidationStatusChanged(bool isValid, const QString
 
 void UnifiedOverlayDialog::onPreviewRequested()
 {
-    // Get the preview overlay from the widget
-    auto previewOverlay = p_widget->getPreviewOverlay();
-    if (previewOverlay) {
-        // Emit signal for overlay manager to handle preview addition
-        emit previewOverlayRequested(previewOverlay);
-    }
-    
-    // Forward signal and update button states
-    emit previewRequested();
-    updateButtonState();
-    updateWindowTitle();
+    handlePreviewChange(true);
 }
 
 void UnifiedOverlayDialog::onPreviewCancelled()
 {
-    // Get the preview overlay from the widget and signal for removal
+    handlePreviewChange(false);
+}
+
+void UnifiedOverlayDialog::handlePreviewChange(bool isRequested)
+{
+    // Get the preview overlay from the widget
     auto previewOverlay = p_widget->getPreviewOverlay();
     if (previewOverlay) {
-        emit previewOverlayCancelled(previewOverlay);
+        // Emit appropriate signal for overlay manager
+        if (isRequested) {
+            emit previewOverlayRequested(previewOverlay);
+        } else {
+            emit previewOverlayCancelled(previewOverlay);
+        }
     }
     
-    // Forward signal and update button states
-    emit previewCancelled();
+    // Forward appropriate signal and update UI
+    if (isRequested) {
+        emit previewRequested();
+    } else {
+        emit previewCancelled();
+    }
+    
     updateButtonState();
     updateWindowTitle();
 }
@@ -400,7 +400,7 @@ void UnifiedOverlayDialog::updateButtonState()
             // Normal state - enable based on validation and no pending operations
             // Note: We track processing state through signals to avoid mutex deadlock
             okButton->setEnabled(d_isValid && d_queueSize == 0 && !d_isProcessing);
-            okButton->setText(getOkButtonText());
+            okButton->setText(isCreationMode() ? "Create Overlay" : "Apply Changes");
             break;
             
         case DialogState::Processing:
@@ -444,18 +444,6 @@ void UnifiedOverlayDialog::updateButtonState()
     }
 }
 
-QString UnifiedOverlayDialog::getOkButtonText() const
-{
-    if (d_dialogState != DialogState::Ready) {
-        return "OK";
-    }
-    
-    if (isInPreviewMode()) {
-        return isCreationMode() ? "Create from Preview" : "Apply from Preview";
-    } else {
-        return isCreationMode() ? "Create Overlay" : "Apply Changes";
-    }
-}
 
 void UnifiedOverlayDialog::updateWindowTitle()
 {
@@ -490,37 +478,14 @@ QString UnifiedOverlayDialog::getTypeName() const
     return "Unknown";
 }
 
-OverlayTypeSpecificWidget* UnifiedOverlayDialog::getTypeSpecificWidget() const
-{
-    return p_widget ? p_widget->getTypeSpecificWidget() : nullptr;
-}
 
 bool UnifiedOverlayDialog::isCreationMode() const
 {
     return d_mode == Mode::Creation;
 }
 
-bool UnifiedOverlayDialog::isSettingsMode() const
-{
-    return d_mode == Mode::Settings;
-}
 
 
-void UnifiedOverlayDialog::applySettingsAsync()
-{
-    if (!p_widget) {
-        return;
-    }
-    
-    setDialogState(DialogState::Processing);
-    
-    // Apply current settings to overlay
-    p_widget->applyToOverlay();
-    
-    // Auto-preview cleanup will be handled automatically
-    
-    QDialog::accept();
-}
 
 void UnifiedOverlayDialog::setDialogState(DialogState state)
 {

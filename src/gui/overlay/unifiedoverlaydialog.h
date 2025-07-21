@@ -32,14 +32,21 @@ class UnifiedOverlayDialog : public QDialog
     Q_OBJECT
 
 public:
-    // Creation mode constructor
+    // State management enum
+    enum class DialogState {
+        Ready,        // Normal state, can accept user input
+        Processing,   // Background operation in progress  
+        Cancelling,   // Gracefully aborting operations
+        Error         // Operation failed, showing error state
+    };
+
+    // Constructors and destructor
     explicit UnifiedOverlayDialog(OverlayBase::OverlayType type,
                                  const QStringList &plotNames,
                                  const Ft &currentFt,
                                  std::shared_ptr<OverlayStorage> overlayStorage,
                                  QWidget *parent = nullptr);
     
-    // Settings mode constructor
     explicit UnifiedOverlayDialog(std::shared_ptr<OverlayBase> overlay,
                                  const QStringList &plotNames,
                                  const Ft &currentFt,
@@ -48,20 +55,9 @@ public:
     
     ~UnifiedOverlayDialog();
     
-    // Get the created overlay (creation mode only)
+    // Core interface methods
     std::shared_ptr<OverlayBase> getOverlay() const;
-    
-    // Check if preview mode is active
     bool isInPreviewMode() const;
-    
-    // State management
-    enum class DialogState {
-        Ready,        // Normal state, can accept user input
-        Processing,   // Background operation in progress  
-        Cancelling,   // Gracefully aborting operations
-        Error         // Operation failed, showing error state
-    };
-    
     DialogState getDialogState() const { return d_dialogState; }
 
 public slots:
@@ -79,12 +75,13 @@ signals:
     void previewOverlayCancelled(std::shared_ptr<OverlayBase> overlay);
 
 private slots:
+    // Widget signal handlers
     void onValidationStatusChanged(bool isValid, const QString &message);
     void onPreviewRequested();
     void onPreviewCancelled();
     void onOverlayDataChanged(std::shared_ptr<OverlayBase> overlay);
     
-    // Background operation handling
+    // Background operation handlers
     void onOperationStarted(const QString &operationId);
     void onOperationProgress(const QString &operationId, int percentage, const QString &message);
     void onOperationCompleted(const QString &operationId, std::shared_ptr<OverlayBase> result);
@@ -93,76 +90,82 @@ private slots:
     void onQueueSizeChanged(int size);
     void onProcessingStateChanged(bool isProcessing);
     
-    // UI update timers
+    // Timer handlers
     void updateProgressDisplay();
     void onOperationTimeout();
 
 private:
-    // UI setup
+    // Constants
+    static const int OPERATION_TIMEOUT_MS = 30000; // 30 seconds
+    static const int PROGRESS_UPDATE_INTERVAL_MS = 100;
+    
+    // Context mode enum
+    enum class Mode {
+        Creation,
+        Settings
+    };
+
+    // UI setup methods
     void setupUI();
     void setupConnections();
     void updateButtonState();
     void updateWindowTitle();
     
-    // Helper methods
-    QString getContextName() const;
-    QString getTypeName() const;
-    QString getOkButtonText() const;
-    bool isCreationMode() const;
-    bool isSettingsMode() const;
-    
-    // Type-specific widget access for operation declaration interface
-    OverlayTypeSpecificWidget* getTypeSpecificWidget() const;
-    
-    // Async workflow methods  
-    void applySettingsAsync();
-    
-    // State management
+    // State management methods
     void setDialogState(DialogState state);
     void resetDialogState();
     
-    // Core components
+    // Helper methods
+    QString getContextName() const;
+    QString getTypeName() const;
+    bool isCreationMode() const;
+    
+    // Common initialization
+    void initializeCommon(OverlayBase::OverlayType type, 
+                         const QStringList &plotNames,
+                         const Ft &currentFt,
+                         std::shared_ptr<OverlayBase> overlay,
+                         std::shared_ptr<OverlayStorage> overlayStorage);
+    
+    // Preview management
+    void handlePreviewChange(bool isRequested);
+    
+    // Core UI components
     UnifiedOverlayWidget *p_widget;
     QDialogButtonBox *p_buttonBox;
     QLabel *p_statusLabel;
     QVBoxLayout *p_mainLayout;
     
-    // Progress indication
+    // Progress UI components
     QProgressBar *p_progressBar;
     QLabel *p_progressLabel;
     QPushButton *p_cancelButton;
+    
+    // Timers
     QTimer *p_progressTimer;
     QTimer *p_timeoutTimer;
     
-    // Context and state
-    enum class Mode {
-        Creation,
-        Settings
-    } d_mode;
-    
+    // Context and configuration
+    Mode d_mode;
     OverlayBase::OverlayType d_overlayType;
     std::shared_ptr<OverlayBase> d_overlay; // Settings mode only
     std::shared_ptr<OverlayBase> d_createdOverlay; // Creation mode result
-    std::shared_ptr<OverlayStorage> d_overlayStorage; // Settings mode only
+    std::shared_ptr<OverlayStorage> d_overlayStorage;
     
-    // Dialog state management
+    // Dialog state tracking
     DialogState d_dialogState;
     QString d_currentOperationId;
     QString d_operationError;
     int d_operationProgress;
     QString d_operationMessage;
     
-    // OverlayProcessManager state tracking (to avoid mutex deadlock)
+    // Operation state tracking (to avoid mutex deadlock)
     int d_queueSize;
     bool d_isProcessing;
     
     // Validation state
     bool d_isValid;
     QString d_validationMessage;
-    
-    // Configuration
-    static const int OPERATION_TIMEOUT_MS = 30000; // 30 seconds
-    static const int PROGRESS_UPDATE_INTERVAL_MS = 100;
 };
 
 #endif // UNIFIEDOVERLAYDIALOG_H

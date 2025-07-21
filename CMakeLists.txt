@@ -89,29 +89,6 @@ add_executable(tst_overlayprocessing tests/tst_overlayprocessing.cpp
     src/data/experiment/fid.cpp)
 add_test(NAME tst_overlayprocessing COMMAND tst_overlayprocessing)
 
-add_executable(tst_unifiedoverlaydialog tests/tst_unifiedoverlaydialog.cpp
-    src/gui/overlay/unifiedoverlaydialog.cpp
-    src/gui/overlay/unifiedoverlaywidget.cpp
-    src/gui/overlay/overlaytypespecificwidget.cpp
-    src/gui/overlay/bcexpoverlaywidget.cpp
-    src/gui/overlay/catalogoverlaywidget.cpp
-    src/data/experiment/overlaybase.cpp
-    src/data/experiment/overlaytypes.cpp
-    src/data/processing/overlayprocessmanager.cpp
-    src/data/processing/overlayoperation.cpp
-    src/data/analysis/ft.cpp
-    src/data/analysis/analysis.cpp
-    src/data/experiment/catalogdata.cpp
-    src/data/processing/parsers/catalogparser.cpp
-    src/data/processing/parsers/fileparser.cpp
-    src/data/processing/parsers/fileparserregistry.cpp
-    src/data/processing/parsers/spcatparser.cpp
-    src/data/processing/parsers/xiamparser.cpp
-    src/data/storage/blackchirpcsv.cpp
-    src/data/storage/overlaystorage.cpp
-    src/data/storage/settingsstorage.cpp
-    src/data/experiment/fid.cpp)
-add_test(NAME tst_unifiedoverlaydialog COMMAND tst_unifiedoverlaydialog)
 
 add_executable(tst_overlayoperations tests/tst_overlayoperations.cpp
     src/gui/overlay/overlaytypespecificwidget.cpp
@@ -141,7 +118,6 @@ target_link_libraries(tst_spcatparser PRIVATE Qt6::Gui Qt6::Test)
 target_link_libraries(tst_xiamparser PRIVATE Qt6::Gui Qt6::Test)
 target_link_libraries(tst_genericxyparser PRIVATE Qt6::Gui Qt6::Test)
 target_link_libraries(tst_overlayprocessing PRIVATE Qt6::Gui Qt6::Test Qt6::Widgets)
-target_link_libraries(tst_unifiedoverlaydialog PRIVATE Qt6::Gui Qt6::Test Qt6::Widgets)
 target_link_libraries(tst_overlayoperations PRIVATE Qt6::Gui Qt6::Test Qt6::Widgets)
 
 # Add version definitions to all test targets
@@ -152,7 +128,6 @@ add_version_definitions(tst_spcatparser)
 add_version_definitions(tst_xiamparser)
 add_version_definitions(tst_genericxyparser)
 add_version_definitions(tst_overlayprocessing)
-add_version_definitions(tst_unifiedoverlaydialog)
 add_version_definitions(tst_overlayoperations)
 
 # Simplified overlay operations test without heavy dependencies
