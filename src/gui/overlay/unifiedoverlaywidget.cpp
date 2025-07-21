@@ -166,15 +166,15 @@ bool UnifiedOverlayWidget::validateAcceptance()
 
 bool UnifiedOverlayWidget::isDataValid() const
 {
-    // Check type-specific widget data validity
+    // Quick check for data readiness without generating error messages
     if (p_typeSpecificWidget && !p_typeSpecificWidget->isDataValid()) {
         return false;
     }
     
-    // Check overlay base options validation (includes label validation)
+    // Check overlay base options are ready (simplified check to avoid duplicate validation)
     if (p_overlayBaseOptionsWidget) {
-        QString errorMessage;
-        if (!p_overlayBaseOptionsWidget->validateSettings(errorMessage, getExistingOverlays())) {
+        QString label = p_overlayBaseOptionsWidget->getLabel();
+        if (label.isEmpty()) {
             return false;
         }
     }
@@ -185,12 +185,6 @@ bool UnifiedOverlayWidget::isDataValid() const
 
 
 
-void UnifiedOverlayWidget::onSettingsChanged()
-{    
-    // Use centralized validation logic
-    performCompleteValidation();
-    emit settingsChanged();
-}
 
 void UnifiedOverlayWidget::onRealTimeUpdate()
 {
@@ -219,10 +213,8 @@ void UnifiedOverlayWidget::onRealTimeUpdate()
     }
 }
 
-void UnifiedOverlayWidget::onDataValidityChanged(bool isValid)
+void UnifiedOverlayWidget::onDataValidityChanged()
 {
-    Q_UNUSED(isValid); // Don't use this parameter - always do full validation
-    
     // Use centralized validation logic - this will handle both UI updates and auto-preview
     performCompleteValidation();
 }
@@ -309,13 +301,16 @@ void UnifiedOverlayWidget::createOverlayBaseOptionsBox()
     
     // Connect signals once during creation
     connect(p_overlayBaseOptionsWidget, &OverlayBaseOptionsWidget::settingsChanged,
-            this, &UnifiedOverlayWidget::onSettingsChanged);
-    connect(p_overlayBaseOptionsWidget, &OverlayBaseOptionsWidget::settingsChanged,
-            this, &UnifiedOverlayWidget::onRealTimeUpdate);
+            this, [this]() {
+                performCompleteValidation();
+                onRealTimeUpdate();
+            });
     
     // Connect label changes to trigger validation (label validation is critical for overlay creation)
     connect(p_overlayBaseOptionsWidget, &OverlayBaseOptionsWidget::labelChanged,
-            this, &UnifiedOverlayWidget::onSettingsChanged);
+            this, [this]() {
+                performCompleteValidation();
+            });
 }
 
 void UnifiedOverlayWidget::loadOverlaySettings()
@@ -368,9 +363,10 @@ void UnifiedOverlayWidget::createCurveAppearanceBox()
     
     // Connect signals once during creation - no context-dependent connections needed
     connect(p_curveAppearanceWidget, &CurveAppearanceWidget::curveAppearanceChanged,
-            this, &UnifiedOverlayWidget::onSettingsChanged);
-    connect(p_curveAppearanceWidget, &CurveAppearanceWidget::curveAppearanceChanged,
-            this, &UnifiedOverlayWidget::onRealTimeUpdate);
+            this, [this]() {
+                performCompleteValidation();
+                onRealTimeUpdate();
+            });
     connect(p_curveAppearanceWidget, &CurveAppearanceWidget::colorChangeRequested,
             this, &UnifiedOverlayWidget::onColorChangeRequested);
 }
@@ -444,16 +440,6 @@ void UnifiedOverlayWidget::setupTypeSpecificWidget()
     }
 }
 
-QString UnifiedOverlayWidget::getContextName() const
-{
-    switch (d_context) {
-    case Context::Creation:
-        return "Creation";
-    case Context::Settings:
-        return "Settings";
-    }
-    return "Unknown";
-}
 
 QVector<std::shared_ptr<OverlayBase>> UnifiedOverlayWidget::getExistingOverlays() const
 {
@@ -520,13 +506,13 @@ void UnifiedOverlayWidget::setupTypeSpecificWidgetConnections()
     
     // Base connections for both contexts
     connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::settingsChanged,
-            this, &UnifiedOverlayWidget::onSettingsChanged);
+            this, [this]() {
+                performCompleteValidation();
+            });
     // Source file validation now handled by type-specific widgets
     connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::dataValidityChanged,
-            this, [this](bool isValid) {
-                Q_UNUSED(isValid); // Don't use this parameter - always do full validation
-                performCompleteValidation(); // Centralized validation that updates UI
-                // Auto-preview logic now handled by performCompleteValidation()
+            this, [this](bool) {
+                onDataValidityChanged(); // Ignore the parameter, use simplified method
             });
     connect(p_typeSpecificWidget, &OverlayTypeSpecificWidget::labelUpdateRequested,
             this, &UnifiedOverlayWidget::onLabelUpdateRequested);
@@ -653,11 +639,6 @@ void UnifiedOverlayWidget::restoreOverlayState()
     d_overlay->setModified();
 }
 
-void UnifiedOverlayWidget::clearBackupState()
-{
-    d_backupMetadata.clear();
-    d_hasBackupState = false;
-}
 
 QString UnifiedOverlayWidget::getOriginalLabel() const
 {

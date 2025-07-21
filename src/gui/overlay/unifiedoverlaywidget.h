@@ -41,6 +41,7 @@ public:
     // Use the Context enum from OverlayTypeSpecificWidget
     using Context = OverlayTypeSpecificWidget::Context;
 
+    // Construction and destruction
     explicit UnifiedOverlayWidget(const QString &settingsKey, 
                                  OverlayBase::OverlayType type,
                                  const QStringList &plotNames,
@@ -50,33 +51,28 @@ public:
                                  QWidget *parent = nullptr);
     ~UnifiedOverlayWidget();
 
-
-    // Overlay creation/modification interface
+    // Core overlay interface
     std::shared_ptr<OverlayBase> createOverlay();
     void applyToOverlay() const; // Apply current settings to existing overlay (settings context only)
     
-    // Validation
+    // Validation interface
     bool validateSettings(QString &errorMessage) const;
     bool isDataValid() const;
     bool validateAcceptance(); // Returns true if dialog should proceed with acceptance
     
-    
-    // Auto-preview functionality (creation context only)
+    // Auto-preview interface (creation context only)
     std::shared_ptr<OverlayBase> getPreviewOverlay() const { return d_previewOverlay; }
     void clearPreviewOverlay() { d_previewOverlay.reset(); }
     void cleanupPreviewOverlay(); // Safe cleanup with signal blocking
     bool isBeingDestroyed() const; // Check if widget is being destroyed
     
-    
-    // State backup/restore for cancel functionality (settings context only)
+    // State management interface (settings context only)
     void backupOverlayState();
     void restoreOverlayState();
-    void clearBackupState();
     QString getOriginalLabel() const; // Get original label from backup metadata
     
 
 signals:
-    void settingsChanged(); // Emitted when any setting changes
     void overlayDataChanged(std::shared_ptr<OverlayBase> overlay); // Real-time overlay updates (settings context)
     void validationStatusChanged(bool isValid, const QString &message);
     
@@ -86,9 +82,8 @@ signals:
 
 public slots:
     // Three-tier control moved to OverlayTypeSpecificWidget base class
-    void onSettingsChanged();
     void onRealTimeUpdate(); // Settings context only
-    void onDataValidityChanged(bool isValid); // Auto-preview handler for creation context
+    void onDataValidityChanged(); // Auto-preview handler for creation context
     void onAccept();
 
 private slots:
@@ -96,36 +91,25 @@ private slots:
     void onColorChangeRequested();
 
 private:
-    // UI Setup
+    // UI setup methods
     void setupUI();
     void setupConnections();
     void createOverlayBaseOptionsBox();
     void createCurveAppearanceBox();
-    void createProgressIndicator();
-    
-    // Settings loading
-    void loadOverlaySettings();
-    
-    // Settings management
-    void saveSettings();
-    
-    // Context management
-    void configureForContext();
-    // Three-tier validation moved to OverlayTypeSpecificWidget base class
     
     // Type-specific widget management
     void setupTypeSpecificWidget();
     void setupTypeSpecificWidgetContext();
     void setupTypeSpecificWidgetConnections();
     
-    // Helper methods
-    QString getContextName() const;
-    bool isCreationContext() const { return d_context == Context::Creation; }
-    bool isSettingsContext() const { return d_context == Context::Settings; }
-    QVector<std::shared_ptr<OverlayBase>> getExistingOverlays() const;
+    // Settings management
+    void loadOverlaySettings();
+    void saveSettings();
+    void configureForContext();
     
-    // Centralized validation
+    // Validation helpers
     void performCompleteValidation();
+    QVector<std::shared_ptr<OverlayBase>> getExistingOverlays() const;
     
     // Auto-preview management (creation context only)
     void createAutoPreview();
@@ -133,11 +117,13 @@ private:
     void removeAutoPreview();
     std::shared_ptr<OverlayBase> getCurrentTargetOverlay() const;
     
-    // Context and state (immutable after construction)
+    // Context helpers
+    bool isCreationContext() const { return d_context == Context::Creation; }
+    bool isSettingsContext() const { return d_context == Context::Settings; }
+    
+    // Context and configuration (immutable after construction)
     const Context d_context;
     OverlayBase::OverlayType d_overlayType;
-    
-    // Plot and spectroscopic data information
     QStringList d_plotNames;
     Ft d_currentFt; // Current spectroscopic data for intelligent defaults
     std::shared_ptr<OverlayBase> d_overlay; // Settings context only
@@ -145,21 +131,13 @@ private:
     
     // UI Components - Three-tier architecture
     QHBoxLayout *p_mainLayout;
-    
-    // Type-specific tier  
-    OverlayTypeSpecificWidget *p_typeSpecificWidget;
-    
-    // Base overlay options tier
-    QGroupBox *p_overlayBaseOptionsBox;
+    OverlayTypeSpecificWidget *p_typeSpecificWidget; // Type-specific tier  
+    QGroupBox *p_overlayBaseOptionsBox; // Base overlay options tier
     OverlayBaseOptionsWidget *p_overlayBaseOptionsWidget;
-    
-    // Curve appearance tier
-    QGroupBox *p_curveAppearanceBox;
+    QGroupBox *p_curveAppearanceBox; // Curve appearance tier
     CurveAppearanceWidget *p_curveAppearanceWidget;
     
-    
-    
-    // State tracking - three-tier logic moved to OverlayTypeSpecificWidget
+    // State tracking
     QString d_lastValidationError;
     
     // Auto-preview state (creation context only)
