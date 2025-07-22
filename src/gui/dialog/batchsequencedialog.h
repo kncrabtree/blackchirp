@@ -71,9 +71,8 @@ public:
         if (BatchSequenceDialog->objectName().isEmpty())
             BatchSequenceDialog->setObjectName(QString::fromUtf8("BatchSequenceDialog"));
         BatchSequenceDialog->resize(416, 183);
-        QIcon icon;
-        icon.addFile(QString::fromUtf8(":/icons/bc_logo_small.png"), QSize(), QIcon::Normal, QIcon::Off); // Will be replaced with bc_logo_trans.svg
-        BatchSequenceDialog->setWindowIcon(icon);
+        // BlackChirp branding icon set programmatically in constructor
+        BatchSequenceDialog->setWindowIcon(QIcon());
         verticalLayout = new QVBoxLayout(BatchSequenceDialog);
         verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
         label = new QLabel(BatchSequenceDialog);

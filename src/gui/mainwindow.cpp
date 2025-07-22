@@ -1262,6 +1262,9 @@ void MainWindow::showExistingExperiment(const QString& path)
 
 void MainWindow::setupThemeAwareIconStyling()
 {
+    // Set BlackChirp branding - main application window icon  
+    this->setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, this));
+    
     // Create theme-aware icons for control buttons using SVG color replacement
     ui->pauseButton->setIcon(ThemeColors::createThemedIcon(":/icons/pause.svg", ThemeColors::IconPrimary, this));
     ui->resumeButton->setIcon(ThemeColors::createThemedIcon(":/icons/play.svg", ThemeColors::IconPrimary, this));

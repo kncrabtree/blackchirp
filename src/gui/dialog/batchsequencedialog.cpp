@@ -9,6 +9,9 @@ BatchSequenceDialog::BatchSequenceDialog(QWidget *parent) :
 {
     ui->setupUi(this);
     
+    // Set BlackChirp branding
+    setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, this));
+    
     // Override icons with theme-aware versions
     ui->configureButton->setIcon(ThemeColors::createThemedIcon(":/icons/cog-6-tooth.svg", ThemeColors::IconPrimary, this));
     ui->cancelButton->setIcon(ThemeColors::createThemedIcon(":/icons/x-mark.svg", ThemeColors::IconPrimary, this));

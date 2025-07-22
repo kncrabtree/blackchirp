@@ -112,9 +112,8 @@ public:
     {
         if (MainWindow->objectName().isEmpty())
             MainWindow->setObjectName(QString::fromUtf8("MainWindow"));
-        QIcon icon;
-        icon.addFile(QString::fromUtf8(":/icons/bc_logo_small.png"), QSize(), QIcon::Normal, QIcon::Off);
-        MainWindow->setWindowIcon(icon);
+        // BlackChirp branding icon set programmatically in setupThemeAwareIconStyling()
+        MainWindow->setWindowIcon(QIcon());
         actionStart_Experiment = new QAction(MainWindow);
         actionStart_Experiment->setObjectName(QString::fromUtf8("actionStart_Experiment"));
         // Icon set programmatically in setupThemeAwareIconStyling()

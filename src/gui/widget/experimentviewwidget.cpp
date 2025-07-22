@@ -30,7 +30,7 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, bool overlaysE
     pu_experiment = std::make_unique<Experiment>(num,path);
     setWindowFlags(Qt::Window);
     setWindowTitle(QString("Experiment %1").arg(pu_experiment->d_number));
-    setWindowIcon(QIcon(QString(":/icons/bc_logo_small.png"))); // Will be replaced with bc_logo_trans.svg
+    setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, this));
 
 
     QVBoxLayout *vbl = new QVBoxLayout;

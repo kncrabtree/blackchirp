@@ -15,6 +15,9 @@ PeakListExportDialog::PeakListExportDialog(const QVector<QPointF> peakList, int 
 {
     ui->setupUi(this);
     
+    // Set BlackChirp branding
+    setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, this));
+    
     // Override icons with theme-aware versions
     ui->addShotButton->setIcon(ThemeColors::createThemedIcon(":/icons/plus.svg", ThemeColors::IconPrimary, this));
     ui->removeShotButton->setIcon(ThemeColors::createThemedIcon(":/icons/minus.svg", ThemeColors::IconPrimary, this));

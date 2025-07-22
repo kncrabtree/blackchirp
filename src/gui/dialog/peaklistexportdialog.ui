@@ -14,8 +14,8 @@
    <string>Export Peak List</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="resources.qrc">
-    <normaloff>:/icons/bc_logo_small.png</normaloff>:/icons/bc_logo_small.png</iconset>
+   <iconset>
+    <normaloff>.</normaloff>.</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
