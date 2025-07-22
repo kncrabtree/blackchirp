@@ -66,7 +66,8 @@ SOURCES += $$PWD/mainwindow.cpp \
     $$PWD/widget/rfconfigwidget.cpp \
     $$PWD/widget/temperaturecontrolwidget.cpp \
     $$PWD/widget/temperaturestatusbox.cpp \
-    $$PWD/widget/toolbarwidgetaction.cpp
+    $$PWD/widget/toolbarwidgetaction.cpp \
+    $$PWD/style/themecolors.cpp
 
 HEADERS += $$PWD/mainwindow.h \
     $$PWD/dialog/batchsequencedialog.h \
@@ -138,7 +139,8 @@ HEADERS += $$PWD/mainwindow.h \
     $$PWD/widget/rfconfigwidget.h \
     $$PWD/widget/temperaturecontrolwidget.h \
     $$PWD/widget/temperaturestatusbox.h \
-    $$PWD/widget/toolbarwidgetaction.h
+    $$PWD/widget/toolbarwidgetaction.h \
+    $$PWD/style/themecolors.h
 
 FORMS += \
     $$PWD/dialog/communicationdialog.ui \

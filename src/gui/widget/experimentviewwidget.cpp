@@ -1,4 +1,5 @@
 #include <gui/widget/experimentviewwidget.h>
+#include <gui/style/themecolors.h>
 
 #include <QTabWidget>
 #include <QVBoxLayout>
@@ -29,7 +30,7 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, bool overlaysE
     pu_experiment = std::make_unique<Experiment>(num,path);
     setWindowFlags(Qt::Window);
     setWindowTitle(QString("Experiment %1").arg(pu_experiment->d_number));
-    setWindowIcon(QIcon(QString(":/icons/bc_logo_small.png")));
+    setWindowIcon(QIcon(QString(":/icons/bc_logo_small.png"))); // Will be replaced with bc_logo_trans.svg
 
 
     QVBoxLayout *vbl = new QVBoxLayout;
@@ -51,13 +52,13 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, bool overlaysE
 
     QWidget *hdr = buildHeaderWidget();
     if(hdr != nullptr)
-        p_tabWidget->addTab(hdr,QIcon(QString(":/icons/header.png")),QString("Header"));
+        p_tabWidget->addTab(hdr, ThemeColors::createThemedIcon(":/icons/header.svg", ThemeColors::IconSecondary, this), QString("Header"));
 
     if(pu_experiment->ftmwEnabled())
     {
         QWidget *ftmw = buildFtmwWidget(path);
         if(ftmw != nullptr)
-            p_tabWidget->addTab(ftmw,QIcon(QString(":/icons/chirp.png")),QString("CP-FTMW"));
+            p_tabWidget->addTab(ftmw, ThemeColors::createThemedIcon(":/icons/signal.svg", ThemeColors::IconPrimary, this), QString("CP-FTMW"));
     }
 
 #ifdef BC_LIF
@@ -65,17 +66,17 @@ ExperimentViewWidget::ExperimentViewWidget(int num, QString path, bool overlaysE
     {
         QWidget *lif = buildLifWidget();
         if(lif != nullptr)
-            p_tabWidget->addTab(lif,QIcon(QString(":/icons/laser.png")),QString("LIF"));
+            p_tabWidget->addTab(lif, ThemeColors::createThemedIcon(":/icons/lif.svg", ThemeColors::IconSecondary, this), QString("LIF"));
     }
 #endif
 
     QWidget *tracking = buildTrackingWidget();
     if(tracking != nullptr)
-        p_tabWidget->addTab(tracking,QIcon(QString(":/icons/dataplots.png")),QString("Tracking"));
+        p_tabWidget->addTab(tracking, ThemeColors::createThemedIcon(":/icons/chart-bar.svg", ThemeColors::IconSecondary, this), QString("Tracking"));
 
     QWidget *log = buildLogWidget(path);
     if(log != nullptr)
-        p_tabWidget->addTab(log,QIcon(QString(":/icons/log.png")),QString("Log"));
+        p_tabWidget->addTab(log, ThemeColors::createThemedIcon(":/icons/log.svg", ThemeColors::IconSecondary, this), QString("Log"));
 
     vbl->addWidget(p_tabWidget);
     setLayout(vbl);

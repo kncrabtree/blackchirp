@@ -13,6 +13,7 @@
 #include <gui/plot/curveappearancepresetmanager.h>
 #include <data/processing/overlayoperation.h>
 #include <data/processing/parsers/catalogparser.h>
+#include <gui/style/themecolors.h>
 
 CatalogOverlayWidget::CatalogOverlayWidget(const Ft &currentFt, QWidget *parent)
     : OverlayTypeSpecificWidget(currentFt, parent), SettingsStorage(BC::Key::CatalogWidget::key),
@@ -658,18 +659,18 @@ void CatalogOverlayWidget::updateSpacingDisplay()
         
         // Add performance warning for very large point counts
         if (numPoints > 500000) {
-            p_spacingDisplayLabel->setStyleSheet("QLabel { color: orange; font-weight: bold; }");
+            p_spacingDisplayLabel->setStyleSheet(QString("QLabel { color: %1; font-weight: bold; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusWarning, this)));
             p_spacingDisplayLabel->setToolTip("Warning: Large number of points may cause slow performance");
         } else if (numPoints > 2000000) {
-            p_spacingDisplayLabel->setStyleSheet("QLabel { color: red; font-weight: bold; }");
+            p_spacingDisplayLabel->setStyleSheet(QString("QLabel { color: %1; font-weight: bold; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusError, this)));
             p_spacingDisplayLabel->setToolTip("Warning: Very large number of points will cause slow performance");
         } else {
-            p_spacingDisplayLabel->setStyleSheet("QLabel { color: gray; }");
+            p_spacingDisplayLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
             p_spacingDisplayLabel->setToolTip("");
         }
     } else {
         p_spacingDisplayLabel->setText("0.000 MHz");
-        p_spacingDisplayLabel->setStyleSheet("QLabel { color: gray; }");
+        p_spacingDisplayLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
         p_spacingDisplayLabel->setToolTip("");
     }
 }
@@ -923,13 +924,13 @@ void CatalogOverlayWidget::createSourceFileConfigUI(QGroupBox *parent)
     p_frequencyRangeLabel = new QLabel("-", detailsFrame);
     
     // Configure labels for compact display
-    auto configureCompactLabel = [](QLabel* label) {
+    auto configureCompactLabel = [this](QLabel* label) {
         label->setWordWrap(false);
         label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         label->setMinimumHeight(18);
         label->setMaximumHeight(20);
         label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-        label->setStyleSheet("QLabel { font-size: 11px; color: gray; }");
+        label->setStyleSheet(QString("QLabel { font-size: 11px; color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
     };
     
     configureCompactLabel(p_formatLabel);
@@ -1091,7 +1092,7 @@ void CatalogOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)
     p_numPointsSpinBox->setKeyboardTracking(false);
     
     p_spacingDisplayLabel = new QLabel("0.000 MHz", rangeGroup);
-    p_spacingDisplayLabel->setStyleSheet("QLabel { color: gray; font-size: 11px; }");
+    p_spacingDisplayLabel->setStyleSheet(QString("QLabel { color: %1; font-size: 11px; }").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
     
     auto rangeRangeLabel = new QLabel("Range:", rangeGroup);
     rangeRangeLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
@@ -1248,7 +1249,7 @@ void CatalogOverlayWidget::configureForCreationContext()
     // Show helpful status message for file selection in molecule label
     if (p_moleculeLabel) {
         p_moleculeLabel->setText("Select a catalog file to begin");
-        p_moleculeLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
+        p_moleculeLabel->setStyleSheet(QString("QLabel { color: %1; font-style: italic; }").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
     }
     
     // Set defaults from settings for creation context

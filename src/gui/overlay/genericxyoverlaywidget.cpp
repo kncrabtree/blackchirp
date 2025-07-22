@@ -14,6 +14,7 @@
 #include <data/storage/settingsstorage.h>
 #include <data/processing/parsers/fileparserregistry.h>
 #include <data/processing/parsers/genericxyparser.h>
+#include <gui/style/themecolors.h>
 
 namespace BC::Key::GenericXYWidget {
 static const QString key{"GenericXYOverlayWidget"};
@@ -141,11 +142,11 @@ void GenericXYOverlayWidget::setupForSettings(std::shared_ptr<OverlayBase> overl
     // Update UI status and preview with loaded data
     if (d_parsedData.isValid()) {
         p_fileStatusLabel->setText(QString("Loaded %1 data points from overlay").arg(d_parsedData.data().size()));
-        p_fileStatusLabel->setStyleSheet("QLabel { color: blue; }");
+        p_fileStatusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusInfo, this)));
         updatePreview();
     } else {
         p_fileStatusLabel->setText("No data available in overlay");
-        p_fileStatusLabel->setStyleSheet("QLabel { color: red; }");
+        p_fileStatusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusError, this)));
     }
 }
 
@@ -473,7 +474,7 @@ void GenericXYOverlayWidget::configureForCreationContext()
     // Show helpful status messages
     if (p_fileStatusLabel) {
         p_fileStatusLabel->setText("Select a file and configure parsing to create overlay");
-        p_fileStatusLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
+        p_fileStatusLabel->setStyleSheet(QString("QLabel { color: %1; font-style: italic; }").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
     }
 }
 
@@ -490,7 +491,7 @@ void GenericXYOverlayWidget::configureForSettingsContext()
         if (genericOverlay) {
             QString info = QString("Editing overlay: %1 data points").arg(genericOverlay->rawData().size());
             p_fileStatusLabel->setText(info);
-            p_fileStatusLabel->setStyleSheet("QLabel { color: blue; }");
+            p_fileStatusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusInfo, this)));
         }
     }
     
@@ -633,7 +634,7 @@ void GenericXYOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
     // Data statistics (compact info display)
     p_dataStatsLabel = new QLabel(parent);
     p_dataStatsLabel->setWordWrap(true);
-    p_dataStatsLabel->setStyleSheet("QLabel { color: gray; font-size: 11px; padding: 4px; }");
+    p_dataStatsLabel->setStyleSheet(QString("QLabel { color: %1; font-size: 11px; padding: 4px; }").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
     
     // Add groups to main layout
     mainLayout->addWidget(formatGroup);
@@ -759,12 +760,12 @@ void GenericXYOverlayWidget::analyzeAndParseFile(bool autodetect)
         updatePreview();
         
         p_fileStatusLabel->setText(QString("Loaded %1 data points").arg(d_parsedData.data().size()));
-        p_fileStatusLabel->setStyleSheet("QLabel { color: green; }");
+        p_fileStatusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this)));
     } else {
         d_parsedData.clear(); // Clears data, making isValid() return false
         d_fileAnalyzed = true;
         p_fileStatusLabel->setText("Failed to parse file");
-        p_fileStatusLabel->setStyleSheet("QLabel { color: red; }");
+        p_fileStatusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusError, this)));
     }
     
     emit dataValidityChanged(d_parsedData.isValid());

@@ -14,6 +14,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <gui/plot/blackchirpplotcurve.h>
+#include <gui/style/themecolors.h>
 
 // Creation mode constructor
 UnifiedOverlayDialog::UnifiedOverlayDialog(OverlayBase::OverlayType type,
@@ -245,10 +246,10 @@ void UnifiedOverlayDialog::onValidationStatusChanged(bool isValid, const QString
     if (p_statusLabel) {
         if (isValid) {
             p_statusLabel->setText("Settings are valid");
-            p_statusLabel->setStyleSheet("QLabel { color: green; }");
+            p_statusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this)));
         } else {
             p_statusLabel->setText(message.isEmpty() ? "Settings are invalid" : message);
-            p_statusLabel->setStyleSheet("QLabel { color: red; }");
+            p_statusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusError, this)));
         }
     }
 }
@@ -308,7 +309,7 @@ void UnifiedOverlayDialog::setupUI()
     
     // Create status label
     p_statusLabel = new QLabel(this);
-    p_statusLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
+    p_statusLabel->setStyleSheet(QString("QLabel { color: %1; font-style: italic; }").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
     p_statusLabel->setText("Validating settings...");
     p_mainLayout->addWidget(p_statusLabel);
     
@@ -525,7 +526,7 @@ void UnifiedOverlayDialog::setDialogState(DialogState state)
     case DialogState::Error:
         if (p_progressLabel) {
             p_progressLabel->setText(QString("Error: %1").arg(d_operationError));
-            p_progressLabel->setStyleSheet("QLabel { color: red; }");
+            p_progressLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusError, this)));
         }
         if (p_cancelButton) p_cancelButton->setVisible(false);
         if (p_progressTimer) p_progressTimer->stop();
@@ -578,7 +579,7 @@ void UnifiedOverlayDialog::onOperationCompleted(const QString &operationId, std:
     }
     if (p_progressLabel) {
         p_progressLabel->setText("Operation completed successfully");
-        p_progressLabel->setStyleSheet("QLabel { color: green; }");
+        p_progressLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this)));
     }
     
     // Return to ready state - user can now interact with dialog normally
@@ -613,10 +614,10 @@ void UnifiedOverlayDialog::onQueueSizeChanged(int size)
     if (p_statusLabel) {
         if (size > 0) {
             p_statusLabel->setText(QString("Background operations: %1 pending").arg(size));
-            p_statusLabel->setStyleSheet("QLabel { color: blue; }");
+            p_statusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusInfo, this)));
         } else if (d_isValid) {
             p_statusLabel->setText("Settings are valid");
-            p_statusLabel->setStyleSheet("QLabel { color: green; }");
+            p_statusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this)));
         }
     }
     
@@ -634,13 +635,13 @@ void UnifiedOverlayDialog::onProcessingStateChanged(bool isProcessing)
         // Show that background processing is active
         if (p_statusLabel) {
             p_statusLabel->setText("Background processing active...");
-            p_statusLabel->setStyleSheet("QLabel { color: blue; }");
+            p_statusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusInfo, this)));
         }
     } else if (!isProcessing && d_dialogState == DialogState::Ready) {
         // Processing finished - restore normal validation status
         if (p_statusLabel && d_isValid) {
             p_statusLabel->setText("Settings are valid");
-            p_statusLabel->setStyleSheet("QLabel { color: green; }");
+            p_statusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this)));
         }
     }
     

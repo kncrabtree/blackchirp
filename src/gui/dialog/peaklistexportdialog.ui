@@ -173,7 +173,7 @@
           </property>
           <property name="icon">
            <iconset resource="resources.qrc">
-            <normaloff>:/icons/add.png</normaloff>:/icons/add.png</iconset>
+            <normaloff>:/icons/plus.svg</normaloff>:/icons/plus.svg</iconset>
           </property>
           <property name="toolButtonStyle">
            <enum>Qt::ToolButtonTextBesideIcon</enum>
@@ -187,7 +187,7 @@
           </property>
           <property name="icon">
            <iconset resource="resources.qrc">
-            <normaloff>:/icons/go-last.png</normaloff>:/icons/go-last.png</iconset>
+            <normaloff>:/icons/go-last.svg</normaloff>:/icons/go-last.svg</iconset>
           </property>
           <property name="toolButtonStyle">
            <enum>Qt::ToolButtonTextBesideIcon</enum>
@@ -201,7 +201,7 @@
           </property>
           <property name="icon">
            <iconset resource="resources.qrc">
-            <normaloff>:/icons/remove.png</normaloff>:/icons/remove.png</iconset>
+            <normaloff>:/icons/minus.svg</normaloff>:/icons/minus.svg</iconset>
           </property>
           <property name="toolButtonStyle">
            <enum>Qt::ToolButtonTextBesideIcon</enum>

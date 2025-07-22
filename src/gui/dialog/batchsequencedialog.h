@@ -72,7 +72,7 @@ public:
             BatchSequenceDialog->setObjectName(QString::fromUtf8("BatchSequenceDialog"));
         BatchSequenceDialog->resize(416, 183);
         QIcon icon;
-        icon.addFile(QString::fromUtf8(":/icons/bc.png"), QSize(), QIcon::Normal, QIcon::Off);
+        icon.addFile(QString::fromUtf8(":/icons/bc_logo_small.png"), QSize(), QIcon::Normal, QIcon::Off); // Will be replaced with bc_logo_trans.svg
         BatchSequenceDialog->setWindowIcon(icon);
         verticalLayout = new QVBoxLayout(BatchSequenceDialog);
         verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
@@ -118,9 +118,7 @@ public:
         horizontalLayout->setObjectName(QString::fromUtf8("horizontalLayout"));
         cancelButton = new QPushButton(BatchSequenceDialog);
         cancelButton->setObjectName(QString::fromUtf8("cancelButton"));
-        QIcon icon1;
-        icon1.addFile(QString::fromUtf8(":/icons/abort.png"), QSize(), QIcon::Normal, QIcon::Off);
-        cancelButton->setIcon(icon1);
+        // Icon set programmatically in constructor
         cancelButton->setIconSize(QSize(15, 15));
 
         horizontalLayout->addWidget(cancelButton);
@@ -131,9 +129,7 @@ public:
 
         quickButton = new QPushButton(BatchSequenceDialog);
         quickButton->setObjectName(QString::fromUtf8("quickButton"));
-        QIcon icon2;
-        icon2.addFile(QString::fromUtf8(":/icons/quickexpt.png"), QSize(), QIcon::Normal, QIcon::Off);
-        quickButton->setIcon(icon2);
+        // Icon set programmatically in constructor
         quickButton->setIconSize(QSize(15, 15));
 
         horizontalLayout->addWidget(quickButton);

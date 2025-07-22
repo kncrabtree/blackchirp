@@ -31,6 +31,7 @@
 #include <gui/widget/gascontrolwidget.h>
 #include <gui/widget/pressurestatusbox.h>
 #include <gui/widget/pressurecontrolwidget.h>
+#include <gui/style/themecolors.h>
 
 #include <gui/dialog/communicationdialog.h>
 #include <gui/dialog/hwdialog.h>
@@ -72,6 +73,10 @@ MainWindow::MainWindow(QWidget *parent) :
     qRegisterMetaType<QwtPlot::Axis>("QwtPlot::Axis");
 
     ui->setupUi(this);
+    
+    // Apply theme-aware styling for SVG icons
+    setupThemeAwareIconStyling();
+    
     ui->rollingDurationBox->setValue(ui->rollingDataViewWidget->historyDuration());
     connect(ui->rollingDurationBox,&SpinBoxWidgetAction::valueChanged,
             ui->rollingDataViewWidget,&RollingDataWidget::setHistoryDuration);
@@ -832,12 +837,12 @@ void MainWindow::setLogIcon(LogHandler::MessageCode c)
         case LogHandler::Warning:
             if(d_logIcon != LogHandler::Error)
             {
-                ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab),QIcon(QString(":/icons/warning.png")));
+                ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab), ThemeColors::createThemedIcon(":/icons/exclamation-triangle.svg", ThemeColors::StatusWarning, this));
                 d_logIcon = c;
             }
             break;
         case LogHandler::Error:
-            ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab),QIcon(QString(":/icons/error.png")));
+            ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab), ThemeColors::createThemedIcon(":/icons/exclamation-triangle.svg", ThemeColors::StatusError, this));
             d_logIcon = c;
             break;
         default:
@@ -911,7 +916,7 @@ void MainWindow::viewExperiment()
 
     QLineEdit *pathEdit = new QLineEdit(&d);
     QToolButton *browseButton = new QToolButton(&d);
-    browseButton->setIcon(QIcon(QString(":/icons/view.png")));
+    browseButton->setIcon(ThemeColors::createThemedIcon(":/icons/document-magnifying-glass.svg", ThemeColors::IconSecondary, this));
 
     connect(browseButton,&QToolButton::clicked,this,[this,pathEdit](){
         QString path = QFileDialog::getExistingDirectory(this,QString("Select experiment directory"),QString("~"));
@@ -1253,4 +1258,51 @@ void MainWindow::showExistingExperiment(const QString& path)
         widget->raise();
         widget->notifyAlreadyOpen();
     }
+}
+
+void MainWindow::setupThemeAwareIconStyling()
+{
+    // Create theme-aware icons for control buttons using SVG color replacement
+    ui->pauseButton->setIcon(ThemeColors::createThemedIcon(":/icons/pause.svg", ThemeColors::IconPrimary, this));
+    ui->resumeButton->setIcon(ThemeColors::createThemedIcon(":/icons/play.svg", ThemeColors::IconPrimary, this));
+    ui->abortButton->setIcon(ThemeColors::createThemedIcon(":/icons/stop.svg", ThemeColors::IconPrimary, this));
+    ui->sleepButton->setIcon(ThemeColors::createThemedIcon(":/icons/moon.svg", ThemeColors::IconPrimary, this));
+    
+    // Set action icons
+    ui->actionStart_Experiment->setIcon(ThemeColors::createThemedIcon(":/icons/document-plus.svg", ThemeColors::IconPrimary, this));
+    ui->actionCommunication->setIcon(ThemeColors::createThemedIcon(":/icons/computer-desktop.svg", ThemeColors::IconPrimary, this));
+    ui->actionTest_All_Connections->setIcon(ThemeColors::createThemedIcon(":/icons/link.svg", ThemeColors::IconPrimary, this));
+    ui->actionQuick_Experiment->setIcon(ThemeColors::createThemedIcon(":/icons/quickexpt.svg", ThemeColors::IconPrimary, this));
+    ui->actionStart_Sequence->setIcon(ThemeColors::createThemedIcon(":/icons/sequence.svg", ThemeColors::IconPrimary, this));
+    
+#ifdef BC_LIF
+    ui->actionLifConfig->setIcon(ThemeColors::createThemedIcon(":/icons/lif.svg", ThemeColors::IconPrimary, this));
+#endif
+
+    ui->actionRfConfig->setIcon(ThemeColors::createThemedIcon(":/icons/rf.svg", ThemeColors::IconPrimary, this));
+    
+    // Set button icons  
+    ui->acquireButton->setIcon(ThemeColors::createThemedIcon(":/icons/play-circle.svg", ThemeColors::IconPrimary, this));
+    ui->hardwareButton->setIcon(ThemeColors::createThemedIcon(":/icons/wrench-screwdriver.svg", ThemeColors::IconPrimary, this));
+    ui->settingsButton->setIcon(ThemeColors::createThemedIcon(":/icons/cog-6-tooth.svg", ThemeColors::IconSecondary, this));
+    ui->auxPlotButton->setIcon(ThemeColors::createThemedIcon(":/icons/chart-bar.svg", ThemeColors::IconSecondary, this));
+    ui->rollingPlotButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-path-rounded-square.svg", ThemeColors::IconSecondary, this));
+    ui->viewExperimentButton->setIcon(ThemeColors::createThemedIcon(":/icons/viewold.svg", ThemeColors::IconSecondary, this));
+    
+    // Set action icons
+    ui->viewExperimentAction->setIcon(ThemeColors::createThemedIcon(":/icons/viewold.svg", ThemeColors::IconSecondary, this));
+    ui->fontAction->setIcon(ThemeColors::createThemedIcon(":/icons/language.svg", ThemeColors::IconSecondary, this));
+    ui->savePathAction->setIcon(ThemeColors::createThemedIcon(":/icons/folder-open.svg", ThemeColors::IconSecondary, this));
+    
+    // Set tab icons
+    ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->ftmwTab), ThemeColors::createThemedIcon(":/icons/signal.svg", ThemeColors::IconPrimary, this));
+    ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->rollingDataTab), ThemeColors::createThemedIcon(":/icons/arrow-path-rounded-square.svg", ThemeColors::IconSecondary, this));
+    ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->auxDataTab), ThemeColors::createThemedIcon(":/icons/chart-bar.svg", ThemeColors::IconSecondary, this));
+#ifdef BC_LIF
+    ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->lifTab), ThemeColors::createThemedIcon(":/icons/sparkles.svg", ThemeColors::IconSecondary, this));
+#endif
+    
+    // Set menu icons
+    ui->menuRollingData->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-path-rounded-square.svg", ThemeColors::IconSecondary, this));
+    ui->menuAuxData->setIcon(ThemeColors::createThemedIcon(":/icons/chart-bar.svg", ThemeColors::IconSecondary, this));
 }

@@ -13,6 +13,7 @@
 #include <QTimer>
 
 #include <gui/widget/ftmwviewwidget.h>
+#include <gui/style/themecolors.h>
 #include <gui/widget/experimentviewwidget.h>
 #include <data/storage/settingsstorage.h>
 #include <data/storage/fidstoragebase.h>
@@ -449,12 +450,12 @@ void BCExpOverlayWidget::updateExperimentStatus()
 {
     if (d_experimentValid) {
         p_experimentStatusLabel->setText("✓ Valid experiment found");
-        p_experimentStatusLabel->setStyleSheet("QLabel { color: green; }");
+        p_experimentStatusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this)));
     } else {
         QString errorMessage;
         validateExperimentPath(getExperimentPath(), errorMessage);
         p_experimentStatusLabel->setText(QString("✗ %1").arg(errorMessage));
-        p_experimentStatusLabel->setStyleSheet("QLabel { color: red; }");
+        p_experimentStatusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusError, this)));
     }
 }
 
@@ -462,14 +463,14 @@ void BCExpOverlayWidget::updateFtStatus()
 {
     if (d_hasFtData) {
         p_configureFtButton->setText("FT Configured ✓");
-        p_configureFtButton->setStyleSheet("QPushButton { color: green; }");
+        p_configureFtButton->setStyleSheet(QString("QPushButton { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this)));
         p_ftStatusLabel->setText("FT data configured and ready.");
-        p_ftStatusLabel->setStyleSheet("QLabel { color: green; }");
+        p_ftStatusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this)));
     } else {
         p_configureFtButton->setText("Configure FT...");
         p_configureFtButton->setStyleSheet("");
         p_ftStatusLabel->setText("Click to configure FT processing settings for this overlay.");
-        p_ftStatusLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
+        p_ftStatusLabel->setStyleSheet(QString("QLabel { color: %1; font-style: italic; }").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
     }
 }
 
@@ -505,7 +506,7 @@ void BCExpOverlayWidget::configureForCreationContext()
     // Show helpful status message
     if (p_experimentStatusLabel) {
         p_experimentStatusLabel->setText("Select an experiment to create overlay");
-        p_experimentStatusLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
+        p_experimentStatusLabel->setStyleSheet(QString("QLabel { color: %1; font-style: italic; }").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
     }
     
     // Emphasize FT configuration requirement
@@ -515,7 +516,7 @@ void BCExpOverlayWidget::configureForCreationContext()
     
     if (p_ftStatusLabel) {
         p_ftStatusLabel->setText("FT configuration required - click 'Configure FT...' to begin");
-        p_ftStatusLabel->setStyleSheet("QLabel { color: orange; font-style: italic; }");
+        p_ftStatusLabel->setStyleSheet(QString("QLabel { color: %1; font-style: italic; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusWarning, this)));
     }
 }
 
@@ -532,7 +533,7 @@ void BCExpOverlayWidget::configureForSettingsContext()
             
             if (p_experimentStatusLabel) {
                 p_experimentStatusLabel->setText(info);
-                p_experimentStatusLabel->setStyleSheet("QLabel { color: blue; }");
+                p_experimentStatusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusInfo, this)));
             }
             
             // Show FT configuration status
@@ -543,7 +544,7 @@ void BCExpOverlayWidget::configureForSettingsContext()
                     .arg(ft.maxFreqMHz(), 0, 'f', 1)
                     .arg(ft.size());
                 p_ftStatusLabel->setText(ftInfo);
-                p_ftStatusLabel->setStyleSheet("QLabel { color: green; }");
+                p_ftStatusLabel->setStyleSheet(QString("QLabel { color: %1; }").arg(ThemeColors::getCSSColor(ThemeColors::StatusSuccess, this)));
             }
         }
     }
@@ -641,7 +642,7 @@ void BCExpOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
     p_ftStatusLabel->setMaximumHeight(60); // Prevent excessive expansion
     p_ftStatusLabel->setMinimumWidth(200); // Ensure sufficient width before wrapping
     p_ftStatusLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft); // Align to top for multi-line text
-    p_ftStatusLabel->setStyleSheet("QLabel { color: gray; font-style: italic; }");
+    p_ftStatusLabel->setStyleSheet(QString("QLabel { color: %1; font-style: italic; }").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
     
     ftLayout->addWidget(p_configureFtButton);
     ftLayout->addWidget(p_ftStatusLabel);

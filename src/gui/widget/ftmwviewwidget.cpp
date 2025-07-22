@@ -1,4 +1,5 @@
 #include <gui/widget/ftmwviewwidget.h>
+#include <gui/style/themecolors.h>
 
 #include <QThread>
 #include <QMessageBox>
@@ -23,6 +24,9 @@ FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path, bool ov
     ui(new Ui::FtmwViewWidget), d_currentExptNum(-1), d_currentSegment(-1), d_path(path), d_overlaysEnabled(overlaysEnabled)
 {
     ui->setupUi(main,this);
+    
+    // Set up theme-aware icons (override hardcoded icons from setupUi)
+    setupThemedIcons();
     
     // Create plot names list after UI is set up
     createPlotNamesList();
@@ -104,6 +108,28 @@ FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path, bool ov
     for (FtPlot* plot : ftPlots) {
         if (plot) {
             connect(plot, &ZoomPanPlot::curveMetadataChanged, this, &FtmwViewWidget::onCurveMetadataChanged);
+        }
+    }
+}
+
+void FtmwViewWidget::setupThemedIcons()
+{
+    // Override hardcoded icons from setupUi with theme-aware versions
+    auto toolbar = findChild<QToolBar*>();
+    if (toolbar) {
+        auto actions = toolbar->actions();
+        for (auto action : actions) {
+            if (action->text() == "Peak Up Options") {
+                action->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-trending-up.svg", ThemeColors::IconSecondary, this));
+            } else if (action->text() == "FID Processing Settings") {
+                action->setIcon(ThemeColors::createThemedIcon(":/icons/presentation-chart-line.svg", ThemeColors::IconPrimary, this));
+            } else if (action->text() == "Peak Find") {
+                action->setIcon(ThemeColors::createThemedIcon(":/icons/magnifying-glass-circle.svg", ThemeColors::IconPrimary, this));
+            } else if (action->text() == "Overlays") {
+                action->setIcon(ThemeColors::createThemedIcon(":/icons/squares-plus.svg", ThemeColors::IconSecondary, this));
+            } else if (action->text() == "Plot Settings") {
+                action->setIcon(ThemeColors::createThemedIcon(":/icons/presentation-chart-bar.svg", ThemeColors::IconSecondary, this));
+            }
         }
     }
 }

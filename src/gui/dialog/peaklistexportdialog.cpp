@@ -1,5 +1,6 @@
 #include "peaklistexportdialog.h"
 #include "ui_peaklistexportdialog.h"
+#include <gui/style/themecolors.h>
 
 #include <QFileDialog>
 #include <QMessageBox>
@@ -13,6 +14,11 @@ PeakListExportDialog::PeakListExportDialog(const QVector<QPointF> peakList, int 
     ui(new Ui::PeakListExportDialog), d_number(number), d_peakList(peakList)
 {
     ui->setupUi(this);
+    
+    // Override icons with theme-aware versions
+    ui->addShotButton->setIcon(ThemeColors::createThemedIcon(":/icons/plus.svg", ThemeColors::IconPrimary, this));
+    ui->removeShotButton->setIcon(ThemeColors::createThemedIcon(":/icons/minus.svg", ThemeColors::IconPrimary, this));
+    ui->insertShotButton->setIcon(ThemeColors::createThemedIcon(":/icons/go-last.svg", ThemeColors::IconSecondary, this));
 
     connect(ui->ftbRadioButton,&QRadioButton::toggled,ui->ftbOptionsBox,&QGroupBox::setEnabled);
     ui->ftbOptionsBox->setEnabled(false);

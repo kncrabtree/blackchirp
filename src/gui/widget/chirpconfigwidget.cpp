@@ -1,5 +1,6 @@
 #include "chirpconfigwidget.h"
 #include "ui_chirpconfigwidget.h"
+#include <gui/style/themecolors.h>
 
 #include <QMessageBox>
 #include <QSpinBox>
@@ -13,6 +14,17 @@ ChirpConfigWidget::ChirpConfigWidget(QWidget *parent) :
     ui(new Ui::ChirpConfigWidget), p_ctm(new ChirpTableModel(this)), d_rampOnly(false)
 {
     ui->setupUi(this);
+    
+    // Override icons with theme-aware versions - differentiated for clarity
+    ui->addButton->setIcon(ThemeColors::createThemedIcon(":/icons/plus-circle.svg", ThemeColors::IconPrimary, this));           // Add with content (filled circle)
+    ui->insertButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-turn-down-right.svg", ThemeColors::IconPrimary, this)); // Insert at position
+    ui->addEmptyButton->setIcon(ThemeColors::createThemedIcon(":/icons/plus.svg", ThemeColors::IconSecondary, this));          // Add empty placeholder (outline)
+    ui->insertEmptyButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-down.svg", ThemeColors::IconSecondary, this)); // Insert empty at position
+    ui->removeButton->setIcon(ThemeColors::createThemedIcon(":/icons/minus.svg", ThemeColors::IconPrimary, this));
+    ui->moveUpButton->setIcon(ThemeColors::createThemedIcon(":/icons/chevron-up.svg", ThemeColors::IconSecondary, this));
+    ui->moveDownButton->setIcon(ThemeColors::createThemedIcon(":/icons/chevron-down.svg", ThemeColors::IconSecondary, this));
+    ui->clearButton->setIcon(ThemeColors::createThemedIcon(":/icons/backspace.svg", ThemeColors::IconSecondary, this));
+    
     ui->chirpTable->setModel(p_ctm);
     ui->chirpTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 

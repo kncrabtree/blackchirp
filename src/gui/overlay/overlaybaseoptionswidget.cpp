@@ -9,6 +9,7 @@
 #include <QRegularExpression>
 #include <QPushButton>
 #include <limits>
+#include <gui/style/themecolors.h>
 
 OverlayBaseOptionsWidget::OverlayBaseOptionsWidget(const QStringList &plotNames, const Ft &currentFt, QWidget *parent)
     : QWidget(parent), SettingsStorage(BC::Key::OverlayBaseOptions::key), d_currentFt(currentFt), d_hasFtData(!currentFt.isEmpty())
@@ -42,7 +43,7 @@ void OverlayBaseOptionsWidget::setupUI()
     
     // Sanitized filename preview
     p_sanitizedLabelDisplay = new QLabel(this);
-    p_sanitizedLabelDisplay->setStyleSheet("color: #666666; font-style: italic; font-size: 11px;");
+    p_sanitizedLabelDisplay->setStyleSheet(QString("color: %1; font-style: italic; font-size: 11px;").arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
     p_sanitizedLabelDisplay->setWordWrap(false);
     p_sanitizedLabelDisplay->setMinimumWidth(200); // Prevent text wrapping
     identityLayout->addRow("Storage Name:", p_sanitizedLabelDisplay);

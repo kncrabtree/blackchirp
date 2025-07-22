@@ -2,6 +2,7 @@
 #include "unifiedoverlaydialog.h"
 #include "overlayconfiguredelegate.h"
 #include <gui/plot/curveappearancewidget.h>
+#include <gui/style/themecolors.h>
 #include <gui/plot/curveappearancepresetmanager.h>
 #include <gui/plot/presetsavedialog.h>
 #include <QVBoxLayout>
@@ -18,6 +19,7 @@
 #include <QColorDialog>
 #include <gui/widget/ftmwviewwidget.h>
 #include <gui/plot/blackchirpplotcurve.h>
+#include <gui/style/themecolors.h>
 
 OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number, const QVector<std::shared_ptr<OverlayBase>> &overlays)
     : QWidget{parent, Qt::Window}, SettingsStorage(BC::Key::OverlayManager::key), p_configureDelegate(nullptr), p_enabledDelegate(nullptr)
@@ -27,7 +29,7 @@ OverlayManagerWidget::OverlayManagerWidget(QWidget *parent, int number, const QV
         setWindowTitle(QString("Overlay Manager: Experiment %1").arg(number));
     else
         setWindowTitle("Overlay Manager: Main Window");
-    setWindowIcon(QIcon(":/icons/peak-find.svg")); // Temporary icon
+    setWindowIcon(ThemeColors::createThemedIcon(":/icons/magnifying-glass-circle.svg", ThemeColors::IconPrimary, this));
     setAttribute(Qt::WA_DeleteOnClose);
     resize(900, 400); // Increased width to accommodate all columns including type
 
@@ -69,7 +71,7 @@ void OverlayManagerWidget::setupUI()
     // Set up add button with dropdown
     setupAddButton();
 
-    p_removeAction = p_toolBar->addAction(QIcon(":/icons/remove.png"), "Remove Overlay");
+    p_removeAction = p_toolBar->addAction(ThemeColors::createThemedIcon(":/icons/minus.svg", ThemeColors::IconPrimary, this), "Remove Overlay");
     p_removeAction->setToolTip("Remove the selected overlay");
 
     // Add separator
@@ -155,7 +157,7 @@ void OverlayManagerWidget::setupAddButton()
 {
     // Create add button with dropdown menu
     p_addButton = new QToolButton(this);
-    p_addButton->setIcon(QIcon(":/icons/add.png"));
+    p_addButton->setIcon(ThemeColors::createThemedIcon(":/icons/plus.svg", ThemeColors::IconPrimary, this));
     p_addButton->setText("Add Overlay");
     p_addButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     p_addButton->setPopupMode(QToolButton::InstantPopup);
@@ -196,7 +198,7 @@ void OverlayManagerWidget::setupAddButton()
         }
 
         // Create action for this overlay type
-        QAction *action = p_addMenu->addAction(QIcon(":/icons/add.png"), menuItemName);
+        QAction *action = p_addMenu->addAction(ThemeColors::createThemedIcon(":/icons/plus.svg", ThemeColors::IconSecondary, this), menuItemName);
         action->setEnabled(enabled);
         d_addActions[typeValue] = action;
 
@@ -833,7 +835,7 @@ void OverlayManagerWidget::createProgressWidget()
     
     // Create progress label
     p_progressLabel = new QLabel("Writing overlay data...", p_progressWidget);
-    p_progressLabel->setStyleSheet("font-weight: bold; color: #0066CC;");
+    p_progressLabel->setStyleSheet(QString("font-weight: bold; color: %1;").arg(ThemeColors::getCSSColor(ThemeColors::StatusInfo, this)));
     
     // Create progress bar
     p_progressBar = new QProgressBar(p_progressWidget);
@@ -845,8 +847,10 @@ void OverlayManagerWidget::createProgressWidget()
     progressLayout->addWidget(p_progressBar);
     progressLayout->addStretch();
     
-    // Set widget background
-    p_progressWidget->setStyleSheet("background-color: #F0F8FF; border: 1px solid #CCCCCC; border-radius: 4px;");
+    // Set widget background with theme-aware colors
+    p_progressWidget->setStyleSheet(QString("background-color: %1; border: 1px solid %2; border-radius: 4px;")
+                                    .arg(ThemeColors::getThemeAwareColor(ThemeColors::StatusInfo, this).lighter(170).name())
+                                    .arg(ThemeColors::getCSSColor(ThemeColors::SubtleText, this)));
 }
 
 void OverlayManagerWidget::updateProgressDisplay(int pendingCount)
@@ -1120,7 +1124,7 @@ void OverlayManagerWidget::showContextMenu(const QPoint &position)
     contextMenu.addSeparator();
     
     // Add Remove action with delete icon
-    QAction *removeAction = contextMenu.addAction(QIcon(":/icons/remove.png"), "Remove Overlay");
+    QAction *removeAction = contextMenu.addAction(ThemeColors::createThemedIcon(":/icons/minus.svg", ThemeColors::IconSecondary, this), "Remove Overlay");
     removeAction->setToolTip("Remove this overlay from the plot");
     connect(removeAction, &QAction::triggered, [this, index]() {
         // Select the row and call remove

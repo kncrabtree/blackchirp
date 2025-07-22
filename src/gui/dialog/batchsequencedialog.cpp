@@ -1,4 +1,5 @@
 #include "batchsequencedialog.h"
+#include <gui/style/themecolors.h>
 
 using namespace BC::Key::SeqDialog;
 
@@ -7,6 +8,11 @@ BatchSequenceDialog::BatchSequenceDialog(QWidget *parent) :
     ui(new Ui::BatchSequenceDialog)
 {
     ui->setupUi(this);
+    
+    // Override icons with theme-aware versions
+    ui->configureButton->setIcon(ThemeColors::createThemedIcon(":/icons/cog-6-tooth.svg", ThemeColors::IconPrimary, this));
+    ui->cancelButton->setIcon(ThemeColors::createThemedIcon(":/icons/x-mark.svg", ThemeColors::IconPrimary, this));
+    ui->quickButton->setIcon(ThemeColors::createThemedIcon(":/icons/quickexpt.svg", ThemeColors::IconPrimary, this));
 
     connect(ui->cancelButton,&QPushButton::clicked,this,&BatchSequenceDialog::reject);
     connect(ui->quickButton,&QPushButton::clicked,this,[this](){ done(quickCode); });

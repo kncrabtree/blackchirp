@@ -122,6 +122,8 @@ public slots:
 
 private:
     Ui::FtmwViewWidget *ui;
+    
+    void setupThemedIcons();
 
     std::shared_ptr<FidStorageBase> ps_fidStorage;
     std::shared_ptr<OverlayStorage> ps_overlayStorage;
@@ -300,20 +302,20 @@ public:
 
         toolBar = new QToolBar(FtmwViewWidget);
         toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-        processingAct =toolBar->addAction(QIcon(QString(":/icons/labplot-xy-fourier-transform-curve.svg")),QString("FID Processing Settings"));
+        processingAct =toolBar->addAction(QIcon(QString(":/icons/presentation-chart-line.svg")),QString("FID Processing Settings"));
         processingAct->setCheckable(true);
 
         processingToolBar = new FtmwProcessingToolBar(main,FtmwViewWidget);
         processingToolBar->setVisible(false);
 
 
-        plotAction = toolBar->addAction(QIcon(QString(":/icons/view-media-visualization.svg")),QString("Plot Settings"));
+        plotAction = toolBar->addAction(QIcon(QString(":/icons/presentation-chart-bar.svg")),QString("Plot Settings"));
         plotAction->setCheckable(true);
 
         plotToolBar = new FtmwPlotToolBar(FtmwViewWidget);
         plotToolBar->setVisible(false);
 
-        auto peakupAction = toolBar->addAction(QIcon(":/icons/averaging.svg"),QString("Peak Up Options"));
+        auto peakupAction = toolBar->addAction(QIcon(":/icons/arrow-trending-up.svg"),QString("Peak Up Options"));
         auto peakupButton = dynamic_cast<QToolButton*>(toolBar->widgetForAction(peakupAction));
         auto peakupMenu = new QMenu;
         auto peakupWa = new QWidgetAction(peakupMenu);
@@ -338,10 +340,10 @@ public:
         peakupButton->setMenu(peakupMenu);
         peakupButton->setPopupMode(QToolButton::InstantPopup);
 
-        peakFindAction = toolBar->addAction(QIcon(":/icons/peak-find.svg"),QString("Peak Find"));
+        peakFindAction = toolBar->addAction(QIcon(":/icons/magnifying-glass-circle.svg"),QString("Peak Find"));
         peakFindAction->setEnabled(false);
 
-        overlayAction = toolBar->addAction(QIcon(":/icons/peak-find.svg"),QString("Overlays"));
+        overlayAction = toolBar->addAction(QIcon(":/icons/squares-plus.svg"),QString("Overlays"));
         overlayAction->setEnabled(false);
 
         auto *spacer = new QWidget;

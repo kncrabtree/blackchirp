@@ -1,6 +1,6 @@
 # Blackchirp
 
-![Blackchirp Logo](src/resources/icons/bc_logo_med.png)
+![Blackchirp Logo](src/resources/icons/bc_logo_large.png)
 
 Blackchirp is open-source data acquisition software for CP-FTMW spectroscopy. It is designed to control a variety of different CP-FTMW spectrometers with versatile and configurable hardware combinations. At minimum, Blackchirp can function simply by connecting to a high-speed digitizer, but it also supports tunable local oscillators, delay generators, mass flow controllers, analog/digital IO boards, pressure controllers, temperature sensors, and it features a versatile chirp editor which can write chirps or chirp sequences to arbitrary waveform generators. FIDs and FTs are displayed for the user in real time with customizable post-processing settings, allowing a user to monitor the progress during an acquisition. All of Blackchirp's data is written in plain-text semicolon-delimited CSV format, and a python module is available for importing the data and performing common processing tasks.
 

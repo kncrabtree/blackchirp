@@ -99,6 +99,7 @@ private:
     void removeExperimentWidget(const QString& path);
     void updateViewExperimentMenu();
     void showExistingExperiment(const QString& path);
+    void setupThemeAwareIconStyling();
 
     ProgramState d_state{Idle};
     int d_logCount{0};
