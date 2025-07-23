@@ -1114,6 +1114,7 @@ void CatalogOverlayWidget::createTypeSpecificSettingsUI(QGroupBox *parent)
     // Group 3: Action Controls
     auto actionLayout = new QHBoxLayout();
     p_convolveButton = new QPushButton("Convolve", convolutionContentWidget);
+    p_convolveButton->setIcon(ThemeColors::createThemedIcon(":/icons/calculator.svg", ThemeColors::IconPrimary, this));
     p_convolveButton->setEnabled(false);
     p_convolveButton->setMinimumHeight(30);
     actionLayout->addWidget(p_convolveButton);

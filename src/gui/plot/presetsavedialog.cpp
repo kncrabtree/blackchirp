@@ -1,5 +1,6 @@
 #include "presetsavedialog.h"
 #include "curveappearancepresetmanager.h"
+#include <gui/style/themecolors.h>
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -20,6 +21,9 @@ PresetSaveDialog::PresetSaveDialog(const QString &suggestedName,
 {
     setWindowTitle("Save Curve Appearance Preset");
     setModal(true);
+    
+    // Set BlackChirp branding
+    setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, this));
     setupUI();
     populateExistingPresets();
     
@@ -96,7 +100,9 @@ void PresetSaveDialog::setupUI()
     p_cancelButton = buttonBox->button(QDialogButtonBox::Cancel);
     
     p_okButton->setText("Save Preset");
+    p_okButton->setIcon(ThemeColors::createThemedIcon(":/icons/document-arrow-down.svg", ThemeColors::IconPrimary, this));
     p_cancelButton->setText("Cancel");
+    p_cancelButton->setIcon(ThemeColors::createThemedIcon(":/icons/x-mark.svg", ThemeColors::IconPrimary, this));
     
     p_mainLayout->addWidget(buttonBox);
     

@@ -26,6 +26,10 @@ QuickExptDialog::QuickExptDialog(const std::map<QString, QString> &hwl, QWidget 
     QDialog(parent), d_hardware{hwl}
 {
     setWindowTitle("Quick Experiment");
+    
+    // Set BlackChirp branding
+    setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, this));
+    
     auto vbl = new QVBoxLayout;
 
     auto tophbl = new QHBoxLayout;
@@ -74,8 +78,10 @@ QuickExptDialog::QuickExptDialog(const std::map<QString, QString> &hwl, QWidget 
     auto bl = new QHBoxLayout;
     auto ne = new QPushButton("New Experiment");
     p_cfgButton = new QPushButton("Configure Experiment");
+    p_cfgButton->setIcon(ThemeColors::createThemedIcon(":/icons/cog-6-tooth.svg", ThemeColors::IconPrimary, this));
     p_startButton = new QPushButton("Start Experiment");
     auto cb = new QPushButton("Cancel");
+    cb->setIcon(ThemeColors::createThemedIcon(":/icons/x-mark.svg", ThemeColors::IconPrimary, this));
 
     p_cfgButton->setEnabled(false);
     p_startButton->setEnabled(false);

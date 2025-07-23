@@ -562,6 +562,7 @@ void GenericXYOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
     p_headerLinesSpinBox->setValue(0);
     
     p_autoDetectButton = new QPushButton("Auto-Detect", formatGroup);
+    p_autoDetectButton->setIcon(ThemeColors::createThemedIcon(":/icons/cpu-chip.svg", ThemeColors::IconPrimary, this));
     p_autoDetectButton->setToolTip("Automatically detect delimiter, headers, and column structure");
     
     // Compact 2x2 grid layout
@@ -586,6 +587,7 @@ void GenericXYOverlayWidget::createSourceFileSettingsUI(QGroupBox *parent)
     p_yColumnCombo = new QComboBox(columnGroup);
     
     p_parseButton = new QPushButton("Parse File", columnGroup);
+    p_parseButton->setIcon(ThemeColors::createThemedIcon(":/icons/document-magnifying-glass.svg", ThemeColors::IconPrimary, this));
     p_parseButton->setEnabled(false);
     
     auto xColumnLabel = new QLabel("X Column:", columnGroup);

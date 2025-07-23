@@ -1,4 +1,5 @@
 #include "bcsavepathdialog.h"
+#include <gui/style/themecolors.h>
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -13,6 +14,9 @@
 
 BCSavePathDialog::BCSavePathDialog(QWidget *parent) : QDialog(parent), SettingsStorage()
 {
+    // Set BlackChirp branding
+    setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, this));
+    
     auto vbl = new QVBoxLayout;
 
     auto lbl = new QLabel(
@@ -34,6 +38,7 @@ When "Apply" is pressed, the directory you have chosen will be created if it doe
         p_lineEdit->setText(savePath);
 
     auto browse = new QPushButton("Browse");
+    browse->setIcon(ThemeColors::createThemedIcon(":/icons/folder-open.svg", ThemeColors::IconPrimary, this));
     connect(browse,&QAbstractButton::clicked,[this](){
         auto ret = QFileDialog::getExistingDirectory(nullptr,"",QDir::homePath());
         if(!ret.isEmpty())

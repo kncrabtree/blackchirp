@@ -847,14 +847,14 @@ void MainWindow::setLogIcon(LogHandler::MessageCode c)
             break;
         default:
             d_logIcon = c;
-            ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab),QIcon());
+            ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab), ThemeColors::createThemedIcon(":/icons/document-text.svg", ThemeColors::IconSecondary, this));
             break;
         }
     }
     else
     {
         d_logIcon = LogHandler::Normal;
-        ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab),QIcon());
+        ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->logTab), ThemeColors::createThemedIcon(":/icons/document-text.svg", ThemeColors::IconSecondary, this));
     }
 }
 
@@ -1304,6 +1304,10 @@ void MainWindow::setupThemeAwareIconStyling()
 #ifdef BC_LIF
     ui->mainTabWidget->setTabIcon(ui->mainTabWidget->indexOf(ui->lifTab), ThemeColors::createThemedIcon(":/icons/sparkles.svg", ThemeColors::IconSecondary, this));
 #endif
+    
+    // Set autoscale action icons
+    ui->actionAutoscale_Rolling->setIcon(ThemeColors::createThemedIcon(":/icons/arrows-pointing-out.svg", ThemeColors::IconSecondary, this));
+    ui->actionAutoscale_Aux->setIcon(ThemeColors::createThemedIcon(":/icons/arrows-pointing-out.svg", ThemeColors::IconSecondary, this));
     
     // Set menu icons
     ui->menuRollingData->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-path-rounded-square.svg", ThemeColors::IconSecondary, this));

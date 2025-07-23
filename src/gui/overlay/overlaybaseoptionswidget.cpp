@@ -72,6 +72,7 @@ void OverlayBaseOptionsWidget::setupUI()
     p_yScaleSpinBox->setKeyboardTracking(false); // Prevent updates while typing
     yScaleRow->addWidget(p_yScaleSpinBox);
     p_invertButton = new QPushButton("Invert", this);
+    p_invertButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrows-up-down.svg", ThemeColors::IconSecondary, this));
     p_invertButton->setMaximumWidth(60);
     yScaleRow->addWidget(p_invertButton);
     yScaleRow->addStretch();
@@ -90,6 +91,7 @@ void OverlayBaseOptionsWidget::setupUI()
     p_autoscalePercentageSpinBox->setKeyboardTracking(false);
     autoscaleRow->addWidget(p_autoscalePercentageSpinBox);
     p_autoscaleButton = new QPushButton("Autoscale", this);
+    p_autoscaleButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrows-pointing-out.svg", ThemeColors::IconSecondary, this));
     p_autoscaleButton->setMaximumWidth(80);
     autoscaleRow->addWidget(p_autoscaleButton);
     autoscaleRow->addStretch();

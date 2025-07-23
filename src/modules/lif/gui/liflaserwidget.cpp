@@ -1,4 +1,5 @@
 #include "liflaserwidget.h"
+#include <gui/style/themecolors.h>
 
 #include <QPushButton>
 #include <QDoubleSpinBox>
@@ -25,6 +26,7 @@ LifLaserWidget::LifLaserWidget(QWidget *parent)
     p_posBox->setDecimals(s.get(decimals,2));
 
     p_posSetButton = new QPushButton(QString("Set"));
+    p_posSetButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-right-circle.svg", ThemeColors::IconPrimary, this));
     connect(p_posSetButton,&QPushButton::clicked,this,[this](){
         p_posBox->setEnabled(false);
         p_posSetButton->setEnabled(false);
@@ -41,6 +43,7 @@ LifLaserWidget::LifLaserWidget(QWidget *parent)
         gl->addWidget(fl,1,0);
 
         p_flButton = new QPushButton(QString("Enable"));
+        p_flButton->setIcon(ThemeColors::createThemedIcon(":/icons/light-bulb.svg", ThemeColors::IconPrimary, this));
         p_flButton->setChecked(false);
         p_flButton->setCheckable(true);
         connect(p_flButton,&QPushButton::clicked,this,[this](bool en){

@@ -1,5 +1,6 @@
 #include <gui/dialog/communicationdialog.h>
 #include "ui_communicationdialog.h"
+#include <gui/style/themecolors.h>
 
 #include <QApplication>
 #include <QMessageBox>
@@ -14,6 +15,15 @@ CommunicationDialog::CommunicationDialog(QWidget *parent) :
      ui(new Ui::CommunicationDialog), d_storage(BC::Key::hw)
 {
 	ui->setupUi(this);
+	
+	// Set BlackChirp branding
+	setWindowIcon(ThemeColors::createThemedIcon(":/icons/bc_logo_trans.svg", ThemeColors::IconPrimary, this));
+	
+	// Override test button icons with theme-aware versions
+	ui->gpibTestButton->setIcon(ThemeColors::createThemedIcon(":/icons/check-circle.svg", ThemeColors::IconPrimary, this));
+	ui->tcpTestButton->setIcon(ThemeColors::createThemedIcon(":/icons/check-circle.svg", ThemeColors::IconPrimary, this));
+	ui->rs232TestButton->setIcon(ThemeColors::createThemedIcon(":/icons/check-circle.svg", ThemeColors::IconPrimary, this));
+	ui->customTestButton->setIcon(ThemeColors::createThemedIcon(":/icons/check-circle.svg", ThemeColors::IconPrimary, this));
 
 	//populate GPIB devices
     auto count = d_storage.getArraySize(BC::Key::Comm::gpib);
