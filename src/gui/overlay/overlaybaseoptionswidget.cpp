@@ -65,12 +65,10 @@ void OverlayBaseOptionsWidget::setupUI()
     // Y Scale with Invert button
     auto yScaleRow = new QHBoxLayout();
     yScaleRow->addWidget(new QLabel("Y Scale:", this));
-    p_yScaleSpinBox = new QDoubleSpinBox(this);
-    p_yScaleSpinBox->setRange(-1e10, 1e10);
-    p_yScaleSpinBox->setDecimals(4);
-    p_yScaleSpinBox->setSingleStep(1.0);
-    p_yScaleSpinBox->setKeyboardTracking(false); // Prevent updates while typing
-    yScaleRow->addWidget(p_yScaleSpinBox);
+    p_yScaleInputWidget = new ScientificInputWidget(this);
+    p_yScaleInputWidget->setSingleStep(1.0);
+    p_yScaleInputWidget->setKeyboardTracking(false); // Prevent updates while typing
+    yScaleRow->addWidget(p_yScaleInputWidget);
     p_invertButton = new QPushButton("Invert", this);
     p_invertButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrows-up-down.svg", ThemeColors::IconSecondary, this));
     p_invertButton->setMaximumWidth(60);
@@ -184,7 +182,7 @@ void OverlayBaseOptionsWidget::setupUI()
     connect(p_plotIdComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &OverlayBaseOptionsWidget::settingsChanged);
     
-    connect(p_yScaleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+    connect(p_yScaleInputWidget, QOverload<double>::of(&ScientificInputWidget::valueChanged),
             this, &OverlayBaseOptionsWidget::settingsChanged);
     connect(p_yOffsetSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
             this, &OverlayBaseOptionsWidget::settingsChanged);
@@ -209,7 +207,7 @@ void OverlayBaseOptionsWidget::initializeDefaults()
 {
     // Set default values
     p_labelLineEdit->clear(); // Empty label
-    p_yScaleSpinBox->setValue(1.0);
+    p_yScaleInputWidget->setValue(1.0);
     p_yOffsetSpinBox->setValue(0.0);
     p_xOffsetSpinBox->setValue(0.0);
     
@@ -262,7 +260,7 @@ QString OverlayBaseOptionsWidget::getPlotId() const
 
 double OverlayBaseOptionsWidget::getYScale() const
 {
-    return p_yScaleSpinBox->value();
+    return p_yScaleInputWidget->value();
 }
 
 double OverlayBaseOptionsWidget::getYOffset() const
@@ -298,7 +296,7 @@ void OverlayBaseOptionsWidget::setPlotId(const QString &plotId)
 
 void OverlayBaseOptionsWidget::setYScale(double yScale)
 {
-    p_yScaleSpinBox->setValue(yScale);
+    p_yScaleInputWidget->setValue(yScale);
 }
 
 void OverlayBaseOptionsWidget::setYOffset(double yOffset)

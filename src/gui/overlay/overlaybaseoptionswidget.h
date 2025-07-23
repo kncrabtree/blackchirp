@@ -19,6 +19,7 @@
 #include <data/experiment/overlaybase.h>
 #include <data/analysis/ft.h>
 #include <data/storage/settingsstorage.h>
+#include <gui/widget/scientificinputwidget.h>
 
 // Namespace for settings keys
 namespace BC::Key::OverlayBaseOptions {
@@ -80,7 +81,7 @@ private:
     QLineEdit *p_labelLineEdit;
     QLabel *p_sanitizedLabelDisplay;
     QComboBox *p_plotIdComboBox;
-    QDoubleSpinBox *p_yScaleSpinBox;
+    ScientificInputWidget *p_yScaleInputWidget;
     QPushButton *p_invertButton;
     QDoubleSpinBox *p_yOffsetSpinBox;
     QDoubleSpinBox *p_xOffsetSpinBox;
