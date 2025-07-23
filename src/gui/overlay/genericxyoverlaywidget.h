@@ -104,7 +104,6 @@ private:
     // Settings management - loadSettings already declared in protected section
     
     // Data validation
-    bool validateFileExists() const;
     bool validateColumns() const;
     bool validateDataRange() const;
     

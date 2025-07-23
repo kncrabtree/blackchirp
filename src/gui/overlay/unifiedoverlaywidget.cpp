@@ -492,6 +492,12 @@ void UnifiedOverlayWidget::setupTypeSpecificWidgetContext()
         p_typeSpecificWidget->setupForCreation();
     } else if (isSettingsContext() && d_overlay) {
         p_typeSpecificWidget->setupForSettings(d_overlay);
+        
+        // Trigger validation immediately after loading overlay settings
+        // This ensures the validation status is updated instead of showing "Validating settings..."
+        QMetaObject::invokeMethod(p_typeSpecificWidget, [this]() {
+            emit p_typeSpecificWidget->settingsChanged();
+        }, Qt::QueuedConnection);
     }
     
     // Configure context-aware UI behavior
