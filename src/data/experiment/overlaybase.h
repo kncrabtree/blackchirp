@@ -22,6 +22,7 @@ static const QString oMinFreqValue{"minFreqValue"};
 static const QString oMaxFreqEnabled{"maxFreqEnabled"};
 static const QString oMaxFreqValue{"maxFreqValue"};
 static const QString oEnabled{"enabled"};
+static const QString oComment{"comment"};
 static const QString overlaySettingsFile{"%1.settings.csv"};
 static const QString overlayDataFile{"%1.data.csv"};
 }
@@ -50,6 +51,7 @@ public:
     QString getSourceFile() const;
     QString getDestFile() const;
     QString getPlotId() const;
+    QString getComment() const;
     double getYScale() const;
     double getYOffset() const;
     double getXOffset() const;
@@ -73,6 +75,7 @@ public:
     void setSourceFile(const QString &newsourceFile);
     void setDestFile(const QString &newdestFile);
     void setPlotId(const QString &newplotId);
+    void setComment(const QString &newcomment);
     void setYScale(double newyScale);
     void setYOffset(double newyOffset);
     void setXOffset(double newxOffset);
@@ -102,7 +105,7 @@ private:
     virtual QVector<QPointF> _xyData() const = 0;
     
     OverlayType d_type;
-    QString d_label{""}, d_sourceFile{""}, d_destFile{""}, d_plotId{""};
+    QString d_label{""}, d_sourceFile{""}, d_destFile{""}, d_plotId{""}, d_comment{""};
     double d_yScale{1.0}, d_yOffset{0.0}, d_xOffset{0.0};
     
     // Frequency range filtering

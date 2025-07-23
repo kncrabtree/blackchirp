@@ -121,9 +121,9 @@ void OverlayManagerWidget::setupUI()
     connect(p_overlayTableView, &QTableView::customContextMenuRequested,
             this, &OverlayManagerWidget::showContextMenu);
     
-    // Enable double-click to configure overlay
+    // Enable double-click to configure overlay (but not on editable columns)
     connect(p_overlayTableView, &QTableView::doubleClicked,
-            this, &OverlayManagerWidget::onConfigureClicked);
+            this, &OverlayManagerWidget::onDoubleClicked);
 
     // Configure headers
     auto horizontalHeader = p_overlayTableView->horizontalHeader();
@@ -691,11 +691,11 @@ void OverlayManagerWidget::resizeColumnsToContents()
     
     auto horizontalHeader = p_overlayTableView->horizontalHeader();
     int columnCount = p_overlayModel->columnCount();
-    int sourceFileColumn = static_cast<int>(OverlayTableModel::SourceFileColumn);
+    int commentColumn = static_cast<int>(OverlayTableModel::CommentColumn);
     
-    // Resize all columns except the source file column to contents
+    // Resize all columns except the comment column to contents
     for (int i = 0; i < columnCount; ++i) {
-        if (i != sourceFileColumn) {
+        if (i != commentColumn) {
             p_overlayTableView->resizeColumnToContents(i);
             // Configure and Enabled columns should be fixed width, others interactive
             if (i == static_cast<int>(OverlayTableModel::ConfigureColumn) || 
@@ -707,9 +707,9 @@ void OverlayManagerWidget::resizeColumnsToContents()
         }
     }
     
-    // Set the source file column to stretch to fill remaining space
-    if (sourceFileColumn < columnCount) {
-        horizontalHeader->setSectionResizeMode(sourceFileColumn, QHeaderView::Stretch);
+    // Set the comment column to stretch to fill remaining space
+    if (commentColumn < columnCount) {
+        horizontalHeader->setSectionResizeMode(commentColumn, QHeaderView::Stretch);
     }
     
     // Set fixed width for configure and enabled columns with minimal padding
@@ -749,7 +749,7 @@ void OverlayManagerWidget::onModelDataChanged(const QModelIndex &topLeft, const 
             case OverlayTableModel::ConfigureColumn: // Configure - handled by delegate
             case OverlayTableModel::LabelColumn: // Label - doesn't affect plot display
             case OverlayTableModel::PlotIdColumn: // PlotId - not directly editable anymore
-            case OverlayTableModel::SourceFileColumn: // SourceFile - doesn't affect plot display
+            case OverlayTableModel::CommentColumn: // Comment - doesn't affect plot display
             case OverlayTableModel::OverlayTypeColumn: // Type - not editable
                 // No signal needed for these columns
                 break;
@@ -772,6 +772,25 @@ void OverlayManagerWidget::onSelectionChanged()
 {
     // Update button states when selection changes
     updateButtonStates();
+}
+
+void OverlayManagerWidget::onDoubleClicked(const QModelIndex &index)
+{
+    if (!index.isValid()) {
+        return;
+    }
+    
+    // Check if the double-clicked column is editable - if so, let the table handle it
+    int column = index.column();
+    if (column == static_cast<int>(OverlayTableModel::EnabledColumn) ||
+        column == static_cast<int>(OverlayTableModel::CommentColumn)) {
+        // These columns are editable, so don't open the configuration dialog
+        // The table view will handle the editing
+        return;
+    }
+    
+    // For non-editable columns, open the configuration dialog
+    onConfigureClicked(index);
 }
 
 void OverlayManagerWidget::onConfigureClicked(const QModelIndex &index)

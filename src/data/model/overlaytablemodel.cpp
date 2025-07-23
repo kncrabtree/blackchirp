@@ -52,8 +52,8 @@ QVariant OverlayTableModel::data(const QModelIndex &index, int role) const
             return overlay->getPlotId();
         case OverlayTypeColumn:
             return getOverlayTypeName(overlay->type());
-        case SourceFileColumn:
-            return overlay->getSourceFile();
+        case CommentColumn:
+            return overlay->getComment();
         }
     }
     else if (role == Qt::TextAlignmentRole)
@@ -97,9 +97,18 @@ bool OverlayTableModel::setData(const QModelIndex &index, const QVariant &value,
     case OverlayTypeColumn:
         // Overlay type is not editable - determined at creation time
         return false;
-    case SourceFileColumn:
-        // Source file is not editable
-        return false;
+    case CommentColumn:
+        // Comment is editable with semicolon validation
+        {
+            QString comment = value.toString();
+            if (comment.contains(';')) {
+                // Reject comments containing semicolons to maintain CSV format integrity
+                return false;
+            }
+            overlay->setComment(comment);
+            emit dataChanged(index, index);
+            return true;
+        }
     default:
         return false;
     }
@@ -126,8 +135,8 @@ QVariant OverlayTableModel::headerData(int section, Qt::Orientation orientation,
             return QString("Plot ID");
         case OverlayTypeColumn:
             return QString("Type");
-        case SourceFileColumn:
-            return QString("Source File");
+        case CommentColumn:
+            return QString("Comment");
         }
     }
 
@@ -143,6 +152,11 @@ Qt::ItemFlags OverlayTableModel::flags(const QModelIndex &index) const
 
     // EnabledColumn is editable via checkbox delegate
     if (index.column() == EnabledColumn) {
+        flags |= Qt::ItemIsEditable;
+    }
+    
+    // CommentColumn is directly editable
+    if (index.column() == CommentColumn) {
         flags |= Qt::ItemIsEditable;
     }
     
@@ -369,9 +383,9 @@ void OverlayTableModel::sort(int column, Qt::SortOrder order)
             aValue = getOverlayTypeName(a->type());
             bValue = getOverlayTypeName(b->type());
             break;
-        case SourceFileColumn:
-            aValue = a->getSourceFile();
-            bValue = b->getSourceFile();
+        case CommentColumn:
+            aValue = a->getComment();
+            bValue = b->getComment();
             break;
         default:
             return false; // No sorting for unknown columns

@@ -8,11 +8,13 @@
 #include <QLabel>
 #include <QRegularExpression>
 #include <QPushButton>
+#include <QRegularExpressionValidator>
 #include <limits>
 #include <gui/style/themecolors.h>
 
 OverlayBaseOptionsWidget::OverlayBaseOptionsWidget(const QStringList &plotNames, const Ft &currentFt, QWidget *parent)
-    : QWidget(parent), SettingsStorage(BC::Key::OverlayBaseOptions::key), d_currentFt(currentFt), d_hasFtData(!currentFt.isEmpty())
+    : QWidget(parent), SettingsStorage(BC::Key::OverlayBaseOptions::key), d_currentFt(currentFt), d_hasFtData(!currentFt.isEmpty()),
+      p_commentValidator(nullptr)
 {
     setupUI();
     
@@ -50,6 +52,14 @@ void OverlayBaseOptionsWidget::setupUI()
     
     // Connect label changes to update sanitized preview (label doesn't emit settingsChanged)
     connect(p_labelLineEdit, &QLineEdit::textChanged, this, &OverlayBaseOptionsWidget::onLabelChanged);
+    
+    // Comment field with semicolon validation
+    p_commentLineEdit = new QLineEdit(this);
+    p_commentLineEdit->setPlaceholderText("Enter description or comment");
+    p_commentValidator = new QRegularExpressionValidator(QRegularExpression("[^;]*"), this);
+    p_commentLineEdit->setValidator(p_commentValidator);
+    p_commentLineEdit->setToolTip("Comments cannot contain semicolons (;) due to file format constraints");
+    identityLayout->addRow("Comment:", p_commentLineEdit);
     
     // Plot ID
     p_plotIdComboBox = new QComboBox(this);
@@ -181,6 +191,8 @@ void OverlayBaseOptionsWidget::setupUI()
     // Connect all non-label widgets to emit settingsChanged signal for real-time updates
     connect(p_plotIdComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &OverlayBaseOptionsWidget::settingsChanged);
+    connect(p_commentLineEdit, &QLineEdit::editingFinished,
+            this, &OverlayBaseOptionsWidget::settingsChanged);
     
     connect(p_yScaleInputWidget, QOverload<double>::of(&ScientificInputWidget::valueChanged),
             this, &OverlayBaseOptionsWidget::settingsChanged);
@@ -207,6 +219,7 @@ void OverlayBaseOptionsWidget::initializeDefaults()
 {
     // Set default values
     p_labelLineEdit->clear(); // Empty label
+    p_commentLineEdit->clear(); // Empty comment
     p_yScaleInputWidget->setValue(1.0);
     p_yOffsetSpinBox->setValue(0.0);
     p_xOffsetSpinBox->setValue(0.0);
@@ -258,6 +271,11 @@ QString OverlayBaseOptionsWidget::getPlotId() const
     return p_plotIdComboBox->currentText();
 }
 
+QString OverlayBaseOptionsWidget::getComment() const
+{
+    return p_commentLineEdit->text();
+}
+
 double OverlayBaseOptionsWidget::getYScale() const
 {
     return p_yScaleInputWidget->value();
@@ -292,6 +310,11 @@ void OverlayBaseOptionsWidget::setPlotId(const QString &plotId)
     if (index >= 0) {
         p_plotIdComboBox->setCurrentIndex(index);
     }
+}
+
+void OverlayBaseOptionsWidget::setComment(const QString &comment)
+{
+    p_commentLineEdit->setText(comment);
 }
 
 void OverlayBaseOptionsWidget::setYScale(double yScale)
@@ -387,6 +410,7 @@ void OverlayBaseOptionsWidget::applyToOverlay(std::shared_ptr<OverlayBase> overl
     
     overlay->setLabel(getLabel());
     overlay->setPlotId(getPlotId());
+    overlay->setComment(getComment());
     overlay->setYScale(getYScale());
     overlay->setYOffset(getYOffset());
     overlay->setXOffset(getXOffset());

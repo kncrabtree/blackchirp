@@ -108,6 +108,11 @@ bool OverlayBase::getEnabled() const
     return d_enabled;
 }
 
+QString OverlayBase::getComment() const
+{
+    return d_comment;
+}
+
 double OverlayBase::yMax() const
 {
     // Ensure cache is up to date
@@ -200,6 +205,12 @@ void OverlayBase::setEnabled(bool enabled)
     d_curveMetadata[BC::Key::bcCurveVisible] = enabled;
 }
 
+void OverlayBase::setComment(const QString &newcomment)
+{
+    d_modified = true;
+    d_comment = newcomment;
+}
+
 void OverlayBase::setPreview(bool preview)
 {
     d_preview = preview;
@@ -236,6 +247,7 @@ void OverlayBase::storeMetadata(std::map<QString,QVariant> &m)
     m.emplace(oMaxFreqEnabled,d_maxFreqEnabled);
     m.emplace(oMaxFreqValue,d_maxFreqValue);
     m.emplace(oEnabled,d_enabled);
+    m.emplace(oComment,d_comment);
     
     // Add curve metadata with "curve_" prefix
     for(const auto& [key, value] : d_curveMetadata) {
@@ -286,6 +298,9 @@ void OverlayBase::retrieveMetadata(const std::map<QString,QVariant> &m)
     it = m.find(oEnabled);
     if(it != m.end())
         d_enabled = it->second.toBool();
+    it = m.find(oComment);
+    if(it != m.end())
+        d_comment = it->second.toString();
     
     // Invalidate cache after loading metadata
     invalidateCache();

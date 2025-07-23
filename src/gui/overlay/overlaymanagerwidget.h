@@ -58,6 +58,7 @@ public slots:
 private slots:
     void onModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight);
     void onSelectionChanged();
+    void onDoubleClicked(const QModelIndex &index);
     void onConfigureClicked(const QModelIndex &index);
     void onOverlaySettingsChanged(std::shared_ptr<OverlayBase> overlay);
     void showContextMenu(const QPoint &position);

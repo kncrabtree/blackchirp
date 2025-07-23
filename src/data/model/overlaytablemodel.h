@@ -44,7 +44,7 @@ public:
         LabelColumn = 2,
         PlotIdColumn = 3,
         OverlayTypeColumn = 4,
-        SourceFileColumn = 5,
+        CommentColumn = 5,
         ColumnCount = 6
     };
 

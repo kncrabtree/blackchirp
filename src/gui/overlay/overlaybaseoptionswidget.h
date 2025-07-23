@@ -14,6 +14,7 @@
 #include <QLabel>
 #include <QStringList>
 #include <QPushButton>
+#include <QRegularExpressionValidator>
 #include <memory>
 
 #include <data/experiment/overlaybase.h>
@@ -39,6 +40,7 @@ public:
     // Getters
     QString getLabel() const;
     QString getPlotId() const;
+    QString getComment() const;
     double getYScale() const;
     double getYOffset() const;
     double getXOffset() const;
@@ -51,6 +53,7 @@ public:
     // Setters
     void setLabel(const QString &label);
     void setPlotId(const QString &plotId);
+    void setComment(const QString &comment);
     void setYScale(double yScale);
     void setYOffset(double yOffset);
     void setXOffset(double xOffset);
@@ -80,6 +83,7 @@ private:
     // UI elements
     QLineEdit *p_labelLineEdit;
     QLabel *p_sanitizedLabelDisplay;
+    QLineEdit *p_commentLineEdit;
     QComboBox *p_plotIdComboBox;
     ScientificInputWidget *p_yScaleInputWidget;
     QPushButton *p_invertButton;
@@ -99,6 +103,9 @@ private:
     
     // X range values for default initialization
     double d_xRangeMin, d_xRangeMax;
+    
+    // Semicolon validator for comment field
+    QRegularExpressionValidator *p_commentValidator;
 
     void setupUI();
     void initializeDefaults();
