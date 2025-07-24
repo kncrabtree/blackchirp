@@ -10,6 +10,7 @@ User Guide
    user_guide/cp-ftmw
    user_guide/rolling-aux-data
    user_guide/plot_controls
+   user_guide/overlays
    user_guide/experiment_setup
    user_guide/data_storage
    user_guide/hardware_menu
