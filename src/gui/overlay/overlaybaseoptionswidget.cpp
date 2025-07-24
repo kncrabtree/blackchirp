@@ -473,8 +473,8 @@ QString OverlayBaseOptionsWidget::sanitizeLabel(const QString& label) const
 {
     QString sanitized = label;
     
-    // Remove or replace characters that are problematic for filenames
-    sanitized.replace(QRegularExpression("[/\\\\:*?\"<>|]"), "_");
+    // Remove or replace characters that are problematic for filenames or CSV parsing
+    sanitized.replace(QRegularExpression("[/\\\\:*?\"<>|;]"), "_");
     
     // Trim whitespace
     sanitized = sanitized.trimmed();

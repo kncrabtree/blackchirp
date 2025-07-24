@@ -201,6 +201,7 @@ The overlay table provides complete control over your overlays with the followin
   - User-editable names for easy identification
   - Must be edited through Configure dialog
   - Overlay labels must be unique within an experiment
+  - Special characters (including semicolons) are automatically replaced with underscores
 
 **Plot Assignment**
   - Shows which plot displays the overlay
