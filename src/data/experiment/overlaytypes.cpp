@@ -358,6 +358,94 @@ QVector<QPointF> CatalogOverlay::generateConvolvedSpectrum() const
     return spectrum;
 }
 
+QVector<QPointF> CatalogOverlay::generateConvolvedSpectrum(ProgressCallback progressCallback) const
+{
+    if (d_catalogData.isEmpty()) {
+        return QVector<QPointF>();
+    }
+
+    // Pre-filter transitions outside range; place into lightweight structures
+    QVector<double> x0, y0;
+    x0.reserve(d_catalogData.size());
+    y0.reserve(d_catalogData.size());
+    for(const auto &trans : d_catalogData.transitions())
+    {
+        if (trans.frequency >= d_convolutionMinFreq && trans.frequency <= d_convolutionMaxFreq)
+        {
+            x0.append(trans.frequency);
+            y0.append(trans.intensity);
+        }
+    }
+    
+    // If no progress callback provided, fall back to original implementation
+    if (!progressCallback) {
+        return generateConvolvedSpectrum();
+    }
+    
+    // Calculate chunking parameters
+    int chunkSize = calculateChunkSize(d_numConvolutionPoints, x0.size());
+    int numChunks = (d_numConvolutionPoints + chunkSize - 1) / chunkSize;
+    
+    // Generate frequency grid using number of points
+    double pointSpacing = calculatePointSpacing();
+    QVector<QPointF> spectrum;
+    spectrum.reserve(d_numConvolutionPoints);
+
+    // Store lineshape function pointer
+    auto f = &CatalogOverlay::lorentzianProfile;
+    if(d_lineshapeType == Gaussian)
+        f = &CatalogOverlay::gaussianProfile;
+    
+    // Process in chunks
+    for (int chunkIdx = 0; chunkIdx < numChunks; ++chunkIdx) {
+        // Calculate chunk boundaries
+        int startIdx = chunkIdx * chunkSize;
+        int endIdx = std::min(startIdx + chunkSize, d_numConvolutionPoints);
+        
+        // Process chunk
+        for (int i = startIdx; i < endIdx; ++i) {
+            double yy = 0.0;
+            double gridFreq = d_convolutionMinFreq + i * pointSpacing;
+            for (int j = 0; (j < x0.size()) && (j < y0.size()); ++j) {
+                yy += y0.at(j) * (this->*f)(gridFreq, x0.at(j), d_linewidth);
+            }
+            spectrum.append({gridFreq, yy});
+        }
+        
+        // Report progress and check for cancellation
+        if (progressCallback) {
+            int progressPercent = (chunkIdx + 1) * 100 / numChunks;
+            QString message = QString("Processed %1/%2 chunks").arg(chunkIdx + 1).arg(numChunks);
+            bool shouldContinue = progressCallback(progressPercent, message);
+            if (!shouldContinue) {
+                // Operation was cancelled - return empty result
+                return QVector<QPointF>();
+            }
+        }
+    }
+    
+    return spectrum;
+}
+
+int CatalogOverlay::calculateChunkSize(int numConvolutionPoints, int numTransitions) const
+{
+    // Target: 50M operations per chunk for ~100ms execution time
+    const int targetOpsPerChunk = 50000000;
+    const int opsPerPoint = numTransitions * 15; // Estimated ops per convolution point
+    
+    if (opsPerPoint <= 0) {
+        return std::min(numConvolutionPoints, 10000); // Safe fallback
+    }
+    
+    int idealChunkSize = targetOpsPerChunk / opsPerPoint;
+    
+    // Clamp to reasonable bounds: at least 1000 points, at most 100000 points
+    int clampedSize = std::clamp(idealChunkSize, 1000, 100000);
+    
+    // Don't make chunks larger than the total number of points
+    return std::min(clampedSize, numConvolutionPoints);
+}
+
 double CatalogOverlay::lorentzianProfile(double x, double x0, double fwhmKHz) const
 {
     // Convert kHz FWHM to MHz for calculation

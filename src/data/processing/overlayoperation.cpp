@@ -214,15 +214,35 @@ std::shared_ptr<OverlayBase> ConvolutionOperation::execute()
         checkCancellation();
         
         if (d_convolutionEnabled) {
-            updateProgress(50, "Performing convolution...");
+            updateProgress(5, "Performing convolution...");
             
             // Set cache to pending state before triggering convolution
             catalogOverlay->setCachePending();
             
-            // Generate convolved spectrum and update cache
-            auto convolvedData = catalogOverlay->generateConvolvedSpectrum();
+            // Create progress callback that maps chunk progress to our 5%-99% range
+            auto progressCallback = [this](int chunkPercent, const QString& message) -> bool {
+                // Check for cancellation
+                if (d_cancelled.load()) {
+                    return false; // Signal cancellation
+                }
+                
+                // Map chunk progress to 5%-99% range
+                int totalPercent = 5 + (chunkPercent * 94 / 100);
+                updateProgress(totalPercent, message);
+                return true; // Continue processing
+            };
             
-            updateProgress(90, "Finalizing convolution...");
+            // Generate convolved spectrum using chunked processing
+            auto convolvedData = catalogOverlay->generateConvolvedSpectrum(progressCallback);
+            
+            // Check if operation was cancelled (empty result indicates cancellation)
+            if (convolvedData.isEmpty() && d_cancelled.load()) {
+                catalogOverlay->invalidateConvolutionCache();
+                updateProgress(0, "Convolution cancelled");
+                return catalogOverlay;
+            }
+            
+            updateProgress(99, "Finalizing convolution...");
             checkCancellation();
             
             // Mark cache as valid with the convolved data

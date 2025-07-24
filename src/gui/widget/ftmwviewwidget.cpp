@@ -132,6 +132,11 @@ void FtmwViewWidget::setupThemedIcons()
             }
         }
     }
+    
+    // Theme the reset averages button
+    if (ui->resetAveragesButton) {
+        ui->resetAveragesButton->setIcon(ThemeColors::createThemedIcon(":/icons/arrow-path.svg", ThemeColors::IconSecondary, this));
+    }
 }
 
 FtmwViewWidget::~FtmwViewWidget()

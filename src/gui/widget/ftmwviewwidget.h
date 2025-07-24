@@ -330,7 +330,7 @@ public:
         avgLbl->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
         peakupFl->addRow(avgLbl,averagesSpinbox);
 
-        resetAveragesButton = new QPushButton(QIcon(":/icons/reset.svg"),QString("Reset Averages"));
+        resetAveragesButton = new QPushButton(QIcon(":/icons/arrow-path.svg"),QString("Reset Averages"));
         resetAveragesButton->setEnabled(false);
         peakupFl->addRow(resetAveragesButton);
 

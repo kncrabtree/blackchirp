@@ -4,6 +4,7 @@
 #include <data/experiment/overlaybase.h>
 #include <data/analysis/ft.h>
 #include <data/experiment/catalogdata.h>
+#include <functional>
 
 namespace BC::Key::Overlay {
 // FT metadata keys
@@ -125,8 +126,13 @@ public:
                                double linewidth, double minFreq, double maxFreq, 
                                int numPoints);
                                
+    // Progress callback type for chunked convolution
+    // Should return true to continue processing, false to cancel
+    using ProgressCallback = std::function<bool(int percentage, const QString& message)>;
+    
     // Generate convolved spectrum from catalog data
     QVector<QPointF> generateConvolvedSpectrum() const;
+    QVector<QPointF> generateConvolvedSpectrum(ProgressCallback progressCallback) const;
 
     // Cache state management for background operations
     void invalidateConvolutionCache();
@@ -148,6 +154,9 @@ private:
     // Lineshape functions (x and x0 in MHz, width in kHz)
     double lorentzianProfile(double x, double x0, double fwhmKHz) const;
     double gaussianProfile(double x, double x0, double fwhmKHz) const;
+    
+    // Chunked processing support
+    int calculateChunkSize(int numConvolutionPoints, int numTransitions) const;
     
     // Data members
     CatalogData d_catalogData;

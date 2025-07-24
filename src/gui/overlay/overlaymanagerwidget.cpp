@@ -78,7 +78,7 @@ void OverlayManagerWidget::setupUI()
     p_toolBar->addSeparator();
 
     // Add raise parent action
-    p_raiseParentAction = p_toolBar->addAction(QIcon(":/icons/go-up.svg"), "Show Parent");
+    p_raiseParentAction = p_toolBar->addAction(ThemeColors::createThemedIcon(":/icons/arrow-up.svg", ThemeColors::IconPrimary, this), "Show Parent");
     p_raiseParentAction->setToolTip("Bring the parent window to front");
 
     // Add spacer

@@ -440,6 +440,7 @@ void CatalogOverlayWidget::onConvolutionEnabledToggled(bool enabled)
 void CatalogOverlayWidget::onLineshapeTypeChanged(int index)
 {
     Q_UNUSED(index);
+    updateConvolutionButtonState();
     emit settingsChanged();
 }
 
@@ -751,6 +752,9 @@ void CatalogOverlayWidget::triggerBackgroundConvolution()
     d_currentConvolutionId = manager.queueOperation(convolutionOp, OverlayProcessManager::Priority::High);
     d_convolutionInProgress = true;
     
+    // Update button state to show "Cancel"
+    updateConvolutionButtonState();
+    
     // Emit progress operation started signal
     emit progressOperationStarted("Updating convolution...");
 }
@@ -762,6 +766,18 @@ void CatalogOverlayWidget::cancelPendingConvolution()
         manager.cancelOperation(d_currentConvolutionId);
         d_currentConvolutionId.clear();
         d_convolutionInProgress = false;
+        
+        // Reset cache state on cancellation
+        auto catalogOverlay = std::dynamic_pointer_cast<CatalogOverlay>(d_overlay);
+        if (catalogOverlay) {
+            catalogOverlay->invalidateConvolutionCache();
+        }
+        
+        // Reset convolution state so button becomes enabled again
+        d_lastConvolutionState.convolutionPerformed = false;
+        
+        // Update button state back to normal
+        updateConvolutionButtonState();
     }
 }
 
@@ -800,6 +816,9 @@ void CatalogOverlayWidget::onConvolutionOperationCompleted(const QString &operat
         d_overlay = result;
     }
     
+    // Update button state back to normal
+    updateConvolutionButtonState();
+    
     emit progressOperationFinished();
     emit settingsChanged(); // Trigger UI updates
 }
@@ -819,6 +838,12 @@ void CatalogOverlayWidget::onConvolutionOperationFailed(const QString &operation
         catalogOverlay->invalidateConvolutionCache();
     }
     
+    // Reset convolution state so button becomes enabled again
+    d_lastConvolutionState.convolutionPerformed = false;
+    
+    // Update button state back to normal
+    updateConvolutionButtonState();
+    
     qWarning() << "Convolution operation failed:" << error;
     emit progressOperationFinished();
 }
@@ -837,6 +862,12 @@ void CatalogOverlayWidget::onConvolutionOperationCancelled(const QString &operat
     if (catalogOverlay) {
         catalogOverlay->invalidateConvolutionCache();
     }
+    
+    // Reset convolution state so button becomes enabled again
+    d_lastConvolutionState.convolutionPerformed = false;
+    
+    // Update button state back to normal
+    updateConvolutionButtonState();
     
     emit progressOperationFinished();
 }
@@ -1168,6 +1199,20 @@ void CatalogOverlayWidget::updateConvolutionButtonState()
         return;
     }
     
+    if (d_convolutionInProgress) {
+        // Show cancel button during processing
+        p_convolveButton->setText("Cancel");
+        p_convolveButton->setIcon(ThemeColors::createThemedIcon(":/icons/x-mark.svg", ThemeColors::StatusError, this));
+        p_convolveButton->setToolTip("Cancel ongoing convolution");
+        p_convolveButton->setEnabled(true);
+        return;
+    }
+    
+    // Normal convolution button state
+    p_convolveButton->setText("Convolve");
+    p_convolveButton->setIcon(ThemeColors::createThemedIcon(":/icons/calculator.svg", ThemeColors::IconPrimary, this));
+    p_convolveButton->setToolTip("Apply convolution to catalog data");
+    
     ConvolutionState current = getCurrentConvolutionState();
     
     // Enable button if:
@@ -1178,9 +1223,6 @@ void CatalogOverlayWidget::updateConvolutionButtonState()
     
     // Only enable if convolution is enabled and we have valid data
     shouldEnable = shouldEnable && current.enabled && isDataValid();
-    
-    // Don't enable during convolution processing
-    shouldEnable = shouldEnable && !d_convolutionInProgress;
     
     p_convolveButton->setEnabled(shouldEnable);
 }
@@ -1225,7 +1267,13 @@ bool CatalogOverlayWidget::overlayHasMatchingConvolutionData() const
 
 void CatalogOverlayWidget::onConvolveButtonClicked()
 {
-    if (!isDataValid() || d_convolutionInProgress) {
+    if (d_convolutionInProgress) {
+        // Cancel operation
+        cancelPendingConvolution();
+        return;
+    }
+    
+    if (!isDataValid()) {
         return;
     }
     
@@ -1233,7 +1281,7 @@ void CatalogOverlayWidget::onConvolveButtonClicked()
     d_lastConvolutionState = getCurrentConvolutionState();
     d_lastConvolutionState.convolutionPerformed = true;
     
-    // Update button state (should disable it)
+    // Update button state (should show "Cancel")
     updateConvolutionButtonState();
     
     // Trigger the background convolution

@@ -460,8 +460,7 @@ void GenericXYOverlayWidget::onAutoDetectClicked()
 
 void GenericXYOverlayWidget::onFilteringChanged()
 {
-    // Save filtering settings and emit signals without re-parsing
-    saveSettings();
+    // Emit signals without re-parsing (don't save settings here - only save on dialog accept)
     emit settingsChanged();
 }
 
