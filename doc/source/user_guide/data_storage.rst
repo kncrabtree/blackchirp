@@ -320,3 +320,74 @@ The ``FtUnits`` value refers to a scaling factor of 10\ :sup:`N` (i.e., a settin
 
 .. math::
    f(n;\beta) = \frac{I_0\left(\beta\sqrt{1-\left[\frac{2x}{N-1}\right]^2}\right)}{I_0(\beta)},\quad x = n-\frac{N-1}{2}
+
+Overlays
+--------
+
+When `overlays <overlays.html>`_ are created for an experiment, their data and settings are automatically saved in an ``overlays`` subfolder within the experiment directory. This allows overlays to be restored when the experiment is reopened. The overlay storage system uses a combination of CSV files to preserve both the overlay data and all configuration settings.
+
+overlays.csv
+............
+
+This master file contains the list of all overlays associated with the experiment and tracks which overlays are currently active. Each overlay is identified by its label, and the value indicates the overlay type: 0 = Blackchirp Experiment, 1 = Catalog, 2 = Generic XY Data. The file also stores version information for compatibility tracking. Example::
+
+  ObjKey;Value
+  1012;2
+  2638;0
+  BCBuildVersion;v1.0.0-release-134-g0d7631d
+  BCMajorVersion;1
+  BCMinorVersion;1
+  BCPatchVersion;0
+  BCReleaseVersion;devel
+  Exp17;0
+  c047527_full;1
+
+Individual Overlay Files
+........................
+
+For each overlay listed in ``overlays.csv``, two additional files are created:
+
+**[label].settings.csv**
+  Contains all configuration parameters for the overlay, including:
+  
+  - Source file path and overlay type-specific settings
+  - Curve appearance properties (color, line style, thickness, visibility)
+  - Data processing parameters (scaling, offsets, frequency filtering)
+  - Plot assignment and display preferences
+  - Version information for compatibility
+
+  Example for a catalog overlay::
+  
+    ObjKey;Value
+    catalogConvolutionEnabled;false
+    catalogLineshapeType;1
+    catalogLinewidthKHz;100
+    catalogTransitionCount;87
+    curve_color;#40963a
+    curve_thickness;2
+    enabled;true
+    label;c047527_full
+    sourceFile;/path/to/catalog.cat
+    yScale;-25056766.9100865
+
+**[label].data.csv**
+  Contains the processed overlay data ready for display, with columns for frequency (X) and intensity (Y) values. The data format varies by overlay type:
+  
+  - **Catalog overlays**: Contains frequencies and intensities of peaks, along with other transition metadata (quantum numbers, etc).
+  - **Generic XY overlays**: Contains the parsed and filtered XY data from the source file  
+  - **Blackchirp Experiment overlays**: Contains the Fourier transform data from the referenced experiment
+
+  The data files use standard CSV format with semicolon separators, maintaining consistency with other Blackchirp data files.
+
+Storage Benefits
+................
+
+This overlay storage system provides several advantages:
+
+- **Session Persistence**: Overlays are automatically restored when reopening experiments
+- **Reproducibility**: All settings and source file references are preserved
+- **Portability**: Overlays are bundled with the experiment and can be loaded on other computers
+- **Version Compatibility**: Version tracking enables future backward compatibility
+- **Performance**: Cached data files enable fast overlay loading without reprocessing
+
+The overlay storage follows Blackchirp's standard CSV format conventions, ensuring the data remains accessible and human-readable while maintaining compatibility with external analysis tools.
