@@ -271,7 +271,7 @@ public:
 
     /*!
      * \brief Constructor that explicitly sets organization name and application
-     * name (used for unit tests; should not be used directly).
+     * name (used for unit tests and reading settings from other applications).
      *
      * \param orgName Organization name passed to `QSettings` constructor
      * \param appName Application name passed to `QSettings` construstor

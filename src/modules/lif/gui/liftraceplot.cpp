@@ -35,10 +35,10 @@ LifTracePlot::LifTracePlot(QWidget *parent) :
     p_integralLabel->attach(this);
     p_integralLabel->setItemAttribute(QwtPlotItem::AutoScale,false);
 
-    p_lif = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::lifCurve,"LIF");
+    p_lif = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::lifCurve, SettingsStorage::General, QString("LIF"));
     p_lif->setZ(1.0);
 
-    p_ref = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::refCurve,"Ref");
+    p_ref = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::refCurve, SettingsStorage::General, QString("Ref"));
     p_ref->setZ(1.0);
 
     p_lifZone = std::make_unique<QwtPlotZoneItem>();

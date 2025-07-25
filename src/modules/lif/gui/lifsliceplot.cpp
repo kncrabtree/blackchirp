@@ -22,7 +22,7 @@ LifSlicePlot::LifSlicePlot(const QString name, QWidget *parent) :
     // Disable QwtPlot's automatic memory management
     setAutoDelete(false);
 
-    p_curve = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::lifSliceCurve,"",Qt::SolidLine,QwtSymbol::Ellipse);
+    p_curve = CurveFactory::createStandardCurve<BlackchirpPlotCurve>(BC::Key::lifSliceCurve, SettingsStorage::General, QString(""), Qt::SolidLine, QwtSymbol::Ellipse);
     p_curve->setZ(1.0);
     p_curve->attach(this);
 

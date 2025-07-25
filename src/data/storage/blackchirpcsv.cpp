@@ -168,11 +168,13 @@ bool BlackchirpCSV::writeVersionFile(int num)
     //the first line should contain just the delimiter
     BlackchirpCSV::writeLine(t,{"",""});
     BlackchirpCSV::writeLine(t,{"key","value"});
+#ifndef BC_VIEWER
     BlackchirpCSV::writeLine(t,{majver,BC_MAJOR_VERSION});
     BlackchirpCSV::writeLine(t,{minver,BC_MINOR_VERSION});
     BlackchirpCSV::writeLine(t,{patchver,BC_PATCH_VERSION});
     BlackchirpCSV::writeLine(t,{relver,STRINGIFY(BC_RELEASE_VERSION)});
     BlackchirpCSV::writeLine(t,{buildver,STRINGIFY(BC_BUILD_VERSION)});
+#endif
 
     return true;
 }
