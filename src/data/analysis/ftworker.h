@@ -5,6 +5,7 @@
 #include <QVector>
 #include <QPointF>
 #include <QPair>
+#include <QTimer>
 #include <memory>
 
 #include <gsl/gsl_fft_real.h>
@@ -34,6 +35,7 @@ class QReadWriteLock;
 class FtWorker : public QObject
 {
     Q_OBJECT
+    friend class FtWorkerTest;
 public:
     enum FtUnits {
         FtV = 0,
@@ -184,6 +186,19 @@ private:
     void winKaiserBessel(int n, double beta);
 
     void clearSplineMemory();
+
+public slots:
+    void cleanupResources();
+    void resetIdleTimer();
+    void setIdleCleanupEnabled(bool enabled);
+
+private slots:
+    void onIdleTimeout();
+
+private:
+    std::unique_ptr<QTimer> pu_idleTimer;
+    bool d_resourcesAllocated{false};
+    bool d_idleCleanupEnabled{false};
 
 };
 

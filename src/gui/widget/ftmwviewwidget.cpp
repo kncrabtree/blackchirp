@@ -39,6 +39,10 @@ FtmwViewWidget::FtmwViewWidget(bool main, QWidget *parent, QString path, bool ov
     connect(p_worker,&FtWorker::fidDone,this,&FtmwViewWidget::fidProcessed,Qt::QueuedConnection);
     connect(p_worker,&FtWorker::ftDiffDone,this,&FtmwViewWidget::ftDiffDone,Qt::QueuedConnection);
     connect(p_worker,&FtWorker::sidebandDone,this,&FtmwViewWidget::sidebandProcessingComplete);
+    
+    // Enable idle cleanup for ExperimentViewWidget instances (non-main)
+    if(!main)
+        p_worker->setIdleCleanupEnabled(true);
 
     d_workerIds << d_liveId << d_mainId << d_plot1Id << d_plot2Id;
 

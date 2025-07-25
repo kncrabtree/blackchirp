@@ -15,6 +15,11 @@ FtWorker::FtWorker(QObject *parent) :
     pu_fftLock = std::make_unique<QReadWriteLock>();
     pu_splineLock = std::make_unique<QReadWriteLock>();
     pu_winfLock = std::make_unique<QReadWriteLock>();
+
+    pu_idleTimer = std::make_unique<QTimer>(this);
+    pu_idleTimer->setSingleShot(true);
+    pu_idleTimer->setInterval(300000); // 5 minutes in ms
+    connect(pu_idleTimer.get(), &QTimer::timeout, this, &FtWorker::onIdleTimeout);
 }
 
 FtWorker::~FtWorker()
@@ -107,6 +112,10 @@ Ft FtWorker::doFT(const FidList fl, const FidProcessingSettings &settings, int f
         real = gsl_fft_real_wavetable_alloc(d_numPnts);
         work = gsl_fft_real_workspace_alloc(d_numPnts);
     }
+    
+    // Set the flag whenever we have allocated resources
+    d_resourcesAllocated = true;
+    resetIdleTimer();
 
     //do the FT. See GNU Scientific Library documentation for details
     gsl_fft_real_transform (fftData.data(), 1, d_numPnts, real, work);
@@ -506,13 +515,15 @@ QPair<QVector<double>,double> FtWorker::resample(double f0, double spacing, cons
         p_spline = gsl_spline_alloc(gsl_interp_cspline,d_numSplinePoints);
 
         if(p_accel != nullptr)
-        {
             gsl_interp_accel_free(p_accel);
-            p_accel = gsl_interp_accel_alloc();
-        }
+        p_accel = gsl_interp_accel_alloc();
         l2.unlock();
         l.relock();
     }
+
+    // Set the flag whenever we have allocated resources
+    d_resourcesAllocated = true;
+    resetIdleTimer();
 
 
     gsl_spline_init(p_spline,xd.constData(),yd.constData(),d_numSplinePoints);
@@ -520,7 +531,34 @@ QPair<QVector<double>,double> FtWorker::resample(double f0, double spacing, cons
     QVector<double> out;
     out.reserve(numPoints);
 
-    for(int i=0; i<numPoints; ++i)
+    // Calculate valid interpolation range to avoid GSL crashes
+    double minX = xd.first();
+    double maxX = xd.last();
+    
+    // Find first valid index where x >= minX
+    int startIdx = 0;
+    while(startIdx < numPoints)
+    {
+        double x = firstPt + static_cast<double>(startIdx)*spacing;
+        if(x >= minX) break;
+        startIdx++;
+    }
+    
+    // Find last valid index where x <= maxX
+    int endIdx = numPoints - 1;
+    while(endIdx >= startIdx)
+    {
+        double x = firstPt + static_cast<double>(endIdx)*spacing;
+        if(x <= maxX) break;
+        endIdx--;
+    }
+    
+    // Append leading zeros
+    for(int i = 0; i < startIdx; ++i)
+        out.append(0.0);
+    
+    // Interpolate valid range
+    for(int i = startIdx; i <= endIdx; ++i)
     {
         double x = firstPt + static_cast<double>(i)*spacing;
         double y = gsl_spline_eval(p_spline,x,p_accel);
@@ -528,6 +566,10 @@ QPair<QVector<double>,double> FtWorker::resample(double f0, double spacing, cons
             y = 0.0;
         out.append(y);
     }
+    
+    // Append trailing zeros
+    for(int i = endIdx + 1; i < numPoints; ++i)
+        out.append(0.0);
 
     return {out,firstPt};
 
@@ -649,4 +691,65 @@ void FtWorker::clearSplineMemory()
     p_accel = nullptr;
 
     d_numSplinePoints = -1;
+}
+
+void FtWorker::cleanupResources()
+{
+    pu_idleTimer->stop();
+    
+    // Clean up FFT resources
+    {
+        QWriteLocker l(pu_fftLock.get());
+        if(real)
+        {
+            gsl_fft_real_wavetable_free(real);
+            gsl_fft_real_workspace_free(work);
+            real = nullptr;
+            work = nullptr;
+        }
+        d_numPnts = 0;
+    }
+    
+    // Clean up spline resources
+    {
+        QWriteLocker l(pu_splineLock.get());
+        if(p_spline != nullptr)
+        {
+            gsl_spline_free(p_spline);
+            gsl_interp_accel_free(p_accel);
+            p_spline = nullptr;
+            p_accel = nullptr;
+        }
+        d_numSplinePoints = 0;
+    }
+    
+    // Clean up window function
+    {
+        QWriteLocker l(pu_winfLock.get());
+        d_winf.clear();
+        d_lastWinf = None;
+        d_lastWinSize = 0;
+    }
+    
+    d_resourcesAllocated = false;
+}
+
+void FtWorker::resetIdleTimer()
+{
+    if(d_resourcesAllocated && d_idleCleanupEnabled)
+        pu_idleTimer->start();
+}
+
+void FtWorker::setIdleCleanupEnabled(bool enabled)
+{
+    d_idleCleanupEnabled = enabled;
+    if(!enabled)
+        pu_idleTimer->stop();
+}
+
+void FtWorker::onIdleTimeout()
+{
+    // Only cleanup if idle cleanup is still enabled
+    if(d_idleCleanupEnabled)
+        cleanupResources();
 }

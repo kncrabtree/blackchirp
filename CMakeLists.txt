@@ -62,6 +62,9 @@ add_test(NAME tst_xiamparser COMMAND tst_xiamparser)
 add_executable(tst_genericxyparser tests/tst_genericxyparser.cpp src/data/processing/parsers/genericxyparser.cpp src/data/processing/parsers/genericxydata.cpp src/data/processing/parsers/fileparser.cpp src/data/storage/settingsstorage.cpp)
 add_test(NAME tst_genericxyparser COMMAND tst_genericxyparser)
 
+add_executable(tst_ftworkertest tests/tst_ftworkertest.cpp src/data/analysis/ftworker.cpp src/data/analysis/ft.cpp src/data/analysis/analysis.cpp src/data/experiment/fid.cpp src/data/bcglobals.cpp)
+add_test(NAME tst_ftworkertest COMMAND tst_ftworkertest)
+
 # Note: Complex overlay GUI tests removed due to extensive dependencies
 # Core overlay functionality is tested by tst_operation_capability_only
 # and tst_background_convolution which provide adequate coverage
@@ -72,6 +75,7 @@ target_link_libraries(tst_blackchirpcsvtest PRIVATE Qt6::Gui Qt6::Test)
 target_link_libraries(tst_spcatparser PRIVATE Qt6::Gui Qt6::Test)
 target_link_libraries(tst_xiamparser PRIVATE Qt6::Gui Qt6::Test)
 target_link_libraries(tst_genericxyparser PRIVATE Qt6::Gui Qt6::Test)
+target_link_libraries(tst_ftworkertest PRIVATE Qt6::Gui Qt6::Test gsl gslcblas m)
 
 # Add version definitions to all test targets
 add_version_definitions(tst_settingsstoragetest)
@@ -80,6 +84,7 @@ add_version_definitions(tst_blackchirpcsvtest)
 add_version_definitions(tst_spcatparser)
 add_version_definitions(tst_xiamparser)
 add_version_definitions(tst_genericxyparser)
+add_version_definitions(tst_ftworkertest)
 
 # Simplified overlay operations test without heavy dependencies
 add_executable(tst_overlayoperations_simple tests/tst_overlayoperations_simple.cpp
