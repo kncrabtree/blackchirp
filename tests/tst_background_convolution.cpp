@@ -70,16 +70,21 @@ void BackgroundConvolutionTest::initTestCase()
         currentDir.cdUp();
     }
 
-    // Look for src directory
-    if (currentDir.exists("src")) {
-        m_testDataDir = currentDir.absoluteFilePath("src/tests/testdata");
-    } else {
-        // Fallback: look for tests directory in current or parent directories
-        QDir searchDir = currentDir;
-        while (!searchDir.exists("tests") && searchDir.cdUp()) {
-            // Keep searching upward
+    // Always use tests/testdata since that's where test data is actually located
+    // Look for tests directory in current or parent directories, but stop at filesystem root
+    QDir searchDir = currentDir;
+    while (!searchDir.exists("tests") && searchDir.cdUp()) {
+        // Prevent going to filesystem root
+        if (searchDir.isRoot()) {
+            break;
         }
+    }
+    
+    if (searchDir.exists("tests")) {
         m_testDataDir = searchDir.absoluteFilePath("tests/testdata");
+    } else {
+        // Fallback: assume we're in src directory and go relative
+        m_testDataDir = currentDir.absoluteFilePath("../tests/testdata");
     }
     
     m_spcatTestPath = getTestDataPath("c047527_sample.cat");

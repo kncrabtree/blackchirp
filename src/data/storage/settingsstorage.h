@@ -63,11 +63,12 @@ static const QString trackingDir{"rollingdata"};
  *
  * A SettingsStorage object reads and maintains an internal copy of the
  * ``QSettings`` keys and values associated with the group/subgroup that it is
- * initialized with. Internally, this is done through the use of two
+ * initialized with. Internally, this is done through the use of three
  * associative containers (key-value containers): one which represents single
- * key-value pairs, and another that contains array values as structured by
- * QSettings. An array value is a list whose items each contain a map
- * consisting of one or more key-value pairs.
+ * key-value pairs, another that contains array values as structured by
+ * QSettings, and a third that contains getter functions for dynamic values.
+ * An array value is a list whose items each contain a map consisting of one
+ * or more key-value pairs.
  *
  * When initializing SettingsStorage, the standard constructor is
  *
@@ -239,6 +240,7 @@ static const QString trackingDir{"rollingdata"};
  */
 class SettingsStorage
 {
+    friend class SettingsStorageTest; // Allow test class access to protected methods
 public:
 
     using SettingsGetter = std::function<QVariant()>; /*!< Alias for a getter function */
@@ -711,12 +713,13 @@ protected:
     void appendArrayMap(const QString key, const SettingsMap &map, bool write = false);
 
     /*!
-     * \brief Clears a value and removes it from QSettings
+     * \brief Clears all data associated with a key and removes it from QSettings
      *
-     * This clears a value (or getter) and immediately removes the key from
-     * `QSettings`. If the key is not found, no action is taken.
+     * This clears all forms of data associated with the given key: regular values,
+     * getter functions, and array values. The key is immediately removed from
+     * `QSettings`. If the key is not found in any form, no action is taken.
      *
-     * \param key The key to clear
+     * \param key The key to clear from all storage forms
      */
     void clearValue(const QString key);
 

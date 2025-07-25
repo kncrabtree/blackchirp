@@ -273,23 +273,37 @@ void SettingsStorage::appendArrayMap(const QString key, const SettingsMap &map, 
 void SettingsStorage::clearValue(const QString key)
 {
     d_edited = true;
+    bool found = false;
 
+    // Clear from regular values
     auto it = d_values.find(key);
     if(it != d_values.end())
     {
-        d_settings.remove(key);
-        d_settings.sync();
         d_values.erase(it);
-        return;
+        found = true;
     }
 
+    // Clear from getters
     auto it2 = d_getters.find(key);
     if(it2 != d_getters.end())
     {
+        d_getters.erase(it2);
+        found = true;
+    }
+    
+    // Clear from array values
+    auto it3 = d_arrayValues.find(key);
+    if(it3 != d_arrayValues.end())
+    {
+        d_arrayValues.erase(it3);
+        found = true;
+    }
+    
+    // Remove from QSettings and sync if anything was found
+    if(found)
+    {
         d_settings.remove(key);
         d_settings.sync();
-        d_getters.erase(it2);
-        return;
     }
 
 }

@@ -267,19 +267,19 @@ void GenericXYParserTest::testGeneratePreview_data()
     QTest::addColumn<int>("expectedPreviewPoints");
 
     // Use real data files for testing instead of simulated ones
-    QTest::newRow("MT59_926.txt") << "/home/kncrabtree/github/blackchirp/src/tests/testdata/xydata/MT59_926.txt"
+    QTest::newRow("MT59_926.txt") << "tests/testdata/xydata/MT59_926.txt"
                                   << "" // Use real file
                                   << true << 100; // Should be limited to preview max
 
-    QTest::newRow("blanked_primos_samp_old.txt") << "/home/kncrabtree/github/blackchirp/src/tests/testdata/xydata/blanked_primos_samp_old.txt"
+    QTest::newRow("blanked_primos_samp_old.txt") << "tests/testdata/xydata/blanked_primos_samp_old.txt"
                                                  << "" // Use real file
                                                  << true << 100;
 
-    QTest::newRow("cubic.csv") << "/home/kncrabtree/github/blackchirp/src/tests/testdata/xydata/cubic.csv"
+    QTest::newRow("cubic.csv") << "tests/testdata/xydata/cubic.csv"
                                << "" // Use real file
                                << true << 100;
 
-    QTest::newRow("tmc_kaifu.txt") << "/home/kncrabtree/github/blackchirp/src/tests/testdata/xydata/tmc_kaifu.txt"
+    QTest::newRow("tmc_kaifu.txt") << "tests/testdata/xydata/tmc_kaifu.txt"
                                    << "" // Use real file, not generated content
                                    << true << 100; // Should be limited to preview max
 
@@ -317,7 +317,7 @@ void GenericXYParserTest::testGeneratePreview()
 
 void GenericXYParserTest::testLargeFiles()
 {
-    QString largePath = "/home/kncrabtree/github/blackchirp/src/tests/testdata/xydata/tmc_kaifu.txt";
+    QString largePath = "tests/testdata/xydata/tmc_kaifu.txt";
     
     QVERIFY2(d_parser.canParse(largePath), 
              QString("Cannot parse large test file: %1").arg(largePath).toLocal8Bit());

@@ -35,6 +35,17 @@ private slots:
     void testSubkeyRead();
     void testHardwareRead();
     void testDestruction();
+    
+    // Enhanced coverage tests
+    void testArrayOperations();
+    void testArrayValueSetGet();
+    void testEdgeCases();
+    void testKeyManagement();
+    void testDiscardChanges();
+    void testGetterConflicts();
+    void testArrayAppend();
+    void testClearValue();
+    void testConstructorVariants();
 
 
 private:
@@ -374,6 +385,333 @@ void SettingsStorageTest::initSettingsFile()
     s.endGroup();
 
     s.sync();
+}
+
+void SettingsStorageTest::testArrayOperations()
+{
+    initSettingsFile();
+    clearGetters(false);
+    readAll();
+    
+    // Test setArray with various scenarios
+    std::vector<SettingsStorage::SettingsMap> newArray = {
+        {{"key1", 10}, {"key2", "test1"}},
+        {{"key1", 20}, {"key2", "test2"}},
+        {{"key1", 30}, {"key2", "test3"}}
+    };
+    
+    setArray("newTestArray", newArray, true);
+    
+    // Verify array was written correctly
+    SettingsStorage readOnly;
+    QCOMPARE(readOnly.getArraySize("newTestArray"), 3);
+    
+    for(std::size_t i = 0; i < 3; ++i) {
+        auto map = readOnly.getArrayMap("newTestArray", i);
+        QCOMPARE(map.at("key1").toInt(), static_cast<int>(10 * (i + 1)));
+        QCOMPARE(map.at("key2").toString(), QString("test%1").arg(i + 1));
+    }
+    
+    // Test empty array (should remove from settings)
+    setArray("newTestArray", {}, true);
+    SettingsStorage readOnly2;
+    QCOMPARE(readOnly2.containsArray("newTestArray"), false);
+    QCOMPARE(readOnly2.getArraySize("newTestArray"), 0);
+}
+
+void SettingsStorageTest::testArrayValueSetGet()
+{
+    initSettingsFile();
+    clearGetters(false);
+    readAll();
+    
+    // Create a test array
+    std::vector<SettingsStorage::SettingsMap> testArray = {
+        {{"value", 100}, {"name", "first"}},
+        {{"value", 200}, {"name", "second"}},
+        {{"value", 300}, {"name", "third"}}
+    };
+    setArray("setGetArray", testArray, false);
+    
+    // Test setArrayValue
+    QCOMPARE(setArrayValue("setGetArray", 1, "value", 250, false), true);
+    QCOMPARE(setArrayValue("setGetArray", 1, "newKey", QString("newValue"), false), true);
+    QCOMPARE(setArrayValue("setGetArray", 10, "value", 999, false), false); // out of bounds
+    QCOMPARE(setArrayValue("nonExistentArray", 0, "key", QString("value"), false), false);
+    
+    // Verify changes
+    QCOMPARE(getArrayValue<int>("setGetArray", 1, "value", 0), 250);
+    QCOMPARE(getArrayValue<QString>("setGetArray", 1, "newKey", ""), QString("newValue"));
+    QCOMPARE(getArrayValue<QString>("setGetArray", 1, "name", ""), QString("second")); // unchanged
+    
+    // Test template versions
+    QCOMPARE(setArrayValue("setGetArray", 0, "templateTest", 42.5, false), true);
+    QCOMPARE(getArrayValue<double>("setGetArray", 0, "templateTest", 0.0), 42.5);
+    
+    // Test out of bounds and non-existent keys
+    QCOMPARE(getArrayValue("setGetArray", 99, "value", QVariant("default")), QVariant("default"));
+    QCOMPARE(getArrayValue<int>("setGetArray", 99, "value", 123), 123);
+    QCOMPARE(getArrayValue<QString>("setGetArray", 0, "nonExistent", "default"), QString("default"));
+}
+
+void SettingsStorageTest::testEdgeCases()
+{
+    initSettingsFile();
+    clearGetters(false);
+    readAll();
+    
+    // Test empty key names
+    QCOMPARE(set("", QString("emptyKey"), false), true);
+    QCOMPARE(get(""), QVariant("emptyKey"));
+    
+    // Test very long key names
+    QString longKey = QString("a").repeated(1000);
+    QCOMPARE(set(longKey, QString("longKeyValue"), false), true);
+    QCOMPARE(get(longKey).toString(), QString("longKeyValue"));
+    
+    // Test special characters in keys
+    QString specialKey = "key/with\\special:chars<>|*?\"";
+    QCOMPARE(set(specialKey, QString("specialValue"), false), true);
+    QCOMPARE(get(specialKey).toString(), QString("specialValue"));
+    
+    // Test null and empty QVariant values
+    QCOMPARE(set("nullTest", QVariant(), false), true);
+    QCOMPARE(get("nullTest"), QVariant());
+    QCOMPARE(get("nullTest").isNull(), true);
+    
+    // Test very large numbers
+    double largeDouble = 1.23456789e308;
+    qint64 largeInt = 9223372036854775807LL;
+    QCOMPARE(set("largeDouble", largeDouble, false), true);
+    QCOMPARE(set("largeInt", largeInt, false), true);
+    QCOMPARE(get<double>("largeDouble"), largeDouble);
+    QCOMPARE(get<qint64>("largeInt"), largeInt);
+    
+    // Test Unicode strings
+    QString unicodeString = "Hello 世界 🌍 мир";
+    QCOMPARE(set("unicode", unicodeString, false), true);
+    QCOMPARE(get<QString>("unicode"), unicodeString);
+}
+
+void SettingsStorageTest::testKeyManagement()
+{
+    initSettingsFile();
+    clearGetters(false);
+    readAll();
+    
+    // Test keys() and arrayKeys()
+    QStringList currentKeys = keys();
+    QStringList currentArrayKeys = arrayKeys();
+    
+    // Should have test data keys
+    QVERIFY(currentKeys.contains("testInt"));
+    QVERIFY(currentKeys.contains("testDouble"));
+    QVERIFY(currentKeys.contains("testString"));
+    QVERIFY(currentArrayKeys.contains("testArray"));
+    
+    // Add new keys and verify they appear
+    set("newKey1", 123, false);
+    set("newKey2", QString("test"), false);
+    setArray("newArray", {{{QString("arrayKey"), QString("arrayValue")}}}, false);
+    
+    QStringList updatedKeys = keys();
+    QStringList updatedArrayKeys = arrayKeys();
+    
+    QVERIFY(updatedKeys.contains("newKey1"));
+    QVERIFY(updatedKeys.contains("newKey2"));
+    QVERIFY(updatedArrayKeys.contains("newArray"));
+    
+    // Verify keys are sorted/consistent
+    QCOMPARE(updatedKeys.count(), currentKeys.count() + 2);
+    QCOMPARE(updatedArrayKeys.count(), currentArrayKeys.count() + 1);
+}
+
+void SettingsStorageTest::testDiscardChanges()
+{
+    initSettingsFile();
+    clearGetters(false);
+    readAll();
+    
+    // Make changes without writing
+    set("discardTest1", QString("value1"), false);
+    set("discardTest2", QString("value2"), false);
+    registerGetter("discardGetter", this, &SettingsStorageTest::intGetter);
+    d_int = 999;
+    
+    // Enable discard mode
+    discardChanges(true);
+    
+    // Changes should not be saved when object is destroyed
+    save(); // Should do nothing due to discard flag
+    
+    // Verify changes weren't written
+    SettingsStorage readOnly;
+    QCOMPARE(readOnly.containsValue("discardTest1"), false);
+    QCOMPARE(readOnly.containsValue("discardTest2"), false);
+    QCOMPARE(readOnly.get<int>("discardGetter", 0), 0); // Should not exist
+    
+    // Disable discard mode and save
+    discardChanges(false);
+    save();
+    
+    // Now changes should be written
+    SettingsStorage readOnly2;
+    QCOMPARE(readOnly2.get<QString>("discardTest1"), QString("value1"));
+    QCOMPARE(readOnly2.get<QString>("discardTest2"), QString("value2"));
+    QCOMPARE(readOnly2.get<int>("discardGetter"), 999);
+}
+
+void SettingsStorageTest::testGetterConflicts()
+{
+    initSettingsFile();
+    clearGetters(false);
+    readAll();
+    
+    // Test getter registration conflicts
+    QCOMPARE(registerGetter("testInt", this, &SettingsStorageTest::intGetter), true);
+    
+    // Try to register getter for array key (should fail)
+    QCOMPARE(registerGetter("testArray", this, &SettingsStorageTest::intGetter), false);
+    
+    // Try to set value for getter key (should fail)
+    QCOMPARE(set("testInt", 999, false), false);
+    
+    // Try to set array for getter key - arrays and getters can coexist
+    setArray("testInt", {{{QString("key"), QString("value")}}}, false);
+    QCOMPARE(containsValue("testInt"), true); // Should still be a getter
+    QCOMPARE(containsArray("testInt"), true); // Array should also exist
+    
+    // Unregister getter and verify we can then set values
+    d_int = 777;
+    unRegisterGetter("testInt", false);
+    // After unregistering, clear all traces of the key so we can set a new value
+    clearValue("testInt"); // This should clear both the stored value from unregistering and the array
+    QCOMPARE(containsValue("testInt"), false); // Should be completely clear now
+    QCOMPARE(containsArray("testInt"), false); // Array should also be cleared
+    QCOMPARE(set("testInt", 888, false), true);
+    QCOMPARE(get<int>("testInt"), 888); // Should be stored value, not getter
+    
+    // Test lambda getter conflicts
+    int lambdaValue = 42;
+    auto lambdaGetter = [&lambdaValue]() { return lambdaValue; };
+    QCOMPARE(registerGetter("lambdaTest", std::function<int()>(lambdaGetter)), true);
+    
+    lambdaValue = 84;
+    QCOMPARE(get<int>("lambdaTest"), 84);
+    
+    // Verify we can't override with regular set
+    QCOMPARE(set("lambdaTest", 999, false), false);
+    QCOMPARE(get<int>("lambdaTest"), 84); // Should still use lambda
+}
+
+void SettingsStorageTest::testArrayAppend()
+{
+    initSettingsFile();
+    clearGetters(false);
+    readAll();
+    
+    // Test appending to new array
+    appendArrayMap("appendTest", {{"first", 1}, {"name", "one"}}, false);
+    appendArrayMap("appendTest", {{"first", 2}, {"name", "two"}}, false);
+    appendArrayMap("appendTest", {{"first", 3}, {"name", "three"}}, false);
+    
+    QCOMPARE(getArraySize("appendTest"), 3);
+    QCOMPARE(getArrayValue<int>("appendTest", 0, "first", 0), 1);
+    QCOMPARE(getArrayValue<QString>("appendTest", 1, "name", ""), QString("two"));
+    QCOMPARE(getArrayValue<int>("appendTest", 2, "first", 0), 3);
+    
+    // Test appending to existing array
+    std::size_t originalSize = getArraySize("testArray");
+    appendArrayMap("testArray", {{"testArrayInt", 999}, {"testArrayString", "appended"}}, false);
+    
+    QCOMPARE(getArraySize("testArray"), originalSize + 1);
+    QCOMPARE(getArrayValue<int>("testArray", originalSize, "testArrayInt", 0), 999);
+    QCOMPARE(getArrayValue<QString>("testArray", originalSize, "testArrayString", ""), QString("appended"));
+    
+    // Test immediate write option
+    appendArrayMap("immediateArray", {{"immediate", true}}, true);
+    
+    SettingsStorage readOnly;
+    QCOMPARE(readOnly.getArraySize("immediateArray"), 1);
+    QCOMPARE(readOnly.getArrayValue<bool>("immediateArray", 0, "immediate", false), true);
+}
+
+void SettingsStorageTest::testClearValue()
+{
+    initSettingsFile();
+    clearGetters(false);
+    readAll();
+    
+    // Verify test value exists
+    QVERIFY(containsValue("testInt"));
+    
+    // Clear regular value
+    clearValue("testInt");
+    QCOMPARE(containsValue("testInt"), false);
+    
+    // Verify it's removed from QSettings
+    SettingsStorage readOnly;
+    QCOMPARE(readOnly.containsValue("testInt"), false);
+    
+    // Test clearing getter
+    registerGetter("clearGetter", this, &SettingsStorageTest::intGetter);
+    QVERIFY(containsValue("clearGetter"));
+    
+    clearValue("clearGetter");
+    QCOMPARE(containsValue("clearGetter"), false);
+    
+    // Test clearing non-existent key (should not crash)
+    clearValue("nonExistentKey");
+    
+    // Test clearing array key
+    QVERIFY(containsArray("testArray"));
+    clearValue("testArray");
+    QCOMPARE(containsArray("testArray"), false);
+    
+    SettingsStorage readOnly2;
+    QCOMPARE(readOnly2.containsArray("testArray"), false);
+}
+
+void SettingsStorageTest::testConstructorVariants()
+{
+    initSettingsFile();
+    
+    // Test empty key constructor (uses default org/app name settings)
+    SettingsStorage emptyKey("");
+    // This will be in a different settings location than our test data, so should be empty
+    QCOMPARE(emptyKey.keys().size(), 0);
+    
+    // Test Hardware type with single key
+    SettingsStorage hardwareType("hardwareKey", SettingsStorage::Hardware);
+    QCOMPARE(hardwareType.get<QString>("hardwareName"), QString("My Hardware"));
+    
+    // Test single key constructor - should have empty keys initially
+    SettingsStorage singleKey("testGroup");
+    QCOMPARE(singleKey.keys().size(), 0); // New group should be empty
+    
+    // Test QStringList constructor
+    SettingsStorage stringList(QStringList{"group1", "group2"});
+    QCOMPARE(stringList.keys().size(), 0); // New nested group should be empty
+    
+    // Verify the hardware constructor found the correct subgroup
+    QCOMPARE(hardwareType.get<int>("hardwareInt"), 10);
+    QCOMPARE(hardwareType.get<double>("hardwareDouble"), 44.4);
+    
+    // Test that we can write to different constructor types (using friend access)
+    singleKey.set("testKey1", QString("value1"), true);
+    stringList.set("testKey2", 42, true);
+    
+    // Verify settings were written to correct locations
+    QSettings s;
+    s.beginGroup("testGroup");
+    QCOMPARE(s.value("testKey1").toString(), QString("value1"));
+    s.endGroup();
+    
+    s.beginGroup("group1");
+    s.beginGroup("group2");
+    QCOMPARE(s.value("testKey2").toInt(), 42);
+    s.endGroup();
+    s.endGroup();
 }
 
 QTEST_MAIN(SettingsStorageTest)
