@@ -1,12 +1,16 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.16)
 
-project(blackchirp-tests LANGUAGES CXX)
+# ============================================================================
+# Project Configuration
+# ============================================================================
+project(Blackchirp 
+    VERSION 1.1.0
+    DESCRIPTION "CP-FTMW Spectroscopy Software"
+    LANGUAGES CXX
+)
 
-# Define version constants (from blackchirp.pro)
-set(BC_MAJOR_VERSION 1)
-set(BC_MINOR_VERSION 0)
-set(BC_PATCH_VERSION 0)
-set(BC_RELEASE_VERSION "devel")
+# Set release version
+set(BC_RELEASE_VERSION "devel" CACHE STRING "Release version string")
 
 # Get git build version
 execute_process(
@@ -14,120 +18,310 @@ execute_process(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     OUTPUT_VARIABLE BC_BUILD_VERSION
     OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
 )
 
-find_package(Qt6Test REQUIRED)
-find_package(Qt6Gui REQUIRED)
-find_package(Qt6Widgets REQUIRED)
+if(NOT BC_BUILD_VERSION)
+    set(BC_BUILD_VERSION "unknown")
+endif()
 
+# Version definitions for compatibility with qmake system
+set(BC_MAJOR_VERSION ${PROJECT_VERSION_MAJOR})
+set(BC_MINOR_VERSION ${PROJECT_VERSION_MINOR})
+set(BC_PATCH_VERSION ${PROJECT_VERSION_PATCH})
+
+# Viewer-specific versioning
+set(BCV_MAJOR_VERSION 1)
+set(BCV_MINOR_VERSION 0)
+set(BCV_PATCH_VERSION 0)
+set(BCV_RELEASE_VERSION "alpha")
+
+# ============================================================================
+# Build Options and Configuration
+# ============================================================================
+
+# Build type
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type" FORCE)
+endif()
+
+# Global options
+option(BC_BUILD_VIEWER_ONLY "Build only the viewer application" OFF)
+option(BC_BUILD_TESTS "Build test executables" ON)
+option(BC_BUILD_DOCUMENTATION "Build documentation" OFF)
+
+# Hardware configuration options
+option(BC_ENABLE_LIF "Enable LIF (Laser-Induced Fluorescence) functionality" OFF)
+option(BC_ENABLE_CUDA "Enable CUDA GPU acceleration" OFF)
+
+# Hardware implementation selection
+set(BC_FTMW_SCOPE "virtual" CACHE STRING "FTMW oscilloscope implementation")
+set_property(CACHE BC_FTMW_SCOPE PROPERTY STRINGS 
+    "virtual" "DSA71604C" "MSO72004C" "M4i2220x8" "DSOx92004A" "DSOV204A" "MSO64B" "DPO71254B")
+
+set(BC_CLOCKS "fixed;fixed" CACHE STRING "Clock implementations (semicolon separated)")
+set(BC_AWG "" CACHE STRING "AWG implementation")
+set(BC_PGEN "" CACHE STRING "Pulse generator implementations (semicolon separated)")
+set(BC_FC "" CACHE STRING "Flow controller implementations (semicolon separated)")
+set(BC_IOBOARD "" CACHE STRING "IO board implementations (semicolon separated)")
+set(BC_GPIB "" CACHE STRING "GPIB controller implementation")
+set(BC_PC "" CACHE STRING "Pressure controller implementations (semicolon separated)")
+set(BC_TC "" CACHE STRING "Temperature controller implementations (semicolon separated)")
+
+# LIF-specific hardware (only relevant if BC_ENABLE_LIF is ON)
+if(BC_ENABLE_LIF)
+    set(BC_LIFSCOPE "" CACHE STRING "LIF oscilloscope implementation")
+    set(BC_LIFLASER "" CACHE STRING "LIF laser implementation")
+endif()
+
+# ============================================================================
+# Compiler Configuration
+# ============================================================================
+
+# C++ standard
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Compiler-specific flags
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_compile_options(-Wall -Wextra)
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+        add_compile_options(-O3)
+    endif()
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    add_compile_options(/W4)
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+        add_compile_options(/O2)
+    endif()
+endif()
+
+# ============================================================================
+# Qt Configuration
+# ============================================================================
+
+# Enable Qt's CMake integration
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# Find Qt6 components
+set(QT_REQUIRED_COMPONENTS Core Gui Widgets Network)
 
-include_directories(src)
+# SerialPort only needed for main application, not viewer
+if(NOT BC_BUILD_VIEWER_ONLY)
+    list(APPEND QT_REQUIRED_COMPONENTS SerialPort)
+endif()
 
-enable_testing()
+find_package(Qt6 REQUIRED COMPONENTS ${QT_REQUIRED_COMPONENTS})
 
-# Function to add version definitions to test targets
-function(add_version_definitions target_name)
+# Qt version information
+message(STATUS "Using Qt ${Qt6_VERSION}")
+
+# ============================================================================
+# External Dependencies
+# ============================================================================
+
+# Add cmake directory to module path
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+# QWT - Scientific plotting library
+find_package(QWT REQUIRED)
+
+# GSL - GNU Scientific Library
+find_package(GSL REQUIRED)
+
+# CUDA - Optional for GPU acceleration
+if(BC_ENABLE_CUDA)
+    enable_language(CUDA)
+    find_package(CUDAToolkit REQUIRED)
+    
+    # CUDA compilation flags
+    set(CMAKE_CUDA_STANDARD 17)
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+    
+    # Architecture-specific flags
+    if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+        set(CMAKE_CUDA_ARCHITECTURES 50 60 70 75 80 86)
+    endif()
+    
+    message(STATUS "CUDA enabled with architectures: ${CMAKE_CUDA_ARCHITECTURES}")
+endif()
+
+# Platform-specific libraries
+if(WIN32)
+    # Windows-specific dependencies
+    find_library(WINMM_LIBRARY winmm)
+elseif(APPLE)
+    find_library(COCOA_LIBRARY Cocoa)
+    find_library(IOKIT_LIBRARY IOKit)
+    find_library(COREFOUNDATION_LIBRARY CoreFoundation)
+else()
+    # Linux-specific dependencies
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(UDEV libudev)
+    endif()
+endif()
+
+# ============================================================================
+# Include Directories
+# ============================================================================
+
+# Global include directory
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+# ============================================================================
+# Hardware Configuration Processing
+# ============================================================================
+
+# Include hardware validation
+include(cmake/HardwareValidation.cmake)
+
+# Process clock configuration
+string(REPLACE ";" " " BC_CLOCKS_SPACE_SEPARATED "${BC_CLOCKS}")
+list(LENGTH BC_CLOCKS BC_NUM_CLOCKS)
+
+# Validate hardware configuration
+validate_hardware_configuration()
+
+# ============================================================================
+# Version and Configuration Definitions
+# ============================================================================
+
+# Create a function to add version definitions to targets
+function(add_blackchirp_definitions target_name)
     target_compile_definitions(${target_name} PRIVATE
         BC_MAJOR_VERSION=${BC_MAJOR_VERSION}
         BC_MINOR_VERSION=${BC_MINOR_VERSION}
         BC_PATCH_VERSION=${BC_PATCH_VERSION}
         BC_RELEASE_VERSION=${BC_RELEASE_VERSION}
         BC_BUILD_VERSION="${BC_BUILD_VERSION}"
+        BC_NUM_CLOCKS=${BC_NUM_CLOCKS}
+    )
+    
+    # Hardware-specific definitions
+    target_compile_definitions(${target_name} PRIVATE
+        BC_FTMWSCOPE=${BC_FTMW_SCOPE}
+        BC_FTMW_SCOPE_${BC_FTMW_SCOPE}
+    )
+    
+    # Process clocks
+    math(EXPR CLOCK_INDEX "0")
+    foreach(CLOCK IN LISTS BC_CLOCKS)
+        target_compile_definitions(${target_name} PRIVATE
+            BC_CLOCK_${CLOCK_INDEX}=BC_CLOCK_${CLOCK}
+            BC_CLOCK_${CLOCK}=${CLOCK}
+        )
+        math(EXPR CLOCK_INDEX "${CLOCK_INDEX} + 1")
+    endforeach()
+    
+    # Optional hardware definitions
+    if(BC_AWG)
+        target_compile_definitions(${target_name} PRIVATE BC_AWG=${BC_AWG} BC_AWG_${BC_AWG})
+    endif()
+    
+    if(BC_PGEN)
+        target_compile_definitions(${target_name} PRIVATE BC_PGEN)
+        string(REPLACE ";" " " BC_PGEN_SPACE_SEPARATED "${BC_PGEN}")
+        list(LENGTH BC_PGEN BC_NUM_PGEN)
+        target_compile_definitions(${target_name} PRIVATE BC_NUM_PGEN=${BC_NUM_PGEN})
+        
+        math(EXPR PGEN_INDEX "0")
+        foreach(PGEN IN LISTS BC_PGEN)
+            target_compile_definitions(${target_name} PRIVATE
+                BC_PGEN_${PGEN_INDEX}=BC_PGEN_${PGEN}
+                BC_PGEN_${PGEN}=${PGEN}
+            )
+            math(EXPR PGEN_INDEX "${PGEN_INDEX} + 1")
+        endforeach()
+    endif()
+    
+    # Add other hardware definitions as needed...
+    
+    # LIF definitions
+    if(BC_ENABLE_LIF)
+        target_compile_definitions(${target_name} PRIVATE BC_LIF)
+    endif()
+    
+    # CUDA definitions
+    if(BC_ENABLE_CUDA)
+        target_compile_definitions(${target_name} PRIVATE BC_CUDA)
+    endif()
+endfunction()
+
+# Viewer-specific version function
+function(add_viewer_definitions target_name)
+    target_compile_definitions(${target_name} PRIVATE
+        BC_VIEWER
+        BCV_MAJOR_VERSION=${BCV_MAJOR_VERSION}
+        BCV_MINOR_VERSION=${BCV_MINOR_VERSION}
+        BCV_PATCH_VERSION=${BCV_PATCH_VERSION}
+        BCV_RELEASE_VERSION=${BCV_RELEASE_VERSION}
+        BCV_BUILD_VERSION="${BC_BUILD_VERSION}"
     )
 endfunction()
 
-add_executable(tst_settingsstoragetest tests/tst_settingsstoragetest.cpp src/data/storage/settingsstorage.cpp)
-add_test(NAME tst_settingsstoragetest COMMAND tst_settingsstoragetest)
+# ============================================================================
+# Subdirectories
+# ============================================================================
 
-add_executable(tst_headerstoragetest tests/tst_headerstoragetest.cpp src/data/storage/headerstorage.cpp src/data/storage/settingsstorage.cpp src/data/storage/blackchirpcsv.cpp src/data/experiment/fid.cpp src/data/analysis/analysis.cpp src/data/bcglobals.cpp)
-add_test(NAME tst_headerstoragetest COMMAND tst_headerstoragetest)
+# Include CMake modules
+add_subdirectory(cmake)
 
-add_executable(tst_blackchirpcsvtest tests/tst_blackchirpcsv.cpp src/data/storage/blackchirpcsv.cpp src/data/storage/settingsstorage.cpp src/data/experiment/fid.cpp src/data/analysis/analysis.cpp)
-add_test(NAME tst_blackchirpcsvtest COMMAND tst_blackchirpcsvtest)
+# Always build tests (they have their own CMakeLists.txt)
+if(BC_BUILD_TESTS)
+    enable_testing()
+    # Note: Test CMakeLists.txt is already in root, will be updated separately
+endif()
 
-add_executable(tst_spcatparser tests/tst_spcatparser.cpp src/data/processing/parsers/spcatparser.cpp src/data/experiment/catalogdata.cpp src/data/processing/parsers/catalogparser.cpp src/data/processing/parsers/fileparser.cpp src/data/processing/parsers/fileparserregistry.cpp src/data/storage/settingsstorage.cpp)
-add_test(NAME tst_spcatparser COMMAND tst_spcatparser)
+# Build main application unless viewer-only build
+if(NOT BC_BUILD_VIEWER_ONLY)
+    add_subdirectory(src)
+endif()
 
-add_executable(tst_xiamparser tests/tst_xiamparser.cpp src/data/processing/parsers/xiamparser.cpp src/data/experiment/catalogdata.cpp src/data/processing/parsers/catalogparser.cpp src/data/processing/parsers/fileparser.cpp src/data/processing/parsers/fileparserregistry.cpp src/data/storage/settingsstorage.cpp)
-add_test(NAME tst_xiamparser COMMAND tst_xiamparser)
+# Build viewer application
+add_subdirectory(viewer-src)
 
-add_executable(tst_genericxyparser tests/tst_genericxyparser.cpp src/data/processing/parsers/genericxyparser.cpp src/data/processing/parsers/genericxydata.cpp src/data/processing/parsers/fileparser.cpp src/data/storage/settingsstorage.cpp)
-add_test(NAME tst_genericxyparser COMMAND tst_genericxyparser)
+# Documentation
+if(BC_BUILD_DOCUMENTATION)
+    add_subdirectory(doc)
+endif()
 
-add_executable(tst_ftworkertest tests/tst_ftworkertest.cpp src/data/analysis/ftworker.cpp src/data/analysis/ft.cpp src/data/analysis/analysis.cpp src/data/experiment/fid.cpp src/data/bcglobals.cpp)
-add_test(NAME tst_ftworkertest COMMAND tst_ftworkertest)
+# ============================================================================
+# Installation and Packaging
+# ============================================================================
 
-# Note: Complex overlay GUI tests removed due to extensive dependencies
-# Core overlay functionality is tested by tst_operation_capability_only
-# and tst_background_convolution which provide adequate coverage
+# Install configuration
+include(GNUInstallDirs)
 
-target_link_libraries(tst_settingsstoragetest PRIVATE Qt6::Gui Qt6::Test)
-target_link_libraries(tst_headerstoragetest PRIVATE Qt6::Gui Qt6::Test)
-target_link_libraries(tst_blackchirpcsvtest PRIVATE Qt6::Gui Qt6::Test)
-target_link_libraries(tst_spcatparser PRIVATE Qt6::Gui Qt6::Test)
-target_link_libraries(tst_xiamparser PRIVATE Qt6::Gui Qt6::Test)
-target_link_libraries(tst_genericxyparser PRIVATE Qt6::Gui Qt6::Test)
-target_link_libraries(tst_ftworkertest PRIVATE Qt6::Gui Qt6::Test gsl gslcblas m)
+# CPack configuration
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    include(cmake/Packaging.cmake)
+endif()
 
-# Add version definitions to all test targets
-add_version_definitions(tst_settingsstoragetest)
-add_version_definitions(tst_headerstoragetest) 
-add_version_definitions(tst_blackchirpcsvtest)
-add_version_definitions(tst_spcatparser)
-add_version_definitions(tst_xiamparser)
-add_version_definitions(tst_genericxyparser)
-add_version_definitions(tst_ftworkertest)
+# ============================================================================
+# Information Summary
+# ============================================================================
 
-# Simplified overlay operations test without heavy dependencies
-add_executable(tst_overlayoperations_simple tests/tst_overlayoperations_simple.cpp
-    src/gui/overlay/overlaytypespecificwidget.cpp
-    src/data/processing/overlayprocessmanager.cpp
-    src/data/processing/overlayoperation.cpp
-    src/data/experiment/overlaybase.cpp
-    src/data/experiment/overlaytypes.cpp
-    src/data/experiment/catalogdata.cpp
-    src/data/processing/parsers/catalogparser.cpp
-    src/data/processing/parsers/fileparser.cpp
-    src/data/processing/parsers/fileparserregistry.cpp
-    src/data/analysis/ft.cpp
-    src/data/analysis/analysis.cpp
-    src/data/storage/settingsstorage.cpp
-    src/data/experiment/fid.cpp)
-add_test(NAME tst_overlayoperations_simple COMMAND tst_overlayoperations_simple)
-target_link_libraries(tst_overlayoperations_simple PRIVATE Qt6::Gui Qt6::Test Qt6::Widgets)
-add_version_definitions(tst_overlayoperations_simple)
-
-# Minimal test for OperationCapability struct only (no heavy dependencies)
-add_executable(tst_operation_capability_only tests/tst_operation_capability_only.cpp
-    src/data/storage/settingsstorage.cpp)
-add_test(NAME tst_operation_capability_only COMMAND tst_operation_capability_only)
-target_link_libraries(tst_operation_capability_only PRIVATE Qt6::Gui Qt6::Test Qt6::Widgets)
-add_version_definitions(tst_operation_capability_only)
-
-# Background convolution execution test (end-to-end processing)
-add_executable(tst_background_convolution tests/tst_background_convolution.cpp
-    src/data/processing/overlayprocessmanager.cpp
-    src/data/processing/overlayoperation.cpp
-    src/data/experiment/overlaybase.cpp
-    src/data/experiment/overlaytypes.cpp
-    src/data/experiment/catalogdata.cpp
-    src/data/processing/parsers/catalogparser.cpp
-    src/data/processing/parsers/fileparser.cpp
-    src/data/processing/parsers/fileparserregistry.cpp
-    src/data/processing/parsers/spcatparser.cpp
-    src/data/processing/parsers/xiamparser.cpp
-    src/data/analysis/ft.cpp
-    src/data/analysis/analysis.cpp
-    src/data/storage/settingsstorage.cpp
-    src/data/experiment/fid.cpp)
-add_test(NAME tst_background_convolution COMMAND tst_background_convolution)
-target_link_libraries(tst_background_convolution PRIVATE Qt6::Gui Qt6::Test Qt6::Widgets)
-add_version_definitions(tst_background_convolution)
+message(STATUS "")
+message(STATUS "Blackchirp ${PROJECT_VERSION} Configuration Summary:")
+message(STATUS "  Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "  C++ standard: C++${CMAKE_CXX_STANDARD}")
+message(STATUS "  Qt version: ${Qt6_VERSION}")
+message(STATUS "  Build viewer only: ${BC_BUILD_VIEWER_ONLY}")
+message(STATUS "  Enable tests: ${BC_BUILD_TESTS}")
+message(STATUS "  Enable LIF: ${BC_ENABLE_LIF}")
+message(STATUS "  Enable CUDA: ${BC_ENABLE_CUDA}")
+message(STATUS "")
+message(STATUS "Hardware Configuration:")
+message(STATUS "  FTMW Scope: ${BC_FTMW_SCOPE}")
+message(STATUS "  Clocks: ${BC_CLOCKS}")
+if(BC_AWG)
+    message(STATUS "  AWG: ${BC_AWG}")
+endif()
+if(BC_PGEN)
+    message(STATUS "  Pulse Generators: ${BC_PGEN}")
+endif()
+message(STATUS "")
