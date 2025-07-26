@@ -1,0 +1,340 @@
+# CMake Migration Plan for Blackchirp and Blackchirp Viewer
+
+## Overview
+Migrate from qmake to CMake build system to enable better cross-platform packaging, dependency management, and modern C++ features. The existing CMake test system provides a foundation to build upon.
+
+## Migration Benefits
+- **Better Packaging**: Native support for CPack, installers, and package managers
+- **Cross-Platform**: More robust Windows/macOS/Linux builds
+- **Modern C++**: Better C++23 support and compiler feature detection
+- **Dependency Management**: Built-in find_package() and FetchContent support
+- **IDE Integration**: Better CLion, VS Code, and Visual Studio support
+- **Testing**: CTest integration already partially implemented
+
+## Current State Analysis
+
+### Existing qmake Structure
+- **blackchirp.pro**: Main application project file
+- **blackchirp-viewer.pro**: Viewer application project file
+- **CMakeLists.txt**: Currently only for tests
+- **config.pri**: Hardware configuration system
+- **Module .pri files**: 25+ .pri files for different components
+
+### Hardware Configuration System (config.pri)
+The current system uses qmake variables to select hardware implementations:
+- FTMWSCOPE: Required oscilloscope (virtual, DSA71604C, MSO72004C, etc.)
+- CLOCKS: Space-delimited list of clock implementations
+- AWG, PGEN, FC, IOBOARD, GPIB, PC, TC: Optional hardware components
+- LIF components: LIFSCOPE, LIFLASER (when lif CONFIG enabled)
+- CUDA support: gpu-cuda CONFIG with custom NVCC compilation
+
+## Implementation Strategy
+
+### Phase 1: Core CMake Infrastructure
+**Create main CMakeLists.txt files:**
+- Root `CMakeLists.txt` - Project configuration, version management, options
+- `src/CMakeLists.txt` - Main Blackchirp application
+- `viewer-src/CMakeLists.txt` - Blackchirp Viewer application
+- `cmake/` directory - Custom find modules and utility functions
+
+**Key Features:**
+- Unified version management (BC_* and BCV_* defines)
+- Hardware configuration options (replacing config.pri)
+- Qt6 auto-detection and linking
+- External library detection (QWT, GSL, CUDA)
+- Platform-specific configurations
+
+### Phase 2: Modular Component System
+**Replace .pri files with CMake modules:**
+- `cmake/BlackchirpData.cmake` - Data layer components
+- `cmake/BlackchirpGui.cmake` - GUI components  
+- `cmake/BlackchirpHardware.cmake` - Hardware abstraction
+- `cmake/BlackchirpAcquisition.cmake` - Acquisition system
+- `cmake/BlackchirpLif.cmake` - LIF module
+- `cmake/BlackchirpCuda.cmake` - CUDA acceleration
+
+**Component Benefits:**
+- Clear dependency declarations
+- Conditional compilation based on available hardware
+- Automatic library linking and include paths
+- Target-specific compile definitions
+
+### Phase 3: Hardware Configuration System
+**Replace config.pri with CMake options:**
+```cmake
+# Hardware selection options
+option(BC_ENABLE_LIF "Enable LIF functionality" OFF)
+option(BC_ENABLE_CUDA "Enable CUDA acceleration" OFF)
+
+# Hardware implementations
+set(BC_FTMW_SCOPE "virtual" CACHE STRING "FTMW oscilloscope implementation")
+set_property(CACHE BC_FTMW_SCOPE PROPERTY STRINGS 
+    "virtual" "DSA71604C" "MSO72004C" "M4i2220x8" "DSOx92004A" "DSOV204A" "MSO64B" "DPO71254B")
+
+set(BC_CLOCKS "fixed;fixed" CACHE STRING "Clock implementations (semicolon separated)")
+set(BC_AWG "" CACHE STRING "AWG implementation")
+set(BC_PGEN "" CACHE STRING "Pulse generator implementations (semicolon separated)")
+set(BC_FC "" CACHE STRING "Flow controller implementations (semicolon separated)")
+set(BC_IOBOARD "" CACHE STRING "IO board implementations (semicolon separated)")
+set(BC_GPIB "" CACHE STRING "GPIB controller implementation")
+set(BC_PC "" CACHE STRING "Pressure controller implementations (semicolon separated)")
+set(BC_TC "" CACHE STRING "Temperature controller implementations (semicolon separated)")
+
+# LIF-specific hardware
+set(BC_LIFSCOPE "" CACHE STRING "LIF oscilloscope implementation")
+set(BC_LIFLASER "" CACHE STRING "LIF laser implementation")
+```
+
+**Configuration Benefits:**
+- GUI configuration via cmake-gui/ccmake
+- Validation of hardware combinations
+- Automatic dependency checking
+- Platform-specific defaults
+
+### Phase 4: External Dependencies
+**Modern dependency management:**
+```cmake
+# Qt6 - Required for all builds
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network)
+# SerialPort only for main application, not viewer
+if(NOT BC_VIEWER_ONLY)
+    find_package(Qt6 REQUIRED COMPONENTS SerialPort)
+endif()
+
+# QWT - Scientific plotting library
+find_package(QWT REQUIRED)
+
+# GSL - GNU Scientific Library
+find_package(GSL REQUIRED)
+
+# CUDA - Optional for GPU acceleration
+if(BC_ENABLE_CUDA)
+    find_package(CUDAToolkit REQUIRED)
+endif()
+
+# Platform-specific libraries
+if(WIN32)
+    # Windows-specific dependencies
+elseif(APPLE)
+    # macOS-specific dependencies
+else()
+    # Linux-specific dependencies
+endif()
+```
+
+### Phase 5: Build Targets and Installation
+**Application targets:**
+- `blackchirp` - Main application executable
+- `blackchirp-viewer` - Viewer application executable
+- `blackchirp-tests` - Test executables (already exists)
+
+**Library targets:**
+- `blackchirp-data` - Shared data layer library
+- `blackchirp-gui` - Shared GUI components library
+- `blackchirp-hardware` - Hardware abstraction library
+- `blackchirp-acquisition` - Acquisition system library
+
+**Installation rules:**
+- Cross-platform binary installation
+- Resource file handling (Qt resources, icons, etc.)
+- Desktop integration files (.desktop files for Linux)
+- Documentation installation
+- Development headers (optional)
+
+### Phase 6: Packaging Integration
+**CPack configuration:**
+```cmake
+# General packaging settings
+set(CPACK_PACKAGE_NAME "Blackchirp")
+set(CPACK_PACKAGE_VENDOR "CrabtreeLab")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "CP-FTMW Spectroscopy Software")
+set(CPACK_PACKAGE_VERSION_MAJOR ${BC_MAJOR_VERSION})
+set(CPACK_PACKAGE_VERSION_MINOR ${BC_MINOR_VERSION})
+set(CPACK_PACKAGE_VERSION_PATCH ${BC_PATCH_VERSION})
+
+# Platform-specific packaging
+if(WIN32)
+    set(CPACK_GENERATOR "NSIS;ZIP")
+    set(CPACK_NSIS_DISPLAY_NAME "Blackchirp")
+    set(CPACK_NSIS_PACKAGE_NAME "Blackchirp")
+    # Code signing configuration
+elseif(APPLE)
+    set(CPACK_GENERATOR "DragNDrop;TGZ")
+    set(CPACK_DMG_VOLUME_NAME "Blackchirp")
+    # Notarization configuration
+else()
+    set(CPACK_GENERATOR "DEB;RPM;TGZ")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Kyle Crabtree")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6core6, libqt6gui6, libqt6widgets6, libqwt-qt6-6, libgsl27")
+    # Snap and Flatpak configurations
+endif()
+```
+
+## Migration Steps (Detailed Implementation)
+
+### Step 1: Create Root CMakeLists.txt
+**File: `/CMakeLists.txt`**
+- Project declaration with C++ language
+- Version detection from git
+- Global compiler settings (C++23, strict warnings)
+- Qt6 and external library detection
+- Hardware configuration option definitions
+- Conditional subdirectory inclusion
+- Testing enablement
+- CPack configuration
+
+### Step 2: Create CMake Utility Directory
+**Directory: `/cmake/`**
+- `FindQWT.cmake` - Custom QWT detection module
+- `BlackchirpMacros.cmake` - Common utility functions
+- `HardwareValidation.cmake` - Hardware configuration validation
+- `PlatformSpecific.cmake` - Platform-specific configurations
+
+### Step 3: Convert Data Layer
+**Migrate: `src/data/data.pri` → `cmake/BlackchirpData.cmake`**
+- List all source and header files
+- Create blackchirp-data library target
+- Handle Qt MOC for QObject classes
+- Set up proper include directories
+- Link required libraries (Qt6::Core, Qt6::Gui, GSL)
+
+### Step 4: Convert GUI Layer  
+**Migrate: `src/gui/gui.pri` → `cmake/BlackchirpGui.cmake`**
+- UI file processing with qt6_add_resources and qt6_add_uic
+- Icon and resource compilation
+- QWT integration for plotting components
+- Platform-specific GUI configurations
+- Theme and styling resource handling
+
+### Step 5: Convert Hardware Layer
+**Migrate: `src/hardware/hardware.pri` → `cmake/BlackchirpHardware.cmake`**
+- Dynamic hardware selection based on CMake options
+- Conditional compilation of hardware drivers
+- Serial port communication (Qt6::SerialPort)
+- Hardware validation and dependency checking
+- Communication protocol selection
+
+### Step 6: Convert Acquisition Layer
+**Migrate: `src/acquisition/acquisition.pri` → `cmake/BlackchirpAcquisition.cmake`**
+- Batch processing system
+- Experiment management
+- Data acquisition pipelines
+- Thread management components
+
+### Step 7: Convert Optional Modules
+**LIF Module: `src/modules/lif/lif.pri` → `cmake/BlackchirpLif.cmake`**
+- Conditional compilation based on BC_ENABLE_LIF
+- LIF-specific hardware integration
+- LIF data processing and visualization
+
+**CUDA Module: `src/modules/cuda/cuda.pri` → `cmake/BlackchirpCuda.cmake`**
+- Modern CMake CUDA support (enable_language(CUDA))
+- CUDA compilation flags and architecture
+- GPU memory management
+- CUDA kernel compilation
+
+### Step 8: Application Assembly
+**Main Application: `src/CMakeLists.txt`**
+- blackchirp executable target
+- Link all required libraries
+- Resource file integration
+- Platform-specific executable properties
+- Installation rules
+
+**Viewer Application: `viewer-src/CMakeLists.txt`**
+- blackchirp-viewer executable target
+- Subset of libraries (no hardware, no acquisition)
+- Viewer-specific version definitions (BCV_*)
+- Standalone deployment configuration
+
+### Step 9: Testing Integration
+**Extend: existing test `CMakeLists.txt`**
+- Integration with new library targets
+- Shared test utilities
+- Hardware simulation for testing
+- Continuous integration compatibility
+
+### Step 10: Documentation and Packaging
+**Documentation:**
+- Update README.md with CMake build instructions
+- Platform-specific build guides
+- Hardware configuration documentation
+- Packaging and deployment guides
+
+## Coexistence Strategy
+
+### Parallel Development Approach
+1. **Keep Existing qmake Files**: Don't remove .pro/.pri files during migration
+2. **Branch-Based Development**: Use 'cmakemigration' branch for all CMake work
+3. **Feature Parity Testing**: Ensure CMake builds produce identical functionality
+4. **Gradual Component Migration**: Convert one component at a time
+5. **Automated Testing**: Test both build systems in CI/CD
+
+### Migration Timeline
+- **Week 1-2**: Core infrastructure (Steps 1-2)
+- **Week 3-4**: Data and GUI layers (Steps 3-4)
+- **Week 5-6**: Hardware and acquisition layers (Steps 5-6)
+- **Week 7-8**: Optional modules and applications (Steps 7-8)
+- **Week 9-10**: Testing, documentation, packaging (Steps 9-10)
+
+### Validation Criteria
+- **Build Success**: Both applications build without errors
+- **Feature Completeness**: All hardware configurations work
+- **Performance Parity**: No performance regression
+- **Package Generation**: Successful package creation for all platforms
+- **Installation Testing**: Packages install and run correctly
+
+## Key Challenges and Solutions
+
+### Challenge 1: Hardware Configuration Complexity
+**Problem**: config.pri has complex parsing and conditional logic
+**Solution**: Use CMake's built-in option and string manipulation functions
+**Implementation**: Create HardwareValidation.cmake with comprehensive validation
+
+### Challenge 2: Qt Resource System Integration
+**Problem**: .qrc files and resource compilation
+**Solution**: Use Qt6's modern CMake integration (qt6_add_resources)
+**Implementation**: Automatic resource detection and compilation
+
+### Challenge 3: CUDA Integration Complexity
+**Problem**: Custom NVCC compilation rules in config.pri
+**Solution**: Leverage CMake's native CUDA support
+**Implementation**: Modern CMake CUDA language support with proper flags
+
+### Challenge 4: Cross-Platform Library Detection
+**Problem**: Different library paths and names across platforms
+**Solution**: Robust find_package modules and platform detection
+**Implementation**: Custom FindQWT.cmake with fallback search paths
+
+### Challenge 5: Maintaining Build Speed
+**Problem**: CMake can be slower than qmake for incremental builds
+**Solution**: Proper target dependencies and modern CMake practices
+**Implementation**: Use target-based approach with minimal rebuilds
+
+## Success Metrics
+1. **Build Time**: CMake builds should be within 10% of qmake build times
+2. **Binary Size**: Generated binaries should be similar size or smaller
+3. **Feature Coverage**: 100% of current functionality preserved
+4. **Platform Support**: Successful builds on Windows, macOS, Linux
+5. **Package Quality**: Generated packages install and run without issues
+6. **Developer Experience**: Easier configuration and dependency management
+
+## Post-Migration Benefits
+1. **Modern Development**: Better IDE integration and debugging
+2. **Easier Packaging**: Automated installer and package generation
+3. **Better Dependencies**: Robust library detection and management
+4. **Simplified Configuration**: GUI-based hardware configuration
+5. **Enhanced Testing**: Better test integration and coverage
+6. **Future-Proof**: Modern build system for future development
+
+## Rollback Plan
+If migration encounters insurmountable issues:
+1. Keep qmake system fully functional during transition
+2. Document any discovered limitations or issues
+3. Provide clear rollback instructions
+4. Preserve all existing functionality in qmake system
+5. Learn from migration attempt for future improvements
+
+---
+
+This migration plan provides a comprehensive roadmap for transitioning Blackchirp from qmake to CMake while maintaining full functionality and enabling better cross-platform deployment.
