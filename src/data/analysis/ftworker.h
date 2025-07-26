@@ -194,6 +194,7 @@ public slots:
 
 private slots:
     void onIdleTimeout();
+    void startIdleTimer();
 
 private:
     std::unique_ptr<QTimer> pu_idleTimer;

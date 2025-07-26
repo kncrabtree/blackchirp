@@ -737,7 +737,10 @@ void FtWorker::cleanupResources()
 void FtWorker::resetIdleTimer()
 {
     if(d_resourcesAllocated && d_idleCleanupEnabled)
-        pu_idleTimer->start();
+    {
+        // Use queued invocation to ensure timer is started from the correct thread
+        QMetaObject::invokeMethod(this, &FtWorker::startIdleTimer, Qt::QueuedConnection);
+    }
 }
 
 void FtWorker::setIdleCleanupEnabled(bool enabled)
@@ -752,4 +755,10 @@ void FtWorker::onIdleTimeout()
     // Only cleanup if idle cleanup is still enabled
     if(d_idleCleanupEnabled)
         cleanupResources();
+}
+
+void FtWorker::startIdleTimer()
+{
+    if(d_resourcesAllocated && d_idleCleanupEnabled)
+        pu_idleTimer->start();
 }
