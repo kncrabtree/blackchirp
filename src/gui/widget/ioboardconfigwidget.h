@@ -2,7 +2,7 @@
 #define IOBOARDCONFIGWIDGET_H
 
 #include <gui/widget/digitizerconfigwidget.h>
-#include <hardware/optional/ioboard/ioboardconfig.h>
+#include <data/experiment/hardware/optional/ioboard/ioboardconfig.h>
 
 namespace BC::Key::DigiWidget {
 static const QString channelName{"name"};

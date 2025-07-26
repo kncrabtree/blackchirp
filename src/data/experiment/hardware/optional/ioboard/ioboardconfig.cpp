@@ -1,4 +1,4 @@
-#include <hardware/optional/ioboard/ioboardconfig.h>
+#include <data/experiment/hardware/optional/ioboard/ioboardconfig.h>
 
 #include <hardware/optional/ioboard/ioboard.h>
 

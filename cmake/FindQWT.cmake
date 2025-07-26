@@ -25,6 +25,8 @@ find_path(QWT_INCLUDE_DIR
         /usr/include/qwt
         /usr/include/qwt-qt6
         /usr/include/qt6/qwt
+        /usr/include/qt6/qwt6
+        /usr/include/qwt6
         /usr/local/include/qwt
         /opt/local/include/qwt
         "C:/Qwt-6.3.0/include"

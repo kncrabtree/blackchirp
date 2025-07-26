@@ -3,7 +3,6 @@
 #include <data/storage/settingsstorage.h>
 #include <hardware/optional/chirpsource/awg.h>
 #include <QDoubleSpinBox>
-#include <QApplication>
 #include <QCheckBox>
 
 ChirpTableModel::ChirpTableModel(QObject *parent)

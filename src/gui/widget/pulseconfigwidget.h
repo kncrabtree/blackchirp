@@ -6,7 +6,7 @@
 
 #include <gui/widget/enumcombobox.h>
 #include <data/storage/settingsstorage.h>
-#include <hardware/optional/pulsegenerator/pulsegenconfig.h>
+#include <data/experiment/hardware/optional/pulsegenerator/pulsegenconfig.h>
 #include <data/experiment/ftmwconfig.h>
 
 #ifdef BC_LIF

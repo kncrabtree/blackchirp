@@ -1,4 +1,4 @@
-#include <hardware/optional/pulsegenerator/pulsegenconfig.h>
+#include <data/experiment/hardware/optional/pulsegenerator/pulsegenconfig.h>
 
 #include <QMetaEnum>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>

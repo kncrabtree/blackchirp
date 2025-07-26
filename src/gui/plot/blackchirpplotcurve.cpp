@@ -4,6 +4,10 @@
 #include <QPalette>
 #include <QMutex>
 
+// Meta-type declarations moved here to avoid redefinition issues when included from multiple translation units
+Q_DECLARE_METATYPE(QwtSymbol::Style)
+Q_DECLARE_METATYPE(QwtPlot::Axis)
+
 BlackchirpPlotCurveBase::BlackchirpPlotCurveBase(std::unique_ptr<CurveStorageInterface> storage, const QString key, const QString title, Qt::PenStyle defaultLineStyle, QwtSymbol::Style defaultMarker, CurveStyle defaultStyle) :
     d_storage{std::move(storage)}, d_key{key}, p_samplesMutex{new QMutex}
 {

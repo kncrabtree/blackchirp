@@ -2,7 +2,7 @@
 #define TEMPERATURECONTROLLER_H
 #include <hardware/core/hardwareobject.h>
 
-#include <hardware/optional/tempcontroller/temperaturecontrollerconfig.h>
+#include <data/experiment/hardware/optional/tempcontroller/temperaturecontrollerconfig.h>
 
 class QTimer;
 

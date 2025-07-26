@@ -9,11 +9,11 @@
 #include <data/storage/settingsstorage.h>
 #include <data/experiment/rfconfig.h>
 
-#include <hardware/optional/flowcontroller/flowconfig.h>
-#include <hardware/optional/pulsegenerator/pulsegenconfig.h>
-#include <hardware/optional/pressurecontroller/pressurecontrollerconfig.h>
-#include <hardware/optional/tempcontroller/temperaturecontrollerconfig.h>
-#include <hardware/optional/ioboard/ioboardconfig.h>
+#include <data/experiment/hardware/optional/flowcontroller/flowconfig.h>
+#include <data/experiment/hardware/optional/pulsegenerator/pulsegenconfig.h>
+#include <data/experiment/hardware/optional/pressurecontroller/pressurecontrollerconfig.h>
+#include <data/experiment/hardware/optional/tempcontroller/temperaturecontrollerconfig.h>
+#include <data/experiment/hardware/optional/ioboard/ioboardconfig.h>
 
 #ifdef BC_LIF
 #include <modules/lif/data/lifconfig.h>

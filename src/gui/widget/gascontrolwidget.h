@@ -5,7 +5,7 @@
 #include <QVector>
 
 #include <data/storage/settingsstorage.h>
-#include <hardware/optional/flowcontroller/flowconfig.h>
+#include <data/experiment/hardware/optional/flowcontroller/flowconfig.h>
 
 class QLineEdit;
 class QDoubleSpinBox;

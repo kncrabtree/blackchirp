@@ -17,11 +17,11 @@
 #include <data/experiment/experimentvalidator.h>
 #include <data/experiment/ftmwconfig.h>
 #include <data/loghandler.h>
-#include <hardware/optional/pulsegenerator/pulsegenconfig.h>
-#include <hardware/optional/flowcontroller/flowconfig.h>
-#include <hardware/optional/ioboard/ioboardconfig.h>
-#include <hardware/optional/pressurecontroller/pressurecontrollerconfig.h>
-#include <hardware/optional/tempcontroller/temperaturecontrollerconfig.h>
+#include <data/experiment/hardware/optional/pulsegenerator/pulsegenconfig.h>
+#include <data/experiment/hardware/optional/flowcontroller/flowconfig.h>
+#include <data/experiment/hardware/optional/ioboard/ioboardconfig.h>
+#include <data/experiment/hardware/optional/pressurecontroller/pressurecontrollerconfig.h>
+#include <data/experiment/hardware/optional/tempcontroller/temperaturecontrollerconfig.h>
 
 //these are included because they define datatypes needed by qRegisterMetaType in main.cpp
 #include <data/analysis/ft.h>

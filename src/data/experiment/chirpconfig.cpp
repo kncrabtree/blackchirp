@@ -1,7 +1,5 @@
 #include <data/experiment/chirpconfig.h>
 
-
-#include <QApplication>
 #include <QList>
 #include <QCryptographicHash>
 #include <QFile>

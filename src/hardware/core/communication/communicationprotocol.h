@@ -4,7 +4,7 @@
 #include <QObject>
 
 #include <QSettings>
-#include <QApplication>
+#include <QCoreApplication>
 
 #include <data/loghandler.h>
 #include <data/storage/settingsstorage.h>

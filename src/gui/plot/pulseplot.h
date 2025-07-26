@@ -6,7 +6,7 @@
 #include <QList>
 #include <memory>
 
-#include <hardware/optional/pulsegenerator/pulsegenconfig.h>
+#include <data/experiment/hardware/optional/pulsegenerator/pulsegenconfig.h>
 
 class QwtPlotCurve;
 class QwtPlotMarker;

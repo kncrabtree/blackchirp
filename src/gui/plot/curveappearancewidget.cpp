@@ -1,5 +1,6 @@
 #include "curveappearancewidget.h"
 #include "curveappearancepresetmanager.h"
+#include "curveappearanceconverter.h"
 #include "blackchirpplotcurve.h"
 #include <data/experiment/overlaybase.h>
 
@@ -436,13 +437,64 @@ void CurveAppearanceWidget::initializeFromOverlay(std::shared_ptr<OverlayBase> o
         return;
     }
     
-    // Create appearance structure from overlay metadata
+    // First try to load using new data layer format with proper enums
+    // Check if the overlay has data layer format stored using BC::Data::CurveKey keys
+    QVariant colorVar = overlay->getCurveMetadata(BC::Data::CurveKey::color);
+    if (colorVar.isValid()) {
+        // New format: load data appearance and convert to GUI
+        BC::Data::CurveAppearance dataAppearance;
+        
+        dataAppearance.color = colorVar.value<QColor>();
+        
+        QVariant curveStyleVar = overlay->getCurveMetadata(BC::Data::CurveKey::curveStyle);
+        if (curveStyleVar.isValid()) {
+            dataAppearance.curveStyle = static_cast<BC::Data::CurveStyle>(curveStyleVar.toInt());
+        }
+        
+        QVariant thicknessVar = overlay->getCurveMetadata(BC::Data::CurveKey::thickness);
+        if (thicknessVar.isValid()) {
+            dataAppearance.lineThickness = thicknessVar.toDouble();
+        }
+        
+        QVariant lineStyleVar = overlay->getCurveMetadata(BC::Data::CurveKey::lineStyle);
+        if (lineStyleVar.isValid()) {
+            dataAppearance.lineStyle = static_cast<BC::Data::LineStyle>(lineStyleVar.toInt());
+        }
+        
+        QVariant markerVar = overlay->getCurveMetadata(BC::Data::CurveKey::marker);
+        if (markerVar.isValid()) {
+            dataAppearance.markerStyle = static_cast<BC::Data::MarkerStyle>(markerVar.toInt());
+        }
+        
+        QVariant markerSizeVar = overlay->getCurveMetadata(BC::Data::CurveKey::markerSize);
+        if (markerSizeVar.isValid()) {
+            dataAppearance.markerSize = markerSizeVar.toInt();
+        }
+        
+        QVariant visibleVar = overlay->getCurveMetadata(BC::Data::CurveKey::visible);
+        if (visibleVar.isValid()) {
+            dataAppearance.visible = visibleVar.toBool();
+        }
+        
+        QVariant autoscaleVar = overlay->getCurveMetadata(BC::Data::CurveKey::autoscale);
+        if (autoscaleVar.isValid()) {
+            dataAppearance.autoscale = autoscaleVar.toBool();
+        }
+        
+        // Convert data appearance to GUI appearance and apply
+        auto guiAppearance = CurveAppearanceConverter::toGuiAppearance(dataAppearance);
+        setCurrentAppearance(guiAppearance);
+        return;
+    }
+    
+    // Fallback to old format for backward compatibility
+    // Create appearance structure from overlay metadata using old BC::Key format
     CurveAppearance appearance;
     
     // Load color (default to palette text color if not set)
-    QVariant colorVar = overlay->getCurveMetadata(BC::Key::bcCurveColor);
-    if (colorVar.isValid()) {
-        appearance.color = colorVar.value<QColor>();
+    QVariant oldColorVar = overlay->getCurveMetadata(BC::Key::bcCurveColor);
+    if (oldColorVar.isValid()) {
+        appearance.color = oldColorVar.value<QColor>();
     } else {
         appearance.color = palette().color(QPalette::Text);
     }
@@ -533,30 +585,9 @@ void CurveAppearanceWidget::applyToOverlay(std::shared_ptr<OverlayBase> overlay)
         return;
     }
     
-    // Save all appearance properties to overlay metadata
-    overlay->setCurveMetadata(BC::Key::bcCurveColor, d_currentAppearance.color);
-    overlay->setCurveMetadata(BC::Key::bcCurveCurveStyle, static_cast<int>(d_currentAppearance.curveStyle));
-    overlay->setCurveMetadata(BC::Key::bcCurveThickness, d_currentAppearance.lineThickness);
-    overlay->setCurveMetadata(BC::Key::bcCurveLineStyle, static_cast<int>(d_currentAppearance.lineStyle));
-    overlay->setCurveMetadata(BC::Key::bcCurveMarker, static_cast<int>(d_currentAppearance.markerStyle));
-    overlay->setCurveMetadata(BC::Key::bcCurveMarkerSize, d_currentAppearance.markerSize);
-    overlay->setCurveMetadata(BC::Key::bcCurveVisible, d_currentAppearance.visible);
-    overlay->setCurveMetadata(BC::Key::bcCurveAutoscale, d_currentAppearance.autoscale);
-    
-    // Convert QwtAxisId back to QwtPlot::Axis for storage
-    QwtPlot::Axis oldAxis;
-    switch (d_currentAppearance.yAxis) {
-        case QwtAxis::YLeft:
-            oldAxis = QwtPlot::yLeft;
-            break;
-        case QwtAxis::YRight:
-            oldAxis = QwtPlot::yRight;
-            break;
-        default:
-            oldAxis = QwtPlot::yLeft;
-            break;
-    }
-    overlay->setCurveMetadata(BC::Key::bcCurveAxisY, static_cast<int>(oldAxis));
+    // Convert GUI appearance to data appearance and use the data layer's storage method
+    auto dataAppearance = CurveAppearanceConverter::toDataAppearance(d_currentAppearance);
+    overlay->setCurveAppearanceMetadata(dataAppearance);
 }
 
 // === PRESET MANAGEMENT METHODS ===

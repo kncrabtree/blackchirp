@@ -1,4 +1,4 @@
-#include <hardware/optional/flowcontroller/flowconfig.h>
+#include <data/experiment/hardware/optional/flowcontroller/flowconfig.h>
 
 #include <data/storage/settingsstorage.h>
 #include <hardware/optional/flowcontroller/flowcontroller.h>

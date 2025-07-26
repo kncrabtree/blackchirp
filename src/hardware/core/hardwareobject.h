@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QString>
 #include <QSettings>
-#include <QApplication>
+#include <QCoreApplication>
 #include <QList>
 #include <QPair>
 

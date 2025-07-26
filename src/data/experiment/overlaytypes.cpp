@@ -2,7 +2,6 @@
 
 #include <data/storage/blackchirpcsv.h>
 #include <data/experiment/experiment.h>
-#include <gui/plot/blackchirpplotcurve.h>
 #include <QtMath>
 #include <cmath>
 #include <QJsonDocument>
@@ -686,7 +685,7 @@ void CatalogOverlay::_retrieveMetadata(const std::map<QString, QVariant> &m)
     }
     
     // Force curve style to stick plot when loaded from disk
-    setCurveMetadata(BC::Key::bcCurveCurveStyle, static_cast<int>(QwtPlotCurve::Sticks));
+    setCurveMetadata(BC::Data::CurveKey::curveStyle, static_cast<int>(BC::Data::CurveStyle::Sticks));
     
     // Invalidate cache after loading metadata
     invalidateConvolutionCache();

@@ -1,7 +1,4 @@
 #include "overlaybase.h"
-#include <gui/plot/blackchirpplotcurve.h>
-#include <gui/plot/curveappearancepresetmanager.h>
-#include <gui/plot/curveappearancewidget.h>
 
 
 OverlayBase::OverlayBase(OverlayType type) : d_type{type}
@@ -202,7 +199,7 @@ void OverlayBase::setEnabled(bool enabled)
     d_enabled = enabled;
     
     // Synchronize with curve visibility metadata for ZoomPanPlot integration
-    d_curveMetadata[BC::Key::bcCurveVisible] = enabled;
+    d_curveMetadata[BC::Data::CurveKey::visible] = enabled;
 }
 
 void OverlayBase::setComment(const QString &newcomment)
@@ -314,12 +311,12 @@ void OverlayBase::retrieveMetadata(const std::map<QString,QVariant> &m)
     }
     
     // Synchronize enabled state with curve visibility if curve metadata exists
-    auto curveVisIt = d_curveMetadata.find(BC::Key::bcCurveVisible);
+    auto curveVisIt = d_curveMetadata.find(BC::Data::CurveKey::visible);
     if(curveVisIt != d_curveMetadata.end()) {
         d_enabled = curveVisIt->second.toBool();
     } else {
         // If no curve visibility metadata exists, ensure curve visibility matches overlay enabled state
-        d_curveMetadata[BC::Key::bcCurveVisible] = d_enabled;
+        d_curveMetadata[BC::Data::CurveKey::visible] = d_enabled;
     }
     
     _retrieveMetadata(m);
@@ -332,15 +329,15 @@ void OverlayBase::invalidateCache()
     d_cachedYMax = 0.0;
 }
 
-void OverlayBase::setCurveAppearanceMetadata(const CurveAppearanceWidget::CurveAppearance &appearance)
+void OverlayBase::setCurveAppearanceMetadata(const BC::Data::CurveAppearance &appearance)
 {
     // Apply all curve appearance properties to overlay metadata
-    setCurveMetadata(BC::Key::bcCurveColor, appearance.color);
-    setCurveMetadata(BC::Key::bcCurveCurveStyle, static_cast<int>(appearance.curveStyle));
-    setCurveMetadata(BC::Key::bcCurveThickness, appearance.lineThickness);
-    setCurveMetadata(BC::Key::bcCurveLineStyle, static_cast<int>(appearance.lineStyle));
-    setCurveMetadata(BC::Key::bcCurveMarker, static_cast<int>(appearance.markerStyle));
-    setCurveMetadata(BC::Key::bcCurveMarkerSize, appearance.markerSize);
-    setCurveMetadata(BC::Key::bcCurveVisible, appearance.visible);
-    setCurveMetadata(BC::Key::bcCurveAutoscale, appearance.autoscale);
+    setCurveMetadata(BC::Data::CurveKey::color, appearance.color);
+    setCurveMetadata(BC::Data::CurveKey::curveStyle, static_cast<int>(appearance.curveStyle));
+    setCurveMetadata(BC::Data::CurveKey::thickness, appearance.lineThickness);
+    setCurveMetadata(BC::Data::CurveKey::lineStyle, static_cast<int>(appearance.lineStyle));
+    setCurveMetadata(BC::Data::CurveKey::marker, static_cast<int>(appearance.markerStyle));
+    setCurveMetadata(BC::Data::CurveKey::markerSize, appearance.markerSize);
+    setCurveMetadata(BC::Data::CurveKey::visible, appearance.visible);
+    setCurveMetadata(BC::Data::CurveKey::autoscale, appearance.autoscale);
 }

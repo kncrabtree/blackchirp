@@ -2,7 +2,7 @@
 #define LIFSCOPE_H
 
 #include <hardware/core/hardwareobject.h>
-#include <modules/lif/hardware/lifdigitizer/lifdigitizerconfig.h>
+#include <modules/lif/data/hardware/lifdigitizer/lifdigitizerconfig.h>
 #include <modules/lif/data/lifconfig.h>
 
 namespace BC::Key::LifDigi {

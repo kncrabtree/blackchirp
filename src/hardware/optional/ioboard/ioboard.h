@@ -3,7 +3,7 @@
 
 #include <hardware/core/hardwareobject.h>
 
-#include <hardware/optional/ioboard/ioboardconfig.h>
+#include <data/experiment/hardware/optional/ioboard/ioboardconfig.h>
 
 namespace BC::Key::IOB {
 static const QString ioboard{"IOBoard"};

@@ -5,7 +5,6 @@
 #include <QMutexLocker>
 #include <QDateTime>
 #include <QtConcurrent/QtConcurrent>
-#include <QApplication>
 
 OverlayProcessManager::OverlayProcessManager(QObject* parent)
     : QObject(parent),

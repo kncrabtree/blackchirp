@@ -12,7 +12,6 @@
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
-#include <QApplication>
 #include <QFile>
 #include <QSaveFile>
 #include <QDir>

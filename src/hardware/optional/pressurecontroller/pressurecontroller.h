@@ -2,7 +2,7 @@
 #define PRESSURECONTROLLER_H
 
 #include <hardware/core/hardwareobject.h>
-#include <hardware/optional/pressurecontroller/pressurecontrollerconfig.h>
+#include <data/experiment/hardware/optional/pressurecontroller/pressurecontrollerconfig.h>
 
 namespace BC::Key::PController {
 static const QString key{"PressureController"};

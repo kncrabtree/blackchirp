@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-#include <hardware/optional/pressurecontroller/pressurecontrollerconfig.h>
+#include <data/experiment/hardware/optional/pressurecontroller/pressurecontrollerconfig.h>
 
 class QDoubleSpinBox;
 class QPushButton;

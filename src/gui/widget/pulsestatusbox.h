@@ -4,7 +4,7 @@
 #include <QGroupBox>
 
 #include "hardwarestatusbox.h"
-#include <hardware/optional/pulsegenerator/pulsegenconfig.h>
+#include <data/experiment/hardware/optional/pulsegenerator/pulsegenconfig.h>
 
 class QLabel;
 class Led;

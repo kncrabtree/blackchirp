@@ -7,7 +7,7 @@
 
 #include <modules/lif/data/liftrace.h>
 #include <modules/lif/data/lifconfig.h>
-#include <modules/lif/hardware/lifdigitizer/lifdigitizerconfig.h>
+#include <modules/lif/data/hardware/lifdigitizer/lifdigitizerconfig.h>
 
 class LifTracePlot;
 class DigitizerConfigWidget;

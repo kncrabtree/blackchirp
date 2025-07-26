@@ -4,7 +4,7 @@
 #include <QWidget>
 
 #include <data/storage/settingsstorage.h>
-#include <hardware/optional/tempcontroller/temperaturecontrollerconfig.h>
+#include <data/experiment/hardware/optional/tempcontroller/temperaturecontrollerconfig.h>
 
 class QLineEdit;
 class QPushButton;

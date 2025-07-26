@@ -11,8 +11,7 @@
 class QMutex;
 class OverlayBase;
 
-Q_DECLARE_METATYPE(QwtSymbol::Style)
-Q_DECLARE_METATYPE(QwtPlot::Axis)
+// Meta-type declarations moved to blackchirpplotcurve.cpp to avoid redefinition issues
 
 #include <data/storage/settingsstorage.h>
 

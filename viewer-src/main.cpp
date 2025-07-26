@@ -1,5 +1,5 @@
 #include <data/storage/settingsstorage.h>
-#include <viewer-src/viewermainwindow.h>
+#include "viewermainwindow.h"
 #include <gui/plot/curveappearancepresetmanager.h>
 #include <data/processing/parsers/fileparserregistry.h>
 #include <data/processing/parsers/spcatparser.h>

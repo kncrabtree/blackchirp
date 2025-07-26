@@ -60,13 +60,13 @@ set_property(CACHE BC_FTMW_SCOPE PROPERTY STRINGS
     "virtual" "DSA71604C" "MSO72004C" "M4i2220x8" "DSOx92004A" "DSOV204A" "MSO64B" "DPO71254B")
 
 set(BC_CLOCKS "fixed;fixed" CACHE STRING "Clock implementations (semicolon separated)")
-set(BC_AWG "" CACHE STRING "AWG implementation")
-set(BC_PGEN "" CACHE STRING "Pulse generator implementations (semicolon separated)")
-set(BC_FC "" CACHE STRING "Flow controller implementations (semicolon separated)")
-set(BC_IOBOARD "" CACHE STRING "IO board implementations (semicolon separated)")
-set(BC_GPIB "" CACHE STRING "GPIB controller implementation")
-set(BC_PC "" CACHE STRING "Pressure controller implementations (semicolon separated)")
-set(BC_TC "" CACHE STRING "Temperature controller implementations (semicolon separated)")
+set(BC_AWG "virtual" CACHE STRING "AWG implementation")
+set(BC_PGEN "virtual;virtual" CACHE STRING "Pulse generator implementations (semicolon separated)")
+set(BC_FLOWCONTROLLER "virtual;virtual" CACHE STRING "Flow controller implementations (semicolon separated)")
+set(BC_IOBOARD "virtual" CACHE STRING "IO board implementations (semicolon separated)")
+set(BC_GPIBCONTROLLER "virtual" CACHE STRING "GPIB controller implementation")
+set(BC_PRESSURECONTROLLER "virtual" CACHE STRING "Pressure controller implementations (semicolon separated)")
+set(BC_TEMPCONTROLLER "virtual" CACHE STRING "Temperature controller implementations (semicolon separated)")
 
 # LIF-specific hardware (only relevant if BC_ENABLE_LIF is ON)
 if(BC_ENABLE_LIF)
@@ -201,44 +201,9 @@ function(add_blackchirp_definitions target_name)
         BC_NUM_CLOCKS=${BC_NUM_CLOCKS}
     )
     
-    # Hardware-specific definitions
-    target_compile_definitions(${target_name} PRIVATE
-        BC_FTMWSCOPE=${BC_FTMW_SCOPE}
-        BC_FTMW_SCOPE_${BC_FTMW_SCOPE}
-    )
+    # Hardware-specific definitions are now handled by BlackchirpHardware.cmake module
     
-    # Process clocks
-    math(EXPR CLOCK_INDEX "0")
-    foreach(CLOCK IN LISTS BC_CLOCKS)
-        target_compile_definitions(${target_name} PRIVATE
-            BC_CLOCK_${CLOCK_INDEX}=BC_CLOCK_${CLOCK}
-            BC_CLOCK_${CLOCK}=${CLOCK}
-        )
-        math(EXPR CLOCK_INDEX "${CLOCK_INDEX} + 1")
-    endforeach()
-    
-    # Optional hardware definitions
-    if(BC_AWG)
-        target_compile_definitions(${target_name} PRIVATE BC_AWG=${BC_AWG} BC_AWG_${BC_AWG})
-    endif()
-    
-    if(BC_PGEN)
-        target_compile_definitions(${target_name} PRIVATE BC_PGEN)
-        string(REPLACE ";" " " BC_PGEN_SPACE_SEPARATED "${BC_PGEN}")
-        list(LENGTH BC_PGEN BC_NUM_PGEN)
-        target_compile_definitions(${target_name} PRIVATE BC_NUM_PGEN=${BC_NUM_PGEN})
-        
-        math(EXPR PGEN_INDEX "0")
-        foreach(PGEN IN LISTS BC_PGEN)
-            target_compile_definitions(${target_name} PRIVATE
-                BC_PGEN_${PGEN_INDEX}=BC_PGEN_${PGEN}
-                BC_PGEN_${PGEN}=${PGEN}
-            )
-            math(EXPR PGEN_INDEX "${PGEN_INDEX} + 1")
-        endforeach()
-    endif()
-    
-    # Add other hardware definitions as needed...
+    # All hardware definitions are now handled by BlackchirpHardware.cmake module
     
     # LIF definitions
     if(BC_ENABLE_LIF)
@@ -264,6 +229,47 @@ function(add_viewer_definitions target_name)
 endfunction()
 
 # ============================================================================
+# Data Layer
+# ============================================================================
+
+# Create data layer library (shared between main app and viewer)
+include(cmake/BlackchirpData.cmake)
+
+# ============================================================================
+# GUI Layer
+# ============================================================================
+
+# Create GUI layer library (includes widgets, plots, and models)
+if(BC_BUILD_VIEWER_ONLY)
+    # Viewer-only build: use lightweight GUI without hardware dependencies
+    include(cmake/BlackchirpViewerGui.cmake)
+else()
+    # Full application build: use complete GUI layer
+    include(cmake/BlackchirpGui.cmake)
+    
+    # Also create viewer GUI library for viewer application
+    include(cmake/BlackchirpViewerGui.cmake)
+endif()
+
+# ============================================================================
+# Hardware Layer
+# ============================================================================
+
+# Create hardware layer library (only for main application, not viewer)
+if(NOT BC_BUILD_VIEWER_ONLY)
+    include(cmake/BlackchirpHardware.cmake)
+endif()
+
+# ============================================================================
+# Application Layer
+# ============================================================================
+
+# Create main application executable (only for main application, not viewer)
+if(NOT BC_BUILD_VIEWER_ONLY)
+    include(cmake/BlackchirpApplication.cmake)
+endif()
+
+# ============================================================================
 # Subdirectories
 # ============================================================================
 
@@ -277,12 +283,11 @@ if(BC_BUILD_TESTS)
 endif()
 
 # Build main application unless viewer-only build
-if(NOT BC_BUILD_VIEWER_ONLY)
-    add_subdirectory(src)
-endif()
+# Note: Main application is now built via BlackchirpApplication.cmake module
+# The src/CMakeLists.txt is kept for reference but not used
 
 # Build viewer application
-add_subdirectory(viewer-src)
+include(cmake/BlackchirpViewerApplication.cmake)
 
 # Documentation
 if(BC_BUILD_DOCUMENTATION)

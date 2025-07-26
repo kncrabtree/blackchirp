@@ -12,6 +12,7 @@
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
 #include <hardware/hw_h.h>
+#include <hardware/opthw_h.h>
 #include <hardware/core/clock/clock_h.h>
 
 #include <boost/preprocessor/iteration/local.hpp>
@@ -31,7 +32,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     d_optHwTypes{BC::Key::Flow::flowController,BC::Key::IOB::ioboard,BC::Key::PController::key,BC::Key::PGen::key,BC::Key::TC::key}
 {
     //Required hardware: FtmwScope and Clocks
-    auto ftmwScope = new BC_FTMWSCOPE;
+    auto ftmwScope = new BC_FTMWDIGITIZER;
     connect(ftmwScope,&FtmwScope::shotAcquired,this,&HardwareManager::ftmwScopeShotAcquired);
     d_hardwareMap.emplace(ftmwScope->d_key,ftmwScope);
 
@@ -42,8 +43,8 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     for(int i=0; i<cl.size(); i++)
         d_hardwareMap.emplace(cl.at(i)->d_key,cl.at(i));
 
-#ifdef BC_AWG
-    auto awg = new BC_AWG;
+#ifdef BC_CHIRPSOURCE
+    auto awg = new BC_CHIRPSOURCE;
     d_hardwareMap.emplace(awg->d_key,awg);
 #endif
 
@@ -61,7 +62,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #ifdef BC_PGEN
     QList<PulseGenerator*> pGenList;
 
-#define BOOST_PP_LOCAL_MACRO(n) pGenList << new BC_PGEN_##n;
+#define BOOST_PP_LOCAL_MACRO(n) pGenList << new BC_PULSEGENERATOR_##n;
 #define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_PGEN-1)
 #include BOOST_PP_LOCAL_ITERATE()
 #undef BOOST_PP_LOCAL_MACRO
@@ -114,7 +115,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #ifdef BC_PCONTROLLER
     QList<PressureController*> pcList;
 
-#define BOOST_PP_LOCAL_MACRO(n) pcList << new BC_PCONTROLLER_##n;
+#define BOOST_PP_LOCAL_MACRO(n) pcList << new BC_PRESSURECONTROLLER_##n;
 #define BOOST_PP_LOCAL_LIMITS (0,BC_NUM_PCONTROLLER-1)
 #include BOOST_PP_LOCAL_ITERATE()
 #undef BOOST_PP_LOCAL_MACRO

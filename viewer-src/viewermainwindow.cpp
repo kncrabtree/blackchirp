@@ -2,6 +2,7 @@
 #include <QApplication>
 #include <QFormLayout>
 #include <QDialogButtonBox>
+#include <QPushButton>
 #include <QDir>
 #include <QListWidgetItem>
 #include <QToolBar>
