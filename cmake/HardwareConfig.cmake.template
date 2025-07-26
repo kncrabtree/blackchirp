@@ -1,0 +1,189 @@
+# Blackchirp Hardware Configuration Template
+#
+# Copy this file to HardwareConfig.cmake and modify as needed for your system.
+# This file is ignored by git to prevent updates from overwriting your settings.
+#
+# IMPORTANT: After copying, edit the hardware selections below to match your
+# laboratory setup. The default "virtual" implementations are for testing only.
+
+# ============================================================================
+# Hardware Configuration Instructions
+# ============================================================================
+#
+# This file configures which hardware implementations to compile into Blackchirp.
+# Each hardware type can be set to one of the available implementations listed below.
+#
+# For single-instance hardware, set the variable to ONE implementation name.
+# For multi-instance hardware, use semicolon-separated lists (e.g., "impl1;impl2").
+#
+# REQUIRED HARDWARE (must always be configured):
+# - BC_FTMW_SCOPE: FTMW digitizer/oscilloscope
+# - BC_CLOCKS: Clock generators (at least one required)
+#
+# OPTIONAL HARDWARE (leave empty "" to disable):
+# - BC_AWG: Arbitrary waveform generator (chirp source)
+# - BC_PGEN: Pulse generators (can have multiple)
+# - BC_FLOWCONTROLLER: Gas flow controllers (can have multiple)
+# - BC_IOBOARD: Digital I/O boards (can have multiple)
+# - BC_GPIBCONTROLLER: GPIB interface controller
+# - BC_PRESSURECONTROLLER: Pressure controllers (can have multiple)
+# - BC_TEMPCONTROLLER: Temperature controllers (can have multiple)
+
+# ============================================================================
+# FTMW Digitizer/Oscilloscope (REQUIRED - choose ONE)
+# ============================================================================
+# Available implementations:
+#   virtual        - Virtual scope for testing (no hardware required)
+#   dsa71604c      - Tektronix DSA71604C real-time oscilloscope
+#   mso72004c      - Tektronix MSO72004C mixed signal oscilloscope
+#   m4i2220x8      - Spectrum M4i.2220-x8 PCIe digitizer
+#   dsox92004a     - Keysight DSOX92004A oscilloscope
+#   dsov204a       - Keysight DSOV204A oscilloscope
+#   mso64b         - Tektronix MSO64B oscilloscope
+#   dpo71254b      - Tektronix DPO71254B oscilloscope
+
+set(BC_FTMW_SCOPE "virtual" CACHE STRING "FTMW digitizer implementation")
+
+# ============================================================================
+# Clock Generators (REQUIRED - at least one, can have multiple)
+# ============================================================================
+# Available implementations:
+#   fixed          - Fixed frequency clock (no hardware control)
+#   valon5009      - Valon 5009 frequency synthesizer
+#   valon5015      - Valon 5015 frequency synthesizer  
+#   hp83712b       - HP 83712B signal generator
+
+set(BC_CLOCKS "fixed;fixed" CACHE STRING "Clock implementations (semicolon-separated)")
+
+# ============================================================================
+# Arbitrary Waveform Generator / Chirp Source (OPTIONAL - choose ONE or leave empty)
+# ============================================================================
+# Available implementations:
+#   virtual        - Virtual AWG for testing
+#   awg70002a      - Tektronix AWG70002A arbitrary waveform generator
+#   awg7122b       - Tektronix AWG7122B arbitrary waveform generator
+#   awg5204        - Tektronix AWG5204 arbitrary waveform generator
+#   ad9914         - Analog Devices AD9914 DDS
+#   m8190          - Keysight M8190A arbitrary waveform generator
+#   m8195a         - Keysight M8195A arbitrary waveform generator
+
+set(BC_AWG "" CACHE STRING "AWG implementation")
+
+# ============================================================================
+# Pulse Generators (OPTIONAL - can have multiple, semicolon-separated)
+# ============================================================================
+# Available implementations:
+#   virtual        - Virtual pulse generator for testing
+#   qc9528         - Quantum Composers 9528 pulse generator
+#   qc9518         - Quantum Composers 9518 pulse generator
+#   qc9214         - Quantum Composers 9214 pulse generator
+#   bnc577         - BNC 577 4-channel pulse generator
+#   bnc577_8       - BNC 577 8-channel pulse generator
+#   srsdg645       - Stanford Research Systems DG645 delay generator
+
+set(BC_PGEN "" CACHE STRING "Pulse generator implementations (semicolon-separated)")
+
+# ============================================================================
+# Flow Controllers (OPTIONAL - can have multiple, semicolon-separated)
+# ============================================================================
+# Available implementations:
+#   virtual        - Virtual flow controller for testing
+#   mks647c        - MKS 647C mass flow controller
+#   mks946         - MKS 946 vacuum transducer controller
+
+set(BC_FLOWCONTROLLER "" CACHE STRING "Flow controller implementations (semicolon-separated)")
+
+# ============================================================================
+# Digital I/O Boards (OPTIONAL - can have multiple, semicolon-separated)
+# ============================================================================
+# Available implementations:
+#   virtual        - Virtual I/O board for testing
+#   labjacku3      - LabJack U3 USB data acquisition device
+
+set(BC_IOBOARD "" CACHE STRING "IO board implementations (semicolon-separated)")
+
+# ============================================================================
+# GPIB Controller (OPTIONAL - choose ONE or leave empty)
+# ============================================================================
+# Available implementations:
+#   virtual        - Virtual GPIB controller for testing
+#   prologixlan    - Prologix GPIB-Ethernet controller
+#   prologixusb    - Prologix GPIB-USB controller
+
+set(BC_GPIBCONTROLLER "" CACHE STRING "GPIB controller implementation")
+
+# ============================================================================
+# Pressure Controllers (OPTIONAL - can have multiple, semicolon-separated)
+# ============================================================================
+# Available implementations:
+#   virtual        - Virtual pressure controller for testing
+#   intellisysiqplus - MKS Intellisys IQ Plus pressure controller
+
+set(BC_PRESSURECONTROLLER "" CACHE STRING "Pressure controller implementations (semicolon-separated)")
+
+# ============================================================================
+# Temperature Controllers (OPTIONAL - can have multiple, semicolon-separated)
+# ============================================================================
+# Available implementations:
+#   virtual        - Virtual temperature controller for testing
+#   lakeshore218   - Lake Shore 218 temperature monitor
+
+set(BC_TEMPCONTROLLER "" CACHE STRING "Temperature controller implementations (semicolon-separated)")
+
+# ============================================================================
+# Optional Modules
+# ============================================================================
+
+# LIF (Laser-Induced Fluorescence) Module
+# Enable this if you have LIF-specific hardware and want LIF functionality
+option(BC_ENABLE_LIF "Enable LIF (Laser-Induced Fluorescence) functionality" OFF)
+
+# LIF-specific hardware (only relevant if BC_ENABLE_LIF is ON)
+if(BC_ENABLE_LIF)
+    # LIF Digitizer options: virtual, dsa71604c, mso72004c, etc. (same as FTMW scopes)
+    set(BC_LIFSCOPE "" CACHE STRING "LIF oscilloscope implementation")
+    
+    # LIF Laser options: virtual, (add specific laser implementations as needed)
+    set(BC_LIFLASER "" CACHE STRING "LIF laser implementation")
+endif()
+
+# CUDA GPU Acceleration Module
+# Enable this if you have CUDA-capable hardware and want GPU acceleration
+option(BC_ENABLE_CUDA "Enable CUDA GPU acceleration" OFF)
+
+# ============================================================================
+# Advanced Build Options
+# ============================================================================
+
+# Development and testing options
+option(BC_BUILD_VIEWER_ONLY "Build only the viewer application (no hardware dependencies)" OFF)
+option(BC_BUILD_TESTS "Build test executables" ON)
+option(BC_BUILD_DOCUMENTATION "Build documentation" OFF)
+
+# Hardware compilation mode
+option(BC_ALLHARDWARE "Compile all available hardware implementations (for development)" OFF)
+
+# ============================================================================
+# Configuration Validation
+# ============================================================================
+#
+# The build system will validate your hardware configuration and report any issues.
+# Common problems and solutions:
+#
+# 1. Missing required hardware:
+#    - BC_FTMW_SCOPE must be set to a valid implementation
+#    - BC_CLOCKS must have at least one valid implementation
+#
+# 2. Invalid implementation names:
+#    - Check the spelling against the available implementations listed above
+#    - Implementation names are case-sensitive
+#
+# 3. Multiple instances with wrong format:
+#    - Use semicolons to separate multiple implementations: "impl1;impl2"
+#    - Don't use spaces around semicolons
+#
+# 4. Hardware dependencies:
+#    - Some hardware may require specific drivers or libraries
+#    - Virtual implementations have no external dependencies
+#
+# For more information, see the Blackchirp documentation or CLAUDE.md file.

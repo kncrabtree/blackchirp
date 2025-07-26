@@ -54,25 +54,7 @@ option(BC_BUILD_DOCUMENTATION "Build documentation" OFF)
 option(BC_ENABLE_LIF "Enable LIF (Laser-Induced Fluorescence) functionality" OFF)
 option(BC_ENABLE_CUDA "Enable CUDA GPU acceleration" OFF)
 
-# Hardware implementation selection
-set(BC_FTMW_SCOPE "virtual" CACHE STRING "FTMW oscilloscope implementation")
-set_property(CACHE BC_FTMW_SCOPE PROPERTY STRINGS 
-    "virtual" "DSA71604C" "MSO72004C" "M4i2220x8" "DSOx92004A" "DSOV204A" "MSO64B" "DPO71254B")
-
-set(BC_CLOCKS "fixed;fixed" CACHE STRING "Clock implementations (semicolon separated)")
-set(BC_AWG "virtual" CACHE STRING "AWG implementation")
-set(BC_PGEN "virtual;virtual" CACHE STRING "Pulse generator implementations (semicolon separated)")
-set(BC_FLOWCONTROLLER "virtual;virtual" CACHE STRING "Flow controller implementations (semicolon separated)")
-set(BC_IOBOARD "virtual" CACHE STRING "IO board implementations (semicolon separated)")
-set(BC_GPIBCONTROLLER "virtual" CACHE STRING "GPIB controller implementation")
-set(BC_PRESSURECONTROLLER "virtual" CACHE STRING "Pressure controller implementations (semicolon separated)")
-set(BC_TEMPCONTROLLER "virtual" CACHE STRING "Temperature controller implementations (semicolon separated)")
-
-# LIF-specific hardware (only relevant if BC_ENABLE_LIF is ON)
-if(BC_ENABLE_LIF)
-    set(BC_LIFSCOPE "" CACHE STRING "LIF oscilloscope implementation")
-    set(BC_LIFLASER "" CACHE STRING "LIF laser implementation")
-endif()
+# Hardware configuration is now handled by HardwareConfig.cmake file
 
 # ============================================================================
 # Compiler Configuration
@@ -175,6 +157,34 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 # ============================================================================
 # Hardware Configuration Processing
 # ============================================================================
+
+# Check for user hardware configuration file
+set(HARDWARE_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/HardwareConfig.cmake")
+set(HARDWARE_CONFIG_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/HardwareConfig.cmake.template")
+
+if(NOT EXISTS ${HARDWARE_CONFIG_FILE})
+    message(STATUS "")
+    message(STATUS "=== HARDWARE CONFIGURATION REQUIRED ===")
+    message(STATUS "")
+    message(STATUS "No hardware configuration file found. Creating default configuration...")
+    message(STATUS "")
+    message(STATUS "IMPORTANT: Please edit the following file to configure your hardware:")
+    message(STATUS "  ${HARDWARE_CONFIG_FILE}")
+    message(STATUS "")
+    message(STATUS "The file contains detailed instructions and lists all available")
+    message(STATUS "hardware implementations. Default 'virtual' implementations are")
+    message(STATUS "provided for testing, but you should configure real hardware")
+    message(STATUS "for actual experiments.")
+    message(STATUS "")
+    message(STATUS "After editing the configuration, re-run cmake to apply changes.")
+    message(STATUS "")
+    
+    # Copy template to create user config file
+    configure_file(${HARDWARE_CONFIG_TEMPLATE} ${HARDWARE_CONFIG_FILE} COPYONLY)
+endif()
+
+# Include user hardware configuration
+include(${HARDWARE_CONFIG_FILE})
 
 # Include hardware validation
 include(cmake/HardwareValidation.cmake)
