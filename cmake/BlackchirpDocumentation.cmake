@@ -47,12 +47,32 @@ if(DOXYGEN_FOUND)
     
     # Configure Doxyfile from template
     if(EXISTS "${SPHINX_SOURCE_DIR}/Doxyfile.in")
-        # Use the Doxyfile.in template with CMake variable substitution
+        # Generate Doxyfile for CMake builds (absolute paths)
         configure_file(
             "${SPHINX_SOURCE_DIR}/Doxyfile.in"
             "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile"
             @ONLY
         )
+        
+        # Generate Doxyfile for ReadTheDocs (relative paths)
+        # Temporarily override variables for ReadTheDocs version
+        set(DOXYGEN_INPUT_DIR_BACKUP "${DOXYGEN_INPUT_DIR}")
+        set(DOXYGEN_OUTPUT_DIR_BACKUP "${DOXYGEN_OUTPUT_DIR}")
+        set(DOXYGEN_INPUT_DIR "../../src")
+        set(DOXYGEN_OUTPUT_DIR "")
+        
+        configure_file(
+            "${SPHINX_SOURCE_DIR}/Doxyfile.in"
+            "${SPHINX_SOURCE_DIR}/Doxyfile"
+            @ONLY
+        )
+        
+        # Restore original variables for CMake build
+        set(DOXYGEN_INPUT_DIR "${DOXYGEN_INPUT_DIR_BACKUP}")
+        set(DOXYGEN_OUTPUT_DIR "${DOXYGEN_OUTPUT_DIR_BACKUP}")
+        
+        message(STATUS "Generated Doxyfile for CMake builds: ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile")
+        message(STATUS "Generated Doxyfile for ReadTheDocs: ${SPHINX_SOURCE_DIR}/Doxyfile")
     else()
         # Fallback: create a basic Doxyfile if template doesn't exist
         message(WARNING "Doxyfile.in not found, creating minimal Doxyfile")
