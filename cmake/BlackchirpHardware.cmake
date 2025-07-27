@@ -603,10 +603,9 @@ endif()
 # Process LIF Hardware (Core when enabled)
 # ============================================================================
 
-if(BC_ENABLE_LIF OR BC_ALLHARDWARE)
+if(BC_ENABLE_LIF)
     if(BC_ALLHARDWARE)
-        # In allhardware mode: enable LIF and force selections to virtual, add all sources
-        set(BC_ENABLE_LIF ON)
+        # In allhardware mode with LIF enabled: force selections to virtual, add all sources
         set(BC_LIFSCOPE "virtual")
         set(BC_LIFLASER "virtual")
         
@@ -615,6 +614,7 @@ if(BC_ENABLE_LIF OR BC_ALLHARDWARE)
         add_single_hardware("liflaser" "virtualliflaser" "VirtualLifLaser" TRUE)
         
         # Add all other LIF hardware sources without preprocessor definitions
+        # NOTE: m4i2211x8 requires Spectrum driver SDK headers to compile
         add_hardware_sources_only("lifdigitizer" "m4i2211x8" TRUE)
         add_hardware_sources_only("lifdigitizer" "rigolds2302a" TRUE)
         add_hardware_sources_only("liflaser" "opolette" TRUE)

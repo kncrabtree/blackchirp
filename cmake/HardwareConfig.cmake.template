@@ -36,7 +36,7 @@
 #   virtual        - Virtual scope for testing (no hardware required)
 #   dsa71604c      - Tektronix DSA71604C real-time oscilloscope
 #   mso72004c      - Tektronix MSO72004C mixed signal oscilloscope
-#   m4i2220x8      - Spectrum M4i.2220-x8 PCIe digitizer
+#   m4i2220x8      - Spectrum M4i.2220-x8 PCIe digitizer (requires Spectrum driver SDK)
 #   dsox92004a     - Keysight DSOX92004A oscilloscope
 #   dsov204a       - Keysight DSOV204A oscilloscope
 #   mso64b         - Tektronix MSO64B oscilloscope
@@ -98,7 +98,7 @@ set(BC_FLOWCONTROLLER "" CACHE STRING "Flow controller implementations (semicolo
 # ============================================================================
 # Available implementations:
 #   virtual        - Virtual I/O board for testing
-#   labjacku3      - LabJack U3 USB data acquisition device
+#   labjacku3      - LabJack U3 USB data acquisition device (requires LabJack SDK)
 
 set(BC_IOBOARD "" CACHE STRING "IO board implementations (semicolon-separated)")
 
@@ -137,7 +137,7 @@ set(BC_TEMPCONTROLLER "" CACHE STRING "Temperature controller implementations (s
 # LIF Digitizer/Oscilloscope (REQUIRED when BC_ENABLE_LIF is ON - choose ONE)
 # Available implementations: (LIF-specific digitizers only)
 #   virtual        - Virtual LIF scope for testing
-#   m4i2211x8      - Spectrum M4i.2211-x8 PCIe digitizer (LIF-specific)
+#   m4i2211x8      - Spectrum M4i.2211-x8 PCIe digitizer (requires Spectrum driver SDK)
 #   rigolds2302a   - Rigol DS2302A oscilloscope
 
 set(BC_LIFSCOPE "virtual" CACHE STRING "LIF oscilloscope implementation")
@@ -174,3 +174,69 @@ set(BC_LIFLASER "virtual" CACHE STRING "LIF laser implementation")
 #    - Virtual implementations have no external dependencies
 #
 # For more information, see the Blackchirp documentation or CLAUDE.md file.
+
+# ============================================================================
+# Vendor Library Dependencies and Configuration
+# ============================================================================
+#
+# Some hardware implementations require vendor-specific SDKs or drivers.
+# This section documents the requirements and provides examples for configuring
+# include paths and linking libraries.
+#
+# SPECTRUM INSTRUMENTS (M4i Cards):
+# ---------------------------------
+# Hardware: m4i2220x8 (FTMW), m4i2211x8 (LIF)
+# Requirements: Spectrum driver SDK with headers in <spcm/> directory
+# 
+# Example configuration for Spectrum cards:
+#   # Add Spectrum SDK include directory
+#   target_include_directories(blackchirp-hardware PRIVATE /opt/spectrum/include)
+#   
+#   # Link Spectrum libraries (if needed)
+#   target_link_libraries(blackchirp-hardware PRIVATE spcm_linux)
+#
+# LABJACK (USB DAQ Devices):
+# ---------------------------
+# Hardware: labjacku3
+# Requirements: LabJack SDK with u3.h header file
+#
+# Example configuration for LabJack:
+#   # Add LabJack SDK include directory  
+#   target_include_directories(blackchirp-hardware PRIVATE /usr/local/include/labjack)
+#   
+#   # Link LabJack libraries (if needed)
+#   target_link_libraries(blackchirp-hardware PRIVATE labjackusb)
+#
+# ADDING VENDOR LIBRARIES:
+# -------------------------
+# To add vendor library support, create a custom CMake configuration file
+# that modifies the blackchirp-hardware target after it's defined.
+# 
+# 1. Create a file: cmake/VendorLibraries.cmake
+# 2. Add your vendor-specific configuration there
+# 3. Include it at the end of this file: include(cmake/VendorLibraries.cmake)
+#
+# Example VendorLibraries.cmake:
+#   # Check if hardware requiring vendor libraries is enabled
+#   if(BC_FTMW_SCOPE STREQUAL "m4i2220x8" OR BC_LIFSCOPE STREQUAL "m4i2211x8")
+#       find_path(SPECTRUM_INCLUDE_DIR spcm/dlltyp.h
+#           PATHS /opt/spectrum/include /usr/local/include
+#           DOC "Spectrum driver include directory")
+#       
+#       if(SPECTRUM_INCLUDE_DIR)
+#           target_include_directories(blackchirp-hardware PRIVATE ${SPECTRUM_INCLUDE_DIR})
+#           message(STATUS "Found Spectrum driver includes: ${SPECTRUM_INCLUDE_DIR}")
+#       else()
+#           message(WARNING "Spectrum driver headers not found - compilation may fail")
+#       endif()
+#   endif()
+#
+# BC_ALLHARDWARE MODE:
+# --------------------
+# When BC_ALLHARDWARE=ON, all hardware sources are compiled for build testing.
+# This includes hardware with vendor dependencies. If vendor SDKs are not
+# installed, compilation will fail - this is expected and acceptable behavior
+# for comprehensive build validation.
+
+# Uncomment to include vendor library configuration:
+# include(cmake/VendorLibraries.cmake)
