@@ -1,6 +1,6 @@
 #include "virtualftmwscope.h"
 
-#include <QFile>
+#include <QRandomGenerator>
 #include <math.h>
 
 using namespace BC::Key::FtmwScope;
@@ -57,30 +57,8 @@ bool VirtualFtmwScope::testConnection()
 
 void VirtualFtmwScope::initialize()
 {
-    QFile f(QString(":/data/virtualdata.txt"));
-    d_simulatedData.reserve(750000);
-    if(f.open(QIODevice::ReadOnly))
-    {
-       while(!f.atEnd())
-       {
-          QByteArray l = f.readLine().trimmed();
-          if(l.isEmpty())
-             break;
-
-          bool ok = false;
-          double d = l.toDouble(&ok);
-          if(ok)
-             d_simulatedData.append(d);
-          else
-             d_simulatedData.append(0.0);
-       }
-       f.close();
-    }
-    else
-    {
-       for(int i=0;i<750000;i++)
-          d_simulatedData.append(0.0);
-    }
+    // Initialize simulated data as empty - will be populated in prepareForExperiment
+    d_simulatedData.clear();
 
     d_simulatedTimer = new QTimer(this);
     connect(d_simulatedTimer,&QTimer::timeout,this,&FtmwScope::readWaveform, Qt::UniqueConnection);
@@ -93,6 +71,10 @@ bool VirtualFtmwScope::prepareForExperiment(Experiment &exp)
         return true;
 
     static_cast<FtmwDigitizerConfig&>(*this) = exp.ftmwConfig()->scopeConfig();
+    
+    // Generate simulated FID data based on experiment configuration
+    generateSimulatedFid();
+    
     return true;
 
 }
@@ -160,4 +142,51 @@ void VirtualFtmwScope::readWaveform()
         }
     //    emit logMessage(QString("Simulate: %1 ms").arg(d_testTime.elapsed()));
         emit shotAcquired(out);
+}
+
+void VirtualFtmwScope::generateSimulatedFid()
+{
+    // Clear any existing data
+    d_simulatedData.clear();
+    d_simulatedData.resize(d_recordLength);
+    d_simulatedData.fill(0.0);
+    
+    // Get full scale for amplitude scaling
+    double fullScale = d_analogChannels.at(d_fidChannel).fullScale;
+    
+    // Generate random number of frequency components (10-100)
+    QRandomGenerator *rng = QRandomGenerator::global();
+    int numComponents = rng->bounded(10, 101);
+    
+    // Calculate time step and Nyquist frequency
+    double dt = 1.0 / d_sampleRate;
+    double nyquistFreq = d_sampleRate / 2.0;
+    
+    // Damping time constant (about 1/2 record length)
+    double dampingTime = (d_recordLength * dt) / 2.0;
+    
+    for(int comp = 0; comp < numComponents; comp++)
+    {
+        // Random frequency: 10% to 90% of Nyquist frequency
+        double minFreq = nyquistFreq * 0.1;
+        double maxFreq = nyquistFreq * 0.9;
+        double frequency = rng->generateDouble() * (maxFreq - minFreq) + minFreq;
+        
+        // Random amplitude
+        double minAmp = fullScale * 0.000001;
+        double maxAmp = fullScale * 0.005;
+        double amplitude = rng->generateDouble() * (maxAmp - minAmp) + minAmp;
+        
+        // Random phase
+        double phase = rng->generateDouble() * 2.0 * M_PI;
+        
+        // Add this component to the FID
+        for(int i = 0; i < d_recordLength; i++)
+        {
+            double t = i * dt;
+            double decay = exp(-t / dampingTime);
+            double signal = amplitude * decay * cos(2.0 * M_PI * frequency * t + phase);
+            d_simulatedData[i] += signal;
+        }
+    }
 }

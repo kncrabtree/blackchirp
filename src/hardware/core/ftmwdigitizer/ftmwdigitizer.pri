@@ -14,7 +14,6 @@ equals(N,VIRTUAL) {
     DEFINES += BC_FTMWSCOPE=VirtualFtmwScope
     HEADERS += $$PWD/virtualftmwscope.h
 	SOURCES += $$PWD/virtualftmwscope.cpp
-	RESOURCES += $$PWD/../../../resources/virtualdata.qrc
     HW *= "$${H}include <hardware/core/ftmwdigitizer/virtualftmwscope.h>"
 }
 
@@ -70,7 +69,6 @@ equals(N,DPO71254B) {
 allhardware {
     HEADERS *= $$PWD/virtualftmwscope.h
     SOURCES *= $$PWD/virtualftmwscope.cpp
-    RESOURCES *= $$PWD/../../../resources/virtualdata.qrc
     HW *= "$${H}include <hardware/core/ftmwdigitizer/virtualftmwscope.h>"
     HEADERS *= $$PWD/dsa71604c.h
     SOURCES *= $$PWD/dsa71604c.cpp

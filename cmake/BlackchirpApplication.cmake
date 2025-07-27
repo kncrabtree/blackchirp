@@ -90,13 +90,7 @@ set(BLACKCHIRP_QRC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/resources/resources.qrc
 )
 
-# Include virtual data resources only when using virtual FTMW digitizer
-if(BC_FTMWSCOPE STREQUAL "virtual")
-    list(APPEND BLACKCHIRP_QRC_FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/resources/virtualdata.qrc
-    )
-    message(STATUS "Including virtual data resources for virtual FTMW digitizer")
-endif()
+# Virtual FTMW digitizer no longer requires resource files
 
 # Manually process Qt resources to ensure they are compiled
 qt6_add_resources(BLACKCHIRP_COMPILED_RESOURCES ${BLACKCHIRP_QRC_FILES})

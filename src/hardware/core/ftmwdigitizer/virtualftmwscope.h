@@ -34,6 +34,8 @@ private:
     QVector<double> d_simulatedData;
     QTimer *d_simulatedTimer = nullptr;
     QTime d_testTime;
+    
+    void generateSimulatedFid();
 };
 
 #endif // VIRTUALFTMWSCOPE_H
