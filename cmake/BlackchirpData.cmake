@@ -146,6 +146,29 @@ set(BLACKCHIRP_DATA_HEADERS
 )
 
 # ============================================================================
+# LIF Data Components (Optional Module)
+# ============================================================================
+
+# Add LIF data sources if LIF module is enabled
+if(BC_ENABLE_LIF)
+    list(APPEND BLACKCHIRP_DATA_SOURCES
+        # LIF-specific data components
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifconfig.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifstorage.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/liftrace.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifdigitizerconfig.cpp
+    )
+    
+    list(APPEND BLACKCHIRP_DATA_HEADERS
+        # LIF-specific data headers
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifconfig.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifstorage.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/liftrace.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/data/lif/lifdigitizerconfig.h
+    )
+endif()
+
+# ============================================================================
 # Create Data Library Target
 # ============================================================================
 

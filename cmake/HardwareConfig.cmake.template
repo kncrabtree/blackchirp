@@ -131,37 +131,24 @@ set(BC_PRESSURECONTROLLER "" CACHE STRING "Pressure controller implementations (
 set(BC_TEMPCONTROLLER "" CACHE STRING "Temperature controller implementations (semicolon-separated)")
 
 # ============================================================================
-# Optional Modules
+# LIF Hardware (only relevant if BC_ENABLE_LIF is ON in BuildConfig.cmake)
 # ============================================================================
 
-# LIF (Laser-Induced Fluorescence) Module
-# Enable this if you have LIF-specific hardware and want LIF functionality
-option(BC_ENABLE_LIF "Enable LIF (Laser-Induced Fluorescence) functionality" OFF)
+# LIF Digitizer/Oscilloscope (REQUIRED when BC_ENABLE_LIF is ON - choose ONE)
+# Available implementations: (LIF-specific digitizers only)
+#   virtual        - Virtual LIF scope for testing
+#   m4i2211x8      - Spectrum M4i.2211-x8 PCIe digitizer (LIF-specific)
+#   rigolds2302a   - Rigol DS2302A oscilloscope
 
-# LIF-specific hardware (only relevant if BC_ENABLE_LIF is ON)
-if(BC_ENABLE_LIF)
-    # LIF Digitizer options: virtual, dsa71604c, mso72004c, etc. (same as FTMW scopes)
-    set(BC_LIFSCOPE "" CACHE STRING "LIF oscilloscope implementation")
-    
-    # LIF Laser options: virtual, (add specific laser implementations as needed)
-    set(BC_LIFLASER "" CACHE STRING "LIF laser implementation")
-endif()
+set(BC_LIFSCOPE "virtual" CACHE STRING "LIF oscilloscope implementation")
 
-# CUDA GPU Acceleration Module
-# Enable this if you have CUDA-capable hardware and want GPU acceleration
-option(BC_ENABLE_CUDA "Enable CUDA GPU acceleration" OFF)
+# LIF Laser (REQUIRED when BC_ENABLE_LIF is ON - choose ONE)
+# Available implementations:
+#   virtual        - Virtual laser for testing
+#   opolette       - Opolette laser system
+#   sirahcobra     - Sirah Cobra laser system
 
-# ============================================================================
-# Advanced Build Options
-# ============================================================================
-
-# Development and testing options
-option(BC_BUILD_VIEWER_ONLY "Build only the viewer application (no hardware dependencies)" OFF)
-option(BC_BUILD_TESTS "Build test executables" ON)
-option(BC_BUILD_DOCUMENTATION "Build documentation" OFF)
-
-# Hardware compilation mode
-option(BC_ALLHARDWARE "Compile all available hardware implementations (for development)" OFF)
+set(BC_LIFLASER "virtual" CACHE STRING "LIF laser implementation")
 
 # ============================================================================
 # Configuration Validation

@@ -1,0 +1,137 @@
+# Blackchirp Build Configuration Template
+#
+# Copy this file to BuildConfig.cmake and modify as needed for your system.
+# This file is ignored by git to prevent updates from overwriting your settings.
+#
+# This file configures compilation options, optional modules, and build features
+# that are separate from hardware selection (which is in HardwareConfig.cmake).
+
+# ============================================================================
+# Build Configuration Instructions
+# ============================================================================
+#
+# This file configures build options, optional modules, and development features.
+# These settings control what gets compiled and how, but not which specific
+# hardware implementations are used (that's in HardwareConfig.cmake).
+#
+# Most users can use the default values provided here. Advanced users may want
+# to enable additional modules or change build settings for development.
+
+# ============================================================================
+# Optional Modules
+# ============================================================================
+
+# LIF (Laser-Induced Fluorescence) Module
+# Enable this if you have LIF-specific hardware and want LIF functionality
+# This adds LIF data structures, GUI components, and hardware support
+# Note: Specific LIF hardware selection is configured in HardwareConfig.cmake
+option(BC_ENABLE_LIF "Enable LIF (Laser-Induced Fluorescence) functionality" OFF)
+
+# CUDA GPU Acceleration Module
+# Enable this if you have CUDA-capable hardware and want GPU acceleration
+# Requires NVIDIA CUDA toolkit to be installed on your system
+# Accelerates Fourier transforms and other computationally intensive operations
+option(BC_ENABLE_CUDA "Enable CUDA GPU acceleration" OFF)
+
+# ============================================================================
+# Build Target Options
+# ============================================================================
+
+# Viewer-only build
+# Enable this to build only the blackchirp-viewer application
+# This excludes all hardware dependencies and is useful for data analysis
+# on systems without laboratory hardware
+option(BC_BUILD_VIEWER_ONLY "Build only the viewer application (no hardware dependencies)" OFF)
+
+# Test executables
+# Enable this to build unit tests and test executables
+# Useful for development and validation of changes
+option(BC_BUILD_TESTS "Build test executables" ON)
+
+# Documentation generation
+# Enable this to build documentation using Doxygen or similar tools
+# Requires documentation tools to be installed
+option(BC_BUILD_DOCUMENTATION "Build documentation" OFF)
+
+# ============================================================================
+# Development and Debug Options
+# ============================================================================
+
+# All hardware compilation mode
+# Enable this to compile ALL available hardware implementations regardless
+# of what is selected in HardwareConfig.cmake. Useful for development to
+# ensure all hardware compiles correctly, but increases build time significantly
+option(BC_ALLHARDWARE "Compile all available hardware implementations (for development)" OFF)
+
+# ============================================================================
+# Advanced Build Settings
+# ============================================================================
+
+# Build type is set via CMAKE_BUILD_TYPE (Debug, Release, RelWithDebInfo, MinSizeRel)
+# This is typically set on the command line: cmake -DCMAKE_BUILD_TYPE=Release
+
+# C++ standard is set to C++23 by default in the main CMakeLists.txt
+# This provides access to the latest C++ features
+
+# Compiler-specific optimizations are automatically applied based on build type
+# Release builds include -O3 optimization, Debug builds include debugging symbols
+
+# Qt6 integration is automatically configured with MOC, UIC, and RCC support
+# All required Qt6 components are found and linked automatically
+
+# ============================================================================
+# Platform-Specific Options
+# ============================================================================
+
+# Windows-specific options
+if(WIN32)
+    # Windows builds automatically link winmm library for multimedia support
+    # WIN32_EXECUTABLE property is set for GUI applications
+endif()
+
+# macOS-specific options  
+if(APPLE)
+    # macOS builds create application bundles with proper Info.plist files
+    # Framework linking is handled automatically for Cocoa, IOKit, etc.
+endif()
+
+# Linux-specific options
+if(UNIX AND NOT APPLE)
+    # Linux builds automatically detect and link udev for hardware enumeration
+    # Desktop integration files (.desktop) can be installed
+endif()
+
+# ============================================================================
+# Configuration Notes
+# ============================================================================
+#
+# Build Configuration vs Hardware Configuration:
+# - BuildConfig.cmake (this file): Controls WHAT gets built and HOW
+# - HardwareConfig.cmake: Controls WHICH hardware implementations are used
+#
+# Common Build Configurations:
+#
+# 1. Development Build (default):
+#    - BC_BUILD_TESTS=ON for testing
+#    - BC_ENABLE_LIF=OFF unless needed
+#    - BC_ENABLE_CUDA=OFF unless developing GPU features
+#    - CMAKE_BUILD_TYPE=Debug for debugging
+#
+# 2. Production Laboratory Build:
+#    - BC_BUILD_TESTS=OFF to reduce binary size
+#    - BC_ENABLE_LIF=ON if using LIF hardware
+#    - BC_ENABLE_CUDA=ON if GPU acceleration desired
+#    - CMAKE_BUILD_TYPE=Release for performance
+#
+# 3. Analysis-Only Build:
+#    - BC_BUILD_VIEWER_ONLY=ON for data analysis systems
+#    - BC_BUILD_TESTS=OFF not needed for analysis
+#    - BC_ENABLE_CUDA=ON for fast data processing
+#    - CMAKE_BUILD_TYPE=Release for performance
+#
+# 4. Continuous Integration Build:
+#    - BC_ALLHARDWARE=ON to test all hardware compiles
+#    - BC_BUILD_TESTS=ON to run test suite
+#    - BC_BUILD_DOCUMENTATION=ON to verify docs build
+#
+# For more information, see the Blackchirp documentation or CLAUDE.md file.

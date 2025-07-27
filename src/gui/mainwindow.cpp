@@ -50,10 +50,10 @@
 #include <acquisition/batch/batchsequence.h>
 
 #ifdef BC_LIF
-#include <modules/lif/gui/lifdisplaywidget.h>
-#include <modules/lif/gui/lifcontrolwidget.h>
-#include <modules/lif/gui/liflaserstatusbox.h>
-#include <modules/lif/hardware/liflaser/liflaser.h>
+#include <gui/lif/gui/lifdisplaywidget.h>
+#include <gui/lif/gui/lifcontrolwidget.h>
+#include <gui/lif/gui/liflaserstatusbox.h>
+#include <hardware/core/liflaser/liflaser.h>
 #endif
 
 #include <hardware/core/hardwaremanager.h>

@@ -10,7 +10,7 @@
 #include <data/experiment/ftmwconfig.h>
 
 #ifdef BC_LIF
-#include <modules/lif/data/lifconfig.h>
+#include <data/lif/lifconfig.h>
 #endif
 
 class QLabel;

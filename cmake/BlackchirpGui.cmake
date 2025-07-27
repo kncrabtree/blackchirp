@@ -228,6 +228,41 @@ set(BLACKCHIRP_GUI_FORMS
 )
 
 # ============================================================================
+# LIF GUI Components (Optional Module)
+# ============================================================================
+
+# Add LIF GUI sources if LIF module is enabled
+if(BC_ENABLE_LIF)
+    list(APPEND BLACKCHIRP_GUI_SOURCES
+        # LIF-specific GUI components
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/experimentlifconfigpage.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifcontrolwidget.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifdisplaywidget.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/liflasercontroldoublespinbox.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/liflaserstatusbox.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/liflaserwidget.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifprocessingwidget.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifsliceplot.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifspectrogramplot.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/liftraceplot.cpp
+    )
+    
+    list(APPEND BLACKCHIRP_GUI_HEADERS
+        # LIF-specific GUI headers
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/experimentlifconfigpage.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifcontrolwidget.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifdisplaywidget.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/liflasercontroldoublespinbox.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/liflaserstatusbox.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/liflaserwidget.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifprocessingwidget.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifsliceplot.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/lifspectrogramplot.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/lif/gui/liftraceplot.h
+    )
+endif()
+
+# ============================================================================
 # Create GUI Library Target
 # ============================================================================
 

@@ -3,7 +3,7 @@
 
 #include <gui/plot/zoompanplot.h>
 
-#include <modules/lif/data/lifconfig.h>
+#include <data/lif/lifconfig.h>
 
 class QwtPlotSpectrogram;
 class QwtMatrixRasterData;

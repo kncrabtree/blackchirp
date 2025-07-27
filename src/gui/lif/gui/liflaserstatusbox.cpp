@@ -4,7 +4,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 
-#include <modules/lif/hardware/liflaser/liflaser.h>
+#include <hardware/core/liflaser/liflaser.h>
 #include <gui/widget/led.h>
 #include <data/storage/settingsstorage.h>
 

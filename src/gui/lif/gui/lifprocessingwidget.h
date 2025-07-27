@@ -4,7 +4,7 @@
 #include <QWidget>
 
 #include <data/storage/settingsstorage.h>
-#include <modules/lif/data/liftrace.h>
+#include <data/lif/liftrace.h>
 
 namespace BC::Key::LifProcessing {
 const QString key("lifProcessingWidget");

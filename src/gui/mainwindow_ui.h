@@ -34,7 +34,7 @@
 #include <gui/widget/toolbarwidgetaction.h>
 
 #ifdef BC_LIF
-#include <modules/lif/gui/lifdisplaywidget.h>
+#include <gui/lif/gui/lifdisplaywidget.h>
 #endif
 
 class Ui_MainWindow

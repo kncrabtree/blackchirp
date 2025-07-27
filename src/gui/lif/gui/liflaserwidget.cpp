@@ -8,7 +8,7 @@
 
 #include <data/bcglobals.h>
 #include <data/storage/settingsstorage.h>
-#include <modules/lif/hardware/liflaser/liflaser.h>
+#include <hardware/core/liflaser/liflaser.h>
 
 LifLaserWidget::LifLaserWidget(QWidget *parent)
     : QWidget{parent}

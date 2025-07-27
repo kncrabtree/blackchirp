@@ -5,9 +5,9 @@
 
 #include <data/storage/settingsstorage.h>
 
-#include <modules/lif/data/liftrace.h>
-#include <modules/lif/data/lifconfig.h>
-#include <modules/lif/data/hardware/lifdigitizer/lifdigitizerconfig.h>
+#include <data/lif/liftrace.h>
+#include <data/lif/lifconfig.h>
+#include <data/lif/lifdigitizerconfig.h>
 
 class LifTracePlot;
 class DigitizerConfigWidget;

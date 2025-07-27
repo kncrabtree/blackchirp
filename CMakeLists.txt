@@ -50,11 +50,7 @@ option(BC_BUILD_VIEWER_ONLY "Build only the viewer application" OFF)
 option(BC_BUILD_TESTS "Build test executables" ON)
 option(BC_BUILD_DOCUMENTATION "Build documentation" OFF)
 
-# Hardware configuration options
-option(BC_ENABLE_LIF "Enable LIF (Laser-Induced Fluorescence) functionality" OFF)
-option(BC_ENABLE_CUDA "Enable CUDA GPU acceleration" OFF)
-
-# Hardware configuration is now handled by HardwareConfig.cmake file
+# Hardware and build configuration is now handled by dedicated config files
 
 # ============================================================================
 # Compiler Configuration
@@ -157,6 +153,31 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 # ============================================================================
 # Hardware Configuration Processing
 # ============================================================================
+
+# Check for user build configuration file
+set(BUILD_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/BuildConfig.cmake")
+set(BUILD_CONFIG_TEMPLATE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/BuildConfig.cmake.template")
+
+if(NOT EXISTS ${BUILD_CONFIG_FILE})
+    message(STATUS "")
+    message(STATUS "=== BUILD CONFIGURATION SETUP ===")
+    message(STATUS "")
+    message(STATUS "No build configuration file found. Creating default configuration...")
+    message(STATUS "")
+    message(STATUS "The following file has been created with default build settings:")
+    message(STATUS "  ${BUILD_CONFIG_FILE}")
+    message(STATUS "")
+    message(STATUS "You can edit this file to customize build options, enable optional")
+    message(STATUS "modules (LIF, CUDA), or change development settings. Most users")
+    message(STATUS "can use the default settings without modification.")
+    message(STATUS "")
+    
+    # Copy template to create user config file
+    configure_file(${BUILD_CONFIG_TEMPLATE} ${BUILD_CONFIG_FILE} COPYONLY)
+endif()
+
+# Include user build configuration
+include(${BUILD_CONFIG_FILE})
 
 # Check for user hardware configuration file
 set(HARDWARE_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/HardwareConfig.cmake")
@@ -329,14 +350,4 @@ message(STATUS "  Build viewer only: ${BC_BUILD_VIEWER_ONLY}")
 message(STATUS "  Enable tests: ${BC_BUILD_TESTS}")
 message(STATUS "  Enable LIF: ${BC_ENABLE_LIF}")
 message(STATUS "  Enable CUDA: ${BC_ENABLE_CUDA}")
-message(STATUS "")
-message(STATUS "Hardware Configuration:")
-message(STATUS "  FTMW Scope: ${BC_FTMW_SCOPE}")
-message(STATUS "  Clocks: ${BC_CLOCKS}")
-if(BC_AWG)
-    message(STATUS "  AWG: ${BC_AWG}")
-endif()
-if(BC_PGEN)
-    message(STATUS "  Pulse Generators: ${BC_PGEN}")
-endif()
 message(STATUS "")

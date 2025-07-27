@@ -22,7 +22,7 @@
 #include <data/loghandler.h>
 
 #ifdef BC_LIF
-#include <modules/lif/gui/lifdisplaywidget.h>
+#include <gui/lif/gui/lifdisplaywidget.h>
 #endif
 
 ExperimentViewWidget::ExperimentViewWidget(int num, QString path, bool overlaysEnabled, QWidget *parent) : QWidget(parent), p_ftmw(nullptr), p_lh(nullptr), d_overlaysEnabled(overlaysEnabled)

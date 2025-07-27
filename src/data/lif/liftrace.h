@@ -3,7 +3,7 @@
 
 #include <QSharedDataPointer>
 
-#include <modules/lif/data/hardware/lifdigitizer/lifdigitizerconfig.h>
+#include <data/lif/lifdigitizerconfig.h>
 
 #include <QVector>
 #include <QPointF>

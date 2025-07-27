@@ -1,4 +1,4 @@
-#include <modules/lif/data/liftrace.h>
+#include <data/lif/liftrace.h>
 #include <QtEndian>
 
 #include <data/analysis/analysis.h>

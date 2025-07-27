@@ -2,7 +2,7 @@
 
 #include <QVBoxLayout>
 
-#include <modules/lif/gui/lifcontrolwidget.h>
+#include <gui/lif/gui/lifcontrolwidget.h>
 
 using namespace BC::Key::WizLif;
 

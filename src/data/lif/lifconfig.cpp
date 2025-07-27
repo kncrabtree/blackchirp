@@ -1,8 +1,8 @@
-#include <modules/lif/hardware/liflaser/liflaser.h>
-#include <modules/lif/hardware/lifdigitizer/lifscope.h>
-#include <modules/lif/data/lifconfig.h>
+#include <hardware/core/liflaser/liflaser.h>
+#include <hardware/core/lifdigitizer/lifscope.h>
+#include <data/lif/lifconfig.h>
 
-#include <modules/lif/data/liftrace.h>
+#include <data/lif/liftrace.h>
 #include <QFile>
 #include <cmath>
 

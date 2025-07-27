@@ -6,7 +6,7 @@
 #include <QMutex>
 
 #include <data/storage/datastoragebase.h>
-#include <modules/lif/data/liftrace.h>
+#include <data/lif/liftrace.h>
 
 class BlackchirpCSV;
 

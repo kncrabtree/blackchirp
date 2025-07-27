@@ -42,11 +42,11 @@ set(VALID_TCS
 )
 
 set(VALID_LIFSCOPES
-    "virtual" "M4i2211x8"
+    "virtual" "m4i2211x8" "rigolds2302a"
 )
 
 set(VALID_LIFLASERS
-    "virtual" "Opolette"
+    "virtual" "opolette" "sirahcobra"
 )
 
 # Function to validate a single hardware selection
@@ -99,8 +99,14 @@ function(validate_hardware_configuration)
     validate_multiple_hardware("pressure controller" "${BC_PC}" "${VALID_PCS}")
     validate_multiple_hardware("temperature controller" "${BC_TC}" "${VALID_TCS}")
     
-    # Validate LIF hardware (only if LIF is enabled)
+    # Validate LIF hardware (required when LIF module is enabled)
     if(BC_ENABLE_LIF)
+        if(NOT BC_LIFSCOPE)
+            message(FATAL_ERROR "LIF digitizer/scope must be specified when BC_ENABLE_LIF is ON")
+        endif()
+        if(NOT BC_LIFLASER)
+            message(FATAL_ERROR "LIF laser must be specified when BC_ENABLE_LIF is ON")
+        endif()
         validate_single_hardware("LIF scope" "${BC_LIFSCOPE}" "${VALID_LIFSCOPES}")
         validate_single_hardware("LIF laser" "${BC_LIFLASER}" "${VALID_LIFLASERS}")
     endif()

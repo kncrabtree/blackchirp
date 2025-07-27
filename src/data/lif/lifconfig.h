@@ -9,8 +9,8 @@
 
 #include <data/storage/headerstorage.h>
 #include <data/experiment/experimentobjective.h>
-#include <modules/lif/data/lifstorage.h>
-#include <modules/lif/data/hardware/lifdigitizer/lifdigitizerconfig.h>
+#include <data/lif/lifstorage.h>
+#include <data/lif/lifdigitizerconfig.h>
 
 namespace BC::Store::LIF {
 static const QString key("LifConfig");

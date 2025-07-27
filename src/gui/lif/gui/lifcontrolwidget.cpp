@@ -1,10 +1,10 @@
-#include "modules/lif/hardware/lifdigitizer/lifscope.h"
-#include <modules/lif/gui/lifcontrolwidget.h>
+#include "hardware/core/lifdigitizer/lifscope.h"
+#include <gui/lif/gui/lifcontrolwidget.h>
 
 #include <gui/widget/digitizerconfigwidget.h>
-#include <modules/lif/gui/liftraceplot.h>
-#include <modules/lif/gui/liflaserwidget.h>
-#include <modules/lif/gui/lifprocessingwidget.h>
+#include <gui/lif/gui/liftraceplot.h>
+#include <gui/lif/gui/liflaserwidget.h>
+#include <gui/lif/gui/lifprocessingwidget.h>
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>

@@ -416,6 +416,51 @@ if(BC_PGEN)
 endif()
 
 # ============================================================================
+# Process LIF Hardware (Core when enabled)
+# ============================================================================
+
+if(BC_ENABLE_LIF)
+    # LIF Digitizer/Oscilloscope (Required when LIF is enabled)
+    if(BC_LIFSCOPE)
+        string(TOUPPER ${BC_LIFSCOPE} LIFSCOPE_UPPER)
+        if(BC_LIFSCOPE STREQUAL "virtual")
+            add_single_hardware("lifdigitizer" "virtuallifscope" "VirtualLifScope" TRUE)
+        elseif(BC_LIFSCOPE STREQUAL "m4i2211x8")
+            add_single_hardware("lifdigitizer" "m4i2211x8" "M4i2211x8" TRUE)
+        elseif(BC_LIFSCOPE STREQUAL "rigolds2302a")
+            add_single_hardware("lifdigitizer" "rigolds2302a" "RigolDS2302A" TRUE)
+        else()
+            message(FATAL_ERROR "Unknown LIF digitizer implementation: ${BC_LIFSCOPE}")
+        endif()
+    endif()
+    
+    # LIF Laser (Required when LIF is enabled)
+    if(BC_LIFLASER)
+        string(TOUPPER ${BC_LIFLASER} LIFLASER_UPPER)
+        if(BC_LIFLASER STREQUAL "virtual")
+            add_single_hardware("liflaser" "virtualliflaser" "VirtualLifLaser" TRUE)
+        elseif(BC_LIFLASER STREQUAL "opolette")
+            add_single_hardware("liflaser" "opolette" "Opolette" TRUE)
+        elseif(BC_LIFLASER STREQUAL "sirahcobra")
+            add_single_hardware("liflaser" "sirahcobra" "SirahCobra" TRUE)
+        else()
+            message(FATAL_ERROR "Unknown LIF laser implementation: ${BC_LIFLASER}")
+        endif()
+    endif()
+    
+    # Add LIF base classes to core sources (always needed when LIF is enabled)
+    list(APPEND BLACKCHIRP_HARDWARE_CORE_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/lifdigitizer/lifscope.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/liflaser.cpp
+    )
+    
+    list(APPEND BLACKCHIRP_HARDWARE_CORE_HEADERS
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/lifdigitizer/lifscope.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/liflaser/liflaser.h
+    )
+endif()
+
+# ============================================================================
 # Clean Old QMake Generated Files
 # ============================================================================
 

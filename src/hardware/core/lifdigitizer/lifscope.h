@@ -2,8 +2,8 @@
 #define LIFSCOPE_H
 
 #include <hardware/core/hardwareobject.h>
-#include <modules/lif/data/hardware/lifdigitizer/lifdigitizerconfig.h>
-#include <modules/lif/data/lifconfig.h>
+#include <data/lif/lifdigitizerconfig.h>
+#include <data/lif/lifconfig.h>
 
 namespace BC::Key::LifDigi {
 static const QString lifScope{"LifDigitizer"};

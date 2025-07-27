@@ -4,8 +4,8 @@
 #include <gui/plot/zoompanplot.h>
 #include <memory>
 
-#include <modules/lif/data/lifconfig.h>
-#include <modules/lif/data/liftrace.h>
+#include <data/lif/lifconfig.h>
+#include <data/lif/liftrace.h>
 
 class QwtPlotCurve;
 class QwtPlotZoneItem;

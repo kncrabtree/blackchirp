@@ -81,10 +81,25 @@ endif()
 # Resource Files
 # ============================================================================
 
-set(BLACKCHIRP_APP_RESOURCES
+# ============================================================================
+# Process Qt Resources
+# ============================================================================
+
+# Always include main resources
+set(BLACKCHIRP_QRC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/resources/resources.qrc
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/resources/virtualdata.qrc
 )
+
+# Include virtual data resources only when using virtual FTMW digitizer
+if(BC_FTMWSCOPE STREQUAL "virtual")
+    list(APPEND BLACKCHIRP_QRC_FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/resources/virtualdata.qrc
+    )
+    message(STATUS "Including virtual data resources for virtual FTMW digitizer")
+endif()
+
+# Manually process Qt resources to ensure they are compiled
+qt6_add_resources(BLACKCHIRP_COMPILED_RESOURCES ${BLACKCHIRP_QRC_FILES})
 
 # ============================================================================
 # Create Application Executable Target
@@ -109,7 +124,7 @@ set(BLACKCHIRP_APP_ALL_HEADERS
 add_executable(blackchirp
     ${BLACKCHIRP_APP_ALL_SOURCES}
     ${BLACKCHIRP_APP_ALL_HEADERS}
-    ${BLACKCHIRP_APP_RESOURCES}
+    ${BLACKCHIRP_COMPILED_RESOURCES}
 )
 
 # Add alias for consistent naming

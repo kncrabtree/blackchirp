@@ -20,7 +20,7 @@
 #ifdef BC_LIF
 #include <hardware/core/hardwaremanager.h>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
-#include <modules/lif/hardware/liflaser/liflaser.h>
+#include <hardware/core/liflaser/liflaser.h>
 #endif
 
 using namespace BC::Key::WizStart;

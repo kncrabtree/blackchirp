@@ -28,7 +28,7 @@
 #include <data/analysis/ftworker.h>
 
 #ifdef BC_LIF
-#include <modules/lif/data/lifconfig.h>
+#include <data/lif/lifconfig.h>
 #endif
 
 namespace BC::Store::Exp {

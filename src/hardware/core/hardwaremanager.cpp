@@ -20,9 +20,8 @@
 #include <QThread>
 
 #ifdef BC_LIF
-#include <modules/lif/hardware/lifhw_h.h>
-#include <modules/lif/hardware/lifdigitizer/lifscope.h>
-#include <modules/lif/hardware/liflaser/liflaser.h>
+#include <hardware/core/lifdigitizer/lifscope.h>
+#include <hardware/core/liflaser/liflaser.h>
 #include <QtConcurrent/QtConcurrent>
 #include <QFuture>
 #include <QFutureWatcher>
@@ -173,7 +172,7 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 #endif
 
 #ifdef BC_LIF
-    auto lsc = new BC_LIFSCOPE;
+    auto lsc = new BC_LIFDIGITIZER;
     connect(lsc,&LifScope::waveformRead,this,&HardwareManager::lifScopeShotAcquired);
     connect(lsc,&LifScope::configAcqComplete,this,&HardwareManager::lifConfigAcqStarted);
     d_hardwareMap.emplace(lsc->d_key,lsc);
@@ -768,8 +767,7 @@ bool HardwareManager::setPGenLifDelay(double d)
 #ifndef BC_PGEN
     emit logMessage(QString("Could not set LIF delay because no pulse generator is avaialble."),LogHandler::Error);
     return false;
-#endif
-
+#else
     bool out = true;
     for(uint i=0; i<BC_NUM_PGEN; i++)
     {
@@ -783,6 +781,7 @@ bool HardwareManager::setPGenLifDelay(double d)
     }
 
     return out;
+#endif
 }
 
 bool HardwareManager::setLifLaserPos(double pos)

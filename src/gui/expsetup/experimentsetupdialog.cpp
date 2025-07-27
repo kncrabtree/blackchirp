@@ -29,7 +29,7 @@
 #include "experimentvalidatorconfigpage.h"
 
 #ifdef BC_LIF
-#include <modules/lif/gui/experimentlifconfigpage.h>
+#include <gui/lif/gui/experimentlifconfigpage.h>
 #endif
 
 ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QString, QString> &hw, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent)
