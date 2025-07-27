@@ -12,7 +12,8 @@ HWSettingsModel::HWSettingsModel(QString key, QStringList forbiddenKeys, QObject
     pu_rootItem = std::make_unique<HWSettingsItem>(l,false,false,nullptr);
 
     forbiddenKeys.append({BC::Key::HW::connected,BC::Key::HW::key,
-                          BC::Key::HW::name,BC::Key::HW::threaded,BC::Key::Custom::comm,BC::Key::RS232::id,
+                          BC::Key::HW::name,BC::Key::HW::threaded,BC::Key::HW::supportedProtocols,
+                          BC::Key::Custom::comm,BC::Key::RS232::id,
                           BC::Key::RS232::baud,BC::Key::RS232::parity,BC::Key::RS232::dataBits,
                           BC::Key::RS232::stopBits,BC::Key::RS232::flowControl, BC::Key::TCP::ip,
                           BC::Key::TCP::port,BC::Key::GPIB::gpibAddress
@@ -63,7 +64,7 @@ HWSettingsModel::HWSettingsModel(QString key, QStringList forbiddenKeys, QObject
     }
 }
 
-void HWSettingsModel::saveChanges(const QString name)
+void HWSettingsModel::saveChanges(const QString name, int selectedProtocol)
 {
     for(int i=0; i<pu_rootItem->childCount(); ++i)
     {
@@ -97,6 +98,10 @@ void HWSettingsModel::saveChanges(const QString name)
 
     if(!name.isEmpty())
         set(BC::Key::HW::name,name);
+    
+    // Save protocol selection if provided
+    if(selectedProtocol >= 0)
+        set(BC::Key::HW::commType, selectedProtocol);
 
     save();
 }

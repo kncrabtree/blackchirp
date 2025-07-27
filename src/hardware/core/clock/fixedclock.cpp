@@ -57,3 +57,9 @@ QStringList FixedClock::forbiddenKeys() const
     out.append(BC::Key::Clock::ch);
     return out;
 }
+
+QVector<CommunicationProtocol::CommType> FixedClock::supportedProtocols() const
+{
+    // FixedClock doesn't actually communicate, but for testing purposes we can support Virtual
+    return {CommunicationProtocol::Virtual};
+}

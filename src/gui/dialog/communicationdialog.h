@@ -9,6 +9,8 @@ class CommunicationDialog;
 }
 
 class QLabel;
+class QSpinBox;
+class QLineEdit;
 
 class CommunicationDialog : public QDialog
 {
@@ -30,7 +32,21 @@ private:
     QList<CustomInfo> d_customInfoList;
     SettingsStorage d_storage;
 
+    // Read options UI elements for each protocol
+    QSpinBox *p_gpibTimeoutSpinBox;
+    QLineEdit *p_gpibTermCharEdit;
+    QSpinBox *p_tcpTimeoutSpinBox;
+    QLineEdit *p_tcpTermCharEdit;
+    QSpinBox *p_rs232TimeoutSpinBox;
+    QLineEdit *p_rs232TermCharEdit;
+    QSpinBox *p_customTimeoutSpinBox;
+    QLineEdit *p_customTermCharEdit;
+
 	void startTest(QString type, QString key);
+	void populateDevicesByProtocol();
+	void setupReadOptionsUI();
+	void loadReadOptionsFromSettings();
+	void saveProtocolReadOptions(const QString& protocolKey, QSpinBox* timeoutSpinBox, QLineEdit* termCharEdit, const QString& hwKey, const QString& subKey);
 
 
 

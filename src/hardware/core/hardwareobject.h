@@ -31,6 +31,7 @@ static const QString connected{"connected"}; /*!< Whether last communication was
 static const QString critical{"critical"}; /*!< Whether communication failure should abort an experiment */
 static const QString threaded{"threaded"}; /*!< Whether object is in its own thread */
 static const QString commType{"commType"}; /*!< CommunicationProtocol type */
+static const QString supportedProtocols{"supportedProtocols"}; /*!< List of supported communication protocols */
 static const QString rInterval{"rollingDataIntervalSec"}; /*!< Timer interval for rolling data (seconds) */
 }
 
@@ -210,7 +211,7 @@ public:
 
     bool d_critical; /*!< Whether a communication error should abort an experiment. */
     const bool d_threaded; /*!< Whether the object should have its own thread of execution. */
-    const CommunicationProtocol::CommType d_commType; /*!< Type of communication */
+    CommunicationProtocol::CommType d_commType; /*!< Type of communication */
 
     /*!
      * \brief Returns most recent error message
@@ -246,6 +247,19 @@ public:
      * \return List of valdidation key strings.
      */
     virtual QStringList validationKeys() const { return {}; }
+
+    /*!
+     * \brief Returns list of supported communication protocols
+     * 
+     * Hardware implementations should override this function to declare which
+     * communication protocols they support. This enables runtime protocol
+     * selection and validates user protocol choices.
+     * 
+     * The default implementation returns the hardcoded protocol from constructor.
+     * 
+     * \return Vector of supported CommunicationProtocol::CommType values
+     */
+    virtual QVector<CommunicationProtocol::CommType> supportedProtocols() const;
 	
 signals:
     /*!
@@ -420,6 +434,19 @@ public slots:
     virtual void endAcquisition(){}
 
     /*!
+     * \brief Sets communication protocol at runtime
+     * 
+     * Allows changing the communication protocol after construction.
+     * The protocol must be supported as declared by supportedProtocols().
+     * This will rebuild the communication object with the new protocol.
+     * 
+     * \param commType New communication protocol type
+     * \param gc Pointer to the `GpibController` object for GPIB devices
+     * \return True if protocol change was successful
+     */
+    bool setCommProtocol(CommunicationProtocol::CommType commType, QObject *gc = nullptr);
+
+    /*!
      * \brief Creates `CommunicationProtocol` object
      * 
      * Uses the `d_comm` parameter passed in the constructor to create the
@@ -428,8 +455,9 @@ public slots:
      * 
      * \param gc Pointer to the `GpibController` object for GPIB devices.
      * If the device is not GPIB, this variable is unused.
+     * \param commType Communication protocol type. If None, uses d_commType.
      */
-    void buildCommunication(QObject *gc = nullptr);
+    void buildCommunication(QObject *gc = nullptr, CommunicationProtocol::CommType commType = CommunicationProtocol::None);
 
 protected:
     QString d_errorString; /*!< Last error. */

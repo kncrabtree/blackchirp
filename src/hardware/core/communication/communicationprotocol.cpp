@@ -1,4 +1,6 @@
 #include <hardware/core/communication/communicationprotocol.h>
+#include <hardware/core/hardwareobject.h>
+#include <QCoreApplication>
 
 CommunicationProtocol::CommunicationProtocol(QString key, QObject *parent) :
     QObject(parent),d_key(key)
@@ -180,6 +182,9 @@ QString CommunicationProtocol::errorString()
 
 bool CommunicationProtocol::bcTestConnection()
 {
+    // Load communication read options from settings before testing
+    loadCommReadOptions();
+    
     bool success = testConnection();
     if(!success)
     {
@@ -188,5 +193,58 @@ bool CommunicationProtocol::bcTestConnection()
     }
 
     return success;
+}
+
+void CommunicationProtocol::loadCommReadOptions()
+{
+    SettingsStorage s(d_key, SettingsStorage::Hardware);
+    
+    // Get current communication type to determine which protocol settings to load
+    auto commType = static_cast<CommunicationProtocol::CommType>(
+        s.get(BC::Key::HW::commType, static_cast<int>(CommunicationProtocol::Virtual))
+    );
+    
+    // Get the protocol key name for settings lookup
+    QString protocolKey;
+    switch(commType) {
+    case CommunicationProtocol::Rs232:
+        protocolKey = BC::Key::Comm::rs232;
+        break;
+    case CommunicationProtocol::Tcp:
+        protocolKey = BC::Key::Comm::tcp;
+        break;
+    case CommunicationProtocol::Gpib:
+        protocolKey = BC::Key::Comm::gpib;
+        break;
+    case CommunicationProtocol::Custom:
+        protocolKey = BC::Key::Comm::custom;
+        break;
+    case CommunicationProtocol::Virtual:
+        protocolKey = BC::Key::Comm::hwVirtual;
+        break;
+    default:
+        // No read options for None or unknown protocols, use defaults
+        setReadOptions(1000, "");
+        return;
+    }
+    
+    // Get subKey for QSettings path
+    auto subKey = s.get(BC::Key::HW::subKey, QString(""));
+    
+    // Load read options using QSettings directly (matches saving pattern)
+    QSettings qs(QCoreApplication::organizationName(), QCoreApplication::applicationName());
+    qs.beginGroup(d_key);
+    qs.beginGroup(subKey);
+    qs.beginGroup(protocolKey);
+    
+    // Default: 1000ms timeout, no termination character
+    int timeout = qs.value(BC::Key::Comm::timeout, 1000).toInt();
+    QString termChar = qs.value(BC::Key::Comm::termChar, QString("")).toString();
+    
+    qs.endGroup();
+    qs.endGroup();
+    qs.endGroup();
+    
+    setReadOptions(timeout, termChar);
 }
 

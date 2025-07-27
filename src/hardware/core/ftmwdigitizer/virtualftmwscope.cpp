@@ -144,6 +144,15 @@ void VirtualFtmwScope::readWaveform()
         emit shotAcquired(out);
 }
 
+QVector<CommunicationProtocol::CommType> VirtualFtmwScope::supportedProtocols() const
+{
+    // For testing: support all protocols to test runtime switching capability
+    // Note: None is excluded as it's only used as a fallback indicator
+    return {CommunicationProtocol::Rs232, CommunicationProtocol::Tcp, 
+            CommunicationProtocol::Gpib, CommunicationProtocol::Custom,
+            CommunicationProtocol::Virtual};
+}
+
 void VirtualFtmwScope::generateSimulatedFid()
 {
     // Clear any existing data

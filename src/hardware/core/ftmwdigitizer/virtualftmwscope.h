@@ -26,6 +26,9 @@ public slots:
 
     void readWaveform() override;
 
+public:
+    QVector<CommunicationProtocol::CommType> supportedProtocols() const override;
+
 protected:
     bool testConnection() override;
     void initialize() override;

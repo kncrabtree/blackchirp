@@ -22,6 +22,8 @@ static const QString tcp{"tcp"}; /*!< TcpInstrument */
 static const QString gpib{"gpib"}; /*!< GpibInstrument */
 static const QString custom{"custom"}; /*!< CustomInstrument */
 static const QString hwVirtual{"virtual"}; /*!< VirtaulInstrument */
+static const QString timeout{"timeout"}; /*!< Read timeout in ms (<=0 disables timeout) */
+static const QString termChar{"termChar"}; /*!< Termination character(s) (empty disables termChar) */
 }
 
 /*!
@@ -169,12 +171,9 @@ public:
     QString errorString();
 
     /*!
-     * \brief Convenience function for setting read options
-     * \param tmo Read timeout, in ms
-     * \param useTermChar Whether to look for termination characters at the end of a message
-     * \param termChar Termination character(s)
+     * \brief Loads read options from settings for this communication protocol
      */
-    void setReadOptions(int tmo, bool useTermChar = false, QByteArray termChar = QByteArray()) { d_timeOut = tmo, d_useTermChar = useTermChar, d_readTerminator = termChar; }
+    void loadCommReadOptions();
 
 signals:
     /*!
@@ -213,6 +212,17 @@ private:
     QByteArray d_readTerminator; /*!< Termination characters that indicate a message from the device is complete. */
     bool d_useTermChar{false}; /*!< If true, a read operation is complete when the message ends with d_readTerminator */
     int d_timeOut{1000}; /*!< Timeout for read operation, in ms */
+
+    /*!
+     * \brief Sets read options for communication protocol
+     * \param timeout Read timeout in ms (<=0 disables timeout)
+     * \param termChar Termination character(s) (empty disables termChar)
+     */
+    void setReadOptions(int timeout, const QString& termChar) { 
+        d_timeOut = timeout; 
+        d_readTerminator = termChar.toUtf8();
+        d_useTermChar = !termChar.isEmpty();
+    }
 
     /*!
      * \brief Attempts to open the QIODevice

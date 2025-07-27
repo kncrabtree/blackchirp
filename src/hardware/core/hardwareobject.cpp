@@ -1,4 +1,5 @@
 #include <hardware/core/hardwareobject.h>
+#include <QMetaEnum>
 
 #ifdef BC_GPIBCONTROLLER
 #include <hardware/optional/gpibcontroller/gpibcontroller.h>
@@ -11,12 +12,13 @@ HardwareObject::HardwareObject(const QString hwType, const QString subKey, const
     SettingsStorage({BC::Key::hwKey(hwType,index),subKey},General),
     d_name(name), d_key(BC::Key::hwKey(hwType,index)),
     d_subKey(subKey), d_index(index), d_threaded(threaded), d_commType(commType),
-    d_enabledForExperiment(true), d_isConnected(false)
+    d_enabledForExperiment(true), d_isConnected(false), p_comm(nullptr)
 {
     set(BC::Key::HW::key,d_key);
     setDefault(BC::Key::HW::name,d_name);
     setDefault(BC::Key::HW::critical,critical);
     setDefault(BC::Key::HW::rInterval,0);
+    setDefault(BC::Key::HW::commType,static_cast<int>(commType));
     save();
 
     //it is necessary to write the subKey one level above the SettingsStorage group, which
@@ -44,8 +46,71 @@ QString HardwareObject::errorString()
     return out;
 }
 
+QVector<CommunicationProtocol::CommType> HardwareObject::supportedProtocols() const
+{
+    // Default implementation returns the hardcoded protocol from constructor
+    return {d_commType};
+}
+
+bool HardwareObject::setCommProtocol(CommunicationProtocol::CommType commType, QObject *gc)
+{
+    auto commTypeEnum = QMetaEnum::fromType<CommunicationProtocol::CommType>();
+    QString protocolName = commTypeEnum.valueToKey(static_cast<int>(commType));
+    
+    // Validate that the requested protocol is supported
+    auto supported = supportedProtocols();
+    if (!supported.contains(commType)) {
+        d_errorString = QString("Protocol %1 not supported by %2").arg(protocolName).arg(d_name);
+        emit logMessage(d_errorString, LogHandler::Error);
+        return false;
+    }
+    
+    emit logMessage(QString("Switching %1 to %2 protocol").arg(d_name).arg(protocolName), LogHandler::Normal);
+    
+    // Store the new protocol type in settings
+    set(BC::Key::HW::commType, static_cast<int>(commType));
+    d_commType = commType; // Update member variable
+    
+    // Rebuild communication with new protocol
+    buildCommunication(gc, commType);
+    
+    // Test the new connection
+    emit logMessage(QString("Testing %1 connection with %2 protocol").arg(d_name).arg(protocolName), LogHandler::Normal);
+    bcTestConnection();
+    
+    emit logMessage(QString("Protocol switch to %1 completed for %2").arg(protocolName).arg(d_name), LogHandler::Normal);
+    
+    return true;
+}
+
 void HardwareObject::bcInitInstrument()
 {
+    // Read settings to get the correct protocol before initialization
+    readAll();
+    auto settingsProtocolInt = get(BC::Key::HW::commType, static_cast<int>(d_commType));
+    auto settingsProtocol = static_cast<CommunicationProtocol::CommType>(settingsProtocolInt);
+    
+    // Check if protocol differs from what was used during construction
+    if(settingsProtocol != d_commType) {
+        auto commTypeEnum = QMetaEnum::fromType<CommunicationProtocol::CommType>();
+        QString oldProtocolName = commTypeEnum.valueToKey(static_cast<int>(d_commType));
+        QString newProtocolName = commTypeEnum.valueToKey(static_cast<int>(settingsProtocol));
+        
+        emit logMessage(QString("Protocol mismatch for %1: constructed as %2, settings show %3. Rebuilding communication.")
+                       .arg(d_name).arg(oldProtocolName).arg(newProtocolName), LogHandler::Warning);
+        
+        // LIMITATION: Thread management for GPIB switching is not handled here.
+        // Switching to/from GPIB protocol would require complex thread migration
+        // which is not currently supported at runtime.
+        if((d_commType == CommunicationProtocol::Gpib) != (settingsProtocol == CommunicationProtocol::Gpib)) {
+            emit logMessage(QString("Warning: Cannot switch to/from GPIB protocol at runtime. Thread management required."), LogHandler::Error);
+        } else {
+            // Safe to rebuild communication for non-GPIB protocol switches
+            d_commType = settingsProtocol;
+            buildCommunication(parent()); // Use current parent as GPIB controller
+        }
+    }
+
     if(p_comm)
     {
         if(p_comm->thread() != thread())
@@ -54,6 +119,16 @@ void HardwareObject::bcInitInstrument()
     }
 
     initialize();
+    
+    // Store supported protocols for UI access (after object is fully constructed)
+    QVariantList protocolList;
+    auto protocols = supportedProtocols();
+    for(auto protocol : protocols) {
+        protocolList.append(static_cast<int>(protocol));
+    }
+    set(BC::Key::HW::supportedProtocols, protocolList);
+    save();
+    
     bcTestConnection();
 
     connect(this,&HardwareObject::hardwareFailure,this,[this](){
@@ -101,6 +176,24 @@ void HardwareObject::bcReadSettings()
     d_critical = get(BC::Key::HW::critical,true);
     auto interval = get(BC::Key::HW::rInterval,0);
 
+    // Check for runtime protocol changes (from HWDialog changes)
+    auto settingsProtocolInt = get(BC::Key::HW::commType, static_cast<int>(d_commType));
+    auto settingsProtocol = static_cast<CommunicationProtocol::CommType>(settingsProtocolInt);
+    
+    if(settingsProtocol != d_commType) {
+        // Protocol has changed at runtime - handle threading properly
+        bool success = false;
+        if(thread() != QThread::currentThread()) {
+            // We're being called from a different thread - use blocking queued invocation
+            QMetaObject::invokeMethod(this, [this, settingsProtocol](){
+                return setCommProtocol(settingsProtocol, parent());
+            }, Qt::BlockingQueuedConnection, &success);
+        } else {
+            // Same thread - direct call is safe
+            success = setCommProtocol(settingsProtocol, parent());
+        }
+    }
+
     if(d_rollingDataTimerId >= 0)
         killTimer(d_rollingDataTimerId);
 
@@ -111,14 +204,24 @@ void HardwareObject::bcReadSettings()
 }
 
 
-void HardwareObject::buildCommunication(QObject *gc)
+void HardwareObject::buildCommunication(QObject *gc, CommunicationProtocol::CommType commType)
 {
 #ifdef BC_GPIBCONTROLLER
     GpibController *c = dynamic_cast<GpibController*>(gc);
 #else
     Q_UNUSED(gc)
 #endif
-    switch(d_commType)
+
+    // Use provided commType, or fall back to member variable
+    CommunicationProtocol::CommType protocolType = (commType == CommunicationProtocol::None) ? d_commType : commType;
+
+    // Clean up existing communication object
+    if(p_comm) {
+        p_comm->deleteLater();
+        p_comm = nullptr;
+    }
+
+    switch(protocolType)
     {
     case CommunicationProtocol::Rs232:
         p_comm = new Rs232Instrument(d_key,this);
@@ -148,7 +251,6 @@ void HardwareObject::buildCommunication(QObject *gc)
     {
         connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
         connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
-
     }
 }
 

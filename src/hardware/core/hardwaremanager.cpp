@@ -183,13 +183,8 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
     d_hardwareMap.emplace(ll->d_key,ll);
 #endif
 
-    //write arrays of the connected devices for use in the Hardware Settings menu
-    //first array is for all objects accessible to the hardware manager
+    //write array of all connected devices for use in the Hardware Settings menu
     setArray(BC::Key::allHw,{},false);
-    setArray(BC::Key::Comm::tcp,{},false);
-    setArray(BC::Key::Comm::rs232,{},false);
-    setArray(BC::Key::Comm::gpib,{},false);
-    setArray(BC::Key::Comm::custom,{},false);
     for(auto hwit = d_hardwareMap.cbegin(); hwit != d_hardwareMap.cend(); ++hwit)
     {        
         auto obj = hwit->second;
@@ -228,39 +223,8 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
                            {BC::Key::HW::name,obj->d_name},
                            {BC::Key::HW::critical,obj->d_critical}
                        });
-        switch(obj->d_commType)
-        {
-        case CommunicationProtocol::Tcp:
-            appendArrayMap(BC::Key::Comm::tcp,{
-                               {BC::Key::HW::key,obj->d_key},
-                               {BC::Key::HW::subKey,obj->d_subKey},
-                               {BC::Key::HW::name,obj->d_name}
-                           });
-            break;
-        case CommunicationProtocol::Rs232:
-            appendArrayMap(BC::Key::Comm::rs232,{
-                               {BC::Key::HW::key,obj->d_key},
-                               {BC::Key::HW::subKey,obj->d_subKey},
-                               {BC::Key::HW::name,obj->d_name}
-                           });
-            break;
-        case CommunicationProtocol::Gpib:
-            appendArrayMap(BC::Key::Comm::gpib,{
-                               {BC::Key::HW::key,obj->d_key},
-                               {BC::Key::HW::subKey,obj->d_subKey},
-                               {BC::Key::HW::name,obj->d_name}
-                           });
-            break;
-        case CommunicationProtocol::Custom:
-            appendArrayMap(BC::Key::Comm::custom,{
-                               {BC::Key::HW::key,obj->d_key},
-                               {BC::Key::HW::subKey,obj->d_subKey},
-                               {BC::Key::HW::name,obj->d_name}
-                           });
-            break;
-        default:
-            break;
-        }
+        // Protocol-specific arrays removed - CommunicationDialog now reads from allHw
+        // and determines current protocol dynamically from individual hardware settings
 
         obj->buildCommunication(gpib);
 

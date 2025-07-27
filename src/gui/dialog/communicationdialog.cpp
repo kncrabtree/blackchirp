@@ -5,6 +5,9 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QMetaEnum>
+#include <QSpinBox>
+#include <QLineEdit>
+#include <QFormLayout>
 
 #include <hardware/core/communication/communicationprotocol.h>
 #include <hardware/core/hardwaremanager.h>
@@ -25,43 +28,8 @@ CommunicationDialog::CommunicationDialog(QWidget *parent) :
 	ui->rs232TestButton->setIcon(ThemeColors::createThemedIcon(":/icons/check-circle.svg", ThemeColors::IconPrimary, this));
 	ui->customTestButton->setIcon(ThemeColors::createThemedIcon(":/icons/check-circle.svg", ThemeColors::IconPrimary, this));
 
-	//populate GPIB devices
-    auto count = d_storage.getArraySize(BC::Key::Comm::gpib);
-    for(std::size_t i=0; i<count; ++i)
-        ui->gpibDeviceComboBox->addItem(d_storage.getArrayValue<QString>(BC::Key::Comm::gpib,i,BC::Key::HW::name),QVariant::fromValue(i));
-
-    if(count == 0)
-		ui->gpibBox->setEnabled(false);
-
-	//populate TCP devices
-    count = d_storage.getArraySize(BC::Key::Comm::tcp);
-    for(std::size_t i=0; i<count; ++i)
-	{
-        ui->tcpDeviceComboBox->addItem(d_storage.getArrayValue<QString>(BC::Key::Comm::tcp,i,BC::Key::HW::name),QVariant::fromValue(i));
-	}
-
-    if(count == 0)
-		ui->tcpBox->setEnabled(false);
-
-	//populate RS232 devices
-    count = d_storage.getArraySize(BC::Key::Comm::rs232);
-    for(std::size_t i=0; i<count; ++i)
-	{
-        ui->rs232DeviceComboBox->addItem(d_storage.getArrayValue<QString>(BC::Key::Comm::rs232,i,BC::Key::HW::name),QVariant::fromValue(i));
-	}
-
-    if(count==0)
-        ui->rs232Box->setEnabled(false);
-
-    //populate custom devices
-    count = d_storage.getArraySize(BC::Key::Comm::custom);
-    for(std::size_t i=0; i<count; ++i)
-    {
-        ui->customDeviceComboBox->addItem(d_storage.getArrayValue<QString>(BC::Key::Comm::custom,i,BC::Key::HW::name),QVariant::fromValue(i));
-    }
-
-    if(count == 0)
-        ui->customBox->setEnabled(false);
+	// Populate devices by reading allHw array and grouping by current protocol
+    populateDevicesByProtocol();
 
     ui->gpibDeviceComboBox->setCurrentIndex(-1);
 	ui->gpibTestButton->setEnabled(false);
@@ -106,6 +74,10 @@ CommunicationDialog::CommunicationDialog(QWidget *parent) :
     ui->customDeviceComboBox->setCurrentIndex(-1);
     ui->customTestButton->setEnabled(false);
 
+    // Setup read options UI for each protocol
+    setupReadOptionsUI();
+    loadReadOptionsFromSettings();
+
     auto cbChanged = static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged);
 
     connect(ui->gpibDeviceComboBox,cbChanged,this,&CommunicationDialog::gpibDeviceChanged);
@@ -133,6 +105,67 @@ void CommunicationDialog::startTest(QString type, QString key)
 	emit testConnection(type,key);
 }
 
+void CommunicationDialog::populateDevicesByProtocol()
+{
+    // Read all hardware objects and group by current communication protocol
+    auto allHwCount = d_storage.getArraySize(BC::Key::allHw);
+    
+    QVector<QPair<QString, QString>> gpibDevices, tcpDevices, rs232Devices, customDevices;
+    
+    for(std::size_t i = 0; i < allHwCount; ++i) {
+        auto hwKey = d_storage.getArrayValue<QString>(BC::Key::allHw, i, BC::Key::HW::key);
+        auto hwSubKey = d_storage.getArrayValue<QString>(BC::Key::allHw, i, BC::Key::HW::subKey);
+        auto hwName = d_storage.getArrayValue<QString>(BC::Key::allHw, i, BC::Key::HW::name);
+        
+        // Read the current communication protocol from the hardware's settings
+        SettingsStorage hwSettings(hwKey, SettingsStorage::Hardware);
+        auto currentProtocol = static_cast<CommunicationProtocol::CommType>(
+            hwSettings.get(BC::Key::HW::commType, static_cast<int>(CommunicationProtocol::Virtual))
+        );
+        
+        // Group by protocol type
+        QPair<QString, QString> deviceInfo{hwKey, hwName};
+        switch(currentProtocol) {
+        case CommunicationProtocol::Gpib:
+            gpibDevices.append(deviceInfo);
+            break;
+        case CommunicationProtocol::Tcp:
+            tcpDevices.append(deviceInfo);
+            break;
+        case CommunicationProtocol::Rs232:
+            rs232Devices.append(deviceInfo);
+            break;
+        case CommunicationProtocol::Custom:
+            customDevices.append(deviceInfo);
+            break;
+        default:
+            // Skip Virtual and None protocols
+            break;
+        }
+    }
+    
+    // Populate combo boxes
+    for(const auto& device : gpibDevices) {
+        ui->gpibDeviceComboBox->addItem(device.second, device.first);
+    }
+    ui->gpibBox->setEnabled(!gpibDevices.isEmpty());
+    
+    for(const auto& device : tcpDevices) {
+        ui->tcpDeviceComboBox->addItem(device.second, device.first);
+    }
+    ui->tcpBox->setEnabled(!tcpDevices.isEmpty());
+    
+    for(const auto& device : rs232Devices) {
+        ui->rs232DeviceComboBox->addItem(device.second, device.first);
+    }
+    ui->rs232Box->setEnabled(!rs232Devices.isEmpty());
+    
+    for(const auto& device : customDevices) {
+        ui->customDeviceComboBox->addItem(device.second, device.first);
+    }
+    ui->customBox->setEnabled(!customDevices.isEmpty());
+}
+
 void CommunicationDialog::gpibDeviceChanged(int index)
 {
 	if(index < 0)
@@ -143,8 +176,7 @@ void CommunicationDialog::gpibDeviceChanged(int index)
 		return;
 	}
 
-    std::size_t i = static_cast<std::size_t>(index);
-    auto key = d_storage.getArrayValue<QString>(BC::Key::Comm::gpib,i,BC::Key::HW::key);
+    auto key = ui->gpibDeviceComboBox->currentData().toString();
 
     SettingsStorage s(key,SettingsStorage::Hardware);
 
@@ -166,8 +198,7 @@ void CommunicationDialog::tcpDeviceChanged(int index)
 		return;
 	}
 
-    std::size_t i = static_cast<std::size_t>(index);
-    auto key = d_storage.getArrayValue<QString>(BC::Key::Comm::tcp,i,BC::Key::HW::key);
+    auto key = ui->tcpDeviceComboBox->currentData().toString();
 
     SettingsStorage s(key,SettingsStorage::Hardware);
 	ui->ipLineEdit->setEnabled(true);
@@ -197,8 +228,7 @@ void CommunicationDialog::rs232DeviceChanged(int index)
         return;
 	}
 
-    std::size_t i = static_cast<std::size_t>(index);
-    auto key = d_storage.getArrayValue<QString>(BC::Key::Comm::rs232,i,BC::Key::HW::key);
+    auto key = ui->rs232DeviceComboBox->currentData().toString();
 
     SettingsStorage s(key,SettingsStorage::Hardware);
 	ui->rs232DeviceIDLineEdit->setEnabled(true);
@@ -255,8 +285,7 @@ void CommunicationDialog::customDeviceChanged(int index)
     }
 
 
-    std::size_t idx = static_cast<std::size_t>(index);
-    auto key = d_storage.getArrayValue<QString>(BC::Key::Comm::custom,idx,BC::Key::HW::key);
+    auto key = ui->customDeviceComboBox->currentData().toString();
 
     SettingsStorage s(key,SettingsStorage::Hardware);
     using namespace BC::Key::Custom;
@@ -300,9 +329,9 @@ void CommunicationDialog::testGpib()
 	if(index < 0)
 		return;
 
-    auto i = static_cast<std::size_t>(index);
-    auto key = d_storage.getArrayValue<QString>(BC::Key::Comm::gpib,i,BC::Key::HW::key);
-    auto subKey = d_storage.getArrayValue<QString>(BC::Key::Comm::gpib,i,BC::Key::HW::subKey);
+    auto key = ui->gpibDeviceComboBox->currentData().toString();
+    SettingsStorage hwSettings(key, SettingsStorage::Hardware);
+    auto subKey = hwSettings.get(BC::Key::HW::subKey, QString(""));
 
     //one of the few times to invoke QSettings directly: need to edit the settings
     //for the hardware object itself
@@ -314,6 +343,9 @@ void CommunicationDialog::testGpib()
     s.endGroup();
 	s.sync();
 
+    // Save read options for GPIB protocol
+    saveProtocolReadOptions(BC::Key::Comm::gpib, p_gpibTimeoutSpinBox, p_gpibTermCharEdit, key, subKey);
+
     startTest(BC::Key::Comm::gpib,key);
 }
 
@@ -323,9 +355,9 @@ void CommunicationDialog::testTcp()
 	if(index < 0)
 		return;
 
-    auto i = static_cast<std::size_t>(index);
-    auto key = d_storage.getArrayValue<QString>(BC::Key::Comm::tcp,i,BC::Key::HW::key);
-    auto subKey = d_storage.getArrayValue<QString>(BC::Key::Comm::tcp,i,BC::Key::HW::subKey);
+    auto key = ui->tcpDeviceComboBox->currentData().toString();
+    SettingsStorage hwSettings(key, SettingsStorage::Hardware);
+    auto subKey = hwSettings.get(BC::Key::HW::subKey, QString(""));
 
     //one of the few times to invoke QSettings directly: need to edit the settings
     //for the hardware object itself
@@ -338,6 +370,9 @@ void CommunicationDialog::testTcp()
     s.endGroup();
 	s.sync();
 
+    // Save read options for TCP protocol
+    saveProtocolReadOptions(BC::Key::Comm::tcp, p_tcpTimeoutSpinBox, p_tcpTermCharEdit, key, subKey);
+
     startTest(BC::Key::Comm::tcp,key);
 }
 
@@ -347,9 +382,9 @@ void CommunicationDialog::testRs232()
 	if(index < 0)
 		return;
 
-    auto i = static_cast<std::size_t>(index);
-    auto key = d_storage.getArrayValue<QString>(BC::Key::Comm::rs232,i,BC::Key::HW::key);
-    auto subKey = d_storage.getArrayValue<QString>(BC::Key::Comm::rs232,i,BC::Key::HW::subKey);
+    auto key = ui->rs232DeviceComboBox->currentData().toString();
+    SettingsStorage hwSettings(key, SettingsStorage::Hardware);
+    auto subKey = hwSettings.get(BC::Key::HW::subKey, QString(""));
 
     using namespace BC::Key::RS232;
     //one of the few times to invoke QSettings directly: need to edit the settings
@@ -367,6 +402,9 @@ void CommunicationDialog::testRs232()
     s.endGroup();
 	s.sync();
 
+    // Save read options for RS232 protocol
+    saveProtocolReadOptions(BC::Key::Comm::rs232, p_rs232TimeoutSpinBox, p_rs232TermCharEdit, key, subKey);
+
     startTest(BC::Key::Comm::rs232,key);
 }
 
@@ -376,9 +414,9 @@ void CommunicationDialog::testCustom()
     if(index < 0)
         return;
 
-    auto i = static_cast<std::size_t>(index);
-    auto key = d_storage.getArrayValue<QString>(BC::Key::Comm::custom,i,BC::Key::HW::key);
-    auto subKey = d_storage.getArrayValue<QString>(BC::Key::Comm::custom,i,BC::Key::HW::subKey);
+    auto key = ui->customDeviceComboBox->currentData().toString();
+    SettingsStorage hwSettings(key, SettingsStorage::Hardware);
+    auto subKey = hwSettings.get(BC::Key::HW::subKey, QString(""));
 
     //one of the few times to invoke QSettings directly: need to edit the settings
     //for the hardware object itself
@@ -406,6 +444,9 @@ void CommunicationDialog::testCustom()
     s.endGroup();
     s.sync();
 
+    // Save read options for Custom protocol
+    saveProtocolReadOptions(BC::Key::Comm::custom, p_customTimeoutSpinBox, p_customTermCharEdit, key, subKey);
+
     startTest(BC::Key::Comm::custom,key);
 }
 
@@ -422,4 +463,65 @@ void CommunicationDialog::testComplete(QString device, bool success, QString msg
 	else
         QMessageBox::critical(this,QString("Connection Failed"),
 						  QString("%1 connection failed!\n%2").arg(device).arg(msg),QMessageBox::Ok);
+}
+
+void CommunicationDialog::setupReadOptionsUI()
+{
+    // Helper function to add read options to a group box
+    auto addReadOptions = [](QGroupBox* box, QSpinBox*& timeoutSpinBox, QLineEdit*& termCharEdit) {
+        auto layout = qobject_cast<QFormLayout*>(box->layout());
+        if (!layout) return;
+        
+        // Timeout setting
+        timeoutSpinBox = new QSpinBox;
+        timeoutSpinBox->setRange(0, 60000); // 0 to 60 seconds (0 = no timeout)
+        timeoutSpinBox->setSuffix(" ms");
+        timeoutSpinBox->setSpecialValueText("No timeout");
+        layout->addRow("Timeout:", timeoutSpinBox);
+        
+        // Termination character setting
+        termCharEdit = new QLineEdit;
+        termCharEdit->setMaxLength(10);
+        termCharEdit->setPlaceholderText("Empty = no termination");
+        layout->addRow("Term Char:", termCharEdit);
+    };
+    
+    // Add read options to each protocol group box
+    addReadOptions(ui->gpibBox, p_gpibTimeoutSpinBox, p_gpibTermCharEdit);
+    addReadOptions(ui->tcpBox, p_tcpTimeoutSpinBox, p_tcpTermCharEdit);
+    addReadOptions(ui->rs232Box, p_rs232TimeoutSpinBox, p_rs232TermCharEdit);
+    addReadOptions(ui->customBox, p_customTimeoutSpinBox, p_customTermCharEdit);
+}
+
+void CommunicationDialog::loadReadOptionsFromSettings()
+{
+    // Helper function to load settings for a protocol
+    auto loadProtocolSettings = [this](const QString& protocolKey, QSpinBox* timeoutSpinBox, QLineEdit* termCharEdit) {
+        int timeout = d_storage.getArrayValue(protocolKey, 0, BC::Key::Comm::timeout, 1000);
+        QString termChar = d_storage.getArrayValue(protocolKey, 0, BC::Key::Comm::termChar, QString(""));
+        
+        timeoutSpinBox->setValue(timeout);
+        termCharEdit->setText(termChar);
+    };
+    
+    // Load settings for each protocol
+    loadProtocolSettings(BC::Key::Comm::gpib, p_gpibTimeoutSpinBox, p_gpibTermCharEdit);
+    loadProtocolSettings(BC::Key::Comm::tcp, p_tcpTimeoutSpinBox, p_tcpTermCharEdit);
+    loadProtocolSettings(BC::Key::Comm::rs232, p_rs232TimeoutSpinBox, p_rs232TermCharEdit);
+    loadProtocolSettings(BC::Key::Comm::custom, p_customTimeoutSpinBox, p_customTermCharEdit);
+}
+
+void CommunicationDialog::saveProtocolReadOptions(const QString& protocolKey, QSpinBox* timeoutSpinBox, QLineEdit* termCharEdit, const QString& hwKey, const QString& subKey)
+{
+    // Save read options to the hardware object's settings using the same pattern as test methods
+    QSettings s(QApplication::organizationName(), QApplication::applicationName());
+    s.beginGroup(hwKey);
+    s.beginGroup(subKey);
+    s.beginGroup(protocolKey); // Store protocol-specific settings in a map
+    s.setValue(BC::Key::Comm::timeout, timeoutSpinBox->value());
+    s.setValue(BC::Key::Comm::termChar, termCharEdit->text());
+    s.endGroup();
+    s.endGroup();
+    s.endGroup();
+    s.sync();
 }
