@@ -322,7 +322,7 @@ include(cmake/BlackchirpViewerApplication.cmake)
 
 # Documentation
 if(BC_BUILD_DOCUMENTATION)
-    add_subdirectory(doc)
+    include(cmake/BlackchirpDocumentation.cmake)
 endif()
 
 # ============================================================================
