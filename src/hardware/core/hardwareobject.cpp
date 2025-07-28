@@ -74,10 +74,6 @@ bool HardwareObject::setCommProtocol(CommunicationProtocol::CommType commType, Q
     // Rebuild communication with new protocol
     buildCommunication(gc, commType);
     
-    // Test the new connection
-    emit logMessage(QString("Testing %1 connection with %2 protocol").arg(d_name).arg(protocolName), LogHandler::Normal);
-    bcTestConnection();
-    
     emit logMessage(QString("Protocol switch to %1 completed for %2").arg(protocolName).arg(d_name), LogHandler::Normal);
     
     return true;
@@ -251,6 +247,9 @@ void HardwareObject::buildCommunication(QObject *gc, CommunicationProtocol::Comm
     {
         connect(p_comm,&CommunicationProtocol::logMessage,this,&HardwareObject::logMessage);
         connect(p_comm,&CommunicationProtocol::hardwareFailure,this,&HardwareObject::hardwareFailure);
+        
+        // Initialize the communication protocol to create underlying devices
+        p_comm->initialize();
     }
 }
 

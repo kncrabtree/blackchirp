@@ -63,6 +63,7 @@ private:
     void loadDeviceSettings();
     void saveDeviceSettings();
     void saveCommonSettings();
+    void loadReadOptions(CommunicationProtocol::CommType protocolType);
     
     QString getDeviceDisplayText(const DeviceInfo& info);
     QIcon getStatusIcon(const DeviceInfo& info);

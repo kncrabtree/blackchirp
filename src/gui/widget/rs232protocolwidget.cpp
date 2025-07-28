@@ -99,10 +99,14 @@ void Rs232ProtocolWidget::loadProtocolSettings()
     // Load RS232-specific settings using group-based storage with backward compatibility
     auto deviceId = getGroupValue(BC::Key::Comm::rs232, id, get(id, QString("")));
     auto baudRate = getGroupValue<qint32>(BC::Key::Comm::rs232, baud, get<qint32>(baud, 57600));
-    auto databitsSetting = getGroupValue<Rs232Instrument::DataBits>(BC::Key::Comm::rs232, dataBits, get<Rs232Instrument::DataBits>(dataBits, Rs232Instrument::Data8));
-    auto paritySetting = getGroupValue<Rs232Instrument::Parity>(BC::Key::Comm::rs232, parity, get<Rs232Instrument::Parity>(parity, Rs232Instrument::NoParity));
-    auto stopbitsSetting = getGroupValue<Rs232Instrument::StopBits>(BC::Key::Comm::rs232, stopBits, get<Rs232Instrument::StopBits>(stopBits, Rs232Instrument::OneStop));
-    auto flowcontrolSetting = getGroupValue<Rs232Instrument::FlowControl>(BC::Key::Comm::rs232, flowControl, get<Rs232Instrument::FlowControl>(flowControl, Rs232Instrument::NoFlowControl));
+    auto databitsSetting = static_cast<Rs232Instrument::DataBits>(getGroupValue<int>(BC::Key::Comm::rs232, dataBits, 
+                                                                                     get<int>(dataBits, static_cast<int>(Rs232Instrument::Data8))));
+    auto paritySetting = static_cast<Rs232Instrument::Parity>(getGroupValue<int>(BC::Key::Comm::rs232, parity, 
+                                                                                  get<int>(parity, static_cast<int>(Rs232Instrument::NoParity))));
+    auto stopbitsSetting = static_cast<Rs232Instrument::StopBits>(getGroupValue<int>(BC::Key::Comm::rs232, stopBits, 
+                                                                                      get<int>(stopBits, static_cast<int>(Rs232Instrument::OneStop))));
+    auto flowcontrolSetting = static_cast<Rs232Instrument::FlowControl>(getGroupValue<int>(BC::Key::Comm::rs232, flowControl, 
+                                                                                            get<int>(flowControl, static_cast<int>(Rs232Instrument::NoFlowControl))));
     
     // Update UI controls
     p_deviceIdEdit->setText(deviceId);
@@ -146,8 +150,8 @@ void Rs232ProtocolWidget::saveProtocolSpecificSettings()
     // Base class will handle final save() call
     setGroupValue(BC::Key::Comm::rs232, id, p_deviceIdEdit->text());
     setGroupValue(BC::Key::Comm::rs232, baud, p_baudRateCombo->currentText().toInt());
-    setGroupValue(BC::Key::Comm::rs232, dataBits, static_cast<Rs232Instrument::DataBits>(p_dataBitsCombo->currentData().toInt()));
-    setGroupValue(BC::Key::Comm::rs232, parity, static_cast<Rs232Instrument::Parity>(p_parityCombo->currentData().toInt()));
-    setGroupValue(BC::Key::Comm::rs232, stopBits, static_cast<Rs232Instrument::StopBits>(p_stopBitsCombo->currentData().toInt()));
-    setGroupValue(BC::Key::Comm::rs232, flowControl, static_cast<Rs232Instrument::FlowControl>(p_flowControlCombo->currentData().toInt()));
+    setGroupValue(BC::Key::Comm::rs232, dataBits, p_dataBitsCombo->currentData().toInt());
+    setGroupValue(BC::Key::Comm::rs232, parity, p_parityCombo->currentData().toInt());
+    setGroupValue(BC::Key::Comm::rs232, stopBits, p_stopBitsCombo->currentData().toInt());
+    setGroupValue(BC::Key::Comm::rs232, flowControl, p_flowControlCombo->currentData().toInt());
 }

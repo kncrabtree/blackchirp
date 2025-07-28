@@ -100,6 +100,7 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/rs232protocolwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/tcpprotocolwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/virtualprotocolwidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/customprotocolwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/pulsestatusbox.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/rfconfigwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificspinbox.cpp

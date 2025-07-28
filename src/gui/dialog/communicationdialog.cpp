@@ -3,6 +3,7 @@
 #include <gui/widget/rs232protocolwidget.h>
 #include <gui/widget/tcpprotocolwidget.h>
 #include <gui/widget/virtualprotocolwidget.h>
+#include <gui/widget/customprotocolwidget.h>
 #include <gui/style/themecolors.h>
 
 #include <QApplication>
@@ -299,9 +300,11 @@ void CommunicationDialog::onProtocolChanged()
         case CommunicationProtocol::Virtual:
             widget = new VirtualProtocolWidget(d_currentDeviceKey, this);
             break;
-        case CommunicationProtocol::Gpib:
         case CommunicationProtocol::Custom:
-            // TODO: Create other protocol widgets
+            widget = new CustomProtocolWidget(d_currentDeviceKey, this);
+            break;
+        case CommunicationProtocol::Gpib:
+            // TODO: Create GPIB protocol widget
             break;
         default:
             break;
@@ -324,10 +327,8 @@ void CommunicationDialog::onProtocolChanged()
         // Load settings into the widget
         currentWidget->loadProtocolSettings();
         
-        // TODO: Load read options from settings and update UI
-        // For now, use defaults
-        p_timeoutSpinBox->setValue(1000);
-        p_termCharEdit->clear();
+        // Load read options from settings and update UI
+        loadReadOptions(currentProtocol);
     }
 }
 
@@ -377,6 +378,52 @@ void CommunicationDialog::saveDeviceSettings()
     // Update local info
     d_deviceInfo[d_currentDeviceKey].currentProtocol = currentProtocol;
     updateDeviceListItem(d_currentDeviceKey);
+}
+
+void CommunicationDialog::loadReadOptions(CommunicationProtocol::CommType protocolType)
+{
+    if(d_currentDeviceKey.isEmpty()) {
+        // Use defaults if no device selected
+        p_timeoutSpinBox->setValue(1000);
+        p_termCharEdit->clear();
+        return;
+    }
+    
+    // Create a temporary SettingsStorage to access the current device's settings
+    SettingsStorage storage(d_currentDeviceKey, SettingsStorage::Hardware);
+    
+    // Get the protocol key for group access
+    QString protocolKey;
+    switch(protocolType) {
+    case CommunicationProtocol::Rs232:
+        protocolKey = BC::Key::Comm::rs232;
+        break;
+    case CommunicationProtocol::Tcp:
+        protocolKey = BC::Key::Comm::tcp;
+        break;
+    case CommunicationProtocol::Gpib:
+        protocolKey = BC::Key::Comm::gpib;
+        break;
+    case CommunicationProtocol::Custom:
+        protocolKey = BC::Key::Comm::custom;
+        break;
+    case CommunicationProtocol::Virtual:
+        protocolKey = BC::Key::Comm::hwVirtual;
+        break;
+    default:
+        // Use defaults for None or unknown protocols
+        p_timeoutSpinBox->setValue(1000);
+        p_termCharEdit->clear();
+        return;
+    }
+    
+    // Load read options from group settings with sensible defaults
+    int timeout = storage.getGroupValue<int>(protocolKey, BC::Key::Comm::timeout, 1000);
+    QString termChar = storage.getGroupValue<QString>(protocolKey, BC::Key::Comm::termChar, QString());
+    
+    // Update UI controls
+    p_timeoutSpinBox->setValue(timeout);
+    p_termCharEdit->setText(termChar);
 }
 
 void CommunicationDialog::updateDeviceListItem(const QString& hwKey)

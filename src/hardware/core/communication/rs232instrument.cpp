@@ -29,10 +29,14 @@ bool Rs232Instrument::testConnection()
 
     // Load RS232 settings from group with backward compatibility fallback
     auto baudRate = s.getGroupValue<qint32>(BC::Key::Comm::rs232, baud, s.get<qint32>(baud, 57600));
-    auto db = s.getGroupValue<DataBits>(BC::Key::Comm::rs232, dataBits, s.get<DataBits>(dataBits, Data8));
-    auto p = s.getGroupValue<Parity>(BC::Key::Comm::rs232, parity, s.get<Parity>(parity, NoParity));
-    auto stop = s.getGroupValue<StopBits>(BC::Key::Comm::rs232, stopBits, s.get<StopBits>(stopBits, OneStop));
-    auto fc = s.getGroupValue<FlowControl>(BC::Key::Comm::rs232, flowControl, s.get<FlowControl>(flowControl, NoFlowControl));
+    auto db = static_cast<DataBits>(s.getGroupValue<int>(BC::Key::Comm::rs232, dataBits, 
+                                                        s.get<int>(dataBits, static_cast<int>(Data8))));
+    auto p = static_cast<Parity>(s.getGroupValue<int>(BC::Key::Comm::rs232, parity, 
+                                                      s.get<int>(parity, static_cast<int>(NoParity))));
+    auto stop = static_cast<StopBits>(s.getGroupValue<int>(BC::Key::Comm::rs232, stopBits, 
+                                                           s.get<int>(stopBits, static_cast<int>(OneStop))));
+    auto fc = static_cast<FlowControl>(s.getGroupValue<int>(BC::Key::Comm::rs232, flowControl, 
+                                                            s.get<int>(flowControl, static_cast<int>(NoFlowControl))));
     auto name = s.getGroupValue<QString>(BC::Key::Comm::rs232, id, s.get<QString>(id, ""));
 
     auto p_sp = dynamic_cast<QSerialPort*>(p_device);
