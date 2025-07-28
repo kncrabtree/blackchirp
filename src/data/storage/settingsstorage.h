@@ -63,12 +63,14 @@ static const QString trackingDir{"rollingdata"};
  *
  * A SettingsStorage object reads and maintains an internal copy of the
  * ``QSettings`` keys and values associated with the group/subgroup that it is
- * initialized with. Internally, this is done through the use of three
+ * initialized with. Internally, this is done through the use of four
  * associative containers (key-value containers): one which represents single
  * key-value pairs, another that contains array values as structured by
- * QSettings, and a third that contains getter functions for dynamic values.
- * An array value is a list whose items each contain a map consisting of one
- * or more key-value pairs.
+ * QSettings, a third that contains getter functions for dynamic values,
+ * and a fourth that contains group-based key-value pairs for hierarchical
+ * organization. An array value is a list whose items each contain a map 
+ * consisting of one or more key-value pairs. Group values provide nested
+ * key-value storage useful for protocol-specific settings and device configurations.
  *
  * When initializing SettingsStorage, the standard constructor is
  *
@@ -425,6 +427,51 @@ public:
     }
 
     /*!
+     * \brief Gets a value from a group-based key-value store
+     *
+     * Groups allow hierarchical organization of settings. Each group contains
+     * its own set of key-value pairs. This is useful for protocol-specific 
+     * settings, device configurations, etc.
+     *
+     * \param groupKey The group identifier 
+     * \param key The key within the group
+     * \param defaultValue Value returned if group or key doesn't exist
+     * \return The stored QVariant or defaultValue if not found
+     */
+    QVariant getGroupValue(const QString groupKey, const QString key, const QVariant &defaultValue = QVariant()) const;
+
+    /*!
+     * \brief Gets a value from a group-based key-value store. Overloaded function
+     *
+     * Template version that automatically converts to the specified type.
+     *
+     * \param groupKey The group identifier
+     * \param key The key within the group  
+     * \param defaultValue Value returned if group or key doesn't exist
+     * \return The stored value converted to type T, or defaultValue if not found
+     */
+    template<typename T>
+    inline T getGroupValue(const QString groupKey, const QString key, const T &defaultValue = QVariant().value<T>()) const {
+        auto groupIt = d_groupValues.find(groupKey);
+        if(groupIt != d_groupValues.end())
+        {
+            auto keyIt = groupIt->second.find(key);
+            if(keyIt != groupIt->second.end())
+                return keyIt->second.value<T>();
+        }
+        
+        return defaultValue;
+    }
+
+    /*!
+     * \brief Gets all key-value pairs within a group
+     *
+     * \param groupKey The group identifier
+     * \return SettingsMap containing all key-value pairs in the group (empty if group doesn't exist)
+     */
+    SettingsMap getGroup(const QString groupKey) const;
+
+    /*!
      * \brief Controls whether changes are wrtten to `QSettings`
      * \param discard If true, settings are not saved.
      */
@@ -713,6 +760,46 @@ protected:
     void appendArrayMap(const QString key, const SettingsMap &map, bool write = false);
 
     /*!
+     * \brief Sets a value within a group-based key-value store
+     *
+     * Groups provide hierarchical organization of settings. This method creates
+     * the group if it doesn't exist and sets the specified key-value pair within it.
+     *
+     * \param groupKey The group identifier
+     * \param key The key within the group
+     * \param value The value to be stored
+     * \param write If true, write to persistent storage immediately
+     * \return Whether the setting was successfully made
+     */
+    bool setGroupValue(const QString groupKey, const QString key, const QVariant &value, bool write = false);
+
+    /*!
+     * \brief Sets a value within a group-based key-value store. Overloaded function
+     *
+     * Template version for type safety.
+     *
+     * \param groupKey The group identifier  
+     * \param key The key within the group
+     * \param value The value to be stored
+     * \param write If true, write to persistent storage immediately
+     * \return Whether the setting was successfully made
+     */
+    template<typename T>
+    bool setGroupValue(const QString groupKey, const QString key, const T &value, bool write = false) {
+        return setGroupValue(groupKey, key, QVariant::fromValue(value), write);
+    }
+
+    /*!
+     * \brief Sets multiple values within a group
+     *
+     * \param groupKey The group identifier
+     * \param values Map of key-value pairs to set within the group
+     * \param write If true, write to persistent storage immediately
+     * \return Map indicating success/failure for each key
+     */
+    std::map<QString,bool> setGroupValues(const QString groupKey, const SettingsMap &values, bool write = false);
+
+    /*!
      * \brief Clears all data associated with a key and removes it from QSettings
      *
      * This clears all forms of data associated with the given key: regular values,
@@ -766,6 +853,7 @@ private:
 
     std::map<QString, SettingsGetter> d_getters; /*!< Map containing all registered getters */
     std::map<QString,std::vector<SettingsMap>> d_arrayValues; /*!< Map containing all array values */
+    std::map<QString, SettingsMap> d_groupValues; /*!< Map containing group-based key-value pairs */
 
     QSettings d_settings; /*!< Handle to QSettings storage object */
 
@@ -774,6 +862,12 @@ private:
      * \param key Key of the array to write
      */
     void writeArray(const QString key);
+
+    /*!
+     * \brief Writes a single group to QSettings
+     * \param groupKey Key of the group to write
+     */
+    void writeGroup(const QString groupKey);
 
 
 };

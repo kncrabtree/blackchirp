@@ -307,10 +307,133 @@ endif()
 # Include CMake modules
 add_subdirectory(cmake)
 
-# Always build tests (they have their own CMakeLists.txt)
+# Always build tests
 if(BC_BUILD_TESTS)
     enable_testing()
-    # Note: Test CMakeLists.txt is already in root, will be updated separately
+    
+    # Create test executables
+    find_package(Qt6 REQUIRED COMPONENTS Test)
+    
+    # Settings Storage Test
+    add_executable(tst_settingsstoragetest tests/tst_settingsstoragetest.cpp)
+    target_link_libraries(tst_settingsstoragetest 
+        blackchirp-data 
+        Qt6::Test 
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_settingsstoragetest)
+    add_test(NAME SettingsStorageTest COMMAND tst_settingsstoragetest)
+    
+    # Header Storage Test  
+    add_executable(tst_headerstoragetest tests/tst_headerstoragetest.cpp)
+    target_link_libraries(tst_headerstoragetest 
+        blackchirp-data 
+        Qt6::Test 
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_headerstoragetest)
+    add_test(NAME HeaderStorageTest COMMAND tst_headerstoragetest)
+    
+    # BlackChirp CSV Test
+    add_executable(tst_blackchirpcsvtest tests/tst_blackchirpcsv.cpp)
+    target_link_libraries(tst_blackchirpcsvtest 
+        blackchirp-data 
+        Qt6::Test 
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_blackchirpcsvtest)
+    add_test(NAME BlackChirpCSVTest COMMAND tst_blackchirpcsvtest)
+    
+    # FT Worker Test
+    add_executable(tst_ftworkertest tests/tst_ftworkertest.cpp)
+    target_link_libraries(tst_ftworkertest 
+        blackchirp-data 
+        Qt6::Test 
+        Qt6::Core
+        GSL::gsl
+    )
+    add_blackchirp_definitions(tst_ftworkertest)
+    add_test(NAME FTWorkerTest COMMAND tst_ftworkertest)
+    
+    # Background Convolution Test
+    add_executable(tst_background_convolution tests/tst_background_convolution.cpp)
+    target_link_libraries(tst_background_convolution 
+        blackchirp-data 
+        Qt6::Test 
+        Qt6::Core
+        GSL::gsl
+    )
+    add_blackchirp_definitions(tst_background_convolution)
+    add_test(NAME BackgroundConvolutionTest COMMAND tst_background_convolution)
+    
+    # Generic XY Parser Test
+    add_executable(tst_genericxyparser tests/tst_genericxyparser.cpp)
+    target_link_libraries(tst_genericxyparser 
+        blackchirp-data 
+        Qt6::Test 
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_genericxyparser)
+    add_test(NAME GenericXYParserTest COMMAND tst_genericxyparser)
+    
+    # Operation Capability Test
+    add_executable(tst_operation_capability_only tests/tst_operation_capability_only.cpp)
+    target_link_libraries(tst_operation_capability_only 
+        blackchirp-data 
+        blackchirp-gui
+        Qt6::Test 
+        Qt6::Core
+        Qt6::Widgets
+    )
+    add_blackchirp_definitions(tst_operation_capability_only)
+    add_test(NAME OperationCapabilityTest COMMAND tst_operation_capability_only)
+    
+    # Overlay Operations Simple Test
+    add_executable(tst_overlayoperations_simple tests/tst_overlayoperations_simple.cpp)
+    target_link_libraries(tst_overlayoperations_simple 
+        blackchirp-data 
+        blackchirp-gui
+        Qt6::Test 
+        Qt6::Core
+        Qt6::Widgets
+    )
+    add_blackchirp_definitions(tst_overlayoperations_simple)
+    add_test(NAME OverlayOperationsSimpleTest COMMAND tst_overlayoperations_simple)
+    
+    # SPCAT Parser Test
+    add_executable(tst_spcatparser tests/tst_spcatparser.cpp)
+    target_link_libraries(tst_spcatparser 
+        blackchirp-data 
+        Qt6::Test 
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_spcatparser)
+    add_test(NAME SPCATParserTest COMMAND tst_spcatparser)
+    
+    # XIAM Parser Test
+    add_executable(tst_xiamparser tests/tst_xiamparser.cpp)
+    target_link_libraries(tst_xiamparser 
+        blackchirp-data 
+        Qt6::Test 
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_xiamparser)
+    add_test(NAME XIAMParserTest COMMAND tst_xiamparser)
+    
+    # Create a custom target to build all tests
+    add_custom_target(tests DEPENDS
+        tst_settingsstoragetest
+        tst_headerstoragetest
+        tst_blackchirpcsvtest
+        tst_ftworkertest
+        tst_background_convolution
+        tst_genericxyparser
+        tst_operation_capability_only
+        tst_overlayoperations_simple
+        tst_spcatparser
+        tst_xiamparser
+    )
+    
 endif()
 
 # Build main application unless viewer-only build

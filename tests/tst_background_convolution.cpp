@@ -91,7 +91,7 @@ void BackgroundConvolutionTest::initTestCase()
     m_xiamTestPath = getTestDataPath("test_aprint32_small.xo");
     
     // Initialize parser registry
-    auto registry = CatalogParserRegistry::instance();
+    auto registry = FileParserRegistry::instance();
     registry->registerParser(std::make_unique<SPCATParser>());
     registry->registerParser(std::make_unique<XIAMParser>());
     
@@ -358,7 +358,7 @@ QString BackgroundConvolutionTest::getTestDataPath(const QString &filename) cons
 std::shared_ptr<CatalogOverlay> BackgroundConvolutionTest::createSPCATOverlay() const
 {
     auto overlay = std::make_shared<CatalogOverlay>();
-    auto registry = CatalogParserRegistry::instance();
+    auto registry = FileParserRegistry::instance();
     auto parser = registry->findParser(m_spcatTestPath);
     
     if (parser) {
@@ -373,7 +373,7 @@ std::shared_ptr<CatalogOverlay> BackgroundConvolutionTest::createSPCATOverlay() 
 std::shared_ptr<CatalogOverlay> BackgroundConvolutionTest::createXIAMOverlay() const
 {
     auto overlay = std::make_shared<CatalogOverlay>();
-    auto registry = CatalogParserRegistry::instance();
+    auto registry = FileParserRegistry::instance();
     auto parser = registry->findParser(m_xiamTestPath);
     
     if (parser) {

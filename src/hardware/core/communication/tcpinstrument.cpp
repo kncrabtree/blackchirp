@@ -22,8 +22,10 @@ bool TcpInstrument::testConnection()
         disconnectSocket();
 
     SettingsStorage s(d_key,SettingsStorage::Hardware);
-    d_ip = s.get<QString>(ip,"");
-    d_port = s.get<int>(port,5000);
+    
+    // Load TCP settings from group with backward compatibility fallback
+    d_ip = s.getGroupValue<QString>(BC::Key::Comm::tcp, ip, s.get<QString>(ip, ""));
+    d_port = s.getGroupValue<int>(BC::Key::Comm::tcp, port, s.get<int>(port, 5000));
 
 	return connectSocket();
 

@@ -27,13 +27,13 @@ bool Rs232Instrument::testConnection()
 
     SettingsStorage s(d_key,SettingsStorage::Hardware);
 
-    auto baudRate = s.get<qint32>(baud,
-                                  57600);
-    auto db = s.get<DataBits>(dataBits,Data8);
-    auto p = s.get<Parity>(parity,NoParity);
-    auto stop = s.get<StopBits>(stopBits,OneStop);
-    auto fc = s.get<FlowControl>(flowControl,NoFlowControl);
-    auto name = s.get<QString>(id,"");
+    // Load RS232 settings from group with backward compatibility fallback
+    auto baudRate = s.getGroupValue<qint32>(BC::Key::Comm::rs232, baud, s.get<qint32>(baud, 57600));
+    auto db = s.getGroupValue<DataBits>(BC::Key::Comm::rs232, dataBits, s.get<DataBits>(dataBits, Data8));
+    auto p = s.getGroupValue<Parity>(BC::Key::Comm::rs232, parity, s.get<Parity>(parity, NoParity));
+    auto stop = s.getGroupValue<StopBits>(BC::Key::Comm::rs232, stopBits, s.get<StopBits>(stopBits, OneStop));
+    auto fc = s.getGroupValue<FlowControl>(BC::Key::Comm::rs232, flowControl, s.get<FlowControl>(flowControl, NoFlowControl));
+    auto name = s.getGroupValue<QString>(BC::Key::Comm::rs232, id, s.get<QString>(id, ""));
 
     auto p_sp = dynamic_cast<QSerialPort*>(p_device);
     p_sp->setPortName(name);

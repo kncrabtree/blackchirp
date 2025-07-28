@@ -412,12 +412,11 @@ void HardwareManager::testAll()
     checkStatus();
 }
 
-void HardwareManager::testObjectConnection(const QString type, const QString key)
+void HardwareManager::testObjectConnection(const QString hwKey)
 {
-    Q_UNUSED(type)
-    auto it = d_hardwareMap.find(key);
+    auto it = d_hardwareMap.find(hwKey);
     if(it == d_hardwareMap.end())
-        emit testComplete(key,false,QString("Device not found!"));
+        emit testComplete(hwKey,false,QString("Device not found!"));
     else
     {
         auto obj = it->second;

@@ -46,6 +46,12 @@ private slots:
     void testArrayAppend();
     void testClearValue();
     void testConstructorVariants();
+    
+    // Group functionality tests
+    void testGroupOperations();
+    void testGroupValueSetGet();
+    void testGroupConflicts();
+    void testGroupMultipleValues();
 
 
 private:
@@ -712,6 +718,126 @@ void SettingsStorageTest::testConstructorVariants()
     QCOMPARE(s.value("testKey2").toInt(), 42);
     s.endGroup();
     s.endGroup();
+}
+
+void SettingsStorageTest::testGroupOperations()
+{
+    // Test basic group operations
+    QString groupKey = "testGroup";
+    QString key1 = "key1";
+    QString key2 = "key2";
+    
+    // Set values in a group
+    QVERIFY(setGroupValue(groupKey, key1, QString("value1")));
+    QVERIFY(setGroupValue(groupKey, key2, 42));
+    
+    // Get values from group
+    QCOMPARE(getGroupValue(groupKey, key1, QString("default")), QString("value1"));
+    QCOMPARE(getGroupValue<int>(groupKey, key2, 0), 42);
+    
+    // Test default values for non-existent keys
+    QCOMPARE(getGroupValue(groupKey, "nonExistent", QString("default")), QString("default"));
+    QCOMPARE(getGroupValue<int>("nonExistentGroup", key1, 99), 99);
+    
+    // Get entire group
+    auto group = getGroup(groupKey);
+    QCOMPARE(group.size(), 2);
+    QVERIFY(group.find(key1) != group.end());
+    QVERIFY(group.find(key2) != group.end());
+    QCOMPARE(group.at(key1).toString(), QString("value1"));
+    QCOMPARE(group.at(key2).toInt(), 42);
+    
+    // Test empty group
+    auto emptyGroup = getGroup("nonExistentGroup");
+    QVERIFY(emptyGroup.empty());
+}
+
+void SettingsStorageTest::testGroupValueSetGet()
+{
+    QString groupKey = "typeTestGroup";
+    
+    // Test different types
+    QVERIFY(setGroupValue(groupKey, "string", QString("testString")));
+    QVERIFY(setGroupValue(groupKey, "int", 123));
+    QVERIFY(setGroupValue(groupKey, "double", 45.67));
+    QVERIFY(setGroupValue(groupKey, "bool", true));
+    QVERIFY(setGroupValue(groupKey, "enum", TestValue3));
+    
+    // Verify retrieval with correct types
+    QCOMPARE(getGroupValue<QString>(groupKey, "string"), QString("testString"));
+    QCOMPARE(getGroupValue<int>(groupKey, "int"), 123);
+    QCOMPARE(getGroupValue<double>(groupKey, "double"), 45.67);
+    QCOMPARE(getGroupValue<bool>(groupKey, "bool"), true);
+    QCOMPARE(getGroupValue<TestEnum>(groupKey, "enum"), TestValue3);
+    
+    // Test with default values
+    QCOMPARE(getGroupValue<QString>(groupKey, "missing", QString("default")), QString("default"));
+    QCOMPARE(getGroupValue<int>(groupKey, "missing", 999), 999);
+}
+
+void SettingsStorageTest::testGroupConflicts()
+{
+    QString conflictKey = "conflictKey";
+    
+    // Set a regular value
+    QVERIFY(set(conflictKey, QString("regularValue")));
+    
+    // Try to create a group with the same key - should fail
+    QVERIFY(!setGroupValue(conflictKey, "subkey", QString("groupValue")));
+    
+    // Verify regular value is still there
+    QCOMPARE(get<QString>(conflictKey), QString("regularValue"));
+    
+    // Test conflict with getter
+    registerGetter("getterKey", this, &SettingsStorageTest::intGetter);
+    QVERIFY(!setGroupValue("getterKey", "subkey", QString("value")));
+    
+    // Test conflict with array
+    SettingsMap arrayMap;
+    arrayMap["arraySubkey"] = QString("arrayValue");
+    setArray("arrayKey", {arrayMap});
+    QVERIFY(!setGroupValue("arrayKey", "subkey", QString("value")));
+    
+    // Test reverse conflicts - regular value shouldn't work if group exists
+    QVERIFY(setGroupValue("groupFirst", "subkey", QString("value")));
+    QVERIFY(!set("groupFirst", QString("regularValue")));
+}
+
+void SettingsStorageTest::testGroupMultipleValues()
+{
+    QString groupKey = "multiGroup";
+    
+    // Create a map of values to set
+    SettingsMap values;
+    values["key1"] = QString("value1");
+    values["key2"] = 42;
+    values["key3"] = 3.14;
+    values["key4"] = true;
+    
+    // Set multiple values at once
+    auto results = setGroupValues(groupKey, values);
+    
+    // All should succeed
+    QCOMPARE(results.size(), 4);
+    for(const auto& result : results) {
+        QVERIFY(result.second);
+    }
+    
+    // Verify all values were set
+    QCOMPARE(getGroupValue<QString>(groupKey, "key1"), QString("value1"));
+    QCOMPARE(getGroupValue<int>(groupKey, "key2"), 42);
+    QCOMPARE(getGroupValue<double>(groupKey, "key3"), 3.14);
+    QCOMPARE(getGroupValue<bool>(groupKey, "key4"), true);
+    
+    // Get the entire group and verify
+    auto group = getGroup(groupKey);
+    QCOMPARE(group.size(), 4);
+    
+    // Test clearValue removes groups
+    clearValue(groupKey);
+    auto clearedGroup = getGroup(groupKey);
+    QVERIFY(clearedGroup.empty());
+    QCOMPARE(getGroupValue<QString>(groupKey, "key1", QString("default")), QString("default"));
 }
 
 QTEST_MAIN(SettingsStorageTest)

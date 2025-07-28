@@ -95,7 +95,11 @@ set(BLACKCHIRP_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/peakfindwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/pressurecontrolwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/pressurestatusbox.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/protocolwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/pulseconfigwidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/rs232protocolwidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/tcpprotocolwidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/virtualprotocolwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/pulsestatusbox.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/rfconfigwidget.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificspinbox.cpp
@@ -195,7 +199,11 @@ set(BLACKCHIRP_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/peakfindwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/pressurecontrolwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/pressurestatusbox.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/protocolwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/pulseconfigwidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/rs232protocolwidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/tcpprotocolwidget.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/virtualprotocolwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/pulsestatusbox.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/rfconfigwidget.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/widget/scientificspinbox.h

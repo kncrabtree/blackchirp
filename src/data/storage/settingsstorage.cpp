@@ -221,11 +221,14 @@ void SettingsStorage::setDefault(const QString key, const QVariant defaultValue)
 
 bool SettingsStorage::set(const QString key, const QVariant &value, bool write)
 {
-    //make sure there is no getter or array associated with this key
+    //make sure there is no getter, array, or group associated with this key
     if(containsArray(key))
         return false;
 
     if(d_getters.find(key) != d_getters.end())
+        return false;
+        
+    if(d_groupValues.find(key) != d_groupValues.end())
         return false;
 
     d_edited = true;
@@ -299,6 +302,14 @@ void SettingsStorage::clearValue(const QString key)
         found = true;
     }
     
+    // Clear from group values
+    auto it4 = d_groupValues.find(key);
+    if(it4 != d_groupValues.end())
+    {
+        d_groupValues.erase(it4);
+        found = true;
+    }
+    
     // Remove from QSettings and sync if anything was found
     if(found)
     {
@@ -306,6 +317,66 @@ void SettingsStorage::clearValue(const QString key)
         d_settings.sync();
     }
 
+}
+
+QVariant SettingsStorage::getGroupValue(const QString groupKey, const QString key, const QVariant &defaultValue) const
+{
+    auto groupIt = d_groupValues.find(groupKey);
+    if(groupIt != d_groupValues.end())
+    {
+        auto keyIt = groupIt->second.find(key);
+        if(keyIt != groupIt->second.end())
+            return keyIt->second;
+    }
+    
+    return defaultValue;
+}
+
+SettingsStorage::SettingsMap SettingsStorage::getGroup(const QString groupKey) const
+{
+    auto groupIt = d_groupValues.find(groupKey);
+    if(groupIt != d_groupValues.end())
+        return groupIt->second;
+        
+    return SettingsMap();
+}
+
+bool SettingsStorage::setGroupValue(const QString groupKey, const QString key, const QVariant &value, bool write)
+{
+    // Cannot set group value for a key that's already used in other containers
+    if(d_values.find(groupKey) != d_values.end() || 
+       d_getters.find(groupKey) != d_getters.end() || 
+       d_arrayValues.find(groupKey) != d_arrayValues.end())
+        return false;
+        
+    d_edited = true;
+    
+    // Create group if it doesn't exist
+    if(d_groupValues.find(groupKey) == d_groupValues.end())
+        d_groupValues[groupKey] = SettingsMap();
+    
+    d_groupValues[groupKey][key] = value;
+    
+    if(write)
+        writeGroup(groupKey);
+        
+    return true;
+}
+
+std::map<QString,bool> SettingsStorage::setGroupValues(const QString groupKey, const SettingsMap &values, bool write)
+{
+    std::map<QString,bool> results;
+    
+    for(const auto& pair : values)
+    {
+        bool success = setGroupValue(groupKey, pair.first, pair.second, false);
+        results[pair.first] = success;
+    }
+    
+    if(write)
+        writeGroup(groupKey);
+        
+    return results;
 }
 
 std::map<QString,bool> SettingsStorage::setMultiple(const std::map<QString, QVariant> m, bool write)
@@ -370,6 +441,17 @@ void SettingsStorage::writeArray(const QString key)
     d_settings.sync();
 }
 
+void SettingsStorage::writeGroup(const QString groupKey)
+{
+    d_settings.remove(groupKey);
+    d_settings.beginGroup(groupKey);
+    auto group = d_groupValues.at(groupKey);
+    for(auto it = group.cbegin(); it != group.cend(); ++it)
+        d_settings.setValue(it->first, it->second);
+    d_settings.endGroup();
+    d_settings.sync();
+}
+
 void SettingsStorage::save()
 {
     if(!d_edited || d_discard)
@@ -386,6 +468,11 @@ void SettingsStorage::save()
         writeArray(it->first);
     }
 
+    for(auto it = d_groupValues.cbegin(); it != d_groupValues.cend(); ++it)
+    {
+        writeGroup(it->first);
+    }
+
     d_settings.sync();
 
     if(d_getters.empty())
@@ -396,6 +483,7 @@ void SettingsStorage::readAll()
 {
     d_values.clear();
     d_arrayValues.clear();
+    d_groupValues.clear();
 
     auto keys = d_settings.childKeys();
     auto groups = d_settings.childGroups();
@@ -419,9 +507,17 @@ void SettingsStorage::readAll()
             d_settings.endArray();
             d_arrayValues.insert_or_assign(g,l);
         }
-        else //key points to a non-array subgroup
+        else //key points to a non-array subgroup (regular group)
         {
             d_settings.endArray();
+            // Read as a regular group
+            d_settings.beginGroup(g);
+            auto groupKeys = d_settings.childKeys();
+            SettingsMap groupMap;
+            for(auto k : groupKeys)
+                groupMap.insert_or_assign(k, d_settings.value(k));
+            d_settings.endGroup();
+            d_groupValues.insert_or_assign(g, groupMap);
         }
 
 

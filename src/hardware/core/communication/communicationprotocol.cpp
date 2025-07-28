@@ -228,22 +228,10 @@ void CommunicationProtocol::loadCommReadOptions()
         return;
     }
     
-    // Get subKey for QSettings path
-    auto subKey = s.get(BC::Key::HW::subKey, QString(""));
-    
-    // Load read options using QSettings directly (matches saving pattern)
-    QSettings qs(QCoreApplication::organizationName(), QCoreApplication::applicationName());
-    qs.beginGroup(d_key);
-    qs.beginGroup(subKey);
-    qs.beginGroup(protocolKey);
-    
+    // Load read options using native SettingsStorage group support
     // Default: 1000ms timeout, no termination character
-    int timeout = qs.value(BC::Key::Comm::timeout, 1000).toInt();
-    QString termChar = qs.value(BC::Key::Comm::termChar, QString("")).toString();
-    
-    qs.endGroup();
-    qs.endGroup();
-    qs.endGroup();
+    int timeout = s.getGroupValue<int>(protocolKey, BC::Key::Comm::timeout, 1000);
+    QString termChar = s.getGroupValue<QString>(protocolKey, BC::Key::Comm::termChar, QString(""));
     
     setReadOptions(timeout, termChar);
 }

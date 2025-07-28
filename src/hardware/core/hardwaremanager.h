@@ -114,7 +114,7 @@ public slots:
     void experimentComplete();
 
     void testAll();
-    void testObjectConnection(const QString type, const QString key);
+    void testObjectConnection(const QString hwKey);
     void updateObjectSettings(const QString key);
     QStringList getForbiddenKeys(const QString key) const;
 
