@@ -152,16 +152,16 @@ void GenericXYParserTest::testRealTestFiles_data()
     QTest::addColumn<int>("expectedColumns");
     QTest::addColumn<int>("expectedDataPoints");
 
-    QTest::newRow("1011.txt") << "tests/testdata/xydata/1011.txt" << "\t" << 26 << 5 << 172;
-    QTest::newRow("1012.txt") << "tests/testdata/xydata/1012.txt" << "\t" << 14 << 2 << 192;
-    QTest::newRow("115.txt") << "tests/testdata/xydata/115.txt" << "\t" << 27 << 9 << 72;
-    QTest::newRow("59.txt") << "tests/testdata/xydata/59.txt" << "\t" << 8 << 3 << 233;
-    QTest::newRow("MT59_926.txt") << "tests/testdata/xydata/MT59_926.txt" << " " << 0 << 2 << 208;
-    QTest::newRow("blanked_primos_samp_old.txt") << "tests/testdata/xydata/blanked_primos_samp_old.txt" << " " << 0 << 2 << 200;
-    QTest::newRow("cubic") << "tests/testdata/xydata/cubic" << " " << 0 << 4 << 202;
-    QTest::newRow("cubic.csv") << "tests/testdata/xydata/cubic.csv" << "," << 0 << 4 << 212;
-    QTest::newRow("Od_230602_F795A_CSA-X.txt") << "tests/testdata/xydata/Od_230602_F795A_CSA-X.txt" << "\t" << 2 << 2 << 937;
-    QTest::newRow("JMOLplot") << "tests/testdata/xydata/JMOLplot" << " " << 2 << 4 << 9;
+    QTest::newRow("1011.txt") << "xydata/1011.txt" << "\t" << 26 << 5 << 172;
+    QTest::newRow("1012.txt") << "xydata/1012.txt" << "\t" << 14 << 2 << 192;
+    QTest::newRow("115.txt") << "xydata/115.txt" << "\t" << 27 << 9 << 72;
+    QTest::newRow("59.txt") << "xydata/59.txt" << "\t" << 8 << 3 << 233;
+    QTest::newRow("MT59_926.txt") << "xydata/MT59_926.txt" << " " << 0 << 2 << 208;
+    QTest::newRow("blanked_primos_samp_old.txt") << "xydata/blanked_primos_samp_old.txt" << " " << 0 << 2 << 200;
+    QTest::newRow("cubic") << "xydata/cubic" << " " << 0 << 4 << 202;
+    QTest::newRow("cubic.csv") << "xydata/cubic.csv" << "," << 0 << 4 << 212;
+    QTest::newRow("Od_230602_F795A_CSA-X.txt") << "xydata/Od_230602_F795A_CSA-X.txt" << "\t" << 2 << 2 << 937;
+    QTest::newRow("JMOLplot") << "xydata/JMOLplot" << " " << 2 << 4 << 9;
 }
 
 void GenericXYParserTest::testRealTestFiles()
@@ -172,7 +172,11 @@ void GenericXYParserTest::testRealTestFiles()
     QFETCH(int, expectedColumns);
     QFETCH(int, expectedDataPoints);
 
-    QString fullPath = QString("/home/kncrabtree/github/blackchirp/src/") + filename;
+#ifdef TESTDATA_DIR
+    QString fullPath = QString(TESTDATA_DIR) + "/" + filename;
+#else
+    QString fullPath = filename;
+#endif
     
     // Test canParse first
     QVERIFY2(d_parser.canParse(fullPath), 
@@ -267,19 +271,19 @@ void GenericXYParserTest::testGeneratePreview_data()
     QTest::addColumn<int>("expectedPreviewPoints");
 
     // Use real data files for testing instead of simulated ones
-    QTest::newRow("MT59_926.txt") << "tests/testdata/xydata/MT59_926.txt"
+    QTest::newRow("MT59_926.txt") << "xydata/MT59_926.txt"
                                   << "" // Use real file
                                   << true << 100; // Should be limited to preview max
 
-    QTest::newRow("blanked_primos_samp_old.txt") << "tests/testdata/xydata/blanked_primos_samp_old.txt"
+    QTest::newRow("blanked_primos_samp_old.txt") << "xydata/blanked_primos_samp_old.txt"
                                                  << "" // Use real file
                                                  << true << 100;
 
-    QTest::newRow("cubic.csv") << "tests/testdata/xydata/cubic.csv"
+    QTest::newRow("cubic.csv") << "xydata/cubic.csv"
                                << "" // Use real file
                                << true << 100;
 
-    QTest::newRow("tmc_kaifu.txt") << "tests/testdata/xydata/tmc_kaifu.txt"
+    QTest::newRow("tmc_kaifu.txt") << "xydata/tmc_kaifu.txt"
                                    << "" // Use real file, not generated content
                                    << true << 100; // Should be limited to preview max
 
@@ -297,9 +301,13 @@ void GenericXYParserTest::testGeneratePreview()
     QFETCH(int, expectedPreviewPoints);
 
     QString filePath;
-    if (filename.startsWith("/")) {
-        // Absolute path - use as is for real files
+    if (filename.startsWith("xydata/")) {
+        // Real test data file - use TESTDATA_DIR
+#ifdef TESTDATA_DIR
+        filePath = QString(TESTDATA_DIR) + "/" + filename;
+#else
         filePath = filename;
+#endif
     } else {
         // Create test file
         createTestFile(filename, content);
@@ -317,7 +325,11 @@ void GenericXYParserTest::testGeneratePreview()
 
 void GenericXYParserTest::testLargeFiles()
 {
-    QString largePath = "tests/testdata/xydata/tmc_kaifu.txt";
+#ifdef TESTDATA_DIR
+    QString largePath = QString(TESTDATA_DIR) + "/xydata/tmc_kaifu.txt";
+#else
+    QString largePath = "xydata/tmc_kaifu.txt";
+#endif
     
     QVERIFY2(d_parser.canParse(largePath), 
              QString("Cannot parse large test file: %1").arg(largePath).toLocal8Bit());

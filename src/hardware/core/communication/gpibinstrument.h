@@ -14,13 +14,14 @@ class GpibInstrument : public CommunicationProtocol
 	Q_OBJECT
 public:
     explicit GpibInstrument(QString key, GpibController *c, QObject *parent = nullptr);
-	~GpibInstrument();
+	virtual ~GpibInstrument();
 	void setAddress(int a);
 	int address() const;
 
 protected:
 	GpibController *p_controller;
 	int d_address;
+	QString d_ownerKey;  // Store the parent's key to avoid pointer access during destruction
 
 	// CommunicationProtocol interface
 public:

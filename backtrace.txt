@@ -1,0 +1,46 @@
+Thread 29 (Thread 0x7fff927fc6c0 (LWP 542054) "FtmwDigitizer.0"):
+#0  0x00007ffff5f84528 in QIODevice::isOpen() const () at /lib64/libQt6Core.so.6
+#1  0x0000000000822b58 in Rs232Instrument::testConnection (this=0x7fff800a5aa0) at /home/kncrabtree/github/blackchirp/src/src/hardware/core/communication/rs232instrument.cpp:25
+        s = {_vptr.SettingsStorage = 0x1, d_values = {_M_t = {_M_impl = {<std::allocator<std::_Rb_tree_node<std::pair<QString const, QVariant> > >> = {<std::__new_allocator<std::_Rb_tree_node<std::pair<QString const, QVariant> > >> = {<No data fields>}, <No data fields>}, <std::_Rb_tree_key_compare<std::less<QString> >> = {_M_key_compare = {<std::binary_function<QString, QString, bool>> = {<No data fields>}, <No data fields>}}, <std::_Rb_tree_header> = {_M_header = {_M_color = (unknown: 0x927facf0), _M_parent = 0x434a9e <QString::~QString()+24>, _M_left = 0x7fff800a0e50, _M_right = 0x7fff800043a0}, _M_node_count = 1}, <No data fields>}}}, d_discard = 39, d_edited = 190, d_getters = {_M_t = {_M_impl = {<std::allocator<std::_Rb_tree_node<std::pair<QString const, std::function<QVariant()> > > >> = {<std::__new_allocator<std::_Rb_tree_node<std::pair<QString const, std::function<QVariant()> > > >> = {<No data fields>}, <No data fields>}, <std::_Rb_tree_key_compare<std::less<QString> >> = {_M_key_compare = {<std::binary_function<QString, QString, bool>> = {<No data fields>}, <No data fields>}}, <std::_Rb_tree_header> = {_M_header = {_M_color = std::_S_black, _M_parent = 0x7fff80004380, _M_left = 0x7fff927fae88, _M_right = 0x7fff927fad70}, _M_node_count = 4431100}, <No data fields>}}}, d_arrayValues = {_M_t = {_M_impl = {<std::allocator<std::_Rb_tree_node<std::pair<QString const, std::vector<std::map<QString, QVariant, std::less<QString>, std::allocator<std::pair<QString const, QVariant> > >, std::allocator<std::map<QString, QVariant, std::less<QString>, std::allocator<std::pair<QString const, QVariant> > > > > > > >> = {<std::__new_allocator<std::_Rb_tree_node<std::pair<QString const, std::vector<std::map<QString, QVariant, std::less<QString>, std::allocator<std::pair<QString const, QVariant> > >, std::allocator<std::map<QString, QVariant, std::less<QString>, std::allocator<std::pair<QString const, QVariant> > > > > > > >> = {<No data fields>}, <No data fields>}, <std::_Rb_tree_key_compare<std::less<QString> >> = {_M_key_compare = {<std::binary_function<QString, QString, bool>> = {<No data fields>}, <No data fields>}}, <std::_Rb_tree_header> = {_M_header = {_M_color = (unknown: 0x927fae88), _M_parent = 0x1, _M_left = 0x7fff80004380, _M_right = 0x7fff927fae88}, _M_node_count = 1}, <No data fields>}}}, d_groupValues = {_M_t = {_M_impl = {<std::allocator<std::_Rb_tree_node<std::pair<QString const, std::map<QString, QVariant, std::less<QString>, std::allocator<std::pair<QString const, QVariant> > > > > >> = {<std::__new_allocator<std::_Rb_tree_node<std::pair<QString const, std::map<QString, QVariant, std::less<QString>, std::allocator<std::pair<QString const, QVariant> > > > > >> = {<No data fields>}, <No data fields>}, <std::_Rb_tree_key_compare<std::less<QString> >> = {_M_key_compare = {<std::binary_function<QString, QString, bool>> = {<No data fields>}, <No data fields>}}, <std::_Rb_tree_header> = {_M_header = {_M_color = (unknown: 0x927fae88), _M_parent = 0x7fff927fad90, _M_left = 0x439588 <std::_Rb_tree<QString, std::pair<QString const, QVariant>, std::_Select1st<std::pair<QString const, QVariant> >, std::less<QString>, std::allocator<std::pair<QString const, QVariant> > >::_M_drop_node(std::_Rb_tree_node<std::pair<QString const, QVariant> >*)+54>, _M_right = 0x7fff80004380}, _M_node_count = 140735651229320}, <No data fields>}}}, d_settings = <incomplete type>}
+        baudRate = 2
+        db = 1000
+        p = Rs232Instrument::NoParity
+        stop = 5
+        fc = Rs232Instrument::NoFlowControl
+        name = {d = {d = 0x7fff927facc0, ptr = 0x7fff80064c60 u"卤翾翸", size = 140735651228880}}
+        p_sp = 0xd20e50
+#2  0x0000000000820385 in CommunicationProtocol::bcTestConnection (this=0x7fff800a5aa0) at /home/kncrabtree/github/blackchirp/src/src/hardware/core/communication/communicationprotocol.cpp:188
+        success = false
+#3  0x0000000000828bdf in HardwareObject::bcTestConnection (this=0x1186920) at /home/kncrabtree/github/blackchirp/src/src/hardware/core/hardwareobject.cpp:146
+        success = false
+#4  0x0000000000828244 in HardwareObject::setCommProtocol (this=0x1186920, commType=CommunicationProtocol::Rs232, gc=0x0) at /home/kncrabtree/github/blackchirp/src/src/hardware/core/hardwareobject.cpp:79
+        commTypeEnum = {mobj = 0x967120 <CommunicationProtocol::staticMetaObject>, data = {d = 0x966c38 <CommunicationProtocol::qt_staticMetaObjectStaticContent<(anonymous namespace)::qt_meta_tag_ZN21CommunicationProtocolE_t>+56>}}
+        protocolName = {d = {d = 0x7fff80001530, ptr = 0x7fff80001540 u"Rs232", size = 5}}
+        supported = {<QListSpecialMethods<CommunicationProtocol::CommType>> = {<QListSpecialMethodsBase<CommunicationProtocol::CommType>> = {<No data fields>}, <No data fields>}, d = {d = 0x7fff800abec0, ptr = 0x7fff800abed0, size = 5}}
+#5  0x000000000082915b in HardwareObject::bcReadSettings (this=0x1186920) at /home/kncrabtree/github/blackchirp/src/src/hardware/core/hardwareobject.cpp:193
+        success = false
+        interval = 0
+        settingsProtocolInt = 2
+        settingsProtocol = CommunicationProtocol::Rs232
+#6  0x0000000000828bb6 in HardwareObject::bcTestConnection (this=0x1186920) at /home/kncrabtree/github/blackchirp/src/src/hardware/core/hardwareobject.cpp:143
+        success = false
+#7  0x000000000081d76a in QtPrivate::FunctorCall<std::integer_sequence<unsigned long>, QtPrivate::List<>, void, void (HardwareObject::*)()>::call(void (HardwareObject::*)(), HardwareObject*, void**)::{lambda()#1}::operator()() const (__closure=0x7fff927fb5e0) at /usr/include/qt6/QtCore/qobjectdefs_impl.h:127
+#8  0x000000000081df0b in QtPrivate::FunctorCallBase::call_internal<void, QtPrivate::FunctorCall<std::integer_sequence<unsigned long>, QtPrivate::List<>, void, void (HardwareObject::*)()>::call(void (HardwareObject::*)(), HardwareObject*, void**)::{lambda()#1}>(void**, QtPrivate::FunctorCall<std::integer_sequence<unsigned long>, QtPrivate::List<>, void, void (HardwareObject::*)()>::call(void (HardwareObject::*)(), HardwareObject*, void**)::{lambda()#1}&&) (args=0x7fff880ab9d8, fn=...) at /usr/include/qt6/QtCore/qobjectdefs_impl.h:65
+#9  0x000000000081d7cd in QtPrivate::FunctorCall<std::integer_sequence<unsigned long>, QtPrivate::List<>, void, void (HardwareObject::*)()>::call(void (HardwareObject::*)(), HardwareObject*, void**) (f=(void (HardwareObject::*)(HardwareObject * const)) 0x828b86 <HardwareObject::bcTestConnection()>, o=0x1186920, arg=0x7fff880ab9d8) at /usr/include/qt6/QtCore/qobjectdefs_impl.h:126
+#10 0x000000000081c956 in QtPrivate::FunctionPointer<void (HardwareObject::*)()>::call<QtPrivate::List<>, void>(void (HardwareObject::*)(), HardwareObject*, void**) (f=(void (HardwareObject::*)(HardwareObject * const)) 0x828b86 <HardwareObject::bcTestConnection()>, o=0x1186920, arg=0x7fff880ab9d8) at /usr/include/qt6/QtCore/qobjectdefs_impl.h:174
+#11 0x000000000081bcd9 in QtPrivate::QCallableObject<void (HardwareObject::*)(), QtPrivate::List<>, void>::impl(int, QtPrivate::QSlotObjectBase*, QObject*, void**, bool*) (which=1, this_=0x7fff880a5240, r=0x1186920, a=0x7fff880ab9d8, ret=0x0) at /usr/include/qt6/QtCore/qobjectdefs_impl.h:545
+        that = 0x7fff880a5240
+#12 0x00007ffff60056d7 in QObject::event(QEvent*) () at /lib64/libQt6Core.so.6
+#13 0x00007ffff73e0d9a in QApplicationPrivate::notify_helper(QObject*, QEvent*) () at /lib64/libQt6Widgets.so.6
+#14 0x00007ffff5fb8b28 in QCoreApplication::notifyInternal2(QObject*, QEvent*) () at /lib64/libQt6Core.so.6
+#15 0x00007ffff5fb8ef6 in QCoreApplicationPrivate::sendPostedEvents(QObject*, int, QThreadData*) () at /lib64/libQt6Core.so.6
+#16 0x00007ffff6220957 in ??? () at /lib64/libQt6Core.so.6
+#17 0x00007ffff5509eb3 in ??? () at /lib64/libglib-2.0.so.0
+#18 0x00007ffff550bce8 in ??? () at /lib64/libglib-2.0.so.0
+#19 0x00007ffff550c52c in g_main_context_iteration () at /lib64/libglib-2.0.so.0
+#20 0x00007ffff621de83 in QEventDispatcherGlib::processEvents(QFlags<QEventLoop::ProcessEventsFlag>) () at /lib64/libQt6Core.so.6
+#21 0x00007ffff5fc3afb in QEventLoop::exec(QFlags<QEventLoop::ProcessEventsFlag>) () at /lib64/libQt6Core.so.6
+#22 0x00007ffff60b771c in QThread::exec() () at /lib64/libQt6Core.so.6
+#23 0x00007ffff6132eae in ??? () at /lib64/libQt6Core.so.6
+#24 0x00007ffff569a7be in start_thread () at /lib64/libc.so.6
+#25 0x00007ffff571edcc in __clone3 () at /lib64/libc.so.6

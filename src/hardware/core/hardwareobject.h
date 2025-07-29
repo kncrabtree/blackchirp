@@ -193,6 +193,7 @@ static const QString rInterval{"rollingDataIntervalSec"}; /*!< Timer interval fo
 class HardwareObject : public QObject, public SettingsStorage
 {
 	Q_OBJECT
+	friend class HardwareCommunicationTest;
 public:
     /*!
      * \brief Constructor. Does nothing.

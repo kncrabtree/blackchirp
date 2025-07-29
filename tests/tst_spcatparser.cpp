@@ -38,30 +38,13 @@ void SPCATParserTest::initTestCase()
 {
     m_parser = new SPCATParser();
     
-    // Get test data directory path - look for src directory
-    QDir currentDir = QDir::current();
-    
-    // If we're in a build directory, go up and find src
-    if (currentDir.dirName().startsWith("build-")) {
-        currentDir.cdUp();
-    }
-    
-    // Always use tests/testdata since that's where test data is actually located
-    // Look for tests directory in current or parent directories, but stop at filesystem root
-    QDir searchDir = currentDir;
-    while (!searchDir.exists("tests") && searchDir.cdUp()) {
-        // Prevent going to filesystem root
-        if (searchDir.isRoot()) {
-            break;
-        }
-    }
-    
-    if (searchDir.exists("tests")) {
-        m_testDataDir = searchDir.absoluteFilePath("tests/testdata");
-    } else {
-        // Fallback: assume we're in src directory and go relative
-        m_testDataDir = currentDir.absoluteFilePath("../tests/testdata");
-    }
+    // Use the testdata directory path configured by CMake
+#ifdef TESTDATA_DIR
+    m_testDataDir = QString(TESTDATA_DIR);
+#else
+    // Fallback if TESTDATA_DIR is not defined
+    m_testDataDir = QDir::current().absoluteFilePath("tests/testdata");
+#endif
     
     // Debug output to help troubleshoot
     qDebug() << "Current directory:" << QDir::current().absolutePath();

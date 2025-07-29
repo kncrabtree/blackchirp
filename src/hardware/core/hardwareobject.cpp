@@ -36,7 +36,7 @@ HardwareObject::HardwareObject(const QString hwType, const QString subKey, const
 
 HardwareObject::~HardwareObject()
 {
-
+    // p_comm will be deleted automatically as a child QObject - no manual cleanup needed
 }
 
 QString HardwareObject::errorString()
@@ -69,6 +69,7 @@ bool HardwareObject::setCommProtocol(CommunicationProtocol::CommType commType, Q
     
     // Store the new protocol type in settings
     set(BC::Key::HW::commType, static_cast<int>(commType));
+    save(); // Persist the protocol change to settings
     d_commType = commType; // Update member variable
     
     // Rebuild communication with new protocol
@@ -213,7 +214,7 @@ void HardwareObject::buildCommunication(QObject *gc, CommunicationProtocol::Comm
 
     // Clean up existing communication object
     if(p_comm) {
-        p_comm->deleteLater();
+        delete p_comm;
         p_comm = nullptr;
     }
 
@@ -228,7 +229,6 @@ void HardwareObject::buildCommunication(QObject *gc, CommunicationProtocol::Comm
 #ifdef BC_GPIBCONTROLLER
     case CommunicationProtocol::Gpib:
         p_comm = new GpibInstrument(d_key,c,this);
-        setParent(c);
         break;
 #endif
     case CommunicationProtocol::Custom:
