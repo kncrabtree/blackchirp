@@ -61,6 +61,7 @@ set(BLACKCHIRP_HARDWARE_CORE_SOURCES
     # Vendor library wrappers (always needed for runtime loading)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/vendorlibrary.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/spectrumlibrary.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/labjacklibrary.cpp
     
     # Clock manager (always needed)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/clock/clockmanager.cpp
@@ -98,6 +99,8 @@ set(BLACKCHIRP_HARDWARE_CORE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/vendorlibrary.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/spectrumlibrary.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/spectrumconstants.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/labjacklibrary.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/labjackconstants.h
     
     # Clock manager (always needed)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/clock/clockmanager.h
