@@ -58,6 +58,10 @@ set(BLACKCHIRP_HARDWARE_CORE_SOURCES
     # Base hardware classes
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/hardwareobject.cpp
     
+    # Vendor library wrappers (always needed for runtime loading)
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/vendorlibrary.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/spectrumlibrary.cpp
+    
     # Clock manager (always needed)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/clock/clockmanager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/clock/clock.cpp
@@ -89,6 +93,11 @@ set(BLACKCHIRP_HARDWARE_CORE_HEADERS
     
     # Base hardware classes
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/hardwareobject.h
+    
+    # Vendor library wrappers (always needed for runtime loading)
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/vendorlibrary.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/spectrumlibrary.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/spectrumconstants.h
     
     # Clock manager (always needed)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/clock/clockmanager.h
