@@ -1,8 +1,10 @@
 #include <hardware/core/hardwareobject.h>
+#include <hardware/core/hardwaremanager.h>
 #include <QMetaEnum>
 
 #ifdef BC_GPIBCONTROLLER
 #include <hardware/optional/gpibcontroller/gpibcontroller.h>
+#include <hardware/core/communication/gpibinstrument.h>
 #endif
 
 HardwareObject::HardwareObject(const QString hwType, const QString subKey, const QString name,
@@ -96,16 +98,9 @@ void HardwareObject::bcInitInstrument()
         emit logMessage(QString("Protocol mismatch for %1: constructed as %2, settings show %3. Rebuilding communication.")
                        .arg(d_name).arg(oldProtocolName).arg(newProtocolName), LogHandler::Warning);
         
-        // LIMITATION: Thread management for GPIB switching is not handled here.
-        // Switching to/from GPIB protocol would require complex thread migration
-        // which is not currently supported at runtime.
-        if((d_commType == CommunicationProtocol::Gpib) != (settingsProtocol == CommunicationProtocol::Gpib)) {
-            emit logMessage(QString("Warning: Cannot switch to/from GPIB protocol at runtime. Thread management required."), LogHandler::Error);
-        } else {
-            // Safe to rebuild communication for non-GPIB protocol switches
-            d_commType = settingsProtocol;
-            buildCommunication(parent()); // Use current parent as GPIB controller
-        }
+        // Rebuild communication with the new protocol
+        d_commType = settingsProtocol;
+        buildCommunication(parent());
     }
 
     if(p_comm)
@@ -205,6 +200,29 @@ void HardwareObject::buildCommunication(QObject *gc, CommunicationProtocol::Comm
 {
 #ifdef BC_GPIBCONTROLLER
     GpibController *c = dynamic_cast<GpibController*>(gc);
+    
+    // If no GPIB controller provided and we need GPIB, try to resolve from settings
+    if (!c && (commType == CommunicationProtocol::Gpib || 
+               (commType == CommunicationProtocol::None && d_commType == CommunicationProtocol::Gpib))) {
+        // Try to get controller key from GPIB settings
+        QString controllerKey = getGroupValue(BC::Key::Comm::gpib, BC::Key::GPIB::gpibController, QString());
+        if (!controllerKey.isEmpty()) {
+            try {
+                // Use callback-based resolution to maintain thread safety
+                HardwareManager::constInstance().resolveGpibController(controllerKey, 
+                    [&c](GpibController* controller) { c = controller; });
+            } catch (const std::runtime_error&) {
+                // HardwareManager not initialized - controller resolution failed
+                c = nullptr;
+            }
+        }
+        
+        // If controller still not found, emit connection failure
+        if (!c) {
+            emit connected(false, "GPIB controller not available", QPrivateSignal());
+            return;
+        }
+    }
 #else
     Q_UNUSED(gc)
 #endif

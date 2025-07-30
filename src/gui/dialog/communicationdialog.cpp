@@ -4,6 +4,7 @@
 #include <gui/widget/tcpprotocolwidget.h>
 #include <gui/widget/virtualprotocolwidget.h>
 #include <gui/widget/customprotocolwidget.h>
+#include <gui/widget/gpibprotocolwidget.h>
 #include <gui/style/themecolors.h>
 
 #include <QApplication>
@@ -304,7 +305,7 @@ void CommunicationDialog::onProtocolChanged()
             widget = new CustomProtocolWidget(d_currentDeviceKey, this);
             break;
         case CommunicationProtocol::Gpib:
-            // TODO: Create GPIB protocol widget
+            widget = new GpibProtocolWidget(d_currentDeviceKey, this);
             break;
         default:
             break;

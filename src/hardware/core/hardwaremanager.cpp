@@ -27,9 +27,18 @@
 #include <QFutureWatcher>
 #endif
 
+// Static instance for const access
+HardwareManager* HardwareManager::s_instance = nullptr;
+
 HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsStorage(BC::Key::hw),
     d_optHwTypes{BC::Key::Flow::flowController,BC::Key::IOB::ioboard,BC::Key::PController::key,BC::Key::PGen::key,BC::Key::TC::key}
 {
+    // Set static instance for const access
+    s_instance = this;
+    
+    // Lock mutex for entire initialization - no concurrency issues during startup
+    QMutexLocker locker(&d_accessMutex);
+    
     //Required hardware: FtmwScope and Clocks
     auto ftmwScope = new BC_FTMWDIGITIZER;
     connect(ftmwScope,&FtmwScope::shotAcquired,this,&HardwareManager::ftmwScopeShotAcquired);
@@ -240,6 +249,9 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
 
 HardwareManager::~HardwareManager()
 {
+    // Clear static instance
+    s_instance = nullptr;
+    
     //stop all threads
     for(auto &[key,obj] : d_hardwareMap)
     {
@@ -404,14 +416,19 @@ void HardwareManager::testAll()
 
 void HardwareManager::testObjectConnection(const QString hwKey)
 {
-    auto it = d_hardwareMap.find(hwKey);
-    if(it == d_hardwareMap.end())
-        emit testComplete(hwKey,false,QString("Device not found!"));
-    else
+    HardwareObject* obj = nullptr;
     {
-        auto obj = it->second;
-        QMetaObject::invokeMethod(obj,&HardwareObject::bcTestConnection);
+        QMutexLocker locker(&d_accessMutex);
+        auto it = d_hardwareMap.find(hwKey);
+        if(it == d_hardwareMap.end()) {
+            emit testComplete(hwKey,false,QString("Device not found!"));
+            return;
+        }
+        obj = it->second;
     }
+    
+    // Call outside the lock to avoid holding mutex during potentially long operation
+    QMetaObject::invokeMethod(obj,&HardwareObject::bcTestConnection);
 }
 
 void HardwareManager::updateObjectSettings(const QString key)
@@ -549,6 +566,7 @@ FlowConfig HardwareManager::getFlowConfig(const QString key)
 
 std::map<QString, QStringList> HardwareManager::validationKeys() const
 {
+    QMutexLocker locker(&d_accessMutex);
     std::map<QString, QStringList> out;
     for(auto &[key,obj] : d_hardwareMap)
         out.insert_or_assign(key,obj->validationKeys());
@@ -558,6 +576,7 @@ std::map<QString, QStringList> HardwareManager::validationKeys() const
 
 std::map<QString, QString> HardwareManager::currentHardware() const
 {
+    QMutexLocker locker(&d_accessMutex);
     std::map<QString,QString> out;
     for(auto &[key,obj] : d_hardwareMap)
         out.insert_or_assign(key,obj->d_subKey);
@@ -843,3 +862,26 @@ void HardwareManager::setLifLaserFlashlampEnabled(bool en)
 
 }
 #endif
+
+const HardwareManager& HardwareManager::constInstance()
+{
+    if (!s_instance) {
+        throw std::runtime_error("HardwareManager instance not initialized");
+    }
+    return *s_instance;
+}
+
+void HardwareManager::resolveGpibController(const QString& controllerKey, std::function<void(GpibController*)> callback) const
+{
+    GpibController* controller = nullptr;
+    {
+        QMutexLocker locker(&d_accessMutex);
+        auto it = d_hardwareMap.find(controllerKey);
+        if (it != d_hardwareMap.end()) {
+            controller = static_cast<GpibController*>(it->second);
+        }
+    }
+    
+    // Call the callback with the resolved controller (or nullptr if not found)
+    callback(controller);
+}

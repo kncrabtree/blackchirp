@@ -8,6 +8,7 @@
 #include <data/storage/auxdatastorage.h>
 #include <data/storage/settingsstorage.h>
 #include <data/experiment/rfconfig.h>
+#include <QMutex>
 
 #include <data/experiment/hardware/optional/flowcontroller/flowconfig.h>
 #include <data/experiment/hardware/optional/pulsegenerator/pulsegenconfig.h>
@@ -22,6 +23,7 @@
 class HardwareObject;
 class ClockManager;
 class Experiment;
+class GpibController;
 
 namespace BC::Key {
 static const QString hw{"hardware"};
@@ -34,6 +36,9 @@ class HardwareManager : public QObject, public SettingsStorage
 public:
     explicit HardwareManager(QObject *parent = 0);
     ~HardwareManager();
+    
+    // Static const access for thread-safe hardware resolution
+    static const HardwareManager& constInstance();
 
     QString getHwName(const QString key);
     const std::set<QString> d_optHwTypes;
@@ -163,6 +168,9 @@ public slots:
 public:
     std::map<QString,QStringList> validationKeys() const;
     std::map<QString,QString> currentHardware() const;
+    
+    // Thread-safe GPIB controller resolution with callback
+    void resolveGpibController(const QString& controllerKey, std::function<void(GpibController*)> callback) const;
 
 private:
     std::size_t d_responseCount{0};
@@ -170,9 +178,17 @@ private:
 
     std::map<QString,HardwareObject*> d_hardwareMap;
     std::unique_ptr<ClockManager> pu_clockManager;
-
+    
+    // Static instance management for const access
+    static HardwareManager* s_instance;
+    
+    // Mutex for thread-safe access to shared data
+    mutable QMutex d_accessMutex;
+    
+    // Private helper for internal use
     template<class T>
     T* findHardware(const QString key) const {
+        QMutexLocker locker(&d_accessMutex);
         auto it = d_hardwareMap.find(key);
         return it == d_hardwareMap.end() ? nullptr : static_cast<T*>(it->second);
     }

@@ -9,6 +9,11 @@ GpibInstrument::GpibInstrument(QString key, GpibController *c, QObject *parent) 
     if (auto* hwParent = qobject_cast<HardwareObject*>(parent)) {
         d_ownerKey = hwParent->d_key;
     }
+    
+    // Connect to controller's destroyed signal for lifecycle management
+    if (p_controller) {
+        connect(p_controller, &QObject::destroyed, this, &GpibInstrument::onControllerDestroyed);
+    }
 }
 
 GpibInstrument::~GpibInstrument()
@@ -17,6 +22,13 @@ GpibInstrument::~GpibInstrument()
     if (p_controller && d_address >= 0 && !d_ownerKey.isEmpty()) {
         p_controller->releaseAddress(d_address, d_ownerKey);
     }
+}
+
+void GpibInstrument::onControllerDestroyed()
+{
+    // Controller has been destroyed - invalidate pointer and emit failure
+    p_controller = nullptr;
+    emit hardwareFailure();
 }
 
 void GpibInstrument::setAddress(int a)
@@ -52,16 +64,25 @@ int GpibInstrument::address() const
 
 bool GpibInstrument::writeCmd(QString cmd)
 {
+    if (!p_controller) {
+        return false;
+    }
     return p_controller->writeCmd(d_address,cmd);
 }
 
 bool GpibInstrument::writeBinary(QByteArray dat)
 {
+    if (!p_controller) {
+        return false;
+    }
     return p_controller->writeBinary(d_address,dat);
 }
 
 QByteArray GpibInstrument::queryCmd(QString cmd, bool suppressError)
 {
+    if (!p_controller) {
+        return QByteArray();
+    }
     return p_controller->queryCmd(d_address,cmd,suppressError);
 }
 

@@ -7,6 +7,7 @@ class GpibController;
 
 namespace BC::Key::GPIB {
 static const QString gpibAddress{"address"};
+static const QString gpibController{"controller"}; // Future support for multiple controllers
 }
 
 class GpibInstrument : public CommunicationProtocol
@@ -32,6 +33,9 @@ public:
 public slots:
     void initialize() override;
     bool testConnection() override;
+
+private slots:
+    void onControllerDestroyed();
     
     // CommunicationProtocol interface
 public:
