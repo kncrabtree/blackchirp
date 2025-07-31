@@ -883,23 +883,7 @@ target_link_libraries(blackchirp-hardware
 )
 
 # Hardware-specific library detection (linking happens in final executable)
-HARDWARE_EQUALS("${BC_IOBOARD}" "LabjackU3" HAS_LABJACK)
-if(HAS_LABJACK)
-    # Find LabJack library for later use by final executable
-    find_library(LABJACK_LIBRARY_PATH
-        NAMES labjackusb
-        PATHS /usr/local/lib /usr/lib /usr/lib64
-        DOC "LabJack USB library"
-    )
-    
-    if(LABJACK_LIBRARY_PATH)
-        message(STATUS "Found LabJack library: ${LABJACK_LIBRARY_PATH}")
-        # Store as cache variable for use by final executable
-        set(LABJACK_LIBRARY_PATH ${LABJACK_LIBRARY_PATH} CACHE INTERNAL "LabJack library path")
-    else()
-        message(WARNING "LabJack library not found - LabjackU3 will not link properly")
-    endif()
-endif()
+# LabJack: Now uses dynamic loading via LabjackLibrary wrapper - no compile-time detection needed
 
 # Add system libraries if needed
 if(UNIX)

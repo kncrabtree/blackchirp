@@ -166,10 +166,7 @@ if(UNIX)
 endif()
 
 # Hardware-specific library linking (only link to final executable)
-if(LABJACK_LIBRARY_PATH)
-    message(STATUS "Linking LabJack library to main application: ${LABJACK_LIBRARY_PATH}")
-    target_link_libraries(blackchirp PRIVATE ${LABJACK_LIBRARY_PATH})
-endif()
+# LabJack: Now uses dynamic loading via LabjackLibrary wrapper - no compile-time linking needed
 
 # CUDA libraries (if enabled)
 if(BC_CUDA AND CUDA_FOUND)

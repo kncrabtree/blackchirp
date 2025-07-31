@@ -5,7 +5,18 @@
 #include "u3.h"
 #include <stdlib.h>
 #include <QtGlobal>
+#include <hardware/library/labjacklibrary.h>
 
+// Helper function to get LabJack library and ensure it's available
+static LabjackLibrary* getLabjackLibrary()
+{
+    LabjackLibrary& lib = LabjackLibrary::instance();
+    if (!lib.isAvailable()) {
+        printf("LabJack USB library not available: %s\n", lib.errorString().toLatin1().constData());
+        return nullptr;
+    }
+    return &lib;
+}
 
 u3CalibrationInfo U3_CALIBRATION_INFO_DEFAULT = {
     3,
@@ -109,7 +120,13 @@ HANDLE openUSBConnection(int localID)
     int i, serial;
     HANDLE hDevice = 0;
 
-    numDevices = LJUSB_GetDevCount(U3_PRODUCT_ID);
+    // Get LabJack library for dynamic loading
+    LabjackLibrary* ljLib = getLabjackLibrary();
+    if (!ljLib) {
+        return NULL;
+    }
+
+    numDevices = ljLib->LJUSB_GetDevCount(U3_PRODUCT_ID);
     if( numDevices == 0 )
     {
         printf("Open error: No U3 devices could be found\n");
@@ -118,7 +135,7 @@ HANDLE openUSBConnection(int localID)
 
     for( dev = 1;  dev <= numDevices; dev++ )
     {
-        hDevice = LJUSB_OpenDevice(dev, 0, U3_PRODUCT_ID);
+        hDevice = ljLib->LJUSB_OpenDevice(dev, 0, U3_PRODUCT_ID);
         if( hDevice != NULL )
         {
             if( localID < 0 )
@@ -139,10 +156,10 @@ HANDLE openUSBConnection(int localID)
 
                 extendedChecksum(buffer, 26);
 
-                if( LJUSB_Write(hDevice, buffer, 26) != 26 )
+                if( ljLib->LJUSB_Write(hDevice, buffer, 26) != 26 )
                     goto locid_error;
 
-                if( LJUSB_Read(hDevice, buffer, 38) != 38 )
+                if( ljLib->LJUSB_Read(hDevice, buffer, 38) != 38 )
                     goto locid_error;
 
                 checksumTotal = extendedChecksum16(buffer, 38);
@@ -173,7 +190,7 @@ HANDLE openUSBConnection(int localID)
                     return hDevice;
 
                 //No matches, not our device
-                LJUSB_CloseDevice(hDevice);
+                ljLib->LJUSB_CloseDevice(hDevice);
             } //else localID >= 0 end
         } //if hDevice != NULL end
     } //for end
@@ -189,7 +206,10 @@ locid_error:
 
 void closeUSBConnection(HANDLE hDevice)
 {
-    LJUSB_CloseDevice(hDevice);
+    LabjackLibrary* ljLib = getLabjackLibrary();
+    if (ljLib) {
+        ljLib->LJUSB_CloseDevice(hDevice);
+    }
 }
 
 
@@ -235,6 +255,12 @@ long getCalibrationInfo(HANDLE hDevice, u3CalibrationInfo *caliInfo)
     quint8 cU3SendBuffer[26], cU3RecBuffer[38];
     int sentRec = 0, offset = 0, i = 0;
 
+    // Get LabJack library for dynamic loading
+    LabjackLibrary* ljLib = getLabjackLibrary();
+    if (!ljLib) {
+        return -1;
+    }
+
     /* Sending ConfigU3 command to get hardware version and see if HV */
     cU3SendBuffer[1] = (quint8)(0xF8);  //Command byte
     cU3SendBuffer[2] = (quint8)(0x0A);  //Number of data words
@@ -247,7 +273,7 @@ long getCalibrationInfo(HANDLE hDevice, u3CalibrationInfo *caliInfo)
 
     extendedChecksum(cU3SendBuffer, 26);
 
-    sentRec = LJUSB_Write(hDevice, cU3SendBuffer, 26);
+    sentRec = ljLib->LJUSB_Write(hDevice, cU3SendBuffer, 26);
     if( sentRec < 26 )
     {
         if( sentRec == 0 )
@@ -256,7 +282,7 @@ long getCalibrationInfo(HANDLE hDevice, u3CalibrationInfo *caliInfo)
             goto writeError1;
     }
 
-    sentRec = LJUSB_Read(hDevice, cU3RecBuffer, 38);
+    sentRec = ljLib->LJUSB_Read(hDevice, cU3RecBuffer, 38);
     if( sentRec < 38 )
     {
         if( sentRec == 0 )
@@ -285,7 +311,7 @@ long getCalibrationInfo(HANDLE hDevice, u3CalibrationInfo *caliInfo)
         sendBuffer[7] = (quint8)i;  //Blocknum = i
         extendedChecksum(sendBuffer, 8);
 
-        sentRec = LJUSB_Write(hDevice, sendBuffer, 8);
+        sentRec = ljLib->LJUSB_Write(hDevice, sendBuffer, 8);
         if( sentRec < 8 )
         {
             if( sentRec == 0 )
@@ -294,7 +320,7 @@ long getCalibrationInfo(HANDLE hDevice, u3CalibrationInfo *caliInfo)
                 goto writeError1;
         }
 
-        sentRec = LJUSB_Read(hDevice, recBuffer, 40);
+        sentRec = ljLib->LJUSB_Read(hDevice, recBuffer, 40);
         if( sentRec < 40 )
         {
             if( sentRec == 0 )
@@ -650,6 +676,12 @@ long getTempKUncalibrated(quint16 bytesTemp, double *kelvinTemp)
 
 long I2C(HANDLE hDevice, quint8 I2COptions, quint8 SpeedAdjust, quint8 SDAPinNum, quint8 SCLPinNum, quint8 Address, quint8 NumI2CBytesToSend, quint8 NumI2CBytesToReceive, quint8 *I2CBytesCommand, quint8 *Errorcode, quint8 *AckArray, quint8 *I2CBytesResponse)
 {
+    LabjackLibrary* ljLib = getLabjackLibrary();
+    if (!ljLib) {
+        *Errorcode = 255;
+        return -1;
+    }
+    
     quint8 *sendBuff, *recBuff;
     quint16 checksumTotal = 0;
     quint32 ackArrayTotal, expectedAckArray;
@@ -686,7 +718,7 @@ long I2C(HANDLE hDevice, quint8 I2COptions, quint8 SpeedAdjust, quint8 SDAPinNum
     extendedChecksum(sendBuff, sendSize);
 
     //Sending command to U3
-    sendChars = LJUSB_Write(hDevice, sendBuff, sendSize);
+    sendChars = ljLib->LJUSB_Write(hDevice, sendBuff, sendSize);
     if( sendChars < sendSize )
     {
         if( sendChars == 0 )
@@ -698,7 +730,7 @@ long I2C(HANDLE hDevice, quint8 I2COptions, quint8 SpeedAdjust, quint8 SDAPinNum
     }
 
     //Reading response from U3
-    recChars = LJUSB_Read(hDevice, recBuff, recSize);
+    recChars = ljLib->LJUSB_Read(hDevice, recBuff, recSize);
     if( recChars < recSize )
     {
         if( recChars == 0 )
@@ -1257,6 +1289,11 @@ long eTCValues(HANDLE Handle, long *aReadTimers, long *aUpdateResetTimers, long 
 
 long ehConfigIO(HANDLE hDevice, quint8 inWriteMask, quint8 inTimerCounterConfig, quint8 inDAC1Enable, quint8 inFIOAnalog, quint8 inEIOAnalog, quint8 *outTimerCounterConfig, quint8 *outDAC1Enable, quint8 *outFIOAnalog, quint8 *outEIOAnalog)
 {
+    LabjackLibrary* ljLib = getLabjackLibrary();
+    if (!ljLib) {
+        return -1;
+    }
+    
     quint8 sendBuff[12], recBuff[12];
     quint16 checksumTotal;
     int sendChars, recChars;
@@ -1275,7 +1312,7 @@ long ehConfigIO(HANDLE hDevice, quint8 inWriteMask, quint8 inTimerCounterConfig,
     extendedChecksum(sendBuff, 12);
 
     //Sending command to U3
-    if( (sendChars = LJUSB_Write(hDevice, sendBuff, 12)) < 12 )
+    if( (sendChars = ljLib->LJUSB_Write(hDevice, sendBuff, 12)) < 12 )
     {
         if( sendChars == 0 )
             printf("ehConfigIO error : write failed\n");
@@ -1285,7 +1322,7 @@ long ehConfigIO(HANDLE hDevice, quint8 inWriteMask, quint8 inTimerCounterConfig,
     }
 
     //Reading response from U3
-    if( (recChars = LJUSB_Read(hDevice, recBuff, 12)) < 12 )
+    if( (recChars = ljLib->LJUSB_Read(hDevice, recBuff, 12)) < 12 )
     {
         if( recChars == 0 )
             printf("ehConfigIO error : read failed\n");
@@ -1340,6 +1377,11 @@ long ehConfigIO(HANDLE hDevice, quint8 inWriteMask, quint8 inTimerCounterConfig,
 
 long ehConfigTimerClock(HANDLE hDevice, quint8 inTimerClockConfig, quint8 inTimerClockDivisor, quint8 *outTimerClockConfig, quint8 *outTimerClockDivisor)
 {
+    LabjackLibrary* ljLib = getLabjackLibrary();
+    if (!ljLib) {
+        return -1;
+    }
+    
     quint8 sendBuff[10], recBuff[10];
     quint16 checksumTotal;
     int sendChars, recChars;
@@ -1356,7 +1398,7 @@ long ehConfigTimerClock(HANDLE hDevice, quint8 inTimerClockConfig, quint8 inTime
     extendedChecksum(sendBuff, 10);
 
     //Sending command to U3
-    if( (sendChars = LJUSB_Write(hDevice, sendBuff, 10)) < 10 )
+    if( (sendChars = ljLib->LJUSB_Write(hDevice, sendBuff, 10)) < 10 )
     {
         if( sendChars == 0 )
             printf("ehConfigTimerClock error : write failed\n");
@@ -1366,7 +1408,7 @@ long ehConfigTimerClock(HANDLE hDevice, quint8 inTimerClockConfig, quint8 inTime
     }
 
     //Reading response from U3
-    if( (recChars = LJUSB_Read(hDevice, recBuff, 10)) < 10 )
+    if( (recChars = ljLib->LJUSB_Read(hDevice, recBuff, 10)) < 10 )
     {
         if( recChars == 0 )
             printf("ehConfigTimerClock error : read failed\n");
@@ -1418,6 +1460,12 @@ long ehConfigTimerClock(HANDLE hDevice, quint8 inTimerClockConfig, quint8 inTime
 
 long ehFeedback(HANDLE hDevice, quint8 *inIOTypesDataBuff, long inIOTypesDataSize, quint8 *outErrorcode, quint8 *outErrorFrame, quint8 *outDataBuff, long outDataSize)
 {
+    LabjackLibrary* ljLib = getLabjackLibrary();
+    if (!ljLib) {
+        *outErrorcode = 255;
+        return -1;
+    }
+    
     quint8 *sendBuff, *recBuff;
     quint16 checksumTotal;
     int sendChars, recChars, sendDWSize, recDWSize;
@@ -1455,7 +1503,7 @@ long ehFeedback(HANDLE hDevice, quint8 *inIOTypesDataBuff, long inIOTypesDataSiz
     extendedChecksum(sendBuff, (sendDWSize+commandBytes));
 
     //Sending command to U3
-    if( (sendChars = LJUSB_Write(hDevice, sendBuff, (sendDWSize+commandBytes))) < sendDWSize+commandBytes )
+    if( (sendChars = ljLib->LJUSB_Write(hDevice, sendBuff, (sendDWSize+commandBytes))) < sendDWSize+commandBytes )
     {
         if( sendChars == 0 )
             printf("ehFeedback error : write failed\n");
@@ -1466,7 +1514,7 @@ long ehFeedback(HANDLE hDevice, quint8 *inIOTypesDataBuff, long inIOTypesDataSiz
     }
 
     //Reading response from U3
-    if( (recChars = LJUSB_Read(hDevice, recBuff, (commandBytes+recDWSize))) < commandBytes+recDWSize )
+    if( (recChars = ljLib->LJUSB_Read(hDevice, recBuff, (commandBytes+recDWSize))) < commandBytes+recDWSize )
     {
         if( recChars == -1 )
         {
