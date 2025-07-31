@@ -70,6 +70,11 @@ set(BLACKCHIRP_HARDWARE_CORE_SOURCES
     # Base hardware classes
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/hardwareobject.cpp
     
+    # Hardware registry system (runtime hardware management)
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/hardwareregistry.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/hardwareregistration.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/runtimehardwareconfig.cpp
+    
     # Vendor library wrappers (always needed for runtime loading)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/vendorlibrary.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/spectrumlibrary.cpp
@@ -106,6 +111,11 @@ set(BLACKCHIRP_HARDWARE_CORE_HEADERS
     
     # Base hardware classes
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/hardwareobject.h
+    
+    # Hardware registry system (runtime hardware management)
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/hardwareregistry.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/hardwareregistration.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/runtimehardwareconfig.h
     
     # Vendor library wrappers (always needed for runtime loading)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/vendorlibrary.h

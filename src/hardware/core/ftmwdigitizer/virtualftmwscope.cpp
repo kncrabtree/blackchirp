@@ -2,9 +2,18 @@
 
 #include <QRandomGenerator>
 #include <math.h>
+#include <hardware/core/hardwareregistration.h>
 
 using namespace BC::Key::FtmwScope;
 using namespace BC::Key::Digi;
+
+// Register this hardware implementation
+REGISTER_SIMPLE_HARDWARE(
+    VirtualFtmwScope,
+    "Virtual FTMW Scope",
+    "Virtual FTMW digitizer for testing and development",
+    false  // not required (fallback option)
+)
 
 VirtualFtmwScope::VirtualFtmwScope(QObject *parent) :
     FtmwScope(BC::Key::Comm::hwVirtual,vftmwName,CommunicationProtocol::Virtual,parent)
