@@ -1,16 +1,12 @@
 #include "labjacklibrary.h"
+#include <QDebug>
+#include <data/storage/settingsstorage.h>
 
-#include <QDir>
-#include <QStandardPaths>
-
-// Static instance for singleton pattern
 LabjackLibrary* LabjackLibrary::s_instance = nullptr;
 
-LabjackLibrary::LabjackLibrary(QObject *parent)
+LabjackLibrary::LabjackLibrary(QObject *parent) 
     : VendorLibrary(BC::Key::LabJack::labjackU3, parent)
 {
-    // Attempt to load the library on construction
-    loadLibrary();
 }
 
 LabjackLibrary& LabjackLibrary::instance()
@@ -26,37 +22,18 @@ QStringList LabjackLibrary::platformLibraryNames() const
     QStringList names;
     
 #ifdef Q_OS_LINUX
-    // Linux variants
-    names << "labjackusb"              // Standard Linux library name
-          << "liblabjackusb.so"        // With lib prefix and extension
-          << "liblabjackusb.so.1"      // With version number
-          << "liblabjackusb.so.2"      // Different version
-          << "liblabjackusb.so.3"      // Different version
-          << "ljacklm"                 // Alternative Linux name
-          << "libljacklm.so";          // Alternative with extension
-          
-#elif defined(Q_OS_WIN)
-    // Windows variants
-    names << "labjackud.dll"          // Windows UD library
-          << "ljacklm.dll"            // Legacy Windows library
-          << "labjackusb.dll"         // USB-specific Windows library
-          << "labjack.dll";           // Generic Windows name
-          
-#elif defined(Q_OS_MACOS)
-    // macOS variants  
-    names << "liblabjackusb.dylib"    // Standard macOS library
-          << "liblabjackusb.1.dylib"  // With version
-          << "libljacklm.dylib"       // Alternative macOS name
-          << "labjack";               // Generic name
-          
-#else
-    // Generic Unix variants as fallback
     names << "liblabjackusb.so"
-          << "liblabjackusb.so.1"
-          << "labjackusb"
-          << "ljacklm";
+          << "liblabjackusb.so.2"
+          << "liblabjackusb.so.2.7.0"
+          << "liblabjackusb.so.2.6.0";
+#elif defined(Q_OS_WIN)
+    names << "labjackusb.dll";
+#elif defined(Q_OS_MACOS)
+    names << "liblabjackusb.dylib";
+#else
+    names << "liblabjackusb.so";
 #endif
-
+    
     return names;
 }
 
@@ -65,90 +42,65 @@ QStringList LabjackLibrary::defaultSearchPaths() const
     QStringList paths;
     
 #ifdef Q_OS_LINUX
-    // Linux-specific paths
-    paths << "/opt/labjack/lib"                     // Default LabJack installation
-          << "/opt/labjack/lib64"                   // 64-bit variant
-          << "/usr/local/labjack/lib"               // Alternative installation
-          << "/usr/local/lib"                       // Manual installation
-          << "/usr/lib"                             // System library
-          << "/usr/lib64"                           // 64-bit system library
-          << "/usr/lib/x86_64-linux-gnu"           // Ubuntu/Debian 64-bit
-          << "/usr/lib/i386-linux-gnu";             // Ubuntu/Debian 32-bit
-          
+    paths << "/usr/local/lib"
+          << "/usr/lib"
+          << "/usr/lib64"
+          << "/usr/lib/x86_64-linux-gnu"
+          << "/lib"
+          << "/lib64";
 #elif defined(Q_OS_WIN)
-    // Windows-specific paths
-    paths << "C:/Program Files/LabJack/lib"        // 64-bit Program Files
-          << "C:/Program Files (x86)/LabJack/lib"  // 32-bit Program Files
-          << "C:/LabJack/lib"                       // Root installation
-          << QDir::homePath() + "/LabJack/lib";     // User installation
-          
+    paths << "C:/Windows/System32"
+          << "C:/Program Files/LabJack/Drivers"
+          << "C:/Program Files (x86)/LabJack/Drivers";
 #elif defined(Q_OS_MACOS)
-    // macOS-specific paths
-    paths << "/opt/labjack/lib"                     // Similar to Linux
-          << "/usr/local/labjack/lib"
-          << "/usr/local/lib"
-          << "/opt/local/lib"                       // MacPorts
-          << "/usr/local/Cellar/labjack/lib";       // Homebrew (if available)
-          
+    paths << "/usr/local/lib"
+          << "/usr/lib"
+          << "/Library/Frameworks"
+          << "/System/Library/Frameworks";
 #endif
-
-    // Add environment variable paths if set
-    QString labjackPath = qgetenv("LABJACK_LIB_PATH");
-    if (!labjackPath.isEmpty()) {
-        paths.prepend(labjackPath); // Give priority to user-specified path
-    }
-    
-    QString labjackHome = qgetenv("LABJACK_HOME");
-    if (!labjackHome.isEmpty()) {
-        paths.prepend(QDir(labjackHome).absoluteFilePath("lib"));
-    }
     
     return paths;
 }
 
 void LabjackLibrary::loadFunctions()
 {
-    // Reset all function pointers
-    openUSBConnection = nullptr;
-    closeUSBConnection = nullptr;
-    getCalibrationInfo = nullptr;
-    eTCConfig = nullptr;
-    eAIN = nullptr;
-    eDI = nullptr;
-    
-    // Load required functions
-    openUSBConnection = reinterpret_cast<openUSBConnection_t>(resolveFunction("openUSBConnection"));
-    closeUSBConnection = reinterpret_cast<closeUSBConnection_t>(resolveFunction("closeUSBConnection"));
-    getCalibrationInfo = reinterpret_cast<getCalibrationInfo_t>(resolveFunction("getCalibrationInfo"));
-    eTCConfig = reinterpret_cast<eTCConfig_t>(resolveFunction("eTCConfig"));
-    eAIN = reinterpret_cast<eAIN_t>(resolveFunction("eAIN"));
-    eDI = reinterpret_cast<eDI_t>(resolveFunction("eDI"));
-    
-    // Check if all essential functions were loaded
-    QStringList missingFunctions;
-    
-    if (!openUSBConnection) missingFunctions << "openUSBConnection";
-    if (!closeUSBConnection) missingFunctions << "closeUSBConnection";
-    if (!getCalibrationInfo) missingFunctions << "getCalibrationInfo";
-    if (!eAIN) missingFunctions << "eAIN";
-    if (!eDI) missingFunctions << "eDI";
-    
-    if (!missingFunctions.isEmpty()) {
-        d_libraryLoaded = false;
-        d_errorString = QString("Failed to resolve essential LabJack U3 functions: %1")
-                       .arg(missingFunctions.join(", "));
+    if (!d_library.isLoaded()) {
+        d_errorString = "Library not loaded";
         return;
     }
     
-    // Optional functions - warn if missing but don't fail
-    QStringList optionalMissing;
-    if (!eTCConfig) optionalMissing << "eTCConfig";
+    // Load low-level LJUSB functions that u3.cpp actually uses
+    LJUSB_GetLibraryVersion = reinterpret_cast<LJUSB_GetLibraryVersion_t>(d_library.resolve("LJUSB_GetLibraryVersion"));
+    LJUSB_GetDevCount = reinterpret_cast<LJUSB_GetDevCount_t>(d_library.resolve("LJUSB_GetDevCount"));
+    LJUSB_OpenDevice = reinterpret_cast<LJUSB_OpenDevice_t>(d_library.resolve("LJUSB_OpenDevice"));
+    LJUSB_CloseDevice = reinterpret_cast<LJUSB_CloseDevice_t>(d_library.resolve("LJUSB_CloseDevice"));
+    LJUSB_Write = reinterpret_cast<LJUSB_Write_t>(d_library.resolve("LJUSB_Write"));
+    LJUSB_Read = reinterpret_cast<LJUSB_Read_t>(d_library.resolve("LJUSB_Read"));
+    LJUSB_IsHandleValid = reinterpret_cast<LJUSB_IsHandleValid_t>(d_library.resolve("LJUSB_IsHandleValid"));
+    LJUSB_ResetConnection = reinterpret_cast<LJUSB_ResetConnection_t>(d_library.resolve("LJUSB_ResetConnection"));
     
-    if (!optionalMissing.isEmpty()) {
-        // Note: We could emit a warning here, but for now we'll just continue
-        // Optional functions missing may indicate an older library version
+    // Verify essential functions are loaded
+    if (!LJUSB_GetDevCount || !LJUSB_OpenDevice || !LJUSB_CloseDevice || 
+        !LJUSB_Write || !LJUSB_Read) {
+        d_errorString = "Failed to load essential LabJack USB functions";
+        d_libraryLoaded = false;
+        return;
     }
     
-    // All essential functions loaded successfully
-    d_libraryLoaded = true;
+    // Test library functionality
+    try {
+        if (LJUSB_GetLibraryVersion) {
+            float version = LJUSB_GetLibraryVersion();
+            qDebug() << "LabJack USB library version:" << version;
+        }
+        
+        d_libraryLoaded = true;
+        d_errorString.clear();
+        
+        qDebug() << "LabJack USB library loaded successfully";
+        
+    } catch (...) {
+        d_errorString = "Exception occurred while testing LabJack library functions";
+        d_libraryLoaded = false;
+    }
 }

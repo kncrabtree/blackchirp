@@ -9,16 +9,15 @@ namespace BC::Key::LabJack {
 
 // Forward declarations for LabJack types to avoid including vendor headers
 typedef void* HANDLE;
-struct U3_CALIBRATION_INFORMATION;
-typedef struct U3_CALIBRATION_INFORMATION u3CalibrationInfo;
+typedef unsigned char BYTE;
+typedef unsigned int UINT;
 
 /*!
- * \brief Runtime wrapper for LabJack U3 SDK
+ * \brief Runtime wrapper for LabJack USB library (liblabjackusb.so)
  * 
- * This class provides dynamic loading of the LabJack U3 library without
- * compile-time dependencies. It implements the VendorLibrary interface
- * and provides function pointers for all LabJack U3 functions used by
- * BlackChirp hardware implementations.
+ * This class provides dynamic loading of the low-level LabJack USB library without
+ * compile-time dependencies. It wraps the LJUSB_* functions that u3.cpp uses
+ * to communicate with LabJack devices at the USB protocol level.
  * 
  * The library follows the singleton pattern for global state management
  * and provides comprehensive platform-specific library discovery.
@@ -29,42 +28,39 @@ class LabjackLibrary : public VendorLibrary
     
 public:
     /*!
-     * \brief Get singleton instance of LabJack library wrapper
+     * \brief Get singleton instance of LabJack USB library wrapper
      * \return Reference to singleton instance
      */
     static LabjackLibrary& instance();
     
     // VendorLibrary interface
     bool isAvailable() const override { return d_libraryLoaded; }
-    QString libraryName() const override { return "LabJack U3 Library"; }
+    QString libraryName() const override { return "LabJack USB Library"; }
     QString errorString() const override { return d_errorString; }
     QStringList platformLibraryNames() const override;
     QStringList defaultSearchPaths() const override;
     
-    // LabJack U3 function pointers - Essential functions
-    typedef HANDLE (*openUSBConnection_t)(int localID);
-    typedef void (*closeUSBConnection_t)(HANDLE hDevice);
-    typedef long (*getCalibrationInfo_t)(HANDLE hDevice, u3CalibrationInfo *caliInfo);
+    // Low-level LabJack USB function pointers (LJUSB_* functions from liblabjackusb.so)
+    // These are the actual functions that u3.cpp calls
     
-    // LabJack U3 function pointers - Configuration functions  
-    typedef long (*eTCConfig_t)(HANDLE Handle, long *aEnableTimers, long *aEnableCounters,
-                                long TCPinOffset, long TimerClockBaseIndex, long TimerClockDivisor,
-                                long *aTimerModes, double *aTimerValues, long Reserved1, long Reserved2);
+    typedef float (*LJUSB_GetLibraryVersion_t)(void);
+    typedef unsigned int (*LJUSB_GetDevCount_t)(unsigned long ProductID);
+    typedef HANDLE (*LJUSB_OpenDevice_t)(UINT DevNum, unsigned int dwReserved, unsigned long ProductID);
+    typedef void (*LJUSB_CloseDevice_t)(HANDLE hDevice);
+    typedef unsigned long (*LJUSB_Write_t)(HANDLE hDevice, const BYTE *pBuff, unsigned long count);
+    typedef unsigned long (*LJUSB_Read_t)(HANDLE hDevice, BYTE *pBuff, unsigned long count);
+    typedef bool (*LJUSB_IsHandleValid_t)(HANDLE hDevice);
+    typedef bool (*LJUSB_ResetConnection_t)(HANDLE hDevice);
     
-    // LabJack U3 function pointers - I/O functions
-    typedef long (*eAIN_t)(HANDLE Handle, u3CalibrationInfo *CalibrationInfo, long ConfigIO,
-                           long *DAC1Enable, long ChannelP, long ChannelN, double *Voltage,
-                           long Range, long Resolution, long Settling, long Binary,
-                           long Reserved1, long Reserved2);
-    typedef long (*eDI_t)(HANDLE Handle, long ConfigIO, long Channel, long *State);
-    
-    // Function pointer instances
-    openUSBConnection_t openUSBConnection = nullptr;
-    closeUSBConnection_t closeUSBConnection = nullptr;
-    getCalibrationInfo_t getCalibrationInfo = nullptr;
-    eTCConfig_t eTCConfig = nullptr;
-    eAIN_t eAIN = nullptr;
-    eDI_t eDI = nullptr;
+    // Function pointer instances - these replace direct library calls in u3.cpp
+    LJUSB_GetLibraryVersion_t LJUSB_GetLibraryVersion = nullptr;
+    LJUSB_GetDevCount_t LJUSB_GetDevCount = nullptr;
+    LJUSB_OpenDevice_t LJUSB_OpenDevice = nullptr;
+    LJUSB_CloseDevice_t LJUSB_CloseDevice = nullptr;
+    LJUSB_Write_t LJUSB_Write = nullptr;
+    LJUSB_Read_t LJUSB_Read = nullptr;
+    LJUSB_IsHandleValid_t LJUSB_IsHandleValid = nullptr;
+    LJUSB_ResetConnection_t LJUSB_ResetConnection = nullptr;
     
 protected:
     void loadFunctions() override;
