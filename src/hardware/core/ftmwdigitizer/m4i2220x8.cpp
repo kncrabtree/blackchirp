@@ -2,9 +2,23 @@
 
 #include <math.h>
 
-
 using namespace BC::Key::FtmwScope;
 using namespace BC::Key::Digi;
+using namespace Spectrum::M4i;
+
+/*!
+ * \brief Helper function to get SpectrumLibrary instance with availability check
+ * \return Pointer to SpectrumLibrary if available, nullptr otherwise
+ */
+static SpectrumLibrary* getSpectrumLibrary()
+{
+    SpectrumLibrary& lib = SpectrumLibrary::instance();
+    if (!lib.isAvailable()) {
+        printf("Spectrum library not available: %s\n", lib.errorString().toLatin1().constData());
+        return nullptr;
+    }
+    return &lib;
+}
 
 M4i2220x8::M4i2220x8(QObject *parent) :
     FtmwScope(BC::Key::FtmwScope::m4i2220x8,BC::Key::FtmwScope::m4i2220x8Name,CommunicationProtocol::Custom,parent), p_handle(nullptr)
@@ -51,22 +65,31 @@ M4i2220x8::~M4i2220x8()
 {
     if(p_handle != nullptr)
     {
-        spcm_vClose(p_handle);
+        SpectrumLibrary* spcmLib = getSpectrumLibrary();
+        if (spcmLib) {
+            spcmLib->spcm_vClose(p_handle);
+        }
         p_handle = nullptr;
     }
 }
 
 bool M4i2220x8::testConnection()
 {    
+    SpectrumLibrary* spcmLib = getSpectrumLibrary();
+    if (!spcmLib) {
+        d_errorString = "Spectrum library not available";
+        return false;
+    }
+    
     auto path = getArrayValue(BC::Key::Custom::comm,0,"devPath",QString("/dev/spcm0"));
 
     if(p_handle != nullptr)
     {
-        spcm_vClose(p_handle);
+        spcmLib->spcm_vClose(p_handle);
         p_handle = nullptr;
     }
 
-    p_handle = spcm_hOpen(path.toLatin1().constData());
+    p_handle = spcmLib->spcm_hOpen(path.toLatin1().constData());
 
 
     if(p_handle == nullptr)
@@ -76,19 +99,19 @@ bool M4i2220x8::testConnection()
     }
 
     qint32 cType = 0;
-    spcm_dwGetParam_i32(p_handle,SPC_PCITYP,&cType);
+    spcmLib->spcm_dwGetParam_i32(p_handle,SPC_PCITYP,&cType);
 
     qint32 serialNo = 0;
-    spcm_dwGetParam_i32(p_handle,SPC_PCISERIALNO,&serialNo);
+    spcmLib->spcm_dwGetParam_i32(p_handle,SPC_PCISERIALNO,&serialNo);
 
     qint32 driVer = 0;
-    spcm_dwGetParam_i32(p_handle,SPC_GETDRVVERSION,&driVer);
+    spcmLib->spcm_dwGetParam_i32(p_handle,SPC_GETDRVVERSION,&driVer);
 
     qint32 kerVer = 0;
-    spcm_dwGetParam_i32(p_handle,SPC_GETKERNELVERSION,&kerVer);
+    spcmLib->spcm_dwGetParam_i32(p_handle,SPC_GETKERNELVERSION,&kerVer);
 
     QByteArray errText(1000,'\0');
-    if(spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
+    if(spcmLib->spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
     {
         d_errorString =  QString::fromLatin1(errText);
         return false;
@@ -114,17 +137,23 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
         return true;
     }
 
+    SpectrumLibrary* spcmLib = getSpectrumLibrary();
+    if (!spcmLib) {
+        exp.d_errorString = QString("Could not initialize %1. Spectrum library not available.").arg(d_name);
+        return false;
+    }
+
     d_enabledForExperiment = true;
 
     //first, reset the card so all registers are in default states
-    spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_RESET);
+    spcmLib->spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_RESET);
 
     auto &sc = exp.ftmwConfig()->scopeConfig();
 
     //this card only has 1 channel, so enable it and disable all others regardless of user's entry
     if(sc.d_fidChannel != 1)
         emit logMessage(QString("FID channel set to 1 (selected: %1) because the device only has a single channel.").arg(sc.d_fidChannel),LogHandler::Warning);
-    spcm_dwSetParam_i32(p_handle,SPC_CHENABLE,CHANNEL0);
+    spcmLib->spcm_dwSetParam_i32(p_handle,SPC_CHENABLE,CHANNEL0);
     sc.d_fidChannel = 1;
 
     //4 possible input ranges: 200, 500, 1000, or 2500 mV.
@@ -177,28 +206,28 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
         range = 2500;
     }
 
-    spcm_dwSetParam_i32(p_handle,SPC_AMP0,range);
+    spcmLib->spcm_dwSetParam_i32(p_handle,SPC_AMP0,range);
 
     //set offset to 0
-    spcm_dwSetParam_i32(p_handle,SPC_OFFS0,0);
+    spcmLib->spcm_dwSetParam_i32(p_handle,SPC_OFFS0,0);
     sc.d_analogChannels[sc.d_fidChannel].offset = 0.0;
 
     //set to AC coupling
-    spcm_dwSetParam_i32(p_handle,SPC_ACDC0,1);
+    spcmLib->spcm_dwSetParam_i32(p_handle,SPC_ACDC0,1);
 
 
     //Configure clock source
     auto clocks = exp.ftmwConfig()->d_rfConfig.getClocks();
     if(clocks.contains(RfConfig::DigRef) && !clocks.value(RfConfig::DigRef).hwKey.isEmpty())
     {
-        spcm_dwSetParam_i32(p_handle,SPC_CLOCKMODE,SPC_CM_EXTREFCLOCK);
-        spcm_dwSetParam_i32(p_handle,SPC_REFERENCECLOCK,qRound(clocks.value(RfConfig::DigRef).desiredFreqMHz*1e6));
+        spcmLib->spcm_dwSetParam_i32(p_handle,SPC_CLOCKMODE,SPC_CM_EXTREFCLOCK);
+        spcmLib->spcm_dwSetParam_i32(p_handle,SPC_REFERENCECLOCK,qRound(clocks.value(RfConfig::DigRef).desiredFreqMHz*1e6));
     }
     else
-        spcm_dwSetParam_i32(p_handle,SPC_CLOCKMODE,SPC_CM_INTPLL);
+        spcmLib->spcm_dwSetParam_i32(p_handle,SPC_CLOCKMODE,SPC_CM_INTPLL);
 
     // Configure sample rate
-    spcm_dwSetParam_i64(p_handle,SPC_SAMPLERATE,static_cast<qint64>(sc.d_sampleRate));
+    spcmLib->spcm_dwSetParam_i64(p_handle,SPC_SAMPLERATE,static_cast<qint64>(sc.d_sampleRate));
 
     //configure trigger
     if(sc.d_triggerChannel != 0)
@@ -206,16 +235,16 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
     sc.d_triggerChannel = 0;
 
 
-    spcm_dwSetParam_i32(p_handle,SPC_TRIG_ORMASK,SPC_TMASK_NONE);
-    spcm_dwSetParam_i32(p_handle,SPC_TRIG_ORMASK,SPC_TMASK_EXT0);
+    spcmLib->spcm_dwSetParam_i32(p_handle,SPC_TRIG_ORMASK,SPC_TMASK_NONE);
+    spcmLib->spcm_dwSetParam_i32(p_handle,SPC_TRIG_ORMASK,SPC_TMASK_EXT0);
 
     if(sc.d_triggerSlope == RisingEdge)
-        spcm_dwSetParam_i32(p_handle,SPC_TRIG_EXT0_MODE,SPC_TM_POS);
+        spcmLib->spcm_dwSetParam_i32(p_handle,SPC_TRIG_EXT0_MODE,SPC_TM_POS);
     else
-        spcm_dwSetParam_i32(p_handle,SPC_TRIG_EXT0_MODE,SPC_TM_NEG);
+        spcmLib->spcm_dwSetParam_i32(p_handle,SPC_TRIG_EXT0_MODE,SPC_TM_NEG);
 
 //    spcm_dwSetParam_i32(p_handle,SPC_TRIG_TERM,1);
-    spcm_dwSetParam_i32(p_handle,SPC_TRIG_EXT0_LEVEL0,static_cast<qint32>(round(sc.d_triggerLevel*1000.0)));
+    spcmLib->spcm_dwSetParam_i32(p_handle,SPC_TRIG_EXT0_LEVEL0,static_cast<qint32>(round(sc.d_triggerLevel*1000.0)));
 
 
 
@@ -226,17 +255,17 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
         if(sc.d_numAverages <= 256)
         {
             dataWidth = 2;
-            spcm_dwSetParam_i32(p_handle,SPC_CARDMODE,SPC_REC_FIFO_AVERAGE_16BIT);
+            spcmLib->spcm_dwSetParam_i32(p_handle,SPC_CARDMODE,SPC_REC_FIFO_AVERAGE_16BIT);
         }
         else
         {
             dataWidth = 4;
-            spcm_dwSetParam_i32(p_handle,SPC_CARDMODE,SPC_REC_FIFO_AVERAGE);
+            spcmLib->spcm_dwSetParam_i32(p_handle,SPC_CARDMODE,SPC_REC_FIFO_AVERAGE);
         }
-        spcm_dwSetParam_i32(p_handle,SPC_AVERAGES,static_cast<qint32>(sc.d_numAverages));
+        spcmLib->spcm_dwSetParam_i32(p_handle,SPC_AVERAGES,static_cast<qint32>(sc.d_numAverages));
     }
     else
-        spcm_dwSetParam_i32(p_handle,SPC_CARDMODE,SPC_REC_FIFO_MULTI);
+        spcmLib->spcm_dwSetParam_i32(p_handle,SPC_CARDMODE,SPC_REC_FIFO_MULTI);
 
     //record length must be a multiple of 32
     if(sc.d_recordLength % 32)
@@ -246,10 +275,10 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
     }
 
     //configure record length
-    spcm_dwSetParam_i64(p_handle,SPC_MEMSIZE,Q_UINT64_C(2147483648));
-    spcm_dwSetParam_i64(p_handle,SPC_SEGMENTSIZE,static_cast<qint64>(sc.d_recordLength));
-    spcm_dwSetParam_i64(p_handle,SPC_POSTTRIGGER,static_cast<qint64>(sc.d_recordLength-6400));
-    spcm_dwSetParam_i64(p_handle,SPC_LOOPS,static_cast<qint64>(16000000));
+    spcmLib->spcm_dwSetParam_i64(p_handle,SPC_MEMSIZE,Q_UINT64_C(2147483648));
+    spcmLib->spcm_dwSetParam_i64(p_handle,SPC_SEGMENTSIZE,static_cast<qint64>(sc.d_recordLength));
+    spcmLib->spcm_dwSetParam_i64(p_handle,SPC_POSTTRIGGER,static_cast<qint64>(sc.d_recordLength-6400));
+    spcmLib->spcm_dwSetParam_i64(p_handle,SPC_LOOPS,static_cast<qint64>(16000000));
 
     d_bufferSize = sc.d_recordLength*dataWidth*sc.d_numRecords*10;
 
@@ -258,16 +287,16 @@ bool M4i2220x8::prepareForExperiment(Experiment &exp)
     d_waveformBytes = sc.d_recordLength*dataWidth*sc.d_numRecords;
     p_m4iBuffer = new char[d_bufferSize];
 
-    spcm_dwDefTransfer_i64(p_handle,SPCM_BUF_DATA,SPCM_DIR_CARDTOPC,4096*4,static_cast<void*>(p_m4iBuffer),0,d_bufferSize);
+    spcmLib->spcm_dwDefTransfer_i64(p_handle,SPCM_BUF_DATA,SPCM_DIR_CARDTOPC,4096*4,static_cast<void*>(p_m4iBuffer),0,d_bufferSize);
 
     sc.d_byteOrder = LittleEndian;
 
 
     QByteArray errText(1000,'\0');
-    if(spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
+    if(spcmLib->spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
     {
         exp.d_errorString = QString("Could not initialize %1. Error message: %2").arg(d_name).arg(QString::fromLatin1(errText));
-        spcm_dwInvalidateBuf(p_handle,SPCM_BUF_DATA);
+        spcmLib->spcm_dwInvalidateBuf(p_handle,SPCM_BUF_DATA);
         delete[] p_m4iBuffer;
         return false;
     }
@@ -288,11 +317,18 @@ void M4i2220x8::beginAcquisition()
 {
     if(d_enabledForExperiment)
     {
-        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
-        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_DATA_STARTDMA);
+        SpectrumLibrary* spcmLib = getSpectrumLibrary();
+        if (!spcmLib) {
+            emit logMessage("Spectrum library not available", LogHandler::Error);
+            emit hardwareFailure();
+            return;
+        }
+        
+        spcmLib->spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
+        spcmLib->spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_DATA_STARTDMA);
 
         QByteArray errText(1000,'\0');
-        if(spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
+        if(spcmLib->spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
         {
             emit logMessage(QString::fromLatin1(errText),LogHandler::Error);
             emit hardwareFailure();
@@ -311,9 +347,12 @@ void M4i2220x8::endAcquisition()
         p_timer->stop();
         disconnect(p_timer,&QTimer::timeout,this,&M4i2220x8::readWaveform);
 
-        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_STOP);
-        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_DATA_STOPDMA);
-        spcm_dwInvalidateBuf(p_handle,SPCM_BUF_DATA);
+        SpectrumLibrary* spcmLib = getSpectrumLibrary();
+        if (spcmLib) {
+            spcmLib->spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_STOP);
+            spcmLib->spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_DATA_STOPDMA);
+            spcmLib->spcm_dwInvalidateBuf(p_handle,SPCM_BUF_DATA);
+        }
         delete[] p_m4iBuffer;
 
         d_waveformBytes = 0;
@@ -323,14 +362,23 @@ void M4i2220x8::endAcquisition()
 
 void M4i2220x8::readWaveform()
 {
+    SpectrumLibrary* spcmLib = getSpectrumLibrary();
+    if (!spcmLib) {
+        emit logMessage("Spectrum library not available", LogHandler::Error);
+        emit hardwareFailure();
+        p_timer->stop();
+        disconnect(p_timer,&QTimer::timeout,this,&M4i2220x8::readWaveform);
+        return;
+    }
+    
     //check to see if a data block is ready
     qint32 stat = 0;
-    spcm_dwGetParam_i32(p_handle,SPC_M2STATUS,&stat);
+    spcmLib->spcm_dwGetParam_i32(p_handle,SPC_M2STATUS,&stat);
 
     if(stat & M2STAT_DATA_ERROR) //internal error
     {
         QByteArray errText(1000,'\0');
-        if(spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
+        if(spcmLib->spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
             emit logMessage(QString::fromLatin1(errText),LogHandler::Error);
 
         emit hardwareFailure();
@@ -343,7 +391,7 @@ void M4i2220x8::readWaveform()
     {
         //read how many bytes are available
         qint64 ba = 0;
-        spcm_dwGetParam_i64(p_handle,SPC_DATA_AVAIL_USER_LEN,&ba);
+        spcmLib->spcm_dwGetParam_i64(p_handle,SPC_DATA_AVAIL_USER_LEN,&ba);
 
         //are enough bytes available to make a waveform?
         if(ba >= d_waveformBytes || stat & M2STAT_DATA_END)
@@ -354,7 +402,7 @@ void M4i2220x8::readWaveform()
 
             //get current position
             qint64 pos = 0;
-            spcm_dwGetParam_i64(p_handle,SPC_DATA_AVAIL_USER_POS,&pos);
+            spcmLib->spcm_dwGetParam_i64(p_handle,SPC_DATA_AVAIL_USER_POS,&pos);
 
             //copy data; rolling over at end of buffer if necessary
             for(int i=0; i<d_waveformBytes; i++)
@@ -367,7 +415,7 @@ void M4i2220x8::readWaveform()
             }
 
             //tell m4i that it can use this memory again
-            spcm_dwSetParam_i64(p_handle,SPC_DATA_AVAIL_CARD_LEN,d_waveformBytes);
+            spcmLib->spcm_dwSetParam_i64(p_handle,SPC_DATA_AVAIL_CARD_LEN,d_waveformBytes);
 
             emit shotAcquired(out);
         }
@@ -376,20 +424,20 @@ void M4i2220x8::readWaveform()
     //workaround for SPC_LOOPS issue
     if(stat & M2STAT_DATA_END)
     {
-        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_STOP);
-        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_DATA_STOPDMA);
+        spcmLib->spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_STOP);
+        spcmLib->spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_DATA_STOPDMA);
 
-        spcm_dwInvalidateBuf(p_handle,SPCM_BUF_DATA);
+        spcmLib->spcm_dwInvalidateBuf(p_handle,SPCM_BUF_DATA);
 
-        spcm_dwDefTransfer_i64(p_handle,SPCM_BUF_DATA,SPCM_DIR_CARDTOPC,4096*4,static_cast<void*>(p_m4iBuffer),0,d_bufferSize);
+        spcmLib->spcm_dwDefTransfer_i64(p_handle,SPCM_BUF_DATA,SPCM_DIR_CARDTOPC,4096*4,static_cast<void*>(p_m4iBuffer),0,d_bufferSize);
 
 
 
-        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
-        spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_DATA_STARTDMA);
+        spcmLib->spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
+        spcmLib->spcm_dwSetParam_i32(p_handle,SPC_M2CMD,M2CMD_DATA_STARTDMA);
 
         QByteArray errText(1000,'\0');
-        if(spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
+        if(spcmLib->spcm_dwGetErrorInfo_i32(p_handle,NULL,NULL,errText.data()) != ERR_OK)
         {
             emit logMessage(QString::fromLatin1(errText),LogHandler::Error);
             emit hardwareFailure();

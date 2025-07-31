@@ -2,12 +2,8 @@
 #define M412220X8_H
 
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
-
-#include <spcm/dlltyp.h>
-#include <spcm/regs.h>
-#include <spcm/spcerr.h>
-#include <spcm/spcm_drv.h>
-
+#include <hardware/library/spectrumlibrary.h>
+#include <hardware/library/spectrumconstants.h>
 
 #include <QTimer>
 
@@ -38,7 +34,7 @@ protected:
     void initialize() override;
 
 private:
-    drv_handle p_handle;
+    void* p_handle;
 
     qint64 d_waveformBytes;
     char *p_m4iBuffer;
