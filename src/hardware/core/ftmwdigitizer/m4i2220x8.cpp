@@ -1,6 +1,7 @@
 #include "m4i2220x8.h"
 
 #include <math.h>
+#include <cstdint>
 
 using namespace BC::Key::FtmwScope;
 using namespace BC::Key::Digi;
@@ -390,7 +391,7 @@ void M4i2220x8::readWaveform()
     if(stat & M2STAT_DATA_BLOCKREADY) //block is ready
     {
         //read how many bytes are available
-        qint64 ba = 0;
+        std::int64_t ba = 0;
         spcmLib->spcm_dwGetParam_i64(p_handle,SPC_DATA_AVAIL_USER_LEN,&ba);
 
         //are enough bytes available to make a waveform?
@@ -401,7 +402,7 @@ void M4i2220x8::readWaveform()
             out.resize(d_waveformBytes);
 
             //get current position
-            qint64 pos = 0;
+            std::int64_t pos = 0;
             spcmLib->spcm_dwGetParam_i64(p_handle,SPC_DATA_AVAIL_USER_POS,&pos);
 
             //copy data; rolling over at end of buffer if necessary

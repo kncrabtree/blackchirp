@@ -265,37 +265,30 @@ if(BC_ALLHARDWARE)
     add_hardware_sources_only("ftmwdigitizer" "mso64b" TRUE)
 else()
     # Normal operation - only add the selected implementation
-    string(TOUPPER ${BC_FTMWSCOPE} FTMW_UPPER)
+    # Set all boolean variables first
     HARDWARE_EQUALS("${BC_FTMWSCOPE}" "virtual" IS_VIRTUAL)
+    HARDWARE_EQUALS("${BC_FTMWSCOPE}" "dsa71604c" IS_DSA71604C)
+    HARDWARE_EQUALS("${BC_FTMWSCOPE}" "m4i2220x8" IS_M4I2220X8)
+    HARDWARE_EQUALS("${BC_FTMWSCOPE}" "dsox92004a" IS_DSOX92004A)
+    HARDWARE_EQUALS("${BC_FTMWSCOPE}" "dsov204a" IS_DSOV204A)
+    HARDWARE_EQUALS("${BC_FTMWSCOPE}" "dpo71254b" IS_DPO71254B)
+    HARDWARE_EQUALS("${BC_FTMWSCOPE}" "mso72004c" IS_MSO72004C)
+    HARDWARE_EQUALS("${BC_FTMWSCOPE}" "mso64b" IS_MSO64B)
 
     if(IS_VIRTUAL)
         add_single_hardware("ftmwdigitizer" "virtualftmwscope" "VirtualFtmwScope" TRUE)
-    HARDWARE_EQUALS("${BC_FTMWSCOPE}" "dsa71604c" IS_DSA71604C)
-
     elseif(IS_DSA71604C)
         add_single_hardware("ftmwdigitizer" "dsa71604c" "Dsa71604c" TRUE)
-    HARDWARE_EQUALS("${BC_FTMWSCOPE}" "m4i2220x8" IS_M4I2220X8)
-
     elseif(IS_M4I2220X8)
         add_single_hardware("ftmwdigitizer" "m4i2220x8" "M4i2220x8" TRUE)
-    HARDWARE_EQUALS("${BC_FTMWSCOPE}" "dsox92004a" IS_DSOX92004A)
-
     elseif(IS_DSOX92004A)
         add_single_hardware("ftmwdigitizer" "dsox92004a" "DSOx92004A" TRUE)
-    HARDWARE_EQUALS("${BC_FTMWSCOPE}" "dsov204a" IS_DSOV204A)
-
     elseif(IS_DSOV204A)
         add_single_hardware("ftmwdigitizer" "dsov204a" "DSOv204A" TRUE)
-    HARDWARE_EQUALS("${BC_FTMWSCOPE}" "dpo71254b" IS_DPO71254B)
-
     elseif(IS_DPO71254B)
         add_single_hardware("ftmwdigitizer" "dpo71254b" "Dpo71254b" TRUE)
-    HARDWARE_EQUALS("${BC_FTMWSCOPE}" "mso72004c" IS_MSO72004C)
-
     elseif(IS_MSO72004C)
         add_single_hardware("ftmwdigitizer" "mso72004c" "MSO72004C" TRUE)
-    HARDWARE_EQUALS("${BC_FTMWSCOPE}" "mso64b" IS_MSO64B)
-
     elseif(IS_MSO64B)
         add_single_hardware("ftmwdigitizer" "mso64b" "MSO64B" TRUE)
     else()

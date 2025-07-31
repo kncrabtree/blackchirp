@@ -17,7 +17,7 @@
 # For multi-instance hardware, use semicolon-separated lists (e.g., "impl1;impl2").
 #
 # REQUIRED HARDWARE (must always be configured):
-# - BC_FTMW_SCOPE: FTMW digitizer/oscilloscope
+# - BC_FTMWSCOPE: FTMW digitizer/oscilloscope
 # - BC_CLOCKS: Clock generators (at least one required)
 #
 # OPTIONAL HARDWARE (leave empty "" to disable):
@@ -42,7 +42,7 @@
 #   mso64b         - Tektronix MSO64B oscilloscope
 #   dpo71254b      - Tektronix DPO71254B oscilloscope
 
-set(BC_FTMW_SCOPE "virtual" CACHE STRING "FTMW digitizer implementation")
+set(BC_FTMWSCOPE "virtual" CACHE STRING "FTMW digitizer implementation")
 
 # ============================================================================
 # Clock Generators (REQUIRED - at least one, can have multiple)
