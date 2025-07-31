@@ -165,6 +165,12 @@ if(UNIX)
     target_link_libraries(blackchirp PRIVATE m)
 endif()
 
+# Hardware-specific library linking (only link to final executable)
+if(LABJACK_LIBRARY_PATH)
+    message(STATUS "Linking LabJack library to main application: ${LABJACK_LIBRARY_PATH}")
+    target_link_libraries(blackchirp PRIVATE ${LABJACK_LIBRARY_PATH})
+endif()
+
 # CUDA libraries (if enabled)
 if(BC_CUDA AND CUDA_FOUND)
     target_link_libraries(blackchirp PRIVATE ${CUDA_LIBRARIES})

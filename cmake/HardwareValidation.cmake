@@ -49,10 +49,31 @@ set(VALID_LIFLASERS
     "virtual" "opolette" "sirahcobra"
 )
 
+# Case-insensitive string comparison function
+function(strequal_case_insensitive VAR1 VAR2 RESULT_VAR)
+    string(TOUPPER "${VAR1}" VAR1_UPPER)
+    string(TOUPPER "${VAR2}" VAR2_UPPER)
+    if(VAR1_UPPER STREQUAL VAR2_UPPER)
+        set(${RESULT_VAR} TRUE PARENT_SCOPE)
+    else()
+        set(${RESULT_VAR} FALSE PARENT_SCOPE)
+    endif()
+endfunction()
+
 # Function to validate a single hardware selection
 function(validate_single_hardware HARDWARE_TYPE HARDWARE_VALUE VALID_OPTIONS)
     if(HARDWARE_VALUE)
-        list(FIND VALID_OPTIONS "${HARDWARE_VALUE}" INDEX)
+        # Convert to uppercase for case-insensitive comparison (like qmake build)
+        string(TOUPPER "${HARDWARE_VALUE}" HARDWARE_UPPER)
+        
+        # Convert valid options to uppercase for comparison
+        set(VALID_OPTIONS_UPPER "")
+        foreach(OPTION IN LISTS VALID_OPTIONS)
+            string(TOUPPER "${OPTION}" OPTION_UPPER)
+            list(APPEND VALID_OPTIONS_UPPER "${OPTION_UPPER}")
+        endforeach()
+        
+        list(FIND VALID_OPTIONS_UPPER "${HARDWARE_UPPER}" INDEX)
         if(INDEX EQUAL -1)
             message(FATAL_ERROR 
                 "Invalid ${HARDWARE_TYPE}: '${HARDWARE_VALUE}'\n"
@@ -66,7 +87,17 @@ function(validate_multiple_hardware HARDWARE_TYPE HARDWARE_LIST VALID_OPTIONS)
     if(HARDWARE_LIST)
         foreach(HARDWARE IN LISTS HARDWARE_LIST)
             if(HARDWARE)
-                list(FIND VALID_OPTIONS "${HARDWARE}" INDEX)
+                # Convert to uppercase for case-insensitive comparison (like qmake build)
+                string(TOUPPER "${HARDWARE}" HARDWARE_UPPER)
+                
+                # Convert valid options to uppercase for comparison
+                set(VALID_OPTIONS_UPPER "")
+                foreach(OPTION IN LISTS VALID_OPTIONS)
+                    string(TOUPPER "${OPTION}" OPTION_UPPER)
+                    list(APPEND VALID_OPTIONS_UPPER "${OPTION_UPPER}")
+                endforeach()
+                
+                list(FIND VALID_OPTIONS_UPPER "${HARDWARE_UPPER}" INDEX)
                 if(INDEX EQUAL -1)
                     message(FATAL_ERROR 
                         "Invalid ${HARDWARE_TYPE}: '${HARDWARE}'\n"
