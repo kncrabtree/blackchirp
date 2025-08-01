@@ -308,28 +308,31 @@ void RuntimeHardwareConfig::saveToSettings()
     }
     
     qDebug() << "Saved" << d_hardwareConfig.size() << "hardware configurations to settings";
+    
+    // Persist changes to storage
+    save();
 }
 
 void RuntimeHardwareConfig::loadFromSettings()
 {
-    QWriteLocker locker(&d_configLock);
-    
     qDebug() << "Loading runtime hardware configuration from settings...";
     
+    // Get all setting keys without holding the config lock
+    QStringList allKeys = keys();
+    
+    QWriteLocker locker(&d_configLock);
     d_hardwareConfig.clear();
     
-    // Get all available hardware types from registry to know what to look for
-    HardwareRegistry& registry = HardwareRegistry::instance();
-    QStringList allTypes = registry.getRegisteredHardwareTypes();
-    
     int loadedCount = 0;
-    for (const QString& type : allTypes) {
-        QString implKey = QString("%1_%2").arg(type, BC::Key::RuntimeHw::selection);
-        QString enabledKey = QString("%1_%2").arg(type, BC::Key::RuntimeHw::enabled);
-        
-        if (containsValue(implKey) || containsValue(enabledKey)) {
+    
+    // Parse existing settings directly rather than querying registry
+    for (const QString& key : allKeys) {
+        if (key.endsWith(QString("_%1").arg(BC::Key::RuntimeHw::selection))) {
+            QString type = key.left(key.length() - BC::Key::RuntimeHw::selection.length() - 1);
+            QString enabledKey = QString("%1_%2").arg(type, BC::Key::RuntimeHw::enabled);
+            
             HardwareConfig config;
-            config.implementation = get<QString>(implKey, QString());
+            config.implementation = get<QString>(key, QString());
             config.enabled = get<bool>(enabledKey, true);
             
             d_hardwareConfig[type] = config;
@@ -341,8 +344,7 @@ void RuntimeHardwareConfig::loadFromSettings()
     }
     
     if (loadedCount == 0) {
-        qDebug() << "No saved hardware configuration found, setting up defaults...";
-        setupDefaultConfiguration();
+        qDebug() << "No saved hardware configuration found, will use defaults when needed";
     } else {
         qDebug() << "Loaded" << loadedCount << "hardware configurations from settings";
     }

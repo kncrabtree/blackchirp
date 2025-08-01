@@ -11,6 +11,8 @@
 
 // Forward declarations for friend classes
 class HardwareManager;
+class RuntimeHardwareConfigTest;
+class RuntimeHardwareConfigSimpleTest;
 
 /*!
  * \brief Runtime hardware configuration validation result
@@ -55,6 +57,8 @@ class RuntimeHardwareConfig : public SettingsStorage
 {
     // Friend classes that can modify configuration
     friend class HardwareManager;
+    friend class RuntimeHardwareConfigTest;  /*!< Test class needs access to private methods */
+    friend class RuntimeHardwareConfigSimpleTest;  /*!< Simple test class needs access to private methods */
     // TODO: Add HardwareSettingsDialog and other authorized writers as needed
     
 public:

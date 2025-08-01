@@ -426,6 +426,26 @@ if(BC_BUILD_TESTS)
     add_blackchirp_definitions(tst_xiamparser)
     add_test(NAME XIAMParserTest COMMAND tst_xiamparser)
     
+    # Hardware Registry Comprehensive Test
+    add_executable(tst_hardwareregistrytest tests/tst_hardwareregistrytest.cpp)
+    target_link_libraries(tst_hardwareregistrytest 
+        blackchirp-hardware 
+        Qt6::Test 
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_hardwareregistrytest)
+    add_test(NAME HardwareRegistryTest COMMAND tst_hardwareregistrytest)
+    
+    # Runtime Hardware Config Comprehensive Test
+    add_executable(tst_runtimehardwareconfigtest tests/tst_runtimehardwareconfigtest.cpp)
+    target_link_libraries(tst_runtimehardwareconfigtest 
+        blackchirp-hardware 
+        Qt6::Test 
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_runtimehardwareconfigtest)
+    add_test(NAME RuntimeHardwareConfigTest COMMAND tst_runtimehardwareconfigtest)
+    
     # Test Hardware Library - includes core hardware sources plus all virtual implementations
     # This replaces the main blackchirp-hardware library for testing to avoid symbol conflicts
     add_library(blackchirp-test-hardware STATIC
@@ -502,6 +522,8 @@ if(BC_BUILD_TESTS)
         tst_overlayoperations_simple
         tst_spcatparser
         tst_xiamparser
+        tst_hardwareregistrytest
+        tst_runtimehardwareconfigtest
         # tst_hardwarecommunication  # Disabled until HardwareManager migration complete
     )
     
