@@ -156,6 +156,19 @@ QStringList SettingsStorage::arrayKeys() const
     return out;
 }
 
+QStringList SettingsStorage::groupKeys() const
+{
+    QStringList out;
+    out.reserve(d_groupValues.size());
+    for(auto const &[key,_] : d_groupValues)
+    {
+        (void)_;
+        out << key;
+    }
+    
+    return out;
+}
+
 QVariant SettingsStorage::unRegisterGetter(const QString key, bool write)
 {
     auto it = d_getters.find(key);

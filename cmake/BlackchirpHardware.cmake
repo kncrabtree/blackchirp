@@ -74,6 +74,7 @@ set(BLACKCHIRP_HARDWARE_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/hardwareregistry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/hardwareregistration.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/runtimehardwareconfig.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/core/hardwareprofilemanager.cpp
     
     # Vendor library wrappers (always needed for runtime loading)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/hardware/library/vendorlibrary.cpp

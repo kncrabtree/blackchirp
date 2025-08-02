@@ -1,0 +1,558 @@
+#ifndef HARDWAREPROFILEMANAGER_H
+#define HARDWAREPROFILEMANAGER_H
+
+#include <QString>
+#include <QStringList>
+#include <QHash>
+#include <QDateTime>
+#include <QByteArray>
+#include <QReadWriteLock>
+#include <QMutex>
+
+#include <data/storage/settingsstorage.h>
+
+// Forward declarations for friend classes
+class HardwareProfileManagerTest;
+
+/*!
+ * \brief Hardware profile data structure for import/export operations
+ */
+struct HardwareProfileData {
+    QString type;           /*!< Hardware type (e.g., "FlowController") */
+    QString label;          /*!< User-defined label (e.g., "mainDevice") */
+    QString implementation; /*!< Implementation key (e.g., "mks647c") */
+    bool active = true;     /*!< Whether profile is active */
+    QDateTime created;      /*!< Profile creation timestamp */
+    QDateTime modified;     /*!< Profile last modified timestamp */
+    QString description;    /*!< User description of the profile */
+    
+    HardwareProfileData() = default;
+    HardwareProfileData(const QString& t, const QString& l, const QString& i, bool a = true)
+        : type(t), label(l), implementation(i), active(a), 
+          created(QDateTime::currentDateTime()), modified(QDateTime::currentDateTime()) {}
+};
+
+/*!
+ * \brief Complete lifecycle management of hardware configurations with user-controlled labels
+ * 
+ * The HardwareProfileManager replaces the current auto-incrementing index system
+ * ("FlowController.0", "FlowController.1") with user-meaningful labels 
+ * ("FlowController.frontPanel", "FlowController.backup").
+ * 
+ * This class provides:
+ * - User-controlled hardware identification through meaningful labels
+ * - Multiple profiles per hardware type with independent configurations
+ * - Settings persistence through SettingsStorage integration
+ * - Collision detection and resolution for conflicting labels
+ * - Thread-safe operations for concurrent access
+ * - Profile import/export functionality
+ * 
+ * Design Principles:
+ * - Label uniqueness enforced within hardware type, reusable across types
+ * - All operations are thread-safe using QReadWriteLock
+ * - Graceful error handling with clear return values
+ * - No automatic fallbacks - explicit user control required
+ * - Full integration with existing SettingsStorage pattern
+ * 
+ * Storage Format:
+ * ```
+ * [HardwareProfiles]
+ * FlowController/frontPanel/implementation=mks647c
+ * FlowController/frontPanel/active=true
+ * FlowController/frontPanel/created=2024-01-15T10:30:00
+ * FlowController/frontPanel/description=Main flow controller
+ * FlowController/backup/implementation=virtual
+ * FlowController/backup/active=false
+ * ```
+ * 
+ * Usage Example:
+ * ```cpp
+ * HardwareProfileManager manager;
+ * 
+ * // Create profiles with meaningful labels
+ * QString label1 = manager.createHardwareProfile("FlowController", "mks647c", "frontPanel");
+ * QString label2 = manager.createHardwareProfile("FlowController", "virtual", "backup");
+ * 
+ * // Query profiles
+ * QStringList activeProfiles = manager.getActiveProfiles("FlowController");
+ * QString implementation = manager.getImplementation("FlowController", "frontPanel");
+ * 
+ * // Manage profile state
+ * manager.deactivateHardwareProfile("FlowController", "backup");
+ * manager.deleteHardwareProfile("FlowController", "backup");
+ * ```
+ */
+class HardwareProfileManager : public SettingsStorage
+{
+    // Friend classes for testing
+    friend class HardwareProfileManagerTest;
+    
+public:
+    /*!
+     * \brief Collision resolution strategies when labels conflict
+     */
+    enum CollisionAction {
+        NoCollision,  /*!< No collision detected */
+        Rename,       /*!< Automatically rename the new profile */
+        Replace,      /*!< Replace the existing profile */
+        Restore,      /*!< Keep existing profile, discard new */
+        Cancel        /*!< Cancel the operation */
+    };
+    
+    /*!
+     * \brief Label validation error types
+     */
+    enum LabelValidationError {
+        Valid,              /*!< Label is valid */
+        Empty,              /*!< Label is empty or whitespace only */
+        TooLong,            /*!< Label exceeds maximum length */
+        InvalidCharacters,  /*!< Label contains invalid characters */
+        StartsWithNumber,   /*!< Label starts with a number */
+        StartsWithUnderscore, /*!< Label starts with underscore */
+        ContainsDots        /*!< Label contains dots (conflicts with key format) */
+    };
+    
+    /*!
+     * \brief Standard constructor using default application settings
+     */
+    HardwareProfileManager();
+    
+    /*!
+     * \brief Constructor with custom organization and application names
+     * \param orgName Organization name for QSettings
+     * \param appName Application name for QSettings
+     */
+    HardwareProfileManager(const QString& orgName, const QString& appName);
+    
+    /*!
+     * \brief Destructor - saves profiles to persistent storage
+     */
+    virtual ~HardwareProfileManager();
+    
+    // ========================================================================
+    // PROFILE MANAGEMENT
+    // ========================================================================
+    
+    /*!
+     * \brief Create a new hardware profile
+     * 
+     * Creates a new profile with the specified implementation and label.
+     * If requestedLabel is empty, a default label will be auto-generated.
+     * If requestedLabel conflicts with existing profile, collision resolution
+     * depends on the collisionAction parameter.
+     * 
+     * \param type Hardware type (e.g., "FlowController", "FtmwDigitizer")
+     * \param implementation Implementation key (e.g., "mks647c", "virtual")
+     * \param requestedLabel Desired label for the profile (auto-generated if empty)
+     * \param collisionAction How to handle label collisions (default: Rename)
+     * \return Actual label used for the profile, or empty string if creation failed
+     */
+    QString createHardwareProfile(const QString& type, 
+                                 const QString& implementation,
+                                 const QString& requestedLabel = QString(),
+                                 CollisionAction collisionAction = Rename);
+    
+    /*!
+     * \brief Delete a hardware profile
+     * \param type Hardware type
+     * \param label Profile label to delete
+     * \return True if profile was deleted successfully
+     */
+    bool deleteHardwareProfile(const QString& type, const QString& label);
+    
+    /*!
+     * \brief Activate a hardware profile
+     * \param type Hardware type
+     * \param label Profile label to activate
+     * \return True if profile was activated successfully
+     */
+    bool activateHardwareProfile(const QString& type, const QString& label);
+    
+    /*!
+     * \brief Deactivate a hardware profile
+     * \param type Hardware type
+     * \param label Profile label to deactivate
+     * \return True if profile was deactivated successfully
+     */
+    bool deactivateHardwareProfile(const QString& type, const QString& label);
+    
+    /*!
+     * \brief Check if a profile exists
+     * \param type Hardware type
+     * \param label Profile label
+     * \return True if profile exists
+     */
+    bool profileExists(const QString& type, const QString& label) const;
+    
+    /*!
+     * \brief Check if a profile is active
+     * \param type Hardware type
+     * \param label Profile label
+     * \return True if profile exists and is active
+     */
+    bool isProfileActive(const QString& type, const QString& label) const;
+    
+    // ========================================================================
+    // LABEL MANAGEMENT
+    // ========================================================================
+    
+    /*!
+     * \brief Check if a label is available for use within a hardware type
+     * \param type Hardware type
+     * \param label Label to check
+     * \return True if label is available (not already used in this type)
+     */
+    bool isLabelAvailable(const QString& type, const QString& label) const;
+    
+    /*!
+     * \brief Generate a default label for a hardware type
+     * 
+     * Generates meaningful default labels based on existing labels:
+     * - "default" (if available)
+     * - "secondary" (if "default" exists)
+     * - "backup" (if "default" and "secondary" exist)
+     * - "{type}1", "{type}2", etc. for additional profiles
+     * 
+     * \param type Hardware type
+     * \return Generated default label that is available
+     */
+    QString generateDefaultLabel(const QString& type) const;
+    
+    /*!
+     * \brief Get all existing labels for a hardware type
+     * \param type Hardware type
+     * \return List of labels currently used by this hardware type
+     */
+    QStringList getExistingLabels(const QString& type) const;
+    
+    /*!
+     * \brief Validate a label according to naming rules
+     * \param label Label to validate
+     * \return Validation result indicating if label is valid or why it's invalid
+     */
+    LabelValidationError validateLabel(const QString& label) const;
+    
+    /*!
+     * \brief Check if a label is valid (convenience function)
+     * \param label Label to check
+     * \return True if label passes all validation rules
+     */
+    bool isValidLabel(const QString& label) const;
+    
+    /*!
+     * \brief Get maximum allowed label length
+     * \return Maximum number of characters allowed in a label
+     */
+    int getMaxLabelLength() const { return 64; }
+    
+    // ========================================================================
+    // PROFILE QUERIES
+    // ========================================================================
+    
+    /*!
+     * \brief Get all active profiles for a hardware type
+     * \param type Hardware type
+     * \return List of labels for active profiles
+     */
+    QStringList getActiveProfiles(const QString& type) const;
+    
+    /*!
+     * \brief Get all inactive profiles for a hardware type
+     * \param type Hardware type
+     * \return List of labels for inactive profiles
+     */
+    QStringList getInactiveProfiles(const QString& type) const;
+    
+    /*!
+     * \brief Get all profiles (active and inactive) for a hardware type
+     * \param type Hardware type
+     * \return List of all labels for this hardware type
+     */
+    QStringList getAllProfiles(const QString& type) const;
+    
+    /*!
+     * \brief Get implementation for a specific profile
+     * \param type Hardware type
+     * \param label Profile label
+     * \return Implementation key, or empty string if profile doesn't exist
+     */
+    QString getImplementation(const QString& type, const QString& label) const;
+    
+    /*!
+     * \brief Get all hardware types that have profiles
+     * \return List of hardware types with at least one profile
+     */
+    QStringList getConfiguredHardwareTypes() const;
+    
+    // ========================================================================
+    // PROFILE METADATA
+    // ========================================================================
+    
+    /*!
+     * \brief Get profile creation timestamp
+     * \param type Hardware type
+     * \param label Profile label
+     * \return Creation timestamp, or invalid QDateTime if profile doesn't exist
+     */
+    QDateTime getProfileCreationTime(const QString& type, const QString& label) const;
+    
+    /*!
+     * \brief Get profile last modified timestamp
+     * \param type Hardware type
+     * \param label Profile label
+     * \return Last modified timestamp, or invalid QDateTime if profile doesn't exist
+     */
+    QDateTime getProfileLastModified(const QString& type, const QString& label) const;
+    
+    /*!
+     * \brief Set profile description
+     * \param type Hardware type
+     * \param label Profile label
+     * \param description User description of the profile
+     * \return True if description was set successfully
+     */
+    bool setProfileDescription(const QString& type, const QString& label, const QString& description);
+    
+    /*!
+     * \brief Get profile description
+     * \param type Hardware type
+     * \param label Profile label
+     * \return Profile description, or empty string if not set or profile doesn't exist
+     */
+    QString getProfileDescription(const QString& type, const QString& label) const;
+    
+    // ========================================================================
+    // COLLISION HANDLING
+    // ========================================================================
+    
+    /*!
+     * \brief Detect if creating a profile would cause a collision
+     * \param type Hardware type
+     * \param label Requested label
+     * \param implementation Implementation key
+     * \return Collision type detected
+     */
+    CollisionAction detectCollision(const QString& type, const QString& label, 
+                                   const QString& implementation) const;
+    
+    /*!
+     * \brief Resolve label collision by generating alternative label
+     * \param type Hardware type
+     * \param baseLabel Base label that caused collision
+     * \return Alternative label that is available
+     */
+    QString resolveCollisionByRename(const QString& type, const QString& baseLabel) const;
+    
+    // ========================================================================
+    // BULK OPERATIONS
+    // ========================================================================
+    
+    /*!
+     * \brief Activate all profiles for a hardware type
+     * \param type Hardware type
+     * \return True if all profiles were activated successfully
+     */
+    bool activateAllProfiles(const QString& type);
+    
+    /*!
+     * \brief Deactivate all profiles for a hardware type
+     * \param type Hardware type
+     * \return True if all profiles were deactivated successfully
+     */
+    bool deactivateAllProfiles(const QString& type);
+    
+    /*!
+     * \brief Delete all profiles for a hardware type
+     * \param type Hardware type
+     * \return True if all profiles were deleted successfully
+     */
+    bool deleteAllProfiles(const QString& type);
+    
+    /*!
+     * \brief Clear all profiles from all hardware types
+     */
+    void clearAllProfiles();
+    
+    // ========================================================================
+    // IMPORT/EXPORT FUNCTIONALITY
+    // ========================================================================
+    
+    /*!
+     * \brief Export all profiles to binary data
+     * \return Serialized profile data suitable for storage or transfer
+     */
+    QByteArray exportProfiles() const;
+    
+    /*!
+     * \brief Export profiles for specific hardware type
+     * \param type Hardware type to export
+     * \return Serialized profile data for the specified type
+     */
+    QByteArray exportProfiles(const QString& type) const;
+    
+    /*!
+     * \brief Import profiles from binary data
+     * \param data Serialized profile data (from exportProfiles)
+     * \param collisionAction How to handle label collisions during import
+     * \return True if import was successful
+     */
+    bool importProfiles(const QByteArray& data, CollisionAction collisionAction = Rename);
+    
+    /*!
+     * \brief Import a single profile
+     * \param profileData Profile data to import
+     * \param collisionAction How to handle label collisions
+     * \return True if profile was imported successfully
+     */
+    bool importProfile(const HardwareProfileData& profileData, 
+                      CollisionAction collisionAction = Rename);
+    
+    /*!
+     * \brief Get profile data for export/backup purposes
+     * \param type Hardware type
+     * \param label Profile label
+     * \return Profile data structure, or invalid data if profile doesn't exist
+     */
+    HardwareProfileData getProfileData(const QString& type, const QString& label) const;
+    
+    // ========================================================================
+    // PERSISTENCE MANAGEMENT
+    // ========================================================================
+    
+    /*!
+     * \brief Force save all profiles to persistent storage
+     * 
+     * Profiles are automatically saved when the manager is destroyed,
+     * but this method allows explicit saving.
+     */
+    void saveProfiles();
+    
+    /*!
+     * \brief Load profiles from persistent storage
+     * 
+     * Called automatically during construction, but can be used to
+     * reload from storage if external changes occurred.
+     */
+    void loadProfiles();
+    
+    /*!
+     * \brief Check if profiles have been modified since last save
+     * \return True if there are unsaved changes
+     */
+    bool hasUnsavedChanges() const;
+
+private:
+    // ========================================================================
+    // INTERNAL DATA STRUCTURES
+    // ========================================================================
+    
+    /*!
+     * \brief Internal profile data structure
+     */
+    struct ProfileInfo {
+        QString implementation;     /*!< Implementation key */
+        bool active = true;         /*!< Whether profile is active */
+        QDateTime created;          /*!< Creation timestamp */
+        QDateTime modified;         /*!< Last modified timestamp */
+        QString description;        /*!< User description */
+        
+        ProfileInfo() : created(QDateTime::currentDateTime()), 
+                       modified(QDateTime::currentDateTime()) {}
+        ProfileInfo(const QString& impl, bool act = true) 
+            : implementation(impl), active(act),
+              created(QDateTime::currentDateTime()),
+              modified(QDateTime::currentDateTime()) {}
+    };
+    
+    // Thread-safe storage: hardware type -> label -> profile info
+    mutable QReadWriteLock d_profilesLock;
+    QHash<QString, QHash<QString, ProfileInfo>> d_profiles;
+    
+    mutable QMutex d_modifiedFlagLock;
+    bool d_modified = false;
+    
+    // ========================================================================
+    // INTERNAL HELPER METHODS
+    // ========================================================================
+    
+    /*!
+     * \brief Load profiles from SettingsStorage into memory structures
+     */
+    void loadProfilesFromSettings();
+    
+    /*!
+     * \brief Save profiles from memory structures to SettingsStorage
+     */
+    void saveProfilesToSettings();
+    
+    
+    /*!
+     * \brief Mark profiles as modified (thread-safe)
+     */
+    void setModified();
+    
+    /*!
+     * \brief Internal label validation implementation
+     * \param label Label to validate
+     * \return Validation error or Valid
+     */
+    LabelValidationError validateLabelInternal(const QString& label) const;
+    
+    /*!
+     * \brief Internal collision detection (assumes lock is held)
+     * \param type Hardware type
+     * \param label Requested label
+     * \param implementation Implementation key
+     * \return Collision type
+     */
+    CollisionAction detectCollisionInternal(const QString& type, const QString& label,
+                                           const QString& implementation) const;
+    
+    /*!
+     * \brief Internal profile creation (assumes lock is held)
+     * \param type Hardware type
+     * \param implementation Implementation key
+     * \param label Profile label (must be validated and available)
+     * \return True if profile was created
+     */
+    bool createProfileInternal(const QString& type, const QString& implementation, 
+                              const QString& label);
+    
+    /*!
+     * \brief Internal default label generation (assumes lock is held)
+     * \param type Hardware type
+     * \return Generated label
+     */
+    QString generateDefaultLabelInternal(const QString& type) const;
+    
+    /*!
+     * \brief Update profile modification timestamp (assumes lock is held)
+     * \param type Hardware type
+     * \param label Profile label
+     */
+    void updateModificationTime(const QString& type, const QString& label);
+    
+    /*!
+     * \brief Internal collision resolution (assumes caller holds lock)
+     * \param type Hardware type  
+     * \param baseLabel Base label that caused collision
+     * \return Alternative label that is available
+     */
+    QString resolveCollisionByRenameInternal(const QString& type, const QString& baseLabel) const;
+};
+
+/*!
+ * \brief Settings keys for hardware profile storage
+ */
+namespace BC::Key::HardwareProfiles {
+    static const QString profiles{"HardwareProfiles"};      /*!< Base settings group */
+    static const QString implementation{"implementation"};   /*!< Implementation subkey */
+    static const QString active{"active"};                  /*!< Active state subkey */
+    static const QString created{"created"};                /*!< Creation time subkey */
+    static const QString modified{"modified"};              /*!< Modified time subkey */
+    static const QString description{"description"};        /*!< Description subkey */
+}
+
+Q_DECLARE_METATYPE(HardwareProfileData)
+
+#endif // HARDWAREPROFILEMANAGER_H

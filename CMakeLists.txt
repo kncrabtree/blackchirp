@@ -446,6 +446,16 @@ if(BC_BUILD_TESTS)
     add_blackchirp_definitions(tst_runtimehardwareconfigtest)
     add_test(NAME RuntimeHardwareConfigTest COMMAND tst_runtimehardwareconfigtest)
     
+    # Hardware Profile Manager Test
+    add_executable(tst_hardwareprofilemanagertest tests/tst_hardwareprofilemanagertest.cpp)
+    target_link_libraries(tst_hardwareprofilemanagertest 
+        blackchirp-hardware 
+        Qt6::Test 
+        Qt6::Core
+    )
+    add_blackchirp_definitions(tst_hardwareprofilemanagertest)
+    add_test(NAME HardwareProfileManagerTest COMMAND tst_hardwareprofilemanagertest)
+    
     # Test Hardware Library - includes core hardware sources plus all virtual implementations
     # This replaces the main blackchirp-hardware library for testing to avoid symbol conflicts
     add_library(blackchirp-test-hardware STATIC

@@ -476,6 +476,27 @@ public:
      * \param discard If true, settings are not saved.
      */
     void discardChanges(bool discard = true) { d_discard = discard; }
+    
+    /*!
+     * \brief List of all keys for normal (non-array) values
+     * 
+     * \return List of keys
+     */
+    QStringList keys() const;
+    
+    /*!
+     * \brief List of keys for array values
+     * 
+     * \return List of Keys
+     */
+    QStringList arrayKeys() const;
+    
+    /*!
+     * \brief List of all group keys
+     * 
+     * \return List of group keys
+     */
+    QStringList groupKeys() const;
 
 protected:
     /*!
@@ -829,20 +850,6 @@ protected:
      */
     void readAll();
     
-    /*!
-     * \brief List of all keys for normal (non-array) values
-     * 
-     * \return List of keys
-     */
-    QStringList keys() const;
-    
-    /*!
-     * \brief List of keys for array values
-     * 
-     * \return List of Keys
-     */
-    QStringList arrayKeys() const;
-
 private:
     explicit SettingsStorage(const QStringList keys, Type type, QSettings::Scope scope);
     explicit SettingsStorage(const QString orgName, const QString appName, const QStringList keys, Type type, QSettings::Scope scope);
