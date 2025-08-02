@@ -4,9 +4,17 @@
 #include <QThread>
 #include <QTimer>
 #include <math.h>
+#include <hardware/core/hardwareregistration.h>
 
 using namespace BC::Key::FtmwScope;
 using namespace BC::Key::Digi;
+
+// Register this hardware implementation
+REGISTER_HARDWARE(
+    Dpo71254b,
+    dpo71254bName,
+    "Digital phosphor oscilloscope for FTMW spectroscopy (12.5 GHz, 50 GS/s)"
+)
 
 Dpo71254b::Dpo71254b(QObject *parent) :
     FtmwScope(dpo71254b,dpo71254bName,CommunicationProtocol::Tcp,parent),

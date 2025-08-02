@@ -120,24 +120,20 @@ void RuntimeHardwareConfigTest::setupTestRegistry()
 {
     // Register some test hardware for validation tests
     auto factory1 = []() -> HardwareObject* { return nullptr; }; // Mock factory
-    auto availCheck1 = []() -> bool { return true; };
     
     d_registry->registerHardware(
         "TestHardware1", "impl1", "Test Hardware 1", "Test implementation 1",
-        QStringList(), factory1, availCheck1,
-        false // Not required
+        factory1
     );
     
     d_registry->registerHardware(
         "TestHardware1", "impl2", "Test Hardware 1 Alt", "Alternative implementation",
-        QStringList(), factory1, availCheck1,
-        false // Not required
+        factory1
     );
     
     d_registry->registerHardware(
         "TestHardware2", "impl1", "Test Hardware 2", "Test implementation 2",
-        QStringList(), factory1, availCheck1,
-        true // Required
+        factory1
     );
 }
 

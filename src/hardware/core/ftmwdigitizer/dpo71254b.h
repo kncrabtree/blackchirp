@@ -10,7 +10,7 @@ class QTcpSocket;
 
 namespace BC::Key::FtmwScope {
 static const QString dpo71254b{"DPO71254B"};
-static const QString dpo71254bName("Ftmw Oscilloscope DPO71254B");
+static const QString dpo71254bName("Tektronix DPO71254B Digital Phosphor Oscilloscope");
 }
 
 class Dpo71254b : public FtmwScope

@@ -8,11 +8,10 @@ using namespace BC::Key::FtmwScope;
 using namespace BC::Key::Digi;
 
 // Register this hardware implementation
-REGISTER_SIMPLE_HARDWARE(
+REGISTER_HARDWARE(
     VirtualFtmwScope,
     "Virtual FTMW Scope",
-    "Virtual FTMW digitizer for testing and development",
-    false  // not required (fallback option)
+    "Virtual FTMW digitizer for testing and development"
 )
 
 VirtualFtmwScope::VirtualFtmwScope(QObject *parent) :

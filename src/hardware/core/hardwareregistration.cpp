@@ -16,12 +16,12 @@ void initializeHardwareRegistrations()
     HardwareRegistry& registry = HardwareRegistry::instance();
     
     // Log registered hardware types
-    QStringList types = registry.getRegisteredHardwareTypes();
+    QStringList types = registry.getHardwareTypes();
     qDebug() << "Registered hardware types:" << types;
     
     for (const QString& type : types) {
-        QStringList implementations = registry.getAvailableImplementations(type);
-        qDebug() << QString("Available implementations for %1:").arg(type) << implementations;
+        QStringList implementations = registry.getImplementations(type);
+        qDebug() << QString("Registered implementations for %1:").arg(type) << implementations;
     }
     
     qDebug() << "Hardware registration initialization complete";

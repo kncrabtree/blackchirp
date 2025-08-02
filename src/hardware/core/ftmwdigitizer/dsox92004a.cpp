@@ -2,9 +2,17 @@
 
 #include <QTcpSocket>
 #include <QTimer>
+#include <hardware/core/hardwareregistration.h>
 
 using namespace BC::Key::FtmwScope;
 using namespace BC::Key::Digi;
+
+// Register this hardware implementation
+REGISTER_HARDWARE(
+    DSOx92004A,
+    dsox92004aName,
+    "High-performance real-time oscilloscope for FTMW spectroscopy (20 GHz, 80 GS/s)"
+)
 
 DSOx92004A::DSOx92004A(QObject *parent) :
     FtmwScope(BC::Key::FtmwScope::dsox92004a,BC::Key::FtmwScope::dsox92004aName,CommunicationProtocol::Tcp,parent)

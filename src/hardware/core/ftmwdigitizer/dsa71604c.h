@@ -10,7 +10,7 @@ class QTcpSocket;
 
 namespace BC::Key::FtmwScope {
 static const QString dsa71604c{"dsa71604c"};
-static const QString dsa71064cName("Ftmw Oscilloscope DSA71604C");
+static const QString dsa71064cName("Tektronix DSA71604C Digital Serial Analyzer");
 }
 
 class Dsa71604c : public FtmwScope

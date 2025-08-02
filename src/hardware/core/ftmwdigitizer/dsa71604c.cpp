@@ -4,9 +4,17 @@
 #include <QTimer>
 #include <QThread>
 #include <math.h>
+#include <hardware/core/hardwareregistration.h>
 
 using namespace BC::Key::FtmwScope;
 using namespace BC::Key::Digi;
+
+// Register this hardware implementation
+REGISTER_HARDWARE(
+    Dsa71604c,
+    dsa71064cName,
+    "Digital Serial Analyzer oscilloscope for FTMW spectroscopy (16 GHz, 50 GS/s)"
+)
 
 Dsa71604c::Dsa71604c(QObject *parent) :
     FtmwScope(dsa71604c,dsa71064cName,CommunicationProtocol::Tcp,parent),

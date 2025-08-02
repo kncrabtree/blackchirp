@@ -126,18 +126,14 @@ QStringList RuntimeHardwareConfig::getConfiguredHardwareTypes() const
 
 bool RuntimeHardwareConfig::isHardwareRequired(const QString& hardwareType) const
 {
-    HardwareRegistry& registry = HardwareRegistry::instance();
-    QStringList implementations = registry.getAvailableImplementations(hardwareType);
+    // Define required hardware types at compile time
+    // These are hardware types that must be configured for the system to operate
+    static const QStringList requiredTypes = {
+        "ftmwDigitizer",  // Required for FTMW spectroscopy
+        "clock"           // Required for timing
+    };
     
-    // Check if any implementation for this type is marked as required
-    for (const QString& impl : implementations) {
-        const HardwareRegistration* reg = registry.getRegistration(hardwareType, impl);
-        if (reg && reg->isRequired) {
-            return true;
-        }
-    }
-    
-    return false;
+    return requiredTypes.contains(hardwareType);
 }
 
 QStringList RuntimeHardwareConfig::getMissingRequiredHardware() const
@@ -260,30 +256,6 @@ void RuntimeHardwareConfig::clearConfiguration()
     d_hardwareConfig.clear();
 }
 
-void RuntimeHardwareConfig::setupDefaultConfiguration()
-{
-    QWriteLocker locker(&d_configLock);
-    
-    qDebug() << "Setting up default hardware configuration...";
-    
-    d_hardwareConfig.clear();
-    
-    HardwareRegistry& registry = HardwareRegistry::instance();
-    QStringList allTypes = registry.getRegisteredHardwareTypes();
-    
-    for (const QString& type : allTypes) {
-        // Get the default implementation for this type
-        QString defaultImpl = registry.getDefaultImplementation(type);
-        if (!defaultImpl.isEmpty()) {
-            HardwareConfig config;
-            config.implementation = defaultImpl;
-            config.enabled = true;
-            
-            d_hardwareConfig[type] = config;
-            qDebug() << "Default hardware selection:" << type << "=" << defaultImpl;
-        }
-    }
-}
 
 void RuntimeHardwareConfig::saveToSettings()
 {
@@ -374,22 +346,17 @@ HardwareValidationResult RuntimeHardwareConfig::validateHardwareTypeInternal(con
         return result;
     }
     
-    // Check availability through HardwareRegistry
+    // Check if implementation is registered (simple validation only)
     HardwareRegistry& registry = HardwareRegistry::instance();
-    if (!registry.isHardwareAvailable(hardwareType, config.implementation)) {
+    if (!registry.isRegistered(hardwareType, config.implementation)) {
         result.isValid = false;
-        result.errors << QString("Selected implementation '%1' for hardware type '%2' is not available")
+        result.errors << QString("Selected implementation '%1' for hardware type '%2' is not registered")
                          .arg(config.implementation, hardwareType);
-        
-        // Get registration info for more detailed error
-        const HardwareRegistration* reg = registry.getRegistration(hardwareType, config.implementation);
-        if (!reg) {
-            result.errors << QString("Implementation '%1' is not registered").arg(config.implementation);
-        } else if (!reg->dependencies.isEmpty()) {
-            result.errors << QString("Missing dependencies: %1").arg(reg->dependencies.join(", "));
-        }
         return result;
     }
+    
+    // NOTE: Actual instantiation and runtime validation is handled by HardwareManager
+    // This validation only checks configuration completeness and registration
     
     // Validation passed
     result.isValid = true;
@@ -409,7 +376,7 @@ QStringList RuntimeHardwareConfig::getMissingRequiredHardwareInternal() const
     
     QStringList missing;
     HardwareRegistry& registry = HardwareRegistry::instance();
-    QStringList allTypes = registry.getRegisteredHardwareTypes();
+    QStringList allTypes = registry.getHardwareTypes();
     
     for (const QString& type : allTypes) {
         if (isHardwareRequired(type)) {

@@ -10,12 +10,10 @@ using namespace BC::Key::Digi;
 using namespace Spectrum::M4i;
 
 // Register this hardware implementation
-REGISTER_HARDWARE_WITH_LIBRARY(
+REGISTER_HARDWARE(
     M4i2220x8,
     "Spectrum M4i.2220-x8",
-    "High-speed digitizer for FTMW spectroscopy (2.5 GS/s, 1.25 GHz bandwidth)",
-    SpectrumLibrary,
-    true  // required hardware
+    "High-speed digitizer for FTMW spectroscopy (2.5 GS/s, 1.25 GHz bandwidth)"
 )
 
 /*!

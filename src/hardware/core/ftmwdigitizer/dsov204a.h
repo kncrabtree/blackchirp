@@ -7,7 +7,7 @@ class QTcpSocket;
 
 namespace BC::Key::FtmwScope {
 static const QString dsov204a{"DSOV204A"};
-static const QString dsov204aName("Ftmw Oscilloscope DSOV204A");
+static const QString dsov204aName("Keysight DSOv204A V-Series Oscilloscope");
 }
 
 class DSOv204A : public FtmwScope

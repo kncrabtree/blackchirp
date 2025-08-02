@@ -10,16 +10,6 @@
 #include <memory>
 
 class HardwareObject;
-class VendorLibrary;
-
-/*!
- * \brief Hardware availability status
- */
-enum class HardwareAvailability {
-    Available,        /*!< Hardware is available and can be instantiated */
-    Unavailable,      /*!< Hardware is not available (missing dependencies, libraries, etc.) */
-    Unknown           /*!< Availability has not been checked yet */
-};
 
 /*!
  * \brief Hardware registration information
@@ -29,37 +19,31 @@ struct HardwareRegistration {
     QString subKey;                                            /*!< Implementation key (e.g., "m4i2220x8") */
     QString prettyName;                                        /*!< Display name for UI */
     QString description;                                       /*!< Description of the hardware */
-    QStringList dependencies;                                  /*!< Required vendor libraries or other dependencies */
     std::function<HardwareObject*()> factory;                 /*!< Factory function to create hardware instance */
-    std::function<bool()> availabilityCheck;                  /*!< Function to check if hardware is available */
-    HardwareAvailability availability = HardwareAvailability::Unknown; /*!< Cached availability status */
-    bool isRequired = false;                                   /*!< Whether this hardware is required for operation */
     
     // Constructor
     HardwareRegistration() = default;
     HardwareRegistration(const QString& k, const QString& sk, const QString& name,
-                        const QString& desc, const QStringList& deps,
-                        std::function<HardwareObject*()> fact,
-                        std::function<bool()> availCheck,
-                        bool required = false)
-        : key(k), subKey(sk), prettyName(name), description(desc),
-          dependencies(deps), factory(fact), availabilityCheck(availCheck),
-          isRequired(required) {}
+                        const QString& desc, std::function<HardwareObject*()> fact)
+        : key(k), subKey(sk), prettyName(name), description(desc), factory(fact) {}
 };
 
 /*!
  * \brief Hardware Registry for runtime hardware management
  * 
- * The HardwareRegistry provides a centralized system for registering hardware
- * implementations and checking their runtime availability. This enables dynamic
- * hardware configuration without compile-time dependencies on vendor libraries.
+ * The HardwareRegistry provides a centralized catalog of hardware implementations
+ * and factory functions for creating them. This is a pure registry system that
+ * does NOT handle availability checking, dependencies, or fallback logic.
  * 
  * Key features:
- * - Runtime availability checking for hardware implementations
- * - Dependency validation (vendor libraries, drivers, etc.)
+ * - Simple registration of hardware implementations
  * - Factory pattern for hardware instantiation
  * - Thread-safe access to hardware registry
- * - Categorization of hardware by type (required vs optional)
+ * - Pure catalog - no runtime state or availability tracking
+ * 
+ * Responsibilities:
+ * - DOES: Register implementations and create instances
+ * - DOES NOT: Check availability, validate dependencies, or provide fallbacks
  * 
  * Usage example:
  * ```cpp
@@ -67,16 +51,11 @@ struct HardwareRegistration {
  * HardwareRegistry::instance().registerHardware(
  *     "ftmwDigitizer", "m4i2220x8", "Spectrum M4i.2220-x8",
  *     "High-speed digitizer for FTMW spectroscopy",
- *     {"spectrum"}, // dependency on SpectrumLibrary
- *     []() -> HardwareObject* { return new M4i2220x8(); },
- *     []() -> bool { return SpectrumLibrary::instance().isAvailable(); },
- *     true // required hardware
+ *     []() -> HardwareObject* { return new M4i2220x8(); }
  * );
  * 
- * // Check availability
- * if (HardwareRegistry::instance().isHardwareAvailable("ftmwDigitizer", "m4i2220x8")) {
- *     auto hw = HardwareRegistry::instance().createHardware("ftmwDigitizer", "m4i2220x8");
- * }
+ * // Create hardware (may return nullptr if factory fails)
+ * auto hw = HardwareRegistry::instance().createHardware("ftmwDigitizer", "m4i2220x8");
  * ```
  */
 class HardwareRegistry : public QObject
@@ -96,31 +75,17 @@ public:
      * \param subKey Implementation key (e.g., "m4i2220x8")
      * \param prettyName Display name for UI
      * \param description Description of the hardware
-     * \param dependencies List of required dependencies (vendor libraries, etc.)
      * \param factory Factory function to create hardware instances
-     * \param availabilityCheck Function to check if hardware is available
-     * \param required Whether this hardware is required for operation
      * \return True if registration was successful
      */
     bool registerHardware(const QString& key, const QString& subKey, const QString& prettyName,
-                          const QString& description, const QStringList& dependencies,
-                          std::function<HardwareObject*()> factory,
-                          std::function<bool()> availabilityCheck,
-                          bool required = false);
-    
-    /*!
-     * \brief Check if a specific hardware implementation is available
-     * \param key Hardware type key
-     * \param subKey Implementation key
-     * \return True if hardware is available and can be instantiated
-     */
-    bool isHardwareAvailable(const QString& key, const QString& subKey);
+                          const QString& description, std::function<HardwareObject*()> factory);
     
     /*!
      * \brief Create an instance of the specified hardware
      * \param key Hardware type key
      * \param subKey Implementation key
-     * \return Pointer to created hardware object, or nullptr if unavailable
+     * \return Pointer to created hardware object, or nullptr if factory fails
      */
     HardwareObject* createHardware(const QString& key, const QString& subKey);
     
@@ -129,13 +94,13 @@ public:
      * \param key Hardware type key
      * \return List of implementation keys for the specified hardware type
      */
-    QStringList getAvailableImplementations(const QString& key);
+    QStringList getImplementations(const QString& key);
     
     /*!
      * \brief Get list of all registered hardware types
      * \return List of hardware type keys
      */
-    QStringList getRegisteredHardwareTypes();
+    QStringList getHardwareTypes();
     
     /*!
      * \brief Get registration information for specific hardware
@@ -146,46 +111,14 @@ public:
     const HardwareRegistration* getRegistration(const QString& key, const QString& subKey);
     
     /*!
-     * \brief Refresh availability status for all registered hardware
-     * 
-     * This function re-runs availability checks for all registered hardware
-     * implementations. Useful when vendor libraries may have been installed
-     * or uninstalled since program startup.
-     */
-    void refreshAvailability();
-    
-    /*!
-     * \brief Check if all required hardware is available
-     * \return True if all required hardware implementations are available
-     */
-    bool allRequiredHardwareAvailable();
-    
-    /*!
-     * \brief Get list of unavailable required hardware
-     * \return List of unavailable required hardware descriptions
-     */
-    QStringList getUnavailableRequiredHardware();
-    
-    /*!
-     * \brief Get default implementation for a hardware type
-     * 
-     * Returns the first available implementation for the specified hardware type,
-     * prioritizing required hardware implementations.
-     * 
-     * \param key Hardware type key
-     * \return Implementation key of default implementation, or empty string if none available
-     */
-    QString getDefaultImplementation(const QString& key);
-
-signals:
-    /*!
-     * \brief Emitted when hardware availability status changes
+     * \brief Check if hardware implementation is registered
      * \param key Hardware type key
      * \param subKey Implementation key
-     * \param available New availability status
+     * \return True if hardware is registered in the catalog
      */
-    void hardwareAvailabilityChanged(const QString& key, const QString& subKey, bool available);
-    
+    bool isRegistered(const QString& key, const QString& subKey);
+
+signals:
     /*!
      * \brief Emitted when hardware is successfully registered
      * \param key Hardware type key

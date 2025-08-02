@@ -8,7 +8,7 @@
 
 namespace BC::Key::FtmwScope {
 static const QString mso64b{"mso64b"};
-static const QString mso64bName("Ftmw Oscilloscope MSO64B");
+static const QString mso64bName("Tektronix MSO64B Mixed Signal Oscilloscope");
 }
 
 class QTcpSocket;

@@ -58,7 +58,6 @@ class RuntimeHardwareConfig : public SettingsStorage
     // Friend classes that can modify configuration
     friend class HardwareManager;
     friend class RuntimeHardwareConfigTest;  /*!< Test class needs access to private methods */
-    friend class RuntimeHardwareConfigSimpleTest;  /*!< Simple test class needs access to private methods */
     // TODO: Add HardwareSettingsDialog and other authorized writers as needed
     
 public:
@@ -223,14 +222,6 @@ private:
      */
     void clearConfiguration();
     
-    /*!
-     * \brief Setup default configuration based on available hardware
-     * 
-     * Queries the HardwareRegistry and sets up a default configuration
-     * with the first available implementation for each hardware type.
-     * This is used for initial setup or when starting fresh.
-     */
-    void setupDefaultConfiguration();
     
     /*!
      * \brief Load configuration from SettingsStorage

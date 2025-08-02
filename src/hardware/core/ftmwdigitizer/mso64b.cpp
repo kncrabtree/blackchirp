@@ -3,9 +3,17 @@
 #include <QTcpSocket>
 #include <QThread>
 #include <math.h>
+#include <hardware/core/hardwareregistration.h>
 
 using namespace BC::Key::FtmwScope;
 using namespace BC::Key::Digi;
+
+// Register this hardware implementation
+REGISTER_HARDWARE(
+    MSO64B,
+    mso64bName,
+    "Mixed signal oscilloscope for FTMW spectroscopy (1 GHz, 6.25 GS/s)"
+)
 
 MSO64B::MSO64B(QObject *parent) :
     FtmwScope(mso64b,mso64bName,CommunicationProtocol::Tcp,parent),

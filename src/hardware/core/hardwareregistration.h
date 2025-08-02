@@ -26,14 +26,10 @@ class HardwareAutoRegistration
 public:
     HardwareAutoRegistration(const QString& key, const QString& subKey, 
                            const QString& prettyName, const QString& description,
-                           const QStringList& dependencies,
-                           std::function<HardwareObject*()> factory,
-                           std::function<bool()> availabilityCheck,
-                           bool required = false)
+                           std::function<HardwareObject*()> factory)
     {
         HardwareRegistry::instance().registerHardware(
-            key, subKey, prettyName, description, dependencies,
-            factory, availabilityCheck, required
+            key, subKey, prettyName, description, factory
         );
     }
 };
@@ -48,11 +44,8 @@ public:
  * \param CLASS Hardware class name
  * \param NAME Pretty name for UI
  * \param DESC Description
- * \param DEPS Dependencies (as QStringList)
- * \param AVAIL_CHECK Availability check function
- * \param REQUIRED Whether hardware is required (default: false)
  */
-#define REGISTER_HARDWARE(CLASS, NAME, DESC, DEPS, AVAIL_CHECK, REQUIRED) \
+#define REGISTER_HARDWARE(CLASS, NAME, DESC) \
     static HardwareAutoRegistration register_##CLASS( \
         []() { \
             auto temp = std::unique_ptr<CLASS>(new CLASS()); \
@@ -62,64 +55,8 @@ public:
             auto temp = std::unique_ptr<CLASS>(new CLASS()); \
             return temp->d_subKey; \
         }(), \
-        NAME, DESC, DEPS, \
-        []() -> HardwareObject* { return new CLASS(); }, \
-        AVAIL_CHECK, REQUIRED \
-    );
-
-/*!
- * \brief Register hardware with vendor library dependency
- * 
- * Convenience macro for hardware that depends on a vendor library.
- * Keys are extracted from the hardware object itself.
- * 
- * \param CLASS Hardware class name
- * \param NAME Pretty name for UI
- * \param DESC Description
- * \param LIBRARY_CLASS Vendor library class name
- * \param REQUIRED Whether hardware is required (default: false)
- */
-#define REGISTER_HARDWARE_WITH_LIBRARY(CLASS, NAME, DESC, LIBRARY_CLASS, REQUIRED) \
-    static HardwareAutoRegistration register_##CLASS( \
-        []() { \
-            auto temp = std::unique_ptr<CLASS>(new CLASS()); \
-            return temp->d_key; \
-        }(), \
-        []() { \
-            auto temp = std::unique_ptr<CLASS>(new CLASS()); \
-            return temp->d_subKey; \
-        }(), \
-        NAME, DESC, {#LIBRARY_CLASS}, \
-        []() -> HardwareObject* { return new CLASS(); }, \
-        []() -> bool { return LIBRARY_CLASS::instance().isAvailable(); }, \
-        REQUIRED \
-    );
-
-/*!
- * \brief Register simple hardware without dependencies
- * 
- * Convenience macro for hardware that has no external dependencies.
- * Keys are extracted from the hardware object itself.
- * 
- * \param CLASS Hardware class name
- * \param NAME Pretty name for UI
- * \param DESC Description
- * \param REQUIRED Whether hardware is required (default: false)
- */
-#define REGISTER_SIMPLE_HARDWARE(CLASS, NAME, DESC, REQUIRED) \
-    static HardwareAutoRegistration register_##CLASS( \
-        []() { \
-            auto temp = std::unique_ptr<CLASS>(new CLASS()); \
-            return temp->d_key; \
-        }(), \
-        []() { \
-            auto temp = std::unique_ptr<CLASS>(new CLASS()); \
-            return temp->d_subKey; \
-        }(), \
-        NAME, DESC, {}, \
-        []() -> HardwareObject* { return new CLASS(); }, \
-        []() -> bool { return true; }, \
-        REQUIRED \
+        NAME, DESC, \
+        []() -> HardwareObject* { return new CLASS(); } \
     );
 
 
