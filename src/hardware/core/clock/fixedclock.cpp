@@ -1,4 +1,8 @@
 #include "fixedclock.h"
+#include <hardware/core/hardwareregistration.h>
+
+// Register hardware implementation
+REGISTER_HARDWARE(FixedClock, BC::Key::Clock::fixedName, "Fixed Frequency Clock")
 
 FixedClock::FixedClock(QObject *parent) :
     Clock(6,true,BC::Key::Clock::fixed,BC::Key::Clock::fixedName,CommunicationProtocol::None,parent)
@@ -18,6 +22,8 @@ FixedClock::FixedClock(QObject *parent) :
     setDefault(minFreq,0.0);
     setDefault(maxFreq,1e7);
     setDefault(lock,true);
+
+    save();
 }
 
 FixedClock::~FixedClock()

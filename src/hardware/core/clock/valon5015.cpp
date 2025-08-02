@@ -1,4 +1,8 @@
 #include "valon5015.h"
+#include <hardware/core/hardwareregistration.h>
+
+// Register hardware implementation
+REGISTER_HARDWARE(Valon5015, BC::Key::valon5015Name, "Valon 5015 Signal Generator")
 
 Valon5015::Valon5015(QObject *parent) :
     Clock(1,true,BC::Key::valon5015,BC::Key::valon5015Name,CommunicationProtocol::Rs232,parent)
@@ -6,6 +10,12 @@ Valon5015::Valon5015(QObject *parent) :
     setDefault(BC::Key::Clock::minFreq,500.0);
     setDefault(BC::Key::Clock::maxFreq,15000.0);
     setDefault(BC::Key::Clock::lock,false);
+
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 500);
+    setDefault(BC::Key::Comm::termChar, QString("\n\r"));
+
+    save();
 }
 
 bool Valon5015::testClockConnection()
@@ -31,7 +41,6 @@ bool Valon5015::testClockConnection()
 
 void Valon5015::initializeClock()
 {
-    p_comm->setReadOptions(500,true,QByteArray("\n\r"));
 }
 
 bool Valon5015::prepareClock(Experiment &exp)

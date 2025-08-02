@@ -1,4 +1,8 @@
 #include "virtualliflaser.h"
+#include <hardware/core/hardwareregistration.h>
+
+// Register hardware implementation
+REGISTER_HARDWARE(VirtualLifLaser, BC::Key::vLifLaser, "Virtual LIF Laser for Testing")
 
 VirtualLifLaser::VirtualLifLaser(QObject *parent) :
     LifLaser (BC::Key::Comm::hwVirtual,BC::Key::vLifLaser,CommunicationProtocol::Virtual,parent), d_pos(0.0), d_fl(false)
@@ -9,6 +13,8 @@ VirtualLifLaser::VirtualLifLaser(QObject *parent) :
     setDefault(units,QString("nm"));
     setDefault(decimals,2);
     setDefault(hasFl,true);
+
+    save();
 }
 
 void VirtualLifLaser::initialize()

@@ -1,11 +1,15 @@
 #include "virtualpressurecontroller.h"
+#include <hardware/core/hardwareregistration.h>
 
 #include <QTimer>
 
 using namespace BC::Key::PController;
 
+// Register hardware implementation
+REGISTER_HARDWARE(VirtualPressureController, BC::Key::PController::vpcName, "Virtual PressureController for Testing")
+
 VirtualPressureController::VirtualPressureController(QObject *parent) :
-    PressureController(BC::Key::Comm::hwVirtual,BC::Key::vpcName,CommunicationProtocol::Virtual,false,parent)
+    PressureController(BC::Key::Comm::hwVirtual,BC::Key::PController::vpcName,CommunicationProtocol::Virtual,false,parent)
 {
     setDefault(min,-1.0);
     setDefault(max,20.0);
@@ -13,6 +17,8 @@ VirtualPressureController::VirtualPressureController(QObject *parent) :
     setDefault(units,QString("Torr"));
     setDefault(readInterval,200);
     setDefault(hasValve,true);
+
+    save();
 }
 
 VirtualPressureController::~VirtualPressureController()

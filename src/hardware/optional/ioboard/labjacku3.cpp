@@ -1,4 +1,8 @@
 #include "labjacku3.h"
+#include <hardware/core/hardwareregistration.h>
+
+// Register hardware implementation
+REGISTER_HARDWARE(LabjackU3, BC::Key::IOB::labjacku3Name, "Labjack U3 IOBoard")
 
 LabjackU3::LabjackU3(QObject *parent) :
     IOBoard(BC::Key::IOB::labjacku3,BC::Key::IOB::labjacku3Name,CommunicationProtocol::Custom,parent),

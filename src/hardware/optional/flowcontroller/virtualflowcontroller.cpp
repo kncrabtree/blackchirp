@@ -1,6 +1,10 @@
 #include "virtualflowcontroller.h"
+#include <hardware/core/hardwareregistration.h>
 
 using namespace BC::Key::Flow;
+
+// Register hardware implementation
+REGISTER_HARDWARE(VirtualFlowController, BC::Key::Flow::virtFCName, "Virtual FlowController for Testing")
 
 VirtualFlowController::VirtualFlowController(QObject *parent) :
     FlowController(BC::Key::Comm::hwVirtual,virtFCName,CommunicationProtocol::Virtual,parent)
@@ -20,6 +24,8 @@ VirtualFlowController::VirtualFlowController(QObject *parent) :
     setDefault(pUnits,QString("kTorr"));
     setDefault(pMax,10.0);
     setDefault(pDec,3);
+
+    save();
 }
 
 VirtualFlowController::~VirtualFlowController()

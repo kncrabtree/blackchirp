@@ -17,6 +17,12 @@ SRSDG645::SRSDG645(QObject *parent)
     setDefault(dutyMax,100000);
     setDefault(canSyncToChannel,true);
     setDefault(canDisableChannels,false);
+
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 500);
+    setDefault(BC::Key::Comm::termChar, QString("\r\n"));
+
+    save();
 }
 
 
@@ -54,7 +60,6 @@ bool SRSDG645::testConnection()
 
 void SRSDG645::initializePGen()
 {
-    p_comm->setReadOptions(500,true,"\r\n");
 }
 
 bool SRSDG645::setChWidth(const int index, const double width)

@@ -52,6 +52,10 @@ Dsa71604c::Dsa71604c(QObject *parent) :
                        {{srText,"100 GSa/s"},{srValue,100e9}}
                      });
 
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 3000);
+    setDefault(BC::Key::Comm::termChar, QString("\n"));
+
     save();
 }
 
@@ -89,7 +93,6 @@ void Dsa71604c::initialize()
 {
     p_scopeTimeout = new QTimer(this);
 
-    p_comm->setReadOptions(3000,true,QByteArray("\n"));
     p_socket = p_comm->device<QTcpSocket>();
     connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::errorOccurred),this,&Dsa71604c::socketError);
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);

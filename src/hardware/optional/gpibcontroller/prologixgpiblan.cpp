@@ -1,8 +1,16 @@
 #include "prologixgpiblan.h"
+#include <hardware/core/hardwareregistration.h>
+
+// Register hardware implementation
+REGISTER_HARDWARE(PrologixGpibLan, BC::Key::prologixName, "Prologix GPIB-LAN Controller")
 
 PrologixGpibLan::PrologixGpibLan(QObject *parent) :
     GpibController(BC::Key::prologix,BC::Key::prologixName,CommunicationProtocol::Tcp,parent)
 {
+    setDefault(BC::Key::Comm::timeout, 1000);
+    setDefault(BC::Key::Comm::termChar, QString("\n"));
+
+    save();
 }
 
 
@@ -35,7 +43,6 @@ bool PrologixGpibLan::testConnection()
 
 void PrologixGpibLan::initialize()
 {
-    p_comm->setReadOptions(1000,true,QByteArray("\n"));
 }
 
 bool PrologixGpibLan::readAddress()

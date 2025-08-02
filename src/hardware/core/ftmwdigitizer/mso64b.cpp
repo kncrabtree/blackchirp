@@ -50,6 +50,10 @@ MSO64B::MSO64B(QObject *parent) :
                                   {{srText,"50 GSa/s"},{srValue,50e9}},
                               });
 
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 3000);
+    setDefault(BC::Key::Comm::termChar, QString("\n"));
+
     save();
 }
 
@@ -87,7 +91,6 @@ void MSO64B::initialize()
 {
     p_scopeTimeout = new QTimer(this);
 
-    p_comm->setReadOptions(3000,true,QByteArray("\n"));
     p_socket = p_comm->device<QTcpSocket>();
     connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::errorOccurred),this,&MSO64B::socketError);
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);

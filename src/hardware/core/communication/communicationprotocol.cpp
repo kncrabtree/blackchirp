@@ -229,9 +229,12 @@ void CommunicationProtocol::loadCommReadOptions()
     }
     
     // Load read options using native SettingsStorage group support
-    // Default: 1000ms timeout, no termination character
-    int timeout = s.getGroupValue<int>(protocolKey, BC::Key::Comm::timeout, 1000);
-    QString termChar = s.getGroupValue<QString>(protocolKey, BC::Key::Comm::termChar, QString(""));
+    // Use hardware-specific defaults if user hasn't configured protocol settings
+    int defaultTimeout = s.get<int>(BC::Key::Comm::timeout, 1000);
+    QString defaultTermChar = s.get<QString>(BC::Key::Comm::termChar, QString(""));
+    
+    int timeout = s.getGroupValue<int>(protocolKey, BC::Key::Comm::timeout, defaultTimeout);
+    QString termChar = s.getGroupValue<QString>(protocolKey, BC::Key::Comm::termChar, defaultTermChar);
     
     setReadOptions(timeout, termChar);
 }

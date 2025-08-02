@@ -1,6 +1,10 @@
 #include "awg7122b.h"
+#include <hardware/core/hardwareregistration.h>
 
 #include <math.h>
+
+// Register hardware implementation
+REGISTER_HARDWARE(AWG7122B, BC::Key::AWG::awg7122bName, "Tektronix AWG7122B AWG")
 
 AWG7122B::AWG7122B(QObject *parent) :
     AWG(BC::Key::AWG::awg7122b,BC::Key::AWG::awg7122bName,CommunicationProtocol::Tcp,parent)
@@ -13,6 +17,12 @@ AWG7122B::AWG7122B(QObject *parent) :
     setDefault(BC::Key::AWG::amp,true);
     setDefault(BC::Key::AWG::rampOnly,false);
     setDefault(BC::Key::AWG::triggered,false);
+
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 10000);
+    setDefault(BC::Key::Comm::termChar, QString("\n"));
+
+    save();
 }
 
 
@@ -59,7 +69,6 @@ bool AWG7122B::testConnection()
 
 void AWG7122B::initialize()
 {
-    p_comm->setReadOptions(10000,true,QByteArray("\n"));
 }
 
 bool AWG7122B::prepareForExperiment(Experiment &exp)

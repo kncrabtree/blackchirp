@@ -1,8 +1,12 @@
 #include "m8195a.h"
+#include <hardware/core/hardwareregistration.h>
 
 #include <math.h>
 
-M8195A::M8195A(QObject *parent) : AWG(BC::Key::m8195a,BC::Key::m8195aName,CommunicationProtocol::Tcp,parent)
+// Register hardware implementation
+REGISTER_HARDWARE(M8195A, BC::Key::AWG::m8195aName, "Keysight M8195A high-speed AWG")
+
+M8195A::M8195A(QObject *parent) : AWG(BC::Key::AWG::m8195a,BC::Key::AWG::m8195aName,CommunicationProtocol::Tcp,parent)
 {
     setDefault(BC::Key::AWG::rate,65e9);
     setDefault(BC::Key::AWG::samples,2e9);
@@ -12,6 +16,12 @@ M8195A::M8195A(QObject *parent) : AWG(BC::Key::m8195a,BC::Key::m8195aName,Commun
     setDefault(BC::Key::AWG::amp,true);
     setDefault(BC::Key::AWG::rampOnly,false);
     setDefault(BC::Key::AWG::triggered,true);
+
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 10000);
+    setDefault(BC::Key::Comm::termChar, QString("\n"));
+
+    save();
 }
 
 
@@ -42,7 +52,6 @@ bool M8195A::testConnection()
 
 void M8195A::initialize()
 {
-    p_comm->setReadOptions(10000,true,QByteArray("\n"));
 }
 
 bool M8195A::prepareForExperiment(Experiment &exp)

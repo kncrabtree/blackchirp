@@ -1,4 +1,8 @@
 #include "virtualgpibcontroller.h"
+#include <hardware/core/hardwareregistration.h>
+
+// Register hardware implementation
+REGISTER_HARDWARE(VirtualGpibController, BC::Key::vgpibName, "Virtual GPIB Controller for Testing")
 
 VirtualGpibController::VirtualGpibController(QObject *parent) :
     GpibController(BC::Key::Comm::hwVirtual,BC::Key::vgpibName,CommunicationProtocol::Virtual,parent)

@@ -1,8 +1,12 @@
 #include "m4i2211x8.h"
+#include <hardware/core/hardwareregistration.h>
 
 #include <QTimer>
 
 using namespace Spectrum::M4i;
+
+// Register hardware implementation
+REGISTER_HARDWARE(M4i2211x8, BC::Key::LifDigi::m4i2211x8Name, "Spectrum M4i.2211-x8 LIF Digitizer")
 
 /*!
  * \brief Helper function to get SpectrumLibrary instance with availability check

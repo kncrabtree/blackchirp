@@ -1,4 +1,8 @@
 #include "hp83712b.h"
+#include <hardware/core/hardwareregistration.h>
+
+// Register hardware implementation
+REGISTER_HARDWARE(HP83712B, BC::Key::hp83712bName, "HP 83712B Signal Generator")
 
 HP83712B::HP83712B(QObject *parent)
     : Clock{1,true,BC::Key::hp83712b,BC::Key::hp83712bName,CommunicationProtocol::Gpib,parent}
@@ -6,12 +10,17 @@ HP83712B::HP83712B(QObject *parent)
     setDefault(BC::Key::Clock::minFreq,1.0);
     setDefault(BC::Key::Clock::maxFreq,20000.0);
     setDefault(BC::Key::Clock::lock,false);
+
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 500);
+    setDefault(BC::Key::Comm::termChar, QString("\n"));
+
+    save();
 }
 
 
 void HP83712B::initializeClock()
 {
-    p_comm->setReadOptions(500,true,QByteArray("\n"));
 }
 
 bool HP83712B::testClockConnection()

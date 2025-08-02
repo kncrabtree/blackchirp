@@ -1,9 +1,13 @@
 #include "ad9914.h"
+#include <hardware/core/hardwareregistration.h>
 
 #include <QSerialPort>
 //#include <QTimer>
 
 #include <math.h>
+
+// Register hardware implementation
+REGISTER_HARDWARE(AD9914, BC::Key::AWG::ad9914Name, "Analog Devices AD9914 Direct Digital Synthesizer")
 
 AD9914::AD9914(QObject *parent) : AWG(BC::Key::AWG::ad9914,BC::Key::AWG::ad9914Name,CommunicationProtocol::Rs232,parent)
 {
@@ -61,7 +65,6 @@ bool AD9914::testConnection()
 
 void AD9914::initialize()
 {
-    p_comm->setReadOptions(1000,true,QByteArray("\n"));
 }
 
 bool AD9914::prepareForExperiment(Experiment &exp)

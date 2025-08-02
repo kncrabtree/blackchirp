@@ -1,4 +1,8 @@
 #include "valon5009.h"
+#include <hardware/core/hardwareregistration.h>
+
+// Register hardware implementation
+REGISTER_HARDWARE(Valon5009, BC::Key::valon5009Name, "Valon 5009 Signal Generator")
 
 Valon5009::Valon5009(QObject *parent) :
     Clock(2,true,BC::Key::valon5009,BC::Key::valon5009Name,CommunicationProtocol::Rs232,parent)
@@ -6,6 +10,12 @@ Valon5009::Valon5009(QObject *parent) :
     setDefault(BC::Key::Clock::minFreq,500.0);
     setDefault(BC::Key::Clock::maxFreq,6000.0);
     setDefault(BC::Key::Clock::lock,true);
+
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 500);
+    setDefault(BC::Key::Comm::termChar, QString("\n\r"));
+
+    save();
 }
 
 
@@ -32,7 +42,6 @@ bool Valon5009::testClockConnection()
 
 void Valon5009::initializeClock()
 {
-    p_comm->setReadOptions(500,true,QByteArray("\n\r"));
 }
 
 

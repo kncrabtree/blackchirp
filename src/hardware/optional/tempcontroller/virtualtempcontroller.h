@@ -2,7 +2,7 @@
 #define VIRTUALTEMPCONTROLLER_H
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
-namespace BC::Key {
+namespace BC::Key::TC {
 static const QString vtcName("Virtual Temperature Controller");
 }
 

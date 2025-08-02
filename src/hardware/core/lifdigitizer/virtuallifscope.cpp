@@ -1,8 +1,12 @@
 #include "virtuallifscope.h"
+#include <hardware/core/hardwareregistration.h>
 
 #include <QTimer>
 #include <math.h>
 #include <QRandomGenerator>
+
+// Register hardware implementation
+REGISTER_HARDWARE(VirtualLifScope, BC::Key::LifDigi::vLifScopeName, "Virtual LIF Scope for Testing")
 
 
 VirtualLifScope::VirtualLifScope(QObject *parent) :

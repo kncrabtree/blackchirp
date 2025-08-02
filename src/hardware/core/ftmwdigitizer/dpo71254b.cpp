@@ -51,6 +51,10 @@ Dpo71254b::Dpo71254b(QObject *parent) :
                 {{srText,"50 GSa/s"},{srValue,50e9}},
                             });
 
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 1000);
+    setDefault(BC::Key::Comm::termChar, QString("\n"));
+
     save();
 }
 
@@ -88,7 +92,6 @@ void Dpo71254b::initialize()
 {
     p_scopeTimeout = new QTimer(this);
 
-    p_comm->setReadOptions(1000,true,QByteArray("\n"));
     p_socket = p_comm->device<QTcpSocket>();
     connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::errorOccurred),this,&Dpo71254b::socketError);
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);

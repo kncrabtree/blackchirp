@@ -3,7 +3,7 @@
 
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
 
-namespace BC::Key {
+namespace BC::Key::PGen {
 static const QString vpGen("Virtual Pulse Generator");
 }
 

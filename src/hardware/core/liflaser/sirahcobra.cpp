@@ -1,4 +1,5 @@
 #include "sirahcobra.h"
+#include <hardware/core/hardwareregistration.h>
 
 #include <QtEndian>
 #include <math.h>
@@ -9,6 +10,9 @@
 #endif
 
 using namespace BC::Key::LifLaser;
+
+// Register hardware implementation
+REGISTER_HARDWARE(SirahCobra, BC::Key::LifLaser::sCobraName, "Sirah Cobra LIF Laser")
 
 SirahCobra::SirahCobra(QObject *parent)
     : LifLaser{sCobra,sCobraName,CommunicationProtocol::Rs232,parent,true,true}
@@ -69,6 +73,10 @@ SirahCobra::SirahCobra(QObject *parent)
                  });
     }
 
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 200);
+    setDefault(BC::Key::Comm::termChar, QString(""));
+
     save();
 
 
@@ -77,7 +85,6 @@ SirahCobra::SirahCobra(QObject *parent)
 
 void SirahCobra::initialize()
 {
-    p_comm->setReadOptions(200,false,"");
 
     if(get(hasExtStage,false))
     {
@@ -100,7 +107,8 @@ bool SirahCobra::testConnection()
 
     if(p_extStagePort)
     {
-        p_extStagePort->setReadOptions(200,true,"\r\n");
+        // TODO: Need different solution for external stage communication settings
+        // p_extStagePort->setReadOptions(200,QString("\r\n"));
         if(!p_extStagePort->testManual(get(extStagePort,QString("COM9"))
                                         ,get(extStageBaud,9600)))
         {

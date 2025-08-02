@@ -1,6 +1,10 @@
 #include "virtualioboard.h"
+#include <hardware/core/hardwareregistration.h>
 
 #include <QRandomGenerator>
+
+// Register hardware implementation
+REGISTER_HARDWARE(VirtualIOBoard, BC::Key::IOB::viobName, "Virtual IOBoard for Testing")
 
 VirtualIOBoard::VirtualIOBoard(QObject *parent) :
     IOBoard(BC::Key::Comm::hwVirtual,BC::Key::IOB::viobName,CommunicationProtocol::Virtual,parent)

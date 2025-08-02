@@ -1,8 +1,12 @@
 #include "mks647c.h"
+#include <hardware/core/hardwareregistration.h>
 
 #include <math.h>
 
 using namespace BC::Key::Flow;
+
+// Register hardware implementation
+REGISTER_HARDWARE(Mks647c, BC::Key::Flow::mks647cName, "MKS 647C FlowController")
 
 Mks647c::Mks647c(QObject *parent) :
     FlowController(mks647c,mks647cName,CommunicationProtocol::Rs232,parent),
@@ -48,6 +52,12 @@ Mks647c::Mks647c(QObject *parent) :
     setDefault(pUnits,QString("kTorr"));
     setDefault(pMax,10.0);
     setDefault(pDec,3);
+
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 1000);
+    setDefault(BC::Key::Comm::termChar, QString("\r\n"));
+
+    save();
 }
 
 bool Mks647c::fcTestConnection()
@@ -97,7 +107,6 @@ bool Mks647c::fcTestConnection()
 
 void Mks647c::fcInitialize()
 {
-    p_comm->setReadOptions(1000,true,QByteArray("\r\n"));
 }
 
 void Mks647c::hwSetFlowSetpoint(const int ch, const double val)

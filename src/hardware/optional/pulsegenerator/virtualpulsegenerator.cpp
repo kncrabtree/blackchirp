@@ -1,7 +1,11 @@
 #include "virtualpulsegenerator.h"
+#include <hardware/core/hardwareregistration.h>
+
+// Register hardware implementation
+REGISTER_HARDWARE(VirtualPulseGenerator, BC::Key::PGen::vpGen, "Virtual PulseGenerator for Testing")
 
 VirtualPulseGenerator::VirtualPulseGenerator(QObject *parent) :
-    PulseGenerator(BC::Key::Comm::hwVirtual,BC::Key::vpGen,CommunicationProtocol::Virtual,8,parent)
+    PulseGenerator(BC::Key::Comm::hwVirtual,BC::Key::PGen::vpGen,CommunicationProtocol::Virtual,8,parent)
 {
     using namespace BC::Key::PGen;
     setDefault(minWidth,0.010);
@@ -15,6 +19,8 @@ VirtualPulseGenerator::VirtualPulseGenerator(QObject *parent) :
     setDefault(canTrigger,true);
     setDefault(dutyMax,100000);
     setDefault(canSyncToChannel,true);
+
+    save();
 }
 
 VirtualPulseGenerator::~VirtualPulseGenerator()

@@ -1,4 +1,8 @@
 #include "qcpulsegenerator.h"
+#include <hardware/core/hardwareregistration.h>
+
+// Register hardware implementation
+REGISTER_HARDWARE(Qc9214, BC::Key::PGen::qc9214Name, "QuantumComposers 9214 Pulse Generator")
 
 Qc9214::Qc9214(QObject *parent) :
     QCPulseGenerator(BC::Key::PGen::qc9214,BC::Key::PGen::qc9214Name,CommunicationProtocol::Rs232,4,parent)
@@ -16,6 +20,8 @@ Qc9214::Qc9214(QObject *parent) :
     setDefault(dutyMax,100000);
     setDefault(canSyncToChannel,true);
     setDefault(canDisableChannels,true);
+
+    save();
 }
 
 Qc9214::~Qc9214()

@@ -1,8 +1,12 @@
 #include "awg5204.h"
+#include <hardware/core/hardwareregistration.h>
 
 #include <QtEndian>
 #include <math.h>
 #include <QTimer>
+
+// Register hardware implementation
+REGISTER_HARDWARE(AWG5204, BC::Key::AWG::awg5204Name, "Tektronix AWG5204 AWG")
 
 AWG5204::AWG5204(QObject *parent) :
     AWG(BC::Key::AWG::awg5204,BC::Key::AWG::awg5204Name,CommunicationProtocol::Tcp,parent)
@@ -15,6 +19,12 @@ AWG5204::AWG5204(QObject *parent) :
     setDefault(BC::Key::AWG::amp,true);
     setDefault(BC::Key::AWG::rampOnly,false);
     setDefault(BC::Key::AWG::triggered,true);
+
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 10000);
+    setDefault(BC::Key::Comm::termChar, QString("\n"));
+
+    save();
 }
 
 
@@ -46,7 +56,6 @@ bool AWG5204::testConnection()
 
 void AWG5204::initialize()
 {
-    p_comm->setReadOptions(10000,true,QByteArray("\n"));
 }
 
 bool AWG5204::prepareForExperiment(Experiment &exp)

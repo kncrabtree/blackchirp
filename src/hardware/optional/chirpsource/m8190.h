@@ -3,11 +3,9 @@
 
 #include <hardware/optional/chirpsource/awg.h>
 
-namespace BC {
-namespace Key {
+namespace BC::Key::AWG {
 static const QString m8190{"m8190"};
 static const QString m8190Name("Arbitrary Waveform Generator M8190");
-}
 }
 
 /*!

@@ -1,6 +1,10 @@
 #include "intellisysiqplus.h"
+#include <hardware/core/hardwareregistration.h>
 
 using namespace BC::Key::PController;
+
+// Register hardware implementation
+REGISTER_HARDWARE(IntellisysIQPlus, BC::Key::PController::iqplusName, "Intellisys IQ+ Pressure Controller")
 
 IntellisysIQPlus::IntellisysIQPlus(QObject *parent) :
     PressureController(iqplus,iqplusName,CommunicationProtocol::Rs232,false,parent)
@@ -11,6 +15,12 @@ IntellisysIQPlus::IntellisysIQPlus(QObject *parent) :
     setDefault(units,QString("Torr"));
     setDefault(readInterval,200);
     setDefault(hasValve,true);
+
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 1000);
+    setDefault(BC::Key::Comm::termChar, QString("\r\n"));
+
+    save();
 }
 
 
@@ -58,7 +68,6 @@ bool IntellisysIQPlus::pcTestConnection()
 
 void IntellisysIQPlus::pcInitialize()
 {
-    p_comm->setReadOptions(1000,true,QByteArray("\r\n"));
 }
 
 double IntellisysIQPlus::hwReadPressure()

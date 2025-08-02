@@ -51,6 +51,10 @@ DSOv204A::DSOv204A(QObject *parent)
                      {{srText,"80 GSa/s"},{srValue,80e9}}
                  });
 
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 1000);
+    setDefault(BC::Key::Comm::termChar, QString("\n"));
+
     save();
 }
 
@@ -380,7 +384,6 @@ void DSOv204A::endAcquisition()
 
 void DSOv204A::initialize()
 {
-    p_comm->setReadOptions(1000,true,QByteArray("\n"));
     p_socket = p_comm->device<QTcpSocket>();
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);
     p_queryTimer = new QTimer(this);

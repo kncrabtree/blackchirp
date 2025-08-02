@@ -1,6 +1,10 @@
 #include "mks946.h"
+#include <hardware/core/hardwareregistration.h>
 
 using namespace BC::Key::Flow;
+
+// Register hardware implementation
+REGISTER_HARDWARE(Mks946, BC::Key::Flow::mks947Name, "MKS 946 FlowController")
 Mks946::Mks946(QObject *parent) :
     FlowController(mks947,mks947Name,CommunicationProtocol::Rs232,parent),
     d_nextRead(0)
@@ -24,6 +28,11 @@ Mks946::Mks946(QObject *parent) :
     setDefault(pMax,10.0);
     setDefault(pDec,3);
 
+    // Communication defaults  
+    setDefault(BC::Key::Comm::timeout, 100);
+    setDefault(BC::Key::Comm::termChar, QString(";FF"));
+
+    save();
 }
 
 
@@ -319,7 +328,6 @@ void Mks946::poll()
 
 void Mks946::fcInitialize()
 {
-    p_comm->setReadOptions(100,true,QByteArray(";FF"));
 }
 
 bool Mks946::mksWrite(QString cmd)

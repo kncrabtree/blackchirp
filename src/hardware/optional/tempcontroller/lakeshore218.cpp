@@ -1,11 +1,20 @@
 #include "lakeshore218.h"
+#include <hardware/core/hardwareregistration.h>
 
 using namespace BC::Key::TC;
+
+// Register hardware implementation
+REGISTER_HARDWARE(Lakeshore218, BC::Key::TC::lakeshore218Name, "Lakeshore 218 Temperature Controller")
 
 Lakeshore218::Lakeshore218(QObject *parent) :
     TemperatureController(lakeshore218,lakeshore218Name,
                           CommunicationProtocol::Rs232,8,parent)
 {
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 500);
+    setDefault(BC::Key::Comm::termChar, QString("\r\n"));
+
+    save();
 }
 
 bool Lakeshore218::tcTestConnection()
@@ -31,7 +40,6 @@ bool Lakeshore218::tcTestConnection()
 
 void Lakeshore218::tcInitialize()
 {
-    p_comm->setReadOptions(500, true,QByteArray("\r\n"));
 }
 
 double Lakeshore218::readHwTemperature(const uint ch)

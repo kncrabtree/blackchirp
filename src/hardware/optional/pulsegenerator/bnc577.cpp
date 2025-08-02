@@ -18,11 +18,16 @@ Bnc577_4::Bnc577_4(QObject *parent)
     setDefault(dutyMax,100000);
     setDefault(canSyncToChannel,true);
     setDefault(canDisableChannels,true);
+
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 200);
+    setDefault(BC::Key::Comm::termChar, QString("\r\n"));
+
+    save();
 }
 
 void Bnc577_4::initializePGen()
 {
-    p_comm->setReadOptions(200,true,"\r\n");
 }
 
 bool Bnc577_4::pGenWriteCmd(QString cmd)
@@ -59,11 +64,16 @@ Bnc577_8::Bnc577_8(QObject *parent)
     setDefault(dutyMax,100000);
     setDefault(canSyncToChannel,true);
     setDefault(canDisableChannels,true);
+
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 200);
+    setDefault(BC::Key::Comm::termChar, QString("\r\n"));
+
+    save();
 }
 
 void Bnc577_8::initializePGen()
 {
-    p_comm->setReadOptions(200,true,"\r\n");
 }
 
 bool Bnc577_8::pGenWriteCmd(QString cmd)

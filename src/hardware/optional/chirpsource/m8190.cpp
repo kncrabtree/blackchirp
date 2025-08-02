@@ -1,8 +1,12 @@
 #include "m8190.h"
+#include <hardware/core/hardwareregistration.h>
 
 #include <math.h>
 
-M8190::M8190(QObject *parent) : AWG(BC::Key::m8190,BC::Key::m8190Name,CommunicationProtocol::Tcp,parent)
+// Register hardware implementation
+REGISTER_HARDWARE(M8190, BC::Key::AWG::m8190Name, "Keysight M8190 AWG")
+
+M8190::M8190(QObject *parent) : AWG(BC::Key::AWG::m8190,BC::Key::AWG::m8190Name,CommunicationProtocol::Tcp,parent)
 {
     setDefault(BC::Key::AWG::rate,9.375e9); //12 GS/s max
     setDefault(BC::Key::AWG::samples,2e9);
@@ -12,6 +16,12 @@ M8190::M8190(QObject *parent) : AWG(BC::Key::m8190,BC::Key::m8190Name,Communicat
     setDefault(BC::Key::AWG::amp,true);
     setDefault(BC::Key::AWG::rampOnly,false);
     setDefault(BC::Key::AWG::triggered,true);
+
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 10000);
+    setDefault(BC::Key::Comm::termChar, QString("\n"));
+
+    save();
 }
 
 
@@ -41,7 +51,6 @@ bool M8190::testConnection()
 
 void M8190::initialize()
 {
-    p_comm->setReadOptions(10000,true,QByteArray("\n"));
 }
 
 bool M8190::prepareForExperiment(Experiment &exp)

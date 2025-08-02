@@ -1,6 +1,10 @@
 #include "rigolds2302a.h"
+#include <hardware/core/hardwareregistration.h>
 
 #include <QThread>
+
+// Register hardware implementation
+REGISTER_HARDWARE(RigolDS2302A, BC::Key::LifDigi::rds2302aName, "Rigol DS2302A LIF Scope")
 
 RigolDS2302A::RigolDS2302A(QObject *parent)
     : LifScope{BC::Key::LifDigi::rds2302a,BC::Key::LifDigi::rds2302aName,
@@ -40,13 +44,16 @@ RigolDS2302A::RigolDS2302A(QObject *parent)
                      {{srText,"1000 MSa/s"},{srValue,1e9}}
                  });
 
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 1000);
+    setDefault(BC::Key::Comm::termChar, QString("\n"));
+
     save();
 }
 
 
 void RigolDS2302A::initialize()
 {
-    p_comm->setReadOptions(1000,true,"\n");
 }
 
 bool RigolDS2302A::testConnection()

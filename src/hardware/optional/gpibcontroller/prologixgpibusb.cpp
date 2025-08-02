@@ -1,14 +1,22 @@
 #include "prologixgpibusb.h"
+#include <hardware/core/hardwareregistration.h>
+
+// Register hardware implementation
+REGISTER_HARDWARE(PrologixGpibUsb, BC::Key::prologixUsbName, "Prologix GPIB-USB Controller")
 
 PrologixGpibUsb::PrologixGpibUsb(QObject *parent)
     : GpibController{BC::Key::prologixUsb,BC::Key::prologixUsbName,CommunicationProtocol::Rs232,parent}
 {
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 1000);
+    setDefault(BC::Key::Comm::termChar, QString("\n"));
+
+    save();
 }
 
 
 void PrologixGpibUsb::initialize()
 {
-    p_comm->setReadOptions(1000,true,QByteArray("\n"));
 }
 
 bool PrologixGpibUsb::testConnection()

@@ -1,7 +1,11 @@
 #include "awg70002a.h"
+#include <hardware/core/hardwareregistration.h>
 
 #include <QtEndian>
 #include <math.h>
+
+// Register hardware implementation
+REGISTER_HARDWARE(AWG70002a, BC::Key::AWG::awg70002aName, "Tektronix AWG70002A high-performance AWG")
 
 AWG70002a::AWG70002a(QObject *parent) :
     AWG(BC::Key::AWG::awg70002a,BC::Key::AWG::awg70002aName,CommunicationProtocol::Tcp,parent)
@@ -14,6 +18,12 @@ AWG70002a::AWG70002a(QObject *parent) :
     setDefault(BC::Key::AWG::amp,true);
     setDefault(BC::Key::AWG::rampOnly,false);
     setDefault(BC::Key::AWG::triggered,true);
+
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 10000);
+    setDefault(BC::Key::Comm::termChar, QString("\n"));
+
+    save();
 }
 
 
@@ -45,7 +55,6 @@ bool AWG70002a::testConnection()
 
 void AWG70002a::initialize()
 {
-    p_comm->setReadOptions(10000,true,QByteArray("\n"));
 }
 
 bool AWG70002a::prepareForExperiment(Experiment &exp)

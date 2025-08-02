@@ -48,6 +48,10 @@ MSO72004C::MSO72004C(QObject *parent) :
                        {{srText,"100 GSa/s"},{srValue,100e9}}
                      });
 
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 1000);
+    setDefault(BC::Key::Comm::termChar, QString("\n"));
+
     save();
 }
 
@@ -84,7 +88,6 @@ void MSO72004C::initialize()
 {
     p_scopeTimeout = new QTimer(this);
 
-    p_comm->setReadOptions(1000,true,QByteArray("\n"));
     p_socket = p_comm->device<QTcpSocket>();
     connect(p_socket,static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::errorOccurred),this,&MSO72004C::socketError);
     p_socket->setSocketOption(QAbstractSocket::LowDelayOption,1);

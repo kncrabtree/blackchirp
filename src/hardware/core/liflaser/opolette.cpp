@@ -1,4 +1,8 @@
 #include "opolette.h"
+#include <hardware/core/hardwareregistration.h>
+
+// Register hardware implementation
+REGISTER_HARDWARE(Opolette, BC::Key::LifLaser::opoName, "Opolette LIF Laser")
 
 Opolette::Opolette(QObject *parent)
     : LifLaser{BC::Key::LifLaser::opo,BC::Key::LifLaser::opoName,CommunicationProtocol::Tcp,parent,true,true}
@@ -9,11 +13,16 @@ Opolette::Opolette(QObject *parent)
     setDefault(minPos,250);
     setDefault(maxPos,2000);
     setDefault(hasFl,true);
+
+    // Communication defaults
+    setDefault(BC::Key::Comm::timeout, 20000);
+    setDefault(BC::Key::Comm::termChar, QString("\n"));
+
+    save();
 }
 
 void Opolette::initialize()
 {
-    p_comm->setReadOptions(20000,true,"\n");
 }
 
 bool Opolette::testConnection()
