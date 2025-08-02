@@ -6,6 +6,7 @@
 #include <QStackedWidget>
 
 #include <hardware/core/hardwareobject.h>
+#include <hardware/core/runtimehardwareconfig.h>
 #include <data/experiment/rfconfig.h>
 
 class QTreeWidget;
@@ -25,7 +26,7 @@ class ExperimentSetupDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit ExperimentSetupDialog(Experiment *exp, const std::map<QString,QString> &hw, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent = nullptr);
+    explicit ExperimentSetupDialog(Experiment *exp, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent = nullptr);
 
 #ifdef BC_LIF
     LifControlWidget *lifControlWidget();
@@ -75,8 +76,9 @@ private:
             return {page,item};
     }
 
-    template<typename T> void addOptHwPages(QString hwKey, const std::map<QString, QString> &hw, QTreeWidgetItem *expTypeItem)
+    template<typename T> void addOptHwPages(QString hwKey, QTreeWidgetItem *expTypeItem)
     {
+        auto hw = RuntimeHardwareConfig::constInstance().getCurrentHardware();
         auto index = 0;
         auto it = hw.end();
         do

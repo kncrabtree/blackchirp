@@ -86,7 +86,6 @@ public slots:
 private:
     Ui::MainWindow *ui;
     QList<QPair<QThread*,QObject*> > d_threadObjectList;
-    std::map<QString,QString> d_hardware;
     std::map<QString,QDialog*> d_openDialogs;
     LogHandler *p_lh;
     HardwareManager *p_hwm;

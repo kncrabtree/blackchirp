@@ -25,7 +25,7 @@ public:
         Configure,
         Start,
     };
-    explicit QuickExptDialog(const std::map<QString, QString> &hwl, QWidget *parent = nullptr);
+    explicit QuickExptDialog(QWidget *parent = nullptr);
 
     std::map<QString,bool> getOptHwSettings() const;
     int exptNumber() const;

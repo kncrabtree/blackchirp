@@ -32,7 +32,7 @@
 #include <gui/lif/gui/experimentlifconfigpage.h>
 #endif
 
-ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QString, QString> &hw, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent)
+ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const QHash<RfConfig::ClockType, RfConfig::ClockFreq> clocks, const std::map<QString, QStringList> &valKeys, QWidget *parent)
     : QDialog{parent}
 {
     setWindowTitle("Experiment Setup");
@@ -134,11 +134,11 @@ ExperimentSetupDialog::ExperimentSetupDialog(Experiment *exp, const std::map<QSt
 
 #endif
 
-    addOptHwPages<ExperimentPulseGenConfigPage>(BC::Key::PGen::key,hw,expTypeItem);
-    addOptHwPages<ExperimentFlowConfigPage>(BC::Key::Flow::flowController,hw,expTypeItem);
-    addOptHwPages<ExperimentTemperatureControllerConfigPage>(BC::Key::TC::key,hw,expTypeItem);
-    addOptHwPages<ExperimentPressureControllerConfigPage>(BC::Key::PController::key,hw,expTypeItem);
-    addOptHwPages<ExperimentIOBoardConfigPage>(BC::Key::IOB::ioboard,hw,expTypeItem);
+    addOptHwPages<ExperimentPulseGenConfigPage>(BC::Key::PGen::key,expTypeItem);
+    addOptHwPages<ExperimentFlowConfigPage>(BC::Key::Flow::flowController,expTypeItem);
+    addOptHwPages<ExperimentTemperatureControllerConfigPage>(BC::Key::TC::key,expTypeItem);
+    addOptHwPages<ExperimentPressureControllerConfigPage>(BC::Key::PController::key,expTypeItem);
+    addOptHwPages<ExperimentIOBoardConfigPage>(BC::Key::IOB::ioboard,expTypeItem);
 
     auto valp = new ExperimentValidatorConfigPage(p_exp,valKeys);
     k = BC::Key::WizardVal::key;

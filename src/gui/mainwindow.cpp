@@ -57,6 +57,7 @@
 #endif
 
 #include <hardware/core/hardwaremanager.h>
+#include <hardware/core/runtimehardwareconfig.h>
 #include <hardware/core/clock/fixedclock.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 #include <hardware/optional/pressurecontroller/pressurecontroller.h>
@@ -68,7 +69,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     p_hwm = new HardwareManager();
-    d_hardware = p_hwm->currentHardware();
 
     qRegisterMetaType<QwtPlot::Axis>("QwtPlot::Axis");
 
@@ -140,8 +140,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(p_hwm,&HardwareManager::clockFrequencyUpdate,ui->clockBox,&ClockDisplayBox::updateFrequency);
 
-
-    for(auto it = d_hardware.cbegin(); it != d_hardware.cend(); ++it)
+    // TODO: This hardware-based UI construction needs to be moved to a dynamic method
+    // that can be called after hardware configuration is determined at runtime.
+    // This is no longer possible in the constructor with dynamic hardware configuration.
+    // See Phase 2.4 in hw-plugin-system.txt for UI integration requirements.
+    auto currentHardware = RuntimeHardwareConfig::constInstance().getCurrentHardware();
+    for(auto it = currentHardware.cbegin(); it != currentHardware.cend(); ++it)
     {
         auto key = it->first;
         auto ki = BC::Key::parseKey(key);
@@ -413,7 +417,7 @@ void MainWindow::quickStart()
         d.mapped()->reject();
     }
 
-    QuickExptDialog d(d_hardware,this);
+    QuickExptDialog d(this);
     int ret = d.exec();
     if(ret == QDialog::Rejected)
         return;
@@ -465,7 +469,7 @@ void MainWindow::startSequence()
 
     if(ret == d.quickCode)
     {
-        QuickExptDialog qed(d_hardware,this);
+        QuickExptDialog qed(this);
         int ret2 = qed.exec();
         if(ret2 == QDialog::Rejected)
             return;
@@ -513,7 +517,7 @@ bool MainWindow::runExperimentWizard(Experiment *exp, QuickExptDialog *qed)
     else
         QMetaObject::invokeMethod(p_hwm,&HardwareManager::getClocks,Qt::BlockingQueuedConnection,&clocks);
 
-    ExperimentSetupDialog d(exp,d_hardware,clocks,p_hwm->validationKeys(),this);
+    ExperimentSetupDialog d(exp,clocks,p_hwm->validationKeys(),this);
 
 #ifdef BC_LIF
     configureLifWidget(d.lifControlWidget());

@@ -1,4 +1,6 @@
 #include <hardware/core/hardwaremanager.h>
+#include <hardware/core/runtimehardwareconfig.h>
+#include <hardware/core/hardwareregistry.h>
 
 #include <hardware/core/hardwareobject.h>
 #include <hardware/core/ftmwdigitizer/ftmwscope.h>
@@ -244,6 +246,14 @@ HardwareManager::HardwareManager(QObject *parent) : QObject(parent), SettingsSto
             obj->setParent(this);
     }
 
+    // Populate RuntimeHardwareConfig with currently compiled-in hardware selections
+    // This validates the runtime configuration system works with existing external API changes
+    auto& runtimeConfig = RuntimeHardwareConfig::instance();
+    for(auto &[key, obj] : d_hardwareMap) {
+        runtimeConfig.setHardwareSelection(obj->d_key, obj->d_subKey, true);
+    }
+    runtimeConfig.saveToSettings();
+
     save();
 }
 
@@ -371,7 +381,7 @@ void HardwareManager::initializeExperiment(std::shared_ptr<Experiment> exp)
     }
 
     exp->d_hardwareSuccess = success;
-    exp->d_hardware = currentHardware();
+    exp->d_hardware = RuntimeHardwareConfig::constInstance().getCurrentHardware();
 
 #ifdef BC_LIF
     if(exp->lifEnabled())

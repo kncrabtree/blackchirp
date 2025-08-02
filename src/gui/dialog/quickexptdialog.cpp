@@ -15,6 +15,7 @@
 #include <data/storage/settingsstorage.h>
 #include <gui/style/themecolors.h>
 #include <gui/widget/experimentsummarywidget.h>
+#include <hardware/core/runtimehardwareconfig.h>
 
 #include <hardware/optional/flowcontroller/flowcontroller.h>
 #include <hardware/optional/pulsegenerator/pulsegenerator.h>
@@ -22,8 +23,8 @@
 #include <hardware/optional/ioboard/ioboard.h>
 #include <hardware/optional/tempcontroller/temperaturecontroller.h>
 
-QuickExptDialog::QuickExptDialog(const std::map<QString, QString> &hwl, QWidget *parent) :
-    QDialog(parent), d_hardware{hwl}
+QuickExptDialog::QuickExptDialog(QWidget *parent) :
+    QDialog(parent), d_hardware{RuntimeHardwareConfig::constInstance().getCurrentHardware()}
 {
     setWindowTitle("Quick Experiment");
     
@@ -103,7 +104,7 @@ QuickExptDialog::QuickExptDialog(const std::map<QString, QString> &hwl, QWidget 
 
     std::set<QString> optHw{ BC::Key::PController::key, BC::Key::Flow::flowController, BC::Key::PGen::key, BC::Key::IOB::ioboard, BC::Key::TC::key};
 
-    for(auto &[key,subKey] : hwl)
+    for(auto &[key,subKey] : d_hardware)
     {
         auto ki = BC::Key::parseKey(key);
         auto hwType = ki.first;
